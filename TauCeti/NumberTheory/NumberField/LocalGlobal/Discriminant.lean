@@ -61,7 +61,7 @@ theorem discriminantExponent_adicCompletion :
   rw [TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent,
     TauCeti.inertiaDegree_def, finrank_residueField_adicCompletion,
     differentExponent_adicCompletion_eq_multiplicity_differentIdeal,
-    multiplicity_differentIdeal_adicCompletionIntegers_eq_multiplicity_asIdeal]
+    multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w]
 
 /-- **The relative discriminant of a Galois extension from one completion.** For `L/K` Galois and
 a finite place `w` of `L` above the finite place `v` of `K`, the coefficient at `v` of the relative
@@ -73,7 +73,7 @@ theorem multiplicity_relDiscr_eq_index_mul_discriminantExponent [IsGalois K L] :
         TauCeti.discriminantExponent (v.adicCompletion K) (w.adicCompletion L) := by
   classical
   -- The primes above `v` are the orbit of `w`, whose size is the index of its stabilizer.
-  rw [TauCeti.multiplicity_relDiscr _ _ v.ne_bot (differentIdeal_ne_bot (A := 𝓞 K)),
+  rw [TauCeti.multiplicity_relDiscr _ _,
     MulAction.index_stabilizer,
     Algebra.IsInvariant.orbit_eq_primesOver (𝓞 K) (𝓞 L) Gal(L/K) v.asIdeal w.asIdeal,
     Set.ncard_eq_toFinset_card', ← smul_eq_mul, ← Finset.sum_const]

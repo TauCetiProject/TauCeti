@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Projection.PrincipalAngle
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.OpNorm
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.SinTheta.Basic
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Pairwise
 
@@ -33,6 +35,11 @@ In the namespace `TauCeti.UnitarilyInvariantSeminorm`:
 
 * `mul_map_starProjection_comp_starProjection_le_pi_div_two_mul_map_sub`: the pairwise
   perturbation `sin Θ` theorem `δ N(P_{Vᗮ} P_U) ≤ (π / 2) N(B - A)`.
+
+In the namespace `Submodule`:
+
+* `mul_norm_sinThetaMap_le_pi_div_two_mul_norm_sub`: its operator-norm form for the directed sine
+  map, `δ ‖sin Θ(U, V)‖ ≤ (π / 2) ‖B - A‖`.
 
 ## References
 
@@ -73,3 +80,24 @@ theorem mul_map_starProjection_comp_starProjection_le_pi_div_two_mul_map_sub
         exact N.map_sylvester_starProjection_comp_starProjection_le hA hB hU hV
 
 end TauCeti.UnitarilyInvariantSeminorm
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- **The pairwise `π / 2` Davis–Kahan `sin Θ` theorem in operator norm.** If every eigenvalue of
+the symmetric operator `A` on its invariant subspace `U` is at distance at least `δ` from every
+eigenvalue of the symmetric operator `B` on `Vᗮ`, where `V` is invariant under `B`, then the
+directed sine map from `U` towards `V` satisfies `δ ‖sin Θ(U, V)‖ ≤ (π / 2) ‖B - A‖`. -/
+theorem mul_norm_sinThetaMap_le_pi_div_two_mul_norm_sub (U V : Submodule 𝕜 E) {A B : E →L[𝕜] E}
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : E →ₗ[𝕜] E).IsSymmetric)
+    (hU : ∀ x ∈ U, A x ∈ U) (hV : ∀ x ∈ V, B x ∈ V) {δ : ℝ}
+    (h : Module.End.PointSpectraSeparated (A : E →ₗ[𝕜] E) U (B : E →ₗ[𝕜] E) Vᗮ δ) :
+    δ * ‖U.sinThetaMap V‖ ≤ π / 2 * ‖B - A‖ := by
+  have := (TauCeti.UnitarilyInvariantSeminorm.opNorm 𝕜 E E)
+    |>.mul_map_starProjection_comp_starProjection_le_pi_div_two_mul_map_sub hA hB hU hV h
+  simpa only [sinThetaMap_def, TauCeti.UnitarilyInvariantSeminorm.opNorm_apply, map_sub,
+    LinearMap.toContinuousLinearMap_coe] using this
+
+end Submodule

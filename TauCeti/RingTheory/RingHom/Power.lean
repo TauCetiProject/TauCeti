@@ -37,13 +37,17 @@ theorem isIntegral_of_comp_eq_pow [CommRing A] [CommRing B] (f : A →+* B) {g :
   rw [← hfg x]
   exact isIntegral_algebraMap
 
-/-- If `f ∘ g` is a positive power map, then `PrimeSpectrum.comap g` is a left inverse of
+/-- If `f ∘ g` is a power map, then `PrimeSpectrum.comap g` is a left inverse of
 `PrimeSpectrum.comap f`. This includes nonreduced rings: prime ideals detect membership of
-positive powers. For `g = f` this says that `PrimeSpectrum.comap f` is an involution. -/
+positive powers. For the exponent `0`, the ring `B` is trivial and has no prime ideals. For
+`g = f` this says that `PrimeSpectrum.comap f` is an involution. -/
 theorem leftInverse_comap_of_comp_eq_pow [CommSemiring A] [CommSemiring B] (f : A →+* B)
-    {g : B →+* A} {n : ℕ} (hn : 0 < n) (hfg : ∀ x, f (g x) = x ^ n) :
+    {g : B →+* A} {n : ℕ} (hfg : ∀ x, f (g x) = x ^ n) :
     Function.LeftInverse (PrimeSpectrum.comap g) (PrimeSpectrum.comap f) := by
   intro P
+  rcases n.eq_zero_or_pos with rfl | hn
+  · have h : (0 : B) = 1 := by simpa using hfg 0
+    exact absurd (by rw [Ideal.eq_top_iff_one, ← h]; exact P.asIdeal.zero_mem) P.isPrime.ne_top
   ext x
   simp [hfg, P.isPrime.pow_mem_iff_mem n hn]
 

@@ -35,7 +35,8 @@ algebraic decomposition by one dimension.
 
 Over a nonempty base the ordered list of root functions of a delineation is the increasing
 enumeration of the real roots of the nonzero members, so a delineation is unique. Delineations
-restrict along continuous maps of bases and reindex along surjections of polynomial labels.
+restrict along continuous maps of bases and reindex along maps of polynomial labels under which
+every root function is still a root of some member.
 
 The main theorem `TauCeti.nonempty_delineation` constructs a delineation over a preconnected base
 from invariant algebraic data: if the coefficients of every member are continuous, every member is
@@ -62,7 +63,10 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
 * `TauCeti.Delineation.instSubsingleton`: over a nonempty base a family has at most one
   delineation.
 * `TauCeti.Delineation.comp`: restriction of a delineation along a continuous map of bases.
-* `TauCeti.Delineation.reindex`: reindexing a delineation along a surjection of polynomial labels.
+* `TauCeti.Delineation.reindex`: reindexing a delineation along a map of polynomial labels under
+  which every root function is still a root of some member.
+* `TauCeti.Delineation.nonempty_of_forall_exists_eq`: a family whose members agree pointwise with
+  those of a delineated family, and conversely, has a delineation.
 * `TauCeti.nonempty_delineation`: existence of a delineation over a preconnected base from
   constant degrees, numbers of distinct complex roots and pairwise gcd degrees.
 * `TauCeti.exists_delineation_of_isRoot_iff`: an ordered continuous enumeration of the real roots
@@ -75,6 +79,10 @@ For a family obtained from polynomials `f` in `n + 1` variables by singling out 
   `TauCeti.Delineation.mk_mem_sectorSet_iff_of_sign_eval_eq`: when the derivative of every
   member is zero or a member, points of one fiber with the same signs are not separated by the
   stack.
+* `TauCeti.Delineation.signInvariant_of_mem_stackCells`,
+  `TauCeti.Delineation.signInvariant_eval_of_mem_stackCells`: every function agreeing on
+  `cylinder S` with the evaluations of a delineated family (in particular
+  `y ↦ (F k (Fin.tail y)).eval (y 0)`) is sign-invariant on every ambient stack cell in `ℝ^(n + 1)`.
 * `TauCeti.Delineation.signInvariant_eval₂_of_mem_stackCells`: the polynomials in `n + 1`
   variables behind a family are sign-invariant on every ambient cell of a delineation.
 
@@ -288,9 +296,10 @@ instance instSubsingleton [Nonempty X] : Subsingleton (Delineation P) where
     obtain rfl : m = m' := funext fun k ↦ funext fun i ↦ (hm k i x).symm.trans (hm' k i x)
     rfl
 
-/-- Reindex a delineation along a surjection of polynomial labels. Surjectivity ensures that
-every section still has positive multiplicity in some member of the reindexed family. -/
-def reindex {κ : Type*} (f : κ → ι) (hf : Surjective f) :
+/-- Reindex a delineation along a map `f` of polynomial labels such that every root function
+still has positive multiplicity in some member of the reindexed family; this holds for instance
+when `f` is surjective. -/
+def reindex {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i) :
     Delineation fun k x ↦ P (f k) x where
   count := D.count
   root := D.root
@@ -299,10 +308,7 @@ def reindex {κ : Type*} (f : κ → ι) (hf : Surjective f) :
   multiplicity k := D.multiplicity (f k)
   rootMultiplicity_root k := D.rootMultiplicity_root (f k)
   exists_root_eq k := D.exists_root_eq (f k)
-  exists_multiplicity_pos i := by
-    obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
-    obtain ⟨l, rfl⟩ := hf k
-    exact ⟨l, hk⟩
+  exists_multiplicity_pos := hf
   eq_zero_or_ne_zero k := D.eq_zero_or_ne_zero (f k)
   natDegree_eq k := D.natDegree_eq (f k)
   signInvariant_sectionSet k := D.signInvariant_sectionSet (f k)
@@ -310,19 +316,19 @@ def reindex {κ : Type*} (f : κ → ι) (hf : Surjective f) :
 
 /-- Reindexing polynomial labels preserves the number of sections. -/
 @[simp]
-theorem reindex_count {κ : Type*} (f : κ → ι) (hf : Surjective f) :
+theorem reindex_count {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i) :
     (D.reindex f hf).count = D.count := (rfl)
 
 /-- Reindexing polynomial labels preserves the ordered root functions. -/
 @[simp]
-theorem reindex_root {κ : Type*} (f : κ → ι) (hf : Surjective f)
+theorem reindex_root {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i)
     (i : Fin (D.reindex f hf).count) (x : X) :
     (D.reindex f hf).root i x = D.root (Fin.cast (D.reindex_count f hf) i) x := (rfl)
 
 /-- Reindexing pulls back the multiplicities along the map of polynomial labels. -/
 @[simp]
-theorem reindex_multiplicity {κ : Type*} (f : κ → ι) (hf : Surjective f) (k : κ)
-    (i : Fin (D.reindex f hf).count) :
+theorem reindex_multiplicity {κ : Type*} (f : κ → ι) (hf : ∀ i, ∃ l, 0 < D.multiplicity (f l) i)
+    (k : κ) (i : Fin (D.reindex f hf).count) :
     (D.reindex f hf).multiplicity k i =
       D.multiplicity (f k) (Fin.cast (D.reindex_count f hf) i) := (rfl)
 
@@ -360,6 +366,27 @@ theorem comp_root (f : Y → X) (hf : Continuous f) (i : Fin (D.comp f hf).count
 theorem comp_multiplicity (f : Y → X) (hf : Continuous f) (k : ι) (i : Fin (D.comp f hf).count) :
     (D.comp f hf).multiplicity k i = D.multiplicity k (Fin.cast (D.comp_count f hf) i) := (rfl)
 
+include D in
+/-- **Transfer to a family with the same members.** If every member of a family `Q` agrees at
+every point with some member of `P`, and every member of `P` with some member of `Q`, then `Q` has
+a delineation. -/
+theorem nonempty_of_forall_exists_eq {κ : Type*} {Q : κ → X → ℝ[X]}
+    (hQP : ∀ l, ∃ k, ∀ x, Q l x = P k x) (hPQ : ∀ k, ∃ l, ∀ x, Q l x = P k x) :
+    Nonempty (Delineation Q) := by
+  -- Over an empty base all families coincide while the multiplicities of `D` are arbitrary, so the
+  -- covering condition of `reindex` is checked at a base point.
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact nonempty_of_isEmpty Q
+  choose g hg using hQP
+  -- a member of `Q` matching a member of `P` with positive multiplicity has it too
+  have hpos (i : Fin D.count) : ∃ l, 0 < D.multiplicity (g l) i := by
+    obtain ⟨k, hk⟩ := D.exists_multiplicity_pos i
+    obtain ⟨l, hl⟩ := hPQ k
+    refine ⟨l, ?_⟩
+    rwa [← D.rootMultiplicity_root (g l) i x₀, ← hg l x₀, hl x₀, D.rootMultiplicity_root]
+  obtain rfl : Q = fun l x ↦ P (g l) x := funext fun l ↦ funext (hg l)
+  exact ⟨D.reindex g hpos⟩
+
 end Delineation
 
 /-- **Delineability from invariant fiber data.** Let `P k x`, for `k` in a finite index type, be
@@ -381,10 +408,10 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
   -- the common ordered real roots of the members that are nowhere zero
   obtain ⟨n, r, hrc, hrm, hroot, hmult⟩ :=
     exists_continuous_ordered_common_roots_of_preconnectedSpace
-      (ι := {k // ∀ x, P k x ≠ 0}) (F := fun k ↦ P k.1) (d := fun k ↦ (P k.1 x₀).natDegree)
-      (fun k i _ ↦ hcoeff k.1 i)
-      (fun k x ↦ by rw [degree_eq_natDegree (k.2 x), hdeg k.1 x x₀])
-      (fun k x₀ ↦ .of_forall fun x ↦ (hcard k.1 x x₀).le)
+      (ι := {k // ∀ x, P k x ≠ 0}) (F := fun k ↦ P k.val) (d := fun k ↦ (P k.val x₀).natDegree)
+      (fun k i _ ↦ hcoeff k.val i)
+      (fun k x ↦ by rw [degree_eq_natDegree (k.property x), hdeg k.val x x₀])
+      (fun k x₀ ↦ .of_forall fun x ↦ (hcard k.val x x₀).le)
       (fun k l hkl x₀ ↦ .of_forall fun x ↦ hgcd (Subtype.coe_ne_coe.2 hkl) x x₀)
   -- a member which is zero somewhere is zero everywhere
   have hzero {k : ι} (h : ¬∀ x, P k x ≠ 0) (x : X) : P k x = 0 :=
@@ -457,11 +484,11 @@ theorem exists_delineation_ball_of_isRoot_iff {B : Type*} [NormedAddCommGroup B]
     isPreconnected_iff_preconnectedSpace.1 (convex_ball b₀ ε).isPreconnected
   obtain ⟨D, hD⟩ := exists_delineation_of_isRoot_iff (θ := fun i (b : ball b₀ ε) ↦ s i b)
     (fun j ↦ continuous_iff_continuousAt.2 fun b ↦
-      ((hball b.2).2.1 j).comp continuous_subtype_val.continuousAt)
-    (fun b c ↦ (hball b.2).2.2.2.trans (hball c.2).2.2.2.symm)
-    (fun i ↦ ((hs i).mono hVU).domRestrict) (fun b ↦ hmono b (hVU b.2))
-    (fun b ↦ hroots b (hVU b.2))
-    fun i b c ↦ (hmult b (hVU b.2) i).trans (hmult c (hVU c.2) i).symm
+      ((hball b.property).2.1 j).comp continuous_subtypeVal.continuousAt)
+    (fun b c ↦ (hball b.property).2.2.2.trans (hball c.property).2.2.2.symm)
+    (fun i ↦ ((hs i).mono hVU).domRestrict) (fun b ↦ hmono b (hVU b.property))
+    (fun b ↦ hroots b (hVU b.property))
+    fun i b c ↦ (hmult b (hVU b.property) i).trans (hmult c (hVU c.property) i).symm
   exact ⟨ε, hε, hVU, D, fun i ↦ (hD i).imp fun _ hj b ↦ congrFun hj b⟩
 
 /-! ### Families closed under differentiation up to zero -/
@@ -529,6 +556,26 @@ theorem mk_mem_sectorSet_iff_of_sign_eval_eq
 
 end Delineation
 
+/-- Any function on `Fin (n + 1) → ℝ` agreeing on `cylinder S` with the evaluations of a member of
+a delineated family `P : ι → S → ℝ[X]` is sign-invariant on each ambient stack cell. -/
+theorem Delineation.signInvariant_of_mem_stackCells {n : ℕ} {S : Set (Fin n → ℝ)}
+    {P : ι → S → ℝ[X]} (D : Delineation P) (k : ι) {g : (Fin (n + 1) → ℝ) → ℝ}
+    (hg : ∀ (x : S) (t : ℝ), g (Fin.cons t x.val) = (P k x).eval t)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
+    SignInvariant g E := by
+  have hcomp : g ∘ cylinder S = fun z : S × ℝ ↦ (P k z.1).eval z.2 :=
+    funext fun z ↦ by rw [Function.comp_apply, cylinder_def, hg]
+  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, hcomp]
+  exacts [D.signInvariant_sectionSet k i, D.signInvariant_sectorSet k j]
+
+/-- Every member of a delineated family `F : ι → (Fin n → ℝ) → ℝ[X]` is sign-invariant along
+`y ↦ (F k (Fin.tail y)).eval (y 0)` on each ambient stack cell in `ℝ^(n + 1)`. -/
+theorem Delineation.signInvariant_eval_of_mem_stackCells {n : ℕ} {S : Set (Fin n → ℝ)}
+    {F : ι → (Fin n → ℝ) → ℝ[X]} (D : Delineation fun k (x : S) ↦ F k x) (k : ι)
+    {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
+    SignInvariant (fun y : Fin (n + 1) → ℝ ↦ (F k (Fin.tail y)).eval (y 0)) E :=
+  D.signInvariant_of_mem_stackCells k (fun _ _ ↦ by simp) hE
+
 section MvPolynomial
 
 variable {A : Type*} [CommRing A] {n : ℕ} {φ : A →+* ℝ}
@@ -538,16 +585,12 @@ variable {A : Type*} [CommRing A] {n : ℕ} {φ : A →+* ℝ}
 `f` in `n + 1` variables, evaluated along `φ`, is sign-invariant on every cell of the stack in
 `ℝ^(n + 1)`. -/
 theorem Delineation.signInvariant_eval₂_of_mem_stackCells
-    (D : Delineation fun (p : F) (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom φ x.1))
+    (D : Delineation fun (p : F) (x : S) ↦ p.val.map (MvPolynomial.eval₂Hom φ x.val))
     {f : MvPolynomial (Fin (n + 1)) A} (hf : MvPolynomial.finSuccEquiv A n f ∈ F)
     {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
-    SignInvariant (fun y ↦ MvPolynomial.eval₂ φ y f) E := by
-  have key : (fun y ↦ MvPolynomial.eval₂ φ y f) ∘ cylinder S =
-      fun z ↦ ((MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ z.1.1)).eval z.2 :=
-    funext fun z ↦ by
-      rw [Function.comp_apply, cylinder_def, MvPolynomial.polynomial_eval_map_finSuccEquiv]
-  rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]
-  exacts [D.signInvariant_sectionSet ⟨_, hf⟩ i, D.signInvariant_sectorSet ⟨_, hf⟩ j]
+    SignInvariant (fun y ↦ MvPolynomial.eval₂ φ y f) E :=
+  D.signInvariant_of_mem_stackCells ⟨_, hf⟩
+    (fun x t ↦ (MvPolynomial.polynomial_eval_map_finSuccEquiv φ x.val t f).symm) hE
 
 end MvPolynomial
 

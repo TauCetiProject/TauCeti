@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.PUnit
+public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import Mathlib.GroupTheory.GroupAction.Hom
+public import Mathlib.GroupTheory.GroupAction.Pointwise
 
 /-!
 # Elementary equivariant maps and the existence of equivariant maps
@@ -16,6 +18,10 @@ public import Mathlib.GroupTheory.GroupAction.Hom
 Two elementary equivariant maps which `Mathlib/GroupTheory/GroupAction/Hom.lean` leaves
 unrecorded: the unique equivariant map to the one-point space `PUnit`, and the constant equivariant
 map whose value is a fixed point.
+
+For group actions, the stabilizer of the preimage of a set of values of an equivariant map is the
+stabilizer of the set; in particular the stabilizer of the image of a point is the stabilizer of
+the fibre through that point.
 
 An equivariant map `X →[G] Y` sends each point to a point whose stabilizer contains the
 stabilizer of the first. Conversely, if every point of `X` has such a point in `Y`, an equivariant
@@ -26,6 +32,8 @@ stabilizer, and extend along the orbit.
 
 * `MulActionHom.toPUnit`: the equivariant map from any space to the point.
 * `MulActionHom.constOfMemFixedPoints`: the constant equivariant map at a fixed point.
+* `TauCeti.MulAction.stabilizer_preimage_of_subset_range`: the stabilizer of the preimage of a set
+  of values is the stabilizer of the set.
 * `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
   stabilizer of `X` is contained in a stabilizer of `Y`.
 -/
@@ -70,7 +78,39 @@ namespace TauCeti
 
 open MulAction
 
+open scoped Pointwise
+
 variable {G X Y : Type*} [Group G] [MulAction G X] [MulAction G Y]
+
+section Stabilizer
+
+variable {F : Type*} [FunLike F X Y] [MulActionHomClass F G X Y]
+
+/-- The stabilizer of the preimage of a set of values of an equivariant map is the stabilizer of
+the set. -/
+theorem MulAction.stabilizer_preimage_of_subset_range (f : F) {s : Set Y}
+    (hs : s ⊆ Set.range f) : stabilizer G (f ⁻¹' s) = stabilizer G s := by
+  ext g
+  rw [mem_stabilizer_iff, mem_stabilizer_iff, ← Group.preimage_smul_set]
+  refine Set.preimage_eq_preimage' ?_ hs
+  rintro _ ⟨y, hy, rfl⟩
+  obtain ⟨x, rfl⟩ := hs hy
+  exact ⟨g • x, map_smul f g x⟩
+
+/-- The stabilizer of the preimage of a set under a surjective equivariant map is the stabilizer
+of the set. -/
+theorem MulAction.stabilizer_preimage_of_surjective {f : F} (hf : Function.Surjective f)
+    (s : Set Y) : stabilizer G (f ⁻¹' s) = stabilizer G s :=
+  stabilizer_preimage_of_subset_range f (hf.range_eq ▸ Set.subset_univ s)
+
+/-- The stabilizer of the image of a point under an equivariant map is the stabilizer of the
+fibre through that point. -/
+theorem MulAction.stabilizer_apply_eq_stabilizer_preimage (f : F) (x : X) :
+    stabilizer G (f x) = stabilizer G (f ⁻¹' {f x}) := by
+  rw [stabilizer_preimage_of_subset_range f (Set.singleton_subset_iff.mpr ⟨x, rfl⟩),
+    stabilizer_singleton]
+
+end Stabilizer
 
 /-- There is an equivariant map `X →[G] Y` exactly when the stabilizer of every point of `X` is
 contained in the stabilizer of some point of `Y`. -/

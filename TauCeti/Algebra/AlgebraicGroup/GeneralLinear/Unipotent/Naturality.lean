@@ -38,7 +38,7 @@ namespace TauCeti.GeneralLinear
 
 universe u v
 
-variable {R : Type u} [CommRing R] [IsDomain R] [Algebra ℚ R] (n : ℕ)
+variable {R : Type u} [CommRing R] [Algebra ℚ R] (n : ℕ)
 
 variable {H : Type v} [CommRing H] [_root_.Bialgebra R H] [Algebra ℚ H]
 

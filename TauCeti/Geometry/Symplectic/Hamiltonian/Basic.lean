@@ -111,6 +111,12 @@ theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : 
   rw [hamiltonianVectorField, hamiltonianVectorField, h, fderiv_const_smul_field, Pi.smul_apply,
     map_smul]
 
+/-- The Hamiltonian vector field is homogeneous, as an identity of vector fields:
+`X_{c H} = c X_H`. -/
+theorem hamiltonianVectorField_const_mul' (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ c * H y) = c • ω.hamiltonianVectorField H :=
+  funext fun x ↦ ω.hamiltonianVectorField_const_mul c H x
+
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
 theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
@@ -191,6 +197,21 @@ theorem apply_fderiv_hamiltonianVectorField_add (ω : SymplecticForm V) {H : V �
     ω.apply_fderiv_hamiltonianVectorField hd, ω.apply_fderiv_hamiltonianVectorField hd]
   rw [hH.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) u v]
   exact add_neg_cancel _
+
+/-- For a `J`-invariant symplectic form and a `C²` Hamiltonian, `J dX_H(x)` is symmetric for the
+bilinear form `g = ω(·, J ·)`: `g(J dX_H(x) u, v) = g(u, J dX_H(x) v)`. It is the Hessian of `H`
+at `x`, since `J X_H` is the gradient of `H` for `g`. -/
+theorem Invariant.associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm
+    {ω : SymplecticForm V} {J : AlmostComplexStructure V} (hJ : ω.Invariant J) {H : V → ℝ}
+    {x : V} (hH : ContDiffAt ℝ 2 H x) (u v : V) :
+    ω.associatedBilinForm J (J (fderiv ℝ (ω.hamiltonianVectorField H) x u)) v =
+      ω.associatedBilinForm J u (J (fderiv ℝ (ω.hamiltonianVectorField H) x v)) := by
+  have h := ω.apply_fderiv_hamiltonianVectorField_add hH u v
+  have hneg : ω u (-fderiv ℝ (ω.hamiltonianVectorField H) x v) =
+      -ω u (fderiv ℝ (ω.hamiltonianVectorField H) x v) := map_neg (ω.toBilinForm u) _
+  rw [associatedBilinForm_apply, associatedBilinForm_apply, (ω.invariant_iff J).mp hJ,
+    J.apply_apply, hneg]
+  linarith
 
 /-- A constant Hamiltonian has zero Hamiltonian vector field. -/
 @[simp]

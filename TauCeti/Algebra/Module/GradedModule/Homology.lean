@@ -47,7 +47,7 @@ open DirectSum
 
 namespace TauCeti.InternalGrading
 
-variable {ι : Type} [DecidableEq ι] [AddRightCancelMonoid ι] {R S M : Type*}
+variable {ι : Type*} [DecidableEq ι] [AddRightCancelMonoid ι] {R S M : Type*}
 
 section Semiring
 

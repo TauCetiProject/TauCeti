@@ -47,7 +47,7 @@ theorem quantile_map_cast_negativeHypergeometricMeasure_eq_iff
         else 0} k := by
   let _ := isProbabilityMeasure_negativeHypergeometricMeasure hr hK
   rw [Measure.quantile_map_natCast_eq_iff _ hu]
-  simp only [negativeHypergeometricMeasure_real_Iic_eq_sum hr hK]
+  simp only [negativeHypergeometricMeasure_real_Iic_eq_sum hr]
 
 /-- The quantile is zero precisely through the probability of drawing `r` consecutive
 successes before the first failure. This also covers the Dirac boundary `r = 0`. -/
@@ -59,7 +59,7 @@ theorem quantile_map_cast_negativeHypergeometricMeasure_eq_zero_iff
   let _ := isProbabilityMeasure_negativeHypergeometricMeasure hr hK
   have hzero : (negativeHypergeometricMeasure N K r).real (Iic 0) =
       ((N - r).choose (K - r) : ℝ) / (N.choose K : ℝ) := by
-    rw [negativeHypergeometricMeasure_real_Iic_eq_sum hr hK]
+    rw [negativeHypergeometricMeasure_real_Iic_eq_sum hr]
     simp
   simpa [IsLeast, lowerBounds, hzero] using
     (Measure.quantile_map_natCast_eq_iff (negativeHypergeometricMeasure N K r) hu 0)

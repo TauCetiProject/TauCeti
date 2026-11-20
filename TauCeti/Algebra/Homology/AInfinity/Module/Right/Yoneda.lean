@@ -191,7 +191,7 @@ private theorem isHomogeneous_tmulConcat_barGrading {p : ℤ} {x : M} (hx : x �
       (barGrading AA AA.toRightModule.grading).piece (barGrading AA MM.grading).piece (p - 1) := by
   have hx' : x ∈ (MM.grading.shift 1).piece (p - 1) := by
     rwa [InternalGrading.shift_piece, sub_add_cancel]
-  have hG (G : InternalGrading R M) : (barGrading AA G).piece =
+  have hG (G : InternalGrading R M ℤ) : (barGrading AA G).piece =
       ((G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1))).piece :=
     funext (barGrading_piece AA G)
   have hA : (barGrading AA AA.toRightModule.grading).piece =
@@ -234,7 +234,7 @@ theorem yonedaCochain_mem_homCochains {p : ℤ} {x : M} (hx : x ∈ MM.grading.p
 /-- The Yoneda cochains of the elements of degree `p`. -/
 noncomputable def yonedaCochains (p : ℤ) :
     MM.grading.piece p →ₗ[R] homCochains AA.toRightModule MM p where
-  toFun x := ⟨MM.yonedaCochain x, MM.yonedaCochain_mem_homCochains x.2⟩
+  toFun x := ⟨MM.yonedaCochain x, MM.yonedaCochain_mem_homCochains x.property⟩
   map_add' _ _ := Subtype.ext (map_add MM.yonedaCochain _ _)
   map_smul' r _ := Subtype.ext (map_smul MM.yonedaCochain r _)
 
@@ -345,7 +345,7 @@ private theorem yonedaCochain_eq_smul {q : ℤ} {y : M} (hy : y ∈ MM.grading.p
 Yoneda cochain of the differential of `x`. -/
 theorem homDifferential_yonedaCochains {p : ℤ} (x : MM.grading.piece p) :
     homDifferential AA.toRightModule MM p (MM.yonedaCochains p x) =
-      MM.yonedaCochains (p + 1) ⟨MM.differential x, MM.differential_mem_piece x.2⟩ := by
+      MM.yonedaCochains (p + 1) ⟨MM.differential x, MM.differential_mem_piece x.property⟩ := by
   obtain ⟨x, hx⟩ := x
   have hdx := MM.differential_mem_piece hx
   have hdd : MM.differential (MM.differential x) = 0 :=
@@ -373,7 +373,7 @@ variable {MM} in
 noncomputable def evalUnitCochains (he : e ∈ AA.grading.piece 0) (p : ℤ) :
     homCochains AA.toRightModule MM p →ₗ[R] MM.grading.piece p where
   toFun F := ⟨evalUnit e (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A),
-    evalUnit_mem_piece MM he F.2⟩
+    evalUnit_mem_piece MM he F.property⟩
   map_add' _ _ := Subtype.ext (map_add (evalUnit e) _ _)
   map_smul' r _ := Subtype.ext (map_smul (evalUnit e) r _)
 
@@ -457,7 +457,7 @@ theorem homDifferential_yonedaHomotopy_add (he : AA.StrictUnit e) {p q : ℤ} (h
           (evalUnit e (F : A ⊗[R] TensorWords R A →ₗ[R] M ⊗[R] TensorWords R A)) := by
   subst hpq
   have hdF := evalUnit_homDifferential MM he.differential_eq_zero F
-  have hxp := evalUnit_mem_piece MM he.degree_zero F.2
+  have hxp := evalUnit_mem_piece MM he.degree_zero F.property
   have hK := homCochains.comp_tmulConcat MM (e := e) F
   have hKδ := homCochains.comp_tmulConcat MM (e := e)
     (homDifferential AA.toRightModule MM (q + 1) F)
@@ -528,7 +528,7 @@ noncomputable def yoneda : MM.cochainComplex ⟶ homComplex AA.toRightModule MM 
       (homComplexXEquiv AA.toRightModule MM (i + 1)).injective ?_)
     have hd : gradedCochainComplexXEquiv (i + 1) ((MM.cochainComplex.d i (i + 1)).hom x) =
         ⟨MM.differential (gradedCochainComplexXEquiv i x),
-          MM.differential_mem_piece (gradedCochainComplexXEquiv i x).2⟩ :=
+          MM.differential_mem_piece (gradedCochainComplexXEquiv i x).property⟩ :=
       Subtype.ext (gradedCochainComplexXEquiv_d i x)
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ConcreteCategory.hom_ofHom,
       LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, homComplexXEquiv_d, hd]

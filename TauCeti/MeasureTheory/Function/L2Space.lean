@@ -12,7 +12,10 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
-import TauCeti.Algebra.Order.Ring.PosPartSq
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.AEMeasurable
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.Algebra.Order.Ring.PosPart.Sq
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Inner products of square-integrable functions
@@ -21,7 +24,11 @@ The pointwise inner product of two square-integrable functions with values in an
 space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L2.integrable_inner`);
 this file gives the form for functions satisfying `MemLp f 2 μ`, which is how second-moment
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
-form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
+form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
+squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
+integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`). The `Lᵖ` seminorm of the pairing
+`x ↦ ⟪f x, c⟫` of a function with a constant vector is at most `‖c‖ₑ` times that of `f`
+(`MeasureTheory.eLpNorm_inner_const_le`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -37,7 +44,9 @@ The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the 
 adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
 (`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
-dense real linear span in L².
+dense real linear span in L². For initial intervals of a second-countable linear order, a
+continuous linear map out of `L²` therefore takes almost everywhere `m`-measurable values
+once it does so on the indicators (`TauCeti.aestronglyMeasurable_of_indicatorConstLp_Iic`).
 
 The space `L²(μ)` is infinite-dimensional as soon as `μ` carries infinitely many pairwise disjoint
 sets of positive finite measure (`MeasureTheory.L2.not_finiteDimensional_of_pairwise_disjoint`),
@@ -70,9 +79,7 @@ variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜
 /-- The pointwise inner product of two square-integrable functions is integrable. -/
 theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
-  (L2.integrable_inner (𝕜 := 𝕜) (hf.toLp f) (hg.toLp g)).congr <| by
-    filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x hfx hgx
-    rw [hfx, hgx]
+  hf.integrable_inner_of_holderConjugate hg
 
 /-- The quadratic form of a matrix on a square-integrable Euclidean-valued function is
 integrable. -/
@@ -81,6 +88,26 @@ theorem MemLp.integrable_inner_toEuclideanLin {ι : Type*} [Fintype ι] [Decidab
     Integrable (fun x ↦ ⟪B.toEuclideanLin (f x), f x⟫_𝕜) μ :=
   (hf.continuousLinearMap_comp (LinearMap.toContinuousLinearMap B.toEuclideanLin)).integrable_inner
     hf
+
+/-- The weighted squared norm `V² ‖g‖²` of a square-integrable function `g` against an
+essentially bounded measurable weight `V` is integrable. -/
+theorem MemLp.integrable_sq_mul_norm_sq {F : Type*} [NormedAddCommGroup F] {g : α → F}
+    (hg : MemLp g 2 μ) {V : α → ℝ} (hV : AEStronglyMeasurable V μ) {C : ℝ}
+    (hVC : ∀ᵐ x ∂μ, V x ^ 2 ≤ C) :
+    Integrable (fun x ↦ V x ^ 2 * ‖g x‖ ^ 2) μ :=
+  hg.norm.integrable_sq.bdd_mul (hV.pow 2)
+    (hVC.mono fun _ hx ↦ (Real.norm_of_nonneg (sq_nonneg _)).trans_le hx)
+
+/-- The `Lᵖ` seminorm of the pairing `x ↦ ⟪f x, c⟫` of a function `f` with a constant vector `c`
+is at most `‖c‖ₑ` times that of `f`. -/
+theorem eLpNorm_inner_const_le (f : α → E) (c : E) (p : ℝ≥0∞) :
+    eLpNorm (fun x ↦ ⟪f x, c⟫_𝕜) p μ ≤ ‖c‖ₑ * eLpNorm f p μ := by
+  by_cases hf : AEStronglyMeasurable f μ
+  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (c := ‖c‖₊) (hf.inner aestronglyMeasurable_const)
+      (.of_forall fun x ↦ (eNorm_inner_le_eNorm _ _).trans_eq (mul_comm _ _)) p
+  obtain rfl | hc := eq_or_ne c 0
+  · simp
+  simp [eLpNorm_of_not_aestronglyMeasurable hf, hc]
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
@@ -327,5 +354,73 @@ theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
     (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
   exact (Submodule.mem_orthogonal _ f).mp hf _
     (Submodule.subset_span ⟨s, hs, rfl⟩)
+
+/-- Initial-interval indicators have dense real linear span in `L²` for a Borel measure
+finite on initial intervals of a second-countable linearly ordered space. -/
+theorem topologicalClosure_span_indicatorConstLp_Iic_eq_top
+    {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [SecondCountableTopology α]
+    [LinearOrder α] [OrderTopology α] [BorelSpace α] {μ : Measure α}
+    (hμ : ∀ a, μ (Set.Iic a) ≠ ∞) :
+    (Submodule.span ℝ (Set.range fun a : α ↦
+      indicatorConstLp (μ := μ) 2 measurableSet_Iic (hμ a) (1 : ℝ))).topologicalClosure = ⊤ := by
+  classical
+  cases isEmpty_or_nonempty α
+  · apply top_unique
+    intro f _
+    have hf : f = 0 := Lp.ext (Filter.Eventually.of_forall (fun a ↦ isEmptyElim a))
+    rw [hf]
+    exact Submodule.zero_mem _
+  have hgen : ‹MeasurableSpace α› =
+      MeasurableSpace.generateFrom (Set.range Set.Iic) :=
+    (BorelSpace.measurable_eq (α := α)).trans (borel_eq_generateFrom_Iic α)
+  have hcover : IsCountablySpanning (Set.range (Set.Iic : α → Set α)) := by
+    obtain ⟨u, hu⟩ := Filter.exists_seq_tendsto (Filter.atTop : Filter α)
+    refine ⟨fun n ↦ Set.Iic (u n), fun n ↦ Set.mem_range_self _, ?_⟩
+    ext a
+    simp only [Set.mem_iUnion, Set.mem_Iic, Set.mem_univ, iff_true]
+    exact (hu.eventually (Filter.eventually_ge_atTop a)).exists
+  have hfin : ∀ s ∈ Set.range Set.Iic, μ s ≠ ∞ := by
+    rintro _ ⟨a, rfl⟩
+    exact hμ a
+  have hdense := topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    hgen isPiSystem_Iic hcover hfin
+  have hset : {g : Lp ℝ 2 μ | ∃ (s : Set α) (hs : s ∈ Set.range Set.Iic),
+      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+        (hfin s hs) 1} = Set.range (fun a : α ↦
+        indicatorConstLp (μ := μ) 2 measurableSet_Iic (hμ a) (1 : ℝ)) := by
+    ext g
+    constructor
+    · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
+      exact Set.mem_range_self a
+    · rintro ⟨a, rfl⟩
+      exact ⟨Set.Iic a, Set.mem_range_self a, rfl⟩
+  rwa [hset] at hdense
+
+/-- A continuous linear map out of real `L²` of a Borel measure finite on initial intervals of a
+second-countable linearly ordered space takes almost everywhere `m`-measurable values as soon
+as it does so on the initial-interval indicators. -/
+theorem aestronglyMeasurable_of_indicatorConstLp_Iic
+    {α : Type*} [TopologicalSpace α] [MeasurableSpace α] [SecondCountableTopology α]
+    [LinearOrder α] [OrderTopology α] [BorelSpace α] {μ : Measure α}
+    (hμ : ∀ a, μ (Set.Iic a) ≠ ∞) {Ω : Type*} {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hm : m ≤ mΩ) (A : Lp ℝ 2 μ →L[ℝ] Lp F p P)
+    (hA : ∀ a, AEStronglyMeasurable[m] (A (indicatorConstLp 2 measurableSet_Iic (hμ a) 1)) P)
+    (f : Lp ℝ 2 μ) : AEStronglyMeasurable[m] (A f) P := by
+  let V : Submodule ℝ (Lp ℝ 2 μ) := (lpMeas F ℝ m p P).comap A.toLinearMap
+  have hV : IsClosed (V : Set (Lp ℝ 2 μ)) := by
+    convert (isClosed_aestronglyMeasurable (F := F) (p := p) (μ := P) hm).preimage
+      A.continuous using 1
+    ext g
+    simp [V, mem_lpMeas_iff_aestronglyMeasurable]
+  have hspan : Submodule.span ℝ (Set.range fun a : α ↦
+      indicatorConstLp (μ := μ) 2 measurableSet_Iic (hμ a) (1 : ℝ)) ≤ V := by
+    rw [Submodule.span_le]
+    rintro _ ⟨a, rfl⟩
+    exact Submodule.mem_comap.2 ((mem_lpMeas_iff_aestronglyMeasurable (𝕜 := ℝ)).2 (hA a))
+  have htop := Submodule.topologicalClosure_minimal _ hspan hV
+  rw [topologicalClosure_span_indicatorConstLp_Iic_eq_top hμ] at htop
+  exact (mem_lpMeas_iff_aestronglyMeasurable (𝕜 := ℝ)).1
+    (Submodule.mem_comap.1 (htop Submodule.mem_top))
 
 end TauCeti

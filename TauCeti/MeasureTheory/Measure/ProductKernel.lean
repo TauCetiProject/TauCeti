@@ -109,7 +109,7 @@ theorem measurable_probabilityMeasure_pi :
     have hBmeas : ∀ i, MeasurableSet (B i) := fun i ↦ hB i (mem_univ i)
     simp_rw [ProbabilityMeasure.toMeasure_pi, Measure.pi_pi]
     exact Finset.measurable_prod Finset.univ fun i _ ↦
-      (Measure.measurable_coe (hBmeas i)).comp (measurable_subtype_coe.comp (measurable_pi_apply i))
+      (Measure.measurable_coe (hBmeas i)).comp (measurable_subtypeVal.comp (measurable_pi_apply i))
   exact hcore.subtype_mk
 
 /-- A finite product of measurable probability-measure kernels is a measurable measure-valued map:
@@ -119,7 +119,7 @@ if each `ν i : Ω → ProbabilityMeasure (α i)` is measurable, then
 theorem measurable_probabilityMeasure_pi_toMeasure
     (ν : ∀ i, Ω → ProbabilityMeasure (α i)) (hν : ∀ i, Measurable (ν i)) :
     Measurable fun ω ↦ (ProbabilityMeasure.pi fun i ↦ ν i ω).toMeasure :=
-  (measurable_subtype_coe.comp measurable_probabilityMeasure_pi).comp (Measurable.of_eval hν)
+  (measurable_subtypeVal.comp measurable_probabilityMeasure_pi).comp (Measurable.of_eval hν)
 
 /-- A finite product of a.e.-measurable probability-measure kernels is an a.e.-measurable
 measure-valued map: if each `ν i : Ω → ProbabilityMeasure (α i)` is `AEMeasurable`, then so is
@@ -128,7 +128,7 @@ measure-valued map: if each `ν i : Ω → ProbabilityMeasure (α i)` is `AEMeas
 theorem aemeasurable_probabilityMeasure_pi_toMeasure
     (ν : ∀ i, Ω → ProbabilityMeasure (α i)) (hν : ∀ i, AEMeasurable (ν i) μ) :
     AEMeasurable (fun ω ↦ (ProbabilityMeasure.pi fun i ↦ ν i ω).toMeasure) μ :=
-  (measurable_subtype_coe.comp measurable_probabilityMeasure_pi).comp_aemeasurable
+  (measurable_subtypeVal.comp measurable_probabilityMeasure_pi).comp_aemeasurable
     (AEMeasurable.of_eval hν)
 
 /-- Measurable-input corollary of `aemeasurable_probabilityMeasure_pi_toMeasure`. -/
@@ -222,8 +222,8 @@ theorem measurable_infinitePi {ι' : Type*} {β : ι' → Type*} [∀ i, Measura
   simpa only [ProbabilityMeasure.toMeasure_pi, Function.comp_def] using
     (Measure.measurable_coe hS).comp
       (measurable_probabilityMeasure_pi_toMeasure
-        (fun i : s ↦ fun p : ∀ j, ProbabilityMeasure (β j) ↦ p i.1)
-        fun i ↦ measurable_pi_apply i.1)
+        (fun i : s ↦ fun p : ∀ j, ProbabilityMeasure (β j) ↦ p i.val)
+        fun i ↦ measurable_pi_apply i.val)
 
 /-- Constant-coordinate `ℕ` specialization of `measurable_infinitePi`: the countable power
 `p ↦ p^{⊗ℕ}` is measurable. -/
@@ -232,6 +232,19 @@ theorem measurable_infinitePi_const {α : Type*} [MeasurableSpace α] :
     Measurable fun p : ProbabilityMeasure α ↦
       Measure.infinitePi (fun _ : ℕ ↦ (p : Measure α)) :=
   measurable_infinitePi.comp (Measurable.of_eval fun _ ↦ measurable_id)
+
+/-- The mixture `∫ P^{⊗ι} dπ(P)` of the powers of `P` indexed by an arbitrary type `ι` has the same
+total mass as the mixing measure `π`, since every infinite product of probability measures is itself
+a probability measure. -/
+@[simp]
+theorem _root_.MeasureTheory.Measure.bind_infinitePi_univ {α ι : Type*} [MeasurableSpace α]
+    (π : Measure (ProbabilityMeasure α)) :
+    (π.bind fun P => Measure.infinitePi fun _ : ι => (P : Measure α)) Set.univ = π Set.univ := by
+  have hm : Measurable fun P : ProbabilityMeasure α ↦
+      Measure.infinitePi fun _ : ι ↦ (P : Measure α) :=
+    measurable_infinitePi.comp (Measurable.of_eval fun _ ↦ measurable_id)
+  rw [Measure.bind_apply MeasurableSet.univ hm.aemeasurable]
+  simp
 
 /-- **Parameter-tagged product kernel.** For a measurable family of probability measures
 `P : T → ProbabilityMeasure α`, the random measure `t ↦ δ_t ⊗ (P t)^{⊗ι}` on `T × (ι → α)` is

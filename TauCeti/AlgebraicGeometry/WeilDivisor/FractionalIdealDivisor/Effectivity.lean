@@ -74,7 +74,7 @@ lemma fractionalIdealDivisor_nonneg_of_le_one (I : Additive (FractionalIdeal R�
   rw [coeff_fractionalIdealDivisor]
   obtain ⟨J, hJ⟩ := FractionalIdeal.le_one_iff_exists_coeIdeal.mp hI
   rw [← hJ]
-  exact FractionalIdeal.count_coe_nonneg K v J
+  exact FractionalIdeal.count_coeIdeal_nonneg K v J
 
 /-- If the divisor of an invertible fractional ideal is effective, then the fractional ideal is
 integral. This is the converse of `fractionalIdealDivisor_nonneg_of_le_one`. -/
