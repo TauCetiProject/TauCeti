@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 
 import Mathlib.LinearAlgebra.Matrix.Integer
 import TauCeti.Data.Nat.GCD
@@ -103,7 +103,7 @@ private lemma conjugate_congruent_mem_SLnZ (a : Fin n → ℕ) (ha : ∀ i, 0 < 
       mapGL ℚ (⟨M, hM_det⟩ : SpecialLinearGroup (Fin n) ℤ) * natDiagGL n a := by
     apply Units.ext
     simp only [mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom, Units.val_mul, natDiagGL_coe n a ha]
+      Int.coe_castRingHom, Units.val_mul, natDiagGL_coe n a ha]
     have h_diag_map : (Matrix.diagonal fun i ↦ (a i : ℤ)).map (Int.cast : ℤ → ℚ) =
         Matrix.diagonal fun i ↦ (a i : ℚ) := Matrix.diagonal_map (by simp)
     have hmap : (↑(mapGL ℚ (⟨M, hM_det⟩ : SpecialLinearGroup (Fin n) ℤ)) :
@@ -147,7 +147,7 @@ private lemma inv_conjugate_congruent_mem_SLnZ (b : Fin n → ℕ) (hb : ∀ i, 
       mapGL ℚ τ * natDiagGL n b := by
     apply Units.ext
     simp only [mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom, Units.val_mul, natDiagGL_coe n b hb]
+      Int.coe_castRingHom, Units.val_mul, natDiagGL_coe n b hb]
     have h_diag_map : (Matrix.diagonal fun i ↦ (b i : ℤ)).map (Int.cast : ℤ → ℚ) =
         Matrix.diagonal fun i ↦ (b i : ℚ) := Matrix.diagonal_map (by simp)
     have hmap : (↑(mapGL ℚ (⟨N, hN_det⟩ : SpecialLinearGroup (Fin n) ℤ)) :
@@ -212,7 +212,7 @@ private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (hcop : Nat.Coprime (∏ i
   obtain ⟨h₁a, hh₁a, h₂a, hh₂a, hδa⟩ := exists_rep_diagCoset_eq_mul_natDiagGL_mul a
   obtain ⟨h₁b, hh₁b, h₂b, hh₂b, hδb⟩ := exists_rep_diagCoset_eq_mul_natDiagGL_mul b
   obtain ⟨σ, hσ⟩ := (mem_SLnZ_iff n).mp
-    ((SLnZ n).mul_mem ((SLnZ n).mul_mem hh₂a p.2.out.2) hh₁b)
+    ((SLnZ n).mul_mem ((SLnZ n).mul_mem hh₂a p.2.out.property) hh₁b)
   have h_cop := mul_mem_doubleCoset_of_coprime n a b hcop σ
   rw [hσ, mem_doubleCoset] at h_cop
   obtain ⟨hc₁, hhc₁, hc₂, hhc₂, h_eq⟩ := h_cop
@@ -229,7 +229,7 @@ private lemma mulMap_coprime_eq (a b : Fin n → ℕ) (hcop : Nat.Coprime (∏ i
       _ = σ₁ * h₁a * hc₁ * natDiagGL n (a * b) * (hc₂ * h₂b) := by group
   rw [diagCoset_def (a * b)]
   exact HeckeCoset.mulMap_eq_of_eq_mul_mul
-    ((SLnZ n).mul_mem ((SLnZ n).mul_mem p.1.out.2 hh₁a) hhc₁)
+    ((SLnZ n).mul_mem ((SLnZ n).mul_mem p.1.out.property hh₁a) hhc₁)
     ((SLnZ n).mul_mem hhc₂ hh₂b) hprod
 
 end CoprimeCosets
@@ -361,7 +361,7 @@ private lemma diagSandwich_scaling (b : Fin n → ℕ) (hb : ∀ i, 0 < b i)
         (↑(natDiagGL n b)⁻¹ : Matrix (Fin n) (Fin n) ℚ) := by
     rw [hD_def]
     simp only [Units.val_mul, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom]
+      Int.coe_castRingHom]
   have h_D_scale : ∀ p q, ∃ z : ℤ,
       (∏ k, (b k : ℚ)) * (↑D : Matrix (Fin n) (Fin n) ℚ) p q = z := by
     intro p q
@@ -374,7 +374,7 @@ private lemma diagSandwich_scaling (b : Fin n → ℕ) (hb : ∀ i, 0 < b i)
   refine Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun q _ ↦ ?_
   have hDpq := (h_D_scale p q).choose_spec
   simp only [mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom, Matrix.map_apply]
+      Int.coe_castRingHom, Matrix.map_apply]
   -- name the chosen integer: its `Exists` argument mentions the term being rewritten,
   -- and rewriting under the bare `choose` breaks the motive
   set z := (h_D_scale p q).choose
@@ -398,7 +398,7 @@ private lemma coprime_coupling_mem_H (a b : Fin n → ℕ)
     have hσ_det : (σ.val.map (Int.cast : ℤ → ℚ)).det = 1 := by
       rw [← Int.cast_det, σ.prop, Int.cast_one]
     simp only [mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom, hC_def, Units.val_mul, Matrix.det_mul]
+      Int.coe_castRingHom, hC_def, Units.val_mul, Matrix.det_mul]
     rw [hσ_det, mul_one, ← Matrix.det_mul, ← Units.val_mul, inv_mul_cancel, Units.val_one,
       Matrix.det_one]
   have hC_mat : (↑C : Matrix (Fin n) (Fin n) ℚ) =
@@ -406,7 +406,7 @@ private lemma coprime_coupling_mem_H (a b : Fin n → ℕ)
         (↑(natDiagGL n a) : Matrix (Fin n) (Fin n) ℚ) := by
     rw [hC_def]
     simp only [Units.val_mul, mapGL_coe_matrix, algebraMap_int_eq, map_apply_coe,
-      RingHom.mapMatrix_apply, Int.coe_castRingHom]
+      Int.coe_castRingHom]
   have h_scale_a : ∀ i j, ∃ z : ℤ,
       (↑(∏ i, a i) : ℚ) * (↑C : Matrix (Fin n) (Fin n) ℚ) i j = z := by
     intro i j
@@ -491,7 +491,7 @@ private lemma multiplicity_coprime_le_one (a b : Fin n → ℕ) (ha_pos : ∀ i,
   rw [QuotientGroup.eq] at h12
   obtain ⟨σ', hσ'⟩ := (mem_SLnZ_iff n).mp
     ((SLnZ n).mul_mem ((SLnZ n).mul_mem ((SLnZ n).inv_mem hh₁a)
-      ((SLnZ n).mul_mem ((SLnZ n).inv_mem i₁.out.2) i₂.out.2)) hh₁a)
+      ((SLnZ n).mul_mem ((SLnZ n).inv_mem i₁.out.property) i₂.out.property)) hh₁a)
   obtain rfl : i₁ = i₂ := by
     refine DoubleCoset.mk_out_mul_injective (SLnZ n) (SLnZ n) δa' ?_
     rw [QuotientGroup.eq]
@@ -500,7 +500,7 @@ private lemma multiplicity_coprime_le_one (a b : Fin n → ℕ) (ha_pos : ∀ i,
       (j₂.out : GL (Fin n) ℚ) (j₁.out : GL (Fin n) ℚ) h₁a h₂a h₁b h₂b
       (((i₁.out : GL (Fin n) ℚ) * δa' * ((j₁.out : GL (Fin n) ℚ) * δb'))⁻¹ *
         ((i₂.out : GL (Fin n) ℚ) * δa' * ((j₂.out : GL (Fin n) ℚ) * δb')))
-      hh₂a hh₁b hh₂b j₂.out.2 j₁.out.2 h12
+      hh₂a hh₁b hh₂b j₂.out.property j₁.out.property h12
       (hδa'_def.trans hδa) (hδb'_def.trans hδb) σ' hσ' (by group)
     have hgoal : ((i₁.out : GL (Fin n) ℚ) * δa')⁻¹ * ((i₂.out : GL (Fin n) ℚ) * δa') =
         δa'⁻¹ * (i₁.out : GL (Fin n) ℚ)⁻¹ * (i₂.out : GL (Fin n) ℚ) * δa' := by group

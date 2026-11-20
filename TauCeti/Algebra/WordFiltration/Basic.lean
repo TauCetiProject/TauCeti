@@ -119,7 +119,7 @@ theorem span_prod_map_eq_range_pow_of_span {ι : Type*} (e : ι → M)
     exact ⟨fun i ↦ ⟨f (e l[(i : ℕ)]), Set.mem_range_self _⟩, congrArg List.prod
       (List.ofFn_getElem_eq_map l fun i ↦ f (e i))⟩
   · rintro ⟨g, rfl⟩
-    choose i hi using fun j ↦ (Set.mem_range.mp (g j).2)
+    choose i hi using fun j ↦ (Set.mem_range.mp (g j).property)
     exact ⟨List.ofFn i, List.length_ofFn, by
       rw [List.map_ofFn]
       simp [Function.comp_def, hi]⟩
@@ -285,7 +285,7 @@ theorem wordFiltration_eq_iSup_pow (k : ℕ) :
     wordFiltration f k = ⨆ i : {i : ℕ // i ≤ k}, LinearMap.range f ^ (i : ℕ) := by
   refine le_antisymm ((wordFiltration_le_iff f).2 fun l hl => ?_) (iSup_le fun i => ?_)
   · exact Submodule.mem_iSup_of_mem ⟨l.length, hl⟩ (prod_map_mem_range_pow f l)
-  · exact (range_pow_le_wordFiltration f i).trans (wordFiltration_mono f i.2)
+  · exact (range_pow_le_wordFiltration f i).trans (wordFiltration_mono f i.property)
 
 /-- Products of at most `k` images of a spanning family span the `k`-th word-filtration step. -/
 theorem span_prod_map_eq_wordFiltration {ι : Type*} (e : ι → M)
@@ -299,7 +299,7 @@ theorem span_prod_map_eq_wordFiltration {ι : Type*} (e : ι → M)
   · rw [wordFiltration_eq_iSup_pow]
     refine iSup_le fun n ↦ ?_
     rw [← span_prod_map_eq_range_pow_of_span f e he]
-    exact Submodule.span_mono fun _ ⟨word, hword, ha⟩ ↦ ⟨word, hword.trans_le n.2, ha⟩
+    exact Submodule.span_mono fun _ ⟨word, hword, ha⟩ ↦ ⟨word, hword.trans_le n.property, ha⟩
 
 /-- The successor filtration step adjoins words of exactly the new degree. -/
 theorem wordFiltration_succ_eq_sup (k : ℕ) :

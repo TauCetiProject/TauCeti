@@ -49,8 +49,6 @@ is asserted here. Those are subsequent steps in the pinned Chevalley--Demazure c
 
 ## Main declarations
 
-* `TauCeti.E6DoubledMinuscule.matrixBasis` and `TauCeti.E6DoubledMinuscule.matrixWeight`: the
-  admissible lattice basis and the weight family in the fifty-four matrix coordinates.
 * `TauCeti.E6DoubledMinuscule.groupScheme`: the doubled minuscule Kostant toral-closure carrier
   over `ℤ`.
 * `TauCeti.E6DoubledMinuscule.rootSubgroup`: its twelve numbered simple-root subgroup morphisms.
@@ -88,65 +86,6 @@ open scoped CategoryTheory.MonObj TensorProduct
 attribute [local instance] TauCeti.moduleNNRat
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
-
-/-! ## The fifty-four matrix coordinates -/
-
-/-- The order in which the two minuscule blocks are laid out along the matrix coordinates of the
-doubled carrier: `finSumFinEquiv` after the numeral identification `27 + 27 = 54`, so that the
-twenty-seven coordinates of `V(ϖ₁)` come first and the twenty-seven coordinates of `V(ϖ₆)` after
-them. -/
-def matrixIndexEquiv : Fin 27 ⊕ Fin 27 ≃ Fin 54 :=
-  finSumFinEquiv.trans (finCongr (by norm_num))
-
-/-- The `V(ϖ₁)` block occupies the first twenty-seven matrix coordinates. -/
-@[simp]
-theorem val_matrixIndexEquiv_inl (a : Fin 27) : (matrixIndexEquiv (.inl a) : ℕ) = a := by
-  simp only [matrixIndexEquiv, Equiv.trans_apply, finSumFinEquiv_apply_left, finCongr_apply,
-    Fin.val_cast, Fin.val_castAdd]
-
-/-- The `V(ϖ₆)` block occupies the last twenty-seven matrix coordinates. -/
-@[simp]
-theorem val_matrixIndexEquiv_inr (a : Fin 27) : (matrixIndexEquiv (.inr a) : ℕ) = 27 + a := by
-  simp only [matrixIndexEquiv, Equiv.trans_apply, finSumFinEquiv_apply_right, finCongr_apply,
-    Fin.val_cast, Fin.val_natAdd]
-
-/-- The admissible doubled minuscule lattice basis, read in the fifty-four matrix coordinates. -/
-noncomputable def matrixBasis : Module.Basis (Fin 54) ℤ lattice :=
-  latticeBasis.reindex matrixIndexEquiv
-
-/-- The matrix-coordinate basis vector at `a` is the block-coordinate one at the block index that
-`matrixIndexEquiv` places at `a`. -/
-@[simp]
-theorem matrixBasis_apply (a : Fin 54) :
-    matrixBasis a = latticeBasis (matrixIndexEquiv.symm a) := by
-  rw [matrixBasis, Module.Basis.reindex_apply]
-
-/-- The fifty-four weights of `V(ϖ₁) ⊕ V(ϖ₆)`, read in the fifty-four matrix coordinates. -/
-def matrixWeight : Fin 54 → Fin 6 → ℤ :=
-  e6DoubledMinusculeWeight ∘ matrixIndexEquiv.symm
-
-/-- The weight at the matrix coordinate `a` is the doubled minuscule weight at the block index
-that `matrixIndexEquiv` places at `a`. -/
-@[simp]
-theorem matrixWeight_apply (a : Fin 54) :
-    matrixWeight a = e6DoubledMinusculeWeight (matrixIndexEquiv.symm a) :=
-  (rfl)
-
-/-- Every matrix-coordinate basis vector has its named Cartan weight. -/
-theorem isCartanWeightVector_matrixBasis (a : Fin 54) :
-    TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
-      (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep (matrixWeight a)
-      ((matrixBasis a : lattice) : (Fin 27 ⊕ Fin 27) → ℚ) := by
-  rw [matrixBasis_apply, matrixWeight_apply]
-  exact isCartanWeightVector_latticeBasis _
-
-/-- **The doubled minuscule weights span the full type-`E₆` character lattice.** Reordering the
-weight family along `matrixIndexEquiv` does not change its range, so this is
-`TauCeti.DynkinType.span_range_e6DoubledMinusculeWeight_eq_top`. -/
-theorem span_range_matrixWeight_eq_top :
-    Submodule.span ℤ (Set.range matrixWeight) = ⊤ := by
-  rw [matrixWeight, matrixIndexEquiv.symm.surjective.range_comp]
-  exact span_range_e6DoubledMinusculeWeight_eq_top
 
 /-- **The doubled minuscule coordinate lattice is stable under the Kostant `ℤ`-form of the
 type-`E₆` Serre algebra.** This is `TauCeti.E6DoubledMinuscule.rep_serreKostantForm_mem_lattice`

@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.MeasureTheory.Measure.Matrix
+public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 
 /-!
@@ -35,7 +36,7 @@ variable {p : ℕ}
 theorem isClosed_setOfPred_rank_le (k : ℕ) :
     IsClosed {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ k} :=
-  (Matrix.isClosed_setOfPred_rank_le k).preimage continuous_subtype_val
+  (Matrix.isClosed_setOfPred_rank_le k).preimage continuous_subtypeVal
 
 /-- The symmetric matrices of rank at most `k` are measurable. -/
 theorem measurableSet_setOfPred_rank_le (k : ℕ) :
@@ -47,6 +48,6 @@ theorem measurableSet_setOfPred_rank_le (k : ℕ) :
 theorem measurableSet_setOfPred_rank_eq (k : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).rank = k} :=
-  (Matrix.measurableSet_setOfPred_rank_eq k).preimage continuous_subtype_val.measurable
+  (Matrix.measurableSet_setOfPred_rank_eq k).preimage continuous_subtypeVal.measurable
 
 end TauCeti

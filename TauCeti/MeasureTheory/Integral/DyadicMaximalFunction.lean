@@ -142,7 +142,8 @@ theorem setOf_lt_dyadicMaximalFunction_eq [Nonempty ι] (hf : ∫⁻ y, ‖f y�
   simp only [mem_ofPred_eq, mem_iUnion, lt_dyadicMaximalFunction_iff, exists_prop]
   constructor
   · rintro ⟨k, m, hx, hlt⟩
-    obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hf ht hlt
+    obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage le_rfl
+      (by simpa only [ENNReal.rpow_one] using hf) ht hlt
     exact ⟨q, hq, hsub hx⟩
   · rintro ⟨q, hq, hx⟩
     exact ⟨q.1, q.2, hx, lt_setLAverage_of_mem_calderonZygmundCubes hq⟩
@@ -201,7 +202,7 @@ private theorem setLAverage_ball_le_of_forall_dyadicCube {r : ℝ} (hr : 0 < r)
       _ ≤ ∑' m : M, t * volume (dyadicCube k (m : ι → ℤ)) := by
           refine tsum_le_tsum fun m => ?_
           rw [← measure_mul_setLAverage _ (volume_dyadicCube_ne_top _ _), mul_comm]
-          exact mul_le_mul_left (h m m.2) _
+          exact mul_le_mul_left (h m m.property) _
       _ = t * volume (⋃ m ∈ M, dyadicCube k m) := by
           rw [measure_biUnion M.to_countable hdisj fun m _ => measurableSet_dyadicCube k m,
             ENNReal.tsum_mul_left]
@@ -250,7 +251,8 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
     -- Calderón–Zygmund cube `Q` with `x ∈ 3Q`.
     obtain ⟨y, hyQ, hyB⟩ := hm
     refine le_of_not_gt fun hlt' => ?_
-    obtain ⟨q, hq, hkq, hQq⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hf ht hlt'
+    obtain ⟨q, hq, hkq, hQq⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage le_rfl
+      (by simpa only [ENNReal.rpow_one] using hf) ht hlt'
     have hyq := mem_closedBall.1 (dyadicCube_subset_closedBall q.1 q.2 (hQq hyQ))
     have h2k : (2 : ℝ) ^ (j + 1) ≤ 2 ^ q.1 := zpow_le_zpow_right₀ one_le_two hkq
     refine hnot q hq (mem_ball.2 ?_)
@@ -264,7 +266,7 @@ theorem volume_lt_maximalFunction_le_mul_volume_lt_dyadicMaximalFunction [Nonemp
       ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by norm_num), ENNReal.ofReal_ofNat]
   calc volume {x | 3 ^ n * t < maximalFunction volume f x}
       ≤ volume (⋃ q ∈ C, ball (c q) (3 * 2 ^ q.1 / 2)) := measure_mono hsub
-    _ ≤ ∑' q : C, volume (ball (c q) (3 * 2 ^ q.1.1 / 2)) :=
+    _ ≤ ∑' q : C, volume (ball (c q) (3 * 2 ^ q.val.1 / 2)) :=
         measure_biUnion_le _ C.to_countable _
     _ = 3 ^ n * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
         rw [measure_biUnion C.to_countable pairwiseDisjoint_calderonZygmundCubes

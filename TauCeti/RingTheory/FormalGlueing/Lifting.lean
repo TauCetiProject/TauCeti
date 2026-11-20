@@ -82,7 +82,7 @@ private theorem amitsur_differential_eq_zero_of_locally_in_range
       have hzero := h.symm.trans (LinearMap.congr_fun hcomp z)
       simpa only [IsLocalizedModule.map_apply, LinearMap.zero_apply] using hzero
     obtain ⟨a, ha⟩ := (IsLocalizedModule.eq_zero_iff (.powers g) _).mp hz'
-    obtain ⟨n, hn⟩ := a.2
+    obtain ⟨n, hn⟩ := a.property
     rw [Submonoid.smul_def, ← hn] at ha
     refine ⟨n, ?_⟩
     rw [← map_pow, algebraMap_smul]
@@ -167,23 +167,23 @@ Pairwise compatibility on the intersections `D(g h)` follows from faithful flatn
 not be assumed separately. -/
 @[stacks 05EK "exactness at the middle term, for faithfully flat ring maps"]
 theorem existsUnique_formalGlueing_lift (y : S ⊗[R] M)
-    (z : (g : G) → LocalizedModule (.powers g.1) M)
+    (z : (g : G) → LocalizedModule (.powers g.val) M)
     (hI : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
       (algebraMap R S) Ideal.le_comap_map))
-    (hz : ∀ g : G, IsLocalizedModule.map (.powers g.1)
-      (LocalizedModule.mkLinearMap (.powers g.1) M)
-      (LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] M))
+    (hz : ∀ g : G, IsLocalizedModule.map (.powers g.val)
+      (LocalizedModule.mkLinearMap (.powers g.val) M)
+      (LocalizedModule.mkLinearMap (.powers g.val) (S ⊗[R] M))
       (TensorProduct.mk R S M 1) (z g) =
-        LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] M) y) :
+        LocalizedModule.mkLinearMap (.powers g.val) (S ⊗[R] M) y) :
     ∃! m : M, (1 : S) ⊗ₜ[R] m = y ∧
-      ∀ g : G, LocalizedModule.mkLinearMap (.powers g.1) M m = z g := by
+      ∀ g : G, LocalizedModule.mkLinearMap (.powers g.val) M m = z g := by
   have hη := Module.FaithfullyFlat.tensorProduct_mk_injective (A := R) (B := S) M
   obtain ⟨m, hm⟩ := (mem_range_mk_one_iff_locally_mem_range y hI).mpr
     (fun g hg ↦ ⟨z ⟨g, hg⟩, hz ⟨g, hg⟩⟩)
   refine ⟨m, ⟨hm, fun g ↦ ?_⟩, fun m' hm' ↦ hη (hm'.1.trans hm.symm)⟩
-  apply IsLocalizedModule.map_injective (.powers g.1)
-    (LocalizedModule.mkLinearMap (.powers g.1) M)
-    (LocalizedModule.mkLinearMap (.powers g.1) (S ⊗[R] M)) _ hη
+  apply IsLocalizedModule.map_injective (.powers g.val)
+    (LocalizedModule.mkLinearMap (.powers g.val) M)
+    (LocalizedModule.mkLinearMap (.powers g.val) (S ⊗[R] M)) _ hη
   rw [IsLocalizedModule.map_apply, hm, hz]
 
 end TensorProduct

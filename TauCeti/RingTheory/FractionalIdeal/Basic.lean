@@ -28,6 +28,6 @@ variable {R : Type*} [CommRing R] {S : Submonoid R} {P : Type*} [CommRing P] [Al
 /-- A product of fractional ideals is zero only if a factor is, when the ambient algebra has no
 zero divisors. -/
 instance [NoZeroDivisors P] : NoZeroDivisors (FractionalIdeal S P) :=
-  coeToSubmodule_injective.noZeroDivisors _ coe_zero coe_mul
+  coeToSubmodule_injective.noZeroDivisors _ coeToSubmodule_zero coeToSubmodule_mul
 
 end FractionalIdeal

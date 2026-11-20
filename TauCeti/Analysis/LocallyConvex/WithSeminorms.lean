@@ -52,13 +52,16 @@ theorem IsBounded.comp {p : ι → Seminorm 𝕜 E} {q : ι' → Seminorm 𝕜�
     _ = _ := (mul_smul C D (t.sup p)).symm
 
 /-- A continuous seminorm of the sum of a series is at most the sum of the seminorms of its
-terms, provided that both series converge. -/
+terms, provided that the series of seminorms converges. -/
 theorem map_tsum_le {𝕜 E β : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [Module 𝕜 E]
-    [TopologicalSpace E] {q : Seminorm 𝕜 E} (hq : Continuous q) {f : β → E} (hf : Summable f)
-    (hqf : Summable fun b ↦ q (f b)) : q (∑' b, f b) ≤ ∑' b, q (f b) :=
-  le_of_tendsto' ((hq.tendsto _).comp hf.hasSum) fun s ↦
-    (Finset.le_sum_of_subadditive q (map_zero q).le (map_add_le_add q) s f).trans
-      (hqf.sum_le_tsum s fun b _ ↦ apply_nonneg q (f b))
+    [TopologicalSpace E] {q : Seminorm 𝕜 E} (hq : Continuous q) {f : β → E}
+    (hqf : Summable fun b ↦ q (f b)) : q (∑' b, f b) ≤ ∑' b, q (f b) := by
+  by_cases hf : Summable f
+  · exact le_of_tendsto' ((hq.tendsto _).comp hf.hasSum) fun s ↦
+      (Finset.le_sum_of_subadditive q (map_zero q).le (map_add_le_add q) s f).trans
+        (hqf.sum_le_tsum s fun b _ ↦ apply_nonneg q (f b))
+  · rw [tsum_eq_zero_of_not_summable hf, map_zero]
+    exact tsum_nonneg fun b ↦ apply_nonneg q (f b)
 
 end Seminorm
 

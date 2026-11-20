@@ -44,8 +44,8 @@ elements on which that calculus is defined.
 * `StarSubalgebra.continuousFunctionalCalculus`: a closed star subalgebra inherits the continuous
   functional calculus.
 * `StarSubalgebra.coe_cfc`: the inherited calculus is computed in the ambient algebra.
-* `StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding`: spectral permanence along a closed
-  embedding of `⋆`-algebras.
+* `StarAlgHom.spectrum_apply_eq_of_injective_of_isClosed_range`: spectral permanence along an
+  injective `⋆`-homomorphism with closed range.
 * `StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding`: a closed embedding of
   `⋆`-algebras pulls the continuous functional calculus back.
 -/
@@ -75,22 +75,23 @@ theorem spectrum_eq_of_predicate (S : StarSubalgebra 𝕜 B) [IsClosed (S : Set 
   have hu : (u : B) = algebraMap 𝕜 B r - x := by
     simp only [u, val_cfcUnits]
     rw [cfc_sub (fun _ ↦ r) (fun t ↦ t) (x : B), cfc_const r (x : B) hx, cfc_id' 𝕜 (x : B) hx]
-  have hmem : ((u⁻¹ : Bˣ) : B) ∈ S := cfc_mem (𝕜' := 𝕜) _ x.2
+  have hmem : ((u⁻¹ : Bˣ) : B) ∈ S := cfc_mem (𝕜' := 𝕜) _ x.property
   refine ⟨⟨algebraMap 𝕜 S r - x, ⟨_, hmem⟩, ?_, ?_⟩, rfl⟩ <;> ext
   · simp [hu]
   · simp [hu]
 
 end StarSubalgebra
 
-variable {A : Type*} [Ring A] [StarRing A] [Algebra 𝕜 A] [TopologicalSpace A]
+variable {A : Type*} [Ring A] [StarRing A] [Algebra 𝕜 A]
 
-/-- **Spectral permanence** along a unital `⋆`-homomorphism `φ` which is a closed embedding: if the
-continuous functional calculus of `B` is defined at `φ a`, then `φ a` has the same spectrum as
-`a`. -/
-theorem StarAlgHom.spectrum_apply_eq_of_isClosedEmbedding (φ : A →⋆ₐ[𝕜] B)
-    (hφ : IsClosedEmbedding φ) {a : A} (ha : q (φ a)) : spectrum 𝕜 (φ a) = spectrum 𝕜 a := by
-  have : IsClosed (φ.range : Set B) := hφ.isClosed_range
-  let e := StarAlgEquiv.ofInjective φ hφ.injective
+/-- **Spectral permanence** along an injective unital `⋆`-homomorphism `φ` with closed range: if
+the continuous functional calculus of `B` is defined at `φ a`, then `φ a` has the same spectrum
+as `a`. No topology on the domain of `φ` is involved. -/
+theorem StarAlgHom.spectrum_apply_eq_of_injective_of_isClosed_range (φ : A →⋆ₐ[𝕜] B)
+    (hφ : Function.Injective φ) (hφr : IsClosed (Set.range φ)) {a : A} (ha : q (φ a)) :
+    spectrum 𝕜 (φ a) = spectrum 𝕜 a := by
+  have : IsClosed (φ.range : Set B) := hφr
+  let e := StarAlgEquiv.ofInjective φ hφ
   rw [← AlgEquiv.spectrum_eq e a]
   exact (φ.range.spectrum_eq_of_predicate (x := e a) ha).symm
 
@@ -114,7 +115,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
   predicate_zero := by simpa using ContinuousFunctionalCalculus.predicate_zero (R := 𝕜) (A := B)
   compactSpace_spectrum x := by
     have : CompleteSpace S := hS.completeSpace_coe
-    exact isCompact_iff_compactSpace.1 (spectrum.isCompact x)
+    exact isCompact_iff_compactSpace.1 (spectrum.isCompact 𝕜 x)
   spectrum_nonempty x hx := by
     have : Nontrivial B := Function.Injective.nontrivial (f := ((↑) : S → B)) Subtype.val_injective
     rw [S.spectrum_eq_of_predicate hx]
@@ -127,7 +128,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
       ext ⟨t, ht⟩
       simpa [e] using congr($hfg ⟨t, hsp ▸ ht⟩)
     have hmem (f) : cfcHom hx (e f) ∈ S := by
-      simpa [cfcHom_eq_cfc_extend 0 hx] using cfc_mem (𝕜' := 𝕜) _ x.2
+      simpa [cfcHom_eq_cfc_extend 0 hx] using cfc_mem (𝕜' := 𝕜) _ x.property
     let ψ := ((cfcHom hx).comp e).codRestrict S hmem
     have hψ (f) : (ψ f : B) = cfcHom hx (e f) := StarAlgHom.coe_codRestrict _ S hmem f
     refine ⟨ψ, ?_, ?_, ?_, fun f ↦ ?_, fun f ↦ ?_⟩
@@ -137,19 +138,19 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
     · have hf : q (ψ f : B) := (hψ f).symm ▸ cfcHom_predicate hx _
       rw [S.spectrum_eq_of_predicate hf, hψ, cfcHom_map_spectrum]
       ext t
-      exact ⟨fun ⟨s, hs⟩ ↦ ⟨_, hs⟩, fun ⟨s, hs⟩ ↦ ⟨⟨s, hsp ▸ s.2⟩, hs⟩⟩
+      exact ⟨fun ⟨s, hs⟩ ↦ ⟨_, hs⟩, fun ⟨s, hs⟩ ↦ ⟨⟨s, hsp ▸ s.property⟩, hs⟩⟩
     · exact (hψ f).symm ▸ cfcHom_predicate hx _
 
 /-- The continuous functional calculus that a closed star subalgebra inherits is computed in the
 ambient algebra. -/
 @[simp]
-theorem coe_cfc [ContinuousMap.UniqueHom 𝕜 B] (f : 𝕜 → 𝕜) (x : S) :
+theorem coe_cfc (f : 𝕜 → 𝕜) (x : S) :
     letI := S.continuousFunctionalCalculus
     ((cfc f x : S) : B) = cfc f (x : B) := by
   let := S.continuousFunctionalCalculus
   by_cases hx : q x
   · by_cases hf : ContinuousOn f (spectrum 𝕜 x)
-    · exact S.subtype.map_cfc f x hf continuous_subtype_val hx hx
+    · exact S.subtype.map_cfc f x hf continuous_subtypeVal hx hx
     · rw [cfc_apply_of_not_continuousOn _ hf,
         cfc_apply_of_not_continuousOn _ (by rwa [← S.spectrum_eq_of_predicate hx]),
         ZeroMemClass.coe_zero]
@@ -169,7 +170,7 @@ theorem StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding (φ : A →
   let e := StarAlgEquiv.ofInjective φ hφ.injective
   have he (y : φ.range) : φ (e.symm y) = y := congr_arg Subtype.val (e.apply_symm_apply y)
   .transfer e.symm (hφ.isInducing.continuous_iff.2 <| by
-      simpa [Function.comp_def, he] using continuous_subtype_val)
+      simpa [Function.comp_def, he] using continuous_subtypeVal)
     fun y ↦ by rw [hpq, he]
 
 end Banach

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.Matrix.Exponential.Derivative
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 
 /-!
@@ -34,6 +35,9 @@ topology is the native matrix topology.
 * `Matrix.IsHermitian.cfc_log_exp`, `Matrix.PosDef.exp_cfc_log`: the logarithm inverts the
   exponential on the Hermitian matrices, and the exponential inverts the logarithm on the positive
   definite matrices.
+* `Matrix.IsHermitian.exp_eq_exp_iff`: the exponential is injective on the Hermitian matrices.
+* `Matrix.IsHermitian.commute_exp_iff`: a matrix commutes with the exponential of a Hermitian
+  matrix exactly when it commutes with the matrix.
 * `Matrix.PosDef.cfc_log_inv`: `log P⁻¹ = -log P` for positive definite `P`.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
@@ -68,6 +72,22 @@ theorem IsHermitian.cfc_log_exp {X : Matrix n n 𝕜} (hX : X.IsHermitian) :
     cfc Real.log (exp X) = X := by
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   exact CFC.log_exp X hX.isSelfAdjoint
+
+/-- The exponential is injective on the Hermitian matrices. -/
+@[simp]
+theorem IsHermitian.exp_eq_exp_iff {X Y : Matrix n n 𝕜} (hX : X.IsHermitian) (hY : Y.IsHermitian) :
+    exp X = exp Y ↔ X = Y :=
+  ⟨fun h ↦ by rw [← hX.cfc_log_exp, h, hY.cfc_log_exp], fun h ↦ h ▸ rfl⟩
+
+/-- A matrix commutes with the exponential of a Hermitian matrix exactly when it commutes with the
+matrix itself. -/
+@[simp]
+theorem IsHermitian.commute_exp_iff {X U : Matrix n n 𝕜} (hX : X.IsHermitian) :
+    Commute U (exp X) ↔ Commute U X := by
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
+  refine ⟨fun h ↦ ?_, fun h ↦ h.exp_right⟩
+  -- `X = log (exp X)` lies in the functional calculus of `exp X`.
+  simpa only [hX.cfc_log_exp] using (h.symm.cfc_real Real.log).symm
 
 /-- The exponential of the logarithm of a positive definite matrix is the matrix itself. -/
 @[simp, grind =]

@@ -15,7 +15,9 @@ Let `Φ : H ≃ₘ^n⟮I, I'⟯ H'` be a `C^n` diffeomorphism between two model 
 `C^n` chart change of `H` by `Φ` gives a `C^n` chart change of `H'`
 (`Diffeomorph.symm_trans_trans_mem_contDiffGroupoid`). Consequently, a `C^n` manifold modelled on
 `I` is a `C^n` manifold modelled on `I'` for the composite charts `ChartedSpace.comp H' H M`, where
-`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`).
+`H` carries the single chart `Φ` (`Diffeomorph.isManifold_chartedSpaceComp`), and `C^n` smoothness
+of maps into `M` is unchanged (`Diffeomorph.contMDiffAt_chartedSpaceComp_iff`,
+`Diffeomorph.contMDiff_chartedSpaceComp_iff`).
 
 For instance, a model with corners described as a subset of `ℂ` can be compared with Mathlib's
 native half-spaces in this way.
@@ -77,5 +79,55 @@ theorem isManifold_chartedSpaceComp (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M : Type*) 
   rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_assoc,
     ← OpenPartialHomeomorph.trans_assoc c.symm]
   exact Φ.symm_trans_trans_mem_contDiffGroupoid (HasGroupoid.compatible hc hc')
+
+/-- Changing the model space of `M` along a `C^n` diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'`
+leaves `C^n` smoothness at `x` of any map `f : X → M` unchanged. -/
+theorem contMDiffAt_chartedSpaceComp_iff (Φ : H ≃ₘ^n⟮I, I'⟯ H')
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {X : Type*} [TopologicalSpace X] [ChartedSpace H'' X]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {f : X → M} {x : X} :
+    (letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+     letI := ChartedSpace.comp H' H M
+     ContMDiffAt I'' I' n f x) ↔ ContMDiffAt I'' I n f x := by
+  have hΦ : ContMDiff I I' n Φ := Φ.contMDiff
+  have hΦs : ContMDiff I' I n Φ.symm := Φ.symm.contMDiff
+  let g : X → H := fun z ↦ chartAt H (f x) (f z)
+  have hg_iff : ContMDiffAt I'' I' n (Φ ∘ g) x ↔ ContMDiffAt I'' I n g x :=
+    ⟨fun h ↦ by simpa [Function.comp_def] using hΦs.contMDiffAt.comp x h,
+      fun h ↦ hΦ.contMDiffAt.comp x h⟩
+  have htarget_I : ContMDiffAt I'' I n f x ↔ ContinuousAt f x ∧ ContMDiffAt I'' I n g x := by
+    rw [contMDiffAt_iff_target (I' := I)]
+    refine and_congr_right fun hfc ↦ ?_
+    have hgc : ContinuousAt g x :=
+      ((chartAt H (f x)).continuousAt (mem_chart_source H (f x))).comp hfc
+    rw [contMDiffAt_iff_target (I' := I) (f := g), and_iff_right hgc]
+    rfl
+  have htarget_I' :
+      (letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+       letI := ChartedSpace.comp H' H M
+       ContMDiffAt I'' I' n f x) ↔ ContinuousAt f x ∧ ContMDiffAt I'' I' n (Φ ∘ g) x := by
+    let _ := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+    let _ := ChartedSpace.comp H' H M
+    rw [contMDiffAt_iff_target (I' := I')]
+    refine and_congr_right fun hfc ↦ ?_
+    have hgc : ContinuousAt (Φ ∘ g) x :=
+      Φ.continuous.continuousAt.comp
+        (((chartAt H (f x)).continuousAt (mem_chart_source H (f x))).comp hfc)
+    rw [contMDiffAt_iff_target (I' := I') (f := Φ ∘ g), and_iff_right hgc]
+    rfl
+  rw [htarget_I', htarget_I, hg_iff]
+
+/-- Changing the model space of `M` along a `C^n` diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'`
+leaves `C^n` smoothness of any map `f : X → M` unchanged. -/
+theorem contMDiff_chartedSpaceComp_iff (Φ : H ≃ₘ^n⟮I, I'⟯ H')
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {X : Type*} [TopologicalSpace X] [ChartedSpace H'' X]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {f : X → M} :
+    (letI := Φ.toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+     letI := ChartedSpace.comp H' H M
+     ContMDiff I'' I' n f) ↔ ContMDiff I'' I n f :=
+  forall_congr' fun _ ↦ Φ.contMDiffAt_chartedSpaceComp_iff
 
 end Diffeomorph

@@ -29,6 +29,13 @@ product. Writing `A = U (Uᴴ P U)` instead, the right positive factor `Uᴴ P U
 exponential of the Hermitian coordinate of the Cartan diffeomorphism
 `Matrix.GeneralLinearGroup.cartanDiffeomorph`, whose unitary coordinate is again `U`
 (`Matrix.GeneralLinearGroup.exp_cartanDiffeomorph_symm_apply_snd`).
+Reading the Cartan coordinates through the exponential coordinates of the cone
+(`Matrix.hermitianExpDiffeomorph`) gives the right polar coordinates
+`Matrix.GeneralLinearGroup.rightPolarDiffeomorph n 𝕜`,
+
+`rightPolarDiffeomorph n 𝕜 : GL n 𝕜 ≃ₘ unitaryGroup n 𝕜 × posDefOpens n 𝕜`,
+
+`A ↦ (U, √(Aᴴ A))`, with inverse `(U, Q) ↦ U Q`.
 
 The coordinates are equivariant under unitary multiplication on both sides: for unitary `V` and
 `W`, the polar coordinates of `V A W` are `(V P Vᴴ, V U W)`. After unfolding the coordinates with
@@ -37,7 +44,10 @@ The coordinates are equivariant under unitary multiplication on both sides: for 
 polar factors, `Units.sqrt_unitary_mul_mul_unitary` and
 `Units.polarUnitary_unitary_mul_mul_unitary`.
 In particular, right multiplication by a unitary matrix only moves the unitary coordinate
-(`Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`).
+(`Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`). Dually, the right polar coordinates
+of `V A W` are `(V U W, Wᴴ Q W)`
+(`Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul`,
+`Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_mul_toUnits_snd`).
 
 They also restrict to determinant one: `det A = 1` exactly when `det P = 1` and `det U = 1`, because
 `det P = ‖det A‖` is positive. Hence the polar coordinates restrict to a homeomorphism
@@ -55,6 +65,13 @@ To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and
 * `Matrix.GeneralLinearGroup.polarDiffeomorph_mul_toUnits`: right unitary equivariance.
 * `Matrix.GeneralLinearGroup.exp_cartanDiffeomorph_symm_apply_snd`: the comparison with the
   Cartan coordinates `A = U exp X`, namely `exp X = Uᴴ P U`.
+* `Matrix.GeneralLinearGroup.rightPolarDiffeomorph`: the right polar-coordinate diffeomorphism
+  `A ↦ (U, √(Aᴴ A))`.
+* `Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_apply_snd_eq_star_mul_mul`: the right
+  positive coordinate is `Uᴴ P U`.
+* `Matrix.GeneralLinearGroup.rightPolarDiffeomorph_toUnits_mul`,
+  `Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_mul_toUnits_snd`: unitary equivariance of
+  the right polar coordinates.
 * `Matrix.GeneralLinearGroup.det_eq_one_iff_polarDiffeomorph`: the determinant-one condition in
   polar coordinates.
 * `Matrix.SpecialLinearGroup.polarHomeomorph`: the restricted polar coordinates on `SL(n, 𝕜)`.
@@ -63,6 +80,8 @@ To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and
 
 * Brian C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition, Graduate Texts
   in Mathematics 222, Springer, 2015, Section 2.5.
+* Anthony W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Progress in Mathematics
+  140, Birkhäuser, 2002, Chapter VI, Section 1.
 -/
 
 public section
@@ -90,12 +109,12 @@ def polarDiffeomorph : GL n 𝕜 ≃ₘ^∞⟮𝓘(ℝ, Matrix n n 𝕜),
   toFun A := (⟨⟨CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)),
     (CFC.sqrt_nonneg _).isSelfAdjoint⟩, (mem_posDefOpens _).2 (posDef_sqrt_mul_star A)⟩,
     A.polarUnitary)
-  invFun p := ((mem_posDefOpens _).1 p.1.2).isUnit.unit * Unitary.toUnits p.2
+  invFun p := ((mem_posDefOpens _).1 p.1.property).isUnit.unit * Unitary.toUnits p.2
   left_inv A := Units.ext (Units.sqrt_mul_star_mul_polarUnitary A)
   right_inv p := by
-    have hp := ((mem_posDefOpens _).1 p.1.2).posSemidef.nonneg
-    have h : ((((mem_posDefOpens _).1 p.1.2).isUnit.unit * Unitary.toUnits p.2 : GL n 𝕜) :
-        Matrix n n 𝕜) = (p.1.1 : Matrix n n 𝕜) * p.2 := by
+    have hp := ((mem_posDefOpens _).1 p.1.property).posSemidef.nonneg
+    have h : ((((mem_posDefOpens _).1 p.1.property).isUnit.unit * Unitary.toUnits p.2 : GL n 𝕜) :
+        Matrix n n 𝕜) = (p.1.val : Matrix n n 𝕜) * p.2 := by
       rw [Units.val_mul, IsUnit.unit_spec, Unitary.val_toUnits_apply]
     exact Prod.ext (Subtype.ext (Subtype.ext (Units.sqrt_mul_star_eq_of_mul_eq _ hp h.symm)))
       (Units.polarUnitary_eq_of_mul_eq _ hp h.symm)
@@ -113,8 +132,7 @@ def polarDiffeomorph : GL n 𝕜 ≃ₘ^∞⟮𝓘(ℝ, Matrix n n 𝕜),
     have hP : ContMDiff (𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)).prod (Unitary.model (Matrix n n 𝕜)))
         𝓘(ℝ, Matrix n n 𝕜) ∞ (fun p : posDefOpens n 𝕜 × unitaryGroup n 𝕜 ↦
           ((p.1 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜)) :=
-      ((selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp contMDiff_subtype_val).comp
-        contMDiff_fst
+      contMDiff_coe_posDefOpens.comp contMDiff_fst
     have hU : ContMDiff (𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)).prod (Unitary.model (Matrix n n 𝕜)))
         𝓘(ℝ, Matrix n n 𝕜) ∞ (fun p : posDefOpens n 𝕜 × unitaryGroup n 𝕜 ↦
           ((p.2 : unitaryGroup n 𝕜) : Matrix n n 𝕜)) :=
@@ -176,6 +194,98 @@ theorem exp_cartanDiffeomorph_symm_apply_snd (A : GL n 𝕜) :
     polarDiffeomorph_apply_snd, ← Units.sqrt_star_mul_eq]
   exact PosDef.exp_cfc_log (by simpa using posDef_sqrt_mul_star (star A))
 
+/-! ### The right polar coordinates `A = U Q` -/
+
+variable (n 𝕜) in
+/-- **Right polar coordinates on `GL(n, 𝕜)`** for `𝕜 = ℝ` or `ℂ`: the global real smooth
+diffeomorphism `A ↦ (U, √(Aᴴ A))` from the invertible matrices onto the product of the unitary
+group (the orthogonal group when `𝕜 = ℝ`) and the positive-definite cone, whose inverse is
+`(U, Q) ↦ U Q`. The unitary coordinate `U` is the same as for `polarDiffeomorph`.
+
+It is the inverse Cartan diffeomorphism `A ↦ (U, X)` followed by the exponential coordinates
+`X ↦ exp X` of the cone. To use this diffeomorphism, open the `Matrix.Norms.L2Operator` scope and
+enable `Matrix.l2OpNormedAlgebraReal` as a local instance. -/
+def rightPolarDiffeomorph : GL n 𝕜 ≃ₘ^∞⟮𝓘(ℝ, Matrix n n 𝕜),
+    (Unitary.model (Matrix n n 𝕜)).prod 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜))⟯
+    unitaryGroup n 𝕜 × posDefOpens n 𝕜 :=
+  (cartanDiffeomorph n 𝕜).symm.trans
+    ((Diffeomorph.refl _ _ _).prodCongr (hermitianExpDiffeomorph n 𝕜 ∞))
+
+/-- The unitary coordinate of the right polar diffeomorphism is the unitary polar factor. -/
+@[simp]
+theorem rightPolarDiffeomorph_apply_fst (A : GL n 𝕜) :
+    (rightPolarDiffeomorph n 𝕜 A).1 = A.polarUnitary :=
+  cartanDiffeomorph_symm_apply_fst A
+
+/-- The positive coordinate of the right polar diffeomorphism is the right positive factor
+`√(Aᴴ A)`. -/
+@[simp]
+theorem coe_rightPolarDiffeomorph_apply_snd (A : GL n 𝕜) :
+    (((rightPolarDiffeomorph n 𝕜 A).2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
+      CFC.sqrt (star (A : Matrix n n 𝕜) * A) := by
+  have hpos : (CFC.sqrt (star (A : Matrix n n 𝕜) * A)).PosDef := by
+    simpa using posDef_sqrt_mul_star (star A)
+  calc _ = NormedSpace.exp ((((cartanDiffeomorph n 𝕜).symm A).2 :
+          selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) :=
+        coe_hermitianExpDiffeomorph_apply ∞ _
+    _ = _ := by rw [coe_cartanDiffeomorph_symm_apply_snd, hpos.exp_cfc_log]
+
+/-- The inverse right polar diffeomorphism multiplies the two coordinates. -/
+@[simp]
+theorem coe_rightPolarDiffeomorph_symm_apply (p : unitaryGroup n 𝕜 × posDefOpens n 𝕜) :
+    ((rightPolarDiffeomorph n 𝕜).symm p : Matrix n n 𝕜) =
+      (p.1 : Matrix n n 𝕜) * ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) := by
+  obtain ⟨A, rfl⟩ := (rightPolarDiffeomorph n 𝕜).surjective p
+  rw [Diffeomorph.coe_toEquiv, Diffeomorph.symm_apply_apply, rightPolarDiffeomorph_apply_fst,
+    coe_rightPolarDiffeomorph_apply_snd, Units.polarUnitary_mul_sqrt_star_mul]
+
+/-- The right polar coordinates are the unique factorization of `A` as a unitary matrix times a
+positive-definite matrix: a pair from the unitary group and the cone is the right polar
+coordinate pair of `A` exactly when its product is `A`. -/
+theorem rightPolarDiffeomorph_eq_iff (A : GL n 𝕜) (p : unitaryGroup n 𝕜 × posDefOpens n 𝕜) :
+    rightPolarDiffeomorph n 𝕜 A = p ↔
+      (p.1 : Matrix n n 𝕜) * ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) = A := by
+  rw [← coe_rightPolarDiffeomorph_symm_apply, ← Units.ext_iff]
+  constructor
+  · rintro rfl
+    exact (rightPolarDiffeomorph n 𝕜).symm_apply_apply A
+  · rintro rfl
+    exact (rightPolarDiffeomorph n 𝕜).apply_symm_apply p
+
+/-- The right positive coordinate `√(Aᴴ A)` is the left positive coordinate `√(A Aᴴ)` conjugated
+by the common unitary coordinate: `Q = Uᴴ P U`, so that `A = P U = U (Uᴴ P U)`. -/
+theorem coe_rightPolarDiffeomorph_apply_snd_eq_star_mul_mul (A : GL n 𝕜) :
+    (((rightPolarDiffeomorph n 𝕜 A).2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
+      star ((polarDiffeomorph n 𝕜 A).2 : Matrix n n 𝕜) *
+        (((polarDiffeomorph n 𝕜 A).1 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) *
+          ((polarDiffeomorph n 𝕜 A).2 : Matrix n n 𝕜) := by
+  rw [coe_rightPolarDiffeomorph_apply_snd, coe_polarDiffeomorph_apply_fst,
+    polarDiffeomorph_apply_snd]
+  exact Units.sqrt_star_mul_eq A
+
+/-- Left multiplication by a unitary matrix fixes the positive right polar coordinate and
+multiplies the unitary coordinate on the left. -/
+theorem rightPolarDiffeomorph_toUnits_mul (V : unitaryGroup n 𝕜) (A : GL n 𝕜) :
+    rightPolarDiffeomorph n 𝕜 (Unitary.toUnits V * A) =
+      (V * (rightPolarDiffeomorph n 𝕜 A).1, (rightPolarDiffeomorph n 𝕜 A).2) := by
+  rw [rightPolarDiffeomorph_eq_iff, coe_rightPolarDiffeomorph_apply_snd,
+    rightPolarDiffeomorph_apply_fst, Submonoid.coe_mul, mul_assoc,
+    Units.polarUnitary_mul_sqrt_star_mul, Units.val_mul, Unitary.val_toUnits_apply]
+
+/-- Right multiplication by a unitary matrix `W` conjugates the positive right polar coordinate:
+the right positive factor of `A W` is `Wᴴ Q W`, where `Q` is the right positive factor of `A`. -/
+theorem coe_rightPolarDiffeomorph_mul_toUnits_snd (A : GL n 𝕜) (W : unitaryGroup n 𝕜) :
+    (((rightPolarDiffeomorph n 𝕜 (A * Unitary.toUnits W)).2 : selfAdjoint (Matrix n n 𝕜)) :
+        Matrix n n 𝕜) =
+      star (W : Matrix n n 𝕜) *
+        (((rightPolarDiffeomorph n 𝕜 A).2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) *
+          (W : Matrix n n 𝕜) := by
+  rw [coe_rightPolarDiffeomorph_apply_snd, coe_rightPolarDiffeomorph_apply_snd, Units.val_mul,
+    Unitary.val_toUnits_apply, star_mul, mul_assoc, ← mul_assoc (star (A : Matrix n n 𝕜)),
+    ← mul_assoc]
+  simpa only [Unitary.coe_star, star_star] using
+    CFC.sqrt_unitary_mul_mul_star (star W) (star (A : Matrix n n 𝕜) * A)
+
 /-! ### Determinant one -/
 
 /-- An invertible matrix has determinant one exactly when both of its polar coordinates have
@@ -210,12 +320,12 @@ def polarHomeomorph : SpecialLinearGroup n 𝕜 ≃ₜ
     {P : posDefOpens n 𝕜 // ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} ×
       specialUnitaryGroup n 𝕜 where
   toFun g :=
-    have h := (det_eq_one_iff_polarDiffeomorph (toGL g)).1 g.2
+    have h := (det_eq_one_iff_polarDiffeomorph (toGL g)).1 g.property
     (⟨(polarDiffeomorph n 𝕜 (toGL g)).1, h.1⟩,
       ⟨(polarDiffeomorph n 𝕜 (toGL g)).2,
-        mem_specialUnitaryGroup_iff.2 ⟨(polarDiffeomorph n 𝕜 (toGL g)).2.2, h.2⟩⟩)
+        mem_specialUnitaryGroup_iff.2 ⟨(polarDiffeomorph n 𝕜 (toGL g)).2.property, h.2⟩⟩)
   invFun p := ⟨((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) * (p.2 : Matrix n n 𝕜), by
-    rw [det_mul, p.1.2, (mem_specialUnitaryGroup_iff.1 p.2.2).2, mul_one]⟩
+    rw [det_mul, p.1.property, (mem_specialUnitaryGroup_iff.1 p.2.property).2, mul_one]⟩
   left_inv g := Subtype.ext (Units.sqrt_mul_star_mul_polarUnitary (toGL g))
   right_inv := by
     rintro ⟨⟨P, hP⟩, U, hU⟩
@@ -228,14 +338,14 @@ def polarHomeomorph : SpecialLinearGroup n 𝕜 ≃ₜ
   continuous_toFun := by
     have h := (polarDiffeomorph n 𝕜).continuous.comp continuous_toGL
     exact ((continuous_fst.comp h).subtype_mk _).prodMk
-      (((continuous_subtype_val.comp (continuous_snd.comp h))).subtype_mk _)
+      (((continuous_subtypeVal.comp (continuous_snd.comp h))).subtype_mk _)
   continuous_invFun := by
     have hP : Continuous fun p : {P : posDefOpens n 𝕜 //
         ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} × specialUnitaryGroup n 𝕜 ↦
         ((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :=
-      continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)
-    exact ((continuous_subtype_val.comp hP).mul
-      (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+      continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_fst)
+    exact ((continuous_subtypeVal.comp hP).mul
+      (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
 
 /-- The positive-definite coordinate of the polar coordinates on `SL(n, 𝕜)` is `√(A Aᴴ)`. -/
 @[simp]

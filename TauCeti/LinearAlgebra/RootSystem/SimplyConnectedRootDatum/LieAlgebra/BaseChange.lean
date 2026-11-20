@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Matrix.BaseChange
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Basic
 public import Mathlib.RingTheory.Flat.Basic
+import TauCeti.Algebra.Lie.BaseChange.Hom
 
 /-!
 # Base change of the pinned Dynkin-type Lie algebra
@@ -301,63 +302,22 @@ private theorem reindex_symm_map_mem_lieAlgebraBaseChange
       rw [heq]
       exact (t.lieAlgebraBaseChange ht K).lie_mem hM hN
 
-/-- Scalar extension of the inclusion of the pinned rational Lie algebra into its ambient
-matrix Lie algebra. -/
-private noncomputable def lieAlgebraBaseChangeIncl :
-    LieHom K (K ⊗[ℚ] t.lieAlgebra ht)
-      (K ⊗[ℚ] Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) where
-  __ := LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap
-  map_lie' {x y} := by
-    induction x with
-    | tmul a x =>
-      induction y with
-      | tmul b y => simp [LieAlgebra.ExtendScalars.bracket_tmul]
-      | add y z hy hz =>
-        simp only [lie_add]
-        calc
-          _ = (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅a ⊗ₜ[ℚ] x, y⁆ +
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅a ⊗ₜ[ℚ] x, z⁆ :=
-            (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add _ _
-          _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (a ⊗ₜ[ℚ] x),
-                (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ +
-              ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (a ⊗ₜ[ℚ] x),
-                (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) z⁆ :=
-            congrArg₂ (fun p q ↦ p + q) hy hz
-          _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (a ⊗ₜ[ℚ] x),
-                (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (y + z)⁆ := by
-            rw [(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add, lie_add]
-    | add x z hx hz =>
-      simp only [add_lie]
-      calc
-        _ = (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅x, y⁆ +
-            (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) ⁅z, y⁆ :=
-          (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add _ _
-        _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) x,
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ +
-            ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) z,
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ :=
-          congrArg₂ (fun p q ↦ p + q) hx hz
-        _ = ⁅(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) (x + z),
-              (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap) y⁆ := by
-          rw [(LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap).map_add, add_lie]
-
-/-- The ambient scalar-extension map restricted to tensors of the pinned rational Lie algebra. -/
+/-- The ambient scalar-extension map restricted to tensors of the pinned rational Lie algebra:
+the scalar extension `LieHom.baseChange` of the inclusion of the pinned rational Lie algebra into
+its ambient matrix Lie algebra, followed by the ambient scalar-extension equivalence. -/
 private noncomputable def lieAlgebraBaseChangeHom :
     LieHom K (K ⊗[ℚ] t.lieAlgebra ht)
       (Matrix ((t.baseChangeBase ht K).support ⊕ Fin t.numRoots)
         ((t.baseChangeBase ht K).support ⊕ Fin t.numRoots) K) :=
   t.ambientLieAlgebraBaseChangeEquiv ht K |>.toLieHom.comp
-    (t.lieAlgebraBaseChangeIncl ht K)
-
-private theorem lieAlgebraBaseChangeIncl_injective :
-    Function.Injective (t.lieAlgebraBaseChangeIncl ht K) := by
-  exact Module.Flat.lTensor_preserves_injective_linearMap
-    (M := K) (t.lieAlgebra ht).incl.toLinearMap Subtype.val_injective
+    (LieHom.baseChange K (t.lieAlgebra ht).incl)
 
 private theorem lieAlgebraBaseChangeHom_injective :
-    Function.Injective (t.lieAlgebraBaseChangeHom ht K) :=
-  (t.ambientLieAlgebraBaseChangeEquiv ht K).injective.comp
-    (t.lieAlgebraBaseChangeIncl_injective ht K)
+    Function.Injective (t.lieAlgebraBaseChangeHom ht K) := by
+  have hincl : Function.Injective (LieHom.baseChange K (t.lieAlgebra ht).incl) := by
+    rw [← LieHom.coe_toLinearMap, LieHom.coe_baseChange, LinearMap.baseChange_eq_lTensor]
+    exact Module.Flat.lTensor_preserves_injective_linearMap _ Subtype.val_injective
+  exact (t.ambientLieAlgebraBaseChangeEquiv ht K).injective.comp hincl
 
 /-- The restricted ambient map has image exactly the Geck Lie algebra constructed after scalar
 extension. -/
@@ -367,7 +327,7 @@ private theorem lieAlgebraBaseChangeHom_range :
   · rintro _ ⟨x, rfl⟩
     induction x with
     | tmul a x =>
-      simpa [lieAlgebraBaseChangeHom, lieAlgebraBaseChangeIncl] using
+      simpa [lieAlgebraBaseChangeHom] using
         (t.lieAlgebraBaseChange ht K).smul_mem a
           (reindex_symm_map_mem_lieAlgebraBaseChange t ht K x x.property)
     | add x y hx hy => simpa using (t.lieAlgebraBaseChange ht K).add_mem hx hy
@@ -378,20 +338,17 @@ private theorem lieAlgebraBaseChangeHom_range :
       refine ⟨1 ⊗ₜ[ℚ] ⟨h (P := t.rationalRootSystem ht) (b := t.rationalBase ht) i, ?_⟩, ?_⟩
       · rw [lieAlgebra_def, RootPairing.GeckConstruction.lieAlgebra]
         exact LieSubalgebra.subset_lieSpan (Or.inl (Or.inl ⟨i, rfl⟩))
-      · simp [lieAlgebraBaseChangeHom, lieAlgebraBaseChangeIncl,
-          reindex_symm_map_h, i]
+      · simp [lieAlgebraBaseChangeHom, reindex_symm_map_h, i]
     · let i := t.supportBaseChangeEquiv ht K j
       refine ⟨1 ⊗ₜ[ℚ] ⟨e (P := t.rationalRootSystem ht) (b := t.rationalBase ht) i, ?_⟩, ?_⟩
       · rw [lieAlgebra_def, RootPairing.GeckConstruction.lieAlgebra]
         exact LieSubalgebra.subset_lieSpan (Or.inl (Or.inr ⟨i, rfl⟩))
-      · simp [lieAlgebraBaseChangeHom, lieAlgebraBaseChangeIncl,
-          reindex_symm_map_e, i]
+      · simp [lieAlgebraBaseChangeHom, reindex_symm_map_e, i]
     · let i := t.supportBaseChangeEquiv ht K j
       refine ⟨1 ⊗ₜ[ℚ] ⟨f (P := t.rationalRootSystem ht) (b := t.rationalBase ht) i, ?_⟩, ?_⟩
       · rw [lieAlgebra_def, RootPairing.GeckConstruction.lieAlgebra]
         exact LieSubalgebra.subset_lieSpan (Or.inr ⟨i, rfl⟩)
-      · simp [lieAlgebraBaseChangeHom, lieAlgebraBaseChangeIncl,
-          reindex_symm_map_f, i]
+      · simp [lieAlgebraBaseChangeHom, reindex_symm_map_f, i]
 
 /-- The scalar-extension map with codomain restricted to the Geck Lie algebra over `K`. -/
 private noncomputable def lieAlgebraBaseChangeLieHom :
@@ -409,7 +366,8 @@ private noncomputable def lieAlgebraBaseChangeLieHom :
       Matrix ((t.baseChangeBase ht K).support ⊕ Fin t.numRoots)
         ((t.baseChangeBase ht K).support ⊕ Fin t.numRoots) K) =
       t.ambientLieAlgebraBaseChangeEquiv ht K
-        (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap x) :=
+        (LinearMap.baseChange K (t.lieAlgebra ht).incl.toLinearMap x) := by
+  rw [← LieHom.coe_baseChange, LieHom.coe_toLinearMap]
   rfl
 
 private theorem lieAlgebraBaseChangeLieHom_bijective :

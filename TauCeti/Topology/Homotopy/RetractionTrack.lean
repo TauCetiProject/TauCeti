@@ -125,12 +125,12 @@ theorem annulusToTrack_apply (R : (ContinuousMap.id X).HomotopyRel r B)
     (β : C(I, I)) (hβ₀ : β 0 = 0) (hβ₁ : β 1 = 1) (p : I × (I × S)) :
     R.annulusToTrack hr γ hγ β hβ₀ hβ₁ p =
       if h : (p.1 : ℝ) ≤ 1 / 2 then
-        R (⟨2 * p.1, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨p.1.2.1, h⟩⟩ *
+        R (⟨2 * p.1, (unitInterval.mul_pos_mem_iff zero_lt_two).2 ⟨p.1.property.1, h⟩⟩ *
           β p.2.1, γ p.2)
       else
         R (β p.2.1, γ (unitInterval.symm
           ⟨2 * p.1 - 1, unitInterval.two_mul_sub_one_mem_iff.2
-            ⟨(not_le.1 h).le, p.1.2.2⟩⟩ * p.2.1, p.2.2)) := by
+            ⟨(not_le.1 h).le, p.1.property.2⟩⟩ * p.2.1, p.2.2)) := by
   exact HomotopyWith.trans_apply _ _ _
 
 /-- **Annuli with homotopic inner circles are homotopic rel their outer boundary condition.**

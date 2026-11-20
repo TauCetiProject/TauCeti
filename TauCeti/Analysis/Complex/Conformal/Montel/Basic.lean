@@ -70,7 +70,7 @@ theorem montel [ProperSpace E] (hΩ : IsOpen Ω) (hF : ∀ n, DifferentiableOn �
   have hlim : ((fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) ∘ (Subtype.val : Ω → ℂ))
       = fun x : Ω => a x := by
     funext x
-    simp [x.2]
+    simp [x.property]
   have hconvOn : TendstoLocallyUniformlyOn (fun n => F (φ n))
       (fun z => if hz : z ∈ Ω then a ⟨z, hz⟩ else 0) atTop Ω := by
     rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hlim]

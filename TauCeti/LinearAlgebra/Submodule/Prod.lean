@@ -14,7 +14,7 @@ public import Mathlib.Order.SupIndep
 Products of submodules commute with indexed suprema, and a family of products is independent
 exactly when both families of factors are. The two coordinate copies `Submodule.fst` and
 `Submodule.snd` of the factors of a product module are cut out by the vanishing of the other
-coordinate and are complementary. Products of submodules are compared componentwise.
+coordinate. Products of submodules are compared componentwise.
 
 ## Main declarations
 
@@ -23,7 +23,6 @@ coordinate and are complementary. Products of submodules are compared componentw
   when both families of factors are.
 * `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
   factors.
-* `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
 * `Submodule.prod_le_prod_iff`, `Submodule.prod_inj`: products of submodules are compared
   componentwise.
 -/
@@ -58,12 +57,6 @@ theorem prod_le_prod_iff {p₁ p₂ : Submodule R M} {q₁ q₂ : Submodule R N}
 theorem prod_inj {p₁ p₂ : Submodule R M} {q₁ q₂ : Submodule R N} :
     p₁.prod q₁ = p₂.prod q₂ ↔ p₁ = p₂ ∧ q₁ = q₂ := by
   simp only [le_antisymm_iff, prod_le_prod_iff, and_and_and_comm]
-
-variable (R M N)
-
-/-- The copies of the two factors of a product module are complementary submodules. -/
-theorem isCompl_fst_snd : IsCompl (Submodule.fst R M N) (Submodule.snd R M N) :=
-  .of_eq (fst_inf_snd R M N) (fst_sup_snd R M N)
 
 end Submodule
 
