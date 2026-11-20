@@ -61,11 +61,8 @@ variable {X Y : Scheme.{u}}
 
 namespace InvertibleSheaf
 
--- Exposed: the isomorphisms `tensorPowCongr` and `tensorPowTrivialIso` below are stated on
--- `L^{⊗0}` as `𝒪_X` and on `L^{⊗(n+1)}` as `L^{⊗n} ⊗ L`, without rewriting the objects.
 /-- The tensor power `L^{⊗n}` of a line bundle, defined by `L^{⊗0} = 𝒪_X` and
 `L^{⊗(n+1)} = L^{⊗n} ⊗ L`. -/
-@[expose]
 noncomputable def tensorPow (L : InvertibleSheaf X) : ℕ → InvertibleSheaf X
   | 0 => trivial X
   | n + 1 => tensorProduct (L.tensorPow n) L
@@ -87,46 +84,45 @@ noncomputable def tensorPowCongr {L K : InvertibleSheaf X} (e : L ≅ K) :
   | 0 => Iso.refl _
   | n + 1 => tensorProductCongrLeft (tensorPowCongr e n) ≪≫ tensorProductCongrRight e
 
-/-- On the zeroth tensor power, `tensorPowCongr e` is the identity of the trivial line bundle. -/
+/-- On the zeroth tensor power, `tensorPowCongr e` is the identity of the trivial line bundle,
+transported along `tensorPow_zero`. -/
 @[simp]
 lemma tensorPowCongr_zero {L K : InvertibleSheaf X} (e : L ≅ K) :
-    tensorPowCongr e 0 = Iso.refl _ :=
-  (rfl)
+    tensorPowCongr e 0 = eqToIso (L.tensorPow_zero.trans K.tensorPow_zero.symm) := by
+  ext1
+  exact (eqToHom_refl _ rfl).symm
 
 /-- The recursive step of `tensorPowCongr`: on `L^{⊗(n+1)} = L^{⊗n} ⊗ L` it applies
 `tensorPowCongr e n` to the first factor and `e` to the second. -/
 lemma tensorPowCongr_succ {L K : InvertibleSheaf X} (e : L ≅ K) (n : ℕ) :
     tensorPowCongr e (n + 1) =
-      tensorProductCongrLeft (tensorPowCongr e n) ≪≫ tensorProductCongrRight e :=
-  (rfl)
+      eqToIso (L.tensorPow_succ n) ≪≫
+        (tensorProductCongrLeft (tensorPowCongr e n) ≪≫ tensorProductCongrRight e) ≪≫
+          eqToIso (K.tensorPow_succ n).symm := by
+  ext1
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- The tensor power of the identity is the identity. -/
 @[simp]
 lemma tensorPowCongr_refl (L : InvertibleSheaf X) (n : ℕ) :
     tensorPowCongr (Iso.refl L) n = Iso.refl _ := by
   induction n with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
-    rw [tensorPowCongr_succ, ih, tensorProductCongrLeft_refl, tensorProductCongrRight_refl,
-      Iso.refl_trans]
-    -- `L^{⊗(n+1)}` is `L^{⊗n} ⊗ L` by definition of `tensorPow`.
-    rfl
+    simp [tensorPowCongr_succ, ih, tensorProductCongrLeft_refl, tensorProductCongrRight_refl]
 
 /-- Tensor powers of isomorphisms respect composition. -/
 @[simp]
 lemma tensorPowCongr_trans {L K M : InvertibleSheaf X} (e : L ≅ K) (e' : K ≅ M) (n : ℕ) :
     tensorPowCongr (e ≪≫ e') n = tensorPowCongr e n ≪≫ tensorPowCongr e' n := by
   induction n with
-  | zero => rfl
+  | zero => simp
   | succ n ih =>
-    rw [tensorPowCongr_succ, tensorPowCongr_succ, tensorPowCongr_succ, ih,
-      tensorProductCongrLeft_trans, tensorProductCongrRight_trans]
-    simp only [Iso.trans_assoc]
-    rw [← Iso.trans_assoc (tensorProductCongrLeft (tensorPowCongr e' n)),
+    simp only [tensorPowCongr_succ, ih, tensorProductCongrLeft_trans,
+      tensorProductCongrRight_trans, Iso.trans_assoc]
+    rw [← Iso.trans_assoc (eqToIso _) (eqToIso _), eqToIso_trans, eqToIso_refl, Iso.refl_trans,
+      ← Iso.trans_assoc (tensorProductCongrLeft (tensorPowCongr e' n)),
       tensorProductCongrLeft_trans_tensorProductCongrRight, Iso.trans_assoc]
-    -- The right side is stated on `L^{⊗(n+1)}`, which `simp` does not identify with
-    -- `L^{⊗n} ⊗ L`; reassociate it by hand.
-    exact (Iso.trans_assoc _ _ _).symm
 
 /-- The tensor power of the inverse of an isomorphism is the inverse of its tensor power. -/
 @[simp]
@@ -144,18 +140,20 @@ noncomputable def tensorPowTrivialIso : (n : ℕ) → (trivial X).tensorPow n �
   | 0 => Iso.refl _
   | n + 1 => tensorTrivialRightIso _ ≪≫ tensorPowTrivialIso n
 
-/-- On the zeroth tensor power, `tensorPowTrivialIso` is the identity of the trivial line
-bundle. -/
+/-- On the zeroth tensor power, `tensorPowTrivialIso` is the transport along `tensorPow_zero`. -/
 @[simp]
-lemma tensorPowTrivialIso_zero : tensorPowTrivialIso X 0 = Iso.refl _ :=
-  (rfl)
+lemma tensorPowTrivialIso_zero : tensorPowTrivialIso X 0 = eqToIso (trivial X).tensorPow_zero := by
+  ext1
+  exact (eqToHom_refl _ rfl).symm
 
 /-- The recursive step of `tensorPowTrivialIso`: on `𝒪_X^{⊗(n+1)} = 𝒪_X^{⊗n} ⊗ 𝒪_X` it removes
 the last factor and then applies `tensorPowTrivialIso X n`. -/
 lemma tensorPowTrivialIso_succ (n : ℕ) :
     tensorPowTrivialIso X (n + 1) =
-      tensorTrivialRightIso ((trivial X).tensorPow n) ≪≫ tensorPowTrivialIso X n :=
-  (rfl)
+      eqToIso ((trivial X).tensorPow_succ n) ≪≫
+        tensorTrivialRightIso ((trivial X).tensorPow n) ≪≫ tensorPowTrivialIso X n := by
+  ext1
+  exact (Category.id_comp _).symm
 
 end InvertibleSheaf
 
