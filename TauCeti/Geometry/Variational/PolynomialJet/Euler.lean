@@ -146,6 +146,10 @@ variable [Fintype ι]
 def iteratedTotalDeriv (I : ι →₀ ℕ) : Module.End R (PolynomialJet R ι α) :=
   multiIndexDeriv (fun i ↦ totalDeriv i) commute_totalDeriv I
 
+theorem iteratedTotalDeriv_def (I : ι →₀ ℕ) :
+    iteratedTotalDeriv (R := R) (α := α) I =
+      multiIndexDeriv (fun i ↦ totalDeriv i) commute_totalDeriv ⇑I := (rfl)
+
 @[simp]
 theorem iteratedTotalDeriv_zero :
     iteratedTotalDeriv (R := R) (α := α) (0 : ι →₀ ℕ) = 1 := by
@@ -184,6 +188,22 @@ theorem iteratedTotalDeriv_X_field (I : ι →₀ ℕ) (a : α) (J : ι →₀ �
   induction I using Finsupp.induction_add_single_one with
   | zero => simp
   | add_single_one i I ih => simp [iteratedTotalDeriv_add_single_one, ih, add_assoc]
+
+open Classical in
+@[simp]
+theorem iteratedTotalDeriv_X_base (I : ι →₀ ℕ) (j : ι) :
+    iteratedTotalDeriv (R := R) (α := α) I (X (Sum.inl j)) =
+      if I = 0 then X (Sum.inl j) else if I = Finsupp.single j 1 then 1 else 0 := by
+  induction I using Finsupp.induction_add_single_one with
+  | zero => simp
+  | add_single_one i I ih =>
+    rw [iteratedTotalDeriv_add_single_one, ih]
+    rcases eq_or_ne I 0 with rfl | hI
+    · simp [totalDeriv_X_base, Finsupp.single_left_inj one_ne_zero, eq_comm]
+    · -- `I + eᵢ` has degree at least `2`, so it is not the unit multi-index `eⱼ`
+      have hj : I + Finsupp.single i 1 ≠ Finsupp.single j 1 := fun h ↦
+        hI (by simpa [Finsupp.degree_eq_zero_iff] using congr(Finsupp.degree $h))
+      split_ifs <;> simp_all
 
 open Classical in
 @[simp]
