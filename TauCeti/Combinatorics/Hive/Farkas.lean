@@ -63,18 +63,13 @@ namespace TauCeti.Hive
 variable {n : ℕ} {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [Field L] [LinearOrder L] [IsStrictOrderedRing L]
 
-/-! ### Pairings with the constraint matrices -/
+/-! ### Rhombus-slack combinations -/
 
-omit [LinearOrder K] [IsStrictOrderedRing K] in
-private theorem dotProduct_eqRHS (z : EqConstraintIndex n → K) (B : Fin 3 → Fin n → K) :
-    z ⬝ᵥ eqRHS B = ∑ s, (fun i => z (.inr (s, i))) ⬝ᵥ B s := by
-  simp [dotProduct, Fintype.sum_sum_type, Fintype.sum_prod_type]
-
-omit [LinearOrder K] [IsStrictOrderedRing K] in
-private theorem dotProduct_rhombusMatrix_mulVec (y : Rhombus n → K) (f : Vertex n → K) :
-    y ⬝ᵥ (rhombusMatrix K n *ᵥ f) =
-      -∑ r : Rhombus n, y r * rhombusSlack f r.1.1 r.1.2.1 r.1.2.2.1 r.1.2.2.2 := by
-  simp [dotProduct, rhombusMatrix_mulVec_apply]
+/-- A nonnegative combination of the unit-rhombus slacks of a hive is nonnegative. -/
+theorem sum_mul_rhombusSlack_nonneg {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
+    {y : Rhombus n → R} (hy : 0 ≤ y) (h : Hive n R) :
+    0 ≤ ∑ r : Rhombus n, y r * rhombusSlack h r.1.1 r.1.2.1 r.1.2.2.1 r.1.2.2.2 :=
+  Finset.sum_nonneg fun r _ => mul_nonneg (hy r) (rhombusSlack_nonneg h r.2)
 
 /-- A solution of the fixed-boundary matrix system for `B` is a hive with boundary `B`. -/
 private theorem exists_hive_of_mem_fixedBoundary {B : Fin 3 → Fin n → K} {f : Vertex n → K}
@@ -95,7 +90,7 @@ theorem exists_nonneg_rhombusSlack_combination_iff (φ : Fin 3 → Fin n → K) 
       ∀ h : Hive n K, 0 ≤ ∑ s, φ s ⬝ᵥ h.boundary s := by
   refine ⟨fun ⟨y, hy, hφ⟩ h => ?_, fun H => ?_⟩
   · rw [boundary_def, hφ]
-    exact Finset.sum_nonneg fun r _ => mul_nonneg (hy r) (rhombusSlack_nonneg h r.2)
+    exact sum_mul_rhombusSlack_nonneg hy h
   -- Apply homogeneous Farkas to the rhombus inequalities, with no equations, and the functional
   -- `c ⬝ᵥ f = -∑ s, φ s ⬝ᵥ boundaryLinear f s`.
   have hc (f : Vertex n → K) :
@@ -134,14 +129,10 @@ theorem exists_boundary_eq_iff (B : Fin 3 → Fin n → K) :
       refine H _ fun h => ?_
       -- On a hive `h`, the relation `y ᵥ* rhombusMatrix + z ᵥ* eqMatrix = 0` reads
       -- `∑ s, z|_s ⬝ᵥ h.boundary s = ∑ r, y r * rhombusSlack h r ≥ 0`.
-      obtain ⟨hEh, -⟩ := (mem_fixedBoundary_iff_mulVec h.boundary (h : Vertex n → K)).mp
-        ⟨h.apply_cornerA, h.isRhombusConcave, boundaryLinear_coe ℤ h⟩
       have := congrArg (· ⬝ᵥ (h : Vertex n → K)) hyz
-      simp only [add_dotProduct, ← dotProduct_mulVec, hEh, dotProduct_eqRHS,
+      simp only [add_dotProduct, ← dotProduct_mulVec, eqMatrix_mulVec_coe, dotProduct_eqRHS,
         dotProduct_rhombusMatrix_mulVec, zero_dotProduct] at this
-      have hslack : 0 ≤ ∑ r : Rhombus n, y r * rhombusSlack h r.1.1 r.1.2.1 r.1.2.2.1 r.1.2.2.2 :=
-        Finset.sum_nonneg fun r _ => mul_nonneg (hy r) (rhombusSlack_nonneg h r.2)
-      linarith
+      linarith [sum_mul_rhombusSlack_nonneg hy h]
   exact exists_hive_of_mem_fixedBoundary heq hineq
 
 /-! ### Change of ordered field and clearing denominators -/
@@ -152,13 +143,10 @@ extension `f : K →+*o L`, a boundary with entries in `K` bounds an `L`-valued 
 theorem exists_boundary_eq_map_iff (f : K →+*o L) (B : Fin 3 → Fin n → K) :
     (∃ h : Hive n L, h.boundary = fun s i => f (B s i)) ↔ ∃ h : Hive n K, h.boundary = B := by
   refine ⟨fun ⟨h, hB⟩ => ?_, fun ⟨h, hB⟩ => ⟨h.map f, by ext s i; simp [hB]⟩⟩
-  obtain ⟨heq, hineq⟩ := (mem_fixedBoundary_iff_mulVec _ (h : Vertex n → L)).mp
-    ⟨h.apply_cornerA, h.isRhombusConcave, (boundaryLinear_coe ℤ h).trans hB⟩
-  have hrhs : eqRHS (fun s i => f (B s i)) = f ∘ eqRHS B := by
-    ext (⟨⟨⟩⟩ | ⟨s, i⟩) <;> simp
-  rw [← map_eqMatrix f, hrhs] at heq
+  have heq := h.eqMatrix_mulVec_coe
+  rw [hB, ← map_eqMatrix f, eqRHS_map] at heq
   have hineq' : (rhombusMatrix K n).map f *ᵥ ⇑h ≤ f ∘ (0 : Rhombus n → K) := by
-    simpa [map_rhombusMatrix] using hineq
+    simpa [map_rhombusMatrix] using h.rhombusMatrix_mulVec_coe_nonpos
   obtain ⟨x, hx, hx'⟩ := (exists_mulVec_le_and_mulVec_eq_map_iff f (rhombusMatrix K n) 0
     (eqMatrix K n) (eqRHS B)).mp ⟨_, hineq', heq⟩
   exact exists_hive_of_mem_fixedBoundary hx' hx

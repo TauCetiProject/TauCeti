@@ -9,11 +9,10 @@ public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.Ring.Defs
 public import Mathlib.Algebra.Order.Hom.Ring
 public import Mathlib.Data.Matrix.Mul
-import Mathlib.LinearAlgebra.Matrix.DotProduct
-import Mathlib.LinearAlgebra.Pi
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import TauCeti.Geometry.Convex.Cone.FiniteDuality
+import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
 # Farkas certificates for finite systems of linear equations and inequalities
@@ -48,7 +47,7 @@ alternative), to the cone in `(ι → K) × K` spanned by the rows `(A i, b i)`,
 
 ## Main results
 
-* `Matrix.vecMul_add_vecMul_dotProduct_le`: weak duality, over any ordered commutative semiring.
+* `Matrix.vecMul_add_vecMul_dotProduct_le`: weak duality, over any ordered semiring.
 * `Matrix.exists_mulVec_le_and_mulVec_eq_iff`: Farkas' lemma for mixed systems.
 * `Matrix.exists_vecMul_add_vecMul_eq_and_le_iff`: valid inequalities of a solvable system.
 * `Matrix.exists_vecMul_add_vecMul_eq_iff`: valid homogeneous inequalities.
@@ -86,22 +85,6 @@ end Ordered
 variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [Field L] [LinearOrder L] [IsStrictOrderedRing L]
   {m p ι : Type*} [Fintype m] [Fintype p] [Fintype ι]
-
-omit [LinearOrder K] [IsStrictOrderedRing K] [Fintype m] [Fintype p] in
-/-- A linear functional on `(ι → K) × K` is `(v, t) ↦ v ⬝ᵥ u + t * s`. -/
-private theorem dual_prod_apply [DecidableEq ι] (f : Module.Dual K ((ι → K) × K)) (v : ι → K)
-    (t : K) : f (v, t) = v ⬝ᵥ (fun k => f (Pi.single k 1, 0)) + t * f (0, 1) := by
-  have hsplit : (v, t) = (v, 0) + t • ((0 : ι → K), (1 : K)) := by ext <;> simp
-  rw [hsplit, map_add, map_smul, smul_eq_mul]
-  congr 1
-  have := LinearMap.pi_apply_eq_sum_univ (f.comp (LinearMap.inl K (ι → K) K)) v
-  simp only [LinearMap.comp_apply, LinearMap.inl_apply] at this
-  rw [this, dotProduct]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [smul_eq_mul]
-  congr 3
-  ext l
-  simp [Pi.single_apply, eq_comm]
 
 /-- The separation step: if `(c, δ)` is not a combination `y ᵥ* A + z ᵥ* E = c`,
 `y ⬝ᵥ b + z ⬝ᵥ d ≤ δ` with `y ≥ 0`, then some `(u, s)` with `s ≥ 0` pairs nonnegatively with every
@@ -143,7 +126,8 @@ private theorem exists_dual_of_not_exists (A : Matrix m ι K) (b : m → K) (E :
   have hgC (k) : 0 ≤ f (g k) := hf _ (PointedCone.subset_hull (Set.mem_range_self k))
   set s := f (0, 1)
   set u : ι → K := fun k => f (Pi.single k 1, 0)
-  have hf_apply (v : ι → K) (t : K) : f (v, t) = v ⬝ᵥ u + t * s := dual_prod_apply f v t
+  have hf_apply (v : ι → K) (t : K) : f (v, t) = v ⬝ᵥ u + t * s :=
+    f.apply_prod_eq_dotProduct_add_mul v t
   have h₀ := hgC (.inr (.inr (.inr ())))
   simp only [g, Sum.elim_inr] at h₀
   refine ⟨u, s, h₀, fun i => ?_, fun j => ?_, ?_⟩
