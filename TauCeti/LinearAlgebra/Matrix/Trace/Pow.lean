@@ -28,6 +28,8 @@ indexed by closed walks, which are then analysed combinatorially.
 
 * `Matrix.pow_succ_apply_eq_sum_prod`: the entries of `A ^ (k + 1)` as sums over walks.
 * `Matrix.trace_pow_eq_sum_prod`: the trace of `A ^ k`, `k ≠ 0`, as a sum over closed walks.
+* `Matrix.trace_mul_pow_eq_sum_prod`: the trace of `(A * B) ^ k`, `k ≠ 0`, for rectangular `A`
+  and `B`, as a sum over closed walks alternating between the row and column indices of `A`.
 
 ## References
 
@@ -68,5 +70,19 @@ theorem trace_pow_eq_sum_prod (A : Matrix ι ι R) {k : ℕ} (hk : k ≠ 0) :
   simp_rw [trace, diag_apply, pow_succ_apply_eq_sum_prod, Fin.snoc_eq_cons_rotate]
   rw [← (Fin.consEquiv fun _ ↦ ι).sum_comp, Fintype.sum_prod_type]
   simp [Fin.consEquiv_apply]
+
+/-- **Trace-word expansion of a product.** For `A : Matrix ι κ R`, `B : Matrix κ ι R` and
+`k ≠ 0`, the trace of `(A * B) ^ k` is the sum, over all pairs of sequences `i : Fin k → ι` and
+`j : Fin k → κ`, of the products `∏ₜ A (i t) (j t) * B (j t) (i (t + 1))`, the indices of `i`
+being read cyclically. Each pair is the closed walk `i 0 → j 0 → i 1 → ⋯ → j (k - 1) → i 0`
+alternating between the row and the column indices of `A`. -/
+theorem trace_mul_pow_eq_sum_prod {κ : Type*} [Fintype κ] (A : Matrix ι κ R) (B : Matrix κ ι R)
+    {k : ℕ} (hk : k ≠ 0) :
+    ((A * B) ^ k).trace = ∑ i : Fin k → ι, ∑ j : Fin k → κ,
+      ∏ t, A (i t) (j t) * B (j t) (i (finRotate k t)) := by
+  rw [trace_pow_eq_sum_prod _ hk]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [Matrix.mul_apply]
+  exact Fintype.prod_sum _
 
 end Matrix
