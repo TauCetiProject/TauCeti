@@ -227,7 +227,7 @@ def lieAnnihilatorSubrepresentation (ν : Module.Dual 𝕜 (GroupLieAlgebra I G)
   apply_mem_toSubmodule g _ hξ := by
     simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
       adjointRepresentation_apply, LieSubalgebra.mem_toSubmodule] using
-      adjointContinuousLinearMap_mem_lieAnnihilator_of_mem_stabilizer (hK g.2) hξ
+      adjointContinuousLinearMap_mem_lieAnnihilator_of_mem_stabilizer (hK g.property) hξ
 
 /-- The underlying submodule of `TauCeti.Lie.lieAnnihilatorSubrepresentation` is `𝔤_ν`. -/
 @[simp]

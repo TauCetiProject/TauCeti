@@ -271,7 +271,7 @@ theorem exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant_of_isCompac
   obtain ⟨B, hsymm, hpos, hAd⟩ := ContRepresentation.exists_isSymm_bilinForm_invariant
     ((continuousAdjointRepresentation (I := I) (G := G)).restrict K.subtype)
     ((contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous.comp
-      continuous_subtype_val)
+      continuous_subtypeVal)
   let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
     BoundarylessManifold.isInteriorPoint
   let b := (B.compl₁₂ e.symm.toLinearMap e.symm.toLinearMap).toContinuousBilinearMap

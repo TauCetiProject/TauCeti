@@ -110,7 +110,8 @@ theorem exists_sup_eq_and_isCompl_of_isCompact {H : Subgroup G} (hH : IsCompact 
       ((adjointRepresentation ℝ I G).comp H.subtype) b.toBilinForm :=
     TauCeti.Representation.isInvariantForm_iff.mpr fun g X Y ↦ by
       simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
-        adjointRepresentation_apply, ContinuousLinearMap.toBilinForm_apply] using hAd g g.2 X Y
+        adjointRepresentation_apply, ContinuousLinearMap.toBilinForm_apply]
+          using hAd g g.property X Y
   have hani : b.toBilinForm.toQuadraticMap.Anisotropic :=
     QuadraticMap.PosDef.anisotropic fun X hX ↦ by
       simpa only [LinearMap.BilinMap.toQuadraticMap_apply,

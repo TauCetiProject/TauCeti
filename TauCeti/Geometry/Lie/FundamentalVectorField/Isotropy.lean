@@ -58,7 +58,7 @@ def isotropySubrepresentation (x : M) {K : Subgroup G} (hK : K ≤ MulAction.sta
   apply_mem_toSubmodule g _ hξ := by
     simpa only [MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
       Lie.adjointRepresentation_apply, LieSubalgebra.mem_toSubmodule] using
-      adjointContinuousLinearMap_mem_isotropy_of_mem_stabilizer (hK g.2) hξ
+      adjointContinuousLinearMap_mem_isotropy_of_mem_stabilizer (hK g.property) hξ
 
 /-- The underlying submodule of `TauCeti.isotropySubrepresentation` is the isotropy algebra. -/
 @[simp]

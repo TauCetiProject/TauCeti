@@ -735,7 +735,7 @@ theorem isCompl_orthogonal_of_anisotropic (hani : B.toQuadraticMap.Anisotropic)
   obtain ⟨u, hu⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     Subspace.dual_finrank_eq.symm).1 hinj ((B.flip v).domRestrict W)
   refine Submodule.mem_sup.2
-    ⟨u, u.2, v - u, B.mem_orthogonal_iff.2 fun w hw ↦ ?_, add_sub_cancel _ _⟩
+    ⟨u, u.property, v - u, B.mem_orthogonal_iff.2 fun w hw ↦ ?_, add_sub_cancel _ _⟩
   have huw := LinearMap.congr_fun hu ⟨w, hw⟩
   simp only [flip_apply, restrict_apply, LinearMap.domRestrict_apply] at huw
   rw [map_sub, huw, sub_self]
