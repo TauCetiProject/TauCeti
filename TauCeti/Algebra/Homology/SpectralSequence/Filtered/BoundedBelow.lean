@@ -55,6 +55,8 @@ filtrations.
 
 ## Main results
 
+* `CochainComplex.mem_range_filtrationFunctor_map_f_iff`: an element of the piece `G_b` of the
+  functor of a filtration comes from `G_a` exactly when its image in `K` lies in `F_a`.
 * `CochainComplex.exists_spectralSequencePageXToPageX_eq_zero`: for a functor `G` exhaustive in
   degree `n - 1`, an element of a page vanishing in `E∞` vanishes on some later page.
 * `CochainComplex.spectralSequencePageXToPageX_filtrationSpectralSequencePageXToGraded`: the maps
@@ -234,20 +236,34 @@ section Filtration
 
 variable {K : CochainComplex (ModuleCat.{v} R) ℤ} (F : ℤ → Subobject K) (hF : Monotone F)
 
+/-- An element of the piece `G_b` of the functor of a filtration comes from the piece `G_a`,
+`a ≤ b`, exactly when its image in `K` lies in the subcomplex `F_a`. -/
+lemma mem_range_filtrationFunctor_map_f_iff {a : ℤ} {b : EInt} (hab : (a : EInt) ≤ b) {m : ℤ}
+    (y : ((filtrationFunctor F hF).obj b).X m) :
+    y ∈ LinearMap.range (((filtrationFunctor F hF).map (homOfLE hab)).f m).hom ↔
+      (filtrationFunctorArrow F hF b).f m y ∈ LinearMap.range ((F a).arrow.f m).hom := by
+  constructor
+  · rintro ⟨z, rfl⟩
+    refine ⟨(eqToHom (filtrationFunctor_obj_coe F hF a)).f m z, ?_⟩
+    rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f,
+      ← HomologicalComplex.comp_f, filtrationFunctor_map_comp_arrow, filtrationFunctorArrow_coe]
+  · rintro ⟨u, hu⟩
+    refine ⟨(eqToHom (filtrationFunctor_obj_coe F hF a).symm).f m u,
+      (ModuleCat.mono_iff_injective ((filtrationFunctorArrow F hF b).f m)).1 inferInstance ?_⟩
+    -- Both sides are the image of `u` in `K`, through `F_a ⟶ G_a ⟶ G_b ⟶ K`.
+    rw [← hu, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+      ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
+      filtrationFunctor_map_comp_arrow, eqToHom_comp_filtrationFunctorArrow]
+
 /-- An exhaustive filtration gives an exhaustive functor: every element of `K = G_⊤` in degree
 `m` comes from some `G_i = F_i`. -/
-private lemma exists_filtrationFunctor_map_f_eq {m : ℤ}
+lemma exists_filtrationFunctor_map_f_eq {m : ℤ}
     (hex : ∀ x : K.X m, ∃ i, x ∈ LinearMap.range ((F i).arrow.f m).hom)
     (x : ((filtrationFunctor F hF).obj ⊤).X m) :
     ∃ (i : ℤ) (y : ((filtrationFunctor F hF).obj i).X m),
-      ((filtrationFunctor F hF).map (homOfLE (le_top : (i : EInt) ≤ ⊤))).f m y = x := by
-  obtain ⟨i, y, hy⟩ := hex ((filtrationFunctorArrow F hF ⊤).f m x)
-  refine ⟨i, (eqToHom (filtrationFunctor_obj_coe F hF i).symm).f m y,
-    (ModuleCat.mono_iff_injective ((filtrationFunctorArrow F hF ⊤).f m)).1 inferInstance ?_⟩
-  -- Both sides are the image of `y` in `K`, through `F_i ⟶ G_i ⟶ G_⊤ ⟶ K`.
-  rw [← hy, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
-    filtrationFunctor_map_comp_arrow, eqToHom_comp_filtrationFunctorArrow]
+      ((filtrationFunctor F hF).map (homOfLE (le_top : (i : EInt) ≤ ⊤))).f m y = x :=
+  let ⟨i, hi⟩ := hex ((filtrationFunctorArrow F hF ⊤).f m x)
+  ⟨i, (mem_range_filtrationFunctor_map_f_iff F hF le_top x).2 hi⟩
 
 /-- **The page objects map onto the graded pieces of the abutment.** Let `pq = (p, q)` and
 `n = p + q`, and suppose that the stage `F_s` vanishes in degree `n + 1`. On every page `r ≥ 2`
