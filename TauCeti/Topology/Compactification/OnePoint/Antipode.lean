@@ -193,7 +193,7 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
     antipodeGL_apply, GeneralLinearGroup.map_apply, scalar_apply,
     SpecialLinearGroup.coe_GL_coe_matrix] at e
   have hdet : A 0 0 * A 1 1 - A 0 1 * A 1 0 = 1 := by
-    have h1 := A.2
+    have h1 := A.property
     rwa [det_fin_two] at h1
   -- Comparing entries, `Aᴴ A` is the scalar matrix `u`.
   have hAA : star (A : Matrix (Fin 2) (Fin 2) 𝕜) * A = scalar (Fin 2) (u : 𝕜) := by
@@ -215,6 +215,6 @@ theorem mem_range_toPSL_iff_forall_smul_antipode (g : PSL(2, 𝕜)) :
     · linear_combination A 0 0 * e11 + A 1 0 * e01
     · linear_combination A 0 1 * e11 + A 1 1 * e01 + (u : 𝕜) * hdet
   rw [specialUnitaryGroup.mk_mem_range_toPSL_iff]
-  exact mem_unitaryGroup_of_star_mul_self_eq_scalar (by simp [A.2]) hAA
+  exact mem_unitaryGroup_of_star_mul_self_eq_scalar (by simp [A.property]) hAA
 
 end Matrix.ProjectiveSpecialLinearGroup

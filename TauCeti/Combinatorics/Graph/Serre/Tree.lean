@@ -17,7 +17,8 @@ between two vertices, and a tree has exactly one. These unique reduced paths are
 used to build the free basis of the fundamental group of a graph from a spanning tree.
 
 An acyclic graph has no loop, hence no dart at all when it has at most one vertex, and no two
-darts with the same endpoints, so a finite set of vertices induces finitely many darts. A
+darts with the same endpoints, so the target map identifies the outgoing darts at any vertex with
+its adjacent vertices and a finite set of vertices induces finitely many darts. A
 restriction `Γ.restrict S hS` is acyclic exactly when no nonempty reduced closed path of `Γ` has
 all its darts in `S`.
 
@@ -119,10 +120,26 @@ variable {Γ} in
 /-- An acyclic graph has no parallel darts: a dart is determined by its endpoints. -/
 theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
     (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
-  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.1 = y.1 := fun x y => by
+  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.val = y.val := fun x y => by
     simpa using congrArg (Path.darts Γ)
       (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
   exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
+variable {Γ} in
+/-- In an acyclic Serre graph, the target map identifies the outgoing darts at any vertex `u` with
+the adjacent vertices `{w // Nonempty (u ⟶ w)}`. -/
+noncomputable def IsAcyclic.starEquivAdjacent (h : Γ.IsAcyclic) (u : Γ.V) :
+    {e : Γ.E // Γ.src e = u} ≃ {w : Γ.V // Nonempty (u ⟶ w)} :=
+  Equiv.ofBijective (fun e => ⟨Γ.tgt e.val, ⟨⟨e.val, e.property, rfl⟩⟩⟩)
+    ⟨fun ⟨_, h₁⟩ ⟨_, h₂⟩ h' =>
+      Subtype.ext (h.eq_of_src_eq_of_tgt_eq (h₁.trans h₂.symm) (congrArg Subtype.val h')),
+     fun ⟨_, ⟨f⟩⟩ => ⟨⟨f.val, f.property.1⟩, Subtype.ext f.property.2⟩⟩
+
+variable {Γ} in
+@[simp] theorem IsAcyclic.starEquivAdjacent_apply_val {h : Γ.IsAcyclic} (u : Γ.V)
+    (e : {e : Γ.E // Γ.src e = u}) :
+    (h.starEquivAdjacent u e).val = Γ.tgt e.val :=
+  (rfl)
 
 variable {Γ} in
 /-- In an acyclic graph, a single vertex induces no dart. -/
@@ -176,7 +193,7 @@ theorem isAcyclic_of_isEmpty_dart [IsEmpty Γ.E] : Γ.IsAcyclic := by
   refine (isAcyclic_iff Γ).mpr fun u p _ => ?_
   cases p with
   | nil => rfl
-  | cons p e => exact isEmptyElim e.1
+  | cons p e => exact isEmptyElim e.val
 
 /-- A Serre graph without darts is a tree exactly when it has exactly one vertex. -/
 theorem isTree_iff_of_isEmpty_dart [IsEmpty Γ.E] :
@@ -364,10 +381,10 @@ theorem segment_isTree : segment.IsTree := by
       cases p with
       | nil =>
         -- The vertices and darts of the segment are both `Bool`, with `tgt f = !f`.
-        exact absurd (f.2.2.trans f.2.1.symm) (Bool.not_ne_self f.1)
+        exact absurd (f.property.2.trans f.property.1.symm) (Bool.not_ne_self f.val)
       | cons p e =>
         refine absurd ?_ ((Path.isReduced_cons_cons segment p e f).mp hp).2
-        exact f.2.1.trans e.2.2.symm
+        exact f.property.1.trans e.property.2.symm
 
 /-- A rose with a petal is not a tree. -/
 theorem rose_not_isTree {α : Type*} (a : α) : ¬(rose α).IsTree := by

@@ -163,7 +163,7 @@ def subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)
     (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W) : ContinuousRep Γ A W where
   toRepresentation := ρ.toRepresentation.subrepresentation W hW
   continuous_action := (ρ.continuous_action.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
 
 @[simp]
 theorem toRepresentation_subrepresentation (ρ : ContinuousRep Γ A M) (W : Submodule A M)

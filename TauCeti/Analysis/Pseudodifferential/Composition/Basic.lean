@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Convolution
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
-import TauCeti.Analysis.Pseudodifferential.OutputSupport
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -68,6 +69,8 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
 * `TauCeti.Symbol.coordSub_smul_coefficient_sharp`: **commutator with a coordinate function**,
   `(x - z)ⱼ (a # b) = a # ((y - z)ⱼ b) + i (∂_{ξⱼ} a) # b`, where `(y - z)ⱼ b` is the composition
   with the symbol `TauCeti.Symbol.coordSubSymbol z j` of multiplication by `(y - z)ⱼ`.
+* `TauCeti.Symbol.quantizeUniformCLM_sharp`: for `a` uniform in the position,
+  `Op(a # b) = Op(a) ∘ Op(b)` as continuous operators on Schwartz space.
 * `TauCeti.Symbol.sharp_assoc`: **associativity**, `(a # b) # c = a # (b # c)` for `b` and `c` with
   compact spatial support, since both are the symbol of `Op(a) ∘ Op(b) ∘ Op(c)`.
 * `TauCeti.Symbol.quantizeSobolev_sharp`: if `a` also has compact spatial support, then
@@ -257,12 +260,11 @@ theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
       (show 1 + ‖y‖ ^ 2 ≤ 1 + ‖R • η‖ ^ 2 by gcongr) (by positivity)).trans ?_
     simpa only [abs_abs] using one_add_norm_smul_sq_rpow_le hR |m'| η
   have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
+      (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
+    (one_add_norm_sq_rpow_add ξ m' m).symm
   have hη : (1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2) =
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-    rw [← Real.rpow_add (by positivity)]
+    rw [← one_add_norm_sq_rpow_add]
     ring_nf
   calc ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖
       ≤ ‖a.coefficient (x, ξ + y)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ :=
@@ -1026,6 +1028,19 @@ theorem quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue [CompleteSpace W] [
       (b.contDiff_quantizeSchwartzValue u)) = quantizeSchwartzValue b.coefficient u :=
     funext (HasCompactSupport.toSchwartzMap_toFun _ _)
   rw [quantizeSchwartzValue_sharp hb, quantizeSchwartzValue_def, SchwartzMap.fourier_coe, hw]
+
+/-- **Composition of uniform quantizations.** For a symbol `b` with compact spatial support,
+`Op(a # b) = Op(a) ∘ Op(b)` on Schwartz space. -/
+theorem quantizeUniformCLM_sharp [CompleteSpace W] [CompleteSpace U] (ha : a.IsUniform)
+    (hb : b.HasCompactSpatialSupport) :
+    quantizeUniformCLM (a.sharp b hb) (ha.sharp hb) =
+      quantizeUniformCLM a ha ∘L quantizeUniformCLM b hb.isUniform := by
+  ext u x
+  rw [quantizeUniformCLM_apply, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue hb,
+    ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply]
+  congr 1
+  ext y
+  simp
 
 /-- **Uniqueness of the composition symbol.** A symbol `c`, of any order, whose quantization is
 `Op(a) ∘ Op(b)` on compactly supported Schwartz functions has the coefficient of `a # b`. -/

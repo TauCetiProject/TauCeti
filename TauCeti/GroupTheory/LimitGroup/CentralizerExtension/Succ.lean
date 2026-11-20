@@ -83,7 +83,7 @@ private def ofSucc (hu : ∀ g : G, g⁻¹ * u * g ∈ centralizer {u} → g ∈
   lift castSuccHom (fun _ => t (Fin.last n)) (fun _ _ => .refl _) fun x hx _ => by
     obtain ⟨p, rfl⟩ := (centralizer_of_eq_range_ofProd hu).le hx
     rw [castSuccHom, lift_ofProd]
-    exact (commute_of_t p.1.2 _).mul_left
+    exact (commute_of_t p.1.property _).mul_left
       (commute_zpowersPiHom (fun _ => commute_t_t _ _) p.2).symm
 
 /-- **Splitting off the last letter of an extension of a centralizer.** If every conjugate of `u`

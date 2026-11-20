@@ -264,7 +264,7 @@ instance (t : R) (I : Ideal R) : CompleteSpace (completion t I) :=
 /-- Evaluation on a completed element is continuous. -/
 @[fun_prop]
 theorem continuous_eval (t : R) (I : Ideal R) (n : ℕ) : Continuous (eval t I n) :=
-  (continuous_apply n).comp continuous_subtype_val
+  (continuous_apply n).comp continuous_subtypeVal
 
 /-- A single residue coordinate suffices to specify a basic neighbourhood in the completion. -/
 theorem hasBasis_nhds_completion (t : R) (I : Ideal R) (x : completion t I) :

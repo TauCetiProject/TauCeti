@@ -173,7 +173,8 @@ vector field `∂_t = (1, 0)` of the time coordinate. It is again a smooth form,
 the velocities of the slices of `α` (`TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`). -/
 def SmoothForm.timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
     SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k :=
-  ⟨mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1, SmoothForm.mlieDerivForm_mem_smoothBundleForms α
+  ⟨mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val, SmoothForm.mlieDerivForm_mem_smoothBundleForms
+      α
     (contMDiff_const_prod_field 1 (X := 0)
       ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd))⟩
 
@@ -181,7 +182,7 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- The underlying form of the time derivative is the Lie derivative along `∂_t`. -/
 @[simp]
 theorem SmoothForm.coe_timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
-    α.timeDeriv.1 = mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 :=
+    α.timeDeriv.val = mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val :=
   (rfl)
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
@@ -190,8 +191,8 @@ omit [FiniteDimensional ℝ E] [T2Space M] in
 theorem SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
     (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) (t : ℝ) (x : M) :
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
-      (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x)
-      ((SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x)
+      (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).val x)
+      ((SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x)
       t := by
   simpa only [SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv] using
     hasDerivAt_mpullback_prodMk t x (α.mdifferentiableAt (t, x))

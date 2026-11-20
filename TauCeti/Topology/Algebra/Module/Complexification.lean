@@ -292,14 +292,14 @@ namespace ContinuousLinearEquiv
 /-- Complex base change `c ⊗ₜ w ↦ c ⊗ₜ e w` of a continuous `ℝ`-linear equivalence `e : W ≃L[ℝ] W'`,
 as a continuous `ℂ`-linear equivalence `ℂ ⊗[ℝ] W ≃L[ℂ] ℂ ⊗[ℝ] W'`. -/
 def baseChangeComplex (e : W ≃L[ℝ] W') : ℂ ⊗[ℝ] W ≃L[ℂ] ℂ ⊗[ℝ] W' :=
-  equivOfInverse e.toContinuousLinearMap.baseChangeComplex
+  ofContinuousLinearMap e.toContinuousLinearMap.baseChangeComplex
     e.symm.toContinuousLinearMap.baseChangeComplex
-    (fun u ↦ by
-      simpa using DFunLike.congr_fun
-        (e.symm.toContinuousLinearMap.baseChangeComplex_comp e.toContinuousLinearMap).symm u)
-    (fun u ↦ by
+    (ContinuousLinearMap.ext fun u ↦ by
       simpa using DFunLike.congr_fun
         (e.toContinuousLinearMap.baseChangeComplex_comp e.symm.toContinuousLinearMap).symm u)
+    (ContinuousLinearMap.ext fun u ↦ by
+      simpa using DFunLike.congr_fun
+        (e.symm.toContinuousLinearMap.baseChangeComplex_comp e.toContinuousLinearMap).symm u)
 
 @[simp] theorem toContinuousLinearMap_baseChangeComplex (e : W ≃L[ℝ] W') :
     e.baseChangeComplex.toContinuousLinearMap = e.toContinuousLinearMap.baseChangeComplex := (rfl)

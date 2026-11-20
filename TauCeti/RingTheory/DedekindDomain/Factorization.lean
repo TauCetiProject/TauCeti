@@ -279,7 +279,7 @@ theorem count_toPrincipalIdeal_eq_neg_log_valuation (v : HeightOneSpectrum A) (u
     intro hn
     apply u.ne_zero
     rw [← hnd, hn, IsFractionRing.mk'_eq_div, map_zero, zero_div]
-  have hd : (d : A) ≠ 0 := nonZeroDivisors.ne_zero d.2
+  have hd : (d : A) ≠ 0 := nonZeroDivisors.ne_zero d.property
   have hval : v.valuation K (u : K) = v.intValuation n / v.intValuation (d : A) :=
     hnd ▸ v.valuation_of_mk'
   rw [hval, coe_toPrincipalIdeal, ← hnd, IsFractionRing.mk'_eq_div,
