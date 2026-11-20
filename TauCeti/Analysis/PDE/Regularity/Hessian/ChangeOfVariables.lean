@@ -153,13 +153,14 @@ theorem nondivPullbackPrincipal_elliptic {k k' : ℕ}
 
 /-- The pulled-back principal coefficient is continuous within `s` at `x` when `Φ` maps `s` into
 `t`, `Φ x ∈ V` and `A` is continuous within `t` at `Φ x`. -/
-theorem continuousWithinAt_nondivPullbackPrincipal (hΨ : IsChangeOfVariables 2 V U Ψ L' c')
+theorem continuousWithinAt_nondivPullbackPrincipal {k : ℕ}
+    (hΨ : IsChangeOfVariables (k + 1) V U Ψ L' c')
     {x : E} (hΦc : ContinuousAt Φ x) {s t : Set E} (hst : MapsTo Φ s t) {A : E → E →L[ℝ] E}
     (hxV : Φ x ∈ V) (hA : ContinuousWithinAt A t (Φ x)) :
     ContinuousWithinAt (nondivPullbackPrincipal Φ Ψ A) s x := by
   have hM : ContinuousAt (fun y => fderiv ℝ Ψ (Φ y)) x :=
-    ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen V.isOpen (by norm_num)).continuousAt
-      (V.isOpen.mem_nhds hxV)).comp hΦc
+    ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen V.isOpen
+      (by exact_mod_cast le_add_self)).continuousAt (V.isOpen.mem_nhds hxV)).comp hΦc
   have hconj : Continuous fun q : (E →L[ℝ] E) × (E →L[ℝ] E) => q.1 ∘L q.2 ∘L q.1.adjoint := by
     fun_prop
   exact hconj.continuousAt.comp_continuousWithinAt

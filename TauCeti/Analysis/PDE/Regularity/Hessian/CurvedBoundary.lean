@@ -523,7 +523,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
             (volume.restrict ((Omega : Set (WithLp 2 (ℝ × E))) ∩ V)) ≤
           C * (‖f‖ + ‖iteratedGradient 0 (lowerOrder 1 u)‖ + ‖value 2 u‖) := by
   -- Flatten the boundary by `Φ = e⁻¹ ∘ G⁻¹`, `G` graph flattening by `φ`, with inverse `G ∘ e`.
-  obtain ⟨U', U, L₁, c₁, L₂, c₂, h0, hΦ, hΨ, himage⟩ :=
+  obtain ⟨U', U, L, h0, -, hΦ, hΨ, himage⟩ :=
     exists_isChangeOfVariables_normalHalfSpace_of_contDiff one_le_two hh₀ hr₀ hφ0 hφ hgraph
   set G := graphFlattening φ hφ.continuous
   have hΨΦ (y : WithLp 2 (ℝ × E)) : (G ∘ e) ((e.symm ∘ G.symm) y) = y := by simp
