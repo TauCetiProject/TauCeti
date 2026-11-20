@@ -288,22 +288,19 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_iUnion_negati
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     exists_isIso_singularHomologyMap_iUnion_negativeDiscBundle hn h hfs hc hd hdim g
   refine ⟨Θ, hΘz, hΘi, hΘf, min ε₀ (min (c - a) (b - c)),
-    lt_min hε₀ (lt_min (by linarith) (by linarith)), fun ε hε ↦ ?_⟩
-  obtain ⟨hε0, hεm⟩ := hε
-  have hε₁ : ε < ε₀ := hεm.trans_le (min_le_left _ _)
-  have hεa : ε < c - a := hεm.trans_le ((min_le_right _ _).trans (min_le_left _ _))
-  have hεb : ε < b - c := hεm.trans_le ((min_le_right _ _).trans (min_le_right _ _))
-  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b := Icc_subset_Icc (by linarith) (by linarith)
-  have hcompact' : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous) (preimage_mono hε')
+    lt_min hε₀ (lt_min (by linarith) (by linarith)), fun ε ⟨hε0, hεm⟩ ↦ ?_⟩
   -- Every critical point of the band lies on one of the submanifolds, hence on the level `c`.
   have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
     obtain ⟨j, s, rfl⟩ := mem_iUnion.1 (hcrit ⟨hx, hfx⟩)
     exact hc j s
-  obtain ⟨hD, _, hiso⟩ := hmain ε hε0 hε₁ hcompact' fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
-  refine ⟨hD, fun {A} _ _ _ R n ↦ ⟨singularHomologySublevelPairIsoOfCriticalValue hfs hac hcb
-    (by linarith : c - ε < c) (by linarith : c < c + ε) hcompact hcompact' hlev
-    (fun x hx hfx ↦ hlev x hx (hε' hfx)) R n ≪≫ (@asIso _ _ _ _ _ (hiso R n)).symm⟩⟩
+  obtain ⟨hε', hcompact'⟩ :=
+    Icc_subset_and_isCompact_preimage_Icc hfs.continuous hcompact
+      (hεm.trans_le (min_le_right _ _)).le
+  obtain ⟨hD, _, hiso⟩ := hmain ε hε0 (hεm.trans_le (min_le_left _ _)) hcompact'
+    fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
+  exact ⟨hD, fun {A} _ _ _ R n ↦ ⟨singularHomologySublevelPairIsoSymmetricBand hfs hac hcb
+    hcompact hlev hε0 (hεm.trans_le (min_le_right _ _)).le R n ≪≫
+      (@asIso _ _ _ _ _ (hiso R n)).symm⟩⟩
 
 /-- **The relative homology across a critical level of a Morse–Bott function is carried by the
 negative disc bundles of its critical submanifolds on that level.** Let the family
