@@ -74,14 +74,14 @@ variable (X F : TopCat.{w}) (n : ℕ) {ι : ℕ → Type w} [∀ p, DecidableEq 
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, sending `a` in the summand indexed by
 `p + q = n` and `i : ι p` to `pr₁^* a ⌣ pr₂^* (b p i)`. -/
 def lerayHirschProd :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) →ₗ[k]
+    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) →ₗ[k]
       (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
   DirectSum.toModule k _ _ fun j ↦
-    ((X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom j.1.1.2 j.1.1.1 n
-        (by rw [add_comm]; exact j.1.2)).flip
-      (TopCat.singularCohomologyMap (snd X F) j.1.1.1 (b j.1.1.1 j.2)) ∘ₗ
-      (TopCat.singularCohomologyMap (fst X F) j.1.1.2).hom
+    ((X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom j.1.val.2 j.1.val.1 n
+        (by rw [add_comm]; exact j.1.property)).flip
+      (TopCat.singularCohomologyMap (snd X F) j.1.val.1 (b j.1.val.1 j.2)) ∘ₗ
+      (TopCat.singularCohomologyMap (fst X F) j.1.val.2).hom
 
 /-- The Leray–Hirsch map of `X × F` sends `a` in the summand indexed by `p + q = n` and `i : ι p`
 to `pr₁^* a ⌣ pr₂^* (b p i)`. -/
@@ -89,8 +89,8 @@ to `pr₁^* a ⌣ pr₂^* (b p i)`. -/
 lemma lerayHirschProd_lof (p q : ℕ) (h : p + q = n) (i : ι p)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
     lerayHirschProd X F n b (DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n},
-        ι pq.1.1 ↦
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        ι pq.val.1 ↦
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2)
         ⟨⟨(p, q), h⟩, i⟩ a) =
       (X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom q p n (by omega)
         (TopCat.singularCohomologyMap (fst X F) q a)
@@ -105,8 +105,8 @@ variable {X F n}
 of `F × X`: the summand indexed by `p + q = n` and `i : ι p` is sent by
 `a ↦ b p i ⊗ (-1)^(p q) a`. -/
 private def toKunnethSource :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) →ₗ[k]
+    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) →ₗ[k]
       (GradedObject.Monoidal.tensorObj
         (fun p ↦ F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
         (fun q ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) n :
@@ -115,14 +115,14 @@ private def toKunnethSource :
     (GradedObject.Monoidal.ιTensorObj
         (fun p ↦ F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
         (fun q ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
-        j.1.1.1 j.1.1.2 n j.1.2).hom ∘ₗ
-      (((-1 : ℤ) ^ (j.1.1.1 * j.1.1.2)) • TensorProduct.mk k _ _ (b j.1.1.1 j.2))
+        j.1.val.1 j.1.val.2 n j.1.property).hom ∘ₗ
+      (((-1 : ℤ) ^ (j.1.val.1 * j.1.val.2)) • TensorProduct.mk k _ _ (b j.1.val.1 j.2))
 
 private lemma toKunnethSource_lof (p q : ℕ) (h : p + q = n) (i : ι p)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
     toKunnethSource b (DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n},
-        ι pq.1.1 ↦
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        ι pq.val.1 ↦
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2)
         ⟨⟨(p, q), h⟩, i⟩ a) =
       GradedObject.Monoidal.ιTensorObj
         (fun p ↦ F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
@@ -135,12 +135,12 @@ private lemma toKunnethSource_lof (p q : ℕ) (h : p + q = n) (i : ι p)
 private def ofKunnethSourceSummand (p q : ℕ) (h : p + q = n) :
     TensorProduct k (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
         (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) →ₗ[k]
-      (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :=
+      (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) :=
   ((-1 : ℤ) ^ (p * q)) •
     (Finsupp.lsum k fun i ↦ DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n},
-        ι pq.1.1 ↦
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        ι pq.val.1 ↦
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2)
         ⟨⟨(p, q), h⟩, i⟩) ∘ₗ
       (TensorProduct.equivFinsuppOfBasisLeft (b p)).toLinearMap
 
@@ -148,8 +148,8 @@ private lemma ofKunnethSourceSummand_tmul (p q : ℕ) (h : p + q = n) (i : ι p)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
     ofKunnethSourceSummand b p q h (b p i ⊗ₜ a) =
       ((-1 : ℤ) ^ (p * q)) • DirectSum.lof k _
-        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
-          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
+          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2)
         ⟨⟨(p, q), h⟩, i⟩ a := by
   simp [ofKunnethSourceSummand]
 
@@ -158,8 +158,8 @@ private def ofKunnethSource :
     GradedObject.Monoidal.tensorObj
         (fun p ↦ F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
         (fun q ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) n ⟶
-      ModuleCat.of k (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :=
+      ModuleCat.of k (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) :=
   GradedObject.Monoidal.tensorObjDesc fun p q h ↦ ModuleCat.ofHom (ofKunnethSourceSummand b p q h)
 
 private lemma ofKunnethSource_ιTensorObj (p q : ℕ) (h : p + q = n) (i : ι p)
@@ -169,8 +169,8 @@ private lemma ofKunnethSource_ιTensorObj (p q : ℕ) (h : p + q = n) (i : ι p)
         (fun q ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
         p q n h (b p i ⊗ₜ a)) =
       ((-1 : ℤ) ^ (p * q)) • DirectSum.lof k _
-        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
-          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
+          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2)
         ⟨⟨(p, q), h⟩, i⟩ a := by
   rw [ofKunnethSource, ← ConcreteCategory.comp_apply]
   exact (ConcreteCategory.congr_hom (GradedObject.Monoidal.ι_tensorObjDesc _ p q h) _).trans
@@ -178,8 +178,8 @@ private lemma ofKunnethSource_ιTensorObj (p q : ℕ) (h : p + q = n) (i : ι p)
 
 /-- `toKunnethSource` is a linear equivalence. -/
 private def toKunnethSourceEquiv :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ≃ₗ[k]
+    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) ≃ₗ[k]
       (GradedObject.Monoidal.tensorObj
         (fun p ↦ F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
         (fun q ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) n :
@@ -277,8 +277,8 @@ Leray–Hirsch map `TopCat.lerayHirschProd`. -/
 def lerayHirschProdEquiv
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F)) :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ≃ₗ[k]
+    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) ≃ₗ[k]
       (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
   LinearEquiv.ofBijective (lerayHirschProd X F n b) (lerayHirschProd_bijective X b hF)
 
@@ -286,8 +286,8 @@ def lerayHirschProdEquiv
 lemma lerayHirschProdEquiv_apply
     (hF : ∀ p ≤ n, Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
       (𝟙_ (ModuleCat.{w} k))).obj F))
-    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) :
     lerayHirschProdEquiv X b hF a = lerayHirschProd X F n b a :=
   (rfl)
 

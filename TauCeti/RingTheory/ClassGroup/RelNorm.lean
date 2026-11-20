@@ -86,7 +86,7 @@ variable (R) in
 noncomputable def Ideal.relNorm0 : (Ideal S)⁰ →* (Ideal R)⁰ :=
   ((Ideal.relNorm R).toMonoidHom.domRestrict (Ideal S)⁰).codRestrict (Ideal R)⁰ fun I =>
     mem_nonZeroDivisors_iff_ne_zero.mpr <|
-      Ideal.relNorm_eq_bot_iff.not.mpr <| mem_nonZeroDivisors_iff_ne_zero.mp I.2
+      Ideal.relNorm_eq_bot_iff.not.mpr <| mem_nonZeroDivisors_iff_ne_zero.mp I.property
 
 @[simp]
 theorem Ideal.coe_relNorm0 (I : (Ideal S)⁰) :

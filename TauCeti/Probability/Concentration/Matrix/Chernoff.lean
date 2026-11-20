@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 import TauCeti.Analysis.Matrix.Order
 import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.MeasureTheory.Integral.PosSemidef
 
 /-!
 # Matrix Chernoff inequalities
@@ -202,7 +203,7 @@ theorem iIndepFun.measureReal_l2_opNorm_sum_ge_le_of_posSemidef [IsProbabilityMe
   set M : Matrix n n 𝕜 := Matrix.of fun i j ↦ ∑ k ∈ s, ∫ ω, Y k ω i j ∂P
   have hM_psd : M.PosSemidef := by
     rw [show M = ∑ k ∈ s, Matrix.of fun i j ↦ ∫ ω, Y k ω i j ∂P by ext; simp [M]]
-    exact Matrix.posSemidef_sum s fun k hk ↦ posSemidef_integral_of_ae_posSemidef (hpsd k hk)
+    exact Matrix.posSemidef_sum s fun k hk ↦ TauCeti.posSemidef_integral (hpsd k hk)
       (integrable_apply_of_ae_l2_opNorm_le (hmeas k hk)
         (((hpsd k hk).and (hupper k hk)).mono fun _ ⟨hP, hU⟩ ↦
           hP.l2_opNorm_le_of_le_smul_one hL.le hU))

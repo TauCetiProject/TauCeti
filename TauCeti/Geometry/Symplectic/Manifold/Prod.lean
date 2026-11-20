@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Geometry.Symplectic.Manifold.Volume
 public import TauCeti.Geometry.Symplectic.Prod.Basic
+import TauCeti.Geometry.Symplectic.Volume
 
 /-!
 # Products of smooth symplectic forms
@@ -22,6 +24,11 @@ symplectic manifold. This is the symplectic structure in which products of isotr
 coisotropic and Lagrangian submanifolds of the factors are again of the same kind
 (`TauCeti.Geometry.Symplectic.Lagrangian.Prod`).
 
+For factors modelled on spaces of dimensions `2 n` and `2 m`, the symplectic volume form of the
+product is the product of the volume forms of the factors: `(σ ⊕ τ)^(n + m) / (n + m)!` takes the
+value `(σⁿ / n!)(u) · (τᵐ / m!)(w)` on the tangent vectors `(uᵢ, 0)` followed by `(0, wⱼ)`
+(`TauCeti.SmoothTwoForm.volumeForm_prod_apply_append`). No nondegeneracy is needed.
+
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.prod`: the product form `pr₁*σ + pr₂*τ` on `M × N`.
@@ -34,6 +41,8 @@ coisotropic and Lagrangian submanifolds of the factors are again of the same kin
   respectively symplectic, factors give a closed, respectively symplectic, product.
 * `TauCeti.SmoothTwoForm.mpullback_prodMap_prod`: the pullback of the product form along a product
   map is the product of the pullbacks.
+* `TauCeti.SmoothTwoForm.volumeForm_prod_apply_append`: the volume form of the product form is the
+  product of the volume forms of the factors.
 
 ## References
 
@@ -71,9 +80,9 @@ theorem prod_def (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
 @[simp]
 theorem prod_apply (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) (p : M × N)
     (v : Fin 2 → TangentSpace (I.prod J) p) :
-    (prod σ τ).1 p v =
-      σ.1 p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) +
-        τ.1 p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
+    (prod σ τ).val p v =
+      σ.val p.1 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).1) +
+        τ.val p.2 (fun i ↦ (Manifold.tangentSpaceProdEquiv p (v i)).2) := by
   simp only [Manifold.tangentSpaceProdEquiv_apply, prod_def, SmoothForm.add_toRoughForm,
     Pi.add_apply, ContinuousAlternatingMap.add_apply, SmoothForm.mpullback_apply, mfderiv_fst,
     mfderiv_snd]
@@ -142,9 +151,44 @@ theorem mpullback_prodMap_prod {E₀ H₀ M₀ F₀ H₀' N₀ : Type*}
     (hg : ContMDiff J₀ J ∞ g) (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) :
     SmoothForm.mpullback (Prod.map f g) (hf.prodMap hg) (prod σ τ) =
       prod (SmoothForm.mpullback f hf σ) (SmoothForm.mpullback g hg τ) := by
-  simp only [prod_def, map_add, SmoothForm.mpullback_mpullback]
-  -- `Prod.fst ∘ Prod.map f g` is `f ∘ Prod.fst` by definition, and similarly for the second
-  -- factor; the smoothness proofs carried by `mpullback` agree by proof irrelevance.
-  rfl
+  rw [prod_def, prod_def, map_add, SmoothForm.mpullback_prodMap_mpullback_fst hf hg,
+    SmoothForm.mpullback_prodMap_mpullback_snd hf hg]
+
+open Module in
+/-- **The volume form of a product.** For factors modelled on spaces of dimensions `2 n` and
+`2 m`, the volume form `(σ ⊕ τ)^(n + m) / (n + m)!` of the product form takes the value
+`(σⁿ / n!)(u) · (τᵐ / m!)(w)` on the tangent vectors `(u₁, 0), …, (u₂ₙ, 0), (0, w₁), …, (0, w₂ₘ)`.
+Neither form needs to be nondegenerate. -/
+theorem volumeForm_prod_apply_append [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] {n m : ℕ}
+    (hn : finrank ℝ E = 2 * n) (hm : finrank ℝ F = 2 * m) (σ : SmoothTwoForm I M)
+    (τ : SmoothTwoForm J N) (p : M × N) (u : Fin (2 * n) → TangentSpace I p.1)
+    (w : Fin (2 * m) → TangentSpace J p.2) :
+    ((prod σ τ).volumeForm (n + m)).val p (fun r ↦ (Manifold.tangentSpaceProdEquiv p).symm
+        (Fin.append (fun i ↦ (u i, 0)) (fun j ↦ (0, w j)) (Fin.cast (Nat.mul_add 2 n m) r))) =
+      (σ.volumeForm n).val p.1 u * (τ.volumeForm m).val p.2 w := by
+  -- On `T_p (M × N) = T_(p.1) M × T_(p.2) N`, the product form is `pr₁^* σ + pr₂^* τ`.
+  have hσ : (prod σ τ).val p =
+      ((σ.val p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ _ _) +
+        (τ.val p.2).compContinuousLinearMap (ContinuousLinearMap.snd ℝ _ _)).compContinuousLinearMap
+        (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).toContinuousLinearMap := by
+    ext v
+    rw [prod_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply]
+    -- The projections act on product tangent vectors through the identity identification.
+    congr 1
+  have hfam : ⇑(Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).toContinuousLinearMap ∘
+      (fun r ↦ (Manifold.tangentSpaceProdEquiv p).symm
+        (Fin.append (fun i ↦ (u i, 0)) (fun j ↦ (0, w j)) (Fin.cast (Nat.mul_add 2 n m) r))) =
+      fun r ↦ Fin.append (fun i ↦ (u i, 0)) (fun j ↦ (0, w j))
+        (Fin.cast (Nat.mul_add 2 n m) r) := by
+    funext r
+    exact (Manifold.tangentSpaceProdEquiv p).apply_symm_apply _
+  rw [volumeForm_apply, volumeForm_apply, volumeForm_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    smul_eq_mul, smul_eq_mul, hσ, ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, hfam]
+  exact ContinuousAlternatingMap.wedgePow_fst_add_snd_apply_append (V := E) (W := F) hn hm
+    (σ.val p.1) (τ.val p.2) u w
 
 end TauCeti.SmoothTwoForm

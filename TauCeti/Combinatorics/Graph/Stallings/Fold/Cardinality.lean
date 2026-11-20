@@ -42,8 +42,8 @@ theorem card_foldAt_E_add_two (S : StallingsGraph.{u, v, w} α) [Finite S.graph.
   have hbij : Function.Bijective fun d : ({f, S.graph.rev f}ᶜ : Set S.graph.E) =>
       (S.foldHom e f hsrc hlabel).graphHom.mapE d := by
     refine ⟨fun x y h => Subtype.ext ?_, fun q => ?_⟩
-    · have hx := x.2
-      have hy := y.2
+    · have hx := x.property
+      have hy := y.property
       rw [foldHom_mapE_eq_iff] at h
       grind
     · obtain ⟨d, rfl⟩ := S.foldHom_mapE_surjective e f hsrc hlabel q
@@ -76,8 +76,8 @@ theorem card_foldAt_V_add_one (S : StallingsGraph.{u, v, w} α) [Finite S.graph.
   have hbij : Function.Bijective fun x : ({S.graph.tgt f}ᶜ : Set S.graph.V) =>
       (S.foldHom e f hsrc hlabel).graphHom.mapV x := by
     refine ⟨fun x y h => Subtype.ext ?_, fun q => ?_⟩
-    · have hx := x.2
-      have hy := y.2
+    · have hx := x.property
+      have hy := y.property
       rw [foldHom_mapV_eq_iff] at h
       grind
     · obtain ⟨x, rfl⟩ := S.foldHom_mapV_surjective e f hsrc hlabel q

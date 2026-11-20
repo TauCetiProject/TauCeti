@@ -14,6 +14,7 @@ import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Matrix.Order
 import TauCeti.Analysis.Normed.Algebra.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
+import TauCeti.MeasureTheory.Integral.PosSemidef
 
 /-!
 # Matrix Bernstein inequalities
@@ -247,7 +248,7 @@ private theorem re_trace_exp_sum_cfc_log_le_bernstein [IsProbabilityMeasure P]
       (hmean k hk) (hupper k hk) (hbdd k hk) hθ hθL
   have hV_psd : V.PosSemidef := hV_split ▸ Matrix.posSemidef_sum s fun k hk ↦
     let ⟨Mk, hMk⟩ := hbdd k hk
-    posSemidef_integral_of_ae_posSemidef ((hherm k hk).mono fun ω hω ↦ by
+    TauCeti.posSemidef_integral ((hherm k hk).mono fun ω hω ↦ by
       simpa only [hω.eq] using posSemidef_conjTranspose_mul_self (X k ω))
       (Matrix.integrable_mul_self_apply (hmeas k hk) hMk)
   refine IsHermitian.re_trace_exp_le_card_mul_exp

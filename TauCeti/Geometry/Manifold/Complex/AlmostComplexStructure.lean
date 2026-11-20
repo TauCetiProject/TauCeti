@@ -48,6 +48,9 @@ apply to complex manifolds. Two properties tie it to the complex structure:
   space, its chart expression is constantly multiplication by `i`.
 * `TauCeti.isPseudoholomorphicAt_ofComplexManifold_iff` and its variants within a set, on a set
   and everywhere: pseudoholomorphic maps between complex manifolds are the holomorphic maps.
+* `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
+  `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
+  pseudoholomorphic.
 * `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
   valued function is holomorphic at a point exactly when its real differential is complex linear.
 * `TauCeti.SmoothAlmostComplexStructure.nijenhuis_ofComplexManifold`: the almost complex structure
@@ -194,6 +197,21 @@ theorem isPseudoholomorphic_ofComplexManifold_iff :
     IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' N) f ↔
       MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, E') f :=
   isPseudoholomorphic_iff.trans (forall_congr' fun _ ↦ isPseudoholomorphicAt_ofComplexManifold_iff)
+
+/-- The inclusion of an open subset of a complex manifold is pseudoholomorphic. -/
+theorem isPseudoholomorphic_ofComplexManifold_subtype_val (U : TopologicalSpace.Opens M) :
+    IsPseudoholomorphic (ofComplexManifold E U) (ofComplexManifold E M) (Subtype.val : U → M) :=
+  isPseudoholomorphic_ofComplexManifold_iff.2
+    ((contMDiff_subtypeVal (n := 1)).mdifferentiable one_ne_zero)
+
+/-- The inclusion of an open subset of a complex manifold into a larger open subset is
+pseudoholomorphic. -/
+theorem isPseudoholomorphic_ofComplexManifold_inclusion {U V : TopologicalSpace.Opens M}
+    (h : U ≤ V) :
+    IsPseudoholomorphic (ofComplexManifold E U) (ofComplexManifold E V)
+      (TopologicalSpace.Opens.inclusion h) :=
+  isPseudoholomorphic_ofComplexManifold_iff.2
+    ((contMDiff_inclusion h (n := 1)).mdifferentiable one_ne_zero)
 
 end Pseudoholomorphic
 

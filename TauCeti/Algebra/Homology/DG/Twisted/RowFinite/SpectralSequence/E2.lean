@@ -195,8 +195,8 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
     (z : {z : P // ind z = q}) (T : Finset {y : P // ind y = q + 1})
     (hT : ∀ y ∉ T, m.m x y = 0) :
     ∑ y ∈ T, indexClassicalEntry hM hm k (q + 1) x y ≫ indexClassicalEntry hM hm k q y z = 0 := by
-  have hx := x.2
-  have hz := z.2
+  have hx := x.property
+  have hz := z.property
   refine ModuleCat.hom_ext (LinearMap.ext fun c ↦ ?_)
   obtain ⟨α, hα, rfl⟩ := (shiftedModuleComplex.{uR, uA, uM, uP} hM
     (q + 1 + 1)).exists_homologyπ_moduleCatCyclesMk_eq (k - (q + 1 + 1) + 1) (by simp) c
@@ -223,7 +223,8 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
   -- The twisting equation at index difference two: the double action is by `∑ y, m x y * m y z`.
   rw [Finset.sum_congr rfl fun y _ ↦ op_smul_koszulTwist_op_smul_koszulTwist
       (m.m_mem_zero_of_subtype x y) hα₀ 1,
-    ← Finset.sum_smul, ← Finset.op_sum, m.sum_subtype_m_mul_m_of_eq_add_two hm q x.2 z.2 T hT]
+    ← Finset.sum_smul, ← Finset.op_sum, m.sum_subtype_m_mul_m_of_eq_add_two hm q x.property
+        z.property T hT]
   -- The Leibniz rule for the cycle `α₀` and the entry `m x z` of degree `-1`.
   have hl := hM.leibniz hα₀ (m.m x z)
   rw [hdα₀, smul_zero, zero_add] at hl

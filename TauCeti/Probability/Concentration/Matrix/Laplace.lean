@@ -14,6 +14,7 @@ import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
 import TauCeti.Analysis.Matrix.MeasurableSpace
 import TauCeti.Analysis.Matrix.Order
 import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.MeasureTheory.Integral.PosSemidef
 import TauCeti.Probability.Independence.Basic
 
 /-!
@@ -28,9 +29,8 @@ master upper and lower eigenvalue tail inequalities.
 
 ## Main results
 
-* `Matrix.isHermitian_integral_of_ae_isHermitian`, `Matrix.posSemidef_integral_of_ae_posSemidef`,
-  `Matrix.integral_le_integral_of_ae_le`: preservation of Hermitianness, positive semidefiniteness,
-  and the Loewner order under entrywise expectation.
+* `Matrix.isHermitian_integral_of_ae_isHermitian`, `Matrix.integral_le_integral_of_ae_le`:
+  preservation of Hermitianness and the Loewner order under entrywise expectation.
 * `Matrix.integral_add_eq_add_integral`, `Matrix.integral_smul_eq_smul_integral`,
   `Matrix.integral_const_add_smul`: linearity of entrywise expectation.
 * `Matrix.posDef_integral_exp`: positive definiteness of `E[exp X]`.
@@ -71,33 +71,6 @@ theorem isHermitian_integral_of_ae_isHermitian {F : Ω → Matrix n n 𝕜}
   refine integral_congr_ae (hF.mono fun ω hω ↦ ?_)
   simpa [conjTranspose_apply, RCLike.star_def] using congrFun (congrFun hω i) j
 
-/-- Entrywise expectation preserves positive semidefiniteness. -/
-theorem posSemidef_integral_of_ae_posSemidef [Finite n] {F : Ω → Matrix n n 𝕜}
-    (hF : ∀ᵐ ω ∂P, (F ω).PosSemidef)
-    (hint : ∀ i j, Integrable (fun ω ↦ F ω i j) P) :
-    (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P).PosSemidef := by
-  have := Fintype.ofFinite n
-  refine posSemidef_iff_dotProduct_mulVec.2
-    ⟨isHermitian_integral_of_ae_isHermitian (hF.mono fun _ h ↦ h.1), fun x ↦ ?_⟩
-  have hterm (i j : n) : Integrable (fun ω ↦ star x i * (F ω i j * x j)) P :=
-    ((hint i j).mul_const (x j)).const_mul (star x i)
-  have hquad_int : Integrable (fun ω ↦ star x ⬝ᵥ F ω *ᵥ x) P := by
-    simp only [dotProduct, mulVec, Finset.mul_sum]
-    exact integrable_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hterm i j
-  rw [show star x ⬝ᵥ (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P) *ᵥ x =
-      ∫ ω, star x ⬝ᵥ F ω *ᵥ x ∂P by
-    simp only [dotProduct, mulVec, of_apply, Finset.mul_sum]
-    rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hterm i j]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [integral_finsetSum _ fun j _ ↦ hterm i j]
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [integral_const_mul, integral_mul_const],
-    RCLike.nonneg_iff]
-  have hnonneg := hF.mono fun _ h ↦ RCLike.nonneg_iff.1 ((posSemidef_iff_dotProduct_mulVec.1 h).2 x)
-  exact ⟨by rw [← RCLike.reCLM_apply, ← RCLike.reCLM.integral_comp_comm hquad_int]
-            exact integral_nonneg_of_ae (hnonneg.mono fun _ h ↦ h.1),
-         by rw [← RCLike.imCLM_apply, ← RCLike.imCLM.integral_comp_comm hquad_int]
-            exact (integral_congr_ae (hnonneg.mono fun _ h ↦ h.2)).trans (integral_zero _ _)⟩
-
 /-- Entrywise expectation is monotone in the Loewner order. -/
 theorem integral_le_integral_of_ae_le [Finite n] {F G : Ω → Matrix n n 𝕜}
     (hle : ∀ᵐ ω ∂P, F ω ≤ G ω)
@@ -107,7 +80,7 @@ theorem integral_le_integral_of_ae_le [Finite n] {F G : Ω → Matrix n n 𝕜}
   rw [le_iff, show (Matrix.of fun i j ↦ ∫ ω, G ω i j ∂P) -
       (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P) = Matrix.of fun i j ↦ ∫ ω, (G ω - F ω) i j ∂P by
     ext i j; simp [integral_sub (hG i j) (hF i j)]]
-  exact posSemidef_integral_of_ae_posSemidef (hle.mono fun _ h ↦ le_iff.1 h)
+  exact TauCeti.posSemidef_integral (hle.mono fun _ h ↦ le_iff.1 h)
     fun i j ↦ (hG i j).sub (hF i j)
 
 /-- Entrywise expectation of a pointwise sum of random matrices is the sum of their entrywise

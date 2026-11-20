@@ -5,17 +5,32 @@ Authors: Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.HasLaw
+public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.Basic
+import TauCeti.Probability.HasLaw
 
 /-!
-# Basic independence lemmas
+# Basic criteria for independence
 
-* `TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_subsingleton`: a dependent family of random
-  variables is independent if all but at most one coordinate are almost surely constant.
-* `ProbabilityTheory.iIndepFun.indepFun_finsetProd_of_notMem₀_on` and
-  `ProbabilityTheory.iIndepFun.indepFun_finsetSum_of_notMem₀_on`: Finset-restricted variants of
-  Mathlib's `indepFun_finsetProd_of_notMem₀` / `indepFun_finsetSum_of_notMem₀` requiring a.e.
-  measurability only on `s` and at the excluded index `i`.
+A dependent family of random variables is independent if all but at most one coordinate are
+almost surely constant; no measurability assumption or restriction on the index type is needed
+(`TauCeti.Probability.iIndepFun_of_ae_eq_const_outside_subsingleton`).
+
+Under a zero or probability measure `P`, a random variable `Z` is independent of a sub-σ-algebra `m`
+whenever restricting `P` to every `m`-measurable event `A` (or `A ∩ F` for an almost-surely holding
+event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A ∩ F) • ν`): see
+`ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict` and
+`ProbabilityTheory.indep_comap_of_forall_hasLaw_restrict_inter`.
+
+An independent, identically distributed family admits a measurable version agreeing almost
+everywhere at each index, preserving independence and identical distribution
+(`ProbabilityTheory.iIndepFun.exists_measurable_ae_eq_of_identDistrib`).
+
+Finset-restricted variants of Mathlib's `indepFun_finsetProd_of_notMem₀` /
+`indepFun_finsetSum_of_notMem₀` require a.e. measurability only on `s` and at the excluded index
+`i` (`ProbabilityTheory.iIndepFun.indepFun_finsetProd_of_notMem₀_on` and
+`ProbabilityTheory.iIndepFun.indepFun_finsetSum_of_notMem₀_on`).
 -/
 
 public section
@@ -89,6 +104,58 @@ end TauCeti.Probability
 
 namespace ProbabilityTheory
 
+open Set
+
+variable {Ω β : Type*} [MeasurableSpace β]
+
+/-- Under a zero or probability measure `P`, if restricting `P` to every event `A` of a
+sub-σ-algebra `m` gives `Z` the law `P A • ν`, then `Z` is independent of `m`. Measurability of `Z`
+in the ambient σ-algebra is not required beyond the almost-everywhere measurability carried by
+`HasLaw`. -/
+theorem indep_comap_of_forall_hasLaw_restrict {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsZeroOrProbabilityMeasure P] {ν : Measure β} {Z : Ω → β} (hm : m ≤ mΩ)
+    (h : ∀ A, MeasurableSet[m] A → HasLaw Z (P A • ν) (P.restrict A)) :
+    Indep (.comap Z inferInstance) m P := by
+  rcases eq_zero_or_isProbabilityMeasure P with rfl | hP
+  · simp [Indep_iff]
+  have hZ : HasLaw Z ν P := by simpa using h univ .univ
+  rw [Indep_iff]
+  rintro _ A ⟨C, hC, rfl⟩ hA
+  have hZA := h A hA
+  calc
+    P (Z ⁻¹' C ∩ A) = P.restrict A (Z ⁻¹' C) := (Measure.restrict_apply' (hm A hA)).symm
+    _ = Measure.map Z (P.restrict A) C :=
+      (Measure.map_apply_of_aemeasurable hZA.aemeasurable hC).symm
+    _ = (P A • ν) C := by rw [hZA.map_eq]
+    _ = ν C * P A := by simp [mul_comm]
+    _ = Measure.map Z P C * P A := by rw [hZ.map_eq]
+    _ = P (Z ⁻¹' C) * P A := by rw [Measure.map_apply_of_aemeasurable hZ.aemeasurable hC]
+
+/-- Under a zero or probability measure, restricted scalar-multiple laws on `A ∩ F` for every
+`m`-event `A` and an almost-surely holding event `F` imply that `Z` is independent of `m`. -/
+theorem indep_comap_of_forall_hasLaw_restrict_inter {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsZeroOrProbabilityMeasure P] {ν : Measure β} {Z : Ω → β} {F : Set Ω} (hm : m ≤ mΩ)
+    (hF : ∀ᵐ ω ∂P, ω ∈ F)
+    (h : ∀ A, MeasurableSet[m] A → HasLaw Z (P (A ∩ F) • ν) (P.restrict (A ∩ F))) :
+    Indep (.comap Z inferInstance) m P :=
+  indep_comap_of_forall_hasLaw_restrict hm fun A hA ↦ (h A hA).of_restrict_inter_of_ae_mem hF
+
+/-- Every independent, identically distributed family of random variables admits a measurable
+version agreeing almost everywhere at each index, preserving independence, identical distribution
+within the family, and identical distribution with each original coordinate. -/
+theorem iIndepFun.exists_measurable_ae_eq_of_identDistrib {Ω ι α : Type*}
+    [MeasurableSpace Ω] [MeasurableSpace α] {P : Measure Ω} {X : ι → Ω → α} {i₀ : ι}
+    (hindep : iIndepFun X P) (hid : ∀ i, IdentDistrib (X i) (X i₀) P P) :
+    ∃ X' : ι → Ω → α, (∀ i, Measurable (X' i)) ∧ (∀ i, X i =ᵐ[P] X' i) ∧
+      iIndepFun X' P ∧ (∀ i, IdentDistrib (X' i) (X' i₀) P P) ∧
+      ∀ i, IdentDistrib (X' i) (X i) P P := by
+  let X' : ι → Ω → α := fun i ↦ (hid i).aemeasurable_fst.mk (X i)
+  have hX'_ae (i : ι) : X i =ᵐ[P] X' i := (hid i).aemeasurable_fst.ae_eq_mk
+  refine ⟨X', fun i ↦ (hid i).aemeasurable_fst.measurable_mk, hX'_ae, hindep.congr hX'_ae,
+    fun i ↦ ((hid i).aemeasurable_fst.identDistrib_mk.symm.trans (hid i)).trans
+      (hid i₀).aemeasurable_fst.identDistrib_mk,
+    fun i ↦ (hid i).aemeasurable_fst.identDistrib_mk.symm⟩
+
 /-- Finset-restricted variant of `ProbabilityTheory.iIndepFun.indepFun_finsetProd_of_notMem₀`:
 for an independent family `f` in a commutative monoid with jointly measurable multiplication,
 `∏ j ∈ s, f j` and `f i` are independent when `i ∉ s`, assuming a.e. measurability only on `s`
@@ -104,17 +171,17 @@ theorem iIndepFun.indepFun_finsetProd_of_notMem₀_on {Ω ι β : Type*} [Measur
     IndepFun (∏ j ∈ s, f j) (f i) μ := by
   classical
   let t : Finset ↥(insert i s) := s.attach.map
-    ⟨fun k ↦ ⟨k.1, Finset.mem_insert_of_mem k.2⟩,
+    ⟨fun k ↦ ⟨k.val, Finset.mem_insert_of_mem k.property⟩,
       fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)⟩
   have hi' : (⟨i, Finset.mem_insert_self i s⟩ : ↥(insert i s)) ∉ t := by
     simp only [t, Finset.mem_map, Finset.mem_attach, true_and, Subtype.ext_iff, not_exists]
-    exact fun k hk ↦ hi (hk ▸ k.2)
-  have hmeas_ins : ∀ k : ↥(insert i s), AEMeasurable (f k.1) μ := fun k ↦ by
-    rcases Finset.mem_insert.1 k.2 with hk | hk
+    exact fun k hk ↦ hi (hk ▸ k.property)
+  have hmeas_ins : ∀ k : ↥(insert i s), AEMeasurable (f k.val) μ := fun k ↦ by
+    rcases Finset.mem_insert.1 k.property with hk | hk
     · rw [hk]; exact hf_i
-    · exact hf_meas k.1 hk
+    · exact hf_meas k.val hk
   have h := (hf_indep.precomp Subtype.val_injective).indepFun_finsetProd_of_notMem₀ hmeas_ins hi'
-  rwa [show (∏ k ∈ t, f k.1) = ∏ k ∈ s, f k by
+  rwa [show (∏ k ∈ t, f k.val) = ∏ k ∈ s, f k by
     simp only [t, Finset.prod_map]
     exact Finset.prod_attach s f] at h
 

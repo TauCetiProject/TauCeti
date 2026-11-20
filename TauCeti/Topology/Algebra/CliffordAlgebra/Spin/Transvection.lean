@@ -71,12 +71,12 @@ theorem continuous_transvectionLiftHom {u : V} (hQ : Q.Nondegenerate) (hu : Q u 
     (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype
   rw [S.isQuotientMap_mkQ.continuous_iff]
   have hw : ∀ w : LinearMap.ker (Q.polarBilin u), polar Q u (w : V) = 0 := fun w ↦ by
-    simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.2
+    simpa only [QuadraticMap.polarBilin_apply_apply] using LinearMap.mem_ker.mp w.property
   have hraw : Continuous (fun w : LinearMap.ker (Q.polarBilin u) ↦
       Additive.ofMul (spinTransvection hQ hu (hw w))) :=
     continuous_spinTransvection (fun _ ↦ u)
       (fun w : LinearMap.ker (Q.polarBilin u) ↦ (w : V)) hQ (fun _ ↦ hu)
-      hw continuous_const continuous_subtype_val
+      hw continuous_const continuous_subtypeVal
   convert hraw using 1
   funext w
   apply Additive.toMul.injective
