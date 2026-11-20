@@ -197,16 +197,6 @@ theorem subcriticalYamabeQuotient_le_of_energyForm_nonpos
     (rpow_integral_abs_toLp_rpow_pos hq (hqq'.trans hq') hw)
     (rpow_integral_abs_toLp_rpow_le_of_riemannianTotalVolume_eq_one hV hq hqq' hq' w)
 
-omit [I.Boundaryless] [T2Space M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- A nonempty closed manifold has a nonzero element of `H¹(M)`. -/
-private theorem exists_ne_zero_sobolevH1 [Nonempty M] : ∃ w : SobolevH1 I M, w ≠ 0 := by
-  refine ⟨SobolevH1.ofSmooth 1, fun h ↦ (riemannianTotalVolume_pos (I := I) (M := M)).ne' ?_⟩
-  have h0 := SobolevH1.toLp_ofSmooth_ae_eq (1 : C^∞⟮I, M; ℝ⟯)
-  rw [h, map_zero] at h0
-  rw [← one_mul (riemannianTotalVolume I M), ← integral_const_riemannianVolume, ← integral_zero]
-  exact integral_congr_ae (h0.symm.trans (Lp.coeFn_zero ..))
-
 /-- **Monotonicity of the subcritical Yamabe constants.** On a closed manifold of dimension `n > 2`
 and unit volume, `|Y_q| = |inf {Q^q(w) | w ≠ 0}|` is nonincreasing in `q ∈ [2, pₙ]`. -/
 theorem antitoneOn_abs_sInf_subcriticalYamabeQuotient (hV : riemannianTotalVolume I M = 1) :
@@ -219,7 +209,7 @@ theorem antitoneOn_abs_sInf_subcriticalYamabeQuotient (hV : riemannianTotalVolum
     rw [not_nonempty_iff] at h
     rw [riemannianTotalVolume_def, univ_eq_empty_iff.2 h, measureReal_empty] at hV
     exact zero_ne_one hV
-  obtain ⟨w₀, hw₀⟩ := exists_ne_zero_sobolevH1 (I := I) (M := M)
+  obtain ⟨w₀, hw₀⟩ := exists_ne (0 : SobolevH1 I M)
   have hq0 : 0 < q := two_pos.trans_le hq.1
   have hbdd := bddBelow_image_subcriticalYamabeQuotient (I := I) (M := M) hq.1 hq.2
   have hbdd' := bddBelow_image_subcriticalYamabeQuotient (I := I) (M := M) hq'.1 hq'.2
@@ -264,7 +254,7 @@ private theorem div_rpow_le_sInf_subcriticalYamabeQuotient [Nonempty M]
         riemannianTotalVolume I M ^ (2 / q - 2 / criticalExponent (finrank ℝ E)) ≤
       sInf (subcriticalYamabeQuotient I q '' {w : SobolevH1 I M | w ≠ 0}) := by
   have hn : 2 < finrank ℝ E := criticalExponent_pos_iff.1 (hq.trans_le hqp)
-  obtain ⟨w₀, hw₀⟩ := exists_ne_zero_sobolevH1 (I := I) (M := M)
+  obtain ⟨w₀, hw₀⟩ := exists_ne (0 : SobolevH1 I M)
   have hVa : 0 < riemannianTotalVolume I M ^ (2 / q - 2 / criticalExponent (finrank ℝ E)) :=
     Real.rpow_pos_of_pos riemannianTotalVolume_pos _
   refine le_csInf ⟨_, w₀, hw₀, rfl⟩ fun _ ⟨w, hw, h⟩ ↦ h ▸ ?_
@@ -344,7 +334,7 @@ theorem tendsto_sInf_subcriticalYamabeQuotient_nhdsLT (hn : 2 < finrank ℝ E)
     exact hq.trans_le (div_rpow_le_sInf_subcriticalYamabeQuotient hE
       (two_pos.trans hq'.1) hq'.2.le)
   · -- From above: a fixed `w` with `Q^{pₙ}(w) < b` has `Q^q(w) < b` for `q` near `pₙ`.
-    obtain ⟨w₀, hw₀⟩ := exists_ne_zero_sobolevH1 (I := I) (M := M)
+    obtain ⟨w₀, hw₀⟩ := exists_ne (0 : SobolevH1 I M)
     obtain ⟨_, ⟨w, hw, rfl⟩, hwb⟩ := exists_lt_of_csInf_lt
       (s := weakYamabeQuotient I '' {w : SobolevH1 I M | w ≠ 0}) ⟨_, w₀, hw₀, rfl⟩ hb
     filter_upwards [(tendsto_subcriticalYamabeQuotient_nhdsLT hn hw).eventually (gt_mem_nhds hwb),

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 
@@ -49,7 +50,8 @@ against a smooth function `φ` it is `∫ w Δ⁺φ dV`, where `Δ⁺ = -Δ` is 
   `TauCeti.Manifold.SobolevH1.ofSmooth` the inclusion of the smooth functions,
   `TauCeti.Manifold.SobolevH1.inner_ofSmooth` the inner product of two smooth functions, and
   `TauCeti.Manifold.SobolevH1.subsingleton_of_isEmpty` showing `H¹(M)` is a subsingleton on an empty
-  manifold.
+  manifold, and `TauCeti.Manifold.SobolevH1.nontrivial_of_nonempty` showing it is nontrivial on a
+  nonempty one.
 * `TauCeti.Manifold.SobolevH1.liftSmooth`: continuous linear extension of a bounded `ℝ`-linear map
   from smooth functions to `H¹(M)`, characterized by `liftSmooth_ofSmooth` and `liftSmooth_unique`.
 * `TauCeti.Manifold.SobolevH1.toLp`: the value map `H¹(M) → L²(M)`, injective by
@@ -328,6 +330,15 @@ theorem toLp_ofSmooth_ae_eq (u : C^∞⟮I, M; ℝ⟯) :
     toLp (ofSmooth u) =ᵐ[riemannianVolume I M] u := by
   rw [toLp_ofSmooth]
   exact ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℝ) _ _
+
+/-- On a nonempty manifold, `H¹(M)` is nontrivial: the constant function `1` is nonzero, since its
+integral is the positive total volume. -/
+instance nontrivial_of_nonempty [Nonempty M] : Nontrivial (SobolevH1 I M) :=
+  nontrivial_of_ne (ofSmooth 1) 0 fun h ↦ (riemannianTotalVolume_pos (I := I) (M := M)).ne' <| by
+    have h0 := toLp_ofSmooth_ae_eq (1 : C^∞⟮I, M; ℝ⟯)
+    rw [h, map_zero] at h0
+    rw [← one_mul (riemannianTotalVolume I M), ← integral_const_riemannianVolume, ← integral_zero]
+    exact integral_congr_ae (h0.symm.trans (Lp.coeFn_zero ..))
 
 /-- The `L²` inner product of the values of two smooth functions is `∫ u v dV`. -/
 theorem inner_toLp_ofSmooth (u v : C^∞⟮I, M; ℝ⟯) :
