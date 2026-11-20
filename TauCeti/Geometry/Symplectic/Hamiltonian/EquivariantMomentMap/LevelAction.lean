@@ -46,7 +46,9 @@ hypotheses on the action, and regularity also uses the moment-map equation.
   (`IsEquivariantMomentMap.differential_surjective_of_stabilizer_levelSubMulAction_eq_bot`).
   If `G` acts freely at every point of `Z`, then `G_c` acts freely on `Z`
   (`IsEquivariantMomentMap.isCancelSMul_levelSubMulAction`) and `c` is a regular value of `μ`
-  (`IsEquivariantMomentMap.forall_differential_surjective_of_stabilizer_eq_bot`).
+  (`IsEquivariantMomentMap.forall_differential_surjective_of_stabilizer_eq_bot`). For a free
+  action of `G` on `M` the freeness of `G_c` on every level is an instance
+  (`IsEquivariantMomentMap.instIsCancelSMulLevelSubMulAction`).
 * If `G` acts properly on `M`, then `G_c` acts properly on `Z`, since every element of `G`
   carrying a point of `Z` into `Z` lies in `G_c`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.properSMul_levelSubMulAction`).
@@ -203,6 +205,12 @@ theorem isCancelSMul_levelSubMulAction (h : σ.IsEquivariantMomentMap μ)
     IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
   isCancelSMul_iff_stabilizer_eq_bot.2 fun z ↦
     (h.stabilizer_levelSubMulAction_eq_bot_iff z).2 (hfree z (h.mem_levelSubMulAction.1 z.2))
+
+/-- If `G` acts freely on `M`, then the coadjoint stabilizer `G_c` acts freely on every level
+`μ⁻¹(c)`. -/
+instance instIsCancelSMulLevelSubMulAction [IsCancelSMul G M] (h : σ.IsEquivariantMomentMap μ) :
+    IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) :=
+  h.isCancelSMul_levelSubMulAction fun x _ ↦ IsCancelSMul.stabilizer_eq_bot x
 
 /-! ### Smoothness -/
 
