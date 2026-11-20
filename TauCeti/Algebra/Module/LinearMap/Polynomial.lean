@@ -115,9 +115,10 @@ theorem eval_detPoly_eq_det (c : ι → R) :
 characteristic polynomial of `φ x`; the two signs `(-1) ^ finrank R M` cancel. -/
 theorem eval_detPoly_neg_eq_charpoly_eval_zero (x : L) :
     eval (b.repr (-x)) (detPoly φ b) = (φ x).charpoly.eval 0 := by
-  rw [eval_detPoly, map_neg, ← neg_one_smul R (φ x), det_smul, det_eq_sign_charpoly_coeff,
-    Polynomial.coeff_zero_eq_eval_zero, ← mul_assoc, ← mul_pow]
-  simp
+  have h : (-φ x).det = (-1) ^ finrank R M * (φ x).det := by
+    simpa using det_smul (-1 : R) (φ x)
+  rw [eval_detPoly, map_neg, h, det_eq_sign_charpoly_coeff]
+  simp [Polynomial.coeff_zero_eq_eval_zero, ← mul_assoc, ← mul_pow]
 
 /-- The determinant polynomial is homogeneous of degree `finrank R M`. -/
 theorem isHomogeneous_detPoly : (detPoly φ b).IsHomogeneous (finrank R M) := by
@@ -179,8 +180,8 @@ theorem detPoly_congr {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N
     (h : ∀ x, e.toLinearMap ∘ₗ φ x = ψ x ∘ₗ e.toLinearMap) :
     detPoly φ b = detPoly ψ b := by
   have hψ : ∀ x, ψ x = e.toLinearMap ∘ₗ φ x ∘ₗ e.symm.toLinearMap := fun x ↦ by
-    rw [← comp_assoc, h, comp_assoc, LinearEquiv.comp_coe, e.symm_trans_self,
-      LinearEquiv.refl_toLinearMap, comp_id]
+    ext m
+    simpa using (LinearMap.congr_fun (h x) (e.symm m)).symm
   simp only [detPoly_eq_det_sum_X_smul, hψ]
   rw [← det_conj _ (e.baseChange R (MvPolynomial ι R) M N)]
   congr 1
@@ -200,8 +201,7 @@ theorem detPoly_smulRight_id (f : L →ₗ[R] R) :
       (∑ i, C (f (b i)) * X i) • LinearMap.id := by
     rw [Finset.sum_smul]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [smulRight_apply, baseChange_smul, baseChange_id, mul_comm (C _), mul_smul, ← algebraMap_eq,
-      algebraMap_smul]
+    simp [baseChange_smul, ← smul_eq_C_mul, smul_comm (X i : MvPolynomial ι R)]
   rw [this, det_smul, det_id, mul_one, finrank_baseChange]
 
 /-- **Multiplicativity in short exact sequences.** Let `0 → M' → M → M'' → 0` be a short exact
