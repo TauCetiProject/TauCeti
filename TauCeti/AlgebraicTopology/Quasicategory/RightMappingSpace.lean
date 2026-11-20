@@ -11,6 +11,9 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
@@ -23,7 +26,8 @@ For vertices `x` and `y` of a simplicial set `X`, the right mapping space `Hom^R
 simplicial set whose `n`-simplices are the `(n + 1)`-simplices of `X` with last vertex `y` whose
 face spanned by the first `n + 1` vertices is the constant simplex at `x`. Its vertices are the
 edges from `x` to `y`. It is the fibre over `x` of the projection `X_{/y} ⟶ X` from the slice over
-`y`, and it models the space of maps from `x` to `y` when `X` is a quasicategory.
+`y` (`SSet.rightMappingSpace.sliceFiberIso`, through `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`), and it models the
+space of maps from `x` to `y` when `X` is a quasicategory.
 
 We realise it as a subcomplex of `SimplexCategory.joinVertex.op ⋙ X`, the simplicial set whose
 `n`-simplices are the `(n + 1)`-simplices of `X`, with simplicial operators acting on the first
@@ -58,12 +62,15 @@ those of `X` and `Y`, and right mapping spaces commute with universe lifts
   `f : X ⟶ Y`.
 * `SSet.rightMappingSpace.prodIso`: the isomorphism
   `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁)) ≅ Hom^R_X(x₀, x₁) ⊗ Hom^R_Y(y₀, y₁)`.
+* `SSet.rightMappingSpace.sliceFiberIso x y`: `Hom^R_X(x, y)` is the fibre over `x` of the
+  projection `X_{/y} ⟶ X` from the slice over `y`.
 * `SSet.rightMappingSpace.uliftIso`: the isomorphism
   `Hom^R_{ulift X}(↑x, ↑y) ≅ ulift Hom^R_X(x, y)`.
 
 ## Main results
 
-* `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)`, and
+* `SSet.mem_rightMappingSpace_iff`: the description of the simplices of `Hom^R_X(x, y)` (at an
+  arbitrary object of the simplex category, `SSet.mem_rightMappingSpace_obj_iff`), and
   `SSet.rightMappingSpace.coe_δ`, `SSet.rightMappingSpace.coe_σ`: their faces and degeneracies
   are those in `X` avoiding, respectively fixing, the last vertex.
 * `SSet.rightMappingSpace.hornFilling`: if `X` is a quasicategory, all horns `Λ[n + 1, i]` in
@@ -132,6 +139,15 @@ theorem mem_rightMappingSpace_iff {n : ℕ} (σ : X _⦋n + 1⦌) :
   -- (its `Membership` instance does not typecheck at `X _⦋n + 1⦌`); membership in the unfolded
   -- set-builder set is the defining predicate, closed by `Iff.rfl`.
   exact Iff.rfl
+
+/-- A simplex of `X` at `joinVertex.obj m` is an `m`-simplex of `Hom^R_X(x, y)` exactly when its
+restriction along `m ⟶ m ⋆ ⦋0⦌` is the constant simplex at `x` and its final vertex is `y`. This
+is the defining condition, for an arbitrary object `m` of the simplex category. -/
+theorem mem_rightMappingSpace_obj_iff {m : SimplexCategory} (σ : X.obj (op (joinVertex.obj m))) :
+    σ ∈ (X.rightMappingSpace x y).obj (op m) ↔
+      X.map (joinVertexInl m).op σ = X.map (SimplexCategory.const m ⦋0⦌ 0).op x ∧
+        X.map (joinVertexInr m).op σ = y :=
+  Iff.rfl
 
 namespace rightMappingSpace
 
@@ -589,6 +605,76 @@ theorem prodIso_inv_ι :
   (rfl)
 
 end prod
+
+/-! ### Right mapping spaces as fibres of slices -/
+
+section sliceFiber
+
+variable (x y)
+
+/-- The `n`-simplices of the fibre over `x` of `X_{/y} ⟶ X` are those of `Hom^R_X(x, y)`, through
+`Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
+private noncomputable def sliceFiberEquiv (m : SimplexCategory) :
+    (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m) ≃
+      (X.rightMappingSpace x y : SSet.{u}).obj (op m) where
+  toFun s := ⟨(yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.val).val) :
+      X.obj (op (joinVertex.obj m))), by
+    refine (mem_rightMappingSpace_obj_iff _).2 ⟨?_, ?_⟩
+    · rw [yonedaEquiv_naturality, join.joinVertexInl_comp_joinVertexIso_inv_assoc, ← slice.π_app,
+        ← mem_fiber_iff]
+      exact s.property
+    · rw [yonedaEquiv_naturality, join.joinVertexInr_comp_joinVertexIso_inv_assoc,
+        (slice.objEquiv s.val).property, Equiv.apply_symm_apply]⟩
+  invFun t := ⟨slice.objEquiv.symm ⟨(join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val, by
+      rw [join.inr_comp_joinVertexIso_hom_assoc, yonedaEquiv_symm_naturality_left,
+        ((mem_rightMappingSpace_obj_iff _).1 t.property).2]⟩, by
+    rw [mem_fiber_iff, slice.π_app, Equiv.apply_symm_apply, join.inl_comp_joinVertexIso_hom_assoc,
+      yonedaEquiv_symm_naturality_left, Equiv.apply_symm_apply]
+    exact ((mem_rightMappingSpace_obj_iff _).1 t.property).1⟩
+  left_inv s := Subtype.ext (slice.objEquiv.injective (Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, Iso.hom_inv_id_assoc])))
+  right_inv t := Subtype.ext (by
+    simp only [Equiv.apply_symm_apply, Iso.inv_hom_id_assoc])
+
+/-- **The right mapping space `Hom^R_X(x, y)` is the fibre over `x` of the projection
+`X_{/y} ⟶ X`** of the slice over `y`. Through `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, an `n`-simplex
+`Δ[n] ⋆ Δ[0] ⟶ X` of the slice is an `(n + 1)`-simplex of `X` with last vertex `y`, and it lies
+over `x` exactly when its face opposite to the last vertex is constant at `x`. -/
+noncomputable def sliceFiberIso :
+    (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}) ≅ (X.rightMappingSpace x y : SSet.{u}) :=
+  NatIso.ofComponents (fun m ↦ (sliceFiberEquiv x y m.unop).toIso) (fun {m m'} f ↦ by
+    ext s : 3
+    refine Subtype.ext ?_
+    -- Both sides are, by definition, the `(n + 1)`-simplices below; they agree by the naturality
+    -- of `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`.
+    have key : (yonedaEquiv ((join.joinVertexIso m'.unop).inv ≫
+        (slice.objEquiv ((slice (yonedaEquiv.symm y)).map f s.val)).val) :
+          X.obj (op (joinVertex.obj m'.unop))) =
+        X.map (joinVertex.map f.unop).op
+          (yonedaEquiv ((join.joinVertexIso m.unop).inv ≫ (slice.objEquiv s.val).val)) := by
+      rw [slice.objEquiv_map_coe, yonedaEquiv_naturality,
+        join.joinVertex_map_comp_joinVertexIso_inv_assoc]
+    -- `key` is the goal, with the maps of the fibre and of `Hom^R_X(x, y)` applied.
+    exact key)
+
+/-- The simplex of `Hom^R_X(x, y)` attached to a simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of
+`X_{/y} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
+theorem sliceFiberIso_hom_app_coe {m : SimplexCategory}
+    (s : (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m)) :
+    ((sliceFiberIso x y).hom.app (op m) s).val =
+      (yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.val).val) :
+        X.obj (op (joinVertex.obj m))) :=
+  (rfl)
+
+/-- The simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of `X_{/y} ⟶ X` attached to a simplex of
+`Hom^R_X(x, y)` is its composite with `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
+theorem sliceFiberIso_inv_app_coe {m : SimplexCategory}
+    (t : (X.rightMappingSpace x y : SSet.{u}).obj (op m)) :
+    (slice.objEquiv ((sliceFiberIso x y).inv.app (op m) t).val).val =
+      (join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val :=
+  congrArg Subtype.val (slice.objEquiv.apply_symm_apply _)
+
+end sliceFiber
 
 /-! ### Universe lifts -/
 
