@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Log.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.Analysis.Complex.HorizontalStrip
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv

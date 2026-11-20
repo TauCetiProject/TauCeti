@@ -82,6 +82,24 @@ theorem ae_mem_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
   filter_upwards [ae_mem_Ioo_semicircleMeasure] with x hx
   constructor <;> nlinarith [Real.sqrt_nonneg (v : ℝ), hx.1, hx.2]
 
+/-- Normalizing a point in the support gives a point in the standard support. -/
+theorem sub_div_sqrt_mem_Icc_of_mem_Icc {a x : ℝ} {v : ℝ≥0} (hv : 0 < v)
+    (hx : x ∈ Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) :
+    (x - a) / Real.sqrt v ∈ Icc (-2) 2 := by
+  have hs : 0 < Real.sqrt v := Real.sqrt_pos.2 (by exact_mod_cast hv)
+  constructor
+  · apply (le_div_iff₀ hs).2
+    nlinarith [hx.1]
+  · apply (div_le_iff₀ hs).2
+    nlinarith [hx.2]
+
+/-- Restriction to the support interval leaves the semicircle law unchanged. -/
+@[simp]
+theorem restrict_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
+    (semicircleReal a v).restrict (Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) =
+      semicircleReal a v :=
+  Measure.restrict_eq_self_of_ae_mem (ae_mem_Icc_semicircleReal a v)
+
 /-- The exact support is the closed interval between the semicircle edges, also at variance zero.
 -/
 @[simp]
@@ -146,6 +164,14 @@ theorem map_affine_semicircleReal (a b c : ℝ) (v : ℝ≥0) :
         ring
       _ = _ := by rw [map_neg_semicircleMeasure]
 
+/-- Every semicircle law is the affine image of the standard semicircle law. -/
+theorem map_standardSemicircleReal (a : ℝ) (v : ℝ≥0) :
+    (semicircleReal 0 1).map (fun x : ℝ ↦ a + Real.sqrt v * x) = semicircleReal a v := by
+  have hvar : Real.toNNReal (Real.sqrt v ^ 2) * (1 : ℝ≥0) = v := by
+    apply NNReal.coe_injective
+    simp [Real.sq_sqrt v.coe_nonneg]
+  simpa [hvar] using map_affine_semicircleReal 0 a (Real.sqrt v) 1
+
 /-- At positive variance the semicircle has density `(2πv)⁻¹ √(4v - (x - a)²)`.
 The real square root makes the density zero outside the support interval. -/
 theorem semicircleReal_eq_withDensity (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
@@ -167,6 +193,38 @@ theorem semicircleReal_eq_withDensity (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
   rw [hrad, Real.sqrt_div' _ (sq_nonneg _), Real.sqrt_sq (by positivity)]
   field_simp
   rw [hs2]
+
+/-- A positive-variance semicircle law is absolutely continuous with respect to volume. -/
+theorem semicircleReal_absolutelyContinuous (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
+    semicircleReal a v ≪ volume := by
+  rw [semicircleReal_eq_withDensity a hv]
+  exact withDensity_absolutelyContinuous _ _
+
+/-- A positive-variance semicircle law has no atoms. -/
+theorem nullSingletonClass_semicircleReal (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
+    NullSingletonClass (semicircleReal a v) := by
+  rw [semicircleReal_eq_withDensity a hv]
+  infer_instance
+
+/-- A positive-variance semicircle law has a uniformly bounded density. -/
+theorem semicircleReal_le_smul_volume (a : ℝ) {v : ℝ≥0} (hv : 0 < v) :
+    semicircleReal a v ≤ ENNReal.ofReal (Real.pi * Real.sqrt v)⁻¹ • (volume : Measure ℝ) := by
+  have hv' : 0 < (v : ℝ) := by exact_mod_cast hv
+  have hs : 0 < Real.sqrt (v : ℝ) := Real.sqrt_pos.2 hv'
+  have hs2 := Real.sq_sqrt v.coe_nonneg
+  rw [semicircleReal_eq_withDensity a hv, ← withDensity_const]
+  apply withDensity_mono
+  filter_upwards with y
+  apply ENNReal.ofReal_le_ofReal
+  have hrad : Real.sqrt (4 * (v : ℝ) - (y - a) ^ 2) ≤ 2 * Real.sqrt v := by
+    rw [Real.sqrt_le_left (by positivity)]
+    nlinarith [sq_nonneg (y - a)]
+  calc
+    (2 * Real.pi * (v : ℝ))⁻¹ * Real.sqrt (4 * (v : ℝ) - (y - a) ^ 2)
+        ≤ (2 * Real.pi * (v : ℝ))⁻¹ * (2 * Real.sqrt v) := by gcongr
+    _ = (Real.pi * Real.sqrt v)⁻¹ := by
+      field_simp [ne_of_gt hs]
+      nlinarith
 
 /-- A semicircle law carried by `[0, ∞)` with positive centre gives no mass to `(-∞, 0]`. -/
 theorem ae_pos_semicircleReal {a : ℝ} {v : ℝ≥0} (h : 2 * Real.sqrt v ≤ a) (ha : 0 < a) :
