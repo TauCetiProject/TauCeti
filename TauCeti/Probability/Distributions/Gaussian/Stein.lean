@@ -25,14 +25,18 @@ parts against it along `eᵢ`; at `v = 0` the law is the point mass at `θ` and 
 The one-dimensional identity is
 `TauCeti.Probability.integral_sub_smul_eq_smul_integral_deriv_gaussianReal`.
 
-The file also records the closed form of the isotropic density, the mean squared distance
-`E‖X - m‖² = tr S` of every multivariate Gaussian law, and the integrability of `‖x‖⁻²` under
-`N(θ, v I)` in dimension at least `3`.
+The file also records a closed form of `multivariateGaussianPDFReal θ (v I)` for `v ≥ 0` (a
+density of `N(θ, v I)` when `v > 0`), the mean squared distance `E‖X - m‖² = tr S` of every
+multivariate Gaussian law, and the integrability of `(‖x‖ ^ 2)⁻¹` under `N(θ, v I)` in dimension
+at least `3`. Here `(‖x‖ ^ 2)⁻¹` is the real-valued reciprocal, which takes the value `0` at the
+origin; for `v ≤ 0`, where `multivariateGaussian` falls back to the point mass at `θ`, this
+convention matters when `θ = 0`.
 
 ## Main results
 
-* `TauCeti.Probability.multivariateGaussianPDFReal_smul_one`: the density of `N(θ, v I)` is
-  `(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`, where `d` is the dimension.
+* `TauCeti.Probability.multivariateGaussianPDFReal_smul_one`: for `v ≥ 0`,
+  `multivariateGaussianPDFReal θ (v I) x = (2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`, where `d` is
+  the dimension; for `v > 0` this is the density of `N(θ, v I)`.
 * `TauCeti.Probability.multivariateGaussian_smul_one_eq_withDensity`: `N(θ, v I)`, `v > 0`, as a
   law with this density.
 * `TauCeti.Probability.integral_norm_sub_sq_multivariateGaussian`: `E‖X - m‖² = tr S`.
@@ -40,8 +44,9 @@ The file also records the closed form of the isotropic density, the mean squared
   identity for a real function.
 * `TauCeti.Probability.gaussian_integration_by_parts`: Stein's identity for the coordinates of an
   `L²` vector field.
-* `TauCeti.Probability.integrable_inv_norm_sq_multivariateGaussian`: `‖x‖⁻²` is integrable under
-  `N(θ, v I)` in dimension at least `3`.
+* `TauCeti.Probability.integrable_inv_norm_sq_multivariateGaussian`: the real-valued reciprocal
+  `(‖x‖ ^ 2)⁻¹` (equal to `0` at the origin) is integrable under `multivariateGaussian θ (v I)`
+  for every real `v`, in dimension at least `3`.
 
 ## References
 
@@ -64,8 +69,11 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The density of the isotropic Gaussian law `N(θ, v I)` in closed form:
-`(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`, where `d` is the dimension. -/
+/-- Closed form of `multivariateGaussianPDFReal θ (v I)` for `v ≥ 0`:
+`(2π v)^(-d/2) exp (-‖x - θ‖² / (2v))`, where `d` is the dimension. For `v > 0` this is the
+density of `N(θ, v I)` (see `multivariateGaussian_smul_one_eq_withDensity`); at `v = 0` it is
+only an identity of real expressions under Lean's conventions `0⁻¹ = 0` and `0 ^ r`, not a
+density. -/
 theorem multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 ≤ v) (θ x : EuclideanSpace ℝ ι) :
     multivariateGaussianPDFReal θ (v • (1 : Matrix ι ι ℝ)) x =
       (2 * π * v) ^ (-(Fintype.card ι : ℝ) / 2) * exp (-‖x - θ‖ ^ 2 / (2 * v)) := by
@@ -110,7 +118,9 @@ theorem multivariateGaussian_smul_one_eq_withDensity {v : ℝ} (hv : 0 < v)
     multivariateGaussianPDF_def]
   simp_rw [multivariateGaussianPDFReal_smul_one hv.le]
 
-/-- For `v ≤ 0` the law `N(θ, v I)` is the point mass at `θ`. -/
+/-- For `v ≤ 0`, `multivariateGaussian θ (v I)` is the point mass at `θ`. At `v = 0` this is the
+degenerate Gaussian law; for `v < 0` the matrix `v I` is not a covariance matrix (in positive
+dimension) and this is the fallback value of `multivariateGaussian`. -/
 theorem multivariateGaussian_smul_one_of_nonpos {v : ℝ} (hv : v ≤ 0) (θ : EuclideanSpace ℝ ι) :
     multivariateGaussian θ (v • (1 : Matrix ι ι ℝ)) = Measure.dirac θ := by
   by_cases hS : (v • (1 : Matrix ι ι ℝ)).PosSemidef
@@ -201,7 +211,11 @@ theorem gaussian_integration_by_parts {v : ℝ} (hv : 0 ≤ v) {θ : EuclideanSp
     (fun x ↦ (EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp x (hg x)) i
     (hgi.integrable one_le_two) (hxi.integrable_mul hgi) hdi
 
-/-- In dimension at least `3`, `‖x‖⁻²` is integrable under `N(θ, v I)`. -/
+/-- In dimension at least `3`, the real-valued reciprocal `(‖x‖ ^ 2)⁻¹`, which takes the value `0`
+at the origin, is integrable under `multivariateGaussian θ (v I)` for every real `v`. For `v > 0`
+this is the usual integrability of `‖x‖⁻²` under `N(θ, v I)`; for `v ≤ 0` the law is the point
+mass at `θ` (the fallback value of `multivariateGaussian` when `v < 0`), and when `θ = 0` the
+statement relies on the convention `0⁻¹ = 0`. -/
 theorem integrable_inv_norm_sq_multivariateGaussian (hι : 3 ≤ Fintype.card ι) (v : ℝ)
     (θ : EuclideanSpace ℝ ι) :
     Integrable (fun x : EuclideanSpace ℝ ι ↦ (‖x‖ ^ 2)⁻¹)
