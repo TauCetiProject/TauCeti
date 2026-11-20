@@ -226,7 +226,7 @@ theorem mem_isometryGroup_iff {e : M ≃ₗ[R] M} :
 same data, the subgroup adding the group structure. -/
 def isometryGroupEquivIsometryEquiv (B : BilinForm R M) :
     isometryGroup B ≃ B.IsometryEquiv B where
-  toFun e := ⟨e.1, fun x y => (mem_isometryGroup.mp e.2).apply x y⟩
+  toFun e := ⟨e.val, fun x y => (mem_isometryGroup.mp e.property).apply x y⟩
   invFun e := ⟨e.toLinearEquiv,
     mem_isometryGroup.mpr (isIsometry_iff.mpr fun x y => e.map_app y x)⟩
   left_inv _ := rfl
@@ -398,7 +398,7 @@ preserves `Q`. -/
 def isometryGroupBaseChange (B : BilinForm R M) :
     isometryGroup B →* isometryGroup (LinearMap.BilinForm.baseChange A B) where
   toFun e := ⟨LinearEquiv.baseChange R A M M (e : M ≃ₗ[R] M),
-    mem_isometryGroup.mpr (IsIsometry.baseChange A (mem_isometryGroup.mp e.2))⟩
+    mem_isometryGroup.mpr (IsIsometry.baseChange A (mem_isometryGroup.mp e.property))⟩
   map_one' := Subtype.ext (by simp)
   map_mul' a b := Subtype.ext (by simp [_root_.LinearEquiv.baseChange_mul])
 
@@ -650,7 +650,7 @@ theorem mem_specialIsometryWithin_iff {g : isometryGroup B} :
 theorem specialIsometryWithin_eq_subgroupOf :
     specialIsometryWithin B = (specialIsometryGroup B).subgroupOf (isometryGroup B) := by
   ext g
-  simp [Subgroup.mem_subgroupOf, g.2]
+  simp [Subgroup.mem_subgroupOf, g.property]
 
 /-- The inclusion from determinant-one isometries to all isometries. -/
 noncomputable def specialIsometryToIsometry (B : BilinForm R M) :
@@ -666,7 +666,7 @@ theorem coe_specialIsometryToIsometry (g : specialIsometryGroup B) :
 @[simp]
 theorem det_coe_specialIsometryGroup (g : specialIsometryGroup B) :
     LinearEquiv.det (g : M ≃ₗ[R] M) = 1 :=
-  (mem_specialIsometryGroup_iff.mp g.2).2
+  (mem_specialIsometryGroup_iff.mp g.property).2
 
 /-- Inclusion of determinant-one isometries into all isometries is injective. -/
 theorem specialIsometryToIsometry_injective :
@@ -757,10 +757,10 @@ variable (A : Type*) [CommRing A] [Algebra R A] [Module.Free R M] [Module.Finite
 def specialIsometryGroupBaseChange (B : BilinForm R M) :
     specialIsometryGroup B →* specialIsometryGroup (LinearMap.BilinForm.baseChange A B) where
   toFun g := ⟨isometryGroupBaseChange A B
-      ⟨g, specialIsometryGroup_le_isometryGroup B g.2⟩, by
-    refine mem_specialIsometryGroup_iff.mpr ⟨(isometryGroupBaseChange A B _).2, ?_⟩
+      ⟨g, specialIsometryGroup_le_isometryGroup B g.property⟩, by
+    refine mem_specialIsometryGroup_iff.mpr ⟨(isometryGroupBaseChange A B _).property, ?_⟩
     rw [coe_isometryGroupBaseChange, LinearEquiv.det_baseChange,
-      (mem_specialIsometryGroup_iff.mp g.2).2, map_one]⟩
+      (mem_specialIsometryGroup_iff.mp g.property).2, map_one]⟩
   map_one' := Subtype.ext (by simp [isometryGroupBaseChange])
   map_mul' g h := Subtype.ext (by simp [isometryGroupBaseChange, LinearEquiv.baseChange_mul])
 

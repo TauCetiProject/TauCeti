@@ -234,8 +234,9 @@ variable {A X Y Z : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAdd
 private def dilationEquiv (t : ℝ) (ht : t ≠ 0) :
     ((CoordinateSpace n × CoordinateSpace n) × ℂ) ≃L[ℝ]
       ((CoordinateSpace n × CoordinateSpace n) × ℂ) :=
-  ContinuousLinearEquiv.equivOfInverse (parameterDilation n t) (parameterDilation n t⁻¹)
-    (fun v => by simp [smul_smul, ht]) (fun v => by simp [smul_smul, ht])
+  ContinuousLinearEquiv.ofContinuousLinearMap (parameterDilation n t) (parameterDilation n t⁻¹)
+    (ContinuousLinearMap.ext fun v => by simp [smul_smul, ht])
+    (ContinuousLinearMap.ext fun v => by simp [smul_smul, ht])
 
 private theorem iteratedFDeriv_comp_dilation (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) {t : ℝ} (ht : t ≠ 0) (k : ℕ) :

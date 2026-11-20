@@ -229,7 +229,7 @@ theorem sign_mul_sign_compl {I : Type*} [LinearOrder I] [Fintype I] {k l : ℕ}
         powersetCard.sign u • b.ExteriorAlgebra Finset.univ := fun hmn u v huv ↦ by
     have hunion : (disjUnion huv : Finset I) = Finset.univ :=
       Finset.eq_univ_of_card _ <| by
-        rw [coe_disjUnion, Finset.card_disjUnion, mem_iff.1 u.2, mem_iff.1 v.2, hmn]
+        rw [coe_disjUnion, Finset.card_disjUnion, mem_iff.1 u.property, mem_iff.1 v.property, hmn]
     rw [ExteriorAlgebra.basis_mul_of_disjoint b u v huv,
       ← sign_eq_permOfDisjoint_sign hmn u v huv, hunion]
   -- Exterior products of degrees `k` and `l` commute up to `(-1) ^ (l * k)`.

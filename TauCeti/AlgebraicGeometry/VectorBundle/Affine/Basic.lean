@@ -146,9 +146,9 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isFiniteLocallyFree_iff_forall_i
     ⟨Scheme.Modules.isLocallyFree_pullback hU.fromSpec M,
       Scheme.Modules.isFinitePresentation_pullback hU.fromSpec M⟩, fun h ↦ ?_⟩
   exact (Scheme.Modules.isFiniteLocallyFree_iff_forall_pullback
-    (Scheme.AffineOpenCover.ofIsOpenCover (fun U : X.affineOpens ↦ U.1)
-      (iSup_affineOpens_eq_top X) fun U ↦ U.2).openCover M).mpr fun U ↦
-    (Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff M U.2).mpr (h U.1 U.2)
+    (Scheme.AffineOpenCover.ofIsOpenCover (fun U : X.affineOpens ↦ U.val)
+      (iSup_affineOpens_eq_top X) fun U ↦ U.property).openCover M).mpr fun U ↦
+    (Scheme.Modules.isFiniteLocallyFree_pullback_fromSpec_iff M U.property).mpr (h U.val U.property)
 
 namespace FiniteLocallyFreeSheaf
 

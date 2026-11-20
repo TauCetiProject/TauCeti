@@ -76,7 +76,7 @@ open scoped Topology
 namespace TauCeti.PowerSeries.IsEntire
 
 -- Supply the positivity witness used by the Gauss-norm instances on each closed disc.
-local instance radius_pos (r : Set.Ioi (0 : ℝ)) : Fact (0 < (r : ℝ)) := ⟨r.2⟩
+local instance radius_pos (r : Set.Ioi (0 : ℝ)) : Fact (0 < (r : ℝ)) := ⟨r.property⟩
 
 section NormedRing
 
@@ -87,7 +87,7 @@ omit [IsUltrametricDist R] in
 theorem mem_subring_iff_forall_isRestricted {f : R⟦X⟧} :
     f ∈ IsEntire.subring R ↔ ∀ r : Set.Ioi (0 : ℝ), f.IsRestricted r :=
   IsEntire.mem_subring.trans <| isEntire_iff_forall_pos.trans
-    ⟨fun h r ↦ h r r.2, fun h r hr ↦ h ⟨r, hr⟩⟩
+    ⟨fun h r ↦ h r r.property, fun h r hr ↦ h ⟨r, hr⟩⟩
 
 /-- Restriction of an entire series to the closed disc of a positive radius. -/
 noncomputable def restrict (r : Set.Ioi (0 : ℝ)) :
@@ -223,7 +223,7 @@ theorem continuous_evalAtHom (b : A) : Continuous (IsEntire.evalAtHom R b) := by
     linarith
   refine squeeze_zero_norm
     (a := fun f ↦ (‖(1 : A)‖ + 1) * ‖restrict (evalRadius b) f‖ * (1 - 2⁻¹)⁻¹) (fun f ↦ ?_) ?_
-  · have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict (evalRadius b) f).2
+  · have hf := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted (restrict (evalRadius b) f).property
     rw [coe_restrict] at hf
     rw [IsEntire.evalAtHom_apply, TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict]
     exact norm_evalAt_le_mul_gaussNorm hf (by norm_num) (by norm_num) hb

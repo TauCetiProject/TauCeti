@@ -235,7 +235,8 @@ theorem isHighestWeightVector_of_forall_rootSpace {lam : Dual K H} {v : M} (hv0 
   refine isHighestWeightVector_iff.mpr ⟨hv0, hcartan, fun x hx => ?_⟩
   rw [mem_positiveNilradical, rootSpaceSpan_eq_iSup] at hx
   exact LieSubmodule.iSup_induction _ (motive := fun x => ⁅x, v⁆ = 0) hx
-    (fun α _ hy => hpos α α.2 _ hy) (by simp) (fun y z hy hz => by rw [add_lie, hy, hz, add_zero])
+    (fun α _ hy => hpos α α.property _ hy) (by simp) (fun y z hy hz => by rw [add_lie, hy, hz,
+        add_zero])
 
 omit [LieModule K L M] in
 /-- Being a highest weight vector is exactly being a nonzero `H`-eigenvector annihilated by every

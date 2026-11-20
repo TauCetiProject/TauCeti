@@ -116,7 +116,7 @@ theorem mem_weakGaugeFixedKernel_iff (hx : Continuous x)
 `C²` square-integrable solution of `L_x y = 0` lies in the weak kernel of `L_x`. -/
 theorem gaugeFixedKernelToLp_mem_weakGaugeFixedKernel (hx : Continuous x)
     (y : gaugeFixedKernel x) : gaugeFixedKernelToLp x y ∈ weakGaugeFixedKernel x := by
-  obtain ⟨hyc, -, hker⟩ := mem_gaugeFixedKernel.1 y.2
+  obtain ⟨hyc, -, hker⟩ := mem_gaugeFixedKernel.1 y.property
   refine (mem_weakGaugeFixedKernel_iff hx).2 fun η hη hηc ↦ ?_
   have hweak := (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx
     (hyc.of_le one_le_two) continuous_const).2 hker η hη hηc

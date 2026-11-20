@@ -178,14 +178,14 @@ private theorem mk_apply_eq_pbwHomogeneousComponentMap (n : ℕ) (p : 𝒮 n) :
     Submodule.Quotient.mk
       (⟨e p, by
         simpa only [pbwFiltration_def] using
-          he.mem_pbwFiltration (TauCeti.Algebra.range_pow_le_wordFiltration _ n p.2)⟩ :
+          he.mem_pbwFiltration (TauCeti.Algebra.range_pow_le_wordFiltration _ n p.property)⟩ :
         TauCeti.Algebra.wordFiltration (ι).toLinearMap n) =
       pbwHomogeneousComponentMap R L n p := by
   let ψ : 𝒮 n →ₗ[R] PBWGradedPiece R L n :=
     (Submodule.mkQ (TauCeti.Algebra.wordFiltration.previousRestricted (ι).toLinearMap n)).comp
       ((e ∘ₗ (𝒮 n).subtype).codRestrict _ fun p ↦ by
         simpa only [pbwFiltration_def, LinearMap.comp_apply, Submodule.subtype_apply] using
-          he.mem_pbwFiltration (TauCeti.Algebra.range_pow_le_wordFiltration _ n p.2))
+          he.mem_pbwFiltration (TauCeti.Algebra.range_pow_le_wordFiltration _ n p.property))
   -- The pure powers span the homogeneous piece, and on them both maps give the class of `ι x ^ n`.
   let v : L → 𝒮 n := fun y ↦ ⟨SymmetricAlgebra.ι R L y ^ n, by
     simpa using prod_map_ι_mem_homogeneousSubmodule R L (List.replicate n y)⟩

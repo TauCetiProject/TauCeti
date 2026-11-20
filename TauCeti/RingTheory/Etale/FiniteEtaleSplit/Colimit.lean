@@ -68,14 +68,14 @@ theorem IsFiniteEtaleSplit.of_forall_finitePresentation {R : Type u} [CommRing R
     let I := Σ (A : Type w) (_ : CommRing A), {_ψ : A →+* R // IsFiniteEtaleSplit A}
     let A (i : I) := i.1
     let (i : I) : CommRing (A i) := i.2.1
-    let ψ (i : I) : A i →+* R := i.2.2.1
+    let ψ (i : I) : A i →+* R := i.2.2.val
     have hfactor (P : Type u) [CommRing P] [Algebra.FinitePresentation ℤ P] (g : P →+* R) :
         ∃ i, ∃ φ : P →+* A i, (ψ i).comp φ = g := by
       obtain ⟨A, _, hA, φ, ψ, hφψ⟩ := h P g
       exact ⟨⟨A, inferInstance, ψ, hA⟩, φ, hφψ⟩
     obtain ⟨i, Tᵢ, _, _, _, _, ⟨e⟩⟩ :=
       Algebra.exists_etale_finite_algEquiv_tensorProduct_of_factorization A ψ hfactor T
-    let : IsFiniteEtaleSplit (A i) := i.2.2.2
+    let : IsFiniteEtaleSplit (A i) := i.2.2.property
     let := (ψ i).toAlgebra
     exact ((Algebra.IsTotallySplit.of_isFiniteEtaleSplit Tᵢ).baseChange R).of_algEquiv e.symm
 
@@ -118,10 +118,10 @@ instance isFiniteEtaleSplit (X : Type*) [TopologicalSpace X] (A : Type*) [CommRi
       map_zero' := rfl
       map_add' _ _ := rfl }
   -- Evaluate at a chosen point of each fibre of `F`.
-  let φ : P →+* (Set.range F → A) := RingHom.pi fun q ↦ (evalRingHom q.2.choose).comp g
+  let φ : P →+* (Set.range F → A) := RingHom.pi fun q ↦ (evalRingHom q.property.choose).comp g
   refine ⟨Set.range F → A, _, inferInstance, φ, ψ, RingHom.toIntAlgHom_injective ?_⟩
   -- Both maps are determined by the generators, on which `g p` is constant on the fibres of `F`.
   refine AlgHom.ext_of_adjoin_eq_top ht fun p hp ↦ ext fun x ↦ ?_
-  exact congrFun (Set.rangeFactorization F x).2.choose_spec ⟨p, hp⟩
+  exact congrFun (Set.rangeFactorization F x).property.choose_spec ⟨p, hp⟩
 
 end LocallyConstant

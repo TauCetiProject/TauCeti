@@ -488,9 +488,9 @@ theorem _root_.PrimeSpectrum.topologicalKrullDimAt_eq_height_add_ringKrullDim_qu
     have hV : IsIrreducible (zeroLocus (q : Set A)) :=
       (isIrreducible_zeroLocus_iff q).2 (by rwa [this.radical])
     rw [← hht, hq q hq' hqp, ← Ideal.topologicalKrullDim_zeroLocus,
-      ← topologicalKrullDim_inter_eq_of_finiteType k hV (isClosed_zeroLocus _) U.2.1
-        ⟨p, (mem_zeroLocus _ _).2 hqp, U.2.2⟩]
-    calc _ = topologicalKrullDim ↥((Subtype.val : U.1 → _) ⁻¹' zeroLocus (q : Set A)) := by
+      ← topologicalKrullDim_inter_eq_of_finiteType k hV (isClosed_zeroLocus _) U.property.1
+        ⟨p, (mem_zeroLocus _ _).2 hqp, U.property.2⟩]
+    calc _ = topologicalKrullDim ↥((Subtype.val : U.val → _) ⁻¹' zeroLocus (q : Set A)) := by
           rw [IsEmbedding.subtypeVal.topologicalKrullDim_preimage, Subtype.range_coe]
       _ ≤ _ := topologicalKrullDim_subspace_le _ _
 

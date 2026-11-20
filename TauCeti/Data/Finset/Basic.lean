@@ -131,7 +131,7 @@ theorem card_nonempty_finset {ι : Type*} :
     let := Fintype.ofFinite ι
     have h : Fintype.card {S : Finset ι // S.Nonempty} = 2 ^ Fintype.card ι - 1 := by
       rw [Fintype.card_subtype]
-      simp_rw [Finset.nonempty_iff_ne_empty]
+      simp_rw [← Finset.ne_empty_iff_nonempty]
       rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
         Fintype.card_finset]
     rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]
@@ -868,7 +868,7 @@ omitted point. -/
 theorem sum_piecewise_eq_sum_update_of_card_eq_succ {ι : Type*} {α : ι → Type*} {M : Type*}
     [Fintype ι] [DecidableEq ι] [AddCommMonoid M] {m : ℕ} (hm : Fintype.card ι = m + 1)
     (F : ((i : ι) → α i) → M) (f g : (i : ι) → α i) :
-    (∑ s : {s : Finset ι // s.card = m}, F (s.1.piecewise f g)) =
+    (∑ s : {s : Finset ι // s.card = m}, F (s.val.piecewise f g)) =
       ∑ i : ι, F (Function.update f i (g i)) := by
   refine (Fintype.sum_equiv (e := (Set.powersetCard.ofSingleton.trans
     (Set.powersetCard.compl hm.symm)).trans

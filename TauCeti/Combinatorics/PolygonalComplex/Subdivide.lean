@@ -437,24 +437,24 @@ replacing the sides of `C` attached along `e`. -/
 private def subdivideSideInlEquiv (e : C.graph.E) :
     {c : (C.subdivide a).Corner // (C.subdivide a).outgoing c = .inl e} ≃
       {c : C.Corner // C.outgoing c = e} where
-  toFun c := ⟨C.subdivideOriginCorner a c.1, by
-    rw [← subdivideOrigin_outgoing, c.2, SerreGraph.subdivideOrigin_inl]⟩
-  invFun c := ⟨C.subdivideFirstCorner a c.1, by rw [outgoing_subdivideFirstCorner, c.2]⟩
-  left_inv c := Subtype.ext (eq_subdivideFirstCorner_of_outgoing_eq_inl c.2).symm
-  right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideFirstCorner a c.1)
+  toFun c := ⟨C.subdivideOriginCorner a c.val, by
+    rw [← subdivideOrigin_outgoing, c.property, SerreGraph.subdivideOrigin_inl]⟩
+  invFun c := ⟨C.subdivideFirstCorner a c.val, by rw [outgoing_subdivideFirstCorner, c.property]⟩
+  left_inv c := Subtype.ext (eq_subdivideFirstCorner_of_outgoing_eq_inl c.property).symm
+  right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideFirstCorner a c.val)
 
 /-- The sides of the subdivision attached along a dart starting at the new vertex are the last
 sides replacing the sides of `C` attached along the dart on which it lies. -/
 private def subdivideSideInrEquiv (b : Bool) :
     {c : (C.subdivide a).Corner // (C.subdivide a).outgoing c = .inr b} ≃
       {c : C.Corner // C.outgoing c = cond b a (C.graph.rev a)} where
-  toFun c := ⟨C.subdivideOriginCorner a c.1, by
-    rw [← subdivideOrigin_outgoing, c.2, SerreGraph.subdivideOrigin_inr]⟩
-  invFun c := ⟨C.subdivideLastCorner a c.1, by
-    rw [outgoing_subdivideLastCorner, c.2]
+  toFun c := ⟨C.subdivideOriginCorner a c.val, by
+    rw [← subdivideOrigin_outgoing, c.property, SerreGraph.subdivideOrigin_inr]⟩
+  invFun c := ⟨C.subdivideLastCorner a c.val, by
+    rw [outgoing_subdivideLastCorner, c.property]
     cases b <;> simp⟩
-  left_inv c := Subtype.ext (eq_subdivideLastCorner_of_outgoing_eq_inr c.2).symm
-  right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideLastCorner a c.1)
+  left_inv c := Subtype.ext (eq_subdivideLastCorner_of_outgoing_eq_inr c.property).symm
+  right_inv c := Subtype.ext (C.subdivideOriginCorner_subdivideLastCorner a c.val)
 
 /-- The sides of the subdivision attached along a dart `x` correspond to the sides of `C` attached
 along the dart on which `x` lies. -/
@@ -510,9 +510,9 @@ to its initial half, and the link edge of a corner at `v` to the link edge of th
 its side. -/
 def subdivideLinkHom (v : C.graph.V) :
     (C.vertexLink v).Hom ((C.subdivide a).vertexLink (some v)) where
-  mapV g := ⟨.inl g.1, congrArg some g.2⟩
-  mapE d := (⟨C.subdivideFirstCorner a d.1.1, by
-    rw [cornerVertex_subdivideFirstCorner, d.1.2]⟩, d.2)
+  mapV g := ⟨.inl g.val, congrArg some g.property⟩
+  mapE d := (⟨C.subdivideFirstCorner a d.1.val, by
+    rw [cornerVertex_subdivideFirstCorner, d.1.property]⟩, d.2)
   map_src := by
     rintro ⟨c, _ | _⟩
     · refine Subtype.ext ?_
@@ -525,10 +525,10 @@ def subdivideLinkHom (v : C.graph.V) :
   map_rev _ := rfl
 
 @[simp] theorem subdivideLinkHom_mapV_val (v : C.graph.V) (g : (C.vertexLink v).V) :
-    ((C.subdivideLinkHom a v).mapV g).1 = .inl g.1 := (rfl)
+    ((C.subdivideLinkHom a v).mapV g).val = .inl g.val := (rfl)
 
 @[simp] theorem subdivideLinkHom_mapE_fst_val (v : C.graph.V) (d : (C.vertexLink v).E) :
-    ((C.subdivideLinkHom a v).mapE d).1.1 = C.subdivideFirstCorner a d.1.1 := (rfl)
+    ((C.subdivideLinkHom a v).mapE d).1.val = C.subdivideFirstCorner a d.1.val := (rfl)
 
 @[simp] theorem subdivideLinkHom_mapE_snd (v : C.graph.V) (d : (C.vertexLink v).E) :
     ((C.subdivideLinkHom a v).mapE d).2 = d.2 := (rfl)
@@ -574,7 +574,7 @@ corners of `C` at that vertex. -/
 theorem subdivideLinkHom_mapE_bijective (v : C.graph.V) :
     Function.Bijective (C.subdivideLinkHom a v).mapE := by
   refine ⟨fun d d' h => Prod.ext (Subtype.ext (C.subdivideFirstCorner_injective a
-    (congrArg (fun d => d.1.1) h))) (congrArg (fun d => d.2) h :), ?_⟩
+    (congrArg (fun d => d.1.val) h))) (congrArg (fun d => d.2) h :), ?_⟩
   rintro ⟨⟨c, hc⟩, b⟩
   exact ⟨(⟨C.subdivideOriginCorner a c, cornerVertex_subdivideOriginCorner_of_eq_some hc⟩, b),
     Prod.ext (Subtype.ext (eq_subdivideFirstCorner_of_cornerVertex_eq_some hc).symm) rfl⟩
@@ -584,9 +584,9 @@ of `C` on which it lies, and the link edge of a corner to that of the corner of 
 it lies. -/
 private def subdivideLinkInv (v : C.graph.V) :
     ((C.subdivide a).vertexLink (some v)).Hom (C.vertexLink v) where
-  mapV x := ⟨C.graph.subdivideOrigin a x.1, src_subdivideOrigin_of_src_eq_some x.2⟩
-  mapE d := (⟨C.subdivideOriginCorner a d.1.1,
-    cornerVertex_subdivideOriginCorner_of_eq_some d.1.2⟩, d.2)
+  mapV x := ⟨C.graph.subdivideOrigin a x.val, src_subdivideOrigin_of_src_eq_some x.property⟩
+  mapE d := (⟨C.subdivideOriginCorner a d.1.val,
+    cornerVertex_subdivideOriginCorner_of_eq_some d.1.property⟩, d.2)
   map_src := by
     rintro ⟨⟨c, hc⟩, b⟩
     obtain ⟨c, rfl⟩ : ∃ c₀, c = C.subdivideFirstCorner a c₀ :=
@@ -603,7 +603,7 @@ is unchanged, and its germs keep their degrees. -/
   rw [hasSurfaceLink_iff, hasSurfaceLink_iff]
   refine and_congr (Equiv.ofBijective _ (C.subdivideLinkHom_mapE_bijective a v)).finite_iff.symm
     (and_congr ⟨(C.subdivideLinkInv a v).connected_of_surjective fun g =>
-      ⟨(C.subdivideLinkHom a v).mapV g, Subtype.ext (SerreGraph.subdivideOrigin_inl a g.1)⟩,
+      ⟨(C.subdivideLinkHom a v).mapV g, Subtype.ext (SerreGraph.subdivideOrigin_inl a g.val)⟩,
       (C.subdivideLinkHom a v).connected_of_surjective
         (C.subdivideLinkHom_mapV_bijective a v).2⟩ ?_)
   simp [Sum.forall, Sum.exists]
@@ -639,17 +639,17 @@ theorem hasSurfaceLink_subdivide_none (h : C.linkDegree a = 1 ∨ C.linkDegree a
     · exact .inl rfl
   -- Each of the two germs at the new vertex has nonzero degree, so finitely many link darts.
   have hfin (b : Bool) : Finite {d : ((C.subdivide a).vertexLink none).E //
-      (((C.subdivide a).vertexLink none).src d).1 = .inr b} := by
+      (((C.subdivide a).vertexLink none).src d).val = .inr b} := by
     have hb := (C.subdivide a).linkDegree_def (.inr b)
     rw [linkDegree_subdivide_inr] at hb
     exact (Nat.card_ne_zero.1 (hb ▸ by omega)).2
   obtain ⟨c, hc⟩ := C.exists_outgoing_of_linkDegree_ne_zero (e := a) (by omega)
   refine ((C.subdivide a).hasSurfaceLink_iff _).2 ⟨Finite.of_surjective
     (fun p : (b : Bool) × {d : ((C.subdivide a).vertexLink none).E //
-      (((C.subdivide a).vertexLink none).src d).1 = .inr b} => p.2.1) fun d => ?_,
+      (((C.subdivide a).vertexLink none).src d).val = .inr b} => p.2.val) fun d => ?_,
     (SerreGraph.connected_iff _).2 ⟨⟨⟨.inr true, rfl⟩⟩,
       SerreGraph.preconnected_of_forall_nonempty_path _ ⟨.inr true, rfl⟩ ?_⟩, ?_⟩
-  · rcases hsrc _ (((C.subdivide a).vertexLink none).src d).2 with hd | hd
+  · rcases hsrc _ (((C.subdivide a).vertexLink none).src d).property with hd | hd
     exacts [⟨⟨true, d, hd⟩, rfl⟩, ⟨⟨false, d, hd⟩, rfl⟩]
   · rintro ⟨x, hx⟩
     rcases hsrc x hx with rfl | rfl
