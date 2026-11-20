@@ -366,16 +366,26 @@ def map (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g) (hfg : ∀ x, (g
     relativeDeRhamComplex I' W' ⟶ relativeDeRhamComplex I W :=
   (CochainComplex.mappingCone.map _ _ _ _ (deRhamRestriction_comm I W hf hg hfg))⟦(-1 : ℤ)⟧'
 
+/-- In relative coordinates the induced map acts by pullback on both components. -/
+private theorem relativeCoordinates_map_f (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
+    (hfg : ∀ x, (g x : M') = f x) (p q : ℤ) (hpq : p + -1 = q)
+    (x : (relativeDeRhamComplex I' W').X p) :
+    relativeCoordinates (deRhamRestriction I W) p q hpq ((map I W hf hg hfg).f p x) =
+      ((extendMap (deRhamComplex.map f hf) _).f p
+          (relativeCoordinates (deRhamRestriction I' W') p q hpq x).1,
+        (extendMap (deRhamComplex.map g hg) _).f q
+          (relativeCoordinates (deRhamRestriction I' W') p q hpq x).2) :=
+  -- `map` is typed between the mapping cocones, while `relativeCoordinates_map` is stated for the
+  -- shifted cone map; the two hom types agree only after unfolding `mappingCocone`.
+  relativeCoordinates_map _ _ _ _ _ p q hpq x
+
 /-- The induced map sends `inl α` to `inl (f^* α)`. -/
 @[simp]
 theorem map_inl (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
     (hfg : ∀ x, (g x : M') = f x) (k : ℕ) (α : SmoothForm I' M' ℝ k) :
     (map I W hf hg hfg).f k (inl I' W' k α) = inl I W k (SmoothForm.mpullback f hf α) := by
   apply (relativeCoordinates (deRhamRestriction I W) k (k + -1) rfl).injective
-  -- `map` is typed between the mapping cocones, while `relativeCoordinates_map` is stated for the
-  -- shifted cone map; the two hom types agree only after unfolding `mappingCocone`.
-  erw [map, relativeCoordinates_map]
-  rw [relativeCoordinates_inl, relativeCoordinates_inl]
+  rw [relativeCoordinates_map_f, relativeCoordinates_inl, relativeCoordinates_inl]
   rw [extendMap_deRhamComplexMap_f_symm_apply, map_zero]
 
 /-- The induced map sends `inr β` to `inr (g^* β)`. -/
@@ -384,10 +394,7 @@ theorem map_inr (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
     (map I W hf hg hfg).f (k + 1 : ℕ) (inr I' W' k β) =
       inr I W k (SmoothForm.mpullback g hg β) := by
   apply (relativeCoordinates (deRhamRestriction I W) (k + 1 : ℕ) k (by push_cast; lia)).injective
-  -- `map` is typed between the mapping cocones, while `relativeCoordinates_map` is stated for the
-  -- shifted cone map; the two hom types agree only after unfolding `mappingCocone`.
-  erw [map, relativeCoordinates_map]
-  rw [relativeCoordinates_inr, relativeCoordinates_inr]
+  rw [relativeCoordinates_map_f, relativeCoordinates_inr, relativeCoordinates_inr]
   rw [extendMap_deRhamComplexMap_f_symm_apply, map_zero]
 
 end Map
@@ -580,13 +587,17 @@ theorem mem_cocyclesZero_iff (α : SmoothForm I M ℝ 0) :
       SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtype_val α = 0 := by
   rw [cocyclesZero, Submodule.mem_inf, mem_closedForms_iff_mextDerivₗ_eq_zero, LinearMap.mem_ker]
 
+/-- The cochain `inl α` of a relative cocycle `α` of degree `0` is a cycle. -/
+theorem d_inl_eq_zero_of_mem_cocyclesZero {α : SmoothForm I M ℝ 0}
+    (hα : α ∈ cocyclesZero I W) :
+    (relativeDeRhamComplex I W).d (0 : ℕ) (0 + 1 : ℕ) (inl I W 0 α) = 0 := by
+  obtain ⟨h1, h2⟩ := (mem_cocyclesZero_iff I W α).mp hα
+  rw [d_inl I W 0, h1, h2, map_zero, map_zero, add_zero]
+
 /-- The class map from the relative cocycles of degree `0` to the relative cohomology. -/
 def classZero : cocyclesZero I W →ₗ[ℝ] relativeDeRhamCohomology I W (0 : ℕ) :=
   (relativeDeRhamComplex I W).moduleCatHomologyClass (Z := cocyclesZero I W) (next_natCast 0)
-    (inl I W 0 ∘ₗ (cocyclesZero I W).subtype) fun α ↦ by
-      obtain ⟨h1, h2⟩ := (mem_cocyclesZero_iff I W α.1).mp α.2
-      rw [LinearMap.comp_apply, Submodule.subtype_apply, d_inl I W 0, h1, h2, map_zero, map_zero,
-        add_zero]
+    (inl I W 0 ∘ₗ (cocyclesZero I W).subtype) fun α ↦ d_inl_eq_zero_of_mem_cocyclesZero I W α.2
 
 /-- The class of a relative cocycle `α` of degree `0` is the homology class of the cochain
 `inl α`. -/
@@ -594,9 +605,7 @@ theorem classZero_apply (α : cocyclesZero I W) :
     classZero I W α =
       (relativeDeRhamComplex I W).homologyπ (0 : ℕ)
         ((relativeDeRhamComplex I W).moduleCatCyclesMk (inl I W 0 α) (0 + 1 : ℕ) (by simp)
-          (by
-            obtain ⟨h1, h2⟩ := (mem_cocyclesZero_iff I W α.1).mp α.2
-            rw [d_inl I W 0, h1, h2, map_zero, map_zero, add_zero])) :=
+          (d_inl_eq_zero_of_mem_cocyclesZero I W α.2)) :=
   moduleCatHomologyClass_apply _ _ _ _ α
 
 /-- In degree `0` the relative de Rham cohomology is the space of smooth functions on `M` with zero
