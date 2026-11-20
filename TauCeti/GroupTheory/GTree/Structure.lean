@@ -153,7 +153,8 @@ variable (D b₀)
 
 /-- The comparison map on vertices is equivariant for the isomorphism
 `D.π₁Equiv b₀ : π₁(𝔹, b₀) ≃* G`. -/
-theorem treeMapV_smul (g : π₁ D.graphOfGroups b₀) (x : (bassSerreTree D.graphOfGroups b₀).V) :
+@[simp] theorem treeMapV_smul (g : π₁ D.graphOfGroups b₀)
+    (x : (bassSerreTree D.graphOfGroups b₀).V) :
     D.treeMapV b₀ (g • x) = D.π₁Equiv b₀ g • D.treeMapV b₀ x := by
   obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective x
   induction g using π₁.induction_on with | h γ => ?_
@@ -161,7 +162,8 @@ theorem treeMapV_smul (g : π₁ D.graphOfGroups b₀) (x : (bassSerreTree D.gra
 
 /-- The comparison map on darts is equivariant for the isomorphism
 `D.π₁Equiv b₀ : π₁(𝔹, b₀) ≃* G`. -/
-theorem treeMapE_smul (g : π₁ D.graphOfGroups b₀) (d : (bassSerreTree D.graphOfGroups b₀).E) :
+@[simp] theorem treeMapE_smul (g : π₁ D.graphOfGroups b₀)
+    (d : (bassSerreTree D.graphOfGroups b₀).E) :
     D.treeMapE b₀ (g • d) = D.π₁Equiv b₀ g • D.treeMapE b₀ d := by
   obtain ⟨_, _, p, e, rfl⟩ := bassSerreDart_surjective d
   induction g using π₁.induction_on with | h γ => ?_
