@@ -96,10 +96,8 @@ lemma rlp_monomorphisms_pre_app (i : A ⟶ X) (hi : SSet.anodyneExtensions i.rig
 no fibrancy assumption on either target and no condition on the based source. -/
 lemma rlp_monomorphisms_ihom_map (X : PointedSSet.{u}) (p : E ⟶ B)
     (hp : (monomorphisms SSet.{u}).rlp p.right) :
-    (monomorphisms SSet.{u}).rlp ((PointedSSet.ihom X).map p).right := by
-  let i : Under.mk (𝟙 (Δ[0] : SSet.{u})) ⟶ X := Under.homMk X.hom
-  have : Mono i.right := SSet.stdSimplex.isTerminalObj₀.mono_from X.hom
-  exact rlp_monomorphisms_pullbackObjObjπ_of_rlp i p hp
-    (Functor.PullbackObjObj.ofIsInitial internalHom i p Under.mkIdInitial)
+    (monomorphisms SSet.{u}).rlp ((PointedSSet.ihom X).map p).right :=
+  rlp_monomorphisms_pullbackObjObjπ_of_rlp (initial.to X) p hp
+    (Functor.PullbackObjObj.ofIsInitial internalHom (initial.to X) p initialIsInitial)
 
 end TauCeti.PointedSSet

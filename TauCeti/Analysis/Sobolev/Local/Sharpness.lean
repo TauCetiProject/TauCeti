@@ -72,18 +72,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
   {p : ENNReal} {U : Set E} {s : ℝ}
 
-/-- For `0 < p < ∞`, the norm power `x ↦ ‖x‖ ^ s` is locally `Lᵖ` on every subset of `E`
+/-- For `p < ∞`, the norm power `x ↦ ‖x‖ ^ s` is locally `Lᵖ` on every subset of `E`
 when `-(Module.finrank ℝ E : ℝ) < s * p.toReal`. -/
-theorem memLpLoc_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞)
+theorem memLpLoc_norm_rpow (hp : p ≠ ∞)
     (hs : -(Module.finrank ℝ E : ℝ) < s * p.toReal) :
-    MemLpLoc p U (fun x : E => ‖x‖ ^ s) := by
-  refine memLpLoc_iff.2 fun K _ hc => ?_
-  rw [← integrable_norm_rpow_iff (measurable_norm.pow_const s).aestronglyMeasurable hp0 hp]
-  simp only [Real.norm_eq_abs, Real.abs_rpow_of_nonneg (norm_nonneg _), abs_norm,
-    ← Real.rpow_mul (norm_nonneg _)]
-  refine (?_ : LocallyIntegrable _ volume).integrableOn_isCompact hc
-  simpa only [zero_sub, norm_neg] using
-    locallyIntegrable_norm_sub_rpow (mu := (volume : Measure E)) (s := s * p.toReal) hs (0 : E)
+    MemLpLoc p U (fun x : E => ‖x‖ ^ s) :=
+  memLpLoc_iff.2 fun _ _ hc => hc.isBounded.memLp_norm_rpow_restrict hp hs
 
 /-- For `0 < p < ∞` on a nontrivial space `E`, if `s * p.toReal ≤ -Module.finrank ℝ E` then
 `x ↦ ‖x‖ ^ s` is not locally `Lᵖ` on any neighbourhood of the origin. -/
@@ -105,7 +99,7 @@ neighbourhood `U` of the origin, `x ↦ ‖x‖ ^ s` is locally `Lᵖ` on `U` if
 theorem memLpLoc_norm_rpow_iff [Nontrivial E] (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : E)) :
     MemLpLoc p U (fun x : E => ‖x‖ ^ s) ↔ -(Module.finrank ℝ E : ℝ) < s * p.toReal :=
   ⟨fun h => not_le.1 fun hs => not_memLpLoc_norm_rpow hp0 hp hU hs h,
-    memLpLoc_norm_rpow hp0 hp⟩
+    memLpLoc_norm_rpow hp⟩
 
 /-- The inverse norm `x ↦ ‖x‖⁻¹` is locally `Lᵖ` on every subset of `E` whenever
 `p < Module.finrank ℝ E`. -/
@@ -141,7 +135,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 theorem memWkpLoc_one_norm_rpow (hp1 : 1 ≤ p) (hp : p ≠ ∞)
     (hs : -(Module.finrank ℝ E : ℝ) < (s - 1) * p.toReal) :
     MemWkpLoc p U 1 (fun x : E => ‖x‖ ^ s) := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
   have hpr : 1 ≤ p.toReal := by
     simpa using ENNReal.toReal_mono hp hp1
   have hs1 : 1 - (Module.finrank ℝ E : ℝ) < s := by
@@ -150,10 +143,10 @@ theorem memWkpLoc_one_norm_rpow (hp1 : 1 ≤ p) (hp : p ≠ ∞)
       have : s - 1 ≤ -(Module.finrank ℝ E : ℝ) := by linarith
       nlinarith
     linarith
-  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_norm_rpow hp0 hp (by linarith),
+  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_norm_rpow hp (by linarith),
     fun x => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x, hasWeakFDerivOn_norm_rpow hs1 _,
     memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hK hc => ?_)⟩
-  refine ((memLpLoc_iff.1 (memLpLoc_norm_rpow hp0 hp hs) K hK hc).const_mul |s|).of_le
+  refine ((memLpLoc_iff.1 (memLpLoc_norm_rpow hp hs) K hK hc).const_mul |s|).of_le
     (locallyIntegrable_norm_rpow_smul_innerSL hs1).aestronglyMeasurable.restrict
     (ae_of_all _ fun x => ?_)
   refine (norm_rpow_smul_innerSL_le s x).trans (le_of_eq ?_)
@@ -239,7 +232,7 @@ theorem memLpLoc_memWkpLoc_not_memLpLoc_mul_norm_rpow :
       MemWkpLoc (4 / 3) (ball (0 : ℂ) 1) 1 (fun z => ‖z‖ ^ (-2 / 5 : ℝ)) ∧
       ¬ MemLpLoc (4 / 3) (ball (0 : ℂ) 1) (fun z => ‖z‖ ^ (-6 / 5 : ℝ) * ‖z‖ ^ (-2 / 5 : ℝ)) := by
   have hp0 : (4 / 3 : ENNReal) ≠ 0 := by simp
-  refine ⟨memLpLoc_norm_rpow hp0 four_thirds_ne_top
+  refine ⟨memLpLoc_norm_rpow four_thirds_ne_top
       (by rw [Complex.finrank_real_complex, toReal_four_thirds]; norm_num),
     memWkpLoc_norm_rpow_neg_two_fifths, ?_⟩
   have hmul : (fun z : ℂ => ‖z‖ ^ (-6 / 5 : ℝ) * ‖z‖ ^ (-2 / 5 : ℝ)) =

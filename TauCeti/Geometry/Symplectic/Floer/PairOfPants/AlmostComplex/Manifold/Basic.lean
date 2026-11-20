@@ -288,7 +288,7 @@ theorem contMDiff_pairOfPantsAlmostComplex
   have hq (q : Puncture) : f y₀ ≠ q.endCenter := ne_endCenter (hS y₀) q
   simp only [pairOfPantsAlmostComplex]
   exact contMDiffAt_endWeightedAlmostComplex h₀ J hJ (hb y₀)
-    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 (hf y₀) (hq q))
+    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q (hf y₀) contMDiffAt_const (hq q))
     fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (hJp q) (hJs q) (hf y₀) (hb y₀) (hq q)
 
 end TauCeti.SmoothTwoForm.Compatible

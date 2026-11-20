@@ -77,7 +77,7 @@ theorem nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible (l : DominantWeigh
     letI := LieRingModule.compLieHom (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule
       (isRationalRep_rationalWeylRep n l).differential
     Nonempty ((weylModuleOfShape ℂ n l.detShiftShape).toSubmodule ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆
-      glIrreducible n fun i ↦ (l.1 i : ℂ)) := by
+      glIrreducible n fun i ↦ (l.val i : ℂ)) := by
   obtain ⟨v, hvl, hv0⟩ :=
     Submodule.exists_mem_ne_zero_of_ne_bot (weightSpace_rationalWeylRep_self_ne_bot ℂ l)
   exact (isRationalRep_rationalWeylRep n l).nonempty_lieModuleEquiv_glIrreducible hv0 hvl
@@ -99,7 +99,7 @@ theorem nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible {μ : YoungDiagram}
     (weightSpace_weylRepOfShape_weightOfShape_ne_bot (k := ℂ) hμ)
   have h := (isPolynomialRep_weylRepOfShape n μ).isRationalRep.nonempty_lieModuleEquiv_glIrreducible
     hv0 hvμ fun _ _ hij ↦ weylRepOfShape_apply_transvectionUnit_eq_self μ hij hvμ
-  have hμ' : (fun i : Fin n ↦ ((weightOfShape n μ).1 i : ℂ)) =
+  have hμ' : (fun i : Fin n ↦ ((weightOfShape n μ).val i : ℂ)) =
       fun i : Fin n ↦ (μ.rowLen i : ℂ) :=
     funext fun i ↦ by rw [weightOfShape_apply, Int.cast_natCast]
   rwa [hμ'] at h
@@ -117,7 +117,7 @@ theorem nonempty_lieModuleEquiv_tprod_rationalWeylRep_glIrreducible (l m : Domin
       ((isRationalRep_rationalWeylRep n l).tprod (isRationalRep_rationalWeylRep n m)).differential
     Nonempty ((weylModuleOfShape ℂ n l.detShiftShape).toSubmodule ⊗[ℂ]
         (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆
-      (glIrreducible n fun i ↦ (l.1 i : ℂ)) ⊗[ℂ] glIrreducible n fun i ↦ (m.1 i : ℂ)) := by
+      (glIrreducible n fun i ↦ (l.val i : ℂ)) ⊗[ℂ] glIrreducible n fun i ↦ (m.val i : ℂ)) := by
   obtain ⟨e₁⟩ := nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible l
   obtain ⟨e₂⟩ := nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible m
   exact ⟨(isRationalRep_rationalWeylRep n l).tprodLieModuleEquiv

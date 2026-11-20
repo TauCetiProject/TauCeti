@@ -146,7 +146,7 @@ theorem memWkpLoc_one_norm_rpow_smul [Nontrivial E] {p : ℝ≥0∞} {U : Set E}
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (hα : -1 < α)
     (hs : -(Module.finrank ℝ E : ℝ) < α * p.toReal) :
     MemWkpLoc p U 1 (fun x : E => ‖x‖ ^ α • x) := by
-  have hnorm := memLpLoc_norm_rpow (E := E) (p := p) (U := U) hp0 hp hs
+  have hnorm := memLpLoc_norm_rpow (E := E) (p := p) (U := U) hp hs
   refine memWkpLoc_one_iff.2 ⟨(continuous_norm_rpow_smul hα).continuousOn.memLpLoc,
     radialRpowDeriv α, hasWeakFDerivOn_norm_rpow_smul hα _, memLpLoc_iff.2 fun K hKU hK => ?_⟩
   refine ((memLpLoc_iff.1 hnorm K hKU hK).const_mul (1 + |α|)).of_le

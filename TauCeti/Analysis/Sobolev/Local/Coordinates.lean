@@ -19,6 +19,11 @@ criterion holds for local `Lᵖ` membership on any topological measure space
 vector-valued maps without choosing compatible representatives of their iterated weak
 derivatives, including the zero-dimensional codomain, order zero, and exponent infinity.
 
+The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
+They also show that testing one basis is equivalent to testing every basis.
+Conversely, real functions in a local Sobolev class, one for each vector of a finite basis,
+are the coordinates of a single map in that class (`Module.Basis.exists_memWkpLoc_repr_eq`).
+
 On the domain side, for any finite basis `b` of a real normed space `E` and any codomain `V`,
 a weak derivative `D : E → E →L[ℝ] V` is reconstructed from its directional components
 `x ↦ D x (b i)` via `ContinuousLinearMap.smulRightL`. Thus `Module.Basis.memWkpLoc_succ_iff_apply`
@@ -84,6 +89,18 @@ theorem memWkpLoc_iff {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
       MemWkpLoc.sum Finset.univ fun i _ =>
         (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
     simpa only [b.sum_repr] using hs
+
+/-- Real functions `v i` in `MemWkpLoc p U k`, one for each vector of a finite basis `b` of `F`,
+are the coordinates in `b` of a single function `E → F` in `MemWkpLoc p U k`. -/
+theorem exists_memWkpLoc_repr_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasureSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {p : ENNReal} {U : Set E} {k : ℕ} (b : Module.Basis ι ℝ F) {v : ι → E → ℝ}
+    (hv : ∀ i, MemWkpLoc p U k (v i)) :
+    ∃ V : E → F, MemWkpLoc p U k V ∧ ∀ i, (fun x => b.repr (V x) i) = v i := by
+  have := Fintype.ofFinite ι
+  have hrepr : ∀ i, (fun x => b.repr (b.equivFun.symm fun j => v j x) i) = v i := fun i =>
+    funext fun x => by rw [← b.equivFun_apply, b.equivFun.apply_symm_apply]
+  exact ⟨_, b.memWkpLoc_iff.2 fun i => (hrepr i).symm ▸ hv i, hrepr⟩
 
 end Codomain
 

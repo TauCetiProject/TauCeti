@@ -5,43 +5,64 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.Analysis.Normed.Ring.LogGauge.Rational
+public import TauCeti.NumberTheory.Padics.LogGauge
+public import TauCeti.RingTheory.Valuation.Spectral
 import TauCeti.Analysis.Normed.Ring.Commensurable
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Commensurable
 import TauCeti.NumberTheory.Padics.Complex.Basic
-import TauCeti.NumberTheory.Padics.LogGauge
 
 /-!
-# The rational valuation on `ℂ_p`
+# The rational and real valuations on `ℂ_p`
 
 Every nonzero norm of the algebraic closure `PadicAlgCl p` of `ℚ_[p]` is a rational power of `p`,
 because the norm of an algebraic element is a root of the norm of an element of `ℚ_[p]`. Every
 nonzero norm of its completion `ℂ_[p]` is a norm of `PadicAlgCl p`, because in an ultrametric
 field a sufficiently close approximation of a nonzero element has the same norm. So the norm of
-`ℂ_[p]` is commensurable with `p`, and `ℂ_[p]` carries the rational-valued additive valuation
-`PadicComplex.addValuation p`, normalised by `v(p) = 1` and recovering the norm through
-`‖x‖ = p ^ (-v(x))`.
+`ℂ_[p]` is commensurable with `p`, and `ℂ_[p]` carries both the rational-valued additive valuation
+`PadicComplex.addValuation p` (with values in `WithTop ℚ`) and the real-valued additive valuation
+`PadicComplex.realValuation p` (with values in `WithTop ℝ`), both normalised by `v(p) = 1` and
+recovering the norm through `‖x‖ = p ^ (-v(x))`.
 
-On `ℚ_[p]` it restricts to Mathlib's `Padic.addValuation`. Since `ℂ_[p]` is algebraically closed,
-every rational number is a value: a root `x` of `x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`.
-For example a cube root of `p` has valuation `1 / 3`.
+On `ℚ_[p]` `PadicComplex.addValuation p` restricts to Mathlib's `Padic.addValuation`.
+`PadicComplex.realValuation p` agrees with `PadicComplex.addValuation p` cast to `ℝ`, equals
+`AddValuation.ofNorm (p : ℝ) _` on `ℂ_[p]`, restricts on `ℚ_[p]` to `TauCeti.padicRealValuation p`,
+and restricts on `PadicAlgCl p` to `TauCeti.spectralAddValuation ℚ_[p] (PadicAlgCl p) p _`.
+Changing from base `p` to base `Real.exp 1` scales finite values by `Real.log p`.
+Since `ℂ_[p]` is algebraically closed, every rational number is a value: a root `x` of
+`x ^ n = p ^ m` with `n > 0` has `v(x) = m / n`. For example a cube root of `p` has valuation
+`1 / 3`. Consequently every rational power of `p` is attained as a norm on `ℂ_[p]`.
 
 ## Main definitions
 
 * `PadicComplex.pseudoUniformizer`: the multiplicative pseudo-uniformiser `p` of `ℂ_[p]`.
 * `PadicComplex.addValuation`: the additive valuation on `ℂ_[p]` with values in `WithTop ℚ`,
   normalised by `v(p) = 1`.
+* `PadicComplex.realValuation`: the real additive valuation on `ℂ_[p]` with values in `WithTop ℝ`,
+  normalised by `v(p) = 1`.
 
 ## Main results
 
 * `PadicAlgCl.isCommensurable`, `PadicComplex.isCommensurable`: the norms of `PadicAlgCl p` and
   `ℂ_[p]` are commensurable with every multiplicative pseudo-uniformiser.
-* `PadicComplex.addValuation_eq_coe_iff`: norm recovery, `v(x) = q ↔ ‖x‖ = p ^ (-q)`, and
-  `PadicComplex.eq_addValuation`: uniqueness of the rational valuation with this property.
-* `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
-* `PadicComplex.addValuation_eq_of_pow_eq_zpow`: a root of `x ^ n = p ^ m` has valuation `m / n`.
-* `PadicComplex.addValuation_surjective`: every rational number is a value.
+* `PadicComplex.addValuation_eq_coe_iff` and `PadicComplex.realValuation_eq_coe_iff`: norm
+  recovery, `v(x) = t ↔ ‖x‖ = p ^ (-t)`, together with uniqueness
+  (`PadicComplex.eq_addValuation`, `PadicComplex.eq_realValuation`).
+* `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the rational valuation is
+  `Padic.addValuation`.
+* `PadicComplex.realValuation_eq_map_addValuation`, `PadicComplex.realValuation_eq_ofNorm`,
+  `PadicComplex.realValuation_algebraMap`, and `PadicComplex.realValuation_coe`: compatibility
+  between rational, real, `ℚ_[p]`, and `PadicAlgCl p` valuations.
+* `PadicComplex.addValuation_eq_of_pow_eq_zpow`,
+  `PadicComplex.addValuation_eq_of_mem_roots_X_pow_sub_C_zpow_p`,
+  `PadicComplex.realValuation_eq_of_pow_eq_zpow`, `PadicComplex.addValuation_surjective`, and
+  `PadicComplex.exists_rat_realValuation`: values at roots of `x ^ n = p ^ m` and rationality of
+  finite values.
+* `PadicComplex.ofNorm_exp_one_eq_map_realValuation`: base change from `p` to `Real.exp 1` scales
+  values by `Real.log p`.
+* `PadicComplex.exists_norm_eq_rpow`: every rational power of `p` is attained as a norm on `ℂ_[p]`.
 
 ## References
 
@@ -54,6 +75,7 @@ For example a cube root of `p` has valuation `1 / 3`.
 public section
 
 open TauCeti.NormedRing
+open scoped Polynomial
 
 variable (p : ℕ) [Fact p.Prime]
 
@@ -146,6 +168,16 @@ theorem addValuation_eq_of_pow_eq_zpow {x : ℂ_[p]} {m : ℤ} {n : ℕ} (hn : 0
   exact PseudoUniformizer.ratAddValuation_eq_of_norm_pow_eq _ hn <| by
     rw [← norm_pow, h, norm_zpow, coe_unit_pseudoUniformizer]
 
+/-- Every root `α` in `ℂ_[p]` of `X ^ n - C (p ^ m)` (`n > 0`, `m : ℤ`) has rational valuation
+`m / n`. -/
+theorem addValuation_eq_of_mem_roots_X_pow_sub_C_zpow_p {α : ℂ_[p]} {m : ℤ} {n : ℕ} (hn : 0 < n)
+    (hα : α ∈ ((Polynomial.X : ℂ_[p][X]) ^ n - Polynomial.C ((p : ℂ_[p]) ^ m)).roots) :
+    addValuation p α = ((m / n : ℚ) : WithTop ℚ) := by
+  have hroot := Polynomial.isRoot_of_mem_roots hα
+  rw [Polynomial.IsRoot.def, Polynomial.eval_sub, Polynomial.eval_pow, Polynomial.eval_X,
+    Polynomial.eval_C, sub_eq_zero] at hroot
+  exact addValuation_eq_of_pow_eq_zpow hn hroot
+
 /-- **The value group is `ℚ`**: every element of `WithTop ℚ` is a value of the valuation. -/
 theorem addValuation_surjective : Function.Surjective (addValuation p) := by
   intro v
@@ -155,4 +187,136 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq ((p : ℂ_[p]) ^ q.num) q.pos
     exact ⟨x, by rw [addValuation_eq_of_pow_eq_zpow q.pos hx, Rat.num_div_den]⟩
 
+/-- Every rational power of `p` is attained as a norm on `ℂ_[p]`. -/
+theorem exists_norm_eq_rpow (q : ℚ) : ∃ x : ℂ_[p], ‖x‖ = (p : ℝ) ^ (q : ℝ) := by
+  obtain ⟨x, hx⟩ := addValuation_surjective (p := p) (-q : ℚ)
+  exact ⟨x, by simpa using addValuation_eq_coe_iff.mp hx⟩
+
+variable (p) in
+/-- The real additive valuation on `ℂ_[p]` with values in `WithTop ℝ`, normalised by `v(p) = 1`.
+It agrees with `PadicComplex.addValuation p` cast to `ℝ` and recovers the norm through
+`‖x‖ = p ^ (-v(x))`. -/
+noncomputable def realValuation : AddValuation ℂ_[p] (WithTop ℝ) :=
+  (pseudoUniformizer p).addValuation
+
+variable (p) in
+/-- `PadicComplex.realValuation p` is the real additive valuation of the pseudo-uniformiser `p`. -/
+theorem realValuation_def : realValuation p = (pseudoUniformizer p).addValuation :=
+  (rfl)
+
+/-- **Norm recovery**: `realValuation p x = t` if and only if `‖x‖ = p ^ (-t)`. -/
+theorem realValuation_eq_coe_iff {x : ℂ_[p]} {t : ℝ} :
+    realValuation p x = t ↔ ‖x‖ = (p : ℝ) ^ (-t) := by
+  rw [realValuation_def, PseudoUniformizer.addValuation_apply,
+    PseudoUniformizer.logGauge_eq_coe_iff, norm_unit_pseudoUniformizer_rpow]
+
+/-- Every nonzero `x : ℂ_[p]` has norm `p ^ (-(realValuation p x).untop₀)`. -/
+theorem norm_eq_rpow_neg_realValuation {x : ℂ_[p]} (hx : x ≠ 0) :
+    ‖x‖ = (p : ℝ) ^ (-(realValuation p x).untop₀) :=
+  realValuation_eq_coe_iff.1
+    (WithTop.coe_untop₀_of_ne_top ((realValuation p).ne_top_iff.2 hx)).symm
+
+/-- `PadicComplex.realValuation p` equals `AddValuation.ofNorm` at base `p`. -/
+theorem realValuation_eq_ofNorm :
+    realValuation p = AddValuation.ofNorm (p : ℝ) (Nat.one_lt_cast.2 (Fact.out : p.Prime).one_lt) :=
+  AddValuation.eq_ofNorm_of_norm_eq_rpow (realValuation p) _ fun _ ↦
+    norm_eq_rpow_neg_realValuation
+
+/-- **Uniqueness**: any real additive valuation on `ℂ_[p]` recovering the norm at base `p` equals
+`PadicComplex.realValuation p`. -/
+theorem eq_realValuation {w : AddValuation ℂ_[p] (WithTop ℝ)}
+    (hw : ∀ x ≠ 0, ‖x‖ = (p : ℝ) ^ (-(w x).untop₀)) : w = realValuation p :=
+  (realValuation p).eq_of_norm_eq_rpow w (Nat.one_lt_cast.2 (Fact.out : p.Prime).one_lt)
+    (fun _ ↦ norm_eq_rpow_neg_realValuation) hw
+
+/-- `PadicComplex.realValuation p` agrees with `PadicComplex.addValuation p` after casting rational
+values to `ℝ`. -/
+theorem realValuation_eq_map_addValuation (x : ℂ_[p]) :
+    realValuation p x = (addValuation p x).map ((↑) : ℚ → ℝ) := by
+  rw [realValuation_def, addValuation_def, PseudoUniformizer.addValuation_apply,
+    PseudoUniformizer.map_ratAddValuation]
+
+/-- `WithTop.untop₀` of `PadicComplex.realValuation p` is the real cast of
+`(PadicComplex.addValuation p x).untop₀` for every `x`, including `0`. -/
+@[simp]
+theorem untop₀_realValuation (x : ℂ_[p]) :
+    (realValuation p x).untop₀ = ((addValuation p x).untop₀ : ℝ) := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  have htop : addValuation p x ≠ ⊤ := (addValuation p).ne_top_iff.2 hx
+  rw [realValuation_eq_map_addValuation, ← WithTop.coe_untop₀_of_ne_top htop,
+    WithTop.map_coe, WithTop.untop₀_coe, WithTop.untop₀_coe]
+
+/-- `PadicComplex.realValuation p` reverses the order of the norm. -/
+theorem realValuation_le_realValuation_iff {x y : ℂ_[p]} :
+    realValuation p x ≤ realValuation p y ↔ ‖y‖ ≤ ‖x‖ := by
+  simp only [realValuation_def, PseudoUniformizer.addValuation_apply,
+    PseudoUniformizer.logGauge_le_logGauge_iff]
+
+/-- `realValuation p x` is at least `t` if and only if `‖x‖ ≤ p ^ (-t)`. -/
+theorem coe_le_realValuation_iff {x : ℂ_[p]} {t : ℝ} :
+    (t : WithTop ℝ) ≤ realValuation p x ↔ ‖x‖ ≤ (p : ℝ) ^ (-t) := by
+  rw [realValuation_def, PseudoUniformizer.addValuation_apply,
+    PseudoUniformizer.coe_le_logGauge_iff, norm_unit_pseudoUniformizer_rpow]
+
+/-- `realValuation p x` exceeds `t` if and only if `‖x‖ < p ^ (-t)`. -/
+theorem coe_lt_realValuation_iff {x : ℂ_[p]} {t : ℝ} :
+    (t : WithTop ℝ) < realValuation p x ↔ ‖x‖ < (p : ℝ) ^ (-t) := by
+  rw [realValuation_def, PseudoUniformizer.addValuation_apply,
+    PseudoUniformizer.coe_lt_logGauge_iff, norm_unit_pseudoUniformizer_rpow]
+
+/-- The real valuation of `p` in `ℂ_[p]` is `1`. -/
+@[simp]
+theorem realValuation_p : realValuation p (p : ℂ_[p]) = 1 := by
+  rw [realValuation_eq_map_addValuation, addValuation_p, ← WithTop.coe_one, WithTop.map_coe,
+    Rat.cast_one, WithTop.coe_one]
+
+/-- On `ℚ_[p]`, `PadicComplex.realValuation p` restricts to `TauCeti.padicRealValuation p`. -/
+@[simp]
+theorem realValuation_algebraMap (x : ℚ_[p]) :
+    realValuation p (algebraMap ℚ_[p] ℂ_[p] x) = TauCeti.padicRealValuation p x := by
+  rw [realValuation_eq_map_addValuation, addValuation_algebraMap,
+    TauCeti.padicRealValuation_eq_map, WithTop.map_map]
+  simp only [Function.comp_def, Rat.cast_intCast]
+
+/-- Pulling `PadicComplex.realValuation p` back to `ℚ_[p]` gives `TauCeti.padicRealValuation p`. -/
+@[simp]
+theorem comap_realValuation :
+    (realValuation p).comap (algebraMap ℚ_[p] ℂ_[p]) = TauCeti.padicRealValuation p :=
+  AddValuation.ext realValuation_algebraMap
+
+/-- On the algebraic closure `PadicAlgCl p`, `PadicComplex.realValuation p` agrees with the
+canonical spectral additive valuation `TauCeti.spectralAddValuation` at base `p`. -/
+theorem realValuation_coe (x : PadicAlgCl p) :
+    realValuation p (x : ℂ_[p]) =
+      TauCeti.spectralAddValuation ℚ_[p] (PadicAlgCl p) (p : ℝ)
+        (Nat.one_lt_cast.2 (Fact.out : p.Prime).one_lt) x := by
+  rw [realValuation_eq_ofNorm, TauCeti.spectralAddValuation_eq_ofNorm]
+  exact AddValuation.ofNorm_eq_of_norm_eq _ (norm_extends p x)
+
+/-- Every nonzero element of `ℂ_[p]` has rational real valuation. -/
+theorem exists_rat_realValuation {x : ℂ_[p]} (hx : x ≠ 0) :
+    ∃ q : ℚ, realValuation p x = ((q : ℝ) : WithTop ℝ) := by
+  obtain ⟨q, hq⟩ := WithTop.ne_top_iff_exists.1 ((addValuation p).ne_top_iff.2 hx)
+  exact ⟨q, by rw [realValuation_eq_map_addValuation, ← hq, WithTop.map_coe]⟩
+
+/-- If `x ^ n = p ^ m` in `ℂ_[p]` with `n > 0`, then `realValuation p x = m / n`. -/
+theorem realValuation_eq_of_pow_eq_zpow {x : ℂ_[p]} {m : ℤ} {n : ℕ} (hn : 0 < n)
+    (h : x ^ n = (p : ℂ_[p]) ^ m) : realValuation p x = ((m / n : ℝ) : WithTop ℝ) := by
+  rw [realValuation_eq_map_addValuation, addValuation_eq_of_pow_eq_zpow hn h, WithTop.map_coe,
+    WithTop.coe_eq_coe]
+  push_cast
+  ring
+
+/-- Changing from base `p` (`PadicComplex.realValuation p`) to base `Real.exp 1`
+(`-Real.log ‖x‖`) multiplies finite valuation values by `Real.log p`. -/
+theorem ofNorm_exp_one_eq_map_realValuation (x : ℂ_[p]) :
+    AddValuation.ofNorm (Real.exp 1) (Real.one_lt_exp_iff.2 zero_lt_one) x =
+      (realValuation p x).map (Real.log p * ·) := by
+  have hp : (1 : ℝ) < p := Nat.one_lt_cast.2 (Fact.out : p.Prime).one_lt
+  rw [realValuation_eq_ofNorm,
+    AddValuation.ofNorm_eq_map_ofNorm hp (Real.one_lt_exp_iff.2 zero_lt_one)]
+  simp [Real.log_exp]
+
 end PadicComplex
+

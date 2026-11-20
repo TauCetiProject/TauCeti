@@ -73,7 +73,7 @@ variable {p : ℕ} [Fact p.Prime]
 -- A non-Tate source can have an adic inclusion into a Tate field.
 example : IsAdicHom (PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]) := by
   apply IsAdicHom.of_continuous_isOpen_map
-  · exact continuous_subtype_val
+  · exact continuous_subtypeVal
   · intro I hI
     have hI0 : I ≠ ⊥ := IsDiscreteValuationRing.isOpen_iff.mp hI
     have hmap : I.map PadicInt.Coe.ringHom ≠ ⊥ :=
