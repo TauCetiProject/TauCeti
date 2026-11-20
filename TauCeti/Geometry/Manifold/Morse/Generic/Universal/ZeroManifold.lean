@@ -192,7 +192,7 @@ theorem exists_isManifold_sectionZero_universalDifferential (hk : 2 ≤ k) :
 
 omit [T2Space M] in
 include hK in
-/-- **The projection of the universal zero manifold is the parameter projection.** For `k ≥ 2`,
+/-- **The projection of the universal zero manifold is the parameter projection.** For `k ≥ 1`,
 let the universal zero set `{(x, f) | df_x = 0}` carry a charted-space structure modelled on
 `C^k(M, ℝ)`, and let `(x, f)` be a point at which the derivative of its inclusion into
 `M × C^k(M, ℝ)` is injective with range the kernel of the universal linearization, as holds at every
@@ -200,7 +200,7 @@ point for the manifold structure of `TauCeti.exists_isManifold_sectionZero_unive
 Then the derivative at `(x, f)` of the projection `(x, f) ↦ f` is the parameter projection of
 `(v, h) ↦ Hess_x f (v) + dh_x`, composed with a continuous linear isomorphism of the model onto
 the kernel of that map. -/
-theorem exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential (hk : 2 ≤ k) :
+theorem exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential (hk : 1 ≤ k) :
     letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
     letI := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
     ∀ (cs : ChartedSpace C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯
@@ -212,15 +212,15 @@ theorem exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential (hk : 2 �
         (mfderiv 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
             Subtype.val z).range =
           ((criticalHessian 𝓘(ℝ, E) z.1.2 z.1.1).coprod
-            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast one_le_two.trans hk)
+            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast hk)
               z.1.1)).ker →
         ∃ T : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ ≃L[ℝ] ((criticalHessian 𝓘(ℝ, E) z.1.2 z.1.1).coprod
-            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast one_le_two.trans hk)
+            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast hk)
               z.1.1)).ker,
           mfderiv 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
             (fun z ↦ z.1.2) z =
             ContinuousLinearMap.parameterProj (criticalHessian 𝓘(ℝ, E) z.1.2 z.1.1)
-              (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast one_le_two.trans hk)
+              (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast hk)
                 z.1.1) ∘L (T : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ →L[ℝ] _) := by
   let := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
   let := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
@@ -228,7 +228,7 @@ theorem exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential (hk : 2 �
   intro cs z hinj hrange
   set L : E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ →L[ℝ] E →L[ℝ] ℝ :=
     (criticalHessian 𝓘(ℝ, E) z.1.2 z.1.1).coprod
-      (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast one_le_two.trans hk) z.1.1)
+      (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast hk) z.1.1)
   set D : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ →L[ℝ] E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯ :=
     mfderiv 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) Subtype.val z
   -- The derivative `D` of the inclusion is injective with closed range `ker L`, so it is an
@@ -269,7 +269,7 @@ include hK in
 zero set where its inclusion has injective derivative with range the kernel of the universal
 linearization, as in `TauCeti.exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential`, the
 derivative of the projection `(x, f) ↦ f` is a Fredholm operator. -/
-theorem isFredholm_mfderiv_snd_universalDifferential (hk : 2 ≤ k) :
+theorem isFredholm_mfderiv_snd_universalDifferential (hk : 1 ≤ k) :
     letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
     letI := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
     ∀ (cs : ChartedSpace C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯
@@ -281,7 +281,7 @@ theorem isFredholm_mfderiv_snd_universalDifferential (hk : 2 ≤ k) :
         (mfderiv 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
             Subtype.val z).range =
           ((criticalHessian 𝓘(ℝ, E) z.1.2 z.1.1).coprod
-            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast one_le_two.trans hk)
+            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast hk)
               z.1.1)).ker →
         (mfderiv 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
           (fun z ↦ z.1.2) z).IsFredholm := by
@@ -302,7 +302,7 @@ universal zero set where its inclusion has injective derivative with range the k
 universal linearization, as in
 `TauCeti.exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential`, the derivative of the
 projection `(x, f) ↦ f` has Fredholm index zero. -/
-theorem index_mfderiv_snd_universalDifferential (hk : 2 ≤ k) :
+theorem index_mfderiv_snd_universalDifferential (hk : 1 ≤ k) :
     letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
     letI := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
     ∀ (cs : ChartedSpace C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯
@@ -314,7 +314,7 @@ theorem index_mfderiv_snd_universalDifferential (hk : 2 ≤ k) :
         (mfderiv 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
             Subtype.val z).range =
           ((criticalHessian 𝓘(ℝ, E) z.1.2 z.1.1).coprod
-            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast one_le_two.trans hk)
+            (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast hk)
               z.1.1)).ker →
         ContinuousLinearMap.index
           (mfderiv 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
@@ -358,7 +358,8 @@ theorem surjective_mfderiv_snd_universalDifferential_iff (hk : 2 ≤ k) :
   let := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
   intro cs z hinj hrange
   obtain ⟨T, hT⟩ :=
-    exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential k hK hk cs z hinj hrange
+    exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential k hK (one_le_two.trans hk) cs z
+      hinj hrange
   rw [hT]
   exact (Surjective.of_comp_iff _ T.surjective).trans
     (surjective_parameterProj_criticalHessian_mvfderivCLM_iff (n := k) (by exact_mod_cast hk)
