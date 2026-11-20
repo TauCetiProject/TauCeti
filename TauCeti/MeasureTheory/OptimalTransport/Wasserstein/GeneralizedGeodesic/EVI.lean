@@ -35,6 +35,9 @@ interpolants converge uniformly to `u` on compact time intervals as the time ste
   `μ₀` with `φ μ₀ ≠ ⊤` and `φ μ₀ ≠ ⊥` starts an `EVI_λ` gradient flow `u` with `u 0 = μ₀`, and all
   JKO schemes eventually starting at `μ₀` with positive step sizes `τ j → 0` converge uniformly to
   `u` on `[0, T]` (Ambrosio–Gigli–Savaré, Theorems 4.0.4 and 11.2.1; Ambrosio–Gigli, Theorem 3.25).
+* `TauCeti.exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent`: extension of JKO
+  convergence to sequences whose initial laws converge to `μ₀` in `W₂` with uniformly bounded
+  initial energy.
 * `TauCeti.exists_isEVISolution_of_mem_closure_of_generalizedGeodesicallyConvex`: when `φ` never
   takes `⊥`, an `EVI_λ` gradient flow starts from every `μ₀ ∈ closure {μ | φ μ ≠ ⊤}`.
 * `TauCeti.eviDomain_eq_closure_of_generalizedGeodesicallyConvex`: when `φ` never takes `⊥`,
@@ -96,6 +99,47 @@ theorem exists_isEVISolution_tendstoUniformlyOn_of_generalizedGeodesicallyConvex
     (fun τ hτ hττ₀ ↦ penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ (hpos hττ₀.le).le)
     ((hconv μ₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt μ₀) hμ₀ hμ₀bot (hpos le_rfl) μ₀)
     hμ₀
+
+/-- **Convergence of the Jordan–Kinderlehrer–Otto scheme with converging initial laws**
+(Ambrosio–Gigli–Savaré, Theorem 4.0.4; Ambrosio–Gigli, Theorem 3.25). Under the hypotheses of
+`TauCeti.exists_isEVISolution_tendstoUniformlyOn_of_generalizedGeodesicallyConvex`, for every `μ₀`
+of finite energy (`φ μ₀ ≠ ⊤` and `φ μ₀ ≠ ⊥`), there starts from `μ₀` an `EVI_λ` flow `u`
+(`u 0 = μ₀`) such that for all positive step sizes `τ j → 0` and all JKO sequences `J j` whose
+initial laws converge to `μ₀` in `W₂` with uniformly bounded initial energy, the piecewise constant
+interpolants `t ↦ J j ⌈t / τ j⌉₊` converge uniformly to `u` on `[0, T]` for every `T : ℝ`. -/
+theorem exists_isEVISolution_tendstoUniformlyOn_moreauYosidaResolvent
+    (hφ : LowerSemicontinuous φ) (hconv : ∀ ν, GeneralizedGeodesicallyConvex lam φ ν)
+    {μ₀ : WassersteinSpace 2 E} (hμ₀ : φ μ₀ ≠ ⊤) (hμ₀bot : φ μ₀ ≠ ⊥) :
+    ∃ u : ℝ → WassersteinSpace 2 E, u 0 = μ₀ ∧ IsEVISolution lam φ u ∧
+      ∀ (τ : ℕ → ℝ≥0) (J : ℕ → ℕ → WassersteinSpace 2 E), (∀ᶠ j in atTop, 0 < τ j) →
+        Tendsto τ atTop (𝓝 0) → Tendsto (fun j ↦ J j 0) atTop (𝓝 μ₀) →
+        (∃ S : ℝ, ∀ᶠ j in atTop, φ (J j 0) ≤ S) →
+        (∀ᶠ j in atTop, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
+        ∀ T : ℝ, TendstoUniformlyOn
+          (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
+  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
+  have hr₀ : 0 < r₀ := by positivity
+  set τ₀ : ℝ≥0 := r₀.toNNReal
+  have hτ₀ : 0 < τ₀ := Real.toNNReal_pos.2 hr₀
+  have hpos : ∀ {δ : ℝ≥0}, δ ≤ τ₀ → 0 < 1 + lam * (δ : ℝ) := fun {δ} hδ ↦ by
+    have hδr : (δ : ℝ) ≤ r₀ :=
+      (NNReal.coe_le_coe.2 hδ).trans_eq (Real.coe_toNNReal r₀ hr₀.le)
+    have habs : |lam * (δ : ℝ)| ≤ 1 / 2 := by
+      rw [abs_mul, abs_of_nonneg (NNReal.coe_nonneg δ)]
+      calc |lam| * (δ : ℝ) ≤ (|lam| + 1) * r₀ :=
+            mul_le_mul (by linarith) hδr (NNReal.coe_nonneg _) (by positivity)
+        _ = 1 / 2 := by dsimp [r₀]; field_simp
+    linarith [(abs_le.1 habs).1]
+  have h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥ :=
+    (hconv μ₀).moreauYosida_ne_bot (hφ.lowerSemicontinuousAt μ₀) hμ₀ hμ₀bot (hpos le_rfl) μ₀
+  have hpen : ∀ᶠ τ in 𝓝[>] (0 : ℝ≥0), PenalizedConvex lam τ φ := by
+    filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds hτ₀), self_mem_nhdsWithin] with
+      τ (hττ₀ : τ < τ₀) (hτ0 : 0 < τ)
+    exact penalizedConvex_of_generalizedGeodesicallyConvex hconv hτ0 (hpos hττ₀.le).le
+  obtain ⟨u, hu0, hu, _⟩ :=
+    exists_isEVISolution_tendstoUniformlyOn_of_generalizedGeodesicallyConvex hφ hconv hμ₀ hμ₀bot
+  exact ⟨u, hu0, hu, fun τ J hτ hτ0 hJ0 ⟨_, hS⟩ hJ T ↦
+    hu.tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ h₀ hpen hτ hτ0 (hu0.symm ▸ hJ0) hS hJ T⟩
 
 /-- **Characterization of the Wasserstein `EVI_λ` domain** (Ambrosio–Gigli–Savaré, Theorems 4.0.4
 and 11.2.1). For an energy `φ` on `P₂(E)` that is lower semicontinuous, `lam`-convex along

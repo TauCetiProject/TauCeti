@@ -11,6 +11,7 @@ public import TauCeti.Analysis.GradientFlow.MinimizingMovement
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Convex
 import Mathlib.Analysis.Convex.SpecificFunctions.Pow
 import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Analysis.GradientFlow.MoreauYosida.ErrorEstimate
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Topology.MetricSpace.Pseudo.Basic
@@ -61,7 +62,14 @@ one-step variational inequalities of two schemes with time steps `τ` and `σ` a
 discrete heat-equation barrier (Crandall–Liggett, Kobayashi) bounds the squared distance of their
 interpolants on `[0, T]` by a multiple of `√(τ + σ)`. Hence `t ↦ J ⌈t / τ⌉₊` converges uniformly on
 `[0, T]` as `τ → 0` to an `EVI_m` solution starting at `x₀`
-(`TauCeti.exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex`).
+(`TauCeti.exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex`). Passing `η → 0` in the
+sharp bilinear-interpolation estimate `TauCeti.dist_ceil_sq_le_of_penalizedConvex` (from
+`TauCeti.Analysis.GradientFlow.MoreauYosida.ErrorEstimate`) yields the quantitative `O(√τ)` error
+bound `TauCeti.IsEVISolution.dist_ceil_sq_le_of_penalizedConvex` against any `EVI_m` solution, which
+extends uniform convergence to minimizing movements with converging initial points and uniformly
+bounded initial energy (`TauCeti.IsEVISolution.tendstoUniformlyOn_of_penalizedConvex`) and
+identifies generalized minimizing movements with respect to general auxiliary convergences
+(`TauCeti.IsGeneralizedMinimizingMovement.isEVISolution_of_penalizedConvex`).
 
 Since `TauCeti.eviDomain m φ` is closed on a complete space (`TauCeti.isClosed_eviDomain`),
 existence on `{x | φ x ≠ ⊤}` extends to every `x₀ ∈ closure {x | φ x ≠ ⊤}`
@@ -70,7 +78,8 @@ existence on `{x | φ x ≠ ⊤}` extends to every `x₀ ∈ closure {x | φ x �
 `TauCeti.eviDomain m φ = closure {x | φ x ≠ ⊤}`
 (`TauCeti.eviDomain_eq_closure_of_penalizedConvex`). On a complete CAT(0) pseudometric space,
 `m`-geodesically convex lower semicontinuous energies that never take the value `⊥` satisfy both
-hypotheses automatically whenever the effective domain is nonempty.
+hypotheses automatically whenever the effective domain is nonempty; more generally, this holds
+under Ambrosio–Gigli's curve-convexity Assumption 3.24.
 
 ## Main results
 
@@ -86,10 +95,19 @@ hypotheses automatically whenever the effective domain is nonempty.
 * `TauCeti.exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex`: existence of the `EVI_m`
   solution and uniform convergence on compact time intervals of minimizing movement interpolants
   as `τ → 0`, on a complete space (Ambrosio–Gigli–Savaré, Theorem 4.0.4).
+* `TauCeti.IsEVISolution.dist_ceil_sq_le_of_penalizedConvex`,
+  `TauCeti.IsEVISolution.tendstoUniformlyOn_of_penalizedConvex`, and
+  `TauCeti.IsGeneralizedMinimizingMovement.isEVISolution_of_penalizedConvex`: quantitative `O(√τ)`
+  error bound against an `EVI_m` solution, uniform convergence from converging initial data with
+  uniformly bounded energy, and `EVI_m` identification of generalized minimizing movements for
+  general auxiliary convergences.
 * `TauCeti.exists_isEVISolution_of_mem_closure_of_penalizedConvex` and
   `TauCeti.eviDomain_eq_closure_of_penalizedConvex`: existence on `closure {x | φ x ≠ ⊤}` and
   `TauCeti.eviDomain m φ = closure {x | φ x ≠ ⊤}` under penalized convexity
   (Ambrosio–Gigli–Savaré, Theorem 4.0.4).
+* `TauCeti.exists_isEVISolution_tendstoUniformlyOn_of_convexAlong_and_convexAlong_dist_sq` and
+  `TauCeti.eviDomain_eq_closure_of_convexAlong_and_convexAlong_dist_sq`: generation of `EVI_λ`
+  flows under Ambrosio–Gigli Assumption 3.24 and Theorem 3.25.
 * `TauCeti.GeodesicallyConvex.exists_isEVISolution_tendstoUniformlyOn`,
   `TauCeti.GeodesicallyConvex.exists_isEVISolution_of_mem_closure`, and
   `TauCeti.GeodesicallyConvex.eviDomain_eq_closure`: CAT(0) corollaries (Jost; Mayer, Theorem 1.13).
@@ -98,7 +116,7 @@ hypotheses automatically whenever the effective domain is nonempty.
 
 * L. Ambrosio, N. Gigli, G. Savaré, *Gradient Flows in Metric Spaces and in the Space of
   Probability Measures*, 2nd ed., Birkhäuser 2008, Chapter 4 (Assumption 4.0.1, Theorems 4.0.4
-  and 4.1.2, Section 4.2).
+  and 4.1.2, Section 4.1, and Section 4.2).
 * L. Ambrosio, N. Gigli, *A user's guide to optimal transport*, in *Modelling and Optimisation of
   Flows on Networks*, Lecture Notes in Math. 2062, Springer 2013, Section 3.3 (Assumption 3.24 and
   Theorem 3.25).
@@ -598,8 +616,8 @@ Ambrosio–Gigli–Savaré, Section 4.2). For minimizing movement sequences `U`,
 started at `x₀` with `φ x₀ = E` and `φ_{τ'}(x₀) = A`, when `4 τ ≤ τ'`, `4 σ ≤ τ'`,
 `|m| τ ≤ 1 / 4`, `|m| σ ≤ 1 / 4`, and `t ∈ [0, T]`, we have
 `dist (U ⌈t / τ⌉₊) (V ⌈t / σ⌉₊) ^ 2 ≤ cauchyK m T τ' A E * √(τ + σ)`. -/
-private theorem dist_ceil_sq_le_of_penalizedConvex {τ σ τ' : ℝ≥0} {x₀ : X} {T A E : ℝ}
-    (hPenτ : PenalizedConvex m τ φ) (hPenσ : PenalizedConvex m σ φ)
+private theorem dist_ceil_sq_le_of_penalizedConvex_crandallLiggett {τ σ τ' : ℝ≥0} {x₀ : X}
+    {T A E : ℝ} (hPenτ : PenalizedConvex m τ φ) (hPenσ : PenalizedConvex m σ φ)
     (hτ : 0 < τ) (hσ : 0 < σ) (hττ' : 4 * τ ≤ τ') (hστ' : 4 * σ ≤ τ')
     (hmτ : |m| * τ ≤ 1 / 4) (hmσ : |m| * σ ≤ 1 / 4)
     (hA : moreauYosida φ τ' x₀ = A) (hE : φ x₀ = E) (hT : 0 ≤ T)
@@ -758,7 +776,7 @@ theorem exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex [CompleteSpac
     have hστ₁ : σ < τ₁ := (NNReal.coe_le_coe.1 (h4_le hστ')).trans_lt hτ'τ₁
     have hmτ := (mul_le_mul_of_nonneg_left (h4_le hττ') (abs_nonneg _)).trans hlamτ'
     have hmσ := (mul_le_mul_of_nonneg_left (h4_le hστ') (abs_nonneg _)).trans hlamτ'
-    exact dist_ceil_sq_le_of_penalizedConvex (hconv τ hτ hττ₁) (hconv σ hσ hστ₁)
+    exact dist_ceil_sq_le_of_penalizedConvex_crandallLiggett (hconv τ hτ hττ₁) (hconv σ hσ hστ₁)
       hτ hσ hττ' hστ' hmτ hmσ hA hE hT hU0 hV0 hU hV ht.1 ht.2
   -- Step 2: Construct a reference minimizing movement family `Jc` at step sizes `τ' / 4 / (j + 1)`
   -- and pass to its uniform limit `u` by completeness.
@@ -912,5 +930,312 @@ theorem GeodesicallyConvex.exists_isEVISolution_of_mem_closure
 
 end GeodesicallyConvex
 
+section QuantitativeErrorAndCurveConvexity
+
+/-- Extracts real energy values and bounds the energy drop `e 0 - e (⌊t / τ⌋₊ + 1)` along a
+minimizing movement sequence satisfying a priori lower and upper energy bounds. -/
+private theorem exists_toReal_apply_and_sub_le {X : Type*} [PseudoMetricSpace X] {φ : X → EReal}
+    {τ₀ τ : ℝ≥0} (hτ : 0 < τ) (hτ_lt : τ < τ₀) {x₁ : X} (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    {U : ℕ → X} (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
+    {S L T t : ℝ} (hS : φ (U 0) ≤ S) (ht : t ∈ Icc 0 T)
+    (hL : ∀ n ≤ ⌈(T + 1) / (τ : ℝ)⌉₊, (L : EReal) ≤ φ (U n)) :
+    ∃ e : ℕ → ℝ, (∀ n, φ (U n) = e n) ∧
+      0 ≤ e 0 - e (⌊t / τ⌋₊ + 1) ∧ e 0 - e (⌊t / τ⌋₊ + 1) ≤ max 0 (S - L) := by
+  have he (n : ℕ) : φ (U n) = ((φ (U n)).toReal : EReal) := (EReal.coe_toReal
+    (ne_top_of_le_ne_top (EReal.coe_ne_top S)
+      ((antitone_comp_of_forall_mem_moreauYosidaResolvent hU (Nat.zero_le n)).trans hS))
+    (ne_bot_of_le_ne_bot (moreauYosida_ne_bot_of_lt hτ_lt (edist_ne_top (U n) x₁) h₀)
+      (moreauYosida_le_self φ τ (U n)))).symm
+  have hn : ⌊t / (τ : ℝ)⌋₊ + 1 ≤ ⌈(T + 1) / τ⌉₊ := Nat.add_one_le_iff.2 (Nat.lt_ceil.2 <|
+    (Nat.floor_le (div_nonneg ht.1 (NNReal.coe_nonneg τ))).trans_lt
+      ((div_lt_div_iff_of_pos_right (NNReal.coe_pos.2 hτ)).2 (by linarith [ht.2])))
+  have ha0 : 0 ≤ (φ (U 0)).toReal - (φ (U (⌊t / τ⌋₊ + 1))).toReal := sub_nonneg.2
+    (EReal.coe_le_coe_iff.1 (he 0 ▸ he _ ▸
+      antitone_comp_of_forall_mem_moreauYosidaResolvent hU (Nat.zero_le _)))
+  exact ⟨fun n ↦ (φ (U n)).toReal, he, ha0,
+    (sub_le_sub (EReal.coe_le_coe_iff.1 (he 0 ▸ hS))
+      (EReal.coe_le_coe_iff.1 (he _ ▸ hL _ hn))).trans (le_max_right _ _)⟩
+
+/-- `η → 0` limit of `TauCeti.dist_ceil_sq_le_of_penalizedConvex` against an `EVI_lam` solution
+`u` whose initial point has finite energy `φ (u 0) ≠ ⊤`. -/
+private theorem dist_ceil_sq_le_of_isEVISolution_of_apply_ne_top {X : Type*}
+    [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {τ₀ τ : ℝ≥0} {φ : X → EReal}
+    {u : ℝ → X} (hu : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ)
+    (hτ₀ : 0 < τ₀) {x₁ : X} (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (hconv : ∀ᶠ η in 𝓝[>] (0 : ℝ≥0), PenalizedConvex lam η φ) (hu0 : φ (u 0) ≠ ⊤)
+    (hτc : PenalizedConvex lam τ φ) (hτ : 0 < τ) (hmτ : |lam| * τ ≤ 1 / 2)
+    {U : ℕ → X} (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
+    {eU : ℕ → ℝ} (heU : ∀ n, φ (U n) = eU n) {t : ℝ} (ht : 0 ≤ t) :
+    dist (U ⌈t / τ⌉₊) (u t) ^ 2 ≤
+      2 * exp (max 0 (-2 * lam + 2 * lam ^ 2 * τ) * t) * dist (U 0) (u 0) ^ 2 +
+        (2 * exp (max 0 (-2 * lam + 2 * lam ^ 2 * τ) * t) + 8) *
+          (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1))) := by
+  obtain ⟨δ, hδ, hconv_ball⟩ := Metric.mem_nhdsWithin_iff.1 hconv
+  set τ₁ : ℝ≥0 := δ.toNNReal
+  have hτ₁ : 0 < τ₁ := Real.toNNReal_pos.2 hδ
+  have hconv_lt : ∀ η : ℝ≥0, 0 < η → η < τ₁ → PenalizedConvex lam η φ := fun η hη0 hη1 ↦
+    hconv_ball ⟨by simpa [τ₁, NNReal.dist_eq, abs_of_nonneg (NNReal.coe_nonneg η),
+      Real.coe_toNNReal _ hδ.le] using NNReal.coe_lt_coe.2 hη1, hη0⟩
+  obtain ⟨v, hv0, hv, hunif⟩ := exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex
+    hφ hτ₀ hτ₁ hconv_lt h₀ hu0
+  have hd_vu : dist (v t) (u t) = 0 :=
+    le_antisymm ((hv.dist_le hu hφ ht).trans_eq (by simp [hv0])) dist_nonneg
+  have hdist_eq : dist (U ⌈t / τ⌉₊) (u t) = dist (U ⌈t / τ⌉₊) (v t) := le_antisymm
+    ((dist_triangle _ (v t) _).trans_eq (by rw [hd_vu, add_zero]))
+    ((dist_triangle _ (u t) _).trans_eq (by rw [dist_comm (u t), hd_vu, add_zero]))
+  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
+  have hr₀ : 0 < r₀ := by positivity
+  set σ₀ : ℝ≥0 := min (τ₀ / 2) (min (τ₁ / 2) r₀.toNNReal)
+  have hσ₀ : 0 < σ₀ := lt_min (half_pos hτ₀) (lt_min (half_pos hτ₁) (Real.toNNReal_pos.2 hr₀))
+  set η : ℕ → ℝ≥0 := fun j ↦ σ₀ / ((j : ℝ≥0) + 1)
+  have hη_pos (j : ℕ) : 0 < η j := div_pos hσ₀ (by positivity)
+  have hη_le_σ₀ (j : ℕ) : η j ≤ σ₀ := div_le_self hσ₀.le (by norm_cast; omega)
+  have hη_lt_τ₀ (j : ℕ) : η j < τ₀ :=
+    (hη_le_σ₀ j).trans_lt ((min_le_left _ _).trans_lt (half_lt_self hτ₀))
+  have hη_lt_τ₁ (j : ℕ) : η j < τ₁ :=
+    (hη_le_σ₀ j).trans_lt
+      ((min_le_right _ _).trans_lt ((min_le_left _ _).trans_lt (half_lt_self hτ₁)))
+  have hmη (j : ℕ) : |lam| * (η j : ℝ) ≤ 1 / 2 := by
+    have hle : (η j : ℝ) ≤ r₀ := (NNReal.coe_le_coe.2
+      ((hη_le_σ₀ j).trans ((min_le_right _ _).trans (min_le_right _ _)))).trans_eq
+      (Real.coe_toNNReal r₀ hr₀.le)
+    calc |lam| * (η j : ℝ) ≤ (|lam| + 1) * r₀ :=
+          mul_le_mul (by linarith) hle (NNReal.coe_nonneg _) (by positivity)
+      _ = 1 / 2 := by dsimp [r₀]; field_simp
+  have hη0 : Tendsto η atTop (𝓝 0) := NNReal.tendsto_coe.1 <| by
+    simpa [η, div_eq_mul_inv] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul (σ₀ : ℝ)
+  have hηc (j : ℕ) : PenalizedConvex lam (η j) φ := hconv_lt (η j) (hη_pos j) (hη_lt_τ₁ j)
+  have hη_pos_mul (j : ℕ) : 0 < 1 + lam * (η j : ℝ) := by
+    linarith [(abs_le.1 ((abs_mul lam (η j)).symm ▸ (abs_of_nonneg (NNReal.coe_nonneg (η j))).symm ▸
+      hmη j)).1]
+  choose V hV0 hV using fun j ↦ (hηc j).exists_forall_mem_moreauYosidaResolvent hφ (hη_pos j)
+    (hη_pos_mul j) (hη_lt_τ₀ j) h₀ (u 0)
+  have hSV (j : ℕ) : φ (V j 0) ≤ ((φ (u 0)).toReal : EReal) := by
+    rw [hV0 j, EReal.coe_toReal hu0 (apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top x₁ _) h₀)]
+  obtain ⟨L, _, -, hapriori⟩ :=
+    exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
+      hτ₀ h₀ (edist_ne_top (u 0) x₁) hη_pos hη0 hV
+      (by simpa only [hV0] using tendsto_const_nhds) hSV (by positivity : 0 ≤ t + 1)
+  have hlim : Tendsto (fun j ↦ V j ⌈t / (η j : ℝ)⌉₊) atTop (𝓝 (v t)) :=
+    (hunif η V (Eventually.of_forall hη_pos) hη0 (Eventually.of_forall hV0)
+      (Eventually.of_forall hV) t).tendsto_at ⟨ht, le_rfl⟩
+  set K : ℝ → ℝ := fun r ↦ max 0 (-2 * lam + 2 * lam ^ 2 * τ + 2 * lam ^ 2 * r)
+  set M : ℝ := max 0 ((φ (u 0)).toReal - L)
+  set R : ℝ → ℝ := fun r ↦ 2 * exp (K r * t) * dist (U 0) (u 0) ^ 2 +
+    (2 * exp (K r * t) + 8) * (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + r * M)
+  have hR_cont : Continuous R := by fun_prop
+  have hev : ∀ᶠ j in atTop, dist (U ⌈t / τ⌉₊) (V j ⌈t / η j⌉₊) ^ 2 ≤ R (η j) := by
+    filter_upwards [hapriori] with j hjL
+    obtain ⟨eV, heV, -, hdropV⟩ := exists_toReal_apply_and_sub_le (hη_pos j) (hη_lt_τ₀ j) h₀
+      (hV j) (hSV j) ⟨ht, le_rfl⟩ fun n hn ↦ (hjL n hn).1
+    have hbd := TauCeti.dist_ceil_sq_le_of_penalizedConvex hτc (hηc j) hτ (hη_pos j) hmτ (hmη j)
+      hU (hV j) heU heV ht
+    rw [hV0 j] at hbd
+    have hmulV := mul_le_mul_of_nonneg_left
+      (mul_le_mul_of_nonneg_left hdropV (NNReal.coe_nonneg (η j)))
+      (by positivity : 0 ≤ 2 * exp (K (η j) * t) + 8)
+    dsimp only [R, K] at hmulV ⊢
+    linarith [hbd, hmulV]
+  rw [hdist_eq]
+  simpa [R, K] using le_of_tendsto_of_tendsto ((tendsto_const_nhds.dist hlim).pow 2)
+    ((hR_cont.tendsto 0).comp (NNReal.tendsto_coe.2 hη0)) hev
+
+/-- **Quantitative `O(√τ)` error bound between a minimizing movement sequence and an `EVI_λ`
+solution.** On a complete pseudometric space, if `φ` is lower semicontinuous, satisfies
+`φ_{τ₀}(x₁) > -∞` for some `τ₀ > 0` and `x₁`, and is penalized convex for all sufficiently small
+positive time steps, then for every `EVI_lam` solution `u` and every minimizing movement sequence
+`U` with step `τ > 0` satisfying `TauCeti.PenalizedConvex lam τ φ`, `|lam| * τ ≤ 1 / 2`, and real
+energies `eU`, the squared distance `d(U ⌈t / τ⌉₊, u t)²` at time `t ≥ 0` is bounded in terms of
+`d(U 0, u 0)²` and `τ * (eU 0 - eU (⌊t / τ⌋₊ + 1))`. -/
+theorem IsEVISolution.dist_ceil_sq_le_of_penalizedConvex {X : Type*}
+    [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {τ₀ τ : ℝ≥0} {φ : X → EReal}
+    {u : ℝ → X} (hu : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ)
+    (hτ₀ : 0 < τ₀) {x₁ : X} (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (hconv : ∀ᶠ η in 𝓝[>] (0 : ℝ≥0), PenalizedConvex lam η φ)
+    (hτc : PenalizedConvex lam τ φ) (hτ : 0 < τ) (hmτ : |lam| * τ ≤ 1 / 2)
+    {U : ℕ → X} (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
+    {eU : ℕ → ℝ} (heU : ∀ n, φ (U n) = eU n) {t : ℝ} (ht : 0 ≤ t) :
+    dist (U ⌈t / τ⌉₊) (u t) ^ 2 ≤
+      2 * exp (max 0 (-2 * lam + 2 * lam ^ 2 * τ) * t) * dist (U 0) (u 0) ^ 2 +
+        (2 * exp (max 0 (-2 * lam + 2 * lam ^ 2 * τ) * t) + 8) *
+          (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1))) := by
+  have : (𝓝[>] (0 : ℝ)).NeBot := nhdsWithin_Ioi_neBot le_rfl
+  have hu_add (r : ℝ) (hr : 0 ≤ r) : Tendsto (fun s ↦ u (r + s)) (𝓝[>] 0) (𝓝 (u r)) :=
+    (hu.continuousOn r hr).tendsto.comp <|
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+        (((by fun_prop : Continuous (r + ·)).tendsto' 0 r (add_zero r)).mono_left
+          nhdsWithin_le_nhds)
+        (eventually_nhdsWithin_of_forall fun s (hs : 0 < s) ↦ mem_Ici.2 (add_nonneg hr hs.le))
+  refine le_of_tendsto_of_tendsto ((tendsto_const_nhds.dist (hu_add t ht)).pow 2)
+    ((((tendsto_const_nhds.dist (hu_add 0 le_rfl)).pow 2).const_mul _).add_const _) ?_
+  filter_upwards [self_mem_nhdsWithin] with s (hs : 0 < s)
+  exact dist_ceil_sq_le_of_isEVISolution_of_apply_ne_top (hu.comp_add_const hs.le) hφ hτ₀ h₀
+    hconv ((zero_add s).symm ▸ hu.apply_ne_top hs) hτc hτ hmτ hU heU ht
+
+/-- **Uniform convergence of minimizing movements with converging initial data.** On a complete
+pseudometric space, under coercivity and `TauCeti.PenalizedConvex lam τ φ` for small `τ > 0`, any
+minimizing movement family `(τ j, U j)` with `τ j → 0`, initial points `U j 0 → u 0`, and
+uniformly bounded initial energy converges uniformly on `[0, T]` to an `EVI_lam` solution `u`. -/
+theorem IsEVISolution.tendstoUniformlyOn_of_penalizedConvex {X : Type*}
+    [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {φ : X → EReal}
+    {u : ℝ → X} (hu : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ)
+    {τ₀ : ℝ≥0} (hτ₀ : 0 < τ₀) {x₁ : X} (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (hconv : ∀ᶠ τ in 𝓝[>] (0 : ℝ≥0), PenalizedConvex lam τ φ)
+    {τ : ℕ → ℝ≥0} {U : ℕ → ℕ → X} (hτ_pos : ∀ᶠ j in atTop, 0 < τ j)
+    (hτ0 : Tendsto τ atTop (𝓝 0)) (hU0 : Tendsto (fun j ↦ U j 0) atTop (𝓝 (u 0)))
+    {S : ℝ} (hS : ∀ᶠ j in atTop, φ (U j 0) ≤ S)
+    (hU : ∀ᶠ j in atTop, ∀ n, U j (n + 1) ∈ moreauYosidaResolvent φ (τ j) (U j n))
+    (T : ℝ) :
+    TendstoUniformlyOn (fun j t ↦ U j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
+  rcases lt_or_ge T 0 with hT | hT
+  · simp [Metric.tendstoUniformlyOn_iff, Icc_eq_empty hT.not_ge]
+  obtain ⟨N₁, hN₁⟩ := eventually_atTop.1 (hτ_pos.and (hS.and hU))
+  set τ' : ℕ → ℝ≥0 := fun j ↦ τ (j + N₁)
+  set U' : ℕ → ℕ → X := fun j ↦ U (j + N₁)
+  have hτ' : ∀ j, 0 < τ' j := fun j ↦ (hN₁ _ (Nat.le_add_left N₁ j)).1
+  have hS' : ∀ j, φ (U' j 0) ≤ S := fun j ↦ (hN₁ _ (Nat.le_add_left N₁ j)).2.1
+  have hU' : ∀ j n, U' j (n + 1) ∈ moreauYosidaResolvent φ (τ' j) (U' j n) :=
+    fun j ↦ (hN₁ _ (Nat.le_add_left N₁ j)).2.2
+  have hτ'0 : Tendsto τ' atTop (𝓝 0) := hτ0.comp (tendsto_add_atTop_nat N₁)
+  have hU'0 : Tendsto (fun j ↦ U' j 0) atTop (𝓝 (u 0)) := hU0.comp (tendsto_add_atTop_nat N₁)
+  obtain ⟨L, _, -, hapriori⟩ :=
+    exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
+      hτ₀ h₀ (edist_ne_top (u 0) x₁) hτ' hτ'0 hU' hU'0 hS' (by positivity : 0 ≤ T + 1)
+  have hτr : Tendsto (fun j ↦ (τ' j : ℝ)) atTop (𝓝 0) := NNReal.tendsto_coe.2 hτ'0
+  have hτw : Tendsto τ' atTop (𝓝[>] 0) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hτ'0 (Eventually.of_forall hτ')
+  have hlam_ev : ∀ᶠ j in atTop, |lam| * (τ' j : ℝ) ≤ 1 / 2 :=
+    (mul_zero |lam| ▸ hτr.const_mul |lam|).eventually (ge_mem_nhds (by norm_num))
+  set Kmax : ℝ := 2 * |lam| + 2 * lam ^ 2; set M : ℝ := max 0 (S - L)
+  set E : ℕ → ℝ := fun j ↦
+    2 * exp (Kmax * T) * dist (U' j 0) (u 0) ^ 2 + (2 * exp (Kmax * T) + 8) * M * τ' j
+  have hE0 : Tendsto E atTop (𝓝 0) := by
+    have hd0 : Tendsto (fun j ↦ dist (U' j 0) (u 0)) atTop (𝓝 0) := by
+      simpa using hU'0.dist (tendsto_const_nhds (x := u 0))
+    simpa [E] using ((hd0.pow 2).const_mul (2 * exp (Kmax * T))).add
+      (hτr.const_mul ((2 * exp (Kmax * T) + 8) * M))
+  suffices h : TendstoUniformlyOn (fun j t ↦ U' j ⌈t / (τ' j : ℝ)⌉₊) u atTop (Icc 0 T) by
+    rw [Metric.tendstoUniformlyOn_iff] at h ⊢
+    intro ε hε
+    obtain ⟨N₂, hN₂⟩ := eventually_atTop.1 (h ε hε)
+    exact eventually_atTop.2 ⟨N₁ + N₂, fun j hj t ht ↦ by
+      simpa [U', τ', Nat.sub_add_cancel ((Nat.le_add_right N₁ N₂).trans hj)] using
+        hN₂ (j - N₁) (Nat.le_sub_of_add_le' hj) t ht⟩
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  filter_upwards [hτw.eventually hconv, hlam_ev, hτr.eventually (ge_mem_nhds one_pos),
+    hτ'0.eventually (gt_mem_nhds hτ₀), hapriori,
+    hE0.eventually (gt_mem_nhds (sq_pos_of_pos hε))] with j hτc hmτ _ hτ_lt hL hEj t ht
+  obtain ⟨eU, heU, haU, hdropU⟩ :=
+    exists_toReal_apply_and_sub_le (hτ' j) hτ_lt h₀ (hU' j) (hS' j) ht fun n hn ↦ (hL n hn).1
+  have hbd := hu.dist_ceil_sq_le_of_penalizedConvex hφ hτ₀ h₀ hconv hτc (hτ' j) hmτ (hU' j)
+    heU ht.1
+  have hexp : exp (max 0 (-2 * lam + 2 * lam ^ 2 * τ' j) * t) ≤ exp (Kmax * T) :=
+    exp_le_exp.2 <| mul_le_mul (max_le (by positivity) (by
+      dsimp [Kmax]; nlinarith [neg_le_abs lam, sq_nonneg lam])) ht.2 ht.1 (by positivity)
+  have h1 := mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hexp zero_le_two)
+    (sq_nonneg (dist (U' j 0) (u 0)))
+  have h2 := mul_le_mul (add_le_add_right (mul_le_mul_of_nonneg_left hexp zero_le_two) 8)
+    (mul_le_mul_of_nonneg_left hdropU (NNReal.coe_nonneg (τ' j)))
+    (mul_nonneg (NNReal.coe_nonneg (τ' j)) haU) (by positivity)
+  have hsq : dist (u t) (U' j ⌈t / (τ' j : ℝ)⌉₊) ^ 2 < ε ^ 2 := by
+    rw [dist_comm]; dsimp only [E] at hEj; nlinarith [hbd, h1, h2, hEj]
+  exact (pow_lt_pow_iff_left₀ dist_nonneg hε.le two_ne_zero).1 hsq
+
+/-- On a complete metric space, under coercivity and `TauCeti.PenalizedConvex` for small time
+steps, every generalized minimizing movement of a lower semicontinuous energy with respect to an
+auxiliary convergence `l` along which `edist z ·` is sequentially lower semicontinuous is an
+`EVI_lam` solution. -/
+theorem IsGeneralizedMinimizingMovement.isEVISolution_of_penalizedConvex {X : Type*}
+    [MetricSpace X] [CompleteSpace X] {l : X → Filter X} {lam : ℝ} {φ : X → EReal} {x₀ : X}
+    {v : ℝ → X} (hv : IsGeneralizedMinimizingMovement l φ x₀ v)
+    (hd : ∀ (z : X) ⦃w : ℕ → X⦄ ⦃y : X⦄, Tendsto w atTop (l y) →
+      edist z y ≤ liminf (fun n ↦ edist z (w n)) atTop)
+    (hφ : LowerSemicontinuous φ) {τ₀ : ℝ≥0} (hτ₀ : 0 < τ₀) {x₁ : X}
+    (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
+    (hconv : ∀ᶠ τ in 𝓝[>] (0 : ℝ≥0), PenalizedConvex lam τ φ) :
+    IsEVISolution lam φ v := by
+  obtain ⟨τ, U, hτ, hτ0, hU, hU0, ⟨S, hS⟩, hlim⟩ := isGeneralizedMinimizingMovement_iff.1 hv
+  have hx₀ : φ x₀ ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top S) <|
+    ((hφ.le_liminf x₀).trans hU0.liminf_le_liminf_comp).trans
+      ((liminf_le_liminf (Eventually.of_forall hS)).trans_eq (by simp [liminf_const]))
+  obtain ⟨δ, hδ, hconv_ball⟩ := Metric.mem_nhdsWithin_iff.1 hconv
+  set τ₁ : ℝ≥0 := δ.toNNReal
+  have hτ₁ : 0 < τ₁ := Real.toNNReal_pos.2 hδ
+  have hconv_lt : ∀ η : ℝ≥0, 0 < η → η < τ₁ → PenalizedConvex lam η φ := fun η hη0 hη1 ↦
+    hconv_ball ⟨by simpa [τ₁, NNReal.dist_eq, abs_of_nonneg (NNReal.coe_nonneg η),
+      Real.coe_toNNReal _ hδ.le] using NNReal.coe_lt_coe.2 hη1, hη0⟩
+  obtain ⟨u, hu0, hu, _⟩ :=
+    exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ hτ₁ hconv_lt h₀ hx₀
+  refine hu.congr fun t (ht : 0 ≤ t) ↦ ?_
+  have h1 := (hu.tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ h₀ hconv (Eventually.of_forall hτ)
+    hτ0 (hu0.symm ▸ hU0) (Eventually.of_forall hS) (Eventually.of_forall hU) t).tendsto_at
+    (⟨ht, le_rfl⟩ : t ∈ Icc 0 t)
+  have hed := hd (u t) (hlim t ht)
+  have hed0 : Tendsto (fun j ↦ edist (u t) (U j ⌈t / (τ j : ℝ)⌉₊)) atTop (𝓝 0) := by
+    simpa using (tendsto_const_nhds (x := u t)).edist h1
+  rw [hed0.liminf_eq] at hed
+  exact edist_le_zero.1 hed
+
+/-- **Generation of `EVI_λ` flows under convexity along curves** (Ambrosio–Gigli, Theorem 3.25).
+Let `φ` be a lower semicontinuous energy on a complete pseudometric space that never takes the
+value `⊥`. Suppose that for every base point `w` and any two points `v₀`, `v₁` of `{y | φ y ≠ ⊤}`
+there is a curve `γ` from `v₀` to `v₁` along which `φ` is `lam`-convex and `z ↦ d(z, w)²` is
+`2`-convex. Then coercivity holds automatically, and for every `x₀` with `φ x₀ ≠ ⊤` there is an
+`EVI_lam` solution `u` from `x₀` to which minimizing movement interpolants with converging initial
+points and uniformly bounded initial energy converge locally uniformly. -/
+theorem exists_isEVISolution_tendstoUniformlyOn_of_convexAlong_and_convexAlong_dist_sq
+    {X : Type*} [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {φ : X → EReal}
+    (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
+    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong lam φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ)
+    {x₀ : X} (hx₀ : φ x₀ ≠ ⊤) :
+    ∃ u : ℝ → X, u 0 = x₀ ∧ IsEVISolution lam φ u ∧
+      ∀ (τ : ℕ → ℝ≥0) (U : ℕ → ℕ → X),
+        (∀ᶠ j in atTop, 0 < τ j) → Tendsto τ atTop (𝓝 0) →
+        Tendsto (fun j ↦ U j 0) atTop (𝓝 x₀) → (∃ S : ℝ, ∀ᶠ j in atTop, φ (U j 0) ≤ S) →
+        (∀ᶠ j in atTop, ∀ n, U j (n + 1) ∈ moreauYosidaResolvent φ (τ j) (U j n)) →
+        ∀ T : ℝ, TendstoUniformlyOn (fun j t ↦ U j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
+  set r₀ : ℝ := (2 * (|lam| + 1))⁻¹
+  have hr₀ : 0 < r₀ := by positivity
+  set τ₀ : ℝ≥0 := r₀.toNNReal
+  have hτ₀ : 0 < τ₀ := Real.toNNReal_pos.2 hr₀
+  have hmτ₀ : 0 < 1 + lam * (τ₀ : ℝ) := by
+    have hle : (τ₀ : ℝ) ≤ r₀ := (Real.coe_toNNReal r₀ hr₀.le).le
+    have habs : |lam * (τ₀ : ℝ)| ≤ 1 / 2 := by
+      rw [abs_mul, abs_of_nonneg (NNReal.coe_nonneg τ₀)]
+      calc |lam| * (τ₀ : ℝ) ≤ (|lam| + 1) * r₀ :=
+            mul_le_mul (by linarith) hle (NNReal.coe_nonneg _) (by positivity)
+        _ = 1 / 2 := by dsimp [r₀]; field_simp
+    linarith [(abs_le.1 habs).1]
+  have h₀ : moreauYosida φ τ₀ x₀ ≠ ⊥ :=
+    moreauYosida_ne_bot_of_convexAlong_and_convexAlong_dist_sq hφ hbot
+      (fun v₀ _ h₀ h₁ ↦ hconv v₀ h₀ h₁) hmτ₀ x₀
+  have hpen : ∀ τ : ℝ≥0, 0 < τ → τ < 1 → PenalizedConvex lam τ φ := fun _ _ _ ↦
+    penalizedConvex_of_convexAlong_and_convexAlong_dist_sq hconv
+  obtain ⟨u, hu0, hu, _⟩ := exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀
+    one_pos hpen h₀ hx₀
+  exact ⟨u, hu0, hu, fun τ U hτ hτ0 hU0 ⟨_, hS⟩ hU T ↦
+    hu.tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ h₀
+      (Eventually.of_forall fun _ ↦ penalizedConvex_of_convexAlong_and_convexAlong_dist_sq hconv)
+      hτ hτ0 (hu0.symm ▸ hU0) hS hU T⟩
+
+/-- Under the hypotheses of
+`TauCeti.exists_isEVISolution_tendstoUniformlyOn_of_convexAlong_and_convexAlong_dist_sq`, the
+domain of the `EVI_lam` flow equals `closure {y | φ y ≠ ⊤}`. -/
+theorem eviDomain_eq_closure_of_convexAlong_and_convexAlong_dist_sq {X : Type*}
+    [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {φ : X → EReal}
+    (hφ : LowerSemicontinuous φ) (hbot : ∀ y, φ y ≠ ⊥)
+    (hconv : ∀ (w : X) ⦃v₀ v₁ : X⦄, φ v₀ ≠ ⊤ → φ v₁ ≠ ⊤ → ∃ γ : ℝ → X, γ 0 = v₀ ∧ γ 1 = v₁ ∧
+      ConvexAlong lam φ γ ∧ ConvexAlong 2 (fun z ↦ ((dist z w ^ 2 : ℝ) : EReal)) γ) :
+    eviDomain lam φ = closure {y | φ y ≠ ⊤} :=
+  eviDomain_eq_closure_of_subset hφ fun _ hx ↦
+    let ⟨u, hu0, hu, _⟩ :=
+      exists_isEVISolution_tendstoUniformlyOn_of_convexAlong_and_convexAlong_dist_sq
+        hφ hbot hconv hx
+    mem_eviDomain.2 ⟨u, hu, hu0⟩
+
+end QuantitativeErrorAndCurveConvexity
 
 end TauCeti

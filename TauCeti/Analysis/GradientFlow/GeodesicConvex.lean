@@ -204,6 +204,18 @@ theorem ConvexAlong.reverse (h : ConvexAlong m φ γ) : ConvexAlong m φ fun t �
   rw [add_comm, dist_comm, mul_right_comm (m / 2) t]
   exact h'
 
+/-- If `z ↦ d(z, γ 0)²` is `2`-convex along `γ`, then `d(γ 0, γ t) ≤ t d(γ 0, γ 1)` for every
+`t ∈ [0, 1]`. -/
+theorem ConvexAlong.dist_le_mul
+    (h : ConvexAlong 2 (fun z ↦ ((dist z (γ 0) ^ 2 : ℝ) : EReal)) γ) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) : dist (γ 0) (γ t) ≤ t * dist (γ 0) (γ 1) := by
+  have hd := convexAlong_def.1 h t ht
+  rw [dist_self, ← EReal.coe_mul, ← EReal.coe_mul, ← EReal.coe_add, ← EReal.coe_sub,
+    EReal.coe_le_coe_iff, dist_comm (γ 1) (γ 0)] at hd
+  have hsq : dist (γ 0) (γ t) ^ 2 ≤ (t * dist (γ 0) (γ 1)) ^ 2 := by
+    rw [dist_comm (γ 0) (γ t)]; nlinarith [hd]
+  exact (pow_le_pow_iff_left₀ dist_nonneg (mul_nonneg ht.1 dist_nonneg) two_ne_zero).1 hsq
+
 /-- **Quadratic growth away from a minimum along a curve of convexity.** If `φ` is `m`-convex
 along `γ` and its smallest value along `γ` on `[0, 1]` is attained at `γ 0`, then
 `φ (γ 0) + (m / 2) d(γ 0, γ 1)² ≤ φ (γ 1)`. Comparing `φ (γ 0)` with the convexity bound at time
