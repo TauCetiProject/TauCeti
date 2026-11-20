@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
-public import Mathlib.Geometry.Manifold.Sheaf.LocallyRingedSpace
+public import TauCeti.Geometry.Manifold.Sheaf.LocallyRingedSpace
 
 /-!
 # Holomorphic and complex-smooth structure sheaves
@@ -16,8 +16,11 @@ holomorphic and hence complex analytic. Thus the `C^ω` holomorphic structure sh
 with Mathlib's `C^∞` structure sheaf over **ℂ**, not the sheaf of real-smooth functions.
 
 We identify sections and sheaves, preserve evaluation on stalks, and compare pullback by
-holomorphic maps. This allows the holomorphic sheaf to use Mathlib's existing native
-manifold locally ringed space and its morphisms, rather than a parallel construction.
+holomorphic maps. Conversely, every morphism of the native locally ringed spaces which induces
+the identity on the residue fields `ℂ` is the pullback along a unique holomorphic map
+(`TauCeti.holomorphicMapLocalRingedEquiv`). This allows the holomorphic sheaf to use Mathlib's
+existing native manifold locally ringed space and its morphisms, rather than a parallel
+construction.
 No compactness, Hausdorffness or second-countability assumption is needed.
 
 The comparison uses the native holomorphic regularity theorem
@@ -180,3 +183,59 @@ theorem smoothSheafIso_hom_naturality (f : X → Y) (hf : ContMDiff I J ω f) :
     ((precomp_apply I X f hf U s x).trans (smoothSectionsEquiv_apply U.unop s _).symm)
 
 end TauCeti.holomorphicStructureSheaf
+
+namespace TauCeti
+
+open AlgebraicGeometry
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] [FiniteDimensional ℂ E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'} [J.Boundaryless]
+  {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y] [IsManifold J 1 Y]
+
+/-- **Holomorphic maps are the morphisms of locally `ℂ`-ringed spaces.** Holomorphic maps
+between finite-dimensional complex manifolds without boundary correspond to the morphisms of
+their native locally ringed spaces that preserve values at points, that is, induce the identity
+on the residue fields `ℂ`. A holomorphic map gives the pullback of functions
+(`ChartedSpace.locallyRingedSpaceMap`), and such a morphism gives its underlying map, which is
+holomorphic. -/
+def holomorphicMapLocalRingedEquiv :
+    C^ω⟮I, X; J, Y⟯ ≃ {φ : ChartedSpace.locallyRingedSpace I X ⟶
+        ChartedSpace.locallyRingedSpace J Y //
+      ∀ x : X, φ.stalkMap x ≫ smoothSheafCommRing.evalHom I 𝓘(ℂ) X ℂ x =
+        smoothSheafCommRing.evalHom J 𝓘(ℂ) Y ℂ (φ.base x)} :=
+  haveI : IsManifold J ∞ Y := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+  haveI := FiniteDimensional.completeSpace ℂ E'
+  Equiv.trans (β := C^∞⟮I, X; J, Y⟯)
+    { toFun f := ⟨f, f.contMDiff.of_le (by simp)⟩
+      invFun f := ⟨f, (f.contMDiff.mdifferentiable (by simp)).contMDiff⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+    ChartedSpace.locallyRingedSpaceMapEquiv
+
+/-- The morphism attached to a holomorphic map is its pullback of functions. -/
+@[simp]
+theorem holomorphicMapLocalRingedEquiv_apply_coe (f : C^ω⟮I, X; J, Y⟯) :
+    (holomorphicMapLocalRingedEquiv f).1 =
+      ChartedSpace.locallyRingedSpaceMap f (f.contMDiff.of_le (by simp)) := by
+  have : IsManifold J ∞ Y := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+  have := FiniteDimensional.completeSpace ℂ E'
+  rw [holomorphicMapLocalRingedEquiv, Equiv.trans_apply,
+    ChartedSpace.locallyRingedSpaceMapEquiv_apply_coe]
+  rfl
+
+/-- The holomorphic map attached to a value-preserving morphism is its underlying map. -/
+@[simp]
+theorem coe_holomorphicMapLocalRingedEquiv_symm_apply
+    (φ : {φ : ChartedSpace.locallyRingedSpace I X ⟶ ChartedSpace.locallyRingedSpace J Y //
+      ∀ x : X, φ.stalkMap x ≫ smoothSheafCommRing.evalHom I 𝓘(ℂ) X ℂ x =
+        smoothSheafCommRing.evalHom J 𝓘(ℂ) Y ℂ (φ.base x)}) :
+    ⇑(holomorphicMapLocalRingedEquiv.symm φ) = φ.1.base := by
+  have : IsManifold J ∞ Y := IsManifold.of_ne_zero ∞ one_ne_zero ‹_›
+  have := FiniteDimensional.completeSpace ℂ E'
+  rw [holomorphicMapLocalRingedEquiv, Equiv.symm_trans_apply]
+  exact ChartedSpace.coe_locallyRingedSpaceMapEquiv_symm_apply φ
+
+end TauCeti
