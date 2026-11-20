@@ -108,7 +108,8 @@ private theorem H0π_relTransfer_augElt [S.FiniteIndex] (a : k) (h : G) :
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   -- `(h q).out⁻¹ h = s q.out⁻¹` with `s = (h q).out⁻¹ h q.out ∈ S`, and `θ` is additive in the
   -- `S`-factor.
-  have hs : (h • q).out⁻¹ * (h * q.out) ∈ S := QuotientGroup.eq.mp (QuotientGroup.mk_out_smul h q)
+  have hs : (h • q).out⁻¹ * (h * q.out) ∈ S := by
+    simpa [mul_assoc] using (QuotientGroup.outCocycle h q).2
   rw [MulAction.toPerm_apply, ← θ_mul a hs, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
 
 private theorem δ_res_mkH1OfIsTrivial_ofAbelianization
