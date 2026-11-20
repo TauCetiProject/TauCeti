@@ -277,8 +277,8 @@ theorem eq_bot_of_neg (hx : IsFreeGradedCommutative 𝒜 x deg) {p : ℤ} (hp : 
   rw [weight_apply]
   exact Finsupp.sum_nonneg fun i _ => nsmul_nonneg (Int.natCast_nonneg _) _
 
-/-- A free graded-commutative algebra on generators of positive degrees is the ground field in
-degree `0`. -/
+/-- A free graded-commutative algebra on generators of positive degrees is spanned by `1` in
+degree `0`, so there it is the image of the ground ring `K`. -/
 theorem eq_span_one_of_pos (hx : IsFreeGradedCommutative 𝒜 x deg) (hdeg : ∀ i, 0 < deg i) :
     𝒜 0 = Submodule.span K {1} := by
   rw [← hx.span_standardMonomial_eq 0]
