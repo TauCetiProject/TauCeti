@@ -32,9 +32,11 @@ Quantitatively, the `Lᵖ` norms are logarithmically convex in `1 / p`: if
 function is `MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq`. At a single exponent, the
 same Hölder argument bounds the `Lᵖ` norm of a pointwise geometric mean
 `‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ` by `‖g₀‖_p ^ (1 - θ) ‖g₁‖_p ^ θ`
-(`MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le`). Since the exponent
-`1 - θ` is positive for `θ < 1`, smallness in `L^{p₀}` and boundedness in `L^{p₁}` give smallness
-in `Lᵖ`; this is how compactness into `L^{p₀}` passes to the intermediate exponents.
+(`MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le`). Both pass from extended `Lᵖ`
+norms to norms of `Lᵖ` elements by
+`MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le`. Since the exponent `1 - θ` is
+positive for `θ < 1`, smallness in `L^{p₀}` and boundedness in `L^{p₁}` give smallness in `Lᵖ`;
+this is how compactness into `L^{p₀}` passes to the intermediate exponents.
 
 A cruder bound needs no interpolation parameter: `‖f‖_p ≤ max (‖f‖_{p₀}, ‖f‖_{p₁})`
 (`MeasureTheory.eLpNorm_le_max_of_le_of_le`), from logarithmic convexity since
@@ -299,6 +301,18 @@ theorem eLpNorm_le_max_of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (h
         rw [← ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel,
           ENNReal.rpow_one]
 
+/-- A bound `‖f‖_p ≤ ‖f₀‖_{p₀} ^ (1 - θ) ‖f₁‖_{p₁} ^ θ` on the extended `Lᵖ` norms of elements
+`f ∈ Lᵖ`, `f₀ ∈ L^{p₀}` and `f₁ ∈ L^{p₁}`, for `0 ≤ θ ≤ 1`, is the same bound on their norms. -/
+theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le {E : Type*} [NormedAddCommGroup E]
+    {p₀ p₁ p : ℝ≥0∞} {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {f : Lp E p μ} {f₀ : Lp E p₀ μ}
+    {f₁ : Lp E p₁ μ} (h : eLpNorm f p μ ≤ eLpNorm f₀ p₀ μ ^ (1 - θ) * eLpNorm f₁ p₁ μ ^ θ) :
+    ‖f‖ ≤ ‖f₀‖ ^ (1 - θ) * ‖f₁‖ ^ θ := by
+  rw [Lp.norm_def, Lp.norm_def, Lp.norm_def, ENNReal.toReal_rpow, ENNReal.toReal_rpow,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hθ.2) (Lp.eLpNorm_ne_top f₀))
+    (ENNReal.rpow_ne_top_of_nonneg hθ.1 (Lp.eLpNorm_ne_top f₁))) h
+
 /-- **Logarithmic convexity of the `Lᵖ` norms**, for elements `f ∈ Lᵖ`, `f₀ ∈ L^{p₀}` and
 `f₁ ∈ L^{p₁}` representing the same function: if `0 ≤ θ ≤ 1` and
 `1 / p = (1 - θ) / p₀ + θ / p₁`, then `‖f‖ ≤ ‖f₀‖ ^ (1 - θ) ‖f₁‖ ^ θ`. -/
@@ -310,11 +324,7 @@ theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq {E : Type*} [NormedAddCommGr
   have key : eLpNorm f p μ ≤ eLpNorm f₀ p₀ μ ^ (1 - θ) * eLpNorm f₁ p₁ μ ^ θ := by
     rw [← eLpNorm_congr_ae h₀, ← eLpNorm_congr_ae h₁]
     exact eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow hθ hp
-  rw [Lp.norm_def, Lp.norm_def, Lp.norm_def, ENNReal.toReal_rpow, ENNReal.toReal_rpow,
-    ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg (sub_nonneg.2 hθ.2) (Lp.eLpNorm_ne_top f₀))
-    (ENNReal.rpow_ne_top_of_nonneg hθ.1 (Lp.eLpNorm_ne_top f₁))) key
+  exact Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le hθ key
 
 /-- **Hölder's inequality for a pointwise geometric mean**, for elements `g`, `g₀` and `g₁` of one
 `Lᵖ` space with `0 < p < ∞`: if `0 ≤ θ ≤ 1` and `‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ` almost everywhere,
@@ -344,10 +354,6 @@ theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le {E : Type*} [NormedAddCommGr
       ← ENNReal.rpow_mul, ← ENNReal.rpow_mul, mul_comm (1 / p.toReal), mul_comm (1 / p.toReal),
       ENNReal.rpow_mul, ENNReal.rpow_mul, ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
     gcongr
-  rw [Lp.norm_def, Lp.norm_def, Lp.norm_def, ENNReal.toReal_rpow, ENNReal.toReal_rpow,
-    ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg hθ₁ (Lp.eLpNorm_ne_top g₀))
-    (ENNReal.rpow_ne_top_of_nonneg hθ.1 (Lp.eLpNorm_ne_top g₁))) key
+  exact Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le hθ key
 
 end MeasureTheory

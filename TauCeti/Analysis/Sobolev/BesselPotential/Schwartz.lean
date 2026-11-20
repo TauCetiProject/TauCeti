@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
 /-!
@@ -137,8 +138,7 @@ theorem toBesselPotentialSpaceCLM_injective (s : ℝ) :
   rw [toDistr_toBesselPotentialSpaceCLM, toDistr_toBesselPotentialSpaceCLM,
     ← Lp.toTemperedDistribution_toLp_eq (p := p) u,
     ← Lp.toTemperedDistribution_toLp_eq (p := p) v] at h
-  exact injective_toLp p volume (LinearMap.ker_eq_bot.mp
-    (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F) (μ := (volume : Measure E)) (p := p)) h)
+  exact injective_toLp p volume (Lp.toTemperedDistribution_injective h)
 
 /-- A nonzero Schwartz function has positive `H^{s,p}` norm. -/
 theorem norm_toBesselPotentialSpaceCLM_pos (s : ℝ) {u : 𝓢(E, F)} (hu : u ≠ 0) :
