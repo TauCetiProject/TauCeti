@@ -27,12 +27,12 @@ can serve as the transition function of a vector bundle.
 
 ## Main declarations
 
-* `TauCeti.symmetricJets`: the symmetric `r`-jets, a closed subspace of all tuples
-  (`TauCeti.isClosed_symmetricJets`), and `TauCeti.SymmetricJet`, the same space as a normed
-  space.
+* `TauCeti.isClosed_symmetricJets`: the symmetric `r`-jets `TauCeti.symmetricJets` form a
+  closed subspace of all tuples, and `TauCeti.SymmetricJet` is the same space as a normed space.
 * `TauCeti.iteratedFDeriv_mem_symmetricJets`: jets of `C^r` maps are symmetric.
 * `TauCeti.symmetrizeJets`: the continuous linear projection onto the symmetric jets
-  (`TauCeti.symmetrizeJets_of_mem`).
+  (`TauCeti.symmetrizeJets_of_mem`), which fixes jets of maps
+  (`TauCeti.toJets_symmetrizeJets_iteratedFDeriv`).
 * `TauCeti.symmetricJetCoordChange`: the coordinate change of symmetric jets, with its
   identity and cocycle laws `TauCeti.symmetricJetCoordChange_id` and
   `TauCeti.symmetricJetCoordChange_comp`, its action on jets of maps
@@ -73,25 +73,7 @@ namespace TauCeti
 
 /-! ### Symmetric jets -/
 
-variable (𝕜 E F) in
-/-- The **symmetric `r`-jets**: the tuples `(A₀, …, Aᵣ)` of continuous multilinear maps
-`Aᵢ : E [×i]→L[𝕜] F` each of which is invariant under permutations of its arguments. Over `ℝ` or
-`ℂ` these are exactly the `r`-jets of smooth maps `E → F` at a point
-(`TauCeti.iteratedFDeriv_mem_symmetricJets`, `TauCeti.iteratedFDeriv_finiteJetPolynomial_self`). -/
-def symmetricJets (r : ℕ) : Submodule 𝕜 ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) where
-  carrier := {A | ∀ i (v : Fin i.val → E) (σ : Perm (Fin i.val)), A i (v ∘ σ) = A i v}
-  add_mem' {A B} hA hB i v σ := by simp [hA i v σ, hB i v σ]
-  zero_mem' := by simp
-  smul_mem' c A hA i v σ := by simp [hA i v σ]
-
 variable {r : ℕ}
-
-/-- A tuple is a symmetric jet when each of its components is invariant under permutations of its
-arguments. -/
-theorem mem_symmetricJets {A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F} :
-    A ∈ symmetricJets 𝕜 E F r ↔
-      ∀ i (v : Fin i.val → E) (σ : Perm (Fin i.val)), A i (v ∘ σ) = A i v :=
-  Iff.rfl
 
 /-- The symmetric jets form a closed subspace. -/
 theorem isClosed_symmetricJets :
@@ -167,7 +149,7 @@ over `ℝ` or `ℂ`, analytic otherwise), its `r`-jet at `x` is a symmetric jet.
 theorem iteratedFDeriv_mem_symmetricJets {f : E → F} {x : E} {n : ℕ∞ω}
     (hf : ContDiffAt 𝕜 n f x) (hn : minSmoothness 𝕜 r ≤ n) :
     (fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val f x) ∈ symmetricJets 𝕜 E F r :=
-  fun i v σ ↦ hf.iteratedFDeriv_comp_perm_of_le
+  mem_symmetricJets.2 fun i v σ ↦ hf.iteratedFDeriv_comp_perm_of_le
     ((minSmoothness_monotone (by exact_mod_cast i.is_le)).trans hn) v σ
 
 /-- **Coordinate changes produce symmetric jets.** If the coordinate maps are `C^n` at `x` with
@@ -176,7 +158,7 @@ theorem linearJetCoordChange_mem_symmetricJets {h : E' → E} {g : E' → F →L
     {n : ℕ∞ω} (hh : ContDiffAt 𝕜 n h x) (hg : ContDiffAt 𝕜 n g x) (hn : minSmoothness 𝕜 r ≤ n)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
     linearJetCoordChange r h g x A ∈ symmetricJets 𝕜 E' G r :=
-  fun i v σ ↦ linearJetCoordChange_apply_comp_perm i hh hg
+  mem_symmetricJets.2 fun i v σ ↦ linearJetCoordChange_apply_comp_perm i hh hg
     ((minSmoothness_monotone (by exact_mod_cast i.is_le)).trans hn) A v σ
 
 /-! ### Symmetrization -/
@@ -193,17 +175,28 @@ def symmetrizeJets :
   (linearJetCoordChange r id (fun _ ↦ ContinuousLinearMap.id 𝕜 F) 0).codRestrict _
     (linearJetCoordChange_mem_symmetricJets (n := ω) contDiffAt_id contDiffAt_const le_top)
 
+/-- The tuple of the symmetrization of a tuple is its coordinate change of jets under the identity
+coordinate changes at `0`. -/
+theorem toJets_symmetrizeJets_eq_linearJetCoordChange
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
+    toJets 𝕜 E F r (symmetrizeJets 𝕜 E F r A) =
+      linearJetCoordChange r id (fun _ ↦ ContinuousLinearMap.id 𝕜 F) 0 A :=
+  (rfl)
+
 /-- The symmetrization of a tuple is the `r`-jet at `0` of its Taylor polynomial at `0`. -/
 theorem toJets_symmetrizeJets (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
     toJets 𝕜 E F r (symmetrizeJets 𝕜 E F r A) =
       fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val (finiteJetPolynomial r A 0) 0 := by
+  rw [toJets_symmetrizeJets_eq_linearJetCoordChange]
   funext i
   exact linearJetCoordChange_apply i contDiffAt_id contDiffAt_const A |>.trans (by simp)
 
 /-- **The symmetrization fixes symmetric jets.** -/
 theorem symmetrizeJets_of_mem [CharZero 𝕜] {A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F}
     (hA : A ∈ symmetricJets 𝕜 E F r) : symmetrizeJets 𝕜 E F r A = mk A hA :=
-  Subtype.ext (linearJetCoordChange_id 0 hA)
+  toJets_injective (by
+    rw [toJets_symmetrizeJets_eq_linearJetCoordChange, toJets_mk]
+    exact linearJetCoordChange_id 0 (mem_symmetricJets.1 hA))
 
 /-- The symmetrization is a left inverse of the inclusion of the symmetric jets. -/
 @[simp]
@@ -217,6 +210,15 @@ theorem symmetrizeJets_comp_toJets [CharZero 𝕜] :
     symmetrizeJets 𝕜 E F r ∘L toJets 𝕜 E F r = ContinuousLinearMap.id 𝕜 _ := by
   ext1 A
   simp
+
+/-- **Symmetrizing the jet of a map does nothing.** If `f` is `C^n` at `x` with
+`minSmoothness 𝕜 r ≤ n` (`C^r` over `ℝ` or `ℂ`, analytic otherwise), the symmetrization of its
+`r`-jet at `x` has the same tuple. -/
+theorem toJets_symmetrizeJets_iteratedFDeriv [CharZero 𝕜] {f : E → F} {x : E} {n : ℕ∞ω}
+    (hf : ContDiffAt 𝕜 n f x) (hn : minSmoothness 𝕜 r ≤ n) :
+    toJets 𝕜 E F r (symmetrizeJets 𝕜 E F r fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val f x) =
+      fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val f x := by
+  rw [symmetrizeJets_of_mem (iteratedFDeriv_mem_symmetricJets hf hn), toJets_mk]
 
 /-! ### Coordinate changes of symmetric jets -/
 
@@ -259,7 +261,8 @@ theorem symmetricJetCoordChange_id [CharZero 𝕜] (x : E) :
       ContinuousLinearMap.id 𝕜 _ := by
   ext1 A
   exact toJets_injective ((toJets_symmetricJetCoordChange (n := ω) contDiffAt_id
-    contDiffAt_const le_top A).trans (linearJetCoordChange_id x (toJets_mem A)))
+    contDiffAt_const le_top A).trans
+      (linearJetCoordChange_id x (mem_symmetricJets.1 (toJets_mem A))))
 
 /-- **The cocycle law.** If `h₁` and `g₁` are `C^n` at `h₂ x`, with `minSmoothness 𝕜 r ≤ n`
 (`C^r` over `ℝ` or `ℂ`, analytic otherwise), and `h₂` and `g₂` are `C^r` at `x`, then transforming a

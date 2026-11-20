@@ -468,22 +468,21 @@ theorem coordinates_mk_finiteJetPolynomial [CharZero 𝕜] {x : E}
   exact iteratedFDeriv_finiteJetPolynomial_self r A x i (hA i)
 
 /-- Over `ℝ` or `ℂ`, the coordinates identify the jets in a chart with the tuples of symmetric
-multilinear maps, the fibre coordinates of the jet bundle. The inverse sends a tuple to the jet
-of its Taylor polynomial. -/
+multilinear maps (`TauCeti.symmetricJets`), the fibre coordinates of the jet bundle. The inverse
+sends a tuple to the jet of its Taylor polynomial. -/
 def coordinatesEquiv [IsRCLikeNormedField 𝕜] (r : ℕ) (x : E) :
-    JetAt 𝕜 F r x ≃ {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v} :=
+    JetAt 𝕜 F r x ≃ symmetricJets 𝕜 E F r :=
   letI : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-  { toFun j := ⟨coordinates j, coordinates_comp_perm j⟩
+  { toFun j := ⟨coordinates j, mem_symmetricJets.2 (coordinates_comp_perm j)⟩
     invFun A := mk (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt
     left_inv j := coordinates_injective
       (coordinates_mk_finiteJetPolynomial _ (coordinates_comp_perm j))
-    right_inv A := Subtype.ext (coordinates_mk_finiteJetPolynomial A.1 A.2) }
+    right_inv A :=
+      Subtype.ext (coordinates_mk_finiteJetPolynomial A.1 (mem_symmetricJets.1 A.2)) }
 
 @[simp]
 theorem coordinatesEquiv_symm_apply [IsRCLikeNormedField 𝕜] {x : E}
-    (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
+    (A : symmetricJets 𝕜 E F r) :
     (coordinatesEquiv r x).symm A =
       mk (finiteJetPolynomial r A.1 x) (contDiff_finiteJetPolynomial r A.1 x).contDiffAt :=
   (rfl)
@@ -502,14 +501,12 @@ theorem mk_finiteJetPolynomial_coordinates [IsRCLikeNormedField 𝕜] {x : E}
   (coordinatesEquiv r x).left_inv j
 
 theorem coordinates_coordinatesEquiv_symm [IsRCLikeNormedField 𝕜] {x : E}
-    (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
+    (A : symmetricJets 𝕜 E F r) :
     coordinates ((coordinatesEquiv r x).symm A) = A.1 :=
   congrArg Subtype.val ((coordinatesEquiv r x).apply_symm_apply A)
 
 theorem value_coordinatesEquiv_symm [IsRCLikeNormedField 𝕜] {x : E}
-    (A : {A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F //
-      ∀ (i : Fin (r + 1)) (v : Fin i → E) (σ : Equiv.Perm (Fin i)), A i (v ∘ σ) = A i v}) :
+    (A : symmetricJets 𝕜 E F r) :
     value ((coordinatesEquiv r x).symm A) = A.1 0 0 := by
   rw [value, coordinates_coordinatesEquiv_symm]
 

@@ -304,8 +304,9 @@ theorem toJets_jet {s : ∀ x, V x} {x : M}
     (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) r (fun x ↦ TotalSpace.mk' F x (s x)) x) :
     toJets 𝕜 E F r (jet I F r s x) = fun k : Fin (r + 1) ↦
       iteratedFDeriv 𝕜 k.val (FirstJetBundle.localRep I F s x) (extChartAt I x x) := by
-  rw [jet, symmetrizeJets_of_mem (iteratedFDeriv_mem_symmetricJets
-    (contDiffAt_localRep I F hs (FirstJetBundle.mem_baseSet_self F V x)) (by simp)), toJets_mk]
+  rw [jet]
+  exact toJets_symmetrizeJets_iteratedFDeriv
+    (contDiffAt_localRep I F hs (FirstJetBundle.mem_baseSet_self F V x)) (by simp)
 
 /-- The preferred trivialization of `JᵣV` at `i` reads an `r`-jet in the chart and trivialization
 of `V` at `i`. -/
@@ -415,8 +416,7 @@ theorem contMDiffOn_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVector
   refine toJets_injective ?_
   rw [toJets_trivializationAt_jet hsx hxb, Function.comp_apply]
   simp only [Φ]
-  rw [symmetrizeJets_of_mem (iteratedFDeriv_mem_symmetricJets (contDiffAt_localRep I F hsx hxb)
-      (by simp)), toJets_mk]
+  exact (toJets_symmetrizeJets_iteratedFDeriv (contDiffAt_localRep I F hsx hxb) (by simp)).symm
 
 /-- **The `r`-jet of a `C^(n+r)` section is a `C^n` section of `JᵣV`.** -/
 theorem contMDiff_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVectorBundle (n + r) F V I]
