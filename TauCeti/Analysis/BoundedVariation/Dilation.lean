@@ -23,7 +23,9 @@ and do not require finite volume. The pullback coefficient written as a quotient
 dimension zero and the degenerate dilation `r = 0`, where both sides vanish. A one-sided domain
 inclusion gives the corresponding localization inequality.
 
-Combined with translation invariance, the perimeter in `ball 0 R` of the blow-up
+Combined with translation invariance, pulling `s` and an open domain back together by
+`y ↦ x + r • y` multiplies the perimeter by `|r| / |r| ^ n`
+(`TauCeti.perimeter_comap_add_smul`). In particular the perimeter in `ball 0 R` of the blow-up
 `(fun y => x + r • y) ⁻¹' s` is `|r| / |r| ^ n` times the perimeter of `s` in `ball x (|r| * R)`
 (`TauCeti.perimeter_ball_zero_preimage_add_smul`), that is, the perimeter of `s` in
 `ball x (|r| * R)` divided by `|r| ^ (n - 1)`
@@ -172,6 +174,21 @@ theorem perimeter_smul (hr : r ≠ 0)
     simp [mul_comm]
   rwa [hfactor] at h
 
+/-- **The perimeter of a blow-up.** Against an additive Haar measure, pulling a set and an open
+domain back together by `y ↦ x + r • y` multiplies the perimeter by `|r| / |r| ^ n`, where
+`n = dim E`. -/
+theorem perimeter_comap_add_smul (x : E) :
+    perimeter μ (Opens.comap ⟨fun y => x + r • y, by fun_prop⟩ Ω) ((fun y => x + r • y) ⁻¹' s) =
+      ENNReal.ofReal (|r| / |r| ^ Module.finrank ℝ E) * perimeter μ Ω s := by
+  have hΩ : Opens.comap ⟨fun y => x + r • y, by fun_prop⟩ Ω =
+      Opens.comap ⟨(r • ·), by fun_prop⟩ (Opens.comap (ContinuousMap.addRight x) Ω) := by
+    ext y
+    simp [add_comm]
+  have hs : (fun y => x + r • y) ⁻¹' s = (r • ·) ⁻¹' ((· + x) ⁻¹' s) := by
+    ext y
+    simp [add_comm]
+  rw [hΩ, hs, perimeter_comap_smul, perimeter_comap_add_right]
+
 /-- **The perimeter of a blow-up in a ball.** Against an additive Haar measure, the perimeter in
 `ball 0 R` of the blow-up `(fun y => x + r • y) ⁻¹' s` is `|r| / |r| ^ n` times the perimeter of
 `s` in `ball x (|r| * R)`, where `n = dim E`. For `r = 0` both sides vanish. -/
@@ -181,20 +198,12 @@ theorem perimeter_ball_zero_preimage_add_smul {x : E} (R : ℝ) :
         perimeter μ ⟨Metric.ball x (|r| * R), Metric.isOpen_ball⟩ s := by
   rcases eq_or_ne r 0 with rfl | hr
   · by_cases hx : x ∈ s <;> simp [hx]
-  have hr' : 0 < |r| := abs_pos.mpr hr
-  have h : (fun y => x + r • y) ⁻¹' s = (r • ·) ⁻¹' ((· + x) ⁻¹' s) := by
+  have hΩ : (⟨Metric.ball 0 R, Metric.isOpen_ball⟩ : Opens E) =
+      Opens.comap ⟨fun y => x + r • y, by fun_prop⟩
+        ⟨Metric.ball x (|r| * R), Metric.isOpen_ball⟩ := by
     ext y
-    simp [add_comm]
-  rw [h, perimeter_preimage_smul (Ω := ⟨Metric.ball 0 (|r| * R), Metric.isOpen_ball⟩) ?_ ?_,
-    perimeter_preimage_add_right (Ω := ⟨Metric.ball x (|r| * R), Metric.isOpen_ball⟩) ?_ ?_]
-  · intro y hy
-    simpa using hy
-  · intro y hy
-    simpa [dist_eq_norm] using hy
-  · intro y hy
-    simpa [norm_smul, mul_lt_mul_iff_right₀ hr'] using hy
-  · intro y hy
-    simpa [norm_smul, inv_mul_lt_iff₀ hr'] using hy
+    simp [dist_eq_norm, norm_smul, mul_lt_mul_iff_right₀ (abs_pos.mpr hr)]
+  rw [hΩ, perimeter_comap_add_smul]
 
 /-- **The perimeter of a blow-up in a ball, normalized.** Against an additive Haar measure on a
 space of dimension `n`, the perimeter in `ball 0 R` of the blow-up `(fun y => x + r • y) ⁻¹' s` is
