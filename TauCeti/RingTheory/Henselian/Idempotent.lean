@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.Ideal.GoingUp
 public import TauCeti.RingTheory.Idempotents.Jacobson
 import Mathlib.RingTheory.Nakayama
 import TauCeti.LinearAlgebra.Matrix.Charpoly.LinearMap
+import TauCeti.RingTheory.Ideal.Quotient.Defs
 
 /-!
 # Idempotents and locality in Henselian rings
@@ -23,7 +24,7 @@ control whether `S` is local. An Artinian ring with only the trivial idempotents
 ring whose quotient by an ideal in its Jacobson radical is local is itself local.
 
 Lifts of idempotents are unique modulo any ideal in the Jacobson radical
-(`IsIdempotentElem.eq_of_sub_mem_of_le_jacobson`), and along an integral ring map the
+(`IsIdempotentElem.eq_of_sub_mem_jacobson`), and along an integral ring map the
 extension of an ideal in the Jacobson radical stays in the Jacobson radical
 (`Ideal.map_le_jacobson_of_isIntegral`). Since a Henselian ideal lies in the Jacobson radical,
 lifts are unique over a Henselian pair and in every integral, in particular every finite, algebra
