@@ -368,15 +368,14 @@ theorem typeABoxDifferential_toUngradedAInfinityRightModule [CharP R 2] [Module 
     (hM : IsUngradedDGRightModule d dM) (N : TypeDStructure d ι X) :
     N.typeABoxDifferential hM.toUngradedAInfinityRightModule = N.boxDifferential dM := by
   refine LinearMap.ext fun φ => funext fun z => ?_
-  rw [typeABoxDifferential_apply_eq_sum_of_act_eq_zero (K := 2) _ _ fun n hn => ?_]
-  · simp only [sum_range_succ, range_zero, sum_empty, zero_add, boxDifferential_apply,
-      Pi.add_apply, IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_zero,
-      IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_one]
-    rw [← (Equiv.funUnique (Fin 1) X).symm.sum_comp, ← (piFinTwoEquiv fun _ => X).symm.sum_comp,
-      Fintype.sum_prod_type]
-    simp [continuationMap_apply (R := R) (M := M) N.coeff]
-  · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-    exact hM.toUngradedAInfinityRightModule_act_add_two n
+  rw [typeABoxDifferential_apply_eq_sum_of_act_eq_zero (K := 2) _ _
+    fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le]
+  simp only [sum_range_succ, range_zero, sum_empty, zero_add, boxDifferential_apply,
+    Pi.add_apply, IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_zero,
+    IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_one]
+  rw [← (Equiv.funUnique (Fin 1) X).symm.sum_comp, ← (piFinTwoEquiv fun _ => X).symm.sum_comp,
+    Fintype.sum_prod_type]
+  simp [continuationMap_apply (R := R) (M := M) N.coeff]
 
 /-! ### Maps induced by morphisms of type `D` structures -/
 
@@ -774,9 +773,7 @@ theorem typeABoxMap_toUngradedAInfinityRightModule [CharP R 2] [Module Aᵐᵒ�
     typeABoxMap N N' hM.toUngradedAInfinityRightModule F = continuationMap R M F := by
   refine LinearMap.ext fun φ => funext fun z => ?_
   have hB : Bound N N' hM.toUngradedAInfinityRightModule Set.univ 2 :=
-    bound_of_act_eq_zero fun n hn => by
-      obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-      exact hM.toUngradedAInfinityRightModule_act_add_two n
+    bound_of_act_eq_zero fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le
   rw [hB.typeABoxMap_apply_eq_sum 0]
   simp only [sum_range_succ, range_zero, sum_empty, zero_add, Finset.univ_eq_empty,
     Fin.sum_univ_one, Function.update_eq_const_of_subsingleton]
@@ -1462,11 +1459,12 @@ theorem typeABoxMapOfHom_toUngradedAInfinityRightModuleHom [CharP R 2] [Module A
   have hmap := IsUngradedDGRightModule.toUngradedAInfinityRightModuleHom_map_add_one hM hM' g hg
   -- The operations of differential modules and the components of chain maps vanish from arity 2.
   rw [N.typeABoxMapOfHom_apply_eq_map_zero _ hmap (K := 2)
-    (N.cone_matrixAct_eq_zero_of_act_eq_zero (fun n hn => ?_) (fun n hn => ?_) fun n hn => ?_)]
+    (N.cone_matrixAct_eq_zero_of_act_eq_zero
+      (fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le)
+      (fun _ => hM'.toUngradedAInfinityRightModule_act_eq_zero_of_two_le) fun n hn => ?_)]
   · simp
-  all_goals obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  exacts [hM.toUngradedAInfinityRightModule_act_add_two n,
-    hM'.toUngradedAInfinityRightModule_act_add_two n, hmap (n + 1)]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  exact hmap (n + 1)
 
 end ModuleHom
 
