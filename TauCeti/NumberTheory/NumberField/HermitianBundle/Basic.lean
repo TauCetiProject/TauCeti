@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
+public import Mathlib.RingTheory.FractionalIdeal.Operations
 public import Mathlib.RingTheory.IsTensorProduct
+public import TauCeti.NumberTheory.NumberField.ComplexEmbedding.Codomain
 public import TauCeti.RingTheory.FractionalIdeal.BaseChange
 
 import Mathlib.LinearAlgebra.Dimension.Localization
@@ -22,32 +25,36 @@ is a finitely generated projective `O_K`-module `E` together with, for every com
 `σ : K → ℂ`, a positive definite hermitian form `h_σ` on the complex fibre `E ⊗_{O_K,σ} ℂ`, such
 that `h_{conj σ}(1 ⊗ x, 1 ⊗ y)` is the complex conjugate of `h_σ(1 ⊗ x, 1 ⊗ y)` for `x, y ∈ E`,
 where `conj σ` is the complex conjugate embedding. At a real embedding this says that `h_σ` is the
-complexification of a real inner product. These are
-the objects whose Arakelov degree is the archimedean part of the height of a point, and the
-Hodge line of an abelian variety with its Faltings metric is one of them.
+complexification of a real inner product. The Arakelov degree of these objects computes
+heights of points, and the Hodge line of an abelian variety with its Faltings metric is one of
+them.
 
-To form the fibre `E ⊗_{O_K,σ} ℂ` for every `σ` at once, `NumberField.ComplexEmbedding.Codomain σ`
-is a copy of `ℂ` carrying the `K`-algebra structure given by `σ`; the fibre at `σ` is the scalar
-extension `Codomain σ ⊗[𝓞 K] E`, a complex vector space. The hermitian forms are complex
-sesquilinear forms on these fibres, conjugate-linear in the first argument as in Mathlib.
+To form the fibre `E ⊗_{O_K,σ} ℂ` for every `σ` at once, the fibre at `σ` is the scalar
+extension `Codomain σ ⊗[𝓞 K] E`, a complex vector space, where
+`NumberField.ComplexEmbedding.Codomain σ` is a copy of `ℂ` carrying the `K`-algebra structure
+given by `σ`. The hermitian forms are complex sesquilinear forms on these fibres,
+conjugate-linear in the first argument as in Mathlib.
 
 ## Main definitions
 
 * `TauCeti.HermitianMetric K E`: a hermitian metric on an `𝓞 K`-module `E`, a family of positive
   definite hermitian forms on the complex fibres compatible with complex conjugation of the
   embeddings.
+* `TauCeti.HermitianMetric.toCore`: the form at `σ` as an inner product core on the complex
+  fibre at `σ`.
 * `TauCeti.HermitianMetric.norm`: the norm `‖u‖_σ` of a vector in the complex fibre at `σ`.
 * `TauCeti.HermitianMetric.placeNorm`: the norm `‖x‖_v` of `x ∈ E` at an infinite place `v`,
   computed at either complex embedding inducing `v` (`TauCeti.HermitianMetric.placeNorm_mk`).
 * `TauCeti.HermitianMetric.rescale`: the metric `Ē(c)` with all norms multiplied by `e^{-c}`.
-* `TauCeti.HermitianMetric.Isometry`: an `𝓞 K`-linear isomorphism whose complexifications are
-  unitary at every embedding.
+* `TauCeti.HermitianMetric.IsometryEquiv`: an `𝓞 K`-linear isomorphism whose complexifications
+  are unitary at every embedding.
 * `TauCeti.HermitianMetric.ofIsBaseChange`: the metric `‖x‖_σ = e^{-λ_v} |σ(ι x)|` on an
   `𝓞 K`-module `E` whose scalar extension to `K` is identified with `K` by `ι`, for real weights
   `λ_v` indexed by the infinite places.
 * `TauCeti.HermitianMetric.trivial`: the trivial hermitian line `Ō_K = (O_K, |·|)`.
 * `TauCeti.HermitianMetric.fractionalIdeal`: the hermitian line `(𝔞, e^{-λ_v} |·|_v)` of a
-  nonzero fractional ideal `𝔞`.
+  nonzero fractional ideal `𝔞`; `TauCeti.HermitianMetric.isometryEquivTrivialFractionalIdealOne`
+  identifies the line of `(1)` with zero weights with `Ō_K`.
 * `TauCeti.HermitianBundle K`: a finitely generated projective `𝓞 K`-module with a hermitian
   metric, with its `TauCeti.HermitianBundle.rank`.
 
@@ -63,54 +70,6 @@ sesquilinear forms on these fibres, conjugate-linear in the first argument as in
 public noncomputable section
 
 open scoped TensorProduct ComplexConjugate ComplexOrder nonZeroDivisors
-
-namespace NumberField.ComplexEmbedding
-
-variable {K : Type*} [Field K]
-
-/-- The field `ℂ`, regarded as an algebra over `K` (and over its ring of integers) through the
-complex embedding `σ`. The complex fibre of an `𝓞 K`-module `E` at `σ` is the scalar extension
-`Codomain σ ⊗[𝓞 K] E`, a complex vector space. -/
-@[expose] def Codomain (_σ : K →+* ℂ) : Type := ℂ
-
-namespace Codomain
-
-variable (σ : K →+* ℂ)
-
-instance : Field (Codomain σ) := inferInstanceAs (Field ℂ)
-
-instance : Algebra ℂ (Codomain σ) := inferInstanceAs (Algebra ℂ ℂ)
-
-instance : Algebra K (Codomain σ) := σ.toAlgebra
-
-instance : Algebra (𝓞 K) (Codomain σ) := (σ.comp (algebraMap (𝓞 K) K)).toAlgebra
-
-instance : IsScalarTower (𝓞 K) K (Codomain σ) := .of_algebraMap_eq fun _ ↦ rfl
-
-instance : SMulCommClass (𝓞 K) ℂ (Codomain σ) where
-  smul_comm a c z := mul_left_comm (G := ℂ) (σ (algebraMap (𝓞 K) K a)) c z
-
-/-- The identification of `Codomain σ` with `ℂ`, as `ℂ`-algebras. -/
-def equiv : Codomain σ ≃ₐ[ℂ] ℂ := AlgEquiv.refl
-
-@[simp]
-theorem equiv_algebraMap (x : K) : equiv σ (algebraMap K (Codomain σ) x) = σ x := (rfl)
-
-@[simp]
-theorem equiv_algebraMap_ringOfIntegers (x : 𝓞 K) :
-    equiv σ (algebraMap (𝓞 K) (Codomain σ) x) = σ x := (rfl)
-
-/-- In the complex fibre `Codomain σ ⊗[𝓞 K] E`, a pure tensor `c ⊗ x` is the complex multiple
-`c • (1 ⊗ x)`. -/
-theorem tmul_eq_smul {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] (c : Codomain σ) (x : E) :
-    c ⊗ₜ[𝓞 K] x = equiv σ c • (1 ⊗ₜ[𝓞 K] x : Codomain σ ⊗[𝓞 K] E) := by
-  -- `equiv σ` is the identity of `ℂ`, and `ℂ` acts on `Codomain σ` by multiplication.
-  rw [TensorProduct.smul_tmul']
-  exact congrArg (· ⊗ₜ[𝓞 K] x) (mul_one (M := ℂ) c).symm
-
-end Codomain
-
-end NumberField.ComplexEmbedding
 
 namespace TauCeti
 
@@ -155,17 +114,40 @@ theorem form_self_eq_zero_iff {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E}
     h.form σ u u = 0 ↔ u = 0 :=
   ⟨fun h0 ↦ by_contra fun hu ↦ (h.form_self_pos σ hu).ne' h0, fun hu ↦ by simp [hu]⟩
 
-/-- The norm `‖u‖_σ = h_σ(u, u)^{1/2}` of a vector in the complex fibre at `σ`. -/
+/-- The hermitian form `h_σ` as an inner product core on the complex fibre at `σ`. Its norm is
+`HermitianMetric.norm`, whose basic properties come from this core. -/
+@[instance_reducible]
+def toCore (σ : K →+* ℂ) : InnerProductSpace.Core ℂ (Codomain σ ⊗[𝓞 K] E) where
+  inner u v := h.form σ u v
+  conj_inner_symm u v := h.conj_form σ v u
+  re_inner_nonneg u := (Complex.nonneg_iff.mp (h.form_self_nonneg σ u)).1
+  add_left u v w := by simp only [map_add, LinearMap.add_apply]
+  smul_left u v r := by simp only [LinearMap.map_smulₛₗ₂, smul_eq_mul]
+  definite _ hu := h.form_self_eq_zero_iff.mp hu
+
+/-- The norm `‖u‖_σ = h_σ(u, u)^{1/2}` of a vector in the complex fibre at `σ`, the norm of the
+inner product core `h.toCore σ`. -/
 protected def norm (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) : ℝ :=
-  √(h.form σ u u).re
+  letI := h.toCore σ
+  (InnerProductSpace.Core.toNorm (𝕜 := ℂ)).norm u
+
+theorem norm_def (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
+    h.norm σ u = √(h.form σ u u).re := (rfl)
+
+/-- The normed group structure on the complex fibre at `σ` given by the core `h.toCore σ`, whose
+norm is `HermitianMetric.norm`; used locally to read off the norm axioms. -/
+private abbrev normedAddCommGroup (σ : K →+* ℂ) : NormedAddCommGroup (Codomain σ ⊗[𝓞 K] E) :=
+  letI := h.toCore σ
+  InnerProductSpace.Core.toNormedAddCommGroup (𝕜 := ℂ)
 
 theorem norm_nonneg (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) : 0 ≤ h.norm σ u :=
-  Real.sqrt_nonneg _
+  letI := h.normedAddCommGroup σ
+  (h.toCore σ).toNormedSpaceCore.norm_nonneg u
 
 theorem form_self_eq_norm_sq (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
     h.form σ u u = ((h.norm σ u ^ 2 : ℝ) : ℂ) := by
   have hnn := Complex.nonneg_iff.mp (h.form_self_nonneg σ u)
-  rw [HermitianMetric.norm, Real.sq_sqrt hnn.1]
+  rw [norm_def, Real.sq_sqrt hnn.1]
   exact Complex.ext (by simp) (by simpa using hnn.2.symm)
 
 theorem norm_sq (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
@@ -173,9 +155,9 @@ theorem norm_sq (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
   rw [h.form_self_eq_norm_sq, Complex.ofReal_re]
 
 @[simp]
-theorem norm_eq_zero_iff {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} : h.norm σ u = 0 ↔ u = 0 := by
-  rw [← h.form_self_eq_zero_iff, h.form_self_eq_norm_sq, Complex.ofReal_eq_zero,
-    pow_eq_zero_iff two_ne_zero]
+theorem norm_eq_zero_iff {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} : h.norm σ u = 0 ↔ u = 0 :=
+  letI := h.normedAddCommGroup σ
+  (h.toCore σ).toNormedSpaceCore.norm_eq_zero_iff u
 
 theorem norm_pos {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} (hu : u ≠ 0) : 0 < h.norm σ u :=
   (h.norm_nonneg σ u).lt_of_ne' (by simpa using hu)
@@ -184,16 +166,27 @@ theorem norm_pos {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} (hu : u ≠ 
 theorem norm_zero (σ : K →+* ℂ) : h.norm σ 0 = 0 := by simp
 
 theorem norm_smul (σ : K →+* ℂ) (c : ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
-    h.norm σ (c • u) = ‖c‖ * h.norm σ u := by
-  rw [HermitianMetric.norm, HermitianMetric.norm, LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul,
-    smul_eq_mul, ← mul_assoc, Complex.conj_mul', ← Complex.ofReal_pow, Complex.re_ofReal_mul,
-    Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (_root_.norm_nonneg c)]
+    h.norm σ (c • u) = ‖c‖ * h.norm σ u :=
+  letI := h.normedAddCommGroup σ
+  (h.toCore σ).toNormedSpaceCore.norm_smul c u
+
+/-- The triangle inequality for the norm at `σ`. -/
+theorem norm_add_le (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+    h.norm σ (u + v) ≤ h.norm σ u + h.norm σ v :=
+  letI := h.normedAddCommGroup σ
+  (h.toCore σ).toNormedSpaceCore.norm_triangle u v
+
+/-- The Cauchy–Schwarz inequality for the form at `σ`. -/
+theorem norm_form_le (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+    ‖h.form σ u v‖ ≤ h.norm σ u * h.norm σ v :=
+  letI := h.toCore σ
+  InnerProductSpace.Core.norm_inner_le_norm (𝕜 := ℂ) u v
 
 /-- At the complex conjugate embedding, vectors of `E` have the same norm. -/
 @[simp]
 theorem norm_conjugate_tmul (σ : K →+* ℂ) (x : E) :
     h.norm (conjugate σ) (1 ⊗ₜ x) = h.norm σ (1 ⊗ₜ x) := by
-  rw [HermitianMetric.norm, HermitianMetric.norm, h.form_conjugate_tmul, Complex.conj_re]
+  rw [norm_def, norm_def, h.form_conjugate_tmul, Complex.conj_re]
 
 /-- At a real embedding, the form takes real values on vectors of `E`: it is the
 complexification of a real inner product on `E ⊗_σ ℝ`. -/
@@ -221,8 +214,7 @@ theorem placeNorm_mk (σ : K →+* ℂ) (x : E) :
 theorem placeNorm_nonneg (v : InfinitePlace K) (x : E) : 0 ≤ h.placeNorm v x :=
   h.norm_nonneg _ _
 
-/-- The zero module carries exactly one hermitian metric, the empty family of forms on the zero
-fibres. -/
+/-- The zero module carries exactly one hermitian metric, the zero form on every (zero) fibre. -/
 instance [Subsingleton E] : Unique (HermitianMetric K E) where
   default :=
     { form _ := 0
@@ -234,6 +226,12 @@ instance [Subsingleton E] : Unique (HermitianMetric K E) where
     simp [Subsingleton.elim u 0]
 
 /-! ### Rescaling -/
+
+/-- `√(e^{-2c} a) = e^{-c} √a`: multiplying a form by `e^{-2c}` multiplies its norm by `e^{-c}`. -/
+private theorem sqrt_exp_neg_two_mul_mul (c a : ℝ) :
+    √(Real.exp (-2 * c) * a) = Real.exp (-c) * √a := by
+  rw [Real.sqrt_mul (Real.exp_pos _).le, ← Real.exp_half]
+  ring_nf
 
 /-- The metric `Ē(c)`: every form multiplied by `e^{-2c}`, so that every norm is multiplied by
 `e^{-c}`. -/
@@ -255,11 +253,7 @@ theorem rescale_form_apply (c : ℝ) (σ : K →+* ℂ) (u v : Codomain σ ⊗[�
 @[simp]
 theorem norm_rescale (c : ℝ) (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
     (h.rescale c).norm σ u = Real.exp (-c) * h.norm σ u := by
-  have hexp : Real.exp (-2 * c) = Real.exp (-c) ^ 2 := by
-    rw [← Real.exp_nat_mul]
-    ring_nf
-  rw [HermitianMetric.norm, HermitianMetric.norm, rescale_form_apply, Complex.re_ofReal_mul,
-    hexp, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (Real.exp_pos _).le]
+  rw [norm_def, norm_def, rescale_form_apply, Complex.re_ofReal_mul, sqrt_exp_neg_two_mul_mul]
 
 @[simp]
 theorem placeNorm_rescale (c : ℝ) (v : InfinitePlace K) (x : E) :
@@ -283,17 +277,18 @@ variable {F G : Type*} [AddCommGroup F] [Module (𝓞 K) F] [AddCommGroup G] [Mo
 
 /-- An **isometry** between hermitian metrics: an `𝓞 K`-linear isomorphism `E ≃ F` whose
 complexification is unitary at every complex embedding. Unitarity is tested on vectors of `E`;
-`HermitianMetric.Isometry.form_baseChange` gives it on the whole complex fibre. -/
-structure Isometry (h : HermitianMetric K E) (h' : HermitianMetric K F) extends E ≃ₗ[𝓞 K] F where
+`HermitianMetric.IsometryEquiv.form_baseChange` gives it on the whole complex fibre. -/
+structure IsometryEquiv (h : HermitianMetric K E) (h' : HermitianMetric K F)
+    extends E ≃ₗ[𝓞 K] F where
   /-- The linear isomorphism preserves the hermitian forms. -/
   form_tmul (σ : K →+* ℂ) (x y : E) :
     h'.form σ (1 ⊗ₜ toLinearEquiv x) (1 ⊗ₜ toLinearEquiv y) = h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y)
 
-namespace Isometry
+namespace IsometryEquiv
 
 variable {h} {h' : HermitianMetric K F} {h'' : HermitianMetric K G}
 
-instance : EquivLike (Isometry h h') E F where
+instance : EquivLike (IsometryEquiv h h') E F where
   coe e := e.toLinearEquiv
   inv e := e.toLinearEquiv.symm
   left_inv e := e.toLinearEquiv.left_inv
@@ -305,19 +300,19 @@ instance : EquivLike (Isometry h h') E F where
     exact LinearEquiv.coe_injective he
 
 @[simp]
-theorem coe_toLinearEquiv (e : Isometry h h') : ⇑e.toLinearEquiv = e := rfl
+theorem coe_toLinearEquiv (e : IsometryEquiv h h') : ⇑e.toLinearEquiv = e := rfl
 
 /-- Two isometries with the same underlying map are equal. -/
 @[ext]
-theorem ext {e e' : Isometry h h'} (he : ∀ x, e x = e' x) : e = e' :=
+theorem ext {e e' : IsometryEquiv h h'} (he : ∀ x, e x = e' x) : e = e' :=
   DFunLike.ext _ _ he
 
 theorem toLinearEquiv_injective :
-    Function.Injective (toLinearEquiv : Isometry h h' → E ≃ₗ[𝓞 K] F) := fun _ _ he ↦
+    Function.Injective (toLinearEquiv : IsometryEquiv h h' → E ≃ₗ[𝓞 K] F) := fun _ _ he ↦
   ext fun x ↦ congr($he x)
 
 /-- An isometry preserves the hermitian forms on the whole complex fibre. -/
-theorem form_baseChange (e : Isometry h h') (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+theorem form_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
     h'.form σ (e.toLinearMap.baseChange (Codomain σ) u)
         (e.toLinearMap.baseChange (Codomain σ) v) = h.form σ u v := by
   induction u using TensorProduct.inductionOn with
@@ -331,35 +326,35 @@ theorem form_baseChange (e : Isometry h h') (σ : K →+* ℂ) (u v : Codomain �
         LinearMap.map_smulₛₗ₂, map_smul, LinearMap.map_smulₛₗ₂, map_smul]
       exact congrArg _ (congrArg _ (e.form_tmul σ x y))
 
-theorem norm_baseChange (e : Isometry h h') (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
+theorem norm_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
     h'.norm σ (e.toLinearMap.baseChange (Codomain σ) u) = h.norm σ u := by
-  rw [HermitianMetric.norm, HermitianMetric.norm, e.form_baseChange]
+  rw [norm_def, norm_def, e.form_baseChange]
 
 @[simp]
-theorem form_tmul_apply (e : Isometry h h') (σ : K →+* ℂ) (x y : E) :
+theorem form_tmul_apply (e : IsometryEquiv h h') (σ : K →+* ℂ) (x y : E) :
     h'.form σ (1 ⊗ₜ e x) (1 ⊗ₜ e y) = h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) :=
   e.form_tmul σ x y
 
 @[simp]
-theorem norm_tmul_apply (e : Isometry h h') (σ : K →+* ℂ) (x : E) :
+theorem norm_tmul_apply (e : IsometryEquiv h h') (σ : K →+* ℂ) (x : E) :
     h'.norm σ (1 ⊗ₜ e x) = h.norm σ (1 ⊗ₜ x) := by
-  rw [HermitianMetric.norm, HermitianMetric.norm, e.form_tmul_apply]
+  rw [norm_def, norm_def, e.form_tmul_apply]
 
 @[simp]
-theorem placeNorm_apply (e : Isometry h h') (v : InfinitePlace K) (x : E) :
+theorem placeNorm_apply (e : IsometryEquiv h h') (v : InfinitePlace K) (x : E) :
     h'.placeNorm v (e x) = h.placeNorm v x :=
   e.norm_tmul_apply _ x
 
 variable (h) in
 /-- The identity isometry. -/
 @[refl]
-def refl : Isometry h h where
+def refl : IsometryEquiv h h where
   toLinearEquiv := LinearEquiv.refl (𝓞 K) E
   form_tmul _ _ _ := rfl
 
 /-- The inverse of an isometry. -/
 @[symm]
-def symm (e : Isometry h h') : Isometry h' h where
+def symm (e : IsometryEquiv h h') : IsometryEquiv h' h where
   toLinearEquiv := e.toLinearEquiv.symm
   form_tmul σ x y := by
     rw [← e.form_tmul σ]
@@ -367,7 +362,7 @@ def symm (e : Isometry h h') : Isometry h' h where
 
 /-- The composite of two isometries. -/
 @[trans]
-def trans (e : Isometry h h') (e' : Isometry h' h'') : Isometry h h'' where
+def trans (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') : IsometryEquiv h h'' where
   toLinearEquiv := e.toLinearEquiv.trans e'.toLinearEquiv
   form_tmul σ x y := by
     simp only [LinearEquiv.trans_apply]
@@ -377,18 +372,18 @@ def trans (e : Isometry h h') (e' : Isometry h' h'') : Isometry h h'' where
 theorem refl_apply (x : E) : refl h x = x := (rfl)
 
 @[simp]
-theorem symm_apply_apply (e : Isometry h h') (x : E) : e.symm (e x) = x :=
+theorem symm_apply_apply (e : IsometryEquiv h h') (x : E) : e.symm (e x) = x :=
   e.toLinearEquiv.symm_apply_apply x
 
 @[simp]
-theorem apply_symm_apply (e : Isometry h h') (x : F) : e (e.symm x) = x :=
+theorem apply_symm_apply (e : IsometryEquiv h h') (x : F) : e (e.symm x) = x :=
   e.toLinearEquiv.apply_symm_apply x
 
 @[simp]
-theorem trans_apply (e : Isometry h h') (e' : Isometry h' h'') (x : E) :
+theorem trans_apply (e : IsometryEquiv h h') (e' : IsometryEquiv h' h'') (x : E) :
     e.trans e' x = e' (e x) := (rfl)
 
-end Isometry
+end IsometryEquiv
 
 /-! ### Hermitian lines inside `K` -/
 
@@ -398,14 +393,14 @@ variable {ι : E →ₗ[𝓞 K] K} (hι : IsBaseChange K ι)
 
 /-- For `ι : E → K` identifying the scalar extension of `E` to `K` with `K`, the complex fibre of
 `E` at `σ` is `ℂ`, through `c ⊗ x ↦ c σ(ι x)`. -/
-def fibreEquiv (σ : K →+* ℂ) : Codomain σ ⊗[𝓞 K] E ≃ₗ[ℂ] ℂ :=
+def fiberEquiv (σ : K →+* ℂ) : Codomain σ ⊗[𝓞 K] E ≃ₗ[ℂ] ℂ :=
   ((hι.comp (IsBaseChange.linearMap K (Codomain σ))).equiv.restrictScalars ℂ).trans
     (Codomain.equiv σ).toLinearEquiv
 
 @[simp]
-theorem fibreEquiv_tmul (σ : K →+* ℂ) (c : Codomain σ) (x : E) :
-    fibreEquiv hι σ (c ⊗ₜ x) = Codomain.equiv σ c * σ (ι x) := by
-  rw [fibreEquiv, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
+theorem fiberEquiv_tmul (σ : K →+* ℂ) (c : Codomain σ) (x : E) :
+    fiberEquiv hι σ (c ⊗ₜ x) = Codomain.equiv σ c * σ (ι x) := by
+  rw [fiberEquiv, LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
     IsBaseChange.equiv_tmul]
   simp
 
@@ -414,7 +409,7 @@ theorem fibreEquiv_tmul (σ : K →+* ℂ) (c : Codomain σ) (x : E) :
 def ofIsBaseChange (w : InfinitePlace K → ℝ) : HermitianMetric K E where
   form σ := LinearMap.mk₂'ₛₗ (starRingEnd ℂ) (RingHom.id ℂ)
     (fun u v ↦ (Real.exp (-2 * w (InfinitePlace.mk σ)) : ℂ) *
-      (conj (fibreEquiv hι σ u) * fibreEquiv hι σ v))
+      (conj (fiberEquiv hι σ u) * fiberEquiv hι σ v))
     (fun _ _ _ ↦ by simp only [map_add]; ring)
     (fun _ _ _ ↦ by simp only [map_smul, smul_eq_mul, map_mul]; ring)
     (fun _ _ _ ↦ by simp only [map_add]; ring)
@@ -423,32 +418,36 @@ def ofIsBaseChange (w : InfinitePlace K → ℝ) : HermitianMetric K E where
     simp only [LinearMap.mk₂'ₛₗ_apply, map_mul, Complex.conj_ofReal, Complex.conj_conj]
     ring
   form_self_pos σ u hu := by
-    have hne : fibreEquiv hι σ u ≠ 0 :=
-      fun h0 ↦ hu (((fibreEquiv hι σ).injective).eq_iff.mp (h0.trans (map_zero _).symm))
+    have hne := (fiberEquiv hι σ).map_ne_zero_iff.mpr hu
     rw [LinearMap.mk₂'ₛₗ_apply, Complex.conj_mul', ← Complex.ofReal_pow, ← Complex.ofReal_mul]
     exact Complex.zero_lt_real.mpr (mul_pos (Real.exp_pos _) (pow_pos (norm_pos_iff.mpr hne) 2))
   form_conjugate_tmul σ x y := by
-    simp only [LinearMap.mk₂'ₛₗ_apply, fibreEquiv_tmul, map_one, one_mul,
+    simp only [LinearMap.mk₂'ₛₗ_apply, fiberEquiv_tmul, map_one, one_mul,
       conjugate_coe_eq, InfinitePlace.mk_conjugate_eq, map_mul, Complex.conj_ofReal]
 
 variable (w : InfinitePlace K → ℝ)
 
+@[simp]
+theorem ofIsBaseChange_form_apply (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+    (ofIsBaseChange hι w).form σ u v =
+      Real.exp (-2 * w (InfinitePlace.mk σ)) * (conj (fiberEquiv hι σ u) * fiberEquiv hι σ v) :=
+  (rfl)
+
+/-- The form of `ofIsBaseChange hι w` on vectors of `E`. This is not `@[simp]`: `simp` proves it
+from `ofIsBaseChange_form_apply` and `fiberEquiv_tmul`. -/
 theorem ofIsBaseChange_form_tmul (σ : K →+* ℂ) (x y : E) :
     (ofIsBaseChange hι w).form σ (1 ⊗ₜ x) (1 ⊗ₜ y) =
       Real.exp (-2 * w (InfinitePlace.mk σ)) * (conj (σ (ι x)) * σ (ι y)) := by
-  simp [ofIsBaseChange]
+  simp
 
 /-- In the metric `ofIsBaseChange hι w`, `‖x‖_σ = e^{-λ_v} |σ(ι x)|`. -/
 @[simp]
 theorem norm_ofIsBaseChange_tmul (σ : K →+* ℂ) (x : E) :
     (ofIsBaseChange hι w).norm σ (1 ⊗ₜ x) =
       Real.exp (-w (InfinitePlace.mk σ)) * ‖σ (ι x)‖ := by
-  have hexp : Real.exp (-2 * w (InfinitePlace.mk σ)) = Real.exp (-w (InfinitePlace.mk σ)) ^ 2 := by
-    rw [← Real.exp_nat_mul]
-    ring_nf
-  rw [HermitianMetric.norm, ofIsBaseChange_form_tmul, Complex.conj_mul', ← Complex.ofReal_pow,
-    ← Complex.ofReal_mul, Complex.ofReal_re, hexp, ← mul_pow,
-    Real.sqrt_sq (mul_nonneg (Real.exp_pos _).le (_root_.norm_nonneg _))]
+  rw [norm_def, ofIsBaseChange_form_tmul, Complex.conj_mul', ← Complex.ofReal_pow,
+    Complex.re_ofReal_mul, Complex.ofReal_re, sqrt_exp_neg_two_mul_mul,
+    Real.sqrt_sq (_root_.norm_nonneg _)]
 
 @[simp]
 theorem placeNorm_ofIsBaseChange (v : InfinitePlace K) (x : E) :
@@ -459,8 +458,8 @@ theorem placeNorm_ofIsBaseChange (v : InfinitePlace K) (x : E) :
 theorem rescale_ofIsBaseChange (c : ℝ) :
     (ofIsBaseChange hι w).rescale c = ofIsBaseChange hι (w + fun _ ↦ c) := by
   ext σ u v
-  simp only [rescale_form_apply, ofIsBaseChange, LinearMap.mk₂'ₛₗ_apply, ← mul_assoc,
-    ← Complex.ofReal_mul, ← Real.exp_add, Pi.add_apply]
+  simp only [rescale_form_apply, ofIsBaseChange_form_apply, ← mul_assoc, ← Complex.ofReal_mul,
+    ← Real.exp_add, Pi.add_apply]
   ring_nf
 
 variable {F : Type*} [AddCommGroup F] [Module (𝓞 K) F] {ι' : F →ₗ[𝓞 K] K}
@@ -468,14 +467,14 @@ variable {F : Type*} [AddCommGroup F] [Module (𝓞 K) F] {ι' : F →ₗ[𝓞 K
 
 /-- A linear isomorphism compatible with the embeddings into `K` is an isometry between the
 metrics `ofIsBaseChange` with the same weights. -/
-def isometryOfIsBaseChange (e : E ≃ₗ[𝓞 K] F) (he : ∀ x, ι' (e x) = ι x) :
-    Isometry (ofIsBaseChange hι w) (ofIsBaseChange hι' w) where
+def isometryEquivOfIsBaseChange (e : E ≃ₗ[𝓞 K] F) (he : ∀ x, ι' (e x) = ι x) :
+    IsometryEquiv (ofIsBaseChange hι w) (ofIsBaseChange hι' w) where
   toLinearEquiv := e
   form_tmul σ x y := by rw [ofIsBaseChange_form_tmul, ofIsBaseChange_form_tmul, he, he]
 
 @[simp]
-theorem isometryOfIsBaseChange_apply (e : E ≃ₗ[𝓞 K] F) (he : ∀ x, ι' (e x) = ι x) (x : E) :
-    isometryOfIsBaseChange hι w hι' e he x = e x := (rfl)
+theorem isometryEquivOfIsBaseChange_apply (e : E ≃ₗ[𝓞 K] F) (he : ∀ x, ι' (e x) = ι x) (x : E) :
+    isometryEquivOfIsBaseChange hι w hι' e he x = e x := (rfl)
 
 end OfIsBaseChange
 
@@ -484,17 +483,22 @@ section NumberField
 variable (K) [NumberField K]
 
 /-- The **trivial hermitian line** `Ō_K = (O_K, |·|)`: `‖x‖_σ = |σ(x)|` at every embedding. -/
-@[expose] def trivial : HermitianMetric K (𝓞 K) :=
+def trivial : HermitianMetric K (𝓞 K) :=
   ofIsBaseChange (IsLocalizedModule.isBaseChange (𝓞 K)⁰ K (Algebra.linearMap (𝓞 K) K)) 0
+
+theorem trivial_def :
+    trivial K =
+      ofIsBaseChange (IsLocalizedModule.isBaseChange (𝓞 K)⁰ K (Algebra.linearMap (𝓞 K) K)) 0 :=
+  (rfl)
 
 variable {K}
 
+@[simp]
 theorem trivial_form_tmul (σ : K →+* ℂ) (x y : 𝓞 K) :
     (trivial K).form σ (1 ⊗ₜ x) (1 ⊗ₜ y) = conj (σ x) * σ y := by
-  simp [trivial, ofIsBaseChange_form_tmul]
+  simp [trivial]
 
 /-- The trivial line has `h_σ(1, 1) = 1` at every embedding. -/
-@[simp]
 theorem trivial_form_one (σ : K →+* ℂ) :
     (trivial K).form σ (1 ⊗ₜ 1) (1 ⊗ₜ 1) = 1 := by
   simp [trivial_form_tmul]
@@ -511,9 +515,14 @@ theorem placeNorm_trivial (v : InfinitePlace K) (x : 𝓞 K) :
 
 /-- The **hermitian line of a nonzero fractional ideal** `𝔞` with weights `λ_v` at the infinite
 places: `‖x‖_σ = e^{-λ_v} |σ(x)|` for `x ∈ 𝔞`, where `v` is the place induced by `σ`. -/
-@[expose] def fractionalIdeal (I : FractionalIdeal (𝓞 K)⁰ K) (hI : I ≠ 0)
+def fractionalIdeal (I : FractionalIdeal (𝓞 K)⁰ K) (hI : I ≠ 0)
     (w : InfinitePlace K → ℝ) : HermitianMetric K I :=
   ofIsBaseChange (FractionalIdeal.isBaseChange_subtype hI) w
+
+theorem fractionalIdeal_def (I : FractionalIdeal (𝓞 K)⁰ K) (hI : I ≠ 0)
+    (w : InfinitePlace K → ℝ) :
+    fractionalIdeal I hI w = ofIsBaseChange (FractionalIdeal.isBaseChange_subtype hI) w :=
+  (rfl)
 
 @[simp]
 theorem norm_fractionalIdeal_tmul {I : FractionalIdeal (𝓞 K)⁰ K} (hI : I ≠ 0)
@@ -527,6 +536,24 @@ theorem placeNorm_fractionalIdeal {I : FractionalIdeal (𝓞 K)⁰ K} (hI : I �
     (w : InfinitePlace K → ℝ) (v : InfinitePlace K) (x : I) :
     (fractionalIdeal I hI w).placeNorm v x = Real.exp (-w v) * v x := by
   simp [fractionalIdeal]
+
+variable (K) in
+/-- The hermitian line of the unit ideal `(1)` with all weights zero is isometric to `Ō_K`, through
+the identification of `O_K` with `(1)`. -/
+def isometryEquivTrivialFractionalIdealOne :
+    IsometryEquiv (trivial K) (fractionalIdeal (1 : FractionalIdeal (𝓞 K)⁰ K) one_ne_zero 0) :=
+  isometryEquivOfIsBaseChange _ 0 _
+    ((LinearEquiv.ofInjective (Algebra.linearMap (𝓞 K) K)
+      fun _ _ hxy ↦ IsFractionRing.injective (𝓞 K) K hxy).trans
+      (LinearEquiv.ofEq _ _ (by rw [FractionalIdeal.coeToSubmodule_one, Submodule.one_eq_range])))
+    fun x ↦ by
+      rw [LinearEquiv.trans_apply, Submodule.subtype_apply, LinearEquiv.coe_ofEq_apply]
+      exact LinearEquiv.ofInjective_apply _ x
+
+@[simp]
+theorem isometryEquivTrivialFractionalIdealOne_apply (x : 𝓞 K) :
+    (isometryEquivTrivialFractionalIdealOne K x : K) = x :=
+  (rfl)
 
 end NumberField
 
@@ -557,13 +584,12 @@ instance : CoeSort (HermitianBundle.{u, v} K) (Type v) := ⟨carrier⟩
 /-- The rank of a hermitian vector bundle: the rank of its underlying `𝓞 K`-module. -/
 def rank (Ē : HermitianBundle K) : ℕ := Module.finrank (𝓞 K) Ē
 
+theorem rank_def (Ē : HermitianBundle K) : Ē.rank = Module.finrank (𝓞 K) Ē := (rfl)
+
 /-- The rank of a hermitian vector bundle is the dimension of its generic fibre `Ē ⊗ K`. -/
-theorem rank_eq_finrank_tensorProduct [NumberField K] (Ē : HermitianBundle K) :
-    Ē.rank = Module.finrank K (K ⊗[𝓞 K] Ē) := by
-  have : IsLocalizedModule (𝓞 K)⁰ (TensorProduct.mk (𝓞 K) K Ē 1) :=
-    (isLocalizedModule_iff_isBaseChange (𝓞 K)⁰ K _).mpr (TensorProduct.isBaseChange _ _ _)
-  rw [rank, IsFractionRing.finrank_right_eq (R := 𝓞 K) (S := K),
-    IsLocalizedModule.finrank_eq (𝓞 K)⁰ (TensorProduct.mk (𝓞 K) K Ē 1) le_rfl]
+theorem rank_eq_finrank_tensorProduct (Ē : HermitianBundle K) :
+    Ē.rank = Module.finrank K (K ⊗[𝓞 K] Ē) :=
+  (TensorProduct.isBaseChange (𝓞 K) Ē K).finrank_eq.symm
 
 variable (K)
 
@@ -576,7 +602,8 @@ variable (K)
 theorem rank_trivial [NumberField K] : (trivial K).rank = 1 :=
   Module.finrank_self (𝓞 K)
 
-/-- The **zero hermitian vector bundle**, the zero module with the empty family of forms. -/
+/-- The **zero hermitian vector bundle**, the zero module with the zero form on every (zero)
+fibre. -/
 @[expose] def zero : HermitianBundle.{u, v} K where
   carrier := PUnit
   metric := default

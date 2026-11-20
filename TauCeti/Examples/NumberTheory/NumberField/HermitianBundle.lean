@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.FractionalIdeal.Operations
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
 
 /-!
 # Examples of hermitian vector bundles over rings of integers
 
-* `Ō_K` has rank one and the zero module with the empty family of forms has rank zero.
+* `Ō_K` has rank one and the zero module with the zero form on every fibre has rank zero.
 * `Ō_K` has `h_σ(1, 1) = 1`, and rescaling by `c` gives `‖1‖_σ = e^{-c}`.
 * The hermitian line of the unit ideal `(1)` with all weights zero is isometric to `Ō_K`.
 * A family of forms on `O_K` with `h_σ(1, 1) = 1` and `h_{conj σ}(1, 1) = 4` violates the
@@ -41,14 +40,9 @@ example (σ : K →+* ℂ) (c : ℝ) :
 
 -- The unit ideal `(1)` with all weights zero is isometric to `Ō_K`.
 example :
-    Nonempty (HermitianMetric.Isometry (HermitianMetric.trivial K)
-      (HermitianMetric.fractionalIdeal (1 : FractionalIdeal (𝓞 K)⁰ K) one_ne_zero 0)) := by
-  have hrange : LinearMap.range (Algebra.linearMap (𝓞 K) K) =
-      ((1 : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K) := by
-    rw [FractionalIdeal.coeToSubmodule_one, Submodule.one_eq_range]
-  exact ⟨HermitianMetric.isometryOfIsBaseChange _ 0 _
-    ((LinearEquiv.ofInjective _ (IsFractionRing.injective (𝓞 K) K)).trans
-      (LinearEquiv.ofEq _ _ hrange)) fun _ ↦ rfl⟩
+    Nonempty (HermitianMetric.IsometryEquiv (HermitianMetric.trivial K)
+      (HermitianMetric.fractionalIdeal (1 : FractionalIdeal (𝓞 K)⁰ K) one_ne_zero 0)) :=
+  ⟨HermitianMetric.isometryEquivTrivialFractionalIdealOne K⟩
 
 -- The conjugation condition excludes `h_σ(1, 1) = 1` together with `h_{conj σ}(1, 1) = 4`.
 example (h : HermitianMetric K (𝓞 K)) (σ : K →+* ℂ)
