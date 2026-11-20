@@ -21,12 +21,12 @@ import Mathlib.NumberTheory.SumPrimeReciprocals
 For real `k`, the Keating–Snaith conjecture predicts
 `∫₀ᵀ |ζ(1/2 + it)|^(2k) dt ∼ a(k) g(k) T (log T)^(k²)`, with an arithmetic factor `a(k)` and a
 random-matrix factor `g(k)`. This file defines both constants and proves the facts about them
-that hold unconditionally: they are positive, and they take the predicted values in the cases
-`k = 1, 2` where the moments are known.
+that hold unconditionally: `a(k)` is positive for every real `k` and `g(k)` is positive for
+`k > -1/2`, and they take the predicted values in the cases `k = 1, 2` where the moments are known.
 
 Write `c_k(j) = (k)_j / j!` for the coefficients of `(1 - x)⁻ᵏ = ∑ c_k(j) xʲ`; this is Mathlib's
 `Ring.multichoose k j`. The local series `∑ c_k(j)² xʲ` is the Gauss hypergeometric function
-`₂F₁(k, k; 1; x)` (`TauCeti.hasSum_multichoose_mul_multichoose_mul_pow`), and the arithmetic
+`₂F₁(k, k; 1; x)` (`TauCeti.hasSum_multichoose_sq_mul_pow`), and the arithmetic
 factor is the Euler product
 `a(k) = ∏_p (1 - 1/p)^(k²) ₂F₁(k, k; 1; 1/p)`.
 Since `₂F₁(k, k; 1; x) = 1 + k² x + O(x²)`, the first-order terms cancel in each local factor,
@@ -46,6 +46,7 @@ axis, and positive for `k > -1/2`.
 
 ## Main results
 
+* `TauCeti.zetaMomentLocalFactor_def`: the local factor is `(1 - x)^(k²) ₂F₁(k, k; 1; x)`.
 * `TauCeti.hasProd_zetaMomentArithmeticFactor`, `TauCeti.zetaMomentArithmeticFactor_pos`: the
   Euler product converges unconditionally and `a(k) > 0`, for every real `k`.
 * `TauCeti.zetaMomentArithmeticFactor_one`, `TauCeti.zetaMomentArithmeticFactor_two`:
@@ -77,11 +78,17 @@ conjecture. At `x = 1/p` it is `(1 - 1/p)^(k²) ∑_j c_k(j)² p⁻ʲ`, where `c
 noncomputable def zetaMomentLocalFactor (k x : ℝ) : ℝ :=
   (1 - x) ^ (k ^ 2) * ₂F₁ k k 1 x
 
-/-- The local series `∑_j c_k(j)² xʲ`, with `c_k(j) = (k)_j / j!`, sums to `₂F₁(k, k; 1; x)`. -/
+/-- The defining formula of the local factor, `(1 - x)^(k²) ₂F₁(k, k; 1; x)`. Combined with
+`TauCeti.hasSum_multichoose_sq_mul_pow`, this identifies the local factor at `x = 1/p` with
+`(1 - 1/p)^(k²) ∑_j c_k(j)² p⁻ʲ`. -/
+theorem zetaMomentLocalFactor_def (k x : ℝ) :
+    zetaMomentLocalFactor k x = (1 - x) ^ (k ^ 2) * ₂F₁ k k 1 x :=
+  (rfl)
+
+/-- The local series `∑_j c_k(j)² xʲ` over `ℝ`, for `|x| < 1`. -/
 private theorem hasSum_localSeries (k : ℝ) {x : ℝ} (hx : |x| < 1) :
-    HasSum (fun j : ℕ ↦ Ring.multichoose k j ^ 2 * x ^ j) (₂F₁ k k 1 x) := by
-  simpa only [sq, smul_eq_mul] using
-    hasSum_multichoose_mul_multichoose_mul_pow (𝔸 := ℝ) k k (x := x) (by simpa using hx)
+    HasSum (fun j : ℕ ↦ Ring.multichoose k j ^ 2 * x ^ j) (₂F₁ k k 1 x) :=
+  hasSum_multichoose_sq_mul_pow k (by rwa [Real.norm_eq_abs])
 
 /-- The local series splits as `1 + k² x` plus the tail `∑_j c_k(j + 2)² x^(j + 2)`. -/
 private theorem hypergeometric_eq_add_tsum (k : ℝ) {x : ℝ} (hx : |x| < 1) :
@@ -176,6 +183,11 @@ private theorem summable_log_zetaMomentLocalFactor (k : ℝ) :
 
 /-! ### The arithmetic factor -/
 
+/-- The reciprocal of a prime lies strictly inside the unit interval. -/
+private theorem abs_inv_prime_lt_one (p : Nat.Primes) : |(p : ℝ)⁻¹| < 1 := by
+  rw [abs_inv, Nat.abs_cast]
+  exact inv_lt_one_of_one_lt₀ (by exact_mod_cast p.2.one_lt)
+
 /-- The arithmetic factor `a(k) = ∏_p (1 - 1/p)^(k²) ∑_j c_k(j)² p⁻ʲ` of the zeta moment
 conjecture, with `c_k(j) = (k)_j / j!`, as an unordered product over the primes. The product
 converges unconditionally for every real `k` (`TauCeti.hasProd_zetaMomentArithmeticFactor`). -/
@@ -187,7 +199,7 @@ private theorem hasProd_rexp_zetaMomentArithmeticFactor (k : ℝ) :
       (rexp (∑' p : Nat.Primes, log (zetaMomentLocalFactor k (p : ℝ)⁻¹))) :=
   hasProd_of_hasSum_log
     (fun p ↦ zetaMomentLocalFactor_pos k (by positivity)
-      (inv_lt_one_of_one_lt₀ (by exact_mod_cast p.2.one_lt)))
+      (lt_of_abs_lt (abs_inv_prime_lt_one p)))
     (summable_log_zetaMomentLocalFactor k).hasSum
 
 /-- The Euler product defining the arithmetic factor converges unconditionally, for every real
@@ -215,10 +227,7 @@ theorem zetaMomentLocalFactor_one {x : ℝ} (hx : |x| < 1) : zetaMomentLocalFact
 /-- `a(1) = 1`. -/
 @[simp]
 theorem zetaMomentArithmeticFactor_one : zetaMomentArithmeticFactor 1 = 1 := by
-  have hp (p : Nat.Primes) : |(p : ℝ)⁻¹| < 1 := by
-    rw [abs_inv, Nat.abs_cast]
-    exact inv_lt_one_of_one_lt₀ (by exact_mod_cast p.2.one_lt)
-  simp [zetaMomentArithmeticFactor, zetaMomentLocalFactor_one (hp _)]
+  simp [zetaMomentArithmeticFactor, zetaMomentLocalFactor_one (abs_inv_prime_lt_one _)]
 
 /-- At `k = 2` the local factor is `1 - x²`: `c_2(j) = j + 1`, and
 `∑_j (j + 1)² xʲ = (1 + x)/(1 - x)³`. At `x = 1/2` this is the local factor `3/4` at `p = 2`. -/
@@ -240,9 +249,6 @@ theorem zetaMomentLocalFactor_two {x : ℝ} (hx : |x| < 1) :
 
 /-- `a(2) = 1/ζ(2) = 6/π²`, by the Euler product of the Riemann zeta function. -/
 theorem zetaMomentArithmeticFactor_two : zetaMomentArithmeticFactor 2 = 6 / π ^ 2 := by
-  have hp (p : Nat.Primes) : |(p : ℝ)⁻¹| < 1 := by
-    rw [abs_inv, Nat.abs_cast]
-    exact inv_lt_one_of_one_lt₀ (by exact_mod_cast p.2.one_lt)
   -- The real product `∏_p (1 - p⁻²)`, read in `ℂ`, is the inverse of the Euler product of `ζ(2)`.
   have hreal := (hasProd_zetaMomentArithmeticFactor 2).map Complex.ofRealHom
     Complex.continuous_ofReal
@@ -252,8 +258,8 @@ theorem zetaMomentArithmeticFactor_two : zetaMomentArithmeticFactor 2 = 6 / π ^
   have hfun : (Complex.ofRealHom ∘ fun p : Nat.Primes ↦
       zetaMomentLocalFactor 2 (p : ℝ)⁻¹) = fun p : Nat.Primes ↦ 1 - (p : ℂ) ^ (-(2 : ℂ)) := by
     ext p
-    simp only [Function.comp_apply, zetaMomentLocalFactor_two (hp p), Complex.cpow_neg,
-      Complex.cpow_ofNat, Complex.ofRealHom_eq_coe]
+    simp only [Function.comp_apply, zetaMomentLocalFactor_two (abs_inv_prime_lt_one p),
+      Complex.cpow_neg, Complex.cpow_ofNat, Complex.ofRealHom_eq_coe]
     push_cast
     rw [inv_pow]
   rw [hfun] at hreal
@@ -281,13 +287,9 @@ theorem ofReal_zetaMomentBarnesFactor (k : ℝ) :
 /-- The Barnes factor `g(k)` is positive for `k > -1/2`. -/
 theorem zetaMomentBarnesFactor_pos {k : ℝ} (hk : -1 / 2 < k) : 0 < zetaMomentBarnesFactor k := by
   have h₁ : barnesG ((k : ℂ) + 1) = ((barnesG ((k + 1 : ℝ) : ℂ)).re : ℂ) := by
-    rw [← barnesG_ofReal_eq_re]
-    push_cast
-    rfl
+    simpa using barnesG_ofReal_eq_re (k + 1)
   have h₂ : barnesG (2 * (k : ℂ) + 1) = ((barnesG ((2 * k + 1 : ℝ) : ℂ)).re : ℂ) := by
-    rw [← barnesG_ofReal_eq_re]
-    push_cast
-    rfl
+    simpa using barnesG_ofReal_eq_re (2 * k + 1)
   rw [zetaMomentBarnesFactor, h₁, h₂, ← Complex.ofReal_pow, ← Complex.ofReal_div,
     Complex.ofReal_re]
   exact div_pos (pow_pos (barnesG_ofReal_re_pos (by linarith)) 2)

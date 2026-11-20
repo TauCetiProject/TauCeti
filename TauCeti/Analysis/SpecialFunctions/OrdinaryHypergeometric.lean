@@ -34,10 +34,13 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 * `TauCeti.one_le_radius_ordinaryHypergeometricSeries`: the radius of convergence of
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
+* `TauCeti.multichoose_eq_ascPochhammer_eval_div`: `Ring.multichoose r n = (r)ₙ / n!` in
+  characteristic zero.
 * `TauCeti.hasSum_ordinaryHypergeometric`: on the open unit ball, `₂F₁ a b c` is the sum of its
   series.
 * `TauCeti.hasSum_multichoose_mul_multichoose_mul_pow`: with lower parameter `1`, the coefficients
   are products of generalized multichoose numbers, so `∑ (a)ₙ (b)ₙ / (n!)² xⁿ = ₂F₁(a, b; 1; x)`.
+  For `a = b` over `𝕂` this is `TauCeti.hasSum_multichoose_sq_mul_pow`.
 * `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
   its first `n + 1` terms.
 * `TauCeti.ordinaryHypergeometricCoefficient_add_one`: the coefficient recurrence.
@@ -75,16 +78,21 @@ theorem ordinaryHypergeometricCoefficient_add_one {K : Type*} [Field K] (a b c :
     Nat.cast_one, ascPochhammer_succ_eval, div_eq_mul_inv, mul_inv]
   ring
 
+/-- In a field of characteristic zero, the generalized multichoose number is the rising factorial
+divided by the factorial: `Ring.multichoose r n = (r)ₙ / n!`. -/
+theorem multichoose_eq_ascPochhammer_eval_div {K : Type*} [Field K] [CharZero K] (r : K)
+    (n : ℕ) : Ring.multichoose r n = (ascPochhammer K n).eval r / n.factorial := by
+  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer r n
+  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
+  rw [← h, mul_div_cancel_left₀ _ (by exact_mod_cast n.factorial_ne_zero)]
+
 /-- With lower parameter `1`, the hypergeometric coefficient `(a)ₙ (b)ₙ / ((1)ₙ n!)` is the product
 of the generalized multichoose numbers `(a)ₙ / n!` and `(b)ₙ / n!`. -/
 theorem ordinaryHypergeometricCoefficient_one_eq_multichoose_mul {K : Type*} [Field K] [CharZero K]
     (a b : K) (n : ℕ) :
     ordinaryHypergeometricCoefficient a b 1 n = Ring.multichoose a n * Ring.multichoose b n := by
-  have hmc (r : K) : Ring.multichoose r n = (ascPochhammer K n).eval r / n.factorial := by
-    have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer r n
-    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-    rw [← h, mul_div_cancel_left₀ _ (by exact_mod_cast n.factorial_ne_zero)]
-  rw [ordinaryHypergeometricCoefficient, hmc, hmc, ascPochhammer_eval_one]
+  rw [ordinaryHypergeometricCoefficient, multichoose_eq_ascPochhammer_eval_div,
+    multichoose_eq_ascPochhammer_eval_div, ascPochhammer_eval_one]
   ring
 
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
@@ -142,6 +150,12 @@ theorem hasSum_multichoose_mul_multichoose_mul_pow [CompleteSpace 𝔸] (a b : �
     HasSum (fun n ↦ (Ring.multichoose a n * Ring.multichoose b n) • x ^ n) (₂F₁ a b 1 x) := by
   simpa only [ordinaryHypergeometricCoefficient_one_eq_multichoose_mul] using
     hasSum_ordinaryHypergeometric a b 1 hx
+
+/-- Inside the open unit disc, the series `∑ c_a(n)² xⁿ` of squared coefficients
+`c_a(n) = (a)ₙ / n!` of `(1 - x)⁻ᵃ` sums to `₂F₁(a, a; 1; x)`. -/
+theorem hasSum_multichoose_sq_mul_pow (a : 𝕂) {x : 𝕂} (hx : ‖x‖ < 1) :
+    HasSum (fun n ↦ Ring.multichoose a n ^ 2 * x ^ n) (₂F₁ a a 1 x) := by
+  simpa only [sq, smul_eq_mul] using hasSum_multichoose_mul_multichoose_mul_pow (𝔸 := 𝕂) a a hx
 
 section Terminating
 
