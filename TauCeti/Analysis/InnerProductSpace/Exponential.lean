@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.CStarAlgebra.Exponential
 import TauCeti.Analysis.Semigroups.BoundedGenerator.Perturbation
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-import TauCeti.Analysis.Semigroups.Group.Stone.Basic
+import all TauCeti.Analysis.Semigroups.Group.Stone.Basic
 
 /-!
 # Exponential estimates for bounded self-adjoint operators
@@ -45,36 +45,17 @@ private theorem norm_exp_smul_I_sub_exp_smul_I_apply_le_of_nonneg {Sm Sn : H →
       t * ‖(I • Sm - I • Sn) ψ‖ := by
   have hexp (S : H →L[ℂ] H) (u : ℝ) (x : H) :
       exp (u • (I • S).restrictScalars ℝ) x = exp (u • (I • S)) x := by
-    let _i : Module ℚ H := Module.compHom H (algebraMap ℚ ℂ)
-    let +nondep : NormedAlgebra ℚ (H →L[ℂ] H) := .restrictScalars ℚ ℂ _
-    let +nondep : NormedAlgebra ℚ (H →L[ℝ] H) := .restrictScalars ℚ ℝ _
-    let ρ : (H →L[ℂ] H) →+* (H →L[ℝ] H) :=
-      { toFun := fun C => C.restrictScalars ℝ
-        map_one' := by ext; rfl
-        map_mul' := by intros; ext; rfl
-        map_zero' := by ext; rfl
-        map_add' := by intros; ext; rfl }
-    -- The ring hom and the scalar-restriction isometry have the same underlying map.
-    have hρ : Continuous ρ :=
-      (ContinuousLinearMap.restrictScalarsIsometry ℂ H H ℝ ℝ).continuous
-    have h := NormedSpace.map_exp ρ hρ (u • (I • S))
-    have hsmul : ρ (u • (I • S)) = u • (I • S).restrictScalars ℝ := by
-      ext x
-      rfl
-    rw [hsmul] at h
-    -- Scalar restriction preserves real time scaling; evaluate the operator identity at `x`.
-    have hx := congrArg (fun C : H →L[ℝ] H => C x) h
-    simpa [ρ] using hx.symm
+    have h := Semigroups.StronglyContinuousGroup.ofBoundedExp_apply S u
+    rw [Semigroups.StronglyContinuousGroup.ofBoundedExp.eq_def,
+      Semigroups.StronglyContinuousGroup.ofBounded_apply] at h
+    simpa only [coe_restrictScalars', Complex.coe_smul] using
+      congrArg (fun C : H →L[ℝ] H => C x) h
   have hbound (S : H →L[ℂ] H) (hS : IsSelfAdjoint S) (u : ℝ) (_hu : 0 ≤ u) :
       ‖exp (u • (I • S).restrictScalars ℝ)‖ ≤ (1 : ℝ) := by
-    apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-    intro x
-    rw [hexp, one_mul]
-    have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp S hS).norm_map u x
-    rw [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply] at h
-    -- Evaluate the real-linear restriction of the native Stone group.
-    change ‖exp ((u : ℂ) • (I • S)) x‖ = ‖x‖ at h
-    exact le_of_eq (by simpa only [Complex.coe_smul] using h)
+    have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp S hS).opNorm_le_one u
+    rw [Semigroups.StronglyContinuousGroup.ofBoundedExp.eq_def,
+      Semigroups.StronglyContinuousGroup.ofBounded_apply] at h
+    exact h
   have hc : Commute ((I • Sm).restrictScalars ℝ) ((I • Sn).restrictScalars ℝ) := by
     ext x
     exact congrArg (fun C : H →L[ℂ] H => C x) ((hcomm.smul_left I).smul_right I).eq

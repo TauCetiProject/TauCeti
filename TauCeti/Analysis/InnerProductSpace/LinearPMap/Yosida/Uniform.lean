@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Exponential
 import TauCeti.Analysis.Semigroups.Group.Stone.Basic
 public import TauCeti.Analysis.Normed.Operator.Dense
 public import Mathlib.Data.PNat.Basic
+import TauCeti.Topology.MetricSpace.Pseudo.Basic
 
 /-!
 # Uniform convergence of Yosida exponential approximants
@@ -72,15 +73,6 @@ variable {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A)
 private noncomputable def yosidaFlow (A : H →ₗ.[ℂ] H) (n : ℕ+) (t : ℝ) : H →L[ℂ] H :=
   NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ)))
 
-private theorem yosidaFlow_norm (hA : IsSelfAdjoint A) (n : ℕ+) (t : ℝ) (x : H) :
-    ‖yosidaFlow A n t x‖ = ‖x‖ := by
-  have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp _
-    (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ))).norm_map t x
-  rw [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply] at h
-  -- The native group acts through a real-linear restriction of the complex exponential.
-  change ‖NormedSpace.exp ((t : ℂ) • (I • A.symmetricYosidaApproximation (n : ℝ))) x‖ = ‖x‖ at h
-  simpa only [yosidaFlow, Complex.coe_smul] using h
-
 private theorem yosidaFlow_difference (hA : IsSelfAdjoint A) (m n : ℕ+) (t : ℝ) (x : H) :
     ‖yosidaFlow A m t x - yosidaFlow A n t x‖ ≤
       |t| * ‖A.symmetricYosidaApproximation (m : ℝ) x -
@@ -98,35 +90,35 @@ theorem _root_.IsSelfAdjoint.yosida_exponential_uniform_cauchy
       ‖NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (m : ℝ))) x -
         NormedSpace.exp (t • (I • A.symmetricYosidaApproximation (n : ℝ))) x‖ < ε := by
   let K := max R 0 + 1
-  have hK : 0 < K := by dsimp [K]; positivity
   have hbound : ∀ᶠ n : ℕ+ in atTop, ∀ t ∈ {t : ℝ | |t| ≤ R}, ‖yosidaFlow A n t‖ ≤ 1 := by
-    exact Filter.Eventually.of_forall fun n t _ =>
-      (yosidaFlow A n t).opNorm_le_bound zero_le_one fun y => by
-        rw [yosidaFlow_norm hA]
-        simp
+    exact Filter.Eventually.of_forall fun n t _ => by
+      have h := (Semigroups.StronglyContinuousGroup.isUnitary_ofBoundedExp _
+        (hA.isSelfAdjoint_symmetricYosidaApproximation (n : ℝ))).opNorm_le_one t
+      rw [Semigroups.StronglyContinuousGroup.ofBoundedExp_apply,
+        ContinuousLinearMap.norm_restrictScalars] at h
+      simpa only [yosidaFlow, Complex.coe_smul] using h
   have hdomain : ∀ y ∈ (A.domain : Set H),
       UniformCauchySeqOn (fun n t => yosidaFlow A n t y) atTop {t : ℝ | |t| ≤ R} := by
     intro y hy
-    apply Metric.uniformCauchySeqOn_iff.mpr
-    intro η hη
     have hconv := ((hA.tendsto_symmetricYosidaApproximation_apply ⟨y, hy⟩).mono_left
       atTop_le_cocompact).comp (tendsto_natCast_atTop_atTop.comp tendsto_PNat_val_atTop_atTop)
-    have hc := hconv.cauchySeq
-    rw [Metric.cauchySeq_iff] at hc
-    obtain ⟨N, hN⟩ := hc (η / K) (by positivity)
-    refine ⟨N, fun m hm n hn t ht => ?_⟩
-    have hmn := hN m hm n hn
-    rw [dist_eq_norm] at hmn ⊢
-    have htK : |t| ≤ K := le_trans ht (le_trans (le_max_left R 0) (by dsimp [K]; linarith))
-    calc
-      ‖yosidaFlow A m t y - yosidaFlow A n t y‖ ≤
-          |t| * ‖A.symmetricYosidaApproximation (m : ℝ) y -
-            A.symmetricYosidaApproximation (n : ℝ) y‖ := yosidaFlow_difference hA m n t y
-      _ ≤ K * ‖A.symmetricYosidaApproximation (m : ℝ) y -
-            A.symmetricYosidaApproximation (n : ℝ) y‖ :=
-        mul_le_mul_of_nonneg_right htK (norm_nonneg _)
-      _ < K * (η / K) := mul_lt_mul_of_pos_left hmn hK
-      _ = η := by field_simp
+    have hzero : Tendsto (fun p : ℕ+ × ℕ+ => K * dist
+        (A.symmetricYosidaApproximation (p.1 : ℝ) y)
+        (A.symmetricYosidaApproximation (p.2 : ℝ) y)) (atTop ×ˢ atTop) (𝓝 0) := by
+      simpa only [Function.comp_apply, dist_self, mul_zero] using tendsto_const_nhds.mul
+        ((hconv.comp tendsto_fst).dist (hconv.comp tendsto_snd))
+    apply uniformCauchySeqOn_of_dist_le hzero
+    exact Filter.Eventually.of_forall fun p t ht => by
+      have htK : |t| ≤ K := le_trans ht
+        (le_trans (le_max_left R 0) (by dsimp [K]; linarith))
+      calc
+        dist (yosidaFlow A p.1 t y) (yosidaFlow A p.2 t y) ≤
+            |t| * dist (A.symmetricYosidaApproximation (p.1 : ℝ) y)
+              (A.symmetricYosidaApproximation (p.2 : ℝ) y) := by
+          simpa only [dist_eq_norm] using yosidaFlow_difference hA p.1 p.2 t y
+        _ ≤ K * dist (A.symmetricYosidaApproximation (p.1 : ℝ) y)
+            (A.symmetricYosidaApproximation (p.2 : ℝ) y) :=
+          mul_le_mul_of_nonneg_right htK dist_nonneg
   have hu := ContinuousLinearMap.uniformCauchySeqOn_apply_of_dense
     (f := yosidaFlow A) (C := 1) hA.dense_domain hbound hdomain x
   obtain ⟨N, hN⟩ := Metric.uniformCauchySeqOn_iff.mp hu ε hε
