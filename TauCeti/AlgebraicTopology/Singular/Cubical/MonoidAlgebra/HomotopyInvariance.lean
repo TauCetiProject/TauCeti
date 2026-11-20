@@ -202,23 +202,13 @@ theorem isQuasiIso_restrictScalars_of_apply_eq
   -- The chains pushed forward along `e` are read with the phantom monoid `G'`, those in
   -- `cubicalChainModuleHomotopy_spec` with `G`; both composites are the push-forward along
   -- `e.invFun ∘ e.toFun` (and similarly for `e.symm`).
-  · have h₁ := LinearMap.congr_fun (cubicalChainModuleLinearMap_comp (G := G) (G' := G')
-      (G'' := G) (R := R) e.toFun e.invFun) x
-    have h₂ := LinearMap.congr_fun (cubicalChainModuleLinearMap_comp (G := G) (G' := G)
-      (G'' := G) (R := R) e.toFun e.invFun) x
-    rw [LinearMap.comp_apply] at h₁ h₂
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hφ]
-    rw [← h₁, h₂]
+  · simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, hφ]
+    rw [cubicalChainModuleLinearMap_linearMap, ← cubicalChainModuleLinearMap_linearMap (G' := G)]
     exact cubicalChainModuleHomotopy_spec R e x
-  · have h₁ := LinearMap.congr_fun (cubicalChainModuleLinearMap_comp (G := G') (G' := G)
-      (G'' := G') (R := R) e.invFun e.toFun) (ε y)
-    have h₂ := LinearMap.congr_fun (cubicalChainModuleLinearMap_comp (G := G') (G' := G')
-      (G'' := G') (R := R) e.invFun e.toFun) (ε y)
-    rw [LinearMap.comp_apply] at h₁ h₂
-    apply ε.injective
+  · apply ε.injective
     simp only [map_add, hφ, LinearMap.comp_apply, LinearEquiv.coe_coe, hd,
       LinearEquiv.apply_symm_apply]
-    rw [← h₁, h₂]
+    rw [cubicalChainModuleLinearMap_linearMap, ← cubicalChainModuleLinearMap_linearMap (G' := G')]
     exact cubicalChainModuleHomotopy_spec R e.symm (ε y)
 
 end Restriction

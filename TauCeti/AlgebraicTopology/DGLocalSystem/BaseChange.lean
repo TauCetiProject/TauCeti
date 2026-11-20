@@ -111,6 +111,10 @@ theorem fibrationLocalSystemSquareMap_id {q : C(E', B)} (h : C(E, E')) (hh : q.c
       (DGLocalSystem.pullbackId R).hom.app (fibrationLocalSystem R q b) =
       fibrationLocalSystemMap R h hh := by
   ext x
+  -- `simp` does not close this goal, nor the one in `fibrationLocalSystemSquareMap_comp`: it
+  -- leaves `DGRightModuleCat.comp_apply` unused, and even after rewriting with it, it does not
+  -- fire `restrictScalarsEquiv_fibrationLocalSystemSquareMap_apply` on the carrier of the
+  -- pullback, so the chain of rewrites is spelled out.
   rw [DGRightModuleCat.comp_apply, DGLocalSystem.pullbackId_hom_app, DGRightModuleCat.comp_apply,
     DGRightModuleCat.restrictScalarsIdApp_hom_apply,
     DGRightModuleCat.restrictScalarsEquiv_eqToHom_apply (loopChainMap_id R),

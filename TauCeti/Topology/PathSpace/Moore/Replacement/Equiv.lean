@@ -178,12 +178,17 @@ def fiberHomotopyEquivFiber {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
     ((Homeomorph.refl (MooreReplacement p)).subtype fun x ↦ by
       rw [endpoint_apply, Homeomorph.refl_apply, id_eq]).toHomotopyEquiv
 
-@[simp]
 theorem val_fiberHomotopyEquivFiber_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p)
     (b : B) (f : {e // p e = b}) : (fiberHomotopyEquivFiber hp b f).val = incl p f := by
   rw [Fiber.val_eq_subtypeVal, fiberHomotopyEquivFiber]
   erw [HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv]
   exact (FiberHomotopyEquiv.coe_fiber_apply _ b f).trans (by rw [fiberHomotopyEquiv_toFun])
+
+/-- The homotopy equivalence `F ≃ₕ F'` is the inclusion `f ↦ (f, const)` of the fibre. -/
+@[simp]
+theorem fiberHomotopyEquivFiber_apply {p : C(E, B)} (hp : IsHurewiczFibration.{max u v} p) (b : B)
+    (f : {e // p e = b}) : fiberHomotopyEquivFiber hp b f = MooreLiftingFunction.fiberIncl p b f :=
+  Fiber.ext <| by rw [val_fiberHomotopyEquivFiber_apply, MooreLiftingFunction.val_fiberIncl]
 
 @[simp]
 theorem coe_fiberHomotopyEquivFiber_symm_apply {p : C(E, B)}
@@ -218,14 +223,8 @@ def Fiber.squareMapHomotopyEquiv {p : C(E, B)} {p' : C(E', B')}
       have hsq' : (Fiber.squareMap h g hsq hg).comp (fiberHomotopyEquivFiber hp b).toFun =
           (fiberHomotopyEquivFiber hp' b').toFun.comp e.toFun := by
         ext x : 1
-        have hi : fiberHomotopyEquivFiber hp b x = MooreLiftingFunction.fiberIncl p b x :=
-          Fiber.ext <| by
-            rw [val_fiberHomotopyEquivFiber_apply, MooreLiftingFunction.val_fiberIncl]
-        have hj : fiberHomotopyEquivFiber hp' b' (e x) =
-            MooreLiftingFunction.fiberIncl p' b' (e x) :=
-          Fiber.ext <| by
-            rw [val_fiberHomotopyEquivFiber_apply, MooreLiftingFunction.val_fiberIncl]
-        rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, hi, hj, Fiber.squareMap_fiberIncl]
+        rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, fiberHomotopyEquivFiber_apply,
+          fiberHomotopyEquivFiber_apply, Fiber.squareMap_fiberIncl]
         exact congrArg _ (Subtype.ext (he x).symm)
       have := (Homotopic.refl (Fiber.squareMap h g hsq hg)).comp
         (fiberHomotopyEquivFiber hp b).right_inv

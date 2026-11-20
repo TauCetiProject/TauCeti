@@ -146,11 +146,8 @@ theorem loopChainMap_lof (f : C(B, B')) (hf : f b = b') (n : ℕ)
 
 /-- `C_*(Ωf)` is the push-forward of chains along `Ωf`. -/
 theorem loopChainMap_apply (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
-    loopChainMap R f hf a = cubicalChainSumMap R (MooreLoopSpace.map f hf).toContinuousMap a := by
-  induction a using DirectSum.induction_on with
-  | zero => rw [map_zero, map_zero]
-  | add a a' ha ha' => rw [map_add, map_add, ha, ha']
-  | of n y => rw [← DirectSum.lof_eq_of R, loopChainMap_lof, cubicalChainSumMap_lof]
+    loopChainMap R f hf a = cubicalChainSumMap R (MooreLoopSpace.map f hf).toContinuousMap a :=
+  cubicalChainDGAlgHom_apply _ a
 
 /-- The identity map induces the identity. -/
 @[simp]
