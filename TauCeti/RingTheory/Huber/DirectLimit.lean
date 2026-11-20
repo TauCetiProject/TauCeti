@@ -107,7 +107,7 @@ topology whose neighbourhoods of zero have basis `ϖ'ⁿ L₀`, such as `TauCeti
 
 section Tate
 
-variable [∀ i, IsTopologicalRing (A i)] (ht : ∀ i j (h : i ≤ j), Continuous (t i j h))
+variable (ht : ∀ i j (h : i ≤ j), Continuous (t i j h))
   (A₀ : ∀ i, Subring (A i)) (hA₀ : ∀ i, IsOpen (A₀ i : Set (A i)))
   {L₀ : Subring L} (hφA₀ : ∀ i, ∀ a ∈ A₀ i, φ i a ∈ L₀)
   {i₀ : ι} {ϖ : A i₀} (hϖ : IsPseudoUniformizer ϖ) {ϖ' : L₀} (hϖ' : (ϖ' : L) = φ i₀ ϖ)
@@ -115,7 +115,8 @@ variable [∀ i, IsTopologicalRing (A i)] (ht : ∀ i j (h : i ≤ j), Continuou
 omit [TopologicalSpace L] in
 include hφt ht hA₀ hφA₀ hϖ hϖ' in
 /-- Every element of a stage `Aᵢ` is mapped into `L₀` after multiplication by a power of `ϖ'`. -/
-private theorem exists_pow_mul_map_mem (i : ι) (a : A i) : ∃ n, (ϖ' : L) ^ n * φ i a ∈ L₀ := by
+private theorem exists_pow_mul_map_mem [∀ i, SeparatelyContinuousMul (A i)] (i : ι) (a : A i) :
+    ∃ n, (ϖ' : L) ^ n * φ i a ∈ L₀ := by
   -- at a stage `j` above `i` and `i₀`, the topologically nilpotent image of `ϖ` absorbs the
   -- image of `a` into the open subring `A₀ⱼ`
   obtain ⟨j, hij, hi₀j⟩ := directed_of (· ≤ ·) i i₀
@@ -131,7 +132,8 @@ include hφt ht hA₀ hφA₀ hϖ hϖ' in
 localisation of any subring `L₀` containing the images of the `A₀ᵢ` away from the image `ϖ'` of
 the pseudouniformiser `ϖ`. In particular `L` carries the `ϖ'`-adic topology
 `TauCeti.Huber.awayTopology ϖ' L`. -/
-theorem isLocalization_away (hcover : ∀ x : L, ∃ i a, φ i a = x) :
+theorem isLocalization_away [∀ i, SeparatelyContinuousMul (A i)]
+    (hcover : ∀ x : L, ∃ i a, φ i a = x) :
     IsLocalization.Away ϖ' L := by
   refine .mk ϖ' ?_ (fun x ↦ ?_) fun a b hab ↦ ⟨0, by simp [Subtype.ext hab]⟩
   · simpa [Algebra.algebraMap_ofSubsemiring_apply, hϖ'] using hϖ.isUnit.map (φ i₀)
@@ -140,7 +142,7 @@ theorem isLocalization_away (hcover : ∀ x : L, ∃ i a, φ i a = x) :
     refine ⟨n, ⟨_, hn⟩, ?_⟩
     simp only [Algebra.algebraMap_ofSubsemiring_apply, mul_comm]
 
-variable
+variable [∀ i, IsTopologicalRing (A i)]
   (h : (𝓝 (0 : L)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (awayNhd ϖ' L n : Set L))
 
 include hφt ht hA₀ hφA₀ hϖ hϖ' h in
