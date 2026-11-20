@@ -187,7 +187,8 @@ theorem mem_relativeCochains_succ_iff {n : ℕ} {ω : L [⋀^Fin (n + 1)]→ₗ[
   refine and_congr_left' ⟨fun h y hy ↦ ?_, fun h v i hv ↦
     map_eq_zero_of_curryLeft_eq_zero (h _ hv) rfl⟩
   ext w
-  exact h _ 0 hy
+  rw [curryLeft_apply_apply, zero_apply]
+  exact h _ 0 (by simpa using hy)
 
 /-- A relative `0`-cochain is an element of `M` annihilated by `H`. -/
 theorem mem_relativeCochains_zero_iff {ω : L [⋀^Fin 0]→ₗ[R] M} :
