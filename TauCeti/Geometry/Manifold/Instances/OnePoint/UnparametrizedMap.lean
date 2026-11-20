@@ -75,7 +75,7 @@ finer topology, such as a `C^∞` topology on pseudoholomorphic spheres.
   `OnePoint.MarkedUnparametrizedMap 𝕜 X` are Hausdorff.
 * `OnePoint.MarkedUnparametrizedMap.continuous_eval`: the evaluation map is continuous.
 * `OnePoint.MarkedUnparametrizedMap.continuous_forget`,
-  `OnePoint.MarkedUnparametrizedMap.surjective_forget`: forgetting the marked point is a continuous
+  `OnePoint.MarkedUnparametrizedMap.forget_surjective`: forgetting the marked point is a continuous
   surjection.
 
 ## References
@@ -178,6 +178,11 @@ noncomputable instance : SMul PSL(2, 𝕜) (NonconstantMap 𝕜 X) where
 @[simp]
 theorem smul_apply (g : PSL(2, 𝕜)) (u : NonconstantMap 𝕜 X) (z : OnePoint 𝕜) :
     (g • u) z = u (g⁻¹ • z) :=
+  (rfl)
+
+@[simp]
+theorem toContinuousMap_smul (g : PSL(2, 𝕜)) (u : NonconstantMap 𝕜 X) :
+    (g • u).toContinuousMap = u.toContinuousMap.comp ⟨(g⁻¹ • ·), continuous_const_smul _⟩ :=
   (rfl)
 
 noncomputable instance : MulAction PSL(2, 𝕜) (NonconstantMap 𝕜 X) where
@@ -294,7 +299,7 @@ theorem continuous_forget : Continuous (forget : MarkedUnparametrizedMap 𝕜 X 
     (continuous_quotient_mk'.comp continuous_fst).congr fun p : NonconstantMap 𝕜 X × OnePoint 𝕜 ↦
       (forget_mk p.1 p.2).symm
 
-theorem surjective_forget : Surjective (forget : MarkedUnparametrizedMap 𝕜 X → _) := by
+theorem forget_surjective : Surjective (forget : MarkedUnparametrizedMap 𝕜 X → _) := by
   rintro ⟨u⟩
   exact ⟨Quotient.mk _ (u, ∞), rfl⟩
 
