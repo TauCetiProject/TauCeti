@@ -89,7 +89,7 @@ system of its orientation double cover with respect to the deck involution. Its 
 the module `TauCeti.signFiber` of functions on the orientations of `E_b` that change sign under
 reversal (`TauCeti.VectorBundleOrientationCover.signLocalSystemObjEquiv`), and transport along a
 path precomposes with path lifting in the cover. -/
-def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
+@[expose] def signLocalSystem (hι : Fintype.card ι = finrank ℝ F) :
     LocalCoefficientSystem.{u, uB, max uB uE uι u} R (TopCat.of B) :=
   (isCoveringMap_proj (F := F) (E := E) hι).signLocalSystem R _ proj_comp_deck
 
@@ -258,7 +258,18 @@ def signLocalSystemIso (o : VectorBundleOrientation F E ι) :
   IsCoveringMap.signLocalSystemIsoOfSection _ (hσ := VectorBundleOrientationCover.proj_comp_deck)
     VectorBundleOrientationCover.deck_ne_self
     (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
-    ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ fun _ ↦ rfl
+    (o.coverSection hι) (o.proj_coverSection hι)
+
+/-- The trivialization of the orientation local system given by `o` is the trivialization of the
+sign local system given by the section `b ↦ (b, o b)` of the orientation double cover. -/
+theorem signLocalSystemIso_def (o : VectorBundleOrientation F E ι) :
+    signLocalSystemIso (R := R) hι o =
+      (VectorBundleOrientationCover.isCoveringMap_proj hι).signLocalSystemIsoOfSection
+        (hσ := VectorBundleOrientationCover.proj_comp_deck)
+        VectorBundleOrientationCover.deck_ne_self
+        (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
+        (o.coverSection hι) (o.proj_coverSection hι) :=
+  (rfl)
 
 @[simp]
 theorem signLocalSystemIso_hom_app_apply (o : VectorBundleOrientation F E ι) (b : B)
@@ -268,10 +279,13 @@ theorem signLocalSystemIso_hom_app_apply (o : VectorBundleOrientation F E ι) (b
         ((signLocalSystemIso hι o).hom.app (FundamentalGroupoid.mk b))) f =
       ULift.up (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b) f) := by
   rw [VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply]
-  exact IsCoveringMap.signLocalSystemIsoOfSection_hom_app_apply (X := TopCat.of B) _
+  refine (IsCoveringMap.signLocalSystemIsoOfSection_hom_app_apply (X := TopCat.of B) _
     (hσ := VectorBundleOrientationCover.proj_comp_deck) VectorBundleOrientationCover.deck_ne_self
     (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
-    ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ (fun _ ↦ rfl) (FundamentalGroupoid.mk b) f
+    (o.coverSection hι) (o.proj_coverSection hι) (FundamentalGroupoid.mk b) f).trans ?_
+  -- `signLocalSystemObjEquiv` of the orientation cover is by definition that of the covering.
+  simp only [coverSection_apply]
+  rfl
 
 /-- The inverse of the trivialization given by `o` sends `r` over `b` to the element of the fibre
 whose evaluation at the orientation `o b` is `r`. -/
@@ -282,10 +296,14 @@ theorem signLocalSystemIso_inv_app_apply (o : VectorBundleOrientation F E ι) (b
       (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b)).symm r := by
   apply (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b)).injective
   rw [LinearEquiv.apply_symm_apply, VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply]
-  exact IsCoveringMap.signLocalSystemIsoOfSection_inv_app_apply (X := TopCat.of B) _
+  refine Eq.trans ?_ (IsCoveringMap.signLocalSystemIsoOfSection_inv_app_apply (X := TopCat.of B)
+    (VectorBundleOrientationCover.isCoveringMap_proj hι)
     (hσ := VectorBundleOrientationCover.proj_comp_deck) VectorBundleOrientationCover.deck_ne_self
     (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
-    ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ (fun _ ↦ rfl) (FundamentalGroupoid.mk b) r
+    (o.coverSection hι) (o.proj_coverSection hι) (FundamentalGroupoid.mk b) r)
+  -- `signLocalSystemObjEquiv` of the orientation cover is by definition that of the covering.
+  simp only [coverSection_apply]
+  rfl
 
 /-- The trivialization of the orientation local system given by the opposite orientation is the
 negative of the one given by `o`. -/
