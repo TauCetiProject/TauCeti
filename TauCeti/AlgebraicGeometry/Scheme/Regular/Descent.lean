@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 public import TauCeti.RingTheory.RegularLocalRing.Descent
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Noetherian
 
 /-!
 # Faithfully flat descent of regularity
@@ -15,7 +16,9 @@ public import TauCeti.RingTheory.RegularLocalRing.Descent
 For a flat morphism `f : X ⟶ Y`, regularity of the local ring at `x` implies regularity of
 the local ring at `f x`. Consequently, if `Y` is locally Noetherian and `f` is surjective,
 regularity of `X` implies regularity of `Y`. This applies in particular to finite faithfully
-flat covers; it needs neither étaleness nor a hypothesis on the fibre dimensions.
+flat covers; it needs neither étaleness nor a hypothesis on the fibre dimensions. For a smooth
+surjective morphism, local Noetherianity also descends, so no separate hypothesis on the target
+is needed to test regularity.
 
 The dimension condition is separate from regularity. For finite faithfully flat covers, the
 companion results in `TauCeti.AlgebraicGeometry.Morphisms.Flat.Dimension` descend the condition
@@ -60,3 +63,17 @@ theorem of_flat_of_surjective {X Y : Scheme.{u}} (f : X ⟶ Y) [Flat f] [Surject
   exact f.isRegularLocalRing_stalk_of_flat x
 
 end TauCeti.AlgebraicGeometry.IsRegular
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti.AlgebraicGeometry (IsRegular)
+
+/-- Regularity can be tested on a smooth surjective cover. -/
+theorem isRegular_iff_of_smooth_of_surjective {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [Smooth f] [Surjective f] : IsRegular X ↔ IsRegular Y := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ IsRegular.of_smooth f⟩
+  have : IsLocallyNoetherian Y := f.isLocallyNoetherian_iff_of_smooth_of_surjective.mp
+    h.toIsLocallyNoetherian
+  exact IsRegular.of_flat_of_surjective f
+
+end AlgebraicGeometry.Scheme.Hom

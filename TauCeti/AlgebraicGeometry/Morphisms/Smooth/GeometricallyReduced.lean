@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Geometrically.Reduced
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 public import TauCeti.RingTheory.Smooth.GeometricallyReduced
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Reduced
 
 /-!
 # Smooth morphisms are geometrically reduced
@@ -17,8 +18,9 @@ are reduced by `TauCeti.isReduced_of_smooth`. After base change to a field, this
 that a smooth morphism has geometrically reduced fibres.
 
 The main results are `AlgebraicGeometry.Scheme.Hom.isReduced_of_smooth` and the instance
-`TauCeti.AlgebraicGeometry.Smooth.geometricallyReduced`. Smooth,
-geometrically connected morphisms are also shown to be geometrically integral in
+`TauCeti.AlgebraicGeometry.Smooth.geometricallyReduced`. For a smooth surjective morphism,
+reducedness is equivalent on source and target (Stacks Project, Descent, Lemmas 35.18.1
+and 35.19.1). Smooth, geometrically connected morphisms are shown to be geometrically integral in
 `TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral`.
 
 No formalization is vendored. The commutative-algebra input is
@@ -56,6 +58,11 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isReduced_of_smooth
       exact isReduced_of_isAffine_isReduced _
     exact IsReduced.of_openCover Z Z.affineCover
   exact @IsReduced.of_openCover X (Y.affineCover.pullback₁ f) hred
+
+/-- Reducedness can be tested on a smooth surjective cover. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isReduced_iff_of_smooth_of_surjective
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [Smooth f] [Surjective f] : IsReduced X ↔ IsReduced Y :=
+  ⟨fun _ ↦ f.isReduced_of_flat_of_surjective, fun _ ↦ f.isReduced_of_smooth⟩
 
 /-- Every smooth morphism of schemes is geometrically reduced. -/
 instance (priority := low) Smooth.geometricallyReduced {X Y : Scheme.{u}} (f : X ⟶ Y)
