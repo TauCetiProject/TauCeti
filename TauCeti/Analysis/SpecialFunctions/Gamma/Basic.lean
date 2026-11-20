@@ -55,6 +55,9 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Complex.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` and
   `Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add` — the pole-free reciprocal identity
   `(Γ s)⁻¹ = s (s + 1) ⋯ (s + n - 1) (Γ(s + n))⁻¹`, valid at every `s`.
+* `Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero`,
+  `Real.ne_neg_natCast_of_neg_one_lt_of_ne_zero` — a nonzero parameter strictly to the right of
+  `-1` avoids `−ℕ`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -253,6 +256,16 @@ theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (s : ℂ) (n : ℕ) :
       Nat.cast_succ, ← add_assoc]
     ring
 
+/-- A nonzero complex number with `Re z > -1` is not a nonpositive integer. -/
+theorem ne_neg_natCast_of_neg_one_lt_re_of_ne_zero {z : ℂ} (hz₀ : -1 < z.re) (hz : z ≠ 0)
+    (n : ℕ) : z ≠ -(n : ℂ) := by
+  rcases n with _ | k
+  · simpa using hz
+  · intro hn
+    have hre := congrArg re hn
+    simp only [neg_re, Nat.cast_add, Nat.cast_one, add_re, natCast_re, one_re] at hre
+    linarith [k.cast_nonneg (α := ℝ)]
+
 /-- On the half-plane `1 ≤ Re s`, the reciprocal Gamma function decays factorially along
 `s + k`: `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!`. Together with the boundedness of `1 / Γ` on compact
 sets, this gives locally uniform bounds for series with coefficients `1 / Γ(b + k)` as functions
@@ -292,6 +305,12 @@ theorem inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (s : ℝ) (n : ℕ) :
   rw [hcast, Complex.Gamma_ofReal, Complex.Gamma_ofReal, heval, ← Complex.ofReal_inv,
     ← Complex.ofReal_inv, ← Complex.ofReal_mul] at h
   exact Complex.ofReal_injective h
+
+/-- A nonzero real number strictly greater than `-1` is not a nonpositive integer. -/
+theorem ne_neg_natCast_of_neg_one_lt_of_ne_zero {σ : ℝ} (hσ₀ : -1 < σ) (hσ : σ ≠ 0) (n : ℕ) :
+    σ ≠ -(n : ℝ) := fun hn ↦
+  Complex.ne_neg_natCast_of_neg_one_lt_re_of_ne_zero (z := σ) (by simpa using hσ₀)
+    (Complex.ofReal_ne_zero.mpr hσ) n (by exact_mod_cast hn)
 
 /-- On `[1, ∞)`, the reciprocal Gamma function decays factorially along natural-number shifts:
 `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!`, the real specialization of
