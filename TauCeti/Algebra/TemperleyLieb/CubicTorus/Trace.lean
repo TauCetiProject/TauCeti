@@ -216,7 +216,7 @@ theorem isMarkovTrace_cubicTrace : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) cubicTr
     change _ * cubicScalarCoefficient (n + 1) _ = _ * cubicScalarCoefficient n _
     rw [h, pow_succ]
     linear_combination (norm := skip) (Real.sqrt 3 : ℂ) ^ (n + 1) * (3 : ℂ)⁻¹ *
-      cubicScalarCoefficient n (cubicHom (n + 1) x).1 * Complex.ofReal_sqrt_mul_self zero_le_three
+      cubicScalarCoefficient n (cubicHom (n + 1) x).1 * Complex.mul_self_ofReal_sqrt zero_le_three
     push_cast
     ring
 

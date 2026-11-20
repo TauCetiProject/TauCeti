@@ -169,8 +169,8 @@ noncomputable def cubeRootPow : AddChar (ZMod 3) ℂˣ :=
   Circle.toUnits.compAddChar ZMod.toCircle
 
 /-- The values of `cubeRootPow` in `ℂ` are those of Mathlib's standard additive character. -/
-theorem coe_cubeRootPow (x : ZMod 3) : (cubeRootPow x : ℂ) = ZMod.stdAddChar x :=
-  (rfl)
+theorem coe_cubeRootPow (x : ZMod 3) : (cubeRootPow x : ℂ) = ZMod.stdAddChar x := by
+  simp [cubeRootPow, ZMod.stdAddChar_apply]
 
 /-- For `x ≠ 0` in `ZMod 3`, `ω ^ x` is a primitive cube root of unity:
 `1 + ω ^ x + (ω ^ x) ^ 2 = 0`. -/
@@ -463,7 +463,7 @@ noncomputable def cubicHom (m : ℕ) :
         cubicProjection_mul_cubicProjection_mul_cubicProjection h, smul_smul]
       congr 1
       linear_combination (norm := skip)
-        ((Real.sqrt 3 : ℂ) / 3) * Complex.ofReal_sqrt_mul_self zero_le_three
+        ((Real.sqrt 3 : ℂ) / 3) * Complex.mul_self_ofReal_sqrt zero_le_three
       push_cast
       ring)
     (fun {i j} h ↦ Subtype.ext <| by
