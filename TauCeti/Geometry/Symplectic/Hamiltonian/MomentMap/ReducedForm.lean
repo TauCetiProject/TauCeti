@@ -115,7 +115,7 @@ theorem isBasic_mpullback {K : Type*} [SMul K Z] (h : σ.IsMomentMap a μ) (hi :
     (hfib : ∀ z z', p z = p z' → ∃ k : K, k • z = z')
     (hinv : ∀ k : K, SmoothForm.mpullback (fun z : Z ↦ k • z) (hK k)
       (SmoothForm.mpullback i hi σ) = SmoothForm.mpullback i hi σ) :
-    RoughForm.IsBasic (V := ℝ) JQ p (SmoothForm.mpullback i hi σ).1 := by
+    RoughForm.IsBasic (V := ℝ) JQ p (SmoothForm.mpullback i hi σ).val := by
   refine RoughForm.isBasic_of_mpullback_eq hp (fun k ↦ (hK k).mdifferentiable (by simp))
     (fun k ↦ funext (hpK k)) (fun z z' hzz' ↦ .inr (hfib z z' hzz')) (fun z v j hj ↦ ?_)
     fun k ↦ by simpa only [SmoothForm.coe_mpullback] using congrArg Subtype.val (hinv k)

@@ -321,7 +321,7 @@ is a smooth structure `j₀` viewed as `C^n`, this gives a term for `j₀` viewe
 def ofEq (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
     {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
     InhomogeneousTerm j' J' :=
-  ⟨ν.val, by subst hj hJ; exact ν.2⟩
+  ⟨ν.val, by subst hj hJ; exact ν.property⟩
 
 @[simp]
 theorem ofEq_val (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}

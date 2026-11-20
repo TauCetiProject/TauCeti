@@ -311,6 +311,11 @@ theorem isomorphismInvariant_univ :
     IsomorphismInvariant (univ : Set (RelationalConfiguration L V)) :=
   fun _ _ _ _ => mem_univ _
 
+/-- On a subsingleton carrier, every set of configurations is isomorphism invariant. -/
+theorem isomorphismInvariant_of_subsingleton [Subsingleton V]
+    (A : Set (RelationalConfiguration L V)) : IsomorphismInvariant A :=
+  fun _ _ h hc => isoSetoid_iff_eq_of_subsingleton.1 h ▸ hc
+
 /-- The complement of an isomorphism-invariant set is isomorphism invariant. -/
 theorem IsomorphismInvariant.compl (hA : IsomorphismInvariant A) : IsomorphismInvariant Aᶜ :=
   fun _ _ h hc hd => hc (hA ((isoSetoid L V).symm h) hd)

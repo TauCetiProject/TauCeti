@@ -16,7 +16,11 @@ import TauCeti.Topology.VectorBundle.Trivialization
 # Continuous bundle homomorphisms and their inverses
 
 For a bundle with finite-dimensional model source, continuity of a fibrewise linear map
-on total spaces is equivalent to continuity as a section of Mathlib's Hom bundle.
+on total spaces is equivalent to continuity as a section of Mathlib's Hom bundle. This rests on
+continuity in coordinates: read in linear trivializations, a fibrewise continuous linear map over
+a map of bases, with finite-dimensional model source and continuous total-space map, is a
+continuous family of linear maps between the model fibres
+(`TauCeti.continuousOn_continuousLinearMapAt_comp_symmL`).
 Consequently a continuous fibrewise linear equivalence, or one whose underlying continuous linear
 maps form a continuous Hom-bundle section, gives a homeomorphism of total spaces
 (`TauCeti.bundleHomeomorph`, `TauCeti.bundleHomeomorphOfHom`): continuity of the inverse need not
@@ -170,6 +174,50 @@ theorem ContinuousAt.inCoordinates_clm_inverse
 
 end OfInCoordinates
 
+namespace TauCeti
+
+section Fiberwise
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  {B' : Type*} [TopologicalSpace B']
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {E' : B' → Type*} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)]
+  [∀ b, Module 𝕜 (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E']
+  {g : B' → B} {φ : ∀ b', E' b' →L[𝕜] E (g b')}
+
+/-- **A fibrewise linear map is continuous in coordinates.** Let the model fibre `F'` of `E'` be
+finite-dimensional over a complete field `𝕜`. Read in linear trivializations `e'` of `E'` and `e`
+of `E`, a family of continuous linear maps `φ b' : E'_{b'} → E_{g b'}` over a map of bases `g`,
+with continuous total-space map, is a continuous family of linear maps `F' → F` on the set of
+points `x` of the base set of `e'` with `g x` in the base set of `e`. -/
+theorem continuousOn_continuousLinearMapAt_comp_symmL [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F']
+    (hφ : Continuous fun v : TotalSpace F' E' ↦ TotalSpace.mk' F (g v.proj) (φ v.proj v.snd))
+    (e : Trivialization F (π F E)) [e.IsLinear 𝕜] (e' : Trivialization F' (π F' E'))
+    [e'.IsLinear 𝕜] :
+    ContinuousOn (fun x ↦ (e.continuousLinearMapAt 𝕜 (g x)).comp
+      ((φ x).comp (e'.symmL 𝕜 x))) (e'.baseSet ∩ g ⁻¹' e.baseSet) := by
+  refine continuousOn_clm_apply.2 fun v ↦ ?_
+  -- Pointwise, the map is `x ↦ (e (φ (e'⁻¹ (x, v)))).2`, a composite of maps continuous on the
+  -- relevant sets.
+  have hsymm : ContinuousOn (fun x ↦ TotalSpace.mk' F' x (e'.symm x v)) e'.baseSet :=
+    e'.continuousOn_symm.comp (continuous_id.prodMk continuous_const).continuousOn
+      fun x hx ↦ ⟨hx, mem_univ v⟩
+  have hcomp : ContinuousOn (fun x ↦ (e (TotalSpace.mk' F (g x) (φ x (e'.symm x v)))).2)
+      (e'.baseSet ∩ g ⁻¹' e.baseSet) :=
+    continuous_snd.comp_continuousOn <| e.continuousOn.comp
+      ((hφ.comp_continuousOn hsymm).mono inter_subset_left) fun x hx ↦ e.mem_source.2 hx.2
+  refine hcomp.congr fun x hx ↦ ?_
+  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, e'.symmL_apply hx.1,
+    Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e hx.2]
+
+end Fiberwise
+
+end TauCeti
+
 section
 
 variable {𝕜 B F₁ F₂ M : Type*} [NontriviallyNormedField 𝕜]
@@ -220,31 +268,22 @@ need not have finite rank. -/
 theorem continuous_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F₁]
     (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
     Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) x (ϕ x)) ↔
-      Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) := by
+      Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd)) := by
   constructor
   · intro hϕ
     exact (hϕ.comp (continuous_proj F₁ E₁)).clm_bundle_apply continuous_id
   · intro hϕ
     refine continuous_iff_continuousAt.mpr fun x ↦ ?_
     rw [continuousAt_hom_bundle]
-    refine ⟨continuousAt_id, continuousAt_clm_apply.mpr fun v ↦ ?_⟩
+    -- In the trivializations at `x`, the coordinate expression of `ϕ` is continuous on the
+    -- common base set, a neighbourhood of `x`.
     let e₁ := trivializationAt F₁ E₁ x
     let e₂ := trivializationAt F₂ E₂ x
-    have h₁ : x ∈ e₁.baseSet := mem_baseSet_trivializationAt F₁ E₁ x
-    have h₂ : x ∈ e₂.baseSet := mem_baseSet_trivializationAt F₂ E₂ x
-    have hs : ContinuousAt (fun y ↦ TotalSpace.mk' F₁ y (e₁.symm y v)) x :=
-      (e₁.continuousOn_symm.continuousAt
-        ((e₁.open_baseSet.prod isOpen_univ).mem_nhds ⟨h₁, mem_univ v⟩)).comp
-          (continuousAt_id.prodMk continuousAt_const)
-    have ht := (e₂.continuousAt (e₂.mem_source.mpr h₂)).comp (hϕ.continuousAt.comp hs)
-    refine ht.snd.congr_of_eventuallyEq ?_
-    filter_upwards [e₁.open_baseSet.mem_nhds h₁, e₂.open_baseSet.mem_nhds h₂] with y hy₁ hy₂
-    simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply]
-    rw [e₁.symmL_apply hy₁,
-      Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₂]
-    -- `TotalSpace.mk'` is the total-space constructor; the second component of
-    -- `e₂` applied to this point is precisely its fibre coordinate.
-    rfl
+    have hx : e₁.baseSet ∩ id ⁻¹' e₂.baseSet ∈ 𝓝 x :=
+      (e₁.open_baseSet.inter e₂.open_baseSet).mem_nhds
+        ⟨mem_baseSet_trivializationAt F₁ E₁ x, mem_baseSet_trivializationAt F₂ E₂ x⟩
+    exact ⟨continuousAt_id,
+      (continuousOn_continuousLinearMapAt_comp_symmL (g := id) hϕ e₂ e₁).continuousAt hx⟩
 
 /-- On the common base set of the trivializations at `x₀`, the coordinate expressions of a
 continuous Hom-bundle section in these fixed trivializations form a continuous family of
@@ -416,8 +455,8 @@ omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x
 /-- A continuous fibrewise linear equivalence with finite-dimensional model source has a
 continuous inverse on total spaces. No compactness or separation of the base is needed. -/
 theorem continuous_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
-    Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.2)) := by
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd))) :
+    Continuous (fun p : TotalSpace F₂ E₂ ↦ TotalSpace.mk' F₁ p.proj ((e p.proj).symm p.snd)) := by
   let := FiniteDimensional.completeSpace 𝕜 F₁
   have : ∀ x, IsTopologicalAddGroup (E₁ x) := VectorBundle.isTopologicalAddGroup 𝕜 F₁ E₁
   have : ∀ x, ContinuousSMul 𝕜 (E₁ x) := VectorBundle.continuousSMul 𝕜 F₁ E₁
@@ -431,10 +470,10 @@ theorem continuous_bundle_symm (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
 /-- The homeomorphism of total spaces induced by a continuous family of fibrewise linear
 equivalences. Continuity of the inverse follows from finite dimensionality. -/
 def bundleHomeomorph (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2))) :
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd))) :
     TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ where
-  toFun p := ⟨p.proj, e p.proj p.2⟩
-  invFun p := ⟨p.proj, (e p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, e p.proj p.snd⟩
+  invFun p := ⟨p.proj, (e p.proj).symm p.snd⟩
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := he
@@ -442,14 +481,14 @@ def bundleHomeomorph (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
 
 @[simp]
 theorem bundleHomeomorph_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)))
-    (p : TotalSpace F₁ E₁) : bundleHomeomorph e he p = ⟨p.proj, e p.proj p.2⟩ :=
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)))
+    (p : TotalSpace F₁ E₁) : bundleHomeomorph e he p = ⟨p.proj, e p.proj p.snd⟩ :=
   (rfl)
 
 @[simp]
 theorem bundleHomeomorph_symm_apply (e : ∀ x, E₁ x ≃L[𝕜] E₂ x)
-    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)))
-    (p : TotalSpace F₂ E₂) : (bundleHomeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ :=
+    (he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)))
+    (p : TotalSpace F₂ E₂) : (bundleHomeomorph e he).symm p = ⟨p.proj, (e p.proj).symm p.snd⟩ :=
   (rfl)
 
 end
@@ -466,10 +505,10 @@ def bundleHomeomorphOfHom : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂ :=
     (((continuous_hom_bundle_iff (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr fun _ ↦ rfl)
 
 @[simp] theorem bundleHomeomorphOfHom_apply (p : TotalSpace F₁ E₁) :
-    bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.2⟩ := (rfl)
+    bundleHomeomorphOfHom e he p = ⟨p.proj, e p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem bundleHomeomorphOfHom_symm_apply (p : TotalSpace F₂ E₂) :
-    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.2⟩ := (rfl)
+    (bundleHomeomorphOfHom e he).symm p = ⟨p.proj, (e p.proj).symm p.snd⟩ := (rfl)
 
 end
 
@@ -477,7 +516,7 @@ omit [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x
 /-- A continuous fibrewise bijective linear map between vector bundles with a
 finite-dimensional model source is induced by a homeomorphism of total spaces. -/
 theorem exists_bundleHomeomorph_of_bijective (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x)
-    (hϕ : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)))
+    (hϕ : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.snd)))
     (hbij : ∀ x, Function.Bijective (ϕ x)) :
     ∃ h : TotalSpace F₁ E₁ ≃ₜ TotalSpace F₂ E₂,
       ∀ (x : B) (v : E₁ x), h ⟨x, v⟩ = ⟨x, ϕ x v⟩ := by
@@ -490,7 +529,7 @@ theorem exists_bundleHomeomorph_of_bijective (ϕ : ∀ x, E₁ x →L[𝕜] E₂
     let := FiberBundle.t2Space F₂ E₂ x
     let := VectorBundle.finiteDimensional 𝕜 F₁ E₁ x
     exact (LinearEquiv.ofBijective (ϕ x).toLinearMap (hbij x)).toContinuousLinearEquiv
-  have he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.2)) :=
+  have he : Continuous (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (e p.proj p.snd)) :=
     hϕ.congr fun p ↦ by simp [e]
   exact ⟨bundleHomeomorph e he, fun x v ↦ by simp [e]⟩
 

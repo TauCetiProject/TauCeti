@@ -220,7 +220,7 @@ theorem rightTranslation_apply_algebraMap (g : G) (c : ℝ) :
 theorem tendsto_leftTranslation_apply_nhds_one (f : UCB G) :
     Tendsto (fun u : G => leftTranslation u f) (𝓝 1) (𝓝 f) := by
   simp only [tendsto_subtype_rng, coe_leftTranslation]
-  exact (mem_ucb_iff_tendsto.1 f.2).comp (by simpa using tendsto_inv (1 : G))
+  exact (mem_ucb_iff_tendsto.1 f.property).comp (by simpa using tendsto_inv (1 : G))
 
 /-- The orbit map `g ↦ L_g f` of a function `f` in `UCB G` is continuous for the supremum norm. -/
 theorem continuous_leftTranslation_apply (f : UCB G) :

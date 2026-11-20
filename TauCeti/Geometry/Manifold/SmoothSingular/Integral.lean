@@ -282,7 +282,7 @@ theorem integral_map {q : ℕ} (σ : SmoothSimplex I M p) (f : ⦋q⦌ ⟶ ⦋p�
   let L := simplexMapAmbient f.toOrderHom
   rw [integral_eq_setIntegral_mpullbackWithin _ φ (g := σ.extension ∘ L) fun x ↦ by
     rw [Function.comp_apply, σ.toContinuousMap_map_apply,
-      ← σ.extension_coe ⟨L x, mapsTo_simplexMapAmbient _ x.2⟩]]
+      ← σ.extension_coe ⟨L x, mapsTo_simplexMapAmbient _ x.property⟩]]
   refine setIntegral_congr_fun (isClosed_fullSimplex q).measurableSet fun x hx ↦ ?_
   rw [mpullbackWithin_comp_simplexMapAmbient f.toOrderHom hx
     ((σ.contMDiffOn_extension (L x) (mapsTo_simplexMapAmbient _ hx)).mdifferentiableWithinAt
@@ -362,7 +362,7 @@ theorem integral_ofFunction [CompleteSpace F] (σ : SmoothSimplex I M 0) (a : M 
     σ.integral (RoughForm.ofFunction I a) = a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 0⟩) := by
   have hx : ∀ x : EuclideanSpace ℝ (Fin 0), x = 0 := fun x ↦ Subsingleton.elim x 0
   rw [integral_eq_setIntegral_mpullbackWithin σ _ (g := fun _ ↦ σ.toContinuousMap
-    ⟨0, zero_mem_fullSimplex 0⟩) fun x ↦ congrArg σ.toContinuousMap (Subtype.ext (hx x.1).symm)]
+    ⟨0, zero_mem_fullSimplex 0⟩) fun x ↦ congrArg σ.toContinuousMap (Subtype.ext (hx x.val).symm)]
   rw [mpullbackWithin_ofFunction]
   refine (setIntegral_congr_fun (isClosed_fullSimplex 0).measurableSet
     (g := fun _ ↦ a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 0⟩))
@@ -433,8 +433,8 @@ theorem integral_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ 
 pinning the orientation convention of `SmoothSimplex.ofCurve` and `SmoothSimplex.integral`. -/
 @[simp]
 theorem integral_ofCurve_id_realLineCoordForm :
-    (ofCurve (I := 𝓘(ℝ)) (γ := id) contMDiff_id).integral SmoothForm.realLineCoordForm.1 = 1 := by
-  have hd : SmoothForm.realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
+    (ofCurve (I := 𝓘(ℝ)) (γ := id) contMDiff_id).integral SmoothForm.realLineCoordForm.val = 1 := by
+  have hd : SmoothForm.realLineCoordForm.val = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
     simpa only [mpullback_id] using SmoothForm.mpullback_realLineCoordForm (I := 𝓘(ℝ)) id
   rw [integral_ofCurve, hd, pathIntegral_mextDeriv_ofFunction contMDiff_id contMDiff_id 0 1]
   norm_num

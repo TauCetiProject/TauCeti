@@ -97,12 +97,12 @@ theorem fg_of_decompose_mem_of_comap_map_le (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (�
     -- Keep only the degree-`d` component of `∑ cᵢ gᵢ`.
     rw [← decompose_of_mem_same 𝒜 hxd, ← GradedAlgebra.proj_apply, hx, map_sum]
     refine Subalgebra.sum_mem _ fun i _ ↦ ?_
-    have hgt : ((g i : B) : S) ∈ t := (g i).2
+    have hgt : ((g i : B) : S) ∈ t := (g i).property
     obtain ⟨hpos, hmem⟩ := hdeg _ hgt
     rw [GradedAlgebra.proj_apply, coe_decompose_mul_of_right_mem 𝒜 d hmem]
     split_ifs with hle
     · exact Subalgebra.mul_mem _
-        (ih _ (by omega) _ (hBdecompose _ (c i).2 _) (SetLike.coe_mem _))
+        (ih _ (by omega) _ (hBdecompose _ (c i).property _) (SetLike.coe_mem _))
         (Algebra.subset_adjoin hgt)
     · exact Subalgebra.zero_mem _
   refine Subalgebra.fg_def.2 ⟨t, t.finite_toSet,
@@ -140,7 +140,7 @@ theorem exists_finset_adjoin_eq_top_and_mem_grade_ne_zero [Algebra.FiniteType (�
         (by simpa using ⟨f, hf, n, ⟨DFinsupp.mem_support_iff.mp hn, hn0⟩, rfl⟩)
   · simp only [Finset.mem_biUnion, Finset.mem_image, Finset.mem_filter]
     rintro _ ⟨f, -, n, ⟨-, hn0⟩, rfl⟩
-    exact ⟨n, hn0, (decompose 𝒜 f n).2⟩
+    exact ⟨n, hn0, (decompose 𝒜 f n).property⟩
 
 end Nat
 

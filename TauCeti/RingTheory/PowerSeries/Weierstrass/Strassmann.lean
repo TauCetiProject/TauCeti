@@ -127,7 +127,7 @@ private theorem IsDistinguished.encard_setOf_evalAt_eq_zero_le_of_completeSpace
     rintro x ⟨hx, h0⟩
     have hu : IsUnit ((e : PowerSeries K).evalAt x) := by
       simpa using he.map (_root_.PowerSeries.IsRestricted.evalAtHom K hx)
-    rw [_root_.PowerSeries.IsRestricted.evalAt_mul e.2 (isRestricted_polynomial ω) hx,
+    rw [_root_.PowerSeries.IsRestricted.evalAt_mul e.property (isRestricted_polynomial ω) hx,
       _root_.PowerSeries.evalAt_coe, hu.mul_right_eq_zero] at h0
     simpa [Polynomial.mem_roots hω.ne_zero] using h0
   refine (Set.encard_le_encard hsub).trans ?_

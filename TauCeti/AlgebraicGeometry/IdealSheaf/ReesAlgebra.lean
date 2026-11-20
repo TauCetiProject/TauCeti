@@ -405,7 +405,7 @@ private lemma bijective_toPolynomial :
   · -- each coefficient `fₙ ∈ I(U)ⁿ` is the image of a section of `Iⁿ`
     have hf (n : ℕ) : (f : Γ(X, U)[X]).coeff n ∈ Set.range (I.reesSec U n) := by
       rw [range_reesSec I ⟨U, hU⟩]
-      exact (mem_reesAlgebra_iff _ _).mp f.2 n
+      exact (mem_reesAlgebra_iff _ _).mp f.property n
     choose y hy using hf
     refine ⟨∑ n ∈ (f : Γ(X, U)[X]).support, DirectSum.of _ n (y n), Subtype.ext ?_⟩
     ext m

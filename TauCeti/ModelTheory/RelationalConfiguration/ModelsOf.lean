@@ -7,8 +7,6 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.Infinite
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
-public import TauCeti.ModelTheory.RelationalConfiguration.Structure
-public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 import TauCeti.ModelTheory.Syntax
 
 /-!
@@ -214,12 +212,12 @@ namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
 
-/-- The model class of an infinitary sentence is invariant under isomorphism of configurations. -/
+/-- Model classes of infinitary sentences are isomorphism invariant, on any carrier and for any
+branching index. -/
 theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
-    IsomorphismInvariant (modelsOf (V := V) φ) := by
-  rw [isomorphismInvariant_iff]
-  rintro c d h hc
-  obtain ⟨e⟩ := isoSetoid_apply.1 h
-  exact (Language.Equiv.mem_modelsOf_iff e φ).mp hc
+    IsomorphismInvariant (modelsOf (V := V) φ) :=
+  isomorphismInvariant_iff.2 fun _ _ h hc => by
+    obtain ⟨e⟩ := isoSetoid_apply.1 h
+    exact (e.mem_modelsOf_iff φ).1 hc
 
 end TauCeti.RelationalConfiguration
