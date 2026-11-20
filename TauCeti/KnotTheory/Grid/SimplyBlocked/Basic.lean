@@ -71,6 +71,9 @@ specialization.
   `TauCeti.exact_X_smul_simplyBlockedSpecialization`: specialization presents the specialized
   chain module as the quotient of `GC⁻` by the multiples of `V_i`, which
   `TauCeti.X_smul_gridChainMinus_injective` says form a copy of `GC⁻`.
+  `TauCeti.simplyBlockedSpecializationLinearMap_surjective` and
+  `TauCeti.exact_X_smul_simplyBlockedSpecializationLinearMap` are the same for the linear maps
+  over the ground semiring.
 * `TauCeti.GridDiagram.simplyBlockedCoefficient_eq_sum`: a matrix coefficient is the sum, over the
   rectangles which avoid the blocked `O`-marking, of the product of the variables of the other
   `O`-markings the rectangle covers.
@@ -477,6 +480,14 @@ theorem exact_X_smul_simplyBlockedSpecialization :
   simp only [simplyBlockedSpecialization_apply, Finsupp.coe_zero, Pi.zero_apply,
     Set.mem_ofPred_eq]
   exact forall_congr' fun x => exact_X_mul_simplyBlockedRingHom R i (c x)
+
+/-- `TauCeti.exact_X_smul_simplyBlockedSpecialization` with multiplication by `V_i` and the
+specialization at `V_i = 0` as linear maps over the ground semiring. -/
+theorem exact_X_smul_simplyBlockedSpecializationLinearMap :
+    Function.Exact
+      (DistribSMul.toLinearMap R (GridChainMinus R n) (MvPolynomial.X i : MvPolynomial (Fin n) R))
+      (simplyBlockedSpecializationLinearMap R i) :=
+  exact_X_smul_simplyBlockedSpecialization R i
 
 /-- Specialization at `V_i = 0` kills multiples of `V_i`. -/
 @[simp]

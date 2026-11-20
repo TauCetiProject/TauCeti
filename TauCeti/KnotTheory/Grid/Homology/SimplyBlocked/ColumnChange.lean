@@ -87,15 +87,6 @@ private theorem X_smul_comp_unblockedDifferential (k : Fin n) :
           (MvPolynomial.X k : MvPolynomial (Fin n) R) :=
   LinearMap.ext fun c => (LinearMap.map_smul (G.unblockedDifferential R) _ c).symm
 
-/-- `exact_X_smul_simplyBlockedSpecialization` for multiplication by `V_k` and specialization at
-`V_k = 0` as linear maps. -/
-private theorem exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap (k : Fin n) :
-    Function.Exact
-      (DistribSMul.toLinearMap R (GridChainMinus R n) (MvPolynomial.X k : MvPolynomial (Fin n) R))
-      (simplyBlockedSpecializationLinearMap R k) := fun c => by
-  rw [simplyBlockedSpecializationLinearMap_apply]
-  exact exact_X_smul_simplyBlockedSpecialization R k c
-
 variable [CharP R 2] {i j : Fin n}
   {H : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n}
   (hH : G.unblockedDifferential R ∘ₗ H + H ∘ₗ G.unblockedDifferential R =
@@ -136,8 +127,8 @@ noncomputable def oneVariableSpecializationHomologyEquivOfHomotopy :
       (G.restrictScalars_homotopy R hH)
       (simplyBlockedSpecializationLinearMap_surjective R i)
       (simplyBlockedSpecializationLinearMap_surjective R j)
-      (exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap R i)
-      (exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap R j)
+      (exact_X_smul_simplyBlockedSpecializationLinearMap R i)
+      (exact_X_smul_simplyBlockedSpecializationLinearMap R j)
       (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential R i)
       (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential R j)).trans
       (G.oneVariableSpecializationHomologyEquivLinearMapHomology R j).symm
@@ -155,7 +146,7 @@ theorem simplyBlockedDifferential_simplyBlockedSpecialization_add_eq_zero
       (G.restrictScalars_unblockedDifferential_comp_self_eq_zero R)
       (G.X_smul_comp_unblockedDifferential R i) (X_smul_gridChainMinus_injective R i)
       (G.restrictScalars_homotopy R hH)
-      (exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap R j)
+      (exact_X_smul_simplyBlockedSpecializationLinearMap R j)
       (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential R j) hab
 
 /-- If `V_i • a + ∂⁻ b = 0` and `π_i b` is the cycle `z`, the change of blocked column sends the
