@@ -43,6 +43,8 @@ vector fields of brackets in `S` (`TauCeti.mlieBracket_sum_smul_mem`).
   exactly when its translate to the identity lies in `S`.
 * `TauCeti.map_mfderiv_mul_left_mulInvariantDistribution`: the distribution is invariant under
   left translation.
+* `TauCeti.finrank_mulInvariantDistribution`: at every point the distribution has the dimension
+  of `S`.
 * `TauCeti.isDistributionFrameOn_mulInvariantDistribution`: the invariant vector fields of a basis
   of `S` form a global frame, so (`TauCeti.isContMDiffDistribution_mulInvariantDistribution`) when
   `S` is finite-dimensional and multiplication is `C^n`, the distribution is `C^m` of rank
@@ -132,6 +134,21 @@ theorem map_mfderiv_mul_left_mulInvariantDistribution (h g : G) :
     exact ⟨w, hw, (mfderiv_mul_left_mulInvariantVectorField h g w).symm⟩
   · rintro ⟨w, hw, rfl⟩
     exact ⟨_, ⟨w, hw, rfl⟩, mfderiv_mul_left_mulInvariantVectorField h g w⟩
+
+/-- The left-invariant distribution of `S` has the dimension of `S` at every point, since the
+differential at the identity of left translation by `g` is injective. -/
+theorem finrank_mulInvariantDistribution (g : G) :
+    finrank 𝕜 (mulInvariantDistribution S g) = finrank 𝕜 S := by
+  refine (LinearEquiv.finrank_eq (Submodule.equivMapOfInjective _ (fun a b hab ↦ ?_) S)).symm
+  -- `hab` compares the values at `a` and `b` of the differential of left translation by `g`,
+  -- read as a linear map into `TangentSpace I g`; these values are the invariant vector fields.
+  have hab' : mulInvariantVectorField a g = mulInvariantVectorField b g := by
+    rw [GroupLieAlgebra.mulInvariantVectorField_apply,
+      GroupLieAlgebra.mulInvariantVectorField_apply]
+    exact hab
+  -- Translating back to the identity recovers the generators.
+  have h := congrArg (mfderiv I I (g⁻¹ * ·) g) hab'
+  rwa [mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField] at h
 
 end Translation
 
