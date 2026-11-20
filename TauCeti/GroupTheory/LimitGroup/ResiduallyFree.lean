@@ -10,7 +10,9 @@ public import TauCeti.GroupTheory.FreeGroup.CSA
 public import TauCeti.GroupTheory.FreeGroup.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 public import TauCeti.GroupTheory.GroupAlgGeom.Domain
+public import TauCeti.GroupTheory.MalcevEquation
 import TauCeti.GroupTheory.FreeGroup.MaximalExponent
+import TauCeti.GroupTheory.FreeGroup.Vaught
 
 /-!
 # Residually free and fully residually free groups
@@ -29,11 +31,16 @@ coefficients in the sense of `TauCeti.GroupAlgGeom`. This makes both properties 
 universes and gives their inheritance by subgroups.
 
 Free groups are fully residually free, and residually free groups have unique roots, hence are
-torsion-free; in particular a nontrivial finite group is not residually free. Every nonidentity
+torsion-free; in particular a nontrivial finite group is not residually free. Residually free
+groups satisfy Vaught's condition: if `x ^ 2 * y ^ 2 * z ^ 2 = 1` and two of `x`, `y`, `z` did not
+commute, their commutator would survive in a free group where the equation holds, contradicting
+Lyndon's theorem there (`IsFreeGroup.isVaught`). Every nonidentity
 element of a residually free group is a positive power of an element that is not a proper power,
 because its root exponents are bounded by those of a nonidentity image in a free group. With unique
 roots, that root has the same centralizer as the element (`Subgroup.centralizer_pow_eq`), so an
-extension of the centralizer of a nonidentity element is also one of a non-proper-power.
+extension of the centralizer of a nonidentity element is also one of a non-proper-power. In
+particular a nonabelian residually free group has an element that is not a proper power and does
+not lie in the center.
 Fully residually free groups are CSA, hence commutative transitive with abelian centralizers of
 nonidentity elements: one homomorphism to a free group can keep any two nonidentity elements
 nontrivial, and the CSA property is witnessed by pairs of elements. Consequently a nonabelian
@@ -66,12 +73,17 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 * `TauCeti.LimitGroup.IsResiduallyFree.hasUniqueRoots`: residually free groups have unique roots.
 * `TauCeti.LimitGroup.IsResiduallyFree.isMulTorsionFree`: residually free groups are
   torsion-free.
+* `TauCeti.LimitGroup.IsResiduallyFree.isVaught`: residually free groups satisfy Vaught's
+  condition.
 * `TauCeti.LimitGroup.IsResiduallyFree.exists_maximalRoot`: in a residually free group every
   nonidentity element is `r ^ k` with `k ≠ 0`, `r` not a proper power, and `k` the greatest root
   exponent of the element.
 * `TauCeti.LimitGroup.IsResiduallyFree.centralizerExt_root_reduction`: in a residually free group
   every nonidentity element `u` is `r ^ d` with `d ≠ 0`, `r` not a proper power, and
   `C_G(u) = C_G(r)`.
+* `TauCeti.LimitGroup.IsResiduallyFree.exists_not_isProperPower_notMem_centralizer`: a nonabelian
+  residually free group has an element `u` that is not a proper power and an element outside
+  `C_G(u)`.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCSA`: fully residually free groups are CSA.
 * `TauCeti.LimitGroup.IsFullyResiduallyFree.isCommTransitive`: fully residually free groups are
   commutative transitive.
@@ -91,7 +103,8 @@ every entry of a tuple and every commutator of consecutive entries nontrivial.
 * C. Champetier, V. Guirardel, *Limit groups as limits of free groups*, Israel J. Math. 146
   (2005), §2.3 (Definition 2.5) and Proposition 3.1.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
-  (2005), §2.6.
+  (2005), §2.6 and §3.1 (Lemma 2).
+* R. C. Lyndon, *The equation `a²b² = c²` in free groups*, Michigan Math. J. 6 (1959).
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
   and ideal theory*, J. Algebra 219 (1999), §2.1.
 -/
@@ -262,6 +275,23 @@ theorem IsResiduallyFree.isMulTorsionFree (h : IsResiduallyFree G) : IsMulTorsio
   have := h.hasUniqueRoots
   inferInstance
 
+/-- A residually free group satisfies Vaught's condition: `x ^ 2 * y ^ 2 * z ^ 2 = 1` forces `x`,
+`y` and `z` to commute pairwise. For a fully residually free group, apply it to
+`IsFullyResiduallyFree.isResiduallyFree`. -/
+theorem IsResiduallyFree.isVaught (h : IsResiduallyFree G) : IsVaught G := by
+  refine (isVaught_iff G).2 fun x y z hxyz => ?_
+  -- Two elements whose images commute in every free group commute: otherwise their commutator
+  -- would survive in some free group.
+  have key {a b : G} (hab : ∀ (ι : Type u) (φ : G →* FreeGroup ι), Commute (φ a) (φ b)) :
+      Commute a b := by
+    by_contra hne
+    obtain ⟨ι, φ, hφ⟩ := h ⁅a, b⁆ (mt commutatorElement_eq_one_iff_commute.1 hne)
+    simp [map_commutatorElement, commutatorElement_eq_one_iff_commute, hab ι φ] at hφ
+  -- The images of `x`, `y`, `z` in a free group commute pairwise by Lyndon's theorem.
+  have hφ (ι : Type u) (φ : G →* FreeGroup ι) :=
+    (isVaught_iff _).1 IsFreeGroup.isVaught (φ x) (φ y) (φ z) (by simpa using congrArg φ hxyz)
+  exact ⟨key fun ι φ => (hφ ι φ).1, key fun ι φ => (hφ ι φ).2.1, key fun ι φ => (hφ ι φ).2.2⟩
+
 /-- Every nonidentity element `u` of a residually free group is `r ^ k` for some `k ≠ 0` and some
 `r` that is not a proper power, with `k` the greatest exponent of a root of `u`: root exponents of
 `u` are bounded by the reduced-word length of a nonidentity image of `u` in a free group. -/
@@ -285,6 +315,18 @@ theorem IsResiduallyFree.centralizerExt_root_reduction (h : IsResiduallyFree G) 
   obtain ⟨r, d, hd, rfl, hr, -⟩ := h.exists_maximalRoot hu
   have := h.hasUniqueRoots
   exact ⟨r, d, hd, rfl, hr, Subgroup.centralizer_pow_eq r hd⟩
+
+/-- A nonabelian residually free group has an element `u` that is not a proper power and an
+element `g` outside `C_G(u)`. -/
+theorem IsResiduallyFree.exists_not_isProperPower_notMem_centralizer (h : IsResiduallyFree G)
+    (hG : ¬IsMulCommutative G) : ∃ u g : G, ¬IsProperPower u ∧ g ∉ Subgroup.centralizer {u} := by
+  obtain ⟨a, b, hab⟩ : ∃ a b : G, b * a ≠ a * b := by
+    by_contra! hcomm
+    exact hG ⟨⟨fun a b => hcomm b a⟩⟩
+  -- Root reduction replaces `a` by a root `r` that is not a proper power, with `C_G(a) = C_G(r)`.
+  obtain ⟨r, -, -, -, hr, hC⟩ := h.centralizerExt_root_reduction (u := a)
+    (by rintro rfl; simp at hab)
+  exact ⟨r, b, hr, by rwa [← hC, Subgroup.mem_centralizer_singleton_iff]⟩
 
 /-- A nontrivial finite group, such as `ℤ/2`, is not residually free. -/
 theorem not_isResiduallyFree_of_finite [Finite G] [Nontrivial G] : ¬IsResiduallyFree G := by

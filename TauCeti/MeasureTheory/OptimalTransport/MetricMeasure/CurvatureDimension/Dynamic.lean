@@ -146,8 +146,8 @@ theorem DynamicCurvatureDimension.mono (h : M.DynamicCurvatureDimension K N) (hK
   refine ⟨η, hη, fun t N'' hN'' ↦ (hle t N'' (hN.trans hN'')).trans ?_⟩
   rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
   refine lintegral_mono fun γ ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
-  · exact distortionTau_left_monotone (sub_le_self _ t.2.1) hK
-  · exact distortionTau_left_monotone t.2.2 hK
+  · exact distortionTau_left_monotone (sub_le_self _ t.property.1) hK
+  · exact distortionTau_left_monotone t.property.2 hK
 
 /-- In the flat case, the right side of the curvature-dimension inequality is the convex
 combination of the endpoint Rényi entropies. -/
@@ -181,7 +181,7 @@ private theorem neg_lintegral_distortionTau_zero {μ₀ μ₁ : ProbabilityMeasu
   simp only [distortionTau_zero_left]
   rw [hint, renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₀,
     renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₁]
-  exact EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul (sub_nonneg.2 t.2.2) t.2.1 _ _
+  exact EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul (sub_nonneg.2 t.property.2) t.property.1 _ _
 
 /-- **The flat curvature-dimension condition.** For `N > 0`, `CD(0, N)` holds exactly when the
 reference measure has full support and any two absolutely continuous laws with bounded support
@@ -353,10 +353,10 @@ theorem dynamicCurvatureDimension_zero_of_finrank_le [Nontrivial E] (hN : (finra
       (M.finite_bounded _ hb).ne
   have key := internalEnergy_map_smul_add_smul_gradient_le M.reference
     (U := fun r ↦ -(r * r ^ (-N'⁻¹))) (by simp)
-    (convexOn_pow_mul_neg_mul_rpow_neg (zero_lt_one.trans_le hN'₁) (hN.trans hN'))
-    (antitoneOn_pow_mul_neg_mul_rpow_neg (zero_lt_one.trans_le hN'₁)) hconv hbot h₀ hμD
+    (convexOn_pow_mul_neg_mul_rpow_neg (hN.trans hN'))
+    (antitoneOn_pow_mul_neg_mul_rpow_neg (zero_le_one.trans hN'₁)) hconv hbot h₀ hμD
     (by rw [← renyiEntropy_def]; exact hbot' μ₀ hb₀)
-    (by rw [← renyiEntropy_def, ← hν]; exact hbot' μ₁ hb₁) ⟨t.2.1, t.2.2⟩
+    (by rw [← renyiEntropy_def, ← hν]; exact hbot' μ₁ hb₁) ⟨t.property.1, t.property.2⟩
   rw [Measure.timeMarginal_map_segmentPath,
     map_graphPlan (measurable_gradient _).aemeasurable (by fun_prop), hν]
   simpa only [← renyiEntropy_def] using key

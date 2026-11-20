@@ -64,7 +64,9 @@ for every exponent `d`, since neither factor is `∞`. This rescales the gauge `
 densities and Hausdorff measures.
 For nonnegative bases and exponents, `ofReal a ^ p * ofReal b ^ q` is the image under
 `ENNReal.ofReal` of the real product `a ^ p * b ^ q`; this transfers weighted geometric means
-of nonnegative real functions to `ℝ≥0∞`.
+of nonnegative real functions to `ℝ≥0∞`. For `0 ≤ x` and an arbitrary real exponent `p`,
+`ENNReal.ofReal (x ^ p) ≤ ENNReal.ofReal x ^ p`, extending `ENNReal.ofReal_rpow_of_pos` across
+`x = 0` where negative powers send `0` to `∞` in `ℝ≥0∞`.
 
 For a finite `x`, or a negative exponent `q`, the extended product `x * x ^ q` is the image under
 `ENNReal.ofReal` of the real product `x.toReal * x.toReal ^ q`; both sides vanish at `x = 0` and,
@@ -81,6 +83,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 
 ## Main declarations
 
+* `ENNReal.pow_rpow_comm`: natural and real powers commute in `ℝ≥0∞`.
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
@@ -97,6 +100,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
 * `ENNReal.ofReal_rpow_mul_ofReal_rpow`: `ofReal a ^ p * ofReal b ^ q = ofReal (a ^ p * b ^ q)`
   for nonnegative `a`, `b`, `p`, `q`.
+* `ENNReal.ofReal_rpow_le`: `ofReal (x ^ p) ≤ ofReal x ^ p` for `0 ≤ x` and any real `p`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.rpow_le_rpow_sub_mul_rpow`: `a ^ (p - q) ≤ b ^ (p - q)` gives
@@ -126,6 +130,10 @@ public section
 open scoped ENNReal NNReal Topology
 
 namespace ENNReal
+
+/-- Natural and real powers commute in `ℝ≥0∞`. -/
+theorem pow_rpow_comm (x : ℝ≥0∞) (n : ℕ) (y : ℝ) : (x ^ n) ^ y = (x ^ y) ^ n := by
+  rw [← rpow_natCast_mul, mul_comm, rpow_mul_natCast]
 
 /-- If `X ^ r ≤ C * X ^ (r - 1)` for a finite `X`, then `X ≤ C`. -/
 theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ ∞)
@@ -238,6 +246,15 @@ theorem ofReal_rpow_mul_ofReal_rpow {a b p q : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b
     ENNReal.ofReal a ^ p * ENNReal.ofReal b ^ q = ENNReal.ofReal (a ^ p * b ^ q) := by
   rw [ofReal_rpow_of_nonneg ha hp, ofReal_rpow_of_nonneg hb hq,
     ofReal_mul (Real.rpow_nonneg ha p)]
+
+/-- For any nonnegative real base `x` and any real exponent `p`,
+`ENNReal.ofReal (x ^ p) ≤ ENNReal.ofReal x ^ p`. Equality holds except when `x = 0` and `p < 0`,
+where the left-hand side is `0` and the right-hand side is `∞`. -/
+theorem ofReal_rpow_le {x p : ℝ} (hx : 0 ≤ x) :
+    ENNReal.ofReal (x ^ p) ≤ ENNReal.ofReal x ^ p := by
+  rcases hx.eq_or_lt with rfl | hx_pos
+  · rcases eq_or_ne p 0 with rfl | hp <;> simp [Real.zero_rpow, *]
+  · rw [ofReal_rpow_of_pos hx_pos]
 
 /-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
 theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :

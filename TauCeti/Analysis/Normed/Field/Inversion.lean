@@ -35,6 +35,9 @@ estimates that describe a Cauchy-type integral far from its data.
 * `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.image_inv_sub_eq_preimage_add_inv`: the inversion about `q` maps a set onto its
   preimage under `w ↦ q + w⁻¹`.
+* `TauCeti.bijOn_inv_compl_ball_one`, `TauCeti.bijOn_inv_compl_closedBall_one` and
+  `TauCeti.bijOn_inv_sphere_one`: inversion exchanges the exterior of the unit ball, of the closed
+  unit ball, and the unit sphere with the punctured closed ball, the punctured ball and the sphere.
 * `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`: the inversion of a closed bounded set about
   any centre, with the centre removed, is closed.
 * `TauCeti.isBounded_image_inv_sub`: the inversion of a set about a point outside its closure is
@@ -88,6 +91,32 @@ theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
 end DivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
+
+section UnitBall
+
+/-- Inversion is a bijection from the closed exterior `(ball 0 1)ᶜ` of the unit ball onto the
+punctured closed unit ball. -/
+theorem bijOn_inv_compl_ball_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (ball 0 1)ᶜ (closedBall 0 1 \ {0}) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_le_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection from the exterior `(closedBall 0 1)ᶜ` of the closed unit ball onto
+the punctured open unit ball. -/
+theorem bijOn_inv_compl_closedBall_one :
+    BijOn (fun w : 𝕜 => w⁻¹) (closedBall 0 1)ᶜ (ball 0 1 \ {0}) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [hw, inv_lt_one₀ (norm_pos_iff.mpr hw)]
+
+/-- Inversion is a bijection of the unit sphere. -/
+theorem bijOn_inv_sphere_one : BijOn (fun w : 𝕜 => w⁻¹) (sphere 0 1) (sphere 0 1) :=
+  (Equiv.inv 𝕜).bijOn fun w => Iff.symm <| by simp
+
+end UnitBall
 
 /-- **The inversion of a closed bounded set is closed.** For closed bounded `K` and any `q`, the
 image `{w | w ≠ 0 ∧ q + w⁻¹ ∈ K}` of `K \ {q}` under `z ↦ (z - q)⁻¹` is closed: it stays away

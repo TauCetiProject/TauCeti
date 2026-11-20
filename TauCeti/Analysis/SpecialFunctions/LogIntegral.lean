@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+public import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
@@ -33,6 +34,8 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
 * `TauCeti.Real.hasDerivAt_logIntegral` — its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
+* `TauCeti.Real.integral_inv_log_pow_eq_sub_add` — integration by parts for every reciprocal
+  logarithm power, with either orientation of the interval.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
 * `TauCeti.Real.logIntegral_isEquivalent_div_log` — `Li x ~ x / log x` at infinity, with the
   quotient form `TauCeti.Real.tendsto_logIntegral_mul_log_div_atTop`.
@@ -58,6 +61,9 @@ summation there.
 
 * H. Davenport, *Multiplicative Number Theory*, Chapter 1.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapter I.
+
+The integration-by-parts recurrence is adapted
+from the Ramanujan estimates in the [PrimeNumberTheoremAnd project](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/dc6e36e/PrimeNumberTheoremAnd/IEANTN/Ramanujan/Ramanujan.lean).
 
 Mathlib's `Mathlib/NumberTheory/Chebyshev.lean` carries out this estimate for the rational
 Chebyshev function, in `Chebyshev.integral_theta_div_log_sq_isLittleO`; the argument for a general
@@ -173,20 +179,21 @@ theorem le_logIntegral {x : ℝ} (hx : 2 ≤ x) : (x - 2) / Real.log x ≤ logIn
 
 /-! ### The asymptotic `Li x ~ x / log x` -/
 
-/-- The derivative of `t ↦ t / log t` to the right of `1`. -/
-theorem hasDerivAt_div_log {t : ℝ} (ht : 1 < t) :
-    HasDerivAt (fun u : ℝ ↦ u / Real.log u) ((Real.log t)⁻¹ - (Real.log t ^ 2)⁻¹) t := by
-  have ht₀ : t ≠ 0 := by positivity
-  have hlt : Real.log t ≠ 0 := ne_of_gt (Real.log_pos ht)
-  have hd : HasDerivAt (fun u : ℝ ↦ u * (Real.log u)⁻¹)
-      (1 * (Real.log t)⁻¹ + t * (-t⁻¹ / Real.log t ^ 2)) t :=
-    (hasDerivAt_id t).mul (Real.hasDerivAt_inv_log ht₀ (ne_of_gt ht) (by linarith))
-  have heq : 1 * (Real.log t)⁻¹ + t * (-t⁻¹ / Real.log t ^ 2)
-      = (Real.log t)⁻¹ - (Real.log t ^ 2)⁻¹ := by
-    field_simp
-    ring
-  rw [heq] at hd
-  simpa only [div_eq_mul_inv] using hd
+/-- Integration by parts for reciprocal powers of the logarithm. Both endpoints lie to the
+right of `1`; the signed interval integral allows either order of the endpoints. -/
+theorem integral_inv_log_pow_eq_sub_add (n : ℕ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
+    (∫ t in a..b, (Real.log t ^ n)⁻¹) = b / Real.log b ^ n - a / Real.log a ^ n +
+      (n : ℝ) * ∫ t in a..b, (Real.log t ^ (n + 1))⁻¹ := by
+  have hi := intervalIntegrable_inv_log_pow n ha hb
+  have hi1 := intervalIntegrable_inv_log_pow (n + 1) ha hb
+  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun t ht ↦ hasDerivAt_div_log_pow n (Real.log_pos (by
+      rcases mem_uIcc.mp ht with ht | ht
+      · exact ha.trans_le ht.1
+      · exact hb.trans_le ht.1)).ne') (hi.sub (hi1.const_mul n))
+  rw [intervalIntegral.integral_sub hi (hi1.const_mul n),
+    intervalIntegral.integral_const_mul] at hFTC
+  exact sub_eq_iff_eq_add.mp hFTC
 
 /-- **The antiderivative identity for the logarithmic integral.** Integrating the derivative of
 `t ↦ t / log t` from `2` to `x` writes `Li x` as `x / log x` plus a constant and a remainder
@@ -194,20 +201,8 @@ integral, which the asymptotic below shows is `o (x / log x)`. -/
 theorem logIntegral_eq_div_log_sub_add {x : ℝ} (hx : 2 ≤ x) :
     logIntegral x =
       x / Real.log x - 2 / Real.log 2 + ∫ t in (2 : ℝ)..x, (Real.log t ^ 2)⁻¹ := by
-  have hx1 : (1 : ℝ) < x := lt_of_lt_of_le one_lt_two hx
-  have h1 : IntervalIntegrable (fun t : ℝ ↦ (Real.log t)⁻¹) volume 2 x := by
-    simpa using intervalIntegrable_inv_log_pow 1 one_lt_two hx1
-  have h2 : IntervalIntegrable (fun t : ℝ ↦ (Real.log t ^ 2)⁻¹) volume 2 x :=
-    intervalIntegrable_inv_log_pow 2 one_lt_two hx1
-  have hderiv : ∀ t ∈ uIcc (2 : ℝ) x, HasDerivAt (fun u : ℝ ↦ u / Real.log u)
-      ((Real.log t)⁻¹ - (Real.log t ^ 2)⁻¹) t := by
-    intro t ht
-    rw [uIcc_of_le hx, mem_Icc] at ht
-    exact hasDerivAt_div_log (by linarith [ht.1])
-  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv (h1.sub h2)
-  rw [intervalIntegral.integral_sub h1 h2] at hFTC
-  rw [logIntegral_def]
-  linarith [hFTC]
+  simpa only [logIntegral, pow_one, Nat.cast_one, one_mul] using
+    integral_inv_log_pow_eq_sub_add 1 one_lt_two (one_lt_two.trans_le hx)
 
 /-- Splitting at `√x` bounds the remainder integral of the antiderivative identity. -/
 private theorem integral_inv_log_sq_le {x : ℝ} (hx : 4 ≤ x) :

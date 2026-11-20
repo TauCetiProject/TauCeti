@@ -413,9 +413,9 @@ private theorem isOfType_linearPart (hJ : ∀ v, J (J v) = -v) (hη : ∀ v, (η
     simp [J', ← Complex.coe_smul]
   refine ⟨fun v ↦ ((hη v).sub ((hη (J v)).smul I)).smul _, fun v ↦ ?_,
     fun v ↦ ((hη v).add ((hη (J v)).smul I)).smul _, fun v ↦ ?_, ?_⟩
-  · simpa [← hlin, J'] using (TauCeti.complexLinearPart_isComplexLinear hJJ hJ'J' η).apply v
+  · simpa [← hlin, J'] using (TauCeti.isComplexLinear_complexLinearPart hJJ hJ'J' η).apply v
   · simpa [← hanti, J', add_comm] using
-      (TauCeti.complexAntilinearPart_isComplexAntilinear hJJ hJ'J' η).apply v
+      (TauCeti.isComplexAntilinear_complexAntilinearPart hJJ hJ'J' η).apply v
   · refine ContinuousLinearMap.coe_injective ?_
     rw [ContinuousLinearMap.toLinearMap_add, hlin, hanti,
       TauCeti.complexLinearPart_add_complexAntilinearPart]

@@ -32,8 +32,9 @@ all: the norm subgroup for the radicand `a` contains the norm `-a` of the square
 so it contains `a` exactly when it contains `-1`.
 
 The subgroup contains every square and, when `a` is a unit, `-a`, the norm of the square-root
-generator. Thus its index may be computed in the square-class group, as in O'Meara,
-*Introduction to Quadratic Forms*, §63A.
+generator; when `2` is invertible and `a` is a square unit, it is the whole unit group
+(`TauCeti.quadraticNormSubgroup_eq_top_of_isSquare`). Thus its index may be computed in the
+square-class group, as in O'Meara, *Introduction to Quadratic Forms*, §63A.
 
 The unit values of a binary diagonal form `⟨a, b⟩` are the coset `a N` of the norm subgroup `N`
 of its discriminant algebra `R[√(-a b)]`
@@ -157,6 +158,15 @@ theorem quadraticNormSubgroup_mul_sq (a : R) (c : Rˣ) :
   refine le_antisymm (key a c) ?_
   have h := key (a * (c : R) ^ 2) c⁻¹
   simpa [mul_assoc, ← mul_pow, ← Units.val_mul] using h
+
+/-- Over a commutative ring in which `2` is invertible, a square unit radicand has quadratic norm
+subgroup `⊤`: every unit is a norm from the split quadratic algebra `R[√a]`. -/
+theorem quadraticNormSubgroup_eq_top_of_isSquare [Invertible (2 : R)] {a : Rˣ} (ha : IsSquare a) :
+    quadraticNormSubgroup (a : R) = ⊤ := by
+  refine eq_top_iff.mpr fun b _ ↦ ?_
+  obtain ⟨x, y, h⟩ := exists_eq_sq_sub_mul_sq_of_isSquare (Units.isSquare_coe_iff.mpr ha) a.isUnit b
+  exact (mem_quadraticNormSubgroup_iff_exists_norm_eq _ _).mpr
+    ⟨⟨x, y⟩, by rw [QuadraticAlgebra.norm_def, h]; ring⟩
 
 /-- **The values of a binary form are a coset of norms.** A unit `c` is represented by the binary
 diagonal form `⟨a, b⟩` exactly when `a * c` is a norm from the discriminant algebra

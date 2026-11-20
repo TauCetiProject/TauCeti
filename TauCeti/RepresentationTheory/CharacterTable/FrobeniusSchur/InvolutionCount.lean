@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.SquareRoot
-public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
+public import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.Table
+import TauCeti.RepresentationTheory.CharacterTable.FrobeniusSchur.Trichotomy
 
 /-!
 # The Frobenius-Schur involution count
@@ -108,7 +109,7 @@ square roots of `x` when there are finitely many, and `Nat.card`'s junk value `0
 finiteness of `G` is needed. -/
 @[simp]
 theorem squareRootCount_apply (x : G) :
-    (squareRootCount k G).1 x = (Nat.card {g : G // g * g = x} : k) :=
+    (squareRootCount k G).val x = (Nat.card {g : G // g * g = x} : k) :=
   (rfl)
 
 end Count
@@ -140,7 +141,7 @@ theorem characterPairing_ofCharacter_squareRootCount_eq_frobeniusSchurIndicator
       (Finset.filter_congr fun g _ => (inv_eq_iff_eq_inv (a := g * g) (b := x)).symm)
   rw [characterPairing_apply, Representation.frobeniusSchurIndicator_def]
   refine congrArg _ ?_
-  calc ∑ x : G, (ofCharacter ρ).1 x * (squareRootCount k G).1 x⁻¹
+  calc ∑ x : G, (ofCharacter ρ).val x * (squareRootCount k G).val x⁻¹
       = ∑ x : G, ∑ _g ∈ {g ∈ Finset.univ | (g * g)⁻¹ = x}, ρ.character x := by
         refine Finset.sum_congr rfl fun x _ => ?_
         rw [ofCharacter_apply, squareRootCount_apply, hcard x, Finset.sum_const, nsmul_eq_mul,
@@ -216,9 +217,9 @@ theorem frobeniusSchurIndicatorRow_eq_inv_mul_sum_characterTable
   simp
 
 variable {G} in
-/-- **The row indicator takes only the values `1`, `0` and `-1`** in characteristic zero, by the
-Frobenius-Schur trichotomy applied to a representation affording the row. -/
-theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one [CharZero k]
+/-- **The row indicator takes only the values `1`, `0` and `-1`** for a finite group over an
+algebraically closed field in which `|G|` is invertible, without assuming characteristic zero. -/
+theorem frobeniusSchurIndicatorRow_eq_one_or_eq_zero_or_eq_neg_one
     (i : Fin (Nat.card (ConjClasses G))) :
     frobeniusSchurIndicatorRow k i = 1 ∨ frobeniusSchurIndicatorRow k i = 0 ∨
       frobeniusSchurIndicatorRow k i = -1 := by

@@ -222,7 +222,7 @@ theorem mem_iff_pow_add_sum_symOpenPartialHomeomorph_mul_pow_eq_zero {ι : Type*
     Sym.mem_basepointDivisor, _root_.Sym.mem_map]
   refine ⟨fun h => ⟨_, h, rfl⟩, ?_⟩
   rintro ⟨x, hx, hxz⟩
-  obtain rfl : x = ⟨z, hz⟩ := Subtype.ext ((φ j).injOn (hVsub j x.2) (hVsub j hz) hxz)
+  obtain rfl : x = ⟨z, hz⟩ := Subtype.ext ((φ j).injOn (hVsub j x.property) (hVsub j hz) hxz)
   exact hx
 
 omit [T2Space α] [ChartedSpace K α] in

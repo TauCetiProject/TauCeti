@@ -73,8 +73,8 @@ def endpointHomeomorph :
     (MappingPathSpace.endpoint_apply f p.val).symm.trans p.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_val).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtypeVal).subtype_mk _
 
 @[simp]
 theorem endpointHomeomorph_val (p : MappingPathFiber f k) :
@@ -84,6 +84,30 @@ theorem endpointHomeomorph_val (p : MappingPathFiber f k) :
 theorem endpointHomeomorph_symm_val
     (p : {p : MappingPathSpace f // MappingPathSpace.endpoint f p = k}) :
     ((endpointHomeomorph f k).symm p).val = p.val.val := (rfl)
+
+/-- Include the ordinary fibre over `k` into the mapping-path fibre by constant paths. -/
+def ofFiber : C(f ⁻¹' {k}, MappingPathFiber f k) :=
+  ⟨fun b ↦ ⟨(b.val, ContinuousMap.const I k), b.property.symm, rfl⟩,
+    (continuous_subtypeVal.prodMk continuous_const).subtype_mk _⟩
+
+@[simp]
+theorem ofFiber_val (b : f ⁻¹' {k}) :
+    (ofFiber f k b).val = (b.val, ContinuousMap.const I k) := (rfl)
+
+@[simp]
+theorem proj_comp_ofFiber :
+    (proj f k).comp (ofFiber f k) = ⟨Subtype.val, continuous_subtypeVal⟩ := by
+  ext
+  rfl
+
+@[simp]
+theorem endpointHomeomorph_ofFiber_val (b : f ⁻¹' {k}) :
+    (endpointHomeomorph f k (ofFiber f k b)).val = MappingPathSpace.incl f b.val := by
+  apply Subtype.ext
+  rw [endpointHomeomorph_val, ofFiber_val, MappingPathSpace.incl_val]
+  refine Prod.ext rfl ?_
+  ext _
+  exact b.property.symm
 
 /-- `MappingPathFiber f k` is the base change along `f` of the fixed-end path fibration
 `proj (ContinuousMap.id K) k`. -/
@@ -96,12 +120,12 @@ def pullbackHomeomorph :
   left_inv _ := rfl
   right_inv x := Subtype.ext (Prod.ext rfl (Subtype.ext (Prod.ext x.property rfl)))
   continuous_toFun := by
-    refine (continuous_subtype_val.fst.prodMk ?_).subtype_mk _
-    exact ((f.continuous.comp continuous_subtype_val.fst).prodMk
-      continuous_subtype_val.snd).subtype_mk _
+    refine (continuous_subtypeVal.fst.prodMk ?_).subtype_mk _
+    exact ((f.continuous.comp continuous_subtypeVal.fst).prodMk
+      continuous_subtypeVal.snd).subtype_mk _
   continuous_invFun :=
-    (continuous_subtype_val.fst.prodMk
-      (continuous_subtype_val.comp continuous_subtype_val.snd).snd).subtype_mk _
+    (continuous_subtypeVal.fst.prodMk
+      (continuous_subtypeVal.comp continuous_subtypeVal.snd).snd).subtype_mk _
 
 @[simp]
 theorem pullbackHomeomorph_val_fst (p : MappingPathFiber f k) :
@@ -130,7 +154,7 @@ def projFiberHomeomorphPath (b : B) :
   left_inv p := Subtype.ext (Subtype.ext (Prod.ext p.property.symm rfl))
   right_inv _ := rfl
   continuous_toFun :=
-    continuous_induced_rng.2 (continuous_subtype_val.comp continuous_subtype_val).snd
+    continuous_induced_rng.2 (continuous_subtypeVal.comp continuous_subtypeVal).snd
   continuous_invFun := ((continuous_const.prodMk continuous_induced_dom).subtype_mk _).subtype_mk _
 
 @[simp]
@@ -186,7 +210,7 @@ def mappingPathFiberConstHomeomorphPath (b k : K) :
     · exact Subsingleton.elim _ _
     · rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 continuous_subtype_val.snd
+  continuous_toFun := continuous_induced_rng.2 continuous_subtypeVal.snd
   continuous_invFun := (continuous_const.prodMk continuous_induced_dom).subtype_mk _
 
 @[simp]
@@ -230,10 +254,10 @@ def mappingPathFiberIdHomeomorph (k : K) :
   right_inv q := Subtype.ext (Prod.ext rfl (ContinuousMap.ext fun t => by simp))
   continuous_toFun :=
     (continuous_const.prodMk ((ContinuousMap.continuous_precomp _).comp
-      continuous_subtype_val.snd)).subtype_mk _
+      continuous_subtypeVal.snd)).subtype_mk _
   continuous_invFun :=
-    ((continuous_subtype_val.snd.eval continuous_const).prodMk
-      ((ContinuousMap.continuous_precomp _).comp continuous_subtype_val.snd)).subtype_mk _
+    ((continuous_subtypeVal.snd.eval continuous_const).prodMk
+      ((ContinuousMap.continuous_precomp _).comp continuous_subtypeVal.snd)).subtype_mk _
 
 @[simp]
 theorem mappingPathFiberIdHomeomorph_apply_val (k : K) (p : MappingPathFiber (ContinuousMap.id K) k)

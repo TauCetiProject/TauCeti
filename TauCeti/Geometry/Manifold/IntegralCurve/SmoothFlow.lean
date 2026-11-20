@@ -69,7 +69,8 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
   let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
   have hws : ContDiffOn ℝ ∞ w W :=
     haveI : IsManifold I (∞ + 1) M := inferInstanceAs (IsManifold I ∞ M)
-    contDiffOn_trivializationAt_extChartAt_symm (n := ∞) v a hv
+    (contDiffOn_trivializationAt_extChartAt_symm (n := ∞) v a hv).mono
+      (inter_subset_inter_left _ interior_subset)
   have haTarget : extChartAt I a a ∈ (extChartAt I a).target := mem_extChartAt_target a
   have hsymmV : (extChartAt I a).symm ⁻¹' V ∈ nhds (extChartAt I a a) := by
     apply (continuousAt_extChartAt_symm'' haTarget).preimage_mem_nhds
