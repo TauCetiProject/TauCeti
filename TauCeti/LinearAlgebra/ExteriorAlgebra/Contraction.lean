@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.Order.Hom.PowersetCard
 
@@ -460,21 +461,10 @@ its `k` generators. -/
 theorem reverse_basis (s : Finset I) :
     reverse (Q := (0 : QuadraticForm R M)) (b.ExteriorAlgebra s) =
       (-1 : R) ^ s.card.choose 2 • b.ExteriorAlgebra s := by
-  -- `CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho` would import this file; instead,
-  -- a vector moves past a product of `n` vectors with the sign `(-1) ^ n` of the grade involution.
-  have key (l : List M) : reverse (l.map (ExteriorAlgebra.ι R)).prod =
-      (-1 : R) ^ l.length.choose 2 • (l.map (ExteriorAlgebra.ι R)).prod := by
-    induction l with
-    | nil => simp
-    | cons a l ih =>
-      have hcomm : (l.map (ExteriorAlgebra.ι R)).prod * ExteriorAlgebra.ι R a =
-          (-1 : R) ^ l.length • (ExteriorAlgebra.ι R a * (l.map (ExteriorAlgebra.ι R)).prod) := by
-        rw [ι_mul_eq_involute_mul, involute_prod_map_ι, smul_mul_assoc, smul_smul, ← pow_add,
-          ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
-      rw [List.map_cons, List.prod_cons, reverse.map_mul, reverse_ι, ih, smul_mul_assoc, hcomm,
-        smul_smul, List.length_cons, Nat.choose_succ_succ, Nat.choose_one_right, pow_add,
-        mul_comm]
-  rw [b.exteriorAlgebra_eq_prod_map_sort, key, List.length_map, Finset.length_sort]
+  -- For the zero form every pair of vectors is orthogonal.
+  rw [b.exteriorAlgebra_eq_prod_map_sort, CliffordAlgebra.reverse_prod_map_ι_of_pairwise_isOrtho
+    (List.pairwise_of_forall fun _ _ ↦ QuadraticMap.IsOrtho.all _ _), List.length_map,
+    Finset.length_sort]
 
 variable [Fintype I]
 
