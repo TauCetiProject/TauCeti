@@ -41,13 +41,13 @@ The single-chart atlases on a point realize the following test atlases.
 * **The reflection atlas** (`TauCeti.ImplicitAtlas.reflectionAtlas`): `s(x) = x²` on `X_α = ℝ`,
   with `Γ_α = ℤˣ = {±1}` acting on `X_α` by `x ↦ ±x` and trivially on `E_α = ℝ`. The regular
   point `0` of `X_α` is fixed by the reflection
-  (`TauCeti.ImplicitAtlas.pointAct_unitsIntAction_neg_one`), which reverses the orientation of
+  (`TauCeti.ImplicitAtlas.coe_pointAct_unitsIntAction_neg_one`), which reverses the orientation of
   `X_α` and preserves that of `E_α`.
 * **The ineffective point** (`TauCeti.ImplicitAtlas.ineffectivePointAtlas`): `Γ_α = ℤˣ` acting
   trivially on the point `X_α = ℝ⁰`, with `E_α = 0`. The regular locus of `X_∅` cannot be all of
   `X_∅`: in every implicit atlas with these thickenings and this action it is empty, by the
   freeness of `Γ_α` over `ψ_∅α⁻¹(X_∅^reg)`
-  (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_subsingleton`).
+  (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_kuranishi_eq_zero`).
 * **A point of virtual dimension `-1`** (`TauCeti.ImplicitAtlas.obstructedPointAtlas`): the point
   `X_α = ℝ⁰` with `E_α = ℝ` and `s_α = 0`. A nonempty space may carry an atlas of negative
   virtual dimension, as long as some expected dimension `d + m_I` is nonnegative
@@ -152,11 +152,13 @@ def pointComponent (I : Finset Unit) : ((α : I) → Γ) →* Γ :=
   if h : () ∈ I then Pi.evalMonoidHom (fun _ : I ↦ Γ) ⟨(), h⟩ else 1
 
 /-- The component of `g ∈ Γ_I` is its value at the index, when `α ∈ I`. -/
+@[simp]
 theorem pointComponent_of_mem {I : Finset Unit} (h : () ∈ I) (g : (α : I) → Γ) :
     pointComponent Γ I g = g ⟨(), h⟩ := by
   simp [pointComponent, h]
 
 /-- The component of the only element of `Γ_∅` is `1`. -/
+@[simp]
 theorem pointComponent_of_notMem {I : Finset Unit} (h : () ∉ I) (g : (α : I) → Γ) :
     pointComponent Γ I g = 1 := by
   simp [pointComponent, h]
@@ -179,8 +181,8 @@ variable {E : Type*} [Zero E] {s : Y → E}
 
 /-- If `y₀` is the only zero of `s`, a point of the zero set `Z_IJ` of a single-chart atlas on a
 point is `y₀` unless `α ∈ I`. -/
-theorem coe_eq_of_mem_kuranishiZeroSet (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit}
-    (hI : () ∉ I) {y : PointThickening Y y₀ J}
+theorem coe_eq_of_mem_kuranishiZeroSet_pointKuranishi (hs₀ : ∀ y, s y = 0 ↔ y = y₀)
+    {I J : Finset Unit} (hI : () ∉ I) {y : PointThickening Y y₀ J}
     (hy : y ∈ kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) I J) : (y : Y) = y₀ := by
   by_cases hJ : () ∈ J
   · exact (hs₀ _).1 (mem_kuranishiZeroSet.1 hy ⟨(), hJ⟩ hI)
@@ -192,14 +194,14 @@ theorem kuranishiZeroSet_pointKuranishi_empty (hs₀ : ∀ y, s y = 0 ↔ y = y�
     kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) ∅ J =
       {y : PointThickening Y y₀ J | (y : Y) = y₀} := by
   ext y
-  exact ⟨coe_eq_of_mem_kuranishiZeroSet hs₀ (Finset.notMem_empty _),
+  exact ⟨coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ (Finset.notMem_empty _),
     fun hy ↦ mem_kuranishiZeroSet.2 fun _ _ ↦ (hs₀ _).2 hy⟩
 
 /-- The footprint map of a single-chart atlas on a point keeps the point of `Y`. -/
 private def pointFootprintMap (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit} (_ : I ⊆ J)
     (x : kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) I J) :
     PointThickening Y y₀ I :=
-  ⟨x.1.1, fun hI ↦ coe_eq_of_mem_kuranishiZeroSet hs₀ (by simp [hI]) x.2⟩
+  ⟨x.1.1, fun hI ↦ coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ (by simp [hI]) x.2⟩
 
 private theorem coe_pointFootprintMap (hs₀ : ∀ y, s y = 0 ↔ y = y₀) {I J : Finset Unit}
     (h : I ⊆ J) (x : kuranishiZeroSet (E := fun _ ↦ E) (pointKuranishi y₀ s) I J) :
@@ -303,10 +305,9 @@ noncomputable def pointAtlas (ρ : Representation ℝ Γ E) (σ : Γ →* (Y ≃
     ext
     simp only [coe_pointFootprintMap, coe_pointAct_apply]
     by_cases hI : () ∈ I
-    · rw [pointComponent_of_mem (h hI), pointComponent_of_mem hI]
-      rfl
-    · rw [coe_eq_of_mem_kuranishiZeroSet hs₀ hI x.2, apply_eq_self_of_equivariant hsσ hs₀,
-        apply_eq_self_of_equivariant hsσ hs₀]
+    · rw [pointComponent_of_mem (h hI), pointComponent_of_mem hI, Finset.restrict₂_def]
+    · rw [coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI x.2,
+        apply_eq_self_of_equivariant hsσ hs₀, apply_eq_self_of_equivariant hsσ hs₀]
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
   kuranishi_footprintMap _ _ _ _ _ := rfl
@@ -324,19 +325,20 @@ noncomputable def pointAtlas (ρ : Representation ℝ Γ E) (σ : Γ →* (Y ≃
   footprintMap_eq_footprintMap_iff I J h x y := by
     refine ⟨fun hxy ↦ ⟨1, funext fun _ ↦ rfl, ?_⟩, fun ⟨g, hg, hgx⟩ ↦ Subtype.ext ?_⟩
     · rw [map_one, Homeomorph.one_apply]
-      exact Subtype.ext (congrArg Subtype.val hxy :)
+      exact Subtype.ext (by simpa only [coe_pointFootprintMap] using congrArg Subtype.val hxy)
     · rw [coe_pointFootprintMap, coe_pointFootprintMap]
       by_cases hI : () ∈ I
       · have hg₁ : pointComponent Γ J g = 1 := by
           rw [pointComponent_of_mem (h hI)]
-          exact congrFun hg ⟨(), hI⟩
+          simpa [Finset.restrict₂_def] using congrFun hg ⟨(), hI⟩
         rw [← hgx, coe_pointAct_apply, hg₁, map_one, Homeomorph.one_apply]
-      · rw [coe_eq_of_mem_kuranishiZeroSet hs₀ hI x.2, coe_eq_of_mem_kuranishiZeroSet hs₀ hI y.2]
+      · rw [coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI x.2,
+          coe_eq_of_mem_kuranishiZeroSet_pointKuranishi hs₀ hI y.2]
   mem_regLocus_of_footprintMap_mem _ _ h _ hx := Finset.Nonempty.mono h hx
   eq_one_of_act_eq I J h x hx g hg _ := by
     obtain ⟨⟨⟩, hI⟩ := hx
     funext ⟨⟨⟩, _⟩
-    exact congrFun hg ⟨(), hI⟩
+    simpa [Finset.restrict₂_def] using congrFun hg ⟨(), hI⟩
   exists_openPartialHomeomorph I J h x hx := by
     have hJ : J.Nonempty := Finset.Nonempty.mono h hx
     obtain rfl : I = Finset.univ := Finset.Nonempty.eq_univ hx
@@ -466,11 +468,24 @@ theorem kuranishi_complexPowAtlas (hm : m ≠ 0) :
     (complexPowAtlas hm).kuranishi = pointKuranishi 0 fun z : ℂ ↦ z ^ m :=
   (rfl)
 
+/-- The regular locus of `X_I` in `TauCeti.ImplicitAtlas.complexPowAtlas` is everything for
+`I = {α}` and empty for `I = ∅`. -/
+theorem regLocus_complexPowAtlas (hm : m ≠ 0) (I : Finset Unit) :
+    (complexPowAtlas hm).regLocus I = {_z | I.Nonempty} :=
+  (rfl)
+
 /-- The regular locus of `X_∅` in `TauCeti.ImplicitAtlas.complexPowAtlas` is empty. -/
 @[simp]
 theorem regLocus_complexPowAtlas_empty (hm : m ≠ 0) : (complexPowAtlas hm).regLocus ∅ = ∅ :=
   letI := complexChartedSpace
   regLocus_pointAtlas_empty ..
+
+/-- The footprint maps of `TauCeti.ImplicitAtlas.complexPowAtlas` keep the complex coordinate. -/
+@[simp]
+theorem coe_footprintMap_complexPowAtlas (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J)
+    (x : kuranishiZeroSet (E := fun _ : Unit ↦ ℂ) (complexPowAtlas hm).kuranishi I J) :
+    ((complexPowAtlas hm).footprintMap h x : ℂ) = ((x : PointThickening ℂ 0 J) : ℂ) :=
+  (rfl)
 
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.complexPowAtlas` is the whole point. -/
 @[simp]
@@ -494,7 +509,7 @@ theorem unitsIntAction_apply (u : ℤˣ) (x : ℝ) : unitsIntAction u x = (u : �
 reflection `x ↦ -x` and trivially on the obstruction space `E_α = ℝ`, and the invariant
 Kuranishi map `s_α(x) = x²`. The regular locus of `X_∅ = X` is empty and `X_α` is regular. The
 regular point `0` of `X_α` is fixed by the reflection
-(`TauCeti.ImplicitAtlas.pointAct_unitsIntAction_neg_one`), which reverses the orientation of
+(`TauCeti.ImplicitAtlas.coe_pointAct_unitsIntAction_neg_one`), which reverses the orientation of
 `X_α` while acting trivially on `E_α`. -/
 noncomputable def reflectionAtlas :
     ImplicitAtlas (fun _ : Unit ↦ ℤˣ) (fun _ ↦ ℝ) (fun _ ↦ Representation.trivial ℝ ℤˣ ℝ)
@@ -511,11 +526,24 @@ theorem kuranishi_reflectionAtlas :
     reflectionAtlas.kuranishi = pointKuranishi 0 fun x : ℝ ↦ x ^ 2 :=
   (rfl)
 
+/-- The regular locus of `X_I` in `TauCeti.ImplicitAtlas.reflectionAtlas` is everything for
+`I = {α}` and empty for `I = ∅`. -/
+theorem regLocus_reflectionAtlas (I : Finset Unit) :
+    reflectionAtlas.regLocus I = {_x | I.Nonempty} :=
+  (rfl)
+
 /-- The regular locus of `X_∅` in `TauCeti.ImplicitAtlas.reflectionAtlas` is empty. -/
 @[simp]
 theorem regLocus_reflectionAtlas_empty : reflectionAtlas.regLocus ∅ = ∅ :=
   letI := realChartedSpace
   regLocus_pointAtlas_empty ..
+
+/-- The footprint maps of `TauCeti.ImplicitAtlas.reflectionAtlas` keep the real coordinate. -/
+@[simp]
+theorem coe_footprintMap_reflectionAtlas {I J : Finset Unit} (h : I ⊆ J)
+    (x : kuranishiZeroSet (E := fun _ : Unit ↦ ℝ) reflectionAtlas.kuranishi I J) :
+    (reflectionAtlas.footprintMap h x : ℝ) = ((x : PointThickening ℝ 0 J) : ℝ) :=
+  (rfl)
 
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.reflectionAtlas` is the whole point. -/
 @[simp]
@@ -525,7 +553,7 @@ theorem footprint_reflectionAtlas_singleton : reflectionAtlas.footprint {()} = u
 
 /-- In `TauCeti.ImplicitAtlas.reflectionAtlas` the element `-1` of `Γ_α` acts on the thickening
 `X_α = ℝ` by the reflection `x ↦ -x`. -/
-theorem pointAct_unitsIntAction_neg_one (hσ : ∀ u, unitsIntAction u 0 = 0)
+theorem coe_pointAct_unitsIntAction_neg_one (hσ : ∀ u, unitsIntAction u 0 = 0)
     (x : PointThickening ℝ 0 {()}) :
     (pointAct unitsIntAction hσ {()} (fun _ ↦ -1) x : ℝ) = -x := by
   simp [pointComponent_of_mem (Finset.mem_singleton_self ())]
@@ -534,7 +562,7 @@ theorem pointAct_unitsIntAction_neg_one (hσ : ∀ u, unitsIntAction u 0 = 0)
 `X = {0}` with one index `α`, group `Γ_α = ℤˣ = {±1}` acting trivially, obstruction space
 `E_α = 0` and thickening `X_α = ℝ⁰`, a point. The regular locus of `X_∅ = X` is empty and `X_α`
 is regular. It has to be: in every atlas with these thickenings and this action, `X_∅` has no
-regular point (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_subsingleton`). -/
+regular point (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_kuranishi_eq_zero`). -/
 noncomputable def ineffectivePointAtlas :
     ImplicitAtlas (fun _ : Unit ↦ ℤˣ) (fun _ ↦ EuclideanSpace ℝ (Fin 0))
       (fun _ ↦ Representation.trivial ℝ ℤˣ (EuclideanSpace ℝ (Fin 0)))
@@ -542,6 +570,34 @@ noncomputable def ineffectivePointAtlas :
       (PointThickening (EuclideanSpace ℝ (Fin 0)) 0 ∅) 0 :=
   pointAtlas (Representation.trivial ℝ ℤˣ (EuclideanSpace ℝ (Fin 0))) 1 0 continuous_const
     (fun _ _ ↦ by simp) (fun _ ↦ iff_of_true rfl (Subsingleton.elim _ _)) 0 (by simp)
+
+/-- The Kuranishi map of `TauCeti.ImplicitAtlas.ineffectivePointAtlas` is zero. -/
+@[simp]
+theorem kuranishi_ineffectivePointAtlas :
+    ineffectivePointAtlas.kuranishi =
+      pointKuranishi 0 (0 : EuclideanSpace ℝ (Fin 0) → EuclideanSpace ℝ (Fin 0)) :=
+  (rfl)
+
+/-- The regular locus of `X_I` in `TauCeti.ImplicitAtlas.ineffectivePointAtlas` is everything
+for `I = {α}` and empty for `I = ∅`. -/
+theorem regLocus_ineffectivePointAtlas (I : Finset Unit) :
+    ineffectivePointAtlas.regLocus I = {_x | I.Nonempty} :=
+  (rfl)
+
+/-- The regular locus of `X_∅` in `TauCeti.ImplicitAtlas.ineffectivePointAtlas` is empty. -/
+@[simp]
+theorem regLocus_ineffectivePointAtlas_empty : ineffectivePointAtlas.regLocus ∅ = ∅ :=
+  regLocus_pointAtlas_empty ..
+
+/-- The footprint maps of `TauCeti.ImplicitAtlas.ineffectivePointAtlas` keep the point of
+`ℝ⁰`. -/
+@[simp]
+theorem coe_footprintMap_ineffectivePointAtlas {I J : Finset Unit} (h : I ⊆ J)
+    (x : kuranishiZeroSet (E := fun _ : Unit ↦ EuclideanSpace ℝ (Fin 0))
+      ineffectivePointAtlas.kuranishi I J) :
+    (ineffectivePointAtlas.footprintMap h x : EuclideanSpace ℝ (Fin 0)) =
+      ((x : PointThickening (EuclideanSpace ℝ (Fin 0)) 0 J) : EuclideanSpace ℝ (Fin 0)) :=
+  (rfl)
 
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.ineffectivePointAtlas` is the whole point. -/
 @[simp]
@@ -561,10 +617,31 @@ noncomputable def obstructedPointAtlas :
   pointAtlas (Representation.trivial ℝ Unit ℝ) 1 0 continuous_const (fun _ _ ↦ by simp)
     (fun _ ↦ iff_of_true rfl (Subsingleton.elim _ _)) 0 (by simp)
 
+/-- The Kuranishi map of `TauCeti.ImplicitAtlas.obstructedPointAtlas` is zero. -/
+@[simp]
+theorem kuranishi_obstructedPointAtlas :
+    obstructedPointAtlas.kuranishi = pointKuranishi 0 (0 : EuclideanSpace ℝ (Fin 0) → ℝ) :=
+  (rfl)
+
+/-- The regular locus of `X_I` in `TauCeti.ImplicitAtlas.obstructedPointAtlas` is everything for
+`I = {α}` and empty for `I = ∅`. -/
+theorem regLocus_obstructedPointAtlas (I : Finset Unit) :
+    obstructedPointAtlas.regLocus I = {_x | I.Nonempty} :=
+  (rfl)
+
 /-- The regular locus of `X_∅` in `TauCeti.ImplicitAtlas.obstructedPointAtlas` is empty. -/
 @[simp]
 theorem regLocus_obstructedPointAtlas_empty : obstructedPointAtlas.regLocus ∅ = ∅ :=
   regLocus_pointAtlas_empty ..
+
+/-- The footprint maps of `TauCeti.ImplicitAtlas.obstructedPointAtlas` keep the point of
+`ℝ⁰`. -/
+@[simp]
+theorem coe_footprintMap_obstructedPointAtlas {I J : Finset Unit} (h : I ⊆ J)
+    (x : kuranishiZeroSet (E := fun _ : Unit ↦ ℝ) obstructedPointAtlas.kuranishi I J) :
+    (obstructedPointAtlas.footprintMap h x : EuclideanSpace ℝ (Fin 0)) =
+      ((x : PointThickening (EuclideanSpace ℝ (Fin 0)) 0 J) : EuclideanSpace ℝ (Fin 0)) :=
+  (rfl)
 
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.obstructedPointAtlas` is the whole point. -/
 @[simp]
@@ -579,29 +656,33 @@ section Isotropy
 
 variable {Γ : Type*} [Group Γ] [Finite Γ] [Nontrivial Γ] {Y : Type*} [TopologicalSpace Y]
   [T2Space Y] {y₀ : Y} {E : Unit → Type*} [∀ α, NormedAddCommGroup (E α)]
-  [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)] [∀ α, Subsingleton (E α)]
+  [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)]
   {ρ : ∀ α, Representation ℝ Γ (E α)} {X : Type*} [TopologicalSpace X] {d : ℤ}
   {σ : Γ →* (Y ≃ₜ Y)} {hσ : ∀ g, σ g y₀ = y₀}
 
 /-- **A nontrivial isotropy group forbids a regular `X_∅`.** Let a nontrivial finite group `Γ`
 act on the thickenings `X_∅ = {y₀}` and `X_α = Y` of a single-chart atlas on a point, through an
-action on `Y` fixing `y₀`, with zero obstruction space. In every implicit atlas with these
-thickenings and this action, the regular locus of `X_∅` is empty. Indeed the zero set `Z_∅α` is
-all of `X_α`, and `Γ_α` fixes its point `y₀`, so a regular point of `X_∅` would contradict the
-freeness of `Γ_α` over `ψ_∅α⁻¹(X_∅^reg)`. This is why the regular locus of
-`TauCeti.ImplicitAtlas.ineffectivePointAtlas` cannot be enlarged to all of `X_∅`. -/
-theorem regLocus_empty_eq_empty_of_subsingleton
-    (𝒜 : ImplicitAtlas (fun _ : Unit ↦ Γ) E ρ (PointThickening Y y₀) (pointAct σ hσ) X d) :
+action on `Y` fixing `y₀`. In every implicit atlas with these thickenings and this action whose
+Kuranishi map `s_α` vanishes at `y₀`, the regular locus of `X_∅` is empty. Indeed `y₀` lies in
+the zero set `Z_∅α` and is fixed by `Γ_α`, so a regular point of `X_∅` would contradict the
+freeness of `Γ_α` over `ψ_∅α⁻¹(X_∅^reg)`. This is why the regular loci of
+`TauCeti.ImplicitAtlas.reflectionAtlas` and `TauCeti.ImplicitAtlas.ineffectivePointAtlas` cannot
+be enlarged to all of `X_∅`. -/
+theorem regLocus_empty_eq_empty_of_kuranishi_eq_zero
+    (𝒜 : ImplicitAtlas (fun _ : Unit ↦ Γ) E ρ (PointThickening Y y₀) (pointAct σ hσ) X d)
+    (h₀ : 𝒜.kuranishi {()} ⟨(), Finset.mem_singleton_self _⟩
+      ⟨y₀, fun h ↦ (Finset.singleton_ne_empty _ h).elim⟩ = 0) :
     𝒜.regLocus ∅ = ∅ := by
   refine eq_empty_of_forall_notMem fun x hx ↦ ?_
   obtain ⟨g, hg⟩ := exists_ne (1 : Γ)
   let z : kuranishiZeroSet 𝒜.kuranishi ∅ {()} :=
     ⟨⟨y₀, fun h ↦ (Finset.singleton_ne_empty _ h).elim⟩,
-      mem_kuranishiZeroSet.2 fun _ _ ↦ Subsingleton.elim _ _⟩
+      mem_kuranishiZeroSet.2 fun ⟨⟨⟩, _⟩ _ ↦ h₀⟩
   have hz : 𝒜.footprintMap (Finset.empty_subset _) z = x :=
     Subtype.ext (((𝒜.footprintMap _ z).2 rfl).trans (x.2 rfl).symm)
   have h₁ := 𝒜.eq_one_of_act_eq (Finset.empty_subset _) z (hz ▸ hx) (fun _ ↦ g)
-    (funext fun α ↦ (Finset.notMem_empty _ α.2).elim) (Subtype.ext (hσ _))
+    (funext fun α ↦ (Finset.notMem_empty _ α.2).elim)
+    (Subtype.ext (by rw [coe_pointAct_apply]; exact hσ _))
   exact hg (congrFun h₁ ⟨(), Finset.mem_singleton_self _⟩)
 
 end Isotropy
