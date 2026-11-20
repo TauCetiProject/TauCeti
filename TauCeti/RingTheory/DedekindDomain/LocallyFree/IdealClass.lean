@@ -170,7 +170,7 @@ theorem idealClassHom_mem_classGroup (hA : ¬IsField A) (c : Additive (ClassGrou
     idealClassHom A c ∈ classGroup A K A := by
   obtain ⟨I, hI⟩ := ClassGroup.mk0_surjective c.toMul
   have h := isLocallyFreeOfRank_one_of_ne_bot (K := K)
-    (mem_nonZeroDivisors_iff_ne_zero.mp I.2)
+    (mem_nonZeroDivisors_iff_ne_zero.mp I.property)
   have : Module.Projective A (I : Ideal A) := h.projective hA
   have hc : Additive.ofMul (ClassGroup.mk0 I) = c := congrArg Additive.ofMul hI
   rw [← hc, idealClassHom_mk0]

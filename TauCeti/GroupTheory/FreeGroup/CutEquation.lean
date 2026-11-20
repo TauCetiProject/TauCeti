@@ -173,7 +173,8 @@ reduced as written. -/
 theorem isSolution_iff : P.IsSolution β α ↔ (∀ m, α m ≠ []) ∧ (∀ m, IsReduced (α m)) ∧
     (∀ σ, IsReduced (substituteVars α (P.pieceLabel σ))) ∧
       P.IsGroupSolution β fun m => FreeGroup.mk (α m) :=
-  ⟨fun h => ⟨h.1, h.2, h.3, h.4⟩, fun h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2⟩⟩
+  ⟨fun h => ⟨h.ne_nil, h.isReduced, h.isReduced_substituteVars, h.isGroupSolution⟩, fun h => ⟨h.1,
+      h.2.1, h.2.2.1, h.2.2.2⟩⟩
 
 namespace IsSolution
 
@@ -192,7 +193,7 @@ theorem substituteVars_eq_toWord [DecidableEq A] (h : P.IsSolution β α) (σ : 
 
 /-- The piece labels of a cut equation with a solution are reduced words. -/
 theorem isReduced_pieceLabel (h : P.IsSolution β α) (σ : E) : IsReduced (P.pieceLabel σ) :=
-  (h.isReduced_substituteVars σ).of_substituteVars h.ne_nil
+  (h.isReduced_substituteVars σ).of_substituteVars fun m _ _ => h.ne_nil m
 
 end IsSolution
 

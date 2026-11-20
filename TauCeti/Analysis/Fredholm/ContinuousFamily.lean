@@ -67,7 +67,7 @@ theorem _root_.ContinuousOn.index_eq_of_isPreconnected {A : X → E →L[K] F} {
     ContinuousLinearMap.index (A x) = ContinuousLinearMap.index (A y) := by
   let := Subtype.preconnectedSpace hs
   exact (Continuous.isLocallyConstant_index hA.domRestrict
-    (fun x ↦ hFredholm x x.2)).apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
+    (fun x ↦ hFredholm x x.property)).apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 /-- A continuous family of Fredholm operators over a preconnected parameter space has constant
 index. -/

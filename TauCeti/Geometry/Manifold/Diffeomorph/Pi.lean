@@ -6,17 +6,36 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
+import TauCeti.Geometry.Manifold.MFDeriv.Pi
 
 /-!
 # Diffeomorphisms of finite products of manifolds
 
-Canonical `C^n` diffeomorphisms identifying finite products of charted spaces modelled on
-`ModelWithCorners.pi`:
+This file constructs canonical `C^n` diffeomorphisms of finite products `∀ i, M i` of charted
+spaces, modelled on `ModelWithCorners.pi I`:
 
-* `Diffeomorph.piUnique` and `Diffeomorph.funUnique`: a product indexed by a `Unique` finite type
-  is diffeomorphic to the factor at `default`.
-* `Diffeomorph.piSnoc`: adjoining the last factor `(∀ i : Fin k, M i.castSucc) × M (Fin.last k)`
-  is diffeomorphic to `∀ i : Fin (k + 1), M i`.
+* `Diffeomorph.piUnique` identifies a finite product indexed by a `Unique` type with its single
+  factor `M default`, the smooth counterpart of `Equiv.piUnique` and `Homeomorph.piUnique`;
+* `Diffeomorph.funUnique` identifies a finite power `ι → M` indexed by a `Unique` type with `M`,
+  the smooth counterpart of `Equiv.funUnique` and `Homeomorph.funUnique`;
+* `Diffeomorph.piSnoc` appends a last factor via `Fin.snoc`, identifying
+  `(∀ i : Fin m, M i.castSucc) × M (Fin.last m)` with `∀ i : Fin (m + 1), M i`, the smooth
+  counterpart of `Fin.snocEquiv` (composed with `Equiv.prodComm`);
+* `Diffeomorph.mfderiv_piSnoc_apply` computes the differential of `Diffeomorph.piSnoc` on tangent
+  vectors as `Fin.snoc`, using `TauCeti.mfderiv_pi`.
+
+## Main definitions
+
+* `Diffeomorph.piUnique`: canonical diffeomorphism `(∀ i, M i) ≃ₘ^n M default` for
+  `[Unique ι]`.
+* `Diffeomorph.funUnique`: canonical diffeomorphism `(ι → M) ≃ₘ^n M` for `[Unique ι]`.
+* `Diffeomorph.piSnoc`: canonical diffeomorphism
+  `((∀ i : Fin m, M i.castSucc) × M (Fin.last m)) ≃ₘ^n (∀ i : Fin (m + 1), M i)`.
+
+## Main results
+
+* `Diffeomorph.mfderiv_piSnoc_apply`: the differential of `Diffeomorph.piSnoc` acts by `Fin.snoc`
+  on tangent vectors.
 -/
 
 public section
@@ -25,28 +44,38 @@ open scoped Manifold ContDiff
 
 namespace Diffeomorph
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 section PiUnique
 
-variable {ι : Type*} [Fintype ι] [Unique ι] {E H : ι → Type*}
-  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] [∀ i, TopologicalSpace (H i)]
-  (I : ∀ i, ModelWithCorners 𝕜 (E i) (H i)) (M : ι → Type*) [∀ i, TopologicalSpace (M i)]
-  [∀ i, ChartedSpace (H i) (M i)]
+variable {ι : Type*} [Fintype ι] [Unique ι]
+  {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+  {H : ι → Type*} [∀ i, TopologicalSpace (H i)] (I : ∀ i, ModelWithCorners 𝕜 (E i) (H i))
+  (M : ι → Type*) [∀ i, TopologicalSpace (M i)] [∀ i, ChartedSpace (H i) (M i)]
+  (n : ℕ∞ω)
 
-/-- A finite product of charted spaces indexed by a `Unique` type is `C^n` diffeomorphic to the
-factor at `default`. -/
-def piUnique (n : ℕ∞ω) :
-    (∀ i, M i) ≃ₘ^n⟮ModelWithCorners.pi I, I default⟯ M default where
+/-- A finite product of charted spaces indexed by a `Unique` type is `C^n` diffeomorphic to its
+single factor `M default`. This is the smooth counterpart of `Equiv.piUnique` and
+`Homeomorph.piUnique`. -/
+def piUnique : (∀ i, M i) ≃ₘ^n⟮ModelWithCorners.pi I, I default⟯ M default where
   toEquiv := Equiv.piUnique M
-  contMDiff_toFun := contMDiff_apply
+  contMDiff_toFun := contMDiff_apply (i := default)
   contMDiff_invFun := contMDiff_pi_iff.2 fun i ↦ by
     obtain rfl := Unique.eq_default i
-    simpa [Equiv.piUnique_symm_apply, Function.id_def] using contMDiff_id (I := I default)
+    simp only [Equiv.piUnique_symm_apply, uniqueElim_default]
+    exact contMDiff_id
 
-@[simp] theorem piUnique_apply (f : ∀ i, M i) : piUnique I M n f = f default := (rfl)
-@[simp] theorem piUnique_symm_apply (x : M default) :
-    (piUnique I M n).symm x = uniqueElim x := (rfl)
+/-- `Diffeomorph.piUnique` evaluates a tuple at `default`. -/
+@[simp]
+theorem piUnique_apply (f : ∀ i, M i) : piUnique I M n f = f default := (rfl)
+
+/-- The inverse of `Diffeomorph.piUnique` builds the singleton tuple via `uniqueElim`. -/
+@[simp]
+theorem piUnique_symm_apply (x : M default) : (piUnique I M n).symm x = uniqueElim x := (rfl)
+
+/-- The underlying equivalence of `Diffeomorph.piUnique` is `Equiv.piUnique`. -/
+@[simp]
+theorem piUnique_toEquiv : (piUnique I M n).toEquiv = Equiv.piUnique M := (rfl)
 
 end PiUnique
 
@@ -57,45 +86,111 @@ variable (ι : Type*) [Fintype ι] [Unique ι] {E H : Type*} [NormedAddCommGroup
   [TopologicalSpace M] [ChartedSpace H M]
 
 /-- A finite power `ι → M` of a charted space indexed by a `Unique` type is `C^n` diffeomorphic
-to `M`. -/
+to `M`. This is the smooth counterpart of `Equiv.funUnique` and `Homeomorph.funUnique`. -/
 def funUnique (n : ℕ∞ω) : (ι → M) ≃ₘ^n⟮ModelWithCorners.pi fun _ : ι ↦ I, I⟯ M where
   toEquiv := Equiv.funUnique ι M
   contMDiff_toFun := contMDiff_apply
   contMDiff_invFun := contMDiff_pi_iff.2 fun _ ↦ contMDiff_id
 
-@[simp] theorem funUnique_apply (f : ι → M) : funUnique ι I M n f = f default := (rfl)
-@[simp] theorem funUnique_symm_apply (x : M) (i : ι) : (funUnique ι I M n).symm x i = x := (rfl)
+/-- `Diffeomorph.funUnique` evaluates a function at `default`. -/
+@[simp]
+theorem funUnique_apply (n : ℕ∞ω) (f : ι → M) : funUnique ι I M n f = f default := (rfl)
+
+/-- The inverse of `Diffeomorph.funUnique` builds the constant function. -/
+@[simp]
+theorem funUnique_symm_apply (n : ℕ∞ω) (x : M) (i : ι) :
+    (funUnique ι I M n).symm x i = x := (rfl)
+
+/-- The underlying equivalence of `Diffeomorph.funUnique` is `Equiv.funUnique`. -/
+@[simp]
+theorem funUnique_toEquiv (n : ℕ∞ω) : (funUnique ι I M n).toEquiv = Equiv.funUnique ι M := (rfl)
 
 end FunUnique
 
-section Snoc
+section PiSnoc
 
-variable {k : ℕ} {E H : Fin (k + 1) → Type*}
-  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] [∀ i, TopologicalSpace (H i)]
-  (I : ∀ i, ModelWithCorners 𝕜 (E i) (H i)) (M : Fin (k + 1) → Type*)
-  [∀ i, TopologicalSpace (M i)] [∀ i, ChartedSpace (H i) (M i)]
+variable {m : ℕ}
+  {E : Fin (m + 1) → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+  {H : Fin (m + 1) → Type*} [∀ i, TopologicalSpace (H i)]
+  (I : ∀ i, ModelWithCorners 𝕜 (E i) (H i))
+  (M : Fin (m + 1) → Type*) [∀ i, TopologicalSpace (M i)] [∀ i, ChartedSpace (H i) (M i)]
+  (n : ℕ∞ω)
 
-/-- Adjoining the last factor identifies `(∀ i : Fin k, M i.castSucc) × M (Fin.last k)` with
-`∀ i : Fin (k + 1), M i` as a `C^n` diffeomorphism via `Fin.snoc`. -/
-def piSnoc (n : ℕ∞ω) :
-    ((∀ i : Fin k, M i.castSucc) × M (Fin.last k)) ≃ₘ^n⟮
-      (ModelWithCorners.pi fun i : Fin k ↦ I i.castSucc).prod (I (Fin.last k)),
-      ModelWithCorners.pi I⟯ (∀ i, M i) where
-  toFun p := Fin.snoc p.1 p.2
-  invFun f := (Fin.init f, f (Fin.last k))
-  left_inv p := Prod.ext (Fin.init_snoc p.2 p.1) (Fin.snoc_last p.2 p.1)
-  right_inv f := Fin.snoc_init_self f
-  contMDiff_toFun := contMDiff_pi_iff.2 <| Fin.lastCases
-    (by simpa [Fin.snoc_last] using contMDiff_snd)
-    fun _ ↦ by
-      simpa [Fin.snoc_castSucc, Function.comp_def] using contMDiff_apply.comp contMDiff_fst
-  contMDiff_invFun := (contMDiff_pi_iff.2 fun _ ↦ contMDiff_apply).prodMk contMDiff_apply
+/-- Appending a last factor via `Fin.snoc` defines a `C^n` diffeomorphism between
+`(∀ i : Fin m, M i.castSucc) × M (Fin.last m)` and `∀ i : Fin (m + 1), M i`, with inverse
+`g ↦ (Fin.init g, g (Fin.last m))`. -/
+def piSnoc :
+    ((∀ i : Fin m, M i.castSucc) × M (Fin.last m)) ≃ₘ^n⟮
+      (ModelWithCorners.pi fun i : Fin m ↦ I i.castSucc).prod (I (Fin.last m)),
+      ModelWithCorners.pi I⟯ (∀ i : Fin (m + 1), M i) where
+  toEquiv := (Equiv.prodComm _ _).trans (Fin.snocEquiv M)
+  contMDiff_toFun := contMDiff_pi_iff.2 fun i ↦ by
+    induction i using Fin.lastCases with
+    | last =>
+      simp only [Equiv.trans_apply, Equiv.prodComm_apply, Fin.snocEquiv_apply, Fin.snoc_last]
+      exact contMDiff_snd
+    | cast k =>
+      simp only [Equiv.trans_apply, Equiv.prodComm_apply, Fin.snocEquiv_apply, Fin.snoc_castSucc]
+      exact (contMDiff_apply (i := k)).comp contMDiff_fst
+  contMDiff_invFun :=
+    (contMDiff_pi_iff.2 fun k ↦ contMDiff_apply (i := k.castSucc)).prodMk
+      (contMDiff_apply (i := Fin.last m))
 
-@[simp] theorem piSnoc_apply (p : (∀ i : Fin k, M i.castSucc) × M (Fin.last k)) :
+/-- `Diffeomorph.piSnoc` appends the second component to the first via `Fin.snoc`. -/
+@[simp]
+theorem piSnoc_apply (p : (∀ i : Fin m, M i.castSucc) × M (Fin.last m)) :
     piSnoc I M n p = Fin.snoc p.1 p.2 := (rfl)
-@[simp] theorem piSnoc_symm_apply (f : ∀ i, M i) :
-    (piSnoc I M n).symm f = (Fin.init f, f (Fin.last k)) := (rfl)
 
-end Snoc
+/-- The inverse of `Diffeomorph.piSnoc` splits a tuple into its initial segment and last entry. -/
+@[simp]
+theorem piSnoc_symm_apply (g : ∀ i : Fin (m + 1), M i) :
+    (piSnoc I M n).symm g = (Fin.init g, g (Fin.last m)) := (rfl)
+
+/-- The underlying equivalence of `Diffeomorph.piSnoc` is `Fin.snocEquiv` composed with
+`Equiv.prodComm`. -/
+@[simp]
+theorem piSnoc_toEquiv :
+    (piSnoc I M n).toEquiv = (Equiv.prodComm _ _).trans (Fin.snocEquiv M) := (rfl)
+
+/-- The differential of `Diffeomorph.piSnoc` acts by `Fin.snoc` on tangent vectors. -/
+theorem mfderiv_piSnoc_apply (p : (∀ i : Fin m, M i.castSucc) × M (Fin.last m))
+    (u : ∀ i : Fin m, E i.castSucc) (w : E (Fin.last m)) :
+    mfderiv ((ModelWithCorners.pi fun i : Fin m ↦ I i.castSucc).prod (I (Fin.last m)))
+      (ModelWithCorners.pi I) (piSnoc I M n) p (u, w) =
+      Fin.snoc (α := E) u w := by
+  let J := (ModelWithCorners.pi fun i : Fin m ↦ I i.castSucc).prod (I (Fin.last m))
+  have hcomp : ∀ i : Fin (m + 1),
+      MDifferentiableAt J (I i) (fun q ↦ piSnoc I M n q i) p ∧
+        mfderiv J (I i) (fun q ↦ piSnoc I M n q i) p (u, w) = Fin.snoc (α := E) u w i := by
+    intro i
+    induction i using Fin.lastCases with
+    | last =>
+      have hlast : (fun q : (∀ j : Fin m, M j.castSucc) × M (Fin.last m) ↦
+          piSnoc I M n q (Fin.last m)) = Prod.snd :=
+        funext fun q ↦ by simp only [piSnoc_apply, Fin.snoc_last]
+      refine ⟨hlast.symm ▸ mdifferentiableAt_snd, ?_⟩
+      rw [Fin.snoc_last]
+      exact (DFunLike.congr_fun
+        (mfderiv_congr (I := J) (I' := I (Fin.last m)) hlast) (u, w)).trans
+        (by rw [mfderiv_snd]; rfl)
+    | cast k =>
+      have hcast : (fun q : (∀ j : Fin m, M j.castSucc) × M (Fin.last m) ↦
+          piSnoc I M n q k.castSucc) = (fun f ↦ f k) ∘ Prod.fst :=
+        funext fun q ↦ by simp only [piSnoc_apply, Fin.snoc_castSucc, Function.comp_apply]
+      have hd_apply : MDifferentiableAt (ModelWithCorners.pi fun j : Fin m ↦ I j.castSucc)
+          (I k.castSucc) (fun f ↦ f k) p.1 :=
+        (TauCeti.hasMFDerivAt_apply k p.1).mdifferentiableAt
+      refine ⟨hcast.symm ▸ hd_apply.comp p mdifferentiableAt_fst, ?_⟩
+      rw [Fin.snoc_castSucc]
+      exact (DFunLike.congr_fun
+        (mfderiv_congr (I := J) (I' := I k.castSucc) hcast) (u, w)).trans
+        (by
+          rw [mfderiv_comp p hd_apply mdifferentiableAt_fst, TauCeti.mfderiv_apply, mfderiv_fst]
+          rfl)
+  rw [TauCeti.mfderiv_pi fun i ↦ (hcomp i).1]
+  funext i
+  exact (hcomp i).2
+
+end PiSnoc
 
 end Diffeomorph

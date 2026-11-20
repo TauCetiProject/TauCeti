@@ -103,7 +103,7 @@ assigned point `e` of the sphere at the origin. -/
 def sphereDirection (e : sphere (0 : E) 1) (x : E) : sphere (0 : E) 1 :=
   ⟨if x = 0 then e else normalize x, by
     split_ifs with hx
-    exacts [e.2, mem_sphere_zero_iff_norm.2 (norm_normalize hx)]⟩
+    exacts [e.property, mem_sphere_zero_iff_norm.2 (norm_normalize hx)]⟩
 
 variable (e : sphere (0 : E) 1) {x : E}
 

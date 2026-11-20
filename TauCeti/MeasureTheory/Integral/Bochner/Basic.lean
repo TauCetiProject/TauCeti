@@ -41,6 +41,8 @@ for set and probability integrals.
 * `TauCeti.MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub` bounds the difference
   of two integrals by the integral of the norm of the difference, with no integrability
   assumption.
+* `TauCeti.MeasureTheory.norm_integral_le_of_eLpNorm_one_le` bounds the norm of an integral by any
+  real bound on the `L¹` norm of the integrand.
 
 ## Counting measures of multisets
 
@@ -69,6 +71,8 @@ for set and probability integrals.
   integrable function `N`.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
+* `integral_mono_of_integral_nonneg` gives `∫ g ≤ ∫ h` for `g ≤ h` almost everywhere,
+  with `h` integrable and `∫ h ≥ 0`, without assuming `g` integrable.
 * `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
   integral of `‖f‖ₑ ^ 2`.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
@@ -293,6 +297,14 @@ theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α E : Type*} [Measu
   · have hui : ¬Integrable u μ := fun hui =>
       hvi ((hui.sub huv).congr (.of_forall fun x => by simp))
     simp [integral_undef hui, integral_undef hvi]
+
+/-- An integral is bounded in norm by any real bound on the `L¹` norm of the integrand. -/
+theorem norm_integral_le_of_eLpNorm_one_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E} {ε : ℝ} (hε : 0 ≤ ε)
+    (h : eLpNorm f 1 μ ≤ ENNReal.ofReal ε) : ‖∫ x, f x ∂μ‖ ≤ ε := by
+  have h1 := eNorm_integral_le_lintegral_eNorm (μ := μ) f
+  rw [← ofReal_norm] at h1
+  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans (lintegral_eNorm_le_eLpNorm_one.trans h))
 
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/
@@ -562,6 +574,15 @@ pointwise maximum. -/
 theorem integral_le_integral_max {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
     (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, f x ∂μ ≤ ∫ x, max (f x) (g x) ∂μ :=
   integral_mono hf (hf.sup hg) fun _ ↦ le_max_left _ _
+
+/-- `∫ g ≤ ∫ h` when `g ≤ h` almost everywhere, `h` is integrable and `∫ h ≥ 0`, also when `g` is
+not integrable, since then `∫ g = 0`. -/
+theorem integral_mono_of_integral_nonneg {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {g h : α → ℝ} (hgh : g ≤ᵐ[μ] h) (hh : Integrable h μ)
+    (h0 : 0 ≤ ∫ x, h x ∂μ) : ∫ x, g x ∂μ ≤ ∫ x, h x ∂μ := by
+  by_cases hg : Integrable g μ
+  · exact integral_mono_ae hg hh hgh
+  · rwa [integral_undef hg]
 
 /-- A probability density `ρ`, almost everywhere nonnegative with `∫ ρ = 1`, has total extended
 mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
@@ -868,7 +889,7 @@ theorem integral_biUnion_finset₀ {X E ι : Type*} [MeasurableSpace X] [NormedA
     simp only [← Finset.mem_coe, Set.biUnion_eq_iUnion]
   rw [hcoe] at hf ⊢
   rw [integral_iUnion_ae (s := fun i : (↑s : Set ι) ↦ t (i : ι))
-    (fun i ↦ hm (i : ι) i.2) (hd.subtype _ _) hf]
+    (fun i ↦ hm (i : ι) i.property) (hd.subtype _ _) hf]
   exact Finset.tsum_subtype' s fun i ↦ ∫ x in t i, f x ∂μ
 
 open Polynomial in

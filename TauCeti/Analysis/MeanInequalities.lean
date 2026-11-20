@@ -57,6 +57,8 @@ of a higher-order Sobolev space.
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: the two-point weighted geometric mean is
+  positively homogeneous.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
@@ -129,6 +131,13 @@ theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0
   have := (rpow_pos_of_pos ha (1 - θ)).ne'
   have := (rpow_pos_of_pos hb θ).ne'
   field_simp
+
+/-- **Homogeneity of the two-point weighted geometric mean.** For weights with `a + b = 1` and
+`t, x, y ≥ 0`, `(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)`. -/
+theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hx : 0 ≤ x)
+    (hy : 0 ≤ y) (hab : a + b = 1) : (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
+  rw [mul_rpow ht hx, mul_rpow ht hy, mul_mul_mul_comm,
+    ← rpow_add' ht (by rw [hab]; exact one_ne_zero), hab, rpow_one]
 
 /-- **Normalized weighted AM-GM.** For positive normalizers `a` and `b`, the weighted geometric
 mean of `A` and `B` is at most the weighted arithmetic mean of `A / a` and `B / b` times the
@@ -337,7 +346,8 @@ theorem Lq_le_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : �
       ENNReal.ofReal_sum_of_nonneg fun i hi ↦ rpow_nonneg (hf i hi) r]
     congr 1
     rw [← Finset.sum_coe_sort s]
-    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg (hf i i.2) hr.le).symm
+    exact Finset.sum_congr rfl fun i _ ↦ (ENNReal.ofReal_rpow_of_nonneg
+        (hf i i.property) hr.le).symm
   have h := ENNReal.Lq_le_Lp_tsum (fun i : s ↦ ENNReal.ofReal (f i)) hp hpq
   rw [← hofReal hq, ← hofReal hp] at h
   exact (ENNReal.ofReal_le_ofReal_iff (rpow_nonneg (Finset.sum_nonneg fun i hi ↦

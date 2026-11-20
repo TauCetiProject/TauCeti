@@ -93,7 +93,7 @@ noncomputable def spinGroupEquivEvenUnitaryOfFinrankLeFour
       have hx : (x : (CliffordAlgebra Q)ˣ) ∈
           (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range := by
         rw [range_spinGroup_toUnits_eq_evenUnitaryGroup_of_finrank_le_four Q hQ hV0 hV]
-        exact x.2
+        exact x.property
       obtain ⟨s, hs⟩ := hx
       refine ⟨s, Subtype.ext ?_⟩
       simpa only [coe_spinGroupToEvenUnitary_apply] using hs⟩
