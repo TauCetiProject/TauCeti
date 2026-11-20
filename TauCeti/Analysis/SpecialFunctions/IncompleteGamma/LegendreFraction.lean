@@ -10,10 +10,11 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Complex.RealDeriv
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.LaplaceTransform.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # The recurrence of Legendre's continued fraction for the upper incomplete Gamma function
@@ -53,7 +54,6 @@ with norm-divergent reduction-of-order sums.
 * `Complex.mul_legendreContFractIntegral_zero` — `z K(0, d) = 1 + d K(0, d - 1)`.
 * `Complex.mul_legendreContFractIntegral_succ` —
   `z K(c + 1, d) = (c + 1) K(c, d) + d K(c + 1, d - 1)`.
-* `Complex.legendreContFractIntegral_zero_zero` — `K(0, 0)(z) = z⁻¹`.
 * `Complex.legendreContFractNum_ne_zero` — the partial numerators `aₙ` (`n ≥ 1`) are nonzero
   when `z ≠ 0` and `a ∉ {1, 2, …}`.
 * `Complex.legendreContFractSol_recurrence` — `f(n + 1) = f(n) + aₙ f(n - 1)` for `n ≥ 1` and
@@ -71,8 +71,7 @@ public section
 
 noncomputable section
 
-open Asymptotics Filter MeasureTheory Set Polynomial
-open scoped Topology
+open MeasureTheory Set Polynomial
 
 namespace Complex
 
@@ -99,38 +98,11 @@ private theorem norm_legendreContFractIntegrand (c : ℕ) (d z : ℂ) {t : ℝ} 
   simp only [neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
   ring
 
-/-- A real polynomial-type weight times `e^{-rt}` is `O(e^{-(r / 2) t})` at infinity. -/
-private theorem isBigO_pow_mul_one_add_rpow_mul_exp (c : ℕ) (p : ℝ) {r : ℝ} (hr : 0 < r) :
-    (fun t : ℝ => t ^ c * (1 + t) ^ p * Real.exp (-(r * t))) =O[atTop]
-      fun t => Real.exp (-(r / 2) * t) := by
-  set q : ℝ := c + |p|
-  have hlo : (fun t : ℝ => (1 + t) ^ q) =o[atTop] fun t => Real.exp (r / 2 * (1 + t)) :=
-    (isLittleO_rpow_exp_pos_mul_atTop q (half_pos hr)).comp_tendsto
-      (tendsto_atTop_add_const_left _ 1 tendsto_id)
-  have hmul := hlo.isBigO.mul (isBigO_refl (fun t : ℝ => Real.exp (-(r * t))) atTop)
-  refine IsBigO.trans ?_ (hmul.trans (IsBigO.of_bound (Real.exp (r / 2)) ?_))
-  · refine IsBigO.of_bound 1 ?_
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    have h1t : 1 ≤ 1 + t := by linarith
-    have hpow : t ^ c * (1 + t) ^ p ≤ (1 + t) ^ q := by
-      calc t ^ c * (1 + t) ^ p ≤ (1 + t) ^ (c : ℝ) * (1 + t) ^ |p| := by
-            gcongr
-            · rw [Real.rpow_natCast]
-              exact pow_le_pow_left₀ ht (by linarith) c
-            · exact le_abs_self p
-        _ = (1 + t) ^ q := by rw [← Real.rpow_add (by linarith)]
-    rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), one_mul]
-    exact mul_le_mul_of_nonneg_right hpow (Real.exp_pos _).le
-  · filter_upwards with t
-    rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-      ← Real.exp_add, ← Real.exp_add]
-    exact le_of_eq (congr_arg Real.exp (by ring))
-
 private theorem continuousOn_legendreContFractIntegrand (c : ℕ) (d z : ℂ) :
     ContinuousOn (fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (Ici 0) := by
   refine ((by fun_prop : Continuous fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c).continuousOn).mul
     ((by fun_prop : Continuous fun t : ℝ => 1 + (t : ℂ)).continuousOn.cpow_const fun t ht => ?_)
-  simpa [add_comm] using TauCeti.ofReal_add_mem_slitPlane one_mem_slitPlane ht
+  exact TauCeti.one_add_ofReal_mem_slitPlane ht
 
 /-- For `Re z > 0`, the integrand `e^{-zt} t^c (1 + t)^d` of `K(c, d)(z)` is integrable on
 `(0, ∞)`. -/
@@ -139,7 +111,7 @@ theorem integrableOn_legendreContFractIntegrand (c : ℕ) (d : ℂ) {z : ℂ} (h
   have hg : IntegrableOn (fun t : ℝ => t ^ c * (1 + t) ^ d.re * Real.exp (-(z.re * t)))
       (Ioi 0) := by
     refine integrable_of_isBigO_exp_neg (half_pos hz) ?_
-      (isBigO_pow_mul_one_add_rpow_mul_exp c d.re hz)
+      (TauCeti.isBigO_pow_mul_one_add_rpow_mul_exp c d.re hz)
     refine ((continuous_pow c).continuousOn.mul ?_).mul (by fun_prop)
     exact (by fun_prop : Continuous fun t : ℝ => 1 + t).continuousOn.rpow_const
       fun t ht => Or.inl (by have : (0 : ℝ) ≤ t := ht; positivity)
@@ -147,28 +119,6 @@ theorem integrableOn_legendreContFractIntegrand (c : ℕ) (d : ℂ) {z : ℂ} (h
     |>.aestronglyMeasurable measurableSet_Ioi) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
   exact (norm_legendreContFractIntegrand c d z (le_of_lt ht)).le
-
-/-- The integrand of `K(c, d)(z)` tends to `0` at infinity when `Re z > 0`. -/
-private theorem tendsto_legendreContFractIntegrand_atTop (c : ℕ) (d : ℂ) {z : ℂ}
-    (hz : 0 < z.re) :
-    Tendsto (fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) atTop (𝓝 0) := by
-  have hO : (fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) =O[atTop]
-      fun t => Real.exp (-(z.re / 2) * t) := by
-    refine IsBigO.trans (IsBigO.of_bound 1 ?_) (isBigO_pow_mul_one_add_rpow_mul_exp c d.re hz)
-    filter_upwards [eventually_ge_atTop 0] with t ht
-    rw [norm_legendreContFractIntegrand c d z ht, one_mul]
-    exact Real.le_norm_self _
-  refine hO.trans_tendsto ?_
-  exact Real.tendsto_exp_atBot.comp
-    (tendsto_id.const_mul_atTop_of_neg (neg_neg_iff_pos.2 (half_pos hz)))
-
-/-- The integrand of `K(c, d)(z)` tends to its value `0 ^ c` at `t = 0` as `t → 0+`. -/
-private theorem tendsto_legendreContFractIntegrand_nhdsGT_zero (c : ℕ) (d z : ℂ) :
-    Tendsto (fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (𝓝[>] 0)
-      (𝓝 ((0 : ℂ) ^ c)) := by
-  have hc := (continuousOn_legendreContFractIntegrand c d z 0
-    (mem_Ici.2 le_rfl)).tendsto.mono_left (nhdsWithin_mono _ Ioi_subset_Ici_self)
-  simpa using hc
 
 /-- **Pointwise relation** between the transforms: for `Re z > 0`,
 `K(c, d) - K(c, d - 1) = K(c + 1, d - 1)`. -/
@@ -179,9 +129,7 @@ theorem legendreContFractIntegral_sub (c : ℕ) (d : ℂ) {z : ℂ} (hz : 0 < z.
     ← integral_sub (integrableOn_legendreContFractIntegrand c d hz)
       (integrableOn_legendreContFractIntegrand c (d - 1) hz)]
   refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
-  have hne : 1 + (t : ℂ) ≠ 0 := by
-    simpa [add_comm] using
-      slitPlane_ne_zero (TauCeti.ofReal_add_mem_slitPlane one_mem_slitPlane ht.le)
+  have hne : 1 + (t : ℂ) ≠ 0 := slitPlane_ne_zero (TauCeti.one_add_ofReal_mem_slitPlane ht.le)
   have hd : (1 + (t : ℂ)) ^ d = (1 + (t : ℂ)) ^ (d - 1) * (1 + (t : ℂ)) := by
     conv_lhs => rw [← sub_add_cancel d 1]
     rw [cpow_add _ _ hne, cpow_one]
@@ -189,57 +137,47 @@ theorem legendreContFractIntegral_sub (c : ℕ) (d : ℂ) {z : ℂ} (hz : 0 < z.
   ring
 
 /-- Integration by parts for the transforms, with the boundary value `0 ^ c` at `t = 0`: for
-`Re z > 0`, `z K(c, d) = 0 ^ c + c K(c - 1, d) + d K(c, d - 1)`. -/
+`Re z > 0`, `z K(c, d) = 0 ^ c + c K(c - 1, d) + d K(c, d - 1)`. This is the Laplace transform of
+the derivative of `t ^ c (1 + t) ^ d`. -/
 private theorem mul_legendreContFractIntegral (c : ℕ) (d : ℂ) {z : ℂ} (hz : 0 < z.re) :
     z * legendreContFractIntegral c d z =
       0 ^ c + c * legendreContFractIntegral (c - 1) d z +
         d * legendreContFractIntegral c (d - 1) z := by
-  set u : ℝ → ℂ := fun t => cexp (-(z * t))
   set v : ℝ → ℂ := fun t => (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d
-  set u' : ℝ → ℂ := fun t => -z * cexp (-(z * t))
   set v' : ℝ → ℂ := fun t =>
     c * (t : ℂ) ^ (c - 1) * (1 + (t : ℂ)) ^ d + (t : ℂ) ^ c * (d * (1 + (t : ℂ)) ^ (d - 1))
-  have hu (t : ℝ) : HasDerivAt u (u' t) t := by
-    have h := (((hasDerivAt_id (t : ℂ)).const_mul (-z)).cexp).comp_ofReal
-    simp only [id, mul_one, neg_mul] at h
-    simp only [u, u']
-    rw [mul_comm]
-    exact h
+  have hI (c' : ℕ) (d' : ℂ) := integrableOn_legendreContFractIntegrand c' d' hz
+  have hv0 : ContinuousWithinAt v (Ici 0) 0 :=
+    ((by fun_prop : Continuous fun t : ℝ => (t : ℂ) ^ c).continuousOn.mul
+      ((by fun_prop : Continuous fun t : ℝ => 1 + (t : ℂ)).continuousOn.cpow_const
+        fun t ht => TauCeti.one_add_ofReal_mem_slitPlane ht)) 0 (mem_Ici.2 le_rfl)
   have hv (t : ℝ) (ht : t ∈ Ioi 0) : HasDerivAt v (v' t) t := by
-    have hmem : 1 + (t : ℂ) ∈ slitPlane := by
-      simpa [add_comm] using TauCeti.ofReal_add_mem_slitPlane one_mem_slitPlane ht.le
     have h := ((hasDerivAt_pow c (t : ℂ)).mul
-      (((hasDerivAt_id (t : ℂ)).const_add 1).cpow_const (c := d) hmem)).comp_ofReal
+      (((hasDerivAt_id (t : ℂ)).const_add 1).cpow_const (c := d)
+        (TauCeti.one_add_ofReal_mem_slitPlane ht.le))).comp_ofReal
     simp only [id, mul_one] at h
     exact h
-  have hI (c' : ℕ) (d' : ℂ) := integrableOn_legendreContFractIntegrand c' d' hz
-  have hsplit : ∀ t : ℝ, u' t * v t + u t * v' t =
-      -z * (cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) +
-        (c * (cexp (-(z * t)) * (t : ℂ) ^ (c - 1) * (1 + (t : ℂ)) ^ d) +
-          d * (cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ (d - 1))) := fun t => by
-    simp only [u, v, u', v']
+  -- The Laplace integrands of `v` and `v'` are combinations of integrands of `K`.
+  have hsplit (t : ℝ) : cexp (-z * t) • v' t =
+      c * (cexp (-(z * t)) * (t : ℂ) ^ (c - 1) * (1 + (t : ℂ)) ^ d) +
+        d * (cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ (d - 1)) := by
+    simp only [v', smul_eq_mul, neg_mul]
     ring
-  have hA : IntegrableOn (fun t : ℝ => -z * (cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d))
-      (Ioi 0) := (hI c d).const_mul (-z)
+  have hL : TauCeti.HasLaplace v z (legendreContFractIntegral c d z) := by
+    have heq : (fun t : ℝ => cexp (-z * t) • v t) =
+        fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d := funext fun t => by
+      simp only [v, smul_eq_mul, neg_mul, mul_assoc]
+    exact TauCeti.HasLaplace.intro (heq ▸ hI c d) (heq ▸ rfl)
   have hB : IntegrableOn (fun t : ℝ =>
       c * (cexp (-(z * t)) * (t : ℂ) ^ (c - 1) * (1 + (t : ℂ)) ^ d) +
         d * (cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ (d - 1))) (Ioi 0) :=
     ((hI (c - 1) d).const_mul (c : ℂ)).add ((hI c (d - 1)).const_mul d)
-  have huv : IntegrableOn (u' * v + u * v') (Ioi 0) := by
-    refine IntegrableOn.congr_fun (hA.add hB) (fun t _ => ?_) measurableSet_Ioi
-    simp only [Pi.add_apply, Pi.mul_apply, hsplit]
-  have h0 : Tendsto (u * v) (𝓝[>] 0) (𝓝 ((0 : ℂ) ^ c)) :=
-    (tendsto_legendreContFractIntegrand_nhdsGT_zero c d z).congr fun t => by
-      simp only [u, v, Pi.mul_apply, mul_assoc]
-  have hinf : Tendsto (u * v) atTop (𝓝 0) :=
-    (tendsto_legendreContFractIntegrand_atTop c d hz).congr fun t => by
-      simp only [u, v, Pi.mul_apply, mul_assoc]
-  have hibp := integral_Ioi_deriv_mul_eq_sub (fun t _ => hu t) hv huv h0 hinf
-  simp only [hsplit] at hibp
-  rw [integral_add hA hB, integral_add ((hI (c - 1) d).const_mul _) ((hI c (d - 1)).const_mul _),
-    integral_const_mul, integral_const_mul, integral_const_mul] at hibp
-  simp only [legendreContFractIntegral]
-  linear_combination -hibp
+  have hL' := (TauCeti.hasLaplace_deriv hv0 hv hL (funext hsplit ▸ hB)).integral_eq
+  simp only [hsplit, smul_eq_mul, v] at hL'
+  rw [integral_add ((hI (c - 1) d).const_mul _) ((hI c (d - 1)).const_mul _),
+    integral_const_mul, integral_const_mul] at hL'
+  simp only [legendreContFractIntegral, ofReal_zero, add_zero, one_cpow, mul_one] at hL' ⊢
+  linear_combination -hL'
 
 /-- **Integration by parts** for `K(0, d)`, with boundary term `1`: for `Re z > 0`,
 `z K(0, d) = 1 + d K(0, d - 1)`. -/
@@ -254,12 +192,6 @@ theorem mul_legendreContFractIntegral_succ (c : ℕ) (d : ℂ) {z : ℂ} (hz : 0
       (c + 1) * legendreContFractIntegral c d z +
         d * legendreContFractIntegral (c + 1) (d - 1) z := by
   simpa using mul_legendreContFractIntegral (c + 1) d hz
-
-/-- The transform `K(0, 0)(z) = ∫₀^∞ e^{-zt} dt` equals `z⁻¹` for `Re z > 0`. -/
-theorem legendreContFractIntegral_zero_zero {z : ℂ} (hz : 0 < z.re) :
-    legendreContFractIntegral 0 0 z = z⁻¹ := by
-  refine eq_inv_of_mul_eq_one_left ?_
-  rw [mul_comm, mul_legendreContFractIntegral_zero 0 hz, zero_mul, add_zero]
 
 /-! ### Partial numerators -/
 
