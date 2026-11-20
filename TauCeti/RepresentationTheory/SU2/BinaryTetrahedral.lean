@@ -74,6 +74,12 @@ def binaryTetrahedralCoords : Finset (Fin 4 → ℤ) :=
   {![2, 0, 0, 0], ![-2, 0, 0, 0], ![0, 2, 0, 0], ![0, -2, 0, 0], ![0, 0, 2, 0], ![0, 0, -2, 0],
     ![0, 0, 0, 2], ![0, 0, 0, -2]} ∪ Fintype.piFinset fun _ => {1, -1}
 
+/-- The explicit list of doubled coordinate vectors, for finite checks by `decide`. -/
+theorem binaryTetrahedralCoords_def : binaryTetrahedralCoords =
+    {![2, 0, 0, 0], ![-2, 0, 0, 0], ![0, 2, 0, 0], ![0, -2, 0, 0], ![0, 0, 2, 0], ![0, 0, -2, 0],
+      ![0, 0, 0, 2], ![0, 0, 0, -2]} ∪ Fintype.piFinset fun _ => {1, -1} :=
+  (rfl)
+
 /-- **The 24 doubled coordinate vectors are distinct.** -/
 @[simp]
 theorem card_binaryTetrahedralCoords : binaryTetrahedralCoords.card = 24 := by
@@ -112,7 +118,7 @@ private theorem exists_mem_binaryTetrahedralCoords_of_coe_eq {g : SU2} {v : Fin 
     (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩) :
     ∃ v ∈ binaryTetrahedralCoords,
       (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ := by
-  have hdet := (Matrix.mem_specialUnitaryGroup_iff.mp g.2).2
+  have hdet := (Matrix.mem_specialUnitaryGroup_iff.mp g.property).2
   rw [hg, det_toComplexMatrix, normSq_mk_div_two, ← Complex.ofReal_one, Complex.ofReal_inj,
     div_eq_one_iff_eq four_ne_zero] at hdet
   refine ⟨v, mem_binaryTetrahedralCoords_iff.mpr ?_, hg⟩
@@ -197,7 +203,7 @@ theorem mem_binaryTetrahedralSubgroup_iff_exists_int {g : SU2} :
 /-- The element of the binary tetrahedral subgroup with doubled coordinates `v`. -/
 private noncomputable def binaryTetrahedralCoordsFun (v : binaryTetrahedralCoords) :
     binaryTetrahedralSubgroup :=
-  ⟨⟨_, toComplexMatrix_mem_of_mem_binaryTetrahedralCoords v.2⟩, v, v.2, rfl⟩
+  ⟨⟨_, toComplexMatrix_mem_of_mem_binaryTetrahedralCoords v.property⟩, v, v.property, rfl⟩
 
 private theorem binaryTetrahedralCoordsFun_bijective :
     Function.Bijective binaryTetrahedralCoordsFun := by
@@ -209,7 +215,7 @@ private theorem binaryTetrahedralCoordsFun_bijective :
     ext i
     fin_cases i
     exacts [h0, h1, h2, h3]
-  · obtain ⟨v, hv, hg⟩ := g.2
+  · obtain ⟨v, hv, hg⟩ := g.property
     exact ⟨⟨v, hv⟩, Subtype.ext (Subtype.ext hg.symm)⟩
 
 /-- **The 24 points parametrize the binary tetrahedral subgroup**: the doubled coordinate vector

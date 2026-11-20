@@ -43,6 +43,8 @@ change of charts.
   `J¹V` for a `C^(n+1)` section `s` (`TauCeti.FirstJetBundle.contMDiff_jet`).
   For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`, and for a constant
   section `v` of a trivial bundle it is `(v, 0)` (`TauCeti.FirstJetBundle.jet_trivial_const`).
+  Its vanishing is equivalent to zero value and chart derivative
+  (`TauCeti.FirstJetBundle.jet_eq_zero_iff_localRep`).
 * `TauCeti.FirstJetBundle.value` and `TauCeti.FirstJetBundle.ofDeriv`: the fibres of the projection
   `J¹V → V` and of the inclusion `Hom(TM, V) → J¹V` of continuous linear maps (for
   finite-dimensional fibres, `Hom(TM, V) = T*M ⊗ V`). The projection sends `j¹s(x)` to
@@ -619,7 +621,7 @@ trivialization of `V` at `i`. -/
 theorem trivializationAt_apply_snd (i : M)
     (p : TotalSpace (F × (E →L[𝕜] F)) (FirstJetBundle I F V)) :
     (trivializationAt (F × (E →L[𝕜] F)) (FirstJetBundle I F V) i p).2 =
-      coordChange I F V p.1 i p.1 p.2 := (rfl)
+      coordChange I F V p.proj i p.proj p.snd := (rfl)
 
 /-- In the preferred trivialization of `J¹V` at `i`, the first jet of a section differentiable
 at `y` consists of the value and the chart derivative of its local representative at `i`. -/
@@ -772,6 +774,15 @@ theorem value_eq_zero_iff (x : M) (j : FirstJetBundle I F V x) : value I F x j =
   rw [h]
   refine ⟨fun h0 ↦ ?_, fun h0 ↦ by rw [h0, map_zero]⟩
   rw [← (trivializationAt F V x).continuousLinearMapAt_symmL (R := 𝕜) hx j.1, h0, map_zero]
+
+/-- A section has zero first jet exactly when its value and the derivative of its local
+representative in the preferred chart vanish. No differentiability hypothesis is needed: the
+first jet records the totalized chart derivative. -/
+theorem jet_eq_zero_iff_localRep {s : ∀ x, V x} {x : M} :
+    jet I F s x = 0 ↔ s x = 0 ∧
+      fderivWithin 𝕜 (localRep I F s x) (range I) (extChartAt I x x) = 0 := by
+  rw [← value_jet I F s x, value_eq_zero_iff, ← jet_snd]
+  exact Prod.ext_iff
 
 /-- A first jet with value coordinate zero has value zero. -/
 @[simp]

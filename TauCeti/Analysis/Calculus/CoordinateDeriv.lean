@@ -128,6 +128,16 @@ theorem coordinateDeriv_append (α β : List (Fin n)) (f : CoordinateSpace n →
     funext x
     rw [List.cons_append, coordinateDeriv_cons, coordinateDeriv_cons, ih]
 
+/-- Differentiating the derivative of `f` in the coordinate direction `j` along a word is
+differentiating `f` along the word extended by `j`. -/
+theorem coordinateDeriv_eq_append_singleton {f g : CoordinateSpace n → A} (w : List (Fin n))
+    (j : Fin n) (h : ∀ y, g y = fderiv ℝ f y (EuclideanSpace.single j 1)) :
+    coordinateDeriv w g = coordinateDeriv (w ++ [j]) f := by
+  rw [coordinateDeriv_append]
+  congr 1
+  funext y
+  rw [h, coordinateDeriv_cons, coordinateDeriv_nil]
+
 /-- Coordinate derivatives along a word of length `k` of a `C^N` function are `C^m` whenever
 `m + k ≤ N`. -/
 theorem _root_.ContDiff.coordinateDeriv_of_le {N m : WithTop ℕ∞} {f : CoordinateSpace n → A}
@@ -255,7 +265,7 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ ∑ j, ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ := by
   set b := EuclideanSpace.basisFun (Fin n) ℝ
   set T : Fin n → A →L[ℝ] CoordinateSpace n →L[ℝ] A := fun j ↦
-    ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n) A (innerSL ℝ (b j))
+    ContinuousLinearMap.smulRightL ℝ ℝ ℝ (CoordinateSpace n) A (innerSL ℝ (b j))
   have hfd : fderiv ℝ f = ∑ j, T j ∘ coordinateDeriv [j] f := by
     funext y
     ext h
@@ -331,11 +341,11 @@ theorem coordinateDeriv_list_sum {ι : Type*} {L : List ι} (α : List (Fin n))
     (x : CoordinateSpace n) :
     coordinateDeriv α (fun y => (L.map fun i => f i y).sum) x =
       (L.map fun i => coordinateDeriv α (f i) x).sum := by
-  have h : (fun y => (L.map fun i => f i y).sum) = ∑ k : Fin L.length, f L[k.1] := by
+  have h : (fun y => (L.map fun i => f i y).sum) = ∑ k : Fin L.length, f L[k.val] := by
     funext y
     rw [Finset.sum_apply]
     exact (Fin.sum_univ_fun_getElem L fun i => f i y).symm
-  rw [h, coordinateDeriv_sum α fun k _ => hf _ (List.getElem_mem k.2), Finset.sum_apply]
+  rw [h, coordinateDeriv_sum α fun k _ => hf _ (List.getElem_mem k.isLt), Finset.sum_apply]
   exact Fin.sum_univ_fun_getElem L fun i => coordinateDeriv α (f i) x
 
 /-- Coordinate derivatives at a point only depend on the germ of the function there. -/

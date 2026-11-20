@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Normed.Group.Real
@@ -22,10 +23,11 @@ bounded interval `[a, b)` is integrable against a locally finite measure, that t
 many disjoint measurable subsets, that an almost everywhere positive function has positive
 integral, bounds for the integral of the reciprocal of a function bounded below by a positive
 constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and supported in a closed
-ball `B`, and that a continuous
-square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
-on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets.
+ball `B`, the integral of `Φ x (f₀ x)` for an almost everywhere zero extension `f₀` of `f`
+from `s` and an integrand `Φ` vanishing at `0`, and that a continuous square-integrable function
+`h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive on nonempty open sets.
+It also bounds the integral over a measurable set `S` by integrals over unions with disjoint sets,
+and that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`.
 
 ## Main statements
 
@@ -39,8 +41,12 @@ unions with disjoint sets.
 * `TauCeti.div_le_setIntegral_inv` and `TauCeti.setIntegral_inv_pos`: if `λ ≤ a ≤ M` almost
   everywhere on a set `s` of finite measure, with `λ > 0`, then `∫_s a⁻¹ ≥ μ(s) / M`; the lower
   bound `a ≥ λ` alone gives `∫_s a⁻¹ > 0` when `μ s > 0`.
+* `TauCeti.le_setIntegral_Icc_add_of_le_mul`: if `m ≤ K σ` on `[a, a + K]`, with `K > 0`, then
+  `m ≤ ∫_a^{a+K} σ`.
 * `TauCeti.setIntegral_sq_le_of_support_subset_closedBall`: a function bounded by `K` on a closed
   ball `B` and vanishing off it has `∫_s ψ² ≤ K² |B|` over every set `s`.
+* `TauCeti.integral_eq_setIntegral_of_ae_eq_indicator`: if `f₀` is almost everywhere the zero
+  extension `1_s f` and `Φ x 0 = 0`, then `∫ Φ x (f₀ x) = ∫_s Φ x (f x)`.
 * `TauCeti.integrableOn_sin_of_measure_ne_top`,
   `TauCeti.integrableOn_exp_ofReal_mul_I_of_measure_ne_top`: the sine and the unit-circle
   exponential `exp (t x I)` are integrable on a set of finite measure.
@@ -206,6 +212,16 @@ theorem setIntegral_inv_pos (hs₀ : μ s ≠ 0) (hs : μ s ≠ ∞) (hlam : 0 <
 
 end Reciprocal
 
+/-- If `m ≤ K σ(r)` for every `r ∈ [a, a + K]`, with `K > 0` and `σ` integrable there, then `m` is
+at most the integral of `σ` over `[a, a + K]`: the average of `σ` over the interval is at least
+`m / K`. -/
+theorem le_setIntegral_Icc_add_of_le_mul {σ : ℝ → ℝ} {a K m : ℝ} (hK : 0 < K)
+    (hσ : IntegrableOn σ (Icc a (a + K))) (hm : ∀ r ∈ Icc a (a + K), m ≤ K * σ r) :
+    m ≤ ∫ r in Icc a (a + K), σ r := by
+  have h := setIntegral_ge_of_const_le_real measurableSet_Icc (by simp)
+    (fun r hr ↦ (div_le_iff₀' hK).2 (hm r hr)) hσ
+  simpa [hK.le, hK.ne'] using h
+
 open Metric in
 /-- A function bounded by `K` on a closed ball and vanishing off it has `∫_s ψ² ≤ K² |B|` over
 every set `s`, where `B` is the closed ball. -/
@@ -231,6 +247,18 @@ theorem setIntegral_sq_le_of_support_subset_closedBall {E : Type*} [PseudoMetric
         gcongr
         rw [measureReal_restrict_apply hmeasB]
         exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+
+/-- If `f₀` is almost everywhere the zero extension `1_s f` of `f` and `Φ x 0 = 0` for every
+`x`, then the integral of `Φ x (f₀ x)` over the whole space is the integral of `Φ x (f x)`
+over `s`. -/
+theorem integral_eq_setIntegral_of_ae_eq_indicator {X E G : Type*} [MeasurableSpace X] [Zero E]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure X} {s : Set X}
+    (hs : NullMeasurableSet s μ) {f f₀ : X → E} (Φ : X → E → G) (hΦ : ∀ x, Φ x 0 = 0)
+    (h : f₀ =ᵐ[μ] s.indicator f) :
+    ∫ x, Φ x (f₀ x) ∂μ = ∫ x in s, Φ x (f x) ∂μ := by
+  rw [← integral_indicator₀ hs]
+  refine integral_congr_ae (h.mono fun x hx => ?_)
+  by_cases hx' : x ∈ s <;> simp [hx, hx', hΦ]
 
 end TauCeti
 

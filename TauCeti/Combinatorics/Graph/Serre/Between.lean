@@ -272,8 +272,8 @@ theorem exists_crosses_of_isBetween (hx : Γ.IsBetween a x b) (hxb : x ≠ b) :
   obtain ⟨p, hp⟩ := exists_length_eq_dist hx.nonempty_path_left
   obtain ⟨q, hq⟩ := exists_length_eq_dist hx.nonempty_path_right
   obtain ⟨y, f, q', -, rfl⟩ := q.eq_toPath_comp_of_length_eq_succ (n := q.length - 1) (by lia)
-  exact ⟨f.1, Path.crosses_of_length_eq_dist
-    (by rw [Quiver.Path.length_comp, hp, hq, hx.dist_add_dist]) (by simp), f.2.1⟩
+  exact ⟨f.val, Path.crosses_of_length_eq_dist
+    (by rw [Quiver.Path.length_comp, hp, hq, hx.dist_add_dist]) (by simp), f.property.1⟩
 
 /-! ### Acyclic graphs -/
 
@@ -346,7 +346,7 @@ theorem IsAcyclic.natCard_crosses (h : Γ.IsAcyclic) (a b : Γ.V) :
   classical
   rcases Nat.eq_zero_or_pos (Γ.dist a b) with h0 | hpos
   · rw [h0, Nat.card_eq_zero]
-    exact .inl ⟨fun e => e.2.dist_pos.ne' h0⟩
+    exact .inl ⟨fun e => e.property.dist_pos.ne' h0⟩
   obtain ⟨p⟩ := nonempty_path_of_dist_ne_zero hpos.ne'
   have hp := Path.isReduced_reduce Γ p
   have hlen := h.dist_eq_length hp

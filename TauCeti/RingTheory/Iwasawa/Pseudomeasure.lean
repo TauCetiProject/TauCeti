@@ -120,7 +120,7 @@ def numerator (g : G) : pseudomeasures δ Q →ₗ[R] R :=
       (FaithfulSMul.algebraMap_injective R Q)).symm.toLinearMap ∘ₗ
     ((LinearMap.mulLeft R (algebraMap R Q (δ g - 1))).comp (pseudomeasures δ Q).subtype
       |>.codRestrict _ fun z => by
-        obtain ⟨r, hr⟩ := mem_pseudomeasures_iff.1 z.2 g
+        obtain ⟨r, hr⟩ := mem_pseudomeasures_iff.1 z.property g
         exact ⟨r, by simpa using hr⟩)
 
 /-- The defining property of the cleared numerator: its image in `Q` is `(δ g - 1) * z`. -/

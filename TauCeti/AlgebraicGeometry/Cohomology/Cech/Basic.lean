@@ -22,12 +22,12 @@ import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 Let `X` be a scheme and let `M` be a quasi-coherent sheaf of modules on `X`. Then `M` has no
 cohomology in positive degrees on affine opens
 (`AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_succ_of_isAffineOpen`). So every
-finite open cover `U` of `X` whose nonempty finite intersections are affine is a Leray cover for
+open cover `U` of `X` whose nonempty finite intersections are affine is a Leray cover for
 `M`, and by Leray's theorem (`TauCeti.Topology.homologyCechComplexIsoH`) the Čech cohomology
 `Hⁿ(U, M)` of the underlying abelian sheaf of `M` is isomorphic to the cohomology `Hⁿ(X, M)`.
 When `X` has affine diagonal, for instance when it is separated, finite intersections of affine
 opens are affine (`AlgebraicGeometry.IsAffineOpen.biInf`), so `Hⁿ(X, M)` can be computed from the
-Čech complex of any finite affine open cover.
+Čech complex of any affine open cover.
 
 The isomorphism is natural in the quasi-coherent sheaf `M`. In particular it intertwines the map
 on Čech cohomology induced by multiplication by a global function `r` on `M` with the action of
@@ -36,15 +36,19 @@ structures of both sides over the ring of global functions, and hence over any b
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology`: for a finite open cover `U`
-  of `X` with affine nonempty finite intersections, `Hⁿ(U, M) ≅ Hⁿ(X, M)` for every `n`;
+* `AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology`: for an open cover `U` of
+  `X` with affine nonempty finite intersections, `Hⁿ(U, M) ≅ Hⁿ(X, M)` for every `n`;
+* `AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology_def`: it is Leray's theorem
+  `TauCeti.Topology.homologyCechComplexIsoH` for the cover;
 * `AlgebraicGeometry.Scheme.Modules.homologyMap_comp_homologyCechComplexIsoCohomology_hom`: its
   naturality in `M`;
 * `AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology_hom_globalSectionsSmul`: its
   compatibility with the action of global functions;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardIsoOfIsAffineHom`: for an affine morphism
-  `f : X ⟶ Y`, where `Y` has affine diagonal and a finite affine open cover `U`, the
-  isomorphism `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)` for quasi-coherent `M`;
+  `f : X ⟶ Y`, where `Y` has affine diagonal, the isomorphism `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)` for
+  quasi-coherent `M`, computed by the Čech complexes of any affine open cover of `Y` and of its
+  preimage in `X`
+  (`homologyCechComplexIsoCohomology_hom_comp_cohomologyPushforwardIsoOfIsAffineHom_hom`);
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardIsoOfIsAffineHom_naturality`: its naturality
   in `M`;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom`: the same
@@ -56,14 +60,18 @@ structures of both sides over the ring of global functions, and hence over any b
 
 ## Cohomology along affine morphisms
 
-Let `f : X ⟶ Y` be an affine morphism and `U` a finite affine open cover of `Y` whose finite
-intersections are affine. The preimages `f⁻¹ U i` form a finite affine open cover of `X` with
+Let `f : X ⟶ Y` be an affine morphism and `U` an affine open cover of `Y` whose finite
+intersections are affine. The preimages `f⁻¹ U i` form an affine open cover of `X` with
 affine finite intersections, and the sections of `f_* M` over a finite intersection of members of
 `U` are the sections of `M` over its preimage. So the Čech complex of `f_* M` for `U` is the Čech
 complex of `M` for `f⁻¹ U` (`TauCeti.CategoryTheory.cechComplexCompIso`), and computing both sides
 by Čech cohomology gives `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)`. This is the computation of cohomology along an
 affine morphism suggested by Hartshorne, Exercise III.4.1; it lets finiteness of cohomology be
-transferred from `Y` to schemes finite over `Y`. The isomorphism is built from the chosen cover `U`.
+transferred from `Y` to schemes finite over `Y`. The isomorphism
+`AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardIsoOfIsAffineHom` is built from the cover of
+`Y` by all its affine opens (`Y.affineOpens`), but it agrees with the comparison through the Čech
+complexes of any affine open cover `U` of `Y`
+(`homologyCechComplexIsoCohomology_hom_comp_cohomologyPushforwardIsoOfIsAffineHom_hom`).
 
 ## References
 
@@ -92,11 +100,11 @@ private lemma subsingleton_cohomologyOn_inf_succ (M : X.Modules) [M.IsQuasicoher
     (s : Finset ι) (hs : s.Nonempty) (k : ℕ) : Subsingleton (cohomologyOn M (k + 1) (s.inf U)) :=
   subsingleton_cohomologyOn_succ_of_isAffineOpen M (hU s hs) k
 
-variable [Finite ι] (hcover : ⨆ i, U i = ⊤)
+variable (hcover : ⨆ i, U i = ⊤)
 
 /-- **Čech cohomology computes the cohomology of a quasi-coherent sheaf.** Let `X` be a scheme,
-`M` a quasi-coherent sheaf of modules on `X`, and `U` a finite family of opens
-covering `X` whose nonempty finite intersections are affine, for instance a finite affine open
+`M` a quasi-coherent sheaf of modules on `X`, and `U` a family of opens
+covering `X` whose nonempty finite intersections are affine, for instance an affine open
 cover when `X` has affine diagonal. Then the Čech cohomology `Hⁿ(U, M)` of the underlying abelian
 sheaf of `M` is isomorphic to `Hⁿ(X, M)`, for every `n`, naturally in `M`
 (`homologyMap_comp_homologyCechComplexIsoCohomology_hom`). -/
@@ -107,7 +115,18 @@ def homologyCechComplexIsoCohomology (M : X.Modules) [M.IsQuasicoherent] (n : �
   TauCeti.Topology.homologyCechComplexIsoH U hcover _
     (subsingleton_cohomologyOn_inf_succ U hU M) n
 
-/-- The comparison of Čech cohomology for a finite cover with affine intersections with the
+/-- The comparison of Čech cohomology for a cover with affine intersections with the cohomology
+of a quasi-coherent sheaf is Leray's theorem for the cover; the vanishing of the cohomology on the
+finite intersections may be witnessed by any proof. -/
+theorem homologyCechComplexIsoCohomology_def (M : X.Modules) [M.IsQuasicoherent]
+    (hM : ∀ s : Finset ι, s.Nonempty → ∀ k,
+      Subsingleton (((SheafOfModules.toSheaf X.ringCatSheaf).obj M).H' (k + 1) (s.inf U)))
+    (n : ℕ) :
+    homologyCechComplexIsoCohomology U hU hcover M n =
+      TauCeti.Topology.homologyCechComplexIsoH U hcover _ hM n :=
+  (rfl)
+
+/-- The comparison of Čech cohomology for a cover with affine intersections with the
 cohomology of a quasi-coherent sheaf is natural in the sheaf. -/
 @[reassoc]
 theorem homologyMap_comp_homologyCechComplexIsoCohomology_hom {M N : X.Modules}
@@ -118,7 +137,7 @@ theorem homologyMap_comp_homologyCechComplexIsoCohomology_hom {M N : X.Modules}
       (homologyCechComplexIsoCohomology U hU hcover M n).hom ≫ (cohomologyFunctor X n).map f :=
   TauCeti.Topology.homologyMap_comp_homologyCechComplexIsoH_hom U hcover _ _ _ n
 
-/-- The comparison of Čech cohomology for a finite cover with affine intersections with the
+/-- The comparison of Čech cohomology for a cover with affine intersections with the
 cohomology of a quasi-coherent sheaf `M` is linear over the global functions: it carries the map
 on Čech cohomology induced by multiplication by `r` on `M` to scalar multiplication by `r` on
 `Hⁿ(X, M)`. -/
@@ -168,6 +187,22 @@ private lemma cechComplexPushforwardIso_naturality {M N : X.Modules} (α : M ⟶
       U _ (fun _ _ ↦ inferInstance)
       ((SheafOfModules.toSheaf X.ringCatSheaf).map α).hom).symm
 
+/-- The identification of Čech complexes `cechComplexPushforwardIso` commutes with refinement
+maps: the refinement of the preimages is the preimage of the refinement. -/
+private lemma cechComplexPushforwardIso_hom_comp_cechComplexMap {κ : Type u} (V : κ → Y.Opens)
+    (M : X.Modules) (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechComplexPushforwardIso f V M).hom ≫
+        TauCeti.CategoryTheory.cechComplexMap ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj
+          (⟨φ.f, fun i ↦ (Opens.map f.base).map (φ.φ i)⟩ :
+            FormalCoproduct.mk _ (fun i ↦ f ⁻¹ᵁ U i) ⟶ FormalCoproduct.mk _ fun i ↦ f ⁻¹ᵁ V i) =
+      TauCeti.CategoryTheory.cechComplexMap
+          ((SheafOfModules.toSheaf Y.ringCatSheaf).obj ((pushforward f).obj M)).obj φ ≫
+        (cechComplexPushforwardIso f U M).hom :=
+  (Iso.inv_comp_eq _).2 <| ((Iso.eq_comp_inv _).2 <|
+    TauCeti.CategoryTheory.cechComplexMap_comp_cechComplexCompIso_hom (Opens.map f.base) U
+      ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj (fun _ _ ↦ inferInstance) φ
+      fun _ _ ↦ inferInstance).trans (Category.assoc _ _ _)
+
 variable [IsAffineHom f] (hU : ∀ i, IsAffineOpen (U i))
 
 include hU in
@@ -182,7 +217,7 @@ private lemma subsingleton_cohomologyOn_inf_preimage_succ
     (f.isAffineOpen_finset_inf_preimage (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
       s hs) k
 
-variable [IsAffineHom (pullback.diagonal (terminal.from Y))] [Finite ι] (hcover : ⨆ i, U i = ⊤)
+variable [IsAffineHom (pullback.diagonal (terminal.from Y))] (hcover : ⨆ i, U i = ⊤)
 
 /-- Leray's theorem for the cover of `X` by the preimages `f⁻¹ U i`. -/
 private def homologyCechComplexPreimageIsoCohomology (M : X.Modules) [M.IsQuasicoherent]
@@ -203,13 +238,9 @@ private lemma homologyMap_comp_homologyCechComplexPreimageIsoCohomology_hom {M N
         (cohomologyFunctor X n).map α :=
   TauCeti.Topology.homologyMap_comp_homologyCechComplexIsoH_hom _ _ _ _ _ n
 
-/-- **Cohomology along an affine morphism.** Let `f : X ⟶ Y` be an affine morphism of schemes,
-where `Y` has affine diagonal (for instance `Y` separated), and let `U` be a finite family of
-affine opens covering `Y`. For a quasi-coherent sheaf `M` on `X`, the cohomology `Hⁿ(Y, f_* M)`
-of its direct image is isomorphic to `Hⁿ(X, M)`, naturally in `M`
-(`cohomologyPushforwardIsoOfIsAffineHom_naturality`). Both sides are computed by the same Čech
-complex, for the cover `U` of `Y` and for the cover of `X` by the preimages `f⁻¹ U i`. -/
-def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+/-- Cohomology along an affine morphism, computed with the Čech complexes of a family `U` of
+affine opens covering `Y` and of the preimages `f⁻¹ U i`. -/
+private def cohomologyPushforwardIsoOfCover (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅
       AddCommGrpCat.of (Cohomology M n) :=
   (homologyCechComplexIsoCohomology U (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
@@ -217,14 +248,14 @@ def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n
     HomologicalComplex.homologyMapIso (cechComplexPushforwardIso f U M) n ≪≫
     homologyCechComplexPreimageIsoCohomology f U hU hcover M n
 
-/-- The cohomology comparison along an affine morphism commutes with maps of quasi-coherent
+/-- The comparison `cohomologyPushforwardIsoOfCover` commutes with maps of quasi-coherent
 coefficient sheaves. -/
 @[reassoc]
-theorem cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules} [M.IsQuasicoherent]
+private lemma cohomologyPushforwardIsoOfCover_naturality {M N : X.Modules} [M.IsQuasicoherent]
     [N.IsQuasicoherent] (α : M ⟶ N) (n : ℕ) :
     (cohomologyFunctor Y n).map ((pushforward f).map α) ≫
-        (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover N n).hom =
-      (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).hom ≫
+        (cohomologyPushforwardIsoOfCover f U hU hcover N n).hom =
+      (cohomologyPushforwardIsoOfCover f U hU hcover M n).hom ≫
         (cohomologyFunctor X n).map α := by
   -- each of the three comparisons composing the isomorphism is natural
   have hY := homologyMap_comp_homologyCechComplexIsoCohomology_hom U
@@ -233,7 +264,7 @@ theorem cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules} [M.Is
     (cechComplexPushforwardIso_naturality f U α)
   have hX := homologyMap_comp_homologyCechComplexPreimageIsoCohomology_hom f U hU hcover α n
   simp only [HomologicalComplex.homologyMap_comp] at hC
-  simp only [cohomologyPushforwardIsoOfIsAffineHom, Iso.trans_hom, Iso.symm_hom,
+  simp only [cohomologyPushforwardIsoOfCover, Iso.trans_hom, Iso.symm_hom,
     HomologicalComplex.homologyMapIso_hom]
   -- The cohomology groups appear both as `AddCommGrpCat.of (Cohomology M n)` and as objects of
   -- `cohomologyFunctor`, which agree only up to unfolding, so the reassociations are terms.
@@ -244,14 +275,78 @@ theorem cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules} [M.Is
     (Category.assoc _ _ _).symm.trans <| (hC =≫ _).trans <| (Category.assoc _ _ _).trans <|
     (_ ≫= hX).trans (Category.assoc _ _ _).symm
 
+/-- **Cohomology along an affine morphism.** Let `f : X ⟶ Y` be an affine morphism of schemes,
+where `Y` has affine diagonal (for instance `Y` separated). For a quasi-coherent sheaf `M` on
+`X`, the cohomology `Hⁿ(Y, f_* M)` of its direct image is isomorphic to `Hⁿ(X, M)`, naturally in
+`M` (`cohomologyPushforwardIsoOfIsAffineHom_naturality`). Both sides are computed by the same Čech
+complex, for the cover of `Y` by its affine opens and for the cover of `X` by their preimages. -/
+def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅
+      AddCommGrpCat.of (Cohomology M n) :=
+  cohomologyPushforwardIsoOfCover f (fun i : Y.affineOpens ↦ (i : Y.Opens)) (fun i ↦ i.property)
+    (iSup_affineOpens_eq_top Y) M n
+
+/-- The cohomology comparison along an affine morphism commutes with maps of quasi-coherent
+coefficient sheaves. -/
+@[reassoc]
+theorem cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules} [M.IsQuasicoherent]
+    [N.IsQuasicoherent] (α : M ⟶ N) (n : ℕ) :
+    (cohomologyFunctor Y n).map ((pushforward f).map α) ≫
+        (cohomologyPushforwardIsoOfIsAffineHom f N n).hom =
+      (cohomologyPushforwardIsoOfIsAffineHom f M n).hom ≫
+        (cohomologyFunctor X n).map α :=
+  cohomologyPushforwardIsoOfCover_naturality f _ _ _ α n
+
+/-- The cohomology comparison along an affine morphism is computed by the Čech complexes of any
+affine open cover `U` of `Y` and of the cover of `X` by the preimages `f⁻¹ U i`, which are
+identified because the sections of `f_* M` over an open `V` are the sections of `M` over
+`f⁻¹ V`. -/
+@[reassoc]
+theorem homologyCechComplexIsoCohomology_hom_comp_cohomologyPushforwardIsoOfIsAffineHom_hom
+    (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    (homologyCechComplexIsoCohomology U (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
+        hcover ((pushforward f).obj M) n).hom ≫ (cohomologyPushforwardIsoOfIsAffineHom f M n).hom =
+      HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechComplexCompIso (Opens.map f.base)
+          U ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).obj fun _ _ ↦ inferInstance).inv n ≫
+        (homologyCechComplexIsoCohomology (fun i ↦ f ⁻¹ᵁ U i)
+          (f.isAffineOpen_finset_inf_preimage fun s hs ↦
+            IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
+          (f.iSup_preimage_eq_top hcover) M n).hom := by
+  -- `U` refines the cover of `Y` by all its affine opens, and its preimage refines theirs
+  let φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ fun i : Y.affineOpens ↦ (i : Y.Opens) :=
+    ⟨fun i ↦ ⟨U i, hU i⟩, fun _ ↦ 𝟙 _⟩
+  have hY := TauCeti.Topology.homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom U hcover
+    _ (iSup_affineOpens_eq_top Y) _
+    (subsingleton_cohomologyOn_inf_succ U
+      (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i) ((pushforward f).obj M))
+    (subsingleton_cohomologyOn_inf_succ _
+      (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ i.property) ((pushforward f).obj M)) φ n
+  have hX := TauCeti.Topology.homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom
+    (fun i ↦ f ⁻¹ᵁ U i) (f.iSup_preimage_eq_top hcover) _
+    (f.iSup_preimage_eq_top (iSup_affineOpens_eq_top Y)) _
+    (subsingleton_cohomologyOn_inf_preimage_succ f U hU M)
+    (subsingleton_cohomologyOn_inf_preimage_succ f _ (fun i ↦ i.property) M)
+    ⟨φ.f, fun i ↦ (Opens.map f.base).map (φ.φ i)⟩ n
+  have hC := congrArg (HomologicalComplex.homologyMap · n)
+    (cechComplexPushforwardIso_hom_comp_cechComplexMap f U _ M φ)
+  simp only [HomologicalComplex.homologyMap_comp] at hC
+  have hY' := (Iso.inv_comp_eq _).2 ((Iso.eq_comp_inv _).2 hY)
+  simp only [cohomologyPushforwardIsoOfIsAffineHom, cohomologyPushforwardIsoOfCover,
+    homologyCechComplexPreimageIsoCohomology, homologyCechComplexIsoCohomology, Iso.trans_hom,
+    Iso.symm_hom, HomologicalComplex.homologyMapIso_hom]
+  rw [← hX, reassoc_of% hC, reassoc_of% hY', Iso.hom_inv_id_assoc]
+  -- `cechComplexPushforwardIso` is by definition the inverse of `cechComplexCompIso`, and the two
+  -- Leray comparisons for the preimages differ only in their vanishing witnesses
+  rfl
+
 /-- The cohomology comparison along an affine morphism carries the action of a global function on
 `Y` to the action of its pullback along `f`. -/
 lemma cohomologyPushforwardIsoOfIsAffineHom_hom_smul (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
     (r : Γ(Y, ⊤)) (x : Cohomology ((pushforward f).obj M) n) :
-    (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).hom (r • x) =
-      f.appTop r • (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).hom x := by
-  have h := ConcreteCategory.congr_hom (cohomologyPushforwardIsoOfIsAffineHom_naturality f U hU
-    hcover (M.globalSectionsSmul (f.appTop r)) n) x
+    (cohomologyPushforwardIsoOfIsAffineHom f M n).hom (r • x) =
+      f.appTop r • (cohomologyPushforwardIsoOfIsAffineHom f M n).hom x := by
+  have h := ConcreteCategory.congr_hom (cohomologyPushforwardIsoOfIsAffineHom_naturality f
+    (M.globalSectionsSmul (f.appTop r)) n) x
   rw [pushforward_map_globalSectionsSmul] at h
   -- The functor objects are definitionally the displayed cohomology groups, but rewriting
   -- their concrete-category composites requires unfolding the functor-object wrappers.
@@ -269,30 +364,30 @@ commutative ring `R`, the comparison `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)` of
 `cohomologyPushforwardIsoOfIsAffineHom` is `R`-linear. -/
 def cohomologyPushforwardBaseLinearEquivOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) : Cohomology ((pushforward f).obj M) n ≃ₗ[R] Cohomology M n where
-  __ := (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).addCommGroupIsoToAddEquiv
+  __ := (cohomologyPushforwardIsoOfIsAffineHom f M n).addCommGroupIsoToAddEquiv
   map_smul' r x := by
     have hr : f.appTop (baseRingToGlobalSections R Y r) = baseRingToGlobalSections R X r := by
       rw [baseRingToGlobalSections_apply, baseRingToGlobalSections_apply,
         ← CommRingCat.comp_apply, ← comp_appTop, HomIsOver.comp_over]
     -- The inherited `toFun` field must be identified with the isomorphism's forward map
     -- before applying its scalar-compatibility lemma.
-    change (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).hom (r • x) =
-      r • (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).hom x
+    change (cohomologyPushforwardIsoOfIsAffineHom f M n).hom (r • x) =
+      r • (cohomologyPushforwardIsoOfIsAffineHom f M n).hom x
     simp only [base_smul_cohomology]
     rw [cohomologyPushforwardIsoOfIsAffineHom_hom_smul, hr]
 
 @[simp]
 lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_apply (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) (x : Cohomology ((pushforward f).obj M) n) :
-    cohomologyPushforwardBaseLinearEquivOfIsAffineHom f U hU hcover R M n x =
-      (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).hom x :=
+    cohomologyPushforwardBaseLinearEquivOfIsAffineHom f R M n x =
+      (cohomologyPushforwardIsoOfIsAffineHom f M n).hom x :=
   (rfl)
 
 @[simp]
 lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_symm_apply (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) (x : Cohomology M n) :
-    (cohomologyPushforwardBaseLinearEquivOfIsAffineHom f U hU hcover R M n).symm x =
-      (cohomologyPushforwardIsoOfIsAffineHom f U hU hcover M n).inv x :=
+    (cohomologyPushforwardBaseLinearEquivOfIsAffineHom f R M n).symm x =
+      (cohomologyPushforwardIsoOfIsAffineHom f M n).inv x :=
   (rfl)
 
 end BaseRing
@@ -318,10 +413,7 @@ lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
   have hU (i : 𝒰.I₀) : IsAffineOpen (U i) := isAffineOpen_opensRange (𝒰.f i)
   have hcover : ⨆ i, U i = ⊤ := 𝒰.iSup_opensRange
   -- An affine open of a scheme with affine diagonal is an affine morphism.
-  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := ⟨fun V hV ↦
-    (U i).ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
-      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
-      exact (hU i).inf hV)⟩
+  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := (hU i).isAffineHom_ι
   have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
   let F : 𝒰.I₀ → X.Modules := fun i ↦
     (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)
@@ -352,7 +444,7 @@ lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
       have : IsAffine (U i).toScheme := hU i
       have := isQuasicoherent_restrictFunctor (U i).ι M
       have : Subsingleton (Cohomology (F i) (k + 1)) :=
-        ((U i).ι.cohomologyPushforwardIsoOfIsAffineHom U hU hcover _
+        ((U i).ι.cohomologyPushforwardIsoOfIsAffineHom _
           (k + 1)).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr.mpr
             (subsingleton_cohomology_succ_of_isAffine _ k)
       exact @AddCommGrpCat.isZero_of_subsingleton _ this
