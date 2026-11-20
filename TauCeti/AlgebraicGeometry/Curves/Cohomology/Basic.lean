@@ -47,17 +47,17 @@ Neither a rational point nor a perfect base field is assumed.
 
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_two_le_of_isCurveOver`:
   `Hⁿ(X, M) = 0` for `n ≥ 2` and `M` quasi-coherent on a regular proper curve;
-* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_two_le_of_smooth`: the same on a
-  smooth proper connected curve of relative dimension one;
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_two_le_of_smooth_of_connected`:
+  the same on a smooth proper connected curve of relative dimension one;
 * `AlgebraicGeometry.Scheme.Modules.cohomologyMap_one_surjective_of_isCurveOver` and
   `AlgebraicGeometry.Scheme.Modules.cohomologyMap_one_surjective_of_epi_of_isCurveOver`:
   right exactness of `H¹` on such a curve;
 * `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_one_of_epi_of_isCurveOver`:
   finite-dimensionality of `H¹` passes to quotients;
 * `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_of_isCurveOver` and
-  `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_of_smooth`: `Hⁿ(X, M)` is
-  finite-dimensional for `M` quasi-coherent of finite type, on a regular proper curve and on a
-  smooth proper connected curve.
+  `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_of_smooth_of_connected`:
+  `Hⁿ(X, M)` is finite-dimensional for `M` quasi-coherent of finite type, on a regular proper curve
+  and on a smooth proper connected curve.
 
 ## References
 
@@ -146,7 +146,7 @@ variable (k) in
 /-- **Vanishing above the dimension of a smooth curve.** On a smooth proper connected curve of
 relative dimension one over any field, a quasi-coherent sheaf of modules has no cohomology in
 degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le_of_smooth [IsProper (X ↘ Spec (.of k))]
+theorem subsingleton_cohomology_of_two_le_of_smooth_of_connected [IsProper (X ↘ Spec (.of k))]
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [ConnectedSpace X] (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
   subsingleton_cohomology_of_two_le_of_isSeparated (R := k)
@@ -156,7 +156,7 @@ variable (k) in
 /-- **Finiteness of coherent cohomology on a smooth curve.** On a smooth proper connected curve of
 relative dimension one over any field `k`, the cohomology of a quasi-coherent sheaf of modules of
 finite type is finite-dimensional over `k` in every degree. -/
-theorem finiteDimensional_cohomology_of_smooth [IsProper (X ↘ Spec (.of k))]
+theorem finiteDimensional_cohomology_of_smooth_of_connected [IsProper (X ↘ Spec (.of k))]
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [ConnectedSpace X] (M : X.Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : FiniteDimensional k (Cohomology M n) := by
   -- a smooth connected curve is integral with regular local rings

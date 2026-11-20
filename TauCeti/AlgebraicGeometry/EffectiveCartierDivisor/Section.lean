@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.FinitePresentation
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Sum
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Section
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Restrict
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.RingTheory.Localization.Ideal
@@ -176,8 +177,6 @@ theorem isRelativeEffectiveCartier_ker_of_smoothOfRelativeDimension (hs : s ≫ 
     [IsSeparated f] [SmoothOfRelativeDimension 1 f] :
     s.ker.IsRelativeEffectiveCartier f := by
   have := s.isClosedImmersion_of_comp_eq_id hs
-  have : SmoothOfRelativeDimension 1 ((⊤ : X.Opens).ι ≫ f) :=
-    inferInstanceAs (SmoothOfRelativeDimension (0 + 1) _)
   exact isRelativeEffectiveCartier_ker_of_comp_eq_id s hs ⊤ (Set.subset_univ _)
 
 /-- The closed subscheme defined by the ideal sheaf of a closed section has degree one over the

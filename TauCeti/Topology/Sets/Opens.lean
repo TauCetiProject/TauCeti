@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Topology.Bases
+public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Sets.Opens
 public import Mathlib.Topology.Separation.Regular
@@ -31,6 +32,8 @@ indexed by.
   space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
 * `TopologicalSpace.Opens.le_iSup_iff_subset_iUnion` : an open set lies below the supremum of a
   family of open sets exactly when their underlying sets cover it.
+* `TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top` : every member of a
+  pairwise-disjoint open cover is clopen.
 * `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
   locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
@@ -95,6 +98,26 @@ sets cover it. -/
 theorem le_iSup_iff_subset_iUnion {ι : Sort*} {U : Opens X} {V : ι → Opens X} :
     U ≤ ⨆ i, V i ↔ (U : Set X) ⊆ ⋃ i, (V i : Set X) := by
   rw [← SetLike.coe_subset_coe, coe_iSup]
+
+/-- Every member of a pairwise-disjoint open cover is clopen, without a finiteness assumption
+on the indexing type. -/
+theorem _root_.TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
+    {ι : Type*} (U : ι → Opens X)
+    (hcover : ⨆ i, U i = ⊤) (hdisj : Pairwise fun i j ↦ Disjoint (U i) (U j)) (j : ι) :
+    IsClopen (U j : Set X) := by
+  classical
+  let V : Opens X := ⨆ i : {i : ι // i ≠ j}, U i.1
+  apply isClopen_of_disjoint_cover_open (b := (V : Set X)) ?_ (U j).isOpen V.isOpen ?_
+  · intro x _
+    have hxcover : x ∈ ⨆ i, U i := hcover.symm ▸ trivial
+    obtain ⟨i, hi⟩ := mem_iSup.mp hxcover
+    by_cases hij : i = j
+    · exact Or.inl (hij ▸ hi)
+    · exact Or.inr (mem_iSup.mpr ⟨⟨i, hij⟩, hi⟩)
+  · apply Set.disjoint_left.mpr
+    intro x hxj hxV
+    obtain ⟨i, hi⟩ := mem_iSup.mp hxV
+    exact (hdisj i.2).le_bot ⟨hi, hxj⟩
 
 /-- An open subset of a locally compact space is locally compact. -/
 instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : LocallyCompactSpace U :=
