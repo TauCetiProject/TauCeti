@@ -105,7 +105,7 @@ theorem contMDiff_apply_reebVectorField_mpullback_prodMk
     (α β : SmoothForm (J.prod I) (N × M) ℝ 1)
     (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
     ContMDiff (J.prod I) 𝓘(ℝ) ∞ fun p : N × M ↦
-      (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) β).1 p.2
+      (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) β).val p.2
         ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
           p.2] := by
   intro p

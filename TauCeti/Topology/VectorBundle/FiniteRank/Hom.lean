@@ -112,10 +112,10 @@ variable {A A' A'' D D' D'' C C' : FiniteRankBundleCore 𝕜 B}
 Hom cores, given in charts by `homCoordConj`. -/
 noncomputable def homMap (f : A' ⟶ A) (g : D ⟶ D') : hom A D ⟶ hom A' D' where
   operator i j :=
-    ⟨fun x ↦ (f.operator j i ⟨x.1, x.2.2.1, x.2.1.1⟩).homCoordConj
-        (g.operator i j ⟨x.1, x.2.1.2, x.2.2.2⟩),
-      ((f.operator j i).continuous.comp (continuous_subtype_val.subtype_mk _)).clm_homCoordConj
-        ((g.operator i j).continuous.comp (continuous_subtype_val.subtype_mk _))⟩
+    ⟨fun x ↦ (f.operator j i ⟨x.val, x.property.2.1, x.property.1.1⟩).homCoordConj
+        (g.operator i j ⟨x.val, x.property.1.2, x.property.2.2⟩),
+      ((f.operator j i).continuous.comp (continuous_subtypeVal.subtype_mk _)).clm_homCoordConj
+        ((g.operator i j).continuous.comp (continuous_subtypeVal.subtype_mk _))⟩
   compatible i i' j j' x hi hi' hj hj' v := by
     have h : ((A'.core.coordChange j' j x).homCoordConj (D'.core.coordChange j j' x)).comp
         ((f.operator j i ⟨x, hj.1, hi.1⟩).homCoordConj (g.operator i j ⟨x, hi.2, hj.2⟩)) =
@@ -130,8 +130,8 @@ noncomputable def homMap (f : A' ⟶ A) (g : D ⟶ D') : hom A D ⟶ hom A' D' w
 theorem operator_homMap (f : A' ⟶ A) (g : D ⟶ D') (i j : B)
     (x : ↥((hom A D).core.baseSet i ∩ (hom A' D').core.baseSet j)) :
     (homMap f g).operator i j x =
-      (f.operator j i ⟨x.1, x.2.2.1, x.2.1.1⟩).homCoordConj
-        (g.operator i j ⟨x.1, x.2.1.2, x.2.2.2⟩) := (rfl)
+      (f.operator j i ⟨x.val, x.property.2.1, x.property.1.1⟩).homCoordConj
+        (g.operator i j ⟨x.val, x.property.1.2, x.property.2.2⟩) := (rfl)
 
 /-- On every fibre, `homMap f g` conjugates operators by `f.fiberMap x` on the right and
 `g.fiberMap x` on the left. -/
@@ -229,27 +229,29 @@ private theorem continuous_homCurry_section (f : A ⊗ C ⟶ D) :
       ⟨C.mem_baseSet_self x₀, A.mem_baseSet_self x₀, D.mem_baseSet_self x₀⟩
   have hc : Continuous fun y : ↥U ↦
       kroneckerCurry 𝕜 A.rank C.rank D.rank
-        (f.operator x₀ x₀ ⟨y.1, ⟨y.2.2.1, y.2.1⟩, y.2.2.2⟩) :=
+        (f.operator x₀ x₀ ⟨y.val, ⟨y.property.2.1, y.property.1⟩, y.property.2.2⟩) :=
     (kroneckerCurry 𝕜 A.rank C.rank D.rank).continuous.comp
       ((f.operator x₀ x₀).continuous.comp
-        (Continuous.subtype_mk continuous_subtype_val fun y : ↥U ↦ ⟨⟨y.2.2.1, y.2.1⟩, y.2.2.2⟩))
+        (Continuous.subtype_mk continuous_subtypeVal fun y : ↥U ↦ ⟨⟨y.property.2.1, y.property.1⟩,
+            y.property.2.2⟩))
   refine ⟨continuousAt_id, ContinuousOn.continuousAt (s := U) ?_ hU⟩
   rw [continuousOn_iff_continuous_domRestrict]
   refine hc.congr fun y ↦ ?_
   dsimp only [Set.domRestrict_apply]
-  have hfop := f.operator_eq x₀ x₀ ⟨y.1, ⟨y.2.2.1, y.2.1⟩, y.2.2.2⟩
+  have hfop := f.operator_eq x₀ x₀ ⟨y.val, ⟨y.property.2.1, y.property.1⟩, y.property.2.2⟩
   rw [inChartCoordinates_core] at hfop
   dsimp only [MonoidalCategoryStruct.tensorObj] at hfop
   rw [coordChange_tensor] at hfop
   have hin := C.core.inCoordinates_eq (hom A D).core
-    (kroneckerCurry 𝕜 A.rank C.rank D.rank (f.fiberMap y.1))
-    (by simpa only [C.indexAt_eq] using y.2.1)
+    (kroneckerCurry 𝕜 A.rank C.rank D.rank (f.fiberMap y.val))
+    (by simpa only [C.indexAt_eq] using y.property.1)
     (by simpa only [(hom A D).indexAt_eq, VectorBundleCore.baseSet_at,
-      localTriv_baseSet_hom] using y.2.2)
+      localTriv_baseSet_hom] using y.property.2)
   simp only [C.indexAt_eq, (hom A D).indexAt_eq, coordChange_hom] at hin
   exact (congrArg (kroneckerCurry 𝕜 A.rank C.rank D.rank) hfop).trans <|
-    (kroneckerCurry_comp_kronecker (A.core.coordChange x₀ y.1 y.1)
-      (C.core.coordChange x₀ y.1 y.1) (D.core.coordChange y.1 x₀ y.1) (f.fiberMap y.1)).trans
+    (kroneckerCurry_comp_kronecker (A.core.coordChange x₀ y.val y.val)
+      (C.core.coordChange x₀ y.val y.val) (D.core.coordChange y.val x₀ y.val)
+          (f.fiberMap y.val)).trans
       hin.symm
 
 /-- Currying of a bundle map `A ⊗ C ⟶ D` to a bundle map `C ⟶ hom A D`. -/
@@ -652,7 +654,7 @@ private theorem localTriv_homFiberEquiv_symm (A D : FiniteRankBundleCore 𝕜 B)
     (q : TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
       (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x))
     (hqA : q.proj ∈ A.core.baseSet i) (hqD : q.proj ∈ D.core.baseSet i) :
-    (((hom A D).core.localTriv i) ⟨q.proj, (homFiberEquiv A D q.proj).symm q.2⟩).2 =
+    (((hom A D).core.localTriv i) ⟨q.proj, (homFiberEquiv A D q.proj).symm q.snd⟩).2 =
       (finProdCLM 𝕜 A.rank D.rank).symm
         ((trivializationAt ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
           (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x) i q).2) := by
@@ -667,8 +669,8 @@ noncomputable def homTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     (hom A D).core.TotalSpace ≃ₜ
       TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
         (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x) where
-  toFun p := ⟨p.proj, homFiberEquiv A D p.proj p.2⟩
-  invFun p := ⟨p.proj, (homFiberEquiv A D p.proj).symm p.2⟩
+  toFun p := ⟨p.proj, homFiberEquiv A D p.proj p.snd⟩
+  invFun p := ⟨p.proj, (homFiberEquiv A D p.proj).symm p.snd⟩
   left_inv p := by simp
   right_inv p := by simp
   continuous_toFun := by
@@ -682,7 +684,7 @@ noncomputable def homTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
     refine ((finProdCLM 𝕜 A.rank D.rank).continuous.continuousAt.comp hc).congr ?_
     filter_upwards [hU] with q hq
     have hq' := ((hom A D).core.mem_localTriv_source p.proj q).1 hq
-    exact (homFiberEquiv_inCoordinates A D p.proj q.proj hq'.1 hq'.2 q.2).symm
+    exact (homFiberEquiv_inCoordinates A D p.proj q.proj hq'.1 hq'.2 q.snd).symm
   continuous_invFun := by
     refine continuous_iff_continuousAt.2 fun p ↦ ?_
     rw [FiberBundle.continuousAt_totalSpace]
@@ -705,12 +707,12 @@ noncomputable def homTotalSpaceHomeomorph (A D : FiniteRankBundleCore 𝕜 B) :
 
 @[simp] theorem homTotalSpaceHomeomorph_apply (A D : FiniteRankBundleCore 𝕜 B)
     (p : (hom A D).core.TotalSpace) :
-    homTotalSpaceHomeomorph A D p = ⟨p.proj, homFiberEquiv A D p.proj p.2⟩ := (rfl)
+    homTotalSpaceHomeomorph A D p = ⟨p.proj, homFiberEquiv A D p.proj p.snd⟩ := (rfl)
 
 @[simp] theorem homTotalSpaceHomeomorph_symm_apply (A D : FiniteRankBundleCore 𝕜 B)
     (p : TotalSpace ((Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))
       (fun x ↦ A.core.Fiber x →L[𝕜] D.core.Fiber x)) :
-    (homTotalSpaceHomeomorph A D).symm p = ⟨p.proj, (homFiberEquiv A D p.proj).symm p.2⟩ := (rfl)
+    (homTotalSpaceHomeomorph A D).symm p = ⟨p.proj, (homFiberEquiv A D p.proj).symm p.snd⟩ := (rfl)
 
 /-- Under `homFiberEquiv`, `homMap f g` acts by precomposing with `f.fiberMap x` and postcomposing
 with `g.fiberMap x`. -/

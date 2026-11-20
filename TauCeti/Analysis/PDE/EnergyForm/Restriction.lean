@@ -396,7 +396,7 @@ theorem energyFormH1_restrictL_eq_of_forall_testFunction {B : Opens (EuclideanSp
     simp only [L, sub_apply, energyFormH1L_apply, Pi.zero_def]
   -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
   suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
-    have := hzero v.2
+    have := hzero v.property
     simp only [mem_ofPred_eq, hL] at this
     linarith
   refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_

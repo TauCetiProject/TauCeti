@@ -739,20 +739,21 @@ private theorem denseRange_smoothSubmodule_subtype (hp : p ≠ ⊤) :
 /-- Precomposition with `Φ` on the elements with a `Cᵏ` representative. -/
 private def compSmooth (h : IsChangeOfVariables k U V Φ L c) (u : smoothSubmodule mu V p k) :
     Wkp mu U p k :=
-  (exists_comp_of_contDiffOn h (u : Wkp mu V p k) u.2.choose_spec.1 u.2.choose_spec.2).choose
+  (exists_comp_of_contDiffOn h (u : Wkp mu V p k) u.property.choose_spec.1
+      u.property.choose_spec.2).choose
 
 private theorem value_compSmooth_ae (h : IsChangeOfVariables k U V Φ L c)
     (u : smoothSubmodule mu V p k) :
     (value k (compSmooth h u) : E → ℝ) =ᵐ[mu.restrict U]
       fun x => value k (u : Wkp mu V p k) (Φ x) :=
-  (exists_comp_of_contDiffOn h (u : Wkp mu V p k) u.2.choose_spec.1
-    u.2.choose_spec.2).choose_spec.1
+  (exists_comp_of_contDiffOn h (u : Wkp mu V p k) u.property.choose_spec.1
+    u.property.choose_spec.2).choose_spec.1
 
 private theorem norm_compSmooth_le (h : IsChangeOfVariables k U V Φ L c)
     (u : smoothSubmodule mu V p k) :
     ‖compSmooth h u‖ ≤ compLBound p k L c * ‖(u : Wkp mu V p k)‖ :=
-  (exists_comp_of_contDiffOn h (u : Wkp mu V p k) u.2.choose_spec.1
-    u.2.choose_spec.2).choose_spec.2
+  (exists_comp_of_contDiffOn h (u : Wkp mu V p k) u.property.choose_spec.1
+    u.property.choose_spec.2).choose_spec.2
 
 /-- Precomposition with `Φ` on the elements with a `Cᵏ` representative, as a linear map. -/
 private def compSmoothₗ (h : IsChangeOfVariables k U V Φ L c) :
@@ -1076,8 +1077,9 @@ for `1 ≤ p < ∞` precomposition with `Φ` is an isomorphism of Banach spaces
 def compLEquiv (hΦ : IsChangeOfVariables k U V Φ L c) (hΨ : IsChangeOfVariables k V U Ψ L' c')
     (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
     (hp : p ≠ ⊤) : Wkp mu V p k ≃L[ℝ] Wkp mu U p k :=
-  ContinuousLinearEquiv.equivOfInverse (compL hΦ hp) (compL hΨ hp)
-    (compL_compL_of_rightInvOn hΦ hΨ hΦΨ hp) (compL_compL_of_rightInvOn hΨ hΦ hΨΦ hp)
+  ContinuousLinearEquiv.ofContinuousLinearMap (compL hΦ hp) (compL hΨ hp)
+    (ContinuousLinearMap.ext (compL_compL_of_rightInvOn hΨ hΦ hΨΦ hp))
+    (ContinuousLinearMap.ext (compL_compL_of_rightInvOn hΦ hΨ hΦΨ hp))
 
 @[simp]
 theorem compLEquiv_apply (hΦ : IsChangeOfVariables k U V Φ L c)
@@ -1122,7 +1124,7 @@ theorem IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL {Omega O 
   have hv0 : ∀ᵐ x ∂mu.restrict Omega, x ∉ tsupport χ → W1p.value (v : W1p mu Omega p) x = 0 := by
     filter_upwards [hv] with x hx hxχ
     rw [hx, image_eq_zero_of_notMem_tsupport hxχ, zero_mul]
-  have hvO := W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs v.2 hv0
+  have hvO := W1p.restrictL_mem_w1p0Submodule_of_isCompact hχc hχs v.property hv0
   have hvΩ' := hΦ.w1pCompL_mem_w1p0Submodule_of_leftInvOn hp hΨ hΨmaps hΨΦ hvO
   obtain ⟨w, hw⟩ := W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule hψ hψc hvΩ'
   refine ⟨w, ?_⟩

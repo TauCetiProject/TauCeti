@@ -255,12 +255,13 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
   have hcd : c ≤ d := hc ▸ hd ▸ hm.monotoneOn ha hb hab
   subst hc hd
   let g : Icc a b → Icc (f a) (f b) := fun s ↦
-    ⟨f s, hm.monotoneOn ha s.2 s.2.1, hm.monotoneOn s.2 hb s.2.2⟩
+    ⟨f s, hm.monotoneOn ha s.property s.property.1, hm.monotoneOn s.property hb s.property.2⟩
   have hg_cont : Continuous g :=
     Continuous.subtype_mk (continuousOn_iff_continuous_domRestrict.1 hf) _
   have hg_bij : Function.Bijective g := by
-    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.2 s'.2 (congrArg Subtype.val h)), fun r ↦ ?_⟩
-    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.2
+    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.property s'.property (congrArg Subtype.val h)),
+        fun r ↦ ?_⟩
+    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.property
     exact ⟨⟨s, hs⟩, Subtype.ext hsr⟩
   -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective g`,
   -- and Mathlib states no lemma for its coercion.
@@ -268,11 +269,12 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
     hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
   have hF (s : Icc a b) : (F s : β) = f s := rfl
   refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
-    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
+    continuous_subtypeVal.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦
+        (F.symm _).property,
     fun r ↦ ?_, fun s hs ↦ ?_⟩
   · rw [← hF, Homeomorph.apply_symm_apply, coe_projIcc, min_comm]
   · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
-      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
+      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).property)
     simp only [this, Homeomorph.symm_apply_apply]
 
 /-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`

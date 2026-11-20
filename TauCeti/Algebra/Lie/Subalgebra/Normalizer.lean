@@ -42,7 +42,7 @@ def idealOfLeNormalizer (hT' : T' ≤ T.normalizer) : LieIdeal R T' where
   lie_mem {x m} hm := by
     -- membership in the comap is membership of the underlying element of `L` in `T`
     change ⁅(x : L), (m : L)⁆ ∈ T
-    exact ideal_in_normalizer (hT' x.2) hm
+    exact ideal_in_normalizer (hT' x.property) hm
 
 @[simp]
 theorem mem_idealOfLeNormalizer (hT' : T' ≤ T.normalizer) {x : T'} :

@@ -197,7 +197,7 @@ theorem etale_morphismRestrict_iff (U : Y.Opens) :
   -- Instance search does not find `IsZariskiLocalAtSource @Etale` by itself.
   have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @Etale) (Q := RingHom.Etale)
   have hx (z : (f ⁻¹ᵁ U).toScheme) : ∃ O : X.Opens, (f ⁻¹ᵁ U).ι z ∈ O ∧ Etale (O.ι ≫ f) :=
-    not_not.mp (Set.disjoint_left.mp h z.2)
+    not_not.mp (Set.disjoint_left.mp h z.property)
   choose O hzO hO using hx
   refine IsZariskiLocalAtSource.of_iSup_eq_top (P := @Etale)
     (fun z ↦ (f ⁻¹ᵁ U).ι ⁻¹ᵁ O z) ?_ fun z ↦ ?_

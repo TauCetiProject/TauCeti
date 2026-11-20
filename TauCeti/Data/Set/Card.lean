@@ -229,6 +229,6 @@ theorem Function.Pullback.ncard_preimage_fst_singleton {A B C : Type*}
 /-- An equivalence onto `p ⁻¹' U` commuting with projections preserves `Set.ncard` of the fibres
 over `y ∈ U`. Both sides are zero for infinite fibres. -/
 theorem Equiv.ncard_fiber_eq_of_preimage {A X Y : Type*} {p : X → Y} {q : A → Y}
-    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).1 = q a) {y : Y} (hy : y ∈ U) :
+    {U : Set Y} (k : A ≃ p ⁻¹' U) (hk : ∀ a, p (k a).val = q a) {y : Y} (hy : y ∈ U) :
     (q ⁻¹' {y}).ncard = (p ⁻¹' {y}).ncard :=
   Set.ncard_congr' (k.fiberEquivOfPreimage hk hy)

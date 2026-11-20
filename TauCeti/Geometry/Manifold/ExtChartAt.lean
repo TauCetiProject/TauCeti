@@ -447,15 +447,15 @@ theorem exists_finite_cover_extendCoordChange_source
     refine nhdsWithin_mono _ (hKt.trans (e.extend_target_subset_range (I := I)))
       (I.extendCoordChange_source_mem_nhdsWithin ?_)
     rw [PartialEquiv.trans_source, PartialEquiv.symm_source, (σ _).extend_source]
-    exact ⟨hKt z.2, hσ _⟩
+    exact ⟨hKt z.property, hσ _⟩
   choose u hu hzu huK using fun z : K ↦ mem_nhdsWithin.mp (hnhds z)
   obtain ⟨t, ht⟩ := hK.elim_finite_subcover u hu fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hzu _⟩
   obtain ⟨Q, hQc, hQu, hKQ⟩ := hK.finite_compact_cover t u (fun z _ ↦ hu z)
     (by simpa only [iUnion_subtype] using ht)
   have hQK (z : K) (hz : z ∈ t) : Q z ⊆ K := hKQ ▸ subset_biUnion_of_mem (u := Q) hz
-  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).1,
-    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).2,
-    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).2 hw⟩, fun z hz ↦ ?_⟩
+  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).val,
+    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).property,
+    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).property hw⟩, fun z hz ↦ ?_⟩
   rw [hKQ] at hz
   obtain ⟨y, hy, hzy⟩ := mem_iUnion₂.mp hz
   exact mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa using hzy⟩
@@ -492,12 +492,12 @@ theorem exists_open_extChartAt_overlap {U₁ U₂ : TopologicalSpace.Opens M} (x
     have hysrc : ((extChartAt I x₁).symm z : M) ∈ (extChartAt I (x₂ : M)).source :=
       (U₂.extChartAt_source_eq x₂ _).mp hy
     have hzV₂ : (extChartAt I (x₁ : M)).symm z ∈ V₂ := by
-      rw [← U₁.coe_extChartAt_symm_apply x₁ z.2]
+      rw [← U₁.coe_extChartAt_symm_apply x₁ z.property]
       exact ⟨hy₂, hysrc⟩
     have hzW : z ∈ Subtype.val ⁻¹' W := by
       rw [hOW]
       exact hzV₂
-    exact ⟨z.2, hzW⟩
+    exact ⟨z.property, hzW⟩
   · rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
     exact ⟨U₁.extChartAt_target_subset x₁ hz.1, (hmemS hz).2⟩
   · rw [U₂.extChartAt_target_eq x₂]
@@ -767,7 +767,7 @@ theorem exists_finite_precompact_chart_cover_of_isOpen_cover [LocallyCompactSpac
         b i ⊆ (extChartAt I (α i)).symm ⁻¹' V (r i) ∧ (extChartAt I (α i)) '' u i ⊆ b i) ∧
       s ⊆ ⋃ i, u i := by
   classical
-  choose j hj using fun x : s ↦ Set.mem_iUnion.mp (hsV x.2)
+  choose j hj using fun x : s ↦ Set.mem_iUnion.mp (hsV x.property)
   choose u b hu hx huV hsource hb htarget hbV himage using fun x : s ↦
     exists_precompact_extChartAt_neighborhood_of_isOpen (I := I) (hV (j x)) (hj x)
   obtain ⟨t, ht⟩ := hs.elim_finite_subcover u hu
@@ -817,7 +817,7 @@ theorem isOpen_setOf_mem_opens_extChartAt_mem {U : TopologicalSpace.Opens M} (c 
         (extChartAt I c).target) ∈ O} := by
   let W : Set U := {q : U | ∃ hy : q ∈ (extChartAt I c).source,
     (⟨extChartAt I c q, (extChartAt I c).map_source hy⟩ : (extChartAt I c).target) ∈ O}
-  convert U.isOpen.isOpenMap_subtype_val W (isOpen_setOf_extChartAt_mem c hO) using 1
+  convert U.isOpen.isOpenMap_subtypeVal W (isOpen_setOf_extChartAt_mem c hO) using 1
   ext y
   exact ⟨fun ⟨hyU, hy, hmem⟩ ↦ ⟨⟨y, hyU⟩, ⟨hy, hmem⟩, rfl⟩,
     by rintro ⟨⟨_, hyU⟩, ⟨hy, hmem⟩, rfl⟩; exact ⟨hyU, hy, hmem⟩⟩
@@ -833,7 +833,7 @@ theorem isOpen_setOf_extChartAt_symm_mem {U' U : TopologicalSpace.Opens M} (x : 
         (⟨extChartAt I c ⟨((extChartAt I x).symm z : M), hyU⟩,
           (extChartAt I c).map_source hy⟩ : (extChartAt I c).target) ∈ O} :=
   (isOpen_setOf_mem_opens_extChartAt_mem c hO).preimage
-    (continuous_subtype_val.comp
+    (continuous_subtypeVal.comp
       (continuousOn_iff_continuous_domRestrict.mp (continuousOn_extChartAt_symm x)))
 
 /-- An open subset `u` of `(extChartAt I x).source` whose coordinate image lies in a compact
@@ -855,7 +855,7 @@ theorem exists_compacts_extChartAt_target_of_precompact {x : M} {u : Set M} {b :
     hu.preimage (continuousOn_iff_continuous_domRestrict.mp (continuousOn_extChartAt_symm x))
   refine interior_maximal (fun z hz ↦ ?_) hO ?_
   · have hmem := himage (Set.mem_image_of_mem _ hz)
-    rwa [(extChartAt I x).right_inv z.2] at hmem
+    rwa [(extChartAt I x).right_inv z.property] at hmem
   · simpa only [Set.mem_ofPred_eq, (extChartAt I x).left_inv (hsource hyu)] using hyu
 
 /-- A compact manifold modelled on a locally compact space is covered by the relative interiors
@@ -892,7 +892,7 @@ theorem exists_finite_compact_chart_cover_of_opens_cover [CompactSpace M] [Local
   let c : ∀ i, U (r i) := fun i ↦ ⟨α i, (h i).1⟩
   choose K hK using fun i ↦ exists_compacts_extChartAt_target_of_precompact (I := I) (x := c i)
     (u := Subtype.val ⁻¹' u i) (b := b i)
-    ((h i).2.1.preimage continuous_subtype_val)
+    ((h i).2.1.preimage continuous_subtypeVal)
     (fun q hq ↦ ((U (r i)).extChartAt_source_eq (c i) q).mpr ((h i).2.2.2.1 hq))
     (h i).2.2.2.2.1
     (fun z hz ↦ by
@@ -1028,7 +1028,7 @@ theorem measurableSet_image_extChartAt_iff [MeasurableSpace E] [BorelSpace E] {s
       (extChartAt I x).source.domRestrict (extChartAt I x) '' (Subtype.val ⁻¹' s) := by
     rw [Set.image_domRestrict, Set.inter_eq_left.mpr hsource]
   rw [himage, (measurableEmbedding_extChartAt_restrict (I := I) x).measurableSet_image,
-    ← (MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source (I := I) x).measurableSet)
+    ← (MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source (I := I) x).measurableSet)
       |>.measurableSet_image, Subtype.image_preimage_coe, Set.inter_eq_right.mpr hsource]
 
 /-- For the Borel measurable space on the manifold, the image of a measurable subset of an

@@ -180,8 +180,8 @@ theorem coe_pathOperation_apply {n : ℕ} (X : Fin (n + 1) → C) (d : Fin n →
     (x : ∀ i, grHom R (X i.rev.castSucc) (X i.rev.succ) (d i)) :
     (𝒞.pathOperation X d x : homModule (R := R) (X 0) (X (Fin.last n))) =
       homProjection (X 0) (X (Fin.last n))
-        (𝒞.m n fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).1) := by
-  exact MultilinearMap.restrictToPath_apply (𝒞.m n) id X fun i ↦ (x i).1
+        (𝒞.m n fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).val) := by
+  exact MultilinearMap.restrictToPath_apply (𝒞.m n) id X fun i ↦ (x i).val
 
 /-- **The operation on a composable string is the total operation.** Including the value of the
 operation on a composable string into the total module gives the total operation on the included
@@ -191,8 +191,8 @@ theorem homInclusion_pathOperation {n : ℕ} (X : Fin (n + 1) → C) (d : Fin n 
     (x : ∀ i, grHom R (X i.rev.castSucc) (X i.rev.succ) (d i)) :
     homInclusion (X 0) (X (Fin.last n))
         (𝒞.pathOperation X d x : homModule (R := R) (X 0) (X (Fin.last n))) =
-      𝒞.m n fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).1 := by
-  exact (𝒞.isPathCompatible_m n).homInclusion_restrictToPath X fun i ↦ (x i).1
+      𝒞.m n fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (x i).val := by
+  exact (𝒞.isPathCompatible_m n).homInclusion_restrictToPath X fun i ↦ (x i).val
 
 /-- `A∞` categories on a graded linear quiver are determined by their operations on composable
 strings. -/

@@ -357,19 +357,19 @@ end StableGeneralLinearGroup
 `max i j + 1` and mapped into `TauCeti.StableGeneralLinearGroup A`. -/
 def stableTransvection (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A) :
     StableGeneralLinearGroup A :=
-  StableGeneralLinearGroup.of A (max p.1.1 p.1.2 + 1)
-    (transvectionUnit (i := (⟨p.1.1, by omega⟩ : Fin (max p.1.1 p.1.2 + 1)))
-      (j := ⟨p.1.2, by omega⟩) (fun h ↦ p.2 (congrArg Fin.val h)) a)
+  StableGeneralLinearGroup.of A (max p.val.1 p.val.2 + 1)
+    (transvectionUnit (i := (⟨p.val.1, by omega⟩ : Fin (max p.val.1 p.val.2 + 1)))
+      (j := ⟨p.val.2, by omega⟩) (fun h ↦ p.property (congrArg Fin.val h)) a)
 
 /-- Forming `e_{ij}(a)` at any size `n` exceeding both `i` and `j` gives the same element of
 `GL_∞(A)`. -/
 theorem stableTransvection_eq_of (p : {p : ℕ × ℕ // p.1 ≠ p.2}) (a : A)
-    {n : ℕ} (hi : p.1.1 < n) (hj : p.1.2 < n) :
+    {n : ℕ} (hi : p.val.1 < n) (hj : p.val.2 < n) :
     stableTransvection p a =
       StableGeneralLinearGroup.of A n
-        (transvectionUnit (i := ⟨p.1.1, hi⟩) (j := ⟨p.1.2, hj⟩)
-          (fun h ↦ p.2 (congrArg Fin.val h)) a) := by
-  have hle : max p.1.1 p.1.2 + 1 ≤ n := by omega
+        (transvectionUnit (i := ⟨p.val.1, hi⟩) (j := ⟨p.val.2, hj⟩)
+          (fun h ↦ p.property (congrArg Fin.val h)) a) := by
+  have hle : max p.val.1 p.val.2 + 1 ≤ n := by omega
   rw [stableTransvection, ← StableGeneralLinearGroup.of_stabilizeGL hle,
     stabilizeGL_transvectionUnit]
 
@@ -502,7 +502,7 @@ theorem ker_mk_eq_iSup (n : ℕ) :
     (mk A n).ker =
       ⨆ (k : ℕ) (h : n ≤ k), (TauCeti.elementarySubgroup (Fin k) A).comap (stabilizeGL A h) := by
   let f : {k : ℕ // n ≤ k} → Subgroup (GL (Fin n) A) :=
-    fun p ↦ (TauCeti.elementarySubgroup (Fin p.1) A).comap (stabilizeGL A p.2)
+    fun p ↦ (TauCeti.elementarySubgroup (Fin p.val) A).comap (stabilizeGL A p.property)
   have hmono : Monotone f := by
     rintro ⟨k₁, hk₁⟩ ⟨k₂, hk₂⟩ (h₁₂ : k₁ ≤ k₂) u hu
     rw [Subgroup.mem_comap] at hu ⊢

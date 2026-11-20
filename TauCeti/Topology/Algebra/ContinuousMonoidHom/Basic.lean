@@ -245,7 +245,7 @@ theorem _root_.ContinuousMonoidHom.zpow_apply {A E : Type*} [Monoid A] [Topologi
 /-- The inclusion of a subgroup, carrying the subspace topology, as a continuous homomorphism. -/
 @[expose] def subgroupSubtype (S : Subgroup G) : S →ₜ* G where
   __ := S.subtype
-  continuous_toFun := continuous_subtype_val
+  continuous_toFun := continuous_subtypeVal
 
 @[simp]
 theorem coe_subgroupSubtype (S : Subgroup G) : (subgroupSubtype S : S →* G) = S.subtype :=
@@ -265,7 +265,7 @@ theorem id_subgroupSubtype_smul (M : Type*) [AddZero M] [SMul G M]
 continuous homomorphism. -/
 @[expose] def subgroupInclusion {H S : Subgroup G} (h : H ≤ S) : H →ₜ* S where
   __ := Subgroup.inclusion h
-  continuous_toFun := continuous_subtype_val.subtype_mk _
+  continuous_toFun := continuous_subtypeVal.subtype_mk _
 
 @[simp]
 theorem coe_subgroupInclusion {H S : Subgroup G} (h : H ≤ S) :
@@ -304,7 +304,7 @@ def _root_.Subgroup.inverseConjugationHom [SeparatelyContinuousMul G] (N : Subgr
   toMonoidHom := (MulAut.conjNormal g⁻¹ : MulAut N).toMonoidHom
   continuous_toFun := continuous_induced_rng.2 <|
     ((IsTopologicalGroup.continuous_conj (G := G) g⁻¹).comp
-      continuous_subtype_val).congr fun n => (MulAut.conjNormal_apply g⁻¹ n).symm
+      continuous_subtypeVal).congr fun n => (MulAut.conjNormal_apply g⁻¹ n).symm
 
 /-- Evaluation of inverse conjugation on a subgroup element. -/
 @[simp]
@@ -426,7 +426,7 @@ form of `MonoidHom.subgroupComap`. -/
 def subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)
     (U : Subgroup G) : U.comap (f : H →* G) →ₜ* U where
   toMonoidHom := (f : H →* G).subgroupComap U
-  continuous_toFun := (f.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (f.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_subgroupComap {H : Type*} [Group H] [TopologicalSpace H] (f : H →ₜ* G)

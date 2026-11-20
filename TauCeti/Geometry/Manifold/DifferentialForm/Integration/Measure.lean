@@ -115,7 +115,7 @@ private theorem chartMeasure_apply (φ : RoughForm I M ℝ k) (α : M) {s : Set 
       ∫⁻ y in (extChartAt I α) '' (s ∩ (extChartAt I α).source),
         ENNReal.ofReal |φ.inChartAt α y (finBasisOfFinrankEq ℝ E hk.out)|
           ∂(finBasisOfFinrankEq ℝ E hk.out).addHaar := by
-  rw [chartMeasure, Measure.map_apply measurable_subtype_coe hs,
+  rw [chartMeasure, Measure.map_apply measurable_subtypeVal hs,
     (measurableEmbedding_extChartAt_restrict α).comap_apply, image_domRestrict,
     withDensity_apply _ ((hs.inter (isOpen_extChartAt_source α).measurableSet).image_extChartAt α
       inter_subset_right)]
