@@ -14,6 +14,8 @@ public import Mathlib.Algebra.Group.AddChar
 ## Main results
 
 * `AddChar.map_sum_eq_prod`: an additive character turns finite sums into products.
+* `AddChar.map_eq_one_of_add_eq_zero`: an additive character trivial at `x` is trivial at every
+  additive left inverse of `x`, even over a monoid.
 * `AddChar.pow_char_eq_one`: every additive character on a ring of characteristic `p`, such as
   `ZMod p`, takes values in the `p`-th roots of unity.
 -/
@@ -33,3 +35,12 @@ theorem AddChar.map_sum_eq_prod {ι A M : Type*} [AddCommMonoid A] [CommMonoid M
   induction s using Finset.cons_induction with
   | empty => simp
   | cons a s ha ih => rw [Finset.sum_cons, map_add_eq_mul, ih, Finset.prod_cons]
+
+/-- An additive character trivial at `x` is trivial at every `y` with `y + x = 0`. Over an
+additive group this says `ψ (-x) = 1`; the statement needs neither negation in the domain nor
+inverses in the codomain, so it also applies to characters of semirings with values in a
+monoid. -/
+theorem AddChar.map_eq_one_of_add_eq_zero {A M : Type*} [AddMonoid A] [Monoid M]
+    (ψ : AddChar A M) {x y : A} (hx : ψ x = 1) (hxy : y + x = 0) : ψ y = 1 :=
+  calc ψ y = ψ y * ψ x := by rw [hx, mul_one]
+    _ = 1 := by rw [← AddChar.map_add_eq_mul, hxy, AddChar.map_zero_eq_one]
