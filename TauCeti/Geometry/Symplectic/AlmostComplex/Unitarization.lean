@@ -161,6 +161,8 @@ theorem Compatible.apply_unitarization_unitarization (hJ : ω.Compatible J)
   have h := hJ.apply_unitarization_apply_unitarization hφ v (Complex.I • w)
   rw [hJ.unitarization_I_smul hφ hφJ, AlmostComplexStructure.apply_apply, inner_smul_right,
     Complex.I_mul_re] at h
+  -- The `CoeFun` instance of `SymplecticForm` applies `ω` through `ω.toBilinForm`, so the
+  -- application `ω a` is definitionally the linear map `ω.toBilinForm a`, whose `map_neg` applies.
   have hneg : ω (ω.unitarization J φ v) (-ω.unitarization J φ w) =
       -ω (ω.unitarization J φ v) (ω.unitarization J φ w) :=
     map_neg (ω.toBilinForm (ω.unitarization J φ v)) _
