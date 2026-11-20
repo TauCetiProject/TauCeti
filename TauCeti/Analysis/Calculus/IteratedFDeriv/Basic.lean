@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Topology.MetricSpace.Holder
+import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 
 /-!
 # Iterated derivatives of iterated derivatives
@@ -18,7 +19,9 @@ derivative fields. The first iterated derivative, uncurried, is the Fréchet der
 (`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`, with the function-level form
 `TauCeti.fderiv_eq_continuousMultilinearCurryFin1_comp`), while evaluating the third iterated
 derivative on three directions gives the three-times curried Fréchet derivative
-(`TauCeti.iteratedFDeriv_three_apply`). The file also supplies the
+(`TauCeti.iteratedFDeriv_three_apply`). Differentiating an iterated derivative evaluated on fixed
+directions gives the next iterated derivative (`TauCeti.fderiv_iteratedFDeriv_apply`). The file
+also supplies the
 two-variable currying isometry used to identify continuous multilinear second derivatives with
 curried bilinear maps, with the left currying of the one- and two-variable inverse curryings
 (`TauCeti.curryLeft_continuousMultilinearCurryFin1_symm`,
@@ -198,6 +201,16 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+/-- Where the `n`-th iterated derivative of `f` is differentiable, the derivative in the direction
+`v` of that iterated derivative evaluated on fixed directions `m` is the next iterated derivative
+evaluated on `v` followed by `m`. -/
+theorem fderiv_iteratedFDeriv_apply {f : E → F} {n : ℕ} {x : E}
+    (hf : DifferentiableAt 𝕜 (iteratedFDeriv 𝕜 n f) x) (m : Fin n → E) (v : E) :
+    fderiv 𝕜 (fun y ↦ iteratedFDeriv 𝕜 n f y m) x v =
+      iteratedFDeriv 𝕜 (n + 1) f x (Fin.cons v m) := by
+  rw [fderiv_continuousMultilinear_apply_const_apply hf, iteratedFDeriv_succ_apply_left]
+  simp
 
 /-- Adding a constant to a function does not change its iterated derivatives of positive order. No
 differentiability is needed, since the derivative of `f + c` is that of `f` everywhere. -/

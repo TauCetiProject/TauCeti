@@ -197,9 +197,7 @@ theorem norm_rpow_smul_id_add_smulRight_le {r : ℝ} (hr : 0 ≤ r) (y : E) :
     rw [abs_of_nonneg hr]
     rcases eq_or_ne y 0 with rfl | hy
     · simpa using mul_nonneg hr (Real.rpow_nonneg le_rfl r)
-    · rw [mul_assoc, ← Real.rpow_add_one (norm_ne_zero_iff.2 hy)]
-      ring_nf
-      rfl
+    · rw [mul_assoc, ← Real.rpow_add_one (norm_ne_zero_iff.2 hy), sub_add_cancel]
   linarith
 
 /-- Away from the origin, the derivative of `x ↦ log ‖x‖` is `‖x‖⁻² ⟨x, ·⟩`. -/
