@@ -53,8 +53,10 @@ theorem cylinderEvents_eq_comap_domRestrict (Δ : Set ι) :
   refine le_antisymm ?_ (measurable_restrict_cylinderEvents Δ).comap_le
   unfold cylinderEvents
   refine iSup₂_le fun i hi => ?_
-  rw [show (fun ω : ∀ i, X i => ω i) = (fun ω : ∀ i : Δ, X i => ω ⟨i, hi⟩) ∘ Δ.domRestrict from
-    rfl, ← MeasurableSpace.comap_comp]
+  -- The `i`-th coordinate factors through the restriction to `Δ`, as the `⟨i, hi⟩`-th coordinate.
+  have hfac : (fun ω : ∀ i, X i => ω i) = (fun ω : ∀ i : Δ, X i => ω ⟨i, hi⟩) ∘ Δ.domRestrict :=
+    funext fun ω => (Set.domRestrict_apply ω Δ ⟨i, hi⟩).symm
+  rw [hfac, ← MeasurableSpace.comap_comp]
   exact MeasurableSpace.comap_mono (measurable_pi_apply (X := fun j : Δ => X j) ⟨i, hi⟩).comap_le
 
 end MeasureTheory

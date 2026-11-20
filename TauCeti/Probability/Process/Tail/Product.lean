@@ -90,8 +90,11 @@ theorem tailEvents_eq_bot [Finite ι] : tailEvents (X := X) = ⊥ :=
 theorem tailEvents_eq_iInf_cylinderEventsCompl {S : Type*} [MeasurableSpace S] :
     tailEvents (X := fun _ : ι => S) =
       ⨅ Λ, Filtration.cylinderEventsCompl (m := ‹MeasurableSpace S›) Λ := by
-  rw [tailEvents_def]
-  rfl
+  -- `Filtration.cylinderEventsCompl` sends `toDual Λ` to `cylinderEvents (↑Λ)ᶜ` by definition.
+  have h (Λ : Finset ι) : Filtration.cylinderEventsCompl (m := ‹MeasurableSpace S›)
+      (OrderDual.toDual Λ) = cylinderEvents (↑Λ)ᶜ := rfl
+  rw [tailEvents_def, ← OrderDual.toDual.iInf_comp]
+  simp only [h]
 
 end Probability
 
