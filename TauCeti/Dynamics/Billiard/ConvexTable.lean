@@ -108,6 +108,11 @@ instance : FunLike (ConvexTable k ℓ) ℝ ℂ where
 @[simp]
 theorem toFun_eq_coe : T.toFun = ⇑T := rfl
 
+@[simp]
+theorem coe_mk (f : ℝ → ℂ) (h₁ h₂ h₃ h₄ h₅) :
+    ⇑(⟨f, h₁, h₂, h₃, h₄, h₅⟩ : ConvexTable k ℓ) = f :=
+  rfl
+
 /-- Two tables with the same parametrisation are equal. -/
 @[ext]
 theorem ext {T T' : ConvexTable k ℓ} (h : ∀ s, T s = T' s) : T = T' :=
