@@ -420,7 +420,7 @@ theorem mergeFacesCornerOrigin_prevCorner (c : (C.mergeFaces h).Corner)
       C.prevCorner (C.mergeFacesCornerOrigin g₁ g₂ c) := by
   obtain ⟨_ | g, k⟩ := c
   · have := C.sides_pos g₁
-    have hk : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.2
+    have hk : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.isLt
     by_cases hk1 : (k : ℕ) < C.sides g₁ - 1
     · rw [mergeFacesCornerOrigin_none_of_lt hk1] at h₁ ⊢
       have hk0 : (k : ℕ) ≠ 0 := fun h0 => h₁ (Sigma.ext rfl (heq_of_eq (Fin.ext h0)))
@@ -444,7 +444,7 @@ incoming side of the corner of `C` it comes from. -/
 theorem coe_incoming_mergeFaces (c : (C.mergeFaces h).Corner)
     (h₁ : C.mergeFacesCornerOrigin g₁ g₂ c ≠ ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
     (h₂ : C.mergeFacesCornerOrigin g₁ g₂ c ≠ C.nextCorner ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) :
-    ((C.mergeFaces h).incoming c).1 = C.incoming (C.mergeFacesCornerOrigin g₁ g₂ c) := by
+    ((C.mergeFaces h).incoming c).val = C.incoming (C.mergeFacesCornerOrigin g₁ g₂ c) := by
   rw [(C.mergeFaces h).incoming_eq_outgoing_prevCorner c, coe_outgoing_mergeFaces,
     mergeFacesCornerOrigin_prevCorner h c h₁ h₂,
     ← C.incoming_eq_outgoing_prevCorner (C.mergeFacesCornerOrigin g₁ g₂ c)]
@@ -554,7 +554,7 @@ private theorem src_side_one_eq (h : C.IsMergeable g₁ g₂) (h₂ : 1 < C.side
 /-- The side of the merged face at the position where `Y` starts begins at the source of `d`. -/
 theorem src_side_mergeFaces_none_sides_sub_one (h₂ : 1 < C.sides g₂) :
     C.graph.src ((C.mergeFaces h).side none
-      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).1 =
+      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).val =
         C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
   rw [← outgoing_def _ ⟨_, _⟩, coe_outgoing_mergeFaces,
@@ -564,7 +564,7 @@ theorem src_side_mergeFaces_none_sides_sub_one (h₂ : 1 < C.sides g₂) :
 
 /-- The side of the merged face at the position `0` starts at the target of `d`. -/
 theorem src_side_mergeFaces_none_zero :
-    C.graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩).1 =
+    C.graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩).val =
       C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
   rw [← outgoing_def _ ⟨_, _⟩, coe_outgoing_mergeFaces]
@@ -616,12 +616,12 @@ theorem IsOrientable.mergeFaces (hC : C.IsOrientable) : (C.mergeFaces h).IsOrien
     have := (hσ _ _ hD).2 (h.outgoing_eq.trans (by rw [incoming_eq_outgoing_prevCorner]))
     rwa [prevCorner_fst] at this
   have hσ' (c : (C.mergeFaces h).Corner) :
-      Option.elim c.1 (σ g₁) (fun g => σ g.1) = σ (C.mergeFacesCornerOrigin g₁ g₂ c).1 := by
+      Option.elim c.1 (σ g₁) (fun g => σ g.val) = σ (C.mergeFacesCornerOrigin g₁ g₂ c).1 := by
     obtain ⟨_ | g, k⟩ := c
     · rcases mergeFacesCornerOrigin_none_fst k with h' | h' <;> simp [h', hs]
     · rfl
   refine (C.mergeFaces h).isOrientable_iff_forall_outgoing.2
-    ⟨fun g => Option.elim g (σ g₁) (fun g => σ g.1), fun c c' hne => ?_⟩
+    ⟨fun g => Option.elim g (σ g₁) (fun g => σ g.val), fun c c' hne => ?_⟩
   dsimp only
   rw [hσ' c, hσ' c', outgoing_mergeFaces_eq_outgoing_iff, outgoing_mergeFaces_eq_rev_iff]
   exact hσ _ _ fun he => hne (mergeFacesCornerOrigin_injective h.ne he)
@@ -662,7 +662,7 @@ theorem IsOrientable.of_mergeFaces (hM : (C.mergeFaces h).IsOrientable) : C.IsOr
   have hσ (c : (C.mergeFaces h).Corner) : σ (C.mergeFacesCornerOrigin g₁ g₂ c).1 = σ' c.1 := by
     obtain ⟨_ | g, k⟩ := c
     · rcases mergeFacesCornerOrigin_none_fst k with h' | h' <;> simp [σ, h']
-    · simp [σ, g.2]
+    · simp [σ, g.property]
   have hσd {c : C.Corner} (hc : C.graph.toGeomEdge (C.outgoing c) =
       C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)) : σ c.1 = σ' none := by
     rcases h.eq_or_eq_of_toGeomEdge_eq c hc with rfl | rfl <;> simp [σ]

@@ -183,8 +183,8 @@ theorem nonempty_path_cornerVertex (f : C.Face) (i j : Fin (C.sides f)) :
       obtain ⟨P⟩ := ih (by omega)
       exact ⟨P.cons ⟨C.outgoing ⟨f, ⟨k, by omega⟩⟩, rfl,
         by rw [tgt_outgoing, C.nextCorner_mk_of_add_one_lt hk]⟩⟩
-  obtain ⟨P⟩ := key i i.2
-  obtain ⟨Q⟩ := key j j.2
+  obtain ⟨P⟩ := key i i.isLt
+  obtain ⟨Q⟩ := key j j.isLt
   exact ⟨P.reverse.comp Q⟩
 
 /-- A side of a face ends where the side at the cyclically next position starts. -/
@@ -237,7 +237,7 @@ theorem prevCorner_mk_of_ne_zero {f : C.Face} {i j : Fin (C.sides f)} (hj : (j :
 @[simp] theorem nextCorner_eq_self_iff {c : C.Corner} : C.nextCorner c = c ↔ C.sides c.1 = 1 := by
   obtain ⟨f, k⟩ := c
   have hk := Fin.coe_finRotate_eq_ite k
-  have := k.2
+  have := k.isLt
   rw [nextCorner_def, Sigma.ext_iff]
   simp only [heq_eq_eq, true_and, Fin.ext_iff]
   split_ifs at hk <;> omega
@@ -375,17 +375,17 @@ theorem nonempty_vertexLink_path_of_path {D : PolygonalComplex.{u', v', w'}} {v 
     {x : D.graph.V} (φ : C.graph.E → D.graph.E)
     (hφ : ∀ e, C.graph.src e = v → D.graph.src (φ e) = x)
     (hc : ∀ c : C.Corner, C.cornerVertex c = v → ∀ {a b : (D.vertexLink x).V},
-      a.1 = φ (C.outgoing c) → b.1 = φ (C.graph.rev (C.incoming c)) →
+      a.val = φ (C.outgoing c) → b.val = φ (C.graph.rev (C.incoming c)) →
         Nonempty ((D.vertexLink x).Path a b))
     {a b : (C.vertexLink v).V} (P : (C.vertexLink v).Path a b) {a' b' : (D.vertexLink x).V}
-    (ha : a'.1 = φ a.1) (hb : b'.1 = φ b.1) : Nonempty ((D.vertexLink x).Path a' b') := by
-  obtain rfl : a' = ⟨φ a.1, hφ a.1 a.2⟩ := Subtype.ext ha
-  obtain rfl : b' = ⟨φ b.1, hφ b.1 b.2⟩ := Subtype.ext hb
+    (ha : a'.val = φ a.val) (hb : b'.val = φ b.val) : Nonempty ((D.vertexLink x).Path a' b') := by
+  obtain rfl : a' = ⟨φ a.val, hφ a.val a.property⟩ := Subtype.ext ha
+  obtain rfl : b' = ⟨φ b.val, hφ b.val b.property⟩ := Subtype.ext hb
   refine SerreGraph.nonempty_path_of_path (Γ := C.vertexLink v) (Δ := D.vertexLink x)
-    (fun a => ⟨φ a.1, hφ a.1 a.2⟩) (fun e => ?_) P
+    (fun a => ⟨φ a.val, hφ a.val a.property⟩) (fun e => ?_) P
   obtain ⟨c, _ | _⟩ := e
-  · exact (hc c.1 c.2 rfl rfl).map Quiver.Path.reverse
-  · exact hc c.1 c.2 rfl rfl
+  · exact (hc c.val c.property rfl rfl).map Quiver.Path.reverse
+  · exact hc c.val c.property rfl rfl
 
 /-- The degree of the germ `e` in the link of its source: the `Nat.card` of the link darts
 starting at `e`. A corner both of whose germs are `e` contributes two. As with `Nat.card`, this is

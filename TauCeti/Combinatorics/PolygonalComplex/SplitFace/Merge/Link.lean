@@ -87,12 +87,12 @@ private theorem joinCorner_eq_firstCorner (h' : C.sides g₁ = 1 ∨ C.sides g�
       Nat.mod_self]
 
 private theorem coe_outgoing_firstCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
-    ((C.mergeFaces h).outgoing (firstCorner h)).1 = C.outgoing ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ := by
+    ((C.mergeFaces h).outgoing (firstCorner h)).val = C.outgoing ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ := by
   rw [coe_outgoing_mergeFaces, firstCorner,
     mergeFacesCornerOrigin_none_of_lt (by dsimp only; omega)]
 
 private theorem coe_incoming_firstCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
-    ((C.mergeFaces h).incoming (firstCorner h)).1 = C.incoming ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ := by
+    ((C.mergeFaces h).incoming (firstCorner h)).val = C.incoming ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ := by
   have := C.sides_pos g₁
   have := C.mergeFacesSides_none g₁ g₂
   rw [firstCorner, (C.mergeFaces h).incoming_mk_zero none, ← outgoing_def _ ⟨_, _⟩,
@@ -101,7 +101,7 @@ private theorem coe_incoming_firstCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
   exact congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega))))
 
 private theorem coe_incoming_firstCorner_of_eq_one (h₂ : C.sides g₂ = 1) :
-    ((C.mergeFaces h).incoming (firstCorner h)).1 =
+    ((C.mergeFaces h).incoming (firstCorner h)).val =
       C.incoming (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := h.two_lt_sides_add_sides
   have := C.mergeFacesSides_none g₁ g₂
@@ -117,7 +117,7 @@ private theorem joinCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
   Sigma.ext rfl (heq_of_eq (Fin.ext (Nat.mod_eq_of_lt (sides_sub_one_lt_mergeFacesSides h₂))))
 
 private theorem coe_outgoing_joinCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
-    ((C.mergeFaces h).outgoing (joinCorner h)).1 =
+    ((C.mergeFaces h).outgoing (joinCorner h)).val =
       C.outgoing (C.nextCorner ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩) := by
   have := C.sides_pos g₁
   rw [joinCorner_of_one_lt h h₂, coe_outgoing_mergeFaces,
@@ -126,7 +126,7 @@ private theorem coe_outgoing_joinCorner_of_one_lt (h₂ : 1 < C.sides g₂) :
   exact congrArg C.outgoing (Sigma.ext rfl (heq_of_eq (Fin.ext (by dsimp only; omega))))
 
 private theorem coe_incoming_joinCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
-    ((C.mergeFaces h).incoming (joinCorner h)).1 =
+    ((C.mergeFaces h).incoming (joinCorner h)).val =
       C.incoming (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   rcases Nat.lt_or_ge 1 (C.sides g₂) with h₂ | h₂
   · rw [joinCorner_of_one_lt h h₂, (C.mergeFaces h).incoming_mk_of_ne_zero
@@ -178,7 +178,8 @@ private theorem mergeGerm_rev_incoming :
       (C.mergeFaces h).outgoing (firstCorner h) := by
   rw [mergeGerm, dite_eq_left (SerreGraph.toGeomEdge_rev _ _), ite_eq_right (C.graph.rev_ne _)]
 
-private theorem src_mergeGerm (e : C.graph.E) : C.graph.src (mergeGerm h e).1 = C.graph.src e := by
+private theorem src_mergeGerm (e : C.graph.E) :
+    C.graph.src (mergeGerm h e).val = C.graph.src e := by
   by_cases he : C.graph.toGeomEdge e = C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
   · rcases C.graph.toGeomEdge_eq_toGeomEdge_iff.1 he.symm with rfl | rfl
     · rw [mergeGerm_incoming]
@@ -192,7 +193,7 @@ private theorem src_mergeGerm (e : C.graph.E) : C.graph.src (mergeGerm h e).1 = 
 omit h in
 /-- Two germs of a link with the same underlying dart are joined by the empty path. -/
 private theorem nonempty_vertexLink_path_of_val_eq {D : PolygonalComplex.{u, v, w}} {x : D.graph.V}
-    {a b : (D.vertexLink x).V} (hab : a.1 = b.1) : Nonempty ((D.vertexLink x).Path a b) := by
+    {a b : (D.vertexLink x).V} (hab : a.val = b.val) : Nonempty ((D.vertexLink x).Path a b) := by
   obtain rfl := Subtype.ext hab
   exact ⟨.nil⟩
 
@@ -200,8 +201,8 @@ private theorem nonempty_vertexLink_path_of_val_eq {D : PolygonalComplex.{u, v, 
 of the merged face where `Y` starts; it collapses when `X` is empty. -/
 private theorem nonempty_vertexLink_path_mergeGerm_prevCorner {v : C.graph.V}
     {a b : ((C.mergeFaces h).vertexLink v).V}
-    (ha : a.1 = mergeGerm h (C.outgoing (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)))
-    (hb : b.1 = mergeGerm h (C.graph.rev (C.incoming (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)))) :
+    (ha : a.val = mergeGerm h (C.outgoing (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)))
+    (hb : b.val = mergeGerm h (C.graph.rev (C.incoming (C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)))) :
     Nonempty (((C.mergeFaces h).vertexLink v).Path a b) := by
   rw [← incoming_eq_outgoing_prevCorner, mergeGerm_incoming] at ha
   rcases Nat.lt_or_ge 1 (C.sides g₁) with h₁ | h₁
@@ -226,8 +227,8 @@ private theorem nonempty_vertexLink_path_mergeGerm_prevCorner {v : C.graph.V}
 first corner of the merged face; it collapses when `Y` is empty. -/
 private theorem nonempty_vertexLink_path_mergeGerm_mk_zero {v : C.graph.V}
     {a b : ((C.mergeFaces h).vertexLink v).V}
-    (ha : a.1 = mergeGerm h (C.outgoing ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩))
-    (hb : b.1 = mergeGerm h (C.graph.rev (C.incoming ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩))) :
+    (ha : a.val = mergeGerm h (C.outgoing ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩))
+    (hb : b.val = mergeGerm h (C.graph.rev (C.incoming ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩))) :
     Nonempty (((C.mergeFaces h).vertexLink v).Path a b) := by
   rw [h.outgoing_eq, mergeGerm_rev_incoming] at ha
   rcases Nat.lt_or_ge 1 (C.sides g₂) with h₂ | h₂
@@ -251,7 +252,8 @@ private theorem nonempty_vertexLink_path_mergeGerm_of_prevCorner {c : C.Corner} 
     (h₂ : c ≠ ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩)
     (hc : C.prevCorner c = C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ ∨
       C.prevCorner c = ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩)
-    (ha : a.1 = mergeGerm h (C.outgoing c)) (hb : b.1 = mergeGerm h (C.graph.rev (C.incoming c))) :
+    (ha : a.val = mergeGerm h (C.outgoing c))
+    (hb : b.val = mergeGerm h (C.graph.rev (C.incoming c))) :
     Nonempty (((C.mergeFaces h).vertexLink v).Path a b) := by
   rw [mergeGerm_of_ne h (toGeomEdge_outgoing_ne_of_ne h h₁ h₂)] at ha
   refine nonempty_vertexLink_path_of_val_eq ((ha.trans ?_).trans hb.symm)
@@ -280,7 +282,8 @@ private theorem nonempty_vertexLink_path_mergeGerm_of_ne {c : C.Corner} {v : C.g
     (h₂ : c ≠ ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩)
     (h₁' : C.prevCorner c ≠ C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩)
     (h₂' : C.prevCorner c ≠ ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩)
-    (ha : a.1 = mergeGerm h (C.outgoing c)) (hb : b.1 = mergeGerm h (C.graph.rev (C.incoming c))) :
+    (ha : a.val = mergeGerm h (C.outgoing c))
+    (hb : b.val = mergeGerm h (C.graph.rev (C.incoming c))) :
     Nonempty (((C.mergeFaces h).vertexLink v).Path a b) := by
   obtain ⟨x, rfl⟩ := exists_mergeFacesCornerOrigin_eq h₁ h₂
   have hi : C.graph.toGeomEdge (C.graph.rev (C.incoming (C.mergeFacesCornerOrigin g₁ g₂ x))) ≠
@@ -298,8 +301,8 @@ private theorem nonempty_vertexLink_path_mergeGerm_of_ne {c : C.Corner} {v : C.g
 joined by a path: the corner itself if it does not touch `d`, a corner of the merged face where
 `X` and `Y` meet, or no edge at all. -/
 private theorem nonempty_vertexLink_path_mergeGerm (c : C.Corner) {v : C.graph.V}
-    {a b : ((C.mergeFaces h).vertexLink v).V} (ha : a.1 = mergeGerm h (C.outgoing c))
-    (hb : b.1 = mergeGerm h (C.graph.rev (C.incoming c))) :
+    {a b : ((C.mergeFaces h).vertexLink v).V} (ha : a.val = mergeGerm h (C.outgoing c))
+    (hb : b.val = mergeGerm h (C.graph.rev (C.incoming c))) :
     Nonempty (((C.mergeFaces h).vertexLink v).Path a b) := by
   by_cases h₁ : c = C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩
   · subst h₁
@@ -318,10 +321,10 @@ they come from corners of `C` at the same vertex. -/
 instance {v : C.graph.V} [Finite (C.vertexLink v).E] :
     Finite ((C.mergeFaces h).vertexLink v).E :=
   .of_injective (β := (C.vertexLink v).E)
-    (fun d => (⟨C.mergeFacesCornerOrigin g₁ g₂ d.1.1,
-      (cornerVertex_mergeFaces h d.1.1).symm.trans d.1.2⟩, d.2))
+    (fun d => (⟨C.mergeFacesCornerOrigin g₁ g₂ d.1.val,
+      (cornerVertex_mergeFaces h d.1.val).symm.trans d.1.property⟩, d.2))
     fun _ _ he => Prod.ext (Subtype.ext (mergeFacesCornerOrigin_injective h.ne
-      (congrArg (·.1.1) he))) (congrArg (·.2) he)
+      (congrArg (·.1.val) he))) (congrArg (·.2) he)
 
 /-- Merging two faces preserves the surface-link condition at every vertex: a link that is a
 finite circle or a finite interval stays a finite circle or a finite interval. -/
@@ -331,23 +334,24 @@ theorem HasSurfaceLink.mergeFaces {v : C.graph.V} (hv : C.HasSurfaceLink v) :
   obtain ⟨⟨a⟩, hpre⟩ := (C.vertexLink v).connected_iff.1 hconn
   have hconn' : ((C.mergeFaces h).vertexLink v).Connected := by
     refine ((C.mergeFaces h).vertexLink v).connected_iff.2
-      ⟨⟨⟨mergeGerm h a.1, (src_mergeGerm h a.1).trans a.2⟩⟩,
+      ⟨⟨⟨mergeGerm h a.val, (src_mergeGerm h a.val).trans a.property⟩⟩,
         ((C.mergeFaces h).vertexLink v).preconnected_iff.2 fun b b' => ?_⟩
-    obtain ⟨P⟩ := (C.vertexLink v).preconnected_iff.1 hpre ⟨b.1.1, b.2⟩ ⟨b'.1.1, b'.2⟩
+    obtain ⟨P⟩ := (C.vertexLink v).preconnected_iff.1 hpre ⟨b.val.val, b.property⟩
+      ⟨b'.val.val, b'.property⟩
     exact nonempty_vertexLink_path_of_path (mergeGerm h) (fun e he => (src_mergeGerm h e).trans he)
-      (fun c _ => nonempty_vertexLink_path_mergeGerm h c) P (mergeGerm_of_ne h b.1.2).symm
-      (mergeGerm_of_ne h b'.1.2).symm
+      (fun c _ => nonempty_vertexLink_path_mergeGerm h c) P (mergeGerm_of_ne h b.val.property).symm
+      (mergeGerm_of_ne h b'.val.property).symm
   have hd (e : C.graph.E) (he : C.linkDegree e = 1) : C.graph.toGeomEdge e ≠
       C.graph.toGeomEdge (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := fun hed => by
     rcases C.graph.toGeomEdge_eq_toGeomEdge_iff.1 hed.symm with rfl | rfl <;>
       simp [h.linkDegree_incoming] at he
   refine ((C.mergeFaces h).hasSurfaceLink_iff v).2 ⟨inferInstance, hconn', ?_⟩
   rcases hdeg with hcirc | ⟨e₁, e₂, hne, h₁, h₂, hd₁, hd₂, hrest⟩
-  · exact .inl fun e he => (linkDegree_mergeFaces h e).trans (hcirc e.1 he)
+  · exact .inl fun e he => (linkDegree_mergeFaces h e).trans (hcirc e.val he)
   · refine .inr ⟨⟨e₁, hd e₁ hd₁⟩, ⟨e₂, hd e₂ hd₂⟩, fun he => hne (congrArg Subtype.val he), h₁,
       h₂, (linkDegree_mergeFaces h _).trans hd₁, (linkDegree_mergeFaces h _).trans hd₂,
       fun e he hne₁ hne₂ => (linkDegree_mergeFaces h e).trans
-        (hrest e.1 he (fun h' => hne₁ (Subtype.ext h')) fun h' => hne₂ (Subtype.ext h'))⟩
+        (hrest e.val he (fun h' => hne₁ (Subtype.ext h')) fun h' => hne₂ (Subtype.ext h'))⟩
 
 end PolygonalComplex
 
@@ -386,7 +390,7 @@ model. -/
         S.graph.toGeomEdge (S.incoming ⟨g₁, ⟨0, S.sides_pos g₁⟩⟩)}
       (Set ↥{e : S.graph.E | S.graph.toGeomEdge e ≠
         S.graph.toGeomEdge (S.incoming ⟨g₁, ⟨0, S.sides_pos g₁⟩⟩)}) _
-      (S.mergeFaces h).boundaryDarts e ↔ e.1 ∈ S.boundaryDarts := by
+      (S.mergeFaces h).boundaryDarts e ↔ e.val ∈ S.boundaryDarts := by
   rw [mem_boundaryDarts_iff, mem_boundaryDarts_iff]
   exact Eq.congr_left (congrArg₂ (· + ·) (PolygonalComplex.sideCount_mergeFaces h _)
     (PolygonalComplex.sideCount_mergeFaces h e))
