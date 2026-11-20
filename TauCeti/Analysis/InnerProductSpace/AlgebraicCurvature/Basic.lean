@@ -622,9 +622,8 @@ theorem constantCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
     [NormedAddCommGroup W] [InnerProductSpace ℝ W] [FiniteDimensional ℝ W] (f : W →ₗᵢ[ℝ] V) :
     (constantCurvature V).compContinuousLinearMap (fun _ ↦ f.toContinuousLinearMap) =
       constantCurvature W := by
-  ext m
-  have hm : m = ![m 0, m 1, m 2, m 3] := by funext i; fin_cases i <;> rfl
-  rw [hm, compContinuousLinearMap_apply_vec]
+  refine ext_vec fun u v z w ↦ ?_
+  rw [compContinuousLinearMap_apply_vec]
   simp
 
 /-- The Ricci contraction of the constant-curvature tensor is `(n - 1) g`. -/
