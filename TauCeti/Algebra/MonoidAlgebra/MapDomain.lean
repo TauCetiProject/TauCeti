@@ -23,7 +23,8 @@ inverse system of group algebras uses. Also: the image of `mapDomain f` commutes
 which `R[M]` acts through `mapDomain ι` for `ι : M →* N`, the action of `single n 1` is
 `R[M]`-linear when `n` commutes with the image of `ι`; and the algebra map `lift F` out of `k[N]`
 induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of the composite
-`F ∘ φ`.
+`F ∘ φ`. Restricting coefficients along an injective monoid homomorphism `f` out of a group,
+`comapDomain f`, commutes with left multiplication by elements of the image of `mapDomain f`.
 
 ## Main results
 
@@ -41,6 +42,9 @@ induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of
   action of `single n 1` on an `R[N]`-module on which `R[M]` acts through `mapDomain ι`, as an
   `R[M]`-linear endomorphism.
 * `MonoidAlgebra.lift_mapDomain`: `lift F ∘ mapDomain φ = lift (F ∘ φ)`.
+* `MonoidAlgebra.comapDomain_mapDomain_mul`: for an injective monoid homomorphism `f` out of a
+  group, restricting coefficients along `f` is linear for left multiplication by the image of
+  `mapDomain f`, with additive form `AddMonoidAlgebra.comapDomain_mapDomain_mul`.
 * `MonoidAlgebra.mapDomainRingEquiv_eq_mapDomain`: the ring isomorphism induced by a monoid
   isomorphism `e` is `mapDomain e`, with additive form
   `AddMonoidAlgebra.mapDomainRingEquiv_eq_mapDomain`.
@@ -145,6 +149,32 @@ theorem mapDomainRingEquiv_eq_mapDomain [Monoid M] [Monoid N] (e : M ≃* N)
   ext <| by
     rw [coeff_mapDomainRingEquiv, coeff_mapDomain, Finsupp.equivMapDomain_eq_mapDomain,
       MulEquiv.coe_toEquiv]
+
+/-- Restricting the coefficients of `mapDomain f a * x` along an injective monoid homomorphism `f`
+out of a group gives `a` times the restriction of `x`: left multiplication by an element supported
+on the subgroup `f(M)` of units preserves the coefficients on `f(M)` and those off it. -/
+@[to_additive (dont_translate := R)
+/-- Restricting the coefficients of `mapDomain f a * x` along an injective additive monoid
+homomorphism `f` out of an additive group gives `a` times the restriction of `x`. -/]
+theorem comapDomain_mapDomain_mul [Group M] [Monoid N] (f : M →* N) (hf : Function.Injective f)
+    (a : MonoidAlgebra R M) (x : MonoidAlgebra R N) :
+    comapDomain f hf (mapDomain f a * x) = a * comapDomain f hf x := by
+  induction a using induction_linear with
+  | zero => simp
+  | add a b ha hb => rw [mapDomain_add, add_mul, comapDomain_add, ha, hb, add_mul]
+  | single m r =>
+    induction x using induction_linear with
+    | zero => simp
+    | add x y hx hy => rw [mul_add, comapDomain_add, hx, hy, comapDomain_add, mul_add]
+    | single n s =>
+      rw [mapDomain_single, single_mul_single]
+      by_cases hn : n ∈ Set.range f
+      · obtain ⟨n, rfl⟩ := hn
+        rw [← map_mul, comapDomain_single_map, comapDomain_single_map, single_mul_single]
+      · rw [comapDomain_single_of_notMem_range hn, comapDomain_single_of_notMem_range, mul_zero]
+        rintro ⟨k, hk⟩
+        exact hn ⟨m⁻¹ * k, by rw [map_mul, hk, ← mul_assoc, ← map_mul, inv_mul_cancel, map_one,
+          one_mul]⟩
 
 section Group
 

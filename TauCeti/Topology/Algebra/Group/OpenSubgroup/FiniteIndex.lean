@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 import Mathlib.Algebra.Group.Subgroup.Order
-import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 import Mathlib.Order.Atoms.Finite
 
 /-!
@@ -37,7 +36,9 @@ Every proper open subgroup of a compact group lies in a maximal open subgroup. T
 by passing to a finite quotient by an open normal subgroup contained in the given subgroup.
 
 The normal core of an open subgroup of finite index is itself open, so such a subgroup contains an
-open normal subgroup of finite index. This needs no compactness.
+open normal subgroup of finite index. More generally the normal core of an open subgroup is open as
+soon as its normalizer has finite index, as for an open normal subgroup of an open subgroup of
+finite index. This needs no compactness.
 
 ## Main results
 
@@ -47,6 +48,8 @@ open normal subgroup of finite index. This needs no compactness.
   compact group is compact.
 * `OpenSubgroup.finiteIndex_comap`: the preimage of an open subgroup of finite index under a
   continuous homomorphism has finite index.
+* `Subgroup.isOpen_normalCore_of_finiteIndex_normalizer`: the normal core of an open subgroup
+  whose normalizer has finite index is open.
 * `OpenSubgroup.isOpen_normalCore`: the normal core of an open subgroup of finite index is open.
 * `OpenSubgroup.exists_openNormalSubgroup_le`: an open subgroup of finite index
   contains an open normal subgroup of finite index.
@@ -120,13 +123,38 @@ section NormalCore
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
-/-- The normal core of an open subgroup of finite index is open: it is closed, being an
-intersection of closed conjugates, and has finite index. -/
-@[to_additive /-- The normal core of an open additive subgroup of finite index is open: it is
-closed, being an intersection of closed conjugates, and has finite index. -/]
+/-- The normal core of an open subgroup `K` whose normalizer has finite index is open: the
+conjugate `g⁻¹ K g` depends only on the coset of `g` modulo the normalizer, so the normal core is
+the intersection of finitely many open conjugates. This applies to an open normal subgroup of an
+open subgroup of finite index, which need not have finite index itself. -/
+@[to_additive /-- The normal core of an open additive subgroup `K` whose normalizer has finite
+index is open: the conjugate `-g + K + g` depends only on the coset of `g` modulo the normalizer,
+so the normal core is the intersection of finitely many open conjugates. -/]
+theorem Subgroup.isOpen_normalCore_of_finiteIndex_normalizer {K : Subgroup G}
+    (hK : IsOpen (K : Set G)) [(Subgroup.normalizer (K : Set G)).FiniteIndex] :
+    IsOpen (K.normalCore : Set G) := by
+  have h : (K.normalCore : Set G) =
+      ⋂ q : G ⧸ Subgroup.normalizer (K : Set G), (fun x ↦ q.out⁻¹ * x * q.out) ⁻¹' K := by
+    ext x
+    simp only [SetLike.mem_coe, Set.mem_iInter, Set.mem_preimage]
+    refine ⟨fun hx q ↦ by simpa using hx q.out⁻¹, fun hx g ↦ ?_⟩
+    obtain ⟨⟨n, hn⟩, hq⟩ := QuotientGroup.mk_out_eq_mul (Subgroup.normalizer (K : Set G)) g⁻¹
+    have hgx := hx (g⁻¹ : G)
+    rw [hq] at hgx
+    rw [Subgroup.mem_normalizer_iff''.mp hn]
+    simpa [mul_assoc] using hgx
+  rw [h]
+  exact isOpen_iInter_of_finite fun q ↦
+    hK.preimage ((continuous_mul_const q.out).comp (continuous_const_mul q.out⁻¹))
+
+/-- The normal core of an open subgroup of finite index is open, since its normalizer contains it
+and so has finite index. -/
+@[to_additive /-- The normal core of an open additive subgroup of finite index is open, since its
+normalizer contains it and so has finite index. -/]
 theorem OpenSubgroup.isOpen_normalCore (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] :
     IsOpen (U.toSubgroup.normalCore : Set G) :=
-  Subgroup.isOpen_of_isClosed_of_finiteIndex _ (Subgroup.normalCore_isClosed _ U.isClosed)
+  have := Subgroup.finiteIndex_of_le U.toSubgroup.le_normalizer
+  Subgroup.isOpen_normalCore_of_finiteIndex_normalizer U.isOpen
 
 /-- An open subgroup of finite index contains an open normal subgroup of finite index, namely its
 normal core. -/
