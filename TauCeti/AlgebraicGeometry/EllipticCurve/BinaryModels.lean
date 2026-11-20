@@ -207,24 +207,22 @@ theorem setOf_equation_F2Model (i : Fin 5) :
     {p : ZMod 2 × ZMod 2 | (F2Model i).toAffine.Equation p.1 p.2} =
       ![∅, {(0, 0)}, {(0, 0), (0, 1)}, {(0, 0), (1, 0), (1, 1)}, Set.univ] i := by
   ext ⟨x, y⟩
-  fin_cases i <;>
-  · simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue, F2Model_zero, F2Model_one,
-      F2Model_two, F2Model_three, F2Model_four, Affine.equation_iff, Set.mem_ofPred_eq,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, Set.mem_empty_iff_false,
-      Set.mem_singleton_iff, Set.mem_insert_iff, Set.mem_univ, Prod.mk.injEq]
-    revert x y
-    decide
+  revert x y
+  fin_cases i <;> simp +decide [Affine.equation_iff]
 
 /-- **The `i`-th model has `i + 1` points**, the point at infinity included. -/
 theorem pointCount_F2Model (i : Fin 5) : (F2Model i).pointCount = i + 1 := by
   rw [pointCount_def, ← Set.coe_ofPred, setOf_equation_F2Model, Nat.card_coe_set_eq]
   fin_cases i <;> simp [Set.ncard_insert_of_notMem]
 
+/-- Two models have the same number of points only when they are the same model. -/
+theorem pointCount_F2Model_inj {i j : Fin 5} :
+    (F2Model i).pointCount = (F2Model j).pointCount ↔ i = j := by
+  rw [pointCount_F2Model, pointCount_F2Model, add_left_inj, Fin.val_inj]
+
 /-- The five models are distinct. -/
-theorem F2Model_injective : Function.Injective F2Model := fun i j h ↦ by
-  have := congrArg pointCount h
-  simp only [pointCount_F2Model, add_left_inj] at this
-  exact Fin.val_injective this
+theorem F2Model_injective : Function.Injective F2Model := fun _ _ h ↦
+  pointCount_F2Model_inj.1 (congrArg pointCount h)
 
 /-! ### Classification up to change of variables -/
 
@@ -247,10 +245,8 @@ the `j`-th only when `i = j`, since it preserves the point count. A model can ha
 automorphisms, so the change itself need not be the identity. -/
 theorem exists_variableChange_smul_F2Model_eq_iff (i j : Fin 5) :
     (∃ C : VariableChange (ZMod 2), C • F2Model i = F2Model j) ↔ i = j := by
-  refine ⟨fun ⟨C, h⟩ ↦ F2Model_injective ?_, fun h ↦ ⟨1, by rw [one_smul, h]⟩⟩
-  have := congrArg pointCount h
-  simp only [variableChange_pointCount, pointCount_F2Model, add_left_inj] at this
-  rw [Fin.val_injective this]
+  refine ⟨fun ⟨C, h⟩ ↦ pointCount_F2Model_inj.1 ?_, fun h ↦ ⟨1, by rw [one_smul, h]⟩⟩
+  rw [← h, variableChange_pointCount]
 
 /-- An elliptic equation over `𝔽₂` is carried onto the `i`-th model exactly when it has `i + 1`
 points. -/
@@ -259,8 +255,8 @@ theorem exists_variableChange_smul_eq_F2Model_iff (W : WeierstrassCurve (ZMod 2)
     (∃ C : VariableChange (ZMod 2), C • W = F2Model i) ↔ W.pointCount = i + 1 := by
   refine ⟨fun ⟨C, h⟩ ↦ by rw [← variableChange_pointCount W C, h, pointCount_F2Model], fun h ↦ ?_⟩
   obtain ⟨j, C, hC⟩ := exists_variableChange_smul_eq_F2Model W
-  rw [← variableChange_pointCount W C, hC, pointCount_F2Model, add_left_inj] at h
-  exact ⟨C, by rw [hC, Fin.val_injective h]⟩
+  rw [← variableChange_pointCount W C, hC, ← pointCount_F2Model i, pointCount_F2Model_inj] at h
+  exact ⟨C, by rw [hC, h]⟩
 
 /-- **Every elliptic equation over `𝔽₂` lies in the orbit of exactly one model.** By
 `TauCeti.exists_variableChange_smul_eq_F2Model_iff`, that model is the one with the same number of
