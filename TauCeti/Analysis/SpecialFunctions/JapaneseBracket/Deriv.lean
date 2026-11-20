@@ -30,7 +30,7 @@ multipliers of Mihlin type, and so bounded on `Lᵖ` for `1 < p < ∞`.
 The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times the linear map
 `2r ⟪x, ·⟫`, and a `C^k` function times a continuous linear map gains half a power of
 `1 + ‖x‖ ^ 2` in its derivative bounds
-(`ContinuousLinearMap.exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow`). The bounds follow
+(`ContinuousLinearMap.norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow`). The bounds follow
 by induction on `k`. Rescaling the argument by `c ≠ 0` changes `1 + ‖x‖ ^ 2` by at most a constant
 factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 
@@ -40,8 +40,6 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   `(1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.contDiff_one_add_norm_sq_rpow`, `TauCeti.contDiff_ofReal_one_add_norm_sq_rpow`: the
   bracket power `(1 + ‖x‖ ^ 2) ^ r` and its complex version are smooth.
-* `TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le`: the bounds for the
-  complex Bessel weight `(1 + ‖x‖ ^ 2) ^ (s / 2)`, in the form of symbol estimates of order `s`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le`: the derivative bounds
   for `⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r`.
 * `TauCeti.exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le_of_le_neg_half`: for
@@ -89,16 +87,17 @@ theorem norm_iteratedFDeriv_le_one_add_norm_sq_rpow (L : E →L[ℝ] G) (j : ℕ
   · rw [L.iteratedFDeriv_add_two, norm_zero]
     positivity
 
-/-- If the derivatives of order `i ≤ k` of a `C^k` function `g` satisfy the bracket bounds
-`‖D^i g x‖ ≤ C_i (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
-continuous linear map `L`, satisfies the bracket bound of order `ρ + 1 / 2`. -/
-theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ] G) {g : E → ℝ}
-    {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ}
-    (hgk : ∀ i ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)) :
-    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ g x • L x) x‖ ≤
-      C * (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
-  choose! C hC using hgk
-  refine ⟨∑ i ∈ Finset.range (k + 1), k.choose i * C i * ‖L‖, fun x ↦ ?_⟩
+/-- If the derivatives of order `i ≤ k` of a `C^k` scalar function `g` satisfy the bracket bounds
+`‖D^i g x‖ ≤ C i (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
+continuous linear map `L`, satisfies the bracket bound of order `ρ + 1 / 2`, with the explicit
+constant `∑ i ≤ k, (k choose i) C i ‖L‖` from the Leibniz rule. -/
+theorem norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow {𝕜 : Type*} [NormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : E →L[ℝ] G) {g : E → 𝕜}
+    {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ} {C : ℕ → ℝ}
+    (hgk : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i g x‖ ≤ C i * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)) (x : E) :
+    ‖iteratedFDeriv ℝ k (fun x ↦ g x • L x) x‖ ≤
+      (∑ i ∈ Finset.range (k + 1), k.choose i * C i * ‖L‖) *
+        (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
   refine (norm_iteratedFDeriv_smul_le hg L.contDiff x le_rfl).trans ?_
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun i hi ↦ ?_
@@ -106,7 +105,7 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
   -- exponents add up to `ρ + 1 / 2 - k / 2`.
   have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
   have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
-  have h₁ := hC i hik x
+  have h₁ := hgk i hik x
   have h₀ : 0 ≤ C i * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2) := (norm_nonneg _).trans h₁
   have h₂ := L.norm_iteratedFDeriv_le_one_add_norm_sq_rpow (k - i) x
   have hexp : (1 + ‖x‖ ^ 2) ^ (ρ - i / 2) * (1 + ‖x‖ ^ 2) ^ ((1 - (k - i : ℕ) : ℝ) / 2) =
@@ -120,6 +119,18 @@ theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow (L : E →L[ℝ]
     _ = k.choose i * C i * ‖L‖ * (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
         rw [← hexp]
         ring
+
+/-- If the derivatives of order `i ≤ k` of a `C^k` scalar function `g` satisfy the bracket bounds
+`‖D^i g x‖ ≤ C_i (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)`, then the `k`-th derivative of `g x • L x`, for a
+continuous linear map `L`, satisfies the bracket bound of order `ρ + 1 / 2`. -/
+theorem exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow {𝕜 : Type*} [NormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : E →L[ℝ] G) {g : E → 𝕜}
+    {k : ℕ} (hg : ContDiff ℝ k g) {ρ : ℝ}
+    (hgk : ∀ i ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ i g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ (ρ - i / 2)) :
+    ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ g x • L x) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ (ρ + 1 / 2 - k / 2) := by
+  choose! C hC using hgk
+  exact ⟨_, L.norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow hg hC⟩
 
 end ContinuousLinearMap
 
@@ -338,20 +349,6 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_add_sq_rpow_le (s : ℝ) (k : �
     _ ≤ max C 0 * (2 ^ ((|s| + k) / 2) * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) *
           (1 + ‖y‖ ^ 2) ^ ((|s| + k) / 2)) := by gcongr
     _ = _ := by ring
-
-/-- **The complex Bessel weight is a symbol.** The complex-valued bracket power
-`(1 + ‖x‖ ^ 2) ^ (s / 2)` satisfies the symbol estimates of order `s`:
-`‖D^k (1 + ‖x‖ ^ 2) ^ (s / 2)‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((s - k) / 2)`. It is the symbol of the Bessel
-potential of order `s`. -/
-theorem exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le (s : ℝ) (k : ℕ) :
-    ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) x‖ ≤
-      C * (1 + ‖x‖ ^ 2) ^ ((s - k) / 2) := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E) (s / 2) k
-  refine ⟨C, fun x ↦ ?_⟩
-  calc _ = ‖iteratedFDeriv ℝ k (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ (s / 2)) x‖ :=
-        Complex.ofRealLI.norm_iteratedFDeriv_comp_left
-          (contDiff_one_add_norm_sq_rpow (s / 2)).contDiffAt le_rfl
-    _ ≤ _ := (hC x).trans_eq (by rw [sub_div])
 
 /-- **Derivative bounds for a linear function times a bracket power.** For every `v`, every real
 `r` and every `k`, `‖D^k (⟪x, v⟫ (1 + ‖x‖ ^ 2) ^ r)‖ ≤ C (1 + ‖x‖ ^ 2) ^ (r + 1 / 2 - k / 2)`. -/

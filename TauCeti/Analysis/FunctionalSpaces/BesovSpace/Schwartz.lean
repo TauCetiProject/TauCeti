@@ -15,6 +15,7 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Cpow
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
