@@ -237,7 +237,7 @@ def compactifiedQuotientNormalizerComap :
     normalizer (Γ : Set PSL(2, ℝ)) →*
       (MeromorphicFunction Γ.CompactifiedQuotient ≃ₐ[ℂ]
         MeromorphicFunction Γ.CompactifiedQuotient)ᵐᵒᵖ where
-  toFun g := op (compactifiedQuotientConjComap (conjAct_pointwise_smul_iff.mpr g.2))
+  toFun g := op (compactifiedQuotientConjComap (conjAct_pointwise_smul_iff.mpr g.property))
   map_one' := congrArg op (compactifiedQuotientConjComap_of_mem Γ.one_mem _)
   map_mul' g g' := by
     rw [← op_mul, AlgEquiv.aut_mul]
@@ -265,7 +265,7 @@ theorem unop_compactifiedQuotientNormalizerComap_compactifiedQuotientComap (h : 
       compactifiedQuotientComap h F := by
   have hΓ : ConjAct.toConjAct (g : PSL(2, ℝ)) • Γ = Γ :=
     conjAct_pointwise_smul_eq_self (le_normalizer hg)
-  rw [unop_compactifiedQuotientNormalizerComap g (conjAct_pointwise_smul_iff.mpr g.2),
+  rw [unop_compactifiedQuotientNormalizerComap g (conjAct_pointwise_smul_iff.mpr g.property),
     compactifiedQuotientConjComap_compactifiedQuotientComap _ hΓ h h,
     compactifiedQuotientConjComap_of_mem hg, AlgEquiv.coe_refl, id]
 
