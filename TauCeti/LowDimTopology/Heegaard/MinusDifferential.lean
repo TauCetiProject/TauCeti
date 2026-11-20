@@ -311,17 +311,17 @@ variable {χ : Region → ℤ}
 @[simp]
 theorem minusDifferential_single_apply (x y : H.Generator) (a : (ZMod 2)[X]) :
     H.minusDifferential χ (Finsupp.single x a) y = a * H.minusCoefficient χ x y :=
-  linearCombination_equivFunOnFinite_symm_single_apply _ x y a
+  Finsupp.linearCombination_equivFunOnFinite_symm_single_apply _ x y a
 
 /-- The coefficient of `y` in the minus differential of a chain `c`. -/
 theorem minusDifferential_apply (c : H.Generator →₀ (ZMod 2)[X]) (y : H.Generator) :
     H.minusDifferential χ c y = c.sum fun x a => a * H.minusCoefficient χ x y :=
-  linearCombination_equivFunOnFinite_symm_apply _ c y
+  Finsupp.linearCombination_equivFunOnFinite_symm_apply _ c y
 
 /-- The minus differential vanishes exactly when all of its coefficients vanish. -/
 theorem minusDifferential_eq_zero_iff :
     H.minusDifferential χ = 0 ↔ ∀ x y, H.minusCoefficient χ x y = 0 :=
-  linearCombination_equivFunOnFinite_symm_eq_zero_iff
+  Finsupp.linearCombination_equivFunOnFinite_symm_eq_zero_iff
 
 /-- **Setting `U = 0` gives the hat differential.** When the counts are finite, reducing the
 coefficients of a chain of `CF⁻` modulo `U` (taking constant coefficients) intertwines the minus
@@ -359,18 +359,18 @@ Laurent polynomials. -/
 theorem infinityDifferential_single_apply (x y : H.Generator) (a : (ZMod 2)[T;T⁻¹]) :
     H.infinityDifferential χ (Finsupp.single x a) y =
       a * toLaurent (H.minusCoefficient χ x y) :=
-  linearCombination_equivFunOnFinite_symm_single_apply _ x y a
+  Finsupp.linearCombination_equivFunOnFinite_symm_single_apply _ x y a
 
 /-- The coefficient of `y` in the infinity differential of a chain `c`. -/
 theorem infinityDifferential_apply (c : H.Generator →₀ (ZMod 2)[T;T⁻¹]) (y : H.Generator) :
     H.infinityDifferential χ c y = c.sum fun x a => a * toLaurent (H.minusCoefficient χ x y) :=
-  linearCombination_equivFunOnFinite_symm_apply _ c y
+  Finsupp.linearCombination_equivFunOnFinite_symm_apply _ c y
 
 /-- The infinity differential vanishes exactly when all of the minus coefficients vanish, that is
 exactly when the minus differential vanishes (`minusDifferential_eq_zero_iff`). -/
 theorem infinityDifferential_eq_zero_iff :
     H.infinityDifferential χ = 0 ↔ ∀ x y, H.minusCoefficient χ x y = 0 :=
-  linearCombination_equivFunOnFinite_symm_eq_zero_iff.trans (by simp)
+  Finsupp.linearCombination_equivFunOnFinite_symm_eq_zero_iff.trans (by simp)
 
 /-- On chains with polynomial coefficients the infinity differential is the minus differential:
 including `CF⁻` into `CF^∞` intertwines the two differentials. -/
