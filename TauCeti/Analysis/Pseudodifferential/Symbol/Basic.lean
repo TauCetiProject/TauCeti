@@ -65,12 +65,11 @@ vanishes depends on the compact set of positions
 (`TauCeti.Symbol.isSmoothing_of_forall_isCompact_coefficient_eq_zero`), while in positive
 dimension a nonzero constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
-The estimates are only required locally uniformly in `x`. The predicate
-`TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
-`TauCeti.Symbol.HasCompactSpatialSupport` asks that the symbol vanish for `x` outside a fixed
-compact set. Symbols with compact spatial support are uniform
-(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), but not conversely: in positive dimension
-a nonzero constant symbol is uniform without compact spatial support
+The estimates are only required locally uniformly in `x`. The predicate `TauCeti.Symbol.IsUniform`
+asks for constants independent of `x`, and `TauCeti.Symbol.HasCompactSpatialSupport` asks that the
+symbol vanish for `x` outside a fixed compact set. Symbols with compact spatial support are uniform
+(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`), but not conversely: in positive dimension a
+nonzero constant symbol is uniform without compact spatial support
 (`TauCeti.Symbol.not_hasCompactSpatialSupport_const`). The symbol of multiplication by `f` is
 uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUniform_ofSpatial_iff`),
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
@@ -908,17 +907,12 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp
   · simp [coordinateDeriv_const T hα]
 
-/-- In positive dimension a nonzero constant symbol does not have compact spatial support, although
-it is uniform (`TauCeti.Symbol.isUniform_const`). -/
+/-- In positive dimension a nonzero constant symbol does not have compact spatial support. -/
 theorem not_hasCompactSpatialSupport_const (hn : 0 < n) {T : V →L[ℂ] W} (hT : T ≠ 0) :
     ¬(const T : Symbol n V W 0).HasCompactSpatialSupport := by
   have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
-  have : NoncompactSpace (CoordinateSpace n) := NormedSpace.noncompactSpace ℝ _
-  intro h
-  obtain ⟨K, hK, hKT⟩ := hasCompactSpatialSupport_iff.1 h
-  have hKu : K = Set.univ :=
-    Set.eq_univ_of_forall fun x ↦ by_contra fun hx ↦ hT (by simpa using hKT x hx 0)
-  exact noncompact_univ _ (hKu ▸ hK)
+  simpa [const, hasCompactSpatialSupport_ofSpatial_iff, HasCompactSupport, tsupport,
+    Function.support_const hT] using noncompact_univ (CoordinateSpace n)
 
 variable (V) in
 /-- The symbol `ψ(x) id_V` of multiplication by a smooth real function `ψ`. -/
