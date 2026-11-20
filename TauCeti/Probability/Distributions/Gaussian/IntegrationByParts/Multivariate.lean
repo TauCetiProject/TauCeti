@@ -10,8 +10,8 @@ public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts.Basi
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Basic
-import Mathlib.Probability.Distributions.Gaussian.HasGaussianLaw.Independence
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Probability.Distributions.Gaussian.Independence
 
 /-!
 # Multivariate Gaussian integration by parts
@@ -30,7 +30,7 @@ The covariance may be singular, and the only integrability hypotheses are those 
 ## Main results
 
 * `ProbabilityTheory.HasGaussianLaw.integral_dual_sub_smul_eq_integral_fderiv`: integration by
-  parts along a continuous linear functional, for a Gaussian random vector in a separable normed
+  parts along a continuous linear functional, for a Gaussian random vector in a separable Banach
   space and a test function with values in a Banach space.
 * `ProbabilityTheory.HasGaussianLaw.integral_repr_sub_smul_eq_sum_covariance_smul_integral_fderiv`:
   the coordinate form with respect to a finite basis.
@@ -64,32 +64,6 @@ namespace ProbabilityTheory.HasGaussianLaw
 variable {Ω E F : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {X : Ω → E}
-
-/-- If `c` is the covariance vector of `L` and `L c ≠ 0`, then `X - L X • (L c)⁻¹ • c` and `L X`
-are independent. -/
-private theorem indepFun_sub_smul_of_covariance [CompleteSpace E] [SecondCountableTopology E]
-    (hX : HasGaussianLaw X P) (L : StrongDual ℝ E)
-    {c : E} (hc : ∀ L' : StrongDual ℝ E, L' c = cov[fun ω ↦ L' (X ω), fun ω ↦ L (X ω); P])
-    (hLc : L c ≠ 0) :
-    IndepFun (fun ω ↦ X ω - L (X ω) • (L c)⁻¹ • c) (fun ω ↦ L (X ω)) P := by
-  have := hX.isProbabilityMeasure
-  have hXY : HasGaussianLaw
-      (fun ω ↦ (X ω - L (X ω) • (L c)⁻¹ • c, L (X ω))) P := by
-    simpa using hX.map_fun ((ContinuousLinearMap.id ℝ E - L.smulRight ((L c)⁻¹ • c)).prod L)
-  refine hXY.indepFun_of_covariance_strongDual fun L₂ L₁ ↦ ?_
-  have h₁ (t : ℝ) : L₁ t = t * L₁ 1 := by
-    rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
-  have h₂ : (L₂ ∘ fun ω ↦ X ω - L (X ω) • (L c)⁻¹ • c) =
-      (fun ω ↦ L₂ (X ω)) - fun ω ↦ ((L c)⁻¹ * L₂ c) * L (X ω) := by
-    ext ω
-    simp only [Function.comp_apply, Pi.sub_apply, map_sub, map_smul, smul_eq_mul]
-    ring
-  have hmem (L' : StrongDual ℝ E) : MemLp (fun ω ↦ L' (X ω)) 2 P := (hX.map_fun L').memLp_two
-  have h₃ : (L₁ ∘ fun ω ↦ L (X ω)) = fun ω ↦ L (X ω) * L₁ 1 := funext fun ω ↦ h₁ _
-  rw [h₂, h₃, covariance_mul_const_right, covariance_sub_left (hmem L₂)
-    ((hmem L).const_mul _) (hmem L), covariance_const_mul_left, ← hc, ← hc]
-  field_simp
-  ring
 
 /-- One-dimensional Gaussian integration by parts in the second variable, integrated against an
 arbitrary s-finite measure in the first variable. -/
@@ -130,7 +104,7 @@ private theorem integral_dual_sub_smul_eq_integral_fderiv_of_ne_zero [CompleteSp
   have hprod : P.map φ = (P.map fun ω ↦ X ω - L (X ω) • u).prod (gaussianReal a v) := by
     rw [← hlaw]
     exact (indepFun_iff_map_prod_eq_prod_map_map (by fun_prop) (by fun_prop)).1
-      (indepFun_sub_smul_of_covariance hX L hc hLc)
+      (hX.indepFun_sub_smul_of_covariance L hc hLc)
   -- The test function along the line through `y` in direction `u`, and its derivative.
   set g : E → ℝ → F := fun y s ↦ f (y + s • u)
   have hg : Continuous (Function.uncurry g) := hf.continuous.comp (by fun_prop)
