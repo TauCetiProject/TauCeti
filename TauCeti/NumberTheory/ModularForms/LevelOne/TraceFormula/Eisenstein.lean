@@ -74,20 +74,12 @@ variable {R : Type*} [CommRing R] {n : ℤ} {w : ℕ}
 /-- The value at `∞` of the monomial `Xⁱ Yʷ⁻ⁱ` is `1` for `i = w` and `0` otherwise. -/
 private theorem evalCusp_infty_binaryFormMonomialBasis (i : Fin (w + 1)) :
     evalCusp R w ∞ (binaryFormMonomialBasis R w i) = if i = Fin.last w then 1 else 0 := by
-  have hi : (i : ℕ) ≤ w := Nat.lt_succ_iff.mp i.isLt
-  rw [evalCusp_infty, coe_binaryFormMonomialBasis]
-  simp only [eval_mul, eval_pow, eval_X, Matrix.cons_val_zero, Matrix.cons_val_one, one_pow,
-    one_mul, zero_pow_eq, Nat.sub_eq_zero_iff_le, hi.ge_iff_eq',
-    Fin.ext_iff, Fin.val_last]
-  split_ifs <;> first | rfl | omega
+  rw [evalCusp_infty, eval_one_zero_binaryFormMonomialBasis]
 
 /-- The value at `0` of the monomial `Xⁱ Yʷ⁻ⁱ` is `1` for `i = 0` and `0` otherwise. -/
 private theorem evalCusp_zero_binaryFormMonomialBasis (i : Fin (w + 1)) :
     evalCusp R w (0 : ℚ) (binaryFormMonomialBasis R w i) = if i = 0 then 1 else 0 := by
-  rw [evalCusp_coe, coe_binaryFormMonomialBasis]
-  simp only [Rat.num_zero, Rat.den_zero, Int.cast_zero, Nat.cast_one, eval_mul, eval_pow, eval_X,
-    Matrix.cons_val_zero, Matrix.cons_val_one, one_pow, mul_one, zero_pow_eq, Fin.ext_iff,
-    Fin.val_zero]
+  simpa using eval_zero_one_binaryFormMonomialBasis (R := R) i
 
 /-- **The Eisenstein polynomial is the binary form of the evaluation at `∞` and `0`.** For even
 `w`, the binary form attached to `P ↦ P(1, 0) - P(0, 1)` is `Y^w - X^w`. -/
