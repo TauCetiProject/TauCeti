@@ -312,14 +312,6 @@ private theorem abs_dotProduct_sub_mulVec_le
   linarith [abs_sub (η ⬝ᵥ (a x *ᵥ ξ)) (η ⬝ᵥ (a' x *ᵥ ξ)), ha.upper_bound hx η ξ,
     ha'.upper_bound hx η ξ]
 
-/-- If `u - g` and `u' - g'` lie in `H¹₀(Ω)`, so does `(u - u') - (g - g')`. -/
-private theorem sub_sub_sub_mem_w1p0Submodule {u u' g g' : W1p volume Omega 2}
-    (hu : u - g ∈ w1p0Submodule volume Omega 2) (hu' : u' - g' ∈ w1p0Submodule volume Omega 2) :
-    u - u' - (g - g') ∈ w1p0Submodule volume Omega 2 := by
-  have h := Submodule.sub_mem _ ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu)
-    ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu')
-  rwa [sub_sub_sub_comm, ClosedSubmodule.mem_toSubmodule_iff] at h
-
 /-- Continuity of the frozen solutions in the coefficient and the freezing function: if
 `Aₖ(x, ·) → A(x, ·)` locally uniformly and `vₖ → v` for almost every `x ∈ Ω`, then the solution
 with the coefficient `Aₖ` frozen at `vₖ` tends in `H¹(Ω)` to the one with `A` frozen at `v`. -/

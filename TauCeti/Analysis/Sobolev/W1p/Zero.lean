@@ -51,6 +51,8 @@ subspace under a suitable geometric hypothesis but not on all of `W^{1,p}(Ω)`.
 * `TauCeti.w1p0Submodule_subset_of_isClosed`: a closed set containing every test-function jet
   contains `W^{1,p}_0(Ω)`, which is how a property is extended from test functions to the whole
   space.
+* `TauCeti.sub_sub_sub_mem_w1p0Submodule`: if `u - g` and `u' - g'` lie in `W^{1,p}_0(Ω)`, so
+  does `(u - u') - (g - g')`.
 * `TauCeti.W1p0.instNormedAddCommGroup` and `TauCeti.W1p0.instInnerProductSpace`: shortcut
   instances for the normed group structure of `W^{1,p}_0(Ω)` and the Hilbert space structure of
   `W^{1,2}_0(Ω)`. They are `local`: a file that needs them registers them.
@@ -186,6 +188,16 @@ theorem w1p0Submodule_subset_of_isClosed {s : Set (W1p mu Omega p)} (hs : IsClos
     (w1p0Submodule mu Omega p : Set (W1p mu Omega p)) ⊆ s := by
   rw [coe_w1p0Submodule]
   exact closure_minimal (by rintro _ ⟨phi, rfl⟩; exact h phi) hs
+
+/-- If `u - g` and `u' - g'` lie in `W^{1,p}_0(Ω)`, so does `(u - u') - (g - g')`: two functions
+with the boundary values of `g` and `g'` differ by a function with the boundary values of
+`g - g'`. -/
+theorem sub_sub_sub_mem_w1p0Submodule {u u' g g' : W1p mu Omega p}
+    (hu : u - g ∈ w1p0Submodule mu Omega p) (hu' : u' - g' ∈ w1p0Submodule mu Omega p) :
+    u - u' - (g - g') ∈ w1p0Submodule mu Omega p := by
+  have h := Submodule.sub_mem _ ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu)
+    ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hu')
+  rwa [sub_sub_sub_comm, ClosedSubmodule.mem_toSubmodule_iff] at h
 
 /-- **The Sobolev space `W^{1,p}_0(Ω)`**, the closure of `C_c^∞(Ω)` in `W^{1,p}(Ω)`. -/
 abbrev W1p0 (mu : Measure E) [mu.IsAddHaarMeasure] (Omega : Opens E) (p : ENNReal)
