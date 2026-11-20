@@ -155,6 +155,10 @@ theorem toWeighted_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 X] (
 theorem toWeighted_injective : Function.Injective (toWeighted : TimeWeighted T η X → _) :=
   fun _ _ h ↦ h
 
+/-- The weight `t ↦ t^η` is continuous on `(0, T]`. -/
+private theorem continuous_rpow_Ioc : Continuous fun t : Ioc (0 : ℝ) T ↦ (t : ℝ) ^ η :=
+  continuous_subtype_val.rpow_const fun t ↦ Or.inl t.2.1.ne'
+
 variable [NormedSpace ℝ X]
 
 /-- The value `u t = t^{-η} • w t` of `u ∈ C_η((0, T]; X)` with weighted function `w`, for
@@ -178,6 +182,11 @@ theorem apply_of_notMem (u : TimeWeighted T η X) {t : ℝ} (ht : t ∉ Ioc (0 :
 theorem toWeighted_apply (u : TimeWeighted T η X) (t : Ioc (0 : ℝ) T) :
     toWeighted u t = (t : ℝ) ^ η • u t := by
   rw [apply_of_mem u t.2, smul_inv_smul₀ (Real.rpow_pos_of_pos t.2.1 η).ne']
+
+/-- The norm of the weighted function of `u` at `t ∈ (0, T]` is `t^η ‖u t‖`. -/
+theorem norm_toWeighted_apply (u : TimeWeighted T η X) (t : Ioc (0 : ℝ) T) :
+    ‖toWeighted u t‖ = (t : ℝ) ^ η * ‖u t‖ := by
+  rw [toWeighted_apply, norm_smul_of_nonneg (Real.rpow_nonneg t.2.1.le η)]
 
 @[ext]
 theorem ext {u v : TimeWeighted T η X} (h : ∀ t ∈ Ioc (0 : ℝ) T, u t = v t) : u = v :=
@@ -214,8 +223,7 @@ instance : IsSubApply (TimeWeighted T η X) where
 theorem rpow_mul_norm_le (u : TimeWeighted T η X) {t : ℝ} (ht : t ∈ Ioc (0 : ℝ) T) :
     t ^ η * ‖u t‖ ≤ ‖u‖ := by
   have h := (toWeighted u).norm_coe_le_norm ⟨t, ht⟩
-  rwa [toWeighted_apply, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le η),
-    norm_toWeighted] at h
+  rwa [norm_toWeighted_apply, norm_toWeighted] at h
 
 /-- **The weighted norm.** `‖u‖ = sup_{0 < t ≤ T} t^η ‖u t‖`: the norm is at most `C ≥ 0` exactly
 when every weighted value is. -/
@@ -224,15 +232,15 @@ theorem norm_le_iff (u : TimeWeighted T η X) {C : ℝ} (hC : 0 ≤ C) :
   refine ⟨fun h t ht ↦ (u.rpow_mul_norm_le ht).trans h, fun h ↦ ?_⟩
   rw [← norm_toWeighted, BoundedContinuousFunction.norm_le hC]
   intro t
-  rw [toWeighted_apply, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg t.2.1.le η)]
+  rw [norm_toWeighted_apply]
   exact h t t.2
 
 /-- The elements of `C_η((0, T]; X)` are continuous on `(0, T]`. -/
 theorem continuousOn (u : TimeWeighted T η X) : ContinuousOn u (Ioc (0 : ℝ) T) := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hw : Continuous fun t : Ioc (0 : ℝ) T ↦ ((t : ℝ) ^ η)⁻¹ • toWeighted u t :=
-    ((continuous_subtype_val.rpow_const fun t ↦ Or.inl t.2.1.ne').inv₀
-      fun t ↦ (Real.rpow_pos_of_pos t.2.1 η).ne').smul (toWeighted u).continuous
+    (continuous_rpow_Ioc.inv₀ fun t ↦ (Real.rpow_pos_of_pos t.2.1 η).ne').smul
+      (toWeighted u).continuous
   exact hw.congr fun t ↦ (apply_of_mem u t.2).symm
 
 /-- The element of `C_η((0, T]; X)` given on `(0, T]` by a function `f` continuous there with
@@ -241,9 +249,8 @@ def mk (f : ℝ → X) (hf : ContinuousOn f (Ioc (0 : ℝ) T)) (C : ℝ)
     (hC : ∀ t ∈ Ioc (0 : ℝ) T, t ^ η * ‖f t‖ ≤ C) : TimeWeighted T η X :=
   ofWeighted <| BoundedContinuousFunction.ofNormedAddCommGroup
     (fun t : Ioc (0 : ℝ) T ↦ (t : ℝ) ^ η • f t)
-    ((continuous_subtype_val.rpow_const fun t ↦ Or.inl t.2.1.ne').smul hf.domRestrict) C
-    fun t ↦ by
-      rw [norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg t.2.1.le η)]
+    (continuous_rpow_Ioc.smul hf.domRestrict) C fun t ↦ by
+      rw [norm_smul_of_nonneg (Real.rpow_nonneg t.2.1.le η)]
       exact hC t t.2
 
 theorem mk_apply_of_mem {f : ℝ → X} (hf : ContinuousOn f (Ioc (0 : ℝ) T)) {C : ℝ}
@@ -271,30 +278,32 @@ def bilinear (B : E →L[𝕜] F →L[𝕜] G) :
     TimeWeighted T η₁ E →L[𝕜] TimeWeighted T η₂ F →L[𝕜] TimeWeighted T (η₁ + η₂) G :=
   ContinuousLinearMap.compL 𝕜 _ _ _
       (weightedₗᵢ T (η₁ + η₂) G 𝕜).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L
-    (BoundedContinuousFunction.applyCLM ∘L B.compLeftContinuousBounded _).bilinearComp
+    (B.compLeftContinuousBounded₂ _).bilinearComp
       (weightedₗᵢ T η₁ E 𝕜).toContinuousLinearEquiv.toContinuousLinearMap
       (weightedₗᵢ T η₂ F 𝕜).toContinuousLinearEquiv.toContinuousLinearMap
 
 /-- The weighted function of a product is the pointwise product of the weighted functions:
 `t^{η₁ + η₂} • B (u t) (v t) = B (t^{η₁} • u t) (t^{η₂} • v t)`. -/
-@[simp]
 theorem toWeighted_bilinear_apply_apply (B : E →L[𝕜] F →L[𝕜] G)
     (u : TimeWeighted T η₁ E) (v : TimeWeighted T η₂ F) (t : Ioc (0 : ℝ) T) :
     toWeighted (bilinear T η₁ η₂ B u v) t = B (toWeighted u t) (toWeighted v t) := by
-  simp [bilinear, BoundedContinuousFunction.applyCLM_apply]
+  simp [bilinear]
 
 /-- **The product estimate in time-weighted spaces.** `‖B (u, v)‖ ≤ ‖B‖ ‖u‖ ‖v‖`. -/
 theorem norm_bilinear_apply_apply_le (B : E →L[𝕜] F →L[𝕜] G) (u : TimeWeighted T η₁ E)
     (v : TimeWeighted T η₂ F) : ‖bilinear T η₁ η₂ B u v‖ ≤ ‖B‖ * ‖u‖ * ‖v‖ := by
   rw [← norm_toWeighted, ← norm_toWeighted u, ← norm_toWeighted v]
-  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun t ↦ ?_
-  rw [toWeighted_bilinear_apply_apply]
-  exact B.le_of_opNorm₂_le_of_le le_rfl ((toWeighted u).norm_coe_le_norm t)
-    ((toWeighted v).norm_coe_le_norm t)
+  exact B.norm_compLeftContinuousBounded₂_apply_apply_le (toWeighted u) (toWeighted v)
 
 /-- The pointwise product has operator norm at most `‖B‖`. -/
 theorem norm_bilinear_le (B : E →L[𝕜] F →L[𝕜] G) : ‖bilinear T η₁ η₂ B‖ ≤ ‖B‖ :=
   ContinuousLinearMap.opNorm_le_bound₂ _ (norm_nonneg B) (norm_bilinear_apply_apply_le B)
+
+/-- The weights multiply: `(t^{η₁ + η₂})⁻¹ (t^{η₁} t^{η₂}) = 1` for `t > 0`. -/
+private theorem rpow_add_inv_mul_rpow_mul_rpow {t : ℝ} (ht : 0 < t) :
+    (t ^ (η₁ + η₂))⁻¹ * (t ^ η₁ * t ^ η₂) = 1 := by
+  rw [Real.rpow_add ht]
+  exact inv_mul_cancel₀ (mul_pos (Real.rpow_pos_of_pos ht η₁) (Real.rpow_pos_of_pos ht η₂)).ne'
 
 variable [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] [NormedSpace ℝ F]
   [IsScalarTower ℝ 𝕜 F] [NormedSpace ℝ G] [IsScalarTower ℝ 𝕜 G]
@@ -304,15 +313,8 @@ variable [NormedAlgebra ℝ 𝕜] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
 theorem bilinear_apply (B : E →L[𝕜] F →L[𝕜] G) (u : TimeWeighted T η₁ E)
     (v : TimeWeighted T η₂ F) (t : ℝ) : bilinear T η₁ η₂ B u v t = B (u t) (v t) := by
   by_cases ht : t ∈ Ioc (0 : ℝ) T
-  · have hpos : 0 < t := ht.1
-    rw [apply_of_mem _ ht, toWeighted_bilinear_apply_apply, toWeighted_apply, toWeighted_apply,
-      ContinuousLinearMap.map_smul_of_tower B, smul_apply,
-      ContinuousLinearMap.map_smul_of_tower, smul_smul, smul_smul]
-    convert one_smul ℝ (B (u t) (v t)) using 2
-    have h₁ := (Real.rpow_pos_of_pos hpos η₁).ne'
-    have h₂ := (Real.rpow_pos_of_pos hpos η₂).ne'
-    simp only [Real.rpow_add hpos]
-    field_simp
+  · rw [apply_of_mem _ ht, toWeighted_bilinear_apply_apply]
+    simp [ContinuousLinearMap.map_smul_of_tower, smul_smul, rpow_add_inv_mul_rpow_mul_rpow ht.1]
   · simp [apply_of_notMem _ ht]
 
 end Bilinear
