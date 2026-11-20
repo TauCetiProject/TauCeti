@@ -49,7 +49,6 @@ inclusions into `Pⱼ` differ by the transport `τⱼ`, that kernel is `{(a, -τ
 
 ## Main definitions and results
 
-* `TauCeti.cellPath`: the path along a `1`-cell.
 * `TauCeti.TopCat.oneCellTransportDifference`: the map `⨁ⱼ Hq(p⁻¹(χⱼ(-1))) ⟶ E¹_{0,q}`,
   `a ↦ a - τⱼ a`.
 * `TauCeti.TopCat.serreSpectralSequenceSecondPageXZeroIsoCokernel`: `E²_{0,q}` is its cokernel.

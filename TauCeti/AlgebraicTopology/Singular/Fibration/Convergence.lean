@@ -141,12 +141,9 @@ theorem isZero_serreSpectralSequence_page_two_X_of_snd_le_neg_two (pq : ℤ × �
   obtain ⟨n, hn⟩ : ∃ n : ℕ, pq.1 + pq.2 = -n := ⟨(-(pq.1 + pq.2)).toNat, by lia⟩
   refine IsZero.of_iso ?_ (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
     (monotone_preimageSkeleton p) pq pq.2 (pq.2 + 1) rfl rfl _ rfl n hn)
-  refine TopPair.isZero_singularHomology_of_surjective_map _ _
-    (fun x ↦ ⟨(⟨(x : preimageSkeleton C p (pq.2 + 1)).1, ?_⟩ : preimageSkeleton C p pq.2), rfl⟩) n
-  have := (mem_preimageSkeleton_iff _ _ _).1 (x : preimageSkeleton C p (pq.2 + 1)).2
-  have h₁ : (pq.2 + 1 + 1).toNat = (pq.2 + 1).toNat := by lia
-  rw [h₁] at this
-  exact (mem_preimageSkeleton_iff _ _ _).2 this
+  exact (TopPair.isZero_singularHomology_ofInclusion_congr _ _ (subset_refl _)
+    (preimageSkeleton_of_neg p (by lia)) (preimageSkeleton_of_neg p (by lia)) n).2
+    (TopPair.isZero_singularHomology_ofInclusion_self _ _ n)
 
 include hp in
 variable (C) in
