@@ -41,8 +41,8 @@ Away from characteristic `3` every elliptic curve takes this form after a finite
 extension of the base field: adjoin a root `x` of the separable polynomial `Ψ₃`, a matching `y`,
 and a cube root of `ψ₂(x, y)`, which is nonzero because `Ψ₃` and `Ψ₂Sq` have no common root. This
 holds in characteristic `2` too, where the Legendre form `y² = x (x - 1) (x - λ)` of
-`TauCeti/AlgebraicGeometry/EllipticCurve/Legendre.lean` is not available. Since `j` is an explicit
-rational function of `a`, the Deuring form ties the reduction of an elliptic curve to its
+`TauCeti/AlgebraicGeometry/EllipticCurve/Legendre/Basic.lean` is not available. Since `j` is an
+explicit rational function of `a`, the Deuring form ties the reduction of an elliptic curve to its
 `j`-invariant in residue characteristic `2`, as the Legendre form does away from it: this is how
 the criterion `WeierstrassCurve.hasPotentialGoodReduction_of_isInteger_j` for potential good
 reduction is proved in residue characteristic `2`.
