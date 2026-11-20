@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import TauCeti.AlgebraicGeometry.Grassmannian.Points
 
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
@@ -47,6 +47,10 @@ the formation of `I` commutes with base change.
 * `Module.Grassmannian.comap_toSchemeHom_schemeIdealLocus`: the inverse image of the closed
   subscheme along the morphism `Spec A ⟶ G(k, M)` classifying a point `N` is the zero scheme of
   `I N`.
+* `Module.Grassmannian.comap_chartι_schemeIdealLocus`,
+  `Module.Grassmannian.idealSheafData_le_of_comap_chartι`, and
+  `Module.Grassmannian.schemeIdealLocus_le_of_le`: checking inclusions of ideal sheaves on
+  `G(k, M)` via pullbacks to the standard charts.
 * `Module.Grassmannian.schemeIdealLocus_le_ker_toSchemeHom_iff`: **the universal property**; the
   morphism classifying `N` factors through the closed subscheme exactly when `I N = ⊥`.
 
@@ -228,6 +232,40 @@ theorem comap_toSchemeHom_schemeIdealLocus {A : Type u} [CommRing A] [Algebra R 
   rw [hι, comap_toSchemeHom_of_range_subset I hI _ hU (hι ▸ hNU),
     comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom, hI]
   rfl
+
+/-- An inequality of ideal sheaves on `G(k, M)` can be checked after pulling back along every
+standard chart `chartι R x`. -/
+theorem idealSheafData_le_of_comap_chartι {J₁ J₂ : (scheme R M k).IdealSheafData}
+    (h : ∀ x : Fin k → M, J₁.comap (chartι R x) ≤ J₂.comap (chartι R x)) : J₁ ≤ J₂ := by
+  rw [← J₁.iInf_map_comap_openCover (chartOpenCover R M k),
+    ← J₂.iInf_map_comap_openCover (chartOpenCover R M k)]
+  exact iInf_mono fun x ↦ map_mono (chartι R x) (h x)
+
+/-- Pulling back `schemeIdealLocus I hI` along the standard chart `chartι R x` gives the ideal
+sheaf of `I` evaluated at the universal point of `ChartAlgebra R x`. -/
+theorem comap_chartι_schemeIdealLocus (x : Fin k → M) :
+    (schemeIdealLocus I hI).comap (chartι R x) =
+      ofIdealTop ((I (chartHomEquiv R x _ (AlgHom.id R _)).1).map
+        (Scheme.ΓSpecIso (.of (ChartAlgebra R x))).inv.hom) := by
+  rw [← toSchemeHom_chartHomEquiv_id x, comap_toSchemeHom_schemeIdealLocus]
+
+/-- Containment of the defining ideals at the universal point of every standard chart implies
+containment of the corresponding ideal sheaves on `G(k, M)`. -/
+theorem schemeIdealLocus_le_of_le
+    {I₁ : ∀ {A : Type u} [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → Ideal A}
+    {hI₁ : ∀ {A B : Type u} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)), I₁ (map f N) = Ideal.map f (I₁ N)}
+    {I₂ : ∀ {A : Type u} [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → Ideal A}
+    {hI₂ : ∀ {A B : Type u} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
+      (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A)), I₂ (map f N) = Ideal.map f (I₂ N)}
+    (hle : ∀ x : Fin k → M,
+      I₁ (chartHomEquiv R x _ (AlgHom.id R _)).1 ≤
+        I₂ (chartHomEquiv R x _ (AlgHom.id R _)).1) :
+    schemeIdealLocus I₁ hI₁ ≤ schemeIdealLocus I₂ hI₂ := by
+  refine idealSheafData_le_of_comap_chartι fun x ↦ ?_
+  rw [comap_chartι_schemeIdealLocus, comap_chartι_schemeIdealLocus,
+    ← equivOfIsAffine_symm_apply, ← equivOfIsAffine_symm_apply, map_le_map_iff]
+  exact Ideal.map_mono (hle x)
 
 /-- **The universal property of the closed subscheme cut out by `I`.** For an `R`-algebra `A`, the
 morphism `Spec A ⟶ G(k, M)` classifying a point `N` of `G(k, A ⊗[R] M; A)` factors through the
