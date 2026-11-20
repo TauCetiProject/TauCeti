@@ -33,6 +33,7 @@ For `h : ℕ`, the residue classes `a ∈ ZMod (p ^ h)` cut `ℤ_p` into the dis
 * `PadicInt.discHomeomorph_symm_cast_add_mul`: the same statement in simp normal form.
 * `PadicInt.natCast_val_eq_natCast_val_add_mul`: the natural representative of a class modulo `pᵏ`
   is that of its class modulo `pʰ` plus `pʰ` times a quotient.
+* `PadicInt.discHomeomorph_add`: carry decomposition of `x + y` in level-`h` disc coordinates.
 -/
 
 public section
@@ -114,5 +115,18 @@ theorem natCast_val_eq_natCast_val_add_mul (h : ℕ) {k : ℕ} (a : ZMod (p ^ k)
       ((a.val : ZMod (p ^ h)).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * ((a.val / p ^ h : ℕ) : ℤ_[p]) := by
   rw [ZMod.val_natCast]
   exact_mod_cast (Nat.mod_add_div a.val (p ^ h)).symm
+
+/-- Carry decomposition of `x + y` in level-`h` disc coordinates: adding `a.val + pʰ u` and
+`b.val + pʰ v` lands in the disc of `a + b` with coordinate `⌊(a.val + b.val) / pʰ⌋ + u + v`. -/
+theorem discHomeomorph_add (h : ℕ) (a b : ZMod (p ^ h)) (u v : ℤ_[p]) :
+    discHomeomorph p h (a, u) + discHomeomorph p h (b, v) =
+      discHomeomorph p h (a + b, (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) + u + v) := by
+  have hnat : a.val + b.val = (a + b).val + p ^ h * ((a.val + b.val) / p ^ h) := by
+    rw [ZMod.val_add, Nat.mod_add_div]
+  simp only [discHomeomorph_apply]
+  have hcast : (a.val : ℤ_[p]) + (b.val : ℤ_[p]) =
+      ((a + b).val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (((a.val + b.val) / p ^ h : ℕ) : ℤ_[p]) := by
+    exact_mod_cast hnat
+  linear_combination hcast
 
 end PadicInt
