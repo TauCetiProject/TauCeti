@@ -42,6 +42,7 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
   its values.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
+* `SchwartzMap.eLpNorm_gaussian_one`: its `L¹` norm `(π / b.re)^(n/2)`.
 * `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
   `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on tempered distributions.
 -/
@@ -135,6 +136,23 @@ theorem fourierInv_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [Borel
       (Real.pi / b) ^ (Module.finrank ℝ V / 2 : ℂ) * cexp (-Real.pi ^ 2 * ‖x‖ ^ 2 / b) := by
   rw [fourierInv_coe, Real.fourierInv_eq_fourier_neg, coe_gaussian,
     fourier_gaussian_innerProductSpace hb, norm_neg]
+
+open MeasureTheory in
+/-- The `L¹` norm of the Schwartz Gaussian `exp (-b ‖x‖²)`, `0 < b.re`, on a real inner product
+space of dimension `n` is `(π / b.re)^(n/2)`, the integral of its modulus `exp (-b.re ‖x‖²)`. In
+particular `exp (-π ‖x‖²)` has unit mass. -/
+theorem eLpNorm_gaussian_one [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ}
+    (hb : 0 < b.re) :
+    eLpNorm (gaussian hb : 𝓢(V, ℂ)) 1 volume =
+      ENNReal.ofReal ((Real.pi / b.re) ^ (Module.finrank ℝ V / 2 : ℝ)) := by
+  set g : 𝓢(V, ℂ) := gaussian hb
+  rw [eLpNorm_one_eq_lintegral_eNorm g.continuous.aestronglyMeasurable,
+    ← ofReal_integral_norm_eq_lintegral_eNorm g.integrable]
+  have h : ∀ x : V, ‖g x‖ = Real.exp (-b.re * ‖x‖ ^ 2) := fun x ↦ by
+    rw [gaussian_apply, norm_exp]
+    congr 1
+    simp [← ofReal_pow]
+  simp_rw [h, GaussianFourier.integral_rexp_neg_mul_sq_norm hb]
 
 end SchwartzMap
 
