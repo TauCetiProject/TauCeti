@@ -20,7 +20,7 @@ therefore a linear automorphism. Lie and module truncations intertwine these aut
 An element of the degree-completed Lie algebra consequently defines a linear automorphism of
 the module completion `limₖ M / F (k + 1)`. Its coordinates are the finite exponentials, and
 negation gives the inverse. This supplies the exponential automorphisms underlying the
-completed filtered-module actions of ScatteringDiagrams §0.6.
+completed filtered-module actions.
 
 The finite automorphism is `PositiveDegrees.truncatedExpLieAction`, with its truncated-series
 formula `PositiveDegrees.truncatedExpLieAction_apply_eq_sum`. The completed automorphism is
@@ -161,7 +161,7 @@ private theorem completionAction_compatible (x : d.completedLie ℒ) {k l : ℕ}
 /-- A completed Lie element exponentiates to an automorphism of the filtered-module completion. -/
 def completedExpLieAction (x : d.completedLie ℒ) : (T).lim ≃ₗ[R] (T).lim :=
   (T).limExp (d.completionAction ℒ F hF hF0 x)
-    (d.completionAction_nilpotent ℒ F hF hF0 x)
+    (fun k ↦ (d.completionAction_nilpotent ℒ F hF hF0 x k).exists_pow_apply_eq_zero)
     (d.completionAction_compatible ℒ F hF hF0 x)
 
 /-- Under the canonical quotient equivalence, each projection is the finite exponential. -/
@@ -169,7 +169,8 @@ def completedExpLieAction (x : d.completedLie ℒ) : (T).lim ≃ₗ[R] (T).lim :
 theorem coe_completedExpLieAction_apply (x : d.completedLie ℒ) (m : (T).lim) (k : ℕ) :
     (q) k ((d.completedExpLieAction ℒ F hF hF0 x m : (T).Product) k) =
       d.truncatedExpLieAction ℒ F hF hF0 k (π k x) ((q) k ((m : (T).Product) k)) := by
-  rw [completedExpLieAction, ModuleTower.coe_limExp_apply]
+  rw [completedExpLieAction, ModuleTower.coe_limExp_apply_of_isNilpotent _ _ _ _ _ _
+    (d.completionAction_nilpotent ℒ F hF hF0 x k)]
   have hsem : Function.Semiconj ((q) k)
       (d.completionAction ℒ F hF hF0 x k) (d.truncatedLieAction ℒ F hF hF0 k (π k x)) := by
     intro a
