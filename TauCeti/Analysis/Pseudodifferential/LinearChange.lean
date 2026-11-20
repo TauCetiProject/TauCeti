@@ -47,7 +47,9 @@ The symbol estimates for `a ∘ (P × Q)` come from the chain rule: a mixed deri
 `(0, Q eⱼ)` (`TauCeti.mixedDeriv_comp_prodMap`). Expanding these directions in the standard basis
 of each factor bounds it by mixed derivatives of `a` with the same numbers of position and
 frequency derivatives (`TauCeti.norm_iteratedFDeriv_append_le`), and the weights `⟨Q ξ⟩` and `⟨ξ⟩`
-are comparable since `Q` is invertible.
+are comparable since `Q` is invertible. The resulting constant depends only on a common bound for
+the norms of `P`, `Q` and `Q⁻¹` (`TauCeti.Symbol.exists_bound_comp_prodMap`), so the estimates are
+uniform over bounded families of linear changes of variables, such as a compact group of them.
 
 ## References
 
@@ -78,35 +80,47 @@ variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCo
   [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U] {m m' : ℝ}
 
 /-- The symbol estimates of a smooth coefficient `f` at the position `P x` give estimates of
-`f ∘ (P × Q)` at the position `x`, with a constant depending only on `P`, `Q` and the constants
-for `f`. The frequency map `Q` is invertible, so that `⟨Q ξ⟩` and `⟨ξ⟩` are comparable. -/
-private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
-    (hf : ContDiff ℝ ∞ f) (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
-    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) (C : List (Fin n) → List (Fin n) → ℝ)
-    (α β : List (Fin n)) :
-    ∃ B, 0 ≤ B ∧ ∀ x, (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
+`f ∘ (P × Q)` at the position `x`. The constant depends only on the constants for `f` and on a
+common bound `c` for the norms of `P`, `Q` and `Q⁻¹`, so it is uniform over every family of
+linear changes of variables with bounded norms, such as a compact group of them. The frequency map
+`Q` is invertible, so that `⟨Q ξ⟩` and `⟨ξ⟩` are comparable. -/
+theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
+    (hf : ContDiff ℝ ∞ f) (c : ℝ) (C : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) :
+    ∃ B, 0 ≤ B ∧ ∀ (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+      (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n), ‖P‖ ≤ c →
+      ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c →
+      ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ c → ∀ x,
+      (∀ α' β' η, ‖mixedDeriv α' β' f (P x) η‖ ≤
         C α' β' * (1 + ‖η‖ ^ 2) ^ ((m - β'.length) / 2)) → ∀ ξ,
       ‖mixedDeriv α β (f ∘ P.prodMap (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)) x ξ‖ ≤
         B * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  set c : ℝ := max 1 (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
-    ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖)
+  set c' : ℝ := max 1 c
+  have hc : 1 ≤ c' := le_max_left _ _
   set s : ℝ := m - β.length
   set D : ℝ := ∑ r : Fin (α.length + β.length) → Fin n,
     max (C (List.ofFn fun i => r (Fin.castAdd β.length i))
       (List.ofFn fun i => r (Fin.natAdd α.length i))) 0
   have _ : 0 ≤ D := Finset.sum_nonneg fun _ _ => le_max_right _ _
-  refine ⟨(∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-    (∏ i, ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n) (EuclideanSpace.single (β.get i) 1)‖) *
-      D * c ^ |s|, by positivity, fun x hC ξ => ?_⟩
-  have hc : 1 ≤ c := le_max_left _ _
-  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+  refine ⟨c' ^ α.length * c' ^ β.length * D * c' ^ |s|, by positivity,
+    fun P Q hP hQ hQ' x hC ξ => ?_⟩
+  -- A linear map of norm at most `c` sends each basis vector to a vector of norm at most `c'`.
+  have hbasis {L : CoordinateSpace n →L[ℝ] CoordinateSpace n} (hL : ‖L‖ ≤ c) (j : Fin n) :
+      ‖L (EuclideanSpace.single j 1)‖ ≤ c' :=
+    calc ‖L (EuclideanSpace.single j 1)‖ ≤ ‖L‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ := L.le_opNorm _
+      _ = ‖L‖ := by simp
+      _ ≤ c' := hL.trans (le_max_right _ _)
+  have hprod {L : CoordinateSpace n →L[ℝ] CoordinateSpace n} (hL : ‖L‖ ≤ c) (γ : List (Fin n)) :
+      ∏ i, ‖L (EuclideanSpace.single (γ.get i) 1)‖ ≤ c' ^ γ.length := by
+    simpa using Finset.prod_le_prod₀ (s := Finset.univ) (fun i _ => norm_nonneg _)
+      (fun i _ => hbasis hL (γ.get i))
+  have hweight : (1 + ‖Q ξ‖ ^ 2) ^ (s / 2) ≤ c' ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
     refine one_add_norm_sq_rpow_le_of_norm_le_mul hc s ?_ ?_
     · calc ‖Q ξ‖ ≤ ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖ξ‖ :=
             (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n).le_opNorm ξ
-        _ ≤ c * ‖ξ‖ := by gcongr; exact le_max_of_le_right (le_max_left _ _)
+        _ ≤ c' * ‖ξ‖ := by gcongr; exact hQ.trans (le_max_right _ _)
     · calc ‖ξ‖ ≤ ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ * ‖Q ξ‖ :=
             norm_le_norm_symm_mul Q ξ
-        _ ≤ c * ‖Q ξ‖ := by gcongr; exact le_max_of_le_right (le_max_right _ _)
+        _ ≤ c' * ‖Q ξ‖ := by gcongr; exact hQ'.trans (le_max_right _ _)
   have hsum : ∑ r : Fin (α.length + β.length) → Fin n,
       ‖mixedDeriv (List.ofFn fun i => r (Fin.castAdd β.length i))
         (List.ofFn fun i => r (Fin.natAdd α.length i)) f (P x) (Q ξ)‖ ≤
@@ -117,14 +131,29 @@ private theorem exists_bound_comp_prodMap {f : CoordinateSpace n × CoordinateSp
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
   rw [mixedDeriv_comp_prodMap P _ (hf.of_le (mod_cast le_top))]
   refine (norm_iteratedFDeriv_append_le (hf.of_le (mod_cast le_top)) _ _ _ _).trans ?_
-  simp only [ContinuousLinearEquiv.coe_coe] at hsum ⊢
+  have hPα := hprod hP α
+  have hQβ := hprod hQ β
+  simp only [ContinuousLinearEquiv.coe_coe] at hsum hQβ ⊢
   calc _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
         (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) * (D * (1 + ‖Q ξ‖ ^ 2) ^ (s / 2)) := by
         gcongr
-    _ ≤ (∏ i, ‖P (EuclideanSpace.single (α.get i) 1)‖) *
-        (∏ i, ‖Q (EuclideanSpace.single (β.get i) 1)‖) *
-          (D * (c ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))) := by gcongr
+    _ ≤ c' ^ α.length * c' ^ β.length * (D * (c' ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2))) := by
+        gcongr
     _ = _ := by ring
+
+/-- A common bound for the norms of `P`, `Q` and `Q⁻¹`. -/
+private theorem norm_le_max_norm (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
+    (Q : CoordinateSpace n ≃L[ℝ] CoordinateSpace n) :
+    ‖P‖ ≤ max ‖P‖ (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
+        ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖) ∧
+      ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ max ‖P‖
+        (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
+          ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖) ∧
+      ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖ ≤ max ‖P‖
+        (max ‖(Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖
+          ‖(Q.symm : CoordinateSpace n →L[ℝ] CoordinateSpace n)‖) :=
+  ⟨le_max_left _ _, (le_max_left _ _).trans (le_max_right _ _),
+    (le_max_right _ _).trans (le_max_right _ _)⟩
 
 /-- **Linear change of variables in a symbol.** For a linear map `P` of positions and a linear
 isomorphism `Q` of frequencies, the symbol `(x, ξ) ↦ a(P x, Q ξ)` of order `m`, as a `ℂ`-linear map
@@ -137,8 +166,10 @@ def compProdMap (P : CoordinateSpace n →L[ℝ] CoordinateSpace n)
         (P.prodMap (Q : CoordinateSpace n →L[ℝ] CoordinateSpace n)).contDiff
       exists_bound K hK α β := by
         choose C _ hC using fun α' β' => a.exists_bound (P '' K) (hK.image P.continuous) α' β'
-        obtain ⟨B, hB, hB'⟩ := exists_bound_comp_prodMap a.contDiff_coefficient P Q C α β
-        exact ⟨B, hB, fun x hx ξ => hB' x (fun α' β' η => hC α' β' (P x) ⟨x, hx, rfl⟩ η) ξ⟩ }
+        obtain ⟨B, hB, hB'⟩ := exists_bound_comp_prodMap a.contDiff_coefficient _ C α β
+        obtain ⟨hP, hQ, hQ'⟩ := norm_le_max_norm P Q
+        exact ⟨B, hB, fun x hx ξ =>
+          hB' P Q hP hQ hQ' x (fun α' β' η => hC α' β' (P x) ⟨x, hx, rfl⟩ η) ξ⟩ }
   map_add' _ _ := (rfl)
   map_smul' _ _ := (rfl)
 
@@ -183,8 +214,9 @@ theorem IsUniform.compProdMap {a : Symbol n V W m} (ha : a.IsUniform)
   rw [isUniform_iff] at ha ⊢
   intro α β
   choose C _ hC using ha
-  obtain ⟨B, hB, hB'⟩ := exists_bound_comp_prodMap a.contDiff_coefficient P Q C α β
-  exact ⟨B, hB, fun x ξ => hB' x (fun α' β' η => hC α' β' (P x) η) ξ⟩
+  obtain ⟨B, hB, hB'⟩ := exists_bound_comp_prodMap a.contDiff_coefficient _ C α β
+  obtain ⟨hP, hQ, hQ'⟩ := norm_le_max_norm P Q
+  exact ⟨B, hB, fun x ξ => hB' P Q hP hQ hQ' x (fun α' β' η => hC α' β' (P x) η) ξ⟩
 
 /-- A linear change of variables preserves smoothing symbols. -/
 theorem IsSmoothing.compProdMap {a : Symbol n V W m} (ha : a.IsSmoothing)
