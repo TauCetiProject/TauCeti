@@ -145,13 +145,29 @@ private theorem segmentPathAux_cons_tgt {v b : SerreGraph.segment.V}
   have hb : SerreGraph.segment.tgt b ≠ b := (SerreGraph.segment_isTree.isAcyclic.src_ne_tgt b).symm
   simp [segmentPathAux, hb]
 
+/- The end of the word at the other vertex, seen from the base vertex `v`: the path crosses back
+along the reverse of the dart leaving `v`. -/
+private theorem segmentPathAux_nil_reverse {v : SerreGraph.segment.V}
+    (p : (segment f g hf hg).AlternatingPath v (SerreGraph.segment.tgt v)) :
+    segmentPathAux p [] = p.cons (Quiver.reverse (SerreGraph.segmentArrow v)) 1 := by
+  have h : (Quiver.reverse (SerreGraph.segmentArrow v)).val = SerreGraph.segment.rev v := by
+    rw [SerreGraph.reverse_val, SerreGraph.segmentArrow_val]
+  -- The other vertex `segment.tgt v` is `!v`, and `!!v` is `v` only once `v` is a constructor.
+  cases v
+  · exact (segmentPathAux_nil_tgt (b := true) p).trans
+      (congrArg (p.cons · 1) (Subtype.ext ((SerreGraph.segmentArrow_val true).trans h.symm)))
+  · exact (segmentPathAux_nil_tgt (b := false) p).trans
+      (congrArg (p.cons · 1) (Subtype.ext ((SerreGraph.segmentArrow_val false).trans h.symm)))
+
 variable (f g hf hg) in
 /-- The closed alternating path of the segment at the vertex `v` spelled by a word in the letters
 of the two vertex groups, as in Mathlib's `Monoid.CoprodI.Word`: starting from `1`, a letter of
 the vertex group at the current vertex is multiplied onto the last element, a letter of the other
 vertex group is appended after crossing the edge, and the path crosses back to `v` with `1` at
 the end if needed. Its element of `A ∗_C B` is the product of the word
-(`equivPushoutI_toπ₁Tree_toPath_segmentPath`). -/
+(`equivPushoutI_toπ₁Tree_toPath_segmentPath`). The equations `segmentPath_nil`,
+`segmentPath_append_singleton_self`, `segmentPath_append_singleton_tgt` and
+`segmentPath_append_cons_cons_self` compute it on every word. -/
 noncomputable def segmentPath (v : SerreGraph.segment.V)
     (l : List (Σ i : SerreGraph.segment.V, (segment f g hf hg).vertexGroup i)) :
     (segment f g hf hg).AlternatingPath v v :=
@@ -195,6 +211,49 @@ element of the path. -/
     segmentPath f g hf hg v (l ++ [⟨v, x⟩]) =
       (segmentPath f g hf hg v l).setLast ((segmentPath f g hf hg v l).last * x) :=
   segmentPathAux_append_singleton_self x _ l
+
+private theorem segmentPathAux_append_singleton_tgt {v : SerreGraph.segment.V}
+    (x : (segment f g hf hg).vertexGroup (SerreGraph.segment.tgt v)) :
+    ∀ {b : SerreGraph.segment.V} (p : (segment f g hf hg).AlternatingPath v b)
+      (l : List (Σ i : SerreGraph.segment.V, (segment f g hf hg).vertexGroup i)),
+      (∀ y ∈ l.getLast?, y.1 = v) → (l = [] → b = v) →
+      segmentPathAux p (l ++ [⟨SerreGraph.segment.tgt v, x⟩]) =
+        ((segmentPathAux p l).cons (SerreGraph.segmentArrow v) x).cons
+          (Quiver.reverse (SerreGraph.segmentArrow v)) 1
+  | b, p, [], _, hb => by
+    obtain rfl := hb rfl
+    simp [segmentPathAux_cons_tgt, segmentPathAux_nil_self, segmentPathAux_nil_reverse]
+  | b, p, ⟨i, y⟩ :: l, hl, _ => by
+    have hl' : ∀ z ∈ l.getLast?, z.1 = v := fun z hz => hl z (List.mem_getLast?_cons hz)
+    have hi : l = [] → i = v := fun h => by
+      subst h
+      exact hl _ rfl
+    by_cases h : i = b
+    · subst h
+      simpa [segmentPathAux_cons_self] using segmentPathAux_append_singleton_tgt x _ l hl' hi
+    · obtain rfl := SerreGraph.segment_tgt_eq_of_ne (Ne.symm h)
+      simpa [segmentPathAux_cons_tgt] using segmentPathAux_append_singleton_tgt x _ l hl' hi
+
+/-- Appending a letter of the vertex group at the other vertex `segment.tgt v` to a word that is
+empty or ends with a letter of the vertex group at the base vertex `v` crosses the edge with that
+letter and crosses back with `1`. -/
+theorem segmentPath_append_singleton_tgt (v : SerreGraph.segment.V)
+    {l : List (Σ i : SerreGraph.segment.V, (segment f g hf hg).vertexGroup i)}
+    (hl : ∀ y ∈ l.getLast?, y.1 = v)
+    (x : (segment f g hf hg).vertexGroup (SerreGraph.segment.tgt v)) :
+    segmentPath f g hf hg v (l ++ [⟨SerreGraph.segment.tgt v, x⟩]) =
+      ((segmentPath f g hf hg v l).cons (SerreGraph.segmentArrow v) x).cons
+        (Quiver.reverse (SerreGraph.segmentArrow v)) 1 :=
+  segmentPathAux_append_singleton_tgt x _ l hl fun _ => rfl
+
+/-- A word with a single letter of the vertex group at the other vertex `segment.tgt v` crosses
+the edge with that letter and crosses back with `1`. -/
+@[simp] theorem segmentPath_singleton_tgt (v : SerreGraph.segment.V)
+    (x : (segment f g hf hg).vertexGroup (SerreGraph.segment.tgt v)) :
+    segmentPath f g hf hg v [⟨SerreGraph.segment.tgt v, x⟩] =
+      ((.single 1 : (segment f g hf hg).AlternatingPath v v).cons (SerreGraph.segmentArrow v)
+        x).cons (Quiver.reverse (SerreGraph.segmentArrow v)) 1 := by
+  simpa using segmentPath_append_singleton_tgt (l := []) v (by simp) x
 
 private theorem segmentPathAux_cons_cons_self {v i : SerreGraph.segment.V}
     (x y : (segment f g hf hg).vertexGroup i) {b : SerreGraph.segment.V}
