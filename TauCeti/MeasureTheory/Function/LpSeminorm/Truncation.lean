@@ -12,8 +12,9 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 # Truncated second moments
 
 For a real square-integrable function `X` and a level `ε`, the truncated square
-`X ^ 2 𝟙{ε ≤ |X|}` is integrable (`MeasureTheory.MemLp.integrable_indicator_sq`), and on a
-probability space the second moment splits as `E[X²] ≤ ε² + E[X²; ε ≤ |X|]`
+`X ^ 2 𝟙{ε ≤ |X|}` is integrable (`MeasureTheory.MemLp.integrable_indicator_sq`), vanishes in
+integral as `ε → ∞` (`MeasureTheory.MemLp.tendsto_integral_indicator_sq_atTop`), and on a
+probability space splits the second moment as `E[X²] ≤ ε² + E[X²; ε ≤ |X|]`
 (`MeasureTheory.MemLp.integral_sq_le_sq_add_integral_indicator`). The truncated second moment is
 the quantity in the Lindeberg condition of the central limit theorem, and the split is how that
 condition controls each individual variance. Only almost-everywhere measurability is used, through
@@ -126,5 +127,25 @@ theorem MemLp.tendsto_integral_norm_ite_sub_rpow
     rw [← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) ENNReal.toReal_nonneg, ofReal_norm]
   · exact (Real.continuous_rpow_const ENNReal.toReal_nonneg).comp_aestronglyMeasurable
       ((hf.aestronglyMeasurable.ite_norm_le R).sub hf.aestronglyMeasurable).norm
+
+/-- For a square-integrable real function `X`, the truncated second moment
+`∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P` tends to `0` as `R → ∞`. -/
+theorem MemLp.tendsto_integral_indicator_sq_atTop (hX : MemLp X 2 P) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P)
+      Filter.atTop (nhds 0) := by
+  have h : Filter.Tendsto (fun R : ℝ ↦
+      ∫ x, ((if ‖X x‖ ≤ R - 1 then X x else 0) - X x) ^ 2 ∂P) Filter.atTop (nhds 0) := by
+    simpa [Function.comp_def, sub_eq_add_neg, ENNReal.toReal_ofNat, Real.rpow_two, sq_abs] using
+      (hX.tendsto_integral_norm_ite_sub_rpow (by norm_num) (by norm_num)).comp
+        (Filter.tendsto_atTop_add_const_right Filter.atTop (-1 : ℝ) Filter.tendsto_id)
+  refine squeeze_zero
+    (fun R ↦ integral_nonneg fun _ ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
+    (fun R ↦ integral_mono (hX.integrable_indicator_sq R)
+      ((hX.ite_norm_le (R - 1)).sub hX).integrable_sq fun ω ↦ ?_) h
+  by_cases hω : R ≤ |X ω|
+  · have hlt : ¬|X ω| ≤ R - 1 := by linarith
+    simp [indicator_of_mem (s := {ω | R ≤ |X ω|}) hω, hlt]
+  · rw [indicator_of_notMem (s := {ω | R ≤ |X ω|}) hω]
+    exact sq_nonneg _
 
 end MeasureTheory
