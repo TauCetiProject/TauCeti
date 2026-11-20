@@ -58,8 +58,8 @@ already has length `edist x y`, by `eVariationOn.edist_le`.
   infimum is attained, by `TauCeti.IsGeodesicSpace.exists_eVariationOn_eq`.
 * `TauCeti.IsLengthSpace.pathConnectedSpace` — a nonempty length space with finite distances is
   path connected.
-* `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space, its geodesic
-  segments being the affine ones (`TauCeti.isGeodesicSegment_lineMap`).
+* `TauCeti.instIsGeodesicSpace` — a real seminormed space is a geodesic space: the affine segment
+  between two points is a geodesic segment joining them (`TauCeti.isGeodesicSegment_lineMap`).
 * `TauCeti.IsGeodesicSegment.eq_lineMap` — in a strictly convex real normed torsor the affine
   segment is the only geodesic segment, so geodesic segments are unique in every metric space that
   embeds isometrically in one (`TauCeti.IsGeodesicSegment.eqOn_of_isometry`).
@@ -118,7 +118,8 @@ theorem edist_le_iInf_eVariationOn (x y : X) :
 
 /-- A continuous curve joining `x` to `y` on an arbitrary parameter interval can be renormalised
 to `[0, 1]` without changing its length. This is how curves produced on other parameter intervals
-enter the length-space condition below. -/
+enter the length-space condition below. The affine reparametrisation by
+`AffineMap.lineMap a b` follows Mathlib's proof of `Manifold.riemannianEDist_le_pathELength`. -/
 theorem exists_isCurveJoining_of_continuousOn {a b : ℝ} (hab : a ≤ b)
     (hγ : ContinuousOn γ (Icc a b)) (ha : γ a = x) (hb : γ b = y) :
     ∃ γ' : ℝ → X, IsCurveJoining γ' x y ∧
@@ -413,7 +414,8 @@ theorem IsGeodesicSpace.of_normedAddTorsor {V P : Type*} [SeminormedAddCommGroup
     [NormedSpace ℝ V] [PseudoMetricSpace P] [NormedAddTorsor V P] : IsGeodesicSpace P :=
   ⟨fun x y => ⟨AffineMap.lineMap x y, isGeodesicSegment_lineMap x y⟩⟩
 
-/-- A real seminormed space is a geodesic space, its geodesic segments being the affine ones. -/
+/-- A real seminormed space is a geodesic space: the affine segment between two points is a
+geodesic segment joining them. -/
 instance instIsGeodesicSpace {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] :
     IsGeodesicSpace E :=
   IsGeodesicSpace.of_normedAddTorsor (V := E)
