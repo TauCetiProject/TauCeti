@@ -74,8 +74,8 @@ In the namespace `AlgebraicGeometry.Scheme.IdealSheafData`:
 
 In the namespace `AlgebraicGeometry.Scheme.Hom`:
 
-* `uniqueFactorizationMonoid_stalk_of_isOpenImmersion`: open immersions preserve stalkwise
-  factoriality.
+* `uniqueFactorizationMonoid_stalk_of_isOpenImmersion`: an open immersion `j` identifies the stalk
+  at `u` with the stalk at `j u`, so the former is factorial when the latter is.
 
 ## References
 
@@ -96,10 +96,10 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
 
-/-- The stalks of the source of an open immersion into a locally factorial scheme are unique
-factorization domains. -/
+/-- For an open immersion `j : U ⟶ X`, the stalk of `U` at `u` is a unique factorization monoid
+whenever the stalk of `X` at `j u` is. -/
 theorem uniqueFactorizationMonoid_stalk_of_isOpenImmersion {U X : Scheme.{u}} (j : U ⟶ X)
-    [IsOpenImmersion j] [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] (u : U) :
+    [IsOpenImmersion j] (u : U) [UniqueFactorizationMonoid (X.presheaf.stalk (j u))] :
     UniqueFactorizationMonoid (U.presheaf.stalk u) :=
   (asIso (j.stalkMap u)).commRingCatIsoToRingEquiv.toMulEquiv.uniqueFactorizationMonoid
     inferInstance
