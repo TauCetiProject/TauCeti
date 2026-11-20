@@ -51,6 +51,10 @@ isomorphism of fibre pairs given by `e` at `b`
 (`Bundle.Trivialization.exists_singularCohomology_thomPairOver_fiber`), and a class over `W` in the
 top degree is determined by those restrictions
 (`Bundle.Trivialization.singularCohomology_thomPairOver_ext`).
+In homology, a class of `(F, F ∖ {0})` read through `e` as a class of the fibre pair over `b`
+has an image in `H_d(E|_W, E₀|_W)`, `d = dim F`, which does not change as `b` moves along a path in
+`W` within the base set of `e` (in `Bundle.Trivialization`,
+`singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn`).
 
 The Thom pair of the trivial bundle is that of the product bundle `B × F`
 (`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
@@ -98,6 +102,9 @@ for the fibre classes of an oriented bundle. In homology, the maps
   trivializing set with prescribed restrictions to the fibres.
 * `Bundle.Trivialization.singularCohomology_thomPairOver_ext`: over a trivializing set, a class in
   the top degree is determined on the fibres.
+* `singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn` (in
+  `Bundle.Trivialization`): in homology, the fibre classes read through a trivialization are
+  constant along paths in `W` within its base set.
 * `Bundle.Trivialization.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: fibre classes
   read in two trivializations differ by the sign of the coordinate change.
 * `Bundle.Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_sign_det_smul`: the maps on
@@ -407,6 +414,45 @@ theorem exists_singularCohomology_thomPairOver_fiber {C : Type u} [Category.{v} 
     prodThomPairFiberMap_comp_prodThomPairSnd, Category.comp_id]
 
 end ThomPairOverFiber
+
+section ThomPairOverFiberHomology
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear ℝ] {C : Type u} [Category.{v} C]
+  [HasCoproducts.{w} C] [Abelian C] (R : C)
+
+/-- **Fibre classes read in a trivialization are constant along paths in its base set**: for
+points `b` and `b'` joined by a path in `W` within the base set of a linear trivialization `e`, a
+class of `H_d(F, F ∖ {0})`, `d = dim F`, read as a class of the fibre pair over `b` or over `b'`
+through `e`, has the same image in `H_d(E|_W, E₀|_W)`. -/
+theorem singularHomologyMap_complZeroPairIso_inv_comp_fiberThomPairOverMap_eq_of_joinedIn
+    {W : Set B} {b b' : B} (h : JoinedIn (W ∩ e.baseSet) b b') (d : ℕ) (hd : finrank ℝ F = d) :
+    TopPair.singularHomologyMap
+        ((e.continuousLinearEquivAt ℝ b h.source_mem.2).complZeroPairIso.inv ≫
+          fiberThomPairOverMap F E h.source_mem.1) R d =
+      TopPair.singularHomologyMap
+        ((e.continuousLinearEquivAt ℝ b' h.target_mem.2).complZeroPairIso.inv ≫
+          fiberThomPairOverMap F E h.target_mem.1) R d := by
+  have hW : W ∩ e.baseSet ⊆ e.baseSet := Set.inter_subset_right
+  -- Over `W ∩ e.baseSet`, `e` reads both composites as fibre inclusions of the product bundle.
+  have key {x : B} (hx : x ∈ W ∩ e.baseSet) :
+      (e.continuousLinearEquivAt ℝ x hx.2).complZeroPairIso.inv ≫
+          fiberThomPairOverMap F E hx.1 =
+        prodThomPairFiberMap F (⟨x, hx⟩ : ↥(W ∩ e.baseSet)) ≫ (e.thomPairOverIso ℝ hW).inv ≫
+          thomPairOverMap F E Set.inter_subset_left := by
+    have hfib : (e.continuousLinearEquivAt ℝ x (hW hx)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E hx =
+          prodThomPairFiberMap F ⟨x, hx⟩ ≫ (e.thomPairOverIso ℝ hW).inv := by
+      rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv,
+        e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW hx]
+    rw [← fiberThomPairOverMap_comp_thomPairOverMap F E Set.inter_subset_left hx,
+      reassoc_of% hfib]
+  simp only [key h.source_mem, key h.target_mem, TopPair.singularHomologyMap_comp,
+    singularHomologyMap_prodThomPairFiberMap_eq_of_joined R F d hd h.joined_subtype]
+
+end ThomPairOverFiberHomology
 
 section ThomPairOverExt
 
