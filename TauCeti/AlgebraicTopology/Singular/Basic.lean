@@ -15,6 +15,9 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 /-!
 # Singular chain complexes
 
+Facet restriction is `ContinuousMap.simplexFace`; `TopCat.toSSetObjEquiv_symm_δ` identifies it
+with the actual simplicial face.
+
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology of the singular
 simplicial set and the map it induces, also applied to a class
@@ -40,6 +43,32 @@ open CategoryTheory Limits
 open scoped Simplicial
 
 universe w v u
+
+namespace ContinuousMap
+
+open Convexity
+
+/-- Restrict a continuous singular simplex to its `j`-th facet. -/
+def simplexFace {Y : Type*} [TopologicalSpace Y] {n : ℕ}
+    (s : C(StdSimplex ℝ (Fin (n + 2)), Y)) (j : Fin (n + 2)) :
+    C(StdSimplex ℝ (Fin (n + 1)), Y) :=
+  s.comp ⟨StdSimplex.map j.succAbove, by fun_prop⟩
+
+/-- The facet restriction evaluates by the native simplex vertex map. -/
+@[simp]
+lemma simplexFace_apply {Y : Type*} [TopologicalSpace Y] {n : ℕ}
+    (s : C(StdSimplex ℝ (Fin (n + 2)), Y)) (j : Fin (n + 2))
+    (x : StdSimplex ℝ (Fin (n + 1))) : s.simplexFace j x = s (x.map j.succAbove) := by
+  rfl
+
+/-- Facet restriction commutes with postcomposition of continuous maps. -/
+@[simp]
+lemma simplexFace_comp {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {n : ℕ}
+    (f : C(X, Y)) (s : C(Convexity.StdSimplex ℝ (Fin (n + 2)), X)) (j : Fin (n + 2)) :
+    (f.comp s).simplexFace j = f.comp (s.simplexFace j) := by
+  rfl
+
+end ContinuousMap
 
 namespace TauCeti
 
@@ -152,6 +181,17 @@ theorem homologyMap_comp_apply (f : C(X, Y)) (g : C(Y, Z)) {Λ : Type*} [Ring Λ
 end ContinuousMap
 
 namespace TopCat
+
+/-- Singular-simplex identification carries the native simplicial face to facet restriction.
+Use this general form explicitly; affine simplices retain their existing vertex-map simp form. -/
+lemma toSSetObjEquiv_symm_δ {X : TopCat.{w}} {n : ℕ}
+    (s : C(Convexity.StdSimplex ℝ (Fin (n + 2)), X)) (j : Fin (n + 2)) :
+    (TopCat.toSSet.obj X).δ j ((X.toSSetObjEquiv _).symm s) =
+      (X.toSSetObjEquiv _).symm (s.simplexFace j) := by
+  -- Native `δ` is the simplicial map of `SimplexCategory.δ`; naturality identifies its map.
+  change (TopCat.toSSet.obj X).map (SimplexCategory.δ j).op _ = _
+  simpa only [ContinuousMap.simplexFace, SimplexCategory.coe_δ] using
+    (TopCat.toSSetObjEquiv_symm_naturality (SimplexCategory.δ j) s)
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
   {R : C} {X : TopCat.{w}}
