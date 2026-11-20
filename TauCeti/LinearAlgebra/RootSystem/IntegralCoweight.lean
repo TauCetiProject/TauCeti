@@ -84,7 +84,7 @@ theorem Base.eq_of_coweightEquiv_eq_of_forall_exists_nat {x y : N}
       (fun i ↦ by rw [Equiv.autFlip_reflection]; exact P.flip.reflection_mem_weylGroup i)
       (by rw [map_one]; exact one_mem _)
       (fun _ _ _ _ ha hb ↦ by rw [map_mul]; exact mul_mem ha hb)
-      (w⁻¹ : P.weylGroup).2
+      (w⁻¹ : P.weylGroup).property
   let w' : P.flip.weylGroup := ⟨Equiv.autFlip P (w⁻¹ : P.Aut), hmem⟩
   have hsmul : w' • x = y := by
     change (Equiv.autFlip P (w⁻¹ : P.Aut)).weightEquiv x = y

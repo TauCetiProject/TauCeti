@@ -171,7 +171,7 @@ by the pairs `i < j`: the map of `TauCeti.lcsGradedPiece_one_freeProP_bijective`
 private noncomputable def degreeOneSum (c : {ij : X × X // ij.1 < ij.2} → ℤ_[p]) :
     gradedPiece 0 (freeProP p X) 1 :=
   ∑ ij, gradedMk 0 (freeProP p X) 1
-    ⟨(isProP_freeProP p X).padicPow ⁅(freeProP.of ij.1.1 : freeProP p X), freeProP.of ij.1.2⁆
+    ⟨(isProP_freeProP p X).padicPow ⁅(freeProP.of ij.val.1 : freeProP p X), freeProP.of ij.val.2⁆
         (c ij),
       (isProP_freeProP p X).padicPow_mem (isClosed_pLowerCentralSeries 1)
         (commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 _)
@@ -182,14 +182,14 @@ private noncomputable def degreeOneSum (c : {ij : X × X // ij.1 < ij.2} → ℤ
 private theorem degreeOneSum_eq_linearCombination (c : {ij : X × X // ij.1 < ij.2} → ℤ_[p]) :
     letI := (isProP_freeProP p X).gradedPieceModule 0 (0 + 0 + 1)
     degreeOneSum p X c = Fintype.linearCombination ℤ_[p] (fun ij : {ij : X × X // ij.1 < ij.2} ↦
-      gradedBracket 0 (freeProP p X) 0 0 (gradedMkZero 0 _ (freeProP.of ij.1.1))
-        (gradedMkZero 0 _ (freeProP.of ij.1.2))) c := by
+      gradedBracket 0 (freeProP p X) 0 0 (gradedMkZero 0 _ (freeProP.of ij.val.1))
+        (gradedMkZero 0 _ (freeProP.of ij.val.2))) c := by
   let _ := (isProP_freeProP p X).gradedPieceModule 0 (0 + 0 + 1)
   rw [degreeOneSum, Fintype.linearCombination_apply]
   refine Finset.sum_congr rfl fun ij _ ↦ ?_
   rw [(isProP_freeProP p X).gradedMk_padicPow ⟨_, commutator_mem_pLowerCentralSeries
-    (mem_pLowerCentralSeries_zero 0 (freeProP.of ij.1.1 : freeProP p X))
-    (mem_pLowerCentralSeries_zero 0 (freeProP.of ij.1.2 : freeProP p X))⟩ (c ij),
+    (mem_pLowerCentralSeries_zero 0 (freeProP.of ij.val.1 : freeProP p X))
+    (mem_pLowerCentralSeries_zero 0 (freeProP.of ij.val.2 : freeProP p X))⟩ (c ij),
     gradedBracket_gradedMkZero]
 
 /-- **Reading off the coefficients of a degree-one sum.** If `Σ_{i<j} [⁅x_i, x_j⁆ ^ c_ij] = 0`
@@ -239,7 +239,8 @@ private theorem degreeOneSum_surjective : Function.Surjective (degreeOneSum p X)
   let B : X → X → gradedPiece 0 (freeProP p X) (0 + 0 + 1) := fun i j ↦
     gradedBracket 0 (freeProP p X) 0 0 (gradedMkZero 0 _ (freeProP.of i))
       (gradedMkZero 0 _ (freeProP.of j))
-  let L := Fintype.linearCombination ℤ_[p] fun ij : {ij : X × X // ij.1 < ij.2} ↦ B ij.1.1 ij.1.2
+  let L := Fintype.linearCombination ℤ_[p] fun ij : {ij : X × X // ij.1 < ij.2} ↦ B ij.val.1
+      ij.val.2
   have hB (i k : X) : B i k ∈ LinearMap.range L := by
     rcases lt_trichotomy i k with hik | rfl | hik
     · exact ⟨Pi.single ⟨(i, k), hik⟩ 1, by simp [L]⟩
@@ -274,7 +275,7 @@ theorem lcsGradedPiece_one_freeProP_bijective :
     Function.Bijective fun c : {ij : X × X // ij.1 < ij.2} → ℤ_[p] ↦
       ∑ ij, gradedMk 0 (freeProP p X) 1
         ⟨(isProP_freeProP p X).padicPow
-            ⁅(freeProP.of ij.1.1 : freeProP p X), freeProP.of ij.1.2⁆ (c ij),
+            ⁅(freeProP.of ij.val.1 : freeProP p X), freeProP.of ij.val.2⁆ (c ij),
           (isProP_freeProP p X).padicPow_mem (isClosed_pLowerCentralSeries 1)
             (commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 _)
               (mem_pLowerCentralSeries_zero 0 _)) (c ij)⟩ := by
@@ -339,7 +340,7 @@ noncomputable def lcsDegreeOneBasis [LinearOrder X] :
     Module.Basis {ij : X × X // ij.1 < ij.2} ℤ_[p] (lcsGradedPiece (freeProP p X) 1) :=
   have h : Function.Bijective (Fintype.linearCombination ℤ_[p]
       fun ij : {ij : X × X // ij.1 < ij.2} ↦ (lcsBracket (freeProP p X) 0 0
-        (gradedMkZero 0 _ (of ij.1.1)) (gradedMkZero 0 _ (of ij.1.2)) :
+        (gradedMkZero 0 _ (of ij.val.1)) (gradedMkZero 0 _ (of ij.val.2)) :
           lcsGradedPiece (freeProP p X) 1)) := by
     convert lcsGradedPiece_one_freeProP_bijective p X using 1
     ext c
@@ -350,8 +351,8 @@ noncomputable def lcsDegreeOneBasis [LinearOrder X] :
 @[simp]
 theorem lcsDegreeOneBasis_apply [LinearOrder X] (ij : {ij : X × X // ij.1 < ij.2}) :
     lcsDegreeOneBasis p X ij =
-      lcsBracket (freeProP p X) 0 0 (gradedMkZero 0 _ (of ij.1.1))
-        (gradedMkZero 0 _ (of ij.1.2)) := by
+      lcsBracket (freeProP p X) 0 0 (gradedMkZero 0 _ (of ij.val.1))
+        (gradedMkZero 0 _ (of ij.val.2)) := by
   simp [lcsDegreeOneBasis]
 
 omit [Fintype X] in

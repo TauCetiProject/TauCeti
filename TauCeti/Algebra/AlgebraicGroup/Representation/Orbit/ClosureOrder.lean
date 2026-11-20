@@ -6,14 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Orbit.Basic
-public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra.SymmetricAlgebra
-public import TauCeti.Algebra.Coalgebra.Comodule.Dual
+import Mathlib.Algebra.Polynomial.Roots
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedPoints
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosureOrder
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.FiniteType
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Points
-import TauCeti.Algebra.HopfAlgebra.Antipode
-import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.AlgebraicGeometry.AugmentationPoint.Dense
+import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+import TauCeti.RingTheory.GradedAlgebra.Homogenization
 import TauCeti.Topology.Constructible.Jacobson
 
 /-!
@@ -32,21 +32,18 @@ and even distinct closures. The *closure order* on orbits,
   `O ≤ O'` if and only if `O ⊆ closure O'`,
 
 is therefore a partial order. An orbit lies strictly below another exactly when its vectors lie
-in the boundary `closure O' \ O'`, and then it has strictly smaller dimension.
+in the boundary `closure O' \ O'`, and then it has strictly smaller dimension. Moreover, any
+polynomial function in `Sym(M*)` that vanishes on every rational translate of `v` also vanishes at
+every vector whose orbit lies below the orbit of `v`.
 
-Invariant polynomial functions in `Sym(M*)^G` pull back to constants along the orbit morphism of
-any vector (`TauCeti.Comodule.orbitCoordinates_eq_algebraMap_of_mem_coinvariants`) and therefore
-take the same value on every vector in an orbit and in its closure
-(`TauCeti.Comodule.VectorOrbit.lift_eval_eq_of_le`). Over any infinite field, a conical orbit —
-one closed under nonzero scalar multiplication — contains the origin in its closure
+Over any infinite field, a conical orbit — one closed under nonzero scalar multiplication —
+contains the origin in its closure
 (`TauCeti.Comodule.mem_closure_projectiveOrbitMap_zero_of_forall_smul`,
-`TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_forall_smul`).
-
-When an orbit `O` has only finitely many orbits below it in the closure order, the affine chart
-`M = {t ≠ 0}` of `P(M × k)` cuts both `closure O` and the boundary `closure O \ O` into the exact
-union of the full scheme-point orbit images below `O`
-(`TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion_le` and
-`TauCeti.Comodule.VectorOrbit.closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt`).
+`TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_forall_smul`). When an orbit `O` has only finitely
+many orbits below it in the closure order, the affine chart `M = {t ≠ 0}` of `P(M × k)` cuts both
+`closure O` and the boundary `closure O \ O` into the exact union of the full scheme-point orbit
+images below `O` (`TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion_le`
+and `TauCeti.Comodule.VectorOrbit.closure_image_sdiff_inter_basicOpen_snd_eq_biUnion_lt`).
 
 Applied to the adjoint representation of `G` on its Lie algebra, this is the closure order on
 adjoint orbits, in particular on nilpotent orbits.
@@ -62,11 +59,9 @@ adjoint orbits, in particular on nilpotent orbits.
   `v`, and strictly below when `w` lies in its boundary.
 * `TauCeti.Comodule.VectorOrbit.strictMono_topologicalKrullDim_image`: strictly smaller orbits
   have strictly smaller dimension.
-* `TauCeti.Comodule.orbitCoordinates_eq_algebraMap_of_mem_coinvariants`,
-  `TauCeti.Comodule.lift_eval_basePointsRepresentation_eq_of_mem_coinvariants`,
-  `TauCeti.Comodule.lift_eval_eq_of_mem_closure_projectiveOrbitMap`, and
-  `TauCeti.Comodule.VectorOrbit.lift_eval_eq_of_le`: invariant polynomial functions are constant on
-  every orbit and its closure.
+* `lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero` in
+  `TauCeti.Comodule.VectorOrbit`: polynomials vanishing on all rational translates of `v` vanish
+  at every `w` with `mk w ≤ mk v`.
 * `TauCeti.Comodule.mem_closure_projectiveOrbitMap_zero_of_forall_smul` and
   `TauCeti.Comodule.VectorOrbit.mk_zero_le_mk_of_forall_smul`: conical orbits contain `0` in their
   closure.
@@ -85,7 +80,6 @@ adjoint orbits, in particular on nilpotent orbits.
 public section
 
 open AlgebraicGeometry TopologicalSpace
-open scoped TensorProduct
 
 namespace TauCeti.Comodule
 
@@ -93,194 +87,10 @@ universe u
 
 attribute [local instance] prodTrivial
 
-section Invariants
-
-section Ring
-
-variable {R H M : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
-  [AddCommGroup M] [Module R M] [Comodule R H M] [Module.Finite R M] [Module.Projective R M]
-
-/-- **Invariant polynomial functions pull back to constants along orbit coordinates.**
-If `p ∈ Sym(M*)^G` is coinvariant for the contragredient coaction, then `orbitCoordinates m p` is
-the constant `algebraMap R H (p(m))` in `H`. No field or reducedness hypothesis is needed. -/
-theorem orbitCoordinates_eq_algebraMap_of_mem_coinvariants (m : M)
-    {p : SymmetricAlgebra R (Module.Dual R M)}
-    (hp : letI := dual R H M; letI := ComoduleAlgebra.symmetricAlgebra R H (Module.Dual R M)
-      p ∈ ComoduleAlgebra.coinvariants R H (SymmetricAlgebra R (Module.Dual R M))) :
-    orbitCoordinates (H := H) m p =
-      algebraMap R H (SymmetricAlgebra.lift (Module.Dual.eval R M m) p) := by
-  let _ := dual R H M
-  let _ := ComoduleAlgebra.symmetricAlgebra R H (Module.Dual R M)
-  let Ψ : SymmetricAlgebra R (Module.Dual R M) ⊗[R] H →ₐ[R] H :=
-    Algebra.TensorProduct.lift
-      ((Algebra.ofId R H).comp (SymmetricAlgebra.lift (Module.Dual.eval R M m)))
-      (AlgHom.id R H) (fun _ _ ↦ Commute.all _ _)
-  have hΨ_ι : ∀ z : Module.Dual R M ⊗[R] H,
-      Ψ ((SymmetricAlgebra.ι R (Module.Dual R M)).rTensor H z) = dualTensorHom R M H z m := by
-    intro z
-    induction z using TensorProduct.inductionOn with
-    | tmul φ h =>
-      simp [Ψ, Algebra.smul_def]
-    | add z₁ z₂ ih₁ ih₂ =>
-      simp [map_add, ih₁, ih₂]
-  have hcomp : Ψ.comp (symmetricAlgebraCoact R H (Module.Dual R M)) =
-      (_root_.HopfAlgebra.antipodeAlgHom R H).comp (orbitCoordinates (H := H) m) := by
-    ext φ
-    change Ψ (symmetricAlgebraCoact R H (Module.Dual R M)
-        (SymmetricAlgebra.ι R (Module.Dual R M) φ)) =
-      _root_.HopfAlgebra.antipodeAlgHom R H
-        (orbitCoordinates (H := H) m (SymmetricAlgebra.ι R (Module.Dual R M) φ))
-    rw [symmetricAlgebraCoact_ι, dual_coact, hΨ_ι, dualTensorHom_dualCoact_apply,
-      orbitCoordinates_ι, _root_.HopfAlgebra.antipodeAlgHom_apply]
-  have hp' : symmetricAlgebraCoact R H (Module.Dual R M) p = p ⊗ₜ[R] (1 : H) := by
-    simpa [ComoduleAlgebra.mem_coinvariants, ComoduleAlgebra.symmetricAlgebra_coact] using hp
-  have happ := congrArg (fun f ↦ f p) hcomp
-  simp only [AlgHom.comp_apply, _root_.HopfAlgebra.antipodeAlgHom_apply] at happ
-  rw [hp'] at happ
-  have hval : Ψ (p ⊗ₜ[R] (1 : H)) =
-      algebraMap R H (SymmetricAlgebra.lift (Module.Dual.eval R M m) p) := by
-    simp [Ψ]
-  rw [hval] at happ
-  have := congrArg (_root_.HopfAlgebra.antipodeAlgHom R H) happ.symm
-  simpa [_root_.HopfAlgebra.antipodeAlgHom_apply, TauCeti.HopfAlgebra.antipode_antipode] using this
-
-/-- **Invariant polynomial functions are constant on rational orbits.** Over any commutative base
-ring, a coinvariant polynomial `p ∈ Sym(M*)^G` takes the same value on `g • m` and `m`. -/
-theorem lift_eval_basePointsRepresentation_eq_of_mem_coinvariants
-    (g : WithConv (H →ₐ[R] R)) (m : M) {p : SymmetricAlgebra R (Module.Dual R M)}
-    (hp : letI := dual R H M; letI := ComoduleAlgebra.symmetricAlgebra R H (Module.Dual R M)
-      p ∈ ComoduleAlgebra.coinvariants R H (SymmetricAlgebra R (Module.Dual R M))) :
-    SymmetricAlgebra.lift (Module.Dual.eval R M (basePointsRepresentation M g m)) p =
-      SymmetricAlgebra.lift (Module.Dual.eval R M m) p := by
-  have h := congrArg g.ofConv (orbitCoordinates_eq_algebraMap_of_mem_coinvariants (H := H) m hp)
-  rw [← AlgHom.comp_apply, comp_orbitCoordinates, g.ofConv.commutes] at h
-  exact h
-
-end Ring
-
-section Field
+section Conical
 
 variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
   [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-
-omit [Module.Finite k M] in
-private theorem map_fst_dualMap_mem_homogeneousSubmodule {d : ℕ}
-    {p : SymmetricAlgebra k (Module.Dual k M)}
-    (hp : p ∈ SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M) d) :
-    SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap p ∈
-      SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)) d := by
-  induction hp using Submodule.pow_induction_on_left' with
-  | algebraMap r =>
-    rw [AlgHom.commutes]
-    exact SetLike.algebraMap_mem_graded _ _
-  | add x y i _ _ ihx ihy =>
-    rw [map_add]
-    exact add_mem ihx ihy
-  | mem_mul x hx i y _ ihy =>
-    obtain ⟨φ, rfl⟩ := hx
-    rw [map_mul, SymmetricAlgebra.map_apply_ι, Nat.succ_eq_add_one, add_comm]
-    exact SetLike.mul_mem_graded (SymmetricAlgebra.ι_mem_homogeneousSubmodule _ _ _) ihy
-
-omit [Module.Finite k M] in
-private theorem orbitCoordinates_mk_one_comp_map_fst (v : M) :
-    (orbitCoordinates (H := H) ((v, 1) : M × k)).comp
-        (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap) =
-      orbitCoordinates (H := H) v := by
-  ext φ
-  have hφ : (LinearMap.fst k M k).dualMap φ ∘ₗ LinearMap.inl k M k = φ := by
-    ext x
-    simp
-  simp [matrixCoefficient_prodTrivial, hφ]
-
-omit [Module.Finite k M] in
-private theorem lift_eval_mk_one_comp_map_fst (w : M) :
-    (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (w, 1))).comp
-        (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap) =
-      SymmetricAlgebra.lift (Module.Dual.eval k M w) := by
-  ext φ
-  simp
-
-/-- **Invariant polynomial functions are constant on orbit closures.** Over any field `k`, if the
-point `(w, 1)` lies in the closure of the projective orbit image of `(v, 1)`, then every
-`G`-invariant polynomial function in `Sym(M*)^G` takes the same value at `w` and `v`. Neither
-algebraic closedness nor finite generation of `H` is needed. -/
-theorem lift_eval_eq_of_mem_closure_projectiveOrbitMap {v w : M}
-    (hw : projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈
-      closure (Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
-        (Module.isUnimodular_mk_one v))))
-    {p : SymmetricAlgebra k (Module.Dual k M)}
-    (hp : letI := dual k H M; letI := ComoduleAlgebra.symmetricAlgebra k H (Module.Dual k M)
-      p ∈ ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k M))) :
-    SymmetricAlgebra.lift (Module.Dual.eval k M w) p =
-      SymmetricAlgebra.lift (Module.Dual.eval k M v) p := by
-  classical
-  let _ := dual k H M
-  let _ := ComoduleAlgebra.symmetricAlgebra k H (Module.Dual k M)
-  let 𝒜 := SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M)
-  -- Reduce to homogeneous coinvariants via the graded decomposition of `Sym(M*)`.
-  suffices ∀ (d : ℕ) (s : SymmetricAlgebra k (Module.Dual k M)),
-      s ∈ 𝒜 d →
-      s ∈ ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k M)) →
-      SymmetricAlgebra.lift (Module.Dual.eval k M w) s =
-        SymmetricAlgebra.lift (Module.Dual.eval k M v) s by
-    rw [← DirectSum.sum_support_decompose 𝒜 p, map_sum, map_sum]
-    refine Finset.sum_congr rfl fun d _ ↦ this d _ (SetLike.coe_mem _)
-      (ComoduleAlgebra.decompose_mem_coinvariants_symmetricAlgebra hp d)
-  intro d s hs hsinv
-  rcases d with _ | d
-  · obtain ⟨r, rfl⟩ : ∃ r : k, algebraMap k (SymmetricAlgebra k (Module.Dual k M)) r = s :=
-      ⟨SymmetricAlgebra.homogeneousSubmoduleZeroEquiv k (Module.Dual k M) ⟨s, hs⟩,
-        SymmetricAlgebra.algebraMap_homogeneousSubmoduleZeroEquiv_apply _ _ _⟩
-    simp
-  · -- Homogenize `s - s(v)` to degree `d + 1` in `Sym((M × k)*)` using the trivial coordinate `t`.
-    set c : k := SymmetricAlgebra.lift (Module.Dual.eval k M v) s
-    let t : SymmetricAlgebra k (Module.Dual k (M × k)) :=
-      SymmetricAlgebra.ι k (Module.Dual k (M × k)) (LinearMap.snd k M k)
-    let q : SymmetricAlgebra k (Module.Dual k (M × k)) :=
-      SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap s - c • t ^ (d + 1)
-    have hq_hom : q ∈ SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)) (d + 1) := by
-      refine sub_mem (map_fst_dualMap_mem_homogeneousSubmodule hs) (Submodule.smul_mem _ _ ?_)
-      have ht : t ∈ SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)) 1 :=
-        SymmetricAlgebra.ι_mem_homogeneousSubmodule _ _ _
-      simpa using SetLike.pow_mem_graded (d + 1) ht
-    have hq_orbit : orbitCoordinates (H := H) ((v, 1) : M × k) q = 0 := by
-      have ht_orb : orbitCoordinates (H := H) ((v, 1) : M × k) t = 1 := by
-        simp [t, matrixCoefficient_prodTrivial]
-      simp only [q, map_sub, map_smul, map_pow, ht_orb, one_pow,
-        ← AlgHom.comp_apply, orbitCoordinates_mk_one_comp_map_fst]
-      rw [orbitCoordinates_eq_algebraMap_of_mem_coinvariants v hsinv, Algebra.smul_def, mul_one,
-        sub_self]
-    let V : (Proj (SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k)))).Opens :=
-      Proj.basicOpen _ q
-    have hpre : projectiveOrbitMap (H := H) ((v, 1) : M × k) (Module.isUnimodular_mk_one v) ⁻¹ᵁ
-        V = ⊥ := by
-      rw [projectiveOrbitMap_preimage_basicOpen _ _ (Nat.succ_pos d) hq_hom, hq_orbit, map_zero,
-        Scheme.basicOpen_zero]
-    have hrange : Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
-        (Module.isUnimodular_mk_one v)) ⊆ (V : Set _)ᶜ := by
-      rintro _ ⟨x, rfl⟩ hx
-      have hx' : x ∈ projectiveOrbitMap (H := H) ((v, 1) : M × k)
-          (Module.isUnimodular_mk_one v) ⁻¹ᵁ V :=
-        (Scheme.Hom.mem_preimage _).mpr hx
-      rw [hpre] at hx'
-      exact hx'
-    have hw_not_mem : projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∉ (V : Set _) :=
-      closure_minimal hrange V.isOpen.isClosed_compl hw
-    have hq_mem : q ∈ (projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H))).asHomogeneousIdeal := by
-      by_contra h
-      exact hw_not_mem h
-    have hmem := (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((w, 1) : M × k)
-      (Module.isUnimodular_mk_one w) 1 hq_hom).mp
-        (by simpa [AlgHom.convOne_def] using hq_mem)
-    simp only [map_one, one_apply_eq_self] at hmem
-    have ht_eval : SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (w, 1)) t = 1 := by
-      simp [t]
-    simp only [q, map_sub, map_smul, map_pow, ht_eval, one_pow, smul_eq_mul, mul_one,
-      ← AlgHom.comp_apply, lift_eval_mk_one_comp_map_fst] at hmem
-    exact sub_eq_zero.mp hmem
 
 /-- **Conical orbits contain zero in their closure.** Over an infinite field `k`, if the rational
 orbit of `v` contains every nonzero scalar multiple `t • v`, then the line through `(0, 1)` lies in
@@ -366,9 +176,7 @@ theorem mem_closure_projectiveOrbitMap_zero_of_forall_smul [Infinite k] {v : M}
   · rw [← range_projectiveOrbitMap_mk_one_basePointsRepresentation g v, hg]
     exact Set.mem_range_self _
 
-end Field
-
-end Invariants
+end Conical
 
 namespace VectorOrbit
 
@@ -448,16 +256,58 @@ theorem strictMono_topologicalKrullDim_image :
   rw [image_mk, image_mk]
   exact Comodule.topologicalKrullDim_range_projectiveOrbitMap_lt _ _ (mk_lt_mk_iff.mp h)
 
-/-- **Invariant polynomial functions are constant on closure order intervals.** If `mk w ≤ mk v`
-in the closure order, then every `G`-invariant polynomial function takes the same value at `w`
-and `v`. -/
-theorem lift_eval_eq_of_le {v w : M} (hle : (mk w : VectorOrbit k H M) ≤ mk v)
+/-- **Polynomials vanishing on a rational orbit vanish on its closure.** Over an algebraically
+closed field, if the rational orbit of `w` lies in the closure of the rational orbit of `v`, and a
+polynomial `p ∈ Sym(M*)` vanishes on `g • v` for every rational point `g ∈ G(k)`, then `p` vanishes
+at `w`. -/
+theorem lift_eval_eq_zero_of_mk_le_mk_of_forall_lift_eval_basePointsRepresentation_eq_zero
+    {v w : M} (h : (mk w : VectorOrbit k H M) ≤ mk v)
     {p : SymmetricAlgebra k (Module.Dual k M)}
-    (hp : letI := dual k H M; letI := ComoduleAlgebra.symmetricAlgebra k H (Module.Dual k M)
-      p ∈ ComoduleAlgebra.coinvariants k H (SymmetricAlgebra k (Module.Dual k M))) :
-    SymmetricAlgebra.lift (Module.Dual.eval k M w) p =
-      SymmetricAlgebra.lift (Module.Dual.eval k M v) p :=
-  lift_eval_eq_of_mem_closure_projectiveOrbitMap (mk_le_mk_iff.mp hle) hp
+    (hp : ∀ g : WithConv (H →ₐ[k] k),
+      SymmetricAlgebra.lift (Module.Dual.eval k M (basePointsRepresentation M g v)) p = 0) :
+    SymmetricAlgebra.lift (Module.Dual.eval k M w) p = 0 := by
+  -- Homogenize `p` against the trivial projective coordinate on `M × k`.
+  let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
+  obtain ⟨d, P, hP, hPeval⟩ :=
+    TauCeti.GradedAlgebra.exists_mem_grade_and_forall_map_eq_of_mem_one 𝒜
+      (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule k _ (LinearMap.snd k M k))
+      (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap p)
+  have heval (u : M) :
+      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1)) P =
+        SymmetricAlgebra.lift (Module.Dual.eval k M u) p := by
+    have hF : (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).comp
+        (SymmetricAlgebra.map k (LinearMap.fst k M k).dualMap) =
+        SymmetricAlgebra.lift (Module.Dual.eval k M u) := by
+      ext φ
+      simp
+    simpa [← hF] using
+      hPeval (SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (u, 1))).toRingHom (by simp)
+  have hrange : Set.range (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v)) ⊆ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ := by
+    rintro _ ⟨x, rfl⟩
+    refine (denseRange_kernelPoint (k := k) (A := H)).induction_on
+      (p := fun x ↦ projectiveOrbitMap (H := H) ((v, 1) : M × k)
+        (Module.isUnimodular_mk_one v) x ∈ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ) x
+      ((Proj.basicOpen 𝒜 P).isOpen.isClosed_compl.preimage
+        (projectiveOrbitMap (H := H) ((v, 1) : M × k)
+          (Module.isUnimodular_mk_one v)).continuous) ?_
+    intro g
+    rw [Set.mem_compl_iff, SetLike.mem_coe, Proj.mem_basicOpen, not_not]
+    have hmem := (mem_projectiveOrbitMap_kernelPoint_iff ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v) (WithConv.toConv g) hP).mpr
+    rw [WithConv.ofConv_toConv] at hmem
+    exact hmem (by rw [basePointsRepresentation_prodTrivial, heval]; exact hp (WithConv.toConv g))
+  have hw_mem : projectiveOrbitMap (H := H) ((w, 1) : M × k) (Module.isUnimodular_mk_one w)
+      (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈ (Proj.basicOpen 𝒜 P : Set (Proj 𝒜))ᶜ :=
+    closure_minimal hrange (Proj.basicOpen 𝒜 P).isOpen.isClosed_compl (mk_le_mk_iff.mp h)
+  rw [Set.mem_compl_iff, SetLike.mem_coe, Proj.mem_basicOpen, not_not] at hw_mem
+  have h1 : (1 : WithConv (H →ₐ[k] k)).ofConv = Bialgebra.counitAlgHom k H := by
+    ext
+    simp [AlgHom.convOne_def]
+  rw [← h1] at hw_mem
+  have h0 := (mem_projectiveOrbitMap_kernelPoint_iff ((w, 1) : M × k)
+    (Module.isUnimodular_mk_one w) 1 hP).mp hw_mem
+  simpa [heval] using h0
 
 /-- **Conical orbits lie above zero in the closure order.** If the rational orbit of `v` contains
 every nonzero scalar multiple of `v`, then `mk 0 ≤ mk v`. -/

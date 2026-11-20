@@ -17,7 +17,9 @@ finite constant `C`. Then precomposition `g ↦ g ∘ f` is well defined on almo
 and is a bounded linear operator `Lᵖ(ν) → Lᵖ(μ)` of norm at most `C ^ (1/p)`
 (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). This generalizes Mathlib's
 `MeasureTheory.Lp.compMeasurePreserving`, the case `μ.map f = ν`, to maps such as
-diffeomorphisms, which change measures only up to a bounded density.
+diffeomorphisms, which change measures only up to a bounded density. When `μ.map f = C • ν` with
+`0 < C < ∞`, such as a finite covering map multiplying volume by its degree, the norm is
+multiplied by exactly `C ^ (1/p)`, so `g ↦ C ^ (-1/p) • g ∘ f` is a linear isometry.
 
 When `f` and `g : β → α` are mutually inverse and both have dominated pushforward, the two
 precompositions are mutually inverse, giving a continuous linear equivalence
@@ -31,6 +33,11 @@ precompositions are mutually inverse, giving a continuous linear equivalence
   `Lp E p ν →L[𝕜] Lp E p μ`.
 * `MeasureTheory.Lp.coeFn_compOfMapLeSmul` and `MeasureTheory.Lp.norm_compOfMapLeSmul_le`: it is
   `g ↦ g ∘ f` almost everywhere, with norm at most `C ^ (1/p)`.
+* `MeasureTheory.Lp.norm_compOfMapLeSmul`: when `μ.map f = C • ν`, the norm is multiplied by
+  exactly `C ^ (1/p)`.
+* `MeasureTheory.Lp.normalizedCompOfMapEqSmul`: when `μ.map f = C • ν` with `0 < C < ∞`, the
+  normalized precomposition `g ↦ C ^ (-1/p) • g ∘ f`, as a linear isometry
+  `Lp E p ν →ₗᵢ[𝕜] Lp E p μ`.
 * `MeasureTheory.Lp.compOfMapLeSmul_comp`: precomposition is contravariant in `f`.
 * `MeasureTheory.Lp.compEquivOfMapLeSmul`: the continuous linear equivalence attached to a pair of
   mutually inverse maps with dominated pushforwards.
@@ -67,7 +74,7 @@ variable (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E]
 most `C • ν` with `C` finite. -/
 private def compOfMapLeSmulₗ (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν) :
     Lp E p ν →ₗ[𝕜] Lp E p μ where
-  toFun g := ⟨_, AEEqFun.compQuasiMeasurePreserving_mem_Lp g.2
+  toFun g := ⟨_, AEEqFun.compQuasiMeasurePreserving_mem_Lp g.property
     (QuasiMeasurePreserving.of_map_le_smul hf hmap) hC hmap⟩
   map_add' g h := by
     have hqmp := QuasiMeasurePreserving.of_map_le_smul hf hmap
@@ -117,8 +124,8 @@ variable {𝕜}
 @[simp]
 theorem compOfMapLeSmul_val (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν)
     (g : Lp E p ν) :
-    (compOfMapLeSmul 𝕜 hf hC hmap g).1 =
-      g.1.compQuasiMeasurePreserving f (.of_map_le_smul hf hmap) :=
+    (compOfMapLeSmul 𝕜 hf hC hmap g).val =
+      g.val.compQuasiMeasurePreserving f (.of_map_le_smul hf hmap) :=
   (rfl)
 
 /-- Precomposition with `f` is `g ↦ g ∘ f` almost everywhere. -/
@@ -131,6 +138,47 @@ theorem norm_compOfMapLeSmul_le (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.
     (g : Lp E p ν) :
     ‖compOfMapLeSmul 𝕜 hf hC hmap g‖ ≤ (C ^ (1 / p).toReal).toReal * ‖g‖ :=
   norm_compOfMapLeSmulₗ_le 𝕜 hf hC hmap g
+
+/-- If `μ.map f = C • ν` with `C ≠ 0`, then precomposition with `f` multiplies the norm by exactly
+`C ^ (1/p)`. -/
+theorem norm_compOfMapLeSmul (hf : Measurable f) (hC₀ : C ≠ 0) (hC : C ≠ ∞)
+    (hmap : μ.map f = C • ν) (g : Lp E p ν) :
+    ‖compOfMapLeSmul 𝕜 hf hC hmap.le g‖ = (C ^ (1 / p).toReal).toReal * ‖g‖ := by
+  rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (coeFn_compOfMapLeSmul hf hC hmap.le g),
+    ← eLpNorm_map_measure (by rw [hmap]; exact (Lp.aestronglyMeasurable g).smul_measure _)
+      hf.aemeasurable, hmap, eLpNorm_smul_measure_of_ne_zero hC₀, smul_eq_mul, ENNReal.toReal_mul]
+
+section Normalized
+
+variable [NormedAlgebra ℝ 𝕜]
+
+variable (𝕜) in
+/-- **Normalized precomposition.** If `f` is measurable and `μ.map f = C • ν` with
+`0 < C < ∞`, then `g ↦ C ^ (-1/p) • g ∘ f` is a linear isometry `Lᵖ(ν) → Lᵖ(μ)`
+(`MeasureTheory.Lp.coeFn_normalizedCompOfMapEqSmul`). -/
+def normalizedCompOfMapEqSmul (hf : Measurable f) (hC₀ : C ≠ 0) (hC : C ≠ ∞)
+    (hmap : μ.map f = C • ν) : Lp E p ν →ₗᵢ[𝕜] Lp E p μ where
+  toLinearMap :=
+    algebraMap ℝ 𝕜 (C.toReal ^ (-(1 / p).toReal)) • (compOfMapLeSmul 𝕜 hf hC hmap.le).toLinearMap
+  norm_map' g := by
+    have hC' : 0 < C.toReal := ENNReal.toReal_pos hC₀ hC
+    simp only [LinearMap.smul_apply, norm_smul, norm_algebraMap', ContinuousLinearMap.coe_coe,
+      norm_compOfMapLeSmul hf hC₀ hC hmap, ← ENNReal.toReal_rpow, Real.rpow_neg hC'.le, norm_inv,
+      Real.norm_of_nonneg (Real.rpow_nonneg hC'.le _)]
+    exact inv_mul_cancel_left₀ (Real.rpow_pos_of_pos hC' _).ne' _
+
+/-- Normalized precomposition with `f` is `g ↦ C ^ (-1/p) • g ∘ f` almost everywhere. -/
+theorem coeFn_normalizedCompOfMapEqSmul (hf : Measurable f) (hC₀ : C ≠ 0) (hC : C ≠ ∞)
+    (hmap : μ.map f = C • ν) (g : Lp E p ν) :
+    normalizedCompOfMapEqSmul 𝕜 hf hC₀ hC hmap g =ᵐ[μ]
+      fun x ↦ algebraMap ℝ 𝕜 (C.toReal ^ (-(1 / p).toReal)) • g (f x) := by
+  filter_upwards [Lp.coeFn_smul (algebraMap ℝ 𝕜 (C.toReal ^ (-(1 / p).toReal)))
+      (compOfMapLeSmul 𝕜 hf hC hmap.le g),
+    coeFn_compOfMapLeSmul (𝕜 := 𝕜) hf hC hmap.le g] with x hx hx'
+  rw [normalizedCompOfMapEqSmul, LinearIsometry.coe_mk, LinearMap.smul_apply,
+    ContinuousLinearMap.coe_coe, hx, Pi.smul_apply, hx', Function.comp_apply]
+
+end Normalized
 
 /-- Precomposition is contravariant: precomposing with `g ∘ f` is precomposing with `g`, then
 with `f`. -/
@@ -161,14 +209,14 @@ def compEquivOfMapLeSmul {g : β → α} {D : ℝ≥0∞} (hf : Measurable f) (h
     (hmap : μ.map f ≤ C • ν) (hg : Measurable g) (hD : D ≠ ∞) (hmapg : ν.map g ≤ D • μ)
     (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) :
     Lp E p ν ≃L[𝕜] Lp E p μ :=
-  ContinuousLinearEquiv.equivOfInverse (compOfMapLeSmul 𝕜 hf hC hmap)
+  ContinuousLinearEquiv.ofContinuousLinearMap (compOfMapLeSmul 𝕜 hf hC hmap)
     (compOfMapLeSmul 𝕜 hg hD hmapg)
-    (fun h ↦ Subtype.ext <| by
-      simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hf hmap)
-        (.of_map_le_smul hg hmapg), hfg.comp_eq_id])
-    (fun h ↦ Subtype.ext <| by
+    (ContinuousLinearMap.ext fun h ↦ Subtype.ext <| by
       simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hg hmapg)
         (.of_map_le_smul hf hmap), hgf.comp_eq_id])
+    (ContinuousLinearMap.ext fun h ↦ Subtype.ext <| by
+      simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hf hmap)
+        (.of_map_le_smul hg hmapg), hfg.comp_eq_id])
 
 section Equiv
 
