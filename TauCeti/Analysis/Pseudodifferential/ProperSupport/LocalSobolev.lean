@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Smoothness
 public import TauCeti.Analysis.Pseudodifferential.Composition.ProperSupport
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Distribution
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 
@@ -22,18 +21,9 @@ the position is assumed. Such an operator acts on every distribution `T ∈ 𝓓
 transposition (`TauCeti.Symbol.quantizeDistribution`). This file relates that action to the rest
 of the calculus and proves that it loses at most `m` orders of local Sobolev regularity.
 
-* **The transpose determines the action.** On test functions,
-  `∫ φ · Op(a) u = ∫ Op(a)ᵗ φ · u` with the transpose `Op(a)ᵗ φ = conj (Op(a)* (conj φ))` by which
-  `Op(a)` acts on distributions, and `Op(a)ᵗ φ` is the only continuous function with this
-  property. Every identity below is reduced to an identity between operators on test functions in
-  this way.
-* **Dependence on the symbol.** `Op(a)` on distributions only depends on the coefficient of `a`
-  (`TauCeti.Symbol.quantizeDistribution_congr`), and it is zero if `R ≤ 0`
-  (`TauCeti.Symbol.HasNearDiagonalKernel.quantizeDistribution_eq_zero`).
-* **Composition.** If `Op(c) = Op(a) ∘ Op(b)` on test functions, then also on distributions
-  (`TauCeti.Symbol.quantizeDistribution_comp`). In particular
-  `Op(a.properSharp ha b) = Op(a) ∘ Op(b)` on `𝓓'(ℝⁿ)` for properly supported `a` and `b`
-  (`TauCeti.Symbol.quantizeDistribution_properSharp`), with no compact spatial support.
+* **Composition.** `Op(a.properSharp ha b) = Op(a) ∘ Op(b)` on `𝓓'(ℝⁿ)` for properly supported
+  `a` and `b` (`TauCeti.Symbol.quantizeDistribution_properSharp`), with no compact spatial
+  support.
 * **Agreement with the tempered extension.** If `a` agrees with a symbol `b` uniform in the
   position at the positions of an open set `U`, then on a tempered distribution `u` the
   distribution `Op(a) u` agrees on `U` with the tempered distribution
@@ -90,111 +80,22 @@ namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {m m' m'' R R' R'' : ℝ} {a : Symbol n ℂ ℂ m}
+variable {n : ℕ} {m m' R R' R'' : ℝ} {a : Symbol n ℂ ℂ m}
 
-/-! ### The transpose on test functions -/
-
-section Transpose
-
-/-- The transpose `Op(a)ᵗ φ = conj (Op(a)* (conj φ))` of a properly supported operator for the
-bilinear pairing `∫ φ u`, on complex test functions. -/
-private def transposeTest (ha : a.HasNearDiagonalKernel R)
-    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
-  postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap
-    (adjointTestFunctionCLM ha (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ))
-
-/-- `Op(a) T` pairs with a complex test function `φ` as `T` with the transpose `Op(a)ᵗ φ`. -/
-private theorem complexPairing_quantizeDistribution_eq (ha : a.HasNearDiagonalKernel R)
-    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-    (quantizeDistribution ha T).complexPairing φ = T.complexPairing (transposeTest ha φ) :=
-  complexPairing_quantizeDistribution ha T φ
-
-/-- **The transpose identity on test functions.** `∫ φ · Op(a) u = ∫ Op(a)ᵗ φ · u`. -/
-private theorem integral_mul_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
-    (u φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-    ∫ x, φ x * quantizeTestFunctionCLM ha u x = ∫ x, transposeTest ha φ x * u x := by
-  -- Pair `Op(a)` on the distribution of `u`, which is the distribution of `Op(a) u`, with `φ`.
-  have hloc (f : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-      LocallyIntegrableOn f (⊤ : Opens (CoordinateSpace n)) volume :=
-    f.continuous.locallyIntegrable.locallyIntegrableOn _
-  have h := congrArg (complexPairing · φ) (quantizeDistribution_ofFun ha u)
-  simp only [complexPairing_quantizeDistribution_eq, complexPairing_ofFun (hloc _)] at h
-  exact h.symm
-
-/-- **Uniqueness of the transpose.** A continuous function `f` with `∫ φ · Op(a) u = ∫ f u` for
-every test function `u` is the transpose `Op(a)ᵗ φ`. -/
-private theorem coe_transposeTest_eq (ha : a.HasNearDiagonalKernel R)
-    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) {f : CoordinateSpace n → ℂ} (hf : Continuous f)
-    (h : ∀ u : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ),
-      ∫ x, φ x * quantizeTestFunctionCLM ha u x = ∫ x, f x * u x) :
-    ⇑(transposeTest ha φ) = f := by
-  refine (Continuous.ae_eq_iff_eq volume (transposeTest ha φ).continuous hf).1
-    (ae_eq_of_integral_contDiff_smul_eq (transposeTest ha φ).continuous.locallyIntegrable
-      hf.locallyIntegrable fun g hg hgc ↦ ?_)
-  -- Test against the complex test function `g`.
-  let u : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ) :=
-    ⟨fun x ↦ (g x : ℂ), ofRealCLM.contDiff.comp hg, hgc.comp_left ofReal_zero, subset_univ _⟩
-  have hu : ⇑u = fun x ↦ (g x : ℂ) := TestFunction.coe_mk
-  have h' := (integral_mul_quantizeTestFunctionCLM ha u φ).symm.trans (h u)
-  simpa [hu, real_smul, mul_comm] using h'
-
-end Transpose
-
-/-! ### Dependence on the symbol and composition -/
+/-! ### Composition -/
 
 section Composition
 
-/-- `Op(a)` on distributions only depends on the coefficient of `a`. -/
-theorem quantizeDistribution_congr {b : Symbol n ℂ ℂ m'} (ha : a.HasNearDiagonalKernel R)
-    (hb : b.HasNearDiagonalKernel R') (h : a.coefficient = b.coefficient) :
-    quantizeDistribution ha = quantizeDistribution hb := by
-  ext T φ
-  simp only [quantizeDistribution_apply]
-  congr 2
-  exact TestFunction.ext fun x ↦ by simp [h]
-
-/-- **A kernel supported within a nonpositive distance of the diagonal is zero**, also on
-distributions: the operator `Op(a)` then vanishes on every test function. -/
-theorem HasNearDiagonalKernel.quantizeDistribution_eq_zero (ha : a.HasNearDiagonalKernel R)
-    (hR : R ≤ 0) : quantizeDistribution ha = 0 := by
-  have h0 (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) : transposeTest ha φ = 0 :=
-    DFunLike.coe_injective <| coe_transposeTest_eq ha φ continuous_const fun u ↦ by
-      have hu (x : CoordinateSpace n) : quantizeTestFunctionCLM ha u x = 0 := by
-        rw [quantizeTestFunctionCLM_apply]
-        exact hasNearDiagonalKernel_iff.1 ha _ x fun y hy ↦ absurd hy (by simp [ball_eq_empty.2 hR])
-      simp [hu]
-  ext T φ
-  rw [← complexPairing_postcompCLM_ofRealCLM, complexPairing_quantizeDistribution_eq, h0]
-  simp
-
-/-- **Composition on distributions.** If `Op(c) = Op(a) ∘ Op(b)` on test functions, then
-`Op(c) = Op(a) ∘ Op(b)` on distributions. -/
-theorem quantizeDistribution_comp {b : Symbol n ℂ ℂ m'} {c : Symbol n ℂ ℂ m''}
-    (ha : a.HasNearDiagonalKernel R) (hb : b.HasNearDiagonalKernel R')
-    (hc : c.HasNearDiagonalKernel R'')
-    (h : ∀ u, quantizeTestFunctionCLM hc u =
-      quantizeTestFunctionCLM ha (quantizeTestFunctionCLM hb u))
-    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-    quantizeDistribution hc T = quantizeDistribution ha (quantizeDistribution hb T) := by
-  -- The transposes compose in the opposite order: `Op(c)ᵗ = Op(b)ᵗ ∘ Op(a)ᵗ`.
-  have ht (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-      transposeTest hc φ = transposeTest hb (transposeTest ha φ) :=
-    DFunLike.coe_injective <| coe_transposeTest_eq hc φ (transposeTest hb _).continuous fun u ↦ by
-      rw [h, integral_mul_quantizeTestFunctionCLM, integral_mul_quantizeTestFunctionCLM]
-  ext φ
-  rw [← complexPairing_postcompCLM_ofRealCLM, ← complexPairing_postcompCLM_ofRealCLM,
-    complexPairing_quantizeDistribution_eq, complexPairing_quantizeDistribution_eq,
-    complexPairing_quantizeDistribution_eq, ht]
-
 /-- **Properly supported operators compose on distributions.** For symbols `a` and `b` whose
-quantizations have kernels supported near the diagonal, the composition symbol `a.properSharp hp b`
-quantizes to `Op(a) ∘ Op(b)` on all distributions. No compact spatial support is assumed. The
-finite propagation `hp` of `a` is the near-diagonal kernel condition in the form that
-`TauCeti.Symbol.properSharp` takes, and the kernel of the composition is supported within the sum
-of the two distances (`TauCeti.Symbol.HasPropagationLE.properSharp`). -/
-theorem quantizeDistribution_properSharp {b : Symbol n ℂ ℂ m'} {ε : ℝ}
-    (ha : a.HasNearDiagonalKernel R) (hb : b.HasNearDiagonalKernel R') (hp : a.HasPropagationLE ε)
-    (hc : (a.properSharp hp b).HasNearDiagonalKernel R'')
+quantizations have kernels supported near the diagonal, the composition symbol
+`TauCeti.Symbol.properSharp` of `a` and `b` quantizes to `Op(a) ∘ Op(b)` on all distributions. No
+compact spatial support is assumed. The near-diagonal kernel condition on `a` is passed to
+`TauCeti.Symbol.properSharp` as finite propagation, and the kernel of the composition is supported
+within the sum of the two distances (`TauCeti.Symbol.HasPropagationLE.properSharp`). -/
+theorem quantizeDistribution_properSharp {b : Symbol n ℂ ℂ m'}
+    (ha : a.HasNearDiagonalKernel R) (hb : b.HasNearDiagonalKernel R')
+    (hc : HasNearDiagonalKernel
+      (a.properSharp (hasPropagationLE_iff.2 (hasNearDiagonalKernel_iff.1 ha)) b) R'')
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     quantizeDistribution hc T = quantizeDistribution ha (quantizeDistribution hb T) :=
   quantizeDistribution_comp ha hb hc (fun u ↦ TestFunction.ext fun x ↦ by
@@ -203,7 +104,7 @@ theorem quantizeDistribution_properSharp {b : Symbol n ℂ ℂ m'} {ε : ℝ}
       funext (quantizeTestFunctionCLM_apply hb u)
     have hu := he ▸ (quantizeTestFunctionCLM hb u).hasCompactSupport
     rw [quantizeTestFunctionCLM_apply, quantizeTestFunctionCLM_apply,
-      quantizeSchwartzValue_properSharp_of_hasCompactSupport hp b hu x]
+      quantizeSchwartzValue_properSharp_of_hasCompactSupport _ b hu x]
     congr 1
     exact SchwartzMap.ext fun y ↦ by simp [he]) T
 
@@ -227,11 +128,11 @@ theorem isVanishingOn_quantizeDistribution_toDistribution_sub (ha : a.HasNearDia
   set φc := postcompCLM (𝕜 := ℝ) ofRealCLM φ
   have hφc (x : CoordinateSpace n) : φc x = φ x := by simp [φc]
   -- On test functions supported in `U`, the transposes `Op(a)ᵗ` and `Op(b)ᵗ` agree.
-  have ht : toSchwartzMapCLM ℝ (transposeTest ha φc) =
+  have ht : toSchwartzMapCLM ℝ (transposeTestFunctionCLM ha φc) =
       transposeUniformCLM b hb (toSchwartzMapCLM ℝ φc) := by
     refine SchwartzMap.ext fun x ↦ ?_
     rw [toSchwartzMapCLM_apply]
-    refine congrFun (coe_transposeTest_eq ha φc (transposeUniformCLM b hb _).continuous
+    refine congrFun (coe_transposeTestFunctionCLM_eq ha φc (transposeUniformCLM b hb _).continuous
       fun v ↦ ?_) x
     refine Eq.trans ?_ ((integral_mul_quantizeUniformCLM b hb (toSchwartzMapCLM ℝ v)
       (toSchwartzMapCLM ℝ φc)).trans (by simp only [toSchwartzMapCLM_apply]))
@@ -243,7 +144,7 @@ theorem isVanishingOn_quantizeDistribution_toDistribution_sub (ha : a.HasNearDia
         (SchwartzMap.ext fun y ↦ by simp)
     · simp [hφc, image_eq_zero_of_notMem_tsupport fun h ↦ hx (hφ h)]
   rw [sub_apply, sub_eq_zero, ← complexPairing_postcompCLM_ofRealCLM,
-    complexPairing_quantizeDistribution_eq, complexPairing_toDistribution, toDistribution_apply,
+    complexPairing_quantizeDistribution, complexPairing_toDistribution, toDistribution_apply,
     quantizeTempered_apply_apply, ht]
 
 /-- **The distribution and tempered extensions of `Op(a)` agree.** For a symbol `a` whose estimates
@@ -385,9 +286,7 @@ theorem IsSmoothing.singularSupport_quantizeDistribution_eq_empty (ha : a.HasNea
   filter_upwards [ball_mem_nhds x one_pos] with y hy s
   -- Read `a` as a symbol of order `t - s`.
   obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha' (t - s)
-  have hb' : b.HasNearDiagonalKernel R := hasNearDiagonalKernel_iff.2 fun u z hu ↦ by
-    rw [hb]
-    exact hasNearDiagonalKernel_iff.1 ha u z hu
+  have hb' : b.HasNearDiagonalKernel R := ha.of_coefficient_eq hb
   rw [quantizeDistribution_congr ha hb' hb.symm]
   have h := isLocallySobolevAt_quantizeDistribution hb' (s := t) (x := y) fun z hz ↦ ht z <|
     mem_closedBall.2 (by linarith [dist_triangle z y x, mem_ball.1 hy, mem_closedBall.1 hz])

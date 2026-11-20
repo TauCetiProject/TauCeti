@@ -436,6 +436,13 @@ theorem HasNearDiagonalKernel.mono {a : Symbol n V W m} {R R' : ℝ}
     (ha : a.HasNearDiagonalKernel R) (h : R ≤ R') : a.HasNearDiagonalKernel R' :=
   fun u x hu ↦ ha u x fun y hy ↦ hu y (Metric.ball_subset_ball h hy)
 
+/-- Whether the kernel of `Op(a)` is supported near the diagonal only depends on the coefficient
+of `a`. -/
+theorem HasNearDiagonalKernel.of_coefficient_eq {m' : ℝ} {a : Symbol n V W m}
+    {b : Symbol n V W m'} {R : ℝ} (ha : a.HasNearDiagonalKernel R)
+    (h : b.coefficient = a.coefficient) : b.HasNearDiagonalKernel R :=
+  fun u x hu ↦ h ▸ ha u x hu
+
 /-- An operator with kernel supported within distance `R` of the diagonal vanishes outside the
 closed `R`-neighbourhood of the support of its input. -/
 theorem HasNearDiagonalKernel.quantizeSchwartzValue_eq_zero_of_notMem {a : Symbol n V W m}
