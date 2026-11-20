@@ -928,8 +928,7 @@ theorem lintegral_floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M)
   have hv : MeasurePreserving (· + v) volume volume :=
     (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
   simp only [floerEnergyDensity_comp_add_right]
-  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
-    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
+  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v) (ENNReal.ofReal ∘ _) S
 
 /-- **The energy identity on a rectangle, for a manifold target.** Let `u` and the perturbation
 data `K = K_s ds + K_t dt` be `C¹` over an open neighbourhood `U` of a rectangle
