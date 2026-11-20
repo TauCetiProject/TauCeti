@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Wave.Propagator
 public import TauCeti.Analysis.PDE.Wave.Strichartz
+import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.LittlewoodPaley
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
@@ -45,11 +46,12 @@ summation.
 
 ## The argument
 
-Fix `N` with `φ.rOut < 2^N φ.rIn`. The cutoff `χ = φ(2^{-N} ·) - φ(2^{N+1} ·)` is smooth, vanishes
-near the origin and outside a ball, and equals `1` on the support of `ψ₀`, so `θ = χ / (2π ‖·‖)`
-is a Schwartz function. Let `Mⱼ` be the multiplier with symbol `θ(2^{-j} ·)`. Its kernel is the
-`L¹`-normalised dilate of `𝓕⁻ θ`, so `Mⱼ` is bounded on every `Lᵖ` uniformly in `j`, and
-`2^{-j} θ(2^{-j} ξ) · 2π ‖ξ‖ = 1` on the support of `ψⱼ`. Since `sin x = (e^{ix} - e^{-ix}) / 2i`,
+The symbol `1 / (2π ‖·‖)` is smooth away from the origin, so it agrees on the annulus
+`φ.rIn / 2 ≤ ‖ξ‖ ≤ φ.rOut`, which contains the support of `ψ₀`, with a Schwartz function `θ`
+(`SchwartzMap.exists_eqOn_annulus_of_contDiffOn`). Let `Mⱼ` be the multiplier with symbol
+`θ(2^{-j} ·)`. Its kernel is the `L¹`-normalised dilate of `𝓕⁻ θ`, so `Mⱼ` is bounded on every
+`Lᵖ` uniformly in `j`, and `2^{-j} θ(2^{-j} ξ) · 2π ‖ξ‖ = 1` on the support of `ψⱼ`. Since
+`sin x = (e^{ix} - e^{-ix}) / 2i`,
 
 `D⁻¹ sin(τD) Pⱼ = 2^{-j} (2i)⁻¹ (W₊(τ) - W₊(-τ)) Pⱼ Mⱼ`,
 
@@ -94,73 +96,43 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### The frequency-localized inverse of `D` -/
 
-/-- The symbol `θ(ξ) = χ(ξ) / (2π ‖ξ‖)` with `χ(ξ) = φ(2^{-N} ξ) - φ(2^{N+1} ξ)`: on the support of
-the Littlewood–Paley cutoff `ψ₀` it inverts the symbol `2π ‖ξ‖` of `D`. -/
-private def invCutoff (N : ℕ) (ξ : E) : ℝ :=
-  (φ (((2 : ℝ) ^ N)⁻¹ • ξ) - φ ((2 * 2 ^ N : ℝ) • ξ)) / sqrtNegLaplacianSymbol ξ
-
-/-- `θ` vanishes near the origin, where both terms of `χ` are `1`. -/
-private theorem invCutoff_eq_zero_of_norm_lt {N : ℕ} {ξ : E}
-    (hξ : ‖ξ‖ < φ.rIn / (2 * 2 ^ N)) : φ.invCutoff N ξ = 0 := by
-  have hN : (1 : ℝ) ≤ 2 ^ N := one_le_pow₀ one_le_two
-  have h2 : ‖(2 * 2 ^ N : ℝ) • ξ‖ ≤ φ.rIn := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    rw [lt_div_iff₀ (by positivity)] at hξ
-    linarith
-  have h1 : ‖((2 : ℝ) ^ N)⁻¹ • ξ‖ ≤ φ.rIn := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    calc ((2 : ℝ) ^ N)⁻¹ * ‖ξ‖ ≤ ‖(2 * 2 ^ N : ℝ) • ξ‖ := by
-          rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-          gcongr
-          calc ((2 : ℝ) ^ N)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hN
-            _ ≤ 2 * 2 ^ N := by linarith
-      _ ≤ φ.rIn := h2
-  rw [invCutoff, φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h1),
-    φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 h2), sub_self, zero_div]
-
-/-- `θ` vanishes outside a ball, where both terms of `χ` are `0`. -/
-private theorem invCutoff_eq_zero_of_le_norm {N : ℕ} {ξ : E}
-    (hξ : 2 ^ N * φ.rOut ≤ ‖ξ‖) : φ.invCutoff N ξ = 0 := by
-  have hN : (1 : ℝ) ≤ 2 ^ N := one_le_pow₀ one_le_two
-  have h1 : φ.rOut ≤ ‖((2 : ℝ) ^ N)⁻¹ • ξ‖ := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity), ← div_eq_inv_mul,
-      le_div_iff₀ (by positivity)]
-    linarith
-  have h2 : φ.rOut ≤ ‖(2 * 2 ^ N : ℝ) • ξ‖ := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-    nlinarith [φ.rOut_pos, norm_nonneg ξ]
-  rw [invCutoff, φ.zero_of_le_dist (by rwa [dist_zero_right]),
-    φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_self, zero_div]
-
-/-- `θ` is smooth: it vanishes near the origin, and away from it `‖·‖` is smooth. -/
-private theorem contDiff_invCutoff (N : ℕ) {n : ℕ∞} : ContDiff ℝ n (φ.invCutoff N) := by
-  refine contDiff_iff_contDiffAt.2 fun x ↦ ?_
-  rcases eq_or_ne x 0 with rfl | hx
-  · refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-    filter_upwards [Metric.ball_mem_nhds (0 : E)
-      (div_pos φ.rIn_pos (by positivity : (0 : ℝ) < 2 * 2 ^ N))] with ξ hξ
-    exact φ.invCutoff_eq_zero_of_norm_lt (mem_ball_zero_iff.1 hξ)
-  · have hnum : ContDiff ℝ n fun ξ : E ↦ φ (((2 : ℝ) ^ N)⁻¹ • ξ) - φ ((2 * 2 ^ N : ℝ) • ξ) :=
-      (φ.contDiff.comp (contDiff_const_smul _)).sub (φ.contDiff.comp (contDiff_const_smul _))
-    have hden : ContDiffAt ℝ n (fun ξ : E ↦ sqrtNegLaplacianSymbol ξ) x := by
-      simp only [sqrtNegLaplacianSymbol_apply]
-      exact contDiffAt_const.mul (contDiffAt_norm ℝ hx)
-    refine hnum.contDiffAt.div hden ?_
-    rw [sqrtNegLaplacianSymbol_apply]
-    have := norm_pos_iff.2 hx
+/-- A Schwartz function `θ₀` equal to `1 / (2π ‖(φ.rIn / 2) • η‖)` on the annulus
+`1 ≤ ‖η‖ ≤ 2 φ.rOut / φ.rIn`: the symbol is smooth away from the origin. -/
+private theorem exists_invCutoff : ∃ σ : 𝓢(E, ℂ), Set.EqOn σ
+    (fun η ↦ (((sqrtNegLaplacianSymbol ((φ.rIn / 2) • η))⁻¹ : ℝ) : ℂ))
+    {η | 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn} := by
+  have ha : φ.rIn / 2 ≠ 0 := (half_pos φ.rIn_pos).ne'
+  refine SchwartzMap.exists_eqOn_annulus_of_contDiffOn
+    (Complex.ofRealCLM.contDiff.comp_contDiffOn (ContDiffOn.inv (fun η hη ↦ ?_) fun η hη ↦ ?_)) _
+  · simp only [sqrtNegLaplacianSymbol_apply]
+    exact (contDiffAt_const.mul ((contDiffAt_norm ℝ (smul_ne_zero ha hη)).comp η
+      (contDiff_const_smul _).contDiffAt)).contDiffWithinAt
+  · rw [sqrtNegLaplacianSymbol_apply]
+    have := norm_pos_iff.2 (smul_ne_zero ha hη)
     positivity
 
-/-- `θ` has compact support. -/
-private theorem hasCompactSupport_invCutoff (N : ℕ) : HasCompactSupport (φ.invCutoff N) :=
-  HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 ^ N * φ.rOut)) fun ξ hξ ↦
-    φ.invCutoff_eq_zero_of_le_norm (le_of_lt (by simpa [mem_closedBall_zero_iff] using hξ))
+/-- The Schwartz function `θ₀` of `exists_invCutoff`. -/
+private def invCutoff : 𝓢(E, ℂ) :=
+  φ.exists_invCutoff.choose
+
+/-- The symbol `θ(2^{-j} ·)` as a Schwartz function, where `θ = θ₀((φ.rIn / 2)⁻¹ ·)` equals
+`1 / (2π ‖·‖)` on the annulus `φ.rIn / 2 ≤ ‖ξ‖ ≤ φ.rOut` containing the support of `ψ₀`. -/
+private def invCutoffSchwartz (j : ℤ) : 𝓢(E, ℂ) :=
+  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.smulLeft
+    (Units.mk0 ((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ (inv_ne_zero
+      (mul_pos (zpow_pos two_pos j) (half_pos φ.rIn_pos)).ne'))) φ.invCutoff
+
+/-- The values of `θ(2^{-j} ·)`. -/
+private theorem invCutoffSchwartz_apply (j : ℤ) (ξ : E) :
+    φ.invCutoffSchwartz j ξ = φ.invCutoff (((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ • ξ) := by
+  rw [invCutoffSchwartz, SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
+    ContinuousLinearEquiv.smulLeft_apply_apply, Units.smul_mk0]
 
 /-- On the support of `ψⱼ`, `2^{-j} θ(2^{-j} ξ)` inverts the symbol `2π ‖ξ‖` of `D`. -/
-private theorem inv_mul_invCutoff_mul {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) {j : ℤ} {ξ : E}
-    (hξ : φ.littlewoodPaley j ξ ≠ 0) :
-    ((2 : ℝ) ^ j)⁻¹ * φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) * sqrtNegLaplacianSymbol ξ = 1 := by
+private theorem inv_mul_invCutoffSchwartz_mul {j : ℤ} {ξ : E} (hξ : φ.littlewoodPaley j ξ ≠ 0) :
+    (((2 : ℝ) ^ j)⁻¹ : ℂ) * φ.invCutoffSchwartz j ξ * (sqrtNegLaplacianSymbol ξ : ℂ) = 1 := by
   have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
-  have h2N : (0 : ℝ) < 2 ^ N := by positivity
+  have hb : (0 : ℝ) < 2 ^ j * (φ.rIn / 2) := mul_pos h2j (half_pos φ.rIn_pos)
   have h1 : 2 ^ (j - 1) * φ.rIn < ‖ξ‖ := by
     by_contra h
     exact hξ (φ.littlewoodPaley_eq_zero_of_norm_le (not_lt.1 h))
@@ -168,95 +140,70 @@ private theorem inv_mul_invCutoff_mul {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) 
     by_contra h
     exact hξ (φ.littlewoodPaley_eq_zero_of_le_norm (not_lt.1 h))
   rw [zpow_sub_one₀ two_ne_zero] at h1
-  set η := ((2 : ℝ) ^ j)⁻¹ • ξ
-  have hη : ‖η‖ = ((2 : ℝ) ^ j)⁻¹ * ‖ξ‖ := by
-    rw [norm_smul, Real.norm_of_nonneg (by positivity)]
-  have hη1 : φ.rIn / 2 < ‖η‖ := by
-    rw [hη, ← div_eq_inv_mul, lt_div_iff₀ h2j]
-    linarith
-  have hη2 : ‖η‖ < φ.rOut := by
-    rw [hη, ← div_eq_inv_mul, div_lt_iff₀ h2j]
-    linarith
-  have hone : φ (((2 : ℝ) ^ N)⁻¹ • η) = 1 := by
-    refine φ.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
-    rw [norm_smul, Real.norm_of_nonneg (by positivity), ← div_eq_inv_mul, div_le_iff₀ h2N]
-    linarith
-  have hzero : φ ((2 * 2 ^ N : ℝ) • η) = 0 := by
-    refine φ.zero_of_le_dist ?_
-    rw [dist_zero_right, norm_smul, Real.norm_of_nonneg (by positivity)]
-    nlinarith
-  have hξ0 : 0 < ‖ξ‖ := lt_trans (by have := φ.rIn_pos; positivity) h1
-  rw [invCutoff, hone, hzero, sub_zero, sqrtNegLaplacianSymbol_apply,
-    sqrtNegLaplacianSymbol_apply, hη]
+  set η := ((2 : ℝ) ^ j * (φ.rIn / 2))⁻¹ • ξ
+  have hη : ‖η‖ = ‖ξ‖ / (2 ^ j * (φ.rIn / 2)) := by
+    rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hb.le), inv_mul_eq_div]
+  have hmem : 1 ≤ ‖η‖ ∧ ‖η‖ ≤ 2 * φ.rOut / φ.rIn := by
+    rw [hη, le_div_iff₀ hb, div_le_div_iff₀ hb φ.rIn_pos]
+    constructor <;> nlinarith [φ.rIn_pos]
+  have haη : (φ.rIn / 2) • η = ((2 : ℝ) ^ j)⁻¹ • ξ := by
+    rw [smul_smul, mul_inv, ← mul_assoc, mul_comm (φ.rIn / 2), mul_assoc,
+      mul_inv_cancel₀ (half_pos φ.rIn_pos).ne', mul_one]
+  have hξ0 : (‖ξ‖ : ℂ) ≠ 0 :=
+    Complex.ofReal_ne_zero.2 (lt_trans (by have := φ.rIn_pos; positivity) h1).ne'
+  rw [invCutoffSchwartz_apply, invCutoff, φ.exists_invCutoff.choose_spec hmem]
+  beta_reduce
+  rw [haη, sqrtNegLaplacianSymbol_apply, sqrtNegLaplacianSymbol_apply, norm_smul,
+    Real.norm_of_nonneg (inv_nonneg.2 h2j.le)]
+  push_cast
   field_simp
-
-/-- `θ(2^{-j} ·)` is smooth, as a complex function. -/
-private theorem contDiff_invCutoff_comp_smul (N : ℕ) (j : ℤ) {n : ℕ∞} :
-    ContDiff ℝ n fun ξ : E ↦ (φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
-  Complex.ofRealCLM.contDiff.comp ((φ.contDiff_invCutoff N).comp (contDiff_const_smul _))
-
-/-- `θ(2^{-j} ·)` has compact support, as a complex function. -/
-private theorem hasCompactSupport_invCutoff_comp_smul (N : ℕ) (j : ℤ) :
-    HasCompactSupport fun ξ : E ↦ (φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
-  (((φ.hasCompactSupport_invCutoff N).comp_smul
-    (inv_ne_zero (zpow_ne_zero j two_ne_zero))).comp_left Complex.ofReal_zero)
-
-/-- The symbol `θ(2^{-j} ·)` as a Schwartz function. -/
-private def invCutoffSchwartz (N : ℕ) (j : ℤ) : 𝓢(E, ℂ) :=
-  (φ.hasCompactSupport_invCutoff_comp_smul N j).toSchwartzMap (φ.contDiff_invCutoff_comp_smul N j)
-
-/-- The values of `θ(2^{-j} ·)`. -/
-private theorem coe_invCutoffSchwartz (N : ℕ) (j : ℤ) :
-    ⇑(φ.invCutoffSchwartz N j) = fun ξ ↦ (φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) :=
-  (rfl)
 
 variable [MeasurableSpace E] [BorelSpace E]
 
 /-- The kernel of the multiplier `θ(2^{-j} ·)` has the same `L¹` norm for every `j`. -/
-private theorem eLpNorm_fourierInv_invCutoffSchwartz (N : ℕ) (j : ℤ) :
-    eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz N j)) 1 volume =
-      eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz N 0)) 1 volume := by
-  have h : ⇑(φ.invCutoffSchwartz N j) =
-      fun ξ ↦ (⇑(φ.invCutoffSchwartz N 0)) (((2 : ℝ) ^ j)⁻¹ • ξ) :=
-    funext fun ξ ↦ by simp [coe_invCutoffSchwartz]
+private theorem eLpNorm_fourierInv_invCutoffSchwartz (j : ℤ) :
+    eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz j)) 1 volume =
+      eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume := by
+  have h : ⇑(φ.invCutoffSchwartz j) =
+      fun ξ ↦ (⇑(φ.invCutoffSchwartz 0)) (((2 : ℝ) ^ j)⁻¹ • ξ) :=
+    funext fun ξ ↦ by
+      rw [invCutoffSchwartz_apply, invCutoffSchwartz_apply, smul_smul, zpow_zero, one_mul,
+        ← mul_inv, mul_comm (φ.rIn / 2)]
   rw [h, TauCeti.eLpNorm_fourierInv_comp_inv_smul _ (zpow_pos two_pos j)]
   simp
 
 /-- The kernel `𝓕⁻ θ` is integrable. -/
-private theorem eLpNorm_fourierInv_invCutoffSchwartz_ne_top (N : ℕ) :
-    eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz N 0)) 1 volume ≠ ∞ := by
+private theorem eLpNorm_fourierInv_invCutoffSchwartz_ne_top :
+    eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume ≠ ∞ := by
   rw [← SchwartzMap.fourierInv_coe]
-  exact ((𝓕⁻ (φ.invCutoffSchwartz N 0)).memLp 1 volume).eLpNorm_ne_top
+  exact ((𝓕⁻ (φ.invCutoffSchwartz 0)).memLp 1 volume).eLpNorm_ne_top
 
 /-- The multiplier `Mⱼ` with symbol `θ(2^{-j} ·)`: on frequencies `‖ξ‖ ≈ 2^j` it is `2^j D⁻¹`. -/
-private def invMultiplier (N : ℕ) (j : ℤ) :
+private def invMultiplier (j : ℤ) :
     Lp ℂ 2 (volume : Measure E) →L[ℂ] Lp ℂ 2 (volume : Measure E) :=
-  Lp.fourierMultiplierCLM ℂ ((φ.invCutoffSchwartz N j).toLp ∞)
+  Lp.fourierMultiplierCLM ℂ ((φ.invCutoffSchwartz j).toLp ∞)
 
 /-- `Mⱼ` is bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`. -/
-private theorem eLpNorm_invMultiplier_le (N : ℕ) (j : ℤ) (f : Lp ℂ 2 (volume : Measure E))
+private theorem eLpNorm_invMultiplier_le (j : ℤ) (f : Lp ℂ 2 (volume : Measure E))
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    eLpNorm (φ.invMultiplier N j f) p volume ≤
-      eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz N 0)) 1 volume * eLpNorm f p volume := by
-  rw [← φ.eLpNorm_fourierInv_invCutoffSchwartz N j]
-  exact (φ.invCutoffSchwartz N j).eLpNorm_fourierMultiplierCLM_toLp_le f hp
+    eLpNorm (φ.invMultiplier j f) p volume ≤
+      eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume * eLpNorm f p volume := by
+  rw [← φ.eLpNorm_fourierInv_invCutoffSchwartz j]
+  exact (φ.invCutoffSchwartz j).eLpNorm_fourierMultiplierCLM_toLp_le f hp
 
 /-! ### The decomposition of `D⁻¹ sin(τD)` -/
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The pointwise form of `D⁻¹ sin(τD) = (2i)⁻¹ (W₊(τ) - W₊(-τ)) 2^{-j} Mⱼ` on the support of
 `ψⱼ`. -/
-private theorem waveSinSymbol_mul_eq {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) {j : ℤ} (τ : ℝ)
-    (ξ : E) {a : ℂ} (ha : φ.littlewoodPaley j ξ = 0 → a = 0) :
+private theorem waveSinSymbol_mul_eq {j : ℤ} (τ : ℝ) (ξ : E) {a : ℂ}
+    (ha : φ.littlewoodPaley j ξ = 0 → a = 0) :
     waveSinSymbol τ ξ * a = (((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ : ℂ) *
-      (phaseSymbol sqrtNegLaplacianSymbol τ ξ * (a * φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ)) -
-        phaseSymbol sqrtNegLaplacianSymbol (-τ) ξ *
-          (a * φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ))) := by
+      (phaseSymbol sqrtNegLaplacianSymbol τ ξ * (a * φ.invCutoffSchwartz j ξ) -
+        phaseSymbol sqrtNegLaplacianSymbol (-τ) ξ * (a * φ.invCutoffSchwartz j ξ)) := by
   by_cases h : φ.littlewoodPaley j ξ = 0
   · simp [ha h]
-  have hkey : (((2 : ℝ) ^ j)⁻¹ : ℂ) * (φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ) *
-      (sqrtNegLaplacianSymbol ξ : ℂ) = 1 := by
-    exact_mod_cast φ.inv_mul_invCutoff_mul hN h
+  have hkey := φ.inv_mul_invCutoffSchwartz_mul h
   have hs := sqrtNegLaplacianSymbol_mul_waveSinSymbol τ ξ
   have hph : phaseSymbol sqrtNegLaplacianSymbol τ ξ - phaseSymbol sqrtNegLaplacianSymbol (-τ) ξ =
       2 * Complex.I * Real.sin (τ * sqrtNegLaplacianSymbol ξ) := by
@@ -268,28 +215,27 @@ private theorem waveSinSymbol_mul_eq {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn) {
     inv_mul_cancel₀ (mul_ne_zero two_ne_zero Complex.I_ne_zero)
   push_cast at hkey ⊢
   linear_combination (-((2 : ℂ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ * a *
-      (φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ)) * hph -
+      φ.invCutoffSchwartz j ξ) * hph -
     (((2 : ℂ) ^ j)⁻¹ * (Real.sin (τ * sqrtNegLaplacianSymbol ξ) : ℂ) * a *
-      (φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ)) * hc +
-    (((2 : ℂ) ^ j)⁻¹ * a * (φ.invCutoff N (((2 : ℝ) ^ j)⁻¹ • ξ) : ℂ)) * hs -
+      φ.invCutoffSchwartz j ξ) * hc +
+    (((2 : ℂ) ^ j)⁻¹ * a * φ.invCutoffSchwartz j ξ) * hs -
     waveSinSymbol τ ξ * a * hkey
 
 /-- `D⁻¹ sin(τD) T_k = 2^{-j} (2i)⁻¹ (W₊(τ) - W₊(-τ)) T_k Mⱼ` for every multiplier `T_k` whose
 symbol vanishes off the support of `ψⱼ`. -/
-private theorem waveSinPropagator_fourierMultiplierCLM_eq {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn)
-    {j : ℤ} {k : Lp ℂ ∞ (volume : Measure E)}
+private theorem waveSinPropagator_fourierMultiplierCLM_eq {j : ℤ} {k : Lp ℂ ∞ (volume : Measure E)}
     (hk : ∀ᵐ ξ ∂volume, φ.littlewoodPaley j ξ = 0 → k ξ = 0) (τ : ℝ)
     (f : Lp ℂ 2 (volume : Measure E)) :
     waveSinPropagator ℂ τ (Lp.fourierMultiplierCLM ℂ k f) =
       (((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ : ℂ) •
-        (halfWavePropagator ℂ τ (Lp.fourierMultiplierCLM ℂ k (φ.invMultiplier N j f)) -
-          halfWavePropagator ℂ (-τ) (Lp.fourierMultiplierCLM ℂ k (φ.invMultiplier N j f))) := by
+        (halfWavePropagator ℂ τ (Lp.fourierMultiplierCLM ℂ k (φ.invMultiplier j f)) -
+          halfWavePropagator ℂ (-τ) (Lp.fourierMultiplierCLM ℂ k (φ.invMultiplier j f))) := by
   simp only [waveSinPropagator_def, phasePropagator_def, invMultiplier,
     Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   rw [← sub_apply, ← Lp.fourierMultiplierCLM_sub,
     ← smul_apply, ← Lp.fourierMultiplierCLM_smul]
   congr 2
-  set σ : Lp ℂ ∞ (volume : Measure E) := (φ.invCutoffSchwartz N j).toLp ∞ volume with hσ
+  set σ : Lp ℂ ∞ (volume : Measure E) := (φ.invCutoffSchwartz j).toLp ∞ volume with hσ
   set w := (memLp_waveSinSymbol (E := E) τ).toLp _ with hw
   set ep := (memLp_phaseSymbol (E := E) sqrtNegLaplacianSymbol τ).toLp _ with hep
   set em := (memLp_phaseSymbol (E := E) sqrtNegLaplacianSymbol (-τ)).toLp _ with hem
@@ -301,44 +247,43 @@ private theorem waveSinPropagator_fourierMultiplierCLM_eq {N : ℕ} (hN : φ.rOu
     (memLp_waveSinSymbol (E := E) τ).coeFn_toLp,
     (memLp_phaseSymbol (E := E) sqrtNegLaplacianSymbol τ).coeFn_toLp,
     (memLp_phaseSymbol (E := E) sqrtNegLaplacianSymbol (-τ)).coeFn_toLp,
-    (φ.invCutoffSchwartz N j).coeFn_toLp ∞ volume, hk] with ξ h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀ h₁₁
+    (φ.invCutoffSchwartz j).coeFn_toLp ∞ volume, hk] with ξ h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ h₉ h₁₀ h₁₁
   rw [← hw] at h₇
   rw [← hep] at h₈
   rw [← hem] at h₉
   rw [← hσ] at h₁₀
   simp only [Pi.smul_apply', Pi.smul_apply, Pi.sub_apply, smul_eq_mul] at h₁ h₂ h₃ h₄ h₅ h₆
-  rw [h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, coe_invCutoffSchwartz]
-  exact φ.waveSinSymbol_mul_eq hN τ ξ h₁₁
+  rw [h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀]
+  exact φ.waveSinSymbol_mul_eq τ ξ h₁₁
 
 /-- `D⁻¹ sin(τD) Pⱼ = 2^{-j} (2i)⁻¹ (W₊(τ) - W₊(-τ)) Pⱼ Mⱼ`. -/
-private theorem waveSinPropagator_littlewoodPaley_eq {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn)
-    {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
+private theorem waveSinPropagator_littlewoodPaley_eq {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
     (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (τ : ℝ)
     (g : Lp ℂ 2 (volume : Measure E)) :
     waveSinPropagator ℂ τ (Lp.fourierMultiplierCLM ℂ m g) =
       (((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ : ℂ) •
-        (halfWavePropagator ℂ τ (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier N j g)) -
-          halfWavePropagator ℂ (-τ) (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier N j g))) :=
-  φ.waveSinPropagator_fourierMultiplierCLM_eq hN
+        (halfWavePropagator ℂ τ (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier j g)) -
+          halfWavePropagator ℂ (-τ) (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier j g))) :=
+  φ.waveSinPropagator_fourierMultiplierCLM_eq
     (hm.mono fun ξ h h0 ↦ by simp only [h, h0, Complex.ofReal_zero]) τ g
 
 /-- `D⁻¹ sin(τD) Pⱼ Pⱼ = 2^{-j} (2i)⁻¹ (W₊(τ) - W₊(-τ)) Pⱼ Pⱼ Mⱼ`. -/
-private theorem waveSinPropagator_littlewoodPaley_littlewoodPaley_eq {N : ℕ}
-    (hN : φ.rOut < 2 ^ N * φ.rIn) {j : ℤ} {m : Lp ℂ ∞ (volume : Measure E)}
+private theorem waveSinPropagator_littlewoodPaley_littlewoodPaley_eq {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure E)}
     (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) (τ : ℝ)
     (g : Lp ℂ 2 (volume : Measure E)) :
     waveSinPropagator ℂ τ (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m g)) =
       (((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹ : ℂ) •
         (halfWavePropagator ℂ τ (Lp.fourierMultiplierCLM ℂ m
-            (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier N j g))) -
+            (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier j g))) -
           halfWavePropagator ℂ (-τ) (Lp.fourierMultiplierCLM ℂ m
-            (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier N j g)))) := by
+            (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier j g)))) := by
   have hk : ∀ᵐ ξ ∂volume, φ.littlewoodPaley j ξ = 0 →
       ((m • m : Lp ℂ ∞ (volume : Measure E)) : E → ℂ) ξ = 0 := by
     filter_upwards [Lp.coeFn_lpSMul (r := ∞) m m, hm] with ξ h₁ h₂ h
     rw [h₁, Pi.smul_apply', h₂, h, Complex.ofReal_zero, zero_smul]
   simp only [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
-  exact φ.waveSinPropagator_fourierMultiplierCLM_eq hN hk τ g
+  exact φ.waveSinPropagator_fourierMultiplierCLM_eq hk τ g
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The constant `2^{-j} (2i)⁻¹` of the decomposition of `D⁻¹ sin(τD)`, counted twice, is
@@ -375,6 +320,9 @@ private theorem eLpNorm_eLpNorm_le_mul_two_mul {w u : ℝ → Lp ℂ 2 (volume :
   have hU := (hu.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
   have hUn : AEStronglyMeasurable (fun t ↦ eLpNorm (u (-t)) r volume) :=
     hU.comp_measurePreserving hneg
+  have hrefl : eLpNorm (fun t ↦ eLpNorm (u (-t)) r volume) q volume =
+      eLpNorm (fun t ↦ eLpNorm (u t) r volume) q volume :=
+    eLpNorm_comp_measurePreserving (g := fun t ↦ eLpNorm (u t) r volume) hU hneg
   calc _ ≤ eLpNorm (fun t ↦ a * (eLpNorm (u t) r volume + eLpNorm (u (-t)) r volume)) q volume :=
         eLpNorm_mono_eNorm (hw.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun t ↦ by
           simpa only [eNorm_eq_self] using h t
@@ -385,8 +333,7 @@ private theorem eLpNorm_eLpNorm_le_mul_two_mul {w u : ℝ → Lp ℂ 2 (volume :
         gcongr
         exact eLpNorm_add_le hq
     _ = _ := by
-        rw [show (fun t ↦ eLpNorm (u (-t)) r volume) = (fun t ↦ eLpNorm (u t) r volume) ∘ Neg.neg
-          from rfl, eLpNorm_comp_measurePreserving hU hneg]
+        rw [hrefl]
         ring
 
 /-- Reflecting time turns a bilinear bound for the pairings `⟪W₊(t - s) T F(s), G(t)⟫` into the
@@ -519,10 +466,10 @@ theorem exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le (hq : 2 < q
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
   · -- In dimension `0` the blocks vanish.
     exact ⟨0, fun j m hm f ↦ by
-      simp_rw [fourierMultiplierCLM_littlewoodPaley_eq_zero hm hE, zero_apply,
-        map_zero, eLpNorm_congr_ae (Lp.coeFn_zero ℂ 2 (volume : Measure E)), eLpNorm_zero,
-        eLpNorm_fun_zero, zero_le]⟩
-  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_admissible hq hr0 hqr hE
+      simp_rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE,
+        zero_apply, map_zero, eLpNorm_congr_ae (Lp.coeFn_zero ℂ 2 (volume : Measure E)),
+        eLpNorm_zero, eLpNorm_fun_zero, zero_le]⟩
+  obtain ⟨-, -, hr2⟩ := two_le_finrank_of_waveAdmissible hq hr0 hqr hE
   -- Test against `L^{r'}` with `r'` the Hölder conjugate of `r`.
   have hrr := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr2)
   obtain ⟨C, hC⟩ := φ.exists_enorm_integral_inner_halfWavePropagator_littlewoodPaley_le
@@ -596,24 +543,23 @@ theorem exists_eLpNorm_eLpNorm_waveSinPropagator_littlewoodPaley_le (hq : 2 < q)
             volume) q volume ≤
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) * ‖g‖ₑ := by
-  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   obtain ⟨C, hC⟩ := φ.exists_eLpNorm_eLpNorm_halfWavePropagator_littlewoodPaley_le hq hpq hqr hr
-  set K := eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz N 0)) 1 volume
+  set K := eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume
   refine ⟨C * K.toNNReal * (ENNReal.LpAddConst r).toNNReal, fun j m hm g ↦ ?_⟩
   set γ := (Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹
   set c : ℂ := ((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹
-  set u := fun t ↦ halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier N j g))
+  set u := fun t ↦ halfWavePropagator ℂ t (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier j g))
   have hu : Continuous u := continuous_phasePropagator_apply _ _
   have hpt (t : ℝ) : eLpNorm (waveSinPropagator ℂ t (Lp.fourierMultiplierCLM ℂ m g)) r volume ≤
       ‖c‖ₑ * ENNReal.LpAddConst r * (eLpNorm (u t) r volume + eLpNorm (u (-t)) r volume) := by
-    rw [φ.waveSinPropagator_littlewoodPaley_eq hN hm, eLpNorm_congr_ae (Lp.coeFn_smul _ _),
+    rw [φ.waveSinPropagator_littlewoodPaley_eq hm, eLpNorm_congr_ae (Lp.coeFn_smul _ _),
       eLpNorm_const_smul, eLpNorm_congr_ae (Lp.coeFn_sub _ _), mul_assoc]
     gcongr
     exact eLpNorm_sub_le' r
-  have hMg : ‖φ.invMultiplier N j g‖ₑ ≤ K * ‖g‖ₑ := by
-    simpa only [Lp.eNorm_def] using φ.eLpNorm_invMultiplier_le N j g one_le_two
+  have hMg : ‖φ.invMultiplier j g‖ₑ ≤ K * ‖g‖ₑ := by
+    simpa only [Lp.eNorm_def] using φ.eLpNorm_invMultiplier_le j g one_le_two
   have hK : (K.toNNReal : ℝ≥0∞) = K :=
-    ENNReal.coe_toNNReal (φ.eLpNorm_fourierInv_invCutoffSchwartz_ne_top N)
+    ENNReal.coe_toNNReal (φ.eLpNorm_fourierInv_invCutoffSchwartz_ne_top)
   have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
   calc _ ≤ ‖c‖ₑ * ENNReal.LpAddConst r * 2 * eLpNorm (fun t ↦ eLpNorm (u t) r volume) q volume :=
         eLpNorm_eLpNorm_le_mul_two_mul (continuous_waveSinPropagator_apply _).aestronglyMeasurable
@@ -656,33 +602,32 @@ theorem exists_lintegral_lintegral_enorm_inner_waveSinPropagator_sub_littlewoodP
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹) - 1)) *
             eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume *
             eLpNorm (fun t ↦ eLpNorm (G t) r' volume) p volume := by
-  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   obtain ⟨C, hC⟩ :=
     φ.exists_lintegral_lintegral_enorm_inner_halfWavePropagator_sub_littlewoodPaley_le (r' := r')
       hq hpq hqr
-  set K := eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz N 0)) 1 volume
+  set K := eLpNorm (𝓕⁻ ⇑(φ.invCutoffSchwartz 0)) 1 volume
   refine ⟨C * K.toNNReal, fun j m hm F G hF hG ↦ ?_⟩
   set γ := (Module.finrank ℝ E : ℝ) / 2 - Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹
   set c : ℂ := ((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹
-  set Y := fun s ↦ φ.invMultiplier N j (F s)
-  have hY : AEStronglyMeasurable Y := (φ.invMultiplier N j).continuous.comp_aestronglyMeasurable hF
+  set Y := fun s ↦ φ.invMultiplier j (F s)
+  have hY : AEStronglyMeasurable Y := (φ.invMultiplier j).continuous.comp_aestronglyMeasurable hF
   -- `D⁻¹ sin(τD) Pⱼ Pⱼ = c (W₊(τ) - W₊(-τ)) Pⱼ Pⱼ Mⱼ`, and the half-wave estimate applies to
   -- both halves.
   have hsplit := lintegral_lintegral_enorm_inner_smul_halfWavePropagator_sub_le
     (Lp.fourierMultiplierCLM ℂ m ∘L Lp.fourierMultiplierCLM ℂ m) c
     (fun F G hF hG ↦ hC j m hm F G hF hG) hY hG
   simp only [ContinuousLinearMap.comp_apply] at hsplit
-  simp_rw [φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hN hm]
+  simp_rw [φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hm]
   -- `Mⱼ` costs a constant factor in the mixed norm.
   have hYF : eLpNorm (fun s ↦ eLpNorm (Y s) r' volume) p volume ≤
       K * eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
     calc _ ≤ eLpNorm (fun s ↦ K * eLpNorm (F s) r' volume) p volume :=
           eLpNorm_mono_eNorm (hY.aemeasurable_eLpNorm_Lp .rfl r').aestronglyMeasurable fun s ↦ by
             simpa only [eNorm_eq_self] using
-              φ.eLpNorm_invMultiplier_le N j (F s) (ENNReal.HolderConjugate.one_le r' r)
+              φ.eLpNorm_invMultiplier_le j (F s) (ENNReal.HolderConjugate.one_le r' r)
       _ = _ := eLpNorm_const_mul_ennreal_of_pos (by exact_mod_cast hpq.pos)
   have hK : (K.toNNReal : ℝ≥0∞) = K :=
-    ENNReal.coe_toNNReal (φ.eLpNorm_fourierInv_invCutoffSchwartz_ne_top N)
+    ENNReal.coe_toNNReal (φ.eLpNorm_fourierInv_invCutoffSchwartz_ne_top)
   have h2j : (0 : ℝ) < 2 ^ j := zpow_pos two_pos j
   calc _ ≤ _ := hsplit
     _ ≤ ‖c‖ₑ * 2 * (C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (2 * γ)) *
@@ -715,27 +660,26 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
           C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ (2 * ((Module.finrank ℝ E : ℝ) / 2 -
             Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹) - 1)) *
             eLpNorm (fun s ↦ eLpNorm (F s) r' volume) p volume := by
-  obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   obtain ⟨C, hC⟩ :=
     φ.exists_lintegral_lintegral_enorm_inner_waveSinPropagator_sub_littlewoodPaley_le (r' := r')
       hq hpq hqr
   refine ⟨C, fun j m hm F hF ↦ ?_⟩
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hE | hE
-  · simp_rw [fourierMultiplierCLM_littlewoodPaley_eq_zero hm hE, zero_apply, map_zero,
-      integral_zero, eLpNorm_congr_ae (Lp.coeFn_zero ℂ 2 (volume : Measure E)), eLpNorm_zero,
-      eLpNorm_fun_zero]
+  · simp_rw [φ.fourierMultiplierCLM_littlewoodPaley_eq_zero_of_finrank_eq_zero hm hE,
+      zero_apply, map_zero, integral_zero,
+      eLpNorm_congr_ae (Lp.coeFn_zero ℂ 2 (volume : Measure E)), eLpNorm_zero, eLpNorm_fun_zero]
     exact zero_le
   obtain ⟨-, -, hr2⟩ :=
-    two_le_finrank_of_admissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr hE
+    two_le_finrank_of_waveAdmissible hq (ENNReal.HolderConjugate.ne_zero r r') hqr hE
   set c : ℂ := ((2 : ℝ) ^ j)⁻¹ * (2 * Complex.I)⁻¹
   set Z := fun s ↦ Lp.fourierMultiplierCLM ℂ m
-    (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier N j (F s)))
+    (Lp.fourierMultiplierCLM ℂ m (φ.invMultiplier j (F s)))
   have hZ : Integrable Z := (Lp.fourierMultiplierCLM ℂ m).integrable_comp
-    ((Lp.fourierMultiplierCLM ℂ m).integrable_comp ((φ.invMultiplier N j).integrable_comp hF))
+    ((Lp.fourierMultiplierCLM ℂ m).integrable_comp ((φ.invMultiplier j).integrable_comp hF))
   have hid (t s : ℝ) : waveSinPropagator ℂ (t - s)
       (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) =
       c • (halfWavePropagator ℂ (t - s) (Z s) - halfWavePropagator ℂ (-(t - s)) (Z s)) :=
-    φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hN hm _ _
+    φ.waveSinPropagator_littlewoodPaley_littlewoodPaley_eq hm _ _
   have hint (t : ℝ) : Integrable fun s ↦ waveSinPropagator ℂ (t - s)
       (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (F s))) := by
     simp_rw [hid]
