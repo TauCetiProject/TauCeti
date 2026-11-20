@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Holder.Normed
+public import TauCeti.Topology.ContinuousMap.Bounded.Smooth
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
@@ -387,27 +388,15 @@ instance [CompleteSpace F] : CompleteSpace (littleHolder k α E F) :=
   isClosed_littleHolder.completeSpace_coe
 variable (k α E F) in
 /-- The bounded `C^{k,α}` maps that are smooth with all derivatives bounded, as a subspace of
-`CkHolderSpace k α E F`. They are dense in `h^{k,α}` on a finite-dimensional space
-(`CkHolderSpace.littleHolder_subset_closure`). -/
-def smoothBoundedDerivatives : Submodule ℝ (CkHolderSpace k α E F) where
-  carrier := {g | ContDiff ℝ ∞ g ∧ ∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C}
-  zero_mem' := ⟨by rw [coe_zero]; exact contDiff_zero_fun, fun i ↦ ⟨0, by simp⟩⟩
-  add_mem' := by
-    rintro f g ⟨hf, hfb⟩ ⟨hg, hgb⟩
-    refine ⟨coe_add f g ▸ hf.add hg, fun i ↦ ?_⟩
-    obtain ⟨C, hC⟩ := hfb i
-    obtain ⟨D, hD⟩ := hgb i
-    refine ⟨C + D, fun x ↦ ?_⟩
-    rw [coe_add, iteratedFDeriv_add_apply (hf.of_le (by simp)).contDiffAt
-      (hg.of_le (by simp)).contDiffAt]
-    exact (norm_add_le _ _).trans (add_le_add (hC x) (hD x))
-  smul_mem' := by
-    rintro c f ⟨hf, hfb⟩
-    refine ⟨coe_smul c f ▸ hf.const_smul c, fun i ↦ ?_⟩
-    obtain ⟨C, hC⟩ := hfb i
-    refine ⟨‖c‖ * C, fun x ↦ ?_⟩
-    rw [coe_smul, iteratedFDeriv_const_smul_apply (hf.of_le (by simp)).contDiffAt, norm_smul]
-    exact mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _)
+`CkHolderSpace k α E F`: the preimage of `TauCeti.smoothBoundedDerivatives` under the coercion to
+functions. On a finite-dimensional space, `h^{k,α}` lies in their closure
+(`CkHolderSpace.littleHolder_subset_closure`), with equality when `α < 1`
+(`CkHolderSpace.littleHolder_eq_closure`). -/
+def smoothBoundedDerivatives : Submodule ℝ (CkHolderSpace k α E F) :=
+  (TauCeti.smoothBoundedDerivatives ℝ E F).comap
+    ({ toFun := (⇑)
+       map_add' := coe_add
+       map_smul' := coe_smul } : CkHolderSpace k α E F →ₗ[ℝ] E → F)
 
 /-- Membership in `smoothBoundedDerivatives` is smoothness together with a global bound on each
 derivative. -/
@@ -415,7 +404,7 @@ derivative. -/
 theorem mem_smoothBoundedDerivatives_iff {g : CkHolderSpace k α E F} :
     g ∈ smoothBoundedDerivatives k α E F ↔
       ContDiff ℝ ∞ g ∧ ∀ i, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C :=
-  Iff.rfl
+  TauCeti.mem_smoothBoundedDerivatives ℝ E F
 
 
 /-- A bounded `C^{k,α}` map whose `k`-th derivative is Hölder of a larger exponent `β > α` lies in
@@ -470,7 +459,7 @@ private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [Borel
   let g : CkHolderSpace k α E F :=
     ofContDiff g₀ (hg₀.of_le (by exact_mod_cast le_top)) (fun i _ ↦ hg₀b i) hg₀h
   have hg : ⇑g = g₀ := coe_ofContDiff _ _ _ _
-  refine ⟨g, ⟨hg ▸ hg₀, hg ▸ hg₀b⟩, fun i hi ↦ ?_⟩
+  refine ⟨g, mem_smoothBoundedDerivatives_iff.2 ⟨hg ▸ hg₀, hg ▸ hg₀b⟩, fun i hi ↦ ?_⟩
   have hfi : ContDiff ℝ i f := f.contDiff.of_le (by exact_mod_cast hi)
   have hgi : ContDiff ℝ i g₀ := hg₀.of_le (by exact_mod_cast le_top)
   rw [coe_sub, hg, iteratedFDeriv_sub hfi hgi, hD i hi]
@@ -545,7 +534,8 @@ theorem littleHolder_eq_closure (hα : α < 1) :
     (littleHolder k α E F : Set (CkHolderSpace k α E F)) =
       closure (smoothBoundedDerivatives k α E F) := by
   refine littleHolder_subset_closure.antisymm
-    (closure_minimal (fun g ⟨hg, hgb⟩ ↦ ?_) isClosed_littleHolder)
+    (closure_minimal (fun g hg ↦ ?_) isClosed_littleHolder)
+  obtain ⟨hg, hgb⟩ := mem_smoothBoundedDerivatives_iff.1 hg
   obtain ⟨C, hC⟩ := hgb (k + 1)
   exact mem_littleHolder_of_contDiff_succ hα (hg.of_le (by exact_mod_cast le_top)) hC
 
