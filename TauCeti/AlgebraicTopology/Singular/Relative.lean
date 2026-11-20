@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Relative
 public import Mathlib.Topology.Category.TopCat.EpiMono
 public import Mathlib.Topology.Category.TopPair
@@ -99,13 +97,6 @@ lemma mem_range_restrict_hom_app_iff (P : TopPair.{w}) (S : (toSSetPair.obj P).r
   (SSetPair.mem_range_restrict_hom_app_iff _ _ x).trans
     (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.val)
 
-/-- Open inclusions induce monomorphisms of singular chains in each degree. -/
-instance _root_.TopCat.mono_chainComplexMap_inclusion'_f {X : TopCat.{0}} (U : Opens X)
-    (L : ModuleCat.{0} ℤ) (q : ℕ) :
-    Mono ((SSet.chainComplexMap (TopCat.toSSet.map (Opens.inclusion' U)) L).f q) :=
-  inferInstanceAs (Mono ((SSet.chainComplexMap
-    (TopPair.toSSetPair.obj (TopPair.ofSubset (U : Set X))).hom L).f q))
-
 section ofInclusionMap
 
 variable {X : TopCat.{w}} {A₁ C₁ A₂ C₂ : Set X} (h₁ : C₁ ⊆ A₁) (h₂ : C₂ ⊆ A₂) (hA : A₁ ⊆ A₂)
@@ -187,6 +178,14 @@ noncomputable def singularChainComplexFunctor :
     (Functor.whiskeringLeft _ _ _).obj toSSetPair
 
 variable {C} (P P' : TopPair.{w}) (f : P ⟶ P') (R : C)
+
+/-- Open inclusions induce monomorphisms of singular chains in each degree. -/
+instance _root_.TopCat.mono_chainComplexMap_inclusion'_f {X : TopCat.{w}} (U : Opens X)
+    (R : C) (q : ℕ) :
+    Mono ((SSet.chainComplexMap (TopCat.toSSet.map (Opens.inclusion' U)) R).f q) :=
+  inferInstanceAs (Mono ((SSet.chainComplexMap
+    (TopPair.toSSetPair.obj (TopPair.ofSubset (U : Set X))).hom R).f q))
+
 
 /-- The relative singular chain complex of a topological pair. -/
 noncomputable abbrev singularChainComplex : ChainComplex C ℕ :=
@@ -698,10 +697,12 @@ section OpenSupport
 
 open TopologicalSpace
 
-variable {X : TopCat.{0}} (U : Opens X) (A : Set X)
+variable {R}
+
+variable {X : TopCat.{w}} (U : Opens X) (A : Set X)
 
 /-- The original subspace paired with the inverse image of the relative subset. -/
-abbrev openSubspacePair : TopPair.{0} :=
+abbrev openSubspacePair : TopPair.{w} :=
   TopPair.ofSubset (Opens.inclusion' U ⁻¹' (A : Set X))
 
 /-- The open-subspace pair of a complement is the complement pair of the inverse image. -/
@@ -720,7 +721,6 @@ lemma openSubspaceInclusion_fst :
   erw [openSubspaceInclusion, TopPair.ofSubsetMap_fst]
 
 variable (S : (TopCat.toSSet.obj X).Subcomplex)
-local notation "ℤₘ" => ModuleCat.of ℤ (ULift ℤ : Type)
 
 /-- Enlarging the relative subset induces a map of the native restricted pairs. -/
 def restrictSubsetMap
@@ -747,35 +747,35 @@ lemma restrictSubsetMap_right
 @[reassoc]
 lemma chainComplexπ_restrictSubsetMap
     {A B : Set X} (hAB : A ⊆ B) :
-    ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrict S).chainComplexπ ℤₘ ≫
-      SSetPair.chainComplexMap (restrictSubsetMap S hAB) ℤₘ =
-      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrict S).chainComplexπ ℤₘ := by
+    ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrict S).chainComplexπ R ≫
+      SSetPair.chainComplexMap (restrictSubsetMap S hAB) R =
+      ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrict S).chainComplexπ R := by
   erw [← SSetPair.chainComplexπ_naturality, restrictSubsetMap_right,
-    show SSet.chainComplexMap (𝟙 S.toSSet) ℤₘ = 𝟙 _ from CategoryTheory.Functor.map_id _ _,
+    show SSet.chainComplexMap (𝟙 S.toSSet) R = 𝟙 _ from CategoryTheory.Functor.map_id _ _,
     Category.id_comp]
 
 /-- Support change commutes with the original relative-chain inclusion. -/
 lemma chainComplexMap_restrictSubsetMap_comp_restrictι
     {A B : Set X} (hAB : A ⊆ B) :
-    SSetPair.chainComplexMap (restrictSubsetMap S hAB) ℤₘ ≫
-      SSetPair.chainComplexMap ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrictι S) ℤₘ =
-    SSetPair.chainComplexMap ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrictι S) ℤₘ ≫
-      TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hAB) ℤₘ := by
+    SSetPair.chainComplexMap (restrictSubsetMap S hAB) R ≫
+      SSetPair.chainComplexMap ((TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrictι S) R =
+    SSetPair.chainComplexMap ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrictι S) R ≫
+      TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hAB) R := by
   have hc : restrictSubsetMap S hAB ≫ (TopPair.toSSetPair.obj (TopPair.ofSubset B)).restrictι S =
       (TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrictι S ≫
         TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) hAB) :=
     SSetPair.restrictMap_comp_restrictι _ _
-  have h := congrArg (fun f ↦ SSetPair.chainComplexMap f ℤₘ) hc
+  have h := congrArg (fun f ↦ SSetPair.chainComplexMap f R) hc
   simpa only [CategoryTheory.Functor.map_comp] using h
 
 /-- Successive support restrictions compose. -/
 @[reassoc (attr := simp)]
 lemma chainComplexMap_restrictSubsetMap_comp
     {A B C : Set X} (hAB : A ⊆ B) (hBC : B ⊆ C) :
-    SSetPair.chainComplexMap (restrictSubsetMap S hAB) ℤₘ ≫
-      SSetPair.chainComplexMap (restrictSubsetMap S hBC) ℤₘ =
-      SSetPair.chainComplexMap (restrictSubsetMap S (hAB.trans hBC)) ℤₘ := by
-  apply (cancel_epi (((toSSetPair.obj (ofSubset A)).restrict S).chainComplexπ ℤₘ)).1
+    SSetPair.chainComplexMap (restrictSubsetMap S hAB) R ≫
+      SSetPair.chainComplexMap (restrictSubsetMap S hBC) R =
+      SSetPair.chainComplexMap (restrictSubsetMap S (hAB.trans hBC)) R := by
+  apply (cancel_epi (((toSSetPair.obj (ofSubset A)).restrict S).chainComplexπ R)).1
   erw [chainComplexπ_restrictSubsetMap_assoc, chainComplexπ_restrictSubsetMap,
     chainComplexπ_restrictSubsetMap]
 

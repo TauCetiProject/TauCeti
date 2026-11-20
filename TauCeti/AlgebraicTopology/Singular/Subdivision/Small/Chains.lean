@@ -32,7 +32,7 @@ small-chain equivalence and prove excision.
   the small subcomplex of the preimage family.
 * `TopCat.toSmallSingularSubcomplex`: the singular simplicial set of a subset of a member of the
   family maps into the small subcomplex.
-* `TopCat.chainComplexMap_f_toSmallSingularSubcomplex`: the inclusion law for subordinate chains.
+* `TopCat.chainComplexMap_f_toSmallSingularSubcomplex_ι`: the inclusion law for subordinate chains.
 * `TopCat.chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero`: a chain map vanishing on the
   singular chains of each member of the family vanishes on the small chains.
 * `TopCat.smallSingularSubcomplex` is affinely stable (`SSet.Subcomplex.IsAffineStable`), so
@@ -207,7 +207,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
   {R : C} {X : TopCat.{w}}
 
 /-- Inclusion of subordinate chains after restricting to a subset is its singular inclusion. -/
-lemma chainComplexMap_f_toSmallSingularSubcomplex {ι : Type*} (U : ι → Set X)
+lemma chainComplexMap_f_toSmallSingularSubcomplex_ι {ι : Type*} (U : ι → Set X)
     {S' : Set X} {i : ι} (hS' : S' ⊆ U i) (n : ℕ) :
     (SSet.chainComplexMap (toSmallSingularSubcomplex U hS') R).f n ≫
         (SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R).f n =

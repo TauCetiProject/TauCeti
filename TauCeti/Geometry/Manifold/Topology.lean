@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
-public import Mathlib.Topology.Category.TopCat.Opens
 public import TauCeti.Analysis.Convex.SimplyConnected
 public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 
@@ -27,13 +26,6 @@ open scoped ContDiff Manifold
 open Topology
 
 universe u v
-
-/-- An open subspace viewed as a bundled topological space carries the restricted native atlas. -/
-instance TopologicalSpace.Opens.instChartedSpaceToTopCatObj {H : Type*} {M : Type*}
-    [TopologicalSpace H] [TopologicalSpace M] [ChartedSpace H M]
-    (W : TopologicalSpace.Opens (TopCat.of M)) :
-    ChartedSpace H ((TopologicalSpace.Opens.toTopCat (TopCat.of M)).obj W) :=
-  inferInstanceAs (ChartedSpace H (⟨(W : Set M), W.isOpen⟩ : TopologicalSpace.Opens M))
 
 namespace ModelWithCorners
 

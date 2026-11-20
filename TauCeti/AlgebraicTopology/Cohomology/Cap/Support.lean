@@ -236,6 +236,23 @@ lemma relativeCapInto_inclusion (p q n : ℕ) (h : p + q = n)
 
 section Subordinate
 
+/-- Enlarging the output open set preserves the support-local relative cap in that set. -/
+@[reassoc]
+lemma relativeCapInto_open_mono (hUV : U ≤ V) (p q n : ℕ) (h : p + q = n)
+    (hS : ∀ (σ : (S : SSet) _⦋n⦌),
+      Set.range (X.toSSetObjEquiv _ σ.val) ⊆ U ∨
+        Set.range (X.toSSetObjEquiv _ σ.val) ⊆ A)
+    (φ : Q[A].X p ⟶ L) :
+    relativeCapInto L S U A p q n h φ ≫
+        (SSet.chainComplexMap (TopCat.toSSet.map ((Opens.toTopCat X).map (homOfLE hUV))) L).f q =
+      relativeCapInto L S V A p q n h φ := by
+  rw [← cancel_mono ((SSet.chainComplexMap (TopCat.toSSet.map (Opens.inclusion' V)) L).f q)]
+  have hi := Opens.toTopCat_map_comp_inclusion' (homOfLE hUV)
+  erw [Category.assoc, ← HomologicalComplex.comp_f,
+    ← CategoryTheory.Functor.map_comp, ← CategoryTheory.Functor.map_comp, hi,
+    relativeCapInto_inclusion L S U A p q n h hS φ,
+    relativeCapInto_inclusion L S V A p q n h (fun σ ↦ (hS σ).imp (fun hs ↦ hs.trans hUV) id) φ]
+
 variable (hS : ∀ m (σ : (S : SSet) _⦋m⦌),
   Set.range (X.toSSetObjEquiv _ σ.val) ⊆ U ∨ Set.range (X.toSSetObjEquiv _ σ.val) ⊆ A)
   (p q n : ℕ) (h : p + q = n)
@@ -517,7 +534,7 @@ lemma restrictSubsetMap_relativeCapInto (hAB : A ≤ B)
         ((TopPair.singularChainComplexMap (TopPair.ofSubsetMap (𝟙 X) hAB) ℤₘ).f p ≫ φ) := by
   erw [← cancel_epi
     ((((TopPair.toSSetPair.obj (TopPair.ofSubset (A : Set X))).restrict S).chainComplexπ ℤₘ).f n)]
-  have hn := congrArg (fun f ↦ f.f n) (chainComplexπ_restrictSubsetMap S hAB)
+  have hn := congrArg (fun f ↦ f.f n) (chainComplexπ_restrictSubsetMap (R := ℤₘ) S hAB)
   simp only [HomologicalComplex.comp_f] at hn
   erw [← Category.assoc, hn, π_relativeCapInto, π_relativeCapInto]
   have hp0 := (TopPair.singularChainComplexπ_pair_naturality
