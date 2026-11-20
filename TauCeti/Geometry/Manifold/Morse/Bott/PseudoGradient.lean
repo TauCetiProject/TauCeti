@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
-public import TauCeti.Geometry.Manifold.Morse.Bott.Chart
-public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic
+public import TauCeti.Geometry.Manifold.Morse.Bott.Chart.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
@@ -39,13 +40,13 @@ the critical submanifold is fixed (`TauCeti.MorseBottChart.linearFlow_eq_self`),
 move in the coordinate slice through it on which the weight-zero coordinates are constant. For a
 Morse function the weights are all nonzero, and an adapted pseudo-gradient in the sense of Audin
 and Damian (`TauCeti.IsAdaptedPseudoGradient`) is adapted in the Morse–Bott sense
-(`TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient`).
+(`TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient`, in
+`TauCeti.Geometry.Manifold.Morse.PseudoGradient.Basic`); the linear flow of a Morse chart and the
+basic properties of Morse pseudo-gradients are the ones proved here.
 
 ## Main declarations
 
 * `TauCeti.IsBottAdaptedPseudoGradient`: the definition.
-* `TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient`: pseudo-gradients adapted to a
-  Morse function are adapted in the Morse–Bott sense.
 * `TauCeti.IsBottAdaptedPseudoGradient.eq_zero_iff`: the zeros of an adapted pseudo-gradient are
   exactly the critical points of `f`.
 * `TauCeti.IsBottAdaptedPseudoGradient.neg`: `-X` is adapted to `-f`.
@@ -121,6 +122,12 @@ theorem linearFlow_add (s t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) :
   ext i
   simp only [linearFlow_apply, ← mul_assoc, ← Real.exp_add]
   ring_nf
+
+/-- The linear flow fixes the origin. -/
+@[simp]
+theorem linearFlow_zero_right (t : ℝ) : φ.linearFlow t 0 = 0 := by
+  ext i
+  simp
 
 /-- The linear flow is linear in the coordinates. -/
 theorem linearFlow_add_right (t : ℝ) (z z' : Fin (Module.finrank ℝ E) → ℝ) :
@@ -242,21 +249,6 @@ structure IsBottAdaptedPseudoGradient (f : M → ℝ) (X : (x : M) → TangentSp
     ∃ φ : MorseBottChart E f x, ∀ y ∈ φ.toChart.source,
       φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
         fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)
-
-/-- **Morse pseudo-gradients are Morse–Bott pseudo-gradients.** A pseudo-gradient adapted to `f`,
-linear in a Morse chart at each critical point, is adapted to `f` in the Morse–Bott sense: a Morse
-chart is a Morse–Bott chart all of whose weights are nonzero. -/
-theorem IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient (hX : IsAdaptedPseudoGradient f X) :
-    IsBottAdaptedPseudoGradient f X where
-  contMDiff := hX.contMDiff
-  mvfderiv_apply_lt_zero := hX.mvfderiv_apply_lt_zero
-  exists_morseBottChart y hy := by
-    obtain ⟨φ, hφ⟩ := hX.exists_morseChart y hy
-    refine ⟨φ.toMorseBottChart, fun z hz ↦ ?_⟩
-    rw [MorseChart.toMorseBottChart_toChart] at hz ⊢
-    rw [MorseChart.toMorseBottChart_coord, MorseChart.toMorseBottChart_weight]
-    exact hφ z hz
-
 
 namespace IsBottAdaptedPseudoGradient
 

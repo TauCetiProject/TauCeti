@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Lemma
-public import TauCeti.Geometry.Manifold.Morse.Bott.Family
-public import TauCeti.Geometry.Manifold.Morse.Bott.Lemma
+public import Mathlib.Analysis.Calculus.FDeriv.Pi
+public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
 # Morse–Bott charts
@@ -25,21 +23,15 @@ that ignores the directions along the submanifold: after a linear change of coor
 
 Such a chart is recorded as a `TauCeti.MorseBottChart`. The coordinates of weight `0` are the
 coordinates along the critical submanifold and those of weight `±1` its negative and positive
-normal coordinates. This extends the Morse charts `TauCeti.MorseChart`, in which every weight is
-`±1` (`TauCeti.MorseChart.toMorseBottChart`), to critical points lying on critical submanifolds of
-positive dimension.
+normal coordinates. The Morse charts `TauCeti.MorseChart`, in which every weight is `±1`, extend
+this structure, so the chart calculus of this file applies to them as well.
 
 In a Morse–Bott chart the critical points of `f` are exactly the points whose coordinates of
 nonzero weight vanish (`TauCeti.MorseBottChart.mfderiv_eq_zero_iff`): the chart straightens the
 critical set into the coordinate plane of the weight-zero coordinates, on which `f` is constant
-(`TauCeti.MorseBottChart.apply_eq_of_mfderiv_eq_zero`). Conversely, every point of a
-Morse–Bott critical submanifold of a smooth function has a Morse–Bott chart
-(`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.nonempty_morseBottChart`): it is the
-normalized Morse–Bott lemma
-`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_normalized_morseBott_chart`,
-read as a single chart of the maximal atlas of `M`, with its normal coordinates rescaled by `√2`.
-So every critical point of a Morse–Bott function has one
-(`TauCeti.IsMorseBottFamily.nonempty_morseBottChart`).
+(`TauCeti.MorseBottChart.apply_eq_of_mfderiv_eq_zero`). The existence of Morse–Bott charts at the
+points of a Morse–Bott critical submanifold is in
+`TauCeti.Geometry.Manifold.Morse.Bott.Chart.Existence`.
 
 Morse–Bott charts are the local models in which the negative gradient flow of a Morse–Bott
 function is normalized: the linear field `z ↦ (-wᵢ zᵢ)ᵢ` is the negative gradient of the normal
@@ -51,29 +43,26 @@ that are linear in such charts are in `TauCeti.Geometry.Manifold.Morse.Bott.Pseu
 
 * `TauCeti.MorseBottChart`: a chart centred at a critical point in which the function is a
   diagonal quadratic form with weights in `{-1, 0, 1}`.
-* `TauCeti.MorseChart.toMorseBottChart`: a Morse chart is a Morse–Bott chart.
 * `TauCeti.MorseBottChart.restr`, `TauCeti.MorseBottChart.neg`: restriction to an open
   neighbourhood of the centre, and the chart of `-f` with the opposite weights.
+* `TauCeti.MorseBottChart.quadratic`: the quadratic normal form, with
+  `TauCeti.MorseBottChart.eqOn_quadratic` and `TauCeti.MorseBottChart.contDiff_quadratic`.
+* `TauCeti.MorseBottChart.contMDiffOn` and `TauCeti.MorseBottChart.contMDiffAt`: a function is
+  smooth on the source of a Morse–Bott chart.
 * `TauCeti.MorseBottChart.mvfderiv_apply`: the differential of `f` in a Morse–Bott chart.
 * `TauCeti.MorseBottChart.mfderiv_eq_zero_iff`: the critical points in a Morse–Bott chart are the
   points whose coordinates of nonzero weight vanish.
-* `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.nonempty_morseBottChart`: every point
-  of a Morse–Bott critical submanifold of a smooth function has a Morse–Bott chart.
-* `TauCeti.IsMorseBottFamily.nonempty_morseBottChart`: every critical point of a Morse–Bott
-  function has a Morse–Bott chart.
 
 ## References
 
 * R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
-* A. Banyaga and D. E. Hurtubise, *A proof of the Morse–Bott lemma*, Expositiones Mathematicae 22
-  (2004), 365–373.
 * M. Hutchings, *Lecture notes on Morse homology (with an eye towards Floer theory and
   pseudoholomorphic curves)*, 2002, Section 6.2 (Morse–Bott functions and their gradient flows).
 -/
 
 public section
 
-open Function Set Topology
+open Function Set
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -102,35 +91,6 @@ structure MorseBottChart (f : M → ℝ) (x : M) where
     f y = f x + (2 : ℝ)⁻¹ * ∑ i, weight i * (coord (toChart y) i) ^ 2
 
 attribute [simp] MorseBottChart.mem_source MorseBottChart.apply_self
-
-/-- A Morse chart is a Morse–Bott chart, all of whose weights are nonzero. -/
-def MorseChart.toMorseBottChart (φ : MorseChart E f x) : MorseBottChart E f x where
-  toChart := φ.toChart
-  mem_maximalAtlas := φ.mem_maximalAtlas
-  mem_source := φ.mem_source
-  apply_self := φ.apply_self
-  coord := φ.coord
-  weight := φ.weight
-  weight_eq_neg_one_or_eq_zero_or_eq_one i := (φ.weight_eq_neg_one_or_eq_one i).imp_right .inr
-  eq_quadratic := φ.eq_quadratic
-
-namespace MorseChart
-
-variable (φ : MorseChart E f x)
-
-@[simp]
-theorem toMorseBottChart_toChart : φ.toMorseBottChart.toChart = φ.toChart := by
-  rw [toMorseBottChart]
-
-@[simp]
-theorem toMorseBottChart_coord : φ.toMorseBottChart.coord = φ.coord := by
-  rw [toMorseBottChart]
-
-@[simp]
-theorem toMorseBottChart_weight : φ.toMorseBottChart.weight = φ.weight := by
-  rw [toMorseBottChart]
-
-end MorseChart
 
 namespace MorseBottChart
 
@@ -189,19 +149,23 @@ def neg : MorseBottChart E (-f) x where
       neg_add_rev]
     ring
 
+/-- The negated Morse–Bott chart has the same chart. -/
 @[simp]
 theorem neg_toChart : φ.neg.toChart = φ.toChart := by
   rw [neg]
 
+/-- The negated Morse–Bott chart has the same coordinates. -/
 @[simp]
 theorem neg_coord : φ.neg.coord = φ.coord := by
   rw [neg]
 
+/-- The negated Morse–Bott chart has the opposite weights. -/
 @[simp]
 theorem neg_weight : φ.neg.weight = -φ.weight := by
   rw [neg]
 
 /-- The inverse of the chart of a Morse–Bott chart sends `0` to the centre. -/
+@[simp]
 theorem toChart_symm_zero : φ.toChart.symm 0 = x := by
   rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source]
 
@@ -248,6 +212,25 @@ theorem quadratic_apply (z : E) :
 theorem eqOn_quadratic : EqOn f (φ.quadratic ∘ φ.toChart) φ.toChart.source := fun y hy ↦ by
   simp only [comp_apply, quadratic_apply]
   exact φ.eq_quadratic y hy
+
+/-- The quadratic normal form is smooth. -/
+theorem contDiff_quadratic : ContDiff ℝ ∞ φ.quadratic := by
+  have hi (i : Fin (Module.finrank ℝ E)) : ContDiff ℝ ∞ fun z ↦ φ.coordL z i :=
+    contDiff_pi.1 φ.coordL.contDiff i
+  simp only [coordL_apply] at hi
+  exact contDiff_const.add (contDiff_const.mul (ContDiff.sum fun i _ ↦
+    contDiff_const.mul ((hi i).pow 2)))
+
+/-- A function is smooth on the source of a Morse–Bott chart: there, it is a quadratic polynomial
+in the coordinates of a chart of the maximal atlas. -/
+theorem contMDiffOn : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ) ∞ f φ.toChart.source :=
+  (φ.contDiff_quadratic.contMDiff.comp_contMDiffOn
+    (contMDiffOn_of_mem_maximalAtlas φ.mem_maximalAtlas)).congr φ.eqOn_quadratic
+
+/-- A function is smooth at every point of the source of a Morse–Bott chart, in particular at its
+centre. -/
+theorem contMDiffAt {y : M} (hy : y ∈ φ.toChart.source) : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f y :=
+  φ.contMDiffOn.contMDiffAt (φ.toChart.open_source.mem_nhds hy)
 
 /-- The derivative of the quadratic normal form. -/
 theorem hasFDerivAt_quadratic (z : E) :
@@ -324,173 +307,5 @@ theorem apply_eq_of_mfderiv_eq_zero {y : M} (hy : y ∈ φ.toChart.source)
   · simp [(φ.mfderiv_eq_zero_iff hy).1 hcrit i hi]
 
 end MorseBottChart
-
-/-! ### Existence on Morse–Bott critical submanifolds -/
-
-section Existence
-
-variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
-  {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S] [ChartedSpace H' S]
-  {i : SmoothEmbedding J 𝓘(ℝ, E) ∞ S M}
-
-/-- Coordinates `(b, y)` on `E' × ℝᵐ` in which `Σⱼ ±yⱼ²` is a diagonal quadratic form with
-weights `0` on the base and `±1` on the fibre: a basis of `E'` on the base and `√2 y` on the fibre,
-indexed by `Fin N` for any `N = dim E' + m`. -/
-private theorem exists_linearEquiv_weight [FiniteDimensional ℝ E'] {m N : ℕ}
-    (hN : N = Module.finrank ℝ E' + m) (ind : ℕ) :
-    ∃ (T : (E' × EuclideanSpace ℝ (Fin m)) ≃ₗ[ℝ] (Fin N → ℝ)) (w : Fin N → ℝ),
-      (∀ j, w j = -1 ∨ w j = 0 ∨ w j = 1) ∧ ∀ v, (2 : ℝ)⁻¹ * ∑ j, w j * T v j ^ 2 =
-        ∑ k, (if k.val < ind then -1 else 1) * v.2 k ^ 2 := by
-  set d := Module.finrank ℝ E'
-  let eN : Fin N ≃ Fin d ⊕ Fin m := (finCongr hN).trans finSumFinEquiv.symm
-  have hsqrt : Real.sqrt 2 ≠ 0 := by positivity
-  let T : (E' × EuclideanSpace ℝ (Fin m)) ≃ₗ[ℝ] (Fin N → ℝ) :=
-    (((Module.finBasis ℝ E').equivFun.prodCongr ((WithLp.linearEquiv 2 ℝ (Fin m → ℝ)).trans
-      (LinearEquiv.smulOfNeZero ℝ _ _ hsqrt))).trans
-        (LinearEquiv.sumArrowLequivProdArrow (Fin d) (Fin m) ℝ ℝ).symm).trans
-      (LinearEquiv.funCongrLeft ℝ ℝ eN)
-  have hT (v : E' × EuclideanSpace ℝ (Fin m)) (j : Fin N) :
-      T v j = Sum.elim ((Module.finBasis ℝ E').equivFun v.1)
-        (fun k ↦ Real.sqrt 2 * v.2 k) (eN j) := by
-    rcases hj : eN j with k | k <;>
-      simp [T, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft, hj]
-  let sg : Fin m → ℝ := fun k ↦ if k.val < ind then -1 else 1
-  let w : Fin N → ℝ := fun j ↦ Sum.elim (fun _ ↦ 0) sg (eN j)
-  have hsum (u : Fin d → ℝ) (v : Fin m → ℝ) :
-      ∑ j, w j * Sum.elim u v (eN j) ^ 2 = ∑ k, sg k * v k ^ 2 := by
-    rw [eN.sum_comp (fun k ↦ Sum.elim (fun _ ↦ (0 : ℝ)) sg k * Sum.elim u v k ^ 2),
-      Fintype.sum_sum_type]
-    simp
-  refine ⟨T, w, fun j ↦ ?_, fun v ↦ ?_⟩
-  · simp only [w, sg]
-    rcases eN j with k | k
-    · simp
-    · simp only [Sum.elim_inr]
-      split_ifs <;> simp
-  · simp only [hT, hsum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    rw [mul_pow, Real.sq_sqrt zero_le_two]
-    ring
-
-omit [FiniteDimensional ℝ E] [J.Boundaryless] in
-/-- A chart `c` of the maximal atlas, followed by the inverse of a linear isomorphism `L`, a
-smooth partial diffeomorphism `ψ`, the translation by `-b` and a linear isomorphism `K` back to
-the model, is again a chart of the maximal atlas. -/
-private theorem exists_trans_mem_maximalAtlas {E₁ E₂ : Type*} [NormedAddCommGroup E₁]
-    [NormedSpace ℝ E₁] [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] {c : OpenPartialHomeomorph M E}
-    (hc : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) (L : E₁ ≃L[ℝ] E)
-    (ψ : OpenPartialHomeomorph E₁ E₂) (hψ : ContDiffOn ℝ ∞ ψ ψ.source)
-    (hψinv : ContDiffOn ℝ ∞ ψ.symm ψ.target) (K : E₂ ≃L[ℝ] E) (b : E₂) :
-    ∃ Φ : OpenPartialHomeomorph E E, (∀ w, Φ w = K (ψ (L.symm w) - b)) ∧
-      Φ.source = L.symm ⁻¹' ψ.source ∧ c.trans Φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M := by
-  let Φ : OpenPartialHomeomorph E E :=
-    (L.symm.toHomeomorph.toOpenPartialHomeomorph.trans ψ).trans
-      ((Homeomorph.subRight b).trans K.toHomeomorph).toOpenPartialHomeomorph
-  have hΦsrc : Φ.source = L.symm ⁻¹' ψ.source := by simp [Φ]
-  have hΦtgt : Φ.target = (fun w ↦ K.symm w + b) ⁻¹' ψ.target := by
-    ext w
-    simp [Φ]
-  refine ⟨Φ, fun _ ↦ rfl, hΦsrc, trans_mem_maximalAtlas_of_contDiffAt hc (fun z hz ↦ ?_)
-    (fun z hz ↦ ?_)⟩
-  · rw [hΦsrc] at hz
-    have hψz : ContDiffAt ℝ ∞ ψ (L.symm z) := (hψ _ hz).contDiffAt (ψ.open_source.mem_nhds hz)
-    exact K.contDiff.contDiffAt.comp z ((hψz.comp z L.symm.contDiff.contDiffAt).sub
-      contDiffAt_const)
-  · rw [hΦtgt] at hz
-    have hψz : ContDiffAt ℝ ∞ ψ.symm (K.symm z + b) :=
-      (hψinv _ hz).contDiffAt (ψ.open_target.mem_nhds hz)
-    exact L.contDiff.contDiffAt.comp z
-      (hψz.comp z (K.symm.contDiff.contDiffAt.add contDiffAt_const))
-
-namespace SmoothEmbedding.IsNondegenerateCriticalSubmanifold
-
-/-- **The Morse–Bott lemma as a chart of the maximal atlas.** Every point `i s` of a Morse–Bott
-critical submanifold of a function `f`, smooth near `i s`, has a Morse–Bott chart: a chart of the
-maximal atlas of `M`, centred at `i s`, in which `f y = f (i s) + (1/2) Σⱼ wⱼ (L (ψ y))ⱼ²` with
-weights `wⱼ ∈ {-1, 0, 1}`.
-
-The chart is the normalized Morse–Bott lemma
-`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_normalized_morseBott_chart`,
-in which `f` reads `f (i s) + Σⱼ ±yⱼ²` in slice coordinates `(b, y)`, translated to centre `i s`
-and with the normal coordinates `y` rescaled by `√2`. -/
-theorem nonempty_morseBottChart (hi : i.IsNondegenerateCriticalSubmanifold f) (s : S)
-    (hf : ∀ᶠ y in 𝓝 (i s), ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) ∞ f y) :
-    Nonempty (MorseBottChart E f (i s)) := by
-  -- Slice charts of `i` at `s`, with complement `F`.
-  let F := i.isImmersion.complement
-  have h : Manifold.IsImmersionAtOfComplement F J 𝓘(ℝ, E) ∞ i s :=
-    i.isImmersion.isImmersionOfComplement_complement s
-  set φ := h.domChart.extend J with hφ
-  set c := h.codChart with hc
-  set L := h.equiv with hL
-  set a := φ s with ha
-  obtain ⟨ψ, U, V, -, -, haU, h0V, hsource, -, hUVξ, hsec, -, hψ0, -, hψ, hψinv, hψg⟩ :=
-    hi.exists_normalized_morseBott_chart h (k := ⊤) (by simp) (by simp)
-      (hf.mono fun y hy ↦ hy.of_le (by simp))
-  have : FiniteDimensional ℝ (E' × F) := L.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ E' :=
-    Module.Finite.of_surjective (LinearMap.fst ℝ E' F) LinearMap.fst_surjective
-  have : FiniteDimensional ℝ F :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ E' F) LinearMap.snd_surjective
-  -- The extended chart of the model `𝓘(ℝ, E)` is the chart itself.
-  have hξs : ∀ w, (c.extend 𝓘(ℝ, E)).symm w = c.symm w := fun w ↦ by simp
-  have hξt : (c.extend 𝓘(ℝ, E)).target = c.target := by simp
-  -- The centre `i s` has slice coordinates `(a, 0)`.
-  have hsa : c.symm (L (a, 0)) = i s := by
-    rw [← hξs, hsec a haU, ha, hφ, (h.domChart.extend J).left_inv
-      (by simpa using h.mem_domChart_source)]
-  have hUVc : U ×ˢ V ⊆ L ⁻¹' c.target := hξt ▸ hUVξ
-  have hca : c (i s) = L (a, 0) := by
-    rw [← hsa, c.right_inv (hUVc (mk_mem_prod haU h0V))]
-  -- The final linear coordinates `T`, with their weights `w`.
-  have hN : Module.finrank ℝ E = Module.finrank ℝ E' + Module.finrank ℝ F := by
-    rw [← L.toLinearEquiv.finrank_eq, Module.finrank_prod]
-  obtain ⟨T, w, hw, hTw⟩ := exists_linearEquiv_weight hN (manifoldMorseIndex 𝓘(ℝ, E) f (i s))
-  -- The chart: slice coordinates, then `ψ`, then the translation of `(a, 0)` to `0` and the
-  -- coordinates `T`, read back in `E` through a basis of `E`.
-  let B := (Module.finBasis ℝ E).equivFun
-  let K : (E' × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) ≃L[ℝ] E :=
-    (T.trans B.symm).toContinuousLinearEquiv
-  have hBK (v : E' × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) : B (K v) = T v := by simp [K]
-  obtain ⟨Φ, hΦ, hΦsrc, hΦmem⟩ := exists_trans_mem_maximalAtlas h.codChart_mem_maximalAtlas L ψ hψ
-    hψinv K ((a, 0) : E' × EuclideanSpace ℝ (Fin (Module.finrank ℝ F)))
-  refine ⟨⟨c.trans Φ, hΦmem, ?_, ?_, B, w, hw, fun y hy ↦ ?_⟩⟩
-  · -- The chart is defined at `i s`.
-    refine ⟨h.mem_codChart_source, ?_⟩
-    rw [mem_preimage, hΦsrc, mem_preimage, OpenPartialHomeomorph.symm_symm, hca,
-      L.symm_apply_apply, hsource]
-    exact mk_mem_prod haU h0V
-  · -- It sends `i s` to `0`.
-    rw [OpenPartialHomeomorph.coe_trans, comp_apply, hca, hΦ, L.symm_apply_apply, hψ0, sub_self,
-      map_zero]
-  · -- The normal form.
-    rw [OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage, hΦsrc,
-      mem_preimage] at hy
-    have hfy := hψg _ hy.2
-    rw [comp_apply, comp_apply, ← hL, ← hc, hξs, L.apply_symm_apply, c.left_inv hy.1] at hfy
-    rw [hfy, OpenPartialHomeomorph.coe_trans, comp_apply, hΦ, hBK, hTw, Prod.snd_sub,
-      sub_zero]
-
-end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
-
-end Existence
-
-section Family
-
-variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M]
-  {ι : Type*} {E' : ι → Type*} [∀ a, NormedAddCommGroup (E' a)] [∀ a, NormedSpace ℝ (E' a)]
-  {H' : ι → Type*} [∀ a, TopologicalSpace (H' a)] {J : ∀ a, ModelWithCorners ℝ (E' a) (H' a)}
-  [∀ a, (J a).Boundaryless] {S : ι → Type*} [∀ a, TopologicalSpace (S a)]
-  [∀ a, ChartedSpace (H' a) (S a)] {i : ∀ a, SmoothEmbedding (J a) 𝓘(ℝ, E) ∞ (S a) M}
-
-/-- **Every critical point of a Morse–Bott function has a Morse–Bott chart.** -/
-theorem IsMorseBottFamily.nonempty_morseBottChart (h : IsMorseBottFamily i f)
-    (hx : x ∈ criticalPoints 𝓘(ℝ, E) f) : Nonempty (MorseBottChart E f x) := by
-  obtain ⟨a, s, rfl⟩ := mem_iUnion.1 (h.criticalPoints_subset_iUnion_range hx)
-  exact (h.isNondegenerateCriticalSubmanifold a).nonempty_morseBottChart s
-    (.of_forall fun _ ↦ h.contMDiff.contMDiffAt)
-
-end Family
 
 end TauCeti
