@@ -253,7 +253,7 @@ theorem summingENorm_smulRight_le (f : StrongDual 𝕜 E) (y : F) :
     summingENorm_le_ofReal_iff (mul_nonneg (norm_nonneg _) (norm_nonneg _))]
   intro n x
   simp only [smulRight_apply]
-  rw [PiLp.norm_toLp_smul_const]
+  rw [PiLp.norm_toLp_smul_const (zero_lt_one.trans_le Fact.out).ne']
   calc
     _ ≤ weakLpNorm (𝕜 := 𝕜) p x * ‖f‖ * ‖y‖ := by
       gcongr
