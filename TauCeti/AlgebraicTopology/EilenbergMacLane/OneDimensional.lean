@@ -21,7 +21,7 @@ import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.WedgeSum
 import TauCeti.AlgebraicTopology.UniversalCover.Action
 import TauCeti.Topology.CWComplex.Classical.Covering
 import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
-import TauCeti.Topology.CWComplex.Classical.WedgeCircles
+import TauCeti.Topology.CWComplex.Classical.WedgeSum.Circles
 
 /-!
 # One-dimensional CW complexes are aspherical
