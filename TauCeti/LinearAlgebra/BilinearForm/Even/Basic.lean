@@ -78,8 +78,8 @@ theorem IsSymm.exists_binary_orthogonal_decomposition [Free R M] [Module.Finite 
     have hpos : 0 < finrank R M := by omega
     let b := Module.finBasisOfFinrankEq R M (Nat.succ_pred_eq_of_pos hpos).symm
     obtain ⟨S, ⟨c⟩, hS, hc⟩ :=
-      hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B hdiag
-      (b 0) (b.coord 0) (by simp)
+      hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B
+      (b 0) (hdiag _) (b.coord 0) (by simp)
     -- The complement is finite free because it is a retract over a local ring.
     let T := B.orthogonal S
     have : Module.Finite R S := .of_basis c

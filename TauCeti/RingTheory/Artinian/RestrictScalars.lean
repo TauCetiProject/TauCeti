@@ -66,7 +66,7 @@ theorem isArtinian_of_le_of_smul_le [IsArtinian B M] {I : Ideal B}
   have hQ : I ≤ Module.annihilator B (N ⧸ Q) := fun a ha ↦ Module.mem_annihilator.mpr fun y ↦ by
     obtain ⟨x, rfl⟩ := Q.mkQ_surjective y
     rw [← map_smul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
-    exact hIN (Submodule.smul_mem_smul ha x.2)
+    exact hIN (Submodule.smul_mem_smul ha x.property)
   have := isArtinian_of_surjective_algebraMap_quotient (S := S) hI hQ
   refine isArtinian_of_range_eq_ker ((Submodule.inclusion hle).restrictScalars S)
     (Q.mkQ.restrictScalars S) ?_

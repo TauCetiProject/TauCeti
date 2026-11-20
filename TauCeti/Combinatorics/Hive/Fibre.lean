@@ -39,12 +39,13 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
 1. **Zero-boundary uniqueness** (`TauCeti.Hive.boundary_eq_zero_iff`): the only normalized hive
    with zero boundary over any partially ordered abelian group is `0`.
 2. **Matrix presentations** (`TauCeti.Hive.eqMatrix`, `TauCeti.Hive.rhombusMatrix`,
-   `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`): `eqMatrix R n` and `rhombusMatrix R n` are defined
-   over any ring `R` by base change from `ℤ` (`TauCeti.Hive.map_intCast_eqMatrix`,
-   `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any partially ordered ring `R` with
-   order-compatible addition (`[IsOrderedAddMonoid R]`, in particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary
-   hives are characterized as the solutions of `eqMatrix R n *ᵥ f = eqRHS B` and
-   `rhombusMatrix R n *ᵥ f ≤ 0`.
+   `TauCeti.Hive.mem_fixedBoundary_iff_mulVec`, `TauCeti.Hive.exists_boundary_eq_iff_mulVec`):
+   `eqMatrix R n` and `rhombusMatrix R n` are defined over any ring `R` by base change from `ℤ`
+   (`TauCeti.Hive.map_intCast_eqMatrix`, `TauCeti.Hive.map_intCast_rhombusMatrix`), and over any
+   partially ordered ring `R` with order-compatible addition (`[IsOrderedAddMonoid R]`, in
+   particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary hives are characterized as the solutions of
+   `eqMatrix R n *ᵥ f = eqRHS B` and `rhombusMatrix R n *ᵥ f ≤ 0`; a hive with boundary `B` exists
+   exactly when this system is feasible.
 3. **Compact real polytopes and proper boundary projection** (`TauCeti.Hive.properCone`,
    `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
    `TauCeti.Hive.isProperMap_boundary_properCone`): `‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖` makes
@@ -68,8 +69,9 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
   `TauCeti.Hive.rhombusMatrix`: finite equality and inequality matrices over any ring.
 * `TauCeti.Hive.properCone`, `TauCeti.Hive.realFibre`: closed real hive cone and polytope fibres.
 * `TauCeti.Hive.FixedIntegerHive`, `TauCeti.Hive.hiveCount`,
-  `TauCeti.Hive.fixedIntegerHiveShiftEquiv`: integer hive fibres, counts, and determinant-shift
-  bijections.
+  `TauCeti.Hive.fixedIntegerHiveRotateEquiv`, `TauCeti.Hive.rotateRotateEquiv`,
+  `TauCeti.Hive.fixedIntegerHiveShiftEquiv`: integer hive fibres, counts, boundary-rotation
+  equivalences, and determinant-shift bijections.
 
 ## Main results
 
@@ -249,10 +251,16 @@ def eqRHS {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) : EqConstra
   | Sum.inl () => 0
   | Sum.inr (s, i) => B s i
 
+@[simp] theorem eqRHS_inl {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) (u : Unit) :
+    eqRHS B (Sum.inl u) = 0 := (rfl)
+
+@[simp] theorem eqRHS_inr {R : Type*} [Zero R] {n : ℕ} (B : Fin 3 → Fin n → R) (s : Fin 3)
+    (i : Fin n) : eqRHS B (Sum.inr (s, i)) = B s i := (rfl)
+
 /-- Inequality constraint matrix over `R` encoding `f b + f d - (f a + f c) ≤ 0` on `Rhombus n`. -/
 def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n) R :=
-  fun r => Pi.single r.1.2.1 1 + Pi.single r.1.2.2.2 1 -
-    (Pi.single r.1.1 1 + Pi.single r.1.2.2.1 1)
+  fun r => Pi.single r.val.2.1 1 + Pi.single r.val.2.2.2 1 -
+    (Pi.single r.val.1 1 + Pi.single r.val.2.2.1 1)
 
 @[simp] theorem eqMatrix_mulVec_inl {n : ℕ} {R : Type*} [Ring R] (f : Vertex n → R) :
     (eqMatrix R n *ᵥ f) (Sum.inl ()) = f (Vertex.cornerA n) :=
@@ -265,10 +273,18 @@ def rhombusMatrix (R : Type*) [Ring R] (n : ℕ) : Matrix (Rhombus n) (Vertex n)
 
 @[simp] theorem rhombusMatrix_mulVec_apply {n : ℕ} {R : Type*} [Ring R] (f : Vertex n → R)
     (r : Rhombus n) :
-    (rhombusMatrix R n *ᵥ f) r = -rhombusSlack f r.1.1 r.1.2.1 r.1.2.2.1 r.1.2.2.2 := by
+    (rhombusMatrix R n *ᵥ f) r = -rhombusSlack f r.val.1 r.val.2.1 r.val.2.2.1 r.val.2.2.2 := by
   simp only [Matrix.mulVec, rhombusMatrix, sub_dotProduct, add_dotProduct, single_one_dotProduct,
     rhombusSlack_def]
   abel
+
+/-- The inequalities `rhombusMatrix R n *ᵥ f ≤ 0` say exactly that `f` is rhombus-concave. -/
+theorem rhombusMatrix_mulVec_nonpos_iff {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] {f : Vertex n → R} :
+    rhombusMatrix R n *ᵥ f ≤ 0 ↔ IsRhombusConcave f := by
+  rw [isRhombusConcave_iff_rhombusSlack_nonneg]
+  exact ⟨fun hf a b c d hr => by simpa using hf ⟨(a, b, c, d), hr⟩,
+    fun hf r => by simpa using hf r.property⟩
 
 /-- Over any ring `R`, `eqMatrix R n` is the base change of `eqMatrix ℤ n`. -/
 @[simp] theorem map_intCast_eqMatrix (R : Type*) [Ring R] (n : ℕ) :
@@ -286,15 +302,22 @@ theorem mem_fixedBoundary_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrde
     [IsOrderedAddMonoid R] (B : Fin 3 → Fin n → R) (f : Vertex n → R) :
     (f (Vertex.cornerA n) = 0 ∧ IsRhombusConcave f ∧ boundaryLinear ℤ n R f = B) ↔
       eqMatrix R n *ᵥ f = eqRHS B ∧ rhombusMatrix R n *ᵥ f ≤ 0 := by
-  refine ⟨fun ⟨hA, hconc, hB⟩ => ⟨by ext (⟨⟨⟩⟩ | ⟨s, i⟩) <;> simp [eqRHS, hA, ← hB], fun r => ?_⟩,
-    fun ⟨heq, hineq⟩ => ⟨by simpa [eqRHS] using congrFun heq (Sum.inl ()),
-      (isRhombusConcave_def f).mpr fun a b c d hr => ?_,
-      by ext s i; simpa [eqRHS] using congrFun heq (Sum.inr (s, i))⟩⟩
-  · rw [Pi.zero_apply, rhombusMatrix_mulVec_apply, neg_nonpos, rhombusSlack_def]
-    exact sub_nonneg.mpr ((isRhombusConcave_def f).mp hconc r.2)
-  · have h := hineq ⟨(a, b, c, d), hr⟩
-    rw [Pi.zero_apply, rhombusMatrix_mulVec_apply, neg_nonpos, rhombusSlack_def] at h
-    exact sub_nonneg.mp h
+  rw [rhombusMatrix_mulVec_nonpos_iff]
+  exact ⟨fun ⟨hA, hconc, hB⟩ => ⟨by ext (⟨⟨⟩⟩ | ⟨s, i⟩) <;> simp [hA, ← hB], hconc⟩,
+    fun ⟨heq, hconc⟩ => ⟨by simpa using congrFun heq (Sum.inl ()), hconc,
+      by ext s i; simpa using congrFun heq (Sum.inr (s, i))⟩⟩
+
+/-- A hive with boundary `B` exists exactly when the matrix system of
+`TauCeti.Hive.mem_fixedBoundary_iff_mulVec` is feasible. -/
+theorem exists_boundary_eq_iff_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] (B : Fin 3 → Fin n → R) :
+    (∃ h : Hive n R, h.boundary = B) ↔
+      ∃ f, rhombusMatrix R n *ᵥ f ≤ 0 ∧ eqMatrix R n *ᵥ f = eqRHS B := by
+  refine ⟨fun ⟨h, hB⟩ => ⟨h, ((mem_fixedBoundary_iff_mulVec B h).mp
+    ⟨h.apply_cornerA, h.isRhombusConcave, (boundaryLinear_coe ℤ h).trans hB⟩).symm⟩,
+    fun ⟨f, hR, hE⟩ => ?_⟩
+  obtain ⟨hA, hconc, hB⟩ := (mem_fixedBoundary_iff_mulVec B f).mpr ⟨hE, hR⟩
+  exact ⟨⟨f, hA, fun hr => (isRhombusConcave_def f).mp hconc hr⟩, (boundary_def _).trans hB⟩
 
 end MatrixPresentation
 
@@ -313,15 +336,15 @@ theorem isConvexPolyhedron_pointedCone (n : ℕ) :
   let g : Bool ⊕ Rhombus n → ((Vertex n → ℝ) →ᴬ[ℝ] ℝ)
     | Sum.inl true => (evalCLM (Vertex.cornerA n)).toContinuousAffineMap
     | Sum.inl false => (-evalCLM (Vertex.cornerA n)).toContinuousAffineMap
-    | Sum.inr r => (evalCLM r.1.2.1 + evalCLM r.1.2.2.2 -
-        (evalCLM r.1.1 + evalCLM r.1.2.2.1)).toContinuousAffineMap
+    | Sum.inr r => (evalCLM r.val.2.1 + evalCLM r.val.2.2.2 -
+        (evalCLM r.val.1 + evalCLM r.val.2.2.1)).toContinuousAffineMap
   have heq : (pointedCone ℝ n : Set (Vertex n → ℝ)) = {f | ∀ i, g i f ≤ 0} := by
     ext f; simp only [SetLike.mem_coe, mem_pointedCone_iff, Set.mem_ofPred_eq, Sum.forall,
       Bool.forall_bool]
     refine ⟨fun ⟨hA, hconc⟩ => ⟨⟨by simp [g, hA], by simp [g, hA]⟩, fun r => ?_⟩,
       fun ⟨⟨hneg, hpos⟩, hr⟩ => ⟨le_antisymm (by simpa [g] using hpos) (by simpa [g] using hneg),
         (isRhombusConcave_def f).mpr fun a b c d hrh => ?_⟩⟩
-    · simpa [g, sub_nonpos] using (isRhombusConcave_def f).mp hconc r.2
+    · simpa [g, sub_nonpos] using (isRhombusConcave_def f).mp hconc r.property
     · simpa [g, sub_nonpos] using hr ⟨(a, b, c, d), hrh⟩
   exact heq ▸ isConvexPolyhedron_setOf_forall g
 
@@ -420,9 +443,9 @@ theorem continuous_boundaryLinear (n : ℕ) : Continuous (boundaryLinear ℝ n �
 
 /-- **Boundary projection on the closed real hive cone is a proper map.** -/
 theorem isProperMap_boundary_properCone (n : ℕ) :
-    IsProperMap (fun f : properCone n => boundaryLinear ℝ n ℝ f.1) := by
+    IsProperMap (fun f : properCone n => boundaryLinear ℝ n ℝ f.val) := by
   rw [isProperMap_iff_isCompact_preimage]
-  refine ⟨(continuous_boundaryLinear n).comp continuous_subtype_val, fun K hK => ?_⟩
+  refine ⟨(continuous_boundaryLinear n).comp continuous_subtypeVal, fun K hK => ?_⟩
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hK.isBounded
   let S : Set (Vertex n → ℝ) := (properCone n : Set (Vertex n → ℝ)) ∩ boundaryLinear ℝ n ℝ ⁻¹' K
   have hS_compact : IsCompact S := Metric.isCompact_iff_isClosed_bounded.mpr
@@ -430,13 +453,13 @@ theorem isProperMap_boundary_properCone (n : ℕ) :
       isBounded_iff_forall_norm_le.mpr ⟨3 * n * max C 0, fun f hf =>
         (norm_le_three_mul_norm_boundary hf.1).trans <|
           mul_le_mul_of_nonneg_left ((hC _ hf.2).trans (le_max_left C 0)) (by positivity)⟩⟩
-  have hpre : ((fun f : properCone n => boundaryLinear ℝ n ℝ f.1) ⁻¹' K) = Subtype.val ⁻¹' S := by
-    ext f; exact ⟨fun h => ⟨f.2, h⟩, fun h => h.2⟩
+  have hpre : ((fun f : properCone n => boundaryLinear ℝ n ℝ f.val) ⁻¹' K) = Subtype.val ⁻¹' S := by
+    ext f; exact ⟨fun h => ⟨f.property, h⟩, fun h => h.2⟩
   exact hpre ▸ (properCone n).isClosed.isProperMap_subtypeVal.isCompact_preimage hS_compact
 
 /-- The image of the real hive cone under boundary projection is closed in `Fin 3 → Fin n → ℝ`. -/
 theorem isClosed_range_boundary_properCone (n : ℕ) :
-    IsClosed (Set.range fun f : properCone n => boundaryLinear ℝ n ℝ f.1) :=
+    IsClosed (Set.range fun f : properCone n => boundaryLinear ℝ n ℝ f.val) :=
   (isProperMap_boundary_properCone n).isClosed_range
 
 end RealPolyhedron
@@ -468,11 +491,11 @@ def fixedIntegerHiveBox {n : ℕ} (B : Fin 3 → Fin n → ℤ) : Finset (Vertex
 /-- Computable equivalence between `FixedIntegerHive B` and `fixedIntegerHiveBox B`. -/
 def fixedIntegerHiveEquivBox {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
     FixedIntegerHive B ≃ ↥(fixedIntegerHiveBox B) where
-  toFun h := ⟨h.1, mem_fixedIntegerHiveBox_iff.mpr
-    ⟨h.1.apply_cornerA, h.1.isRhombusConcave, (boundaryLinear_coe ℤ h.1).trans h.2⟩⟩
+  toFun h := ⟨h.val, mem_fixedIntegerHiveBox_iff.mpr
+    ⟨h.val.apply_cornerA, h.val.isRhombusConcave, (boundaryLinear_coe ℤ h.val).trans h.property⟩⟩
   invFun f :=
-    let hf := mem_fixedIntegerHiveBox_iff.mp f.2
-    let h : IntegerHive n := ⟨f.1, hf.1, fun hr => (isRhombusConcave_def f.1).mp hf.2.1 hr⟩
+    let hf := mem_fixedIntegerHiveBox_iff.mp f.property
+    let h : IntegerHive n := ⟨f.val, hf.1, fun hr => (isRhombusConcave_def f.val).mp hf.2.1 hr⟩
     ⟨h, (boundaryLinear_coe ℤ h).symm.trans hf.2.2⟩
   left_inv _ := by ext p; rfl
   right_inv _ := by ext p; rfl
@@ -514,7 +537,7 @@ theorem hiveCount_eq_zero_of_sum_ne_zero {n : ℕ} {B : Fin 3 → Fin n → ℤ}
 instance uniqueFixedIntegerHiveZero (n : ℕ) :
     Unique (FixedIntegerHive (0 : Fin 3 → Fin n → ℤ)) where
   default := ⟨0, boundary_zero⟩
-  uniq h := Subtype.ext ((boundary_eq_zero_iff h.1).mp h.2)
+  uniq h := Subtype.ext ((boundary_eq_zero_iff h.val).mp h.property)
 
 @[simp] theorem hiveCount_zero (n : ℕ) : hiveCount (0 : Fin 3 → Fin n → ℤ) = 1 :=
   Fintype.card_unique
@@ -523,23 +546,64 @@ instance uniqueFixedIntegerHiveZero (n : ℕ) :
 @[simp] theorem hiveCount_rank_zero (B : Fin 3 → Fin 0 → ℤ) : hiveCount B = 1 := by
   rw [Subsingleton.elim B 0, hiveCount_zero]
 
+/-- Clockwise boundary-shift equivalence on integer hive fibres: rotating a hive twice sends
+boundary `fun s => B (s + 1)` to `B`, with `Hive.rotate` as inverse. -/
+def fixedIntegerHiveRotateEquiv {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
+    FixedIntegerHive (fun s => B (s + 1)) ≃ FixedIntegerHive B where
+  toFun h := ⟨h.val.rotate.rotate, by
+    rw [boundary_rotate, boundary_rotate, h.property]
+    ext s i
+    have hs : s + 1 + 1 + 1 = s := by fin_cases s <;> decide
+    exact congrFun (congrArg B hs) i⟩
+  invFun h := ⟨h.val.rotate, by ext s i; simp [h.property]⟩
+  left_inv _ := by ext p; simp
+  right_inv _ := by ext p; simp
+
+@[simp] theorem fixedIntegerHiveRotateEquiv_apply_coe {n : ℕ} (B : Fin 3 → Fin n → ℤ)
+    (h : FixedIntegerHive (fun s => B (s + 1))) :
+    (fixedIntegerHiveRotateEquiv B h).val = h.val.rotate.rotate := (rfl)
+
+@[simp] theorem fixedIntegerHiveRotateEquiv_symm_apply_coe {n : ℕ} (B : Fin 3 → Fin n → ℤ)
+    (h : FixedIntegerHive B) :
+    ((fixedIntegerHiveRotateEquiv B).symm h).val = h.val.rotate := (rfl)
+
 /-- Clockwise rotation of the boundary preserves `hiveCount`. -/
 @[simp] theorem hiveCount_rotate {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
     hiveCount (fun s => B (s + 1)) = hiveCount B :=
-  Fintype.card_congr
-    { toFun := fun h => ⟨h.1.rotate.rotate, by
-        ext s i; rw [boundary_rotate, boundary_rotate, h.2]; dsimp only
-        rw [show s + 1 + 1 + 1 = s by fin_cases s <;> decide]⟩
-      invFun := fun h => ⟨h.1.rotate, by ext s i; simp [h.2]⟩
-      left_inv := fun _ => by ext p; simp
-      right_inv := fun _ => by ext p; simp }
+  Fintype.card_congr (fixedIntegerHiveRotateEquiv B)
+
+private theorem cyclicBoundary_eq_productBoundary_add_one {n : ℕ} (lam μ ν : DominantWeight n) :
+    ![lam.val, μ.val, ν.val] = fun s => productBoundary ν lam μ.dual (s + 1) := by
+  ext s r; fin_cases s <;> simp
+
+/-- Rotating twice identifies integer hives of clockwise cyclic boundary `![lam.1, μ.1, ν.1]` with
+integer hives of product boundary `productBoundary ν lam μ.dual`. -/
+def rotateRotateEquiv {n : ℕ} (lam μ ν : DominantWeight n) :
+    FixedIntegerHive ![lam.val, μ.val, ν.val] ≃ FixedIntegerHive (productBoundary ν lam μ.dual) :=
+  (Equiv.subtypeEquivRight fun _ => by
+    rw [cyclicBoundary_eq_productBoundary_add_one]).trans
+    (fixedIntegerHiveRotateEquiv (productBoundary ν lam μ.dual))
+
+@[simp] theorem rotateRotateEquiv_apply_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (h : FixedIntegerHive ![lam.val, μ.val, ν.val]) :
+    (rotateRotateEquiv lam μ ν h).val = h.val.rotate.rotate := (rfl)
+
+@[simp] theorem rotateRotateEquiv_symm_apply_coe {n : ℕ} (lam μ ν : DominantWeight n)
+    (k : FixedIntegerHive (productBoundary ν lam μ.dual)) :
+    ((rotateRotateEquiv lam μ ν).symm k).val = k.val.rotate := (rfl)
+
+/-- Rotating twice identifies `hiveCount ![lam.1, μ.1, ν.1]` with
+`hiveCount (productBoundary ν lam μ.dual)`. -/
+theorem hiveCount_cyclic_eq_hiveCount_productBoundary {n : ℕ} (lam μ ν : DominantWeight n) :
+    hiveCount ![lam.val, μ.val, ν.val] = hiveCount (productBoundary ν lam μ.dual) := by
+  rw [cyclicBoundary_eq_productBoundary_add_one, hiveCount_rotate]
 
 /-- Reflection of the boundary preserves `hiveCount`. -/
 @[simp] theorem hiveCount_reflect {n : ℕ} (B : Fin 3 → Fin n → ℤ) :
     hiveCount (fun s i => -B s.rev i.rev) = hiveCount B :=
   Fintype.card_congr
-    { toFun := fun h => ⟨h.1.reflect, by ext s i; simp [h.2]⟩
-      invFun := fun h => ⟨h.1.reflect, by ext s i; simp [h.2]⟩
+    { toFun := fun h => ⟨h.val.reflect, by ext s i; simp [h.property]⟩
+      invFun := fun h => ⟨h.val.reflect, by ext s i; simp [h.property]⟩
       left_inv := fun _ => by ext p; simp
       right_inv := fun _ => by ext p; simp }
 
@@ -551,8 +615,10 @@ theorem hiveCount_productBoundary_dual {n : ℕ} (lam μ γ : DominantWeight n) 
     ext s i; fin_cases s <;> simp
   exact Fintype.card_congr
     { toFun := fun h =>
-        ⟨h.1.reflect.rotate, (boundary_reflect_rotate_of_productBoundary h.2).trans hdual_pb⟩
-      invFun := fun h => ⟨h.1.reflect.rotate, boundary_reflect_rotate_of_productBoundary h.2⟩
+        ⟨h.val.reflect.rotate, (boundary_reflect_rotate_of_productBoundary h.property).trans
+            hdual_pb⟩
+      invFun := fun h => ⟨h.val.reflect.rotate, boundary_reflect_rotate_of_productBoundary
+          h.property⟩
       left_inv := fun _ => by ext p; simp
       right_inv := fun _ => by ext p; simp }
 
@@ -562,46 +628,44 @@ theorem hiveCount_productBoundary_dual {n : ℕ} (lam μ γ : DominantWeight n) 
 -/
 theorem sum_eq_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) :
-    (∑ i, lam.1 i) + (∑ i, μ.1 i) = ∑ i, γ.1 i :=
+    (∑ i, lam.val i) + (∑ i, μ.val i) = ∑ i, γ.val i :=
   (sum_productBoundary_eq_zero_iff lam μ γ).mp (hb ▸ h.sum_boundary)
 
 /-- Suffix-sum inequality for `productBoundary lam μ γ`: for every `k ≤ n`, the sum of the last
 `n - k` coordinates of `γ` is at least the sum of those of `λ` and `μ`. -/
 theorem suffix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) {k : ℕ} (hk : k ≤ n) :
-    (∑ i : Fin n with k ≤ i.val, lam.1 i) + (∑ i : Fin n with k ≤ i.val, μ.1 i) ≤
-      ∑ i : Fin n with k ≤ i.val, γ.1 i := by
+    (∑ i : Fin n with k ≤ i.val, lam.val i) + (∑ i : Fin n with k ≤ i.val, μ.val i) ≤
+      ∑ i : Fin n with k ≤ i.val, γ.val i := by
   let p : Vertex n := Vertex.edgePoint n 1 ⟨n - k, by omega⟩
   have hup := le_entryUpperBound h.rotate p
   rw [apply_edgePoint_one, Fin.val_mk] at hup; unfold entryUpperBound at hup
   rw [show p.y = k by simp [p]; omega, show n - p.z = k by simp [p]; omega,
-    show h.rotate.boundary 0 = μ.1 by simp [boundary_rotate, hb],
-    show h.rotate.boundary 1 = γ.dual.1 by simp [boundary_rotate, hb],
-    show h.rotate.boundary 2 = lam.1 by simp [boundary_rotate, hb]] at hup
-  have hdual : (∑ i : Fin n with i.val < n - k, γ.dual.1 i) = -∑ j : Fin n with k ≤ j.val, γ.1 j :=
+    show h.rotate.boundary 0 = μ.val by simp [boundary_rotate, hb],
+    show h.rotate.boundary 1 = γ.dual.val by simp [boundary_rotate, hb],
+    show h.rotate.boundary 2 = lam.val by simp [boundary_rotate, hb]] at hup
+  have hdual : (∑ i : Fin n with i.val < n - k, γ.dual.val i) = -∑ j : Fin n with k ≤ j.val, γ.val j
+      :=
     by
-    simp only [DominantWeight.dual_apply, Finset.sum_neg_distrib, neg_inj, Finset.sum_filter]
-    refine (Finset.sum_congr rfl fun i _ => ?_).trans
-      (Equiv.sum_comp Fin.revPerm fun j : Fin n => if k ≤ j.val then γ.1 j else 0)
-    simp only [Fin.revPerm_apply, Fin.val_rev]
-    by_cases hi : i.val < n - k
-    · simp [hi, show k ≤ n - (i.val + 1) by omega]
-    · simp [hi, show ¬ k ≤ n - (i.val + 1) by omega]
+    have hd : γ.dual.val = fun i : Fin n => -γ.val i.rev := funext γ.dual_apply
+    rw [← TauCeti.prefixSum_def, hd, TauCeti.prefixSum_comp_rev (Nat.sub_le n k)
+        (fun j => -γ.val j),
+      Nat.sub_sub_self hk, Finset.sum_neg_distrib]
   rw [hdual, ← Finset.sum_filter_add_sum_filter_not Finset.univ
-    (fun i : Fin n => i.val < k) μ.1] at hup
+    (fun i : Fin n => i.val < k) μ.val] at hup
   simp only [not_lt] at hup; linarith
 
 /-- **Dominance prefix-sum bound** for `productBoundary lam μ γ`. -/
 theorem prefix_sum_le_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) (k : ℕ) :
-    (∑ i : Fin n with i.val < k, γ.1 i) ≤
-      (∑ i : Fin n with i.val < k, lam.1 i) + ∑ i : Fin n with i.val < k, μ.1 i := by
+    (∑ i : Fin n with i.val < k, γ.val i) ≤
+      (∑ i : Fin n with i.val < k, lam.val i) + ∑ i : Fin n with i.val < k, μ.val i := by
   rcases le_or_gt k n with hk | hk
   · have hsplit (g : Fin n → ℤ) :
         (∑ i : Fin n with i.val < k, g i) + (∑ i : Fin n with k ≤ i.val, g i) = ∑ i, g i := by
       simpa [not_lt] using Finset.sum_filter_add_sum_filter_not Finset.univ (fun i => i.val < k) g
     linarith [sum_eq_of_productBoundary hb, suffix_sum_le_of_productBoundary hb hk,
-      hsplit lam.1, hsplit μ.1, hsplit γ.1]
+      hsplit lam.val, hsplit μ.val, hsplit γ.val]
   · rw [show ({i : Fin n | i.val < k} : Finset (Fin n)) = Finset.univ by
       ext i; simp [i.isLt.trans hk], ← sum_eq_of_productBoundary hb]
 
@@ -616,7 +680,7 @@ theorem dominates_add_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n
 /-- **Lower-coordinate bound `γₙ ≥ λₙ + μₙ`** on nonempty weights. -/
 theorem last_le_of_productBoundary {m : ℕ} {lam μ γ : DominantWeight (m + 1)}
     {h : IntegerHive (m + 1)} (hb : h.boundary = productBoundary lam μ γ) :
-    lam.1 (Fin.last m) + μ.1 (Fin.last m) ≤ γ.1 (Fin.last m) := by
+    lam.val (Fin.last m) + μ.val (Fin.last m) ≤ γ.val (Fin.last m) := by
   have hsuf := suffix_sum_le_of_productBoundary hb (Nat.le_succ m)
   have hlast : ({i : Fin (m + 1) | m ≤ i.val} : Finset (Fin (m + 1))) = {Fin.last m} := by
     ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton,
@@ -641,7 +705,7 @@ theorem isPolynomial_of_productBoundary {n : ℕ} {lam μ γ : DominantWeight n}
 /-- Upper first-coordinate bound `γ₁ ≤ λ₁ + μ₁` on nonempty weights. -/
 theorem first_le_of_productBoundary {m : ℕ} {lam μ γ : DominantWeight (m + 1)}
     {h : IntegerHive (m + 1)} (hb : h.boundary = productBoundary lam μ γ) :
-    γ.1 0 ≤ lam.1 0 + μ.1 0 := by
+    γ.val 0 ≤ lam.val 0 + μ.val 0 := by
   have hpre := prefix_sum_le_of_productBoundary hb 1
   have hzero : ({i : Fin (m + 1) | i.val < 1} : Finset (Fin (m + 1))) = {0} := by
     ext i; simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton,
@@ -655,12 +719,12 @@ theorem finite_support_hiveCount_productBoundary {n : ℕ} (lam μ : DominantWei
   | zero => exact Set.toFinite _
   | succ m =>
     let box : Finset (Fin (m + 1) → ℤ) := Fintype.piFinset fun _ =>
-      Finset.Icc (lam.1 (Fin.last m) + μ.1 (Fin.last m)) (lam.1 0 + μ.1 0)
+      Finset.Icc (lam.val (Fin.last m) + μ.val (Fin.last m)) (lam.val 0 + μ.val 0)
     refine (box.finite_toSet.preimage Subtype.coe_injective.injOn).subset fun γ hγ => ?_
     obtain ⟨⟨h, hb⟩⟩ := hiveCount_pos_iff.mp hγ
     simp only [Set.mem_preimage, SetLike.mem_coe, box, Fintype.mem_piFinset, Finset.mem_Icc]
-    exact fun j => ⟨(last_le_of_productBoundary hb).trans (γ.2 (Fin.le_last j)),
-      (γ.2 (Fin.zero_le j)).trans (first_le_of_productBoundary hb)⟩
+    exact fun j => ⟨(last_le_of_productBoundary hb).trans (γ.property (Fin.le_last j)),
+      (γ.property (Fin.zero_le j)).trans (first_le_of_productBoundary hb)⟩
 
 /-- Adding `Hive.affine n a (a + b)` shifts `productBoundary lam μ γ` to
 `productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))`. -/
@@ -685,11 +749,11 @@ bijection between `FixedIntegerHive (productBoundary lam μ γ)` and
 def fixedIntegerHiveShiftEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : ℤ) :
     FixedIntegerHive (productBoundary lam μ γ) ≃
       FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b))) where
-  toFun h := ⟨h.1 + affine n a (a + b), boundary_add_affine_of_productBoundary h.2 a b⟩
+  toFun h := ⟨h.val + affine n a (a + b), boundary_add_affine_of_productBoundary h.property a b⟩
   invFun h :=
-    ⟨h.1 + affine n (-a) (-a + -b), by
+    ⟨h.val + affine n (-a) (-a + -b), by
       have hab : a + b + (-a + -b) = 0 := by ring
-      rw [boundary_add_affine_of_productBoundary h.2 (-a) (-b), DominantWeight.shift_shift,
+      rw [boundary_add_affine_of_productBoundary h.property (-a) (-b), DominantWeight.shift_shift,
         DominantWeight.shift_shift, DominantWeight.shift_shift]
       simp [hab]⟩
   left_inv h := by
@@ -703,13 +767,14 @@ def fixedIntegerHiveShiftEquiv {n : ℕ} (lam μ γ : DominantWeight n) (a b : �
 
 @[simp] theorem coe_fixedIntegerHiveShiftEquiv_apply {n : ℕ} (lam μ γ : DominantWeight n)
     (a b : ℤ) (h : FixedIntegerHive (productBoundary lam μ γ)) :
-    (fixedIntegerHiveShiftEquiv lam μ γ a b h).1 = h.1 + affine n a (a + b) := (rfl)
+    (fixedIntegerHiveShiftEquiv lam μ γ a b h).val = h.val + affine n a (a + b) := (rfl)
 
 /-- The inverse of `fixedIntegerHiveShiftEquiv lam μ γ a b` adds `affine n (-a) (-a + -b)`. -/
 @[simp] theorem coe_fixedIntegerHiveShiftEquiv_symm_apply {n : ℕ} (lam μ γ : DominantWeight n)
     (a b : ℤ)
     (h : FixedIntegerHive (productBoundary (lam.shift a) (μ.shift b) (γ.shift (a + b)))) :
-    ((fixedIntegerHiveShiftEquiv lam μ γ a b).symm h).1 = h.1 + affine n (-a) (-a + -b) := (rfl)
+    ((fixedIntegerHiveShiftEquiv lam μ γ a b).symm h).val =
+      h.val + affine n (-a) (-a + -b) := (rfl)
 
 /-- **Determinant-shift covariance of `hiveCount`**: shifting `λ` by `a` and `μ` by `b` while
 shifting `γ` by `a + b` preserves `hiveCount`. -/
@@ -739,7 +804,7 @@ section LowRankChecks
 
 instance subsingleton_fixedIntegerHive_two (B : Fin 3 → Fin 2 → ℤ) :
     Subsingleton (FixedIntegerHive B) :=
-  ⟨fun h₁ h₂ => Subtype.ext (boundary_injective_two (h₁.2.trans h₂.2.symm))⟩
+  ⟨fun h₁ h₂ => Subtype.ext (boundary_injective_two (h₁.property.trans h₂.property.symm))⟩
 
 /-- Every `GL₂` hive fibre has at most one element (`hiveCount B ≤ 1`). -/
 theorem hiveCount_le_one_two (B : Fin 3 → Fin 2 → ℤ) : hiveCount B ≤ 1 :=
@@ -803,38 +868,38 @@ theorem hiveCount_two_signed_std_dual_triv :
 
 private theorem eq_of_apply_interior_three {B : Fin 3 → Fin 3 → ℤ}
     {h₁ h₂ : FixedIntegerHive B}
-    (hv : h₁.1 ⟨1, 1, 1, rfl⟩ = h₂.1 ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
+    (hv : h₁.val ⟨1, 1, 1, rfl⟩ = h₂.val ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
   apply Subtype.ext; ext p
   have hp := p.sum_eq
   rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0 ∨ (p.x = 1 ∧ p.y = 1 ∧ p.z = 1)) with
     hz | hx | hy | ⟨hx, hy, hz⟩
   · have hp' : p = Vertex.edgePoint 3 0 ⟨p.y, by omega⟩ := by ext <;> simp [hz]; omega
-    rw [hp', apply_edgePoint_zero, apply_edgePoint_zero, h₁.2, h₂.2]
+    rw [hp', apply_edgePoint_zero, apply_edgePoint_zero, h₁.property, h₂.property]
   · have hp' : p = Vertex.edgePoint 3 1 ⟨p.z, by omega⟩ := by ext <;> simp [hx]; omega
-    rw [hp', apply_edgePoint_one, apply_edgePoint_one, h₁.2, h₂.2]
+    rw [hp', apply_edgePoint_one, apply_edgePoint_one, h₁.property, h₂.property]
   · have hp' : p = Vertex.edgePoint 3 2 ⟨p.x, by omega⟩ := by ext <;> simp [hy]; omega
-    rw [hp', apply_edgePoint_two, apply_edgePoint_two, h₁.2, h₂.2]
+    rw [hp', apply_edgePoint_two, apply_edgePoint_two, h₁.property, h₂.property]
   · have hp' : p = ⟨1, 1, 1, rfl⟩ := by ext <;> simp [hx, hy, hz]
     rw [hp', hv]
 
 private theorem apply_interior_three_bounds {lam μ γ : DominantWeight 3}
     (h : FixedIntegerHive (productBoundary lam μ γ)) :
-    lam.1 1 + γ.1 0 ≤ h.1 ⟨1, 1, 1, rfl⟩ ∧
-      h.1 ⟨1, 1, 1, rfl⟩ ≤ lam.1 0 + lam.1 1 + μ.1 0 := by
+    lam.val 1 + γ.val 0 ≤ h.val ⟨1, 1, 1, rfl⟩ ∧
+      h.val ⟨1, 1, 1, rfl⟩ ≤ lam.val 0 + lam.val 1 + μ.val 0 := by
   have hp12 : (⟨1, 1, 1, rfl⟩ : Vertex 3) =
-      Vertex.productVertex 3 1 2 (by decide) (by decide) := by ext <;> simp
-  have hlo := h.1.le_of_isRhombus
-    (isRhombus_productVertex_mixed (n := 3) (i := 0) (j := 1) (by decide) (by decide))
-  have hhi := h.1.le_of_isRhombus
-    (isRhombus_productVertex_mixed (n := 3) (i := 0) (j := 2) (by decide) (by decide))
-  rw [apply_productVertex_zero_left_of_productBoundary h.2 (by decide),
-    apply_productVertex_zero_left_of_productBoundary h.2 (by decide),
-    apply_productVertex_diag_of_productBoundary h.2 (by decide), ← hp12] at hlo
-  rw [apply_productVertex_zero_left_of_productBoundary h.2 (by decide),
-    apply_productVertex_zero_left_of_productBoundary h.2 (by decide),
-    apply_productVertex_self_right_of_productBoundary h.2 (by decide), ← hp12] at hhi
-  simp only [Finset.sum_filter, Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two]
-    at hlo hhi
+      Vertex.ofChart 3 1 2 (by decide) (by decide) := by ext <;> simp
+  have hlo := h.val.le_of_isRhombus
+    (isRhombus_ofChart_diag_y (n := 3) (i := 0) (j := 1) (by decide) (by decide))
+  have hhi := h.val.le_of_isRhombus
+    (isRhombus_ofChart_diag_y (n := 3) (i := 0) (j := 2) (by decide) (by decide))
+  rw [apply_ofChart_zero_left_of_productBoundary h.property (by decide),
+    apply_ofChart_zero_left_of_productBoundary h.property (by decide),
+    apply_ofChart_self_of_productBoundary h.property (by decide), ← hp12] at hlo
+  rw [apply_ofChart_zero_left_of_productBoundary h.property (by decide),
+    apply_ofChart_zero_left_of_productBoundary h.property (by decide),
+    apply_ofChart_right_of_productBoundary h.property (by decide), ← hp12] at hhi
+  simp only [TauCeti.prefixSum_def, Finset.sum_filter, Fin.sum_univ_three, Fin.val_zero,
+    Fin.val_one, Fin.val_two] at hlo hhi
   omega
 
 private def threeFun (lam μ γ : Fin 3 → ℤ) (v : ℤ) (p : Vertex 3) : ℤ :=
@@ -861,28 +926,30 @@ private instance (lam μ γ : Fin 3 → ℤ) (v : ℤ) : Decidable (threeInterio
   unfold threeInteriorValid; infer_instance
 
 private def mkThreeHive (lam μ γ : DominantWeight 3) (v : ℤ)
-    (htr : lam.1 0 + lam.1 1 + lam.1 2 + μ.1 0 + μ.1 1 + μ.1 2 = γ.1 0 + γ.1 1 + γ.1 2)
-    (hvalid : threeInteriorValid lam.1 μ.1 γ.1 v) :
+    (htr : lam.val 0 + lam.val 1 + lam.val 2 + μ.val 0 + μ.val 1 + μ.val 2 =
+      γ.val 0 + γ.val 1 + γ.val 2)
+    (hvalid : threeInteriorValid lam.val μ.val γ.val v) :
     FixedIntegerHive (productBoundary lam μ γ) :=
-  ⟨⟨threeFun lam.1 μ.1 γ.1 v, by simp [threeFun], fun hr => by
+  ⟨⟨threeFun lam.val μ.val γ.val v, by simp [threeFun], fun hr => by
       obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := hvalid
       refine (isRhombusConcave_def _).mp
-        ((isRhombusConcave_iff_productVertex (threeFun lam.1 μ.1 γ.1 v)).mpr ⟨?_, ?_, ?_⟩) hr
+        ((isRhombusConcave_iff_ofChart (threeFun lam.val μ.val γ.val v)).mpr ⟨?_, ?_, ?_⟩) hr
+      · intro i j hij hj
+        rcases (by omega : i = 0 ∧ j = 1 ∨ i = 0 ∧ j = 2 ∨ i = 1 ∧ j = 2) with
+          ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [threeFun] <;> omega
       · intro i j hij hj
         rcases (by omega : i = 0 ∧ j = 1 ∨ i = 0 ∧ j = 2 ∨ i = 1 ∧ j = 2) with
           ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [threeFun] <;> omega
       · intro i j hij hj
         rcases (by omega : i = 0 ∧ j = 0 ∨ i = 0 ∧ j = 1 ∨ i = 1 ∧ j = 1) with
-          ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [threeFun] <;> omega
-      · intro i j hij hj
-        rcases (by omega : i = 0 ∧ j = 1 ∨ i = 0 ∧ j = 2 ∨ i = 1 ∧ j = 2) with
           ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> simp [threeFun] <;> omega⟩, by
     ext s m; fin_cases s <;> fin_cases m <;> simp [boundary_apply, threeFun, Fin.rev]; omega⟩
 
 @[simp] private theorem mkThreeHive_interior (lam μ γ : DominantWeight 3) (v : ℤ)
-    (htr : lam.1 0 + lam.1 1 + lam.1 2 + μ.1 0 + μ.1 1 + μ.1 2 = γ.1 0 + γ.1 1 + γ.1 2)
-    (hvalid : threeInteriorValid lam.1 μ.1 γ.1 v) :
-    (mkThreeHive lam μ γ v htr hvalid).1 ⟨1, 1, 1, rfl⟩ = v := (rfl)
+    (htr : lam.val 0 + lam.val 1 + lam.val 2 + μ.val 0 + μ.val 1 + μ.val 2 =
+      γ.val 0 + γ.val 1 + γ.val 2)
+    (hvalid : threeInteriorValid lam.val μ.val γ.val v) :
+    (mkThreeHive lam μ γ v htr hvalid).val ⟨1, 1, 1, rfl⟩ = v := (rfl)
 
 /-- **Rank-`3` check**: `hiveCount = 1` for `((1, 0, 0), (1, 0, 0), (2, 0, 0))`, witnessed by the
 unique interior value `h ⟨1, 1, 1, rfl⟩ = 2`. -/
@@ -912,13 +979,13 @@ theorem hiveCount_three_two_one_two_one_three_two_one :
   let h₄ := mkThreeHive lam lam γ 4 (by decide) (by decide)
   let h₅ := mkThreeHive lam lam γ 5 (by decide) (by decide)
   refine (Fintype.card_congr
-    { toFun := fun h => decide (h.1 ⟨1, 1, 1, rfl⟩ = 5)
+    { toFun := fun h => decide (h.val ⟨1, 1, 1, rfl⟩ = 5)
       invFun := fun b => if b then h₅ else h₄
       left_inv := fun h => by
         have hb := apply_interior_three_bounds h
         dsimp only [lam, γ] at hb
         simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at hb
-        rcases (by omega : h.1 ⟨1, 1, 1, rfl⟩ = 4 ∨ h.1 ⟨1, 1, 1, rfl⟩ = 5) with hv4 | hv5
+        rcases (by omega : h.val ⟨1, 1, 1, rfl⟩ = 4 ∨ h.val ⟨1, 1, 1, rfl⟩ = 5) with hv4 | hv5
         · have hdec : decide ((4 : ℤ) = 5) = false := by decide
           simp only [hv4, hdec, Bool.false_eq_true, ↓reduceIte]
           exact eq_of_apply_interior_three hv4.symm

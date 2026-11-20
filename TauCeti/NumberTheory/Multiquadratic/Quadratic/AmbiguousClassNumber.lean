@@ -94,8 +94,8 @@ theorem natCard_classGroup_sq_eq_one_eq_two_pow
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hd : d < 0) :
     Nat.card {C : ClassGroup (𝓞 K) // C ^ 2 = 1} = 2 ^ ((ramifiedPrimes K).ncard - 1) := by
-  rw [← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
-    TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
+  rw [← ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
+    ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
     twoRank_eq_ncard_ramifiedPrimes_sub_one hmin hgen hsf hd]
 
 /-- **The ambiguous class number formula, counted by conjugation-fixed classes.** For `K = ℚ(√d)`
@@ -174,8 +174,8 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_foral
     rcases hc with rfl | rfl <;> norm_num at hcfd <;> omega
   rw [Nat.card_congr (Equiv.subtypeEquivRight fun C =>
       mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
-    ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
-    TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
+    ← ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
+    ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
     (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs hprod hmin hgen hsf hd).mpr hpos]
 
 /-- **The ambiguous class number formula for a real quadratic field with a negative prime
@@ -192,8 +192,8 @@ theorem natCard_mulEquiv_ringOfIntegersQuadraticConj_eq_self_eq_two_pow_of_neg {
       2 ^ ((ramifiedPrimes K).ncard - 2) := by
   rw [Nat.card_congr (Equiv.subtypeEquivRight fun C =>
       mulEquiv_ringOfIntegersQuadraticConj_apply_eq_self_iff hmin hgen C),
-    ← TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
-    TauCeti.ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
+    ← ClassGroup.card_elementaryTwoQuotient_eq_card_twoTorsion,
+    ClassGroup.card_elementaryTwoQuotient_eq_two_pow_twoRank,
     twoRank_eq_ncard_ramifiedPrimes_sub_two_of_neg hs hprod hmin hgen hsf hd hP hneg]
 
 /-- **The strongly ambiguous class number of a quadratic field with a unit of norm `-1`.** For

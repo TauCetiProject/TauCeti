@@ -92,8 +92,7 @@ theorem heatCauchyPotentialBUC_mem_smoothBoundedDerivativesSubmodule
     heatCauchyPotentialBUC t f ∈ smoothBoundedDerivativesSubmodule ℝ E F := by
   refine (mem_smoothBoundedDerivativesSubmodule ℝ E F _).mpr ⟨?_, fun m => ?_⟩
   · rw [coe_heatCauchyPotentialBUC, coe_heatCauchyPotentialBCF_of_pos ht]
-    exact contDiff_heatKernel_convolution ht f.val.continuous.aestronglyMeasurable
-      (ae_of_all _ f.val.norm_coe_le_norm)
+    exact contDiff_heatKernel_convolution ht (ae_of_all _ f.val.norm_coe_le_norm)
   · rw [coe_heatCauchyPotentialBUC]
     exact ⟨_, norm_iteratedFDeriv_heatCauchyPotentialBCF_le ht f.val m⟩
 

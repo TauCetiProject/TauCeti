@@ -87,6 +87,13 @@ theorem toAdd_pointsMulEquiv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
     Multiplicative.toAdd (pointsMulEquiv F) = SymmetricAlgebra.lift.symm F.ofConv :=
   rfl
 
+/-- The converse of `toAdd_pointsMulEquiv`, so that `simp` is confluent with
+`Multiplicative.ofAdd_toAdd`. -/
+@[simp]
+theorem ofAdd_lift_symm_ofConv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
+    Multiplicative.ofAdd (SymmetricAlgebra.lift.symm F.ofConv) = pointsMulEquiv F :=
+  rfl
+
 /-- The linear map underlying a point evaluates as `x ↦ F (ι x)`. -/
 theorem toAdd_pointsMulEquiv_apply (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) (x : M) :
     Multiplicative.toAdd (pointsMulEquiv F) x = F.ofConv (ι R M x) := by
@@ -116,8 +123,8 @@ theorem pointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     pointsMulEquiv (R := R) (M := M) (A := B)
         (AlgHom.mapValue (H := SymmetricAlgebra R M) φ F) =
       Multiplicative.ofAdd
-        (φ.toLinearMap.comp (Multiplicative.toAdd (pointsMulEquiv F))) := by
-  exact congrArg Multiplicative.ofAdd (toAdd_pointsMulEquiv_mapValue φ F)
+        (φ.toLinearMap.comp (Multiplicative.toAdd (pointsMulEquiv F))) :=
+  congrArg Multiplicative.ofAdd (toAdd_pointsMulEquiv_mapValue φ F)
 
 /-- Naturality of the inverse vector-group points equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
@@ -127,10 +134,7 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B)
       (pointsMulEquiv (R := R) (M := M) (A := B)).symm
         (Multiplicative.ofAdd (φ.toLinearMap.comp (Multiplicative.toAdd ψ))) := by
   apply (pointsMulEquiv (R := R) (M := M) (A := B)).injective
-  rw [pointsMulEquiv_mapValue]
-  rw [(pointsMulEquiv (R := R) (M := M) (A := A)).apply_symm_apply ψ]
-  exact ((pointsMulEquiv (R := R) (M := M) (A := B)).apply_symm_apply
-    (Multiplicative.ofAdd (φ.toLinearMap.comp (Multiplicative.toAdd ψ)))).symm
+  simp only [pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply]
 
 end Points
 
@@ -169,6 +173,13 @@ theorem toAdd_gaPointsMulEquiv (F : WithConv (SymmetricAlgebra R R →ₐ[R] A))
   rw [gaPointsMulEquiv]
   simp
 
+/-- The converse of `toAdd_gaPointsMulEquiv`, so that `simp` is confluent with
+`Multiplicative.ofAdd_toAdd`. -/
+@[simp]
+theorem ofAdd_ofConv_ι_one (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
+    Multiplicative.ofAdd (F.ofConv (ι R R 1)) = gaPointsMulEquiv F := by
+  rw [← toAdd_gaPointsMulEquiv, ofAdd_toAdd]
+
 /-- The universal additive point has parameter equal to the universal coordinate. -/
 @[simp]
 theorem gaPointsMulEquiv_toConv_id :
@@ -202,8 +213,8 @@ theorem gaPointsMulEquiv_mapValue (φ : A →ₐ[R] B)
     (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) :
     gaPointsMulEquiv (R := R) (A := B)
         (AlgHom.mapValue (H := SymmetricAlgebra R R) φ F) =
-      Multiplicative.ofAdd (φ (Multiplicative.toAdd (gaPointsMulEquiv F))) := by
-  exact congrArg Multiplicative.ofAdd (toAdd_gaPointsMulEquiv_mapValue φ F)
+      Multiplicative.ofAdd (φ (Multiplicative.toAdd (gaPointsMulEquiv F))) :=
+  congrArg Multiplicative.ofAdd (toAdd_gaPointsMulEquiv_mapValue φ F)
 
 /-- Naturality of the inverse `𝔾ₐ` points equivalence in the value algebra. -/
 theorem mapValue_gaPointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (a : Multiplicative A) :
@@ -212,10 +223,7 @@ theorem mapValue_gaPointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (a : Multiplic
       (gaPointsMulEquiv (R := R) (A := B)).symm
         (Multiplicative.ofAdd (φ (Multiplicative.toAdd a))) := by
   apply (gaPointsMulEquiv (R := R) (A := B)).injective
-  rw [gaPointsMulEquiv_mapValue]
-  rw [(gaPointsMulEquiv (R := R) (A := A)).apply_symm_apply a]
-  exact ((gaPointsMulEquiv (R := R) (A := B)).apply_symm_apply
-    (Multiplicative.ofAdd (φ (Multiplicative.toAdd a)))).symm
+  simp only [gaPointsMulEquiv_mapValue, MulEquiv.apply_symm_apply]
 
 /-- The `A`-valued point of `𝔾ₐ` whose parameter is the product of the parameters of `F` and
 `G`.
@@ -256,10 +264,8 @@ theorem mapValue_gaPointParamMul (φ : A →ₐ[R] B)
       gaPointParamMul
         (AlgHom.mapValue (H := SymmetricAlgebra R R) φ F)
         (AlgHom.mapValue (H := SymmetricAlgebra R R) φ G) := by
-  rw [gaPointParamMul, mapValue_gaPointsMulEquiv_symm_apply, gaPointParamMul,
-    toAdd_gaPointsMulEquiv_mapValue, toAdd_gaPointsMulEquiv_mapValue]
-  exact congrArg (gaPointsMulEquiv (R := R) (A := B)).symm
-    (congrArg Multiplicative.ofAdd (map_mul φ _ _))
+  apply (gaPointsMulEquiv (R := R) (A := B)).injective
+  simp only [gaPointsMulEquiv_mapValue, gaPointsMulEquiv_gaPointParamMul, toAdd_ofAdd, map_mul]
 
 end Ga
 

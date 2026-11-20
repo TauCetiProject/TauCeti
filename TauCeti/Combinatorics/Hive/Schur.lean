@@ -142,11 +142,11 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
   classical
   let ι := {ν : (lam.shape.card + μ.shape.card).Partition // (ofPartition ν).colLen 0 ≤ n}
   let emb : ι ↪ DominantWeight n :=
-    { toFun ν := weightOfShape n (ofPartition ν.1)
+    { toFun ν := weightOfShape n (ofPartition ν.val)
       inj' ν₁ ν₂ h := by
-        have hsh : (weightOfShape n (ofPartition ν₁.1)).shape =
-            (weightOfShape n (ofPartition ν₂.1)).shape := congrArg DominantWeight.shape h
-        rw [shape_weightOfShape ν₁.2, shape_weightOfShape ν₂.2] at hsh
+        have hsh : (weightOfShape n (ofPartition ν₁.val)).shape =
+            (weightOfShape n (ofPartition ν₂.val)).shape := congrArg DominantWeight.shape h
+        rw [shape_weightOfShape ν₁.property, shape_weightOfShape ν₂.property] at hsh
         exact Subtype.ext (YoungDiagram.ofPartition_injective hsh) }
   let f (γ : DominantWeight n) : MvPolynomial (Fin n) R :=
     hiveCount (productBoundary lam μ γ) • diagramSchurPoly n R γ.shape
@@ -156,7 +156,7 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
       intro h0
       exact hγ_supp (by simp [f, h0])
     obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
-    have hγ_poly : γ.IsPolynomial := isPolynomial_of_productBoundary h.2 hlam hμ
+    have hγ_poly : γ.IsPolynomial := isPolynomial_of_productBoundary h.property hlam hμ
     rw [hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ hγ_poly] at hcnt
     have hcard : γ.shape.card = lam.shape.card + μ.shape.card := by
       by_contra hne
@@ -171,11 +171,11 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_finsum_hiveCount {n : ℕ} {R :
     diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau,
     sum_nsmul_diagramSchurPoly_eq_sum_colLen_le]
   refine Finset.sum_congr rfl fun ν _ => ?_
-  have hterm : emb ν = weightOfShape n (ofPartition ν.1) := rfl
-  simp only [f, hterm, shape_weightOfShape ν.2]
+  have hterm : emb ν = weightOfShape n (ofPartition ν.val) := rfl
+  simp only [f, hterm, shape_weightOfShape ν.property]
   congr 1
   rw [hiveCount_productBoundary_eq_natCard_lrTableau hlam hμ
-    (isPolynomial_weightOfShape n (ofPartition ν.1)), shape_weightOfShape ν.2]
+    (isPolynomial_weightOfShape n (ofPartition ν.val)), shape_weightOfShape ν.property]
 
 private theorem finsum_hiveCount_one_eq_smul :
     let lam : DominantWeight 1 := ⟨![1], by decide⟩
@@ -191,7 +191,7 @@ private theorem finsum_hiveCount_one_eq_smul :
     intro γ hγ_supp
     have hcnt : hiveCount (productBoundary lam lam γ) ≠ 0 := fun h0 => hγ_supp (by simp [f, h0])
     obtain ⟨h⟩ := hiveCount_pos_iff.mp (Nat.pos_of_ne_zero hcnt)
-    have hsum := sum_eq_of_productBoundary h.2
+    have hsum := sum_eq_of_productBoundary h.property
     simp only [Fin.sum_univ_one, lam, Matrix.cons_val_zero] at hsum
     refine Finset.mem_coe.mpr (Finset.mem_singleton.mpr ?_)
     ext i; fin_cases i; dsimp [γ₁]; omega

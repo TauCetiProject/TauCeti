@@ -333,7 +333,7 @@ theorem torusFamilyMarking_singularHomologyMap_affineMap {g : Γ} {y y' : Y}
   -- The target fibre is the fibre over `g • y`, as `φ` sends `[y, 0]` there.
   have hy' : y' = g • y := by
     have : torusFamilyProjection P
-        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).2
+        (φ ⟨Quotient.mk _ (y, 0), torusFamilyProjection_mk P (y, 0)⟩ : _) = y' := (φ _).property
     rwa [hφ, torusFamilyProjection_affineMap, torusFamilyProjection_mk, eq_comm] at this
   subst hy'
   obtain ⟨⟨y₁, β⟩, hβ⟩ := Quotient.exists_rep (b g y)
@@ -391,7 +391,7 @@ theorem torusFamilyMarking_loopClass_eq_of_homotopy {y₀ y₁ : Y}
         AddAction.orbitRel.Quotient Λ (Y × E)) = H (t, s)) → ∀ t, (H' (t, s)).1 = y := by
     intro y z γ s hγ t
     rw [← torusFamilyProjection_mk P, hH', ← hγ]
-    exact (γ t).2
+    exact (γ t).property
   let Γ : I → C(I, E) := fun s ↦
     ContinuousMap.snd.comp (H'.comp ((ContinuousMap.id I).prodMk (ContinuousMap.const I s)))
   have hΓ : ∀ {y : Y} {z} (γ : Path z z) (s : I),
@@ -476,7 +476,7 @@ def torusFamilyPeriodLoop (y : Y) (l : Λ) :
   letI := periodAddAction P
   { toFun t := ⟨Quotient.mk _ (y, (t : ℝ) • P y l), torusFamilyProjection_mk P _⟩
     continuous_toFun := (continuous_quotient_mk'.comp (continuous_const.prodMk
-      (continuous_subtype_val.smul continuous_const))).subtype_mk _
+      (continuous_subtypeVal.smul continuous_const))).subtype_mk _
     source' := by simp
     target' := by
       ext
@@ -504,7 +504,7 @@ theorem torusFamilyMarking_periodLoop (y : Y) (l : Λ) :
     (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l))) = l
   refine hinj y ?_
   rw [torusFamilyMarking_loopClass P hcont hinj y _
-    ⟨fun t ↦ (t : ℝ) • P y l, continuous_subtype_val.smul continuous_const⟩
+    ⟨fun t ↦ (t : ℝ) • P y l, continuous_subtypeVal.smul continuous_const⟩
     (coe_torusFamilyPeriodLoop_apply P y l)]
   simp
 
@@ -577,7 +577,7 @@ theorem IsFlatTorusFamilyMarking.torusFamilyMarking_symm_trans_eq
   let H : C(I × I, AddAction.orbitRel.Quotient Λ (Y × E)) :=
     ⟨fun x ↦ Quotient.mk _ (p x.2, (x.1 : ℝ) • P (p x.2) l),
       continuous_quotient_mk'.comp ((p.continuous.comp continuous_snd).prodMk
-        ((continuous_subtype_val.comp continuous_fst).smul
+        ((continuous_subtypeVal.comp continuous_fst).smul
           ((hcont l).comp (p.continuous.comp continuous_snd))))⟩
   have hH : ∀ s, H (0, s) = H (1, s) := fun s ↦ by
     simp only [H, ContinuousMap.coe_mk, Set.Icc.coe_zero, Set.Icc.coe_one, zero_smul, one_smul]

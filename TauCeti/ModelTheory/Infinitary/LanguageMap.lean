@@ -46,6 +46,11 @@ equivalence of formula types, so that translating along it loses no formula.
   of finitary formulas, with relabelling and weakening of bound-variable slots, and with
   transport along a coding of carriers; along the way it commutes with `⊥`, `⊤`, negation,
   existential quantification and the coded connectives `iInfAlong` and `iSupAlong`.
+* `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_imp`,
+  `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_all`,
+  `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_iSup` and
+  `FirstOrder.Language.LHom.exists_of_onBoundedFormulaInf_eq_iInf`: a language map reflects the
+  compound constructors onto preimages, with no injectivity hypothesis.
 * `FirstOrder.Language.LHom.Injective.onBoundedFormulaInf_injective`: an injective language map
   acts injectively on infinitary formulas.
 * `FirstOrder.Language.LEquiv.realize_onBoundedFormulaInf`: realization is preserved by
@@ -60,8 +65,8 @@ equivalence of formula types, so that translating along it loses no formula.
 * Divergences from that source: the action is defined at every carrier `ι` rather than at `ℕ`,
   between languages in arbitrary universes rather than a common one, and as a method of the
   language homomorphism named after Mathlib's finitary `LHom.onBoundedFormula`; the functor laws,
-  injectivity and the equivalence along a language equivalence, which follows Mathlib's finitary
-  `LEquiv.onBoundedFormula`, are new.
+  constructor inversion, injectivity and the equivalence along a language equivalence, which
+  follows Mathlib's finitary `LEquiv.onBoundedFormula`, are new.
 -/
 
 public section
@@ -132,6 +137,59 @@ theorem onBoundedFormulaInf_iInf (φs : ι → L.BoundedFormulaInf ι α n) :
     g.onBoundedFormulaInf (.iInf φs) = .iInf fun i => g.onBoundedFormulaInf (φs i) := (rfl)
 
 end ConstructorEqs
+
+section ConstructorInversion
+
+variable {g : L →ᴸ L'} {n : ℕ}
+
+/-- If the image of a formula under a language map is an implication, the formula is itself an
+implication of preimages of the two sides. -/
+theorem exists_of_onBoundedFormulaInf_eq_imp {χ : L.BoundedFormulaInf ι α n}
+    {φ ψ : L'.BoundedFormulaInf ι α n} (h : g.onBoundedFormulaInf χ = φ.imp ψ) :
+    ∃ χ₁ χ₂ : L.BoundedFormulaInf ι α n, χ = χ₁.imp χ₂ ∧
+      g.onBoundedFormulaInf χ₁ = φ ∧ g.onBoundedFormulaInf χ₂ = ψ := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.imp.injEq] at h
+  exact ⟨_, _, rfl, h⟩
+
+/-- If the image of a formula under a language map is a universal quantification, the formula is
+itself a universal quantification of a preimage of the body. -/
+theorem exists_of_onBoundedFormulaInf_eq_all {χ : L.BoundedFormulaInf ι α n}
+    {φ : L'.BoundedFormulaInf ι α (n + 1)} (h : g.onBoundedFormulaInf χ = φ.all) :
+    ∃ χ₁ : L.BoundedFormulaInf ι α (n + 1), χ = χ₁.all ∧ g.onBoundedFormulaInf χ₁ = φ := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.all.injEq] at h
+  exact ⟨_, rfl, h⟩
+
+/-- If the image of a formula under a language map is a disjunction over the carrier, the formula
+is itself a disjunction of preimages of the disjuncts. -/
+theorem exists_of_onBoundedFormulaInf_eq_iSup {χ : L.BoundedFormulaInf ι α n}
+    {φs : ι → L'.BoundedFormulaInf ι α n} (h : g.onBoundedFormulaInf χ = .iSup φs) :
+    ∃ χs : ι → L.BoundedFormulaInf ι α n, χ = .iSup χs ∧
+      ∀ i, g.onBoundedFormulaInf (χs i) = φs i := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.iSup.injEq] at h
+  exact ⟨_, rfl, congrFun h⟩
+
+/-- If the image of a formula under a language map is a conjunction over the carrier, the formula
+is itself a conjunction of preimages of the conjuncts. -/
+theorem exists_of_onBoundedFormulaInf_eq_iInf {χ : L.BoundedFormulaInf ι α n}
+    {φs : ι → L'.BoundedFormulaInf ι α n} (h : g.onBoundedFormulaInf χ = .iInf φs) :
+    ∃ χs : ι → L.BoundedFormulaInf ι α n, χ = .iInf χs ∧
+      ∀ i, g.onBoundedFormulaInf (χs i) = φs i := by
+  cases χ <;> simp only [onBoundedFormulaInf_falsum, onBoundedFormulaInf_equal,
+    onBoundedFormulaInf_rel, onBoundedFormulaInf_imp, onBoundedFormulaInf_all,
+    onBoundedFormulaInf_iSup, onBoundedFormulaInf_iInf, reduceCtorEq,
+    BoundedFormulaInf.iInf.injEq] at h
+  exact ⟨_, rfl, congrFun h⟩
+
+end ConstructorInversion
 
 /-- **Realization along an expansion.** If the `L'`-structure on `M` expands its `L`-structure
 along `g`, the image of an infinitary formula under `g` is realized exactly when the formula is.
