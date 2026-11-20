@@ -10,6 +10,9 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
+-- Access the body of `IsLocalDiffeomorphAt` to destructure its witness.
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+
 /-!
 # Smooth enhancements of implicit atlases
 
@@ -39,11 +42,11 @@ submersion over `ψ_IJ⁻¹(X_I^reg)` and that `ψ_IJ` be a local diffeomorphism
 `ψ_IJ⁻¹(X_I^reg) ∩ Z_IJ`, packaged in local normal form: `s_(J \ I)` is the second coordinate of
 a local diffeomorphism, and `ψ_IJ` is its first coordinate on the zero set, the slice
 `X_I^reg × {0}`. Phrasing it through `τ` avoids putting a smooth structure on the zero set itself.
+The extra obstruction `s_(J \ I)` is the topological map `TauCeti.kuranishiSdiff` of
+`TauCeti.Topology.ImplicitAtlas.Basic`.
 
 ## Main definitions
 
-* `TauCeti.ImplicitAtlas.kuranishiSdiff`: the extra obstruction
-  `s_(J \ I) : X_J → E_(J \ I) = ∏_(α ∈ J \ I) E_α`.
 * `TauCeti.ImplicitAtlas.IsSmoothEnhancement`: the smooth structures on the regular loci form a
   smooth enhancement of the atlas.
 * `TauCeti.ImplicitAtlas.IsSmoothEnhancement.actDiffeomorph`: `Γ_I` acts on `X_I^reg` by
@@ -82,24 +85,6 @@ variable {A : Type*} [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] 
   {act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)}
   {X : Type*} [TopologicalSpace X] {d : ℤ} (𝒜 : ImplicitAtlas Γ E ρ T act X d)
 
-/-- The extra obstruction `s_(J \ I) : X_J → E_(J \ I) = ∏_(α ∈ J \ I) E_α`, the components of
-the Kuranishi map of `X_J` indexed by `J \ I`. Its zero set is `Z_IJ`
-(`TauCeti.ImplicitAtlas.kuranishiSdiff_eq_zero_iff`). -/
-def kuranishiSdiff (I J : Finset A) (y : T J) : (α : ↥(J \ I)) → E α :=
-  fun α ↦ 𝒜.kuranishi J ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩ y
-
-@[simp]
-theorem kuranishiSdiff_apply (I J : Finset A) (y : T J) (α : ↥(J \ I)) :
-    𝒜.kuranishiSdiff I J y α = 𝒜.kuranishi J ⟨α.1, (Finset.mem_sdiff.1 α.2).1⟩ y := by
-  simp only [kuranishiSdiff]
-
-/-- The zero set of the extra obstruction `s_(J \ I)` is `Z_IJ`. -/
-theorem kuranishiSdiff_eq_zero_iff {I J : Finset A} {y : T J} :
-    𝒜.kuranishiSdiff I J y = 0 ↔ y ∈ kuranishiZeroSet 𝒜.kuranishi I J := by
-  simp only [funext_iff, kuranishiSdiff_apply, Pi.zero_apply, mem_kuranishiZeroSet]
-  exact ⟨fun h α hα ↦ h ⟨α.1, Finset.mem_sdiff.2 ⟨α.2, hα⟩⟩,
-    fun h α ↦ h _ (Finset.mem_sdiff.1 α.2).2⟩
-
 variable (N : Finset A → ℕ) [∀ I, ChartedSpace (EuclideanSpace ℝ (Fin (N I))) (𝒜.regLocus I)]
 
 /-- The charted space structures on the regular loci `X_I^reg`, modelled on `ℝ^(N I)`, form a
@@ -128,7 +113,7 @@ structure IsSmoothEnhancement : Prop where
         ∀ hy : y.1 ∈ kuranishiZeroSet 𝒜.kuranishi I J,
           (τ y : T I) = 𝒜.footprintMap h ⟨y.1, hy⟩) ∧
       IsLocalDiffeomorphAt (𝓡 (N J)) ((𝓡 (N I)).prod 𝓘(ℝ, (α : ↥(J \ I)) → E α)) ∞
-        (fun y ↦ (τ y, 𝒜.kuranishiSdiff I J y))
+        (fun y ↦ (τ y, kuranishiSdiff 𝒜.kuranishi I J y))
         ⟨x.1, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩
 
 namespace IsSmoothEnhancement
@@ -137,7 +122,7 @@ variable {𝒜 N}
 
 /-- **`Γ_I` acts on `X_I^reg` by diffeomorphisms**: the action of `g ∈ Γ_I` restricted to the
 regular locus, as a diffeomorphism with inverse the action of `g⁻¹`. -/
-@[expose] noncomputable def actDiffeomorph (hS : 𝒜.IsSmoothEnhancement N) (I : Finset A)
+noncomputable def actDiffeomorph (hS : 𝒜.IsSmoothEnhancement N) (I : Finset A)
     (g : (α : I) → Γ α) :
     Diffeomorph (𝓡 (N I)) (𝓡 (N I)) (𝒜.regLocus I) (𝒜.regLocus I) ∞ where
   toFun x := ⟨act I g x, 𝒜.act_mem_regLocus I g x x.2⟩
@@ -153,13 +138,13 @@ regular locus, as a diffeomorphism with inverse the action of `g⁻¹`. -/
 theorem coe_actDiffeomorph_apply (hS : 𝒜.IsSmoothEnhancement N) (I : Finset A)
     (g : (α : I) → Γ α) (x : 𝒜.regLocus I) :
     (hS.actDiffeomorph I g x : T I) = act I g x :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem coe_actDiffeomorph_symm_apply (hS : 𝒜.IsSmoothEnhancement N) (I : Finset A)
     (g : (α : I) → Γ α) (x : 𝒜.regLocus I) :
     ((hS.actDiffeomorph I g).symm x : T I) = act I g⁻¹ x :=
-  rfl
+  (rfl)
 
 /-- **A smooth enhancement induces the topological product models.** Let `x ∈ Z_IJ` with
 `ψ_IJ x ∈ X_I^reg`. There is a homeomorphism `e` of an open neighbourhood of `x` in `X_J` onto an
@@ -174,46 +159,36 @@ theorem exists_openPartialHomeomorph (hS : 𝒜.IsSmoothEnhancement N) {I J : Fi
     (N I : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
       ∃ e : OpenPartialHomeomorph (T J)
           (EuclideanSpace ℝ (Fin (N I)) × ((α : ↥(J \ I)) → E α)),
-        x.1 ∈ e.source ∧ (∀ y ∈ e.source, (e y).2 = 𝒜.kuranishiSdiff I J y) ∧
+        x.1 ∈ e.source ∧ (∀ y ∈ e.source, (e y).2 = kuranishiSdiff 𝒜.kuranishi I J y) ∧
         ∀ y : kuranishiZeroSet 𝒜.kuranishi I J, y.1 ∈ e.source →
           ∃ hy : 𝒜.footprintMap h y ∈ 𝒜.regLocus I,
             (e y).1 = chartAt (EuclideanSpace ℝ (Fin (N I)))
               (⟨𝒜.footprintMap h x, hx⟩ : 𝒜.regLocus I) ⟨𝒜.footprintMap h y, hy⟩ := by
   refine ⟨hS.natCast_eq I ⟨_, hx⟩, ?_⟩
   set x' : 𝒜.regLocus J := ⟨x.1, 𝒜.mem_regLocus_of_footprintMap_mem h x hx⟩
-  obtain ⟨τ, hτ, hf⟩ := hS.exists_isLocalDiffeomorphAt h x hx
-  set f : 𝒜.regLocus J → 𝒜.regLocus I × ((α : ↥(J \ I)) → E α) :=
-    fun y ↦ (τ y, 𝒜.kuranishiSdiff I J y)
-  set Ψ := hf.localInverse.toOpenPartialHomeomorph
+  obtain ⟨τ, hτ, Φ, hxΦ, hfΦ⟩ := hS.exists_isLocalDiffeomorphAt h x hx
+  have hΦ : ∀ y ∈ Φ.source, Φ y = (τ y, kuranishiSdiff 𝒜.kuranishi I J y) :=
+    fun _ hy ↦ (hfΦ hy).symm
   have hτx : τ x' = ⟨𝒜.footprintMap h x, hx⟩ := Subtype.ext (hτ.self_of_nhds x.2)
-  -- Near `x'`, `τ` extends `ψ_IJ` and `f` maps into the source of its local inverse `Ψ`.
-  obtain ⟨W, hW, hWo, hxW⟩ := eventually_nhds_iff.1 <| hτ.and <|
-    hf.contMDiffAt.continuousAt.preimage_mem_nhds <|
-      hf.localInverse_open_source.mem_nhds hf.localInverse_mem_source
+  -- Near `x'`, `τ` extends `ψ_IJ` and the local diffeomorphism `Φ` is defined.
+  obtain ⟨W, hW, hWo, hxW⟩ := eventually_nhds_iff.1 <| hτ.and <| Φ.open_source.mem_nhds hxΦ
   set c := chartAt (EuclideanSpace ℝ (Fin (N I))) (⟨𝒜.footprintMap h x, hx⟩ : 𝒜.regLocus I)
-  -- The inverse of `Ψ`, which is `f` near `x'`, followed by a chart of `X_I^reg`, cut down to `W`.
-  set e₀ := (Ψ.symm.trans (c.prod (OpenPartialHomeomorph.refl ((α : ↥(J \ I)) → E α)))).restrOpen
-    W hWo
-  have hΨ : ∀ y ∈ hf.localInverse.target, y ∈ W → Ψ.symm y = f y := by
-    intro y hy hyW
-    conv_lhs => rw [← hf.localInverse_left_inv hy]
-    exact Ψ.left_inv (hW y hyW).2
-  have he₀ : ∀ y ∈ e₀.source, y ∈ W ∧ e₀ y = (c (τ y), 𝒜.kuranishiSdiff I J y) := by
+  -- `Φ = (τ, s_(J \ I))` followed by a chart of `X_I^reg`, cut down to `W`.
+  set e₀ := (Φ.toOpenPartialHomeomorph.trans
+    (c.prod (OpenPartialHomeomorph.refl ((α : ↥(J \ I)) → E α)))).restrOpen W hWo
+  have he₀ : ∀ y ∈ e₀.source, y ∈ W ∧ e₀ y = (c (τ y), kuranishiSdiff 𝒜.kuranishi I J y) := by
     intro y hy
     simp only [e₀, OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.trans_source,
-      mem_inter_iff, OpenPartialHomeomorph.symm_source] at hy
+      mem_inter_iff] at hy
     refine ⟨hy.2, ?_⟩
-    simp [e₀, hΨ y hy.1.1 hy.2, f]
+    simp [e₀, hΦ y (hW y hy.2).2]
   refine ⟨e₀.lift_openEmbedding (𝒜.isOpen_regLocus J).isOpenEmbedding_subtypeVal, ?_, ?_, ?_⟩
   · refine ⟨x', ?_, rfl⟩
     simp only [e₀, OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.trans_source,
       mem_inter_iff, mem_preimage, OpenPartialHomeomorph.prod_source,
-      OpenPartialHomeomorph.refl_source, mem_prod, mem_univ, and_true,
-      OpenPartialHomeomorph.symm_source]
-    refine ⟨⟨hf.localInverse_mem_target, ?_⟩, hxW⟩
-    rw [hΨ x' hf.localInverse_mem_target hxW]
-    change τ x' ∈ c.source
-    rw [hτx]
+      OpenPartialHomeomorph.refl_source, mem_prod, mem_univ, and_true]
+    refine ⟨⟨hxΦ, ?_⟩, hxW⟩
+    rw [PartialDiffeomorph.toFun'_toOpenPartialHomeomorph, hΦ x' hxΦ, hτx]
     exact mem_chart_source _ _
   · rintro _ ⟨y, hy, rfl⟩
     rw [OpenPartialHomeomorph.lift_openEmbedding_apply, (he₀ y hy).2]
