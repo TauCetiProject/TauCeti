@@ -187,7 +187,7 @@ the contact counterpart of the fact that Lagrangian subspaces are maximal isotro
 theorem IsLegendrianImmersion.mem_range_mfderiv_of_distributionLeviForm_eq_zero
     [IsManifold J 2 N] (h : IsLegendrianImmersion J D f) {y : N} {a : D (f y)}
     (ha : ∀ u, distributionLeviForm D (f y) a ⟨_, h.isHorizontalMap.mfderiv_mem y u⟩ = 0) :
-    a.1 ∈ LinearMap.range (mfderiv J I f y).toLinearMap := by
+    a.val ∈ LinearMap.range (mfderiv J I f y).toLinearMap := by
   have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
   have : IsManifold I (1 + 1) M := .of_le (n := 2) (by norm_num)
   have hD := h.isContactDistribution

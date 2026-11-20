@@ -41,18 +41,18 @@ variable {ι : Type*} [DecidableEq ι] (K : AbstractSimplicialComplex ι) {n : �
   (f : Fin (n + 1) ↪ ι) (hf : Finset.univ.image f ∈ K)
 
 private def simplexCharacteristicFun (x : Fin n → ℝ) : Realization K :=
-  if hx : x ∈ closedBall 0 1 then (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1
-  else (simplexClosedBallHomeomorph K f hf ⟨0, by simp⟩).1
+  if hx : x ∈ closedBall 0 1 then (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).val
+  else (simplexClosedBallHomeomorph K f hf ⟨0, by simp⟩).val
 
 private theorem simplexCharacteristicFun_apply {x : Fin n → ℝ}
     (hx : x ∈ closedBall 0 1) :
-    simplexCharacteristicFun K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1 :=
+    simplexCharacteristicFun K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).val :=
   dite_eq_left hx
 
 private theorem simplexCharacteristicFun_apply_symm
-    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
-    simplexCharacteristicFun K f hf ((simplexClosedBallHomeomorph K f hf).symm y).1 = y.1 := by
-  rw [simplexCharacteristicFun_apply K f hf ((simplexClosedBallHomeomorph K f hf).symm y).2,
+    (y : {x : Realization K // x.val.support ⊆ Finset.univ.image f}) :
+    simplexCharacteristicFun K f hf ((simplexClosedBallHomeomorph K f hf).symm y).val = y.val := by
+  rw [simplexCharacteristicFun_apply K f hf ((simplexClosedBallHomeomorph K f hf).symm y).property,
     Subtype.coe_eta, Homeomorph.apply_symm_apply]
 
 private theorem injOn_simplexCharacteristicFun_closedBall :
@@ -64,7 +64,7 @@ private theorem injOn_simplexCharacteristicFun_closedBall :
 
 private theorem bijOn_simplexCharacteristicFun :
     BijOn (simplexCharacteristicFun K f hf) (ball 0 1)
-      {x : Realization K | x.1.support = Finset.univ.image f} := by
+      {x : Realization K | x.val.support = Finset.univ.image f} := by
   refine ⟨?_, ?_, ?_⟩
   · intro x hx
     rw [mem_ofPred_eq, simplexCharacteristicFun_apply K f hf (ball_subset_closedBall hx)]
@@ -82,7 +82,7 @@ It is continuous on the closed ball and parametrizes all proper faces on the sph
 def simplexCharacteristicMap : PartialEquiv (Fin n → ℝ) (Realization K) :=
   (bijOn_simplexCharacteristicFun K f hf).toPartialEquiv
     (simplexCharacteristicFun K f hf) (ball 0 1)
-    {x : Realization K | x.1.support = Finset.univ.image f}
+    {x : Realization K | x.val.support = Finset.univ.image f}
 
 /-- The source of a simplicial characteristic map is the open unit ball. -/
 @[simp]
@@ -93,11 +93,11 @@ theorem simplexCharacteristicMap_source :
 @[simp]
 theorem simplexCharacteristicMap_target :
     (simplexCharacteristicMap K f hf).target =
-      {x : Realization K | x.1.support = Finset.univ.image f} := (rfl)
+      {x : Realization K | x.val.support = Finset.univ.image f} := (rfl)
 
 /-- On the closed ball the characteristic map agrees with the closed-simplex homeomorphism. -/
 theorem simplexCharacteristicMap_apply {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
-    simplexCharacteristicMap K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).1 :=
+    simplexCharacteristicMap K f hf x = (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).val :=
   simplexCharacteristicFun_apply K f hf hx
 
 /-- The characteristic map is injective on the closed ball. -/
@@ -109,23 +109,23 @@ theorem injOn_simplexCharacteristicMap_closedBall :
 that point. -/
 @[simp]
 theorem simplexCharacteristicMap_apply_symm
-    (y : {x : Realization K // x.1.support ⊆ Finset.univ.image f}) :
-    simplexCharacteristicMap K f hf ((simplexClosedBallHomeomorph K f hf).symm y).1 = y.1 :=
+    (y : {x : Realization K // x.val.support ⊆ Finset.univ.image f}) :
+    simplexCharacteristicMap K f hf ((simplexClosedBallHomeomorph K f hf).symm y).val = y.val :=
   simplexCharacteristicFun_apply_symm K f hf y
 
 /-- Outside the closed ball the characteristic map takes its value at the origin. -/
 theorem simplexCharacteristicMap_apply_of_notMem_closedBall {x : Fin n → ℝ}
     (hx : x ∉ closedBall 0 1) :
     simplexCharacteristicMap K f hf x =
-      (simplexClosedBallHomeomorph K f hf ⟨0, by simp⟩).1 :=
+      (simplexClosedBallHomeomorph K f hf ⟨0, by simp⟩).val :=
   dite_eq_right hx
 
 /-- On the open cell, the inverse characteristic map is the inverse closed-simplex
 homeomorphism followed by the inclusion into the ambient coordinate space. -/
 theorem simplexCharacteristicMap_symm_apply {y : Realization K}
-    (hy : y.1.support = Finset.univ.image f) :
+    (hy : y.val.support = Finset.univ.image f) :
     (simplexCharacteristicMap K f hf).symm y =
-      ((simplexClosedBallHomeomorph K f hf).symm ⟨y, hy.le⟩).1 :=
+      ((simplexClosedBallHomeomorph K f hf).symm ⟨y, hy.le⟩).val :=
   (((simplexCharacteristicMap K f hf).eq_symm_apply
     (mem_ball_zero_iff.mpr
       ((norm_simplexClosedBallHomeomorph_symm_lt_one_iff K f hf ⟨y, hy.le⟩).mpr hy)) hy).mpr
@@ -135,8 +135,8 @@ theorem simplexCharacteristicMap_symm_apply {y : Realization K}
 theorem continuousOn_simplexCharacteristicMap :
     ContinuousOn (simplexCharacteristicMap K f hf) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
-  exact (continuous_subtype_val.comp (simplexClosedBallHomeomorph K f hf).continuous).congr
-    (fun x => (simplexCharacteristicMap_apply K f hf x.2).symm)
+  exact (continuous_subtypeVal.comp (simplexClosedBallHomeomorph K f hf).continuous).congr
+    (fun x => (simplexCharacteristicMap_apply K f hf x.property).symm)
 
 /-- The inverse of a simplicial characteristic map is continuous on the open cell. -/
 theorem continuousOn_simplexCharacteristicMap_symm :
@@ -144,38 +144,38 @@ theorem continuousOn_simplexCharacteristicMap_symm :
       (simplexCharacteristicMap K f hf).target := by
   rw [simplexCharacteristicMap_target, continuousOn_iff_continuous_domRestrict]
   have hc : Continuous (fun y : {y : Realization K |
-      y.1.support = Finset.univ.image f} =>
-      ((simplexClosedBallHomeomorph K f hf).symm ⟨y.1, y.2.le⟩).1) :=
-    continuous_subtype_val.comp ((simplexClosedBallHomeomorph K f hf).symm.continuous.comp
-      (continuous_subtype_val.subtype_mk (fun y => y.2.le)))
-  exact hc.congr (fun y => (simplexCharacteristicMap_symm_apply K f hf y.2).symm)
+      y.val.support = Finset.univ.image f} =>
+      ((simplexClosedBallHomeomorph K f hf).symm ⟨y.val, y.property.le⟩).val) :=
+    continuous_subtypeVal.comp ((simplexClosedBallHomeomorph K f hf).symm.continuous.comp
+      (continuous_subtypeVal.subtype_mk (fun y => y.property.le)))
+  exact hc.congr (fun y => (simplexCharacteristicMap_symm_apply K f hf y.property).symm)
 
 /-- The closed ball maps onto the whole closed simplex. -/
 @[simp]
 theorem image_simplexCharacteristicMap_closedBall :
     simplexCharacteristicMap K f hf '' closedBall 0 1 =
-      {x : Realization K | x.1.support ⊆ Finset.univ.image f} := by
+      {x : Realization K | x.val.support ⊆ Finset.univ.image f} := by
   ext y
   constructor
   · rintro ⟨x, hx, rfl⟩
     rw [simplexCharacteristicMap_apply K f hf hx]
-    exact (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).2
+    exact (simplexClosedBallHomeomorph K f hf ⟨x, hx⟩).property
   · intro hy
-    exact ⟨_, ((simplexClosedBallHomeomorph K f hf).symm ⟨y, hy⟩).2,
+    exact ⟨_, ((simplexClosedBallHomeomorph K f hf).symm ⟨y, hy⟩).property,
       simplexCharacteristicMap_apply_symm K f hf ⟨y, hy⟩⟩
 
 /-- The sphere maps onto exactly the proper faces of the closed simplex. -/
 @[simp]
 theorem image_simplexCharacteristicMap_sphere :
     simplexCharacteristicMap K f hf '' sphere 0 1 =
-      {x : Realization K | x.1.support ⊂ Finset.univ.image f} := by
+      {x : Realization K | x.val.support ⊂ Finset.univ.image f} := by
   ext y
   constructor
   · rintro ⟨x, hx, rfl⟩
     have hxc := sphere_subset_closedBall hx
     rw [simplexCharacteristicMap_apply K f hf hxc]
     exact Finset.ssubset_iff_subset_ne.mpr
-      ⟨(simplexClosedBallHomeomorph K f hf ⟨x, hxc⟩).2,
+      ⟨(simplexClosedBallHomeomorph K f hf ⟨x, hxc⟩).property,
         (simplexClosedBallHomeomorph_support_ne_iff K f hf _).mpr
           (mem_sphere_zero_iff_norm.mp hx)⟩
   · intro hy
