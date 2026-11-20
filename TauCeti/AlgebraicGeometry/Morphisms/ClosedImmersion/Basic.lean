@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Closed immersions over a base
@@ -19,6 +20,9 @@ A closed immersion also preserves the height of every point for the specializati
 (`AlgebraicGeometry.Scheme.Hom.height_apply_eq_height`): the closure of a point of the source is
 carried homeomorphically onto the closure of its image. So the dimension of the closure of a point
 can be computed in a closed subscheme or in the ambient scheme alike.
+
+An open subscheme with closed underlying set has a closed-immersion inclusion, as does every
+member of a pairwise-disjoint open cover. These inclusions support clopen decompositions.
 -/
 
 public section
@@ -78,3 +82,30 @@ theorem height_apply_eq_height {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f
   exact ⟨a', by simpa only [lt_iff_le_not_ge, hle] using hb, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Opens
+
+/-- The inclusion of an open subscheme whose underlying set is closed is a closed immersion. -/
+theorem isClosedImmersion_ι_of_isClosed {X : Scheme} (U : X.Opens)
+    (hU : IsClosed (U : Set X)) : IsClosedImmersion U.ι :=
+  IsClosedImmersion.of_isPreimmersion _
+    (by simpa only [AlgebraicGeometry.Scheme.Opens.range_ι] using hU)
+
+end AlgebraicGeometry.Scheme.Opens
+
+namespace TauCeti
+
+namespace AlgebraicGeometry
+
+/-- Every inclusion in a pairwise-disjoint open cover is a closed immersion. -/
+theorem isClosedImmersion_ι_of_pairwiseDisjoint_iSup_eq_top {X : Scheme} {J : Type*}
+    (U : J → X.Opens)
+    (hcover : ⨆ j, U j = ⊤) (hdisj : Pairwise fun i j ↦ Disjoint (U i) (U j)) (j : J) :
+    IsClosedImmersion (U j).ι :=
+  (U j).isClosedImmersion_ι_of_isClosed
+    (TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
+      U hcover hdisj j).isClosed
+
+end AlgebraicGeometry
+
+end TauCeti
