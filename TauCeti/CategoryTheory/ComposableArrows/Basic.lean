@@ -23,7 +23,9 @@ string maps its arrows along the functor
 (`CategoryTheory.ComposableArrows.totalArrow_mapComposableArrows_obj`) and commutes with
 prepending (`CategoryTheory.Functor.mapComposableArrows_obj_precomp`). A string of at least one
 arrow is already determined by its first arrow and the remaining string
-(`CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`).
+(`CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`), or dually by its arrows between
+non-final vertices and into its final vertex
+(`CategoryTheory.ComposableArrows.ext_last_of_totalArrow`).
 
 All vertices of a composable string in a groupoid have the same isomorphism class.
 
@@ -31,8 +33,9 @@ All vertices of a composable string in a groupoid have the same isomorphism clas
 
 * `CategoryTheory.ComposableArrows.totalArrow`: the arrow of a string between two positions.
 * `CategoryTheory.ComposableArrows.ext_of_totalArrow`: a string is determined by its arrows.
-* `CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`: a string is determined by its first
-  arrow and its remaining arrows.
+* `CategoryTheory.ComposableArrows.ext_succ_of_totalArrow`,
+  `CategoryTheory.ComposableArrows.ext_last_of_totalArrow`: a string of positive length is
+  determined by its initial or final arrows together with the remaining arrows.
 * `CategoryTheory.ComposableArrows.quotient_mk_obj`: the vertices of a string in a groupoid are
   isomorphic.
 -/
@@ -66,6 +69,18 @@ theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i �
 theorem totalArrow_self (F : ComposableArrows C n) (i : Fin (n + 1)) :
     F.totalArrow i i le_rfl = ⟨F.obj i, F.obj i, 𝟙 (F.obj i)⟩ := by
   simp [totalArrow_def]
+
+/-- Transport `totalArrow` along equalities of its endpoint indices. -/
+lemma totalArrow_congr (F : ComposableArrows C n) {i i' j j' : Fin (n + 1)}
+    (hi : i = i') (hj : j = j') (hij : i ≤ j) :
+    F.totalArrow i j hij = F.totalArrow i' j' (hi ▸ hj ▸ hij) := by
+  subst hi; subst hj; rfl
+
+/-- When `j = 0`, the arrow of `F` from `0` to `j` is `eqToHom`. -/
+lemma map_homOfLE_eq_eqToHom (F : ComposableArrows C n) {j : Fin (n + 1)} (hj : j = 0) :
+    F.map (homOfLE (Fin.zero_le j)) = eqToHom (congrArg F.obj hj.symm) := by
+  subst hj
+  rw [Subsingleton.elim (homOfLE (Fin.zero_le (0 : Fin (n + 1)))) (𝟙 0), F.map_id, eqToHom_refl]
 
 /-- The first arrow of a string obtained by prepending an arrow is that arrow, including
 when its target is identified with the first vertex by an equality. -/
@@ -158,6 +173,30 @@ theorem ext_succ_of_totalArrow {F G : ComposableArrows C (n + 1)} (h : F.δ₀ =
     (w : F.totalArrow 0 1 (Fin.zero_le _) = G.totalArrow 0 1 (Fin.zero_le _)) : F = G := by
   obtain ⟨h₀, h₁, hw⟩ := Quiver.Total.mk.inj w
   exact ext_succ h₀ h ((conj_eqToHom_iff_heq _ _ h₀ h₁).2 hw)
+
+/-- Two strings of `n + 1` composable arrows are equal when their arrows between non-final vertices
+and their arrows from non-final vertices to the final vertex agree. -/
+theorem ext_last_of_totalArrow {F G : ComposableArrows C (n + 1)}
+    (hcast : ∀ (i j : Fin (n + 1)) (hij : i ≤ j),
+      F.totalArrow i.castSucc j.castSucc (Fin.castSucc_le_castSucc_iff.mpr hij) =
+        G.totalArrow i.castSucc j.castSucc (Fin.castSucc_le_castSucc_iff.mpr hij))
+    (hlast : ∀ i : Fin (n + 1),
+      F.totalArrow i.castSucc (Fin.last (n + 1)) (Fin.le_last _) =
+        G.totalArrow i.castSucc (Fin.last (n + 1)) (Fin.le_last _)) : F = G := by
+  refine ext_of_totalArrow fun i j hij ↦ ?_
+  induction j using Fin.lastCases with
+  | last =>
+    induction i using Fin.lastCases with
+    | last =>
+      have hY : F.obj (Fin.last (n + 1)) = G.obj (Fin.last (n + 1)) :=
+        congrArg Quiver.Total.right (hlast 0)
+      rw [totalArrow_self, totalArrow_self]
+      exact Quiver.Total.ext hY hY ((conj_eqToHom_iff_heq _ _ hY hY).mp (by simp))
+    | cast i => exact hlast i
+  | cast j =>
+    induction i using Fin.lastCases with
+    | last => exact (Nat.not_lt.mpr hij j.isLt).elim
+    | cast i => exact hcast i j (Fin.castSucc_le_castSucc_iff.mp hij)
 
 /-- Applying a functor to a string with a prepended arrow prepends the image of that arrow to the
 image of the string. -/
