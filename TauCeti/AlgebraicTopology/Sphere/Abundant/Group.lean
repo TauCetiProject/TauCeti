@@ -12,9 +12,9 @@ public import TauCeti.Topology.MappingSpace.Sphere.Basic
 public import Mathlib.Analysis.Quaternion
 import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
+import TauCeti.AlgebraicTopology.Sphere.Abundant.Action
 import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
-import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.Topology.MappingSpace.Sphere.PathComponent
 
@@ -38,7 +38,8 @@ its coefficients `ℤ ⊗ ℤ` are identified with `ℤ`
 (`TauCeti.livesOverFundamentalClass_homologyMap_coefficient_iff`), and it is carried to
 `Map(S², G)` by a homeomorphism over `G`
 (`TauCeti.livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id`). Its degree is `n + deg α`,
-above the dimension.
+above the dimension. This homeomorphism is the action map of `G` acting on itself, so the image of
+`[G] × α` is the class `TauCeti.BasedMap.actionClass` of that action.
 
 In degree zero (`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_const_ne`)
 the reduced homology `H₀(Ω²G, pt)` is the quotient of `H₀(Ω²G)` by the multiples of the class of
@@ -101,111 +102,37 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   {G : Type} [TopologicalSpace G] [T2Space G] [CompactSpace G] [ChartedSpace V G] [Group G]
   [IsTopologicalGroup G] (o : HomologicalOrientation G V n) (hn : Module.finrank ℝ V = n)
 
-/-- The cross product `[G] × α ∈ Hₙ₊ₖ(G × Map_*(S², G); ℤ ⊗ ℤ)` of the fundamental class with a
-class `α ∈ Hₖ(Map_*(S², G); ℤ)`. -/
-private def crossFundamentalClass {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    ((TopCat.toSSet.obj (TopCat.of (G × BasedMap Sphere2 G Sphere2.north 1))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k) :
-        ModuleCat.{0} ℤ) :=
-  (TopCat.singularHomologyCross (TopCat.of G) (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))
-    (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl).hom
-      (o.fundamentalClass hn ⊗ₜ α)
-
-/-- The class of `Map(S², G)` carried by `[G] × α` for `α ∈ Hₖ(Map_*(S², G); ℤ)`: the cross
-product, with its coefficients `ℤ ⊗ ℤ` identified with `ℤ`, pushed forward along the
-homeomorphism `G × Map_*(S², G) ≃ₜ Map(S², G)`, `(g, f) ↦ g · f`. -/
-private def sphereClass {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    ((TopCat.toSSet.obj (TopCat.of C(Sphere2, G))).homology (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (n + k) : ModuleCat.{0} ℤ) :=
-  (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
-    (mappingSpaceGroupHomeomorph (G := G) Sphere2.north :
-      C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G))))) (ModuleCat.of ℤ (ULift.{0} ℤ))
-        (n + k)).hom
-    ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      (ModuleCat.uliftTensorSelfIso ℤ).hom).app
-        (TopCat.toSSet.obj (TopCat.of (G × BasedMap Sphere2 G Sphere2.north 1)))) (n + k)).hom
-      (o.crossFundamentalClass hn α))
-
-/-- `[G] × α` lives over the fundamental class of `G`, for evaluation at the north pole, exactly
-when `α ≠ 0`. -/
-private theorem livesOverFundamentalClass_sphereClass_iff (b : G) {k : ℕ}
+/-- The class `[G] × α` of `Map(S², G)`, the class `TauCeti.BasedMap.actionClass` of `G` acting on
+itself with `A = [G]`, lives over the fundamental class of `G`, for evaluation at the north pole,
+exactly when `α ≠ 0`. -/
+private theorem livesOverFundamentalClass_actionClass_iff (b : G) {k : ℕ}
     {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)} :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north) b
-      (o.sphereClass hn α) ↔ α ≠ 0 := by
+      (BasedMap.actionClass G Sphere2.north (1 : G) (o.fundamentalClass hn) α) ↔ α ≠ 0 := by
   let Ψ := mappingSpaceGroupHomeomorph (G := G) Sphere2.north
-  have hτ : (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)).comp Ψ =
-      ContinuousMap.id _ :=
-    Ψ.symm_comp_toContinuousMap
-  have h : mappingSpaceEval Sphere2.north ∘ Ψ = id ∘ Prod.fst := funext fun x ↦ by
-    simp [Ψ, x.2.2]
+  let Φ : C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G)) :=
+    BasedMap.actionMap Sphere2.north 1
+  -- The action map of `G` on itself is the homeomorphism `(g, f) ↦ g · f`.
+  have hτ : (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)).comp Φ =
+      ContinuousMap.id _ := by
+    have hΦ : Φ = Ψ := by
+      ext p s
+      simp [Φ, Ψ, mappingSpaceGroupHomeomorph_apply]
+    rw [hΦ]
+    exact Ψ.symm_comp_toContinuousMap
+  have h : mappingSpaceEval Sphere2.north ∘ Φ = id ∘ Prod.fst := funext fun x ↦ by
+    simp [Φ, x.2.2]
   have h' : (id ∘ Prod.fst) ∘ Ψ.symm = mappingSpaceEval Sphere2.north := funext fun f ↦ by
     simp [Ψ]
   -- Carry the class back along the homeomorphism over `G`, identify the coefficients `ℤ ⊗ ℤ`
   -- with `ℤ`, and use that the cross product with `[G]` is injective.
-  have hx : LivesOverFundamentalClass _ (id ∘ Prod.fst) b (o.crossFundamentalClass hn α) ↔
-      α ≠ 0 :=
-    o.livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff hn b rfl
-  have hy := livesOverFundamentalClass_homologyMap_coefficient_iff
-    (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.uliftTensorSelfIso ℤ)
-    (p := id ∘ Prod.fst) (b := b) (α := o.crossFundamentalClass hn α)
   refine (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (ModuleCat.of ℤ (ULift.{0} ℤ))
-    (Ψ : C(G × BasedMap Sphere2 G Sphere2.north 1, C(Sphere2, G)))
-    (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)) hτ h h' (b := b)).trans ?_
-  exact hy.trans hx
-
-/-- `[G] × α` is additive in `α`. -/
-private theorem sphereClass_sub {k : ℕ}
-    (α β : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    o.sphereClass hn (α - β) = o.sphereClass hn α - o.sphereClass hn β := by
-  have h : o.crossFundamentalClass hn (α - β) =
-      o.crossFundamentalClass hn α - o.crossFundamentalClass hn β :=
-    singularHomologyCross_tmul_sub _ _ rfl _ α β
-  exact (congrArg _ ((congrArg _ h).trans (map_sub _ _ _))).trans (map_sub _ _ _)
-
-/-- The constant spheres at the values at the north pole, `f ↦ const (f north)`, send `[G] × α`
-to `[G] × c_* α`, where `c` is the constant self-map of `Map_*(S², G)` at the constant sphere `1`:
-composed with `G × Map_*(S², G) ≃ₜ Map(S², G)`, this self-map of `Map(S², G)` is the identity
-times `c`. -/
-private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
-      (ContinuousMap.const'.comp (mappingSpaceEval (X := G) Sphere2.north))))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom (o.sphereClass hn α) =
-      o.sphereClass hn ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
-        (ContinuousMap.const (BasedMap Sphere2 G Sphere2.north 1) ⟨1, ContinuousMap.one_apply _⟩)))
-          (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  let Y := BasedMap Sphere2 G Sphere2.north 1
-  let c : C(Y, Y) := ContinuousMap.const Y ⟨1, ContinuousMap.one_apply _⟩
-  let Ψ : C(G × Y, C(Sphere2, G)) := mappingSpaceGroupHomeomorph (G := G) Sphere2.north
-  let γ : C(G × Y, G × Y) := (ContinuousMap.id G).prodMap c
-  have hΨ : (ContinuousMap.const'.comp (mappingSpaceEval (X := G) Sphere2.north)).comp Ψ =
-      Ψ.comp γ := by
-    ext ⟨g, y⟩ s
-    simp only [Ψ, γ, c, ContinuousMap.comp_apply, ContinuousMap.prodMap_apply,
-      ContinuousMap.coe_ofClass]
-    rw [mappingSpaceGroupHomeomorph_apply, mappingSpaceGroupHomeomorph_apply]
-    simp [y.2]
-  -- The cross product with `[G]` is natural in the second factor: `γ_*([G] × α) = [G] × c_* α`.
-  have hcross : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ)
-      (n + k)).hom (o.crossFundamentalClass hn α) =
-        o.crossFundamentalClass hn ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom c)) R k).hom
-          α) := by
-    have h := homologyMap_prodMap_singularHomologyCross_tmul R R (ContinuousMap.id G) c rfl
-      (o.fundamentalClass hn) α
-    simp only [TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
-      ModuleCat.id_apply] at h
-    exact h
-  -- Identify the coefficients before the maps, then commute the square `hΨ`.
-  rw [sphereClass, sphereClass, ← hcross, homologyMap_chainComplexFunctor_map_apply]
-  exact ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm R _ hΨ) _
+    Φ (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)) hτ h h'
+      (b := b)).trans ?_
+  exact (livesOverFundamentalClass_homologyMap_coefficient_iff _
+    (ModuleCat.uliftTensorSelfIso ℤ)).trans
+      (o.livesOverFundamentalClass_singularHomologyCross_fundamentalClass_iff hn b rfl)
 
 include o hn in
 /-- **A topological group with a nonzero class of positive degree in its double loop space is
@@ -218,7 +145,7 @@ theorem isAbundantWithTwoSpheres_of_ne_zero (b : G) {k : ℕ} (hk : 0 < k)
     {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)} (hα : α ≠ 0) :
     IsAbundantWithTwoSpheres G n b :=
-  isAbundantWithTwoSpheres_of_lt ((o.livesOverFundamentalClass_sphereClass_iff hn b).2 hα)
+  isAbundantWithTwoSpheres_of_lt ((o.livesOverFundamentalClass_actionClass_iff hn b).2 hα)
     (by omega)
 
 include o hn in
@@ -239,11 +166,13 @@ theorem isAbundantWithTwoSpheres_of_homologyMap_const_ne (b : G)
       (ContinuousMap.const (BasedMap Sphere2 G Sphere2.north 1) ⟨1, ContinuousMap.one_apply _⟩)))
         (ModuleCat.of ℤ (ULift.{0} ℤ)) 0).hom α ≠ α) :
     IsAbundantWithTwoSpheres G n b := by
-  refine isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub (α := o.sphereClass hn α)
-    ((o.livesOverFundamentalClass_sphereClass_iff hn b).2 fun h ↦ hα (by rw [h, map_zero])) ?_
+  refine isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub
+    (α := BasedMap.actionClass G Sphere2.north (1 : G) (o.fundamentalClass hn) α)
+    ((o.livesOverFundamentalClass_actionClass_iff hn b).2 fun h ↦ hα (by rw [h, map_zero])) ?_
   -- The self-map `f ↦ const (f(north))` sends `[G] × α` to `[G] × c_* α`, and `α - c_* α ≠ 0`.
-  have h := (o.livesOverFundamentalClass_sphereClass_iff hn b).2 (sub_ne_zero.2 hα.symm)
-  rwa [sphereClass_sub, ← o.homologyMap_const'_comp_mappingSpaceEval_sphereClass hn] at h
+  have h := (o.livesOverFundamentalClass_actionClass_iff hn b).2 (sub_ne_zero.2 hα.symm)
+  rwa [BasedMap.actionClass_sub,
+    ← BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass] at h
 
 include o hn in
 /-- **A non-aspherical topological group is abundant with 2-spheres**

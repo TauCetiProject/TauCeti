@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
 public import TauCeti.Topology.MappingSpace.Action
-import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 import TauCeti.Algebra.Group.ZMultiples
 import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
@@ -89,6 +89,12 @@ localization of `A` with `α` (`TauCeti.fiberLocalization_singularHomologyCross_
   cross product is nonzero, since its image in `M × Map_*(B, M)` is the relative cross product of
   the local orientation, a free generator, with `ℓ • α ≠ 0`.
 
+## Main declarations
+
+* `TauCeti.BasedMap.actionClass`: the class `Φ_*(A × α)` with its coefficients identified with
+  `ℤ`. The self-map `f ↦ const (f(b₀))` sends it to `Φ_*(A × c_* α)`
+  (`TauCeti.BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass`).
+
 ## Main results
 
 * `TauCeti.HomologicalOrientation.livesOverFundamentalClass_actionMap_singularHomologyCross`:
@@ -119,6 +125,79 @@ open CategoryTheory MonoidalCategory TensorProduct Module Set Topology
 open scoped Topology.Homotopy
 
 namespace TauCeti
+
+namespace BasedMap
+
+variable (G : Type) [TopologicalSpace G] [Group G] {M : Type} [TopologicalSpace M] [MulAction G M]
+  [ContinuousSMul G M] {B : Type} [TopologicalSpace B] (b₀ : B) (x₀ : M) {d : ℕ}
+
+/-- The class `Φ_*(A × α)` of `Map(B, M)` carried by `A ∈ H_d(G; ℤ)` and a class `α` of the based
+mapping space `Map_*(B, M)` under the action map `Φ : G × Map_*(B, M) → Map(B, M)`
+(`TauCeti.BasedMap.actionMap`), with the coefficients `ℤ ⊗ ℤ` of the cross product identified
+with `ℤ`. For a group acting on itself, `x₀ = 1` and `A = [G]` it is the class of Example 6.30 of
+Barraud–Damian–Humilière–Oancea. -/
+@[expose] def actionClass
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    ((TopCat.toSSet.obj (TopCat.of C(B, M))).homology (ModuleCat.of ℤ (ULift.{0} ℤ))
+      (d + k) : ModuleCat.{0} ℤ) :=
+  (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (actionMap (G := G) b₀ x₀)))
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
+    ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+      (ModuleCat.uliftTensorSelfIso ℤ).hom).app
+        (TopCat.toSSet.obj (TopCat.of (G × BasedMap B M b₀ x₀)))) (d + k)).hom
+      ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of (BasedMap B M b₀ x₀))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
+          (A ⊗ₜ α)))
+
+/-- `Φ_*(A × α)` is additive in `α`. -/
+theorem actionClass_sub
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ}
+    (α β : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    actionClass G b₀ x₀ A (α - β) = actionClass G b₀ x₀ A α - actionClass G b₀ x₀ A β := by
+  exact (congrArg _ ((congrArg _ (singularHomologyCross_tmul_sub _ _ rfl A α β)).trans
+    (map_sub _ _ _))).trans (map_sub _ _ _)
+
+/-- The constant maps at the values at the base point, `f ↦ const (f b₀)`, send `Φ_*(A × α)` to
+`Φ_*(A × c_* α)`, where `c` is the constant self-map of `Map_*(B, M)` at the constant map at `x₀`:
+both `g • u ↦ const (g • x₀)` and `(g, u) ↦ g • const x₀` agree. -/
+theorem homologyMap_const'_comp_mappingSpaceEval_actionClass
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+      (ContinuousMap.const'.comp (mappingSpaceEval (X := M) b₀))))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom (actionClass G b₀ x₀ A α) =
+      actionClass G b₀ x₀ A ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
+        (ContinuousMap.const (BasedMap B M b₀ x₀) ⟨ContinuousMap.const B x₀, rfl⟩)))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
+  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
+  let Y := BasedMap B M b₀ x₀
+  let c : C(Y, Y) := ContinuousMap.const Y ⟨ContinuousMap.const B x₀, rfl⟩
+  let Φ : C(G × Y, C(B, M)) := actionMap b₀ x₀
+  let ρ : C(C(B, M), C(B, M)) := ContinuousMap.const'.comp (mappingSpaceEval b₀)
+  let γ : C(G × Y, G × Y) := (ContinuousMap.id G).prodMap c
+  have hΦ : ρ.comp Φ = Φ.comp γ := by
+    ext ⟨g, y⟩ s
+    simp only [ρ, Φ, γ, c, ContinuousMap.comp_apply, ContinuousMap.prodMap_apply,
+      ContinuousMap.coe_id, ContinuousMap.const_apply, ContinuousMap.coe_const']
+    rw [actionMap_apply, actionMap_apply]
+    simp [y.2]
+  -- The cross product with `A` is natural in the second factor: `γ_*(A × α) = A × c_* α`.
+  have hcross := homologyMap_prodMap_singularHomologyCross_tmul R R (ContinuousMap.id G) c rfl A α
+  simp only [TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
+    ModuleCat.id_apply] at hcross
+  -- Identify the coefficients before the maps, then commute the square `ρ ∘ Φ = Φ ∘ γ`.
+  rw [actionClass, actionClass, ← hcross, homologyMap_chainComplexFunctor_map_apply _ γ
+    ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of Y) R R d k (d + k) rfl).hom (A ⊗ₜ α))]
+  exact ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm R _ hΦ) _
+
+end BasedMap
 
 namespace HomologicalOrientation
 
@@ -372,86 +451,6 @@ theorem livesOverFundamentalClass_actionMap_singularHomologyCross {B : Type}
   exact (livesOverFundamentalClass_iff _ _ _ _).2 fun h0 ↦
     hX (hΘinj ((key.symm.trans h0).trans (map_zero _).symm))
 
-variable (G) in
-/-- The class `Φ_*(A × α)` of `Map(S², M)` carried by `A ∈ H_d(G; ℤ)` and a class `α` of the based
-mapping space `Map_*(S², M)` under the action map `Φ`, with the coefficients `ℤ ⊗ ℤ` of the cross
-product identified with `ℤ`. -/
-private def actionClass (x₀ : M)
-    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
-      ModuleCat.{0} ℤ)) {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    ((TopCat.toSSet.obj (TopCat.of C(Sphere2, M))).homology (ModuleCat.of ℤ (ULift.{0} ℤ))
-      (d + k) : ModuleCat.{0} ℤ) :=
-  (HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      (ModuleCat.uliftTensorSelfIso ℤ).hom).app (TopCat.toSSet.obj (TopCat.of C(Sphere2, M))))
-        (d + k)).hom
-    ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
-      (BasedMap.actionMap (G := G) Sphere2.north x₀)))
-        (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
-      ((TopCat.singularHomologyCross (TopCat.of G)
-        (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀)) (ModuleCat.of ℤ (ULift.{0} ℤ))
-          (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom (A ⊗ₜ α)))
-
-omit [T2Space M] [CompactSpace M] [ChartedSpace V M] [IsTopologicalGroup G] in
-/-- `Φ_*(A × α)` is additive in `α`. -/
-private theorem actionClass_sub (x₀ : M)
-    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
-      ModuleCat.{0} ℤ)) {k : ℕ}
-    (α β : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    actionClass G x₀ A (α - β) = actionClass G x₀ A α - actionClass G x₀ A β := by
-  exact (congrArg _ ((congrArg _ (singularHomologyCross_tmul_sub _ _ rfl A α β)).trans
-    (map_sub _ _ _))).trans (map_sub _ _ _)
-
-omit [T2Space M] [CompactSpace M] [ChartedSpace V M] [IsTopologicalGroup G] in
-/-- The constant spheres at the values at the base point, `f ↦ const (f north)`, send
-`Φ_*(A × α)` to `Φ_*(A × c_* α)`, where `c` is the constant self-map of `Map_*(S², M)` at the
-constant sphere at `x₀`: both `g • u ↦ const (g • x₀)` and `(g, u) ↦ g • const x₀` agree. -/
-private theorem homologyMap_const'_comp_mappingSpaceEval_actionClass (x₀ : M)
-    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
-      ModuleCat.{0} ℤ)) {k : ℕ}
-    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
-    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
-      (ContinuousMap.const'.comp (mappingSpaceEval (X := M) Sphere2.north))))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom (actionClass G x₀ A α) =
-      actionClass G x₀ A ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
-        (ContinuousMap.const (BasedMap Sphere2 M Sphere2.north x₀)
-          ⟨ContinuousMap.const Sphere2 x₀, rfl⟩))) (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  let Y := BasedMap Sphere2 M Sphere2.north x₀
-  let c : C(Y, Y) := ContinuousMap.const Y ⟨ContinuousMap.const Sphere2 x₀, rfl⟩
-  let Φ : C(G × Y, C(Sphere2, M)) := BasedMap.actionMap Sphere2.north x₀
-  let ρ : C(C(Sphere2, M), C(Sphere2, M)) :=
-    ContinuousMap.const'.comp (mappingSpaceEval Sphere2.north)
-  let γ : C(G × Y, G × Y) := (ContinuousMap.id G).prodMap c
-  have hΦ : ρ.comp Φ = Φ.comp γ := by
-    ext ⟨g, y⟩ s
-    simp only [ρ, Φ, γ, c, ContinuousMap.comp_apply, ContinuousMap.prodMap_apply,
-      ContinuousMap.coe_id, ContinuousMap.const_apply, ContinuousMap.coe_const']
-    rw [BasedMap.actionMap_apply, BasedMap.actionMap_apply]
-    simp [y.2]
-  -- The cross product with `A` is natural in the second factor: `γ_*(A × α) = A × c_* α`.
-  have hcross := homologyMap_prodMap_singularHomologyCross_tmul R R (ContinuousMap.id G) c rfl A α
-  simp only [TopCat.ofHom_id, CategoryTheory.Functor.map_id, SSet.homologyMap_id,
-    ModuleCat.id_apply] at hcross
-  -- Identify the coefficients before the maps, then commute the square `ρ ∘ Φ = Φ ∘ γ`.
-  rw [actionClass, actionClass, ← hcross]
-  have hsq : ∀ x : ((TopCat.toSSet.obj (TopCat.of (G × Y))).homology R (d + k) :
-      ModuleCat.{0} ℤ),
-      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) R (d + k)).hom
-          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) R (d + k)).hom x) =
-        (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) R (d + k)).hom
-          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (d + k)).hom x) :=
-    ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm R _ hΦ)
-  exact (congrArg _ (homologyMap_chainComplexFunctor_map_apply
-      (ModuleCat.uliftTensorSelfIso ℤ).hom Φ _)).trans
-    ((hsq _).trans
-      ((congrArg _ (homologyMap_chainComplexFunctor_map_apply
-          (ModuleCat.uliftTensorSelfIso ℤ).hom γ _)).symm.trans
-        (homologyMap_chainComplexFunctor_map_apply (ModuleCat.uliftTensorSelfIso ℤ).hom Φ _).symm))
-
 include o hd in
 /-- `Φ_*(A × α)`, with its coefficients identified with `ℤ`, lives over the fundamental class at
 `x₀` when `π_* A = ℓ • [M]` and `ℓ • α ≠ 0`. -/
@@ -467,10 +466,16 @@ private theorem livesOverFundamentalClass_actionClass {x₀ : M} (π : C(G, M))
     {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)} (hα : ℓ • α ≠ 0) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) (mappingSpaceEval Sphere2.north) x₀
-      (actionClass G x₀ A α) :=
-  (livesOverFundamentalClass_homologyMap_coefficient_iff _ (ModuleCat.uliftTensorSelfIso ℤ)).2
-    (o.livesOverFundamentalClass_actionMap_singularHomologyCross hd Sphere2.north π hπ hloc hstab
-      hA hα)
+      (BasedMap.actionClass G Sphere2.north x₀ A α) := by
+  have h := (livesOverFundamentalClass_homologyMap_coefficient_iff _
+    (ModuleCat.uliftTensorSelfIso ℤ)).2
+      (o.livesOverFundamentalClass_actionMap_singularHomologyCross hd Sphere2.north π hπ hloc
+        hstab hA hα)
+  -- Identify the coefficients before the action map, as in `BasedMap.actionClass`.
+  rwa [homologyMap_chainComplexFunctor_map_apply _ _
+    ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of (BasedMap Sphere2 M Sphere2.north x₀))
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
+        (A ⊗ₜ α))] at h
 
 include o hd in
 /-- **Abundance with 2-spheres from a group action, above the dimension**: a criterion for
@@ -534,12 +539,14 @@ theorem isAbundantWithTwoSpheres_of_smul_sub_homologyMap_const_ne_zero {x₀ : M
   have hℓα : ℓ • α ≠ 0 := fun h ↦ hα <|
     calc ℓ • (α - c α) = ℓ • α - ℓ • c α := zsmul_sub _ _ _
       _ = 0 := by rw [← map_zsmul, h, map_zero, sub_zero]
-  refine isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub (α := actionClass G x₀ A α)
+  refine isAbundantWithTwoSpheres_of_livesOverFundamentalClass_sub
+    (α := BasedMap.actionClass G Sphere2.north x₀ A α)
     (o.livesOverFundamentalClass_actionClass hd π hπ hloc hstab hA hℓα) ?_
   -- The self-map `f ↦ const (f(north))` sends `Φ_*(A × α)` to `Φ_*(A × c_* α)`, and
   -- `ℓ • (α - c_* α) ≠ 0`.
   have h := o.livesOverFundamentalClass_actionClass hd π hπ hloc hstab hA hα
-  rwa [actionClass_sub, ← homologyMap_const'_comp_mappingSpaceEval_actionClass] at h
+  rwa [BasedMap.actionClass_sub,
+    ← BasedMap.homologyMap_const'_comp_mappingSpaceEval_actionClass] at h
 
 include o hd in
 /-- **A manifold covered by a group action with `π₂ ≠ 0` is abundant with 2-spheres**
@@ -570,9 +577,7 @@ theorem isAbundantWithTwoSpheres_of_nontrivial_homotopyGroup_two {x₀ : M} (π 
   -- `c_* [y₁] = [y₀]`, and `ℓ • ([y₁] - [y₀]) ≠ 0`.
   have key := smul_sub_singularHomology₀Section_apply_ne_zero (M := R) (X := TopCat.of Y)
     (r := ULift.up 1) hy₁ (c := ℓ) fun h ↦ hℓ <| by
-      -- `ℓ • up 1` is `up (ℓ * 1)` by definition of the module structure of `ULift ℤ`.
-      have h' : ℓ * 1 = 0 := congrArg ULift.down h
-      simpa using h'
+      simpa [R, ULift.smul_down] using congrArg ULift.down h
   rw [homologyMap_singularHomology₀Section_apply]
   simp only [TopCat.hom_ofHom, ContinuousMap.const_apply]
   -- `key` uses the module scalar multiplication, the goal `zsmul`.
