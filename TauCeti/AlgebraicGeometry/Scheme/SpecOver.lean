@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Group.Affine
 
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Schemes and morphisms over an affine base
