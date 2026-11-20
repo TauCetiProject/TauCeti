@@ -30,6 +30,7 @@ rational solutions `ξ`.
 ## Main results
 
 * `TauCeti.thueC₂`: Thue's constant `C₂`, bounding the auxiliary polynomials near `α`.
+* `TauCeti.thueC₂_def`: the explicit formula for `C₂`.
 * `TauCeti.thue_gap_principle`: Thue's gap principle with explicit constants, for complex
   algebraic `α`.
 * `TauCeti.thue_approximation`: Thue's approximation theorem, for complex algebraic `α`.
@@ -54,6 +55,13 @@ noncomputable def thueC₂ (α : ℂ) (b : ℕ) (ε : ℝ) : ℝ :=
   2 ^ ((1 / 2 + ε) * (minpoly ℚ α).natDegree) *
     (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * (minpoly ℚ α).natDegree) *
     (48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε))
+
+/-- The defining formula of Thue's constant `C₂`. -/
+theorem thueC₂_def (α : ℂ) (b : ℕ) (ε : ℝ) :
+    thueC₂ α b ε = 2 ^ ((1 / 2 + ε) * (minpoly ℚ α).natDegree) *
+      (1 + ‖α‖) ^ (1 + (1 / 2 + ε) * (minpoly ℚ α).natDegree) *
+      (48 * b * max 1 (house α)) ^ ((minpoly ℚ α).natDegree * (1 + 1 / ε)) :=
+  (rfl)
 
 /-- Thue's constant `C₂` is at least `1`. -/
 theorem one_le_thueC₂ (α : ℂ) {b : ℕ} (hb : 0 < b) {ε : ℝ} (hε : 0 < ε) :
@@ -94,7 +102,7 @@ private theorem thue_key_inequality {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natD
     rw [← this, aeval_def, eval_map, algebraMap_int_eq]
   -- `thueC₂ α b ε` is the constant `2 ^ δ (1 + ‖α‖) ^ (1 + δ) C₁` of
   -- `norm_eval_hasseDeriv_sub_mul_le` with `δ = (1 / 2 + ε) d`.
-  unfold thueC₂
+  rw [thueC₂_def]
   refine ⟨k, hkN, hk, hlow.trans_eq ?_ |>.trans <| norm_eval_hasseDeriv_sub_mul_le (ξ₂ : ℂ) k hr
     (hdeg hP) (hdeg hQ) ((hlen P).trans_le hPC) ((hlen Q).trans_le hQC) hdvd h₁⟩
   rw [← Complex.norm_ratCast]
