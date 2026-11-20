@@ -17,8 +17,8 @@ with operator norm controlled by the norms of those images. Hence such operators
 approximated in operator norm by operators factoring through any operator `g : F →L[𝕜] E` of
 dense range. On a finite-dimensional domain over a locally compact field, such as `ℝ`, `ℂ` or a
 `p`-adic field, strict pointwise norm bounds are equivalent to strict operator-norm bounds. Over
-a complete field, an operator between finite-dimensional spaces of the same dimension is
-invertible as soon as it is injective.
+a complete field, an operator into a finite-dimensional space from a space of the same `finrank`
+is invertible as soon as it is injective.
 
 Bounded operators between finite-dimensional spaces form a finite-dimensional space over every
 finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
@@ -30,8 +30,9 @@ real-linear operators into a complex space.
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional domain over a locally compact field.
-* `ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq`: between finite-dimensional
-  spaces of the same dimension, an operator is invertible exactly when it is injective.
+* `ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq`: an operator into a
+  finite-dimensional space from a space of the same `finrank` is invertible exactly when it is
+  injective.
 * `ContinuousLinearMap.finiteDimensional_of_isScalarTower`: `E →L[𝕜] F` is finite-dimensional
   over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
@@ -124,15 +125,17 @@ end ScalarExtension
 section Invertible
 
 variable {𝕜 U G : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup U] [NormedSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+  [NormedAddCommGroup U] [NormedSpace 𝕜 U]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
 
-/-- A continuous linear map between finite-dimensional spaces of the same dimension is invertible
-exactly when it is injective. -/
+/-- A continuous linear map into a finite-dimensional space, from a space of the same `finrank`,
+is invertible exactly when it is injective. The domain need not be assumed finite-dimensional:
+it injects into the codomain. -/
 theorem isInvertible_iff_injective_of_finrank_eq {A : U →L[𝕜] G}
-    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) : A.IsInvertible ↔ Function.Injective A :=
-  ⟨IsInvertible.injective, fun hinj ↦
-    ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩⟩
+    (hdim : Module.finrank 𝕜 U = Module.finrank 𝕜 G) : A.IsInvertible ↔ Function.Injective A := by
+  refine ⟨IsInvertible.injective, fun hinj ↦ ?_⟩
+  have := FiniteDimensional.of_injective (A : U →ₗ[𝕜] G) hinj
+  exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, by ext; simp⟩
 
 end Invertible
 
