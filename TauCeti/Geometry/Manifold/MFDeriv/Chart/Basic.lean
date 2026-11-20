@@ -58,8 +58,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
 * `TauCeti.isInvertible_mvfderiv_extend`: the derivative of an extended chart of the maximal
   atlas, read as a map into the model space, is invertible on the chart source.
-* `TauCeti.mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
-  some chart locally agree with maps having equal Fréchet derivatives have equal differentials.
+* `TauCeti.mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
+  some chart locally agree with differentiable maps have equal differentials exactly when those
+  maps have equal Fréchet derivatives.
 * `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
   of a family with differentiable slices in the extended chart at `x` transfers to the manifold.
 * `TauCeti.exists_norm_fderiv_comp_extend_symm_le_mul_norm_fderiv_comp_extChartAt_symm`: near `x`,
@@ -76,6 +77,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `ContMDiffAt.contDiffAt_writtenInExtChartAt` and
   `MDifferentiableAt.differentiableAt_writtenInExtChartAt`: the same for a map between manifolds,
   read in the extended charts at the point and at its image.
+* `MDifferentiableAt.differentiableAt_comp_prod_extChartAt_symm`: the same for a differentiable
+  map from a product of boundaryless manifolds, read in the product of the preferred charts at the
+  two factors and the preferred chart at the image.
 * `MDifferentiableAt.tangentSpaceCastModel_mfderiv_apply`: on a boundaryless source, the coordinate
   derivative is the manifold derivative transported by the canonical tangent-to-model casts.
 * `TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm`: on a boundaryless
@@ -363,24 +367,27 @@ theorem isInvertible_mvfderiv_extend {e : OpenPartialHomeomorph M H}
     (isInvertible_mfderiv_extend he hx)
 
 /-- Read in a chart whose source contains `y`, two maps into a normed space have the same
-differential at `y` when, near the chart image of `y`, their coordinate expressions agree with maps
-`f'` and `g'` that are differentiable there with the same Fréchet derivative. Taking
+differential at `y` exactly when, near the chart image of `y`, their coordinate expressions agree
+with maps `f'` and `g'` that are differentiable there with the same Fréchet derivative. Taking
 `f' = f ∘ (extChartAt I x).symm` and `g' = g ∘ (extChartAt I x).symm` compares the coordinate
 expressions themselves. -/
-theorem mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E → F}
+theorem mvfderiv_eq_iff_fderiv_comp_extChartAt_symm_eq {g : M → F} {f' g' : E → F}
     (hy : y ∈ (extChartAt I x).source)
     (hf : f ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x y)] f')
     (hg : g ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x y)] g')
     (hf' : DifferentiableAt 𝕜 f' (extChartAt I x y))
-    (hg' : DifferentiableAt 𝕜 g' (extChartAt I x y))
-    (h : fderiv 𝕜 f' (extChartAt I x y) = fderiv 𝕜 g' (extChartAt I x y)) :
-    mvfderiv I f y = mvfderiv I g y := by
+    (hg' : DifferentiableAt 𝕜 g' (extChartAt I x y)) :
+    mvfderiv I f y = mvfderiv I g y ↔
+      fderiv 𝕜 f' (extChartAt I x y) = fderiv 𝕜 g' (extChartAt I x y) := by
+  obtain ⟨L, hL⟩ := isInvertible_mfderiv_extChartAt hy
   simp only [mvfderiv,
     mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hf'.congr_of_eventuallyEq hf),
     mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy (hg'.congr_of_eventuallyEq hg),
-    hf.fderiv_eq, hg.fderiv_eq, h]
-  -- The two sides differ only in the point indexing the tangent space of `F`, which is `F`.
-  rfl
+    hf.fderiv_eq, hg.fderiv_eq, ← hL]
+  -- Both sides are the Fréchet derivatives after the invertible chart derivative `L`, read in `F`.
+  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun h ↦ by rw [h]; rfl⟩
+  obtain ⟨w, rfl⟩ := L.surjective v
+  exact DFunLike.congr_fun h w
 
 open Filter in
 /-- Transfer of local uniqueness of critical points to the manifold. Suppose that `η q.1` lies in
@@ -581,6 +588,22 @@ theorem MDifferentiableAt.differentiableAt_writtenInExtChartAt {g : M → M'}
     DifferentiableAt 𝕜 (writtenInExtChartAt I I' x g) (extChartAt I x x) := by
   simpa only [writtenInExtChartAt, I.range_eq_univ, differentiableWithinAt_univ] using
     ((mdifferentiableAt_iff _ _).1 hg).2
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a product of boundaryless manifolds, a map into a manifold which is differentiable at
+`(x, x')` has a differentiable coordinate expression in the preferred extended charts at `x` and
+`x'` and at the image of `(x, x')`, at the pair of chart images. -/
+theorem MDifferentiableAt.differentiableAt_comp_prod_extChartAt_symm [I'.Boundaryless]
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {H'' : Type*} [TopologicalSpace H'']
+    {I'' : ModelWithCorners 𝕜 E'' H''} {M'' : Type*} [TopologicalSpace M'']
+    [ChartedSpace H'' M''] {g : M × M' → M''} {x' : M'}
+    (hg : MDifferentiableAt (I.prod I') I'' g (x, x')) :
+    DifferentiableAt 𝕜
+      (fun z : E × E' ↦ extChartAt I'' (g (x, x'))
+        (g ((extChartAt I x).symm z.1, (extChartAt I' x').symm z.2)))
+      (extChartAt I x x, extChartAt I' x' x') := by
+  simpa only [writtenInExtChartAt, extChartAt_prod, PartialEquiv.prod_coe_symm,
+    PartialEquiv.prod_coe, Function.comp_def] using hg.differentiableAt_writtenInExtChartAt
 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- On a boundaryless manifold, the manifold derivative of `g : M → M'` at `x` is the Fréchet
