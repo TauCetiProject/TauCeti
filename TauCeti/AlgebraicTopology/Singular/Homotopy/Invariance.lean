@@ -26,11 +26,12 @@ deformation retracts onto `s` the relative homology of `(t, s)` vanishes
 (`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`), as it does whenever a homotopy
 from the identity into `s` keeps `s` inside `s`
 (`TopPair.isZero_singularHomology_ofSubset_of_homotopy`).  In the absolute
-case, a homotopy equivalence of spaces induces an isomorphism on singular homology
-(`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map of pairs which is a
-homotopy equivalence on both spaces induces isomorphisms on relative singular homology
-(`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`). In particular, if `j : s → X` is an
-embedding and `h : X ≃ₕ t` is a homotopy equivalence with `h ∘ j` the inclusion `s ⊆ t`, then
+case, homotopic maps induce the same map on singular homology
+(`ContinuousMap.Homotopic.homologyMap_eq`) and a homotopy equivalence of spaces induces an
+isomorphism on it (`ContinuousMap.HomotopyEquiv.singularHomologyIso`), so by the five lemma a map
+of pairs which is a homotopy equivalence on both spaces induces isomorphisms on relative singular
+homology (`TopPair.isIso_singularHomologyMap_of_homotopyEquiv`). In particular, if `j : s → X` is
+an embedding and `h : X ≃ₕ t` is a homotopy equivalence with `h ∘ j` the inclusion `s ⊆ t`, then
 `Hₙ(X, j s) ≅ Hₙ(t, s)` (`TopPair.nonempty_singularHomology_ofInclusion_iso_of_homotopyEquiv`).
 
 The homotopy is transported to the singular simplicial sets of the two spaces, where the
@@ -275,6 +276,18 @@ namespace ContinuousMap
 
 open AlgebraicTopology TauCeti
 
+variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- **Homotopy invariance** in the form `SSet.homologyMap (TopCat.toSSet.map _)` used for the
+homology of pairs: homotopic maps induce the same map on singular homology, with coefficients `R`
+in any category. -/
+theorem Homotopic.homologyMap_eq {f g : C(X, Y)} (H : f.Homotopic g) {C : Type u}
+    [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C] [CategoryWithHomology C] (R : C)
+    (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n :=
+  TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor H.some R n
+
 /-- Homotopic continuous maps induce the same map on singular homology with coefficients in any
 object `R`. -/
 theorem singularHomologyFunctor_map_eq_of_homotopic {C : Type u} [Category.{v} C]
@@ -285,8 +298,7 @@ theorem singularHomologyFunctor_map_eq_of_homotopic {C : Type u} [Category.{v} C
       ((singularHomologyFunctor C n).obj R).map (TopCat.ofHom g') :=
   -- `((singularHomologyFunctor C n).obj R).map` is the homology of the map of singular chains by
   -- definition.
-  TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
-    (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some R n
+  H.homologyMap_eq R n
 
 variable (k : Type w) [Ring k] (n : ℕ)
 

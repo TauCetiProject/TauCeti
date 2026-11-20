@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
+public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Singular chain complexes
@@ -25,6 +26,8 @@ a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`),
 and the vanishing of the singular homology of the empty space
 (`TauCeti.isZero_singularHomology_of_isEmpty`).
+Applied to a class, the homology map induced by a composite of continuous maps is the composite of
+the homology maps (`ContinuousMap.homologyMap_comp_apply`).
 A commuting square of continuous maps gives a commuting square of homology maps
 (`TauCeti.homologyMap_toSSet_ofHom_comp_comm`).
 -/
@@ -131,6 +134,22 @@ theorem isZero_singularHomology_of_isEmpty [CategoryWithHomology C] (X : TopCat.
     ((TopCat.toSSet.obj X).isZero_chainComplex R)
 
 end TauCeti
+
+namespace ContinuousMap
+
+variable {X Y Z : Type w} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- The map induced by a composite on singular homology, in the form
+`SSet.homologyMap (TopCat.toSSet.map _)`, applied to a class with coefficients in a module. -/
+theorem homologyMap_comp_apply (f : C(X, Y)) (g : C(Y, Z)) {Λ : Type*} [Ring Λ]
+    (R : ModuleCat.{w} Λ) (n : ℕ)
+    (x : ((TopCat.toSSet.obj (TopCat.of X)).homology R n : ModuleCat.{w} Λ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (g.comp f))) R n).hom x =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n).hom
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n).hom x) := by
+  rw [← ModuleCat.comp_apply, ← SSet.homologyMap_comp, ← Functor.map_comp, ← TopCat.ofHom_comp]
+
+end ContinuousMap
 
 namespace TopCat
 

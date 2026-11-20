@@ -528,8 +528,7 @@ theorem mapFundamentalClass_eq_of_homotopic {f g : C(M, X)} (h : f.Homotopic g) 
     o.mapFundamentalClass hn f = o.mapFundamentalClass hn g := by
   rw [mapFundamentalClass_def, mapFundamentalClass_def]
   congr 2
-  exact TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{0} ℤ)
-    (f := TopCat.ofHom f) (g := TopCat.ofHom g) h.some _ n
+  exact h.homologyMap_eq _ n
 
 /-- Reversing the orientation negates the image of the fundamental class. -/
 @[simp]
