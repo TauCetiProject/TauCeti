@@ -10,6 +10,7 @@ public import Mathlib.SetTheory.Cardinal.Regular
 public import Mathlib.SetTheory.Descriptive.Tree
 public import Mathlib.SetTheory.Ordinal.Rank
 import Mathlib.Data.Fin.Tuple.Take
+import Mathlib.Data.List.ChainOfFn
 import Mathlib.Topology.MetricSpace.PiNat
 import Mathlib.Topology.MetricSpace.Polish
 
@@ -32,6 +33,11 @@ subtree recursion
 Mathlib's residual tree `Descriptive.Tree.subAt T x`. Over a countable alphabet `A`, every
 well-founded tree on `A` has countable rank (`rank T < ω₁`).
 
+For a relation `r` on `A`, the tree `Descriptive.Tree.descending r` of finite strictly
+`r`-descending sequences is well-founded exactly when `r` is, and for a well-order `r` its rank
+strictly exceeds the order type of `r` (`Descriptive.Tree.type_lt_rank_descending`). This turns
+bounds on tree ranks into bounds on order types.
+
 The main theorem is the **Lusin–Sierpiński / Kunen–Martin boundedness theorem** for analytic
 families of well-founded trees (`MeasureTheory.AnalyticSet.exists_treeRank_lt_omega_one`): if
 `s ⊆ X` is analytic and `F : X → Descriptive.tree A` over a countable alphabet `A` assigns a
@@ -48,6 +54,7 @@ at `z*`.
 * `Descriptive.Tree.ChildRel`: immediate one-element extension on the nodes of a descriptive tree.
 * `Descriptive.Tree.IsWellFounded`: well-foundedness of `ChildRel` on a descriptive tree.
 * `Descriptive.Tree.rank`: ordinal rank of a descriptive tree (`0` on `⊥` and on ill-founded trees).
+* `Descriptive.Tree.descending`: the tree of finite strictly descending sequences of a relation.
 
 ## Main results
 
@@ -58,6 +65,9 @@ at `z*`.
   `Descriptive.Tree.IsWellFounded.rank_subAt_eq_succ_iSup`: the subtree recursion for `rank`.
 * `Descriptive.Tree.IsWellFounded.rank_lt_omega_one`: on a countable alphabet, every well-founded
   tree has rank strictly below `ω₁`.
+* `Descriptive.Tree.isWellFounded_descending_iff` and `Descriptive.Tree.type_lt_rank_descending`:
+  the descending-sequence tree of `r` is well-founded iff `r` is, and the order type of a
+  well-order is below the rank of its descending-sequence tree.
 * `Descriptive.Tree.exists_rank_lt_omega_one_of_nat_nat`: boundedness below `ω₁` for families of
   well-founded trees indexed by Baire space `ℕ → ℕ` with closed node-membership sets.
 * `MeasureTheory.AnalyticSet.exists_treeRank_lt_omega_one` and
@@ -358,6 +368,60 @@ theorem IsWellFounded.rank_lt_omega_one [Countable A] (hT : IsWellFounded T) : r
   rw [hT.rank_eq_iSup]
   exact Ordinal.iSup_lt_omega_one fun u =>
     (Cardinal.isSuccLimit_omega 1).succ_lt (hnode u)
+
+/-! ### The tree of descending sequences -/
+
+/-- The tree of finite strictly `r`-descending sequences: the lists `[a₀, a₁, …, aₙ]` with
+`r aᵢ₊₁ aᵢ` for every `i < n`. -/
+def descending (r : A → A → Prop) : tree A :=
+  ⟨{l | l.IsChain (flip r)}, fun _ _ h => h.prefix (List.prefix_append _ _)⟩
+
+@[simp]
+theorem mem_descending {r : A → A → Prop} {l : List A} :
+    l ∈ descending r ↔ l.IsChain (flip r) :=
+  Iff.rfl
+
+/-- The tree of `r`-descending sequences is well-founded exactly when `r` is well-founded. -/
+theorem isWellFounded_descending_iff {r : A → A → Prop} :
+    IsWellFounded (descending r) ↔ WellFounded r := by
+  rw [isWellFounded_iff_forall_exists_notMem, wellFounded_iff_isEmpty_descending_chain,
+    ← not_nonempty_iff, nonempty_subtype]
+  simp only [mem_descending, List.isChain_ofFn]
+  refine ⟨fun h ⟨f, hf⟩ => ?_, fun h f => ?_⟩
+  · obtain ⟨n, hn⟩ := h f
+    exact hn fun i _ => hf i
+  · by_contra! hf
+    exact h ⟨f, fun n => hf (n + 2) n (by omega)⟩
+
+/-- Every element `a` of a well-order ending a node `u ++ [a]` of its descending-sequence tree has
+order position below the rank of the residual subtree at that node. -/
+private theorem typein_lt_rank_subAt_descending {r : A → A → Prop} [IsWellOrder A r] (a : A) :
+    ∀ u : List A, u ++ [a] ∈ descending r →
+      Ordinal.typein r a < rank (Tree.subAt (descending r) (u ++ [a])) := by
+  have hT : IsWellFounded (descending r) := isWellFounded_descending_iff.2 IsWellOrder.wf
+  induction a using (IsWellOrder.wf : WellFounded r).induction with
+  | _ a ih =>
+    intro u hu
+    rw [hT.rank_subAt_eq_succ_iSup hu, Order.lt_succ_iff]
+    refine le_of_forall_lt fun o ho => ?_
+    obtain ⟨b, rfl⟩ := Ordinal.typein_surj r (ho.trans (Ordinal.typein_lt_type r a))
+    have hba : r b a := (Ordinal.typein_lt_typein r).1 ho
+    have hmem : u ++ [a] ++ [b] ∈ descending r := by
+      simp only [mem_descending] at hu ⊢
+      exact List.isChain_append.2 ⟨hu, List.isChain_singleton b, by simpa [flip] using hba⟩
+    exact (ih b hba (u ++ [a]) hmem).trans_le
+      (Ordinal.le_iSup (fun c => rank (Tree.subAt (descending r) (u ++ [a] ++ [c]))) b)
+
+/-- The order type of a well-order is strictly smaller than the rank of its tree of descending
+sequences. -/
+theorem type_lt_rank_descending (r : A → A → Prop) [IsWellOrder A r] :
+    Ordinal.type r < rank (descending r) := by
+  have hT : IsWellFounded (descending r) := isWellFounded_descending_iff.2 IsWellOrder.wf
+  rw [hT.rank_eq_succ_iSup (by simp), Order.lt_succ_iff]
+  refine le_of_forall_lt fun o ho => ?_
+  obtain ⟨a, rfl⟩ := Ordinal.typein_surj r ho
+  exact (typein_lt_rank_subAt_descending a [] (by simp)).trans_le
+    (Ordinal.le_iSup (fun b => rank (Tree.subAt (descending r) [b])) a)
 
 /-! ### Boundedness for Baire-indexed and analytic families of well-founded trees -/
 
