@@ -45,9 +45,8 @@ functions, whose real interpolation spaces are known
 
 ## Main declarations
 
-* `TauCeti.CompatibleCouple.besselPotentialSpace E F p s₀ s₁`: the couple `(H^{s₀,p}, H^{s₁,p})`,
-  with `TauCeti.CompatibleCouple.besselPotentialSpaceSumToMin`, the inclusion of its sum space
-  into `H^{min s₀ s₁, p}`.
+* `TauCeti.CompatibleCouple.besselPotentialSpaceSumToMin`: the inclusion of the sum space of the
+  couple `(H^{s₀,p}, H^{s₁,p})` into `H^{min s₀ s₁, p}`.
 * `TauCeti.CompatibleCouple.besselPotentialSpaceKMethodEquiv`: the isomorphism
   `(H^{s₀,p}, H^{s₁,p})_{θ,q} ≃L[ℂ] B^{s_θ}_{p,q}`, which keeps the underlying tempered
   distribution.
@@ -83,34 +82,16 @@ open BesselPotentialSpace TemperedDistribution KMethodSpace
 
 section Couple
 
-variable (E F) (p : ℝ≥0∞) [Fact (1 ≤ p)] in
-/-- The compatible couple `(H^{s₀,p}, H^{s₁,p})` of Bessel-potential spaces, both embedded into
-the tempered distributions. -/
-def besselPotentialSpace (s₀ s₁ : ℝ) :
-    CompatibleCouple ℂ H^{s₀, p}(E, F) H^{s₁, p}(E, F) 𝓢'(E, F) where
-  embed₀ := toDistrCLM E F s₀ p
-  embed₁ := toDistrCLM E F s₁ p
-  embed₀_injective := toDistrCLM_injective
-  embed₁_injective := toDistrCLM_injective
-
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {s₀ s₁ : ℝ}
-
-@[simp]
-theorem besselPotentialSpace_embed₀_apply (u : H^{s₀, p}(E, F)) :
-    (besselPotentialSpace E F p s₀ s₁).embed₀ u = u.toDistr :=
-  toDistrCLM_apply u
-
-@[simp]
-theorem besselPotentialSpace_embed₁_apply (u : H^{s₁, p}(E, F)) :
-    (besselPotentialSpace E F p s₀ s₁).embed₁ u = u.toDistr :=
-  toDistrCLM_apply u
 
 /-- A Schwartz function has the same class in the sum space `H^{s₀,p} + H^{s₁,p}` whether it is
 read in `H^{s₀,p}` or in `H^{s₁,p}`. -/
 theorem besselPotentialSpace_fstToSum_toBesselPotentialSpaceCLM (f : 𝓢(E, F)) :
-    (besselPotentialSpace E F p s₀ s₁).fstToSum (SchwartzMap.toBesselPotentialSpaceCLM s₀ p f) =
-      (besselPotentialSpace E F p s₀ s₁).sndToSum (SchwartzMap.toBesselPotentialSpaceCLM s₁ p f) :=
-  (besselPotentialSpace E F p s₀ s₁).sumSpace_ext <| by
+    (besselPotentialSpace E F s₀ p s₁ p).fstToSum
+        (SchwartzMap.toBesselPotentialSpaceCLM s₀ p f) =
+      (besselPotentialSpace E F s₀ p s₁ p).sndToSum
+        (SchwartzMap.toBesselPotentialSpaceCLM s₁ p f) :=
+  (besselPotentialSpace E F s₀ p s₁ p).sumSpace_ext <| by
     simp [SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
 
 variable (E F p s₀ s₁) in
@@ -118,28 +99,28 @@ variable (E F p s₀ s₁) in
 inclusions of `H^{s₀,p}` and `H^{s₁,p}` into `H^{min s₀ s₁, p}`. It keeps the underlying tempered
 distribution (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceSumToMin`). -/
 def besselPotentialSpaceSumToMin :
-    (besselPotentialSpace E F p s₀ s₁).SumSpace →L[ℂ] H^{min s₀ s₁, p}(E, F) :=
-  (besselPotentialSpace E F p s₀ s₁).sumLift (inclusion (min_le_left s₀ s₁))
+    (besselPotentialSpace E F s₀ p s₁ p).SumSpace →L[ℂ] H^{min s₀ s₁, p}(E, F) :=
+  (besselPotentialSpace E F s₀ p s₁ p).sumLift (inclusion (min_le_left s₀ s₁))
     (inclusion (min_le_right s₀ s₁)) fun x ↦ BesselPotentialSpace.ext <| by
-      simpa [toDistr_inclusion] using (besselPotentialSpace E F p s₀ s₁).embed₀_interFst x
+      simpa [toDistr_inclusion] using (besselPotentialSpace E F s₀ p s₁ p).embed₀_interFst x
 
 @[simp]
 theorem besselPotentialSpaceSumToMin_fstToSum (x : H^{s₀, p}(E, F)) :
-    besselPotentialSpaceSumToMin E F p s₀ s₁ ((besselPotentialSpace E F p s₀ s₁).fstToSum x) =
+    besselPotentialSpaceSumToMin E F p s₀ s₁ ((besselPotentialSpace E F s₀ p s₁ p).fstToSum x) =
       inclusion (min_le_left s₀ s₁) x :=
   sumLift_fstToSum _ _ _ _ x
 
 @[simp]
 theorem besselPotentialSpaceSumToMin_sndToSum (x : H^{s₁, p}(E, F)) :
-    besselPotentialSpaceSumToMin E F p s₀ s₁ ((besselPotentialSpace E F p s₀ s₁).sndToSum x) =
+    besselPotentialSpaceSumToMin E F p s₀ s₁ ((besselPotentialSpace E F s₀ p s₁ p).sndToSum x) =
       inclusion (min_le_right s₀ s₁) x :=
   sumLift_sndToSum _ _ _ _ x
 
 @[simp]
-theorem toDistr_besselPotentialSpaceSumToMin (w : (besselPotentialSpace E F p s₀ s₁).SumSpace) :
+theorem toDistr_besselPotentialSpaceSumToMin (w : (besselPotentialSpace E F s₀ p s₁ p).SumSpace) :
     (besselPotentialSpaceSumToMin E F p s₀ s₁ w).toDistr =
-      (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed w := by
-  obtain ⟨x₀, x₁, rfl⟩ := (besselPotentialSpace E F p s₀ s₁).exists_fstToSum_add_sndToSum_eq w
+      (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed w := by
+  obtain ⟨x₀, x₁, rfl⟩ := (besselPotentialSpace E F s₀ p s₁ p).exists_fstToSum_add_sndToSum_eq w
   simp [toDistr_inclusion]
 
 end Couple
@@ -179,11 +160,11 @@ private theorem weightedLp_embed₁_weightedBlocksCLM (u : H^{s₁, p}(E, F)) (j
 
 variable (F p s₀ s₁) in
 /-- The blocks `u ↦ (Δⱼ u)ⱼ`, from `H^{s₀,p} + H^{s₁,p}` to `ℓ^∞_{s₀}(Lᵖ) + ℓ^∞_{s₁}(Lᵖ)`. -/
-private def blocksMap : (besselPotentialSpace E F p s₀ s₁).SumSpace →L[ℂ]
+private def blocksMap : (besselPotentialSpace E F s₀ p s₁ p).SumSpace →L[ℂ]
     (weightedLp ℂ (Lp F p (volume : Measure E)) ∞ ∞ s₀ s₁).SumSpace :=
   sumLift _ (fstToSum _ ∘L weightedBlocksCLM F p φ s₀) (sndToSum _ ∘L weightedBlocksCLM F p φ s₁)
     fun x ↦ sumSpace_ext _ <| funext fun j ↦ by
-      have hx := (besselPotentialSpace E F p s₀ s₁).embed₀_interFst x
+      have hx := (besselPotentialSpace E F s₀ p s₁ p).embed₀_interFst x
       simp only [besselPotentialSpace_embed₀_apply, besselPotentialSpace_embed₁_apply] at hx
       simp only [ContinuousLinearMap.comp_apply, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum,
         weightedLp_embed₀_weightedBlocksCLM, weightedLp_embed₁_weightedBlocksCLM]
@@ -192,11 +173,11 @@ private def blocksMap : (besselPotentialSpace E F p s₀ s₁).SumSpace →L[ℂ
         (by rw [toDistr_toBesovSpace, toDistr_toBesovSpace]; exact hx) j
 
 /-- The `j`-th entry of the blocks of `u` is the `Lᵖ` function `Δⱼ u`. -/
-private theorem coe_sumSpaceEmbed_blocksMap (u : (besselPotentialSpace E F p s₀ s₁).SumSpace)
+private theorem coe_sumSpaceEmbed_blocksMap (u : (besselPotentialSpace E F s₀ p s₁ p).SumSpace)
     (j : ℕ) :
     ((weightedLp ℂ (Lp F p (volume : Measure E)) ∞ ∞ s₀ s₁).sumSpaceEmbed
         (blocksMap F p φ s₀ s₁ u) j : 𝓢'(E, F)) =
-      littlewoodPaleyBlock F φ j ((besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed u) := by
+      littlewoodPaleyBlock F φ j ((besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed u) := by
   obtain ⟨x₀, x₁, rfl⟩ := exists_fstToSum_add_sndToSum_eq _ u
   simp only [blocksMap, map_add, sumLift_fstToSum, sumLift_sndToSum, ContinuousLinearMap.comp_apply,
     sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, Pi.add_apply,
@@ -335,7 +316,7 @@ variable (F p s₀ s₁) in
 /-- The synthesis `(aⱼ)ⱼ ↦ ∑ⱼ Wⱼ aⱼ`, from `ℓ¹_{s₀}(Lᵖ) + ℓ¹_{s₁}(Lᵖ)` to
 `H^{s₀,p} + H^{s₁,p}`. -/
 private def synthesisMap : (weightedLp ℂ (Lp F p (volume : Measure E)) 1 1 s₀ s₁).SumSpace →L[ℂ]
-    (besselPotentialSpace E F p s₀ s₁).SumSpace :=
+    (besselPotentialSpace E F s₀ p s₁ p).SumSpace :=
   sumLift _ (fstToSum _ ∘L synthesis F p φ s₀) (sndToSum _ ∘L synthesis F p φ s₁) fun x ↦
     sumSpace_ext _ <| by
       have hx := (weightedLp ℂ (Lp F p (volume : Measure E)) 1 1 s₀ s₁).embed₀_interFst x
@@ -352,7 +333,7 @@ private theorem hasSum_sumSpaceEmbed_synthesisMap
     (w : (weightedLp ℂ (Lp F p (volume : Measure E)) 1 1 s₀ s₁).SumSpace) :
     HasSum (fun j ↦ window F φ j
         ((weightedLp ℂ (Lp F p (volume : Measure E)) 1 1 s₀ s₁).sumSpaceEmbed w j : 𝓢'(E, F)))
-      ((besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (synthesisMap F p φ s₀ s₁ w)) := by
+      ((besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed (synthesisMap F p φ s₀ s₁ w)) := by
   obtain ⟨b₀, b₁, rfl⟩ := exists_fstToSum_add_sndToSum_eq _ w
   convert (hasSum_synthesis (s := s₀) φ b₀).add (hasSum_synthesis (s := s₁) φ b₁) using 1
   · funext j
@@ -371,7 +352,7 @@ variable [Fact (1 ≤ q)] (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
 an `ℓ^q` sequence: the blocks map `(H^{s₀,p}, H^{s₁,p})_{θ,q}` into
 `(ℓ^∞_{s₀}(Lᵖ), ℓ^∞_{s₁}(Lᵖ))_{θ,q} = ℓ^q_{s_θ}(Lᵖ)`. -/
 private def kMethodWeightedBlocks :
-    (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q →L[ℂ]
+    (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q →L[ℂ]
       lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q :=
   (weightedLpKMethodEquiv (𝕜 := ℂ) (A := Lp F p (volume : Measure E)) (q₀ := ∞) (q₁ := ∞)
       (q := q) hs hθ : _ →L[ℂ] _) ∘L
@@ -380,11 +361,11 @@ private def kMethodWeightedBlocks :
       (fun _ ↦ by simp [blocksMap])
 
 private theorem coe_kMethodWeightedBlocks_apply
-    (u : (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q) (j : ℕ) :
+    (u : (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q) (j : ℕ) :
     (kMethodWeightedBlocks φ hs hθ u j : 𝓢'(E, F)) =
       (((2 : ℝ) ^ (((1 - θ) * s₀ + θ * s₁) * j) : ℝ) : ℂ) •
         littlewoodPaleyBlock F φ j
-          ((besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (toSumₗ u)) := by
+          ((besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed (toSumₗ u)) := by
   simp only [kMethodWeightedBlocks, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     weightedLpKMethodEquiv_apply, toSumₗ_map, ContinuousLinearMap.coe_coe]
   refine (Lp.toTemperedDistribution_smul _ _).trans ?_
@@ -392,28 +373,29 @@ private theorem coe_kMethodWeightedBlocks_apply
 
 /-- The inclusion `(H^{s₀,p}, H^{s₁,p})_{θ,q} → B^{s_θ}_{p,q}`. -/
 private def kMethodToBesov :
-    (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q →L[ℂ]
+    (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q →L[ℂ]
       BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q :=
   LinearMap.mkContinuous
-    { toFun u := ⟨(besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (toSumₗ u),
+    { toFun u := ⟨(besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed (toSumₗ u),
         kMethodWeightedBlocks φ hs hθ u, coe_kMethodWeightedBlocks_apply φ hs hθ u⟩
       map_add' u v := BesovSpace.ext (by simp)
       map_smul' c u := BesovSpace.ext (by simp) }
-    ‖(kMethodWeightedBlocks φ hs hθ : (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q →L[ℂ] _)‖
+    ‖(kMethodWeightedBlocks φ hs hθ :
+      (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q →L[ℂ] _)‖
     fun u ↦ by
       rw [← BesovSpace.norm_weightedBlocks]
       exact (kMethodWeightedBlocks φ hs hθ).le_opNorm u
 
-private theorem toDistr_kMethodToBesov (u : (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q) :
+private theorem toDistr_kMethodToBesov (u : (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q) :
     (kMethodToBesov φ hs hθ u).toDistr =
-      (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (toSumₗ u) :=
+      (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed (toSumₗ u) :=
   (rfl)
 
 /-- The inclusion `B^{s_θ}_{p,q} → (H^{s₀,p}, H^{s₁,p})_{θ,q}`: the weighted blocks of `v` lie in
 `ℓ^q_{s_θ}(Lᵖ) = (ℓ¹_{s₀}(Lᵖ), ℓ¹_{s₁}(Lᵖ))_{θ,q}`, and the synthesis maps them back to `v`. -/
 private def besovToKMethod :
     BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q →L[ℂ]
-      (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q :=
+      (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q :=
   map (synthesisMap F p φ s₀ s₁).toLinearMap (T₀ := synthesis F p φ s₀)
       (T₁ := synthesis F p φ s₁) (fun _ ↦ by simp [synthesisMap])
       (fun _ ↦ by simp [synthesisMap]) ∘L
@@ -423,7 +405,7 @@ private def besovToKMethod :
 
 private theorem sumSpaceEmbed_toSumₗ_besovToKMethod
     (v : BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q) :
-    (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (toSumₗ (besovToKMethod φ hs hθ v)) =
+    (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed (toSumₗ (besovToKMethod φ hs hθ v)) =
       v.toDistr := by
   have h := hasSum_sumSpaceEmbed_synthesisMap φ (toSumₗ ((weightedLpKMethodEquiv (𝕜 := ℂ)
     (A := Lp F p (volume : Measure E)) (q₀ := 1) (q₁ := 1) (q := q) hs hθ).symm v.weightedBlocks))
@@ -444,7 +426,7 @@ Besov space `B^{s_θ}_{p,q}` with `s_θ = (1 - θ) s₀ + θ s₁`, with equival
 isomorphism keeps the underlying tempered distribution
 (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceKMethodEquiv_apply`). -/
 def besselPotentialSpaceKMethodEquiv :
-    (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q ≃L[ℂ]
+    (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q ≃L[ℂ]
       BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q :=
   ContinuousLinearEquiv.ofContinuousLinearMap (kMethodToBesov φ hs hθ) (besovToKMethod φ hs hθ)
     (ContinuousLinearMap.ext fun v ↦ BesovSpace.ext <| by
@@ -456,15 +438,15 @@ def besselPotentialSpaceKMethodEquiv :
 
 @[simp]
 theorem toDistr_besselPotentialSpaceKMethodEquiv_apply
-    (u : (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q) :
+    (u : (besselPotentialSpace E F s₀ p s₁ p).KMethodSpace θ q) :
     (besselPotentialSpaceKMethodEquiv φ hs hθ u).toDistr =
-      (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed (toSumₗ u) :=
+      (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed (toSumₗ u) :=
   (rfl)
 
 @[simp]
 theorem sumSpaceEmbed_toSumₗ_besselPotentialSpaceKMethodEquiv_symm_apply
     (v : BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q) :
-    (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed
+    (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed
         (toSumₗ ((besselPotentialSpaceKMethodEquiv φ hs hθ).symm v)) = v.toDistr :=
   sumSpaceEmbed_toSumₗ_besovToKMethod φ hs hθ v
 
@@ -475,9 +457,9 @@ end Equiv
 `(H^{s₀,p}, H^{s₁,p})_{θ,q}` exactly when its tempered distribution lies in the Besov space
 `B^{s_θ}_{p,q}`, where `s_θ = (1 - θ) s₀ + θ s₁`. -/
 theorem mem_kMethod_besselPotentialSpace_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (hq : 1 ≤ q)
-    {u : (besselPotentialSpace E F p s₀ s₁).SumSpace} :
-    u ∈ (besselPotentialSpace E F p s₀ s₁).kMethod θ q ↔
-      ((besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed u).MemBesov φ
+    {u : (besselPotentialSpace E F s₀ p s₁ p).SumSpace} :
+    u ∈ (besselPotentialSpace E F s₀ p s₁ p).kMethod θ q ↔
+      ((besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed u).MemBesov φ
         ((1 - θ) * s₀ + θ * s₁) p q := by
   have : Fact (1 ≤ q) := ⟨hq⟩
   refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
@@ -495,8 +477,8 @@ and `1 ≤ q`, a tempered distribution lies in the Besov space `B^{s_θ}_{p,q}`,
 theorem memBesov_iff_exists_mem_kMethod_besselPotentialSpace (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)
     (hq : 1 ≤ q) {v : 𝓢'(E, F)} :
     v.MemBesov φ ((1 - θ) * s₀ + θ * s₁) p q ↔
-      ∃ u ∈ (besselPotentialSpace E F p s₀ s₁).kMethod θ q,
-        (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed u = v := by
+      ∃ u ∈ (besselPotentialSpace E F s₀ p s₁ p).kMethod θ q,
+        (besselPotentialSpace E F s₀ p s₁ p).sumSpaceEmbed u = v := by
   refine ⟨fun hv ↦ ?_, ?_⟩
   · have : Fact (1 ≤ q) := ⟨hq⟩
     exact ⟨_, toSumₗ_mem ((besselPotentialSpaceKMethodEquiv φ hs hθ).symm hv.toBesovSpace),
