@@ -8,8 +8,8 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 
-import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # The fixed tangent subspace of a group action
@@ -164,7 +164,7 @@ theorem fixedTangentSubspace_eq_top_of_smul_eq_self (h : ∀ (k : K) (x : M), k 
     fixedTangentSubspace I K p = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun v ↦ mem_fixedTangentSubspace.2 fun k _ ↦ ?_
   rw [show (fun y : M ↦ k • y) = id from funext (h k), mfderiv_id]
-  rfl
+  exact ContinuousLinearMap.id_apply v
 
 variable (I) in
 /-- **The fixed set of a trivial action.** If every group element acts as the identity, as for the
@@ -184,17 +184,6 @@ section Linear
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Type*} [Group K]
   [DistribMulAction K E] [SMulCommClass K ℝ E] [ContinuousConstSMul K E]
 
-/-- For a group acting on a normed space by continuous linear maps, the differential of `k •` at
-every point is `k •` itself, through the canonical identifications of the tangent spaces with the
-space. -/
-theorem fromTangentSpace_mfderiv_smul (k : K) (p : E) (v : TangentSpace 𝓘(ℝ, E) p) :
-    NormedSpace.fromTangentSpace (k • p) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (k • ·) p v) =
-      k • NormedSpace.fromTangentSpace p v := by
-  let L : E →L[ℝ] E := ⟨DistribSMul.toLinearMap ℝ E k, continuous_const_smul k⟩
-  rw [mfderiv_eq_fderiv, show (fun x : E ↦ k • x) = L from rfl, L.fderiv]
-  -- `L` is `k • ·` by construction, and `fromTangentSpace` is the identity of `E`.
-  rfl
-
 /-- **The fixed tangent subspace of a linear action.** For a group acting on a normed space `E` by
 continuous linear maps, the fixed tangent subspace at a fixed point is, through the canonical
 identification of the tangent space with `E`, the subspace of invariant vectors. -/
@@ -207,17 +196,18 @@ theorem map_fromTangentSpace_fixedTangentSubspace {p : E} (hp : p ∈ fixedPoint
     Representation.ofDistribMulAction_apply_apply]
   constructor
   · rintro ⟨v, hv, rfl⟩ k
-    have := fromTangentSpace_mfderiv_smul k p v
-    rw [(mem_fixedTangentSubspace_iff_of_mem_fixedPoints hp).1 hv k] at this
+    have := mvfderiv_smul_left (𝕜 := ℝ) k p v
+    rw [mvfderiv_apply_eq_mfderiv_apply,
+      (mem_fixedTangentSubspace_iff_of_mem_fixedPoints hp).1 hv k] at this
     -- `fromTangentSpace` is the identity of `E` at every base point, here `k • p = p`.
     exact this.symm
   · intro hw
     refine ⟨(NormedSpace.fromTangentSpace p).symm w,
       (mem_fixedTangentSubspace_iff_of_mem_fixedPoints hp).2 fun k ↦ ?_, by simp⟩
-    have := fromTangentSpace_mfderiv_smul k p ((NormedSpace.fromTangentSpace p).symm w)
-    simp only [ContinuousLinearEquiv.apply_symm_apply, hw k] at this
-    -- As above, `fromTangentSpace` is the identity of `E` at both `k • p` and `p`.
-    exact (NormedSpace.fromTangentSpace (k • p)).injective this
+    rw [← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_smul_left,
+      ContinuousLinearEquiv.apply_symm_apply]
+    -- `(fromTangentSpace p).symm` is the identity of `E`.
+    exact hw k
 
 /-- For a group acting on a normed space by continuous linear maps, the fixed tangent subspace at
 every fixed point has the dimension of the subspace of invariant vectors. -/

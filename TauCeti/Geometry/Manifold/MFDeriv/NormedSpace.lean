@@ -50,6 +50,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
+* `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
+  the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
   differentiability hypothesis.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
@@ -289,6 +291,18 @@ theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
     hg (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcg.const_smul c⁻¹)
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hcg]
+
+/-- For a group acting on a normed space by continuous linear maps, the derivative of `k • ·`, read
+in the space, is `k • ·` at every point. -/
+theorem mvfderiv_smul_left {K : Type*} [Group K] [DistribMulAction K F] [SMulCommClass K 𝕜 F]
+    [ContinuousConstSMul K F] (k : K) (p : F) (v : TangentSpace 𝓘(𝕜, F) p) :
+    mvfderiv 𝓘(𝕜, F) (fun x ↦ k • x) p v = k • NormedSpace.fromTangentSpace p v := by
+  have h : (fun x : F ↦ k • x) = ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) k := by
+    funext x
+    rw [ContinuousLinearEquiv.smulLeft_apply_apply]
+  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, h, ContinuousLinearEquiv.fderiv,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.smulLeft_apply_apply,
+    ContinuousLinearEquiv.coe_coe]
 
 /-- Adding a constant does not change the derivative of a vector-valued function, read in the
 target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
