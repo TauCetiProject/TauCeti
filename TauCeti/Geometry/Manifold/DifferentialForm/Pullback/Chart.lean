@@ -14,9 +14,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Chart
 
 The coordinate expression of a pullback uses the within-range derivative of the map composed
 with the inverse source chart. This is the actual manifold chain rule, including boundary
-points, and supplies the coefficient transport used in interval and product comparisons. On a
-boundaryless model it is the pullback along the composite of the map with the inverse chart
-(`TauCeti.RoughForm.inChartAt_mpullback_eq_mpullback_comp_symm`).
+points, and supplies the coefficient transport used in interval and product comparisons.
 In top degree, the coefficient of a pullback in a basis is the coordinate Jacobian determinant
 times the coefficient of the form; when the two manifolds are modelled on different spaces, the
 Jacobian is read in the source model through a linear equivalence of the model spaces.
@@ -62,18 +60,6 @@ theorem inChartAt_mpullback (ω : RoughForm I' M' F k) (f : M → M') (α : M) {
   have he := congrArg (fun L : E →L[ℝ] TangentSpace I' (f ((extChartAt I α).symm z)) ↦
     ω (f ((extChartAt I α).symm z)) (fun i ↦ L (v i))) hd
   exact he.symm
-
-/-- On a boundaryless model, the actual pullback's coefficient in a preferred source chart is the
-pullback along the composite of the map with the inverse chart. -/
-theorem inChartAt_mpullback_eq_mpullback_comp_symm [I.Boundaryless] (ω : RoughForm I' M' F k)
-    (f : M → M') (α : M) {z : E} (hz : z ∈ (extChartAt I α).target)
-    (hf : MDifferentiableAt I I' f ((extChartAt I α).symm z)) :
-    (mpullback I I' f ω).inChartAt α z =
-      mpullback 𝓘(ℝ, E) I' (f ∘ (extChartAt I α).symm) ω z := by
-  rw [inChartAt_mpullback ω f α hz hf, I.range_eq_univ, mfderivWithin_univ]
-  ext v
-  rw [ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  exact (mpullback_apply (I := 𝓘(ℝ, E)) (I' := I') (f ∘ (extChartAt I α).symm) ω z v).symm
 
 /-- The within-set pullback of a form along a map `f` from a normed space, at a point `w` sent into
 the preferred chart at `c`, is the flat pullback of the coordinate expression of the form in that
