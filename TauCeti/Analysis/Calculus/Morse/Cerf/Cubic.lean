@@ -18,6 +18,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.Morse.Cerf
@@ -201,6 +202,10 @@ theorem exists_cubicPerturbation_fderiv_eq (x : E) {v : E} (hv : v ≠ 0) (a b :
   have hQ : ContDiff ℝ 3 Q := by fun_prop
   have haQ : ContDiff ℝ 3 (⇑a' + Q) := a'.contDiff.add hQ
   have hcK : ContDiff ℝ 3 ((c / 6) • K) := by fun_prop
+  -- `Q` is the quadratic map of the bilinear form `ℓ.smulRight γ`, with constant Hessian.
+  have hQB : fderiv ℝ (fderiv ℝ Q) = fun _ ↦ (ℓ.smulRight γ).flip + ℓ.smulRight γ := by
+    rw [show Q = fun y ↦ ℓ.smulRight γ y y by ext; simp [Q]]
+    exact funext (ℓ.smulRight γ).fderiv_fderiv_apply_self
   refine ⟨(a', 0, 0) + (0, (ContinuousMultilinearMap.mkPiAlgebra ℝ (Fin 2)
     ℝ).compContinuousLinearMap ![ℓ, γ], 0) + (c / 6) •
       (0, 0, (ContinuousMultilinearMap.mkPiAlgebra ℝ (Fin 3) ℝ).compContinuousLinearMap fun _ ↦ ℓ),
@@ -215,14 +220,14 @@ theorem exists_cubicPerturbation_fderiv_eq (x : E) {v : E} (hv : v ≠ 0) (a b :
       fderiv_fderiv_add a'.contDiff.contDiffAt (hQ.contDiffAt.of_le (by norm_num)),
       a'.fderiv_fderiv, fderiv_fderiv_const_smul]
     ext k
-    simp only [add_apply, smul_apply, Pi.zero_apply, zero_add, Q, ℓ.fderiv_fderiv_mul_apply, hℓ,
-      one_mul]
+    simp only [add_apply, smul_apply, Pi.zero_apply, zero_add, hQB,
+      ContinuousLinearMap.flip_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul, hℓ, one_mul]
     subst hγ hb'
     simp [hℓ]
     ring
   · rw [fderiv_fderiv_fderiv_add haQ.contDiffAt hcK.contDiffAt,
       fderiv_fderiv_fderiv_add a'.contDiff.contDiffAt hQ.contDiffAt, a'.fderiv_fderiv_fderiv,
-      ℓ.fderiv_fderiv_fderiv_mul, fderiv_fderiv_fderiv_const_smul]
+      hQB, fderiv_fun_const, fderiv_fderiv_fderiv_const_smul]
     simp only [smul_apply, Pi.zero_apply, zero_add, K, ℓ.fderiv_fderiv_fderiv_pow_three_apply, hℓ,
       smul_eq_mul]
     ring

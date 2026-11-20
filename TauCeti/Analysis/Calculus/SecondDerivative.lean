@@ -107,9 +107,8 @@ Morse-theoretic definitions that use them.
   `TauCeti.fderiv_fderiv_fun_smul_apply` its form for `fun y ↦ f y • g y`, and
   `TauCeti.fderiv_fderiv_mul_apply` (and `TauCeti.fderiv_fderiv_fun_mul_apply`) its case of a
   product of maps into a commutative algebra.
-* `ContinuousLinearMap.fderiv_fderiv_mul_apply`, `ContinuousLinearMap.fderiv_fderiv_fderiv_mul`
-  and `ContinuousLinearMap.fderiv_fderiv_fderiv_pow_three_apply`: the second and third derivatives
-  of the product of two linear functionals and the third derivative of the cube of one.
+* `ContinuousLinearMap.fderiv_fderiv_fderiv_pow_three_apply`: the third derivative of the cube of
+  a linear functional.
 * `TauCeti.sum_mul_fderiv_apply_eq_zero_of_sum_sq_eventuallyEq_const` and
   `TauCeti.sum_mul_fderiv_fderiv_apply_add_fderiv_apply_mul_eq_zero_of_sum_sq_eventuallyEq_const`:
   the first and second derivatives of a partition of unity by squares, `∑ₐ Jₐ²` constant.
@@ -549,26 +548,6 @@ theorem fderiv_fderiv_mul_apply {𝔸' : Type*} [NormedCommRing 𝔸'] [NormedAl
         fderiv 𝕜 f x v * fderiv 𝕜 g x w + fderiv 𝕜 g x v * fderiv 𝕜 f x w := by
   simp_rw [Pi.mul_def, ← smul_eq_mul, fderiv_fderiv_fun_smul_apply hf hg v w, smul_eq_mul]
   ring
-
-/-- The second derivative of the product `y ↦ ℓ y * β y` of two linear functionals is
-`(v, w) ↦ ℓ v * β w + β v * ℓ w` at every point. -/
-@[simp]
-theorem _root_.ContinuousLinearMap.fderiv_fderiv_mul_apply (ℓ β : E →L[𝕜] 𝕜) (x v w : E) :
-    fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y * β y) x v w = ℓ v * β w + β v * ℓ w := by
-  rw [fderiv_fderiv_fun_mul_apply ℓ.contDiff.contDiffAt β.contDiff.contDiffAt, ℓ.fderiv_fderiv,
-    β.fderiv_fderiv, ℓ.fderiv, β.fderiv]
-  simp
-
-/-- The third derivative of the product `y ↦ ℓ y * β y` of two linear functionals vanishes. -/
-@[simp]
-theorem _root_.ContinuousLinearMap.fderiv_fderiv_fderiv_mul (ℓ β : E →L[𝕜] 𝕜) :
-    fderiv 𝕜 (fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y * β y)) = 0 := by
-  -- The second derivative does not depend on the point.
-  have h : fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y * β y) =
-      fun _ ↦ fderiv 𝕜 (fderiv 𝕜 fun y ↦ ℓ y * β y) 0 :=
-    funext fun x ↦ ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ by
-      rw [ℓ.fderiv_fderiv_mul_apply, ℓ.fderiv_fderiv_mul_apply]
-  rw [h, fderiv_fun_const]
 
 /-- The third derivative of the cube `y ↦ ℓ y ^ 3` of a linear functional is
 `(a, b, c) ↦ 6 * ℓ a * ℓ b * ℓ c` at every point. -/
