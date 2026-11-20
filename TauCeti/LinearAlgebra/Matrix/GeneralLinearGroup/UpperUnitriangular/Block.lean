@@ -164,6 +164,10 @@ theorem coe_blockDiagonalGL (g : ι → GL n R) :
       blockDiagonal fun i => (g i : Matrix n n R) :=
   (rfl)
 
+/-- The inverse of a Levi element is block diagonal with the inverse blocks. The high `simp`
+priority makes this fire before `Matrix.coe_units_inv` turns the left side into the inverse of a
+block-diagonal matrix. -/
+@[simp high]
 theorem coe_blockDiagonalGL_inv (g : ι → GL n R) :
     ((blockDiagonalGL n ι R g)⁻¹ : GL (n × ι) R) =
       (blockDiagonal fun i => ((g i)⁻¹ : GL n R) : Matrix (n × ι) (n × ι) R) := by
