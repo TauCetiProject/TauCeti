@@ -37,7 +37,11 @@ converges locally uniformly to its constant value (`TauCeti.tendstoLocallyUnifor
 
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
-(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
+(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`). Convergence of
+`Fᵢ ∘ g` on an open set `s`, for an open map `g` injective on `s`, is convergence of `Fᵢ` on
+`g '' s` (`TendstoLocallyUniformlyOn.image_of_isOpenMap`). Locally uniform limits on open windows
+`Uᵢ \ Zᵢ` glue to a locally uniform limit on `(⋃ᵢ Uᵢ) \ Z` for every closed set `Z` containing
+each `Zᵢ ∩ Uᵢ` (`TauCeti.exists_tendstoLocallyUniformlyOn_iUnion_sdiff`).
 
 A locally uniform limit `w` of maps `e ∘ uᵢ`, for an open partial homeomorphism `e` and maps `uᵢ`
 with values in a subset `K` of its source, is read back through `e.symm` when `w` takes values in
@@ -109,6 +113,23 @@ theorem TendstoLocallyUniformly.comp_tendsto {ι ι' α β : Type*} [Topological
     TendstoLocallyUniformly (fun i ↦ F (ψ i)) f q :=
   tendstoLocallyUniformlyOn_univ.1 ((tendstoLocallyUniformlyOn_univ.2 h).comp_tendsto hψ)
 
+/-- Locally uniform convergence of the maps `Fᵢ ∘ g` on an open set `s`, for an open map `g`
+injective on `s`, is locally uniform convergence of the maps `Fᵢ` on `g '' s`, to the limit read
+through the inverse of `g` on `s`. -/
+theorem TendstoLocallyUniformlyOn.image_of_isOpenMap {ι α β γ : Type*} [TopologicalSpace α]
+    [TopologicalSpace γ] [Nonempty γ] [UniformSpace β] {F : ι → α → β} {f : γ → β}
+    {p : Filter ι} {g : γ → α} {s : Set γ}
+    (h : TendstoLocallyUniformlyOn (fun i ↦ F i ∘ g) f p s) (hs : IsOpen s) (hg : IsOpenMap g)
+    (hinj : InjOn g s) :
+    TendstoLocallyUniformlyOn F (f ∘ Function.invFunOn g s) p (g '' s) := by
+  rintro u hu _ ⟨x, hx, rfl⟩
+  obtain ⟨t, ht, hev⟩ := h u hu x hx
+  obtain ⟨o, hot, ho, hxo⟩ := mem_nhds_iff.1 (hs.nhdsWithin_eq hx ▸ ht)
+  refine ⟨g '' (o ∩ s), mem_nhdsWithin_of_mem_nhds
+    ((hg _ (ho.inter hs)).mem_nhds ⟨x, ⟨hxo, hx⟩, rfl⟩), hev.mono fun i hi ↦ ?_⟩
+  rintro _ ⟨y, ⟨hyo, hys⟩, rfl⟩
+  simpa [hinj.leftInvOn_invFunOn hys] using hi y (hot hyo)
+
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
 
@@ -173,5 +194,25 @@ theorem tendstoLocallyUniformly_of_forall_continuousAt {δ γ : Type*} [Topologi
   have hlim := (hΦ x).tendsto.comp (hx.prodMk_nhds tendsto_const_nhds)
   have hfam := (hΦ x).tendsto.comp (hx.prodMk_nhds (hp.comp tendsto_fst))
   exact (hlim.prodMk_nhds hfam).mono_right (nhds_le_uniformity _)
+
+/-- **Gluing locally uniform limits over open windows.** If `F i` converges locally uniformly on
+`Uⱼ \ Zⱼ` for every open window `Uⱼ`, then it converges locally uniformly on `(⋃ⱼ Uⱼ) \ Z` for
+every closed set `Z` containing every `Zⱼ ∩ Uⱼ`: the limits of two windows agree where both
+converge. -/
+theorem exists_tendstoLocallyUniformlyOn_iUnion_sdiff {γ κ : Type*} [UniformSpace γ]
+    [T2Space γ] [l.NeBot] {U : κ → Set α} (hU : ∀ j, IsOpen (U j)) {F : ι → α → γ}
+    {Zw : κ → Set α} {Z : Set α} (hZ : IsClosed Z) (hZw : ∀ j, Zw j ∩ U j ⊆ Z) {vw : κ → α → γ}
+    (hvw : ∀ j, TendstoLocallyUniformlyOn F (vw j) l (U j \ Zw j)) :
+    ∃ v : α → γ, TendstoLocallyUniformlyOn F v l ((⋃ j, U j) \ Z) := by
+  classical
+  obtain ⟨i₀⟩ := l.nonempty_of_neBot
+  refine ⟨fun x ↦ if hx : ∃ j, x ∈ U j \ Zw j then vw (Classical.choose hx) x else F i₀ x, ?_⟩
+  rw [iUnion_sdiff]
+  refine tendstoLocallyUniformlyOn_iUnion (fun j ↦ (hU j).sdiff hZ) fun j ↦ ?_
+  have hsub : U j \ Z ⊆ U j \ Zw j := fun x hx ↦ ⟨hx.1, fun hxj ↦ hx.2 (hZw j ⟨hxj, hx.1⟩)⟩
+  refine ((hvw j).congr_right fun x hx ↦ ?_).mono hsub
+  have hex : ∃ j, x ∈ U j \ Zw j := ⟨j, hx⟩
+  simp only [hex, ↓reduceDIte]
+  exact tendsto_nhds_unique ((hvw j).tendsto_at hx) ((hvw _).tendsto_at (Classical.choose_spec hex))
 
 end TauCeti
