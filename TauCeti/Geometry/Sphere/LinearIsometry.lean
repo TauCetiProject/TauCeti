@@ -69,7 +69,7 @@ variable [Module R E] [Module R F]
 
 /-- A linear isometry restricts to a map of the corresponding unit spheres. -/
 def unitSphereMap (f : E →ₗᵢ[R] F) (x : sphere (0 : E) 1) : sphere (0 : F) 1 :=
-  ⟨f x, f.map_zero ▸ f.isometry.mapsTo_sphere 0 1 x.2⟩
+  ⟨f x, f.map_zero ▸ f.isometry.mapsTo_sphere 0 1 x.property⟩
 
 @[simp]
 theorem coe_unitSphereMap_apply (f : E →ₗᵢ[R] F) (x : sphere (0 : E) 1) :

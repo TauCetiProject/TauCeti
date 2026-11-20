@@ -108,9 +108,7 @@ multiplication by `a` for even `j` and by `b` for odd `j`. -/
 theorem cyclicModuleResolutionComplex_d (j : ℕ) :
     (cyclicModuleResolutionComplex a b hab hba).d (j + 1) j =
       ModuleCat.ofHom (LinearMap.toSpanSingleton Aᵐᵒᵖ Aᵐᵒᵖ (op (if Even j then a else b))) := by
-  -- the two sides differ only in the reducible spelling of the terms `A` of the complex
-  by_cases hj : Even j <;> simp [HomologicalComplex.alternatingConst_d, Nat.even_add_one, hj] <;>
-    rfl
+  by_cases hj : Even j <;> simp [HomologicalComplex.alternatingConst_d, Nat.even_add_one, hj]
 
 /-- The differential of `TauCeti.cyclicModuleResolutionComplex` into degree `j` sends `c` to
 `c * op a` for even `j` and to `c * op b` for odd `j`. -/

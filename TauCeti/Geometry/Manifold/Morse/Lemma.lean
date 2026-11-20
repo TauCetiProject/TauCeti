@@ -290,9 +290,9 @@ theorem apply_toChart_symm_coord_symm_splitCoord_symm
   congr 2
   congr 1
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp [i.2]
+    simp [i.property]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
-    simp [(φ.weight_eq_neg_one_or_eq_one i).resolve_right i.2]
+    simp [(φ.weight_eq_neg_one_or_eq_one i).resolve_right i.property]
     norm_num
 
 variable {φ}

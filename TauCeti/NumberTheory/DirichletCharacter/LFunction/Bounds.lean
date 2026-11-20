@@ -9,12 +9,15 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LSeries.SumCoeff
 public import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
+import TauCeti.NumberTheory.PrimeFactors.Bounds
 
 /-!
 # A level-dependent bound for continued Dirichlet L-functions
 
 Cancellation over a full period bounds the partial sums of a nonprincipal character of level
-`N` by `N`. Partial summation then represents its continued L-function on `Re(s) > 0` by an
+`N` by `N`, so they are `O(1)` (`DirichletCharacter.isBigO_sum_Icc_one`). Partial summation then
+represents its continued L-function on `Re(s) > 0` by an
 absolutely convergent integral and gives `‖L(s, χ)‖ ≤ N ‖s‖ / Re(s)`. In particular this is a
 linear growth bound on each vertical line in the right half-plane, with explicit dependence
 on the level. For a primitive character the level is its conductor.
@@ -23,7 +26,10 @@ At `s = 1` the same integral is `∫_{t > 1} S(t) / t²`, where `S(t)` is the su
 `1 ≤ k ≤ t`. Using `‖S(t)‖ ≤ t` on `(1, N]` and `‖S(t)‖ ≤ N` beyond gives
 `‖L(1, χ)‖ ≤ 1 + log N`. No primitivity is assumed, so this bound also holds for imprimitive
 characters such as the product of two characters taken at the least common multiple of their
-levels.
+levels. Combining the nonprincipal bound with the fractional-part bound on `riemannZeta` and the
+Euler-factor bound on `N.primeFactors` also yields
+`‖L(s, χ)‖ ≤ N (‖s - 1‖⁻¹ + 1 + ‖s‖ / Re(s))` on `Re(s) > 0` (away from `s = 1` when `χ = 1`) for
+every character `χ` of level `N`, principal or nonprincipal.
 
 The function being bounded is the native analytic continuation, not the Dirichlet series
 (which need not converge absolutely in this half-plane). No zero-free hypothesis is required.
@@ -43,18 +49,15 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
-private theorem sum_isBigO_one (hχ : χ ≠ 1) :
-    (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
-  refine isBigO_iff.mpr ⟨N, Eventually.of_forall fun n ↦ ?_⟩
-  simpa using χ.norm_sum_Icc_le_level hχ n
-
 /-- Partial summation represents the continued L-function of a nonprincipal character on the
 whole half-plane `Re(s) > 0`. -/
 theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
     χ.LFunction s =
       s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (t : ℂ) ^ (-(s + 1)) := by
+  have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
+    simpa only [Real.rpow_zero] using χ.isBigO_sum_Icc_one hχ
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
-  have hF := TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO _ (χ.sum_isBigO_one hχ)
+  have hF := TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO _ hO
   have heq : χ.LFunction =ᶠ[𝓝 (2 : ℂ)]
       fun z ↦ z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) *
         (t : ℂ) ^ (-(z + 1)) := by
@@ -62,7 +65,7 @@ theorem LFunction_eq_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
       (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z hz
     rw [LFunction_eq_LSeries χ hz]
     exact LSeries_eq_mul_integral _ le_rfl (lt_trans zero_lt_one hz)
-      (χ.LSeriesSummable_of_one_lt_re hz) (χ.sum_isBigO_one hχ)
+      (χ.LSeriesSummable_of_one_lt_re hz) hO
   have hL := (differentiable_LFunction hχ).differentiableOn.analyticOnNhd hopen
   exact (hL.eqOn_of_preconnected_of_eventuallyEq
     (hF.analyticOnNhd hopen) (convex_halfSpace_re_gt 0).isPreconnected
@@ -85,9 +88,10 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
   have hnorm {t : ℝ} (ht : 0 < t) : ‖f t‖ = ‖∑ k ∈ Icc 1 ⌊t⌋₊, χ k‖ * t ^ (-2 : ℝ) := by
     rw [hf, norm_mul, norm_cpow_eq_rpow_re_of_pos ht]
     norm_num
+  have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, χ k) =O[atTop] fun n ↦ (n : ℝ) ^ (0 : ℝ) := by
+    simpa only [Real.rpow_zero] using χ.isBigO_sum_Icc_one hχ
   have hint : IntegrableOn (fun t ↦ ‖f t‖) (Set.Ioi 1) :=
-    (TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ (χ.sum_isBigO_one hχ)
-      (s := 1) (by simp)).norm
+    (TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ hO (s := 1) (by simp)).norm
   -- Split the integral at `N`: bound the partial sums by `t` below `N` and by `N` above it.
   have hlow : ∫ t in Set.Ioc 1 (N : ℝ), ‖f t‖ ≤ Real.log N := by
     have hinv : IntegrableOn (fun t : ℝ ↦ t⁻¹) (Set.Ioc 1 N) :=
@@ -136,5 +140,22 @@ theorem norm_LFunction_one_le_one_add_log (hχ : χ ≠ 1) :
         (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN)),
         Set.Ioc_union_Ioi_eq_Ioi hN]
     _ ≤ 1 + Real.log N := by linarith
+
+/-- On `Re(s) > 0` (away from `s = 1` when `χ = 1`), the continued L-function of any Dirichlet
+character of level `N` — principal or nonprincipal — satisfies
+`‖L(s, χ)‖ ≤ N (‖s - 1‖⁻¹ + 1 + ‖s‖ / Re(s))`. -/
+theorem norm_LFunction_le {s : ℂ} (hs : 0 < s.re) (h1 : s ≠ 1 ∨ χ ≠ 1) :
+    ‖χ.LFunction s‖ ≤ (N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re) := by
+  by_cases hχ : χ = 1
+  · subst hχ
+    have hs_ne : s ≠ 1 := h1.resolve_right (not_not.mpr rfl)
+    rw [← LFunctionTrivChar, LFunctionTrivChar_eq_mul_riemannZeta hs_ne, norm_mul]
+    exact mul_le_mul (TauCeti.norm_prod_primeFactors_one_sub_cpow_neg_le hs.le)
+      (TauCeti.norm_riemannZeta_le_of_re_pos hs) (norm_nonneg _) (Nat.cast_nonneg N)
+  · calc ‖χ.LFunction s‖ ≤ (N : ℝ) * ‖s‖ / s.re :=
+          χ.norm_LFunction_le_level_mul_norm_div_re hχ hs
+      _ = (N : ℝ) * (‖s‖ / s.re) := mul_div_assoc _ _ _
+      _ ≤ (N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re) :=
+          mul_le_mul_of_nonneg_left (le_add_of_nonneg_left (by positivity)) (Nat.cast_nonneg N)
 
 end DirichletCharacter

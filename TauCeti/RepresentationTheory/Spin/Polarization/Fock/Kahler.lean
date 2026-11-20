@@ -157,7 +157,7 @@ private theorem realFockAction_sum_ι_mul_ι_ι_mul (x : (J.spinPolarizationData
         (4 * Complex.I) • (ExteriorAlgebra.ι ℂ x * s) := by
   have hx : J.toLinearMap.baseChange ℂ (x : ℂ ⊗[ℝ] V) = Complex.I • (x : ℂ ⊗[ℝ] V) := by
     have hmem : (x : ℂ ⊗[ℝ] V) ∈ Module.End.eigenspace (J.toLinearMap.baseChange ℂ) Complex.I :=
-      J.spinPolarizationData_W hQJ hQnd ▸ x.2
+      J.spinPolarizationData_W hQJ hQnd ▸ x.property
     exact Module.End.mem_eigenspace_iff.1 hmem
   have h := congr(J.fockAction hQJ hQnd
     $(J.ofBaseChangeAux_sum_ι_mul_ι_mul_ι_sub hQJ hQ b (x : ℂ ⊗[ℝ] V)) s)
