@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.GroupAction.OfQuotient
 public import Mathlib.Topology.Algebra.ClopenNhdofOne
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Nonabelian.Basic
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 import TauCeti.GroupTheory.GroupAction.FixedPoints
 
 /-!
@@ -176,12 +177,6 @@ section Transition
 
 variable {M N P : Subgroup G} [M.Normal] [N.Normal] [P.Normal]
 
-private def transitionQuotient (h : M ≤ N) : (G ⧸ M) →ₜ* (G ⧸ N) :=
-  ContinuousMonoidHom.quotientLift (Subgroup.quotientMkContinuousMonoidHom N) M fun m hm ↦
-    by simpa only [MonoidHom.mem_ker, ContinuousMonoidHom.coe_toMonoidHom,
-      Subgroup.coe_quotientMkContinuousMonoidHom, QuotientGroup.mk'_apply] using
-      (QuotientGroup.eq_one_iff m).mpr (h hm)
-
 private def transitionCoefficients (h : M ≤ N) :
     FixedPoints.subgroup N A →ₜ* FixedPoints.subgroup M A :=
   ContinuousMonoidHom.subgroupInclusion (fixedPoints_subgroup_antitone G A h)
@@ -193,12 +188,11 @@ private theorem coe_transitionCoefficients (h : M ≤ N) (a : FixedPoints.subgro
 
 private theorem transition_smul (h : M ≤ N) (q : G ⧸ M)
     (a : FixedPoints.subgroup N A) :
-    transitionCoefficients h (transitionQuotient h q • a) =
+    transitionCoefficients h (QuotientGroup.mapOfLEContinuousMonoidHom h q • a) =
       q • transitionCoefficients h a := by
   induction q using QuotientGroup.induction_on with | H g =>
   apply Subtype.ext
-  simp only [transitionQuotient,
-    ContinuousMonoidHom.quotientLift_mk, Subgroup.quotientMkContinuousMonoidHom_apply,
+  simp only [QuotientGroup.mapOfLEContinuousMonoidHom_mk,
     coe_transitionCoefficients, coe_quotient_smul_fixedPoints_subgroup]
 
 namespace Cocycle
@@ -207,15 +201,14 @@ namespace Cocycle
 of fixed coefficient groups. -/
 def transition (h : M ≤ N) (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) :
     Cocycle (G ⧸ M) (FixedPoints.subgroup M A) :=
-  c.map (transitionQuotient h) (transitionCoefficients h) (transition_smul h)
+  c.map (QuotientGroup.mapOfLEContinuousMonoidHom h) (transitionCoefficients h) (transition_smul h)
 
 /-- At a representative `g`, refinement retains the underlying coefficient value. -/
 @[simp]
 theorem coe_transition_apply (h : M ≤ N)
     (c : Cocycle (G ⧸ N) (FixedPoints.subgroup N A)) (g : G) :
     (transition h c (g : G ⧸ M) : A) = (c (g : G ⧸ N) : A) := by
-  simp only [transition, Cocycle.map_apply, transitionQuotient,
-    ContinuousMonoidHom.quotientLift_mk, Subgroup.quotientMkContinuousMonoidHom_apply,
+  simp only [transition, Cocycle.map_apply, QuotientGroup.mapOfLEContinuousMonoidHom_mk,
     coe_transitionCoefficients]
 
 /-- Inflating a refined cocycle agrees with its original inflation. -/
@@ -266,7 +259,7 @@ inclusion of fixed coefficient groups. -/
 def transition (h : M ≤ N) :
     NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A) →
       NonabelianH1 (G ⧸ M) (FixedPoints.subgroup M A) :=
-  map (transitionQuotient h) (transitionCoefficients h) (transition_smul h)
+  map (QuotientGroup.mapOfLEContinuousMonoidHom h) (transitionCoefficients h) (transition_smul h)
 
 /-- Refinement sends a cocycle class to the class of its refinement. -/
 @[simp]
