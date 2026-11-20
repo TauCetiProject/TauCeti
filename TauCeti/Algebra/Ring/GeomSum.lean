@@ -40,6 +40,7 @@ exactly when `x ^ d ≠ 1` for each of its indices `d`.
   `x ^ n = 1`; in particular a root of `T² + T + 1` is a cube root of unity.
 * `TauCeti.prod_geom_sum_ne_zero_iff`: a product of `x`-integers is nonzero exactly when no index
   `d` has `x ^ d = 1`.
+* `TauCeti.geom_sum_range_mul`: `[m n]_x = [m]_x [n]_{x ^ m}` in any semiring.
 -/
 
 public section
@@ -133,5 +134,15 @@ theorem prod_geom_sum_ne_zero_iff {R : Type*} [CommRing R] [NoZeroDivisors R] {x
     ∏ d ∈ s, ∑ i ∈ range d, x ^ i ≠ 0 ↔ ∀ d ∈ s, x ^ d ≠ 1 := by
   have : Nontrivial R := ⟨⟨x, 1, hx⟩⟩
   simp only [Finset.prod_ne_zero_iff, ne_eq, geom_sum_eq_zero_iff_pow_eq_one hx]
+
+/-- The `x`-integer of a product factors as `[m n]_x = [m]_x [n]_{x ^ m}`, in any semiring:
+`∑_{i < m n} x ^ i = (∑_{i < m} x ^ i) (∑_{j < n} (x ^ m) ^ j)`. -/
+theorem geom_sum_range_mul {R : Type*} [Semiring R] (x : R) (m n : ℕ) :
+    ∑ i ∈ range (m * n), x ^ i = (∑ i ∈ range m, x ^ i) * ∑ j ∈ range n, (x ^ m) ^ j := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Nat.mul_add_one, sum_range_add, ih, sum_range_succ, mul_add, ← pow_mul, sum_mul _ _ (x ^ _)]
+    simp only [add_comm (m * n), pow_add]
 
 end TauCeti
