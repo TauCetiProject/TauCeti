@@ -61,6 +61,9 @@ Neither normality nor a separation axiom is needed.
   space of a finite-group quotient covering over a compact base is compact.
 * `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
   and on its translates.
+* `IsQuotientCoveringMap.injOn_of_disjoint`, `IsQuotientCoveringMap.injOn_smul`: the quotient
+  covering map is injective on a set disjoint from its nontrivial translates, and injectivity on a
+  set passes to its translates.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
   isomorphic to `G` acting compatibly.
 * `AddSubgroup.isAddQuotientCoveringMap_quotientMk`: the orbit projection for translation by a
@@ -142,6 +145,22 @@ theorem _root_.IsQuotientCoveringMap.image_smul_set (hq : IsQuotientCoveringMap 
     (s : Set E) : q '' (g • s) = q '' s := by
   rw [← Set.image_smul, Set.image_image]
   simp_rw [hq.map_smul]
+
+/-- A quotient covering map is injective on a set that is disjoint from its nontrivial
+translates. -/
+theorem _root_.IsQuotientCoveringMap.injOn_of_disjoint (hq : IsQuotientCoveringMap q G)
+    {U : Set E} (hU : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) : Set.InjOn q U := by
+  intro a ha b hb hab
+  obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
+  obtain rfl := hU k ⟨_, ⟨b, hb, rfl⟩, ha⟩
+  simp
+
+/-- If a quotient covering map is injective on a set, then it is injective on every translate of
+that set, since `q (g • x) = q x`. -/
+theorem _root_.IsQuotientCoveringMap.injOn_smul (hq : IsQuotientCoveringMap q G) {S : Set E}
+    (hS : Set.InjOn q S) (g : G) : Set.InjOn q (g • S) := by
+  rw [← Set.image_smul]
+  exact Set.InjOn.image_of_comp (by simpa [Function.comp_def, hq.map_smul] using hS)
 
 /-- **Openness in a quotient covering map is detected on a single translate.** A subset `W` of the
 image of `U` is open as soon as the part of its preimage lying in `U` is open, because the whole
