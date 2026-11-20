@@ -619,6 +619,14 @@ theorem quotientCoeff_def : quotientCoeff N = (QuotientGroup.mk' N).comp inl := 
 @[simp]
 theorem quotientCoeff_apply (g : G) : quotientCoeff N g = ((inl g : GX G X) : GX G X ⧸ N) := (rfl)
 
+variable {N} in
+/-- A `G`-homomorphism out of `G[X] ⧸ N` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `quotientCoeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} (φ : GHom (quotientCoeff N) κ) (g : G) :
+    φ ((inl g : GX G X) : GX G X ⧸ N) = κ g :=
+  φ.map_coeff g
+
 variable {N}
 
 /-- A `G`-homomorphism `G[X] ⧸ N → H`, composed with the quotient map, restricts to `ι` on the
@@ -733,6 +741,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff ι S g = ((inl g : GX G X) : CoordGroup ι S) := (rfl)
+
+/-- A `G`-homomorphism out of the coordinate group sends the class of a coefficient to its image. It
+is the simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff ι S) κ)
+    (g : G) : φ ((inl g : GX G X) : CoordGroup ι S) = κ g :=
+  φ.map_coeff g
 
 variable (v) in
 /-- Evaluation at a solution `v` of `S` in `H`, as a `G`-homomorphism `G_{R(S)} → H`. -/
@@ -1020,6 +1035,13 @@ theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
     coeff S g = ((inl g : GX G X) : SystemGroup G S) := (rfl)
+
+/-- A `G`-homomorphism out of `G_S` sends the class of a coefficient to its image. It is the
+simp-normal form of `GHom.map_coeff` once `coeff_apply` has rewritten the coefficient. -/
+@[simp]
+theorem map_mk_inl {K : Type*} [Group K] {κ : G →* K} {S : Set (GX G X)} (φ : GHom (coeff S) κ)
+    (g : G) : φ ((inl g : GX G X) : SystemGroup G S) = κ g :=
+  φ.map_coeff g
 
 variable (ι) in
 /-- The canonical surjection `G_S →* G_{R(S)}`, a `G`-homomorphism. -/
