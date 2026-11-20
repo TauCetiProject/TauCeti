@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Prod
 public import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Morse.Submersion
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Morse functions of the fibre coordinate on mapping tori
@@ -125,8 +126,8 @@ theorem ker_criticalHessian_mk_le_of_forall_mk_eq [I.Boundaryless] {t : ℝ} {x 
   have hker := ((isLocalDiffeomorph_uncurry_mk φ (t, x)).isRegularPoint (by simp))
     |>.ker_criticalHessian_comp hf ((contMDiff_uncurry_mk φ (t, x)).of_le (by simp)) hcrit
   have hsnd : IsRegularPoint (𝓘(ℝ).prod I) I (Prod.snd : ℝ × M → M) (t, x) := by
-    rw [isRegularPoint_iff, mfderiv_snd]
-    exact fun w ↦ ⟨(0, w), rfl⟩
+    rw [isRegularPoint_iff]
+    exact fun w ↦ ⟨(0, w), mfderiv_snd_apply _ _⟩
   rw [comp_uncurry_mk_eq_comp_snd φ hfg,
     hsnd.ker_criticalHessian_comp hx.contMDiffAt contMDiffAt_snd hx.mem_criticalPoints] at hker
   have hw : (Manifold.tangentSpaceProdEquiv (t, x)).symm (b, w) ∈ (criticalHessian I g
@@ -135,8 +136,7 @@ theorem ker_criticalHessian_mk_le_of_forall_mk_eq [I.Boundaryless] {t : ℝ} {x 
     exact hv
   have hsw : mfderiv (𝓘(ℝ).prod I) I Prod.snd (t, x)
       ((Manifold.tangentSpaceProdEquiv (t, x)).symm (b, w)) = w := by
-    rw [mfderiv_snd, Manifold.tangentSpaceProdEquiv_symm_apply]
-    rfl
+    rw [mfderiv_snd_apply, Manifold.tangentSpaceProdEquiv_symm_apply]
   have hw' : criticalHessian I g x w = 0 := by
     rw [Submodule.mem_comap, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hw
     -- `hw` is this statement at `(t, x).2 = x`, with `w` written as its image under `d Prod.snd`.
