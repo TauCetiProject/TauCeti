@@ -748,6 +748,15 @@ theorem pathWeight_nonneg {m : ℕ} (s : Fin (m + 1) → V) : 0 ≤ pathWeight G
   · exact ((hrs _).div (hrs _)).sq_nonneg
   · exact le_rfl
 
+omit [Fintype V] in
+include hr hrs in
+/-- For nonzero self-adjoint weights `r`, every walk from `v₀` has positive weight. -/
+theorem pathWeight_pos {m : ℕ} {s : Fin (m + 1) → V} (hs : G.IsWalkFrom v₀ s) :
+    0 < pathWeight G v₀ r s := by
+  rw [pathWeight_def, ite_eq_left hs]
+  have h := mul_star_self_pos_iff.2 (div_ne_zero (hr (s (Fin.last m))) (hr v₀))
+  rwa [((hrs _).div (hrs _)).star_eq, ← sq] at h
+
 include hrs in
 /-- **Positivity of the trace of the path model.** For self-adjoint weights `r`, the trace of the
 path model is nonnegative on every element of the form `x⋆ * x`. -/
@@ -906,15 +915,11 @@ theorem ker_walkRep (hδ : IsPathEigenvectorUpTo G v₀ r δ n) :
   rw [RingHom.mem_ker, LinearMap.mem_traceRadical]
   refine ⟨fun hx y ↦ by rw [pathTrace_eq_trace_walkRep, map_mul, hx, zero_mul, mul_zero,
     trace_zero], fun hx ↦ ?_⟩
-  -- Every walk has positive weight, so the weighted trace is faithful on squares.
-  have hw (s : {s : Fin (n + 1) → V // G.IsWalkFrom v₀ s}) : 0 < pathWeight G v₀ r s.1 := by
-    rw [pathWeight_def, ite_eq_left s.2]
-    have h := mul_star_self_pos_iff.2 (div_ne_zero (hr (s.1 (Fin.last n))) (hr v₀))
-    rwa [((hrs _).div (hrs _)).star_eq, ← sq] at h
   -- For `y` acting by the conjugate transpose of `x`, the trace of `x * y` is the weighted
   -- squared Hilbert–Schmidt norm of `(walkRep x)ᴴ`.
   obtain ⟨y, hy⟩ := (AlgHom.mem_range _).1 (conjTranspose_mem_range_walkRep hr hrs hδ x)
-  rw [← conjTranspose_eq_zero, ← trace_diagonal_mul_conjTranspose_mul_self_eq_zero_iff hw,
+  rw [← conjTranspose_eq_zero, ← trace_diagonal_mul_conjTranspose_mul_self_eq_zero_iff
+    fun s ↦ pathWeight_pos hr hrs s.2,
     conjTranspose_conjTranspose, ← hy, ← map_mul, ← pathTrace_eq_trace_walkRep]
   exact hx y
 
