@@ -19,7 +19,10 @@ is determined by its values on the coordinate vectors
 `‖f (1, 0)‖ + ‖f (0, 1)‖`
 (`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). The map
 `(x, y) ↦ (x, c • y)` on a product with `‖c‖ ≤ 1` is a contraction
-(`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`).
+(`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`). For an
+endomorphism `L` of `E × F`, each component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`
+(`ContinuousLinearMap.norm_apply_fst_sub_fst_le`, `ContinuousLinearMap.norm_apply_snd_sub_snd_le`),
+so `L` moves each coordinate of `v` little when it is close to the identity.
 -/
 
 public section
@@ -64,6 +67,16 @@ theorem norm_inl_comp_fst_add_smul_inr_comp_snd_le {c : 𝕜} (hc : ‖c‖ ≤ 
   refine max_le (norm_fst_le _ _ _) ?_
   rw [norm_smul]
   exact (mul_le_of_le_one_left (norm_nonneg _) hc).trans (norm_snd_le _ _ _)
+
+/-- The first component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_fst_sub_fst_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).1 - v.1‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_fst_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
+
+/-- The second component of `L v - v` has norm at most `‖L - 1‖ ‖v‖`. -/
+theorem norm_apply_snd_sub_snd_le (L : E × F →L[𝕜] E × F) (v : E × F) :
+    ‖(L v).2 - v.2‖ ≤ ‖L - 1‖ * ‖v‖ :=
+  (_root_.norm_snd_le ((L - 1) v)).trans ((L - 1).le_opNorm v)
 
 end ContinuousLinearMap
 
