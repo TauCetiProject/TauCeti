@@ -65,6 +65,8 @@ closed upper half-plane are read in `ℂ` in
 * `TauCeti.FiniteBundleAtlas.compactSpace`: a manifold with a finite bundle atlas is compact.
 * `TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`: the chart domains of a finite
   bundle atlas of a Hausdorff manifold have a shrinking.
+* `TauCeti.FiniteBundleAtlas.eq_of_forall_eqOn_coord`: a section is determined by its chart
+  expressions on the chart images.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
   coordinate change of the bundle; `TauCeti.FiniteBundleAtlas.coord_eq_coordChangeL_coord` is the
   same for charts of two different atlases.
@@ -281,6 +283,14 @@ theorem eq_of_coord_chart_eq {i : Fin A.n} {s t : ∀ x, V x} {x : M} (hx : x �
       ← (A.triv i).mk_proj_snd' (x := ⟨x, t x⟩) hb, h]
   exact TotalSpace.mk_inj.1 ((A.triv i).injOn ((A.triv i).mem_source.2 hb)
     ((A.triv i).mem_source.2 hb) himage)
+
+/-- **Sections are determined by their chart expressions.** Two sections whose chart expressions
+agree on the image of every chart are equal. -/
+theorem eq_of_forall_eqOn_coord {s t : ∀ x, V x}
+    (h : ∀ i, EqOn (A.coord i s) (A.coord i t) (A.image i)) : s = t :=
+  funext fun x ↦ by
+    obtain ⟨i, hx⟩ := A.exists_mem_dom x
+    exact A.eq_of_coord_chart_eq hx (h i (A.mem_image.2 ⟨x, hx, rfl⟩))
 
 theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).symm y ∈ A.dom i := by
   obtain ⟨x, hx, rfl⟩ := hy
