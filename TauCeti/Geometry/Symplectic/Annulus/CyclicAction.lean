@@ -107,14 +107,15 @@ private theorem generatingCorrespondence_neg_of_isStripGeneratingFunction {S : �
   · rw [CotangentBundle.generatingSource_snd]
     simp only
     rw [hcov (hS.hasDerivAt_left hp).fun_neg, neg_neg]
-    rfl
+    exact (CotangentBundle.fieldEquiv_snd_apply p u).symm
   · rw [CotangentBundle.generatingTarget_snd]
     simp only
     have h : -(1 : ℝ →L[ℝ] ℝ).smulRight (-(F p).2) = (1 : ℝ →L[ℝ] ℝ).smulRight (F p).2 := by
       ext
       simp
     rw [hcov (hS.hasDerivAt_right hp).fun_neg]
-    exact congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L u) h
+    exact (congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L u) h).trans
+      (CotangentBundle.fieldEquiv_snd_apply (F p) u).symm
 
 /-! ### Periodic chains and critical configurations -/
 
@@ -173,7 +174,8 @@ theorem exists_equiv_periodic_of_isStripGeneratingFunction {F : ZMod N → ℝ �
         mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ 𝓘(ℝ))
           (cyclicAction fun k z ↦ -S k z) q = 0)
     fun q ↦ by rw [cyclicAction_neg, mvfderiv_neg, neg_eq_zero]
-  refine ⟨(e₁.trans e₀).trans e₂, fun p k ↦ he₀ _ k, fun q k ↦ ?_⟩
+  refine ⟨(e₁.trans e₀).trans e₂, fun p k ↦ (he₀ _ k).trans (CotangentBundle.proj_fieldEquiv _),
+    fun q k ↦ ?_⟩
   have h : ((((e₁.trans e₀).trans e₂).symm q : ZMod N → ℝ × ℝ) k) =
       (fieldEquiv ℝ).symm (CotangentBundle.generatingSource 𝓘(ℝ) (fun z ↦ -S k z)
         (q.1 k, q.1 (k + 1))) :=

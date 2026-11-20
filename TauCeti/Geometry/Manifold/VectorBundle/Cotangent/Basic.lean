@@ -102,7 +102,7 @@ variable (𝕜) in
 /-- The covectors of the model line `𝕜` are the pairs `(x, y)`: the pair `(x, y)` is the covector
 `y dx` at `x`, and a covector at `x` is `y dx` for its value `y` on the unit tangent vector. The
 tangent lines of `𝕜` are `𝕜` by definition. -/
-@[expose] def fieldEquiv : 𝕜 × 𝕜 ≃ CotangentBundle 𝓘(𝕜) 𝕜 where
+def fieldEquiv : 𝕜 × 𝕜 ≃ CotangentBundle 𝓘(𝕜) 𝕜 where
   toFun p := TotalSpace.mk' (𝕜 →L[𝕜] 𝕜) p.1 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight p.2)
   invFun z := (z.proj, z.2 (1 : 𝕜))
   -- Both inverse laws are `1 • y = y`, the tangent lines of `𝕜` being `𝕜` by definition.
@@ -122,6 +122,7 @@ theorem fieldEquiv_snd_apply (p : 𝕜 × 𝕜) (v : 𝕜) :
     (fieldEquiv 𝕜 p).2 v = v * p.2 :=
   (rfl)
 
+@[simp]
 theorem fieldEquiv_symm_apply (z : CotangentBundle 𝓘(𝕜) 𝕜) :
     (fieldEquiv 𝕜).symm z = (z.proj, z.2 (1 : 𝕜)) :=
   (rfl)
