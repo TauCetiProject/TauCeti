@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Ext.QuotientRange
+public import TauCeti.Algebra.Module.Torsion.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Torsion
-public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Torsion
+public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Wang
+public import Mathlib.RingTheory.Ideal.Int
 
 /-!
 # The torsion of the second cohomology of a mapping torus

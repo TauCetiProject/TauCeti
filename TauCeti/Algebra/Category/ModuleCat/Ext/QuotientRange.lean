@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import TauCeti.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 public import TauCeti.Algebra.Homology.Ext.Presentation
 public import TauCeti.LinearAlgebra.Determinant.Basic
 public import TauCeti.LinearAlgebra.FreeModule.CardQuotient
@@ -32,7 +32,9 @@ For an endomorphism `f` of a finite free module over a principal ideal domain wi
 `Ext¹(P ⧸ range f, R)` has the cardinality of `R ⧸ (det f)`, the same as the cokernel
 `P ⧸ range f` itself (`LinearMap.card_ext_one_quotient_range_eq_card_quotient_span_det`,
 `LinearMap.card_ext_one_quotient_range_eq_card_quotient_range`). It is a torsion module, killed by
-`det f` (`LinearMap.isTorsion_ext_one_quotient_range`). Over `ℤ` the order of the finite group
+`det f`, which by Cramer's rule kills the cokernel `P ⧸ range f` and hence every
+`Extⁿ(P ⧸ range f, M)` (`LinearMap.det_smul_ext_quotient_range_eq_zero`,
+`LinearMap.isTorsion_ext_one_quotient_range`). Over `ℤ` the order of the finite group
 `Ext¹(P ⧸ range f, ℤ)` is `|det f|`. Through the universal coefficient theorem, this computes the
 torsion of a cohomology group from a presentation of the torsion of the homology one degree below.
 
@@ -45,8 +47,10 @@ torsion of a cohomology group from a presentation of the torsion of the homology
 * `LinearMap.card_ext_one_quotient_range_eq_card_quotient_span_det`: for an endomorphism `f` of a
   finite free module over a principal ideal domain with `det f ≠ 0`, `Ext¹(P ⧸ range f, R)` has
   the same `Nat.card` as `R ⧸ (det f)`.
-* `LinearMap.isTorsion_ext_one_quotient_range`: under the same hypotheses `Ext¹(P ⧸ range f, R)`
-  is a torsion module.
+* `LinearMap.det_smul_ext_quotient_range_eq_zero`: for an endomorphism `f` of a finite free
+  module, `det f` kills `Extⁿ(P ⧸ range f, M)`.
+* `LinearMap.isTorsion_ext_one_quotient_range`: over a domain with `det f ≠ 0`,
+  `Ext¹(P ⧸ range f, R)` is a torsion module.
 
 ## References
 
@@ -149,18 +153,23 @@ theorem card_ext_one_quotient_range_eq_card_quotient_range [IsPrincipalIdealRing
   rw [card_ext_one_quotient_range_eq_card_quotient_span_det hf,
     card_quotient_range_eq_card_quotient_span_det hf]
 
+omit [IsDomain R] in
+/-- For an endomorphism `f` of a finite free module, `det f` kills `Extⁿ(P ⧸ range f, M)` for every
+module `M`: by Cramer's rule (`LinearMap.det_smul_mem_range`) it annihilates `P ⧸ range f`. -/
+theorem det_smul_ext_quotient_range_eq_zero {M : ModuleCat.{w} R} {n : ℕ}
+    (x : Ext.{w} (ModuleCat.of R (P ⧸ range f)) M n) : f.det • x = 0 :=
+  Ext.smul_eq_zero_of_mem_annihilator_left (Module.mem_annihilator.2 fun y ↦ by
+    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
+    exact det_smul_mem_range f y) x
+
 /-- For an endomorphism `f` of a finite free module over a domain with `det f ≠ 0`,
-`Ext¹(P ⧸ range f, R)` is a torsion module: it is killed by `det f`. -/
+`Ext¹(P ⧸ range f, R)` is a torsion module: it is killed by `det f`
+(`LinearMap.det_smul_ext_quotient_range_eq_zero`). -/
 theorem isTorsion_ext_one_quotient_range (hf : f.det ≠ 0) :
-    Module.IsTorsion R (Ext.{w} (ModuleCat.of R (P ⧸ range f)) (ModuleCat.of R R) 1) := by
-  have htors : Module.IsTorsion R (Dual R P ⧸ range f.dualMap) := by
-    intro x
-    obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-    refine ⟨⟨f.det, mem_nonZeroDivisors_of_ne_zero hf⟩, ?_⟩
-    rw [Submonoid.smul_def, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
-    simpa only [det_dualMap] using det_smul_mem_range f.dualMap g
-  exact htors.of_injective (f := (extOneQuotientRangeEquiv (injective_of_det_ne_zero hf) :
-    _ →ₗ[R] _)) (extOneQuotientRangeEquiv _).injective
+    Module.IsTorsion R (Ext.{w} (ModuleCat.of R (P ⧸ range f)) (ModuleCat.of R R) 1) :=
+  fun x ↦ ⟨⟨f.det, mem_nonZeroDivisors_of_ne_zero hf⟩,
+    det_smul_ext_quotient_range_eq_zero x⟩
 
 end LinearMap
 
