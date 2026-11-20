@@ -33,6 +33,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 ## Main results
 
+* `ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq`: a continuous map locally
+  linear in preferred charts has the corresponding native manifold derivative, including corners.
+
 * `TauCeti.Manifold.mdifferentiableAt_iff_of_chartAt_eq`: manifold differentiability at a point
   depends only on the preferred chart at that point.
 * `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred chart at a point preserves
@@ -170,6 +173,22 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
   {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M']
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- A continuous map whose preferred coordinate expression agrees locally with a continuous
+linear map has that manifold derivative. The equality is only required within the source model. -/
+theorem ContinuousAt.hasMFDerivAt_of_writtenInExtChartAt_eventuallyEq
+    {f : M → M'} {x : M} (hf : ContinuousAt f x) (L : E →L[𝕜] E')
+    (hL : writtenInExtChartAt I I' x f =ᶠ[𝓝[range I] (extChartAt I x x)] L) :
+    HasMFDerivAt I I' f x L := by
+  refine ⟨hf, ?_⟩
+  have hd := L.hasFDerivAt.hasFDerivWithinAt.congr_of_eventuallyEq hL
+    (hL.eq_of_nhdsWithin ⟨chartAt H x x, rfl⟩)
+  -- HasMFDerivAt conjugates by the implementation's tangent-to-model casts. These casts
+  -- are identity maps on model vectors, so identify the continuous linear maps pointwise once.
+  convert hd using 1
+  ext v
+  rfl
 
 namespace TauCeti.Manifold
 
