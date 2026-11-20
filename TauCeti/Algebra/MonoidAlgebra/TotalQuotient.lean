@@ -142,7 +142,7 @@ by a proper ideal has characteristic zero. -/
 additive torsion by a proper ideal has characteristic zero. -/]
 theorem MonoidAlgebra.charZero_quotient_of_isFractionRing {I : Ideal K} (hI : I ≠ ⊤) :
     CharZero (K ⧸ I) :=
-  IsFractionRing.charZero_quotient (MonoidAlgebra R M) K
+  IsLocalization.charZero_quotient (MonoidAlgebra R M) K
     (fun _ ↦ TauCeti.natCast_mem_nonZeroDivisors) hI
 
 end CharZero
