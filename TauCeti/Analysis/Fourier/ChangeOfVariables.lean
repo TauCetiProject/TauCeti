@@ -22,11 +22,11 @@ Precomposing a function by a continuous real linear automorphism rescales its Fo
 by the inverse absolute determinant and precomposes it by the adjoint of the inverse. This is the
 change of coordinates needed to transport Fourier identities from the standard integer lattice
 to an arbitrary full lattice. For a dilation `x ↦ c • x` it reads
-`𝓕 (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕 f (c⁻¹ • y)` in dimension `n`, so that dilating a function does not
-change the `L¹` norm of its inverse Fourier transform and multiplies the moment
-`∫ ‖y‖ ^ s ‖𝓕⁻ f y‖` of order `s` of that inverse Fourier transform by `|c| ^ s`, while
-replacing `g` by `g (R⁻¹ • ·)`, `R > 0`, multiplies the `Lʳ` norm of its inverse Fourier transform
-by `R ^ (n - n / r)`.
+`𝓕 (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕 f (c⁻¹ • y)` in dimension `n`, for every real `c`. Hence, for
+`c ≠ 0`, dilating a function by `c` does not change the `L¹` norm of its inverse Fourier transform
+and multiplies the moment `∫ ‖y‖ ^ s ‖𝓕⁻ f y‖` of order `s` of that inverse Fourier transform by
+`|c| ^ s`, while for `R > 0` replacing `g` by `g (R⁻¹ • ·)` multiplies the `Lʳ` norm of its inverse
+Fourier transform by `R ^ (n - n / r)`.
 
 The Jacobian factor comes from Mathlib's
 `MeasureTheory.Measure.map_linearMap_addHaar_eq_smul_addHaar`. The formulas use the total Bochner
@@ -38,16 +38,16 @@ complex normed space, including Schwartz functions by coercion.
 * `ContinuousLinearEquiv.fourier_comp`: change of variables for the Fourier transform.
 * `ContinuousLinearEquiv.fourierInv_comp`: the corresponding inverse-transform formula.
 * `TauCeti.fourier_comp_smul`, `TauCeti.fourierInv_comp_smul`: the dilation formulas.
-* `TauCeti.support_fourier_comp_smul`: dilating a function by `c` dilates the support of its
-  Fourier transform by `c`.
+* `TauCeti.support_fourier_comp_smul`: for `c ≠ 0`, dilating a function by `c` dilates the
+  support of its Fourier transform by `c`.
 * `TauCeti.integral_norm_rpow_mul_norm_fourierInv_comp_smul`,
-  `TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul`: dilation by `c` multiplies the
-  moment of order `s` of the inverse Fourier transform by `|c| ^ s`, for real `s` and for natural
-  `s = k`.
-* `TauCeti.integral_norm_fourierInv_comp_smul`: dilation preserves the `L¹` norm of the inverse
-  Fourier transform.
-* `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: dilation rescales the `Lʳ` norm of the inverse
-  Fourier transform.
+  `TauCeti.integral_norm_pow_mul_norm_fourierInv_comp_smul`: for `c ≠ 0`, dilation by `c`
+  multiplies the moment of order `s` of the inverse Fourier transform by `|c| ^ s`, for real `s`
+  and for natural `s = k`.
+* `TauCeti.integral_norm_fourierInv_comp_smul`: dilation by `c ≠ 0` preserves the `L¹` norm of the
+  inverse Fourier transform.
+* `TauCeti.eLpNorm_fourierInv_comp_inv_smul`: for `R > 0`, replacing `g` by `g (R⁻¹ • ·)`
+  multiplies the `Lʳ` norm of the inverse Fourier transform by `R ^ (n - n / r)`.
 * `TauCeti.fourier_comp_sub_const`, `TauCeti.support_fourier_comp_sub_const`: translating a
   function by `a` multiplies its Fourier transform by the character `𝐞 (-⟪a, ·⟫)`, so the support
   of the Fourier transform does not change.
@@ -120,8 +120,8 @@ theorem fourier_comp_smul (f : E → F) (c : ℝ) (y : E) :
     simp_rw [hinner]
     rw [Measure.integral_comp_smul volume (fun x ↦ 𝐞 (-⟪x, c⁻¹ • y⟫) • f x), abs_inv]
 
-/-- **Frequencies of a dilation**: the Fourier transform of `f (c • ·)` is supported on the dilate
-`c • support (𝓕 f)` of the support of `𝓕 f`. -/
+/-- **Frequencies of a dilation**: for `c ≠ 0`, the Fourier transform of `f (c • ·)` is supported
+on the dilate `c • support (𝓕 f)` of the support of `𝓕 f`. -/
 theorem support_fourier_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
     Function.support (𝓕 (fun x ↦ f (c • x))) = c • Function.support (𝓕 f) := by
   ext y
@@ -134,8 +134,9 @@ theorem fourierInv_comp_smul (f : E → F) (c : ℝ) (y : E) :
     𝓕⁻ (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕⁻ f (c⁻¹ • y) := by
   simp only [Real.fourierInv_eq_fourier_neg, fourier_comp_smul f, smul_neg]
 
-/-- Dilating a function by `c` multiplies the moment of order `s` of its inverse Fourier transform
-by `|c| ^ s`: `∫ ‖y‖ ^ s ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ s ∫ ‖y‖ ^ s ‖𝓕⁻ f y‖`, for every real `s`. -/
+/-- Dilating a function by `c ≠ 0` multiplies the moment of order `s` of its inverse Fourier
+transform by `|c| ^ s`: `∫ ‖y‖ ^ s ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ s ∫ ‖y‖ ^ s ‖𝓕⁻ f y‖`, for every
+real `s`. -/
 theorem integral_norm_rpow_mul_norm_fourierInv_comp_smul (f : E → F) (s : ℝ) {c : ℝ}
     (hc : c ≠ 0) :
     ∫ y, ‖y‖ ^ s * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = |c| ^ s * ∫ y, ‖y‖ ^ s * ‖𝓕⁻ f y‖ := by
@@ -151,14 +152,14 @@ theorem integral_norm_rpow_mul_norm_fourierInv_comp_smul (f : E → F) (s : ℝ)
     smul_eq_mul]
   field_simp
 
-/-- Dilating a function by `c` multiplies the `k`-th moment of its inverse Fourier transform by
-`|c| ^ k`: `∫ ‖y‖ ^ k ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ k ∫ ‖y‖ ^ k ‖𝓕⁻ f y‖`. -/
+/-- Dilating a function by `c ≠ 0` multiplies the `k`-th moment of its inverse Fourier transform
+by `|c| ^ k`: `∫ ‖y‖ ^ k ‖𝓕⁻ (f (c • ·)) y‖ = |c| ^ k ∫ ‖y‖ ^ k ‖𝓕⁻ f y‖`. -/
 theorem integral_norm_pow_mul_norm_fourierInv_comp_smul (f : E → F) (k : ℕ) {c : ℝ}
     (hc : c ≠ 0) :
     ∫ y, ‖y‖ ^ k * ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = |c| ^ k * ∫ y, ‖y‖ ^ k * ‖𝓕⁻ f y‖ := by
   simpa only [Real.rpow_natCast] using integral_norm_rpow_mul_norm_fourierInv_comp_smul f k hc
 
-/-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
+/-- Dilating a function by `c ≠ 0` does not change the `L¹` norm of its inverse Fourier transform:
 `∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
 theorem integral_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
     ∫ y, ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
