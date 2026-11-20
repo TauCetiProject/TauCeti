@@ -46,6 +46,8 @@ with the deformation.
 * `TauCeti.phamSkeleton k`: its subspace of points whose coordinate powers are real and
   nonnegative.
 * `TauCeti.phamInclusion k`: the inclusion of the skeleton into the fibre.
+* `TauCeti.fermatFiber.mulRoots` and `TauCeti.phamSkeleton.mulRoots`: multiplying each coordinate
+  of a point of the fibre or of the skeleton by a root of unity of its exponent.
 * `TauCeti.phamRetraction k hk`: the retraction of the fibre onto the skeleton.
 * `TauCeti.phamHomotopy k hk`: the homotopy from the identity of the fibre to the retraction
   followed by the inclusion, fixing the skeleton.
@@ -59,7 +61,7 @@ with the deformation.
   homotopy fix the skeleton.
 * `TauCeti.phamRetraction_comp_phamInclusion`: the retraction is a left inverse of the inclusion.
 * `TauCeti.phamHomotopy_apply_pow`: the deformation moves each coordinate power along a segment.
-* `TauCeti.phamHomotopy_apply_of_mul` and `TauCeti.phamRetraction_apply_of_mul`: the homotopy and
+* `TauCeti.phamHomotopy_apply_mulRoots` and `TauCeti.phamRetraction_mulRoots`: the homotopy and
   the retraction commute with multiplying the coordinates by roots of unity.
 * `TauCeti.phamStrongRetraction`: **Pham's equivariant strong deformation retraction** of the
   Fermat fibre onto its skeleton, for every positive exponent family.
@@ -103,6 +105,39 @@ def phamInclusion : C(phamSkeleton k, fermatFiber k) :=
 
 @[simp]
 theorem phamInclusion_apply (s : phamSkeleton k) : phamInclusion k s = s.val :=
+  (rfl)
+
+variable {k} in
+/-- Multiplying each coordinate `zᵢ` of a point of the Fermat fibre by a `kᵢ`-th root of unity
+`uᵢ`; this leaves every power `zᵢ ^ kᵢ` unchanged. -/
+def fermatFiber.mulRoots (z : fermatFiber k) (u : Fin n → ℂ) (hu : ∀ i, u i ^ k i = 1) :
+    fermatFiber k :=
+  ⟨fun i => u i * z.val i, by simpa [mul_pow, hu] using z.2⟩
+
+variable {k} in
+/-- The coordinates of `z.mulRoots u hu` are `uᵢ zᵢ`. -/
+@[simp]
+theorem fermatFiber.mulRoots_val (z : fermatFiber k) (u : Fin n → ℂ) (hu : ∀ i, u i ^ k i = 1) :
+    (z.mulRoots u hu).val = fun i => u i * z.val i :=
+  (rfl)
+
+variable {k} in
+/-- Multiplying each coordinate `zᵢ` of a point of the Pham skeleton by a `kᵢ`-th root of unity
+`uᵢ`; this leaves every power `zᵢ ^ kᵢ` unchanged, so the skeleton is preserved. -/
+def phamSkeleton.mulRoots (s : phamSkeleton k) (u : Fin n → ℂ) (hu : ∀ i, u i ^ k i = 1) :
+    phamSkeleton k :=
+  ⟨s.val.mulRoots u hu, fun i => by simpa [mul_pow, hu] using s.2 i⟩
+
+variable {k} in
+/-- Multiplying a point of the skeleton by roots of unity is computed in the fibre. -/
+@[simp]
+theorem phamSkeleton.mulRoots_val (s : phamSkeleton k) (u : Fin n → ℂ)
+    (hu : ∀ i, u i ^ k i = 1) : (s.mulRoots u hu).val = s.val.mulRoots u hu :=
+  (rfl)
+
+/-- The inclusion of the skeleton commutes with multiplying the coordinates by roots of unity. -/
+theorem phamInclusion_mulRoots (s : phamSkeleton k) {u : Fin n → ℂ} (hu : ∀ i, u i ^ k i = 1) :
+    phamInclusion k (s.mulRoots u hu) = (phamInclusion k s).mulRoots u hu :=
   (rfl)
 
 /-! ### The deformation on `Fin n → ℂ` -/
@@ -153,7 +188,7 @@ private theorem weight_le_norm {u : Fin n → ℂ} (hu : ∑ i, u i = 1) (i : Fi
 private theorem re_ratio_nonneg {u : Fin n → ℂ} (hu : ∑ i, u i = 1) {t : ℝ} (ht : t ∈ I)
     (i : Fin n) : 0 ≤ (ratio t u i).re := by
   have hw : 0 ≤ ((weight u i : ℂ) / u i).re := by
-    rw [div_re, ofReal_re, ofReal_im, zero_mul, zero_div, add_zero]
+    simp only [div_re, ofReal_re, ofReal_im, zero_mul, zero_div, add_zero]
     refine div_nonneg ?_ (normSq_nonneg _)
     simp only [weight, div_mul_eq_mul_div]
     refine div_nonneg ?_ (posMass_pos hu).le
@@ -202,7 +237,7 @@ private theorem sum_deform_pow (hk : ∀ i, k i ≠ 0) (t : ℝ) {z : Fin n → 
 private theorem norm_deform_le {t : ℝ} (ht : t ∈ I) {z : Fin n → ℂ}
     (hz : ∑ i, z i ^ k i = 1) (i : Fin n) : ‖deform k t z i‖ ≤ ‖z i‖ := by
   have hpos : (0 : ℝ) ≤ (k i : ℝ)⁻¹ := inv_nonneg.2 (Nat.cast_nonneg _)
-  have hexp : ((k i : ℂ)⁻¹) = (((k i : ℝ)⁻¹ : ℝ) : ℂ) := by push_cast; rfl
+  have hexp : ((k i : ℂ)⁻¹) = (((k i : ℝ)⁻¹ : ℝ) : ℂ) := by push_cast; ring
   rw [deform, norm_mul, hexp, norm_cpow_real]
   exact mul_le_of_le_one_right (norm_nonneg _)
     (Real.rpow_le_one (norm_nonneg _) (norm_ratio_le_one hz ht i) hpos)
@@ -253,25 +288,17 @@ private theorem deform_of_mul {u : Fin n → ℂ} (hu : ∀ i, u i ^ k i = 1) (t
 private theorem continuousAt_ratio {t : I} {z : fermatFiber k} {i : Fin n}
     (hu : z.val i ^ k i ≠ 0) :
     ContinuousAt (fun q : I × fermatFiber k => ratio q.1 (powers k q.2.val) i) (t, z) := by
-  have hpow : ∀ j, Continuous fun q : I × fermatFiber k => q.2.val j ^ k j := fun j =>
-    ((continuous_apply j).comp (continuous_subtype_val.comp continuous_snd)).pow _
-  have hmass : Continuous fun q : I × fermatFiber k => posMass (powers k q.2.val) :=
-    continuous_finsetSum _ fun j _ => (continuous_re.comp (hpow j)).max continuous_const
-  have hweight : ContinuousAt
-      (fun q : I × fermatFiber k => weight (powers k q.2.val) i) (t, z) :=
-    (((continuous_re.comp (hpow i)).max continuous_const).continuousAt).div
-      hmass.continuousAt (posMass_pos z.2).ne'
-  have ht : Continuous fun q : I × fermatFiber k => (q.1 : ℝ) :=
-    continuous_subtype_val.comp continuous_fst
-  exact ((continuous_ofReal.comp (continuous_const.sub ht)).continuousAt).add
-    ((continuous_ofReal.comp ht).continuousAt.mul
-      ((continuous_ofReal.continuousAt.comp hweight).div (hpow i).continuousAt hu))
+  have hz : ∀ j, Continuous fun q : I × fermatFiber k => q.2.val j := fun j =>
+    (continuous_apply j).comp (by fun_prop)
+  have hm : posMass (powers k z.val) ≠ 0 := (posMass_pos z.2).ne'
+  simp only [ratio, weight, posMass, powers] at hm ⊢
+  fun_prop (disch := dsimp only; assumption)
 
 /-- Each coordinate of the deformation is continuous on `I × X`. -/
 private theorem continuous_deform_apply (hk : ∀ i, k i ≠ 0) (i : Fin n) :
     Continuous fun q : I × fermatFiber k => deform k q.1 q.2.val i := by
   have hz : Continuous fun q : I × fermatFiber k => q.2.val i :=
-    (continuous_apply i).comp (continuous_subtype_val.comp continuous_snd)
+    (continuous_apply i).comp (by fun_prop)
   rw [continuous_iff_continuousAt]
   rintro ⟨t, z⟩
   by_cases h : z.val i = 0
@@ -347,7 +374,7 @@ theorem phamHomotopy_apply_pow (hk : ∀ i, k i ≠ 0) (t : I) (z : fermatFiber 
     (phamHomotopy k hk (t, z)).val i ^ k i =
       (1 - t) * z.val i ^ k i +
         t * ((max (z.val i ^ k i).re 0 / ∑ j, max (z.val j ^ k j).re 0 : ℝ) : ℂ) :=
-  by rw [phamHomotopy_apply_val]; exact deform_pow k hk t z.val i
+  by rw [phamHomotopy_apply_val, deform_pow k hk]; simp [weight, posMass, powers]
 
 /-- The retraction sends the coordinate powers `zᵢ ^ kᵢ` to the weights
 `max (re (zᵢ ^ kᵢ)) 0 / ∑ⱼ max (re (zⱼ ^ kⱼ)) 0`. -/
@@ -359,19 +386,21 @@ theorem phamRetraction_apply_pow (hk : ∀ i, k i ≠ 0) (z : fermatFiber k) (i 
 
 /-- **Equivariance of the homotopy**: multiplying each coordinate by a root of unity of its
 exponent commutes with Pham's homotopy at every time. -/
-theorem phamHomotopy_apply_of_mul (hk : ∀ i, k i ≠ 0) {u : Fin n → ℂ}
-    (hu : ∀ i, u i ^ k i = 1) (t : I) {z w : fermatFiber k} (hw : ∀ i, w.val i = u i * z.val i)
-    (i : Fin n) : (phamHomotopy k hk (t, w)).val i = u i * (phamHomotopy k hk (t, z)).val i := by
-  have hw' : w.val = fun j => u j * z.val j := funext hw
-  rw [phamHomotopy_apply_val, phamHomotopy_apply_val, hw', deform_of_mul k hu]
+theorem phamHomotopy_apply_mulRoots (hk : ∀ i, k i ≠ 0) {u : Fin n → ℂ}
+    (hu : ∀ i, u i ^ k i = 1) (t : I) (z : fermatFiber k) :
+    phamHomotopy k hk (t, z.mulRoots u hu) = (phamHomotopy k hk (t, z)).mulRoots u hu :=
+  Subtype.ext <| by
+    simp only [phamHomotopy_apply_val, fermatFiber.mulRoots_val]
+    exact funext (deform_of_mul k hu t z.val)
 
 /-- **Equivariance of the retraction**: multiplying each coordinate by a root of unity of its
 exponent commutes with Pham's retraction. -/
-theorem phamRetraction_apply_of_mul (hk : ∀ i, k i ≠ 0) {u : Fin n → ℂ}
-    (hu : ∀ i, u i ^ k i = 1) {z w : fermatFiber k} (hw : ∀ i, w.val i = u i * z.val i)
-    (i : Fin n) :
-    (phamRetraction k hk w).val.val i = u i * (phamRetraction k hk z).val.val i :=
-  phamHomotopy_apply_of_mul k hk hu 1 hw i
+theorem phamRetraction_mulRoots (hk : ∀ i, k i ≠ 0) {u : Fin n → ℂ}
+    (hu : ∀ i, u i ^ k i = 1) (z : fermatFiber k) :
+    phamRetraction k hk (z.mulRoots u hu) = (phamRetraction k hk z).mulRoots u hu :=
+  Subtype.ext <| Subtype.ext <| by
+    simp only [phamRetraction_apply_val, phamSkeleton.mulRoots_val, fermatFiber.mulRoots_val]
+    exact funext (deform_of_mul k hu 1 z.val)
 
 /-- **Pham's equivariant strong deformation retraction.** For every positive exponent family
 `k`, the Pham skeleton is a strong deformation retract of the Fermat fibre
@@ -387,7 +416,11 @@ theorem phamStrongRetraction (hk : ∀ i, k i ≠ 0) :
           ∀ (t : I) (z w : fermatFiber k), (∀ i, w.val i = u i * z.val i) →
             ∀ i, (H (t, w)).val i = u i * (H (t, z)).val i :=
   ⟨phamRetraction k hk, phamRetraction_comp_phamInclusion k hk, phamHomotopy k hk,
-    fun _ hu t _ _ hw i => phamHomotopy_apply_of_mul k hk hu t hw i⟩
+    fun u hu t z w hw i => by
+      obtain rfl : w = z.mulRoots u hu := Subtype.ext <| by
+        rw [fermatFiber.mulRoots_val]
+        exact funext hw
+      simp only [phamHomotopy_apply_mulRoots, fermatFiber.mulRoots_val]⟩
 
 /-! ### Positive levels -/
 
@@ -415,10 +448,10 @@ private theorem weightedScale_one (z : Fin n → ℂ) : weightedScale k 1 z = z 
   simp [weightedScale]
 
 private theorem continuous_weightedScale {X : Type*} [TopologicalSpace X] {s : X → ℝ}
-    {z : X → Fin n → ℂ} (hs : Continuous s) (hs0 : ∀ x, s x ≠ 0) (hz : Continuous z) :
-    Continuous fun x => weightedScale k (s x) (z x) :=
-  continuous_pi fun i => (continuous_ofReal.comp (hs.rpow_const fun x => Or.inl (hs0 x))).mul
-    ((continuous_apply i).comp hz)
+    {z : X → Fin n → ℂ} (hs : Continuous s) (hz : Continuous z) :
+    Continuous fun x => weightedScale k (s x) (z x) := by
+  unfold weightedScale
+  fun_prop
 
 /-- The value `∑ᵢ zᵢ ^ kᵢ` of the Fermat polynomial at a point of a positive level. -/
 private theorem sum_pow_eq_ofReal (z : fermatPositiveLevels k) :
@@ -443,9 +476,9 @@ private theorem sum_weightedScale_fiber_pow (hk : ∀ i, k i ≠ 0) {t : ℝ} (h
 private noncomputable def positiveLevel (z : fermatPositiveLevels k) : Ioi (0 : ℝ) :=
   ⟨(∑ i, z.val i ^ k i).re, z.2.2⟩
 
-private theorem continuous_positiveLevel : Continuous (positiveLevel k) :=
-  (continuous_re.comp (continuous_finsetSum _ fun i _ =>
-    ((continuous_apply i).comp continuous_subtype_val).pow _)).subtype_mk _
+private theorem continuous_positiveLevel : Continuous (positiveLevel k) := by
+  have h : Continuous fun z : Fin n → ℂ => (∑ i, z i ^ k i).re := by fun_prop
+  exact (h.comp continuous_subtype_val).subtype_mk _
 
 /-- Rescaling a point at the positive level `t` by `t⁻¹`, a point of the Fermat fibre. -/
 private noncomputable def toFermatFiber (hk : ∀ i, k i ≠ 0) (z : fermatPositiveLevels k) :
@@ -489,10 +522,10 @@ noncomputable def fermatPositiveLevelsHomeomorph (hk : ∀ i, k i ≠ 0) :
     have hl : Continuous fun z : fermatPositiveLevels k => (positiveLevel k z : ℝ) :=
       continuous_subtype_val.comp (continuous_positiveLevel k)
     exact (continuous_weightedScale k (hl.inv₀ fun z => ne_of_gt (positiveLevel k z).2)
-      (fun z => inv_ne_zero (ne_of_gt (positiveLevel k z).2)) continuous_subtype_val).subtype_mk _
+      continuous_subtype_val).subtype_mk _
   continuous_invFun :=
     (continuous_weightedScale k (continuous_subtype_val.comp continuous_snd)
-      (fun p => ne_of_gt p.2.2) (continuous_subtype_val.comp continuous_fst)).subtype_mk _
+      (continuous_subtype_val.comp continuous_fst)).subtype_mk _
 
 /-- The second component of `TauCeti.fermatPositiveLevelsHomeomorph` is the level
 `∑ᵢ zᵢ ^ kᵢ`. -/
