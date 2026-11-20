@@ -34,8 +34,8 @@ For a nonzero ratio `r` and `V = (r • ·) ⁻¹' Ω`, a function belongs to BV
 its pullback `x ↦ u (r • x)` belongs to BV on `V` (`TauCeti.memBV_comp_smul_iff`). On classes this
 gives the continuous linear equivalence `TauCeti.BV.compSmul : BV μ Ω ≃L[ℝ] BV μ V`, which
 multiplies the `L¹` norm by `|r| ^ (-n)` and the variation by `|r| ^ (1 - n)`
-(`TauCeti.BV.norm_compSmul`). It is not an isometry unless `|r| = 1`, since the two parts of the
-BV norm scale differently.
+(`TauCeti.BV.norm_compSmul`). In general it is not an isometry, since the two parts of the BV
+norm scale by different powers of `|r|`.
 
 The proof uses the divergence of a dilated test vector field and change of variables for an
 additive Haar measure; it does not require a derivative measure or boundary regularity.
@@ -255,11 +255,14 @@ theorem memBV_comp_smul_iff (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹
     simp only [lt_top_iff_ne_top, ne_eq, ENNReal.mul_eq_top, hc, ENNReal.ofReal_ne_top, false_and,
       or_false, not_false_eq_true, true_and]
 
-/-- Pulling a BV function back by a dilation of nonzero ratio gives a BV function on the preimage
-domain. -/
-theorem MemBV.comp_smul (hu : MemBV μ Ω u) (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
+/-- Pulling a BV function back by a dilation of nonzero ratio gives a BV function on any open
+domain that the dilation maps into the original domain. -/
+theorem MemBV.comp_smul (hu : MemBV μ Ω u) (hr : r ≠ 0) (hVO : MapsTo (fun x : E => r • x) V Ω) :
     MemBV μ V (fun x => u (r • x)) :=
-  (memBV_comp_smul_iff hr hVO).mpr hu
+  memBV_iff.mpr ⟨((memBV_comp_smul_iff (V := Opens.comap ⟨(r • ·), by fun_prop⟩ Ω) hr rfl).mpr
+      hu).integrableOn.mono_set (mapsTo_iff_subset_preimage.mp hVO),
+    (totalVariationOn_comp_smul_le hVO).trans_lt
+      (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hu.totalVariationOn_lt_top)⟩
 
 namespace BV
 
@@ -272,7 +275,8 @@ private theorem quasiMeasurePreserving_smul_restrict (hr : r ≠ 0)
 /-- Pull a BV class back by the dilation of ratio `r`. -/
 private def compSmulAux (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) (u : BV μ Ω) :
     BV μ V :=
-  ofFunction (fun x => u (r • x)) (u.memBV.comp_smul hr hVO)
+  ofFunction (fun x => u (r • x))
+    (u.memBV.comp_smul hr (mapsTo_iff_subset_preimage.mpr hVO.subset))
 
 private theorem coeFn_compSmulAux (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω)
     (u : BV μ Ω) :
@@ -370,22 +374,24 @@ theorem coeFn_compSmul (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω)
 
 /-- The dilation of the class of a BV function is the class of its dilation. -/
 theorem compSmul_ofFunction (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) (hu : MemBV μ Ω u) :
-    compSmul hr hVO (ofFunction u hu) = ofFunction (fun x => u (r • x)) (hu.comp_smul hr hVO) :=
+    compSmul hr hVO (ofFunction u hu) = ofFunction (fun x => u (r • x))
+      (hu.comp_smul hr (mapsTo_iff_subset_preimage.mpr hVO.subset)) :=
   ext <| by
     filter_upwards [coeFn_compSmul hr hVO (ofFunction u hu),
-      coeFn_ofFunction (fun x => u (r • x)) (hu.comp_smul hr hVO),
+      coeFn_ofFunction (fun x => u (r • x))
+        (hu.comp_smul hr (mapsTo_iff_subset_preimage.mpr hVO.subset)),
       (quasiMeasurePreserving_smul_restrict hr hVO).ae_eq_comp (coeFn_ofFunction u hu)]
       with x h₁ h₂ h₃
     simp only [Function.comp_apply] at h₃
     rw [h₁, h₂, h₃]
 
 /-- The inverse of the dilation by `r` is the dilation by `r⁻¹`. -/
-theorem compSmul_symm (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω)
-    (hOV : (Ω : Set E) = (r⁻¹ • ·) ⁻¹' V) :
-    (compSmul hr hVO).symm = compSmul (μ := μ) (inv_ne_zero hr) hOV := by
+theorem compSmul_symm (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
+    (compSmul hr hVO).symm = compSmul (μ := μ) (inv_ne_zero hr)
+      (by rw [hVO, preimage_smul_inv₀ hr, preimage_smul₀ hr, smul_inv_smul₀ hr]) := by
   refine ContinuousLinearEquiv.ext (funext fun v => (compSmul hr hVO).injective ?_)
   rw [ContinuousLinearEquiv.apply_symm_apply, compSmul_apply, compSmul_apply]
-  exact (compSmulAux_compSmulAux (inv_ne_zero hr) hr (inv_mul_cancel₀ hr) hOV hVO v).symm
+  exact (compSmulAux_compSmulAux (inv_ne_zero hr) hr (inv_mul_cancel₀ hr) _ hVO v).symm
 
 /-- Dilating a BV class by a nonzero ratio `r` multiplies its total variation by
 `|r| / |r| ^ n`, where `n` is the dimension. -/
