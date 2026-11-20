@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.Pi
+import TauCeti.Algebra.Algebra.IsUnit
 
 /-!
 # The filtration of the special fibre defined by a lattice
@@ -40,6 +41,8 @@ base change along any ring map `B → B'` for which `B'` also embeds in its coef
   `g ∈ GLₙ(B)`.
 * `Submodule.latticeFiltration_diagonalLattice`: `Fil^m (μ(ξ) Bⁿ)` consists of the vectors
   vanishing at every `i` with `m < k_i`.
+* `Submodule.latticeFiltration_map_diagonalLattice_eq`: `Fil^m (g μ(ξ) Bⁿ)` is the image under
+  `g mod ξ` of the coordinate subspace spanned by the `e_i` with `k_i ≤ m`.
 * `Submodule.finrank_latticeFiltration_map_diagonalLattice`: `Fil^m (g μ(ξ) Bⁿ)` has rank
   `#{i | k_i ≤ m}`.
 * `Submodule.exists_isCompl_latticeFiltration_map_diagonalLattice`: `Fil^m (g μ(ξ) Bⁿ)` is a
@@ -79,10 +82,9 @@ def latticeFiltration (Λ : Submodule B (n → K)) (hξ : IsUnit (algebraMap B K
     obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective c
     refine ⟨b • x, ?_, by ext; simp⟩
     convert Λ.smul_mem b hx using 1
-    ext i
-    simp only [Pi.smul_apply, smul_eq_mul, map_mul, Units.smul_def, Algebra.smul_def,
-      Pi.mul_apply, Pi.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-    ring
+    rw [smul_comm b]
+    exact congrArg _ (funext fun i ↦ (map_mul (algebraMap B K) b (x i)).trans
+      (Algebra.smul_def _ _).symm)
 
 @[simp]
 theorem mem_latticeFiltration {Λ : Submodule B (n → K)} {hξ : IsUnit (algebraMap B K ξ)}
@@ -99,23 +101,14 @@ theorem latticeFiltration_mono {Λ Λ' : Submodule B (n → K)} (h : Λ ≤ Λ')
   rintro _ ⟨x, hx, rfl⟩
   exact ⟨x, h hx, rfl⟩
 
-/-- For `a ≤ b`, the power `ξ ^ b` in `K` is `ξ ^ a` times the image of `ξ ^ (b - a)`. -/
-private theorem val_unit_zpow_of_le (hξ : IsUnit (algebraMap B K ξ)) {a b : ℤ} (h : a ≤ b) :
-    ((hξ.unit ^ b : Kˣ) : K) = (hξ.unit ^ a : Kˣ) * algebraMap B K (ξ ^ (b - a).toNat) := by
-  have hb : b = a + ((b - a).toNat : ℕ) := by omega
-  conv_lhs => rw [hb, zpow_add, zpow_natCast]
-  simp
-
 /-- **The filtration is increasing**: `Fil^m Λ ⊆ Fil^{m'} Λ` for `m ≤ m'`. -/
 theorem monotone_latticeFiltration (Λ : Submodule B (n → K)) (hξ : IsUnit (algebraMap B K ξ)) :
     Monotone (Λ.latticeFiltration hξ) := by
   rintro m m' h _ ⟨x, hx, rfl⟩
   refine ⟨x, ?_, rfl⟩
   convert Λ.smul_mem (ξ ^ (m' - m).toNat) hx using 1
-  ext i
-  simp only [Pi.smul_apply, Units.smul_def, val_unit_zpow_of_le hξ h, map_pow, smul_eq_mul,
-    Algebra.smul_def, Pi.mul_apply, Pi.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply]
-  ring
+  rw [Units.smul_def, Units.smul_def, hξ.val_unit_zpow_eq_mul_algebraMap_pow_of_le h, mul_smul,
+    algebraMap_smul, smul_comm]
 
 open Matrix
 
@@ -183,8 +176,8 @@ theorem latticeFiltration_diagonalLattice (hinj : Function.Injective (algebraMap
     obtain ⟨b, hb⟩ := mem_diagonalLattice.1 hx i
     have hx' : x i = ξ ^ (k i - m).toNat * b := by
       apply hinj
-      simp only [Pi.smul_apply, Units.smul_def, smul_eq_mul, val_unit_zpow_of_le hξ hi.le,
-        mul_assoc] at hb
+      simp only [Pi.smul_apply, Units.smul_def, smul_eq_mul,
+        hξ.val_unit_zpow_eq_mul_algebraMap_pow_of_le hi.le, mul_assoc] at hb
       simpa only [map_mul] using (Units.mul_right_inj _).1 hb
     dsimp only
     rw [hx', Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
@@ -199,7 +192,8 @@ theorem latticeFiltration_diagonalLattice (hinj : Function.Injective (algebraMap
       split_ifs with h
       · exact ⟨0, by simp⟩
       · refine ⟨ξ ^ (m - k i).toNat * x i, ?_⟩
-        simp [Units.smul_def, val_unit_zpow_of_le hξ (not_lt.1 h), mul_assoc]
+        simp [Units.smul_def, hξ.val_unit_zpow_eq_mul_algebraMap_pow_of_le (not_lt.1 h),
+          mul_assoc]
     · dsimp only
       split_ifs with h
       · simp [hy i h]
@@ -207,10 +201,11 @@ theorem latticeFiltration_diagonalLattice (hinj : Function.Injective (algebraMap
 
 variable [Fintype n] [DecidableEq n]
 
-/-- The filtration of `g μ(ξ) Bⁿ` is the image of the coordinate subspace of the `e_i` with
-`k i ≤ m` under the reduction of `g` modulo `ξ`, the linear automorphism of `(B ⧸ ξ)ⁿ` that
-Mathlib attaches to `GeneralLinearGroup.map (Ideal.Quotient.mk _) g`. -/
-private theorem latticeFiltration_map_diagonalLattice_eq
+/-- **The filtration of a translated diagonal lattice.** If `B → K` is injective, the filtration
+of `g μ(ξ) Bⁿ` is the image of the coordinate subspace of the `e_i` with `k i ≤ m` under the
+reduction of `g` modulo `ξ`, the linear automorphism of `(B ⧸ ξ)ⁿ` that Mathlib attaches to
+`GeneralLinearGroup.map (Ideal.Quotient.mk _) g`. -/
+theorem latticeFiltration_map_diagonalLattice_eq
     (hinj : Function.Injective (algebraMap B K)) (hξ : IsUnit (algebraMap B K ξ)) (g : GL n B)
     (k : n → ℤ) (m : ℤ) :
     ((diagonalLattice k hξ).map
@@ -278,10 +273,12 @@ theorem latticeFiltration_map_diagonalLattice_eq_span_image {B' K' : Type*} [Com
     (Ideal.span_singleton_le_iff_mem _ |>.2 (Ideal.mem_span_singleton_self _))
   set F : (n → B ⧸ Ideal.span {ξ}) → n → B' ⧸ Ideal.span {φ ξ} := fun v i ↦ φbar (v i)
   -- Reduction of `φ` intertwines the two reductions of `g`.
-  have hcomm : F ∘ (GeneralLinearGroup.toLin
-      (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ})) g)).toLinearEquiv =
-      (GeneralLinearGroup.toLin (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {φ ξ}))
-        (GeneralLinearGroup.map φ g))).toLinearEquiv ∘ F := by
+  have hcomm (v : n → B ⧸ Ideal.span {ξ}) : F (((GeneralLinearGroup.toLin
+      (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ})) g)).toLinearEquiv :
+        (n → B ⧸ Ideal.span {ξ}) →ₗ[B ⧸ Ideal.span {ξ}] _) v) =
+      ((GeneralLinearGroup.toLin (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {φ ξ}))
+        (GeneralLinearGroup.map φ g))).toLinearEquiv :
+          (n → B' ⧸ Ideal.span {φ ξ}) →ₗ[B' ⧸ Ideal.span {φ ξ}] _) (F v) := by
     -- Entrywise, reducing `g` modulo `ξ` and then applying `φbar` is reducing `φ g` modulo `φ ξ`.
     have hmat : (GeneralLinearGroup.map (Ideal.Quotient.mk (Ideal.span {ξ})) g :
         Matrix n n (B ⧸ Ideal.span {ξ})).map φbar =
@@ -289,11 +286,10 @@ theorem latticeFiltration_map_diagonalLattice_eq_span_image {B' K' : Type*} [Com
           (GeneralLinearGroup.map φ g) := by
       ext a b
       simp only [map_apply, GeneralLinearGroup.map_apply, φbar, Ideal.quotientMap_mk]
-    ext v i
-    simp only [F, Function.comp_apply, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+    ext i
+    simp only [F, LinearEquiv.coe_coe, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
       GeneralLinearGroup.toLin_apply, mulVecLin_apply, RingHom.map_mulVec, hmat, Function.comp_def]
   rw [latticeFiltration_map_diagonalLattice_eq hinj, latticeFiltration_map_diagonalLattice_eq hinj',
-    map_coe, ← Set.image_comp, LinearEquiv.coe_coe, hcomm, Set.image_comp,
-    ← LinearEquiv.coe_coe, span_image, span_image_map_pi_bot]
+    map_coe, Set.image_comm hcomm, span_image, span_image_map_pi_bot]
 
 end Submodule
