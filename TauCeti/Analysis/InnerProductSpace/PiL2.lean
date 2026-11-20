@@ -16,6 +16,7 @@ public import TauCeti.Algebra.BigOperators.Finset.Fiber
 public import TauCeti.Analysis.Normed.Lp.PiLp
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Fibrewise sums of Euclidean coordinates
@@ -37,9 +38,13 @@ Borel measurable structure on the scalar field.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
+* `EuclideanSpace.posDef_iff_of_forall_eq_sum_mul_sq`: a quadratic form that is diagonal in the
+  real Euclidean coordinates is positive definite exactly when all of its weights are positive.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
+* `EuclideanSpace.sq_add_sq_add_sq_of_mem_sphere`: the coordinates of a point of the unit sphere
+  of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
   over the vertices weighted by its coordinates, at distance at most `√(1 - ‖x‖ ^ 2)` from them.
 * `EuclideanSpace.abs_sub_sum_mul_basisFun_le_sqrt`: consequently a `K`-Lipschitz function at a
@@ -92,6 +97,19 @@ theorem measurableSet_setOf_forall_pos {ι : Type*} [Finite ι] :
   exact MeasurableSet.iInter fun i ↦
     measurableSet_lt (measurable_const (a := (0 : ℝ))) (by fun_prop)
 
+/-- A quadratic form `∑ i, w i * x i ^ 2` that is diagonal in the coordinates of real Euclidean
+space is positive definite exactly when all of its weights are positive. This is
+`QuadraticMap.posDef_weightedSumSquares_iff` read in Euclidean coordinates. -/
+theorem posDef_iff_of_forall_eq_sum_mul_sq {ι : Type*} [Fintype ι]
+    {Q : QuadraticForm ℝ (EuclideanSpace ℝ ι)} {w : ι → ℝ} (hQ : ∀ x, Q x = ∑ i, w i * x i ^ 2) :
+    Q.PosDef ↔ ∀ i, 0 < w i := by
+  have hQ' : Q = (QuadraticMap.weightedSumSquares ℝ w).comp
+      (WithLp.linearEquiv 2 ℝ (ι → ℝ)).toLinearMap :=
+    QuadraticMap.ext fun x ↦ by simp [hQ, QuadraticMap.weightedSumSquares_apply, sq]
+  rw [← QuadraticMap.posDef_weightedSumSquares_iff, hQ']
+  refine ⟨fun h x hx ↦ ?_, fun h ↦ h.comp _ (WithLp.linearEquiv 2 ℝ (ι → ℝ)).injective⟩
+  simpa using h (WithLp.toLp 2 x) (by simpa using hx)
+
 variable {𝕜 : Type*} {ι : Type*} [Fintype ι]
 
 /-- The square root of the dimension of a nonzero Euclidean space is positive. -/
@@ -104,6 +122,13 @@ theorem toLp_mem_sphere_zero_one_iff {v : ι → ℝ} :
     WithLp.toLp 2 v ∈ Metric.sphere (0 : EuclideanSpace ℝ ι) 1 ↔ v ⬝ᵥ v = 1 := by
   rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
     ← real_inner_self_eq_norm_sq, inner_toLp_toLp, star_trivial]
+
+/-- The coordinates of a point of the unit sphere of `ℝ³` satisfy `x₀² + x₁² + x₂² = 1`. -/
+theorem sq_add_sq_add_sq_of_mem_sphere {x : EuclideanSpace ℝ (Fin 3)}
+    (hx : x ∈ Metric.sphere (0 : EuclideanSpace ℝ (Fin 3)) 1) :
+    x 0 ^ 2 + x 1 ^ 2 + x 2 ^ 2 = 1 := by
+  have h : ‖x‖ ^ 2 = 1 := by rw [mem_sphere_zero_iff_norm.1 hx, one_pow]
+  rwa [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three] at h
 
 /-- For a vector `x` whose coordinates sum to one, the `x`-weighted mean squared distance from
 `x` to the standard basis vectors is `1 - ‖x‖ ^ 2`. -/
