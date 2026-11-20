@@ -521,7 +521,8 @@ The identity combines them without division, which is the integral step needed i
   degree `n` contains the degree-`n` coefficient of `-r`.
 * `TauCeti.ringChooseSpan_neg`: negation leaves the integral span unchanged.
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
-* `TauCeti.Ring.add_one_nsmul_multichoose_add_one`: the product recursion
+* `TauCeti.Ring.add_one_nsmul_choose_add_one` and `TauCeti.Ring.add_one_nsmul_multichoose_add_one`:
+  the product recursions `(k + 1) (r choose (k + 1)) = (r choose k) (r - k)` and
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
 
 ## References
@@ -568,6 +569,17 @@ theorem mul_weighted_choose_add_mul_choose (r c : R) (k : ℕ) :
   rw [hpascal]
   rw [mul_add]
   abel
+
+/-- The product recursion for binomial coefficients:
+
+```text
+(k + 1) (r choose (k + 1)) = (r choose k) (r - k).
+```
+-/
+theorem add_one_nsmul_choose_add_one (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose r (k + 1) = _root_.Ring.choose r k * (r - k) := by
+  simpa [Nat.choose_succ_self_right] using
+    _root_.Ring.choose_smul_choose r (n := k + 1) (k := k) (Nat.le_succ k)
 
 end WeightedPascal
 
