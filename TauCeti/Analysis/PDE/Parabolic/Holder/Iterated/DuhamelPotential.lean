@@ -37,7 +37,7 @@ The fields of `w` are computed from the order-two theory.
   `∂ₜ^r D_x^m w = D^m Δ^r w + ∑_{i < r} D^m Δ^(r-1-i) ∂ₜ^i f`
   (`TauCeti.ParabolicCkHolderSpace.mixedDerivL_heatDuhamelPotentialL`). The derivatives of
   iterated Laplacians are contractions of higher derivatives
-  (`TauCeti.iteratedFDeriv_iterate_laplacian`), so `D^m Δ^r w` is a contraction of
+  (`ContDiff.iteratedFDeriv_iterate_laplacian`), so `D^m Δ^r w` is a contraction of
   `D_x^(m + 2r) w`, and `D^m Δ^(r-1-i) ∂ₜ^i f` one of the field `∂ₜ^i D_x^(m+2(r-1-i)) f` of `f`,
   of order `2r + m - 2`. Contractions are continuous linear, so the boundedness and the Hölder
   conditions of the fields of `w` at the two top orders `k + 2` and `k + 1` come from those of
@@ -51,6 +51,7 @@ supremum of `f`.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL`: the Duhamel potential as a continuous
   linear map `C_{par,b}^{k+α}(E × [0, T]) → C_{par,b}^{k+2+α}(E × [0, T])`.
 * `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply`: its values.
+* `TauCeti.ParabolicCkHolderSpace.heatDuhamelPotentialL_apply_slabMk_zero`: its zero initial value.
 * `TauCeti.ParabolicCkHolderSpace.mixedDerivL_heatDuhamelPotentialL`: its fields.
 * `TauCeti.ParabolicCkHolderSpace.equivParabolicC2HolderSpace_heatDuhamelPotentialL`: agreement
   with the order-two Duhamel operator.
@@ -103,6 +104,39 @@ local instance instNormedSpaceHessian (n : ℕ) :
     NormedSpace ℝ (E →L[ℝ] E →L[ℝ] E [×n]→L[ℝ] F) :=
   inferInstance
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+/-- Left currying of an `(n + 1)`-multilinear map by the currying equivalence is `curryLeft`. -/
+private theorem continuousMultilinearCurryLeftEquiv_eq_curryLeft {n : ℕ}
+    (A : E [×(n + 1)]→L[ℝ] F) :
+    continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (n + 1) ↦ E) F A = A.curryLeft := by
+  ext x v
+  rw [continuousMultilinearCurryLeftEquiv_apply, ContinuousMultilinearMap.curryLeft_apply]
+
+/-- A continuous linear map applied after a Hölder function is Hölder with the same exponent, the
+constant multiplied by the operator norm. -/
+private theorem holderWith_continuousLinearMap_comp {X G G' : Type*} [PseudoEMetricSpace X]
+    [SeminormedAddCommGroup G] [NormedSpace ℝ G] [SeminormedAddCommGroup G'] [NormedSpace ℝ G']
+    (L : G →L[ℝ] G') {C r : ℝ≥0} {g : X → G} (h : HolderWith C r g) :
+    HolderWith (‖L‖₊ * C) r fun x ↦ L (g x) := by
+  have h' := (holderWith_one.2 L.lipschitzWith).comp h
+  rwa [NNReal.coe_one, NNReal.rpow_one, one_mul, Function.comp_def] at h'
+
+omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+/-- For `g` of class `C^(m + 2a + 1)`, the derivative of `D^m Δ^[a] g` is `D^(m+1) Δ^[a] g`, curried
+on the left. -/
+private theorem hasFDerivAt_iteratedFDeriv_iterate_laplacian {g : E → F} {m a : ℕ}
+    (hg : ContDiff ℝ (m + 2 * a + 1) g) (x : E) :
+    HasFDerivAt (iteratedFDeriv ℝ m (Δ^[a] g))
+      (iteratedFDeriv ℝ (m + 1) (Δ^[a] g) x).curryLeft x := by
+  have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ m (Δ^[a] g)) x := by
+    rw [funext (ContDiff.iteratedFDeriv_iterate_laplacian
+      (hg.of_le (Nat.cast_le.2 (Nat.le_succ _))))]
+    exact (iteratedTraceLastTwoL E F a m).differentiableAt.comp x
+      (hg.differentiable_iteratedFDeriv (Nat.cast_lt.2 (Nat.lt_succ_self _)) x)
+  have h := hd.hasFDerivAt
+  rwa [fderiv_iteratedFDeriv, Function.comp_apply,
+    continuousMultilinearCurryLeftEquiv_eq_curryLeft] at h
+
 section Fields
 
 variable (hα₀ : 0 < α) (hα₁ : α < 1) (f : ParabolicCkHolderSpace k α E F hT)
@@ -143,9 +177,9 @@ private theorem hasFDerivAt_potential {j : ℕ} (h : j < k) (t : Icc (0 : ℝ) T
       (fun x ↦ ParabolicC2HolderSpace.timeExtension T.coe_nonneg (forcing hα₁ f j) x s)
       (L (ParabolicC2HolderSpace.timeExtension T.coe_nonneg (forcing hα₁ f (j + 1)) y s)) y := by
     intro s y
-    simp only [ParabolicC2HolderSpace.timeExtension_def, forcing_apply hα₁ f h.le,
-      forcing_apply hα₁ f (Nat.succ_le_of_lt h)]
-    -- The left-currying equivalence applied to a map is `curryLeft` by definition.
+    simp only [L, ParabolicC2HolderSpace.timeExtension_def, forcing_apply hα₁ f h.le,
+      forcing_apply hα₁ f (Nat.succ_le_of_lt h), LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      continuousMultilinearCurryLeftEquiv_eq_curryLeft]
     exact f.hasFDerivAt_mixedDerivL (by omega) _ y
   have hc : ∀ s : ℝ, Continuous fun y ↦
       L (ParabolicC2HolderSpace.timeExtension T.coe_nonneg (forcing hα₁ f (j + 1)) y s) :=
@@ -201,6 +235,12 @@ private def curryTwo : (E →L[ℝ] E →L[ℝ] E [×k]→L[ℝ] F) →L[ℝ] E 
     (ContinuousLinearMap.compL ℝ E (E →L[ℝ] E [×k]→L[ℝ] F) (E [×(k + 1)]→L[ℝ] F)
       (curryOne k E F : (E →L[ℝ] E [×k]→L[ℝ] F) →L[ℝ] _))
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
+private theorem curryTwo_apply (A : E →L[ℝ] E →L[ℝ] E [×k]→L[ℝ] F) :
+    curryTwo k E F A = (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 2) ↦ E) F).symm
+      ((curryOne k E F : (E →L[ℝ] E [×k]→L[ℝ] F) →L[ℝ] _).comp A) :=
+  (rfl)
+
 /-- The derivative of order `k + 1` of `w(t, ·)` is the gradient of the potential of `D_x^k f`. -/
 private theorem iteratedFDeriv_slice_succ (t : Icc (0 : ℝ) T) (y : E) :
     iteratedFDeriv ℝ (k + 1) (slice hα₀ hα₁ f t) y =
@@ -225,8 +265,7 @@ private theorem iteratedFDeriv_slice_succ_succ (t : Icc (0 : ℝ) T) (y : E) :
         (ParabolicC2HolderSpace.spatialSecondFDerivL (potential hα₀ hα₁ f k) (slabMk y t))) y :=
     (curryOne k E F).toContinuousLinearEquiv.hasFDerivAt.comp y
       ((potential hα₀ hα₁ f k).hasSpatialSecondFDerivAt t y)
-  rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, h, hd.fderiv]
-  rfl
+  rw [iteratedFDeriv_succ_eq_comp_left, Function.comp_apply, h, hd.fderiv, curryTwo_apply]
 
 private theorem continuous_slice_iteratedFDeriv {n : ℕ} (h : n ≤ k + 2) (t : Icc (0 : ℝ) T) :
     Continuous (iteratedFDeriv ℝ n (slice hα₀ hα₁ f t)) := by
@@ -279,8 +318,7 @@ private theorem exists_coe_eq_derivField {n : ℕ} (h : n ≤ k + 2) :
   · refine ⟨(curryOne k E F : _ →L[ℝ] _).compLeftContinuousBounded _
       (ParabolicC2HolderSpace.spatialFDerivL (potential hα₀ hα₁ f k)), funext fun p ↦ ?_⟩
     rw [← slabMk_space_slabTime p, derivField_slabMk, iteratedFDeriv_slice_succ,
-      ContinuousLinearMap.compLeftContinuousBounded_apply]
-    rfl
+      ContinuousLinearMap.compLeftContinuousBounded_apply, LinearIsometryEquiv.coe_coe'']
   · refine ⟨(curryTwo k E F).compLeftContinuousBounded _
       (ParabolicC2HolderSpace.spatialSecondFDerivL
         (potential hα₀ hα₁ f k)).toBoundedContinuousFunction, funext fun p ↦ ?_⟩
@@ -318,7 +356,8 @@ private theorem heatField_slabMk {r m : ℕ} (h : m + 2 * r ≤ k + 2) (x : E)
     heatField hα₀ hα₁ f r m (slabMk x t) = iteratedFDeriv ℝ m (Δ^[r] (slice hα₀ hα₁ f t)) x := by
   rw [heatField, ContinuousLinearMap.compLeftContinuousBounded_apply,
     derivFieldBCF_apply hα₀ hα₁ f h, derivField_slabMk,
-    iteratedFDeriv_iterate_laplacian ((contDiff_slice hα₀ hα₁ f t).of_le (by exact_mod_cast h))]
+    ContDiff.iteratedFDeriv_iterate_laplacian
+      ((contDiff_slice hα₀ hα₁ f t).of_le (by exact_mod_cast h))]
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 private theorem forcingField_slabMk {m i a : ℕ} (h : 2 * i + (m + 2 * a) ≤ k) (x : E)
@@ -326,8 +365,9 @@ private theorem forcingField_slabMk {m i a : ℕ} (h : 2 * i + (m + 2 * a) ≤ k
     forcingField f m i a (slabMk x t) =
       iteratedFDeriv ℝ m (Δ^[a] fun y ↦ (mixedDerivL i 0 f (slabMk y t)).curry0) x := by
   rw [forcingField, ContinuousLinearMap.compLeftContinuousBounded_apply,
-    iteratedFDeriv_iterate_laplacian ((f.hasFTaylorSeriesUpTo_mixedDerivL i t).contDiff.of_le
-      (Nat.cast_le.2 (by omega : m + 2 * a ≤ k - 2 * i))),
+    ContDiff.iteratedFDeriv_iterate_laplacian
+      ((f.hasFTaylorSeriesUpTo_mixedDerivL i t).contDiff.of_le
+        (Nat.cast_le.2 (by omega : m + 2 * a ≤ k - 2 * i))),
     f.iteratedFDeriv_mixedDerivL_zero h]
 
 /-! ### Spatial derivatives of the fields -/
@@ -337,13 +377,8 @@ private theorem hasFDerivAt_heatField {r m : ℕ} (h : m + 2 * r + 1 ≤ k + 2) 
       (heatField hα₀ hα₁ f r (m + 1) (slabMk x t)).curryLeft x := by
   rw [funext fun y ↦ heatField_slabMk hα₀ hα₁ f (by omega) y t,
     heatField_slabMk hα₀ hα₁ f (by omega : m + 1 + 2 * r ≤ k + 2)]
-  have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ m (Δ^[r] (slice hα₀ hα₁ f t))) x := by
-    rw [funext (iteratedFDeriv_iterate_laplacian
-      ((contDiff_slice hα₀ hα₁ f t).of_le (by exact_mod_cast (by omega : m + 2 * r ≤ k + 2))))]
-    exact (iteratedTraceLastTwoL E F r m).differentiableAt.comp x
-      ((contDiff_slice hα₀ hα₁ f t).differentiable_iteratedFDeriv (by exact_mod_cast h) x)
-  -- The derivative of the `m`-th derivative is the `(m+1)`-th one, curried on the left.
-  exact hd.hasFDerivAt
+  exact hasFDerivAt_iteratedFDeriv_iterate_laplacian
+    ((contDiff_slice hα₀ hα₁ f t).of_le (by exact_mod_cast h)) x
 
 omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
 private theorem hasFDerivAt_forcingField {m i a : ℕ} (h : 2 * i + (m + 2 * a) + 1 ≤ k)
@@ -351,15 +386,9 @@ private theorem hasFDerivAt_forcingField {m i a : ℕ} (h : 2 * i + (m + 2 * a) 
       (forcingField f (m + 1) i a (slabMk x t)).curryLeft x := by
   rw [funext fun y ↦ forcingField_slabMk f (by omega) y t,
     forcingField_slabMk f (by omega : 2 * i + (m + 1 + 2 * a) ≤ k)]
-  have hc := (f.hasFTaylorSeriesUpTo_mixedDerivL i t).contDiff
-  have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ m
-      (Δ^[a] fun y ↦ (mixedDerivL i 0 f (slabMk y t)).curry0)) x := by
-    rw [funext (iteratedFDeriv_iterate_laplacian
-      (hc.of_le (Nat.cast_le.2 (by omega : m + 2 * a ≤ k - 2 * i))))]
-    exact (iteratedTraceLastTwoL E F a m).differentiableAt.comp x
-      (hc.differentiable_iteratedFDeriv (Nat.cast_lt.2 (by omega : m + 2 * a < k - 2 * i)) x)
-  -- The derivative of the `m`-th derivative is the `(m+1)`-th one, curried on the left.
-  exact hd.hasFDerivAt
+  exact hasFDerivAt_iteratedFDeriv_iterate_laplacian
+    ((f.hasFTaylorSeriesUpTo_mixedDerivL i t).contDiff.of_le
+      (Nat.cast_le.2 (by omega : m + 2 * a + 1 ≤ k - 2 * i))) x
 
 private theorem hasFDerivAt_field {r m : ℕ} (h : 2 * r + m + 1 ≤ k + 2) (t : Icc (0 : ℝ) T)
     (x : E) : HasFDerivAt (fun y ↦ field hα₀ hα₁ f r m (slabMk y t))
@@ -394,7 +423,7 @@ private theorem hasDerivWithinAt_derivFieldBCF {n : ℕ} (h : n ≤ k) (x : E) (
   have hΔ : Δ (fun y ↦ potential hα₀ hα₁ f n (slabMk y t)) x =
       traceLastTwoL E F n (derivFieldBCF hα₀ hα₁ f (n + 2) (slabMk x t)) := by
     rw [← funext (iteratedFDeriv_slice_of_le hα₀ hα₁ f h t), derivFieldBCF_apply hα₀ hα₁ f
-      (by omega), derivField_slabMk, laplacian_iteratedFDeriv_apply
+      (by omega), derivField_slabMk, ContDiff.laplacian_iteratedFDeriv_eq_traceLastTwoL
       ((contDiff_slice hα₀ hα₁ f t).of_le (by exact_mod_cast (by omega : n + 2 ≤ k + 2)))]
   have hd := (potential hα₀ hα₁ f n).hasTimeDerivWithinAt x t
   rw [potential, TauCeti.timeDerivL_heatDuhamelPotentialL_eq_laplacian_add, ← potential,
@@ -473,9 +502,7 @@ private theorem exists_holderWith_derivFieldBCF {n : ℕ} (hn : n = k + 1) :
     ∃ C, ∀ x : E, HolderWith C ((1 + α) / 2)
       fun t : Icc (0 : ℝ) T ↦ derivFieldBCF hα₀ hα₁ f n (slabMk x t) := by
   subst hn
-  refine ⟨‖((curryOne k E F).toContinuousLinearEquiv :
-      (E →L[ℝ] E [×k]→L[ℝ] F) →L[ℝ] E [×(k + 1)]→L[ℝ] F)‖₊ *
-    (timeEHolderNorm ((1 + α) / 2)
+  refine ⟨(timeEHolderNorm ((1 + α) / 2)
       (ParabolicC2HolderSpace.spatialFDerivL (potential hα₀ hα₁ f k) : _ → _)).toNNReal,
     fun x ↦ ?_⟩
   have hgrad : HolderWith
@@ -487,16 +514,13 @@ private theorem exists_holderWith_derivFieldBCF {n : ℕ} (hn : n = k + 1) :
     rw [ENNReal.coe_toNNReal (potential hα₀ hα₁ f k).timeEHolderNorm_spatialFDeriv_lt_top.ne]
     exact timeEHolderNorm_le_iff.1 le_rfl x t s
   have heq : (fun t : Icc (0 : ℝ) T ↦ derivFieldBCF hα₀ hα₁ f (k + 1) (slabMk x t)) =
-      fun t ↦ ((curryOne k E F).toContinuousLinearEquiv :
-        (E →L[ℝ] E [×k]→L[ℝ] F) →L[ℝ] E [×(k + 1)]→L[ℝ] F)
-        (ParabolicC2HolderSpace.spatialFDerivL (potential hα₀ hα₁ f k) (slabMk x t)) := by
+      curryOne k E F ∘ fun t ↦
+        ParabolicC2HolderSpace.spatialFDerivL (potential hα₀ hα₁ f k) (slabMk x t) := by
     funext t
-    rw [derivFieldBCF_apply hα₀ hα₁ f (by omega), derivField_slabMk,
+    rw [Function.comp_apply, derivFieldBCF_apply hα₀ hα₁ f (by omega), derivField_slabMk,
       iteratedFDeriv_slice_succ]
-    rfl
   rw [heq]
-  simpa [Function.comp_def] using (holderWith_one.2 ((curryOne k E F).toContinuousLinearEquiv :
-    (E →L[ℝ] E [×k]→L[ℝ] F) →L[ℝ] E [×(k + 1)]→L[ℝ] F).lipschitzWith).comp hgrad
+  exact (curryOne k E F).isometry.comp_holderWith hgrad
 
 /-- `D_x^(k+2) w`, the Hessian of the potential of `D_x^k f`, is parabolically `α`-Hölder. -/
 private theorem memHolder_derivFieldBCF {n : ℕ} (hn : n = k + 2) :
@@ -528,12 +552,10 @@ private theorem exists_holderWith_field {r m : ℕ} (h : 2 * r + m + 1 = k + 2) 
     fun x ↦ ?_⟩
   simp only [field, heatField, forcingField, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply,
     Finset.sum_apply, ContinuousLinearMap.compLeftContinuousBounded_apply]
-  refine HolderWith.add (by simpa [Function.comp_def] using (holderWith_one.2
-    (iteratedTraceLastTwoL E F r m).lipschitzWith).comp (hC x)) (HolderWith.sum fun i hi ↦ ?_)
+  refine HolderWith.add (holderWith_continuousLinearMap_comp _ (hC x))
+    (HolderWith.sum fun i hi ↦ ?_)
   have := Finset.mem_range.1 hi
-  simpa [Function.comp_def] using
-    (holderWith_one.2 (iteratedTraceLastTwoL E F (r - 1 - i) m).lipschitzWith).comp
-      (hforce i (r - 1 - i) (by omega) x)
+  exact holderWith_continuousLinearMap_comp _ (hforce i (r - 1 - i) (by omega) x)
 
 /-- At the order `k + 2`, the fields are parabolically `α`-Hölder. -/
 private theorem memHolder_field {r m : ℕ} (h : 2 * r + m = k + 2) :
@@ -544,9 +566,7 @@ private theorem memHolder_field {r m : ℕ} (h : 2 * r + m = k + 2) :
       fun p ↦ iteratedTraceLastTwoL E F (r - 1 - i) m (mixedDerivL i (m + 2 * (r - 1 - i)) f p) :=
     fun i hi ↦ by
       have := Finset.mem_range.1 hi
-      simpa [Function.comp_def] using
-        (holderWith_one.2 (iteratedTraceLastTwoL E F (r - 1 - i) m).lipschitzWith).comp
-          (f.memHolder_mixedDerivL (by omega)).holderWith
+      exact holderWith_continuousLinearMap_comp _ (f.memHolder_mixedDerivL (by omega)).holderWith
   have hfun : ⇑(field hα₀ hα₁ f r m) =
       (fun p ↦ iteratedTraceLastTwoL E F r m (derivFieldBCF hα₀ hα₁ f (m + 2 * r) p)) +
         fun p ↦ ∑ i ∈ Finset.range r,
@@ -557,9 +577,8 @@ private theorem memHolder_field {r m : ℕ} (h : 2 * r + m = k + 2) :
   rw [hfun]
   have hheat' : HolderWith (‖iteratedTraceLastTwoL E F r m‖₊ *
       nnHolderNorm α (derivFieldBCF hα₀ hα₁ f (m + 2 * r) : slab (E := E) 0 T → _)) α
-      fun p ↦ iteratedTraceLastTwoL E F r m (derivFieldBCF hα₀ hα₁ f (m + 2 * r) p) := by
-    simpa [Function.comp_def] using
-      (holderWith_one.2 (iteratedTraceLastTwoL E F r m).lipschitzWith).comp hheat
+      fun p ↦ iteratedTraceLastTwoL E F r m (derivFieldBCF hα₀ hα₁ f (m + 2 * r) p) :=
+    holderWith_continuousLinearMap_comp _ hheat
   exact ⟨_, hheat'.add (HolderWith.sum hforce)⟩
 
 /-! ### The potential in the space of order `k + 2` -/
@@ -691,6 +710,12 @@ theorem heatDuhamelPotentialL_apply (f : ParabolicCkHolderSpace k α E F hT)
       (fun s x ↦ ParabolicC2HolderSpace.timeExtension T.coe_nonneg f x s)
       (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space := by
   rw [heatDuhamelPotentialL_eq_potentialK, potentialK_apply_eq_heatDuhamelPotential]
+
+/-- **Zero initial value.** The Duhamel potential vanishes at the initial time `t = 0`. It is not
+a simp lemma because `simp` proves it from `heatDuhamelPotentialL_apply`. -/
+theorem heatDuhamelPotentialL_apply_slabMk_zero (f : ParabolicCkHolderSpace k α E F hT) (x : E) :
+    heatDuhamelPotentialL hα₀ hα₁ hT f (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) = 0 := by
+  simp
 
 /-- **The fields of the Duhamel potential.** For `2 r + m ≤ k + 2`, the field `∂ₜ^r D_x^m w` of
 the Duhamel potential `w` of `f` is

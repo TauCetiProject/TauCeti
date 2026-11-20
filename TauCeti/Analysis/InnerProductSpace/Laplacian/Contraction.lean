@@ -21,11 +21,11 @@ maps. It computes the derivatives of a Laplacian from those of the function: for
 
 `D^m (Δ f) x = traceLastTwoL (D^(m + 2) f x)`
 
-(`TauCeti.iteratedFDeriv_laplacian`), and since the Laplacian commutes with derivatives
+(`ContDiff.iteratedFDeriv_laplacian`), and since the Laplacian commutes with derivatives
 (`ContDiff.laplacian_iteratedFDeriv`), also `Δ (D^m f) x = traceLastTwoL (D^(m + 2) f x)`
-(`TauCeti.laplacian_iteratedFDeriv_apply`). Iterating, the `r`-fold contraction
+(`ContDiff.laplacian_iteratedFDeriv_eq_traceLastTwoL`). Iterating, the `r`-fold contraction
 `TauCeti.iteratedTraceLastTwoL r m` sends `D^(m + 2r) f x` to `D^m (Δ^[r] f) x`
-(`TauCeti.iteratedFDeriv_iterate_laplacian`).
+(`ContDiff.iteratedFDeriv_iterate_laplacian`).
 
 Being continuous and linear, the contraction carries bounds, continuity and Hölder estimates of
 `D^(m + 2r) f` over to `D^m (Δ^[r] f)`. This is how the time derivatives `∂ₜ^r D^m u = D^m Δ^r u`
@@ -65,7 +65,7 @@ theorem traceLastTwoL_apply {n : ℕ} (A : E [×(n + 2)]→L[ℝ] F) (v : Fin n 
 
 variable (E F) in
 /-- The `r`-fold contraction `traceLastTwoL`, from `(m + 2r)`-multilinear maps to `m`-multilinear
-maps: it sends `D^(m + 2r) f x` to `D^m (Δ^[r] f) x` (`TauCeti.iteratedFDeriv_iterate_laplacian`).
+maps: it sends `D^(m + 2r) f x` to `D^m (Δ^[r] f) x` (`ContDiff.iteratedFDeriv_iterate_laplacian`).
 -/
 def iteratedTraceLastTwoL : (r m : ℕ) → (E [×(m + 2 * r)]→L[ℝ] F) →L[ℝ] (E [×m]→L[ℝ] F)
   | 0, _ => ContinuousLinearMap.id ℝ _
@@ -83,7 +83,8 @@ theorem iteratedTraceLastTwoL_succ (r m : ℕ) :
 
 /-- **Derivatives of the Laplacian.** For `f` of class `C^(m + 2)`, the `m`-th derivative of
 `Δ f` is the contraction of the last two arguments of the `(m + 2)`-th derivative of `f`. -/
-theorem iteratedFDeriv_laplacian {f : E → F} {m : ℕ} (hf : ContDiff ℝ (m + 2) f) (x : E) :
+theorem _root_.ContDiff.iteratedFDeriv_laplacian {f : E → F} {m : ℕ} (hf : ContDiff ℝ (m + 2) f)
+    (x : E) :
     iteratedFDeriv ℝ m (Δ f) x = traceLastTwoL E F m (iteratedFDeriv ℝ (m + 2) f x) := by
   have hD : ContDiff ℝ m (fderiv ℝ (fderiv ℝ f)) :=
     (hf.fderiv_right (m := (m + 1 : ℕ)) (by norm_cast)).fderiv_right le_rfl
@@ -98,13 +99,14 @@ theorem iteratedFDeriv_laplacian {f : E → F} {m : ℕ} (hf : ContDiff ℝ (m +
 
 /-- **The Laplacian of a derivative.** For `f` of class `C^(m + 2)`, the Laplacian of `D^m f` is
 the contraction of the last two arguments of `D^(m + 2) f`. -/
-theorem laplacian_iteratedFDeriv_apply {f : E → F} {m : ℕ} (hf : ContDiff ℝ (m + 2) f) (x : E) :
+theorem _root_.ContDiff.laplacian_iteratedFDeriv_eq_traceLastTwoL {f : E → F} {m : ℕ}
+    (hf : ContDiff ℝ (m + 2) f) (x : E) :
     Δ (iteratedFDeriv ℝ m f) x = traceLastTwoL E F m (iteratedFDeriv ℝ (m + 2) f x) := by
-  rw [hf.laplacian_iteratedFDeriv, iteratedFDeriv_laplacian hf]
+  rw [hf.laplacian_iteratedFDeriv, hf.iteratedFDeriv_laplacian]
 
 /-- **Derivatives of iterated Laplacians.** For `f` of class `C^(m + 2r)`, the `m`-th derivative
 of `Δ^[r] f` is the `r`-fold contraction of the `(m + 2r)`-th derivative of `f`. -/
-theorem iteratedFDeriv_iterate_laplacian {f : E → F} {r m : ℕ}
+theorem _root_.ContDiff.iteratedFDeriv_iterate_laplacian {f : E → F} {r m : ℕ}
     (hf : ContDiff ℝ (m + 2 * r) f) (x : E) :
     iteratedFDeriv ℝ m (Δ^[r] f) x =
       iteratedTraceLastTwoL E F r m (iteratedFDeriv ℝ (m + 2 * r) f x) := by
@@ -113,7 +115,10 @@ theorem iteratedFDeriv_iterate_laplacian {f : E → F} {r m : ℕ}
   | succ r ih =>
     have hf' : ContDiff ℝ (m + 2 * r + 2) f := by simpa [mul_add, add_assoc] using hf
     rw [Function.iterate_succ_apply,
-      ih (hf'.laplacian (by norm_cast)), iteratedFDeriv_laplacian hf', iteratedTraceLastTwoL_succ]
+      ih (hf'.laplacian (by norm_cast)), hf'.iteratedFDeriv_laplacian, iteratedTraceLastTwoL_succ,
+      ContinuousLinearMap.comp_apply]
+    -- The two sides differ only in the order `m + 2 * (r + 1)` versus `m + 2 * r + 2`, which
+    -- agree definitionally (`Nat.mul_succ`, `Nat.add_assoc`); `rfl` unfolds that arithmetic.
     rfl
 
 end TauCeti
