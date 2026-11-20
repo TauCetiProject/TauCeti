@@ -32,9 +32,9 @@ public section
 open Metric Set
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι] {X Y : Type*}
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+  [SeminormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
   [CompleteSpace Y]
-  {Z : ι → Type*} [∀ i, NormedAddCommGroup (Z i)] [∀ i, NormedSpace 𝕜 (Z i)]
+  {Z : ι → Type*} [∀ i, SeminormedAddCommGroup (Z i)] [∀ i, NormedSpace 𝕜 (Z i)]
 
 /-- **Domination by compact operators.** A continuous linear map into a Banach space whose norm is
 bounded by a multiple of the sum of the norms of finitely many compact operators is compact. -/
