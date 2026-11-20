@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.RescaledDual
+public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Rescaled
 
 /-!
 # Supersingular K3 lattices and the bound on the Artin invariant
@@ -106,6 +106,12 @@ theorem sigPos_eq : L.sigPos = 1 := by
   simp only [signature, Prod.mk.injEq] at this
   exact this.1
 
+/-- The null index of a supersingular K3 lattice is `0`. -/
+theorem sigNull_eq : L.sigNull = 0 := by
+  have := h.signature_eq
+  simp only [signature, Prod.mk.injEq] at this
+  exact this.2.1
+
 /-- The negative index of inertia of a supersingular K3 lattice is `21`. -/
 theorem sigNeg_eq : L.sigNeg = 21 := by
   have := h.signature_eq
@@ -114,16 +120,12 @@ theorem sigNeg_eq : L.sigNeg = 21 := by
 
 /-- A supersingular K3 lattice has rank `22`. -/
 theorem finrank_eq : finrank ℚ V = 22 := by
-  have hsig := h.signature_eq
-  simp only [signature, Prod.mk.injEq] at hsig
-  rw [← L.signature_sum_eq_finrank, hsig.1, hsig.2.1, hsig.2.2]
+  rw [← L.signature_sum_eq_finrank, h.sigPos_eq, h.sigNull_eq, h.sigNeg_eq]
 
 /-- A supersingular K3 lattice is nondegenerate, its null index being `0`. -/
 theorem isNondegenerate : L.IsNondegenerate := by
-  have hsig := h.signature_eq
-  simp only [signature, Prod.mk.injEq] at hsig
   exact ⟨by_contra fun hnd ↦ by
-    simpa [hsig.2.1] using L.isDegenerate_iff_sigNull_pos.mp
+    simpa [h.sigNull_eq] using L.isDegenerate_iff_sigNull_pos.mp
       (L.isDegenerate_iff_not_nondegenerate.mpr hnd)⟩
 
 /-- **The determinant of a supersingular K3 lattice is `−p^{2σ}`**: its absolute value is the
@@ -144,7 +146,7 @@ theorem one_le : 1 ≤ σ := by
 
 /-- The characteristic of a supersingular K3 lattice is at least `2`: for `p ≤ 1` the order
 `p^{2σ}` of the discriminant group would be `0` or `1`. -/
-theorem one_lt : 1 < p := by
+theorem one_lt_char : 1 < p := by
   have := h.isNondegenerate
   have hσ := h.one_le
   have hcard := h.natCard_discriminantGroup_eq
@@ -162,7 +164,7 @@ determinant. -/
 theorem unique {τ : ℕ} (h' : L.IsSupersingularK3Lattice p τ) : σ = τ := by
   have hdet := h.determinant_eq.symm.trans h'.determinant_eq
   rw [neg_inj] at hdet
-  have := Nat.pow_right_injective h.one_lt (by exact_mod_cast hdet)
+  have := Nat.pow_right_injective h.one_lt_char (by exact_mod_cast hdet)
   omega
 
 /-- **The Artin invariant of a supersingular K3 lattice is at most `11`**: the discriminant group
@@ -171,7 +173,7 @@ theorem le_eleven : σ ≤ 11 := by
   have := h.isNondegenerate
   have hdvd := L.natCard_discriminantGroup_dvd_pow_finrank p h.nsmul_eq_zero
   rw [h.natCard_discriminantGroup_eq, h.finrank_eq] at hdvd
-  have := (Nat.pow_dvd_pow_iff_le_right h.one_lt).mp hdvd
+  have := (Nat.pow_dvd_pow_iff_le_right h.one_lt_char).mp hdvd
   omega
 
 /-- **The Artin invariant of a supersingular K3 lattice is at most `10`**, provided that at

@@ -24,7 +24,8 @@ boundary case `L = nLᵛ` of an `n`-elementary lattice reduces to a unimodular o
 Together with Milgram's theorem for even unimodular lattices this gives the congruence
 `t₊ − t₋ ≡ 0 (mod 8)` for every lattice of level dividing `n` whose discriminant group has order
 `n^r`. For odd `n`, an even lattice whose discriminant group is killed by `n` automatically has
-level dividing `n`, so that hypothesis is only a genuine restriction at `n = 2`. These are the
+level dividing `n` (`TauCeti.IntegralLattice.IsEven.level_dvd_of_odd`), so that hypothesis is a
+genuine restriction only for even `n` (among primes, only at `p = 2`). These are the
 boundary clauses of Nikulin's existence conditions for `p`-elementary lattices, and they are the
 lattice-theoretic step behind the bound on the Artin invariant of a supersingular K3 surface.
 
@@ -35,12 +36,10 @@ lattice-theoretic step behind the bound on the Artin invariant of a supersingula
   `L` divides `n`.
 * `TauCeti.IntegralLattice.isUnimodular_rescaledDual`: if `#A_L = n^r`, then `Lᵛ(n)` is
   unimodular.
-* `TauCeti.IntegralLattice.sigPos_rescaledDual`, `TauCeti.IntegralLattice.sigNeg_rescaledDual`:
-  for `n ≠ 0`, `Lᵛ(n)` has the positive and negative indices of `L`.
+* `TauCeti.IntegralLattice.signature_rescaledDual`: for `n ≠ 0`, `Lᵛ(n)` has the signature of
+  `L`; `sigPos_rescaledDual`, `sigNull_rescaledDual` and `sigNeg_rescaledDual` give its parts.
 * `TauCeti.IntegralLattice.eight_dvd_sigPos_sub_sigNeg_of_natCard_eq_pow_finrank`: if the level
   of `L` divides `n` and `#A_L = n^r`, then `8 ∣ t₊ − t₋`.
-* `TauCeti.IntegralLattice.IsEven.level_dvd_of_odd`: for odd `n`, an even lattice whose
-  discriminant group is killed by `n` has level dividing `n`.
 
 ## References
 
@@ -131,6 +130,19 @@ theorem sigNeg_rescaledDual (hn0 : n ≠ 0) : (L.rescaledDual n hn).sigNeg = L.s
   rw [← sigNeg_smul_of_pos (Int.natCast_pos.mpr (Nat.pos_of_ne_zero hn0)) L]
   simp only [IntegralLattice.sigNeg, rescaledDual_form, smul_form, Int.cast_natCast]
 
+/-- For `n ≠ 0`, the rescaled dual `Lᵛ(n)` has the null index of `L`. -/
+theorem sigNull_rescaledDual (hn0 : n ≠ 0) : (L.rescaledDual n hn).sigNull = L.sigNull := by
+  have h : (L.rescaledDual n hn).radical = ((n : ℤ) • L).radical := by
+    ext x
+    simp only [mem_radical_iff, rescaledDual_form, smul_form, Int.cast_natCast]
+  rw [sigNull, h, ← sigNull, sigNull_smul (Int.natCast_ne_zero.mpr hn0)]
+
+/-- For `n ≠ 0`, the rescaled dual `Lᵛ(n)` has the signature of `L`. -/
+theorem signature_rescaledDual (hn0 : n ≠ 0) :
+    (L.rescaledDual n hn).signature = L.signature := by
+  rw [signature, sigPos_rescaledDual L n hn hn0, sigNull_rescaledDual L n hn hn0,
+    sigNeg_rescaledDual L n hn hn0, signature]
+
 omit hn in
 /-- **Milgram's congruence at the boundary `L = nLᵛ`.** If the level of `L` divides `n` and the
 discriminant group has order `n^r`, `r` the rank, then `t₊ − t₋ ≡ 0 (mod 8)`: the rescaled dual
@@ -156,30 +168,5 @@ theorem eight_dvd_sigPos_sub_sigNeg_of_natCard_eq_pow_finrank (hlev : L.level �
       ((L.isEven_rescaledDual_iff n hn).mpr hlev) (L.isUnimodular_rescaledDual n hn hcard)
 
 end RescaledDual
-
-/-- **For odd `n`, an even lattice whose discriminant group is killed by `n` has level dividing
-`n`.** For `x ∈ Lᵛ` the integer `m = n · B(x, x) = B(x, n x)` satisfies `n m = B(n x, n x) ∈ 2ℤ`,
-so `m` is even when `n` is odd. At `n = 2` this fails: `⟨2⟩` has discriminant group `ℤ/2` and
-level `4`. -/
-theorem IsEven.level_dvd_of_odd {L : IntegralLattice V} (hL : L.IsEven) {n : ℕ} (hodd : Odd n)
-    (hn : ∀ x : L.DiscriminantGroup, n • x = 0) : L.level ∣ n := by
-  rw [← Int.natCast_dvd_natCast, IntegralLattice.level_dvd_iff]
-  intro x hx
-  have hnx : n • x ∈ L.carrier := L.nsmul_mem_carrier n hn ⟨x, hx⟩
-  obtain ⟨m, hm⟩ := Submodule.mem_one.mp
-    ((LinearMap.BilinForm.mem_dualSubmodule _).mp hx _ hnx)
-  obtain ⟨z, hz⟩ := (isEven_iff_forall_norm L).mp hL ⟨n • x, hnx⟩
-  replace hz : L.norm (n • x) = 2 * z := hz
-  rw [eq_intCast, map_nsmul, nsmul_eq_mul] at hm
-  simp only [norm_apply, map_nsmul, LinearMap.smul_apply, nsmul_eq_mul] at hz
-  -- `n m = n² B(x, x) = B(n x, n x) = 2 z` in `ℤ`, so `m` is even since `n` is odd.
-  have hnm : (n : ℤ) * m = 2 * z := by
-    have : ((n : ℤ) * m : ℚ) = (2 * z : ℤ) := by push_cast; rw [hm, ← hz]
-    exact_mod_cast this
-  obtain ⟨k, hk⟩ : Even m := by
-    rcases Int.even_mul.mp ⟨z, by rw [hnm]; ring⟩ with h | h
-    · exact absurd h (Int.not_even_iff_odd.mpr (by exact_mod_cast hodd.natCast))
-    · exact h
-  exact ⟨k, by rw [norm_apply, Int.cast_natCast, ← hm, hk]; push_cast; ring⟩
 
 end TauCeti.IntegralLattice

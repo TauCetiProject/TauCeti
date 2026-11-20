@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.TwoElementary
-public import TauCeti.LinearAlgebra.IntegralLattice.RescaledDual
+public import TauCeti.LinearAlgebra.IntegralLattice.Dual.Rescaled
 
 /-!
 # Even two-elementary lattices
