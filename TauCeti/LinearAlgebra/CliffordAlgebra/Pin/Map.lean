@@ -165,10 +165,9 @@ theorem pinToOrthogonal_pinGroupMap_apply [Invertible (2 : R)] (f : Q₁ →qᵢ
         TauCeti.QuadraticMap.orthogonalGroup Q₂) : M₂ ≃ₗ[R] M₂) (f m) =
       f (((CliffordAlgebra.pinToOrthogonal Q₁ x : TauCeti.QuadraticMap.orthogonalGroup Q₁) :
         M₁ ≃ₗ[R] M₁) m) := by
-  apply CliffordAlgebra.ι_injective Q₂
-  rw [CliffordAlgebra.ι_pinToOrthogonal_apply, ← CliffordAlgebra.map_apply_ι f,
-    ← CliffordAlgebra.map_apply_ι f, CliffordAlgebra.ι_pinToOrthogonal_apply, map_mul, map_mul,
-    coe_pinGroupMap_apply, CliffordAlgebra.map_involute, CliffordAlgebra.map_star]
+  rw [CliffordAlgebra.coe_pinToOrthogonal_apply, CliffordAlgebra.coe_pinToOrthogonal_apply,
+    pinToLipschitz_pinGroupMap]
+  exact (f.map_lipschitzVectorAction (CliffordAlgebra.pinToLipschitz Q₁ x) m).symm
 
 end QuadraticMap.Isometry
 
@@ -231,14 +230,9 @@ theorem orthogonalGroupCongr_pinToOrthogonal [Invertible (2 : R)]
     (e : Q₁.IsometryEquiv Q₂) (x : pinGroup Q₁) :
     e.orthogonalGroupCongr (CliffordAlgebra.pinToOrthogonal Q₁ x) =
       CliffordAlgebra.pinToOrthogonal Q₂ (e.pinGroupEquiv x) := by
-  ext m
-  rw [e.coe_orthogonalGroupCongr_apply, pinGroupEquiv_apply]
-  calc
-    e (((CliffordAlgebra.pinToOrthogonal Q₁ x : TauCeti.QuadraticMap.orthogonalGroup Q₁) :
-          M₁ ≃ₗ[R] M₁) (e.symm m)) =
-        ((CliffordAlgebra.pinToOrthogonal Q₂ (e.toIsometry.pinGroupMap x) :
-          TauCeti.QuadraticMap.orthogonalGroup Q₂) : M₂ ≃ₗ[R] M₂) (e.toIsometry (e.symm m)) :=
-      (e.toIsometry.pinToOrthogonal_pinGroupMap_apply x (e.symm m)).symm
-    _ = _ := by rw [toIsometry_apply, e.apply_symm_apply]
+  rw [CliffordAlgebra.pinToOrthogonal_eq_lipschitzToOrthogonal,
+    CliffordAlgebra.pinToOrthogonal_eq_lipschitzToOrthogonal,
+    e.orthogonalGroupCongr_lipschitzToOrthogonal, pinGroupEquiv_apply,
+    Isometry.pinToLipschitz_pinGroupMap, lipschitzGroupEquiv_apply]
 
 end QuadraticMap.IsometryEquiv
