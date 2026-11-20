@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Invertible
-public import Mathlib.Algebra.Polynomial.Bivariate
-public import Mathlib.Algebra.Polynomial.Taylor
-public import Mathlib.Data.Nat.Choose.Lucas
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.LinearAlgebra.Lagrange
+public import TauCeti.Algebra.Polynomial.Bivariate
+public import TauCeti.RingTheory.PowerSeries.Additive
 
 /-!
 # Additive polynomials
@@ -19,9 +17,11 @@ A polynomial `f` over a commutative ring `R` is *additive* when `f(X + Y) = f(X)
 bivariate polynomial ring `R[X][Y]`; it then satisfies `f(x + y) = f(x) + f(y)` in every commutative
 `R`-algebra. Comparing the coefficients of `X ^ a * Y ^ b`, which are `(a + b).choose a • f_{a+b}`
 on the left, `f` is additive exactly when its constant coefficient vanishes and
-`(a + b).choose a • f_{a+b} = 0` for all positive `a` and `b`. In prime characteristic `p` every
-middle binomial coefficient of `n` vanishes exactly when `n` is a power of `p` (Lucas), so the
-additive polynomials are the *`p`-polynomials*, the `R`-linear combinations of the `X ^ p ^ i`
+`(a + b).choose a • f_{a+b} = 0` for all positive `a` and `b`. This is the coefficient criterion
+`PowerSeries.subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero` for `f` viewed
+as a power series. In prime characteristic `p` every middle binomial coefficient of `n` vanishes
+exactly when `n` is a power of `p` (Lucas, via `PowerSeries.subst_add_eq_iff_coeff_eq_zero`), so
+the additive polynomials are the *`p`-polynomials*, the `R`-linear combinations of the `X ^ p ^ i`
 (Goss, Chapter 1). These are the endomorphisms of the additive group in characteristic
 `p`.
 
@@ -56,8 +56,6 @@ characteristic `p`, `a_V = X ^ p - X`.
 
 ## Main results
 
-* `Polynomial.coeff_coeff_aeval_C_X_add_Y`: the coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is
-  `(a + b).choose b * f_{a+b}`.
 * `Polynomial.aeval_C_X_add_Y_eq_iff`: `f(X + Y) = f(X) + f(Y)` exactly when `f_0 = 0` and
   `(a + b).choose a * f_{a+b} = 0` for all positive `a`, `b`.
 * `Polynomial.aeval_add_of_aeval_C_X_add_Y_eq`: an additive polynomial is additive in every
@@ -96,18 +94,6 @@ open Bivariate
 section CommSemiring
 
 variable {R : Type*} [CommSemiring R]
-
-/-- The coefficient of `X ^ a * Y ^ b` in `f(X + Y)` is `(a + b).choose b * f_{a+b}`. -/
-@[simp]
-theorem coeff_coeff_aeval_C_X_add_Y (f : R[X]) (a b : ℕ) :
-    ((aeval (C X + Y : R[X][Y]) f).coeff b).coeff a =
-      ((a + b).choose b : R) * f.coeff (a + b) := by
-  -- `f(X + Y)` is the Taylor expansion of `f(Y)` at `X`, whose coefficients are the Hasse
-  -- derivatives of `f`.
-  have h : aeval (C X + Y : R[X][Y]) f = taylor X (f.map C) := by
-    rw [taylor_apply, comp, eval₂_map, aeval_def, add_comm,
-      IsScalarTower.algebraMap_eq R R[X] R[X][X], algebraMap_eq, algebraMap_eq]
-  rw [h, taylor_coeff, hasseDeriv_map, eval_map, eval₂_C_X, hasseDeriv_coeff]
 
 /-- A polynomial satisfying `f(X + Y) = f(X) + f(Y)` is additive in every commutative algebra. -/
 theorem aeval_add_of_aeval_C_X_add_Y_eq {A : Type*} [CommSemiring A] [Algebra R A] {f : R[X]}
@@ -153,33 +139,15 @@ theorem aeval_C_X_add_Y_eq_iff_mem_span (p : ℕ) [Fact p.Prime] [CharP R p] {f 
       AddMonoidAlgebra.supported R R (Set.range (p ^ ·)) := by
     rw [AddMonoidAlgebra.supported_eq_span_single, ← Set.range_comp]
     simp [Function.comp_def, single_eq_monomial, X_pow_eq_monomial]
-  constructor
-  · -- A coefficient `f_n ≠ 0` with `n` not a power of `p` would make some middle binomial
-    -- coefficient of `n` a unit, by Lucas's theorem, contradicting the coefficient criterion.
-    rw [aeval_C_X_add_Y_eq_iff, hspan, AddMonoidAlgebra.mem_supported']
-    rintro ⟨h0, h⟩ n hpow
-    by_contra hn
-    have hn0 : n ≠ 0 := by rintro rfl; exact hn h0
-    refine hpow ⟨multiplicity p n, (Choose.eq_pow_multiplicity_of_choose_modEq_zero_nat
-      (Nat.pos_of_ne_zero hn0) fun i hi => ?_).symm⟩
-    obtain ⟨hi1, hi2⟩ := Finset.mem_Icc.mp hi
-    by_contra hc
-    have hu : IsUnit (n.choose i : R) := (CharP.isUnit_natCast_iff (Fact.out : p.Prime)).mpr
-      fun hd => hc (Nat.modEq_zero_iff_dvd.mpr hd)
-    have := h i (n - i) (by omega) (by omega)
-    rw [Nat.add_sub_cancel' (by omega)] at this
-    exact hn (hu.mul_right_eq_zero.mp this)
-  · -- The identity is `R`-linear in `f`, and holds for `X ^ p ^ i` by the freshman's dream.
-    intro hf
-    induction hf using Submodule.span_induction with
-    | mem g hg =>
-      obtain ⟨i, rfl⟩ := hg
-      simp [add_pow_char_pow]
-    | zero => simp
-    | add g h _ _ hg hh => simp [hg, hh, Polynomial.map_add]; abel
-    | smul r g _ hg =>
-      rw [map_smul, hg, Polynomial.map_smul, smul_add, smul_C]
-      exact congrArg _ (algebraMap_smul R[X] r (map C g)).symm
+  -- The coefficient criterion is the one for `f` as a power series, whose prime-characteristic
+  -- form is the support criterion `PowerSeries.subst_add_eq_iff_coeff_eq_zero`.
+  have hseries := (PowerSeries.subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero
+    (f : PowerSeries R)).symm.trans <|
+      PowerSeries.subst_add_eq_iff_coeff_eq_zero (f : PowerSeries R) (Fact.out : p.Prime)
+        (CharP.cast_eq_zero R p)
+  simp only [coeff_coe, constantCoeff_coe, Nat.pos_iff_ne_zero] at hseries
+  rw [aeval_C_X_add_Y_eq_iff, hseries, hspan, AddMonoidAlgebra.mem_supported']
+  simp [eq_comm]
 
 end CommRing
 
