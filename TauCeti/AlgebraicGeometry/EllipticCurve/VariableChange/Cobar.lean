@@ -538,6 +538,37 @@ theorem cobarRingEquiv_cobarMap {m n : SimplexCategory} (f : m ⟶ n) :
 
 /-! ### The cofaces and codegeneracies -/
 
+/-- `SimplexCategory.δ_apply` for the order homomorphism underlying the coface `δ i`, in which
+`cobarRingEquiv_cobarMap` is stated. -/
+private theorem toOrderHom_δ_apply {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) :
+    (SimplexCategory.δ i).toOrderHom j = i.succAbove j :=
+  SimplexCategory.δ_apply i j
+
+/-- `SimplexCategory.σ_apply` for the order homomorphism underlying the codegeneracy `σ i`, in
+which `cobarRingEquiv_cobarMap` is stated. -/
+private theorem toOrderHom_σ_apply {n : ℕ} (i : Fin (n + 1)) (j : Fin (n + 2)) :
+    (SimplexCategory.σ i).toOrderHom j = i.predAbove j :=
+  SimplexCategory.σ_apply i j
+
+/-- Consecutive composite changes of variables `D_{i+1} = Cᵢ Dᵢ` of a string differ by the change
+of variables `Cᵢ` between them. -/
+private theorem unop_partialProd_succ_mul_inv {G : Type*} [Group G] {n : ℕ} (g : Fin n → G)
+    (i : Fin n) :
+    (Fin.partialProd (fun k ↦ MulOpposite.op (g k)) i.succ).unop *
+        (Fin.partialProd (fun k ↦ MulOpposite.op (g k)) i.castSucc).unop⁻¹ = g i := by
+  rw [← MulOpposite.unop_inv, ← MulOpposite.unop_mul, Fin.partialProd_right_inv,
+    MulOpposite.unop_op]
+
+/-- Composite changes of variables `D_{i+2} = Cᵢ₊₁ Cᵢ Dᵢ` two steps apart in a string differ by
+the composite `Cᵢ₊₁ Cᵢ` of the two changes of variables between them. -/
+private theorem unop_partialProd_succ_succ_mul_inv {G : Type*} [Group G] {n : ℕ}
+    (g : Fin (n + 2) → G) (i : Fin (n + 1)) :
+    (Fin.partialProd (fun k ↦ MulOpposite.op (g k)) i.succ.succ).unop *
+        (Fin.partialProd (fun k ↦ MulOpposite.op (g k)) i.castSucc.castSucc).unop⁻¹ =
+      g i.succ * g i.castSucc := by
+  rw [← unop_partialProd_succ_mul_inv g i.succ, ← unop_partialProd_succ_mul_inv g i.castSucc,
+    Fin.succ_castSucc, mul_assoc, inv_mul_cancel_left]
+
 /-- The last coface `δⁿ⁺¹ : Γ^{⊗_A n} → Γ^{⊗_A (n + 1)}` is the inclusion `algebraMap` of the first
 `n` factors, classifying the first `n` arrows of a string of `n + 1` composable arrows. -/
 @[simp]
@@ -547,14 +578,11 @@ theorem cobarMap_δ_last (n : ℕ) :
   apply (cobarRingEquiv _ n).injective
   rw [cobarRingEquiv_cobarMap]
   refine Prod.ext ?_ (funext fun i ↦ ?_)
-  · simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
-      OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply, Fin.succAbove_last,
-      Fin.castSucc_zero, Fin.partialProd_zero, MulOpposite.unop_one, one_smul]
+  · simp only [toOrderHom_δ_apply, Fin.succAbove_last, Fin.castSucc_zero,
+      Fin.partialProd_zero, MulOpposite.unop_one, one_smul]
     exact cobarRingEquiv_succ_apply_fst _ n (RingHom.id _)
-  · simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
-      OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply, Fin.succAbove_last,
-      Fin.castSucc_succ, Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op,
-      mul_inv_cancel_right]
+  · simp only [toOrderHom_δ_apply, Fin.succAbove_last, Fin.castSucc_succ,
+      unop_partialProd_succ_mul_inv]
     exact cobarRingEquiv_succ_apply_snd_castSucc _ n (RingHom.id _) i
 
 /-- A coface `δⁱ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A (n + 2)}` with `i ≤ n` is `ChangeRing.map` of the
@@ -569,11 +597,10 @@ theorem cobarMap_δ_castSucc_castSucc (n : ℕ) (i : Fin (n + 1)) :
     rw [ChangeRing.map_comp_algebraMap]
     exact h
   · rw [universalChange_map_map, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
-    simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
-      Fin.succ_last, OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
+    simp only [toOrderHom_δ_apply, Fin.succ_last,
       Fin.succAbove_ne_last_last (Fin.castSucc_ne_last _), Fin.castSucc_succAbove_castSucc]
-    rw [← Fin.succ_last (n + 1), Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op,
-      mul_inv_cancel_right, cobarRingEquiv_succ_apply_snd_last, VariableChange.map_id]
+    rw [← Fin.succ_last (n + 1), unop_partialProd_succ_mul_inv,
+      cobarRingEquiv_succ_apply_snd_last, VariableChange.map_id]
 
 /-- The coface `δⁿ⁺¹ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A (n + 2)}` multiplies the last two arrows: it
 classifies the string whose first `n` arrows come from the first `n` factors and whose last
@@ -592,14 +619,11 @@ theorem cobarMap_δ_castSucc_last (n : ℕ) :
     rw [lift_comp_algebraMap]
     exact h
   · rw [map_lift, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
-    simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
-      Fin.succ_last, OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply,
+    simp only [toOrderHom_δ_apply, Fin.succ_last,
       Fin.succAbove_ne_last_last (Fin.castSucc_ne_last _), Fin.castSucc_succAbove_castSucc,
       Fin.succAbove_last]
-    rw [← Fin.succ_last (n + 1), Fin.partialProd_succ, ← Fin.succ_last n, ← Fin.succ_castSucc,
-      Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_mul, MulOpposite.unop_op,
-      MulOpposite.unop_op, mul_assoc, mul_inv_cancel_right, Fin.succ_last,
-      cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_succ_apply_snd_castSucc,
+    rw [← Fin.succ_last (n + 1), ← Fin.succ_last n, unop_partialProd_succ_succ_mul_inv,
+      Fin.succ_last, cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_succ_apply_snd_castSucc,
       cobarRingEquiv_succ_apply_snd_last, VariableChange.map_id, RingHom.id_comp]
 
 /-- The last codegeneracy `σⁿ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A n}` is the identity on the first `n`
@@ -613,7 +637,7 @@ theorem cobarMap_σ_last (n : ℕ) :
     rw [lift_comp_algebraMap]
     exact h
   · rw [map_lift, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
-    simp [SimplexCategory.σ]
+    simp [toOrderHom_σ_apply]
 
 /-- A codegeneracy `σⁱ : Γ^{⊗_A (n + 2)} → Γ^{⊗_A (n + 1)}` with `i ≤ n` is `ChangeRing.map` of
 the codegeneracy `σⁱ : Γ^{⊗_A (n + 1)} → Γ^{⊗_A n}`: it does not involve the last arrow. -/
@@ -626,11 +650,10 @@ theorem cobarMap_σ_castSucc (n : ℕ) (i : Fin (n + 1)) :
     rw [ChangeRing.map_comp_algebraMap]
     exact h
   · rw [universalChange_map_map, ← cobarRingEquiv_succ_apply_snd_last, cobarRingEquiv_cobarMap]
-    simp only [SimplexCategory.σ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
-      Fin.succ_last, Fin.predAboveOrderHom_coe, Fin.predAbove_right_last,
+    simp only [toOrderHom_σ_apply, Fin.succ_last, Fin.predAbove_right_last,
       Fin.castSucc_predAbove_castSucc]
-    rw [← Fin.succ_last n, Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op,
-      mul_inv_cancel_right, cobarRingEquiv_succ_apply_snd_last, VariableChange.map_id]
+    rw [← Fin.succ_last n, unop_partialProd_succ_mul_inv, cobarRingEquiv_succ_apply_snd_last,
+      VariableChange.map_id]
 
 /-! ### Comparison with the Hopf algebroid structure maps -/
 
@@ -648,7 +671,8 @@ theorem cobarMap_δ_zero_eq_rightUnit : cobarMap (SimplexCategory.δ (n := 0) 0)
   apply (cobarRingEquiv _ 0).injective
   rw [cobarRingEquiv_cobarMap, cobarRingEquiv_one_apply, cobarRingEquiv_zero_apply]
   refine Prod.ext ?_ (funext fun i ↦ i.elim0)
-  simp [SimplexCategory.δ, Fin.partialProd, List.ofFn_succ, map_rightUnit]
+  rw [toOrderHom_δ_apply, Fin.succAbove_zero, Fin.partialProd_succ]
+  simp [map_rightUnit]
 
 /-- The coface `δ¹ : A → Γ` of the cobar construction is the left unit `η_L = algebraMap`,
 classifying the source of an arrow. -/
