@@ -24,8 +24,8 @@ take that step once.
   against `μ`;
 * `TauCeti.MeasureTheory.integral_withDensity_ofReal`: integration against the measure is
   integration of the `ρ`-weighted integrand against `μ`;
-* `TauCeti.MeasureTheory.measureReal_withDensity_ofReal`: the real mass of a measurable set is the
-  integral of `ρ` over it.
+* `TauCeti.MeasureTheory.measureReal_withDensity_ofReal`: the real mass of a null-measurable set is
+  the integral of `ρ` over it.
 -/
 
 public section
@@ -77,13 +77,13 @@ theorem integral_withDensity_ofReal (hρ : AEMeasurable ρ μ) (hnn : 0 ≤ᵐ[�
   rw [ENNReal.toReal_ofReal hx]
 
 /-- Integrating a density that is nonnegative and measurable on `s` computes the real mass of `s`
-under the measure presented by that density. The nonnegativity and measurability hypotheses are
-only local to `s`, and no integrability is needed: when the integral is infinite both sides are
-`0`. -/
+under the measure presented by that density. The set `s` need only be null-measurable for the
+reference measure. The nonnegativity and measurability hypotheses are only local to `s`, and no
+integrability is needed: when the integral is infinite both sides are `0`. -/
 theorem measureReal_withDensity_ofReal (hnn : 0 ≤ᵐ[μ.restrict s] ρ)
-    (hs : MeasurableSet s) (hρ : AEMeasurable ρ (μ.restrict s)) :
+    (hs : NullMeasurableSet s μ) (hρ : AEMeasurable ρ (μ.restrict s)) :
     (μ.withDensity (fun x => ENNReal.ofReal (ρ x))).real s = ∫ x in s, ρ x ∂μ := by
-  rw [measureReal_def, withDensity_apply _ hs,
+  rw [measureReal_def, withDensity_apply₀ _ hs,
     integral_eq_lintegral_of_nonneg_ae hnn hρ.aestronglyMeasurable]
 
 end MeasureTheory

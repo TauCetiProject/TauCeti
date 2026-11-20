@@ -450,8 +450,8 @@ theorem rnDeriv_weibullMeasure (k lam : ℝ) :
 private lemma measureReal_weibullMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (weibullMeasure k lam).real s = ∫ y in s, weibullPDFReal k lam y := by
   rw [weibullMeasure_def, funext (weibullPDF_eq_ofReal k lam)]
-  exact MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (weibullPDFReal_nonneg k lam)) hs
-    (measurable_weibullPDFReal k lam).aemeasurable
+  exact MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (weibullPDFReal_nonneg k lam))
+    hs.nullMeasurableSet (measurable_weibullPDFReal k lam).aemeasurable
 
 /-- The real upper-tail mass of a valid Weibull law. -/
 theorem measureReal_Ioi_weibullMeasure (hk : 0 < k) (hlam : 0 < lam) (hx : 0 < x) :

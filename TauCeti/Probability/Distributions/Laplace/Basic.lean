@@ -338,8 +338,8 @@ theorem rnDeriv_laplaceMeasure (μ b : ℝ) :
 private lemma measureReal_laplaceMeasure {s : Set ℝ} (hs : MeasurableSet s) :
     (laplaceMeasure μ b).real s = ∫ y in s, laplacePDFReal μ b y := by
   rw [laplaceMeasure_eq_withDensity, funext (laplacePDF_eq_ofReal μ b)]
-  exact MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b)) hs
-    (measurable_laplacePDFReal μ b).aemeasurable
+  exact MeasureTheory.measureReal_withDensity_ofReal (ae_of_all _ (laplacePDFReal_nonneg μ b))
+    hs.nullMeasurableSet (measurable_laplacePDFReal μ b).aemeasurable
 
 /-- The upper tail of a Laplace law above its location. -/
 theorem measureReal_Ioi_laplaceMeasure (hb : 0 < b) (hx : μ ≤ x) :

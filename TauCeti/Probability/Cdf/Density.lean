@@ -51,7 +51,7 @@ theorem cdf_sub_cdf_eq_integral_of_eq_withDensity
   · rw [intervalIntegral.integral_symm, ← this b a (le_of_not_ge hab), neg_sub]
   rw [← Measure.measureReal_Ioc_eq_cdf_sub μ hab, intervalIntegral.integral_of_le hab, hμ]
   exact MeasureTheory.measureReal_withDensity_ofReal
-    (ae_restrict_of_ae hnn) measurableSet_Ioc hfm.restrict
+    (ae_restrict_of_ae hnn) nullMeasurableSet_Ioc hfm.restrict
 
 /-- A real probability law with an everywhere positive density has a strictly increasing cdf. -/
 theorem strictMono_cdf_of_eq_withDensity

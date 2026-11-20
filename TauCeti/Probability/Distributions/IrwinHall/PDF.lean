@@ -219,7 +219,7 @@ theorem integral_irwinHallPDFReal {n : ℕ} (hn : 0 < n) :
     ∫ x, irwinHallPDFReal n x = 1 := by
   have hμ := irwinHallMeasure_eq_withDensity hn
   have hmass := MeasureTheory.measureReal_withDensity_ofReal (μ := volume)
-    (s := univ) (ae_of_all _ (irwinHallPDFReal_nonneg n)) MeasurableSet.univ
+    (s := univ) (ae_of_all _ (irwinHallPDFReal_nonneg n)) nullMeasurableSet_univ
     (measurable_irwinHallPDFReal n).aemeasurable
   simpa [← irwinHallPDF_eq_ofReal, ← hμ] using hmass.symm
 
