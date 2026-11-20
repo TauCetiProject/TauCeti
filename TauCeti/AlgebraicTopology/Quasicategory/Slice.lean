@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
 public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
-public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
 
 /-!
 # Relative slices of inner fibrations
@@ -28,13 +26,13 @@ a lifting problem of a map `j : A ⟶ B` against the relative slice map for `i`,
 problem of `i` against the relative coslice map for `j`, are both extension problems along the
 pushout-join of `j` and `i` for maps `B ⋆ K ⟶ X` over `S`
 (`SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout` and its coslice
-counterpart, in `TauCeti.AlgebraicTopology.SimplicialSet.Coslice`). For a horn `Λ[m, k] ⟶ Δ[m]` with
-`0 < k`, the relative coslice map for it is a trivial fibration: by Mathlib's description of the
-trivial fibrations as the maps lifting against boundary inclusions (`SSet.rlp_monomorphisms`), it
-suffices to lift `∂Δ[n] ⟶ Δ[n]`, and the pushout-join `(Λ[m, k] ⋆ Δ[n]) ∪ (Δ[m] ⋆ ∂Δ[n])` is the
-inner horn `Λ[m + n + 1, k]`, which lifts against the inner fibration `p`. Dually, for `k < m` the
-relative slice map for `Λ[m, k] ⟶ Δ[m]` is a trivial fibration, by the inner horns
-`(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, k])`.
+counterpart `SSet.coslice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout`). For a horn
+`Λ[m, k] ⟶ Δ[m]` with `0 < k`, the relative coslice map for it is a trivial fibration: by
+Mathlib's description of the trivial fibrations as the maps lifting against boundary inclusions
+(`SSet.rlp_monomorphisms`), it suffices to lift `∂Δ[n] ⟶ Δ[n]`, and the pushout-join
+`(Λ[m, k] ⋆ Δ[n]) ∪ (Δ[m] ⋆ ∂Δ[n])` is the inner horn `Λ[m + n + 1, k]`, which lifts against the
+inner fibration `p`. Dually, for `k < m` the relative slice map for `Λ[m, k] ⟶ Δ[m]` is a trivial
+fibration, by the inner horns `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, k])`.
 
 ## Main results
 
@@ -150,10 +148,6 @@ end coslice
 
 variable {C : SSet.{u}}
 
-/-- The empty subcomplex has no vertex. -/
-private lemma not_nonempty_bot : ¬ ((⊥ : K.Subcomplex) : SSet.{u}).Nonempty :=
-  fun ⟨⟨_, hx⟩⟩ ↦ by simp only [Subfunctor.bot_obj, Set.mem_empty_iff_false] at hx
-
 namespace slice
 
 /-- For a quasicategory `C`, a diagram `p : K ⟶ C` and a monomorphism `j : L ⟶ K`, the
@@ -170,7 +164,7 @@ instance rightFibration_map [Quasicategory C] (p : K ⟶ C) (j : L ⟶ K) [Mono 
 /-- The projection of the slice of a quasicategory is a right fibration. It is the restriction of
 cones to the empty diagram, followed by an isomorphism. -/
 instance rightFibration_π [Quasicategory C] (p : K ⟶ C) : RightFibration (π p) := by
-  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) not_nonempty_bot
+  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) Subcomplex.not_nonempty_bot
   rw [← Category.comp_id (π p),
     ← map_π (q := (⊥ : K.Subcomplex).ι ≫ p) (⊥ : K.Subcomplex).ι (𝟙 C) (by simp)]
   infer_instance
@@ -213,7 +207,7 @@ instance leftFibration_map [Quasicategory C] (p : K ⟶ C) (j : L ⟶ K) [Mono j
 /-- The projection of the coslice of a quasicategory is a left fibration. It is the restriction of
 cocones to the empty diagram, followed by an isomorphism. -/
 instance leftFibration_π [Quasicategory C] (p : K ⟶ C) : LeftFibration (π p) := by
-  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) not_nonempty_bot
+  have := isIso_π ((⊥ : K.Subcomplex).ι ≫ p) Subcomplex.not_nonempty_bot
   rw [← Category.comp_id (π p),
     ← map_π (q := (⊥ : K.Subcomplex).ι ≫ p) (⊥ : K.Subcomplex).ι (𝟙 C) (by simp)]
   infer_instance

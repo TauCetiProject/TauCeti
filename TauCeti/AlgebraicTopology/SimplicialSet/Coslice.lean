@@ -61,12 +61,19 @@ simplicial set on these edges.
 * `SSet.coslice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
 * `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
-* `SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout`,
-  `SSet.coslice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout`: for maps `j : A ⟶ B`,
-  `i : L ⟶ K` and `p : X ⟶ S`, the map `j` lifts against every relative slice map for `i`, and
-  the map `i` lifts against every relative coslice map for `j`, exactly when the pushout-join
-  `(A ⋆ K) ∪ (B ⋆ L) ⟶ B ⋆ K` of `j` and `i` lifts against `p`; hence these two conditions are
-  equivalent (`SSet.slice.forall_hasLiftingProperty_restrictionMap_iff`).
+* `SSet.coslice.opSliceIso_hom_comp_opFunctor_map_slice_map`: maps of coslices are the opposites
+  of maps of slices.
+* `SSet.coslice.hasLiftingProperty_restrictionMap_iff_slice`: a map `i` lifts against a relative
+  coslice map exactly when `iᵒᵖ` lifts against the opposite relative slice map.
+* `SSet.coslice.isIso_restrictionMap`: for an isomorphism `p`, the relative coslice map is an
+  isomorphism.
+* `SSet.coslice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout`: for maps `j : A ⟶ B`,
+  `i : L ⟶ K` and `p : X ⟶ S`, the map `i` lifts against every relative coslice map for `j`
+  exactly when the map `(A ⋆ K) ⨿_{A ⋆ L} (B ⋆ L) ⟶ B ⋆ K` from the pushout-join of `j` and `i`
+  lifts against `p`. It is deduced from the slice criterion
+  `SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout` by passing to opposites.
+  Hence `j` lifts against every relative slice map for `i` exactly when `i` lifts against every
+  relative coslice map for `j` (`SSet.slice.forall_hasLiftingProperty_restrictionMap_iff`).
 
 ## References
 
@@ -288,12 +295,47 @@ lemma map_π (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q) : map i g h ≫
   rw [comp_π, ← Category.id_comp (map i g h), homEquiv_comp_map_coe, join.inr_map_assoc,
     Category.id_comp, π, Category.assoc]
 
+/-- Pushing cocones forward along an isomorphism is an isomorphism of coslices. -/
+instance isIso_map (g : C ⟶ D) [IsIso g] {r : K ⟶ D} (h : 𝟙 K ≫ p ≫ g = r) :
+    IsIso (map (𝟙 K) g h) :=
+  ⟨map (𝟙 K) (inv g) (by simp [← h]), by simp [map_comp], by simp [map_comp]⟩
+
+/-- Composing a map `F : X ⟶ C_{p/}` with the opposite of a map of slices
+`M : Cᵒᵖ_{/pᵒᵖ} ⟶ Dᵒᵖ_{/qᵒᵖ}` corresponds, on opposites, to composing with `M`. -/
+private lemma opHomEquiv_comp_opFunctor_map (F : X ⟶ coslice p)
+    (M : slice (opFunctor.map p) ⟶ slice (opFunctor.map q)) :
+    opHomEquiv (F ≫ (opSliceIso p).hom ≫ opFunctor.map M ≫ (opSliceIso q).inv) =
+      opHomEquiv F ≫ M := by
+  simp only [opSliceIso, Iso.refl_hom, Iso.refl_inv]
+  exact opEquivalence.toAdjunction.homEquiv_naturality_right_symm F M
+
+/-- **Maps of coslices are opposite to maps of slices**: through the identification of coslices
+with opposite slices (`SSet.coslice.opSliceIso`), the map of coslices induced by `i` and `g` is
+the opposite of the map of slices induced by `iᵒᵖ` and `gᵒᵖ`. The maps `i'` and `g'` are any maps
+equal to `iᵒᵖ` and `gᵒᵖ`, such as `𝟙 Lᵒᵖ` for `i = 𝟙 L`. -/
+lemma opSliceIso_hom_comp_opFunctor_map_slice_map (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q)
+    {i' : L.op ⟶ K.op} {g' : C.op ⟶ D.op} (hi : opFunctor.map i = i')
+    (hg : opFunctor.map g = g') :
+    (opSliceIso p).hom ≫ opFunctor.map (slice.map i' g' (by simp [← hi, ← hg, ← h]) :
+        slice (opFunctor.map p) ⟶ slice (opFunctor.map q)) ≫ (opSliceIso q).inv =
+      map i g h := by
+  subst hi hg
+  refine hom_ext ?_
+  apply opFunctor.map_injective
+  rw [← cancel_epi (join.opIso L (coslice p)).inv, ← Category.id_comp ((opSliceIso p).hom ≫ _),
+    opIso_inv_comp_opFunctor_map_homEquiv_coe, opHomEquiv_comp_opFunctor_map,
+    slice.homEquiv_comp_map_coe, ← Category.id_comp (map i g h), homEquiv_comp_map_coe,
+    Functor.map_comp, Functor.map_comp, ← opIso_inv_comp_opFunctor_map_homEquiv_coe,
+    ← cancel_epi (join.opIso L (coslice p)).hom, Iso.hom_inv_id_assoc,
+    ← CategoryTheory.Functor.map_id opFunctor (coslice p),
+    ← join.opFunctor_map_map_comp_opIso_hom_assoc, Category.assoc, Iso.hom_inv_id_assoc]
+
 variable (p) in
 /-- A coslice of a terminal simplicial set is terminal. It is the opposite of a slice of the
 terminal simplicial set `Cᵒᵖ` (`SSet.slice.isTerminal`). -/
 noncomputable def isTerminal (hC : Limits.IsTerminal C) : Limits.IsTerminal (coslice p) :=
-  Limits.IsTerminal.isTerminalObj opFunctor.{u} _
-    (slice.isTerminal (opFunctor.map p) (Limits.IsTerminal.isTerminalObj opFunctor.{u} _ hC))
+  (Limits.IsTerminal.isTerminalObj opFunctor.{u} _ (slice.isTerminal (opFunctor.map p)
+    (Limits.IsTerminal.isTerminalObj opFunctor.{u} _ hC))).ofIso (opSliceIso p).symm
 
 section restrictionMap
 
@@ -317,6 +359,14 @@ lemma restrictionMap_snd (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X) :
     restrictionMap i p σ ≫ Limits.pullback.snd _ _ = map (𝟙 K) p (by simp) :=
   Limits.pullback.lift_snd _ _ _
 
+/-- For an isomorphism `p`, the map `SSet.coslice.restrictionMap i p σ` is an isomorphism. -/
+instance isIso_restrictionMap (i : L ⟶ K) (p : X ⟶ S) [IsIso p] (σ : K ⟶ X) :
+    IsIso (restrictionMap i p σ) := by
+  have : IsIso (restrictionMap i p σ ≫ Limits.pullback.snd _ _) := by
+    rw [restrictionMap_snd]
+    infer_instance
+  exact IsIso.of_isIso_comp_right _ (Limits.pullback.snd _ _)
+
 end restrictionMap
 
 end coslice
@@ -329,73 +379,57 @@ open Limits
 
 variable {A B L P S : SSet.{u}}
 
-namespace slice
-
-/-- **Lifting problems for relative slices are extension problems along a pushout-join.** Let
-`j : A ⟶ B`, `i : L ⟶ K` and `p : X ⟶ S`, and let `u : P ⟶ B ⋆ K` be the map induced on a pushout
-`P` of `A ⋆ K ← A ⋆ L → B ⋆ L`. Then `j` lifts against every relative slice map
-`X_{/σ} ⟶ X_{/i ≫ σ} ×_{S_{/i ≫ σ ≫ p}} S_{/σ ≫ p}` exactly when `u` lifts against `p`: through
-the universal property of the slice, a lifting problem of either kind is a pair of maps
-`A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, together with a map `B ⋆ K ⟶ S` restricting to
-their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending both. -/
-theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) (i : L ⟶ K)
-    (p : X ⟶ S) {f : join A K ⟶ P} {g : join B L ⟶ P}
-    (h : IsPushout (join.map (𝟙 A) i) (join.map j (𝟙 L)) f g) {u : P ⟶ join B K}
-    (hf : f ≫ u = join.map j (𝟙 K)) (hg : g ≫ u = join.map (𝟙 B) i) :
-    (∀ σ : K ⟶ X, HasLiftingProperty j (restrictionMap i p σ)) ↔ HasLiftingProperty u p := by
-  refine ⟨fun H ↦ ⟨fun {t b} sq ↦ ?_⟩, fun H σ ↦ ⟨fun {a b} sq ↦ ?_⟩⟩
-  · -- The restrictions of `t` to `A ⋆ K` and `B ⋆ L`, and the map `b`, form a lifting problem
-    -- for the relative slice map at the restriction `σ : K ⟶ X` of `t`.
-    let σ : K ⟶ X := join.inr A K ≫ f ≫ t
-    have hβ : join.inr B L ≫ g ≫ t = i ≫ σ :=
-      calc join.inr B L ≫ g ≫ t = join.inr A L ≫ join.map j (𝟙 L) ≫ g ≫ t := by
-            rw [join.inr_map_assoc, Category.id_comp]
-        _ = i ≫ σ := by rw [← h.w_assoc, join.inr_map_assoc]
-    have hγ : join.inr B K ≫ b = σ ≫ p := by
-      rw [Category.assoc, Category.assoc, sq.w, reassoc_of% hf, join.inr_map_assoc,
-        Category.id_comp]
-    have sq' : CommSq (homEquiv.symm ⟨f ≫ t, rfl⟩) j (restrictionMap i p σ)
-        (pullback.lift (homEquiv.symm ⟨g ≫ t, hβ⟩) (homEquiv.symm ⟨b, hγ⟩)
-          (hom_ext (by simp [sq.w, reassoc_of% hg]))) :=
-      ⟨pullback.hom_ext (hom_ext (by simp [h.w_assoc]))
-        (hom_ext (by simp [sq.w, reassoc_of% hf]))⟩
-    have := H σ
-    have hl₁ := congrArg (fun F ↦ (homEquiv F).1) sq'.fac_left
-    have hl₂ := congrArg (fun F ↦ (homEquiv F).1) (sq'.fac_right =≫ pullback.fst _ _)
-    have hl₃ := congrArg (fun F ↦ (homEquiv F).1) (sq'.fac_right =≫ pullback.snd _ _)
-    simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-      pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id,
-      Equiv.apply_symm_apply] at hl₁ hl₂ hl₃
-    simp only [homEquiv_comp_coe] at hl₁ hl₂ hl₃
-    exact ⟨⟨⟨(homEquiv sq'.lift).1, h.hom_ext (by rw [reassoc_of% hf, hl₁])
-      (by rw [reassoc_of% hg, hl₂]), hl₃⟩⟩⟩
-  · obtain ⟨b₁, b₂, hb, rfl⟩ : ∃ b₁ b₂ hb, b = pullback.lift b₁ b₂ hb :=
-      ⟨b ≫ pullback.fst _ _, b ≫ pullback.snd _ _, by simp [pullback.condition],
-        pullback.hom_ext (by simp) (by simp)⟩
-    -- The square amounts to maps `A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, and a map
-    -- `B ⋆ K ⟶ S` under them. Glue the first two on the pushout and lift against `p`.
-    have h₁ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.fst _ _)
-    have h₂ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.snd _ _)
-    have h₃ := congrArg (fun F ↦ (homEquiv F).1) hb
-    simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-      pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-      Category.comp_id] at h₁ h₂ h₃
-    simp only [homEquiv_comp_coe] at h₁ h₂ h₃
-    have sq' : CommSq (h.desc (homEquiv a).1 (homEquiv b₁).1 h₁) u p (homEquiv b₂).1 :=
-      ⟨h.hom_ext (by simp [reassoc_of% hf, h₂]) (by simp [reassoc_of% hg, h₃])⟩
-    have hl₁ : join.map j (𝟙 K) ≫ sq'.lift = (homEquiv a).1 := by
-      rw [← hf, Category.assoc, sq'.fac_left, IsPushout.inl_desc]
-    have hl₂ : join.map (𝟙 B) i ≫ sq'.lift = (homEquiv b₁).1 := by
-      rw [← hg, Category.assoc, sq'.fac_left, IsPushout.inr_desc]
-    refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext (by simp [hl₁]),
-      pullback.hom_ext (hom_ext (by simp [hl₂])) (hom_ext (by simp))⟩⟩⟩
-    calc join.inr B K ≫ sq'.lift = join.inr A K ≫ join.map j (𝟙 K) ≫ sq'.lift := by
-          rw [join.inr_map_assoc, Category.id_comp]
-      _ = σ := by rw [hl₁, (homEquiv a).2]
-
-end slice
-
 namespace coslice
+
+/-- **Relative coslice maps are opposite to relative slice maps**: for maps `i : L ⟶ K`,
+`j : A ⟶ B`, `p : X ⟶ S` and `τ : B ⟶ X`, the map `i` lifts against the relative coslice map
+`X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}` exactly when `iᵒᵖ` lifts against the relative
+slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ`. The first map is the opposite of the second, through the
+identification of coslices with opposite slices
+(`SSet.coslice.opSliceIso_hom_comp_opFunctor_map_slice_map`) and the preservation of pullbacks by
+`SSet.opFunctor`. -/
+theorem hasLiftingProperty_restrictionMap_iff_slice (i : L ⟶ K) (j : A ⟶ B) (p : X ⟶ S)
+    (τ : B ⟶ X) :
+    HasLiftingProperty i (restrictionMap j p τ) ↔
+      HasLiftingProperty (opFunctor.map i)
+        (slice.restrictionMap (opFunctor.map j) (opFunctor.map p) (opFunctor.map τ)) := by
+  -- The opposite of the pullback of slices is a pullback of the corresponding coslices.
+  have hP := ((IsPullback.of_hasPullback
+      (slice.map (𝟙 _) (opFunctor.map p) (by simp) :
+        slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ ≫ p)))
+      (slice.map (opFunctor.map j) (𝟙 _) (by simp) :
+        slice (opFunctor.map (τ ≫ p)) ⟶ _)).map opFunctor).of_iso (Iso.refl _)
+    (opSliceIso (j ≫ τ)).symm (opSliceIso (τ ≫ p)).symm (opSliceIso (j ≫ τ ≫ p)).symm
+    (fst' := opFunctor.map (pullback.fst _ _) ≫ (opSliceIso (j ≫ τ)).inv)
+    (snd' := opFunctor.map (pullback.snd _ _) ≫ (opSliceIso (τ ≫ p)).inv)
+    (f' := map (𝟙 A) p (by simp)) (g' := map j (𝟙 S) (by simp)) (Category.id_comp _).symm
+    (Category.id_comp _).symm
+    (by rw [← opSliceIso_hom_comp_opFunctor_map_slice_map (𝟙 A) p _
+      (CategoryTheory.Functor.map_id _ _) rfl]; exact (Iso.inv_hom_id_assoc _ _).symm)
+    (by rw [← opSliceIso_hom_comp_opFunctor_map_slice_map j (𝟙 S) _ rfl
+      (CategoryTheory.Functor.map_id _ _)]; exact (Iso.inv_hom_id_assoc _ _).symm)
+  have e : Arrow.mk (opFunctor.map
+      (slice.restrictionMap (opFunctor.map j) (opFunctor.map p) (opFunctor.map τ))) ≅
+        Arrow.mk (restrictionMap j p τ) :=
+    Arrow.isoMk (opSliceIso τ).symm hP.isoPullback (pullback.hom_ext
+      (by
+        simp only [Arrow.mk_hom, Category.assoc, restrictionMap_fst]
+        rw [← opSliceIso_hom_comp_opFunctor_map_slice_map j (𝟙 X) _ rfl
+          (CategoryTheory.Functor.map_id _ _)]
+        refine (Iso.inv_hom_id_assoc _ _).trans ?_
+        exact ((congrArg (fun x ↦ opFunctor.map x ≫ (opSliceIso (j ≫ τ)).inv)
+          (slice.restrictionMap_fst _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _)).trans
+          (congrArg (_ ≫ ·) hP.isoPullback_hom_fst.symm))
+      (by
+        simp only [Arrow.mk_hom, Category.assoc, restrictionMap_snd]
+        rw [← opSliceIso_hom_comp_opFunctor_map_slice_map (𝟙 B) p _
+          (CategoryTheory.Functor.map_id _ _) rfl]
+        refine (Iso.inv_hom_id_assoc _ _).trans ?_
+        exact ((congrArg (fun x ↦ opFunctor.map x ≫ (opSliceIso (τ ≫ p)).inv)
+          (slice.restrictionMap_snd _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _)).trans
+          (congrArg (_ ≫ ·) hP.isoPullback_hom_snd.symm)))
+  exact ((opEquivalence.toAdjunction.hasLiftingProperty_iff i _).trans
+    (HasLiftingProperty.iff_of_arrow_iso_right i e)).symm
 
 /-- **Lifting problems for relative coslices are extension problems along a pushout-join.** Let
 `j : A ⟶ B`, `i : L ⟶ K` and `p : X ⟶ S`, and let `u : P ⟶ B ⋆ K` be the map induced on a pushout
@@ -403,61 +437,36 @@ namespace coslice
 `X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}` exactly when `u` lifts against `p`: through
 the universal property of the coslice, a lifting problem of either kind is a pair of maps
 `A ⋆ K ⟶ X` and `B ⋆ L ⟶ X` agreeing on `A ⋆ L`, together with a map `B ⋆ K ⟶ S` restricting to
-their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending both. -/
+their composites with `p`, and a solution is a map `B ⋆ K ⟶ X` over `S` extending both. It is
+deduced from its slice counterpart
+`SSet.slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout` by passing to opposites
+(`SSet.coslice.hasLiftingProperty_restrictionMap_iff_slice`). -/
 theorem forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (j : A ⟶ B) (i : L ⟶ K)
     (p : X ⟶ S) {f : join A K ⟶ P} {g : join B L ⟶ P}
     (h : IsPushout (join.map (𝟙 A) i) (join.map j (𝟙 L)) f g) {u : P ⟶ join B K}
     (hf : f ≫ u = join.map j (𝟙 K)) (hg : g ≫ u = join.map (𝟙 B) i) :
     (∀ τ : B ⟶ X, HasLiftingProperty i (restrictionMap j p τ)) ↔ HasLiftingProperty u p := by
-  refine ⟨fun H ↦ ⟨fun {t b} sq ↦ ?_⟩, fun H τ ↦ ⟨fun {a b} sq ↦ ?_⟩⟩
-  · -- The restrictions of `t` to `B ⋆ L` and `A ⋆ K`, and the map `b`, form a lifting problem
-    -- for the relative coslice map at the restriction `τ : B ⟶ X` of `t`.
-    let τ : B ⟶ X := join.inl B L ≫ g ≫ t
-    have hα : join.inl A K ≫ f ≫ t = j ≫ τ :=
-      calc join.inl A K ≫ f ≫ t = join.inl A L ≫ join.map (𝟙 A) i ≫ f ≫ t := by
-            rw [join.inl_map_assoc, Category.id_comp]
-        _ = j ≫ τ := by rw [h.w_assoc, join.inl_map_assoc]
-    have hγ : join.inl B K ≫ b = τ ≫ p := by
-      rw [Category.assoc, Category.assoc, sq.w, reassoc_of% hg, join.inl_map_assoc,
-        Category.id_comp]
-    have sq' : CommSq (homEquiv.symm ⟨g ≫ t, rfl⟩) i (restrictionMap j p τ)
-        (pullback.lift (homEquiv.symm ⟨f ≫ t, hα⟩) (homEquiv.symm ⟨b, hγ⟩)
-          (hom_ext (by simp [sq.w, reassoc_of% hf]))) :=
-      ⟨pullback.hom_ext (hom_ext (by simp [h.w_assoc]))
-        (hom_ext (by simp [sq.w, reassoc_of% hg]))⟩
-    have := H τ
-    have hl₁ := congrArg (fun F ↦ (homEquiv F).1) sq'.fac_left
-    have hl₂ := congrArg (fun F ↦ (homEquiv F).1) (sq'.fac_right =≫ pullback.fst _ _)
-    have hl₃ := congrArg (fun F ↦ (homEquiv F).1) (sq'.fac_right =≫ pullback.snd _ _)
-    simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-      pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id,
-      Equiv.apply_symm_apply] at hl₁ hl₂ hl₃
-    simp only [homEquiv_comp_coe] at hl₁ hl₂ hl₃
-    exact ⟨⟨⟨(homEquiv sq'.lift).1, h.hom_ext (by rw [reassoc_of% hf, hl₂])
-      (by rw [reassoc_of% hg, hl₁]), hl₃⟩⟩⟩
-  · obtain ⟨b₁, b₂, hb, rfl⟩ : ∃ b₁ b₂ hb, b = pullback.lift b₁ b₂ hb :=
-      ⟨b ≫ pullback.fst _ _, b ≫ pullback.snd _ _, by simp [pullback.condition],
-        pullback.hom_ext (by simp) (by simp)⟩
-    -- The square amounts to maps `B ⋆ L ⟶ X` and `A ⋆ K ⟶ X` agreeing on `A ⋆ L`, and a map
-    -- `B ⋆ K ⟶ S` under them. Glue the first two on the pushout and lift against `p`.
-    have h₁ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.fst _ _)
-    have h₂ := congrArg (fun F ↦ (homEquiv F).1) (sq.w =≫ pullback.snd _ _)
-    have h₃ := congrArg (fun F ↦ (homEquiv F).1) hb
-    simp only [Category.assoc, restrictionMap_fst, restrictionMap_snd, pullback.lift_fst,
-      pullback.lift_snd, homEquiv_comp_map_coe, join.map_id, Category.id_comp,
-      Category.comp_id] at h₁ h₂ h₃
-    simp only [homEquiv_comp_coe] at h₁ h₂ h₃
-    have sq' : CommSq (h.desc (homEquiv b₁).1 (homEquiv a).1 h₁.symm) u p (homEquiv b₂).1 :=
-      ⟨h.hom_ext (by simp [reassoc_of% hf, h₃]) (by simp [reassoc_of% hg, h₂])⟩
-    have hl₁ : join.map j (𝟙 K) ≫ sq'.lift = (homEquiv b₁).1 := by
-      rw [← hf, Category.assoc, sq'.fac_left, IsPushout.inl_desc]
-    have hl₂ : join.map (𝟙 B) i ≫ sq'.lift = (homEquiv a).1 := by
-      rw [← hg, Category.assoc, sq'.fac_left, IsPushout.inr_desc]
-    refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, hom_ext (by simp [hl₂]),
-      pullback.hom_ext (hom_ext (by simp [hl₁])) (hom_ext (by simp))⟩⟩⟩
-    calc join.inl B K ≫ sq'.lift = join.inl B L ≫ join.map (𝟙 B) i ≫ sq'.lift := by
-          rw [join.inl_map_assoc, Category.id_comp]
-      _ = τ := by rw [hl₂, (homEquiv a).2]
+  -- Pass to opposites, where the claim is the slice criterion for `iᵒᵖ`, `jᵒᵖ` and `pᵒᵖ` along
+  -- the opposite pushout square, whose corners are joins of opposites (`SSet.join.opIso`).
+  have h' : IsPushout (join.map (𝟙 L.op) (opFunctor.map j)) (join.map (opFunctor.map i) (𝟙 A.op))
+      ((join.opIso B L).inv ≫ opFunctor.map g) ((join.opIso A K).inv ≫ opFunctor.map f) :=
+    (h.map opFunctor).flip.of_iso (join.opIso A L) (join.opIso B L) (join.opIso A K) (Iso.refl _)
+      (by simp) (by simp) (by simp) (by simp)
+  have hu := slice.forall_hasLiftingProperty_restrictionMap_iff_of_isPushout (opFunctor.map i)
+    (opFunctor.map j) (opFunctor.map p) h' (u := opFunctor.map u ≫ (join.opIso B K).hom)
+    (by simp [← Functor.map_comp_assoc, hg]) (by simp [← Functor.map_comp_assoc, hf])
+  have hop : HasLiftingProperty (opFunctor.map u) (opFunctor.map p) ↔ HasLiftingProperty u p :=
+    (opEquivalence.toAdjunction.hasLiftingProperty_iff u _).trans
+      (HasLiftingProperty.iff_of_arrow_iso_right u
+        (Arrow.isoMk (opEquivalence.counitIso.app X) (opEquivalence.counitIso.app S)
+          (opEquivalence.counit.naturality p).symm : Arrow.mk _ ≅ Arrow.mk p))
+  rw [← HasLiftingProperty.iff_of_arrow_iso_left
+    (Arrow.isoMk (Iso.refl _) (join.opIso B K) :
+      Arrow.mk (opFunctor.map u) ≅ Arrow.mk (opFunctor.map u ≫ (join.opIso B K).hom)), hop] at hu
+  rw [← hu]
+  refine ⟨fun H σ ↦ ?_, fun H τ ↦ (hasLiftingProperty_restrictionMap_iff_slice i j p τ).2 (H _)⟩
+  rw [← opFunctor.map_preimage σ, ← hasLiftingProperty_restrictionMap_iff_slice]
+  exact H _
 
 end coslice
 
