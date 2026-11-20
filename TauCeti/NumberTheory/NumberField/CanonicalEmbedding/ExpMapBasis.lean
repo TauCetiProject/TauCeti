@@ -67,7 +67,7 @@ theorem intCoord_apply_w₀ (c : {w : InfinitePlace K // w ≠ w₀} → ℤ) : 
 @[simp]
 theorem intCoord_apply (c : {w : InfinitePlace K // w ≠ w₀} → ℤ)
     (w : {w : InfinitePlace K // w ≠ w₀}) : intCoord c w = c w := by
-  simp [intCoord, w.2]
+  simp [intCoord, w.property]
 
 open scoped Classical in
 /-- The integral point `intCoord c` of the coordinates of `expMapBasis` is mapped to the vector of

@@ -36,6 +36,7 @@ the exponentials above preserve an integral lattice. The application to the Kost
 
 ## Main results
 
+* `IsNilpotent.exp_eq_zero_of_not_isNilpotent`: a non-nilpotent element has exponential `0`.
 * `IsNilpotent.unop_exp_op`: the exponential commutes with passage to the opposite ring.
 * `IsNilpotent.exp_mulLeft_apply`, `IsNilpotent.exp_mulRight_apply`: exponentiating multiplication
   by a nilpotent element gives multiplication by its exponential.
@@ -70,6 +71,11 @@ open Finset
 
 variable {A : Type*} [Ring A] [Module ℚ A]
 
+/-- The exponential of a non-nilpotent element is the junk value `0`. -/
+theorem exp_eq_zero_of_not_isNilpotent {x : A} (hx : ¬ IsNilpotent x) : exp x = 0 := by
+  rw [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx), range_zero,
+    sum_empty]
+
 /-- Taking the exponential in the opposite ring and reading it back in the original ring gives the
 original exponential. Both sides take the junk value `0` at a non-nilpotent element. -/
 @[simp]
@@ -81,8 +87,8 @@ theorem unop_exp_op {x : A} : MulOpposite.unop (exp (MulOpposite.op x)) = exp x 
     rw [exp_eq_sum hk, exp_eq_sum hk_op]
     simp
   · have hx_op : ¬ IsNilpotent (MulOpposite.op x) := by simpa only [isNilpotent_op] using hx
-    simp [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx),
-      Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx_op)]
+    rw [exp_eq_zero_of_not_isNilpotent hx_op, exp_eq_zero_of_not_isNilpotent hx,
+      MulOpposite.unop_zero]
 
 variable {R : Type*} [Semiring R] [Module R A]
 
@@ -199,8 +205,7 @@ theorem exp_zsmul_eq_zero_of_not_isNilpotent {x : A} (hx : ¬ IsNilpotent x) {t 
     exp (t • x) = 0 := by
   have hnil : ¬ IsNilpotent (t • x) := fun h => hx <| by
     simpa [← Int.cast_smul_eq_zsmul ℚ, smul_smul, ht] using h.smul ((t : ℚ)⁻¹)
-  rw [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hnil)]
-  simp
+  exact exp_eq_zero_of_not_isNilpotent hnil
 
 /-- An additive subgroup containing every divided power of an element contains every integral
 exponential of it. For a nilpotent element this is the integrality of root subgroup maps; for a
@@ -344,10 +349,10 @@ private noncomputable def expZSMulAddEquiv {x : A} (hx : IsNilpotent x)
     (t : Multiplicative ℤ) : M ≃+ M where
   toFun v := ⟨(expSMulHom ℤ hx t : Aˣ) • (v : V), by
     simpa only [Units.smul_def, coe_expSMulHom] using
-      exp_zsmul_smul_mem hM (Multiplicative.toAdd t) v.2⟩
+      exp_zsmul_smul_mem hM (Multiplicative.toAdd t) v.property⟩
   invFun v := ⟨(expSMulHom ℤ hx t)⁻¹ • (v : V), by
     simpa only [← map_inv, Units.smul_def, coe_expSMulHom] using
-      exp_zsmul_smul_mem hM (Multiplicative.toAdd t⁻¹) v.2⟩
+      exp_zsmul_smul_mem hM (Multiplicative.toAdd t⁻¹) v.property⟩
   left_inv v := by
     apply Subtype.ext
     simp

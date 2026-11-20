@@ -264,30 +264,16 @@ private theorem laplacian_normed_convolution_eq_zero
     Δ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] f) y = 0 := by
   set ρ : E → ℝ := φ.normed μ with hρ_def
   -- The test function `ψ t = ρ (y - t)`, supported in `closedBall y φ.rOut ⊆ Ω`.
-  set g : E → ℝ := fun t ↦ ρ (y - t) with hg_def
-  have hg_supp : tsupport g ⊆ closedBall y φ.rOut := by
-    refine closure_minimal (fun t ht ↦ ?_) isClosed_closedBall
-    have : y - t ∈ Function.support ρ := ht
-    rw [hρ_def, φ.support_normed_eq, mem_ball_zero_iff, ← dist_eq_norm] at this
-    exact (mem_closedBall'.2 this.le)
-  let ψ : 𝓓(Ω, ℝ) := ⟨g, φ.contDiff_normed.comp (contDiff_const.sub contDiff_id),
-    (isCompact_closedBall y φ.rOut).of_isClosed_subset (isClosed_tsupport _) hg_supp,
-    hg_supp.trans hyΩ⟩
-  have hψ : (ψ : E → ℝ) = g := rfl
-  -- `Δψ t = Δρ (y - t)`, by invariance of the Laplacian under `t ↦ -t` and translations.
-  have hΔg : ∀ t, Δ g t = Δ ρ (y - t) := by
-    have hcomp : g = (fun s ↦ ρ (s + y)) ∘ (LinearIsometryEquiv.neg ℝ (E := E)) := by
-      ext t
-      simp [hg_def, neg_add_eq_sub]
-    intro t
-    rw [hcomp, laplacian_comp_linearIsometryEquiv_right, laplacian_comp_add_right]
-    simp [neg_add_eq_sub]
+  have hy : ∀ t ∈ tsupport ρ, y - t ∈ Ω := fun t ht ↦ hyΩ <| by
+    rw [hρ_def, φ.tsupport_normed_eq, mem_closedBall_zero_iff] at ht
+    rwa [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg]
   -- Move the Laplacian onto the bump, then recognize the pairing of `u` with `Δψ`.
   rw [← convolution_flip, HasCompactSupport.laplacian_convolution_right _ φ.hasCompactSupport_normed
-    hf.locallyIntegrable φ.contDiff_normed, convolution_def, ← hΔ ψ]
+    hf.locallyIntegrable φ.contDiff_normed, convolution_def,
+    ← hΔ (reflectTranslateTestFunction ρ y φ.contDiff_normed φ.hasCompactSupport_normed hy)]
   refine integral_congr_ae (ae_of_all _ fun t ↦ ?_)
   simp only [flip_apply, lsmul_apply, smul_eq_mul]
-  rw [hψ, hΔg]
+  rw [laplacian_reflectTranslateTestFunction]
   by_cases ht : t ∈ closedBall y φ.rOut
   · rw [hfu ht]
   · have hρ0 : Δ ρ (y - t) = 0 := by

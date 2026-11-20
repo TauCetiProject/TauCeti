@@ -551,8 +551,8 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
         ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} :=
       -- `x.2 : (x : M) ∈ {x | f x ≤ c + ε}` is the inequality `f x ≤ c + ε` by the definition of
       -- membership in a set-builder set.
-      fun x ↦ Or.inl (le_trans (b := c + ε) x.2 (by linarith))
-    exact ⟨⟨fun x ↦ ⟨x.1, x.2, hsub x⟩, continuous_subtype_val.subtype_mk _⟩, fun x ↦ rfl,
+      fun x ↦ Or.inl (le_trans (b := c + ε) x.property (by linarith))
+    exact ⟨⟨fun x ↦ ⟨x.val, x.property, hsub x⟩, continuous_subtypeVal.subtype_mk _⟩, fun x ↦ rfl,
       ⟨ContinuousMap.HomotopyRel.refl _ _⟩⟩
   have := Fintype.ofFinite ι
   -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`.
@@ -640,15 +640,15 @@ theorem exists_diffeomorph_sublevel_eq_union_handles [Finite ι] (hfs : ContMDif
   refine ⟨milnorHandle ψ k ε μ, e, Φ, fun i ↦ inter_subset_left, fun i x ↦ ?_, fun i x ↦ ?_,
     fun i x ↦ ?_, fun x ↦ ?_, fun x ↦ ?_⟩
   · -- The handle lies on or above the level `c - ε` of `f`.
-    rw [(milnorFunction_of_mem_source hψ hf (μ := μ) x.2.1).1]
-    linarith [(mem_quadraticHandle.1 x.2.2).1]
+    rw [(milnorFunction_of_mem_source hψ hf (μ := μ) x.property.1).1]
+    linarith [(mem_quadraticHandle.1 x.property.2).1]
   · -- The handle meets the lower sublevel in its attaching region.
-    have hfx := (milnorFunction_of_mem_source hψ hf (μ := μ) x.2.1).1
+    have hfx := (milnorFunction_of_mem_source hψ hf (μ := μ) x.property.1).1
     rw [(he i x).1, norm_fst_quadraticHandleMap_eq_one_iff hε, hfx]
-    have := (mem_quadraticHandle.1 x.2.2).1
+    have := (mem_quadraticHandle.1 x.property.2).1
     constructor <;> intro h <;> linarith
   · -- The core of the handle is the set where the coordinates beyond the first `k i` vanish.
-    rw [(he i x).2, quadraticHandleMap_snd_eq_zero_iff hμa hμε x.2.2,
+    rw [(he i x).2, quadraticHandleMap_snd_eq_zero_iff hμa hμε x.property.2,
       EuclideanSpace.snd_sumComplEquivProd_eq_zero_iff]
     simp only [not_lt]
   · rw [← setOf_milnorFunction_le_sub hψ hf hμ₀ hμ_nonneg, mem_ofPred_eq, (hΦ x).1,

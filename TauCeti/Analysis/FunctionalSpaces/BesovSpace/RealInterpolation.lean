@@ -317,7 +317,7 @@ theorem besov_embed₁ : (besov F φ s₀ s₁ p q₀ q₁).embed₁ = BesovSpac
 /-- A pair `(u₀, u₁)` lies in the intersection of `(B^{s₀}_{p,q₀}, B^{s₁}_{p,q₁})` if and only if
 `u₀` and `u₁` represent the same tempered distribution. -/
 theorem mem_besov_inter_iff {x : BesovSpace F φ s₀ p q₀ × BesovSpace F φ s₁ p q₁} :
-    x ∈ (besov F φ s₀ s₁ p q₀ q₁).inter ↔ x.1.toDistr = x.2.toDistr := by
+    x ∈ (besov F φ s₀ s₁ p q₀ q₁).inter ↔ x.fst.toDistr = x.snd.toDistr := by
   simp [mem_inter_iff]
 
 /-- Two decompositions in `B^{s₀}_{p,q₀} + B^{s₁}_{p,q₁}` agree if and only if their sums agree in
@@ -616,10 +616,21 @@ interpolation space `(B^{s₀}_{p,q₀}, B^{s₁}_{p,q₁})_{θ,q}` is isomorphi
 def besovKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
     (besov F φ s₀ s₁ p q₀ q₁).KMethodSpace θ q ≃L[ℂ]
       BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (besovKMethodToBesov hs hθ)
     (besovToBesovKMethod hs hθ)
-    (fun u ↦ by
+    (ContinuousLinearMap.ext fun v ↦ BesovSpace.ext <| by
+      have hsum : toSumₗ (besovToBesovKMethod (q₀ := q₀) (q₁ := q₁) hs hθ v) =
+          weightedLpToBesovSum φ (q₀ := q₀) (q₁ := q₁)
+            (toSumₗ ((weightedLpKMethodEquiv (q₀ := q₀) (q₁ := q₁) hs hθ).symm
+              v.weightedBlocks)) := by
+        simp [besovToBesovKMethod, weightedLpToBesovKMethod]
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        toDistr_besovKMethodToBesov, hsum]
+      exact sumSpaceEmbed_weightedLpToBesovSum_eq_toDistr fun j ↦ by
+        rw [sumSpaceEmbed_toSumₗ_weightedLpKMethodEquiv_symm_apply]
+        exact BesovSpace.inv_weight_smul_weightedBlocks_apply v j)
+    (ContinuousLinearMap.ext fun u ↦ by
       have hleft := KMethodSpace.leftInverse_map (θ := θ) (q := q)
         (besovToWeightedLpSum (F := F) (φ := φ) (s₀ := s₀) (s₁ := s₁) (p := p)
           (q₀ := q₀) (q₁ := q₁)).toLinearMap
@@ -633,16 +644,6 @@ def besovKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
         (fun y ↦ by simp) (fun y ↦ by simp)
         (leftInverse_weightedLpToBesovSum φ) u
       simpa [besovToBesovKMethod, besovToWeightedLpKMethod, weightedLpToBesovKMethod] using hleft)
-    (fun v ↦ BesovSpace.ext <| by
-      have hsum : toSumₗ (besovToBesovKMethod (q₀ := q₀) (q₁ := q₁) hs hθ v) =
-          weightedLpToBesovSum φ (q₀ := q₀) (q₁ := q₁)
-            (toSumₗ ((weightedLpKMethodEquiv (q₀ := q₀) (q₁ := q₁) hs hθ).symm
-              v.weightedBlocks)) := by
-        simp [besovToBesovKMethod, weightedLpToBesovKMethod]
-      rw [toDistr_besovKMethodToBesov, hsum]
-      exact sumSpaceEmbed_weightedLpToBesovSum_eq_toDistr fun j ↦ by
-        rw [sumSpaceEmbed_toSumₗ_weightedLpKMethodEquiv_symm_apply]
-        exact BesovSpace.inv_weight_smul_weightedBlocks_apply v j)
 
 @[simp]
 theorem toDistr_besovKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1)

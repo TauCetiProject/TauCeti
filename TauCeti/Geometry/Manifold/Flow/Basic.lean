@@ -39,6 +39,8 @@ compact set.
 * `TauCeti.mfderiv_flowOf_comp_prodMk_apply`: the differential of `y ↦ φ_{τ y}(f y)`.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
+* `TauCeti.mfderiv_flowOf_zero_apply_eq_self`: the spatial derivative of the time-zero flow map is
+  the identity.
 * `TauCeti.hasMFDerivAt_flowOf_comp_of_eq_zero`: the derivative of flowing for a time that
   vanishes at the base point.
 * `TauCeti.mfderiv_flowOf_trajectory_apply`, `TauCeti.mfderiv_flowOf_trajectory_zero_apply`: the
@@ -46,6 +48,7 @@ compact set.
 * `TauCeti.mfderiv_flowOf_apply_self`: the differential of the time-`t` map carries the field to
   itself.
 * `TauCeti.flowOf_add`: the domain-aware group law.
+* `TauCeti.mfderiv_flowOf_add_apply`: the differential of the composition of two local flow maps.
 * `TauCeti.flowOf_neg_flowOf`: flowing backwards undoes flowing forwards.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
 
@@ -99,6 +102,16 @@ theorem mem_flowDomain_zero_of_mem {v : (x : M) → TangentSpace I x} {t : ℝ} 
 /-- The maximal flow fixes every point at time zero. -/
 theorem flowOf_zero (v : (x : M) → TangentSpace I x) (x : M) : flowOf v 0 x = x := by
   rw [flowOf_apply, maximalIntegralCurve_zero]
+
+/-- The differential of the time-`0` local flow map `flowOf v 0` acts as the identity on every
+tangent vector. -/
+theorem mfderiv_flowOf_zero_apply_eq_self (v : (x : M) → TangentSpace I x) (x : M)
+    (w : TangentSpace I x) :
+    -- The tangent spaces at `flowOf v 0 x` and `x` are both the model space `E`.
+    @Eq E (mfderiv I I (flowOf v 0) x w) w := by
+  have h0 : flowOf v 0 = id := funext (flowOf_zero v)
+  rw [h0, mfderiv_id]
+  exact ContinuousLinearMap.id_apply w
 
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E]
 
@@ -316,12 +329,10 @@ theorem mfderiv_flowOf_zero_apply [IsManifold I 1 M]
   have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (0, x) :=
     ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
       ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
-  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero v)
   have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t x) 0 a) (a • v x) :=
     mfderiv_flowOf_trajectory_zero_apply hv x a
-  have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) x w) w := by
-    rw [hspace, mfderiv_id]
-    rfl
+  have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) x w) w :=
+    mfderiv_flowOf_zero_apply_eq_self v x w
   -- The splitting of the derivative into its time and space parts is an equation in the tangent
   -- space at `flowOf v 0 x`, which is `E` by definition, so it composes with `h1` and `h2`.
   exact (mfderiv_prod_eq_add_apply hG).trans (congrArg₂ (· + ·) h1 h2)
@@ -448,6 +459,30 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
     exact hvel _
   rw [hvel] at key
   exact key.symm.trans hvel'
+
+/-- **Differential of the composition of two local flow maps.** Along a trajectory of a `C¹`
+vector field, applying the differential of the time-`s` map at `p` and then the differential of
+the time-`t` map at `q = flowOf v s p` equals the differential of the time-`(s + t)` map at
+`p`. -/
+theorem mfderiv_flowOf_add_apply [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {s t : ℝ} {p q : M}
+    (hs : (s, p) ∈ flowDomain v) (hq : flowOf v s p = q) (ht : (t, q) ∈ flowDomain v)
+    (w : TangentSpace I p) :
+    -- The tangent spaces at `flowOf v t q` and `flowOf v (s + t) p` are both the model space `E`.
+    @Eq E (mfderiv I I (flowOf v t) q (mfderiv I I (flowOf v s) p w))
+      (mfderiv I I (flowOf v (s + t)) p w) := by
+  have hΦs := contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id hs
+  have hΦt := contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id ht
+  have hev : (flowOf v t ∘ flowOf v s) =ᶠ[𝓝 p] flowOf v (s + t) := by
+    have h₁ : ∀ᶠ z in 𝓝 p, (s, z) ∈ flowDomain v :=
+      (isOpen_setOf_mem_flowDomain hv continuous_const continuous_id).mem_nhds hs
+    have h₂ : ∀ᶠ z in 𝓝 p, (t, flowOf v s z) ∈ flowDomain v :=
+      hΦs.continuousAt.preimage_mem_nhds
+        ((isOpen_setOf_mem_flowDomain hv continuous_const continuous_id).mem_nhds (hq ▸ ht))
+    filter_upwards [h₁, h₂] with z hsz htz
+    exact (flowOf_add hv hsz htz).2
+  exact (mfderiv_comp_apply_of_eq p (hΦt.mdifferentiableAt one_ne_zero)
+    (hΦs.mdifferentiableAt one_ne_zero) hq w).symm.trans (DFunLike.congr_fun hev.mfderiv_eq w)
 
 /-- At a finite right endpoint of a maximal interval, the trajectory eventually leaves every
 compact set. -/
