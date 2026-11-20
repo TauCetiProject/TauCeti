@@ -77,7 +77,7 @@ theorem source (γ : MoorePathFrom X b) : γ.toMoorePath.source = b := γ.proper
 
 @[fun_prop]
 theorem continuous_toMoorePath : Continuous (toMoorePath : MoorePathFrom X b → MoorePath X) :=
-  continuous_subtype_val
+  continuous_subtypeVal
 
 variable (X b) in
 /-- The constant path of length zero at `b`, the basepoint of `P_b X`. -/

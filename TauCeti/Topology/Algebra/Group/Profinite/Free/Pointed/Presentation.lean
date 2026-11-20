@@ -93,7 +93,7 @@ converge to `1` and generate it topologically. -/
 theorem topologicalGeneratorRank_freeProPInsertOne_le {s : Set G} (hs : ConvergesToOne s) :
     topologicalGeneratorRank (freeProPInsertOne p s) ≤ #s := by
   set x₀ : ↥(insert (1 : G) s) := ⟨1, Set.mem_insert 1 _⟩
-  set e : s → ↥(insert (1 : G) s) := fun x ↦ ⟨x, Set.mem_insert_of_mem 1 x.2⟩
+  set e : s → ↥(insert (1 : G) s) := fun x ↦ ⟨x, Set.mem_insert_of_mem 1 x.property⟩
   have he : Tendsto e cofinite (𝓝 x₀) := tendsto_subtype_rng.mpr hs.tendsto_coe
   have hconv : Tendsto (fun x ↦ freeProCPointed.of (finiteGroupClassP.{u} p) x₀ (e x))
       cofinite (𝓝 1) := by
@@ -107,7 +107,7 @@ theorem topologicalGeneratorRank_freeProPInsertOne_le {s : Set G} (hs : Converge
     refine Subgroup.topologicalClosure_minimal _ ((Subgroup.closure_le _).mpr ?_)
       (Subgroup.isClosed_topologicalClosure _)
     rintro _ ⟨x, rfl⟩
-    rcases x.2 with hx1 | hx
+    rcases x.property with hx1 | hx
     · have hx₀ : x = x₀ := Subtype.ext hx1
       rw [hx₀, freeProCPointed.of_basePoint]
       exact one_mem _
@@ -161,7 +161,7 @@ variable (hG : IsProP p G) (s : Set G)
 the free pro-`p` group on the pointed space `(insert 1 s, 1)` to `G` that extends the inclusion
 of `insert 1 s` into `G`. -/
 noncomputable def presentation : freeProPInsertOne p s →ₜ* G :=
-  freeProCPointed.lift (isProC_finiteGroupClassP_iff.mpr hG) Subtype.val continuous_subtype_val rfl
+  freeProCPointed.lift (isProC_finiteGroupClassP_iff.mpr hG) Subtype.val continuous_subtypeVal rfl
 
 /-- The presentation sends the generator attached to a point of `insert 1 s` to that point. -/
 @[simp]
@@ -234,7 +234,7 @@ theorem exists_comp_presentation_eq
     (by simpa only [Function.support, ne_eq, toAdd_eq_zero] using hψ)
   refine ⟨Additive.toMul (b.repr.symm c), freeProCPointed.hom_ext fun x ↦ ?_⟩
   rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, presentation_of]
-  rcases x.2 with hx1 | ⟨i, hi⟩
+  rcases x.property with hx1 | ⟨i, hi⟩
   · have hx₀ : x = x₀ := Subtype.ext hx1
     rw [hx1, map_one, hx₀, freeProCPointed.of_basePoint, map_one]
   · have hx : x = e i := Subtype.ext hi.symm

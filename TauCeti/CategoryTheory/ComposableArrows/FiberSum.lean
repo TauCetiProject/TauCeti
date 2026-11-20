@@ -27,7 +27,7 @@ variable {C : Type*} [Category C] {n : ℕ}
 
 /-- Summing over strings with a fixed tail is summing over arrows into the first vertex
 of that tail. -/
-theorem finsum_mem_preimage_δ₀ {M : Type*} [AddCommMonoid M]
+theorem finsum_mem_preimage_δ₀_singleton {M : Type*} [AddCommMonoid M]
     (f : ComposableArrows C (n + 1) → M) (σ : ComposableArrows C n) :
     ∑ᶠ τ ∈ (fun τ : ComposableArrows C (n + 1) ↦ τ.δ₀) ⁻¹' {σ}, f τ =
       ∑ᶠ b : Quiver.Costar σ.left, f (σ.precomp b.2) := by

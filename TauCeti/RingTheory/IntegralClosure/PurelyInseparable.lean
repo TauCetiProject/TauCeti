@@ -19,6 +19,7 @@ import TauCeti.RingTheory.MvPolynomial.IntegrallyClosed
 -- and integral-closure transfer. No statement below mentions them, so none is re-exported.
 import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.Expand
+import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Roots
 import TauCeti.FieldTheory.PurelyInseparable.Embedding
 import TauCeti.FieldTheory.PurelyInseparable.Exponent
@@ -156,14 +157,6 @@ private theorem exists_finite_forall_coeff_exists_pow_eq {R : Type u} [CommRing 
   -- the root `y` is integral over `R`, since its `m`-th power comes from `R`
   exact ⟨⟨y, IsIntegral.of_pow hm (hy ▸ isIntegral_algebraMap)⟩, Subtype.ext (by simpa using hy)⟩
 
-/-- Adjoining a `K`-basis of `M` to `K` gives all of `M`: the basis already spans, and `adjoin`
-contains the span. -/
-private theorem adjoin_range_eq_top_of_basis {K M ι : Type*} [Field K] [Field M] [Algebra K M]
-    (b : Module.Basis ι K M) : IntermediateField.adjoin K (Set.range b) = ⊤ :=
-  eq_top_iff.mpr fun x _ ↦
-    (Submodule.span_le (p := (IntermediateField.adjoin K (Set.range b)).toSubmodule)).mpr
-      (IntermediateField.subset_adjoin K _) (b.mem_span x)
-
 /-- Source: Stacks, Lemma 10.161.13 (tag 032O): "If `R` is N-2 then `R[x]` is N-2", second
 paragraph of the proof, for `r` variables at once. **The purely inseparable core of
 normalization-finiteness.** Let `R` be a Noetherian Japanese domain, for instance a field. For
@@ -223,8 +216,7 @@ theorem IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable (R : Type*)
   -- so it is the integral closure of `P` in `K'`
   refine IsIntegralClosure.finite_of_forall_exists_pow_eq (MvPolynomial σ R) K M C
     (MvPolynomial σ R') (FractionRing (MvPolynomial σ R')) p (le_refl n)
-    (s := Set.range b) ?_ ?_
-  · exact adjoin_range_eq_top_of_basis b
+    (s := Set.range b) b.adjoin_range_eq_top ?_
   · -- the root hypothesis, from A5 applied to `g j`
     rintro _ ⟨j, rfl⟩
     obtain ⟨y, hy⟩ := MvPolynomial.exists_pow_eq_map_expand (algebraMap R R') p n

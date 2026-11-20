@@ -234,7 +234,7 @@ private theorem mem_range_leaf_iff_mem_connectedComponent (hm : 1 ≤ m) (hmr : 
         connectedComponent (WithTopology.toTopology (leafTop (I := I) m k D) x) := by
   constructor
   · rintro ⟨z, rfl⟩
-    exact (WithTopology.toTopology_ofTopology (leafTop (I := I) m k D) z.1).symm ▸ z.2
+    exact (WithTopology.toTopology_ofTopology (leafTop (I := I) m k D) z.val).symm ▸ z.property
   · intro hy
     exact ⟨⟨WithTopology.toTopology (leafTop (I := I) m k D) y, hy⟩,
       WithTopology.ofTopology_toTopology (leafTop (I := I) m k D) y⟩
