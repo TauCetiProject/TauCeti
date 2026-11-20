@@ -94,8 +94,11 @@ variable {p} {x : R}
 /-- For `x ^ p = x`, the element `x` acts on `frobeniusFixedIdempotent p x i` as the scalar `i`. -/
 theorem mul_frobeniusFixedIdempotent (hx : x ^ p = x) (i : ZMod p) :
     x * frobeniusFixedIdempotent p x i = (i.cast : R) * frobeniusFixedIdempotent p x i := by
-  rw [← sub_eq_zero, ← sub_mul, frobeniusFixedIdempotent_def, mul_sub, mul_one, ← pow_succ',
-    Nat.sub_add_cancel hp.out.one_le, sub_zmodCast_pow_char hx, sub_self]
+  -- The one real step: `(x - i) * (x - i) ^ (p - 1) = (x - i) ^ p = x - i`.
+  have h : (x - (i.cast : R)) * (x - (i.cast : R)) ^ (p - 1) = x - (i.cast : R) := by
+    rw [← pow_succ', Nat.sub_add_cancel hp.out.one_le, sub_zmodCast_pow_char hx]
+  rw [frobeniusFixedIdempotent_def]
+  linear_combination -h
 
 /-- For `x ^ p = x`, each `frobeniusFixedIdempotent p x i` is idempotent. -/
 theorem isIdempotentElem_frobeniusFixedIdempotent (hx : x ^ p = x) (i : ZMod p) :
@@ -134,16 +137,11 @@ theorem frobeniusFixedIdempotent_sum_zmodCast_mul {f : ZMod p → R}
     (hf : CompleteOrthogonalIdempotents f) :
     frobeniusFixedIdempotent p (∑ i : ZMod p, (i.cast : R) * f i) = f := by
   funext i
-  have hsub : ∑ j : ZMod p, (j.cast : R) * f j - (i.cast : R) =
-      ∑ j : ZMod p, ((j - i : ZMod p).cast : R) * f j := by
-    simp_rw [ZMod.cast_sub', sub_mul, Finset.sum_sub_distrib, ← Finset.mul_sum, hf.complete,
-      mul_one]
-  rw [frobeniusFixedIdempotent_def, hsub, hf.sum_mul_pow, ← hf.complete, ← Finset.sum_sub_distrib]
-  simp_rw [← ZMod.cast_pow', ← one_sub_mul]
-  rw [Finset.sum_eq_single i (fun j _ hji ↦ by
-    rw [ZMod.pow_card_sub_one_eq_one (sub_ne_zero.mpr hji), ZMod.cast_one', sub_self, zero_mul])
-    (by simp)]
-  rw [sub_self, zero_pow (Nat.sub_ne_zero_of_lt hp.out.one_lt), ZMod.cast_zero, sub_zero, one_mul]
+  rw [frobeniusFixedIdempotent_def, ← hf.sum_sub_mul, hf.sum_mul_pow]
+  simp_rw [← ZMod.cast_sub', ← ZMod.cast_pow']
+  rw [← hf.complete, ← Finset.sum_sub_distrib, Finset.sum_eq_single i
+    (fun j _ hji ↦ by simp [ZMod.pow_card_sub_one_eq_one (sub_ne_zero.mpr hji)]) (by simp)]
+  simp [zero_pow (Nat.sub_ne_zero_of_lt hp.out.one_lt)]
 
 /-- Every combination `∑ i, i * f i` of a complete family of orthogonal idempotents indexed by
 `ZMod p` is fixed by the `p`-power map. -/

@@ -19,6 +19,7 @@ disconnected spectrum.
 ## Main results
 
 * `OrthogonalIdempotents.sum_mul_mul`: `(∑ i, a i * e i) * e j = a j * e j`.
+* `CompleteOrthogonalIdempotents.sum_sub_mul`: `∑ i, (a i - c) * e i = ∑ i, a i * e i - c`.
 * `CompleteOrthogonalIdempotents.sum_mul_pow`: `(∑ i, a i * e i) ^ n = ∑ i, a i ^ n * e i`.
 -/
 
@@ -38,6 +39,13 @@ theorem sum_mul_mul (he : OrthogonalIdempotents e) (a : ι → R) (j : ι) :
 end OrthogonalIdempotents
 
 namespace CompleteOrthogonalIdempotents
+
+/-- Shifting every coefficient of a combination of a complete family of orthogonal idempotents by
+`c` shifts the combination by `c`: `∑ i, (a i - c) * e i = ∑ i, a i * e i - c`. -/
+theorem sum_sub_mul {R ι : Type*} [Ring R] [Fintype ι] {e : ι → R}
+    (he : CompleteOrthogonalIdempotents e) (a : ι → R) (c : R) :
+    ∑ i, (a i - c) * e i = ∑ i, a i * e i - c := by
+  simp [sub_mul, Finset.sum_sub_distrib, ← Finset.mul_sum, he.complete]
 
 variable {R ι : Type*} [CommSemiring R] [Fintype ι] {e : ι → R}
 
