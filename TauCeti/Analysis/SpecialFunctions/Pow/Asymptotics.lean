@@ -252,7 +252,7 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ = _ := by dsimp [M]; ring
 
 /-- For `B ≠ 0`, the power `B ^ q⁻¹` tends to `1` as the real number `q` tends to `∞`. -/
-theorem tendsto_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
+theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
     Tendsto (fun q : ℝ => B ^ q⁻¹) atTop (𝓝 1) := by
   simpa only [Function.comp_def, rpow_zero] using
     (continuousAt_const_rpow hB).tendsto.comp tendsto_inv_atTop_zero

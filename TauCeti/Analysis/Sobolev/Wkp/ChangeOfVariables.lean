@@ -622,7 +622,7 @@ theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0
     Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
   unfold compLBound
   rw [ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero]
-  refine (((Real.tendsto_rpow_inv_atTop (inv_ne_zero hc)).comp
+  refine (((Real.tendsto_const_rpow_inv_atTop (inv_ne_zero hc)).comp
     (NNReal.tendsto_coe_atTop.2 tendsto_id)).congr fun q => ?_).mul_const _
   rw [Function.comp_apply, id_eq, one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
 
@@ -1004,7 +1004,7 @@ private theorem aestronglyMeasurable_and_eLpNorm_top_le_of_chain {n : ℕ}
       atTop (𝓝 (compLBound ⊤ (n + 1) L c * ‖u‖)) := by
     simpa only [Function.comp_def, id_eq, mul_one] using
       ((tendsto_compLBound_coe_atTop (n + 1) L h.pos.ne').mul
-        ((Real.tendsto_rpow_inv_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne').comp
+        ((Real.tendsto_const_rpow_inv_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne').comp
           (NNReal.tendsto_coe_atTop.2 tendsto_id))).mul_const ‖u‖
   refine eLpNorm_exponent_top_le_liminf.trans ?_
   rw [← (ENNReal.tendsto_ofReal hK).liminf_eq]
