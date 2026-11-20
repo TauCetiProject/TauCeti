@@ -68,6 +68,9 @@ cut.
   band around an isolated critical value does not depend on the band; the identification is
   induced by inclusions of pairs
   (`TauCeti.singularHomologyMap_comp_singularHomologySublevelPairIsoOfCriticalValue_hom`).
+* `TauCeti.Icc_subset_and_isCompact_and_nonempty_singularHomology_sublevelPair_iso`: in
+  particular a compact band around an isolated critical value `c` can be narrowed to any
+  `f⁻¹[c - ε, c + ε]` inside it.
 
 ## References
 
@@ -344,6 +347,29 @@ def singularHomologySublevelPairIsoOfCriticalValue (hf : ContMDiff I 𝓘(ℝ) �
       (hsub hcompact' (hs'c.trans hv).le le_rfl)
       (hreg hcrit' le_rfl (hu.trans hct').le fun h ↦ hu.not_ge h.2)
       (hreg hcrit' (hs'c.trans hv).le le_rfl fun h ↦ hv.not_ge h.1) R n).symm
+
+/-- **Narrowing a band around an isolated critical value.** Let `a < c < b`, with the band
+`f⁻¹[a, b]` compact and every critical point of `f` in it on the level `c`. For
+`0 < ε ≤ min (c - a) (b - c)` the band `f⁻¹[c - ε, c + ε]` lies in `f⁻¹[a, b]` and is compact, and
+`Hₙ({f ≤ b}, {f ≤ a})` is isomorphic to `Hₙ({f ≤ c + ε}, {f ≤ c - ε})` in every degree
+(`TauCeti.singularHomologySublevelPairIsoOfCriticalValue`). -/
+theorem Icc_subset_and_isCompact_and_nonempty_singularHomology_sublevelPair_iso
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c ε : ℝ} (hac : a < c) (hcb : c < b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
+    (hε : 0 < ε) (hεδ : ε ≤ min (c - a) (b - c)) :
+    Icc (c - ε) (c + ε) ⊆ Icc a b ∧ IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) ∧
+      ∀ {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Abelian A] (R : A) (n : ℕ),
+        Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
+          (sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularHomology R n) := by
+  have hεa : ε ≤ c - a := hεδ.trans (min_le_left _ _)
+  have hεb : ε ≤ b - c := hεδ.trans (min_le_right _ _)
+  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b := Icc_subset_Icc (by linarith) (by linarith)
+  have hcompact' : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous) (preimage_mono hε')
+  exact ⟨hε', hcompact', fun R n ↦ ⟨singularHomologySublevelPairIsoOfCriticalValue hf hac hcb
+    (by linarith : c - ε < c) (by linarith : c < c + ε) hcompact hcompact' hcrit
+    (fun x hx hfx ↦ hcrit x hx (hε' hfx)) R n⟩⟩
 
 /-- The identification `TauCeti.singularHomologySublevelPairIsoOfCollars` of
 `Hₙ({f ≤ b}, {f ≤ a})` with `Hₙ({f ≤ t}, {f ≤ s})`, precomposed with the map induced by the

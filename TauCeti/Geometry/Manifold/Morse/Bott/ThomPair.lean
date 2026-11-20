@@ -107,6 +107,7 @@ def negativeNormalGauge (F' : Type*) (ε : ℝ) :
     TotalSpace F' (fun s ↦ h.negativeNormalSpace hn g s) → ℝ :=
   fun v ↦ √(-(2⁻¹ * h.normalHessian hn v.proj v.2 v.2) / ε)
 
+@[simp]
 theorem negativeNormalGauge_apply {ε : ℝ}
     (v : TotalSpace F' fun s ↦ h.negativeNormalSpace hn g s) :
     h.negativeNormalGauge hn g F' ε v = √(-(2⁻¹ * h.normalHessian hn v.proj v.2 v.2) / ε) :=
@@ -332,24 +333,20 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair [T2Space M]
   have hm : 0 < min ε₀ (min (c - a) (b - c)) := lt_min hε₀ (lt_min (by linarith) (by linarith))
   have hε : 0 < ε := half_pos hm
   have hεm : ε < min ε₀ (min (c - a) (b - c)) := half_lt_self hm
-  have hε₁ : ε < ε₀ := hεm.trans_le (min_le_left _ _)
-  have hεa : ε < c - a := hεm.trans_le ((min_le_right _ _).trans (min_le_left _ _))
-  have hεb : ε < b - c := hεm.trans_le ((min_le_right _ _).trans (min_le_right _ _))
-  have hε' : Icc (c - ε) (c + ε) ⊆ Icc a b := Icc_subset_Icc (by linarith) (by linarith)
-  have hcompact' : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) :=
-    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous) (preimage_mono hε')
   -- Every critical point of the band lies on the submanifold, hence on the level `c`.
   have hlev : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c := fun x hx hfx ↦ by
     obtain ⟨s, rfl⟩ := hcrit ⟨hx, hfx⟩
     exact hc s
-  obtain ⟨φ, -, hφ⟩ := hmain ε hε hε₁ hcompact' fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
+  obtain ⟨hε', hcompact', hband⟩ :=
+    Icc_subset_and_isCompact_and_nonempty_singularHomology_sublevelPair_iso hfs hac hcb hcompact
+      hlev hε (hεm.trans_le (min_le_right _ _)).le
+  obtain ⟨φ, -, hφ⟩ := hmain ε hε (hεm.trans_le (min_le_left _ _)) hcompact'
+    fun x hx ↦ hcrit ⟨hx.1, hε' hx.2⟩
   have hρ := IsCriticalSubmanifold.isFiberGauge_negativeNormalGauge hn h.toIsCriticalSubmanifold
     g.toRiemannianMetric (F' := Fin r → ℝ) (by simp) (fun s ↦ (hfs (i s)).of_le (by simp)) hdim hε
   have := isIso_singularHomologyMap_gaugeDiscSpherePairMap hρ R n
-  exact ⟨singularHomologySublevelPairIsoOfCriticalValue hfs hac hcb
-    (by linarith : c - ε < c) (by linarith : c < c + ε) hcompact hcompact' hlev
-    (fun x hx hfx ↦ hlev x hx (hε' hfx)) R n ≪≫ (@asIso _ _ _ _ _ (hφ R n)).symm ≪≫
-      asIso (TopPair.singularHomologyMap (gaugeDiscSpherePairMap hρ) R n)⟩
+  exact ⟨(hband R n).some ≪≫ (@asIso _ _ _ _ _ (hφ R n)).symm ≪≫
+    asIso (TopPair.singularHomologyMap (gaugeDiscSpherePairMap hρ) R n)⟩
 
 end IsNondegenerateCriticalSubmanifold
 
