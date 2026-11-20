@@ -191,11 +191,6 @@ theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : A.sectionChartData.SobolevD
   have hcompat := ae_restrict_of_ae_restrict_of_subset hP
     ((SectionChartData.compatible_iff _ _ _ _).1
       (SectionChartData.compatible_of_mem (A.aeTransition_sectionChartData μ) hw i j))
-  have htr : ∀ y ∈ (P : Set E), A.transition i j y = ((A.chart j).symm ≫ₕ A.chart i) y := by
-    intro y hy
-    obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 (hP hy)
-    rw [A.transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-      (A.chart j).left_inv (A.dom_subset_chart_source j hx.2)]
   have hj := ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hPj)
     (A.sectionChartData.chartValueL_apply_ae μ p k j w)
   have hi : ∀ᵐ y ∂μ.restrict P,
@@ -211,7 +206,8 @@ theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : A.sectionChartData.SobolevD
     A.value_transferL_ae μ p k hp i j hPc hPD hPQ (fun l ↦ Wkp.restrictL hQ k (w i l)) m,
     ae_restrict_mem P.isOpen.measurableSet] with y hy₁ hy₂ hy₃ hy₄ hy₅ hy₆ hyP
   rw [A.sectionChartData_coordChange_of_mem (hP hyP),
-    A.sectionChartData_transition_of_mem (hP hyP), htr y hyP] at hy₂
+    A.sectionChartData_transition_of_mem (hP hyP),
+    A.transition_eq_symm_trans] at hy₂
   have hval : Wkp.value k (w j m) y =
       (finBasis ℝ F).repr (A.sectionChartData.chartValueL μ p k j w y) m := by
     rw [hy₃, (finBasis ℝ F).repr_sum_self]

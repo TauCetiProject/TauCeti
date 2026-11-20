@@ -36,7 +36,7 @@ chart-`i` data gives, on each piece, an element of `W^{k,p⋆}(P i j)` with the 
 chart-`j` data. These glue over the finite cover
 (`TauCeti.Wkp.exists_continuousLinearMap_value_ae_eq`) to an element of `W^{k,p⋆}(A.image j)`, and
 the resulting tuples are again the components of the same section
-(`TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq`).
+(`TauCeti.SectionChartData.exists_continuousLinearMap_chartValueL_ae_eq_coord`).
 
 ## Main results
 
@@ -142,7 +142,18 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
     simp only [f, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, h₁, hD, ← hu, h₄]
   choose Φ hΦ using fun j m ↦ Wkp.exists_continuousLinearMap_value_ae_eq (fun i ↦ hPj i j)
     (hcov j) (f j m) _ (hf j m)
-  exact A.sectionChartData.exists_continuousLinearMap_chartValueL_ae_eq Φ hΦ
+  -- The values of `Φ` are the components of the readings of every section read by `w`.
+  have hrepr (w : SobolevSection A μ p (k + 1)) {s : ∀ x, V x}
+      (hs : ∀ i, A.sectionChartData.chartValueL μ p (k + 1) i w =ᵐ[μ.restrict (A.image i)]
+        A.sectionChartData.coord i s) (i : Fin A.n) (m : Fin (finrank ℝ F)) :
+      (Wkp.value k (Φ i m w) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
+        fun y ↦ (finBasis ℝ F).repr (A.sectionChartData.coord i s y) m :=
+    (hΦ i m w).trans (SectionChartData.value_ae_eq_repr_coord (hs i) m)
+  obtain ⟨T, hT⟩ := A.sectionChartData.exists_continuousLinearMap_chartValueL_ae_eq_coord Φ
+    fun w ↦ (A.sectionChartData.exists_section μ p (k + 1) w).imp fun _ ↦ hrepr w
+  refine ⟨T, fun w i ↦ ?_⟩
+  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section μ p (k + 1) w
+  exact (hT w s (hrepr w hs) i).trans (hs i).symm
 
 /-- **Iterated Sobolev embedding for Sobolev sections.** On a compact manifold without boundary of
 dimension `n`, given by a finite bundle atlas of a Hausdorff manifold, let `1 ≤ p` and

@@ -230,6 +230,12 @@ theorem overlap_subset_image (i i' : Fin A.n) : A.overlap i i' ⊆ A.image i' :=
 def transition (i i' : Fin A.n) (y : E) : E :=
   A.chart i ((A.chart i').symm y)
 
+/-- The chart transition from chart `i'` to chart `i` is the inverse of chart `i'` followed by
+chart `i`. -/
+theorem transition_eq_symm_trans (i i' : Fin A.n) :
+    A.transition i i' = (A.chart i').symm ≫ₕ A.chart i :=
+  (OpenPartialHomeomorph.coe_trans _ _).symm
+
 theorem transition_chart {i i' : Fin A.n} {x : M} (hx : x ∈ A.dom i') :
     A.transition i i' (A.chart i' x) = A.chart i x := by
   rw [transition, (A.chart i').left_inv (A.dom_subset_chart_source i' hx)]

@@ -112,11 +112,9 @@ private theorem value_transferL_append_ae (hp : p ≠ ⊤) {i : Fin A.n} {j : Fi
   filter_upwards [(A.append B).value_transferL_ae μ p k hp _ _ hPc hPD hPQ _ m, hcv.ae_comp hQs,
     ae_restrict_mem P.isOpen.measurableSet] with y hy₁ hy₂ hy
   -- Pointwise, this is the coordinate change between the two charts of the union atlas.
-  obtain ⟨x, hx, rfl⟩ := (A.append B).mem_overlap.1 (hP hy)
   rw [hy₁, hy₂, ← FiniteBundleAtlas.coord_append_natAdd A B j,
     (A.append B).coord_eq_coordChange s (hP hy), FiniteBundleAtlas.coord_append_castAdd,
-    (A.append B).transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
-    ((A.append B).chart _).left_inv ((A.append B).dom_subset_chart_source _ hx.2)]
+    (A.append B).transition_eq_symm_trans]
 
 /-- The `m`-th component of the chart-`j` coordinates of the sections read by the elements of the
 Sobolev sections of `A` depends continuously linearly on them as a `W^{k,p}` function on the
@@ -171,21 +169,28 @@ private theorem exists_continuousLinearMap_chartValueL_ae (hp : p ≠ ⊤) [T2Sp
           ∀ j, B.sectionChartData.chartValueL μ p k j (T w) =ᵐ[μ.restrict (B.image j)]
             B.coord j s := by
   choose Φ hΦ using exists_continuousLinearMap_value_ae A B μ k hp
-  have hchart (w : SobolevSection A μ p k) {s : ∀ x, V x}
-      (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)]
-        A.coord i s) (j : Fin B.n) :
-      B.sectionChartData.chartValueL μ p k j (fun j m ↦ Φ j m w) =ᵐ[μ.restrict (B.image j)]
-        B.sectionChartData.coord j s := by
-    refine B.sectionChartData.chartValueL_ae_eq_coord μ p k fun m ↦ ?_
+  -- The values of `Φ` are the components of the readings in the charts of `B` of every section
+  -- read by `w`.
+  have hrepr (w : SobolevSection A μ p k) {s : ∀ x, V x}
+      (hs : ∀ i, A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+      (j : Fin B.n) (m : Fin (finrank ℝ F)) :
+      (Wkp.value k (Φ j m w) : E → ℝ) =ᵐ[μ.restrict (B.image j)]
+        fun y ↦ (finBasis ℝ F).repr (B.sectionChartData.coord j s y) m := by
     filter_upwards [hΦ j m w s hs, B.sectionChartData_coord_ae_eq μ j s] with y h₁ h₂
-    exact h₁.trans (by rw [h₂, Basis.coord_apply])
-  refine ⟨(ContinuousLinearMap.pi fun j ↦ ContinuousLinearMap.pi (Φ j)).codRestrict
-    (B.sectionChartData.sobolevSections μ p k) fun w ↦ ?_,
-    fun w s hs j ↦ (hchart w hs j).trans (B.sectionChartData_coord_ae_eq μ j s)⟩
-  obtain ⟨s, hs⟩ := SobolevSection.exists_ae_eq_coord A μ p k w
-  exact (B.sectionChartData.mem_sobolevSections_iff μ p k).2 ⟨s, hchart w hs⟩
+    rw [h₁, h₂]
+  obtain ⟨T, hT⟩ := B.sectionChartData.exists_continuousLinearMap_chartValueL_ae_eq_coord Φ
+    fun w ↦ (exists_ae_eq_coord A μ p k w).imp fun _ ↦ hrepr w
+  exact ⟨T, fun w s hs j ↦ (hT w s (hrepr w hs) j).trans (B.sectionChartData_coord_ae_eq μ j s)⟩
 
 variable [T2Space M]
+
+/-- Mapping the Sobolev sections of `A` to those of `B` and back is the identity. -/
+private theorem leftInverse_exists_continuousLinearMap_chartValueL_ae (hp : p ≠ ⊤) :
+    Function.LeftInverse (exists_continuousLinearMap_chartValueL_ae B A μ k hp).choose
+      (exists_continuousLinearMap_chartValueL_ae A B μ k hp).choose := fun w ↦ by
+  obtain ⟨s, hs⟩ := exists_ae_eq_coord A μ p k w
+  exact eq_of_ae_eq_coord ((exists_continuousLinearMap_chartValueL_ae B A μ k hp).choose_spec
+    _ s ((exists_continuousLinearMap_chartValueL_ae A B μ k hp).choose_spec w s hs)) hs
 
 /-- **Independence of the atlas.** For `1 ≤ p < ∞`, the Sobolev spaces `W^{k,p}(V)` of sections
 given by two finite bundle atlases `A` and `B` are identified by a continuous linear equivalence,
@@ -195,14 +200,8 @@ def atlasEquiv (hp : p ≠ ⊤) : SobolevSection A μ p k ≃L[ℝ] SobolevSecti
   ContinuousLinearEquiv.equivOfInverse
     (exists_continuousLinearMap_chartValueL_ae A B μ k hp).choose
     (exists_continuousLinearMap_chartValueL_ae B A μ k hp).choose
-    (fun w ↦ by
-      obtain ⟨s, hs⟩ := exists_ae_eq_coord A μ p k w
-      exact eq_of_ae_eq_coord ((exists_continuousLinearMap_chartValueL_ae B A μ k hp).choose_spec
-        _ s ((exists_continuousLinearMap_chartValueL_ae A B μ k hp).choose_spec w s hs)) hs)
-    (fun w ↦ by
-      obtain ⟨s, hs⟩ := exists_ae_eq_coord B μ p k w
-      exact eq_of_ae_eq_coord ((exists_continuousLinearMap_chartValueL_ae A B μ k hp).choose_spec
-        _ s ((exists_continuousLinearMap_chartValueL_ae B A μ k hp).choose_spec w s hs)) hs)
+    (leftInverse_exists_continuousLinearMap_chartValueL_ae A B μ k hp)
+    (leftInverse_exists_continuousLinearMap_chartValueL_ae B A μ k hp)
 
 variable {A B μ k}
 
