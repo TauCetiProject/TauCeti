@@ -47,6 +47,10 @@ Over any commutative ring, the quotient of `p` by `X - a` takes the value `p' (a
 Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 `leadingCoeff p · leadingCoeff q · deg q`.
 
+Over a possibly noncommutative semiring, the derivative of `f ^ n` is the sum of the `n` products
+`f ^ k * f′ * f ^ (n - 1 - k)` (`Polynomial.derivative_pow_eq_sum`), the form of `derivative_pow`
+that does not move `f′` past powers of `f`.
+
 In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
 vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
 
@@ -298,5 +302,19 @@ theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial 
   rw [← Nat.cast_add_one, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr (NeZero.ne p)),
     CharP.cast_eq_zero, mul_zero] at this
   exact zero_ne_one this
+
+/-- **The derivative of a power, without commutativity.**  Over any semiring, the derivative of
+`f ^ n` is the sum over the `n` positions of the factor that is differentiated. Over a commutative
+semiring this is `Polynomial.derivative_pow`. -/
+theorem derivative_pow_eq_sum {R : Type*} [Semiring R] (f : R[X]) (n : ℕ) :
+    derivative (f ^ n) = ∑ k ∈ Finset.range n, f ^ k * derivative f * f ^ (n - 1 - k) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, derivative_mul, ih, Finset.sum_mul, Finset.sum_range_succ, Nat.add_sub_cancel,
+      Nat.sub_self, pow_zero, mul_one]
+    congr 1
+    refine Finset.sum_congr rfl fun k hk ↦ ?_
+    rw [mul_assoc, ← pow_succ, show n - 1 - k + 1 = n - k by grind]
 
 end Polynomial
