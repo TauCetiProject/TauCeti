@@ -385,11 +385,6 @@ theorem isSmoothEmbedding_closedOrbit_iff (hn : 1 ≤ n) :
   exact ⟨fun he ↦ he.isEmbedding.injective, fun hinj ↦ ⟨isImmersion_closedOrbit h hn,
     ((contMDiff_closedOrbit h).continuous.isClosedEmbedding hinj).isEmbedding⟩⟩
 
-/-- The circle `ℝ / 1ℤ` parametrizing the closed orbit through a fixed point has positive
-period. -/
-instance fact_natCast_one_pos : Fact (0 < ((1 : ℕ) : ℝ)) :=
-  ⟨Nat.cast_pos.2 one_pos⟩
-
 /-- The closed orbit through a point of least period `d`, as a bundled `C^n` smooth embedding of
 the circle `ℝ / dℤ` into the mapping torus. -/
 def closedOrbitEmbedding (hn : 1 ≤ n) (hd : minimalPeriod φ x = d) :

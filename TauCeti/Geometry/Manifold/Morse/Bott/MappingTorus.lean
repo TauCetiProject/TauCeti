@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Map
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Prod
 import TauCeti.Geometry.Manifold.Morse.Submersion
@@ -149,7 +150,8 @@ theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodic
   -- The projection to `M` is onto, and the Hessian of `h` at `x` is injective, so `u` has no
   -- component along `M`.
   have hsnd : IsRegularPoint (𝓘(ℝ).prod I) I (Prod.snd : ℝ × M → M) (t, x) :=
-    isRegularPoint_iff.2 fun w ↦ ⟨((0 : ℝ), w), by rw [mfderiv_snd]; rfl⟩
+    isRegularPoint_iff.2 fun w ↦ ⟨(Manifold.tangentSpaceProdEquiv (t, x)).symm (0, w), by
+      rw [mfderiv_snd_apply, Manifold.tangentSpaceProdEquiv_symm_apply]⟩
   rw [hsnd.ker_criticalHessian_comp hcrit.contMDiffAt contMDiffAt_snd hcrit.mem_criticalPoints,
     Submodule.mem_comap, mfderiv_snd] at hu
   have hu2 : (Manifold.tangentSpaceProdEquiv (t, x) u).2 = 0 := by
@@ -168,7 +170,10 @@ theorem isNondegenerateCriticalSubmanifold_closedOrbitEmbedding (hx : IsPeriodic
     · rw [hu2, Prod.smul_snd, smul_zero]
   refine ⟨a, ?_⟩
   rw [hu', map_smul, ← timeVectorField_mk]
-  rfl
+  -- The domain of the velocity is `ℝ` only up to the tangent space synonym, which blocks rewriting
+  -- with `ContinuousLinearMap.smulRight_apply`; `exact` sees through it.
+  exact ContinuousLinearMap.smulRight_apply.trans
+    (congrArg (· • _) (one_apply_eq_self (F := ℝ →L[ℝ] ℝ) a))
 
 /-- **The induced function of a Morse function is Morse–Bott.** Let `h` be a `φ`-invariant Morse
 function all of whose critical points are fixed by `φ`. Then the closed orbits through the critical

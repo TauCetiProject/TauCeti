@@ -234,21 +234,11 @@ section Lift
 
 variable (φ : M ≃ₘ^n⟮I, I⟯ M) {β : Type*} {f : M → β}
 
-/-- A function invariant under `φ` is invariant under every integer power of `φ`. -/
-private theorem apply_zpow_apply (hf : ∀ x, f (φ x) = f x) (k : ℤ) (x : M) :
-    f ((φ ^ k) x) = f x := by
-  induction k using Int.induction_on generalizing x with
-  | zero => rfl
-  | succ k ih => rw [zpow_add_one, Diffeomorph.mul_apply, ih, hf]
-  | pred k ih =>
-    rw [zpow_sub_one, Diffeomorph.mul_apply, ih, Diffeomorph.inv_apply, ← hf,
-      Diffeomorph.apply_symm_apply]
-
 /-- The function `[t, x] ↦ f x` on the mapping torus induced by a function `f` invariant under `φ`.
 It is well defined because `f` is invariant under every integer power of `φ`. -/
 def lift (f : M → β) (hf : ∀ x, f (φ x) = f x) : SmoothMappingTorus φ → β :=
   MulAction.orbitRelQuotientLift (fun z ↦ f ((ofProd φ).symm z).2) fun k z ↦ by
-    rw [ofProd_symm_smul, apply_zpow_apply φ hf]
+    rw [ofProd_symm_smul, φ.apply_zpow_apply_of_invariant hf]
 
 variable (hf : ∀ x, f (φ x) = f x)
 

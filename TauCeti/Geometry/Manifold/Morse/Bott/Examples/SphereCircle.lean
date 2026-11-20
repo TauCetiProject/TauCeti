@@ -56,9 +56,9 @@ and `(S, π)`, where `N = u` and `S = -u` are the poles and `θ = 0, π` the poi
   `[t, ±u, ±1]`.
 * `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_self_one`,
   `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_self_neg_one`,
-  `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_neg_one`,
-  `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_neg_neg_one`: its Morse indices `3`, `2`, `1`
-  and `0` along the four critical circles.
+  `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_neg_self_one`,
+  `TauCeti.manifoldMorseIndex_sphereCircleTorusHeight_neg_self_neg_one`: its Morse indices `3`,
+  `2`, `1` and `0` along the four critical circles.
 
 ## References
 
@@ -96,12 +96,6 @@ theorem sphereCircleHeight_apply (u : sphere (0 : E) 1) (ε : ℝ)
 
 variable {v : E} {u : sphere (0 : E) 1}
 
-/-- The reflection across `v^⊥` fixes a vector `u` orthogonal to `v`. -/
-private theorem reflection_eq_self (huv : ⟪v, (u : E)⟫_ℝ = 0) :
-    (ℝ ∙ v)ᗮ.reflection (u : E) = u :=
-  Submodule.reflection_mem_subspace_eq_self
-    (Submodule.mem_orthogonal_singleton_iff_inner_right.2 huv)
-
 variable [Fact (finrank ℝ E = 2 + 1)]
 
 /-- **The function is invariant under `τ`** when `u` is orthogonal to `v`: the reflection across
@@ -112,29 +106,27 @@ theorem sphereCircleHeight_sphereCircleReflection (huv : ⟪v, (u : E)⟫_ℝ = 
   rw [sphereCircleHeight_apply, sphereCircleHeight_apply, coe_sphereCircleReflection_apply_fst,
     coe_sphereCircleReflection_apply_snd, Complex.conj_re]
   congr 1
-  conv_lhs => rw [← reflection_eq_self huv]
+  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u := Submodule.reflection_mem_subspace_eq_self
+    (Submodule.mem_orthogonal_singleton_iff_inner_right.2 huv)
+  conv_lhs => rw [← hu]
   rw [LinearIsometryEquiv.inner_map_map]
 
 /-- A space of dimension `2 + 1` is finite-dimensional, so its unit sphere is compact. -/
 local instance : FiniteDimensional ℝ E :=
   .of_fact_finrank_eq_succ 2
 
-/-- Multiplication by a constant is smooth. -/
-private theorem contDiff_mul_left (ε : ℝ) {n : WithTop ℕ∞} : ContDiff ℝ n (ε * · : ℝ → ℝ) :=
-  contDiff_const.mul contDiff_id
-
 omit [Fact (finrank ℝ E = 2 + 1)] in
 /-- `ε` times the height on the circle is smooth. -/
 private theorem contMDiff_mul_sphereHeight (ε : ℝ) {m : WithTop ℕ∞} :
     ContMDiff (𝓡 1) 𝓘(ℝ) m ((ε * ·) ∘ sphereHeight (1 : sphere (0 : ℂ) 1)) :=
-  (contDiff_mul_left ε).contMDiff.comp (contMDiff_sphereHeight 1)
+  (contDiff_const.mul contDiff_id).contMDiff.comp (contMDiff_sphereHeight 1)
 
 /-- **The function is Morse** for `ε ≠ 0`: it is the separated sum of the height on `S²` and of
 `ε` times the height on `S¹`, both Morse functions. -/
 theorem isMorse_sphereCircleHeight (u : sphere (0 : E) 1) {ε : ℝ} (hε : ε ≠ 0) :
     IsMorse ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε) :=
   (isMorse_sphereHeight u).comp_fst_add_comp_snd ((isMorse_sphereHeight 1).scalar_comp
-    (fun _ ↦ (contDiff_mul_left ε).contDiffAt) fun _ ↦ by simpa using hε)
+    (fun _ ↦ (contDiff_const.mul contDiff_id).contDiffAt) fun _ ↦ by simpa using hε)
 
 /-- **The critical points of the function** are the four pairs `(±u, ±1)` of poles, for
 `ε ≠ 0`. -/
@@ -159,11 +151,13 @@ theorem isFixedPt_sphereCircleReflection_of_mem_criticalPoints (huv : ⟪v, (u :
     (hx : x ∈ criticalPoints ((𝓡 2).prod (𝓡 1)) (sphereCircleHeight u ε)) :
     IsFixedPt (sphereCircleReflection v) x := by
   obtain ⟨hp, hw⟩ := (mem_criticalPoints_sphereCircleHeight_iff u hε x).1 hx
+  have hu : (ℝ ∙ v)ᗮ.reflection (u : E) = u := Submodule.reflection_mem_subspace_eq_self
+    (Submodule.mem_orthogonal_singleton_iff_inner_right.2 huv)
   refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
   · rw [coe_sphereCircleReflection_apply_fst]
     rcases hp with hp | hp <;> rw [hp]
-    · exact reflection_eq_self huv
-    · rw [coe_neg_sphere, map_neg, reflection_eq_self huv]
+    · exact hu
+    · rw [coe_neg_sphere, map_neg, hu]
   · rw [coe_sphereCircleReflection_apply_snd]
     rcases hw with hw | hw <;> rw [hw] <;> simp
 
@@ -178,8 +172,8 @@ private theorem manifoldMorseIndex_sphereCircleHeight (u : sphere (0 : E) 1) {ε
   rw [sphereCircleHeight, manifoldMorseIndex_comp_fst_add_comp_snd
     (contMDiff_sphereHeight (m := 2) u p).contDiffAt_comp_extChartAt_symm
     (contMDiff_mul_sphereHeight (m := 2) ε w).contDiffAt_comp_extChartAt_symm,
-    manifoldMorseIndex_scalar_comp_of_pos (contMDiff_sphereHeight (m := 2) 1 w)
-      (contDiff_mul_left ε).contDiffAt hw (by simpa using hε)]
+    manifoldMorseIndex_scalar_comp_of_pos (φ := (ε * ·)) (contMDiff_sphereHeight (m := 2) 1 w)
+      (contDiff_const.mul contDiff_id).contDiffAt hw (by simpa using hε)]
 
 /-! ### The induced function on the mapping torus -/
 
@@ -257,15 +251,15 @@ theorem manifoldMorseIndex_sphereCircleTorusHeight_self_neg_one (huv : ⟪v, (u 
     manifoldMorseIndex_sphereHeight_self, manifoldMorseIndex_sphereHeight_neg]
 
 /-- The Morse index along the critical circle `(S, 0)`, through `[t, -u, 1]`, is `1`. -/
-theorem manifoldMorseIndex_sphereCircleTorusHeight_neg_one (huv : ⟪v, (u : E)⟫_ℝ = 0) {ε : ℝ}
-    (hε : 0 < ε) (t : ℝ) :
+theorem manifoldMorseIndex_sphereCircleTorusHeight_neg_self_one (huv : ⟪v, (u : E)⟫_ℝ = 0)
+    {ε : ℝ} (hε : 0 < ε) (t : ℝ) :
     manifoldMorseIndex (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) (sphereCircleTorusHeight huv ε)
       (SmoothMappingTorus.mk _ t (-u, 1)) = 1 := by
   rw [manifoldMorseIndex_sphereCircleTorusHeight huv hε t (.inr rfl) (.inl rfl),
     manifoldMorseIndex_sphereHeight_neg, manifoldMorseIndex_sphereHeight_self]
 
 /-- The Morse index along the critical circle `(S, π)`, through `[t, -u, -1]`, is `0`. -/
-theorem manifoldMorseIndex_sphereCircleTorusHeight_neg_neg_one (huv : ⟪v, (u : E)⟫_ℝ = 0)
+theorem manifoldMorseIndex_sphereCircleTorusHeight_neg_self_neg_one (huv : ⟪v, (u : E)⟫_ℝ = 0)
     {ε : ℝ} (hε : 0 < ε) (t : ℝ) :
     manifoldMorseIndex (𝓘(ℝ).prod ((𝓡 2).prod (𝓡 1))) (sphereCircleTorusHeight huv ε)
       (SmoothMappingTorus.mk _ t (-u, -1)) = 0 := by

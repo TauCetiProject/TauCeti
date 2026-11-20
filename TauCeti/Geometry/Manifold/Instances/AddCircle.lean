@@ -49,6 +49,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `TauCeti.PeriodLine.quotientDiffeomorph p n`: the orbit space is diffeomorphic to
   `AddCircle p`.
 * `AddCircle.diffeomorphAddCircle p q n`: the rescaling diffeomorphism `AddCircle p ≃ AddCircle q`.
+* `TauCeti.fact_natCast_pos`: a nonzero natural number `d` is a positive period, so the circle
+  `AddCircle (d : ℝ)` of integer period carries this structure.
 
 ## Main results
 
@@ -101,6 +103,10 @@ open Set Filter Topology
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+/-- A nonzero natural number `d` is a positive real period, so `AddCircle (d : ℝ)` is a circle. -/
+instance fact_natCast_pos {d : ℕ} [NeZero d] : Fact (0 < (d : ℝ)) :=
+  ⟨Nat.cast_pos.2 (Nat.pos_of_neZero d)⟩
 
 /-- The real line, as the covering space of the circle `AddCircle p`: a type synonym of `ℝ`
 carrying the action of `Multiplicative ℤ` by translations by integer multiples of `p`. -/
