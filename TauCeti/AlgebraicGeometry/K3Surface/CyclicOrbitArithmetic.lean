@@ -12,6 +12,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity
+import Mathlib.Tactic.Simproc.Divisors
 
 /-!
 # Orbit arithmetic of symplectic cyclic actions on K3 surfaces
@@ -201,6 +202,13 @@ theorem cyclicSubgroupOrbitCount_def (n : ℕ) (a : ℕ → ℕ) (d e : ℕ) :
     cyclicSubgroupOrbitCount n a d e = ∑ m ∈ n.divisors with m.gcd d = e, n / m.lcm d * a m :=
   (rfl)
 
+/-- An orbit with stabilizer of order `m` has `n / m = (d / gcd (m, d)) * (n / lcm (m, d))` points:
+`d / gcd (m, d)` orbits of the subgroup of order `d`, each of `n / lcm (m, d)` points. -/
+private theorem div_gcd_mul_div_lcm {n m d : ℕ} (hm : m ∣ n) (hd : d ∣ n) (hd0 : d ≠ 0) :
+    d / m.gcd d * (n / m.lcm d) = n / m := by
+  rw [Nat.div_mul_div_comm (Nat.gcd_dvd_right m d) (Nat.lcm_dvd hm hd), Nat.gcd_mul_lcm,
+    mul_comm m d, Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hd0)]
+
 /-- The orbit relations pass to subgroups: the orbit counts of the subgroup of order `d` satisfy
 the orbit relations of the cyclic group of order `d`. -/
 theorem IsK3CyclicOrbitData.restrict {n : ℕ} {a : ℕ → ℕ}
@@ -208,10 +216,6 @@ theorem IsK3CyclicOrbitData.restrict {n : ℕ} {a : ℕ → ℕ}
     IsK3CyclicOrbitData d (cyclicSubgroupOrbitCount n a d) := by
   refine isK3CyclicOrbitData_iff.2 fun d' hd' ↦ ?_
   have hd0 : d ≠ 0 := (Nat.mem_divisors.1 hd').2
-  -- an orbit with stabilizer of order `m` has `n / m = (d / gcd (m, d)) * (n / lcm (m, d))` points
-  have key : ∀ m ∈ n.divisors, d / m.gcd d * (n / m.lcm d) = n / m := fun m hm ↦ by
-    rw [Nat.div_mul_div_comm (Nat.gcd_dvd_right m d) (Nat.lcm_dvd (Nat.dvd_of_mem_divisors hm) hd),
-      Nat.gcd_mul_lcm, mul_comm m d, Nat.mul_div_mul_left _ _ (Nat.pos_of_ne_zero hd0)]
   calc ∑ e ∈ d.divisors, d / e * cyclicSubgroupOrbitCount n a d e * (e.gcd d' ^ 2 - 1)
       = ∑ e ∈ d.divisors, ∑ m ∈ n.divisors with m.gcd d = e,
           n / m * a m * (m.gcd d' ^ 2 - 1) := by
@@ -219,13 +223,40 @@ theorem IsK3CyclicOrbitData.restrict {n : ℕ} {a : ℕ → ℕ}
         rw [cyclicSubgroupOrbitCount_def, Finset.mul_sum, Finset.sum_mul]
         refine Finset.sum_congr rfl fun m hm ↦ ?_
         obtain ⟨hmn, rfl⟩ := Finset.mem_filter.1 hm
-        rw [Nat.gcd_assoc, Nat.gcd_eq_right (Nat.dvd_of_mem_divisors hd'), ← key m hmn]
+        rw [Nat.gcd_assoc, Nat.gcd_eq_right (Nat.dvd_of_mem_divisors hd'),
+          ← div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
         ring
     _ = ∑ m ∈ n.divisors, n / m * a m * (m.gcd d' ^ 2 - 1) :=
         Finset.sum_fiberwise_of_maps_to
           (fun m _ ↦ Nat.mem_divisors.2 ⟨Nat.gcd_dvd_right m d, hd0⟩) _
     _ = 24 * (d' - 1) := isK3CyclicOrbitData_iff.1 h d'
         (Nat.mem_divisors.2 ⟨(Nat.dvd_of_mem_divisors hd').trans hd, hn⟩)
+
+/-- The fixed-point counts of the subgroup of order `d`, computed from its orbit counts
+`cyclicSubgroupOrbitCount n a d`, agree with those of the whole group: for `e ∣ d`, the subgroup of
+order `e` fixes the same points either way. -/
+theorem cyclicFixedPointCount_cyclicSubgroupOrbitCount {n : ℕ} (a : ℕ → ℕ) (hn : n ≠ 0) {d e : ℕ}
+    (hd : d ∣ n) (he : e ∣ d) :
+    cyclicFixedPointCount d (cyclicSubgroupOrbitCount n a d) e = cyclicFixedPointCount n a e := by
+  have hd0 : d ≠ 0 := ne_zero_of_dvd_ne_zero hn hd
+  rw [cyclicFixedPointCount_def, cyclicFixedPointCount_def, Finset.sum_filter, Finset.sum_filter]
+  calc ∑ f ∈ d.divisors, (if e ∣ f then d / f * cyclicSubgroupOrbitCount n a d f else 0)
+      = ∑ f ∈ d.divisors, ∑ m ∈ n.divisors with m.gcd d = f,
+          if e ∣ m then n / m * a m else 0 := by
+        refine Finset.sum_congr rfl fun f _ ↦ ?_
+        rw [cyclicSubgroupOrbitCount_def, Finset.mul_sum]
+        -- `e ∣ gcd (m, d) ↔ e ∣ m`, since `e ∣ d`
+        split_ifs with hef
+        · refine Finset.sum_congr rfl fun m hm ↦ ?_
+          obtain ⟨hmn, rfl⟩ := Finset.mem_filter.1 hm
+          rw [ite_eq_left (hef.trans (Nat.gcd_dvd_left m d)), ← mul_assoc,
+            div_gcd_mul_div_lcm (Nat.dvd_of_mem_divisors hmn) hd hd0]
+        · refine (Finset.sum_eq_zero fun m hm ↦ ?_).symm
+          obtain ⟨-, rfl⟩ := Finset.mem_filter.1 hm
+          exact ite_eq_right fun hem ↦ hef (Nat.dvd_gcd hem he)
+    _ = ∑ m ∈ n.divisors, if e ∣ m then n / m * a m else 0 :=
+        Finset.sum_fiberwise_of_maps_to
+          (fun m _ ↦ Nat.mem_divisors.2 ⟨Nat.gcd_dvd_right m d, hd0⟩) _
 
 /-- A single orbit type contributes to the root rank. -/
 theorem le_cyclicRootRank {n m : ℕ} (a : ℕ → ℕ) (hm : m ∈ n.divisors) :
@@ -499,7 +530,7 @@ theorem IsK3CyclicOrbitData.orbitCounts_eleven {a : ℕ → ℕ} (h : IsK3Cyclic
     a 11 = 2 := by
   have h11 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 11) (by norm_num) (k := 2)
     (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
-  rw [cyclicFixedPointCount_def, show Nat.divisors 11 = {1, 11} by decide] at h11
+  simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h11
   simpa [Finset.filter_insert, Finset.filter_singleton] using h11
 
 /-- The orbit counts of a symplectic action of order `14`: one orbit each with stabilizer of order
@@ -512,7 +543,7 @@ theorem IsK3CyclicOrbitData.orbitCounts_fourteen {a : ℕ → ℕ} (h : IsK3Cycl
     (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
   have h14 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 14) (by norm_num) (k := 1)
     (by rw [show 14 = 2 * 7 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-  simp only [cyclicFixedPointCount_def, show Nat.divisors 14 = {1, 2, 7, 14} by decide] at h2 h7 h14
+  simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h2 h7 h14
   simp [Finset.filter_insert, Finset.filter_singleton] at h2 h7 h14
   omega
 
@@ -526,7 +557,7 @@ theorem IsK3CyclicOrbitData.orbitCounts_fifteen {a : ℕ → ℕ} (h : IsK3Cycli
     (by rw [mathieuFunction_prime (by norm_num)]; norm_num)
   have h15 := h.cyclicFixedPointCount_eq (by norm_num) (dvd_refl 15) (by norm_num) (k := 1)
     (by rw [show 15 = 3 * 5 by norm_num, mathieuFunction_mul (by norm_num)]; norm_num)
-  simp only [cyclicFixedPointCount_def, show Nat.divisors 15 = {1, 3, 5, 15} by decide] at h3 h5 h15
+  simp only [cyclicFixedPointCount_def, Nat.divisors_ofNat] at h3 h5 h15
   simp [Finset.filter_insert, Finset.filter_singleton] at h3 h5 h15
   omega
 
@@ -535,13 +566,13 @@ theorem IsK3CyclicOrbitData.orbitCounts_fifteen {a : ℕ → ℕ} (h : IsK3Cycli
 theorem IsK3CyclicOrbitData.cyclicRootRank_eq_twenty {n : ℕ} {a : ℕ → ℕ}
     (h : IsK3CyclicOrbitData n a) (hn : n = 11 ∨ n = 14 ∨ n = 15) : cyclicRootRank n a = 20 := by
   rcases hn with rfl | rfl | rfl
-  · rw [cyclicRootRank_def, show Nat.divisors 11 = {1, 11} by decide]
+  · simp only [cyclicRootRank_def, Nat.divisors_ofNat]
     simp [h.orbitCounts_eleven]
   · obtain ⟨h2, h7, h14⟩ := h.orbitCounts_fourteen
-    rw [cyclicRootRank_def, show Nat.divisors 14 = {1, 2, 7, 14} by decide]
+    simp only [cyclicRootRank_def, Nat.divisors_ofNat]
     simp [h2, h7, h14]
   · obtain ⟨h3, h5, h15⟩ := h.orbitCounts_fifteen
-    rw [cyclicRootRank_def, show Nat.divisors 15 = {1, 3, 5, 15} by decide]
+    simp only [cyclicRootRank_def, Nat.divisors_ofNat]
     simp [h3, h5, h15]
 
 /-- Under the rank bound `19` on the exceptional root lattice, as in characteristic zero, where the
@@ -560,18 +591,18 @@ theorem IsK3CyclicOrbitData.le_eight {n : ℕ} {a : ℕ → ℕ} (h : IsK3Cyclic
 
 /-- A symplectic involution: eight fixed points, `24 * (2 - 1) = 8 * 3`. -/
 example : IsK3CyclicOrbitData 2 (fun m ↦ if m = 2 then 8 else 0) := by
-  rw [isK3CyclicOrbitData_iff]
+  simp only [isK3CyclicOrbitData_iff, Nat.divisors_ofNat]
   decide
 
 /-- Order `4`: four orbits with stabilizer of order `4` and two with stabilizer of order `2`;
 `72 = 4 * 15 + 2 * 2 * 3`, and the square fixes `4 + 2 * 2 = 8` points. -/
 example : IsK3CyclicOrbitData 4 (fun m ↦ if m = 4 then 4 else if m = 2 then 2 else 0) := by
-  rw [isK3CyclicOrbitData_iff]
+  simp only [isK3CyclicOrbitData_iff, Nat.divisors_ofNat]
   decide
 
 /-- Order `14` survives the orbit relations: `21 + 96 + 195 = 312 = 24 * 13`. -/
 example : IsK3CyclicOrbitData 14 (fun m ↦ if m = 2 ∨ m = 7 ∨ m = 14 then 1 else 0) := by
-  rw [isK3CyclicOrbitData_iff]
+  simp only [isK3CyclicOrbitData_iff, Nat.divisors_ofNat]
   decide
 
 end TauCeti
