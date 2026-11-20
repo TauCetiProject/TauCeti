@@ -69,7 +69,7 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
 /-- The decomposition `F = q # a - (q ∘ a - F) - (q # a - q ∘ a)` behind the parametrix
 estimate, on `H^s`, with `Op(q # a) = Op(q) ∘ Op(a)`. -/
 private theorem toDistr_quantizeSobolev_eq_sub_sub (ha : a.HasCompactSpatialSupport)
-    {q : Symbol n W V (0 + -m)} (hq : q.HasCompactSpatialSupport) {F : Symbol n V V 0}
+    {q : Symbol n W V (-m)} (hq : q.HasCompactSpatialSupport) {F : Symbol n V V 0}
     (hF : F.HasCompactSpatialSupport)
     (hsmK : (q.comp a - Symbol.inclusion (le_of_eq (by ring)) F).HasCompactSpatialSupport) (s : ℝ)
     (u : H^{s}(CoordinateSpace n, V)) :
@@ -104,14 +104,14 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
   have hφ0 : ∀ x ∉ tsupport φ, φ x = 0 := fun x hx ↦ image_eq_zero_of_notMem_tsupport hx
   -- The parametrix symbol `q = φ e`: `q ∘ a - φ` vanishes at large frequencies, and
   -- `q # a - q ∘ a` is a symbol `rem` of order `-1` vanishing outside `tsupport φ`.
-  set q := F.comp e
-  have hq : q.HasCompactSpatialSupport := hF.comp_right e
+  set q := smulLeft (φ.smooth ⊤) e
+  have hq : q.HasCompactSpatialSupport := hasCompactSpatialSupport_smulLeft (φ.smooth ⊤) hφ e
   set sm := q.comp a - Symbol.inclusion (le_of_eq (by ring)) F
   have hsm : sm.IsSmoothing := isSmoothing_of_coefficient_eq_zero R fun x ξ hξ ↦ by
     by_cases hx : x ∈ tsupport φ
-    · simp only [sm, q, F, coefficient_sub, coefficient_comp, coefficient_inclusion,
-        coefficient_ofSpatial, Pi.sub_apply, he x (hφU hx) ξ hξ, ContinuousLinearMap.smul_comp,
-        ContinuousLinearMap.id_comp, sub_self]
+    · simp only [sm, q, F, coefficient_sub, coefficient_comp, coefficient_smulLeft,
+        coefficient_inclusion, coefficient_ofSpatial, Pi.sub_apply, ContinuousLinearMap.smul_comp,
+        he x (hφU hx) ξ hξ, sub_self]
     · simp [sm, q, F, hφ0 x hx]
   have hsmK : sm.HasCompactSpatialSupport := (hq.comp_right a).sub (hF.inclusion _)
   set rem := q.sharpRemainder a ha 1
@@ -121,7 +121,7 @@ private theorem exists_norm_smulLeftCLM_le_step (ha : a.HasCompactSpatialSupport
     ((hq.sharp ha).sub (hq.comp_right a)).of_coefficient_eq hrem.symm
   have hrem0 : ∀ x ∉ tsupport φ, ∀ ξ, rem.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
     rw [← hrem]
-    simp [q, F, hφ0 x hx]
+    simp [q, hφ0 x hx]
   obtain ⟨C₁, hC₁⟩ := exists_norm_quantizeSobolev_le_smulLeftCLM hremK hrem0 hχ hχφ
     (min_le_right r (s - 1))
   obtain ⟨T, hT⟩ := hsm.exists_continuousLinearMap_toDistr_quantizeSobolev_eq hsmK r s

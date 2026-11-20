@@ -299,9 +299,7 @@ private theorem isMicrolocallySmoothAt_toDistribution_quantizeSobolev {a : Symbo
   set b := smulLeft (ofRealCLM.contDiff.comp hψ) a
   have hbψ (x ξ : CoordinateSpace n) : b.coefficient (x, ξ) = (ψ x : ℂ) • a.coefficient (x, ξ) :=
     coefficient_smulLeft _ a (x, ξ)
-  have hb : b.HasCompactSpatialSupport := by
-    obtain ⟨L, hL, hLa⟩ := hasCompactSpatialSupport_iff.1 ha
-    exact hasCompactSpatialSupport_iff.2 ⟨L, hL, fun x hx ξ ↦ by rw [hbψ, hLa x hx ξ, smul_zero]⟩
+  have hb : b.HasCompactSpatialSupport := ha.smulLeft _
   have hbK : ∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
     rw [hbψ, hψK x hx]
     simp

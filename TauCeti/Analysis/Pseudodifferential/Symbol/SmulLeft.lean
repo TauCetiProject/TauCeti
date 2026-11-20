@@ -21,6 +21,8 @@ operator `Op(a)` in the position.
   `TauCeti.Symbol.coefficient_smulLeft`.
 * `TauCeti.Symbol.hasCompactSpatialSupport_smulLeft`: when `ψ` has compact support, `ψ(x) a(x, ξ)`
   has compact spatial support.
+* `TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`: when `a` has compact spatial support, so does
+  `ψ(x) a(x, ξ)`.
 -/
 
 public section
@@ -56,6 +58,13 @@ theorem hasCompactSpatialSupport_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ 
     (smulLeft hψ a).HasCompactSpatialSupport :=
   hasCompactSpatialSupport_iff.2
     ⟨tsupport ψ, hψc, fun x hx ξ ↦ by simp [image_eq_zero_of_notMem_tsupport hx]⟩
+
+/-- Multiplying a symbol with compact spatial support by any smooth function of the position keeps
+compact spatial support. -/
+theorem HasCompactSpatialSupport.smulLeft {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) :
+    (Symbol.smulLeft hψ a).HasCompactSpatialSupport :=
+  (ha.comp_left _).inclusion _
 
 end Symbol
 
