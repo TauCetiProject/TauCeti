@@ -478,6 +478,18 @@ lemma matrixBilinearForm_self (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm A ξ ξ = A.toQuadraticForm' ξ := by
   rw [matrixBilinearForm_apply, Matrix.toQuadraticForm'_apply]
 
+/-- The difference of two matrix bilinear forms with the same first argument `g` splits as
+`gᵀ M (g + h) - gᵀ N h = gᵀ M g + gᵀ (M - N) h`. With `M` and `N` a coefficient frozen at two
+functions, this is the identity behind comparison and monotonicity estimates for quasilinear
+operators. -/
+lemma matrixBilinearForm_add_sub_matrixBilinearForm (M N : Matrix n n ℝ)
+    (g h : EuclideanSpace ℝ n) :
+    matrixBilinearForm M g (g + h) - matrixBilinearForm N g h =
+      M.toQuadraticForm' g + g ⬝ᵥ ((M - N) *ᵥ h) := by
+  rw [map_add, matrixBilinearForm_self]
+  simp only [matrixBilinearForm_apply, Matrix.sub_mulVec, dotProduct_sub]
+  ring
+
 /-- Every matrix quadratic form is bounded above by the operator norm of the matrix bilinear form
 times `‖ξ‖²`. -/
 lemma toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A : Matrix n n ℝ)
