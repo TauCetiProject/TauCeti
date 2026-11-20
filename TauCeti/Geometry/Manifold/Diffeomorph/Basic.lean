@@ -24,6 +24,8 @@ with a diffeomorphism and are mapped by the differential under postcomposition.
 These facts support inverse isometries, calibrated immersions, and transport of curve
 differentiability through diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as
 a partial diffeomorphism is also characterized, for composition with partial coordinates.
+The linear map underlying the differential of a diffeomorphism viewed as a linear equivalence
+(`Diffeomorph.mfderivToContinuousLinearEquiv_toLinearMap`) is the differential.
 -/
 
 public section
@@ -149,6 +151,13 @@ theorem mdifferentiableAt_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn 
   · intro hf
     exact hf.comp x (h.mdifferentiable hn x)
 
+/-- The linear map underlying the differential of a diffeomorphism, viewed as a linear equivalence,
+is the differential. -/
+theorem mfderivToContinuousLinearEquiv_toLinearMap (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M) :
+    (h.mfderivToContinuousLinearEquiv hn x).toLinearEquiv.toLinearMap =
+      (mfderiv I J h x).toLinearMap :=
+  congrArg ContinuousLinearMap.toLinearMap (h.mfderivToContinuousLinearEquiv_coe hn)
+
 section TangentImage
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
@@ -186,11 +195,8 @@ theorem range_mfderiv_diffeomorph_comp (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
     LinearMap.range (mfderiv K J (h ∘ f) x).toLinearMap =
       (LinearMap.range (mfderiv K I f x).toLinearMap).map
         (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap := by
-  have hder : (h.mfderivToContinuousLinearEquiv hn (f x)).toLinearEquiv.toLinearMap =
-      (mfderiv I J h (f x)).toLinearMap :=
-    congrArg ContinuousLinearMap.toLinearMap (h.mfderivToContinuousLinearEquiv_coe hn (x := f x))
   rw [h.mfderiv_diffeomorph_comp hn, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
-    hder]
+    h.mfderivToContinuousLinearEquiv_toLinearMap hn]
 
 /-- Precomposition with a diffeomorphism does not change tangent images: the range of the
 differential of `f ∘ h` at `x` is the range of the differential of `f` at `h x`. No

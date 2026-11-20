@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints.Submanifold
 public import TauCeti.Geometry.Symplectic.Manifold.Invariants
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic.Basic
 public import TauCeti.Geometry.Symplectic.Restrict
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
+public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
 
 /-!
 # The fixed locus of a group of symplectic isometries
@@ -38,6 +40,19 @@ symplectic, the inclusion of `M^K_d` is a symplectic submanifold embedding
 component of the fixed set of a group of symplectic isometries is an embedded symplectic
 submanifold of even dimension.
 
+The fixed locus and its symplectic normal spaces are natural. A diffeomorphism `F : M → N` with
+`F^* τ = σ` has linear symplectomorphisms `dF_p : (T_p M, σ_p) → (T_(F p) N, τ_(F p))` as
+differentials (`TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`). If
+`F` is moreover equivariant, it carries the fixed tangent subspace `V_p` onto `V_(F p)`
+(`Diffeomorph.map_mfderiv_fixedTangentSubspace`), and hence the symplectic normal space
+`V_p^σ = {v | σ_p(w, v) = 0 for all w ∈ V_p}` onto `V_(F p)^τ`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.map_mfderiv_orthogonal_fixedTangentSubspace`). No metric
+is needed for these statements. For any manifold structures on `M^K_d` and `N^K_d` whose inclusions
+are smooth embeddings, such as those of the symplectic submanifold theorem below, `F` restricts to
+a diffeomorphism `M^K_d → N^K_d` (`Diffeomorph.subtypeOfIsSmoothEmbedding`, using
+`Diffeomorph.apply_mem_fixedPointsOfFinrank_iff`) which pulls the restriction of `τ` back to the
+restriction of `σ` (`Diffeomorph.mpullback_subtypeOfIsSmoothEmbedding_fixedPointsOfFinrank`).
+
 Neither completeness of the metric nor compactness of `M` or `K` is used. A compact Lie group
 acting smoothly preserves the metric obtained by averaging a smooth metric
 (`TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`), so the results apply to the fixed sets
@@ -52,6 +67,12 @@ of smooth symplectic actions of compact Lie groups, such as torus actions.
 * `IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFinrank`:
   each `M^K_d` is an embedded symplectic submanifold with tangent spaces the fixed tangent
   subspaces.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.map_mfderiv_orthogonal_fixedTangentSubspace`: an
+  equivariant diffeomorphism pulling `τ` back to `σ` carries the symplectic normal spaces of the
+  fixed tangent subspaces onto each other.
+* `Diffeomorph.mpullback_subtypeOfIsSmoothEmbedding_fixedPointsOfFinrank`: it restricts to
+  diffeomorphisms between the parts of the fixed sets of each dimension, transporting the restricted
+  forms.
 
 ## References
 
@@ -104,6 +125,36 @@ theorem IsNondegenerate.even_finrank_fixedTangentSubspace (hσ : σ.IsNondegener
 
 end FixedTangentSubspace
 
+section Naturality
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
+  {σ : SmoothTwoForm I M} {τ : SmoothTwoForm I' N}
+
+variable {K : Type*} [Group K] [MulAction K M] [MulAction K N]
+  [ContMDiffConstSMul I ∞ K M] [ContMDiffConstSMul I' ∞ K N]
+
+/-- **Equivariant symplectic diffeomorphisms preserve symplectic normal spaces.** If an equivariant
+diffeomorphism `F` pulls the nondegenerate two-form `τ` back to `σ`, its differential at `p` carries
+the symplectic complement of the fixed tangent subspace at `p` onto the symplectic complement of
+the fixed tangent subspace at `F p`. -/
+theorem IsNondegenerate.map_mfderiv_orthogonal_fixedTangentSubspace (hσ : σ.IsNondegenerate)
+    (hτ : τ.IsNondegenerate) (F : M ≃ₘ⟮I, I'⟯ N) (hFσ : SmoothForm.mpullback F F.contMDiff τ = σ)
+    (hF : ∀ (k : K) (x : M), F (k • x) = k • F x) (p : M) :
+    ((hσ.symplecticFormAt p).orthogonal (fixedTangentSubspace I K p)).map
+        (mfderiv I I' F p).toLinearMap =
+      (hτ.symplecticFormAt (F p)).orthogonal (fixedTangentSubspace I' K (F p)) := by
+  have he := (SymplecticForm.isSymplectomorphism_iff_transport_eq.2
+    (hσ.symplecticFormAt_transport (hσ₂ := hτ) F hFσ p)).map_orthogonal (fixedTangentSubspace I K p)
+  rwa [F.mfderivToContinuousLinearEquiv_toLinearMap,
+    F.map_mfderiv_fixedTangentSubspace (by simp) hF] at he
+
+end Naturality
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M]
   [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
@@ -139,3 +190,45 @@ theorem IsNondegenerate.exists_isSymplecticSubmanifoldEmbedding_fixedPointsOfFin
   exact hσ.isSymplectic_fixedTangentSubspace hK hσK _
 
 end TauCeti.SmoothTwoForm
+
+namespace Diffeomorph
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
+  {σ : SmoothTwoForm I M} {τ : SmoothTwoForm I' N}
+  {K : Type*} [Group K] [MulAction K M] [MulAction K N]
+  [ContMDiffConstSMul I ∞ K M] [ContMDiffConstSMul I' ∞ K N]
+
+/-- **Equivariant symplectic diffeomorphisms transport the parts `M^K_d` of the fixed locus with
+their restricted forms.** Let `F` be an equivariant diffeomorphism pulling `τ` back to `σ`, and
+give the parts `M^K_d` and `N^K_d` of the fixed sets any manifold structures whose inclusions are
+smooth embeddings. Then `F` restricts to a diffeomorphism `M^K_d → N^K_d`, and this restriction
+pulls the restriction of `τ` to `N^K_d` back to the restriction of `σ` to `M^K_d`. -/
+theorem mpullback_subtypeOfIsSmoothEmbedding_fixedPointsOfFinrank (F : M ≃ₘ⟮I, I'⟯ N)
+    (hFσ : SmoothForm.mpullback F F.contMDiff τ = σ)
+    (hF : ∀ (k : K) (x : M), F (k • x) = k • F x) {d : ℕ}
+    {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace ℝ F₀]
+    {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F₀ G}
+    {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners ℝ F₁ G'}
+    [ChartedSpace G (fixedPointsOfFinrank I K M d)] [IsManifold J ∞ (fixedPointsOfFinrank I K M d)]
+    [ChartedSpace G' (fixedPointsOfFinrank I' K N d)]
+    [IsManifold J' ∞ (fixedPointsOfFinrank I' K N d)]
+    (hs : IsSmoothEmbedding J I ∞ (Subtype.val : fixedPointsOfFinrank I K M d → M))
+    (ht : IsSmoothEmbedding J' I' ∞ (Subtype.val : fixedPointsOfFinrank I' K N d → N)) :
+    SmoothForm.mpullback
+        (F.subtypeOfIsSmoothEmbedding hs ht
+          fun _ ↦ (F.apply_mem_fixedPointsOfFinrank_iff (by simp) hF).symm)
+        (F.subtypeOfIsSmoothEmbedding hs ht
+          fun _ ↦ (F.apply_mem_fixedPointsOfFinrank_iff (by simp) hF).symm).contMDiff
+        (SmoothForm.mpullback Subtype.val ht.contMDiff τ) =
+      SmoothForm.mpullback Subtype.val hs.contMDiff σ :=
+  F.mpullback_subtypeOfIsSmoothEmbedding_mpullback_subtype_val hs ht _ hFσ
+
+end Diffeomorph

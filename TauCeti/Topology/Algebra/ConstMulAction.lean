@@ -14,7 +14,9 @@ public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.LocallyFinite
+public import TauCeti.GroupTheory.GroupAction.Hom
 
 import TauCeti.Topology.Compactness.Compact
 
@@ -36,6 +38,8 @@ finiteness of the translates of any nonempty set forces the topology on `G` to b
 Likewise, a nonempty open set disjoint from all of its nontrivial translates forces the acting
 group, with any topology for which the orbit maps are continuous, to be discrete, and on such a
 set the orbit projection is an open embedding.
+An equivariant homeomorphism carries the connected components of the fixed set onto those of the
+target fixed set.
 
 ## Main results
 
@@ -69,6 +73,8 @@ set the orbit projection is an open embedding.
   open embedding on an open set disjoint from its nontrivial translates.
 * `TauCeti.discreteTopology_of_disjoint_smul`: the existence of a nonempty such open set makes the
   acting group discrete.
+* `Homeomorph.image_connectedComponentIn_fixedPoints`: an equivariant homeomorphism carries each
+  connected component of the fixed set onto the component through the image point.
 -/
 
 public section
@@ -351,6 +357,16 @@ theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
   continuous_subtypeVal.properlyDiscontinuousSMul fun _ _ ↦ rfl
 
 end SubMulAction
+
+/-- **An equivariant homeomorphism carries connected components of the fixed set onto connected
+components of the fixed set.** -/
+theorem Homeomorph.image_connectedComponentIn_fixedPoints {M X Y : Type*} [Monoid M]
+    [TopologicalSpace X] [TopologicalSpace Y] [MulAction M X] [MulAction M Y] (e : X ≃ₜ Y)
+    (he : ∀ (m : M) (x : X), e (m • x) = m • e x) {p : X} (hp : p ∈ MulAction.fixedPoints M X) :
+    e '' connectedComponentIn (MulAction.fixedPoints M X) p =
+      connectedComponentIn (MulAction.fixedPoints M Y) (e p) := by
+  rw [← e.toEquiv.image_fixedPoints he]
+  exact e.image_connectedComponentIn hp
 
 namespace TauCeti
 
