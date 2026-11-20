@@ -438,6 +438,34 @@ private theorem tBracketSection_apply (u v : Cₛ^∞⟮I; F, Trivial M F⟯) (x
     tBracketSection a e u v x = tBracket a e (fun x ↦ (u x : F)) (fun x ↦ (v x : F)) x :=
   (rfl)
 
+omit [CompleteSpace E] in
+private theorem tBracketSection_add_left (u u' v : Cₛ^∞⟮I; F, Trivial M F⟯) :
+    tBracketSection a e (u + u') v = tBracketSection a e u v + tBracketSection a e u' v :=
+  ContMDiffSection.ext fun x ↦ by
+    simp only [tBracketSection_apply, ↓coe_add_fun, Pi.add_apply,
+      tBracket_add_left u.contMDiff_coe_trivial u'.contMDiff_coe_trivial]
+
+omit [CompleteSpace E] in
+private theorem tBracketSection_add_right (u v v' : Cₛ^∞⟮I; F, Trivial M F⟯) :
+    tBracketSection a e u (v + v') = tBracketSection a e u v + tBracketSection a e u v' :=
+  ContMDiffSection.ext fun x ↦ by
+    simp only [tBracketSection_apply, ↓coe_add_fun, Pi.add_apply,
+      tBracket_add_right v.contMDiff_coe_trivial v'.contMDiff_coe_trivial]
+
+omit [CompleteSpace E] in
+private theorem tBracketSection_const_smul_left (c : ℝ) (u v : Cₛ^∞⟮I; F, Trivial M F⟯) :
+    tBracketSection a e (c • u) v = c • tBracketSection a e u v :=
+  ContMDiffSection.ext fun x ↦ by
+    simp only [tBracketSection_apply, ↓coe_const_smul_fun, Pi.smul_apply,
+      tBracket_const_smul_left u.contMDiff_coe_trivial]
+
+omit [CompleteSpace E] in
+private theorem tBracketSection_const_smul_right (c : ℝ) (u v : Cₛ^∞⟮I; F, Trivial M F⟯) :
+    tBracketSection a e u (c • v) = c • tBracketSection a e u v :=
+  ContMDiffSection.ext fun x ↦ by
+    simp only [tBracketSection_apply, ↓coe_const_smul_fun, Pi.smul_apply,
+      tBracket_const_smul_right v.contMDiff_coe_trivial]
+
 variable (a e) in
 /-- The **transformation Lie algebroid** of an infinitesimal action `ξ ↦ ξ_M` of a Lie algebra
 `𝔤` on `M`: the trivial bundle `M × F`, with `F ≃ₗ[ℝ] 𝔤` by `e`, the anchor `w ↦ -(e w)_M(x)`
@@ -448,21 +476,8 @@ def transformation : LieAlgebroid I F (Trivial M F) where
   anchor :=
     { toFun := tAnchorCLM a e
       contMDiff_toFun := contMDiff_tAnchorCLM }
-  bracket := LinearMap.mk₂ ℝ (tBracketSection a e)
-    (fun u u' v ↦ ContMDiffSection.ext fun x ↦ by
-      rw [ContMDiffSection.coe_add, Pi.add_apply, tBracketSection_apply, tBracketSection_apply,
-        tBracketSection_apply, coe_add_fun,
-        tBracket_add_left u.contMDiff_coe_trivial u'.contMDiff_coe_trivial, Pi.add_apply])
-    (fun c u v ↦ ContMDiffSection.ext fun x ↦ by
-      rw [ContMDiffSection.coe_smul, Pi.smul_apply, tBracketSection_apply, tBracketSection_apply,
-        coe_const_smul_fun, tBracket_const_smul_left u.contMDiff_coe_trivial, Pi.smul_apply])
-    (fun u v v' ↦ ContMDiffSection.ext fun x ↦ by
-      rw [ContMDiffSection.coe_add, Pi.add_apply, tBracketSection_apply, tBracketSection_apply,
-        tBracketSection_apply, coe_add_fun,
-        tBracket_add_right v.contMDiff_coe_trivial v'.contMDiff_coe_trivial, Pi.add_apply])
-    (fun c u v ↦ ContMDiffSection.ext fun x ↦ by
-      rw [ContMDiffSection.coe_smul, Pi.smul_apply, tBracketSection_apply, tBracketSection_apply,
-        coe_const_smul_fun, tBracket_const_smul_right v.contMDiff_coe_trivial, Pi.smul_apply])
+  bracket := LinearMap.mk₂ ℝ (tBracketSection a e) tBracketSection_add_left
+    tBracketSection_const_smul_left tBracketSection_add_right tBracketSection_const_smul_right
   bracket_self u := ContMDiffSection.ext fun x ↦ by
     rw [LinearMap.mk₂_apply, tBracketSection_apply, tBracket_self, ContMDiffSection.coe_zero,
       Pi.zero_apply]
