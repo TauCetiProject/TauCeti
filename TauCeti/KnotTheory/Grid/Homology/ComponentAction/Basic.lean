@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Diagram.ComponentIndex
+public import TauCeti.KnotTheory.Grid.Diagram.Components
 public import TauCeti.KnotTheory.Grid.Homology.Unblocked
 
 /-!
