@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # The phase form of a complex function
@@ -18,7 +19,8 @@ For a differentiable function `α : E → ℂ` on a real normed space, the **pha
 branch of `arg α`. This file proves that it is as regular as `dα` away from the zeros of `α`
 (`TauCeti.contDiffAt_phaseForm`), that it is closed there (`TauCeti.extDeriv_phaseForm`), that it
 is natural under pullback (`TauCeti.phaseForm_comp`), and that it is additive under products
-(`TauCeti.phaseForm_mul`).
+(`TauCeti.phaseForm_mul`). For a function `u` with values in the unit circle, it
+recovers the derivative: `du = u · i Im (u⁻¹ du)` (`TauCeti.fderiv_apply_eq_mul_I_mul_phaseForm`).
 
 ## Main definitions
 
@@ -30,6 +32,7 @@ public section
 noncomputable section
 
 open ContinuousAlternatingMap Complex
+open scoped Topology
 
 namespace TauCeti
 
@@ -121,5 +124,19 @@ theorem phaseForm_mul (hu : DifferentiableAt ℝ u x) (hα : DifferentiableAt �
   congr 1
   field_simp
   ring
+
+/-- The derivative of a function `u` that is circle-valued near `x` is `du = u · i Im (u⁻¹ du)`:
+since `du` is orthogonal to `u`, `u⁻¹ du = conj u du` is imaginary. -/
+theorem fderiv_apply_eq_mul_I_mul_phaseForm (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1) (v : E) :
+    fderiv ℝ u x v = u x * (I * phaseForm u x (fun _ ↦ v)) := by
+  have hux : ‖u x‖ = 1 := hu.self_of_nhds
+  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
+    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
+    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
+      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
+  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
+  have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
+    Complex.ext (by simp [hre]) (by simp)
+  rw [phaseForm_apply, ← hw, mul_inv_cancel_left₀ hu0]
 
 end TauCeti

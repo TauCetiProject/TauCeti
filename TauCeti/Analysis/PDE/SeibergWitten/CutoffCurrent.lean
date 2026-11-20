@@ -21,7 +21,6 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.FDeriv.Comp
-import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
@@ -298,22 +297,9 @@ theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1
     (hud : DifferentiableAt ℝ u x) (hα : DifferentiableAt ℝ α x) :
     covariantDeriv (b - phaseForm u) (u * α) x = u x • covariantDeriv b α x := by
   ext v
-  have hux : ‖u x‖ = 1 := hu.self_of_nhds
-  -- Since `|u| = 1` near `x`, `du` is orthogonal to `u`, so `u⁻¹ du = conj u du` is imaginary.
-  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
-    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
-    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
-      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
-  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
-  have hdu : fderiv ℝ u x v = u x * (I * ((u x)⁻¹ * fderiv ℝ u x v).im) := by
-    have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
-      Complex.ext (by simp [hre]) (by simp)
-    rw [← hw, mul_inv_cancel_left₀ hu0]
   simp only [covariantDeriv_apply, fderiv_mul hud hα, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply, phaseForm_apply, _root_.add_apply, _root_.smul_apply,
-    smul_eq_mul, Pi.mul_apply, real_smul, ofReal_sub]
-  generalize ((u x)⁻¹ * fderiv ℝ u x v).im = c at hdu ⊢
-  rw [hdu]
+    ContinuousAlternatingMap.sub_apply, _root_.add_apply, _root_.smul_apply,
+    smul_eq_mul, Pi.mul_apply, real_smul, ofReal_sub, fderiv_apply_eq_mul_I_mul_phaseForm hu v]
   ring
 
 /-! ### The cutoff phase form and the cutoff current -/
