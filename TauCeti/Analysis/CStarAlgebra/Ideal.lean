@@ -13,6 +13,7 @@ public import TauCeti.Analysis.CStarAlgebra.Basic
 public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
+import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
 
 /-!
 # Closed two-sided ideals in C⋆-algebras and ideal multiplier homomorphisms
@@ -23,11 +24,11 @@ C⋆-algebra `A` is automatically closed under complex scalar multiplication and
 
 For scalar multiplication, `(c • e) * a = c • (e * a) → c • a` along an approximate unit `e` of `A`
 while `(c • e) * a ∈ I` by left ideal absorption. For self-adjointness, the symmetric core
-`S = {x ∈ I | star x ∈ I}` is already a closed nonunital ⋆-subalgebra of `A`, hence a nonunital
-C⋆-algebra containing `star a * a` for every `a ∈ I`. Along the increasing approximate unit `e` of
-`S`, right ideal absorption gives `(e : A) * star a ∈ I`, while the C⋆-identity in the unitization
-`A⁺¹` yields
-`‖star a - (e : A) * star a‖ ^ 2 ≤ ‖star a * a - (e : A) * (star a * a)‖ → 0`,
+`S = {x ∈ I | star x ∈ I}` (`Submodule.interStar`) is already a closed nonunital ⋆-subalgebra of
+`A` containing `star a * a` for every `a ∈ I`. Along an approximate unit `e` of `S` by
+self-adjoint contractions, right ideal absorption gives `e * star a ∈ I`, while
+`‖a - a * e‖ ^ 2 ≤ 2 * ‖star a * a - star a * a * e‖ → 0`
+(`TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le`), so `e * star a → star a`,
 following the standard approximate-unit argument (see, e.g., Gerard J. Murphy, *C*-Algebras and
 Operator Theory*, Theorem 3.1.3, or Kenneth R. Davidson, *C*-Algebras by Example*, Theorem I.5.3).
 
@@ -70,7 +71,7 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 
 public section
 
-open Filter Topology Unitization
+open Filter Topology
 open scoped CStarAlgebra
 
 namespace TwoSidedIdeal
@@ -85,60 +86,6 @@ theorem smul_mem_of_isClosed (c : ℂ) {a : A} (ha : a ∈ I) : c • a ∈ I :=
   have _ := CStarAlgebra.spectralOrderedRing A
   exact I.smul_mem_of_isApproximateUnit
     (CStarAlgebra.increasingApproximateUnit A).toIsApproximateUnit c ha
-
-/-- Every closed two-sided ideal of a C⋆-algebra is self-adjoint (closed under `star`). -/
-theorem star_mem_of_isClosed {a : A} (ha : a ∈ I) : star a ∈ I := by
-  let _ := CStarAlgebra.spectralOrder A
-  have _ := CStarAlgebra.spectralOrderedRing A
-  -- Step 1: Form the closed self-adjoint core `S = I ∩ I⋆`, which is a C⋆-subalgebra of `A`.
-  let S : NonUnitalStarSubalgebra ℂ A :=
-    { carrier := {x : A | x ∈ I ∧ star x ∈ I}
-      mul_mem' := fun {x y} hx hy =>
-        ⟨I.mul_mem_left x y hy.1, by rw [star_mul]; exact I.mul_mem_left (star y) (star x) hx.2⟩
-      add_mem' := fun {x y} hx hy =>
-        ⟨I.add_mem hx.1 hy.1, by rw [star_add]; exact I.add_mem hx.2 hy.2⟩
-      zero_mem' := ⟨I.zero_mem, by rw [star_zero]; exact I.zero_mem⟩
-      smul_mem' := fun c {x} hx =>
-        ⟨I.smul_mem_of_isClosed c hx.1,
-          by rw [star_smul]; exact I.smul_mem_of_isClosed (star c) hx.2⟩
-      star_mem' := fun {x} hx => ⟨hx.2, by rw [star_star]; exact hx.1⟩ }
-  have hS_closed : IsClosed (S : Set A) := by
-    have hS_set : (S : Set A) = (I : Set A) ∩ star ⁻¹' (I : Set A) := rfl
-    rw [hS_set]
-    exact hI.inter (hI.preimage continuous_star)
-  let _ : NonUnitalCStarAlgebra S :=
-    NonUnitalStarSubalgebra.nonUnitalCStarAlgebra S (h_closed := hS_closed)
-  have _ : StarOrderedRing S := Subtype.starOrderedRing S (hs := hS_closed)
-  -- Step 2: Notice `k = a⋆ * a` lies in `S`, and take an increasing approximate unit `l` of `S`.
-  let k : S := ⟨star a * a, I.mul_mem_left (star a) a ha,
-    by rw [star_mul, star_star]; exact I.mul_mem_left (star a) a ha⟩
-  let l : Filter S := CStarAlgebra.approximateUnit S
-  have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit S
-  have := hl.neBot
-  -- Step 3: Bound `‖e * a⋆ - a⋆‖² ≤ ‖e * k - k‖` in `A⁺¹` so `e * a⋆ → a⋆`.
-  have hlim : Tendsto (fun e : S => (e : A) * star a) l (𝓝 (star a)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    have hsq : ∀ᶠ e : S in l,
-        ‖(e : A) * star a - star a‖ ^ 2 ≤ ‖(e * k - k : S)‖ := by
-      filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
-      have h := TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le (A := A) (e := (e : A)) he₀ he₁ a
-      rw [norm_sub_rev (star a * a)] at h
-      exact h
-    have hk_lim : Tendsto (fun e : S => ‖(e * k - k : S)‖) l (𝓝 0) :=
-      tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right k)
-    have hsqrt : Tendsto (fun e : S => Real.sqrt ‖(e * k - k : S)‖) l (𝓝 0) := by
-      simpa only [Real.sqrt_zero, Function.comp_def] using
-        (Real.continuous_sqrt.tendsto 0).comp hk_lim
-    refine squeeze_zero_norm' ?_ hsqrt
-    filter_upwards [hsq] with e he
-    rw [Real.norm_of_nonneg (norm_nonneg _)]
-    exact Real.le_sqrt_of_sq_le he
-  exact hI.mem_of_tendsto hlim
-    (Eventually.of_forall fun e => I.mul_mem_right (e : A) (star a) e.2.1)
-
-@[simp]
-theorem star_mem_iff_of_isClosed {a : A} : star a ∈ I ↔ a ∈ I :=
-  ⟨fun h => star_star a ▸ I.star_mem_of_isClosed h, I.star_mem_of_isClosed⟩
 
 /-- A closed two-sided ideal of a C⋆-algebra bundled as a complex submodule. -/
 @[expose] def toSubmodule : Submodule ℂ A where
@@ -157,6 +104,29 @@ theorem mem_toSubmodule {a : A} : a ∈ I.toSubmodule ↔ a ∈ I :=
 
 instance isClosed_toSubmodule : IsClosed (I.toSubmodule : Set A) :=
   hI
+
+/-- Every closed two-sided ideal of a C⋆-algebra is self-adjoint (closed under `star`). -/
+theorem star_mem_of_isClosed {a : A} (ha : a ∈ I) : star a ∈ I := by
+  let _ := CStarAlgebra.spectralOrder A
+  have _ := CStarAlgebra.spectralOrderedRing A
+  -- The closed self-adjoint core `S = I ∩ star I` is a C⋆-subalgebra containing `star a * a`.
+  have hL (b : A) {x : A} (hx : x ∈ I.toSubmodule) : b * x ∈ I.toSubmodule :=
+    I.mem_toSubmodule.mpr (I.mul_mem_left b x (I.mem_toSubmodule.mp hx))
+  have ha' : a ∈ I.toSubmodule := I.mem_toSubmodule.mpr ha
+  have hk : star a * a ∈ I.toSubmodule.interStar hL :=
+    Submodule.mem_interStar.mpr ⟨hL _ ha', by rw [star_mul, star_star]; exact hL _ ha'⟩
+  obtain ⟨l, _, hlS, -, hsa, hnorm, hl⟩ := NonUnitalStarSubalgebra.exists_approximateUnit
+    (Submodule.isClosed_interStar (hL := hL) I.isClosed_toSubmodule)
+  -- Along an approximate unit `e` of `S`, `a * e → a`, so `e * star a → star a` with
+  -- `e * star a ∈ I`.
+  exact hI.mem_of_tendsto (TauCeti.tendsto_mul_star_of_tendsto_mul hsa <|
+      TauCeti.CStarAlgebra.tendsto_mul_of_star_mul_self_le hsa hnorm le_rfl (hl _ hk).1)
+    (hlS.mono fun e he ↦
+      I.mul_mem_right e (star a) (I.mem_toSubmodule.mp (Submodule.mem_interStar.mp he).1))
+
+@[simp]
+theorem star_mem_iff_of_isClosed {a : A} : star a ∈ I ↔ a ∈ I :=
+  ⟨fun h => star_star a ▸ I.star_mem_of_isClosed h, I.star_mem_of_isClosed⟩
 
 /-- A closed two-sided ideal of a C⋆-algebra bundled as a nonunital complex ⋆-subalgebra. -/
 def toNonUnitalStarSubalgebra : NonUnitalStarSubalgebra ℂ A where

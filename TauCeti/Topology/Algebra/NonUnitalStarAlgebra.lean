@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
+public import TauCeti.Algebra.Star.NonUnitalSubalgebra
 
 /-!
-# Carrier of the topological closure of a nonunital star subalgebra
+# Topological facts about nonunital star subalgebras
 
 This file provides the `@[simp]` lemma `NonUnitalStarSubalgebra.topologicalClosure_coe`
 identifying the underlying set of `s.topologicalClosure` with `closure (s : Set A)`, matching
-`StarSubalgebra.topologicalClosure_coe`.
+`StarSubalgebra.topologicalClosure_coe`, and shows that the star subalgebra `L ∩ star L` of a
+closed left ideal `L` is closed, `Submodule.isClosed_interStar`.
 -/
 
 public section
@@ -31,3 +33,15 @@ theorem topologicalClosure_coe (s : NonUnitalStarSubalgebra R A) :
   (rfl)
 
 end NonUnitalStarSubalgebra
+
+namespace Submodule
+
+variable {R A : Type*} [CommSemiring R] [Star R] [NonUnitalNonAssocSemiring A] [StarRing A]
+  [Module R A] [StarModule R A] [TopologicalSpace A] [ContinuousStar A]
+  {L : Submodule R A} {hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L}
+
+/-- For a closed left ideal `L`, the star subalgebra `L ∩ star L` is closed. -/
+theorem isClosed_interStar (hLc : IsClosed (L : Set A)) : IsClosed (L.interStar hL : Set A) :=
+  coe_interStar (hL := hL) ▸ hLc.inter (hLc.preimage continuous_star)
+
+end Submodule
