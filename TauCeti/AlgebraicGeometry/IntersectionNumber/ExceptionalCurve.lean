@@ -48,6 +48,9 @@ exceptional component has genus zero and self-intersection minus its weight, tha
 
 ## Main results
 
+* `Scheme.IdealSheafData.IsExceptionalCurve.exists_algebra_finrank_cohomology_zero`:
+  over a field `k`, `E ≅ ℙ¹_κ` over `k` for an extension `κ` of `k`, and
+  `dim_k H⁰(E, 𝒪_E) = [κ : k]`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsExceptionalCurve.finrank_cohomology_one_trivial`:
   `H¹(E, 𝒪_E) = 0`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.IsExceptionalCurve.intersectionNumber_self`:
@@ -95,11 +98,13 @@ namespace IsExceptionalCurve
 variable {I : X.IdealSheafData} (k : Type u) [Field k] [I.subscheme.Over (Spec (.of k))]
 
 /-- **The invariants of an exceptional curve over a field.** If an exceptional curve of the first
-kind `E ≅ ℙ¹_κ` is a scheme over a field `k`, then `κ` is an extension of `k` of degree
-`dim_k H⁰(E, 𝒪_E)`, `H¹(E, 𝒪_E)` vanishes, and the normal sheaf of `E` has degree `-[κ : k]` over
-`k`. -/
-private theorem exists_field (h : I.IsExceptionalCurve) :
-    ∃ (κ : Type u) (_ : Field κ) (_ : Algebra k κ),
+kind `E` is a scheme over a field `k`, then `E ≅ ℙ¹_κ` for an extension `κ` of `k`, by an
+isomorphism over `k`, such that `dim_k H⁰(E, 𝒪_E) = [κ : k]`, `H¹(E, 𝒪_E)` vanishes, and the
+normal sheaf of `E` has degree `-[κ : k]` over `k`. -/
+theorem exists_algebra_finrank_cohomology_zero (h : I.IsExceptionalCurve) :
+    ∃ (κ : Type u) (_ : Field κ) (_ : Algebra k κ) (e : projectiveLine κ ≅ I.subscheme),
+      e.hom ≫ I.subscheme ↘ Spec (.of k) =
+        (projectiveLine κ ↘ Spec (.of κ)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k κ)) ∧
       finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) = finrank k κ ∧
       finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 1) = 0 ∧
       LineBundleClass.intersectionNumber k I.subschemeι
@@ -121,7 +126,7 @@ private theorem exists_field (h : I.IsExceptionalCurve) :
   -- is `φ`.
   have hκ : (projectiveLine κ ↘ Spec (.of κ)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k κ)) =
       projectiveLine κ ↘ Spec (.of k) := hφ
-  refine ⟨κ, inferInstance, inferInstance, ?_, ?_, ?_⟩
+  refine ⟨κ, inferInstance, inferInstance, e, hκ.symm, ?_, ?_, ?_⟩
   · rw [finrank_cohomology_trivial_eq_of_isPullback H,
       Scheme.Modules.finrank_cohomology_eq_finrank_mul hκ,
       (projectiveLine.cohomologyZeroTrivialLinearEquiv κ).finrank_eq, Module.finrank_self, mul_one]
@@ -139,7 +144,7 @@ private theorem exists_field (h : I.IsExceptionalCurve) :
 `E` is a scheme over a field `k`, then `dim_k H¹(E, 𝒪_E) = 0`. -/
 theorem finrank_cohomology_one_trivial (h : I.IsExceptionalCurve) :
     finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 1) = 0 := by
-  obtain ⟨κ, _, _, -, h₁, -⟩ := exists_field k h
+  obtain ⟨κ, _, _, -, -, -, h₁, -⟩ := exists_algebra_finrank_cohomology_zero k h
   exact h₁
 
 /-- **The self-intersection of an exceptional curve.** If an exceptional curve of the first kind
@@ -150,7 +155,7 @@ theorem intersectionNumber_self (h : I.IsExceptionalCurve) :
     LineBundleClass.intersectionNumber k I.subschemeι
         (LineBundleClass.mk h.isEffectiveCartier.toInvertibleSheaf)⁻¹ =
       -finrank k (Cohomology (InvertibleSheaf.trivial I.subscheme).obj 0) := by
-  obtain ⟨κ, _, _, h₀, -, h₂⟩ := exists_field k h
+  obtain ⟨κ, _, _, -, -, h₀, -, h₂⟩ := exists_algebra_finrank_cohomology_zero k h
   rw [h₂, h₀]
 
 end IsExceptionalCurve
