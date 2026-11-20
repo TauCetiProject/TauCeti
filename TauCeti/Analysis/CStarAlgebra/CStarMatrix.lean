@@ -88,6 +88,93 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
+/-! ### Rectangular products and conjugate transposes -/
+
+section Rectangular
+
+variable {l m o B : Type*}
+
+/-- Products of rectangular C⋆-matrices are the products of the underlying matrices. -/
+@[simp]
+theorem of_mul_of [Fintype m] [Mul A] [AddCommMonoid A] (M : Matrix l m A) (N : Matrix m n A) :
+    ofMatrix M * ofMatrix N = ofMatrix (M * N) :=
+  (rfl)
+
+/-- The conjugate transpose of a C⋆-matrix is that of the underlying matrix. -/
+@[simp]
+theorem conjTranspose_of [Star A] (M : Matrix m n A) :
+    (ofMatrix M).conjTranspose = ofMatrix Mᴴ :=
+  (rfl)
+
+/-- The conjugate transpose of C⋆-matrices is an involution. -/
+@[simp]
+theorem conjTranspose_conjTranspose [InvolutiveStar A] (M : CStarMatrix m n A) :
+    M.conjTranspose.conjTranspose = M :=
+  Matrix.conjTranspose_conjTranspose M
+
+/-- The conjugate transpose of a sum of rectangular C⋆-matrices. -/
+@[simp]
+theorem conjTranspose_add [AddMonoid A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
+    (M + N).conjTranspose = M.conjTranspose + N.conjTranspose :=
+  Matrix.conjTranspose_add M N
+
+/-- The conjugate transpose of a difference of rectangular C⋆-matrices. -/
+@[simp]
+theorem conjTranspose_sub [AddGroup A] [StarAddMonoid A] (M N : CStarMatrix m n A) :
+    (M - N).conjTranspose = M.conjTranspose - N.conjTranspose :=
+  Matrix.conjTranspose_sub M N
+
+/-- The conjugate transpose of a product of rectangular C⋆-matrices. -/
+@[simp]
+theorem conjTranspose_mul [Fintype m] [NonUnitalNonAssocSemiring A] [StarRing A]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    (M * N).conjTranspose = N.conjTranspose * M.conjTranspose :=
+  Matrix.conjTranspose_mul M N
+
+/-- Multiplication of rectangular C⋆-matrices is associative. -/
+protected theorem mul_assoc [Fintype m] [Fintype n] [NonUnitalSemiring A]
+    (L : CStarMatrix l m A) (M : CStarMatrix m n A) (N : CStarMatrix n o A) :
+    L * M * N = L * (M * N) :=
+  Matrix.mul_assoc L M N
+
+/-- Left multiplication of rectangular C⋆-matrices distributes over subtraction. -/
+protected theorem mul_sub [Fintype n] [NonUnitalNonAssocRing A]
+    (L : CStarMatrix m n A) (M N : CStarMatrix n o A) :
+    L * (M - N) = L * M - L * N :=
+  Matrix.mul_sub L M N
+
+/-- Right multiplication of rectangular C⋆-matrices distributes over subtraction. -/
+protected theorem sub_mul [Fintype m] [NonUnitalNonAssocRing A]
+    (L M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    (L - M) * N = L * N - M * N :=
+  Matrix.sub_mul L M N
+
+/-- Applying a non-unital ring homomorphism to every entry respects products of rectangular
+C⋆-matrices. -/
+theorem map_mul [Fintype m] [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemiring B]
+    {F : Type*} [FunLike F A B] [NonUnitalRingHomClass F A B] (f : F)
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
+    (M * N).map f = M.map f * N.map f := by
+  ext
+  simp [mul_apply, map_sum]
+
+/-- Applying a star-preserving map to every entry commutes with the conjugate transpose. -/
+theorem map_conjTranspose [Star A] [Star B] {F : Type*} [FunLike F A B] [StarHomClass F A B]
+    (f : F) (M : CStarMatrix m n A) :
+    M.conjTranspose.map f = (M.map f).conjTranspose := by
+  ext
+  simp [map_star]
+
+/-- Over a star-ordered ring with proper star, a rectangular C⋆-matrix `M` vanishes as soon as
+`Mᴴ * M` does. -/
+@[simp]
+theorem conjTranspose_mul_self_eq_zero [Fintype m] [PartialOrder A] [NonUnitalRing A]
+    [StarRing A] [StarOrderedRing A] [IsProperStar A] {M : CStarMatrix m n A} :
+    M.conjTranspose * M = 0 ↔ M = 0 :=
+  Matrix.conjTranspose_mul_self_eq_zero
+
+end Rectangular
+
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
     (f : ι → CStarMatrix m n A) (i : m) (j : n) : (∑ k ∈ s, f k) i j = ∑ k ∈ s, f k i j :=
