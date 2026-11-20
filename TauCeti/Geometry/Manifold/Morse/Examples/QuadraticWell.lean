@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.Morse.NormSq
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Geometry.Manifold.Morse.Examples.ExponentialConvergence
 
@@ -19,8 +20,13 @@ uses it to test the convergence and decay theorems for gradient trajectories of 
 (`TauCeti.IsMorse.exists_tendsto_of_isMIntegralCurveOn_neg_mgradient` and
 `TauCeti.IsMorse.exists_riemannianEDist_le_mul_exp_of_tendsto_neg_mgradient`).
 
-* **The trajectories.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
-  only critical point is `0` (`TauCeti.criticalPoints_sq_real`). The trajectory of `-grad f`
+* **The Morse data.** The function `x²` is a Morse function (`TauCeti.isMorse_sq_real`) whose
+  only critical point is `0` (`TauCeti.criticalPoints_sq_real`), a minimum of index `0`
+  (`TauCeti.manifoldMorseIndex_sq_real`). The inverted well `-x²` is a Morse function
+  (`TauCeti.isMorse_neg_sq_real`) with the same critical point
+  (`TauCeti.criticalPoints_neg_sq_real`), a maximum of index `1`
+  (`TauCeti.manifoldMorseIndex_neg_sq_real`).
+* **The trajectories.** The trajectory of `-grad f`
   through `x₀` is `t ↦ x₀ exp (-2 t)`, defined for all time
   (`TauCeti.maximalIntegralCurve_neg_mgradient_sq`). For `t ≥ 0` it stays in
   `[-|x₀|, |x₀|]` (`TauCeti.mapsTo_maximalIntegralCurve_neg_mgradient_sq`) and it converges to
@@ -105,6 +111,28 @@ theorem isMorse_sq_real : IsMorse 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) := by
     simp
   rw [hd]
   simp
+
+/-- The critical point `0` of `x ↦ x²` on `ℝ` is a minimum: its Morse index is `0`. -/
+theorem manifoldMorseIndex_sq_real : manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) 0 = 0 := by
+  simpa using morseIndex_norm_sq (0 : ℝ)
+
+/-- The inverted well `x ↦ -x²` is a Morse function on `ℝ`. -/
+theorem isMorse_neg_sq_real : IsMorse 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x ^ 2) :=
+  isMorse_sq_real.neg
+
+/-- The only critical point of the inverted well is `0`. -/
+theorem criticalPoints_neg_sq_real : criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x ^ 2) = {0} :=
+  (criticalPoints_neg (f := fun x : ℝ ↦ x ^ 2)).trans criticalPoints_sq_real
+
+/-- The critical point `0` of the inverted well is a maximum: its Morse index is `1`. -/
+theorem manifoldMorseIndex_neg_sq_real :
+    manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ -x ^ 2) 0 = 1 := by
+  have hcrit : (0 : ℝ) ∈ criticalPoints 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) := by
+    simp [criticalPoints_sq_real]
+  have hnd := isMorse_sq_real.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hcrit)
+  have h := hnd.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  rwa [manifoldMorseIndex_sq_real, Module.finrank_self] at h
 
 /-! ### The trajectories -/
 
