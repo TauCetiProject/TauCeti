@@ -27,6 +27,12 @@ preserves it, and packages the resulting equivariant self-duality.
   against the all-ones vector is `TauCeti.stdSymplecticBilinForm_one_right`.
 * `TauCeti.stdSymplecticRepEquivDual` is the induced equivariant self-duality.
 
+## Main results
+
+* `TauCeti.exists_map_stdSymplecticRep_eq`: `Sp₂ₙ(k)` acts transitively on the isotropic subspaces
+  of each dimension. It follows from Witt's theorem for alternating forms,
+  `LinearMap.BilinForm.IsAlt.exists_isometryEquiv_map_eq`.
+
 ## References
 
 * The equivariance, self-duality, and character constructions follow the formal template in
@@ -311,7 +317,8 @@ theorem exists_map_stdSymplecticRep_eq {U₁ U₂ : Submodule k ((Fin n ⊕ Fin 
     rw [SymplecticGroup.mem_iff']
     apply Matrix.toBilin'.injective
     rw [← Matrix.toBilin'_comp, Matrix.toLin'_toMatrix', ← stdSymplecticBilinForm]
-    exact LinearMap.ext₂ fun x y ↦ g.map_app y x
+    ext x y
+    simp
   refine ⟨⟨_, hA⟩, ?_⟩
   rw [stdSymplecticRep_apply, ← Matrix.toLin'_apply', Matrix.toLin'_toMatrix', hg]
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
 import Mathlib.LinearAlgebra.Basis.Prod
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
@@ -39,8 +40,8 @@ hold in characteristic two.
   form on a Noetherian module lies in a self-orthogonal one.
 * `LinearMap.BilinForm.eq_orthogonal_iff_two_mul_finrank_eq`: for a nondegenerate form, an
   isotropic subspace is Lagrangian exactly when it has half the ambient dimension.
-* `LinearMap.BilinForm.IsAlt.exists_finrank_eq_of_two_mul_le`: there are isotropic subspaces of
-  every dimension `r` with `2 * r ≤ dim V`.
+* `LinearMap.BilinForm.IsAlt.exists_le_orthogonal_finrank_eq_of_two_mul_le`: there are isotropic
+  subspaces of every dimension `r` with `2 * r ≤ dim V`.
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J_inl_inl_eq`: a basis of an isotropic
   subspace extends to a symplectic basis.
 * `LinearMap.BilinForm.IsAlt.exists_isometryEquiv_map_eq`: two isotropic subspaces of the same
@@ -94,7 +95,8 @@ theorem eq_orthogonal_iff_two_mul_finrank_eq (hnd : B.Nondegenerate) {U : Submod
 /-- For an alternating form on a finite-dimensional space, there are isotropic subspaces of every
 dimension `r` with `2 * r ≤ dim V`; the form may be degenerate. For a nondegenerate form,
 `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal` shows that there are no others. -/
-theorem IsAlt.exists_finrank_eq_of_two_mul_le (hB : B.IsAlt) {r : ℕ} (hr : 2 * r ≤ finrank K V) :
+theorem IsAlt.exists_le_orthogonal_finrank_eq_of_two_mul_le (hB : B.IsAlt) {r : ℕ}
+    (hr : 2 * r ≤ finrank K V) :
     ∃ U : Submodule K V, U ≤ B.orthogonal U ∧ finrank K U = r := by
   obtain ⟨L, -, hL⟩ := hB.exists_le_eq_orthogonal (bot_le : (⊥ : Submodule K V) ≤ _)
   have hLdim := finrank_le_two_mul_finrank_of_orthogonal_le hL.ge
@@ -133,9 +135,7 @@ theorem IsAlt.exists_basis_toMatrix_eq_J_inl_inl_eq (hB : B.IsAlt) (hnd : B.Nond
   let bL : Basis (ι ⊕ κ) K L := (eU'.prod c).map (prodEquivOfIsCompl U' C hC)
   obtain ⟨b, hbJ, hb⟩ := hB.exists_basis_toMatrix_eq_J_inl_eq hnd bL hL
   refine ⟨b, hbJ, fun i ↦ ?_⟩
-  simp only [hb, bL, eU', Basis.map_apply, Basis.prod_apply, Sum.elim_inl, Function.comp_apply,
-    LinearMap.inl_apply, coe_prodEquivOfIsCompl', ZeroMemClass.coe_zero, add_zero]
-  rw [← comapSubtypeEquivOfLe_apply_coe hUL, LinearEquiv.apply_symm_apply]
+  simp [hb, bL, eU', ← comapSubtypeEquivOfLe_apply_coe hUL]
 
 /-- **Witt's theorem for alternating forms.** For a nondegenerate alternating form on a
 finite-dimensional space, any two isotropic subspaces of the same dimension are related by an
@@ -154,16 +154,12 @@ theorem IsAlt.exists_isometryEquiv_map_eq (hB : B.IsAlt) (hnd : B.Nondegenerate)
   obtain ⟨b₁, hb₁, he₁⟩ := hB.exists_basis_toMatrix_eq_J_inl_inl_eq hnd e₁ h₁ hdim
   obtain ⟨b₂, hb₂, he₂⟩ := hB.exists_basis_toMatrix_eq_J_inl_inl_eq hnd e₂ h₂ hdim
   -- The automorphism matching the two symplectic bases preserves `B`.
-  let g : V ≃ₗ[K] V := b₁.equiv b₂ (Equiv.refl _)
-  have hg : B.comp g.toLinearMap g.toLinearMap = B := ext_basis b₁ fun i j ↦ by
-    rw [comp_apply, LinearEquiv.coe_coe, Basis.equiv_apply, Basis.equiv_apply, Equiv.refl_apply,
-      Equiv.refl_apply, ← toMatrix_apply, ← toMatrix_apply, hb₁, hb₂]
-  refine ⟨⟨g, fun x y ↦ congr($hg x y)⟩, ?_⟩
+  let g := b₁.isometryEquivOfToMatrixEq b₂ (hb₁.trans hb₂.symm)
+  refine ⟨g, ?_⟩
   -- Both subspaces are spanned by the first vectors of their symplectic bases.
   have hspan (U : Submodule K V) (e : Basis (Fin (finrank K U₁)) K U) :
-      span K (Set.range fun i ↦ (e i : V)) = U := by
-    have h := congrArg (map U.subtype) e.span_eq
-    rwa [map_span, map_subtype_top, ← Set.range_comp] at h
+      span K (Set.range fun i ↦ (e i : V)) = U :=
+    (span_range_subtype_eq_top_iff U fun i ↦ (e i).2).mp e.span_eq
   rw [← hspan U₁ e₁, ← hspan U₂ e₂, map_span, ← Set.range_comp]
   refine congrArg (fun v ↦ span K (Set.range v)) (funext fun i ↦ ?_)
   simp [g, ← he₁, ← he₂]
