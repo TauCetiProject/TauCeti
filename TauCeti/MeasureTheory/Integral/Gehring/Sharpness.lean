@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.Gehring
+public import Mathlib.MeasureTheory.Integral.Average
+public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
@@ -68,6 +69,12 @@ open scoped ENNReal NNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
+/-- For `s ≥ 0`, the map `u ↦ u ^ (-s)` on `ℝ≥0∞` is antitone. -/
+private theorem rpow_neg_le_rpow_neg {u v : ℝ≥0∞} {s : ℝ} (hs : 0 ≤ s) (h : u ≤ v) :
+    v ^ (-s) ≤ u ^ (-s) := by
+  rw [ENNReal.rpow_neg, ENNReal.rpow_neg]
+  gcongr
+
 omit [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] in
 /-- The upper half of the reverse Hölder inequality for `‖x‖ ^ (-s)` on a ball `B(y, ρ)` with
 `‖y‖ ≥ 2ρ`, which stays away from the origin. -/
@@ -82,15 +89,10 @@ private theorem setLAverage_ball_enorm_rpow_neg_le_of_le_norm {s : ℝ} (hs : 0 
   set L := ‖y‖ + 2 * ρ
   have hL : 0 < L := by positivity
   -- Far from the origin the weight is at most `(L / 4) ^ (-s) = 4 ^ s L ^ (-s)`.
-  have hfar : ∀ x ∈ ball y ρ, L / 4 ≤ ‖x‖ := fun x hx => by
-    have := norm_sub_norm_le y x
-    rw [← dist_eq_norm, dist_comm] at this
-    linarith [mem_ball.1 hx]
   have hpt : ∀ x ∈ ball y ρ, ‖x‖ₑ ^ (-s) ≤ ENNReal.ofReal ((L / 4) ^ (-s)) := fun x hx => by
-    rw [← ENNReal.ofReal_rpow_of_pos (by positivity), ENNReal.rpow_neg, ENNReal.rpow_neg,
-      ← ofReal_norm]
-    gcongr
-    exact hfar x hx
+    rw [← ENNReal.ofReal_rpow_of_pos (by positivity), ← ofReal_norm]
+    exact rpow_neg_le_rpow_neg hs (ENNReal.ofReal_le_ofReal
+      (by linarith [norm_sub_norm_le y x, mem_ball_iff_norm'.1 hx]))
   refine ((laverage_le_essSup _).trans (essSup_le_of_ae_le _
     ((ae_restrict_mem measurableSet_ball).mono hpt))).trans (ENNReal.ofReal_le_ofReal ?_)
   rw [div_eq_mul_inv, Real.mul_rpow hL.le (by norm_num), Real.inv_rpow (by norm_num),
@@ -103,12 +105,12 @@ private theorem setLAverage_ball_enorm_rpow_neg_le_of_le_norm {s : ℝ} (hs : 0 
       nlinarith [pow_pos (by norm_num : (0 : ℝ) < 4) d]
 
 /-- The real inequality closing the case `‖y‖ < 2ρ` of the reverse Hölder inequality for a power
-weight: for `D = d`, `0 ≤ s < D` and `0 < L ≤ 4ρ`,
-`D / (D - s) · (3ρ) ^ (D - s) / ρ ^ d ≤ D 4ᵈ / (D - s) · L ^ (-s)`. -/
-private theorem div_mul_rpow_three_mul_div_le {D s ρ L : ℝ} {d : ℕ} (hD : D = d) (hs : 0 ≤ s)
-    (ht : 0 < D - s) (hρ : 0 < ρ) (hL : 0 < L) (hL4 : L ≤ 4 * ρ) :
-    D / (D - s) * ((3 * ρ) ^ (D - s) / ρ ^ d) ≤ D * 4 ^ d / (D - s) * L ^ (-s) := by
-  subst hD
+weight: for `0 ≤ s < d` and `0 < L ≤ 4ρ`,
+`d / (d - s) · (3ρ) ^ (d - s) / ρ ^ d ≤ d 4ᵈ / (d - s) · L ^ (-s)`. -/
+private theorem div_mul_rpow_three_mul_div_le {s ρ L : ℝ} {d : ℕ} (hs : 0 ≤ s)
+    (ht : 0 < (d : ℝ) - s) (hρ : 0 < ρ) (hL : 0 < L) (hL4 : L ≤ 4 * ρ) :
+    (d : ℝ) / (d - s) * ((3 * ρ) ^ ((d : ℝ) - s) / ρ ^ d) ≤
+      d * 4 ^ d / (d - s) * L ^ (-s) := by
   have hpow : (3 * ρ) ^ ((d : ℝ) - s) / ρ ^ d = 3 ^ ((d : ℝ) - s) * ρ ^ (-s) := by
     rw [Real.mul_rpow (by norm_num) hρ.le, mul_div_assoc, ← Real.rpow_natCast,
       ← Real.rpow_sub hρ]
@@ -147,9 +149,7 @@ private theorem setLAverage_ball_enorm_rpow_neg_le_of_norm_lt {s : ℝ} (hs : 0 
   -- Near the origin, `B(y, ρ) ⊆ closedBall 0 (3ρ)`, where the integral is explicit.
   have hsub : ball y ρ ⊆ closedBall (0 : E) (3 * ρ) := fun x hx => by
     rw [mem_closedBall, dist_zero_right]
-    have := norm_le_norm_add_norm_sub y x
-    rw [← dist_eq_norm, dist_comm] at this
-    linarith [mem_ball.1 hx]
+    linarith [norm_le_norm_add_norm_sub' x y, mem_ball_iff_norm.1 hx]
   have hint : ∫⁻ x in ball y ρ, ‖x‖ₑ ^ (-s) ∂μ ≤
       ENNReal.ofReal (D * μ.real (ball (0 : E) 1) * ((3 * ρ) ^ (D + -s) / (D + -s))) := by
     calc ∫⁻ x in ball y ρ, ‖x‖ₑ ^ (-s) ∂μ
@@ -171,7 +171,7 @@ private theorem setLAverage_ball_enorm_rpow_neg_le_of_norm_lt {s : ℝ} (hs : 0 
     rw [← sub_eq_add_neg]
     field_simp
   rw [hlhs]
-  exact div_mul_rpow_three_mul_div_le rfl hs ht hρ hL (by linarith)
+  exact div_mul_rpow_three_mul_div_le hs ht hρ hL (by linarith)
 
 /-- The upper half of the reverse Hölder inequality for `‖x‖ ^ (-s)`: its average over `B(y, ρ)`
 is at most `d 4ᵈ / (d - s)` times `(‖y‖ + 2ρ) ^ (-s)`. -/
@@ -207,13 +207,9 @@ theorem setLAverage_ball_enorm_rpow_neg_rpow_le {a q : ℝ} (ha : 0 ≤ a) (hq :
       _ ≤ ⨍⁻ x in ball y (2 * ρ), ‖x‖ₑ ^ (-a) ∂μ :=
           laverage_mono_ae ((ae_restrict_mem measurableSet_ball).mono fun x hx => by
             dsimp only
-            have hxL : ‖x‖ ≤ ‖y‖ + 2 * ρ := by
-              have := norm_le_norm_add_norm_sub y x
-              rw [← dist_eq_norm, dist_comm] at this
-              linarith [mem_ball.1 hx]
-            rw [← ENNReal.ofReal_rpow_of_pos hL, ENNReal.rpow_neg, ENNReal.rpow_neg,
-              ← ofReal_norm]
-            gcongr)
+            rw [← ENNReal.ofReal_rpow_of_pos hL, ← ofReal_norm]
+            exact rpow_neg_le_rpow_neg ha (ENNReal.ofReal_le_ofReal
+              (by linarith [norm_le_norm_add_norm_sub' x y, mem_ball_iff_norm.1 hx])))
   have hs : 0 ≤ a * q := mul_nonneg ha hq
   simp_rw [← ENNReal.rpow_mul, neg_mul]
   calc ⨍⁻ x in ball y ρ, ‖x‖ₑ ^ (-(a * q)) ∂μ
@@ -226,24 +222,6 @@ theorem setLAverage_ball_enorm_rpow_neg_rpow_le {a q : ℝ} (ha : 0 ≤ a) (hq :
           ENNReal.ofReal_mul (div_nonneg (by positivity) (sub_pos.2 haq).le), neg_mul]
     _ ≤ _ := by
         gcongr
-
-/-- Around the origin, the average of `‖x‖ ^ (-t)` is infinite once `t ≥ d`. -/
-private theorem setLAverage_ball_zero_enorm_rpow_neg_eq_top [Nontrivial E] {t r : ℝ}
-    (ht : finrank ℝ E ≤ t) (hr : 0 < r) : ⨍⁻ x in ball (0 : E) r, ‖x‖ₑ ^ (-t) ∂μ = ⊤ := by
-  have hI : ∫⁻ x in ball (0 : E) r, ‖(0 : E) - x‖ₑ ^ (-t) ∂μ = ⊤ :=
-    setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior (neg_le_neg ht)
-      (by rw [isOpen_ball.interior_eq]; exact mem_ball_self hr)
-  simp only [zero_sub, eNorm_neg] at hI
-  rw [setLAverage_eq, hI, ENNReal.top_div_of_ne_top measure_ball_lt_top.ne]
-
-/-- Around the origin, the average of `‖x‖ ^ (-t)` is finite when `t < d`. -/
-private theorem setLAverage_ball_zero_enorm_rpow_neg_lt_top {t r : ℝ} (ht : t < finrank ℝ E)
-    (hr : 0 ≤ r) : ⨍⁻ x in ball (0 : E) r, ‖x‖ₑ ^ (-t) ∂μ < ⊤ := by
-  refine setLAverage_lt_top (ne_top_of_le_ne_top ?_ (lintegral_mono_set ball_subset_closedBall))
-  have := setLIntegral_closedBall_enorm_sub_rpow (mu := μ) (s := -t) (by linarith) hr 0
-  simp only [zero_sub, eNorm_neg] at this
-  rw [this]
-  exact ENNReal.ofReal_ne_top
 
 /-- **The gain in Gehring's lemma degenerates as the constant grows.** Let `E` be nontrivial of
 dimension `d`, let `q > 0`, and let `b > 4ᵈ`. Suppose that for some gain `δ > 0` and some constant
@@ -300,10 +278,13 @@ theorem lt_div_sub_of_forall_setLAverage_rpow_add_le [Nontrivial E] {q δ : ℝ}
     hexp] at key
   -- The left side is infinite, since `a (q + δ) = d`, and the right side is finite, since
   -- `a q < d`.
-  rw [setLAverage_ball_zero_enorm_rpow_neg_eq_top le_rfl (by norm_num), neg_mul] at key
+  have htop := setLAverage_ball_enorm_sub_rpow_eq_top (mu := μ) le_rfl (0 : E)
+    (by norm_num : (0 : ℝ) < 1 / 2)
+  have hfin := setLAverage_ball_enorm_sub_rpow_lt_top (mu := μ) (neg_lt_neg haq) (0 : E) 1
+  simp only [zero_sub, eNorm_neg] at htop hfin
+  rw [htop, neg_mul] at key
   refine (lt_irrefl (⊤ : ℝ≥0∞)) (key.trans_lt ?_)
-  refine ENNReal.mul_lt_top ENNReal.coe_lt_top (ENNReal.rpow_lt_top_of_nonneg ?_
-    (setLAverage_ball_zero_enorm_rpow_neg_lt_top haq zero_le_one).ne)
+  refine ENNReal.mul_lt_top ENNReal.coe_lt_top (ENNReal.rpow_lt_top_of_nonneg ?_ hfin.ne)
   positivity
 
 /-- **Gehring's lemma has no gain independent of the constant.** On a nontrivial space and for
@@ -328,8 +309,8 @@ theorem not_exists_forall_exists_setLAverage_rpow_add_le [Nontrivial E] {q : ℝ
   obtain ⟨C, hC⟩ := hG b
   have hlt := lt_div_sub_of_forall_setLAverage_rpow_add_le (μ := μ) hq hδ
     (by rw [hbc]; nlinarith [div_pos hq hδ]) hC
-  rw [hbc, show c * (1 + q / δ) - c = c * q / δ by ring, div_div_eq_mul_div,
-    mul_comm q c, mul_div_cancel_left₀ _ (by positivity : c * q ≠ 0)] at hlt
-  exact lt_irrefl δ hlt
+  rw [hbc, show c * (1 + q / δ) - c = c * q / δ by ring] at hlt
+  field_simp at hlt
+  linarith
 
 end TauCeti
