@@ -88,8 +88,9 @@ regular case.
   symmetric bilinear form `B` is `2 • B`.
 * `LinearMap.BilinForm.radical_toQuadraticMap`: the radical of the quadratic form of a symmetric
   bilinear form `B` equals the kernel of `B`.
-* `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, the
-  quadratic form of a nondegenerate symmetric bilinear form is nondegenerate.
+* `LinearMap.BilinForm.nondegenerate_toQuadraticMap_iff`,
+  `LinearMap.BilinForm.Nondegenerate.toQuadraticMap`: over a ring in which `2` is invertible, a
+  symmetric bilinear form is nondegenerate exactly when its quadratic form is.
 * `QuadraticMap.radical_zero_prod`: the radical of the orthogonal sum of a zero form with `Q`.
 * `QuadraticMap.radical_lift_radical`, `QuadraticMap.nondegenerate_lift_radical`: the regular
   part has trivial radical, so it is nondegenerate when `2` is invertible.
@@ -709,16 +710,23 @@ theorem BilinForm.radical_toQuadraticMap [Invertible (2 : R)] (B : LinearMap.Bil
   rw [QuadraticMap.radical_eq_ker_associated,
     QuadraticMap.associated_left_inverse (S := R) hB.eq]
 
+/-- Over a ring in which `2` is invertible, a symmetric bilinear form is nondegenerate exactly
+when its quadratic form is: the associated bilinear form of the quadratic form is the form itself.
+-/
+theorem BilinForm.nondegenerate_toQuadraticMap_iff [Invertible (2 : R)]
+    {B : LinearMap.BilinForm R M} (hB : B.IsSymm) :
+    B.toQuadraticMap.Nondegenerate ↔ B.Nondegenerate := by
+  rw [← QuadraticMap.nondegenerate_associated_iff,
+    QuadraticMap.associated_left_inverse' R (BilinForm.isSymm_iff_flip.1 hB)]
+
 /-- **Nondegeneracy passes from a symmetric bilinear form to its quadratic form** over a ring in
 which `2` is invertible. Some hypothesis on `2` is needed: a quadratic form is a finer invariant
 than its polar form, and it is the bilinear form, not the polar form `2 • B`, that is assumed
 nondegenerate here. -/
 theorem BilinForm.Nondegenerate.toQuadraticMap [Invertible (2 : R)] {B : LinearMap.BilinForm R M}
     (hB : B.Nondegenerate) (hflip : LinearMap.flip B = B) :
-    (BilinMap.toQuadraticMap B).Nondegenerate := by
-  rw [← QuadraticMap.nondegenerate_associated_iff,
-    QuadraticMap.associated_left_inverse' R hflip]
-  exact hB
+    (BilinMap.toQuadraticMap B).Nondegenerate :=
+  (nondegenerate_toQuadraticMap_iff (BilinForm.isSymm_iff_flip.2 hflip)).2 hB
 
 end LinearMap
 

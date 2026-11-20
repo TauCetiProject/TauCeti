@@ -11,7 +11,6 @@ public import TauCeti.NumberTheory.ModularForms.GeodesicIntegral.BetweenCusps
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.ExpDecay
-import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
@@ -299,7 +298,7 @@ theorem integrableOn_resToImagAxis_periodIntegrand_slash [Γ.IsArithmetic] [Cusp
     exact hg
   have := integrableOn_resToImagAxis_periodIntegrand_slash_Ici f hk P hgS
   rwa [SlashAction.slash_mul, ModularForm.rat_slash_mapGL,
-    ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash] at this
+    ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash] at this
 
 /-- **Decay on vertical strips**: for a cusp form `f` of weight `w + 2` on an arithmetic
 subgroup, a binary form `P` of degree `w`, and a rational matrix `g` of positive determinant, the
@@ -418,7 +417,7 @@ theorem periodIntegrand_slash_mapGL {k : ℤ} (hk : k = w + 2) (f : ℍ → ℂ)
     rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
   funext τ
   rw [periodIntegrand_slash_apply hk f P (by rw [hdet]; exact one_pos) τ, periodIntegrand_apply,
-    hdet, ModularForm.rat_slash_mapGL, ← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    hdet, ModularForm.rat_slash_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     ← ModularForm.SL_slash, map_mapGL, coe_binaryFormRep_apply, aeval_linearSubst]
   push_cast
   rw [_root_.one_zpow, one_mul]
@@ -451,7 +450,7 @@ theorem geodesicIntegral_mapGL_mul_periodIntegrand_of_mem {Γ : Subgroup SL(2, �
       g.geodesicIntegral
         (periodIntegrand f (binaryFormRep R w (op (γ : Matrix (Fin 2) (Fin 2) ℤ)) P)) := by
   rw [geodesicIntegral_mapGL_mul_periodIntegrand hk, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
 
 /-- **The periods between cusps respect the modular-symbol relation**: for `γ` in the level `Γ`
@@ -468,7 +467,7 @@ theorem cuspIntegral_periodIntegrand_mapGL_smul_of_mem {Γ : Subgroup SL(2, ℤ)
     rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
     exact one_pos
   rw [← cuspIntegral_slash _ hdet, periodIntegrand_slash_mapGL hk, ModularForm.SL_slash,
-    TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
     SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)]
 
 /-! ### The transformation law under integral matrices -/

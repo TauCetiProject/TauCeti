@@ -113,10 +113,8 @@ theorem forall_subsingleton_homotopyGroup_of_mem_serreFibrations (hp : serreFibr
   intro k hk x
   have : PathConnectedSpace E := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero e.1).2
     (subsingleton_homotopyGroup_of_mem_serreFibrations hp e (hB 0 n.zero_le) (hF 0 n.zero_le))
-  have := subsingleton_homotopyGroup_of_mem_serreFibrations hp e (hB k hk) (hF k hk)
-  -- Transport the trivial group `π_k(E, e)` along a path from `e` to `x`.
-  exact (homotopyGroupEquivOfPath (N := Fin k)
-    (PathConnectedSpace.somePath e.1 x)).symm.subsingleton
+  exact subsingleton_homotopyGroup_of_pathConnectedSpace
+    (subsingleton_homotopyGroup_of_mem_serreFibrations hp e (hB k hk) (hF k hk))
 
 /-- **The total space is simply connected when the base and one fibre are.** For a Serre fibration
 `p : E → B` over a simply connected base whose fibre over `b` is simply connected, the total space
@@ -212,11 +210,8 @@ theorem forall_subsingleton_homotopyGroup_of_exists_trivialization
   intro k hk x
   have : PathConnectedSpace B :=
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero b).2 (hB 0 n.zero_le)
-  have := hB k hk
-  -- Transport the trivial group `π_k(B, b)` along a path from `p x` to `b`.
   exact subsingleton_homotopyGroup_of_exists_trivialization h x
-    (homotopyGroupEquivOfPath (N := Fin k) (PathConnectedSpace.somePath (p x) b)).subsingleton
-    (hF k hk)
+    (subsingleton_homotopyGroup_of_pathConnectedSpace (hB k hk)) (hF k hk)
 
 /-- **The total space of a locally trivial map is simply connected when the base and the fibre
 are.** -/

@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -31,6 +32,8 @@ centred at the zero vector over `x₀`, has base component the tangent coordinat
 fibre component the product-rule sum of the derivative of that coordinate change in the base point
 and the coordinate change applied to `w`.  This is the transformation law obeyed by a second-order
 vector field on `TM`, such as a geodesic spray, when it is carried between tangent-bundle charts.
+On a boundaryless manifold the change of charts of `TM` itself is `(q, u) ↦ (φ q, Dφ_q u)`, for
+the change of base charts `φ`.
 
 It then identifies the tangent spaces of an open submanifold with those of its ambient manifold
 and shows that, near each point, the inverse tangent-bundle trivializations agree under that
@@ -60,6 +63,11 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
+* `TauCeti.Manifold.extChartAt_tangent_self_snd`: in the tangent-bundle chart at `v`, the fibre
+  coordinate of `v` is `v` itself.
+* `TauCeti.Manifold.extChartAt_tangent_symm_mem_baseSet_and_snd`: a point with coordinates `y` in
+  the tangent-bundle chart at `v` lies over the base set of the trivialization at `v.proj`, with
+  fibre coordinate `y.2` there.
 * `TauCeti.Manifold.extend_eq_trivializationAt_symm`: the extension of a tangent vector `w` at `x`
   is the vector field with constant coordinates `w` in the canonical trivialization at `x`.
 * `TauCeti.Manifold.inTangentCoordinates_eq_self_of_eq`: a field of linear maps read in the tangent
@@ -82,6 +90,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.contMDiffAt_tangentCoordChange`: that coordinate change is `C^n` at the base
   point of its first chart, as a map of manifolds into the linear endomorphisms of the model
   space.
+* `TauCeti.Manifold.extChartAt_tangent_eq_fderiv` and
+  `TauCeti.Manifold.extChartAt_tangent_symm_eventuallyEq`: on a boundaryless manifold, the change
+  of tangent-bundle charts is `(q, u) ↦ (φ q, Dφ_q u)` for the change of base charts `φ`.
 * `TauCeti.Manifold.tangentCoordChange_tangent_apply`: the coordinate-change formula on the
   tangent bundle of the tangent bundle.
 * `TauCeti.Manifold.continuousLinearMapAt_symmL_coordChange`: reading a tangent vector through the
@@ -100,7 +111,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
   `TauCeti.Manifold.injective_mvfderiv_subtype_val`: for an open subset of a normed space, the
   derivative of the inclusion, read in the normed space, fixes each tangent vector.
 * `TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply`: under this equivalence, the differential
-  of a map between open submanifolds is that of any ambient map it restricts.
+  of a map between open submanifolds is that of any ambient map it restricts; in particular one is
+  the identity exactly when the other is (`TauCeti.Manifold.mfderiv_eq_id_iff_of_comp_subtype_val`).
 * `TauCeti.Manifold.instT2SpaceTangentBundleModelSpace`: a model space has a Hausdorff tangent
   bundle. It is an instance in the `TauCeti` scope, for model spaces `H` whose Hausdorffness is
   not already an instance; over a Hausdorff manifold the tangent bundle is Hausdorff by the general
@@ -245,6 +257,19 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (v : TangentSpace I 
   rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
 
+/-- In its own preferred chart, a tangent vector `z` has coordinates the chart image of its base
+point and its own fibre coordinate. -/
+theorem _root_.TangentBundle.extChartAt_self (z : TangentBundle I M) :
+    extChartAt I.tangent z z = (extChartAt I z.proj z.proj, (z.2 : E)) := by
+  simp only [FiberBundle.extChartAt, PartialEquiv.coe_trans, Function.comp_apply,
+    PartialEquiv.prod_coe, PartialEquiv.refl_coe, id_eq,
+    OpenPartialHomeomorph.coe_toPartialEquiv, Trivialization.coe_coe,
+    TangentBundle.trivializationAt_fst]
+  refine Prod.ext rfl ?_
+  exact ((trivializationAt E (TangentSpace I) z.proj).continuousLinearMapAt_apply_of_mem (R := 𝕜)
+    (FiberBundle.mem_baseSet_trivializationAt' z.proj) z.2).symm.trans
+    (continuousLinearMapAt_trivializationAt_self z.proj z.2)
+
 /-- The inverse form of `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self`: over its
 own base point, the inverse of the canonical trivialization is the identity. -/
 @[simp]
@@ -252,6 +277,28 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- In the tangent-bundle chart at `v`, the fibre coordinate of `v` itself is `v`: the chart reads
+fibres through the tangent coordinate change from the chart at `v.proj` to itself, which is the
+identity at `v.proj`. -/
+theorem extChartAt_tangent_self_snd (v : TangentBundle I M) :
+    (extChartAt I.tangent v v).2 = v.2 := by
+  simp only [extChartAt_coe, Function.comp_apply, modelWithCorners_prod_coe, Prod.map_snd,
+    modelWithCornersSelf_coe, id_eq, TangentBundle.coe_chartAt_snd]
+  exact tangentCoordChange_self (mem_extChartAt_source v.proj)
+
+/-- A point with coordinates `y` in the tangent-bundle chart at `v` lies over the base set of the
+trivialization at `v.proj`, and its fibre coordinate there is `y.2`. -/
+theorem extChartAt_tangent_symm_mem_baseSet_and_snd (v : TangentBundle I M) {y : E × E}
+    (hy : y ∈ (extChartAt I.tangent v).target) :
+    ((extChartAt I.tangent v).symm y).proj ∈ (trivializationAt E (TangentSpace I) v.proj).baseSet ∧
+      (trivializationAt E (TangentSpace I) v.proj ((extChartAt I.tangent v).symm y)).2 = y.2 := by
+  set w := (extChartAt I.tangent v).symm y
+  have hb : w.proj ∈ (trivializationAt E (TangentSpace I) v.proj).baseSet :=
+    Bundle.proj_extChartAt_symm v hy ▸ TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet
+      (Bundle.fst_mem_extChartAt_target v hy)
+  refine ⟨hb, ?_⟩
+  rw [← (extChartAt I.tangent v).right_inv hy, Bundle.extChartAt_apply_of_mem_baseSet v hb]
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
 `x` takes the value `u` at `x`. -/
@@ -281,27 +328,6 @@ theorem _root_.TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (x : 
   have h := FiberBundle.mdifferentiableAt_extend (I := I) (V := TangentSpace I) (x := x) E u
   rwa [extend_eq_trivializationAt_symm (I := I) (x := x) u] at h
 
-/-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
-tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
-theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGroup E']
-    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
-    [ChartedSpace H' M'] [IsManifold I' 1 M'] (f : N → M) (g : N → M')
-    (ϕ : Π x : N, TangentSpace I (f x) →L[𝕜] TangentSpace I' (g x)) {x₀ x : N}
-    (hf : f x = f x₀) (hg : g x = g x₀) :
-    inTangentCoordinates I I' f g ϕ x₀ x = ϕ x := by
-  rw [inTangentCoordinates_eq _ _ _ (by rw [hf]; exact mem_chart_source H _)
-    (by rw [hg]; exact mem_chart_source H' _)]
-  have h₁ : achart H (f x₀) = achart H (f x) := by rw [hf]
-  have h₂ : achart H' (g x₀) = achart H' (g x) := by rw [hg]
-  ext v
-  simp only [ContinuousLinearMap.comp_apply, h₁, h₂,
-    (tangentBundleCore I' M').coordChange_self (achart H' (g x)) (g x)
-      (mem_chart_source H' (g x))]
-  -- `ContinuousLinearMap.comp_apply` does not fire on the inner composition, whose source is
-  -- `TangentSpace I (f x)` rather than `E`; it is applied by definition.
-  exact congrArg (ϕ x) ((tangentBundleCore I M).coordChange_self (achart H (f x)) (f x)
-    (mem_chart_source H (f x)) v)
-
 /-- A linear map between tangent spaces, read in the canonical trivializations at its own base
 points, is unchanged. -/
 @[simp]
@@ -314,6 +340,16 @@ theorem inCoordinates_tangentSpace_self {E' H' M' : Type*} [NormedAddCommGroup E
   simp only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
     symmL_trivializationAt_self]
   exact continuousLinearMapAt_trivializationAt_self y (ϕ v)
+
+/-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
+tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
+theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] (f : N → M) (g : N → M')
+    (ϕ : Π x : N, TangentSpace I (f x) →L[𝕜] TangentSpace I' (g x)) {x₀ x : N}
+    (hf : f x = f x₀) (hg : g x = g x₀) :
+    inTangentCoordinates I I' f g ϕ x₀ x = ϕ x := by
+  rw [inTangentCoordinates, ← hf, ← hg, inCoordinates_tangentSpace_self]
 
 /-- The differential of the extended chart at `x₀`, at a point `x` of its source, is inverted by
 the inverse of the canonical tangent-bundle trivialization at `x₀`.  This is the inverse form of
@@ -485,6 +521,51 @@ private theorem extChartAt_tangent_symm_trans_eq [IsManifold I 1 M] (z q : Tange
   · change (extChartAt I.tangent q b).2 =
       tangentCoordChange I z.proj q.proj ((extChartAt I z.proj).symm a.1) a.2
     simpa only [hy] using hsecond
+
+/-- **Transition maps of the tangent bundle.** For a boundaryless model, a tangent vector `w` in
+the sources of the tangent charts at `w₀` and `w₁` has coordinates `(φ q, Dφ_q u)` in the chart at
+`w₁`, where `(q, u)` are its coordinates in the chart at `w₀` and `φ` is the change of base charts
+from `w₀.proj` to `w₁.proj`. -/
+theorem extChartAt_tangent_eq_fderiv [IsManifold I 1 M] [I.Boundaryless]
+    {w₀ w₁ w : TangentBundle I M} (h₀ : w ∈ (extChartAt I.tangent w₀).source)
+    (h₁ : w ∈ (extChartAt I.tangent w₁).source) :
+    extChartAt I.tangent w₁ w =
+      ((extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm) (extChartAt I.tangent w₀ w).1,
+        fderiv 𝕜 (extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm)
+          (extChartAt I.tangent w₀ w).1 (extChartAt I.tangent w₀ w).2) := by
+  set a := extChartAt I.tangent w₀ w
+  have haT : a ∈ (extChartAt I.tangent w₀).target := (extChartAt I.tangent w₀).map_source h₀
+  have ha : a ∈ ((extChartAt I.tangent w₀).symm ≫ extChartAt I.tangent w₁).source := by
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
+    refine ⟨haT, ?_⟩
+    rw [mem_preimage, (extChartAt I.tangent w₀).left_inv h₀]
+    exact h₁
+  have h := extChartAt_tangent_symm_trans_eq w₀ w₁ ha
+  rw [(extChartAt I.tangent w₀).left_inv h₀] at h
+  have ha₁ : a.1 ∈ (extChartAt I w₀.proj).target := by
+    rw [FiberBundle.extChartAt_target] at haT
+    exact haT.1.1
+  rw [h, tangentCoordChange_def, (extChartAt I w₀.proj).right_inv ha₁, I.range_eq_univ,
+    fderivWithin_univ]
+  -- The fibre coordinate change is the derivative applied to `a.2`, read in `E`.
+  rfl
+
+/-- **Changes of tangent-bundle charts, near a point.** For a boundaryless model, near the
+coordinates in the chart at `w₀` of a tangent vector `w` in the sources of the tangent charts at
+`w₀` and `w₁`, the inverse of the chart at `w₀` is the inverse of the chart at `w₁` precomposed with
+`(q, u) ↦ (φ q, Dφ_q u)`, where `φ` is the change of base charts from `w₀.proj` to `w₁.proj`. -/
+theorem extChartAt_tangent_symm_eventuallyEq [IsManifold I 1 M] [I.Boundaryless]
+    {w₀ w₁ w : TangentBundle I M} (h₀ : w ∈ (extChartAt I.tangent w₀).source)
+    (h₁ : w ∈ (extChartAt I.tangent w₁).source) :
+    (extChartAt I.tangent w₀).symm =ᶠ[𝓝 (extChartAt I.tangent w₀ w)] fun y ↦
+      (extChartAt I.tangent w₁).symm
+        ((extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm) y.1,
+          fderiv 𝕜 (extChartAt I w₁.proj ∘ (extChartAt I w₀.proj).symm) y.1 y.2) := by
+  filter_upwards [extChartAt_target_mem_nhds' ((extChartAt I.tangent w₀).map_source h₀),
+    extChartAt_preimage_mem_nhds' h₀ (extChartAt_source_mem_nhds' h₁)] with y hy hy'
+  have hw := extChartAt_tangent_eq_fderiv ((extChartAt I.tangent w₀).map_target hy) hy'
+  rw [(extChartAt I.tangent w₀).right_inv hy] at hw
+  rw [← hw, (extChartAt I.tangent w₁).left_inv hy']
 
 private theorem tangentCoordChange_tangent_eventuallyEq [IsManifold I 1 M] {x x₀ : M}
     (hx₀ : x ∈ (extChartAt I x₀).source) (u : E) :
@@ -703,7 +784,7 @@ This is deliberately a named equivalence rather than `ContinuousLinearEquiv.refl
 `TangentSpace` is not reducible, a statement phrased with `refl` is type-correct only after
 unfolding it, so `rw` and `simp` fail on such statements. Mathlib introduces
 `NormedSpace.fromTangentSpace` for the analogous identification for the same reason. -/
-noncomputable def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
+def tangentSpaceOpenEquiv {U : Opens M} (x : U) :
     TangentSpace I x ≃L[𝕜] TangentSpace I (x : M) where
   toFun v := v
   invFun v := v
@@ -881,6 +962,22 @@ theorem tangentSpaceOpenEquiv_mfderiv_apply
   rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply]
   exact h.symm
 
+/-- If a map `f` between open submanifolds is the restriction of a self-map `A` of the ambient
+manifold, then `f` has identity differential at `x` exactly when `A` does. -/
+theorem mfderiv_eq_id_iff_of_comp_subtype_val {U V : Opens M} {f : U → V} {A : M → M} {x : U}
+    (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) :
+    mfderiv I I f x = ContinuousLinearMap.id 𝕜 (TangentSpace I x) ↔
+      mfderiv I I A x = ContinuousLinearMap.id 𝕜 (TangentSpace I (x : M)) := by
+  have h (v : TangentSpace I x) : mfderiv I I f x v = mfderiv I I A x v := by
+    have h := tangentSpaceOpenEquiv_mfderiv_apply (I := I) (I' := I) hcomp v
+    rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply] at h
+    -- The two sides live in `TangentSpace I (f x)` and `TangentSpace I ↑(f x)`, both `E`.
+    exact h
+  constructor <;> intro hd <;> ext v
+  · -- Both identities act on the model space `E`.
+    exact (h v).symm.trans (congrArg (· v) hd)
+  · exact (h v).trans (congrArg (· v) hd)
+
 /-- The differential of the inclusion of nested open submanifolds is the identity of the common
 model vector space. -/
 @[simp]
@@ -948,7 +1045,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Restrict a field of continuous bilinear maps on the tangent spaces of `M` to an open
 submanifold `U`, through the canonical tangent-space identification. -/
-noncomputable def restrictOpenTangentSpaceBilinear
+def restrictOpenTangentSpaceBilinear
     (b : Π x : M, TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F) (U : Opens M) (x : U) :
     TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] F :=
   let e := tangentSpaceOpenEquiv (I := I) x
@@ -1023,7 +1120,7 @@ variable
 the tangent spaces of the factors. Both are Mathlib's type synonym for the product of the model
 vector spaces; as for `tangentSpaceOpenEquiv`, the identification is named so that statements
 using it are type-correct without unfolding `TangentSpace`. -/
-noncomputable def tangentSpaceProdEquiv (p : M × N) :
+def tangentSpaceProdEquiv (p : M × N) :
     TangentSpace (I.prod J) p ≃L[𝕜] TangentSpace I p.1 × TangentSpace J p.2 where
   toFun v := v
   invFun v := v

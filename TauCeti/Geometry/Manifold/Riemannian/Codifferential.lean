@@ -207,6 +207,15 @@ theorem tsupport_codifferential_subset (o : Manifold.Orientation I M (Fin m))
   refine (RoughForm.tsupport_mextDeriv_subset _).trans ?_
   exact RoughForm.tsupport_hodgeStar_subset o hkl β.1
 
+/-- The Hodge star of a compactly supported form is compactly supported. -/
+theorem hodgeStar_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {β : SmoothForm I M ℝ k} (hβ : β ∈ compactlySupportedForms I M k) :
+    hodgeStar o hkl β ∈ compactlySupportedForms I M l :=
+  (mem_compactlySupportedForms I).2 (((mem_compactlySupportedForms I).1 hβ).of_isClosed_subset
+    (_root_.isClosed_tsupport _) (by
+      rw [coe_hodgeStar]
+      exact RoughForm.tsupport_hodgeStar_subset o hkl β.1))
+
 /-- The codifferential of a compactly supported form is compactly supported. -/
 theorem codifferential_mem_compactlySupportedForms (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + l = m) {β : SmoothForm I M ℝ (k + 1)}
@@ -564,9 +573,10 @@ private theorem mextDerivₗ_funSMulₗ_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) 
     ext w
     rw [innerSL_apply_apply, Manifold.inner_mgradient]
   ext v
-  rw [mextDerivₗ_funSMulₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    ← ContinuousAlternatingMap.wedge_def, mextDeriv_ofFunction, hdf, add_comm]
-  simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+  rw [mextDerivₗ_funSMulₗ, Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+    cast_apply, coe_wedge_apply, mextDerivₗ_apply, coe_ofFunction, mextDeriv_ofFunction, hdf,
+    add_comm]
+  simp only [coe_funSMulₗ, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
 
@@ -810,6 +820,42 @@ theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (h
   congr 1
   funext x
   rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The `L²` pairing of forms is homogeneous in its first argument,
+`∫_M ⟨c α, β⟩ vol = c ∫_M ⟨α, β⟩ vol`. -/
+theorem integralTopForm_inner_smul_left (o : Manifold.Orientation I M (Fin m)) (c : ℝ)
+    (α β : SmoothForm I M ℝ k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((c • α).1 x) (β.1 x) •
+      riemannianVolumeForm o x) =
+      c * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
+        riemannianVolumeForm o x) := by
+  rw [← integralTopForm_smul]
+  congr 1
+  funext x
+  rw [Submodule.coe_smul, Pi.smul_apply, LinearMap.map_smul₂, Pi.smul_apply, smul_eq_mul,
+    mul_smul]
+
+/-- **Young's inequality for the `L²` pairing**: on an oriented Riemannian manifold of positive
+dimension `m = k + l`, compactly supported smooth `k`-forms satisfy
+`-(∫_M |α|² vol + ∫_M |β|² vol) ≤ 2 ∫_M ⟨α, β⟩ vol`, from `0 ≤ ∫_M |α + β|² vol`. -/
+theorem neg_add_le_two_mul_integralTopForm_inner [NeZero m] (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α β : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k)
+    (hβ : β ∈ compactlySupportedForms I M k) :
+    -(integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (α.1 x) •
+        riemannianVolumeForm o x) +
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.1 x) (β.1 x) •
+        riemannianVolumeForm o x)) ≤
+      2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.1 x) (β.1 x) •
+        riemannianVolumeForm o x) := by
+  have hsq := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o (α + β).1
+  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.1,
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.1,
+    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
+    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.1 α.1] at hsq
+  linarith
 
 /-! ### Green's formulas and positivity of a Laplacian -/
 

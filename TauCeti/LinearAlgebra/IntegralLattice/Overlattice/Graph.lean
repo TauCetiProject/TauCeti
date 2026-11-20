@@ -345,13 +345,9 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
   set P := N.toIntermediateCarrier hform hle
   have hPc : P.1 = N.carrier := N.coe_toIntermediateCarrier hform hle
   have hdual : N.carrier ≤ S.dualCarrier := hPc ▸ P.2.2
-  have hPe := N.isEven_toIntermediateCarrier hform hle hNe
-  have hPN := N.toIntegralLattice_toIntermediateCarrier hform hle hPe.isIntegral
   -- Its subgroup of the discriminant group is a quadratic Lagrangian.
-  have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) := by
-    refine (FiniteQuadraticModule.isLagrangian_def _ _).mpr
-      ⟨(IntermediateCarrier.isEven_iff_isIsotropic_discriminantSubgroup hS P).mp hPe, ?_⟩
-    exact hPe.isIntegral.isUnimodular_toIntegralLattice_iff_isLagrangian.mp (hPN.symm ▸ hNu)
+  have hlag : (S.discriminantQuadraticModule hS).IsLagrangian (S.discriminantSubgroup P) :=
+    (S.isLagrangian_discriminantSubgroup_toIntermediateCarrier_iff hS N hform hle).mpr ⟨hNe, hNu⟩
   have hlag' := ((L.discriminantQuadraticIsometryOrthogonalSum M hL hM).isLagrangian_map_iff
     _ (S.discriminantSubgroup P)).mpr hlag
   rw [discriminantQuadraticIsometryOrthogonalSum_toAddEquiv] at hlag'
@@ -376,5 +372,30 @@ theorem exists_eq_glueAlongDiscriminant (N : IntegralLattice (V × W))
     exact ⟨hx, hy, (hf _ _).mp ((hmem ⟨z.1, hx⟩ ⟨z.2, hy⟩).mpr hz)⟩
   · rintro ⟨hx, hy, h⟩
     exact (hmem ⟨z.1, hx⟩ ⟨z.2, hy⟩).mp ((hf _ _).mpr h)
+
+/-- **The gluing is injective in the isometry.** An even unimodular overlattice of `L ⊥ M` obtained
+by gluing determines the isometry of discriminant forms used to build it. Together with
+`TauCeti.IntegralLattice.exists_eq_glueAlongDiscriminant` this is the uniqueness half of
+Nikulin's correspondence. -/
+theorem glueAlongDiscriminant_injective :
+    Function.Injective (L.glueAlongDiscriminant M hL hM) := by
+  intro e e' h
+  apply DFunLike.coe_injective
+  funext a
+  induction a using Submodule.Quotient.induction_on with
+  | _ x =>
+    obtain ⟨y, hy⟩ := Submodule.Quotient.mk_surjective _ (e (Submodule.Quotient.mk x))
+    have hmem := (L.mem_glueAlongDiscriminant_iff M hL hM e x y).mpr hy.symm
+    rw [h] at hmem
+    exact (((L.mem_glueAlongDiscriminant_iff M hL hM e' x y).mp hmem).trans hy).symm
+
+/-- Two gluings of `L ⊥ M` are equal if and only if they use the same isometry of discriminant
+forms. -/
+@[simp]
+theorem glueAlongDiscriminant_inj
+    {e e' : FiniteQuadraticModule.Isometry (L.discriminantQuadraticModule hL)
+      (M.discriminantQuadraticModule hM).neg} :
+    L.glueAlongDiscriminant M hL hM e = L.glueAlongDiscriminant M hL hM e' ↔ e = e' :=
+  (L.glueAlongDiscriminant_injective M hL hM).eq_iff
 
 end TauCeti.IntegralLattice

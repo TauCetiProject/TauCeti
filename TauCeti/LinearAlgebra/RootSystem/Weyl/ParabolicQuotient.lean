@@ -260,6 +260,22 @@ theorem coroot'_smul_nonpos_of_isLeftDescent (hlam : lam ∈ dominantChamber P b
   rwa [weylCoxeterSystem_simple, mul_smul, RootPairing.weylGroup.ofIdx_smul,
     Equiv.reflection_smul, coroot'_reflection_self, neg_nonneg] at h
 
+omit [P.flip.IsReduced] in
+/-- **A positive pairing rules out a left descent.** If `⟨w λ, αᵢ^∨⟩ > 0` for a dominant `λ`, then
+`sᵢ` is not a left descent of `w`. -/
+theorem not_isLeftDescent_of_coroot'_pos (hlam : lam ∈ dominantChamber P b)
+    {w : P.weylGroup} {i : b.support} (hi : 0 < P.coroot' i (w • lam)) :
+    ¬(weylCoxeterSystem P b).IsLeftDescent w i := fun h ↦
+  (coroot'_smul_nonpos_of_isLeftDescent hlam h).not_gt hi
+
+omit [P.flip.IsReduced] in
+/-- **A negative pairing forces a left descent.** If `⟨w λ, αᵢ^∨⟩ < 0` for a dominant `λ`, then
+`sᵢ` is a left descent of `w`. -/
+theorem isLeftDescent_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
+    {w : P.weylGroup} {i : b.support} (hi : P.coroot' i (w • lam) < 0) :
+    (weylCoxeterSystem P b).IsLeftDescent w i :=
+  not_not.mp fun hd ↦ (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd).not_gt hi
+
 /-- **Reflection test, negative pairing.** Let `β` be a positive root with `⟨w λ, β^∨⟩ < 0`, and
 let `v` be the minimal coset representative of `s_β w`, so `v λ = s_β (w λ)`. Then `v < w` in the
 Bruhat order. Here `w` is arbitrary; it need not be minimal in its own coset. -/
@@ -425,8 +441,7 @@ theorem minimalCosetRepCovBy_simple_mul_of_coroot'_pos (hlam : lam ∈ dominantC
     (hi : 0 < P.coroot' i (u • lam)) :
     (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) u
       ((weylCoxeterSystem P b).simple i * u) := by
-  have hd : ¬(weylCoxeterSystem P b).IsLeftDescent u i := fun h ↦
-    (coroot'_smul_nonpos_of_isLeftDescent hlam h).not_gt hi
+  have hd := not_isLeftDescent_of_coroot'_pos hlam hi
   have hlen := (weylCoxeterSystem P b).not_isLeftDescent_iff.mp hd
   exact CoxeterSystem.minimalCosetRepCovBy_iff.mpr
     ⟨hu, isMinimalCosetRep_simple_mul_of_coroot'_ne_zero hu hi.ne',
@@ -441,10 +456,8 @@ theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_pos
     (hy : 0 < P.coroot' i (y • lam)) (hx : 0 < P.coroot' i (x • lam)) :
     (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
       ((weylCoxeterSystem P b).simple i * y) ((weylCoxeterSystem P b).simple i * x) := by
-  have hdx : ¬(weylCoxeterSystem P b).IsLeftDescent x i := fun hd ↦
-    (coroot'_smul_nonpos_of_isLeftDescent hlam hd).not_gt hx
-  have hdy : ¬(weylCoxeterSystem P b).IsLeftDescent y i := fun hd ↦
-    (coroot'_smul_nonpos_of_isLeftDescent hlam hd).not_gt hy
+  have hdx := not_isLeftDescent_of_coroot'_pos hlam hx
+  have hdy := not_isLeftDescent_of_coroot'_pos hlam hy
   have := (weylCoxeterSystem P b).not_isLeftDescent_iff.mp hdx
   have := (weylCoxeterSystem P b).not_isLeftDescent_iff.mp hdy
   have := h.length_add_one_eq
@@ -463,13 +476,8 @@ theorem minimalCosetRepCovBy_simple_mul_simple_mul_of_coroot'_neg
     (hy : P.coroot' i (y • lam) < 0) (hx : P.coroot' i (x • lam) < 0) :
     (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
       ((weylCoxeterSystem P b).simple i * y) ((weylCoxeterSystem P b).simple i * x) := by
-  have hdx : (weylCoxeterSystem P b).IsLeftDescent x i := by
-    by_contra hd
-    exact (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd).not_gt hx
-  have hdy : (weylCoxeterSystem P b).IsLeftDescent y i := by
-    by_contra hd
-    exact (coroot'_smul_nonneg_of_not_isLeftDescent hlam hd).not_gt hy
-  exact h.simple_mul_of_isLeftDescent hdy hdx
+  exact h.simple_mul_of_isLeftDescent (isLeftDescent_of_coroot'_neg hlam hy)
+    (isLeftDescent_of_coroot'_neg hlam hx)
 
 /-- **A cover leaving the nonpositive side of a simple wall is given by the simple reflection.** If
 `y ⋖ x` in `W / W_λ` with `⟨x λ, αᵢ^∨⟩ ≤ 0 < ⟨y λ, αᵢ^∨⟩`, then `x = sᵢ y`. -/

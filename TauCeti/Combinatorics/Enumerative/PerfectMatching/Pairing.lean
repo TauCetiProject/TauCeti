@@ -116,9 +116,7 @@ theorem isPairing_toFinpartition (D : PerfectMatching α) : D.toFinpartition.IsP
 @[simp]
 theorem toPerfectMatching_toFinpartition (D : PerfectMatching α) :
     D.isPairing_toFinpartition.toPerfectMatching = D := by
-  apply Subtype.ext
-  apply Equiv.ext
-  intro a
+  ext a
   exact (D.isPairing_toFinpartition.toPerfectMatching_apply_eq_iff a _).mpr
     ⟨by simp, D.apply_ne a⟩
 

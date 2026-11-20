@@ -59,20 +59,9 @@ it identifies vertices or darts globally. -/
 theorem Hom.isReduced_mapPath (f : S.Hom T) (hS : S.IsFolded)
     {a b : S.graph.V} (p : S.graph.Path a b)
     (hp : SerreGraph.Path.IsReduced S.graph p) :
-    SerreGraph.Path.IsReduced T.graph (f.graphHom.toPrefunctor.mapPath p) := by
-  induction p with
-  | nil => exact SerreGraph.Path.isReduced_nil T.graph _
-  | cons p e ih =>
-    cases p with
-    | nil => exact SerreGraph.Path.isReduced_toPath T.graph _
-    | cons p d =>
-      obtain ⟨hprev, hne⟩ := (SerreGraph.Path.isReduced_cons_cons S.graph p d e).mp hp
-      apply (SerreGraph.Path.isReduced_cons_cons T.graph _ _ _).mpr
-      refine ⟨ih hprev, ?_⟩
-      intro he
-      apply hS.labels_not_inverse S (e.2.1.trans d.2.2.symm) hne
-      have hl := congrArg T.label he
-      simpa only [f.graphHom.toPrefunctor_map_val, T.label_rev, f.map_label] using hl
+    SerreGraph.Path.IsReduced T.graph (f.graphHom.toPrefunctor.mapPath p) :=
+  f.graphHom.isReduced_mapPath
+    (fun e e' hs he => S.isFolded_def.mp hS e e' hs (by simpa using congrArg T.label he)) p hp
 
 /-- A label-preserving morphism from a folded graph that is injective on vertices is also
 injective on darts. -/

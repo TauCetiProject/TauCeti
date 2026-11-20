@@ -21,6 +21,9 @@ import TauCeti.Data.Fin.Basic
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
+Summing a tuple on `Fin (k + 1)` with one index left out, over all choices of the omitted
+index, counts every entry `k` times (`Fin.sum_sum_succAbove`, multiplicatively
+`Fin.prod_prod_succAbove`).
 The equivalence omitting the last index also reindexes sums by the preceding indices, and a
 filtered product over `Fin (n + 1)` splits off its first index; when two such products agree and
 so do their first factors, the products over the remaining indices agree.
@@ -33,7 +36,8 @@ A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a ca
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
 
-A product over the pairs `Fin 2 → α` is the double product over their two entries. A double sum
+A product over the pairs `Fin 2 → α` is the double product over their two entries, and a
+product over the triples `Fin 3 → α` is the triple product over their three entries. A double sum
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
 the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`). A sum over the pairs
 `(a, b)` with `P a` and a fixed second entry `b` is the sum over the `a` with `P a`.
@@ -59,6 +63,15 @@ public section
 
 namespace Fin
 
+/-- Reindex the product omitting an index by the order-preserving map `Fin.succAbove`. -/
+@[to_additive /-- Reindex the sum omitting an index by the order-preserving map
+`Fin.succAbove`. -/]
+theorem prod_univ_succAbove_eq_erase {M : Type*} [CommMonoid M] {n : ℕ}
+    (f : Fin (n + 1) → M) (j : Fin (n + 1)) :
+    (∏ i : Fin n, f (j.succAbove i)) = ∏ i ∈ Finset.univ.erase j, f i := by
+  classical
+  simp only [univ_succAbove n j, Finset.erase_cons, Finset.prod_map, coe_succAboveEmb]
+
 /-- Successive differences telescope to the endpoint difference. -/
 theorem sum_univ_succ_sub_castSucc {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :
@@ -74,6 +87,24 @@ theorem sum_univ_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :
     ∑ i : Fin n, (f i.castSucc - f i.succ) = f 0 - f (last n) := by
   simpa only [neg_sub_neg] using sum_univ_succ_sub_castSucc (fun i ↦ -f i)
+
+/-- Multiplying the products of a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
+choices of the omitted index, takes every entry `k` times. -/
+@[to_additive /-- Summing a tuple on `Fin (k + 1)` with one index left out, over all `k + 1`
+choices of the omitted index, counts every entry `k` times. -/]
+theorem prod_prod_succAbove {M : Type*} [CommMonoid M] {k : ℕ} (f : Fin (k + 1) → M) :
+    ∏ j : Fin (k + 1), ∏ i : Fin k, f (j.succAbove i) = (∏ i, f i) ^ k := by
+  classical
+  have h (j : Fin (k + 1)) :
+      ∏ i : Fin k, f (j.succAbove i) = ∏ l ∈ Finset.univ.filter (· ≠ j), f l := by
+    rw [Finset.filter_ne', ← Finset.prod_image fun _ _ _ _ h ↦ succAbove_right_injective h,
+      image_succAbove_univ, Finset.compl_eq_univ_sdiff, Finset.sdiff_singleton_eq_erase]
+  -- Exchanging the two products, each entry `f l` occurs once for every index `j ≠ l`.
+  simp_rw [h, Finset.prod_filter]
+  rw [Finset.prod_comm, ← Finset.prod_pow]
+  refine Finset.prod_congr rfl fun l _ ↦ ?_
+  rw [← Finset.prod_filter, Finset.prod_const]
+  simp [Finset.filter_ne]
 
 -- Adapted from [AINTLIB](https://github.com/CBirkbeck/AINTLIB) (Chris Birkbeck), Apache-2.0, at
 -- commit `2baa76f742bdb4fb8ee323fabba41203bd390e08`,
@@ -202,6 +233,14 @@ theorem prod_finTwoArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 2 
     ∏ w, f w = ∏ p, ∏ q, f ![p, q] := by
   rw [← (finTwoArrowEquiv α).symm.prod_comp, prod_prod_type]
   rfl
+
+/-- **A product over the triples `Fin 3 → α`** is the triple product over their three entries. -/
+@[to_additive /-- **A sum over the triples `Fin 3 → α`** is the triple sum over their three
+entries. -/]
+theorem prod_finThreeArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 3 → α) → M) :
+    ∏ w, f w = ∏ p, ∏ q, ∏ r, f ![p, q, r] := by
+  rw [← (Fin.consEquiv fun _ ↦ α).prod_comp, prod_prod_type]
+  exact Finset.prod_congr rfl fun p _ ↦ prod_finTwoArrow fun v ↦ f (Fin.cons p v)
 
 end Fintype
 

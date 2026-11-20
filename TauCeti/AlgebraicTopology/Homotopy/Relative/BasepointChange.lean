@@ -79,7 +79,7 @@ noncomputable section
 
 universe u v
 
-open CategoryTheory Set
+open Set
 open scoped unitInterval Topology Topology.Homotopy
 
 namespace TauCeti
@@ -706,11 +706,13 @@ def equivOfPath (γ : Path X.basepoint b) :
   left_inv := transport_symm_transport γ
   right_inv := transport_transport_symm γ
 
+/-- `equivOfPath γ` is the base-point change map `transport γ`. -/
 @[simp]
 theorem equivOfPath_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N X) :
     equivOfPath γ x = transport γ x :=
   (rfl)
 
+/-- The inverse of `equivOfPath γ` is the base-point change map `transport` along `γ.symm`. -/
 @[simp]
 theorem equivOfPath_symm_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N ⟨X.pair, b⟩) :
     (equivOfPath γ).symm x = transport (X := ⟨X.pair, b⟩) γ.symm x :=
@@ -811,11 +813,13 @@ def mulEquivOfPath (γ : Path X.basepoint b) :
   toEquiv := equivOfPath γ
   map_mul' := transport_mul γ
 
+/-- `mulEquivOfPath γ` is the base-point change map `transport γ`. -/
 @[simp]
 theorem mulEquivOfPath_apply (γ : Path X.basepoint b) (x : RelHomotopyGroup N X) :
     mulEquivOfPath γ x = transport γ x :=
   (rfl)
 
+/-- The inverse of `mulEquivOfPath γ` is the base-point change map `transport` along `γ.symm`. -/
 @[simp]
 theorem mulEquivOfPath_symm_apply (γ : Path X.basepoint b)
     (x : RelHomotopyGroup N ⟨X.pair, b⟩) :

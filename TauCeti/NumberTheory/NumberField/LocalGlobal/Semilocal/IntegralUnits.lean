@@ -48,7 +48,7 @@ def semilocalIntegralUnits (L : Type u) [Field L] [NumberField L] [Algebra K L]
     (unitFiltration (w.1.adicCompletion L) 0).comap
       (Units.map ((Pi.evalMonoidHom (fun w' :
         {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} ↦
-          w'.1.adicCompletion L) w).comp (semilocalEquiv L v : _ →* _)))
+          w'.1.adicCompletion L) w).comp (v.adicCompletionSemilocalEquiv K (𝓞 L) L : _ →* _)))
 
 /-- A semi-local unit is integral and invertible exactly when every component has valuation one. -/
 @[simp]
@@ -56,7 +56,7 @@ theorem mem_semilocalIntegralUnits_iff (v : HeightOneSpectrum (𝓞 K))
     (y : (v.adicCompletion K ⊗[K] L)ˣ) :
     y ∈ semilocalIntegralUnits L v ↔
       ∀ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
-        Valued.v (semilocalEquiv L v y w) = 1 := by
+        Valued.v (v.adicCompletionSemilocalEquiv K (𝓞 L) L y w) = 1 := by
   simp only [semilocalIntegralUnits, Subgroup.mem_iInf, Subgroup.mem_comap,
     mem_unitFiltration_zero_adicCompletion_iff, Units.coe_map, MonoidHom.coe_comp,
     Function.comp_apply, Pi.evalMonoidHom_apply, MonoidHom.coe_ofClass]
@@ -134,12 +134,13 @@ private def integralUnitsComponentHom :
   let c : (v.adicCompletion K ⊗[K] L)ˣ →* (w.adicCompletion L)ˣ :=
     Units.map ((Pi.evalMonoidHom (fun w' :
       {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} ↦
-        w'.1.adicCompletion L) ⟨w, ‹_›⟩).comp (semilocalEquiv L v : _ →* _))
+        w'.1.adicCompletion L) ⟨w, ‹_›⟩).comp
+      (v.adicCompletionSemilocalEquiv K (𝓞 L) L : _ →* _))
   refine (c.comp (semilocalIntegralUnits L v).subtype).codRestrict _ fun y ↦ ?_
   rw [mem_unitFiltration_zero_adicCompletion_iff]
   -- Evaluate the composed units map and the evaluation hom; the membership criterion
   -- then applies to exactly the chosen coordinate, without unfolding the subgroup.
-  change Valued.v (semilocalEquiv L v y.1 ⟨w, ‹_›⟩) = 1
+  change Valued.v (v.adicCompletionSemilocalEquiv K (𝓞 L) L y.1 ⟨w, ‹_›⟩) = 1
   exact (mem_semilocalIntegralUnits_iff v y.1).1 y.2 ⟨w, ‹_›⟩
 
 /-- Projection to the chosen integral component, equivariant for its decomposition group. -/
@@ -168,7 +169,8 @@ theorem semilocalIntegralUnitsToCoind_apply (y : semilocalIntegralUnits L v)
     (g : L ≃ₐ[K] L) :
     (((((semilocalIntegralUnitsToCoind v w).hom (Additive.ofMul y)).1 g).toMul.1 :
       (w.adicCompletion L)ˣ) : w.adicCompletion L) =
-        semilocalEquiv L v (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g y.1)
+        v.adicCompletionSemilocalEquiv K (𝓞 L) L
+          (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g y.1)
           ⟨w, ‹_›⟩ :=
   (rfl)
 
@@ -254,7 +256,7 @@ private theorem semilocalIntegralUnitsToCoind_bijective [IsGalois K L] :
       let := w'.2
       obtain ⟨g, hg⟩ := Ideal.exists_smul_eq_of_isGaloisGroup v.asIdeal
         w'.1.asIdeal w.asIdeal (L ≃ₐ[K] L)
-      have hv : Valued.v (semilocalEquiv L v
+      have hv : Valued.v (v.adicCompletionSemilocalEquiv K (𝓞 L) L
           (Algebra.TensorProduct.baseChangeAutHom (v.adicCompletion K) L g u) ⟨w, ‹_›⟩) = 1 := by
         rw [← semilocalUnitsToCoind_apply v w u g]
         let val : Additive (w.adicCompletion L)ˣ → ℤᵐ⁰ := fun x ↦ Valued.v (x.toMul :

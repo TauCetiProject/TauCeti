@@ -57,7 +57,7 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   anisotropic vector or orthogonal pair to an orthogonal basis.
 * `LinearMap.BilinForm.exists_apply_self_ne_zero_isOrtho_pair`: find an anisotropic vector
   orthogonal to a given vector and to one member of an anisotropic orthogonal triple.
-* `TauCeti.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
+* `LinearMap.BilinForm.restrict_nondegenerate_sup_span_singleton`: adjoining an orthogonal vector
   to a left-separating subspace produces a nondegenerate restriction.
 * `LinearMap.BilinForm.isCompl_orthogonal_of_flip_restrict_bijective`: a perfect flipped
   restriction splits a bilinear module over a commutative ring.
@@ -281,18 +281,14 @@ theorem exists_forall_restrict_eq_of_isInternal {ι : Type*} [DecidableEq ι]
 
 end LinearMap.BilinForm
 
-namespace TauCeti
-
-open LinearMap (BilinForm)
-
-namespace BilinForm
+namespace LinearMap.BilinForm
 
 variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
 
 /-- Adjoining a vector whose self-pairing is a right non-zero-divisor from the orthogonal complement
 of a left-separating subspace preserves nondegeneracy. -/
 theorem restrict_nondegenerate_sup_span_singleton
-    (B : BilinForm K V) (hB : B.IsRefl) (W : Submodule K V)
+    (B : LinearMap.BilinForm K V) (hB : B.IsRefl) (W : Submodule K V)
     (hW : (B.restrict W).SeparatingLeft) (x : V) (hxx : B x x ∈ nonZeroDivisorsRight K)
     (hx : x ∈ B.orthogonal W) :
     (B.restrict (W ⊔ Submodule.span K {x})).Nondegenerate := by
@@ -323,9 +319,7 @@ theorem restrict_nondegenerate_sup_span_singleton
   refine ⟨hleft, fun y hy ↦ hleft y fun z ↦ ?_⟩
   exact (hB.domRestrict S).eq_zero (hy z)
 
-end BilinForm
-
-end TauCeti
+end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm
 

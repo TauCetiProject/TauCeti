@@ -136,6 +136,7 @@ theorem not_isRankLeOne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
     (hr : ∃ c : K, ‖c‖ = r) :
     ¬ @ValuativeRel.IsRankLeOne _ _ (discPointAbove a ha hr₀ hr₁).1.toValuativeRel := by
   obtain ⟨c, hc⟩ := hr
+  have hc₀ : c ≠ 0 := norm_ne_zero_iff.mp (hc ▸ hr₀.ne')
   obtain ⟨d, hd⟩ := NormedField.exists_one_lt_norm K
   let := (discPointAbove a ha hr₀ hr₁).1.toValuativeRel
   refine ValuativeRel.not_isRankLeOne_of_forall_pow_vle (f := T - C a) (g := C c) (h := C d)
@@ -148,7 +149,7 @@ theorem not_isRankLeOne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
     have hlt := closedDiscGaussValuationAbove_lt_of_lt hr₀ hr₁.le
       ((closedDiscGaussValuation_weightedX_pow hr₀ hr₁.le hc n).trans_lt
         (closedDiscGaussValuation_lt_mul_weightedC hr₀ hr₁.le hd
-          (closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁.le hc n)))
+          (closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁.le hc₀ n)))
     rw [discPointAbove_vle_iff]
     simpa only [map_pow, map_mul, map_sub, taylorHom_weightedX, taylorHom_weightedC,
       add_sub_cancel_right] using hlt.le
@@ -162,6 +163,7 @@ theorem not_isRankLeOne_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
     (hr : ∃ c : K, ‖c‖ = r) :
     ¬ @ValuativeRel.IsRankLeOne _ _ (discPointBelow a ha hr₀ hr₁).1.toValuativeRel := by
   obtain ⟨c, hc⟩ := hr
+  have hc₀ : c ≠ 0 := norm_ne_zero_iff.mp (hc ▸ hr₀.ne')
   obtain ⟨d, hd⟩ := NormedField.exists_one_lt_norm K
   let := (discPointBelow a ha hr₀ hr₁).1.toValuativeRel
   refine ValuativeRel.not_isRankLeOne_of_forall_pow_vle (f := C c) (g := T - C a) (h := C d)
@@ -171,7 +173,7 @@ theorem not_isRankLeOne_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 <
     simpa only [map_sub, taylorHom_weightedX, taylorHom_weightedC, add_sub_cancel_right,
       closedDiscGaussValuationBelow_weightedC_le_iff, not_lt] using hc.ge
   · -- the Gauss norms of `cⁿ` and `Tⁿ d` are `rⁿ < rⁿ ‖d‖`
-    have hpos := closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁ hc n
+    have hpos := closedDiscGaussValuation_weightedC_pow_pos hr₀ hr₁ hc₀ n
     rw [← closedDiscGaussValuation_weightedX_pow hr₀ hr₁ hc n] at hpos
     have hlt := closedDiscGaussValuationBelow_lt_of_lt hr₀ hr₁
       ((closedDiscGaussValuation_weightedX_pow hr₀ hr₁ hc n).symm.trans_lt

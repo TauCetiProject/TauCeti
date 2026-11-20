@@ -76,6 +76,10 @@ cokernel on this class of data, and the index `k + 1` predicted by the Riemann�
 * `TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq_iff`: the problem is solvable exactly when
   `c n = 0` for `k < n < 0`.
 * `TauCeti.exists_diffContOnCl_sub_zpow_mul_conj_eq`: for `k ≥ -1` it is always solvable.
+* `TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_fourierCoeffOn_eq_zero`: for every
+  `k`, `∂u/∂(conj z) = f` with boundary values `u(e^{iθ}) ∈ e^{ikθ/2} ℝ` is solvable when the
+  boundary defect of the Cauchy transform of `f` has vanishing Fourier coefficients for
+  `k < n < 0`.
 * `TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj`: for `k ≥ -1`, `∂/∂(conj z)` with
   boundary values `u(e^{iθ}) ∈ e^{ikθ/2} ℝ` is onto on compactly supported `C²` data.
 * `TauCeti.domRestrict_sub_mem_unitDiscCauchyRiemannKernel`: two solutions differ by an element of
@@ -274,21 +278,16 @@ theorem exists_diffContOnCl_sub_zpow_mul_conj_eq (hk : -1 ≤ k)
       ∀ w ∈ sphere (0 : ℂ) 1, h w - w ^ k * conj (h w) = φ w :=
   (exists_diffContOnCl_sub_zpow_mul_conj_eq_iff hφ hs hb).mpr fun n hkn hn ↦ by omega
 
-/-! ### Surjectivity of the Cauchy–Riemann operator for `k ≥ -1` -/
+/-! ### Solving `∂u/∂(conj z) = f` with boundary values on a rotating line -/
 
-/-- The boundary defect `w ^ k * conj (v w) - v w` of any function `v` lies, at `w = e^{iθ}`, on
-the line `i e^{ikθ/2} ℝ`, the data side of the Riemann–Hilbert problem. -/
-private theorem zpow_mul_conj_sub_eq_neg (v : ℂ → ℂ) {w : ℂ} (hw : w ∈ sphere (0 : ℂ) 1) :
-    w ^ k * conj (v w) - v w = -(w ^ k * conj (w ^ k * conj (v w) - v w)) := by
-  rw [map_sub, map_mul, conj_conj, mul_sub, ← mul_assoc, zpow_mul_conj_zpow_of_mem_sphere hw,
-    sub_self, zpow_zero]
-  ring
-
-/-- **Correcting boundary values.** For `k ≥ -1` and a `C²` function `v`, there is `h`,
-holomorphic on the open disc and continuous on the closed disc, such that `v + h` satisfies the
-boundary condition `(v + h) w = w ^ k * conj ((v + h) w)` on the unit circle. -/
-private theorem exists_diffContOnCl_add_eq_zpow_mul_conj (hk : -1 ≤ k) {v : ℂ → ℂ}
-    (hv : ContDiff ℝ 2 v) :
+/-- **Correcting boundary values.** For a `C²` function `v` whose boundary defect
+`θ ↦ e^{ikθ} conj (v(e^{iθ})) - v(e^{iθ})` has vanishing Fourier coefficients in the range
+`k < n < 0`, there is `h`, holomorphic on the open disc and continuous on the closed disc, such
+that `v + h` satisfies the boundary condition `(v + h) w = w ^ k * conj ((v + h) w)` on the unit
+circle. -/
+private theorem exists_diffContOnCl_add_eq_zpow_mul_conj {v : ℂ → ℂ} (hv : ContDiff ℝ 2 v)
+    (hvan : ∀ n : ℤ, k < n → n < 0 → fourierCoeffOn Real.two_pi_pos
+      (fun θ ↦ circleMap 0 1 θ ^ k * conj (v (circleMap 0 1 θ)) - v (circleMap 0 1 θ)) n = 0) :
     ∃ h : ℂ → ℂ, DiffContOnCl ℂ h (ball 0 1) ∧
       ∀ w ∈ sphere (0 : ℂ) 1, v w + h w = w ^ k * conj (v w + h w) := by
   have hvc : ContDiff ℝ 2 fun θ ↦ v (circleMap 0 1 θ) := hv.comp (contDiff_circleMap 0 1)
@@ -297,12 +296,42 @@ private theorem exists_diffContOnCl_add_eq_zpow_mul_conj (hk : -1 ≤ k) {v : �
     ((contDiff_circleMap_zpow 1 k).mul (conjCLE.contDiff.comp hvc)).sub hvc
   set φ : ℂ → ℂ := fun w ↦ w ^ k * conj (v w) - v w
   replace hφ : ContDiff ℝ 2 fun θ ↦ φ (circleMap 0 1 θ) := hφ
-  obtain ⟨h, hh, hhb⟩ := exists_diffContOnCl_sub_zpow_mul_conj_eq hk hφ.continuous
-    (summable_fourierCoeffOn_circleMap_of_contDiff hφ) fun w hw ↦ zpow_mul_conj_sub_eq_neg v hw
+  obtain ⟨h, hh, hhb⟩ := (exists_diffContOnCl_sub_zpow_mul_conj_eq_iff hφ.continuous
+    (summable_fourierCoeffOn_circleMap_of_contDiff hφ)
+    fun w hw ↦ zpow_mul_conj_sub_eq_neg_of_mem_sphere hw k (v w)).mpr hvan
   refine ⟨h, hh, fun w hw ↦ ?_⟩
   have := hhb w hw
   rw [map_add, mul_add]
   linear_combination this
+
+/-- **Solving the boundary problem from the Fourier conditions.** Let `f` be compactly supported
+`C²` with Cauchy transform `T f`, and let the boundary defect
+`θ ↦ e^{ikθ} conj (T f (e^{iθ})) - T f (e^{iθ})` have vanishing Fourier coefficients in the range
+`k < n < 0`. Then there is `u`, continuous on the closed unit disc and real differentiable on the
+open disc, with `∂u/∂(conj z) = f` on the open disc and `u w = w ^ k * conj (u w)` on the unit
+circle: `u = T f + h`, where `h` solves the Riemann–Hilbert problem correcting the boundary values
+of `T f`. For `k ≥ -1` the range `k < n < 0` is empty
+(`TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj`). -/
+theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_fourierCoeffOn_eq_zero {f : ℂ → ℂ}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 2 f)
+    (hvan : ∀ n : ℤ, k < n → n < 0 → fourierCoeffOn Real.two_pi_pos
+      (fun θ ↦ circleMap 0 1 θ ^ k * conj (cauchyTransform f (circleMap 0 1 θ)) -
+        cauchyTransform f (circleMap 0 1 θ)) n = 0) :
+    ∃ u : ℂ → ℂ, ContinuousOn u (closedBall 0 1) ∧ DifferentiableOn ℝ u (ball 0 1) ∧
+      (∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u z 1 = f z) ∧
+      ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w) := by
+  have hv : ContDiff ℝ 2 (cauchyTransform f) := hc.contDiff_cauchyTransform hf
+  obtain ⟨h, hh, hhb⟩ := exists_diffContOnCl_add_eq_zpow_mul_conj hv hvan
+  have hhd (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : DifferentiableAt ℂ h z :=
+    hh.differentiableAt isOpen_ball hz
+  have hvd (z : ℂ) : DifferentiableAt ℝ (cauchyTransform f) z := hv.differentiable (by simp) z
+  refine ⟨cauchyTransform f + h, hv.continuous.continuousOn.add hh.continuousOn_ball,
+    fun z hz ↦ ((hvd z).add ((hhd z hz).restrictScalars ℝ)).differentiableWithinAt,
+    fun z hz ↦ ?_, hhb⟩
+  rw [conjWirtingerDeriv_add (hvd z) ((hhd z hz).restrictScalars ℝ), add_apply,
+    (hhd z hz).conjWirtingerDeriv_eq_zero,
+    hc.conjWirtingerDeriv_cauchyTransform (hf.of_le (by simp))]
+  simp
 
 /-- **The Cauchy–Riemann operator on the disc with boundary values on a rotating line is onto for
 `k ≥ -1`.** For a compactly supported `C²` function `f` there is `u`, continuous on the closed
@@ -315,19 +344,9 @@ theorem exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj (hk : -1 ≤ k) {f : �
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 2 f) :
     ∃ u : ℂ → ℂ, ContinuousOn u (closedBall 0 1) ∧ DifferentiableOn ℝ u (ball 0 1) ∧
       (∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u z 1 = f z) ∧
-      ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w) := by
-  have hv : ContDiff ℝ 2 (cauchyTransform f) := hc.contDiff_cauchyTransform hf
-  obtain ⟨h, hh, hhb⟩ := exists_diffContOnCl_add_eq_zpow_mul_conj hk hv
-  have hhd (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : DifferentiableAt ℂ h z :=
-    hh.differentiableAt isOpen_ball hz
-  have hvd (z : ℂ) : DifferentiableAt ℝ (cauchyTransform f) z := hv.differentiable (by simp) z
-  refine ⟨cauchyTransform f + h, hv.continuous.continuousOn.add hh.continuousOn_ball,
-    fun z hz ↦ ((hvd z).add ((hhd z hz).restrictScalars ℝ)).differentiableWithinAt,
-    fun z hz ↦ ?_, hhb⟩
-  rw [conjWirtingerDeriv_add (hvd z) ((hhd z hz).restrictScalars ℝ), add_apply,
-    (hhd z hz).conjWirtingerDeriv_eq_zero,
-    hc.conjWirtingerDeriv_cauchyTransform (hf.of_le (by simp))]
-  simp
+      ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w) :=
+  exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_fourierCoeffOn_eq_zero hc hf
+    fun _ _ _ ↦ by omega
 
 /-- **Uniqueness modulo the kernel.** Two functions, continuous on the closed unit disc and real
 differentiable on the open disc, with the same `∂/∂(conj z)` on the open disc and boundary values
@@ -339,15 +358,10 @@ theorem domRestrict_sub_mem_unitDiscCauchyRiemannKernel {u₁ u₂ : ℂ → ℂ
     (heq : ∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv u₁ z 1 = conjWirtingerDeriv u₂ z 1)
     (hb₁ : ∀ w ∈ sphere (0 : ℂ) 1, u₁ w = w ^ k * conj (u₁ w))
     (hb₂ : ∀ w ∈ sphere (0 : ℂ) 1, u₂ w = w ^ k * conj (u₂ w)) :
-    (closedBall 0 1).domRestrict (u₁ - u₂) ∈ unitDiscCauchyRiemannKernel k := by
-  refine mem_unitDiscCauchyRiemannKernel_iff.mpr ⟨u₁ - u₂, ⟨fun z hz ↦ ?_, ?_⟩, fun w hw ↦ ?_, rfl⟩
-  · have h₁ := (hd₁ z hz).differentiableAt (isOpen_ball.mem_nhds hz)
-    have h₂ := (hd₂ z hz).differentiableAt (isOpen_ball.mem_nhds hz)
-    refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero (h₁.sub h₂)).mpr
-      ?_).differentiableWithinAt
-    rw [conjWirtingerDeriv_sub h₁ h₂, sub_apply, heq z hz, sub_self]
-  · rw [closure_ball 0 one_ne_zero]
-    exact hc₁.sub hc₂
-  · simp only [Pi.sub_apply, map_sub, mul_sub, ← hb₁ w hw, ← hb₂ w hw]
+    (closedBall 0 1).domRestrict (u₁ - u₂) ∈ unitDiscCauchyRiemannKernel k :=
+  mem_unitDiscCauchyRiemannKernel_iff.mpr
+    ⟨u₁ - u₂, diffContOnCl_sub_of_conjWirtingerDeriv_eq isOpen_ball
+      (by rwa [closure_ball 0 one_ne_zero]) (by rwa [closure_ball 0 one_ne_zero]) hd₁ hd₂ heq,
+      fun w hw ↦ by simp only [Pi.sub_apply, map_sub, mul_sub, ← hb₁ w hw, ← hb₂ w hw], rfl⟩
 
 end TauCeti

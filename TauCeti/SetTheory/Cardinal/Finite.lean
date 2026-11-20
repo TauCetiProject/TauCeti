@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Basic.Denumerable
+import Mathlib.Data.Fintype.Card
 
 /-!
 # Finite and extended cardinalities
@@ -32,6 +33,9 @@ type whose cardinality is coprime to that of an infinite type has `Nat.card` equ
 particular is a subsingleton.
 
 ## Main results
+
+* `Finite.eq_or_eq_of_card_le_two`: two distinct elements exhaust a finite type of
+  cardinality at most two.
 
 * `Nat.card_pi_eq_prod_of_card_eq_one`: `Nat.card (∀ i, X i) = ∏ i ∈ s, Nat.card (X i)` when every
   factor outside `s` has cardinality one.
@@ -152,3 +156,18 @@ theorem finite_of_natCast_card_ne_zero {α R : Type*} [AddMonoidWithOne R]
   Nat.finite_of_card_ne_zero fun hcard ↦ h (by simp [hcard])
 
 end TauCeti
+
+namespace Finite
+
+/-- Two distinct elements exhaust a finite type with at most two elements. -/
+theorem eq_or_eq_of_card_le_two {K : Type*} [Finite K] (hK : Nat.card K ≤ 2)
+    {i j : K} (hij : i ≠ j) (k : K) : k = i ∨ k = j := by
+  classical
+  let := Fintype.ofFinite K
+  by_contra hk
+  push Not at hk
+  have hlt := Fintype.two_lt_card_iff.mpr ⟨k, i, j, hk.1, hk.2, hij⟩
+  rw [← Nat.card_eq_fintype_card] at hlt
+  omega
+
+end Finite

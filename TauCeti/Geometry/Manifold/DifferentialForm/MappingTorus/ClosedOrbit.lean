@@ -103,11 +103,8 @@ theorem mpullback_orbitTorus_mpullback_snd_fiberForm {F : Type*} [NormedAddCommG
     {hτ : SmoothForm.mpullback φ φ.contMDiff τ = τ} (hk : k ≠ 0) :
     SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h)
         (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ τ hτ)) = 0 := by
-  have hsnd : Prod.snd ∘ orbitTorus φ h = closedOrbit φ h ∘ Prod.snd :=
-    funext fun p ↦ congrArg Prod.snd (orbitTorus_apply h p)
-  rw [← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
-  simp only [hsnd]
-  rw [SmoothForm.mpullback_comp _ _ contMDiff_snd (contMDiff_closedOrbit h), LinearMap.comp_apply,
+  simp only [orbitTorus_eq_prodMap]
+  rw [SmoothForm.mpullback_prodMap_mpullback_snd contMDiff_id (contMDiff_closedOrbit h),
     mpullback_closedOrbit_fiberForm h hk, map_zero]
 
 end TauCeti.SmoothMappingTorus

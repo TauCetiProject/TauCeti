@@ -31,6 +31,9 @@ For a prime `p` this pins the order down: `#A[p^∞]` is the full power of `p` d
   only depends on `#A`.
 * `TauCeti.AddCommGroup.natCard_primaryComponent`: for a prime `p` and a finite group,
   `#A[p^∞] = p ^ v_p(#A)`.
+* `TauCeti.AddCommGroup.natCard_dvd_of_natCard_primaryComponent_dvd` and
+  `TauCeti.AddCommGroup.natCard_eq_of_natCard_primaryComponent_eq`: the converses, for finite
+  groups: `#G ∣ #H` (resp. `#G = #H`) if this holds for every prime-primary component.
 -/
 
 public section
@@ -120,6 +123,31 @@ theorem natCard_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] {p : �
   rw [← (AddCommGroup.primaryComponent A p).card_mul_index, hk,
     Nat.factorization_mul (pow_ne_zero _ hp.ne_zero) AddSubgroup.index_ne_zero_of_finite]
   simp [hp.factorization_pow, hi]
+
+/-- **If the `p`-primary component of `G` has order dividing that of `H` for every prime `p`, then
+`#G ∣ #H`** for finite commutative groups. The order of the `p`-primary component is the `p`-part
+of the group order (`TauCeti.AddCommGroup.natCard_primaryComponent`). -/
+theorem natCard_dvd_of_natCard_primaryComponent_dvd {G H : Type*} [AddCommGroup G]
+    [AddCommGroup H] [Finite G] [Finite H]
+    (h : ∀ p : ℕ, p.Prime → Nat.card (AddCommGroup.primaryComponent G p) ∣
+      Nat.card (AddCommGroup.primaryComponent H p)) :
+    Nat.card G ∣ Nat.card H := by
+  rw [← Nat.factorization_prime_le_iff_dvd Nat.card_pos.ne' Nat.card_pos.ne']
+  intro p hp
+  refine (hp.pow_dvd_iff_le_factorization Nat.card_pos.ne').1 ?_
+  rw [← natCard_primaryComponent G hp]
+  exact (h p hp).trans (AddSubgroup.card_addSubgroup_dvd_card _)
+
+/-- **Finite commutative groups whose `p`-primary components have the same order for every prime
+`p` have the same order.** This is the converse of
+`TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq`. -/
+theorem natCard_eq_of_natCard_primaryComponent_eq {G H : Type*} [AddCommGroup G]
+    [AddCommGroup H] [Finite G] [Finite H]
+    (h : ∀ p : ℕ, p.Prime → Nat.card (AddCommGroup.primaryComponent G p) =
+      Nat.card (AddCommGroup.primaryComponent H p)) :
+    Nat.card G = Nat.card H :=
+  Nat.dvd_antisymm (natCard_dvd_of_natCard_primaryComponent_dvd fun p hp ↦ (h p hp).dvd)
+    (natCard_dvd_of_natCard_primaryComponent_dvd fun p hp ↦ (h p hp).symm.dvd)
 
 end AddCommGroup
 
