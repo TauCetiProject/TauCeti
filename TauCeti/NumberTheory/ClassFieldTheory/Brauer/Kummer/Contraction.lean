@@ -197,15 +197,24 @@ def kummerContractionEquiv : (muNRep n F).V ⊗[ZMod n] (muNRep n F).V ≃ₗ[ZM
 /-- The linear equivalence `kummerContractionEquiv ζ hζ` is the root contraction. -/
 @[simp]
 theorem kummerContractionEquiv_toLinearMap :
-    (kummerContractionEquiv ζ hζ).toLinearMap = kummerContraction ζ hζ := by
-  rw [kummerContraction_eq_rid_comp_map]
-  exact TensorProduct.ext' fun x y ↦ (rfl)
+    (kummerContractionEquiv ζ hζ).toLinearMap = kummerContraction ζ hζ :=
+  eq_kummerContraction_of_apply_generator_tmul ζ hζ (by
+    simp only [kummerContractionEquiv, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      TensorProduct.congr_tmul, LinearEquiv.refl_apply, AddEquiv.coe_toLinearEquiv,
+      muNRepEquivZMod_generator, TensorProduct.rid_tmul, one_smul])
 
 /-- The linear equivalence `kummerContractionEquiv ζ hζ` acts as the root contraction. -/
 @[simp]
 theorem kummerContractionEquiv_apply (t : (muNRep n F).V ⊗[ZMod n] (muNRep n F).V) :
     kummerContractionEquiv ζ hζ t = kummerContraction ζ hζ t :=
   LinearMap.congr_fun (kummerContractionEquiv_toLinearMap ζ hζ) t
+
+/-- The inverse of `kummerContractionEquiv ζ hζ` sends `x` to `x ⊗ ζ`. -/
+@[simp]
+theorem kummerContractionEquiv_symm_apply (x : (muNRep n F).V) :
+    (kummerContractionEquiv ζ hζ).symm x = x ⊗ₜ muNRepGenerator ζ hζ := by
+  rw [LinearEquiv.symm_apply_eq, kummerContractionEquiv_apply, kummerContraction_tmul,
+    kummerCupPairing_bil, muNRepEquivZMod_smul_generator]
 
 /-- The root contraction is bijective. -/
 theorem kummerContraction_bijective : Function.Bijective (kummerContraction ζ hζ) := by
@@ -248,20 +257,22 @@ theorem nsmul_kummerBrauerClass_pow (a b : Fˣ) :
   have hn : IsUnit (n : F) := hζ.neZero'.out.isUnit
   -- Multiplication by `k` on `μₙ` intertwines the pairing of `ζ ^ k` with the pairing of `ζ`.
   have hcup := (kummerCupPairing (ζ ^ k) hζk).cup_coeffMap (kummerCupPairing ζ hζ)
-    (𝟙 _) (𝟙 _) (k • 𝟙 (muNRep n F)) (fun x y ↦ by
+    (𝟙 _) (𝟙 _) ((k : ZMod n) • 𝟙 (muNRep n F)) (fun x y ↦ by
       rw [CategoryTheory.id_apply, CategoryTheory.id_apply,
-        ← nsmul_kummerCupPairing_pow_bil hζ hζk x y]
-      -- The morphism `k • 𝟙` of topological representations acts as `k • ·`.
-      rfl) 1 1 (kummerClass F hn a) (kummerClass F hn b)
-  have hk := (TauCeti.ContinuousCohomology.continuousCohomologyFunctor (ZMod n)
-    (Field.absoluteGaloisGroup F) (1 + 1)).map_nsmul (f := 𝟙 (muNRep n F)) (n := k)
-  rw [TauCeti.ContinuousCohomology.continuousCohomologyFunctor_map,
-    TauCeti.ContinuousCohomology.continuousCohomologyFunctor_map,
-    TauCeti.ContinuousCohomology.coeffMap_id] at hk
-  rw [TauCeti.ContinuousCohomology.coeffMap_id, hk] at hcup
-  rw [kummerBrauerClass_def, kummerBrauerClass_def, ← map_nsmul]
-  -- `hcup` applies the morphism `k • 𝟙` of topological modules, which acts as `k • ·`.
-  exact congrArg (h2MuToBr n F) hcup
+        ← nsmul_kummerCupPairing_pow_bil hζ hζk x y, ← TopRep.Hom.hom, TopRep.hom_smul,
+        ContIntertwiningMap.smul_apply, TopRep.hom_id, ContIntertwiningMap.id_apply,
+        Nat.cast_smul_eq_nsmul]) 1 1 (kummerClass F hn a) (kummerClass F hn b)
+  -- The functor `H²(G_F, ·)` is `ℤ/n`-linear, so it sends `(k : ℤ/n) • 𝟙` to `k • 𝟙`.
+  have hk : TauCeti.ContinuousCohomology.coeffMap ((k : ZMod n) • 𝟙 (muNRep n F)) (1 + 1) =
+      k • 𝟙 (continuousCohomology (1 + 1) (muNRep n F)) := by
+    rw [← Nat.cast_smul_eq_nsmul (ZMod n), ← TauCeti.ContinuousCohomology.coeffMap_id]
+    exact (TauCeti.ContinuousCohomology.continuousCohomologyFunctor (ZMod n)
+      (Field.absoluteGaloisGroup F) (1 + 1)).map_smul _ _
+  rw [TauCeti.ContinuousCohomology.coeffMap_id, CategoryTheory.id_apply, CategoryTheory.id_apply,
+    hk] at hcup
+  simp only [TopModuleCat.hom_nsmul, smul_apply, TopModuleCat.hom_id,
+    ContinuousLinearMap.id_apply] at hcup
+  rw [kummerBrauerClass_def, kummerBrauerClass_def, ← map_nsmul, hcup]
 
 /-- **The Kummer-cup Brauer class of `ζ ^ u` is `u⁻¹` times that of `ζ`**: if `l` is an inverse of
 `k` modulo `n`, the Brauer class of the cup along the pairing of `ζ ^ k` is `l` times the Brauer

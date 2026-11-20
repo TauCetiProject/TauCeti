@@ -454,18 +454,14 @@ theorem muNRepEquivZMod_generator (ζ : F) (hζ : IsPrimitiveRoot ζ n) :
   simp only [muNRepGenerator, AddEquiv.apply_symm_apply]
 
 variable {n F} in
-/-- The chosen primitive root is the element of `μₙ` with chosen-root coordinate `1`. -/
-theorem muNRepGenerator_def (ζ : F) (hζ : IsPrimitiveRoot ζ n) :
-    muNRepGenerator ζ hζ = (muNRepEquivZMod ζ hζ).symm 1 := by
-  rw [eq_comm, AddEquiv.symm_apply_eq, muNRepEquivZMod_generator]
-
-variable {n F} in
 /-- The chosen generator `muNRepGenerator ζ hζ` of `μₙ` represents the root `ζ` of `Fˢ`. -/
+@[simp]
 theorem coe_kummerCoeffEquivMuNRep_symm_muNRepGenerator {ζ : F} (hζ : IsPrimitiveRoot ζ n) :
     ((((kummerCoeffEquivMuNRep n F).symm (muNRepGenerator ζ hζ)).toMul :
         (SeparableClosure F)ˣ) : SeparableClosure F) = algebraMap F (SeparableClosure F) ζ := by
-  have h := coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ 1
-  rwa [Nat.cast_one, pow_one, ← muNRepEquivZMod_symm_apply, ← muNRepGenerator_def] at h
+  rw [muNRepGenerator, muNRepEquivZMod_symm_apply]
+  simpa only [Nat.cast_one, pow_one] using
+    coe_kummerCoeffEquivMuNRep_symm_muNRepEquivTrivialFp_symm_natCast n F hζ 1
 
 variable {n F} in
 /-- Every element of `μₙ` is its chosen-root coordinate times the chosen generator. -/
