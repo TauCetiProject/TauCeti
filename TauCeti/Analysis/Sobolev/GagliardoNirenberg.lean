@@ -108,14 +108,18 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 `normRpowSmulDeriv r (w x) (∂ᵥ w x)` along `v`. -/
 private theorem hasLineDerivAt_norm_rpow_smul {w : E → F} (hw : ContDiff ℝ 1 w) {r : ℝ}
     (hr : 0 ≤ r) (x v : E) :
-    HasLineDerivAt ℝ (fun y ↦ ‖w y‖ ^ r • w y) (normRpowSmulDeriv r (w x) (fderiv ℝ w x v)) x v :=
-  ((hasFDerivAt_norm_rpow_smul_self hr (w x)).comp x
+    HasLineDerivAt ℝ (fun y ↦ ‖w y‖ ^ r • w y) (normRpowSmulDeriv r (w x) (fderiv ℝ w x v))
+    x v := by
+  have h := ((hasFDerivAt_norm_rpow_smul_self hr (w x)).comp x
     ((hw.differentiable one_ne_zero) x).hasFDerivAt).hasLineDerivAt v
+  rw [Function.comp_def, ContinuousLinearMap.comp_apply] at h
+  rwa [normRpowSmulDeriv]
 
 private theorem norm_normRpowSmulDeriv_apply_le {r : ℝ} (hr : 0 ≤ r) (y z : F) :
-    ‖normRpowSmulDeriv r y z‖ ≤ (1 + r) * ‖y‖ ^ r * ‖z‖ :=
-  ((normRpowSmulDeriv r y).le_opNorm z).trans
-    (mul_le_mul_of_nonneg_right (norm_rpow_smul_id_add_smulRight_le hr y) (norm_nonneg _))
+    ‖normRpowSmulDeriv r y z‖ ≤ (1 + r) * ‖y‖ ^ r * ‖z‖ := by
+  refine ((normRpowSmulDeriv r y).le_opNorm z).trans ?_
+  rw [normRpowSmulDeriv]
+  exact mul_le_mul_of_nonneg_right (norm_rpow_smul_id_add_smulRight_le hr y) (norm_nonneg _)
 
 omit [μ.IsAddHaarMeasure] in
 private theorem aestronglyMeasurable_normRpowSmulDeriv_apply {w w' : E → F} (hw : Continuous w)
