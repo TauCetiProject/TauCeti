@@ -24,8 +24,11 @@ this file derives the consequences for pushforwards of measures `μ` restricted 
 * If `J` is almost everywhere measurable and almost nowhere zero on `S`, then `T` pushes `μ ≪ ρ`
   restricted to `S` to a measure absolutely continuous with respect to `σ`.
 * If `T` is injective on `S`, maps measurable subsets of `S` to measurable sets, and pushes `μ`
-  restricted to `S` to a measure `T₊ (μ|S) ≪ σ`, then the densities satisfy the Jacobian equation
-  `dμ/dρ (x) = J x * d(T₊ (μ|S))/dσ (T x)` on `S`.
+  restricted to `S` to a measure `T₊ (μ|S) ≪ σ`, then the Jacobian equation holds as an identity
+  of measures: `μ|S = ρ.withDensity (S.indicator fun x => J x * d(T₊ (μ|S))/dσ (T x))`. When `ρ`
+  is σ-finite and this density is almost everywhere measurable, it follows that
+  `dμ/dρ (x) = J x * d(T₊ (μ|S))/dσ (T x)` for `ρ`-almost every `x ∈ S`; the identity says
+  nothing about `J` on `ρ`-null sets.
 * If moreover `T` is measurable and `J` is almost everywhere measurable on `S` (it is then almost
   everywhere finite there, as `σ` is σ-finite), integrals of a function `Φ` with `Φ 0 = 0` of the
   density of the pushforward are integrals over `S`:
@@ -97,8 +100,9 @@ variable [SigmaFinite σ]
 
 /-- Under the change of variables of `map_restrict_absolutelyContinuous_of_withDensity_image_eq`,
 with `T` injective on `S` and sending measurable subsets of `S` to measurable sets, if `T` pushes
-`μ` restricted to `S` to a measure `T₊ (μ|S) ≪ σ`, then `μ` restricted to `S` has density
-`J x * d(T₊ (μ|S))/dσ (T x)` on `S` with respect to `ρ`. -/
+`μ` restricted to `S` to a measure `T₊ (μ|S) ≪ σ`, then `μ` restricted to `S` is `ρ` with density
+`J x * d(T₊ (μ|S))/dσ (T x)` on `S` (and `0` off `S`). This is an identity of measures: it
+determines the density, hence `dμ/dρ`, only `ρ`-almost everywhere. -/
 theorem restrict_eq_withDensity_indicator_rnDeriv_map_restrict {T : X → Y} {S : Set X}
     {μ : Measure X} [SFinite μ] (hT : AEMeasurable T (μ.restrict S)) (hSm : MeasurableSet S)
     (hinj : InjOn T S) (himage : ∀ s, MeasurableSet s → s ⊆ S → MeasurableSet (T '' s))
@@ -159,8 +163,9 @@ theorem lintegral_comp_rnDeriv_map_restrict [SigmaFinite ρ] {T : X → Y} (hT :
       exact measure_mono_null (fun x hx => (hx.1 (mem_image_of_mem T hx.2)).elim) measure_empty
     rw [← setLIntegral_eq_zero_iff hTS.compl (measurable_rnDeriv ν σ), ← withDensity_apply _
       hTS.compl, hν, hνc]
-  -- The Jacobian equation on `S`, `dμ/dρ (x) = J x * g (T x)`, gives `g (T x) = dμ/dρ (x) / J x`
-  -- wherever `J x` is nonzero and finite; where `J x = 0`, both sides below vanish.
+  -- The Jacobian equation `dμ/dρ (x) = J x * g (T x)`, for `ρ`-a.e. `x ∈ S`, gives
+  -- `g (T x) = dμ/dρ (x) / J x` wherever `J x` is nonzero and finite; where `J x = 0`, both sides
+  -- below vanish.
   have hJac : ∀ᵐ x ∂ρ.restrict S, J x * Φ (g (T x)) = J x * Φ (μ.rnDeriv ρ x / J x) := by
     have h₁ := rnDeriv_restrict μ ρ hSm
     rw [restrict_eq_withDensity_indicator_rnDeriv_map_restrict ρ σ hT.aemeasurable hSm hinj
