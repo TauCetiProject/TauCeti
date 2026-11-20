@@ -85,6 +85,11 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   in any dimension.
 * `LinearMap.BilinForm.IsRefl.nondegenerate_restrict_of_isCompl_ker`: a reflexive form is
   nondegenerate on every complement of its kernel.
+* `LinearMap.IsRefl.apply_add_add_of_mem`: a reflexive form splits on `W + W^⊥`.
+* `Submodule.map_comap_orthogonalBilin_of_isometry` and
+  `Submodule.finrank_inf_orthogonalBilin_eq_of_isometry`: a linear isomorphism of subspaces
+  carrying one form to the other, up to an injective map of values, matches the radicals
+  `W ∩ W^⊥` of the restricted forms.
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
   `LinearMap.BilinForm.finrank_le_two_mul_finrank_of_orthogonal_le`: dimension lower bounds for
   orthogonal complements of an arbitrary bilinear form.
@@ -783,6 +788,41 @@ theorem orthogonalBilin_compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R
   simp only [mem_orthogonalBilin, LinearMap.compr₂_apply]
   exact forall₂_congr fun w _ ↦ by rw [← map_zero e, he.eq_iff]
 
+section Isometry
+
+variable {R M M' Q Q' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] [AddCommGroup Q] [Module R Q] [AddCommGroup Q'] [Module R Q']
+  {B : M →ₗ[R] M →ₗ[R] Q} {B' : M' →ₗ[R] M' →ₗ[R] Q'} {W : Submodule R M} {W' : Submodule R M'}
+  {c : Q →ₗ[R] Q'}
+
+/-- A linear isomorphism `L : W ≃ W'` with `B'(L x, L y) = c (B(x, y))`, for an injective `c`,
+maps the radical `W ∩ W^⊥` of `B` restricted to `W` onto the radical `W' ∩ W'^⊥` of `B'`
+restricted to `W'`, both seen inside `W` and `W'`. -/
+theorem map_comap_orthogonalBilin_of_isometry (hc : Function.Injective c) (L : W ≃ₗ[R] W')
+    (hL : ∀ x y : W, B' (L x) (L y) = c (B x y)) :
+    ((W.orthogonalBilin B).comap W.subtype).map (L : W →ₗ[R] W') =
+      (W'.orthogonalBilin B').comap W'.subtype := by
+  ext y
+  obtain ⟨x, rfl⟩ := L.surjective y
+  simp only [mem_map_equiv, LinearEquiv.symm_apply_apply, mem_comap, subtype_apply,
+    mem_orthogonalBilin]
+  refine ⟨fun h n hn ↦ ?_, fun h n hn ↦ ?_⟩
+  · obtain ⟨m, hm⟩ := L.surjective ⟨n, hn⟩
+    rw [show n = L m by rw [hm], hL, h m m.property, map_zero]
+  · exact hc (by rw [← hL ⟨n, hn⟩ x, h _ (L ⟨n, hn⟩).property, map_zero])
+
+/-- A linear isomorphism `L : W ≃ W'` with `B'(L x, L y) = c (B(x, y))`, for an injective `c`,
+matches the radicals of the restricted forms, so `W ∩ W^⊥` and `W' ∩ W'^⊥` have the same
+dimension. -/
+theorem finrank_inf_orthogonalBilin_eq_of_isometry (hc : Function.Injective c)
+    (L : W ≃ₗ[R] W') (hL : ∀ x y : W, B' (L x) (L y) = c (B x y)) :
+    Module.finrank R ↥(W ⊓ W.orthogonalBilin B) =
+      Module.finrank R ↥(W' ⊓ W'.orthogonalBilin B') := by
+  rw [← map_comap_subtype, ← map_comap_subtype, finrank_map_subtype_eq, finrank_map_subtype_eq,
+    ← map_comap_orthogonalBilin_of_isometry hc L hL, LinearEquiv.finrank_map_eq]
+
+end Isometry
+
 end Submodule
 
 namespace LinearMap
@@ -794,6 +834,14 @@ theorem IsRefl.compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R]
     (B.compr₂ e).IsRefl := fun x y h ↦ by
   rw [compr₂_apply, ← map_zero e, he.eq_iff] at h
   rw [compr₂_apply, hB x y h, map_zero]
+
+/-- Vectors of `W` and of `W^⊥` do not pair, so a reflexive form splits on `W + W^⊥`. -/
+theorem IsRefl.apply_add_add_of_mem {R M Q : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid Q] [Module R Q] {B : M →ₗ[R] M →ₗ[R] Q} (hB : B.IsRefl)
+    {W : Submodule R M} {w₁ w₂ u₁ u₂ : M} (hw₁ : w₁ ∈ W) (hw₂ : w₂ ∈ W)
+    (hu₁ : u₁ ∈ W.orthogonalBilin B) (hu₂ : u₂ ∈ W.orthogonalBilin B) :
+    B (w₁ + u₁) (w₂ + u₂) = B w₁ w₂ + B u₁ u₂ := by
+  simp [hu₂ w₁ hw₁, hB _ _ (hu₁ w₂ hw₂)]
 
 /-- **Identifying a line with the scalars turns an injective line-valued form into a
 nondegenerate bilinear form.** If `L : V → Hom(V, Q)` is injective and `Q` is one-dimensional,
