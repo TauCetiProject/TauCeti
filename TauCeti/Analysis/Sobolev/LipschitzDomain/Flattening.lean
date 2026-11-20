@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.GraphFlattening
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
-import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # Flattening a `Cᵏ` boundary graph by a change of variables
