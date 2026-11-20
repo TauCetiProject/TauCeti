@@ -37,6 +37,9 @@ and the Banach open mapping theorem. Equivalent norms need not be equal or isome
   algebra give homeomorphic residue algebras for their quotient Gauss norms.
 * `TauCeti.IsAffinoidAlgebra.residueNormedCommRing`: every affinoid algebra carries a complete
   ultrametric algebra norm, transported from the residue algebra of a chosen Tate presentation.
+* `TauCeti.IsAffinoidAlgebra.algHom_ext_of_denseRange`: two `K`-algebra homomorphisms from a
+  noetherian ultrametric Banach algebra into an affinoid algebra (with no chosen norm) agreeing on
+  a map with dense range are equal.
 
 ## References
 
@@ -199,6 +202,19 @@ theorem completeSpace_residueNormedCommRing :
       isometry_toFun := AddMonoidHomClass.isometry_of_norm hD.residueAlgEquiv
         hD.norm_residueAlgEquiv }
   e.completeSpace_iff.mpr inferInstance
+
+include hD in
+/-- Two `K`-algebra homomorphisms from a noetherian ultrametric Banach algebra into an affinoid
+algebra (with no norm or continuity assumed on the target) that agree on a map with dense range are
+equal. -/
+theorem algHom_ext_of_denseRange [IsNoetherianRing A] {ι : Type*} {g : ι → A} (hg : DenseRange g)
+    {Φ₁ Φ₂ : A →ₐ[K] D} (h : ∀ i, Φ₁ (g i) = Φ₂ (g i)) : Φ₁ = Φ₂ := by
+  let := hD.residueNormedCommRing
+  let := hD.residueNormedAlgebra
+  have := hD.isUltrametricDist_residueNormedCommRing
+  have := hD.completeSpace_residueNormedCommRing
+  exact AlgHom.coe_fn_injective <|
+    hg.equalizer (hD.continuous_algHom Φ₁) (hD.continuous_algHom Φ₂) (funext h)
 
 end ResidueNorm
 

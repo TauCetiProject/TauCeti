@@ -97,7 +97,7 @@ theorem ι_spinVectorAction_apply (x : spinGroup Q) (m : M) :
       (x : CliffordAlgebra Q) * ι Q m * star (x : CliffordAlgebra Q) :=
   by
     rw [spinVectorAction, ι_lipschitzVectorAction_apply]
-    rw [coe_spinToLipschitz_apply, spinGroup.involute_eq x.2]
+    rw [coe_spinToLipschitz_apply, spinGroup.involute_eq x.property]
     have hunit :
         ((spinToLipschitz Q x : lipschitzGroup Q) : (CliffordAlgebra Q)ˣ) =
           spinGroup.toUnits x := by
@@ -115,14 +115,14 @@ theorem ι_spinVectorAction_apply (x : spinGroup Q) (m : M) :
 `ι (x • m) * x = x * ι m`. -/
 theorem ι_spinVectorAction_apply_mul (x : spinGroup Q) (m : M) :
     ι Q (spinVectorAction Q x m) * x = (x : CliffordAlgebra Q) * ι Q m := by
-  rw [ι_spinVectorAction_apply, mul_assoc, spinGroup.star_mul_self_of_mem x.2, mul_one]
+  rw [ι_spinVectorAction_apply, mul_assoc, spinGroup.star_mul_self_of_mem x.property, mul_one]
 
 /-- A Spin element sends `m` to `w` when it moves `ι Q m` past itself as `ι Q w`. -/
 theorem spinVectorAction_eq_of_mul_ι_eq (x : spinGroup Q) {m w : M}
     (h : (x : CliffordAlgebra Q) * ι Q m = ι Q w * x) :
     spinVectorAction Q x m = w := by
   apply ι_injective Q
-  rw [ι_spinVectorAction_apply, h, mul_assoc, spinGroup.mul_star_self_of_mem x.2, mul_one]
+  rw [ι_spinVectorAction_apply, h, mul_assoc, spinGroup.mul_star_self_of_mem x.property, mul_one]
 
 /-- Conjugation by a spin element preserves the quadratic form. -/
 @[simp]

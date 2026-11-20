@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
+public import TauCeti.Combinatorics.Network.AuxiliaryTerminals.Paths
 
 /-!
 # Examples of auxiliary-terminal walk projection
@@ -29,38 +29,36 @@ abbrev terminals : Finset Unit := {()}
 
 /-- A common terminal contributes an empty original segment, lifted to a simple two-arrow path. -/
 theorem overlapping_terminals :
-    let p := liftWalk (Q := Loops) (A := terminals) (B := terminals) (a := ()) (b := ())
+    let p := lift (Q := Loops) (A := terminals) (B := terminals) (a := ()) (b := ())
       (by simp [terminals]) (by simp [terminals]) (ArrowWalk.nil ())
-    p.IsPath ∧ p.length = 2 ∧
-      (projectWalk (Q := Loops) (A := terminals) (B := terminals) p).2.2.length = 0 := by
-  dsimp only
-  rw [projectWalk_liftWalk]
+    p.IsPath ∧ p.length = 2 ∧ (project p).walk.length = 0 := by
   simp
 
 /-- Distinct parallel loops remain distinct after adjoining the terminal arrows. -/
 theorem parallel_loops_ne :
-    liftWalk (A := terminals) (B := terminals) (a := ()) (b := ())
+    lift (A := terminals) (B := terminals) (a := ()) (b := ())
       (by simp [terminals]) (by simp [terminals])
       ((ArrowWalk.nil () : ArrowWalk Loops () ()).cons 0) ≠
-    liftWalk (A := terminals) (B := terminals) (a := ()) (b := ())
+    lift (A := terminals) (B := terminals) (a := ()) (b := ())
       (by simp [terminals]) (by simp [terminals])
       ((ArrowWalk.nil () : ArrowWalk Loops () ()).cons 1) := by
+  rw [ne_eq, lift_inj]
   intro h
-  have hproj := congrArg (projectWalk (Q := Loops) (A := terminals) (B := terminals)) h
-  simp only [projectWalk_liftWalk, Sigma.mk.inj_iff, heq_eq_eq, true_and] at hproj
-  have harrows := congrArg ArrowWalk.arrows hproj
+  have harrows := congrArg ArrowWalk.arrows h
   simp at harrows
 
 /-- Projection recovers both occurrences of a repeated loop; it does not simplify the walk. -/
 theorem repeated_loop_projection :
     let p : ArrowWalk Loops () () := (ArrowWalk.nil () |>.cons (x := ()) 0).cons 0
-    let q := liftWalk (A := terminals) (B := terminals) (a := ()) (b := ())
+    let q := lift (A := terminals) (B := terminals) (a := ()) (b := ())
       (by simp [terminals]) (by simp [terminals]) p
-    (projectWalk (Q := Loops) (A := terminals) (B := terminals) q).2.2.arrows =
-      [⟨(), (), 0⟩, ⟨(), (), 0⟩] ∧ q.length = 4 ∧ ¬q.IsPath := by
+    (project q).walk.arrows = [⟨(), (), 0⟩, ⟨(), (), 0⟩] ∧ q.length = 4 ∧ ¬q.IsPath := by
   dsimp only
-  rw [projectWalk_liftWalk]
-  simp [ArrowWalk.isPath_def]
+  constructor
+  · apply List.map_injective_iff.mpr originalArrow_injective
+    rw [Projection.map_arrows_walk, arrows_lift]
+    simp
+  · simp [ArrowWalk.isPath_def]
 
 /-- An empty source-terminal set gives no walk between the auxiliary terminals. -/
 example {V : Type*} (Q : V → V → Type*) (B : Finset V) :
