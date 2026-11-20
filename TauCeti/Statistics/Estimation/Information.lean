@@ -31,8 +31,8 @@ Without square integrability this fails: for the density `2 (1 + x)⁻³` on `x 
 
 The **information inequality** holds for a regular model, one whose densities are
 differentiable in the parameter almost everywhere and whose integrals `∫ f t dμ` and
-`∫ W f t dμ` may be differentiated under the integral sign at `θ`: if the Fisher information is
-positive and `W` is square integrable, then
+`∫ W f t dμ` may be differentiated under the integral sign at `θ`: if the score and `W` are
+square integrable (in particular, if the Fisher information is positive), then
 `(d/dθ ∫ W dP θ)² ≤ Var[W; P θ] · fisherInformation P f θ`.
 The first identity makes the score centred, the second makes `d/dθ ∫ W dP θ` the integral of
 `W` times the score, and the Cauchy–Schwarz inequality concludes. The densities may vanish: the
@@ -54,7 +54,10 @@ score is the true score `∂_θ f / f` almost everywhere for `P θ`, and where `
   vector score is positive semidefinite.
 * `TauCeti.integral_likelihoodScore_eq_zero`: the score of a regular model has mean `0`.
 * `TauCeti.integral_mul_likelihoodScore_eq_deriv`: `∫ W · score dP θ = d/dθ ∫ W dP θ`.
-* `TauCeti.sq_deriv_le_variance_mul_fisherInformation`: the information inequality.
+* `TauCeti.sq_deriv_le_variance_mul_fisherInformation_of_memLp`: the information inequality for
+  a square-integrable score.
+* `TauCeti.sq_deriv_le_variance_mul_fisherInformation`: the information inequality for positive
+  Fisher information.
 
 ## References
 
@@ -216,19 +219,18 @@ theorem integral_mul_likelihoodScore_eq_deriv (hf : ∀ t, HasDensity (P t) μ (
   rw [smul_eq_mul, ← hx]
   ring
 
-/-- **The information inequality** for a regular real-parameter model: the densities are
-almost everywhere differentiable in the parameter at `θ`, and the integrals
-`∫ f t dμ` and `∫ W f t dμ` are differentiated under the integral sign at `θ`. For a
-square-integrable `W` and positive Fisher information,
-`(d/dθ ∫ W dP θ)² ≤ Var[W; P θ] · fisherInformation P f θ`. -/
-theorem sq_deriv_le_variance_mul_fisherInformation [∀ t, IsProbabilityMeasure (P t)]
+/-- **The information inequality** for a regular real-parameter model with a square-integrable
+score: the densities are almost everywhere differentiable in the parameter at `θ`, and the
+integrals `∫ f t dμ` and `∫ W f t dμ` are differentiated under the integral sign at `θ`. For a
+square-integrable `W`, `(d/dθ ∫ W dP θ)² ≤ Var[W; P θ] · fisherInformation P f θ`. The Fisher
+information may be zero, as for a model that does not depend on the parameter. -/
+theorem sq_deriv_le_variance_mul_fisherInformation_of_memLp [∀ t, IsProbabilityMeasure (P t)]
     (hf : ∀ t, HasDensity (P t) μ (f t)) {W : X → ℝ} (hW : MemLp W 2 (P θ))
     (hd : ∀ᵐ x ∂μ, DifferentiableAt ℝ (fun t ↦ f t x) θ)
     (h1 : HasDerivAt (fun t ↦ ∫ x, f t x ∂μ) (∫ x, deriv (fun t ↦ f t x) θ ∂μ) θ)
     (hW' : HasDerivAt (fun t ↦ ∫ x, W x * f t x ∂μ) (∫ x, W x * deriv (fun t ↦ f t x) θ ∂μ) θ)
-    (hI : 0 < fisherInformation P f θ) :
+    (hs : MemLp (likelihoodScore f θ) 2 (P θ)) :
     deriv (fun t ↦ ∫ x, W x ∂P t) θ ^ 2 ≤ Var[W; P θ] * fisherInformation P f θ := by
-  have hs := memLp_likelihoodScore hf hd hI.ne'
   have hWc : MemLp (fun x ↦ W x - ∫ y, W y ∂P θ) 2 (P θ) := hW.sub (memLp_const _)
   have hcross : ∫ x, (W x - ∫ y, W y ∂P θ) * likelihoodScore f θ x ∂P θ =
       deriv (fun t ↦ ∫ x, W x ∂P t) θ := by
@@ -239,5 +241,23 @@ theorem sq_deriv_le_variance_mul_fisherInformation [∀ t, IsProbabilityMeasure 
       integral_mul_likelihoodScore_eq_deriv hf hd hW']
   rw [← hcross, variance_eq_integral hW.aemeasurable, fisherInformation_def]
   exact sq_integral_mul_le_integral_sq_mul_integral_sq hWc hs
+
+/-- **The information inequality** for a regular real-parameter model: the densities are
+almost everywhere differentiable in the parameter at `θ`, and the integrals
+`∫ f t dμ` and `∫ W f t dμ` are differentiated under the integral sign at `θ`. For a
+square-integrable `W` and positive Fisher information,
+`(d/dθ ∫ W dP θ)² ≤ Var[W; P θ] · fisherInformation P f θ`. Positive information makes the score
+square integrable (`TauCeti.memLp_likelihoodScore`); see
+`TauCeti.sq_deriv_le_variance_mul_fisherInformation_of_memLp` for the form under square
+integrability of the score. -/
+theorem sq_deriv_le_variance_mul_fisherInformation [∀ t, IsProbabilityMeasure (P t)]
+    (hf : ∀ t, HasDensity (P t) μ (f t)) {W : X → ℝ} (hW : MemLp W 2 (P θ))
+    (hd : ∀ᵐ x ∂μ, DifferentiableAt ℝ (fun t ↦ f t x) θ)
+    (h1 : HasDerivAt (fun t ↦ ∫ x, f t x ∂μ) (∫ x, deriv (fun t ↦ f t x) θ ∂μ) θ)
+    (hW' : HasDerivAt (fun t ↦ ∫ x, W x * f t x ∂μ) (∫ x, W x * deriv (fun t ↦ f t x) θ ∂μ) θ)
+    (hI : 0 < fisherInformation P f θ) :
+    deriv (fun t ↦ ∫ x, W x ∂P t) θ ^ 2 ≤ Var[W; P θ] * fisherInformation P f θ :=
+  sq_deriv_le_variance_mul_fisherInformation_of_memLp hf hW hd h1 hW'
+    (memLp_likelihoodScore hf hd hI.ne')
 
 end TauCeti
