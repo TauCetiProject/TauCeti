@@ -881,7 +881,7 @@ theorem range_brauerActionSymp_eq_adjoin_union :
       Algebra.adjoin R
         (Set.range (symplecticPermTensorAction R n k) ∪
           Set.range fun p : {p : Fin k × Fin k // p.1 ≠ p.2} =>
-            symplecticCupCapAt R n k p.1.1 p.1.2) := by
+            symplecticCupCapAt R n k p.val.1 p.val.2) := by
   rw [← Algebra.map_top,
     ← BrauerAlgebra.adjoin_range_of_permToBrauer_union_range_of_capCup R (-(2 * n : R)) k,
     AlgHom.map_adjoin]

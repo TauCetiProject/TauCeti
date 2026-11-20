@@ -49,12 +49,17 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
 
 ## Main results
 
+* `LinearMap.detLineRestrictScalarsEquiv_eq_congr`,
+  `LinearMap.detLineRestrictScalarsEquiv_symm_eq_congr`: the identification is the transport along
+  the identifications of the real and complex kernels and cokernels.
 * `LinearMap.detLineRestrictScalarsEquiv_detLineCongr`: transport along a commuting square is
   transport along the induced isomorphisms of complex kernels and cokernels.
 * `LinearMap.IsComplexPositiveDetLine.exists_pos_smul_eq`,
   `LinearMap.IsComplexPositiveDetLine.not_neg`,
   `LinearMap.isComplexPositiveDetLine_or_isComplexPositiveDetLine_neg`: complex positivity is an
   orientation of the determinant line.
+* `LinearMap.isComplexPositiveDetLine_detLineEquivOfBijective_symm_one`: for a bijective map the
+  complex orientation is the orientation given by bijectivity.
 * `LinearMap.IsComplexPositiveDetLine.detLineCongr`: complex-linear transport preserves the
   complex orientation of the determinant line of a complex-linear map.
 * `LinearMap.IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr`: conjugate-linear transport
@@ -119,6 +124,23 @@ theorem detLineRestrictScalarsEquiv_symm_tmul (x : TauCeti.detLine ℝ (ker f))
     ← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply]
   simp [comp_assoc, ← LinearEquiv.detLineCongr_symm]
 
+/-- `LinearMap.detLineRestrictScalarsEquiv` is the transport along the identifications of the
+real kernel and cokernel with the complex ones. -/
+theorem detLineRestrictScalarsEquiv_eq_congr :
+    f.detLineRestrictScalarsEquiv = TensorProduct.congr
+      (f.kerRestrictScalarsEquiv ℝ).symm.detLineCongr
+      (f.cokerRestrictScalarsEquiv ℝ).symm.detLineCongr.dualMap :=
+  (rfl)
+
+/-- The inverse of `LinearMap.detLineRestrictScalarsEquiv` is the transport along the
+identifications of the complex kernel and cokernel with the real ones. -/
+theorem detLineRestrictScalarsEquiv_symm_eq_congr :
+    f.detLineRestrictScalarsEquiv.symm = TensorProduct.congr
+      (f.kerRestrictScalarsEquiv ℝ).detLineCongr
+      (f.cokerRestrictScalarsEquiv ℝ).symm.detLineCongr.symm.dualMap := by
+  rw [detLineRestrictScalarsEquiv_eq_congr, TensorProduct.congr_symm,
+    LinearEquiv.detLineCongr_symm, LinearEquiv.symm_symm, LinearEquiv.dualMap_symm]
+
 /-- An element of the real determinant line of a complex-linear map `f` is **complex positive** if
 it corresponds to a complex positive element of `det (ker f) ⊗ (det (coker f))^*`, that is, to
 `(b₀ ∧ I • b₀ ∧ ⋯) ⊗ φ` for a complex basis `b` of the kernel and a functional `φ` positive on
@@ -145,6 +167,22 @@ theorem exists_isComplexPositiveDetLine [FiniteDimensional ℂ (ker f)]
   obtain ⟨t, ht⟩ := exists_isComplexPositiveTMulDual (E := ker f) (F := N ⧸ range f)
   exact ⟨f.detLineRestrictScalarsEquiv.symm t, by
     rwa [isComplexPositiveDetLine_iff, LinearEquiv.apply_symm_apply]⟩
+
+/-- **The complex orientation of a bijective complex-linear map** is the orientation given by
+bijectivity: kernel and cokernel vanish, and the element `1` of the determinant line under
+`LinearMap.detLineEquivOfBijective` is complex positive. -/
+theorem isComplexPositiveDetLine_detLineEquivOfBijective_symm_one
+    (hf : Function.Bijective (f.restrictScalars ℝ)) :
+    f.IsComplexPositiveDetLine ((detLineEquivOfBijective hf).symm 1) := by
+  have hf' : Function.Bijective f := by simpa using hf
+  have : Subsingleton (ker f) := Submodule.subsingleton_iff_eq_bot.2 (ker_eq_bot.2 hf'.1)
+  have : Subsingleton (N ⧸ range f) :=
+    Submodule.Quotient.subsingleton_iff.2 (range_eq_top.2 hf'.2)
+  rw [detLineEquivOfBijective_symm_one_eq_ιMulti_tmul, isComplexPositiveDetLine_iff,
+    detLineRestrictScalarsEquiv_tmul, LinearEquiv.detLineCongr_ιMulti]
+  refine (isComplexPositive_ιMulti_of_subsingleton _).isComplexPositiveTMulDual_tmul
+    ((isComplexPositive_ιMulti_of_subsingleton 0).isComplexPositiveDual_of_apply_eq_one ?_)
+  simp
 
 /-- A positive multiple of a complex positive element of the determinant line of a complex-linear
 map is complex positive. -/

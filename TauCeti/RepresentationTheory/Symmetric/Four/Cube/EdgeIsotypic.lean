@@ -275,8 +275,8 @@ theorem cubeEdgeStandardEval_injective (h2 : IsLeftRegular (2 : k)) :
     simp only [cubeEdgeOrientation_mk, Fin.sum_univ_four] at hb₀₃
     simpa [cubeBodyDiagonal_def, det_fin_three, dotProduct, Fin.sum_univ_three] using hb₀₃
   have h32 : IsLeftRegular (32 : k) := by simpa [show (32 : k) = 2 ^ 5 by norm_num] using h2.pow 5
-  have hsa : ∑ j, (a : MonoidAlgebra k (Fin 4)).coeff j = 0 := by simpa using a.2
-  have hsb : ∑ j, (b : MonoidAlgebra k (Fin 4)).coeff j = 0 := by simpa using b.2
+  have hsa : ∑ j, (a : MonoidAlgebra k (Fin 4)).coeff j = 0 := by simpa using a.property
+  have hsb : ∑ j, (b : MonoidAlgebra k (Fin 4)).coeff j = 0 := by simpa using b.property
   rw [Fin.sum_univ_four] at hsa hsb
   have ha₀ : (a : MonoidAlgebra k (Fin 4)).coeff 0 = 0 :=
     h2.mul_left_eq_zero_iff.mp (by linear_combination ha₀₁ + ha₀₂ - ha₁₂)

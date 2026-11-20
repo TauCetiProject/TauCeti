@@ -13,7 +13,7 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.Complex.Basic
-import TauCeti.Geometry.Symplectic.Floer.Graph
+import TauCeti.Geometry.Symplectic.Floer.Graph.Basic
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -33,7 +33,7 @@ where `J(z, x)` is an almost complex structure on `V` depending on the domain po
 `TauCeti.SymplecticForm.hamiltonianOneForm`. The equation says that the perturbed derivative
 `du - X(z, u)` is complex linear.
 
-Gromov's graph construction (`TauCeti.Geometry.Symplectic.Floer.Graph`) turns solutions into
+Gromov's graph construction (`TauCeti.Geometry.Symplectic.Floer.Graph.Basic`) turns solutions into
 pseudoholomorphic curves: the graph `U y = (y, u y)` solves the autonomous equation
 `∂ₜU = J'(U) ∂ₛU` for the structure
 
@@ -1072,25 +1072,26 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {Ks Kt : ℝ × ℝ → V → ℝ} {J : ℝ × ℝ → V → AlmostComplexStructure V}
 
 /-- In the complex coordinate `equivRealProdCLM`, the Floer equation `(du - X_K)^{0,1} = 0` at
-`equivRealProdCLM y` is the coordinate equation `∂ₜu' - X(y, u') i = J(y, u')(∂ₛu' - X(y, u') 1)`
-for `u' = u ∘ equivRealProdCLM`, with `X(y, x) = X_K(equivRealProdCLM y, x) ∘ equivRealProdCLM`. -/
-theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × ℝ → V}
-    {y : ℂ} (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (equivRealProdCLM y) (u (equivRealProdCLM y)))
-      (ω.perturbedFDeriv Ks Kt u (equivRealProdCLM y) : ℝ × ℝ →ₗ[ℝ] V)) :
-    fderiv ℝ (u ∘ equivRealProdCLM) y I -
-        (ω.hamiltonianOneForm Ks Kt (equivRealProdCLM y) (u (equivRealProdCLM y)) ∘L
-          (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I =
-      J (equivRealProdCLM y) (u (equivRealProdCLM y))
-        (fderiv ℝ (u ∘ equivRealProdCLM) y 1 -
+`equivRealProdCLM y` is equivalent to the coordinate equation
+`∂ₜu' - X(y, u') i = J(y, u')(∂ₛu' - X(y, u') 1)` for `u' = u ∘ equivRealProdCLM`, with
+`X(y, x) = X_K(equivRealProdCLM y, x) ∘ equivRealProdCLM`. -/
+theorem isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub
+    (ω : SymplecticForm V) {u : ℝ × ℝ → V} {y : ℂ} :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (J (equivRealProdCLM y) (u (equivRealProdCLM y)))
+        (ω.perturbedFDeriv Ks Kt u (equivRealProdCLM y) : ℝ × ℝ →ₗ[ℝ] V) ↔
+      fderiv ℝ (u ∘ equivRealProdCLM) y I -
           (ω.hamiltonianOneForm Ks Kt (equivRealProdCLM y) (u (equivRealProdCLM y)) ∘L
-            (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) := by
-  have h' := h.apply_stdComplexLineImag
-  simp only [perturbedFDeriv_eq_sub, sub_apply,
-    ContinuousLinearMap.coe_coe] at h'
-  simpa only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
+            (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I =
+        J (equivRealProdCLM y) (u (equivRealProdCLM y))
+          (fderiv ℝ (u ∘ equivRealProdCLM) y 1 -
+            (ω.hamiltonianOneForm Ks Kt (equivRealProdCLM y) (u (equivRealProdCLM y)) ∘L
+              (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) := by
+  rw [isComplexLinearMap_stdComplexLine_iff]
+  simp only [perturbedFDeriv_eq_sub, sub_apply, ContinuousLinearMap.coe_coe,
+    fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
-    equivRealProdCLM_I] using h'
+    equivRealProdCLM_I]
 
 /-- **The energy density bounds the derivative uniformly over a compact parameter window.** Let
 `J_p(z, x)` be continuous and tamed by `ω`, and `X_{K_{s,p}}(z, x)` continuous, for `(p, z, x)` in

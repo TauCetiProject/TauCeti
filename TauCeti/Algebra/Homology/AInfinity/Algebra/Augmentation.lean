@@ -149,7 +149,7 @@ theorem decompose_mem_augmentationIdeal (ε : 𝒜.Augmentation) (x : ε.augment
     have hmap := 𝒜.grading.map_eq_map_decompose (i := 0) f hf (x : A)
     have hx : f (x : A) = 0 := (mem_augmentationIdeal ε).mp x.property
     exact hmap.symm.trans hx
-  · exact ε.map_of_mem_ne_zero p _ (DirectSum.decompose 𝒜.grading.piece (x : A) p).2 hp
+  · exact ε.map_of_mem_ne_zero p _ (DirectSum.decompose 𝒜.grading.piece (x : A) p).property hp
 
 /-- The internal grading on the reduced augmentation ideal obtained by intersecting it with each
 homogeneous piece of the original algebra. -/
@@ -237,6 +237,16 @@ theorem reducedPart_coe (ε : 𝒜.Augmentation) (x : ε.augmentationIdeal) :
     ε.reducedPart (x : A) = x := by
   apply Subtype.ext
   rw [coe_reducedPart, (mem_augmentationIdeal ε).mp x.property, zero_smul, sub_zero]
+
+/-- The augmentation vanishes on the inclusion of its augmentation ideal. -/
+@[simp] theorem toLinearMap_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.toLinearMap ∘ₗ ε.augmentationIdeal.subtype = 0 :=
+  LinearMap.ext fun x ↦ (mem_augmentationIdeal ε).mp x.property
+
+/-- The reduced-part projection is a left inverse to the inclusion of the augmentation ideal. -/
+@[simp] theorem reducedPart_comp_subtype (ε : 𝒜.Augmentation) :
+    ε.reducedPart ∘ₗ ε.augmentationIdeal.subtype = LinearMap.id :=
+  LinearMap.ext ε.reducedPart_coe
 
 private theorem coe_evalNat_reducedOperation (ε : 𝒜.Augmentation) (n : ℕ)
     (x : ℕ → ε.augmentationIdeal) :

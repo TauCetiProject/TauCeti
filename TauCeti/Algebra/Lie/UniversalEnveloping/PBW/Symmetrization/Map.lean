@@ -207,7 +207,7 @@ theorem pbwFiltration_le_span_pow (j : ℕ) :
   rw [h, Submodule.map_span]
   refine Submodule.span_mono ?_
   rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
-  exact ⟨x, i, i.2, pbwSymmetrizationMap_ι_pow R L x i⟩
+  exact ⟨x, i, i.property, pbwSymmetrizationMap_ι_pow R L x i⟩
 
 /-- Symmetrization is natural for Lie algebra homomorphisms. -/
 theorem map_pbwSymmetrizationMap {M : Type*} [LieRing M] [LieAlgebra R M] (f : L →ₗ⁅R⁆ M)

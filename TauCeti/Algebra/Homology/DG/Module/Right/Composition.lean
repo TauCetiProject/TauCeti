@@ -67,7 +67,7 @@ def comp {p q j : ℤ}
     (hpq : p + q = j) :
     dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳP) j := by
   subst j
-  exact ⟨g.1.comp f.1, by
+  exact ⟨g.val.comp f.val, by
     apply mem_iff.mpr
     rw [LinearMap.isHomogeneous_def]
     intro r x hx
@@ -75,7 +75,7 @@ def comp {p q j : ℤ}
     -- The restricted `Aᵐᵒᵖ`-linear composite coerces here to an `R`-linear map, and no
     -- evaluation lemma rewrites through that restriction.  Align its value with the two
     -- successive applications once; the remaining goal is only degree arithmetic.
-    change g.1 (f.1 x) ∈ ℳP (r + (p + q))
+    change g.val (f.val x) ∈ ℳP (r + (p + q))
     simpa only [add_assoc, add_comm q p] using this⟩
 
 /-- Composition of homogeneous right-module cochains is pointwise composition. -/
@@ -84,7 +84,7 @@ theorem comp_apply {p q j : ℤ}
     (g : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳN) (ℳN := ℳP) p)
     (f : dgRightModuleCochains (R := R) (A := A) (ℳ := ℳ) (ℳN := ℳN) q)
     (hpq : p + q = j) (x : M) :
-    ((comp g f hpq).1 : M →ₗ[Aᵐᵒᵖ] P) x = g.1 (f.1 x) := by
+    ((comp g f hpq).val : M →ₗ[Aᵐᵒᵖ] P) x = g.val (f.val x) := by
   subst j
   rfl
 
@@ -137,7 +137,7 @@ theorem comp_smul {p q j : ℤ} (r : R)
     (hpq : p + q = j) : comp g (r • f) hpq = r • comp g f hpq := by
   ext x
   simp only [comp_apply, Submodule.coe_smul_of_tower, LinearMap.smul_apply]
-  exact g.1.map_smul_of_tower r (f.1 x)
+  exact g.val.map_smul_of_tower r (f.val x)
 
 /-- The degree-zero identity cochain of a graded right module. -/
 def id :
@@ -154,7 +154,7 @@ def id :
 /-- The identity cochain acts as the identity map. -/
 @[simp]
 theorem id_apply (x : M) :
-    ((id (R := R) (A := A) (ℳ := ℳ)).1 : M →ₗ[Aᵐᵒᵖ] M) x = x :=
+    ((id (R := R) (A := A) (ℳ := ℳ)).val : M →ₗ[Aᵐᵒᵖ] M) x = x :=
   (rfl)
 
 /-- Composing on the right with the identity cochain changes nothing. -/
@@ -218,7 +218,7 @@ theorem gradedCommutator_comp {p q : ℤ}
   ext x
   simp only [gradedCommutator_apply, comp_apply, map_sub, Submodule.coe_add,
     LinearMap.add_apply, Submodule.coe_smul_of_tower, LinearMap.smul_apply]
-  have hmap (z : N) : g.1 (q.negOnePow • z) = q.negOnePow • g.1 z := by
+  have hmap (z : N) : g.val (q.negOnePow • z) = q.negOnePow • g.val z := by
     rw [Units.smul_def, map_zsmul, ← Units.smul_def]
   rw [hmap, Int.negOnePow_add, smul_sub, smul_smul]
   abel

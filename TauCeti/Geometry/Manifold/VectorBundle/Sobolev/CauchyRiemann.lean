@@ -242,7 +242,7 @@ private theorem chartDerivL_ae_overlap (w : A.sectionChartData.sobolevSections �
         (A.sectionChartData.chartValueL μ p 1 i w (A.transition i i' y)) =
       A.sectionChartData.chartValueL μ p 1 i' w y := by
     filter_upwards [(A.sectionChartData.compatible_iff μ p 1).1
-      (SectionChartData.compatible_of_mem hC w.2 i i'),
+      (SectionChartData.compatible_of_mem hC w.property i i'),
       ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h hy
     rw [A.sectionChartData_coordChange_of_mem hy, A.sectionChartData_transition_of_mem hy] at h
     exact h.symm
@@ -303,7 +303,7 @@ private theorem compatible_dataL (w : A.sectionChartData.sobolevSections μ p 1)
   have h₂ := (A.sectionChartData.aeTransition_iff.1 hC) (i := i) (i' := i')
     (chartValueL_dataL_ae A hD hDs μ p w i)
   have h₃ := (A.sectionChartData.compatible_iff μ p 1).1
-    (SectionChartData.compatible_of_mem hC w.2 i i')
+    (SectionChartData.compatible_of_mem hC w.property i i')
   refine (A.tangentHom.sectionChartData.compatible_iff μ p 0).2 ?_
   refine (ae_overlap_tangentHom_iff A μ i i').2 ?_
   filter_upwards [h₁, h₂, h₃, chartDerivL_ae_overlap A μ p w i i',
