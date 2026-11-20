@@ -19,8 +19,10 @@ term is the operator norm, and the term at index `n` vanishes on operators of ra
 
 This file defines the ordinary and strict axioms and derives the norm bound, Lipschitz
 continuity and scalar homogeneity. Strictness means normalization on every identity below
-the dimension, not merely on the finite Euclidean identities. An injective family is one that
-does not change under postcomposition with linear isometries.
+the dimension, not merely on the finite Euclidean identities. For a strict sequence, factoring
+the identity of a space of rank greater than `n` through an operator `T` therefore bounds
+`sₙ(T)` from below (`TauCeti.SNumbers.IsStrictSNumberSequence.le_of_comp_eq_id`). An injective
+family is one that does not change under postcomposition with linear isometries.
 
 ## References
 
@@ -209,5 +211,29 @@ theorem neg (T : X →L[𝕜] Y) (n : ℕ) : s (-T) n = s T n := by
   simpa using hs.smul (-1) T n
 
 end IsSNumberSequence
+
+namespace IsStrictSNumberSequence
+
+variable {s : SNumberFamily 𝕜} (hs : IsStrictSNumberSequence s)
+
+include hs
+variable {M X Y : Type u}
+  [NormedAddCommGroup M] [NormedSpace 𝕜 M] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+
+/-- **Lower bound by factorization.** If the identity of a space of rank greater than `n`
+factors as `B ∘ T ∘ A` with `c ‖B‖ ‖A‖ ≤ 1`, then `c ≤ sₙ(T)`. -/
+theorem le_of_comp_eq_id {c : ℝ≥0} (B : Y →L[𝕜] M) (T : X →L[𝕜] Y) (A : M →L[𝕜] X)
+    (hBTA : B ∘L T ∘L A = ContinuousLinearMap.id 𝕜 M) {n : ℕ}
+    (hn : (n : Cardinal) < Module.rank 𝕜 M) (hc : c * ‖B‖₊ * ‖A‖₊ ≤ 1) : c ≤ s T n := by
+  have h1 : 1 ≤ ‖B‖₊ * s T n * ‖A‖₊ := by
+    simpa [hBTA, hs.normalize_of_lt_rank n hn] using hs.comp_le B T A n
+  calc
+    c = c * 1 := (mul_one c).symm
+    _ ≤ c * (‖B‖₊ * s T n * ‖A‖₊) := by gcongr
+    _ = c * ‖B‖₊ * ‖A‖₊ * s T n := by ring
+    _ ≤ s T n := mul_le_of_le_one_left' hc
+
+end IsStrictSNumberSequence
 
 end TauCeti.SNumbers
