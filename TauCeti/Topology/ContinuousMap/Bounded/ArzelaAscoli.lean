@@ -18,12 +18,13 @@ compact as soon as it maps a neighborhood of `0` to an equicontinuous family who
 each point lie in a compact set (`TauCeti.isCompactOperator_of_equicontinuous`). This is the
 Arzelà–Ascoli theorem in operator form.
 
-In the form used for restriction maps, an operator `E → β →ᵇ F` that reads the functions
-`Φ f : α → F` along a continuous map `j : β → α` with values in a compact set `K` is compact as
-soon as a neighborhood of `0` gives a family that is equicontinuous on `K` with pointwise
-relatively compact values there (`IsCompact.isCompactOperator_of_equicontinuousOn`). For spaces
-of bounded holomorphic functions, Cauchy estimates give the equicontinuity, and the result is
-Montel's theorem.
+In the form used for restriction maps, an operator `E → β →ᵇ F` that, on a neighborhood of `0`,
+reads the functions `Φ f : α → F` along a continuous map `j : β → α` with values in a compact set
+`K` is compact as soon as the family indexed by that neighborhood is equicontinuous on `K` with
+pointwise relatively compact values there (`IsCompact.isCompactOperator_of_equicontinuousOn`).
+For the restriction of bounded holomorphic functions to a set lying in a compact subset `K` of
+their domain, Cauchy estimates give the equicontinuity on `K` and properness of the target gives
+the pointwise relatively compact values, and the result is Montel's theorem.
 -/
 
 public section
@@ -44,33 +45,42 @@ theorem isCompactOperator_of_equicontinuous [CompactSpace α] {T : E → α →�
     (hT : Equicontinuous fun f : V => (T f : α → F)) :
     IsCompactOperator T := by
   let e := ContinuousMap.isometryEquivBoundedOfCompact α F
+  have he (g : α →ᵇ F) : ⇑(e.symm g) = g := by
+    simp only [e, ContinuousMap.isometryEquivBoundedOfCompact_symm_apply, coe_toContinuousMap]
   have h := ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := fun f : V => e.symm (T f))
-    hT fun x => let ⟨Q, hQ, hTQ⟩ := hTV x; ⟨Q, hQ, fun f => hTQ f f.property⟩
+    (by simpa only [he] using hT) fun x => by
+      obtain ⟨Q, hQ, hTQ⟩ := hTV x
+      exact ⟨Q, hQ, fun f => by simpa only [he] using hTQ f f.property⟩
   refine ⟨_, h.image e.continuous, Filter.mem_of_superset hV fun f hf => ?_⟩
   exact ⟨_, subset_closure ⟨⟨f, hf⟩, rfl⟩, e.apply_symm_apply _⟩
 
 end TauCeti
 
-/-- **Arzelà–Ascoli for restriction operators.** Let `T` send `f : E` to the function
-`Φ f ∘ j` in `β →ᵇ F`, where `j` takes values in a compact set `K`. If `Φ` maps a neighborhood
-`V` of `0` to a family that is equicontinuous on `K` and whose values at each point of `K` lie in
-a compact set, then `T` is a compact operator. -/
+/-- **Arzelà–Ascoli for restriction operators.** Let `j : β → α` be a continuous map with
+values in a compact set `K`, and let `T` send each `f` in a neighborhood `V` of `0` in `E` to the
+function `Φ f ∘ j` in `β →ᵇ F`. If the family `Φ f` for `f ∈ V` is equicontinuous on `K` and its
+values at each point of `K` lie in a compact set, then `T` is a compact operator. -/
 theorem IsCompact.isCompactOperator_of_equicontinuousOn {K : Set α} (hK : IsCompact K)
-    (j : C(β, α)) (hjK : ∀ z, j z ∈ K) {Φ : E → α → F} {T : E → β →ᵇ F}
-    (hT : ∀ f z, T f z = Φ f (j z)) {V : Set E} (hV : V ∈ 𝓝 0)
+    (j : C(β, α)) (hjK : ∀ z, j z ∈ K) {Φ : E → α → F} {T : E → β →ᵇ F} {V : Set E}
+    (hV : V ∈ 𝓝 0) (hT : ∀ f ∈ V, ∀ z, T f z = Φ f (j z))
     (hΦV : ∀ x ∈ K, ∃ Q : Set F, IsCompact Q ∧ ∀ f ∈ V, Φ f x ∈ Q)
     (hs : EquicontinuousOn (fun f : V => Φ f) K) :
     IsCompactOperator T := by
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let σ : C(β, K) := ⟨fun z => ⟨j z, hjK z⟩, j.continuous.subtype_mk _⟩
-  -- Only the functions indexed by `V` matter; `p` projects every `f` to one of them, and
-  -- equicontinuity makes each `Φ (p f)` continuous on `K`.
-  classical
-  let p : E → V := fun f => if h : f ∈ V then ⟨f, h⟩ else ⟨0, mem_of_mem_nhds hV⟩
-  obtain ⟨Q, hQ, hRQ⟩ := TauCeti.isCompactOperator_of_equicontinuous
-    (T := fun f => mkOfCompact ⟨K.domRestrict (Φ (p f)), (hs.continuousOn (p f)).domRestrict⟩)
-    hV (fun x => let ⟨Q, hQ, hΦQ⟩ := hΦV x x.property; ⟨Q, hQ, fun f _ => hΦQ _ (p f).property⟩)
-    (((equicontinuous_restrict_iff _).mpr hs).comp fun f : V => p f)
-  refine ⟨_, hQ.image (continuous_compContinuous σ),
-    Filter.mem_of_superset (Filter.inter_mem hV hRQ) fun f hf => ⟨_, hf.right, ext fun z => ?_⟩⟩
-  simp [p, hf.left, hT, σ]
+  -- The restrictions to `K` of the functions indexed by `V`, continuous by equicontinuity.
+  let R : V → C(K, F) := fun f => ⟨K.domRestrict (Φ f), (hs.continuousOn f).domRestrict⟩
+  have hR (f : V) : ⇑(R f) = K.domRestrict (Φ f) := ContinuousMap.coe_mk _ _
+  have h := ArzelaAscoli.isCompact_closure_range_of_equicontinuous (f := R)
+    (by simpa only [hR, Function.comp_def] using (equicontinuous_restrict_iff _).mpr hs) fun x => by
+      obtain ⟨Q, hQ, hΦQ⟩ := hΦV x x.property
+      exact ⟨Q, hQ, fun f => by simpa only [hR, Set.domRestrict_apply] using hΦQ f f.property⟩
+  -- Read the restrictions along `σ` as bounded functions on `β`.
+  let e := ContinuousMap.isometryEquivBoundedOfCompact K F
+  let G : C(K, F) → β →ᵇ F := fun g => (e g).compContinuous σ
+  have hG : Continuous G := (continuous_compContinuous σ).comp e.continuous
+  refine ⟨_, h.image hG,
+    Filter.mem_of_superset hV fun f hf => ⟨R ⟨f, hf⟩, subset_closure (mem_range_self _), ?_⟩⟩
+  ext z
+  simp only [G, e, compContinuous_apply, ContinuousMap.isometryEquivBoundedOfCompact_apply,
+    mkOfCompact_apply, hR, Set.domRestrict_apply, σ, ContinuousMap.coe_mk, hT f hf z]
