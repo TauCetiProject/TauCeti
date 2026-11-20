@@ -85,62 +85,21 @@ theorem zetaMomentLocalFactor_def (k x : ℝ) :
     zetaMomentLocalFactor k x = (1 - x) ^ (k ^ 2) * ₂F₁ k k 1 x :=
   (rfl)
 
-/-- The local series `∑_j c_k(j)² xʲ` over `ℝ`, for `|x| < 1`. -/
-private theorem hasSum_localSeries (k : ℝ) {x : ℝ} (hx : |x| < 1) :
-    HasSum (fun j : ℕ ↦ Ring.multichoose k j ^ 2 * x ^ j) (₂F₁ k k 1 x) :=
-  hasSum_multichoose_sq_mul_pow k (by rwa [Real.norm_eq_abs])
-
-/-- The local series splits as `1 + k² x` plus the tail `∑_j c_k(j + 2)² x^(j + 2)`. -/
-private theorem hypergeometric_eq_add_tsum (k : ℝ) {x : ℝ} (hx : |x| < 1) :
-    ₂F₁ k k 1 x =
-      1 + k ^ 2 * x + ∑' j : ℕ, Ring.multichoose k (j + 2) ^ 2 * x ^ (j + 2) := by
-  have h := hasSum_localSeries k hx
-  rw [← h.tsum_eq, ← h.summable.sum_add_tsum_nat_add 2]
-  simp [Finset.sum_range_succ]
-
-/-- For `0 ≤ x < 1`, the local series is at least `1 + k² x`. -/
-private theorem one_add_sq_mul_le_hypergeometric (k : ℝ) {x : ℝ} (hx₀ : 0 ≤ x) (hx₁ : x < 1) :
-    1 + k ^ 2 * x ≤ ₂F₁ k k 1 x := by
-  rw [hypergeometric_eq_add_tsum k (abs_lt.2 ⟨by linarith, hx₁⟩)]
-  exact le_add_of_nonneg_right (tsum_nonneg fun j ↦ by positivity)
-
-/-- On `[0, 1/2]`, the local series is `1 + k² x + O(x²)`. -/
-private theorem exists_hypergeometric_le (k : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ x : ℝ, 0 ≤ x → x ≤ 1 / 2 → ₂F₁ k k 1 x ≤ 1 + k ^ 2 * x + C * x ^ 2 := by
-  -- The tail at `x` is dominated termwise by `x²` times the shifted series at `1/2`.
-  set g : ℕ → ℝ := fun j ↦ Ring.multichoose k (j + 2) ^ 2 * (1 / 2) ^ j
-  have hg : Summable g := by
-    have h := (summable_nat_add_iff 2).2 (hasSum_localSeries k (x := 1 / 2) (by norm_num)).summable
-    convert h.mul_left 4 using 2 with j
-    simp only [g, pow_succ]
-    ring
-  refine ⟨∑' j, g j, tsum_nonneg fun j ↦ by positivity, fun x hx₀ hx₁ ↦ ?_⟩
-  rw [hypergeometric_eq_add_tsum k (abs_lt.2 ⟨by linarith, by linarith⟩), mul_comm (∑' j, g j),
-    ← tsum_mul_left]
-  have hterm (j : ℕ) : Ring.multichoose k (j + 2) ^ 2 * x ^ (j + 2) ≤ x ^ 2 * g j := by
-    have hxj : x ^ j ≤ (1 / 2) ^ j := pow_le_pow_left₀ hx₀ hx₁ j
-    calc Ring.multichoose k (j + 2) ^ 2 * x ^ (j + 2)
-        = x ^ 2 * (Ring.multichoose k (j + 2) ^ 2 * x ^ j) := by ring
-      _ ≤ x ^ 2 * g j :=
-        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hxj (by positivity)) (by positivity)
-  have hsum : Summable fun j ↦ Ring.multichoose k (j + 2) ^ 2 * x ^ (j + 2) :=
-    (hg.mul_left (x ^ 2)).of_nonneg_of_le (fun j ↦ by positivity) hterm
-  exact (add_le_add_iff_left _).2 (hsum.tsum_le_tsum hterm (hg.mul_left _))
-
 /-- The local factor is positive for `0 ≤ x < 1`. -/
 theorem zetaMomentLocalFactor_pos (k : ℝ) {x : ℝ} (hx₀ : 0 ≤ x) (hx₁ : x < 1) :
     0 < zetaMomentLocalFactor k x :=
   mul_pos (rpow_pos_of_pos (by linarith) _)
-    (by nlinarith [one_add_sq_mul_le_hypergeometric k hx₀ hx₁, sq_nonneg k])
+    (by nlinarith [one_add_sq_mul_le_ordinaryHypergeometric k hx₀ hx₁, sq_nonneg k])
 
 /-- The first-order terms cancel in the local factor: `log ((1 - x)^(k²) ₂F₁(k, k; 1; x))` is
 `O(x²)` on `[0, 1/2]`. -/
 private theorem exists_abs_log_zetaMomentLocalFactor_le (k : ℝ) :
     ∃ C, ∀ x : ℝ, 0 ≤ x → x ≤ 1 / 2 → |log (zetaMomentLocalFactor k x)| ≤ C * x ^ 2 := by
-  obtain ⟨C, hC, hup⟩ := exists_hypergeometric_le k
+  obtain ⟨C, hC, hup⟩ :=
+    exists_ordinaryHypergeometric_le k (r := 1 / 2) (by norm_num) (by norm_num)
   refine ⟨2 * k ^ 2 + C + (k ^ 2 + C) ^ 2, fun x hx₀ hx₁ ↦ ?_⟩
   set S := ₂F₁ k k 1 x
-  have hlow : 1 + k ^ 2 * x ≤ S := one_add_sq_mul_le_hypergeometric k hx₀ (by linarith)
+  have hlow : 1 + k ^ 2 * x ≤ S := one_add_sq_mul_le_ordinaryHypergeometric k hx₀ (by linarith)
   have hup : S ≤ 1 + k ^ 2 * x + C * x ^ 2 := hup x hx₀ hx₁
   have hk : 0 ≤ k ^ 2 := sq_nonneg k
   have hS : 0 < S := by nlinarith
@@ -218,7 +177,7 @@ theorem zetaMomentArithmeticFactor_pos (k : ℝ) : 0 < zetaMomentArithmeticFacto
 
 /-- At `k = 1` every local factor is `1`: `c_1(j) = 1` and `₂F₁(1, 1; 1; x) = 1/(1 - x)`. -/
 theorem zetaMomentLocalFactor_one {x : ℝ} (hx : |x| < 1) : zetaMomentLocalFactor 1 x = 1 := by
-  have h := hasSum_localSeries 1 hx
+  have h := hasSum_multichoose_sq_mul_pow (1 : ℝ) (x := x) (by rwa [Real.norm_eq_abs])
   simp only [Ring.multichoose_one, one_pow, one_mul] at h
   have hx₁ : 1 - x ≠ 0 := by linarith [le_abs_self x]
   rw [zetaMomentLocalFactor, h.unique (hasSum_geometric_of_abs_lt_one hx), one_pow, rpow_one,
@@ -238,7 +197,7 @@ theorem zetaMomentLocalFactor_two {x : ℝ} (hx : |x| < 1) :
   have h := ((hasSum_choose_mul_geometric_of_norm_lt_one 2 hx').mul_left 2).sub
     (hasSum_choose_mul_geometric_of_norm_lt_one 1 hx')
   have hS : ₂F₁ (2 : ℝ) 2 1 x = 2 * (1 / (1 - x) ^ 3) - 1 / (1 - x) ^ 2 := by
-    refine (hasSum_localSeries 2 hx).unique (h.congr_fun fun j ↦ ?_)
+    refine (hasSum_multichoose_sq_mul_pow (2 : ℝ) hx').unique (h.congr_fun fun j ↦ ?_)
     rw [Ring.multichoose_two, Nat.cast_choose_two, Nat.choose_one_right]
     push_cast
     ring

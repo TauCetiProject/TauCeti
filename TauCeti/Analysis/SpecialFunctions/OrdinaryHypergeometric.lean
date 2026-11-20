@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
-public import Mathlib.RingTheory.Binomial
 public import TauCeti.Analysis.Analytic.OfScalars
+public import TauCeti.RingTheory.Binomial
 import Mathlib.Analysis.Analytic.ChangeOrigin
 
 /-!
@@ -34,13 +34,15 @@ is equivalent to the recurrence `(n + 1) (c + n) cₙ₊₁ = (a + n) (b + n) c�
 * `TauCeti.one_le_radius_ordinaryHypergeometricSeries`: the radius of convergence of
   `ordinaryHypergeometricSeries 𝔸 a b c` is at least `1`.
 * `TauCeti.analyticOnNhd_ordinaryHypergeometric`: `₂F₁ a b c` is analytic on the open unit ball.
-* `TauCeti.multichoose_eq_ascPochhammer_eval_div`: `Ring.multichoose r n = (r)ₙ / n!` in
-  characteristic zero.
 * `TauCeti.hasSum_ordinaryHypergeometric`: on the open unit ball, `₂F₁ a b c` is the sum of its
   series.
 * `TauCeti.hasSum_multichoose_mul_multichoose_mul_pow`: with lower parameter `1`, the coefficients
   are products of generalized multichoose numbers, so `∑ (a)ₙ (b)ₙ / (n!)² xⁿ = ₂F₁(a, b; 1; x)`.
   For `a = b` over `𝕂` this is `TauCeti.hasSum_multichoose_sq_mul_pow`.
+* `TauCeti.ordinaryHypergeometric_eq_one_add_sq_mul_add_tsum`,
+  `TauCeti.one_add_sq_mul_le_ordinaryHypergeometric`, `TauCeti.exists_ordinaryHypergeometric_le`:
+  `₂F₁(a, a; 1; x) = 1 + a² x + O(x²)`, with the explicit tail on the open unit disc and two-sided
+  bounds for real `0 ≤ x ≤ r < 1`.
 * `TauCeti.ordinaryHypergeometric_neg_nat_eq_sum`: a terminating `₂F₁(−n, b; c; z)` is the sum of
   its first `n + 1` terms.
 * `TauCeti.ordinaryHypergeometricCoefficient_add_one`: the coefficient recurrence.
@@ -78,21 +80,13 @@ theorem ordinaryHypergeometricCoefficient_add_one {K : Type*} [Field K] (a b c :
     Nat.cast_one, ascPochhammer_succ_eval, div_eq_mul_inv, mul_inv]
   ring
 
-/-- In a field of characteristic zero, the generalized multichoose number is the rising factorial
-divided by the factorial: `Ring.multichoose r n = (r)ₙ / n!`. -/
-theorem multichoose_eq_ascPochhammer_eval_div {K : Type*} [Field K] [CharZero K] (r : K)
-    (n : ℕ) : Ring.multichoose r n = (ascPochhammer K n).eval r / n.factorial := by
-  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer r n
-  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
-  rw [← h, mul_div_cancel_left₀ _ (by exact_mod_cast n.factorial_ne_zero)]
-
 /-- With lower parameter `1`, the hypergeometric coefficient `(a)ₙ (b)ₙ / ((1)ₙ n!)` is the product
 of the generalized multichoose numbers `(a)ₙ / n!` and `(b)ₙ / n!`. -/
 theorem ordinaryHypergeometricCoefficient_one_eq_multichoose_mul {K : Type*} [Field K] [CharZero K]
     (a b : K) (n : ℕ) :
     ordinaryHypergeometricCoefficient a b 1 n = Ring.multichoose a n * Ring.multichoose b n := by
-  rw [ordinaryHypergeometricCoefficient, multichoose_eq_ascPochhammer_eval_div,
-    multichoose_eq_ascPochhammer_eval_div, ascPochhammer_eval_one]
+  rw [ordinaryHypergeometricCoefficient, Ring.multichoose_eq_ascPochhammer_eval_div,
+    Ring.multichoose_eq_ascPochhammer_eval_div, ascPochhammer_eval_one]
   ring
 
 variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [NormedAlgebra 𝕂 𝔸]
@@ -156,6 +150,47 @@ theorem hasSum_multichoose_mul_multichoose_mul_pow [CompleteSpace 𝔸] (a b : �
 theorem hasSum_multichoose_sq_mul_pow (a : 𝕂) {x : 𝕂} (hx : ‖x‖ < 1) :
     HasSum (fun n ↦ Ring.multichoose a n ^ 2 * x ^ n) (₂F₁ a a 1 x) := by
   simpa only [sq, smul_eq_mul] using hasSum_multichoose_mul_multichoose_mul_pow (𝔸 := 𝕂) a a hx
+
+/-- Inside the open unit disc, `₂F₁(a, a; 1; x)` is `1 + a² x` plus the tail
+`∑ c_a(n + 2)² x^(n + 2)` of its series, where `c_a(n) = (a)ₙ / n!`. -/
+theorem ordinaryHypergeometric_eq_one_add_sq_mul_add_tsum (a : 𝕂) {x : 𝕂} (hx : ‖x‖ < 1) :
+    ₂F₁ a a 1 x = 1 + a ^ 2 * x + ∑' n : ℕ, Ring.multichoose a (n + 2) ^ 2 * x ^ (n + 2) := by
+  have h := hasSum_multichoose_sq_mul_pow a hx
+  rw [← h.tsum_eq, ← h.summable.sum_add_tsum_nat_add 2]
+  simp [Finset.sum_range_succ]
+
+/-- For `0 ≤ x < 1`, `₂F₁(a, a; 1; x)` is at least `1 + a² x`. -/
+theorem one_add_sq_mul_le_ordinaryHypergeometric (a : ℝ) {x : ℝ} (hx₀ : 0 ≤ x) (hx₁ : x < 1) :
+    1 + a ^ 2 * x ≤ ₂F₁ a a 1 x := by
+  rw [ordinaryHypergeometric_eq_one_add_sq_mul_add_tsum a
+    (by rw [Real.norm_eq_abs, abs_of_nonneg hx₀]; exact hx₁)]
+  exact le_add_of_nonneg_right (tsum_nonneg fun n ↦ by positivity)
+
+/-- On `[0, r]` with `0 < r < 1`, `₂F₁(a, a; 1; x)` is `1 + a² x + O(x²)`: it is at most
+`1 + a² x + C x²` for some constant `C ≥ 0`. -/
+theorem exists_ordinaryHypergeometric_le (a : ℝ) {r : ℝ} (hr₀ : 0 < r) (hr₁ : r < 1) :
+    ∃ C, 0 ≤ C ∧ ∀ x : ℝ, 0 ≤ x → x ≤ r → ₂F₁ a a 1 x ≤ 1 + a ^ 2 * x + C * x ^ 2 := by
+  -- The tail at `x` is dominated termwise by `x²` times the shifted series at `r`.
+  set g : ℕ → ℝ := fun n ↦ Ring.multichoose a (n + 2) ^ 2 * r ^ n
+  have hg : Summable g := by
+    have h := (summable_nat_add_iff 2).2 (hasSum_multichoose_sq_mul_pow a
+      (by rwa [Real.norm_eq_abs, abs_of_pos hr₀])).summable
+    convert h.mul_left (r ^ 2)⁻¹ using 2 with n
+    simp only [g, pow_add]
+    field_simp
+  refine ⟨∑' n, g n, tsum_nonneg fun n ↦ by positivity, fun x hx₀ hxr ↦ ?_⟩
+  rw [ordinaryHypergeometric_eq_one_add_sq_mul_add_tsum a
+    (by rw [Real.norm_eq_abs, abs_of_nonneg hx₀]; linarith), mul_comm (∑' n, g n),
+    ← tsum_mul_left]
+  have hterm (n : ℕ) : Ring.multichoose a (n + 2) ^ 2 * x ^ (n + 2) ≤ x ^ 2 * g n := by
+    have hxn : x ^ n ≤ r ^ n := pow_le_pow_left₀ hx₀ hxr n
+    calc Ring.multichoose a (n + 2) ^ 2 * x ^ (n + 2)
+        = x ^ 2 * (Ring.multichoose a (n + 2) ^ 2 * x ^ n) := by ring
+      _ ≤ x ^ 2 * g n :=
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hxn (by positivity)) (by positivity)
+  have hsum : Summable fun n ↦ Ring.multichoose a (n + 2) ^ 2 * x ^ (n + 2) :=
+    (hg.mul_left (x ^ 2)).of_nonneg_of_le (fun n ↦ by positivity) hterm
+  exact (add_le_add_iff_left _).2 (hsum.tsum_le_tsum hterm (hg.mul_left _))
 
 section Terminating
 
