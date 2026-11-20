@@ -40,6 +40,9 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.exists_integrable_norm_iteratedFDeriv_add_le`: `‖D^n f (z + h)‖` has an integrable
   envelope in `z`, uniformly for `‖h‖ ≤ 1`, so convolutions with `f` can be differentiated under
   the integral.
+* `SchwartzMap.postcompCLM_re_add_I_smul_im`: a complex Schwartz function is its real part plus `I`
+  times its imaginary part, so complex-linear maps out of `𝓢(E, ℂ)` are determined by real
+  Schwartz functions.
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
@@ -316,6 +319,20 @@ theorem closure_range_toLp_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace 
       ((LinearMap.range (toLpCLM ℝ F p μ).toLinearMap).topologicalClosure : Set (Lp F p μ)) := by
   have hcoe : ⇑(toLpCLM ℝ F p μ) = fun f ↦ f.toLp p μ := funext fun _ ↦ toLpCLM_apply
   rw [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hcoe]
+
+section RealImag
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A complex Schwartz function is its real part plus `I` times its imaginary part, both embedded
+back into complex Schwartz space by `Complex.ofRealCLM`. -/
+theorem postcompCLM_re_add_I_smul_im (φ : 𝓢(E, ℂ)) :
+    (φ.postcompCLM Complex.reCLM).postcompCLM Complex.ofRealCLM +
+      Complex.I • (φ.postcompCLM Complex.imCLM).postcompCLM Complex.ofRealCLM = φ := by
+  ext x
+  simpa [mul_comm] using Complex.re_add_im (φ x)
+
+end RealImag
 
 section Conj
 
