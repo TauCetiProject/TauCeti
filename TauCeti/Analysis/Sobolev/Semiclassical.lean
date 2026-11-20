@@ -122,17 +122,18 @@ theorem semiclassicalSobolevNorm_neg (k : ℕ) (h : ℝ) (f : E → F) :
     semiclassicalSobolevNorm k h (-f) = semiclassicalSobolevNorm k h f := by
   simp [semiclassicalSobolevNorm, iteratedFDeriv_neg]
 
-/-- **Homogeneity of the semiclassical norm.** For `f` of class `Cᵏ`,
-`‖c f‖_{k,h} = |c| ‖f‖_{k,h}`. -/
-theorem semiclassicalSobolevNorm_const_smul {k : ℕ} {f : E → F} (hf : ContDiff ℝ k f) (h c : ℝ) :
+/-- **Homogeneity of the semiclassical norm.** `‖c f‖_{k,h} = |c| ‖f‖_{k,h}`. -/
+theorem semiclassicalSobolevNorm_const_smul (k : ℕ) (h c : ℝ) (f : E → F) :
     semiclassicalSobolevNorm k h (c • f) = |c| * semiclassicalSobolevNorm k h f := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
   rw [semiclassicalSobolevNorm, semiclassicalSobolevNorm, mul_left_comm |c|]
   congr 1
   rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have hi : (i : ℕ∞) ≤ k := by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hD : iteratedFDeriv ℝ i (c • f) = c • iteratedFDeriv ℝ i f :=
-    funext fun _ ↦ iteratedFDeriv_const_smul_apply ((hf.of_le (by exact_mod_cast hi)).contDiffAt)
+    funext fun _ ↦
+      (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
   rw [hD, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs, mul_left_comm]
 
 /-- **The triangle inequality for the semiclassical norm.** For `f` and `g` of class `Cᵏ`, with

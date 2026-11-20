@@ -22,8 +22,9 @@ multiplication, with the estimate
 
 for a constant `C` depending only on `E` and `k` (`TauCeti.Wkp.exists_norm_mul_le`). This is the
 algebra property of the Bessel-potential space `H^k(E)` (`BesselPotentialSpace.mulCLM`),
-transported through the identification `W^{k,2}(E) ≃ H^k(E)` of
-`TauCeti.Wkp.toBesselPotentialSpace`, whose inverse is bounded on its range.
+transported through the bounded embedding `TauCeti.Wkp.toBesselPotentialSpace` of `W^{k,2}(E)`
+into `H^{k,2}(E, ℂ)`, whose range is the real-valued elements and whose inverse is bounded on
+that range.
 
 For classical functions this gives the two estimates that make the `L²` norms of the derivatives
 through order `k` behave like a Banach algebra norm. If `f` and `g` are `Cᵏ` on `E` and their
