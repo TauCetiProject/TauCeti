@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Artanh
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # The normalized exponential partial sums `e^{-nx} e_n(nx)`
@@ -127,15 +128,6 @@ theorem one_sub_exp_neg_mul_sum_pow_div_factorial_le_of_le {n : ℕ} {y : ℝ} (
 
 /-! ### The density `tⁿ e^{-t}` on either side of its mode -/
 
-/-- For `0 ≤ u`, `(1 - u) e^u ≤ (1 + u) e^{-u}`: this is `sinh u ≤ u cosh u`, that is
-`Real.tanh_le_self`. -/
-private lemma one_sub_mul_exp_le {u : ℝ} (hu0 : 0 ≤ u) :
-    (1 - u) * rexp u ≤ (1 + u) * rexp (-u) := by
-  have h := Real.tanh_le_self hu0
-  rw [Real.tanh_eq_sinh_div_cosh, div_le_iff₀ (Real.cosh_pos u), Real.sinh_eq,
-    Real.cosh_eq] at h
-  linarith
-
 /-- For `0 ≤ u ≤ 1 / 2`, `(1 + u) e^{-u} ≤ e^{(8 / 3) u³} (1 - u) e^u`. -/
 private lemma one_add_mul_exp_neg_le {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u ≤ 1 / 2) :
     (1 + u) * rexp (-u) ≤ rexp (8 / 3 * u ^ 3) * ((1 - u) * rexp u) := by
@@ -165,6 +157,12 @@ private lemma pow_mul_exp_neg_eq (m : ℕ) (v : ℝ) :
     show (m : ℝ) + m * v = m * (1 + v) by ring, mul_pow]
   ring
 
+/-- The density `tᵐ e^{-t}` at `t = m (1 - u)` is `(m (1 - u) e^u)ᵐ e^{-m}`. -/
+private lemma pow_mul_exp_neg_sub_eq (m : ℕ) (u : ℝ) :
+    ((m : ℝ) - m * u) ^ m * rexp (-((m : ℝ) - m * u)) =
+      ((m : ℝ) * ((1 - u) * rexp u)) ^ m * rexp (-m) := by
+  simpa [sub_eq_add_neg] using pow_mul_exp_neg_eq m (-u)
+
 /-- **Reflection about the mode.** For `0 ≤ s ≤ m`, the density `tᵐ e^{-t}` at `m - s` is at most
 its value at `m + s`. -/
 private lemma pow_mul_exp_neg_sub_le (m : ℕ) {s : ℝ} (hs0 : 0 ≤ s) (hsm : s ≤ m) :
@@ -174,13 +172,11 @@ private lemma pow_mul_exp_neg_sub_le (m : ℕ) {s : ℝ} (hs0 : 0 ≤ s) (hsm : 
   have hm' : (0 : ℝ) < m := Nat.cast_pos.2 hm
   obtain ⟨u, rfl⟩ : ∃ u, s = m * u := ⟨s / m, by rw [mul_div_cancel₀ _ hm'.ne']⟩
   have hu0 : 0 ≤ u := (mul_nonneg_iff_of_pos_left hm').1 hs0
-  have hneg := pow_mul_exp_neg_eq m (-u)
-  rw [neg_neg, mul_neg, ← sub_eq_add_neg, ← sub_eq_add_neg] at hneg
-  rw [hneg, pow_mul_exp_neg_eq]
+  rw [pow_mul_exp_neg_sub_eq, pow_mul_exp_neg_eq]
   have hu1 : u ≤ 1 := (mul_le_iff_le_one_right hm').1 hsm
   have : 0 ≤ (m : ℝ) * ((1 - u) * rexp u) :=
     mul_nonneg hm'.le (mul_nonneg (by linarith) (Real.exp_pos u).le)
-  have := one_sub_mul_exp_le hu0
+  have := Real.one_sub_mul_exp_le_one_add_mul_exp_neg hu0
   gcongr
 
 /-- **Comparison near the mode.** For `0 ≤ s ≤ m / 2`, the density `tᵐ e^{-t}` at `m + s` is at
@@ -188,9 +184,7 @@ most `exp ((8 / 3) m (s / m)³)` times its value at `m - s`, written with `s = m
 private lemma pow_mul_exp_neg_add_le (m : ℕ) {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u ≤ 1 / 2) :
     ((m : ℝ) + m * u) ^ m * rexp (-((m : ℝ) + m * u)) ≤
       rexp (8 / 3 * m * u ^ 3) * (((m : ℝ) - m * u) ^ m * rexp (-((m : ℝ) - m * u))) := by
-  have hneg := pow_mul_exp_neg_eq m (-u)
-  rw [neg_neg, mul_neg, ← sub_eq_add_neg, ← sub_eq_add_neg] at hneg
-  rw [hneg, pow_mul_exp_neg_eq]
+  rw [pow_mul_exp_neg_sub_eq, pow_mul_exp_neg_eq]
   calc ((m : ℝ) * ((1 + u) * rexp (-u))) ^ m * rexp (-m)
       ≤ (rexp (8 / 3 * u ^ 3) * (m * ((1 - u) * rexp u))) ^ m * rexp (-m) := by
         gcongr ?_ ^ _ * _
@@ -200,18 +194,6 @@ private lemma pow_mul_exp_neg_add_le (m : ℕ) {u : ℝ} (hu0 : 0 ≤ u) (hu1 : 
         rw [mul_pow, show (8 / 3 : ℝ) * m * u ^ 3 = m * (8 / 3 * u ^ 3) by ring,
           Real.exp_nat_mul]
         ring
-
-/-- `∫₀ʸ tⁿ e^{-t} dt = n! (1 - e^{-y} e_n(y))` for `y ≥ 0`, the regularized form
-`P(n + 1, y) = 1 - e^{-y} e_n(y)` of `TauCeti.regularizedGamma_natCast`. -/
-private lemma integral_pow_mul_exp_neg (n : ℕ) {y : ℝ} (hy : 0 ≤ y) :
-    ∫ t in (0 : ℝ)..y, t ^ n * rexp (-t) =
-      n ! * (1 - rexp (-y) * ∑ k ∈ range (n + 1), y ^ k / k !) := by
-  have h := regularizedGamma_natCast (n := n + 1) n.succ_ne_zero hy
-  rw [regularizedGamma_eq_div, lowerIncompleteGamma_eq_integral hy] at h
-  push_cast at h
-  rw [Real.Gamma_nat_eq_factorial, add_sub_cancel_right] at h
-  rw [← h, mul_div_cancel₀ _ (by positivity)]
-  simp_rw [Real.rpow_natCast]
 
 /-- The mass of `tⁿ e^{-t} dt` on `[0, n]`, reflected about the mode `t = n`, is
 `n! (1 - e^{-n} e_n(n))`. -/
@@ -238,13 +220,6 @@ private lemma integral_reflect_right (n : ℕ) {w : ℝ} (hw : 0 ≤ w) :
     (hf.intervalIntegrable (μ := MeasureTheory.volume) 0 (n : ℝ)),
     integral_pow_mul_exp_neg n (by positivity), integral_pow_mul_exp_neg n n.cast_nonneg]
   ring
-
-/-- `e^{-y} e_n(y) ≤ 1` for `y ≥ 0`, from `Real.sum_le_exp_of_nonneg`. -/
-private lemma exp_neg_mul_sum_pow_div_factorial_le_one (n : ℕ) {y : ℝ} (hy : 0 ≤ y) :
-    rexp (-y) * ∑ k ∈ range (n + 1), y ^ k / k ! ≤ 1 := by
-  calc rexp (-y) * ∑ k ∈ range (n + 1), y ^ k / k ! ≤ rexp (-y) * rexp y := by
-        gcongr; exact sum_le_exp_of_nonneg hy _
-    _ = 1 := by rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
 
 /-! ### Ramanujan's problem: `e^{-n} e_n(n) → 1 / 2` -/
 
@@ -364,13 +339,6 @@ theorem two_mul_exp_neg_mul_sum_pow_div_factorial_self_sub_one_le (n : ℕ) {v :
     mul_le_mul_of_nonneg_left ha1 hε0]
 
 /-! ### The limits DLMF 8.11.13 -/
-
-/-- `x e^{1 - x} < 1` for `x ≠ 1`. -/
-private lemma mul_exp_one_sub_lt_one {x : ℝ} (hx : x ≠ 1) : x * rexp (1 - x) < 1 := by
-  have h := Real.add_one_lt_exp (sub_ne_zero.2 hx)
-  rw [sub_add_cancel] at h
-  calc x * rexp (1 - x) < rexp (x - 1) * rexp (1 - x) := by gcongr
-    _ = 1 := by rw [← Real.exp_add, sub_add_sub_cancel, sub_self, Real.exp_zero]
 
 /-- **DLMF 8.11.13 for `0 ≤ x < 1`**: `e^{-nx} e_n(nx) → 1` as `n → ∞`. -/
 theorem tendsto_exp_neg_mul_sum_pow_div_factorial_of_lt_one {x : ℝ} (hx0 : 0 ≤ x) (hx : x < 1) :

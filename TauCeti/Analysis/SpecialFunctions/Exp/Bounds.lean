@@ -21,6 +21,7 @@ is bounded on `x ≥ 0`.
 
 ## Main results
 
+* `TauCeti.mul_exp_one_sub_lt_one`: `x exp (1 - x) < 1` for `x ≠ 1`.
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
 * `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
   `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
@@ -44,6 +45,13 @@ public section
 open Filter Real
 
 namespace TauCeti
+
+/-- `x exp (1 - x) < 1` for `x ≠ 1`, a rescaling of `x + 1 < exp x` for `x ≠ 0`. -/
+theorem mul_exp_one_sub_lt_one {x : ℝ} (hx : x ≠ 1) : x * exp (1 - x) < 1 := by
+  have h := add_one_lt_exp (sub_ne_zero.2 hx)
+  rw [sub_add_cancel] at h
+  calc x * exp (1 - x) < exp (x - 1) * exp (1 - x) := by gcongr
+    _ = 1 := by rw [← exp_add, sub_add_sub_cancel, sub_self, exp_zero]
 
 /-- An affine function of `x` is eventually smaller than `exp (a x)` when `0 < a`. -/
 theorem eventually_mul_add_lt_exp_mul {a : ℝ} (ha : 0 < a) (A B : ℝ) :

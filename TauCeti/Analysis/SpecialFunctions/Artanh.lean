@@ -56,6 +56,8 @@ follows from the inversion `Real.tanh_artanh` together with the addition formula
   `x ≤ artanh x ≤ x / (1 - x ^ 2)` on `[0, 1)`, obtained by bounding that integrand between
   its values at the two endpoints.
 * `Real.tanh_le_self` — the inverse form `tanh x ≤ x` of the lower bound, for `0 ≤ x`.
+* `Real.one_sub_mul_exp_le_one_add_mul_exp_neg` — the same bound written with exponentials,
+  `(1 - u) e^u ≤ (1 + u) e^{-u}` for `0 ≤ u`.
 
 The motivation is the hyperbolic (Poincaré) metric on the unit disc. Tau Ceti's
 `TauCeti.hyperbolicDist` is `Real.artanh` of the pseudo-hyperbolic expression, so the additive
@@ -303,6 +305,15 @@ theorem _root_.Real.self_le_artanh {x : ℝ} (hx : 0 ≤ x) (hx₁ : x < 1) : x 
 theorem _root_.Real.tanh_le_self {x : ℝ} (hx : 0 ≤ x) : Real.tanh x ≤ x := by
   simpa only [Real.artanh_tanh] using
     Real.self_le_artanh (Real.tanh_nonneg hx) (Real.tanh_lt_one x)
+
+/-- For `0 ≤ u`, `(1 - u) e^u ≤ (1 + u) e^{-u}`: this is `sinh u ≤ u cosh u`, that is
+`Real.tanh_le_self`. -/
+theorem _root_.Real.one_sub_mul_exp_le_one_add_mul_exp_neg {u : ℝ} (hu : 0 ≤ u) :
+    (1 - u) * Real.exp u ≤ (1 + u) * Real.exp (-u) := by
+  have h := Real.tanh_le_self hu
+  rw [Real.tanh_eq_sinh_div_cosh, div_le_iff₀ (Real.cosh_pos u), Real.sinh_eq,
+    Real.cosh_eq] at h
+  linarith
 
 /-- **The elementary upper bound `artanh x ≤ x / (1 - x ^ 2)` on `[0, 1)`**: the Poincaré
 density `(1 - t ^ 2)⁻¹` is increasing, so on `[0, x]` it is at most its value at `x`. -/

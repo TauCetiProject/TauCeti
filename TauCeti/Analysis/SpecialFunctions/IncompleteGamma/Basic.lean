@@ -51,6 +51,9 @@ the parameter range.
 * `TauCeti.regularizedGamma_one` — `P(1, x) = 1 - e ^ (-x)` for `0 ≤ x`, the exponential cdf;
 * `TauCeti.regularizedGamma_natCast` — the Erlang form
   `P(n, x) = 1 - exp (-x) * ∑ j < n, x ^ j / j!` at a positive integer shape `n`, for `0 ≤ x`;
+* `TauCeti.integral_pow_mul_exp_neg` — its unregularized form
+  `∫₀ˣ tⁿ e^{-t} dt = n! (1 - exp (-x) * ∑ k ≤ n, x ^ k / k!)`, with the bound
+  `TauCeti.exp_neg_mul_sum_pow_div_factorial_le_one` on the exponential partial sums;
 * `TauCeti.Real.erf_eq_regularizedGamma_half_sq` — the error function is the regularized
   incomplete gamma function of shape `1 / 2` after squaring, on the nonnegative half-line;
 * `TauCeti.strictMonoOn_regularizedGamma`, `TauCeti.regularizedGamma_pos_iff`,
@@ -418,6 +421,28 @@ theorem regularizedGamma_natCast {n : ℕ} (hn : n ≠ 0) (hx : 0 ≤ x) :
     rw [Nat.cast_succ, regularizedGamma_add_one (Nat.cast_pos.2 (Nat.pos_of_ne_zero hn')) hx,
       ih hn', Real.rpow_natCast, Real.Gamma_nat_eq_factorial, Finset.sum_range_succ]
     ring
+
+/-- `∫₀ˣ tⁿ e^{-t} dt = n! (1 - e^{-x} ∑_{k ≤ n} x ^ k / k!)` for `0 ≤ x`: the lower incomplete
+gamma function `γ(n + 1, x)` at a natural shape, unregularized from
+`TauCeti.regularizedGamma_natCast`. -/
+theorem integral_pow_mul_exp_neg (n : ℕ) (hx : 0 ≤ x) :
+    ∫ t in (0 : ℝ)..x, t ^ n * Real.exp (-t) =
+      n.factorial *
+        (1 - Real.exp (-x) * ∑ k ∈ Finset.range (n + 1), x ^ k / (k.factorial : ℝ)) := by
+  have h := regularizedGamma_natCast (n := n + 1) n.succ_ne_zero hx
+  rw [regularizedGamma_eq_div, lowerIncompleteGamma_eq_integral hx] at h
+  push_cast at h
+  rw [Real.Gamma_nat_eq_factorial, add_sub_cancel_right] at h
+  rw [← h, mul_div_cancel₀ _ (by positivity)]
+  simp_rw [Real.rpow_natCast]
+
+/-- `e^{-x} ∑_{k ≤ n} x ^ k / k! ≤ 1` for `0 ≤ x`, from `Real.sum_le_exp_of_nonneg`. -/
+theorem exp_neg_mul_sum_pow_div_factorial_le_one (n : ℕ) (hx : 0 ≤ x) :
+    Real.exp (-x) * ∑ k ∈ Finset.range (n + 1), x ^ k / (k.factorial : ℝ) ≤ 1 := by
+  calc Real.exp (-x) * ∑ k ∈ Finset.range (n + 1), x ^ k / (k.factorial : ℝ)
+      ≤ Real.exp (-x) * Real.exp x := by
+        gcongr; exact Real.sum_le_exp_of_nonneg hx _
+    _ = 1 := by rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
 
 /-! ### Relation with the error function -/
 
