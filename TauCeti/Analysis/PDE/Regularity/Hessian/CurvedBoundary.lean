@@ -137,54 +137,6 @@ private theorem continuousWithinAt_comp_comp_adjoint {Ω Ω' : Set F}
 
 end Coefficients
 
-/-- **Restricting a straightening chart.** If `Φ` maps the part of `U'` in `H` onto `Ω ∩ U`, with
-inverse `Ψ`, then for every open `W` it maps the part of `U' ∩ Φ⁻¹(W)` in `H` onto `Ω ∩ U ∩ W`,
-and both maps restrict to changes of variables between these sets with the same constants. -/
-private theorem exists_isChangeOfVariables_inf {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] {U U' Omega : Opens F} {H : Set F} {Φ Ψ : F → F} {k : ℕ}
-    {L L' c c' : ℝ} (hΦ : IsChangeOfVariables k U' U Φ L c)
-    (hΨ : IsChangeOfVariables k U U' Ψ L' c') (hΨΦ : LeftInvOn Ψ Φ U')
-    (hΦΨ : RightInvOn Ψ Φ U) (himage : Φ '' (H ∩ U') = (Omega : Set F) ∩ U) (W : Opens F) :
-    ∃ U'₁ : Opens F, IsChangeOfVariables k U'₁ (U ⊓ W) Φ L c ∧
-      IsChangeOfVariables k (U ⊓ W) U'₁ Ψ L' c' ∧ LeftInvOn Ψ Φ U'₁ ∧
-        RightInvOn Ψ Φ (U ⊓ W : Opens F) ∧
-          Φ '' (H ∩ U'₁) = (Omega : Set F) ∩ (U ⊓ W : Opens F) := by
-  let U'₁ : Opens F := ⟨U' ∩ Φ ⁻¹' W,
-    hΦ.differentiableOn.continuousOn.isOpen_inter_preimage U'.isOpen W.isOpen⟩
-  have hU'₁ : U'₁ ≤ U' := fun x hx => hx.1
-  refine ⟨U'₁, hΦ.mono_set hU'₁ fun x hx => ⟨hΦ.mapsTo hx.1, hx.2⟩,
-    hΨ.mono_set inf_le_left fun y hy => ⟨hΨ.mapsTo hy.1, ?_⟩, hΨΦ.mono hU'₁,
-    hΦΨ.mono inf_le_left, ?_⟩
-  · rw [mem_preimage, hΦΨ hy.1]
-    exact hy.2
-  · ext y
-    constructor
-    · rintro ⟨x, ⟨hxH, hxU', hxW⟩, rfl⟩
-      have hx : Φ x ∈ (Omega : Set F) ∩ U := himage ▸ mem_image_of_mem Φ ⟨hxH, hxU'⟩
-      exact ⟨hx.1, hx.2, hxW⟩
-    · rintro ⟨hyΩ, hyU, hyW⟩
-      obtain ⟨x, ⟨hxH, hxU'⟩, rfl⟩ : y ∈ Φ '' (H ∩ U') := himage ▸ ⟨hyΩ, hyU⟩
-      exact ⟨x, ⟨hxH, hxU', hyW⟩, rfl⟩
-
-/-- **The chart between the two sides.** If `Φ` maps the part of `U'` in `H` onto `Ω ∩ U`, with
-inverse `Ψ`, then `Φ` restricts to a change of variables from `H ∩ U'` into `Ω ∩ U` and `Ψ` to one
-from `Ω ∩ U` into `H ∩ U'`, with the same constants. -/
-private theorem isChangeOfVariables_inf_of_image_eq {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] {U U' Omega H : Opens F} {Φ Ψ : F → F} {k : ℕ} {L L' c c' : ℝ}
-    (hΦ : IsChangeOfVariables k U' U Φ L c) (hΨ : IsChangeOfVariables k U U' Ψ L' c')
-    (hΨΦ : LeftInvOn Ψ Φ U') (himage : Φ '' ((H : Set F) ∩ U') = (Omega : Set F) ∩ U) :
-    IsChangeOfVariables k (H ⊓ U') (Omega ⊓ U) Φ L c ∧
-      IsChangeOfVariables k (Omega ⊓ U) (H ⊓ U') Ψ L' c' := by
-  refine ⟨hΦ.mono_set inf_le_right fun x hx => ?_, hΨ.mono_set inf_le_right fun y hy => ?_⟩
-  · have h : Φ x ∈ Φ '' ((H : Set F) ∩ U') := mem_image_of_mem Φ hx
-    rw [himage] at h
-    exact h
-  · have h : y ∈ (Omega : Set F) ∩ U := hy
-    rw [← himage] at h
-    obtain ⟨x, hx, rfl⟩ := h
-    rw [hΨΦ hx.2]
-    exact hx
-
 section Transport
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
@@ -445,7 +397,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
         C * (‖f‖ + ‖iteratedGradient 0 (lowerOrder 1 v)‖ + ‖value 2 v‖) := by
   set Ω' : Opens (WithLp 2 (ℝ × E)) := normalHalfSpace (E := E) a ⊓ U'
   have hΩ'm : MeasurableSet (Ω' : Set (WithLp 2 (ℝ × E))) := Ω'.isOpen.measurableSet
-  have hΦ' := (isChangeOfVariables_inf_of_image_eq hΦ hΨ hΨΦ himage).1
+  have hΦ' := (hΦ.inf_of_image_eq hΨ hΨΦ himage).1
   have hΦmaps := hΦ'.mapsTo
   have hΦc : ContinuousOn Φ U' := hΦ.differentiableOn.continuousOn
   have hD : ((Omega ⊓ U : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) ⊆ Omega :=
@@ -552,7 +504,7 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
     (stdOrthonormalBasis ℝ (WithLp 2 (ℝ × E))) a hΦ hΨ hΨΦ hΦΨ himage hK hKU hA hAΛ hcont hell hb
     hbβ hc hcγ
   -- Restrict the chart to the flat side `Ω' = H ∩ U'` and the curved side `D = Ω ∩ U`.
-  obtain ⟨hΦ', hΨ'⟩ := isChangeOfVariables_inf_of_image_eq hΦ hΨ hΨΦ himage
+  obtain ⟨hΦ', hΨ'⟩ := hΦ.inf_of_image_eq hΨ hΨΦ himage
   have hΦΩ : MapsTo Φ (normalHalfSpace (E := E) a ⊓ U' : Opens (WithLp 2 (ℝ × E))) Omega :=
     fun x hx => (hΦ'.mapsTo hx).1
   have hκ : 0 ≤ c⁻¹ ^ (1 / p).toReal := Real.rpow_nonneg (inv_nonneg.2 hΦ.pos.le) _
@@ -648,7 +600,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_isChangeOfVar
       (Finset.single_le_sum (f := fun x => ‖A x‖ + 1) (fun x _ => by positivity) hxI)
   -- Restrict the chart to `U ∩ W`, with nonnegative constants.
   obtain ⟨U'₁, hΦ₁, hΨ₁, hΨΦ₁, hΦΨ₁, himage₁⟩ :=
-    exists_isChangeOfVariables_inf hΦ hΨ hΨΦ hΦΨ himage W
+    hΦ.exists_inf_of_image_eq hΨ hΨΦ hΦΨ himage W
   obtain ⟨C, hC⟩ := exists_lpNorm_iteratedGradient_le_of_norm_le hp hp_top a (le_max_right L 0)
     (le_max_right L' 0) (hΦ₁.mono_const (le_max_left L 0) hΦ₁.pos le_rfl)
     (hΨ₁.mono_const (le_max_left L' 0) hΨ₁.pos le_rfl) hΨΦ₁ hΦΨ₁ himage₁ hK
@@ -715,7 +667,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
   rw [hH] at himage
   -- Restrict the chart to `U ∩ W` and take a closed ball about the origin inside it.
   obtain ⟨U'₁, hΦ₁, hΨ₁, hΨΦ₁, hΦΨ₁, himage₁⟩ :=
-    exists_isChangeOfVariables_inf hΦ hΨ
+    hΦ.exists_inf_of_image_eq hΨ
       (fun x _ => by simp only [Function.comp_apply, AffineIsometryEquiv.apply_symm_apply,
         AffineIsometryEquiv.symm_apply_apply, Homeomorph.apply_symm_apply])
       (fun y _ => by simp only [Function.comp_apply, AffineIsometryEquiv.apply_symm_apply,

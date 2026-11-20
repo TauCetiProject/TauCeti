@@ -86,6 +86,10 @@ derivatives gives the chain rule for the weak Hessian.
   estimate for the Laplacian to a constant-coefficient operator along a linear change of variables.
 * `TauCeti.Wkp.IsChangeOfVariables.w1pCompL`: the first-order change of variables
   `TauCeti.W1p.compL` along a change of variables of order at least one.
+* `TauCeti.Wkp.IsChangeOfVariables.inf_of_image_eq` and
+  `TauCeti.Wkp.IsChangeOfVariables.exists_inf_of_image_eq`: a pair of mutually inverse changes of
+  variables mapping `H ∩ U` onto `Ω ∩ V` restricts to the two sides, and to `V ∩ W` for any open
+  `W`.
 * `TauCeti.Wkp.IsChangeOfVariables.abs_det_fderiv_eq_one`: mutually inverse changes of variables
   with Jacobian determinants at least one in absolute value have Jacobian determinants of absolute
   value one.
@@ -443,6 +447,52 @@ theorem mono_set {U₁ V₁ : Opens E} (h : IsChangeOfVariables k U V Φ L c) (h
   norm_iteratedFDeriv_le i hi hik x hx := h.norm_iteratedFDeriv_le i hi hik x (hU hx)
   pos := h.pos
   le_abs_det x hx := h.le_abs_det x (hU hx)
+
+/-- **The chart between the two sides.** If mutually inverse changes of variables `Φ` and `Ψ`
+between `U` and `V` satisfy `Φ '' (H ∩ U) = Ω ∩ V`, then `Φ` restricts to a change of variables
+from `H ∩ U` into `Ω ∩ V` and `Ψ` to one from `Ω ∩ V` into `H ∩ U`, with the same constants. -/
+theorem inf_of_image_eq {Omega H : Opens E} {Ψ : E → E} {L' c' : ℝ}
+    (hΦ : IsChangeOfVariables k U V Φ L c) (hΨ : IsChangeOfVariables k V U Ψ L' c')
+    (hΨΦ : LeftInvOn Ψ Φ U) (himage : Φ '' ((H : Set E) ∩ U) = (Omega : Set E) ∩ V) :
+    IsChangeOfVariables k (H ⊓ U) (Omega ⊓ V) Φ L c ∧
+      IsChangeOfVariables k (Omega ⊓ V) (H ⊓ U) Ψ L' c' := by
+  refine ⟨hΦ.mono_set inf_le_right fun x hx => ?_, hΨ.mono_set inf_le_right fun y hy => ?_⟩
+  · have h : Φ x ∈ Φ '' ((H : Set E) ∩ U) := mem_image_of_mem Φ hx
+    rw [himage] at h
+    exact h
+  · have h : y ∈ (Omega : Set E) ∩ V := hy
+    rw [← himage] at h
+    obtain ⟨x, hx, rfl⟩ := h
+    rw [hΨΦ hx.2]
+    exact hx
+
+/-- **Restricting a straightening chart.** If mutually inverse changes of variables `Φ` and `Ψ`
+between `U` and `V` satisfy `Φ '' (H ∩ U) = Ω ∩ V`, then for every open `W` they restrict to
+mutually inverse changes of variables between `U₁ = U ∩ Φ⁻¹(W)` and `V ∩ W`, with the same
+constants, and `Φ '' (H ∩ U₁) = Ω ∩ V ∩ W`. -/
+theorem exists_inf_of_image_eq {Omega H : Set E} {Ψ : E → E} {L' c' : ℝ}
+    (hΦ : IsChangeOfVariables k U V Φ L c) (hΨ : IsChangeOfVariables k V U Ψ L' c')
+    (hΨΦ : LeftInvOn Ψ Φ U) (hΦΨ : RightInvOn Ψ Φ V) (himage : Φ '' (H ∩ U) = Omega ∩ V)
+    (W : Opens E) :
+    ∃ U₁ : Opens E, IsChangeOfVariables k U₁ (V ⊓ W) Φ L c ∧
+      IsChangeOfVariables k (V ⊓ W) U₁ Ψ L' c' ∧ LeftInvOn Ψ Φ U₁ ∧
+        RightInvOn Ψ Φ (V ⊓ W : Opens E) ∧ Φ '' (H ∩ U₁) = Omega ∩ (V ⊓ W : Opens E) := by
+  let U₁ : Opens E := ⟨U ∩ Φ ⁻¹' W,
+    hΦ.differentiableOn.continuousOn.isOpen_inter_preimage U.isOpen W.isOpen⟩
+  have hU₁ : U₁ ≤ U := fun x hx => hx.1
+  refine ⟨U₁, hΦ.mono_set hU₁ fun x hx => ⟨hΦ.mapsTo hx.1, hx.2⟩,
+    hΨ.mono_set inf_le_left fun y hy => ⟨hΨ.mapsTo hy.1, ?_⟩, hΨΦ.mono hU₁,
+    hΦΨ.mono inf_le_left, ?_⟩
+  · rw [mem_preimage, hΦΨ hy.1]
+    exact hy.2
+  · ext y
+    constructor
+    · rintro ⟨x, ⟨hxH, hxU, hxW⟩, rfl⟩
+      have hx : Φ x ∈ Omega ∩ V := himage ▸ mem_image_of_mem Φ ⟨hxH, hxU⟩
+      exact ⟨hx.1, hx.2, hxW⟩
+    · rintro ⟨hyΩ, hyV, hyW⟩
+      obtain ⟨x, ⟨hxH, hxU⟩, rfl⟩ : y ∈ Φ '' (H ∩ U) := himage ▸ ⟨hyΩ, hyV⟩
+      exact ⟨x, ⟨hxH, hxU, hyW⟩, rfl⟩
 
 /-- The derivative of a change of variables of order at least one is bounded by `L`. -/
 theorem norm_fderiv_le (h : IsChangeOfVariables (k + 1) U V Φ L c) :
