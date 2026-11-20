@@ -114,7 +114,10 @@ variable [NormedSpace ℂ F] [CompleteSpace F] [FiniteDimensional ℂ F] {G : Ty
 theorem MemSobolev.applyLeftCLM_of_forall_smulLeftCLM {s : ℝ} {A : E → F →L[ℂ] G} {f : 𝓢'(E, F)}
     (h : ∀ ℓ : (F →L[ℂ] G) →L[ℂ] ℂ, MemSobolev s p (smulLeftCLM F (fun x ↦ ℓ (A x)) f)) :
     MemSobolev s p (applyLeftCLM A f) := by
-  rw [applyLeftCLM_def]
+  by_cases hA : A.HasTemperateGrowth
+  swap
+  · simp [applyLeftCLM_of_not_hasTemperateGrowth hA]
+  rw [applyLeftCLM_def hA]
   simp only [sum_apply, ContinuousLinearMap.comp_apply]
   exact MemSobolev.sum fun i _ ↦
     (h ((Module.finBasis ℂ (F →L[ℂ] G)).coord i).toContinuousLinearMap).postcomp _

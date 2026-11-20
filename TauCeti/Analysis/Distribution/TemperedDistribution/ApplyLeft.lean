@@ -34,6 +34,8 @@ Scalar multiples of the identity and constant maps are the two basic cases, and 
 ## Main declarations
 
 * `TemperedDistribution.applyLeftCLM`: multiplication by an operator-valued function.
+* `TemperedDistribution.applyLeftCLM_of_not_hasTemperateGrowth`: it is `0` for `A` without
+  temperate growth.
 * `TemperedDistribution.applyLeftCLM_eq_sum`: its expansion along any finite decomposition
   `A x = ∑ᵢ gᵢ(x) • Lᵢ`, and `TemperedDistribution.applyLeftCLM_apply_apply` its value on a test
   function.
@@ -64,19 +66,27 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 `A : E → (F →L[ℂ] G)`, for finite-dimensional `F` and `G`. With the coordinates `gᵢ = bᵢ* ∘ A` of
 `A` in a basis `(bᵢ)` of `F →L[ℂ] G`, it sends `u` to `∑ᵢ bᵢ (gᵢ u)`. Any other expansion of `A`
 gives the same operator (`TemperedDistribution.applyLeftCLM_eq_sum`); on Schwartz functions it is
-`u ↦ (x ↦ A x (u x))` (`TemperedDistribution.applyLeftCLM_toTemperedDistributionCLM_eq`). Each
-coordinate `gᵢ` without temperate growth contributes `0`, since `smulLeftCLM` is `0` for such
-functions; the result is only meaningful when `A` has temperate growth. -/
+`u ↦ (x ↦ A x (u x))` (`TemperedDistribution.applyLeftCLM_toTemperedDistributionCLM_eq`).
+If `A` does not have temperate growth, it is `0`
+(`TemperedDistribution.applyLeftCLM_of_not_hasTemperateGrowth`), as Mathlib's `smulLeftCLM` is. -/
 def applyLeftCLM (A : E → F →L[ℂ] G) : 𝓢'(E, F) →L[ℂ] 𝓢'(E, G) :=
-  let b := Module.finBasis ℂ (F →L[ℂ] G)
-  ∑ i, PointwiseConvergenceCLM.postcomp _ (b i) ∘L smulLeftCLM F fun x ↦ b.coord i (A x)
+  open Classical in
+  if A.HasTemperateGrowth then
+    let b := Module.finBasis ℂ (F →L[ℂ] G)
+    ∑ i, PointwiseConvergenceCLM.postcomp _ (b i) ∘L smulLeftCLM F fun x ↦ b.coord i (A x)
+  else 0
 
-/-- `applyLeftCLM A` sends `u` to `∑ᵢ bᵢ (gᵢ u)`, for the coordinates `gᵢ = bᵢ* ∘ A` of `A` in the
-basis `Module.finBasis ℂ (F →L[ℂ] G)`. -/
-theorem applyLeftCLM_def (A : E → F →L[ℂ] G) :
+/-- For `A` of temperate growth, `applyLeftCLM A` sends `u` to `∑ᵢ bᵢ (gᵢ u)`, for the coordinates
+`gᵢ = bᵢ* ∘ A` of `A` in the basis `Module.finBasis ℂ (F →L[ℂ] G)`. -/
+theorem applyLeftCLM_def {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth) :
     applyLeftCLM A = ∑ i, PointwiseConvergenceCLM.postcomp _ (Module.finBasis ℂ (F →L[ℂ] G) i) ∘L
-      smulLeftCLM F fun x ↦ (Module.finBasis ℂ (F →L[ℂ] G)).coord i (A x) :=
-  (rfl)
+      smulLeftCLM F fun x ↦ (Module.finBasis ℂ (F →L[ℂ] G)).coord i (A x) := by
+  simp [applyLeftCLM, hA]
+
+/-- Multiplication by a function without temperate growth is `0` by convention. -/
+theorem applyLeftCLM_of_not_hasTemperateGrowth {A : E → F →L[ℂ] G}
+    (hA : ¬A.HasTemperateGrowth) : applyLeftCLM A = 0 := by
+  simp [applyLeftCLM, hA]
 
 /-- **Expansion of `applyLeftCLM`.** If `A x = ∑ᵢ gᵢ(x) • Lᵢ` for finitely many scalar functions
 `gᵢ` of temperate growth and constant maps `Lᵢ`, then multiplication by `A` sends `u` to
@@ -96,8 +106,11 @@ theorem applyLeftCLM_eq_sum {ι : Type*} (s : Finset ι) (L : ι → F →L[ℂ]
     rw [h, smulLeftCLM_sum (g := fun i ↦ (Module.finBasis ℂ (F →L[ℂ] G)).coord j (L i) • g i)
       fun i hi ↦ (Function.HasTemperateGrowth.const _).smul (hg i hi)]
     exact Finset.sum_congr rfl fun i hi ↦ smulLeftCLM_smul (hg i hi) _
+  have hA' : A.HasTemperateGrowth := by
+    rw [show A = fun x ↦ ∑ i ∈ s, g i x • L i from funext hA]
+    exact Function.HasTemperateGrowth.sum fun i hi ↦ (hg i hi).smul (.const (L i))
   ext u φ
-  simp only [applyLeftCLM, hcoord]
+  simp only [applyLeftCLM_def hA', hcoord]
   simp only [sum_apply, ContinuousLinearMap.comp_apply, smul_apply,
     PointwiseConvergenceCLM.postcomp_apply_apply, map_sum, map_smul]
   rw [Finset.sum_comm]
@@ -123,7 +136,8 @@ the multiplications. -/
 theorem applyLeftCLM_sum {ι : Type*} {A : ι → E → F →L[ℂ] G} {s : Finset ι}
     (hA : ∀ i ∈ s, (A i).HasTemperateGrowth) :
     applyLeftCLM (fun x ↦ ∑ i ∈ s, A i x) = ∑ i ∈ s, applyLeftCLM (A i) := by
-  simp only [applyLeftCLM_def]
+  rw [applyLeftCLM_def (Function.HasTemperateGrowth.sum hA),
+    Finset.sum_congr rfl fun i hi ↦ applyLeftCLM_def (hA i hi)]
   set b := Module.finBasis ℂ (F →L[ℂ] G)
   have h (j) : smulLeftCLM F (fun x ↦ b.coord j (∑ i ∈ s, A i x)) =
       ∑ i ∈ s, smulLeftCLM F fun x ↦ b.coord j (A i x) := by
@@ -146,7 +160,9 @@ theorem applyLeftCLM_add {A₁ A₂ : E → F →L[ℂ] G} (hA₁ : A₁.HasTemp
 scalar multiple of the multiplication. -/
 theorem applyLeftCLM_smul {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth) (c : ℂ) :
     applyLeftCLM (c • A) = c • applyLeftCLM A := by
-  simp only [applyLeftCLM_def, Pi.smul_apply, map_smul, Finset.smul_sum]
+  rw [applyLeftCLM_def (A := c • A) ((Function.HasTemperateGrowth.const c).smul hA),
+    applyLeftCLM_def hA]
+  simp only [Pi.smul_apply, map_smul, Finset.smul_sum]
   set b := Module.finBasis ℂ (F →L[ℂ] G)
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← ContinuousLinearMap.comp_smul, ← smulLeftCLM_smul (hA.basis_coord b j)]
