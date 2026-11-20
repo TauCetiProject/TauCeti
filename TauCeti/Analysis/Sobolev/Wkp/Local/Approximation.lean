@@ -33,9 +33,7 @@ estimates for classical solutions of second-order equations pass to strong solut
 restrictions of test functions from a larger open set, `TauCeti.Wkp.restrictTestFunctionClosure`
 packages their Sobolev-norm closure as a submodule and
 `TauCeti.Wkp.range_restrictL_ofTestFunctionₗ_top` identifies the range of restricted whole-space
-test functions with smooth compactly supported representatives. Conversely, a function smooth on
-`Ω` is, near each point of `Ω`, the restriction of a test function, so it lies locally in every
-`W^{k,p}` (`ContDiffOn.exists_wkp_value_ae_eq`).
+test functions with smooth compactly supported representatives.
 
 ## References
 
@@ -155,28 +153,6 @@ theorem range_restrictL_ofTestFunctionₗ_top (k : ℕ) :
     let psi : 𝓓((⊤ : Opens E), ℝ) := ⟨f, hf, hsupp, subset_univ _⟩
     exact ⟨psi, ext k (Lp.ext
       ((value_restrictL_ofTestFunctionₗ_ae (le_top : Omega ≤ ⊤) k psi).trans hu.symm))⟩
-
-/-- **Smooth functions are locally in every `W^{k,p}`.** A function smooth on `Ω` agrees, on a
-neighbourhood `V ⊆ Ω` of each point of `Ω`, with an element of `W^{k,p}(V)` for every order `k`:
-the restriction of the test function `ψ f` for a cutoff `ψ` equal to one near `V`. -/
-theorem _root_.ContDiffOn.exists_wkp_value_ae_eq {f : E → ℝ} (hf : ContDiffOn ℝ (⊤ : ℕ∞) f Omega)
-    {x : E} (hx : x ∈ Omega) :
-    ∃ V : Opens E, x ∈ V ∧ V ≤ Omega ∧ ∀ k, ∃ F : Wkp mu V p k,
-      (value k F : E → ℝ) =ᵐ[mu.restrict V] f := by
-  obtain ⟨R, hR, hRΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
-  obtain ⟨ψ, hψ, -, hψ1, hψc, hψΩ⟩ :=
-    (isCompact_closedBall x R).exists_contDiff_cutoff_eventuallyEq_one Omega.isOpen hRΩ
-  let φ : 𝓓(Omega, ℝ) :=
-    ⟨fun y => ψ y • f y, hf.contDiff_smul_of_tsupport_subset Omega.isOpen hψ.contDiffOn hψΩ,
-      hψc.smul_right, (tsupport_smul_subset_left ψ f).trans hψΩ⟩
-  let V : Opens E := ⟨Metric.ball x R, Metric.isOpen_ball⟩
-  have hVΩ : V ≤ Omega := fun y hy => hRΩ (Metric.ball_subset_closedBall hy)
-  refine ⟨V, Metric.mem_ball_self hR, hVΩ, fun k => ⟨restrictL hVΩ k (ofTestFunctionₗ k φ), ?_⟩⟩
-  filter_upwards [value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hVΩ k φ,
-    ae_restrict_mem V.isOpen.measurableSet] with y hy hyV
-  rw [hy]
-  simp only [φ, TestFunction.coe_mk]
-  rw [(hψ1 y (Metric.ball_subset_closedBall hyV)).self_of_nhds, one_smul]
 
 /-- The closure in `W^{k,p}(U)` of the restrictions to `U` of test functions on `Ω`, as an
 `ℝ`-submodule of `W^{k,p}(U)`. -/

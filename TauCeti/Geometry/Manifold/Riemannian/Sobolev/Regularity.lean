@@ -13,7 +13,6 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.PDE.Regularity.Semilinear
 import TauCeti.Analysis.PDE.Regularity.Smooth
-import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.Geometry.Manifold.ContMDiff.LocalRepresentative
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
@@ -977,9 +976,13 @@ private theorem ChartPDEData.exists_contDiffOn_ae_eq_of_dirichletForm_add_eq {p 
   rw [W1p.restrictL_self] at hu_H10
   have hu_eq := PDE.energyFormH1_eq_setIntegral_of_principal_eq_sub d.hcoeff MemLp.zero hc_top
     hF2 fun v ↦ (hu_H10 v).trans (by simp [u])
-  exact d.hell.exists_contDiffOn_ae_eq_of_contDiffOn (contDiffOn_chartMatrix p d.hΩt)
-    contDiff_zero_fun.contDiffOn hc
-    (fun x hx ↦ (hF.exists_wkp_value_ae_eq hx).imp fun V hV ↦ ⟨hV.1, hV.2.2⟩) hu_eq
+  refine d.hell.exists_contDiffOn_ae_eq_of_contDiffOn (contDiffOn_chartMatrix p d.hΩt)
+    contDiff_zero_fun.contDiffOn hc (fun x hx ↦ ?_) hu_eq
+  -- Near each point the smooth datum `F` lies in every `W^{k,2}` of a small ball.
+  obtain ⟨R, hR, hRΩ⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (d.Ω.isOpen.mem_nhds hx)
+  exact ⟨⟨Metric.ball x R, Metric.isOpen_ball⟩, Metric.mem_ball_self hR, fun k ↦
+    Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact k d.Ω.isOpen (hF.of_le (by simp))
+      (isCompact_closedBall x R) Metric.ball_subset_closedBall hRΩ⟩
 
 /-- **Smooth regularity of the Schrödinger equation on `H¹(M)`.** Let `M` be a closed manifold of
 any dimension with a smooth Riemannian metric, and let `V` and `f` be smooth on `M`. If `w ∈ H¹(M)`
