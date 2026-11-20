@@ -100,13 +100,11 @@ theorem mul_frobeniusFixedIdempotent (hx : x ^ p = x) (i : ZMod p) :
 /-- For `x ^ p = x`, each `frobeniusFixedIdempotent p x i` is idempotent. -/
 theorem isIdempotentElem_frobeniusFixedIdempotent (hx : x ^ p = x) (i : ZMod p) :
     IsIdempotentElem (frobeniusFixedIdempotent p x i) := by
+  -- With `y = x - i` and `y ^ p = y`: `y ^ (2p - 2) = y ^ p * y ^ (p - 2) = y ^ (p - 1)`.
+  have := hp.out.two_le
   refine IsIdempotentElem.one_sub ?_
-  have h := sub_zmodCast_pow_char hx i
-  set y := x - (i.cast : R)
-  obtain ⟨k, hk⟩ : ∃ k, p = k + 2 := ⟨p - 2, by have := hp.out.two_le; omega⟩
-  rw [hk] at h ⊢
-  rw [IsIdempotentElem, ← pow_add, show k + 2 - 1 + (k + 2 - 1) = (k + 2) + k by omega, pow_add, h,
-    ← pow_succ', show k + 2 - 1 = k + 1 by omega]
+  rw [IsIdempotentElem, ← pow_add, show p - 1 + (p - 1) = p + (p - 2) by omega, pow_add,
+    sub_zmodCast_pow_char hx, ← pow_succ', show p - 2 + 1 = p - 1 by omega]
 
 /-- For `x ^ p = x`, the `frobeniusFixedIdempotent p x i` form a complete family of orthogonal
 idempotents indexed by `ZMod p`. -/
