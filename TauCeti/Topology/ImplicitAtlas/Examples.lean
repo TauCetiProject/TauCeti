@@ -45,8 +45,9 @@ The single-chart atlases on a point realize the following test atlases.
   `X_α` and preserves that of `E_α`.
 * **The ineffective point** (`TauCeti.ImplicitAtlas.ineffectivePointAtlas`): `Γ_α = ℤˣ` acting
   trivially on the point `X_α = ℝ⁰`, with `E_α = 0`. The regular locus of `X_∅` cannot be all of
-  `X_∅`: in every implicit atlas with these thickenings and this action it is empty, by the
-  freeness of `Γ_α` over `ψ_∅α⁻¹(X_∅^reg)`
+  `X_∅`: in every implicit atlas with these thickenings and this action whose Kuranishi map
+  vanishes at the point (automatic when `E_α = 0`) it is empty, by the freeness of `Γ_α` over
+  `ψ_∅α⁻¹(X_∅^reg)`
   (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_kuranishi_eq_zero`).
 * **A point of virtual dimension `-1`** (`TauCeti.ImplicitAtlas.obstructedPointAtlas`): the point
   `X_α = ℝ⁰` with `E_α = ℝ` and `s_α = 0`. A nonempty space may carry an atlas of negative
@@ -57,7 +58,10 @@ The single-chart atlases on a point realize the following test atlases.
 
 * J. Pardon, *An algebraic approach to virtual fundamental cycles on moduli spaces of
   pseudo-holomorphic curves*, Geom. Topol. 20 (2016), 779–1034, Example 2.3.2 and
-  Definition 3.1.1.
+  Definition 3.1.1. The atlas `s(x) = xᵐ` on `ℝ` is Pardon's Example 2.3.2, and `s(z) = zᵐ` on
+  `ℂ` is its complex analogue. The reflection atlas, the ineffective point, the point of virtual
+  dimension `-1` and the isotropy theorem are constructed here as implicit atlases in the sense of
+  Definition 3.1.1; they are not taken from a numbered example of Pardon.
 -/
 
 public section
@@ -561,8 +565,9 @@ theorem coe_pointAct_unitsIntAction_neg_one (hσ : ∀ u, unitsIntAction u 0 = 0
 /-- **The ineffective point.** The implicit atlas of virtual dimension `0` on the point
 `X = {0}` with one index `α`, group `Γ_α = ℤˣ = {±1}` acting trivially, obstruction space
 `E_α = 0` and thickening `X_α = ℝ⁰`, a point. The regular locus of `X_∅ = X` is empty and `X_α`
-is regular. It has to be: in every atlas with these thickenings and this action, `X_∅` has no
-regular point (`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_kuranishi_eq_zero`). -/
+is regular. It has to be: in every atlas with these thickenings and this action whose Kuranishi
+map vanishes at the point, as it must for `E_α = 0`, `X_∅` has no regular point
+(`TauCeti.ImplicitAtlas.regLocus_empty_eq_empty_of_kuranishi_eq_zero`). -/
 noncomputable def ineffectivePointAtlas :
     ImplicitAtlas (fun _ : Unit ↦ ℤˣ) (fun _ ↦ EuclideanSpace ℝ (Fin 0))
       (fun _ ↦ Representation.trivial ℝ ℤˣ (EuclideanSpace ℝ (Fin 0)))
