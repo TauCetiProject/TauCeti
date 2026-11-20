@@ -103,10 +103,11 @@ local notation "Mₜ" => TopCat.of M
 private def openFundamentalClass (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W) :
     ((openSubspacePair W (K : Set Mₜ)ᶜ).singularChainComplex
-      ℤₘ).homology d := by
-  let oW := o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding
-  rw [TopPair.openSubspacePair_compl]
-  exact oW.fundamentalClassOn hn ((preimageCompacts W K hKW).isCompact)
+      ℤₘ).homology d :=
+  (show localHomology (A := ModuleCat.{0} ℤ) ℤₘ (Opens.inclusion' W ⁻¹' (K : Set Mₜ)) d from
+    (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).fundamentalClassOn hn
+      (show IsCompact (Opens.inclusion' W ⁻¹' (K : Set Mₜ)) from
+        (preimageCompacts W K hKW).isCompact))
 
 private lemma fundamentalClassOn_open_preimage (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W) :
@@ -430,7 +431,7 @@ private lemma signed_duality_on_compact_union (U V : Opens Mₜ)
       (TopCat.singularCohomologyComplMayerVietorisδ ℤₘ ℤ L
         K.isCompact.isClosed N.isCompact.isClosed p (p + 1) rfl a)
   obtain ⟨φ, ψ, α, hφ, hψ, hα, ha⟩ :=
-    TopCat.exists_singularCohomologyComplMayerVietorisδ_representatives L
+    TopCat.exists_singularCohomologyComplMayerVietorisδ_representatives ℤₘ ℤ L
     K.isCompact.isClosed N.isCompact.isClosed p a ζ hζ
   erw [ChainComplex.linearYonedaObj_d_apply, TopPair.singularCochainComplexMap_f_apply] at hφ hψ
   simp only [TopPair.singularCochainComplexMap_f_apply] at hα

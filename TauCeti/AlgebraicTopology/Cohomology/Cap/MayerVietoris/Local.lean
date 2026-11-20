@@ -127,7 +127,7 @@ private lemma relativeCapInto_comp_d_eq_zsmul_relativeCapInto
           (SSet.chainComplexMap
             (TopCat.toSSet.map ((Opens.toTopCat X).map (homOfLE hWU))) L).f q) := by
   have hb := relativeCapInto_cycles_comp_d L S U A hSU p q n h φ
-  have hm := relativeCapInto_open_mono L S W U B hWU
+  have hm := relativeCapInto_comp_chainComplexMap_homOfLE L S W U B hWU
     (p + 1) q (n + 1) (by omega) (hSW (n + 1)) ζ
   have hc := chainComplexMap_restrictSubsetMap_comp (R := ℤₘ) S hCA hAB
   erw [← HomologicalComplex.cyclesMap_i_assoc, hb, Preadditive.comp_zsmul, hφ,
@@ -232,7 +232,7 @@ lemma capCycles_homologyπ_mayerVietorisδ (S : (TopCat.toSSet.obj X).Subcomplex
     inf_le_right hCB hBD hSV hSW p q n h ψ ζ hψ
   obtain ⟨z, hz⟩ := SSet.exists_cycle_of_chain_lifts L sq.toCommSq q
     (((( -1 : ℤ) ^ (p + 1)) • w) ≫ CW.iCycles q) a b ha hb
-  have hd := SSet.homologyπ_mayerVietorisδ_of_chain_lifts sq L (R.cycles (n + 1)) q z
+  have hd := SSet.homologyπ_mayerVietorisδ_of_chain_lifts L sq q z
     (((-1 : ℤ) ^ (p + 1)) • w) a b hz ha hb
   have hzM : z ≫ HomologicalComplex.cyclesMap
         (SSet.chainComplexMap (X.smallSingularSubcomplex ![(U : Set X), (V : Set X)]).ι L)

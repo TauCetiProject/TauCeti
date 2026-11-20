@@ -498,34 +498,30 @@ lemma singularCohomologyComplMayerVietorisδ_naturality_of_subset {S' T' : Set X
   singularCohomologyComplMayerVietorisδ_naturality R k M hS' hT' hS hT (𝟙 X)
     (mapsTo_id_compl hSS') (mapsTo_id_compl hTT') n m h
 
-end TopCat
-
-namespace TopCat
-
 open HomologicalComplex Topology
 
 /-! ### Exact cochain representatives of the complement connecting morphism -/
 
-local notation "ℤₘ" => ModuleCat.of ℤ (ULift ℤ : Type)
+variable (R k M)
 
 attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-- A chosen cocycle for the native connecting class is the exact coboundary of a lift. -/
-private lemma exists_complMayerVietoris_cochains {X : TopCat.{0}} (L : ModuleCat.{0} ℤ)
+private lemma exists_complMayerVietoris_cochains
     {K N : Set X} (hK : IsClosed K) (hN : IsClosed N) (p : ℕ)
-    (a : (TopPair.ofSubset (K ∪ N)ᶜ).singularCohomology ℤₘ ℤ L p)
-    (ζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).cycles (p + 1))
-    (hζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).homologyπ (p + 1) ζ =
-      TopCat.singularCohomologyComplMayerVietorisδ ℤₘ ℤ L
+    (a : (TopPair.ofSubset (K ∪ N)ᶜ).singularCohomology R k M p)
+    (ζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).cycles (p + 1))
+    (hζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).homologyπ (p + 1) ζ =
+      TopCat.singularCohomologyComplMayerVietorisδ R k M
         hK hN p (p + 1) rfl a) :
-    let C := SSetPair.mayerVietorisCochainShortComplex ℤₘ ℤ L
+    let C := SSetPair.mayerVietorisCochainShortComplex R k M
       (MorphismProperty.Arrow.Hom.ext (TopCat.isPushout_toSmallSingularPair_left
           (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ)).w (TopCat.isPushout_toSmallSingularPair_right
           (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ)).w)
     let g := TopPair.singularCochainComplexMap
-      (R := ℤₘ) (k := ℤ) (M := L) (TopCat.unionComplPairIso K N).hom ≫
+      (R := R) (k := k) (M := M) (TopCat.unionComplPairIso K N).hom ≫
         SSetPair.cochainComplexMap
           (TopCat.smallSingularPairToUnion (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
     ∃ (x₂ : C.X₂.X p) (α : C.X₃.cycles p),
@@ -535,24 +531,24 @@ private lemma exists_complMayerVietoris_cochains {X : TopCat.{0}} (L : ModuleCat
           (C.X₃.homologyπ p).hom α =
             TopPair.singularCohomologyMap (TopCat.interComplPairIso K N).hom p a := by
   dsimp only
-  have hS := SSetPair.shortExact_mayerVietorisCochainShortComplex ℤₘ ℤ L
+  have hS := SSetPair.shortExact_mayerVietorisCochainShortComplex R k M
     (TopCat.isPushout_toSmallSingularPair_left (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
     (TopCat.isPushout_toSmallSingularPair_right (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
   apply hS.moduleCat_exists_d_eq_of_δ_eq p (p + 1) rfl
   have hc := ConcreteCategory.congr_hom
     (TopCat.singularCohomologyPairMayerVietorisδ_comp_homologyMap
-      ℤₘ ℤ L (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ)
+      R k M (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ)
       isOpen_univ isOpen_univ (hK.isOpen_compl.preimage continuous_subtypeVal)
       (hN.isOpen_compl.preimage continuous_subtypeVal) p (p + 1) rfl)
     (TopPair.singularCohomologyMap (TopCat.interComplPairIso K N).hom p a)
-  rw [SSetPair.mayerVietorisCochainδ_def ℤₘ ℤ L
+  rw [SSetPair.mayerVietorisCochainδ_def R k M
     (TopCat.isPushout_toSmallSingularPair_left (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
     (TopCat.isPushout_toSmallSingularPair_right (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
     p (p + 1) rfl] at hc
   rw [← hc]
   have hpair := congrArg
     (TopPair.singularCohomologyMap (TopCat.unionComplPairIso K N).hom (p + 1)) hζ
-  rw [TopCat.singularCohomologyComplMayerVietorisδ_def ℤₘ ℤ L hK hN p (p + 1) rfl] at hpair
+  rw [TopCat.singularCohomologyComplMayerVietorisδ_def R k M hK hN p (p + 1) rfl] at hpair
   simp only [ConcreteCategory.comp_apply] at hpair
   conv_rhs at hpair =>
     rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
@@ -561,11 +557,10 @@ private lemma exists_complMayerVietoris_cochains {X : TopCat.{0}} (L : ModuleCat
   rw [moduleCat_homologyMap_homologyπ, moduleCat_homologyMap_homologyπ]
   simp only [cyclesMap_comp, ConcreteCategory.comp_apply]
 
-private lemma complement_cochain_square {X : TopCat.{0}}
-    (L : ModuleCat.{0} ℤ) (K N S : Set X) (i : Fin 2)
+private lemma complement_cochain_square (K N S : Set X) (i : Fin 2)
     (hS : Sᶜ ⊆ ![Kᶜ, Nᶜ] i) (hIS : K ∩ N ⊆ S) :
     TopPair.singularCochainComplexMap
-        (R := ℤₘ) (k := ℤ) (M := L) (TopCat.unionComplPairIso K N).hom ≫
+        (R := R) (k := k) (M := M) (TopCat.unionComplPairIso K N).hom ≫
       SSetPair.cochainComplexMap
         (TopCat.smallSingularPairToUnion (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ)) ≫
       SSetPair.cochainComplexMap
@@ -577,8 +572,8 @@ private lemma complement_cochain_square {X : TopCat.{0}}
     (Set.subset_univ Sᶜ) (i := i) (by fin_cases i <;> simp) hS
   let j := TopCat.smallSingularPairToUnion (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ)
   have hc : Sᶜ ⊆ Kᶜ ∪ Nᶜ := by simpa only [← Set.compl_inter] using Set.compl_subset_compl.mpr hIS
-  have hsmall : SSetPair.cochainComplexMap (R := ℤₘ)
-      (k := ℤ) (M := L) j ≫ SSetPair.cochainComplexMap r =
+  have hsmall : SSetPair.cochainComplexMap (R := R)
+      (k := k) (M := M) j ≫ SSetPair.cochainComplexMap r =
       TopPair.singularCochainComplexMap (TopPair.ofInclusionMap (Set.subset_univ Sᶜ)
         (Set.union_subset_union (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
         (ContinuousMap.inclusion (by simp : Set.univ ⊆ (Set.univ : Set X) ∪ Set.univ))
@@ -588,9 +583,9 @@ private lemma complement_cochain_square {X : TopCat.{0}}
       (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ) (Set.subset_univ Sᶜ)
       (i := i) (by fin_cases i <;> simp) hS (by simp) hc]
   erw [← Category.assoc (SSetPair.cochainComplexMap
-      (R := ℤₘ) (k := ℤ) (M := L) j)
-    (SSetPair.cochainComplexMap (R := ℤₘ) (k := ℤ) (M := L) r) (TopPair.singularCochainComplexMap
-      (R := ℤₘ) (k := ℤ) (M := L) (TopCat.univComplPairIso S).inv), hsmall]
+      (R := R) (k := k) (M := M) j)
+    (SSetPair.cochainComplexMap (R := R) (k := k) (M := M) r) (TopPair.singularCochainComplexMap
+      (R := R) (k := k) (M := M) (TopCat.univComplPairIso S).inv), hsmall]
   rw [← Category.assoc, ← TopPair.singularCochainComplexMap_comp]
   erw [TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom
     Set.mem_univ (fun x ↦ Set.mem_union_left _ (Set.mem_univ x))
@@ -600,10 +595,9 @@ private lemma complement_cochain_square {X : TopCat.{0}}
   rw [Category.assoc, ← TopPair.singularCochainComplexMap_comp,
     Iso.inv_hom_id, TopPair.singularCochainComplexMap_id, Category.comp_id]
 
-private lemma complement_inter_cochain_square {X : TopCat.{0}}
-    (L : ModuleCat.{0} ℤ) (K N S : Set X) (hS : S ⊆ K ∪ N) :
+private lemma complement_inter_cochain_square (K N S : Set X) (hS : S ⊆ K ∪ N) :
     TopPair.singularCochainComplexMap
-        (R := ℤₘ) (k := ℤ) (M := L) (TopPair.ofInclusionMap
+        (R := R) (k := k) (M := M) (TopPair.ofInclusionMap
           (Set.inter_subset_inter (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
           (Set.subset_univ Sᶜ) (ContinuousMap.inclusion Set.inter_subset_left)
           (fun x hx ↦ by
@@ -616,7 +610,7 @@ private lemma complement_inter_cochain_square {X : TopCat.{0}}
           (TopPair.ofSubsetMap (𝟙 X) (TopCat.mapsTo_id_compl hS)) := by
   rw [← TopPair.singularCochainComplexMap_comp, ← TopPair.singularCochainComplexMap_comp]
   apply congrArg (fun f ↦ TopPair.singularCochainComplexMap
-    (R := ℤₘ) (k := ℤ) (M := L) f)
+    (R := R) (k := k) (M := M) f)
   rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
   exact TopPair.ofInclusionMap_inclusion_comp_ofInclusionIsoOfSubset_hom
     (fun x ↦ Set.mem_inter (Set.mem_univ x) (Set.mem_univ x)) Set.mem_univ
@@ -629,61 +623,60 @@ private lemma complement_inter_cochain_square {X : TopCat.{0}}
 
 /-- Exact original-pair representatives of the native complement connecting class. -/
 lemma exists_singularCohomologyComplMayerVietorisδ_representatives
-    {X : TopCat.{0}} (L : ModuleCat.{0} ℤ)
-    {K N : Set X} (hK : IsClosed K) (hN : IsClosed N) (p : ℕ)
-    (a : (TopPair.ofSubset (K ∪ N)ᶜ).singularCohomology ℤₘ ℤ L p)
-    (ζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).cycles (p + 1))
-    (hζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).homologyπ (p + 1) ζ =
-      TopCat.singularCohomologyComplMayerVietorisδ ℤₘ ℤ L
+        {K N : Set X} (hK : IsClosed K) (hN : IsClosed N) (p : ℕ)
+    (a : (TopPair.ofSubset (K ∪ N)ᶜ).singularCohomology R k M p)
+    (ζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).cycles (p + 1))
+    (hζ : ((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).homologyπ (p + 1) ζ =
+      TopCat.singularCohomologyComplMayerVietorisδ R k M
         hK hN p (p + 1) rfl a) :
-    ∃ (u : ((TopPair.ofSubset Kᶜ).singularCochainComplex ℤₘ ℤ L).X p)
-      (v : ((TopPair.ofSubset Nᶜ).singularCochainComplex ℤₘ ℤ L).X p)
-      (α : ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex ℤₘ ℤ L).cycles p),
-      ((TopPair.ofSubset Kᶜ).singularCochainComplex ℤₘ ℤ L).d p (p + 1) u =
+    ∃ (u : ((TopPair.ofSubset Kᶜ).singularCochainComplex R k M).X p)
+      (v : ((TopPair.ofSubset Nᶜ).singularCochainComplex R k M).X p)
+      (α : ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex R k M).cycles p),
+      ((TopPair.ofSubset Kᶜ).singularCochainComplex R k M).d p (p + 1) u =
         (TopPair.singularCochainComplexMap
           (TopPair.ofSubsetMap (𝟙 X) (TopCat.mapsTo_id_compl Set.inter_subset_left))).f (p + 1)
-          (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).iCycles (p + 1) ζ) ∧
-      ((TopPair.ofSubset Nᶜ).singularCochainComplex ℤₘ ℤ L).d p (p + 1) v =
+          (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).iCycles (p + 1) ζ) ∧
+      ((TopPair.ofSubset Nᶜ).singularCochainComplex R k M).d p (p + 1) v =
         (TopPair.singularCochainComplexMap
           (TopPair.ofSubsetMap (𝟙 X) (TopCat.mapsTo_id_compl Set.inter_subset_right))).f (p + 1)
-          (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).iCycles (p + 1) ζ) ∧
+          (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).iCycles (p + 1) ζ) ∧
       (TopPair.singularCochainComplexMap
           (TopPair.ofSubsetMap (𝟙 X) (TopCat.mapsTo_id_compl Set.subset_union_left))).f p u -
         (TopPair.singularCochainComplexMap
           (TopPair.ofSubsetMap (𝟙 X) (TopCat.mapsTo_id_compl Set.subset_union_right))).f p v =
-        ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex ℤₘ ℤ L).iCycles p α ∧
-      ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex ℤₘ ℤ L).homologyπ p α = a := by
-  obtain ⟨x, α, hx, ha, hα⟩ := exists_complMayerVietoris_cochains L hK hN p a ζ hζ
+        ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex R k M).iCycles p α ∧
+      ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex R k M).homologyπ p α = a := by
+  obtain ⟨x, α, hx, ha, hα⟩ := exists_complMayerVietoris_cochains R k M hK hN p a ζ hζ
   obtain ⟨u, v, hu, hv, huv⟩ := HomologicalComplex.moduleCat_exists_components_of_biprod_lift
     (SSetPair.cochainComplexMap _) (SSetPair.cochainComplexMap _)
     (TopPair.singularCochainComplexMap _) (TopPair.singularCochainComplexMap _)
     p x _ _ hx ha
   let iK := TopPair.singularCochainComplexMap
-    (R := ℤₘ) (k := ℤ) (M := L) (TopCat.univComplPairIso K).inv
+    (R := R) (k := k) (M := M) (TopCat.univComplPairIso K).inv
   let iN := TopPair.singularCochainComplexMap
-    (R := ℤₘ) (k := ℤ) (M := L) (TopCat.univComplPairIso N).inv
+    (R := R) (k := k) (M := M) (TopCat.univComplPairIso N).inv
   let iU := TopPair.singularCochainComplexMap
-    (R := ℤₘ) (k := ℤ) (M := L) (TopCat.interComplPairIso K N).inv
+    (R := R) (k := k) (M := M) (TopCat.interComplPairIso K N).inv
   refine ⟨iK.f p u, iN.f p v, cyclesMap iU p α, ?_, ?_, ?_, ?_⟩
   · rw [HomologicalComplex.Hom.comm_apply, hu, moduleCat_iCycles_cyclesMap_apply]
     have hs := ConcreteCategory.congr_hom
       (congrArg (fun f ↦ f.f (p + 1)) (complement_cochain_square
-        L K N K 0 (by simp) Set.inter_subset_left))
-      (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).iCycles (p + 1) ζ)
+        R k M K N K 0 (by simp) Set.inter_subset_left))
+      (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).iCycles (p + 1) ζ)
     simpa only [HomologicalComplex.comp_f, ConcreteCategory.comp_apply] using hs
   · rw [HomologicalComplex.Hom.comm_apply, hv, moduleCat_iCycles_cyclesMap_apply]
     have hs := ConcreteCategory.congr_hom
       (congrArg (fun f ↦ f.f (p + 1)) (complement_cochain_square
-        L K N N 1 (by simp) Set.inter_subset_right))
-      (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex ℤₘ ℤ L).iCycles (p + 1) ζ)
+        R k M K N N 1 (by simp) Set.inter_subset_right))
+      (((TopPair.ofSubset (K ∩ N)ᶜ).singularCochainComplex R k M).iCycles (p + 1) ζ)
     simpa only [HomologicalComplex.comp_f, ConcreteCategory.comp_apply] using hs
   · rw [moduleCat_iCycles_cyclesMap_apply, ← huv, map_sub]
     have hk := ConcreteCategory.congr_hom
       (congrArg (fun f ↦ f.f p) (complement_inter_cochain_square
-        L K N K Set.subset_union_left)) u
+        R k M K N K Set.subset_union_left)) u
     have hn := ConcreteCategory.congr_hom
       (congrArg (fun f ↦ f.f p) (complement_inter_cochain_square
-        L K N N Set.subset_union_right)) v
+        R k M K N N Set.subset_union_right)) v
     simp only [HomologicalComplex.comp_f, ConcreteCategory.comp_apply] at hk hn
     rw [hk, hn]
   · rw [← moduleCat_homologyMap_homologyπ, hα]
