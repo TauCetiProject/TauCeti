@@ -374,22 +374,21 @@ theorem mfderiv_iterate_symm_apply_eq_apply_mfderiv (j : ℕ) (s t : ℝ) (y : M
     (v : TangentSpace I y) :
     mfderiv I I (⇑φ.symm)^[j] y (K ((s, t), y) v) =
       K ((s, t + j), (⇑φ.symm)^[j] y) (mfderiv I I (⇑φ.symm)^[j] y v) := by
+  -- The point and the time sit inside the argument of `K`, on which the type of `K p` depends,
+  -- so they are normalized with `rw` (which abstracts the motive) rather than `simp`.
   induction j generalizing t y v with
   | zero =>
-    rw [Nat.cast_zero, add_zero]
-    simp only [iterate_zero, mfderiv_id]
-    -- The two sides agree up to the eta-expansion of the point `((s, t), y)`.
-    rfl
+    rw [Nat.cast_zero, add_zero, iterate_zero, id_eq, mfderiv_id, ContinuousLinearMap.id_apply,
+      ContinuousLinearMap.id_apply]
   | succ j ih =>
     have hg : MDifferentiableAt I I (⇑φ.symm)^[j] (φ.symm y) :=
       (φ.symm.contMDiff.iterate j).mdifferentiableAt (by simp)
     have hh : MDifferentiableAt I I φ.symm y := φ.symm.contMDiff.mdifferentiableAt (by simp)
     have h := ht ((s, t), y) v
-    rw [show ((s, t) + (0, 1) : ℝ × ℝ) = (s, t + 1) by simp] at h
-    rw [iterate_succ, mfderiv_comp y hg hh, ContinuousLinearMap.comp_apply, h, ih,
-      ContinuousLinearMap.comp_apply, Nat.cast_succ, add_assoc, add_comm 1 (j : ℝ)]
-    -- The two sides agree up to the eta-expansion of the point.
-    rfl
+    rw [Prod.mk_add_mk, add_zero] at h
+    rw [show t + ((j + 1 : ℕ) : ℝ) = t + 1 + j by push_cast; ring, iterate_succ_apply,
+      iterate_succ, mfderiv_comp y hg hh, ContinuousLinearMap.comp_apply, h, ih,
+      ContinuousLinearMap.comp_apply]
 
 /-- **The seam identity of the return map.** Let `K` be a vertical family satisfying the seam
 identity, let `x` be a periodic point of `φ` of period `d`, and let `P` be the differential of
