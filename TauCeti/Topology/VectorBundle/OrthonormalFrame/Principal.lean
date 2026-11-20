@@ -137,7 +137,7 @@ variable [CompleteSpace V]
 base point and a frame. -/
 def totalSpaceEquiv :
     TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V) ≃ OrthonormalFrameBundle 𝕜 F E V where
-  toFun p := ⟨p.proj, p.2.frame⟩
+  toFun p := ⟨p.proj, p.snd.frame⟩
   invFun p := ⟨p.proj, .ofFrame p.frame⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -146,7 +146,7 @@ def totalSpaceEquiv :
 `b` to the pair of `b` and its frame. -/
 @[simp]
 theorem totalSpaceEquiv_apply (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :
-    totalSpaceEquiv p = ⟨p.proj, p.2.frame⟩ :=
+    totalSpaceEquiv p = ⟨p.proj, p.snd.frame⟩ :=
   (rfl)
 
 theorem proj_totalSpaceEquiv (p : TotalSpace (unitary (V →L[𝕜] V)) (Fiber 𝕜 F E V)) :

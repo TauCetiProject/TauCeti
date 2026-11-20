@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Basic
 public import Mathlib.Combinatorics.SimpleGraph.Metric
-public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Data.Fin.Tuple.Take
 
 /-!
 # Walks recorded as vertex sequences
@@ -28,8 +28,11 @@ decidable subset of a finite function type.
   vertex is adjacent to the old endpoint.
 * `SimpleGraph.IsWalkFrom.edist_le`: every vertex of a walk from `v₀` lies at extended distance at
   most its step index from `v₀`.
+* `SimpleGraph.IsWalkFrom.take`: any prefix of a walk from `v₀` is a walk from `v₀`.
 * `SimpleGraph.IsWalkFrom.update`: moving an interior vertex of a walk whose neighbouring positions
   carry the same vertex to another neighbour of that vertex gives a walk.
+* `SimpleGraph.IsWalkFrom.le_add_of_adj_le_succ`: if each step increases a `ℕ`-valued function by
+  at most `1`, then `i` steps increase it by at most `i`.
 -/
 
 public section
@@ -84,6 +87,11 @@ theorem isWalkFrom_iff_init {m : ℕ} (s : Fin (m + 2) → V) :
   conv_lhs => rw [← Fin.snoc_init_self s]
   exact isWalkFrom_snoc _ _
 
+/-- Dropping the last step of a walk from `v₀` leaves a walk from `v₀`. -/
+theorem IsWalkFrom.init {m : ℕ} {s : Fin (m + 2) → V} (hs : IsWalkFrom G v₀ s) :
+    IsWalkFrom G v₀ (Fin.init s) :=
+  ((isWalkFrom_iff_init s).1 hs).1
+
 /-- Consecutive vertices of a walk are adjacent. -/
 theorem IsWalkFrom.adj {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
     {a b : Fin (m + 1)} (hab : a.val + 1 = b.val) : G.Adj (s a) (s b) := by
@@ -103,6 +111,13 @@ theorem IsWalkFrom.edist_le {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G
       _ ≤ (j.val : ℕ∞) + 1 := add_le_add ih (le_of_eq (edist_eq_one_iff_adj.mpr (hs.2 j)))
       _ = (j.succ : ℕ) := by simp
 
+/-- The prefix of length `k ≤ m` of an `m`-step walk from `v₀` is a `k`-step walk from `v₀`. -/
+theorem IsWalkFrom.take {m k : ℕ} (hk : k ≤ m) {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s) :
+    IsWalkFrom G v₀ (Fin.take (k + 1) (Nat.add_le_add_right hk 1) s) := by
+  refine ⟨by simpa [Fin.take_apply] using hs.1, fun i ↦ ?_⟩
+  simp only [Fin.take_apply]
+  exact hs.adj rfl
+
 /-- Moving the vertex at an interior position `b` of a walk, whose two neighbouring positions
 carry the same vertex, to another neighbour of that vertex gives a walk. -/
 theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
@@ -121,5 +136,18 @@ theorem IsWalkFrom.update {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v
     exact hx.symm
   · rw [update_of_ne h₁, update_of_ne h₂]
     exact hs.2 i
+
+/-- If every step in `G` increases a `ℕ`-valued function `f` by at most `1`, then after `i` steps
+a walk from `v₀` reaches at most `f v₀ + i`. -/
+theorem IsWalkFrom.le_add_of_adj_le_succ {m : ℕ} {s : Fin (m + 1) → V} (hs : IsWalkFrom G v₀ s)
+    (f : V → ℕ) (hf : ∀ ⦃u v⦄, G.Adj u v → f v ≤ f u + 1) (i : Fin (m + 1)) :
+    f (s i) ≤ f v₀ + i.val := by
+  induction i using Fin.induction with
+  | zero => simp [hs.1]
+  | succ j ih =>
+    have hstep := hf (hs.2 j)
+    simp only [Fin.val_castSucc] at ih
+    simp only [Fin.val_succ]
+    omega
 
 end SimpleGraph

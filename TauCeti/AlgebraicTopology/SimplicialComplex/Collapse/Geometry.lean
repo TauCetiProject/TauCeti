@@ -48,10 +48,10 @@ variable {ι : Type*} [DecidableEq ι] {K : PreAbstractSimplicialComplex ι}
 standard horn opposite `a` under the finite-simplex homeomorphism. -/
 theorem mem_deletion_space_iff_mem_horn (K : PreAbstractSimplicialComplex ι)
     (hτ : τ ∈ K) (a : τ) (hσ : τ.erase a = σ) (x : StandardSimplex τ) :
-    x.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space ↔
+    x.val ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space ↔
       Finset.standardSimplexHomeomorph τ x ∈ Convexity.StdSimplex.horn a := by
   classical
-  have hx : x.1.support ∈ K := K.isRelLowerSet_faces.mem_of_le hτ
+  have hx : x.val.support ∈ K := K.isRelLowerSet_faces.mem_of_le hτ
     (StandardSimplex.support_subset x)
     (Finsupp.support_nonempty_iff.mpr fun hz => by
       have hsum := StandardSimplex.sum_eq_one x
@@ -63,16 +63,16 @@ theorem mem_deletion_space_iff_mem_horn (K : PreAbstractSimplicialComplex ι)
     Finsupp.mem_support_iff, not_not, Finset.standardSimplexHomeomorph_weights]
   constructor
   · rintro ⟨v, hv, hxv⟩
-    have hvτ : v ∈ τ := Finset.erase_subset a.1 τ (hσ.symm ▸ hv)
+    have hvτ : v ∈ τ := Finset.erase_subset a.val τ (hσ.symm ▸ hv)
     refine ⟨⟨v, hvτ⟩, ?_, hxv⟩
     intro h
     have hval := congrArg Subtype.val h
     rw [← hσ] at hv
     exact (Finset.mem_erase.mp hv).1 hval
   · rintro ⟨v, hv, hxv⟩
-    refine ⟨v.1, ?_, hxv⟩
+    refine ⟨v.val, ?_, hxv⟩
     rw [← hσ, Finset.mem_erase]
-    exact ⟨fun h => hv (Subtype.ext h), v.2⟩
+    exact ⟨fun h => hv (Subtype.ext h), v.property⟩
 
 /-- A simplex strongly deformation retracts onto its intersection with the polyhedron
 obtained by deleting one of its nonempty facets. This is the local geometric realization of a
@@ -80,7 +80,7 @@ free-pair collapse, including the case where the deleted facet is a vertex. -/
 theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSimplicialComplex ι)
     (hτ : τ ∈ K) (hστ : σ ⋖ τ) (hσne : σ.Nonempty) :
     let S : Set (StandardSimplex τ) :=
-      {x | x.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space}
+      {x | x.val ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space}
     ∃ r : C(StandardSimplex τ, S), (∀ x : S, r x = x) ∧ Nonempty
       ((ContinuousMap.id (StandardSimplex τ)).HomotopyRel
         ((ContinuousMap.subtypeVal S).comp r) S) := by
@@ -95,7 +95,7 @@ theorem exists_strong_deformation_retraction_simplex_deletion (K : PreAbstractSi
   let : Nontrivial τ := ⟨⟨a', ⟨b, hbτ⟩, fun h => hba (congrArg Subtype.val h).symm⟩⟩
   let e := Finset.standardSimplexHomeomorph τ
   let S : Set (StandardSimplex τ) :=
-    {x | x.1 ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space}
+    {x | x.val ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) (deletion K σ)).space}
   -- The geometric part retained by deletion is exactly the non-apex-coordinate horn.
   have hS (x : StandardSimplex τ) : x ∈ S ↔ e x ∈ Convexity.StdSimplex.horn a' :=
     mem_deletion_space_iff_mem_horn K hτ a' hσ x

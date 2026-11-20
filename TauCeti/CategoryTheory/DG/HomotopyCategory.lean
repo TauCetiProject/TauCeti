@@ -213,13 +213,13 @@ theorem exists_dgHomotopyClass_eq {X Y : C} (c : DGHomotopyClass R X Y) :
     induction e.hom c using Submodule.Quotient.induction_on with
     | H f => exact ⟨f, rfl⟩
   let g := (dgCyclesConcreteEquiv R X Y).symm f
-  refine ⟨g, g.2, ?_⟩
+  refine ⟨g, g.property, ?_⟩
   apply e.toLinearEquiv.injective
-  have hclass := dgHomotopyClass_moduleCatHomologyIso_hom R (g : DGHom R 0 X Y) g.2
+  have hclass := dgHomotopyClass_moduleCatHomologyIso_hom R (g : DGHom R 0 X Y) g.property
   -- The function underlying `e.toLinearEquiv` is `e.hom`; spelling that out lets the
   -- representative compatibility lemma rewrite the transported class.
-  change e.hom (dgHomotopyClass R g g.2) = e.hom c
-  rw [show e.hom (dgHomotopyClass R g g.2) =
+  change e.hom (dgHomotopyClass R g g.property) = e.hom c
+  rw [show e.hom (dgHomotopyClass R g g.property) =
     S.moduleCatLeftHomologyData.π (dgCyclesConcreteEquiv R X Y g) by
       simpa only [e, S] using hclass]
   simpa only [g, LinearEquiv.apply_symm_apply] using hf
@@ -418,7 +418,7 @@ def dgCyclesComp (X Y Z : C) :
   LinearMap.mk₂ R
     (fun (f : dgCycles R X Y) (g : dgCycles R Y Z) ↦
       ⟨dgCompZero R (X := X) (Y := Y) (Z := Z)
-        (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z), dgCompZero_mem_dgCycles R f.2 g.2⟩)
+        (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z), dgCompZero_mem_dgCycles R f.property g.property⟩)
     (fun (f f' : dgCycles R X Y) (g : dgCycles R Y Z) ↦ by
       apply Subtype.ext
       simp only [Submodule.coe_add, add_dgCompZero])
@@ -473,14 +473,14 @@ private def dgConcreteHomotopyComp (X Y Z : C) :
           obtain ⟨h, hh⟩ := hf
           refine ⟨h, ?_⟩
           exact congrArg Subtype.val hh)
-        ((dgCyclesConcreteEquiv R Y Z).symm g).2)
+        ((dgCyclesConcreteEquiv R Y Z).symm g).property)
     (fun g hg ↦ LinearMap.ext fun f ↦ (moduleCatπ_eq_zero_iff R _).2 <| by
       apply (mem_moduleCatToCycles_range R
         ((dgCyclesConcreteEquiv R X Z).symm
           (dgConcreteCyclesComp R X Y Z f g))).2
       simp only [dgConcreteCyclesComp]
       exact dgCompZero_mem_dgBoundaries_of_right R
-        ((dgCyclesConcreteEquiv R X Y).symm f).2
+        ((dgCyclesConcreteEquiv R X Y).symm f).property
         (by
           obtain ⟨h, hh⟩ := hg
           refine ⟨h, ?_⟩

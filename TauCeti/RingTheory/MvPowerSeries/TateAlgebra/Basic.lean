@@ -231,7 +231,8 @@ noncomputable instance instNormedRingIsRestrictedSubring :
       add_le' f g :=
         (gaussNorm_add_le_max norm c (f : MvPowerSeries σ R) (g : MvPowerSeries σ R)
           (fun i ↦ (hc i).out.le) norm_nonneg
-          IsUltrametricDist.isNonarchimedean_norm f.2.hasGaussNorm g.2.hasGaussNorm).trans
+          IsUltrametricDist.isNonarchimedean_norm f.property.hasGaussNorm
+              g.property.hasGaussNorm).trans
           (max_le_add_of_nonneg (gaussNorm_nonneg norm _ _ norm_nonneg)
             (gaussNorm_nonneg norm _ _ norm_nonneg))
       neg' f := gaussNorm_neg (fun x : R ↦ ‖x‖) c (fun x ↦ norm_neg x)
@@ -239,10 +240,10 @@ noncomputable instance instNormedRingIsRestrictedSubring :
       mul_le' f g := gaussNorm_mul_le norm c (f : MvPowerSeries σ R)
         (g : MvPowerSeries σ R) (fun i ↦ (hc i).out.le) norm_nonneg
         norm_mul_le IsUltrametricDist.isNonarchimedean_norm norm_zero
-        f.2.hasGaussNorm g.2.hasGaussNorm
+        f.property.hasGaussNorm g.property.hasGaussNorm
       eq_zero_of_map_eq_zero' f h := by
         rwa [gaussNorm_eq_zero_iff norm _ _ norm_zero norm_nonneg
-          (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) f.2.hasGaussNorm,
+          (fun _ ↦ norm_eq_zero.mp) (fun i ↦ (hc i).out) f.property.hasGaussNorm,
           ZeroMemClass.coe_eq_zero] at h }
 
 /-- The norm of a restricted series is its Gauss norm at the chosen polyradii. -/
@@ -252,7 +253,7 @@ theorem norm_eq_gaussNorm (f : IsRestricted.subring (R := R) c) :
 /-- Every weighted coefficient norm is bounded by the Gauss norm of the restricted series. -/
 theorem norm_coeff_mul_prod_le (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
     ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤ ‖f‖ :=
-  le_gaussNorm norm c _ f.2.hasGaussNorm t
+  le_gaussNorm norm c _ f.property.hasGaussNorm t
 
 /-- The constant coefficient is bounded by the Gauss norm of the restricted series. -/
 theorem norm_constantCoeff_le (f : IsRestricted.subring (R := R) c) :
@@ -306,7 +307,7 @@ theorem exists_norm_coeff_mul_prod_gap (f : IsRestricted.subring (R := R) c) (hf
   set w : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
   have hM : 0 < M := norm_pos_iff.mpr hf
   have hF : {t | M / 2 ≤ w t}.Finite := by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hM))
+    simpa [eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds (half_pos hM))
   let F' := hF.toFinset.filter fun t ↦ w t < M
   rcases F'.eq_empty_or_nonempty with hF' | hF'
   · refine ⟨M / 2, (half_pos hM).le, half_lt_self hM, fun t ht ↦ le_of_not_ge fun h ↦ ?_⟩
@@ -334,7 +335,7 @@ since the norm is attained. -/
 theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
     ‖f‖ < r ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) < r := by
   refine ⟨fun h t ↦ (norm_coeff_mul_prod_le f t).trans_lt h, fun h ↦ ?_⟩
-  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
+  obtain ⟨t, ht⟩ := f.property.exists_achievesGaussNorm
   rw [norm_eq_gaussNorm, ← ht]
   exact h t
 
@@ -346,7 +347,7 @@ theorem norm_coeff_le_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)
 /-- At unit polyradius a restricted series has a coefficient whose norm is its Gauss norm. -/
 theorem exists_norm_coeff_eq_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
     ∃ t, ‖coeff t (f : MvPowerSeries σ R)‖ = ‖f‖ := by
-  obtain ⟨t, ht⟩ := f.2.exists_achievesGaussNorm
+  obtain ⟨t, ht⟩ := f.property.exists_achievesGaussNorm
   exact ⟨t, by simpa [AchievesGaussNorm, ← norm_eq_gaussNorm] using ht⟩
 
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
@@ -407,7 +408,8 @@ theorem dense_closure_monomial {s : Set R} (hs : Dense s) :
   set w : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
   -- only finitely many weighted coefficients are at least `ε / 2`
   have hF : {t | ε / 2 ≤ w t}.Finite := by
-    simpa [Filter.eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds (half_pos hε))
+    simpa [Filter.eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds
+        (half_pos hε))
   -- approximate each of these coefficients by an element of `s` up to `ε / 2` in weighted norm
   have happrox (t : σ →₀ ℕ) : ∃ a ∈ s,
       ‖coeff t (f : MvPowerSeries σ R) - a‖ * t.prod (c · ^ ·) < ε / 2 := by
@@ -434,7 +436,7 @@ instance : IsUltrametricDist (IsRestricted.subring (R := R) c) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun f g ↦
     gaussNorm_add_le_max norm c (f : MvPowerSeries σ R) (g : MvPowerSeries σ R)
       (fun i ↦ (hc i).out.le) norm_nonneg
-      IsUltrametricDist.isNonarchimedean_norm f.2.hasGaussNorm g.2.hasGaussNorm
+      IsUltrametricDist.isNonarchimedean_norm f.property.hasGaussNorm g.property.hasGaussNorm
 
 /-- The Gauss norm preserves the norm of `1` from the coefficient ring. -/
 instance [NormOneClass R] : NormOneClass
@@ -449,7 +451,7 @@ instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
   obtain ⟨a, hg, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_coefficient_limit
-    (fun i ↦ (hc i).out.le) (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) (fun k ↦ (F k).2)
+    (fun i ↦ (hc i).out.le) (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) (fun k ↦ (F k).property)
     (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
@@ -615,7 +617,7 @@ theorem IsRestricted.gaussNorm_mul [NormMulClass R] {f g : MvPowerSeries σ R}
 
 /-- The Gauss norm inherits multiplicativity from the coefficient norm. -/
 instance [NormMulClass R] : NormMulClass (IsRestricted.subring (R := R) c) where
-  norm_mul f g := f.2.gaussNorm_mul g.2
+  norm_mul f g := f.property.gaussNorm_mul g.property
 
 end NormedRing
 

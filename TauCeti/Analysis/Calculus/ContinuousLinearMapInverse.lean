@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -53,6 +54,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   vector curve.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
+* `TauCeti.iteratedDeriv_ringInverse_add_smul`: all derivatives of the ring inverse of an
+  affine pencil, at any parameter where the pencil is a unit.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
   and `P` of velocity `Z` through `1` has velocity `Z * C - C * Z` at that point.
 
@@ -112,7 +115,7 @@ theorem ContinuousLinearMap.isInvertible_of_norm_sub_le_half [CompleteSpace E]
     (L : E ≃L[𝕜] F) {A : E →L[𝕜] F}
     (h : ‖A - (L : E →L[𝕜] F)‖₊ ≤ ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2) : A.IsInvertible := by
   rcases eq_or_ne (‖(L.symm : F →L[𝕜] E)‖₊)⁻¹ 0 with h0 | h0
-  · rw [h0, zero_div, le_zero_iff, nnNorm_eq_zero, sub_eq_zero] at h
+  · rw [h0, zero_div, nonpos_iff_eq_zero, nnNorm_eq_zero, sub_eq_zero] at h
     exact h ▸ ContinuousLinearMap.isInvertible_equiv
   · exact ContinuousLinearMap.isInvertible_of_norm_sub_lt L (h.trans_lt (NNReal.half_lt_self h0))
 
@@ -323,6 +326,51 @@ theorem ContDiffAt.inverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x)
 theorem ContDiff.inverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x, IsUnit (f x)) :
     ContDiff 𝕜 n (fun y => Ring.inverse (f y)) :=
   contDiff_iff_contDiffAt.2 fun x => hf.contDiffAt.inverse (hfu x)
+
+/-- All derivatives of the ring inverse of an affine pencil at a unit value, with the
+noncommutative product order preserved. No invertibility away from the evaluation point is
+required. -/
+theorem TauCeti.iteratedDeriv_ringInverse_add_smul (a b : R) (k : ℕ) {t : 𝕜}
+    (ht : IsUnit (a + t • b)) :
+    iteratedDeriv k (fun s : 𝕜 ↦ Ring.inverse (a + s • b)) t =
+      ((-1 : 𝕜) ^ k * (Nat.factorial k : 𝕜)) •
+        (Ring.inverse (a + t • b) * (b * Ring.inverse (a + t • b)) ^ k) := by
+  have hR (t : 𝕜) (ht : IsUnit (a + t • b)) :
+      HasDerivAt (fun s : 𝕜 ↦ Ring.inverse (a + s • b))
+      (-(Ring.inverse (a + t • b) * b * Ring.inverse (a + t • b))) t := by
+    obtain ⟨u, hu⟩ := ht
+    have hd : HasDerivAt (fun s : 𝕜 ↦ a + s • b) b t := by
+      simpa only [one_smul, id_eq] using! ((hasDerivAt_id t).smul_const b).const_add a
+    simpa only [Function.comp_def, ← hu, Ring.inverse_unit,
+      neg_apply, ContinuousLinearMap.mulLeftRight_apply] using!
+      (hasFDerivAt_ringInverse (𝕜 := 𝕜) u).comp_hasDerivAt_of_eq t hd hu
+  have hword (t : 𝕜) (ht : IsUnit (a + t • b)) (j : ℕ) : HasDerivAt
+      (fun s : 𝕜 ↦ Ring.inverse (a + s • b) * (b * Ring.inverse (a + s • b)) ^ j)
+      (-((j + 1 : ℕ) : 𝕜) •
+        (Ring.inverse (a + t • b) * (b * Ring.inverse (a + t • b)) ^ (j + 1))) t := by
+    have hR := hR t ht
+    induction j with
+    | zero => simpa [pow_one, mul_assoc] using hR
+    | succ j ih =>
+      have hd := ih.fun_mul (hR.const_mul b)
+      simp only [pow_succ, ← mul_assoc] at hd ⊢
+      refine hd.congr_deriv ?_
+      simp only [smul_mul_assoc, mul_neg, mul_assoc, Nat.cast_add, Nat.cast_one,
+        neg_add, add_smul, neg_one_smul, add_mul, neg_mul]
+  induction k generalizing t with
+  | zero => simp
+  | succ k ih =>
+    have hu : ∀ᶠ s in 𝓝 t, IsUnit (a + s • b) :=
+      (Units.isOpen.preimage (by fun_prop : Continuous (fun s : 𝕜 ↦ a + s • b))).mem_nhds ht
+    have heq : iteratedDeriv k (fun s : 𝕜 ↦ Ring.inverse (a + s • b)) =ᶠ[𝓝 t]
+        fun s ↦ ((-1 : 𝕜) ^ k * (Nat.factorial k : 𝕜)) •
+          (Ring.inverse (a + s • b) * (b * Ring.inverse (a + s • b)) ^ k) :=
+      hu.mono fun s hs ↦ ih hs
+    rw [iteratedDeriv_succ, heq.deriv_eq,
+      ((hword t ht k).fun_const_smul ((-1 : 𝕜) ^ k * (Nat.factorial k : 𝕜))).deriv, smul_smul]
+    congr 1
+    simp only [pow_succ, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one]
+    ring
 
 omit [HasSummableGeomSeries R] in
 /-- If `K t * P t = P t * C` for all `t`, `P t₀ = 1`, `P` has derivative `Z` at `t₀` and `K` is

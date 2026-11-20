@@ -133,7 +133,7 @@ identity. -/
 private theorem continuous_chartHandleDeformation [T2Space M] [Finite ι]
     (hC : ∀ i, IsCompact (C i)) :
     Continuous fun p : I × X ↦ chartHandleDeformation φ ε p.1 p.2 := by
-  have hval : Continuous fun q : I × X ↦ (q.2 : M) := continuous_subtype_val.comp continuous_snd
+  have hval : Continuous fun q : I × X ↦ (q.2 : M) := continuous_subtypeVal.comp continuous_snd
   set K := ⋃ i, (φ i).symm '' C i
   have hK : IsClosed K := (isCompact_iUnion fun i ↦ (hC i).image_of_continuousOn
     ((φ i).continuousOn_symm.mono (hCφ i))).isClosed
@@ -146,7 +146,7 @@ private theorem continuous_chartHandleDeformation [T2Space M] [Finite ι]
         {q : I × X | (q.2 : M) ∈ (φ i).source} :=
       (φ i).continuousOn_symm.comp ((quadraticHandleDeformation ε).continuous.comp_continuousOn
         (continuousOn_fst.prodMk ((φ i).continuousOn.comp hval.continuousOn fun _ hq ↦ hq)))
-        fun q hq ↦ (quadraticHandleDeformation_mem_target_and_mem hCφ hX q.2.2 hq q.1).1
+        fun q hq ↦ (quadraticHandleDeformation_mem_target_and_mem hCφ hX q.2.property hq q.1).1
     exact (hcU.continuousAt (hU.mem_nhds hi)).congr
       (Filter.eventually_of_mem (hU.mem_nhds hi) fun q hq ↦
         (chartHandleDeformation_of_mem hφ hq).symm)
@@ -158,7 +158,7 @@ private theorem continuous_chartHandleDeformation [T2Space M] [Finite ι]
       ((hK.isOpen_compl.preimage hval).mem_nhds hpK) fun q hq ↦ ?_)
     by_cases hq' : ∃ i, (q.2 : M) ∈ (φ i).source
     · obtain ⟨i, hi⟩ := hq'
-      refine (chartHandleDeformation_eq_self_of_notMem hφ hX q.2.2 hi
+      refine (chartHandleDeformation_eq_self_of_notMem hφ hX q.2.property hi
         (fun hqC ↦ hq (mem_iUnion.2 ⟨i, φ i q.2, hqC, ?_⟩)) q.1).symm
       exact (φ i).left_inv hi
     · exact (chartHandleDeformation_of_forall_notMem (not_exists.1 hq')).symm
@@ -204,16 +204,17 @@ private theorem exists_deformation_of_charts [T2Space M] [Finite ι] (hC : ∀ i
     · rw [chartHandleDeformation_of_forall_notMem (not_exists.1 h)] at hj
       exact absurd hj (not_exists.1 h j)
   have hcont := continuous_chartHandleDeformation hφ hCφ hX hC
-  refine ⟨⟨fun x ↦ ⟨chartHandleDeformation φ ε 0 x, chartHandleDeformation_mem hφ hCφ hX x.2 0,
-      hG0S x.2⟩, (hcont.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩,
-    fun x ↦ Subtype.ext (hfixS x.2.1 x.2.2 0), ⟨?_⟩⟩
+  refine ⟨⟨fun x ↦ ⟨chartHandleDeformation φ ε 0 x, chartHandleDeformation_mem hφ hCφ hX x.property
+      0,
+      hG0S x.property⟩, (hcont.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩,
+    fun x ↦ Subtype.ext (hfixS x.property.1 x.property.2 0), ⟨?_⟩⟩
   exact
     { toFun p :=
-        ⟨chartHandleDeformation φ ε p.1 p.2, chartHandleDeformation_mem hφ hCφ hX p.2.2 p.1⟩
+        ⟨chartHandleDeformation φ ε p.1 p.2, chartHandleDeformation_mem hφ hCφ hX p.2.property p.1⟩
       continuous_toFun := hcont.subtype_mk _
       map_zero_left x := rfl
       map_one_left x := Subtype.ext (hG1 x)
-      prop' t x hx := Subtype.ext ((hfixS x.2 hx t).trans (hfixS x.2 hx 0).symm) }
+      prop' t x hx := Subtype.ext ((hfixS x.property hx t).trans (hfixS x.property hx 0).symm) }
 
 end Hypotheses
 
