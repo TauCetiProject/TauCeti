@@ -50,6 +50,8 @@ generators.
   through the tree is the product of the generators of its darts.
 * `TauCeti.SerreGraph.roseGraphPresentationEquivFreeGroup`: the rose has free fundamental group
   on its petals, the two darts of a petal giving a generator and its inverse.
+* `TauCeti.SerreGraph.rosePathGroupEquivFreeGroup`: the same for the reduced path group of the
+  rose, the petal loop giving the generator and its reverse the inverse.
 * `TauCeti.SerreGraph.IsAcyclic.subsingleton_graphPresentation`: relative to any spanning tree,
   the presentation of an acyclic graph is trivial.
 
@@ -296,5 +298,38 @@ as the petal `a` and the dart `(a, false)` as its inverse. -/
     (roseGraphPresentationEquivFreeGroup α).symm (FreeGroup.of a) =
       PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true) := by
   rw [MulEquiv.symm_apply_eq, roseGraphPresentationEquivFreeGroup_of_true]
+
+/-- The reduced path group of a rose is free on its petals: the petal loop `rosePetal a`, which
+crosses the dart `(a, true)`, is the free generator `a`, and the loop crossing the reverse dart
+`(a, false)` is its inverse. -/
+noncomputable def rosePathGroupEquivFreeGroup (α : Type w) (v : (rose α).V) :
+    PathGroup (rose α) v ≃* FreeGroup α :=
+  haveI : IsEmpty (roseTree α).darts := Set.isEmpty_coe_sort.mpr (roseTree_darts α)
+  ((roseTree α).pathGroupEquivTreePresentation v (GraphOfGroups.trivial (rose α))).trans
+    (GraphOfGroups.π₁Tree.roseEquivFreeGroup _ (roseTree α).darts)
+
+@[simp] theorem rosePathGroupEquivFreeGroup_ofPath_rosePetal {α : Type w} (v : (rose α).V) (a : α) :
+    rosePathGroupEquivFreeGroup α v (PathGroup.ofPath (rosePetal a)) = FreeGroup.of a := by
+  -- The vertex type of `rose α` unfolds only at default transparency, so the petal loop, a path at
+  -- `PUnit.unit`, is identified with the tree loop at `v` by composing equations.
+  have h : (PathGroup.ofPath (rosePetal a) : PathGroup (rose α) v) =
+      (roseTree α).loop v (a, true) :=
+    ((roseTree α).basedPath_self v _).symm.trans ((congrArg _ (rosePetal_eq_toPath a)).trans
+      (((roseTree α).basedPath_toPath v _).trans (congrArg _ ((rose α).dart_val _))))
+  rw [h]
+  exact (congrArg _ ((roseTree α).pathGroupEquivTreePresentation_loop v _ (a, true))).trans
+    (GraphOfGroups.π₁Tree.roseEquivFreeGroup_edge_true _ _ a)
+
+/-- The petal loop of `a` traversed backwards, crossing the dart `(a, false)`, is the inverse of
+the free generator `a`. -/
+@[simp] theorem rosePathGroupEquivFreeGroup_ofPath_reverse_rosePetal {α : Type w} (v : (rose α).V)
+    (a : α) : rosePathGroupEquivFreeGroup α v (PathGroup.ofPath (rosePetal a).reverse) =
+      (FreeGroup.of a)⁻¹ :=
+  (congrArg _ (PathGroup.ofPath_reverse (v := v) (rosePetal a))).trans
+    ((map_inv _ _).trans (congrArg _ (rosePathGroupEquivFreeGroup_ofPath_rosePetal v a)))
+
+@[simp] theorem rosePathGroupEquivFreeGroup_symm_of {α : Type w} (v : (rose α).V) (a : α) :
+    (rosePathGroupEquivFreeGroup α v).symm (FreeGroup.of a) = PathGroup.ofPath (rosePetal a) :=
+  (MulEquiv.symm_apply_eq _).mpr (rosePathGroupEquivFreeGroup_ofPath_rosePetal v a).symm
 
 end TauCeti.SerreGraph
