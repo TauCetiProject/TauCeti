@@ -42,6 +42,9 @@ All in the namespace `TauCeti.PDCode`:
   planar code `D`, a functor `Finset (Fin n) ⥤ ModuleCat R`.
 * `resolutionCubeObjCongr`: reindexing the circle tensors along a bijection of resolved circles,
   as a linear equivalence of vertices of cubes of resolutions with pieces of the same degree.
+* `resolutionCubeHom`: the map of cubes of resolutions of two planar codes with the same crossings
+  given by homogeneous maps of the circle tensors of the resolutions which commute with the saddle
+  maps.
 * `khovanovBracket D hD R`: the unnormalized Khovanov complex, as a graded object of cochain
   complexes indexed by the quantum degree.
 
@@ -396,6 +399,63 @@ theorem resolutionCube_map_homOfLE_comp_resolutionCubeι {S T : Finset (Fin n)} 
   have ha : a ∉ S := fun hm => hc (by subst hT; simp [Finset.insert_eq_of_mem hm])
   subst hT
   exact D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j ha
+
+/-! ### Maps of cubes of resolutions -/
+
+section Hom
+
+variable {D} {D' : PDCode n} (hD' : D'.IsPlanar) {j' d : ℤ}
+  (f : ∀ s : Fin n → Bool, Khovanov.CircleTensor R (D.ResolvedCircle s) →ₗ[R]
+    Khovanov.CircleTensor R (D'.ResolvedCircle s))
+  (hf : ∀ s, TauCeti.LinearMap.IsHomogeneous (f s)
+    (Khovanov.circleQuantumGrading R (D.ResolvedCircle s)).piece
+    (Khovanov.circleQuantumGrading R (D'.ResolvedCircle s)).piece d)
+  (hfe : ∀ ⦃s t : Fin n → Bool⦄ ⦃c : Fin n⦄ (hst : ∀ i, i ≠ c → s i = t i) (hc : s c ≠ t c)
+    (h : #(D.circlesAt s c) = 2 ∨ #(D.circlesAt t c) = 2)
+    (h' : #(D'.circlesAt s c) = 2 ∨ #(D'.circlesAt t c) = 2)
+    (x : Khovanov.CircleTensor R (D.ResolvedCircle s)),
+    D'.resolutionEdgeMap hst hc h' R (f s x) = f t (D.resolutionEdgeMap hst hc h R x))
+  (hj : j' = j + d)
+
+/-- The component on the vertex `S` of `TauCeti.PDCode.resolutionCubeHom`: the map `f` on the
+resolution of `S`, restricted to the quantum pieces. -/
+private def resolutionCubeHomApp (S : Finset (Fin n)) :
+    (D.resolutionCube hD R j).obj S ⟶ (D'.resolutionCube hD' R j').obj S :=
+  ModuleCat.ofHom <| (f (cubeState S)).restrict fun x hx ↦ by
+    convert (hf (cubeState S)).map_mem hx using 2
+    omega
+
+@[reassoc]
+private theorem resolutionCubeHomApp_comp_resolutionCubeι (S : Finset (Fin n)) :
+    resolutionCubeHomApp hD R j hD' f hf hj S ≫ D'.resolutionCubeι hD' R j' S =
+      D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom (f (cubeState S)) :=
+  (rfl)
+
+/-- **Maps of cubes of resolutions from maps of circle tensors.** Linear maps `f s` from the
+circle tensors of the resolutions of `D` to those of a planar code `D'` with the same crossings,
+of quantum degree `d` and commuting with the saddle maps, form a map of cubes of resolutions from
+quantum degree `j` to quantum degree `j' = j + d`. On the vertex `S` it is `f (cubeState S)`
+restricted to the quantum pieces. -/
+def resolutionCubeHom : D.resolutionCube hD R j ⟶ D'.resolutionCube hD' R j' :=
+  NatTrans.ofCubeEdges (resolutionCubeHomApp hD R j hD' f hf hj) fun S T h ↦ by
+    obtain ⟨a, ha, rfl⟩ := h.exists_finset_insert
+    rw [← cancel_mono (D'.resolutionCubeι hD' R j' (insert a S)), Category.assoc, Category.assoc,
+      resolutionCubeHomApp_comp_resolutionCubeι,
+      D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι_assoc hD R j ha,
+      D'.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD' R j' ha,
+      resolutionCubeHomApp_comp_resolutionCubeι_assoc]
+    ext x
+    exact (hfe _ _ _ _ _).symm
+
+/-- On the vertex `S`, `TauCeti.PDCode.resolutionCubeHom` acts by `f (cubeState S)`. -/
+@[reassoc]
+theorem resolutionCubeHom_app_comp_resolutionCubeι (S : Finset (Fin n)) :
+    (resolutionCubeHom hD R j hD' f hf hfe hj).app S ≫ D'.resolutionCubeι hD' R j' S =
+      D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom (f (cubeState S)) := by
+  rw [resolutionCubeHom, NatTrans.ofCubeEdges_app]
+  exact resolutionCubeHomApp_comp_resolutionCubeι hD R j hD' f hf hj S
+
+end Hom
 
 /-! ### The unnormalized Khovanov complex -/
 
