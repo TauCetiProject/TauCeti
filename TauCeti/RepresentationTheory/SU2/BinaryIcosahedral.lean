@@ -106,30 +106,6 @@ theorem coe_binaryIcosahedralTau :
 
 /-! ### Doubled coordinates in `ℤ[φ]` -/
 
-/-- The coordinatewise evaluation at `φ` of quaternions over `ℤ[φ]`. -/
-private noncomputable def realQuaternion : ℍ[QuadraticAlgebra ℤ 1 1] →+* ℍ[ℝ] :=
-  Quaternion.map goldenEval
-
-@[simp]
-private theorem re_realQuaternion (x : ℍ[QuadraticAlgebra ℤ 1 1]) :
-    (realQuaternion x).re = goldenEval x.re :=
-  Quaternion.re_map _ _
-
-@[simp]
-private theorem imI_realQuaternion (x : ℍ[QuadraticAlgebra ℤ 1 1]) :
-    (realQuaternion x).imI = goldenEval x.imI :=
-  Quaternion.imI_map _ _
-
-@[simp]
-private theorem imJ_realQuaternion (x : ℍ[QuadraticAlgebra ℤ 1 1]) :
-    (realQuaternion x).imJ = goldenEval x.imJ :=
-  Quaternion.imJ_map _ _
-
-@[simp]
-private theorem imK_realQuaternion (x : ℍ[QuadraticAlgebra ℤ 1 1]) :
-    (realQuaternion x).imK = goldenEval x.imK :=
-  Quaternion.imK_map _ _
-
 /-- The quaternion product over `ℤ[φ]` written out coordinatewise, which the kernel evaluates much
 faster than the generic product of `ℍ[R]`. -/
 private def qmul (x y : ℍ[QuadraticAlgebra ℤ 1 1]) : ℍ[QuadraticAlgebra ℤ 1 1] :=
@@ -267,7 +243,8 @@ private theorem abs_of_isTwiceBase {z : QuadraticAlgebra ℤ 1 1} {k : Fin 4}
 /-- If `x / 4` is one of the 120 points, then so is any element of `SU(2)` with this quaternion. -/
 private theorem mem_binaryIcosahedralSet_of_isQuadPoint {g : SU2} {x : ℍ[QuadraticAlgebra ℤ 1 1]}
     (hx : IsQuadPoint x)
-    (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ((4⁻¹ : ℝ) • realQuaternion x)) :
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) =
+      toComplexMatrix ((4⁻¹ : ℝ) • Quaternion.map goldenEval x)) :
     g ∈ binaryIcosahedralSet := by
   rcases hx with ⟨h₀, h₁, h₂, h₃⟩ | ⟨p, hp, h₀, h₁, h₂, h₃⟩
   · obtain ⟨m₀, hm₀⟩ := exists_int_of_isTwiceInt h₀
@@ -298,7 +275,8 @@ private theorem eq_sign_mul_abs (y : ℝ) : y = ((if 0 ≤ y then 1 else -1 : �
 `cosetQuat q` for parameters `q`. -/
 private theorem exists_of_mem_binaryIcosahedralSet {g : SU2} (hg : g ∈ binaryIcosahedralSet) :
     ∃ v ∈ intQuat '' ↑binaryTetrahedralCoords ∪ cosetQuat '' ↑cosetParams,
-      (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ((2⁻¹ : ℝ) • realQuaternion v) := by
+      (g : Matrix (Fin 2) (Fin 2) ℂ) =
+        toComplexMatrix ((2⁻¹ : ℝ) • Quaternion.map goldenEval v) := by
   rcases hg with hg | ⟨σ, hσ, x, hx, hg⟩
   · obtain ⟨v, hv, hg⟩ := mem_binaryTetrahedralSubgroup_iff.mp hg
     refine ⟨intQuat v, .inl ⟨v, hv, rfl⟩, ?_⟩
@@ -323,8 +301,8 @@ private theorem exists_of_mem_binaryIcosahedralSet {g : SU2} (hg : g ∈ binaryI
   refine ⟨cosetQuat (⇑σ, t 1, t 2, t 3), .inr ⟨_, hmem, rfl⟩, ?_⟩
   rw [hg]
   congr 1
-  ext <;> simp only [cosetQuat, re_realQuaternion, imI_realQuaternion, imJ_realQuaternion,
-    imK_realQuaternion, QuaternionAlgebra.re_smul, QuaternionAlgebra.imI_smul,
+  ext <;> simp only [cosetQuat, Quaternion.re_map, Quaternion.imI_map, Quaternion.imJ_map,
+    Quaternion.imK_map, AlgHom.coe_toRingHom, QuaternionAlgebra.re_smul, QuaternionAlgebra.imI_smul,
     QuaternionAlgebra.imJ_smul, QuaternionAlgebra.imK_smul, smul_eq_mul, ← hcoord] <;> ring
 
 private theorem ncard_params_le :
@@ -340,7 +318,7 @@ private theorem ncard_params_le :
 /-- The matrices of the 120 points. -/
 private theorem coe_image_binaryIcosahedralSet_subset :
     Subtype.val '' binaryIcosahedralSet ⊆
-      (fun v => toComplexMatrix ((2⁻¹ : ℝ) • realQuaternion v)) ''
+      (fun v => toComplexMatrix ((2⁻¹ : ℝ) • Quaternion.map goldenEval v)) ''
         (intQuat '' ↑binaryTetrahedralCoords ∪ cosetQuat '' ↑cosetParams) := by
   rintro _ ⟨g, hg, rfl⟩
   obtain ⟨v, hv, hgv⟩ := exists_of_mem_binaryIcosahedralSet hg
@@ -362,7 +340,7 @@ private theorem ncard_binaryIcosahedralSet_le : binaryIcosahedralSet.ncard ≤ 1
 /-! ### Closure under the generators -/
 
 private theorem coe_binaryIcosahedralTau_eq : (binaryIcosahedralTau : Matrix (Fin 2) (Fin 2) ℂ) =
-    toComplexMatrix ((2⁻¹ : ℝ) • realQuaternion tauQuat) := by
+    toComplexMatrix ((2⁻¹ : ℝ) • Quaternion.map goldenEval tauQuat) := by
   rw [coe_binaryIcosahedralTau, inv_goldenRatio_eq_goldenRatio_sub_one]
   congr 1
   ext <;> simp [tauQuat] <;> ring
@@ -373,7 +351,8 @@ private noncomputable def generators : Set SU2 :=
 
 private theorem exists_generatorQuat {a : SU2} (ha : a ∈ generators) :
     ∃ x ∈ generatorQuats,
-      (a : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ((2⁻¹ : ℝ) • realQuaternion x) := by
+      (a : Matrix (Fin 2) (Fin 2) ℂ) =
+        toComplexMatrix ((2⁻¹ : ℝ) • Quaternion.map goldenEval x) := by
   rcases ha with rfl | rfl | rfl | rfl
   · refine ⟨_, List.mem_cons_self, ?_⟩
     rw [coe_binaryDihedralRotation_eq_toComplexMatrix]
