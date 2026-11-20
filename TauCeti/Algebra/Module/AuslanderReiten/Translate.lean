@@ -49,8 +49,9 @@ that statement, and it is what licenses the notation `τ M`.
   for a finitely generated left-hand source and an injective cogenerator `E`, the converse holds
   too — **the translate vanishes exactly on the projective modules** — so that `τ` assigns a
   nonzero module to every non-projective one.
-* `TauCeti.AuslanderReitenTranslate.isIndecomposableModule_iff`: when the transpose has finite
-  length over `R`, the translate is indecomposable exactly when the transpose is.
+* The translate is the Matlis dual of the transpose, so
+  `TauCeti.MatlisDual.isIndecomposableModule_iff` shows that, when the transpose has finite length
+  over `R`, the translate is indecomposable exactly when the transpose is.
 
 ## Implementation notes
 
@@ -166,21 +167,5 @@ theorem nonempty_linearEquiv_auslanderReitenTranslate (h : IsMinimalProjectivePr
 end Comparison
 
 end IsMinimalProjectivePresentation
-
-namespace AuslanderReitenTranslate
-
-variable {P₀ : Type v} {P₁ : Type w} [AddCommGroup P₀] [Module A P₀]
-  [AddCommGroup P₁] [Module A P₁] {p₁ : P₁ →ₗ[A] P₀}
-
-/-- For a transpose of finite length over `R`, the translate is indecomposable exactly when the
-transpose is.  Over an Artin algebra every finite presentation has such a transpose. -/
-theorem isIndecomposableModule_iff [Module.Injective R E] [Small.{y} R]
-    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
-    (hTr : IsFiniteLength R (AuslanderReitenTranspose p₁)) :
-    IsIndecomposableModule A (AuslanderReitenTranslate R E p₁) ↔
-      IsIndecomposableModule Aᵐᵒᵖ (AuslanderReitenTranspose p₁) :=
-  MatlisDual.isIndecomposableModule_iff hE hTr
-
-end AuslanderReitenTranslate
 
 end TauCeti

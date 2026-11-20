@@ -140,7 +140,7 @@ theorem indecomposable_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Fin
       (fun h ↦ hp ((IsProjective.iff_projective (R := A) M).mp h))
   have : Module.Finite R (AuslanderReitenTranspose P.p) := Module.Finite.trans Aᵐᵒᵖ _
   exact (indecomposable_iff_isIndecomposableModule _).mpr
-    ((AuslanderReitenTranslate.isIndecomposableModule_iff hE (isFiniteLength_of_finite R _)).mpr
+    ((MatlisDual.isIndecomposableModule_iff hE (isFiniteLength_of_finite R _)).mpr
       htr)
 
 /-- The translate is injective exactly when the original module is projective. Consequently

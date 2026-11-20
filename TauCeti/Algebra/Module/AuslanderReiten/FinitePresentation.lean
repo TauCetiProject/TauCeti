@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Module.AuslanderReiten.Translate
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.RingTheory.Artinian.FiniteLength
-import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
 # Finite presentation of the Auslander–Bridger transpose
@@ -67,15 +67,12 @@ variable {R A P₀ P₁ : Type*} [CommRing R] [IsNoetherianRing R] [Ring A] [Alg
   [Module.Finite A P₁]
 
 /-- Over an algebra finite over a Noetherian ring `R`, the transpose of an arrow with finitely
-generated source is finitely generated over `R`, with no projectivity: precomposition with a
-surjection `Aⁿ → P₁` embeds `Hom_A(P₁, A)` into `Hom_A(Aⁿ, A)`, which is finite over `R`. -/
-instance finite_base (f : P₁ →ₗ[A] P₀) : Module.Finite R (AuslanderReitenTranspose f) := by
-  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' A P₁
-  have : Module.Finite R ((Fin n → A) →ₗ[A] A) := Module.Finite.linearMap A R _ A
-  have := isNoetherian_of_isNoetherianRing_of_finite R ((Fin n → A) →ₗ[A] A)
-  have : Module.Finite R (Module.Dual A P₁) :=
-    Module.Finite.of_injective (g.lcomp R A) (LinearMap.lcomp_injective_of_surjective g hg)
-  exact Module.Finite.of_surjective ((mk f).restrictScalars R) (mk_surjective f)
+generated source is finitely generated over `R`, with no projectivity: `Hom_A(P₁, A)` is a
+Noetherian `R`-module (`TauCeti.isNoetherian_linearMap_of_finite`), and the transpose is a quotient
+of it. -/
+instance finite_base (f : P₁ →ₗ[A] P₀) : Module.Finite R (AuslanderReitenTranspose f) :=
+  have := isNoetherian_of_isNoetherianRing_of_finite R A
+  Module.Finite.of_surjective ((mk f).restrictScalars R) (mk_surjective f)
 
 end Base
 

@@ -7,6 +7,7 @@ module
 
 import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 import TauCeti.Algebra.Module.Opposite
+import TauCeti.RingTheory.Noetherian.LinearMap
 public import TauCeti.LinearAlgebra.Dual.RightAction
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 
@@ -314,13 +315,14 @@ end Instances
 
 section Finite
 
-variable {R : Type u} [CommRing R] [IsNoetherianRing R] {E : Type v} [AddCommGroup E]
-  [Module R E] [Module.Finite R E] {N : Type w} [AddCommGroup N] [Module R N] [Module.Finite R N]
+variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E] [IsNoetherian R E]
+  {N : Type w} [AddCommGroup N] [Module R N] [Module.Finite R N]
 
-/-- Over a Noetherian ring, the dual of a finitely generated module with values in a finitely
-generated module is finitely generated, as linear maps between such modules are. -/
-instance : Module.Finite R (MatlisDual R E N) :=
-  Module.Finite.equiv (equivLinearMap R E N).symm
+/-- The dual of a finitely generated module with values in a Noetherian module is Noetherian, as
+linear maps between such modules are (`TauCeti.isNoetherian_linearMap_of_finite`); in particular it
+is finitely generated. -/
+instance : IsNoetherian R (MatlisDual R E N) :=
+  isNoetherian_of_linearEquiv (equivLinearMap R E N).symm
 
 end Finite
 
