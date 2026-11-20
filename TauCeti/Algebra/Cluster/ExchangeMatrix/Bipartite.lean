@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.CartanCompanion
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
@@ -21,8 +20,8 @@ rank is required. In particular, isolated vertices and the empty diagram are adm
 The row-product definition of bipartite is the one used in the finite-type classification:
 all entries of each row have the same weak sign. Mutation at a source or sink only reverses
 its incident entries, and therefore leaves the Cartan companion unchanged. These constructions
-provide the bipartite matrix representatives needed in ClusterAlgebras §4.1; they do not assume
-or prove the classification of finite cluster-variable sets.
+provide bipartite matrix representatives for finite-type classification without assuming the
+classification of finite cluster-variable sets.
 
 ## References
 
@@ -60,47 +59,6 @@ theorem isBipartite_iff_forall_nonneg_or_nonpos {I : Type*} (B : Matrix I I ℤ)
     · exact mul_nonneg (hi j) (hi k)
     · exact mul_nonneg_of_nonpos_of_nonpos (hi j) (hi k)
 
-namespace IsSkewSymmetrizer
-
-variable {I : Type*} [DecidableEq I] {B : Matrix I I ℤ} {s : I → ℤ}
-
-/-- Away from its incident row and column, mutation at a nonnegative row fixes entries. -/
-theorem matrixMutation_apply_of_row_nonneg (h : B.IsSkewSymmetrizer s) {k i j : I}
-    (hk : ∀ l, 0 ≤ B k l) (hi : i ≠ k) (hj : j ≠ k) :
-    TauCeti.matrixMutation (Function.Embedding.refl I) B k i j = B i j := by
-  have hcol : B i k ≤ 0 := by
-    exact le_of_not_gt fun hi ↦ (not_lt_of_ge (hk i)) (h.apply_pos_iff.mp hi)
-  rw [TauCeti.matrixMutation_apply_of_ne hi hj]
-  simp [posPart_eq_zero.mpr hcol, negPart_eq_zero.mpr (hk j)]
-
-/-- Source or sink mutation only reverses the incident entries. -/
-theorem matrixMutation_apply_of_row_nonneg_or_nonpos (h : B.IsSkewSymmetrizer s) (k i j : I)
-    (hk : (∀ l, 0 ≤ B k l) ∨ ∀ l, B k l ≤ 0) :
-    TauCeti.matrixMutation (Function.Embedding.refl I) B k i j =
-      if i = k ∨ j = k then -B i j else B i j := by
-  split_ifs with hij
-  · simp [TauCeti.matrixMutation_apply, hij]
-  · obtain ⟨hi, hj⟩ := not_or.mp hij
-    rcases hk with hk | hk
-    · exact h.matrixMutation_apply_of_row_nonneg hk hi hj
-    · have hneg : ∀ l, 0 ≤ (-B) k l := fun l ↦ neg_nonneg.mpr (hk l)
-      have heq := h.neg.matrixMutation_apply_of_row_nonneg hneg hi hj
-      simpa only [TauCeti.matrixMutation_neg, Matrix.neg_apply, neg_inj] using heq
-
-/-- A source or sink mutation preserves the Cartan companion. -/
-theorem cartanCompanion_matrixMutation_of_row_nonneg_or_nonpos
-    (h : B.IsSkewSymmetrizer s) (k : I)
-    (hk : (∀ l, 0 ≤ B k l) ∨ ∀ l, B k l ≤ 0) :
-    (TauCeti.matrixMutation (Function.Embedding.refl I) B k).cartanCompanion =
-      B.cartanCompanion := by
-  ext i j
-  simp only [cartanCompanion_apply]
-  split_ifs with hij
-  · rfl
-  · rw [h.matrixMutation_apply_of_row_nonneg_or_nonpos k i j hk]
-    split_ifs <;> simp
-
-end IsSkewSymmetrizer
 end Matrix
 
 namespace TauCeti.SymmetrizableDatum
