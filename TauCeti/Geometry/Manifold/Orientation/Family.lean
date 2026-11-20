@@ -104,8 +104,8 @@ theorem isLocallyConstant_isOrientationPreservingAt
   have ho := o'.toVectorBundleOrientation.eventually_mapOrientation_eq o'.card_eq e' ha
   simp only [toVectorBundleOrientation_apply] at ho
   filter_upwards [hpos, hbase, (hf.tendsto a).eventually ho] with p hpos hp hop
-  have hmaps := _root_.Orientation.map_eq_map_of_det_pos η (T p hp).toLinearEquiv
-    (T a ha).toLinearEquiv o.card_eq (by
+  have hmaps := (_root_.Orientation.map_eq_map_iff_det_pos η (T p hp).toLinearEquiv
+    (T a ha).toLinearEquiv o.card_eq).mpr (by
       convert hpos using 2
       ext v
       simp [K, hcT p hp])
