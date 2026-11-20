@@ -166,4 +166,29 @@ lemma affineFunctions_map_relativeSpecCounit_hom_app (V : AffineSchemeOver X) :
       (relativeSpecUnit X).inv.app ((affineFunctions X).obj V) :=
   ((relativeSpecEquiv X).unitInv_app_inverse V).symm
 
+variable {X}
+
+/-- Faithfulness of `relativeSpec X` at the level of underlying algebra morphisms: two morphisms of
+quasicoherent commutative algebras on `X` are equal when they induce the same morphism between
+relative spectra. -/
+theorem eq_of_relativeSpecMap_eq {B₁ B₂ : QuasicoherentAlgebra X} {u v : B₁ ⟶ B₂}
+    (h : CommMon.relativeSpecMap u.hom = CommMon.relativeSpecMap v.hom) :
+    u = v := by
+  have hmap : (relativeSpec X).map u.op = (relativeSpec X).map v.op := by
+    apply MorphismProperty.Over.Hom.ext
+    exact h
+  exact Quiver.Hom.op_inj ((relativeSpec X).map_injective hmap)
+
+/-- Fullness of `relativeSpec X` at the level of underlying scheme morphisms: any morphism
+`Spec_X B₁ ⟶ Spec_X B₂` over `X` is `CommMon.relativeSpecMap ψ.hom` for some algebra morphism
+`ψ : B₂ ⟶ B₁`. -/
+theorem exists_relativeSpecMap_eq (B₁ B₂ : QuasicoherentAlgebra X)
+    (g : B₁.obj.relativeSpec ⟶ B₂.obj.relativeSpec)
+    (hg : g ≫ B₂.obj.relativeSpecToBase = B₁.obj.relativeSpecToBase) :
+    ∃ ψ : B₂ ⟶ B₁, CommMon.relativeSpecMap ψ.hom = g := by
+  let g' : (relativeSpec X).obj (op B₁) ⟶ (relativeSpec X).obj (op B₂) :=
+    MorphismProperty.Over.homMk g hg
+  refine ⟨((relativeSpec X).preimage g').unop, ?_⟩
+  exact congrArg (·.left) ((relativeSpec X).map_preimage g')
+
 end TauCeti.AlgebraicGeometry

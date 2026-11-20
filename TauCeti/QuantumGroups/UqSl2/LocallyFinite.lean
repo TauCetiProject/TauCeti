@@ -126,6 +126,19 @@ theorem isLocallyFiniteModule_iff_exists_linearEquiv_dfinsupp_ladderModule
   ⟨fun _ => exists_linearEquiv_dfinsupp_ladderModule hq,
     fun ⟨_, _, _, ⟨e⟩⟩ => .of_linearEquiv e⟩
 
+/-- At a generic parameter, every locally finite simple `UqSl2 q`-module is isomorphic to a
+signed ladder module `L_m^ε`. -/
+theorem exists_linearEquiv_ladderModule_of_isLocallyFiniteModule
+    (hq : IsGenericQuantumParameter q) [IsLocallyFiniteModule ℂ (UqSl2 q) V]
+    [IsSimpleModule (UqSl2 q) V] :
+    ∃ p : ℕ × ℤˣ, Nonempty (LadderModule q p.1 p.2 ≃ₗ[UqSl2 q] V) := by
+  have := IsSimpleModule.congr (Submodule.topEquiv (R := UqSl2 q) (M := V))
+  have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) (⊤ : Submodule (UqSl2 q) V)
+  have : FiniteDimensional ℂ V :=
+    .equiv ((Submodule.topEquiv (R := UqSl2 q) (M := V)).restrictScalars ℂ)
+  obtain ⟨m, ε, e⟩ := exists_linearEquiv_ladderModule hq (V := V)
+  exact ⟨(m, ε), e⟩
+
 /-- **The evaluation isomorphism.** At a generic parameter, a locally finite `UqSl2 q`-module `V`
 is the direct sum over `(m, ε)` of `L_m^ε ⊗ Hom_U(L_m^ε, V)`, by `v ⊗ φ ↦ φ v`. Here `UqSl2 q`
 acts on the left tensor factors, and the multiplicity spaces `Hom_U(L_m^ε, V)` may be
@@ -137,11 +150,8 @@ noncomputable def ladderModuleTensorHomEquiv (hq : IsGenericQuantumParameter q)
   have := isSemisimpleModule_of_isLocallyFiniteModule hq (V := V)
   have (p : ℕ × ℤˣ) := LadderModule.isSimpleModule (m := p.1) (ε := p.2) hq
   directSumIsotypicTensorEquiv ℂ (fun p : ℕ × ℤˣ => LadderModule q p.1 p.2)
-    (fun _ _ h => Prod.ext_iff.mpr ((LadderModule.nonempty_linearEquiv_iff hq).mp h))
-    (fun N _ => by
-      have := IsLocallyFiniteModule.finite_of_isSimpleModule (k := ℂ) N
-      obtain ⟨m, ε, e⟩ := exists_linearEquiv_ladderModule hq (V := N)
-      exact ⟨(m, ε), e⟩)
+    (fun _ _ => LadderModule.eq_of_nonempty_linearEquiv hq)
+    (fun N _ => exists_linearEquiv_ladderModule_of_isLocallyFiniteModule hq (V := N))
 
 /-- The evaluation isomorphism sends `v ⊗ φ` in the `(m, ε)` summand to `φ v`. -/
 @[simp]

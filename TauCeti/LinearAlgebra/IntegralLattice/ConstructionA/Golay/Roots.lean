@@ -88,7 +88,7 @@ theorem norm_eq_two_iff {x : Fin 24 → ℚ} (hx : x ∈ constructionALattice.ca
       exact_mod_cast hq
     have hw : hammingNorm (fun i ↦ (z i : ZMod 2)) ∈
         ({0, 8, 12, 16, 24} : Finset ℕ) := hammingNorm_mem hz
-    have hle := hammingNorm_intCast_le_sum_sq z
+    have hle := hammingNorm_intCast_le_sum_sq (ZMod 2) z
     simp only [mem_insert, mem_singleton] at hw
     have hzero : hammingNorm (fun i ↦ (z i : ZMod 2)) = 0 := by omega
     have hcast := hammingNorm_eq_zero.mp hzero

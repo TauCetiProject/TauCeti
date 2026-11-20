@@ -70,8 +70,6 @@ open CategoryTheory Finset
 
 namespace TauCeti.PDCode
 
-universe u
-
 variable {n : ℕ}
 
 /-! ### The states of the vertices -/
@@ -139,6 +137,8 @@ end TauCeti.OrientedPDCode
 
 namespace TauCeti.PDCode
 
+universe u
+
 variable {n : ℕ}
 
 /-- The vertex `S` is recovered from its state. -/
@@ -155,7 +155,7 @@ theorem cubeState_bijective : Function.Bijective (cubeState (n := n)) :=
 crossing `a ∈ T \ S`. -/
 theorem cubeState_eq_of_covBy {S T : Finset (Fin n)} (h : S ⋖ T) {a : Fin n} (haS : a ∉ S)
     (haT : a ∈ T) (j : Fin n) (hj : j ≠ a) : cubeState S j = cubeState T j := by
-  obtain ⟨b, hbS, rfl⟩ := h.exists_finset_insert
+  obtain ⟨b, -, rfl⟩ := h.exists_finset_insert
   obtain rfl : a = b := (mem_insert.mp haT).resolve_right haS
   simp [cubeState, hj]
 
@@ -343,11 +343,8 @@ def resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' : D'.IsPlanar) {j' : �
     (e : D.ResolvedCircle (cubeState S) ≃ D'.ResolvedCircle (cubeState S'))
     (h : j - #S = j' - #S') :
     (D.resolutionCube hD R j).obj S ≃ₗ[R] (D'.resolutionCube hD' R j').obj S' :=
-  (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j S)).trans <|
-    ((PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e).ofSubmodules _ _ (by
-      rw [range_resolutionCubeι, range_resolutionCubeι,
-        Khovanov.map_reindex_circleQuantumGrading_piece, h])).trans
-      (LinearEquiv.ofInjective _ (D'.resolutionCubeι_injective hD' R j' S')).symm
+  (PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e).ofSubmodules _ _ (by
+    rw [Khovanov.map_reindex_circleQuantumGrading_piece, h])
 
 /-- `TauCeti.PDCode.resolutionCubeObjCongr` reindexes the circle tensor along the bijection of
 resolved circles. -/
@@ -357,7 +354,7 @@ theorem resolutionCubeι_resolutionCubeObjCongr {m : ℕ} {D' : PDCode m} (hD' :
     (h : j - #S = j' - #S') (x : (D.resolutionCube hD R j).obj S) :
     (D'.resolutionCubeι hD' R j' S').hom (D.resolutionCubeObjCongr hD R j hD' e h x) =
       PiTensorProduct.reindex R (fun _ ↦ DualNumber R) e ((D.resolutionCubeι hD R j S).hom x) := by
-  simp [resolutionCubeObjCongr]
+  unfold resolutionCubeObjCongr; rfl
 
 private theorem resolutionCube_map_homOfLE_insert {S : Finset (Fin n)} {a : Fin n} (ha : a ∉ S) :
     (D.resolutionCube hD R j).map (homOfLE (subset_insert a S)) =

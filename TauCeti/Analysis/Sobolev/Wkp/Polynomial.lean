@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
-import Mathlib.Analysis.Analytic.Uniqueness
-import Mathlib.MeasureTheory.Measure.OpenPos
 
 /-!
 # Polynomial classes in Sobolev spaces
@@ -45,7 +43,7 @@ private theorem exists_value_ae_eq_polynomial
     (k : ℕ) {m : ℕ} (q : polynomialsDegLE ι m) :
     ∃ u : Wkp μ Ω p k, (value k u : EuclideanSpace ℝ ι → ℝ) =ᵐ[μ.restrict Ω] q :=
   exists_value_ae_eq_of_contDiffOn_of_isCompact k isOpen_univ
-    (analyticOnNhd_coe_polynomialsDegLE ι q).contDiff.contDiffOn
+    (contDiff_of_mem_polynomialsDegLE q.property).contDiffOn
     hΩ.isCompact_closure subset_closure (Set.subset_univ _)
 
 /-- Send a bounded-degree polynomial function to its Sobolev class on a bounded open set.
@@ -116,7 +114,7 @@ theorem iteratedGradient_polynomialL_ae
       EuclideanSpace ℝ ι → IteratedGradient (EuclideanSpace ℝ ι) k)
       =ᵐ[μ.restrict Ω] iteratedGradientChain q k :=
   iteratedGradient_ae_eq_of_contDiffOn k _
-    ((analyticOnNhd_coe_polynomialsDegLE ι q).contDiff.contDiffOn.mono (Set.subset_univ _))
+    (contDiff_of_mem_polynomialsDegLE q.property).contDiffOn
     (value_polynomialL_ae hΩ (k + 1) m q)
 
 /-- The highest weak derivative of a polynomial class has the classical derivative's
@@ -127,7 +125,7 @@ theorem norm_iteratedGradient_polynomialL
     ‖iteratedGradient k (polynomialL (μ := μ) (p := p) hΩ (k + 1) m q)‖ =
       lpNorm (iteratedFDeriv ℝ (k + 1) (q : EuclideanSpace ℝ ι → ℝ)) p (μ.restrict Ω) :=
   norm_iteratedGradient_eq_lpNorm_of_contDiffOn k _
-    ((analyticOnNhd_coe_polynomialsDegLE ι q).contDiff.contDiffOn.mono (Set.subset_univ _))
+    (contDiff_of_mem_polynomialsDegLE q.property).contDiffOn
     (value_polynomialL_ae hΩ (k + 1) m q)
 
 /-- On a nonempty open set, taking a polynomial's Sobolev class loses no information. -/
@@ -137,14 +135,8 @@ theorem polynomialL_injective (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpa
   intro q r h
   have hae := (value_polynomialL_ae hΩ k m q).symm.trans
     (h ▸ value_polynomialL_ae hΩ k m r)
-  obtain ⟨x, hx⟩ := hΩne
-  have heq := Measure.eqOn_open_of_ae_eq hae Ω.isOpen
-    ((analyticOnNhd_coe_polynomialsDegLE ι q).continuousOn.mono (Set.subset_univ _))
-    ((analyticOnNhd_coe_polynomialsDegLE ι r).continuousOn.mono (Set.subset_univ _))
-  apply Subtype.ext
-  exact (analyticOnNhd_coe_polynomialsDegLE ι q).eq_of_eventuallyEq
-    (analyticOnNhd_coe_polynomialsDegLE ι r)
-    (Filter.eventuallyEq_of_mem (Ω.isOpen.mem_nhds hx) heq)
+  exact Subtype.ext <|
+    eq_of_mem_polynomialsDegLE_of_ae_eq_isOpen q.property r.property Ω.isOpen hΩne hae
 
 /-- The subspace of Sobolev classes represented by polynomials of degree at most `m`. -/
 def polynomialClasses (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) (k m : ℕ) :

@@ -405,19 +405,11 @@ theorem not_LSeriesSummable_normCoeff_one :
     linarith [Nat.le_ceil (2 * b.upper / b.lower)]
   -- the blocks of a convergent series of nonnegative terms are eventually small
   have hpartial : Tendsto (fun N : ℕ ↦ ∑ k ∈ Finset.Ioc 0 N, g k) atTop (𝓝 (∑' k, g k)) := by
+    have hg0 : g 0 = 0 := by simp [hgdef]
     refine (hgsum.hasSum.tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)).congr fun N ↦ ?_
-    simp only [Function.comp_apply]
-    refine (Finset.sum_subset ?_ ?_).symm
-    · intro k hk
-      rw [Finset.mem_range]
-      exact Nat.lt_succ_of_le (Finset.mem_Ioc.mp hk).2
-    · intro k hk hknot
-      have hk0 : k = 0 := by
-        rcases Nat.eq_zero_or_pos k with h | h
-        · exact h
-        · exact absurd (Finset.mem_Ioc.mpr ⟨h, Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)⟩) hknot
-      rw [hk0, hgdef]
-      simp
+    rw [Function.comp_apply, Finset.range_eq_Ico,
+      Finset.sum_eq_sum_Ico_succ_bot (Nat.add_one_pos N), hg0, zero_add,
+      Finset.Ico_add_one_add_one_eq_Ioc]
   have htail : Tendsto (fun N : ℕ ↦ (∑' k, g k) - ∑ k ∈ Finset.Ioc 0 N, g k) atTop (𝓝 0) := by
     simpa using hpartial.const_sub (∑' k, g k)
   obtain ⟨N, hN⟩ := eventually_atTop.mp

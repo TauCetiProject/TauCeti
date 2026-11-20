@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.LSPath.Stretch
 public import TauCeti.Data.Rat.ZMultiples
-import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Integral subdivisions of stretched LS paths
@@ -128,7 +127,6 @@ theorem exists_uniform_integral_durations (hlam : lam ∈ dominantChamber P b) :
     ∃ n : ℕ, 0 < n ∧ ∀ π : LSPath P b lam,
       ∃ m : Fin (π.length + 1) → ℕ,
         (∀ j, 0 < m j) ∧ ∀ j, (m j : ℚ) = (n : ℚ) * π.duration j := by
-  have := P.flip_isReduced
   have := LSPath.finite hlam
   obtain ⟨n, hn, hden⟩ := Rat.exists_forall_mem_zmultiples_inv_natCast
     (fun x : (π : LSPath P b lam) × Fin (π.length + 1) ↦ x.1.duration x.2)

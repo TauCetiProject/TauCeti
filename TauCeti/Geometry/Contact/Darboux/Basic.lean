@@ -327,7 +327,7 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul
     ext m
     rw [ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply_of_skew _ two_ne_zero
       (fun v w ↦ by simpa [ContinuousAlternatingMap.flatL_apply_apply] using
-        (extDeriv α x₀).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one),
+        (extDeriv α x₀).apply_vecCons_swap w v),
       ContinuousAlternatingMap.flatL_apply_apply]
     congr 1
     funext i

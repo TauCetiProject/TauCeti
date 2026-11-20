@@ -336,6 +336,15 @@ theorem reindexTableOfMap_apply_classOf {R S : Type*}
       f (table i j) := by
   simp only [d.reindexTableOfMap_apply, ← d.equivConjClasses_apply, Equiv.symm_apply_apply]
 
+/-- The mapped and reindexed table evaluated at an arbitrary row and a numbered class: the row is
+read back in the numbering of `d`. -/
+theorem reindexTableOfMap_classOf {R S : Type*}
+    (f : R → S) (table : Matrix (Fin d.numClasses) (Fin d.numClasses) R)
+    (i : Fin (Nat.card (ConjClasses G))) (j : Fin d.numClasses) :
+    d.reindexTableOfMap f table i (d.classOf j) =
+      f (table ((finCongr d.numClasses_eq_card_conjClasses).symm i) j) := by
+  rw [← d.reindexTableOfMap_apply_classOf f table, Equiv.apply_symm_apply]
+
 -- Finiteness enters only from here: it is what presents a conjugacy class as a `Finset`, and so
 -- what lets the structure constants be counted.
 variable [Fintype G]

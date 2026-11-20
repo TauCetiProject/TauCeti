@@ -51,31 +51,11 @@ section OpenImmersion
 
 variable {U Y : Scheme.{u}} (j : U ⟶ Y) [IsOpenImmersion j]
 
-/-- The morphism of sheaves of rings along `j.opensFunctor`, given on sections by the inverses of
-the isomorphisms `Scheme.Hom.appIso`, along which `Scheme.Modules.restrictFunctor j` is the
-pushforward of sheaves of modules. -/
--- Exposed because the exported instance `restrictFunctorLaxMonoidal` is checked by unfolding
--- `restrictFunctor j` to the pushforward along this morphism.
-@[expose]
-def restrictRingCatSheafHom :
-    U.ringCatSheaf ⟶ (j.opensFunctor.sheafPushforwardContinuous _ _ _).obj Y.ringCatSheaf :=
-  letI α : U.presheaf ⟶ j.opensFunctor.op ⋙ Y.presheaf := { app W := (j.appIso W.unop).inv }
-  ⟨Functor.whiskerRight α (forget₂ CommRingCat RingCat)⟩
-
-/-- The coefficient map for restriction along an open immersion is an isomorphism: on
-each open it is the inverse of the structure-sheaf isomorphism. -/
-instance isIso_restrictRingCatSheafHom : IsIso (restrictRingCatSheafHom j) := by
-  have : IsIso ((TopCat.Sheaf.forget RingCat U).map (restrictRingCatSheafHom j)) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro W
-    exact inferInstanceAs (IsIso ((forget₂ CommRingCat RingCat).map (j.appIso W.unop).inv))
-  exact isIso_of_reflects_iso (restrictRingCatSheafHom j) (TopCat.Sheaf.forget RingCat U)
-
 /-- Restriction of modules along an open immersion `j` is lax monoidal, as the pushforward of
 sheaves of modules along the functor of opens `j.opensFunctor`
-(`TauCeti.SheafOfModules.pushforwardLaxMonoidal`). -/
+(`SheafOfModules.pushforwardLaxMonoidal`). -/
 instance restrictFunctorLaxMonoidal : (restrictFunctor j).LaxMonoidal :=
-  TauCeti.SheafOfModules.pushforwardLaxMonoidal (restrictRingCatSheafHom j)
+  SheafOfModules.pushforwardLaxMonoidal (restrictRingCatSheafHom j)
 
 /-- The unit `M ⟶ j_* (M|_U)` of the restriction--pushforward adjunction along an open immersion
 is compatible with the tensor maps of restriction and pushforward. -/

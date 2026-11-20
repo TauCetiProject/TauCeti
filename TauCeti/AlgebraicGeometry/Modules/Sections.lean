@@ -429,9 +429,9 @@ lemma unitHomEquivTop_zero :
     M.unitHomEquivTop (0 : (show X.Modules from SheafOfModules.unit X.ringCatSheaf) ⟶ M) = 0 := by
   exact (unitHomEquivTop_apply M _).trans rfl
 
-@[simp]
 lemma unitHomEquivTop_symm_val_app (t : Γ(M, ⊤)) (U : X.Opens) (r : Γ(X, U)) :
-    (M.unitHomEquivTop.symm t).val.app (op U) r = r • M.presheaf.map U.leTop.op t :=
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((M.unitHomEquivTop.symm t).val.app (op U) r = r • M.presheaf.map U.leTop.op t) :=
   (rfl)
 
 /-- Composing a morphism `𝒪_X ⟶ M` with `p : M ⟶ N` applies `p` to the corresponding global

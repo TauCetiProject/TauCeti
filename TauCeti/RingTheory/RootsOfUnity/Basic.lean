@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Hom.Instances
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
+import TauCeti.Algebra.Group.Hom.Instances
 
 /-!
 # Basic results on roots of unity
@@ -21,7 +23,8 @@ homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`
 `p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
 also records that roots of unity, and hence the values of a character of a finite group, are
 integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
-kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity.
+kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity, and shows
+that homomorphisms out of an `n`-torsion monoid into `Mˣ` factor uniquely through `μₙ(M)`.
 Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
@@ -39,12 +42,17 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 ## Main results
 
+* `TauCeti.compHom_subtype_rootsOfUnity_bijective`: postcomposition with
+  `(rootsOfUnity n M).subtype` is bijective on homomorphisms out of a monoid whose elements satisfy
+  `g ^ n = 1`.
 * `IsOfFinOrder.isIntegral`: a finite-order element of a commutative ring is integral over `ℤ`.
 * `MonoidHom.isIntegral_coe_apply`: the values of a homomorphism from a finite group to the units
   of a commutative ring are integral over `ℤ`.
 
 * `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a commutative ring without zero divisors, a
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
+* `TauCeti.mul_sub_one_ne_zero_of_pow_eq_one`: if `ζ ^ n = 1` and `y ^ n ≠ 1`, then `ζ * y - 1 ≠ 0`,
+  which supplies the nonzero denominators in root averaging.
 * `TauCeti.subsingleton_rootsOfUnity_prime_pow`: in a reduced commutative ring of exponential
   characteristic `p`, the group of `pʲ`-th roots of unity is trivial.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
@@ -86,6 +94,16 @@ theorem restrictRootsOfUnity_injective {R S F : Type*} [CommMonoid R] [CommMonoi
     [FunLike F R S] [MonoidHomClass F R S] (f : F) (n : ℕ) (hf : Function.Injective f) :
     Function.Injective (restrictRootsOfUnity f n) :=
   fun _ _ h ↦ Subtype.ext (Units.map_injective hf (congrArg Subtype.val h))
+
+/-- Postcomposition with `(rootsOfUnity n M).subtype` is bijective on homomorphisms out of a
+monoid `G` whose elements satisfy `g ^ n = 1`: every homomorphism `G →* Mˣ` lands in `μₙ(M)`. -/
+theorem compHom_subtype_rootsOfUnity_bijective {G M : Type*} [Monoid G] [CommMonoid M] {n : ℕ}
+    (hG : ∀ g : G, g ^ n = 1) :
+    Function.Bijective
+      (MonoidHom.compHom (rootsOfUnity n M).subtype :
+        (G →* rootsOfUnity n M) →* (G →* Mˣ)) :=
+  MonoidHom.compHom_bijective_of_forall_pow_eq_one Subtype.val_injective hG
+    fun y hy ↦ ⟨⟨y, (mem_rootsOfUnity n y).2 hy⟩, rfl⟩
 
 variable {R : Type*} [CommRing R]
 

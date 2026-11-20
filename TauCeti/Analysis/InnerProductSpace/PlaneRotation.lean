@@ -37,6 +37,7 @@ unit sphere of `E` along itself; this is how knotted arcs are slid along a great
 * `LinearIsometry.planeRotation_neg_one`: the rotation by `-1` is the reflection across that
   complement.
 * `LinearIsometry.contMDiff_planeRotation`: the rotation is smooth in the angle and the point.
+* `Continuous.planeRotation`: the rotation depends continuously on the plane and the angle.
 -/
 
 public section
@@ -191,5 +192,29 @@ theorem contMDiff_planeRotation {m : ℕ∞ω} :
       fun p : Circle × E => ((p.1 : ℂ) - 1) * planeCoord ι p.2 :=
     contDiff_mul.contMDiff.comp ((hc.sub contMDiff_const).prodMk_space hw)
   exact hx.add (ι.toContinuousLinearMap.contDiff.contMDiff.comp hmul)
+
+/-- **The rotation depends continuously on the plane and the angle**: for a family of planes
+`ι x` depending continuously on `x`, in the operator norm, and a continuous family of points `c x`
+of the unit circle, the rotation `planeRotation (ι x) (c x)` depends continuously on `x` in the
+operator norm. -/
+theorem _root_.Continuous.planeRotation {X : Type*} [TopologicalSpace X] {ι : X → ℂ →ₗᵢ[ℝ] E}
+    {c : X → Circle} (hι : Continuous fun x ↦ (ι x).toContinuousLinearMap) (hc : Continuous c) :
+    Continuous fun x ↦ (((ι x).planeRotation (c x)).toContinuousLinearEquiv : E →L[ℝ] E) := by
+  -- The coordinate `planeCoord (ι x)` pairs a vector with the images `ι x 1` and `ι x I`.
+  have hinner (w a : ℂ) : Continuous fun x ↦ (innerSL ℝ (ι x w)).smulRight a := by
+    have hw : Continuous fun x ↦ ι x w := by
+      simpa only [coe_toContinuousLinearMap] using hι.clm_apply continuous_const
+    exact ((ContinuousLinearMap.smulRightL ℝ E ℂ).continuous.comp
+      ((innerSL ℝ).continuous.comp hw)).clm_apply continuous_const
+  have hcoord : Continuous fun x ↦ planeCoord (ι x) := by
+    unfold planeCoord
+    exact (hinner 1 1).add (hinner I I)
+  have hmul : Continuous fun x ↦ ContinuousLinearMap.mul ℝ ℂ ((c x : ℂ) - 1) :=
+    (ContinuousLinearMap.mul ℝ ℂ).continuous.comp
+      ((continuous_subtype_val.comp hc).sub continuous_const)
+  refine ((continuous_const (y := ContinuousLinearMap.id ℝ E)).add
+    (hι.clm_comp (hmul.clm_comp hcoord))).congr fun x ↦ ?_
+  ext y
+  simp [planeRotation_apply_eq, sub_mul]
 
 end LinearIsometry

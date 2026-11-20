@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.DiscreteValuationRing.IntegrallyClosed
+import Mathlib.RingTheory.Polynomial.RationalRoot
 
 /-!
 # Normal schemes
@@ -34,7 +35,7 @@ use `IsNormalScheme (Spec R)` for it.
   iff every localization of `R` at a prime is an integrally closed domain.
 * `TauCeti.AlgebraicGeometry.isNormalScheme_iff_forall_affineOpens`: a scheme is normal iff the
   ring of sections over every affine open is normal.
-* `TauCeti.AlgebraicGeometry.isNormalScheme_iff_forall_exists_affineOpens`: it suffices that
+* `TauCeti.AlgebraicGeometry.isNormalScheme_iff_forall_exists_affineOpens`: a scheme is normal iff
   every point has an affine open neighbourhood with normal ring of sections.
 * `TauCeti.AlgebraicGeometry.isNormalScheme_iff_openCover`: normality is local on an open
   cover.
@@ -49,6 +50,8 @@ use `IsNormalScheme (Spec R)` for it.
 * `TauCeti.AlgebraicGeometry.IsNormalScheme.isDiscreteValuationRing_stalk`: on a locally
   Noetherian normal scheme, the local ring at a point of coheight one is a discrete valuation
   ring, by the ring-level `IsDiscreteValuationRing.of_ringKrullDim_eq_one`.
+* `TauCeti.AlgebraicGeometry.IsNormalScheme.of_uniqueFactorizationMonoid_stalk`: a scheme whose
+  local rings are unique factorization domains is normal.
 
 ## References
 
@@ -159,8 +162,10 @@ theorem isNormalScheme_iff_forall_affineOpens :
       X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
     exact ⟨_, hU.fromSpec, hU.isOpenImmersion_fromSpec, h ⟨U, hU⟩, hU.range_fromSpec.ge hxU⟩
 
-/-- A scheme is normal as soon as every point has an affine open neighbourhood whose ring of
-sections is normal. Stacks, Lemma 28.7.2 (033J), the affine open covering form. -/
+/-- A scheme is normal if and only if every point has an affine open neighbourhood whose ring of
+sections is normal (the forward direction restricts to an affine open neighbourhood, the converse
+is the criterion that normality is local). Stacks, Lemma 28.7.2 (033J), the affine open covering
+form. -/
 @[stacks 033J "affine open covering form"]
 theorem isNormalScheme_iff_forall_exists_affineOpens :
     IsNormalScheme X ↔
@@ -207,6 +212,13 @@ theorem IsNormalScheme.isDiscreteValuationRing_stalk [IsLocallyNoetherian X] [Is
     rw [ringKrullDim_stalk_eq_coheight]
     simp [hx]
   exact IsDiscreteValuationRing.of_ringKrullDim_eq_one hdim
+
+/-- A scheme whose local rings are unique factorization domains is normal. -/
+theorem IsNormalScheme.of_uniqueFactorizationMonoid_stalk {X : Scheme.{u}}
+    [∀ x : X, IsDomain (X.presheaf.stalk x)]
+    [∀ x : X, UniqueFactorizationMonoid (X.presheaf.stalk x)] : IsNormalScheme X where
+  isDomain_stalk := inferInstance
+  isIntegrallyClosed_stalk _ := inferInstance
 
 end AlgebraicGeometry
 

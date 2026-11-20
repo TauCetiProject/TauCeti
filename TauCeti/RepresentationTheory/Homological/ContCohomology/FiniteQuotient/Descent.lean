@@ -30,9 +30,8 @@ universe u v
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {M : Type v} [AddGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  [DistribMulAction G M] [ContinuousSMul G M] [CompactSpace G] [TotallyDisconnectedSpace G]
+  [DistribMulAction G M] [ContinuousSMul G M] [CompactSpace G]
 
-omit [TotallyDisconnectedSpace G] in
 /-- A continuous function from a compact topological group to a discrete module descends below any
 prescribed open normal subgroup to a continuous function on a finite quotient, with values fixed
 by that subgroup. -/

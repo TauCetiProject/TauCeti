@@ -25,8 +25,9 @@ inclusions in the proof of the class number one theorem.
 This file constructs `g_r` and develops its elementary analytic and algebraic properties:
 the defining product converges locally uniformly on the upper half-plane, so `g_r` is
 holomorphic there; `g_r` vanishes nowhere on the upper half-plane when `r ∉ ℤ²`; and `g_r`
-transforms by an explicit root of unity under integral translations of `r` and under `τ ↦ τ + 1`.
-The phases are exact: no root of unity is lost to a choice of branch. Finally it computes the three
+transforms by an explicit constant of modulus one (a root of unity when `r` is rational) under
+integral translations of `r`, and by an explicit root of unity under `τ ↦ τ + 1`. The phases are
+exact: no root of unity is lost to a choice of branch. Finally it computes the three
 Siegel functions of level two, `g₀ = g_{(0, 1/2)}`, `g₁ = g_{(1/2, 0)}` and `g₂ = g_{(1/2, 1/2)}`,
 as explicit products (up to constant factors they are the squares `𝔣₂²`, `𝔣₁²` and `𝔣²` of
 Weber's modular functions), proves `g₀ g₁ g₂ = 2 ζ₈` with `ζ₈ = e^{2π i / 8}`, expands their

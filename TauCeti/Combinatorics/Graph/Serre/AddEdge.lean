@@ -185,6 +185,11 @@ noncomputable def deleteEdgeGeomEdgeEquiv (d : Γ.E) :
       Γ.toGeomEdge e.1 :=
   congrArg Subtype.val (GeomEdge.lift_toGeomEdge ..)
 
+/-- Deleting an edge of a graph with finitely many geometric edges leaves finitely many geometric
+edges. -/
+instance [Finite Γ.GeomEdge] (d : Γ.E) : Finite (Γ.deleteEdge d).GeomEdge :=
+  .of_equiv _ (Γ.deleteEdgeGeomEdgeEquiv d).symm
+
 /-- Deleting an edge removes one geometric edge. -/
 theorem card_deleteEdge_geomEdge_add_one [Finite Γ.GeomEdge] (d : Γ.E) :
     Nat.card (Γ.deleteEdge d).GeomEdge + 1 = Nat.card Γ.GeomEdge := by

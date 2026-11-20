@@ -135,6 +135,26 @@ def tangentHom (A : DomainDependentHomSection I M IP P n) (q : P × M) :
 theorem tangentHom_apply (A : DomainDependentHomSection I M IP P n) (q : P × M)
     (v : TangentSpace IP q.1) : A.tangentHom q v = A q v := (rfl)
 
+@[simp]
+theorem tangentHom_zero (q : P × M) :
+    (0 : DomainDependentHomSection I M IP P n).tangentHom q = 0 := (rfl)
+
+@[simp]
+theorem tangentHom_add (A B : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (A + B).tangentHom q = A.tangentHom q + B.tangentHom q := (rfl)
+
+@[simp]
+theorem tangentHom_smul (c : ℝ) (A : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (c • A).tangentHom q = c • A.tangentHom q := (rfl)
+
+@[simp]
+theorem tangentHom_neg (A : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (-A).tangentHom q = -A.tangentHom q := (rfl)
+
+@[simp]
+theorem tangentHom_sub (A B : DomainDependentHomSection I M IP P n) (q : P × M) :
+    (A - B).tangentHom q = A.tangentHom q - B.tangentHom q := (rfl)
+
 /-- Reading the original tangent fibres preserves native Hom-section regularity. -/
 theorem contMDiff_tangentHom (A : DomainDependentHomSection I M IP P n) :
     ContMDiff (IP.prod I) ((IP.prod I).prod 𝓘(ℝ, EP →L[ℝ] E)) n
@@ -163,6 +183,10 @@ def ofLE (A : DomainDependentHomSection I M IP P n) {m : ℕ∞} (hmn : m ≤ n)
 @[simp]
 theorem ofLE_apply (A : DomainDependentHomSection I M IP P n) {m : ℕ∞} (hmn : m ≤ n)
     (q : P × M) : (A.ofLE hmn) q = A q := (rfl)
+
+@[simp]
+theorem tangentHom_ofLE (A : DomainDependentHomSection I M IP P n) {m : ℕ∞} (hmn : m ≤ n)
+    (q : P × M) : (A.ofLE hmn).tangentHom q = A.tangentHom q := (rfl)
 
 section Model
 
@@ -267,6 +291,95 @@ def ofLE (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
 theorem ofLE_val_apply (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) (q : P × M) :
     (ν.ofLE hmn).val q = ν.val q := (rfl)
 
+@[simp]
+theorem ofLE_val_tangentHom (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) (q : P × M) :
+    (ν.ofLE hmn).val.tangentHom q = ν.val.tangentHom q := (rfl)
+
+@[simp]
+theorem ofLE_zero {m : ℕ∞} (hmn : m ≤ n) : (0 : InhomogeneousTerm j J).ofLE hmn = 0 :=
+  (rfl)
+
+@[simp]
+theorem ofLE_add (ν μ : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (ν + μ).ofLE hmn = ν.ofLE hmn + μ.ofLE hmn := (rfl)
+
+@[simp]
+theorem ofLE_smul (c : ℝ) (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (c • ν).ofLE hmn = c • ν.ofLE hmn := (rfl)
+
+@[simp]
+theorem ofLE_neg (ν : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (-ν).ofLE hmn = -ν.ofLE hmn := (rfl)
+
+@[simp]
+theorem ofLE_sub (ν μ : InhomogeneousTerm j J) {m : ℕ∞} (hmn : m ≤ n) :
+    (ν - μ).ofLE hmn = ν.ofLE hmn - μ.ofLE hmn := (rfl)
+
+/-- Regard a forcing term for `(j, J)` as one for equal structures `(j', J')`, keeping its
+underlying section. For instance, after a regularity downgrade of a term whose domain structure
+is a smooth structure `j₀` viewed as `C^n`, this gives a term for `j₀` viewed as `C^m`. -/
+def ofEq (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    InhomogeneousTerm j' J' :=
+  ⟨ν.val, by subst hj hJ; exact ν.2⟩
+
+@[simp]
+theorem ofEq_val (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (ν.ofEq hj hJ).val = ν.val := (rfl)
+
+@[simp]
+theorem ofEq_rfl (ν : InhomogeneousTerm j J) : ν.ofEq rfl rfl = ν := (rfl)
+
+@[simp]
+theorem ofEq_ofEq (ν : InhomogeneousTerm j J) {j' j'' : ContMDiffAlmostComplexStructure IP n P}
+    {J' J'' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J')
+    (hj' : j' = j'') (hJ' : J' = J'') :
+    (ν.ofEq hj hJ).ofEq hj' hJ' = ν.ofEq (hj.trans hj') (hJ.trans hJ') := (rfl)
+
+@[simp]
+theorem ofEq_zero {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (0 : InhomogeneousTerm j J).ofEq hj hJ = 0 := (rfl)
+
+@[simp]
+theorem ofEq_add (ν μ : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (ν + μ).ofEq hj hJ = ν.ofEq hj hJ + μ.ofEq hj hJ := (rfl)
+
+@[simp]
+theorem ofEq_smul (c : ℝ) (ν : InhomogeneousTerm j J)
+    {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (c • ν).ofEq hj hJ = c • ν.ofEq hj hJ := (rfl)
+
+@[simp]
+theorem ofEq_neg (ν : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (-ν).ofEq hj hJ = -ν.ofEq hj hJ := (rfl)
+
+@[simp]
+theorem ofEq_sub (ν μ : InhomogeneousTerm j J) {j' : ContMDiffAlmostComplexStructure IP n P}
+    {J' : ContMDiffAlmostComplexStructureFamily I M IP P n} (hj : j = j') (hJ : J = J') :
+    (ν - μ).ofEq hj hJ = ν.ofEq hj hJ - μ.ofEq hj hJ := (rfl)
+
+/-- Forgetting no regularity leaves a forcing term unchanged, up to the equalities
+`j.ofLE le_rfl = j` and `J.ofLE le_rfl = J` of its structures. -/
+@[simp]
+theorem ofLE_refl (ν : InhomogeneousTerm j J) :
+    ν.ofLE le_rfl = ν.ofEq j.ofLE_refl.symm J.ofLE_refl.symm := by
+  ext q v
+  rfl
+
+/-- Successive regularity downgrades of a forcing term compose, up to the corresponding
+equalities of its structures. -/
+@[simp]
+theorem ofLE_ofLE (ν : InhomogeneousTerm j J) {m l : ℕ∞} (hmn : m ≤ n) (hlm : l ≤ m) :
+    (ν.ofLE hmn).ofLE hlm = (ν.ofLE (hlm.trans hmn)).ofEq (j.ofLE_ofLE hmn hlm).symm
+      (J.ofLE_ofLE hmn hlm).symm := by
+  ext q v
+  rfl
+
 /-- Compose a forcing term with jointly regular complex-linear source and target bundle maps.
 The domain and target structures may both change. -/
 def compose (ν : InhomogeneousTerm j J)
@@ -284,7 +397,7 @@ def compose (ν : InhomogeneousTerm j J)
       (J'.toEndomorphism q).toLinearMap (B q).toLinearMap) : InhomogeneousTerm j' J' :=
   ⟨B.clmComp (ν.val.clmComp A), fun q ↦ by
     simpa only [ContMDiffSection.clmComp_apply, ContinuousLinearMap.toLinearMap_comp] using
-      (hB q).comp_antilinear ((ν.isComplexAntilinear q).comp_linear (hA q))⟩
+      (hB q).comp_isComplexAntilinear ((ν.isComplexAntilinear q).comp_isComplexLinear (hA q))⟩
 
 @[simp]
 theorem compose_val_apply (ν : InhomogeneousTerm j J)
@@ -360,7 +473,7 @@ def project (j : ContMDiffAlmostComplexStructure IP n P)
       ContMDiffSection.coe_add, Pi.add_apply, add_apply, ContMDiffSection.clmComp_apply,
       ContinuousLinearMap.comp_apply, complexAntilinearPart_apply, ContinuousLinearMap.coe_coe]
   rw [he]
-  apply complexAntilinearPart_isComplexAntilinear
+  apply isComplexAntilinear_complexAntilinearPart
   · ext v
     exact j.horizontalEndomorphism_apply_apply q v
   · ext v
@@ -386,6 +499,7 @@ theorem project_toLinearMap_apply (j : ContMDiffAlmostComplexStructure IP n P)
       (j.horizontalEndomorphism (I := I) (M := M) q).toLinearMap
       (J.toEndomorphism q).toLinearMap (A q).toLinearMap := by
   ext v
+  rw [complexAntilinearPart_apply]
   exact project_apply j J A q v
 
 /-- The projection is a retraction onto the native submodule of forcing terms. -/

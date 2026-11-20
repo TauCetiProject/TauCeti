@@ -11,7 +11,7 @@ import Mathlib.Algebra.Module.Projective
 import TauCeti.LinearAlgebra.Basis.Exact
 public import TauCeti.Algebra.Module.LinearMap.Defs
 public import TauCeti.LinearAlgebra.Exact
-public import TauCeti.LinearAlgebra.Orientation.Exact
+public import TauCeti.LinearAlgebra.Orientation.Exact.Basic
 import TauCeti.LinearAlgebra.Ray
 
 /-!
