@@ -59,6 +59,9 @@ orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
 (`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
 are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`).
 
+Isometries carry restricted Euclidean Hausdorff measure to its restriction on the image
+(`Isometry.map_euclideanHausdorffMeasure_restrict`).
+
 ## References
 
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
@@ -112,6 +115,17 @@ theorem euclideanHausdorffMeasure_one {X : Type*} [EMetricSpace X] [MeasurableSp
   rw [euclideanHausdorffMeasure_def, hc, one_smul, Nat.cast_one]
 
 end MeasureTheory.Measure
+
+/-- An isometry carries Euclidean Hausdorff measure restricted to a set to Euclidean
+Hausdorff measure restricted to its image, in every dimension. -/
+theorem Isometry.map_euclideanHausdorffMeasure_restrict {X Y : Type*} [EMetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+    {f : X → Y} (hf : Isometry f) {d : ℕ} (s : Set X) :
+    ((μHE[d] : Measure X).restrict s).map f = (μHE[d] : Measure Y).restrict (f '' s) := by
+  ext t ht
+  rw [Measure.map_apply hf.continuous.measurable ht,
+    Measure.restrict_apply (hf.continuous.measurable ht), Measure.restrict_apply ht,
+    ← image_preimage_inter, hf.euclideanHausdorffMeasure_image]
 
 namespace TauCeti
 
