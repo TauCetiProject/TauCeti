@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
-import TauCeti.LinearAlgebra.Submodule.Primitive
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!

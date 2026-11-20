@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.Determinant.SumElim
 import TauCeti.LinearAlgebra.Matrix.Gram.Basic
+import TauCeti.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.Submodule.Primitive
 
 /-!

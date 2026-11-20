@@ -6,12 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import Mathlib.RingTheory.Regular.IsSMulRegular
 
 /-!
-# Surjectivity of induced maps on quotient modules
+# Basic facts about quotient modules
 
 A surjective linear map `f : M → M₂` sending `p` into `q` induces a surjective map
-`M ⧸ p → M₂ ⧸ q`.
+`M ⧸ p → M₂ ⧸ q`. The quotient by a submodule is torsion-free exactly when the submodule is
+saturated, that is, contains every element of which it contains a multiple by a regular scalar.
+
+## Main results
+
+* `Submodule.mapQ_surjective`: induced maps on quotients preserve surjectivity.
+* `Submodule.isTorsionFree_quotient_iff`: a submodule has torsion-free quotient if and only if
+  it is saturated.
 -/
 
 public section
@@ -27,5 +35,13 @@ theorem mapQ_surjective (f : M →ₛₗ[τ₁₂] M₂) (h : p ≤ comap f q) (
   rintro ⟨y⟩
   obtain ⟨x, rfl⟩ := hf y
   exact ⟨Quotient.mk x, rfl⟩
+
+/-- The quotient by a submodule is torsion-free if and only if the submodule contains every
+element of which it contains a multiple by a regular scalar. Over a domain the regular scalars
+are exactly the nonzero ones, see `isRegular_iff_ne_zero`. -/
+theorem isTorsionFree_quotient_iff {S : Submodule R M} :
+    Module.IsTorsionFree R (M ⧸ S) ↔ ∀ (c : R) (z : M), IsRegular c → c • z ∈ S → z ∈ S :=
+  ⟨fun _ c _ hc ↦ (isSMulRegular_quotient_iff_mem_of_smul_mem S c).mp hc.isSMulRegular _,
+    fun hS ↦ ⟨fun c hc ↦ (isSMulRegular_quotient_iff_mem_of_smul_mem S c).mpr (hS c · hc)⟩⟩
 
 end Submodule

@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 public import TauCeti.LinearAlgebra.Submodule.Primitive
 
+import TauCeti.LinearAlgebra.Quotient.Basic
+
 /-!
 # Primitive embeddings of integral lattices
 
@@ -92,7 +94,8 @@ theorem isTorsionFree_quotient (hf : IsPrimitiveEmbedding L M f) :
     Module.IsTorsionFree ℤ
       (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) :=
   Submodule.isTorsionFree_quotient_iff.mpr fun k y hk hy ↦
-    hf.saturated y y.property k hk.ne_zero hy
+    hf.saturated y y.property k hk.ne_zero <| by
+      simpa only [Submodule.mem_comap, Submodule.coe_subtype, SetLike.val_smul] using hy
 
 end IsPrimitiveEmbedding
 
@@ -125,7 +128,8 @@ theorem isPrimitiveEmbedding_iff_isTorsionFree_quotient (f : V →ₗ[ℚ] W)
       (M ⧸ (L.carrier.map (f.restrictScalars ℤ)).comap M.carrier.subtype) := by
   refine ⟨fun hf ↦ hf.isTorsionFree_quotient, fun h ↦ ⟨hi, hB, hL, ?_⟩⟩
   intro y hy k hk hky
-  exact Submodule.isTorsionFree_quotient_iff.mp h k ⟨y, hy⟩ (.of_ne_zero hk) hky
+  exact Submodule.isTorsionFree_quotient_iff.mp h k ⟨y, hy⟩ (.of_ne_zero hk) <| by
+    simpa only [Submodule.mem_comap, Submodule.coe_subtype, SetLike.val_smul] using hky
 
 /-- The integral image of a form-preserving injection is saturated exactly when it has an
 integral-module complement. This does not assert an orthogonal splitting. -/

@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.HighestWeight
 public import TauCeti.LinearAlgebra.Submodule.Primitive
 
+import TauCeti.LinearAlgebra.Quotient.Basic
+
 /-!
 # The integral rank-one string in a fundamental module
 

@@ -9,7 +9,8 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Dimension.RankNullity
-import TauCeti.LinearAlgebra.Submodule.Primitive
+import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.LinearAlgebra.Quotient.Basic
 
 /-!
 # Extending a submodule across a saturated step of rank one
