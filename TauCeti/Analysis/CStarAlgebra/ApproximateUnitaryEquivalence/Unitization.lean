@@ -5,182 +5,132 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Sequential
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Basic
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Algebra.Algebra.Unitization
 
 /-!
-# Approximate unitary equivalence in the minimal unitization
+# Approximate unitary equivalence with unitaries of the unitization
 
-For possibly nonunital C⋆-algebras, `UnitizationApproximatelyUnitarilyEquivalent` uses
-unitaries of the minimal unitization of the target. This is the relation used in uniqueness
-of maps between nonunital AF algebras. It is an equivalence relation, is functorial for
-arbitrary star homomorphisms on both sides, and has a sequential characterization for
-separable sources. Unlike multiplier-unitary equivalence, postcomposition here needs no
-nondegeneracy assumption: every map extends unitally to the minimal unitizations.
+For star homomorphisms `φ ψ : A → B` into a possibly nonunital C⋆-algebra `B`, approximate
+unitary equivalence with unitaries of the minimal unitization `B⁺ = Unitization ℂ B` is the
+target-unitary relation `TauCeti.ApproximatelyUnitarilyEquivalent` for the composites of `φ` and
+`ψ` with the inclusion `B → B⁺`: on every finite set some unitary `w` of `B⁺` has
+`‖w φ(a) w⋆ - ψ(a)‖ < ε`, the norm being that of `B` since the inclusion is isometric. The laws
+of the target-unitary relation, including the sequential criterion for separable sources, apply
+to it verbatim.
 
-We also identify this relation with target-unitary equivalence of the unital extensions.
-The key observation is that conjugation fixes the scalar summand of a unitization, so
-finite-set estimates on its ideal summand suffice.
+This file compares the unitization relation with the target-unitary one. For a unital target
+the two relations agree: a unitary `w` of `B⁺` maps to a unitary of `B` under the unital map
+`B⁺ → B` extending the identity, and a unitary `u` of `B` gives the unitary
+`u + (1 - 1_B)` of `B⁺`, which acts on `B` by the same conjugation. Unlike the target-unitary
+relation, the unitization relation is preserved by postcomposition with every star
+homomorphism, since star homomorphisms extend unitally to unitizations.
 
-The convention follows Rørdam, *Classification of Nuclear C*-Algebras* (2002), §1.3,
-and Blackadar, *K-Theory for Operator Algebras*, Chapter 7.
+For maps into a unital target, extending the source to its minimal unitization preserves
+and reflects approximate unitary equivalence. The extensions send the scalar summand of
+`Unitization ℂ A` to central scalars in the target, so the finite-set estimates only depend
+on the `A` coordinates. In particular, for a possibly nonunital target `B`, the unitization
+relation is equivalent to approximate unitary equivalence of the unital extensions
+`Unitization ℂ A → Unitization ℂ B`.
+
+The unitization relation is the one in which approximate unitary equivalence of
+*-homomorphisms between AF algebras is characterized by K-theory.
+
+## References
+
+* M. Rørdam, *Classification of nuclear, simple C*-algebras*, in *Classification of Nuclear
+  C*-Algebras. Entropy in Operator Algebras*, Encyclopaedia Math. Sci. 126, Springer, 2002,
+  Definition 1.1.15.
 -/
 
 public section
 
-open Filter Topology
 open scoped CStarAlgebra
 
-namespace TauCeti
+namespace TauCeti.ApproximatelyUnitarilyEquivalent
 
-variable {A B C : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+variable {A B C : Type*} [NonUnitalCStarAlgebra A]
 
-/-- Approximate unitary equivalence with implementing unitaries in the minimal unitization
-of the target. Neither algebra nor either map is required to be unital. -/
-def UnitizationApproximatelyUnitarilyEquivalent (φ ψ : A →⋆ₙₐ[ℂ] B) : Prop :=
-  ApproximatelyUnitarilyEquivalent
-    ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp φ)
-    ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp ψ)
-
-/-- Finite-set characterization with unitaries of the minimal unitization. -/
-theorem unitizationApproximatelyUnitarilyEquivalent_def {φ ψ : A →⋆ₙₐ[ℂ] B} :
-    UnitizationApproximatelyUnitarilyEquivalent φ ψ ↔
-      ∀ (F : Finset A) (ε : ℝ), 0 < ε → ∃ u : unitary (Unitization ℂ B),
-        ∀ a ∈ F, ‖(u : Unitization ℂ B) * (φ a : Unitization ℂ B) *
-          star (u : Unitization ℂ B) - (ψ a : Unitization ℂ B)‖ < ε :=
-  approximatelyUnitarilyEquivalent_def _ _
-
-namespace ApproximatelyUnitarilyEquivalent
-
-variable [CStarAlgebra C] {φ ψ : A →⋆ₙₐ[ℂ] C}
-
-/-- Extending both maps unitally preserves target-unitary approximate equivalence.
-The scalar summand is fixed by every implementing conjugation. -/
-theorem starLift (h : ApproximatelyUnitarilyEquivalent φ ψ) :
+/-- Approximate unitary equivalence into a unital target is preserved and reflected by
+extending both maps to the minimal unitization of the source. -/
+@[simp]
+theorem starLift_iff [CStarAlgebra B] {φ ψ : A →⋆ₙₐ[ℂ] B} :
     ApproximatelyUnitarilyEquivalent (Unitization.starLift φ).toNonUnitalStarAlgHom
-      (Unitization.starLift ψ).toNonUnitalStarAlgHom := by
-  classical
-  rw [approximatelyUnitarilyEquivalent_def] at h ⊢
-  intro F ε hε
-  obtain ⟨u, hu⟩ := h (F.image (fun x : Unitization ℂ A ↦ x.snd)) ε hε
-  refine ⟨u, fun x hx ↦ ?_⟩
-  have hs := hu x.snd (Finset.mem_image.mpr ⟨x, hx, rfl⟩)
-  have hi (f : A →⋆ₙₐ[ℂ] C) (a : A) :
-      (Unitization.starLift f) (a : Unitization ℂ A) = f a := by
-    rw [← Unitization.starLift_symm_apply_apply, Equiv.symm_apply_apply]
-  have he : (u : C) * (Unitization.starLift φ) x * star (u : C) -
-      (Unitization.starLift ψ) x = (u : C) * φ x.snd * star (u : C) - ψ x.snd := by
-    induction x using Unitization.ind with
-    | inl_add_inr r a =>
-      simp only [Unitization.snd_add, Unitization.snd_inr, map_add, hi,
-        ← Unitization.algebraMap_eq_inl, AlgHomClass.commutes]
-      simp [Algebra.algebraMap_eq_smul_one, mul_add, add_mul]
-  simpa only [StarAlgHom.coe_toNonUnitalStarAlgHom, he] using hs
-
-end ApproximatelyUnitarilyEquivalent
-
-namespace UnitizationApproximatelyUnitarilyEquivalent
-
-variable {φ ψ χ : A →⋆ₙₐ[ℂ] B}
-
-/-- A fixed conjugacy by a unitization unitary gives approximate unitary equivalence. -/
-theorem of_unitary (u : unitary (Unitization ℂ B))
-    (h : ∀ a, (u : Unitization ℂ B) * (φ a : Unitization ℂ B) *
-      star (u : Unitization ℂ B) = (ψ a : Unitization ℂ B)) :
-    UnitizationApproximatelyUnitarilyEquivalent φ ψ :=
-  ApproximatelyUnitarilyEquivalent.of_unitary u h
-
-/-- Unitization-unitary approximate equivalence is reflexive. -/
-@[refl, simp]
-theorem refl (φ : A →⋆ₙₐ[ℂ] B) : UnitizationApproximatelyUnitarilyEquivalent φ φ :=
-  ApproximatelyUnitarilyEquivalent.refl _
-
-/-- Unitization-unitary approximate equivalence is symmetric. -/
-@[symm]
-theorem symm (h : UnitizationApproximatelyUnitarilyEquivalent φ ψ) :
-    UnitizationApproximatelyUnitarilyEquivalent ψ φ :=
-  ApproximatelyUnitarilyEquivalent.symm h
-
-/-- Unitization-unitary approximate equivalence is transitive. -/
-@[trans]
-theorem trans (h₁ : UnitizationApproximatelyUnitarilyEquivalent φ ψ)
-    (h₂ : UnitizationApproximatelyUnitarilyEquivalent ψ χ) :
-    UnitizationApproximatelyUnitarilyEquivalent φ χ :=
-  ApproximatelyUnitarilyEquivalent.trans h₁ h₂
-
-/-- The unitization-unitary relation is an equivalence relation. -/
-theorem equivalence :
-    Equivalence (UnitizationApproximatelyUnitarilyEquivalent (A := A) (B := B)) :=
-  ⟨refl, fun h ↦ h.symm, fun h₁ h₂ ↦ h₁.trans h₂⟩
-
-/-- Precomposition, in particular restriction to a subalgebra, preserves the relation. -/
-theorem precomp [NonUnitalCStarAlgebra C]
-    (h : UnitizationApproximatelyUnitarilyEquivalent φ ψ) (ρ : C →⋆ₙₐ[ℂ] A) :
-    UnitizationApproximatelyUnitarilyEquivalent (φ.comp ρ) (ψ.comp ρ) :=
-  ApproximatelyUnitarilyEquivalent.precomp h ρ
-
-/-- Unitization-unitary approximate equivalence is exactly target-unitary approximate
-equivalence of the unital extensions to the minimal unitizations. -/
-theorem iff_starMap : UnitizationApproximatelyUnitarilyEquivalent φ ψ ↔
-    ApproximatelyUnitarilyEquivalent (Unitization.starMap φ).toNonUnitalStarAlgHom
-      (Unitization.starMap ψ).toNonUnitalStarAlgHom := by
+        (Unitization.starLift ψ).toNonUnitalStarAlgHom ↔
+      ApproximatelyUnitarilyEquivalent φ ψ := by
   constructor
-  · exact ApproximatelyUnitarilyEquivalent.starLift
   · intro h
-    have hi (f : A →⋆ₙₐ[ℂ] B) :
-        (Unitization.starMap f).toNonUnitalStarAlgHom.comp
-          (Unitization.inrNonUnitalStarAlgHom ℂ A) =
-        (Unitization.inrNonUnitalStarAlgHom ℂ B).comp f := by
-      ext a : 1
-      simp only [NonUnitalStarAlgHom.comp_apply, StarAlgHom.coe_toNonUnitalStarAlgHom,
-        Unitization.inrNonUnitalStarAlgHom_apply, Unitization.starMap_inr]
-    simpa only [hi, UnitizationApproximatelyUnitarilyEquivalent] using
+    simpa only [Unitization.starLift_comp_inr] using
       h.precomp (Unitization.inrNonUnitalStarAlgHom ℂ A)
+  · classical
+    rw [approximatelyUnitarilyEquivalent_def, approximatelyUnitarilyEquivalent_def]
+    intro h F ε hε
+    obtain ⟨u, hu⟩ := h (F.image (fun x : Unitization ℂ A ↦ x.snd)) ε hε
+    refine ⟨u, fun x hx ↦ ?_⟩
+    -- Conjugation fixes the common scalar image of `x.fst`.
+    have he : (u : B) * (Unitization.starLift φ) x * star (u : B) -
+        (Unitization.starLift ψ) x = (u : B) * φ x.snd * star (u : B) - ψ x.snd := by
+      simp [Algebra.algebraMap_eq_smul_one, mul_add, add_mul]
+    simpa only [StarAlgHom.coe_toNonUnitalStarAlgHom, he] using
+      hu x.snd (Finset.mem_image.mpr ⟨x, hx, rfl⟩)
 
-/-- Every star homomorphism preserves unitization-unitary approximate equivalence,
-without a nondegeneracy assumption. -/
-theorem postcomp [NonUnitalCStarAlgebra C]
-    (h : UnitizationApproximatelyUnitarilyEquivalent φ ψ) (ρ : B →⋆ₙₐ[ℂ] C) :
-    UnitizationApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) := by
-  have hp := ApproximatelyUnitarilyEquivalent.postcomp h (Unitization.starMap ρ)
-  have hi (f : A →⋆ₙₐ[ℂ] B) :
-      (Unitization.starMap ρ).toNonUnitalStarAlgHom.comp
-        ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp f) =
-      (Unitization.inrNonUnitalStarAlgHom ℂ C).comp (ρ.comp f) := by
-    ext a : 1
-    simp only [NonUnitalStarAlgHom.comp_apply, StarAlgHom.coe_toNonUnitalStarAlgHom,
-      Unitization.inrNonUnitalStarAlgHom_apply, Unitization.starMap_inr]
-  simpa only [hi, UnitizationApproximatelyUnitarilyEquivalent] using hp
+section Unital
 
-/-- Equivalent maps have the same pointwise norm, even for nonunital targets. -/
-theorem norm_eq (h : UnitizationApproximatelyUnitarilyEquivalent φ ψ) (a : A) :
-    ‖φ a‖ = ‖ψ a‖ := by
-  simpa only [NonUnitalStarAlgHom.comp_apply, Unitization.inrNonUnitalStarAlgHom_apply,
-    Unitization.norm_inr] using ApproximatelyUnitarilyEquivalent.norm_eq h a
+variable [CStarAlgebra B]
 
-/-- Unitization-unitary approximate equivalence preserves injectivity. -/
-theorem injective_iff (h : UnitizationApproximatelyUnitarilyEquivalent φ ψ) :
-    Function.Injective φ ↔ Function.Injective ψ := by
-  rw [injective_iff_map_eq_zero φ, injective_iff_map_eq_zero ψ]
-  exact forall_congr' fun a ↦ by
-    rw [← norm_eq_zero (a := φ a), ← norm_eq_zero (a := ψ a), h.norm_eq]
+/-- For a unital target, approximate unitary equivalence with unitaries of the unitization is
+approximate unitary equivalence with unitaries of the target. -/
+theorem unitization_iff {φ ψ : A →⋆ₙₐ[ℂ] B} :
+    ApproximatelyUnitarilyEquivalent ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp φ)
+        ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp ψ) ↔
+      ApproximatelyUnitarilyEquivalent φ ψ := by
+  constructor
+  · intro h
+    simpa only [NonUnitalStarAlgHom.id_comp] using
+      h.postcomp_of_comp_eq (κ := NonUnitalStarAlgHom.id ℂ B)
+        (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B)) (Unitization.starLift_comp_inr _)
+  · intro h
+    rw [approximatelyUnitarilyEquivalent_def] at h ⊢
+    intro F ε hε
+    obtain ⟨u, hu⟩ := h F ε hε
+    refine ⟨Unitary.map (Unitization.oneAddInrSubOne (R := ℂ)) u, fun a ha ↦ ?_⟩
+    have hconj :
+        (Unitary.map (Unitization.oneAddInrSubOne (R := ℂ) (B := B)) u : Unitization ℂ B) *
+          ((φ a : B) : Unitization ℂ B) *
+          star (Unitary.map (Unitization.oneAddInrSubOne (R := ℂ) (B := B)) u : Unitization ℂ B) =
+          (((u : B) * φ a * star (u : B) : B) : Unitization ℂ B) := by
+      rw [Unitary.coe_map, ← map_star, Unitization.oneAddInrSubOne_mul_inr,
+        Unitization.inr_mul_oneAddInrSubOne]
+    simpa only [NonUnitalStarAlgHom.comp_apply, Unitization.inrNonUnitalStarAlgHom_apply, hconj,
+      ← Unitization.inr_sub, Unitization.norm_inr] using hu a ha
 
-/-- Any convergent net of unitization conjugacies gives approximate unitary equivalence. -/
-theorem of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot]
-    (u : ι → unitary (Unitization ℂ B))
-    (h : ∀ a, Tendsto (fun i ↦ (u i : Unitization ℂ B) * (φ a : Unitization ℂ B) *
-      star (u i : Unitization ℂ B)) l (𝓝 (ψ a : Unitization ℂ B))) :
-    UnitizationApproximatelyUnitarilyEquivalent φ ψ :=
-  ApproximatelyUnitarilyEquivalent.of_tendsto u h
+end Unital
 
-/-- For a separable source, one sequence of unitization unitaries implements the relation. -/
-theorem iff_exists_unitary_seq [TopologicalSpace.SeparableSpace A] :
-    UnitizationApproximatelyUnitarilyEquivalent φ ψ ↔
-      ∃ u : ℕ → unitary (Unitization ℂ B), ∀ a,
-        Tendsto (fun n ↦ (u n : Unitization ℂ B) * (φ a : Unitization ℂ B) *
-          star (u n : Unitization ℂ B)) atTop (𝓝 (ψ a : Unitization ℂ B)) :=
-  ApproximatelyUnitarilyEquivalent.iff_exists_unitary_seq
+variable [NonUnitalCStarAlgebra B] {φ ψ : A →⋆ₙₐ[ℂ] B}
 
-end UnitizationApproximatelyUnitarilyEquivalent
+/-- The unital extensions are approximately unitarily equivalent exactly when the original
+maps are approximately unitarily equivalent with unitaries of the target unitization. -/
+@[simp]
+theorem starMap_iff :
+    ApproximatelyUnitarilyEquivalent (Unitization.starMap φ).toNonUnitalStarAlgHom
+        (Unitization.starMap ψ).toNonUnitalStarAlgHom ↔
+      ApproximatelyUnitarilyEquivalent ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp φ)
+        ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp ψ) := by
+  simpa only [Unitization.starMap] using starLift_iff
 
-end TauCeti
+variable [NonUnitalCStarAlgebra C]
+
+/-- Approximate unitary equivalence with unitaries of the unitization is preserved by
+postcomposition with any star homomorphism, unital or not. -/
+theorem unitization_postcomp
+    (h : ApproximatelyUnitarilyEquivalent ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp φ)
+      ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp ψ))
+    (ρ : B →⋆ₙₐ[ℂ] C) :
+    ApproximatelyUnitarilyEquivalent ((Unitization.inrNonUnitalStarAlgHom ℂ C).comp (ρ.comp φ))
+      ((Unitization.inrNonUnitalStarAlgHom ℂ C).comp (ρ.comp ψ)) := by
+  simpa only [NonUnitalStarAlgHom.comp_assoc] using
+    h.postcomp_of_comp_eq (κ := (Unitization.inrNonUnitalStarAlgHom ℂ C).comp ρ)
+      (Unitization.starMap ρ) (Unitization.starLift_comp_inr _)
+
+end TauCeti.ApproximatelyUnitarilyEquivalent

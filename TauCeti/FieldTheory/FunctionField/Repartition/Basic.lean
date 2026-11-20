@@ -492,7 +492,7 @@ an algebraic function field has only finitely many poles. -/
 noncomputable def repartitionMul (hF : IsFunctionField k F) :
     F →ₐ[k] Module.End k ↥(repartitionSpace k F) where
   toFun f :=
-    { toFun a := ⟨f • (a : Place k F → F), smul_mem_repartitionSpace hF f a.2⟩
+    { toFun a := ⟨f • (a : Place k F → F), smul_mem_repartitionSpace hF f a.property⟩
       map_add' a b := Subtype.ext (by simp [smul_add])
       map_smul' c a := Subtype.ext (by simp [smul_comm f c]) }
   map_one' := LinearMap.ext fun a ↦ Subtype.ext (by simp)

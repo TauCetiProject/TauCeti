@@ -382,7 +382,7 @@ theorem isAnalytic_spa_iff
   · have hx := h ⟨v, hv⟩
     rwa [analyticPoints_presentationLimitPreAdicSpace] at hx
   · rw [analyticPoints_presentationLimitPreAdicSpace]
-    exact h.symm ▸ (x : spa Aplus).2
+    exact h.symm ▸ (x : spa Aplus).property
 
 /-- **`Spa(A, A⁺)` is analytic when `A` is a Tate ring**: its rational opens are open Tate
 affinoid subspaces. The ring `A` need not be complete or Hausdorff. -/

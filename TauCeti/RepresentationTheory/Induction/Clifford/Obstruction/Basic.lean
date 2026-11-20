@@ -79,7 +79,7 @@ variable {k : Type u} {G : Type v} [CommRing k] [Group G] {N : Subgroup G} [N.No
 private theorem mk_inclusion_eq_one (n : N) :
     ((Subgroup.inclusion (le_inertia A) n : inertia A) : inertia A ⧸ N.subgroupOf (inertia A))
       = 1 :=
-  (QuotientGroup.eq_one_iff _).2 (Subgroup.mem_subgroupOf.2 n.2)
+  (QuotientGroup.eq_one_iff _).2 (Subgroup.mem_subgroupOf.2 n.property)
 
 /-- **A projective extension of `A` to its inertia group, compatible with `N`**: a projective
 representation `ρ` of `inertia A` on `A` that restricts to `A` on `N` and whose factor set is
@@ -177,7 +177,7 @@ private theorem exists_linearEquiv_inertia_apply_mul_inclusion :
   classical
   set M := N.subgroupOf (inertia A)
   set ι : N →* inertia A := Subgroup.inclusion (le_inertia A) with hι
-  have hιM (n : N) : ι n ∈ M := Subgroup.mem_subgroupOf.2 n.2
+  have hιM (n : N) : ι n ∈ M := Subgroup.mem_subgroupOf.2 n.property
   obtain ⟨ρ₀, -, -, hres, hinter⟩ := exists_isProjectiveRep_inertia_restrict_eq A hScalar
   -- `Subgroup.inclusion` sends `n` to `⟨n, _⟩` by definition, the form in which `hres` is stated.
   have hres' (n : N) (x : A) : ρ₀ (ι n) x = A.ρ n x := hres n x
