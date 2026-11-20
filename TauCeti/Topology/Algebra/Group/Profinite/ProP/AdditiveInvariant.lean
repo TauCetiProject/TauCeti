@@ -124,7 +124,7 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
         (by rw [AddSubgroup.inclusion_range, QuotientAddGroup.ker_mk'])
       rw [hprev, heq] at hstep
       simpa only [succ_nsmul] using hstep
-  exact (invariant_addSubgroup_eq_of_eq_top I hExact hM (N _) (hN _)
-    (htop _ le_rfl)).symm.trans (hind _ le_rfl)
+  exact (invariant_addSubgroup_eq_of_eq_top I hExact hM (N _) (htop _ le_rfl)).symm.trans
+    (hind _ le_rfl)
 
 end TauCeti

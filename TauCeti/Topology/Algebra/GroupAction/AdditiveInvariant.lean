@@ -90,12 +90,14 @@ module. -/
 theorem invariant_addSubgroup_eq_of_eq_top {M : Type u}
     [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
     [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
-    (hM : IsAddPGroup p M) (N : AddSubgroup M)
-    (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) (htop : N = ⊤) :
+    (hM : IsAddPGroup p M) (N : AddSubgroup M) (htop : N = ⊤) :
+    haveI hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x _ ↦ htop ▸ AddSubgroup.mem_top (g • x)
     letI := N.restrictDistribMulAction hN
     letI := N.restrictDistribMulAction_continuousSMul hN
     I N (hM.to_addSubgroup N) = I M hM := by
   subst htop
+  have hN : ∀ g : G, ∀ x ∈ (⊤ : AddSubgroup M), g • x ∈ (⊤ : AddSubgroup M) :=
+    fun g x _ ↦ AddSubgroup.mem_top (g • x)
   let := (⊤ : AddSubgroup M).restrictDistribMulAction hN
   let := (⊤ : AddSubgroup M).restrictDistribMulAction_continuousSMul hN
   exact invariant_eq_of_equiv I hExact _ AddSubgroup.topEquiv fun g x ↦ by
@@ -124,9 +126,10 @@ include hExact in
 /-- An invariant with values in a type whose addition has zero as an identity and left
 cancellation, additive on equivariant short exact sequences, vanishes on a subsingleton module. -/
 theorem invariant_eq_zero_of_subsingleton [IsLeftCancelAdd R] {A : Type u}
-    [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A] [ContinuousSMul G A]
-    [Subsingleton A] :
+    [AddCommGroup A] [TopologicalSpace A] [DistribMulAction G A] [Subsingleton A] :
+    haveI : ContinuousSMul G A := ⟨continuous_of_const fun _ _ ↦ Subsingleton.elim _ _⟩
     I A (.of_subsingleton p A) = 0 := by
+  have : ContinuousSMul G A := ⟨continuous_of_const fun _ _ ↦ Subsingleton.elim _ _⟩
   have hA := IsAddPGroup.of_subsingleton p A
   have h := hExact hA hA hA 0 0 (fun _ _ ↦ Subsingleton.elim _ _)
     (fun _ _ ↦ Subsingleton.elim _ _) (Function.injective_of_subsingleton _)
