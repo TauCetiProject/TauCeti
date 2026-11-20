@@ -17,7 +17,8 @@ The trivial bundle `Bundle.Trivial B F` has the single global trivialization
 `Bundle.Trivial.trivialization B F`, so a map into its total space is smooth exactly when its base
 map and its fibre map into `F` are smooth. A section is differentiable at a point exactly when its
 fibre map is (`Bundle.Trivial.mdifferentiableAt_section_iff`). The homeomorphism
-`Bundle.Trivial.homeomorphProd` upgrades to a `C^n` diffeomorphism `Bundle.Trivial.diffeomorphProd` between `TotalSpace F (Bundle.Trivial B F)` and
+`Bundle.Trivial.homeomorphProd` upgrades to a `C^n` diffeomorphism
+`Bundle.Trivial.diffeomorphProd` between `TotalSpace F (Bundle.Trivial B F)` and
 `B × F`. When the fibre `W` is instead a finite-dimensional Hausdorff topological module over a
 complete nontrivially normed field `𝕜` without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies
 `Fin (Module.finrank 𝕜 W) → 𝕜` as a nominal coordinate model fibre equipping `Bundle.Trivial B W`
