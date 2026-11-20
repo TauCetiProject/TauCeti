@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Normed.Affine.Convex
 
 /-!
 # Hölder continuity up to a hyperplane
@@ -66,12 +67,8 @@ private theorem dist_le_of_two_mul_dist_lt {v : F} (hv : ‖v‖ = 1) {α : ℝ�
   have hheight : ∀ z ∈ segment ℝ x y, d ≤ ⟪z, v⟫ := by
     intro z hz
     have hzx : dist z x ≤ d := by
-      obtain ⟨a, b, ha, hb, hab, rfl⟩ := hz
-      have : a • x + b • y - x = b • (y - x) := by
-        rw [show a = 1 - b by linarith, sub_smul, one_smul, smul_sub]
-        abel
-      rw [dist_eq_norm, this, norm_smul, Real.norm_of_nonneg hb, ← dist_eq_norm, dist_comm]
-      exact mul_le_of_le_one_left dist_nonneg (by linarith)
+      rw [dist_comm]
+      linarith [dist_add_dist_of_mem_segment hz, dist_nonneg (x := z) (y := y)]
     have := abs_inner_sub_inner_le hv x z
     rw [abs_le, dist_comm] at this
     linarith
@@ -182,25 +179,19 @@ private theorem dist_ite_neg_comp_hyperplaneReflection_le {v : F} (hv : v ≠ 0)
   set z := (b / (a + b)) • x + (a / (a + b)) • y
   have hsum : b / (a + b) + a / (a + b) = 1 := by
     rw [← add_div, add_comm b a, div_self hab.ne']
-  have hzS : z ∈ S := hS hx hy (by positivity) (by positivity) hsum
+  have hzseg : z ∈ segment ℝ x y := ⟨_, _, by positivity, by positivity, hsum, rfl⟩
+  have hzS : z ∈ S := hS.segment_subset hx hy hzseg
   have hz0 : ⟪z, v⟫ = 0 := by
     have hy : ⟪y, v⟫ = -b := by simp [b]
     simp only [z, inner_add_left, inner_smul_left, RCLike.conj_to_real, hy]
     field_simp
     ring
-  have hxz : dist x z ≤ dist x y := by
-    have : x - z = (a / (a + b)) • (x - y) := by
-      simp only [z, show b / (a + b) = 1 - a / (a + b) by linarith, sub_smul, one_smul, smul_sub]
-      abel
-    rw [dist_eq_norm, dist_eq_norm, this, norm_smul, Real.norm_of_nonneg (by positivity)]
-    exact mul_le_of_le_one_left (norm_nonneg _) (div_le_one_of_le₀ (by linarith) hab.le)
+  -- `z` lies on the segment `[x, y]`, so it is within `dist x y` of both endpoints.
+  have hxzy := dist_add_dist_of_mem_segment hzseg
+  have hxz : dist x z ≤ dist x y := by linarith [dist_nonneg (x := z) (y := y)]
   have hyz : dist y z ≤ dist x y := by
-    have : y - z = (b / (a + b)) • (y - x) := by
-      simp only [z, show a / (a + b) = 1 - b / (a + b) by linarith, sub_smul, one_smul, smul_sub]
-      abel
-    rw [dist_eq_norm, dist_eq_norm, this, norm_smul, Real.norm_of_nonneg (by positivity),
-      norm_sub_rev]
-    exact mul_le_of_le_one_left (norm_nonneg _) (div_le_one_of_le₀ (by linarith) hab.le)
+    rw [dist_comm]
+    linarith [dist_nonneg (x := x) (y := z)]
   have hρy : hyperplaneReflection v 0 y ∈ S ∩ {x | 0 ≤ ⟪x, v⟫} :=
     ⟨hρS y hy, by rw [mem_ofPred_eq, inner_hyperplaneReflection hv]; linarith⟩
   have hρz : hyperplaneReflection v 0 z = z := hyperplaneReflection_eq_self_of_inner_eq hz0

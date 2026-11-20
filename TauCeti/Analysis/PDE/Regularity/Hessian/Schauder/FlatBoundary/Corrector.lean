@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Euclidean.CoordinateHyperplane
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Projection
 
 /-!
 # The boundary corrector for Poisson's equation at a flat boundary
@@ -163,10 +164,13 @@ private theorem iteratedFDeriv_three_halfSq (y : E) :
 /-- The Laplacian of `halfSq` is `1`. -/
 @[simp]
 theorem laplacian_halfSq (y : E) : Δ (halfSq (n := n)) y = 1 := by
-  rw [laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)]
-  simp only [iteratedFDeriv_two_halfSq_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    EuclideanSpace.basisFun_apply]
-  rw [Fin.sum_univ_succ]
+  have h : halfSq (n := n) = (1 / 2 : ℝ) • fun z : E ↦ ⟪e₀, z⟫ ^ 2 := by
+    funext z
+    rw [halfSq_apply, Pi.smul_apply, real_inner_comm, EuclideanSpace.real_inner_single_one_right,
+      smul_eq_mul]
+    ring
+  have hd : ContDiff ℝ 2 fun z : E ↦ ⟪e₀, z⟫ ^ 2 := (contDiff_const.inner ℝ contDiff_id).pow 2
+  rw [h, laplacian_smul _ hd.contDiffAt, laplacian_inner_sq]
   simp
 
 /-! ### Leibniz bounds for `halfSq * (f - c)` -/

@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.IteratedFDeriv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
+import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -660,9 +661,9 @@ theorem exists_norm_iteratedFDeriv_halfSpacePoissonIntegral_le (v : U) {α : ℝ
   -- Points of `ball x (t / 2)` have heights between `t / 2` and `3 t / 2`.
   have hheight : ∀ y ∈ ball x (t / 2), t / 2 < ⟪(v : E), y⟫ ∧ ⟪(v : E), y⟫ ≤ 3 / 2 * t := by
     intro y hy
-    have h := abs_real_inner_le_norm (v : E) (y - x)
-    rw [hv, one_mul, inner_sub_right, abs_le] at h
-    have hy' : ‖y - x‖ < t / 2 := mem_ball_iff_norm.1 hy
+    have h := abs_inner_sub_inner_le hv y x
+    rw [real_inner_comm (v : E) y, real_inner_comm (v : E) x, abs_le] at h
+    have hy' : dist y x < t / 2 := mem_ball.1 hy
     constructor <;> linarith
   have hball : ball x (t / 2) ⊆ {y | 0 < ⟪(v : E), y⟫} := fun y hy ↦
     (half_pos hx).trans (hheight y hy).1

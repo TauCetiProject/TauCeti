@@ -118,6 +118,14 @@ private theorem reflection_add_smul {τ : E} (hτ : τ 0 = 0) (a : ℝ) :
   simp
   module
 
+/-- A function vanishing on the hyperplane has zero tangential derivative at its points. -/
+private theorem fderiv_apply_eq_zero_of_forall_eq_zero {U : Set E} (hU : IsOpen U) {f : E → ℝ}
+    {p : E} (hp : p ∈ U) (hp0 : p 0 = 0) (hd : DifferentiableAt ℝ f p)
+    (h0 : ∀ y ∈ U, y 0 = 0 → f y = 0) {τ : E} (hτ : τ 0 = 0) : fderiv ℝ f p τ = 0 :=
+  hd.fderiv_apply_eq_zero_of_eventually_eq_zero (ℓ := ℓ₀) (b := 0) (by simpa using hp0)
+    (Filter.eventually_of_mem (hU.mem_nhds hp) fun y hy h ↦ h0 y hy (by simpa using h))
+    (by simpa using hτ)
+
 /-- The derivative at a point of the hyperplane of a function vanishing on it is odd under the
 reflection. -/
 private theorem fderiv_comp_reflection {U : Set E} (hU : IsOpen U) {u : E → ℝ} {p : E}
@@ -126,9 +134,7 @@ private theorem fderiv_comp_reflection {U : Set E} (hU : IsOpen U) {u : E → �
     (fderiv ℝ u p).comp Rℓ = -fderiv ℝ u p := by
   ext m
   obtain ⟨τ, a, hτ, rfl⟩ := exists_eq_add_smul m
-  have h := hd.fderiv_apply_eq_zero_of_eventually_eq_zero (ℓ := ℓ₀) (b := 0) (by simpa using hp0)
-    (Filter.eventually_of_mem (hU.mem_nhds hp) fun y hy h ↦ h0 y hy (by simpa using h))
-    (by simpa using hτ)
+  have h := fderiv_apply_eq_zero_of_forall_eq_zero hU hp hp0 hd h0 hτ
   rw [ContinuousLinearMap.comp_apply, reflection_add_smul hτ]
   simp [h]
 
@@ -163,13 +169,8 @@ private theorem neg_hessian_sub_apply_reflection {U : Set E} (hU : IsOpen U) {u 
     have hf : DifferentiableAt ℝ (fun z ↦ fderiv ℝ u z τ') p :=
       hd2.clm_apply (differentiableAt_const τ')
     have h0' : ∀ y ∈ U, y 0 = 0 → fderiv ℝ u y τ' = 0 := fun y hy hy0 ↦
-      (hdu y hy).fderiv_apply_eq_zero_of_eventually_eq_zero (ℓ := ℓ₀) (b := 0)
-        (by simpa using hy0)
-        (Filter.eventually_of_mem (hU.mem_nhds hy) fun z hz h ↦ h0 z hz (by simpa using h))
-        (by simpa using hτ')
-    have := hf.fderiv_apply_eq_zero_of_eventually_eq_zero (ℓ := ℓ₀) (b := 0) (by simpa using hp0)
-      (Filter.eventually_of_mem (hU.mem_nhds hp) fun y hy h ↦ h0' y hy (by simpa using h))
-      (by simpa using hτ)
+      fderiv_apply_eq_zero_of_forall_eq_zero hU hy hy0 (hdu y hy) h0 hτ'
+    have := fderiv_apply_eq_zero_of_forall_eq_zero hU hp hp0 hf h0' hτ
     rwa [fderiv_clm_apply hd2 (differentiableAt_const τ'), fderiv_const_apply,
       ContinuousLinearMap.comp_zero, zero_add, ContinuousLinearMap.flip_apply] at this
   -- Along the normal, the second derivative is the Laplacian.
