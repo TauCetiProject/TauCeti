@@ -20,7 +20,7 @@ operator `F = y ∂_x` and `H = ⁅E, F⁆ = x ∂_x - y ∂_y` (see `TauCeti.po
 
 * `TauCeti.isSl2Triple_polynomialOperator`: `x ∂_x - y ∂_y`, `x ∂_y` and `y ∂_x` form an
   `sl₂`-triple.
-* `TauCeti.lie_polynomialOperator_polynomialMonomial`: `H e_i = (d - 2i) e_i`.
+* `TauCeti.lie_polynomialOperator_zero_one_one_zero_polynomialMonomial`: `H e_i = (d - 2i) e_i`.
 * `TauCeti.hasPrimitiveVectorWith_X_zero_pow`: `x ^ d` is a primitive vector of weight `d`.
 
 ## References
@@ -57,7 +57,7 @@ theorem isSl2Triple_polynomialOperator [Nontrivial R] :
 variable {R} {d i : ℕ}
 
 /-- **The weights of the binary monomials**: `H = ⁅x ∂_y, y ∂_x⁆` multiplies `e_i` by `d - 2i`. -/
-theorem lie_polynomialOperator_polynomialMonomial :
+theorem lie_polynomialOperator_zero_one_one_zero_polynomialMonomial :
     ⁅polynomialOperator R (0 : Fin 2) 1, polynomialOperator R (1 : Fin 2) 0⁆
         (polynomialMonomial R d i) =
       ((d : R) - 2 * i) • polynomialMonomial R d i := by
@@ -76,7 +76,7 @@ theorem hasPrimitiveVectorWith_X_zero_pow [Nontrivial R] (d : ℕ) :
       (X 0 ^ d : MvPolynomial (Fin 2) R) (d : R) where
   ne_zero := by simp [X_pow_eq_monomial]
   lie_h := by
-    have := lie_polynomialOperator_polynomialMonomial (R := R) (d := d) (i := 0)
+    have := lie_polynomialOperator_zero_one_one_zero_polynomialMonomial (R := R) (d := d) (i := 0)
     simpa [lie_polynomialOperator_zero_one_one_zero, polynomialMonomial_zero_right] using this
   lie_e := by
     simpa [polynomialMonomial_zero_right] using
