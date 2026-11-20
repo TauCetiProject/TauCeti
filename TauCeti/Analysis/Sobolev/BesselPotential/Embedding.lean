@@ -274,9 +274,7 @@ theorem exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto {s : ℝ} (hs : fin
     ∃ g : Lp F 2 (volume : Measure E), ∃ hg : MemSobolev s 2 (g : 𝓢'(E, F)),
       hg.toBesselPotentialSpace = ∑' n, a n • (hd n).toBesselPotentialSpace ∧
       ∀ᵐ x ∂volume, Tendsto (fun N ↦ ∑ n ∈ Finset.range N, a n • d n x) atTop (𝓝 (g x)) := by
-  have hs0 : 0 ≤ s := by
-    have := (finrank ℝ E).cast_nonneg (α := ℝ)
-    linarith
+  have hs0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
   set L := ∑' n, a n • (hd n).toBesselPotentialSpace
   -- The limit `L` is the `H^s` element of an `L²` function `g`.
   obtain ⟨g, hLg⟩ := memSobolev_zero_iff.1 (L.memSobolev_toDistr.mono hs0)
