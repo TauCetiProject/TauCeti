@@ -112,9 +112,12 @@ lemma serreSpectralObjectIsoCubical_hom_app_chainFiltrationAbutmentIso_hom (C : 
           (monotone_preimageSkeleton (C := C) p) n).hom =
       (chainFiltrationAbutmentIso (singularChains R) (monotone_preimageSkeleton (C := C) p) n).hom ≫
         HomologicalComplex.homologyMap ((singularToCubical R).app E) n := by
-  rw [serreSpectralObjectIsoCubical_hom,
-    spectralObjectMap_chainFiltrationMap_hom_app_chainFiltrationAbutmentIso_hom,
-    CategoryTheory.Functor.map_id, Category.id_comp]
+  rw [serreSpectralObjectIsoCubical_hom]
+  -- The proof argument `fun _ _ hx ↦ hx` of `chainFiltrationMap` only typechecks after unfolding
+  -- `𝟙 E`, which blocks `rw` with the general lemma, so it is applied as a term.
+  refine (spectralObjectMap_chainFiltrationMap_hom_app_chainFiltrationAbutmentIso_hom
+    (singularToCubical R) _ _ (𝟙 E) (fun _ _ hx ↦ hx) n).trans ?_
+  rw [CategoryTheory.Functor.map_id, Category.id_comp]
 
 end SpectralObject
 
