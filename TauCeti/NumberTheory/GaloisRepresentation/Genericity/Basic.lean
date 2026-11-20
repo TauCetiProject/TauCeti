@@ -313,11 +313,6 @@ def IsStronglyGenericAt (A : Matrix n n K) (q : K) : Prop :=
 
 variable {A : Matrix n n K} {q : K}
 
-/-- The characteristic polynomial has a listing of its roots in an algebraic closure. -/
-private theorem exists_isRootEnumeration_charpoly (A : Matrix n n K) :
-    ∃ β : n → AlgebraicClosure K, A.charpoly.IsRootEnumeration β :=
-  (charpoly_monic A).exists_isRootEnumeration (charpoly_natDegree_eq_dim A)
-
 /-- A listing of the characteristic roots in a field extension `L` of `K` and one in an algebraic
 closure of `K` list generic families together: both are sent to the roots of the characteristic
 polynomial in an algebraic closure of `L`. -/
@@ -365,7 +360,7 @@ theorem isGenericAt_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι] [Field 
     A.IsGenericAt q ↔ TauCeti.IsGenericEigenvalues (algebraMap K L q) α := by
   refine ⟨fun ⟨β, hβ, h⟩ ↦ (isGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).1 h,
     fun h ↦ ?_⟩
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) A
   exact ⟨β, hβ, (isGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).2 h⟩
 
 /-- **Strong genericity of a matrix is strong genericity of any listing of its characteristic
@@ -377,13 +372,13 @@ theorem isStronglyGenericAt_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι]
     A.IsStronglyGenericAt q ↔ TauCeti.IsStronglyGenericEigenvalues (algebraMap K L q) α := by
   refine ⟨fun ⟨β, hβ, h⟩ ↦ (isStronglyGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).1 h,
     fun h ↦ ?_⟩
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) A
   exact ⟨β, hβ, (isStronglyGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).2 h⟩
 
 /-- Strong genericity of a matrix is genericity at both `1` and `q`. -/
 theorem isStronglyGenericAt_iff_and :
     A.IsStronglyGenericAt q ↔ A.IsGenericAt 1 ∧ A.IsGenericAt q := by
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) A
   rw [isStronglyGenericAt_iff_of_isRootEnumeration hβ rfl,
     isGenericAt_iff_of_isRootEnumeration hβ rfl, isGenericAt_iff_of_isRootEnumeration hβ rfl,
     _root_.map_one, TauCeti.isStronglyGenericEigenvalues_iff_and]
@@ -412,13 +407,13 @@ theorem isStronglyGenericAt_iff_of_charpoly_map_eq_prod {L : Type*} [Field L] [A
 /-- A matrix of size at most one is generic at every `q`. -/
 theorem isGenericAt_of_subsingleton [Subsingleton n] (A : Matrix n n K) (q : K) :
     A.IsGenericAt q := by
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) A
   exact ⟨β, hβ, TauCeti.isGenericEigenvalues_of_subsingleton⟩
 
 /-- A matrix of size at most one is strongly generic at every `q`. -/
 theorem isStronglyGenericAt_of_subsingleton [Subsingleton n] (A : Matrix n n K) (q : K) :
     A.IsStronglyGenericAt q := by
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) A
   exact ⟨β, hβ, TauCeti.isStronglyGenericEigenvalues_of_subsingleton⟩
 
 /-- A diagonal matrix is generic exactly when its diagonal entries are. -/
@@ -438,7 +433,7 @@ theorem isStronglyGenericAt_diagonal_iff {α : n → K} :
 /-- Genericity depends only on the characteristic polynomial. -/
 theorem isGenericAt_iff_of_charpoly_eq {B : Matrix m m K} (h : A.charpoly = B.charpoly) :
     A.IsGenericAt q ↔ B.IsGenericAt q := by
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly B
+  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) B
   have hβA : A.charpoly.IsRootEnumeration β := by rwa [h]
   have hcard : Fintype.card m = Fintype.card n := by
     rw [← charpoly_natDegree_eq_dim B, ← h, charpoly_natDegree_eq_dim A]
@@ -465,7 +460,8 @@ theorem isStronglyGenericAt_units_conj (P : (Matrix n n K)ˣ) :
 @[simp]
 theorem isGenericAt_map_iff {L : Type*} [Field L] [Algebra K L] :
     (A.map (algebraMap K L)).IsGenericAt (algebraMap K L q) ↔ A.IsGenericAt q := by
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (A.map (algebraMap K L))
+  obtain ⟨β, hβ⟩ :=
+    exists_isRootEnumeration_charpoly (E := AlgebraicClosure L) (A.map (algebraMap K L))
   have hβK : A.charpoly.IsRootEnumeration β := by
     rwa [charpoly_map, isRootEnumeration_map] at hβ
   rw [isGenericAt_iff_of_isRootEnumeration hβ rfl, isGenericAt_iff_of_isRootEnumeration hβK rfl,
@@ -480,12 +476,8 @@ theorem isStronglyGenericAt_map_iff {L : Type*} [Field L] [Algebra K L] :
 
 /-- **Inverting a matrix preserves genericity.** -/
 theorem isGenericAt_inv_iff (hA : IsUnit A) : A⁻¹.IsGenericAt q ↔ A.IsGenericAt q := by
-  obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly A
   let L := AlgebraicClosure K
-  have hprod : (A.map (algebraMap K L)).charpoly = ∏ i, (X - C (β i)) := by
-    simpa [charpoly_map, ((charpoly_monic A).map _).leadingCoeff] using
-      hβ.eq_C_mul_prod_X_sub_C
-        (by rw [(charpoly_monic A).natDegree_map, charpoly_natDegree_eq_dim])
+  obtain ⟨β, hprod⟩ := exists_charpoly_map_eq_prod_X_sub_C (E := L) A
   have hAL : IsUnit (A.map (algebraMap K L)) := by
     simpa using hA.map (algebraMap K L).mapMatrix
   have hinv : (A⁻¹.map (algebraMap K L)).charpoly = ∏ i, (X - C (β i)⁻¹) := by
