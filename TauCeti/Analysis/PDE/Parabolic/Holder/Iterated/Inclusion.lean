@@ -101,8 +101,8 @@ private theorem holderWith_mixedDerivL_slabMk_of_add_two_le (f : ParabolicCkHold
 
 /-- For `2 r + m + 1 = k` and `α ≤ 1`, the field `D_t^r D_x^m u` is parabolically `α`-Hölder:
 it is bounded, Lipschitz in space, and `(1 + α) / 2`-Hölder in time. -/
-private theorem holderWith_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ}
-    (h : 2 * r + m + 1 = k) (hα : α ≤ 1) :
+private theorem holderWith_mixedDerivL_of_add_one_eq (f : ParabolicCkHolderSpace k α E F hab)
+    {r m : ℕ} (h : 2 * r + m + 1 = k) (hα : α ≤ 1) :
     HolderWith (‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
       (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊)) α ⇑(mixedDerivL r m f) := by
   -- The spatial derivative of `D_t^r D_x^m u` is `D_t^r D_x^(m+1) u`, curried on the left.
@@ -138,7 +138,7 @@ private def ofSucc (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F h
   mk (fun r m ↦ mixedDerivL r m f) (fun _ _ h t x ↦ f.hasFDerivAt_mixedDerivL (by omega) t x)
     (fun _ _ h x t ↦ f.hasDerivWithinAt_mixedDerivL (by omega) x t)
     (fun _ _ h ↦ ⟨_, holderWith_mixedDerivL_slabMk_of_add_two_le f (by omega) hα⟩)
-    (fun _ _ h ↦ (holderWith_mixedDerivL f (by omega) hα).memHolder)
+    (fun _ _ h ↦ (holderWith_mixedDerivL_of_add_one_eq f (by omega) hα).memHolder)
 
 private theorem mixedDerivL_ofSucc (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F hab)
     {r m : ℕ} (h : 2 * r + m ≤ k) : mixedDerivL r m (ofSucc hα f) = mixedDerivL r m f :=
@@ -148,58 +148,30 @@ private theorem ofSucc_apply (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1
     (p : slab (E := E) a b) : ofSucc hα f p = f p := by
   rw [ofSucc, mk_apply, ContinuousMultilinearMap.curry0_apply, mixedDerivL_zero_zero_apply]
 
-/-- At the two top orders of the space of order `k`, the norms of the family of time slices and of
-the Hölder field of a map of order `k + 1` are at most `7 ‖u‖`. -/
-private theorem norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le (hα : α ≤ 1)
-    (f : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
-    ‖timeSliceL r m (ofSucc hα f)‖ + ‖mixedDerivHolderL r m (ofSucc hα f)‖ ≤ 7 * ‖f‖ := by
-  have hf := norm_nonneg f
-  have hD (r m : ℕ) := f.norm_mixedDerivL_le r m
-  by_cases hs : 2 * r + m + 1 = k
-  · -- The order `k - 1`: the Hölder field vanishes, and the time slices are those of the
-    -- `(1 + α) / 2`-Hölder field `D_t^r D_x^m u`.
-    rw [mixedDerivHolderL_of_ne (by omega), zero_apply, norm_zero, add_zero]
-    have hholder := holderWith_mixedDerivL_slabMk_of_add_two_le f (r := r) (m := m) (by omega) hα
-    have hK : ((‖mixedDerivL (r + 1) m f‖₊ + 2 * ‖mixedDerivL r m f‖₊ : ℝ≥0) : ℝ) ≤
-        3 * ‖f‖ := by
-      push_cast
-      nlinarith [hD (r + 1) m, hD r m]
-    refine (lp.norm_le_of_forall_le (C := ‖mixedDerivL r m f‖ + 3 * ‖f‖)
-      (by positivity) fun x ↦ ?_).trans (by nlinarith [hD r m])
-    refine (HolderSpace.norm_le_of_norm_le_of_holderWith (norm_nonneg (mixedDerivL r m f))
-      (fun t ↦ ?_) ?_).trans (add_le_add le_rfl hK)
-    · rw [timeSliceL_apply _ hs, mixedDerivL_ofSucc hα f (by omega)]
-      exact (mixedDerivL r m f).norm_coe_le_norm _
-    · rw [coe_timeSliceL _ hs, mixedDerivL_ofSucc hα f (by omega)]
-      exact hholder x
-  · rw [timeSliceL_of_ne hs, zero_apply, norm_zero, zero_add]
-    by_cases hh : 2 * r + m = k
-    · -- The order `k`: the Hölder field is the parabolically `α`-Hölder field `D_t^r D_x^m u`.
-      have hholder := holderWith_mixedDerivL f (r := r) (m := m) (by omega) hα
-      have hK : ((‖mixedDerivL r (m + 1) f‖₊ + 2 * ‖mixedDerivL r m f‖₊ +
-          (‖timeSliceL r m f‖₊ + 2 * ‖mixedDerivL r m f‖₊) : ℝ≥0) : ℝ) ≤ 6 * ‖f‖ := by
-        push_cast
-        have := f.norm_timeSliceL_le r m
-        nlinarith [hD r (m + 1), hD r m]
-      have hcoe : ⇑(mixedDerivHolderL r m (ofSucc hα f)) = mixedDerivL r m f := by
-        rw [← HolderSpace.coe_toBoundedContinuousFunction,
-          toBoundedContinuousFunction_mixedDerivHolderL _ hh, mixedDerivL_ofSucc hα f hh.le]
-      refine (HolderSpace.norm_le_of_norm_le_of_holderWith (norm_nonneg (mixedDerivL r m f))
-        (fun p ↦ ?_) (hcoe ▸ hholder)).trans ((add_le_add (hD r m) hK).trans (by nlinarith))
-      rw [hcoe]
-      exact (mixedDerivL r m f).norm_coe_le_norm _
-    · rw [mixedDerivHolderL_of_ne hh, zero_apply, norm_zero]
-      positivity
-
 /-- The norm of a map of order `k + 1`, read as a map of order `k`, is at most `8 N` times its
 norm, with `N` the number of pairs `(r, m)`, `2 r + m ≤ k`. -/
 private theorem norm_ofSucc_le (hα : α ≤ 1) (f : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ‖ofSucc hα f‖ ≤ (parabolicDerivPairs k).card * 8 * ‖f‖ := by
   rw [norm_eq, mul_assoc, ← nsmul_eq_mul, ← Finset.sum_const]
   refine Finset.sum_le_sum fun p hp ↦ ?_
-  rw [mixedDerivL_ofSucc hα f (mem_parabolicDerivPairs.1 hp)]
-  have := norm_timeSliceL_add_norm_mixedDerivHolderL_ofSucc_le hα f p.1 p.2
-  nlinarith [f.norm_mixedDerivL_le p.1 p.2]
+  have hp := mem_parabolicDerivPairs.1 hp
+  have hD (r m : ℕ) := f.norm_mixedDerivL_le r m
+  -- Each pair contributes at most `2 ‖u‖ + 6 ‖u‖`: the Hölder constants of the two top orders
+  -- are at most `3 ‖u‖` and `6 ‖u‖`.
+  refine (norm_add_norm_timeSliceL_add_norm_mixedDerivHolderL_le (ofSucc hα f) (B := ‖f‖)
+    (C := 6 * ‖f‖₊) ?_ (fun h x ↦ ?_) (fun h ↦ ?_)).trans_eq (by push_cast; ring)
+  · rw [mixedDerivL_ofSucc hα f hp]
+    exact f.norm_mixedDerivL_le p.1 p.2
+  · rw [mixedDerivL_ofSucc hα f hp]
+    refine (holderWith_mixedDerivL_slabMk_of_add_two_le f (by omega) hα x).mono ?_
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    linarith [hD (p.1 + 1) p.2, hD p.1 p.2, norm_nonneg f]
+  · rw [mixedDerivL_ofSucc hα f hp]
+    refine (holderWith_mixedDerivL_of_add_one_eq f (by omega) hα).mono ?_
+    rw [← NNReal.coe_le_coe]
+    push_cast
+    linarith [hD p.1 (p.2 + 1), hD p.1 p.2, f.norm_timeSliceL_le p.1 p.2]
 
 /-- **The inclusion of parabolic Hölder spaces of consecutive orders.** For `α ≤ 1`, a bounded
 parabolic Hölder map of order `k + 1` on the slab `E × [a, b]` is one of order `k`, with the same
