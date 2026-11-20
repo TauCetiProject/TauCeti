@@ -12,6 +12,7 @@ public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+import TauCeti.Analysis.PDE.SeibergWitten.LogModulusRatio
 
 /-!
 # The flat limiting Seiberg–Witten equations and plane vortices
@@ -50,10 +51,30 @@ the plane vortex equations:
 
 So the base-independent solutions of the flat limiting equations with spinor on the canonical
 line and connection along the normal factor are exactly the pullbacks of plane vortices, in the
-normalization `∂bar_a α = 0`, `*i F_a = (1 - |α|²) / 8` of `TauCeti.Vortex.equation`. The gauge
-fixing row is not treated here. That rescaled solutions of the large-parameter equations converge,
-in the sense of `1`-jets, only to solutions of the flat limiting equations is
-`TauCeti.Analysis.PDE.SeibergWitten.Rescaling`.
+normalization `∂bar_a α = 0`, `*i F_a = (1 - |α|²) / 8` of `TauCeti.Vortex.equation`.
+
+For a solution `(b, α u₀)` that is not assumed base independent:
+
+* **`J`-invariance.** A two-form whose self-dual part is a multiple of `ω` is `J`-invariant
+  (`TauCeti.AlmostComplexStructure.lieMap_eq_zero_of_add_hodgeStar_eq_smul`), so the curvature
+  satisfies `db(J u, J w) = db(u, w)`: `F_a` has no `(0,2)`-part
+  (`extDeriv_apply_apply_eq_of_add_hodgeStar_eq_smul`).
+* **The flat vortex equations.** The `ω`-component of the curvature equation is
+  `∑ᵢ db(fᵢ, J fᵢ) = (|α|² - 1) / 4` in every orthonormal basis `f`
+  (`sum_extDeriv_apply_eq_of_add_hodgeStar_eq_sub_quadraticTwoForm`). With `∂bar_a α = 0`, these
+  are the flat vortex equations with coupling `κ = 1 / 4` of
+  `TauCeti.Analysis.PDE.SeibergWitten.LogModulusRatio`.
+* **Comparison with a pulled-back vortex.** If `α = h · (α' ∘ z)` for the section `α'` of a plane
+  vortex, a nowhere-vanishing `C²` function `h` and the normal coordinate `z`, if the log-modulus
+  ratio `log |h|²` is bounded, and if `|α| → 1` as `|z| → ∞` uniformly along the base, then
+  `|h| = 1` and the solution is the gauge transform by `h` of the pullback of the vortex
+  (`norm_eq_one_and_eq_normalConnection_sub_phaseForm`). The limit `|z| → ∞` is the transverse
+  limit of `TauCeti.eq_zero_of_tendsto_comap_norm_starProjection_of_mul_laplacian_nonneg`, since
+  `|z(y)|` is the length of the projection of `y` to the normal plane (`norm_normalCoord`).
+
+The boundedness of the log-modulus ratio and the gauge fixing row are not treated here. That
+rescaled solutions of the large-parameter equations converge, in the sense of `1`-jets, only to
+solutions of the flat limiting equations is `TauCeti.Analysis.PDE.SeibergWitten.Rescaling`.
 
 ## References
 
@@ -72,8 +93,8 @@ open exteriorPower
 
 namespace TauCeti.SeibergWitten
 
-open CliffordAlgebra Module Complex
-open scoped RealInnerProductSpace InnerProductSpace ComplexConjugate
+open CliffordAlgebra Module Complex Filter
+open scoped RealInnerProductSpace InnerProductSpace ComplexConjugate Topology
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {Q : QuadraticForm ℝ V} {o : Orientation ℝ V (Fin 4)}
@@ -159,6 +180,11 @@ theorem normalCoord_apply (v : V) : normalCoord e v = ⟪e 2, v⟫ + ⟪e 3, v�
 theorem normalCoord_apply_two : normalCoord e (e 2) = 1 := by
   apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (3 : Fin 4) ≠ 2)]
 
+/-- The normal coordinate is onto: `z (Re w • e₂ + Im w • e₃) = w`. -/
+theorem normalCoord_surjective : Function.Surjective (normalCoord e) := fun w ↦
+  ⟨w.re • e 2 + w.im • e 3, by
+    apply Complex.ext <;> simp [e.orthonormal.inner_eq_zero (by decide : (2 : Fin 4) ≠ 3)]⟩
+
 /-- In a unitary frame the normal coordinate is complex linear: `z (J v) = i z (v)`. -/
 theorem normalCoord_apply_apply (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (v : V) :
     normalCoord e (J v) = I * normalCoord e v := by
@@ -188,6 +214,17 @@ theorem normalConnection_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (y v : V
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
 
+/-- The pulled-back connection is differentiable at `y` when the plane field is differentiable at
+the normal coordinate of `y`. -/
+theorem differentiableAt_normalConnection (hx : DifferentiableAt ℝ x (normalCoord e y)) :
+    DifferentiableAt ℝ (normalConnection e x) y := by
+  have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ x (normalCoord e y') i) y :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hx).comp y
+      (normalCoord e).differentiableAt
+  unfold normalConnection
+  exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
+    (0 : Fin 1)).differentiableAt.comp y (((hc 0).smul_const _).add ((hc 1).smul_const _))
+
 /-- The covariant derivative of the pulled-back section along the pulled-back connection is the
 covariant derivative of the plane field in the normal direction. -/
 theorem covariantDeriv_normalConnection (hx : DifferentiableAt ℝ x (normalCoord e y)) (v : V) :
@@ -200,6 +237,32 @@ theorem covariantDeriv_normalConnection (hx : DifferentiableAt ℝ x (normalCoor
   ring
 
 variable [FiniteDimensional ℝ V]
+
+/-- **The normal coordinate measures the normal component**: `|z(y)| = ‖P_K y‖`, where `P_K` is the
+orthogonal projection onto the normal plane `K = span {e₂, e₃}`. -/
+theorem norm_normalCoord (y : V) :
+    ‖normalCoord e y‖ = ‖(Submodule.span ℝ {e 2, e 3}).starProjection y‖ := by
+  set K := Submodule.span ℝ {e 2, e 3}
+  obtain ⟨a, c, hac⟩ := Submodule.mem_span_pair.1 (K.starProjection_apply_mem y)
+  have h22 : ⟪e 2, e 2⟫ = 1 := by simp
+  have h33 : ⟪e 3, e 3⟫ = 1 := by simp
+  have h23 : ⟪e 2, e 3⟫ = 0 := e.orthonormal.inner_eq_zero (by decide)
+  have h32 : ⟪e 3, e 2⟫ = 0 := e.orthonormal.inner_eq_zero (by decide)
+  -- `⟪eⱼ, P_K y⟫ = ⟪eⱼ, y⟫` for `eⱼ ∈ K`, so `P_K y = ⟪e₂, y⟫ e₂ + ⟪e₃, y⟫ e₃`.
+  have hP (j : Fin 4) (hj : e j ∈ K) : ⟪e j, K.starProjection y⟫ = ⟪e j, y⟫ := by
+    have h := K.starProjection_inner_eq_zero y (e j) hj
+    rw [inner_sub_left, sub_eq_zero] at h
+    rw [real_inner_comm, ← h, real_inner_comm]
+  have ha := hP 2 (Submodule.subset_span (by simp))
+  have hc := hP 3 (Submodule.subset_span (by simp))
+  rw [← hac] at ha hc
+  simp only [inner_add_right, real_inner_smul_right, h22, h23, h32, h33] at ha hc
+  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.normSq_apply,
+    normalCoord_re, normalCoord_im, ← real_inner_self_eq_norm_sq, ← hac]
+  simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right, h22, h23,
+    h32, h33]
+  rw [← ha, ← hc]
+  ring
 
 /-- **`∂bar_a α` of a pulled-back field**: in a unitary frame,
 `∂bar_a α (v) = conj (z v) (E₁ + i E₂)`, where `z` is the normal coordinate and `E₁`, `E₂` are the
@@ -247,13 +310,7 @@ theorem alternatingFormEquiv_symm_neg_extDeriv_normalConnection
       ((fderiv ℝ (fun w ↦ x w i) (π y)).comp π) y :=
     ((EuclideanSpace.proj (𝕜 := ℝ) i).differentiableAt.comp _ hx).hasFDerivAt.comp y
       π.hasFDerivAt
-  have hb : DifferentiableAt ℝ (normalConnection e x) y := by
-    unfold normalConnection
-    have h : DifferentiableAt ℝ
-        (fun y' ↦ x (π y') 0 • innerSL ℝ (e 2) + x (π y') 1 • innerSL ℝ (e 3)) y :=
-      ((hc 0).differentiableAt.smul_const _).add ((hc 1).differentiableAt.smul_const _)
-    exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
-      (0 : Fin 1)).differentiableAt.comp y h
+  have hb : DifferentiableAt ℝ (normalConnection e x) y := differentiableAt_normalConnection hx
   -- The derivative of the coefficient `b(w) = b₁(z) Re z(w) + b₂(z) Im z(w)` along `v`.
   have key (v w : V) : fderiv ℝ (fun y' ↦ normalConnection e x y' (fun _ ↦ w)) y v =
       fderiv ℝ (fun z ↦ x z 0) (π y) (π v) * (π w).re +
@@ -351,5 +408,140 @@ theorem sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
     exact ⟨⟨h1, h2⟩, by linarith⟩
 
 end Equations
+
+/-! ### The flat vortex equations of a flat limit and the comparison with a pulled-back vortex -/
+
+section Comparison
+
+variable [Fact (finrank ℝ V = 4)]
+
+-- The dimension `Fact` makes the oriented four-space finite-dimensional.
+attribute [local instance] finiteDimensional_of_finrank_four
+
+variable (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o) (h₀ : J (e 0) = e 1)
+  (h₂₃ : J (e 2) = e 3) {b : V → V [⋀^Fin 1]→L[ℝ] ℝ} {y : V} {c : ℝ}
+
+include he h₀ h₂₃ in
+/-- **The curvature of a flat limit is `J`-invariant.** If the real curvature `F = -db` of `b` at
+`y` has self-dual part a multiple of `ω`, `F + ⋆F = c ω`, as the flat limiting curvature equation
+on the canonical line says (`add_hodgeStar_eq_sub_quadraticTwoForm_iff`), then
+`db(J u, J w) = db(u, w)`: the curvature `F_a` has no `(0,2)`-part. -/
+theorem extDeriv_apply_apply_eq_of_add_hodgeStar_eq_smul
+    (hF : (alternatingFormEquiv V 2).symm (-extDeriv b y) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b y)) = c • J.kahlerForm)
+    (u w : V) : extDeriv b y ![J u, J w] = extDeriv b y ![u, w] := by
+  have h := (AlmostComplexStructure.lieMap_eq_zero_iff_forall_inner_ιMulti_apply
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃) _).1
+    (AlmostComplexStructure.lieMap_eq_zero_of_add_hodgeStar_eq_smul h₀ h₂₃ hkl he hF) u w
+  simpa only [inner_alternatingFormEquiv_symm_ιMulti, ContinuousAlternatingMap.neg_apply,
+    neg_inj] using h
+
+include he h₀ h₂₃ in
+/-- **The `ω`-trace of the curvature of a flat limit.** If the real curvature `F = -db` of `b` at
+`y` satisfies `F + ⋆F = c ω`, then `∑ᵢ db(fᵢ, J fᵢ) = -2 c` in every orthonormal basis `f`. -/
+theorem sum_extDeriv_apply_eq_of_add_hodgeStar_eq_smul {ι : Type*} [Fintype ι]
+    (f : OrthonormalBasis ι ℝ V)
+    (hF : (alternatingFormEquiv V 2).symm (-extDeriv b y) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b y)) = c • J.kahlerForm) :
+    ∑ i, extDeriv b y ![f i, J (f i)] = -2 * c := by
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  set F := (alternatingFormEquiv V 2).symm (-extDeriv b y)
+  have hFv (u w : V) : ⟪F, ιMulti ℝ 2 ![u, w]⟫ = -extDeriv b y ![u, w] := by
+    rw [inner_alternatingFormEquiv_symm_ιMulti, ContinuousAlternatingMap.neg_apply]
+  -- `⟪ω, F⟫ = c`, since `⟪ω, ⋆F⟫ = ⟪ω, F⟫` and `‖ω‖² = 2`.
+  have hω : ⟪J.kahlerForm, F⟫ = c := by
+    have h := congrArg (⟪J.kahlerForm, ·⟫) hF
+    simp only [inner_add_right, AlmostComplexStructure.inner_kahlerForm_hodgeStar h₀ h₂₃ hkl he,
+      real_inner_smul_right, real_inner_self_eq_norm_sq,
+      AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ] at h
+    linarith
+  -- `∑ᵢ fᵢ ∧ J fᵢ = 2 ω`.
+  have hsum := congrArg (⟪F, ·⟫)
+    (AlmostComplexStructure.sum_ιMulti_apply_eq_two_smul_kahlerForm hJ f)
+  simp only [inner_sum, hFv, Finset.sum_neg_distrib, real_inner_smul_right] at hsum
+  rw [real_inner_comm, hω] at hsum
+  linarith
+
+variable (hQ : ∀ v, Q v = -‖v‖ ^ 2) (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+  (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
+  (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1)
+
+include hQ he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ in
+/-- **The flat vortex curvature equation of a flat limit.** If `(b, α u₀)` solves the flat limiting
+curvature equation `F + ⋆F = ω / 8 - q(α u₀) / 2` at `y`, for a unit spinor `u₀` of the canonical
+line, then `∑ᵢ db(fᵢ, J fᵢ) = (|α|² - 1) / 4` in every orthonormal basis `f`: the curvature
+equation of the flat vortex equations with coupling `κ = 1 / 4`. -/
+theorem sum_extDeriv_apply_eq_of_add_hodgeStar_eq_sub_quadraticTwoForm {ι : Type*} [Fintype ι]
+    (f : OrthonormalBasis ι ℝ V) {α : V → ℂ}
+    (hF : (alternatingFormEquiv V 2).symm (-extDeriv b y) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b y)) =
+      (8⁻¹ : ℝ) • J.kahlerForm - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (α y • u₀) : ⋀[ℝ]^2 V)) :
+    ∑ i, extDeriv b y ![f i, J (f i)] = 4⁻¹ * (‖α y‖ ^ 2 - 1) := by
+  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
+  have hP : cliffordProjection o ρ J.kahlerForm (α y • u₀) = α y • u₀ := by
+    rw [map_smul, hu₀]
+  rw [add_hodgeStar_eq_sub_quadraticTwoForm_iff hQ hkl hω h₂ hρ hP, norm_smul, hu₀₁,
+    mul_one] at hF
+  rw [sum_extDeriv_apply_eq_of_add_hodgeStar_eq_smul hkl he h₀ h₂₃ f hF]
+  ring
+
+include hQ he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ in
+/-- **A flat limit with bounded log-modulus ratio is a pulled-back plane vortex up to gauge.** Let
+`(b, α u₀)` solve the flat limiting Dirac and curvature equations on `V = ℂ_base × ℂ_normal`
+everywhere, for a unit spinor `u₀` of the canonical line, and let `x` be a differentiable plane
+vortex whose section `α'` is nonzero on a dense set and satisfies `|α'(z)| → 1` as `z → ∞`. Suppose
+that `α = h · (α' ∘ z)` for a nowhere-vanishing `C²` function `h`, where `z` is the normal
+coordinate, that the log-modulus ratio `log |h|²` is bounded, and that `|α| → 1` as `|z| → ∞`,
+uniformly along the base. Then `|h| = 1` and `b = b' - Im (h⁻¹ dh)`, where `b'` is the connection of
+`x` pulled back along `z`: the flat limit is the gauge transform by `h` of the base-independent
+pullback of `x` (`normalConnection`). -/
+theorem norm_eq_one_and_eq_normalConnection_sub_phaseForm {α h : V → ℂ} (hb : Differentiable ℝ b)
+    (hD : ∀ y, ∑ k, covariantDeriv b α y (e k) • ρ (ι Q (e k)) u₀ = 0)
+    (hF : ∀ y, (alternatingFormEquiv V 2).symm (-extDeriv b y) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b y)) =
+      (8⁻¹ : ℝ) • J.kahlerForm - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (α y • u₀) : ⋀[ℝ]^2 V))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Differentiable ℝ x)
+    (hsol : ∀ z, Vortex.equation x z = 0) (hdense : Dense {z | Vortex.sectionValue x z ≠ 0})
+    (hframe : Tendsto (fun z ↦ ‖Vortex.sectionValue x z‖) (cocompact ℂ) (𝓝 1))
+    (hh : ContDiff ℝ 2 h) (hh₀ : ∀ y, h y ≠ 0)
+    (hα : α = h * (Vortex.sectionValue x ∘ normalCoord e))
+    (hbdd : Bornology.IsBounded (Set.range fun y ↦ Real.log (‖h y‖ ^ 2)))
+    (hlim : Tendsto (fun y ↦ ‖α y‖) (comap (fun y ↦ ‖normalCoord e y‖) atTop) (𝓝 1)) :
+    (∀ y, ‖h y‖ = 1) ∧ b = normalConnection e x - phaseForm h := by
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hu₀' : (u₀ : W) ≠ 0 := by
+    have hu : u₀ ≠ 0 := by
+      rintro rfl
+      simp at hu₀₁
+    simpa using hu
+  set α' := Vortex.sectionValue x ∘ normalCoord e
+  have hα' : Differentiable ℝ α' := fun y ↦
+    (Vortex.differentiableAt_sectionValue_of_differentiableAt (hx _)).comp y
+      (normalCoord e).differentiableAt
+  -- The pulled-back vortex solves the flat limiting equations.
+  have hflat (y : V) :=
+    (sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff hQ hkl he h₀ h₂₃ h₂ hρ hu₀
+      hu₀₁ (hx (normalCoord e y))).2 (hsol _)
+  have hdirac := sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀'
+  -- Transversal limits along the normal plane `K = span {e₂, e₃}` are limits as `|z| → ∞`.
+  set K := Submodule.span ℝ {e 2, e 3}
+  have hK : K ≠ ⊥ := fun hK ↦ e.orthonormal.ne_zero 2
+    ((Submodule.mem_bot ℝ).1 (hK ▸ Submodule.subset_span (by simp)))
+  have hfilter : comap (fun y ↦ ‖K.starProjection y‖) atTop =
+      comap (fun y ↦ ‖normalCoord e y‖) atTop := by
+    simp only [norm_normalCoord, K]
+  have hz : Tendsto (normalCoord e) (comap (fun y ↦ ‖normalCoord e y‖) atTop) (cocompact ℂ) := by
+    rw [← Metric.cobounded_eq_cocompact, ← tendsto_norm_atTop_iff_cobounded]
+    exact tendsto_comap
+  refine norm_eq_one_and_eq_sub_phaseForm_of_tendsto hJ e (κ := 4⁻¹) (by norm_num) hK hb
+    (fun y ↦ differentiableAt_normalConnection (hx _)) hh hα' hh₀ hα
+    (hdense.preimage ((normalCoord e).isOpenMap normalCoord_surjective))
+    (fun y ↦ (hdirac _ _ _).1 (hD y)) (fun y ↦ (hdirac _ _ _).1 (hflat y).1)
+    (fun y ↦ sum_extDeriv_apply_eq_of_add_hodgeStar_eq_sub_quadraticTwoForm hkl he h₀ h₂₃ hQ h₂ hρ
+      hu₀ hu₀₁ e (hF y))
+    (fun y ↦ sum_extDeriv_apply_eq_of_add_hodgeStar_eq_sub_quadraticTwoForm hkl he h₀ h₂₃ hQ h₂ hρ
+      hu₀ hu₀₁ e (α := α') (hflat y).2) hbdd (hfilter ▸ hlim) (hfilter ▸ hframe.comp hz)
+
+end Comparison
 
 end TauCeti.SeibergWitten
