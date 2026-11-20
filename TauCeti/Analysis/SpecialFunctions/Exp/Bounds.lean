@@ -50,6 +50,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le`:
   `((y ^ m)⁻¹ + y ^ m) exp (-a ((y - 1)² / y)) ≤ 2 max (m! / (a / 4) ^ m) (2 ^ m)` for `0 < a`,
   `0 < y`.
+* `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
 -/
 
 public section
@@ -300,5 +301,11 @@ theorem inv_pow_add_pow_mul_exp_neg_mul_sub_one_sq_div_le {a y : ℝ} (ha : 0 < 
           ≤ (2 * 2 ^ m) * 1 := mul_le_mul hym hexp1 (by positivity) (by positivity)
         _ ≤ 2 * max ((m ! : ℝ) / (a / 4) ^ m) (2 ^ m) := by
             rw [mul_one]; gcongr; exact le_max_right _ _
+
+/-- A natural power of a nonnegative real number is at most the exponential of the exponent
+times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp x`. -/
+theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
+  rw [exp_natCast_mul]
+  exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
 end TauCeti
