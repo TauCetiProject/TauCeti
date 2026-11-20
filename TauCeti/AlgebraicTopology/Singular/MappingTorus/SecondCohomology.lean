@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.FibreClass
-import Mathlib.LinearAlgebra.Determinant
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 import TauCeti.Algebra.Homology.UniversalCoefficient.Basic
@@ -70,37 +69,6 @@ variable [Module.Free ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).o
     (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
   [Module.Finite ℤ ((((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
     (ModuleCat.of ℤ ℤ)).obj (TopCat.of F)).homology 1)]
-
-/-- If `det (1 - φ_*) ≠ 0` on `H₁(F; ℤ)`, then `1 - φ_*` is injective on the homology
-`H₁(F; ULift ℤ)` used by the fibre class. -/
-private theorem injective_id_sub_homologyMap_monodromyChainMap_ulift
-    (hdet : (LinearMap.id -
-      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom).det ≠ 0) :
-    Function.Injective (LinearMap.id -
-      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ (ULift.{0} ℤ))) 1).hom :
-        _ →ₗ[ℤ] _) := by
-  -- `uliftIntHomologyIso` is stated for `SSet.homology`, which is by definition the homology of
-  -- `singularChainComplexFunctor`.
-  let e : (((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj
-      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of F)).homology 1 ≃ₗ[ℤ]
-        (((singularChainComplexFunctor (ModuleCat.{0} ℤ)).obj (ModuleCat.of ℤ ℤ)).obj
-          (TopCat.of F)).homology 1 :=
-    (uliftIntHomologyIso (TopCat.of F) 1).toLinearEquiv
-  -- `homologyMap (monodromyChainMap φ R) 1` is by definition `SSet.homologyMap` of `φ`, so the
-  -- coefficient isomorphism intertwines the two actions of the monodromy.
-  have hφ : ∀ z, e ((homologyMap (monodromyChainMap φ (ModuleCat.of ℤ (ULift.{0} ℤ))) 1).hom z) =
-      (homologyMap (monodromyChainMap φ (ModuleCat.of ℤ ℤ)) 1).hom (e z) := fun z ↦ by
-    have h := LinearMap.congr_fun (ModuleCat.hom_ext_iff.1
-      (homologyMap_comp_uliftIntHomologyIso_hom (TopCat.ofHom ⟨φ, φ.continuous⟩) 1)) z
-    simp only [ModuleCat.hom_comp, LinearMap.coe_comp] at h
-    rw [monodromyChainMap_def, monodromyChainMap_def]
-    exact h
-  intro x y hxy
-  apply e.injective
-  apply LinearMap.ker_eq_bot.1 (not_not.1 fun h ↦ hdet (LinearMap.det_eq_zero_iff_ker_ne_bot.2 h))
-  have h := congrArg e hxy
-  simp only [LinearMap.sub_apply, LinearMap.id_apply, map_sub, hφ] at h ⊢
-  exact h
 
 /-- Multiplication by `|det (1 - φ_*)|` on `H₁(Y_φ; ULift ℤ)` factors through `ℤ`: the torsion has
 that order, and `H₁(Y_φ; ℤ)` modulo torsion is `H₀(F; ℤ) ≅ ℤ` through the Wang connecting
