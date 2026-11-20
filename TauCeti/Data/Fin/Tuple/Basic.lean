@@ -63,6 +63,8 @@ once.
 * `Fin.update_removeNth_succ_eq_removeNth_castSucc`: deleting entry `j + 1` and then overwriting
   entry `j` by the deleted entry is deleting entry `j`.
 * `Fin.contractNth_castSucc_const`: contracting two adjacent entries of a constant tuple.
+* `Fin.contractNth_castSucc_window_apply`: contracting two adjacent entries inside a window of
+  consecutive entries is contracting them in the whole tuple.
 * `Fin.insertNth_apply_zero_of_ne_zero`, `Fin.insertNth_apply_last_of_ne_last`: inserting away
   from the first (last) position keeps the first (last) entry.
 * `Fin.contractNth_castSucc_insertNth_succ_castSucc`: contracting the two steps of a path that
@@ -315,6 +317,25 @@ theorem contractNth_castSucc_const (j : Fin n) (x : α) :
   · rw [Function.update_of_ne hkj.ne, contractNth_apply_of_lt _ _ _ _ hkj]
   · rw [Function.update_self, contractNth_apply_of_eq _ _ _ _ rfl]
   · rw [Function.update_of_ne hkj.ne', contractNth_apply_of_gt _ _ _ _ hkj]
+
+/-- Contracting two adjacent entries inside a window `a x, …, a (x + c)` of consecutive entries
+of a tuple is contracting them in the whole tuple. -/
+theorem contractNth_castSucc_window_apply {m c : ℕ} (a : Fin (m + 1) → α) {x : ℕ}
+    (hxc : x + c ≤ m) (j l : Fin c) :
+    contractNth j.castSucc op (fun l : Fin (c + 1) => a ⟨x + l, by have := l.isLt; omega⟩) l =
+      contractNth (⟨x + j, by have := j.isLt; omega⟩ : Fin m).castSucc op a
+        ⟨x + l, by have := l.isLt; omega⟩ := by
+  rcases lt_trichotomy (l : ℕ) j with hl | hl | hl
+  · rw [contractNth_apply_of_lt _ _ _ _ (by simpa using hl),
+      contractNth_apply_of_lt _ _ _ _ (by simp; omega)]
+    exact congrArg a (Fin.ext (by simp))
+  · rw [contractNth_apply_of_eq _ _ _ _ (by simpa using hl),
+      contractNth_apply_of_eq _ _ _ _ (by simp; omega)]
+    simp only [val_castSucc, val_succ]
+    exact congrArg₂ op (congrArg a (Fin.ext rfl)) (congrArg a (Fin.ext (by simp; omega)))
+  · rw [contractNth_apply_of_gt _ _ _ _ (by simpa using hl),
+      contractNth_apply_of_gt _ _ _ _ (by simp; omega)]
+    exact congrArg a (Fin.ext (by simp; omega))
 
 end ContractNth
 
