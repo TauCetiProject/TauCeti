@@ -436,8 +436,8 @@ private theorem lift_mk_partLetter {β : Ω.closedSections → FreeGroup A}
     Ω.isTiling_itemTiling (h₁.trans (he.le.trans h₂)) hj⟩⟩
   simp only [cutEquation_pieceLabel, cutEquation_paramLabel, List.map_append, ← FreeGroup.mul_mk,
     map_mul, lift_mk_map_partLetter_itemTiling] at h₃ h₄
-  rw [← Ω.segment_append h₁ (he.le.trans h₂), ← Ω.segment_append he.le h₂,
-    ← FreeGroup.mul_mk, ← FreeGroup.mul_mk, map_mul, map_mul, ← h₃, mul_assoc] at h₄
+  rw [Ω.lift_mk_segment_eq_mul _ h₁ (he.le.trans h₂), Ω.lift_mk_segment_eq_mul _ he.le h₂, ← h₃,
+    mul_assoc] at h₄
   exact (mul_right_cancel (mul_left_cancel h₄)).symm
 
 /-- At a group solution of `Π_Ω` on `T`, a variable base `μ` whose closed section belongs to `T`
