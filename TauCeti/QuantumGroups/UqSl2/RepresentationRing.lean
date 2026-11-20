@@ -329,26 +329,6 @@ theorem coe_range_repRingCharacter (hq : IsGenericQuantumParameter q) :
   ext1 p
   simp [φ]
 
-/-- The character of `L_m^ε` is supported on the signed powers `δ q^k` with `|k| < m + 1`. -/
-private theorem formalCharacter_ladderModule_mem_supported (m : ℕ) (ε : ℤˣ) :
-    formalCharacter q (LadderModule q m ε) ∈ MonoidAlgebra.supported ℤ ℤ
-      {μ : ℂ | ∃ (δ : ℤˣ) (k : ℤ), |k| < ((m + 1 : ℕ) : ℤ) ∧ μ = δ * q ^ k} := by
-  rw [formalCharacter_ladderModule]
-  refine Submodule.sum_mem _ fun j hj => MonoidAlgebra.mem_supported.2 ?_
-  have hj : j ≤ m := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-  rw [MonoidAlgebra.coeff_single]
-  refine (Finset.coe_subset.2 Finsupp.support_single_subset).trans ?_
-  rw [Finset.coe_singleton, Set.singleton_subset_iff]
-  exact ⟨ε, _, abs_lt.2 ⟨by omega, by omega⟩, rfl⟩
-
-/-- At a generic parameter, the coefficient of `ch L_N^ε` at the extreme weight `δ q^N` is `1`
-if `ε = δ` and `0` otherwise. -/
-private theorem formalCharacter_ladderModule_coeff_units_mul_zpow_self
-    (hq : IsGenericQuantumParameter q) (N : ℕ) (ε δ : ℤˣ) :
-    (formalCharacter q (LadderModule q N ε)).coeff (δ * q ^ (N : ℤ)) = if ε = δ then 1 else 0 := by
-  rw [formalCharacter_ladderModule_coeff_units_mul_zpow hq]
-  by_cases h : ε = δ <;> simp [h]
-
 /-- At a generic parameter, an element of `ℤ[ℂ]` supported on the signed powers `δ q^k` with
 `|k| < N` and symmetric under `μ ↦ μ⁻¹` lies in the span of the characters of the signed ladder
 modules. -/
@@ -396,9 +376,7 @@ private theorem mem_span_formalCharacter_ladderModule (hq : IsGenericQuantumPara
       rcases (show k = N ∨ k = -N by push_cast at hk; omega) with rfl | rfl
       · exact hne (hgtop δ)
       · refine hne ?_
-        rw [← hginv, show ((δ : ℂ) * q ^ (-(N : ℤ)))⁻¹ = δ * q ^ (N : ℤ) by
-          rw [zpow_neg]
-          rcases Int.units_eq_one_or δ with rfl | rfl <;> simp, hgtop]
+        rw [← hginv, units_mul_zpow_inv, neg_neg, hgtop]
     rw [show f = g + ∑ ε : ℤˣ,
         f.coeff (ε * q ^ (N : ℤ)) • formalCharacter q (LadderModule q N ε) by
       rw [hg, sub_add_cancel]]
