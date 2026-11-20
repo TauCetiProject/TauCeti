@@ -77,14 +77,10 @@ namespace TauCeti.ModularForm
 
 /-! ### `η(δ τ)` at an arbitrary cusp -/
 
-/-- The automorphy factor `c τ + d` of `σ = (a b; c d) ∈ SL(2, ℤ)` does not vanish on `ℍ`. -/
-private theorem denom_ne_zero (σ : SL(2, ℤ)) (τ : ℍ) : (σ 1 0 : ℂ) * τ + σ 1 1 ≠ 0 := by
-  simpa [UpperHalfPlane.denom] using UpperHalfPlane.denom_ne_zero (σ : GL (Fin 2) ℝ) τ
-
 /-- The principal square root `√(c τ + d)` does not vanish on `ℍ`. -/
 private theorem sqrt_denom_ne_zero (σ : SL(2, ℤ)) (τ : ℍ) :
     Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) ≠ 0 :=
-  Complex.sqrt_eq_zero_iff.not.2 (denom_ne_zero σ τ)
+  Complex.sqrt_eq_zero_iff.not.2 (ModularGroup.denom_apply σ τ ▸ UpperHalfPlane.denom_ne_zero σ τ)
 
 /-- The integer data of the factorization `diag(δ, 1) σ = σ' (A B; 0 D)`: with `A = gcd(δ, c)`,
 `δ = A D` with `D > 0`, `c = A c'`, and Bézout coefficients `A = δ x + c y`. -/
@@ -158,11 +154,13 @@ theorem exists_eta_natCast_mul_smul_eq (δ : ℕ) [NeZero δ] (σ : SL(2, ℤ)) 
     simpa [σ', hwC] using denom_eq_of_gcd_decomposition (d := (σ 1 1 : ℂ)) (τ := τ) hδC hcC hbezC
       hA hD0
   have hsmul : ((σ' • w : ℍ) : ℂ) = δ * ((σ • τ : ℍ) : ℂ) := by
+    have hτ : (σ 1 0 : ℂ) * τ + σ 1 1 ≠ 0 :=
+      ModularGroup.denom_apply σ τ ▸ UpperHalfPlane.denom_ne_zero σ τ
     rw [UpperHalfPlane.coe_specialLinearGroup_apply, UpperHalfPlane.coe_specialLinearGroup_apply]
     simp only [algebraMap_int_eq, eq_intCast, Complex.ofReal_intCast]
     rw [hden]
     simpa [σ', hwC] using smul_eq_of_gcd_decomposition (τ := τ) hδC hbezC
-      (by exact_mod_cast hdet) hA hD0 (denom_ne_zero σ τ)
+      (by exact_mod_cast hdet) hA hD0 hτ
   have hsqrt := Complex.sqrt_ofReal_mul (r := (D : ℝ)⁻¹) (by positivity)
     ((σ 1 0 : ℂ) * τ + σ 1 1)
   push_cast at hsqrt
