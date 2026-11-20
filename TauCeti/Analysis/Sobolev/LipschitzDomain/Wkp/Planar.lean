@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Euclidean.Plane
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.ContDiff
@@ -45,9 +46,10 @@ at most `j` are Hölder of exponent `1 - 2/p` up to the boundary.
 * `TauCeti.Wkp.exists_holderEmbeddingL_complexBall`,
   `TauCeti.Wkp.exists_holderEmbeddingL_complexHalfDisc`: the Hölder embedding
   `W^{k,p} → C^{0,1-2/(k p)}` for `2 < k p`.
-* `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall`,
-  `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexHalfDisc`: `C^{j,1-2/p}`
-  representatives of members of `W^{j+1,p}` for `p > 2`.
+* `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall` and, for a half-disc
+  with arbitrary real centre,
+  `TauCeti.Wkp.exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall_upperHalf`:
+  `C^{j,1-2/p}` representatives of members of `W^{j+1,p}` for `p > 2`.
 
 ## References
 
@@ -92,6 +94,29 @@ private theorem isBounded_complexHalfDisc (r : ℝ) :
   refine (isBounded_ball (x := (0 : ℂ)) (r := r)).subset fun z hz => ?_
   rw [mem_ball, dist_zero_right, ← Complex.equivRealProdL2Swap.norm_map]
   exact (mem_halfDisc.1 hz).1
+
+/-- The image of the half-disc `{z | |z - x| < r, 0 < Im z}` centred at a real point `x` under
+`Complex.equivRealProdL2Swap` is a translate of the model half-disc, hence a Lipschitz domain. -/
+private theorem image_complexBall_upperHalf (x r : ℝ) :
+    Complex.equivRealProdL2Swap '' (ball (x : ℂ) r ∩ {z | 0 < z.im}) =
+      AffineIsometryEquiv.vaddConst ℝ (Complex.equivRealProdL2Swap x) ''
+        (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) := by
+  ext w
+  constructor
+  · rintro ⟨z, ⟨hz, hzim⟩, rfl⟩
+    refine ⟨Complex.equivRealProdL2Swap (z - x), mem_halfDisc.2 ⟨?_, ?_⟩, ?_⟩
+    · rw [LinearIsometryEquiv.norm_map, ← dist_eq_norm]
+      exact hz
+    · simpa using hzim
+    · simp [map_sub]
+  · rintro ⟨v, hv, rfl⟩
+    obtain ⟨hv, hvim⟩ := mem_halfDisc.1 hv
+    refine ⟨Complex.equivRealProdL2Swap.symm v + x, ⟨?_, ?_⟩, ?_⟩
+    · rw [mem_ball, dist_eq_norm, add_sub_cancel_right, LinearIsometryEquiv.norm_map]
+      exact hv
+    · simpa using hvim
+    · simp only [map_add, LinearIsometryEquiv.apply_symm_apply,
+        AffineIsometryEquiv.coe_vaddConst, vadd_eq_add]
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -210,31 +235,32 @@ theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall {p : ℝ≥0}
   rw [Complex.finrank_real_complex, Nat.cast_ofNat] at h
   exact h
 
-/-- **`C^{j,1-2/p}` up to the boundary of the planar half-disc.** On the half-disc
-`{z | |z| < r, 0 < Im z}`, for `2 < p < ∞` there is a constant `K` such that every
-`u ∈ W^{j+1,p}` agrees almost everywhere with a function `g` that is `Cʲ` on the half-disc, and
-whose derivatives of order `i ≤ j` are bounded by `K ‖u‖` and Hölder of exponent `1 - 2/p` with
-constant `K ‖u‖` on the half-disc. In particular they extend continuously to the closed half-disc,
-including its segment of the real axis. -/
-theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_complexHalfDisc {p : ℝ≥0}
-    [Fact (1 ≤ (p : ℝ≥0∞))] (r : ℝ) (hp : 2 < p) (j : ℕ) :
-    ∃ K : ℝ≥0, ∀ u : Wkp volume (⟨Complex.equivRealProdL2Swap ⁻¹' halfDisc r,
-          (halfDisc r).isOpen.preimage Complex.equivRealProdL2Swap.continuous⟩ : Opens ℂ) p
-          (j + 1),
-      ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (Complex.equivRealProdL2Swap ⁻¹' halfDisc r) ∧
-        (value (j + 1) u : ℂ → ℝ) =ᵐ[volume.restrict
-          (Complex.equivRealProdL2Swap ⁻¹' halfDisc r)] g ∧ ∀ i ≤ j,
-          (∀ z ∈ Complex.equivRealProdL2Swap ⁻¹' halfDisc r,
-            ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖u‖) ∧
-            HolderOnWith (K * ‖u‖₊) (1 - 2 / p) (iteratedFDeriv ℝ i g)
-              (Complex.equivRealProdL2Swap ⁻¹' halfDisc r) := by
-  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_image_complexHalfDisc r
+/-- **`C^{j,1-2/p}` up to the boundary of a planar half-disc with real centre.** On the half-disc
+`{z | |z - x| < r, 0 < Im z}` centred at a real point `x`, for `2 < p < ∞` there is a constant
+`K` such that every `u ∈ W^{j+1,p}` agrees almost everywhere with a function `g` that is `Cʲ` on the
+half-disc, and whose derivatives of order `i ≤ j` are bounded by `K ‖u‖` and Hölder of exponent
+`1 - 2/p` with constant `K ‖u‖` on the half-disc. -/
+theorem exists_contDiffOn_holderOnWith_iteratedFDeriv_complexBall_upperHalf {p : ℝ≥0}
+    [Fact (1 ≤ (p : ℝ≥0∞))] (x r : ℝ) (hp : 2 < p) (j : ℕ) :
+    ∃ K : ℝ≥0, ∀ u : Wkp volume (Opens.upperHalf ⟨ball (x : ℂ) r, isOpen_ball⟩) p (j + 1),
+      ∃ g : ℂ → ℝ, ContDiffOn ℝ j g (ball (x : ℂ) r ∩ {z | 0 < z.im}) ∧
+        (value (j + 1) u : ℂ → ℝ) =ᵐ[volume.restrict (ball (x : ℂ) r ∩ {z | 0 < z.im})] g ∧
+        ∀ i ≤ j, (∀ z ∈ ball (x : ℂ) r ∩ {z | 0 < z.im}, ‖iteratedFDeriv ℝ i g z‖ ≤ K * ‖u‖) ∧
+          HolderOnWith (K * ‖u‖₊) (1 - 2 / p) (iteratedFDeriv ℝ i g)
+            (ball (x : ℂ) r ∩ {z | 0 < z.im}) := by
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_halfDisc r
   have h := exists_contDiffOn_holderOnWith_iteratedFDeriv_of_isLipschitzDomainWith_image
-    (p := p) Complex.equivRealProdL2Swap (Ω := ⟨_, (halfDisc r).isOpen.preimage
-      Complex.equivRealProdL2Swap.continuous⟩) hL (isBounded_complexHalfDisc r)
+    (p := p) Complex.equivRealProdL2Swap (Ω := Opens.upperHalf ⟨ball (x : ℂ) r, isOpen_ball⟩)
+    (by rw [Opens.coe_upperHalf, Opens.coe_mk, image_complexBall_upperHalf]
+        exact hL.image_affineIsometryEquiv _)
+    (isBounded_ball.subset (by rw [Opens.coe_upperHalf]; exact inter_subset_left))
     (by simpa [Complex.finrank_real_complex] using hp) j
   rw [Complex.finrank_real_complex, Nat.cast_ofNat] at h
-  exact h
+  obtain ⟨K, hK⟩ := h
+  refine ⟨K, fun u => ?_⟩
+  obtain ⟨g, hg, hug, hb⟩ := hK u
+  simp only [← SetLike.mem_coe, Opens.coe_upperHalf, Opens.coe_mk] at hg hug hb
+  exact ⟨g, hg, hug, hb⟩
 
 end Wkp
 
