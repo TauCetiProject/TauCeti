@@ -28,7 +28,8 @@ them vanishes, through the boundary values `I_x(0, b) = 1` (for `0 ≤ x`) and `
 `TauCeti.regularizedIncompleteBeta`, and each theorem below assumes only what its identity needs.
 The homogeneous relations 8.17.12–8.17.17 hold for every real `x`, because off `[0, 1]` the clamped
 function takes the same value `0` or `1` at all the parameters involved and the coefficients
-balance; 8.17.18 and 8.17.19 need `0 ≤ x ≤ 1`.
+balance (`TauCeti.exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc`); 8.17.18 and 8.17.19
+need `0 ≤ x ≤ 1`.
 
 The unit steps 8.17.20 and 8.17.21 are `TauCeti.regularizedIncompleteBeta_add_one_left` and
 `TauCeti.regularizedIncompleteBeta_add_one_right`; together with the antidiagonal step
@@ -37,8 +38,6 @@ above, through the functional equation of the Gamma function.
 
 ## Main results
 
-* `TauCeti.exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc` — independence of the
-  parameters off `[0, 1]`;
 * `TauCeti.regularizedIncompleteBeta_eq_mul_sub_one_left_add_mul_sub_one_right` — 8.17.12;
 * `TauCeti.add_mul_regularizedIncompleteBeta_eq_mul_add_one_left_add_mul_add_one_right` —
   8.17.13;
@@ -61,16 +60,6 @@ namespace TauCeti
 open ProbabilityTheory
 
 variable {a b x : ℝ}
-
-/-- Off `[0, 1]` the regularized incomplete beta function does not depend on the parameters in the
-range `0 ≤ a`, `0 < b`: it is `0` to the left of `0` and `1` from `1` on. This is what lets the
-homogeneous recurrences below hold for every real `x`. -/
-theorem exists_forall_regularizedIncompleteBeta_eq_of_notMem_Icc (hx : x ∉ Set.Icc 0 1) :
-    ∃ v, ∀ a b, 0 ≤ a → 0 < b → regularizedIncompleteBeta a b x = v := by
-  rcases lt_or_ge x 0 with hx0 | hx0
-  · exact ⟨0, fun a b _ _ ↦ regularizedIncompleteBeta_eq_zero_of_neg a b hx0⟩
-  · have hx1 : 1 ≤ x := (lt_of_not_ge fun h ↦ hx ⟨hx0, h⟩).le
-    exact ⟨1, fun a b ha hb ↦ regularizedIncompleteBeta_eq_one_of_one_le ha hb hx1⟩
 
 /-- The antidiagonal step in the form `I_x(a, b) = I_x(a + 1, b - 1) + x ^ a (1 - x) ^ (b - 1) /
 (a Β(a, b))`, [DLMF 8.17.18](https://dlmf.nist.gov/8.17.E18).
