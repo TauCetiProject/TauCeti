@@ -89,7 +89,6 @@ variable (C D) in
 /-- The isomorphism classes of a product category are the pairs of isomorphism classes of the
 factors. The inverse sends a pair of classes to the class of the pair of chosen
 representatives. -/
-@[expose]
 noncomputable def isomorphismClassesEquiv :
     Quotient (isIsomorphicSetoid (C × D)) ≃
       Quotient (isIsomorphicSetoid C) × Quotient (isIsomorphicSetoid D) where
@@ -104,7 +103,12 @@ noncomputable def isomorphismClassesEquiv :
 
 @[simp]
 theorem isomorphismClassesEquiv_mk (z : C × D) :
-    isomorphismClassesEquiv C D ⟦z⟧ = (⟦z.1⟧, ⟦z.2⟧) := rfl
+    isomorphismClassesEquiv C D ⟦z⟧ = (⟦z.1⟧, ⟦z.2⟧) := (rfl)
+
+@[simp]
+theorem isomorphismClassesEquiv_symm_apply
+    (p : Quotient (isIsomorphicSetoid C) × Quotient (isIsomorphicSetoid D)) :
+    (isomorphismClassesEquiv C D).symm p = ⟦(p.1.out, p.2.out)⟧ := (rfl)
 
 end CategoryTheory.Prod
 
@@ -114,7 +118,6 @@ variable (C D) in
 /-- The isomorphism classes of a disjoint union of categories are the disjoint union of the
 isomorphism classes of the summands. The inverse sends a class to the class of the image of its
 chosen representative. -/
-@[expose]
 noncomputable def isomorphismClassesEquiv :
     Quotient (isIsomorphicSetoid (C ⊕ D)) ≃
       Quotient (isIsomorphicSetoid C) ⊕ Quotient (isIsomorphicSetoid D) where
@@ -138,11 +141,19 @@ noncomputable def isomorphismClassesEquiv :
 
 @[simp]
 theorem isomorphismClassesEquiv_mk_inl (x : C) :
-    isomorphismClassesEquiv C D ⟦_root_.Sum.inl x⟧ = _root_.Sum.inl ⟦x⟧ := rfl
+    isomorphismClassesEquiv C D ⟦_root_.Sum.inl x⟧ = _root_.Sum.inl ⟦x⟧ := (rfl)
 
 @[simp]
 theorem isomorphismClassesEquiv_mk_inr (y : D) :
-    isomorphismClassesEquiv C D ⟦_root_.Sum.inr y⟧ = _root_.Sum.inr ⟦y⟧ := rfl
+    isomorphismClassesEquiv C D ⟦_root_.Sum.inr y⟧ = _root_.Sum.inr ⟦y⟧ := (rfl)
+
+@[simp]
+theorem isomorphismClassesEquiv_symm_inl (a : Quotient (isIsomorphicSetoid C)) :
+    (isomorphismClassesEquiv C D).symm (_root_.Sum.inl a) = ⟦_root_.Sum.inl a.out⟧ := (rfl)
+
+@[simp]
+theorem isomorphismClassesEquiv_symm_inr (b : Quotient (isIsomorphicSetoid D)) :
+    (isomorphismClassesEquiv C D).symm (_root_.Sum.inr b) = ⟦_root_.Sum.inr b.out⟧ := (rfl)
 
 end CategoryTheory.Sum
 
@@ -150,7 +161,6 @@ namespace CategoryTheory.Equivalence
 
 /-- An equivalence of categories induces an equivalence of their isomorphism classes, sending the
 class of `x` to the class of `e.functor.obj x`. -/
-@[expose]
 def isomorphismClassesEquiv (e : C ≌ D) :
     Quotient (isIsomorphicSetoid C) ≃ Quotient (isIsomorphicSetoid D) where
   toFun := Quotient.map' e.functor.obj fun _ _ ⟨i⟩ => ⟨e.functor.mapIso i⟩
@@ -160,6 +170,10 @@ def isomorphismClassesEquiv (e : C ≌ D) :
 
 @[simp]
 theorem isomorphismClassesEquiv_mk (e : C ≌ D) (x : C) :
-    e.isomorphismClassesEquiv ⟦x⟧ = ⟦e.functor.obj x⟧ := rfl
+    e.isomorphismClassesEquiv ⟦x⟧ = ⟦e.functor.obj x⟧ := (rfl)
+
+@[simp]
+theorem isomorphismClassesEquiv_symm_mk (e : C ≌ D) (y : D) :
+    e.isomorphismClassesEquiv.symm ⟦y⟧ = ⟦e.inverse.obj y⟧ := (rfl)
 
 end CategoryTheory.Equivalence

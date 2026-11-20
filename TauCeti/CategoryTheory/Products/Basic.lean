@@ -156,12 +156,20 @@ universe v₁ v₂ u₁ u₂
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
 /-- An isomorphism between pairs of objects of a product category is a pair of isomorphisms. -/
-@[expose, simps]
 def isoEquiv {x x' : C} {y y' : D} : ((x, y) ≅ (x', y')) ≃ (x ≅ x') × (y ≅ y') where
   toFun e := ((CategoryTheory.Prod.fst C D).mapIso e, (CategoryTheory.Prod.snd C D).mapIso e)
   invFun p := Iso.prod p.1 p.2
   left_inv _ := by ext <;> rfl
   right_inv _ := by ext <;> rfl
+
+@[simp]
+theorem isoEquiv_apply {x x' : C} {y y' : D} (e : (x, y) ≅ (x', y')) :
+    isoEquiv e =
+      ((CategoryTheory.Prod.fst C D).mapIso e, (CategoryTheory.Prod.snd C D).mapIso e) := (rfl)
+
+@[simp]
+theorem isoEquiv_symm_apply {x x' : C} {y y' : D} (p : (x ≅ x') × (y ≅ y')) :
+    isoEquiv.symm p = Iso.prod p.1 p.2 := (rfl)
 
 end CategoryTheory.Prod
 

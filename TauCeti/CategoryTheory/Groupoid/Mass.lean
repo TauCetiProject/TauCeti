@@ -168,31 +168,27 @@ needed: when one factor's sum has infinite support and the other's is nonempty, 
 for the product, and both sides are `0`. -/
 @[simp]
 theorem groupoidMass_prod : groupoidMass (C × D) = groupoidMass C * groupoidMass D := by
-  rw [groupoidMass_eq_finsum _
-      (CategoryTheory.Prod.isomorphismClassesEquiv C D).symm.bijective,
-    groupoidMass_eq_finsum_out, groupoidMass_eq_finsum_out]
+  have hs : Bijective fun p : _root_.Quotient (isIsomorphicSetoid C) ×
+      _root_.Quotient (isIsomorphicSetoid D) =>
+      (⟦(p.1.out, p.2.out)⟧ : _root_.Quotient (isIsomorphicSetoid (C × D))) := by
+    convert (CategoryTheory.Prod.isomorphismClassesEquiv C D).symm.bijective with p
+    rw [CategoryTheory.Prod.isomorphismClassesEquiv_symm_apply]
+  rw [groupoidMass_eq_finsum _ hs, groupoidMass_eq_finsum_out, groupoidMass_eq_finsum_out,
+    finsum_mul_finsum]
   simp_rw [natCard_aut_prod, Nat.cast_mul, mul_inv]
-  set f := fun a : _root_.Quotient (isIsomorphicSetoid C) => ((Nat.card (Aut a.out) : ℚ))⁻¹
-  set g := fun b : _root_.Quotient (isIsomorphicSetoid D) => ((Nat.card (Aut b.out) : ℚ))⁻¹
-  by_cases h : (support fun p : _ × _ => f p.1 * g p.2).Finite
-  · rw [finsum_curry _ h, finsum_mul]
-    exact finsum_congr fun a => by rw [mul_finsum]
-  -- The support of the summand is `support f ×ˢ support g`, so one factor has infinite support.
-  have hfg : (support fun p : _ × _ => f p.1 * g p.2) = support f ×ˢ support g := by
-    ext; simp
-  rw [finsum_of_infinite_support h]
-  rcases Set.infinite_prod.mp (hfg ▸ h : (support f ×ˢ support g).Infinite) with
-    ⟨hf, -⟩ | ⟨hg, -⟩
-  · rw [finsum_of_infinite_support hf, zero_mul]
-  · rw [finsum_of_infinite_support hg, mul_zero]
 
 /-- The mass of a disjoint union of two categories with finitely many isomorphism classes is the
 sum of their masses. -/
 theorem groupoidMass_sum [Finite (_root_.Quotient (isIsomorphicSetoid C))]
     [Finite (_root_.Quotient (isIsomorphicSetoid D))] :
     groupoidMass (C ⊕ D) = groupoidMass C + groupoidMass D := by
-  rw [groupoidMass_eq_finsum _ (CategoryTheory.Sum.isomorphismClassesEquiv C D).symm.bijective,
-    finsum_sum_type _ (Set.toFinite _) (Set.toFinite _),
+  have hs : Bijective fun p : _root_.Quotient (isIsomorphicSetoid C) ⊕
+      _root_.Quotient (isIsomorphicSetoid D) =>
+      (⟦p.elim (fun a => _root_.Sum.inl a.out) (fun b => _root_.Sum.inr b.out)⟧ :
+        _root_.Quotient (isIsomorphicSetoid (C ⊕ D))) := by
+    convert (CategoryTheory.Sum.isomorphismClassesEquiv C D).symm.bijective with p
+    rcases p with a | b <;> simp
+  rw [groupoidMass_eq_finsum _ hs, finsum_sum_type _ (Set.toFinite _) (Set.toFinite _),
     groupoidMass_eq_finsum_out, groupoidMass_eq_finsum_out]
   congr 1
   · exact finsum_congr fun a => congrArg (fun n : ℕ => (n : ℚ)⁻¹)
