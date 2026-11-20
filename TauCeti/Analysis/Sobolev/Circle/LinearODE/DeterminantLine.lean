@@ -484,11 +484,20 @@ private theorem exists_detLineChartEquiv_detLineLoopOperatorEquiv_symm
   have hΦ := evalZeroProd_ker T S r
   have hK := evalZeroProd_inl T S
   have hC := quotientRangeLoopOperatorEquiv_mkQ_loopStab T S r
-  refine ⟨ContinuousLinearMap.isInvertible_prod_coprod_of_kerCokerEquiv hΦ hK
-    (fun y _ ↦ evalZeroProd_snd T y) hC (fun y _ ↦ fst_evalZeroProd T y) h', ?_⟩
-  rw [← ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker hΦ hK
-    (fun y _ ↦ evalZeroProd_snd T y) hC (fun y _ ↦ fst_evalZeroProd T y) _ h']
-  exact congrArg _ ((detLineLoopOperatorEquiv T S).apply_symm_apply _)
+  have h := ContinuousLinearMap.isInvertible_prod_coprod_of_kerCokerEquiv
+    (eΛ := LinearEquiv.refl ℝ E) hΦ hK (fun y _ ↦ evalZeroProd_snd T y) hC (LinearEquiv.refl ℝ E)
+    (fun y _ ↦ (fst_evalZeroProd T y).trans (LinearEquiv.refl_apply _).symm) h'
+  refine ⟨h, ?_⟩
+  have := ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker
+    (eΛ := LinearEquiv.refl ℝ E) hΦ hK (fun y _ ↦ evalZeroProd_snd T y) hC (LinearEquiv.refl ℝ E)
+    (fun y _ ↦ (fst_evalZeroProd T y).trans (LinearEquiv.refl_apply _).symm) h h'
+    ((detLineLoopOperatorEquiv T S).symm
+      (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator)
+  have hid : ∀ z, TensorProduct.congr (LinearEquiv.refl ℝ E).detLineCongr
+      (LinearEquiv.refl ℝ E).detLineCongr.symm.dualMap z = z := fun z ↦ by
+    simp [LinearEquiv.detLineCongr_refl]
+  exact ((hid _).symm.trans this.symm).trans
+    (congrArg _ ((detLineLoopOperatorEquiv T S).apply_symm_apply _))
 
 variable {X : Type*} [TopologicalSpace X] {M : X → C(AddCircle T, E →L[ℝ] E)}
 

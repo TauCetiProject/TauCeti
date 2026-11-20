@@ -289,6 +289,66 @@ variable {𝕜 E Λ F G E' Λ' F' G' : Type*} [Field 𝕜] [AddCommGroup E] [Mod
   {q : E × Λ →L[𝕜] G} {q' : E' × Λ' →L[𝕜] G'}
   {e₁ : E ≃ₗ[𝕜] E'} {e₂ : F ≃ₗ[𝕜] F'} {eΛ : Λ ≃ₗ[𝕜] Λ'} {Ψ : (E × Λ) ≃ₗ[𝕜] (E' × Λ')}
 
+/-- **Kernel charts of operators with isomorphic exact sequences.** Let `eK` and `eC` identify
+the kernels and the cokernels of `D₁` and `D₁'`, and let `Φ : E × Λ → E' × Λ'` carry the kernel of
+the stabilization `D₁.coprod D₂` into that of `D₁'.coprod D₂'`, restricting to `eK` on
+`ker D₁ × 0`, acting on the stabilizing component by `eΛ` and matching the kernel coordinates
+along `eG : G ≃ G'`, `q' ∘ Φ = eG ∘ q`, on the stabilized kernel. If moreover `eC` sends the class
+of `D₂ l` to that of `D₂' (eΛ l)`, then the two kernel charts intertwine
+`LinearMap.detLineCongrKerCoker eK eC` with the isomorphism
+`det G ⊗ (det Λ)^* ≃ det G' ⊗ (det Λ')^*` induced by `eG` and `eΛ`.
+
+The operators need not be related by isomorphisms of their sources and targets, as in
+`ContinuousLinearMap.detLineChartEquiv_detLineCongr`: for instance `D₁` may be a differential
+operator and `D₁'` an endomorphism of a finite-dimensional space with the same kernel and
+cokernel. -/
+theorem detLineChartEquiv_detLineCongrKerCoker {eK : D₁.ker ≃ₗ[𝕜] D₁'.ker}
+    {eC : (F ⧸ D₁.range) ≃ₗ[𝕜] (F' ⧸ D₁'.range)} {Φ : E × Λ →ₗ[𝕜] E' × Λ'}
+    (hΦ : ∀ y, D₁.coprod D₂ y = 0 → D₁'.coprod D₂' (Φ y) = 0)
+    (hK : ∀ u : D₁.ker, Φ ((u : E), 0) = ((eK u : E'), 0))
+    (hΛ : ∀ y, D₁.coprod D₂ y = 0 → (Φ y).2 = eΛ y.2)
+    (hC : ∀ l, eC (D₁.range.mkQ (D₂ l)) = D₁'.range.mkQ (D₂' (eΛ l))) (eG : G ≃ₗ[𝕜] G')
+    (hq : ∀ y, D₁.coprod D₂ y = 0 → q' (Φ y) = eG (q y))
+    (h : ((D₁.coprod D₂).prod q).IsInvertible) (h' : ((D₁'.coprod D₂').prod q').IsInvertible)
+    (y : (D₁ : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv D₁' D₂' q' h' (LinearMap.detLineCongrKerCoker eK eC y) =
+      TensorProduct.congr eG.detLineCongr eΛ.detLineCongr.symm.dualMap
+        (detLineChartEquiv D₁ D₂ q h y) := by
+  have := finiteDimensional_ker_of_isInvertible_prod_coprod h
+  have := finiteDimensional_ker_of_isInvertible_prod_coprod h'
+  have hs := surjective_of_isInvertible_prod h
+  have hs' := surjective_of_isInvertible_prod h'
+  -- The stabilized kernels are identified through their coordinate spaces and `eG`; on them this
+  -- identification is `Φ`.
+  set eS : (D₁.coprod D₂).ker ≃ₗ[𝕜] (D₁'.coprod D₂').ker :=
+    (kerEquivOfProd _ q h).toLinearEquiv.symm.trans
+      (eG.trans (kerEquivOfProd _ q' h').toLinearEquiv) with heS_def
+  have heS (z : (D₁.coprod D₂).ker) : (eS z : E' × Λ') = Φ z := by
+    simp only [heS_def, LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+      kerEquivOfProd_symm_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+      coe_kerEquivOfProd_apply]
+    rw [← hq z z.2, kerSection_apply_of_mem_ker h' (hΦ z z.2)]
+  obtain ⟨t, rfl⟩ := (detLineStabilizationEquiv D₁ D₂ hs).surjective y
+  rw [← detLineStabilizationEquiv_congrKerCoker eK eS eC (fun u ↦ Subtype.ext ?_) (fun z ↦ ?_)
+      (fun l ↦ ?_) hs hs' t,
+    detLineChartEquiv_detLineStabilizationEquiv, detLineChartEquiv_detLineStabilizationEquiv]
+  · induction t using TensorProduct.inductionOn with
+    | tmul a φ =>
+      rw [TensorProduct.congr_tmul, LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul,
+        TensorProduct.congr_tmul]
+      congr 1
+      rw [← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans,
+        ← LinearEquiv.detLineCongr_trans]
+      refine congrArg (fun e ↦ LinearEquiv.detLineCongr e a) (LinearEquiv.ext fun k ↦ ?_)
+      simp [heS_def]
+    | add a b ha hb => rw [LinearEquiv.map_add, LinearEquiv.map_add, ha, hb, LinearEquiv.map_add,
+        LinearEquiv.map_add]
+  · rw [heS, kerCoprodHom_apply, kerCoprodHom_apply]
+    exact hK u
+  · simp [parameterProj_apply, heS, hΛ z z.2]
+  · simp only [parameterToCoker_apply]
+    exact (hC l).symm
+
 /-- **Naturality of kernel charts.** In the setting of
 `ContinuousLinearMap.detLineStabilizationEquiv_congr`, let `(D₂, q)` and `(D₂', q')` be kernel
 charts of `D₁` and `D₁'`, and let `eG : G ≃ G'` match the kernel coordinates along `Ψ` on the
@@ -306,24 +366,18 @@ theorem detLineChartEquiv_detLineCongr
         ((D₁ : E →ₗ[𝕜] F).detLineCongr e₁ e₂ (comp_eq_of_coprod_comp_eq hΨ hΨ₁) y) =
       TensorProduct.congr eG.detLineCongr eΛ.detLineCongr.symm.dualMap
         (detLineChartEquiv D₁ D₂ q hinv y) := by
-  have := finiteDimensional_ker_of_isInvertible_prod_coprod hinv
-  have := finiteDimensional_ker_of_isInvertible_prod_coprod hinv'
-  have hs := surjective_of_isInvertible_prod hinv
-  obtain ⟨t, rfl⟩ := (detLineStabilizationEquiv D₁ D₂ hs).surjective y
-  rw [← detLineStabilizationEquiv_congr hΨ hΨ₁ hΨ₂ hs t,
-    detLineChartEquiv_detLineStabilizationEquiv, detLineChartEquiv_detLineStabilizationEquiv]
-  induction t using TensorProduct.inductionOn with
-  | tmul a φ =>
-    rw [TensorProduct.congr_tmul, LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul,
-      TensorProduct.congr_tmul]
-    congr 1
-    rw [← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans,
-      ← LinearEquiv.detLineCongr_trans]
-    -- Both composites read a stabilized kernel vector `k` as `q' (Ψ k) = eG (q k)`.
-    refine congrArg (fun e ↦ LinearEquiv.detLineCongr e a) (LinearEquiv.ext fun k ↦ ?_)
-    simp [hq k k.2]
-  | add a b ha hb => rw [LinearEquiv.map_add, LinearEquiv.map_add, ha, hb, LinearEquiv.map_add,
-      LinearEquiv.map_add]
+  rw [LinearMap.detLineCongr_eq_detLineCongrKerCoker]
+  refine detLineChartEquiv_detLineCongrKerCoker (Φ := Ψ.toLinearMap)
+    (fun z hz ↦ (LinearMap.congr_fun hΨ z).trans (by
+      rw [LinearMap.comp_apply, coe_coe, hz, map_zero])) (fun u ↦ by simp [hΨ₁])
+    (fun z _ ↦ hΨ₂ z) (fun l ↦ ?_) eG hq hinv hinv' y
+  -- The class of `e₂ (D₂ l)` is that of `D₂' (eΛ l)`, since they differ by `D₁' (Ψ (0, l)).1`.
+  have hl := LinearMap.congr_fun hΨ (0, l)
+  simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply, coe_coe,
+    coprod_apply, map_zero, zero_add, hΨ₂] at hl
+  rw [Submodule.Quotient.equiv_apply, Submodule.mkQ_apply, Submodule.mkQ_apply,
+    Submodule.mapQ_apply, LinearEquiv.coe_coe, ← hl, Submodule.Quotient.eq]
+  exact ⟨(Ψ (0, l)).1, by simp⟩
 
 /-- **Changing the data of a kernel chart.** Let `(D₂, q)` and `(D₃, q₁)` be kernel charts of the
 same operator `D₁`, related by an automorphism `Ψ₁` of `E × Λ` which fixes `E × 0`, acts on the
@@ -465,88 +519,27 @@ section Comparison
 
 /-! ### Kernel charts of operators with isomorphic exact sequences -/
 
-variable {𝕜 E Λ F G E' F' : Type*} [Field 𝕜] [AddCommGroup E] [Module 𝕜 E]
+variable {𝕜 E Λ F E' Λ' F' : Type*} [Field 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [TopologicalSpace E] [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [AddCommGroup F]
-  [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [AddCommGroup G] [Module 𝕜 G]
-  [TopologicalSpace G] [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E'] [AddCommGroup F']
-  [Module 𝕜 F'] [TopologicalSpace F'] [ContinuousAdd F'] [FiniteDimensional 𝕜 Λ]
-  [FiniteDimensional 𝕜 G] {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
-  {D₁' : E' →L[𝕜] F'} {D₂' : Λ →L[𝕜] F'} {q' : E' × Λ →L[𝕜] G}
-  {eK : D₁.ker ≃ₗ[𝕜] D₁'.ker} {eC : (F ⧸ D₁.range) ≃ₗ[𝕜] (F' ⧸ D₁'.range)}
-  {Φ : E × Λ →ₗ[𝕜] E' × Λ}
+  [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F] [AddCommGroup E'] [Module 𝕜 E']
+  [TopologicalSpace E'] [AddCommGroup Λ'] [Module 𝕜 Λ'] [TopologicalSpace Λ'] [AddCommGroup F']
+  [Module 𝕜 F'] [TopologicalSpace F'] [ContinuousAdd F'] {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F}
+  {D₁' : E' →L[𝕜] F'} {D₂' : Λ' →L[𝕜] F'} {eK : D₁.ker ≃ₗ[𝕜] D₁'.ker}
+  {eC : (F ⧸ D₁.range) ≃ₗ[𝕜] (F' ⧸ D₁'.range)} {eΛ : Λ ≃ₗ[𝕜] Λ'} {Φ : E × Λ →ₗ[𝕜] E' × Λ'}
 
-/-- **Kernel charts of operators with isomorphic exact sequences.** Let `eK` and `eC` identify
-the kernels and the cokernels of `D₁` and `D₁'`, and let `Φ : E × Λ → E' × Λ` carry the kernel of
-the stabilization `D₁.coprod D₂` into that of `D₁'.coprod D₂'`, restricting to `eK` on
-`ker D₁ × 0`, preserving the stabilizing component and matching the kernel coordinates,
-`q' ∘ Φ = q`, on the stabilized kernel. If moreover `eC` sends the class of `D₂ l` to that of
-`D₂' l`, then the kernel chart `(D₂', q')` of `D₁'` reads the image of `y` under
-`LinearMap.detLineCongrKerCoker eK eC` as the kernel chart `(D₂, q)` of `D₁` reads `y`.
-
-The operators need not be related by isomorphisms of their sources and targets, as in
-`ContinuousLinearMap.detLineChartEquiv_detLineCongr`: for instance `D₁` may be a differential
-operator and `D₁'` an endomorphism of a finite-dimensional space with the same kernel and
-cokernel. -/
-theorem detLineChartEquiv_detLineCongrKerCoker
-    (hΦ : ∀ y, D₁.coprod D₂ y = 0 → D₁'.coprod D₂' (Φ y) = 0)
-    (hK : ∀ u : D₁.ker, Φ ((u : E), 0) = ((eK u : E'), 0))
-    (hΛ : ∀ y, D₁.coprod D₂ y = 0 → (Φ y).2 = y.2)
-    (hC : ∀ l, eC (D₁.range.mkQ (D₂ l)) = D₁'.range.mkQ (D₂' l))
-    (hq : ∀ y, D₁.coprod D₂ y = 0 → q' (Φ y) = q y)
-    (h : ((D₁.coprod D₂).prod q).IsInvertible) (h' : ((D₁'.coprod D₂').prod q').IsInvertible)
-    (y : (D₁ : E →ₗ[𝕜] F).detLine) :
-    detLineChartEquiv D₁' D₂' q' h' (LinearMap.detLineCongrKerCoker eK eC y) =
-      detLineChartEquiv D₁ D₂ q h y := by
-  have := finiteDimensional_ker_of_isInvertible_prod_coprod h
-  have := finiteDimensional_ker_of_isInvertible_prod_coprod h'
-  have hs := surjective_of_isInvertible_prod h
-  have hs' := surjective_of_isInvertible_prod h'
-  -- The stabilized kernels are identified through their common coordinate space `G`; on them
-  -- this identification is `Φ`.
-  set eS : (D₁.coprod D₂).ker ≃ₗ[𝕜] (D₁'.coprod D₂').ker :=
-    (kerEquivOfProd _ q h).toLinearEquiv.symm.trans (kerEquivOfProd _ q' h').toLinearEquiv
-    with heS_def
-  have heS (z : (D₁.coprod D₂).ker) : (eS z : E' × Λ) = Φ z := by
-    simp only [heS_def, LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
-      kerEquivOfProd_symm_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
-      coe_kerEquivOfProd_apply]
-    rw [← hq z z.2, kerSection_apply_of_mem_ker h' (hΦ z z.2)]
-  obtain ⟨t, rfl⟩ := (detLineStabilizationEquiv D₁ D₂ hs).surjective y
-  rw [← detLineStabilizationEquiv_congrKerCoker (eΛ := LinearEquiv.refl 𝕜 Λ) eK eS eC
-      (fun u ↦ Subtype.ext ?_) (fun z ↦ ?_) (fun l ↦ ?_) hs hs' t,
-    detLineChartEquiv_detLineStabilizationEquiv, detLineChartEquiv_detLineStabilizationEquiv]
-  · induction t using TensorProduct.inductionOn with
-    | tmul a φ =>
-      rw [TensorProduct.congr_tmul, LinearEquiv.rTensor_tmul, LinearEquiv.rTensor_tmul,
-        ← LinearEquiv.trans_apply, ← LinearEquiv.detLineCongr_trans]
-      congr 1
-      · congr 1
-        refine LinearEquiv.ext fun z ↦ ?_
-        simp only [heS_def]
-        simp [← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply]
-      · ext x
-        simp [LinearEquiv.detLineCongr_refl]
-    | add a b ha hb =>
-      rw [LinearEquiv.map_add, LinearEquiv.map_add, LinearEquiv.map_add, ha, hb]
-  · rw [heS, kerCoprodHom_apply, kerCoprodHom_apply]
-    exact hK u
-  · simp [parameterProj_apply, heS, hΛ z z.2]
-  · simp only [parameterToCoker_apply, LinearEquiv.refl_apply]
-    exact (hC l).symm
-
-omit [FiniteDimensional 𝕜 Λ] [FiniteDimensional 𝕜 G] in
 /-- **The five lemma for stabilized kernels.** In the situation of
 `ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker`, `Φ` maps the kernel of
 `D₁.coprod D₂` onto that of `D₁'.coprod D₂'`. -/
 private theorem exists_coprod_eq_zero_and_eq
     (hΦ : ∀ y, D₁.coprod D₂ y = 0 → D₁'.coprod D₂' (Φ y) = 0)
     (hK : ∀ u : D₁.ker, Φ ((u : E), 0) = ((eK u : E'), 0))
-    (hΛ : ∀ y, D₁.coprod D₂ y = 0 → (Φ y).2 = y.2)
-    (hC : ∀ l, eC (D₁.range.mkQ (D₂ l)) = D₁'.range.mkQ (D₂' l)) (y' : E' × Λ)
+    (hΛ : ∀ y, D₁.coprod D₂ y = 0 → (Φ y).2 = eΛ y.2)
+    (hC : ∀ l, eC (D₁.range.mkQ (D₂ l)) = D₁'.range.mkQ (D₂' (eΛ l))) (y' : E' × Λ')
     (hy' : D₁'.coprod D₂' y' = 0) : ∃ y, D₁.coprod D₂ y = 0 ∧ Φ y = y' := by
-  obtain ⟨u', l⟩ := y'
-  have hy'' : D₁' u' + D₂' l = 0 := by simpa using hy'
-  -- The class of `D₂ l` vanishes, since that of `D₂' l` does.
+  obtain ⟨u', l'⟩ := y'
+  obtain ⟨l, rfl⟩ := eΛ.surjective l'
+  have hy'' : D₁' u' + D₂' (eΛ l) = 0 := by simpa using hy'
+  -- The class of `D₂ l` vanishes, since that of `D₂' (eΛ l)` does.
   have hmk : D₁.range.mkQ (D₂ l) = 0 := by
     refine eC.injective ?_
     rw [hC, map_zero, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
@@ -556,9 +549,9 @@ private theorem exists_coprod_eq_zero_and_eq
   obtain ⟨u₀, hu₀⟩ := (Submodule.Quotient.mk_eq_zero _).1 hmk
   rw [coe_coe] at hu₀
   have hy₀ : D₁.coprod D₂ (-u₀, l) = 0 := by simp [hu₀]
-  -- The difference `(u', l) - Φ (-u₀, l)` lies in `ker D₁' × 0`, so it is the image of
+  -- The difference `(u', eΛ l) - Φ (-u₀, l)` lies in `ker D₁' × 0`, so it is the image of
   -- `ker D₁ × 0`.
-  have h2 : (Φ (-u₀, l)).2 = l := hΛ _ hy₀
+  have h2 : (Φ (-u₀, l)).2 = eΛ l := hΛ _ hy₀
   have hd : D₁' (u' - (Φ (-u₀, l)).1) = 0 := by
     have h1 := hΦ _ hy₀
     rw [← Prod.mk.eta (p := Φ (-u₀, l)), h2] at h1
@@ -575,17 +568,18 @@ end Comparison
 
 section ComparisonInvertible
 
-variable {𝕜 E Λ F G E' F' : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 E Λ F G E' Λ' F' G' : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ] [FiniteDimensional 𝕜 Λ]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
-  [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E'] [AddCommGroup F'] [Module 𝕜 F']
-  [TopologicalSpace F'] [ContinuousAdd F']
+  [AddCommGroup E'] [Module 𝕜 E'] [TopologicalSpace E'] [AddCommGroup Λ'] [Module 𝕜 Λ']
+  [TopologicalSpace Λ'] [AddCommGroup F'] [Module 𝕜 F'] [TopologicalSpace F'] [ContinuousAdd F']
+  [AddCommGroup G'] [Module 𝕜 G'] [TopologicalSpace G']
   {D₁ : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
-  {D₁' : E' →L[𝕜] F'} {D₂' : Λ →L[𝕜] F'} {q' : E' × Λ →L[𝕜] G}
-  {eK : D₁.ker ≃ₗ[𝕜] D₁'.ker} {eC : (F ⧸ D₁.range) ≃ₗ[𝕜] (F' ⧸ D₁'.range)}
-  {Φ : E × Λ →ₗ[𝕜] E' × Λ}
+  {D₁' : E' →L[𝕜] F'} {D₂' : Λ' →L[𝕜] F'} {q' : E' × Λ' →L[𝕜] G'}
+  {eK : D₁.ker ≃ₗ[𝕜] D₁'.ker} {eC : (F ⧸ D₁.range) ≃ₗ[𝕜] (F' ⧸ D₁'.range)} {eΛ : Λ ≃ₗ[𝕜] Λ'}
+  {Φ : E × Λ →ₗ[𝕜] E' × Λ'}
 
 /-- **Kernel charts transfer along isomorphic exact sequences.** In the situation of
 `ContinuousLinearMap.detLineChartEquiv_detLineCongrKerCoker`, with `D₁` an operator between Banach
@@ -594,17 +588,18 @@ spaces, the pair `(D₂, q)` is a kernel chart of `D₁` as soon as `(D₂', q')
 theorem isInvertible_prod_coprod_of_kerCokerEquiv
     (hΦ : ∀ y, D₁.coprod D₂ y = 0 → D₁'.coprod D₂' (Φ y) = 0)
     (hK : ∀ u : D₁.ker, Φ ((u : E), 0) = ((eK u : E'), 0))
-    (hΛ : ∀ y, D₁.coprod D₂ y = 0 → (Φ y).2 = y.2)
-    (hC : ∀ l, eC (D₁.range.mkQ (D₂ l)) = D₁'.range.mkQ (D₂' l))
-    (hq : ∀ y, D₁.coprod D₂ y = 0 → q' (Φ y) = q y)
+    (hΛ : ∀ y, D₁.coprod D₂ y = 0 → (Φ y).2 = eΛ y.2)
+    (hC : ∀ l, eC (D₁.range.mkQ (D₂ l)) = D₁'.range.mkQ (D₂' (eΛ l))) (eG : G ≃ₗ[𝕜] G')
+    (hq : ∀ y, D₁.coprod D₂ y = 0 → q' (Φ y) = eG (q y))
     (h' : ((D₁'.coprod D₂').prod q').IsInvertible) : ((D₁.coprod D₂).prod q).IsInvertible := by
   have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
   have : CompleteSpace G := FiniteDimensional.completeSpace 𝕜 G
   -- `D₁.coprod D₂` is onto: every class in the cokernel of `D₁` is the class of some `D₂ l`.
   have hsurj : Function.Surjective (D₁.coprod D₂) := by
     refine (parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).1 fun c ↦ ?_
-    obtain ⟨l, hl⟩ := (parameterToCoker_surjective_iff_coprod_surjective D₁' D₂').2
+    obtain ⟨l', hl⟩ := (parameterToCoker_surjective_iff_coprod_surjective D₁' D₂').2
       (surjective_of_isInvertible_prod h') (eC c)
+    obtain ⟨l, rfl⟩ := eΛ.surjective l'
     refine ⟨l, eC.injective ?_⟩
     rw [parameterToCoker_apply, hC, ← parameterToCoker_apply, hl]
   have hker := exists_coprod_eq_zero_and_eq (eK := eK) hΦ hK hΛ hC
@@ -616,7 +611,7 @@ theorem isInvertible_prod_coprod_of_kerCokerEquiv
     -- `Φ (u, l)` lies in the stabilized kernel of `D₁'` with vanishing coordinate, so it is zero.
     have hΦ0 : Φ (u, l) = 0 := h'.injective (by
       simp only [map_zero]
-      exact Prod.ext (hΦ _ hy₁) ((hq _ hy₁).trans hq0))
+      exact Prod.ext (hΦ _ hy₁) ((hq _ hy₁).trans (by simp [hq0])))
     have hl : l = 0 := by simpa [hΦ0] using (hΛ _ hy₁).symm
     subst hl
     have hu : D₁ u = 0 := by simpa using hy₁
@@ -625,11 +620,12 @@ theorem isInvertible_prod_coprod_of_kerCokerEquiv
       LinearEquiv.map_eq_zero_iff] at this
     simpa using congrArg Subtype.val this.1
   · obtain ⟨y₀, hy₀⟩ := hsurj f
-    set y' := (D₁'.coprod D₂').kerSection q' (g - q y₀)
+    set y' := (D₁'.coprod D₂').kerSection q' (eG (g - q y₀))
     obtain ⟨k, hk, hky⟩ := hker y' (apply_kerSection _)
+    have hqk : q k = g - q y₀ := eG.injective (by rw [← hq k hk, hky, apply_kerSection_right h'])
     refine ⟨y₀ + k, Prod.ext ?_ ?_⟩
     · rw [prod_apply, map_add, hy₀, hk, add_zero]
-    · simp [← hq k hk, hky, y', apply_kerSection_right h']
+    · simp [hqk]
 
 end ComparisonInvertible
 
