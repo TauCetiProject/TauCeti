@@ -45,7 +45,8 @@ right-hand side of the global Hölder estimate of Gilbarg–Trudinger, Theorem 8
 Three estimates already proved are combined.
 
 * **The global bound.** Stampacchia's maximum principle
-  (`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow`) bounds `|u|` on `Ω` by
+  (`TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow_drift`, with no drift) bounds `|u|` on
+  `Ω` by
   `M = C ‖f‖_{Lʳ(Ω)} / λ · |Ω|^(2/n - 1/r)`.
 * **Decay at the boundary.** At a point `z ∉ Ω`, De Giorgi's boundary estimate
   (`exists_ae_abs_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ball_diff`)
@@ -131,7 +132,7 @@ theorem exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_di
             (eLpNorm f r (mu.restrict Omega)).toReal / lam).toNNReal α
         (preciseRepresentative mu
           ((Omega : Set (EuclideanSpace ℝ ι)).indicator (W1p.value u))) := by
-  obtain ⟨Cb, hCb, hbd⟩ := exists_ae_abs_value_le_mul_div_mul_rpow (mu := mu) hr hrn
+  obtain ⟨Cb, hCb, hbd⟩ := exists_ae_abs_value_le_mul_div_mul_rpow_drift (mu := mu) hr hrn
   obtain ⟨β, Cd, hβ, hCd, hdecay⟩ :=
     exists_ae_abs_value_le_mul_rpow_mul_add_of_mul_measureReal_le_measureReal_ball_diff
       (mu := mu) (lam := lam) (Lam := Lam) hr hrn hθ
@@ -155,8 +156,9 @@ theorem exists_holderWith_preciseRepresentative_indicator_of_measureReal_ball_di
   have hN0 : 0 ≤ N := by positivity
   -- Stampacchia's global bound `|u| ≤ M`.
   have hbound : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M :=
-    hbd (u := ⟨u, hu0⟩) (c := 0) (gamma := 0) hfin h ha aestronglyMeasurable_zero (by simp)
-      (by simp) hf hu
+    hbd (u := ⟨u, hu0⟩) (b := 0) (beta := 0) (c := 0) (gamma := 0) hfin h ha
+      aestronglyMeasurable_zero aestronglyMeasurable_zero (by simp) (by simp) (by simp)
+      (fun _ _ => by rw [mul_zero, zero_mul]; exact mul_nonneg h.pos.le (norm_nonneg _)) hf hu
   -- De Giorgi's decay at the points of the complement, `|u| ≤ N (ρ / R)^β` on `Ω ∩ B(z, ρ)`.
   have hbdry : ∀ z ∉ (Omega : Set (EuclideanSpace ℝ ι)), ∀ ρ, 0 < ρ → ρ ≤ R →
       ∀ᵐ x ∂mu.restrict ((Omega : Set (EuclideanSpace ℝ ι)) ∩ ball z ρ),
