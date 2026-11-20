@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SingleOracle.Code
+public import TauCeti.Computability.SingleOracle.Substitution.Basic
 import TauCeti.Computability.SingleOracle.Universal
 import TauCeti.Computability.RecursiveIn
+import TauCeti.Data.PFun.Basic
 public import TauCeti.Computability.TuringDegree
 
 /-!
@@ -60,6 +61,58 @@ public section
 
 open Encodable Denumerable TauCeti.Oracle.Single
 
+namespace TauCeti.Oracle.Single.Code
+
+/-- The index of a program that runs `c` on the fixed input `x`, ignoring its own input. -/
+def haltingIndex (c : Code) (x : ℕ) : ℕ :=
+  encode (comp c (Nat.Partrec.Code.const x).toSingleOracleCode)
+
+/-- Hard-wiring an input to a program is primitive recursive. -/
+theorem primrec₂_haltingIndex : Primrec₂ haltingIndex :=
+  Primrec.encode.comp <| primrec₂_comp.comp Primrec.fst <|
+    Nat.Partrec.Code.primrec_toSingleOracleCode.comp
+      (Nat.Partrec.Code.primrec_const.comp Primrec.snd)
+
+/-- The halting index retains both the program and its fixed input. -/
+@[simp]
+theorem haltingIndex_inj {c d : Code} {x y : ℕ} :
+    haltingIndex c x = haltingIndex d y ↔ c = d ∧ x = y := by
+  constructor
+  · intro h
+    obtain ⟨hc, hconst⟩ := Code.comp.inj (encode_inj.1 h)
+    exact ⟨hc, Nat.Partrec.Code.const_inj (Nat.Partrec.Code.toSingleOracleCode_injective hconst)⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+/-- The decoded halting index runs the program on its fixed input in every oracle. -/
+@[simp]
+theorem eval_ofNat_haltingIndex (O : ℕ →. ℕ) (c : Code) (x y : ℕ) :
+    eval O (ofNat Code (c.haltingIndex x)) y = eval O c x := by
+  simp only [haltingIndex, ofNat_encode, eval_comp, eval_toSingleOracleCode,
+    Nat.Partrec.Code.eval_const, PFun.some_bind]
+
+/-- Translate a diagonal halting question using a program `d` that supplies the source oracle.
+The target program has the queries in program `e` replaced by `d` and fixes its input to `e`. -/
+def jumpIndex (d : Code) (e : ℕ) : ℕ :=
+  ((ofNat Code e).subst d).haltingIndex e
+
+/-- Translation of diagonal indices is primitive recursive in the query program and index. -/
+theorem primrec₂_jumpIndex : Primrec₂ jumpIndex :=
+  primrec₂_haltingIndex.comp (primrec₂_subst.comp ((Primrec.ofNat Code).comp Primrec.snd)
+    Primrec.fst) Primrec.snd
+
+/-- For a fixed query program the jump-index translation is one-to-one. -/
+theorem jumpIndex_injective (d : Code) : Function.Injective d.jumpIndex :=
+  fun _ _ h => (haltingIndex_inj.1 h).2
+
+/-- Diagonal index translation simulates the original run relative to the computed oracle. -/
+@[simp]
+theorem eval_ofNat_jumpIndex (O : ℕ →. ℕ) (d : Code) (e x : ℕ) :
+    eval O (ofNat Code (d.jumpIndex e)) x = eval (eval O d) (ofNat Code e) e := by
+  rw [jumpIndex, eval_ofNat_haltingIndex, eval_subst]
+
+end TauCeti.Oracle.Single.Code
+
 namespace Set
 
 variable (Z : Set ℕ)
@@ -100,19 +153,11 @@ program `c` halts on `x` exactly when the program that ignores its input and run
 on its own number. -/
 theorem oneOneReducible_dom_eval_jump :
     OneOneReducible (fun p : Code × ℕ => (Code.eval Z.oracle p.1 p.2).Dom) (· ∈ Z.jump) := by
-  -- hard-wire the input `x` into the program `c`
-  let r : Code × ℕ → Code := fun p => .comp p.1 (Nat.Partrec.Code.const p.2).toSingleOracleCode
-  have hr : Primrec r := Code.primrec₂_comp.comp Primrec.fst <|
-    Nat.Partrec.Code.primrec_toSingleOracleCode.comp <|
-      Nat.Partrec.Code.primrec_const.comp Primrec.snd
-  refine ⟨fun p => encode (r p), (Primrec.encode.comp hr).to_comp, ?_, fun p => ?_⟩
-  · rintro ⟨c, x⟩ ⟨d, y⟩ h
-    simp only [r, encode_inj, Code.comp.injEq] at h
-    obtain ⟨rfl, h⟩ := h
-    rw [Nat.Partrec.Code.const_inj (Nat.Partrec.Code.toSingleOracleCode_injective h)]
-  · simp only [r, mem_jump, ofNat_encode, Code.eval_comp, Code.eval_toSingleOracleCode,
-      Nat.Partrec.Code.eval_const]
-    exact Iff.of_eq (congrArg Part.Dom (Part.bind_some _ _)).symm
+  refine ⟨Function.uncurry Code.haltingIndex, Code.primrec₂_haltingIndex.to_comp, ?_, ?_⟩
+  · intro p q hpq
+    exact Prod.ext (Code.haltingIndex_inj.1 hpq).1 (Code.haltingIndex_inj.1 hpq).2
+  · intro p
+    simp [Function.uncurry]
 
 /-- **Every set c.e. in `Z` reduces one-one to the jump of `Z`:** the domain of every partial
 function recursive in the oracle of `Z` reduces one-one to `Z'`. -/
@@ -216,14 +261,19 @@ theorem rePred_mem_jump_of_computablePred (hA : ComputablePred (· ∈ A)) :
 theorem rePred_mem_jump_empty : REPred (· ∈ (∅ : Set ℕ).jump) :=
   rePred_mem_jump_of_computablePred ((turingReducible_empty_iff ∅).1 .rfl)
 
+/-- A program computing the oracle of `A` in the oracle of `B` gives a uniform index
+translation from diagonal halting in `A` to diagonal halting in `B`. -/
+theorem mem_jumpIndex_iff {d : Code} (hd : Code.eval B.oracle d = A.oracle) (e : ℕ) :
+    d.jumpIndex e ∈ B.jump ↔ e ∈ A.jump := by
+  simp [hd]
+
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then `A'` reduces one-one to
 `B'`. -/
 theorem oneOneReducible_jump_jump (h : TuringReducible A.oracle B.oracle) :
     OneOneReducible (· ∈ A.jump) (· ∈ B.jump) := by
-  -- the diagonal computations relative to `A` are recursive in `A`, hence in `B`, so `A'` is c.e.
-  -- in `B`
-  exact oneOneReducible_jump_of_recursiveIn B <| A.recursiveIn_eval_diag.subst fun g hg =>
-    (Set.mem_singleton_iff.1 hg) ▸ RecursiveIn.iff_nat.1 h
+  obtain ⟨d, hd⟩ := Code.turingReducible_iff_exists_code.1 h
+  exact ⟨d.jumpIndex, (Code.primrec₂_jumpIndex.comp (Primrec.const d) Primrec.id).to_comp,
+    d.jumpIndex_injective, fun e => (mem_jumpIndex_iff hd e).symm⟩
 
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then so is `A'` to `B'`. -/
 theorem turingReducible_jump_jump (h : TuringReducible A.oracle B.oracle) :
