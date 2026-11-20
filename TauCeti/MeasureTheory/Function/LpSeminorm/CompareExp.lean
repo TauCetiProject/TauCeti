@@ -23,7 +23,9 @@ bounds `‖u‖ ≤ ‖f‖ ^ r`.
 
 On an arbitrary measure space, a common bound for the `Lᵖ` seminorm and the essential supremum
 also bounds every intermediate `Lᵠ` seminorm (`MeasureTheory.eLpNorm_le_of_exponent_le`).
-This comparison is useful for embeddings of real interpolation spaces.
+This comparison is useful for embeddings of real interpolation spaces. A function bounded almost
+everywhere and vanishing off a set of finite measure lies in every `Lᵖ`
+(`MeasureTheory.memLp_of_norm_le_of_measure_support_ne_top`).
 
 ## Main declarations
 
@@ -255,5 +257,12 @@ theorem eLpNorm_le_of_exponent_le
   rw [hnorm, ENNReal.inv_mul_le_iff (ENNReal.ofReal_ne_zero_iff.2 hM)
     ENNReal.ofReal_ne_top, mul_one] at h
   exact h
+
+/-- A function bounded almost everywhere and vanishing off a set of finite measure lies in every
+`Lᵖ`. -/
+theorem memLp_of_norm_le_of_measure_support_ne_top {F : Type*} [NormedAddCommGroup F]
+    {u : α → F} (hu : AEStronglyMeasurable u μ) {c : ℝ} (hc : ∀ᵐ x ∂μ, ‖u x‖ ≤ c) {s : Set α}
+    (hs : μ s ≠ ∞) (hsupp : ∀ x, x ∉ s → u x = 0) (p : ℝ≥0∞) : MemLp u p μ :=
+  (memLp_top_of_bound hu c hc).mono_exponent_of_measure_support_ne_top hsupp hs le_top
 
 end MeasureTheory
