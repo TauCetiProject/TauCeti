@@ -192,6 +192,10 @@ subspace `A`. -/
 abbrev interPair : TopPair.{w} := ofSubset (X := TopCat.of A) (Subtype.val ⁻¹' B)
 
 /-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)`. -/
+-- The body is exposed so that the ambient component of the excision maps for different `B` is the
+-- same inclusion `A → X` up to unfolding: twisted chains of `(A, A ∩ B)` use the coefficient system
+-- pulled back along it, and these must agree for all `B` and with other constructions on `A`.
+@[expose]
 def excisionMap : interPair A B ⟶ ofSubset B :=
   ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtypeVal.restrictPreimage⟩)
