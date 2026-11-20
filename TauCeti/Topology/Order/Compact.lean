@@ -15,12 +15,6 @@ A continuous function on a nonempty compact set attains an extremum on the front
 interior local extrema are excluded. On a connected noncompact space, transferring every
 frontier upper bound to the whole compact set also gives a maximum on the frontier, assuming
 continuity there.
-
-The supremum `x ↦ ⨆ y, f x y` over a compact space of a jointly continuous function is
-continuous, and dually for infima (`TauCeti.continuous_ciSup_of_compactSpace`,
-`TauCeti.continuous_ciInf_of_compactSpace`). These are the indexed forms of Mathlib's
-`IsCompact.continuous_sSup` and `IsCompact.continuous_sInf` for the whole space, the
-compact-index counterparts of `TauCeti.continuous_ciSup_of_finite`.
 -/
 
 public section
@@ -70,22 +64,3 @@ theorem IsCompact.exists_mem_frontier_isMaxOn_of_le_frontier {X β : Type*} [Top
     nonempty_frontier_iff.2 ⟨hne, fun h => noncompact_univ X (h ▸ hK)⟩
   obtain ⟨z, hzfr, hzmax⟩ := hfrcompact.exists_isMaxOn hfrne hcont
   exact ⟨z, hzfr, fun y hyK => hbound (fun w hw => hzmax hw) hyK⟩
-
-namespace TauCeti
-
-variable {α β γ : Type*} [ConditionallyCompleteLinearOrder α] [TopologicalSpace α]
-  [OrderTopology α] [TopologicalSpace β] [CompactSpace β] [TopologicalSpace γ]
-
-/-- The pointwise supremum `x ↦ ⨆ y, f x y` over a compact space `β` of a function `f` that is
-jointly continuous on `γ × β` is continuous. -/
-theorem continuous_ciSup_of_compactSpace {f : γ → β → α} (hf : Continuous (Function.uncurry f)) :
-    Continuous fun x ↦ ⨆ y, f x y := by
-  simpa [iSup, Set.image_univ] using isCompact_univ.continuous_sSup hf
-
-/-- The pointwise infimum `x ↦ ⨅ y, f x y` over a compact space `β` of a function `f` that is
-jointly continuous on `γ × β` is continuous. -/
-theorem continuous_ciInf_of_compactSpace {f : γ → β → α} (hf : Continuous (Function.uncurry f)) :
-    Continuous fun x ↦ ⨅ y, f x y :=
-  continuous_ciSup_of_compactSpace (α := αᵒᵈ) hf
-
-end TauCeti

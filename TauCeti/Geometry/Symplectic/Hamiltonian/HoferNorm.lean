@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import TauCeti.Topology.Order.Compact
+public import TauCeti.Topology.Semicontinuity.CompactInfimum
 public import Mathlib.Basic.Real.Pointwise
 
 /-!
@@ -174,7 +174,8 @@ variable [TopologicalSpace M] [CompactSpace M] {F G H : ℝ → M → ℝ}
 
 private theorem integrableOn_iSup_apply (hH : Continuous (uncurry H)) :
     IntegrableOn (fun t ↦ ⨆ x, H t x) (Icc (0 : ℝ) 1) :=
-  (continuous_ciSup_of_compactSpace hH).continuousOn.integrableOn_compact isCompact_Icc
+  (Continuous.iSup_of_compactSpace (f := fun p : M × ℝ ↦ H p.2 p.1)
+    (hH.comp continuous_swap)).continuousOn.integrableOn_compact isCompact_Icc
 
 private theorem bddAbove_range_apply (hH : Continuous (uncurry H)) (t : ℝ) :
     BddAbove (range (H t)) :=
@@ -221,7 +222,8 @@ theorem hoferPlus_add_const [Nonempty M] (hH : Continuous (uncurry H)) {c : ℝ 
 theorem hoferNorm_eq (hH : Continuous (uncurry H)) :
     hoferNorm H = ∫ t in Icc (0 : ℝ) 1, ((⨆ x, H t x) - ⨅ x, H t x) := by
   have hmin : IntegrableOn (fun t ↦ ⨅ x, H t x) (Icc (0 : ℝ) 1) :=
-    (continuous_ciInf_of_compactSpace hH).continuousOn.integrableOn_compact isCompact_Icc
+    (Continuous.iInf_of_compactSpace (f := fun p : M × ℝ ↦ H p.2 p.1)
+      (hH.comp continuous_swap)).continuousOn.integrableOn_compact isCompact_Icc
   rw [hoferNorm_def, hoferMinus_eq, integral_sub (integrableOn_iSup_apply hH) hmin, hoferPlus_def,
     sub_eq_add_neg]
 
@@ -283,7 +285,9 @@ theorem hoferNorm_eq_zero_iff (hH : Continuous (uncurry H)) :
     hoferNorm H = 0 ↔ ∀ t ∈ Icc (0 : ℝ) 1, ∀ x y, H t x = H t y := by
   set g : ℝ → ℝ := fun t ↦ (⨆ x, H t x) + ⨆ x, (-H) t x with hg
   have hgc : Continuous g :=
-    (continuous_ciSup_of_compactSpace hH).add (continuous_ciSup_of_compactSpace hH.neg)
+    (Continuous.iSup_of_compactSpace (f := fun p : M × ℝ ↦ H p.2 p.1) (hH.comp continuous_swap)).add
+      (Continuous.iSup_of_compactSpace (f := fun p : M × ℝ ↦ -H p.2 p.1)
+        (hH.neg.comp continuous_swap))
   have hgi : IntegrableOn g (Icc (0 : ℝ) 1) := hgc.continuousOn.integrableOn_compact isCompact_Icc
   have hg0 : 0 ≤ᵐ[volume.restrict (Icc (0 : ℝ) 1)] g :=
     Filter.Eventually.of_forall fun t ↦ iSup_add_iSup_neg_nonneg hH t

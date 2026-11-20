@@ -36,8 +36,8 @@ and in particular of continuous functions, which is `upperSemicontinuous_iInf`.
   the infimum of a lower semicontinuous function if and only if it holds pointwise.
 * `LowerSemicontinuous.iInf_of_compactSpace`: the partial infimum of a jointly lower
   semicontinuous function over a compact first factor is lower semicontinuous.
-* `Continuous.iInf_of_compactSpace`: the partial infimum of a jointly continuous function over a
-  compact first factor is continuous.
+* `Continuous.iInf_of_compactSpace`, `Continuous.iSup_of_compactSpace`: the partial infimum and
+  supremum of a jointly continuous function over a compact first factor are continuous.
 -/
 
 public section
@@ -103,3 +103,10 @@ theorem Continuous.iInf_of_compactSpace [CompactSpace X] [TopologicalSpace β] [
     Continuous fun y => ⨅ x, f (x, y) := by
   simpa only [image_univ, sInf_range] using
     isCompact_univ.continuous_sInf (f := fun y x => f (x, y)) (hf.comp continuous_swap)
+
+/-- The supremum of a jointly continuous function over a compact first factor is a continuous
+function of the second variable. -/
+theorem Continuous.iSup_of_compactSpace [CompactSpace X] [TopologicalSpace β] [OrderTopology β]
+    {f : X × Y → β} (hf : Continuous f) :
+    Continuous fun y => ⨆ x, f (x, y) :=
+  Continuous.iInf_of_compactSpace (β := βᵒᵈ) hf
