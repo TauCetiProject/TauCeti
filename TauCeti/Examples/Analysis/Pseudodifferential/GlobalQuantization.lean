@@ -84,8 +84,8 @@ theorem quantizeSchwartzValue_ofSpatial_smul_id (u : 𝓢(CoordinateSpace n, V))
         (Symbol.ofSpatial (fun x ↦ χ x • ContinuousLinearMap.id ℂ V)
           (hχ.smul contDiff_const)).coefficient u x = χ x • u x := by
   rw [funext (Symbol.coefficient_ofSpatial _ _),
-    quantizeSchwartzValue_comp_fst (fun x ↦ χ x • ContinuousLinearMap.id ℂ V) u x]
-  rfl
+    quantizeSchwartzValue_comp_fst (fun x ↦ χ x • ContinuousLinearMap.id ℂ V) u x,
+    _root_.smul_apply, ContinuousLinearMap.id_apply]
 
 /-- Testing the quantization of `χ(x)` on cut-off exponentials recovers `χ(x)`. -/
 theorem tendsto_quantizeSchwartzValue_ofSpatial_smul_id_cutoffExponential
@@ -172,30 +172,14 @@ theorem displacementKernel_apply (v : CoordinateSpace n) (φ : 𝓢(CoordinateSp
     displacementKernel v φ = φ 0 + Complex.I * ∂_{v} φ 0 := by
   simp [displacementKernel, sub_eq_add_neg]
 
-/-- The Schwartz function `z ↦ u (x - z)`: the input `u` read in the displacement variable
-`z = x - y`. -/
-def displace (x : CoordinateSpace n) : 𝓢(CoordinateSpace n, ℂ) →L[ℂ] 𝓢(CoordinateSpace n, ℂ) :=
-  (compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ)).comp (compSubConstCLM ℂ (-x))
-
-@[simp]
-theorem displace_apply (x : CoordinateSpace n) (u : 𝓢(CoordinateSpace n, ℂ))
-    (z : CoordinateSpace n) : displace x u z = u (x - z) := by
-  simp [displace, sub_eq_add_neg, add_comm]
-
-/-- Differentiating `z ↦ u (x - z)` in the direction `v` gives `-(∂_v u) (x - z)`. -/
-theorem lineDerivOp_displace (x v : CoordinateSpace n) (u : 𝓢(CoordinateSpace n, ℂ)) :
-    ∂_{v} (displace x u) = -displace x (∂_{v} u) := by
-  ext z
-  simp [displace, lineDerivOp_compCLMOfContinuousLinearEquiv, LineDeriv.lineDerivOp_left_neg]
-
 /-- **The kernel of `1 + D_v`.** `Op(1 + ⟪ξ, v⟫) u (x)` is the displacement kernel `δ₀ - i ∂_v δ₀`
-tested on `z ↦ u (x - z)`. -/
+tested on `z ↦ u (x - z)`, the reflection `z ↦ u (-z)` of `u` translated by `x`. -/
 theorem quantizeSchwartzValue_onePlusInner_eq_displacementKernel (v : CoordinateSpace n)
     (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue (onePlusInner v).coefficient u x =
-      displacementKernel v (displace x u) := by
-  rw [quantizeSchwartzValue_onePlusInner, displacementKernel_apply, lineDerivOp_displace]
-  simp [sub_eq_add_neg]
+    quantizeSchwartzValue (onePlusInner v).coefficient u x = displacementKernel v
+      (compSubConstCLM ℂ x (compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.neg ℝ) u)) := by
+  rw [quantizeSchwartzValue_onePlusInner, displacementKernel_apply, lineDerivOp_compSubConstCLM]
+  simp [lineDerivOp_compCLMOfContinuousLinearEquiv, LineDeriv.lineDerivOp_left_neg, sub_eq_add_neg]
 
 /-- The angular-frequency slice `ζ ↦ 1 + ⟪2πζ, v⟫` of `1 + ⟪ξ, v⟫` has temperate growth. -/
 theorem hasTemperateGrowth_one_add_inner (v : CoordinateSpace n) :
