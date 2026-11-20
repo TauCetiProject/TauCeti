@@ -161,7 +161,7 @@ theorem mul_norm_gradient_sub_sq_le_energyFormH1_quasilinear_sub {P K : ℝ}
   -- Cauchy–Schwarz and Poincaré: `∫ |w| ‖∇w‖ ≤ ‖w‖₂ ‖∇w‖₂ ≤ P ‖∇w‖₂²`.
   have hCS : ∫ x in Omega, ‖W1p.value w x‖ * ‖W1p.gradient w x‖ ∂mu ≤
       P * ‖W1p.gradient w‖ ^ 2 := by
-    refine (W1p.integral_norm_value_mul_norm_gradient_le w).trans ?_
+    refine (Lp.integral_norm_mul_norm_le (W1p.value w) (W1p.gradient w)).trans ?_
     rw [sq, ← mul_assoc]
     exact mul_le_mul_of_nonneg_right (hpoincare ⟨w, huv⟩) (norm_nonneg _)
   have hLK : L * K * ∫ x in Omega, ‖W1p.value w x‖ * ‖W1p.gradient w x‖ ∂mu ≤

@@ -709,13 +709,6 @@ theorem W1p.norm_sq_le_mul_norm_gradient_sq_of_norm_value_le {u : W1p mu Omega 2
   rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
   linarith
 
-/-- **Cauchy–Schwarz for the value and the gradient.** For `u ∈ W^{1,2}(Ω)`,
-`∫_Ω |u| ‖∇u‖ ≤ ‖u‖₂ ‖∇u‖₂`. -/
-theorem W1p.integral_norm_value_mul_norm_gradient_le (u : W1p mu Omega 2) :
-    ∫ x in Omega, ‖W1p.value u x‖ * ‖W1p.gradient u x‖ ∂mu ≤
-      ‖W1p.value u‖ * ‖W1p.gradient u‖ :=
-  Lp.integral_norm_mul_norm_le (W1p.value u) (W1p.gradient u)
-
 /-- The integral of the squared Sobolev gradient is its squared `L²` norm. -/
 theorem W1p.integral_norm_gradient_sq_eq_norm_gradient_sq (u : W1p mu Omega 2) :
     ∫ x in Omega, ‖W1p.gradient u x‖ ^ 2 ∂mu = ‖W1p.gradient u‖ ^ 2 :=
