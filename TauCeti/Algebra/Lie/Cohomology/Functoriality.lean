@@ -106,6 +106,11 @@ theorem cochainMap_twoCochainEquiv_symm (g : M →ₗ[R] M') (f : L' →ₗ⁅R�
 
 variable [LieRingModule L M] [LieModule R L M] [LieRingModule L' M'] [LieModule R L' M']
 
+/-- Deleting an entry commutes with applying a function to every entry of a tuple. -/
+private theorem removeNth_comp {α β : Type*} (h : α → β) {n : ℕ} (i : Fin (n + 1))
+    (v : Fin (n + 1) → α) : (i.removeNth fun k ↦ h (v k)) = fun k ↦ h (i.removeNth v k) :=
+  (rfl)
+
 omit [LieModule R L M] [LieModule R L' M'] in
 /-- The image under `f` of a tuple with a bracket prepended is the image tuple with the bracket
 of the images prepended. -/
@@ -128,11 +133,7 @@ theorem d_cochainMap {g : M →ₗ[R] M'} {f : L' →ₗ⁅R⁆ L} (hg : ∀ x m
   | succ n =>
     ext v
     simp only [d_succ_apply, cochainMap_apply, map_add, map_sum, map_zsmul, hg,
-      comp_vecCons_lie]
-    -- The sides differ by deleting entries of `f ∘ v` versus applying `f` after deleting entries
-    -- of `v`; `simp` cannot rewrite under the dependent type of `Fin.removeNth`, so unfold it.
-    unfold Fin.removeNth
-    rfl
+      comp_vecCons_lie, removeNth_comp]
 
 /-- Naturality of the Chevalley–Eilenberg differential, as an identity of linear maps. -/
 theorem d_comp_cochainMap {g : M →ₗ[R] M'} {f : L' →ₗ⁅R⁆ L}
