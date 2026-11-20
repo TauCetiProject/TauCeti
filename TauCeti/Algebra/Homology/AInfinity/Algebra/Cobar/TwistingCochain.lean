@@ -297,6 +297,15 @@ theorem cobarBarHomEquiv_apply_ι
       -(InternalGrading.ofDecomposition 𝒟).koszulTwist 1 (f.taylor z) := by
   simp [cobarBarHomEquiv]
 
+/-- Evaluated via the source Koszul twist `σ` of `Tᶜ(sA)`, `cobarBarHomEquiv` sends `s⁻¹ z` to
+`f.taylor (σ z)`. -/
+theorem cobarBarHomEquiv_apply_ι_eq_taylor_koszulTwist
+    (f : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) (z : ReducedTensorWords R A) :
+    cobarBarHomEquiv 𝒜 hD f (TensorAlgebra.ι R z) =
+      f.taylor ((ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 z) := by
+  rw [cobarBarHomEquiv_apply_ι,
+    ← apply_koszulTwist 𝒜 hD.toIsNonUnitalDGAlgebra f.taylor f.isHomogeneous_taylor z]
+
 /-- The Taylor map of the `A∞` morphism of a DG algebra map `φ : Ω Tᶜ(sA) ⟶ D` is
 `z ↦ -σ (φ (s⁻¹ z))`. -/
 @[simp]
@@ -356,6 +365,14 @@ theorem linearPart_toCobarBar :
   LinearMap.ext fun _ ↦ by
     simp [ReducedTensorWords.koszulTwist_grading, InternalGrading.koszulTwist_one_shift_one]
 
+/-- On a single letter `a`, `toCobarBar.linearPart` is `s⁻¹ [s a]` twisted by `(-1)^(|a|-1)`. -/
+theorem linearPart_toCobarBar_apply (a : A) :
+    𝒜.toCobarBar.linearPart a =
+      TensorAlgebra.ι R
+        (ReducedTensorWords.ofLetter R A ((𝒜.grading.shift 1).koszulTwist 1 a)) := by
+  rw [AInfinityHom.linearPart_apply, taylor_toCobarBar, LinearMap.comp_apply,
+    ReducedTensorWords.koszulTwist_grading, ReducedTensorWords.map_ofLetter]
+
 /-- The `A∞` morphism of a DG algebra map `φ : Ω Tᶜ(sA) ⟶ D` is `φ` composed with the canonical
 morphism `A ⟶ Ω Tᶜ(sA)`. -/
 theorem cobarBarHomEquiv_symm_apply
@@ -374,6 +391,16 @@ theorem cobarBarHomEquiv_symm_apply
     taylor_cobarBarHomEquiv_symm]
   simp [h]
 
+/-- In terms of the source Koszul twist `σ` of `Tᶜ(sA)`, `((cobarBarHomEquiv 𝒜 hD).symm φ).taylor`
+restricts `φ` to desuspended generators after `σ`. -/
+theorem taylor_cobarBarHomEquiv_symm_eq_comp_koszulTwist
+    (φ : DGAlgHom 𝒜.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential hD) :
+    ((cobarBarHomEquiv 𝒜 hD).symm φ).taylor =
+      (φ : TensorAlgebra R (ReducedTensorWords R A) →ₗ[R] D) ∘ₗ TensorAlgebra.ι R ∘ₗ
+        (ReducedTensorWords.grading (𝒜.grading.shift 1)).koszulTwist 1 := by
+  rw [cobarBarHomEquiv_symm_apply, AInfinityStrictHom.taylor_toAInfinityHom_comp, taylor_toCobarBar]
+  exact LinearMap.ext fun _ ↦ by simp
+
 /-- **The universal property of `Ω Tᶜ(sA)`**: every `A∞` morphism from `A` to a DG algebra `D` is
 the composite of the canonical morphism `A ⟶ Ω Tᶜ(sA)` with exactly one DG algebra map
 `Ω Tᶜ(sA) ⟶ D`. -/
@@ -384,6 +411,15 @@ theorem bijective_comp_toCobarBar :
   convert (cobarBarHomEquiv 𝒜 hD).symm.bijective using 1
   funext φ
   exact (cobarBarHomEquiv_symm_apply 𝒜 hD φ).symm
+
+/-- Every `A∞` morphism `f : A ⟶ D` into a DG algebra factors through `toCobarBar` via
+`cobarBarHomEquiv 𝒜 hD f`. -/
+@[simp]
+theorem toAInfinityHom_cobarBarHomEquiv_comp_toCobarBar
+    (f : AInfinityHom 𝒜 hD.toIsNonUnitalDGAlgebra.toAInfinityAlgebra) :
+    (cobarBarHomEquiv 𝒜 hD f).toNonUnitalDGAlgHom.toAInfinityStrictHom.toAInfinityHom.comp
+        𝒜.toCobarBar = f := by
+  rw [← cobarBarHomEquiv_symm_apply 𝒜 hD, Equiv.symm_apply_apply]
 
 /-- Universal factorization characterization: `φ : Ω Tᶜ(sA) ⟶ D` is the DG algebra lift of
 `g : A ⟶ D` if and only if `φ ∘ 𝒜.toCobarBar = g`. -/

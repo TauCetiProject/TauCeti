@@ -505,10 +505,22 @@ noncomputable abbrev envelopingMap (hf : f.IsAugmented ε ε') :
       ε'.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential :=
   hf.reducedHom.cobarBarMap
 
+/-- On a desuspended generator `s⁻¹ z`, `hf.envelopingMap` applies `hf.reducedHom.barMap`. -/
+theorem envelopingMap_ι (hf : f.IsAugmented ε ε')
+    (z : ReducedTensorWords R ε.augmentationIdeal) :
+    hf.envelopingMap (ι R z) = ι R (hf.reducedHom.barMap z) :=
+  hf.reducedHom.cobarBarMap_ι z
+
 /-- The induced enveloping DG algebra morphism intertwines canonical augmentations. -/
 @[simp] theorem envelopingAugmentation_comp_envelopingMap (hf : f.IsAugmented ε ε') :
     ε'.envelopingAugmentation.comp hf.envelopingMap = ε.envelopingAugmentation :=
   ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.cobarHom_ext _ fun _ ↦ by simp
+
+/-- The identity augmented `A∞` morphism induces the identity DG algebra morphism on `U(A, ε)`. -/
+@[simp] theorem envelopingMap_id (ε : 𝒜.Augmentation) :
+    (AInfinityHom.isAugmented_id ε).envelopingMap =
+      DGAlgHom.id ε.reducedAlgebra.isNonCounitalDGCoalgebra_bar.isDGAlgebra_cobarDifferential := by
+  rw [envelopingMap, AInfinityHom.IsAugmented.reducedHom_id, AInfinityHom.cobarBarMap_id]
 
 /-- `envelopingMap` preserves composition of augmented `A∞` morphisms. -/
 theorem envelopingMap_comp (hg : g.IsAugmented ε' ε'') (hf : f.IsAugmented ε ε') :
@@ -669,6 +681,43 @@ theorem fromEnveloping_naturality (eB : DGAlgAugmentation hB) (eC : DGAlgAugment
       fromEnveloping_comp_toEnveloping, AInfinityHom.comp_id, hφ]
     rw [← AInfinityHom.comp_assoc, fromEnveloping_comp_toEnveloping, AInfinityHom.id_comp]
 
+/-- Factoring `(ε.augmentedEnvelopingDGAlgHomEquiv e).symm` through `envelopingMap` and
+`fromEnveloping`. -/
+theorem fromEnveloping_comp_envelopingMap {A : Type uA} [AddCommGroup A] [Module R A]
+    {𝒜 : AInfinityAlgebra R A} {ε : 𝒜.Augmentation}
+    (e : DGAlgAugmentation hB)
+    {f : AInfinityHom 𝒜 hB.toIsNonUnitalDGAlgebra.toAInfinityAlgebra}
+    (hf : f.IsAugmented ε e.toAInfinityAugmentation) :
+    e.fromEnveloping.comp hf.envelopingMap =
+      ((ε.augmentedEnvelopingDGAlgHomEquiv e).symm ⟨f, hf⟩).val := by
+  have h := ε.augmentedEnvelopingDGAlgHomEquiv_symm_comp_right hf e
+    ⟨AInfinityHom.id _, AInfinityHom.isAugmented_id e.toAInfinityAugmentation⟩
+  simpa [fromEnveloping, AInfinityHom.id_comp] using h.symm
+
+/-- Naturality of `fromEnveloping` along an augmentation-preserving DG algebra morphism
+`g : (B, eB) ⟶ (C, eC)`. -/
+@[simp] theorem fromEnveloping_comp_envelopingMap_toAInfinityHom
+    (eB : DGAlgAugmentation hB) (eC : DGAlgAugmentation hC)
+    (g : DGAlgHom hB hC) (hg : eC.comp g = eB) :
+    eC.fromEnveloping.comp ((g.isAugmented_toAInfinityHom_iff eB eC).2 hg).envelopingMap =
+      g.comp eB.fromEnveloping :=
+  (fromEnveloping_naturality eB eC g
+    ((g.isAugmented_toAInfinityHom_iff eB eC).2 hg).envelopingMap_comp_toEnveloping).symm
+
 end DGAlgAugmentation
+
+namespace AInfinityAlgebra.Augmentation
+
+/-- Second triangle identity of the augmented enveloping bar–cobar adjunction for `(A, ε)`. -/
+@[simp] theorem fromEnveloping_comp_envelopingMap_toEnveloping
+    {𝒜 : AInfinityAlgebra R A} (ε : 𝒜.Augmentation) :
+    ε.envelopingAugmentation.fromEnveloping.comp ε.isAugmented_toEnveloping.envelopingMap =
+      DGAlgHom.id _ :=
+  (ε.envelopingAugmentation.fromEnveloping_comp_envelopingMap
+      ε.isAugmented_toEnveloping).trans <|
+    congrArg Subtype.val ((ε.augmentedEnvelopingDGAlgHomEquiv
+      ε.envelopingAugmentation).symm_apply_apply ⟨DGAlgHom.id _, DGAlgHom.comp_id _⟩)
+
+end AInfinityAlgebra.Augmentation
 
 end TauCeti
