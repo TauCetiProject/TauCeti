@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
+import TauCeti.Analysis.Pseudodifferential.Symbol.SmulLeft
 import TauCeti.Analysis.Calculus.FDeriv.SumSq
 
 /-!
@@ -229,12 +230,13 @@ theorem IsSmoothing.compress (ha : a.IsSmoothing) (hφ : ContDiff ℝ ∞ φ) (h
 /-- The remainder `φ r` of a compression, for a remainder symbol `r` of order `m - N`. -/
 private def remainder (hφ : ContDiff ℝ ∞ φ) (N : ℕ) (r : Symbol n V W (m + 0 - N)) :
     Symbol n V W (m - N) :=
-  inclusion (by simp) ((cutoff W hφ).comp r)
+  inclusion (by simp) (smulLeft (ψ := fun y ↦ (φ y : ℂ)) (Complex.ofRealCLM.contDiff.comp hφ) r)
 
 private theorem coefficient_remainder (hφ : ContDiff ℝ ∞ φ) (N : ℕ)
     (r : Symbol n V W (m + 0 - N)) (x ξ : CoordinateSpace n) :
     (remainder hφ N r).coefficient (x, ξ) = φ x • r.coefficient (x, ξ) := by
-  simp [remainder, coefficient_cutoff]
+  rw [remainder, coefficient_inclusion]
+  exact (coefficient_smulLeft _ r (x, ξ)).trans (Complex.coe_smul _ _)
 
 /-- The zeroth term of the expansion of `a # ψ` is `ψ a`. -/
 private theorem coefficient_sharpTerm_cutoff_zero (hψ : ContDiff ℝ ∞ ψ)
