@@ -85,7 +85,7 @@ theorem pathChainPrependHomotopy_spec (γ : MoorePathBetween B a b) (c : B)
       pathChainPrepend R γ c (pathChainPrepend R γ.symm c x) - x := by
   have h := cubicalChainModuleDifferential_prism_add_prism_differential
     (G := MooreLoopSpace B c) (R := R) (γ.prependSymmHomotopy c) x
-  rw [cubicalChainModuleLinearMap_comp, cubicalChainModuleLinearMap_id,
+  rw [cubicalChainModuleLinearMap_comp (G' := MooreLoopSpace B c), cubicalChainModuleLinearMap_id,
     LinearMap.comp_apply, LinearMap.id_apply] at h
   rw [pathChainPrepend_apply, pathChainPrepend_apply]
   simpa only [pathChainPrependHomotopy, cubicalChainModulePrismLinearMap_apply] using h

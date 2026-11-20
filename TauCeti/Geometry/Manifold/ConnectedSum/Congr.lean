@@ -202,7 +202,7 @@ point outside the ball goes to itself. -/
 private def congrLeftInr (he₁ : Injective e₁) (y : puncture e₂) : ConnectedSum e₁' e₂ :=
   if h : (y : N) ∈ range e₂ then
     inl e₁' e₂ (punctureMap φ φ.injective hφ.eq_of_nhds ⟨e₁ (inversion 0 1 (invFun e₂ y)),
-      apply_inversion_mem_puncture he₁ fun h0 ↦ mem_puncture.1 y.2 (h0 ▸ invFun_eq h).symm⟩)
+      apply_inversion_mem_puncture he₁ fun h0 ↦ mem_puncture.1 y.property (h0 ▸ invFun_eq h).symm⟩)
   else inr e₁' e₂ y
 
 private theorem congrLeftInr_apply (he₁ : Injective e₁) (he₂ : Injective e₂) {w : E}
@@ -311,7 +311,7 @@ private theorem continuous_congrLeftMap [ProperSpace E] [T2Space N] (h₁ : IsOp
       (continuous_punctureMap _ _ φ.continuous)).continuousAt
   · refine (isOpenEmbedding_inr h₁ h₂).continuousAt_iff.1 ?_
     refine (continuous_inr e₁' e₂).continuousAt.congr ?_
-    filter_upwards [(hK.isOpen_compl.preimage continuous_subtype_val).mem_nhds hy] with y' hy'
+    filter_upwards [(hK.isOpen_compl.preimage continuous_subtypeVal).mem_nhds hy] with y' hy'
     rw [comp_apply, congrLeftMap_inr, hr y' hy']
 
 /-- **Moving the first ball of a connected sum.** Let `φ : M ≃ₜ M'` carry the ball `e₁` to the
@@ -341,7 +341,7 @@ variable [ProperSpace E] [T2Space N] (h₁ : IsOpenEmbedding e₁) (h₁' : IsOp
 @[simp]
 theorem congrLeftHomeomorph_inl (x : puncture e₁) :
     congrLeftHomeomorph φ hφ h₁ h₁' h₂ (inl e₁ e₂ x) =
-      inl e₁' e₂ ⟨φ x, apply_mem_puncture φ.injective hφ.eq_of_nhds x.2⟩ :=
+      inl e₁' e₂ ⟨φ x, apply_mem_puncture φ.injective hφ.eq_of_nhds x.property⟩ :=
   (congrLeftMap_inl φ hφ h₁.injective h₂.injective x).trans
     (congrArg _ (Subtype.ext (coe_punctureMap _ _ _)))
 
@@ -398,13 +398,13 @@ private theorem contMDiff_congrLeftMap (hφs : ContMDiff I I n φ) :
     have hinl : inl e₁' e₂ = mk e₁' e₂ ∘ Sum.inl := funext fun x ↦ (mk_inl e₁' e₂ x).symm
     have hφ' : ContMDiff I I n (punctureMap φ φ.injective hφ.eq_of_nhds) :=
       (ContMDiff.subtypeVal_comp_iff _ _).1
-        (by rw [subtypeVal_comp_punctureMap]; exact hφs.comp contMDiff_subtype_val)
+        (by rw [subtypeVal_comp_punctureMap]; exact hφs.comp contMDiff_subtypeVal)
     rw [hinl]
     exact (hmk'.contMDiff.comp (ContMDiff.inl.comp hφ')).contMDiffAt
   · rw [← mk_inr, ← ((hmk (.inr y)).contMDiffAt_comp_iff le_rfl), congrLeftMap, lift_comp_mk,
       contMDiffAt_sumElim_inr]
     refine (hmk'.contMDiff.comp ContMDiff.inr).contMDiffAt.congr_of_eventuallyEq ?_
-    filter_upwards [(hK.isOpen_compl.preimage continuous_subtype_val).mem_nhds hy] with y' hy'
+    filter_upwards [(hK.isOpen_compl.preimage continuous_subtypeVal).mem_nhds hy] with y' hy'
     rw [hr y' hy', comp_apply, mk_inr]
 
 /-- **Moving the first ball of a connected sum of manifolds.** If `φ : M ≃ₘ M'` is a `C^n`
@@ -504,8 +504,8 @@ variable {e₁ : E → M} {e₂ : E → N}
 and of its inversion. -/
 private theorem inl_eq_inr_of_eq {x : puncture e₁} {y : puncture e₂} (v : E)
     (hx : e₁ v = x) (hy : e₂ (inversion 0 1 v) = y) : inl e₁ e₂ x = inr e₁ e₂ y := by
-  have hx' : x = ⟨e₁ v, hx ▸ x.2⟩ := Subtype.ext hx.symm
-  have hy' : y = ⟨e₂ (inversion 0 1 v), hy ▸ y.2⟩ := Subtype.ext hy.symm
+  have hx' : x = ⟨e₁ v, hx ▸ x.property⟩ := Subtype.ext hx.symm
+  have hy' : y = ⟨e₂ (inversion 0 1 v), hy ▸ y.property⟩ := Subtype.ext hy.symm
   rw [hx', hy']
   exact inl_eq_inr v _ _
 
@@ -550,13 +550,13 @@ theorem compLinearIsometryEquivHomeomorph_inr (y : puncture e₂) :
 @[simp]
 theorem compLinearIsometryEquivHomeomorph_symm_inl (x : puncture (e₁ ∘ R)) :
     (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inl (e₁ ∘ R) (e₂ ∘ R) x) =
-      inl e₁ e₂ ⟨x, by simpa using x.2⟩ :=
+      inl e₁ e₂ ⟨x, by simpa using x.property⟩ :=
   lift_inl _ _ _ x
 
 @[simp]
 theorem compLinearIsometryEquivHomeomorph_symm_inr (y : puncture (e₂ ∘ R)) :
     (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inr (e₁ ∘ R) (e₂ ∘ R) y) =
-      inr e₁ e₂ ⟨y, by simpa using y.2⟩ :=
+      inr e₁ e₂ ⟨y, by simpa using y.property⟩ :=
   lift_inr _ _ _ y
 
 /-- Read on the disjoint union of the punctured summands, the rotation of the balls is the identity
