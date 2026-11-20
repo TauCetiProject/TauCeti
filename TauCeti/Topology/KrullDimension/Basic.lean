@@ -38,6 +38,8 @@ closed, since a proper specialization of such a point would have codimension at 
   codimension one is closed.
 * `TauCeti.coheight_le_topologicalKrullDim`: the codimension of a point for the specialization
   preorder is at most the Krull dimension of the space.
+* `Specializes.one_le_topologicalKrullDim_of_ne`: a T₀ space with a proper specialization has
+  Krull dimension at least one.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober space, the Krull dimension is
   the supremum of the codimensions of the points for the specialization preorder.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober space, the height
@@ -103,6 +105,15 @@ theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] (x : 
     lt_of_le_of_ne (specializes_iff_closure_subset.mp hyz.le) fun h ↦ hyz.not_ge
       (specializes_iff_closure_subset.mpr (congrArg SetLike.coe h).ge)
   exact (coheight_le_krullDim x).trans (krullDim_le_of_strictMono c hc)
+
+attribute [local instance] specializationOrder in
+/-- In a T₀ space, a proper specialization `x ⤳ y` makes `y` a point of positive codimension, so
+the Krull dimension is at least one. -/
+theorem _root_.Specializes.one_le_topologicalKrullDim_of_ne {α : Type*} [TopologicalSpace α]
+    [T0Space α] {x y : α} (h : x ⤳ y) (hne : x ≠ y) : 1 ≤ topologicalKrullDim α := by
+  have hpos : 1 ≤ coheight y :=
+    Order.one_le_iff_pos.mpr (coheight_pos.mpr (not_isMax_iff.mpr ⟨x, lt_of_le_of_ne h hne.symm⟩))
+  exact le_trans (by exact_mod_cast hpos) (coheight_le_topologicalKrullDim y)
 
 attribute [local instance] specializationPreorder in
 /-- On a quasi-sober topological space, the Krull dimension is the supremum of the codimensions of
@@ -203,11 +214,11 @@ theorem Topology.IsOpenEmbedding.coheight_subtype_eq {X Y : Type*} [TopologicalS
     coheight (⟨x, hx⟩ : T) = coheight (⟨f x, (hTF x).1 hx⟩ : F) := by
   have hlt {a b : X} : f a < f b ↔ a < b :=
     and_congr hf.isInducing.specializes_iff (not_congr hf.isInducing.specializes_iff)
-  refine coheight_eq_of_strictMono (fun v : T ↦ (⟨f v, (hTF v).1 v.2⟩ : F))
+  refine coheight_eq_of_strictMono (fun v : T ↦ (⟨f v, (hTF v).1 v.property⟩ : F))
     (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h)) (fun v b h ↦ ?_) _
   obtain ⟨v', hv'⟩ : (b : Y) ∈ Set.range f :=
     h.le.mem_open hf.isOpen_range ⟨v, rfl⟩
-  exact ⟨⟨v', (hTF v').2 (hv' ▸ b.2)⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
+  exact ⟨⟨v', (hTF v').2 (hv' ▸ b.property)⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
 
 namespace Topology.IsEmbedding
 

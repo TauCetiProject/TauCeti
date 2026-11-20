@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DeRham.Differential
+public import TauCeti.RingTheory.DeRham.Complex
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
 
 /-!
@@ -66,6 +66,26 @@ section Pullback
 variable {A B C E : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing E]
   [Algebra A B] [Algebra A C] [Algebra A E]
 
+/-- The alternating `B`-multilinear map `(Fin n → Ω[B⁄A]) → Forms A C n` under the `B`-algebra
+structure on `C` induced by `f : B →ₐ[A] C`. -/
+private def pullbackAlt (f : B →ₐ[A] C) (n : ℕ) :
+    letI : Algebra B C := f.toRingHom.toAlgebra
+    AlternatingMap B (KaehlerDifferential A B) (Forms A C n) (Fin n) :=
+  letI : Algebra B C := f.toRingHom.toAlgebra
+  letI : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
+  { ((exteriorPower.ιMulti C n (M := KaehlerDifferential A C)).toMultilinearMap.restrictScalars
+        B).compLinearMap (fun _ => KaehlerDifferential.map A A B C) with
+    map_eq_zero_of_eq' := fun _ _ _ hv hij =>
+      (exteriorPower.ιMulti C n).map_eq_zero_of_eq _ (congrArg _ hv) hij }
+
+private theorem pullbackAlt_apply (f : B →ₐ[A] C) (n : ℕ)
+    (ω : Fin n → KaehlerDifferential A B) :
+    let : Algebra B C := f.toRingHom.toAlgebra
+    let : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
+    pullbackAlt f n ω =
+      exteriorPower.ιMulti C n (fun i => KaehlerDifferential.map A A B C (ω i)) :=
+  rfl
+
 /-- **Pullback of ordinary algebraic differential `n`-forms** along an `A`-algebra homomorphism
 `f : B →ₐ[A] C`, extending `KaehlerDifferential.mapSemilinear f` to `n`-th exterior powers. It is
 `f`-semilinear in `B`-scalars (`pullback_smul`), `A`-linear (`pullback_base_smul`), and uniquely
@@ -74,17 +94,18 @@ characterized on elementary forms by `c · Dv₁ ∧ ⋯ ∧ Dvₙ ↦ f c · D 
 def pullback (f : B →ₐ[A] C) (n : ℕ) : Forms A B n →ₛₗ[f.toRingHom] Forms A C n :=
   letI : Algebra B C := f.toRingHom.toAlgebra
   letI : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
-  let alt : AlternatingMap B (KaehlerDifferential A B) (Forms A C n) (Fin n) :=
-    { ((exteriorPower.ιMulti C n (M := KaehlerDifferential A C)).toMultilinearMap.restrictScalars
-          B).compLinearMap (fun _ => KaehlerDifferential.map A A B C) with
-      map_eq_zero_of_eq' := fun v i j hv hij =>
-        (exteriorPower.ιMulti C n).map_eq_zero_of_eq _ (congrArg _ hv) hij }
-  let φ : Forms A B n →ₗ[B] Forms A C n := exteriorPower.alternatingMapLinearEquiv alt
+  let φ : Forms A B n →ₗ[B] Forms A C n :=
+    exteriorPower.alternatingMapLinearEquiv (pullbackAlt f n)
   { toFun := φ
     map_add' := map_add φ
     map_smul' := fun b ω => by
       rw [LinearMap.map_smul]
       exact (IsScalarTower.algebraMap_smul C b (φ ω)).symm }
+
+private theorem pullback_apply (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
+    let : Algebra B C := f.toRingHom.toAlgebra
+    pullback f n ω = exteriorPower.alternatingMapLinearEquiv (pullbackAlt f n) ω :=
+  rfl
 
 /-- The semilinearity law of `pullback`, stated with `f` applied rather than `f.toRingHom`,
 matching `KaehlerDifferential.mapSemilinear_smul`. -/
@@ -108,9 +129,7 @@ theorem pullback_ιMulti (f : B →ₐ[A] C) (n : ℕ) (ω : Fin n → KaehlerDi
   let : Algebra B C := f.toRingHom.toAlgebra
   have : IsScalarTower A B C := IsScalarTower.of_algebraMap_eq' f.comp_algebraMap.symm
   have hf : IsScalarTower.toAlgHom A B C = f := AlgHom.ext fun _ => rfl
-  change exteriorPower.alternatingMapLinearEquiv _ (exteriorPower.ιMulti B n ω) = _
-  rw [exteriorPower.alternatingMapLinearEquiv_apply_ιMulti]
-  change exteriorPower.ιMulti C n (fun i => KaehlerDifferential.map A A B C (ω i)) = _
+  rw [pullback_apply, exteriorPower.alternatingMapLinearEquiv_apply_ιMulti, pullbackAlt_apply]
   congr 1
   funext i
   rw [← hf]
@@ -119,7 +138,7 @@ theorem pullback_ιMulti (f : B →ₐ[A] C) (n : ℕ) (ω : Fin n → KaehlerDi
 /-- Pullback sends `c · Dv₁ ∧ ⋯ ∧ Dvₙ` to `f c · D (f v₁) ∧ ⋯ ∧ D (f vₙ)`. -/
 @[simp]
 theorem pullback_elementary (f : B →ₐ[A] C) (n : ℕ) (c : B) (v : Fin n → B) :
-    pullback f n (elementary A B n c v) = elementary A C n (f c) (f ∘ v) := by
+    pullback f n (elementary A c v) = elementary A (f c) (f ∘ v) := by
   rw [elementary_def, elementary_def, pullback_smul, pullback_ιMulti]
   congr 2
   funext i
@@ -129,7 +148,7 @@ theorem pullback_elementary (f : B →ₐ[A] C) (n : ℕ) (c : B) (v : Fin n →
 elementary-form formula equals `pullback f n`. -/
 theorem pullback_unique (f : B →ₐ[A] C) (n : ℕ) {φ : Forms A B n →ₛₗ[f.toRingHom] Forms A C n}
     (hφ : ∀ (c : B) (v : Fin n → B),
-      φ (elementary A B n c v) = elementary A C n (f c) (f ∘ v)) :
+      φ (elementary A c v) = elementary A (f c) (f ∘ v)) :
     φ = pullback f n := by
   apply LinearMap.ext
   intro ω
@@ -169,8 +188,12 @@ theorem pullback_d (f : B →ₐ[A] C) (n : ℕ) (ω : Forms A B n) :
   | zero => rw [map_zero, map_zero, map_zero, map_zero]
   | add ω₁ ω₂ h₁ h₂ => rw [map_add, map_add, map_add, map_add, h₁, h₂]
   | elem c v =>
-    rw [d_elementary, pullback_elementary, pullback_elementary, d_elementary, map_one,
-      Fin.comp_cons]
+    rw [d_elementary, pullback_ιMulti, pullback_elementary, d_elementary]
+    congr 1
+    funext i
+    refine Fin.cases ?_ (fun j => ?_) i
+    · exact KaehlerDifferential.mapSemilinear_D f c
+    · exact KaehlerDifferential.mapSemilinear_D f (v j)
 
 /-- Pullback preserves the exterior wedge product of differential forms. -/
 theorem pullback_wedge (f : B →ₐ[A] C) {m n : ℕ} (α : Forms A B m) (β : Forms A B n) :

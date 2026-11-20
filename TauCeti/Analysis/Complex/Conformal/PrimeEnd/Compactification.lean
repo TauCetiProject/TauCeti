@@ -148,7 +148,7 @@ theorem continuous_point : Continuous (point : U → PrimeEndCompactification U)
       Subtype.val ⁻¹' V := by
     ext
     simp
-  exact h ▸ hV.preimage continuous_subtype_val
+  exact h ▸ hV.preimage continuous_subtypeVal
 
 /-- The inclusion of an open set into its prime-end compactification is an open map: near a point
 of `U`, the compactification consists of points of `U`. -/
@@ -157,7 +157,7 @@ theorem isOpenMap_point (hU : IsOpen U) : IsOpenMap (point : U → PrimeEndCompa
   obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hW
   refine isOpen_iff_mem_nhds.mpr ?_
   rintro _ ⟨z, hzO, rfl⟩
-  obtain ⟨ε, hε, hεO⟩ := Metric.isOpen_iff.mp (hO.inter hU) (z : ℂ) ⟨hzO, z.2⟩
+  obtain ⟨ε, hε, hεO⟩ := Metric.isOpen_iff.mp (hO.inter hU) (z : ℂ) ⟨hzO, z.property⟩
   -- the ball of radius `ε / 2` is compactly contained in `U`, so no prime end has a domain in it
   refine (hasBasis_nhds _).mem_iff.mpr ⟨ball (z : ℂ) (ε / 2),
     ⟨isOpen_ball, by simp [hε]⟩, ?_⟩
@@ -205,7 +205,7 @@ the point itself inside the disc, and its prime end on the circle. -/
 private def ofClosedBall (z : closedBall (0 : ℂ) 1) : PrimeEndCompactification (ball (0 : ℂ) 1) :=
   if hz : (z : ℂ) ∈ ball 0 1 then point ⟨z, hz⟩ else
     primeEnd (unitDiscPrimeEnd ⟨z, mem_sphere_zero_iff_norm.mpr
-      (le_antisymm (mem_closedBall_zero_iff.mp z.2) (not_lt.mp (by simpa using hz)))⟩)
+      (le_antisymm (mem_closedBall_zero_iff.mp z.property) (not_lt.mp (by simpa using hz)))⟩)
 
 /-- On open sets, the filter of the point at `z` agrees with the neighbourhood filter of `z`
 within the disc. -/
@@ -226,7 +226,7 @@ private theorem continuous_ofClosedBall : Continuous ofClosedBall := by
     simp only [mem_preimage, mem_ofPred_eq, mem_toFilter_ofClosedBall_iff hV,
       ← eventually_nhdsWithin_iff, eventually_mem_set]
   rw [h]
-  exact isOpen_setOfPred_eventually_nhds.preimage continuous_subtype_val
+  exact isOpen_setOfPred_eventually_nhds.preimage continuous_subtypeVal
 
 private theorem ofClosedBall_injective : Function.Injective ofClosedBall := by
   intro a b h
@@ -240,8 +240,8 @@ private theorem ofClosedBall_surjective : Function.Surjective ofClosedBall := by
   rintro (⟨w, hw⟩ | p)
   · exact ⟨⟨w, ball_subset_closedBall hw⟩, by simp [ofClosedBall, hw]⟩
   · obtain ⟨ζ, rfl⟩ := unitDiscPrimeEnd_surjective p
-    have hζ : ¬(ζ : ℂ) ∈ ball 0 1 := by simp [mem_sphere_zero_iff_norm.mp ζ.2]
-    exact ⟨⟨ζ, sphere_subset_closedBall ζ.2⟩, by simp [ofClosedBall, hζ]⟩
+    have hζ : ¬(ζ : ℂ) ∈ ball 0 1 := by simp [mem_sphere_zero_iff_norm.mp ζ.property]
+    exact ⟨⟨ζ, sphere_subset_closedBall ζ.property⟩, by simp [ofClosedBall, hζ]⟩
 
 /-- The prime-end compactification of the unit disc is Hausdorff. -/
 instance : T2Space (PrimeEndCompactification (ball (0 : ℂ) 1)) := by

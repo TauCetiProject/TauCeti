@@ -184,7 +184,7 @@ private theorem eight_dvd_sigPos_sub_sigNeg_of_carrier_eq_two_nsmul
   have hTe : T.IsEven := by
     rw [isEven_iff_forall_norm]
     intro y
-    obtain ⟨z, hz⟩ := Submodule.mem_one.mp (hnorm ⟨y, hcarrier ▸ y.2⟩)
+    obtain ⟨z, hz⟩ := Submodule.mem_one.mp (hnorm ⟨y, hcarrier ▸ y.property⟩)
     exact ⟨z, by rw [norm_apply, hT, LinearMap.smul_apply, LinearMap.smul_apply, ← hz]; simp⟩
   have hTu : T.IsUnimodular := by
     rw [isUnimodular_iff_dualCarrier_le]

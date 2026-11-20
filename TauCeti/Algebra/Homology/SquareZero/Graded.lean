@@ -32,8 +32,14 @@ bilinear map `H^i × H^j → H^k` for `k = i + j + ε` (`LinearMap.cohomologyPro
 A linear map `f : M₁ → M₀` which preserves degrees and commutes with the endomorphisms on
 homogeneous elements, `D₀ (f a) = f (D₁ a)`, sends cocycles to cocycles and coboundaries to
 coboundaries, so it induces a linear map on cohomology in each degree (`LinearMap.cohomologyMap`).
+Chain homotopic maps induce the same map on cohomology (`LinearMap.cohomologyMap_eq_of_homotopy`),
+so a chain homotopy equivalence induces an isomorphism of cohomology in each degree
+(`LinearMap.cohomologyEquiv`); for this it suffices that the two composites are the identity up to
+coboundaries on cocycles (`LinearMap.leftInverse_cohomologyMap`).
 If three such maps intertwine two products up to coboundaries on cocycles, then the induced maps
-intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduct`).
+intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduct`), and so do
+one-sided inverses on cohomology of such maps, in the other direction
+(`LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse`).
 Likewise, if the two composites `μ' (μ a b) c` and `ν' a (ν b c)` of products differ by a
 coboundary on cocycles, then the induced products on cohomology are associative
 (`LinearMap.cohomologyProduct_assoc`), and if `μ a b - (-1)^(i j) μ' b a` is a coboundary on
@@ -49,6 +55,7 @@ cocycles of degrees `i` and `j`, then they are graded commutative
   Leibniz rule.
 * `LinearMap.cohomologyMap`: the map on cohomology induced by a degree-preserving linear map
   commuting with the endomorphisms.
+* `LinearMap.cohomologyEquiv`: the isomorphism on cohomology induced by a homotopy equivalence.
 
 ## Main results
 
@@ -65,8 +72,15 @@ cocycles of degrees `i` and `j`, then they are graded commutative
 * `LinearMap.cohomologyMap_id`, `LinearMap.cohomologyMap_comp`: functoriality of the induced maps.
 * `LinearMap.cohomologyMap_comp_cohomologyMap`, `LinearMap.cohomologyMap_cohomologyMap`: composites
   of induced maps, in the orientation used by `simp`.
+* `LinearMap.sub_mem_coboundaries_of_homotopy`,
+  `LinearMap.cohomologyMap_eq_of_sub_mem_coboundaries`, `LinearMap.cohomologyMap_eq_of_homotopy`:
+  homotopy invariance of the induced maps.
+* `LinearMap.leftInverse_cohomologyMap`: a left inverse up to coboundaries on cocycles induces a
+  left inverse on cohomology.
 * `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
   intertwine the products on cohomology.
+* `LinearMap.cohomologyMap_cohomologyProduct_of_leftInverse`: one-sided inverses of maps
+  intertwining the products on cohomology intertwine them in the other direction.
 * `LinearMap.cohomologyProduct_assoc`: products whose two composites differ by coboundaries on
   cocycles induce associative products on cohomology.
 * `LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct`: products which commute
@@ -200,21 +214,21 @@ def cohomologyProduct :
     D₁.cohomology G₁ i →ₗ[R] D₂.cohomology G₂ j →ₗ[R] D₀.cohomology G₀ k :=
   liftQ₂ _ _
     ((mk₂ R (fun (a : D₁.cocycles G₁ i) (b : D₂.cocycles G₂ j) =>
-        (⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.2 b.2⟩ : D₀.cocycles G₀ k))
+        (⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.property b.property⟩ : D₀.cocycles G₀ k))
       (fun _ _ _ => Subtype.ext (μ.map_add₂ _ _ _))
       (fun _ _ _ => Subtype.ext (μ.map_smul₂ _ _ _))
       (fun _ _ _ => Subtype.ext ((μ _).map_add _ _))
       (fun _ _ _ => Subtype.ext ((μ _).map_smul _ _))).compr₂ (Submodule.mkQ _))
     (fun _ ha => ext fun b => (Submodule.Quotient.mk_eq_zero _).2
-      (apply_mem_coboundaries_of_left μ hdeg hL hk ha b.2))
+      (apply_mem_coboundaries_of_left μ hdeg hL hk ha b.property))
     (fun _ hb => ext fun a => (Submodule.Quotient.mk_eq_zero _).2
-      (apply_mem_coboundaries_of_right μ hdeg hL hk a.2 hb))
+      (apply_mem_coboundaries_of_right μ hdeg hL hk a.property hb))
 
 /-- The product on cohomology of the classes of two cocycles is the class of their product. -/
 @[simp]
 theorem cohomologyProduct_mk (a : D₁.cocycles G₁ i) (b : D₂.cocycles G₂ j) :
     cohomologyProduct μ hdeg hL hk (Submodule.Quotient.mk a) (Submodule.Quotient.mk b) =
-      Submodule.Quotient.mk ⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.2 b.2⟩ :=
+      Submodule.Quotient.mk ⟨μ a b, apply_mem_cocycles μ hdeg hL hk a.property b.property⟩ :=
   (rfl)
 
 end Product
@@ -253,7 +267,7 @@ def cohomologyMap : D₁.cohomology G₁ i →ₗ[R] D₀.cohomology G₀ i :=
 @[simp]
 theorem cohomologyMap_mk (a : D₁.cocycles G₁ i) :
     cohomologyMap f hdeg hD i (Submodule.Quotient.mk a) =
-      Submodule.Quotient.mk ⟨f a, apply_mem_cocycles_of_mem_cocycles f hdeg hD a.2⟩ :=
+      Submodule.Quotient.mk ⟨f a, apply_mem_cocycles_of_mem_cocycles f hdeg hD a.property⟩ :=
   (rfl)
 
 omit hdeg hD in
@@ -302,6 +316,100 @@ theorem cohomologyMap_cohomologyMap (c : D₁.cohomology G₁ i) :
 
 end Map
 
+section Homotopy
+
+variable {R M₁ M₀ : Type*} [Ring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₀]
+  [Module R M₀] {D₁ : M₁ →ₗ[R] M₁} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₀ : ℤ → Submodule R M₀} {f g : M₁ →ₗ[R] M₀} {i : ℤ}
+
+/-- **A homotopy on cocycles.** If `f - g = D₀ h + h D₁` on degree-`i` elements, for a map `h`
+lowering their degree by one, then `f a - g a` is a coboundary for every degree-`i` cocycle `a`. -/
+theorem sub_mem_coboundaries_of_homotopy (h : M₁ →ₗ[R] M₀)
+    (hh : ∀ {a : M₁}, a ∈ G₁ i → h a ∈ G₀ (i - 1))
+    (hfg : ∀ {a : M₁}, a ∈ G₁ i → f a - g a = D₀ (h a) + h (D₁ a))
+    {a : M₁} (ha : a ∈ D₁.cocycles G₁ i) : f a - g a ∈ D₀.coboundaries G₀ i := by
+  rw [mem_cocycles_iff] at ha
+  exact mem_coboundaries_iff.2 ⟨h a, hh ha.2, by rw [hfg ha.2, ha.1, map_zero, add_zero]⟩
+
+variable {hfdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → f a ∈ G₀ i}
+  {hfD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₀ (f a) = f (D₁ a)}
+  {hgdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → g a ∈ G₀ i}
+  {hgD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₀ (g a) = g (D₁ a)}
+
+/-- Two maps which agree up to coboundaries on degree-`i` cocycles induce the same map on
+degree-`i` cohomology. -/
+theorem cohomologyMap_eq_of_sub_mem_coboundaries
+    (hfg : ∀ {a : M₁}, a ∈ D₁.cocycles G₁ i → f a - g a ∈ D₀.coboundaries G₀ i) :
+    cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i =
+      cohomologyMap (G₁ := G₁) (G₀ := G₀) g hgdeg hgD i := by
+  refine LinearMap.ext fun x => ?_
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  rw [cohomologyMap_mk, cohomologyMap_mk, cohomology_mk_eq_mk_iff]
+  exact hfg a.property
+
+/-- **Homotopy invariance.** Chain homotopic maps induce the same map on cohomology: if
+`f - g = D₀ h + h D₁` on degree-`i` elements, for a map `h` lowering their degree by one, then `f`
+and `g` induce the same map on degree-`i` cohomology. -/
+theorem cohomologyMap_eq_of_homotopy (h : M₁ →ₗ[R] M₀)
+    (hh : ∀ {a : M₁}, a ∈ G₁ i → h a ∈ G₀ (i - 1))
+    (hfg : ∀ {a : M₁}, a ∈ G₁ i → f a - g a = D₀ (h a) + h (D₁ a)) :
+    cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i =
+      cohomologyMap (G₁ := G₁) (G₀ := G₀) g hgdeg hgD i :=
+  cohomologyMap_eq_of_sub_mem_coboundaries fun ha => sub_mem_coboundaries_of_homotopy h hh hfg ha
+
+end Homotopy
+
+section Equiv
+
+variable {R M₁ M₀ : Type*} [Ring R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₀]
+  [Module R M₀] {D₁ : M₁ →ₗ[R] M₁} {D₀ : M₀ →ₗ[R] M₀}
+  {G₁ : ℤ → Submodule R M₁} {G₀ : ℤ → Submodule R M₀} (f : M₁ →ₗ[R] M₀) (g : M₀ →ₗ[R] M₁)
+  (hfdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → f a ∈ G₀ i)
+  (hfD : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → D₀ (f a) = f (D₁ a))
+  (hgdeg : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → g a ∈ G₁ i)
+  (hgD : ∀ {i : ℤ} {a : M₀}, a ∈ G₀ i → D₁ (g a) = g (D₀ a)) {i : ℤ}
+  (hgf : ∀ {a : M₁}, a ∈ D₁.cocycles G₁ i → g (f a) - a ∈ D₁.coboundaries G₁ i)
+  (hfg : ∀ {a : M₀}, a ∈ D₀.cocycles G₀ i → f (g a) - a ∈ D₀.coboundaries G₀ i)
+
+include hgf in
+/-- **A left inverse on cohomology.** If `g (f a) - a` is a coboundary for every degree-`i`
+cocycle `a`, as when `g ∘ f` is chain homotopic to the identity
+(`LinearMap.sub_mem_coboundaries_of_homotopy`), then the map induced by `g` on degree-`i`
+cohomology is a left inverse of the map induced by `f`. -/
+theorem leftInverse_cohomologyMap :
+    Function.LeftInverse (cohomologyMap (G₁ := G₀) (G₀ := G₁) g hgdeg hgD i)
+      (cohomologyMap (G₁ := G₁) (G₀ := G₀) f hfdeg hfD i) := by
+  intro x
+  induction x using Submodule.Quotient.induction_on with | H a => ?_
+  rw [cohomologyMap_mk, cohomologyMap_mk, cohomology_mk_eq_mk_iff]
+  exact hgf a.property
+
+/-- **The isomorphism on cohomology of a homotopy equivalence.** Let `f` and `g` be
+degree-preserving maps in opposite directions commuting with the endomorphisms, each a left
+inverse of the other up to coboundaries on degree-`i` cocycles, as for a chain homotopy
+equivalence (`LinearMap.sub_mem_coboundaries_of_homotopy`). Then the maps they induce on degree-`i`
+cohomology are mutually inverse isomorphisms. -/
+def cohomologyEquiv : D₁.cohomology G₁ i ≃ₗ[R] D₀.cohomology G₀ i where
+  __ := cohomologyMap f hfdeg hfD i
+  invFun := cohomologyMap g hgdeg hgD i
+  left_inv := leftInverse_cohomologyMap f g hfdeg hfD hgdeg hgD hgf
+  right_inv := leftInverse_cohomologyMap g f hgdeg hgD hfdeg hfD hfg
+
+/-- The isomorphism of a homotopy equivalence is the map induced by its forward map. -/
+@[simp]
+theorem cohomologyEquiv_apply (x : D₁.cohomology G₁ i) :
+    cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg x = cohomologyMap f hfdeg hfD i x :=
+  (rfl)
+
+/-- The inverse of the isomorphism of a homotopy equivalence is the map induced by its backward
+map. -/
+@[simp]
+theorem cohomologyEquiv_symm_apply (x : D₀.cohomology G₀ i) :
+    (cohomologyEquiv f g hfdeg hfD hgdeg hgD hgf hfg).symm x = cohomologyMap g hgdeg hgD i x :=
+  (rfl)
+
+end Equiv
+
 section Naturality
 
 variable {R M₁ M₂ M₀ N₁ N₂ N₀ : Type*} [CommRing R]
@@ -342,7 +450,38 @@ theorem cohomologyMap_cohomologyProduct {i j k : ℤ} (hk : i + j + ε = k)
   induction y using Submodule.Quotient.induction_on with | H b => ?_
   rw [cohomologyProduct_mk, cohomologyMap_mk, cohomologyMap_mk, cohomologyMap_mk,
     cohomologyProduct_mk, cohomology_mk_eq_mk_iff]
-  exact hnat a.2 b.2
+  exact hnat a.property b.property
+
+variable {g₁ : N₁ →ₗ[R] M₁} {g₂ : N₂ →ₗ[R] M₂} {g₀ : N₀ →ₗ[R] M₀}
+  {hg₁ : ∀ {i : ℤ} {a : N₁}, a ∈ H₁ i → g₁ a ∈ G₁ i}
+  {hg₁D : ∀ {i : ℤ} {a : N₁}, a ∈ H₁ i → D₁ (g₁ a) = g₁ (E₁ a)}
+  {hg₂ : ∀ {i : ℤ} {a : N₂}, a ∈ H₂ i → g₂ a ∈ G₂ i}
+  {hg₂D : ∀ {i : ℤ} {a : N₂}, a ∈ H₂ i → D₂ (g₂ a) = g₂ (E₂ a)}
+  {hg₀ : ∀ {i : ℤ} {a : N₀}, a ∈ H₀ i → g₀ a ∈ G₀ i}
+  {hg₀D : ∀ {i : ℤ} {a : N₀}, a ∈ H₀ i → D₀ (g₀ a) = g₀ (E₀ a)}
+
+/-- **Naturality of the product on cohomology for one-sided inverses.** Let `f₁`, `f₂`, `f₀`
+induce maps on cohomology intertwining the products induced by `μ` and `ν`, and let `g₁`, `g₂`
+induce right inverses of the maps induced by `f₁`, `f₂` and `g₀` a left inverse of the map induced
+by `f₀`, as for homotopy inverses (`LinearMap.leftInverse_cohomologyMap`). Then the maps induced by
+`g₁`, `g₂`, `g₀` intertwine the products in the other direction. -/
+theorem cohomologyMap_cohomologyProduct_of_leftInverse {i j k : ℤ} (hk : i + j + ε = k)
+    (hfg₁ : Function.RightInverse (cohomologyMap (G₁ := H₁) (G₀ := G₁) g₁ hg₁ hg₁D i)
+      (cohomologyMap (G₁ := G₁) (G₀ := H₁) f₁ hf₁ hf₁D i))
+    (hfg₂ : Function.RightInverse (cohomologyMap (G₁ := H₂) (G₀ := G₂) g₂ hg₂ hg₂D j)
+      (cohomologyMap (G₁ := G₂) (G₀ := H₂) f₂ hf₂ hf₂D j))
+    (hgf₀ : Function.LeftInverse (cohomologyMap (G₁ := H₀) (G₀ := G₀) g₀ hg₀ hg₀D k)
+      (cohomologyMap (G₁ := G₀) (G₀ := H₀) f₀ hf₀ hf₀D k))
+    (hnat : ∀ (x : D₁.cohomology G₁ i) (y : D₂.cohomology G₂ j),
+      cohomologyMap f₀ hf₀ hf₀D k (cohomologyProduct μ hμdeg hμL hk x y) =
+        cohomologyProduct ν hνdeg hνL hk (cohomologyMap f₁ hf₁ hf₁D i x)
+          (cohomologyMap f₂ hf₂ hf₂D j y))
+    (x : E₁.cohomology H₁ i) (y : E₂.cohomology H₂ j) :
+    cohomologyMap g₀ hg₀ hg₀D k (cohomologyProduct ν hνdeg hνL hk x y) =
+      cohomologyProduct μ hμdeg hμL hk (cohomologyMap g₁ hg₁ hg₁D i x)
+        (cohomologyMap g₂ hg₂ hg₂D j y) := by
+  conv_lhs => rw [← hfg₁ x, ← hfg₂ y, ← hnat]
+  exact hgf₀ _
 
 end Naturality
 
@@ -387,7 +526,7 @@ theorem cohomologyProduct_assoc {i j k l l' m : ℤ} (hl : i + j + ε = l) (hm :
   induction z using Submodule.Quotient.induction_on with | H c => ?_
   simp only [cohomologyProduct_mk]
   rw [cohomology_mk_eq_mk_iff]
-  exact hassoc a.2 b.2 c.2
+  exact hassoc a.property b.property c.property
 
 end Associativity
 
@@ -420,7 +559,7 @@ theorem cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct {i j k : ℤ}
   induction y using Submodule.Quotient.induction_on with | H b => ?_
   rw [cohomologyProduct_mk, cohomologyProduct_mk, ← Submodule.Quotient.mk_smul,
     cohomology_mk_eq_mk_iff]
-  exact hcomm a.2 b.2
+  exact hcomm a.property b.property
 
 end Commutativity
 

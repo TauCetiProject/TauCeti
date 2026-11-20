@@ -334,7 +334,7 @@ def lift (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
     SphericalCapClass ω c γ → A :=
   Quotient.lift (s := AddAction.orbitRel _ _) f fun D D' ⟨k, hk⟩ => by
     rw [← hk]
-    simp only [AddSubgroup.vadd_def, hf, AddMonoidHom.mem_ker.1 k.2, map_zero, zero_add]
+    simp only [AddSubgroup.vadd_def, hf, AddMonoidHom.mem_ker.1 k.property, map_zero, zero_add]
 
 @[simp]
 theorem lift_mk (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
