@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import TauCeti.Topology.ContinuousMap.Algebra
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # The fixed-point index of a map of an open subset of a vector space
@@ -48,6 +50,13 @@ The index has the following properties of the classical fixed-point index:
   (`ContinuousMap.fixedPointIndex_eq_localFixedPointIndex`).
 * **Excision.** Restricting `f` to an open subset containing all its fixed points does not change
   the index (`ContinuousMap.fixedPointIndex_comp_inclusion`).
+* **Invariance under smooth changes of coordinates.** If a map `h : E → E` with invertible strict
+  derivative at a fixed point `x` of `f` conjugates `f` near `x` to a map `g`, so that
+  `g (h z) = h (f z)` near `x`, then the local index of `g` at `h x` is that of `f` at `x`
+  (`ContinuousMap.localFixedPointIndex_eq_of_hasStrictFDerivAt`), whether or not `h` preserves
+  orientation. So the local index of a self-map of a smooth manifold at a fixed point can be
+  computed in any chart: a transition map between two charts conjugates the two coordinate
+  expressions of the map.
 
 Together these say that whenever `f` is joined, by a homotopy with compact fixed set, to a map
 with finitely many nondegenerate fixed points, the index of `f` is the sum of the signs
@@ -77,6 +86,8 @@ degenerate fixed point `0` of `x ↦ x + x³` on `ℝ`, where `det (1 - f') = 0`
   set.
 * `ContinuousMap.fixedPointIndex_eq_sign_det_of_forall_eq`: a linear map `A` with `1 - A`
   invertible has index `sign det (1 - A)` on every open set containing `0`.
+* `ContinuousMap.localFixedPointIndex_eq_of_hasStrictFDerivAt`: the local index is invariant
+  under conjugation by a map with invertible strict derivative.
 
 ## References
 
@@ -216,6 +227,126 @@ theorem localFixedPointIndex_eq_sign_det {f : C(U, E)} {x : U} (hx : f x = x) {�
     IsOpenEmbedding.id (f := f.displacement) (φ := fun z ↦ z - φ z)
     (hφ.mono fun z hz ↦ by simp [hz]) ((hasFDerivAt_id (x : E)).sub hd) hdet
   rwa [HomologicalOrientation.comap_id] at h
+
+omit [FiniteDimensional ℝ E] in
+/-- Near a fixed point `x` of `f`, a map `h` with invertible strict derivative `A` at `x` moves
+`z` and `f z` apart by `A (z - f z)`, up to an error at most half its norm. -/
+private theorem eventually_norm_sub_sub_le_half {f : C(U, E)} {x : U} (hx : f x = x) {h : E → E}
+    {A : E ≃L[ℝ] E} (hh : HasStrictFDerivAt h (A : E →L[ℝ] E) x) :
+    ∀ᶠ z : U in 𝓝 x, ‖h z - h (f z) - A ((z : E) - f z)‖ ≤ ‖A ((z : E) - f z)‖ / 2 := by
+  set C := ‖(A.symm : E →L[ℝ] E)‖
+  have ht : Filter.Tendsto (fun z : U ↦ ((z : E), f z)) (𝓝 x) (𝓝 ((x : E), (x : E))) := by
+    simpa [hx] using (continuous_subtypeVal.prodMk f.continuous).tendsto x
+  filter_upwards [ht.eventually ((HasStrictFDerivAt.isLittleO hh).def
+    (inv_pos.2 (by positivity : (0 : ℝ) < 2 * (C + 1))))] with z hz
+  -- Since `‖v‖ ≤ C ‖A v‖`, the error `‖v‖ / (2 (C + 1))` is at most `‖A v‖ / 2`.
+  have hv : ‖(z : E) - f z‖ ≤ C * ‖A ((z : E) - f z)‖ := by
+    simpa using (A.symm : E →L[ℝ] E).le_opNorm (A ((z : E) - f z))
+  refine hz.trans ((inv_mul_le_iff₀ (by positivity)).2 ?_)
+  nlinarith [norm_nonneg (A ((z : E) - f z)), norm_nonneg (A.symm : E →L[ℝ] E)]
+
+/-- Near a fixed point `x` of `f : U → E`, a map `h` with invertible strict derivative at `x`
+conjugating `f` to `g : V → E` restricts to an open embedding `k : W → V` of an open neighbourhood
+`W ⊆ U` of `x`, on which it conjugates `f` to `g` and the estimate of
+`eventually_norm_sub_sub_le_half` holds. -/
+private theorem exists_opens_isOpenEmbedding_conj {V : Opens E} {f : C(U, E)} {g : C(V, E)}
+    {x : U} (hx : f x = x) {h : E → E} {A : E ≃L[ℝ] E}
+    (hh : HasStrictFDerivAt h (A : E →L[ℝ] E) x) (hxV : h x ∈ V)
+    (hconj : ∀ᶠ z : U in 𝓝 x, ∀ hz : h z ∈ V, g ⟨h z, hz⟩ = h (f z)) :
+    ∃ (W : Opens E) (hWU : W ≤ U) (k : C(W, V)), (x : E) ∈ W ∧ IsOpenEmbedding k ∧
+      ∀ z : W, (k z : E) = h z ∧ g (k z) = h (f (inclusion hWU z)) ∧
+        ‖h z - h (f (inclusion hWU z)) - A (z - f (inclusion hWU z))‖ ≤
+          ‖A (z - f (inclusion hWU z))‖ / 2 := by
+  set e := HasStrictFDerivAt.toOpenPartialHomeomorph h hh
+  have he : ⇑e = h := HasStrictFDerivAt.toOpenPartialHomeomorph_coe hh
+  have hsrc : ∀ᶠ z : U in 𝓝 x, (z : E) ∈ e.source ∧ h z ∈ V :=
+    ((continuous_subtypeVal.tendsto x).eventually (e.open_source.mem_nhds
+      (HasStrictFDerivAt.mem_toOpenPartialHomeomorph_source hh))).and
+    ((continuous_subtypeVal.tendsto x).eventually
+      ((HasStrictFDerivAt.continuousAt hh).preimage_mem_nhds (V.isOpen.mem_nhds hxV)))
+  obtain ⟨t, ht, hto, hxt⟩ :=
+    eventually_nhds_iff.1 ((hsrc.and hconj).and (eventually_norm_sub_sub_le_half hx hh))
+  -- `W` is the open subset `t` of `U`, read in `E`.
+  set W : Opens E := ⟨Subtype.val '' t, U.isOpenEmbedding'.isOpenMap t hto⟩
+  have hWU : W ≤ U := by rintro _ ⟨z, -, rfl⟩; exact z.property
+  have hWt (z : W) : inclusion hWU z ∈ t := by
+    obtain ⟨z', hz', hzz'⟩ := z.property
+    exact (Subtype.ext hzz' : z' = inclusion hWU z) ▸ hz'
+  have hWsrc (z : W) : (z : E) ∈ e.source := (ht _ (hWt z)).1.1.1
+  have hWV (z : W) : h z ∈ V := (ht _ (hWt z)).1.1.2
+  have hk_cont : Continuous fun z : W ↦ h z := by
+    rw [← he]; exact e.continuousOn.comp_continuous continuous_subtypeVal hWsrc
+  let k : C(W, V) := ⟨fun z ↦ ⟨h z, hWV z⟩, hk_cont.subtype_mk _⟩
+  -- Read in `E`, `k` is `e` composed with the inclusion of `W`, whose range lies in `e.source`.
+  have hk : IsOpenEmbedding k := by
+    refine (IsOpenEmbedding.of_comp_iff k V.isOpenEmbedding').1 ?_
+    simpa [k, he, Function.comp_def] using
+      e.isOpenEmbedding_comp W.isOpenEmbedding' (by rintro _ ⟨z, rfl⟩; exact hWsrc z)
+  refine ⟨W, hWU, k, ⟨x, hxt, rfl⟩, hk, fun z ↦ ?_⟩
+  obtain ⟨⟨-, hzconj⟩, hzest⟩ := ht _ (hWt z)
+  exact ⟨rfl, hzconj _, hzest⟩
+
+/-- **The local fixed-point index is invariant under smooth changes of coordinates.** Let
+`f : U → E` and `g : V → E` be continuous maps of open subsets of `E`, and let `x` be a fixed point
+of `f`. If a map `h : E → E` with invertible strict derivative at `x` conjugates `f` to `g` near
+`x`, that is `g (h z) = h (f z)` for `z` near `x`, then the local fixed-point index of `g` at `h x`
+is that of `f` at `x`. This holds whether or not `h` preserves orientation. In particular, the
+local fixed-point index of a self-map of a smooth manifold at an isolated fixed point does not
+depend on the chart in which it is computed. -/
+theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)} {g : C(V, E)}
+    {x : U} (hx : f x = x) {h : E → E} {A : E ≃L[ℝ] E}
+    (hh : HasStrictFDerivAt h (A : E →L[ℝ] E) x) (hxV : h x ∈ V)
+    (hconj : ∀ᶠ z : U in 𝓝 x, ∀ hz : h z ∈ V, g ⟨h z, hz⟩ = h (f z)) :
+    g.localFixedPointIndex ⟨h x, hxV⟩ = f.localFixedPointIndex x := by
+  obtain ⟨W, hWU, k, hxW, hk, hkW⟩ := exists_opens_isOpenEmbedding_conj hx hh hxV hconj
+  set o := fixedPointOrientation (E := E)
+  have hdet : (A : E →L[ℝ] E).det ≠ 0 := A.toLinearEquiv.isUnit_det'.ne_zero
+  let ι : C(W, U) := inclusion hWU
+  set xW : W := ⟨x, hxW⟩
+  -- `ι xW` is `x`, by definition of the inclusion.
+  have hιx : inclusion hWU xW = x := rfl
+  have hfW : (f.comp ι) xW = xW := by rw [comp_apply, hιx]; exact hx
+  have hkx : k xW = ⟨h x, hxV⟩ := Subtype.ext (hkW xW).1
+  -- Read on `W`, the displacement of `g` through `k` is `z ↦ h z - h (f z)`, within half its
+  -- norm of `z ↦ A (z - f z)`; so the two maps have the same local index at `x`.
+  let Ac : C(E, E) := ⟨A, A.continuous⟩
+  have hcomp : (o.comap W.isOpenEmbedding').localIndex o (Ac.comp (f.comp ι).displacement) xW =
+      (o.comap W.isOpenEmbedding').localIndex o (g.displacement.comp k) xW := by
+    have hG (z : W) : (g.displacement.comp k) z = h z - h ((f.comp ι) z) := by
+      rw [comp_apply, displacement_apply, (hkW z).2.1, (hkW z).1]
+      -- `f.comp ι` is `f ∘ inclusion hWU` by definition.
+      rfl
+    have hAD (z : W) : (Ac.comp (f.comp ι).displacement) z = A (z - (f.comp ι) z) := by
+      rw [comp_apply, displacement_apply]
+      -- `Ac` is `A` as a continuous map, by definition.
+      rfl
+    refine HomologicalOrientation.localIndex_eq_of_norm_sub_le _ _ rfl rfl one_half_lt_one
+      (by rw [hG, hAD, hfW, sub_self, sub_self, map_zero]) (.of_forall fun z ↦ ?_)
+    rw [hG, hAD, hAD xW, hfW, sub_self, map_zero, sub_zero, one_div_mul_eq_div]
+    exact (hkW z).2.2
+  -- By the chain rule, both sides are `sign det A` times a local fixed-point index.
+  have hL : (o.comap W.isOpenEmbedding').localIndex o (Ac.comp (f.comp ι).displacement) xW =
+      SignType.sign (A : E →L[ℝ] E).det * f.localFixedPointIndex x := by
+    rw [(o.comap W.isOpenEmbedding').localIndex_comp o o rfl
+        (eventually_nhdsWithin_of_forall fun z hz ↦ A.injective.ne hz),
+      displacement_apply, hfW, sub_self,
+      o.localIndex_eq_sign_det rfl (f := Ac) (A : E →L[ℝ] E).hasFDerivAt hdet,
+      ← (f.comp ι).localFixedPointIndex_eq_localIndex o rfl hfW,
+      localFixedPointIndex_comp_inclusion, hιx]
+  have hR : (o.comap W.isOpenEmbedding').localIndex o (g.displacement.comp k) xW =
+      SignType.sign (A : E →L[ℝ] E).det * g.localFixedPointIndex ⟨h x, hxV⟩ := by
+    rw [(o.comap W.isOpenEmbedding').localIndex_comp_of_isOpenEmbedding
+        (o.comap V.isOpenEmbedding') o rfl hk xW,
+      o.localIndex_comap_eq_sign_det rfl W.isOpenEmbedding' V.isOpenEmbedding' (f := k) (φ := h)
+        (.of_forall fun z ↦ ((hkW z).1).symm) (HasStrictFDerivAt.hasFDerivAt hh) hdet,
+      ← g.localFixedPointIndex_eq_localIndex o rfl (x := k xW)
+        (by rw [(hkW xW).2.1, (hkW xW).1]; exact congrArg h hfW), hkx, mul_comm]
+  -- `sign det A ≠ 0` in `SignType`, and the cast `SignType → ℤ` is injective.
+  have hs : (SignType.sign (A : E →L[ℝ] E).det : ℤ) ≠ 0 := by
+    have hs := sign_ne_zero.2 hdet
+    generalize SignType.sign (A : E →L[ℝ] E).det = s at hs ⊢
+    decide +revert
+  exact (mul_left_cancel₀ hs (hL.symm.trans (hcomp.trans hR))).symm
 
 /-- The fixed-point index vanishes when the fixed set is not compact. -/
 theorem fixedPointIndex_of_not_isCompact (f : C(U, E)) (h : ¬IsCompact {z | f z = z}) :
