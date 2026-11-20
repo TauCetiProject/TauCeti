@@ -11,6 +11,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.Logic.Equiv.Fin.Basic
+import Mathlib.Tactic
 import Mathlib.Data.Fintype.Fin
 -- Non-public: a cycle and an adjacent transposition generate the permutation group.
 import Mathlib.GroupTheory.Perm.Closure
@@ -36,6 +37,8 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   `decide +kernel` certificate small.
 * `Equiv.Perm.sum_comp_symm_apply_zero`: summing a function of `σ⁻¹ 0` over all permutations of
   `Fin (n + 1)` counts each value `n!` times.
+* `Equiv.Perm.consFin`, `Equiv.Perm.snocFin`: ordered insertion and its sign in every
+  dimension, including the empty tail missing from the primed Mathlib decomposition.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
 -/
 
@@ -166,3 +169,126 @@ theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
 end
 
 end Equiv.Perm
+
+noncomputable section
+
+namespace Equiv.Perm
+
+
+/-- Place a coordinate first, with the remaining coordinates ordered by the smaller permutation. -/
+def consFin {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) : Perm (Fin (n + 1)) :=
+  j.cycleRange.symm * Perm.decomposeFin.symm (0, π)
+
+/-- The distinguished coordinate is first. -/
+@[simp]
+lemma consFin_zero {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    consFin j π 0 = j := by
+  simp [consFin, Perm.mul_apply]
+
+/-- The remaining coordinates preserve their increasing-coordinate identification. -/
+@[simp]
+lemma consFin_succ {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) (k : Fin n) :
+    consFin j π k.succ = j.succAbove (π k) := by
+  simp [consFin, Perm.mul_apply]
+
+/-- The first coordinate has position zero. -/
+@[simp]
+lemma consFin_symm_self {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (consFin j π).symm j = 0 := by
+  apply (consFin j π).injective
+  simp
+
+/-- The position of another coordinate is its position in the smaller permutation, plus one. -/
+@[simp]
+lemma consFin_symm_succAbove {n : ℕ} (j : Fin (n + 1))
+    (π : Perm (Fin n)) (k : Fin n) :
+    (consFin j π).symm (j.succAbove (π k)) = k.succ := by
+  apply (consFin j π).injective
+  simp
+
+/-- The first-coordinate decomposition has the coordinate insertion sign. -/
+lemma sign_consFin {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (consFin j π).sign = (-1) ^ (j : ℕ) * π.sign := by
+  simp [consFin, Perm.sign_mul, Perm.decomposeFin.symm_sign]
+
+/-- First coordinate and remaining ordering determine a permutation bijectively. -/
+private lemma consFin_bijective (n : ℕ) : Function.Bijective
+    (fun p : Fin (n + 1) × Perm (Fin n) ↦ consFin p.1 p.2) := by
+  rw [Nat.bijective_iff_injective_and_card]
+  constructor
+  · rintro ⟨j, π⟩ ⟨k, ρ⟩ h
+    obtain rfl : j = k := by simpa using congrArg (fun e ↦ e 0) h
+    have hp : π = ρ := by
+      apply Equiv.ext
+      intro i
+      have hi := congrArg (fun e ↦ e i.succ) h
+      simpa using hi
+    subst ρ
+    rfl
+  · simp [Fintype.card_perm, Nat.factorial_succ]
+
+/-- Every permutation is uniquely a first-coordinate insertion, including dimension one. -/
+def consFinEquiv (n : ℕ) : Fin (n + 1) × Perm (Fin n) ≃ Perm (Fin (n + 1)) :=
+  Equiv.ofBijective _ (consFin_bijective n)
+
+/-- The first-coordinate equivalence has the stated underlying insertion map. -/
+@[simp]
+lemma consFinEquiv_apply {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    consFinEquiv n (j, π) = consFin j π := by
+  unfold consFinEquiv
+  rfl
+
+/-- The ordering obtained by placing the distinguished coordinate last. -/
+def snocFin {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    Perm (Fin (n + 1)) := consFin j π * finRotate (n + 1)
+
+/-- The earlier steps of the last-coordinate ordering follow the smaller permutation. -/
+@[simp]
+lemma snocFin_castSucc {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n))
+    (i : Fin n) : snocFin j π i.castSucc = j.succAbove (π i) := by
+  have hi : finRotate (n + 1) i.castSucc = i.succ := by
+    apply Fin.ext
+    rw [coe_finRotate_of_ne_last (Fin.castSucc_ne_last i)]
+    rfl
+  simp [snocFin, Perm.mul_apply, hi]
+
+/-- The distinguished coordinate is the last step. -/
+@[simp]
+lemma snocFin_last {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    snocFin j π (Fin.last (n)) = j := by
+  simp [snocFin, Perm.mul_apply]
+
+/-- The distinguished coordinate has the last position in this ordering. -/
+@[simp]
+lemma snocFin_symm_self {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (snocFin j π).symm j = Fin.last (n) := by
+  apply (snocFin j π).injective
+  simp
+
+/-- The position of an earlier coordinate in the last-coordinate ordering. -/
+@[simp]
+lemma snocFin_symm_succAbove {n : ℕ} (j : Fin (n + 1))
+    (π : Perm (Fin n)) (i : Fin n) :
+    (snocFin j π).symm (j.succAbove (π i)) = i.castSucc := by
+  apply (snocFin j π).injective
+  simp
+
+/-- The sign of the ordering with the distinguished coordinate last. -/
+lemma sign_snocFin {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    (snocFin j π).sign = (-1) ^ ((j : ℕ) + n) * π.sign := by
+  simp [snocFin, Perm.sign_mul, sign_consFin, sign_finRotate,
+    pow_add, mul_assoc, mul_comm]
+
+/-- Every permutation is uniquely a last-coordinate insertion, including the empty tail. -/
+def snocFinEquiv (n : ℕ) : Fin (n + 1) × Perm (Fin n) ≃ Perm (Fin (n + 1)) :=
+  (consFinEquiv n).trans (Equiv.mulRight (finRotate (n + 1)))
+
+/-- The last-coordinate equivalence evaluates to ordered insertion. -/
+@[simp]
+lemma snocFinEquiv_apply {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    snocFinEquiv n (j, π) = snocFin j π := by
+  rfl
+
+end Equiv.Perm
+
+end

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
 import Mathlib.Data.Fin.Parity
+import Mathlib.Tactic.Abel
 import Mathlib.Topology.CompactOpen
 
 /-!
@@ -33,6 +34,8 @@ only the central signs `(-1) ^ i` enter the boundary.
 * `TauCeti.CubicalChain X R n`: unnormalized cubical `n`-chains.
 * `TauCeti.CubicalChain.boundary X R n`: the boundary
   `CubicalChain X R (n + 1) →ₗ[R] CubicalChain X R n`.
+* `TauCeti.CubicalChain.boundaryWithCoefficients X R M n`: the same boundary with arbitrary
+  module coefficients, without matching the scalar and module universes.
 * `TauCeti.CubicalChain.map R f n`: the chains pushed forward along a continuous map.
 * `TauCeti.CubicalChain.cast R h`: reindexing of chains along an equality of dimensions.
 
@@ -216,6 +219,65 @@ theorem map_boundary (f : C(X, Y)) (n : ℕ) :
   simp [face_comp]
 
 end Boundary
+
+section ModuleCoefficients
+
+variable {R : Type*} [Semiring R] {X : Type*} [TopologicalSpace X]
+  {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- The native cubical differential on raw cubes with arbitrary module coefficients. -/
+def boundaryWithCoefficients (X : Type*) [TopologicalSpace X] (R : Type*) [Semiring R]
+    (M : Type*) [AddCommGroup M] [Module R M] (n : ℕ) :
+    (SingularCube X (n + 1) →₀ M) →ₗ[R] (SingularCube X n →₀ M) :=
+  ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
+    (Finsupp.lmapDomain M R (SingularCube.face j 0) -
+     Finsupp.lmapDomain M R (SingularCube.face j 1))
+
+/-- Boundary of a cube with its original module coefficient. -/
+@[simp]
+theorem boundaryWithCoefficients_single {n : ℕ}
+    (c : SingularCube X (n + 1)) (a : M) :
+    boundaryWithCoefficients X R M n (Finsupp.single c a) =
+      ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
+        (Finsupp.single (SingularCube.face j 0 c) a -
+         Finsupp.single (SingularCube.face j 1 c) a) := by
+  simp [boundaryWithCoefficients]
+
+/-- The cubical identities make the raw module boundary square zero. -/
+theorem boundaryWithCoefficients_comp_boundaryWithCoefficients (n : ℕ) :
+    boundaryWithCoefficients X R M n ∘ₗ boundaryWithCoefficients X R M (n + 1) = 0 := by
+  apply Finsupp.lhom_ext
+  intro c a
+  simp only [LinearMap.comp_apply, boundaryWithCoefficients_single, LinearMap.zero_apply,
+    map_sum, map_zsmul, map_sub, ← Finset.sum_sub_distrib, Finset.smul_sum]
+  rw [← Finset.sum_product']
+  refine Finset.sum_involution (fun p _ ↦ CubicalChain.faceSwap p) (fun p _ ↦ ?_)
+    (fun p _ _ ↦ CubicalChain.faceSwap_ne p) (fun _ _ ↦ Finset.mem_univ _)
+    (fun p _ ↦ CubicalChain.faceSwap_faceSwap p)
+  obtain ⟨i, j⟩ := p
+  simp only [CubicalChain.faceSwap_def, ← SingularCube.face_face, smul_sub, smul_smul,
+    ← pow_add, Fin.neg_one_pow_succAbove_add_predAbove, neg_smul]
+  abel
+
+end ModuleCoefficients
+
+section ScalarCoefficients
+
+variable {R : Type*} [Ring R] {X : Type*} [TopologicalSpace X]
+
+/-- The raw module differential specializes to the existing scalar cubical boundary. -/
+theorem boundaryWithCoefficients_eq_boundary (n : ℕ) :
+    boundaryWithCoefficients X R R n = CubicalChain.boundary X R n := by
+  apply Finsupp.lhom_ext
+  intro c a
+  rw [boundaryWithCoefficients_single, CubicalChain.boundary_single]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have h := Int.cast_smul_eq_zsmul R ((-1 : ℤ) ^ (j : ℕ))
+    (Finsupp.single (SingularCube.face j 0 c) a -
+     Finsupp.single (SingularCube.face j 1 c) a)
+  simpa only [Int.cast_pow, Int.cast_neg, Int.cast_one] using h.symm
+
+end ScalarCoefficients
 
 end CubicalChain
 

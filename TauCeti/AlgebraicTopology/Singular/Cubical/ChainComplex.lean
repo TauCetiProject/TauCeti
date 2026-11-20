@@ -164,3 +164,18 @@ theorem NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology {X : TopCat
   exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
 
 end TauCeti
+
+universe r w
+namespace TauCeti
+
+/-- The native chain-complex object on original raw cubes with arbitrary module coefficients.
+The coefficient ring universe is independent of the space and coefficient-module universes. -/
+noncomputable abbrev rawCubicalChainComplexObj {R : Type r} [Ring R]
+    (X : TopCat.{w}) (M : ModuleCat.{max u w} R) : ChainComplex (ModuleCat.{max u w} R) ℕ :=
+  ChainComplex.of (fun n ↦ ModuleCat.of R (SingularCube X n →₀ M))
+    (fun n ↦ ModuleCat.ofHom (CubicalChain.boundaryWithCoefficients X R M n)) fun n ↦ by
+      rw [← ModuleCat.ofHom_comp,
+        CubicalChain.boundaryWithCoefficients_comp_boundaryWithCoefficients]
+      rfl
+
+end TauCeti
