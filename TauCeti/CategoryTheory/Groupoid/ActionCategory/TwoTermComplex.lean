@@ -180,13 +180,18 @@ def label {X Y : d.QuotientGroupoid} (f : X ⟶ Y) : A :=
 /-- An arrow of the quotient groupoid translates its source to its target by the image of its
 label. -/
 theorem apply_label_add {X Y : d.QuotientGroupoid} (f : X ⟶ Y) :
-    d (label f) + (objEquiv d).symm X = (objEquiv d).symm Y :=
-  f.map_val
+    d (label f) + (objEquiv d).symm X = (objEquiv d).symm Y := by
+  obtain ⟨x, rfl⟩ := (objEquiv d).surjective X
+  obtain ⟨y, rfl⟩ := (objEquiv d).surjective Y
+  have := ActionCategory.hom_smul (x := TranslationSpace.of d x) (y := TranslationSpace.of d y) f
+  rw [← ofAdd_toAdd f.hom, TranslationSpace.ofAdd_smul_of] at this
+  simpa [label] using (TranslationSpace.of d).injective this
 
 /-- The arrow `x ⟶ y` labelled by `a`, for `a : A` with `d a + x = y`. -/
 def homMk {X Y : d.QuotientGroupoid} (a : A)
     (h : d a + (objEquiv d).symm X = (objEquiv d).symm Y) : X ⟶ Y :=
-  Functor.Elements.homMk (Multiplicative.ofAdd a) h
+  Functor.Elements.homMk (Multiplicative.ofAdd a) <|
+    (TranslationSpace.ofAdd_smul_of d a _).trans (congrArg (TranslationSpace.of d) h)
 
 @[simp]
 theorem label_homMk {X Y : d.QuotientGroupoid} (a : A)
@@ -254,8 +259,8 @@ variable (d) in
 def isomorphismClassesEquiv :
     _root_.Quotient (isIsomorphicSetoid d.QuotientGroupoid) ≃ B ⧸ d.range :=
   ((Quotient.congr (TranslationSpace.of d) fun x y => by
-    rw [QuotientAddGroup.leftRel_apply, neg_add_eq_sub, TranslationSpace.orbitRel_of_iff,
-      sub_mem_comm_iff]).trans (ActionCategory.orbitQuotientEquivIsomorphismClasses _ _)).symm
+    simp [QuotientAddGroup.leftRel_apply, TranslationSpace.orbitRel_of_iff, sub_mem_comm_iff,
+      neg_add_eq_sub]).trans (ActionCategory.orbitQuotientEquivIsomorphismClasses _ _)).symm
 
 @[simp]
 theorem isomorphismClassesEquiv_mk (x : B) :
@@ -444,18 +449,16 @@ theorem full_map_iff :
   constructor
   · intro hlift
     refine ⟨fun a' ha' => ?_, fun x hx => ?_⟩
-    · obtain ⟨a, rfl, ha⟩ := hlift 0 0 a' (by rw [mem_ker.mp ha', map_zero, add_zero])
+    · obtain ⟨a, rfl, ha⟩ := hlift 0 0 a' (by simp [mem_ker.mp ha'])
       exact ⟨a, mem_ker.mpr (by rwa [add_zero] at ha), rfl⟩
     · obtain ⟨a', ha'⟩ := mem_range.mp (AddSubgroup.mem_comap.mp hx)
-      obtain ⟨a, -, ha⟩ := hlift 0 x a' (by rw [ha', map_zero, add_zero])
+      obtain ⟨a, -, ha⟩ := hlift 0 x a' (by simp [ha'])
       exact mem_range.mpr ⟨a, by rwa [add_zero] at ha⟩
   · rintro ⟨hker, hcoker⟩ x x' a' hx
     obtain ⟨a₀, ha₀⟩ := mem_range.mp (hcoker (x := x' - x) (AddSubgroup.mem_comap.mpr
-      (mem_range.mpr ⟨a', by rw [map_sub, ← hx, add_sub_cancel_right]⟩)))
-    obtain ⟨k, hk, hfk⟩ := @hker (a' - f₀ a₀) (mem_ker.mpr (by
-      rw [map_sub, ← h', ha₀, map_sub, ← hx, add_sub_cancel_right, sub_self]))
-    refine ⟨a₀ + k, by rw [map_add, hfk, add_sub_cancel], ?_⟩
-    rw [map_add, mem_ker.mp hk, add_zero, ha₀, sub_add_cancel]
+      (mem_range.mpr ⟨a', by simp [← hx]⟩)))
+    obtain ⟨k, hk, hfk⟩ := @hker (a' - f₀ a₀) (mem_ker.mpr (by simp [← h', ha₀, ← hx]))
+    exact ⟨a₀ + k, by simp [hfk], by simp [mem_ker.mp hk, ha₀]⟩
 
 /-- The functor induced by a chain map is essentially surjective exactly when the chain map is
 surjective on `H¹ = B ⧸ range d`. -/
