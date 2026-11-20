@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.Dimension.Prod
 public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
+import TauCeti.LinearAlgebra.Prod
+
 /-!
 # Involutions and the doubling of kernels, cokernels and indices
 
@@ -213,8 +215,8 @@ theorem finrank_ker_eq_two_mul_finrank_ker_restrictEigenspace (T : X 竊鱈[復] 
     congr(toLinearMap $(restrictEigenspace_comp_eigenspaceNegEquiv T hJX hJﾏス hJY hJﾏズ hT hTJ 1))
   simp only [toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
     at hconj hswap
-  rw [(LinearMap.kerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap, LinearMap.ker_prodMap,
-    (Submodule.prodEquiv _ _).finrank_eq,
+  rw [(LinearMap.kerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap,
+    (LinearMap.kerProdMapEquiv _ _).finrank_eq,
     ((LinearEquiv.refl 復 _).prodCongr (LinearMap.kerEquivOfComp _ _ hswap.symm).symm).finrank_eq,
     finrank_prod_self]
 
@@ -233,8 +235,8 @@ theorem finrank_coker_eq_two_mul_finrank_coker_restrictEigenspace (T : X 竊鱈[
     congr(toLinearMap $(restrictEigenspace_comp_eigenspaceNegEquiv T hJX hJﾏス hJY hJﾏズ hT hTJ 1))
   simp only [toLinearMap_comp, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
     at hconj hswap
-  rw [(LinearMap.cokerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap, LinearMap.range_prodMap,
-    (Submodule.quotientProdEquiv _ _).finrank_eq,
+  rw [(LinearMap.cokerEquivOfComp _ _ hconj).finrank_eq, coe_prodMap,
+    (LinearMap.cokerProdMapEquiv _ _).finrank_eq,
     ((LinearEquiv.refl 復 _).prodCongr
       (LinearMap.cokerEquivOfComp _ _ hswap.symm).symm).finrank_eq,
     finrank_prod_self]
