@@ -398,9 +398,13 @@ open TauCeti
 linear map, provided `m + r ≤ n`. -/
 theorem ContDiffAt.symmetricJetCoordChange {r : ℕ} {h : E' → E} {g : E' → F →L[𝕜] G} {x₀ : E'}
     {n m : ℕ∞ω} (hh : ContDiffAt 𝕜 n h x₀) (hg : ContDiffAt 𝕜 n g x₀) (hmn : m + r ≤ n) :
-    ContDiffAt 𝕜 m (TauCeti.symmetricJetCoordChange r h g) x₀ :=
+    ContDiffAt 𝕜 m (TauCeti.symmetricJetCoordChange r h g) x₀ := by
+  -- By definition, `symmetricJetCoordChange r h g x` is this composite (with `∘L` associating to
+  -- the right), so the goal changes by unfolding it.
+  change ContDiffAt 𝕜 m (fun x ↦ jetSymmetrize 𝕜 E' G r ∘L
+    (TauCeti.linearJetCoordChange r h g x ∘L SymmetricJet.subtypeL 𝕜 E F r)) x₀
   -- Composing with the symmetrization and the inclusion is continuous linear in the operator.
-  (contDiff_const.clm_comp (contDiff_id.clm_comp contDiff_const)).contDiffAt.comp x₀
+  exact (contDiff_const.clm_comp (contDiff_id.clm_comp contDiff_const)).contDiffAt.comp x₀
     (hh.linearJetCoordChange hg hmn)
 
 /-- **Smoothness of coordinate changes of symmetric jets on open sets.** If the coordinate maps
