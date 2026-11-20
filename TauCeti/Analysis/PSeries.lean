@@ -167,12 +167,7 @@ reciprocals `((k + 1) ^ n)⁻¹` in an `RCLike` field `𝕜` are summable over `
 theorem summable_norm_inv_natCast_add_one_zpow (𝕜 : Type*) [RCLike 𝕜] {n : ℤ} (hn : 1 < n) :
     Summable fun k : ℕ ↦ ‖((k + 1 : 𝕜) ^ n)⁻¹‖ := by
   obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m := ⟨n.toNat, by omega⟩
-  refine ((summable_nat_add_iff 1).mpr (Real.summable_nat_pow_inv.mpr (by omega : 1 < m))).congr
-    fun k ↦ ?_
-  have hcast : ‖(k + 1 : 𝕜)‖ = (k + 1 : ℝ) := by exact_mod_cast RCLike.norm_natCast (K := 𝕜) (k + 1)
-  rw [zpow_natCast, norm_inv, norm_pow, hcast]
-  push_cast
-  ring
+  simpa [zpow_natCast, one_div] using summable_pow_div_add (1 : 𝕜) m 1 (by omega)
 
 /-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
 are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
