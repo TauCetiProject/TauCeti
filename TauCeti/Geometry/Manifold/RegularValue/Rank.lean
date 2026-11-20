@@ -29,8 +29,9 @@ finite-dimensional space `E`, the rank and the dimension of the kernel of `df_x`
 
 The rank does not depend on coordinates. It is computed in any pair of charts by the derivative of
 the coordinate expression of `f` (`TauCeti.mfderivRank_eq_finrank_range_fderivWithin`), and it is
-unchanged by composition on the left with maps of injective derivative and on the right with maps
-of surjective derivative (`TauCeti.mfderivRank_comp_of_injective` and
+unchanged by composition on the left with maps of injective derivative (for `f` differentiable at
+the point, the left map need not be assumed differentiable) and on the right with maps of surjective
+derivative (for differentiable `f` and `h`; `TauCeti.mfderivRank_comp_of_injective` and
 `TauCeti.mfderivRank_comp_of_surjective`). Composition on either side with a diffeomorphism
 preserves it without any differentiability assumption on `f`
 (`Diffeomorph.mfderivRank_diffeomorph_comp` and `Diffeomorph.mfderivRank_comp_diffeomorph`).
@@ -148,8 +149,10 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
   {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
 
-/-- **Composition on the left with an immersion preserves the rank.** If `g` has injective
-derivative at `f x`, then `g ∘ f` and `f` have the same rank at `x`. -/
+/-- **Composition on the left with an immersion preserves the rank.** If `f` is differentiable
+at `x` and `g` has injective derivative at `f x`, then `g ∘ f` and `f` have the same rank at `x`.
+Differentiability of `g` at `f x` is not assumed: it follows from the injectivity of the
+derivative. -/
 theorem mfderivRank_comp_of_injective {g : N → P}
     (hf : MDifferentiableAt I J f x) (hinj : Injective (mfderiv J K g (f x))) :
     mfderivRank I K (g ∘ f) x = mfderivRank I J f x := by
