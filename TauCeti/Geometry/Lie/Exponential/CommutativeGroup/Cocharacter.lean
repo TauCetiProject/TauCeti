@@ -1,0 +1,313 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Character
+
+/-!
+# Cocharacters and the period lattice
+
+A **cocharacter** of a Lie group `G` is a continuous homomorphism `ψ : Circle → G`. With the
+circle period `2π` of `Circle.exp t = e^{it}`, its **coweight** is the Lie-algebra vector
+
+`X_ψ = dψ(∂_θ)`
+
+(`ContinuousMonoidHom.lieCoweight`), the image under the Lie map of `ψ` of the generator
+`circleExpGenerator` of `Circle.exp`. It is characterized by
+
+`ψ (Circle.exp t) = exp (t X_ψ)`
+
+(`ContinuousMonoidHom.apply_circleExp`, `ContinuousMonoidHom.eq_lieCoweight`), so a cocharacter is
+determined by its coweight (`ContinuousMonoidHom.lieCoweight_injective`). Coweights are natural:
+the coweight of `f ∘ ψ` is `df(X_ψ)`.
+
+**Characters pair integrally with cocharacters.** For a character `χ : G → Circle` with real
+weight `α_χ = (1/i) dχ` (`ContinuousMonoidHom.lieWeight`), the composite `χ ∘ ψ` is a continuous
+endomorphism of the circle, and the number `α_χ(X_ψ)` is the integer `n` with
+`χ (ψ z) = z ^ n` (`ContinuousMonoidHom.lieWeight_lieCoweight_eq_intCast_iff`,
+`ContinuousMonoidHom.exists_lieWeight_lieCoweight_eq_intCast`). For `G` the circle and `χ` the
+identity this says that the continuous endomorphisms of the circle are the powers `z ↦ z ^ n`, with
+weight `n` (`ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`). By naturality of
+weights and coweights, restriction of characters along a homomorphism `f` is dual to pushforward of
+cocharacters: `α_(χ ∘ f)(X_ψ) = α_χ(X_(f ∘ ψ))`
+(`ContinuousMonoidHom.lieWeight_comp_apply_lieCoweight`). None of this needs `G` to be
+commutative.
+
+**The cocharacters of a commutative Lie group are its period lattice.** For commutative `G`,
+coweights lie in the period lattice `Λ_ℤ = (2π)⁻¹ ker(exp)` (`TauCeti.periodLattice`), since
+`exp(2π X_ψ) = ψ(Circle.exp 2π) = 1`, and conversely every `X ∈ Λ_ℤ` is the coweight of the
+cocharacter `Circle.exp t ↦ exp(t X)`, which is well defined because `t ↦ exp(t X)` has period
+`2π`. This gives the equivalence `Λ_ℤ ≃ (Circle →ₜ* G)`
+(`TauCeti.periodLatticeEquivCocharacter`), under which addition in `Λ_ℤ` is the pointwise product
+of cocharacters (`TauCeti.periodLatticeEquivCocharacter_add_apply`). On a connected commutative
+Lie group the weights of characters are exactly the functionals integral on `Λ_ℤ`
+(`ContinuousMonoidHom.range_lieWeight`), so under the pairing above the characters are identified
+with the integral functionals on the cocharacters.
+
+## Main definitions
+
+* `ContinuousMonoidHom.lieCoweight`: the coweight `X_ψ = dψ(∂_θ)` of a cocharacter.
+* `TauCeti.periodLatticeEquivCocharacter`: the period lattice of a commutative Lie group is the set
+  of its cocharacters.
+
+## Main results
+
+* `ContinuousMonoidHom.apply_circleExp`, `ContinuousMonoidHom.eq_lieCoweight`: the identity
+  `ψ (Circle.exp t) = exp (t X_ψ)`, and uniqueness of a vector satisfying it.
+* `ContinuousMonoidHom.lieCoweight_comp`: naturality of coweights.
+* `ContinuousMonoidHom.lieWeight_lieCoweight_eq_intCast_iff`,
+  `ContinuousMonoidHom.exists_lieWeight_lieCoweight_eq_intCast`: the pairing of a character with a
+  cocharacter is the integer degree of their composite.
+* `ContinuousMonoidHom.lieWeight_comp_apply_lieCoweight`: restriction of characters is dual to
+  pushforward of cocharacters.
+* `ContinuousMonoidHom.lieCoweight_mem_periodLattice`, `ContinuousMonoidHom.range_lieCoweight`:
+  for commutative `G`, the coweights are exactly the elements of the period lattice.
+
+## References
+
+* T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+  Chapter I, § 3 (The Exponential Map).
+* D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 15 (Tori).
+-/
+
+public section
+
+noncomputable section
+
+open Real
+open scoped ContDiff Manifold
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+namespace ContinuousMonoidHom
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
+  [FiniteDimensional ℝ E'] [LieGroup I' ∞ G']
+
+/-! ### The coweight of a cocharacter -/
+
+/-- The **coweight** `X_ψ = dψ(∂_θ)` of a cocharacter `ψ : Circle → G`: the image under the Lie map
+of `ψ` of the generator of `Circle.exp`. It is characterized by
+`ψ (Circle.exp t) = exp (t X_ψ)` (`ContinuousMonoidHom.apply_circleExp`). -/
+def lieCoweight (ψ : Circle →ₜ* G) : LeftInvariantDerivation I G :=
+  lieMap (I := 𝓡 1) (I' := I) ψ circleExpGenerator
+
+theorem lieCoweight_def (ψ : Circle →ₜ* G) :
+    lieCoweight (I := I) ψ = lieMap (I := 𝓡 1) (I' := I) ψ circleExpGenerator :=
+  (rfl)
+
+/-- **Naturality of coweights.** The coweight of `f ∘ ψ` is the image of the coweight of `ψ` under
+the Lie map of `f`. -/
+theorem lieCoweight_comp (f : G →ₜ* G') (ψ : Circle →ₜ* G) :
+    lieCoweight (I := I') (f.comp ψ) = lieMap (I := I) (I' := I') f (lieCoweight ψ) := by
+  rw [lieCoweight_def, lieMap_comp (I := 𝓡 1) (I' := I) (I'' := I'), LieHom.comp_apply,
+    lieCoweight_def]
+
+/-- The identity cocharacter of the circle has the generator of `Circle.exp` as coweight. -/
+@[simp]
+theorem lieCoweight_id_circle :
+    lieCoweight (I := 𝓡 1) (ContinuousMonoidHom.id Circle) = circleExpGenerator := by
+  rw [lieCoweight_def, lieMap_id, one_apply_eq_self]
+
+/-- The pairing of a character with the coweight of a cocharacter is the weight of their composite,
+an endomorphism of the circle, at the generator of `Circle.exp`. -/
+theorem lieWeight_lieCoweight (χ : G →ₜ* Circle) (ψ : Circle →ₜ* G) :
+    lieWeight (I := I) χ (lieCoweight ψ) =
+      lieWeight (I := 𝓡 1) (χ.comp ψ) circleExpGenerator := by
+  rw [lieWeight_comp (I := 𝓡 1) (I' := I), LinearMap.comp_apply, LieHom.coe_toLinearMap,
+    lieCoweight_def]
+
+/-- **Restriction of characters is dual to pushforward of cocharacters**:
+`α_(χ ∘ f)(X_ψ) = α_χ(X_(f ∘ ψ))`. -/
+theorem lieWeight_comp_apply_lieCoweight (χ : G' →ₜ* Circle) (f : G →ₜ* G')
+    (ψ : Circle →ₜ* G) :
+    lieWeight (I := I) (χ.comp f) (lieCoweight ψ) =
+      lieWeight (I := I') χ (lieCoweight (I := I') (f.comp ψ)) := by
+  rw [lieWeight_comp (I := I) (I' := I'), LinearMap.comp_apply, LieHom.coe_toLinearMap,
+    lieCoweight_comp (I := I) (I' := I')]
+
+/-! ### The integral pairing of characters and cocharacters -/
+
+/-- **Characters pair integrally with cocharacters**: `α_χ(X_ψ)` is an integer. -/
+theorem exists_lieWeight_lieCoweight_eq_intCast (χ : G →ₜ* Circle) (ψ : Circle →ₜ* G) :
+    ∃ n : ℤ, lieWeight (I := I) χ (lieCoweight ψ) = n := by
+  rw [lieWeight_lieCoweight]
+  exact exists_lieWeight_apply_eq_intCast_of_mem_periodLattice _
+    circleExpGenerator_mem_periodLattice
+
+/-- **The pairing of a character with a cocharacter is the degree of their composite**:
+`α_χ(X_ψ) = n` exactly when `χ (ψ z) = z ^ n` for every `z` on the circle. -/
+theorem lieWeight_lieCoweight_eq_intCast_iff (χ : G →ₜ* Circle) (ψ : Circle →ₜ* G) (n : ℤ) :
+    lieWeight (I := I) χ (lieCoweight ψ) = n ↔ ∀ z, χ (ψ z) = z ^ n := by
+  rw [lieWeight_lieCoweight, lieWeight_circleExpGenerator_eq_intCast_iff, coe_comp]
+  simp only [Function.comp_apply]
+
+/-- A cocharacter of the circle is `z ↦ z ^ n` exactly when its coweight is `n` times the generator
+of `Circle.exp`. -/
+theorem circleLieAlgebraEquiv_lieCoweight_eq_intCast_iff (ψ : Circle →ₜ* Circle) (n : ℤ) :
+    circleLieAlgebraEquiv (lieCoweight (I := 𝓡 1) ψ) = n ↔ ∀ z, ψ z = z ^ n := by
+  rw [← lieWeight_circleExpGenerator_eq_intCast_iff, lieWeight_apply, lieCoweight_def]
+
+variable [T2Space G] [BoundarylessManifold I G]
+
+/-- **The defining identity of the coweight**: `ψ (Circle.exp t) = exp (t X_ψ)`. -/
+theorem apply_circleExp (ψ : Circle →ₜ* G) (t : ℝ) :
+    ψ (Circle.exp t) = lieExp (I := I) (t • lieCoweight ψ) := by
+  rw [← lieExp_circleExpGenerator, map_lieExp (I := 𝓡 1) (I' := I), map_smul, lieCoweight_def]
+
+/-- **Uniqueness of the coweight.** A vector `X` with `ψ (Circle.exp t) = exp (t X)` for every `t`
+is the coweight of `ψ`. -/
+theorem eq_lieCoweight {ψ : Circle →ₜ* G} {X : LeftInvariantDerivation I G}
+    (h : ∀ t : ℝ, ψ (Circle.exp t) = lieExp (t • X)) : X = lieCoweight ψ := by
+  apply oneParameterSubgroup_injective (I := I) (G := G)
+  refine DFunLike.ext _ _ fun t ↦ ?_
+  rw [← ofAdd_toAdd t, oneParameterSubgroup_apply, oneParameterSubgroup_apply, ← h,
+    apply_circleExp (I := I)]
+
+/-- **Cocharacters are determined by their coweights.** -/
+theorem lieCoweight_injective :
+    Function.Injective (lieCoweight (I := I) : (Circle →ₜ* G) → LeftInvariantDerivation I G) := by
+  intro ψ φ h
+  ext z
+  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+  rw [apply_circleExp (I := I), apply_circleExp (I := I), h]
+
+/-! ### Cocharacters of commutative Lie groups -/
+
+section Commutative
+
+variable [IsMulCommutative G]
+
+/-- **Coweights lie in the period lattice**: `exp(2π X_ψ) = ψ (Circle.exp 2π) = 1`. -/
+theorem lieCoweight_mem_periodLattice (ψ : Circle →ₜ* G) :
+    lieCoweight (I := I) ψ ∈ periodLattice I G := by
+  rw [mem_periodLattice, ← apply_circleExp, Circle.exp_two_pi, map_one]
+
+end Commutative
+
+end ContinuousMonoidHom
+
+namespace TauCeti
+
+open ContinuousMonoidHom
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
+  [IsMulCommutative G]
+
+/-- For `X` in the period lattice, `t ↦ exp (t X)` has period `2π`. -/
+private theorem periodic_lieExp_smul {X : LeftInvariantDerivation I G}
+    (hX : X ∈ periodLattice I G) :
+    Function.Periodic (fun t : ℝ ↦ lieExp (t • X)) (2 * π) := fun t ↦ by
+  beta_reduce
+  rw [add_smul, lieExp_add, mem_periodLattice.1 hX, mul_one]
+
+/-- The function `Circle.exp t ↦ exp (t X)` on the circle, for `X` in the period lattice. -/
+private def cocharacterFun {X : LeftInvariantDerivation I G} (hX : X ∈ periodLattice I G)
+    (z : Circle) : G :=
+  (periodic_lieExp_smul hX).lift (AddCircle.homeomorphCircle'.symm z)
+
+private theorem cocharacterFun_circleExp {X : LeftInvariantDerivation I G}
+    (hX : X ∈ periodLattice I G) (t : ℝ) :
+    cocharacterFun hX (Circle.exp t) = lieExp (t • X) := by
+  rw [cocharacterFun, AddCircle.homeomorphCircle'.symm_apply_eq.2
+    (AddCircle.homeomorphCircle'_apply_mk t).symm]
+  exact Function.Periodic.lift_coe _ t
+
+/-- The cocharacter `Circle.exp t ↦ exp (t X)` of an element `X` of the period lattice. -/
+private def cocharacter {X : LeftInvariantDerivation I G} (hX : X ∈ periodLattice I G) :
+    Circle →ₜ* G where
+  toFun := cocharacterFun hX
+  map_one' := by rw [← Circle.exp_zero, cocharacterFun_circleExp, zero_smul, lieExp_zero]
+  map_mul' z w := by
+    obtain ⟨s, rfl⟩ := Circle.exp_surjective z
+    obtain ⟨t, rfl⟩ := Circle.exp_surjective w
+    rw [← Circle.exp_add, cocharacterFun_circleExp, cocharacterFun_circleExp,
+      cocharacterFun_circleExp, add_smul, lieExp_add]
+  continuous_toFun := by
+    have hcont : Continuous fun t : ℝ ↦ lieExp (t • X) := by
+      simpa only [oneParameterSubgroup_apply] using (contMDiff_oneParameterSubgroup X).continuous
+    have hlift : Continuous (periodic_lieExp_smul hX).lift := continuous_coinduced_dom.2 hcont
+    exact hlift.comp AddCircle.homeomorphCircle'.symm.continuous
+
+private theorem cocharacter_circleExp {X : LeftInvariantDerivation I G}
+    (hX : X ∈ periodLattice I G) (t : ℝ) :
+    cocharacter hX (Circle.exp t) = lieExp (t • X) :=
+  cocharacterFun_circleExp hX t
+
+variable (I G) in
+/-- **The cocharacters of a commutative Lie group are its period lattice.** An element `X` of the
+period lattice `Λ_ℤ = (2π)⁻¹ ker(exp)` corresponds to the cocharacter `Circle.exp t ↦ exp (t X)`,
+and a cocharacter to its coweight. -/
+def periodLatticeEquivCocharacter : periodLattice I G ≃ (Circle →ₜ* G) where
+  toFun X := cocharacter X.2
+  invFun ψ := ⟨lieCoweight ψ, lieCoweight_mem_periodLattice ψ⟩
+  left_inv X := Subtype.ext (eq_lieCoweight (cocharacter_circleExp X.2)).symm
+  right_inv _ := lieCoweight_injective (eq_lieCoweight (cocharacter_circleExp _)).symm
+
+/-- The cocharacter of an element `X` of the period lattice sends `Circle.exp t` to `exp (t X)`. -/
+@[simp]
+theorem periodLatticeEquivCocharacter_apply_circleExp (X : periodLattice I G) (t : ℝ) :
+    periodLatticeEquivCocharacter I G X (Circle.exp t) =
+      lieExp (t • (X : LeftInvariantDerivation I G)) :=
+  cocharacter_circleExp X.2 t
+
+/-- The inverse of `periodLatticeEquivCocharacter` sends a cocharacter to its coweight. -/
+@[simp]
+theorem coe_periodLatticeEquivCocharacter_symm_apply (ψ : Circle →ₜ* G) :
+    ((periodLatticeEquivCocharacter I G).symm ψ : LeftInvariantDerivation I G) =
+      lieCoweight ψ :=
+  (rfl)
+
+/-- The coweight of the cocharacter of an element of the period lattice is that element. -/
+@[simp]
+theorem lieCoweight_periodLatticeEquivCocharacter (X : periodLattice I G) :
+    lieCoweight (I := I) (periodLatticeEquivCocharacter I G X) =
+      (X : LeftInvariantDerivation I G) := by
+  rw [← coe_periodLatticeEquivCocharacter_symm_apply, Equiv.symm_apply_apply]
+
+/-- **Addition in the period lattice is the pointwise product of cocharacters.** -/
+theorem periodLatticeEquivCocharacter_add_apply (X Y : periodLattice I G) (z : Circle) :
+    periodLatticeEquivCocharacter I G (X + Y) z =
+      periodLatticeEquivCocharacter I G X z * periodLatticeEquivCocharacter I G Y z := by
+  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+  rw [periodLatticeEquivCocharacter_apply_circleExp, periodLatticeEquivCocharacter_apply_circleExp,
+    periodLatticeEquivCocharacter_apply_circleExp, AddSubgroup.coe_add, smul_add, lieExp_add]
+
+end TauCeti
+
+namespace ContinuousMonoidHom
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
+  [IsMulCommutative G]
+
+/-- **The coweights of a commutative Lie group are exactly the elements of its period lattice.** -/
+theorem range_lieCoweight :
+    Set.range (lieCoweight (I := I) : (Circle →ₜ* G) → LeftInvariantDerivation I G) =
+      periodLattice I G := by
+  ext X
+  refine ⟨?_, fun hX ↦ ?_⟩
+  · rintro ⟨ψ, rfl⟩
+    exact lieCoweight_mem_periodLattice ψ
+  · exact ⟨periodLatticeEquivCocharacter I G ⟨X, hX⟩,
+      lieCoweight_periodLatticeEquivCocharacter ⟨X, hX⟩⟩
+
+end ContinuousMonoidHom
