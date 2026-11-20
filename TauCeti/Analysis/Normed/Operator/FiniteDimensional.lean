@@ -145,6 +145,7 @@ noncomputable def bordered (L : E →L[ℝ] StrongDual ℝ E) (ℓ : StrongDual 
     E × ℝ →L[ℝ] StrongDual ℝ E × ℝ :=
   prodL ℝ (coprodEquivL ℝ (L, toSpanSingleton ℝ ℓ), ℓ.comp (fst ℝ E ℝ))
 
+@[simp]
 theorem bordered_apply (L : E →L[ℝ] StrongDual ℝ E) (ℓ : StrongDual ℝ E) (z : E × ℝ) :
     L.bordered ℓ z = (L z.1 + z.2 • ℓ, ℓ z.1) := by
   simp [bordered]
@@ -192,7 +193,7 @@ theorem exists_tendsto_eventually_apply_eq_zero {X : Type*} [TopologicalSpace X]
   have hTc : ContinuousAt T z₀ := (continuous_bordered ℓ).continuousAt.comp hL
   -- The inverse of the bordered operator at `z₀` sends `(0, 1)` to `(v, 0)`.
   have hT₀v : (T z₀).inverse (0, 1) = (v, 0) :=
-    hT₀.inverse_apply_eq.2 (by simp [T, bordered_apply, hv, hℓ])
+    hT₀.inverse_apply_eq.2 (by simp [T, hv, hℓ])
   refine ⟨fun z ↦ ((T z).inverse (0, 1)).1, ?_, ?_⟩
   · have hinv : ContinuousAt (fun z ↦ (T z).inverse) z₀ :=
       (hT₀.contDiffAt_map_inverse (n := 0)).continuousAt.comp hTc
@@ -203,9 +204,9 @@ theorem exists_tendsto_eventually_apply_eq_zero {X : Type*} [TopologicalSpace X]
   · filter_upwards [hTc.eventually hT₀.eventually_nhds] with z hz u hu hu0
     -- The kernel vector `u` is not killed by `ℓ`, since `(u, 0)` is not killed by `T z`.
     have hℓu : ℓ u ≠ 0 := fun h0 ↦ hu0 <| congrArg Prod.fst <|
-      hz.injective (a₁ := (u, 0)) (a₂ := 0) (by simp [T, bordered_apply, hu, h0])
+      hz.injective (a₁ := (u, 0)) (a₂ := 0) (by simp [T, hu, h0])
     have hW : (T z).inverse (0, 1) = ((ℓ u)⁻¹ • u, 0) :=
-      hz.inverse_apply_eq.2 (by simp [T, bordered_apply, hu, hℓu])
+      hz.inverse_apply_eq.2 (by simp [T, hu, hℓu])
     simp [hW, hu, hℓu]
 
 end Bordered
