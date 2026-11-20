@@ -54,7 +54,7 @@ namespace Mean
 
 /-- The finitely additive probability on all subsets associated to a discrete mean. -/
 def toContent (m : Mean G) : AddContent ℝ≥0∞ (univ : Set (Set G)) :=
-  ((boundedContinuousFunctionEquiv G m).1.toLinearMap.toAddContent).ofReal
+  ((boundedContinuousFunctionEquiv G m).val.toLinearMap.toAddContent).ofReal
     (fun s _ => PositiveLinearMap.toAddContent_nonneg _ s)
 
 /-- A content value is the mean of the characteristic function, converted to `ℝ≥0∞`. -/
@@ -86,12 +86,12 @@ theorem toReal_toContent (m : Mean G) (s : Set G) :
   rw [toContent_apply, ENNReal.toReal_ofReal]
   simpa only [LinearMap.toAddContent_apply, PositiveLinearMap.coe_toLinearMap,
     boundedContinuousFunctionEquiv_apply] using
-    PositiveLinearMap.toAddContent_nonneg (boundedContinuousFunctionEquiv G m).1 s
+    PositiveLinearMap.toAddContent_nonneg (boundedContinuousFunctionEquiv G m).val s
 
 /-- The original real content is recovered by taking real values of `toContent`. -/
 theorem toContent_toReal (m : Mean G) :
     m.toContent.toReal (fun s _ => m.toContent_ne_top s) =
-      (boundedContinuousFunctionEquiv G m).1.toLinearMap.toAddContent := by
+      (boundedContinuousFunctionEquiv G m).val.toLinearMap.toAddContent := by
   simp only [toContent, AddContent.toReal_ofReal]
 
 /-- A mean evaluates finite linear combinations of characteristic functions by its content.
@@ -153,9 +153,10 @@ def contentEquiv : Mean G ≃ {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) /
   toFun m := ⟨m.toContent, m.toContent_univ⟩
   invFun ν := (boundedContinuousFunctionEquiv G).symm
     ⟨(PositiveLinearMap.addContentEquiv G).symm
-      ⟨ν.1.toReal fun s _ => addContent_ne_top_of_univ_ne_top (ν.2.trans_ne ENNReal.one_ne_top) s,
+      ⟨ν.val.toReal fun s _ => addContent_ne_top_of_univ_ne_top
+          (ν.property.trans_ne ENNReal.one_ne_top) s,
         AddContent.toReal_nonneg _ _⟩,
-      by simp [AddContent.toReal_apply, ν.2]⟩
+      by simp [AddContent.toReal_apply, ν.property]⟩
   left_inv m := by
     refine (boundedContinuousFunctionEquiv G).symm_apply_eq.2 (Subtype.ext ?_)
     refine (PositiveLinearMap.addContentEquiv G).symm_apply_eq.2 (Subtype.ext ?_)
@@ -166,7 +167,8 @@ def contentEquiv : Mean G ≃ {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) /
     rw [toContent_apply, boundedContinuousFunctionEquiv_symm_apply,
       UCB.coe_discreteAlgEquiv_symm, PositiveLinearMap.addContentEquiv_symm_apply_indicator,
       AddContent.toReal_apply,
-      ENNReal.ofReal_toReal (addContent_ne_top_of_univ_ne_top (ν.2.trans_ne ENNReal.one_ne_top) s)]
+      ENNReal.ofReal_toReal (addContent_ne_top_of_univ_ne_top
+          (ν.property.trans_ne ENNReal.one_ne_top) s)]
 
 @[simp]
 theorem coe_contentEquiv_apply (m : Mean G) :
@@ -178,7 +180,7 @@ content. -/
 @[simp]
 theorem toContent_contentEquiv_symm
     (ν : {ν : AddContent ℝ≥0∞ (univ : Set (Set G)) // ν univ = 1}) :
-    ((contentEquiv G).symm ν).toContent = ν.1 :=
+    ((contentEquiv G).symm ν).toContent = ν.val :=
   congrArg Subtype.val ((contentEquiv G).apply_symm_apply ν)
 
 /-- A mean on a discrete group is determined by its content. -/

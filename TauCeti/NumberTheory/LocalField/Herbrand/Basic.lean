@@ -241,13 +241,13 @@ private theorem exists_herbrandReal_eq {y : ℝ} (hy : -1 ≤ y) :
 
 /-- The Herbrand function as a self-map of `[-1, ∞)`. -/
 private def herbrandFun (u : RamificationIndexDomain) : RamificationIndexDomain :=
-  ⟨herbrandReal K L u, mem_Ici.2 (neg_one_le_herbrandReal K L u.2)⟩
+  ⟨herbrandReal K L u, mem_Ici.2 (neg_one_le_herbrandReal K L u.property)⟩
 
 private theorem herbrandFun_strictMono : StrictMono (herbrandFun K L) :=
   fun _ _ h ↦ Subtype.mk_lt_mk.2 (herbrandReal_strictMono K L h)
 
 private theorem herbrandFun_surjective : Function.Surjective (herbrandFun K L) := fun y ↦ by
-  obtain ⟨u, hu, h⟩ := exists_herbrandReal_eq K L y.2
+  obtain ⟨u, hu, h⟩ := exists_herbrandReal_eq K L y.property
   exact ⟨⟨u, hu⟩, Subtype.ext h⟩
 
 /-! ### The Herbrand function and its inverse -/
@@ -342,7 +342,8 @@ theorem herbrand_slope_anti_adjacent {u v w : RamificationIndexDomain} (huv : u 
 @[simp]
 theorem herbrand_of_coe_le_zero {u : RamificationIndexDomain} (hu : (u : ℝ) ≤ 0) :
     herbrand K L u = u :=
-  Subtype.ext ((coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_le_zero K L u.2 hu))
+  Subtype.ext ((coe_herbrand_eq_herbrandReal K L u).trans (herbrandReal_of_le_zero K L u.property
+      hu))
 
 /-- On an interval `[a, b]` over which the lower ramification filtration is constant, that is
 `G_t = G_b` for every `a < t ≤ b`, the Herbrand function is affine of slope `#G_b / #G_0`:

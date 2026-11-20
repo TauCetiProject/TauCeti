@@ -27,6 +27,9 @@ inverse computed over `ℚ` is the inverse over `ℝ`.
 `Matrix.inv_submatrix_mul_row_eq_single` normalizes the rows of a matrix whose columns off a pivot
 set vanish to coordinate vectors, by the inverse of its pivot submatrix.
 
+Two matrices `L` and `M` with the same Gram matrix `L * Lᵀ = M * Mᵀ`, where `det L` is a unit,
+differ by the orthogonal matrix `L⁻¹ * M` (`Matrix.inv_mul_mul_transpose_inv_mul_eq_one`).
+
 `LinearMap.toMatrix_ringInverse` identifies the matrix of an endomorphism's ring inverse.
 
 For invertible matrices `A`, `B` over a linearly ordered field, inverse entries bounded by `L`
@@ -70,6 +73,20 @@ theorem inv_submatrix_mul_row_eq_single {K ι : Type*} [CommRing K] [Fintype ι]
       e.injective.eq_iff, Matrix.one_apply, eq_comm] using h
   · have hz : ∀ b, e b ≠ j := fun b h ↦ hj ⟨b, h⟩
     simp [Matrix.mul_apply, hred, hj, hz, Ne.symm]
+
+/-- If `L` has unit determinant and `L * Lᵀ = M * Mᵀ`, then `L⁻¹ * M` is orthogonal:
+`(L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1`. -/
+theorem inv_mul_mul_transpose_inv_mul_eq_one {L M : Matrix n n R} (hLdet : IsUnit L.det)
+    (hgram : L * Lᵀ = M * Mᵀ) : (L⁻¹ * M) * (L⁻¹ * M)ᵀ = 1 := by
+  have hLinvt_right : Lᵀ * L⁻¹ᵀ = 1 := by
+    rw [← transpose_mul, nonsing_inv_mul L hLdet, transpose_one]
+  rw [transpose_mul]
+  calc
+    (L⁻¹ * M) * (Mᵀ * L⁻¹ᵀ) = L⁻¹ * (M * Mᵀ) * L⁻¹ᵀ := by
+      simp only [Matrix.mul_assoc]
+    _ = L⁻¹ * (L * Lᵀ) * L⁻¹ᵀ := by rw [← hgram]
+    _ = (L⁻¹ * L) * (Lᵀ * L⁻¹ᵀ) := by simp only [Matrix.mul_assoc]
+    _ = 1 := by rw [nonsing_inv_mul L hLdet, hLinvt_right, Matrix.one_mul]
 
 end Matrix
 

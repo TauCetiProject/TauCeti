@@ -90,22 +90,23 @@ theorem hasLiftingProperty_map_horn_ι [Quasicategory C] (hi : 0 < i) (σ : Δ[m
   refine ⟨fun {a b} sq ↦ ?_⟩
   -- The square amounts to maps `Δ[m] ⋆ ∂Δ[n] ⟶ C` and `Λ[m, i] ⋆ Δ[n] ⟶ C` agreeing on
   -- `Λ[m, i] ⋆ ∂Δ[n]`. Glue them on the pushout-join and extend along the inner horn inclusion.
-  have hw : join.map (𝟙 _) ∂Δ[n].ι ≫ (homEquiv b).1 = join.map Λ[m, i].ι (𝟙 _) ≫ (homEquiv a).1 :=
-    by simpa using (congrArg (fun F ↦ (homEquiv F).1) sq.w).symm
+  have hw : join.map (𝟙 _) ∂Δ[n].ι ≫ (homEquiv b).val = join.map Λ[m, i].ι (𝟙 _) ≫ (homEquiv a).val
+      :=
+    by simpa using (congrArg (fun F ↦ (homEquiv F).val) sq.w).symm
   have hpush := Subcomplex.unionJoin.isPushout Λ[m, i] ∂Δ[n]
   have := join.innerAnodyneExtensions_unionJoin_horn_boundary n hi (terminal.from C)
     (mem_innerFibrations _)
-  have sq' : CommSq (hpush.desc (homEquiv b).1 (homEquiv a).1 hw)
+  have sq' : CommSq (hpush.desc (homEquiv b).val (homEquiv a).val hw)
       (Λ[m, i].unionJoin ∂Δ[n]).ι (terminal.from C) (terminal.from _) :=
     ⟨Subsingleton.elim _ _⟩
-  have h₁ : join.map Λ[m, i].ι (𝟙 _) ≫ sq'.lift = (homEquiv b).1 := by
+  have h₁ : join.map Λ[m, i].ι (𝟙 _) ≫ sq'.lift = (homEquiv b).val := by
     rw [← Subcomplex.unionJoin.ι₁_ι, Category.assoc, sq'.fac_left, IsPushout.inl_desc]
-  have h₂ : join.map (𝟙 _) ∂Δ[n].ι ≫ sq'.lift = (homEquiv a).1 := by
+  have h₂ : join.map (𝟙 _) ∂Δ[n].ι ≫ sq'.lift = (homEquiv a).val := by
     rw [← Subcomplex.unionJoin.ι₂_ι, Category.assoc, sq'.fac_left, IsPushout.inr_desc]
   refine ⟨⟨⟨homEquiv.symm ⟨sq'.lift, ?_⟩, ?_, ?_⟩⟩⟩
   · calc join.inl _ _ ≫ sq'.lift = join.inl _ _ ≫ join.map (𝟙 _) ∂Δ[n].ι ≫ sq'.lift := by
           rw [join.inl_map_assoc, Category.id_comp]
-      _ = σ := by rw [h₂, (homEquiv a).2]
+      _ = σ := by rw [h₂, (homEquiv a).property]
   · exact hom_ext (by rw [homEquiv_comp_coe, Equiv.apply_symm_apply, h₂])
   · exact hom_ext (by rw [homEquiv_comp_map_coe, Equiv.apply_symm_apply, Category.comp_id, h₁])
 
@@ -121,23 +122,23 @@ theorem hasLiftingProperty_horn_ι_π [Quasicategory C] (p : K ⟶ C) (hi : 0 < 
   refine ⟨fun {a b} sq ↦ ?_⟩
   -- A lift is a map `Δ[m] ⋆ K ⟶ C` extending `b` on `Δ[m]` and `a` on `Λ[m, i] ⋆ K`: lift the
   -- inclusion of the empty subcomplex of `K` against the restriction of cocones under `b`.
-  have ha : join.inl _ K ≫ (homEquiv a).1 = Λ[m, i].ι ≫ b := by rw [← comp_π, sq.w]
+  have ha : join.inl _ K ≫ (homEquiv a).val = Λ[m, i].ι ≫ b := by rw [← comp_π, sq.w]
   have sq' : CommSq (Subcomplex.isInitialBot.to (coslice b)) (⊥ : K.Subcomplex).ι
       (coslice.map Λ[m, i].ι (𝟙 C) (by simp))
-      (coslice.homEquiv.symm ⟨(homEquiv a).1, ha⟩) :=
+      (coslice.homEquiv.symm ⟨(homEquiv a).val, ha⟩) :=
     ⟨Subcomplex.isInitialBot.hom_ext _ _⟩
   have := coslice.hasLiftingProperty_map_horn_ι hi b (⊥ : K.Subcomplex).ι
-  have h : join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).1 = (homEquiv a).1 := by
-    have h := congrArg (fun F ↦ (coslice.homEquiv F).1) sq'.fac_right
+  have h : join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).val = (homEquiv a).val := by
+    have h := congrArg (fun F ↦ (coslice.homEquiv F).val) sq'.fac_right
     rwa [coslice.homEquiv_comp_map_coe, Equiv.apply_symm_apply, Category.comp_id] at h
-  refine ⟨⟨⟨homEquiv.symm ⟨(coslice.homEquiv sq'.lift).1, ?_⟩, ?_, ?_⟩⟩⟩
-  · calc join.inr _ _ ≫ (coslice.homEquiv sq'.lift).1 =
-          join.inr _ _ ≫ join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).1 := by
+  refine ⟨⟨⟨homEquiv.symm ⟨(coslice.homEquiv sq'.lift).val, ?_⟩, ?_, ?_⟩⟩⟩
+  · calc join.inr _ _ ≫ (coslice.homEquiv sq'.lift).val =
+          join.inr _ _ ≫ join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).val := by
           rw [join.inr_map_assoc, Category.id_comp]
-      _ = p := by rw [h, (homEquiv a).2]
+      _ = p := by rw [h, (homEquiv a).property]
   · exact hom_ext (by rw [homEquiv_comp_coe, Equiv.apply_symm_apply, h])
   · rw [comp_π, Equiv.apply_symm_apply]
-    exact (coslice.homEquiv sq'.lift).2
+    exact (coslice.homEquiv sq'.lift).property
 
 /-- The projection of the slice of a quasicategory is a right fibration, hence an inner
 fibration. -/
@@ -160,28 +161,28 @@ theorem hasLiftingProperty_horn_ι_map [Quasicategory C] (p : K ⟶ C) (j : L �
   refine ⟨fun {a b} sq ↦ ?_⟩
   -- A lift is a map `Δ[m] ⋆ K ⟶ C` extending `b` on `Δ[m] ⋆ L` and `a` on `Λ[m, i] ⋆ K`: lift `j`
   -- against the restriction of cocones under the simplex `Δ[m] ⟶ C` underlying `b`.
-  have ha : join.inl _ K ≫ (homEquiv a).1 = Λ[m, i].ι ≫ join.inl _ L ≫ (homEquiv b).1 := by
+  have ha : join.inl _ K ≫ (homEquiv a).val = Λ[m, i].ι ≫ join.inl _ L ≫ (homEquiv b).val := by
     rw [← comp_π, ← comp_π, ← Category.comp_id (π p), ← map_π (q := j ≫ p) j (𝟙 C) (by simp),
       reassoc_of% sq.w]
-  have sq' : CommSq (coslice.homEquiv.symm ⟨(homEquiv b).1, rfl⟩) j
-      (coslice.map Λ[m, i].ι (𝟙 C) (by simp)) (coslice.homEquiv.symm ⟨(homEquiv a).1, ha⟩) :=
+  have sq' : CommSq (coslice.homEquiv.symm ⟨(homEquiv b).val, rfl⟩) j
+      (coslice.map Λ[m, i].ι (𝟙 C) (by simp)) (coslice.homEquiv.symm ⟨(homEquiv a).val, ha⟩) :=
     ⟨coslice.hom_ext (by
-      have := congrArg (fun F ↦ (homEquiv F).1) sq.w
+      have := congrArg (fun F ↦ (homEquiv F).val) sq.w
       rw [homEquiv_comp_map_coe, homEquiv_comp_coe, Category.comp_id] at this
       rw [coslice.homEquiv_comp_map_coe, coslice.homEquiv_comp_coe, Equiv.apply_symm_apply,
         Equiv.apply_symm_apply, Category.comp_id, this])⟩
-  have := coslice.hasLiftingProperty_map_horn_ι hi (join.inl _ L ≫ (homEquiv b).1) j
-  have h₁ : join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).1 = (homEquiv a).1 := by
-    have h := congrArg (fun F ↦ (coslice.homEquiv F).1) sq'.fac_right
+  have := coslice.hasLiftingProperty_map_horn_ι hi (join.inl _ L ≫ (homEquiv b).val) j
+  have h₁ : join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).val = (homEquiv a).val := by
+    have h := congrArg (fun F ↦ (coslice.homEquiv F).val) sq'.fac_right
     rwa [coslice.homEquiv_comp_map_coe, Equiv.apply_symm_apply, Category.comp_id] at h
-  have h₂ : join.map (𝟙 _) j ≫ (coslice.homEquiv sq'.lift).1 = (homEquiv b).1 := by
-    have h := congrArg (fun F ↦ (coslice.homEquiv F).1) sq'.fac_left
+  have h₂ : join.map (𝟙 _) j ≫ (coslice.homEquiv sq'.lift).val = (homEquiv b).val := by
+    have h := congrArg (fun F ↦ (coslice.homEquiv F).val) sq'.fac_left
     rwa [coslice.homEquiv_comp_coe, Equiv.apply_symm_apply] at h
-  refine ⟨⟨⟨homEquiv.symm ⟨(coslice.homEquiv sq'.lift).1, ?_⟩, ?_, ?_⟩⟩⟩
-  · calc join.inr _ _ ≫ (coslice.homEquiv sq'.lift).1 =
-          join.inr _ _ ≫ join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).1 := by
+  refine ⟨⟨⟨homEquiv.symm ⟨(coslice.homEquiv sq'.lift).val, ?_⟩, ?_, ?_⟩⟩⟩
+  · calc join.inr _ _ ≫ (coslice.homEquiv sq'.lift).val =
+          join.inr _ _ ≫ join.map Λ[m, i].ι (𝟙 K) ≫ (coslice.homEquiv sq'.lift).val := by
           rw [join.inr_map_assoc, Category.id_comp]
-      _ = p := by rw [h₁, (homEquiv a).2]
+      _ = p := by rw [h₁, (homEquiv a).property]
   · exact hom_ext (by rw [homEquiv_comp_coe, Equiv.apply_symm_apply, h₁])
   · exact hom_ext (by rw [homEquiv_comp_map_coe, Equiv.apply_symm_apply, Category.comp_id, h₂])
 

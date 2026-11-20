@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -19,6 +20,9 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 
 ## Main results
 
+* `NormedSpace.fromTangentSpace_apply`, `NormedSpace.fromTangentSpace_symm_apply`: the canonical
+  tangent-space identification of a normed space preserves the underlying vector, as an explicit
+  equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
@@ -28,6 +32,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
+* `MDifferentiableAt.mfderiv_prodMk_id_apply`: the derivative of the graph map `y ↦ (y, u y)`
+  sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
 * `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
@@ -51,6 +57,9 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
   at `x` has the identity as derivative at `x`.
+* `TauCeti.mvfderiv_eq_fderivWithin_extChartAt_target`: the derivative at `x` of a map
+  differentiable at `x` is the derivative of its coordinate expression within the extended chart
+  target.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.range_mvfderiv`: the tangent-space identification transports derivative ranges.
 * `TauCeti.injective_mvfderiv_iff`:
@@ -58,11 +67,14 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
   some tangent vector is differentiable there.
 * `TauCeti.mfderiv_neg_eq_zero_iff`: `mfderiv I 𝓘(𝕜, F) (-g) x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
+* `TauCeti.exists_contMDiffAt_mvfderiv_eq_one`, `TauCeti.exists_contMDiffAt_mvfderiv_ne_zero`: any
+  nonzero tangent vector admits a scalar function `C^n` at the point whose differential sends it to
+  `1`.
 -/
 
 public section
 
-open scoped Manifold Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -125,6 +137,17 @@ theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
   simp only [mvfderiv, mfderiv_extChartAt_eq_id]
   -- Both tangent identifications are the identity of `E` across type synonyms.
   rfl
+
+/-- The derivative at `x` of a vector-valued map differentiable at `x` is the derivative within the
+extended chart target of its coordinate expression. -/
+theorem mvfderiv_eq_fderivWithin_extChartAt_target {f : M → F} {x : M}
+    (hf : MDifferentiableAt I 𝓘(𝕜, F) f x) :
+    mvfderiv I f x = fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x).target
+      (extChartAt I x x) := by
+  rw [hf.mvfderiv, fderivWithin_of_mem_nhdsWithin (extChartAt_target_mem_nhdsWithin x)
+    I.uniqueDiffWithinAt_image (hf.differentiableWithinAt_writtenInExtChartAt.mono
+      (extChartAt_target_subset_range x)), writtenInExtChartAt, extChartAt_model_space_eq_id,
+    PartialEquiv.refl_coe, Function.id_comp]
 
 /-- The chain rule for a vector-valued function on a manifold followed by a map between normed
 spaces that is differentiable at the relevant point, evaluated on a tangent vector. -/
@@ -370,5 +393,30 @@ theorem mfderiv_apply_eq_zero_of_const_line {f : F → M} {z w : F}
     rfl
   · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
     rfl
+
+/-- **Existence of a local `C^n` scalar function separating a nonzero tangent vector.** For any
+nonzero tangent vector `v` at `x` and any regularity `n : ℕ∞ω` (including smooth and analytic),
+there exists a scalar function `g : M → 𝕜` which is `C^n` at `x` with `dg_x(v) = 1`. No manifold
+smoothness, finite dimension, or boundaryless assumption is required: `g` is a continuous linear
+functional composed with the preferred extended chart at `x`. -/
+theorem exists_contMDiffAt_mvfderiv_eq_one [SeparatingDual 𝕜 E] {x : M} {v : TangentSpace I x}
+    (hv : v ≠ 0) (n : ℕ∞ω) :
+    ∃ g : M → 𝕜, ContMDiffAt I 𝓘(𝕜) n g x ∧ mvfderiv I g x v = 1 := by
+  -- `TangentSpace I x` is definitionally the model space `E`.
+  have hv' : @Ne E v 0 := hv
+  obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := 𝕜) hv'
+  refine ⟨ℓ ∘ extChartAt I x,
+    (ℓ.contDiff.contMDiff (n := n)).contMDiffAt.comp x contMDiffAt_extChartAt, ?_⟩
+  rw [ℓ.mvfderiv_comp_apply ((contMDiffAt_extChartAt (I := I) (n := 1)).mdifferentiableAt
+    one_ne_zero), mvfderiv_apply_of_eventuallyEq_extChartAt Filter.EventuallyEq.rfl]
+  exact hℓ
+
+/-- Any nonzero tangent vector `v` at `x` admits a scalar function `g : M → 𝕜` that is `C^n` at
+`x` with `dg_x(v) ≠ 0`. -/
+theorem exists_contMDiffAt_mvfderiv_ne_zero [SeparatingDual 𝕜 E] {x : M} {v : TangentSpace I x}
+    (hv : v ≠ 0) (n : ℕ∞ω) :
+    ∃ g : M → 𝕜, ContMDiffAt I 𝓘(𝕜) n g x ∧ mvfderiv I g x v ≠ 0 := by
+  obtain ⟨g, hg, hgv⟩ := exists_contMDiffAt_mvfderiv_eq_one (I := I) hv n
+  exact ⟨g, hg, hgv.symm ▸ one_ne_zero⟩
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Exact.Projective
 public import TauCeti.CategoryTheory.ObjectProperty.FactorsThrough
+import TauCeti.CategoryTheory.EqToHom
 
 /-!
 # Relative injectives in an exact category
@@ -209,9 +210,15 @@ noncomputable def split (X : C) : (ExactStructure.split C).InjectivePresentation
 
 @[simp] theorem split_K (X : C) : (split X).K = 0 := (rfl)
 
-@[simp] theorem split_i (X : C) : HEq (split X).i (𝟙 X) := (HEq.rfl)
+/-- After identifying the injective term, the tautological presentation starts with the
+identity. -/
+@[simp] theorem split_i (X : C) : (split X).i ≫ eqToHom (split_I X) = 𝟙 X := by
+  simp [split]
 
-@[simp] theorem split_p (X : C) : HEq (split X).p (0 : X ⟶ (0 : C)) := (HEq.rfl)
+/-- After identifying the terms, the tautological presentation ends with the zero map. -/
+@[simp] theorem split_p (X : C) :
+    eqToHom (split_I X).symm ≫ (split X).p ≫ eqToHom (split_K X) = 0 := by
+  simp [split]
 
 /-- Mathlib's injective presentation gives a relative injective presentation for the canonical
 exact structure of an abelian category. -/
@@ -234,13 +241,20 @@ noncomputable def abelian {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughInjectives A] (X : A) :
     (abelian X).K = cokernel (Injective.ι X) := (rfl)
 
+/-- After identifying the injective term, the presentation starts with Mathlib's chosen
+monomorphism into an injective object. -/
 @[simp] theorem abelian_i {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughInjectives A] (X : A) :
-    HEq (abelian X).i (Injective.ι X) := (HEq.rfl)
+    (abelian X).i ≫ eqToHom (abelian_I X) = Injective.ι X := by
+  simp [abelian]
 
+/-- After identifying the terms, the presentation ends with the cokernel projection. -/
 @[simp] theorem abelian_p {A : Type u} [Category.{v} A] [Abelian A]
     [CategoryTheory.EnoughInjectives A] (X : A) :
-    HEq (abelian X).p (cokernel.π (Injective.ι X)) := (HEq.rfl)
+    eqToHom (abelian_I X).symm ≫ (abelian X).p ≫ eqToHom (abelian_K X) =
+      cokernel.π (Injective.ι X) := by
+  simp only [abelian, eqToHom_naturality, eqToHom_refl, Category.id_comp]
+  exact eqToHom_self_comp _ _
 
 section Comparison
 

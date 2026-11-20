@@ -204,16 +204,17 @@ private theorem tensorProductIso_hom :
 
 /-- On a pure tensor `s ⊗ t` of sections over `U`, sent into `𝒪(m) ⊗ 𝒪(n)` by the unit of
 sheafification, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is multiplication of sections. -/
-@[simp]
 theorem tensorProductIso_hom_tmul (U : (Proj 𝒜).Opens) (s : Γ(twistingSheaf 𝒜 m, U))
     (t : Γ(twistingSheaf 𝒜 n, U)) :
-    Scheme.Modules.Hom.app
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
+      Functor.id_obj]
+    (Scheme.Modules.Hom.app
       ((TauCeti.SheafOfModules.tensorProductIso (Proj 𝒜).sheaf (twistingSheaf 𝒜 m)
         (twistingSheaf 𝒜 n)).inv ≫ (tensorProductIso f hf hcover m n).hom) U
       (((PresheafOfModules.sheafificationAdjunction (𝟙 (Proj 𝒜).ringCatSheaf.obj)).unit.app
         (PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := (Proj 𝒜).sheaf.obj)
           (twistingSheaf 𝒜 m).val (twistingSheaf 𝒜 n).val)).app (op U) (s ⊗ₜ t)) =
-      mul 𝒜 U m n s t := by
+      mul 𝒜 U m n s t) := by
   let P := PresheafOfModulesOfCommRing.Monoidal.tensorObj (R := (Proj 𝒜).sheaf.obj)
     (twistingSheaf 𝒜 m).val (twistingSheaf 𝒜 n).val
   let F := PresheafOfModules.sheafification (R := (Proj 𝒜).ringCatSheaf)
