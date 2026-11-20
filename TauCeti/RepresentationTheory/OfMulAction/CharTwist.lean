@@ -66,6 +66,8 @@ non-zero-divisor in `k`.
 * `TauCeti.mem_charTrivialOrbits_iff`: an orbit is in `charTrivialOrbits` exactly when `χ` is
   trivial on the stabilizer of its chosen representative; this depends only on the orbit
   (`TauCeti.MulAction.stabilizer_smul_le_iff_of_normal`).
+* `TauCeti.twistedOrbitSum_smul`: moving the base point from `x` to `g • x` multiplies the
+  twisted orbit sum by `(χ g)⁻¹`.
 * `TauCeti.twistedOrbitSum_mem_invariants`: twisted orbit sums are invariant.
 * `TauCeti.twistedInvariantOrbitSumBasis_repr_apply`: the coordinate of an invariant at an orbit
   is its coefficient at the chosen representative.
@@ -217,6 +219,25 @@ theorem twistedOrbitSum_of_not_le {x : X} (hx : ¬stabilizer Γ x ≤ χ.ker) :
 theorem coeff_twistedOrbitSum_self {x : X} (hx : stabilizer Γ x ≤ χ.ker) :
     (twistedOrbitSum χ x).coeff x = 1 := by
   simpa using coeff_twistedOrbitSum_smul hx 1
+
+/-- **Changing the base point of a twisted orbit sum.** Moving the base point from `x` to `g • x`
+multiplies the twisted orbit sum by `(χ g)⁻¹`, so the twisted orbit sums at the points of an orbit
+agree up to units. -/
+theorem twistedOrbitSum_smul (g : Γ) (x : X) :
+    twistedOrbitSum χ (g • x) = (((χ g)⁻¹ : kˣ) : k) • twistedOrbitSum χ x := by
+  by_cases hx : stabilizer Γ x ≤ χ.ker
+  · have hgx : stabilizer Γ (g • x) ≤ χ.ker := MulAction.stabilizer_smul_le_iff_of_normal.2 hx
+    ext y
+    rw [coeff_smul_apply, smul_eq_mul]
+    by_cases hy : y ∈ orbit Γ x
+    · obtain ⟨c, rfl⟩ := mem_orbit_iff.1 hy
+      have hc : c • x = (c * g⁻¹) • g • x := by rw [smul_smul, inv_mul_cancel_right]
+      rw [coeff_twistedOrbitSum_smul hx, hc, coeff_twistedOrbitSum_smul hgx, map_mul, map_inv,
+        Units.val_mul, mul_comm]
+    · rw [coeff_twistedOrbitSum_of_notMem hy,
+        coeff_twistedOrbitSum_of_notMem (by rwa [orbit_smul]), mul_zero]
+  · rw [twistedOrbitSum_of_not_le hx, smul_zero,
+      twistedOrbitSum_of_not_le (mt MulAction.stabilizer_smul_le_iff_of_normal.1 hx)]
 
 /-- **Twisted orbit sums are invariant.** -/
 theorem twistedOrbitSum_mem_invariants (x : X) :
