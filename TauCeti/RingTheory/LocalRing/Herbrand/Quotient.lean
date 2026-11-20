@@ -140,7 +140,7 @@ private theorem eval_smul_charpoly_dvd_sub_smul [Fintype H] [FaithfulSMul G B]
   set g := q.map (algebraMap A B) - C (y : B)
   have hg : ∀ τ : H, g.eval (τ • x) = 0 := fun τ ↦ by
     rw [eval_sub, eval_C, eval_map_algebraMap, Subgroup.smul_def, Polynomial.aeval_smul, hq,
-      ← Subgroup.smul_def, y.2 τ, sub_self]
+      ← Subgroup.smul_def, y.property τ, sub_self]
   have hinj : Function.Injective fun τ : H ↦ τ • x := by
     simpa [Function.comp_def, Subgroup.smul_def] using
       (TauCeti.smul_left_injective_of_adjoin_singleton_eq_top (G := G) hx).comp
@@ -386,7 +386,7 @@ theorem map_quotientMk'_ramificationGroupReal (u : ℝ) :
     obtain ⟨τ₀, hτ₀⟩ := exists_forall_lowerIndex_mul_le (B := B) H σ
     have hmk : QuotientGroup.mk' H σ = ((σ * (τ₀ : G) : G) : G ⧸ H) := by
       rw [QuotientGroup.mk'_apply, QuotientGroup.eq]
-      simp [τ₀.2]
+      simp [τ₀.property]
     rw [hmk, mk_mem_ramificationGroupReal_herbrandFun_iff A B G H _ hτ₀]
     have hle : lowerIndex B σ ≤ lowerIndex B (σ * (τ₀ : G)) := by
       have := hτ₀ τ₀⁻¹
@@ -398,7 +398,7 @@ theorem map_quotientMk'_ramificationGroupReal (u : ℝ) :
     obtain ⟨τ₀, hτ₀⟩ := exists_forall_lowerIndex_mul_le (B := B) H σ
     have hmk : ((σ * (τ₀ : G) : G) : G ⧸ H) = (σ : G ⧸ H) := by
       rw [QuotientGroup.eq]
-      simp [inv_mem τ₀.2]
+      simp [inv_mem τ₀.property]
     refine ⟨σ * (τ₀ : G), ?_, by rw [QuotientGroup.mk'_apply, hmk]⟩
     rw [← mk_mem_ramificationGroupReal_herbrandFun_iff A B G H _ hτ₀, hmk]
     exact h
@@ -664,16 +664,16 @@ def fixedPointsIntegralClosureEquiv (H : Subgroup (L ≃ₐ[K] L)) :
     FixedPoints.subalgebra A (integralClosure A L) H ≃ₐ[A]
       integralClosure A (IntermediateField.fixedField H) where
   toFun x :=
-    ⟨⟨((x : integralClosure A L) : L), fun σ ↦ congrArg Subtype.val (x.2 σ)⟩, by
+    ⟨⟨((x : integralClosure A L) : L), fun σ ↦ congrArg Subtype.val (x.property σ)⟩, by
       rw [mem_integralClosure_iff,
         ← isIntegral_algHom_iff
           ((IntermediateField.fixedField H).val.restrictScalars A) Subtype.val_injective]
-      exact (x : integralClosure A L).2⟩
+      exact (x : integralClosure A L).property⟩
   invFun y :=
     ⟨⟨((y : IntermediateField.fixedField H) : L), by
       rw [mem_integralClosure_iff]
-      exact y.2.map ((IntermediateField.fixedField H).val.restrictScalars A)⟩,
-      fun σ ↦ Subtype.ext ((y : IntermediateField.fixedField H).2 σ)⟩
+      exact y.property.map ((IntermediateField.fixedField H).val.restrictScalars A)⟩,
+      fun σ ↦ Subtype.ext ((y : IntermediateField.fixedField H).property σ)⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_mul' _ _ := rfl
@@ -710,14 +710,14 @@ private theorem algebra_isInvariant_integralClosure :
   isInvariant x hx := by
     have hfixed : (x : L) ∈ IntermediateField.fixedField (⊤ : Subgroup (L ≃ₐ[K] L)) := by
       intro σ
-      exact congrArg Subtype.val (hx σ.1)
+      exact congrArg Subtype.val (hx σ.val)
     rw [IsGalois.fixedField_top] at hfixed
     obtain ⟨k, hk⟩ := IntermediateField.mem_bot.1 hfixed
     have hint : IsIntegral A k := by
       rw [← isIntegral_algHom_iff (IsScalarTower.toAlgHom A K L) (algebraMap K L).injective]
       change IsIntegral A (algebraMap K L k)
       rw [hk]
-      exact (mem_integralClosure_iff A L).1 x.2
+      exact (mem_integralClosure_iff A L).1 x.property
     obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.1 hint
     refine ⟨a, Subtype.ext ?_⟩
     change algebraMap A L a = (x : L)

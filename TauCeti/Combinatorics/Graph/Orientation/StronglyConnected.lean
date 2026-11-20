@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.OfSimpleGraph
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Orientation.OfSimpleGraph
 public import TauCeti.Combinatorics.Graph.Orientation.Walk
@@ -40,6 +41,9 @@ any two vertices joined by a walk are joined by a directed walk.
   multigraphs.
 * `SimpleGraph.exists_stronglyConnected_orientation_iff`: Robbins' theorem for simple graphs, with
   dart orientations.
+* `SimpleGraph.exists_componentwiseStrong_orientation_iff`,
+  `SimpleGraph.Preconnected.exists_stronglyConnected_orientation_iff`: the componentwise and
+  classical forms for simple graphs, where only actual edges are tested for being bridges.
 
 ## References
 
@@ -60,7 +64,7 @@ variable {V : Type u} {E : Type v} {G : Graph V E}
 /-- If the arrow chosen for an edge by an orientation lies on a directed cycle, the underlying
 edge is not a bridge. -/
 theorem not_isBridge_of_liesOnCycle (o : G.Orientation) (e : E(G))
-    (hcycle : ArrowWalk.LiesOnCycle (o.arrow e)) : ¬ G.IsBridge e.1 := by
+    (hcycle : ArrowWalk.LiesOnCycle (o.arrow e)) : ¬ G.IsBridge e.val := by
   rw [ArrowWalk.liesOnCycle_def] at hcycle
   rintro he
   obtain ⟨x, p, hp, hep⟩ := hcycle
@@ -72,7 +76,7 @@ theorem not_isBridge_of_liesOnCycle (o : G.Orientation) (e : E(G))
 /-- If the head of an oriented edge can reach its tail in the orientation, the edge is not a
 bridge. -/
 theorem not_isBridge_of_nonempty_returnWalk (o : G.Orientation) (e : E(G))
-    (hreturn : Nonempty (ArrowWalk o.Hom (o.head e) (o.tail e))) : ¬ G.IsBridge e.1 :=
+    (hreturn : Nonempty (ArrowWalk o.Hom (o.head e) (o.tail e))) : ¬ G.IsBridge e.val :=
   o.not_isBridge_of_liesOnCycle e
     ((ArrowWalk.liesOnCycle_iff_nonempty (o.arrow e)).2 hreturn)
 
@@ -129,7 +133,7 @@ private theorem reachableWithin_mono {o : G.Orientation} {F F' : Set E} {x y : V
 
 /-- Reachability within `F` only depends on the directions of the edges of `F`. -/
 private theorem reachableWithin_congr {o o' : G.Orientation} {F : Set E} {x y : V}
-    (hoo' : ∀ e : G.edgeSet, e.1 ∈ F → o.head e = o'.head e) (h : ReachableWithin o F x y) :
+    (hoo' : ∀ e : G.edgeSet, e.val ∈ F → o.head e = o'.head e) (h : ReachableWithin o F x y) :
     ReachableWithin o' F x y := by
   obtain ⟨p, hp, hpF⟩ := h
   exact ⟨p, (Walk.followsOrientation_congr fun e he ↦ hoo' e (hpF e he)).1 hp, hpF⟩
@@ -160,7 +164,7 @@ private noncomputable def orientEdge (o : G.Orientation) {e : E} {x y : V}
 
 open Classical in
 private theorem orientEdge_head_of_ne (o : G.Orientation) {e : E} {x y : V}
-    (h : G.IsLink e x y) {f : G.edgeSet} (hf : f.1 ≠ e) : (o.orientEdge h).head f = o.head f := by
+    (h : G.IsLink e x y) {f : G.edgeSet} (hf : f.val ≠ e) : (o.orientEdge h).head f = o.head f := by
   rw [orientEdge, ofHead_head, Function.update_of_ne fun hfe ↦ hf (congrArg Subtype.val hfe)]
 
 private theorem followsOrientation_orientEdge (o : G.Orientation) {e : E} {x y : V}
@@ -176,7 +180,7 @@ private theorem followsOrientation_orientEdge (o : G.Orientation) {e : E} {x y :
 reachable from its start and reaches its end, using edges of `F` and of the trail. -/
 private theorem exists_forall_mem_support_reachableWithin (o : G.Orientation) {F : Set E}
     (hF : Settled o F) {a b : V} (q : G.Walk a b) (hq : q.IsTrail) :
-    ∃ o' : G.Orientation, (∀ e : G.edgeSet, e.1 ∈ F → o.head e = o'.head e) ∧
+    ∃ o' : G.Orientation, (∀ e : G.edgeSet, e.val ∈ F → o.head e = o'.head e) ∧
       ∀ v ∈ q.support, ReachableWithin o' (F ∪ {f | f ∈ q.edges}) a v ∧
         ReachableWithin o' (F ∪ {f | f ∈ q.edges}) v b := by
   induction q with
@@ -192,7 +196,7 @@ private theorem exists_forall_mem_support_reachableWithin (o : G.Orientation) {F
       Set.union_subset_union_right F fun f (hf : f ∈ p.edges) ↦ by simp [hf]
     -- Direct `e` along the trail unless it is already settled.
     obtain ⟨o', ho', hxy⟩ : ∃ o' : G.Orientation,
-        (∀ f : G.edgeSet, f.1 ∈ F ∪ {f | f ∈ p.edges} → o₁.head f = o'.head f) ∧
+        (∀ f : G.edgeSet, f.val ∈ F ∪ {f | f ∈ p.edges} → o₁.head f = o'.head f) ∧
           ReachableWithin o' (F ∪ {f | f ∈ (Walk.cons e h p).edges}) x y := by
       by_cases heF : e ∈ F
       · refine ⟨o₁, fun _ _ ↦ rfl, ?_⟩
@@ -279,7 +283,7 @@ theorem exists_stronglyConnected_orientation_iff [Finite E(G)] :
   refine ⟨isEdgeConnected_two_of_exists_stronglyConnected_orientation, fun hG ↦ ?_⟩
   rw [isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge] at hG
   obtain ⟨o, ho⟩ := exists_componentwiseStrong_orientation_iff.2 hG.2
-  exact ⟨o, fun x y ↦ ho x y (hG.1 x.2 y.2)⟩
+  exact ⟨o, fun x y ↦ ho x y (hG.1 x.property y.property)⟩
 
 /-- **Robbins' theorem, classical form.** A connected multigraph with finitely many actual edges
 has a strongly connected orientation exactly when it has no bridge. -/
@@ -326,5 +330,53 @@ theorem exists_stronglyConnected_orientation_iff [Finite G.edgeSet] :
   obtain ⟨o, ho⟩ := Graph.exists_stronglyConnected_orientation_iff.2
     ((Graph.isEdgeConnected_ofSimpleGraph_iff G 2).2 hG)
   exact ⟨o.toDartOrientation, o.isStronglyConnected_orientedQuiver_iff.2 ho⟩
+
+/-- **Robbins' theorem for simple graphs, componentwise form.** A simple graph with finitely many
+edges has a dart orientation in which any two vertices joined by a walk are joined by a directed
+path exactly when no edge is a bridge.
+
+Only actual edges are tested: `SimpleGraph.IsBridge` also holds for a non-edge joining two
+different connected components, so requiring no bridge among all of `Sym2 V` would also force `G`
+to be preconnected. -/
+theorem exists_componentwiseStrong_orientation_iff [Finite G.edgeSet] :
+    (∃ o : DoubledQuiver.Orientation G, ∀ x y, G.Reachable x y →
+      Nonempty (Quiver.Path (DoubledQuiver.OrientedQuiver.vertex G o x)
+        (DoubledQuiver.OrientedQuiver.vertex G o y))) ↔
+      ∀ e ∈ G.edgeSet, ¬ G.IsBridge e := by
+  have : Finite (Graph.ofSimpleGraph G).edgeSet := by
+    rwa [Graph.edgeSet_ofSimpleGraph]
+  -- Directed paths between the vertices of a dart orientation are directed walks of the
+  -- corresponding multigraph orientation.
+  have hpath (o : (Graph.ofSimpleGraph G).Orientation) (x y : (Graph.ofSimpleGraph G).vertexSet) :
+      Nonempty (Quiver.Path (DoubledQuiver.OrientedQuiver.vertex G o.toDartOrientation x.val)
+        (DoubledQuiver.OrientedQuiver.vertex G o.toDartOrientation y.val)) ↔
+        Nonempty (ArrowWalk o.Hom x y) := by
+    simpa only [Graph.Orientation.orientedVertexEquiv_apply] using o.nonempty_oriented_path_iff x y
+  have hbridge : (∀ e ∈ G.edgeSet, ¬ G.IsBridge e) ↔
+      ∀ e, ¬ (Graph.ofSimpleGraph G).IsBridge e := by
+    simp only [Graph.isBridge_ofSimpleGraph_iff, not_and]
+  rw [hbridge, ← Graph.exists_componentwiseStrong_orientation_iff,
+    ← G.graphOrientationEquiv.exists_congr_right]
+  refine exists_congr fun o ↦ ?_
+  rw [graphOrientationEquiv_apply]
+  refine ⟨fun ho x y hxy ↦ ?_, fun ho x y hxy ↦ ?_⟩
+  · rw [← hpath]
+    exact ho x.val y.val ((reachable_ofSimpleGraph_iff G x.val y.val).1 hxy)
+  · exact (hpath o ⟨x, by simp⟩ ⟨y, by simp⟩).2
+      (ho _ _ ((reachable_ofSimpleGraph_iff G x y).2 hxy))
+
+/-- **Robbins' theorem for preconnected simple graphs.** A preconnected simple graph with finitely
+many edges has a strongly connected dart orientation exactly when no edge is a bridge. Only actual
+edges are tested, as in `SimpleGraph.exists_componentwiseStrong_orientation_iff`. -/
+theorem Preconnected.exists_stronglyConnected_orientation_iff [Finite G.edgeSet]
+    (hG : G.Preconnected) :
+    (∃ o : DoubledQuiver.Orientation G,
+      Quiver.IsStronglyConnected (DoubledQuiver.OrientedQuiver G o)) ↔
+      ∀ e ∈ G.edgeSet, ¬ G.IsBridge e := by
+  rw [← exists_componentwiseStrong_orientation_iff]
+  refine exists_congr fun o ↦ ⟨fun ho x y _ ↦ ho _ _, fun ho x y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := (DoubledQuiver.OrientedQuiver.vertexEquiv G o).surjective x
+  obtain ⟨y, rfl⟩ := (DoubledQuiver.OrientedQuiver.vertexEquiv G o).surjective y
+  simpa only [DoubledQuiver.OrientedQuiver.vertexEquiv_apply] using ho x y (hG x y)
 
 end SimpleGraph

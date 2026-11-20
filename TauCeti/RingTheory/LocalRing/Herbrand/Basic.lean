@@ -484,8 +484,8 @@ theorem neg_one_le_inverseHerbrandFun_iff {v : ℝ} : -1 ≤ inverseHerbrandFun 
 /-- The **Herbrand function** restricted to `[-1, ∞)`, packaged as an order automorphism with
 inverse `ψ`. -/
 def herbrandOrderIso : Set.Ici (-1 : ℝ) ≃o Set.Ici (-1 : ℝ) where
-  toFun u := ⟨herbrandFun G S u, (neg_one_le_herbrandFun_iff G S).2 u.2⟩
-  invFun v := ⟨inverseHerbrandFun G S v, (neg_one_le_inverseHerbrandFun_iff G S).2 v.2⟩
+  toFun u := ⟨herbrandFun G S u, (neg_one_le_herbrandFun_iff G S).2 u.property⟩
+  invFun v := ⟨inverseHerbrandFun G S v, (neg_one_le_inverseHerbrandFun_iff G S).2 v.property⟩
   left_inv u := Subtype.ext (inverseHerbrandFun_herbrandFun G S u)
   right_inv v := Subtype.ext (herbrandFun_inverseHerbrandFun G S v)
   map_rel_iff' := (herbrandFun_strictMono G S).le_iff_le

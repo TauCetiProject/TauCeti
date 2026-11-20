@@ -63,7 +63,7 @@ instance instIsLocalHomSubsemiringSubtype {B G : Type*} [Semiring B] [Monoid G]
         g • (↑u⁻¹ : B) = (g • (↑u⁻¹ : B)) * ((u : B) * (↑u⁻¹ : B)) := by
           rw [Units.mul_inv, mul_one]
         _ = (g • (↑u⁻¹ : B)) * (g • (u : B)) * (↑u⁻¹ : B) := by
-          rw [← mul_assoc, hu, Subsemiring.coe_subtype, x.2 g]
+          rw [← mul_assoc, hu, Subsemiring.coe_subtype, x.property g]
         _ = g • ((↑u⁻¹ : B) * (u : B)) * (↑u⁻¹ : B) := by
           rw [smul_mul']
         _ = (↑u⁻¹ : B) := by
@@ -157,9 +157,9 @@ instance instIsPrincipalIdealRingSubring {B G : Type*} [CommRing B] [IsDomain B]
     have hc_fix : c ∈ FixedPoints.subring B G := fun g ↦
       mul_left_cancel₀ ha0 <| by
         calc
-          (a : B) * (g • c) = (g • (a : B)) * (g • c) := by rw [a.2 g]
+          (a : B) * (g • c) = (g • (a : B)) * (g • c) := by rw [a.property g]
           _ = g • ((a : B) * c) := (smul_mul' g (a : B) c).symm
-          _ = (x : B) := by rw [← hc, x.2 g]
+          _ = (x : B) := by rw [← hc, x.property g]
           _ = (a : B) * c := hc
     exact ⟨⟨c, hc_fix⟩, Subtype.ext hc⟩
 

@@ -174,21 +174,21 @@ noncomputable def hopfIdealLocusEquiv :
       {I : TauCeti.HopfIdeal A (A ⊗[R] H) //
         Module.Finite A ((A ⊗[R] H) ⧸ I.toIdeal) ∧ Module.Projective A ((A ⊗[R] H) ⧸ I.toIdeal) ∧
           ∀ p, rankAtStalk (R := A) ((A ⊗[R] H) ⧸ I.toIdeal) p = k} where
-  toFun N := ⟨TauCeti.HopfIdeal.ofIsHopfIdeal A (N.1.hopfIdeal N.2), by
+  toFun N := ⟨TauCeti.HopfIdeal.ofIsHopfIdeal A (N.val.hopfIdeal N.property), by
     rw [TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal]
-    exact ⟨inferInstance, inferInstance, rankAtStalk_quotient_hopfIdeal N.1 N.2⟩⟩
+    exact ⟨inferInstance, inferInstance, rankAtStalk_quotient_hopfIdeal N.val N.property⟩⟩
   invFun I :=
-    have := I.2.1
-    have := I.2.2.1
-    ⟨{ toSubmodule := I.1.toIdeal.restrictScalars A
+    have := I.property.1
+    have := I.property.2.1
+    ⟨{ toSubmodule := I.val.toIdeal.restrictScalars A
        finite_quotient :=
-         Module.Finite.equiv (Submodule.Quotient.restrictScalarsEquiv A I.1.toIdeal).symm
+         Module.Finite.equiv (Submodule.Quotient.restrictScalarsEquiv A I.val.toIdeal).symm
        projective_quotient :=
-         Module.Projective.of_equiv (Submodule.Quotient.restrictScalarsEquiv A I.1.toIdeal).symm
+         Module.Projective.of_equiv (Submodule.Quotient.restrictScalarsEquiv A I.val.toIdeal).symm
        rankAtStalk_eq p := by
-         rw [rankAtStalk_eq_of_equiv (Submodule.Quotient.restrictScalarsEquiv A I.1.toIdeal)]
-         exact I.2.2.2 p },
-      (hopfIdealLocus_eq_bot_iff _).2 ⟨I.1.toIdeal, rfl, inferInstance, inferInstance⟩⟩
+         rw [rankAtStalk_eq_of_equiv (Submodule.Quotient.restrictScalarsEquiv A I.val.toIdeal)]
+         exact I.property.2.2 p },
+      (hopfIdealLocus_eq_bot_iff _).2 ⟨I.val.toIdeal, rfl, inferInstance, inferInstance⟩⟩
   left_inv N := Subtype.ext <| Grassmannian.ext <| by
     dsimp only
     rw [TauCeti.HopfIdeal.ofIsHopfIdeal_toIdeal, restrictScalars_hopfIdeal]
@@ -199,7 +199,7 @@ noncomputable def hopfIdealLocusEquiv :
 /-- `hopfIdealLocusEquiv` sends a point `N` of the Hopf-ideal locus to `N.hopfIdeal hN`. -/
 @[simp]
 theorem hopfIdealLocusEquiv_apply_coe (N : {N : G(k, A ⊗[R] H; A) // N.hopfIdealLocus = ⊥}) :
-    (hopfIdealLocusEquiv N).1 = TauCeti.HopfIdeal.ofIsHopfIdeal A (N.1.hopfIdeal N.2) :=
+    (hopfIdealLocusEquiv N).val = TauCeti.HopfIdeal.ofIsHopfIdeal A (N.val.hopfIdeal N.property) :=
   (rfl)
 
 /-- `hopfIdealLocusEquiv.symm` sends a Hopf ideal to its underlying `A`-submodule. -/
@@ -208,7 +208,7 @@ theorem hopfIdealLocusEquiv_symm_apply_toSubmodule
     (I : {I : TauCeti.HopfIdeal A (A ⊗[R] H) //
       Module.Finite A ((A ⊗[R] H) ⧸ I.toIdeal) ∧ Module.Projective A ((A ⊗[R] H) ⧸ I.toIdeal) ∧
         ∀ p, rankAtStalk (R := A) ((A ⊗[R] H) ⧸ I.toIdeal) p = k}) :
-    (hopfIdealLocusEquiv.symm I).1.toSubmodule = I.1.toIdeal.restrictScalars A := by
+    (hopfIdealLocusEquiv.symm I).val.toSubmodule = I.val.toIdeal.restrictScalars A := by
   rfl
 
 end HopfIdealLocusEquiv

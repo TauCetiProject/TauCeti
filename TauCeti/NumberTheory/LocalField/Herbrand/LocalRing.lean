@@ -57,7 +57,7 @@ theorem lowerJump_iff_localRing (u : RamificationIndexDomain) :
       lowerRamificationGroup_def]
   constructor
   · intro hu v hv
-    have hv' : v ∈ RamificationIndexDomain := u.2.trans hv.le
+    have hv' : v ∈ RamificationIndexDomain := u.property.trans hv.le
     simpa only [hEq] using hu ⟨v, hv'⟩ (Subtype.mk_lt_mk.2 hv)
   · intro hu v hv
     simpa only [hEq] using hu v (Subtype.coe_lt_coe.2 hv)
@@ -109,7 +109,7 @@ theorem upperJump_iff_localRing (v : RamificationIndexDomain) :
   rw [upperJump_iff, TauCeti.IsLocalRing.upperJump_iff]
   constructor
   · intro hv w hw
-    have hw' : w ∈ RamificationIndexDomain := v.2.trans hw.le
+    have hw' : w ∈ RamificationIndexDomain := v.property.trans hw.le
     simpa only [upperRamificationGroup_eq_localRing] using hv ⟨w, hw'⟩ (Subtype.mk_lt_mk.2 hw)
   · intro hv w hw
     simpa only [upperRamificationGroup_eq_localRing] using hv w (Subtype.coe_lt_coe.2 hw)
