@@ -83,8 +83,8 @@ private theorem joinCorner_eq_firstCorner (h' : C.sides g₁ = 1 ∨ C.sides g�
   dsimp only
   rcases h' with h' | h'
   · rw [h', Nat.sub_self, Nat.zero_mod]
-  · rw [mergeFacesSides_none, h', show C.sides g₁ + 1 - 2 = C.sides g₁ - 1 by omega,
-      Nat.mod_self]
+  · have hsides : C.sides g₁ + 1 - 2 = C.sides g₁ - 1 := by omega
+    rw [mergeFacesSides_none, h', hsides, Nat.mod_self]
 
 private theorem coe_outgoing_firstCorner_of_one_lt (h₁ : 1 < C.sides g₁) :
     ((C.mergeFaces h).outgoing (firstCorner h)).val = C.outgoing ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ := by
