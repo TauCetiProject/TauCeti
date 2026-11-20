@@ -149,14 +149,12 @@ theorem lowerOrdersL_ofContMDiffSection (d : ℕ)
     A.sectionChartData.lowerOrdersL μ p k d (ofContMDiffSection A μ p (k + d) s) =
       ofContMDiffSection A μ p k
         ⟨s, s.contMDiff.of_le (by exact_mod_cast Nat.le_add_right k d)⟩ := by
-  apply A.sectionChartData.chartValuesL_injective μ p k
-  rw [SectionChartData.chartValuesL_lowerOrdersL]
-  funext i
-  simp only [SectionChartData.chartValuesL_apply]
-  apply Lp.ext
-  exact (chartValueL_ofContMDiffSection_ae A μ p (k + d) s i).trans
-    (chartValueL_ofContMDiffSection_ae A μ p k
-      ⟨s, s.contMDiff.of_le (by exact_mod_cast Nat.le_add_right k d)⟩ i).symm
+  apply SobolevSection.eq_of_ae_eq_coord (s := s)
+  · intro i
+    rw [SectionChartData.chartValueL_lowerOrdersL]
+    exact chartValueL_ofContMDiffSection_ae A μ p (k + d) s i
+  · exact fun i ↦ chartValueL_ofContMDiffSection_ae A μ p k
+      ⟨s, s.contMDiff.of_le (by exact_mod_cast Nat.le_add_right k d)⟩ i
 
 end SobolevSection
 

@@ -389,12 +389,11 @@ variable (A μ p k) in
 /-- The continuous inclusion of native `(0,1)`-forms from order `k + d` to order `k`. -/
 def zeroOneLowerOrdersL (d : ℕ) :
     zeroOneSobolevSections A μ p (k + d) →L[ℝ] zeroOneSobolevSections A μ p k :=
-  ((A.tangentHom.sectionChartData.lowerOrdersL μ p k d).comp
-    (zeroOneSobolevSections A μ p (k + d)).subtypeL).codRestrict _
-      fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections d w.property
+  (A.tangentHom.sectionChartData.lowerOrdersL μ p k d).restrict
+    (fun _ hw ↦ lowerOrdersL_mem_zeroOneSobolevSections d hw)
 
 /-- As a function, the native order inclusion is the restriction of the canonical order map. -/
-theorem zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
+theorem coeFn_zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
     ⇑(zeroOneLowerOrdersL A μ p k d) =
       Set.codRestrict
         (⇑(A.tangentHom.sectionChartData.lowerOrdersL μ p k d) ∘
@@ -408,7 +407,7 @@ theorem zeroOneLowerOrdersL_eq_codRestrict (d : ℕ) :
 theorem coe_zeroOneLowerOrdersL (d : ℕ) (w : zeroOneSobolevSections A μ p (k + d)) :
     (zeroOneLowerOrdersL A μ p k d w : SobolevSection A.tangentHom μ p k) =
       A.tangentHom.sectionChartData.lowerOrdersL μ p k d w :=
-  ContinuousLinearMap.coe_codRestrict_apply _ _ _ _
+  ContinuousLinearMap.coe_restrict_apply _ _
 
 /-- Forgetting zero derivatives is the identity. -/
 @[simp]

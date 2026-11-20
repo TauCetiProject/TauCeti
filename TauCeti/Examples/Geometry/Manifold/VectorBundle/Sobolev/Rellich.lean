@@ -38,6 +38,46 @@ example (w : C.sobolevSections μ p (k + 1)) :
 example (w : C.sobolevSections μ p k) : C.lowerOrdersL μ p k 0 w = w :=
   C.lowerOrdersL_zero μ p k w
 
+-- Loss one stays in the all-loss simp normal form until explicitly rewritten.
+example (w : C.sobolevSections μ p (k + 1)) (i : Fin C.n) (j : Fin (Module.finrank ℝ F)) :
+    Wkp.value k ((C.lowerOrdersL μ p k 1 w : C.SobolevData μ p k) i j) =
+      Wkp.value (k + 1) ((w : C.SobolevData μ p (k + 1)) i j) := by
+  simp
+
+example (d : ℕ) (w : C.sobolevSections μ p ((k + d) + 1)) :
+    C.lowerOrdersL μ p k d (C.lowerOrdersL μ p (k + d) 1 w) =
+      C.lowerOrdersL μ p k (d + 1) ((Nat.add_assoc k d 1) ▸ w) := by
+  simp
+
+example (d : ℕ) (w : C.sobolevSections μ p ((k + 1) + d)) :
+    C.lowerOrdersL μ p k 1 (C.lowerOrdersL μ p (k + 1) d w) =
+      C.lowerOrdersL μ p k (1 + d) ((Nat.add_assoc k 1 d) ▸ w) := by
+  simp
+
+example (d e : ℕ) (w : C.sobolevSections μ p ((k + d) + e)) (i : Fin C.n) :
+    C.chartValueL μ p k i (C.lowerOrdersL μ p k d (C.lowerOrdersL μ p (k + d) e w)) =
+      C.chartValueL μ p ((k + d) + e) i w := by
+  simp
+
+example {a b : ℕ} (h : a = b) (w : C.sobolevSections μ p a) (i : Fin C.n) :
+    C.chartValueL μ p b i (h ▸ w : C.sobolevSections μ p b) = C.chartValueL μ p a i w := by
+  simp
+
+example (d e : ℕ) (w : C.sobolevSections μ p ((k + d) + e))
+    (i : Fin C.n) (j : Fin (Module.finrank ℝ F)) :
+    Wkp.value k
+        ((C.lowerOrdersL μ p k d (C.lowerOrdersL μ p (k + d) e w) : C.SobolevData μ p k) i j) =
+      Wkp.value ((k + d) + e) ((w : C.SobolevData μ p ((k + d) + e)) i j) := by
+  simp
+
+-- The removed one-step constant-map law is an explicit specialization of the all-loss law.
+example {L : F →L[ℝ] F} {Ψ : S → S}
+    (hΨ : ∀ i s, ∀ y ∈ C.image i, C.coord i (Ψ s) y = L (C.coord i s y))
+    (w : C.sobolevSections μ p (k + 1)) :
+    C.lowerOrderL μ p k (C.constMapL μ p (k + 1) L Ψ hΨ w) =
+      C.constMapL μ p k L Ψ hΨ (C.lowerOrderL μ p k w) := by
+  simpa only [C.lowerOrdersL_one μ p k] using C.lowerOrdersL_constMapL μ p k 1 hΨ w
+
 end ChartData
 
 section NativeBundle
@@ -50,6 +90,15 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)]
   (A : FiniteBundleAtlas E M F V) (μ : Measure E) [μ.IsAddHaarMeasure]
   (p : ℝ≥0∞) [Fact (1 ≤ p)] (k d : ℕ)
+
+-- The removed one-step exponent law uses the all-loss API on the original native bundle.
+example {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
+    (w : SobolevSection A μ q (k + 1)) :
+    A.sectionChartData.lowerOrderL μ p k (A.sectionChartData.ofExponentLEL μ (k + 1) hpq w) =
+      A.sectionChartData.ofExponentLEL μ k hpq (A.sectionChartData.lowerOrderL μ q k w) := by
+  simpa only [SectionChartData.lowerOrdersL_one] using
+    SectionChartData.lowerOrdersL_ofExponentLEL (C := A.sectionChartData)
+      (μ := μ) (k := k) 1 hpq w
 
 example (hp : p ≠ ⊤) :
     IsCompactOperator ((A.sectionChartData.lowerOrdersL μ p k (d + 1)).comp
@@ -88,13 +137,13 @@ end NativeBundle
 attribute [local instance] ChartedSpace.empty
 
 /-- An actual finite atlas of a trivial normed bundle over the empty complex manifold. -/
-def emptyAtlas (F : Type*) [NormedAddCommGroup F] :
+private def emptyAtlas (F : Type*) [NormedAddCommGroup F] :
     FiniteBundleAtlas ℂ Empty F (Trivial Empty F) :=
   Classical.choice (FiniteBundleAtlas.nonempty (E := ℂ) (M := Empty) (F := F)
     (V := Trivial Empty F))
 
 /-- An actual finite atlas of a trivial complex bundle with zero-dimensional fibre. -/
-def zeroFiberAtlas (M : Type*) [TopologicalSpace M] [ChartedSpace ℂ M] [CompactSpace M]
+private def zeroFiberAtlas (M : Type*) [TopologicalSpace M] [ChartedSpace ℂ M] [CompactSpace M]
     [T2Space M] : FiniteBundleAtlas ℂ M (Fin 0 → ℂ) (Trivial M (Fin 0 → ℂ)) :=
   Classical.choice (FiniteBundleAtlas.nonempty (E := ℂ) (M := M) (F := Fin 0 → ℂ)
     (V := Trivial M (Fin 0 → ℂ)))
@@ -139,13 +188,8 @@ example (p : ℝ≥0∞) [Fact (1 ≤ p)]
 example (p : ℝ≥0∞) [Fact (1 ≤ p)]
     (w : zeroOneSobolevSections A μ p ((k + 1) + d)) :
     zeroOneLowerOrdersL A μ p k 1 (zeroOneLowerOrdersL A μ p (k + 1) d w) =
-      zeroOneLowerOrdersL A μ p k (d + 1)
-        ((by omega : (k + 1) + d = k + (d + 1)) ▸ w) := by
-  apply Subtype.ext
-  simpa only [coe_zeroOneLowerOrdersL, coe_zeroOneSobolevSections_eqRec,
-    A.tangentHom.sectionChartData.lowerOrdersL_one μ p k] using
-    A.tangentHom.sectionChartData.lowerOrderL_lowerOrdersL μ p k d
-      (w : SobolevSection A.tangentHom μ p ((k + 1) + d))
+      zeroOneLowerOrdersL A μ p k (1 + d) ((Nat.add_assoc k 1 d) ▸ w) :=
+  zeroOneLowerOrdersL_zeroOneLowerOrdersL 1 d w
 
 -- The same one-step inclusion commutes with the actual native projection.
 example (p : ℝ≥0∞) [Fact (1 ≤ p)]
@@ -168,12 +212,16 @@ example {M : Type*} [TopologicalSpace M] [ChartedSpace ℂ M] [IsManifold 𝓘(�
     Function.Injective (zeroOneLowerOrdersL (zeroFiberAtlas M) μ p k d) :=
   zeroOneLowerOrdersL_injective d
 
-example (p : ℝ≥0∞) [Fact (1 ≤ p)] (k d : ℕ)
-    (w : zeroOneSobolevSections (emptyAtlas ℂ) volume p (k + d)) :
-    zeroOneLowerOrdersL (emptyAtlas ℂ) volume p k d w = 0 := by
+/-- The actual empty base admits a finite atlas whose native order inclusions vanish. -/
+theorem exists_emptyAtlas_zeroOneLowerOrdersL_eq_zero
+    (p : ℝ≥0∞) [Fact (1 ≤ p)] (k d : ℕ) :
+    ∃ A : FiniteBundleAtlas ℂ Empty ℂ (Trivial Empty ℂ),
+      ∀ w : zeroOneSobolevSections A volume p (k + d),
+        zeroOneLowerOrdersL A volume p k d w = 0 := by
+  refine ⟨emptyAtlas ℂ, fun w ↦ ?_⟩
   apply Subtype.ext
-  apply (emptyAtlas ℂ).tangentHom.sectionChartData.chartValuesL_injective volume p k
-  funext i
+  apply SectionChartData.eq_of_chartValueL_ae_eq
+  intro i
   exact ((emptyAtlas ℂ).tangentHom.center i).elim
 
 end TauCeti.Examples.RellichOrders

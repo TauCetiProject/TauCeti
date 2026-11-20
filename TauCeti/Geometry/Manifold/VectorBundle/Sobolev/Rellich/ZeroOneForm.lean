@@ -51,7 +51,7 @@ variable (A μ p k)
 exponent `p`. -/
 theorem isCompactOperator_zeroOneLowerOrdersL (hp : p ≠ ⊤) (d : ℕ) :
     IsCompactOperator (zeroOneLowerOrdersL A μ p k (d + 1)) := by
-  rw [zeroOneLowerOrdersL_eq_codRestrict]
+  rw [coeFn_zeroOneLowerOrdersL_eq_codRestrict]
   exact ((SobolevSection.isCompactOperator_lowerOrdersL A.tangentHom μ p k hp d).comp_clm
     (zeroOneSobolevSections A μ p (k + (d + 1))).subtypeL).codRestrict
       (fun w ↦ lowerOrdersL_mem_zeroOneSobolevSections (d + 1) w.property)
