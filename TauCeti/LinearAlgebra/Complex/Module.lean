@@ -46,7 +46,10 @@ conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds eve
 at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
-half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). Multiplication by
+`-I` is a real linear equivalence from the skew-adjoint onto the self-adjoint elements, with
+inverse multiplication by `I` (`skewAdjoint.negISMulEquiv`), extending Mathlib's
+`skewAdjoint.negISMul`.
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
 (`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
@@ -212,6 +215,32 @@ theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → �
   simp [(Pi.basisFun ℂ ι).mem_span_real_range_iff]
 
 end TauCeti
+
+namespace skewAdjoint
+
+open Complex
+
+variable {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A] [StarModule ℂ A]
+
+/-- **The skew-adjoint elements are `-I` times the self-adjoint ones**: Mathlib's
+`skewAdjoint.negISMul`, `a ↦ -I • a`, is a real linear equivalence from the skew-adjoint onto the
+self-adjoint elements of a complex star module, with inverse `a ↦ I • a`. -/
+def negISMulEquiv : skewAdjoint A ≃ₗ[ℝ] selfAdjoint A :=
+  { skewAdjoint.negISMul with
+    invFun a := ⟨I • (a : A), I_smul_mem_skewAdjoint_iff_isSelfAdjoint.mpr a.2⟩
+    left_inv a := Subtype.ext (skewAdjoint.I_smul_neg_I a)
+    right_inv a := Subtype.ext (by simp [smul_smul]) }
+
+@[simp]
+theorem coe_negISMulEquiv_apply (a : skewAdjoint A) : (negISMulEquiv a : A) = -I • (a : A) :=
+  skewAdjoint.negISMul_apply_coe a
+
+@[simp]
+theorem coe_negISMulEquiv_symm_apply (a : selfAdjoint A) :
+    (negISMulEquiv.symm a : A) = I • (a : A) :=
+  (rfl)
+
+end skewAdjoint
 
 section ComplexOfMapISmul
 
