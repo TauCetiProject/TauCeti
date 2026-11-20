@@ -365,16 +365,20 @@ namespace SmoothForm
 
 variable [IsManifold I 1 M]
 
-/-- **The ω-energy of a trivial cylinder vanishes**: its `V`-component does not move in the
-`s`-direction, so the pullback of `ω` is zero. -/
+/-- **The ω-energy of a trivial cylinder vanishes**: the `V`-component of the differential field
+`TauCeti.trivialCylinderDeriv R γ c` vanishes in the `s`-direction, so the pullback of `ω` is zero.
+When `γ` is an integral curve of `R`, this field is the differential of the cylinder
+`(s, t) ↦ (c s, γ (c t))` (`TauCeti.hasMFDerivAt_trivialCylinder`). -/
 theorem omegaEnergy_trivialCylinder (ω : SmoothForm I M ℝ 2) (c : ℝ) (μ : Measure (ℝ × ℝ)) :
     ω.omegaEnergy (fun z ↦ γ (c * z.2))
         (fun z ↦ (trivialCylinderDeriv R γ c z : (ℝ × ℝ) →ₗ[ℝ] ℝ × TangentSpace I (γ (c * z.2))))
         μ = 0 := by
   simp [omegaEnergy_def, omegaEnergyDensity_def, stdComplexLineReal_eq]
 
-/-- The end-energy density of the trivial cylinder `(s, t) ↦ (c s, γ (c t))` over a curve along
-which `α(R) = 1` is `c²`. -/
+/-- If `α(R) = 1` along `γ`, the end-energy density of the differential field
+`TauCeti.trivialCylinderDeriv R γ c` is `c²`. When `γ` is an integral curve of `R`, this field is
+the differential of the trivial cylinder `(s, t) ↦ (c s, γ (c t))`
+(`TauCeti.hasMFDerivAt_trivialCylinder`), so this is the cylinder's end-energy density. -/
 theorem endEnergyDensity_trivialCylinder {α : SmoothForm I M ℝ 1}
     (hR : ∀ t, α.1 (γ t) ![R (γ t)] = 1) (c : ℝ) (z : ℝ × ℝ) :
     α.endEnergyDensity (fun z ↦ γ (c * z.2))
@@ -386,9 +390,12 @@ theorem endEnergyDensity_trivialCylinder {α : SmoothForm I M ℝ 1}
   ring
 
 /-- **The end energy of a trivial cylinder is its action.** Let `γ` be a curve along which
-`α(R) = 1`, such as an integral curve of the characteristic vector field, and `c > 0`. Over
-`ℝ × [0, 1]`, the cylinder `(s, t) ↦ (c s, γ (c t))` has end energy `c`, the action of `γ` over
-`[0, c]`: for every test function `φ`, `∫ φ(c s) c² ds dt = c`. -/
+`α(R) = 1` and `c > 0`. Over `ℝ × [0, 1]`, the differential field
+`TauCeti.trivialCylinderDeriv R γ c` has end energy `c`: for every test function `φ`,
+`∫ φ(c s) c² ds dt = c`. When `γ` is an integral curve of `R`, for instance of the characteristic
+vector field, this field is the differential of the cylinder `(s, t) ↦ (c s, γ (c t))`
+(`TauCeti.hasMFDerivAt_trivialCylinder`) and `c = ∫₀ᶜ γ^*α` is the action of `γ` over `[0, c]`,
+so the cylinder's end energy is that action. -/
 theorem endEnergy_trivialCylinder {α : SmoothForm I M ℝ 1} (hR : ∀ t, α.1 (γ t) ![R (γ t)] = 1)
     {c : ℝ} (hc : 0 < c) :
     α.endEnergy (fun z ↦ γ (c * z.2))
