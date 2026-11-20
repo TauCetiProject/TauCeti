@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.CyclicCohomology.Derivation
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.LinearAlgebra.End.Idempotent
 
 /-!
 # Traces of curvature and the cyclic two-cocycle of two derivations
@@ -44,8 +45,8 @@ a finite projective module through the curvature of any connection on it.
 
 * `TauCeti.piEndTrace_mul_comm`, `TauCeti.rangeEndTrace_mul_comm`: both traces vanish on
   commutators.
-* `TauCeti.rangeEndTrace_derivativeEnd`: the trace of the derivative of an endomorphism along a
-  connection vanishes.
+* `TauCeti.rangeEndTrace_derivativeEnd_eq_zero`: the trace of the derivative of an endomorphism
+  along a connection vanishes.
 * `TauCeti.rangeEndTrace_curvature_eq`: the trace of the curvature does not depend on the
   connections.
 * `TauCeti.rangeEndTrace_curvature_eq_matrixCochainExtension`: the trace of the curvature of
@@ -103,7 +104,7 @@ theorem piEndTrace_mulVecBilin (N : Matrix ι ι A) :
 
 /-- Integration by parts on `ι → A`: if `τ ∘ D = 0`, the trace of the derivative of an
 endomorphism along the coordinate connection vanishes. -/
-theorem piEndTrace_derivativeEnd_coordinate {D : derivationLieAlgebra k A}
+theorem piEndTrace_derivativeEnd_coordinate_eq_zero {D : derivationLieAlgebra k A}
     (hD : ∀ x, τ ((D : Module.End k A) x) = 0) (T : (ι → A) →ₗ[Aᵐᵒᵖ] (ι → A)) :
     piEndTrace τ (derivativeEnd (coordinate D ι) T) = 0 := by
   have h (i : ι) : coordinate D ι (Pi.single i 1) = 0 := by
@@ -146,32 +147,24 @@ theorem rangeEndExtend_apply (S : LinearMap.range p →ₗ[Aᵐᵒᵖ] LinearMap
 
 variable {p}
 
-private theorem rangeRestrict_coe (hp : IsIdempotentElem p) (y : LinearMap.range p) :
-    p.rangeRestrict y = y :=
-  Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp).mp y.property)
-
-private theorem rangeRestrict_apply_self (hp : IsIdempotentElem p) (y : ι → A) :
-    p.rangeRestrict (p y) = p.rangeRestrict y :=
-  Subtype.ext (LinearMap.congr_fun hp y)
-
 /-- For an idempotent `p`, extension by zero is multiplicative. -/
 theorem rangeEndExtend_mul (hp : IsIdempotentElem p)
     (S S' : LinearMap.range p →ₗ[Aᵐᵒᵖ] LinearMap.range p) :
     rangeEndExtend p (S * S') = rangeEndExtend p S * rangeEndExtend p S' := by
   refine LinearMap.ext fun x ↦ ?_
-  simp [rangeRestrict_coe hp]
+  simp [LinearMap.IsIdempotentElem.rangeRestrict_coe hp]
 
 /-- For an idempotent `p`, the extension by zero of an endomorphism of the range of `p` vanishes
 on the kernel of `p`. -/
-theorem rangeEndExtend_mul_self (hp : IsIdempotentElem p)
+theorem rangeEndExtend_mul_proj (hp : IsIdempotentElem p)
     (S : LinearMap.range p →ₗ[Aᵐᵒᵖ] LinearMap.range p) :
     rangeEndExtend p S * p = rangeEndExtend p S := by
   refine LinearMap.ext fun x ↦ ?_
-  simp [rangeRestrict_apply_self hp]
+  simp [LinearMap.IsIdempotentElem.rangeRestrict_apply_self hp]
 
 /-- For an idempotent `p`, the extension by zero of an endomorphism of the range of `p` takes
 values in the range of `p`. -/
-theorem self_mul_rangeEndExtend (hp : IsIdempotentElem p)
+theorem proj_mul_rangeEndExtend (hp : IsIdempotentElem p)
     (S : LinearMap.range p →ₗ[Aᵐᵒᵖ] LinearMap.range p) :
     p * rangeEndExtend p S = rangeEndExtend p S :=
   LinearMap.ext fun _ ↦ (LinearMap.IsIdempotentElem.mem_range_iff hp).mp (S _).property
@@ -188,7 +181,7 @@ theorem rangeEndExtend_derivativeEnd_project_coordinate (hp : IsIdempotentElem p
   have hg : project (coordinate D ι) p hp (p.rangeRestrict x) =
       p.rangeRestrict (coordinate D ι (p x)) :=
     Subtype.ext (coe_project_apply _ _ _ _)
-  simp [hS, hg, rangeRestrict_apply_self hp, map_sub]
+  simp [hS, hg, LinearMap.IsIdempotentElem.rangeRestrict_apply_self hp, map_sub]
 
 variable [Fintype ι] [DecidableEq ι] (p)
 
@@ -212,7 +205,7 @@ theorem rangeEndTrace_mul_comm (hτ : ∀ x y, τ (x * y) = τ (y * x)) (hp : Is
 
 /-- Integration by parts on the range of an idempotent: if `τ ∘ D = 0`, the trace of the
 derivative `[c, S]` of an endomorphism along any connection `c` along `D` vanishes. -/
-theorem rangeEndTrace_derivativeEnd (hτ : ∀ x y, τ (x * y) = τ (y * x))
+theorem rangeEndTrace_derivativeEnd_eq_zero (hτ : ∀ x y, τ (x * y) = τ (y * x))
     (hp : IsIdempotentElem p) {D : derivationLieAlgebra k A}
     (hD : ∀ x, τ ((D : Module.End k A) x) = 0)
     (c : RightConnection (E := LinearMap.range p) D)
@@ -226,8 +219,8 @@ theorem rangeEndTrace_derivativeEnd (hτ : ∀ x y, τ (x * y) = τ (y * x))
   rw [hcg, rangeEndTrace_apply, rangeEndExtend_derivativeEnd_project_coordinate hp]
   set T := rangeEndExtend p S
   set d := derivativeEnd (coordinate D ι) p
-  have hTp : T * p = T := rangeEndExtend_mul_self hp S
-  have hpT : p * T = T := self_mul_rangeEndExtend hp S
+  have hTp : T * p = T := rangeEndExtend_mul_proj hp S
+  have hpT : p * T = T := proj_mul_rangeEndExtend hp S
   -- `p [D, p] p = 0` since `[D, p]` maps the range of `p` into its kernel.
   have hpdp : p * (d * p) = 0 :=
     LinearMap.ext fun x ↦
@@ -242,7 +235,7 @@ theorem rangeEndTrace_derivativeEnd (hτ : ∀ x y, τ (x * y) = τ (y * x))
   have h₃ : piEndTrace τ (T * d) = 0 := by
     rw [← hpT, ← hTp, mul_assoc p, piEndTrace_mul_comm hτ p, mul_assoc, mul_assoc, hpdp,
       mul_zero, map_zero]
-  rw [h₁, h₂, map_sub, piEndTrace_derivativeEnd_coordinate hD, h₃, sub_zero]
+  rw [h₁, h₂, map_sub, piEndTrace_derivativeEnd_coordinate_eq_zero hD, h₃, sub_zero]
 
 variable {D₁ D₂ : derivationLieAlgebra k A}
 
@@ -258,7 +251,7 @@ theorem rangeEndTrace_curvature_eq (hτ : ∀ x y, τ (x * y) = τ (y * x))
     rangeEndTrace τ p (curvature c₁ c₂ hD) = rangeEndTrace τ p (curvature c₁' c₂' hD) := by
   rw [curvature_eq_curvature_add c₁ c₁' c₂ c₂', map_add, map_sub (rangeEndTrace τ p),
     map_add, map_sub (rangeEndTrace τ p),
-    rangeEndTrace_derivativeEnd hτ hp hD₁, rangeEndTrace_derivativeEnd hτ hp hD₂,
+    rangeEndTrace_derivativeEnd_eq_zero hτ hp hD₁, rangeEndTrace_derivativeEnd_eq_zero hτ hp hD₂,
     rangeEndTrace_mul_comm hτ hp]
   abel
 
@@ -304,17 +297,12 @@ theorem rangeEndTrace_curvature_eq_matrixCochainExtension
     (c₂ : RightConnection (E := LinearMap.range (Matrix.mulVecBilin A Aᵐᵒᵖ e)) D₂) :
     rangeEndTrace (τ : A →+ M) (Matrix.mulVecBilin A Aᵐᵒᵖ e) (curvature c₁ c₂ hD) =
       matrixCochainExtension ι 2 (traceDerivationPairCochain τ D₁ D₂) ![e, e, e] := by
-  have hmul (N N' : Matrix ι ι A) : Matrix.mulVecBilin A Aᵐᵒᵖ (N * N') =
-      Matrix.mulVecBilin A Aᵐᵒᵖ N * Matrix.mulVecBilin A Aᵐᵒᵖ N' := by
-    refine LinearMap.ext fun x ↦ ?_
-    simp [Matrix.mulVec_mulVec]
-  have hp : IsIdempotentElem (Matrix.mulVecBilin A Aᵐᵒᵖ e) := by
-    rw [IsIdempotentElem, ← hmul, he.eq]
+  have hp := he.mulVecBilin A Aᵐᵒᵖ
   rw [rangeEndTrace_curvature_eq hτ hp hD₁ hD₂ hD c₁ (project (coordinate D₁ ι) _ hp) c₂
       (project (coordinate D₂ ι) _ hp), rangeEndTrace_curvature_project_coordinate hτ hp hD,
-    derivativeEnd_coordinate_mulVecBilin, derivativeEnd_coordinate_mulVecBilin, ← hmul, ← hmul,
-    ← map_sub, ← hmul, piEndTrace_mulVecBilin, matrixCochainExtension_apply,
-    Fintype.sum_finThreeArrow]
+    derivativeEnd_coordinate_mulVecBilin, derivativeEnd_coordinate_mulVecBilin]
+  simp only [Module.End.mul_eq_comp, ← Matrix.mulVecBilin_mul, ← map_sub]
+  rw [piEndTrace_mulVecBilin, matrixCochainExtension_apply, Fintype.sum_finThreeArrow]
   simp [Matrix.trace, Matrix.mul_apply, Matrix.sub_apply, map_sum, Finset.mul_sum, mul_sub,
     Finset.sum_sub_distrib]
 

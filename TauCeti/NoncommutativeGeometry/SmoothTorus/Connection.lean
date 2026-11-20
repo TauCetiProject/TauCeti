@@ -61,12 +61,7 @@ theorem matrixCochainExtension_fundamentalCocycle_eq_rangeEndTrace
       (2 * π * I)⁻¹ * rangeEndTrace (trace θ)
         (Matrix.mulVecBilin (SmoothNoncommutativeTorus θ) (SmoothNoncommutativeTorus θ)ᵐᵒᵖ e)
         (curvature c₁ c₂ commute_derivation₁_derivation₂) := by
-  have hφ : ((fundamentalCocycle θ : cyclicCochains ℂ (SmoothNoncommutativeTorus θ) ℂ 2) :
-      MultilinearMap (RingHom.id ℂ) (fun _ : Fin 3 ↦ SmoothNoncommutativeTorus θ) ℂ) =
-      (2 * π * I)⁻¹ • traceDerivationPairCochain (trace θ) (derivation₁ θ) (derivation₂ θ) := by
-    ext a
-    simp
-  rw [hφ, map_smul, smul_apply, smul_eq_mul,
+  rw [coe_fundamentalCocycle, map_smul, smul_apply, smul_eq_mul,
     rangeEndTrace_curvature_eq_matrixCochainExtension trace_mul_comm trace_derivation₁
       trace_derivation₂ commute_derivation₁_derivation₂ he c₁ c₂]
 
