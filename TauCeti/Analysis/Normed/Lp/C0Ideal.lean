@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Order.Filter.Cofinite
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # The `c₀` ideal of a bounded product
@@ -20,8 +22,11 @@ star rings, so for C⋆-algebras `A i` the quotient `lp A ∞ ⧸ lp.c0Ideal A` 
 C⋆-algebras, by `lp.inftyCStarAlgebra` and `TwoSidedIdeal.Quotient.cstarAlgebra`).
 
 The quotient norm of the class of `a` is `limsup_i ‖a i‖` along the cofinite filter,
-`lp.norm_mk_c0Ideal`. For instance, in `∏ₙ Mₙ / ⊕ₙ Mₙ`, a family of norm-one elements has
-quotient norm `1`, and the family `(aₙ / n)` has quotient norm `0`.
+`lp.norm_mk_c0Ideal`. For unital factors with `‖1‖ = 1` and summable geometric series (in
+particular, complete normed rings with `‖1‖ = 1`, such as operator algebras on nontrivial spaces),
+the quotient class of `a` is a unit if and only if `a i` is eventually a unit along `cofinite` with
+uniformly bounded inverse norms (`lp.isUnit_mk_c0Ideal_iff`), and the norm of the quotient inverse
+is `limsup_i ‖(a i)⁻¹‖` (`lp.norm_ringInverse_mk_c0Ideal`).
 
 ## Main declarations
 
@@ -29,10 +34,16 @@ quotient norm `1`, and the family `(aₙ / n)` has quotient norm `0`.
 * `lp.isClosed_c0Ideal`: the `c₀` ideal is closed.
 * `lp.star_mem_c0Ideal`: the `c₀` ideal is closed under `star`.
 * `lp.norm_mk_c0Ideal`: the quotient norm is the limit superior of the coordinate norms.
+* `lp.isUnit_mk_c0Ideal_iff`: invertibility in `lp A ∞ ⧸ lp.c0Ideal A` is eventual coordinate
+  invertibility along `cofinite` with uniformly bounded inverse norms.
+* `lp.norm_ringInverse_mk_c0Ideal`: the norm of a quotient inverse is the limit superior of the
+  coordinate inverse norms.
 
 ## References
 
 * B. Blackadar, *Operator Algebras*, II.8.1.
+* A. Böttcher, *C\*-Algebras in Numerical Analysis*, Irish Math. Soc. Bull. 45 (2000), 57–101,
+  Section 7.
 -/
 
 public section
@@ -43,6 +54,8 @@ open scoped ENNReal
 noncomputable section
 
 namespace lp
+
+section NonUnital
 
 variable {ι : Type*} (A : ι → Type*) [∀ i, NonUnitalNormedRing (A i)]
 
@@ -152,5 +165,124 @@ theorem norm_mk_c0Ideal [Infinite ι] (a : lp A ∞) :
     have h := norm_apply_le_norm ENNReal.top_ne_zero (a + z) i
     calc ‖a i‖ ≤ ‖a i + z i‖ + ‖z i‖ := by simpa using norm_sub_le (a i + z i) (z i)
       _ ≤ ‖a + z‖ + ε := add_le_add (by simpa using h) hi.le
+
+end NonUnital
+
+section Units
+
+variable {ι : Type*} {A : ι → Type*} [∀ i, NormedRing (A i)] [∀ i, NormOneClass (A i)]
+
+/-- Build a bounded representative of the inverse modulo `c0Ideal` from an eventual inverse-norm
+bound along `cofinite`. -/
+private theorem exists_mul_sub_one_mem_c0Ideal {a : lp A ∞} {M : ℝ}
+    (hM : ∀ᶠ i in cofinite, IsUnit (a i) ∧ ‖Ring.inverse (a i)‖ ≤ M) :
+    ∃ b : lp A ∞,
+      (∀ᶠ i in cofinite, b i = Ring.inverse (a i)) ∧
+        a * b - 1 ∈ c0Ideal A ∧ b * a - 1 ∈ c0Ideal A := by
+  classical
+  let S : Set ι := {i | IsUnit (a i) ∧ ‖Ring.inverse (a i)‖ ≤ M}
+  have hS : S ∈ cofinite := hM
+  let b : lp A ∞ := ⟨fun i ↦ if i ∈ S then Ring.inverse (a i) else 0, memℓp_infty ⟨max M 0, by
+    rintro _ ⟨i, rfl⟩
+    by_cases hi : i ∈ S
+    · simp only [hi, ↓reduceIte]
+      exact hi.2.trans (le_max_left M 0)
+    · simp [hi]⟩⟩
+  have hb_eq : ∀ᶠ i in cofinite, b i = Ring.inverse (a i) := by
+    filter_upwards [hS] with i hi
+    simp [b, hi]
+  have hab : a * b - 1 ∈ c0Ideal A := by
+    refine mem_c0Ideal.2 (tendsto_const_nhds.congr' ?_)
+    filter_upwards [hS] with i hi
+    have h0 : (a * b - 1) i = 0 := by
+      rw [lp.coeFn_sub, lp.infty_coeFn_mul, lp.infty_coeFn_one, Pi.sub_apply, Pi.mul_apply,
+        Pi.one_apply]
+      simp [b, hi, Ring.mul_inverse_cancel (a i) hi.1]
+    simp [h0]
+  have hba : b * a - 1 ∈ c0Ideal A := by
+    refine mem_c0Ideal.2 (tendsto_const_nhds.congr' ?_)
+    filter_upwards [hS] with i hi
+    have h0 : (b * a - 1) i = 0 := by
+      rw [lp.coeFn_sub, lp.infty_coeFn_mul, lp.infty_coeFn_one, Pi.sub_apply, Pi.mul_apply,
+        Pi.one_apply]
+      simp [b, hi, Ring.inverse_mul_cancel (a i) hi.1]
+    simp [h0]
+  exact ⟨b, hb_eq, hab, hba⟩
+
+/-- A bounded family whose coordinates are eventually units along `cofinite` with uniformly bounded
+inverse norms projects to a unit modulo `lp.c0Ideal`. -/
+theorem isUnit_mk_c0Ideal_of_eventually {a : lp A ∞}
+    (h : ∃ M : ℝ, ∀ᶠ i in cofinite, IsUnit (a i) ∧ ‖Ring.inverse (a i)‖ ≤ M) :
+    IsUnit (TwoSidedIdeal.Quotient.mk (c0Ideal A) a) := by
+  obtain ⟨M, hM⟩ := h
+  obtain ⟨b, -, hab, hba⟩ := exists_mul_sub_one_mem_c0Ideal hM
+  refine isUnit_iff_exists.mpr ⟨TwoSidedIdeal.Quotient.mk (c0Ideal A) b, ?_, ?_⟩
+  · rw [← map_mul, ← TwoSidedIdeal.Quotient.mk_one (c0Ideal A), TwoSidedIdeal.Quotient.eq]
+    exact hab
+  · rw [← map_mul, ← TwoSidedIdeal.Quotient.mk_one (c0Ideal A), TwoSidedIdeal.Quotient.eq]
+    exact hba
+
+/-- **Invertibility in `lp A ∞ ⧸ lp.c0Ideal A`.** When each factor has `‖1‖ = 1` and summable
+geometric series (in particular, when each factor is a complete normed ring with `‖1‖ = 1`), the
+quotient class of `a : lp A ∞` is invertible if and only if `a i` is eventually invertible along
+`cofinite` with uniformly bounded inverse norms. -/
+theorem isUnit_mk_c0Ideal_iff [∀ i, HasSummableGeomSeries (A i)] {a : lp A ∞} :
+    IsUnit (TwoSidedIdeal.Quotient.mk (c0Ideal A) a) ↔
+      ∃ M : ℝ, ∀ᶠ i in cofinite, IsUnit (a i) ∧ ‖Ring.inverse (a i)‖ ≤ M := by
+  refine ⟨fun hu ↦ ?_, isUnit_mk_c0Ideal_of_eventually⟩
+  obtain ⟨q, hq₁, hq₂⟩ := isUnit_iff_exists.mp hu
+  obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (c0Ideal A) q
+  have hab : 1 - a * b ∈ c0Ideal A := by
+    rw [← neg_sub]
+    refine (c0Ideal A).neg_mem (TwoSidedIdeal.Quotient.eq.mp ?_)
+    rw [map_mul, TwoSidedIdeal.Quotient.mk_one]
+    exact hq₁
+  have hba : 1 - b * a ∈ c0Ideal A := by
+    rw [← neg_sub]
+    refine (c0Ideal A).neg_mem (TwoSidedIdeal.Quotient.eq.mp ?_)
+    rw [map_mul, TwoSidedIdeal.Quotient.mk_one]
+    exact hq₂
+  have hr_ev : ∀ᶠ i in cofinite, ‖(1 - a * b) i‖ < 1 / 2 :=
+    (tendsto_order.mp (mem_c0Ideal.mp hab)).2 (1 / 2) (by norm_num)
+  have hl_ev : ∀ᶠ i in cofinite, ‖(1 - b * a) i‖ < 1 / 2 :=
+    (tendsto_order.mp (mem_c0Ideal.mp hba)).2 (1 / 2) (by norm_num)
+  refine ⟨2 * ‖b‖, (hr_ev.and hl_ev).mono fun i ⟨hr, hl⟩ ↦ ?_⟩
+  have hr' : ‖(1 : A i) - a i * b i‖ < 1 / 2 := by
+    simpa only [lp.coeFn_sub, lp.infty_coeFn_one, lp.infty_coeFn_mul, Pi.sub_apply, Pi.one_apply,
+      Pi.mul_apply] using hr
+  have hl' : ‖(1 : A i) - b i * a i‖ < 1 / 2 := by
+    simpa only [lp.coeFn_sub, lp.infty_coeFn_one, lp.infty_coeFn_mul, Pi.sub_apply, Pi.one_apply,
+      Pi.mul_apply] using hl
+  obtain ⟨hu_i, hnorm_i⟩ :=
+    NormedRing.isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt
+      (hr'.trans (by norm_num)) (hl'.trans (by norm_num))
+  refine ⟨hu_i, hnorm_i.trans ?_⟩
+  rw [div_le_iff₀ (by linarith)]
+  nlinarith [norm_apply_le_norm ENNReal.top_ne_zero b i, norm_nonneg b]
+
+/-- The norm of the inverse of a unit in `lp A ∞ ⧸ lp.c0Ideal A` is the limit superior of the
+coordinate inverse norms along `cofinite`. -/
+theorem norm_ringInverse_mk_c0Ideal [Infinite ι] [∀ i, HasSummableGeomSeries (A i)] {a : lp A ∞}
+    (ha : IsUnit (TwoSidedIdeal.Quotient.mk (c0Ideal A) a)) :
+    ‖Ring.inverse (TwoSidedIdeal.Quotient.mk (c0Ideal A) a)‖ =
+      limsup (fun i ↦ ‖Ring.inverse (a i)‖) cofinite := by
+  obtain ⟨M, hM⟩ := isUnit_mk_c0Ideal_iff.mp ha
+  obtain ⟨b, hb_eq, hab, hba⟩ := exists_mul_sub_one_mem_c0Ideal hM
+  let u : (lp A ∞ ⧸ c0Ideal A)ˣ :=
+    { val := TwoSidedIdeal.Quotient.mk (c0Ideal A) a
+      inv := TwoSidedIdeal.Quotient.mk (c0Ideal A) b
+      val_inv := by
+        rw [← map_mul, ← TwoSidedIdeal.Quotient.mk_one (c0Ideal A), TwoSidedIdeal.Quotient.eq]
+        exact hab
+      inv_val := by
+        rw [← map_mul, ← TwoSidedIdeal.Quotient.mk_one (c0Ideal A), TwoSidedIdeal.Quotient.eq]
+        exact hba }
+  have hinv : Ring.inverse (TwoSidedIdeal.Quotient.mk (c0Ideal A) a) =
+      TwoSidedIdeal.Quotient.mk (c0Ideal A) b :=
+    Ring.inverse_unit u
+  rw [hinv, norm_mk_c0Ideal]
+  exact limsup_congr (hb_eq.mono fun _ hi ↦ congrArg norm hi)
+
+end Units
 
 end lp

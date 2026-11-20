@@ -18,13 +18,14 @@ When the nonunits also form an open set, as in a complete discretely valued ring
 there is no such boundary and `Ring.inverse` is continuous everywhere.
 
 The Neumann series also gives explicit bounds: `‖(1 - x)⁻¹‖ ≤ ‖1‖ - 1 + (1 - ‖x‖)⁻¹` when
-`‖x‖ < 1`, and `‖(u + t)⁻¹‖ ≤ ‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)` for a unit `u` with
-`‖u⁻¹‖ * ‖t‖ < 1`; in particular `(1 - w) * u + d` is a unit with
+`‖x‖ < 1`, `‖a⁻¹‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖)` when `b` is a two-sided approximate inverse with
+`‖1 - a * b‖ < 1` and `‖1 - b * a‖ < 1`, and `‖(u + t)⁻¹‖ ≤ ‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)` for a unit
+`u` with `‖u⁻¹‖ * ‖t‖ < 1`; in particular `(1 - w) * u + d` is a unit with
 `‖((1 - w) * u + d)⁻¹‖ ≤ M / (1 - ‖w‖ - M * ‖d‖)` when `‖u⁻¹‖ ≤ M`, `‖w‖ < 1` and
 `M * ‖d‖ < 1 - ‖w‖`.
 Mathlib records these inverses only through asymptotic `O`-bounds such as
-`NormedRing.inverse_add_norm`; the explicit constants are needed for inductive constructions
-that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
+`NormedRing.inverse_add_norm`; the explicit constants are needed for stability criteria and
+inductive constructions that perturb a unit infinitely often, such as Cohen–Hewitt factorization.
 
 The Jacobson radical is closed, as an intersection of maximal left ideals, using
 Mathlib's `Ring.jacobson_eq_sInf_isMaximal` and `Ideal.IsMaximal.isClosed`.
@@ -55,6 +56,41 @@ theorem norm_inverse_one_sub_le {x : R} (hx : ‖x‖ < 1) :
     ‖Ring.inverse (1 - x)‖ ≤ ‖(1 : R)‖ - 1 + (1 - ‖x‖)⁻¹ := by
   rw [inverse_one_sub x hx]
   exact tsum_geometric_le_of_norm_lt_one x hx
+
+/-- A two-sided approximate inverse in a normed ring with summable geometric series makes an
+element invertible, with an explicit bound on its inverse: if `‖1 - a * b‖ < 1` and
+`‖1 - b * a‖ < 1`, then `a` is a unit and `‖a⁻¹‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖)`. -/
+theorem isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt {a b : R}
+    (hr : ‖1 - a * b‖ < 1) (hl : ‖1 - b * a‖ < 1) :
+    IsUnit a ∧ ‖Ring.inverse a‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖) := by
+  set ur : Rˣ := Units.oneSub (1 - a * b) hr with hur_def
+  set ul : Rˣ := Units.oneSub (1 - b * a) hl with hul_def
+  have hur : (ur : R) = a * b := by
+    rw [hur_def, Units.val_oneSub, sub_sub_cancel]
+  have hul : (ul : R) = b * a := by
+    rw [hul_def, Units.val_oneSub, sub_sub_cancel]
+  have haR : a * (b * ↑ur⁻¹) = 1 := by
+    rw [← mul_assoc, ← hur, Units.mul_inv]
+  have haL : (↑ul⁻¹ * b) * a = 1 := by
+    rw [mul_assoc, ← hul, Units.inv_mul]
+  have hLR : ↑ul⁻¹ * b = b * ↑ur⁻¹ := by
+    rw [← mul_one (↑ul⁻¹ * b), ← haR, ← mul_assoc, haL, one_mul]
+  have haL' : (b * ↑ur⁻¹) * a = 1 := hLR ▸ haL
+  set u : Rˣ := Units.mk a (b * ↑ur⁻¹) haR haL' with hu_def
+  have hu_val : (u : R) = a := by
+    rw [hu_def, Units.val_mk]
+  have hu_inv : (↑u⁻¹ : R) = b * ↑ur⁻¹ := by
+    rw [hu_def, Units.inv_mk, Units.val_mk]
+  have hu_eq : (b * ↑ur⁻¹ : R) = b + (b * ↑ur⁻¹) * (1 - a * b) := by
+    have hmul : (b * ↑ur⁻¹) * (a * b) = b := by
+      rw [← hur, mul_assoc, Units.inv_mul, mul_one]
+    rw [mul_sub, mul_one, hmul, add_sub_cancel]
+  have hstep : ‖(b * ↑ur⁻¹ : R)‖ ≤ ‖b‖ + ‖(b * ↑ur⁻¹ : R)‖ * ‖1 - a * b‖ :=
+    (congrArg norm hu_eq).le.trans <| (norm_add_le _ _).trans <|
+      add_le_add_right (norm_mul_le _ _) _
+  refine ⟨hu_val ▸ u.isUnit, ?_⟩
+  rw [← hu_val, Ring.inverse_unit, hu_inv, le_div_iff₀ (sub_pos.mpr hr)]
+  linarith
 
 omit [HasSummableGeomSeries R] in
 /-- In a normed ring, perturbing a unit `u` by `t` with `‖u⁻¹‖ * ‖t‖ < 1` gives an element whose
