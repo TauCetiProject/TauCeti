@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -772,16 +773,10 @@ theorem contMDiff_apply_prodMk_const_of_contMDiff_hom_bundle
   intro u₀
   have h := (contMDiffAt_hom_bundle _).1
     ((hA.comp (f := fun u ↦ (c u, x)) (hc.prodMk contMDiff_const)) u₀)
-  refine h.2.congr_of_eventuallyEq (Filter.Eventually.of_forall fun u ↦ ?_)
-  -- Read in the chart at `x`, the section over the constant base point `x` is `A` itself: both
-  -- coordinate changes are coordinate changes from the chart at `x` to itself.
-  have := inTangentCoordinates_eq (I := I) (I' := I) (fun _ : N ↦ x) (fun _ : N ↦ x)
-    (fun u ↦ (A (c u, x) : TangentSpace I x →L[𝕜] TangentSpace I x)) (x₀ := u₀) (x := u)
-    (mem_chart_source H x) (mem_chart_source H x)
-  refine Eq.trans ?_ this.symm
-  ext v
-  have hself := (tangentBundleCore I M).coordChange_self (achart H x) x (mem_achart_source H x)
-  exact (congrArg _ (hself v)).symm.trans (hself _).symm
+  -- Read in the chart at `x`, the section over the constant base point `x` is `A` itself.
+  exact h.2.congr_of_eventuallyEq (Filter.Eventually.of_forall fun u ↦
+    (Manifold.inTangentCoordinates_eq_self_of_eq (I := I) (I' := I) (fun _ ↦ x) (fun _ ↦ x)
+      (fun u ↦ A (c u, x)) (x₀ := u₀) (x := u) rfl rfl).symm)
 
 end TangentEndomorphism
 

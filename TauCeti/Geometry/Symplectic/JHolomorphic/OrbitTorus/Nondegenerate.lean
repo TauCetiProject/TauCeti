@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Trivialization
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
 import TauCeti.Geometry.Symplectic.Manifold.Suspension.AlmostComplex
 
@@ -45,9 +46,8 @@ This file supplies the hypotheses of the kernel criteria of
 
 When the vertical family is smooth, as for
 `TauCeti.SmoothMappingTorus.suspensionAlmostComplexStructure`, the loop
-`TauCeti.verticalFamilyAt K s₀ x` is smooth by
-`TauCeti.contMDiff_apply_prodMk_const_of_contMDiff_hom_bundle`, which discharges the `C²`
-hypothesis below.
+`TauCeti.verticalFamilyAt K s₀ x` is smooth by `TauCeti.contDiff_verticalFamilyAt`, which
+discharges the `C²` hypothesis below.
 
 The main theorem combines these with the dynamics of the return map. If `φ` is nondegenerate up to
 period `2 N` (no return map of a periodic orbit of period at most `2 N` has the eigenvalue `1`),
@@ -83,7 +83,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- The vertical family `K` read at the circle coordinate `s` and the point `x`: the loop
 `t ↦ K_((s, t), x)` of endomorphisms of `T_x M`, which is the model space `E` by definition. -/
-@[expose] noncomputable def verticalFamilyAt
+noncomputable def verticalFamilyAt
     (K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)) (s : ℝ) (x : M) (t : ℝ) :
     E →L[ℝ] E :=
   show E →L[ℝ] E from (K ((s, t), x)).toLinearMap.toContinuousLinearMap
@@ -93,7 +93,20 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 theorem verticalFamilyAt_apply
     (K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)) (s : ℝ) (x : M) (t : ℝ)
     (v : E) : verticalFamilyAt K s x t v = K ((s, t), x) v :=
-  rfl
+  (rfl)
+
+/-- **The vertical family at a point is as smooth as the family.** If the vertical family `K` is a
+`C^n` section of the endomorphism bundle of `T M` along `(ℝ × ℝ) × M → M`, then the loop
+`TauCeti.verticalFamilyAt K s x` is `C^n`. -/
+theorem contDiff_verticalFamilyAt [IsManifold I 1 M] {n : WithTop ℕ∞}
+    {K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)}
+    (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun p : (ℝ × ℝ) × M ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        p.2 (K p).toLinearMap.toContinuousLinearMap))
+    (s : ℝ) (x : M) : ContDiff ℝ n (verticalFamilyAt K s x) :=
+  contMDiff_iff_contDiff.1 (contMDiff_apply_prodMk_const_of_contMDiff_hom_bundle _ hK
+    (contMDiff_iff_contDiff.2 (contDiff_const.prodMk contDiff_id)) x)
 
 variable [IsManifold I ∞ M] {φ : M ≃ₘ⟮I, I⟯ M}
   {K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I p.2)}
