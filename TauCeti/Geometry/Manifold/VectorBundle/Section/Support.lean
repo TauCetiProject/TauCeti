@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Sets.Compacts
 
@@ -19,7 +19,9 @@ and their compactly supported submodule. The latter is the directed supremum of 
 fixed-compact stages. These are algebraic carriers; no topology on section spaces is installed
 here. Support-preserving linear equivalences preserve both native support submodules.
 
-Smooth scalar multiplication preserves support and compact support. A compactly supported
+Nonzero constant scalars from a normed algebra over the base field preserve exact support
+(`ContMDiffSection.tsupport_smul_of_normedAlgebra`). Smooth scalar multiplication preserves
+support and compact support. A compactly supported
 scalar function localizes even a section without compact support, and a cutoff equal to one
 on the support acts as the identity. These operations provide the support stages and
 localizations used in test sections and their inductive-limit topologies.
@@ -94,6 +96,23 @@ theorem tsupport_subset_iff {s : Cₛ^n⟮I; F, V⟯} {K : Set M} (hK : IsClosed
 
 end Support
 
+section NormedAlgebra
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- A nonzero extension scalar preserves closed support under the native normed-algebra action. -/
+theorem tsupport_smul_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) (hc : c ≠ 0) :
+    (c • s).tsupport = s.tsupport := by
+  rw [tsupport_def, tsupport_def]
+  congr 1
+  ext x
+  simp only [Set.mem_ofPred_eq, coe_smul_of_normedAlgebra, Pi.smul_apply]
+  exact not_congr (smul_eq_zero_iff_right hc)
+
+end NormedAlgebra
+
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
 @[simp]
@@ -123,10 +142,8 @@ theorem tsupport_smul_subset (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) :
 
 /-- Multiplication by a nonzero scalar preserves closed support. -/
 theorem tsupport_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (hc : c ≠ 0) :
-    (c • s).tsupport = s.tsupport := by
-  refine (tsupport_smul_subset c s).antisymm ?_
-  have h := tsupport_smul_subset c⁻¹ (c • s)
-  simpa [smul_smul, hc] using h
+    (c • s).tsupport = s.tsupport :=
+  tsupport_smul_of_normedAlgebra c s hc
 
 variable (I F n V) in
 /-- The submodule of native smooth sections whose closed support lies in `K`. -/

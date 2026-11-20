@@ -489,21 +489,11 @@ theorem SupportedIn.complexificationEquivProd_symm_ofSupportedIn (K : Compacts M
   exact not_congr (map_eq_zero_iff (tmulConj (V x))
     (Function.LeftInverse.injective (tmulConj_tmulConj (V x))))
 
-/-- Native nonzero complex scalar multiplication preserves exact section support. -/
-theorem tsupport_complex_smul (z : ℂ)
-    (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) (hz : z ≠ 0) :
-    (z • σ).tsupport = σ.tsupport := by
-  rw [tsupport_def, tsupport_def]
-  congr 1
-  ext x
-  simp only [Set.mem_ofPred_eq, coe_smul_of_normedAlgebra, Pi.smul_apply]
-  exact not_congr (smul_eq_zero_iff_right hz)
-
 /-- Multiplication by i preserves native section support. -/
 @[simp] theorem tsupport_I_smul
     (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
     (Complex.I • σ).tsupport = σ.tsupport :=
-  tsupport_complex_smul Complex.I σ Complex.I_ne_zero
+  tsupport_smul_of_normedAlgebra Complex.I σ Complex.I_ne_zero
 
 private def smulIRealLinearEquiv :
     Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ ≃ₗ[ℝ]
