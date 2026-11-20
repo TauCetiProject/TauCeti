@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
+public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.RingTheory.Kaehler.Basic
 import Mathlib.Algebra.DirectSum.Module
+import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
 /-!
 # The differential-symbol presentation of differential forms
@@ -101,6 +103,76 @@ theorem elementary_def (c : B) (v : Fin n → B) :
     elementary A c v = c • exteriorPower.ιMulti B n fun i => D A B (v i) :=
   (rfl)
 
+section Elementary
+
+variable {A}
+
+/-- An elementary form with zero coefficient vanishes. -/
+@[simp]
+theorem elementary_zero_coeff (v : Fin n → B) :
+    elementary A (0 : B) v = 0 := by
+  rw [elementary_def, zero_smul]
+
+/-- An elementary form with unit coefficient is a pure exterior product of differentials. -/
+theorem elementary_one_coeff (v : Fin n → B) :
+    elementary A (1 : B) v = exteriorPower.ιMulti B n fun i => D A B (v i) := by
+  rw [elementary_def, one_smul]
+
+/-- Addition in the coefficient of an elementary form. -/
+theorem elementary_add_coeff (c e : B) (v : Fin n → B) :
+    elementary A (c + e) v = elementary A c v + elementary A e v := by
+  rw [elementary_def, elementary_def, elementary_def, add_smul]
+
+/-- `B`-scalar multiplication on an elementary form multiplies its coefficient. -/
+theorem elementary_smul_coeff (b c : B) (v : Fin n → B) :
+    b • elementary A c v = elementary A (b * c) v := by
+  rw [elementary_def, elementary_def, smul_smul]
+
+/-- `A`-scalar multiplication on an elementary form acts on its coefficient. -/
+theorem elementary_base_smul_coeff (a : A) (c : B) (v : Fin n → B) :
+    a • elementary A c v = elementary A (a • c) v := by
+  rw [elementary_def, elementary_def, smul_assoc]
+
+/-- An elementary form with two equal slots vanishes. -/
+theorem elementary_eq_zero_of_eq (c : B) (v : Fin n → B) {i j : Fin n}
+    (hij : i ≠ j) (hv : v i = v j) :
+    elementary A c v = 0 := by
+  rw [elementary_def,
+    (exteriorPower.ιMulti B n).map_eq_zero_of_eq _ (congrArg (D A B) hv) hij, smul_zero]
+
+/-- In degree `0`, `exteriorPower.zeroEquiv` maps an elementary form to its coefficient. -/
+@[simp]
+theorem zeroEquiv_elementary (c : B) (v : Fin 0 → B) :
+    exteriorPower.zeroEquiv B Ω[B⁄A] (elementary A c v) = c := by
+  simp [elementary_def]
+
+/-- In degree `0`, `(exteriorPower.zeroEquiv B Ω[B⁄A]).symm c` is an elementary form. -/
+theorem elementary_zero_eq_zeroEquiv_symm (c : B) (v : Fin 0 → B) :
+    elementary A c v = (exteriorPower.zeroEquiv B Ω[B⁄A]).symm c := by
+  apply (exteriorPower.zeroEquiv B Ω[B⁄A]).injective
+  simp
+
+/-- In degree `1`, `exteriorPower.oneEquiv` maps an elementary form `c • dv₀` to `c • D (v 0)`. -/
+@[simp]
+theorem oneEquiv_elementary (c : B) (v : Fin 1 → B) :
+    exteriorPower.oneEquiv B Ω[B⁄A] (elementary A c v) = c • D A B (v 0) := by
+  simp [elementary_def]
+
+/-- The wedge product of two elementary differential forms multiplies their coefficients and
+concatenates their differential slots. -/
+theorem wedge_elementary {m n : ℕ} (c c' : B) (u : Fin m → B) (v : Fin n → B) :
+    exteriorPower.wedge B Ω[B⁄A] m n (elementary A c u) (elementary A c' v) =
+      elementary A (c * c') (Fin.append u v) := by
+  simp only [elementary_def, map_smul, LinearMap.smul_apply, exteriorPower.wedge_ιMulti,
+    smul_smul, mul_comm c' c]
+  congr 2
+  funext i
+  refine Fin.addCases (fun j => ?_) (fun j => ?_) i
+  · simp [Fin.append_left]
+  · simp [Fin.append_right]
+
+end Elementary
+
 omit [CommRing B] [Algebra A B] in
 variable {A} in
 /-- `A`-linear maps out of the symbols agree once they agree on every basis symbol `[c; v]`. -/
@@ -157,6 +229,13 @@ theorem symbolRelations_eq_span : symbolRelations A B n = Submodule.span A (rela
   (rfl)
 
 variable {A B n}
+
+/-- `symbolMap` evaluates a single `Finsupp.single (c, v) a` to `a • elementary A c v`. -/
+@[simp]
+theorem symbolMap_single (c : B) (v : Fin n → B) (a : A) :
+    symbolMap A B n (Finsupp.single (c, v) a) = a • elementary A c v :=
+  Finsupp.linearCombination_single (R := A)
+    (v := fun p : B × (Fin n → B) => elementary A p.1 p.2) a (c, v)
 
 /-- `symbolMap` evaluates `[c; v]` to the elementary form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁`. -/
 @[simp]
@@ -273,6 +352,19 @@ theorem forms_hom_ext {M : Type*} [AddCommGroup M] [Module A M] {f g : Forms A B
     (h : ∀ (c : B) (v : Fin n → B), f (elementary A c v) = g (elementary A c v)) : f = g :=
   (LinearMap.cancel_right (symbolMap_surjective A B n)).1 <|
     symbols_hom_ext fun c v => by simpa only [LinearMap.comp_apply, symbolMap_sym] using h c v
+
+/-- Additive induction principle on `Forms A B n`: a predicate holding on `0`, closed under
+addition, and holding on every elementary form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁` holds on all `n`-forms. -/
+theorem induction_elementary {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] {n : ℕ}
+    {P : Forms A B n → Prop} (zero : P 0) (add : ∀ ω₁ ω₂, P ω₁ → P ω₂ → P (ω₁ + ω₂))
+    (elem : ∀ (c : B) (v : Fin n → B), P (elementary A c v)) (ω : Forms A B n) :
+    P ω := by
+  obtain ⟨s, rfl⟩ := symbolMap_surjective A B n ω
+  induction s using Finsupp.induction with
+  | zero => simpa using zero
+  | single_add p a s _ _ ih =>
+    rw [map_add, symbolMap_single, elementary_base_smul_coeff]
+    exact add _ _ (elem (a • p.1) p.2) ih
 
 end
 
@@ -631,5 +723,13 @@ variable {A B n}
 public theorem symbolQuotientEquiv_mk (s : Symbols A B n) :
     symbolQuotientEquiv A B n (Submodule.Quotient.mk s) = symbolMap A B n s := by
   simp [symbolQuotientEquiv]
+
+/-- `(symbolQuotientEquiv A B n).symm` sends an elementary form to the class of its symbol. -/
+@[simp]
+public theorem symbolQuotientEquiv_symm_elementary (c : B) (v : Fin n → B) :
+    (symbolQuotientEquiv A B n).symm (elementary A c v) =
+      Submodule.Quotient.mk (sym A c v) := by
+  apply (symbolQuotientEquiv A B n).injective
+  simp
 
 end TauCeti.DeRham

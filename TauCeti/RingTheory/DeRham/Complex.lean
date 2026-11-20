@@ -37,13 +37,13 @@ definitionally, and the statement of `complex_d` relies on this.
 * The Stacks Project, Section 10.132 (Tag 0FKF).
 -/
 
-universe u
+universe u v
 
 namespace TauCeti.DeRham
 
 open CategoryTheory
 
-variable (A B : Type u) [CommRing A] [CommRing B] [Algebra A B]
+variable (A : Type u) (B : Type v) [CommRing A] [CommRing B] [Algebra A B]
 
 public section
 
@@ -51,13 +51,14 @@ public section
 `Ω⁰ → Ω¹ → Ω² → ⋯` of differential forms `Ωⁿ = ⋀[B]^n Ω[B⁄A]`, with the de Rham
 differential. -/
 @[expose]
-noncomputable def complex : CochainComplex (ModuleCat.{u} A) ℕ :=
+noncomputable def complex : CochainComplex (ModuleCat.{v} A) ℕ :=
   CochainComplex.of (fun n => ModuleCat.of A (Forms A B n)) (fun n => ModuleCat.ofHom (d A B n))
     fun n => by
       ext ω
       simp
 
 /-- The degree-`n` object of the de Rham complex is the module of differential `n`-forms. -/
+@[simp]
 theorem complex_X (n : ℕ) : (complex A B).X n = ModuleCat.of A (Forms A B n) :=
   rfl
 
@@ -65,6 +66,17 @@ theorem complex_X (n : ℕ) : (complex A B).X n = ModuleCat.of A (Forms A B n) :
 @[simp]
 theorem complex_d (n : ℕ) : (complex A B).d n (n + 1) = ModuleCat.ofHom (d A B n) := by
   simp only [complex, CochainComplex.of_d]
+
+/-- Pointwise evaluation of the differential of `complex A B` from degree `n` to `n + 1`. -/
+theorem complex_d_apply (n : ℕ) (ω : Forms A B n) :
+    (complex A B).d n (n + 1) ω = d A B n ω := by
+  rw [complex_d]
+  rfl
+
+/-- Differentials of `complex A B` vanish outside adjacent degrees `i ↦ i + 1`. -/
+theorem complex_d_ne {i j : ℕ} (h : i + 1 ≠ j) : (complex A B).d i j = 0 := by
+  apply CochainComplex.of_d_ne
+  exact h
 
 end
 
