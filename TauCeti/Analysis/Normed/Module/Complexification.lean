@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -56,8 +57,10 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
   on the real parts of rotations.
 * `TauCeti.Complexification.instNormedSpace`, `TauCeti.Complexification.instCompleteSpace`: the
   complex seminormed space structure, complete when `X` is, and continuous conjugation
-  `TauCeti.Complexification.conjCLE`.
-* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`.
+  `TauCeti.Complexification.conjCLE`, also as the real-linear map
+  `TauCeti.Complexification.conjCLM`.
+* `TauCeti.Complexification.equivProd`: `X_ℂ` is real-linearly homeomorphic to `X × X`, so
+  `X_ℂ` is finite-dimensional over `ℝ` and over `ℂ` when `X` is.
 * `TauCeti.Complexification.equivPi`: the complexification of `ι → ℝ` is complex-linearly
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
@@ -347,6 +350,16 @@ instance instCompleteSpace [CompleteSpace X] : CompleteSpace (Complexification X
   ((equivProd X).isUniformEmbedding.isUniformInducing.completeSpace_congr
     (equivProd X).surjective).2 inferInstance
 
+/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℝ`. -/
+instance instFiniteDimensionalReal [FiniteDimensional ℝ X] :
+    FiniteDimensional ℝ (Complexification X) :=
+  Module.Finite.equiv (equivProd X).symm.toLinearEquiv
+
+/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℂ`. -/
+instance instFiniteDimensionalComplex [FiniteDimensional ℝ X] :
+    FiniteDimensional ℂ (Complexification X) :=
+  Module.Finite.of_restrictScalars_finite ℝ ℂ _
+
 end Norm
 
 /-- The Taylor seminorm is a norm when the original real seminorm is a norm. -/
@@ -551,6 +564,16 @@ def conjCLE (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℝ X] :
 
 @[simp] theorem coe_conjCLE : ⇑(conjCLE X) = conj X := (rfl)
 @[simp] theorem conjCLE_symm : (conjCLE X).symm = conjCLE X := by ext <;> rfl
+
+/-- Complex conjugation on `TauCeti.Complexification X` as a continuous real-linear map. -/
+def conjCLM (X : Type*) [SeminormedAddCommGroup X] [NormedSpace ℝ X] :
+    Complexification X →L[ℝ] Complexification X :=
+  ⟨{ toFun := conj X
+     map_add' := map_add (conj X)
+     map_smul' := fun r z ↦ by ext <;> simp },
+    (conjCLE X).continuous⟩
+
+@[simp] theorem coe_conjCLM : ⇑(conjCLM X) = conj X := (rfl)
 
 /-- Complexification of a bounded real operator commutes with complex conjugation. -/
 theorem conj_complexify (T : X →L[ℝ] Y) (z : Complexification X) :

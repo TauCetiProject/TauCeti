@@ -168,17 +168,6 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 open Complexification
 
-/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℝ`. -/
-private theorem finiteDimensional_real_complexification [FiniteDimensional ℝ X] :
-    FiniteDimensional ℝ (Complexification X) :=
-  Module.Finite.equiv (equivProd X).symm.toLinearEquiv
-
-/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℂ`. -/
-private theorem finiteDimensional_complex_complexification [FiniteDimensional ℝ X] :
-    FiniteDimensional ℂ (Complexification X) :=
-  have := finiteDimensional_real_complexification (X := X)
-  Module.Finite.of_restrictScalars_finite ℝ ℂ _
-
 /-- The space `X_ℂ × X_ℂ` in which the pair `ξ = (u, ψ)` takes its values. -/
 private abbrev CPair (X : Type*) :=
   Complexification X × Complexification X
@@ -215,17 +204,10 @@ private theorem fderiv_hwPair_one_add_I_smul {u : ℂ → X} {z : ℂ} (hu : Con
   · simpa using fderiv_ofReal_comp_one_add_I_smul (hu.differentiableAt (by norm_num))
   · simpa using fderiv_cxDeriv_one_add_I_smul hu
 
-/-- Complex conjugation on the complexification, as a real-linear map. -/
-private noncomputable def conjCLM : Complexification X →L[ℝ] Complexification X :=
-  ⟨{ toFun := conj X
-     map_add' := map_add (conj X)
-     map_smul' := fun r z ↦ by ext <;> simp [real_smul_re, real_smul_im] },
-    by simpa using (conjCLE X).continuous⟩
-
 /-- The conjugation part `v ↦ (conj v.2, 0)` of the coefficient of the first-order system. -/
 private noncomputable def hwConjPart : CPair X →L[ℝ] CPair X :=
   (ContinuousLinearMap.inl ℝ (Complexification X) (Complexification X)).comp
-    (conjCLM.comp (ContinuousLinearMap.snd ℝ (Complexification X) (Complexification X)))
+    ((conjCLM X).comp (ContinuousLinearMap.snd ℝ (Complexification X) (Complexification X)))
 
 /-- The coefficient `C` of the first-order system `∂ₛξ + i ∂ₜξ + C ξ = 0` solved by `ξ = (u, ψ)`:
 `C v = -(conj v.2, ‖T ξ‖⁻² ⟪T ξ, T v⟫ Δu)`, for an injective map `T` into an inner product space,
@@ -309,7 +291,7 @@ private theorem hwPair_equation {Ω : Set ℂ} (hΩ : IsOpen Ω) {u : ℂ → X}
     simp [hwCoeff, hwConjPart, h0, hψ, hΔ]
   · have he : T (hwPair u z) ≠ 0 := fun h ↦ h0 (hT (h.trans (map_zero T).symm))
     ext1
-    · simp [hwCoeff, hwConjPart, conjCLM, hwPair]
+    · simp [hwCoeff, hwConjPart, hwPair]
     · simp [hwCoeff, hwConjPart, rankOneDivNormSq_apply_self _ he]
 
 /-- The pair `ξ = (u, ψ)` of a `C²` solution of `‖Δu‖ ≤ K (‖u‖ + ‖Du‖)` solves a linear
@@ -324,7 +306,6 @@ private theorem exists_coeff_hwPair [FiniteDimensional ℝ X] {Ω : Set ℂ} (h�
       (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) ∧
       ∀ z ∈ Ω, fderiv ℝ (hwPair u) z 1 + Complex.I • fderiv ℝ (hwPair u) z Complex.I +
         C z (hwPair u z) = 0 := by
-  have := finiteDimensional_real_complexification (X := X)
   let e := toEuclidean (E := CPair X)
   let T : CPair X →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ (CPair X))) := e
   let T' : EuclideanSpace ℝ (Fin (Module.finrank ℝ (CPair X))) →L[ℝ] CPair X := e.symm
@@ -459,7 +440,6 @@ theorem eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul {Ω : Set ℂ} (h
       (fun z ↦ u z - ((z - z₀) ^ k • c).re) =o[𝓝 z₀] (fun z ↦ ‖z - z₀‖ ^ k) ∧
       (fun z ↦ fderiv ℝ u z - fderiv ℝ (fun w ↦ ((w - z₀) ^ k • c).re) z) =o[𝓝 z₀]
         fun z ↦ ‖z - z₀‖ ^ (k - 1) := by
-  have := finiteDimensional_complex_complexification (X := X)
   -- the similarity principle for `ξ = (u, ψ)` at `z₀`, and the leading term of `ξ`
   obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_hwPair hΩ hu hK
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hEq⟩ :=
@@ -494,7 +474,6 @@ theorem eqOn_zero_or_exists_isLittleO_sub_re_pow_smul {Ω : Set ℂ} (hΩ : IsOp
         fun z ↦ ‖z - z₀‖ ^ (k - 1) := by
   refine (eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul hΩ hu hK hz₀ hu₀).imp_left
     fun h0 ↦ ?_
-  have := finiteDimensional_complex_complexification (X := X)
   have := FiniteDimensional.completeSpace ℂ (CPair X)
   obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_hwPair hΩ hu hK
   have hξ := contDiffOn_hwPair hΩ hu
