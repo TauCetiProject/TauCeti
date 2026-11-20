@@ -16,7 +16,9 @@ Conversely, a densely spanning family stays densely spanning when pushed forward
 continuous linear map with dense range, such as the projection onto a quotient module, so that a
 quotient of a module spanned densely by a countable family is again spanned densely by one.
 Restricting a point-continuous family of maps to a dense-range index map likewise preserves the
-closed span of all their ranges (`DenseRange.topologicalClosure_span_iUnion_range_comp_eq`).
+closed span of all their ranges (`DenseRange.topologicalClosure_span_iUnion_range_comp_eq`), and a
+continuous linear map sending a set `s` into the span of `t` sends the closed span of `s` into the
+closed span of `t` (`LinearMap.mapsTo_topologicalClosure_span`).
 No norm, separation, or completeness assumptions are needed.
 
 Likewise, a continuous semilinear map sending a generating set into a closed submodule sends the
@@ -88,3 +90,20 @@ theorem DenseRange.topologicalClosure_span_iUnion_range_comp_eq {R α ι X Y : T
   refine (S.isClosed_topologicalClosure.preimage (hL x)).closure_subset_iff.2 ?_ (hg a)
   rintro _ ⟨i, rfl⟩
   exact Submodule.le_topologicalClosure S (Submodule.subset_span (Set.mem_iUnion.2 ⟨i, x, rfl⟩))
+
+/-- A continuous `R`-linear map sending `s` into the `R`-linear span of `t` sends the closed
+`R`-linear span of `s` into the closed `R`-linear span of `t`. -/
+theorem LinearMap.mapsTo_topologicalClosure_span {R M N : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul R M]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N] [ContinuousAdd N] [ContinuousConstSMul R N]
+    {f : M →ₗ[R] N} (hfc : Continuous f) {s : Set M} {t : Set N}
+    (hf : Set.MapsTo f s (Submodule.span R t)) :
+    Set.MapsTo f ((Submodule.span R s).topologicalClosure : Set M)
+      ((Submodule.span R t).topologicalClosure : Set N) := by
+  have hS : Set.MapsTo f (Submodule.span R s : Set M) (Submodule.span R t : Set N) := by
+    have hmap : (Submodule.span R s).map f ≤ Submodule.span R t := by
+      rw [Submodule.map_span, Submodule.span_le]
+      rintro _ ⟨x, hx, rfl⟩
+      exact hf hx
+    exact fun x hx => hmap ⟨x, hx, rfl⟩
+  simpa only [Submodule.topologicalClosure_coe] using hS.closure hfc

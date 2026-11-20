@@ -14,8 +14,9 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 For bounded operators `A : E → E` and `X : F → E` between Hilbert spaces, the *compression* of
 `A` along `X` is the operator `X† A X` on `F`, `ContinuousLinearMap.compression A X`. When `X` is
 an isometry it is `A` cut down to the subspace `range X`, read in the coordinates of `F`. This
-file records its basic algebra: it is additive and homogeneous in `A`, commutes with adjoints,
-preserves symmetry, and compressing in two steps is compressing along the composite. Compressing
+file records its basic algebra: it is additive and homogeneous in `A`, sends `1` to `1` along a
+linear isometry, commutes with adjoints, preserves symmetry, and compressing in two steps is
+compressing along the composite. Compressing
 to the orthogonal complement of an eigenvector creates no new eigenvalues
 (`ContinuousLinearMap.hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton`), and
 compressing an operator that commutes with linear isometries eventually shifting a dense set into a
@@ -88,6 +89,12 @@ theorem inner_compression_apply (x y : F) :
 theorem compression_id : A.compression (ContinuousLinearMap.id 𝕜 E) = A := by
   ext x
   simp [compression_def, adjoint_id]
+
+/-- Compressing the identity operator along a linear isometry gives the identity operator. -/
+@[simp]
+theorem compression_one (V : F →ₗᵢ[𝕜] E) :
+    (1 : E →L[𝕜] E).compression V.toContinuousLinearMap = 1 := by
+  rw [compression_def, one_def, id_comp, V.adjoint_comp_self]
 
 /-- Compressing in two steps is compressing along the composite. -/
 theorem compression_comp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]

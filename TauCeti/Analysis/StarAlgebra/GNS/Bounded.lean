@@ -78,8 +78,12 @@ section NonUnital
 variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule ℂ A]
   [IsScalarTower ℂ A A] (φ : StarPositiveFunctional A)
 
-/-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
-abbrev HilbertGNS : Type _ := Completion φ.GNS
+/-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`.
+Built over `PseudoMetricSpace.toUniformSpace` (which is definitionally equal to
+`SeparationQuotient.instUniformSpace`) so that nested typeclass inference (such as
+`NonUnitalStarAlgHom.isClosed_ker`) unifies `UniformSpace.Completion.instNormedAddCommGroup` and
+`UniformSpace.Completion.innerProductSpace` directly without metavariable blocking. -/
+abbrev HilbertGNS : Type _ := @Completion φ.GNS PseudoMetricSpace.toUniformSpace
 
 /-- The canonical linear map sending an algebra element to its class in the completed GNS Hilbert
 space. -/

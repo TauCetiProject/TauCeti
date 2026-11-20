@@ -29,8 +29,10 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 
 * `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
   `isNondegenerate_iff_dense`.
-* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`:
-  a representation of a unital C⋆-algebra is nondegenerate exactly when it sends `1` to `1`.
+* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`,
+  `NonUnitalStarAlgHom.isNondegenerate_iff_map_one`, and
+  `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: a representation of a unital C⋆-algebra is
+  nondegenerate iff it sends `1` to `1`, and therefore promotes to a unital `⋆`-homomorphism.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
@@ -94,6 +96,36 @@ operator. -/
 theorem IsNondegenerate.map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : ρ.IsNondegenerate) : ρ 1 = 1 :=
   hρ.ext fun b => by rw [← map_mul, one_mul, one_mul]
+
+/-- A representation of a unital C⋆-algebra is nondegenerate if and only if it sends `1` to `1`. -/
+theorem isNondegenerate_iff_map_one {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} :
+    ρ.IsNondegenerate ↔ ρ 1 = 1 :=
+  ⟨IsNondegenerate.map_one, isNondegenerate_of_map_one⟩
+
+/-- View a nondegenerate representation of a unital C⋆-algebra as a unital `⋆`-algebra homomorphism.
+-/
+def IsNondegenerate.toStarAlgHom {B : Type*} [CStarAlgebra B] {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
+    (hρ : ρ.IsNondegenerate) : B →⋆ₐ[ℂ] (H →L[ℂ] H) where
+  toFun := ρ
+  map_one' := hρ.map_one
+  map_mul' := map_mul ρ
+  map_zero' := map_zero ρ
+  map_add' := map_add ρ
+  commutes' c := by
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, hρ.map_one, Algebra.algebraMap_eq_smul_one]
+  map_star' := map_star ρ
+
+@[simp]
+theorem IsNondegenerate.toStarAlgHom_apply {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) (b : B) :
+    hρ.toStarAlgHom b = ρ b :=
+  (rfl)
+
+@[simp]
+theorem IsNondegenerate.toNonUnitalStarAlgHom_toStarAlgHom {B : Type*} [CStarAlgebra B]
+    {ρ : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)} (hρ : ρ.IsNondegenerate) :
+    hρ.toStarAlgHom.toNonUnitalStarAlgHom = ρ :=
+  (rfl)
 
 /-- For a nondegenerate representation, the vectors `π (m * e) ξ` converge along any eventually
 norm-bounded net `e` with `e * a → a`, and the limit is a bounded operator `T` with
