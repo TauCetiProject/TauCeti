@@ -70,6 +70,7 @@ def khovanovHomologyMirrorKronecker (i j : ℤ) :
 /-- **The Kronecker map of the mirror on classes**: the class of a cocycle `φ` of the mirror pairs
 with the class of a cycle `x` of `D` to the value on `x` of the cochain that
 `TauCeti.OrientedPDCode.khovanovComplexMirrorIso` assigns to `φ`. -/
+@[simp]
 theorem khovanovHomologyMirrorKronecker_homologyπ_homologyπ (i j : ℤ)
     (φ : (D.mirror.khovanovComplex hD' R j).cycles i)
     (x : (D.khovanovComplex hD R (-j)).cycles (-i)) :
@@ -103,8 +104,7 @@ theorem khovanovHomologyMirrorKronecker_bijective [Module.Injective R R] (i j : 
   have := Module.injective_object_of_injective_module R R
   exact (ModuleCat.homLinearEquiv (S := R)).bijective.comp
     (((D.khovanovComplex hD R (-j)).kronecker_bijective R (ModuleCat.of R R) i).comp
-      ⟨(ModuleCat.mono_iff_injective _).1 inferInstance,
-        (ModuleCat.epi_iff_surjective _).1 inferInstance⟩)
+      (ConcreteCategory.bijective_of_isIso _))
 
 /-- **Mirror duality of Khovanov homology**: over a coefficient ring `R` injective as a module over
 itself, such as a field, `Khⁱʲ(D.mirror; R)` is the `R`-linear dual of `Kh⁻ⁱ⁻ʲ(D; R)`. The
@@ -126,26 +126,13 @@ section PrincipalIdealRing
 
 variable [NoZeroDivisors R] [IsPrincipalIdealRing R]
 
-/-- The terms of the chain complex `K.negChainComplex` of a normalized Khovanov complex `K` are
-projective, being the free terms of `K`. -/
-private instance (j m : ℤ) :
-    Module.Projective R ((D.khovanovComplex hD R j).negChainComplex.X m) :=
-  inferInstanceAs (Module.Projective R ((D.khovanovComplex hD R j).X (-m)))
-
-/-- The cycles of the chain complex `K.negChainComplex` of a normalized Khovanov complex `K` are
-projective: over a principal ideal ring without zero divisors they are free. -/
-private instance (j m : ℤ) : Projective ((D.khovanovComplex hD R j).negChainComplex.cycles m) :=
-  have h : Module.Free R ((D.khovanovComplex hD R j).negChainComplex.cycles m) :=
-    HomologicalComplex.free_cycles_of_isPrincipalIdealRing _ _
-  @ModuleCat.projective_of_categoryTheory_projective _ _ _ (@Module.Projective.of_free _ _ _ _ _ h)
-
 /-- **Surjectivity in the mirror universal coefficient sequence**: over a principal ideal ring
 without zero divisors, such as `ℤ`, every linear form on `Kh⁻ⁱ⁻ʲ(D; R)` is the evaluation of a
 class of the mirror. -/
 theorem khovanovHomologyMirrorKronecker_surjective (i j : ℤ) :
     Function.Surjective (D.khovanovHomologyMirrorKronecker hD hD' R i j) :=
   (ModuleCat.homLinearEquiv (S := R)).surjective.comp
-    (((D.khovanovComplex hD R (-j)).kronecker_surjective R (ModuleCat.of R R) i).comp
+    (((D.khovanovComplex hD R (-j)).kronecker_surjective_of_isSplitMono R (ModuleCat.of R R) i).comp
       ((ModuleCat.epi_iff_surjective _).1 inferInstance))
 
 /-- **The `Ext` term of the mirror universal coefficient sequence**: over a principal ideal ring
@@ -182,15 +169,9 @@ theorem exact_extToKhovanovHomologyMirror_khovanovHomologyMirrorKronecker {i p :
     LinearEquiv.postcomp_exact_iff_exact]
   -- `Hⁱ` of the mirror isomorphism carries the sequence of the dual complex of `D` to that of the
   -- complex of the mirror.
-  refine (LinearMap.exact_iff_of_surjective_of_bijective_of_injective _ _
-    ((D.khovanovComplex hD R (-j)).extToHomology R (ModuleCat.of R R) i p)
-    ((D.khovanovComplex hD R (-j)).kronecker R (ModuleCat.of R R) i) LinearMap.id
-    (homologyMap (D.khovanovComplexMirrorIso hD R j hD').hom i).hom LinearMap.id ?_ rfl
-    Function.surjective_id ⟨(ModuleCat.mono_iff_injective _).1 inferInstance,
-      (ModuleCat.epi_iff_surjective _).1 inferInstance⟩ Function.injective_id).2
+  exact (LinearEquiv.conj_symm_exact_iff_exact _ _
+    (homologyMapIso (D.khovanovComplexMirrorIso hD R j hD') i).toLinearEquiv).2
     ((D.khovanovComplex hD R (-j)).exact_extToHomology_kronecker R (ModuleCat.of R R) hip)
-  ext x
-  simp [← ConcreteCategory.comp_apply, ← homologyMap_comp]
 
 end PrincipalIdealRing
 

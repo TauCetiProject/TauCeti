@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
+public import Mathlib.Algebra.Module.Projective
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Basic
 
@@ -45,7 +46,7 @@ identification `CochainComplex.linearHomComplexSingleIso`. The sign does not cha
 
 * `CochainComplex.kronecker_bijective` and `CochainComplex.kroneckerEquiv`: for an injective `Y`,
   `Hⁱ(Hom(K, Y[0])) ≃ₗ[k] (H⁻ⁱ(K) ⟶ Y)`.
-* `CochainComplex.kronecker_surjective`, `CochainComplex.extToHomology_injective` and
+* `CochainComplex.kronecker_surjective_of_isSplitMono`, `CochainComplex.extToHomology_injective` and
   `CochainComplex.exact_extToHomology_kronecker`: the universal coefficient sequence is exact.
 
 ## References
@@ -208,7 +209,7 @@ def kronecker (i : ℤ) :
 
 /-- **The Kronecker map of the dual on classes**: evaluating the class of a cocycle `φ` on the class
 of a cycle of `K⁻ⁱ` is evaluating the morphism `K⁻ⁱ ⟶ Y` of `φ` on the cycle. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma homologyπ_kronecker_homologyπ (i : ℤ)
     (φ : (linearHomComplex k K ((singleFunctor C 0).obj Y)).cycles i) :
     K.homologyπ (-i) ≫
@@ -247,9 +248,7 @@ lemma homologyπ_kronecker_homologyπ (i : ℤ)
 injective object `Y`, the Kronecker map `Hⁱ(Hom(K, Y[0])) →ₗ[k] (H⁻ⁱ(K) ⟶ Y)` is bijective. -/
 theorem kronecker_bijective [Injective Y] (i : ℤ) : Function.Bijective (K.kronecker k Y i) :=
   (Linear.homCongr k _ _).bijective.comp
-    ((TauCeti.ChainComplex.kronecker_bijective i).comp
-      ⟨(ModuleCat.mono_iff_injective _).1 inferInstance, (ModuleCat.epi_iff_surjective _).1
-        inferInstance⟩)
+    ((TauCeti.ChainComplex.kronecker_bijective i).comp (ConcreteCategory.bijective_of_isIso _))
 
 /-- The Kronecker map of the dual as a `k`-linear equivalence
 `Hⁱ(Hom(K, Y[0])) ≃ₗ[k] (H⁻ⁱ(K) ⟶ Y)`, for an injective object `Y`. -/
@@ -267,7 +266,7 @@ lemma kroneckerEquiv_apply [Injective Y] (i : ℤ)
 /-- **Surjectivity in the universal coefficient sequence of the dual**: the Kronecker map
 `Hⁱ(Hom(K, Y[0])) →ₗ[k] (H⁻ⁱ(K) ⟶ Y)` is surjective when the cycles split off `K⁻ⁱ`, written as
 the degree `i` term of `K.negChainComplex`. -/
-theorem kronecker_surjective (i : ℤ) [IsSplitMono (K.negChainComplex.iCycles i)] :
+theorem kronecker_surjective_of_isSplitMono (i : ℤ) [IsSplitMono (K.negChainComplex.iCycles i)] :
     Function.Surjective (K.kronecker k Y i) :=
   (Linear.homCongr k _ _).surjective.comp
     ((TauCeti.ChainComplex.kronecker_surjective_of_isSplitMono i).comp
@@ -311,15 +310,9 @@ theorem exact_extToHomology_kronecker {i p : ℤ} (hip : i + p = 1)
     LinearEquiv.postcomp_exact_iff_exact]
   -- `Hⁱ` of the isomorphism `Hom(K, Y[0]) ≅ Hom(K.negChainComplex, Y)` carries the sequence of
   -- `K.negChainComplex` to that of the dual.
-  refine (LinearMap.exact_iff_of_surjective_of_bijective_of_injective _ _
-    (TauCeti.ChainComplex.extToHomology k K.negChainComplex Y i (-p))
-    (TauCeti.ChainComplex.kronecker k K.negChainComplex Y i) LinearMap.id
-    (homologyMap (K.linearHomComplexSingleIso k Y).hom i).hom LinearMap.id ?_ rfl
-    Function.surjective_id ⟨(ModuleCat.mono_iff_injective _).1 inferInstance,
-      (ModuleCat.epi_iff_surjective _).1 inferInstance⟩ Function.injective_id).2
+  exact (LinearEquiv.conj_symm_exact_iff_exact _ _
+    (homologyMapIso (K.linearHomComplexSingleIso k Y) i).toLinearEquiv).2
     (TauCeti.ChainComplex.exact_extToHomology_kronecker (by omega))
-  ext x
-  simp [← ConcreteCategory.comp_apply, ← homologyMap_comp]
 
 /-- `CochainComplex.extToHomology` is `TauCeti.ChainComplex.extToHomology` for
 `K.negChainComplex`, transported along `CochainComplex.negChainComplexHomologyIso` and
@@ -336,5 +329,33 @@ lemma homologyMap_linearHomComplexSingleIso_hom_extToHomology (i p : ℤ)
 end Ext
 
 end Abelian
+
+section ModuleCat
+
+variable {k : Type*} [CommRing k] (K : CochainComplex (ModuleCat.{w} k) ℤ)
+
+/-- The terms of `K.negChainComplex` are projective when the terms of `K` are: its degree `m` term
+is `K⁻ᵐ`. -/
+instance projective_negChainComplex_X (m : ℤ) [h : Module.Projective k (K.X (-m))] :
+    Module.Projective k (K.negChainComplex.X m) :=
+  h
+
+variable (Y : ModuleCat.{w} k)
+
+/-- **The Kronecker map of the dual on classes, elementwise**: for a complex of `k`-modules,
+evaluating the class of a cocycle `φ` on the class of a cycle `x` of `K⁻ⁱ` is the morphism
+`K⁻ⁱ ⟶ Y` of `φ` evaluated on the underlying chain of `x`. -/
+@[simp]
+lemma kronecker_homologyπ_homologyπ (i : ℤ)
+    (φ : (linearHomComplex k K ((singleFunctor (ModuleCat.{w} k) 0).obj Y)).cycles i)
+    (x : K.cycles (-i)) :
+    K.kronecker k Y i ((linearHomComplex k K ((singleFunctor _ 0).obj Y)).homologyπ i φ)
+        (K.homologyπ (-i) x) =
+      (HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
+        ((linearHomComplex k K ((singleFunctor _ 0).obj Y)).iCycles i φ)).hom
+        (K.iCycles (-i) x) :=
+  ConcreteCategory.congr_hom (K.homologyπ_kronecker_homologyπ k Y i φ) x
+
+end ModuleCat
 
 end CochainComplex
