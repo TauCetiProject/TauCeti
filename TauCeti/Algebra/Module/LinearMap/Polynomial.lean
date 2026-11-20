@@ -41,6 +41,8 @@ characteristic polynomial `LinearMap.polyCharpoly φ b`, and characterized by th
 * `LinearMap.detPoly_baseChange`: the determinant polynomial commutes with base change.
 * `LinearMap.bind₁_detPoly`: a change of basis of `L` substitutes the coordinates of the new
   generic element, as for `LinearMap.polyCharpoly` (`LinearMap.polyCharpoly_map_bind₁`).
+* `LinearMap.detPoly_congr`: families intertwined by a linear equivalence have the same
+  determinant polynomial; `LinearMap.detPoly_of_subsingleton`: on a subsingleton module it is `1`.
 * `LinearMap.isHomogeneous_detPoly`: `detPoly φ b` is homogeneous of degree `finrank R M`.
 * `LinearMap.detPoly_eq_mul_of_exact`: the determinant polynomial is multiplicative in short
   exact sequences of free modules with compatible families.
@@ -69,7 +71,11 @@ variable {R L M ι ι' : Type*} [CommRing R] [AddCommGroup L] [Module R L]
 
 /-- **Change of basis for the generic characteristic polynomial.** For a second basis `b'` of `L`,
 `polyCharpoly φ b'` is obtained from `polyCharpoly φ b` by substituting for each coordinate `X i`
-the `i`-th coordinate, with respect to `b`, of the generic element `∑ j, X j • b' j`. -/
+the `i`-th coordinate, with respect to `b`, of the generic element `∑ j, X j • b' j`.
+
+The substitution argument is adapted from the proof of
+`LinearMap.polyCharpoly_coeff_eq_zero_of_basis` in Mathlib's
+`Mathlib.Algebra.Module.LinearMap.Polynomial`. -/
 theorem polyCharpoly_map_bind₁ (b' : Basis ι' R L) :
     (polyCharpoly φ b).map (bind₁ (LinearMap.id.toMvPolynomial b' b)) = polyCharpoly φ b' := by
   classical
@@ -95,8 +101,7 @@ theorem detPoly_def : detPoly φ b = (-1) ^ finrank R M * (polyCharpoly φ b).co
 `φ x`. -/
 @[simp]
 theorem eval_detPoly (x : L) : eval (b.repr x) (detPoly φ b) = (φ x).det := by
-  rw [detPoly_def, map_mul, map_pow, map_neg, map_one, polyCharpoly_coeff_eval,
-    det_eq_sign_charpoly_coeff]
+  simp [detPoly_def, polyCharpoly_coeff_eval, det_eq_sign_charpoly_coeff]
 
 /-- The determinant polynomial evaluates at `c : ι → R` to the determinant of `φ` at the vector
 with coordinates `c`. -/
@@ -111,8 +116,8 @@ characteristic polynomial of `φ x`; the two signs `(-1) ^ finrank R M` cancel. 
 theorem eval_detPoly_neg_eq_charpoly_eval_zero (x : L) :
     eval (b.repr (-x)) (detPoly φ b) = (φ x).charpoly.eval 0 := by
   rw [eval_detPoly, map_neg, ← neg_one_smul R (φ x), det_smul, det_eq_sign_charpoly_coeff,
-    ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul,
-    Polynomial.coeff_zero_eq_eval_zero]
+    Polynomial.coeff_zero_eq_eval_zero, ← mul_assoc, ← mul_pow]
+  simp
 
 /-- The determinant polynomial is homogeneous of degree `finrank R M`. -/
 theorem isHomogeneous_detPoly : (detPoly φ b).IsHomogeneous (finrank R M) := by
@@ -162,6 +167,26 @@ theorem detPoly_eq_det_sum_X_smul :
       (∑ i, (X i : MvPolynomial ι R) • (φ (b i)).baseChange (MvPolynomial ι R)).det := by
   rw [← aeval_detPoly, aeval_X_left_apply]
 
+/-- The determinant polynomial of a family of endomorphisms of a subsingleton module is `1`. -/
+theorem detPoly_of_subsingleton [Subsingleton M] : detPoly φ b = 1 := by
+  rw [detPoly_eq_det_sum_X_smul]
+  exact det_eq_one_of_subsingleton _
+
+/-- **Invariance under isomorphism.** Families of endomorphisms intertwined by a linear equivalence
+`e : M ≃ₗ[R] N` have the same determinant polynomial. -/
+theorem detPoly_congr {N : Type*} [AddCommGroup N] [Module R N] [Module.Free R N]
+    [Module.Finite R N] {ψ : L →ₗ[R] Module.End R N} (e : M ≃ₗ[R] N)
+    (h : ∀ x, e.toLinearMap ∘ₗ φ x = ψ x ∘ₗ e.toLinearMap) :
+    detPoly φ b = detPoly ψ b := by
+  have hψ : ∀ x, ψ x = e.toLinearMap ∘ₗ φ x ∘ₗ e.symm.toLinearMap := fun x ↦ by
+    rw [← comp_assoc, h, comp_assoc, LinearEquiv.comp_coe, e.symm_trans_self,
+      LinearEquiv.refl_toLinearMap, comp_id]
+  simp only [detPoly_eq_det_sum_X_smul, hψ]
+  rw [← det_conj _ (e.baseChange R (MvPolynomial ι R) M N)]
+  congr 1
+  ext m
+  simp [baseChange_comp]
+
 /-- **Scalar families.** If `L` acts on `M` through scalars, by `x ↦ f x • id` for a linear form
 `f`, the determinant polynomial is the `finrank R M`-th power of the linear form
 `∑ i, f (b i) X i`. -/
@@ -175,7 +200,7 @@ theorem detPoly_smulRight_id (f : L →ₗ[R] R) :
       (∑ i, C (f (b i)) * X i) • LinearMap.id := by
     rw [Finset.sum_smul]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [smulRight_apply, baseChange_smul, baseChange_id, mul_comm, mul_smul, ← algebraMap_eq,
+    rw [smulRight_apply, baseChange_smul, baseChange_id, mul_comm (C _), mul_smul, ← algebraMap_eq,
       algebraMap_smul]
   rw [this, det_smul, det_id, mul_one, finrank_baseChange]
 
