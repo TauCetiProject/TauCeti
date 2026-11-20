@@ -20,7 +20,6 @@ import TauCeti.Analysis.Normed.Module.Alternating.ContactNormalForm
 import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Dynamics.Flow.RestPoint
 import TauCeti.Geometry.Contact.Symplectization.Linear
-import TauCeti.Data.Fin.VecNotation
 
 /-!
 # The contact Moser lemma and Darboux's theorem for contact forms
@@ -405,6 +404,9 @@ theorem exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mu
     funext i
     fin_cases i
     rfl
+  have hvec2 (v w : V) : ⇑(e : V →L[ℝ] P) ∘ ![v, w] = ![e v, e w] := by
+    funext i
+    fin_cases i <;> rfl
   have hα₀x₀ : α₀ x₀ = α x₀ := by
     ext m
     simp only [hα₀_def]
@@ -414,8 +416,7 @@ theorem exists_diffeomorph_eventually_innerProductContactForm_apply_fderiv_eq_mu
     rw [hα₀_def, extDeriv_pullback (hσ.differentiable (by simp)).differentiableAt
       (hfs.contDiffAt : ContDiffAt ℝ 2 f x₀) (by simp)]
     ext m
-    rw [hm2 m, compContinuousLinearMap_apply, (hfd x₀).fderiv, Matrix.comp_vec2,
-      ContinuousLinearEquiv.coe_coe, hfx₀, hωe, hdσ]
+    rw [hm2 m, compContinuousLinearMap_apply, (hfd x₀).fderiv, hvec2, hfx₀, hωe, hdσ]
   -- The contact Moser lemma deforms `α₀` into a positive multiple of `α`.
   obtain ⟨ψ, g, hfix, hev⟩ :=
     exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq hr hW hx₀

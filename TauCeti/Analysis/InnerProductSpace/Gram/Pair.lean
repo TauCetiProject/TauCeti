@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
-import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Gram determinants of pairs
@@ -40,7 +39,9 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProdu
 /-- A linear isometry preserves the `2 × 2` Gram matrix of a pair. -/
 @[simp]
 theorem gram_pair (u v : E) : Matrix.gram 𝕜 ![l u, l v] = Matrix.gram 𝕜 ![u, v] := by
-  rw [← Matrix.comp_vec2 l u v, l.gram_comp]
+  have hcomp : (![l u, l v] : Fin 2 → F) = l ∘ ![u, v] :=
+    funext <| Fin.forall_fin_two.mpr ⟨rfl, rfl⟩
+  rw [hcomp, l.gram_comp]
 
 end LinearIsometry
 

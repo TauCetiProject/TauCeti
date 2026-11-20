@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 import TauCeti.NumberTheory.Padics.PadicValNat
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
-import TauCeti.Data.Fin.VecNotation
 
 /-!
 # Heights of integer tuples and integer polynomials over `ℚ`
@@ -124,7 +123,10 @@ theorem mulHeight₁_le_max_one_abs_mul_den (q : ℚ) :
 `max(|x|, |y|)`. -/
 theorem mulHeight₁_intCast_div_le (x : ℤ) {y : ℤ} (hy : y ≠ 0) :
     mulHeight₁ ((x : ℚ) / y) ≤ max |(x : ℝ)| |(y : ℝ)| := by
-  rw [mulHeight₁_div_eq_mulHeight, ← Matrix.comp_vec2 ((↑) : ℤ → ℚ) x y]
+  have hv : ![(x : ℚ), y] = ((↑) : ℤ → ℚ) ∘ ![x, y] := by
+    ext i
+    fin_cases i <;> simp
+  rw [mulHeight₁_div_eq_mulHeight, hv]
   refine (mulHeight_le_max_abs (by simp [hy])).trans ?_
   rw [← Int.cast_abs, ← Int.cast_abs, ← Int.cast_max, Int.cast_le]
   exact ciSup_le fun i ↦ by fin_cases i <;> simp
@@ -133,6 +135,9 @@ theorem mulHeight₁_intCast_div_le (x : ℤ) {y : ℤ} (hy : y ≠ 0) :
 includes `y = 0`, where `x = ±1` and `x / y = 0` has height `1`. -/
 theorem mulHeight₁_intCast_div_of_isCoprime {x y : ℤ} (h : IsCoprime x y) :
     mulHeight₁ ((x : ℚ) / y) = max |(x : ℝ)| |(y : ℝ)| := by
+  have hv : ![(x : ℚ), y] = ((↑) : ℤ → ℚ) ∘ ![x, y] := by
+    ext i
+    fin_cases i <;> simp
   -- `Finset.gcd` normalizes its entries, and `normalize y` is a unit multiple of `y`.
   have hg : Finset.univ.gcd ![x, y] = 1 := by
     have h' : IsCoprime x (_root_.normalize y) := by
@@ -140,8 +145,7 @@ theorem mulHeight₁_intCast_div_of_isCoprime {x y : ℤ} (h : IsCoprime x y) :
       exact (isCoprime_mul_unit_right_right (Units.isUnit _) x y).mpr h
     simp only [Fin.univ_succ, Finset.univ_unique]
     simp [← Int.coe_gcd, Int.isCoprime_iff_gcd_eq_one.mp h']
-  rw [mulHeight₁_div_eq_mulHeight, ← Matrix.comp_vec2 ((↑) : ℤ → ℚ) x y,
-    mulHeight_eq_max_abs_of_gcd_eq_one hg, ← Int.cast_abs,
+  rw [mulHeight₁_div_eq_mulHeight, hv, mulHeight_eq_max_abs_of_gcd_eq_one hg, ← Int.cast_abs,
     ← Int.cast_abs, ← Int.cast_max, Int.cast_inj]
   exact le_antisymm (ciSup_le fun i ↦ by fin_cases i <;> simp)
     (max_le (le_ciSup (f := fun i ↦ |![x, y] i|) (Finite.bddAbove_range _) 0)

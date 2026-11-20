@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 import TauCeti.Geometry.Symplectic.Volume
 import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Covector
-import TauCeti.Data.Fin.VecNotation
 
 /-!
 # The contact volume criterion
@@ -102,8 +101,11 @@ theorem pairedWedge_wedgePow_ne_zero_iff (hn : finrank ℝ E = 2 * n + 1)
   rw [Ne, pairedWedge_eq_zero_iff_compContinuousLinearMap_subtypeL_eq_zero hn a _ hN
       ((hf r).symm.trans hr), wedgePow_compContinuousLinearMap, ← Ne,
     wedgePow_ne_zero_iff hNrank]
+  have hpair (p q : N) : (Subtype.val ∘ ![p, q] : Fin 2 → E) = ![(p : E), q] := by
+    ext i
+    fin_cases i <;> rfl
   simp only [ha, ne_eq, not_false_eq_true, true_and, compContinuousLinearMap_apply,
-    Submodule.coe_subtypeL, Submodule.coe_subtype, Matrix.comp_vec2]
+    Submodule.coe_subtypeL, Submodule.coe_subtype, hpair]
   constructor
   · intro h v hv hvw
     exact congrArg Subtype.val (h ⟨v, (hN v).2 hv⟩ fun w ↦ hvw w ((hN w).1 w.2))

@@ -15,7 +15,6 @@ import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.LinearAlgebra.Orientation.Basic
-import TauCeti.Data.Fin.VecNotation
 
 /-!
 # The oriented Jacobian of a linear map
@@ -369,8 +368,8 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 theorem areaForm_comp_eq (oV : Orientation ℝ V (Fin 2))
     (oW : Orientation ℝ W (Fin 2)) (A : V →ₗ[ℝ] W) (x y : V) :
     oW.areaForm (A x) (A y) = oV.orientedJacobian oW A * oV.areaForm x y := by
-  rw [areaForm_to_volumeForm, areaForm_to_volumeForm, ← Matrix.comp_vec2 A x y,
-    oV.volumeForm_comp_eq oW A]
+  have hxy : ![A x, A y] = A ∘ ![x, y] := by ext i; fin_cases i <;> simp
+  rw [areaForm_to_volumeForm, areaForm_to_volumeForm, hxy, oV.volumeForm_comp_eq oW A]
 
 end TwoDim
 
