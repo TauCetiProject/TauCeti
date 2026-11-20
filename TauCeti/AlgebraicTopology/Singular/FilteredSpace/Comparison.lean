@@ -102,7 +102,7 @@ lemma chainFiltrationSpectralObjectIso_hom_app_chainFiltrationAbutmentIso_hom (n
   rw [chainFiltrationSpectralObjectIso_hom]
   -- The proof argument `fun _ _ hx ↦ hx` of `chainFiltrationMap` only typechecks after unfolding
   -- `𝟙 Y`, which blocks `rw` with the general lemma, so it is applied as a term.
-  refine (spectralObjectMap_chainFiltrationMap_hom_app_chainFiltrationAbutmentIso_hom
+  refine (chainFiltrationAbutmentIso_hom_naturality
     α hX hX (𝟙 Y) (fun _ _ hx ↦ hx) n).trans ?_
   rw [CategoryTheory.Functor.map_id, Category.id_comp]
 

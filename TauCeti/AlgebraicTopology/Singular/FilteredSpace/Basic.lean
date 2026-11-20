@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Naturality
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Triple
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Comparison
 
 /-!
 # The spectral sequence of a filtered space
@@ -35,10 +36,7 @@ sending subspace inclusions to monomorphisms, so that they apply to singular and
 chains alike. So is the morphism of filtrations induced by a natural transformation `F ⟶ G`
 together with a map of filtered spaces (`TauCeti.chainFiltrationMap`), which is a
 quasi-isomorphism on every stage when the natural transformation is a quasi-isomorphism on every
-space (`TauCeti.quasiIso_chainFiltrationMap_app`). On the abutment, the morphism of spectral
-objects it induces is the map in homology induced by the natural transformation and the map of
-spaces
-(`TauCeti.spectralObjectMap_chainFiltrationMap_hom_app_chainFiltrationAbutmentIso_hom`).
+space (`TauCeti.quasiIso_chainFiltrationMap_app`).
 
 * **Graded pieces.** The quotient `F_b / F_a` of two stages of the filtration is the relative
   singular chain complex of the pair `(X b, X a)` (`TauCeti.singularChainFiltrationCokernelIso`),
@@ -67,7 +65,12 @@ spaces
   `Hₙ(X (q + 1), X q) ⟶ Hₙ(X' (q + 1), X' q)` induced by `g`
   (`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso_hom_naturality`), so if these maps are
   isomorphisms, the morphism of spectral sequences is an isomorphism on every page
-  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`).
+  (`TauCeti.isIso_filteredSpaceSpectralSequenceMap_hom_f`). On the abutment, the underlying
+  morphism of spectral objects is the map `Hₙ(g)` in singular homology
+  (`TauCeti.chainFiltrationAbutmentIso_hom_naturality`). For finite filtrations this gives the
+  comparison theorem: if `g` induces isomorphisms on the relative homology of the pairs
+  `(X (q + 1), X q) ⟶ (X' (q + 1), X' q)`, it induces isomorphisms in singular homology
+  (`TauCeti.isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap`).
 * **Naturality in the coefficients.** A morphism `φ : R ⟶ R'` of coefficient objects induces a
   morphism of filtered complexes and hence of spectral sequences
   (`TauCeti.filteredSpaceSpectralSequenceCoefficientMap`), functorial in `φ`. On the first page it
@@ -88,8 +91,9 @@ a fibration by the preimages of the skeleta of the base gives the Serre spectral
 ## References
 
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
-  Section 2.2, the spectral sequence of a filtered complex, and Chapter 5, its application to the
-  filtration of a total space by the preimages of the skeleta of the base.
+  Section 2.2, the spectral sequence of a filtered complex, Chapter 3, the comparison of spectral
+  sequences, and Chapter 5, its application to the filtration of a total space by the preimages of
+  the skeleta of the base.
 * J.-P. Serre, *Homologie singulière des espaces fibrés. Applications*, Ann. of Math. 54 (1951),
   425–505.
 -/
@@ -219,14 +223,6 @@ def chainFiltrationAbutmentIso (hX : Monotone X) (n : ℕ) :
   CochainComplex.filtrationAbutmentIso _ _ _ ≪≫
     extendHomologyIso _ ComplexShape.embeddingDownNat rfl
 
-/-- The abutment isomorphism `TauCeti.chainFiltrationAbutmentIso` is the abutment isomorphism of
-the filtration, followed by the identification of the homology of the extended complex. -/
-lemma chainFiltrationAbutmentIso_hom (hX : Monotone X) (n : ℕ) :
-    (chainFiltrationAbutmentIso F hX n).hom =
-      (CochainComplex.filtrationAbutmentIso _ _ (-n)).hom ≫
-        (extendHomologyIso _ ComplexShape.embeddingDownNat rfl).hom :=
-  Iso.trans_hom _ _
-
 end ChainFunctor
 
 section ChainFunctorMap
@@ -335,26 +331,6 @@ instance quasiIso_chainFiltrationMap_app [∀ q, QuasiIso (α.app (TopPair.ofSub
   rw [this]
   infer_instance
 
-/-- **Naturality of the abutment of the spectral sequence of a filtered space.** Through the
-abutment isomorphisms `TauCeti.chainFiltrationAbutmentIso`, the morphism of spectral objects
-induced by `α` and a map of filtered spaces `g` is, on the abutment in degree `-n`, the map
-`Hₙ(F Y) ⟶ Hₙ(G Y')` induced by `g` and `α`. -/
-@[reassoc (attr := simp)]
-lemma spectralObjectMap_chainFiltrationMap_hom_app_chainFiltrationAbutmentIso_hom (n : ℕ) :
-    ((CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX' g hg)).hom (-n)).app
-        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
-        (chainFiltrationAbutmentIso G hX' n).hom =
-      (chainFiltrationAbutmentIso F hX n).hom ≫
-        HomologicalComplex.homologyMap (F.map g ≫ α.app Y') n := by
-  open CochainComplex in
-  rw [chainFiltrationMap_def, chainFiltrationAbutmentIso_hom, chainFiltrationAbutmentIso_hom,
-    spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom_assoc,
-    Category.assoc]
-  -- The degree `-n` is `ComplexShape.embeddingDownNat.f n` only up to unfolding, so the
-  -- naturality of `extendHomologyIso` is applied as a term.
-  exact _ ≫= extendHomologyIso_hom_naturality (F.map g ≫ α.app Y')
-    ComplexShape.embeddingDownNat (j := n) rfl
-
 /-- The identity of a filtered space induces the identity of its filtered chains. -/
 @[simp]
 lemma chainFiltrationMap_id (h : ∀ q, Set.MapsTo (𝟙 Y : Y ⟶ Y) (X q) (X q)) :
@@ -375,6 +351,27 @@ lemma chainFiltrationMap_comp [∀ P : TopPair.{w}, Mono (H.map P.map)] (β : G 
       (by rw [← extendMap_comp]; simp),
     CochainComplex.filtrationFunctorMap_comp _ _ (factors_chainFiltration α g hg)
       (factors_chainFiltration β g' hg')]
+
+/-- **The morphism of spectral objects of filtered spaces on the abutment.** Under the
+identifications `TauCeti.chainFiltrationAbutmentIso` of the abutments in degree `-n` with the
+homology `Hₙ(F Y)` and `Hₙ(G Y')`, the morphism of spectral objects induced by `α` and `g` is the
+map `Hₙ(F Y) ⟶ Hₙ(G Y')` induced by `F.map g ≫ α.app Y'`; for singular chains and `α` the
+identity, this is the map `Hₙ(g)` in singular homology. -/
+@[reassoc]
+theorem chainFiltrationAbutmentIso_hom_naturality (n : ℕ) :
+    ((CochainComplex.spectralObjectMap (chainFiltrationMap α hX hX' g hg)).hom (-n)).app
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫
+        (chainFiltrationAbutmentIso G hX' n).hom =
+      (chainFiltrationAbutmentIso F hX n).hom ≫
+        HomologicalComplex.homologyMap (F.map g ≫ α.app Y') n := by
+  rw [chainFiltrationAbutmentIso, chainFiltrationAbutmentIso, chainFiltrationMap]
+  -- The homology objects of the extended complexes carry `HasHomology` instances that `rw` does
+  -- not identify, so the square is assembled as a term.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _)
+    (CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom
+      _ _ _)).trans <| (Category.assoc _ _ _).trans <| (congrArg
+      ((CochainComplex.filtrationAbutmentIso _ (monotone_chainFiltration F hX) _).hom ≫ ·)
+      (extendHomologyIso_hom_naturality _ _ _)).trans (Category.assoc _ _ _).symm
 
 end ChainFunctorMap
 
@@ -898,6 +895,49 @@ theorem isIso_filteredSpaceSpectralSequenceMap_hom_f
   rw [← Iso.eq_comp_inv] at e
   have := h pq.2 n
   rw [e]
+  infer_instance
+
+/-- Outside `[a, b)`, the relative singular homology `Hₙ(X (q + 1), X q)` of a filtration with
+`X a = ∅` and `X b = Y` vanishes: both subspaces are empty, or both are everything. -/
+private lemma isZero_singularHomology_ofInclusion_of_notMem_Ico {a b q : ℤ} (ha : X a = ∅)
+    (hb : X b = Set.univ) (hq : q ∉ Set.Ico a b) (n : ℕ) :
+    IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl : q ≤ q + 1))).singularHomology R n) :=
+  TopPair.isZero_singularHomology_of_surjective_map _ R (fun y ↦ by
+    rcases not_and_or.1 hq with hq | hq
+    · exact absurd (hX (by lia : q + 1 ≤ a) y.property) (by simp [ha])
+    · exact ⟨⟨y.val, hX (not_lt.1 hq) (hb ▸ Set.mem_univ y.val)⟩, rfl⟩) n
+
+/-- **The comparison theorem for maps of finite filtrations of spaces.** Let `g : Y ⟶ Y'` carry
+each `X q` into `X' q`, for finite filtrations: `X a` and `X' a` are empty, and `X b` and `X' b`
+are everything. If for every `a ≤ q < b` the map of pairs `(X (q + 1), X q) ⟶ (X' (q + 1), X' q)`
+induced by `g` gives isomorphisms in relative singular homology, then `g` induces isomorphisms
+`Hₙ(Y) ⟶ Hₙ(Y')` in singular homology. -/
+theorem isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap {a b : ℤ} (ha : X a = ∅)
+    (ha' : X' a = ∅) (hb : X b = Set.univ) (hb' : X' b = Set.univ)
+    (h : ∀ q, a ≤ q → q < b → ∀ n : ℕ, IsIso (TopPair.singularHomologyMap
+      (filteredSpaceStepMap hX hX' g hg (Int.le_add_one le_rfl : q ≤ q + 1)) R n))
+    (n : ℕ) : IsIso (((AlgebraicTopology.singularHomologyFunctor A n).obj R).map g) := by
+  -- The morphism of spectral sequences is an isomorphism from the first page on: outside the
+  -- bands `a ≤ q < b` both relative homologies vanish.
+  have hpage := isIso_filteredSpaceSpectralSequenceMap_hom_f R hX hX' g hg (fun q m ↦ by
+    by_cases hq : q ∈ Set.Ico a b
+    · exact h q hq.1 hq.2 m
+    · exact (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX ha hb hq m).isIso
+        (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX' ha' hb' hq m) _) 2 le_rfl
+  -- Both filtrations are finite, so it is an isomorphism on the abutments.
+  have habut :=
+    CochainComplex.isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page _ _ _ _
+      (chainFiltrationMap (𝟙 _) hX hX' g hg) (singularChainFiltration_eq_bot R ha)
+      (singularChainFiltration_eq_bot R ha') (chainFiltration_eq_top _ hb)
+      (chainFiltration_eq_top _ hb') 2 le_rfl hpage (-n)
+  have e := chainFiltrationAbutmentIso_hom_naturality (𝟙 ((singularChainComplexFunctor A).obj R))
+    hX hX' g hg n
+  rw [NatTrans.id_app, Category.comp_id, ← Iso.inv_comp_eq] at e
+  rw [singularHomologyFunctor_obj_map]
+  -- `SSet.homologyMap` is by definition the map in homology of the singular chains.
+  change IsIso (HomologicalComplex.homologyMap
+    (((singularChainComplexFunctor A).obj R).map g) n)
+  rw [← e]
   infer_instance
 
 end Naturality

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.LocallyFinite
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -18,10 +19,11 @@ chart. `MSemianalyticAt` uses the preferred chart, and
 may be used instead. In particular, this is a property of the set germ, not of the chosen chart.
 The definition tests every ambient point, including points outside the set.
 
-We prove finite Boolean closure and stability under analytic preimages, locally and globally.
-The latter also gives invariance under analytic homeomorphisms. These results use the existing
-convergent analytic chart calculus; no new manifold or submanifold structure is introduced.
-No completeness or finite-dimensionality assumption on the model spaces is needed.
+We prove finite Boolean closure, closure under locally finite unions, and stability under analytic
+preimages, locally and globally. The latter also gives invariance under analytic homeomorphisms.
+These results use the existing convergent analytic chart calculus; no new manifold or submanifold
+structure is introduced. No completeness or finite-dimensionality assumption on the model spaces
+is needed.
 
 ## References
 
@@ -132,6 +134,18 @@ protected theorem iInter {ι : Type*} [Finite ι] {s : ι → Set M}
   simp only [mSemianalyticAt_def, preimage_iInter] at hs ⊢
   exact .iInter hs
 
+/-- A finite bounded union of sets semianalytic at a manifold point is semianalytic there. -/
+protected theorem biUnion {ι : Type*} {J : Set ι} (hJ : J.Finite) {s : ι → Set M}
+    (hs : ∀ i ∈ J, MSemianalyticAt I (s i) x) : MSemianalyticAt I (⋃ i ∈ J, s i) x := by
+  have := hJ.to_subtype
+  simpa only [biUnion_eq_iUnion] using MSemianalyticAt.iUnion fun i : J ↦ hs i.val i.property
+
+/-- A finite bounded intersection of sets semianalytic at a manifold point is semianalytic there. -/
+protected theorem biInter {ι : Type*} {J : Set ι} (hJ : J.Finite) {s : ι → Set M}
+    (hs : ∀ i ∈ J, MSemianalyticAt I (s i) x) : MSemianalyticAt I (⋂ i ∈ J, s i) x := by
+  have := hJ.to_subtype
+  simpa only [biInter_eq_iInter] using MSemianalyticAt.iInter fun i : J ↦ hs i.val i.property
+
 end MSemianalyticAt
 
 /-- On the model space, manifold semianalyticity is the existing affine notion. -/
@@ -216,7 +230,29 @@ protected theorem iInter {ι : Type*} [Finite ι] {s : ι → Set M}
     (hs : ∀ i, IsMSemianalytic I (s i)) : IsMSemianalytic I (⋂ i, s i) :=
   fun x => .iInter fun i => hs i x
 
+/-- Finite bounded unions of semianalytic subsets of a manifold are semianalytic. -/
+protected theorem biUnion {ι : Type*} {J : Set ι} (hJ : J.Finite) {s : ι → Set M}
+    (hs : ∀ i ∈ J, IsMSemianalytic I (s i)) : IsMSemianalytic I (⋃ i ∈ J, s i) :=
+  fun x => .biUnion hJ fun i hi => hs i hi x
+
+/-- Finite bounded intersections of semianalytic subsets of a manifold are semianalytic. -/
+protected theorem biInter {ι : Type*} {J : Set ι} (hJ : J.Finite) {s : ι → Set M}
+    (hs : ∀ i ∈ J, IsMSemianalytic I (s i)) : IsMSemianalytic I (⋂ i ∈ J, s i) :=
+  fun x => .biInter hJ fun i hi => hs i hi x
+
 end IsMSemianalytic
+
+/-- **Locally finite unions on manifolds.** The union of a locally finite family of semianalytic
+subsets of a charted space is semianalytic. -/
+theorem _root_.LocallyFinite.isMSemianalytic_iUnion {ι : Type*} {s : ι → Set M}
+    (hfin : LocallyFinite s) (hs : ∀ i, IsMSemianalytic I (s i)) :
+    IsMSemianalytic I (⋃ i, s i) :=
+  isMSemianalytic_iff.2 fun x ↦ by
+    obtain ⟨V, hV, hJ⟩ := hfin x
+    refine (MSemianalyticAt.biUnion hJ fun i _ ↦ (hs i).mSemianalyticAt x).congr ?_
+    filter_upwards [hV] with y hy
+    simp only [mem_iUnion, exists_prop]
+    exact ⟨fun ⟨i, _, hyi⟩ ↦ ⟨i, hyi⟩, fun ⟨i, hyi⟩ ↦ ⟨i, ⟨y, hyi, hy⟩, hyi⟩⟩
 
 section AnalyticAtlas
 
