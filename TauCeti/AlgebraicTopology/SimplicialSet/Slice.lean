@@ -42,6 +42,7 @@ to standard simplices.
 * `SSet.slice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
 * `SSet.slice.isIso_π`: the slice over the empty diagram is the whole simplicial set.
+* `SSet.slice.isTerminal`: a slice of a terminal simplicial set is terminal.
 * `SSet.slice.isPullback_map`: slices preserve pullback squares.
 * `SSet.slice.isPullback_restrictionMap`, `SSet.slice.restrictionMap_comp` and
   `SSet.slice.isPullback_restrictionMapComp`: the behaviour of restriction maps under base change
@@ -364,6 +365,13 @@ lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
   · have := join.isIso_inl (K := X) hK
     refine ⟨homEquiv.symm ⟨inv (join.inl X K) ≫ g, (isInitialOfNotNonempty hK).hom_ext _ _⟩, ?_⟩
     simp
+
+variable (p) in
+/-- A slice of a terminal simplicial set is terminal: for every `X` there is exactly one map
+`X ⋆ K ⟶ C` extending `p`. -/
+noncomputable def isTerminal (hC : Limits.IsTerminal C) : Limits.IsTerminal (slice p) :=
+  Limits.IsTerminal.ofUniqueHom (fun _ ↦ homEquiv.symm ⟨hC.from _, hC.hom_ext _ _⟩)
+    fun _ _ ↦ hom_ext (hC.hom_ext _ _)
 
 section map
 
