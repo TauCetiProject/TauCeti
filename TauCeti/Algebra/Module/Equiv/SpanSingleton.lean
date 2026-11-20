@@ -36,6 +36,8 @@ unit of `K` and `a ↦ a • x` is bijective.
   freely.
 * `LinearMap.span_singleton_apply_eq_top_of_leftInverse`: a linear map between modules isomorphic
   to the base ring which has a left inverse carries generators to generators.
+* `LinearMap.span_singleton_eq_top_of_span_singleton_apply_eq_top`: any linear map between
+  modules isomorphic to the base ring reflects generators.
 * `LinearMap.eq_id_of_apply_eq_self`: over a domain, an endomorphism of a module isomorphic to the
   base ring which fixes a nonzero element is the identity.
 
@@ -121,6 +123,19 @@ theorem span_singleton_apply_eq_top_of_leftInverse {R M N : Type*} [CommSemiring
   refine eN.span_singleton_eq_top_iff_isUnit.2
     (eN.isUnit_apply_of_apply_eq_one ((↑u⁻¹ : R) • (eM.toLinearMap ∘ₗ g)) ?_)
   simp [hgf x, ← hu]
+
+/-- **Linear maps between modules isomorphic to the base ring reflect generators.** If
+`f : M →ₗ[R] N` and both `M` and `N` are isomorphic to the commutative semiring `R`, then `x`
+spans `M` whenever `f x` spans `N`: in coordinates `f` is multiplication by `eN (f (eM⁻¹ 1))`, so
+the unit `eN (f x)` is the product of `eM x` with it, and `eM x` is a unit. -/
+theorem span_singleton_eq_top_of_span_singleton_apply_eq_top {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
+    (eM : M ≃ₗ[R] R) (eN : N ≃ₗ[R] R) {x : M} (hx : Submodule.span R {f x} = ⊤) :
+    Submodule.span R {x} = ⊤ := by
+  have hxe : x = eM x • eM.symm 1 := by simp [← map_smul]
+  have hu := eN.span_singleton_eq_top_iff_isUnit.1 hx
+  rw [hxe, map_smul, map_smul, smul_eq_mul] at hu
+  exact eM.span_singleton_eq_top_iff_isUnit.2 (isUnit_of_mul_isUnit_left hu)
 
 /-- **An endomorphism of a module isomorphic to the base ring fixing a nonzero element is the
 identity**, over a domain: in coordinates it is right multiplication by an element `a`, and
