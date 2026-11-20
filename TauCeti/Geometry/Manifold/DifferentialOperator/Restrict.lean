@@ -134,17 +134,20 @@ private def restrictLinearMap {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M
     obtain ⟨g', hg'⟩ := f'.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
     have hsum : ((g + g' : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ Subtype.val =ᶠ[𝓝 x] (f + f' : C^∞⟮I, U; ℝ⟯) :=
       hg.add hg'
-    rw [ContMDiffMap.coe_add, Pi.add_apply, restrictFun_apply, restrictFun_apply,
-      restrictFun_apply, restrictValue_eq hD hsum, restrictValue_eq hD hg,
-      restrictValue_eq hD hg', map_add, ContMDiffMap.coe_add, Pi.add_apply]
+    simp only [ContMDiffMap.coe_add, Pi.add_apply, restrictFun_apply, restrictValue_eq hD hsum,
+      restrictValue_eq hD hg, restrictValue_eq hD hg', map_add]
   map_smul' c f := by
     ext x
     obtain ⟨g, hg⟩ := f.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
     have hsmul : ((c • g : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ Subtype.val =ᶠ[𝓝 x] (c • f : C^∞⟮I, U; ℝ⟯) :=
       hg.const_smul c
-    rw [RingHom.id_apply, ContMDiffMap.coe_smul, Pi.smul_apply, restrictFun_apply,
-      restrictFun_apply, restrictValue_eq hD hsmul, restrictValue_eq hD hg, map_smul,
-      ContMDiffMap.coe_smul, Pi.smul_apply]
+    simp only [RingHom.id_apply, ContMDiffMap.coe_smul, Pi.smul_apply, restrictFun_apply,
+      restrictValue_eq hD hsmul, restrictValue_eq hD hg, map_smul]
+
+private theorem restrictLinearMap_apply {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (f : C^∞⟮I, U; ℝ⟯) (x : U) : restrictLinearMap hD f x = restrictValue U D f x :=
+  (rfl)
 
 /-- A function on `U` in the `n`-th power of the vanishing ideal at `x` agrees near `x` with the
 restriction of a function on `M` in the `n`-th power of the vanishing ideal at `x`. -/
@@ -178,10 +181,9 @@ private theorem restrictLinearMap_mem {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^�
   intro x h hh
   simp only [ker_evalAlgHom_eq_smoothVanishingIdeal, Ideal.smul_eq_mul, Ideal.mul_top] at hh ⊢
   obtain ⟨g, hg, hgh⟩ := exists_mem_pow_eventuallyEq hh
-  have hDg := apply_mem_smul_top_of_mem_pow_smul_top hD _ (x := g) (by simpa using hg)
-  rw [Ideal.smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff] at hDg
   rw [mem_smoothVanishingIdeal_iff]
-  exact (restrictValue_eq hD hgh).trans hDg
+  exact (restrictValue_eq hD hgh).trans
+    (differentialOperators_apply_eq_zero_of_mem_smoothVanishingIdeal_pow hD hg)
 
 /-! ### Restriction of differential operators -/
 
@@ -200,13 +202,15 @@ def _root_.TopologicalSpace.Opens.restrictDifferentialOperators :
   map_add' D₁ D₂ := by
     ext f x
     obtain ⟨g, hg⟩ := f.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
-    exact (restrictValue_eq (D₁ + D₂).2 hg).trans
-      (congrArg₂ (· + ·) (restrictValue_eq D₁.2 hg) (restrictValue_eq D₂.2 hg)).symm
+    simp only [Submodule.coe_add, LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply,
+      restrictLinearMap_apply, restrictValue_eq (add_mem D₁.2 D₂.2) hg,
+      restrictValue_eq D₁.2 hg, restrictValue_eq D₂.2 hg]
   map_smul' c D := by
     ext f x
     obtain ⟨g, hg⟩ := f.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
-    exact (restrictValue_eq (c • D).2 hg).trans
-      (congrArg (c * ·) (restrictValue_eq D.2 hg)).symm
+    simp only [Submodule.coe_smul, LinearMap.smul_apply, ContMDiffMap.coe_smul, Pi.smul_apply,
+      RingHom.id_apply, restrictLinearMap_apply, restrictValue_eq (Submodule.smul_mem _ c D.2) hg,
+      restrictValue_eq D.2 hg]
 
 /-- **The values of a restricted operator.** If the restriction of `g ∈ C^∞(M)` agrees with
 `f ∈ C^∞(U)` near `x`, then `(D|_U f)(x) = (D g)(x)`. -/
@@ -305,15 +309,6 @@ theorem commutatorSymbol_restrictDifferentialOperators_apply_restrict
       (fun i ↦ (f i.succ).restrict U) (g.restrict U))
       (Subtype.ext (smulCommutator_restrictDifferentialOperators D (f 0)))
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- The differential at `x ∈ U` of the restriction of `f` is the differential of `f` at `x`,
-composed with the identification of the tangent spaces of `U` and `M`. -/
-private theorem mvfderiv_restrict (f : C^∞⟮I, M; ℝ⟯) (x : U) :
-    mvfderiv I (f.restrict U) x =
-      (mvfderiv I f x).comp (Manifold.tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
-  rw [ContMDiffMap.coe_restrict, mvfderiv_comp x (f.contMDiff.mdifferentiable (by simp) _)
-    ((contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)), Manifold.mfderiv_subtype_val]
-
 /-- **Restriction preserves the commutator symbol.** At an interior point `x ∈ U`, the commutator
 symbol of `D|_U` on covectors `ηᵢ ∘ ι` is the commutator symbol of `D` on the covectors `ηᵢ`, where
 `ι : T_x U ≃ T_x M` is the identification of the tangent spaces. -/
@@ -327,12 +322,10 @@ theorem smoothCommutatorSymbol_restrictDifferentialOperators {x : U}
       smoothCommutatorSymbol I hx D η := by
   choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) (x : M) (0 : ℝ) (η i)
   obtain rfl : (fun i ↦ mvfderiv I (f i) (x : M)) = η := funext hf
-  have hone : (1 : C^∞⟮I, U; ℝ⟯) = (1 : C^∞⟮I, M; ℝ⟯).restrict U := by
-    ext
-    simp
-  simp only [← mvfderiv_restrict]
-  rw [smoothCommutatorSymbol_mvfderiv, smoothCommutatorSymbol_mvfderiv, hone,
-    commutatorSymbol_restrictDifferentialOperators_apply_restrict, ContMDiffMap.restrict_apply]
+  simp only [← ContMDiffMap.mvfderiv_restrict (n := ∞) (by simp)]
+  rw [smoothCommutatorSymbol_mvfderiv, smoothCommutatorSymbol_mvfderiv,
+    ← ContMDiffMap.restrict_one U, commutatorSymbol_restrictDifferentialOperators_apply_restrict,
+    ContMDiffMap.restrict_apply]
 
 /-- **Restriction preserves the principal symbol.** At an interior point `x ∈ U`, the principal
 symbol of `D|_U` at `ξ ∘ ι` is the principal symbol of `D` at `ξ`, where `ι : T_x U ≃ T_x M` is the
@@ -422,8 +415,9 @@ theorem _root_.Derivation.vectorField_restrictDerivation [BoundarylessManifold I
   have hd : mvfderiv I f x = mvfderiv I (g.restrict U) x := by
     rw [ContMDiffMap.coe_restrict]
     exact hg.symm.mvfderiv_eq
-  rw [hd, mvfderiv_restrict, Opens.restrictDerivation_apply_of_eventuallyEq δ hg,
-    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply, Derivation.mvfderiv_vectorField]
+  rw [hd, ContMDiffMap.mvfderiv_restrict (by simp),
+    Opens.restrictDerivation_apply_of_eventuallyEq δ hg, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
+    Derivation.mvfderiv_vectorField]
 
 end TauCeti

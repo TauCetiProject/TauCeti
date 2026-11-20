@@ -47,6 +47,9 @@ target, which lets one chart serve all nearby points. The converse is Hadamard's
 * `TauCeti.quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff`: two smooth functions have the same
   class modulo `I_x ^ (m + 1)` if and only if their chart expressions have the same derivatives of
   order at most `m` at `φ x`.
+* `TauCeti.differentialOperators_apply_eq_zero_of_mem_smoothVanishingIdeal_pow`,
+  `TauCeti.differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow`: a differential
+  operator of order at most `m` on `C^∞(M)` vanishes at `x` on `I_x ^ (m + 1)`.
 * `TauCeti.differentialOperators_apply_eq_of_iteratedFDeriv_eq`: a differential operator of order
   at most `m` on `C^∞(M)` takes the same value at `x` on two functions with the same `m`-jet at
   `x`.
@@ -128,6 +131,27 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
         (contMDiffWithinAt_extChartAt_symm_target x (interior_subset hy'))).contMDiffAt
           (mem_interior_iff_mem_nhds.mp hy'))) hf hk
 
+/-- A differential operator of order at most `m` on `C^∞(M)` vanishes at `x` on every function
+in `I_x ^ (m + 1)`. -/
+theorem differentialOperators_apply_eq_zero_of_mem_smoothVanishingIdeal_pow {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    {f : C^∞⟮I, M; ℝ⟯} (hf : f ∈ smoothVanishingIdeal I x ^ (m + 1)) :
+    D f x = 0 := by
+  have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
+    (x := f) (by simpa using hf)
+  rwa [smul_eq_mul, Ideal.mul_top, mem_smoothVanishingIdeal_iff] at h
+
+/-- A differential operator of order at most `m` on `C^∞(M)` takes the same value at `x` on two
+smooth functions whose difference lies in `I_x ^ (m + 1)`. -/
+theorem differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
+    {f g : C^∞⟮I, M; ℝ⟯} (hfg : f - g ∈ smoothVanishingIdeal I x ^ (m + 1)) :
+    D f x = D g x := by
+  have h := differentialOperators_apply_eq_zero_of_mem_smoothVanishingIdeal_pow hD hfg
+  rwa [map_sub, ContMDiffMap.coe_sub, Pi.sub_apply, sub_eq_zero] at h
+
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
 /-- **The powers of the vanishing ideal.** At an interior point `x` of a finite-dimensional
@@ -184,15 +208,10 @@ theorem differentialOperators_apply_eq_of_iteratedFDeriv_eq {m : ℕ}
     (hfg : ∀ k ≤ m,
       iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) =
         iteratedFDeriv ℝ k ((g : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x)) :
-    D f x = D g x := by
-  have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) := by
+    D f x = D g x :=
+  differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow hD <| by
     rw [← Ideal.Quotient.eq]
     exact (quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff hx m f g).mpr hfg
-  have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
-    (x := f - g) (by simpa using hmem)
-  rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
-    Pi.sub_apply, sub_eq_zero] at h
-  exact h
 
 /-- **Differential operators are local.** A differential operator of order at most `m` on
 `C^∞(M)` takes the same value at `x` on two smooth functions that agree near `x`: their difference
@@ -201,15 +220,10 @@ theorem differentialOperators_apply_eq_of_eventuallyEq {m : ℕ}
     {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
     (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
     {f g : C^∞⟮I, M; ℝ⟯} (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) :
-    D f x = D g x := by
-  have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) :=
+    D f x = D g x :=
+  differentialOperators_apply_eq_of_sub_mem_smoothVanishingIdeal_pow hD <|
     mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero
       (by simpa [ContMDiffMap.coe_sub, sub_eq_zero] using hfg.sub_eq) _
-  have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
-    (x := f - g) (by simpa using hmem)
-  rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
-    Pi.sub_apply, sub_eq_zero] at h
-  exact h
 
 /-- A differential operator on `C^∞(M)` does not enlarge supports: `D f` vanishes outside the
 closed support of `f`. -/
