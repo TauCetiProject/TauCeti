@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 public import TauCeti.AlgebraicTopology.Cellular.Comparison
 public import TauCeti.AlgebraicTopology.Cellular.Coproduct
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
@@ -19,8 +20,8 @@ differentials at `Cₙ(C, D; R)` vanish, since one end of each is zero
 the cellular chain group, a coproduct of one copy of the coefficients `R` for each `n`-cell
 (`TauCeti.cellularHomologyIsoSigma`). This is the *lacunary principle* for CW complexes: in a degree
 whose neighbouring dimensions carry no cells (or which carries none itself), homology is free on the
-`n`-cells, with coefficients in any abelian category with coproducts, integral coefficients
-included.
+`n`-cells, with coefficients in any abelian category whose coproducts indexed by the `n`-cells are
+exact (automatic for finitely many `n`-cells), integral coefficients included.
 
 Through the cellular–singular comparison the same holds for the singular homology of every space
 `Y` homotopy equivalent to an absolute CW complex `C`
@@ -79,13 +80,15 @@ def cellularHomologyIsoSigma (n : ℕ) [HasExactColimitsOfShape (Discrete (cell 
     (hsucc : IsEmpty (cell C n) ∨ IsEmpty (cell C (n + 1)))
     (hpred : ∀ m, m + 1 = n → IsEmpty (cell C m) ∨ IsEmpty (cell C n)) :
     (cellularChainComplex C R).homology n ≅ ∐ fun _ : cell C n ↦ R :=
-  ((cellularChainComplex C R).isoHomologyπ (n + 1) n (by simp)
-      (cellularChainComplex_d_eq_zero_of_isEmpty_or C R hsucc.symm)).symm ≪≫
-    (cellularChainComplex C R).iCyclesIso n _ rfl (by
-      -- The only differential out of degree `n` goes to degree `n - 1`, when `n ≥ 1`.
-      by_cases hrel : (ComplexShape.down ℕ).Rel n ((ComplexShape.down ℕ).next n)
-      · exact cellularChainComplex_d_eq_zero_of_isEmpty_or C R (hpred _ hrel).symm
-      · exact (cellularChainComplex C R).shape _ _ hrel) ≪≫
+  ((cellularChainComplex C R).XIsoHomologyOfDEqZero n
+      (cellularChainComplex_d_eq_zero_of_isEmpty_or C R <| by
+        rw [ChainComplex.prev]
+        exact hsucc.symm)
+      (by
+        -- The only differential out of degree `n` goes to degree `n - 1`, when `n ≥ 1`.
+        by_cases hrel : (ComplexShape.down ℕ).Rel n ((ComplexShape.down ℕ).next n)
+        · exact cellularChainComplex_d_eq_zero_of_isEmpty_or C R (hpred _ hrel).symm
+        · exact (cellularChainComplex C R).shape _ _ hrel)).symm ≪≫
     eqToIso (cellularChainComplex_X C R n) ≪≫ cellularChainGroupIso C R n
 
 /-- The isomorphism `TauCeti.cellularHomologyIsoSigma` sends the class of a cellular cycle to the

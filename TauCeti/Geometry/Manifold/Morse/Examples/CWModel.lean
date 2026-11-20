@@ -133,7 +133,7 @@ theorem exists_cwComplex_homotopyEquiv_projectivization_complex (n : ℕ) :
   refine Finite.card_eq.1 ?_
   rw [ComplexProjectiveSpace.nat_card_cell_cwComplex, Nat.card_congr c, Nat.card_coe_set_eq,
     ncard_def, ← criticalCount_def, criticalCount_projectiveMomentFunction_complex hw]
-  split_ifs <;> rfl
+  split_ifs <;> simp
 
 /-! ### The real line -/
 

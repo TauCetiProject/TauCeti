@@ -64,19 +64,13 @@ namespace TauCeti
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ}
 
-/-- No critical point has index `j` exactly when the critical count in index `j` vanishes. -/
-private theorem isEmpty_setOf_manifoldMorseIndex_eq_iff (j : ℕ) :
-    IsEmpty ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = j} ↔
-      criticalCount I f j = 0 := by
-  rw [criticalCount_def, encard_eq_zero, isEmpty_coe_sort]
-
 /-- If no two critical points have indices differing by one, then of any two consecutive indices
 one is the index of no critical point. -/
 private theorem criticalCount_eq_zero_or_criticalCount_add_one_eq_zero
     (hind : ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
       manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1) (j : ℕ) :
     criticalCount I f j = 0 ∨ criticalCount I f (j + 1) = 0 := by
-  simp only [← isEmpty_setOf_manifoldMorseIndex_eq_iff, isEmpty_subtype, mem_ofPred_eq, not_and]
+  simp only [criticalCount_eq_zero_iff]
   by_contra! hne
   obtain ⟨⟨x, hx, rfl⟩, ⟨y, hy, hxy⟩⟩ := hne
   exact hind y hy x hx hxy
@@ -96,7 +90,8 @@ private theorem nonempty_singularHomology_iso_sigma_of_homotopyEquiv {W : Type u
       ∐ fun _ : ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = n} ↦ R) := by
   -- A dimension of the model carries no cells exactly when no critical point has that index.
   have hcell (j : ℕ) : IsEmpty (cell (univ : Set W) j) ↔ criticalCount I f j = 0 :=
-    (c j).isEmpty_congr.trans (isEmpty_setOf_manifoldMorseIndex_eq_iff j)
+    (c j).isEmpty_congr.trans <| by
+      simp [isEmpty_subtype, criticalCount_eq_zero_iff]
   exact ⟨(e.trans (Homeomorph.Set.univ W).symm.toHomotopyEquiv).singularHomologyIsoSigma R n
       (by simpa only [hcell] using hsucc) (fun m hm ↦ by simpa only [hcell] using hpred m hm) ≪≫
     Sigma.whiskerEquiv (c n) fun _ ↦ Iso.refl R⟩

@@ -116,7 +116,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.exists_regular_sublevel_partition`: on a compact manifold, regular values
   cutting the values of a Morse function into bands with at most one critical value each.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
-  points, with `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
+  points, with `TauCeti.criticalCount_eq_zero_iff`,
+  `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
@@ -940,6 +941,11 @@ theorem totalCriticalCount_def : totalCriticalCount I f = (criticalPoints I f).e
 theorem criticalCount_def (j : ℕ) :
     criticalCount I f j = {x ∈ criticalPoints I f | manifoldMorseIndex I f x = j}.encard :=
   (rfl)
+
+/-- The critical count in index `j` vanishes exactly when no critical point has index `j`. -/
+theorem criticalCount_eq_zero_iff (j : ℕ) :
+    criticalCount I f j = 0 ↔ ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≠ j := by
+  simp [criticalCount_def, encard_eq_zero, eq_empty_iff_forall_notMem]
 
 /-- The number of critical points of a given index is at most the number of critical points. -/
 theorem criticalCount_le_totalCriticalCount (j : ℕ) :
