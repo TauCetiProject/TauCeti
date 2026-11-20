@@ -81,23 +81,28 @@ variable {V V' P P' : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V P] [Ad
 /-! ### Comparing two Gauss codes -/
 
 /-- **Comparison of Gauss codes.** Let `g` be an injective map carrying the traversal of `poly` to
-that of `poly'`, time by time. If `g` carries the fibres of the projection along `d` to those of
-the projection along `d'`, the relation "lies above, seen from `d`" to "lies above, seen from
-`d'`", and the orientation of the frames formed by two edge directions and `d` with respect to `b`
-to that with respect to `b'`, then the two Gauss codes agree. -/
+that of `poly'`, time by time. If `g` carries the relation "lies above, seen from `d`" to "lies
+above, seen from `d'`" (which makes it carry the fibres of the projection along `d` to those of the
+projection along `d'`), and the orientation of the frames formed by two edge directions and `d`
+with respect to `b` to that with respect to `b'`, then the two Gauss codes agree. -/
 private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q₀ : P'} {d' : V'}
     (hs : poly.IsSimple ℝ) (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d))
     (hs' : poly'.IsSimple ℝ) (hπ' : poly'.IsRegularProjection ℝ (projAlong ℝ q₀ d'))
     (b : Basis (Fin 3) ℝ V) (b' : Basis (Fin 3) ℝ V') {g : P → P'} (hg : Injective g)
     (hbp : ∀ t, poly'.boundaryParam t = g (poly.boundaryParam t))
-    (hfib : ∀ x y, projAlong ℝ q₀ d' (g x) = projAlong ℝ q₀ d' (g y) ↔
-      projAlong ℝ p₀ d x = projAlong ℝ p₀ d y)
     (hover : ∀ x y, (∃ c : ℝ, 0 < c ∧ c • d' = g x -ᵥ g y) ↔ ∃ c : ℝ, 0 < c ∧ c • d = x -ᵥ y)
     (hsign : ∀ i j : Fin n,
       SignType.sign (b'.det ![poly' (finRotate n i) -ᵥ poly' i,
         poly' (finRotate n j) -ᵥ poly' j, d']) =
       SignType.sign (b.det ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d])) :
     (⟨_, gaussCode hs' hπ' b'⟩ : Σ m, BasedOrientedGaussCode m) = ⟨_, gaussCode hs hπ b⟩ := by
+  -- `g` preserves and reflects the fibres of the projections, as it preserves "lies above".
+  have hfib (x y) : projAlong ℝ q₀ d' (g x) = projAlong ℝ q₀ d' (g y) ↔
+      projAlong ℝ p₀ d x = projAlong ℝ p₀ d y :=
+    ⟨fun h ↦ projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub h hg.eq_iff.1 (hover x y).1
+        (hover y x).1,
+      fun h ↦ projAlong_eq_projAlong_of_exists_pos_smul_eq_vsub h (congrArg g) (hover x y).2
+        (hover y x).2⟩
   -- `g` carries the boundary and the double points of `poly` onto those of `poly'`.
   have hbd : poly'.boundary ℝ = g '' poly.boundary ℝ := by
     rw [← range_boundaryParam, ← range_boundaryParam, ← range_comp]
@@ -111,7 +116,7 @@ private theorem gaussCode_eq_of_boundaryParam_eq_comp {poly' : Polygon P' n} {q�
     ext t
     rw [mem_crossingTimes, mem_crossingTimes, hbp, hDP, hg.mem_set_image]
   exact gaussCode_eq_of_strictMonoOn b hs hπ b' hs' hπ' (φ := id) (strictMono_id.strictMonoOn _)
-    (by rw [hct, image_id]) (fun t _ ↦ hbp t) hg.injOn (fun x _ y _ ↦ (hfib x y).2)
+    (by rw [hct, image_id]) (fun t _ ↦ hbp t)
     (fun x _ y _ ↦ (hover x y).2) fun t _ t' _ _ ↦ hsign _ _
 
 /-! ### Affine maps -/
@@ -141,7 +146,6 @@ theorem gaussCode_map (hs : poly.IsSimple ℝ) (hπ : poly.IsRegularProjection �
     (e.toAffineMap.linear_apply_vsub x y).symm
   refine gaussCode_eq_of_boundaryParam_eq_comp hs hπ hs' hπ' b _ e.injective
     (boundaryParam_map e.toAffineMap poly)
-    (fun x y ↦ projAlong_map_eq_projAlong_map_iff (f := e.toAffineMap) e.linear.injective q₀ p₀ d)
     (fun x y ↦ exists_congr fun c ↦ and_congr_right fun _ ↦ ?_) fun i j ↦ ?_
   · rw [hlin, ← LinearEquiv.map_smul, e.linear.injective.eq_iff]
   · simp only [map_apply, hlin, Basis.det_map]
@@ -158,7 +162,7 @@ theorem gaussCode_eq_of_orientation_eq (hs : poly.IsSimple ℝ)
     (h : b.orientation = b'.orientation) : gaussCode hs hπ b = gaussCode hs hπ b' := by
   have hpos : 0 < b'.det b := (b'.orientation_eq_iff_det_pos b).1 h.symm
   have := gaussCode_eq_of_boundaryParam_eq_comp hs hπ hs hπ b' b injective_id (fun _ ↦ rfl)
-    (fun _ _ ↦ Iff.rfl) (fun _ _ ↦ Iff.rfl) fun i j ↦ by
+    (fun _ _ ↦ Iff.rfl) fun i j ↦ by
       rw [b'.det.eq_smul_basis_det b, smul_apply, smul_eq_mul, sign_mul, sign_pos hpos, one_mul]
   exact eq_of_heq (Sigma.mk.inj_iff.1 this).2
 
@@ -177,8 +181,8 @@ theorem gaussCode_eq_mirror_of_orientation_eq_neg (hs : poly.IsSimple ℝ)
   -- The partner visits do not depend on the basis.
   have hpartner (j) : D'.partner.val j = D.partner.val j := by
     simpa only [Fin.cast_eq_self, Equiv.refl_symm, Equiv.refl_apply] using
-      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs hπ (injOn_id _)
-        (fun _ hx ↦ doublePoints_subset_boundary hx) (fun _ _ _ _ hxy ↦ hxy) rfl (Equiv.refl _)
+      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs hπ (g := id)
+        (fun _ _ _ _ hxy ↦ hxy) rfl (Equiv.refl _)
         (fun _ ↦ by simp only [Fin.cast_eq_self, Equiv.refl_apply, id_eq]) j
   have hover (j) : D'.over j = D.over j := by
     rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hpartner]
@@ -230,9 +234,7 @@ theorem gaussCode_smul (hs : poly.IsSimple ℝ) (hπ : poly.IsRegularProjection 
       fun ⟨a, ha, h⟩ ↦ ⟨a / c, (hp _).1 (by rwa [div_mul_cancel₀ a hc.ne']),
         by rwa [div_mul_cancel₀ a hc.ne']⟩⟩
   refine gaussCode_eq_of_boundaryParam_eq_comp hs hπ hs hπ' b b injective_id (fun _ ↦ rfl)
-    (fun x y ↦ ?_) (fun x y ↦ hmul fun a ↦ mul_pos_iff_of_pos_right hc) fun i j ↦ ?_
-  · simpa only [projAlong_eq_projAlong_iff, true_and, id_eq] using
-      hmul (p := fun _ ↦ True) (v := x -ᵥ y) fun _ ↦ Iff.rfl
+    (fun x y ↦ hmul fun a ↦ mul_pos_iff_of_pos_right hc) fun i j ↦ ?_
   · have hv : ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, c • d] =
         update ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] 2
           (c • ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] 2) := by

@@ -702,7 +702,7 @@ private theorem X_pow_six_dvd_inv_airyModulusSqSeries :
 
 private theorem evalC (i : Fin 6) {q : ℚ} (h : vecInvA i / (1 - 2 * (i : ℚ)) = q) :
     airyPhaseCoeff i = q := by
-  rwa [airyPhaseCoeff_def, coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_inv_airyModulusSqSeries i.2]
+  rwa [airyPhaseCoeff_def, coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_inv_airyModulusSqSeries i.isLt]
 
 /-- DLMF 9.8.22: `c_1 = 5 / 32`. -/
 theorem airyPhaseCoeff_one : airyPhaseCoeff 1 = 5 / 32 := evalC 1 (by norm_num [vecInvA])
@@ -735,7 +735,7 @@ private theorem X_pow_six_dvd_inv_airyDerivModulusSqSeries :
 private theorem evalD (i : Fin 6) {q : ℚ} (h : vecInvB i / (1 - 2 * (i : ℚ)) = q) :
     airyDerivPhaseCoeff i = q := by
   rwa [airyDerivPhaseCoeff_def,
-    coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_inv_airyDerivModulusSqSeries i.2]
+    coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_inv_airyDerivModulusSqSeries i.isLt]
 
 /-- DLMF 9.8.23: `d_1 = -7 / 32`. -/
 theorem airyDerivPhaseCoeff_one : airyDerivPhaseCoeff 1 = -7 / 32 :=
@@ -874,13 +874,13 @@ private theorem X_pow_six_dvd_airyZeroSeriesW :
     (by ext i; fin_cases i <;> norm_num [mulJet6, powJet6, derivativeThreeJet6, vecW, vecU])
 
 private theorem evalT (i : Fin 6) {q : ℚ} (h : vecT i = q) : airyZeroCoeffT i = q :=
-  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesT i.2).trans h
+  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesT i.isLt).trans h
 private theorem evalU (i : Fin 6) {q : ℚ} (h : vecU i = q) : airyZeroCoeffU i = q :=
-  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesU i.2).trans h
+  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesU i.isLt).trans h
 private theorem evalV (i : Fin 6) {q : ℚ} (h : vecV i = q) : airyZeroCoeffV i = q :=
-  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesV i.2).trans h
+  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesV i.isLt).trans h
 private theorem evalW (i : Fin 6) {q : ℚ} (h : vecW i = q) : airyZeroCoeffW i = q :=
-  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesW i.2).trans h
+  (coeff_eq_of_X_pow_six_dvd X_pow_six_dvd_airyZeroSeriesW i.isLt).trans h
 
 /-- DLMF 9.9.18: `T_1 = 5 / 48`. -/
 theorem airyZeroCoeffT_one : airyZeroCoeffT 1 = 5 / 48 := evalT 1 rfl

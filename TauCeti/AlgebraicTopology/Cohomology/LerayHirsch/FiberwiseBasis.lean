@@ -80,13 +80,13 @@ variable (n : ℕ) {ι : ℕ → Type w} [∀ p, DecidableEq (ι p)]
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, sending `a` in the summand indexed by
 `p + q = n` and `i : ι p` to `pr₁^* a ⌣ c p i`. -/
 def lerayHirschProdOfClasses :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) →ₗ[k]
+    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) →ₗ[k]
       (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
   DirectSum.toModule k _ _ fun j ↦
-    ((X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom j.1.1.2 j.1.1.1 n
-        (by rw [add_comm]; exact j.1.2)).flip (c j.1.1.1 j.2) ∘ₗ
-      (TopCat.singularCohomologyMap (fst X F) j.1.1.2).hom
+    ((X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom j.1.val.2 j.1.val.1 n
+        (by rw [add_comm]; exact j.1.property)).flip (c j.1.val.1 j.2) ∘ₗ
+      (TopCat.singularCohomologyMap (fst X F) j.1.val.2).hom
 
 /-- The Leray–Hirsch map of the classes `c` sends `a` in the summand indexed by `p + q = n` and
 `i : ι p` to `pr₁^* a ⌣ c p i`. -/
@@ -94,8 +94,8 @@ def lerayHirschProdOfClasses :
 lemma lerayHirschProdOfClasses_lof (p q : ℕ) (h : p + q = n) (i : ι p)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
     lerayHirschProdOfClasses X F n c (DirectSum.lof k _
-        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
-          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
+        (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
+          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2)
         ⟨⟨(p, q), h⟩, i⟩ a) =
       (X ⊗ F).singularCup k (λ_ _).inv (λ_ _).hom q p n (by omega)
         (TopCat.singularCohomologyMap (fst X F) q a) (c p i) := by
@@ -107,18 +107,18 @@ pulled-back classes `φ^* c`. -/
 lemma singularCohomologyMap_lerayHirschProdOfClasses {X' F' : TopCat.{w}} (φ : X ⊗ F ⟶ X' ⊗ F')
     (f : X ⟶ X') (hφ : φ ≫ fst X' F' = fst X F ≫ f)
     (c : ∀ p, ι p → (X' ⊗ F').singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X'.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X'.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) :
     TopCat.singularCohomologyMap φ n (lerayHirschProdOfClasses X' F' n c a) =
       lerayHirschProdOfClasses X F n (fun p i ↦ TopCat.singularCohomologyMap φ p (c p i))
-        (DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+        (DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
           (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.1.2).hom) a) := by
+            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.val.2).hom) a) := by
   suffices h : (TopCat.singularCohomologyMap φ n).hom ∘ₗ lerayHirschProdOfClasses X' F' n c =
       lerayHirschProdOfClasses X F n (fun p i ↦ TopCat.singularCohomologyMap φ p (c p i)) ∘ₗ
-        DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
+        DirectSum.lmap (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
           (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.1.2).hom) from LinearMap.congr_fun h a
+            (M := 𝟙_ (ModuleCat.{w} k)) f j.1.val.2).hom) from LinearMap.congr_fun h a
   refine DirectSum.linearMap_ext k fun ⟨⟨⟨p, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun a ↦ ?_
   simp only [LinearMap.comp_apply, DirectSum.lmap_lof]
   rw [lerayHirschProdOfClasses_lof, lerayHirschProdOfClasses_lof, ← singularCup_naturality,
@@ -145,15 +145,15 @@ variable {X F : TopCat.{w}} {ι : ℕ → Type w} [∀ p, DecidableEq (ι p)]
 
 /-- The source `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k)` of the Leray–Hirsch maps in degree `n`. -/
 private abbrev LHSource (k : Type w) [CommRing k] (X : TopCat.{w}) (ι : ℕ → Type w) (n : ℕ) :=
-  ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2
+  ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2
 
 /-- The summand inclusion of the source of the Leray–Hirsch maps. -/
 private abbrev lhLof (n p q : ℕ) (h : p + q = n) (i : ι p) :
     X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q →ₗ[k]
       LHSource k X ι n :=
-  DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
-    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ⟨⟨(p, q), h⟩, i⟩
+  DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
+    X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) ⟨⟨(p, q), h⟩, i⟩
 
 /-- Linear maps out of the source of the Leray–Hirsch maps agree if they agree on summands. -/
 private lemma lhSource_ext {n : ℕ} {M : Type*} [AddCommGroup M] [Module k M]
@@ -191,7 +191,7 @@ private lemma lhLof_apply_of_ne_zero (p p' q' : ℕ) (h : p' + q' = p) (hq : q' 
     (l : ι p) (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q') :
     lhLof p p' q' h i a ⟨⟨(p, 0), add_zero p⟩, l⟩ = 0 :=
   DirectSum.of_eq_of_ne _ _ _ fun he ↦ hq (by
-    have := congrArg (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1 ↦ j.1.1.2) he
+    have := congrArg (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.val.1 ↦ j.1.val.2) he
     exact this.symm)
 
 /-- Cupping on the left with `a ∈ H^q(X; k)` and shifting the base degrees by `q`: the map from the
@@ -200,11 +200,11 @@ source in degree `p` to the source in degree `n = p + q` sending `β` in the sum
 private def shiftCup (n p q : ℕ) (h : p + q = n) :
     X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q →ₗ[k]
       LHSource k X ι p →ₗ[k] LHSource k X ι n :=
-  (DirectSum.toModule k _ _ fun j' : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1 ↦
-    ((X.singularCup k (λ_ _).inv (λ_ _).hom q j'.1.1.2 (q + j'.1.1.2) rfl).compr₂
-      (DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
-          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
-        ⟨⟨(j'.1.1.1, q + j'.1.1.2), by have := j'.1.2; omega⟩, j'.2⟩)).flip).flip
+  (DirectSum.toModule k _ _ fun j' : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.val.1 ↦
+    ((X.singularCup k (λ_ _).inv (λ_ _).hom q j'.1.val.2 (q + j'.1.val.2) rfl).compr₂
+      (DirectSum.lof k _ (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
+          X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2)
+        ⟨⟨(j'.1.val.1, q + j'.1.val.2), by have := j'.1.property; omega⟩, j'.2⟩)).flip).flip
 
 private lemma shiftCup_lof (n p q : ℕ) (h : p + q = n) (p' q' : ℕ) (h' : p' + q' = p) (i : ι p')
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
@@ -218,7 +218,8 @@ private lemma shiftCup_lof (n p q : ℕ) (h : p + q = n) (p' q' : ℕ) (h' : p' 
 the summand indexed by `p + q = n` and `i` to `shiftCup a (γ p i)`. -/
 private def coeffMap (n : ℕ) (γ : ∀ p, ι p → LHSource k X ι p) :
     LHSource k X ι n →ₗ[k] LHSource k X ι n :=
-  DirectSum.toModule k _ _ fun j ↦ (shiftCup n j.1.1.1 j.1.1.2 j.1.2).flip (γ j.1.1.1 j.2)
+  DirectSum.toModule k _ _ fun j ↦ (shiftCup n j.1.val.1 j.1.val.2 j.1.property).flip
+      (γ j.1.val.1 j.2)
 
 private lemma coeffMap_lof (n : ℕ) (γ : ∀ p, ι p → LHSource k X ι p) (p q : ℕ) (h : p + q = n)
     (i : ι p) (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
@@ -235,11 +236,11 @@ summands indexed by `(p, q)` and `i'`. -/
 private def diagMap (n : ℕ)
     (E : ∀ p, ι p → ι p → X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0) :
     LHSource k X ι n →ₗ[k] LHSource k X ι n :=
-  DirectSum.toModule k _ _ fun j ↦ ∑ i' ∈ s j.1.1.1, DirectSum.lof k _
-      (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ⟨j.1, i'⟩ ∘ₗ
-    (X.singularCup k (λ_ _).inv (λ_ _).hom j.1.1.2 0 j.1.1.2 (add_zero _)).flip
-      (E j.1.1.1 j.2 i')
+  DirectSum.toModule k _ _ fun j ↦ ∑ i' ∈ s j.1.val.1, DirectSum.lof k _
+      (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) ⟨j.1, i'⟩ ∘ₗ
+    (X.singularCup k (λ_ _).inv (λ_ _).hom j.1.val.2 0 j.1.val.2 (add_zero _)).flip
+      (E j.1.val.1 j.2 i')
 
 private lemma diagMap_lof (n : ℕ)
     (E : ∀ p, ι p → ι p → X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) 0)
@@ -276,10 +277,10 @@ private lemma diagMap_eq_id (n : ℕ)
 /-- The filtration of the source by the fibre degree: the span of the summands of fibre degree
 `p < m`. -/
 private def filt (n m : ℕ) : Submodule k (LHSource k X ι n) :=
-  ⨆ (j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1) (_ : j.1.1.1 < m),
+  ⨆ (j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1) (_ : j.1.val.1 < m),
     LinearMap.range (DirectSum.lof k _
-      (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) j)
+      (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1 ↦
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) j)
 
 private lemma lhLof_mem_filt {n m p q : ℕ} (h : p + q = n) (hp : p < m) (i : ι p)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
@@ -436,8 +437,8 @@ the values at `x` of the base-degree-zero components of `g`. -/
 theorem singularCohomologyMap_prodFiberInclusion_lerayHirschProdOfClasses (x : X) (p : ℕ)
     [Fintype (ι p)]
     (c : ∀ p, ι p → (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1,
-      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.val.1,
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) :
     TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (lerayHirschProdOfClasses X F p c g) =
       ∑ i', TauCeti.singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) •
         TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i') := by
@@ -485,8 +486,8 @@ theorem singularCohomologyMap_prodFiberInclusion_lerayHirschProd (x : X) (p : �
     [Fintype (ι p)]
     (b : ∀ p, Module.Basis (ι p) k
       (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p))
-    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.1.1,
-      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    (g : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = p}, ι pq.val.1,
+      X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) :
     TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (lerayHirschProd X F p b g) =
       ∑ i', TauCeti.singularCohomologyZeroEval x (g ⟨⟨(p, 0), add_zero p⟩, i'⟩) • b p i' := by
   rw [← lerayHirschProdOfClasses_snd,
@@ -588,8 +589,8 @@ def lerayHirschProdOfClassesEquiv (n : ℕ)
         (c p i)) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
         TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i))) :
-    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) ≃ₗ[k]
+    (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) ≃ₗ[k]
       (X ⊗ F).singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
   LinearEquiv.ofBijective (lerayHirschProdOfClasses X F n c)
     (lerayHirschProdOfClasses_bijective X n c hι hF hc)
@@ -605,8 +606,8 @@ lemma lerayHirschProdOfClassesEquiv_apply (n : ℕ)
         (c p i)) ∧
       ⊤ ≤ Submodule.span k (Set.range fun i ↦
         TopCat.singularCohomologyMap (prodFiberInclusion X F x) p (c p i)))
-    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
-        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2) :
+    (a : ⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.val.1,
+        X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.val.2) :
     lerayHirschProdOfClassesEquiv X n c hι hF hc a = lerayHirschProdOfClasses X F n c a :=
   (rfl)
 
