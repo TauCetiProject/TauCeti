@@ -68,7 +68,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   unchanged by renumbering its factors along `Fin.cast`, an empty part of an appended family can
   be dropped (`TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_left`,
   `TauCeti.ExteriorAlgebra.ιMulti_append_of_eq_zero_right`), and
-  `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
+  `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family;
+  `TauCeti.ExteriorAlgebra.ιMulti_append_comp_cast` multiplies two renumbered families.
 * `TauCeti.ExteriorAlgebra.ιMulti_of_eq_zero`: an exterior product of a family indexed by `Fin n`
   with `n = 0` is `1`.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
@@ -481,6 +482,14 @@ theorem ιMulti_comp_append {n m : ℕ} (f : M →ₗ[R] N) (a : Fin n → M) (b
       _root_.ExteriorAlgebra.ιMulti R n (f ∘ a) * _root_.ExteriorAlgebra.ιMulti R m (f ∘ b) := by
   rw [← _root_.ExteriorAlgebra.map_apply_ιMulti, ← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti,
     map_mul, _root_.ExteriorAlgebra.map_apply_ιMulti, _root_.ExteriorAlgebra.map_apply_ιMulti]
+
+/-- Exterior products of two families renumbered along `Fin.cast` multiply to the exterior
+product of their concatenation. -/
+theorem ιMulti_append_comp_cast {n₁ n₂ m₁ m₂ : ℕ} (x : Fin m₁ → M) (y : Fin m₂ → M)
+    (h₁ : n₁ = m₁) (h₂ : n₂ = m₂) :
+    _root_.ExteriorAlgebra.ιMulti R (n₁ + n₂) (Fin.append (x ∘ Fin.cast h₁) (y ∘ Fin.cast h₂)) =
+      _root_.ExteriorAlgebra.ιMulti R m₁ x * _root_.ExteriorAlgebra.ιMulti R m₂ y := by
+  rw [← ιMulti_comp_cast h₁ x, ← ιMulti_comp_cast h₂ y, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
 
 /-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)`, written
 with a scalar of the base ring rather than Mathlib's unit of `ℤ`
