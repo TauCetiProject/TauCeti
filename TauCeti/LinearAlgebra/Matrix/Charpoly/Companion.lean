@@ -44,9 +44,9 @@ The orientation is the one of `TauCeti.companionFinTwo` in size two: ones below 
 the coefficients in the last column. The transpose, with the coefficients in the last row, is the
 state-transition matrix of the linear recurrence with characteristic polynomial `p`.
 
-Companion matrices are the normal form of cyclic endomorphisms, and the matrices of the
-monodromy of a hypergeometric differential equation at `0` and `∞` are companion matrices
-(Levelt's theorem).
+Companion matrices are the normal form of cyclic endomorphisms, and in a suitable basis the local
+monodromies `h_∞` and `h_0⁻¹` of a hypergeometric differential equation are companion matrices
+(Levelt's theorem; Beukers–Heckman, Theorem 3.5).
 
 ## Main definitions
 
@@ -123,6 +123,7 @@ theorem leftMulMatrix_root_eq_companion (hp : p.Monic) :
 
 /-- **The characteristic polynomial of the companion matrix** of a monic polynomial `p`, over any
 commutative ring, is `p`. -/
+@[simp]
 theorem charpoly_companion (hp : p.Monic) : p.companion.charpoly = p := by
   rw [← leftMulMatrix_root_eq_companion hp]
   exact (charpoly_leftMulMatrix (AdjoinRoot.powerBasis' hp)).trans
@@ -130,12 +131,14 @@ theorem charpoly_companion (hp : p.Monic) : p.companion.charpoly = p := by
 
 /-- The determinant of the companion matrix of a monic polynomial `p` of natural degree `d` is
 `(-1) ^ d * p.coeff 0`. -/
+@[simp]
 theorem det_companion (hp : p.Monic) : p.companion.det = (-1) ^ p.natDegree * p.coeff 0 := by
   rw [det_eq_sign_charpoly_coeff, charpoly_companion hp, Fintype.card_fin]
 
 /-- **The minimal polynomial of the companion matrix** of a monic polynomial `p`, over any
 commutative ring, is `p`: it equals the characteristic polynomial, so a companion matrix is
 non-derogatory. -/
+@[simp]
 theorem minpoly_companion (hp : p.Monic) : minpoly R p.companion = p := by
   rw [← leftMulMatrix_root_eq_companion hp]
   exact (minpoly.algHom_eq _ (Algebra.leftMulMatrix_injective _) _).trans

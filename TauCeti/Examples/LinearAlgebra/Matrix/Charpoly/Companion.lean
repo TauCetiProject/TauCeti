@@ -83,7 +83,7 @@ theorem reindex_companion_X_sq_add_one :
     simp [coeff_one]
 
 /-- The companion matrix of `X² + 1` is not its own transpose. -/
-theorem companion_X_sq_add_one_transpose_ne :
+theorem transpose_companion_X_sq_add_one_ne :
     (X ^ 2 + 1 : ℤ[X]).companionᵀ ≠ (X ^ 2 + 1 : ℤ[X]).companion := by
   intro h
   have := congr(reindex (finCongr natDegree_X_sq_add_one)
@@ -105,7 +105,7 @@ theorem not_hasEigenvalue_companion_X_sq_add_one (μ : ℚ) :
   positivity
 
 /-- The companion matrix of `1` is the empty matrix, and its characteristic polynomial is `1`. -/
-theorem companion_one_charpoly : (1 : ℚ[X]).companion.charpoly = 1 :=
+theorem charpoly_companion_one : (1 : ℚ[X]).companion.charpoly = 1 :=
   charpoly_companion monic_one
 
 end TauCeti.Examples.Companion
