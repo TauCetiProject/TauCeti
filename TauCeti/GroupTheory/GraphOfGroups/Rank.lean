@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Cycle.SpanningTree
 public import TauCeti.GroupTheory.Coprod.Finiteness
 public import TauCeti.GroupTheory.GraphOfGroups.GraphPresentation
+public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.FreeGroup.Rank
 
 /-!
@@ -39,11 +40,21 @@ is finitely generated exactly when there are finitely many petals
 (`TauCeti.GraphOfGroups.π₁Tree.fg_rose_iff_finite`), and then its rank is their number
 (`TauCeti.GraphOfGroups.π₁Tree.rank_rose`).
 
+The same holds for the fundamental group `π₁(𝔸, v)` of closed `𝔸`-paths at the vertex of the
+rose. With trivial vertex group it is free on the petals
+(`TauCeti.GraphOfGroups.π₁.roseEquivFreeGroup`), so when finitely generated its rank is the number
+of petals (`TauCeti.GraphOfGroups.π₁.rank_rose`). With finitely generated vertex group it is
+finitely generated exactly when there are finitely many petals
+(`TauCeti.GraphOfGroups.π₁.fg_rose_iff_finite`): it maps onto the free group on the petals by
+killing the vertex group.
+
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §§2.3–3.1.
 * A. Hatcher, *Algebraic Topology*, §1.A, Proposition 1A.2.
 * I. Kapovich, A. Myasnikov, *Stallings foldings and subgroups of free groups*, §8, Lemma 8.2.
+* I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
+  Internat. J. Algebra Comput. 15 (2005), §2, Proposition 2.4(3).
 -/
 
 public section
@@ -187,3 +198,51 @@ theorem rank_rose [Group.FG (π₁Tree 𝔸 T)] : Group.rank (π₁Tree 𝔸 T) 
   (FreeGroupBasis.ofRepr (roseEquivFreeGroup 𝔸 T)).rank_eq_nat_card
 
 end TauCeti.GraphOfGroups.π₁Tree
+
+namespace TauCeti.GraphOfGroups.π₁
+
+universe v w x
+
+variable {α : Type v} (𝔸 : GraphOfGroups.{0, v, w, x} (SerreGraph.rose α))
+  (v₀ : (SerreGraph.rose α).V)
+
+/-- The fundamental group at the vertex of a graph of groups with trivial vertex groups over a
+rose, when finitely generated, has rank the number of petals: for the rose with `n` petals it is
+free of rank `n`. -/
+theorem rank_rose [∀ a, Subsingleton (𝔸.vertexGroup a)] [Group.FG (π₁ 𝔸 v₀)] :
+    Group.rank (π₁ 𝔸 v₀) = Nat.card α :=
+  (FreeGroupBasis.ofRepr (roseEquivFreeGroup 𝔸 v₀)).rank_eq_nat_card
+
+/-- The homomorphism from the fundamental group at the vertex of a graph of groups over a rose to
+the free group on the petals that kills the vertex group and sends the class of the dart `(a, b)`
+to `a` or `a⁻¹` according to `b`. -/
+private noncomputable def roseToFreeGroup : π₁ 𝔸 v₀ →* FreeGroup α :=
+  (π₁Tree.lift (T := (SerreGraph.roseTree α).darts) (fun _ => 1)
+      (fun e => cond e.2 (FreeGroup.of e.1) (FreeGroup.of e.1)⁻¹)
+      (fun e he => isEmptyElim (⟨e, he⟩ : (SerreGraph.roseTree α).darts))
+      (fun e => by obtain ⟨a, b⟩ := e; cases b <;> simp) (fun _ _ => by simp)).comp
+    (π₁Equiv 𝔸 v₀ (SerreGraph.roseTree α)).toMonoidHom
+
+private theorem roseToFreeGroup_surjective : Function.Surjective (roseToFreeGroup 𝔸 v₀) := by
+  rw [← MonoidHom.range_eq_top, eq_top_iff, ← FreeGroup.closure_range_of, Subgroup.closure_le]
+  rintro _ ⟨a, rfl⟩
+  refine ⟨ofPathGroup 𝔸 v₀ ((SerreGraph.roseTree α).loop v₀ (a, true)), ?_⟩
+  rw [roseToFreeGroup, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    π₁Equiv_ofPathGroup_loop 𝔸 v₀ _ (a, true)]
+  exact π₁Tree.lift_edge ..
+
+/-- The fundamental group at the vertex of a graph of groups over a rose with finitely generated
+vertex group is finitely generated exactly when the rose has finitely many petals. -/
+theorem fg_rose_iff_finite [∀ a, Group.FG (𝔸.vertexGroup a)] : Group.FG (π₁ 𝔸 v₀) ↔ Finite α := by
+  refine ⟨fun _ => ?_, fun _ => ?_⟩
+  · have := Group.fg_of_surjective (roseToFreeGroup_surjective 𝔸 v₀)
+    exact (FreeGroupBasis.ofRepr (MulEquiv.refl (FreeGroup α))).finite_of_fg
+  · exact Group.fg_of_surjective (f := (π₁Equiv 𝔸 v₀ (SerreGraph.roseTree α)).symm.toMonoidHom)
+      (MulEquiv.surjective _)
+
+/-- The fundamental group at the vertex of a graph of groups over a rose with finitely many petals
+and finitely generated vertex group is finitely generated. -/
+instance [∀ a, Group.FG (𝔸.vertexGroup a)] [Finite α] : Group.FG (π₁ 𝔸 v₀) :=
+  (fg_rose_iff_finite 𝔸 v₀).2 ‹_›
+
+end TauCeti.GraphOfGroups.π₁
