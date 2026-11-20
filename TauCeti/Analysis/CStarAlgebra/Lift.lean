@@ -5,34 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.PosPart.Isometric
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
-# Norm-preserving lifts through surjective `⋆`-homomorphisms
+# Norm-preserving lifts through `⋆`-homomorphisms
 
-Let `φ : A → B` be a surjective `⋆`-homomorphism between (possibly nonunital) complex
-C⋆-algebras, for instance the quotient map `A → A ⧸ I` by a closed two-sided ideal. A
-`⋆`-homomorphism is contractive, so every preimage `a` of `b` has `‖b‖ ≤ ‖a‖`. This file shows
-that the bound is attained, and that order-theoretic properties of `b` can be lifted along with
-its norm:
+Let `φ : A → B` be a `⋆`-homomorphism between (possibly nonunital) complex C⋆-algebras, for
+instance the quotient map `A → A ⧸ I` by a closed two-sided ideal. A `⋆`-homomorphism is
+contractive, so every preimage `a` of `b` has `‖b‖ ≤ ‖a‖`. This file shows that for `b` in the
+range of `φ` the bound is attained, and that order-theoretic properties of `b` can be lifted along
+with its norm:
 
-* `NonUnitalStarAlgHom.exists_apply_eq_norm_eq`: every `b : B` has a preimage of the same norm;
-* `NonUnitalStarAlgHom.exists_isSelfAdjoint_apply_eq_norm_eq`: every self-adjoint `b` has a
-  self-adjoint preimage of the same norm;
-* `NonUnitalStarAlgHom.exists_nonneg_apply_eq_norm_eq`: every positive `b` has a positive
-  preimage of the same norm. In particular positive contractions lift to positive contractions.
+* `NonUnitalStarAlgHom.exists_apply_eq_norm_eq`: every `b` in the range of `φ` has a preimage of
+  the same norm;
+* `NonUnitalStarAlgHom.exists_isSelfAdjoint_apply_eq_norm_eq`: every self-adjoint `b` in the
+  range has a self-adjoint preimage of the same norm;
+* `NonUnitalStarAlgHom.exists_nonneg_apply_eq_norm_eq`: every positive `b` in the range has a
+  positive preimage of the same norm. In particular positive contractions lift to positive
+  contractions through a surjective `φ`.
 * `TwoSidedIdeal.Quotient.exists_norm_mk_eq`: every class in a C⋆-quotient `A ⧸ I` has a
   representative whose norm is the quotient norm `inf_{y ∈ I} ‖a + y‖`.
 
 ## Implementation notes
 
-The self-adjoint and positive lifts come from an arbitrary self-adjoint preimage `s` of `b` by
-applying the non-unital continuous functional calculus with a function that clamps the spectrum
-to `[-‖b‖, ‖b‖]`, respectively to `[0, ‖b‖]`. Such a function is the identity on the
-quasispectrum of `b`, and `⋆`-homomorphisms commute with the functional calculus
-(`NonUnitalStarAlgHomClass.map_cfcₙ`). For an arbitrary `b = φ c` with `r = ‖b‖ > 0`, the
+The self-adjoint lift comes from the real part `s` of an arbitrary preimage of `b` by applying
+the non-unital continuous functional calculus with the function clamping the spectrum to
+`[-‖b‖, ‖b‖]`, and the positive lift is the positive part of the self-adjoint lift. Both functions
+are the identity on the quasispectrum of `b`, and `⋆`-homomorphisms commute with the functional
+calculus (`NonUnitalStarAlgHomClass.map_cfcₙ`). For an arbitrary `b = φ c` with `r = ‖b‖ > 0`, the
 preimage is `c - c * h(c⋆c)` where `h t = max 0 (√t - r) / √t`: the function `h` vanishes on
 `[0, r ^ 2] ⊇ σₙ(b⋆b)`, while `t * (1 - h t) ^ 2 = min t (r ^ 2)` bounds the norm.
 
@@ -45,7 +47,7 @@ preimage is `c - c * h(c⋆c)` where `h t = max 0 (√t - r) / √t`: the functi
 
 public section
 
-open scoped CStarAlgebra
+open scoped CStarAlgebra ComplexStarModule
 
 namespace NonUnitalStarAlgHom
 
@@ -62,17 +64,19 @@ private theorem apply_cfcₙ_eq (φ : F) {s : A} (hs : IsSelfAdjoint s) {b : B} 
   rw [NonUnitalStarAlgHomClass.map_cfcₙ (S := ℂ) φ f s (hf₀ := hf₀) (hφ := map_continuous φ)
     (hφa := hs.map φ), cfcₙ_congr (g := id) hfb, cfcₙ_id ℝ (φ s) (hs.map φ)]
 
-/-- A surjective `⋆`-homomorphism of C⋆-algebras maps some self-adjoint element of the same
-norm onto any given self-adjoint element. -/
-theorem exists_isSelfAdjoint_apply_eq_norm_eq (φ : F) (hφ : Function.Surjective φ) {b : B}
+/-- A `⋆`-homomorphism of C⋆-algebras is contractive, so every preimage of `b` has norm at
+least `‖b‖`. -/
+private theorem norm_le_of_apply_eq (φ : F) {a : A} {b : B} (h : φ a = b) : ‖b‖ ≤ ‖a‖ :=
+  h ▸ norm_apply_le φ a
+
+/-- A `⋆`-homomorphism of C⋆-algebras maps some self-adjoint element of the same norm onto any
+given self-adjoint element of its range. -/
+theorem exists_isSelfAdjoint_apply_eq_norm_eq (φ : F) {b : B} (hbφ : b ∈ Set.range φ)
     (hb : IsSelfAdjoint b) : ∃ a, IsSelfAdjoint a ∧ φ a = b ∧ ‖a‖ = ‖b‖ := by
-  obtain ⟨c, rfl⟩ := hφ b
+  obtain ⟨c, rfl⟩ := hbφ
   -- The real part of `c` is a self-adjoint preimage of `φ c`, which we then clamp.
-  obtain ⟨s, hs, hsc⟩ : ∃ s, IsSelfAdjoint s ∧ φ s = φ c := by
-    refine ⟨(2⁻¹ : ℂ) • (c + star c),
-      .smul (by simp [IsSelfAdjoint] : IsSelfAdjoint (2⁻¹ : ℂ)) (.add_star_self c), ?_⟩
-    rw [map_smul, map_add, map_star, hb.star_eq, ← two_smul ℂ (φ c), smul_smul,
-      inv_mul_cancel₀ two_ne_zero, one_smul]
+  obtain ⟨s, hs, hsc⟩ : ∃ s : A, IsSelfAdjoint s ∧ φ s = φ c :=
+    ⟨ℜ c, (ℜ c).2, by rw [map_realPart, hb.coe_realPart]⟩
   set r := ‖φ c‖
   have hr : 0 ≤ r := norm_nonneg _
   let f : ℝ → ℝ := fun t ↦ max (-r) (min t r)
@@ -84,7 +88,7 @@ theorem exists_isSelfAdjoint_apply_eq_norm_eq (φ : F) (hφ : Function.Surjectiv
   refine ⟨cfcₙ f s, cfcₙ_predicate f s, hfa, le_antisymm (norm_cfcₙ_le fun x _ ↦ ?_) ?_⟩
   · simp only [Real.norm_eq_abs, abs_le, f]
     exact ⟨le_max_left _ _, max_le (by linarith) (min_le_right _ _)⟩
-  · exact (congrArg norm hfa).ge.trans (norm_apply_le φ _)
+  · exact norm_le_of_apply_eq φ hfa
 
 /-- The cutoff `t ↦ max 0 (√t - r) / √t` is continuous for `r > 0`: it vanishes on
 `(-∞, r ^ 2)`, a neighbourhood of every `t ≤ 0`, where `√t` vanishes. -/
@@ -110,16 +114,20 @@ private theorem mul_one_sub_cutoff_sq_le {r t : ℝ} (hr : 0 < r) (ht : 0 ≤ t)
     rw [max_eq_right (sub_nonneg.2 hlt.le), this, div_pow, Real.sq_sqrt ht]
     exact (mul_div_cancel₀ _ (Real.sqrt_pos.1 hu).ne').le
 
-/-- Every element of the target of a surjective `⋆`-homomorphism of C⋆-algebras has a preimage
-of the same norm. For a quotient map this says that the quotient norm is attained. -/
-theorem exists_apply_eq_norm_eq (φ : F) (hφ : Function.Surjective φ) (b : B) :
+/-- Every element of the range of a `⋆`-homomorphism of C⋆-algebras has a preimage of the same
+norm. For a quotient map this says that the quotient norm is attained. -/
+theorem exists_apply_eq_norm_eq (φ : F) {b : B} (hbφ : b ∈ Set.range φ) :
     ∃ a, φ a = b ∧ ‖a‖ = ‖b‖ := by
-  obtain ⟨c, rfl⟩ := hφ b
+  obtain ⟨c, rfl⟩ := hbφ
   set r := ‖φ c‖
   rcases (norm_nonneg (φ c)).eq_or_lt with hr | hr
   · exact ⟨0, by simp [norm_eq_zero.1 hr.symm], by simp [r, ← hr]⟩
+  -- `A` carries no order here; the spectral order provides the `StarOrderedRing` structure
+  -- needed below for `star_mul_self_nonneg` and `quasispectrum_nonneg_of_nonneg`.
   let _ := CStarAlgebra.spectralOrder A
   have _ := CStarAlgebra.spectralOrderedRing A
+  -- Make the cutoff opaque, so that the `cfcₙ` side goals and `simp` do not unfold its body;
+  -- `hdef` recovers the formula where it is needed.
   obtain ⟨h, hh, hdef⟩ : ∃ h : ℝ → ℝ, Continuous h ∧ ∀ t, h t = max 0 (√t - r) / √t :=
     ⟨_, continuous_cutoff hr, fun _ ↦ rfl⟩
   -- The cutoff vanishes at `0`, as the non-unital calculus requires.
@@ -151,33 +159,24 @@ theorem exists_apply_eq_norm_eq (φ : F) (hφ : Function.Surjective φ) (b : B) 
     rw [show t - t * h t - h t * t + h t * t * h t = t * (1 - h t) ^ 2 by ring, Real.norm_eq_abs,
       abs_of_nonneg (by positivity), hdef]
     exact mul_one_sub_cutoff_sq_le hr ht₀
-  refine ⟨c - c * H, by rw [map_sub, map_mul, hφH, mul_zero, sub_zero], le_antisymm ?_ ?_⟩
-  · rw [← sq_le_sq₀ (norm_nonneg _) hr.le, sq, ← CStarRing.norm_star_mul_self]
-    exact hnorm
-  · exact (congrArg norm (show φ (c - c * H) = φ c by
-      rw [map_sub, map_mul, hφH, mul_zero, sub_zero])).ge.trans (norm_apply_le φ _)
+  have hφa : φ (c - c * H) = φ c := by simp [hφH]
+  refine ⟨c - c * H, hφa, le_antisymm ?_ (norm_le_of_apply_eq φ hφa)⟩
+  rw [← sq_le_sq₀ (norm_nonneg _) hr.le, sq, ← CStarRing.norm_star_mul_self]
+  exact hnorm
 
 variable [PartialOrder A] [StarOrderedRing A] [PartialOrder B] [StarOrderedRing B]
 
-/-- A surjective `⋆`-homomorphism of C⋆-algebras maps some positive element of the same norm onto
-any given positive element. In particular, positive contractions lift to positive contractions. -/
-theorem exists_nonneg_apply_eq_norm_eq (φ : F) (hφ : Function.Surjective φ) {b : B}
-    (hb : 0 ≤ b) : ∃ a, 0 ≤ a ∧ φ a = b ∧ ‖a‖ = ‖b‖ := by
-  obtain ⟨c, rfl⟩ := hφ b
-  obtain ⟨s, hs, hsc, -⟩ := exists_isSelfAdjoint_apply_eq_norm_eq φ hφ hb.isSelfAdjoint
-  set r := ‖φ c‖
-  have hr : 0 ≤ r := norm_nonneg _
-  let f : ℝ → ℝ := fun t ↦ max 0 (min t r)
-  have hf : Continuous f := by fun_prop
-  have hfa : φ (cfcₙ f s) = φ c := apply_cfcₙ_eq φ hs hsc hf fun x hx ↦ by
-    have h₀ : 0 ≤ x := quasispectrum_nonneg_of_nonneg _ hb x hx
-    have h₁ : x ≤ r := (Real.le_norm_self x).trans (quasispectrum.norm_le_norm_of_mem hx)
-    simp only [f, min_eq_left h₁, max_eq_right h₀]
-  refine ⟨cfcₙ f s, cfcₙ_nonneg fun x _ ↦ le_max_left _ _, hfa,
-    le_antisymm (norm_cfcₙ_le fun x _ ↦ ?_) ?_⟩
-  · simp only [Real.norm_eq_abs, abs_le, f]
-    exact ⟨by linarith [le_max_left 0 (min x r)], max_le hr (min_le_right _ _)⟩
-  · exact (congrArg norm hfa).ge.trans (norm_apply_le φ _)
+/-- A `⋆`-homomorphism of C⋆-algebras maps some positive element of the same norm onto any given
+positive element of its range. In particular, positive contractions lift to positive contractions
+through a surjective `φ`. -/
+theorem exists_nonneg_apply_eq_norm_eq (φ : F) {b : B} (hbφ : b ∈ Set.range φ) (hb : 0 ≤ b) :
+    ∃ a, 0 ≤ a ∧ φ a = b ∧ ‖a‖ = ‖b‖ := by
+  obtain ⟨s, hs, hsb, hsn⟩ := exists_isSelfAdjoint_apply_eq_norm_eq φ hbφ hb.isSelfAdjoint
+  -- The positive part of `s` is still a preimage: `(·⁺)` is the identity on `σₙ(b) ⊆ [0, ∞)`.
+  have hφs : φ s⁺ = b := apply_cfcₙ_eq φ hs hsb (by fun_prop) fun x hx ↦
+    posPart_eq_self.2 (quasispectrum_nonneg_of_nonneg _ hb x hx)
+  exact ⟨s⁺, CFC.posPart_nonneg s, hφs,
+    ((CStarAlgebra.norm_posPart_le s).trans hsn.le).antisymm (norm_le_of_apply_eq φ hφs)⟩
 
 end NonUnitalStarAlgHom
 
@@ -190,6 +189,6 @@ whose norm equals the quotient norm: the infimum in `TwoSidedIdeal.Quotient.norm
 attained. -/
 theorem exists_norm_mk_eq (x : A ⧸ I) : ∃ a : A, mk I a = x ∧ ‖a‖ = ‖x‖ := by
   simpa only [mkStarAlgHom_apply] using
-    NonUnitalStarAlgHom.exists_apply_eq_norm_eq (mkStarAlgHom I) (mkStarAlgHom_surjective I) x
+    NonUnitalStarAlgHom.exists_apply_eq_norm_eq (mkStarAlgHom I) (mkStarAlgHom_surjective I x)
 
 end TwoSidedIdeal.Quotient
