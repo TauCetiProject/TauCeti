@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Finiteness.Prod
-public import Mathlib.CategoryTheory.Limits.Constructions.FiniteProductsOfBinaryProducts
+public import Mathlib.CategoryTheory.Limits.FullSubcategory
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts.BinaryProducts
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
@@ -17,26 +17,19 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Product
 /-!
 # Products of finitely generated comodules
 
-This file packages the direct-sum product comodule inside `FGComoduleCat`. The ambient
-category `ComoduleCat` already has the product comodule on the cartesian product of the
-underlying modules; finite generation is preserved by binary products of modules, so this
-construction stays in the full subcategory of finitely generated comodules. The same concrete
-object is registered as the categorical binary product, which is upgraded to a biproduct over a
-commutative ring. Downstream code then uses Mathlib's generic `M ⨯ N` / `M ⊞ N` API.
-
-The same comparison shows that finite generation, as an object property of all comodules, is
-closed under binary and finite products, so Mathlib's `ObjectProperty` instances for full
-subcategories apply to `FGComoduleCat`.
+The ambient category `ComoduleCat` has the product comodule on the cartesian product of the
+underlying modules as its categorical binary product. Finite generation is preserved by binary
+products of modules, so finite generation, as an object property of all comodules, is closed
+under binary and finite products. Mathlib's `ObjectProperty` instances for full subcategories
+then give `FGComoduleCat` binary and finite products, created by the inclusion into all
+comodules, and over a commutative ring these products are biproducts. Downstream code uses
+Mathlib's generic `M ⨯ N` / `M ⊞ N` API.
 
 ## Main declarations
 
 * `TauCeti.ComoduleCat.isFG_isClosedUnderBinaryProducts`,
   `TauCeti.ComoduleCat.isFG_isClosedUnderFiniteProducts`: finite generation of comodules is
   closed under binary and finite products.
-* `TauCeti.FGComoduleCat.hasBinaryProduct`: the categorical binary product instance using
-  the concrete product object.
-* `TauCeti.FGComoduleCat.hasBinaryProducts`, `hasFiniteProducts`: product infrastructure
-  induced by the binary product and the existing zero object.
 * `TauCeti.FGComoduleCat.hasBinaryBiproduct`: the ring/preadditive biproduct instance induced
   by the binary product.
 * `TauCeti.FGComoduleCat.hasBinaryBiproducts`, `hasFiniteBiproducts`: aggregate
@@ -44,7 +37,7 @@ subcategories apply to `FGComoduleCat`.
 
 ## References
 
-The construction reuses the direct-sum comodule from `TauCeti.Algebra.Coalgebra.Comodule.Product`.
+The products come from the direct-sum comodule in `TauCeti.Algebra.Coalgebra.Comodule.Product`.
 -/
 
 public section
@@ -66,17 +59,15 @@ instance isFG_isClosedUnderBinaryProducts :
     (isFG.{u, v, w} R C).IsClosedUnderBinaryProducts := by
   refine ObjectProperty.IsClosedUnderLimitsOfShape.mk' ?_
   rintro _ ⟨F, hF⟩
-  refine (isFG R C).prop_of_iso (HasLimit.isoOfNatIso (diagramIsoPair F)).symm ?_
   let M := F.obj ⟨.left⟩
   let N := F.obj ⟨.right⟩
-  let : Module.Finite R M := hF _
-  let : Module.Finite R N := hF _
-  let e : prod R C M N ≅ M ⨯ N :=
-    { hom := Limits.prod.lift (prodFst M N) (prodSnd M N)
-      inv := prodLift Limits.prod.fst Limits.prod.snd
-      hom_inv_id := prod_hom_ext (by simp) (by simp)
-      inv_hom_id := Limits.prod.hom_ext (by simp) (by simp) }
-  exact (isFG R C).prop_of_iso e (Module.Finite.prod : Module.Finite R (M × N))
+  have : Module.Finite R M := (isFG_iff R C M).mp (hF _)
+  have : Module.Finite R N := (isFG_iff R C N).mp (hF _)
+  have hprod : isFG R C (prod R C M N) :=
+    (isFG_iff R C (prod R C M N)).mpr (Module.Finite.prod : Module.Finite R (M × N))
+  exact (isFG R C).prop_of_iso
+    ((limit.isoLimitCone (binaryProductLimitCone M N)).symm ≪≫
+      (HasLimit.isoOfNatIso (diagramIsoPair F)).symm) hprod
 
 /-- Finitely generated comodules are closed under finite products. -/
 instance isFG_isClosedUnderFiniteProducts :
@@ -86,90 +77,6 @@ instance isFG_isClosedUnderFiniteProducts :
 end ComoduleCat
 
 namespace FGComoduleCat
-
-/-- The product of two finitely generated comodules, carried by the product of the
-underlying modules. -/
-private abbrev prod (M N : FGComoduleCat.{u, v, w} R C) : FGComoduleCat.{u, v, w} R C where
-  obj := ComoduleCat.prod R C M.obj N.obj
-  property := by
-    -- `ComoduleCat.prod` is carried definitionally by the raw product `M × N`, so the finite
-    -- generation obligation is exactly the standard product finiteness instance.
-    change Module.Finite R (M × N)
-    exact Module.Finite.prod
-
-section Semiring
-
-variable {R C}
-
-private abbrev prodFst (M N : FGComoduleCat.{u, v, w} R C) : prod R C M N ⟶ M :=
-  ObjectProperty.homMk (ComoduleCat.prodFst M.obj N.obj)
-
-private abbrev prodSnd (M N : FGComoduleCat.{u, v, w} R C) : prod R C M N ⟶ N :=
-  ObjectProperty.homMk (ComoduleCat.prodSnd M.obj N.obj)
-
-private abbrev prodLift {P M N : FGComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P ⟶ N) :
-    P ⟶ prod R C M N :=
-  ObjectProperty.homMk (ComoduleCat.prodLift f.hom g.hom)
-
-private theorem prodFst_hom (M N : FGComoduleCat.{u, v, w} R C) :
-    (prodFst M N).hom = ComoduleCat.prodFst M.obj N.obj :=
-  rfl
-
-private theorem prodSnd_hom (M N : FGComoduleCat.{u, v, w} R C) :
-    (prodSnd M N).hom = ComoduleCat.prodSnd M.obj N.obj :=
-  rfl
-
-private theorem prodLift_fst {P M N : FGComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P ⟶ N) :
-    prodLift f g ≫ prodFst M N = f := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom]
-  exact ComoduleCat.prodLift_fst (R := R) (C := C) f.hom g.hom
-
-private theorem prodLift_snd {P M N : FGComoduleCat.{u, v, w} R C} (f : P ⟶ M) (g : P ⟶ N) :
-    prodLift f g ≫ prodSnd M N = g := by
-  apply ObjectProperty.hom_ext
-  simp only [ObjectProperty.FullSubcategory.comp_hom]
-  exact ComoduleCat.prodLift_snd (R := R) (C := C) f.hom g.hom
-
-private theorem prod_hom_ext {P M N : FGComoduleCat.{u, v, w} R C} {f g : P ⟶ prod R C M N}
-    (hfst : f ≫ prodFst M N = g ≫ prodFst M N)
-    (hsnd : f ≫ prodSnd M N = g ≫ prodSnd M N) : f = g := by
-  apply ObjectProperty.hom_ext
-  exact ComoduleCat.prod_hom_ext (R := R) (C := C)
-    (by simpa only [ObjectProperty.FullSubcategory.comp_hom, prodFst_hom] using
-      congrArg (fun h => h.hom) hfst)
-    (by simpa only [ObjectProperty.FullSubcategory.comp_hom, prodSnd_hom] using
-      congrArg (fun h => h.hom) hsnd)
-
-private def prodBinaryFan (M N : FGComoduleCat.{u, v, w} R C) : Limits.BinaryFan M N :=
-  Limits.BinaryFan.mk (prodFst M N) (prodSnd M N)
-
-private def prodBinaryFanIsLimit (M N : FGComoduleCat.{u, v, w} R C) :
-    Limits.IsLimit (prodBinaryFan M N) :=
-  Limits.BinaryFan.IsLimit.mk _
-    (fun f g => prodLift f g)
-    (fun f g => prodLift_fst f g)
-    (fun f g => prodLift_snd f g)
-    (fun f g _ hfst hsnd =>
-      prod_hom_ext
-        (hfst.trans (prodLift_fst f g).symm)
-        (hsnd.trans (prodLift_snd f g).symm))
-
-/-- The concrete product supplies the categorical binary product of finitely generated
-comodules. -/
-instance hasBinaryProduct (M N : FGComoduleCat.{u, v, w} R C) :
-    Limits.HasBinaryProduct M N :=
-  Limits.HasLimit.mk ⟨prodBinaryFan M N, prodBinaryFanIsLimit M N⟩
-
-/-- Finitely generated comodules have categorical binary products. -/
-instance hasBinaryProducts : Limits.HasBinaryProducts (FGComoduleCat.{u, v, w} R C) :=
-  Limits.hasBinaryProducts_of_hasLimit_pair (FGComoduleCat.{u, v, w} R C)
-
-/-- Finitely generated comodules have finite products. -/
-instance hasFiniteProducts : Limits.HasFiniteProducts (FGComoduleCat.{u, v, w} R C) :=
-  CategoryTheory.hasFiniteProducts_of_has_binary_and_terminal
-
-end Semiring
 
 section Ring
 
