@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Topology.InductiveDimension.Classes
 public import Mathlib.Topology.Spectral.Basic
 
 /-!
@@ -27,6 +28,8 @@ explicit second topology.
 * `TauCeti.isCompact_of_isClosed_generateFrom` : every `t'`-closed set is quasi-compact for the
   generated topology, and `TauCeti.isCompact_of_isClopen_generateFrom` : in particular every
   member of `U` is.
+* `TauCeti.spectralSpace_of_zeroDimensionalSpace` : every compact T0 zero-dimensional space (in
+  particular, every profinite space) is spectral.
 
 ## References
 
@@ -180,5 +183,11 @@ theorem spectralSpace_of_isClopen_generateFrom (htU : t = generateFrom U)
   toPrespectralSpace := prespectralSpace_of_isClopen_generateFrom htU hcomp hU
 
 end Criterion
+
+/-- Every compact T0 zero-dimensional space (in particular, every profinite space) is spectral. -/
+theorem spectralSpace_of_zeroDimensionalSpace (X : Type*) [TopologicalSpace X]
+    [CompactSpace X] [T0Space X] [ZeroDimensionalSpace X] : SpectralSpace X :=
+  spectralSpace_of_isClopen_generateFrom isTopologicalBasis_isClopen.eq_generateFrom ‹_›
+    fun _ hs ↦ hs
 
 end TauCeti

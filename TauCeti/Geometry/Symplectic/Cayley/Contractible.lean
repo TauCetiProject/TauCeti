@@ -74,17 +74,12 @@ coordinate at `J₀` is `1 - t` times that of `J`. -/
 private def Compatible.cayleyContractionFun (h₀ : ω.Compatible J₀) (t : I)
     (J : {J : AlmostComplexStructure V // ω.Tames J}) :
     {J : AlmostComplexStructure V // ω.Tames J} :=
-  h₀.cayleyEquiv.symm
-    ⟨(σ t : ℝ) • J₀.cayley J, h₀.smul_cayley_mem_cayleyBall J.2 (abs_coe_le_one (σ t))⟩
+  ⟨h₀.cayleyInterp J.2 (σ t).2, h₀.tames_cayleyInterp J.2 _⟩
 
 private theorem Compatible.cayley_cayleyContractionFun (h₀ : ω.Compatible J₀) (t : I)
     (J : {J : AlmostComplexStructure V // ω.Tames J}) :
-    J₀.cayley (h₀.cayleyContractionFun t J) = (σ t : ℝ) • J₀.cayley J := by
-  have h := congrArg Subtype.val (h₀.cayleyEquiv.apply_symm_apply
-    ⟨(σ t : ℝ) • J₀.cayley J, h₀.smul_cayley_mem_cayleyBall J.2 (abs_coe_le_one (σ t))⟩)
-  rw [Compatible.cayleyEquiv_apply_coe] at h
-  rw [Compatible.cayleyContractionFun]
-  exact h
+    J₀.cayley (h₀.cayleyContractionFun t J) = (σ t : ℝ) • J₀.cayley J :=
+  h₀.cayley_cayleyInterp J.2 _
 
 /-- In operator-norm coordinates `Compatible.cayleyContractionFun` is continuous jointly in the
 time and the structure. -/
@@ -110,8 +105,7 @@ private theorem Compatible.continuous_cayleyContractionFun (h₀ : ω.Compatible
   refine (hcont.comp (f := fun p : I × {J : AlmostComplexStructure V // ω.Tames J} ↦
       ((σ p.1 : ℝ), A, LinearMap.toContinuousLinearMap p.2.1.toLinearMap))
     hin.continuousAt).congr (Filter.Eventually.of_forall fun p ↦ ?_)
-  exact (h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley p.2.2
-    (abs_coe_le_one (σ p.1)) hA
+  exact (h₀.toContinuousLinearMap_cayleyInterp p.2.2 (σ p.1).2 hA
     (LinearMap.coe_toContinuousLinearMap _)).symm
 
 /-- For an `ω`-compatible `J₀`, the deformation of the `ω`-tame complex structures onto `J₀`:
@@ -147,7 +141,7 @@ theorem Compatible.toContinuousLinearMap_cayleyContraction (h₀ : ω.Compatible
     (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J.1.toLinearMap) :
     LinearMap.toContinuousLinearMap (h₀.cayleyContraction (t, J)).1.toLinearMap =
       cayleyPathFormula (σ t) A B :=
-  h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley J.2 (abs_coe_le_one (σ t)) hA hB
+  h₀.toContinuousLinearMap_cayleyInterp J.2 (σ t).2 hA hB
 
 /-- The deformation `Compatible.cayleyContraction` keeps `ω`-compatible structures compatible. -/
 theorem Compatible.compatible_cayleyContraction (h₀ : ω.Compatible J₀) (t : I)

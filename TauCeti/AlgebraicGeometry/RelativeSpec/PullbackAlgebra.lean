@@ -385,6 +385,35 @@ theorem pullbackComp_inv_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) (A : Quasic
     CategoryTheory.Functor.map_id, Category.comp_id]
   rfl
 
+/-- The composition comparison of algebra pullback followed by `eqToIso` along a commuting triangle
+`f ≫ g = h` agrees with the corresponding module pullback comparison on underlying modules. -/
+theorem pullbackComp_eqToIso_hom_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z}
+    (hfg : f ≫ g = h) (A : QuasicoherentAlgebra Z) :
+    ((pullbackComp f g ≪≫ eqToIso (congrArg pullback hfg)).hom.app A).hom.hom.hom =
+      eqToHom ((pullback_obj_X f _).trans
+        (congrArg (Scheme.Modules.pullback f).obj (pullback_obj_X g A))) ≫
+        ((Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hfg).app A.obj.X).hom ≫
+          eqToHom (pullback_obj_X h A).symm := by
+  subst hfg
+  simp only [eqToIso_refl, Iso.trans_refl, pullbackComp_hom_app_hom_hom_hom,
+    Scheme.Modules.pullbackCongr, Iso.app_hom]
+  rfl
+
+/-- The inverse composition comparison of algebra pullback preceded by `eqToIso` along a commuting
+triangle `f ≫ g = h` agrees with the corresponding inverse module pullback comparison on underlying
+modules. -/
+theorem pullbackComp_eqToIso_inv_app_hom_hom_hom (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z}
+    (hfg : f ≫ g = h) (A : QuasicoherentAlgebra Z) :
+    ((pullbackComp f g ≪≫ eqToIso (congrArg pullback hfg)).inv.app A).hom.hom.hom =
+      eqToHom (pullback_obj_X h A) ≫
+        ((Scheme.Modules.pullbackComp f g ≪≫ Scheme.Modules.pullbackCongr hfg).app A.obj.X).inv ≫
+          eqToHom ((pullback_obj_X f _).trans
+            (congrArg (Scheme.Modules.pullback f).obj (pullback_obj_X g A))).symm := by
+  subst hfg
+  simp only [eqToIso_refl, Iso.trans_refl, pullbackComp_inv_app_hom_hom_hom,
+    Scheme.Modules.pullbackCongr, Iso.app_inv]
+  rfl
+
 end QuasicoherentAlgebra
 
 namespace QuasicoherentAlgebra
