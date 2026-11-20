@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Presentation
 public import TauCeti.NumberTheory.HeckeRing.GLn.Rational
 
 import Mathlib.Algebra.Algebra.Subalgebra.Lattice
+import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # Laurent presentation of the `p`-local `GL_n` Hecke ring
@@ -350,6 +351,27 @@ theorem exists_mul_scalarLocalUnit_pow_eq (p : ℕ) (z : pLocalRationalSubring n
       (by simpa only [smul_eq_mul] using hk.symm)
   simpa [f, g₀] using hk'
 
+@[instance_reducible]
+private noncomputable def commRingPLocalSubring (p : ℕ) : CommRing (pLocalSubring n p) :=
+  { (inferInstance : Ring _) with
+    mul_comm := fun a b ↦ Subtype.ext
+      (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
+        (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1) }
+
+private theorem isLocalization_away_heckeGen_rev_zero (p : ℕ) :
+    letI : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
+    letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
+      (integralToRationalLocal n p).toAlgebra
+    IsLocalization.Away
+      (⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩ : pLocalSubring n p)
+      (pLocalRationalSubring n p) :=
+  letI : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
+  letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
+    (integralToRationalLocal n p).toAlgebra
+  IsLocalization.Away.mk _ (val_scalarLocalUnit n p ▸ (scalarLocalUnit n p).isUnit)
+    (exists_mul_scalarLocalUnit_pow_eq n p)
+    (fun _ _ hab ↦ ⟨0, by simp [integralToRationalLocal_injective n p hab]⟩)
+
 variable {n} in
 omit [NeZero n] in
 /-- Ring homomorphisms out of `pLocalRationalSubring n p` are uniquely determined by their
@@ -366,51 +388,14 @@ theorem pLocalRationalSubring_ringHom_ext {p : ℕ} {R : Type*} [Semiring R]
     exact (Subtype.ext hza.symm : z = integralToRationalLocal 0 p ⟨a, ha⟩) ▸
       RingHom.congr_fun h ⟨a, ha⟩
   · have : NeZero n := ⟨hn.ne'⟩
-    ext z; obtain ⟨k, a, hk⟩ := exists_mul_scalarLocalUnit_pow_eq n p z
-    let u : Rˣ := Units.map (f₁ : pLocalRationalSubring n p →* R) (scalarLocalUnit n p ^ k)
-    have hu : (u : R) = f₂ (↑(scalarLocalUnit n p ^ k)) := by
-      simpa only [u, Units.coe_map, MonoidHom.coe_ofClass, Units.val_pow_eq_pow_val,
-        val_scalarLocalUnit, ← map_pow, RingHom.comp_apply] using RingHom.congr_fun h _
-    refine u.mul_left_inj.mp ?_
-    calc f₁ z * u = f₁ (integralToRationalLocal n p a) := by simp [u, ← hk]
-      _ = f₂ (integralToRationalLocal n p a) := RingHom.congr_fun h a
-      _ = f₂ z * u := by rw [← hk, map_mul, hu, Units.val_pow_eq_pow_val]
-
-private noncomputable def pLocalRationalSubringLiftAux {p : ℕ} {R : Type*} [Semiring R]
-    (g : pLocalSubring n p →+* R)
-    (hg : IsUnit (g ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩)) :
-    { f : pLocalRationalSubring n p →+* R // ∀ a, f (integralToRationalLocal n p a) = g a } :=
-  let s₀ : pLocalSubring n p :=
-    ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩
-  have hmul_comm (a b : pLocalSubring n p) : a * b = b * a := Subtype.ext
-    (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-      (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1)
-  letI : CommRing (pLocalSubring n p) := { (inferInstance : Ring _) with mul_comm := hmul_comm }
-  letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
-    (integralToRationalLocal n p).toAlgebra
-  have : IsLocalization.Away s₀ (pLocalRationalSubring n p) :=
-    IsLocalization.Away.mk s₀ (val_scalarLocalUnit n p ▸ (scalarLocalUnit n p).isUnit)
-      (exists_mul_scalarLocalUnit_pow_eq n p)
-      (fun _ _ hab ↦ ⟨0, by simp [integralToRationalLocal_injective n p hab]⟩)
-  let S : Set R := insert (↑hg.unit⁻¹ : R) (Set.range g)
-  have hcommS : S.Pairwise Commute := by
-    have hcg (a b : pLocalSubring n p) : Commute (g a) (g b) := by
-      rw [Commute, SemiconjBy, ← map_mul, ← map_mul, hmul_comm]
-    rintro _ (rfl | ⟨a, rfl⟩) _ (rfl | ⟨b, rfl⟩) _
-    · exact Commute.refl _
-    · exact Commute.units_inv_left (by simpa only [IsUnit.unit_spec] using hcg s₀ b)
-    · exact Commute.units_inv_right (by simpa only [IsUnit.unit_spec] using hcg a s₀)
-    · exact hcg a b
-  let C : Subsemiring R := Subsemiring.closure S
-  letI : CommSemiring C :=
-    { C.toSemiring with mul_comm := (Subsemiring.isMulCommutative_closure hcommS).is_comm.comm }
-  let g' : pLocalSubring n p →+* C :=
-    g.codRestrict C fun a ↦ Subsemiring.subset_closure (Set.mem_insert_of_mem _ ⟨a, rfl⟩)
-  have hg' : IsUnit (g' s₀) :=
-    ⟨⟨g' s₀, ⟨↑hg.unit⁻¹, Subsemiring.subset_closure (Set.mem_insert _ _)⟩,
-      Subtype.ext hg.mul_val_inv, Subtype.ext hg.val_inv_mul⟩, rfl⟩
-  ⟨C.subtype.comp (IsLocalization.Away.lift s₀ (g := g') hg'), fun a ↦
-    congrArg Subtype.val (IsLocalization.Away.lift_eq s₀ hg' a)⟩
+    let _ : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
+    let _ : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
+      (integralToRationalLocal n p).toAlgebra
+    have := isLocalization_away_heckeGen_rev_zero n p
+    exact IsLocalization.ringHom_ext
+      (Submonoid.powers
+        (⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩ :
+          pLocalSubring n p)) h
 
 /-- **Universal-property lift for `pLocalRationalSubring`**: any ring homomorphism
 `g : pLocalSubring n p →+* R` into a semiring `R` sending `heckeGen n p (Fin.rev 0) = T(p, …, p)`
@@ -419,7 +404,12 @@ noncomputable def pLocalRationalSubringLift {p : ℕ} {R : Type*} [Semiring R]
     (g : pLocalSubring n p →+* R)
     (hg : IsUnit (g ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩)) :
     pLocalRationalSubring n p →+* R :=
-  (pLocalRationalSubringLiftAux n g hg).1
+  letI : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
+  letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
+    (integralToRationalLocal n p).toAlgebra
+  haveI := isLocalization_away_heckeGen_rev_zero n p
+  IsLocalization.Away.liftSemiring
+    (⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩ : pLocalSubring n p) hg
 
 /-- `pLocalRationalSubringLift` extends `g` along `integralToRationalLocal`. -/
 @[simp]
@@ -427,8 +417,12 @@ theorem pLocalRationalSubringLift_integralToRationalLocal {p : ℕ} {R : Type*} 
     (g : pLocalSubring n p →+* R)
     (hg : IsUnit (g ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩))
     (a : pLocalSubring n p) :
-    pLocalRationalSubringLift n g hg (integralToRationalLocal n p a) = g a :=
-  (pLocalRationalSubringLiftAux n g hg).2 a
+    pLocalRationalSubringLift n g hg (integralToRationalLocal n p a) = g a := by
+  let _ : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
+  let _ : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
+    (integralToRationalLocal n p).toAlgebra
+  have := isLocalization_away_heckeGen_rev_zero n p
+  exact IsLocalization.Away.liftSemiring_eq _ hg a
 
 /-- Precomposing `pLocalRationalSubringLift` with `integralToRationalLocal` recovers `g`. -/
 @[simp]

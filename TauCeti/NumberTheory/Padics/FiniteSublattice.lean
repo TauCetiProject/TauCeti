@@ -5,11 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.Data.ZMod.RingHoms
+public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.Algebra.Module.Submodule.Map
+import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.LinearAlgebra.Pi
+import Mathlib.Tactic.Linarith
+import TauCeti.LinearAlgebra.Matrix.Divisibility
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
 # Integral and p-adic sublattices modulo a prime power
@@ -26,6 +32,19 @@ The order and quotient isomorphisms allow any coordinate type. Finiteness of the
 type is needed for the span identification and the finiteness of the intervals.
 The exponent zero is included.
 
+For finite coordinates `Fin n`, we also specialize the correspondence to column sublattices
+`intSublattice` and `padicSublattice` of `n × n` matrices over `ℤ` and `ℤ_p`:
+* `TauCeti.pPowerSublatticeEquiv_intSublattice`,
+  `TauCeti.pPowerSublatticeEquiv_symm_padicSublattice`: compatibility of
+  `pPowerSublatticeEquiv` with scalar extension of matrix column sublattices.
+* `TauCeti.intermediateSublatticeOrderIso`: order isomorphism between intermediate `ℤ`-sublattices
+  `intSublattice n C ≤ L ≤ intSublattice n A` and intermediate `ℤ_p`-sublattices between their
+  completions when `det C ∣ p ^ k` and `det A ∣ p ^ k`.
+* `TauCeti.exists_det_eq_pow_and_intSublattice_eq`,
+  `TauCeti.exists_det_eq_pow_and_mul_eq_map`: every `ℤ`-sublattice containing `p ^ k • ℤ^n` (and
+  hence every nonsingular `ℤ_p`-matrix up to right multiplication by `GL_n(ℤ_p)`) comes from an
+  integer matrix `D` with `det D = p ^ m` (`m : ℕ`).
+
 ## References
 
 * J. A. Rhodes and T. R. Shemanske, *Bruhat–Tits buildings and Hecke operators*,
@@ -36,6 +55,8 @@ The exponent zero is included.
 public noncomputable section
 
 namespace TauCeti
+
+section General
 
 variable (ι : Type*) (p k : ℕ) [Fact p.Prime]
 
@@ -235,5 +256,320 @@ instance [Finite ι] : Finite (Set.Ici (LinearMap.ker (padicVectorReduction ι p
   Finite.of_equiv (Submodule (ZMod (p ^ k)) (ι → ZMod (p ^ k)))
     (LinearMap.submoduleComapOrderIsoOfSurjective (padicVectorReduction ι p k)
       (padicVectorReduction_surjective ι p k)).toEquiv
+
+end General
+
+section Matrix
+
+variable (n p : ℕ) [Fact p.Prime]
+
+omit [Fact p.Prime] in
+/-- The `ℤ`-sublattice of `ℤ^n` spanned by the columns of `A : Matrix (Fin n) (Fin n) ℤ`. -/
+def intSublattice (A : Matrix (Fin n) (Fin n) ℤ) : Submodule ℤ (Fin n → ℤ) :=
+  LinearMap.range A.mulVecLin
+
+omit [Fact p.Prime] in
+/-- Defining equation for `intSublattice`. -/
+theorem intSublattice_def (A : Matrix (Fin n) (Fin n) ℤ) :
+    intSublattice n A = LinearMap.range A.mulVecLin := (rfl)
+
+/-- The `ℤ_p`-sublattice of `ℤ_p^n` spanned by the columns of `B : Matrix (Fin n) (Fin n) ℤ_[p]`. -/
+def padicSublattice (B : Matrix (Fin n) (Fin n) ℤ_[p]) :
+    Submodule ℤ_[p] (Fin n → ℤ_[p]) :=
+  LinearMap.range B.mulVecLin
+
+/-- Defining equation for `padicSublattice`. -/
+theorem padicSublattice_def (B : Matrix (Fin n) (Fin n) ℤ_[p]) :
+    padicSublattice n p B = LinearMap.range B.mulVecLin := (rfl)
+
+/-- Two nonsingular `ℤ_p`-matrices generate the same `ℤ_p`-sublattice if and only if they lie in
+the same right `GL_n(ℤ_p)`-coset. -/
+theorem padicSublattice_eq_iff {B₁ B₂ : Matrix (Fin n) (Fin n) ℤ_[p]}
+    (h₁ : B₁.det ≠ 0) (h₂ : B₂.det ≠ 0) :
+    padicSublattice n p B₁ = padicSublattice n p B₂ ↔
+      ∃ U : GL (Fin n) ℤ_[p], B₁ * (↑U : Matrix (Fin n) (Fin n) ℤ_[p]) = B₂ :=
+  Matrix.range_mulVecLin_eq_iff h₁ h₂
+
+omit [Fact p.Prime] in
+/-- Two positive-determinant integer matrices generate the same `ℤ`-sublattice if and only if they
+lie in the same right `SL_n(ℤ)`-coset. -/
+theorem intSublattice_eq_iff_exists_sl {A₁ A₂ : Matrix (Fin n) (Fin n) ℤ}
+    (h₁ : 0 < A₁.det) (h₂ : 0 < A₂.det) :
+    intSublattice n A₁ = intSublattice n A₂ ↔
+      ∃ σ : Matrix.SpecialLinearGroup (Fin n) ℤ, A₁ * (σ : Matrix (Fin n) (Fin n) ℤ) = A₂ := by
+  rw [intSublattice_def, intSublattice_def, Matrix.range_mulVecLin_eq_iff h₁.ne' h₂.ne']
+  refine ⟨?_, fun ⟨σ, hσ⟩ ↦ ⟨σ.toGL, hσ⟩⟩
+  rintro ⟨U, rfl⟩
+  have hunit : IsUnit (↑U : Matrix (Fin n) (Fin n) ℤ).det :=
+    (Matrix.isUnit_iff_isUnit_det _).mp U.isUnit
+  rw [Matrix.det_mul] at h₂
+  have hdet : (↑U : Matrix (Fin n) (Fin n) ℤ).det = 1 :=
+    (Int.isUnit_iff.mp hunit).resolve_right fun hneg ↦ by rw [hneg] at h₂; linarith
+  exact ⟨⟨↑U, hdet⟩, rfl⟩
+
+omit [Fact p.Prime] in
+/-- If `A.det ∣ p ^ k`, then `intSublattice n A` contains `p ^ k • ℤ^n` (the kernel of reduction
+modulo `p ^ k`). -/
+theorem ker_intVectorReduction_le_intSublattice {A : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
+    (hA : A.det ∣ (p : ℤ) ^ k) :
+    LinearMap.ker (intVectorReduction (Fin n) p k) ≤ intSublattice n A := by
+  obtain ⟨c, hc⟩ := hA
+  intro x hx
+  obtain ⟨y, rfl⟩ := (mem_ker_intVectorReduction_iff (Fin n) p k x).mp hx
+  refine ⟨(c • A.adjugate).mulVec y, ?_⟩
+  rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec, Matrix.mul_smul, Matrix.mul_adjugate,
+    smul_smul, mul_comm c A.det, ← hc, Matrix.smul_mulVec, Matrix.one_mulVec]
+
+/-- Every nonsingular `B ∈ M_n(ℤ_p)` defines a `ℤ_p`-sublattice containing
+`p ^ v(det B) • ℤ_p^n`. -/
+theorem ker_padicVectorReduction_le_padicSublattice {B : Matrix (Fin n) (Fin n) ℤ_[p]}
+    (hB : B.det ≠ 0) :
+    LinearMap.ker (padicVectorReduction (Fin n) p B.det.valuation) ≤
+      padicSublattice n p B := by
+  let u := PadicInt.unitCoeff hB
+  let c : ℤ_[p] := ↑(u⁻¹)
+  intro x hx
+  obtain ⟨y, rfl⟩ :=
+    (mem_ker_padicVectorReduction_iff (Fin n) p B.det.valuation x).mp hx
+  refine ⟨(c • B.adjugate).mulVec y, ?_⟩
+  have hu : c * B.det = (p : ℤ_[p]) ^ B.det.valuation := by
+    dsimp only [c]
+    conv_lhs => rw [PadicInt.unitCoeff_spec hB, ← mul_assoc, Units.inv_mul, one_mul]
+  rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec, Matrix.mul_smul, Matrix.mul_adjugate,
+    smul_smul, hu, Matrix.smul_mulVec, Matrix.one_mulVec]
+
+/-- **Sublattice completion** (Rhodes–Shemanske, *Bruhat–Tits buildings and Hecke operators*,
+§3.1 Proposition 3.2): under `TauCeti.pPowerSublatticeEquiv`, any `ℤ`-sublattice
+`intSublattice n A` containing `p ^ k • ℤ^n` maps to the `ℤ_p`-sublattice
+`padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))`. -/
+theorem pPowerSublatticeEquiv_intSublattice {A : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
+    (hker : LinearMap.ker (intVectorReduction (Fin n) p k) ≤ intSublattice n A) :
+    (pPowerSublatticeEquiv (Fin n) p k ⟨intSublattice n A, hker⟩).1 =
+      padicSublattice n p (A.map (Int.castRingHom ℤ_[p])) := by
+  rw [pPowerSublatticeEquiv_eq_span]
+  set B := A.map (Int.castRingHom ℤ_[p])
+  have hcompat (v : Fin n → ℤ) :
+      intVectorToPadic (Fin n) p (A.mulVec v) =
+        B.mulVec (intVectorToPadic (Fin n) p v) := by
+    ext i; simp [B, Matrix.mulVec, dotProduct]
+  refine le_antisymm ?_ ?_
+  · rw [Submodule.span_le]
+    rintro _ ⟨_, ⟨v, rfl⟩, rfl⟩
+    exact ⟨intVectorToPadic (Fin n) p v, (hcompat v).symm⟩
+  · rintro _ ⟨w, rfl⟩
+    have hw : w = ∑ j : Fin n, w j • intVectorToPadic (Fin n) p (Pi.single j 1) := by
+      ext i; simp [Pi.single_apply]
+    rw [Matrix.mulVecLin_apply, hw, Matrix.mulVec_sum]
+    refine Submodule.sum_mem _ fun j _ ↦ ?_
+    rw [Matrix.mulVec_smul, ← hcompat]
+    exact Submodule.smul_mem _ (w j)
+      (Submodule.subset_span ⟨A.mulVec (Pi.single j 1), ⟨Pi.single j 1, rfl⟩, rfl⟩)
+
+/-- Inverse of `pPowerSublatticeEquiv_intSublattice`: applying `(pPowerSublatticeEquiv _ p k).symm`
+to `padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))` recovers `intSublattice n A`. -/
+theorem pPowerSublatticeEquiv_symm_padicSublattice {A : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
+    (hker : LinearMap.ker (intVectorReduction (Fin n) p k) ≤ intSublattice n A)
+    (hkerP : LinearMap.ker (padicVectorReduction (Fin n) p k) ≤
+      padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))) :
+    ((pPowerSublatticeEquiv (Fin n) p k).symm
+      ⟨padicSublattice n p (A.map (Int.castRingHom ℤ_[p])), hkerP⟩).1 = intSublattice n A := by
+  have heq : (⟨padicSublattice n p (A.map (Int.castRingHom ℤ_[p])), hkerP⟩ :
+      Set.Ici (LinearMap.ker (padicVectorReduction (Fin n) p k))) =
+      pPowerSublatticeEquiv (Fin n) p k ⟨intSublattice n A, hker⟩ :=
+    Subtype.ext (pPowerSublatticeEquiv_intSublattice n p hker).symm
+  exact (congrArg (fun X ↦ ((pPowerSublatticeEquiv (Fin n) p k).symm X).1) heq).trans
+    (congrArg Subtype.val
+      ((pPowerSublatticeEquiv (Fin n) p k).symm_apply_apply ⟨intSublattice n A, hker⟩))
+
+/-- **Intermediate-lattice correspondence** (Rhodes–Shemanske, *Bruhat–Tits buildings and Hecke
+operators*, §3.2 Lemma 3.3): for `p`-primary integer matrices `C` and `A` with `det C ∣ p ^ k` and
+`det A ∣ p ^ k`, `TauCeti.pPowerSublatticeEquiv` restricts to an order isomorphism between
+`ℤ`-sublattices `intSublattice n C ≤ L ≤ intSublattice n A` and `ℤ_p`-sublattices between their
+completions. -/
+def intermediateSublatticeOrderIso {A C : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
+    (hC : C.det ∣ (p : ℤ) ^ k) (hA : A.det ∣ (p : ℤ) ^ k) :
+    {L : Submodule ℤ (Fin n → ℤ) // intSublattice n C ≤ L ∧ L ≤ intSublattice n A} ≃o
+      {M : Submodule ℤ_[p] (Fin n → ℤ_[p]) //
+        padicSublattice n p (C.map (Int.castRingHom ℤ_[p])) ≤ M ∧
+          M ≤ padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))} where
+  toFun L :=
+    ⟨(pPowerSublatticeEquiv (Fin n) p k
+        ⟨L.1, (ker_intVectorReduction_le_intSublattice n p hC).trans L.2.1⟩).1,
+      by
+        rw [← pPowerSublatticeEquiv_intSublattice n p
+            (ker_intVectorReduction_le_intSublattice n p hC),
+          ← pPowerSublatticeEquiv_intSublattice n p
+            (ker_intVectorReduction_le_intSublattice n p hA)]
+        exact ⟨(pPowerSublatticeEquiv (Fin n) p k).monotone L.2.1,
+          (pPowerSublatticeEquiv (Fin n) p k).monotone L.2.2⟩⟩
+  invFun M :=
+    let hkerC := (pPowerSublatticeEquiv_intSublattice n p
+      (ker_intVectorReduction_le_intSublattice n p hC)) ▸
+      (pPowerSublatticeEquiv (Fin n) p k
+        ⟨intSublattice n C, ker_intVectorReduction_le_intSublattice n p hC⟩).2
+    let hkerA := (pPowerSublatticeEquiv_intSublattice n p
+      (ker_intVectorReduction_le_intSublattice n p hA)) ▸
+      (pPowerSublatticeEquiv (Fin n) p k
+        ⟨intSublattice n A, ker_intVectorReduction_le_intSublattice n p hA⟩).2
+    ⟨((pPowerSublatticeEquiv (Fin n) p k).symm ⟨M.1, hkerC.trans M.2.1⟩).1,
+      ⟨(pPowerSublatticeEquiv_symm_padicSublattice n p
+          (ker_intVectorReduction_le_intSublattice n p hC) hkerC) ▸
+          (pPowerSublatticeEquiv (Fin n) p k).symm.monotone M.2.1,
+        (pPowerSublatticeEquiv_symm_padicSublattice n p
+          (ker_intVectorReduction_le_intSublattice n p hA) hkerA) ▸
+          (pPowerSublatticeEquiv (Fin n) p k).symm.monotone M.2.2⟩⟩
+  left_inv L := by
+    apply Subtype.ext; dsimp only
+    exact congrArg Subtype.val ((pPowerSublatticeEquiv (Fin n) p k).symm_apply_apply
+      ⟨L.1, (ker_intVectorReduction_le_intSublattice n p hC).trans L.2.1⟩)
+  right_inv M := by
+    apply Subtype.ext; dsimp only
+    exact congrArg Subtype.val ((pPowerSublatticeEquiv (Fin n) p k).apply_symm_apply
+      ⟨M.1, _⟩)
+  map_rel_iff' {L₁ L₂} :=
+    (pPowerSublatticeEquiv (Fin n) p k).map_rel_iff
+      (a := ⟨L₁.1, _⟩) (b := ⟨L₂.1, _⟩)
+
+/-- Coercing `intermediateSublatticeOrderIso n p hC hA L` to a `ℤ_p`-submodule applies
+`TauCeti.pPowerSublatticeEquiv`. -/
+@[simp]
+theorem coe_intermediateSublatticeOrderIso {A C : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
+    (hC : C.det ∣ (p : ℤ) ^ k) (hA : A.det ∣ (p : ℤ) ^ k)
+    (L : {L : Submodule ℤ (Fin n → ℤ) // intSublattice n C ≤ L ∧ L ≤ intSublattice n A}) :
+    (intermediateSublatticeOrderIso n p hC hA L : Submodule ℤ_[p] (Fin n → ℤ_[p])) =
+      (pPowerSublatticeEquiv (Fin n) p k
+        ⟨L.1, (ker_intVectorReduction_le_intSublattice n p hC).trans L.2.1⟩).1 := (rfl)
+
+/-- Coercing `(intermediateSublatticeOrderIso n p hC hA).symm M` to a `ℤ`-submodule applies
+`(TauCeti.pPowerSublatticeEquiv (Fin n) p k).symm`. -/
+@[simp]
+theorem coe_intermediateSublatticeOrderIso_symm {A C : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
+    (hC : C.det ∣ (p : ℤ) ^ k) (hA : A.det ∣ (p : ℤ) ^ k)
+    (M : {M : Submodule ℤ_[p] (Fin n → ℤ_[p]) //
+      padicSublattice n p (C.map (Int.castRingHom ℤ_[p])) ≤ M ∧
+        M ≤ padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))}) :
+    ((intermediateSublatticeOrderIso n p hC hA).symm M : Submodule ℤ (Fin n → ℤ)) =
+      ((pPowerSublatticeEquiv (Fin n) p k).symm
+        ⟨M.1, ((pPowerSublatticeEquiv_intSublattice n p
+          (ker_intVectorReduction_le_intSublattice n p hC)) ▸
+          (pPowerSublatticeEquiv (Fin n) p k
+            ⟨intSublattice n C, ker_intVectorReduction_le_intSublattice n p hC⟩).2).trans
+          M.2.1⟩).1 := (rfl)
+
+private theorem finrank_eq_of_ker_intVectorReduction_le {k : ℕ}
+    {L : Submodule ℤ (Fin n → ℤ)}
+    (hL : LinearMap.ker (intVectorReduction (Fin n) p k) ≤ L) :
+    Module.finrank ℤ L = Module.finrank ℤ (Fin n → ℤ) := by
+  set K := LinearMap.ker (intVectorReduction (Fin n) p k)
+  have hpk : (p : ℤ) ^ k ≠ 0 :=
+    pow_ne_zero k (Int.natCast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  let φ : (Fin n → ℤ) →ₗ[ℤ] K :=
+    { toFun := fun y ↦ ⟨(p : ℤ) ^ k • y,
+        (mem_ker_intVectorReduction_iff (Fin n) p k _).mpr ⟨y, rfl⟩⟩
+      map_add' := fun x y ↦ Subtype.ext (smul_add _ x y)
+      map_smul' := fun r x ↦ Subtype.ext (smul_comm _ r x) }
+  have hbij : Function.Bijective φ :=
+    ⟨fun x y hxy ↦ funext fun i ↦ mul_left_cancel₀ hpk (congr_fun (congrArg Subtype.val hxy) i),
+      fun ⟨x, hx⟩ ↦ by
+        obtain ⟨y, rfl⟩ := (mem_ker_intVectorReduction_iff (Fin n) p k x).mp hx
+        exact ⟨y, rfl⟩⟩
+  have hK : Module.finrank ℤ K = Module.finrank ℤ (Fin n → ℤ) :=
+    (LinearEquiv.ofBijective φ hbij).finrank_eq.symm
+  exact le_antisymm L.finrank_le (hK ▸ Submodule.finrank_mono hL)
+
+private theorem exists_matrix_intSublattice_eq {k : ℕ} {L : Submodule ℤ (Fin n → ℤ)}
+    (hL : LinearMap.ker (intVectorReduction (Fin n) p k) ≤ L) :
+    ∃ D₀ : Matrix (Fin n) (Fin n) ℤ,
+      D₀.det ≠ 0 ∧ D₀.det.natAbs ∣ p ^ (k * n) ∧ intSublattice n D₀ = L := by
+  classical
+  have hrank := finrank_eq_of_ker_intVectorReduction_le n p hL
+  let bL := Submodule.smithNormalFormBotBasis (Pi.basisFun ℤ (Fin n)) hrank
+  let D₀ : Matrix (Fin n) (Fin n) ℤ := Matrix.of fun i j ↦ (bL j : Fin n → ℤ) i
+  have hmulVec (v : Fin n → ℤ) : D₀.mulVec v = ∑ j : Fin n, v j • (bL j : Fin n → ℤ) := by
+    ext i; simp [D₀, Matrix.mulVec, dotProduct, mul_comm]
+  have hrange : intSublattice n D₀ = L := by
+    refine le_antisymm ?_ ?_
+    · rintro _ ⟨v, rfl⟩
+      rw [Matrix.mulVecLin_apply, hmulVec]
+      exact Submodule.sum_mem L fun j _ ↦ L.smul_mem (v j) (bL j).2
+    · intro x hx
+      refine ⟨bL.repr ⟨x, hx⟩, ?_⟩
+      rw [Matrix.mulVecLin_apply, hmulVec]
+      have hsum := congrArg L.subtype (bL.sum_repr ⟨x, hx⟩)
+      rw [map_sum] at hsum
+      simpa only [LinearMap.map_smul, Submodule.coe_subtype] using hsum
+  obtain ⟨C, hDC⟩ := Matrix.exists_mul_eq_of_range_le
+    (L := D₀) (L' := (p : ℤ) ^ k • (1 : Matrix (Fin n) (Fin n) ℤ)) fun j ↦ by
+      have hcol : ((p : ℤ) ^ k • (1 : Matrix (Fin n) (Fin n) ℤ)).col j =
+          (p : ℤ) ^ k • Pi.single j 1 := by
+        ext i
+        rw [Matrix.col_apply, Matrix.smul_apply, Matrix.one_apply, Pi.smul_apply, Pi.single_apply]
+      rw [hcol, ← intSublattice_def, hrange]
+      exact hL ((mem_ker_intVectorReduction_iff (Fin n) p k _).mpr ⟨Pi.single j 1, rfl⟩)
+  have hdvdZ : D₀.det ∣ (p : ℤ) ^ (k * n) := by
+    simpa [Fintype.card_fin, pow_mul] using Matrix.det_dvd_pow_card_of_mul_eq_smul_one hDC
+  have hp_ne : (p : ℤ) ^ (k * n) ≠ 0 :=
+    pow_ne_zero _ (Int.natCast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  refine ⟨D₀, fun h0 ↦ hp_ne (zero_dvd_iff.mp (h0 ▸ hdvdZ)), ?_, hrange⟩
+  simpa [Int.natAbs_pow, Int.natAbs_natCast] using Int.natAbs_dvd_natAbs.mpr hdvdZ
+
+/-- Every `ℤ`-sublattice of `ℤ^n` containing `p ^ k • ℤ^n` is `intSublattice n D` for an integer
+matrix `D` whose determinant is a power `p ^ m` (`m : ℕ`). -/
+theorem exists_det_eq_pow_and_intSublattice_eq {k : ℕ} {L : Submodule ℤ (Fin n → ℤ)}
+    (hL : LinearMap.ker (intVectorReduction (Fin n) p k) ≤ L) :
+    ∃ (D : Matrix (Fin n) (Fin n) ℤ) (m : ℕ),
+      D.det = (p : ℤ) ^ m ∧ intSublattice n D = L := by
+  obtain ⟨D₀, hne, hdvd, hrange⟩ := exists_matrix_intSublattice_eq n p hL
+  obtain ⟨m, -, hm⟩ := (Nat.dvd_prime_pow (Fact.out : p.Prime)).mp hdvd
+  rcases lt_or_gt_of_ne hne with hneg | hpos
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · exfalso; simp [Matrix.det_isEmpty] at hneg
+    · have : NeZero n := ⟨hn.ne'⟩
+      let U : GL (Fin n) ℤ := diagGL fun i : Fin n ↦ if i = 0 then (-1 : ℤˣ) else 1
+      have hUdet : (↑U : Matrix (Fin n) (Fin n) ℤ).det = -1 := by
+        rw [diagGL_coe, Matrix.det_diagonal, Finset.prod_eq_single (0 : Fin n)]
+        · simp
+        · exact fun i _ hi ↦ by simp [hi]
+        · exact fun h ↦ absurd (Finset.mem_univ (0 : Fin n)) h
+      refine ⟨D₀ * (↑U : Matrix (Fin n) (Fin n) ℤ), m, ?_, ?_⟩
+      · rw [Matrix.det_mul, hUdet, mul_neg_one]
+        have habs : (D₀.det.natAbs : ℤ) = -D₀.det := Int.ofNat_natAbs_of_nonpos hneg.le
+        rw [← habs, hm, Nat.cast_pow]
+      · rw [intSublattice_def]
+        exact (Matrix.range_mulVecLin_mul_unit D₀ U).trans hrange
+  · refine ⟨D₀, m, ?_, hrange⟩
+    have habs : (D₀.det.natAbs : ℤ) = D₀.det := Int.natAbs_of_nonneg hpos.le
+    rw [← habs, hm, Nat.cast_pow]
+
+/-- **Every finite-index `ℤ_p`-sublattice comes from a `p`-primary integer matrix**
+(Rhodes–Shemanske, *Bruhat–Tits buildings and Hecke operators*, §3.1 Proposition 3.2): for every
+nonsingular `B ∈ M_n(ℤ_p)` there exist `D ∈ M_n(ℤ)`, `m : ℕ`, and `U ∈ GL_n(ℤ_p)` with
+`det D = p ^ m` and `B * U = D.map (Int.castRingHom ℤ_[p])`. -/
+theorem exists_det_eq_pow_and_mul_eq_map (B : Matrix (Fin n) (Fin n) ℤ_[p]) (hB : B.det ≠ 0) :
+    ∃ (D : Matrix (Fin n) (Fin n) ℤ) (m : ℕ) (U : GL (Fin n) ℤ_[p]),
+      D.det = (p : ℤ) ^ m ∧
+        B * (↑U : Matrix (Fin n) (Fin n) ℤ_[p]) = D.map (Int.castRingHom ℤ_[p]) := by
+  let k := B.det.valuation
+  let M₀ : Set.Ici (LinearMap.ker (padicVectorReduction (Fin n) p k)) :=
+    ⟨padicSublattice n p B, ker_padicVectorReduction_le_padicSublattice n p hB⟩
+  let L := (pPowerSublatticeEquiv (Fin n) p k).symm M₀
+  obtain ⟨D, m, hDdet, hDL⟩ := exists_det_eq_pow_and_intSublattice_eq n p L.2
+  have hkerD : LinearMap.ker (intVectorReduction (Fin n) p k) ≤ intSublattice n D :=
+    hDL ▸ L.2
+  have hpadic : padicSublattice n p B = padicSublattice n p (D.map (Int.castRingHom ℤ_[p])) := by
+    calc padicSublattice n p B
+        = (pPowerSublatticeEquiv (Fin n) p k L).1 :=
+          congrArg Subtype.val
+            ((pPowerSublatticeEquiv (Fin n) p k).apply_symm_apply M₀).symm
+      _ = padicSublattice n p (D.map (Int.castRingHom ℤ_[p])) := by
+          have hL_eq : L = ⟨intSublattice n D, hkerD⟩ := Subtype.ext hDL.symm
+          rw [hL_eq, pPowerSublatticeEquiv_intSublattice]
+  have hDpadic_ne : (D.map (Int.castRingHom ℤ_[p])).det ≠ 0 := by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, hDdet, map_pow, map_natCast]
+    exact pow_ne_zero m (NeZero.ne (p : ℤ_[p]))
+  obtain ⟨U, hBU⟩ := (padicSublattice_eq_iff n p hB hDpadic_ne).mp hpadic
+  exact ⟨D, m, U, hDdet, hBU⟩
+
+end Matrix
 
 end TauCeti

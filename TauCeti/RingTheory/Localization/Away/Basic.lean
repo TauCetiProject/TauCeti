@@ -64,6 +64,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.of_dvd_of_dvd_pow`: inverting `x` also localizes away from `g` when
   `g ∣ x` and `x` divides a power of `g`.
+* `IsLocalization.Away.liftSemiring`, `IsLocalization.Away.eq_liftSemiring_iff`: universal-property
+  lift of `g : R →+* P` with `IsUnit (g x)` into a possibly noncommutative target semiring `P`.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
@@ -483,6 +485,68 @@ theorem of_dvd_of_dvd_pow {R A : Type*} [CommSemiring R] [CommSemiring A] [Algeb
   have : IsLocalization M B := IsLocalization.of_le (Submonoid.powers g) M le_sup_right hMB
   exact (IsLocalization.isLocalization_iff_of_isLocalization M (Submonoid.powers g) B).mp
     inferInstance
+
+section LiftSemiring
+
+variable {R S P : Type*} [CommSemiring R] (x : R) [CommSemiring S] [Algebra R S]
+  [IsLocalization.Away x S] [Semiring P] {g : R →+* P}
+
+private noncomputable def liftSemiringAux (hg : IsUnit (g x)) :
+    { f : S →+* P // ∀ a : R, f (algebraMap R S a) = g a } :=
+  let T : Set P := insert (↑hg.unit⁻¹ : P) (Set.range g)
+  have hcommT : T.Pairwise Commute := by
+    have hcg (a b : R) : Commute (g a) (g b) := by
+      rw [Commute, SemiconjBy, ← map_mul, ← map_mul, mul_comm]
+    rintro _ (rfl | ⟨a, rfl⟩) _ (rfl | ⟨b, rfl⟩) _
+    · exact Commute.refl _
+    · exact Commute.units_inv_left (by simpa only [IsUnit.unit_spec] using hcg x b)
+    · exact Commute.units_inv_right (by simpa only [IsUnit.unit_spec] using hcg a x)
+    · exact hcg a b
+  let C : Subsemiring P := Subsemiring.closure T
+  letI : CommSemiring C :=
+    { C.toSemiring with mul_comm := (Subsemiring.isMulCommutative_closure hcommT).is_comm.comm }
+  let g' : R →+* C :=
+    g.codRestrict C fun a ↦ Subsemiring.subset_closure (Set.mem_insert_of_mem _ ⟨a, rfl⟩)
+  have hg' : IsUnit (g' x) :=
+    ⟨⟨g' x, ⟨↑hg.unit⁻¹, Subsemiring.subset_closure (Set.mem_insert _ _)⟩,
+      Subtype.ext hg.mul_val_inv, Subtype.ext hg.val_inv_mul⟩, rfl⟩
+  ⟨C.subtype.comp (IsLocalization.Away.lift x (g := g') hg'), fun a ↦
+    congrArg Subtype.val (IsLocalization.Away.lift_eq x hg' a)⟩
+
+/-- **Universal-property lift into a semiring**: given `[IsLocalization.Away x S]` over a
+commutative semiring `R`, any ring homomorphism `g : R →+* P` into a (possibly noncommutative)
+semiring `P` sending `x` to a unit extends uniquely to `S →+* P`. -/
+noncomputable def liftSemiring (hg : IsUnit (g x)) : S →+* P :=
+  (liftSemiringAux x hg).1
+
+/-- `liftSemiring` agrees with `g` along `algebraMap R S`. -/
+@[simp]
+theorem liftSemiring_eq (hg : IsUnit (g x)) (a : R) :
+    liftSemiring x hg (algebraMap R S a) = g a :=
+  (liftSemiringAux x hg).2 a
+
+/-- Precomposing `liftSemiring` with `algebraMap R S` recovers `g`. -/
+@[simp]
+theorem liftSemiring_comp (hg : IsUnit (g x)) :
+    (liftSemiring x hg).comp (algebraMap R S) = g :=
+  RingHom.ext (liftSemiring_eq x hg)
+
+/-- `liftSemiring` sends `invSelf x` to `(hg.unit)⁻¹`. -/
+theorem liftSemiring_invSelf (hg : IsUnit (g x)) :
+    liftSemiring x hg (invSelf x : S) = ↑hg.unit⁻¹ := by
+  apply hg.unit.mul_right_inj.mp
+  rw [Units.mul_inv, IsUnit.unit_spec, ← liftSemiring_eq (S := S) x hg, ← map_mul,
+    mul_invSelf (S := S) x, map_one]
+
+/-- **Universal property of `liftSemiring`**: a ring homomorphism `f : S →+* P` into a semiring `P`
+equals `liftSemiring x hg` if and only if its precomposition with `algebraMap R S` is `g`. -/
+theorem eq_liftSemiring_iff (hg : IsUnit (g x)) (f : S →+* P) :
+    f = liftSemiring x hg ↔ f.comp (algebraMap R S) = g :=
+  ⟨fun h ↦ h ▸ liftSemiring_comp x hg,
+    fun h ↦ IsLocalization.ringHom_ext (Submonoid.powers x)
+      (h.trans (liftSemiring_comp x hg).symm)⟩
+
+end LiftSemiring
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
 
