@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.NumberTheory.PrimeCounting
 
 /-!
 # Explicit bounds for the difference `ψ − θ`
@@ -36,6 +37,9 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`.
 * `Chebyshev.theta_sqrt_add_theta_rpow_le_psi_sub_theta`: `θ(√x) + θ(x^{1/3}) ≤ ψ(x) − θ(x)`.
 * `Chebyshev.sum_rpow_one_div_le`:
   `∑_{3 ≤ k ≤ log x / log 2} x^{1/k} ≤ (log x / log 2 − 2)⁺ x^{1/3}`.
+* `Chebyshev.theta_le_mul_of_nonneg`, `Chebyshev.psi_le_mul_of_nonneg`,
+  `Chebyshev.nonneg_of_forall_theta_le`, `Chebyshev.nonneg_of_forall_psi_le`: a linear bound for
+  `θ` or `ψ` on `y > 0` extends to `y = 0` and has a nonnegative constant.
 * `Chebyshev.psi_sub_theta_le_of_forall_theta_le`, `Chebyshev.psi_sub_theta_le_log_four_mul`:
   the upper bound from a linear bound for `θ`, and its unconditional case.
 * `Chebyshev.psi_sub_theta_le_one_add_mul_sqrt_add`,
@@ -101,6 +105,19 @@ theorem theta_sqrt_add_theta_rpow_le_psi_sub_theta {x : ℝ} (hx : 0 ≤ x) :
   simp only [Nat.cast_ofNat] at h3
   linarith
 
+/-- A sum of terms at most `M ≥ 0` over `a ≤ k ≤ y` is at most `(y + 1 − a)⁺ M`, for `y ≥ 0`. -/
+private theorem sum_Icc_floor_le_max_mul {y M : ℝ} (hy : 0 ≤ y) (hM : 0 ≤ M) (a : ℕ)
+    {f : ℕ → ℝ} (hf : ∀ k ∈ Icc a ⌊y⌋₊, f k ≤ M) :
+    ∑ k ∈ Icc a ⌊y⌋₊, f k ≤ max (y + 1 - a) 0 * M := by
+  refine (sum_le_card_nsmul _ _ _ hf).trans ?_
+  rw [nsmul_eq_mul, Nat.card_Icc]
+  gcongr
+  rcases le_total (⌊y⌋₊ + 1) a with h | h
+  · rw [Nat.sub_eq_zero_of_le h, Nat.cast_zero]
+    exact le_max_right _ _
+  · rw [Nat.cast_sub h, Nat.cast_add, Nat.cast_one]
+    exact le_max_of_le_left (by linarith [Nat.floor_le hy])
+
 /-- The roots `x^{1/k}` with `3 ≤ k ≤ log x / log 2` add up to at most
 `(log x / log 2 − 2)⁺ x^{1/3}`, for `x ≥ 0`. -/
 theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
@@ -112,35 +129,37 @@ theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
         (log_nonpos hx hx1.le) (log_nonneg one_le_two)).trans_lt one_pos)
     simp only [this, Icc_eq_empty_of_lt (by norm_num : 0 < 3), sum_empty]
     positivity
-  calc ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k)
-      ≤ ∑ _k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / 3) := by
-        refine sum_le_sum fun k hk ↦ rpow_le_rpow_of_exponent_le hx1 ?_
-        have : (3 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
-        gcongr
-    _ = ((⌊log x / log 2⌋₊ + 1 - 3 : ℕ) : ℝ) * x ^ ((1 : ℝ) / 3) := by
-        rw [sum_const, Nat.card_Icc, nsmul_eq_mul]
-    _ ≤ max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) := by
-        gcongr
-        have hfl : (⌊log x / log 2⌋₊ : ℝ) ≤ log x / log 2 :=
-          Nat.floor_le (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
-        rcases le_total ⌊log x / log 2⌋₊ 2 with h | h
-        · rw [Nat.sub_eq_zero_of_le (by omega), Nat.cast_zero]
-          exact le_max_right _ _
-        · rw [Nat.cast_sub (by omega), Nat.cast_add, Nat.cast_one]
-          exact le_max_of_le_left (by linarith)
+  refine (sum_Icc_floor_le_max_mul (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
+    (rpow_nonneg hx ((1 : ℝ) / 3)) 3 fun k hk ↦ rpow_le_rpow_of_exponent_le hx1 ?_).trans_eq ?_
+  · have : (3 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
+    gcongr
+  · congr 2
+    push_cast
+    ring
 
 /-- A bound `θ(y) ≤ c y` for `y > 0` extends to `y = 0`. -/
-private theorem theta_le_mul_of_nonneg {c y : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
+theorem theta_le_mul_of_nonneg {c y : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y)
     (hy : 0 ≤ y) : θ y ≤ c * y := by
   rcases hy.eq_or_lt with rfl | hy
   · simp [theta_zero]
   · exact hc y hy
 
+/-- A bound `ψ(y) ≤ c y` for `y > 0` extends to `y = 0`. -/
+theorem psi_le_mul_of_nonneg {c y : ℝ} (hc : ∀ y, 0 < y → ψ y ≤ c * y)
+    (hy : 0 ≤ y) : ψ y ≤ c * y := by
+  rcases hy.eq_or_lt with rfl | hy
+  · simp [psi_zero]
+  · exact hc y hy
+
 /-- A bound `θ(y) ≤ c y` for `y > 0` forces `c ≥ 0`, since `θ(2) = log 2 > 0`. -/
-private theorem nonneg_of_forall_theta_le {c : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y) : 0 ≤ c := by
+theorem nonneg_of_forall_theta_le {c : ℝ} (hc : ∀ y, 0 < y → θ y ≤ c * y) : 0 ≤ c := by
   have := hc 2 two_pos
   have := theta_pos (le_refl (2 : ℝ))
   linarith
+
+/-- A bound `ψ(y) ≤ c y` for `y > 0` forces `c ≥ 0`, since `θ ≤ ψ`. -/
+theorem nonneg_of_forall_psi_le {c : ℝ} (hc : ∀ y, 0 < y → ψ y ≤ c * y) : 0 ≤ c :=
+  nonneg_of_forall_theta_le fun y hy ↦ (theta_le_psi y).trans (hc y hy)
 
 /-- The terms with `k ≥ 3` of the decomposition: if `θ(y) ≤ c y` for every `y > 0`, then
 `∑_{3 ≤ k ≤ N} θ(x^{1/k}) ≤ c ∑_{3 ≤ k ≤ N} x^{1/k}` for `x ≥ 0`. -/
@@ -235,15 +254,11 @@ theorem theta_le_one_add_mul_of_psi_le {ε x₁ x : ℝ} (hε : 0 ≤ ε)
 `ψ(x) − c₀ (√x + x^{1/3} + x^{1/5}) ≤ θ(x)` for `x ≥ 0`. -/
 theorem theta_ge_psi_sub_mul {c₀ x : ℝ} (hc₀ : ∀ y, 0 < y → ψ y ≤ c₀ * y) (hx : 0 ≤ x) :
     ψ x - c₀ * (√x + x ^ ((1 : ℝ) / 3) + x ^ ((1 : ℝ) / 5)) ≤ θ x := by
-  have hc₀' : ∀ y, 0 ≤ y → ψ y ≤ c₀ * y := fun y hy ↦ by
-    rcases hy.eq_or_lt with rfl | hy
-    · simp [psi_zero]
-    · exact hc₀ y hy
   have := psi_sub_theta_le_psi_add_psi_add_psi x
   rw [← one_div, ← one_div, ← one_div, ← sqrt_eq_rpow] at this
-  have h2 := hc₀' _ (sqrt_nonneg x)
-  have h3 := hc₀' _ (rpow_nonneg hx ((1 : ℝ) / 3))
-  have h5 := hc₀' _ (rpow_nonneg hx ((1 : ℝ) / 5))
+  have h2 := psi_le_mul_of_nonneg hc₀ (sqrt_nonneg x)
+  have h3 := psi_le_mul_of_nonneg hc₀ (rpow_nonneg hx ((1 : ℝ) / 3))
+  have h5 := psi_le_mul_of_nonneg hc₀ (rpow_nonneg hx ((1 : ℝ) / 5))
   linarith
 
 /-- **Broadbent–Kadiri–Lumley–Ng–Wilk, Lemma 11.** If `ψ(y) ≤ c₀ y` for every `y > 0` and
@@ -253,7 +268,7 @@ theorem theta_ge_of_psi_ge_of_exp_le {c₀ ε b x : ℝ} (hc₀ : ∀ y, 0 < y �
     (hψ : (1 - ε) * x ≤ ψ x) (hx : exp b ≤ x) :
     (1 - ε - c₀ * (exp (-b / 2) + exp (-2 * b / 3) + exp (-4 * b / 5))) * x ≤ θ x := by
   have hx0 : 0 < x := (exp_pos b).trans_le hx
-  have hc0 : 0 ≤ c₀ := nonneg_of_forall_theta_le fun y hy ↦ (theta_le_psi y).trans (hc₀ y hy)
+  have hc0 : 0 ≤ c₀ := nonneg_of_forall_psi_le hc₀
   -- `x^{1/k} = x^{−(1 − 1/k)} x ≤ e^{−(1 − 1/k) b} x`, as `log x ≥ b`.
   have hb : b ≤ log x := (le_log_iff_exp_le hx0).mpr hx
   have key (k : ℝ) (hk : 1 ≤ k) : x ^ (1 / k) ≤ exp (-((k - 1) / k) * b) * x := by
@@ -290,9 +305,10 @@ theorem card_filter_isPrimePow_le {x : ℝ} (hx : 2 ≤ x) :
     (#{n ∈ Ioc 0 ⌊x⌋₊ | IsPrimePow n} : ℝ) ≤
       Nat.primeCounting ⌊x⌋₊ + (log x / log 2 - 1) * √x := by
   have hx0 : 0 ≤ x := by linarith
-  have hK : 1 ≤ ⌊log x / log 2⌋₊ := Nat.le_floor <| by
-    rw [Nat.cast_one, le_div_iff₀ (log_pos one_lt_two), one_mul]
+  have hL : 1 ≤ log x / log 2 := by
+    rw [le_div_iff₀ (log_pos one_lt_two), one_mul]
     exact log_le_log two_pos hx
+  have hK : 1 ≤ ⌊log x / log 2⌋₊ := Nat.le_floor (by exact_mod_cast hL)
   have hsplit : Icc 1 ⌊log x / log 2⌋₊ = insert 1 (Icc 2 ⌊log x / log 2⌋₊) := by
     ext k
     simp only [mem_Icc, mem_insert]
@@ -301,25 +317,27 @@ theorem card_filter_isPrimePow_le {x : ℝ} (hx : 2 ≤ x) :
     Nat.cast_add, Nat.cast_sum]
   simp only [Nat.cast_one, div_one, rpow_one]
   gcongr
-  calc ∑ k ∈ Icc 2 ⌊log x / log 2⌋₊, (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ)
-      ≤ ∑ _k ∈ Icc 2 ⌊log x / log 2⌋₊, √x := by
-        refine sum_le_sum fun k hk ↦ ?_
-        have hk2 : (2 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
-        have hπ (m : ℕ) : Nat.primeCounting m ≤ m := by
-          rw [← Nat.primesLE_card_eq_primeCounting, Nat.primesLE_eq_filter_Ioc_zero]
-          exact (card_filter_le _ _).trans (by simp)
-        calc (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ)
-            ≤ ⌊x ^ ((1 : ℝ) / k)⌋₊ := by exact_mod_cast hπ _
-          _ ≤ x ^ ((1 : ℝ) / k) := Nat.floor_le (rpow_nonneg hx0 _)
-          _ ≤ x ^ ((1 : ℝ) / 2) := rpow_le_rpow_of_exponent_le (by linarith) (by gcongr)
-          _ = √x := (sqrt_eq_rpow x).symm
-    _ = ((⌊log x / log 2⌋₊ + 1 - 2 : ℕ) : ℝ) * √x := by
-        rw [sum_const, Nat.card_Icc, nsmul_eq_mul]
-    _ ≤ (log x / log 2 - 1) * √x := by
-        gcongr
-        rw [Nat.cast_sub (by omega), Nat.cast_add, Nat.cast_one]
-        linarith [Nat.floor_le (div_nonneg (log_nonneg (by linarith : (1 : ℝ) ≤ x))
-          (log_nonneg one_le_two))]
+  refine (sum_Icc_floor_le_max_mul (by linarith) (sqrt_nonneg x) 2 fun k hk ↦ ?_).trans_eq ?_
+  · have hk2 : (2 : ℝ) ≤ k := by exact_mod_cast (mem_Icc.mp hk).1
+    calc (Nat.primeCounting ⌊x ^ ((1 : ℝ) / k)⌋₊ : ℝ)
+        ≤ ⌊x ^ ((1 : ℝ) / k)⌋₊ := by exact_mod_cast Nat.primeCounting_le_self _
+      _ ≤ x ^ ((1 : ℝ) / k) := Nat.floor_le (rpow_nonneg hx0 _)
+      _ ≤ x ^ ((1 : ℝ) / 2) := rpow_le_rpow_of_exponent_le (by linarith) (by gcongr)
+      _ = √x := (sqrt_eq_rpow x).symm
+  · rw [max_eq_left (by push_cast; linarith)]
+    push_cast
+    ring
+
+/-- For `x ≥ 1`, `(log x)² e² ≤ 16 √x`: the maximum of `L² e^{−L/2}` is `16/e²`, at `L = 4`. -/
+private theorem sq_log_mul_exp_one_le_sixteen_mul_sqrt {x : ℝ} (hx : 1 ≤ x) :
+    (log x * exp 1) ^ 2 ≤ 16 * √x := by
+  have hsqrt : √x = exp (log x / 4) ^ 2 := by
+    rw [← exp_nat_mul, sqrt_eq_rpow, rpow_def_of_pos (by linarith)]
+    ring_nf
+  have h := pow_le_pow_left₀ (by have := log_nonneg hx; positivity)
+    (exp_one_mul_le_exp (x := log x / 4)) 2
+  rw [hsqrt]
+  nlinarith
 
 /-- For `x ≥ 2`, the prime powers `m ≤ x` number at most `6 x / log x`. -/
 theorem card_filter_isPrimePow_le_six_mul_div_log {x : ℝ} (hx : 2 ≤ x) :
@@ -332,17 +350,7 @@ theorem card_filter_isPrimePow_le_six_mul_div_log {x : ℝ} (hx : 2 ≤ x) :
   have hsx : √x * √x = x := mul_self_sqrt hx0.le
   have hπ := pi_le_log4_mul_div (by linarith : 1 < x)
   rw [log_sqrt hx0.le, show (4 : ℝ) = 2 ^ 2 by norm_num, log_pow] at hπ
-  -- `(log x)² e² ≤ 16 √x`: the maximum of `L² e^{−L/2}` is `16/e²`, at `L = 4`.
-  have hkey : (log x * exp 1) ^ 2 ≤ 16 * √x := by
-    have hsqrt : √x = exp (log x / 4) ^ 2 := by
-      rw [← exp_nat_mul, sqrt_eq_rpow, rpow_def_of_pos hx0]
-      ring_nf
-    have h2 : log x / 4 * exp 1 ≤ exp (log x / 4) :=
-      calc log x / 4 * exp 1 = (log x / 4 - 1 + 1) * exp 1 := by ring
-        _ ≤ exp (log x / 4 - 1) * exp 1 := by gcongr; exact add_one_le_exp _
-        _ = exp (log x / 4) := by rw [← exp_add]; ring_nf
-    rw [hsqrt]
-    nlinarith [mul_nonneg hL.le (exp_pos 1).le]
+  have hkey := sq_log_mul_exp_one_le_sixteen_mul_sqrt (by linarith : (1 : ℝ) ≤ x)
   have hcount := card_filter_isPrimePow_le hx
   rw [le_div_iff₀ hL]
   -- `π(x) ≤ 4 log 2 · x / log x + √x`, and `(log x)² √x ≤ 16 x / e²`.
