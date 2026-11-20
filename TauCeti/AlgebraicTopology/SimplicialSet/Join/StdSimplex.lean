@@ -800,7 +800,53 @@ private lemma mem_horn_natAdd_iff (hm : m ≠ 0) (j : Fin (m + 1)) :
       obtain ⟨t, ht⟩ := hx' ⟨n + 1 + l, by omega⟩ (by simpa [Fin.ext_iff] using hlj)
       exact hl (mem_range_right hlast (by rw [ht]))
 
+private lemma mem_boundary_iff_mem_unionJoin :
+    x ∈ (∂Δ[n + m + 1] : (Δ[n + m + 1] : SSet.{u}).Subcomplex).obj _ ↔
+      (stdSimplexIso n m).inv.app _ x ∈ (Subcomplex.unionJoin ∂Δ[n] ∂Δ[m]).obj _ := by
+  rw [Subcomplex.mem_unionJoin_iff, objEquiv_stdSimplexIso_inv_app, mem_boundary_iff_notMem_range]
+  constructor
+  · rintro ⟨j, hj⟩
+    by_cases hjn : (j : ℕ) ≤ n
+    · refine Or.inl fun k y hy ↦ ?_
+      induction k using Opposite.rec with | op k
+      induction k using SimplexCategory.rec with | _ a
+      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_left hjn hj y hy⟩
+    · refine Or.inr fun k y hy ↦ ?_
+      induction k using Opposite.rec with | op k
+      induction k using SimplexCategory.rec with | _ a
+      exact (mem_boundary_iff_notMem_range _).2 ⟨_, notMem_range_right (by omega) hj y hy⟩
+  · intro h
+    by_contra! hx
+    rcases h with h | h
+    · have h₀ := apply_zero_le (j := 0) (by simp) (hx 0)
+      obtain ⟨j, hj⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (lowerSection_mem x h₀))
+      obtain ⟨t, ht⟩ := hx (Fin.castLE (by omega) j)
+      exact hj (mem_range_left h₀ (by rw [ht, Fin.val_castLE]))
+    · have hlast := lt_apply_last (j := Fin.last _) (by simp) (hx (Fin.last _))
+      obtain ⟨j, hj⟩ := (mem_boundary_iff_notMem_range _).1 (h _ _ (upperSection_mem x hlast))
+      obtain ⟨t, ht⟩ := hx ⟨n + 1 + j, by omega⟩
+      exact hj (mem_range_right hlast (by rw [ht]))
+
 end horn
+
+/-- Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, the pushout-join
+`(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` is the boundary `∂Δ[n + m + 1]`. -/
+theorem preimage_unionJoin_boundary_boundary (n m : ℕ) :
+    (Subcomplex.unionJoin ∂Δ[n] ∂Δ[m]).preimage (stdSimplexIso.{u} n m).inv = ∂Δ[n + m + 1] := by
+  ext ⟨k⟩ x
+  induction k using SimplexCategory.rec with | _ d
+  exact mem_boundary_iff_mem_unionJoin.symm
+
+/-- Under the cone isomorphism `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the pushout-join of the two
+boundaries is `∂Δ[n + 1]`. -/
+theorem preimage_unionJoin_boundary_boundary_coneIso (n : ℕ) :
+    (Subcomplex.unionJoin ∂Δ[0] ∂Δ[n]).preimage (coneIso.{u} n).inv = ∂Δ[n + 1] := by
+  have h {a b : ℕ} (e : ⦋a⦌ = ⦋b⦌) :
+      (∂Δ[a] : (Δ[a] : SSet.{u}).Subcomplex).preimage (stdSimplex.mapIso (eqToIso e)).inv =
+        ∂Δ[b] := by
+    obtain rfl : a = b := congrArg SimplexCategory.len e
+    simp
+  rw [coneIso, Iso.trans_inv, Subcomplex.preimage_comp, preimage_unionJoin_boundary_boundary, h]
 
 variable (m) in
 /-- **The pushout-join of a horn and a boundary is a horn.** Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, the
