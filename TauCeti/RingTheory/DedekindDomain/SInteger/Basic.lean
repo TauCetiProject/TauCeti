@@ -79,8 +79,8 @@ instance : IsIntegrallyClosed (S.integer K) := by
   -- `𝒪_S` is the intersection of the valuation subalgebras at the `v ∉ S`, each of which is
   -- integrally closed, so `IsIntegrallyClosed.iInf` applies.
   have he : S.integer K = ⨅ v : {v : HeightOneSpectrum R // v ∉ S},
-      ({ (v.1.valuation K).valuationSubring.toSubring with
-          algebraMap_mem' := fun r ↦ v.1.valuation_le_one r } : Subalgebra R K) := by
+      ({ (v.val.valuation K).valuationSubring.toSubring with
+          algebraMap_mem' := fun r ↦ v.val.valuation_le_one r } : Subalgebra R K) := by
     ext x
     simp only [Algebra.mem_iInf, Subtype.forall, Set.mem_integer_iff]
     -- What remains is membership in the anonymous `Subalgebra` assembled above. Mathlib has no
@@ -91,7 +91,7 @@ instance : IsIntegrallyClosed (S.integer K) := by
     rfl
   rw [he]
   exact IsIntegrallyClosed.iInf _ fun v ↦
-    inferInstanceAs (IsIntegrallyClosed (v.1.valuation K).valuationSubring)
+    inferInstanceAs (IsIntegrallyClosed (v.val.valuation K).valuationSubring)
 
 /-!
 ### Primes in `S` become the unit ideal
@@ -125,25 +125,26 @@ lemma HeightOneSpectrum.valuation_le_one_of_mem_inv_coeIdeal {v w : HeightOneSpe
   -- `1 ∈ v * v⁻¹`, as a submodule of `K`
   have h1 : (1 : K) ∈
       (v.asIdeal : FractionalIdeal R⁰ K) * (v.asIdeal : FractionalIdeal R⁰ K)⁻¹ := by
-    rw [FractionalIdeal.coe_ideal_mul_inv _ v.ne_bot]
+    rw [FractionalIdeal.coeIdeal_mul_inv _ v.ne_bot]
     exact (FractionalIdeal.mem_one_iff _).mpr ⟨1, map_one _⟩
-  rw [← FractionalIdeal.mem_coe, FractionalIdeal.coe_mul] at h1
+  rw [← FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.coeToSubmodule_mul] at h1
   -- every element of the product that is an `S`-integer lies in `M`
   refine Ideal.eq_top_iff_one M |>.mpr ?_
   suffices H : ∀ x ∈ (v.asIdeal : FractionalIdeal R⁰ K) * (v.asIdeal : FractionalIdeal R⁰ K)⁻¹,
       ∃ hx : x ∈ A, (⟨x, hx⟩ : A) ∈ M by
-    obtain ⟨hx, hx'⟩ := H 1 (by rwa [← FractionalIdeal.coe_mul, FractionalIdeal.mem_coe] at h1)
+    obtain ⟨hx, hx'⟩ := H 1 (by
+      rwa [← FractionalIdeal.coeToSubmodule_mul, FractionalIdeal.mem_coeToSubmodule] at h1)
     have h1A : (⟨1, hx⟩ : A) = 1 := Subtype.val_injective (Subalgebra.coe_one A).symm
     exact h1A ▸ hx'
   intro x hx
-  rw [← FractionalIdeal.mem_coe, FractionalIdeal.coe_mul] at hx
+  rw [← FractionalIdeal.mem_coeToSubmodule, FractionalIdeal.coeToSubmodule_mul] at hx
   refine Submodule.mul_induction_on hx (fun a ha y hy ↦ ?_) (fun x y hx hy ↦ ?_)
   · obtain ⟨a, ha', rfl⟩ := (FractionalIdeal.mem_coeIdeal R⁰).mp
-      ((FractionalIdeal.mem_coe (I := (v.asIdeal : FractionalIdeal R⁰ K))).mpr ha)
+      ((FractionalIdeal.mem_coeToSubmodule (I := (v.asIdeal : FractionalIdeal R⁰ K))).mpr ha)
     have hyA : y ∈ A := (Set.mem_integer_iff K S).mpr fun w hw ↦
       have hwv : w ≠ v := by rintro rfl; exact hw hv
       HeightOneSpectrum.valuation_le_one_of_mem_inv_coeIdeal K hwv
-        ((FractionalIdeal.mem_coe (I := (v.asIdeal : FractionalIdeal R⁰ K)⁻¹)).mpr hy)
+        ((FractionalIdeal.mem_coeToSubmodule (I := (v.asIdeal : FractionalIdeal R⁰ K)⁻¹)).mpr hy)
     have haA : algebraMap R K a ∈ A := A.algebraMap_mem a
     refine ⟨mul_mem haA hyA, ?_⟩
     have he : (⟨algebraMap R K a * y, mul_mem haA hyA⟩ : A) = algebraMap R A a * ⟨y, hyA⟩ :=
@@ -246,7 +247,7 @@ lemma integer_comap_ne_bot {P : Ideal (S.integer K)} (hP : P ≠ ⊥) :
 noncomputable abbrev integerIdealUnder (I : (Ideal (S.integer K))⁰) : (Ideal R)⁰ :=
   ⟨(I : Ideal (S.integer K)).under R,
     mem_nonZeroDivisors_iff_ne_zero.mpr
-      (integer_comap_ne_bot K S (mem_nonZeroDivisors_iff_ne_zero.mp I.2))⟩
+      (integer_comap_ne_bot K S (mem_nonZeroDivisors_iff_ne_zero.mp I.property))⟩
 
 @[simp] lemma coe_integerIdealUnder (I : (Ideal (S.integer K))⁰) :
     (integerIdealUnder K S I : Ideal R) = (I : Ideal (S.integer K)).under R := rfl

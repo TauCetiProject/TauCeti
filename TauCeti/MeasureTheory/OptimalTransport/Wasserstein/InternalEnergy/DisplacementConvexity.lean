@@ -165,7 +165,7 @@ private theorem aestronglyMeasurable_indicator_ite_det_eq_zero {D S : Set E}
 /-- **The internal energy along the interpolation of a convex gradient.** Let `f : E → EReal` be
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
 effective domain, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the
-subdifferential of `f` at `x` (the Alexandrov Hessian). Let `μ` be an s-finite measure, absolutely
+subdifferential of `f` at `x` (the Alexandrov Hessian). Let `μ` be a measure, absolutely
 continuous with respect to an additive Haar measure `ρ` and carried by `D`, and let `U 0 = 0`. For
 `0 ≤ t < 1`, the internal energy of the interpolant `μₜ = (Tₜ)₊ μ`,
 `Tₜ x = (1 - t) • x + t • ∇F x`, is the potential energy against `ρ` of
@@ -174,7 +174,7 @@ theorem internalEnergy_map_smul_add_smul_gradient (hU0 : U 0 = 0)
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
     {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
     internalEnergy U ρ (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) =
       potentialEnergy ((interior {x | f x ≠ ⊤}).indicator fun x =>
@@ -332,7 +332,7 @@ private theorem internalEnergy_map_smul_add_smul_gradient_le_of_hessian [Nontriv
     simp
   have hxS' := hxS.1 hxD
   rw [indicator_of_mem hxD, indicator_of_mem hxD, indicator_of_mem hxD]
-  refine (hS x hxS').2.1.det_mul_apply_div_det_le hU0 hc ha ENNReal.toReal_nonneg ht₀ ht₁
+  refine (hS x hxS').2.1.det_mul_apply_div_det_le hU0 hc ha ENNReal.toReal_nonneg ht₀.le ht₁
     fun h0 hr s hs => ?_
   -- The bound `φ ≤ L` is needed only where the density is positive and `det (H x) = 0`.
   by_cases hrec : recessionConstant U = L

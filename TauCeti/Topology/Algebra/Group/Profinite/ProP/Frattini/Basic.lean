@@ -39,11 +39,13 @@ normal subgroup of index `p` missing the element.
 
 Two consequences are recorded because they are what consumers use: for a prime `p` the Frattini
 quotient `G ⧸ proPFrattini p G` is commutative of exponent dividing `p` — an `𝔽_p`-vector space —
-and, for a *profinite* `G`, `proPFrattini p G` is trivial exactly when `G` itself already is one.
-The maximality of that quotient is likewise a profinite statement, recorded as
-`TauCeti.proPFrattini_le_iff`.
+and `proPFrattini p G` is trivial exactly when `G` itself already is one, both for a *discrete*
+and for a *profinite* `G`. In the discrete case every subgroup is open, so the separation of
+points by index-`p` subgroups applies to `G` directly and no compactness is needed. The maximality
+of the Frattini quotient is a profinite statement, recorded as `TauCeti.proPFrattini_le_iff`.
 
-Everything up to the verbal description is stated for an arbitrary group equipped with a topology;
+Everything up to the verbal description is stated for an arbitrary group equipped with a topology,
+except the triviality criterion for discrete groups, which assumes the discrete topology;
 closedness additionally requires continuous translations. Compactness and total disconnectedness
 are assumed exactly where they are used.
 
@@ -70,8 +72,9 @@ are assumed exactly where they are used.
 * `TauCeti.map_proPFrattini_eq_of_surjective` and `TauCeti.comap_proPFrattini_eq_of_surjective`:
   a continuous surjection of profinite groups carries the pro-`p` Frattini subgroup onto the
   pro-`p` Frattini subgroup, and the preimage of the latter is the former joined with the kernel.
-* `TauCeti.proPFrattini_eq_bot_iff`: for a profinite `G`, the pro-`p` Frattini subgroup is trivial
-  exactly when `G` is commutative of exponent dividing `p`.
+* `TauCeti.proPFrattini_eq_bot_iff_of_discreteTopology` and `TauCeti.proPFrattini_eq_bot_iff`:
+  for a discrete `G`, and for a profinite `G`, the pro-`p` Frattini subgroup is trivial exactly
+  when `G` is commutative of exponent dividing `p`.
 * `TauCeti.proPFrattini_eq_range_powMonoidHom` and `TauCeti.mem_proPFrattini_iff_exists_pow`: for
   a commutative profinite group the pro-`p` Frattini subgroup is the subgroup of `p`-th powers,
   with no closure.
@@ -79,6 +82,7 @@ are assumed exactly where they are used.
   continuous automorphisms.
 * `TauCeti.isTopCharacteristic_proPFrattini`: the pro-`p` Frattini subgroup is topologically
   characteristic.
+
 ## References
 
 * L. Ribes and P. Zalesskii, *Profinite Groups*, Section 2.8.
@@ -102,18 +106,18 @@ closed normal subgroup whose quotient is elementary abelian, so that `G ⧸ proP
 then the largest elementary abelian quotient of `G` by a closed normal subgroup; see
 `TauCeti.proPFrattini_le_iff`. -/
 def proPFrattini : Subgroup G :=
-  ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.1.toSubgroup
+  ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.val.toSubgroup
 
 /-- The defining equation of the pro-`p` Frattini subgroup: the body of `TauCeti.proPFrattini` is
 not exposed, so unfolding it goes through this lemma. -/
 theorem proPFrattini_def :
     proPFrattini p G =
-      ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.1.toSubgroup := by
+      ⨅ U : {U : OpenNormalSubgroup G // U.toSubgroup.index = p}, U.val.toSubgroup := by
   rw [proPFrattini]
 
 /-- The pro-`p` Frattini subgroup is a normal subgroup. -/
 instance proPFrattini_normal : (proPFrattini p G).Normal :=
-  Subgroup.normal_iInf_normal fun U ↦ U.1.isNormal'
+  Subgroup.normal_iInf_normal fun U ↦ U.val.isNormal'
 
 end Defs
 
@@ -125,7 +129,7 @@ theorem mem_proPFrattini_iff {x : G} :
     x ∈ proPFrattini p G ↔
       ∀ U : OpenNormalSubgroup G, U.toSubgroup.index = p → x ∈ U.toSubgroup := by
   rw [proPFrattini_def, Subgroup.mem_iInf]
-  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.val U.property⟩
 
 /-- The pro-`p` Frattini subgroup is contained in every open normal subgroup of index `p`. -/
 theorem proPFrattini_le {U : OpenNormalSubgroup G} (hU : U.toSubgroup.index = p) :
@@ -136,7 +140,7 @@ theorem proPFrattini_le {U : OpenNormalSubgroup G} (hU : U.toSubgroup.index = p)
 instance isClosed_proPFrattini [SeparatelyContinuousMul G] :
     IsClosed ((proPFrattini p G : Subgroup G) : Set G) := by
   rw [proPFrattini_def, Subgroup.coe_iInf]
-  exact isClosed_iInter fun U ↦ U.1.toOpenSubgroup.isClosed
+  exact isClosed_iInter fun U ↦ U.val.toOpenSubgroup.isClosed
 
 /-! ### The elementary abelian generators -/
 
@@ -196,6 +200,16 @@ instance instModuleQuotientProPFrattini [Fact p.Prime] :
   AddCommGroup.zmodModule fun x ↦
     Monoid.exponent_dvd_iff_forall_pow_eq_one.mp exponent_quotient_proPFrattini_dvd x.toMul
 
+/-- If the pro-`p` Frattini subgroup is trivial, then `G` is commutative of exponent dividing `p`,
+for `p` prime: it contains the commutators and the `p`-th powers. This is the direction of
+`TauCeti.proPFrattini_eq_bot_iff` and `TauCeti.proPFrattini_eq_bot_iff_of_discreteTopology` that
+needs no hypothesis on the topology. -/
+private theorem isMulCommutative_and_exponent_dvd_of_proPFrattini_eq_bot (hp : p.Prime)
+    (h : proPFrattini p G = ⊥) : IsMulCommutative G ∧ Monoid.exponent G ∣ p :=
+  ⟨(commutator_eq_bot_iff G).mp (le_bot_iff.mp (h ▸ commutator_le_proPFrattini hp)),
+    Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun g ↦ by
+      simpa [h] using pow_mem_proPFrattini (p := p) g⟩
+
 /-! ### Functoriality -/
 
 /-- A continuous surjection carries the pro-`p` Frattini subgroup into the pro-`p` Frattini
@@ -253,6 +267,21 @@ every natural number `p`. -/
 theorem isTopCharacteristic_proPFrattini (p : ℕ) :
     IsTopCharacteristic G (proPFrattini p G) :=
   isTopCharacteristic_iff_map_eq.mpr fun φ ↦ ContinuousMulEquiv.map_proPFrattini_eq φ
+
+/-! ### Discrete groups -/
+
+/-- The pro-`p` Frattini subgroup of a discrete group is trivial exactly when the group is
+commutative of exponent dividing `p`, that is an `𝔽_p`-vector space, for `p` prime. Every subgroup
+of a discrete group is open, and in a commutative group of exponent dividing `p` the subgroups of
+index `p` separate points (`TauCeti.exists_index_eq_notMem_of_exponent_dvd`). This is the discrete
+counterpart of `TauCeti.proPFrattini_eq_bot_iff`, with no compactness. -/
+theorem proPFrattini_eq_bot_iff_of_discreteTopology [DiscreteTopology G] (hp : p.Prime) :
+    proPFrattini p G = ⊥ ↔ IsMulCommutative G ∧ Monoid.exponent G ∣ p := by
+  refine ⟨isMulCommutative_and_exponent_dvd_of_proPFrattini_eq_bot hp, fun ⟨_, hexp⟩ ↦ ?_⟩
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun x hx ↦ ?_
+  by_contra hx1
+  obtain ⟨K, hKindex, hKx⟩ := exists_index_eq_notMem_of_exponent_dvd hp hexp hx1
+  exact hKx (proPFrattini_le (U := ⟨⟨K, isOpen_discrete _⟩, inferInstance⟩) hKindex hx)
 
 /-! ### The verbal description -/
 
@@ -348,17 +377,13 @@ theorem proPFrattini_eq_bot_iff (hp : p.Prime) :
     proPFrattini p G = ⊥ ↔ IsMulCommutative G ∧ Monoid.exponent G ∣ p := by
   have hbot : IsClosed ((⊥ : Subgroup G) : Set G) := by
     rw [Subgroup.coe_bot]; exact isClosed_singleton
-  refine ⟨fun h ↦ ⟨(commutator_eq_bot_iff G).mp
-      (le_bot_iff.mp (h ▸ commutator_le_proPFrattini hp)), ?_⟩, fun h ↦ ?_⟩
-  · exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mpr fun g ↦ by
-      simpa [h] using pow_mem_proPFrattini (p := p) g
-  · obtain ⟨hcomm, hexp⟩ := h
-    rw [proPFrattini_eq_topologicalClosure hp, ← le_bot_iff]
-    refine Subgroup.topologicalClosure_minimal _ (sup_le ?_ ?_) hbot
-    · exact Subgroup.closure_le _ |>.mpr <| by
-        rintro _ ⟨g, rfl⟩
-        simpa using Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp g
-    · exact ((commutator_eq_bot_iff G).mpr hcomm).le
+  refine ⟨isMulCommutative_and_exponent_dvd_of_proPFrattini_eq_bot hp, fun ⟨hcomm, hexp⟩ ↦ ?_⟩
+  rw [proPFrattini_eq_topologicalClosure hp, ← le_bot_iff]
+  refine Subgroup.topologicalClosure_minimal _ (sup_le ?_ ?_) hbot
+  · exact Subgroup.closure_le _ |>.mpr <| by
+      rintro _ ⟨g, rfl⟩
+      simpa using Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp g
+  · exact ((commutator_eq_bot_iff G).mpr hcomm).le
 
 /-! ### The commutative case -/
 

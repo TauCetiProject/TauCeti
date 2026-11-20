@@ -52,6 +52,8 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
   each orbit sum is fixed by `σ`.
 * `RootPairing.orbitSum_reflectionPerm_self`: the orbit sum of a negated root is the negated
   orbit sum.
+* `RootPairing.mem_support_iff_of_mem_orbitIndices`: for an automorphism permuting the simple roots
+  of a base, a root orbit either consists entirely of simple roots or contains none.
 * `RootPairing.orbitSum_mem_posRootCone` and `RootPairing.orbitSum_ne_zero`: for an automorphism
   permuting the simple roots of a base, the orbit sum of a positive root is a natural combination
   of simple roots, and no orbit sum vanishes (`RootPairing.zero_notMem_foldedIndices`).
@@ -68,16 +70,16 @@ namespace RootPairing
 open Finset TauCeti
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-  (P : RootPairing ι R M N) [Finite ι]
+  (P : RootPairing ι R M N) [Finite ι] (σ : P.Aut) (i : ι) {j : ι}
 
 /-! ### Root orbits -/
 
 /-- The **root orbit** of the index `i` under the automorphism `σ`: the finite set of distinct
 root indices `σᵏ i`, that is, of the indices on the same cycle of `σ` as `i`. -/
-noncomputable def orbitIndices (σ : P.Aut) (i : ι) : Finset ι :=
+noncomputable def orbitIndices : Finset ι :=
   (Set.toFinite {j | Equiv.Perm.SameCycle σ.indexEquiv i j}).toFinset
 
-variable {P} {σ : P.Aut} {i j : ι}
+variable {P σ i}
 
 @[simp]
 theorem mem_orbitIndices : j ∈ P.orbitIndices σ i ↔ Equiv.Perm.SameCycle σ.indexEquiv i j := by
@@ -91,14 +93,6 @@ theorem mem_orbitIndices_iff_exists_pow :
   rintro ⟨k, rfl⟩
   exact Equiv.Perm.sameCycle_pow_right.mpr (Equiv.Perm.SameCycle.refl _ _)
 
-variable (P σ i) in
-theorem self_mem_orbitIndices : i ∈ P.orbitIndices σ i :=
-  mem_orbitIndices.mpr (Equiv.Perm.SameCycle.refl _ _)
-
-variable (P σ i) in
-theorem orbitIndices_nonempty : (P.orbitIndices σ i).Nonempty :=
-  ⟨i, self_mem_orbitIndices P σ i⟩
-
 /-- The root orbit is stable under `σ`. -/
 theorem indexEquiv_mem_orbitIndices_iff :
     σ.indexEquiv j ∈ P.orbitIndices σ i ↔ j ∈ P.orbitIndices σ i := by
@@ -111,33 +105,41 @@ theorem orbitIndices_eq_of_mem (h : j ∈ P.orbitIndices σ i) :
   simp only [mem_orbitIndices] at h ⊢
   exact ⟨h.trans, h.symm.trans⟩
 
-variable (P σ i) in
-@[simp]
-theorem orbitIndices_indexEquiv : P.orbitIndices σ (σ.indexEquiv i) = P.orbitIndices σ i :=
-  orbitIndices_eq_of_mem (indexEquiv_mem_orbitIndices_iff.mpr (self_mem_orbitIndices P σ i))
-
 /-- The root orbit of `i` is `{i}` exactly when `σ` fixes `i`. -/
 theorem orbitIndices_eq_singleton_iff : P.orbitIndices σ i = {i} ↔ σ.indexEquiv i = i := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · simpa [h] using indexEquiv_mem_orbitIndices_iff.mpr (self_mem_orbitIndices P σ i)
+  · have hi : σ.indexEquiv i ∈ P.orbitIndices σ i :=
+      indexEquiv_mem_orbitIndices_iff.mpr (mem_orbitIndices.mpr (Equiv.Perm.SameCycle.refl _ _))
+    simpa [h] using hi
   · ext j
     rw [mem_orbitIndices, Finset.mem_singleton]
     exact ⟨fun hj ↦ (hj.eq_of_left h).symm, fun hj ↦ hj ▸ Equiv.Perm.SameCycle.refl _ _⟩
 
-variable (P i) in
+variable (P σ i)
+
+theorem self_mem_orbitIndices : i ∈ P.orbitIndices σ i :=
+  mem_orbitIndices.mpr (Equiv.Perm.SameCycle.refl _ _)
+
+theorem orbitIndices_nonempty : (P.orbitIndices σ i).Nonempty :=
+  ⟨i, self_mem_orbitIndices P σ i⟩
+
+@[simp]
+theorem orbitIndices_indexEquiv : P.orbitIndices σ (σ.indexEquiv i) = P.orbitIndices σ i :=
+  orbitIndices_eq_of_mem (indexEquiv_mem_orbitIndices_iff.mpr (self_mem_orbitIndices P σ i))
+
 @[simp]
 theorem orbitIndices_one : P.orbitIndices 1 i = {i} :=
   orbitIndices_eq_singleton_iff.mpr rfl
 
-variable (P σ i) in
 /-- The size of the root orbit of `i` is the minimal period of `i` under `σ`. -/
 theorem card_orbitIndices :
     #(P.orbitIndices σ i) = Function.minimalPeriod σ.indexEquiv i := by
   rw [orbitIndices, ← Set.ncard_eq_toFinset_card, Equiv.Perm.ncard_setOf_sameCycle]
 
-variable (P σ i) in
 theorem card_orbitIndices_pos : 0 < #(P.orbitIndices σ i) :=
   (orbitIndices_nonempty P σ i).card_pos
+
+variable {P σ i}
 
 /-- If `σᵐ` fixes `i`, then the size of the root orbit of `i` divides `m`. -/
 theorem card_orbitIndices_dvd {m : ℕ} (hm : (σ.indexEquiv ^ m) i = i) :
@@ -148,36 +150,24 @@ theorem card_orbitIndices_dvd {m : ℕ} (hm : (σ.indexEquiv ^ m) i = i) :
 
 /-! ### Orbit sums -/
 
-variable (P σ i) in
+variable (P σ i)
+
 /-- The **orbit sum** of the root `αᵢ` under the automorphism `σ`: the sum of the roots indexed
 by the distinct members of the root orbit of `i`, each counted once. -/
 noncomputable def orbitSum : M :=
   ∑ j ∈ P.orbitIndices σ i, P.root j
 
-variable (P σ i) in
 theorem orbitSum_def : P.orbitSum σ i = ∑ j ∈ P.orbitIndices σ i, P.root j := by
   rw [orbitSum]
 
-/-- The orbit sum does not depend on the chosen member of the orbit. -/
-theorem orbitSum_eq_of_mem (h : j ∈ P.orbitIndices σ i) : P.orbitSum σ j = P.orbitSum σ i := by
-  rw [orbitSum, orbitSum, orbitIndices_eq_of_mem h]
-
-variable (P σ i) in
 @[simp]
 theorem orbitSum_indexEquiv : P.orbitSum σ (σ.indexEquiv i) = P.orbitSum σ i := by
   rw [orbitSum, orbitSum, orbitIndices_indexEquiv]
 
-/-- The orbit sum of a root fixed by `σ` is that root. -/
-theorem orbitSum_eq_root_of_indexEquiv_eq (h : σ.indexEquiv i = i) :
-    P.orbitSum σ i = P.root i := by
-  rw [orbitSum, orbitIndices_eq_singleton_iff.mpr h, sum_singleton]
-
-variable (P i) in
 @[simp]
-theorem orbitSum_one : P.orbitSum 1 i = P.root i :=
-  orbitSum_eq_root_of_indexEquiv_eq rfl
+theorem orbitSum_one : P.orbitSum 1 i = P.root i := by
+  rw [orbitSum, orbitIndices_one, sum_singleton]
 
-variable (P σ i) in
 /-- The orbit sum is the sum of the roots `σᵏ αᵢ` for `k` below the minimal period of `i`. -/
 theorem orbitSum_eq_sum_range :
     P.orbitSum σ i =
@@ -193,6 +183,17 @@ theorem orbitSum_eq_sum_range :
   · obtain ⟨k, -, rfl⟩ := mem_image.mp hj
     exact mem_orbitIndices_iff_exists_pow.mpr ⟨k, rfl⟩
   · rw [card_image_of_injOn hinj, card_range, card_orbitIndices]
+
+variable {P σ i}
+
+/-- The orbit sum does not depend on the chosen member of the orbit. -/
+theorem orbitSum_eq_of_mem (h : j ∈ P.orbitIndices σ i) : P.orbitSum σ j = P.orbitSum σ i := by
+  rw [orbitSum, orbitSum, orbitIndices_eq_of_mem h]
+
+/-- The orbit sum of a root fixed by `σ` is that root. -/
+theorem orbitSum_eq_root_of_indexEquiv_eq (h : σ.indexEquiv i = i) :
+    P.orbitSum σ i = P.root i := by
+  rw [orbitSum, orbitIndices_eq_singleton_iff.mpr h, sum_singleton]
 
 /-- **Full-period sums.** If `σᵐ` fixes `i`, then summing the roots `σᵏ αᵢ` over `k < m`
 counts every root of the orbit `m / d` times, where `d` is the size of the orbit. -/
@@ -248,20 +249,19 @@ theorem weightMap_orbitSum (e : P.Equiv P₂) {τ : P₂.Aut}
 
 end Map
 
-variable (P σ i) in
+variable (P σ i)
+
 /-- Every orbit sum is fixed by `σ`. -/
 @[simp]
 theorem weightMap_orbitSum_self : σ.weightMap (P.orbitSum σ i) = P.orbitSum σ i := by
   rw [weightMap_orbitSum σ (fun _ ↦ rfl), orbitSum_indexEquiv]
 
-variable (P σ i) in
 theorem orbitSum_mem_fixedSubmodule :
     P.orbitSum σ i ∈ LinearMap.fixedSubmodule σ.weightMap :=
   LinearMap.mem_fixedSubmodule_iff.mpr (weightMap_orbitSum_self P σ i)
 
 /-! ### Negation -/
 
-variable (P σ i) in
 /-- The orbit sum of the negative of a root is the negative of its orbit sum. -/
 @[simp]
 theorem orbitSum_reflectionPerm_self :
@@ -282,7 +282,16 @@ theorem orbitSum_reflectionPerm_self :
 
 section Base
 
-variable [CharZero R] {b : P.Base}
+variable {P σ i} {b : P.Base}
+
+/-- For an automorphism permuting the simple roots of `b`, a `σ`-orbit either consists entirely of
+simple roots or contains none. -/
+theorem mem_support_iff_of_mem_orbitIndices (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support)
+    (h : j ∈ P.orbitIndices σ i) : j ∈ b.support ↔ i ∈ b.support :=
+  Iff.of_eq ((mem_orbitIndices.mp h).apply_eq_of_apply_eq (f := (· ∈ b.support)) fun z ↦
+    propext (b.mem_support_indexEquiv_iff hσ z)).symm
+
+variable [CharZero R]
 
 /-- For an automorphism permuting the simple roots of `b`, the roots of one orbit are all
 positive or all negative. -/
@@ -315,28 +324,27 @@ end Base
 
 /-! ### The set of orbit sums -/
 
-variable (P σ) in
 /-- The set of all orbit sums of `σ`. Distinct orbits may have the same sum, so this set, rather
 than the set of orbits, indexes the folded roots. -/
 noncomputable def foldedIndices : Set M :=
   Set.range (P.orbitSum σ)
 
-@[simp]
-theorem mem_foldedIndices {x : M} : x ∈ P.foldedIndices σ ↔ ∃ i, P.orbitSum σ i = x :=
-  Iff.rfl
-
-variable (P σ i) in
 theorem orbitSum_mem_foldedIndices : P.orbitSum σ i ∈ P.foldedIndices σ :=
   ⟨i, rfl⟩
 
-instance : Finite (P.foldedIndices σ) :=
-  Set.finite_range _
-
-variable (P) in
 /-- For the identity automorphism the orbit sums are exactly the roots. -/
 @[simp]
 theorem foldedIndices_one : P.foldedIndices 1 = Set.range P.root := by
   rw [foldedIndices, funext (orbitSum_one P)]
+
+variable {P σ}
+
+@[simp]
+theorem mem_foldedIndices {x : M} : x ∈ P.foldedIndices σ ↔ ∃ i, P.orbitSum σ i = x :=
+  Iff.rfl
+
+instance : Finite (P.foldedIndices σ) :=
+  Set.finite_range _
 
 /-- For an automorphism permuting the simple roots of a base, zero is not an orbit sum. -/
 theorem zero_notMem_foldedIndices [CharZero R] {b : P.Base}

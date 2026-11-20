@@ -143,11 +143,11 @@ theorem coe_wedgeWith (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm
 /-- Evaluation of the smooth fixed-coefficient paired wedge. -/
 theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothForm I M F₁ k)
     (ψ : SmoothForm I M F₂ l) (x : M) (v : Fin (k + l) → TangentSpace I x) :
-    (wedgeWith μ φ ψ).1 x v =
+    (wedgeWith μ φ ψ).val x v =
       (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
         ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
-          μ (φ.1 x (fun i ↦ v (σ (Fin.castAdd l i))))
-            (ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
+          μ (φ.val x (fun i ↦ v (σ (Fin.castAdd l i))))
+            (ψ.val x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedgeWith, RoughForm.wedgeWith_apply]
 
 /-- Pairing a smooth form with a degree-zero form pairs its value with the function value. -/
@@ -155,16 +155,16 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (φ : SmoothFo
 theorem wedgeWith_apply_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ 0)
     (x : M) (v : Fin k → TangentSpace I x) :
-    (wedgeWith μ φ ψ).1 x v = μ (φ.1 x v) (ψ.1 x 0) := by
+    (wedgeWith μ φ ψ).val x v = μ (φ.val x v) (ψ.val x 0) := by
   rw [coe_wedgeWith]
-  exact RoughForm.wedgeWith_apply_zero_right μ φ.1 ψ.1 x v
+  exact RoughForm.wedgeWith_apply_zero_right μ φ.val ψ.val x v
 
 /-- Evaluation of the smooth paired wedge on two one-forms. -/
 theorem wedgeWith_apply_one_one (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ 1) (ψ : SmoothForm I M F₂ 1) (x : M)
     (v w : TangentSpace I x) :
-    (wedgeWith μ φ ψ).1 x ![v, w] =
-      μ (φ.1 x ![v]) (ψ.1 x ![w]) - μ (φ.1 x ![w]) (ψ.1 x ![v]) := by
+    (wedgeWith μ φ ψ).val x ![v, w] =
+      μ (φ.val x ![v]) (ψ.val x ![w]) - μ (φ.val x ![w]) (ψ.val x ![v]) := by
   rw [coe_wedgeWith, RoughForm.wedgeWith_apply_one_one]
 
 /-- The real wedge of smooth real-valued forms, as a bilinear map. -/
@@ -186,11 +186,11 @@ theorem coe_wedge (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :
 /-- Evaluation of the smooth real-valued wedge in every degree. -/
 theorem wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l)
     (x : M) (v : Fin (k + l) → TangentSpace I x) :
-    (wedge φ ψ).1 x v =
+    (wedge φ ψ).val x v =
       (((k.factorial : ℝ) * (l.factorial : ℝ))⁻¹) •
         ∑ σ : Equiv.Perm (Fin (k + l)), Equiv.Perm.sign σ •
-          (φ.1 x (fun i ↦ v (σ (Fin.castAdd l i))) *
-            ψ.1 x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
+          (φ.val x (fun i ↦ v (σ (Fin.castAdd l i))) *
+            ψ.val x (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedge, RoughForm.wedge_apply]
 
 /-- Wedging a smooth real-valued form with a degree-zero form multiplies its value by the
@@ -198,30 +198,38 @@ function value. -/
 @[simp]
 theorem wedge_apply_zero_right (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ 0)
     (x : M) (v : Fin k → TangentSpace I x) :
-    (wedge φ ψ).1 x v = φ.1 x v * ψ.1 x 0 := by
+    (wedge φ ψ).val x v = φ.val x v * ψ.val x 0 := by
   rw [coe_wedge, RoughForm.wedge_apply_zero_right]
+
+/-- At each point `x`, wedging a smooth real-valued `k`-form on the right with a smooth zero-form
+scales its fibrewise alternating form by `ψ.1 x 0`. -/
+theorem wedge_zero_right_apply_eq_smul (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ 0)
+    (x : M) :
+    (wedge φ ψ).val x = ψ.val x 0 • φ.val x := by
+  ext v
+  rw [wedge_apply_zero_right, ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_comm]
 
 /-- The smooth real-valued wedge of two one-forms evaluates as a determinant. -/
 theorem wedge_apply_one_one (φ : SmoothForm I M ℝ 1) (ψ : SmoothForm I M ℝ 1) (x : M)
     (v w : TangentSpace I x) :
-    (wedge φ ψ).1 x ![v, w] =
-      φ.1 x ![v] * ψ.1 x ![w] - φ.1 x ![w] * ψ.1 x ![v] := by
+    (wedge φ ψ).val x ![v, w] =
+      φ.val x ![v] * ψ.val x ![w] - φ.val x ![w] * ψ.val x ![v] := by
   rw [coe_wedge, RoughForm.wedge_apply_one_one]
 
 /-- The smooth real-valued wedge of two one-forms, evaluated on an ordered pair of tangent vectors,
 is a determinant. -/
 theorem eval₂_wedge_one_one (φ ψ : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpace I x) :
     SmoothBundleForm.eval₂ (wedge φ ψ) x v w =
-      φ.1 x ![v] * ψ.1 x ![w] - φ.1 x ![w] * ψ.1 x ![v] := by
+      φ.val x ![v] * ψ.val x ![w] - φ.val x ![w] * ψ.val x ![v] := by
   rw [SmoothBundleForm.eval₂_apply, wedge_apply_one_one]
 
 /-- Swapping smooth paired forms flips the coefficient pairing and contributes the graded sign. -/
 theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) (x : M)
     (v : Fin (k + l) → TangentSpace I x) :
-    (wedgeWith μ φ ψ).1 x v =
+    (wedgeWith μ φ ψ).val x v =
       (-1 : ℝ) ^ (k * l) •
-        (wedgeWith μ.flip ψ φ).1 x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+        (wedgeWith μ.flip ψ φ).val x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [coe_wedgeWith] using
     RoughForm.wedgeWith_flip μ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₂ l) x v
 
@@ -229,19 +237,36 @@ theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
 theorem wedgeWith_comm (μ : F₁ →L[ℝ] F₁ →L[ℝ] F₃)
     (hμ : ∀ a b, μ a b = μ b a) (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₁ l)
     (x : M) (v : Fin (k + l) → TangentSpace I x) :
-    (wedgeWith μ φ ψ).1 x v =
+    (wedgeWith μ φ ψ).val x v =
       (-1 : ℝ) ^ (k * l) •
-        (wedgeWith μ ψ φ).1 x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+        (wedgeWith μ ψ φ).val x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [coe_wedgeWith] using
     RoughForm.wedgeWith_comm μ hμ (φ : RoughForm I M F₁ k) (ψ : RoughForm I M F₁ l) x v
 
 /-- Real-valued smooth forms commute with the usual graded sign. -/
 theorem wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l) → TangentSpace I x) :
-    (wedge φ ψ).1 x v =
-      (-1 : ℝ) ^ (k * l) • (wedge ψ φ).1 x (v ∘ Fin.cast (Nat.add_comm l k)) := by
+    (wedge φ ψ).val x v =
+      (-1 : ℝ) ^ (k * l) • (wedge ψ φ).val x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [wedge, coe_wedgeWith, RoughForm.wedge_def] using
     RoughForm.wedge_comm (φ : RoughForm I M ℝ k) (ψ : RoughForm I M ℝ l) x v
+
+/-- Real-valued smooth forms of the same even degree commute. -/
+theorem wedge_comm_of_even (hk : Even k) (φ ψ : SmoothForm I M ℝ k) :
+    wedge φ ψ = wedge ψ φ := by
+  refine Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)
+  rw [wedge_comm, (hk.mul_right k).neg_one_pow, one_smul, Fin.cast_refl, Function.comp_id]
+/-- Bundled graded commutativity of the smooth real-valued wedge: `φ ∧ ψ` equals `(-1) ^ (k * l)`
+times the degree transport of `ψ ∧ φ`. -/
+theorem wedge_eq_smul_cast_wedge_comm (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) :
+    wedge φ ψ = (-1 : ℝ) ^ (k * l) •
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+        (Nat.add_comm l k) (wedge ψ φ) := by
+  apply Subtype.ext
+  funext x
+  ext v
+  rw [wedge_comm, Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
+    cast_apply]
 
 end SmoothForm
 

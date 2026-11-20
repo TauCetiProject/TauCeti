@@ -52,11 +52,11 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 one it subtracts `df` from every covector. -/
 def cotangentExactGraphTranslation (f : V → ℝ) (t : ℝ) :
     V × StrongDual ℝ V → V × StrongDual ℝ V :=
-  cotangentFiberTranslate (t • differentialOneForm f)
+  cotangentFiberTranslate (t • differentialOneForm ℝ f)
 
 /-- Exact graph translation is fibre translation by the one-form `t df`. -/
 lemma cotangentExactGraphTranslation_def (f : V → ℝ) (t : ℝ) :
-    cotangentExactGraphTranslation f t = cotangentFiberTranslate (t • differentialOneForm f) :=
+    cotangentExactGraphTranslation f t = cotangentFiberTranslate (t • differentialOneForm ℝ f) :=
   (rfl)
 
 /-- Exact graph translation fixes the base point. -/
@@ -154,7 +154,7 @@ lemma cotangentLiouvilleForm_cotangentExactGraphTranslation {f : V → ℝ}
     (cotangentLiouvilleForm (cotangentExactGraphTranslation f t x)).compContinuousLinearMap
         (fderiv ℝ (cotangentExactGraphTranslation f t) x) =
       cotangentLiouvilleForm x -
-        (t • differentialOneForm f x.1).compContinuousLinearMap
+        (t • differentialOneForm ℝ f x.1).compContinuousLinearMap
           (ContinuousLinearMap.fst ℝ V (StrongDual ℝ V)) := by
   apply cotangentLiouvilleForm_cotangentFiberTranslate
   exact (differentiableAt_differentialOneForm_iff.2 hdf).const_smul t

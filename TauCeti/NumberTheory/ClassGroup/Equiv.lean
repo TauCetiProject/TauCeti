@@ -70,7 +70,7 @@ arbitrary fraction fields. -/
   -- The injectivity lemma leaves the coercions applied as anonymous functions.
   -- Reduce these applications to expose the underlying submodules for the named rewrites.
   dsimp only
-  rw [FractionalIdeal.extendedHom'_apply, FractionalIdeal.coe_extended_eq_span,
+  rw [FractionalIdeal.extendedHom'_apply, FractionalIdeal.coeToSubmodule_extended_eq_span,
     ← FractionalIdeal.val_eq_coe, FractionalIdeal.ringEquivOfRingEquiv_apply_val]
   simp only [FractionalIdeal.val_eq_coe]
   rw [← Submodule.span_eq (I : Submodule R (FractionRing R)), Submodule.map_span]
@@ -210,7 +210,7 @@ theorem mulEquiv_apply_eq_inv_of_isPrincipal_mul_map [IsDedekindDomain R] {f : R
   obtain ⟨I, rfl⟩ := ClassGroup.mk0_surjective C
   rw [mulEquiv_mk0, ClassGroup.mk0_eq_mk0_inv_iff]
   obtain ⟨x, hx⟩ := (hf I).principal
-  have hIne : (I : Ideal R) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp I.2
+  have hIne : (I : Ideal R) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp I.property
   have hmapne : Ideal.map (f : R →+* R) (I : Ideal R) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot,
       Ideal.map_eq_bot_iff_of_injective (f := (f : R →+* R)) f.injective, ← Ideal.zero_eq_bot]

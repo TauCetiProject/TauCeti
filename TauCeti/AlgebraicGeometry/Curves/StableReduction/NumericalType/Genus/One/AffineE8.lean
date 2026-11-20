@@ -143,10 +143,10 @@ private lemma affineE8_weights_intersections (l : Fin 9 → T.Component)
   have hcard : Fintype.card T.Component = 9 := by
     by_contra h
     exact hc.not_affineE8 (by omega) hbne (hself 1) hbpos
-  obtain ⟨w, hw, hwb, hedge, hab, hbzero⟩ :=
+  obtain ⟨w, hw, hwb, -, hab, hbzero⟩ :=
     hc.exists_weight_intersection_affineE8_eq hbne (hself 1) hbpos
   have hentry {i j : ℕ} (hi : i < 8) (hj : j < 8) :=
-    hc.intersection_eq_ite (by omega) hw hedge hi hj
+    hc.intersection_eq_ite (by omega) hw hi hj
   have hbentry {i : ℕ} (hi : i < 8) :
       T.intersection (c i) (l 1) = if i = 5 then (w : ℤ) else 0 := by
     split_ifs with h5

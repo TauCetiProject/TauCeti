@@ -44,12 +44,12 @@ variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 /-- The local Krull dimension of `X` at `x` is the infimum of the dimensions of the open
 neighbourhoods of `x`. -/
 noncomputable def topologicalKrullDimAt (X : Type*) [TopologicalSpace X] (x : X) : WithBot ℕ∞ :=
-  ⨅ U : {U : Set X // IsOpen U ∧ x ∈ U}, topologicalKrullDim U.1
+  ⨅ U : {U : Set X // IsOpen U ∧ x ∈ U}, topologicalKrullDim U.val
 
 /-- The local Krull dimension written as the infimum over open neighbourhoods. -/
 theorem topologicalKrullDimAt_eq_iInf (x : X) :
     topologicalKrullDimAt X x =
-      ⨅ U : {U : Set X // IsOpen U ∧ x ∈ U}, topologicalKrullDim U.1 :=
+      ⨅ U : {U : Set X // IsOpen U ∧ x ∈ U}, topologicalKrullDim U.val :=
   (rfl)
 
 /-- Local dimension is at most the dimension of any open neighbourhood. -/
@@ -69,7 +69,7 @@ theorem topologicalKrullDimAt_nonneg (x : X) : 0 ≤ topologicalKrullDimAt X x :
   refine le_iInf fun U ↦ ?_
   rw [topologicalKrullDim]
   exact krullDim_nonneg_iff.mpr
-    ⟨⟨closure {⟨x, U.2.2⟩}, isIrreducible_singleton.closure, isClosed_closure⟩⟩
+    ⟨⟨closure {⟨x, U.property.2⟩}, isIrreducible_singleton.closure, isClosed_closure⟩⟩
 
 /-- The Krull dimension of a space is the supremum of its local Krull dimensions. -/
 theorem iSup_topologicalKrullDimAt (X : Type*) [TopologicalSpace X] :
@@ -77,12 +77,12 @@ theorem iSup_topologicalKrullDimAt (X : Type*) [TopologicalSpace X] :
   refine le_antisymm (iSup_le fun p ↦ ?_) (iSup_le topologicalKrullDimAt_le)
   obtain ⟨x, hx⟩ := p.head.isIrreducible.nonempty
   refine le_iSup_of_le x (le_iInf fun U ↦ ?_)
-  let f : U.1 → X := Subtype.val
+  let f : U.val → X := Subtype.val
   let q : LTSeries {V : IrreducibleCloseds X | (f ⁻¹' V).Nonempty} :=
-    ⟨p.length, fun j ↦ ⟨p j, ⟨⟨x, U.2.2⟩, p.monotone (Fin.zero_le j) hx⟩⟩,
+    ⟨p.length, fun j ↦ ⟨p j, ⟨⟨x, U.property.2⟩, p.monotone (Fin.zero_le j) hx⟩⟩,
       fun j ↦ p.step j⟩
   exact (q.map _ (IrreducibleCloseds.orderIsoOfIsOpenEmbedding f
-    U.2.1.isOpenEmbedding_subtypeVal).symm.strictMono).length_le_krullDim
+    U.property.1.isOpenEmbedding_subtypeVal).symm.strictMono).length_le_krullDim
 
 end TauCeti
 
@@ -98,16 +98,16 @@ theorem topologicalKrullDimAt_eq {f : X → Y} (hf : IsOpenEmbedding f) (x : X) 
   apply le_antisymm
   · refine le_iInf fun V ↦ ?_
     let U : {U : Set X // IsOpen U ∧ x ∈ U} :=
-      ⟨f ⁻¹' V.1, V.2.1.preimage hf.continuous, V.2.2⟩
-    have hdim : topologicalKrullDim U.1 ≤ topologicalKrullDim V.1 :=
-      ((hf.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict V.1 fun z ↦
-        z.2).isInducing.topologicalKrullDim_le
+      ⟨f ⁻¹' V.val, V.property.1.preimage hf.continuous, V.property.2⟩
+    have hdim : topologicalKrullDim U.val ≤ topologicalKrullDim V.val :=
+      ((hf.isEmbedding.comp IsEmbedding.subtypeVal).codRestrict V.val fun z ↦
+        z.property).isInducing.topologicalKrullDim_le
     exact (iInf_le _ U).trans hdim
   · refine le_iInf fun U ↦ ?_
     let V : {V : Set Y // IsOpen V ∧ f x ∈ V} :=
-      ⟨f '' U.1, hf.isOpenMap U.1 U.2.1, mem_image_of_mem f U.2.2⟩
+      ⟨f '' U.val, hf.isOpenMap U.val U.property.1, mem_image_of_mem f U.property.2⟩
     refine (iInf_le _ V).trans_eq ?_
-    exact (hf.isEmbedding.homeomorphImage U.1).symm.isHomeomorph.topologicalKrullDim_eq
+    exact (hf.isEmbedding.homeomorphImage U.val).symm.isHomeomorph.topologicalKrullDim_eq
 
 end Topology.IsOpenEmbedding
 

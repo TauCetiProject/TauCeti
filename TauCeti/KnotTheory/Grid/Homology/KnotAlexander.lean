@@ -43,7 +43,7 @@ variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (R : Type*)
   [CommRing R] [CharP R 2]
 
 /-- The Alexander grading of the `R[U]`-module `GH⁻` of a knot grid. -/
-noncomputable def alexanderUnblockedHomologyGrading : InternalGrading R (G.unblockedHomology R) :=
+noncomputable def alexanderUnblockedHomologyGrading : InternalGrading R (G.unblockedHomology R) ℤ :=
   (hG.toOddComponentGridDiagram).alexanderUnblockedHomologyGrading R
 
 /-- Membership in a knot grid's Alexander piece is membership in the corresponding piece of

@@ -185,6 +185,16 @@ theorem Integrable.atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSi
 
 namespace MeasureTheory.Measure
 
+/-- Away from the pure-atom endpoint, a function is integrable for an atom mixture exactly when it
+is integrable for the base component: the atom itself never obstructs integrability. -/
+theorem integrable_atomMixture_iff {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
+    [SeminormedAddGroup E] (μ : Measure α) (c : α) {w : unitInterval} (hw : w ≠ 1) {f : α → E} :
+    Integrable f (μ.atomMixture c w) ↔ Integrable f μ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ Integrable.atomMixture h c w⟩
+  rw [atomMixture_def] at h
+  exact (integrable_smul_measure (ENNReal.ofReal_ne_zero_iff.2 <| sub_pos.2 <|
+    unitInterval.lt_one_iff_ne_one.2 hw) ENNReal.ofReal_ne_top).1 h.right_of_add_measure
+
 /-- Integrating against an atom mixture gives the corresponding convex combination. -/
 theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
@@ -196,5 +206,21 @@ theorem integral_atomMixture {α E : Type*} [MeasurableSpace α] [MeasurableSing
       ENNReal.toReal_ofReal (sub_nonneg.mpr (unitInterval.le_one w))]
   · exact (integrable_dirac (by simp)).smul_measure (by simp)
   · exact hf.smul_measure (by simp)
+
+/-- Integrating a function that vanishes at the atom against an atom mixture gives `1 - w` times
+its integral against the base component. This is an identity of Bochner integrals: when `f` is not
+integrable for `μ`, both sides are `0` (at `w = 1` because the mixture is the point mass at `c`). -/
+theorem integral_atomMixture_of_eq_zero {α E : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [NormedAddCommGroup E] [NormedSpace ℝ E] (μ : Measure α) (c : α)
+    (w : unitInterval) {f : α → E} (hf : f c = 0) :
+    ∫ x, f x ∂μ.atomMixture c w = (1 - (w : ℝ)) • ∫ x, f x ∂μ := by
+  by_cases hE : CompleteSpace E
+  swap
+  · rw [integral_of_not_completeSpace hE, integral_of_not_completeSpace hE, smul_zero]
+  by_cases hμ : Integrable f μ
+  · rw [integral_atomMixture μ c w f hμ, hf, smul_zero, zero_add]
+  by_cases hw : w = 1
+  · simp [hw, hf]
+  rw [integral_undef hμ, integral_undef ((integrable_atomMixture_iff μ c hw).not.2 hμ), smul_zero]
 
 end MeasureTheory.Measure

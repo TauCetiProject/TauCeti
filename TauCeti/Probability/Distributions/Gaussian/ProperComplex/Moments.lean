@@ -17,6 +17,9 @@ Both statements use centered coordinate products and include
 their integrability. Thus the factor one half and the signs of the off-diagonal blocks
 in the real covariance agree with the proper complex convention, including singular laws.
 The squared modulus of each centered coordinate is integrable and has mean its complex variance.
+In particular, `integrable_norm_sq_properComplexGaussianScalar` and
+`integral_norm_sq_properComplexGaussianScalar` give integrability and unit second moment for
+the standard scalar law.
 
 The proofs use Mathlib's real Gaussian coordinate covariance and Fernique integrability.
 
@@ -183,5 +186,24 @@ theorem integral_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
     Complex.ofReal_re, Complex.normSq_eq_norm_sq] using
     (integral_re (integrable_mul_conj_sub_properComplexGaussianMeasure m C i i)).trans
       (congrArg RCLike.re (integral_mul_conj_sub_properComplexGaussianMeasure m hC i i))
+
+/-- The squared modulus of a standard scalar proper complex Gaussian is integrable. -/
+theorem integrable_norm_sq_properComplexGaussianScalar :
+    Integrable (fun z : ℂ ↦ ‖z‖ ^ 2) properComplexGaussianScalar := by
+  rw [properComplexGaussianScalar_def]
+  have hcont : Continuous (fun z : ℂ ↦ ‖z‖ ^ 2) := by fun_prop
+  apply (integrable_map_measure (f := fun z : Unit → ℂ ↦ z ())
+    (g := fun z : ℂ ↦ ‖z‖ ^ 2) hcont.aestronglyMeasurable
+    (measurable_pi_apply ()).aemeasurable).2
+  simpa [Function.comp_def] using integrable_norm_sq_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) 1 ()
+
+/-- The expected squared modulus of a standard scalar proper complex Gaussian is `1`. -/
+theorem integral_norm_sq_properComplexGaussianScalar :
+    ∫ z : ℂ, ‖z‖ ^ 2 ∂properComplexGaussianScalar = 1 := by
+  rw [properComplexGaussianScalar_def,
+    integral_map (measurable_pi_apply ()).aemeasurable (by fun_prop)]
+  simpa using integral_norm_sq_sub_eval_properComplexGaussianMeasure
+    (fun _ : Unit ↦ (0 : ℂ)) Matrix.PosSemidef.one ()
 
 end TauCeti.Probability

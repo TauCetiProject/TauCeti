@@ -44,11 +44,14 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
 * `ContinuousLinearMap.isPositive_modulus`, `ContinuousLinearMap.isSelfAdjoint_modulus`: the
   modulus is positive and self-adjoint.
 * `ContinuousLinearMap.modulus_comp_modulus`: `|T| |T| = T† T`.
+* `ContinuousLinearMap.modulus_smul`: `|c T| = ‖c‖ |T|`.
 * `ContinuousLinearMap.eq_modulus_iff`: the modulus is the unique positive square root of
   `T† T`; in particular `ContinuousLinearMap.IsPositive.modulus_eq`: a positive operator is its
   own modulus.
 * `ContinuousLinearMap.norm_modulus_apply`: `‖|T| x‖ = ‖T x‖`; consequently
-  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`,
+  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`, so that in finite dimension
+  `ContinuousLinearMap.isUnit_modulus_iff_injective`: `|T|` is invertible exactly when `T` is
+  injective,
   `ContinuousLinearMap.topologicalClosure_range_modulus`: the closure of the range of `|T|` is
   `(ker T)ᗮ`, and
   `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
@@ -117,13 +120,16 @@ theorem commute_modulus_of_commute {T : E →L[𝕜] F} {S : E →L[𝕜] E}
     (h : Commute S (T† ∘L T)) : Commute S T.modulus :=
   (h.symm.cfcₙ_nnreal NNReal.sqrt).symm
 
+/-- The source Gram operator `T† T` of an invertible operator is strictly positive. -/
+theorem isStrictlyPositive_adjoint_comp_self_of_isInvertible {T : E →L[𝕜] F}
+    (hT : T.IsInvertible) : IsStrictlyPositive (T† ∘L T) :=
+  IsStrictlyPositive.iff_of_unital.mpr ⟨nonneg_iff_isPositive.mpr T.isPositive_adjoint_comp_self,
+    isUnit_iff_bijective.mpr (hT.adjoint.comp hT).bijective⟩
+
 /-- The modulus of an invertible operator is strictly positive. -/
-theorem isStrictlyPositive_modulus_of_isUnit (T : E →L[𝕜] E) (hT : IsUnit T) :
-    IsStrictlyPositive T.modulus := by
-  refine ⟨T.modulus_nonneg, ?_⟩
-  rw [modulus, CFC.isUnit_sqrt_iff _
-    (nonneg_iff_isPositive.mpr T.isPositive_adjoint_comp_self)]
-  exact (isUnit_star.mpr hT).mul hT
+theorem isStrictlyPositive_modulus_of_isInvertible {T : E →L[𝕜] F} (hT : T.IsInvertible) :
+    IsStrictlyPositive T.modulus :=
+  (isStrictlyPositive_adjoint_comp_self_of_isInvertible hT).sqrt
 
 end RealAlgebra
 
@@ -158,6 +164,13 @@ theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
 @[simp]
 theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
   (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
+
+/-- Scaling an operator by `c` scales its modulus by `‖c‖`: `|c T| = ‖c‖ |T|`. -/
+@[simp]
+theorem modulus_smul (c : 𝕜) (T : E →L[𝕜] F) : (c • T).modulus = (‖c‖ : 𝕜) • T.modulus := by
+  refine (eq_modulus_iff.2 ⟨T.isPositive_modulus.smul_of_nonneg (by simp), ?_⟩).symm
+  simp only [map_smulₛₗ, smul_comp, comp_smul, modulus_comp_modulus, smul_smul, RCLike.mul_conj,
+    sq]
 
 /-- The modulus is natural under linear isometric equivalences of the source and target:
 `|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with conjugation by a linear
@@ -199,6 +212,13 @@ theorem ker_modulus (T : E →L[𝕜] F) : T.modulus.ker = T.ker := by
   ext x
   simp only [LinearMap.mem_ker, coe_coe, ← norm_eq_zero (a := T.modulus x),
     ← norm_eq_zero (a := T x), norm_modulus_apply]
+
+/-- In finite dimension the modulus `|T|` of an operator is invertible exactly when `T` is
+injective. -/
+theorem isUnit_modulus_iff_injective [FiniteDimensional 𝕜 E] {T : E →L[𝕜] F} :
+    IsUnit T.modulus ↔ Function.Injective T := by
+  rw [isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_ker_eq_bot, ker_modulus,
+    LinearMap.ker_eq_bot, coe_coe]
 
 /-- The orthogonal complement of the range of the modulus is the kernel of the operator. -/
 @[simp]

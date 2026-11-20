@@ -82,7 +82,7 @@ theorem quotient_ext {k : ℕ} {x y : (ModuleTower.quotients J hJ).obj (Opposite
   rw [hJd k, d.mem_degreeSubmodule_iff ℳ]
   intro n hn
   have he := congrArg Subtype.val (h n hn)
-  simpa only [quotientComponent_mk, decompose_sub, sub_apply,
+  simpa only [quotientComponent_mk, decompose_sub, DirectSum.sub_apply,
     Submodule.coe_sub, sub_eq_zero] using he
 
 /-- The degree-`n` coefficient of a completed module element. -/
@@ -136,7 +136,7 @@ private theorem decompose_finiteApprox (k : ℕ) (x : ∀ n, ℳ n) (n : N)
   by_cases hP : n ∈ d.monoid
   · have hn' : n ∈ (d.finite_cutoff k).toFinset := by simp [hP, hn]
     simp only [finiteApprox, LinearMap.sum_apply, LinearMap.comp_apply,
-      LinearMap.proj_apply, Submodule.subtype_apply, decompose_sum, sum_apply,
+      LinearMap.proj_apply, Submodule.subtype_apply, decompose_sum, DirectSum.sum_apply,
       Submodule.coe_sum]
     rw [Finset.sum_eq_single n]
     · exact decompose_of_mem_same ℳ (x n).property

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.AntipodalPairs
+public import TauCeti.LinearAlgebra.IntegralLattice.AntipodalPairs.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Leech.MinimalVectors
 
 /-!

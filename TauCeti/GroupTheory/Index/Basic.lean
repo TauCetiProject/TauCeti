@@ -37,8 +37,9 @@ centre gives the `Γ.withCenter` readings.
 * `Subgroup.relIndex_sup_of_le_normalizer`: if `H` normalises `N`, the relative index of `H` in
   `H ⊔ N` is that in `N`.
 * `Subgroup.finiteIndex_of_index_coprime`: an index prime to some `p ≠ 1` is finite.
-* `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: the relative index `2`
-  and the index doubling, for an `N` normalised by `Γ` whose elements are `1` and `a ∉ Γ`.
+* `Subgroup.relIndex_sup_eq_two`, `Subgroup.index_eq_two_mul_index_sup`: `Γ` has relative index
+  `2` in `Γ ⊔ N`, and the index of `Γ` is twice the index of `Γ ⊔ N`, for an `N` normalised by `Γ`
+  whose elements are `1` and `a ∉ Γ`.
 * `Subgroup.instCountableQuotient`: a coset space of a countable group is countable.
 * `Subgroup.finiteIndex_of_finiteIndex_subgroupOf`: finite index composes along `V ≤ U ≤ G`.
 * `Subgroup.compositeTransversal`: representatives for `G/V` obtained by composing
@@ -54,10 +55,12 @@ centre gives the `Γ.withCenter` readings.
   quotient group finite-index.
 * `MonoidHom.finiteIndex_range_comp`: finite index of ranges is preserved by composition
   with a homomorphism of finite-index range.
+* `MonoidHom.finiteIndex_range_of_injective_comp`: if the range of `φ₂.comp φ₁` has finite index
+  and `φ₂` is injective, then the range of `φ₁` has finite index.
 * `MonoidHom.mk_mul_out_bijective`: right cosets of a composite range are represented by
   products of representatives for the two successive ranges.
 * `Subgroup.relIndex_withCenter_eq_two`, `Subgroup.index_eq_two_mul_index_withCenter`: the same
-  two facts on `Γ.withCenter`, when the centre is `{1, a}`.
+  two facts on `Γ.withCenter`, when the centre is `{1, a}` and `a ∉ Γ`.
 -/
 
 
@@ -211,6 +214,15 @@ theorem finiteIndex_range_comp (φ₁ : A →* B) (φ₂ : B →* C) [φ₁.rang
   exact Nat.mul_ne_zero
     (Subgroup.finiteIndex_of_le hle).index_ne_zero
     Subgroup.FiniteIndex.index_ne_zero
+
+/-- If the range of `φ₂.comp φ₁` has finite index and `φ₂` is injective, then the range of `φ₁`
+has finite index. -/
+@[to_additive /-- If the range of `φ₂.comp φ₁` has finite index and `φ₂` is injective, then the
+range of `φ₁` has finite index. -/]
+theorem finiteIndex_range_of_injective_comp (φ₁ : A →* B) (φ₂ : B →* C)
+    (hφ₂ : Function.Injective φ₂) [(φ₂.comp φ₁).range.FiniteIndex] : φ₁.range.FiniteIndex := by
+  simpa only [MonoidHom.range_comp, Subgroup.comap_map_eq_self_of_injective hφ₂] using
+    (inferInstance : ((φ₂.comp φ₁).range.comap φ₂).FiniteIndex)
 
 end MonoidHom
 
@@ -399,8 +411,9 @@ theorem relIndex_sup_eq_two (N : Subgroup G) (hnorm : Γ ≤ Subgroup.normalizer
   · exact Or.inr (by simpa using hg)
   · exact Or.inl (by simpa [mul_assoc, ha2] using hg)
 
-/-- **The index doubles on adjoining a two-element subgroup normalised by `Γ` and not inside
-it.** The counting form of `Subgroup.relIndex_sup_eq_two`. -/
+/-- **The index of `Γ` is twice the index of `Γ ⊔ N`, for a two-element subgroup `N` normalised
+by `Γ` and not inside `Γ`.** The counting form of `Subgroup.relIndex_sup_eq_two`: both indices are
+taken in `G`, and `Γ` has relative index `2` in `Γ ⊔ N`. -/
 theorem index_eq_two_mul_index_sup (N : Subgroup G) (hnorm : Γ ≤ Subgroup.normalizer N)
     (ha : a ∈ N) (haΓ : a ∉ Γ) (hN : ∀ c ∈ N, c = 1 ∨ c = a) :
     Γ.index = 2 * (Γ ⊔ N).index := by

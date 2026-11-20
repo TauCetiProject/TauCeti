@@ -79,7 +79,7 @@ theorem dist_ellipticMeridianLift (n : ℤ) (τ : ℍ) (t : unitInterval) :
       ‖discCoordinate z τ‖ := by
     rw [discCoordinate_ellipticMeridianLift, norm_mul, Complex.norm_exp_ofReal_mul_I, mul_one]
   rw [norm_discCoordinate, norm_discCoordinate] at hnorm
-  exact (div_left_inj' (by norm_num : (2 : ℝ) ≠ 0)).mp (Real.tanh_injective hnorm)
+  exact (div_left_inj₀ (by norm_num : (2 : ℝ) ≠ 0)).mp (Real.tanh_injective hnorm)
 
 /-- The local power-map projection of an elliptic lift is the circular loop with `n` signed
 turns. Positive turns are counterclockwise in the quotient coordinate. -/
@@ -93,7 +93,7 @@ theorem discCoordinate_ellipticMeridianLift_pow (n : ℤ) (τ : ℍ) (t : unitIn
       ((2 * Real.pi * n * (t : ℝ) : ℝ) : ℂ) * Complex.I := by
     push_cast
     field_simp [hm]
-  rw [discCoordinate_ellipticMeridianLift, mul_pow, ← Complex.exp_nat_mul, hangle]
+  rw [discCoordinate_ellipticMeridianLift, mul_pow, ← Complex.exp_natCast_mul, hangle]
 
 /-- The meridian in the local quotient coordinate, defined as the power-map projection of its
 explicit lift. At the fixed point itself this degenerates to the constant zero path. -/
@@ -157,9 +157,9 @@ theorem eq_ellipticMeridianLift_of_pow_eq (n : ℤ) {τ : ℍ}
   let L (t : unitInterval) : {w : ℂ // w ≠ 0} :=
     ⟨discCoordinate z (ellipticMeridianLift Γ z n τ t), hlift0 t⟩
   have he : (fun w : {w : ℂ // w ≠ 0} ↦
-      (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.2⟩ : {w : ℂ // w ≠ 0})) ∘ F =
+      (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.property⟩ : {w : ℂ // w ≠ 0})) ∘ F =
       (fun w : {w : ℂ // w ≠ 0} ↦
-        (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.2⟩ : {w : ℂ // w ≠ 0})) ∘ L := by
+        (⟨w ^ Nat.card (stabilizer Γ z), pow_ne_zero _ w.property⟩ : {w : ℂ // w ≠ 0})) ∘ L := by
     funext t
     apply Subtype.ext
     exact (hq t).trans (ellipticMeridian_apply Γ z n τ t)

@@ -46,6 +46,9 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   [HasProducts.{w} A] [HasCoproducts.{0} A]
   {ι κ : Type w} (U : ι → C) {V : κ → C}
 
+/-- Cochain complexes in a category with products have products, computed degreewise. -/
+instance hasProducts_cochainComplex : HasProducts.{w} (CochainComplex A ℤ) where
+
 /-- The direct-sum total Čech complex of a presheaf of cochain complexes, functorial in its
 coefficients. The Čech grading is extended by zero from `ℕ` to `ℤ` before totalization.
 The composite functor is exposed with its object field given by the native total, so native
@@ -98,7 +101,7 @@ lemma cechTotalComplexMap_def (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.m
 
 /-- On each total summand, refinement is the corresponding component of the extended
 Čech refinement map. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma ι_cechTotalComplexMap
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
     (hpq : p + q = n) :
@@ -150,7 +153,7 @@ def cechTotalComplexMapHomotopy
 
 /-- On each total summand the refinement prism is the extended Čech prism, with no extra
 sign. The inclusion on the right has bidegree `(p - 1,q)`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 lemma ι_cechTotalComplexMapHomotopy_hom
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
     (hpq : p + q = n) :

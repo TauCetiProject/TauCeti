@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Extension
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Horodisc
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Automorphy
 public import TauCeti.Analysis.Complex.RootsOfUnity.TwistedDescent
+public import TauCeti.Analysis.Complex.UpperHalfPlane.AutomorphyExtension
+import TauCeti.Algebra.Group.Subgroup.Pointwise
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.ChangeScaling
 import TauCeti.Analysis.Complex.Fuchsian.Cusp.Conj
 import TauCeti.Analysis.Complex.Periodic
@@ -74,6 +77,46 @@ constant times `automorphyFrame D s k r τ`
 function between the trivializations of the automorphy sheaf in the charts at two cusp data
 representing the same cusp of `X(Γ)`.
 
+The transition functions to the chart at the cusp from any other chart are specified for
+`Γ' ≤ SL(2, ℝ)` with image `Γ`, as for elliptic charts. The frame satisfies the weight-`k`
+transformation law for every element of `Γ'` fixing the cusp as soon as every lift in `Γ'` of
+the generator satisfies the sign condition
+(`TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_mem`), so on a precisely invariant horodisc
+it is compatible with the weight-`k` action of `Γ'`
+(`TauCeti.Subgroup.CuspDatum.automorphyFrame_compatible`; for a discrete `Γ` every horodisc of
+height at least the width is precisely invariant,
+`TauCeti.Subgroup.CuspDatum.smul_cusp_eq_of_mem_horodisc_of_smul_mem_horodisc`) and has an
+automorphic extension (`Subgroup.automorphyExtension`). For a frame `F'` of another chart,
+compatible with that action, the transition function is the coefficient of the automorphic
+extension of `F'` with respect to the frame at the cusp:
+
+* the coefficient of a function satisfying the transformation law for `g` on the horodisc is
+  holomorphic at the cusp coordinate of every point of the horodisc at which the function is
+  holomorphic (`TauCeti.Subgroup.CuspDatum.differentiableAt_automorphyDescent`), so the transition
+  function is holomorphic on the overlap
+  (`TauCeti.Subgroup.CuspDatum.differentiableAt_automorphyDescent_automorphyExtension`);
+* the frame at the cusp times it is `F'` transported in weight `k`
+  (`TauCeti.Subgroup.CuspDatum.automorphyFrame_mul_automorphyDescent_automorphyExtension`), and it
+  vanishes nowhere `F'` does not vanish after transport
+  (`TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_ne_zero`);
+* the coefficients of every section in the two charts differ by it
+  (`TauCeti.Subgroup.CuspDatum.automorphyDescent_eq_automorphyDescent_automorphyExtension_mul`);
+  since the frame at the cusp vanishes nowhere on `ℍ`, this needs no continuity argument;
+* for the chart at a second cusp, on a precisely invariant horodisc, this is the coefficient law
+  `TauCeti.Subgroup.CuspDatum.automorphyDescent_eq_mul_automorphyDescent`, and the transition
+  functions satisfy the cocycle law on triple overlaps
+  (`TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_eq_mul`);
+* the cusp `q = 0` lies only in the charts at cusps of its orbit. The exponent `r` depends only on
+  that orbit (`TauCeti.Subgroup.CuspDatum.exponent_eq_of_smul_cusp_eq`), and the transition
+  function between two such charts is, on the whole disc of cusp-coordinate values including
+  `q = 0`, the nonzero constant of `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`
+  (`TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_automorphyExtension_automorphyFrame`);
+* for the chart of a local linearizing coordinate at a point `z'` of `ℍ`, on a precisely
+  invariant disc, the transition functions in the two directions are inverse to each other, also
+  at the orbit of `z'`, where the elliptic frame may vanish
+  (`automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one`),
+  so they vanish nowhere on the overlap.
+
 At a regular cusp, or in even weight, `ε ^ k = 1`, so `r = 0`: the frame is `denom s τ ^ (-k)` and
 the coefficient is the usual expansion of `f ∣[k] s⁻¹` in `q`. At an irregular cusp in odd weight
 `ε ^ k = -1`, so `r = 1`: the `q₂`-expansion of `f ∣[k] s⁻¹` has only odd terms, the order of a
@@ -103,11 +146,33 @@ formulas of Diamond–Shurman §3.5.
   `TauCeti.Subgroup.CuspDatum.differentialFrame_smul` and
   `TauCeti.Subgroup.CuspDatum.mdifferentiable_differentialFrame`: the weight-`2 * j` function of
   `(dq) ^ j`, a local section of weight `2 * j` holomorphic on all of `ℍ`.
-* `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`: the frames at two cusps of
-  the same orbit differ by a nonzero constant after transport along `Γ`.
 * `TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_differentialFrame` and
   `TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyDescent_differentialFrame`: its
   coefficient `(2 * π * I / w) ^ j * q ^ j` with respect to the automorphy frame.
+* `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`: the frames at two cusps of
+  the same orbit differ by a nonzero constant after transport along `Γ`.
+* `TauCeti.Subgroup.CuspDatum.differentiableAt_automorphyDescent`: holomorphy of the coefficient
+  at the points of the horodisc.
+* `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_mem` and
+  `TauCeti.Subgroup.CuspDatum.automorphyFrame_compatible`: the transformation law of the frame
+  for the whole cusp stabilizer in `Γ'`, and its compatibility on a precisely invariant horodisc.
+* `TauCeti.Subgroup.CuspDatum.differentiableAt_automorphyDescent_automorphyExtension`,
+  `TauCeti.Subgroup.CuspDatum.automorphyFrame_mul_automorphyDescent_automorphyExtension` and
+  `TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_ne_zero`: the transition
+  function from another chart.
+* `TauCeti.Subgroup.CuspDatum.automorphyDescent_eq_automorphyDescent_automorphyExtension_mul`,
+  `TauCeti.Subgroup.CuspDatum.automorphyDescent_eq_mul_automorphyDescent` and
+  `TauCeti.Subgroup.CuspDatum.automorphyDescent_automorphyExtension_eq_mul`: the coefficients of a
+  section in two charts differ by the transition function, and the cocycle law.
+* `TauCeti.Subgroup.CuspDatum.exponent_eq_of_smul_cusp_eq` and
+  `TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_automorphyExtension_automorphyFrame`: the
+  exponent is an invariant of the cusp orbit, and the transition function between the charts at
+  two cusps of the same orbit is constant, also at the cusp.
+* `automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one`:
+  the transition functions between the chart at the cusp and an elliptic chart are inverse to
+  each other.
+* `automorphyDescent_automorphyExtension_linearizingCoordinate_automorphyFrame_ne_zero`:
+  the transition from an elliptic chart to the chart at a cusp vanishes nowhere on the overlap.
 
 ## References
 
@@ -123,7 +188,7 @@ public section
 noncomputable section
 
 open Filter Function Matrix.ProjectiveSpecialLinearGroup Metric MulAction Set UpperHalfPlane
-open scoped ContDiff Manifold MatrixGroups ModularForm Topology
+open scoped ComplexConjugate ContDiff Manifold MatrixGroups ModularForm Topology
 
 namespace TauCeti.Subgroup.CuspDatum
 
@@ -154,7 +219,9 @@ theorem mdifferentiable_automorphyFrame (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) :
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (automorphyFrame D s k r) :=
   (mdifferentiable_denom_zpow _ (-k)).mul ((mdifferentiable_sqrtCoordinate D).pow r)
 
-variable {D} {s g : SL(2, ℝ)} {k : ℤ} {r : ℕ} {A : ℝ} {f : ℍ → ℂ}
+section
+
+variable {D} {s g : SL(2, ℝ)} {k : ℤ} {r : ℕ}
 
 /-- The conjugated lift `s * g * s⁻¹` of the generator lifts the translation by the width. -/
 private theorem coe_conj_eq_upperRightHom (hs : (s : PSL(2, ℝ)) = D.scaling)
@@ -211,7 +278,8 @@ theorem automorphyFrame_smul (hs : (s : PSL(2, ℝ)) = D.scaling)
   linear_combination (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k *
     denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ ^ (-k) * sqrtCoordinate D τ ^ r) * h1
 
-variable (D) in
+end
+
 /-- **The sum of the `q₂`-expansion of a local section** of weight `k` at the cusp of `D`: the
 q-extension `q₂ ↦ (f ∣[k] s⁻¹) z`, for `q₂ = exp (2 * π * I * z / (2 * w))`, of the function
 `f ∣[k] s⁻¹` in the scaling coordinate. At the width parameter of a point `τ` of the horodisc it
@@ -221,13 +289,11 @@ transforms by the sign `(-1) ^ r` under `q₂ ↦ -q₂`, and its twisted descen
 def automorphyUntwist (s : SL(2, ℝ)) (k : ℤ) (f : ℍ → ℂ) : ℂ → ℂ :=
   UpperHalfPlane.cuspFunction (2 * D.width) (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹)
 
-variable (D) in
 theorem automorphyUntwist_def (s : SL(2, ℝ)) (k : ℤ) (f : ℍ → ℂ) :
     automorphyUntwist D s k f =
       UpperHalfPlane.cuspFunction (2 * D.width) (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) :=
   (rfl)
 
-variable (D) in
 /-- **The coefficient of a local section of the weight-`k` automorphy sheaf at the cusp with
 respect to the frame** `TauCeti.Subgroup.CuspDatum.automorphyFrame D s k r`, as a function of the
 cusp coordinate: for a local section `f` and `τ` in the horodisc,
@@ -238,26 +304,25 @@ cusp coordinate: for a local section `f` and `τ` in the horodisc,
 def automorphyDescent (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (f : ℍ → ℂ) : ℂ → ℂ :=
   descendPowTwist 2 r (automorphyUntwist D s k f)
 
-variable (D) in
 theorem automorphyDescent_def (s : SL(2, ℝ)) (k : ℤ) (r : ℕ) (f : ℍ → ℂ) :
     automorphyDescent D s k r f = descendPowTwist 2 r (automorphyUntwist D s k f) :=
   (rfl)
 
-variable (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
-  (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
-  (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
-  (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (horodisc D A))
-  (hbdd : IsBoundedAtImInfty (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹))
+section
 
-include hs in
+variable {D} {s g : SL(2, ℝ)} {k : ℤ} {A : ℝ} {f : ℍ → ℂ}
+
 /-- The point `s⁻¹ • z` lies in the horodisc of height `A` exactly when `A < z.im`. -/
-private theorem inv_smul_mem_horodisc_iff {z : ℍ} : s⁻¹ • z ∈ horodisc D A ↔ A < z.im := by
+private theorem inv_smul_mem_horodisc_iff (hs : (s : PSL(2, ℝ)) = D.scaling) {z : ℍ} :
+    s⁻¹ • z ∈ horodisc D A ↔ A < z.im := by
   rw [mem_horodisc, ← hs, pslMk_smul, smul_inv_smul]
 
-include hs hg hf in
 /-- In the scaling coordinate, the translation by the width multiplies `f ∣[k] s⁻¹` by `ε ^ k`
 above the height `A`. -/
-private theorem slash_inv_vadd {z : ℍ} (hz : A < z.im) :
+private theorem slash_inv_vadd (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    {z : ℍ} (hz : A < z.im) :
     (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) (D.width +ᵥ z) =
       (((s * g * s⁻¹) 1 1 : ℝ) : ℂ) ^ k * (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) z := by
   have hτ : s⁻¹ • z ∈ horodisc D A := (inv_smul_mem_horodisc_iff hs).mpr hz
@@ -269,9 +334,11 @@ private theorem slash_inv_vadd {z : ℍ} (hz : A < z.im) :
     ← mul_zpow, denom_smul_mul_denom hs hg, mul_zpow, mul_assoc,
     ← Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul, ← hz']
 
-include hs hg hf in
 /-- Above the height `A`, `f ∣[k] s⁻¹` is periodic of period twice the width. -/
-private theorem slash_inv_two_mul_vadd {z : ℍ} (hz : A < z.im) :
+private theorem slash_inv_two_mul_vadd (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    {z : ℍ} (hz : A < z.im) :
     (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) ((2 * D.width) +ᵥ z) =
       (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) z := by
   rw [two_mul, ← vadd_vadd, slash_inv_vadd hs hg hf (by rwa [vadd_im]), slash_inv_vadd hs hg hf hz,
@@ -279,37 +346,38 @@ private theorem slash_inv_two_mul_vadd {z : ℍ} (hz : A < z.im) :
     (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).2,
     Complex.ofReal_one, one_zpow, one_mul]
 
-include hs hfd in
 /-- Above the height `A`, `f ∣[k] s⁻¹` is holomorphic. -/
-private theorem mdifferentiableAt_slash_inv {z : ℍ} (hz : A < z.im) :
+private theorem mdifferentiableAt_slash_inv (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (horodisc D A)) {z : ℍ} (hz : A < z.im) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) z := by
   have hτ : s⁻¹ • z ∈ horodisc D A := (inv_smul_mem_horodisc_iff hs).mpr hz
-  have hcomp : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ)
-      (fun τ : ℍ ↦ f (Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ • τ)) z := by
-    refine MDifferentiableAt.comp z ?_ (mdifferentiable_smul (by simp) z)
-    rw [Matrix.SpecialLinearGroup.mapGL_smul]
-    exact (hfd _ hτ).mdifferentiableAt ((isOpen_horodisc D A).mem_nhds hτ)
-  have hdet : 0 < ((Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ : GL (Fin 2) ℝ) :
-      Matrix (Fin 2) (Fin 2) ℝ).det := by simp
-  rw [ModularForm.slash_def, σ_eq_refl_of_det_pos hdet]
-  simp only [ContinuousAlgEquiv.refl_apply]
-  exact (hcomp.mul mdifferentiableAt_const).mul (mdifferentiable_denom_zpow _ _ z)
+  refine MDifferentiableAt.slash ?_ k
+  rw [Matrix.SpecialLinearGroup.mapGL_smul]
+  exact (hfd _ hτ).mdifferentiableAt ((isOpen_horodisc D A).mem_nhds hτ)
 
-variable (D) in
+end
+
 /-- The radius of the disc of cusp-coordinate values of the horodisc of height `A` is the square
 of that of its width-parameter values. -/
 private theorem sq_exp_radius (A : ℝ) :
     Real.exp (-2 * Real.pi * A / (2 * D.width)) ^ 2 = Real.exp (-2 * Real.pi * A / D.width) := by
-  rw [← Real.exp_nat_mul]
+  rw [← Real.exp_natCast_mul]
   congr 1
   field_simp [D.width_pos.ne']
   push_cast
   ring
 
-include hs hg hf hfd hbdd in
+section
+
+variable {D} {s g : SL(2, ℝ)} {k : ℤ} {r : ℕ} {A : ℝ} {f : ℍ → ℂ}
+
 /-- **The sum of the `q₂`-expansion of a local section is holomorphic** on the disc of
 width-parameter values of the horodisc, including at the cusp `q₂ = 0`. -/
-theorem differentiableOn_automorphyUntwist (hA : 0 ≤ A) :
+theorem differentiableOn_automorphyUntwist (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (horodisc D A))
+    (hbdd : IsBoundedAtImInfty (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹)) (hA : 0 ≤ A) :
     DifferentiableOn ℂ (automorphyUntwist D s k f)
       (ball 0 (Real.exp (-2 * Real.pi * A / (2 * D.width)))) := by
   rw [automorphyUntwist_def, UpperHalfPlane.cuspFunction]
@@ -317,10 +385,12 @@ theorem differentiableOn_automorphyUntwist (hA : 0 ≤ A) :
     (by positivity [D.width_pos]) hA (fun z hz ↦ slash_inv_two_mul_vadd hs hg hf hz)
     (fun z hz ↦ mdifferentiableAt_slash_inv hs hfd hz) hbdd
 
-include hs hg hf in
 /-- **The sum of the `q₂`-expansion at the width parameter of a point of the horodisc** is the
 untwisted value `denom s τ ^ k * f τ`. -/
-theorem automorphyUntwist_sqrtCoordinate {τ : ℍ} (hτ : τ ∈ horodisc D A) :
+theorem automorphyUntwist_sqrtCoordinate (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    {τ : ℍ} (hτ : τ ∈ horodisc D A) :
     automorphyUntwist D s k f (sqrtCoordinate D τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ ^ k * f τ := by
   have hτ' : A < (s • τ).im := by rwa [mem_horodisc, ← hs, pslMk_smul] at hτ
@@ -329,10 +399,12 @@ theorem automorphyUntwist_sqrtCoordinate {τ : ℍ} (hτ : τ ∈ horodisc D A) 
       (fun z hz ↦ slash_inv_two_mul_vadd hs hg hf hz) hτ',
     Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul]
 
-include hs hg hk hf in
 /-- At the width parameter of a point of the horodisc, `q₂ ↦ -q₂` multiplies the sum of the
 `q₂`-expansion by `(-1) ^ r`. -/
-private theorem automorphyUntwist_neg_sqrtCoordinate {τ : ℍ} (hτ : τ ∈ horodisc D A) :
+private theorem automorphyUntwist_neg_sqrtCoordinate (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    {τ : ℍ} (hτ : τ ∈ horodisc D A) :
     automorphyUntwist D s k f (-sqrtCoordinate D τ) =
       (-1) ^ r * automorphyUntwist D s k f (sqrtCoordinate D τ) := by
   have hw : 0 < 2 * D.width := by positivity [D.width_pos]
@@ -350,28 +422,39 @@ private theorem automorphyUntwist_neg_sqrtCoordinate {τ : ℍ} (hτ : τ ∈ ho
     TauCeti.UpperHalfPlane.cuspFunction_qParam_of_lt_im hw hper hz,
     slash_inv_vadd hs hg hf hz, ofReal_zpow_eq hk]
 
-include hs hg hk hf hfd hbdd in
+/-- Away from `0`, on the disc of width-parameter values of the horodisc, `q₂ ↦ -q₂` multiplies
+the sum of the `q₂`-expansion by `(-1) ^ r`: there `u` is the width parameter of a point of the
+horodisc. -/
+private theorem automorphyUntwist_neg_of_ne_zero (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hA : 0 ≤ A) {u : ℂ} (hu0 : u ≠ 0)
+    (hu : ‖u‖ < Real.exp (-2 * Real.pi * A / (2 * D.width))) :
+    automorphyUntwist D s k f (-u) = (-1) ^ r * automorphyUntwist D s k f u := by
+  have hw : 0 < 2 * D.width := by positivity [D.width_pos]
+  have him : A < (Periodic.invQParam (2 * D.width) u).im := by
+    rwa [← Periodic.norm_qParam_lt_iff hw, Periodic.qParam_right_inv hw.ne' hu0]
+  set z : ℍ := UpperHalfPlane.mk _ (hA.trans_lt him)
+  have hτ : D.scaling⁻¹ • z ∈ horodisc D A := by
+    rwa [mem_horodisc, smul_inv_smul, UpperHalfPlane.mk_im]
+  have hqz : sqrtCoordinate D (D.scaling⁻¹ • z) = u := by
+    rw [sqrtCoordinate_def, smul_inv_smul, UpperHalfPlane.coe_mk]
+    exact Periodic.qParam_right_inv hw.ne' hu0
+  rw [← hqz]
+  exact automorphyUntwist_neg_sqrtCoordinate hs hg hk hf hτ
+
 /-- **The parity of the `q₂`-expansion of a local section**: on the disc of width-parameter
 values of the horodisc, `q₂ ↦ -q₂` multiplies the sum of the expansion by `(-1) ^ r`. For `r = 1`
 the expansion has only odd terms. -/
-theorem automorphyUntwist_neg (hA : 0 ≤ A) {u : ℂ}
+theorem automorphyUntwist_neg (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (horodisc D A))
+    (hbdd : IsBoundedAtImInfty (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹)) (hA : 0 ≤ A) {u : ℂ}
     (hu : u ∈ ball (0 : ℂ) (Real.exp (-2 * Real.pi * A / (2 * D.width)))) :
     automorphyUntwist D s k f (-u) = (-1) ^ r * automorphyUntwist D s k f u := by
-  have hw : 0 < 2 * D.width := by positivity [D.width_pos]
-  -- away from `0`, `u` is the width parameter of a point of the horodisc
-  have hne {u : ℂ} (hu0 : u ≠ 0)
-      (hu : ‖u‖ < Real.exp (-2 * Real.pi * A / (2 * D.width))) :
-      automorphyUntwist D s k f (-u) = (-1) ^ r * automorphyUntwist D s k f u := by
-    have him : A < (Periodic.invQParam (2 * D.width) u).im := by
-      rwa [← Periodic.norm_qParam_lt_iff hw, Periodic.qParam_right_inv hw.ne' hu0]
-    set z : ℍ := UpperHalfPlane.mk _ (hA.trans_lt him)
-    have hτ : D.scaling⁻¹ • z ∈ horodisc D A := by
-      rwa [mem_horodisc, smul_inv_smul, UpperHalfPlane.mk_im]
-    have hqz : sqrtCoordinate D (D.scaling⁻¹ • z) = u := by
-      rw [sqrtCoordinate_def, smul_inv_smul, UpperHalfPlane.coe_mk]
-      exact Periodic.qParam_right_inv hw.ne' hu0
-    rw [← hqz]
-    exact automorphyUntwist_neg_sqrtCoordinate hs hg hk hf hτ
+  have hne {u : ℂ} (hu0 : u ≠ 0) (hu : ‖u‖ < Real.exp (-2 * Real.pi * A / (2 * D.width))) :=
+    automorphyUntwist_neg_of_ne_zero hs hg hk hf hA hu0 hu
   rw [mem_ball_zero_iff] at hu
   rcases ne_or_eq u 0 with hu0 | rfl
   · exact hne hu0 hu
@@ -389,10 +472,14 @@ theorem automorphyUntwist_neg (hA : 0 ≤ A) {u : ℂ}
   exact ((h₁.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
     (continuousAt_const.mul hc)).mp heq).eq_of_nhds
 
-include hs hg hk hf hfd hbdd in
 /-- **The coefficient of a local section is holomorphic** on the disc of cusp-coordinate values
 of the horodisc, including at the cusp `q = 0`. -/
-theorem differentiableOn_automorphyDescent (hA : 0 ≤ A) (hr : r ≤ 2) :
+theorem differentiableOn_automorphyDescent (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (horodisc D A))
+    (hbdd : IsBoundedAtImInfty (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹)) (hA : 0 ≤ A)
+    (hr : r ≤ 2) :
     DifferentiableOn ℂ (automorphyDescent D s k r f)
       (ball 0 (Real.exp (-2 * Real.pi * A / D.width))) := by
   rw [← sq_exp_radius D A, ← image_pow_ball (Real.exp_pos _).le, automorphyDescent_def]
@@ -402,7 +489,6 @@ theorem differentiableOn_automorphyDescent (hA : 0 ≤ A) (hr : r ≤ 2) :
       rw [smul_eq_mul]
       exact automorphyUntwist_neg hs hg hk hf hfd hbdd hA hu
 
-include hs hg hk hf in
 /-- **The local trivialization of the weight-`k` automorphy sheaf at a cusp.** If `s` and `g`
 lift the scaling and the generator of `D`, `ε ^ k = (-1) ^ r` with `r < 2` for the sign `ε` of
 `s * g * s⁻¹`, and `f` satisfies the weight-`k` transformation law for `g` on the horodisc of
@@ -410,7 +496,10 @@ height `A`, then on the horodisc `f` is the frame times its coefficient, a funct
 coordinate. If `f` is moreover holomorphic there and `f ∣[k] s⁻¹` is bounded at `i∞`, the
 coefficient is holomorphic, including at the cusp
 (`TauCeti.Subgroup.CuspDatum.differentiableOn_automorphyDescent`). -/
-theorem automorphyFrame_mul_automorphyDescent (hr : r < 2) {τ : ℍ} (hτ : τ ∈ horodisc D A) :
+theorem automorphyFrame_mul_automorphyDescent (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hr : r < 2) {τ : ℍ} (hτ : τ ∈ horodisc D A) :
     automorphyFrame D s k r τ * automorphyDescent D s k r f (coordinate D τ) = f τ := by
   have h := pow_smul_descendPowTwist_pow_of_ne_zero hr (sqrtCoordinate_ne_zero D τ)
     (apply_rootsOfUnity_two_smul_of_apply_neg <| by
@@ -420,13 +509,17 @@ theorem automorphyFrame_mul_automorphyDescent (hr : r < 2) {τ : ℍ} (hτ : τ 
   rw [automorphyFrame_def, automorphyDescent_def, mul_assoc, h, ← mul_assoc,
     ← zpow_add₀ (denom_ne_zero _ _), neg_add_cancel, zpow_zero, one_mul]
 
-include hs hg hk hf hfd hbdd in
 /-- **Uniqueness of the local trivialization at a cusp.** Under the hypotheses of
 `TauCeti.Subgroup.CuspDatum.differentiableOn_automorphyDescent`, with `r < 2`, any function `G`
 continuous on the disc of cusp-coordinate values of the horodisc with
 `f τ = automorphyFrame D s k r τ * G (coordinate D τ)` on the horodisc is the coefficient of `f`
 there. -/
-theorem eqOn_automorphyDescent (hA : 0 ≤ A) (hr : r < 2) {G : ℂ → ℂ}
+theorem eqOn_automorphyDescent (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (horodisc D A))
+    (hbdd : IsBoundedAtImInfty (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹)) (hA : 0 ≤ A)
+    (hr : r < 2) {G : ℂ → ℂ}
     (hG : ContinuousOn G (ball 0 (Real.exp (-2 * Real.pi * A / D.width))))
     (hfG : ∀ τ ∈ horodisc D A, f τ = automorphyFrame D s k r τ * G (coordinate D τ)) :
     EqOn G (automorphyDescent D s k r f) (ball 0 (Real.exp (-2 * Real.pi * A / D.width))) := by
@@ -458,12 +551,16 @@ theorem eqOn_automorphyDescent (hA : 0 ≤ A) (hr : r < 2) {G : ℂ → ℂ}
   exact (((hG.continuousAt hball).eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hD).mp
     heq).eq_of_nhds
 
-include hs hg hk hf hfd hbdd in
 /-- **The order of the coefficient of a local section at a cusp.** Under the hypotheses of
 `TauCeti.Subgroup.CuspDatum.differentiableOn_automorphyDescent`, with `r < 2`, the order at
 `q₂ = 0` of the sum of the `q₂`-expansion of `f ∣[k] s⁻¹` is `r` plus twice the order at `q = 0`
 of the coefficient `automorphyDescent D s k r f`. -/
-theorem analyticOrderAt_automorphyUntwist (hA : 0 ≤ A) (hr : r < 2) :
+theorem analyticOrderAt_automorphyUntwist (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) f (horodisc D A))
+    (hbdd : IsBoundedAtImInfty (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹)) (hA : 0 ≤ A)
+    (hr : r < 2) :
     analyticOrderAt (automorphyUntwist D s k f) 0 =
       r + analyticOrderAt (automorphyDescent D s k r f) 0 * 2 :=
   analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul isOpen_ball
@@ -473,9 +570,10 @@ theorem analyticOrderAt_automorphyUntwist (hA : 0 ≤ A) (hr : r < 2) :
       rw [smul_eq_mul]
       exact automorphyUntwist_neg hs hg hk hf hfd hbdd hA hu
 
+end
+
 /-! ### The powers of the differential of the cusp coordinate -/
 
-variable (D) in
 /-- **The `j`-th power of the differential of the cusp coordinate**, as a function of weight
 `2 * j` on the upper half-plane: `τ ↦ (dq / dτ) ^ j` for the cusp coordinate
 `q(τ) = exp (2 * π * I * σ τ / w)`, read on `ℂ` through `UpperHalfPlane.ofComplex`. It is the
@@ -489,16 +587,19 @@ order `j` at the cusp
 def differentialFrame (j : ℕ) (τ : ℍ) : ℂ :=
   deriv (fun t : ℂ ↦ coordinate D (ofComplex t)) τ ^ j
 
-variable (D) in
 theorem differentialFrame_def (j : ℕ) (τ : ℍ) :
     differentialFrame D j τ = deriv (fun t : ℂ ↦ coordinate D (ofComplex t)) τ ^ j :=
   (rfl)
 
-include hs in
+section
+
+variable {D} {s g : SL(2, ℝ)}
+
 /-- **The powers of the differential of the cusp coordinate in the automorphy frame.** For a lift
 `s` of the scaling, `(dq / dτ) ^ j` is the automorphy frame of weight `2 * j` and exponent `0`
 times `(2 * π * I / w) ^ j * q ^ j`. -/
-theorem differentialFrame_eq_automorphyFrame_mul (j : ℕ) (τ : ℍ) :
+theorem differentialFrame_eq_automorphyFrame_mul (hs : (s : PSL(2, ℝ)) = D.scaling) (j : ℕ)
+    (τ : ℍ) :
     differentialFrame D j τ = automorphyFrame D s (2 * j) 0 τ *
       ((2 * Real.pi * Complex.I / D.width) ^ j * coordinate D τ ^ j) := by
   rw [differentialFrame_def, (hasDerivAt_coordinate D τ).deriv, ← hs,
@@ -506,20 +607,19 @@ theorem differentialFrame_eq_automorphyFrame_mul (j : ℕ) (τ : ℍ) :
   simp only [pow_zero, mul_one, zpow_neg, zpow_mul, zpow_ofNat, zpow_natCast]
   ring
 
-include hs hg in
 /-- In even weight the sign of the conjugated lift `s * g * s⁻¹` of the generator disappears. -/
-private theorem zpow_two_mul_conj (j : ℕ) :
+private theorem zpow_two_mul_conj (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (j : ℕ) :
     ((s * g * s⁻¹) 1 1 : ℝ) ^ (2 * (j : ℤ)) = (-1) ^ 0 := by
   rw [zpow_mul, zpow_two,
     (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).2,
     one_zpow, pow_zero]
 
-include hg in
 /-- **The transformation law of the powers of the differential of the cusp coordinate.** If `g`
 lifts the generator of `D`, then `differentialFrame D j` satisfies the weight-`2 * j`
 transformation law for `g` on all of `ℍ`: the cusp coordinate is invariant under `g`, and the
 automorphy frame of weight `2 * j` and exponent `0` satisfies that law. -/
-theorem differentialFrame_smul (j : ℕ) (τ : ℍ) :
+theorem differentialFrame_smul (hg : (g : PSL(2, ℝ)) = D.generator) (j : ℕ) (τ : ℍ) :
     differentialFrame D j (g • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * differentialFrame D j τ := by
   obtain ⟨s', hs'⟩ := QuotientGroup.mk_surjective (D.scaling : PSL(2, ℝ))
@@ -529,7 +629,8 @@ theorem differentialFrame_smul (j : ℕ) (τ : ℍ) :
   rw [differentialFrame_eq_automorphyFrame_mul hs', differentialFrame_eq_automorphyFrame_mul hs',
     automorphyFrame_smul hs' hg (zpow_two_mul_conj hs' hg j), hq, mul_assoc]
 
-variable (D) in
+end
+
 /-- **The powers of the differential of the cusp coordinate are holomorphic** on the upper
 half-plane. -/
 theorem mdifferentiable_differentialFrame (j : ℕ) :
@@ -541,13 +642,16 @@ theorem mdifferentiable_differentialFrame (j : ℕ) :
   exact (mdifferentiable_automorphyFrame D s' _ _).mul
     (mdifferentiable_const.mul ((mdifferentiable_coordinate D).pow j))
 
-include hs in
+section
+
+variable {D} {s g : SL(2, ℝ)} {k : ℤ} {r : ℕ} {A : ℝ} {f : ℍ → ℂ}
+
 /-- **The transition function from the automorphy frame to the powers of the differential at a
 cusp.** For a lift `s` of the scaling, the coefficient of
 `differentialFrame D j`, the weight-`2 * j` function of the frame `(dq) ^ j`, with respect to the
 automorphy frame `automorphyFrame D s (2 * j) 0` is `q ↦ (2 * π * I / w) ^ j * q ^ j` on the open
 unit disc. -/
-theorem eqOn_automorphyDescent_differentialFrame (j : ℕ) :
+theorem eqOn_automorphyDescent_differentialFrame (hs : (s : PSL(2, ℝ)) = D.scaling) (j : ℕ) :
     EqOn (automorphyDescent D s (2 * j) 0 (differentialFrame D j))
       (fun q ↦ (2 * Real.pi * Complex.I / D.width) ^ j * q ^ j) (ball 0 1) := by
   set c : ℂ := 2 * Real.pi * Complex.I / D.width
@@ -571,12 +675,12 @@ theorem eqOn_automorphyDescent_differentialFrame (j : ℕ) :
   rw [mul_zero, zero_div, Real.exp_zero] at h
   exact h.symm
 
-include hs in
 /-- **The order of the transition function at a cusp.** The coefficient of the weight-`2 * j`
 function of `(dq) ^ j` with respect to the automorphy frame vanishes to order exactly `j` at the
 cusp. This is the correction `k / 2`, for `k = 2 * j`, of the divisor of the weight-`k` automorphy
 sheaf at a cusp relative to the `j`-th power of the sheaf of differentials. -/
-theorem analyticOrderAt_automorphyDescent_differentialFrame (j : ℕ) :
+theorem analyticOrderAt_automorphyDescent_differentialFrame (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (j : ℕ) :
     analyticOrderAt (automorphyDescent D s (2 * j) 0 (differentialFrame D j)) 0 = j := by
   have hc : (2 * Real.pi * Complex.I / D.width : ℂ) ^ j ≠ 0 :=
     pow_ne_zero _ (div_ne_zero (by simp [Real.pi_ne_zero])
@@ -590,6 +694,8 @@ theorem analyticOrderAt_automorphyDescent_differentialFrame (j : ℕ) :
     analyticAt_const.analyticOrderAt_eq_zero.mpr hc, analyticOrderAt_centeredMonomial, zero_add]
 
 /-! ### Transport of the frame along `Γ` -/
+
+section
 
 variable {D' : Γ.CuspDatum} {s' h : SL(2, ℝ)} {γ : Γ}
 
@@ -612,7 +718,8 @@ private theorem scaling_mul_mul_inv_apply_one_zero (hs : (s : PSL(2, ℝ)) = D.s
   rwa [OnePoint.pslMk_smul, OnePoint.smul_infty_eq_self_iff,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix] at hg
 
-include hs in
+end
+
 /-- **The transition function between the frames at two cusps of the same orbit is constant.**
 Let `D` and `D'` be cusp data whose cusps are related by `γ ∈ Γ`, `γ • c = c'`, and let `s`, `s'`
 and `h` lift their scalings `σ`, `σ'` and `γ`. Then `t = s' * h * s⁻¹` is upper triangular, and
@@ -626,7 +733,8 @@ satisfy `w' = t₀₀ ^ 2 * w`, and the width parameters satisfy
 cusp data at the same cusp. For `D' = D`, `s' = s` and `h` a lift of the generator of `D`, the
 constant is `ε ^ (-k) * (-1) ^ r` for the sign `ε` of `s * h * s⁻¹`, which is `1` exactly under
 the sign condition of `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul`. -/
-theorem automorphyFrame_smul_of_smul_cusp_eq (hs' : (s' : PSL(2, ℝ)) = D'.scaling)
+theorem automorphyFrame_smul_of_smul_cusp_eq (hs : (s : PSL(2, ℝ)) = D.scaling)
+    {D' : Γ.CuspDatum} {s' h : SL(2, ℝ)} {γ : Γ} (hs' : (s' : PSL(2, ℝ)) = D'.scaling)
     (hh : (h : PSL(2, ℝ)) = γ) (hγ : γ • D.cusp = D'.cusp) (τ : ℍ) :
     automorphyFrame D' s' k r (h • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ k *
@@ -647,7 +755,7 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs' : (s' : PSL(2, ℝ)) = D'.scal
       coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
   -- hence the widths satisfy `w' = t₀₀ ^ 2 * w`, comparing `D'` with the transport of `D`
   have hw : D'.width = t 0 0 ^ 2 * D.width := by
-    have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.2)
+    have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.property)
     have h := TauCeti.cuspDatum_width_eq_mul (D := D.conj hc) (D' := D')
       (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hγ, Subgroup.smul_def])
       (a := t 0 0 ^ 2) (b := t 0 0 * t 0 1) fun x ↦ by
@@ -676,5 +784,457 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs' : (s' : PSL(2, ℝ)) = D'.scal
   rw [automorphyFrame_def, automorphyFrame_def, hq, hden, div_eq_mul_inv, mul_zpow, mul_zpow,
     inv_zpow', neg_neg, mul_pow]
   ring
+
+/-! ### Holomorphy of the coefficient at the points of `ℍ` -/
+
+/-- **The sum of the `q₂`-expansion is holomorphic at the width parameter of every point of the
+horodisc at which the section is holomorphic.** Unlike
+`TauCeti.Subgroup.CuspDatum.differentiableOn_automorphyUntwist`, this needs neither holomorphy on
+the whole horodisc nor boundedness at `i∞`, so it applies to the automorphic extension of a local
+section of another chart (`Subgroup.automorphyExtension`), holomorphic only on the saturation of
+that chart. -/
+theorem differentiableAt_automorphyUntwist_sqrtCoordinate (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    {τ : ℍ} (hτ : τ ∈ horodisc D A) (hfτ : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f τ) :
+    DifferentiableAt ℂ (automorphyUntwist D s k f) (sqrtCoordinate D τ) := by
+  have hτ' : A < (s • τ).im := by rwa [mem_horodisc, ← hs, pslMk_smul] at hτ
+  rw [automorphyUntwist_def, UpperHalfPlane.cuspFunction, sqrtCoordinate_def, ← hs, pslMk_smul]
+  exact TauCeti.UpperHalfPlane.differentiableAt_cuspFunction_qParam_of_lt_im
+    (by positivity [D.width_pos]) (fun z hz ↦ slash_inv_two_mul_vadd hs hg hf hz) hτ'
+    (MDifferentiableAt.slash (by rwa [Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul]) k)
+
+/-- **The coefficient of a section is holomorphic at the cusp coordinate of every point of the
+horodisc at which the section is holomorphic.** If `f` satisfies the weight-`k` transformation
+law for `g` on the horodisc of height `A` and is holomorphic at a point `τ` of it, then
+`automorphyDescent D s k r f` is holomorphic at the cusp coordinate of `τ`. -/
+theorem differentiableAt_automorphyDescent (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hg : (g : PSL(2, ℝ)) = D.generator) (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hf : ∀ τ ∈ horodisc D A, f (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * f τ)
+    (hr : r ≤ 2) {τ : ℍ} (hτ : τ ∈ horodisc D A) (hfτ : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f τ) :
+    DifferentiableAt ℂ (automorphyDescent D s k r f) (coordinate D τ) := by
+  -- the horodisc of height `max A 0` contains `τ` and lies in that of height `A`
+  have hτ₀ : τ ∈ horodisc D (max A 0) :=
+    (mem_horodisc D).mpr (max_lt ((mem_horodisc D).mp hτ) (D.scaling • τ).im_pos)
+  have hf₀ : ∀ σ ∈ horodisc D (max A 0),
+      f (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * f σ := fun σ hσ ↦
+    hf σ ((mem_horodisc D).mpr ((le_max_left A 0).trans_lt ((mem_horodisc D).mp hσ)))
+  -- near the width parameter of `τ`, every point is the width parameter of a point of the horodisc
+  have hnhds : ∀ᶠ v in 𝓝 (sqrtCoordinate D τ),
+      v ≠ 0 ∧ ‖v‖ < Real.exp (-2 * Real.pi * max A 0 / (2 * D.width)) :=
+    (isOpen_ne.inter (isOpen_lt continuous_norm continuous_const)).mem_nhds
+      ⟨sqrtCoordinate_ne_zero D τ, (norm_sqrtCoordinate_lt_iff_mem_horodisc D _ τ).mpr hτ₀⟩
+  rw [← sqrtCoordinate_sq, automorphyDescent_def]
+  refine differentiableAt_descendPowTwist_pow hr ?_ (sqrtCoordinate_ne_zero D τ)
+    (differentiableAt_automorphyUntwist_sqrtCoordinate hs hg hf hτ hfτ)
+  filter_upwards [hnhds] with v hv
+  exact apply_rootsOfUnity_two_smul_of_apply_neg <| by
+    rw [smul_eq_mul]
+    exact automorphyUntwist_neg_of_ne_zero hs hg hk hf₀ (le_max_right A 0) hv.1 hv.2
+
+/-! ### Transition functions between the trivializations of two charts -/
+
+section
+
+variable {Γ' : _root_.Subgroup SL(2, ℝ)}
+
+/-- **The transformation law of the frame for the whole cusp stabilizer.** Let `Γ' ≤ SL(2, ℝ)`
+have image `Γ` in `PSL(2, ℝ)`, and let every lift `g ∈ Γ'` of the generator of `D` satisfy the
+sign condition `ε ^ k = (-1) ^ r` of `TauCeti.Subgroup.CuspDatum.automorphyFrame_smul`. Then the
+frame satisfies the weight-`k` transformation law for every element of `Γ'` fixing the cusp.
+
+If `-1 ∈ Γ'` and `k` is odd, the two lifts `g` and `-g` of the generator have opposite signs, so the
+hypothesis fails for every `r`: there is no frame, in accordance with the vanishing of the
+weight-`k` forms by parity. -/
+theorem automorphyFrame_smul_of_mem
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
+    (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hk : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D.generator → ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {h : SL(2, ℝ)} (hh : h ∈ Γ') (hhc : (h : PSL(2, ℝ)) • D.cusp = D.cusp) (τ : ℍ) :
+    automorphyFrame D s k r (h • τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ k * automorphyFrame D s k r τ := by
+  -- a lift of the generator in `Γ'`
+  obtain ⟨g₀, hg₀, hg₀gen⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ D.generator.property :
+    (D.generator : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))))
+  -- the image of `h` is a power of the generator
+  have hstab : (⟨(h : PSL(2, ℝ)), hΓ ▸ _root_.Subgroup.mem_map_of_mem _ hh⟩ : Γ) ∈
+      stabilizer Γ D.cusp :=
+    mem_stabilizer_iff.mpr hhc
+  obtain ⟨n, hn⟩ := D.mem_stabilizer_iff.mp hstab
+  have hn' : (h : PSL(2, ℝ)) = (D.generator : PSL(2, ℝ)) ^ n := by
+    rw [← _root_.Subgroup.coe_zpow, hn]
+  have hlift (g : SL(2, ℝ)) (hg : g ∈ Γ') (hgen : (g : PSL(2, ℝ)) = D.generator) :
+      g ∈ TauCeti.UpperHalfPlane.transformationLawSubgroup k (automorphyFrame D s k r) :=
+    TauCeti.UpperHalfPlane.mem_transformationLawSubgroup.mpr
+      (automorphyFrame_smul hs hgen (hk g hg hgen))
+  -- `h = h₁ * g₀ ^ (n - 1)` with `h₁ = h * g₀ ^ (1 - n)` another lift of the generator
+  have hh₁ : ((h * g₀ ^ (1 - n) : SL(2, ℝ)) : PSL(2, ℝ)) = D.generator := by
+    rw [QuotientGroup.mk_mul, QuotientGroup.mk_zpow, hn', ← QuotientGroup.mk'_apply, hg₀gen,
+      ← zpow_add, add_sub_cancel, zpow_one]
+  have hmem : h ∈ TauCeti.UpperHalfPlane.transformationLawSubgroup k (automorphyFrame D s k r) := by
+    have hdecomp : h = h * g₀ ^ (1 - n) * g₀ ^ (n - 1) := by group
+    rw [hdecomp]
+    exact mul_mem (hlift _ (mul_mem hh (zpow_mem hg₀ _)) hh₁)
+      (zpow_mem (hlift g₀ hg₀ hg₀gen) _)
+  exact TauCeti.UpperHalfPlane.mem_transformationLawSubgroup.mp hmem τ
+
+/-- **The frame is compatible on a precisely invariant horodisc.** Under the hypotheses of
+`TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_mem`, if the horodisc of height `A` is
+precisely invariant under `Γ'`, in that an element of `Γ'` moving one of its points into it fixes
+the cusp, then the frame is compatible with the weight-`k` action of `Γ'` on it, so that it has an
+automorphic extension (`Subgroup.automorphyExtension`) and the transition-function lemmas apply to
+it. For a discrete `Γ` and `A` at least the width the horodisc is precisely invariant
+(`TauCeti.Subgroup.CuspDatum.smul_cusp_eq_of_mem_horodisc_of_smul_mem_horodisc`). -/
+theorem automorphyFrame_compatible
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
+    (hs : (s : PSL(2, ℝ)) = D.scaling)
+    (hk : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D.generator → ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hprec : ∀ g ∈ Γ', ∀ σ ∈ horodisc D A, g • σ ∈ horodisc D A →
+      (g : PSL(2, ℝ)) • D.cusp = D.cusp) :
+    ∀ g ∈ Γ', ∀ σ ∈ horodisc D A, g • σ ∈ horodisc D A →
+      automorphyFrame D s k r (g • σ) =
+        denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * automorphyFrame D s k r σ :=
+  fun g hg σ hσ hgσ ↦ automorphyFrame_smul_of_mem hΓ hs hk hg (hprec g hg σ hσ hgσ) σ
+
+end
+
+/-- **The transition function is holomorphic.** Let `F'` be a function on an open set `U'`,
+holomorphic there and compatible with the weight-`k` action of `Γ'` (for instance the frame of
+another chart). The coefficient with respect to the frame at the cusp of its automorphic extension
+`Subgroup.automorphyExtension Γ' U' k F'` is the transition function from the trivialization of
+the chart of `F'` to that at the cusp; it is holomorphic at the cusp coordinate of every point `τ`
+moved into `U'` by an element of `Γ'`, that is, on the overlap of the two charts. -/
+theorem differentiableAt_automorphyDescent_automorphyExtension
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} {U' : Set ℍ} {F' : ℍ → ℂ} (hgΓ : g ∈ Γ')
+    (hF' : ∀ g ∈ Γ', ∀ σ ∈ U', g • σ ∈ U' →
+      F' (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * F' σ)
+    (hr : r ≤ 2) (hU' : IsOpen U') (hF'd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) F' U') {τ : ℍ}
+    {h : SL(2, ℝ)} (hh : h ∈ Γ') (hτ : h • τ ∈ U') :
+    DifferentiableAt ℂ (automorphyDescent D s k r (Γ'.automorphyExtension U' k F'))
+      (coordinate D τ) :=
+  differentiableAt_automorphyDescent hs hg hk (A := 0)
+    (fun σ _ ↦ _root_.Subgroup.automorphyExtension_smul hF' hgΓ σ) hr
+    ((mem_horodisc D).mpr (D.scaling • τ).im_pos)
+    ((_root_.Subgroup.mdifferentiableOn_automorphyExtension hF' hU' hF'd).mdifferentiableAt
+      (hU'.smul_left.mem_nhds
+        (_root_.Subgroup.mem_smul_set_iff_exists_smul_mem.mpr ⟨h, hh, hτ⟩)))
+
+/-- **The defining identity of the transition function.** Let `F'` be a function on `U'`
+compatible with the weight-`k` action of `Γ'`, let `r < 2`, and let `h ∈ Γ'` move `τ` into `U'`.
+Then the frame at the cusp at `τ` times the transition function at the cusp coordinate of `τ` is
+the function `F'` at `h • τ`, transported back to `τ` in weight `k`. -/
+theorem automorphyFrame_mul_automorphyDescent_automorphyExtension
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} {U' : Set ℍ} {F' : ℍ → ℂ} (hgΓ : g ∈ Γ')
+    (hF' : ∀ g ∈ Γ', ∀ σ ∈ U', g • σ ∈ U' →
+      F' (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * F' σ)
+    (hr : r < 2) {τ : ℍ} {h : SL(2, ℝ)} (hh : h ∈ Γ') (hτ : h • τ ∈ U') :
+    automorphyFrame D s k r τ *
+        automorphyDescent D s k r (Γ'.automorphyExtension U' k F') (coordinate D τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ (-k) * F' (h • τ) := by
+  rw [automorphyFrame_mul_automorphyDescent hs hg hk (A := 0)
+    (fun σ _ ↦ _root_.Subgroup.automorphyExtension_smul hF' hgΓ σ) hr
+    ((mem_horodisc D).mpr (D.scaling • τ).im_pos),
+    _root_.Subgroup.automorphyExtension_eq hF' hh hτ]
+
+/-- **The transition function does not vanish** at the cusp coordinate of a point `τ` of the
+overlap with `F' (h • τ) ≠ 0`. -/
+theorem automorphyDescent_automorphyExtension_ne_zero
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} {U' : Set ℍ} {F' : ℍ → ℂ} (hgΓ : g ∈ Γ')
+    (hF' : ∀ g ∈ Γ', ∀ σ ∈ U', g • σ ∈ U' →
+      F' (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * F' σ)
+    (hr : r < 2) {τ : ℍ} {h : SL(2, ℝ)} (hh : h ∈ Γ') (hτ : h • τ ∈ U')
+    (hF'0 : F' (h • τ) ≠ 0) :
+    automorphyDescent D s k r (Γ'.automorphyExtension U' k F') (coordinate D τ) ≠ 0 := by
+  have h0 := automorphyFrame_mul_automorphyDescent_automorphyExtension hs hg hk hgΓ hF' hr hh hτ
+  exact right_ne_zero_of_mul (h0 ▸ mul_ne_zero (zpow_ne_zero _ (denom_ne_zero _ _)) hF'0)
+
+/-- **The transformation law of the coefficients of a section between the chart at the cusp and
+another chart.** Let `f` satisfy the weight-`k` transformation law for `Γ'`, and let the second
+chart have frame `F'` on `U'`, compatible with the weight-`k` action of `Γ'`. If `h ∈ Γ'` moves
+`τ` into `U'` and `c` is the coefficient of `f` at `h • τ` in the second chart,
+`F' (h • τ) * c = f (h • τ)`, then the coefficient of `f` at the cusp coordinate of `τ` is the
+transition function times `c`. Since the frame at the cusp vanishes nowhere on `ℍ`, no holomorphy
+is needed; the second chart may be a chart at a cusp
+(`TauCeti.Subgroup.CuspDatum.automorphyDescent_eq_mul_automorphyDescent`) or at an elliptic or
+free point. -/
+theorem automorphyDescent_eq_automorphyDescent_automorphyExtension_mul
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} {U' : Set ℍ} {F' : ℍ → ℂ} (hgΓ : g ∈ Γ')
+    (hF' : ∀ g ∈ Γ', ∀ σ ∈ U', g • σ ∈ U' →
+      F' (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * F' σ)
+    (hr : r < 2)
+    (hlaw : ∀ g ∈ Γ', ∀ σ : ℍ, f (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * f σ)
+    {τ : ℍ} {h : SL(2, ℝ)} (hh : h ∈ Γ') (hτ : h • τ ∈ U') {c : ℂ}
+    (hc : F' (h • τ) * c = f (h • τ)) :
+    automorphyDescent D s k r f (coordinate D τ) =
+      automorphyDescent D s k r (Γ'.automorphyExtension U' k F') (coordinate D τ) * c := by
+  refine mul_left_cancel₀ (automorphyFrame_ne_zero D s k r τ) ?_
+  rw [automorphyFrame_mul_automorphyDescent hs hg hk (A := 0) (fun σ _ ↦ hlaw g hgΓ σ) hr
+    ((mem_horodisc D).mpr (D.scaling • τ).im_pos), ← mul_assoc,
+    automorphyFrame_mul_automorphyDescent_automorphyExtension hs hg hk hgΓ hF' hr hh hτ,
+    mul_assoc, hc, hlaw h hh τ, ← mul_assoc, zpow_neg_mul_zpow_self k (denom_ne_zero _ _),
+    one_mul]
+
+/-- **The transformation law of the coefficients of a section between the charts at two cusps.**
+Let `Γ'` have image `Γ`, let `D'` be a second cusp datum with lift `s'` of its scaling, exponent
+`r' < 2` and the sign condition for every lift in `Γ'` of its generator, and let the horodisc of
+height `A'` at its cusp be precisely invariant: an element of `Γ'` moving one of its points into it
+fixes the cusp; for a discrete `Γ` and `A'` at least the width this is
+`TauCeti.Subgroup.CuspDatum.smul_cusp_eq_of_mem_horodisc_of_smul_mem_horodisc`. If `f` satisfies
+the weight-`k` transformation law for `Γ'` and `h ∈ Γ'` moves `τ` into the horodisc, then the
+coefficient of `f` at the cusp of `D` is the transition function, the coefficient of the
+automorphic extension of the frame at the cusp of `D'`, times the coefficient of `f` at the cusp of
+`D'` at `h • τ`. -/
+theorem automorphyDescent_eq_mul_automorphyDescent
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} (hgΓ : g ∈ Γ')
+    {D' : Γ.CuspDatum} {s' : SL(2, ℝ)} {r' : ℕ} {A' : ℝ}
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
+    (hr : r < 2)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling)
+    (hk' : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D'.generator → ((s' * g * s'⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r')
+    (hr' : r' < 2)
+    (hprec' : ∀ g ∈ Γ', ∀ σ ∈ horodisc D' A', g • σ ∈ horodisc D' A' →
+      (g : PSL(2, ℝ)) • D'.cusp = D'.cusp)
+    (hlaw : ∀ g ∈ Γ', ∀ σ : ℍ, f (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * f σ)
+    {τ : ℍ} {h : SL(2, ℝ)} (hh : h ∈ Γ') (hτ : h • τ ∈ horodisc D' A') :
+    automorphyDescent D s k r f (coordinate D τ) =
+      automorphyDescent D s k r (Γ'.automorphyExtension (horodisc D' A') k
+          (automorphyFrame D' s' k r')) (coordinate D τ) *
+        automorphyDescent D' s' k r' f (coordinate D' (h • τ)) := by
+  obtain ⟨g', hg'Γ, hg'⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ D'.generator.property :
+    (D'.generator : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))))
+  refine automorphyDescent_eq_automorphyDescent_automorphyExtension_mul hs hg hk hgΓ
+    (automorphyFrame_compatible hΓ hs' hk' hprec') hr hlaw hh hτ ?_
+  exact automorphyFrame_mul_automorphyDescent hs' hg' (hk' g' hg'Γ hg') (A := 0)
+    (fun σ _ ↦ hlaw g' hg'Γ σ) hr' ((mem_horodisc D').mpr (D'.scaling • h • τ).im_pos)
+
+/-- **The cocycle law of the transition functions at two cusps.** Let `D'` be as in
+`TauCeti.Subgroup.CuspDatum.automorphyDescent_eq_mul_automorphyDescent`, and let `F''` be a
+function on `U''` compatible with the weight-`k` action of `Γ'`, the frame of a third chart. The
+transition function from the chart of `F''` to that at the cusp of `D` is the product of the
+transition function from the chart at the cusp of `D'` to that at the cusp of `D` and the
+transition function from the chart of `F''` to that at the cusp of `D'`, read at the corresponding
+point `h • τ`. -/
+theorem automorphyDescent_automorphyExtension_eq_mul
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} (hgΓ : g ∈ Γ')
+    {D' : Γ.CuspDatum} {s' : SL(2, ℝ)} {r' : ℕ} {A' : ℝ}
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
+    (hr : r < 2)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling)
+    (hk' : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D'.generator → ((s' * g * s'⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r')
+    (hr' : r' < 2)
+    (hprec' : ∀ g ∈ Γ', ∀ σ ∈ horodisc D' A', g • σ ∈ horodisc D' A' →
+      (g : PSL(2, ℝ)) • D'.cusp = D'.cusp)
+    {U'' : Set ℍ} {F'' : ℍ → ℂ}
+    (hF'' : ∀ g ∈ Γ', ∀ σ ∈ U'', g • σ ∈ U'' →
+      F'' (g • σ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) σ ^ k * F'' σ)
+    {τ : ℍ} {h : SL(2, ℝ)} (hh : h ∈ Γ') (hτ : h • τ ∈ horodisc D' A') :
+    automorphyDescent D s k r (Γ'.automorphyExtension U'' k F'') (coordinate D τ) =
+      automorphyDescent D s k r (Γ'.automorphyExtension (horodisc D' A') k
+          (automorphyFrame D' s' k r')) (coordinate D τ) *
+        automorphyDescent D' s' k r' (Γ'.automorphyExtension U'' k F'') (coordinate D' (h • τ)) :=
+  automorphyDescent_eq_mul_automorphyDescent hs hg hk hgΓ hΓ hr hs' hk' hr' hprec'
+    (fun _ hg σ ↦ _root_.Subgroup.automorphyExtension_smul hF'' hg σ) hh hτ
+
+/-- **The exponent depends only on the cusp orbit.** Let `D'` be a cusp datum whose cusp is the
+image `γ • c` of the cusp of `D` under `γ ∈ Γ`, with a lift `h ∈ Γ'` of `γ`, let `s'` lift its
+scaling, and let `r' < 2` satisfy the sign condition for every lift in `Γ'` of its generator.
+Then `r = r'`: the conjugate `h * g * h⁻¹ ∈ Γ'` lifts the generator of `D'`, and its conjugate by
+`s'` has the same lower-right entry `ε` as `s * g * s⁻¹`, since `s' * h * s⁻¹` is upper
+triangular. -/
+theorem exponent_eq_of_smul_cusp_eq
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} (hgΓ : g ∈ Γ')
+    {D' : Γ.CuspDatum} {s' : SL(2, ℝ)} {r' : ℕ}
+    (hr : r < 2) (hs' : (s' : PSL(2, ℝ)) = D'.scaling)
+    (hk' : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D'.generator → ((s' * g * s'⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r')
+    (hr' : r' < 2) {h : SL(2, ℝ)} {γ : Γ} (hhΓ : h ∈ Γ') (hh : (h : PSL(2, ℝ)) = γ)
+    (hγ : γ • D.cusp = D'.cusp) : r = r' := by
+  -- `h * g * h⁻¹` lifts the generator of `D'`
+  have hc := Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer γ.property)
+  have hgen : ((h * g * h⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) = D'.generator := by
+    rw [← cuspDatum_generator_eq (D := D.conj hc)
+      (by rw [_root_.Subgroup.CuspDatum.conj_cusp, ← hγ, Subgroup.smul_def]),
+      _root_.Subgroup.CuspDatum.coe_conj_generator, QuotientGroup.mk_mul, QuotientGroup.mk_mul,
+      QuotientGroup.mk_inv, hh, hg]
+  -- conjugation by the upper triangular `t = s' * h * s⁻¹` keeps the lower-right entry
+  have ht : (s' * h * s⁻¹) 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have hM : (s * g * s⁻¹) 1 0 = 0 :=
+    (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).1
+  have hdet : (s' * h * s⁻¹) 0 0 * (s' * h * s⁻¹) 1 1 = 1 := by
+    have h := (s' * h * s⁻¹).det_coe
+    rwa [Matrix.det_fin_two, ht, mul_zero, sub_zero] at h
+  have hconj : s' * (h * g * h⁻¹) * s'⁻¹ = (s' * h * s⁻¹) * (s * g * s⁻¹) * (s' * h * s⁻¹)⁻¹ := by
+    group
+  have hentry : (s' * (h * g * h⁻¹) * s'⁻¹) 1 1 = (s * g * s⁻¹) 1 1 := by
+    rw [hconj, Matrix.SpecialLinearGroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul,
+      Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two]
+    simp only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.of_apply, Matrix.cons_val_one,
+      Matrix.cons_val_zero, ht, hM]
+    linear_combination (s * g * s⁻¹) 1 1 * hdet
+  have hsign := hk' _ (Γ'.mul_mem (Γ'.mul_mem hhΓ hgΓ) (Γ'.inv_mem hhΓ)) hgen
+  rw [hentry, hk] at hsign
+  interval_cases r <;> interval_cases r' <;> first | rfl | norm_num at hsign
+
+/-- **The transition function between the charts at two cusp data of the same cusp orbit is
+constant, also at the cusp.** Let `D'` be as in
+`TauCeti.Subgroup.CuspDatum.automorphyDescent_eq_mul_automorphyDescent`, and let `h ∈ Γ'` carry
+the cusp of `D` to that of `D'` and the horodisc of height `A ≥ 0` at the cusp of `D` into the
+horodisc of height `A'` at the cusp of `D'`. Then `r = r'`
+(`TauCeti.Subgroup.CuspDatum.exponent_eq_of_smul_cusp_eq`), and on the disc of cusp-coordinate
+values of the horodisc of height `A`, including the cusp `q = 0`, the transition function from the
+chart at the cusp of `D'` to that at the cusp of `D` is the nonzero constant of
+`TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`. In particular it is holomorphic
+and vanishes nowhere there, and for `D' = D`, `s' = s` and `h = 1` the constant is `1`. -/
+theorem eqOn_automorphyDescent_automorphyExtension_automorphyFrame
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (hg : (g : PSL(2, ℝ)) = D.generator)
+    (hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    {Γ' : _root_.Subgroup SL(2, ℝ)} (hgΓ : g ∈ Γ')
+    {D' : Γ.CuspDatum} {s' : SL(2, ℝ)} {r' : ℕ} {A' : ℝ}
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ) (hr : r < 2)
+    (hs' : (s' : PSL(2, ℝ)) = D'.scaling)
+    (hk' : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D'.generator → ((s' * g * s'⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r')
+    (hr' : r' < 2)
+    (hprec' : ∀ g ∈ Γ', ∀ σ ∈ horodisc D' A', g • σ ∈ horodisc D' A' →
+      (g : PSL(2, ℝ)) • D'.cusp = D'.cusp)
+    (hA : 0 ≤ A) {h : SL(2, ℝ)} (hh : h ∈ Γ') (hhc : (h : PSL(2, ℝ)) • D.cusp = D'.cusp)
+    (hhA : ∀ τ ∈ horodisc D A, h • τ ∈ horodisc D' A') :
+    EqOn (automorphyDescent D s k r
+        (Γ'.automorphyExtension (horodisc D' A') k (automorphyFrame D' s' k r')))
+      (fun _ ↦ (((s' * h * s⁻¹) 1 1 : ℝ) : ℂ) ^ (-k) *
+        Complex.exp (Real.pi * Complex.I * ((s' * h * s⁻¹) 0 1 * (s' * h * s⁻¹) 1 1) /
+          D.width) ^ r)
+      (ball 0 (Real.exp (-2 * Real.pi * A / D.width))) := by
+  set γ : Γ := ⟨h, hΓ ▸ _root_.Subgroup.mem_map_of_mem _ hh⟩
+  have hγ : γ • D.cusp = D'.cusp := by
+    rw [Subgroup.smul_def]
+    exact hhc
+  obtain rfl := exponent_eq_of_smul_cusp_eq hs hg hk hgΓ hr hs' hk' hr' hh rfl hγ
+  set C : ℂ := (((s' * h * s⁻¹) 1 1 : ℝ) : ℂ) ^ (-k) *
+    Complex.exp (Real.pi * Complex.I * ((s' * h * s⁻¹) 0 1 * (s' * h * s⁻¹) 1 1) / D.width) ^ r
+  set E := Γ'.automorphyExtension (horodisc D' A') k (automorphyFrame D' s' k r) with hE
+  have hF' := automorphyFrame_compatible hΓ hs' hk' hprec'
+  -- on the horodisc of height `A`, the extension is the frame at the cusp of `D` times `C`
+  have hEF (τ : ℍ) (hτ : τ ∈ horodisc D A) : E τ = automorphyFrame D s k r τ * C := by
+    rw [hE, _root_.Subgroup.automorphyExtension_eq hF' hh (hhA τ hτ),
+      automorphyFrame_smul_of_smul_cusp_eq hs hs' rfl hγ τ, ← mul_assoc, ← mul_assoc,
+      zpow_neg_mul_zpow_self k (denom_ne_zero _ _), one_mul]
+    exact mul_comm _ _
+  have hEd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) E (horodisc D A) :=
+    (_root_.Subgroup.mdifferentiableOn_automorphyExtension hF' (isOpen_horodisc D' A')
+      (mdifferentiable_automorphyFrame D' s' k r).mdifferentiableOn).mono fun τ hτ ↦
+        _root_.Subgroup.mem_smul_set_iff_exists_smul_mem.mpr ⟨h, hh, hhA τ hτ⟩
+  -- in the scaling coordinate the extension is `q₂ ^ r * C` above height `A`, so it is bounded
+  have hbdd : IsBoundedAtImInfty (E ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) := by
+    refine isBoundedAtImInfty_iff.mpr ⟨‖C‖, A + 1, fun z hz ↦ ?_⟩
+    have hz' : s⁻¹ • z ∈ horodisc D A := (inv_smul_mem_horodisc_iff hs).mpr (by linarith)
+    have hq : ‖sqrtCoordinate D (s⁻¹ • z)‖ < 1 := by
+      simpa using (norm_sqrtCoordinate_lt_iff_mem_horodisc D 0 _).mpr
+        ((mem_horodisc D).mpr (D.scaling • s⁻¹ • z).im_pos)
+    have hden {a : ℂ} (ha : a ≠ 0) (b : ℂ) : a ^ k * (a ^ (-k) * b * C) = b * C := by
+      linear_combination b * C * zpow_neg_mul_zpow_self k ha
+    rw [← smul_inv_smul s z, Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul, hEF _ hz',
+      automorphyFrame_def, hden (denom_ne_zero _ _), norm_mul, norm_pow]
+    exact mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hq.le)
+  exact (eqOn_automorphyDescent hs hg hk
+    (fun τ _ ↦ _root_.Subgroup.automorphyExtension_smul hF' hgΓ τ) hEd hbdd hA hr
+    continuousOn_const hEF).symm
+
+/-! ### Transition functions between the charts at a cusp and at an elliptic point -/
+
+variable {Γ' : _root_.Subgroup SL(2, ℝ)}
+variable {z' : ℍ} {ε' : ℝ} [Finite (stabilizer Γ z')]
+
+/-- **The transition functions between the chart at a cusp and an elliptic chart are inverse to
+each other.** Let `Γ'` have image `Γ`, let every lift in `Γ'` of the generator of `D` satisfy the
+sign condition with `r < 2`, and let the horodisc of height `A` be precisely invariant. Let
+`ψ'` be a local linearizing coordinate at `z'` on a precisely invariant disc, with exponent
+`r' < m'` satisfying the frame condition. If `τ` is a point of the horodisc and `σ = h • τ`, for
+`h ∈ Γ'`, is a point of the disc about `z'`, then the transition function from the chart of `ψ'`
+to that at the cusp, at the cusp coordinate of `τ`, times the transition function from the chart
+at the cusp to that of `ψ'`, at the quotient coordinate of `σ`, is `1`. This holds also when `σ`
+is the centre `z'`, where for `r' ≠ 0` the frame of `ψ'` vanishes; so both transition functions
+are units on the whole overlap of the two charts. -/
+theorem automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (ψ' : Γ.LinearizingCoordinate z' ε')
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
+    (hk : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D.generator → ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hr : r < 2)
+    (hprec : ∀ g ∈ Γ', ∀ σ ∈ horodisc D A, g • σ ∈ horodisc D A →
+      (g : PSL(2, ℝ)) • D.cusp = D.cusp) {r' : ℕ}
+    (hk' : ∀ g ∈ Γ', g • z' = z' →
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z' ^ (2 * r' + k) = 1)
+    (hr' : r' < Nat.card (stabilizer Γ z'))
+    (hprec' : ∀ g ∈ Γ', ∀ σ ∈ ball z' ε', g • σ ∈ ball z' ε' → g • z' = z')
+    {τ : ℍ} (hτ : τ ∈ horodisc D A) {σ : Γ.stabilizerBall z' ε'} {h : SL(2, ℝ)} (hh : h ∈ Γ')
+    (hσ : (σ : ℍ) = h • τ) :
+    automorphyDescent D s k r (Γ'.automorphyExtension (ball z' ε') k fun σ ↦
+          ((σ : ℂ) - conj (z' : ℂ)) ^ (-k) * ψ'.toEquiv (UpperHalfPlane.discCoordinate z' σ) ^ r')
+        (coordinate D τ) *
+      ψ'.automorphyDescent k r' (Γ'.automorphyExtension (horodisc D A) k
+          (automorphyFrame D s k r)) (ψ'.quotientCoordinate σ) = 1 := by
+  -- a lift `g ∈ Γ'` of the generator of `D`
+  obtain ⟨g, hgΓ, hg⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ D.generator.property :
+    (D.generator : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))))
+  have hF := automorphyFrame_compatible hΓ hs hk hprec
+  have hσb : (σ : ℍ) ∈ ball z' ε' :=
+    mem_ball.mpr ((_root_.Subgroup.mem_stabilizerBall Γ z' ε').1 σ.property)
+  -- the coefficient in the chart of `ψ'` of the extension of the frame at the cusp
+  have hσA : h⁻¹ • (σ : ℍ) ∈ horodisc D A := by rwa [hσ, inv_smul_smul]
+  have hc := ψ'.automorphyFrame_mul_automorphyDescent_automorphyExtension hΓ.ge hk'
+    (isOpen_horodisc D A) hF (mdifferentiable_automorphyFrame D s k r).mdifferentiableOn hr'
+    (Γ'.inv_mem hh) hσA
+  rw [← _root_.Subgroup.automorphyExtension_eq hF (Γ'.inv_mem hh) hσA] at hc
+  rw [_root_.Subgroup.LinearizingCoordinate.automorphyFrame_eq_toEquiv_discCoordinate, hσ] at hc
+  have h₁ := automorphyDescent_eq_automorphyDescent_automorphyExtension_mul hs hg (hk g hgΓ hg) hgΓ
+    (F' := fun σ ↦
+      ((σ : ℂ) - conj (z' : ℂ)) ^ (-k) * ψ'.toEquiv (UpperHalfPlane.discCoordinate z' σ) ^ r')
+    (ψ'.automorphyFrame_compatible hΓ.le hk' hprec') hr
+    (fun _ hg σ ↦ _root_.Subgroup.automorphyExtension_smul hF hg σ) hh (hσ ▸ hσb) hc
+  rw [← h₁]
+  -- the transition function from the chart at the cusp to itself is `1`
+  refine mul_left_cancel₀ (automorphyFrame_ne_zero D s k r τ) ?_
+  rw [automorphyFrame_mul_automorphyDescent hs hg (hk g hgΓ hg)
+    (fun σ _ ↦ _root_.Subgroup.automorphyExtension_smul hF hgΓ σ) hr hτ,
+    _root_.Subgroup.automorphyExtension_of_mem hF hτ, mul_one]
+
+/-- **The transition function from an elliptic chart to the chart at a cusp vanishes nowhere
+on their overlap.** The horodisc and the elliptic disc are precisely invariant, and their
+exponents satisfy the frame conditions. Nonvanishing holds also at the elliptic centre,
+where the elliptic frame may vanish. -/
+theorem automorphyDescent_automorphyExtension_linearizingCoordinate_automorphyFrame_ne_zero
+    (hs : (s : PSL(2, ℝ)) = D.scaling) (ψ' : Γ.LinearizingCoordinate z' ε')
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ)
+    (hk : ∀ g ∈ Γ', (g : PSL(2, ℝ)) = D.generator → ((s * g * s⁻¹) 1 1 : ℝ) ^ k = (-1) ^ r)
+    (hr : r < 2)
+    (hprec : ∀ g ∈ Γ', ∀ σ ∈ horodisc D A, g • σ ∈ horodisc D A →
+      (g : PSL(2, ℝ)) • D.cusp = D.cusp) {r' : ℕ}
+    (hk' : ∀ g ∈ Γ', g • z' = z' →
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z' ^ (2 * r' + k) = 1)
+    (hr' : r' < Nat.card (stabilizer Γ z'))
+    (hprec' : ∀ g ∈ Γ', ∀ σ ∈ ball z' ε', g • σ ∈ ball z' ε' → g • z' = z')
+    {τ : ℍ} (hτ : τ ∈ horodisc D A) {h : SL(2, ℝ)} (hh : h ∈ Γ')
+    (hτ' : h • τ ∈ ball z' ε') :
+    automorphyDescent D s k r (Γ'.automorphyExtension (ball z' ε') k fun σ ↦
+          ((σ : ℂ) - conj (z' : ℂ)) ^ (-k) * ψ'.toEquiv (UpperHalfPlane.discCoordinate z' σ) ^ r')
+        (coordinate D τ) ≠ 0 :=
+  left_ne_zero_of_mul_eq_one
+    (automorphyDescent_automorphyExtension_mul_linearizingCoordinate_automorphyDescent_eq_one hs ψ'
+      hΓ hk hr hprec hk' hr' hprec' hτ
+      (σ := ⟨h • τ, (_root_.Subgroup.mem_stabilizerBall Γ z' ε').2 (mem_ball.mp hτ')⟩) hh rfl)
+
+end
 
 end TauCeti.Subgroup.CuspDatum

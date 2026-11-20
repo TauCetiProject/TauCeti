@@ -18,15 +18,12 @@ import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 The tangent-space adjoint action is the differential at the identity of conjugation. We first prove
 that this differential transports left-invariant vector fields. Naturality of the manifold Lie
 bracket then shows that it is a Lie algebra automorphism, and the composition law for conjugation
-gives the representation law. A subsequent file transports this construction to the roadmap-facing
-Lie algebra of left-invariant derivations.
+gives the representation law. A subsequent file transports this construction to the Lie algebra
+of left-invariant derivations.
 
 The construction works over any nontrivially normed field. Its differential only requires a
 `C¹` Lie group; preservation of the bracket uses Mathlib's regularity threshold
 `minSmoothness 𝕜 3`, which is `3` over the real and complex numbers.
-
-This advances Deliverable A, Layer 1 of
-`TauCetiRoadmap/RepresentationTheory/LieGroups/README.md`.
 
 ## Main definitions
 
@@ -42,11 +39,11 @@ This advances Deliverable A, Layer 1 of
   trivial.
 * `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism intertwines the
   adjoint actions of its differential at the identity, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
+* `MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker`: when that differential is injective,
+  the kernel of the homomorphism acts trivially on the Lie algebra.
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The group adjoint".
 * Sébastien Gouëzel's `Mathlib.Geometry.Manifold.GroupLieAlgebra`, especially
   `inverse_mfderiv_mul_left`, `mpullback_mulInvariantVectorField`, and
   `mulInvariantVector_mlieBracket`; the corresponding conjugation arguments below adapt the
@@ -149,6 +146,13 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (by simp)]
   rfl
 
+/-- The adjoint action of `g` undoes that of `g⁻¹`: `Ad_g (Ad_{g⁻¹} X) = X`. -/
+theorem adjointContinuousLinearMap_adjointContinuousLinearMap_inv (g : G)
+    (X : GroupLieAlgebra I G) :
+    adjointContinuousLinearMap (I := I) g (adjointContinuousLinearMap (I := I) g⁻¹ X) = X := by
+  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, mul_inv_cancel,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+
 /-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` intertwines the adjoint
 actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`, where `dφ` is the differential of `φ` at the identity
 (zero if `φ` is not differentiable there, in which case both sides vanish). -/
@@ -181,6 +185,19 @@ theorem _root_.MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap
   -- steps are chained as terms.
   exact (DFunLike.congr_fun (mfderiv_congr (I := J) (I' := I) hfun) ξ).trans <|
     hcomp'.trans (adjointContinuousLinearMap_apply (I := I) (φ k) _).symm
+
+/-- **The kernel of a homomorphism with injective differential acts trivially on the Lie
+algebra.** If the differential `dφ` at the identity of `φ : K →* G` is injective, then every
+`k ∈ ker φ` has trivial adjoint action, `Ad_k = id`, since `dφ (Ad_k ξ) = Ad_1 (dφ ξ) = dφ ξ`. -/
+theorem _root_.MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [LieGroup J 1 K] (φ : K →* G) (hφ : Function.Injective (φ.groupLieAlgebraMap J I)) {k : K}
+    (hk : k ∈ φ.ker) :
+    adjointContinuousLinearMap (I := J) k = ContinuousLinearMap.id 𝕜 (GroupLieAlgebra J K) := by
+  refine ContinuousLinearMap.ext fun ξ ↦ hφ ?_
+  rw [φ.groupLieAlgebraMap_adjointContinuousLinearMap, φ.mem_ker.1 hk,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
 
 @[simp]
 private theorem conjDiffeomorph_inv (g : G) :

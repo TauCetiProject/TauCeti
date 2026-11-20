@@ -29,7 +29,9 @@ The approximation holds for functions of finite smoothness `m ≥ k`, with appro
 smoothness; for `C¹` integrable functions with integrable derivative it gives compactly supported
 `C¹` approximants converging in `L¹`, with `L¹` norms of the derivatives bounded by `‖Du‖₁`
 plus a sequence tending to zero
-(`TauCeti.exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv`).
+(`TauCeti.exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv`). An open-set form
+(`TauCeti.tendsto_eLpNorm_iteratedFDeriv_cutoff_sub_of_isOpen`) proves convergence in
+`Lᵖ(μ.restrict U)` when `f` is only `Cᵏ` on an open set `U ⊆ E`.
 The statements here concern classical derivatives; no identification with a bundled weak
 Sobolev space is asserted.
 
@@ -56,70 +58,102 @@ open scoped ContDiff ENNReal Topology
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+/-- On an open set `U`, the `k`-th derivative of `(χ (n⁻¹ • ·) - 1) • f` for `1 ≤ n` is bounded
+pointwise by the Leibniz sum in the derivatives of `f` and bounds `B i` on `χ`. -/
+private theorem norm_iteratedFDeriv_cutoff_sub_le_of_isOpen {U : Set E} (hU : IsOpen U)
+    {χ : E → ℝ} {f : E → F} {k : ℕ} (hχ : ContDiff ℝ k χ) {B : ℕ → ℝ}
+    (hB : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i) (hf : ContDiffOn ℝ k f U)
+    {n : ℝ} (hn : 1 ≤ n) {x : E} (hx : x ∈ U) :
+    ‖iteratedFDeriv ℝ k (fun y ↦ (χ (n⁻¹ • y) - 1) • f y) x‖ ≤
+      ‖∑ i ∈ Finset.range (k + 1),
+        (k.choose i : ℝ) * (1 + B i) * ‖iteratedFDeriv ℝ (k - i) f x‖‖ := by
+  rw [← iteratedFDerivWithin_of_isOpen k hU hx]
+  refine (norm_iteratedFDerivWithin_smul_le
+    (((hχ.comp (contDiff_const_smul _)).sub contDiff_const).contDiffOn) hf
+    hU.uniqueDiffOn hx le_rfl).trans ?_
+  refine (Finset.sum_le_sum fun i hi ↦ ?_).trans (le_abs_self _)
+  rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen (k - i) hU hx]
+  have hi' : i ≤ k := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
+  have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm (hB i hi') hn 1 x
+  exact mul_le_mul_of_nonneg_right
+    (mul_le_mul_of_nonneg_left (by simpa [add_comm] using hd)
+      (Nat.cast_nonneg _)) (norm_nonneg _)
+
+/-- Expanding cutoffs approximate the `k`-th classical derivative of a function that is `Cᵏ` on an
+open set `U` in `Lᵖ(μ.restrict U)`. The scale `r` may tend to infinity along any filter. Only the
+derivatives up to the requested order need to belong to `Lᵖ(μ.restrict U)`. -/
+theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub_of_isOpen
+    [MeasurableSpace E] [OpensMeasurableSpace E] [SecondCountableTopology E]
+    {μ : Measure E} {U : Set E} (hU : IsOpen U) {p : ENNReal} (hp : p ≠ ⊤)
+    {ι : Type*} {l : Filter ι} {r : ι → ℝ} (hr : Tendsto r l atTop)
+    {χ : E → ℝ} {f : E → F} {k : ℕ} (hχ : ContDiff ℝ k χ)
+    (hχ1 : χ =ᶠ[𝓝 0] 1) {B : ℕ → ℝ}
+    (hB : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i)
+    (hf : ContDiffOn ℝ k f U)
+    (hmem : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p (μ.restrict U)) :
+    Tendsto (fun n ↦ eLpNorm
+      (iteratedFDeriv ℝ k (fun x ↦ χ ((r n)⁻¹ • x) • f x) -
+        iteratedFDeriv ℝ k f) p (μ.restrict U)) l (𝓝 0) := by
+  suffices h : Tendsto (fun R : ℝ ↦ eLpNorm
+      (iteratedFDeriv ℝ k (fun x ↦ χ (R⁻¹ • x) • f x) -
+        iteratedFDeriv ℝ k f) p (μ.restrict U)) atTop (𝓝 0) from h.comp hr
+  let error (n : ℝ) : E → F := fun x ↦ (χ (n⁻¹ • x) - 1) • f x
+  have hsmooth (n : ℝ) : ContDiffOn ℝ k (error n) U :=
+    (((hχ.comp (contDiff_const_smul _)).sub contDiff_const).contDiffOn).smul hf
+  have herr (n : ℝ) {x : E} (hx : x ∈ U) :
+      iteratedFDeriv ℝ k (error n) x =
+        iteratedFDeriv ℝ k (fun y ↦ χ (n⁻¹ • y) • f y) x - iteratedFDeriv ℝ k f x := by
+    have hfx : ContDiffAt ℝ k f x := hf.contDiffAt (hU.mem_nhds hx)
+    simp only [error, sub_smul, one_smul]
+    exact fun_iteratedFDeriv_sub_apply
+      (((hχ.comp (contDiff_const_smul _)).contDiffAt).smul hfx) hfx
+  have hbmem : MemLp (fun x ↦ ∑ i ∈ Finset.range (k + 1),
+      (k.choose i : ℝ) * (1 + B i) * ‖iteratedFDeriv ℝ (k - i) f x‖) p (μ.restrict U) :=
+    memLp_finsetSum _ fun i _ ↦
+      (hmem (k - i) (Nat.sub_le _ _)).norm.const_smul ((k.choose i : ℝ) * (1 + B i))
+  -- The expanding region where the cutoff is one gives eventual local agreement.
+  have hlim (x : E) : ∀ᶠ n in atTop, iteratedFDeriv ℝ k (error n) x = 0 := by
+    have ht : Tendsto (fun n : ℝ ↦ n⁻¹ • x) atTop (𝓝 0) := by
+      simpa only [zero_smul] using (tendsto_inv_atTop_zero (𝕜 := ℝ)).smul_const x
+    filter_upwards [ht.eventually (eventually_eventually_nhds.2 hχ1)] with n hn
+    have heq : error n =ᶠ[𝓝 x] 0 := by
+      filter_upwards [(continuous_const_smul (n⁻¹ : ℝ)).continuousAt.eventually hn] with y hy
+      simp only [error, hy, Pi.one_apply, sub_self, zero_smul, Pi.zero_apply]
+    simpa only [iteratedFDeriv_zero, Pi.zero_apply] using
+      (heq.iteratedFDeriv ℝ k).eq_of_nhds
+  -- Dominated convergence on `U` applies to the full derivative error, including order zero.
+  have ht := tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (g := 0) hp
+    (Eventually.of_forall fun n ↦
+      (ContinuousOn.continuousOn_iteratedFDeriv (hsmooth n) hU le_rfl).aestronglyMeasurable
+        hU.measurableSet)
+    hbmem
+    (by
+      filter_upwards [eventually_ge_atTop (1 : ℝ)] with n hn
+      filter_upwards [ae_restrict_mem hU.measurableSet] with x hx
+      simpa only [ofReal_norm, Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul] using
+        ENNReal.ofReal_le_ofReal (norm_iteratedFDeriv_cutoff_sub_le_of_isOpen hU hχ hB hf hn hx))
+    (Eventually.of_forall fun x ↦ (tendsto_congr' (hlim x)).mpr tendsto_const_nhds)
+  refine ht.congr fun n ↦ eLpNorm_congr_ae ?_
+  filter_upwards [ae_restrict_mem hU.measurableSet] with x hx
+  simp only [Pi.sub_apply, Pi.zero_apply, sub_zero, herr n hx]
+
 /-- Expanding cutoffs approximate the `k`-th classical derivative of a `Cᵏ` function in `Lᵖ`.
-Only the derivatives up to the requested order need to be integrable; the measure need not
-be translation invariant. -/
+The scale `r` may tend to infinity along any filter. Only the derivatives up to the requested
+order need to be integrable; the measure need not be translation invariant. -/
 theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
     [MeasurableSpace E] [OpensMeasurableSpace E] [SecondCountableTopology E]
     {μ : Measure E} {p : ENNReal} (hp : p ≠ ⊤)
+    {ι : Type*} {l : Filter ι} {r : ι → ℝ} (hr : Tendsto r l atTop)
     {χ : E → ℝ} {f : E → F} {k : ℕ} (hχ : ContDiff ℝ k χ)
     (hχ1 : χ =ᶠ[𝓝 0] 1) {B : ℕ → ℝ}
     (hB : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i)
     (hf : ContDiff ℝ k f) (hmem : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) p μ) :
-    Tendsto (fun n : ℕ ↦ eLpNorm
-      (iteratedFDeriv ℝ k (fun x ↦ χ (((n : ℝ) + 1)⁻¹ • x) • f x) -
-        iteratedFDeriv ℝ k f) p μ) atTop (𝓝 0) := by
-  let error (n : ℕ) : E → F := fun x ↦ (χ (((n : ℝ) + 1)⁻¹ • x) - 1) • f x
-  have hsmooth (n : ℕ) : ContDiff ℝ k (error n) :=
-    ((hχ.comp (contDiff_const_smul _)).sub contDiff_const).smul hf
-  have herr (n : ℕ) :
-      iteratedFDeriv ℝ k (error n) =
-        iteratedFDeriv ℝ k (fun x ↦ χ (((n : ℝ) + 1)⁻¹ • x) • f x) -
-          iteratedFDeriv ℝ k f := by
-    funext x
-    simp only [error, sub_smul, one_smul]
-    exact fun_iteratedFDeriv_sub_apply
-      ((hχ.comp (contDiff_const_smul _)).smul hf).contDiffAt hf.contDiffAt
-  -- The Leibniz estimate is dominated by a finite sum of integrable derivative norms.
-  let bound : E → ℝ := fun x ↦ ∑ i ∈ Finset.range (k + 1),
-    (k.choose i : ℝ) * (1 + B i) * ‖iteratedFDeriv ℝ (k - i) f x‖
-  have hbmem : MemLp bound p μ := by
-    apply memLp_finsetSum
-    intro i _
-    exact (hmem (k - i) (Nat.sub_le _ _)).norm.const_smul
-      ((k.choose i : ℝ) * (1 + B i))
-  have hb (n : ℕ) (x : E) : ‖iteratedFDeriv ℝ k (error n) x‖ ≤ ‖bound x‖ := by
-    refine (norm_iteratedFDeriv_smul_le
-      ((hχ.comp (contDiff_const_smul _)).sub contDiff_const) hf x le_rfl).trans ?_
-    refine (Finset.sum_le_sum fun i hi ↦ ?_).trans (le_abs_self _)
-    have hi' : i ≤ k := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
-    have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm (hB i hi')
-      (by linarith [Nat.cast_nonneg (α := ℝ) n] : (1 : ℝ) ≤ (n : ℝ) + 1) 1 x
-    exact mul_le_mul_of_nonneg_right
-      (mul_le_mul_of_nonneg_left (by simpa [add_comm] using hd)
-        (Nat.cast_nonneg _)) (norm_nonneg _)
-  -- The expanding region where the cutoff is one gives eventual local agreement.
-  have hlim (x : E) : ∀ᶠ n : ℕ in atTop, iteratedFDeriv ℝ k (error n) x = 0 := by
-    have ht : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • x) atTop (𝓝 0) := by
-      simpa only [one_div, zero_smul] using
-        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const x
-    filter_upwards [ht.eventually (eventually_eventually_nhds.2 hχ1)] with n hn
-    have heq : error n =ᶠ[𝓝 x] 0 := by
-      have hnear := (continuous_const_smul ((n : ℝ) + 1)⁻¹).continuousAt.eventually hn
-      filter_upwards [hnear] with y hy
-      simp only [error, hy, Pi.one_apply, sub_self, zero_smul, Pi.zero_apply]
-    simpa only [iteratedFDeriv_zero, Pi.zero_apply] using
-      (heq.iteratedFDeriv ℝ k).eq_of_nhds
-  -- Dominated convergence applies to the full derivative error, including order zero.
-  have ht := tendsto_eLpNorm_sub_of_ae_tendsto (C := 1) (g := 0) hp
-    (Eventually.of_forall fun n ↦ (hsmooth n).continuous_iteratedFDeriv le_rfl
-      |>.aestronglyMeasurable)
-    hbmem
-    (Eventually.of_forall fun n ↦ Eventually.of_forall fun x ↦ by
-      simpa only [ofReal_norm, Pi.zero_apply, sub_zero, ENNReal.coe_one, one_mul] using
-        ENNReal.ofReal_le_ofReal (hb n x))
-    (Eventually.of_forall fun x ↦ (tendsto_congr' (hlim x)).mpr tendsto_const_nhds)
-  simpa only [sub_zero, herr] using ht
+    Tendsto (fun n ↦ eLpNorm
+      (iteratedFDeriv ℝ k (fun x ↦ χ ((r n)⁻¹ • x) • f x) -
+        iteratedFDeriv ℝ k f) p μ) l (𝓝 0) := by
+  simpa only [Measure.restrict_univ] using
+    tendsto_eLpNorm_iteratedFDeriv_cutoff_sub_of_isOpen isOpen_univ hp hr hχ hχ1 hB hf.contDiffOn
+      (by simpa only [Measure.restrict_univ] using hmem)
 
 /-- Multiplication by a `Cᵏ` scalar function with bounded derivatives preserves `Lᵖ`
 integrability of the `k`-th classical derivative, provided every derivative of the second
@@ -183,6 +217,8 @@ theorem exists_contDiff_hasCompactSupport_approximation
       (fun j hj ↦ hmem j (hj.trans hi))
   · intro i hi
     exact tendsto_eLpNorm_iteratedFDeriv_cutoff_sub hp
+      (r := fun n : ℕ ↦ (n : ℝ) + 1)
+      (tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop)
       (χ.contDiff.of_le (mod_cast le_top)) χ.eventuallyEq_one
       (fun j _ x ↦ hB j x) (hfk i hi)
       (fun j hj ↦ hmem j (hj.trans hi))

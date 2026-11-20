@@ -8,6 +8,14 @@ module
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.LocallyConvex.UltrastrongTopology
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+import Mathlib.Analysis.LocallyConvex.HahnBanach
+import Mathlib.Analysis.LocallyConvex.WeakDual
+import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
+import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
+import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Analysis.Normed.Module.Dual.Submodule
 
 /-!
 # The ultraweak operator topology
@@ -31,6 +39,37 @@ The ultraweak topology sits between the others: it is coarser than the ultrastro
 operator topology (`isInducing_restrict_toWOT`): for a uniformly bounded net, weak operator and
 ultraweak convergence are equivalent.
 
+The ultraweakly continuous linear functionals are the square-summable vector functionals
+`A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫` (`ContinuousLinearMapUltraweak.exists_tsum_inner_apply_eq` and
+`ContinuousLinearMapUltraweak.continuous_iff_exists_tsum_inner_apply_eq`): the ultraweak topology
+is induced by these functionals, so a continuous one is a finite linear combination of them, and
+the finitely many pairs are interleaved into one (`lp.exists_inner_ampliation_apply_eq_sum`).
+When `F` is complete, the same holds for the ultrastrong topology
+(`ContinuousLinearMapUltrastrong.exists_tsum_inner_apply_eq` and
+`ContinuousLinearMapUltrastrong.continuous_iff_exists_tsum_inner_apply_eq`): by Hahn–Banach an
+ultrastrongly continuous functional extends from the ampliations `⊕ A` to a strongly continuous
+functional on the operators of `ℓ²(ℕ, ·)`, which is a finite sum of continuous functionals of
+values, and the Riesz theorem in `ℓ²(ℕ, F)` turns these into vectors `η`. So, for complete `F`,
+the ultraweak and ultrastrong topologies have the same continuous linear functionals
+(`continuous_strongDual_ultrastrong_apply`) and a convex set of operators has the same closure in
+both (`Convex.ultrastrongOfCLM_mem_closure_image_iff_ultraweak`).
+
+On infinite-dimensional spaces the ultraweak and ultrastrong topologies are not coarser than the
+weak and strong operator topologies, respectively, and the ultraweak topology is not even coarser
+than the strong operator topology. A diagonal functional `A ↦ ∑ₙ ⟪ξₙ, A ξₙ⟫` whose vectors span an
+infinite-dimensional subspace, such as `ξₙ = (n + 1)⁻¹ eₙ` for an orthonormal sequence `eₙ`, is
+not continuous for the strong or the weak operator topology
+(`TauCeti.not_continuous_pointwiseConvergenceCLM_tsum_inner_apply`,
+`TauCeti.not_continuous_wot_tsum_inner_apply`), since it does not vanish on the projection onto the
+orthogonal complement of any finite set of vectors. Between two infinite-dimensional spaces the
+identity from the strong, and hence from the weak, operator topology to the ultraweak topology is
+not continuous (`ContinuousLinearMapUltraweak.not_continuous_ofPointwiseConvergenceCLM`,
+`ContinuousLinearMapUltraweak.not_continuous_ofWOT`). The proof pairs a square-summable sequence of
+linearly independent vectors (`lp.exists_linearIndependent`) with a rank-one operator vanishing on
+finitely many vectors but not on the whole sequence, as in the corresponding comparison
+`ContinuousLinearMapUltrastrong.not_continuous_ofPointwiseConvergenceCLM` of the ultrastrong and
+strong operator topologies.
+
 ## Implementation notes
 
 As for the ultrastrong copy, the algebraic structure is transported from `E →L[𝕜] F` along
@@ -38,9 +77,16 @@ As for the ultrastrong copy, the algebraic structure is transported from `E →L
 the agreement of the uniform structure with the topology hold by definition downstream.
 The seminorms are not exposed; they are used through `seminorm_apply` and `seminormFamily_apply`.
 
+The characterization of the ultrastrongly continuous functionals reduces to Tau Ceti's
+`PointwiseConvergenceCLM.exists_finset_sum_eq` for the strong operator topology, and the
+convex-closure comparison `Convex.ultrastrongOfCLM_mem_closure_image_iff_ultraweak` follows the
+proof of `Convex.toPointwiseConvergenceCLM_mem_closure_image_iff`, the weak/strong operator
+version built on `ContinuousLinearMapWOT.continuous_strongDual_apply_toPointwiseConvergenceCLM`.
+
 ## References
 
-* J. Dixmier, *Von Neumann Algebras*, North-Holland, 1981, Part I, Chapter 3, §1.
+* J. Dixmier, *Von Neumann Algebras*, North-Holland, 1981, Part I, Chapter 3, §1, for the
+  topologies and the characterization of their continuous linear functionals.
 * M. Takesaki, *Theory of Operator Algebras I*, Springer, 1979, Chapter II, §2.
 -/
 
@@ -359,12 +405,290 @@ theorem isInducing_restrict_toWOT {s : Set (ContinuousLinearMapUltraweak 𝕜 E 
     IsInducing (s.domRestrict fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
       ContinuousLinearMapWOT.ofCLM A.toCLM) := by
   refine isInducing_iff_nhds.2 fun A ↦ le_antisymm
-    ((continuous_toWOT.comp continuous_subtype_val).tendsto A).le_comap ?_
+    ((continuous_toWOT.comp continuous_subtypeVal).tendsto A).le_comap ?_
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toWOT_of_eventually_norm_le
-    (Eventually.of_forall fun B : s ↦ hs B B.2)).2 tendsto_comap
+    (Eventually.of_forall fun B : s ↦ hs B B.property)).2 tendsto_comap
 
 end Comparison
+
+end ContinuousLinearMapUltraweak
+
+/-! ### Continuous linear functionals -/
+
+namespace ContinuousLinearMapUltrastrong
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- A square-summable vector functional `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫` is ultrastrongly continuous. -/
+@[fun_prop]
+theorem continuous_tsum_inner_apply (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) :
+    Continuous fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦ ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  simpa only [lp.inner_ampliation_apply] using
+    (continuous_const (y := η)).inner (𝕜 := 𝕜) (continuous_ampliation_apply (𝕜 := 𝕜) (F := F) ξ)
+
+variable [CompleteSpace F]
+
+/-- **Ultrastrongly continuous functionals.** A linear functional on operators which is continuous
+for the ultrastrong topology is a square-summable vector functional `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫`. -/
+theorem exists_tsum_inner_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F)) :
+    ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)), ∀ A : ContinuousLinearMapUltrastrong 𝕜 E F,
+      φ A = ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  -- The ampliation `A ↦ ⊕ A` identifies the ultrastrong copy with a subspace `e` of the operators
+  -- on `ℓ²(ℕ, ·)` with the strong operator topology.
+  let ι : ContinuousLinearMapUltrastrong 𝕜 E F →ₗ[𝕜] ℓ²(ℕ, E) →Lₚₜ[𝕜] ℓ²(ℕ, F) :=
+    (ContinuousLinearMap.toUniformConvergenceCLM (RingHom.id 𝕜) _ _).toLinearMap ∘ₗ
+      (lp.ampliation ℕ 2).toLinearMap ∘ₗ (linearEquiv 𝕜).toLinearMap
+  have hι (A : ContinuousLinearMapUltrastrong 𝕜 E F) (ξ : ℓ²(ℕ, E)) :
+      ι A ξ = lp.ampliation ℕ 2 A.toCLM ξ := by
+    simp [ι]
+  have hιinj : Function.Injective ι := fun A B h ↦ toCLM_injective <| lp.ampliation_injective <|
+    ContinuousLinearMap.ext fun ξ ↦ by simpa only [hι] using congr($h ξ)
+  let e := LinearEquiv.ofInjective ι hιinj
+  have he : Continuous e.symm := continuous_of_continuous_ampliation_apply fun ξ ↦
+    ((continuous_eval_const ξ).comp continuous_subtypeVal).congr fun x ↦ by
+      simp [e, ← hι, LinearEquiv.ofInjective_symm_apply]
+  -- By Hahn–Banach `φ` extends to a strongly continuous functional `G`, a finite sum of continuous
+  -- functionals of values, which the Riesz theorem in `ℓ²(ℕ, F)` turns into vectors.
+  have := (PointwiseConvergenceCLM.withSeminorms (σ := RingHom.id 𝕜) (E := ℓ²(ℕ, E))
+    (F := ℓ²(ℕ, F))).toPolynormableSpace
+  obtain ⟨G, hG⟩ := StrongDual.exists_extension (LinearMap.range ι) (φ ∘L ⟨e.symm, he⟩)
+  obtain ⟨s, g, hg⟩ := PointwiseConvergenceCLM.exists_finset_sum_eq G
+  obtain ⟨ξ, η, h⟩ := lp.exists_inner_ampliation_apply_eq_sum (𝕜 := 𝕜) s id
+    fun x ↦ (InnerProductSpace.toDual 𝕜 ℓ²(ℕ, F)).symm (g x)
+  refine ⟨ξ, η, fun A ↦ ?_⟩
+  have hGA : G (ι A) = φ A := by simpa [e] using hG (e A)
+  rw [← hGA, hg, ← lp.inner_ampliation_apply, h]
+  simp [hι]
+
+/-- A linear functional on operators is ultrastrongly continuous exactly when it is a
+square-summable vector functional `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫`. -/
+theorem continuous_iff_exists_tsum_inner_apply_eq
+    (φ : ContinuousLinearMapUltrastrong 𝕜 E F →ₗ[𝕜] 𝕜) :
+    Continuous φ ↔ ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)), ∀ A : ContinuousLinearMapUltrastrong 𝕜 E F,
+      φ A = ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  refine ⟨fun h ↦ exists_tsum_inner_apply_eq ⟨φ, h⟩, ?_⟩
+  rintro ⟨ξ, η, h⟩
+  exact (continuous_tsum_inner_apply ξ η).congr fun A ↦ (h A).symm
+
+end ContinuousLinearMapUltrastrong
+
+namespace ContinuousLinearMapUltraweak
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- A square-summable vector functional `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫` is ultraweakly continuous. -/
+@[fun_prop]
+theorem continuous_tsum_inner_apply (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  simpa only [lp.inner_ampliation_apply] using continuous_inner_ampliation_apply ξ η
+
+/-- **Ultraweakly continuous functionals.** A linear functional on operators which is continuous
+for the ultraweak topology is a square-summable vector functional `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫`. -/
+theorem exists_tsum_inner_apply_eq (φ : StrongDual 𝕜 (ContinuousLinearMapUltraweak 𝕜 E F)) :
+    ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)), ∀ A : ContinuousLinearMapUltraweak 𝕜 E F,
+      φ A = ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  -- The topology is induced by the matrix coefficients, so `φ` is a finite linear combination of
+  -- them.
+  have hφ : (φ : ContinuousLinearMapUltraweak 𝕜 E F →ₗ[𝕜] 𝕜) ∈ Submodule.span 𝕜
+      (Set.range fun p : ℓ²(ℕ, E) × ℓ²(ℕ, F) ↦ LinearMap.proj p ∘ₗ inducingFn 𝕜 E F) := by
+    rw [LinearMap.mem_span_iff_continuous, continuous_iff_le_induced]
+    exact φ.continuous.le_induced.trans_eq' (induced_to_pi (inducingFn 𝕜 E F))
+  obtain ⟨c, hc⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hφ
+  -- Absorbing the coefficients into the vectors `η`, the finitely many pairs interleave into one.
+  obtain ⟨ξ, η, h⟩ := lp.exists_inner_ampliation_apply_eq_sum (𝕜 := 𝕜) c.support Prod.fst
+    fun p ↦ starRingEnd 𝕜 (c p) • p.2
+  refine ⟨ξ, η, fun A ↦ ?_⟩
+  rw [← lp.inner_ampliation_apply, h, ← ContinuousLinearMap.coe_coe φ, ← hc]
+  simp [Finsupp.sum, inner_smul_left, ← inducingFn_apply]
+
+/-- A linear functional on operators is ultraweakly continuous exactly when it is a
+square-summable vector functional `A ↦ ∑ₙ ⟪ηₙ, A ξₙ⟫`. -/
+theorem continuous_iff_exists_tsum_inner_apply_eq
+    (φ : ContinuousLinearMapUltraweak 𝕜 E F →ₗ[𝕜] 𝕜) :
+    Continuous φ ↔ ∃ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)), ∀ A : ContinuousLinearMapUltraweak 𝕜 E F,
+      φ A = ∑' n, ⟪η n, A.toCLM (ξ n)⟫_𝕜 := by
+  refine ⟨fun h ↦ exists_tsum_inner_apply_eq ⟨φ, h⟩, ?_⟩
+  rintro ⟨ξ, η, h⟩
+  exact (continuous_tsum_inner_apply ξ η).congr fun A ↦ (h A).symm
+
+/-- **Same continuous duals.** For complete `F`, a linear functional on operators which is
+continuous for the ultrastrong topology is continuous for the ultraweak topology. -/
+theorem continuous_strongDual_ultrastrong_apply [CompleteSpace F]
+    (φ : StrongDual 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F)) :
+    Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦
+      φ (ContinuousLinearMapUltrastrong.ofCLM A.toCLM) := by
+  obtain ⟨ξ, η, h⟩ := ContinuousLinearMapUltrastrong.exists_tsum_inner_apply_eq φ
+  simpa only [h] using continuous_tsum_inner_apply (𝕜 := 𝕜) ξ η
+
+end ContinuousLinearMapUltraweak
+
+namespace ContinuousLinearMapUltrastrong
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [CompleteSpace F] [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F]
+
+/-- For a convex set of operators and complete `F`, the closures in the ultrastrong and in the
+ultraweak topology contain the same operators. -/
+theorem _root_.Convex.ultrastrongOfCLM_mem_closure_image_iff_ultraweak {s : Set (E →L[𝕜] F)}
+    (hs : Convex ℝ s) {T : E →L[𝕜] F} :
+    ofCLM T ∈ closure (ofCLM '' s) ↔
+      ContinuousLinearMapUltraweak.ofCLM T ∈ closure (ContinuousLinearMapUltraweak.ofCLM '' s) := by
+  -- `e` is the identity on underlying operators, from the ultrastrong to the ultraweak copy.
+  let e : ContinuousLinearMapUltrastrong 𝕜 E F ≃ₗ[𝕜] ContinuousLinearMapUltraweak 𝕜 E F :=
+    (linearEquiv 𝕜).trans (ContinuousLinearMapUltraweak.linearEquiv 𝕜).symm
+  have he (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
+      e A = ContinuousLinearMapUltraweak.ofCLM A.toCLM := by
+    simp [e, LinearEquiv.symm_apply_eq]
+  have he_symm (A : ContinuousLinearMapUltraweak 𝕜 E F) : e.symm A = ofCLM A.toCLM := by
+    simp [e, LinearEquiv.symm_apply_eq]
+  have hof :
+      ⇑(linearEquiv ℝ).symm = (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+    funext fun _ ↦ by simp [LinearEquiv.symm_apply_eq]
+  have hconv : Convex ℝ (ofCLM '' s : Set (ContinuousLinearMapUltrastrong 𝕜 E F)) := by
+    simpa only [LinearEquiv.coe_toLinearMap, hof] using
+      hs.linear_image (linearEquiv ℝ).symm.toLinearMap
+  have hclosure := e.image_closure_of_convex hconv
+    (fun f ↦ (f.continuous.comp ContinuousLinearMapUltraweak.continuous_ofUltrastrong).congr
+      fun A ↦ by simp [he])
+    (fun f ↦ (ContinuousLinearMapUltraweak.continuous_strongDual_ultrastrong_apply f).congr
+      fun A ↦ by simp [he_symm])
+  have himage : e '' (ofCLM '' s) = ContinuousLinearMapUltraweak.ofCLM '' s := by
+    simp only [Set.image_image, he]
+  rw [← himage, ← hclosure, ← he, e.injective.mem_set_image]
+
+end ContinuousLinearMapUltrastrong
+
+/-! ### Separating the ultraweak from the weak operator topology -/
+
+section Separation
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A diagonal vector functional `A ↦ ∑ₙ ⟪ξₙ, A ξₙ⟫` whose vectors `ξₙ` span an
+infinite-dimensional subspace is not continuous for the strong operator topology, although it is
+ultrastrongly continuous (`TauCeti.ContinuousLinearMapUltrastrong.continuous_tsum_inner_apply`). -/
+theorem not_continuous_pointwiseConvergenceCLM_tsum_inner_apply {ξ : ℓ²(ℕ, E)}
+    (hξ : ¬ FiniteDimensional 𝕜 (Submodule.span 𝕜 (Set.range ξ))) :
+    ¬ Continuous fun A : E →Lₚₜ[𝕜] E ↦ ∑' n, ⟪ξ n, A (ξ n)⟫_𝕜 := by
+  classical
+  intro hcont
+  -- Written as a matrix coefficient of the ampliation, the functional is linear; elements of
+  -- `E →Lₚₜ[𝕜] E` are read as operators through `toUniformConvergenceCLM.symm`.
+  let ψ : (E →L[𝕜] E) →ₗ[𝕜] 𝕜 :=
+    { toFun T := ⟪ξ, lp.ampliation ℕ 2 T ξ⟫_𝕜
+      map_add' T S := by simp [inner_add_right]
+      map_smul' c T := by simp [inner_smul_right] }
+  let φ : StrongDual 𝕜 (E →Lₚₜ[𝕜] E) :=
+    ⟨ψ ∘ₗ (ContinuousLinearMap.toUniformConvergenceCLM _ E _).symm.toLinearMap,
+      hcont.congr fun A ↦ by simp [ψ, lp.inner_ampliation_apply]⟩
+  -- A strongly continuous functional only sees the values at finitely many vectors `x ∈ s`,
+  -- so it vanishes at the projection `P` onto the orthogonal complement of their span `K`.
+  obtain ⟨s, g, hg⟩ := PointwiseConvergenceCLM.exists_finset_sum_eq φ
+  set K := Submodule.span 𝕜 (s : Set E)
+  set P := Kᗮ.starProjection
+  have hφP : ⟪ξ, lp.ampliation ℕ 2 P ξ⟫_𝕜 = 0 := by
+    have h0 : φ (ContinuousLinearMap.toUniformConvergenceCLM _ E _ P) = 0 := by
+      rw [hg]
+      refine Finset.sum_eq_zero fun x hx ↦ ?_
+      rw [ContinuousLinearMap.toUniformConvergenceCLM_apply, Kᗮ.starProjection_apply_eq_zero_iff.2
+        (K.le_orthogonal_orthogonal (Submodule.subset_span hx)), map_zero]
+    simpa [φ, ψ] using h0
+  -- But `⟪ξ, (⊕ P) ξ⟫ = ‖(⊕ P) ξ‖²`, so `P` kills every `ξ n`, which therefore lies in `K`.
+  have hPξ : lp.ampliation ℕ 2 P ξ = 0 := by
+    rw [← inner_self_eq_zero (𝕜 := 𝕜), ← hφP, lp.inner_eq_tsum, lp.inner_eq_tsum]
+    refine tsum_congr fun n ↦ ?_
+    rw [lp.ampliation_apply_apply, Kᗮ.inner_starProjection_left_eq_right,
+      Kᗮ.starProjection_eq_self_iff.2 (Kᗮ.starProjection_apply_mem _)]
+  have hξK : Submodule.span 𝕜 (Set.range ξ) ≤ K := by
+    refine Submodule.span_le.2 (Set.range_subset_iff.2 fun n ↦ ?_)
+    rw [SetLike.mem_coe, ← K.orthogonal_orthogonal, ← Kᗮ.starProjection_apply_eq_zero_iff]
+    simpa only [lp.ampliation_apply_apply, lp.coeFn_zero, Pi.zero_apply] using congr($hPξ n)
+  exact hξ (Submodule.finiteDimensional_of_le hξK)
+
+/-- A diagonal vector functional `A ↦ ∑ₙ ⟪ξₙ, A ξₙ⟫` whose vectors `ξₙ` span an
+infinite-dimensional subspace is not continuous for the weak operator topology, although it is
+ultraweakly continuous (`TauCeti.ContinuousLinearMapUltraweak.continuous_tsum_inner_apply`). -/
+theorem not_continuous_wot_tsum_inner_apply {ξ : ℓ²(ℕ, E)}
+    (hξ : ¬ FiniteDimensional 𝕜 (Submodule.span 𝕜 (Set.range ξ))) :
+    ¬ Continuous fun A : E →WOT[𝕜] E ↦ ∑' n, ⟪ξ n, A (ξ n)⟫_𝕜 := fun h ↦
+  not_continuous_pointwiseConvergenceCLM_tsum_inner_apply hξ
+    (h.comp ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM)
+
+/-- On an infinite-dimensional inner product space there is a diagonal vector functional
+`A ↦ ∑ₙ ⟪ξₙ, A ξₙ⟫`, continuous for the ultraweak and ultrastrong topologies, which is not
+continuous for the strong operator topology, nor therefore for the weak operator topology. -/
+theorem exists_not_continuous_pointwiseConvergenceCLM_tsum_inner_apply
+    (hE : ¬ FiniteDimensional 𝕜 E) :
+    ∃ ξ : ℓ²(ℕ, E), ¬ Continuous fun A : E →Lₚₜ[𝕜] E ↦ ∑' n, ⟪ξ n, A (ξ n)⟫_𝕜 := by
+  obtain ⟨ξ, hξ⟩ := lp.exists_linearIndependent (𝕜 := 𝕜) (p := 2) (by norm_num) hE
+  -- The span of the infinite linearly independent sequence `ξ` is not finite-dimensional.
+  refine ⟨ξ, not_continuous_pointwiseConvergenceCLM_tsum_inner_apply fun _ ↦ ?_⟩
+  exact Module.Finite.not_linearIndependent_of_infinite (R := 𝕜)
+    (fun n ↦ (⟨ξ n, Submodule.subset_span ⟨n, rfl⟩⟩ : Submodule.span 𝕜 (Set.range ξ)))
+    (LinearIndependent.of_comp (Submodule.span 𝕜 (Set.range ξ)).subtype hξ)
+
+end Separation
+
+namespace ContinuousLinearMapUltraweak
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- Between infinite-dimensional inner product spaces the ultraweak topology is not coarser than
+the strong operator topology: the identity from the strong operator topology to the ultraweak
+topology is not continuous. -/
+theorem not_continuous_ofPointwiseConvergenceCLM (hE : ¬ FiniteDimensional 𝕜 E)
+    (hF : ¬ FiniteDimensional 𝕜 F) :
+    ¬ Continuous fun A : E →Lₚₜ[𝕜] F ↦ ofCLM (A : E →L[𝕜] F) := by
+  classical
+  intro h
+  -- Pair a linearly independent `ξ ∈ ℓ²(ℕ, E)` with `η = (2⁻ⁿ wₙ)` for an orthonormal sequence `w`.
+  obtain ⟨ξ, hξ⟩ := lp.exists_linearIndependent (𝕜 := 𝕜) (p := 2) (by norm_num) hE
+  obtain ⟨ζ, hζ⟩ := lp.exists_linearIndependent (𝕜 := 𝕜) (p := 2) (by norm_num) hF
+  set w := InnerProductSpace.gramSchmidtNormed 𝕜 fun n ↦ ζ n
+  have hw : Orthonormal 𝕜 w := InnerProductSpace.gramSchmidtNormed_orthonormal hζ
+  have hη : Memℓp (fun n ↦ ((2 : 𝕜) ^ n)⁻¹ • w n) 2 :=
+    Memℓp.of_norm_le_geometric (C := 1) (r := 2⁻¹) (by norm_num) (by norm_num)
+      (fun n ↦ by simp [norm_smul, hw.1 n]) (by norm_num)
+  let η : ℓ²(ℕ, F) := ⟨_, hη⟩
+  -- The matrix coefficient at `(ξ, η)` would be strongly continuous, so it would only see the
+  -- values at finitely many vectors `x ∈ s`. Elements of `E →Lₚₜ[𝕜] F` are read as operators
+  -- through `toUniformConvergenceCLM.symm`.
+  have hsymm (B : E →Lₚₜ[𝕜] F) :
+      (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm B = (B : E →L[𝕜] F) :=
+    ContinuousLinearMap.ext fun _ ↦ ContinuousLinearMap.toUniformConvergenceCLM_symm_apply
+  let ψ : (E →L[𝕜] F) →ₗ[𝕜] 𝕜 :=
+    { toFun T := ⟪η, lp.ampliation ℕ 2 T ξ⟫_𝕜
+      map_add' T S := by simp [inner_add_right]
+      map_smul' c T := by simp [inner_smul_right] }
+  let φ : StrongDual 𝕜 (E →Lₚₜ[𝕜] F) :=
+    ⟨ψ ∘ₗ (ContinuousLinearMap.toUniformConvergenceCLM _ F _).symm.toLinearMap,
+      ((continuous_inner_ampliation_apply ξ η).comp h).congr fun A ↦ by simp [ψ, hsymm]⟩
+  obtain ⟨s, g, hg⟩ := PointwiseConvergenceCLM.exists_finset_sum_eq φ
+  -- Some `ξ N` lies outside the span `K` of `s`. The rank-one operator `x ↦ f x • w N`, with `f`
+  -- vanishing on `K` and `f (ξ N) = 1`, vanishes at every `x ∈ s`, yet its coefficient is `2⁻ᴺ`.
+  set K := Submodule.span 𝕜 (s : Set E)
+  obtain ⟨N, hN⟩ : ∃ N, ξ N ∉ K := by
+    by_contra! hK
+    exact Module.Finite.not_linearIndependent_of_infinite (R := 𝕜) (fun n ↦ (⟨ξ n, hK n⟩ : K))
+      (LinearIndependent.of_comp K.subtype hξ)
+  obtain ⟨f, hfK, hfN⟩ := K.exists_dual_forall_mem_eq_zero_eq_one K.isClosed_of_finiteDimensional hN
+  have h0 := hg (ContinuousLinearMap.toUniformConvergenceCLM _ F _ (f.smulRight (w N)))
+  rw [Finset.sum_eq_zero fun x hx ↦ by simp [hfK x (Submodule.subset_span hx)]] at h0
+  simp [φ, ψ, η, lp.inner_ampliation_apply, inner_smul_left, inner_smul_right,
+    orthonormal_iff_ite.1 hw, hfN] at h0
+
+/-- Between infinite-dimensional inner product spaces the ultraweak topology is strictly finer
+than the weak operator topology: the identity from the weak operator topology to the ultraweak
+topology is not continuous. -/
+theorem not_continuous_ofWOT (hE : ¬ FiniteDimensional 𝕜 E) (hF : ¬ FiniteDimensional 𝕜 F) :
+    ¬ Continuous fun A : E →WOT[𝕜] F ↦ ofCLM A.toCLM := fun h ↦
+  not_continuous_ofPointwiseConvergenceCLM hE hF
+    (h.comp ContinuousLinearMapWOT.continuous_ofPointwiseConvergenceCLM)
 
 end ContinuousLinearMapUltraweak
 

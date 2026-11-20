@@ -74,7 +74,7 @@ theorem hasLocallyFiniteMass_iff_forall_comp_monoCLM (T : 𝓕)
     HasLocallyFiniteMass T ↔ ∀ i, HasLocallyFiniteMass
       (T ∘ (monoCLM ℝ : 𝓓^{n}(U i, F) →L[ℝ] 𝓓^{n}(Ω, F))) := by
   have hUΩ (i : ι) : U i ≤ Ω := hU ▸ le_iSup U i
-  refine ⟨fun hT i => hT.comp_monoCLM (hUΩ i), fun hT => ?_⟩
+  refine ⟨fun hT i => hT.comp_monoCLM, fun hT => ?_⟩
   refine (hasLocallyFiniteMass_iff_exists_open_localMass_ne_top T).2 fun x hx => ?_
   obtain ⟨i, hi⟩ : ∃ i, x ∈ U i := by
     simpa [← SetLike.mem_coe, ← hU, Opens.coe_iSup] using hx

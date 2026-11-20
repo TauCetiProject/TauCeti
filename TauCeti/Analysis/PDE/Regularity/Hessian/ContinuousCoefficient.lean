@@ -13,7 +13,7 @@ import TauCeti.Topology.Instances.Matrix
 /-!
 # The interior Calderón–Zygmund estimate for continuous coefficients
 
-Let `0 < n`, `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file proves the interior `W^{2,p}`
+Let `1 < p < ∞`, and let `Ω ⊆ ℝⁿ` be open. This file proves the interior `W^{2,p}`
 estimate for strong solutions of a non-divergence-form equation
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu + ⟪b, ∇u⟫ + c u = f` whose principal coefficients are continuous on `Ω` and whose
 lower-order coefficients are bounded, in
@@ -44,7 +44,7 @@ estimate with the coefficients frozen at `A = a(x)` bounds `‖D²u‖_{Lᵖ(B(x
 the bounds `β` and `γ` on `b` and `c` entering its constant.
 By compactness finitely many of the balls `B(x, rₓ)` cover `K`, and the `Lᵖ` norm on `K` is at
 most the sum of the `Lᵖ` norms on these balls
-(`MeasureTheory.eLpNorm_restrict_biUnion_finset_le`).
+(`MeasureTheory.lpNorm_restrict_le_sum_of_subset_biUnion`).
 
 ## References
 
@@ -91,7 +91,7 @@ private theorem le_mul_mul_add_of_sq_mul_le {C₀ : ℝ≥0} {lam r T F U G Lf L
       field_simp
       ring
     rw [hsplit]
-    refine mul_le_mul_of_nonneg_left ?_ C₀.2
+    refine mul_le_mul_of_nonneg_left ?_ C₀.property
     have h1 : (2 * r) ^ 2 / lam * Lf ≤ (2 * r) ^ 2 / lam * F := by gcongr
     have h2 : T * Lu ≤ T * U := mul_le_mul_of_nonneg_left hLu hT0
     have h3 : 0 ≤ r ^ 2 * (4 / lam) * U + T * F :=
@@ -104,7 +104,7 @@ around an elliptic matrix `A` by at most `δ λ`, the interior estimate on balls
 `B(x₀, r)` by the `Lᵖ(Ω)` norms of `f` and `u`, with the coefficient bound
 `Λ = ∑ᵢⱼ |Aᵢⱼ| + δ λ` on `B(x₀, 2r)` and the bounds `β` and `γ` on the lower-order
 coefficients. -/
-private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0 < n)
+private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm
     (hp : 1 < p) (hp_top : p ≠ ⊤) :
     ∃ C₀ : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧ ∀ {A : Matrix (Fin n) (Fin n) ℝ} {lam : ℝ}, 0 < lam →
       (∀ ξ : EuclideanSpace ℝ (Fin n), lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
@@ -130,7 +130,8 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0
           C₀ * (4 / lam + (1 + (∑ i, ∑ j, |A i j| + δ * lam + β * (2 * r) +
             γ * (2 * r) ^ 2) / lam) ^ 2 / r ^ 2) * (‖f‖ + ‖Wkp.value 2 u‖) := by
   obtain ⟨C₀, δ, hδ, hball⟩ :=
-    exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq hn hp hp_top
+    exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_add_mul_eq (n := n) hp
+      hp_top
   refine ⟨C₀, δ, hδ, fun {A lam} hl0 hA {Omega x₀ r} hr0 hR {a b c β γ} ha hosc hb hbβ hc hcγ
     u f heq => ?_⟩
   set Λ := ∑ i, ∑ j, |A i j| + δ * lam
@@ -157,8 +158,8 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0
     (lpNorm_mono_measure (Lp.memLp f) (Measure.restrict_mono hR le_rfl))
     (lpNorm_mono_measure (Lp.memLp _) (Measure.restrict_mono hR le_rfl)) key
 
-/-- **The interior Calderón–Zygmund estimate for continuous coefficients.** Let `0 < n` and
-`1 < p < ∞`, let `Ω ⊆ ℝⁿ` be open and `K ⊆ Ω` compact, and let `a` be a matrix-valued coefficient,
+/-- **The interior Calderón–Zygmund estimate for continuous coefficients.** Let `1 < p < ∞`,
+let `Ω ⊆ ℝⁿ` be open and `K ⊆ Ω` compact, and let `a` be a matrix-valued coefficient,
 measurable on `Ω` and continuous at each `x ∈ K`, such that `a x` is elliptic at each `x ∈ K`,
 that is, `λₓ ‖ξ‖² ≤ ξᵀ a(x) ξ` for some `λₓ > 0`. Let `b` and `c` be measurable lower-order
 coefficients with `‖b(x)‖ ≤ β` and `|c(x)| ≤ γ` for almost every `x ∈ Ω`. Then there is a
@@ -172,7 +173,7 @@ where `D²u` is the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u` and `∇u` t
 `TauCeti.Wkp.iteratedGradient 0 (TauCeti.Wkp.lowerOrder 1 u)`. No boundary condition on `u`
 and no regularity of `Ω` are assumed, and the gradient of `u` does not appear on the right. -/
 theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_of_continuousAt
-    (hn : 0 < n) (hp : 1 < p) (hp_top : p ≠ ⊤) {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+    (hp : 1 < p) (hp_top : p ≠ ⊤) {Omega : Opens (EuclideanSpace ℝ (Fin n))}
     {K : Set (EuclideanSpace ℝ (Fin n))} (hK : IsCompact K) (hKΩ : K ⊆ Omega)
     {a : EuclideanSpace ℝ (Fin n) → Matrix (Fin n) (Fin n) ℝ}
     (ha : AEStronglyMeasurable a (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))))
@@ -195,7 +196,7 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_
       lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict K) ≤
         C * (‖f‖ + ‖Wkp.value 2 u‖) := by
   obtain ⟨C₀, δ, hδ, hball⟩ :=
-    exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm hn hp hp_top
+    exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (n := n) hp hp_top
   -- Around each point of `K`, a ball in `Ω` on which `a` oscillates by at most `δ λₓ`.
   choose! lam hlam hA using hell
   have hsmall : ∀ x ∈ K, ∃ r : ℝ, 0 < r ∧ ball x (2 * r) ⊆ Omega ∧
@@ -212,18 +213,11 @@ theorem exists_lpNorm_iteratedGradient_le_of_sum_mul_inner_add_inner_add_mul_eq_
       γ * (2 * r x) ^ 2) / lam x) ^ 2 / r x ^ 2)
   refine ⟨∑ x ∈ t, C x, fun u f heq => ?_⟩
   -- Sum the ball estimates over the cover.
-  have hfin : ∀ x ∈ t, eLpNorm (Wkp.iteratedGradient 1 u) p
-      (volume.restrict (ball x (r x))) ≠ ⊤ := fun x hxt =>
-    ((Lp.memLp _).mono_measure (Measure.restrict_mono ((ball_subset_ball
-      (by linarith [hr x (htK x hxt)])).trans (hrΩ x (htK x hxt))) le_rfl)).eLpNorm_ne_top
   calc lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict K)
-      ≤ ∑ x ∈ t, lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x (r x))) := by
-        rw [← toReal_eLpNorm]
-        simp_rw [← toReal_eLpNorm]
-        rw [← ENNReal.toReal_sum hfin]
-        exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 hfin)
-          ((eLpNorm_mono_measure _ (Measure.restrict_mono hcover le_rfl)).trans
-            (eLpNorm_restrict_biUnion_finset_le _ hp.le t _))
+      ≤ ∑ x ∈ t, lpNorm (Wkp.iteratedGradient 1 u) p (volume.restrict (ball x (r x))) :=
+        lpNorm_restrict_le_sum_of_subset_biUnion hp.le hcover fun x hxt =>
+          (Lp.memLp _).mono_measure (Measure.restrict_mono ((ball_subset_ball
+            (by linarith [hr x (htK x hxt)])).trans (hrΩ x (htK x hxt))) le_rfl)
     _ ≤ ∑ x ∈ t, C x * (‖f‖ + ‖Wkp.value 2 u‖) := Finset.sum_le_sum fun x hxt =>
         hball (hlam x (htK x hxt)) (hA x (htK x hxt)) (hr x (htK x hxt)) (hrΩ x (htK x hxt)) ha
           (hosc x (htK x hxt)) hb hbβ hc hcγ u f heq
