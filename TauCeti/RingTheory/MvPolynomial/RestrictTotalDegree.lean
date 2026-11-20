@@ -52,6 +52,7 @@ the monomials may be replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members 
   finite coefficient coordinates by zero.
 * `MvPolynomial.boundedCoefficientEquiv_inclusion_comp_homogeneous`: including homogeneous
   polynomials in a bounded-degree space extends their coordinates by zero.
+* `MvPolynomial.mul_mem_restrictTotalDegree`: total degree bounds add under multiplication.
 * `MvPolynomial.aeval_mem_restrictTotalDegree`: substituting linear forms for the variables does
   not raise the total degree.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
@@ -268,6 +269,14 @@ theorem boundedCoefficientEquiv_inclusion_comp_homogeneous [Finite σ] {d e : �
   simp
 
 end Coordinates
+
+/-- A product of polynomials of total degrees at most `d` and `e` has total degree at most
+`d + e`. -/
+theorem mul_mem_restrictTotalDegree {d e : ℕ} {f g : MvPolynomial σ R}
+    (hf : f ∈ restrictTotalDegree σ R d) (hg : g ∈ restrictTotalDegree σ R e) :
+    f * g ∈ restrictTotalDegree σ R (d + e) := by
+  rw [mem_restrictTotalDegree] at hf hg ⊢
+  exact (totalDegree_mul f g).trans (add_le_add hf hg)
 
 /-- Substituting polynomials of total degree at most one, for instance linear forms, for the
 variables does not raise the total degree. -/
