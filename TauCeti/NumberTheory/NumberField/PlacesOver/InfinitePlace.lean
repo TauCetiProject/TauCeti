@@ -5,51 +5,56 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
-import TauCeti.Analysis.Normed.Algebra.GelfandMazur
+
+import Mathlib.FieldTheory.Minpoly.Field
+import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.Analysis.Normed.Algebra.RealField
+import TauCeti.Analysis.Normed.Field.WithAbs
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 
 /-!
-# Absolute values above an infinite place
+# Absolute values of a field extension lying over an infinite place
 
-Let `F` be a field extension of a field `K` and `v` an infinite place of `K`. Every absolute value
-`w : AbsoluteValue F ℝ` lying over `v` is itself an infinite place of `F`: it is the norm of a
-complex embedding of `F` (`NumberField.isInfinitePlace_of_liesOver`). No finiteness or
-algebraicity of the extension is needed. Consequently the absolute values of `F` over `v` are
-exactly the underlying absolute values of the infinite places of `F` over `v`
-(`NumberField.setOf_liesOver_infinitePlace_eq_image`), so a statement about an absolute value
-over an infinite place, as Diophantine approximation with algebraic targets requires, never has
-to mention a completion.
+Let `F / K` be a field extension and `v` an infinite place of `K`. Unlike at finite places, where
+an absolute value `w : AbsoluteValue F ℝ` lying over a finite place of `K` is in general a
+fractional power `FinitePlace.mk 𝔓 ^ (e * f)⁻¹`, an absolute value of `F` lying over `v` is
+already the underlying absolute value of a unique infinite place of `F` lying over `v`
+(`NumberField.isInfinitePlace_of_liesOver`, `NumberField.existsUnique_infinitePlace_of_liesOver`).
+No algebraicity or number-field hypothesis on `F / K` is required: in fact, an absolute value on
+`F` lying over an absolute value on `K` is an infinite place of `F` if and only if the base
+absolute value is an infinite place of `K` (`NumberField.isInfinitePlace_iff_of_liesOver`).
 
-The argument runs in the completion `F_w`. Since `w` restricts to `v` on `K`, the completion
-`K_v` embeds isometrically into `F_w` (`AbsoluteValue.Completion.isometry_map`), and `K_v`
-contains an isometric copy of `ℝ` (`NumberField.InfinitePlace.Completion.ofReal`). So `F_w` is a
-normed field containing an isometric copy of `ℝ`, that is, a normed `ℝ`-algebra, and it embeds
-isometrically into `ℂ` by `NormedAlgebra.Real.exists_algHom_complex_isometry`, a strengthening
-of Gelfand–Mazur. Composing with `F → F_w` gives the complex embedding. Gelfand–Mazur asks neither
-for the completeness of `F_w` nor for its finite dimension over `K_v`.
+The proof embeds `ℝ` isometrically into `v.Completion` via
+`NumberField.InfinitePlace.Completion.ofReal`, composes with the isometric completion map
+`v.Completion →+* w.Completion` (`AbsoluteValue.Completion.norm_map`), and applies the isometric
+real Gelfand–Mazur embedding `RingHom.exists_comp_eq_ofRealHom_and_norm_eq` to obtain a complex
+embedding of `w.Completion`, whose restriction to `F` realizes `w`.
+
+When `F / K` is algebraic, every infinite place of `K` has an absolute value of `F` lying over it
+(`NumberField.nonempty_setOf_liesOver_infinitePlace`); when `F / K` is a finite field extension,
+only finitely many do (`NumberField.finite_setOf_liesOver_infinitePlace`).
 
 ## Main results
 
-* `NumberField.isInfinitePlace_of_liesOver`: an absolute value lying over an infinite place is an
-  infinite place.
-* `NumberField.setOf_liesOver_infinitePlace_eq_image`: the absolute values over an infinite place
-  are the infinite places over it.
+* `NumberField.isInfinitePlace_of_liesOver`: an absolute value on `F` lying over an infinite place
+  of `K` is an infinite place of `F`.
+* `NumberField.isInfinitePlace_iff_of_liesOver`: for `w` on `F` lying over `v` on `K`, `w` is an
+  infinite place of `F` if and only if `v` is an infinite place of `K`.
+* `NumberField.existsUnique_infinitePlace_of_liesOver` and
+  `NumberField.liesOver_infinitePlace_iff`: `w` lies over `v : InfinitePlace K` if and only if it
+  is `w'.1` for a (unique) `w' : InfinitePlace F` lying over `v`.
 * `NumberField.exists_injective_infinitePlace_eq_of_liesOver`: absolute values over distinct
-  infinite places are distinct infinite places, with multiplicity at least that of the place
-  below.
-* `NumberField.finite_setOf_liesOver_infinitePlace` and
-  `NumberField.nonempty_setOf_liesOver_infinitePlace`: there are finitely many of them over a
-  number field, and at least one over an algebraic extension.
-* `NumberField.InfinitePlace.exists_liesOver_of_liesOver`: an absolute value over an infinite
-  place extends to every algebraic extension.
+  infinite places of `K` come from distinct infinite places of `F`.
+* `NumberField.nonempty_setOf_liesOver_infinitePlace` and
+  `NumberField.finite_setOf_liesOver_infinitePlace`: nonemptiness (for algebraic extensions) and
+  finiteness (for finite field extensions) of `{w : AbsoluteValue F ℝ | w.LiesOver v.1}`.
 
 ## References
 
-* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
-  (2006), §1.3, Proposition 1.3.1.
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press, 2006,
+  §1.3.
 -/
 
 public section
@@ -58,75 +63,102 @@ open AbsoluteValue
 
 namespace NumberField
 
+/-- An absolute value lying over an infinite place is archimedean. -/
+theorem not_isNonarchimedean_of_liesOver_infinitePlace {K F : Type*} [Field K] [Semiring F]
+    [Algebra K F] [FaithfulSMul K F] (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
+    [w.LiesOver v.1] : ¬ IsNonarchimedean w :=
+  fun hw ↦ v.not_isNonarchimedean (isNonarchimedean_under_of_liesOver v.1 hw)
+
+section Field
+
 variable {K F : Type*} [Field K] [Field F] [Algebra K F]
 
-/-- **Absolute values above an infinite place** (Bombieri–Gubler, Proposition 1.3.1): an
-absolute value of a field extension `F` lying over an infinite place of `K` is an infinite place
-of `F`, the norm of a complex embedding. -/
+/-- **Absolute values over an infinite place.** For any field extension `F / K`, an absolute value
+on `F` lying over an infinite place of `K` is an infinite place of `F`. -/
 theorem isInfinitePlace_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
     [w.LiesOver v.1] : IsInfinitePlace w := by
-  -- `K_v` contains an isometric copy of `ℝ`, which maps isometrically into `F_w`, making `F_w`
-  -- a normed `ℝ`-algebra.
-  let ι : ℝ →+* w.Completion := (Completion.map v.1 w).comp (InfinitePlace.Completion.ofReal v)
-  have hι (r : ℝ) : ‖ι r‖ = ‖r‖ := by
-    rw [RingHom.comp_apply,
-      (AddMonoidHomClass.isometry_iff_norm _).mp (Completion.isometry_map v.1 w),
-      InfinitePlace.Completion.norm_ofReal, Real.norm_eq_abs]
-  let : NormedAlgebra ℝ w.Completion :=
-    { ι.toAlgebra with
-      norm_smul_le r x := by
-        rw [RingHom.smul_toAlgebra, norm_mul, hι] }
-  obtain ⟨ψ, hψ⟩ := NormedAlgebra.Real.exists_algHom_complex_isometry w.Completion
-  refine ⟨(ψ : w.Completion →+* ℂ).comp (algebraMap F w.Completion), AbsoluteValue.ext fun x ↦ ?_⟩
-  simp [place_apply, (AddMonoidHomClass.isometry_iff_norm _).mp hψ, Completion.algebraMap_def,
-    Completion.norm_coe, WithAbs.algebraMap_right_apply]
+  let ι : ℝ →+* w.Completion :=
+    (AbsoluteValue.Completion.map v.1 w).comp (InfinitePlace.Completion.ofReal v)
+  have hι (r : ℝ) : ‖ι r‖ = |r| := by
+    simp [ι, AbsoluteValue.Completion.norm_map, InfinitePlace.Completion.norm_ofReal]
+  obtain ⟨φ, -, hφ⟩ := ι.exists_comp_eq_ofRealHom_and_norm_eq hι
+  refine ⟨φ.comp (algebraMap F w.Completion), AbsoluteValue.ext fun y ↦ ?_⟩
+  rw [place_apply, RingHom.comp_apply, hφ, AbsoluteValue.Completion.algebraMap_def,
+    WithAbs.algebraMap_right_apply, Algebra.algebraMap_self_apply,
+    AbsoluteValue.Completion.norm_coe, WithAbs.ofAbs_toAbs]
+
+/-- For any field extension `F / K` and absolute values `w` on `F` lying over `v` on `K`, `w` is
+an infinite place of `F` if and only if `v` is an infinite place of `K`. -/
+theorem isInfinitePlace_iff_of_liesOver (v : AbsoluteValue K ℝ) (w : AbsoluteValue F ℝ)
+    [w.LiesOver v] : IsInfinitePlace w ↔ IsInfinitePlace v := by
+  refine ⟨?_, fun hv ↦ ?_⟩
+  · rintro ⟨φ, rfl⟩
+    refine ⟨φ.comp (algebraMap K F), AbsoluteValue.ext fun x ↦ ?_⟩
+    rw [place_apply, RingHom.comp_apply, ← place_apply,
+      ← LiesOver.apply_algebraMap (w := place φ) v]
+  · obtain ⟨v', rfl⟩ := (isInfinitePlace_iff v).mp hv
+    exact isInfinitePlace_of_liesOver v' w
+
+/-- **Unique infinite place representing a restricted absolute value.** An absolute value `w` on
+`F` lying over an infinite place `v` of `K` is the underlying absolute value of a unique infinite
+place of `F` lying over `v`. -/
+theorem existsUnique_infinitePlace_of_liesOver (v : InfinitePlace K) (w : AbsoluteValue F ℝ)
+    [w.LiesOver v.1] :
+    ∃! w' : InfinitePlace F, w'.LiesOver v ∧ w'.1 = w := by
+  obtain ⟨w', rfl⟩ := (isInfinitePlace_iff w).mp (isInfinitePlace_of_liesOver v w)
+  exact ⟨w', ⟨inferInstance, rfl⟩, fun u ⟨_, hu⟩ ↦ Subtype.ext hu⟩
+
+/-- An absolute value `w` on `F` lies over an infinite place `v` of `K` if and only if `w` is the
+underlying absolute value of an infinite place of `F` lying over `v`. -/
+theorem liesOver_infinitePlace_iff {v : InfinitePlace K} {w : AbsoluteValue F ℝ} :
+    w.LiesOver v.1 ↔ ∃ w' : InfinitePlace F, w'.LiesOver v ∧ w'.1 = w := by
+  refine ⟨fun _ ↦ (existsUnique_infinitePlace_of_liesOver v w).exists, ?_⟩
+  rintro ⟨w', hw', rfl⟩
+  exact hw'
 
 /-- Absolute values over distinct infinite places of the base are distinct infinite places of the
-extension, each with multiplicity at least that of the place below. This permits comparing
-products of local factors without counting an infinite place of the extension twice. -/
+extension. This permits comparing products of archimedean local factors without counting an
+extension place twice. -/
 theorem exists_injective_infinitePlace_eq_of_liesOver
     (S : Set (InfinitePlace K)) (w : S → AbsoluteValue F ℝ)
     (hw : ∀ v, (w v).LiesOver v.val.1) :
     ∃ W : S → InfinitePlace F, Function.Injective W ∧
-      ∀ v, (W v).1 = w v ∧ v.val.mult ≤ (W v).mult := by
-  let W (v : S) : InfinitePlace F := ⟨w v, have := hw v; isInfinitePlace_of_liesOver v.val (w v)⟩
-  have hcomap (v : S) : (W v).comap (algebraMap K F) = v.val :=
-    have := hw v; InfinitePlace.LiesOver.comap_eq (W v) v.val
-  refine ⟨W, fun v u h ↦ Subtype.ext ?_, fun v ↦ ⟨rfl, ?_⟩⟩
-  · rw [← hcomap v, ← hcomap u, h]
-  · simpa only [hcomap] using InfinitePlace.mult_comap_le (algebraMap K F) (W v)
+      ∀ v, (W v).LiesOver v.val ∧ (W v).1 = w v := by
+  have hclass (v : S) := by
+    let := hw v
+    exact (existsUnique_infinitePlace_of_liesOver v.val (w v)).exists
+  choose W hW heq using hclass
+  refine ⟨W, fun v u h ↦ Subtype.ext ?_, fun v ↦ ⟨hW v, heq v⟩⟩
+  let := hW v
+  let := hW u
+  rw [← InfinitePlace.LiesOver.comap_eq (W v) v.val,
+    ← InfinitePlace.LiesOver.comap_eq (W u) u.val, h]
 
 variable (F) in
-/-- The absolute values of `F` lying over an infinite place `v` of `K` are exactly the underlying
-absolute values of the infinite places of `F` over `v`. -/
-theorem setOf_liesOver_infinitePlace_eq_image (v : InfinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1} =
-      Subtype.val '' InfinitePlace.placesOver F v := by
-  ext w
-  refine ⟨fun (hw : w.LiesOver v.1) ↦ ⟨⟨w, isInfinitePlace_of_liesOver v w⟩, hw, rfl⟩, ?_⟩
-  rintro ⟨w', hw', rfl⟩
-  exact hw'
-
-variable (F) in
-/-- A number field has only finitely many absolute values lying over a given infinite place. -/
-theorem finite_setOf_liesOver_infinitePlace [NumberField F] (v : InfinitePlace K) :
-    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Finite := by
-  rw [setOf_liesOver_infinitePlace_eq_image]
-  exact (Set.toFinite (InfinitePlace.placesOver F v)).image _
-
-variable (F) in
-/-- Every infinite place of `K` has an absolute value of an algebraic extension lying over it. -/
+/-- Every infinite place of the base has an absolute value of an algebraic field extension lying
+over it. -/
 theorem nonempty_setOf_liesOver_infinitePlace [Algebra.IsAlgebraic K F] (v : InfinitePlace K) :
     {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Nonempty := by
-  obtain ⟨w, hw⟩ := InfinitePlace.comap_surjective (k := K) (K := F) v
-  exact ⟨w.1, InfinitePlace.liesOver_iff_comap_eq.mpr hw⟩
+  obtain ⟨w', rfl⟩ := InfinitePlace.comap_surjective (K := F) v
+  exact ⟨w'.1, InfinitePlace.liesOver_comap w'⟩
 
-/-- An absolute value lying over an infinite place extends to every algebraic extension. -/
-theorem InfinitePlace.exists_liesOver_of_liesOver {E : Type*} [Field E] [Algebra F E]
-    [Algebra.IsAlgebraic F E] (v : InfinitePlace K) (w : AbsoluteValue F ℝ) [w.LiesOver v.1] :
-    ∃ u : AbsoluteValue E ℝ, u.LiesOver w := by
-  obtain ⟨u, hu⟩ := nonempty_setOf_liesOver_infinitePlace E
-    (⟨w, isInfinitePlace_of_liesOver v w⟩ : InfinitePlace F)
-  exact ⟨u, hu⟩
+variable (F) in
+/-- A finite field extension has only finitely many absolute values lying over a given infinite
+place of the base field. -/
+theorem finite_setOf_liesOver_infinitePlace [Module.Finite K F] (v : InfinitePlace K) :
+    {w : AbsoluteValue F ℝ | w.LiesOver v.1}.Finite := by
+  let : Algebra K ℂ := v.embedding.toAlgebra
+  have : Fintype (F →ₐ[K] ℂ) := minpoly.AlgHom.fintype K F ℂ
+  refine (Set.finite_range fun φ : F →ₐ[K] ℂ ↦ (InfinitePlace.mk φ.toRingHom).1).subset
+    fun w (hw : w.LiesOver v.1) ↦ ?_
+  obtain ⟨u, ⟨_, rfl⟩, -⟩ := existsUnique_infinitePlace_of_liesOver v w
+  rcases InfinitePlace.LiesOver.embedding_comp_eq_or_conjugate_embedding_comp_eq u v with h | h
+  · exact ⟨⟨u.embedding, fun x ↦ RingHom.congr_fun h x⟩,
+      congrArg Subtype.val (InfinitePlace.mk_embedding u)⟩
+  · exact ⟨⟨ComplexEmbedding.conjugate u.embedding, fun x ↦ RingHom.congr_fun h x⟩,
+      congrArg Subtype.val ((InfinitePlace.mk_conjugate_eq u.embedding).trans
+        (InfinitePlace.mk_embedding u))⟩
+
+end Field
 
 end NumberField

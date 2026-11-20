@@ -16,8 +16,9 @@ matrix by its matrix-vector action, and `Matrix.permMatrix_mem_unitary` records 
 permutation matrices over a possibly noncommutative star semiring are unitary. Accordingly
 `Matrix.permutationUnitary` is `Matrix.permMatrixHom` with values in the unitary matrices.
 
-`Matrix.conjTranspose_mul_mul_mem_unitary` transfers unitarity along a possibly rectangular
-matrix whose conjugate transpose is a two-sided inverse.
+`Matrix.mem_unitary_iff_conjTranspose` characterizes `unitary (Matrix n n R)` via the conjugate
+transpose over any star semiring, and `Matrix.conjTranspose_mul_mul_mem_unitary` transfers
+unitarity along a possibly rectangular matrix whose conjugate transpose is a two-sided inverse.
 
 `Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
 `1` except one is unitary exactly when that entry is.
@@ -42,6 +43,13 @@ end Matrix.UnitaryGroup
 
 namespace Matrix
 
+/-- Over any star semiring, a square matrix belongs to `unitary (Matrix n n R)` if and only if its
+conjugate transpose is a two-sided inverse. -/
+theorem mem_unitary_iff_conjTranspose {R n : Type*} [Semiring R] [StarRing R]
+    [Fintype n] [DecidableEq n] {U : Matrix n n R} :
+    U ∈ unitary (Matrix n n R) ↔ Uᴴ * U = 1 ∧ U * Uᴴ = 1 := by
+  rw [Unitary.mem_iff, star_eq_conjTranspose]
+
 /-- Conjugation by a possibly rectangular matrix with conjugate-transpose inverse preserves
 unitarity over a possibly noncommutative star semiring. -/
 theorem conjTranspose_mul_mul_mem_unitary
@@ -55,7 +63,7 @@ theorem conjTranspose_mul_mul_mem_unitary
     calc
       _ = Pᴴ * (Y * (P * Pᴴ) * Z) * P := by simp only [Matrix.mul_assoc]
       _ = _ := by rw [hP', Matrix.mul_one]
-  rw [Unitary.mem_iff, star_eq_conjTranspose] at hX ⊢
+  rw [mem_unitary_iff_conjTranspose] at hX ⊢
   constructor <;>
     simp only [conjTranspose_mul, conjTranspose_conjTranspose,
       ← Matrix.mul_assoc Pᴴ Xᴴ P, hcancel, hX.1, hX.2, Matrix.mul_one, hP]

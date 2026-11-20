@@ -40,6 +40,10 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
   and `IsLocalRing.isUnit_three_of_card_residueField_eq_two`: `3` is a unit.
 * `AlgHom.ker_isMaximal_residueField`: the kernel of an algebra map from a possibly
   noncommutative algebra to the residue field of a commutative local ring is a maximal ideal.
+* `TauCeti.IsLocalRing.algHom_residueField_eq_of_ker_eq`: two algebra maps to the residue field of
+  a commutative local ring with the same kernel coincide.
+* `AlgHom.ker_residue_comp_eq_comap_maximalIdeal` and `AlgHom.comap_ker_residueField`: the kernel
+  of a reduced retraction and the preimage of the kernel of an algebra map to the residue field.
 -/
 
 public section
@@ -143,3 +147,55 @@ theorem AlgHom.ker_isMaximal_residueField {A B : Type*} [CommRing A] [IsLocalRin
   RingHom.ker_isMaximal_of_surjective φ fun y ↦ by
     obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective y
     exact ⟨algebraMap A _ a, by rw [AlgHom.commutes, IsLocalRing.ResidueField.algebraMap_eq]⟩
+
+namespace AlgHom
+
+section ResidueField
+
+open IsLocalRing
+
+variable {R S : Type*} [CommRing R] [IsLocalRing R] [Ring S] [Algebra R S]
+
+/-- The kernel of the reduction `S → R → ResidueField R` of an `R`-algebra retraction `τ : S → R`
+is `τ⁻¹(𝔪_R)`. -/
+@[simp]
+theorem ker_residue_comp_eq_comap_maximalIdeal (τ : S →ₐ[R] R) :
+    RingHom.ker ((Algebra.ofId R (ResidueField R)).comp τ) = (maximalIdeal R).comap τ := by
+  ext s
+  simp [RingHom.mem_ker, ResidueField.algebraMap_eq]
+
+/-- The kernel of an `R`-algebra map from `S` to `ResidueField R` lies over `𝔪_R`. -/
+@[simp]
+theorem comap_ker_residueField (ψ : S →ₐ[R] ResidueField R) :
+    (RingHom.ker ψ).comap (algebraMap R S) = maximalIdeal R := by
+  ext r
+  simp [Ideal.mem_comap, RingHom.mem_ker, ResidueField.algebraMap_eq]
+
+end ResidueField
+
+end AlgHom
+
+namespace TauCeti.IsLocalRing
+
+section ResidueField
+
+open _root_.IsLocalRing
+
+variable {R S : Type*} [CommRing R] [IsLocalRing R] [Ring S] [Algebra R S]
+
+/-- Two `R`-algebra maps from a possibly noncommutative `R`-algebra `S` to `ResidueField R` with
+the same kernel coincide, because `R → ResidueField R` is surjective. -/
+theorem algHom_residueField_eq_of_ker_eq {ψ₁ ψ₂ : S →ₐ[R] ResidueField R}
+    (hker : RingHom.ker ψ₁ = RingHom.ker ψ₂) : ψ₁ = ψ₂ := by
+  ext s
+  obtain ⟨r, hr⟩ := residue_surjective (ψ₁ s)
+  have hmem : s - algebraMap R S r ∈ RingHom.ker ψ₁ := by
+    rw [RingHom.mem_ker, map_sub, AlgHom.commutes, ResidueField.algebraMap_eq, hr, sub_self]
+  have hmem₂ : s - algebraMap R S r ∈ RingHom.ker ψ₂ := hker ▸ hmem
+  rw [RingHom.mem_ker, map_sub, AlgHom.commutes, sub_eq_zero, ResidueField.algebraMap_eq, hr]
+    at hmem₂
+  exact hmem₂.symm
+
+end ResidueField
+
+end TauCeti.IsLocalRing
