@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Ray
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 
 /-!
 # Vectors in the same ray: partitions, sums, finite orbits, and durations of segments
@@ -266,11 +267,6 @@ theorem Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem
 end Duration
 
 section Velocity
-
-/-- Rescaling a pair `(d, v)` by a nonzero factor does not change the velocity `d⁻¹ • v`. -/
-theorem Prod.inv_fst_smul_snd_smul {R M : Type*} [GroupWithZero R] [MulAction R M] {a : R}
-    (ha : a ≠ 0) (z : R × M) : (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
-  rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
 
 variable {R M : Type*} [Semifield R] [PartialOrder R] [IsStrictOrderedRing R] [AddCommMonoid M]
   [Module R M]
