@@ -201,6 +201,18 @@ theorem HolderOnWith.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
       add_le_add (hf.dist_le hx hy) (hg.dist_le hx hy)
     _ = _ := by rw [NNReal.coe_add, add_mul]
 
+/-- The negation of a function Hölder on `s` is Hölder on `s` with the same constant and
+exponent. -/
+theorem HolderOnWith.neg {X Y : Type*} [PseudoEMetricSpace X] [SeminormedAddCommGroup Y]
+    {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s) :
+    HolderOnWith C r (-f) s := fun x hx y hy => by
+  simpa only [Pi.neg_apply, edist_neg_neg] using hf x hx y hy
+
+/-- The negation of a Hölder function is Hölder with the same constant and exponent. -/
+theorem HolderWith.neg {X Y : Type*} [PseudoEMetricSpace X] [SeminormedAddCommGroup Y]
+    {C r : ℝ≥0} {f : X → Y} (hf : HolderWith C r f) : HolderWith C r (-f) :=
+  holderOnWith_univ.1 ((hf.holderOnWith univ).neg)
+
 /-- The difference of two `r`-Hölder functions is `r`-Hölder. Compare `MemHolder.add`. -/
 theorem MemHolder.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y] {r : ℝ≥0}
     {f g : X → Y} (hf : MemHolder r f) (hg : MemHolder r g) : MemHolder r (f - g) := by
@@ -289,6 +301,25 @@ theorem HolderOnWith.of_le_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [Pseud
       rw [mul_assoc, ← Real.rpow_add_of_nonneg dist_nonneg (sub_nonneg.2 hγβ') γ.coe_nonneg,
         sub_add_cancel]
     _ ≤ K * (δ : ℝ) ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by gcongr
+
+/-- A function that is `β`-Hölder on `s` with constant `K` and bounded in norm by `D` there is
+`γ`-Hölder on `s` for every `γ ≤ β`, with constant `K δ^(β - γ) + 2 D δ^(-γ)` for every scale
+`δ > 0`. This is `HolderOnWith.of_le_of_dist_le` with the oscillation bounded by `2 D`. -/
+theorem HolderOnWith.of_le_of_norm_le {X Y : Type*} [PseudoMetricSpace X]
+    [SeminormedAddCommGroup Y] {K D δ β γ : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : HolderOnWith K β f s) (hD : ∀ x ∈ s, ‖f x‖ ≤ D) (hγβ : γ ≤ β) (hδ : 0 < δ) :
+    HolderOnWith (K * δ ^ ((β : ℝ) - γ) + 2 * D * δ ^ (-(γ : ℝ))) γ f s :=
+  HolderOnWith.of_le_of_dist_le (fun x hx y hy _ => hf.dist_le hx hy)
+    (fun x hx y hy => (dist_le_norm_add_norm _ _).trans (by
+      push_cast; linarith [hD x hx, hD y hy])) hγβ hδ
+
+/-- A `β`-Hölder function with constant `K` bounded in norm by `D` is `γ`-Hölder for every
+`γ ≤ β`, with constant `K δ^(β - γ) + 2 D δ^(-γ)` for every scale `δ > 0`. -/
+theorem HolderWith.of_le_of_norm_le {X Y : Type*} [PseudoMetricSpace X]
+    [SeminormedAddCommGroup Y] {K D δ β γ : ℝ≥0} {f : X → Y} (hf : HolderWith K β f)
+    (hD : ∀ x, ‖f x‖ ≤ D) (hγβ : γ ≤ β) (hδ : 0 < δ) :
+    HolderWith (K * δ ^ ((β : ℝ) - γ) + 2 * D * δ ^ (-(γ : ℝ))) γ f :=
+  holderOnWith_univ.1 ((hf.holderOnWith univ).of_le_of_norm_le (fun x _ => hD x) hγβ hδ)
 
 /-- A function that is Hölder continuous with constant `C` and exponent `r` on the ball
 `ball x₀ ρ` stays within `C ρ^r` of its value at the centre. -/
