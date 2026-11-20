@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.SmoothSeries
+import TauCeti.Analysis.Convolution.Holder
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
@@ -61,15 +62,20 @@ For the `k`-th derivatives, the sup bounds `O(2^{-jα})` together with the Lipsc
 and to `u` in `𝓢'`, so `f` represents `u`.
 
 For the converse, the kernel `κ = 𝓕⁻ ψ_{j+1}` of a block `Δ_{j+1}` has integral `ψ_{j+1}(0) = 0`
-(`ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`), so for an `α`-Hölder `f`
+(`ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`), and it is even, since the
+bump function is. Averaging `Δ_{j+1} f(x) = ∫ κ(t) f(x - t) dt` with its reflection
+`∫ κ(t) f(x + t) dt` gives
 
-`Δ_{j+1} f(x) = ∫ κ(t) (f(x - t) - f(x)) dt`, and `‖Δ_{j+1} f‖_∞ ≤ H ∫ ‖t‖^α ‖κ(t)‖ dt`,
+`2 Δ_{j+1} f(x) = ∫ κ(t) (f(x + t) + f(x - t) - 2 f(x)) dt`,
 
-which is `O(H 2^{-jα})` since `κ` is an `L¹`-normalised dilate at scale `2^j`. This is the case
-`k = 0`. For `k ≥ 1`, the first derivatives `∂_{bᵢ} f` along an orthonormal basis are bounded
-`C^{k-1,α}` functions, hence lie in `𝒞^{k-1+α}` by induction, and an `L^∞` function whose first
-derivatives lie in `𝒞^{k-1+α}` lies in `𝒞^{k+α}`
-(`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq`).
+so a bounded function whose second differences satisfy `‖f(x + h) + f(x - h) - 2 f(x)‖ ≤ H ‖h‖^s`
+has `‖Δ_{j+1} f‖_∞ ≤ H ∫ ‖t‖^s ‖κ(t)‖ dt`, which is `O(H 2^{-js})` since `κ` is an `L¹`-normalised
+dilate at scale `2^j`. Hence `f ∈ 𝒞^s` for every `s ≥ 0`. For `s = 1` this is Zygmund's
+condition: the Zygmund class lies in `𝒞^1`. The second differences of an `α`-Hölder function are
+at most `2 H ‖h‖^α`, which gives `C^{0,α} ⊆ 𝒞^α`, the case `k = 0`. For `k ≥ 1`, the first
+derivatives `∂_{bᵢ} f` along an orthonormal basis are bounded `C^{k-1,α}` functions, hence lie in
+`𝒞^{k-1+α}` by induction, and an `L^∞` function whose first derivatives lie in `𝒞^{k-1+α}` lies in
+`𝒞^{k+α}` (`TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_lineDerivOp_eq`).
 
 For `0 < α < 1` the isomorphism takes the little Hölder functions exactly to the elements whose
 weighted blocks vanish at high frequency. A bounded continuous function
@@ -97,8 +103,11 @@ bounded but do not tend to zero, so it is an explicit element of `𝒞^α` outsi
 * `TauCeti.BesovSpace.toHolderSpace`: the inclusion `𝒞^α → C^{0,α}` as a continuous linear map
   into the Hölder space with norm `‖f‖_∞ + [f]_α`, characterised by
   `TauCeti.BesovSpace.toHolderSpace_eq_iff` and `TauCeti.BesovSpace.toLpTop_toHolderSpace`.
-* `TauCeti.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith`: the blocks of an
-  `α`-Hölder function with constant `H` satisfy `2^{(j+1)α} ‖Δ_{j+1} f‖_∞ ≤ C H`.
+* `TauCeti.exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_add_add_sub_two_nsmul_le`:
+  the blocks of a bounded function whose second differences are at most `H ‖h‖^s` satisfy
+  `2^{(j+1)s} ‖Δ_{j+1} f‖_∞ ≤ C H`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_norm_add_add_sub_two_nsmul_le`: such a
+  function lies in `𝒞^s`, with a norm bound; for `s = 1` the Zygmund class lies in `𝒞^1`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_holderWith` and
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_contDiff_of_holderWith`: the converse
   inclusions `C^{0,α} ⊆ 𝒞^α` and `C_b^{k,α} ⊆ 𝒞^{k+α}`, for every `α ≥ 0`, with norm bounds.
@@ -279,28 +288,32 @@ private theorem ae_eq_smoothBlock {n₀ : ℕ} (hn₀ : φ.rOut ≤ 2 ^ n₀ * �
 
 end Kernel
 
-section Holder
+section SecondDifference
 
 open BoundedContinuousFunction
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- **The blocks of a Hölder function.** Let `α ≥ 0`. There is `C`, depending only on `φ` and
-`α`, with the following property. Let `f` be a bounded continuous `α`-Hölder function with
-constant `H`. Then for every `j` the `L^∞` function `Δ_{j+1} f` satisfies
-`2^{(j+1)α} ‖Δ_{j+1} f‖_∞ ≤ C H`. -/
-theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith (α : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {H : ℝ≥0}, HolderWith H α f →
+/-- **The blocks of a function with bounded second differences.** Let `s ≥ 0`. There is `C`,
+depending only on `φ` and `s`, with the following property. Let `f` be a bounded continuous
+function whose second differences satisfy `‖f (x + h) + f (x - h) - 2 f x‖ ≤ H ‖h‖^s`. Then for
+every `j` the `L^∞` function `Δ_{j+1} f` satisfies `2^{(j+1)s} ‖Δ_{j+1} f‖_∞ ≤ C H`. For `s = 1`
+the hypothesis is Zygmund's condition. -/
+theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_add_add_sub_two_nsmul_le
+    (s : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {H : ℝ≥0},
+      (∀ x h, ‖f (x + h) + f (x - h) - 2 • f x‖ ≤ H * ‖h‖ ^ (s : ℝ)) →
       ∀ (j : ℕ) (g : Lp F ∞ (volume : Measure E)),
       littlewoodPaleyBlock F φ (j + 1) (toLpTop volume ℂ f : 𝓢'(E, F)) = g →
-      2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖ ≤ C * H := by
+      2 ^ ((s : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖ ≤ C * H := by
   obtain ⟨C, hC, hm⟩ :=
     φ.exists_integrable_and_integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le
-      α.coe_nonneg
+      s.coe_nonneg
   refine ⟨C, hC, fun f H hf j g hg ↦ ?_⟩
-  -- The block `Δ_{j+1} f` is the convolution `κ ⋆ f` with the kernel `κ = 𝓕⁻ ψ_{j+1}`, whose
-  -- integral vanishes; hence `(κ ⋆ f)(x) = ∫ κ(t) (f(x - t) - f(x)) dt` is at most
-  -- `H ∫ ‖t‖^α ‖κ t‖ dt`, the `α`-th moment of `κ` times `H`.
+  -- The block `Δ_{j+1} f` is the convolution `κ ⋆ f` with the kernel `κ = 𝓕⁻ ψ_{j+1}`, which is
+  -- even and has vanishing integral; hence
+  -- `2 (κ ⋆ f)(x) = ∫ κ(t) (f(x + t) + f(x - t) - 2 f(x)) dt` is at most
+  -- `H ∫ ‖t‖^s ‖κ t‖ dt`, the `s`-th moment of `κ` times `H`.
   set κ : E → ℂ := 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ))
   have hκi : Integrable κ := by
     simpa only [φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz] using
@@ -309,36 +322,23 @@ theorem exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith (α : �
   have hconv : (g : E → F) =ᵐ[volume] κ ⋆[lsmul ℂ ℂ] (f : E → F) := by
     refine (ae_eq_convolution_of_littlewoodPaleyBlock_eq φ (j + 1) hg).trans ?_
     rw [convolution_congr (lsmul ℂ ℂ) (Filter.EventuallyEq.refl _ κ) (coeFn_toLpTop volume f)]
-  have hpt (x : E) : ‖(κ ⋆[lsmul ℂ ℂ] (f : E → F)) x‖ ≤ H * ∫ t, ‖t‖ ^ (α : ℝ) * ‖κ t‖ := by
-    have hint₁ : Integrable fun t ↦ κ t • f (x - t) :=
-      hκi.smul_bdd ‖f‖
-        (f.continuous.comp (continuous_const.sub continuous_id)).aestronglyMeasurable
-        (Filter.Eventually.of_forall fun t ↦ f.norm_coe_le_norm _)
-    have hzero : ∫ t, κ t • f x = 0 := by
-      rw [integral_smul_const, φ.integral_fourierInv_inhomogeneousLittlewoodPaley_succ j,
-        zero_smul]
-    have heq : (κ ⋆[lsmul ℂ ℂ] (f : E → F)) x = ∫ t, κ t • (f (x - t) - f x) := by
-      simp only [convolution_def, lsmul_apply, smul_sub]
-      rw [integral_sub hint₁ (hκi.smul_const _), hzero, sub_zero]
-    rw [heq, ← integral_const_mul]
-    refine norm_integral_le_of_norm_le (hmi.const_mul _) (Filter.Eventually.of_forall fun t ↦ ?_)
-    have hd : ‖f (x - t) - f x‖ ≤ H * ‖t‖ ^ (α : ℝ) := by
-      simpa [dist_eq_norm] using hf.dist_le (x - t) x
-    calc ‖κ t • (f (x - t) - f x)‖ ≤ ‖κ t‖ * (H * ‖t‖ ^ (α : ℝ)) := by
-          rw [norm_smul]
-          gcongr
-      _ = H * (‖t‖ ^ (α : ℝ) * ‖κ t‖) := by ring
-  have hnorm : ‖g‖ ≤ H * (((2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C) := by
+  have hpt (x : E) : ‖(κ ⋆[lsmul ℂ ℂ] (f : E → F)) x‖ ≤ H * ∫ t, ‖t‖ ^ (s : ℝ) * ‖κ t‖ := by
+    simp only [convolution_def, lsmul_apply]
+    exact norm_integral_kernel_smul_sub_le_of_norm_add_add_sub_two_nsmul_le hκi
+      (φ.fourierInv_inhomogeneousLittlewoodPaley_neg (j + 1) ·)
+      (φ.integral_fourierInv_inhomogeneousLittlewoodPaley_succ j) hf hmi
+      (integrable_kernel_smul_sub hκi f.continuous (f.norm_coe_le_norm ·) x)
+  have hnorm : ‖g‖ ≤ H * (((2 : ℝ) ^ ((s : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C) := by
     refine Lp.norm_top_le_of_ae_bound (by positivity) ?_
     filter_upwards [hconv] with x hx
     rw [hx]
     exact (hpt x).trans (by gcongr)
-  calc 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖
-      ≤ 2 ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)) *
-          (H * (((2 : ℝ) ^ ((α : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C)) := by gcongr
+  calc 2 ^ ((s : ℝ) * ((j + 1 : ℕ) : ℝ)) * ‖g‖
+      ≤ 2 ^ ((s : ℝ) * ((j + 1 : ℕ) : ℝ)) *
+          (H * (((2 : ℝ) ^ ((s : ℝ) * ((j + 1 : ℕ) : ℝ)))⁻¹ * C)) := by gcongr
     _ = C * H := by field_simp
 
-end Holder
+end SecondDifference
 
 namespace BesovSpace
 
@@ -731,21 +731,26 @@ theorem toCkHolderSpace_eq_iff (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1)
 
 /-! ### The converse inclusion `C_b^{k,α} ⊆ 𝒞^{k+α}` -/
 
-/-- **Hölder functions are Hölder–Zygmund distributions.** Let `α ≥ 0`. There is `C`, depending
-only on `φ` and `α`, such that every bounded continuous `α`-Hölder function `f` with constant `H`
-is an element of `𝒞^α = B^α_{∞,∞}` of norm at most `C (‖f‖ + H)`. -/
-theorem exists_toDistr_eq_and_norm_le_of_holderWith (α : ℝ≥0) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {H : ℝ≥0}, HolderWith H α f →
-      ∃ w : BesovSpace F φ α ∞ ∞, w.toDistr = toLpTop volume ℂ f ∧ ‖w‖ ≤ C * (‖f‖ + H) := by
+/-- **Functions with bounded second differences are Hölder–Zygmund distributions.** Let
+`s ≥ 0`. There is `C`, depending only on `φ` and `s`, such that every bounded continuous function
+`f` whose second differences satisfy `‖f (x + h) + f (x - h) - 2 f x‖ ≤ H ‖h‖^s` is an element of
+`𝒞^s = B^s_{∞,∞}` of norm at most `C (‖f‖ + H)`. For `s = 1` the hypothesis is Zygmund's
+condition, which a Lipschitz function satisfies but which does not imply the Lipschitz
+condition. -/
+theorem exists_toDistr_eq_and_norm_le_of_norm_add_add_sub_two_nsmul_le (s : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {H : ℝ≥0},
+      (∀ x h, ‖f (x + h) + f (x - h) - 2 • f x‖ ≤ H * ‖h‖ ^ (s : ℝ)) →
+      ∃ w : BesovSpace F φ s ∞ ∞, w.toDistr = toLpTop volume ℂ f ∧ ‖w‖ ≤ C * (‖f‖ + H) := by
   obtain ⟨CΔ, hΔ⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ
   obtain ⟨Cm, hCm, hblock⟩ :=
-    exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_holderWith (F := F) φ α
+    exists_rpow_mul_norm_littlewoodPaleyBlock_succ_le_of_norm_add_add_sub_two_nsmul_le
+      (F := F) φ s
   refine ⟨max CΔ 0 + Cm, by positivity, fun f H hf ↦ ?_⟩
   -- The blocks `Δⱼ f` are `L^∞` functions `gⱼ`, and the weighted blocks are bounded by
   -- `c = max CΔ 0 ‖f‖ + Cm H`: the low-frequency block by `‖f‖`, the others by `H`.
   choose g hg hgn using fun j ↦ hΔ j (toLpTop volume ℂ f)
   obtain ⟨w, hw, hwn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_of_forall_le
-    (s := α) g (c := max CΔ 0 * ‖f‖ + Cm * H) hg fun j ↦ by
+    (s := s) g (c := max CΔ 0 * ‖f‖ + Cm * H) hg fun j ↦ by
       rcases j with _ | j
       · rw [Nat.cast_zero, mul_zero, Real.rpow_zero, one_mul]
         refine ((hgn 0).trans ?_).trans (le_add_of_nonneg_right (by positivity))
@@ -756,6 +761,20 @@ theorem exists_toDistr_eq_and_norm_le_of_holderWith (α : ℝ≥0) :
           (le_add_of_nonneg_left (by positivity))
   refine ⟨w, hw, hwn.trans ?_⟩
   have := le_max_right CΔ 0
+  nlinarith [norm_nonneg f, H.coe_nonneg]
+
+/-- **Hölder functions are Hölder–Zygmund distributions.** Let `α ≥ 0`. There is `C`, depending
+only on `φ` and `α`, such that every bounded continuous `α`-Hölder function `f` with constant `H`
+is an element of `𝒞^α = B^α_{∞,∞}` of norm at most `C (‖f‖ + H)`. -/
+theorem exists_toDistr_eq_and_norm_le_of_holderWith (α : ℝ≥0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ (f : E →ᵇ F) {H : ℝ≥0}, HolderWith H α f →
+      ∃ w : BesovSpace F φ α ∞ ∞, w.toDistr = toLpTop volume ℂ f ∧ ‖w‖ ≤ C * (‖f‖ + H) := by
+  obtain ⟨C, hC, h⟩ := exists_toDistr_eq_and_norm_le_of_norm_add_add_sub_two_nsmul_le (F := F) φ α
+  refine ⟨2 * C, by positivity, fun f H hf ↦ ?_⟩
+  obtain ⟨w, hw, hwn⟩ := h f (H := 2 * H) fun x h ↦ by
+    simpa using hf.norm_add_add_sub_two_nsmul_le x h
+  refine ⟨w, hw, hwn.trans ?_⟩
+  push_cast
   nlinarith [norm_nonneg f, H.coe_nonneg]
 
 /-- **The inductive step from order `k` to order `k + 1`.** If bounded `C^{k,α}` functions lie in
