@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # Smooth maps into trivial bundles
@@ -15,7 +16,8 @@ The trivial bundle `Bundle.Trivial B F` has the single global trivialization
 `Bundle.Trivial.trivialization B F`, so a map into its total space is smooth exactly when its base
 map and its fibre map into `F` are smooth, and `Bundle.Trivial.homeomorphProd` upgrades to a `C^n`
 diffeomorphism `Bundle.Trivial.diffeomorphProd` between `TotalSpace F (Bundle.Trivial B F)` and
-`B × F`.
+`B × F`. In particular the underlying `F`-valued function of a smooth section is smooth
+(`ContMDiffSection.contMDiff_coe_trivial`).
 -/
 
 public section
@@ -49,6 +51,11 @@ theorem contMDiff_mk_iff {b : M → B} {f : M → F} :
     ContMDiff J (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F (E := Trivial B F) (b y) (f y)) ↔
       ContMDiff J I n b ∧ ContMDiff J 𝓘(𝕜, F) n f :=
   (forall_congr' fun _ ↦ contMDiffAt_mk_iff).trans forall_and
+
+/-- The underlying `F`-valued function of a smooth section of the trivial bundle is smooth. -/
+theorem _root_.ContMDiffSection.contMDiff_coe_trivial (s : Cₛ^n⟮I; F, Trivial B F⟯) :
+    ContMDiff I 𝓘(𝕜, F) n (fun x ↦ (s x : F)) :=
+  (contMDiff_mk_iff.1 s.contMDiff).2
 
 section Diffeomorph
 
