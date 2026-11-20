@@ -28,8 +28,9 @@ bounded below `ω₁` (`exists_type_lt_omega_one_of_analyticSet`), whereas on a 
 carrier every countable infinite order type occurs (`exists_mem_wellOrderClass_type_eq`). Hence the
 class is not analytic (`not_analyticSet_wellOrderClass`), not measurable for the product σ-algebra
 (`not_measurableSet_wellOrderClass`), and not the model class of any `L_{ω₁ω}` sentence
-(`not_exists_modelsOf_eq_wellOrderClass`). These three results hold for every language, with no
-countability assumption on its relation symbols, and need no model existence.
+(`not_exists_modelsOf_eq_wellOrderClass`). The first two hold for every language and the third for
+every relational language; none of them assumes the relation symbols are countable, and none needs
+model existence.
 
 ## Main definitions
 
@@ -197,21 +198,6 @@ theorem analyticSet_compl_wellOrderClass [∀ n, Countable (L.Relations n)] [Cou
 
 /-! ### Order types of coded well-orders -/
 
-/-- The structure interpreting the binary symbol `lt` by `r` and every other relation as empty;
-function symbols take an arbitrary value. -/
-@[instance_reducible]
-private noncomputable def ltStructure [Nonempty V] (lt : L.Relations 2) (r : V → V → Prop) :
-    L.Structure V where
-  funMap _ _ := Classical.arbitrary V
-  RelMap {n} R x := ∃ h : n = 2, cast (congrArg L.Relations h) R = lt ∧
-    r (x (Fin.cast h.symm 0)) (x (Fin.cast h.symm 1))
-
-private theorem codeRel_ofStructure_ltStructure [Nonempty V] (lt : L.Relations 2)
-    (r : V → V → Prop) (x y : V) :
-    codeRel lt (@ofStructure L V (ltStructure lt r)) x y ↔ r x y := by
-  rw [@codeRel_ofStructure L V (ltStructure lt r)]
-  exact ⟨fun ⟨_, _, h⟩ => h, fun h => ⟨rfl, rfl, h⟩⟩
-
 /-- On a countably infinite carrier every order type `β` with `ω ≤ β < ω₁` is the order type of a
 coded well-order. -/
 theorem exists_mem_wellOrderClass_type_eq [Countable V] [Infinite V] (lt : L.Relations 2)
@@ -224,10 +210,12 @@ theorem exists_mem_wellOrderClass_type_eq [Countable V] [Infinite V] (lt : L.Rel
   obtain ⟨e⟩ : Nonempty (β.ToType ≃ V) :=
     Cardinal.eq.1 (by rw [Cardinal.mk_eq_aleph0, Cardinal.mk_eq_aleph0])
   -- Code the order of `β.ToType` transported to `V` along `e`.
-  let c := @ofStructure L V (ltStructure lt fun x y => e.symm x < e.symm y)
+  let r : V → V → Prop := fun x y => e.symm x < e.symm y
+  let S := relStructure lt r (Classical.arbitrary V)
+  let c := @ofStructure L V S
   let f : codeRel lt c ≃r ((· < ·) : β.ToType → β.ToType → Prop) :=
-    ⟨e.symm, fun {x y} => (codeRel_ofStructure_ltStructure lt (fun x y => e.symm x < e.symm y)
-      x y).symm⟩
+    ⟨e.symm, fun {x y} =>
+      ((@codeRel_ofStructure L V S lt x y).trans (relMap_relStructure_self lt r _ x y)).symm⟩
   have : IsWellOrder V (codeRel lt c) := f.toRelEmbedding.isWellOrder
   exact ⟨c, mem_wellOrderClass.2 this, f.ordinalType_congr.trans (Ordinal.type_toType β)⟩
 
@@ -273,15 +261,8 @@ theorem not_measurableSet_wellOrderClass [Countable V] [Infinite V] (lt : L.Rela
   -- Enlarge the countable set of symbols by `lt`.
   let R₁ : Set (Σ n, L.Relations n) := insert ⟨2, lt⟩ R₀
   have : Countable R₁ := (hR₀.insert _).to_subtype
-  have : ∀ n, Countable ((symbSublang (L := L) ∅ R₁).Relations n) :=
-    fun n => (sigma_mk_injective (i := n)).countable
   let ι₁ := symbSublangIncl (L := L) ∅ R₁
-  let incl : symbSublang (L := L) ∅ R₀ →ᴸ symbSublang ∅ R₁ :=
-    { onFunction := fun _ fn => ⟨fn.1, fn.2⟩
-      onRelation := fun _ r => ⟨r.1, mem_insert_of_mem _ r.2⟩ }
-  have hcomp : ι₁.comp incl = symbSublangIncl ∅ R₀ :=
-    LHom.funext (funext fun _ => funext fun _ => by simp [incl, ι₁])
-      (funext fun _ => funext fun _ => by simp [incl, ι₁])
+  let incl := symbSublangInclusion (L := L) (subset_refl ∅) (subset_insert ⟨2, lt⟩ R₀)
   let lt₁ : (symbSublang (L := L) ∅ R₁).Relations 2 := ⟨lt, mem_insert _ _⟩
   have hcode (c : RelationalConfiguration L V) :
       codeRel lt₁ (ι₁.reductConfiguration c) = codeRel lt c := by
@@ -291,7 +272,8 @@ theorem not_measurableSet_wellOrderClass [Countable V] [Infinite V] (lt : L.Rela
   have hW : incl.reductConfiguration ⁻¹' D₀ = wellOrderClass (V := V) lt₁ := by
     ext d
     obtain ⟨c, rfl⟩ := reductConfiguration_symbSublang_surjective ∅ R₁ d
-    rw [mem_preimage, ← LHom.comp_reductConfiguration, hcomp, ← mem_preimage, ← hD,
+    rw [mem_preimage, ← LHom.comp_reductConfiguration, symbSublangIncl_comp_symbSublangInclusion,
+      ← mem_preimage, ← hD,
       mem_wellOrderClass, mem_wellOrderClass, hcode]
   exact not_measurableSet_wellOrderClass_of_countable lt₁
     (hW ▸ incl.measurable_reductConfiguration hD₀)
