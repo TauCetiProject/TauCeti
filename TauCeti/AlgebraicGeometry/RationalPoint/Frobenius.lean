@@ -20,8 +20,11 @@ of `X` is formed from the numbers of points of `X` with values in the extensions
 The extension of degree `r` of `k` is unique only up to a non-unique isomorphism, so
 `AlgebraicGeometry.Scheme.Hom.pointCount a r` uses one model of it in the universe of `k`: the
 splitting field of `X ^ (q ^ r) - X` over `k`. It is the number of points of `X` with values in
-that field (`AlgebraicGeometry.Scheme.Hom.numberOfRationalPoints`). The definition makes sense
-for every field `k`, with `q = Nat.card k`; only the theorems assume `k` finite.
+that field (`AlgebraicGeometry.Scheme.Hom.numberOfRationalPoints`). The definition is stated for
+every field `k`, with `q = Nat.card k`, but it has the meaning above only for finite `k`. For
+infinite `k` the convention of `Nat.card` gives `q = 0`, so for `r ≠ 0` the polynomial is `1 - X`,
+its splitting field is `k`, and the definition gives the number of `k`-valued points at every `r`;
+it has no degree-`r` meaning there. The theorems about extensions assume `k` finite.
 
 The model does not matter: for every finite extension `E / k` of degree `d`, `E` has `q ^ d`
 elements, hence is a splitting field of `X ^ (q ^ d) - X` over `k`, hence is `k`-isomorphic to
@@ -75,10 +78,13 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 variable {k : Type u} [Field k] {X : Scheme.{u}}
 
-/-- The number of points of a `k`-scheme `a : X ⟶ Spec k` over the extension of degree `r` of
-`k`, modelled by the splitting field of `X ^ (q ^ r) - X` over `k`, where `q = Nat.card k`. For a
-finite field `k` this does not depend on the model of the extension
-(`AlgebraicGeometry.Scheme.Hom.pointCount_eq_numberOfRationalPoints`). -/
+/-- For a finite field `k`, the number of points of a `k`-scheme `a : X ⟶ Spec k` over the
+extension of degree `r` of `k`, modelled by the splitting field of `X ^ (q ^ r) - X` over `k`,
+where `q = Nat.card k`. This does not depend on the model of the extension
+(`AlgebraicGeometry.Scheme.Hom.pointCount_eq_numberOfRationalPoints`). The definition is stated
+for every field, but for infinite `k` the convention of `Nat.card` gives `q = 0`, so for `r ≠ 0`
+the polynomial is `1 - X` and the value is the number of `k`-valued points at every `r`, with no
+degree-`r` meaning. -/
 noncomputable def pointCount (a : X ⟶ Spec (.of k)) (r : ℕ) : ℕ :=
   a.numberOfRationalPoints (SplittingField (Polynomial.X ^ Nat.card k ^ r - Polynomial.X : k[X]))
 
