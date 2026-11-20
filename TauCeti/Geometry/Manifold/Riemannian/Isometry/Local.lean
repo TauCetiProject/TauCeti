@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Tangent.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
@@ -29,6 +29,8 @@ along such maps.
   inner product.
 * `TauCeti.IsLocalRiemannianIsometry.exists_linearIsometryEquiv_eq_mfderiv`: the differential at
   each point is a linear isometric equivalence of tangent spaces.
+* `TauCeti.IsLocalRiemannianIsometry.norm_mfderiv`: the differential preserves tangent-vector
+  norms.
 * `TauCeti.IsLocalRiemannianIsometry.mfderiv_apply_mpullback`: the differential sends a pulled-back
   vector field to the original field.
 * `TauCeti.IsLocalRiemannianIsometry.inner_mpullback`: pulling back vector fields preserves their
@@ -110,6 +112,11 @@ theorem exists_linearIsometryEquiv_eq_mfderiv (hf : IsLocalRiemannianIsometry I 
   have hAv : ∀ v, A v = mfderiv I J f x v := fun v ↦ by rw [← hA, ContinuousLinearEquiv.coe_coe]
   refine ⟨LinearEquiv.isometryOfInner A.toLinearEquiv fun v w ↦ ?_, hAv⟩
   simpa only [ContinuousLinearEquiv.coe_toLinearEquiv, hAv] using hf.inner_mfderiv x v w
+
+/-- The differential of a local Riemannian isometry preserves tangent-vector norms. -/
+theorem norm_mfderiv (hf : IsLocalRiemannianIsometry I J f) (x : M) (v : TangentSpace I x) :
+    ‖mfderiv I J f x v‖ = ‖v‖ := by
+  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, hf.inner_mfderiv]
 
 /-- The differential of a local Riemannian isometry sends the pullback of a vector field at `x` to
 the value of the field at `f x`. -/
