@@ -571,16 +571,6 @@ private theorem exists_coprod_eq_zero_and_eq
   rw [this, map_add, hK u, hu]
   ext <;> simp [h2]
 
-/-- Stabilizing an endomorphism `B` by the whole space, with the first factor as kernel
-coordinate, gives a kernel chart of `B`: the pair `(u, l) ↦ (B u + l, u)` is invertible, with
-inverse `(f, g) ↦ (g, f - B g)`. -/
-theorem isInvertible_coprod_id_prod_fst {M : Type*} [AddCommGroup M] [Module 𝕜 M]
-    [TopologicalSpace M] [IsTopologicalAddGroup M] (B : M →L[𝕜] M) :
-    ((B.coprod (ContinuousLinearMap.id 𝕜 M)).prod (fst 𝕜 M M)).IsInvertible :=
-  ⟨ContinuousLinearEquiv.equivOfInverse ((B.coprod (ContinuousLinearMap.id 𝕜 M)).prod
-    (fst 𝕜 M M)) ((snd 𝕜 M M).prod (fst 𝕜 M M - B ∘L snd 𝕜 M M)) (fun _ ↦ by simp)
-    (fun _ ↦ by simp), rfl⟩
-
 end Comparison
 
 section ComparisonInvertible

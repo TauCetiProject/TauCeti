@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 public import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Data.SignType.Basic
 import TauCeti.LinearAlgebra.LinearMap.RegularRestriction
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The determinant line of a periodic loop operator and the return map
