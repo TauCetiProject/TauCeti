@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
-public import TauCeti.Algebra.Module.Torsion.Basic
 public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
 public import TauCeti.RingTheory.QuotSMulTop
