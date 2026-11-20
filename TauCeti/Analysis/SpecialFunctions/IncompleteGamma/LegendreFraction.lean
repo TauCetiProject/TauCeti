@@ -102,7 +102,7 @@ private theorem continuousOn_pow_mul_one_add_cpow (c : ℕ) (d : ℂ) :
     ContinuousOn (fun t : ℝ => (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (Ici 0) :=
   (by fun_prop : Continuous fun t : ℝ => (t : ℂ) ^ c).continuousOn.mul
     ((by fun_prop : Continuous fun t : ℝ => 1 + (t : ℂ)).continuousOn.cpow_const
-      fun _ ht => TauCeti.one_add_ofReal_mem_slitPlane ht)
+      fun _ ht => TauCeti.add_ofReal_mem_slitPlane one_mem_slitPlane ht)
 
 private theorem continuousOn_legendreContFractIntegrand (c : ℕ) (d z : ℂ) :
     ContinuousOn (fun t : ℝ => cexp (-(z * t)) * (t : ℂ) ^ c * (1 + (t : ℂ)) ^ d) (Ici 0) :=
@@ -134,7 +134,8 @@ theorem legendreContFractIntegral_sub (c : ℕ) (d : ℂ) {z : ℂ} (hz : 0 < z.
     ← integral_sub (integrableOn_legendreContFractIntegrand c d hz)
       (integrableOn_legendreContFractIntegrand c (d - 1) hz)]
   refine setIntegral_congr_fun measurableSet_Ioi fun t ht => ?_
-  have hne : 1 + (t : ℂ) ≠ 0 := slitPlane_ne_zero (TauCeti.one_add_ofReal_mem_slitPlane ht.le)
+  have hne : 1 + (t : ℂ) ≠ 0 :=
+    slitPlane_ne_zero (TauCeti.add_ofReal_mem_slitPlane one_mem_slitPlane ht.le)
   have hd : (1 + (t : ℂ)) ^ d = (1 + (t : ℂ)) ^ (d - 1) * (1 + (t : ℂ)) := by
     conv_lhs => rw [← sub_add_cancel d 1]
     rw [cpow_add _ _ hne, cpow_one]
@@ -157,7 +158,7 @@ private theorem mul_legendreContFractIntegral (c : ℕ) (d : ℂ) {z : ℂ} (hz 
   have hv (t : ℝ) (ht : t ∈ Ioi 0) : HasDerivAt v (v' t) t := by
     have h := ((hasDerivAt_pow c (t : ℂ)).mul
       (((hasDerivAt_id (t : ℂ)).const_add 1).cpow_const (c := d)
-        (TauCeti.one_add_ofReal_mem_slitPlane ht.le))).comp_ofReal
+        (TauCeti.add_ofReal_mem_slitPlane one_mem_slitPlane ht.le))).comp_ofReal
     simp only [id, mul_one] at h
     exact h
   -- The Laplace integrands of `v` and `v'` are combinations of integrands of `K`.

@@ -60,7 +60,7 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`,
-  `TauCeti.one_add_ofReal_mem_slitPlane`
+  `TauCeti.add_ofReal_mem_slitPlane`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.ne_neg_natCast_of_mem_slitPlane`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
@@ -205,10 +205,12 @@ theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht 
   rw [add_re, ofReal_re]
   positivity
 
-/-- For a nonnegative real number `t`, `1 + t` lies in the slit plane. -/
-theorem one_add_ofReal_mem_slitPlane {t : ℝ} (ht : 0 ≤ t) : 1 + (t : ℂ) ∈ slitPlane := by
+/-- Translating a point of the slit plane by a nonnegative real number on the right keeps it in
+the slit plane. -/
+theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    z + (t : ℂ) ∈ slitPlane := by
   rw [add_comm]
-  exact ofReal_add_mem_slitPlane one_mem_slitPlane ht
+  exact ofReal_add_mem_slitPlane hz ht
 
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/

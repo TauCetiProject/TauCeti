@@ -50,13 +50,9 @@ open Complex Real Filter Set Topology MeasureTheory intervalIntegral Asymptotics
 
 namespace Complex
 
-private theorem add_ofReal_mem_slitPlane {s : ℂ} (hs : s ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
-    s + t ∈ slitPlane := by
-  simpa only [add_comm] using TauCeti.ofReal_add_mem_slitPlane hs ht
-
 private theorem add_ofReal_ne_zero {s : ℂ} (hs : s ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
     s + t ≠ 0 :=
-  slitPlane_ne_zero (add_ofReal_mem_slitPlane hs ht)
+  slitPlane_ne_zero (TauCeti.add_ofReal_mem_slitPlane hs ht)
 
 private theorem add_natCast_ne_zero {s : ℂ} (hs : s ∈ slitPlane) (N : ℕ) : s + N ≠ 0 := by
   simpa only [ofReal_natCast] using add_ofReal_ne_zero hs (Nat.cast_nonneg N)
@@ -106,7 +102,7 @@ private theorem integral_add_one_div_add_sq {s : ℂ} (hs : s ∈ slitPlane) (N 
       HasDerivAt (fun u : ℝ ↦ Complex.log (s + (u : ℂ)) + (s - 1) / (s + u))
         (((t : ℂ) + 1) / (s + t) ^ 2) t := by
     rw [uIcc_of_le (Nat.cast_nonneg N)] at ht
-    have h := (hasDerivAt_log_add_ofReal (add_ofReal_mem_slitPlane hs ht.1)).add
+    have h := (hasDerivAt_log_add_ofReal (TauCeti.add_ofReal_mem_slitPlane hs ht.1)).add
       ((hasDerivAt_inv_add_ofReal (add_ofReal_ne_zero hs ht.1)).const_mul (s - 1))
     convert h using 1
     · ext u
