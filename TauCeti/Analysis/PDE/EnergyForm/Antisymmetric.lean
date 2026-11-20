@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.Inner
@@ -48,11 +46,13 @@ different solution set; here the coordinates are `x₀, x₁` and `∂₁` diffe
 
 For a test function `ψ`, the test vector field `W = Kᵀ ∇ψ - ψ g` is divergence free. Indeed
 `div (Kᵀ ∇ψ) = ⟪g, ∇ψ⟫ + ∑ᵢⱼ Kᵢⱼ ∂ᵢ∂ⱼψ`, and the last sum vanishes because the Hessian of `ψ` is
-symmetric and `K` is antisymmetric; and `div (ψ g) = ⟪∇ψ, g⟫ + ψ ∑ᵢⱼ ∂ᵢ∂ⱼ Kᵢⱼ`, where the double
-divergence of `K` vanishes for the same reason. Pairing the weak gradient of `u` with `W`
-(`TauCeti.HasWeakFDerivOn.integral_divergenceCLM_smul_eq_neg_integral`) gives `∫ ⟪∇u, W⟫ = 0`,
-which is the identity. Test functions are dense in `H¹₀(Ω)`, and both sides are continuous in `v`
-when `K` and `g` are bounded.
+symmetric and `K` is antisymmetric
+(`TauCeti.sum_sum_smul_fderiv_fderiv_apply_eq_zero_of_transpose_eq_neg`); and
+`div (ψ g) = ⟪∇ψ, g⟫ + ψ ∑ᵢⱼ ∂ᵢ∂ⱼ Kᵢⱼ`, where the double divergence of `K` vanishes for the same
+reason (`TauCeti.sum_fderiv_sum_fderiv_apply_eq_zero_of_transpose_eq_neg`). Pairing the weak
+gradient of `u` with `W` (`TauCeti.HasWeakFDerivOn.integral_divergenceCLM_smul_eq_neg_integral`)
+gives `∫ ⟪∇u, W⟫ = 0`, which is the identity. Test functions are dense in `H¹₀(Ω)`, and both sides
+are continuous in `v` when `K` and `g` are bounded.
 
 ## Main declarations
 
@@ -88,65 +88,8 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- Contracting the Hessian of a smooth function with an antisymmetric matrix gives zero. -/
-private theorem sum_inner_gradient_lineDeriv_eq_zero {ψ : EuclideanSpace ℝ ι → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ) (x : EuclideanSpace ℝ ι) {A : Matrix ι ι ℝ} (hA : Aᵀ = -A) :
-    ∑ i, ⟪∇ (fun y ↦ lineDeriv ℝ ψ y (EuclideanSpace.single i 1)) x,
-      WithLp.toLp 2 (A i)⟫_ℝ = 0 := by
-  have hsymm := (hψ.contDiffAt (x := x)).isSymmSndFDerivAt (by simp)
-  have hAij : ∀ i j, A j i = -A i j := fun i j ↦ by
-    simpa using congrFun (congrFun hA i) j
-  set H := fderiv ℝ (fderiv ℝ ψ) x
-  have key : ∀ i, ⟪∇ (fun y ↦ lineDeriv ℝ ψ y (EuclideanSpace.single i 1)) x,
-      WithLp.toLp 2 (A i)⟫_ℝ =
-        ∑ j, A i j * H (EuclideanSpace.single j 1) (EuclideanSpace.single i 1) := fun i ↦ by
-    have hfun : (fun y ↦ lineDeriv ℝ ψ y (EuclideanSpace.single i 1)) =
-        fun y ↦ fderiv ℝ ψ y (EuclideanSpace.single i 1) :=
-      funext fun y ↦ (hψ.differentiable (by simp) y).lineDeriv_eq_fderiv
-    have hrow : WithLp.toLp 2 (A i) = ∑ j, A i j • EuclideanSpace.single j (1 : ℝ) := by
-      simpa using ((EuclideanSpace.basisFun ι ℝ).sum_repr (WithLp.toLp 2 (A i))).symm
-    rw [hfun, inner_gradient_left,
-      (hψ.contDiffAt.hasFDerivAt_fderiv_apply (by simp) _).fderiv, hrow]
-    simp [H, map_sum, map_smul]
-  rw [Finset.sum_congr rfl fun i _ ↦ key i]
-  refine Finset.sum_sum_eq_zero_of_diag _ (fun i _ ↦ ?_) fun i _ j _ _ ↦ ?_
-  · simp [show A i i = 0 by linarith [hAij i i]]
-  · rw [hAij, hsymm]
-    ring
-
-variable {Ω : Opens (EuclideanSpace ℝ ι)} {K : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-  {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-
-/-- The double divergence `∑ᵢⱼ ∂ᵢ∂ⱼ Kᵢⱼ` of a smooth antisymmetric matrix field vanishes. -/
-private theorem sum_fderiv_sum_fderiv_eq_zero (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω)
-    (hKt : ∀ x ∈ Ω, (K x)ᵀ = -K x) {x : EuclideanSpace ℝ ι} (hx : x ∈ Ω) :
-    ∑ i, fderiv ℝ (fun y ↦ ∑ j, fderiv ℝ (fun z ↦ K z i j) y (EuclideanSpace.single j 1)) x
-      (EuclideanSpace.single i 1) = 0 := by
-  have hc : ∀ i j, ContDiffAt ℝ ∞ (fun z ↦ K z i j) x := fun i j ↦
-    (hK i j).contDiffAt (Ω.isOpen.mem_nhds hx)
-  have hdd : ∀ i j, DifferentiableAt ℝ (fderiv ℝ fun z ↦ K z i j) x := fun i j ↦
-    ((hc i j).fderiv_right (m := 1) (by simp)).differentiableAt one_ne_zero
-  -- The Hessians `Hᵢⱼ` of the entries are symmetric, and antisymmetric in `(i, j)`.
-  have hneg : ∀ i j, fderiv ℝ (fderiv ℝ fun z ↦ K z j i) x =
-      -fderiv ℝ (fderiv ℝ fun z ↦ K z i j) x := fun i j ↦ by
-    have heq : (fun z ↦ K z j i) =ᶠ[𝓝 x] fun z ↦ -K z i j :=
-      Filter.eventually_of_mem (Ω.isOpen.mem_nhds hx) fun z hz ↦ by
-        simpa using congrFun (congrFun (hKt z hz) i) j
-    have heq' : fderiv ℝ (fun z ↦ K z j i) =ᶠ[𝓝 x] fun z ↦ -fderiv ℝ (fun z ↦ K z i j) z :=
-      heq.fderiv.trans (Filter.Eventually.of_forall fun z ↦ fderiv_neg)
-    rw [heq'.fderiv_eq, fderiv_fun_neg]
-  rw [Finset.sum_congr rfl fun i _ ↦ by
-    rw [fderiv_fun_sum fun j _ ↦ (hdd i j).clm_apply (differentiableAt_const _),
-      sum_apply]]
-  simp_rw [((hc _ _).hasFDerivAt_fderiv_apply (by simp) _).fderiv, ContinuousLinearMap.flip_apply]
-  refine Finset.sum_sum_eq_zero_of_diag _ (fun i _ ↦ ?_) fun i _ j _ _ ↦ ?_
-  · have h := hneg i i
-    rw [eq_neg_iff_add_eq_zero, ← two_smul ℝ, smul_eq_zero] at h
-    simp [h.resolve_left two_ne_zero]
-  · rw [hneg i j, neg_apply, neg_apply, (hc i j).isSymmSndFDerivAt (by simp)]
-    ring
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Ω : Opens (EuclideanSpace ℝ ι)}
+  {K : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
 
 /-- The test vector field `Kᵀ ∇ψ - ψ g`, for the row divergence `g` of a smooth antisymmetric
 matrix field `K`, is divergence free. -/
@@ -160,7 +103,6 @@ private theorem divergenceCLM_sum_sub_eq_zero (hK : ∀ i j, ContDiffOn ℝ ∞ 
   by_cases hx : x ∈ Ω
   swap
   · exact image_eq_zero_of_notMem_tsupport fun h ↦ hx ((divergenceCLM _).tsupport_subset h)
-  have hdψ : ∀ y, DifferentiableAt ℝ ψ y := fun y ↦ ψ.contDiff.differentiable (by simp) y
   -- The divergence of each row `Kᵢ` is the entry `gᵢ`.
   have htr : ∀ i, LinearMap.trace ℝ _ (fderiv ℝ (fun y ↦ WithLp.toLp 2 (K y i)) x :
       EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) = g x i := fun i ↦ by
@@ -171,23 +113,29 @@ private theorem divergenceCLM_sum_sub_eq_zero (hK : ∀ i j, ContDiffOn ℝ ∞ 
       EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) = 0 := by
     rw [trace_fderiv_eq_sum_fderiv_apply_single
         ((hgs.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt (by simp)),
-      ← sum_fderiv_sum_fderiv_eq_zero hK hKt hx]
+      ← sum_fderiv_sum_fderiv_apply_eq_zero_of_transpose_eq_neg
+        (fun i j ↦ (hK i j).contDiffAt (Ω.isOpen.mem_nhds hx)) (by simp)
+        (Filter.eventually_of_mem (Ω.isOpen.mem_nhds hx) hKt) fun j ↦ EuclideanSpace.single j 1]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Filter.EventuallyEq.fderiv_eq (Filter.eventually_of_mem (Ω.isOpen.mem_nhds hx)
       fun y hy ↦ hg y hy i)]
+  -- The Hessian of `ψ`, contracted with the antisymmetric matrix `K x`, vanishes.
+  have hhess : ∑ i, ⟪∇ (fun y ↦ lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) y
+      (EuclideanSpace.single i 1)) x, WithLp.toLp 2 (K x i)⟫_ℝ = 0 := by
+    rw [← sum_sum_smul_fderiv_fderiv_apply_eq_zero_of_transpose_eq_neg
+      (ψ.contDiff.contDiffAt (x := x)) (by simp) (fun j ↦ EuclideanSpace.single j 1) (hKt x hx)]
+    simp [-inner_gradient_left, TestFunction.lineDeriv_eq_fderiv ψ, PiLp.inner_apply,
+      gradient_apply_eq_fderiv_apply_single,
+      (ψ.contDiff.contDiffAt.hasFDerivAt_fderiv_apply (by simp) _).fderiv]
   have hgrad : ⟪∇ (ψ : EuclideanSpace ℝ ι → ℝ) x, g x⟫_ℝ =
       ∑ i, lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (EuclideanSpace.single i 1) * g x i := by
-    have h := congrArg (fderiv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x)
-      (by simpa using ((EuclideanSpace.basisFun ι ℝ).sum_repr (g x)).symm :
-        g x = ∑ j, g x j • EuclideanSpace.single j (1 : ℝ))
-    rw [inner_gradient_left, h]
-    simp [(hdψ x).lineDeriv_eq_fderiv, mul_comm]
-  have hKx : (K x)ᵀ = -K x := hKt x hx
+    simp [-inner_gradient_left, PiLp.inner_apply, gradient_apply_eq_fderiv_apply_single,
+      TestFunction.lineDeriv_eq_fderiv ψ, mul_comm]
   rw [map_sub, map_sum, sub_apply, sum_apply, Finset.sum_congr rfl fun i _ ↦
       divergenceCLM_smulTestField (hr i) _ hx, divergenceCLM_smulTestField hgs ψ hx,
     Finset.sum_add_distrib]
   simp only [coe_lineDerivCLM]
-  rw [sum_inner_gradient_lineDeriv_eq_zero ψ.contDiff x hKx, htrg, hgrad]
+  rw [hhess, htrg, hgrad]
   simp [htr]
 
 omit [DecidableEq ι] in
@@ -204,36 +152,13 @@ private theorem contDiffOn_of_eq_sum_fderiv (hK : ∀ i j, ContDiffOn ℝ ∞ (f
     ((hK i j).fderiv_of_isOpen Ω.isOpen (by simp)).clm_apply contDiffOn_const).congr
       fun x hx ↦ hg x hx i
 
+omit [DecidableEq ι] in
+/-- A matrix field with smooth entries is continuous. -/
+private theorem continuousOn_of_contDiffOn_apply
+    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω) : ContinuousOn K Ω :=
+  continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ (hK i j).continuousOn
+
 variable {mu : Measure (EuclideanSpace ℝ ι)}
-
-omit [DecidableEq ι] in
-/-- A bounded principal coefficient with smooth entries has an essentially bounded field of
-energy integrands. -/
-private theorem memLp_energyIntegrand_principal
-    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω) {Λ : ℝ}
-    (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) :
-    MemLp (fun x ↦ energyIntegrand (K x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-      ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Ω) := by
-  have hKc : ContinuousOn (Y := ι → ι → ℝ) K Ω :=
-    continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ (hK i j).continuousOn
-  refine memLp_energyIntegrand_of_bounds (Lam := max Λ 0) (beta := 0) (gamma := 0)
-    (le_max_right _ _) (hKc.aestronglyMeasurable Ω.isOpen.measurableSet)
-    aestronglyMeasurable_const aestronglyMeasurable_const (fun x hx η ξ ↦ ?_)
-    (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
-  rw [← matrixBilinearForm_apply, ← Real.norm_eq_abs]
-  refine ((matrixBilinearForm (K x)).le_opNorm₂ η ξ).trans ?_
-  gcongr
-  exact (hKb x hx).trans (le_max_left _ _)
-
-omit [DecidableEq ι] in
-/-- A bounded continuous drift has an essentially bounded field of energy integrands. -/
-private theorem memLp_energyIntegrand_drift (hgc : ContinuousOn g Ω) {β : ℝ}
-    (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β) :
-    MemLp (fun x ↦ energyIntegrand ((0 : EuclideanSpace ℝ ι → Matrix ι ι ℝ) x) (g x)
-      ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Ω) :=
-  memLp_energyIntegrand_of_bounds (Lam := 0) (gamma := 0) le_rfl aestronglyMeasurable_const
-    (hgc.aestronglyMeasurable Ω.isOpen.measurableSet) aestronglyMeasurable_const
-    (fun _ _ _ _ ↦ by simp) hgb (fun _ _ ↦ by simp)
 
 variable [mu.IsAddHaarMeasure]
 
@@ -259,19 +184,15 @@ theorem energyFormH1_ofTestFunctionₗ_eq_of_transpose_eq_neg
       ∫ x, ⟪Θ x, W1p.gradient u x⟫_ℝ ∂mu := fun Θ ↦
     setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
       rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (Θ.tsupport_subset h), inner_zero_left]
-  have hdψ : ∀ x, DifferentiableAt ℝ ψ x := fun x ↦ ψ.contDiff.differentiable (by simp) x
   have hΦ : energyFormH1 K 0 0 u (W1p.ofTestFunctionₗ mu Ω 2 ψ) =
       ∫ x, ⟪Φ x, W1p.gradient u x⟫_ℝ ∂mu := by
     rw [energyFormH1_zero_zero_eq_setIntegral, ← hpair]
     refine integral_congr_ae ?_
     filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 ψ] with x hx
-    have hcoord : ∀ i, (∇ (ψ : EuclideanSpace ℝ ι → ℝ) x) i =
-        lineDeriv ℝ (ψ : EuclideanSpace ℝ ι → ℝ) x (EuclideanSpace.single i 1) := fun i ↦ by
-      rw [(hdψ x).lineDeriv_eq_fderiv, ← inner_gradient_left, EuclideanSpace.inner_single_right]
-      simp
     rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_apply]
     simp [Φ, sum_apply, sum_inner, inner_smul_left, dotProduct, Matrix.mulVec,
-      hcoord, PiLp.inner_apply, mul_comm]
+      gradient_apply_eq_fderiv_apply_single, TestFunction.lineDeriv_eq_fderiv ψ, PiLp.inner_apply,
+      mul_comm]
   have hΨ : energyFormH1 0 g 0 u (W1p.ofTestFunctionₗ mu Ω 2 ψ) =
       ∫ x, ⟪Ψ x, W1p.gradient u x⟫_ℝ ∂mu := by
     rw [energyFormH1_def, ← hpair]
@@ -296,9 +217,14 @@ theorem energyFormH1_eq_of_transpose_eq_neg
     {Λ β : ℝ} (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β)
     (u : W1p mu Ω 2) (v : W1p0 mu Ω 2) :
     energyFormH1 K 0 0 u v = energyFormH1 0 g 0 u v := by
-  have hcK := memLp_energyIntegrand_principal (mu := mu) hK hKb
-  have hcg := memLp_energyIntegrand_drift (mu := mu)
-    (contDiffOn_of_eq_sum_fderiv hK hg).continuousOn hgb
+  have hcK := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (b := 0) (c := 0)
+    (continuousOn_of_contDiffOn_apply hK) continuousOn_const continuousOn_const hKb
+    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
+  have hcg := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (a := 0) (c := 0)
+    continuousOn_const (contDiffOn_of_eq_sum_fderiv hK hg).continuousOn continuousOn_const
+    (Lam := 0)
+    (fun _ _ ↦ by simp [← matrixBilinearFormLinear_apply, ContinuousLinearMap.opNorm_zero]) hgb
+    (gamma := 0) (fun _ _ ↦ by simp)
   have hclosed : IsClosed {w : W1p mu Ω 2 | energyFormH1L hcK u w = energyFormH1L hcg u w} :=
     isClosed_eq (energyFormH1L hcK u).continuous (energyFormH1L hcg u).continuous
   have hmem := w1p0Submodule_subset_of_isClosed hclosed (fun ψ ↦ by
@@ -318,9 +244,14 @@ theorem energyFormH1_add_eq_of_transpose_eq_neg {a : EuclideanSpace ℝ ι → M
     {Λ β : ℝ} (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β)
     (u : W1p mu Ω 2) (v : W1p0 mu Ω 2) :
     energyFormH1 (a + K) b c u v = energyFormH1 a (b + g) c u v := by
-  have hcK := memLp_energyIntegrand_principal (mu := mu) hK hKb
-  have hcg := memLp_energyIntegrand_drift (mu := mu)
-    (contDiffOn_of_eq_sum_fderiv hK hg).continuousOn hgb
+  have hcK := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (b := 0) (c := 0)
+    (continuousOn_of_contDiffOn_apply hK) continuousOn_const continuousOn_const hKb
+    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
+  have hcg := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (a := 0) (c := 0)
+    continuousOn_const (contDiffOn_of_eq_sum_fderiv hK hg).continuousOn continuousOn_const
+    (Lam := 0)
+    (fun _ _ ↦ by simp [← matrixBilinearFormLinear_apply, ContinuousLinearMap.opNorm_zero]) hgb
+    (gamma := 0) (fun _ _ ↦ by simp)
   calc energyFormH1 (a + K) b c u v = energyFormH1 (a + K) (b + 0) (c + 0) u v := by simp
     _ = energyFormH1 a b c u v + energyFormH1 K 0 0 u v := energyFormH1_add hcoeff hcK u v
     _ = energyFormH1 a b c u v + energyFormH1 0 g 0 u v := by
@@ -400,9 +331,11 @@ theorem energyFormH1_one_add_coord_smul_skew
   · ext i j
     fin_cases i <;> fin_cases j <;> simp
   · fin_cases i <;> simp [((hcoord x 0).mul_const _).fderiv]
-  · refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
-    have h0 : |x 0| ≤ R := (PiLp.norm_apply_le x 0).trans (by simpa using hR hx)
-    simp [Fin.sum_univ_two]
+  · have h0 : |x 0| ≤ R := (PiLp.norm_apply_le x 0).trans (by simpa using hR hx)
+    have hsum : ∑ i, ∑ j, |(x 0 • !![(0 : ℝ), -1; 1, 0]) i j| = 2 * |x 0| := by
+      simp [Fin.sum_univ_two, two_mul]
+    refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
+    rw [hsum]
     linarith
 
 end Plane
