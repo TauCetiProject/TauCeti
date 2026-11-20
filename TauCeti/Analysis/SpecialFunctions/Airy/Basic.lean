@@ -14,6 +14,8 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 The Airy functions `airyAi` and `airyBi` are defined through the regularized hypergeometric
 function `₀F₁`. They are entire. Their everywhere convergent series and their values and first
 derivatives at the origin fix the standard normalization of the two solutions of Airy's equation.
+The derivatives `Ai′` and `Bi′` are again combinations of regularized `₀F₁` series, since
+differentiating `₀F₁(; b; ·)` raises the parameter `b` by one.
 
 The series here use Gamma denominators, grouping the powers congruent to zero and one modulo
 three.
@@ -22,6 +24,9 @@ three.
 
 * NIST Digital Library of Mathematical Functions, §§9.2(ii), 9.4,
   <https://dlmf.nist.gov/9.2>, <https://dlmf.nist.gov/9.4>.
+
+The derivative formulas are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Airy/Basic/Properties.lean`.
 -/
 
 public section
@@ -128,43 +133,78 @@ theorem airyBi_zero_sq : airyBi 0 ^ 2 = 3 * airyAi 0 ^ 2 := by
 theorem airyAi_zero_sq_add_airyBi_zero_sq : airyAi 0 ^ 2 + airyBi 0 ^ 2 = 4 * airyAi 0 ^ 2 := by
   rw [airyBi_zero_sq]; ring
 
-private theorem hasDerivAt_airy_hypergeometric_zero (b : ℂ) :
-    HasDerivAt (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9)) 0 0 := by
-  have h := (analyticAt_regularizedHGFun_zero (b := {b})
-    ((0 : ℂ) ^ 3 / 9)).differentiableAt.hasDerivAt
-  simpa [Function.comp_def] using
-    h.comp 0 (((hasDerivAt_id' (0 : ℂ)).pow 3).div_const 9)
-
-private theorem airy_derivative_coefficient (a : ℂ) :
-    (3 : ℂ) ^ a / Gamma (4 / 3) = (3 : ℂ) ^ (a + 1) / Gamma (1 / 3) := by
-  have hshift : (4 / 3 : ℂ) = 1 / 3 + 1 := by norm_num
-  have hG : Gamma (4 / 3 : ℂ) = Gamma (1 / 3 : ℂ) / 3 := by
-    rw [hshift, Gamma_add_one _ (by norm_num)]
-    ring
-  rw [hG, cpow_add _ _ (by norm_num), cpow_one]
+/-- The chain rule for `z ↦ ₀F₁(; b; z³/9)`: its derivative is `(z²/3) ₀F₁(; b + 1; z³/9)`. -/
+theorem _root_.Complex.hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (b z : ℂ) :
+    HasDerivAt (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9))
+      (z ^ 2 / 3 * regularizedHGFun 0 {b + 1} (z ^ 3 / 9)) z := by
+  have h := (hasDerivAt_regularizedHGFun_zero_singleton b (z ^ 3 / 9)).comp z
+    ((hasDerivAt_pow 3 z).div_const 9)
+  refine h.congr_deriv ?_
+  push_cast
   ring
+
+/-- `3 ^ s = 3 ^ t * 3` when `s = t + 1`. This relates the constants `3^{-1/3}` and `3^{1/6}` of
+`Ai′` and `Bi′` to the constants `3^{-4/3}` and `3^{-5/6}` of `Ai` and `Bi`. -/
+private theorem three_cpow_of_eq_add_one {s t : ℂ} (h : s = t + 1) :
+    (3 : ℂ) ^ s = 3 ^ t * 3 := by
+  rw [h, cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
+
+/-- The derivative of `Ai` as a combination of regularized `₀F₁` series. -/
+theorem hasDerivAt_airyAi (z : ℂ) :
+    HasDerivAt airyAi (-(3 : ℂ) ^ (-1 / 3 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
+      (3 : ℂ) ^ (-2 / 3 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9)) z := by
+  have h := ((hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (2 / 3) z).const_mul
+    ((3 : ℂ) ^ (-2 / 3 : ℂ))).sub (((hasDerivAt_id z).mul
+      (hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (4 / 3) z)).const_mul
+      ((3 : ℂ) ^ (-4 / 3 : ℂ)))
+  simp only [Pi.sub_def, Pi.mul_def, id] at h
+  rw [funext airyAi_def]
+  convert h using 1
+  · ext w
+    ring
+  · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
+      three_cpow_of_eq_add_one (by norm_num : (-1 / 3 : ℂ) = -4 / 3 + 1)]
+    norm_num
+    ring
+
+/-- The derivative of `Bi` as a combination of regularized `₀F₁` series. -/
+theorem hasDerivAt_airyBi (z : ℂ) :
+    HasDerivAt airyBi ((3 : ℂ) ^ (1 / 6 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
+      (3 : ℂ) ^ (-1 / 6 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9)) z := by
+  have h := ((hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (2 / 3) z).const_mul
+    ((3 : ℂ) ^ (-1 / 6 : ℂ))).add (((hasDerivAt_id z).mul
+      (hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (4 / 3) z)).const_mul
+      ((3 : ℂ) ^ (-5 / 6 : ℂ)))
+  simp only [Pi.add_def, Pi.mul_def, id] at h
+  rw [funext airyBi_def]
+  convert h using 1
+  · ext w
+    ring
+  · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
+      three_cpow_of_eq_add_one (by norm_num : (1 / 6 : ℂ) = -5 / 6 + 1)]
+    norm_num
+    ring
+
+/-- The derivative of `Ai`: `Ai′(z) = −3^{−1/3} 𝐅(⅓, z³/9) + 3^{−2/3} (z²/3) 𝐅(5/3, z³/9)`. -/
+theorem deriv_airyAi (z : ℂ) :
+    deriv airyAi z = -(3 : ℂ) ^ (-1 / 3 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
+      (3 : ℂ) ^ (-2 / 3 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9) :=
+  (hasDerivAt_airyAi z).deriv
+
+/-- The derivative of `Bi`: `Bi′(z) = 3^{1/6} 𝐅(⅓, z³/9) + 3^{−1/6} (z²/3) 𝐅(5/3, z³/9)`. -/
+theorem deriv_airyBi (z : ℂ) :
+    deriv airyBi z = (3 : ℂ) ^ (1 / 6 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
+      (3 : ℂ) ^ (-1 / 6 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9) :=
+  (hasDerivAt_airyBi z).deriv
 
 /-- DLMF 9.2.4: the first derivative of `Ai` at the origin. -/
 @[simp]
 theorem deriv_airyAi_zero : deriv airyAi 0 = -(3 : ℂ) ^ (-1 / 3 : ℂ) / Gamma (1 / 3) := by
-  have h := ((hasDerivAt_airy_hypergeometric_zero (2 / 3)).const_mul
-    ((3 : ℂ) ^ (-2 / 3 : ℂ))).sub
-    (((hasDerivAt_id' (0 : ℂ)).const_mul ((3 : ℂ) ^ (-4 / 3 : ℂ))).mul
-      (hasDerivAt_airy_hypergeometric_zero (4 / 3)))
-  rw [Pi.sub_def, Pi.mul_def] at h
-  rw [funext airyAi_def, h.deriv]
-  convert congrArg Neg.neg (airy_derivative_coefficient (-4 / 3)) using 1 <;>
-    norm_num [div_eq_mul_inv]
+  simp [deriv_airyAi, div_eq_mul_inv]
 
 /-- DLMF 9.2.6: the first derivative of `Bi` at the origin. -/
 @[simp]
 theorem deriv_airyBi_zero : deriv airyBi 0 = (3 : ℂ) ^ (1 / 6 : ℂ) / Gamma (1 / 3) := by
-  have h := ((hasDerivAt_airy_hypergeometric_zero (2 / 3)).const_mul
-    ((3 : ℂ) ^ (-1 / 6 : ℂ))).add
-    (((hasDerivAt_id' (0 : ℂ)).const_mul ((3 : ℂ) ^ (-5 / 6 : ℂ))).mul
-      (hasDerivAt_airy_hypergeometric_zero (4 / 3)))
-  rw [Pi.add_def, Pi.mul_def] at h
-  rw [funext airyBi_def, h.deriv]
-  convert airy_derivative_coefficient (-5 / 6) using 1 <;> norm_num [div_eq_mul_inv]
+  simp [deriv_airyBi, div_eq_mul_inv]
 
 end TauCeti

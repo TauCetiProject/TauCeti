@@ -19,7 +19,6 @@ solution satisfies the Riccati equation `W' = z − W²`.
 
 ## Main results
 
-* `TauCeti.deriv_airyAi`, `TauCeti.deriv_airyBi`: the derivatives as regularized `₀F₁` series;
 * `TauCeti.airyAi_ode`, `TauCeti.airyBi_ode`: Airy's equation (DLMF 9.2.1);
 * `TauCeti.wronskian_airyAi_airyBi`: `𝒲{Ai, Bi} = 1/π` (DLMF 9.2.7);
 * `TauCeti.eq_airy_combination`: every entire solution is
@@ -52,74 +51,13 @@ open scoped Real
 
 namespace TauCeti
 
-/-- The chain rule for `z ↦ ₀F₁(; b; z³/9)`. -/
-private theorem hasDerivAt_airy_hypergeometric (b z : ℂ) :
-    HasDerivAt (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9))
-      (z ^ 2 / 3 * regularizedHGFun 0 {b + 1} (z ^ 3 / 9)) z := by
-  have h := (hasDerivAt_regularizedHGFun_zero_singleton b (z ^ 3 / 9)).comp z
-    ((hasDerivAt_pow 3 z).div_const 9)
-  refine h.congr_deriv ?_
-  push_cast
-  ring
-
-/-- `3 ^ s = 3 ^ t * 3` when `s = t + 1`. This relates the constants `3^{-1/3}` and `3^{1/6}` of
-`Ai′` and `Bi′` to the constants `3^{-4/3}` and `3^{-5/6}` of `Ai` and `Bi`. -/
-private theorem three_cpow_of_eq_add_one {s t : ℂ} (h : s = t + 1) :
-    (3 : ℂ) ^ s = 3 ^ t * 3 := by
-  rw [h, cpow_add _ _ (by norm_num : (3 : ℂ) ≠ 0), cpow_one]
-
-/-- The derivative of `Ai` as a combination of regularized `₀F₁` series. -/
-theorem hasDerivAt_airyAi (z : ℂ) :
-    HasDerivAt airyAi (-(3 : ℂ) ^ (-1 / 3 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
-      (3 : ℂ) ^ (-2 / 3 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9)) z := by
-  have h := ((hasDerivAt_airy_hypergeometric (2 / 3) z).const_mul ((3 : ℂ) ^ (-2 / 3 : ℂ))).sub
-    (((hasDerivAt_id z).mul (hasDerivAt_airy_hypergeometric (4 / 3) z)).const_mul
-      ((3 : ℂ) ^ (-4 / 3 : ℂ)))
-  simp only [Pi.sub_def, Pi.mul_def, id] at h
-  rw [funext airyAi_def]
-  convert h using 1
-  · ext w
-    ring
-  · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
-      three_cpow_of_eq_add_one (by norm_num : (-1 / 3 : ℂ) = -4 / 3 + 1)]
-    norm_num
-    ring
-
-/-- The derivative of `Bi` as a combination of regularized `₀F₁` series. -/
-theorem hasDerivAt_airyBi (z : ℂ) :
-    HasDerivAt airyBi ((3 : ℂ) ^ (1 / 6 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
-      (3 : ℂ) ^ (-1 / 6 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9)) z := by
-  have h := ((hasDerivAt_airy_hypergeometric (2 / 3) z).const_mul ((3 : ℂ) ^ (-1 / 6 : ℂ))).add
-    (((hasDerivAt_id z).mul (hasDerivAt_airy_hypergeometric (4 / 3) z)).const_mul
-      ((3 : ℂ) ^ (-5 / 6 : ℂ)))
-  simp only [Pi.add_def, Pi.mul_def, id] at h
-  rw [funext airyBi_def]
-  convert h using 1
-  · ext w
-    ring
-  · rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (1 / 3 : ℂ),
-      three_cpow_of_eq_add_one (by norm_num : (1 / 6 : ℂ) = -5 / 6 + 1)]
-    norm_num
-    ring
-
-/-- The derivative of `Ai`: `Ai′(z) = −3^{−1/3} 𝐅(⅓, z³/9) + 3^{−2/3} (z²/3) 𝐅(5/3, z³/9)`. -/
-theorem deriv_airyAi (z : ℂ) :
-    deriv airyAi z = -(3 : ℂ) ^ (-1 / 3 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
-      (3 : ℂ) ^ (-2 / 3 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9) :=
-  (hasDerivAt_airyAi z).deriv
-
-/-- The derivative of `Bi`: `Bi′(z) = 3^{1/6} 𝐅(⅓, z³/9) + 3^{−1/6} (z²/3) 𝐅(5/3, z³/9)`. -/
-theorem deriv_airyBi (z : ℂ) :
-    deriv airyBi z = (3 : ℂ) ^ (1 / 6 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (z ^ 3 / 9) +
-      (3 : ℂ) ^ (-1 / 6 : ℂ) * (z ^ 2 / 3) * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9) :=
-  (hasDerivAt_airyBi z).deriv
-
 /-- By the contiguous relation, `z ↦ (z²/3) ₀F₁(; 5/3; z³/9)` has derivative
 `z ₀F₁(; 2/3; z³/9)`. -/
 private theorem hasDerivAt_airy_second (z : ℂ) :
     HasDerivAt (fun z : ℂ => z ^ 2 / 3 * regularizedHGFun 0 {(5 / 3 : ℂ)} (z ^ 3 / 9))
       (z * regularizedHGFun 0 {(2 / 3 : ℂ)} (z ^ 3 / 9)) z := by
-  have h := ((hasDerivAt_pow 2 z).div_const 3).mul (hasDerivAt_airy_hypergeometric (5 / 3) z)
+  have h := ((hasDerivAt_pow 2 z).div_const 3).mul
+    (hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (5 / 3) z)
   refine h.congr_deriv ?_
   rw [regularizedHGFun_zero_singleton_eq_mul_add_mul (2 / 3 : ℂ)]
   norm_num
@@ -127,7 +65,8 @@ private theorem hasDerivAt_airy_second (z : ℂ) :
 
 /-- **Airy's equation** for `Ai` (DLMF 9.2.1). -/
 theorem airyAi_ode (z : ℂ) : deriv^[2] airyAi z = z * airyAi z := by
-  have h := ((hasDerivAt_airy_hypergeometric (1 / 3) z).const_mul (-(3 : ℂ) ^ (-1 / 3 : ℂ))).add
+  have h := ((hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (1 / 3) z).const_mul
+    (-(3 : ℂ) ^ (-1 / 3 : ℂ))).add
     ((hasDerivAt_airy_second z).const_mul ((3 : ℂ) ^ (-2 / 3 : ℂ)))
   have hfun : deriv airyAi = fun x =>
       -(3 : ℂ) ^ (-1 / 3 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (x ^ 3 / 9) +
@@ -135,13 +74,17 @@ theorem airyAi_ode (z : ℂ) : deriv^[2] airyAi z = z * airyAi z := by
     funext fun x => by rw [deriv_airyAi]; ring
   simp only [Pi.add_def] at h
   rw [Function.iterate_succ_apply', Function.iterate_one, hfun, h.deriv]
-  · rw [airyAi_def, three_cpow_of_eq_add_one (by norm_num : (-1 / 3 : ℂ) = -4 / 3 + 1)]
-    norm_num
-    ring
+  -- The constant `3^{-1/3}` of `Ai′` is `3^{-4/3} · 3`, with `3^{-4/3}` the constant of `Ai`.
+  have h3 : (3 : ℂ) ^ (-1 / 3 : ℂ) = 3 ^ (-4 / 3 : ℂ) * 3 := by
+    rw [(by norm_num : (-1 / 3 : ℂ) = -4 / 3 + 1), cpow_add _ _ (by norm_num), cpow_one]
+  rw [airyAi_def, h3]
+  norm_num
+  ring
 
 /-- **Airy's equation** for `Bi` (DLMF 9.2.1). -/
 theorem airyBi_ode (z : ℂ) : deriv^[2] airyBi z = z * airyBi z := by
-  have h := ((hasDerivAt_airy_hypergeometric (1 / 3) z).const_mul ((3 : ℂ) ^ (1 / 6 : ℂ))).add
+  have h := ((hasDerivAt_regularizedHGFun_zero_singleton_pow_three_div_nine (1 / 3) z).const_mul
+    ((3 : ℂ) ^ (1 / 6 : ℂ))).add
     ((hasDerivAt_airy_second z).const_mul ((3 : ℂ) ^ (-1 / 6 : ℂ)))
   have hfun : deriv airyBi = fun x =>
       (3 : ℂ) ^ (1 / 6 : ℂ) * regularizedHGFun 0 {(1 / 3 : ℂ)} (x ^ 3 / 9) +
@@ -149,9 +92,12 @@ theorem airyBi_ode (z : ℂ) : deriv^[2] airyBi z = z * airyBi z := by
     funext fun x => by rw [deriv_airyBi]; ring
   simp only [Pi.add_def] at h
   rw [Function.iterate_succ_apply', Function.iterate_one, hfun, h.deriv]
-  · rw [airyBi_def, three_cpow_of_eq_add_one (by norm_num : (1 / 6 : ℂ) = -5 / 6 + 1)]
-    norm_num
-    ring
+  -- The constant `3^{1/6}` of `Bi′` is `3^{-5/6} · 3`, with `3^{-5/6}` the constant of `Bi`.
+  have h3 : (3 : ℂ) ^ (1 / 6 : ℂ) = 3 ^ (-5 / 6 : ℂ) * 3 := by
+    rw [(by norm_num : (1 / 6 : ℂ) = -5 / 6 + 1), cpow_add _ _ (by norm_num), cpow_one]
+  rw [airyBi_def, h3]
+  norm_num
+  ring
 
 /-- The Wronskian of two entire solutions of Airy's equation is constant. -/
 theorem wronskian_eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
@@ -160,7 +106,7 @@ theorem wronskian_eq_of_airy_ode {f g : ℂ → ℂ} (hf : Differentiable ℂ f)
     f z * deriv g z - deriv f z * g z = f w * deriv g w - deriv f w * g w := by
   have h2 {u : ℂ → ℂ} (hu : Differentiable ℂ u) (hu' : ∀ z, deriv^[2] u z = z * u z) (t : ℂ) :
       HasDerivAt (deriv u) (id t * u t) t := by
-    rw [id, ← hu' t]
+    rw [id, ← hu' t, Function.iterate_succ_apply', Function.iterate_one]
     exact (hu.deriv t).hasDerivAt
   have h := wronskian_eq_of_hasDerivAt (q := id) (fun t => (hg t).hasDerivAt) (h2 hg hg')
     (fun t => (hf t).hasDerivAt) (h2 hf hf') z w
@@ -236,7 +182,7 @@ theorem hasDerivAt_deriv_div_of_airy_ode_at {w : ℂ → ℂ} {z : ℂ} (hw : Di
     (hw' : DifferentiableAt ℂ (deriv w) z) (hode : deriv^[2] w z = z * w z) (hz : w z ≠ 0) :
     HasDerivAt (fun u => deriv w u / w u) (z - (deriv w z / w z) ^ 2) z := by
   have h2 : HasDerivAt (deriv w) (z * w z) z := by
-    rw [← hode]
+    rw [← hode, Function.iterate_succ_apply', Function.iterate_one]
     exact hw'.hasDerivAt
   refine (h2.div hw.hasDerivAt hz).congr_deriv ?_
   field_simp
