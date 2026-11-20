@@ -39,6 +39,8 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
   `innerₛₗ 𝕜 (b i)`.
+* `OrthonormalBasis.exists_clm_norm_le_one_and_repr_eq`: each coordinate of a real orthonormal
+  basis is a complex-valued continuous real-linear form of norm at most one.
 * `OrthonormalBasis.subsingleton_of_isEmpty`: a space with an orthonormal basis indexed by an
   empty type is trivial.
 * `OrthonormalBasis.repr_apply_of_eigenbasis`: in an orthonormal eigenbasis of a linear map `S`,
@@ -97,6 +99,15 @@ theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
     b.toBasis.coord i = innerₗ F (b i) := by
   ext v
   simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
+/-- The `i`-th coordinate `y ↦ bᵢ(y)` of a real orthonormal basis, as a complex-valued continuous
+real-linear form of norm at most one. -/
+theorem exists_clm_norm_le_one_and_repr_eq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] (b : OrthonormalBasis ι ℝ F) (i : ι) :
+    ∃ A : F →L[ℝ] ℂ, ‖A‖ ≤ 1 ∧ ∀ y, ((b.toBasis.repr y i : ℝ) : ℂ) = A y := by
+  refine ⟨Complex.ofRealCLM.comp (innerSL ℝ (b i)), ?_, fun y ↦ by simp [b.repr_apply_apply]⟩
+  refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y ↦ ?_
+  simpa [b.orthonormal.1 i] using norm_inner_le_norm (𝕜 := ℝ) (b i) y
 
 /-- The space carrying an orthonormal basis indexed by an empty type is trivial. -/
 theorem subsingleton_of_isEmpty [IsEmpty ι] (b : OrthonormalBasis ι 𝕜 E) : Subsingleton E :=
