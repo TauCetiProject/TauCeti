@@ -13,6 +13,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.UniformSpace.AbstractCompletion
 public import TauCeti.RingTheory.NovikovSeries.Basic
+public import TauCeti.Topology.Algebra.Nonarchimedean.EnergyFiltration
 import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 /-!
@@ -60,6 +61,8 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
 * The instances `T2Space` and `CompleteSpace`: the period topology is separated and complete.
 * The instances `NonarchimedeanAddGroup` and `ContinuousConstSMul`: the period topology has a
   basis of open subgroups, and coefficientwise scalar multiplication is continuous.
+* `TauCeti.NovikovSeries.isEnergyFiltration_periodFiltration`: the subgroups `U_C` are an energy
+  filtration, with the period as energy.
 * `TauCeti.NovikovSeries.coeff_tsum_eq_zero`: a sum of series vanishing at an exponent vanishes
   there.
 * `TauCeti.NovikovSeries.isClosed_setOf_support_subset`: series supported in any fixed set form a
@@ -285,6 +288,14 @@ instance : NonarchimedeanAddGroup (NovikovSeries R H N) where
   is_nonarchimedean U hU := by
     obtain ⟨C, -, hC⟩ := hasBasis_nhds_zero.mem_iff.1 hU
     exact ⟨⟨periodFiltration R N C, isOpen_periodFiltration C⟩, hC⟩
+
+/-- The period filtration is an energy filtration of the Novikov series: the subgroups `U_C`
+decrease, exhaust the series and form a basis of neighbourhoods of `0`. -/
+theorem isEnergyFiltration_periodFiltration :
+    IsEnergyFiltration (periodFiltration R N : ℝ → AddSubgroup (NovikovSeries R H N)) where
+  antitone := antitone_periodFiltration
+  exists_mem := exists_mem_periodFiltration
+  hasBasis_nhds_zero := hasBasis_nhds_zero
 
 /-- Coefficientwise scalar multiplication is continuous in the period topology. -/
 instance {S : Type*} [DistribSMul S R] : ContinuousConstSMul S (NovikovSeries R H N) where
