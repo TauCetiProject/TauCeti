@@ -47,6 +47,10 @@ stack is the Picard stack `h¹/h⁰`. The groupoid sees exactly the cohomology o
 ## Main declarations
 
 * `AddMonoidHom.TranslationSpace d`: the type `B` with `A` acting by translation through `d`.
+* `AddMonoidHom.TranslationSpace.orbitRel_of_iff`,
+  `AddMonoidHom.TranslationSpace.stabilizerMulEquiv`: its orbits are the cosets of `range d` and
+  its stabilizers are `ker d`. Through the orbit and stabilizer dictionary of the action groupoid,
+  these give the cohomology of the quotient groupoid.
 * `AddMonoidHom.QuotientGroupoid d`: the quotient groupoid `[B/A]` of `d : A →+ B`.
 * `AddMonoidHom.QuotientGroupoid.objEquiv`, `AddMonoidHom.QuotientGroupoid.label`,
   `AddMonoidHom.QuotientGroupoid.homMk`: objects are elements of `B`, arrows are labelled by `A`.
@@ -102,6 +106,50 @@ theorem vadd_of (a : A) (x : B) : a +ᵥ of d x = of d (d a + x) := (rfl)
 /-- The multiplicative form of the translation action, used by the action groupoid. -/
 theorem ofAdd_smul_of (a : A) (x : B) : Multiplicative.ofAdd a • of d x = of d (d a + x) := (rfl)
 
+variable {d}
+
+/-- Two points of the translation space lie in the same orbit exactly when they differ by an
+element of the range of `d`. -/
+theorem orbitRel_of_iff {x y : B} :
+    MulAction.orbitRel (Multiplicative A) d.TranslationSpace (of d x) (of d y) ↔
+      x - y ∈ d.range := by
+  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, Multiplicative.ofAdd.surjective.exists]
+  simp only [ofAdd_smul_of, (of d).injective.eq_iff, mem_range, eq_sub_iff_add_eq]
+
+/-- An element of `A` stabilizes a point of the translation space exactly when it lies in the
+kernel of `d`. -/
+theorem mem_stabilizer_iff {a : Multiplicative A} {x : d.TranslationSpace} :
+    a ∈ MulAction.stabilizer (Multiplicative A) x ↔ Multiplicative.toAdd a ∈ d.ker := by
+  obtain ⟨y, rfl⟩ := (of d).surjective x
+  rw [MulAction.mem_stabilizer_iff, ← ofAdd_toAdd a, ofAdd_smul_of, (of d).injective.eq_iff,
+    toAdd_ofAdd, add_eq_right, mem_ker]
+
+variable (d)
+
+/-- The stabilizer of every point of the translation space is the kernel of `d`. Both sides are
+subtypes of `A`, read through `Multiplicative`, so each element keeps its underlying element of
+`A`. -/
+def stabilizerMulEquiv (x : d.TranslationSpace) :
+    MulAction.stabilizer (Multiplicative A) x ≃* Multiplicative d.ker where
+  toFun a := Multiplicative.ofAdd ⟨Multiplicative.toAdd (a : Multiplicative A),
+    mem_stabilizer_iff.mp a.2⟩
+  invFun k := ⟨Multiplicative.ofAdd ((Multiplicative.toAdd k : d.ker) : A),
+    mem_stabilizer_iff.mpr (Multiplicative.toAdd k).2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem coe_toAdd_stabilizerMulEquiv_apply (x : d.TranslationSpace)
+    (a : MulAction.stabilizer (Multiplicative A) x) :
+    ((Multiplicative.toAdd (stabilizerMulEquiv d x a) : d.ker) : A) =
+      Multiplicative.toAdd (a : Multiplicative A) := (rfl)
+
+@[simp]
+theorem coe_stabilizerMulEquiv_symm_apply (x : d.TranslationSpace) (k : Multiplicative d.ker) :
+    (((stabilizerMulEquiv d x).symm k : MulAction.stabilizer (Multiplicative A) x) :
+      Multiplicative A) = Multiplicative.ofAdd ((Multiplicative.toAdd k : d.ker) : A) := (rfl)
+
 end TranslationSpace
 
 /-- The quotient groupoid `[B/A]` of the two-term complex `d : A →+ B`: Deligne's `h¹/h⁰` of the
@@ -155,7 +203,8 @@ theorem homMk_label {X Y : d.QuotientGroupoid} (f : X ⟶ Y) :
   hom_ext rfl
 
 @[simp]
-theorem label_id (X : d.QuotientGroupoid) : label (𝟙 X) = 0 := (rfl)
+theorem label_id (X : d.QuotientGroupoid) : label (𝟙 X) = 0 := by
+  rw [label, ActionCategory.id_hom, toAdd_one]
 
 @[simp]
 theorem label_eqToHom {X Y : d.QuotientGroupoid} (h : X = Y) : label (eqToHom h) = 0 := by
@@ -163,8 +212,8 @@ theorem label_eqToHom {X Y : d.QuotientGroupoid} (h : X = Y) : label (eqToHom h)
 
 @[simp]
 theorem label_comp {X Y Z : d.QuotientGroupoid} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    label (f ≫ g) = label f + label g :=
-  add_comm (label g) (label f)
+    label (f ≫ g) = label f + label g := by
+  rw [label, label, label, ActionCategory.comp_hom, toAdd_mul, add_comm]
 
 @[simp]
 theorem label_inv {X Y : d.QuotientGroupoid} (f : X ⟶ Y) : label (inv f) = -label f := by
@@ -196,47 +245,42 @@ variable {d : A →+ B}
 the range of `d`. -/
 theorem isIsomorphic_objEquiv_iff {x y : B} :
     IsIsomorphic (objEquiv d x) (objEquiv d y) ↔ y - x ∈ d.range := by
-  rw [Groupoid.isIsomorphic_iff_nonempty_hom, (homEquiv x y).nonempty_congr, nonempty_subtype]
-  simp only [mem_range, eq_sub_iff_add_eq]
+  rw [objEquiv, Equiv.trans_apply, Equiv.trans_apply, ActionCategory.isIsomorphic_iff_orbitRel,
+    TranslationSpace.orbitRel_of_iff, sub_mem_comm_iff]
 
 variable (d) in
 /-- The isomorphism classes of the quotient groupoid of `d : A →+ B` are the cokernel
 `H¹ = B ⧸ range d` of `d`. -/
 def isomorphismClassesEquiv :
     _root_.Quotient (isIsomorphicSetoid d.QuotientGroupoid) ≃ B ⧸ d.range :=
-  (Quotient.congr (objEquiv d) fun x y => by
-    rw [QuotientAddGroup.leftRel_apply, neg_add_eq_sub]
-    exact isIsomorphic_objEquiv_iff.symm).symm
+  ((Quotient.congr (TranslationSpace.of d) fun x y => by
+    rw [QuotientAddGroup.leftRel_apply, neg_add_eq_sub, TranslationSpace.orbitRel_of_iff,
+      sub_mem_comm_iff]).trans (ActionCategory.orbitQuotientEquivIsomorphismClasses _ _)).symm
 
 @[simp]
 theorem isomorphismClassesEquiv_mk (x : B) :
     isomorphismClassesEquiv d (_root_.Quotient.mk _ (objEquiv d x)) = (x : B ⧸ d.range) := by
-  rw [isomorphismClassesEquiv, Equiv.symm_apply_eq, Quotient.congr_mk]
+  rw [isomorphismClassesEquiv, Equiv.symm_apply_eq, Equiv.trans_apply, Quotient.congr_mk,
+    ActionCategory.orbitQuotientEquivIsomorphismClasses_mk, objEquiv, Equiv.trans_apply]
 
 variable (d) in
 /-- The automorphisms of any object of the quotient groupoid of `d : A →+ B` are the kernel
 `H⁰ = ker d` of `d`: an automorphism is its label. The group law of `Aut` is composition, which
 adds labels. -/
-def autMulEquiv (X : d.QuotientGroupoid) : Aut X ≃* Multiplicative d.ker where
-  toFun e := Multiplicative.ofAdd ⟨label e.asIso.hom, by
-    simpa using apply_label_add e.asIso.hom⟩
-  invFun a := .of <| (Groupoid.isoEquivHom X X).symm <| homMk (Multiplicative.toAdd a : d.ker) <| by
-    rw [(mem_ker).mp (Multiplicative.toAdd a).2, zero_add]
-  left_inv e := Aut.ext (Iso.ext (hom_ext rfl))
-  right_inv _ := rfl
-  map_mul' e e' := Multiplicative.toAdd.injective <| Subtype.ext <| by
-    simp only [toAdd_ofAdd, toAdd_mul, AddSubgroup.coe_add, Aut.mul_asIso, Iso.trans_hom,
-      label_comp]
-    exact add_comm _ _
+def autMulEquiv (X : d.QuotientGroupoid) : Aut X ≃* Multiplicative d.ker :=
+  (Aut.autMulEquivOfIso (eqToIso ((ActionCategory.objEquiv _ _).apply_symm_apply X).symm)).trans <|
+    (ActionCategory.stabilizerMulEquivAut _ _).symm.trans (TranslationSpace.stabilizerMulEquiv d _)
 
 @[simp]
 theorem coe_toAdd_autMulEquiv_apply (X : d.QuotientGroupoid) (e : Aut X) :
-    ((Multiplicative.toAdd (autMulEquiv d X e) : d.ker) : A) = label e.asIso.hom := (rfl)
+    ((Multiplicative.toAdd (autMulEquiv d X e) : d.ker) : A) = label e.asIso.hom := by
+  simp [autMulEquiv, label, ActionCategory.comp_hom]
 
 @[simp]
 theorem label_autMulEquiv_symm_apply_asIso_hom (X : d.QuotientGroupoid)
     (a : Multiplicative d.ker) :
-    label ((autMulEquiv d X).symm a).asIso.hom = (Multiplicative.toAdd a : d.ker) := (rfl)
+    label ((autMulEquiv d X).symm a).asIso.hom = (Multiplicative.toAdd a : d.ker) := by
+  simp [autMulEquiv, label, ActionCategory.comp_hom]
 
 variable (d) in
 /-- The quotient groupoid of `d : A →+ B` is equivalent to the point exactly when `d` is
@@ -276,6 +320,12 @@ private def translationSpaceMap (f₀ : A →+ A') (f₁ : B →+ B') (h : f₁.
       TranslationSpace.ofAdd_smul_of, Equiv.symm_apply_apply, Equiv.symm_apply_apply, map_add,
       ← comp_apply f₁, h, comp_apply]
 
+@[simp]
+private theorem translationSpaceMap_of (f₀ : A →+ A') (f₁ : B →+ B') (h : f₁.comp d = d'.comp f₀)
+    (x : B) :
+    translationSpaceMap f₀ f₁ h (TranslationSpace.of d x) = TranslationSpace.of d' (f₁ x) :=
+  congrArg (TranslationSpace.of d' ∘ f₁) ((TranslationSpace.of d).symm_apply_apply x)
+
 /-- The functor between quotient groupoids induced by a chain map `(f₀, f₁)` from `d : A →+ B` to
 `d' : A' →+ B'`, that is a commutative square `f₁ ∘ d = d' ∘ f₀`. It sends `x` to `f₁ x` and
 the arrow labelled `a` to the arrow labelled `f₀ a`. -/
@@ -287,8 +337,8 @@ variable (f₀ : A →+ A') (f₁ : B →+ B') (h : f₁.comp d = d'.comp f₀)
 
 @[simp]
 theorem map_obj_objEquiv (x : B) : (map f₀ f₁ h).obj (objEquiv d x) = objEquiv d' (f₁ x) := by
-  rw [map, objEquiv, Equiv.trans_apply, ActionCategory.map_obj]
-  rfl
+  rw [map, objEquiv, objEquiv, Equiv.trans_apply, Equiv.trans_apply, ActionCategory.map_obj,
+    translationSpaceMap_of]
 
 @[simp]
 theorem objEquiv_symm_map_obj (X : d.QuotientGroupoid) :
@@ -369,17 +419,16 @@ variable {d : A →+ B} {d' : A' →+ B'} (f₀ : A →+ A') (f₁ : B →+ B') 
 /-- The functor induced by a chain map is faithful exactly when the chain map is injective on
 `H⁰ = ker d`. -/
 theorem faithful_map_iff : (map f₀ f₁ h).Faithful ↔ Set.InjOn f₀ d.ker := by
+  rw [map, ActionCategory.faithful_map_iff, (TranslationSpace.of d).surjective.forall]
+  simp only [Multiplicative.ofAdd.surjective.forall, TranslationSpace.ofAdd_smul_of,
+    (TranslationSpace.of d).injective.eq_iff, add_left_inj, toMultiplicative_apply_apply,
+    toAdd_ofAdd, Multiplicative.ofAdd.injective.eq_iff, forall_const]
   constructor
-  · intro _ a (ha : d a = 0) b (hb : d b = 0) hab
-    have := (map f₀ f₁ h).map_injective (X := objEquiv d 0) (Y := objEquiv d 0)
-      (a₁ := homMk a (by simpa using ha)) (a₂ := homMk b (by simpa using hb))
-      (hom_ext (by simpa using hab))
-    simpa using congrArg label this
-  · intro hinj
-    refine ⟨fun {X Y} g g' hgg' => hom_ext <| sub_eq_zero.mp <| hinj ?_ (zero_mem d.ker) ?_⟩
-    · rw [SetLike.mem_coe, mem_ker, map_sub, sub_eq_zero, ← add_left_inj ((objEquiv d).symm X),
-        apply_label_add, apply_label_add]
-    · rw [map_sub, map_zero, sub_eq_zero, ← label_map_map f₀ f₁ h, ← label_map_map f₀ f₁ h, hgg']
+  · intro hinj a ha b hb hab
+    exact hinj a b ((mem_ker.mp ha).trans (mem_ker.mp hb).symm) hab
+  · intro hinj a b hab hf
+    refine sub_eq_zero.mp (hinj (mem_ker.mpr ?_) (zero_mem d.ker) ?_) <;>
+      simp [hab, hf]
 
 /-- The functor induced by a chain map is full exactly when the chain map is surjective on
 `H⁰ = ker d` and injective on `H¹ = B ⧸ range d`; the latter says that an element of `B` whose
@@ -388,46 +437,35 @@ image lies in the range of `d'` lies in the range of `d` (compare
 theorem full_map_iff :
     (map f₀ f₁ h).Full ↔ Set.SurjOn f₀ d.ker d'.ker ∧ d'.range.comap f₁ ≤ d.range := by
   have h' (a : A) : f₁ (d a) = d' (f₀ a) := DFunLike.congr_fun h a
+  rw [map, ActionCategory.full_map_iff]
+  simp only [(TranslationSpace.of d).surjective.forall, Multiplicative.ofAdd.surjective.forall,
+    Multiplicative.ofAdd.surjective.exists, translationSpaceMap_of, TranslationSpace.ofAdd_smul_of,
+    (TranslationSpace.of d).injective.eq_iff, (TranslationSpace.of d').injective.eq_iff,
+    toMultiplicative_apply_apply, toAdd_ofAdd, Multiplicative.ofAdd.injective.eq_iff]
   constructor
-  · intro _
+  · intro hlift
     refine ⟨fun a' (ha' : d' a' = 0) => ?_, fun x ⟨a', ha'⟩ => ?_⟩
-    · obtain ⟨g, hg⟩ := (map f₀ f₁ h).map_surjective (X := objEquiv d 0) (Y := objEquiv d 0)
-        (homMk a' (by simpa using ha'))
-      refine ⟨label g, by simpa using apply_label_add g, ?_⟩
-      simpa using congrArg label hg
-    · obtain ⟨g, -⟩ := (map f₀ f₁ h).map_surjective (X := objEquiv d 0) (Y := objEquiv d x)
-        (homMk a' (by simpa using ha'))
-      exact ⟨label g, by simpa using apply_label_add g⟩
-  · rintro ⟨hker, hcoker⟩
-    refine ⟨fun {X Y} g' => ?_⟩
-    have hg' := apply_label_add g'
-    simp only [objEquiv_symm_map_obj] at hg'
-    obtain ⟨a₀, ha₀⟩ := hcoker (x := (objEquiv d).symm Y - (objEquiv d).symm X)
-      ⟨label g', by rw [map_sub, ← hg', add_sub_cancel_right]⟩
-    obtain ⟨k, hk, hfk⟩ := hker (show d' (label g' - f₀ a₀) = 0 by
-      rw [map_sub, ← h', ha₀, map_sub, ← hg', add_sub_cancel_right, sub_self])
-    refine ⟨homMk (a₀ + k) ?_, hom_ext ?_⟩
-    · rw [map_add, (mem_ker).mp hk, add_zero, ha₀, sub_add_cancel]
-    · rw [label_map_map, label_homMk, map_add, hfk, add_sub_cancel]
+    · obtain ⟨a, rfl, ha⟩ := hlift 0 0 a' (by rw [ha', map_zero, add_zero])
+      exact ⟨a, mem_ker.mpr (by rwa [add_zero] at ha), rfl⟩
+    · obtain ⟨a, -, ha⟩ := hlift 0 x a' (by rw [ha', map_zero, add_zero])
+      exact ⟨a, by rwa [add_zero] at ha⟩
+  · rintro ⟨hker, hcoker⟩ x x' a' hx
+    obtain ⟨a₀, ha₀⟩ := hcoker (x := x' - x) ⟨a', by rw [map_sub, ← hx, add_sub_cancel_right]⟩
+    obtain ⟨k, hk, hfk⟩ := hker (show d' (a' - f₀ a₀) = 0 by
+      rw [map_sub, ← h', ha₀, map_sub, ← hx, add_sub_cancel_right, sub_self])
+    refine ⟨a₀ + k, by rw [map_add, hfk, add_sub_cancel], ?_⟩
+    rw [map_add, (mem_ker).mp hk, add_zero, ha₀, sub_add_cancel]
 
 /-- The functor induced by a chain map is essentially surjective exactly when the chain map is
 surjective on `H¹ = B ⧸ range d`. -/
 theorem essSurj_map_iff :
     (map f₀ f₁ h).EssSurj ↔
       Function.Surjective (QuotientAddGroup.map _ _ f₁ (range_le_comap_range_of_comp_eq h)) := by
-  rw [Function.Surjective, (QuotientAddGroup.mk_surjective (s := d'.range)).forall]
-  simp_rw [(QuotientAddGroup.mk_surjective (s := d.range)).exists, QuotientAddGroup.map_mk,
-    QuotientAddGroup.eq, neg_add_eq_sub, ← isIsomorphic_objEquiv_iff, ← map_obj_objEquiv f₀ f₁ h]
-  constructor
-  · intro _ y
-    obtain ⟨X, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage (F := map f₀ f₁ h) (objEquiv d' y)
-    obtain ⟨x, rfl⟩ := (objEquiv d).surjective X
-    exact ⟨x, ⟨e⟩⟩
-  · intro hsurj
-    refine ⟨fun Y => ?_⟩
-    obtain ⟨x, hx⟩ := hsurj ((objEquiv d').symm Y)
-    rw [Equiv.apply_symm_apply] at hx
-    exact ⟨objEquiv d x, hx⟩
+  rw [map, ActionCategory.essSurj_map_iff, (TranslationSpace.of d').surjective.forall,
+    Function.Surjective, (QuotientAddGroup.mk_surjective (s := d'.range)).forall]
+  simp_rw [(TranslationSpace.of d).surjective.exists, translationSpaceMap_of,
+    TranslationSpace.orbitRel_of_iff, (QuotientAddGroup.mk_surjective (s := d.range)).exists,
+    QuotientAddGroup.map_mk, QuotientAddGroup.eq, neg_add_eq_sub, sub_mem_comm_iff]
 
 /-- **Quasi-isomorphism invariance of the quotient groupoid.** The functor induced by a chain map
 `(f₀, f₁)` from `d` to `d'` is an equivalence exactly when the chain map is a quasi-isomorphism:
