@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.TubularNeighborhood.NormalFrame
 
 /-!
 # The local addition adapted to a submanifold of a Euclidean space
@@ -25,13 +26,15 @@ displacement `ν = q - f y`, and a vector `v : V`, the **adapted local addition*
 (`TauCeti.adaptedLocalAddition`). The tangential part of `v` moves the base point along the
 submanifold, through the retraction, and the normal part of `v` is added to the normal
 displacement and transported to the new base point by its normal projection. Unlike the straight
-addition `q + v`, it is adapted to the submanifold: starting on the submanifold, it stays there
-exactly along tangent vectors. Such an addition gives charts on spaces of maps whose boundary
-values lie on the submanifold, the boundary condition being linear in the chart, as for discs with
-boundary on a Lagrangian or totally real submanifold. This file proves the basic properties of
-`B`.
+addition `q + v`, it is adapted to the submanifold: starting at a point `f x` of the submanifold,
+for small `v` it stays in the image of a neighbourhood of `x` exactly along tangent vectors. Such
+an addition gives charts on spaces of maps whose boundary values lie on the submanifold, the
+boundary condition being linear in the chart, as for discs with boundary on a Lagrangian or
+totally real submanifold. This file proves the basic properties of `B`.
 
 * `TauCeti.adaptedLocalAddition_zero`: `B(q, 0) = q`.
+* `TauCeti.adaptedLocalAddition_apply_of_retract`: at a point `f x` fixed by the retraction,
+  `B(f x, v) = f y' + P_N(y') (P_N(x) v)`, where `y' = r (f x + P_T(x) v)`.
 * `TauCeti.adaptedLocalAddition_of_mem_orthogonal`: along a tangent vector `v` at `f x`,
   `B(f x, v) = f (r (f x + v))` lies on the submanifold.
 * `TauCeti.contDiffAt_adaptedLocalAddition`: `B` is jointly `C^n` when `f` is `C^(n + 1)` and `r`
@@ -42,8 +45,8 @@ boundary on a Lagrangian or totally real submanifold. This file proves the basic
 * `TauCeti.hasFDerivAt_adaptedLocalAddition`: at a point `f x` of the submanifold, the derivative
   of `v ↦ B(f x, v)` at `0` is the identity.
 * `TauCeti.eventually_adaptedLocalAddition_mem_image_iff`: on a tubular neighbourhood on which
-  normal addition `(y, ν) ↦ f y + ν` is injective, `B(f x, v)` lies on the submanifold, for small
-  `v`, exactly when `v` is tangent at `f x`.
+  normal addition `(y, ν) ↦ f y + ν` is injective at the points of a neighbourhood `W` of `x`,
+  `B(f x, v)` lies in `f '' W`, for small `v`, exactly when `v` is tangent at `f x`.
 
 Here the retraction is only required near the points considered: a smooth local retraction with
 normal displacement exists near every point of an immersion
@@ -91,11 +94,21 @@ theorem adaptedLocalAddition_apply (q v : V) :
           (q - f (r q) + (normalSubspace I f (r q)).starProjection v) :=
   (rfl)
 
-/-- The adapted local addition of the zero vector is the identity, at every point whose normal
-displacement from the submanifold is normal at its base point. -/
+/-- The adapted local addition of the zero vector is the identity, at every point `q` such that `r`
+fixes the base point `r q` (`r (f (r q)) = r q`) and whose normal displacement from the
+submanifold is normal there. -/
 theorem adaptedLocalAddition_zero {q : V} (hrq : r (f (r q)) = r q)
     (hq : q - f (r q) ∈ normalSubspace I f (r q)) : adaptedLocalAddition I f r q 0 = q := by
   simp [adaptedLocalAddition, hrq, Submodule.starProjection_eq_self_iff.mpr hq]
+
+/-- At a point `f x` of the submanifold fixed by the retraction, the adapted local addition is
+`B(f x, v) = f y' + P_N(y') (P_N(x) v)`, where `y' = r (f x + P_T(x) v)`. -/
+theorem adaptedLocalAddition_apply_of_retract {x : M} (hrx : r (f x) = x) (v : V) :
+    adaptedLocalAddition I f r (f x) v =
+      f (r (f x + (normalSubspace I f x)ᗮ.starProjection v)) +
+        (normalSubspace I f (r (f x + (normalSubspace I f x)ᗮ.starProjection v))).starProjection
+          ((normalSubspace I f x).starProjection v) := by
+  rw [adaptedLocalAddition_apply, hrx, sub_self, zero_add]
 
 /-- Along a tangent vector `v` at a point `f x` of the submanifold, the adapted local addition is
 the retraction of the straight addition: `B(f x, v) = f (r (f x + v))`. In particular it lies on
@@ -105,7 +118,8 @@ theorem adaptedLocalAddition_of_mem_orthogonal {x : M} (hrx : r (f x) = x) {v : 
     adaptedLocalAddition I f r (f x) v = f (r (f x + v)) := by
   have h0 : (normalSubspace I f x).starProjection v = 0 :=
     (Submodule.starProjection_apply_eq_zero_iff _).mpr hv
-  simp [adaptedLocalAddition, hrx, h0, Submodule.starProjection_eq_self_iff.mpr hv]
+  rw [adaptedLocalAddition_apply_of_retract hrx, h0, map_zero, add_zero,
+    Submodule.starProjection_eq_self_iff.mpr hv]
 
 section Smooth
 
@@ -116,51 +130,37 @@ at a point where `r` is `C^n`, when `f` is `C^(n + 1)`. -/
 theorem contDiffAt_starProjection_normalSubspace_comp [IsManifold I (n + 1) M]
     (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f) {q : V}
     (himm : Injective (mfderiv I 𝓘(ℝ, V) f (r q))) (hr : ContMDiffAt 𝓘(ℝ, V) I n r q) :
-    ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) q := by
-  have : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
-  set e := extChartAt I (r q) with he
-  have hφ : ContDiffOn ℝ (n + 1) (f ∘ e.symm) e.target :=
-    contMDiffOn_iff_contDiffOn.mp (hf.comp_contMDiffOn (contMDiffOn_extChartAt_symm _))
-  have hdiff : ∀ y ∈ e.source, DifferentiableAt ℝ (f ∘ e.symm) (e y) := fun y hy ↦
-    (hφ.contDiffAt ((isOpen_extChartAt_target _).mem_nhds (e.map_source hy))).differentiableAt
-      (by simp)
-  have hρ : ContDiffAt ℝ n (e ∘ r) q :=
-    contMDiffAt_iff_contDiffAt.mp ((contMDiffAt_extChartAt (n := n)).comp q hr)
-  have hA : ContDiffAt ℝ n (fun q' ↦ fderiv ℝ (f ∘ e.symm) (e (r q'))) q :=
-    ((hφ.contDiffAt ((isOpen_extChartAt_target _).mem_nhds (mem_extChartAt_target _))).fderiv_right
-      le_rfl).comp q hρ
-  have hinj : Injective (fderiv ℝ (f ∘ e.symm) (e (r q))) :=
-    fderiv_comp_extChartAt_symm_injective (mem_extChartAt_source _)
-      (hdiff _ (mem_extChartAt_source _)) himm
-  refine (hA.starProjection_orthogonal_range hinj).congr_of_eventuallyEq ?_
-  filter_upwards [hr.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) (r q))]
-    with q' hq'
-  simp only [normalSubspace_eq_of_mem_source hq' (hdiff _ hq'), he]
+    ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) q :=
+  contMDiffAt_iff_contDiffAt.mp
+    ((contMDiffAt_normalSubspace_starProjection (hf (r q)) himm).comp q hr)
 
 /-- The adapted local addition is jointly `C^n` at `(q, v)` when `f` is a `C^(n + 1)` immersion
 and `r` is `C^n` at `q` and at the moved base point `f (r q) + P_T(r q) v`. -/
 theorem contDiffAt_adaptedLocalAddition [IsManifold I (n + 1) M]
-    (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f) (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x))
-    {q v : V} (hrq : ContMDiffAt 𝓘(ℝ, V) I n r q)
+    (hf : ContMDiff I 𝓘(ℝ, V) (n + 1) f) {q v : V}
+    (himmq : Injective (mfderiv I 𝓘(ℝ, V) f (r q)))
+    (himmw : Injective (mfderiv I 𝓘(ℝ, V) f
+      (r (f (r q) + (normalSubspace I f (r q))ᗮ.starProjection v))))
+    (hrq : ContMDiffAt 𝓘(ℝ, V) I n r q)
     (hrw : ContMDiffAt 𝓘(ℝ, V) I n r (f (r q) + (normalSubspace I f (r q))ᗮ.starProjection v)) :
     ContDiffAt ℝ n (fun p : V × V ↦ adaptedLocalAddition I f r p.1 p.2) (q, v) := by
   have hg {q : V} (h : ContMDiffAt 𝓘(ℝ, V) I n r q) : ContDiffAt ℝ n (f ∘ r) q :=
     contMDiffAt_iff_contDiffAt.mp (((hf.of_le le_self_add) (r q)).comp q h)
-  have hN {q : V} (h : ContMDiffAt 𝓘(ℝ, V) I n r q) :
+  have hN {q : V} (himm : Injective (mfderiv I 𝓘(ℝ, V) f (r q)))
+      (h : ContMDiffAt 𝓘(ℝ, V) I n r q) :
       ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q)).starProjection) q :=
-    contDiffAt_starProjection_normalSubspace_comp hf (himm _) h
-  have hT {q : V} (h : ContMDiffAt 𝓘(ℝ, V) I n r q) :
-      ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q))ᗮ.starProjection) q := by
-    refine ((contDiffAt_const (c := (1 : V →L[ℝ] V))).sub (hN h)).congr_of_eventuallyEq
+    contDiffAt_starProjection_normalSubspace_comp hf himm h
+  have hT : ContDiffAt ℝ n (fun q ↦ (normalSubspace I f (r q))ᗮ.starProjection) q := by
+    refine ((contDiffAt_const (c := (1 : V →L[ℝ] V))).sub (hN himmq hrq)).congr_of_eventuallyEq
       (Eventually.of_forall fun q ↦ ?_)
     exact Submodule.starProjection_orthogonal' _
   have hW : ContDiffAt ℝ n
       (fun p : V × V ↦ f (r p.1) + (normalSubspace I f (r p.1))ᗮ.starProjection p.2) (q, v) :=
-    ((hg hrq).comp (q, v) contDiffAt_fst).add (((hT hrq).comp (q, v) contDiffAt_fst).clm_apply
+    ((hg hrq).comp (q, v) contDiffAt_fst).add ((hT.comp (q, v) contDiffAt_fst).clm_apply
       contDiffAt_snd)
-  exact ((hg hrw).comp (q, v) hW).add (((hN hrw).comp (q, v) hW).clm_apply
+  exact ((hg hrw).comp (q, v) hW).add (((hN himmw hrw).comp (q, v) hW).clm_apply
     ((contDiffAt_fst.sub ((hg hrq).comp (q, v) contDiffAt_fst)).add
-      (((hN hrq).comp (q, v) contDiffAt_fst).clm_apply contDiffAt_snd)))
+      (((hN himmq hrq).comp (q, v) contDiffAt_fst).clm_apply contDiffAt_snd)))
 
 /-- Let `r` be a `C^n` retraction, `n ≥ 1`, onto a `C^(n + 1)` immersion `f` near `f x`, with
 normal displacement. Then the differential of `f ∘ r` at `f x` is the orthogonal projection onto
@@ -226,9 +226,8 @@ theorem hasFDerivAt_adaptedLocalAddition [IsManifold I (n + 1) M]
   set P := (normalSubspace I f x).starProjection
   set T := (normalSubspace I f x)ᗮ.starProjection
   have hB : adaptedLocalAddition I f r (f x) =
-      fun v ↦ (f ∘ r) (f x + T v) + (normalSubspace I f (r (f x + T v))).starProjection (P v) := by
-    ext v
-    simp [adaptedLocalAddition, hrx, P, T]
+      fun v ↦ (f ∘ r) (f x + T v) + (normalSubspace I f (r (f x + T v))).starProjection (P v) :=
+    funext (adaptedLocalAddition_apply_of_retract hrx)
   rw [hB]
   have hw : HasFDerivAt (fun v ↦ f x + T v) T 0 := T.hasFDerivAt.const_add (f x)
   have hw0 : f x + T 0 = f x := by simp
@@ -242,9 +241,9 @@ theorem hasFDerivAt_adaptedLocalAddition [IsManifold I (n + 1) M]
   refine ((hg.comp 0 hw).add ((hN.hasFDerivAt.comp 0 hw).clm_apply P.hasFDerivAt)).congr_fderiv
     (ContinuousLinearMap.ext fun h ↦ ?_)
   have hPP : P (P h) = P h :=
-    Submodule.starProjection_eq_self_iff.mpr (Submodule.starProjection_apply_mem _ _)
+    DFunLike.congr_fun (Submodule.isIdempotentElem_starProjection _).eq h
   have hTT : T (T h) = T h :=
-    Submodule.starProjection_eq_self_iff.mpr (Submodule.starProjection_apply_mem _ _)
+    DFunLike.congr_fun (Submodule.isIdempotentElem_starProjection _).eq h
   simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply, map_zero, add_zero, hrx,
     ContinuousLinearMap.coe_id', id_eq]
   rw [hTT, hPP, add_comm]
@@ -265,8 +264,8 @@ theorem eventually_adaptedLocalAddition_mem_image_iff [IsManifold I (n + 1) M]
   set T := (normalSubspace I f x)ᗮ.starProjection
   set N := fun q ↦ (normalSubspace I f (r q)).starProjection
   have hB (v : V) :
-      adaptedLocalAddition I f r (f x) v = f (r (f x + T v)) + N (f x + T v) (P v) := by
-    simp [adaptedLocalAddition, hrx, P, T, N]
+      adaptedLocalAddition I f r (f x) v = f (r (f x + T v)) + N (f x + T v) (P v) :=
+    adaptedLocalAddition_apply_of_retract hrx v
   have hwc : ContinuousAt (fun v : V ↦ f x + T v) 0 := (T.continuous.const_add (f x)).continuousAt
   have hw0 : f x + T 0 = f x := by simp
   have hNc : ContinuousAt (fun v ↦ N (f x + T v)) 0 :=
@@ -295,8 +294,8 @@ theorem eventually_adaptedLocalAddition_mem_image_iff [IsManifold I (n + 1) M]
     by_contra hPv
     have hle : ‖P v‖ ≤ ‖P - N (f x + T v)‖ * ‖P v‖ := by
       calc ‖P v‖ = ‖(P - N (f x + T v)) (P v)‖ := by
-            rw [sub_apply, hn0, sub_zero,
-              Submodule.starProjection_eq_self_iff.mpr (Submodule.starProjection_apply_mem _ _)]
+            rw [sub_apply, hn0, sub_zero, show P (P v) = P v from
+              DFunLike.congr_fun (normalSubspace I f x).isIdempotentElem_starProjection.eq v]
         _ ≤ ‖P - N (f x + T v)‖ * ‖P v‖ := ContinuousLinearMap.le_opNorm _ _
     have hlt : ‖P - N (f x + T v)‖ < 1 := by
       simpa [dist_eq_norm, norm_sub_rev] using hv1
