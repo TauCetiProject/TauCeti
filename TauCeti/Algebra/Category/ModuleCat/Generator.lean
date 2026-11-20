@@ -42,10 +42,10 @@ separator. This is the `ModuleCat` analogue of
   module is a retract of a finite power of a generator.
 * `ModuleCat.exists_retract_pi_of_projective`: a finitely generated projective module is a retract
   of a finite free module `Rⁿ`.
-* `CategoryTheory.Equivalence.finite_functor_obj_self`,
-  `CategoryTheory.Equivalence.projective_functor_obj_self` and
-  `CategoryTheory.Equivalence.isGenerator_functor_obj_self`: an equivalence of module categories
-  carries the regular module to a progenerator.
+* `CategoryTheory.Equivalence.isGenerator_functor_obj_self`: an equivalence of module categories
+  carries the regular module to a generator; with `finite_functor_obj_self` and
+  `projective_functor_obj_self` (`Algebra/Category/ModuleCat/Equivalence.lean`), to a
+  progenerator.
 
 ## References
 
@@ -120,15 +120,6 @@ end ModuleCat
 namespace CategoryTheory.Equivalence
 
 variable {A : Type u} [Ring A] {B : Type u'} [Ring B] (e : ModuleCat.{u} A ≌ ModuleCat.{u'} B)
-
-/-- An equivalence of module categories carries the regular module to a finitely generated
-module. -/
-instance finite_functor_obj_self : Module.Finite B (e.functor.obj (ModuleCat.of A A)) :=
-  (e.finite_functor_obj_iff _).2 inferInstance
-
-/-- An equivalence of module categories carries the regular module to a projective module. -/
-instance projective_functor_obj_self : Module.Projective B (e.functor.obj (ModuleCat.of A A)) :=
-  (e.projective_functor_obj_iff _).2 inferInstance
 
 /-- An equivalence of module categories carries the regular module to a generator, the image of a
 separator being a separator. -/
