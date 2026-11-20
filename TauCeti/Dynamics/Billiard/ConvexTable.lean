@@ -16,6 +16,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Analysis.Complex.Circle
 import TauCeti.Dynamics.Billiard.Circle
 import TauCeti.Topology.JordanCurve.Interval
 
@@ -52,7 +53,8 @@ in this sense are the tables on which the billiard ball map of a convex billiard
 * `TauCeti.ConvexTable.deriv_deriv`: the unit tangent of a table satisfies `τ' = i κ τ`.
 * `TauCeti.ConvexTable.curvature_nonneg`: the curvature of a table is nonnegative.
 * `TauCeti.ConvexTable.curvature_shift`, `TauCeti.ConvexTable.curvature_rigidMotion`: the
-  curvature is unchanged by reparametrisation and by rotations and translations.
+  curvature transforms by `κ ↦ κ (· + c)` under a shift of the origin and is unchanged by
+  rotations and translations.
 * `TauCeti.ConvexTable.curvature_circle`: the circle of radius `R` has curvature `1 / R`.
 * `TauCeti.ConvexTable.coe_ne_comp_neg`: reversing the orientation of a table never gives a
   table.
@@ -295,13 +297,6 @@ theorem curvature_shift (c s : ℝ) : (T.shift c).curvature s = T.curvature (s +
   have h : deriv (T.shift c) = fun s => deriv T (s + c) := funext (T.deriv_shift c)
   rw [curvature_def, curvature_def, h, deriv_comp_add_const]
 
-/-- Rotating both factors of the cross product `Im (conj z * w)` by a unit complex number does
-not change it. -/
-private theorem im_conj_mul_mul_mul (a : Circle) (z w : ℂ) :
-    (conj (a * z) * (a * w)).im = (conj z * w).im := by
-  rw [map_mul, mul_mul_mul_comm, ← normSq_eq_conj_mul_self, Circle.normSq_coe, ofReal_one,
-    one_mul]
-
 /-- The image `s ↦ a * γ s + b` of a table under the rotation by the unit complex number `a`
 followed by the translation by `b`. -/
 def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
@@ -314,7 +309,7 @@ def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
       T.norm_deriv, one_mul]
   left_of_tangent' s t h := by
     rw [deriv_add_const, deriv_const_mul _ (T.differentiable s), add_sub_add_right_eq_sub,
-      ← mul_sub, im_conj_mul_mul_mul]
+      ← mul_sub, Circle.conj_coe_mul_mul_coe_mul]
     exact T.left_of_tangent' s t h
 
 @[simp]
@@ -332,7 +327,7 @@ theorem curvature_rigidMotion (a : Circle) (b : ℂ) (s : ℝ) :
     (T.rigidMotion a b).curvature s = T.curvature s := by
   have h : deriv (T.rigidMotion a b) = fun s => (a : ℂ) * deriv T s :=
     funext (T.deriv_rigidMotion a b)
-  rw [curvature_def, curvature_def, h, deriv_const_mul_field', im_conj_mul_mul_mul]
+  rw [curvature_def, curvature_def, h, deriv_const_mul_field', Circle.conj_coe_mul_mul_coe_mul]
 
 /-- A table of class `C^k` regarded as a table of class `C^j` for `1 ≤ j ≤ k`. -/
 def ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ConvexTable j ℓ where
@@ -345,6 +340,12 @@ def ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ConvexTable j ℓ where
 
 @[simp]
 theorem coe_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ⇑(T.ofLE hj hjk) = T := (rfl)
+
+/-- Lowering the regularity of a table does not change its curvature. -/
+@[simp]
+theorem curvature_ofLE (hj : 1 ≤ j) (hjk : j ≤ k) (s : ℝ) :
+    (T.ofLE hj hjk).curvature s = T.curvature s :=
+  (rfl)
 
 /-- **Orientation is part of a table.** Running through a table backwards, `s ↦ γ (-s)`, never
 gives a table, of any regularity: the curve lies to the right of the reversed tangents. -/
@@ -413,15 +414,18 @@ theorem deriv_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
 @[simp]
 theorem curvature_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
     (circle R).curvature s = R⁻¹ := by
-  have hd : deriv (circle R) = fun s => circleMap 0 1 (s / R) * I := funext (deriv_circle R)
-  have h := (((hasDerivAt_circleMap 0 1 (s / R)).scomp s
-    ((hasDerivAt_id s).div_const R)).mul_const I)
-  simp only [comp_def, id] at h
-  rw [curvature_def, hd, h.deriv]
-  simp only [circleMap_zero]
-  generalize s / R = b
-  simp [mul_im, mul_re, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im]
-  linear_combination R⁻¹ * Real.sin_sq_add_cos_sq b
+  have hR : R ≠ 0 := pos_of_fact.ne'
+  -- The unit tangent `i exp(i t / R)` is the point `R exp(i t / R)` multiplied by `i / R`, so it
+  -- turns according to `τ' = (i / R) τ`.
+  have hd : deriv (circle R) = fun t => I / R * circle R t := funext fun t => by
+    rw [deriv_circle, circle_apply, circleMap_zero, circleMap_zero, ofReal_one, one_mul]
+    field_simp [ofReal_ne_zero.2 hR]
+  have h2 : deriv (deriv (circle R)) s = I / R * deriv (circle R) s := by
+    conv_lhs => rw [hd]
+    exact congrFun (deriv_const_mul_field' _) s
+  rw [curvature_def, h2, mul_left_comm, ← normSq_eq_conj_mul_self, normSq_eq_norm_sq,
+    norm_deriv]
+  simp
 
 /-! ### Comparison with strictly convex billiard tables -/
 
