@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Testing smooth bundle homomorphisms on sections
@@ -78,6 +79,11 @@ morphisms and equivalences of holomorphic vector bundles. They are the `C^n` cou
 `TauCeti.bundleHomeomorphOfHom`. A family of fibrewise linear
 maps is realized by a `C^n` diffeomorphism of total spaces exactly when its total-space map is
 `C^n` and its fibre maps are bijective (`TauCeti.exists_bundleDiffeomorph_iff`).
+
+For the tangent bundle, a parametrized family of endomorphisms of the tangent spaces that is a
+`C^n` Hom-bundle section along `P × M → M`, read at a fixed base point `x`, is a `C^n` family of
+endomorphisms of `T_x M`, which is the model space `E` by definition
+(`TauCeti.contMDiff_apply_prodMk_const_of_contMDiff_hom_bundle`).
 -/
 
 public section
@@ -742,6 +748,39 @@ theorem exists_bundleDiffeomorph_iff (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
   exact ⟨bundleDiffeomorph e (hϕ.congr fun p ↦ by simp [he]), funext fun p ↦ by simp [he]⟩
 
 end BundleMap
+
+section TangentEndomorphism
+
+variable {𝕜 E H M EP HP P EN HN N : Type*} [NontriviallyNormedField 𝕜] {n : WithTop ℕ∞}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [TopologicalSpace HP]
+  {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+  [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN]
+  {IN : ModelWithCorners 𝕜 EN HN} [TopologicalSpace N] [ChartedSpace HN N]
+
+/-- **A family of tangent endomorphisms read at a fixed base point.** Let `A` be a family of
+endomorphisms of the tangent spaces of `M`, depending on a parameter in a manifold `P`, which is a
+`C^n` section of the endomorphism bundle of `T M` along the projection `P × M → M`. Then for a
+`C^n` map `c : N → P` and a fixed base point `x`, the endomorphisms `A (c u, x)` of `T_x M`, which
+is the model space `E` by definition, depend `C^n` on `u`. -/
+theorem contMDiff_apply_prodMk_const_of_contMDiff_hom_bundle
+    (A : ∀ q : P × M, TangentSpace I q.2 →L[𝕜] TangentSpace I q.2)
+    (hA : ContMDiff (IP.prod I) (I.prod 𝓘(𝕜, E →L[𝕜] E)) n
+      (fun q ↦ TotalSpace.mk' (E →L[𝕜] E)
+        (E := fun x : M ↦ TangentSpace I x →L[𝕜] TangentSpace I x) q.2 (A q)))
+    {c : N → P} (hc : ContMDiff IN IP n c) (x : M) :
+    -- `T_x M` is `E` by definition, which `show` exposes to the model `𝓘(𝕜, E →L[𝕜] E)`.
+    ContMDiff IN 𝓘(𝕜, E →L[𝕜] E) n fun u ↦ show E →L[𝕜] E from A (c u, x) := by
+  intro u₀
+  have h := (contMDiffAt_hom_bundle _).1
+    ((hA.comp (f := fun u ↦ (c u, x)) (hc.prodMk contMDiff_const)) u₀)
+  -- Read in the chart at `x`, the section over the constant base point `x` is `A` itself.
+  exact h.2.congr_of_eventuallyEq (Filter.Eventually.of_forall fun u ↦
+    (Manifold.inTangentCoordinates_eq_self_of_eq (I := I) (I' := I) (fun _ ↦ x) (fun _ ↦ x)
+      (fun u ↦ A (c u, x)) (x₀ := u₀) (x := u) rfl rfl).symm)
+
+end TangentEndomorphism
 
 end TauCeti
 
