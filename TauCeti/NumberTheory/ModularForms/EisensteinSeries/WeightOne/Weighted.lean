@@ -139,7 +139,11 @@ open scoped MatrixGroups Topology Manifold Real
 
 namespace TauCeti.EisensteinSeries
 
-variable {N : ℕ} [NeZero N]
+variable {N : ℕ}
+
+section Definition
+
+variable [NeZero N]
 
 /-- The weight-one Eisenstein series weighted by `W : (Fin 2 → ZMod N) → ℂ`:
 `N⁻¹ ∑_a W(a) (ζ((a₀ z + a₁) / N) - (a₀ η₁ + a₁ η₂) / N)`, where `ζ` is the Weierstrass `ζ`
@@ -179,16 +183,16 @@ lemma weightedE1_smul (c : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
   simp only [weightedE1, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
   exact Finset.sum_congr rfl fun a _ ↦ by ring
 
-/-! ### The corrected division values of `ζ` -/
+end Definition
+
+/-! ### The corrected division values of `ζ`
+
+The corrected division value `zetaValue` is defined for integer pairs. Its vanishing at zero, its
+parity and its slash action hold for every `N`; only the passage to residue pairs needs `N ≠ 0`. -/
 
 /-- The least nonnegative representatives of a residue pair. -/
 private def lift (a : Fin 2 → ZMod N) : Fin 2 → ℤ := fun i ↦ ((a i).val : ℤ)
 
-private lemma intCast_comp_lift (a : Fin 2 → ZMod N) : ((↑) : ℤ → ZMod N) ∘ lift a = a := by
-  ext i
-  simp [lift]
-
-omit [NeZero N] in
 private lemma lift_zero : lift (0 : Fin 2 → ZMod N) = 0 := by
   ext i
   simp [lift]
@@ -200,20 +204,42 @@ private def zetaValue (N : ℕ) (b : Fin 2 → ℤ) (z : ℍ) : ℂ :=
     ((b 0 : ℂ) * z.periodPair.quasiPeriod ⟨_, z.periodPair.ω₁_mem_lattice⟩ +
       b 1 * z.periodPair.quasiPeriod ⟨_, z.periodPair.ω₂_mem_lattice⟩) / N
 
-private lemma weightedE1_eq_sum_zetaValue (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
-    weightedE1 W z = (N : ℂ)⁻¹ * ∑ a, W a * zetaValue N (lift a) z := by
-  simp [weightedE1, zetaValue, lift]
-
-omit [NeZero N] in
 private lemma zetaValue_zero (z : ℍ) : zetaValue N 0 z = 0 := by
   simp [zetaValue]
 
-omit [NeZero N] in
 /-- The corrected division values are odd in the integer pair, as `ζ` is odd. -/
 private lemma zetaValue_neg (b : Fin 2 → ℤ) (z : ℍ) : zetaValue N (-b) z = -zetaValue N b z := by
   simp only [zetaValue, Pi.neg_apply, Int.cast_neg, neg_mul, ← neg_add, neg_div]
   rw [weierstrassZeta_neg]
   ring
+
+/-- **The slash action on one corrected division value**: the lattice of `γ z` is `(c z + d)⁻¹`
+times that of `z`, and both `ζ` and its quasi-periods scale by `c z + d`. -/
+private lemma zetaValue_smul (γ : SL(2, ℤ)) (b : Fin 2 → ℤ) (z : ℍ) :
+    zetaValue N b (γ • z) = denom γ z * zetaValue N (b ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) z := by
+  set b' := b ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)
+  set l : z.periodPair.lattice :=
+    ⟨_, intCast_mul_add_intCast_mem_lattice_periodPair z (b' 0) (b' 1)⟩
+  have hb := intCast_mul_smul_add_intCast γ z b
+  -- the quasi-periods of `γ z` at `b₀ γz + b₁`, which is `l / (c z + d)`
+  have hη := (γ • z).periodPair.quasiPeriod_eq_intCast_mul_add
+    ⟨_, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.property⟩ (m := b 0) (n := b 1)
+    (by simpa [l] using hb)
+  rw [quasiPeriod_periodPair_smul,
+    z.periodPair.quasiPeriod_eq_intCast_mul_add l (m := b' 0) (n := b' 1) (by simp [l])] at hη
+  simp only [zetaValue]
+  rw [← hη, hb, div_right_comm, weierstrassZeta_periodPair_smul]
+  ring
+
+variable [NeZero N]
+
+private lemma intCast_comp_lift (a : Fin 2 → ZMod N) : ((↑) : ℤ → ZMod N) ∘ lift a = a := by
+  ext i
+  simp [lift]
+
+private lemma weightedE1_eq_sum_zetaValue (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
+    weightedE1 W z = (N : ℂ)⁻¹ * ∑ a, W a * zetaValue N (lift a) z := by
+  simp [weightedE1, zetaValue, lift]
 
 /-- **The corrected division values depend only on the residue**: the value of `b` is that of
 the least nonnegative representatives of `b mod N`. Replacing `b` by `b + N y` moves the division
@@ -243,25 +269,6 @@ private lemma zetaValue_eq_lift (b : Fin 2 → ℤ) (z : ℍ) :
   simp only [zetaValue]
   rw [hx, weierstrassZeta_add_coe, hl, hm', hn']
   field_simp
-  ring
-
-omit [NeZero N] in
-/-- **The slash action on one corrected division value**: the lattice of `γ z` is `(c z + d)⁻¹`
-times that of `z`, and both `ζ` and its quasi-periods scale by `c z + d`. -/
-private lemma zetaValue_smul (γ : SL(2, ℤ)) (b : Fin 2 → ℤ) (z : ℍ) :
-    zetaValue N b (γ • z) = denom γ z * zetaValue N (b ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)) z := by
-  set b' := b ᵥ* (γ : Matrix (Fin 2) (Fin 2) ℤ)
-  set l : z.periodPair.lattice :=
-    ⟨_, intCast_mul_add_intCast_mem_lattice_periodPair z (b' 0) (b' 1)⟩
-  have hb := intCast_mul_smul_add_intCast γ z b
-  -- the quasi-periods of `γ z` at `b₀ γz + b₁`, which is `l / (c z + d)`
-  have hη := (γ • z).periodPair.quasiPeriod_eq_intCast_mul_add
-    ⟨_, (div_denom_mem_lattice_periodPair_smul_iff γ z l).mpr l.property⟩ (m := b 0) (n := b 1)
-    (by simpa [l] using hb)
-  rw [quasiPeriod_periodPair_smul,
-    z.periodPair.quasiPeriod_eq_intCast_mul_add l (m := b' 0) (n := b' 1) (by simp [l])] at hη
-  simp only [zetaValue]
-  rw [← hη, hb, div_right_comm, weierstrassZeta_periodPair_smul]
   ring
 
 /-- The slash action on the corrected division value of a residue pair. -/
@@ -592,7 +599,6 @@ theorem isBoundedAtImInfty_weightedE1_slash (W : (Fin 2 → ZMod N) → ℂ) (γ
 
 /-! ### The value at infinity -/
 
-omit [NeZero N] in
 /-- **The limit at `i∞` of a cotangent row** at `x = (b₀ z + b₁) / M` with `b₀ < M`: the rows
 `m ≠ 0` vanish, and the row `m = 0` is `π cot (π x)`, which tends to `-π i` if `b₀ ≠ 0` and is
 the constant `π cot (π b₁ / M)` if `b₀ = 0`. -/
@@ -745,13 +751,11 @@ private lemma norm_divCoeff_le (M b₀ b₁ c k : ℕ) [NeZero M] : ‖divCoeff 
     split_ifs <;> simp
   linarith
 
-omit [NeZero N] in
 /-- The rows at the division points `z / 2` and `1 / 2` of the quasi-periods have no
 nonconstant terms, as `1 ≡ -1` modulo `2`. -/
 private lemma divCoeff_two_one_zero (c k : ℕ) : divCoeff 2 1 0 c k = 0 := by
   simp [divCoeff, ZMod.neg_eq_self_mod_two]
 
-omit [NeZero N] in
 private lemma divCoeff_two_zero_one (c k : ℕ) : divCoeff 2 0 1 c k = 0 := by
   simp [divCoeff, ZMod.neg_eq_self_mod_two]
 

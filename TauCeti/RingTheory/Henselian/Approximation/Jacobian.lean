@@ -89,6 +89,21 @@ theorem annihilator_span_range_le_elkikJacobianIdeal (f : σ → MvPolynomial ι
   have h := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f ∅
   simpa only [jacobianMinorsIdeal_empty_mul_colon] using h
 
+/-- If one equation generates all relations, its partial-derivative ideal is contained in Elkik's
+presentation Jacobian ideal. -/
+theorem span_range_pderiv_le_elkikJacobianIdeal (f : σ → MvPolynomial ι R) (a : σ)
+    (hf : Ideal.span (Set.range f) ≤ Ideal.span {f a}) :
+    Ideal.span (Set.range fun i => pderiv i (f a)) ≤ elkikJacobianIdeal f := by
+  have h := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {a}
+  simpa only [jacobianMinorsIdeal_singleton_mul_colon f a hf] using h
+
+/-- If one equation generates all relations, each of its partial derivatives belongs to Elkik's
+presentation Jacobian ideal. -/
+theorem pderiv_mem_elkikJacobianIdeal (f : σ → MvPolynomial ι R) (a : σ) (i : ι)
+    (hf : Ideal.span (Set.range f) ≤ Ideal.span {f a}) :
+    pderiv i (f a) ∈ elkikJacobianIdeal f :=
+  span_range_pderiv_le_elkikJacobianIdeal f a hf (Ideal.subset_span ⟨i, rfl⟩)
+
 /-- With no equations, Elkik's ideal is the unit ideal. -/
 @[simp] theorem elkikJacobianIdeal_isEmpty [IsEmpty σ] (f : σ → MvPolynomial ι R) :
     elkikJacobianIdeal f = ⊤ := by
@@ -136,8 +151,7 @@ theorem elkikJacobianIdeal_unique [Unique σ] (f : σ → MvPolynomial ι R) :
       exact le_sup_right
   · refine sup_le ?_ ?_
     · simpa only [hrange] using annihilator_span_range_le_elkikJacobianIdeal f
-    · have h := jacobianMinorsIdeal_mul_colon_le_elkikJacobianIdeal f {default}
-      simpa only [jacobianMinorsIdeal_singleton_mul_colon f default hspan] using h
+    · exact span_range_pderiv_le_elkikJacobianIdeal f default hspan
 
 /-- For a single equation that is a non-zero-divisor, only its partials contribute. -/
 theorem elkikJacobianIdeal_unique_of_mem_nonZeroDivisors [Unique σ]

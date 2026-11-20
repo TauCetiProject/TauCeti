@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
-public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
