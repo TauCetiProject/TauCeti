@@ -30,8 +30,9 @@ eigenvalues of geometric Frobenius.
 On nonzero elements the `ι`-weight is a group homomorphism from `Eˣ` to `ℝ`: it adds under
 products and changes sign under inverses. Raising both `α` and `q` to the same nonzero power, as
 in a finite extension of the base field, does not change it, and it transports along
-compositions of field embeddings. A rational `q > 1` has weight `2`, so the Tate line, on which
-geometric Frobenius acts by `q⁻¹`, has weight `-2`; roots of unity have weight `0`.
+compositions of field embeddings. A positive rational `q ≠ 1` has weight `2` relative to itself,
+so the Tate line, on which geometric Frobenius acts by `q⁻¹`, has weight `-2`; roots of unity
+have weight `0`.
 
 The `ι`-weight depends on `ι`: in `ℚ(√2)` the element `1 + √2` has weights `2 log₂ (1 + √2)` and
 `-2 log₂ (1 + √2)` relative to `2` at the two real embeddings. An element of integer `ι`-weight
@@ -53,7 +54,8 @@ absolute value `√2` gives `t` the weight `1` relative to `2`. Both examples cl
 * `TauCeti.iotaWeight_pow_pow`: replacing `α` and `q` by `α ^ r` and `q ^ r` for `r ≠ 0` does not
   change the weight.
 * `TauCeti.iotaWeight_comp`: the weight at `ι ∘ τ` of `α` is the weight at `ι` of `τ α`.
-* `TauCeti.isIotaPure_ratCast_zpow`: for rational `q > 1`, `q ^ k` is `ι`-pure of weight `2 * k`.
+* `TauCeti.isIotaPure_ratCast_self_zpow`: for a positive rational `q ≠ 1`, `q ^ k` is `ι`-pure of
+  weight `2 * k` relative to `q`.
 * `TauCeti.isIotaPure_zero_of_pow_eq_one`: roots of unity are `ι`-pure of weight `0`.
 
 ## References
@@ -199,6 +201,16 @@ theorem IsIotaPure.inv (h : IsIotaPure ι q β α) : IsIotaPure ι q (-β) α⁻
 theorem IsIotaPure.zpow (h : IsIotaPure ι q β α) (n : ℤ) : IsIotaPure ι q (n * β) (α ^ n) :=
   ⟨zpow_ne_zero n h.ne_zero, by rw [iotaWeight_zpow, h.iotaWeight_eq]⟩
 
+/-- The `n`-th power of an element `ι`-pure of weight `β` is `ι`-pure of weight `n * β`. -/
+theorem IsIotaPure.pow (h : IsIotaPure ι q β α) (n : ℕ) : IsIotaPure ι q (n * β) (α ^ n) :=
+  ⟨pow_ne_zero n h.ne_zero, by rw [iotaWeight_pow, h.iotaWeight_eq]⟩
+
+/-- The quotient of elements `ι`-pure of weights `β` and `γ` is `ι`-pure of weight `β - γ`. -/
+theorem IsIotaPure.div (h : IsIotaPure ι q β α) (h' : IsIotaPure ι q γ α') :
+    IsIotaPure ι q (β - γ) (α / α') := by
+  rw [div_eq_mul_inv, sub_eq_add_neg]
+  exact h.mul h'.inv
+
 /-- For `r ≠ 0`, `α ^ r` is `ι`-pure of weight `β` relative to `q ^ r` exactly when `α` is
 `ι`-pure of weight `β` relative to `q`. -/
 theorem isIotaPure_pow_pow_iff {r : ℕ} (hr : r ≠ 0) :
@@ -213,20 +225,23 @@ theorem isIotaPure_comp_iff (τ : F →+* E) {α : F} :
 
 /-! ### Rational powers of `q` and roots of unity -/
 
-/-- A rational number `q > 1` has `ι`-weight `2` relative to itself. -/
-theorem iotaWeight_ratCast {q : ℚ} (hq : 1 < q) : iotaWeight ι q (q : E) = 2 := by
-  have hq' : (1 : ℝ) < q := by exact_mod_cast hq
-  rw [iotaWeight_def, map_ratCast, Complex.norm_ratCast, ← Rat.cast_abs,
-    abs_of_pos (zero_lt_one.trans hq), logb_self_eq_one hq', mul_one]
+/-- A positive rational number `q ≠ 1` has `ι`-weight `2` relative to itself. -/
+theorem iotaWeight_ratCast_self {q : ℚ} (hq₀ : 0 < q) (hq₁ : q ≠ 1) :
+    iotaWeight ι q (q : E) = 2 := by
+  have hnorm : ‖ι q‖ = q := by simp [hq₀.le]
+  have hq₀' : (0 : ℝ) < q := by exact_mod_cast hq₀
+  have hq₁' : (q : ℝ) ≠ 1 := by exact_mod_cast hq₁
+  rw [iotaWeight_def, hnorm, logb_self_eq_one_iff.mpr ⟨hq₀'.ne', hq₁', by linarith⟩, mul_one]
 
-/-- For a rational number `q > 1`, `q ^ k` is `ι`-pure of weight `2 * k` relative to `q`. With
-`k = -1` this is the weight `-2` of the Tate line, on which geometric Frobenius acts by `q⁻¹`. -/
-theorem isIotaPure_ratCast_zpow {q : ℚ} (hq : 1 < q) (k : ℤ) :
+/-- For a positive rational number `q ≠ 1`, `q ^ k` is `ι`-pure of weight `2 * k` relative to `q`.
+With `k = -1` this is the weight `-2` of the Tate line, on which geometric Frobenius acts by
+`q⁻¹`. -/
+theorem isIotaPure_ratCast_self_zpow {q : ℚ} (hq₀ : 0 < q) (hq₁ : q ≠ 1) (k : ℤ) :
     IsIotaPure ι q (2 * k) ((q : E) ^ k) := by
   have := ι.charZero
-  have hq0 : (q : E) ≠ 0 := Rat.cast_ne_zero.mpr (zero_lt_one.trans hq).ne'
+  have hq0 : (q : E) ≠ 0 := Rat.cast_ne_zero.mpr hq₀.ne'
   have h := (isIotaPure_iotaWeight (ι := ι) (q := (q : ℝ)) hq0).zpow k
-  rwa [iotaWeight_ratCast hq, mul_comm (k : ℝ)] at h
+  rwa [iotaWeight_ratCast_self hq₀ hq₁, mul_comm (k : ℝ)] at h
 
 /-- A root of unity has `ι`-weight `0` for every `ι` and every `q`. -/
 theorem isIotaPure_zero_of_pow_eq_one {n : ℕ} (hn : n ≠ 0) (hα : α ^ n = 1) :
@@ -237,34 +252,34 @@ theorem isIotaPure_zero_of_pow_eq_one {n : ℕ} (hn : n ≠ 0) (hα : α ^ n = 1
 
 /-! ### Examples -/
 
-private theorem irreducible_X_sq_sub_two : Irreducible (X ^ 2 - C 2 : ℚ[X]) :=
-  irreducible_X_pow_sub_C_of_prime Nat.prime_two fun b hb ↦ irrational_sqrt_two ⟨|b|, by
-    have hb' : (b : ℝ) ^ 2 = 2 := by exact_mod_cast hb
-    rw [Rat.cast_abs, ← Real.sqrt_sq_eq_abs, hb']⟩
-
 /- The `ι`-weight depends on `ι`. In `ℚ(√2) = ℚ[X] / (X² - 2)`, the two real embeddings give
 `1 + √2` the weights `2 log₂ (1 + √2)` and `-2 log₂ (1 + √2)` relative to `2`, because
 `(√2 - 1) (√2 + 1) = 1`. -/
 example :
-    letI : Fact (Irreducible (X ^ 2 - C 2 : ℚ[X])) := ⟨irreducible_X_sq_sub_two⟩
+    letI : Fact (Irreducible (X ^ 2 - C 2 : ℚ[X])) :=
+      ⟨irreducible_X_pow_sub_C_of_prime Nat.prime_two fun b hb ↦ irrational_sqrt_two ⟨|b|, by
+        have hb' : (b : ℝ) ^ 2 = 2 := by exact_mod_cast hb
+        rw [Rat.cast_abs, ← Real.sqrt_sq_eq_abs, hb']⟩⟩
     ∃ ι₁ ι₂ : AdjoinRoot (X ^ 2 - C 2 : ℚ[X]) →+* ℂ,
       iotaWeight ι₁ 2 (1 + AdjoinRoot.root _) = 2 * logb 2 (1 + √2) ∧
       iotaWeight ι₂ 2 (1 + AdjoinRoot.root _) = -(2 * logb 2 (1 + √2)) := by
-  have : Fact (Irreducible (X ^ 2 - C 2 : ℚ[X])) := ⟨irreducible_X_sq_sub_two⟩
   have hs : (√2 : ℝ) ^ 2 = 2 := Real.sq_sqrt zero_le_two
   have hs' : ((√2 : ℝ) : ℂ) ^ 2 = 2 := by exact_mod_cast hs
   have hlt := Real.one_lt_sqrt_two
   refine ⟨AdjoinRoot.lift (algebraMap ℚ ℂ) (√2 : ℝ) (by simp [eval₂_sub, hs']),
     AdjoinRoot.lift (algebraMap ℚ ℂ) (-(√2 : ℝ)) (by simp [eval₂_sub, hs']), ?_, ?_⟩
-  · rw [iotaWeight_def, map_add, map_one, AdjoinRoot.lift_root, ← Complex.ofReal_one,
-      ← Complex.ofReal_add, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (by linarith)]
-  · have hinv : √2 - 1 = (1 + √2)⁻¹ := by
+  · have hnorm : ‖(1 + ((√2 : ℝ) : ℂ))‖ = 1 + √2 := by
+      rw [← Complex.ofReal_one, ← Complex.ofReal_add, Complex.norm_of_nonneg (by positivity)]
+    unfold iotaWeight
+    rw [map_add, map_one, AdjoinRoot.lift_root, hnorm]
+  · -- The key step: `|1 - √2| = √2 - 1 = (1 + √2)⁻¹`.
+    have hnorm : ‖1 + -((√2 : ℝ) : ℂ)‖ = (1 + √2)⁻¹ := by
+      rw [← Complex.ofReal_one, ← Complex.ofReal_neg, ← Complex.ofReal_add, Complex.norm_real,
+        Real.norm_eq_abs, abs_of_neg (by linarith)]
       refine eq_inv_of_mul_eq_one_left ?_
       linear_combination hs
-    rw [iotaWeight_def, map_add, map_one, AdjoinRoot.lift_root, ← Complex.ofReal_one,
-      ← Complex.ofReal_neg, ← Complex.ofReal_add, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_neg (by linarith), neg_add, neg_neg, add_comm, ← sub_eq_add_neg, hinv, logb_inv,
-      mul_neg]
+    unfold iotaWeight
+    rw [map_add, map_one, AdjoinRoot.lift_root, hnorm, logb_inv, mul_neg]
 
 /- An element of integer `ι`-weight need not be algebraic. For a transcendental complex number
 `z` of absolute value `√2`, an embedding of `ℚ(t)` sending `t` to `z` makes `t` pure of weight `1`
