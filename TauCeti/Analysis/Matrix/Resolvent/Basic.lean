@@ -132,7 +132,7 @@ theorem inv_sub_smul_one_eq_conjStarAlgAut_diagonal {z : 𝕜} (hz : z ∉ spect
 theorem trace_inv_sub_smul_one {z : 𝕜} (hz : z ∉ spectrum 𝕜 A) :
     (A - z • 1)⁻¹.trace = ∑ j, ((hA.eigenvalues j : 𝕜) - z)⁻¹ := by
   rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, conjStarAlgAut_apply, trace_mul_cycle,
-    star_mul_self_of_mem hA.eigenvectorUnitary.2, one_mul, trace_diagonal]
+    star_mul_self_of_mem hA.eigenvectorUnitary.property, one_mul, trace_diagonal]
 
 open scoped Matrix.Norms.L2Operator in
 /-- Off the spectrum, the Euclidean operator norm of the resolvent of a Hermitian matrix is the

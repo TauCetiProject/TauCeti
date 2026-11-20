@@ -195,15 +195,16 @@ theorem contMDiffAt_sectionAlong_strictContactMoserVectorField [CompleteSpace E]
     (hc : ((α m₀).contactFlat (b m₀)).IsInvertible)
     (hα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
-        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).1 (b m))) m₀)
+        (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m) ((α m).val
+            (b m))) m₀)
     (hdα : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x [⋀^Fin 2]→L[ℝ] Trivial M ℝ x) (b m)
-        (mextDeriv (α m).1 (b m))) m₀)
+        (mextDeriv (α m).val (b m))) m₀)
     (hβ : ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x) (b m)
-        ((β m).1 (b m))) m₀)
+        ((β m).val (b m))) m₀)
     (hh : ContMDiffAt J 𝓘(ℝ) n (fun m ↦ h m (b m)) m₀)
     (hdh : ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n
       (fun m ↦ TotalSpace.mk' (E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (b m)
@@ -233,8 +234,8 @@ theorem contactFlat_strictContactMoserVectorField (β : SmoothForm I M ℝ 1) (h
 /-- The value of `α` on the strict contact-Moser vector is `h` corrected by the defect
 `β(R_α) - R_α h` of the Reeb-direction equation. -/
 theorem apply_strictContactMoserVectorField (β : SmoothForm I M ℝ 1) (h : M → ℝ) (x : M) :
-    α.1 x ![α.strictContactMoserVectorField β h x] =
-      h x + (β.1 x ![α.reebVectorField x] - mvfderiv I h x (α.reebVectorField x)) := by
+    α.val x ![α.strictContactMoserVectorField β h x] =
+      h x + (β.val x ![α.reebVectorField x] - mvfderiv I h x (α.reebVectorField x)) := by
   have hR := DFunLike.congr_fun (hα.contactFlat_strictContactMoserVectorField β h x)
     (α.reebVectorField x)
   simp only [contactFlat_apply, hα.mextDeriv_reebVectorField_right, hα.apply_reebVectorField,
@@ -246,9 +247,9 @@ theorem apply_strictContactMoserVectorField (β : SmoothForm I M ℝ 1) (h : M �
 `α` by the defect of the Reeb-direction equation. -/
 theorem mextDeriv_strictContactMoserVectorField_left (β : SmoothForm I M ℝ 1) (h : M → ℝ)
     (x : M) (v : TangentSpace I x) :
-    mextDeriv α.1 x ![α.strictContactMoserVectorField β h x, v] =
-      β.1 x ![v] - mvfderiv I h x v -
-        (β.1 x ![α.reebVectorField x] - mvfderiv I h x (α.reebVectorField x)) * α.1 x ![v] := by
+    mextDeriv α.val x ![α.strictContactMoserVectorField β h x, v] =
+      β.val x ![v] - mvfderiv I h x v -
+        (β.val x ![α.reebVectorField x] - mvfderiv I h x (α.reebVectorField x)) * α.val x ![v] := by
   have hv := DFunLike.congr_fun (hα.contactFlat_strictContactMoserVectorField β h x) v
   simp only [contactFlat_apply, hα.apply_strictContactMoserVectorField,
     add_apply, sub_apply,
@@ -258,28 +259,28 @@ theorem mextDeriv_strictContactMoserVectorField_left (β : SmoothForm I M ℝ 1)
 section ReebDirection
 
 variable {x : M}
-  (hR : mvfderiv I h x (α.reebVectorField x) = β.1 x ![α.reebVectorField x])
+  (hR : mvfderiv I h x (α.reebVectorField x) = β.val x ![α.reebVectorField x])
 include hR
 
 /-- Where `h` solves the Reeb-direction equation, `α` takes the value `h` on the strict
 contact-Moser vector. -/
 theorem apply_strictContactMoserVectorField_of_mvfderiv_eq :
-    α.1 x ![α.strictContactMoserVectorField β h x] = h x := by
+    α.val x ![α.strictContactMoserVectorField β h x] = h x := by
   rw [hα.apply_strictContactMoserVectorField, hR, sub_self, add_zero]
 
 /-- Where `h` solves the Reeb-direction equation, the contraction of `dα` with the strict
 contact-Moser vector is `β - dh`. -/
 theorem mextDeriv_strictContactMoserVectorField_left_of_mvfderiv_eq (v : TangentSpace I x) :
-    mextDeriv α.1 x ![α.strictContactMoserVectorField β h x, v] =
-      β.1 x ![v] - mvfderiv I h x v := by
+    mextDeriv α.val x ![α.strictContactMoserVectorField β h x, v] =
+      β.val x ![v] - mvfderiv I h x v := by
   rw [hα.mextDeriv_strictContactMoserVectorField_left, hR, sub_self, zero_mul, sub_zero]
 
 /-- **Characterization of the strict contact-Moser vector.** Where `h` solves the Reeb-direction
 equation `R_α h = β(R_α)`, a tangent vector `v` is the strict contact-Moser vector exactly when
 `α(v) = h` and `ι_v dα + dh = β`. -/
 theorem eq_strictContactMoserVectorField_iff {v : TangentSpace I x} :
-    v = α.strictContactMoserVectorField β h x ↔ α.1 x ![v] = h x ∧
-      ∀ w, mextDeriv α.1 x ![v, w] + mvfderiv I h x w = β.1 x ![w] := by
+    v = α.strictContactMoserVectorField β h x ↔ α.val x ![v] = h x ∧
+      ∀ w, mextDeriv α.val x ![v, w] + mvfderiv I h x w = β.val x ![w] := by
   constructor
   · rintro rfl
     refine ⟨hα.apply_strictContactMoserVectorField_of_mvfderiv_eq hR, fun w ↦ ?_⟩
@@ -297,11 +298,11 @@ theorem eq_strictContactMoserVectorField_iff {v : TangentSpace I x} :
 equation, the strict contact-Moser vector vanishes exactly when `h` vanishes and `dh = β`. -/
 theorem strictContactMoserVectorField_eq_zero_iff :
     α.strictContactMoserVectorField β h x = 0 ↔
-      h x = 0 ∧ ∀ w, mvfderiv I h x w = β.1 x ![w] := by
+      h x = 0 ∧ ∀ w, mvfderiv I h x w = β.val x ![w] := by
   rw [eq_comm, hα.eq_strictContactMoserVectorField_iff hR]
-  have h0 : α.1 x ![0] = 0 := (α.1 x).map_coord_zero 0 rfl
-  have h1 (w : TangentSpace I x) : mextDeriv α.1 x ![0, w] = 0 :=
-    (mextDeriv α.1 x).map_coord_zero 0 rfl
+  have h0 : α.val x ![0] = 0 := (α.val x).map_coord_zero 0 rfl
+  have h1 (w : TangentSpace I x) : mextDeriv α.val x ![0, w] = 0 :=
+    (mextDeriv α.val x).map_coord_zero 0 rfl
   simp only [h0, h1, zero_add, eq_comm]
 
 /-- **The strict contact-Moser vector as a sum.** Where `h` solves the Reeb-direction equation,
@@ -315,10 +316,10 @@ theorem strictContactMoserVectorField_eq_add :
   · rw [← degreeOneEquiv_apply_apply_vec, map_add, degreeOneEquiv_apply_apply_vec,
       degreeOneEquiv_apply_apply_vec, hα.apply_contactMoserVectorField,
       hα.apply_contactHamiltonianVectorField, zero_add]
-  · have hadd : mextDeriv α.1 x
+  · have hadd : mextDeriv α.val x
         ![α.contactMoserVectorField (-β) x + α.contactHamiltonianVectorField h x, w] =
-          mextDeriv α.1 x ![α.contactMoserVectorField (-β) x, w] +
-            mextDeriv α.1 x ![α.contactHamiltonianVectorField h x, w] := by
+          mextDeriv α.val x ![α.contactMoserVectorField (-β) x, w] +
+            mextDeriv α.val x ![α.contactHamiltonianVectorField h x, w] := by
       simp only [mextDeriv_eq_bilinFormAt, map_add, LinearMap.add_apply]
     rw [hadd, hα.mextDeriv_contactMoserVectorField_left,
       hα.mextDeriv_contactHamiltonianVectorField_left, hR]
@@ -331,9 +332,9 @@ end ReebDirection
 `α(v) = h` and `ι_v dα + dh = β` exactly when `h` solves the Reeb-direction equation
 `R_α h = β(R_α)` at that point. -/
 theorem exists_apply_eq_and_mextDeriv_add_eq_iff {x : M} :
-    (∃ v : TangentSpace I x, α.1 x ![v] = h x ∧
-      ∀ w, mextDeriv α.1 x ![v, w] + mvfderiv I h x w = β.1 x ![w]) ↔
-      mvfderiv I h x (α.reebVectorField x) = β.1 x ![α.reebVectorField x] := by
+    (∃ v : TangentSpace I x, α.val x ![v] = h x ∧
+      ∀ w, mextDeriv α.val x ![v, w] + mvfderiv I h x w = β.val x ![w]) ↔
+      mvfderiv I h x (α.reebVectorField x) = β.val x ![α.reebVectorField x] := by
   constructor
   · rintro ⟨v, -, hd⟩
     rw [← hd, hα.mextDeriv_reebVectorField_right, zero_add]
@@ -344,9 +345,9 @@ theorem exists_apply_eq_and_mextDeriv_add_eq_iff {x : M} :
 multiple `(R_α h) α` of `α` at `x`, then the strict contact-Moser vector of `(β, h)` at `x` is the
 contact Hamiltonian vector of `h`. -/
 theorem strictContactMoserVectorField_eq_contactHamiltonianVectorField {x : M}
-    (hβ : β.1 x = mvfderiv I h x (α.reebVectorField x) • α.1 x) :
+    (hβ : β.val x = mvfderiv I h x (α.reebVectorField x) • α.val x) :
     α.strictContactMoserVectorField β h x = α.contactHamiltonianVectorField h x := by
-  have hR : mvfderiv I h x (α.reebVectorField x) = β.1 x ![α.reebVectorField x] := by
+  have hR : mvfderiv I h x (α.reebVectorField x) = β.val x ![α.reebVectorField x] := by
     rw [hβ, ContinuousAlternatingMap.smul_apply, hα.apply_reebVectorField, smul_eq_mul, mul_one]
   rw [hα.strictContactMoserVectorField_eq_add hR, add_eq_right,
     hα.contactMoserVectorField_eq_zero_iff]
@@ -377,12 +378,12 @@ theorem mdifferentiable_strictContactMoserVectorField (β : SmoothForm I M ℝ 1
 `x`, then `L_X α = β` at `x`. -/
 theorem mlieDerivForm_strictContactMoserVectorField_apply {x : M}
     (hXd : MDifferentiableAt I I.tangent (T% (α.strictContactMoserVectorField β h)) x)
-    (hR : ∀ᶠ y in 𝓝 x, mvfderiv I h y (α.reebVectorField y) = β.1 y ![α.reebVectorField y]) :
-    mlieDerivForm (α.strictContactMoserVectorField β h) α.1 x = β.1 x := by
+    (hR : ∀ᶠ y in 𝓝 x, mvfderiv I h y (α.reebVectorField y) = β.val y ![α.reebVectorField y]) :
+    mlieDerivForm (α.strictContactMoserVectorField β h) α.val x = β.val x := by
   ext v
   obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, by ext i; fin_cases i; rfl⟩
   -- Near `x` the field takes the value `h` under `α`, so `d(α(X)) = dh` at `x`.
-  have hd : mvfderiv I (fun y ↦ α.1 y ![α.strictContactMoserVectorField β h y]) x =
+  have hd : mvfderiv I (fun y ↦ α.val y ![α.strictContactMoserVectorField β h y]) x =
       mvfderiv I h x :=
     Filter.EventuallyEq.mvfderiv_eq
       (hR.mono fun y hy ↦ hα.apply_strictContactMoserVectorField_of_mvfderiv_eq hy)
@@ -394,8 +395,8 @@ theorem mlieDerivForm_strictContactMoserVectorField_apply {x : M}
 if `h` is `C²` and solves the Reeb-direction equation `R_α h = β(R_α)` everywhere, then the
 strict contact-Moser vector field `X` of `(β, h)` satisfies `L_X α = β`. -/
 theorem mlieDerivForm_strictContactMoserVectorField (hh : ContMDiff I 𝓘(ℝ) 2 h)
-    (hR : ∀ y, mvfderiv I h y (α.reebVectorField y) = β.1 y ![α.reebVectorField y]) :
-    mlieDerivForm (α.strictContactMoserVectorField β h) α.1 = β.1 :=
+    (hR : ∀ y, mvfderiv I h y (α.reebVectorField y) = β.val y ![α.reebVectorField y]) :
+    mlieDerivForm (α.strictContactMoserVectorField β h) α.val = β.val :=
   funext fun x ↦ hα.mlieDerivForm_strictContactMoserVectorField_apply
     (hα.mdifferentiable_strictContactMoserVectorField β hh x) (.of_forall hR)
 
@@ -403,9 +404,9 @@ theorem mlieDerivForm_strictContactMoserVectorField (hh : ContMDiff I 𝓘(ℝ) 
 vector field `X` is differentiable at `x` and `L_X α = β` at `x`, then `h = α(X)` satisfies
 `R_α h = β(R_α)` at `x`. -/
 theorem mvfderiv_apply_reebVectorField_of_mlieDerivForm_apply_eq {x : M}
-    (hXd : MDifferentiableAt I I.tangent (T% X) x) (hL : mlieDerivForm X α.1 x = β.1 x) :
-    mvfderiv I (fun y ↦ α.1 y ![X y]) x (α.reebVectorField x) =
-      β.1 x ![α.reebVectorField x] := by
+    (hXd : MDifferentiableAt I I.tangent (T% X) x) (hL : mlieDerivForm X α.val x = β.val x) :
+    mvfderiv I (fun y ↦ α.val y ![X y]) x (α.reebVectorField x) =
+      β.val x ![α.reebVectorField x] := by
   -- Evaluate Cartan's formula `L_X α = ι_X dα + d(α(X))` at the Reeb vector field.
   have h := mlieDerivForm_apply_eq_mextDeriv_add (fun _ ↦ rfl) (α.mdifferentiableAt x) hXd
     (α.reebVectorField x)
@@ -415,8 +416,8 @@ theorem mvfderiv_apply_reebVectorField_of_mlieDerivForm_apply_eq {x : M}
 vector field `X` is differentiable at `x` and `L_X α = β` at `x`, then `X` at `x` is the strict
 contact-Moser vector of `(β, α(X))`. -/
 theorem eq_strictContactMoserVectorField_of_mlieDerivForm_apply_eq {x : M}
-    (hXd : MDifferentiableAt I I.tangent (T% X) x) (hL : mlieDerivForm X α.1 x = β.1 x) :
-    X x = α.strictContactMoserVectorField β (fun y ↦ α.1 y ![X y]) x := by
+    (hXd : MDifferentiableAt I I.tangent (T% X) x) (hL : mlieDerivForm X α.val x = β.val x) :
+    X x = α.strictContactMoserVectorField β (fun y ↦ α.val y ![X y]) x := by
   refine (hα.eq_strictContactMoserVectorField_iff
     (hα.mvfderiv_apply_reebVectorField_of_mlieDerivForm_apply_eq hXd hL)).2 ⟨rfl, fun w ↦ ?_⟩
   rw [← mlieDerivForm_apply_eq_mextDeriv_add (fun _ ↦ rfl) (α.mdifferentiableAt x) hXd, hL]
@@ -427,16 +428,16 @@ finite-dimensional manifold, a differentiable vector field `X` satisfies `L_X α
 contact-Moser vector field of `(β, h)`. -/
 theorem mlieDerivForm_eq_iff_eq_strictContactMoserVectorField
     (hXd : MDifferentiable I I.tangent (T% X)) :
-    mlieDerivForm X α.1 = β.1 ↔
-      (∀ x, mvfderiv I (fun y ↦ α.1 y ![X y]) x (α.reebVectorField x) =
-        β.1 x ![α.reebVectorField x]) ∧
-      X = α.strictContactMoserVectorField β (fun y ↦ α.1 y ![X y]) := by
+    mlieDerivForm X α.val = β.val ↔
+      (∀ x, mvfderiv I (fun y ↦ α.val y ![X y]) x (α.reebVectorField x) =
+        β.val x ![α.reebVectorField x]) ∧
+      X = α.strictContactMoserVectorField β (fun y ↦ α.val y ![X y]) := by
   refine ⟨fun hL ↦ ⟨fun x ↦ hα.mvfderiv_apply_reebVectorField_of_mlieDerivForm_apply_eq (hXd x)
     (congrFun hL x), funext fun x ↦
       hα.eq_strictContactMoserVectorField_of_mlieDerivForm_apply_eq (hXd x) (congrFun hL x)⟩,
     fun ⟨hR, hX⟩ ↦ funext fun x ↦ ?_⟩
   have hXd' : MDifferentiableAt I I.tangent
-      (T% (α.strictContactMoserVectorField β (fun y ↦ α.1 y ![X y]))) x := by
+      (T% (α.strictContactMoserVectorField β (fun y ↦ α.val y ![X y]))) x := by
     rw [← hX]
     exact hXd x
   have h := hα.mlieDerivForm_strictContactMoserVectorField_apply hXd' (.of_forall hR)
@@ -478,11 +479,11 @@ velocity `-∂_t α_t` that enters the strict contact-Moser vector field. -/
 private theorem mvfderiv_eq_mpullback_neg_timeDeriv {t : ℝ} {x : M}
     (hR : mvfderiv I (fun y ↦ h (t, y)) x
       ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x) =
-        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x
           ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x]) :
     mvfderiv I (fun y ↦ h (t, y)) x
       ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x) =
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (-α.timeDeriv)).1 x
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (-α.timeDeriv)).val x
           ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x] := by
   rw [map_neg, neg_toRoughForm, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, hR]
 
@@ -497,7 +498,7 @@ section ReebDirection
 variable {x : M}
   (hR : mvfderiv I (fun y ↦ h (t, y)) x
     ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x) =
-      -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x
+      -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x
         ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x])
 include hR
 
@@ -505,7 +506,7 @@ include hR
 `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` at `x`, then `α_t` takes the value `h_t` on the strict Moser
 vector field at time `t` and at `x`. -/
 theorem apply_strictMoserVectorField :
-    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x
+    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x
       ![α.strictMoserVectorField h t x] = h (t, x) :=
   hc.apply_strictContactMoserVectorField_of_mvfderiv_eq (mvfderiv_eq_mpullback_neg_timeDeriv hR)
 
@@ -515,11 +516,11 @@ vector `v` at `x` is the value of the strict Moser vector field at time `t` exac
 `α_t(v) = h_t` and `ι_v dα_t + dh_t + ∂_t α_t = 0`. -/
 theorem eq_strictMoserVectorField_iff {v : TangentSpace I x} :
     v = α.strictMoserVectorField h t x ↔
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] = h (t, x) ∧
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v] = h (t, x) ∧
         ∀ w,
-          mextDeriv (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v, w] +
+          mextDeriv (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v, w] +
             mvfderiv I (fun y ↦ h (t, y)) x w =
-              -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x
+              -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x
                 ![w] := by
   rw [strictMoserVectorField_def,
     hc.eq_strictContactMoserVectorField_iff (mvfderiv_eq_mpullback_neg_timeDeriv hR)]
@@ -532,7 +533,7 @@ vector field vanishes at time `t` and at `x` exactly when `h_t` vanishes there a
 theorem strictMoserVectorField_eq_zero_iff :
     α.strictMoserVectorField h t x = 0 ↔
       h (t, x) = 0 ∧ ∀ w, mvfderiv I (fun y ↦ h (t, y)) x w =
-        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![w] := by
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x ![w] := by
   rw [strictMoserVectorField_def,
     hc.strictContactMoserVectorField_eq_zero_iff (mvfderiv_eq_mpullback_neg_timeDeriv hR)]
   simp only [map_neg, neg_toRoughForm, Pi.neg_apply, ContinuousAlternatingMap.neg_apply]
@@ -546,12 +547,12 @@ theorem mlieDerivForm_strictMoserVectorField_add_apply
     (hh : ContMDiff I 𝓘(ℝ) 2 fun y ↦ h (t, y)) {x : M}
     (hR : ∀ᶠ y in 𝓝 x, mvfderiv I (fun z ↦ h (t, z)) y
       ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y) =
-        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 y
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val y
           ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y])
     (v : TangentSpace I x) :
     mlieDerivForm (α.strictMoserVectorField h t)
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] +
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] = 0 := by
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v] +
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x ![v] = 0 := by
   have hL := hc.mlieDerivForm_strictContactMoserVectorField_apply
     (hc.mdifferentiable_strictContactMoserVectorField _ hh x)
     (hR.mono fun _ hy ↦ mvfderiv_eq_mpullback_neg_timeDeriv hy)
@@ -564,12 +565,12 @@ theorem mlieDerivForm_strictMoserVectorField_add_apply
 theorem mlieDerivForm_strictMoserVectorField_add (hh : ContMDiff I 𝓘(ℝ) 2 fun y ↦ h (t, y))
     (hR : ∀ y, mvfderiv I (fun z ↦ h (t, z)) y
       ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y) =
-        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 y
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val y
           ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y])
     (x : M) (v : TangentSpace I x) :
     mlieDerivForm (α.strictMoserVectorField h t)
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] +
-      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] = 0 :=
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x ![v] +
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x ![v] = 0 :=
   mlieDerivForm_strictMoserVectorField_add_apply hc hh (.of_forall hR) v
 
 end Slice
@@ -614,12 +615,12 @@ private theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_strictMoserVect
     (hh : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 h) {t : ℝ} {x : M}
     (hR : ∀ᶠ y in 𝓝 x, mvfderiv I (fun z ↦ h (t, z)) y
       ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y) =
-        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 y
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val y
           ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y]) :
     (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.val) +
         mlieDerivForm (α.strictMoserVectorField h t)
-          (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1)) x = 0 := by
+          (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val)) x = 0 := by
   ext v
   have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
   have hv0 := mlieDerivForm_strictMoserVectorField_add_apply (hc t)
@@ -632,7 +633,7 @@ private theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_strictMoserVect
 
 variable (hR : ∀ t x, mvfderiv I (fun y ↦ h (t, y)) x
     ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x) =
-      -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x
+      -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val x
         ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x])
 
 variable [I.Boundaryless] [T2Space M]
@@ -648,8 +649,8 @@ theorem mpullback_timeDependentFlowOf_strictMoserVectorField
     (hcomplete : IsCompleteVectorField (timeDependentSuspensionField (α.strictMoserVectorField h)))
     (s t : ℝ) :
     TauCeti.mpullback I I (timeDependentFlowOf (α.strictMoserVectorField h) s t)
-        (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
-      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α.1 :=
+        (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.val) =
+      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α.val :=
   mpullback_timeDependentFlowOf_mpullback_prodMk_eq
     (contMDiff_strictMoserVectorField hc (n := 2) (by norm_num) hh) hcomplete
     (α.contMDiff.of_le (by simp))
@@ -733,12 +734,12 @@ theorem mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc {s t : 
     (hR : ∀ u ∈ Set.uIcc s t, ∀ᶠ y in 𝓝 (strictMoserPartialDiffeomorph hc hh s u x),
       mvfderiv I (fun z ↦ h (u, z)) y
         ((mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y) =
-          -(mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 y
+          -(mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val y
             ![(mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
               y]) :
     TauCeti.mpullback I I (strictMoserPartialDiffeomorph hc hh s t)
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
-      (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x =
+      (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).val x := by
   have hφ (u : ℝ) : ⇑(strictMoserPartialDiffeomorph hc hh s u) =
       timeDependentFlowOf (α.strictMoserVectorField h) s u :=
     funext (strictMoserPartialDiffeomorph_apply hc hh s u)
@@ -758,8 +759,8 @@ partial isotopy `φ_(s,t)`, it pulls `α_t` back to `α_s`. -/
 theorem mpullback_strictMoserPartialDiffeomorph_apply {s t : ℝ} {x : M}
     (hx : x ∈ (strictMoserPartialDiffeomorph hc hh s t).source) :
     TauCeti.mpullback I I (strictMoserPartialDiffeomorph hc hh s t)
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
-      (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x :=
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x =
+      (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).val x :=
   mpullback_strictMoserPartialDiffeomorph_apply_of_forall_mem_uIcc hc hh hx
     fun u _ ↦ .of_forall (hR u)
 
@@ -801,13 +802,13 @@ theorem exists_partialDiffeomorph_mpullback_eq {K : Set M}
     {s t : ℝ} (hKU : ∀ x ∈ K, ∀ u ∈ Set.uIcc s t, (u, x) ∈ U)
     (hR : ∀ p ∈ U, mvfderiv I (fun y ↦ h (p.1, y)) p.2
       ((mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField p.2) =
-        -(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 p.2
+        -(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val p.2
           ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
             p.2]) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
       ∀ x ∈ φ.source, TauCeti.mpullback I I φ
-          (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
-        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+          (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).val x =
+        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).val x := by
   have hX := contMDiff_strictMoserVectorField hc (n := 1) (by simp) (hh.of_le (by simp))
   set W := {x | ∀ u ∈ Set.uIcc s t,
     ((s, u), x) ∈ timeDependentFlowDomain (α.strictMoserVectorField h) ∧

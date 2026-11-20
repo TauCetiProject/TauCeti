@@ -473,7 +473,7 @@ theorem IsFormalTranspose.smoothPrincipalSymbol_eq {m : ℕ}
       (TauCeti.smulCommutator ℝ f ^ m) (P : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) ∈
         differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 0 := fun P ↦
     smulCommutator_pow_mem_differentialOperators (by simp) f
-  have heq := (h.smulCommutator_pow D.2 D'.2 f m).unique
+  have heq := (h.smulCommutator_pow D.property D'.property f m).unique
     (isFormalTranspose_self_of_mem_differentialOperators_zero (hm D))
   have heq' : (TauCeti.smulCommutator ℝ f ^ m) (D' : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) =
       (-1 : ℝ) ^ m • (TauCeti.smulCommutator ℝ f ^ m) (D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) := by

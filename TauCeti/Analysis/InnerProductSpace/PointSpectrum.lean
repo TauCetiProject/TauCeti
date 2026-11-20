@@ -449,15 +449,15 @@ theorem finrank_pointSpectralSubspace_eq_finsum_finrank_eigenspace [FiniteDimens
   let S : Set ℝ := Ω ∩ {μ : ℝ | A.HasEigenvalue (μ : 𝕜)}
   have hS : S.Finite :=
     (A.finite_hasEigenvalue.preimage RCLike.ofReal_injective.injOn).subset Set.inter_subset_right
-  have hiSup : A.pointSpectralSubspace Ω = ⨆ μ : hS.toFinset, A.eigenspace (μ.1 : 𝕜) := by
+  have hiSup : A.pointSpectralSubspace Ω = ⨆ μ : hS.toFinset, A.eigenspace (μ.val : 𝕜) := by
     refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_)
-      (iSup_le fun μ ↦ eigenspace_le_pointSpectralSubspace (hS.mem_toFinset.mp μ.2).1)
+      (iSup_le fun μ ↦ eigenspace_le_pointSpectralSubspace (hS.mem_toFinset.mp μ.property).1)
     by_cases h : A.HasEigenvalue (μ : 𝕜)
-    · exact le_iSup (fun ν : hS.toFinset ↦ A.eigenspace (ν.1 : 𝕜))
+    · exact le_iSup (fun ν : hS.toFinset ↦ A.eigenspace (ν.val : 𝕜))
         ⟨μ, hS.mem_toFinset.mpr ⟨hμ, h⟩⟩
     · rw [Module.End.hasEigenvalue_iff, not_not] at h
       simp [h]
-  have hind : iSupIndep (fun μ : hS.toFinset ↦ A.eigenspace (μ.1 : 𝕜)) :=
+  have hind : iSupIndep (fun μ : hS.toFinset ↦ A.eigenspace (μ.val : 𝕜)) :=
     (A.eigenspaces_iSupIndep.comp RCLike.ofReal_injective).comp Subtype.val_injective
   rw [hiSup, TauCeti.finrank_iSup_eq_sum_finrank_of_iSupIndep hind,
     Finset.sum_coe_sort hS.toFinset (fun μ : ℝ ↦ Module.finrank 𝕜 (A.eigenspace (μ : 𝕜)))]
@@ -741,7 +741,7 @@ private theorem eigenvalues_restrict_mem (hA : A.IsSymmetric) (hU : ∀ x ∈ U,
     (i : Fin (Module.finrank 𝕜 U)) :
     (hA.restrict_invariant hU).eigenvalues rfl i ∈ A.restrictedPointSpectrum U := by
   set hB := hA.restrict_invariant hU
-  refine Module.End.mem_restrictedPointSpectrum (hB.eigenvectorBasis rfl i).2 ?_ ?_
+  refine Module.End.mem_restrictedPointSpectrum (hB.eigenvectorBasis rfl i).property ?_ ?_
   · exact_mod_cast (hB.eigenvectorBasis rfl).orthonormal.ne_zero i
   · exact congrArg Subtype.val (hB.apply_eigenvectorBasis rfl i)
 

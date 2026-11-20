@@ -47,8 +47,8 @@ theorem exists_normalized_unit_between (B : ℝ) (v : (𝓞 K)ˣ)
     (hv : w v ≠ 1) (hvbound : |Real.log (w v)| < Real.log B) :
     ∃ (ε : torsion K) (δ : (𝓞 K)ˣ),
       (δ = v ∨ δ = v⁻¹) ∧
-      1 < embedding_of_isReal hw ((ε.1 * δ : (𝓞 K)ˣ) : K) ∧
-      embedding_of_isReal hw ((ε.1 * δ : (𝓞 K)ˣ) : K) < B := by
+      1 < embedding_of_isReal hw ((ε.val * δ : (𝓞 K)ˣ) : K) ∧
+      embedding_of_isReal hw ((ε.val * δ : (𝓞 K)ˣ) : K) < B := by
   have hvlog : 0 < |Real.log (w v)| := by
     exact abs_pos.mpr (Real.log_ne_zero_of_pos_of_ne_one (Units.pos_at_place v w) hv)
   have hB : 1 < B :=
@@ -126,6 +126,6 @@ theorem generates_mod_torsion_iff_no_unit_between_real (hr : rank K = 1)
           simp
         exact (ne_of_gt hv₀) hz)
         ((logEmbedding_norm_lt_iff_at_place hr u v w hu).mp hv₁)
-    exact h ⟨ε.1 * δ, hδlo, hδhi⟩
+    exact h ⟨ε.val * δ, hδlo, hδhi⟩
 
 end TauCeti.NumberField.Units

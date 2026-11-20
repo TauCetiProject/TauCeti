@@ -120,7 +120,7 @@ private theorem norm_mul_valueHolderL_le (hα : α ≤ 1) (g : HolderSpace α (s
     · congr 2
       ext
       · simp [slabClamp]
-      · simp [slabClamp, projIcc_of_mem hsb.le ⟨hp, (mem_slab.1 p.2).2⟩]
+      · simp [slabClamp, projIcc_of_mem hsb.le ⟨hp, (mem_slab.1 p.property).2⟩]
   have hvn : ‖v‖ ≤ ‖valueHolderL hα (restrictL has le_rfl hsb u)‖ :=
     (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_of_le_one_left (norm_nonneg _)
       (HolderSpace.norm_compLipschitzL_le_one _))
@@ -166,7 +166,7 @@ private theorem norm_restrictL_le_of_timeCutoff (hα : α ≤ 1) {T : ℝ} {hT :
   -- On `E × [δ, T]` the localization `χ u` is `u`, and it vanishes at the initial time.
   have hw : restrictL hδ le_rfl hδT u = restrictL hδ le_rfl hδT w := by
     ext p
-    simp [← hwu, hχ₁ (inclusion (slab_subset_slab hδ le_rfl) p) (mem_slab.1 p.2).1]
+    simp [← hwu, hχ₁ (inclusion (slab_subset_slab hδ le_rfl) p) (mem_slab.1 p.property).1]
   have hw₀ : w.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩ = 0 :=
     CkHolderSpace.ext fun x ↦ by
       simp [spatialTrace_apply, ← hwu, hχ₀ (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) (by simp [hs.le])]

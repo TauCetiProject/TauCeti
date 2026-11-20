@@ -148,7 +148,7 @@ instance instCStarRing : CStarRing (A ⧸ I) where
     -- `TauCeti.CStarAlgebra.norm_sub_mul_sq_le` for the positive contraction `e`.
     have hmk_eq : mk I a = mk I (a - a * (e : A)) := by
       rw [map_sub, eq_zero_iff_mem.mpr
-        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.2)), sub_zero]
+        (I.mul_mem_left a (e : A) (I.mem_toNonUnitalStarSubalgebra.mp e.property)), sub_zero]
     calc
       ‖mk I a‖ ^ 2 ≤ ‖a - a * (e : A)‖ ^ 2 := by
         rw [hmk_eq]

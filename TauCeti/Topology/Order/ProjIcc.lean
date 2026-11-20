@@ -52,7 +52,7 @@ theorem ContinuousOn.exists_continuous_eqOn_univ_prod_Icc {γ : Type*} [Topologi
     {f : γ × α → β} (hab : a ≤ b) (hf : ContinuousOn f (univ ×ˢ Icc a b)) :
     ∃ g : γ × α → β, Continuous g ∧ EqOn g f (univ ×ˢ Icc a b) :=
   ⟨fun p ↦ f (p.1, projIcc a b hab p.2),
-    hf.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp
+    hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp
       (continuous_projIcc.comp continuous_snd))) fun _ ↦ ⟨mem_univ _, Subtype.coe_prop _⟩,
     fun _ hp ↦ by simp [projIcc_of_mem _ hp.2]⟩
 
@@ -60,7 +60,7 @@ theorem ContinuousOn.exists_continuous_eqOn_univ_prod_Icc {γ : Type*} [Topologi
 projection `projIcc a b` onto it, is continuous on the whole space. -/
 theorem ContinuousOn.comp_projIcc (hf : ContinuousOn f (Icc a b)) (hab : a ≤ b) :
     Continuous fun x => f (projIcc a b hab x) :=
-  hf.comp_continuous continuous_projIcc.subtype_val fun x => (projIcc a b hab x).2
+  hf.comp_continuous continuous_projIcc.subtypeVal fun x => (projIcc a b hab x).property
 
 /-- Constant extension is right-continuous wherever the original function is right-continuous
 within the interval. Outside `[a,b)` no continuity assumption is needed. -/
@@ -82,7 +82,7 @@ theorem TauCeti.continuousWithinAt_IccExtend_Ici (hab : a ≤ b) {x : α}
       have hproj : (projIcc a b hab x : α) = x := by
         simp [projIcc_of_mem hab ⟨hax, hxb.le⟩]
       have hc : Continuous (fun y : α ↦ (projIcc a b hab y : α)) :=
-        continuous_subtype_val.comp continuous_projIcc
+        continuous_subtypeVal.comp continuous_projIcc
       exact (hfr ⟨hax, hxb⟩).comp_of_eq hc.continuousAt.continuousWithinAt
         (fun y hy ↦ ⟨by simpa only [coe_projIcc] using
           (le_max_of_le_right (le_min hxb.le hy) : x ≤ max a (min b y)),

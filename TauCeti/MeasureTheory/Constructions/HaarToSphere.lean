@@ -102,7 +102,7 @@ against the weight `r ^ k`. -/
 theorem integral_volumeIoiPow (k : ℕ) (h : ℝ → F) :
     ∫ r : Ioi (0 : ℝ), h r ∂(Measure.volumeIoiPow k) = ∫ r in Ioi (0 : ℝ), r ^ k • h r := by
   simp only [Measure.volumeIoiPow, ENNReal.ofReal]
-  rw [integral_withDensity_eq_integral_smul (measurable_subtype_coe.pow_const _).real_toNNReal,
+  rw [integral_withDensity_eq_integral_smul (measurable_subtypeVal.pow_const _).real_toNNReal,
     integral_subtype_comap measurableSet_Ioi fun r ↦ Real.toNNReal (r ^ k) • h r]
   refine setIntegral_congr_fun measurableSet_Ioi fun r hr ↦ ?_
   rw [NNReal.smul_def, Real.coe_toNNReal _ (pow_nonneg (le_of_lt hr) _)]
@@ -113,7 +113,7 @@ theorem lintegral_volumeIoiPow (k : ℕ) (h : ℝ → ℝ≥0∞) :
     ∫⁻ r : Ioi (0 : ℝ), h r ∂(Measure.volumeIoiPow k) =
       ∫⁻ r in Ioi (0 : ℝ), ENNReal.ofReal (r ^ k) * h r := by
   rw [Measure.volumeIoiPow, lintegral_withDensity_eq_lintegral_mul_non_measurable _
-      (measurable_subtype_coe.pow_const k).ennreal_ofReal
+      (measurable_subtypeVal.pow_const k).ennreal_ofReal
       (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
     ← lintegral_subtype_comap measurableSet_Ioi (fun r ↦ ENNReal.ofReal (r ^ k) * h r)]
   simp only [Pi.mul_apply]
@@ -225,14 +225,14 @@ theorem _root_.ContinuousOn.integral_toSphere_smul_uncurry {g : E → E → F} {
   have hmem : ∀ r ∈ Icc (0 : ℝ) R, ∀ u : sphere (0 : E) 1,
       (r • (u : E), (u : E)) ∈ closedBall (0 : E) R ×ˢ sphere (0 : E) 1 := by
     intro r hr u
-    refine ⟨?_, u.2⟩
+    refine ⟨?_, u.property⟩
     rw [mem_closedBall_zero_iff, norm_smul, norm_eq_of_mem_sphere u, mul_one,
       Real.norm_of_nonneg hr.1]
     exact hr.2
   refine continuousOn_of_dominated (bound := fun _ ↦ C) (fun r hr ↦ ?_) (fun r hr ↦ ?_)
     (integrable_const C) (ae_of_all _ fun u ↦ ?_)
-  · exact (hg.comp_continuous ((continuous_const.smul continuous_subtype_val).prodMk
-      continuous_subtype_val) (hmem r hr)).aestronglyMeasurable
+  · exact (hg.comp_continuous ((continuous_const.smul continuous_subtypeVal).prodMk
+      continuous_subtypeVal) (hmem r hr)).aestronglyMeasurable
   · exact ae_of_all _ fun u ↦ hC _ (hmem r hr u)
   · exact hg.comp ((continuous_id.smul continuous_const).prodMk continuous_const).continuousOn
       fun r hr ↦ hmem r hr u
@@ -463,7 +463,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_isRadialGraph
   apply Eventually.of_forall
   intro ω
   have hslice : {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A}.Subsingleton :=
-    fun s hs t ht ↦ hray ω ω.2 s t hs.1 ht.1 hs.2 ht.2
+    fun s hs t ht ↦ hray ω ω.property s t hs.1 ht.1 hs.2 ht.2
   exact hslice.countable.measure_zero volume
 
 /-- An arbitrary Haar almost-everywhere predicate transports to the polar product measure; no
@@ -544,7 +544,7 @@ theorem integral_toSphere_coe_eq_zero :
     rw [show (ι : E → E) = Neg.neg from LinearIsometryEquiv.coe_neg, Measure.map_neg_eq_self]
   have hg : Measurable g := ι.continuous.measurable.subtype_map _
   have h := integral_map (μ := μ.toSphere) hg.aemeasurable
-    (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtype_val.aestronglyMeasurable
+    (f := fun θ : sphere (0 : E) 1 ↦ (θ : E)) continuous_subtypeVal.aestronglyMeasurable
   rw [hmap] at h
   have hg' : ∀ θ : sphere (0 : E) 1, (g θ : E) = -(θ : E) := fun θ ↦ by
     simp only [g]

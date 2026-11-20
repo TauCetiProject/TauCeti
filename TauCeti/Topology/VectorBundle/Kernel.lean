@@ -59,12 +59,12 @@ noncomputable def kernelTrivialization :
   have he := (Trivial.homeomorphProd X E).isEmbedding.comp
     (isEmbedding_totalSpace_subbundle E G (E := Trivial X E) (fun x ↦ (A x).ker))
   let e : TotalSpace G (fun x ↦ (A x).ker) ≃ₜ {p : X × E | A p.1 p.2 = 0} :=
-    { toFun := fun v ↦ ⟨(v.proj, v.2), v.2.property⟩
+    { toFun := fun v ↦ ⟨(v.proj, v.snd), v.snd.property⟩
       invFun := fun p ↦ ⟨p.val.1, ⟨p.val.2, p.property⟩⟩
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       continuous_toFun := he.continuous.subtype_mk _
-      continuous_invFun := he.continuous_iff.mpr continuous_subtype_val }
+      continuous_invFun := he.continuous_iff.mpr continuous_subtypeVal }
   exact {
     toOpenPartialHomeomorph :=
       (e.trans (ContinuousLinearMap.kernelHomeomorph A q hA h)).toOpenPartialHomeomorph
@@ -82,8 +82,8 @@ theorem kernelTrivialization_baseSet : (kernelTrivialization hA h).baseSet = uni
 
 @[simp]
 theorem kernelTrivialization_apply (v : TotalSpace G fun x ↦ (A x).ker) :
-    kernelTrivialization hA h v = (v.proj, q v.2) := by
-  exact ContinuousLinearMap.kernelHomeomorph_apply hA h ⟨(v.proj, v.2), v.2.property⟩
+    kernelTrivialization hA h v = (v.proj, q v.snd) := by
+  exact ContinuousLinearMap.kernelHomeomorph_apply hA h ⟨(v.proj, v.snd), v.snd.property⟩
 
 /-- The inverse chart's underlying domain vector is the kernel section. -/
 @[simp]

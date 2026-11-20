@@ -76,10 +76,10 @@ namespace HolderSpace
 variable {α : ℝ≥0} {X : Type u} {Y : Type v} [MetricSpace X]
   [NormedAddCommGroup Y] [NormedSpace ℝ Y]
 
-instance : CoeFun (HolderSpace α X Y) fun _ ↦ X → Y := ⟨fun f ↦ f.1.1⟩
+instance : CoeFun (HolderSpace α X Y) fun _ ↦ X → Y := ⟨fun f ↦ f.toHolderSubmodule.val⟩
 
 /-- The underlying bounded continuous function. -/
-def toBoundedContinuousFunction (f : HolderSpace α X Y) : X →ᵇ Y := f.1.1
+def toBoundedContinuousFunction (f : HolderSpace α X Y) : X →ᵇ Y := f.toHolderSubmodule.val
 
 /-- Promote a bounded continuous Hölder function to the Hölder space. -/
 def ofBoundedContinuousFunction (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y)) :
@@ -111,7 +111,7 @@ theorem continuous (f : HolderSpace α X Y) : Continuous (f : X → Y) := by
 /-- A Hölder-space element satisfies the global Hölder condition. -/
 theorem memHolder (f : HolderSpace α X Y) :
     MemHolder α (f.toBoundedContinuousFunction : X → Y) :=
-  (mem_holderSubmodule_iff f.toHolderSubmodule.1).mp f.toHolderSubmodule.2
+  (mem_holderSubmodule_iff f.toHolderSubmodule.val).mp f.toHolderSubmodule.property
 
 @[simp]
 theorem ofBoundedContinuousFunction_toBoundedContinuousFunction (f : HolderSpace α X Y) :
@@ -132,17 +132,17 @@ theorem ext {f g : HolderSpace α X Y} (h : ∀ x, f x = g x) : f = g := by
 
 instance : Zero (HolderSpace α X Y) := ⟨⟨0⟩⟩
 
-instance : Add (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.1 + g.1⟩⟩
+instance : Add (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.toHolderSubmodule + g.toHolderSubmodule⟩⟩
 
-instance : Neg (HolderSpace α X Y) := ⟨fun f ↦ ⟨-f.1⟩⟩
+instance : Neg (HolderSpace α X Y) := ⟨fun f ↦ ⟨-f.toHolderSubmodule⟩⟩
 
-instance : Sub (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.1 - g.1⟩⟩
+instance : Sub (HolderSpace α X Y) := ⟨fun f g ↦ ⟨f.toHolderSubmodule - g.toHolderSubmodule⟩⟩
 
-instance : SMul ℝ (HolderSpace α X Y) := ⟨fun c f ↦ ⟨c • f.1⟩⟩
+instance : SMul ℝ (HolderSpace α X Y) := ⟨fun c f ↦ ⟨c • f.toHolderSubmodule⟩⟩
 
-instance : SMul ℕ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
+instance : SMul ℕ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.toHolderSubmodule⟩⟩
 
-instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.1⟩⟩
+instance : SMul ℤ (HolderSpace α X Y) := ⟨fun n f ↦ ⟨n • f.toHolderSubmodule⟩⟩
 
 @[simp] theorem toBoundedContinuousFunction_zero :
     (0 : HolderSpace α X Y).toBoundedContinuousFunction = 0 := (rfl)

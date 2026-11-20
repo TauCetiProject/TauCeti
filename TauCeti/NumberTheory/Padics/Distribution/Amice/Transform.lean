@@ -351,10 +351,10 @@ noncomputable def amiceTransformEquiv :
     LocallyAnalyticDistribution p K ≃ₗ[K] PowerSeries.OnOpenDisc.subring K 1 where
   toFun μ := ⟨amiceTransform μ, PowerSeries.OnOpenDisc.mem_subring.mpr
     (onOpenDisc_amiceTransform μ)⟩
-  invFun F := ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2)
+  invFun F := ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.property)
   left_inv := ofOnOpenDisc_amiceTransform
   right_inv F := Subtype.ext (amiceTransform_ofOnOpenDisc p
-    (PowerSeries.OnOpenDisc.mem_subring.mp F.2))
+    (PowerSeries.OnOpenDisc.mem_subring.mp F.property))
   map_add' μ ν := Subtype.ext (map_add amiceTransform μ ν)
   map_smul' a μ := Subtype.ext <| by simp
 
@@ -367,7 +367,7 @@ theorem coe_amiceTransformEquiv (μ : LocallyAnalyticDistribution p K) :
 @[simp]
 theorem amiceTransformEquiv_symm_apply (F : PowerSeries.OnOpenDisc.subring K 1) :
     amiceTransformEquiv.symm F =
-      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2) := (rfl)
+      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.property) := (rfl)
 
 end NormedAlgebra
 

@@ -124,14 +124,14 @@ sending `v` to the operator `u ↦ fun j ↦ ∑ i, u i * v (finProdFinEquiv (i,
 are explicit coordinate maps, so the scalar field need not be complete or nontrivially normed. -/
 def finProdCLM (m n : ℕ) :
     (Fin (m * n) → 𝕜) ≃L[𝕜] ((Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) :=
-  equivOfInverse (finProdToCLM 𝕜 m n) (finProdOfCLM 𝕜 m n)
-    (fun v ↦ funext fun k ↦ by
+  ofContinuousLinearMap (finProdToCLM 𝕜 m n) (finProdOfCLM 𝕜 m n)
+    (ContinuousLinearMap.ext fun T ↦ ContinuousLinearMap.ext fun u ↦ funext fun j ↦ by
+      rw [ContinuousLinearMap.comp_apply, finProdToCLM_apply]
+      conv_rhs => rw [ContinuousLinearMap.id_apply, pi_eq_sum_univ' u, map_sum]
+      simp [Finset.sum_apply, smul_eq_mul])
+    (ContinuousLinearMap.ext fun v ↦ funext fun k ↦ by
       obtain ⟨⟨i, j⟩, rfl⟩ := finProdFinEquiv.surjective k
       simp [Pi.single_apply])
-    (fun T ↦ ContinuousLinearMap.ext fun u ↦ funext fun j ↦ by
-      rw [finProdToCLM_apply]
-      conv_rhs => rw [pi_eq_sum_univ' u, map_sum]
-      simp [Finset.sum_apply, smul_eq_mul])
 
 variable {𝕜} {m n : ℕ}
 

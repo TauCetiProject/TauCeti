@@ -95,7 +95,7 @@ theorem ContinuousLinearMap.nonempty_path_iff_index_eq
     Nonempty (Path S T) ↔ S.val.index = T.val.index := by
   constructor
   · rintro ⟨γ⟩
-    exact (γ.map continuous_subtype_val).index_eq fun t ↦ (γ t).property
+    exact (γ.map continuous_subtypeVal).index_eq fun t ↦ (γ t).property
   · intro hind
     exact (joinedIn_iff_joined (F := {U : E →L[ℂ] F | U.IsFredholm})
       (x := S.val) (y := T.val) S.property T.property).mp

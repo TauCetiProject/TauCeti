@@ -141,7 +141,7 @@ lemma sheafι_app_map {U V : X.Opens} (i : V ⟶ U) (t : Γ(I.sheaf, U)) :
 /-- The inclusion `I ⟶ 𝒪_X` sends a section of the ideal sheaf over `U` into `sections I U`. -/
 lemma sheafι_app_mem (U : X.Opens) (t : Γ(I.sheaf, U)) :
     Scheme.Modules.Hom.app I.sheafι U t ∈ I.sections U :=
-  t.2
+  t.property
 
 /-- The inclusion of the ideal sheaf into `𝒪_X` is injective on sections. -/
 lemma sheafι_app_injective (U : X.Opens) : Function.Injective (Scheme.Modules.Hom.app I.sheafι U) :=
