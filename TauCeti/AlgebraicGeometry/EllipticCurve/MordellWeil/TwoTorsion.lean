@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.XSubT
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
+import Mathlib.FieldTheory.Separable
 
 /-!
 # The `2`-torsion of the group of points of a Weierstrass curve
@@ -88,6 +89,17 @@ theorem card_ker_nsmul_two : Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker 
     _ = Nat.card {x : K // W.f.eval x = 0} + 1 := by
         rw [← Nat.card_coe_set_eq, Nat.card_range_of_injective hinj]
         rfl
+
+/-- In characteristic different from two normal form, an elliptic curve has full rational
+`2`-torsion precisely when its monic cubic splits over the base field. -/
+theorem splits_f_iff_card_ker_nsmul_two_eq_four :
+    W.f.Splits ↔ Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker = 4 := by
+  have hroots : Nat.card {x : K // W.f.eval x = 0} = W.f.roots.card := by
+    rw [Nat.subtype_card W.f.roots.toFinset,
+      Multiset.toFinset_card_of_nodup (nodup_roots W.separable_f)]
+    simp only [Multiset.mem_toFinset, mem_roots W.f_ne_zero, IsRoot.def, implies_true]
+  rw [splits_iff_card_roots, W.natDegree_f, W.card_ker_nsmul_two, hroots]
+  omega
 
 end Affine
 

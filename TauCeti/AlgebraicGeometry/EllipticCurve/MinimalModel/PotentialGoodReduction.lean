@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FreyCurve.Basic
 import Mathlib.Tactic.ComputeDegree
 import TauCeti.AlgebraicGeometry.Curves.StableReduction.DVRExtension.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
-import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre
+import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 import TauCeti.RingTheory.Valuation.ValuationRing
 
