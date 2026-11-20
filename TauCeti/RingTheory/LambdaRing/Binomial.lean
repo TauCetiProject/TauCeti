@@ -37,6 +37,15 @@ public noncomputable section
 
 open PowerSeries
 
+namespace Ring
+
+/-- `(1 choose n) = 0` for `n ≥ 2`, the analogue of `Ring.choose_zero_pos` for `1`. -/
+theorem choose_one_of_two_le (R : Type*) [NonAssocRing R] [Pow R ℕ] [NatPowAssoc R]
+    [BinomialRing R] {n : ℕ} (hn : 2 ≤ n) : choose (1 : R) n = 0 := by
+  rw [← Nat.cast_one, choose_natCast, Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
+
+end Ring
+
 namespace TauCeti
 
 namespace PreLambdaStructure
@@ -68,8 +77,8 @@ theorem binomial_lambda_natCast (n k : ℕ) : (binomial R).lambda n (k : R) = k.
 
 /-- `1` is a line element of the binomial structure: `λ_t 1 = 1 + t`. -/
 @[simp]
-theorem isLine_binomial_one : (binomial R).IsLine 1 := (isLine_iff _).2 fun n hn => by
-  rw [← Nat.cast_one, binomial_lambda_natCast, Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero]
+theorem isLine_binomial_one : (binomial R).IsLine 1 :=
+  (isLine_iff _).2 fun _ hn => Ring.choose_one_of_two_le R hn
 
 /-- `λ² 2 = 1` in the binomial structure. Together with `λ² 1 = 0` (`isLine_binomial_one`), this
 shows that `λ²` is not additive in any nonzero binomial ring. -/

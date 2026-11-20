@@ -128,9 +128,8 @@ example :
     (lineMonomial (Multiplicative ℤ)).lambda 2
         (MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd 1) +
           MonoidAlgebra.of ℤ _ (Multiplicative.ofAdd (-1))) = 1 := by
-  have h : Ring.choose (1 : ℤ) 2 = 0 := by
-    simpa [binomial_lambda] using (isLine_binomial_one (R := ℤ)).lambda_eq_zero le_rfl
-  simp [lambda_add, Finset.Nat.sum_antidiagonal_succ, h, MonoidAlgebra.one_def]
+  simp [lambda_add, Finset.Nat.sum_antidiagonal_succ, Ring.choose_one_of_two_le ℤ le_rfl,
+    MonoidAlgebra.one_def]
 
 /-- For the trivial monoid, the line-monomial structure is the binomial structure on `ℤ`. -/
 example (n : ℕ) (c : ℤ) :

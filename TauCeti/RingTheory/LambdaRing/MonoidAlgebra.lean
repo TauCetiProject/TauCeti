@@ -121,10 +121,7 @@ theorem totalSeries_lineMonomial_single (m : M) (c : ℤ) :
 /-- Every basis monomial is a line element of the line-monomial structure. -/
 theorem isLine_lineMonomial_of (m : M) : (lineMonomial M).IsLine (of ℤ M m) := by
   refine (isLine_iff _).2 fun n hn => ?_
-  have h : Ring.choose (1 : ℤ) n = 0 := by
-    rw [← binomial_lambda]
-    exact isLine_binomial_one.lambda_eq_zero hn
-  rw [of_apply, lineMonomial_lambda_single, h, single_zero]
+  rw [of_apply, lineMonomial_lambda_single, Ring.choose_one_of_two_le ℤ hn, single_zero]
 
 theorem totalSeries_lineMonomial_of (m : M) :
     (lineMonomial M).totalSeries (of ℤ M m) = 1 + C (of ℤ M m) * X :=
