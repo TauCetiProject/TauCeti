@@ -10,10 +10,8 @@ public import Mathlib.Topology.Compactification.OnePoint.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Calculus.FDeriv.Puncture
-import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
-import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Continuous removal of finite-energy punctures
@@ -35,12 +33,15 @@ only tamed, so it need not be an isometry (`TauCeti.fderiv_comp_inv_apply_I_eq`,
 `TauCeti.integrableOn_norm_fderiv_comp_inv_apply_one_sq`). A finite-energy solution on the whole
 plane therefore extends to a continuous map on the Riemann sphere `OnePoint ℂ`
 (`SymplecticForm.exists_continuous_onePoint_elim_of_finite_energy`). This identifies the end at
-infinity of a finite-energy plane with a point of a sphere, continuously only: it gives neither
-differentiability nor the Cauchy--Riemann equation at infinity.
+infinity of a finite-energy plane with a point of a sphere, continuously only.
 
-This is the continuous part of removal of singularities for pseudoholomorphic curves.
-It does not assert differentiability at the puncture or the Cauchy--Riemann equation there;
-those require elliptic regularity for the extended map.
+This is the continuous part of removal of singularities for pseudoholomorphic curves. That the
+filling solves the Cauchy--Riemann equation weakly across the puncture, and the inverted filling
+weakly at infinity, is proved in `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative`
+(`SymplecticForm.exists_isWeakCauchyRiemannOn_update_of_finite_energy`,
+`SymplecticForm.exists_isWeakCauchyRiemannOn_update_comp_inv_of_finite_energy`). Differentiability
+of the filling and the classical equation at the puncture or at infinity still require elliptic
+regularity for the extended map.
 
 The analytic inputs are
 `SymplecticForm.exists_pos_integrableOn_deriv_radial` (finite radial length) and
@@ -58,62 +59,6 @@ no alternative norm or inner-product instance is installed.
 public section
 
 open Complex Filter MeasureTheory Metric Set Topology
-
-namespace TauCeti
-
-section Inversion
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- **Inversion preserves the Cauchy--Riemann equation.** If `u` solves `∂ₜu = J(u) ∂ₛu` at `w⁻¹`,
-where `J(u w⁻¹)` squares to `-1`, then the inverted map `w ↦ u w⁻¹` solves it at `w ≠ 0`: the
-differential of the inversion is multiplication by `-w⁻²`, which commutes with `I`. -/
-theorem fderiv_comp_inv_apply_I_eq {u : ℂ → E} {J : E → E →L[ℝ] E} {w : ℂ} (hw : w ≠ 0)
-    (hCR : fderiv ℝ u w⁻¹ I = J (u w⁻¹) (fderiv ℝ u w⁻¹ 1))
-    (hJsq : ∀ v, J (u w⁻¹) (J (u w⁻¹) v) = -v) :
-    fderiv ℝ (fun w ↦ u w⁻¹) w I = J (u w⁻¹) (fderiv ℝ (fun w ↦ u w⁻¹) w 1) := by
-  rw [fderiv_comp_inv_apply hw, fderiv_comp_inv_apply hw, mul_one]
-  exact (fderiv ℝ u w⁻¹ : ℂ →ₗ[ℝ] E).apply_mul_I_eq_of_apply_I_eq (A := J (u w⁻¹)) hCR hJsq _
-
-/-- **The energy near infinity is the energy of the inverted map near zero**, up to a constant:
-for a solution of `∂ₜu = J(u) ∂ₛu` outside the disc of radius `R`, with `‖J‖ ≤ M` along it, the
-map `w ↦ u w⁻¹` has integrable energy density on the disc of radius `R⁻¹` whenever `u` has
-integrable energy density outside the disc of radius `R`. The Cauchy--Riemann equation bounds
-`‖du‖` by `(1 + M) ‖∂ₛu‖`, and inversion preserves finite energy
-(`TauCeti.integrableOn_norm_fderiv_comp_inv_sq_iff`). -/
-theorem integrableOn_norm_fderiv_comp_inv_apply_one_sq [CompleteSpace E] {u : ℂ → E}
-    {J : E → E →L[ℝ] E} {R M : ℝ}
-    (hCR : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
-    (hM : ∀ z ∈ (closedBall (0 : ℂ) R)ᶜ, ‖J (u z)‖ ≤ M)
-    (henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2) (closedBall 0 R)ᶜ) :
-    IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) (ball 0 R⁻¹) := by
-  let : MeasurableSpace E := borel E
-  have : BorelSpace E := ⟨rfl⟩
-  set D : Set ℂ := ball 0 R⁻¹ \ {0}
-  have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
-  have hDm : MeasurableSet D := measurableSet_ball.diff (measurableSet_singleton 0)
-  -- By the Cauchy--Riemann equation, `‖du‖ ≤ (1 + M) ‖∂ₛu‖` outside the disc of radius `R`.
-  have hfull : IntegrableOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (closedBall 0 R)ᶜ := by
-    refine (henergy.const_mul ((1 + M) ^ 2)).mono'
-      ((measurable_fderiv ℝ u).norm.pow_const 2).aestronglyMeasurable
-      (ae_restrict_of_forall_mem isClosed_closedBall.isOpen_compl.measurableSet fun z hz ↦ ?_)
-    rw [norm_pow, norm_norm, ← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _)
-      ((fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) (hM z hz) le_rfl) 2
-  -- Inversion preserves finite energy.
-  have hD : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w‖ ^ 2) D :=
-    (integrableOn_norm_fderiv_comp_inv_sq_iff hDm).2 (hfull.mono_set hDE.image_subset)
-  have hD1 : IntegrableOn (fun w ↦ ‖fderiv ℝ (fun w ↦ u w⁻¹) w 1‖ ^ 2) D := by
-    refine hD.mono' ((measurable_fderiv_apply_const ℝ _ 1).norm.pow_const 2).aestronglyMeasurable
-      (ae_of_all _ fun w ↦ ?_)
-    rw [norm_pow, norm_norm]
-    exact pow_le_pow_left₀ (norm_nonneg _)
-      (by simpa using (fderiv ℝ (fun w ↦ u w⁻¹) w).le_opNorm (1 : ℂ)) 2
-  exact hD1.congr_set_ae (sdiff_null_ae_eq_self (measure_singleton 0)).symm
-
-end Inversion
-
-end TauCeti
 
 namespace TauCeti.SymplecticForm
 

@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.HigherIntegrability
 import TauCeti.Analysis.Normed.Field.Inversion
+import TauCeti.Analysis.Calculus.FDeriv.Inv
+import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
@@ -129,25 +131,17 @@ theorem exists_isWeakCauchyRiemannOn_update_of_finite_energy
           (Function.update u z₀ q) := by
   obtain ⟨q, hq, hcont, hmaps, hweak⟩ := ω.exists_hasWeakFDerivOn_update_of_finite_energy
     hg hc hR hW hJ hK hKW hJsq hu hCR huK htame henergy
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (hJ.continuousOn.mono hKW)
-  have hbound : ∀ z ∈ ball z₀ R \ {z₀}, ‖J (u z)‖ ≤ max B 0 := fun z hz ↦
-    (hB _ (huK hz)).trans (le_max_left _ _)
-  obtain ⟨ε, hε, hεR, hmem⟩ := ω.exists_pos_forall_memLp_fderiv_of_finite_energy
-    hg hc hR hW hJ hK hKW hJsq hu hCR huK htame hbound henergy
-  -- Any exponent `2 + β` with `β = c / (1 + M)²` is admissible for the higher integrability.
-  set β := c / (1 + max B 0) ^ 2
-  have hβ : 0 < β := by positivity
-  have hprange : (2 + β) * (1 - β) < 2 := by nlinarith [sq_nonneg β]
+  obtain ⟨ε, hε, hεR, p, hp, hmem⟩ := ω.exists_pos_two_lt_memLp_fderiv_of_finite_energy
+    hg hc hR hW hJ hK hKW hJsq hu hCR huK htame henergy
   have hεR' : ball z₀ ε ⊆ ball z₀ R := ball_subset_ball hεR.le
   refine ⟨q, hq, continuousAt_update_same.1 (hcont.continuousAt (ball_mem_nhds z₀ hR)), hmaps,
-    ε, hε, hεR, 2 + β, by linarith, ?_⟩
-  let Ω : Opens ℂ := ⟨ball z₀ ε, isOpen_ball⟩
-  rw [show ball z₀ ε = (Ω : Set ℂ) from rfl, isWeakCauchyRiemannOn_iff_of_isOpen]
+    ε, hε, hεR, p, hp, ?_⟩
+  -- Pass to the open ball as an element of `Opens ℂ`, the form taken by the weak derivative.
+  rw [← Opens.coe_mk (U := ball z₀ ε) (hU := isOpen_ball), isWeakCauchyRiemannOn_iff_of_isOpen]
   refine ⟨hcont.mono hεR', (hcont.mono hεR').memLpLoc, fderiv ℝ u,
-    hweak.mono (show Ω ≤ ⟨ball z₀ R, isOpen_ball⟩ from hεR'),
-    (hmem _ (by linarith) hprange).memLpLoc, ?_⟩
+    hweak.mono (SetLike.coe_subset_coe.1 hεR'), hmem.memLpLoc, ?_⟩
   -- Off the puncture the classical equation `∂ₜu = J(u) ∂ₛu` and `J² = -1` give the weak one.
-  filter_upwards [ae_restrict_mem (s := (Ω : Set ℂ)) measurableSet_ball,
+  filter_upwards [ae_restrict_mem measurableSet_ball,
     ae_restrict_of_ae (volume.ae_ne z₀)] with z hz hzz
   have hz' : z ∈ ball z₀ R \ {z₀} := ⟨hεR' hz, hzz⟩
   rw [Function.update_of_ne hzz, hCR z hz', hJsq _ (huK hz')]
