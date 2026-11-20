@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Cpow
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
