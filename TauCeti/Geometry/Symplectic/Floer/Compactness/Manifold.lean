@@ -87,14 +87,20 @@ in a compact subset `C` of the source of a symplectic chart, in the namespace
 The data are read in the chart: the Hamiltonians are `K'(z, y) = K(z, φ⁻¹ y)`, and the almost
 complex structures are any family `J'(z, y)` on `V` with `dφ_x ∘ J(z, x) = J'(z, φ x) ∘ dφ_x`.
 The regularity hypotheses, `C³` for `K'` and `C²` for `J'`, are those of the vector-space theorem
-for this coordinate data. By `TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate maps
-`φ ∘ u` solve the Floer equation of `(V, ω₀)` for `K'` and `J'`, with the same energy density, and
-`J'` is tamed by `ω₀` where `J` is tamed by `ω`. So a sequence of such solutions on an open subset
+for this coordinate data. If `K` is `C³` on `Ω' × M` for an open set `Ω'` of the domain, then `K'`
+is `C³` on `Ω' × φ.target`
+(`PartialDiffeomorph.contDiffOn_comp_symm_of_contMDiffOn`). By
+`TauCeti.Geometry.Symplectic.Floer.Chart`, the coordinate maps `φ ∘ u` solve the Floer equation
+of `(V, ω₀)` for `K'` and `J'`, with the same energy density, and `J'` is tamed by `ω₀` where `J`
+is tamed by `ω`. So a sequence of such solutions on an open subset
 `Ω` of a compact window `D` of the domain, with Floer energy at most `A`, has a subsequence which
 converges off a finite set `Z` of bubbling points: the coordinate maps converge locally uniformly
 on `Ω \ Z` with locally bounded derivatives, the maps themselves converge pointwise in `M` to a
 continuous limit with values in `C`, `#Z δ ≤ A` for a threshold `δ > 0` depending only on the
 data, and at least the energy `δ` concentrates at every point of `Z`.
+The theorems take the energy bound as an integrable density with bounded integral over `Ω`;
+`TauCeti.SmoothTwoForm.integrableOn_and_setIntegral_floerEnergyDensity_le` derives it from a bound
+on the energy over a larger open domain.
 
 The same holds over a compact window `C` of parameters `p` in a real inner product space, for
 perturbations `K_p` and structures `J_p` whose chart readings `K_p(z, φ⁻¹ y)` and `J'_p(z, y)` are
@@ -481,6 +487,33 @@ theorem IsNondegenerate.exists_pos_forall_tendstoLocallyUniformlyOn_extChartAt_s
   refine h.congr fun n ↦ ?_
   simp only [Function.comp_apply]
   exact e.left_inv (hus (φ n) hz.1)
+
+omit [FiniteDimensional ℝ E] in
+/-- **The Floer energy over a subdomain as a Bochner integral, for a manifold target.** Let `u` be
+`C¹` on an open set `S ⊆ ℝ × ℝ`, let the Hamiltonian vector fields of `K = K_s ds + K_t dt` be
+continuous on `S × M` as maps into the tangent bundle, and let `Ω ⊆ S` be measurable with Floer
+energy density nonnegative on `Ω`. If the energy of `u` over `S` is at most `E ≥ 0`, then the
+density is integrable on `Ω` and its integral over `Ω` is at most `E`. The vector-space case is
+`TauCeti.SymplecticForm.integrableOn_and_setIntegral_floerEnergyDensity_le`. -/
+theorem integrableOn_and_setIntegral_floerEnergyDensity_le (ω : SmoothTwoForm I M)
+    {S Ω : Set (ℝ × ℝ)} (hS : IsOpen S) (hΩ : MeasurableSet Ω) (hΩS : Ω ⊆ S)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u S)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (S ×ˢ univ))
+    (hf0 : ∀ z ∈ Ω, 0 ≤ ω.floerEnergyDensity Ks Kt u z) {E : ℝ} (hE0 : 0 ≤ E)
+    (hE : ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≤ ENNReal.ofReal E) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω ∧
+      ∫ z in Ω, ω.floerEnergyDensity Ks Kt u z ≤ E := by
+  have hf0' := ae_restrict_of_forall_mem (μ := volume) hΩ hf0
+  have hlin := (lintegral_mono_set hΩS).trans hE
+  have hint : IntegrableOn (ω.floerEnergyDensity Ks Kt u) Ω :=
+    ⟨((ω.continuousOn_floerEnergyDensity hS hu hXs hXt).mono hΩS).aestronglyMeasurable hΩ,
+      (hasFiniteIntegral_iff_ofReal hf0').2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
+  refine ⟨hint, ?_⟩
+  rw [integral_eq_lintegral_of_nonneg_ae hf0' hint.aestronglyMeasurable]
+  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
 
 end SmoothTwoForm
 
