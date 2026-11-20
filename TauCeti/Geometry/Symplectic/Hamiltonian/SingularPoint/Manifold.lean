@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero.Manifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SingularPoint
+import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # Nondegenerate points of positive rank on symplectic manifolds
@@ -46,8 +47,8 @@ a symplectic vector space, to manifolds, and shows that it is intrinsic.
   it is nondegeneracy of rank zero
   (`IsNondegenerate.isNondegeneratePoint_iff_isNondegenerateRankZeroPoint`, in the namespace
   `TauCeti.SmoothTwoForm`). Since `dφ_y` is invertible, `y` is critical for `F ∘ φ` exactly when
-  `φ y` is critical for `F`, so the invariance of nondegenerate rank-zero points under symplectic
-  changes of coordinates follows
+  `φ y` is critical for `F` (`TauCeti.mvfderiv_comp_eq_zero_iff_of_isInvertible`), so the
+  invariance of nondegenerate rank-zero points under symplectic changes of coordinates follows
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerateRankZeroPoint_comp_right_iff` and
   `TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_right_iff`).
 
@@ -251,18 +252,6 @@ theorem _root_.TauCeti.SymplecticForm.isNondegeneratePoint_comp_right_iff
   -- The two sides differ only in the instances on `E'` and on `TangentSpace 𝓘(ℝ, E') y`.
   exact Iff.rfl
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [I.Boundaryless] [FiniteDimensional ℝ E']
-  [I'.Boundaryless] in
-/-- When `dφ_y` is invertible, `F ∘ φ` is critical at `y` exactly when `F` is critical at `φ y`. -/
-private theorem mvfderiv_comp_right_eq_zero_iff (hφ : ContMDiffAt I' I 2 φ y)
-    (hinv : (mfderiv I' I φ y).IsInvertible) (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F (φ y)) :
-    mvfderiv I' (F ∘ φ) y = 0 ↔ mvfderiv I F (φ y) = 0 := by
-  obtain ⟨e, he⟩ := hinv
-  rw [mvfderiv_comp y (hF.mdifferentiableAt two_ne_zero) (hφ.mdifferentiableAt two_ne_zero), ← he]
-  refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_,
-    fun h ↦ by rw [h, ContinuousLinearMap.zero_comp]⟩
-  simpa using congr($h (e.symm v))
-
 /-- **Invariance of rank-zero nondegeneracy under symplectic changes of coordinates.** Let `M` be
 boundaryless, let `τ` be a nondegenerate two-form on a boundaryless manifold `N` and let
 `φ : N → M` be `C²` at `y`, with invertible differential there, pulling `σ` back to `τ` at `y`.
@@ -275,7 +264,7 @@ theorem isNondegenerateRankZeroPoint_comp_right_iff [IsManifold I' ∞ N] {τ : 
       SmoothBundleForm.eval₂ τ y u w)
     (hF : ContMDiffAt I 𝓘(ℝ, G) 2 F (φ y)) :
     hτ.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ hσ.IsNondegenerateRankZeroPoint F (φ y) := by
-  have h0 := mvfderiv_comp_right_eq_zero_iff hφ hinv hF
+  have h0 := mvfderiv_comp_eq_zero_iff_of_isInvertible (hF.mdifferentiableAt two_ne_zero) hinv
   by_cases h : mvfderiv I F (φ y) = 0
   · rw [← isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h0.2 h),
       ← isNondegeneratePoint_iff_isNondegenerateRankZeroPoint h]
@@ -297,7 +286,7 @@ theorem _root_.TauCeti.SymplecticForm.isNondegenerateRankZeroPoint_comp_right_if
     ω₀.IsNondegenerateRankZeroPoint (F ∘ φ) y ↔ hσ.IsNondegenerateRankZeroPoint F (φ y) := by
   -- On the model space, the manifold derivative is the usual one.
   have h0 : fderiv ℝ (F ∘ φ) y = 0 ↔ mvfderiv I F (φ y) = 0 := by
-    rw [← mvfderiv_comp_right_eq_zero_iff hφ hinv hF]
+    rw [← mvfderiv_comp_eq_zero_iff_of_isInvertible (hF.mdifferentiableAt two_ne_zero) hinv]
     exact ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦
         (mvfderiv_eq_fderiv_apply _ y v).trans congr($h v),
       fun h ↦ ContinuousLinearMap.ext fun v ↦
