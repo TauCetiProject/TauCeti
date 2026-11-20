@@ -6,14 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Basic
+public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.ToLp
 public import TauCeti.Analysis.Sobolev.BesselPotential.RealInterpolation
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 
 /-!
-# Complex interpolation of the Hilbert scale of Bessel-potential spaces
+# Complex interpolation of Bessel-potential spaces
+
+This file identifies two kinds of complex interpolation spaces of Bessel-potential spaces: those
+of the Hilbert scale, where the order varies, and those of a fixed order, where the integrability
+exponent varies.
+
+## The Hilbert scale
 
 Let `E` be a finite-dimensional real inner product space, `H` a complex Hilbert space and
 `H^s = H^{s,2}(E, H)` Mathlib's Bessel-potential spaces. For real orders `s₀`, `s₁` the spaces
@@ -44,6 +52,21 @@ Bessel potential `J^w` of complex order (`SchwartzMap.besselPotentialCLM`): the 
   functions are bounded in this way lies in `H^{s_θ}`, by the Riesz representation theorem in
   `H^{s_θ}` (`BesselPotentialSpace.exists_inclusion_eq_and_norm_le`).
 
+## A fixed order
+
+Let `F` be a complex Hilbert space, `s` real, `1 ≤ p₀, p₁ ≤ ∞`, `0 < θ < 1` and
+`1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`. For the couple `(H^{s,p₀}(E, F), H^{s,p₁}(E, F))`,
+
+`[H^{s,p₀}, H^{s,p₁}]_θ = H^{s,p}`,
+
+isometrically (`TauCeti.CompatibleCouple.besselPotentialSpaceExponentComplexMethodEquiv`). The
+Bessel potential `J^s` is an isometry `H^{s,q} ≃ L^q` for every `q`, it is the same operator on
+the tempered distributions for every `q`, and an `L^{p₀}` and an `L^{p₁}` function with the same
+tempered distribution agree almost everywhere. So `J^s` is an isomorphism from the couple onto the
+Lebesgue couple `(L^{p₀}, L^{p₁})`, and the identity follows from `[L^{p₀}, L^{p₁}]_θ = Lᵖ`
+(`TauCeti.CompatibleCouple.lebesgueComplexMethodEquivLp`). This is the case `s₀ = s₁` of
+Bergh–Löfström, Theorem 6.4.5 (7).
+
 ## Main declarations
 
 * `TauCeti.CompatibleCouple.besselPotentialSpaceComplexMethodEquiv`: the isometric isomorphism
@@ -53,6 +76,14 @@ Bessel potential `J^w` of complex order (`SchwartzMap.besselPotentialCLM`): the 
 * `TauCeti.CompatibleCouple.exists_complexMethodSpace_toSum_eq_iff_memSobolev`: an element of
   `H^{s₀} + H^{s₁}` lies in `[H^{s₀}, H^{s₁}]_θ` exactly when its tempered distribution lies in
   `H^{s_θ}`.
+* `TauCeti.CompatibleCouple.besselPotentialSpaceExponentComplexMethodEquiv`: the isometric
+  isomorphism `[H^{s,p₀}, H^{s,p₁}]_θ ≃ H^{s,p}`, which keeps the underlying tempered distribution
+  (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceExponentComplexMethodEquiv_apply`,
+  and its inverse form
+  `sumSpaceEmbed_toSum_besselPotentialSpaceExponentComplexMethodEquiv_symm_apply`).
+* `TauCeti.CompatibleCouple.exists_complexMethodSpace_toSum_eq_iff_memSobolev_of_inv_eq`: an
+  element of `H^{s,p₀} + H^{s,p₁}` lies in `[H^{s,p₀}, H^{s,p₁}]_θ` exactly when its tempered
+  distribution lies in `H^{s,p}`.
 
 ## References
 
@@ -130,34 +161,34 @@ private def besselTrace (s₀ s₁ θ : ℝ) (hδ : 0 < δ) (f : 𝓢(E, H)) :
     stripGaussianSMul hδ θ 1 (besselLine s₀ s₁ θ s₁ 1 f))
 
 private theorem diffContOnCl_besselShift (f : 𝓢(E, H)) :
-    DiffContOnCl ℂ (fun z ↦ (besselPotentialSpace E H 2 s₀ s₁).fstToSum
+    DiffContOnCl ℂ (fun z ↦ (besselPotentialSpace E H 2 2 s₀ s₁).fstToSum
       (besselShift s₀ s₁ θ s₀ f z)) (verticalStrip 0 1) :=
-  ((besselPotentialSpace E H 2 s₀ s₁).fstToSum.differentiable.comp
+  ((besselPotentialSpace E H 2 2 s₀ s₁).fstToSum.differentiable.comp
     (differentiable_besselShift s₀ s₁ θ s₀ f)).diffContOnCl
 
 private theorem isBounded_image_besselShift (f : 𝓢(E, H)) :
-    Bornology.IsBounded ((fun z ↦ (besselPotentialSpace E H 2 s₀ s₁).fstToSum
+    Bornology.IsBounded ((fun z ↦ (besselPotentialSpace E H 2 2 s₀ s₁).fstToSum
       (besselShift s₀ s₁ θ s₀ f z)) '' verticalClosedStrip 0 1) :=
   isBounded_iff_forall_norm_le.2
     ⟨‖toBesselPotentialSpaceCLM (s₀ + (|θ| + 1) * |s₁ - s₀|) 2 f‖, by
       rintro _ ⟨z, hz, rfl⟩
-      exact ((besselPotentialSpace E H 2 s₀ s₁).norm_fstToSum_le _).trans
+      exact ((besselPotentialSpace E H 2 2 s₀ s₁).norm_fstToSum_le _).trans
         (norm_besselShift_le s₀ s₁ θ s₀ f hz)⟩
 
 private theorem besselShift_one_add_mul_I (f : 𝓢(E, H)) (t : ℝ) :
-    (besselPotentialSpace E H 2 s₀ s₁).fstToSum (besselShift s₀ s₁ θ s₀ f (1 + t * I)) =
-      (besselPotentialSpace E H 2 s₀ s₁).sndToSum (besselLine s₀ s₁ θ s₁ 1 f t) := by
+    (besselPotentialSpace E H 2 2 s₀ s₁).fstToSum (besselShift s₀ s₁ θ s₀ f (1 + t * I)) =
+      (besselPotentialSpace E H 2 2 s₀ s₁).sndToSum (besselLine s₀ s₁ θ s₁ 1 f t) := by
   simp [besselLine, besselShift, besselPotentialSpace_fstToSum_toBesselPotentialSpaceCLM]
 
 private theorem besselTrace_mem (hδ : 0 < δ) (f : 𝓢(E, H)) :
-    besselTrace s₀ s₁ θ hδ f ∈ (besselPotentialSpace E H 2 s₀ s₁).stripTraces :=
+    besselTrace s₀ s₁ θ hδ f ∈ (besselPotentialSpace E H 2 2 s₀ s₁).stripTraces :=
   stripGaussianSMul_mem_stripTraces hδ θ (diffContOnCl_besselShift f)
     (isBounded_image_besselShift f) (fun t ↦ by simp [besselLine]) (besselShift_one_add_mul_I f)
 
 private theorem stripEval_besselTrace (hδ : 0 < δ) (hθ : θ ∈ Icc 0 1) (f : 𝓢(E, H)) :
-    (besselPotentialSpace E H 2 s₀ s₁).stripEval θ
+    (besselPotentialSpace E H 2 2 s₀ s₁).stripEval θ
         ⟨besselTrace s₀ s₁ θ hδ f, besselTrace_mem hδ f⟩ =
-      (besselPotentialSpace E H 2 s₀ s₁).fstToSum (toBesselPotentialSpaceCLM s₀ 2 f) :=
+      (besselPotentialSpace E H 2 2 s₀ s₁).fstToSum (toBesselPotentialSpaceCLM s₀ 2 f) :=
   (stripEval_stripGaussianSMul hδ hθ (diffContOnCl_besselShift f)
     (isBounded_image_besselShift f) (fun t ↦ by simp [besselLine])
     (besselShift_one_add_mul_I f)).trans (by simp [besselShift])
@@ -182,7 +213,7 @@ variable (E H s₀ s₁) in
 /-- The inclusion of Schwartz functions into `[H^{s₀}, H^{s₁}]_θ`, through the admissible function
 `exp ((z - θ)²) J^{(θ - z) (s₁ - s₀)} f`. -/
 private def schwartzToComplexMethod (hθ : θ ∈ Icc 0 1) :
-    𝓢(E, H) →ₗ[ℂ] (besselPotentialSpace E H 2 s₀ s₁).ComplexMethodSpace θ where
+    𝓢(E, H) →ₗ[ℂ] (besselPotentialSpace E H 2 2 s₀ s₁).ComplexMethodSpace θ where
   toFun f := ComplexMethodSpace.mk θ ⟨besselTrace s₀ s₁ θ one_pos f, besselTrace_mem one_pos f⟩
   map_add' f g := ComplexMethodSpace.ext <| by
     simp only [map_add, ComplexMethodSpace.toSum_mk, stripEval_besselTrace one_pos hθ]
@@ -192,7 +223,7 @@ private def schwartzToComplexMethod (hθ : θ ∈ Icc 0 1) :
 
 private theorem toSum_schwartzToComplexMethod (hθ : θ ∈ Icc 0 1) (f : 𝓢(E, H)) :
     ComplexMethodSpace.toSum (schwartzToComplexMethod E H s₀ s₁ hθ f) =
-      (besselPotentialSpace E H 2 s₀ s₁).fstToSum (toBesselPotentialSpaceCLM s₀ 2 f) :=
+      (besselPotentialSpace E H 2 2 s₀ s₁).fstToSum (toBesselPotentialSpaceCLM s₀ 2 f) :=
   (ComplexMethodSpace.toSum_mk _).trans (stripEval_besselTrace one_pos hθ f)
 
 private theorem norm_schwartzToComplexMethod_le (hθ : θ ∈ Icc 0 1) (f : 𝓢(E, H)) :
@@ -211,7 +242,7 @@ variable (E H s₀ s₁) in
 `schwartzToComplexMethod`. -/
 private def besselPotentialSpaceToComplexMethod (hθ : θ ∈ Icc 0 1) :
     H^{(1 - θ) * s₀ + θ * s₁}(E, H) →L[ℂ]
-      (besselPotentialSpace E H 2 s₀ s₁).ComplexMethodSpace θ :=
+      (besselPotentialSpace E H 2 2 s₀ s₁).ComplexMethodSpace θ :=
   (schwartzToComplexMethod E H s₀ s₁ hθ).extendOfNorm
     (toBesselPotentialSpaceCLM ((1 - θ) * s₀ + θ * s₁) 2).toLinearMap
 
@@ -227,12 +258,12 @@ private theorem besselPotentialSpaceToComplexMethod_toBesselPotentialSpaceCLM
 /-- The inclusion `H^{s_θ} ⊆ [H^{s₀}, H^{s₁}]_θ` keeps the underlying tempered distribution. -/
 private theorem sumSpaceEmbed_toSum_besselPotentialSpaceToComplexMethod (hθ : θ ∈ Icc 0 1)
     (u : H^{(1 - θ) * s₀ + θ * s₁}(E, H)) :
-    (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed
+    (besselPotentialSpace E H 2 2 s₀ s₁).sumSpaceEmbed
         (ComplexMethodSpace.toSum (besselPotentialSpaceToComplexMethod E H s₀ s₁ hθ u)) =
       u.toDistr := by
   refine (denseRange_toBesselPotentialSpaceCLM (p := 2) _ ENNReal.ofNat_ne_top).induction_on
     u
-    (isClosed_eq ((besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed.comp
+    (isClosed_eq ((besselPotentialSpace E H 2 2 s₀ s₁).sumSpaceEmbed.comp
       (ComplexMethodSpace.toSum.comp (besselPotentialSpaceToComplexMethod E H s₀ s₁ hθ))).continuous
       continuous_toDistr) fun f ↦ ?_
   rw [besselPotentialSpaceToComplexMethod_toBesselPotentialSpaceCLM,
@@ -263,10 +294,10 @@ private theorem min_le_interp (hθ : θ ∈ Icc 0 1) : min s₀ s₁ ≤ (1 - θ
 /-- The pairing `z ↦ ⟪J^{(conj z - θ) (s₁ - s₀)} v, F z⟫_{H^m}`, `m = min s₀ s₁`, of a Schwartz
 function `v` with a function `F` on the strip with values in the sum space. -/
 private def stripPairing (θ : ℝ) (v : 𝓢(E, H))
-    (F : ℂ → (besselPotentialSpace E H 2 s₀ s₁).SumSpace) (z : ℂ) : ℂ :=
+    (F : ℂ → (besselPotentialSpace E H 2 2 s₀ s₁).SumSpace) (z : ℂ) : ℂ :=
   ⟪besselShift s₁ s₀ θ (min s₀ s₁) v (conj z), besselPotentialSpaceSumToMin E H 2 s₀ s₁ (F z)⟫_ℂ
 
-private theorem diffContOnCl_stripPairing {F : ℂ → (besselPotentialSpace E H 2 s₀ s₁).SumSpace}
+private theorem diffContOnCl_stripPairing {F : ℂ → (besselPotentialSpace E H 2 2 s₀ s₁).SumSpace}
     (hF : DiffContOnCl ℂ F (verticalStrip 0 1)) (v : 𝓢(E, H)) :
     DiffContOnCl ℂ (stripPairing θ v F) (verticalStrip 0 1) := by
   refine ⟨fun z hz ↦ ?_, ?_⟩
@@ -280,9 +311,9 @@ private theorem diffContOnCl_stripPairing {F : ℂ → (besselPotentialSpace E H
       continuous_conj).continuousOn.inner
         ((besselPotentialSpaceSumToMin E H 2 s₀ s₁).continuous.comp_continuousOn hF.continuousOn)
 
-private theorem bddAbove_stripPairing {F : ℂ → (besselPotentialSpace E H 2 s₀ s₁).SumSpace}
+private theorem bddAbove_stripPairing {F : ℂ → (besselPotentialSpace E H 2 2 s₀ s₁).SumSpace}
     {g : C₀(ℝ, H^{s₀}(E, H)) × C₀(ℝ, H^{s₁}(E, H))}
-    (hF : (besselPotentialSpace E H 2 s₀ s₁).IsStripFunction F g) (v : 𝓢(E, H)) :
+    (hF : (besselPotentialSpace E H 2 2 s₀ s₁).IsStripFunction F g) (v : 𝓢(E, H)) :
     BddAbove ((norm ∘ stripPairing θ v F) '' verticalClosedStrip 0 1) := by
   obtain ⟨K, hK⟩ := hF.exists_norm_le
   refine ⟨‖toBesselPotentialSpaceCLM (min s₀ s₁ + (|θ| + 1) * |s₀ - s₁|) 2 v‖ *
@@ -315,9 +346,9 @@ private theorem norm_inner_besselShift_inclusion_le {s : ℝ} (hs : min s₀ s�
 `‖g‖ ‖v‖_{H^{2m - s_θ}}`: the pairing `⟪J^{(conj z - θ) (s₁ - s₀)} v, F z⟫_{H^m}` is holomorphic
 on the strip, and on the line `re z = j` it has this bound. -/
 private theorem norm_inner_besselPotentialSpaceSumToMin_le (hθ : θ ∈ Icc 0 1)
-    {F : ℂ → (besselPotentialSpace E H 2 s₀ s₁).SumSpace}
+    {F : ℂ → (besselPotentialSpace E H 2 2 s₀ s₁).SumSpace}
     {g : C₀(ℝ, H^{s₀}(E, H)) × C₀(ℝ, H^{s₁}(E, H))}
-    (hF : (besselPotentialSpace E H 2 s₀ s₁).IsStripFunction F g) (v : 𝓢(E, H)) :
+    (hF : (besselPotentialSpace E H 2 2 s₀ s₁).IsStripFunction F g) (v : 𝓢(E, H)) :
     ‖⟪toBesselPotentialSpaceCLM (min s₀ s₁) 2 v,
         besselPotentialSpaceSumToMin E H 2 s₀ s₁ (F θ)⟫_ℂ‖ ≤
       ‖g‖ * ‖toBesselPotentialSpaceCLM (2 * min s₀ s₁ - ((1 - θ) * s₀ + θ * s₁)) 2 v‖ := by
@@ -356,17 +387,17 @@ private theorem norm_inner_besselPotentialSpaceSumToMin_le (hθ : θ ∈ Icc 0 1
 /-- An element of `[H^{s₀}, H^{s₁}]_θ` lies in `H^{s_θ}`, with `H^{s_θ}` norm at most its
 interpolation norm. -/
 private theorem exists_toDistr_eq_and_norm_le_of_complexMethod (hθ : θ ∈ Icc 0 1)
-    (u : (besselPotentialSpace E H 2 s₀ s₁).ComplexMethodSpace θ) :
+    (u : (besselPotentialSpace E H 2 2 s₀ s₁).ComplexMethodSpace θ) :
     ∃ Y : H^{(1 - θ) * s₀ + θ * s₁}(E, H),
-      Y.toDistr = (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) ∧
+      Y.toDistr = (besselPotentialSpace E H 2 2 s₀ s₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) ∧
         ‖Y‖ ≤ ‖u‖ := by
   have hm := min_le_interp (s₀ := s₀) (s₁ := s₁) hθ
   -- Every trace `g` representing `u` gives an element of `H^{s_θ}` of norm at most `‖g‖`.
   have key (g) (hg : ComplexMethodSpace.mk θ g = u) : ∃ Y : H^{(1 - θ) * s₀ + θ * s₁}(E, H),
       inclusion hm Y = besselPotentialSpaceSumToMin E H 2 s₀ s₁ (ComplexMethodSpace.toSum u) ∧
         ‖Y‖ ≤ ‖g‖ := by
-    have hF := (besselPotentialSpace E H 2 s₀ s₁).isStripFunction_stripFunction g
-    have hFθ : (besselPotentialSpace E H 2 s₀ s₁).stripFunction g θ =
+    have hF := (besselPotentialSpace E H 2 2 s₀ s₁).isStripFunction_stripFunction g
+    have hFθ : (besselPotentialSpace E H 2 2 s₀ s₁).stripFunction g θ =
         ComplexMethodSpace.toSum u := by
       rw [← hg, ComplexMethodSpace.toSum_mk, stripEval_apply]
     refine exists_inclusion_eq_and_norm_le hm (norm_nonneg _) _ fun φ ↦ ?_
@@ -393,7 +424,7 @@ private theorem norm_besselPotentialSpaceToComplexMethod (hθ : θ ∈ Icc 0 1)
 private theorem surjective_besselPotentialSpaceToComplexMethod (hθ : θ ∈ Icc 0 1) :
     Function.Surjective (besselPotentialSpaceToComplexMethod E H s₀ s₁ hθ) := fun u ↦ by
   obtain ⟨Y, hY, -⟩ := exists_toDistr_eq_and_norm_le_of_complexMethod hθ u
-  exact ⟨Y, ComplexMethodSpace.ext <| (besselPotentialSpace E H 2 s₀ s₁).sumSpace_ext <| by
+  exact ⟨Y, ComplexMethodSpace.ext <| (besselPotentialSpace E H 2 2 s₀ s₁).sumSpace_ext <| by
     rw [sumSpaceEmbed_toSum_besselPotentialSpaceToComplexMethod, hY]⟩
 
 end Reverse
@@ -407,7 +438,7 @@ Calderón's complex interpolation space `[H^{s₀}, H^{s₁}]_θ` of the couple
 `s_θ = (1 - θ) s₀ + θ s₁`, with equal norms. The isometry keeps the underlying tempered
 distribution (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceComplexMethodEquiv_apply`). -/
 def besselPotentialSpaceComplexMethodEquiv (hθ : θ ∈ Icc 0 1) :
-    (besselPotentialSpace E H 2 s₀ s₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ]
+    (besselPotentialSpace E H 2 2 s₀ s₁).ComplexMethodSpace θ ≃ₗᵢ[ℂ]
       H^{(1 - θ) * s₀ + θ * s₁}(E, H) :=
   (LinearIsometryEquiv.ofSurjective
     { toLinearMap := (besselPotentialSpaceToComplexMethod E H s₀ s₁ hθ).toLinearMap
@@ -417,16 +448,16 @@ def besselPotentialSpaceComplexMethodEquiv (hθ : θ ∈ Icc 0 1) :
 @[simp]
 theorem sumSpaceEmbed_toSum_besselPotentialSpaceComplexMethodEquiv_symm_apply
     (hθ : θ ∈ Icc 0 1) (u : H^{(1 - θ) * s₀ + θ * s₁}(E, H)) :
-    (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed
+    (besselPotentialSpace E H 2 2 s₀ s₁).sumSpaceEmbed
         (ComplexMethodSpace.toSum ((besselPotentialSpaceComplexMethodEquiv E H s₀ s₁ hθ).symm u)) =
       u.toDistr :=
   sumSpaceEmbed_toSum_besselPotentialSpaceToComplexMethod hθ u
 
 @[simp]
 theorem toDistr_besselPotentialSpaceComplexMethodEquiv_apply (hθ : θ ∈ Icc 0 1)
-    (u : (besselPotentialSpace E H 2 s₀ s₁).ComplexMethodSpace θ) :
+    (u : (besselPotentialSpace E H 2 2 s₀ s₁).ComplexMethodSpace θ) :
     (besselPotentialSpaceComplexMethodEquiv E H s₀ s₁ hθ u).toDistr =
-      (besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) := by
+      (besselPotentialSpace E H 2 2 s₀ s₁).sumSpaceEmbed (ComplexMethodSpace.toSum u) := by
   conv_rhs => rw [← (besselPotentialSpaceComplexMethodEquiv E H s₀ s₁ hθ).symm_apply_apply u]
   rw [sumSpaceEmbed_toSum_besselPotentialSpaceComplexMethodEquiv_symm_apply]
 
@@ -434,13 +465,13 @@ theorem toDistr_besselPotentialSpaceComplexMethodEquiv_apply (hθ : θ ∈ Icc 0
 `0 ≤ θ ≤ 1`, an element `w` of `H^{s₀} + H^{s₁}` lies in `[H^{s₀}, H^{s₁}]_θ` exactly when its
 tempered distribution lies in `H^{s_θ}`, where `s_θ = (1 - θ) s₀ + θ s₁`. -/
 theorem exists_complexMethodSpace_toSum_eq_iff_memSobolev (hθ : θ ∈ Icc 0 1)
-    {w : (besselPotentialSpace E H 2 s₀ s₁).SumSpace} :
-    (∃ v : (besselPotentialSpace E H 2 s₀ s₁).ComplexMethodSpace θ,
+    {w : (besselPotentialSpace E H 2 2 s₀ s₁).SumSpace} :
+    (∃ v : (besselPotentialSpace E H 2 2 s₀ s₁).ComplexMethodSpace θ,
         ComplexMethodSpace.toSum v = w) ↔
-      ((besselPotentialSpace E H 2 s₀ s₁).sumSpaceEmbed w).MemSobolev
+      ((besselPotentialSpace E H 2 2 s₀ s₁).sumSpaceEmbed w).MemSobolev
         ((1 - θ) * s₀ + θ * s₁) 2 := by
   refine ⟨?_, fun hw ↦ ⟨(besselPotentialSpaceComplexMethodEquiv E H s₀ s₁ hθ).symm
-    hw.toBesselPotentialSpace, (besselPotentialSpace E H 2 s₀ s₁).sumSpace_ext ?_⟩⟩
+    hw.toBesselPotentialSpace, (besselPotentialSpace E H 2 2 s₀ s₁).sumSpace_ext ?_⟩⟩
   · rintro ⟨v, rfl⟩
     rw [← toDistr_besselPotentialSpaceComplexMethodEquiv_apply hθ v]
     exact memSobolev_toDistr _
@@ -448,6 +479,155 @@ theorem exists_complexMethodSpace_toSum_eq_iff_memSobolev (hθ : θ ∈ Icc 0 1)
       TemperedDistribution.MemSobolev.toBesselPotentialSpace_toDistr]
 
 end Hilbert
+
+/-! ### Interpolation in the integrability exponent at a fixed order -/
+
+section Exponent
+
+open MeasureTheory
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+  {s θ : ℝ} {p₀ p₁ p : ℝ≥0∞} [Fact (1 ≤ p₀)] [Fact (1 ≤ p₁)] [Fact (1 ≤ p)]
+
+/-- The Bessel potential `J^s`, which identifies `H^{s,p₀}` with `L^{p₀}` and `H^{s,p₁}` with
+`L^{p₁}`, is compatible with the intersections of the couples `(H^{s,p₀}, H^{s,p₁})` and
+`(L^{p₀}, L^{p₁})`. -/
+private theorem toLp_compatible (x : (besselPotentialSpace E F p₀ p₁ s s).inter) :
+    (lebesgue ℂ F (volume : Measure E) p₀ p₁).fstToSum
+        ((toLpₗᵢ E F s p₀).toContinuousLinearEquiv
+          ((besselPotentialSpace E F p₀ p₁ s s).interFst x)) =
+      (lebesgue ℂ F (volume : Measure E) p₀ p₁).sndToSum
+        ((toLpₗᵢ E F s p₁).toContinuousLinearEquiv
+          ((besselPotentialSpace E F p₀ p₁ s s).interSnd x)) := by
+  refine (lebesgue ℂ F (volume : Measure E) p₀ p₁).sumSpace_ext ?_
+  simpa [L1AddLinfty.ofLp_eq_ofLp_iff] using BesselPotentialSpace.toLp_ae_eq_of_toDistr_eq
+    (by simpa using (besselPotentialSpace E F p₀ p₁ s s).embed₀_interFst x)
+
+/-- The inverse Bessel potential `J^{-s}`, which identifies `L^{p₀}` with `H^{s,p₀}` and
+`L^{p₁}` with `H^{s,p₁}`, is compatible with the intersections of the couples. -/
+private theorem toLp_symm_compatible (y : (lebesgue ℂ F (volume : Measure E) p₀ p₁).inter) :
+    (besselPotentialSpace E F p₀ p₁ s s).fstToSum
+        ((toLpₗᵢ E F s p₀).toContinuousLinearEquiv.symm
+          ((lebesgue ℂ F (volume : Measure E) p₀ p₁).interFst y)) =
+      (besselPotentialSpace E F p₀ p₁ s s).sndToSum
+        ((toLpₗᵢ E F s p₁).toContinuousLinearEquiv.symm
+          ((lebesgue ℂ F (volume : Measure E) p₀ p₁).interSnd y)) := by
+  refine (besselPotentialSpace E F p₀ p₁ s s).sumSpace_ext ?_
+  have hy := mem_lebesgue_inter_iff.1 y.2
+  simp only [sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, besselPotentialSpace_embed₀_apply,
+    besselPotentialSpace_embed₁_apply, LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
+    toLpₗᵢ_symm_apply, interFst_apply, interSnd_apply]
+  rw [Lp.toTemperedDistribution_eq_of_ae_eq hy]
+
+variable (E F s θ p₀ p₁) in
+/-- The isometry `[H^{s,p₀}, H^{s,p₁}]_θ ≃ [L^{p₀}, L^{p₁}]_θ` induced by the Bessel potential
+`J^s`, an isometry of each endpoint onto the corresponding Lebesgue space. -/
+private def toLpComplexMethodEquiv :
+    (besselPotentialSpace E F p₀ p₁ s s).ComplexMethodSpace θ ≃ₗᵢ[ℂ]
+      (lebesgue ℂ F (volume : Measure E) p₀ p₁).ComplexMethodSpace θ :=
+  { (ComplexMethodSpace.mapEquiv θ (toLpₗᵢ E F s p₀).toContinuousLinearEquiv
+      (toLpₗᵢ E F s p₁).toContinuousLinearEquiv toLp_compatible
+      toLp_symm_compatible).toLinearEquiv with
+    norm_map' := ComplexMethodSpace.norm_mapEquiv _ _ _ _ (toLpₗᵢ E F s p₀).norm_map
+      (toLpₗᵢ E F s p₁).norm_map }
+
+/-- The isometry `[H^{s,p₀}, H^{s,p₁}]_θ ≃ [L^{p₀}, L^{p₁}]_θ` sends the class of `u₀ + u₁` to
+the class of `J^s u₀ + J^s u₁`. -/
+private theorem toSum_toLpComplexMethodEquiv
+    (u : (besselPotentialSpace E F p₀ p₁ s s).ComplexMethodSpace θ) {x₀ : H^{s, p₀}(E, F)}
+    {x₁ : H^{s, p₁}(E, F)}
+    (hx : (besselPotentialSpace E F p₀ p₁ s s).fstToSum x₀ +
+      (besselPotentialSpace E F p₀ p₁ s s).sndToSum x₁ = ComplexMethodSpace.toSum u) :
+    ComplexMethodSpace.toSum (toLpComplexMethodEquiv E F s θ p₀ p₁ u) =
+      (lebesgue ℂ F (volume : Measure E) p₀ p₁).fstToSum x₀.toLp +
+        (lebesgue ℂ F (volume : Measure E) p₀ p₁).sndToSum x₁.toLp := by
+  have h : ComplexMethodSpace.toSum (toLpComplexMethodEquiv E F s θ p₀ p₁ u) =
+      ComplexMethodSpace.toSum (ComplexMethodSpace.mapEquiv θ
+        (toLpₗᵢ E F s p₀).toContinuousLinearEquiv (toLpₗᵢ E F s p₁).toContinuousLinearEquiv
+        toLp_compatible toLp_symm_compatible u) :=
+    -- `toLpComplexMethodEquiv` is `mapEquiv` together with its norm identity.
+    (rfl)
+  rw [h, ComplexMethodSpace.toSum_mapEquiv, ← hx, map_add]
+  -- `rw` cannot use `sumLift_fstToSum` here: the compatibility proof in `sumLift` is stated for
+  -- the coercion of `toLpₗᵢ` to a continuous linear equivalence, so unify up to defeq instead.
+  refine (congrArg₂ (· + ·) (sumLift_fstToSum _ _ _ _ x₀) (sumLift_sndToSum _ _ _ _ x₁)).trans ?_
+  simp
+
+variable (E F s p₀ p₁) in
+/-- **Complex interpolation of Bessel-potential spaces of a fixed order.** For `0 < θ < 1` and
+the interpolated exponent `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`, Calderón's complex
+interpolation space `[H^{s,p₀}, H^{s,p₁}]_θ` of the couple `(H^{s,p₀}(E, F), H^{s,p₁}(E, F))` is
+the Bessel-potential space `H^{s,p}(E, F)`, with equal norms. The isometry keeps the underlying
+tempered distribution
+(`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceExponentComplexMethodEquiv_apply`).
+
+The Bessel potential `J^s` is an isometry `H^{s,q} ≃ L^q` for every `q`, so it identifies the
+couple with the Lebesgue couple `(L^{p₀}, L^{p₁})`, whose complex interpolation space is `Lᵖ`
+(`TauCeti.CompatibleCouple.lebesgueComplexMethodEquivLp`). -/
+def besselPotentialSpaceExponentComplexMethodEquiv (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞) :
+    (besselPotentialSpace E F p₀ p₁ s s).ComplexMethodSpace θ ≃ₗᵢ[ℂ] H^{s, p}(E, F) :=
+  (toLpComplexMethodEquiv E F s θ p₀ p₁).trans
+    ((lebesgueComplexMethodEquivLp hθ hp hp_top).trans (toLpₗᵢ E F s p).symm)
+
+/-- The identification `[H^{s,p₀}, H^{s,p₁}]_θ = H^{s,p}` keeps the underlying tempered
+distribution: it sends the class of `u₀ + u₁`, `u₀ ∈ H^{s,p₀}`, `u₁ ∈ H^{s,p₁}`, to the element
+of `H^{s,p}` with tempered distribution `u₀ + u₁`. -/
+@[simp]
+theorem toDistr_besselPotentialSpaceExponentComplexMethodEquiv_apply (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞)
+    (u : (besselPotentialSpace E F p₀ p₁ s s).ComplexMethodSpace θ) :
+    (besselPotentialSpaceExponentComplexMethodEquiv E F s p₀ p₁ hθ hp hp_top u).toDistr =
+      (besselPotentialSpace E F p₀ p₁ s s).sumSpaceEmbed (ComplexMethodSpace.toSum u) := by
+  obtain ⟨x₀, x₁, hx⟩ := (besselPotentialSpace E F p₀ p₁ s s).exists_fstToSum_add_sndToSum_eq
+    (ComplexMethodSpace.toSum u)
+  -- The `Lᵖ` function `J^s` of the image is `J^s x₀ + J^s x₁` almost everywhere.
+  have hw :
+      ⇑(lebesgueComplexMethodEquivLp hθ hp hp_top (toLpComplexMethodEquiv E F s θ p₀ p₁ u))
+        =ᵐ[volume] ⇑x₀.toLp + ⇑x₁.toLp := by
+    have h := congrArg (l1Linfty ℂ F (volume : Measure E)).sumSpaceEmbed
+      (ofLp_lebesgueComplexMethodEquivLp hθ hp hp_top (toLpComplexMethodEquiv E F s θ p₀ p₁ u))
+    simp only [toSum_toLpComplexMethodEquiv u hx, map_add, sumSpaceEmbed_fstToSum,
+      sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁,
+      L1AddLinfty.sumSpaceEmbed_ofLp] at h
+    exact ((L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff ℂ).1 h.symm).symm
+  simp only [besselPotentialSpaceExponentComplexMethodEquiv, LinearIsometryEquiv.trans_apply,
+    toLpₗᵢ_symm_apply]
+  rw [Lp.toTemperedDistribution_eq_add_of_ae_eq hw, ← hx]
+  simp [besselPotential_neg_toLp_eq]
+
+/-- The inverse identification `H^{s,p} = [H^{s,p₀}, H^{s,p₁}]_θ` keeps the underlying tempered
+distribution. -/
+@[simp]
+theorem sumSpaceEmbed_toSum_besselPotentialSpaceExponentComplexMethodEquiv_symm_apply
+    (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞)
+    (v : H^{s, p}(E, F)) :
+    (besselPotentialSpace E F p₀ p₁ s s).sumSpaceEmbed (ComplexMethodSpace.toSum
+        ((besselPotentialSpaceExponentComplexMethodEquiv E F s p₀ p₁ hθ hp hp_top).symm v)) =
+      v.toDistr := by
+  rw [← toDistr_besselPotentialSpaceExponentComplexMethodEquiv_apply hθ hp hp_top,
+    LinearIsometryEquiv.apply_symm_apply]
+
+/-- **Complex interpolation of Bessel-potential spaces of a fixed order**, membership form: for
+`0 < θ < 1` and `1 / p = (1 - θ) / p₀ + θ / p₁` with `p < ∞`, an element `w` of
+`H^{s,p₀} + H^{s,p₁}` lies in `[H^{s,p₀}, H^{s,p₁}]_θ` exactly when its tempered distribution
+lies in `H^{s,p}`. -/
+theorem exists_complexMethodSpace_toSum_eq_iff_memSobolev_of_inv_eq (hθ : θ ∈ Ioo (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) (hp_top : p ≠ ∞)
+    {w : (besselPotentialSpace E F p₀ p₁ s s).SumSpace} :
+    (∃ v : (besselPotentialSpace E F p₀ p₁ s s).ComplexMethodSpace θ,
+        ComplexMethodSpace.toSum v = w) ↔
+      ((besselPotentialSpace E F p₀ p₁ s s).sumSpaceEmbed w).MemSobolev s p := by
+  refine ⟨?_, fun hw ↦ ⟨(besselPotentialSpaceExponentComplexMethodEquiv E F s p₀ p₁ hθ hp
+    hp_top).symm hw.toBesselPotentialSpace, (besselPotentialSpace E F p₀ p₁ s s).sumSpace_ext ?_⟩⟩
+  · rintro ⟨v, rfl⟩
+    rw [← toDistr_besselPotentialSpaceExponentComplexMethodEquiv_apply hθ hp hp_top v]
+    exact memSobolev_toDistr _
+  · rw [sumSpaceEmbed_toSum_besselPotentialSpaceExponentComplexMethodEquiv_symm_apply,
+      TemperedDistribution.MemSobolev.toBesselPotentialSpace_toDistr]
+
+end Exponent
 
 end CompatibleCouple
 
