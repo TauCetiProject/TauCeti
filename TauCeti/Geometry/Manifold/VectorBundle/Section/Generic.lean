@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Parametric
 public import TauCeti.Geometry.Manifold.VectorBundle.Translate
 public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Generic sections from finite smooth spanning families
@@ -21,6 +22,17 @@ linearization is surjective. On a finite-dimensional base manifold, native param
 transversality then supplies regular parameters without a topology on the space of all smooth
 sections.
 
+For each point where some perturbing section is nonzero, the parameters giving a nonzero value
+form an open dense set. Countable intersections give sections avoiding any prescribed countable
+set, while retaining regular, finitely many zeros when the base and fiber dimensions agree.
+On a complex base, the smooth real theorem applies to the underlying real smooth structure via
+`IsManifold.restrictScalars_of_ne_zero`, retaining both smoothness and regularity of the zeros.
+The examples check this on compact complex manifolds and native complex line subbundles.
+
+The density and residual avoidance lemmas require only a nonzero perturbation direction at each
+avoided point. The existence results require a nontrivial model fiber, since every section of a
+rank-zero bundle vanishes everywhere.
+
 ## References
 
 * M. W. Hirsch, *Differential Topology*, Chapter 3.
@@ -29,7 +41,7 @@ sections.
 
 public section
 
-open Bundle Function Module Set
+open Bundle Filter Function Module Set
 open scoped Manifold ContDiff Topology
 
 namespace ContMDiffSection
@@ -303,5 +315,103 @@ theorem exists_contMDiffSection_regular_finite_zero_of_finrank_eq [FiniteDimensi
   obtain ⟨a, ha⟩ := (dense_of_mem_residual
     (mem_residual_setOf_regular_and_finite_zero_affineFamily 0 s hspan hdim)).nonempty
   exact ⟨affineFamily 0 s a, TauCeti.isRegularSectionParameter_iff.mp ha.1, ha.2⟩
+
+end TauCeti
+
+namespace ContMDiffSection
+
+variable {X H M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ X H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  {ι : Type*} [Fintype ι]
+
+/-- The parameters whose perturbed section does not vanish at a given point form an open set. -/
+theorem isOpen_setOf_affineFamily_apply_ne_zero (s₀ : ContMDiffSection I F ∞ V)
+    (s : ι → ContMDiffSection I F ∞ V) (x : M) :
+    IsOpen {a | affineFamily s₀ s a x ≠ 0} := by
+  let e := (trivializationAt F V x).continuousLinearEquivAt ℝ x
+    (mem_baseSet_trivializationAt F V x)
+  have hc : Continuous fun a ↦ e (affineFamily s₀ s a x) := by
+    simp only [affineFamily_apply, map_add, map_sum, map_smul]
+    exact continuous_const.add (continuous_finsetSum _ fun i _ ↦
+      (continuous_apply i).smul continuous_const)
+  have hset : {a | affineFamily s₀ s a x ≠ 0} = (fun a ↦ e (affineFamily s₀ s a x)) ⁻¹' {0}ᶜ := by
+    ext a
+    exact (map_ne_zero_iff e e.injective).symm
+  rw [hset]
+  exact hc.isOpen_preimage _ isOpen_compl_singleton
+
+/-- If one perturbing section is nonzero at `x`, the parameters whose perturbed section does not
+vanish at `x` are dense: the others form a proper affine subspace. -/
+theorem dense_setOf_affineFamily_apply_ne_zero (s₀ : ContMDiffSection I F ∞ V)
+    (s : ι → ContMDiffSection I F ∞ V) {x : M} (hdir : ∃ i, s i x ≠ 0) :
+    Dense {a | affineFamily s₀ s a x ≠ 0} := by
+  classical
+  obtain ⟨i, hi⟩ := hdir
+  let b : ι → ℝ := Pi.single i 1
+  have hb : ∑ j, b j • s j x = s i x := by simp [b]
+  intro a
+  by_cases ha : affineFamily s₀ s a x = 0
+  · refine mem_closure_of_tendsto (f := fun t : ℝ ↦ a + t • b) (b := 𝓝[≠] 0) ?_ ?_
+    · exact ((continuous_const.add (continuous_id.smul continuous_const)).tendsto' 0 a
+        (by simp)).mono_left nhdsWithin_le_nhds
+    · filter_upwards [self_mem_nhdsWithin] with t ht
+      have h : affineFamily s₀ s (a + t • b) x = t • s i x := by
+        rw [← zero_add (t • s i x), ← ha, ← hb]
+        simp only [affineFamily_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, add_smul,
+          mul_smul, Finset.sum_add_distrib, Finset.smul_sum, add_assoc]
+      rw [h]
+      exact smul_ne_zero ht hi
+  · exact subset_closure ha
+
+/-- If at least one perturbing section is nonzero at every point of a countable set, the parameters
+whose perturbed section does not vanish on that set form a residual set. -/
+theorem mem_residual_setOf_forall_mem_affineFamily_ne_zero
+    (s₀ : ContMDiffSection I F ∞ V) (s : ι → ContMDiffSection I F ∞ V) {S : Set M}
+    (hS : S.Countable) (hdir : ∀ x ∈ S, ∃ i, s i x ≠ 0) :
+    {a | ∀ x ∈ S, affineFamily s₀ s a x ≠ 0} ∈ residual (ι → ℝ) := by
+  refine mem_of_superset ((countable_bInter_mem hS).2 fun x hx ↦ residual_of_dense_open
+    (isOpen_setOf_affineFamily_apply_ne_zero s₀ s x)
+    (dense_setOf_affineFamily_apply_ne_zero s₀ s (hdir x hx))) fun a ha ↦ ?_
+  simpa using ha
+
+end ContMDiffSection
+
+namespace TauCeti
+
+open ContMDiffSection
+
+section Real
+
+variable {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+  [FiniteDimensional ℝ X] [TopologicalSpace M] [ChartedSpace X M]
+  [T2Space M] [CompactSpace M] [IsManifold 𝓘(ℝ, X) ∞ M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [Nontrivial F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, X)]
+
+/-- A compact smooth bundle of equal base and fiber dimensions and nontrivial model fiber has a
+smooth section with surjective intrinsic linearization at every zero and finitely many zeros, none
+of them in a given countable set. -/
+theorem exists_contMDiffSection_regular_finite_zero_forall_mem_ne_zero
+    (hdim : finrank ℝ X = finrank ℝ F) {S : Set M} (hS : S.Countable) :
+    ∃ s : ContMDiffSection 𝓘(ℝ, X) F ∞ V,
+      (∀ x, s x = 0 → Surjective (TauCeti.sectionLinearization (F := F) 𝓘(ℝ, X) id s x)) ∧
+        {x | s x = 0}.Finite ∧ ∀ x ∈ S, s x ≠ 0 := by
+  let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
+  obtain ⟨n, s, hspan⟩ := exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V)
+  obtain ⟨a, ha, hS⟩ := (dense_of_mem_residual
+    (inter_mem
+      (mem_residual_setOf_regular_and_finite_zero_affineFamily 0 s hspan hdim)
+      (mem_residual_setOf_forall_mem_affineFamily_ne_zero 0 s hS fun x _ ↦
+        VectorBundle.exists_ne_zero_of_span_range_eq_top F (hspan x)))).nonempty
+  exact ⟨affineFamily 0 s a, TauCeti.isRegularSectionParameter_iff.mp ha.1, ha.2, hS⟩
+
+end Real
 
 end TauCeti
