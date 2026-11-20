@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Laguerre.Basic
 public import Mathlib.Algebra.Polynomial.Derivative
+import TauCeti.Data.Nat.Factorial.Field
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 
@@ -51,32 +52,18 @@ private theorem coeff_laguerre_of_le_eq (α : R) {n k : ℕ} (h : k ≤ n) :
         (ascPochhammer R (n - k)).eval (α + k + 1) := by
   rw [coeff_laguerre_of_le α h, Algebra.smul_def, eval_eq_smeval, mul_assoc]
 
-/-- `1 / (a! b!) = (a + 1) / ((a + 1)! b!)`, transported to `R`. -/
-private theorem algebraMap_one_div_factorial_mul_left (a b : ℕ) :
-    algebraMap ℚ R (1 / (a.factorial * b.factorial)) =
-      algebraMap ℚ R (1 / ((a + 1).factorial * b.factorial)) * (a + 1) := by
-  have h : (1 / (a.factorial * b.factorial) : ℚ) =
-      1 / ((a + 1).factorial * b.factorial) * (a + 1) := by
-    rw [Nat.factorial_succ]; push_cast; field_simp
-  rw [h, map_mul, map_add, map_natCast, map_one]
-
-/-- `1 / (a! b!) = (b + 1) / (a! (b + 1)!)`, transported to `R`. -/
-private theorem algebraMap_one_div_factorial_mul_right (a b : ℕ) :
-    algebraMap ℚ R (1 / (a.factorial * b.factorial)) =
-      algebraMap ℚ R (1 / (a.factorial * (b + 1).factorial)) * (b + 1) := by
-  rw [mul_comm (a.factorial : ℚ), mul_comm (a.factorial : ℚ),
-    algebraMap_one_div_factorial_mul_left]
-
 /-- The derivative of a Laguerre polynomial raises the parameter and lowers the index:
 `(Lₙ₊₁^{(α)})' = -Lₙ^{(α+1)}` (DLMF 18.9.23). It is stated at index `n + 1` because the
 `n`-indexed form fails at `n = 0`. -/
+@[simp]
 theorem derivative_laguerre (α : R) (n : ℕ) :
     derivative (laguerre α (n + 1)) = -laguerre (α + 1) n := by
   ext k
   rw [coeff_derivative, coeff_neg]
   rcases le_or_gt k n with hk | hk
   · rw [coeff_laguerre_of_le_eq α (by omega : k + 1 ≤ n + 1), coeff_laguerre_of_le_eq _ hk,
-      Nat.add_sub_add_right, algebraMap_one_div_factorial_mul_right (n - k) k]
+      Nat.add_sub_add_right, Nat.one_div_factorial_mul_factorial_succ_right (n - k) k, map_mul,
+      map_add, map_natCast, map_one]
     have hα : α + ((k + 1 : ℕ) : R) + 1 = α + 1 + k + 1 := by push_cast; ring
     rw [hα]
     ring
@@ -92,7 +79,8 @@ theorem laguerre_add_one_sub (α : R) (n : ℕ) :
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + k := ⟨n - k, by omega⟩
     rw [coeff_laguerre_of_le_eq α hk.le, coeff_laguerre_of_le_eq _ hk.le,
       coeff_laguerre_of_le_eq _ (Nat.le_add_left k m), (by omega : m + k + 1 - k = m + 1),
-      Nat.add_sub_cancel, algebraMap_one_div_factorial_mul_left m k]
+      Nat.add_sub_cancel, Nat.one_div_factorial_mul_factorial_succ_left m k, map_mul, map_add,
+      map_natCast, map_one]
     -- `(a)ₘ₊₁ = a (a + 1)ₘ` and `(a + 1)ₘ₊₁ = (a + 1)ₘ (a + 1 + m)` for `a = α + k + 1`
     have e : (ascPochhammer R (m + 1)).eval (α + k + 1) =
         (α + k + 1) * (ascPochhammer R m).eval (α + 1 + k + 1) := by
@@ -113,7 +101,8 @@ theorem X_mul_laguerre_add_one (α : R) (n : ℕ) :
   rcases k with _ | j
   · rw [coeff_X_mul_zero, coeff_laguerre_of_le_eq α (Nat.zero_le n),
       coeff_laguerre_of_le_eq α (Nat.zero_le (n + 1)), Nat.sub_zero, Nat.sub_zero,
-      ascPochhammer_succ_eval, algebraMap_one_div_factorial_mul_left n 0]
+      ascPochhammer_succ_eval, Nat.one_div_factorial_mul_factorial_succ_left n 0, map_mul, map_add,
+      map_natCast, map_one]
     push_cast
     ring
   rw [coeff_X_mul]
@@ -122,8 +111,9 @@ theorem X_mul_laguerre_add_one (α : R) (n : ℕ) :
     rw [coeff_laguerre_of_le_eq _ hj.le, coeff_laguerre_of_le_eq α hj,
       coeff_laguerre_of_le_eq α (by omega : j + 1 ≤ m + (j + 1) + 1),
       (by omega : m + (j + 1) - j = m + 1), (by omega : m + (j + 1) + 1 - (j + 1) = m + 1),
-      Nat.add_sub_cancel, algebraMap_one_div_factorial_mul_right (m + 1) j,
-      algebraMap_one_div_factorial_mul_left m (j + 1)]
+      Nat.add_sub_cancel, Nat.one_div_factorial_mul_factorial_succ_right (m + 1) j, map_mul,
+      map_add, map_natCast, map_one, Nat.one_div_factorial_mul_factorial_succ_left m (j + 1),
+      map_mul, map_add, map_natCast, map_one]
     have ha : α + 1 + j + 1 = α + ((j + 1 : ℕ) : R) + 1 := by push_cast; ring
     rw [ha, ascPochhammer_succ_eval]
     simp only [Nat.succ_eq_add_one, Nat.cast_add, Nat.cast_one]
