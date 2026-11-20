@@ -10,6 +10,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import Mathlib.Data.Nat.Choose.Multinomial
+import TauCeti.MeasureTheory.Constructions.Pi
 
 /-!
 # Moments and moment-generating functions of sums under a product measure
@@ -99,10 +100,8 @@ theorem integrableExpSet_sum_pi [∀ i, SigmaFinite (μ i)] [∀ i, NeZero (μ i
     (f : ∀ i, E i → ℝ) :
     integrableExpSet (fun x ↦ ∑ j, f j (x j)) (Measure.pi μ) =
       ⋂ j, integrableExpSet (f j) (μ j) := by
-  -- The product measure is nonzero, since its total mass is the product of the nonzero masses.
-  have : NeZero (Measure.pi μ) := ⟨fun h ↦ by
-    simpa [Measure.pi_univ, Finset.prod_eq_zero_iff, NeZero.ne] using congrArg (· Set.univ) h⟩
-  -- Each moment-generating function is positive exactly on its integrability domain.
+  -- Each moment-generating function, including that of the product measure (nonzero by
+  -- `Measure.instNeZeroPi`), is positive exactly on its integrability domain.
   ext t
   simp only [Set.mem_iInter, integrableExpSet, Set.mem_ofPred_eq, ← mgf_pos_iff, mgf_sum_pi]
   refine ⟨fun h j ↦ mgf_nonneg.lt_of_ne' fun hj ↦ ?_, fun h ↦ Finset.prod_pos fun j _ ↦ h j⟩
