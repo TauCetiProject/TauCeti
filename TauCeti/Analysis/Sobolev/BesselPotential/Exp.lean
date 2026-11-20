@@ -33,8 +33,9 @@ power series `∑_{n ≥ 1} v ^ (n + 1) / (n + 1)!` without its linear term. Sin
 on the order gives smoothness.
 
 Nonlinear elliptic equations with an exponential nonlinearity, such as Taubes's reduced vortex
-equation `Δw = (exp (2w) h - 1) / 8 + g`, therefore define smooth maps between Sobolev spaces,
-to which the implicit function theorem applies.
+equation `Δw = h (exp (2w) - 1) / 8 + k` with bounded coefficient `h` and source `k`, therefore
+define smooth maps between Sobolev spaces: this is the smoothness input of the implicit function
+theorem, which also needs an invertible linearization.
 
 ## Main declarations
 

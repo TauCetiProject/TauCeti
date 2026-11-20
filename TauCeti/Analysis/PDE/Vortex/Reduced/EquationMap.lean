@@ -11,9 +11,11 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.AtInfinity
+import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.PDE.Vortex.Existence
 import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 import TauCeti.Analysis.PDE.Vortex.Reduced.Sobolev
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # The reduced vortex equation as a smooth map of the divisor and the correction
@@ -127,6 +129,23 @@ theorem backgroundDefect_apply (P : _root_.Polynomial ℂ) (z : ℂ) :
     backgroundDefect P z = (((1 + ‖P.eval z‖ ^ 2)⁻¹ : ℝ) : ℂ) :=
   (rfl)
 
+/-- `1 + ‖P z‖² ≠ 0`, as a complex number. -/
+private theorem one_add_norm_sq_ne_zero (P : _root_.Polynomial ℂ) (z : ℂ) :
+    (1 + (‖P.eval z‖ : ℂ) ^ 2) ≠ 0 := by
+  exact_mod_cast (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne'
+
+/-- The source `k = (h - 1) / 8 + 2 ‖P'‖² / (1 + ‖P‖²)²` in terms of the defect `φ = 1 - h`:
+`k = -φ / 8 + 2 ‖P'‖² φ²`. -/
+private theorem backgroundSource_eq_backgroundDefect (P : _root_.Polynomial ℂ) (z : ℂ) :
+    (backgroundSource (P.eval ·) z : ℂ) = -8⁻¹ * backgroundDefect P z +
+      2 * ((‖P.derivative.eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P z ^ 2 := by
+  rw [backgroundSource_def, backgroundWeight_eq_one_sub_inv, _root_.Polynomial.deriv,
+    backgroundDefect_apply]
+  have := one_add_norm_sq_ne_zero P z
+  push_cast
+  field_simp
+  ring
+
 /-! ### Expansion in the coefficients -/
 
 section Expansion
@@ -207,32 +226,11 @@ private theorem contDiff_normSqWeight (hP₀ : P₀ ≠ 0) {n : ℕ} (hn : n ≤
 
 end Expansion
 
-/-! ### Smoothness of the coefficients of `P_c` -/
+/-! ### Degree bounds for `P_c` and `P_c'` -/
 
 section Coefficients
 
 variable {m : ℕ}
-
-/-- Each coefficient of `P_c` depends smoothly on `c`. -/
-private theorem contDiff_coeff_monicOfCoeff (k : ℕ) :
-    ContDiff ℝ ∞ fun c : Fin m → ℂ ↦ (monicOfCoeff c).coeff k := by
-  rcases lt_trichotomy k m with hk | rfl | hk
-  · have h (c : Fin m → ℂ) : (monicOfCoeff c).coeff k = c ⟨k, hk⟩ :=
-      coeff_monicOfCoeff c ⟨k, hk⟩
-    simp_rw [h]
-    exact contDiff_apply ℝ (fun _ : Fin m ↦ ℂ) ⟨k, hk⟩
-  · simp_rw [coeff_monicOfCoeff_self]
-    exact contDiff_const
-  · have h (c : Fin m → ℂ) : (monicOfCoeff c).coeff k = 0 :=
-      _root_.Polynomial.coeff_eq_zero_of_natDegree_lt (by rwa [natDegree_monicOfCoeff])
-    simp_rw [h]
-    exact contDiff_const
-
-/-- Each coefficient of the derivative `P_c'` depends smoothly on `c`. -/
-private theorem contDiff_coeff_derivative_monicOfCoeff (k : ℕ) :
-    ContDiff ℝ ∞ fun c : Fin m → ℂ ↦ (monicOfCoeff c).derivative.coeff k := by
-  simp_rw [_root_.Polynomial.coeff_derivative]
-  exact (contDiff_coeff_monicOfCoeff (k + 1)).mul contDiff_const
 
 private theorem natDegree_monicOfCoeff_lt (c : Fin m → ℂ) : (monicOfCoeff c).natDegree < m + 1 := by
   rw [natDegree_monicOfCoeff]
@@ -292,43 +290,21 @@ theorem coeFn_backgroundSourceLp (hm : 0 < m) (c : Fin m → ℂ) :
 
 end Family
 
-/-! ### Multiplication of `L²(ℂ)` by bounded continuous functions -/
-
-/-- Multiplication of `L²(ℂ)` by bounded continuous functions, as a bounded bilinear map: Hölder's
-product `L∞ × L² → L²` with the class of the multiplier in `L∞`. It is irreducible: it is only
-used through `coeFn_mulL2` and its bilinearity, and unfolding it slows elaboration. -/
-@[irreducible] private def mulL2 :
-    (ℂ →ᵇ ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) :=
-  ((ContinuousLinearMap.mul ℂ ℂ).holderL volume ⊤ 2 2).comp (toLpTop volume ℂ)
-
-private theorem coeFn_mulL2 (F : ℂ →ᵇ ℂ) (f : Lp ℂ 2 (volume : Measure ℂ)) :
-    mulL2 F f =ᵐ[volume] fun z ↦ F z • f z := by
-  have h := (ContinuousLinearMap.mul ℂ ℂ).coeFn_holder (r := 2) (toLpTop volume ℂ F) f
-  filter_upwards [h, coeFn_toLpTop volume (𝕜 := ℂ) F] with z h₁ h₂
-  rw [mulL2, ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂,
-    ContinuousLinearMap.mul_apply', smul_eq_mul]
-
 /-! ### Smoothness of the defect and the source in the coefficients -/
 
 section Smooth
 
 variable {m : ℕ}
 
-/-- The pointwise value of the inverse of a unit in the algebra of bounded continuous functions. -/
-private theorem ring_inverse_apply {F : ℂ →ᵇ ℂ} (hF : IsUnit F) (z : ℂ) :
-    Ring.inverse F z = (F z)⁻¹ := by
-  have h := congrArg (fun G : ℂ →ᵇ ℂ ↦ G z) (Ring.mul_inverse_cancel F hF)
-  simp only [mul_apply, one_apply] at h
-  exact (eq_inv_of_mul_eq_one_right h)
-
 /-- The local representation of the coefficient dependence near `c₀`: with
 `ρ_c = (1 + ‖P_c‖²) φ₀` and `σ_c = ‖P_c'‖² φ₀`, where `φ₀ = φ_{c₀}`, both polynomial in `c` and
-`conj c`. Since `ρ_{c₀} = 1`, `ρ_c` is invertible near `c₀`, with smooth inverse. -/
+`conj c`. Since `ρ_{c₀} = 1`, `ρ_c` is invertible near `c₀`, with smooth inverse, and there
+`φ_c = φ₀ ρ_c⁻¹`. -/
 private theorem exists_local_repr (c₀ : Fin m → ℂ) :
     ∃ ρ σ : (Fin m → ℂ) → ℂ →ᵇ ℂ, ContDiff ℝ ∞ σ ∧
-      (∀ᶠ c in 𝓝 c₀, IsUnit (ρ c)) ∧ ContDiffAt ℝ ∞ (fun c ↦ Ring.inverse (ρ c)) c₀ ∧
-      (∀ c z, ρ c z = ((1 + ‖(monicOfCoeff c).eval z‖ ^ 2 : ℝ) : ℂ) *
-        backgroundDefect (monicOfCoeff c₀) z) ∧
+      ContDiffAt ℝ ∞ (fun c ↦ Ring.inverse (ρ c)) c₀ ∧
+      (∀ᶠ c in 𝓝 c₀, backgroundDefect (monicOfCoeff c) =
+        backgroundDefect (monicOfCoeff c₀) * Ring.inverse (ρ c)) ∧
       ∀ c z, σ c z = ((‖(monicOfCoeff c).derivative.eval z‖ ^ 2 : ℝ) : ℂ) *
         backgroundDefect (monicOfCoeff c₀) z := by
   set P₀ := monicOfCoeff c₀
@@ -336,8 +312,8 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
   have hn : m ≤ P₀.natDegree := (natDegree_monicOfCoeff c₀).ge
   set ρ : (Fin m → ℂ) → ℂ →ᵇ ℂ :=
     fun c ↦ backgroundDefect P₀ + normSqWeight P₀ hP₀ hn fun i ↦ (monicOfCoeff c).coeff i
-  have hρ : ContDiff ℝ ∞ ρ :=
-    contDiff_const.add (contDiff_normSqWeight P₀ hP₀ hn fun i ↦ contDiff_coeff_monicOfCoeff i)
+  have hρ : ContDiff ℝ ∞ ρ := contDiff_const.add (contDiff_normSqWeight P₀ hP₀ hn
+    fun i ↦ (contDiff_coeff_monicOfCoeff i).restrict_scalars ℝ)
   have hρ₀ : ρ c₀ = 1 := by
     ext z
     rw [add_apply, normSqWeight_apply P₀ hP₀ hn (natDegree_monicOfCoeff_lt c₀),
@@ -350,95 +326,79 @@ private theorem exists_local_repr (c₀ : Fin m → ℂ) :
     have := contDiffAt_ringInverse ℝ (n := ∞) (1 : (ℂ →ᵇ ℂ)ˣ)
     rw [Units.val_one, ← hρ₀] at this
     exact this.comp c₀ hρ.contDiffAt
+  have hunit : ∀ᶠ c in 𝓝 c₀, IsUnit (ρ c) := hρ.continuous.continuousAt.preimage_mem_nhds
+    (Units.isOpen.mem_nhds ((hρ₀ ▸ isUnit_one : IsUnit (ρ c₀))))
+  -- Near `c₀`, `φ_c = φ₀ ρ_c⁻¹`.
+  have hdef : ∀ᶠ c in 𝓝 c₀, backgroundDefect (monicOfCoeff c) =
+      backgroundDefect P₀ * Ring.inverse (ρ c) := by
+    filter_upwards [hunit] with c hc
+    ext z
+    have hρz : ρ c z = ((1 + ‖(monicOfCoeff c).eval z‖ ^ 2 : ℝ) : ℂ) * backgroundDefect P₀ z := by
+      rw [add_apply, normSqWeight_apply P₀ hP₀ hn (natDegree_monicOfCoeff_lt c),
+        Complex.ofReal_add, Complex.ofReal_one, add_mul, one_mul]
+    rw [mul_apply, ring_inverse_apply hc, hρz, backgroundDefect_apply, backgroundDefect_apply]
+    have := one_add_norm_sq_ne_zero (monicOfCoeff c) z
+    have := one_add_norm_sq_ne_zero P₀ z
+    push_cast
+    field_simp
   refine ⟨ρ, fun c ↦ normSqWeight P₀ hP₀ hn fun i ↦ (monicOfCoeff c).derivative.coeff i,
-    contDiff_normSqWeight P₀ hP₀ hn fun i ↦ contDiff_coeff_derivative_monicOfCoeff i,
-    hρ.continuous.continuousAt.preimage_mem_nhds
-      (Units.isOpen.mem_nhds ((hρ₀ ▸ isUnit_one : IsUnit (ρ c₀)))), hinv,
-    fun c z ↦ ?_, fun c z ↦ ?_⟩
-  · rw [add_apply, normSqWeight_apply P₀ hP₀ hn (natDegree_monicOfCoeff_lt c),
-      Complex.ofReal_add, Complex.ofReal_one, add_mul, one_mul]
-  · exact normSqWeight_apply P₀ hP₀ hn (natDegree_derivative_monicOfCoeff_lt c) z
+    contDiff_normSqWeight P₀ hP₀ hn
+      fun i ↦ (contDiff_coeff_derivative_monicOfCoeff i).restrict_scalars ℝ,
+    hinv, hdef, fun c z ↦ ?_⟩
+  exact normSqWeight_apply P₀ hP₀ hn (natDegree_derivative_monicOfCoeff_lt c) z
 
 /-- **The defect depends smoothly on the coefficients**, as a bounded continuous function. -/
 theorem contDiff_backgroundDefect_monicOfCoeff :
     ContDiff ℝ ∞ fun c : Fin m → ℂ ↦ backgroundDefect (monicOfCoeff c) := by
   refine contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
-  obtain ⟨ρ, -, -, hunit, hinv, hρz, -⟩ := exists_local_repr c₀
-  refine ((contDiffAt_const (c := backgroundDefect (monicOfCoeff c₀))).mul
-    hinv).congr_of_eventuallyEq ?_
-  filter_upwards [hunit] with c hc
-  ext z
-  rw [mul_apply, ring_inverse_apply hc, hρz, backgroundDefect_apply,
-    backgroundDefect_apply]
-  have hpos : (1 + (‖(monicOfCoeff c).eval z‖ : ℂ) ^ 2) ≠ 0 := by
-    exact_mod_cast (by positivity : (0 : ℝ) < 1 + ‖(monicOfCoeff c).eval z‖ ^ 2).ne'
-  have hpos₀ : (1 + (‖(monicOfCoeff c₀).eval z‖ : ℂ) ^ 2) ≠ 0 := by
-    exact_mod_cast (by positivity : (0 : ℝ) < 1 + ‖(monicOfCoeff c₀).eval z‖ ^ 2).ne'
-  push_cast
-  field_simp
+  obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
+  exact (contDiffAt_const.mul hinv).congr_of_eventuallyEq hdef
 
 /-- **The defect depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
 theorem contDiff_backgroundDefectLp (hm : 0 < m) :
     ContDiff ℝ ∞ (backgroundDefectLp (m := m) hm) := by
   refine contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
-  obtain ⟨ρ, -, -, hunit, hinv, hρz, -⟩ := exists_local_repr c₀
+  obtain ⟨ρ, -, -, hinv, hdef, -⟩ := exists_local_repr c₀
   have hmul : ContDiffAt ℝ ∞
-      (fun c ↦ mulL2 (Ring.inverse (ρ c))
-        (backgroundDefectLp hm c₀)) c₀ :=
-    ((((mulL2).flip
+      (fun c ↦ mulLpL volume 2 (Ring.inverse (ρ c)) (backgroundDefectLp hm c₀)) c₀ :=
+    ((((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).flip
       (backgroundDefectLp hm c₀)).restrictScalars ℝ).contDiff.contDiffAt).comp c₀ hinv
   refine hmul.congr_of_eventuallyEq ?_
-  filter_upwards [hunit] with c hc
+  filter_upwards [hdef] with c hc
   refine Lp.ext ?_
   filter_upwards [coeFn_backgroundDefectLp hm c,
-    coeFn_mulL2 (Ring.inverse (ρ c))
-    (backgroundDefectLp hm c₀), coeFn_backgroundDefectLp hm c₀] with z h₁ h₂ h₃
-  rw [h₁, h₂, h₃, smul_eq_mul, ring_inverse_apply hc, hρz, backgroundDefect_apply,
-    backgroundDefect_apply]
-  have hpos : (1 + (‖(monicOfCoeff c).eval z‖ : ℂ) ^ 2) ≠ 0 := by
-    exact_mod_cast (by positivity : (0 : ℝ) < 1 + ‖(monicOfCoeff c).eval z‖ ^ 2).ne'
-  have hpos₀ : (1 + (‖(monicOfCoeff c₀).eval z‖ : ℂ) ^ 2) ≠ 0 := by
-    exact_mod_cast (by positivity : (0 : ℝ) < 1 + ‖(monicOfCoeff c₀).eval z‖ ^ 2).ne'
-  push_cast
-  field_simp
+    coeFn_mulLpL volume 2 (Ring.inverse (ρ c)) (backgroundDefectLp hm c₀),
+    coeFn_backgroundDefectLp hm c₀] with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, hc, mul_apply, smul_eq_mul, mul_comm]
 
 /-- **The source depends smoothly on the coefficients**, as an element of `L²(ℂ)`. -/
 theorem contDiff_backgroundSourceLp (hm : 0 < m) :
     ContDiff ℝ ∞ (backgroundSourceLp (m := m) hm) := by
   refine contDiff_iff_contDiffAt.2 fun c₀ ↦ ?_
-  obtain ⟨ρ, σ, hσ, hunit, hinv, hρz, hσz⟩ := exists_local_repr c₀
+  obtain ⟨ρ, σ, hσ, hinv, hdef, hσz⟩ := exists_local_repr c₀
   have hmul : ContDiffAt ℝ ∞
-      (fun c ↦ mulL2 (σ c * Ring.inverse (ρ c) ^ 2)
+      (fun c ↦ mulLpL volume 2 (σ c * Ring.inverse (ρ c) ^ 2)
         (backgroundDefectLp hm c₀)) c₀ :=
-    ((((mulL2).flip
+    ((((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).flip
       (backgroundDefectLp hm c₀)).restrictScalars ℝ).contDiff.contDiffAt).comp c₀
       (hσ.contDiffAt.mul (hinv.pow 2))
   refine (((contDiff_backgroundDefectLp hm).contDiffAt.const_smul (-(8⁻¹ : ℂ))).add
     (hmul.const_smul (2 : ℂ))).congr_of_eventuallyEq ?_
-  filter_upwards [hunit] with c hc
+  filter_upwards [hdef] with c hc
   refine Lp.ext ?_
   filter_upwards [coeFn_backgroundSourceLp hm c, Lp.coeFn_add ((-(8⁻¹ : ℂ)) •
-      backgroundDefectLp hm c) ((2 : ℂ) • mulL2
+      backgroundDefectLp hm c) ((2 : ℂ) • mulLpL volume 2
         (σ c * Ring.inverse (ρ c) ^ 2)
         (backgroundDefectLp hm c₀)),
     Lp.coeFn_smul (-(8⁻¹ : ℂ)) (backgroundDefectLp hm c),
-    Lp.coeFn_smul (2 : ℂ) (mulL2 (σ c * Ring.inverse (ρ c) ^ 2)
+    Lp.coeFn_smul (2 : ℂ) (mulLpL volume 2 (σ c * Ring.inverse (ρ c) ^ 2)
       (backgroundDefectLp hm c₀)),
     coeFn_backgroundDefectLp hm c,
-    coeFn_mulL2 (σ c * Ring.inverse (ρ c) ^ 2) (backgroundDefectLp hm c₀),
+    coeFn_mulLpL volume 2 (σ c * Ring.inverse (ρ c) ^ 2) (backgroundDefectLp hm c₀),
     coeFn_backgroundDefectLp hm c₀] with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
-  rw [h₁, h₂, Pi.add_apply, h₃, h₄, Pi.smul_apply, Pi.smul_apply, h₅, h₆, h₇, smul_eq_mul,
-    mul_apply,
-    pow_apply, ring_inverse_apply hc, hρz, hσz, backgroundDefect_apply,
-    backgroundDefect_apply, backgroundSource_def, backgroundWeight_eq_one_sub_inv,
-    _root_.Polynomial.deriv]
-  have hpos : (1 + (‖(monicOfCoeff c).eval z‖ : ℂ) ^ 2) ≠ 0 := by
-    exact_mod_cast (by positivity : (0 : ℝ) < 1 + ‖(monicOfCoeff c).eval z‖ ^ 2).ne'
-  have hpos₀ : (1 + (‖(monicOfCoeff c₀).eval z‖ : ℂ) ^ 2) ≠ 0 := by
-    exact_mod_cast (by positivity : (0 : ℝ) < 1 + ‖(monicOfCoeff c₀).eval z‖ ^ 2).ne'
+  rw [h₁, h₂, Pi.add_apply, h₃, h₄, Pi.smul_apply, Pi.smul_apply, h₅, h₆, h₇,
+    backgroundSource_eq_backgroundDefect, hc, mul_apply, mul_apply, pow_apply, hσz]
   simp only [smul_eq_mul]
-  push_cast
-  field_simp
   ring
 
 end Smooth
@@ -460,6 +420,16 @@ private def expTwo (u : H^{2}(ℂ)) : H^{2}(ℂ) :=
 private theorem contDiff_expTwo : ContDiff ℂ ∞ expTwo :=
   (contDiff_expSubOne finrank_lt).comp (contDiff_id.const_smul (2 : ℂ))
 
+/-- The `L²` function of `expTwo u` is almost everywhere `exp (2u) - 1`. -/
+private theorem coeFn_inclusionLp_expTwo (u : H^{2}(ℂ)) :
+    ⇑(inclusionLp zero_le_two (expTwo u)) =ᵐ[volume]
+      fun z ↦ Complex.exp (2 * inclusionLp zero_le_two u z) - 1 := by
+  filter_upwards [coeFn_inclusionLp_expSubOne finrank_lt zero_le_two ((2 : ℂ) • u),
+    (by rw [map_smul]; exact Lp.coeFn_smul (2 : ℂ) (inclusionLp zero_le_two u) :
+      ⇑(inclusionLp zero_le_two ((2 : ℂ) • u)) =ᵐ[volume] (2 : ℂ) • ⇑(inclusionLp zero_le_two u))]
+    with z h₁ h₂
+  rw [expTwo, h₁, h₂, Pi.smul_apply, smul_eq_mul]
+
 /-- **The reduced vortex equation map.** For `m ≥ 1`, coefficients `c ∈ ℂ^m` and
 `u ∈ H²(ℂ)`, the defect `Φ(c, u) = Δu - h_c (exp (2u) - 1) / 8 - k_c ∈ L²(ℂ)` of the reduced
 equation for the zero divisor of `P_c = TauCeti.Polynomial.monicOfCoeff c`
@@ -468,7 +438,7 @@ equation for the zero divisor of `P_c = TauCeti.Polynomial.monicOfCoeff c`
 def reducedEquationMap (hm : 0 < m) (c : Fin m → ℂ) (u : H^{2}(ℂ)) : Lp ℂ 2 (volume : Measure ℂ) :=
   inclusionLp le_rfl (laplacianCLM (by norm_num) u) -
     (8⁻¹ : ℂ) • (inclusionLp zero_le_two (expTwo u) -
-      mulL2 (backgroundDefect (monicOfCoeff c))
+      mulLpL volume 2 (backgroundDefect (monicOfCoeff c))
         (inclusionLp zero_le_two (expTwo u))) -
     backgroundSourceLp hm c
 
@@ -482,22 +452,16 @@ theorem coeFn_reducedEquationMap (hm : 0 < m) (c : Fin m → ℂ) (u : H^{2}(ℂ
           (Complex.exp (2 * inclusionLp zero_le_two u z) - 1) / 8 -
         (backgroundSource ((monicOfCoeff c).eval ·) z : ℂ) := by
   set E := inclusionLp zero_le_two (expTwo u)
-  set F := mulL2 (backgroundDefect (monicOfCoeff c)) E
-  have hE : ⇑E =ᵐ[volume] fun z ↦ Complex.exp (2 * inclusionLp zero_le_two u z) - 1 := by
-    rw [show E = inclusionLp zero_le_two (expSubOne finrank_lt ((2 : ℂ) • u)) by
-      simp only [E, expTwo]]
-    filter_upwards [coeFn_inclusionLp_expSubOne finrank_lt zero_le_two ((2 : ℂ) • u),
-      (by rw [map_smul]; exact Lp.coeFn_smul (2 : ℂ) (inclusionLp zero_le_two u) :
-        ⇑(inclusionLp zero_le_two ((2 : ℂ) • u)) =ᵐ[volume] (2 : ℂ) • ⇑(inclusionLp zero_le_two u))]
-      with z h₁ h₂
-    rw [h₁, h₂, Pi.smul_apply, smul_eq_mul]
+  set F := mulLpL volume 2 (backgroundDefect (monicOfCoeff c)) E
+  have hE : ⇑E =ᵐ[volume] fun z ↦ Complex.exp (2 * inclusionLp zero_le_two u z) - 1 :=
+    coeFn_inclusionLp_expTwo u
   filter_upwards [Lp.coeFn_sub (inclusionLp le_rfl (laplacianCLM (by norm_num) u) -
       (8⁻¹ : ℂ) • (E - F)) (backgroundSourceLp hm c),
     Lp.coeFn_sub (inclusionLp le_rfl (laplacianCLM (by norm_num) u))
       ((8⁻¹ : ℂ) • (E - F)),
     Lp.coeFn_smul (8⁻¹ : ℂ) (E - F),
     Lp.coeFn_sub E (F),
-    coeFn_mulL2 (backgroundDefect (monicOfCoeff c)) E, hE,
+    coeFn_mulLpL volume 2 (backgroundDefect (monicOfCoeff c)) E, hE,
     coeFn_backgroundSourceLp hm c]
     with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
   simp only [reducedEquationMap]
@@ -518,9 +482,9 @@ theorem contDiff_reducedEquationMap (hm : 0 < m) :
     ((((inclusionLp le_rfl).comp (laplacianCLM (by norm_num))).restrictScalars ℝ).contDiff).comp
       contDiff_snd
   have hmul : ContDiff ℝ ∞ fun p : (Fin m → ℂ) × H^{2}(ℂ) ↦
-      mulL2 (backgroundDefect (monicOfCoeff p.1))
+      mulLpL volume 2 (backgroundDefect (monicOfCoeff p.1))
         (inclusionLp zero_le_two (expTwo p.2)) :=
-    (mulL2.isBoundedBilinearMap.contDiff.restrict_scalars ℝ).comp
+    ((mulLpL (𝕜 := ℂ) (E := ℂ) volume 2).isBoundedBilinearMap.contDiff.restrict_scalars ℝ).comp
       ((contDiff_backgroundDefect_monicOfCoeff.comp contDiff_fst).prodMk hE)
   unfold reducedEquationMap
   exact (hΔ.sub ((hE.sub hmul).const_smul (8⁻¹ : ℂ))).sub
@@ -532,7 +496,7 @@ def reducedLinearization (c : Fin m → ℂ) (u : H^{2}(ℂ)) :
     H^{2}(ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) :=
   (inclusionLp le_rfl).comp (laplacianCLM (by norm_num)) -
     (4⁻¹ : ℂ) • (inclusionLp zero_le_two -
-      (mulL2 (backgroundDefect (monicOfCoeff c))).comp
+      (mulLpL volume 2 (backgroundDefect (monicOfCoeff c))).comp
         (inclusionLp zero_le_two)).comp (mulCLM finrank_lt (expTwo u) + ContinuousLinearMap.id ℂ _)
 
 /-- **The partial derivative of the reduced equation map in the correction.** -/
@@ -546,7 +510,7 @@ theorem hasFDerivAt_reducedEquationMap (hm : 0 < m) (c : Fin m → ℂ) (u : H^{
     simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply,
       map_smul, expTwo]
   set A : H^{2}(ℂ) →L[ℂ] Lp ℂ 2 (volume : Measure ℂ) := inclusionLp zero_le_two -
-    (mulL2 (backgroundDefect (monicOfCoeff c))).comp
+    (mulLpL volume 2 (backgroundDefect (monicOfCoeff c))).comp
       (inclusionLp zero_le_two)
   have hA : HasFDerivAt (fun u ↦ A (expTwo u)) (A.comp ((2 : ℂ) •
       (mulCLM finrank_lt (expTwo u) + ContinuousLinearMap.id ℂ _))) u :=
@@ -575,28 +539,25 @@ theorem coeFn_reducedLinearization (c : Fin m → ℂ) (u v : H^{2}(ℂ)) :
     filter_upwards [(by rw [map_add]; exact Lp.coeFn_add _ _ :
         ⇑(inclusionLp zero_le_two W) =ᵐ[volume]
           ⇑(inclusionLp zero_le_two (mulCLM finrank_lt (expTwo u) v)) +
-            ⇑(inclusionLp zero_le_two v)), hmul,
-      coeFn_inclusionLp_expSubOne finrank_lt zero_le_two ((2 : ℂ) • u),
-      (by rw [map_smul]; exact Lp.coeFn_smul (2 : ℂ) (inclusionLp zero_le_two u) :
-        ⇑(inclusionLp zero_le_two ((2 : ℂ) • u)) =ᵐ[volume] (2 : ℂ) • ⇑(inclusionLp zero_le_two u))]
-      with z h₁ h₂ h₃ h₄
-    rw [h₁, Pi.add_apply, h₂, expTwo, h₃, h₄, Pi.smul_apply, smul_eq_mul]
+            ⇑(inclusionLp zero_le_two v)), hmul, coeFn_inclusionLp_expTwo u]
+      with z h₁ h₂ h₃
+    rw [h₁, Pi.add_apply, h₂, h₃]
     ring
   have hval : reducedLinearization c u v = inclusionLp le_rfl (laplacianCLM (by norm_num) v) -
-      (4⁻¹ : ℂ) • (inclusionLp zero_le_two W - mulL2
+      (4⁻¹ : ℂ) • (inclusionLp zero_le_two W - mulLpL volume 2
         (backgroundDefect (monicOfCoeff c)) (inclusionLp zero_le_two W)) := by
     simp only [reducedLinearization, ContinuousLinearMap.comp_add, ContinuousLinearMap.sub_comp,
       ContinuousLinearMap.comp_id, smul_add, sub_apply, ContinuousLinearMap.comp_apply,
       add_apply, smul_apply, map_add, sub_right_inj, W]
     module
   rw [hval]
-  set G := mulL2 (backgroundDefect (monicOfCoeff c))
+  set G := mulLpL volume 2 (backgroundDefect (monicOfCoeff c))
     (inclusionLp zero_le_two W)
   filter_upwards [Lp.coeFn_sub (inclusionLp le_rfl (laplacianCLM (by norm_num) v))
       ((4⁻¹ : ℂ) • (inclusionLp zero_le_two W - G)),
     Lp.coeFn_smul (4⁻¹ : ℂ) (inclusionLp zero_le_two W - G),
     Lp.coeFn_sub (inclusionLp zero_le_two W) G,
-    coeFn_mulL2 (backgroundDefect (monicOfCoeff c))
+    coeFn_mulLpL volume 2 (backgroundDefect (monicOfCoeff c))
       (inclusionLp zero_le_two W), hW]
     with z h₁ h₂ h₃ h₄ h₅
   rw [h₁, Pi.sub_apply, h₂, Pi.smul_apply, h₃, Pi.sub_apply, h₄, h₅, backgroundDefect_apply,

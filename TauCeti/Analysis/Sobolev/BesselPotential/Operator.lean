@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.WeakDeriv.TemperedDistribution
 
 /-!
@@ -184,11 +186,8 @@ theorem coeFn_inclusionLp_laplacianCLM_ae_eq {s t : ℝ} (hs : 0 ≤ s) (ht : s 
   -- `Δu` is the sum of the second derivatives `∂_{b i} ∂_{b i} u`.
   have hsum : laplacianCLM ht u = ∑ i, D (b i) (D' (b i) u') := by
     refine ext ?_
-    have hmap (S : Finset _) : (∑ i ∈ S, D (b i) (D' (b i) u')).toDistr =
-        ∑ i ∈ S, (D (b i) (D' (b i) u')).toDistr := by
-      induction S using Finset.induction_on with
-      | empty => rfl
-      | insert a S ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, toDistr_add, ih]
+    have hmap := map_sum (toDistrCLM E ℂ s 2) (fun i ↦ D (b i) (D' (b i) u')) Finset.univ
+    simp only [toDistrCLM_apply] at hmap
     rw [hmap, toDistr_laplacianCLM, TemperedDistribution.laplacian_eq_sum b]
     have hcopy : u'.toDistr = u.toDistr := toDistr_copy u (by linarith)
     simp only [D, D', toDistr_lineDerivCLM, hcopy]
@@ -196,11 +195,9 @@ theorem coeFn_inclusionLp_laplacianCLM_ae_eq {s t : ℝ} (hs : 0 ≤ s) (ht : s 
   filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ
       fun i ↦ inclusionLp hs (D (b i) (D' (b i) u')),
     ae_all_iff.2 hd] with x h₁ h₂
-  rw [h₁, InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f b, Complex.ofReal_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [h₂ i, iteratedFDeriv_two_apply, fderiv_clm_apply
-    ((hf.fderiv_right le_rfl).differentiable one_ne_zero x) (differentiableAt_const _)]
-  simp
+  rw [h₁, TauCeti.laplacian_eq_sum_fderiv_fderiv_apply b
+    ((hf.fderiv_right le_rfl).differentiable one_ne_zero x), Complex.ofReal_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ h₂ i
 
 variable [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {r s : ℝ} {p : ℝ≥0∞}
   [Fact (1 ≤ p)]
