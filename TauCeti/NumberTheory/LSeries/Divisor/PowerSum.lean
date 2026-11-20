@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Complex
 import TauCeti.NumberTheory.LSeries.Continuity
 import TauCeti.NumberTheory.LSeries.Convergence
-import TauCeti.NumberTheory.LSeries.RiemannZeta
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.Twist
 
 /-!
