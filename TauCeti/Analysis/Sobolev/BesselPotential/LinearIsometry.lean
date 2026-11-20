@@ -47,11 +47,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 /-- The pullback of an element of `H^{s,p}` along a linear isometry equivalence `A`, before it is
 bundled as a linear isometry equivalence. -/
 private def compAux (A : E ≃ₗᵢ[ℝ] E) (f : H^{s, p}(E, F)) : H^{s, p}(E, F) where
-  toDistr := compCLM F A.toHomeomorph.toEquiv (by simpa using A.hasTemperateGrowth)
-    (by simpa using A.symm.hasTemperateGrowth) f.toDistr
+  toDistr := compCLM F A.toHomeomorph.toEquiv A.hasTemperateGrowth_toHomeomorph_toEquiv
+    A.hasTemperateGrowth_toHomeomorph_toEquiv_symm f.toDistr
   toLp := Lp.compMeasurePreserving A A.measurePreserving f.toLp
-  bessel_toDistr_eq_toLp := besselPotential_compCLM_linearIsometryEquiv_eq A _ _
-    f.bessel_toDistr_eq_toLp
+  bessel_toDistr_eq_toLp :=
+    besselPotential_compCLM_linearIsometryEquiv_eq_compMeasurePreserving A _ _
+      f.bessel_toDistr_eq_toLp
 
 private theorem compAux_symm_compAux (A : E ≃ₗᵢ[ℝ] E) (f : H^{s, p}(E, F)) :
     compAux A.symm (compAux A f) = f := by
@@ -122,16 +123,41 @@ theorem compLinearIsometryEquiv_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
       SchwartzMap.toBesselPotentialSpaceCLM s p
         (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ A.toContinuousLinearEquiv u) := by
   ext1
-  rw [toDistr_compLinearIsometryEquiv A (by simpa using A.hasTemperateGrowth)
-    (by simpa using A.symm.hasTemperateGrowth), SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+  rw [toDistr_compLinearIsometryEquiv A A.hasTemperateGrowth_toHomeomorph_toEquiv
+    A.hasTemperateGrowth_toHomeomorph_toEquiv_symm, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
     SchwartzMap.toDistr_toBesselPotentialSpaceCLM, compCLM_toTemperedDistributionCLM volume]
-  congr 1
+  refine congrArg _ ?_
+  ext x
+  simp [SchwartzMap.compCLM_apply]
 
 variable (E F s p) in
 /-- The **reflection** `R u = u (-·)` of the Bessel-potential space `H^{s,p}(E, F)`, a linear
 isometry equivalence for every real order `s` and `1 ≤ p ≤ ∞`. -/
 def reflection : H^{s, p}(E, F) ≃ₗᵢ[ℂ] H^{s, p}(E, F) :=
   compLinearIsometryEquiv s p (LinearIsometryEquiv.neg ℝ)
+
+/-- The reflection is the action of the linear isometry `x ↦ -x`. -/
+theorem reflection_eq_compLinearIsometryEquiv :
+    reflection E F s p = compLinearIsometryEquiv s p (LinearIsometryEquiv.neg ℝ) :=
+  (rfl)
+
+/-- On the underlying tempered distributions, the reflection is the pullback along `x ↦ -x`. -/
+theorem toDistr_reflection
+    (hφ : ((LinearIsometryEquiv.neg ℝ (E := E)).toHomeomorph.toEquiv : E → E).HasTemperateGrowth)
+    (hψ : Function.HasTemperateGrowth
+      ((LinearIsometryEquiv.neg ℝ (E := E)).toHomeomorph.toEquiv.symm : E → E))
+    (f : H^{s, p}(E, F)) :
+    (reflection E F s p f).toDistr =
+      compCLM F (LinearIsometryEquiv.neg ℝ).toHomeomorph.toEquiv hφ hψ f.toDistr := by
+  rw [reflection_eq_compLinearIsometryEquiv, toDistr_compLinearIsometryEquiv _ hφ hψ]
+
+/-- On the `Lᵖ` representatives `J^s u`, the reflection is composition with `x ↦ -x`. -/
+@[simp]
+theorem toLp_reflection (f : H^{s, p}(E, F)) :
+    (reflection E F s p f).toLp =
+      Lp.compMeasurePreserving (LinearIsometryEquiv.neg ℝ)
+        (LinearIsometryEquiv.neg ℝ : E ≃ₗᵢ[ℝ] E).measurePreserving f.toLp := by
+  rw [reflection_eq_compLinearIsometryEquiv, toLp_compLinearIsometryEquiv]
 
 /-- The reflection is an involution. -/
 @[simp]
@@ -140,8 +166,9 @@ theorem reflection_reflection (f : H^{s, p}(E, F)) :
   (compLinearIsometryEquiv s p (LinearIsometryEquiv.neg ℝ)).symm_apply_apply f
 
 @[simp]
-theorem reflection_symm : (reflection E F s p).symm = reflection E F s p :=
-  (rfl)
+theorem reflection_symm : (reflection E F s p).symm = reflection E F s p := by
+  rw [reflection_eq_compLinearIsometryEquiv, compLinearIsometryEquiv_symm,
+    LinearIsometryEquiv.symm_neg]
 
 theorem reflection_involutive : Function.Involutive (reflection E F s p) :=
   reflection_reflection

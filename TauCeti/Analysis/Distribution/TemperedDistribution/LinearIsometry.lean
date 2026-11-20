@@ -28,8 +28,8 @@ multiplier whose symbol is invariant under `A`
 `J^s`, whose symbol `(1 + ‖ξ‖²)^(s/2)` is radial, commutes with `A^*` for every real `s`
 (`TemperedDistribution.besselPotential_compCLM_linearIsometryEquiv`). On `Lᵖ` functions the
 pullback is composition with the measure-preserving map `A`
-(`TemperedDistribution.compCLM_linearIsometryEquiv_toTemperedDistribution`). Together these show
-that `A^*` preserves the Bessel-potential class `H^{s,p}` for every real `s` and every
+(`TemperedDistribution.compCLM_toTemperedDistribution_eq_compMeasurePreserving`). Together these
+show that `A^*` preserves the Bessel-potential class `H^{s,p}` for every real `s` and every
 `1 ≤ p ≤ ∞` (`TemperedDistribution.MemSobolev.compCLM_linearIsometryEquiv`), with the `Lᵖ`
 representative of `J^s (A^* u)` the composition of that of `J^s u` with `A`; the norms of the
 Bessel-potential spaces are therefore invariant under `A`.
@@ -128,29 +128,16 @@ theorem besselPotential_compCLM_linearIsometryEquiv (s : ℝ) (T : 𝓢'(E, F)) 
   fourierMultiplierCLM_compCLM_linearIsometryEquiv A hφ hψ (by fun_prop)
     (fun ξ ↦ by rw [A.norm_map]) T
 
-/-- On an `Lᵖ` function `u`, the pullback along a linear isometry equivalence `A` is the
-distribution of the composition `u ∘ A`, the `Lᵖ` precomposition with the measure-preserving map
-`A`. -/
-theorem compCLM_linearIsometryEquiv_toTemperedDistribution [CompleteSpace F] {p : ℝ≥0∞}
-    [Fact (1 ≤ p)] (u : Lp F p (volume : Measure E)) :
-    compCLM F A.toHomeomorph.toEquiv hφ hψ (u : 𝓢'(E, F)) =
-      (Lp.compMeasurePreserving A A.measurePreserving u : 𝓢'(E, F)) := by
-  ext f
-  rw [compCLM_apply_apply, Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply,
-    SchwartzMap.integral_pushforwardCLM_smul]
-  refine integral_congr_ae ((Lp.coeFn_compMeasurePreserving u A.measurePreserving).mono
-    fun x hx ↦ ?_)
-  simp only [hx, Function.comp_apply, Homeomorph.coe_toEquiv, LinearIsometryEquiv.coe_toHomeomorph]
-
 /-- **Linear isometries preserve the Bessel-potential spaces.** If `J^s u` is the `Lᵖ` function
 `v`, then `J^s (A^* u)` is the `Lᵖ` function `v ∘ A`, of the same `Lᵖ` norm. -/
-theorem besselPotential_compCLM_linearIsometryEquiv_eq [CompleteSpace F] {s : ℝ} {p : ℝ≥0∞}
-    [Fact (1 ≤ p)] {T : 𝓢'(E, F)} {v : Lp F p (volume : Measure E)}
+theorem besselPotential_compCLM_linearIsometryEquiv_eq_compMeasurePreserving [CompleteSpace F]
+    {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {T : 𝓢'(E, F)} {v : Lp F p (volume : Measure E)}
     (hT : besselPotential E F s T = v) :
     besselPotential E F s (compCLM F A.toHomeomorph.toEquiv hφ hψ T) =
       (Lp.compMeasurePreserving A A.measurePreserving v : 𝓢'(E, F)) := by
-  rw [besselPotential_compCLM_linearIsometryEquiv, hT,
-    compCLM_linearIsometryEquiv_toTemperedDistribution]
+  rw [besselPotential_compCLM_linearIsometryEquiv, hT]
+  exact compCLM_toTemperedDistribution_eq_compMeasurePreserving volume hφ hψ
+    A.measurePreserving v
 
 /-- The pullback along a linear isometry equivalence preserves membership in `H^{s,p}`, for every
 real `s` and `1 ≤ p ≤ ∞`. -/
@@ -158,6 +145,6 @@ theorem MemSobolev.compCLM_linearIsometryEquiv [CompleteSpace F] {s : ℝ} {p : 
     [Fact (1 ≤ p)] {T : 𝓢'(E, F)} (hT : T.MemSobolev s p) :
     (compCLM F A.toHomeomorph.toEquiv hφ hψ T).MemSobolev s p := by
   obtain ⟨v, hv⟩ := hT
-  exact ⟨_, besselPotential_compCLM_linearIsometryEquiv_eq A hφ hψ hv⟩
+  exact ⟨_, besselPotential_compCLM_linearIsometryEquiv_eq_compMeasurePreserving A hφ hψ hv⟩
 
 end TemperedDistribution
