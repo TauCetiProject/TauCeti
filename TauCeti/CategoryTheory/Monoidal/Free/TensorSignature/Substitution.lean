@@ -240,14 +240,15 @@ variable (S) in
 itself. -/
 def id : Substitution S S where
   obj := FreeMonoidal.of
-  coupon g := cast (by rw [projectObj_of, projectObj_of]) (Hom.coupon g)
+  coupon g := cast (by rw [FreeMonoidal.projectObj_of, FreeMonoidal.projectObj_of])
+    (Hom.coupon g)
 
 @[simp]
 theorem id_obj : (Substitution.id S).obj = FreeMonoidal.of := (rfl)
 
 /-- The identity substitution replaces a coupon by the coupon itself, up to the identification
 of each word with its interpretation by its own generating objects (`projectObj_of`). -/
-theorem id_coupon (g : S.Coupon) : (Substitution.id S).coupon g ≍ Hom.coupon g :=
+theorem id_coupon_heq (g : S.Coupon) : (Substitution.id S).coupon g ≍ Hom.coupon g :=
   cast_heq _ _
 
 variable {U : TensorSignature.{u'', v''}}
@@ -257,8 +258,9 @@ variable {U : TensorSignature.{u'', v''}}
 diagrammatic, as for `Functor.comp`: `σ` is applied first (`Substitution.toFunctor_comp`). -/
 def comp (σ : Substitution S T) (τ : Substitution T U) : Substitution S U where
   obj a := projectObj τ.obj (σ.obj a).as
-  coupon g := cast (by rw [projectObj_projectObj, projectObj_projectObj])
-    ((σ.coupon g).subst τ)
+  coupon g :=
+    cast (by rw [FreeMonoidal.projectObj_projectObj, FreeMonoidal.projectObj_projectObj])
+      ((σ.coupon g).subst τ)
 
 @[simp]
 theorem comp_obj (σ : Substitution S T) (τ : Substitution T U) (a : S.Obj) :
@@ -267,7 +269,7 @@ theorem comp_obj (σ : Substitution S T) (τ : Substitution T U) (a : S.Obj) :
 
 /-- The composite substitution replaces a coupon by the substitution of `τ` into its replacement
 under `σ`, up to the identification of the boundary words given by `projectObj_projectObj`. -/
-theorem comp_coupon (σ : Substitution S T) (τ : Substitution T U) (g : S.Coupon) :
+theorem comp_coupon_heq (σ : Substitution S T) (τ : Substitution T U) (g : S.Coupon) :
     (σ.comp τ).coupon g ≍ (σ.coupon g).subst τ :=
   cast_heq _ _
 
@@ -339,7 +341,7 @@ theorem Hom.subst_substitutionId_heq {X Y : FreeMonoidalCategory S.Obj} (f : Hom
   | l_inv X => exact congr_arg_heq Hom.l_inv (h X)
   | ρ_hom X => exact congr_arg_heq Hom.ρ_hom (h X)
   | ρ_inv X => exact congr_arg_heq Hom.ρ_inv (h X)
-  | coupon g => exact Substitution.id_coupon g
+  | coupon g => exact Substitution.id_coupon_heq g
   | comp f g hf hg => exact comp_heq (h _) (h _) (h _) hf hg
   | whiskerLeft X f hf => exact whiskerLeft_heq (h X) (h _) (h _) hf
   | whiskerRight f X hf => exact whiskerRight_heq (h _) (h _) (h X) hf
@@ -363,7 +365,7 @@ theorem Hom.subst_subst_heq (σ : Substitution S T) (τ : Substitution T U)
   | l_inv X => exact congr_arg_heq Hom.l_inv (h X)
   | ρ_hom X => exact congr_arg_heq Hom.ρ_hom (h X)
   | ρ_inv X => exact congr_arg_heq Hom.ρ_inv (h X)
-  | coupon g => exact (Substitution.comp_coupon σ τ g).symm
+  | coupon g => exact (Substitution.comp_coupon_heq σ τ g).symm
   | comp f g hf hg => exact comp_heq (h _) (h _) (h _) hf hg
   | whiskerLeft X f hf => exact whiskerLeft_heq (h X) (h _) (h _) hf
   | whiskerRight f X hf => exact whiskerRight_heq (h _) (h _) (h X) hf
@@ -380,24 +382,26 @@ variable {U : TensorSignature.{u'', v''}}
 /-- The identity substitution is a left unit for composition. -/
 @[simp]
 theorem id_comp (σ : Substitution S T) : (Substitution.id S).comp σ = σ :=
-  hext rfl fun g ↦ (comp_coupon _ σ g).trans
+  hext rfl fun g ↦ (comp_coupon_heq _ σ g).trans
     (Hom.subst_congr_heq σ (congrArg FreeMonoidal.as (projectObj_of _))
-      (congrArg FreeMonoidal.as (projectObj_of _)) (id_coupon g))
+      (congrArg FreeMonoidal.as (projectObj_of _)) (id_coupon_heq g))
 
 /-- The identity substitution is a right unit for composition. -/
 @[simp]
 theorem comp_id (σ : Substitution S T) : σ.comp (Substitution.id T) = σ :=
   hext (funext fun _ ↦ projectObj_of _) fun g ↦
-    (comp_coupon σ _ g).trans (Hom.subst_substitutionId_heq _)
+    (comp_coupon_heq σ _ g).trans (Hom.subst_substitutionId_heq _)
 
 /-- Composition of substitutions is associative. -/
 theorem comp_assoc {W : TensorSignature.{u''', v'''}} (σ : Substitution S T)
     (τ : Substitution T U) (ρ : Substitution U W) : (σ.comp τ).comp ρ = σ.comp (τ.comp ρ) :=
   hext (funext fun a ↦ projectObj_projectObj ρ.obj τ.obj (σ.obj a).as) fun g ↦
-    ((comp_coupon _ ρ g).trans
-      (Hom.subst_congr_heq ρ (congrArg FreeMonoidal.as (projectObj_projectObj _ _ _)).symm
-        (congrArg FreeMonoidal.as (projectObj_projectObj _ _ _)).symm (comp_coupon σ τ g))).trans
-      ((Hom.subst_subst_heq τ ρ _).trans (comp_coupon σ _ g).symm)
+    ((comp_coupon_heq _ ρ g).trans
+      (Hom.subst_congr_heq ρ
+        (congrArg FreeMonoidal.as (FreeMonoidal.projectObj_projectObj _ _ _)).symm
+        (congrArg FreeMonoidal.as (FreeMonoidal.projectObj_projectObj _ _ _)).symm
+        (comp_coupon_heq σ τ g))).trans
+      ((Hom.subst_subst_heq τ ρ _).trans (comp_coupon_heq σ _ g).symm)
 
 /-- The functor induced by the identity substitution is the identity functor. -/
 @[simp]
