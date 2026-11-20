@@ -427,7 +427,10 @@ private theorem compactDualExtension_apply (u : ℂ ⊗[ℝ] (E →L_c[ℝ] ℝ)
     ContinuousLinearMap.comp_apply,
     Complex.ofRealCLM_apply, ContinuousLinearMap.toUniformConvergenceCLM_symm_apply,
     smul_eq_mul]
-  apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im]; ring
+  apply Complex.ext
+  · simp [Complex.mul_re, Complex.mul_im]
+    ring
+  · simp [Complex.mul_re, Complex.mul_im]
 
 /-- The inverse is the literal tensor made from Re/Im restrictions to the real inclusion. -/
 private def compactDualRestriction (A : (ℂ ⊗[ℝ] E) →L_c[ℂ] ℂ) : ℂ ⊗[ℝ] (E →L_c[ℝ] ℝ) :=
@@ -623,7 +626,10 @@ theorem complexificationCompactDualEquiv_tmulConj (u : ℂ ⊗[ℝ] (E →L_c[�
   simp only [compactDualEquiv_apply, compactDualExtension_apply, compactDualConjCLE_apply,
     realPart_tmulConj,
     imaginaryPart_tmulConj]
-  apply Complex.ext <;> simp [Complex.mul_re, Complex.mul_im]; ring
+  apply Complex.ext
+  · simp [Complex.mul_re]
+  · simp [Complex.mul_im]
+    ring
 
 /-- The actual real dual is included by the native complex-linear extension. -/
 def compactDualComplexExtension : (E →L_c[ℝ] ℝ) →L[ℝ] ((ℂ ⊗[ℝ] E) →L_c[ℂ] ℂ) :=
