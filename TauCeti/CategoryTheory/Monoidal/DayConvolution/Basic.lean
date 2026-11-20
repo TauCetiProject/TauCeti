@@ -42,12 +42,12 @@ initial in every positive level.
   carries the inverse associator to the inverse Day convolution associator.
 * `DayFunctor.tensor_tensor_hom_ext`, `DayFunctor.unit_tensor_hom_ext`,
   `DayFunctor.tensor_unit_hom_ext`: extensionality for morphisms out of iterated Day convolutions.
-* `TauCeti.CategoryTheory.MonoidalCategory.DayConvolution.isIso_can`: the structure map of a Day
-  convolution unit is an isomorphism when `𝟙_ C` has only the identity endomorphism. The instances
+* `Functor.isIso_dayConvolutionUnitCan`: the structure map of a Day convolution unit is an
+  isomorphism when `𝟙_ C` has only the identity endomorphism. The instances
   `TauCeti.CategoryTheory.MonoidalCategory.DayConvolution.isIso_unitUnit` and
   `DayFunctor.isIso_ν` record this for the unit of a lawful Day convolution and of `C ⊛⥤ V`.
-* `TauCeti.CategoryTheory.MonoidalCategory.DayConvolution.isInitialUnitObj`: a Day convolution
-  unit is initial at objects receiving no morphism from `𝟙_ C`.
+* `Functor.isInitialDayConvolutionUnitObj`: a Day convolution unit is initial at objects
+  receiving no morphism from `𝟙_ C`.
 -/
 
 public section
@@ -58,7 +58,7 @@ section UnitValues
 
 open CategoryTheory MonoidalCategory Limits
 
-namespace TauCeti.CategoryTheory.MonoidalCategory.DayConvolution
+namespace CategoryTheory.Functor
 
 variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
   [MonoidalCategory C] [MonoidalCategory V]
@@ -66,8 +66,8 @@ variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
 /-- If the only endomorphism of `𝟙_ C` is the identity, then the structure map
 `can : 𝟙_ V ⟶ U.obj (𝟙_ C)` of a Day convolution unit `U` is an isomorphism: `U` takes the value
 `𝟙_ V` at `𝟙_ C`. -/
-instance isIso_can (U : C ⥤ V) [DayConvolutionUnit U] [Subsingleton (𝟙_ C ⟶ 𝟙_ C)] :
-    IsIso (DayConvolutionUnit.can (F := U)) := by
+instance isIso_dayConvolutionUnitCan (U : C ⥤ V) [DayConvolutionUnit U]
+    [Subsingleton (𝟙_ C ⟶ 𝟙_ C)] : IsIso (DayConvolutionUnit.can (F := U)) := by
   -- With a single endomorphism of `𝟙_ C`, the inclusion of `𝟙_ C` is fully faithful.
   have : (Functor.fromPUnit.{0} (𝟙_ C)).Full :=
     ⟨fun _ ↦ ⟨Discrete.eqToHom (Subsingleton.elim _ _), Subsingleton.elim (α := 𝟙_ C ⟶ 𝟙_ C) _ _⟩⟩
@@ -76,20 +76,32 @@ instance isIso_can (U : C ⥤ V) [DayConvolutionUnit U] [Subsingleton (𝟙_ C �
 
 /-- If there is no morphism `𝟙_ C ⟶ d`, then a Day convolution unit `U` takes an initial value
 at `d`. -/
-def isInitialUnitObj (U : C ⥤ V) [DayConvolutionUnit U] {d : C} [IsEmpty (𝟙_ C ⟶ d)] :
-    IsInitial (U.obj d) :=
+def isInitialDayConvolutionUnitObj (U : C ⥤ V) [DayConvolutionUnit U] {d : C}
+    [IsEmpty (𝟙_ C ⟶ d)] : IsInitial (U.obj d) :=
   have : IsEmpty (CostructuredArrow (Functor.fromPUnit.{0} (𝟙_ C)) d) :=
     ⟨fun f ↦ IsEmpty.false (α := 𝟙_ C ⟶ d) f.hom⟩
   isColimitEquivIsInitialOfIsEmpty _ _ (DayConvolutionUnit.isPointwiseLeftKanExtensionCan d)
+
+end CategoryTheory.Functor
+
+namespace TauCeti.CategoryTheory.MonoidalCategory.DayConvolution
+
+variable {C : Type u₁} [Category.{v₁} C] {V : Type u₂} [Category.{v₂} V]
+  [MonoidalCategory C] [MonoidalCategory V]
 
 /-- If the only endomorphism of `𝟙_ C` is the identity, then the structure map
 `unitUnit C V D : 𝟙_ V ⟶ ((ι C V D).obj (𝟙_ D)).obj (𝟙_ C)` of a lawful Day convolution is an
 isomorphism. -/
 instance isIso_unitUnit (D : Type u₃) [Category.{v₃} D] [MonoidalCategoryStruct D]
     [LawfulDayConvolutionMonoidalCategoryStruct C V D] [Subsingleton (𝟙_ C ⟶ 𝟙_ C)] :
-    IsIso (LawfulDayConvolutionMonoidalCategoryStruct.unitUnit C V D) :=
-  letI := LawfulDayConvolutionMonoidalCategoryStruct.convolutionUnit C V D
-  isIso_can ((LawfulDayConvolutionMonoidalCategoryStruct.ι C V D).obj (𝟙_ D))
+    IsIso (LawfulDayConvolutionMonoidalCategoryStruct.unitUnit C V D) := by
+  have := letI := LawfulDayConvolutionMonoidalCategoryStruct.convolutionUnit C V D
+    Functor.isIso_dayConvolutionUnitCan
+      ((LawfulDayConvolutionMonoidalCategoryStruct.ι C V D).obj (𝟙_ D))
+  -- The structure map of Mathlib's `convolutionUnit` is `unitUnit`.
+  unfold LawfulDayConvolutionMonoidalCategoryStruct.convolutionUnit at this
+  dsimp only at this
+  exact this
 
 end TauCeti.CategoryTheory.MonoidalCategory.DayConvolution
 

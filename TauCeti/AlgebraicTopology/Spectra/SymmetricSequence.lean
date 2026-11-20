@@ -154,7 +154,6 @@ noncomputable def SymmetricSequence.isInitialUnitObj (n : ℕ) :
     Limits.IsInitial ((𝟙_ SymmetricSequence.{u}).functor.obj (FiniteBijection.mk (n + 1))) :=
   letI := LawfulDayConvolutionMonoidalCategoryStruct.convolutionUnit
     FiniteBijection PointedSSet.{u} SymmetricSequence.{u}
-  DayFunctor.ι_obj (𝟙_ SymmetricSequence.{u}) ▸
-    CategoryTheory.MonoidalCategory.DayConvolution.isInitialUnitObj _
+  DayFunctor.ι_obj (𝟙_ SymmetricSequence.{u}) ▸ Functor.isInitialDayConvolutionUnitObj _
 
 end TauCeti
