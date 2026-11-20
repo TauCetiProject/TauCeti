@@ -85,6 +85,8 @@ likewise for `(det E)^*` and `det E ⊗ (det F)^*`.
 * `TauCeti.isComplexPositive_iff`: complex positivity is computed by any complex basis.
 * `TauCeti.isComplexPositive_iff_of_orientation_eq`: complex positivity is
   `TauCeti.complexOrientation`, computed by any real basis in that orientation.
+* `TauCeti.isComplexPositive_ιMulti_of_subsingleton`: the empty exterior product of a zero complex
+  vector space is complex positive.
 * `TauCeti.IsComplexPositive.exists_pos_smul_eq`, `TauCeti.IsComplexPositive.not_neg`,
   `TauCeti.isComplexPositive_or_isComplexPositive_neg`: complex positivity is an orientation of
   the line `det E`; similarly for `(det E)^*` and `det E ⊗ (det F)^*`.
@@ -250,6 +252,15 @@ theorem isComplexPositive_ιMulti_complexToRealFamily (b : Basis (Fin n) ℂ E)
     (h : finrank ℝ E = 2 * n) :
     IsComplexPositive (exteriorPower.ιMulti ℝ _ (complexToRealFamily ⇑b ∘ Fin.cast h)) :=
   ⟨n, b, 1, one_pos, by simp⟩
+
+omit [IsScalarTower ℝ ℂ E] in
+/-- Every exterior product in the real determinant line of a zero complex vector space is complex
+positive: it is the empty exterior product, the one given by the empty complex basis. -/
+theorem isComplexPositive_ιMulti_of_subsingleton [Subsingleton E] (w : Fin (finrank ℝ E) → E) :
+    IsComplexPositive (exteriorPower.ιMulti ℝ _ w) := by
+  have h : finrank ℝ E = 0 := finrank_zero_of_subsingleton
+  have : IsEmpty (Fin (finrank ℝ E)) := by rw [h]; infer_instance
+  convert isComplexPositive_ιMulti_complexToRealFamily (Basis.empty E : Basis (Fin 0) ℂ E) h
 
 /-- The exterior product of the image under a complex-linear map `f` of the real family underlying
 a family `v` is complex positive in `det F` when `f ∘ v` is a complex basis `b` of `F`. -/

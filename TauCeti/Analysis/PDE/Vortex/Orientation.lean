@@ -27,15 +27,17 @@ identifies this orientation with the complex orientation of the tangent space of
 
 * `J'` acts on `L²(ℂ; ℝ⁴)` pointwise, as an almost complex structure
   (`TauCeti.Vortex.lpTargetAlmostComplexStructure`), and the realization intertwines `J` and `J'`
-  (`TauCeti.Vortex.isComplexLinearMap_sobolevGaugeFixedOperator`). Packaged as a complex-linear map
+  (`TauCeti.Vortex.isComplexLinearMap_sobolevGaugeFixedOperator`); both are in
+  `TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure`. Packaged as a complex-linear map
   (`TauCeti.IsComplexLinearMap.toComplexLinearMap`), its determinant line carries the complex
   orientation of the determinant lines of complex-linear Fredholm operators
   (`TauCeti.IsComplexLinearMap.IsComplexPositiveDetLine`).
 * At a plane vortex `x` lying in `A_m^k` for every `k`, with zero divisor `D`, the kernel of the
   realization is identified with the space `D → ℂ` of principal parts, the tangent space of
   `Sym^m ℂ` at `D`: an element `y` of the kernel is taken to the weak `L²` kernel, there to the
-  smooth classical solution with the same values, and then to the principal parts of `δα / α` at
-  the zeros of `α` (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). This identification is
+  smooth classical solution with the same values (`TauCeti.Vortex.gaugeFixedKernelEquivWeak`), and
+  then to the principal parts of `δα / α` at the zeros of `α`
+  (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). This identification is
   complex linear: it sends `J y` to `i` times the principal parts of `y`
   (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv_sobolevGaugeFixedKernelAlmostComplexStructure`).
 * The realization is onto at a vortex, so its determinant line is the real determinant line of its
@@ -69,72 +71,12 @@ open scoped ENNReal Topology
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
 
-/-! ### The realization as a complex-linear map -/
-
-/-- The complex structure `J'` of the target `ℝ ⊕ ℝ ⊕ ℂ` of the gauge-fixed operator, acting
-pointwise on `L²(ℂ; ℝ⁴)`, as an almost complex structure. -/
-def lpTargetAlmostComplexStructure :
-    AlmostComplexStructure (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) where
-  toLinearMap :=
-    targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLpₗ 2 μ⊤
-  square_neg := LinearMap.ext fun g ↦ Lp.ext <| by
-    filter_upwards [ContinuousLinearMap.coeFn_compLp
-        targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap
-        (targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp g),
-      ContinuousLinearMap.coeFn_compLp
-        targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap g,
-      Lp.coeFn_neg g] with z h₁ h₂ h₃
-    simpa [h₁, h₂] using h₃.symm
-
-/-- The almost complex structure of `L²(ℂ; ℝ⁴)` is `J'` composed with the classes. -/
-theorem lpTargetAlmostComplexStructure_apply (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    lpTargetAlmostComplexStructure g =
-      targetComplexStructure.toContinuousLinearEquiv.toContinuousLinearMap.compLp g :=
-  (rfl)
-
-/-- The almost complex structure of `L²(ℂ; ℝ⁴)` acts by `J'` pointwise. -/
-theorem coeFn_lpTargetAlmostComplexStructure (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
-    lpTargetAlmostComplexStructure g =ᵐ[μ⊤] fun z ↦ targetComplexStructure (g z) := by
-  rw [lpTargetAlmostComplexStructure_apply]
-  exact ContinuousLinearMap.coeFn_compLp _ g
-
-/-- **The Sobolev realization of `L_x` is complex linear**: it intertwines the almost complex
-structure `J` of `H¹(ℂ)⁴` with the almost complex structure `J'` of `L²(ℂ; ℝ⁴)`. -/
-theorem isComplexLinearMap_sobolevGaugeFixedOperator (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
-    IsComplexLinearMap sobolevVariationAlmostComplexStructure lpTargetAlmostComplexStructure
-      (sobolevGaugeFixedOperator a : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →ₗ[ℝ] _) :=
-  (isComplexLinearMap_iff_apply _ _ _).2 fun y ↦ by
-    rw [lpTargetAlmostComplexStructure_apply]
-    exact sobolevGaugeFixedOperator_sobolevVariationAlmostComplexStructure a y
-
 /-! ### The principal parts of the kernel at a plane vortex -/
 
 section Vortex
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
   {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {D : Multiset ℂ} {ν : ℂ → ℂ}
-
-/-- At a continuous field lying in every `A_m^k`, the classical kernel of `L_x` is identified with
-its weak kernel by taking `L²` classes. -/
-private def gaugeFixedKernelEquivWeak (hx : Continuous x)
-    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
-    gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x :=
-  (LinearEquiv.ofInjective _ (gaugeFixedKernelToLp_injective x)).trans
-    (LinearEquiv.ofEq _ _ (range_gaugeFixedKernelToLp
-      (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-      fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))))
-
-/-- A continuous field lying in every `A_m^k` has `|α|² → 1` at infinity. -/
-private theorem tendsto_normSq_of_forall_mem_framedFieldSpace (hx : Continuous x)
-    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
-    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
-  tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
-
-private theorem coe_gaugeFixedKernelEquivWeak_apply (hx : Continuous x)
-    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (y : gaugeFixedKernel x) :
-    (gaugeFixedKernelEquivWeak hx hmem y : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume) =
-      gaugeFixedKernelToLp x y :=
-  (rfl)
 
 /-- **The principal parts of the kernel of the realization.** Let `x` be a continuous field lying
 in the affine field space `A_m^k` for every `k`, whose section satisfies the holomorphicity rows
@@ -209,21 +151,6 @@ private theorem exists_gaugeFixedKernel_ae_eq_values (hx : Continuous x)
   rw [← coe_gaugeFixedKernelEquivWeak_apply hx hmem, hu]
   exact coeFn_sobolevGaugeFixedKernelEquiv hx hax y
 
-/-- The values of `J y`, for `y ∈ H¹(ℂ)⁴`, are almost everywhere `J` applied to the values of
-`y`. -/
-private theorem values_sobolevVariationAlmostComplexStructure_ae
-    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    (fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value (sobolevVariationAlmostComplexStructure y j) z :
-      EuclideanSpace ℝ (Fin 4))) =ᵐ[volume]
-      fun z ↦ variationComplexStructure (WithLp.toLp 2 fun j ↦ W1p.value (y j) z) := by
-  have hv (j : Fin 4) : ∀ᵐ z ∂volume, W1p.value (-y j) z = -W1p.value (y j) z := by
-    refine Filter.Eventually.filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge) ?_
-    rw [W1p.value_neg]
-    exact Lp.coeFn_neg _
-  filter_upwards [hv 1, hv 3] with z h₁ h₃
-  ext j
-  fin_cases j <;> simp [h₁, h₃]
-
 /-- **The principal-part identification of the kernel is complex linear**: it sends `J y` to `i`
 times the principal parts of `y`, where `J` is the complex structure of the kernel of the
 realization (`sobolevGaugeFixedKernelAlmostComplexStructure`). -/
@@ -249,8 +176,9 @@ theorem sobolevKernelPrincipalPartEquiv_sobolevGaugeFixedKernelAlmostComplexStru
           W1p.value ((y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) j) z) :=
       hu.mono fun z hz ↦ congrArg variationComplexStructure hz
     rw [coe_sobolevGaugeFixedKernelAlmostComplexStructure_apply]
-    exact (h₁.trans h₂).trans (values_sobolevVariationAlmostComplexStructure_ae
-      (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)).symm
+    exact (h₁.trans h₂).trans ((values_sobolevVariationAlmostComplexStructure_ae
+      (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)).filter_mono
+        (ae_mono (Measure.restrict_coe_opens_top _).ge)).symm
   have e₁ := sobolevKernelPrincipalPartEquiv_eq_of_ae_eq hx hmem hhol hax hD hν hνeq
     (sobolevGaugeFixedKernelAlmostComplexStructure a y) (gaugeFixedKernelAlmostComplexStructure x u)
     hJu

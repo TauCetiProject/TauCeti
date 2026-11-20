@@ -49,6 +49,8 @@ satisfying the full vortex equation, the cokernel of that operator also vanishes
 ## Main definitions
 
 * `TauCeti.Vortex.weakGaugeFixedKernel x`: the weak `L²` kernel of `L_x`.
+* `TauCeti.Vortex.gaugeFixedKernelEquivWeak`: at a continuous field lying in every `A_m^k`, the
+  isomorphism from the classical kernel onto the weak kernel given by `L²` classes.
 
 ## Main results
 
@@ -152,6 +154,24 @@ theorem finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel (hx : ContDiff 
 /-! ### The weak kernel at a plane vortex -/
 
 variable {f : ContDiffBump (0 : ℝ)} {m : ℕ}
+
+/-- **The classical and weak kernels at a field in every `A_m^k`.** At a continuous field lying in
+the affine field space `A_m^k` for every `k`, taking `L²` classes (`gaugeFixedKernelToLp`) is an
+isomorphism from the classical kernel of `L_x` onto its weak `L²` kernel
+(`range_gaugeFixedKernelToLp`). -/
+def gaugeFixedKernelEquivWeak (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
+    gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x :=
+  (LinearEquiv.ofInjective _ (gaugeFixedKernelToLp_injective x)).trans
+    (LinearEquiv.ofEq _ _ (range_gaugeFixedKernelToLp
+      (contDiff_of_forall_mem_framedFieldSpace hx hmem)
+      fun i n ↦ exists_norm_iteratedFDeriv_le_of_mem_framedFieldSpace hx i n (hmem (n + 2))))
+
+/-- `gaugeFixedKernelEquivWeak` takes a classical kernel element to its `L²` class. -/
+theorem coe_gaugeFixedKernelEquivWeak_apply (hx : Continuous x)
+    (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) (y : gaugeFixedKernel x) :
+    (gaugeFixedKernelEquivWeak hx hmem y : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume) =
+      gaugeFixedKernelToLp x y :=
+  (rfl)
 
 /-- **The weak kernel at a plane vortex is finite-dimensional.** Let `x` be a continuous field
 lying in the affine field space `A_m^k` for every `k` whose section satisfies the holomorphicity

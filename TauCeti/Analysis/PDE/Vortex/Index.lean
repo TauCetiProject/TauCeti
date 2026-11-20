@@ -202,7 +202,7 @@ theorem isFredholm_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace (hx 
     (hax : a =ᵐ[μ⊤] x) :
     (sobolevGaugeFixedOperator a).IsFredholm := by
   have hxs := contDiff_of_forall_mem_framedFieldSpace hx hmem
-  have hlim := tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx
+  have hlim := tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem
   exact isFredholm_sobolevGaugeFixedOperator (hxs.of_le (by simp)) hsol hlim
     (tendsto_covariantDerivative_cocompact (contDiff_euclidean.1 hxs 0).continuous
       ((contDiff_euclidean.1 hxs 2).of_le (by simp)) ((contDiff_euclidean.1 hxs 3).of_le (by simp))
@@ -217,7 +217,7 @@ theorem sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace (hx 
     Function.Surjective (sobolevGaugeFixedOperator a) :=
   sobolevGaugeFixedOperator_surjective
     ((contDiff_of_forall_mem_framedFieldSpace hx hmem).of_le (by simp)) hsol
-    (tendsto_normSq_of_mem_framedFieldSpace one_lt_two (by exact_mod_cast hmem 2) hx) hax
+    (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hax
 
 /-- **The realization at a plane vortex has index `2m`** (Taubes). Let `x` be a continuous plane
 vortex lying in the affine field space `A_m^k` for every `k`, with `L∞` class `a`. Then the

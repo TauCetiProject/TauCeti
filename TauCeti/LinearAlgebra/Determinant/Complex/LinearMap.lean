@@ -302,15 +302,6 @@ section Surjective
 
 /-! ### Surjective complex-linear maps -/
 
-/-- Every exterior product in the real determinant line of a zero complex vector space is complex
-positive: it is the empty exterior product, the one given by the empty complex basis. -/
-private theorem isComplexPositive_ιMulti_of_subsingleton {Q : Type*} [AddCommGroup Q] [Module ℂ Q]
-    [Module ℝ Q] [Subsingleton Q] (w : Fin (finrank ℝ Q) → Q) :
-    IsComplexPositive (exteriorPower.ιMulti ℝ _ w) := by
-  have h : finrank ℝ Q = 0 := finrank_zero_of_subsingleton
-  have : IsEmpty (Fin (finrank ℝ Q)) := by rw [h]; infer_instance
-  convert isComplexPositive_ιMulti_complexToRealFamily (Basis.empty Q : Basis (Fin 0) ℂ Q) h
-
 /-- **The complex orientation of a surjective complex-linear map is that of its kernel.** For a
 surjective complex-linear map `f`, the determinant line of the underlying real map is the real
 determinant line of its kernel (`LinearMap.detLineEquivOfSurjective`), which is that of the complex
@@ -339,8 +330,7 @@ theorem isComplexPositiveDetLine_iff_of_surjective (hf : Function.Surjective f)
       detLineEquivOfSurjective_tmul_ιMulti (f := f.restrictScalars ℝ) hf _ _ w,
       LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.detLineCongr_ιMulti, map_smul,
       ← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply]
-  -- The right-hand side is `Ψ z` by the definition of `Ψ`.
-  change IsComplexPositiveTMulDual (f.detLineRestrictScalarsEquiv z) ↔ IsComplexPositive (Ψ z)
+  rw [isComplexPositiveDetLine_iff, ← LinearEquiv.trans_apply]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨x, φ, hx, hφ, ht⟩ := isComplexPositiveTMulDual_iff.1 h
     rw [← LinearEquiv.eq_symm_apply] at ht
