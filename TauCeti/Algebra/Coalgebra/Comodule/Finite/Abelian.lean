@@ -8,7 +8,9 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Abelian
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Product
 public import Mathlib.CategoryTheory.Abelian.Subcategory
-import Mathlib.CategoryTheory.Preadditive.LeftExact
+public import TauCeti.CategoryTheory.ObjectProperty.Kernels
+import Mathlib.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # The abelian category of finite comodules
@@ -19,7 +21,11 @@ In particular, finite-dimensional comodules over a field form an abelian categor
 exact forgetful functor to vector spaces. For coordinate Hopf algebras this supplies the
 abelian and exact structures of the Tannakian representation category.
 
-The full-subcategory argument uses Mathlib's `ObjectProperty` kernel and cokernel closure API.
+The full-subcategory argument shows that finite generation is closed under kernels, cokernels and
+finite products. Mathlib's `ObjectProperty` abelian-subcategory instance then makes finite
+comodules abelian, and `CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
+`CategoryTheory.ObjectProperty.preservesFiniteColimits_ι` make their inclusion into all comodules
+exact.
 -/
 
 public section
@@ -46,6 +52,23 @@ instance isFG_isClosedUnderCokernels :
     exact Module.Finite.equiv (isoToLinearEquiv (R := R) (C := C)
       ((cokernelIsoRangeQuotient f).symm ≪≫ colimit.isoColimitCocone ⟨s, hs⟩))
 
+/-- Finite comodules are closed under binary products. -/
+instance isFG_isClosedUnderBinaryProducts :
+    (isFG.{u, v, w} R C).IsClosedUnderBinaryProducts :=
+  have : HasBinaryBiproducts (ComoduleCat.{u, v, w} R C) := .of_hasBinaryProducts
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN ↦ by
+    let F := forget₂ (ComoduleCat.{u, v, w} R C) (ModuleCat.{w} R)
+    have := preservesBinaryBiproducts_of_preservesBiproducts F
+    let : Module.Finite R (F.obj M) := hM
+    let : Module.Finite R (F.obj N) := hN
+    exact Module.Finite.equiv
+      ((F.mapBiprod M N ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv.symm)
+
+/-- Finite comodules are closed under finite products. -/
+instance isFG_isClosedUnderFiniteProducts :
+    (isFG.{u, v, w} R C).IsClosedUnderFiniteProducts :=
+  .mk'
+
 variable [IsNoetherianRing R] [Module.Flat R C]
 
 /-- Kernels of morphisms between finite comodules are finite over a Noetherian base. -/
@@ -63,32 +86,6 @@ end ComoduleCat
 namespace FGComoduleCat
 
 variable [IsNoetherianRing R] [Module.Flat R C]
-
-/-- Finite comodules over a flat coalgebra over a Noetherian commutative ring are abelian. -/
-instance : Abelian (FGComoduleCat.{u, v, w} R C) where
-
-instance {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    PreservesLimit (parallelPair f 0) (incl (R := R) (C := C)) :=
-  (ComoduleCat.isFG R C).preservesKernels_ι f
-
-omit [IsNoetherianRing R] [Module.Flat R C] in
-instance {M N : FGComoduleCat.{u, v, w} R C} (f : M ⟶ N) :
-    PreservesColimit (parallelPair f 0) (incl (R := R) (C := C)) :=
-  (ComoduleCat.isFG R C).preservesCokernels_ι f
-
-/-- Inclusion of finite comodules preserves finite limits. -/
-instance : PreservesFiniteLimits (incl (R := R) (C := C) :
-    FGComoduleCat.{u, v, w} R C ⥤ _) :=
-  Functor.preservesFiniteLimits_of_preservesKernels _
-
-omit [IsNoetherianRing R] [Module.Flat R C] in
-/-- Inclusion of finite comodules preserves finite colimits. -/
-instance : PreservesFiniteColimits (incl (R := R) (C := C) :
-    FGComoduleCat.{u, v, w} R C ⥤ _) :=
-  by
-    let : HasCoequalizers (FGComoduleCat.{u, v, w} R C) :=
-      Preadditive.hasCoequalizers_of_hasCokernels
-    exact Functor.preservesFiniteColimits_of_preservesCokernels _
 
 /-- The underlying-module functor on finite comodules preserves finite limits. -/
 instance : PreservesFiniteLimits
