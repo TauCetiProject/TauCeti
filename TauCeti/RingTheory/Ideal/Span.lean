@@ -32,4 +32,10 @@ theorem span_singleton_intCast_eq_natAbs {R : Type*} [Ring R] (a : ℤ) :
   · conv_lhs => rw [h, Int.cast_natCast]
   · conv_lhs => rw [h, Int.cast_neg, Int.cast_natCast, span_singleton_neg]
 
+/-- In a characteristic-zero semiring, the ideal spanned by a nonzero natural number is nonzero. -/
+theorem span_singleton_natCast_ne_bot {R : Type*} [Semiring R] [CharZero R] {n : ℕ}
+    (hn : n ≠ 0) : Ideal.span {(n : R)} ≠ ⊥ := by
+  simpa using hn
+
+
 end Ideal
