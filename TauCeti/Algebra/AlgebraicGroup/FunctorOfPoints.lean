@@ -282,8 +282,7 @@ noncomputable def piValueMulEquiv :
 @[simp]
 lemma piValueMulEquiv_apply (f : WithConv (H →ₐ[R] ∀ i, B i)) (i : ι) (h : H) :
     (piValueMulEquiv f i).ofConv h = f.ofConv h i := by
-  change (mapValue (Pi.evalAlgHom R B i) f).ofConv h = _
-  rw [mapValue_apply, ofConv_toConv]
+  delta piValueMulEquiv
   rfl
 
 @[simp]
