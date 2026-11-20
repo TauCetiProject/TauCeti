@@ -22,6 +22,9 @@ together with the elementary bound `log φ < 1 / 2` (`φ² < e`).
 
 ## Main results
 
+* `TauCeti.floor_goldenRatio`, `TauCeti.fract_goldenRatio`, `TauCeti.inv_fract_goldenRatio`:
+  `⌊φ⌋ = 1`, `Int.fract φ = φ - 1`, and `φ` is a fixed point of the Gauss map
+  `x ↦ (Int.fract x)⁻¹`.
 * `TauCeti.aroots_X_sq_sub_X_sub_one`: the complex roots of `X² - X - 1` are `φ` and `ψ`.
 * `TauCeti.log_goldenRatio_lt_one_half`: `Real.log Real.goldenRatio < 1 / 2`.
 -/
@@ -32,6 +35,21 @@ open Polynomial
 open scoped Real
 
 namespace TauCeti
+
+/-- The integer part of the golden ratio is `1`. -/
+@[simp]
+theorem floor_goldenRatio : ⌊Real.goldenRatio⌋ = 1 :=
+  Int.floor_eq_iff.mpr ⟨by simpa using Real.one_lt_goldenRatio.le, by
+    norm_num; linarith [Real.goldenRatio_lt_two]⟩
+
+/-- The fractional part of the golden ratio is `φ - 1`. -/
+theorem fract_goldenRatio : Int.fract Real.goldenRatio = Real.goldenRatio - 1 := by
+  simp [Int.fract]
+
+/-- The golden ratio is a fixed point of the Gauss map `x ↦ (Int.fract x)⁻¹`. -/
+theorem inv_fract_goldenRatio : (Int.fract Real.goldenRatio)⁻¹ = Real.goldenRatio := by
+  rw [fract_goldenRatio]
+  exact inv_eq_of_mul_eq_one_left (by linear_combination Real.goldenRatio_sq)
 
 /-- The complex roots of `X² - X - 1` are the golden ratio `φ` and its conjugate `ψ`. -/
 theorem aroots_X_sq_sub_X_sub_one :
