@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
+public import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
 # Functorial pullback of line bundles
@@ -196,24 +197,6 @@ lemma pullbackTensorProductIso_hom_hom_comp_tensorProductObjIso_hom (f : X ⟶ Y
         Functor.OplaxMonoidal.δ (Scheme.Modules.pullback f) L.obj K.obj ≫
         (eqToHom (pullback_obj_obj f L).symm ⊗ₘ eqToHom (pullback_obj_obj f K).symm) := by
   simp [pullbackTensorProductIso_hom_hom]
-
-/-- Whiskering on the right by a morphism commutes with transports of the tensor factors along
-equalities of objects. -/
-private lemma whiskerRight_comp_tensorHom_eqToHom {C : Type*} [Category C] [MonoidalCategory C]
-    {A A' B B' K K' : C} (hA : A = A') (hB : B = B') (hK : K = K') (g : A ⟶ B) :
-    g ▷ K ≫ (eqToHom hB ⊗ₘ eqToHom hK) =
-      (eqToHom hA ⊗ₘ eqToHom hK) ≫ (eqToHom hA.symm ≫ g ≫ eqToHom hB) ▷ K' := by
-  subst hA hB hK
-  simp
-
-/-- Whiskering on the left by a morphism commutes with transports of the tensor factors along
-equalities of objects. -/
-private lemma whiskerLeft_comp_tensorHom_eqToHom {C : Type*} [Category C] [MonoidalCategory C]
-    {L L' A A' B B' : C} (hL : L = L') (hA : A = A') (hB : B = B') (g : A ⟶ B) :
-    L ◁ g ≫ (eqToHom hL ⊗ₘ eqToHom hB) =
-      (eqToHom hL ⊗ₘ eqToHom hA) ≫ L' ◁ (eqToHom hA.symm ≫ g ≫ eqToHom hB) := by
-  subst hL hA hB
-  simp
 
 /-- `pullbackTensorProductIso` is natural with respect to isomorphisms in the first factor,
 transported through the tensor product by `tensorProductCongrLeft`. -/
