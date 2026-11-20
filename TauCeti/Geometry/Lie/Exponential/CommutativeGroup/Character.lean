@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Commutative
 public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The period lattice and the real weights of circle characters
@@ -74,8 +75,8 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
   `G`, characters correspond exactly to functionals taking integer values on `Λ_ℤ`.
 * `TauCeti.mem_periodLattice_circle`, `TauCeti.circleExpGenerator_mem_periodLattice`,
   `ContinuousMonoidHom.lieWeight_id_circle`,
-  `ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`: the circle case; the
-  continuous endomorphisms of the circle are the powers `z ↦ z ^ n`, of weight `n`.
+  `ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`: the circle case; a
+  continuous endomorphism of the circle is the power `z ↦ z ^ n` exactly when its weight is `n`.
 
 ## References
 
@@ -337,7 +338,7 @@ theorem lieWeight_id_circle :
   (eq_lieWeight fun X ↦ by
     rw [coe_id, id_eq, LinearEquiv.coe_coe, ← lieExp_circle, LinearEquiv.symm_apply_apply]).symm
 
-/-- **The continuous endomorphisms of the circle are its integer powers**: a continuous
+/-- **The degree of a circle endomorphism is its weight at the generator**: a continuous
 endomorphism `f` of the circle is `z ↦ z ^ n` exactly when its weight at the generator of
 `Circle.exp` is `n`. -/
 theorem lieWeight_circleExpGenerator_eq_intCast_iff (f : Circle →ₜ* Circle) (n : ℤ) :
@@ -353,11 +354,8 @@ theorem lieWeight_circleExpGenerator_eq_intCast_iff (f : Circle →ₜ* Circle) 
     rw [← lieExp_circle, apply_lieExp_eq_circleExp_lieWeight, hX, lieExp_circle,
       ← Circle.exp_zsmul, zsmul_eq_mul, mul_comm]
   · intro hf
-    -- Evaluation at `z` is a monoid hom, so it commutes with integer powers.
     have h : f = ContinuousMonoidHom.id Circle ^ n := ext fun z ↦ by
-      rw [hf]
-      exact (map_zpow (⟨⟨fun g : Circle →ₜ* Circle ↦ g z, rfl⟩, fun _ _ ↦ rfl⟩ :
-        (Circle →ₜ* Circle) →* Circle) (.id Circle) n).symm
+      rw [hf, ContinuousMonoidHom.zpow_apply, coe_id, id_eq]
     rw [h, lieWeight_zpow, lieWeight_id_circle, LinearMap.smul_apply, LinearEquiv.coe_coe,
       circleLieAlgebraEquiv_apply_generator, zsmul_one]
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.ContinuousMonoidHom
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Character
 
 /-!
@@ -40,7 +41,7 @@ commutative.
 coweights lie in the period lattice `Λ_ℤ = (2π)⁻¹ ker(exp)` (`TauCeti.periodLattice`), since
 `exp(2π X_ψ) = ψ(Circle.exp 2π) = 1`, and conversely every `X ∈ Λ_ℤ` is the coweight of the
 cocharacter `Circle.exp t ↦ exp(t X)`, which is well defined because `t ↦ exp(t X)` has period
-`2π`. This gives the equivalence `Λ_ℤ ≃ (Circle →ₜ* G)`
+`2π` (`ContinuousMonoidHom.circleLift`). This gives the equivalence `Λ_ℤ ≃ (Circle →ₜ* G)`
 (`TauCeti.periodLatticeEquivCocharacter`), under which zero, addition, negation and integer
 multiples in `Λ_ℤ` are the trivial cocharacter and the pointwise product, inverse and powers of
 cocharacters (`TauCeti.periodLatticeEquivCocharacter_add_apply` and its companions).
@@ -167,12 +168,6 @@ theorem lieWeight_lieCoweight_eq_intCast_iff (χ : G →ₜ* Circle) (ψ : Circl
   rw [lieWeight_lieCoweight, lieWeight_circleExpGenerator_eq_intCast_iff, coe_comp]
   simp only [Function.comp_apply]
 
-/-- A cocharacter of the circle is `z ↦ z ^ n` exactly when its coweight is `n` times the generator
-of `Circle.exp`. -/
-theorem circleLieAlgebraEquiv_lieCoweight_eq_intCast_iff (ψ : Circle →ₜ* Circle) (n : ℤ) :
-    circleLieAlgebraEquiv (lieCoweight (I := 𝓡 1) ψ) = n ↔ ∀ z, ψ z = z ^ n := by
-  rw [← lieWeight_circleExpGenerator_eq_intCast_iff, lieWeight_apply, lieCoweight_def]
-
 variable [T2Space G] [BoundarylessManifold I G]
 
 /-- **The defining identity of the coweight**: `ψ (Circle.exp t) = exp (t X_ψ)`. -/
@@ -249,62 +244,25 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
   [IsMulCommutative G]
 
-/-- For `X` in the period lattice, `t ↦ exp (t X)` has period `2π`. -/
-private theorem periodic_lieExp_smul {X : LeftInvariantDerivation I G}
-    (hX : X ∈ periodLattice I G) :
-    Function.Periodic (fun t : ℝ ↦ lieExp (t • X)) (2 * π) := fun t ↦ by
-  beta_reduce
-  rw [add_smul, lieExp_add, mem_periodLattice.1 hX, mul_one]
-
-/-- The function `Circle.exp t ↦ exp (t X)` on the circle, for `X` in the period lattice. -/
-private def cocharacterFun {X : LeftInvariantDerivation I G} (hX : X ∈ periodLattice I G)
-    (z : Circle) : G :=
-  (periodic_lieExp_smul hX).lift (AddCircle.homeomorphCircle'.symm z)
-
-private theorem cocharacterFun_circleExp {X : LeftInvariantDerivation I G}
-    (hX : X ∈ periodLattice I G) (t : ℝ) :
-    cocharacterFun hX (Circle.exp t) = lieExp (t • X) := by
-  rw [cocharacterFun, AddCircle.homeomorphCircle'.symm_apply_eq.2
-    (AddCircle.homeomorphCircle'_apply_mk t).symm]
-  exact Function.Periodic.lift_coe _ t
-
-/-- The cocharacter `Circle.exp t ↦ exp (t X)` of an element `X` of the period lattice. -/
-private def cocharacter {X : LeftInvariantDerivation I G} (hX : X ∈ periodLattice I G) :
-    Circle →ₜ* G where
-  toFun := cocharacterFun hX
-  map_one' := by rw [← Circle.exp_zero, cocharacterFun_circleExp, zero_smul, lieExp_zero]
-  map_mul' z w := by
-    obtain ⟨s, rfl⟩ := Circle.exp_surjective z
-    obtain ⟨t, rfl⟩ := Circle.exp_surjective w
-    rw [← Circle.exp_add, cocharacterFun_circleExp, cocharacterFun_circleExp,
-      cocharacterFun_circleExp, add_smul, lieExp_add]
-  continuous_toFun := by
-    have hcont : Continuous fun t : ℝ ↦ lieExp (t • X) := by
-      simpa only [oneParameterSubgroup_apply] using (contMDiff_oneParameterSubgroup X).continuous
-    have hlift : Continuous (periodic_lieExp_smul hX).lift := continuous_coinduced_dom.2 hcont
-    exact hlift.comp AddCircle.homeomorphCircle'.symm.continuous
-
-private theorem cocharacter_circleExp {X : LeftInvariantDerivation I G}
-    (hX : X ∈ periodLattice I G) (t : ℝ) :
-    cocharacter hX (Circle.exp t) = lieExp (t • X) :=
-  cocharacterFun_circleExp hX t
-
 variable (I G) in
 /-- **The cocharacters of a commutative Lie group are its period lattice.** An element `X` of the
 period lattice `Λ_ℤ = (2π)⁻¹ ker(exp)` corresponds to the cocharacter `Circle.exp t ↦ exp (t X)`,
 and a cocharacter to its coweight. -/
 def periodLatticeEquivCocharacter : periodLattice I G ≃ (Circle →ₜ* G) where
-  toFun X := cocharacter X.2
+  toFun X := circleLift (oneParameterSubgroup (X : LeftInvariantDerivation I G))
+    (by rw [oneParameterSubgroup_apply]; exact mem_periodLattice.1 X.2)
   invFun ψ := ⟨lieCoweight ψ, lieCoweight_mem_periodLattice ψ⟩
-  left_inv X := Subtype.ext (eq_lieCoweight (cocharacter_circleExp X.2)).symm
-  right_inv _ := lieCoweight_injective (eq_lieCoweight (cocharacter_circleExp _)).symm
+  left_inv X := Subtype.ext (eq_lieCoweight fun t ↦ by
+    rw [circleLift_circleExp, oneParameterSubgroup_apply]).symm
+  right_inv _ := lieCoweight_injective (eq_lieCoweight fun t ↦ by
+    rw [circleLift_circleExp, oneParameterSubgroup_apply]).symm
 
 /-- The cocharacter of an element `X` of the period lattice sends `Circle.exp t` to `exp (t X)`. -/
 @[simp]
 theorem periodLatticeEquivCocharacter_apply_circleExp (X : periodLattice I G) (t : ℝ) :
     periodLatticeEquivCocharacter I G X (Circle.exp t) =
       lieExp (t • (X : LeftInvariantDerivation I G)) :=
-  cocharacter_circleExp X.2 t
+  (circleLift_circleExp _ _ t).trans (oneParameterSubgroup_apply _ t)
 
 /-- The inverse of `periodLatticeEquivCocharacter` sends a cocharacter to its coweight. -/
 @[simp]
