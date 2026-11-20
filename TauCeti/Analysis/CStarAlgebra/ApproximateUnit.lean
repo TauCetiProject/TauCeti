@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import TauCeti.Topology.ApproximateUnit
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
+import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Increasing approximate units: images and uniform convergence
