@@ -142,6 +142,8 @@ theorem isUnit_cellularIncidence_of_isEmbedding {n : ℕ} {i : cell C (n + 1)}
       TopPair.ofSubsetMap _ hfU := by
     refine TopPair.hom_ext_of_fst _ ?_
     rw [TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst]
+    -- Both sides are the inclusion `U → Dⁿ⁺²` followed by the attaching map; this `rfl` relies on
+    -- the exposed body of `TopPair.excisionMap`, whose ambient component is that inclusion.
     rfl
   have : IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hfP) (ModuleCat.of R R)
       (n + 1)) := by

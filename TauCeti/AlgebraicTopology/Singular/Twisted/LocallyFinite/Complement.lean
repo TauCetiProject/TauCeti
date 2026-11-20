@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower
 public import TauCeti.Topology.Compactness.SigmaCompact
-import TauCeti.Algebra.Category.ModuleCat.Tower.MittagLeffler
 
 /-!
 # Borel–Moore homology of the complement of a closed set
@@ -74,19 +73,6 @@ private abbrev complExhaustion : CompactExhaustion (TopCat.of ↥Aᶜ) :=
   CompactExhaustion.subtype Aᶜ K hK (fun n ↦ Set.subset_compl_comm.1 (hKA n)) hsub
     fun x hx ↦ Set.mem_iUnion.2 (hcover x hx)
 
-include hKA hsub hcover in
-/-- The complement of `A` is the union of the interiors of the sets `Kₙ`, so it is open. -/
-private lemma isOpen_compl_of_exhaustion : IsOpen Aᶜ := by
-  have : Aᶜ = ⋃ n, interior (K (n + 1)) := by
-    ext x
-    refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-    · obtain ⟨n, hn⟩ := hcover x hx
-      exact Set.mem_iUnion.2 ⟨n, hsub n hn⟩
-    · obtain ⟨n, hn⟩ := Set.mem_iUnion.1 hx
-      exact fun hxA ↦ hKA (n + 1) hxA (interior_subset hn)
-  rw [this]
-  exact isOpen_iUnion fun _ ↦ isOpen_interior
-
 /-- The restriction of `L` to the complement of `A`. -/
 private abbrev complSystem (L : LocalCoefficientSystem.{u, v, max v w} R X) (A : Set X) :
     LocalCoefficientSystem.{u, v, max v w} R (TopCat.of ↥Aᶜ) :=
@@ -119,21 +105,25 @@ private lemma isIso_twistedHomologyTotalToOuter (n j : ℕ) :
   TopTriple.isIso_twistedHomologyTotalToOuter_of_isZero (TopTriple.ofSubset (hKA n)) L j
     (hzero n j) fun m _ ↦ hzero n m
 
+/-- The quotient `H_j(X, A; L) ⟶ H_j(X, X \ Kₙ; L)` as an isomorphism. -/
+private def outerIso (n j : ℕ) :=
+  @asIso _ _ _ _ ((TopTriple.ofSubset (hKA n)).twistedHomologyTotalToOuter L j)
+    (isIso_twistedHomologyTotalToOuter L hKA hzero n j)
+
 include hKc hKA hsub hcover in
 /-- Excision `H_j(U, U \ Kₙ; L) ⟶ H_j(X, X \ Kₙ; L)` is an isomorphism. -/
 private lemma isIso_twistedHomologyMap_excisionMap (n j : ℕ) :
     IsIso (TopPair.twistedHomologyMap (TopPair.excisionMap Aᶜ (K n)ᶜ) L j) :=
   TopPair.isIso_twistedHomologyMap_excisionMap_of_isClosed_subset L
-    (isOpen_compl_of_exhaustion hKA hsub hcover) (hKc n) (Set.subset_compl_comm.1 (hKA n)) j
+    (isOpen_of_subset_interior_succ (fun n ↦ Set.subset_compl_comm.1 (hKA n)) hsub
+      fun x hx ↦ Set.mem_iUnion.2 (hcover x hx)) (hKc n) (Set.subset_compl_comm.1 (hKA n)) j
 
 /-- The comparison `H_j(U, U \ Kₙ; L) ⟶ H_j(X, A; L)`: excision to `H_j(X, X \ Kₙ; L)` followed by
 the inverse of the quotient `H_j(X, A; L) ⟶ H_j(X, X \ Kₙ; L)`. -/
 private def towerToRelative (n j : ℕ) :
     ((relativeChainComplexTower (complSystem L A) (complExhaustion hK hKA hsub hcover)).homology
       j).obj (op n) ⟶ (TopPair.ofSubset A).twistedHomology L j :=
-  TopPair.twistedHomologyMap (TopPair.excisionMap Aᶜ (K n)ᶜ) L j ≫
-    (@asIso _ _ _ _ ((TopTriple.ofSubset (hKA n)).twistedHomologyTotalToOuter L j)
-      (isIso_twistedHomologyTotalToOuter L hKA hzero n j)).inv
+  TopPair.twistedHomologyMap (TopPair.excisionMap Aᶜ (K n)ᶜ) L j ≫ (outerIso L hKA hzero n j).inv
 
 include hKc in
 private lemma isIso_towerToRelative (n j : ℕ) :
@@ -152,10 +142,7 @@ private lemma homology_map_comp_towerToRelative (n j : ℕ) :
       (relativeChainComplexTower_map_comp_excision L hK hKA hsub hcover n)).trans
       (HomologicalComplex.homologyMap_comp _ _ j))
   have h₂ : (TopTriple.ofSubset hKK).twistedHomologyTotalToOuter L j ≫
-      (@asIso _ _ _ _ ((TopTriple.ofSubset (hKA n)).twistedHomologyTotalToOuter L j)
-        (isIso_twistedHomologyTotalToOuter L hKA hzero n j)).inv =
-      (@asIso _ _ _ _ ((TopTriple.ofSubset (hKA (n + 1))).twistedHomologyTotalToOuter L j)
-        (isIso_twistedHomologyTotalToOuter L hKA hzero (n + 1) j)).inv :=
+      (outerIso L hKA hzero n j).inv = (outerIso L hKA hzero (n + 1) j).inv :=
     (Iso.comp_inv_eq _).2 <| (Iso.eq_inv_comp _).2 <|
       TopTriple.twistedHomologyTotalToOuter_ofSubset_comp (hKA (n + 1)) hKK L j
   unfold towerToRelative
@@ -210,38 +197,35 @@ private lemma toTwistedHomology_bijective (j : ℕ) :
     Function.Bijective (toTwistedHomology L hK hKA hsub hcover hzero j) := by
   set KU := complExhaustion hK hKA hsub hcover
   set C := relativeChainComplexTower (complSystem L A) KU
-  have hψ (n : ℕ) : Function.Bijective (towerToRelative L hK hKA hsub hcover hzero n j).hom := by
-    have := isIso_towerToRelative L hK hKc hKA hsub hcover hzero n j
-    exact ConcreteCategory.bijective_of_isIso _
-  refine ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩
-  · -- Two classes with the same image have the same relative classes at every stage, so they
-    -- differ by an element of `lim¹`, which vanishes because the transitions are bijective.
-    have : Subsingleton (C.homology (j + 1)).limOne :=
-      ModuleTower.subsingleton_limOne_of_isMittagLeffler _ <|
-        ModuleTower.isMittagLeffler_of_surjective _ fun n ↦
-          (transition_bijective L hK hKc hKA hsub hcover hzero (j + 1) n).2
-    have hlim : borelMooreHomologyToLim (complSystem L A) KU j x =
-        borelMooreHomologyToLim (complSystem L A) KU j y := by
-      refine Subtype.ext <| funext fun n ↦ (hψ n).1 ?_
-      have := towerToRelative_limπ L hK hKA hsub hcover hzero
-        (borelMooreHomologyToLim (complSystem L A) KU j x) n
-      rw [← ModuleTower.limπ_apply, ← ModuleTower.limπ_apply, this,
-        towerToRelative_limπ L hK hKA hsub hcover hzero
-          (borelMooreHomologyToLim (complSystem L A) KU j y) n]
-      exact hxy
-    rw [← sub_eq_zero, ← map_sub] at hlim
-    rw [← sub_eq_zero]
-    obtain ⟨a, ha⟩ :=
-      (exact_limOneToBorelMooreHomology_borelMooreHomologyToLim (complSystem L A) KU j _).1 hlim
-    rw [← ha, Subsingleton.elim a 0, map_zero]
-  · -- The preimages of `y` under the comparisons form an element of the limit of the tower.
-    choose z hz using fun n ↦ (hψ n).2 y
-    have hzlim : z ∈ (C.homology j).lim := (ModuleTower.mem_lim _).2 fun n ↦ (hψ n).1 <| by
-      rw [hz n, ← hz (n + 1), ModuleTower.transition_def, ← LinearMap.comp_apply,
-        ← ModuleCat.hom_comp, homology_map_comp_towerToRelative]
-    obtain ⟨x, hx⟩ := borelMooreHomologyToLim_surjective (complSystem L A) KU j ⟨z, hzlim⟩
-    rw [← hz 0]
-    exact ⟨x, by rw [toTwistedHomology_apply, hx, ModuleTower.limπ_apply]⟩
+  have (n : ℕ) := isIso_towerToRelative L hK hKc hKA hsub hcover hzero n j
+  -- The inverses of the comparisons are compatible bijections onto the terms of the tower, so they
+  -- identify `H_j(X, A; L)` with its limit, with inverse the comparison at stage `0`.
+  let f (n : ℕ) := (inv (towerToRelative L hK hKA hsub hcover hzero n j)).hom
+  have hf (n : ℕ) : (C.homology j).transition n ∘ₗ f (n + 1) = f n := by
+    rw [ModuleTower.transition_def, ← ModuleCat.hom_comp]
+    exact congrArg ModuleCat.Hom.hom <| (IsIso.inv_comp_eq _).2 <| (IsIso.eq_comp_inv _).2 <|
+      homology_map_comp_towerToRelative L hK hKA hsub hcover hzero n j
+  have hlift := (C.homology j).limLift_bijective_of_le f hf 0 fun n _ ↦
+    ConcreteCategory.bijective_of_isIso (inv (towerToRelative L hK hKA hsub hcover hzero n j))
+  have hleft : (towerToRelative L hK hKA hsub hcover hzero 0 j).hom ∘ₗ ModuleTower.limπ _ 0 ∘ₗ
+      (C.homology j).limLift f hf = LinearMap.id := by
+    rw [ModuleTower.limπ_comp_limLift, ← ModuleCat.hom_comp, IsIso.inv_hom_id, ModuleCat.hom_id]
+  -- The Milnor map is bijective because `lim¹` vanishes for a tower with bijective transitions.
+  have : Subsingleton (C.homology (j + 1)).limOne :=
+    ModuleTower.subsingleton_limOne_of_surjective _ fun n ↦
+      (transition_bijective L hK hKc hKA hsub hcover hzero (j + 1) n).2
+  have htoLim : Function.Bijective (borelMooreHomologyToLim (complSystem L A) KU j) := by
+    refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_,
+      borelMooreHomologyToLim_surjective (complSystem L A) KU j⟩
+    obtain ⟨a, rfl⟩ :=
+      (exact_limOneToBorelMooreHomology_borelMooreHomologyToLim (complSystem L A) KU j _).1 hx
+    rw [Subsingleton.elim a 0, map_zero]
+  have hcomp : Function.Bijective
+      ((towerToRelative L hK hKA hsub hcover hzero 0 j).hom ∘ₗ ModuleTower.limπ _ 0) :=
+    (Function.Bijective.of_comp_iff _ hlift).1 <| by
+      rw [← LinearMap.coe_comp, LinearMap.comp_assoc, hleft]
+      exact Function.bijective_id
+  exact hcomp.comp htoLim
 
 /-- **Borel–Moore homology of a complement.** Let `A ⊆ X`, and let `Kₙ` be closed compact subsets
 of `X` covering `X \ A`, disjoint from `A`, with `Kₙ ⊆ interior Kₙ₊₁`. If the relative homology
@@ -277,7 +261,6 @@ theorem twistedHomologyTotalToOuter_borelMooreHomologyComplEquiv (j n : ℕ)
   -- The target of the excision map is `TopPair.ofSubset (K n)ᶜ` while the inverse quotient starts
   -- at the outer pair of the triple; they agree up to unfolding, which `rw` does not see.
   erw [ModuleCat.hom_comp, LinearMap.comp_apply]
-  exact congrArg (fun f ↦ ModuleCat.Hom.hom f _)
-    (@asIso _ _ _ _ _ (isIso_twistedHomologyTotalToOuter L hKA hzero n j)).inv_hom_id
+  exact congrArg (fun f ↦ ModuleCat.Hom.hom f _) (outerIso L hKA hzero n j).inv_hom_id
 
 end TauCeti.LocalCoefficientSystem

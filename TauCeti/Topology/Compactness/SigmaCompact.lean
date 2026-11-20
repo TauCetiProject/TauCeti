@@ -16,7 +16,8 @@ subsets that exhausts it in the sense that every compact subset lies in one of t
 (`IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`).
 
 Conversely, compact subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover
-a subset `U` trace a compact exhaustion of the subspace `U` (`CompactExhaustion.subtype`).
+a subset `U` trace a compact exhaustion of the subspace `U` (`CompactExhaustion.subtype`); such
+a `U` is open (`isOpen_of_subset_interior_succ`).
 -/
 
 public section
@@ -40,6 +41,15 @@ theorem IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_s
       Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
     obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
     exact ⟨m, fun x hx => ⟨⟨x, hKΩ hx⟩, hm hx, rfl⟩⟩
+
+/-- A subset `U` covered by subsets `Kₙ ⊆ U` with `Kₙ ⊆ interior Kₙ₊₁` is open: it is the union of
+the interiors of the `Kₙ`. -/
+theorem isOpen_of_subset_interior_succ {X : Type*} [TopologicalSpace X] {U : Set X}
+    {K : ℕ → Set X} (hKU : ∀ n, K n ⊆ U) (hsub : ∀ n, K n ⊆ interior (K (n + 1)))
+    (hcover : U ⊆ ⋃ n, K n) : IsOpen U := by
+  refine isOpen_iff_mem_nhds.2 fun x hx ↦ ?_
+  obtain ⟨n, hn⟩ := mem_iUnion.1 (hcover hx)
+  exact Filter.mem_of_superset (mem_interior_iff_mem_nhds.1 (hsub n hn)) (hKU (n + 1))
 
 namespace CompactExhaustion
 
