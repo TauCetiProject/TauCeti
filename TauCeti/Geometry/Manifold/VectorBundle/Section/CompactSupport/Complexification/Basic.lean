@@ -140,38 +140,71 @@ def CompactlySupported.ITmul : compactlySupported I F n V →ₗ[ℝ]
     (CompactlySupported.ITmul σ).val = ITmulLinearMap I F n V σ.val := by
   simp only [CompactlySupported.ITmul, LinearMap.coe_restrict_apply]
 
-/-- Real algebraic identification of compact tests with pairs of original real tests. -/
+/-- A native complexified section is compactly supported exactly when both coordinates are. -/
+theorem CompactlySupported.mem_iff_complexificationEquivProd
+    (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
+    σ ∈ compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x) ↔
+      ContMDiffSection.complexificationEquivProd I F n V σ ∈
+        (compactlySupported I F n V).prod (compactlySupported I F n V) := by
+  simp only [mem_compactlySupported, Submodule.mem_prod,
+    ContMDiffSection.complexificationEquivProd_apply]
+  rw [tsupport_eq_union_complexificationEquivProd]
+  simp only [ContMDiffSection.complexificationEquivProd_apply]
+  constructor
+  · intro h
+    exact ⟨h.of_isClosed_subset (isClosed_tsupport _) subset_union_left,
+      h.of_isClosed_subset (isClosed_tsupport _) subset_union_right⟩
+  · rintro ⟨hr, hi⟩
+    exact hr.union hi
+
+/-- The native all-section pair equivalence restricted to its compact-support submodules. -/
 def CompactlySupported.complexificationEquivProd : compactlySupported I (Complexification F) n
-  (fun x ↦ ℂ ⊗[ℝ] V x) ≃ₗ[ℝ]
-    compactlySupported I F n V × compactlySupported I F n V :=
-  { CompactlySupported.realPart.prod CompactlySupported.imaginaryPart with
-    invFun := fun p ↦ CompactlySupported.oneTmul p.1 + CompactlySupported.ITmul p.2
-    left_inv := by
-      intro φ
-      apply Subtype.ext
-      ext x
-      simp only [CompactlySupported.coe_oneTmul, oneTmulLinearMap_apply,
-        CompactlySupported.coe_ITmul, ITmulLinearMap_apply,
-        Submodule.coe_add, ContMDiffSection.coe_add, Pi.add_apply]
-      simpa only [LinearMap.toFun_eq_coe, LinearMap.prod_apply, Function.prod,
-        CompactlySupported.coe_realPart, realPartLinearMap_apply,
-          CompactlySupported.coe_imaginaryPart, imaginaryPartLinearMap_apply] using
-        one_tmul_realPart_add_I_tmul_imaginaryPart (V x) (φ.val x)
-    right_inv := by
-      intro p
-      apply Prod.ext <;> apply Subtype.ext <;> ext x <;> simp }
+    (fun x ↦ ℂ ⊗[ℝ] V x) ≃ₗ[ℝ]
+      compactlySupported I F n V × compactlySupported I F n V :=
+  ((ContMDiffSection.complexificationEquivProd I F n V).ofSubmodules _
+    ((compactlySupported I F n V).prod (compactlySupported I F n V)) (by
+      ext p
+      constructor
+      · rintro ⟨σ, hσ, rfl⟩
+        exact (CompactlySupported.mem_iff_complexificationEquivProd σ).mp hσ
+      · intro hp
+        refine ⟨(ContMDiffSection.complexificationEquivProd I F n V).symm p, ?_,
+          (ContMDiffSection.complexificationEquivProd I F n V).apply_symm_apply p⟩
+        exact (CompactlySupported.mem_iff_complexificationEquivProd _).mpr (by simpa using
+          hp))).trans
+    (Submodule.prodEquiv _ _)
+
+/-- Support forgetting commutes with the native all-section coordinate equivalence. -/
+theorem CompactlySupported.coe_complexificationEquivProd_apply
+    (σ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
+    ((CompactlySupported.complexificationEquivProd σ).1.val,
+      (CompactlySupported.complexificationEquivProd σ).2.val) =
+        ContMDiffSection.complexificationEquivProd I F n V σ.val := by rfl
 
 /-- The bundled map evaluates by the stated original-fibre formula. -/
 @[simp] theorem CompactlySupported.complexificationEquivProd_apply
     (φ : compactlySupported I (Complexification F) n (fun x ↦ ℂ ⊗[ℝ] V x)) :
     CompactlySupported.complexificationEquivProd φ = (CompactlySupported.realPart φ,
-      CompactlySupported.imaginaryPart φ) := by rfl
+      CompactlySupported.imaginaryPart φ) := by
+  apply Prod.ext <;> apply Subtype.ext
+  · simpa only [ContMDiffSection.complexificationEquivProd_apply,
+      CompactlySupported.coe_realPart] using
+      congrArg Prod.fst (CompactlySupported.coe_complexificationEquivProd_apply φ)
+  · simpa only [ContMDiffSection.complexificationEquivProd_apply,
+      CompactlySupported.coe_imaginaryPart] using
+      congrArg Prod.snd (CompactlySupported.coe_complexificationEquivProd_apply φ)
 
 /-- The bundled map evaluates by the stated original-fibre formula. -/
 @[simp] theorem CompactlySupported.complexificationEquivProd_symm_apply (p : compactlySupported I
   F n V × compactlySupported I F n V) :
     CompactlySupported.complexificationEquivProd.symm p = CompactlySupported.oneTmul p.1 +
-      CompactlySupported.ITmul p.2 := by rfl
+      CompactlySupported.ITmul p.2 := by
+  apply Subtype.ext
+  simp only [CompactlySupported.complexificationEquivProd, LinearEquiv.trans_symm,
+    LinearEquiv.trans_apply, LinearEquiv.ofSubmodules_symm_apply,
+    Submodule.prodEquiv_symm_apply_coe, ContMDiffSection.complexificationEquivProd_symm_apply,
+    Submodule.coe_add, CompactlySupported.coe_oneTmul, CompactlySupported.coe_ITmul]
+
 
 /-- The closed support is exactly the union of the coordinate supports. -/
 theorem CompactlySupported.tsupport_eq_union_realPart_imaginaryPart
@@ -260,13 +293,9 @@ def CompactlySupported.realPointsConjEquiv : compactlySupported I F n V ≃ₗ[�
   right_inv φ := by
     apply Subtype.ext
     apply Subtype.ext
-    ext x
-    have hfix := congrArg (fun σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ ↦ σ x)
-      ((CompactlySupported.mem_realPointsConj φ.val).mp φ.property)
-    have hfix' : tmulConj (V x) (φ.val.val x) = φ.val.val x := by
-      simpa only [ContMDiffSection.conjEquiv_apply] using hfix
-    obtain ⟨v, hv⟩ := (tmulConj_eq_self_iff (V x) (φ.val.val x)).mp hfix'
-    simp [hv]
+    simpa only [CompactlySupported.coe_oneTmul, CompactlySupported.coe_realPart] using
+      oneTmulLinearMap_realPartLinearMap_of_conjEquiv_eq
+        ((CompactlySupported.mem_realPointsConj φ.val).mp φ.property)
   map_add' φ ψ := Subtype.ext (map_add CompactlySupported.oneTmul φ ψ)
   map_smul' r φ := Subtype.ext (map_smul CompactlySupported.oneTmul r φ)
 
@@ -317,7 +346,8 @@ theorem CompactlySupported.tsupport_complexificationEquivProd_symm (p : compactl
   have h := congrArg (fun q : compactlySupported I F n V × compactlySupported I F n V ↦
       q.1.val.tsupport ∪ q.2.val.tsupport)
         (CompactlySupported.complexificationEquivProd.apply_symm_apply p)
-  exact (CompactlySupported.tsupport_eq_union_realPart_imaginaryPart _).trans h
+  exact (CompactlySupported.tsupport_eq_union_realPart_imaginaryPart _).trans
+    (by simpa only [CompactlySupported.complexificationEquivProd_apply] using h)
 
 /-- The bundled map evaluates by the stated original-fibre formula. -/
 @[simp] theorem SupportedIn.complexificationEquivProd_fst_apply (K : Set M)
@@ -380,14 +410,14 @@ def SupportedIn.realPointsConjEquiv (K : Set M) : supportedIn I F n V K ≃ₗ[�
   right_inv φ := by
     apply Subtype.ext
     apply Subtype.ext
-    apply ContMDiffSection.ext
-    intro x
-    have hfix := congrArg (fun σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯ ↦ σ x)
-      ((SupportedIn.mem_realPointsConj K φ.val).mp φ.property)
-    have hfix' : tmulConj (V x) (φ.val.val x) = φ.val.val x := by
-      simpa only [ContMDiffSection.conjEquiv_apply] using hfix
-    obtain ⟨v, hv⟩ := (tmulConj_eq_self_iff (V x) (φ.val.val x)).mp hfix'
-    simp [hv]
+    ext x
+    have h := congrArg (fun σ : Cₛ^n⟮I; Complexification F, fun y ↦ ℂ ⊗[ℝ] V y⟯ ↦ σ x)
+      (oneTmulLinearMap_realPartLinearMap_of_conjEquiv_eq
+        ((SupportedIn.mem_realPointsConj K φ.val).mp φ.property))
+    simpa only [SupportedIn.complexificationEquivProd_symm_apply,
+      SupportedIn.complexificationEquivProd_fst_apply, Submodule.coe_zero,
+      ContMDiffSection.coe_zero, Pi.zero_apply, TensorProduct.tmul_zero, add_zero,
+      oneTmulLinearMap_apply, realPartLinearMap_apply] using h
   map_add' φ ψ := by
     apply Subtype.ext
     simpa using map_add (SupportedIn.complexificationEquivProd (n := n) (I := I) (F := F) (V := V)
