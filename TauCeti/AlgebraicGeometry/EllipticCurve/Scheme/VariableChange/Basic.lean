@@ -473,14 +473,13 @@ theorem existsUnique_eq_eqToHom_comp_projModelVariableChangeIso_hom
   obtain ⟨C, hC, hu2, hu3, hr, hs, ht⟩ := Affine.CoordinateRing.exists_variableChange_of_equation hα
     hEq
   refine ⟨C, hC, ?_⟩
-  -- the two isomorphisms agree on the scheme-theoretically dense chart `D₊(Z)`, through which the
-  -- chart factors through the tautological point
-  obtain ⟨k, hk⟩ := W.exists_SpecMap_comp_tautologicalPoint_eq_chartι
+  -- The two isomorphisms agree on the scheme-theoretically dense chart `D₊(Z)`.
   refine TauCeti.ext_of_isSchemeTheoreticallyDominant (W.chartι 2) W'.projModelOver ?_ ?_
   · rw [he, Category.assoc, projModelVariableChangeIso_hom_projModelOver]
     subst hC
     simp
-  · rw [← hk, Category.assoc, Category.assoc, hτ, tautologicalPoint_def,
+  · rw [← W.SpecMap_chartRingTwoEquivCoordinateRing_symm_tautologicalPoint,
+      Category.assoc, Category.assoc, hτ, tautologicalPoint_def,
       projModelPoint_eqToHom_assoc hC.symm,
       projModelPoint_projModelVariableChangeIso_hom (j := 2) _
         (by rw [VariableChange.toMatrix_mulVec_two]; exact isUnit_vecCons_two _ _)]
