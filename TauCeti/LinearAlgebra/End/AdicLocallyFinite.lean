@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import Mathlib.RingTheory.Noetherian.Basic
 public import Mathlib.RingTheory.Polynomial.Basic
+public import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
 # Adically locally finite endomorphisms
@@ -34,6 +35,9 @@ submodules of a module killed by a power of `I`, and it is detected modulo `I`.
 
 ## Main results
 
+* `Module.End.exists_fg_le_comap_of_forall_pow_apply_mem_sup`: over a noetherian ring, if every
+  orbit lies in a finitely generated submodule modulo a `T`-stable `K`, every finitely generated
+  submodule lies in a finitely generated submodule which is `T`-stable modulo `K`.
 * `Module.End.isLocallyFinite_iff_exists_fg_le_comap`: over a noetherian ring, local finiteness
   says that every vector lies in a finitely generated submodule which is `T`-stable modulo
   `I ^ n • ⊤`.
@@ -61,68 +65,6 @@ submodules of a module killed by a power of `I`, and it is detected modulo `I`.
 
 public section
 
-namespace Submodule
-
-variable {R M M' : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
-  [Module R M']
-
-/-- A finitely generated submodule contained in the range of a linear map is the image of a
-finitely generated submodule of the source. -/
-theorem FG.exists_fg_map_eq_of_le_range {f : M →ₗ[R] M'} {N' : Submodule R M'} (hN' : N'.FG)
-    (h : N' ≤ LinearMap.range f) : ∃ N : Submodule R M, N.FG ∧ N.map f = N' := by
-  induction N', hN' using Submodule.fg_induction with
-  | singleton y =>
-    obtain ⟨x, rfl⟩ := h (mem_span_singleton_self y)
-    exact ⟨R ∙ x, fg_span_singleton x, by simp [map_span]⟩
-  | sup N₁ N₂ _ _ ih₁ ih₂ =>
-    obtain ⟨P₁, hP₁, rfl⟩ := ih₁ (le_sup_left.trans h)
-    obtain ⟨P₂, hP₂, rfl⟩ := ih₂ (le_sup_right.trans h)
-    exact ⟨P₁ ⊔ P₂, hP₁.sup hP₂, Submodule.map_sup _ _ _⟩
-
-/-- A finitely generated submodule of `B ⊔ C` lies in `B ⊔ C'` for some finitely generated
-`C' ≤ C`. -/
-theorem FG.exists_fg_le_sup {A B C : Submodule R M} (hA : A.FG) (h : A ≤ B ⊔ C) :
-    ∃ C' : Submodule R M, C'.FG ∧ C' ≤ C ∧ A ≤ B ⊔ C' := by
-  induction A, hA using Submodule.fg_induction with
-  | singleton x =>
-    obtain ⟨b, hb, c, hc, rfl⟩ := mem_sup.1 (h (mem_span_singleton_self x))
-    refine ⟨R ∙ c, fg_span_singleton c, (span_singleton_le_iff_mem _ _).2 hc, ?_⟩
-    rw [span_singleton_le_iff_mem]
-    exact add_mem (mem_sup_left hb) (mem_sup_right (mem_span_singleton_self c))
-  | sup A₁ A₂ _ _ ih₁ ih₂ =>
-    obtain ⟨C₁, hC₁, hC₁C, hA₁⟩ := ih₁ (le_sup_left.trans h)
-    obtain ⟨C₂, hC₂, hC₂C, hA₂⟩ := ih₂ (le_sup_right.trans h)
-    exact ⟨C₁ ⊔ C₂, hC₁.sup hC₂, sup_le hC₁C hC₂C,
-      sup_le (hA₁.trans (sup_le_sup_left le_sup_left _))
-        (hA₂.trans (sup_le_sup_left le_sup_right _))⟩
-
-/-- A finitely generated submodule of `I • N` lies in `I • W` for some finitely generated
-`W ≤ N`. -/
-theorem FG.exists_fg_le_smul {I : Ideal R} {N C : Submodule R M} (hC : C.FG) (h : C ≤ I • N) :
-    ∃ W : Submodule R M, W.FG ∧ W ≤ N ∧ C ≤ I • W := by
-  induction C, hC using Submodule.fg_induction with
-  | singleton x =>
-    have hx : x ∈ I • N := h (mem_span_singleton_self x)
-    simp only [span_singleton_le_iff_mem]
-    clear h
-    induction hx using Submodule.smul_induction_on' with
-    | smul r hr n hn =>
-      exact ⟨R ∙ n, fg_span_singleton n, (span_singleton_le_iff_mem _ _).2 hn,
-        smul_mem_smul hr (mem_span_singleton_self n)⟩
-    | add x _ y _ hx hy =>
-      obtain ⟨W₁, hW₁, hW₁N, hxW⟩ := hx
-      obtain ⟨W₂, hW₂, hW₂N, hyW⟩ := hy
-      exact ⟨W₁ ⊔ W₂, hW₁.sup hW₂, sup_le hW₁N hW₂N,
-        add_mem ((smul_mono_right I le_sup_left : I • W₁ ≤ I • (W₁ ⊔ W₂)) hxW)
-          ((smul_mono_right I le_sup_right : I • W₂ ≤ I • (W₁ ⊔ W₂)) hyW)⟩
-  | sup C₁ C₂ _ _ ih₁ ih₂ =>
-    obtain ⟨W₁, hW₁, hW₁N, hC₁⟩ := ih₁ (le_sup_left.trans h)
-    obtain ⟨W₂, hW₂, hW₂N, hC₂⟩ := ih₂ (le_sup_right.trans h)
-    exact ⟨W₁ ⊔ W₂, hW₁.sup hW₂, sup_le hW₁N hW₂N, sup_le
-      (hC₁.trans (smul_mono_right _ le_sup_left)) (hC₂.trans (smul_mono_right _ le_sup_right))⟩
-
-end Submodule
-
 namespace Module.End
 
 open Submodule
@@ -145,6 +87,12 @@ variable {T : Module.End R M} {I : Ideal R}
 theorem isLocallyFinite_iff : T.IsLocallyFinite I ↔
     ∀ (n : ℕ) (v : M), ∃ N : Submodule R M, N.FG ∧ ∀ k : ℕ, (T ^ k) v ∈ N ⊔ I ^ n • ⊤ :=
   Iff.rfl
+
+/-- Local finiteness for an ideal `I` implies local finiteness for every larger ideal. -/
+theorem IsLocallyFinite.mono {J : Ideal R} (hT : T.IsLocallyFinite I) (hIJ : I ≤ J) :
+    T.IsLocallyFinite J := fun n v ↦ by
+  obtain ⟨N, hN, hv⟩ := hT n v
+  exact ⟨N, hN, fun k ↦ sup_le_sup_left (smul_mono_left (Ideal.pow_right_mono hIJ n)) N (hv k)⟩
 
 /-- Iterates of intertwined endomorphisms are intertwined. -/
 private theorem pow_apply_of_comp_eq {T₂ : Module.End R M₂} {T₃ : Module.End R M₃}
@@ -188,6 +136,7 @@ theorem isLocallyFinite_of_forall_exists_fg_le_comap
 /-! ### Examples -/
 
 /-- Every endomorphism of a finitely generated module is locally finite. -/
+@[simp]
 theorem isLocallyFinite_of_finite [Module.Finite R M] : T.IsLocallyFinite I :=
   fun _ _ ↦ ⟨⊤, Module.Finite.fg_top, fun _ ↦ mem_sup_left mem_top⟩
 
@@ -269,7 +218,7 @@ variable {R M M₁ M₂ M₃ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 /-- Over a noetherian ring, if every orbit lies in a finitely generated submodule modulo a
 `T`-stable `K`, then every finitely generated submodule lies in a finitely generated submodule
 which is `T`-stable modulo `K`. -/
-private theorem exists_fg_le_comap_of_forall [IsNoetherianRing R] {K : Submodule R M}
+theorem exists_fg_le_comap_of_forall_pow_apply_mem_sup [IsNoetherianRing R] {K : Submodule R M}
     (hK : K ≤ K.comap T) (h : ∀ v : M, ∃ N : Submodule R M, N.FG ∧ ∀ k : ℕ, (T ^ k) v ∈ N ⊔ K)
     {N : Submodule R M} (hN : N.FG) :
     ∃ P : Submodule R M, P.FG ∧ N ≤ P ∧ P ≤ (P ⊔ K).comap T := by
@@ -310,7 +259,7 @@ submodule which is `T`-stable modulo `I ^ n • ⊤`, for a locally finite `T`. 
 theorem IsLocallyFinite.exists_fg_le_comap [IsNoetherianRing R] (hT : T.IsLocallyFinite I)
     (n : ℕ) {N : Submodule R M} (hN : N.FG) :
     ∃ P : Submodule R M, P.FG ∧ N ≤ P ∧ P ≤ (P ⊔ I ^ n • ⊤).comap T :=
-  exists_fg_le_comap_of_forall (smul_top_le_comap_smul_top _ T) (hT n) hN
+  exists_fg_le_comap_of_forall_pow_apply_mem_sup (smul_top_le_comap_smul_top _ T) (hT n) hN
 
 /-- Over a noetherian ring, `T` is locally finite exactly when, for every `n`, each vector lies in
 a finitely generated submodule which is `T`-stable modulo `I ^ n • ⊤`. -/
@@ -412,7 +361,7 @@ theorem isLocallyFinite_iff_forall_exists_fg_sup_smul_top [IsNoetherianRing R] :
     obtain ⟨C, hC, hCI, hTP⟩ := (hP.map T).exists_fg_le_sup (map_le_iff_le_comap.2 hPT)
     obtain ⟨W, hW, -, hCW⟩ := hC.exists_fg_le_smul hCI
     obtain ⟨Q, hQ, hWQ, hQT⟩ :=
-      exists_fg_le_comap_of_forall (smul_top_le_comap_smul_top I T) h hW
+      exists_fg_le_comap_of_forall_pow_apply_mem_sup (smul_top_le_comap_smul_top I T) h hW
     refine ⟨P ⊔ I ^ n • Q, hP.sup (FG.smul (IsNoetherian.noetherian _) hQ), mem_sup_left hvP, ?_⟩
     rw [← map_le_iff_le_comap, Submodule.map_sup]
     refine sup_le (hTP.trans (sup_le (le_sup_left.trans le_sup_left) ?_)) ?_
@@ -448,24 +397,15 @@ end Module.End
 
 namespace Polynomial
 
-variable {R : Type*} [CommRing R] [Nontrivial R]
+variable {R : Type*} [CommSemiring R] [Nontrivial R]
 
 /-- Multiplication by `X` on `R[X]` is not locally finite for the zero ideal: the orbit of `1`
 consists of all the monomials `X ^ k`, which lie in no finitely generated submodule. -/
 theorem not_isLocallyFinite_mulLeft_X :
     ¬ Module.End.IsLocallyFinite (LinearMap.mulLeft R (X : R[X])) ⊥ := by
   intro h
-  obtain ⟨N, hN, hX⟩ := h 1 1
-  have key : ∀ N : Submodule R R[X], N.FG → ∃ d : ℕ, N ≤ degreeLE R d := fun N hN ↦ by
-    induction N, hN using Submodule.fg_induction with
-    | singleton p => exact ⟨p.natDegree,
-        (Submodule.span_singleton_le_iff_mem _ _).2 (mem_degreeLE.2 degree_le_natDegree)⟩
-    | sup N₁ N₂ _ _ ih₁ ih₂ =>
-      obtain ⟨d₁, h₁⟩ := ih₁
-      obtain ⟨d₂, h₂⟩ := ih₂
-      exact ⟨max d₁ d₂, sup_le (h₁.trans (degreeLE_mono (by exact_mod_cast le_max_left _ _)))
-        (h₂.trans (degreeLE_mono (by exact_mod_cast le_max_right _ _)))⟩
-  obtain ⟨d, hd⟩ := key N hN
+  obtain ⟨_, ⟨s, rfl⟩, hX⟩ := h 1 1
+  obtain ⟨d, hd⟩ := span_le_degreeLE_of_finite s.finite_toSet
   have hmem := hd (by simpa [LinearMap.pow_mulLeft] using hX (d + 1))
   rw [mem_degreeLE, degree_X_pow] at hmem
   norm_cast at hmem
