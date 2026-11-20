@@ -107,37 +107,7 @@ theorem weightComponent_mem_of_corestrict_eq_ofWeights
   have hproj := congrArg (fun c : Comodule R (MonoidAlgebra R G) (I → R) ↦
     let _ := c
     Comodule.weightProj R G (I → R) g v) hcomodule
-  rw [hproj] at hp
-  have heq :
-      (let _ := Comodule.ofWeights (Pi.basisFun R I) wt
-       Comodule.weightProj R G (I → R) g v) =
-      (fun a ↦ if wt a = g then v a else 0) := by
-    let _ := Comodule.ofWeights (Pi.basisFun R I) wt
-    conv_lhs => rw [← Finset.univ_sum_single v]
-    rw [map_sum]
-    have hterm (b : I) : Comodule.weightProj R G (I → R) g (Pi.single b (v b)) =
-        if wt b = g then Pi.single b (v b) else 0 := by
-      have hsingle : Pi.single b (v b) = v b • Pi.single b (1 : R) := by
-        simp [← Pi.single_smul]
-      rw [hsingle, map_smul]
-      by_cases hb : wt b = g
-      · rw [ite_eq_left hb, Comodule.weightProj_of_mem]
-        rw [← hb, ← Pi.basisFun_apply]
-        exact Comodule.basis_mem_weightSpace_ofWeights _ _ b
-      · rw [ite_eq_right hb, Comodule.weightProj_of_mem_of_ne]
-        · simp
-        · exact Ne.symm hb
-        · rw [← Pi.basisFun_apply]
-          exact Comodule.basis_mem_weightSpace_ofWeights _ _ b
-    simp_rw [hterm]
-    ext a
-    simp only [Finset.sum_apply, Pi.zero_apply, ite_apply, Pi.single_apply]
-    rw [Finset.sum_eq_single a]
-    · simp
-    · intro b _ hba
-      simp [Ne.symm hba]
-    · simp
-  rw [heq] at hp
+  rw [hproj, Comodule.weightProj_ofWeights_pi_eq] at hp
   exact (mem_corestrict f N _).1 hp
 
 end WeightComponent
