@@ -44,6 +44,7 @@ it lies in `L^∞` of any measure, with norm one when the measure is nonzero.
   `L^∞` of any measure, with norm one when the measure is nonzero.
 * `ContDiff.fourierChar`: `y ↦ 𝐞 (Φ y)` is `C^n` when the phase `Φ` is.
 * `HasFDerivAt.fourierChar`: the derivative of `y ↦ 𝐞 (Φ y)` is `2πi 𝐞 (Φ y) DΦ(y)`.
+* `Real.fderiv_fourierChar_comp_apply`: its value in a direction `w`, `2πi DΦ(y) w 𝐞 (Φ y)`.
 -/
 
 public section
@@ -140,3 +141,11 @@ theorem HasFDerivAt.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace 
   refine ((Real.hasDerivAt_fourierChar (Φ y)).hasFDerivAt.comp y hΦ).congr_fderiv ?_
   ext w
   simp [mul_comm]
+
+/-- The derivative of the phase `y ↦ 𝐞 (Φ y)` in the direction `w` is `2πi DΦ(x) w 𝐞 (Φ x)`. -/
+theorem Real.fderiv_fourierChar_comp_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {Φ : F → ℝ} {x : F} (hΦ : DifferentiableAt ℝ Φ x) (w : F) :
+    fderiv ℝ (fun y ↦ (𝐞 (Φ y) : ℂ)) x w =
+      2 * Real.pi * Complex.I * fderiv ℝ Φ x w * 𝐞 (Φ x) := by
+  rw [hΦ.hasFDerivAt.fourierChar.fderiv, ContinuousLinearMap.smulRight_apply, Complex.real_smul]
+  ring
