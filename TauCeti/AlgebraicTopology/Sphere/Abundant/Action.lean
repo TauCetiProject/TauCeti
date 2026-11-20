@@ -438,11 +438,19 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_actionClass (x₀ : M)
     ModuleCat.id_apply] at hcross
   -- Identify the coefficients before the maps, then commute the square `ρ ∘ Φ = Φ ∘ γ`.
   rw [actionClass, actionClass, ← hcross]
-  let e := (ModuleCat.uliftTensorSelfIso ℤ).hom
-  exact (congrArg _ (homologyMap_chainComplexFunctor_map_apply e Φ _)).trans
-    ((ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm R _ hΦ) _).trans
-      ((congrArg _ (homologyMap_chainComplexFunctor_map_apply e γ _)).symm.trans
-        (homologyMap_chainComplexFunctor_map_apply e Φ _).symm))
+  have hsq : ∀ x : ((TopCat.toSSet.obj (TopCat.of (G × Y))).homology R (d + k) :
+      ModuleCat.{0} ℤ),
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ρ)) R (d + k)).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) R (d + k)).hom x) =
+        (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom Φ)) R (d + k)).hom
+          ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) R (d + k)).hom x) :=
+    ConcreteCategory.congr_hom (homologyMap_toSSet_ofHom_comp_comm R _ hΦ)
+  exact (congrArg _ (homologyMap_chainComplexFunctor_map_apply
+      (ModuleCat.uliftTensorSelfIso ℤ).hom Φ _)).trans
+    ((hsq _).trans
+      ((congrArg _ (homologyMap_chainComplexFunctor_map_apply
+          (ModuleCat.uliftTensorSelfIso ℤ).hom γ _)).symm.trans
+        (homologyMap_chainComplexFunctor_map_apply (ModuleCat.uliftTensorSelfIso ℤ).hom Φ _).symm))
 
 include o hd in
 /-- `Φ_*(A × α)`, with its coefficients identified with `ℤ`, lives over the fundamental class at
