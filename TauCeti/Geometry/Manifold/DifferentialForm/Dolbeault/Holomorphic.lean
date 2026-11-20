@@ -86,7 +86,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 vanishes at a point exactly when `f` is pseudoholomorphic there as a map into the complex vector
 space `F`, whose almost complex structure is multiplication by `i`. -/
 theorem delBar_apply_eq_zero_iff_isPseudoholomorphicAt (f : SmoothForm I M F 0) (x : M) :
-    (J.delBar f).1 x = 0 ↔
+    (J.delBar f).val x = 0 ↔
       IsPseudoholomorphicAt J (ofComplexManifold F F) (fun y ↦ f.val y 0) x := by
   rw [delBar_apply_eq_zero_iff_dbarFunction_eq_zero]
   exact J.dbarFunction_eq_zero_iff_isPseudoholomorphicAt
@@ -114,7 +114,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 manifold, `∂bar f` vanishes at a point exactly when the smooth function `f` is holomorphic
 there. -/
 theorem delBar_ofComplexManifold_apply_eq_zero_iff (f : SmoothForm 𝓘(ℝ, E) M F 0) (x : M) :
-    ((ofComplexManifold E M).delBar f).1 x = 0 ↔
+    ((ofComplexManifold E M).delBar f).val x = 0 ↔
       MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) (fun y ↦ f.val y 0) x := by
   rw [delBar_apply_eq_zero_iff_dbarFunction_eq_zero]
   exact dbarFunction_ofComplexManifold_eq_zero_iff
@@ -161,7 +161,7 @@ def kerDelBarZeroEquiv :
   toFun φ := ⟨fun y ↦ φ.val.val y 0,
     ((delBar_ofComplexManifold_eq_zero_iff φ.val).1 (LinearMap.mem_ker.1 φ.property)).contMDiff⟩
   invFun g := ⟨⟨RoughForm.ofFunction 𝓘(ℝ, E) g,
-      (isSmoothForm_ofFunction_iff.property <| by
+      (isSmoothForm_ofFunction_iff.2 <| by
         simpa only [modelWithCornersSelf_restrictScalars] using
           g.contMDiff.restrictScalars ℝ).mem_smoothBundleForms⟩,
     LinearMap.mem_ker.2 <| (delBar_ofComplexManifold_eq_zero_iff _).2 <| by
@@ -216,7 +216,7 @@ def kerDelBarZeroEquivOfCompactSpace :
     LinearMap.ker ((ofComplexManifold E M).delBar (F := F) (k := 0)) ≃ₗ[ℂ] F where
   toFun φ := φ.val.val (Classical.arbitrary M) 0
   invFun c := ⟨⟨RoughForm.ofFunction 𝓘(ℝ, E) fun _ : M ↦ c,
-      (isSmoothForm_ofFunction_iff.property contMDiff_const).mem_smoothBundleForms⟩,
+      (isSmoothForm_ofFunction_iff.2 contMDiff_const).mem_smoothBundleForms⟩,
     LinearMap.mem_ker.2 <| (delBar_ofComplexManifold_eq_zero_iff _).2 <| by
       simpa only [RoughForm.ofFunction_apply] using mdifferentiable_const⟩
   map_add' _ _ := rfl

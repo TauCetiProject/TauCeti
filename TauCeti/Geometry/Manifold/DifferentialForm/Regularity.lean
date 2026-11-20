@@ -619,7 +619,7 @@ theorem ofFunction_apply_zero [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F)
 
 /-- The function underlying a smooth `0`-form is smooth. -/
 theorem contMDiff_apply_zero [IsManifold I 1 M] (f : SmoothForm I M F 0) :
-    ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.1 y 0 := by
+    ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.val y 0 := by
   rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
   exact f.isSmoothForm
 
