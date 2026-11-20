@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
