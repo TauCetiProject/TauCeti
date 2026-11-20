@@ -129,9 +129,8 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
         Wkp.value k (Emb i (u i l)) (((A.chart j).symm ≫ₕ A.chart i) y) =
           Wkp.value (k + 1) (Wkp.restrictL (hQi i) (k + 1) (u i l))
             (((A.chart j).symm ≫ₕ A.chart i) y) :=
-      (A.exists_isChangeOfVariables_chart_symm_trans k (hPc i j) (hPD i j)
-        (hPQ i j)).choose_spec.choose_spec.ae_comp (ae_all_iff.2 fun l ↦ (hEmb i (u i l)).trans
-          (Wkp.value_restrictL_ae (hQi i) (k + 1) (u i l)).symm)
+      A.ae_comp_chart_symm_trans (hPc i j) (hPD i j) (hPQ i j) (ae_all_iff.2 fun l ↦
+        (hEmb i (u i l)).trans (Wkp.value_restrictL_ae (hQi i) (k + 1) (u i l)).symm)
     filter_upwards [A.value_transferL_ae μ pstar k hpstar i j (hPc i j) (hPD i j) (hPQ i j)
         (D i w) m,
       A.value_transferL_ae μ p (k + 1) hp i j (hPc i j) (hPD i j) (hPQ i j)

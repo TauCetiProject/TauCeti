@@ -97,8 +97,6 @@ private theorem value_transferL_append_ae (hp : p ≠ ⊤) {i : Fin A.n} {j : Fi
     (Wkp.value k ((A.append B).transferL μ p k hp (Fin.castAdd B.n i) (Fin.natAdd A.n j) hPc hPD
       hPQ (fun l ↦ Wkp.restrictL hQ k ((w : A.sectionChartData.SobolevData μ p k) i l)) m) :
         E → ℝ) =ᵐ[μ.restrict P] fun y ↦ (finBasis ℝ F).repr (B.coord j s y) m := by
-  have hcv :=
-    ((A.append B).exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
   -- On `Q`, the restricted chart-`i` components assemble to the chart-`i` coordinates of `s`.
   have hQs : ∀ᵐ z ∂μ.restrict Q, ∑ l, Wkp.value k (Wkp.restrictL hQ k
       ((w : A.sectionChartData.SobolevData μ p k) i l)) z • finBasis ℝ F l = A.coord i s z := by
@@ -109,7 +107,8 @@ private theorem value_transferL_append_ae (hp : p ≠ ⊤) {i : Fin A.n} {j : Fi
       ae_restrict_of_ae_restrict_of_subset hQ' (hs i)] with z hl hz hsz
     simp only [hl]
     exact hz.symm.trans hsz
-  filter_upwards [(A.append B).value_transferL_ae μ p k hp _ _ hPc hPD hPQ _ m, hcv.ae_comp hQs,
+  filter_upwards [(A.append B).value_transferL_ae μ p k hp _ _ hPc hPD hPQ _ m,
+    (A.append B).ae_comp_chart_symm_trans hPc hPD hPQ hQs,
     ae_restrict_mem P.isOpen.measurableSet] with y hy₁ hy₂ hy
   -- Pointwise, this is the coordinate change between the two charts of the union atlas.
   rw [hy₁, hy₂, ← FiniteBundleAtlas.coord_append_natAdd A B j,
