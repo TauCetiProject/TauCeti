@@ -87,8 +87,9 @@ theorem snoc_zero_zero : snoc (0 : Fin n →₀ M) 0 = 0 := by
   ext i
   cases i using Fin.lastCases <;> simp
 
-theorem snoc_injective2 : Function.Injective2 (snoc (n := n) (M := M)) :=
-  fun _ _ _ _ h ↦ ⟨by simpa using congrArg init h, by simpa using DFunLike.congr_fun h (Fin.last n)⟩
+theorem snoc_injective2 : Function.Injective2 (snoc (n := n) (M := M)) := fun _ _ _ _ h ↦
+  (Fin.snoc_injective2 (α := fun _ ↦ M) (congrArg DFunLike.coe h)).imp_left
+    (DFunLike.coe_injective ·)
 
 @[simp]
 theorem snoc_inj {s s' : Fin n →₀ M} {y y' : M} : snoc s y = snoc s' y' ↔ s = s' ∧ y = y' :=
@@ -103,6 +104,8 @@ theorem eq_snoc_iff {t : Fin (n + 1) →₀ M} {s : Fin n →₀ M} {y : M} :
 compares the last entries when the initial parts are equal. -/
 theorem toLex_snoc_lt_toLex_snoc_iff [LT M] {x y : M} {s t : Fin n →₀ M} :
     toLex (snoc s x) < toLex (snoc t y) ↔ toLex s < toLex t ∨ s = t ∧ x < y := by
+  -- Modelled on Mathlib's `Fin.pi_lex_lt_cons_cons`, but the quantifiers of the lexicographic
+  -- order are split at the last index instead of the first.
   simp only [Lex.lt_iff, ofLex_toLex, coe_snoc, Fin.exists_fin_succ', Fin.forall_fin_succ',
     Fin.snoc_castSucc, Fin.snoc_last, Fin.castSucc_lt_castSucc_iff, Fin.castSucc_lt_last,
     (Fin.castSucc_lt_last _).not_gt, lt_self_iff_false, Finsupp.ext_iff, false_imp_iff,
