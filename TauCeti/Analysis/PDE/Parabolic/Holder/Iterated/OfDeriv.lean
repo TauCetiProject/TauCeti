@@ -271,6 +271,7 @@ private theorem mixedDerivL_ofSpatialFDerivTimeDeriv {r m : ℕ} (h : 2 * r + m 
 
 /-- The spatial derivatives `D_x^(m+1) u` of the map built from its first derivatives are the
 fields `D_x^m G` of its spatial derivative `G`, with the last variable uncurried. -/
+@[simp]
 theorem mixedDerivL_zero_succ_ofSpatialFDerivTimeDeriv {m : ℕ} (hm : m ≤ k + 1)
     (p : slab (E := E) a b) :
     mixedDerivL 0 (m + 1) (ofSpatialFDerivTimeDeriv u G H hG hH) p =
@@ -280,6 +281,7 @@ theorem mixedDerivL_zero_succ_ofSpatialFDerivTimeDeriv {m : ℕ} (hm : m ≤ k +
 
 /-- The fields `D_t^(r+1) D_x^m u` of the map built from its first derivatives are the fields
 `D_t^r D_x^m H` of its time derivative `H`. -/
+@[simp]
 theorem mixedDerivL_succ_ofSpatialFDerivTimeDeriv {r m : ℕ} (h : 2 * r + m ≤ k) :
     mixedDerivL (r + 1) m (ofSpatialFDerivTimeDeriv u G H hG hH) = mixedDerivL r m H := by
   rw [mixedDerivL_ofSpatialFDerivTimeDeriv hG hH (by omega), ofDerivFields_succ]
