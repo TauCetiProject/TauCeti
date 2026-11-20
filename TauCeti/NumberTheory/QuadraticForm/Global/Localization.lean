@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Places.ScalarExtension
@@ -189,26 +190,30 @@ theorem Nondegenerate.atFinitePlace [NumberField K] [FiniteDimensional K V]
   rw [atFinitePlace_def]
   exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every real place. -/
-theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
+/-- A nondegenerate quadratic form stays nondegenerate at every real place. -/
+theorem Nondegenerate.atRealPlace
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : {w : InfinitePlace K // w.IsReal}) :
     (Q.atRealPlace w).Nondegenerate := by
   let : CharZero K := RingHom.charZero w.1.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
-  rw [atRealPlace_def]
-  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+  rw [atRealPlace_def, ← QuadraticMap.nondegenerate_associated_iff,
+    _root_.QuadraticForm.associated_baseChange]
+  exact LinearMap.BilinForm.Nondegenerate.baseChange ℝ
+    (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate after scalar extension
+/-- A nondegenerate quadratic form stays nondegenerate after scalar extension
 through a complex embedding. -/
-theorem Nondegenerate.atComplexEmbedding [FiniteDimensional K V]
+theorem Nondegenerate.atComplexEmbedding
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
     (Q.atComplexEmbedding w).Nondegenerate := by
   let : CharZero K := RingHom.charZero w.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let : Algebra K ℂ := w.embedding.toAlgebra
-  rw [atComplexEmbedding_def]
-  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+  rw [atComplexEmbedding_def, ← QuadraticMap.nondegenerate_associated_iff,
+    _root_.QuadraticForm.associated_baseChange]
+  exact LinearMap.BilinForm.Nondegenerate.baseChange ℂ
+    (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
 /-- A global isometry of quadratic forms localizes to an isometry at every finite place. -/
 theorem _root_.QuadraticMap.Equivalent.atFinitePlace [NumberField K]

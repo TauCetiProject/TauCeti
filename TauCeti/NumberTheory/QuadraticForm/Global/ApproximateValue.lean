@@ -71,7 +71,7 @@ private theorem represents_atFinitePlace_neg_apply
       obtain ⟨x₀, y, hx₀, hxy, hsq⟩ := h han
       exact ⟨_, y, hx₀, hxy, hsq⟩
 
-omit [FiniteDimensional K X] in
+omit [FiniteDimensional K X] [FiniteDimensional K Y] in
 /-- If `W` is regular, then `-U x` is represented at a real place `w` as soon as, where `W_w` is
 anisotropic, the value `U_w (1 ⊗ x)` lies in the square class of a local value of `U_w` that is
 the negative of a local value of `W_w`. -/
