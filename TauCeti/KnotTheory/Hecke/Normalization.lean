@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Units.Basic
-public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
+public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace.Polynomial
 public import TauCeti.KnotTheory.Hecke.Trace
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 
@@ -179,7 +179,7 @@ theorem heckeQuadraticTrace_eq_mul_algebraMap (β : MarkovBraid) (q a b : Rˣ) :
       Units.val (Units.map
         (algebraMap R (AdjoinRoot (X ^ 2 - C ((b * a⁻¹ : Rˣ) : R)))).toMonoidHom q) := by
     simp
-  rw [heckeQuadraticTrace_def, heckeTrace_def, ocneanuTrace_braidHom_algebraMap hq]
+  rw [heckeQuadraticTrace_def, heckeTrace_def, ← map_braidHom hq, ocneanuTrace_map]
 
 /-- **Universal property of `heckeQuadraticTrace`.** Given any commutative `R`-algebra `S` and any
 unit `l : Sˣ` satisfying `l ^ 2 = algebraMap R S (b * a⁻¹)`, the induced `R`-algebra homomorphism
@@ -216,7 +216,7 @@ theorem algHomEquiv_symm_heckeQuadraticTrace {S : Type*} [CommRing S] [Algebra R
     rw [Units.coe_map] at h
     simpa using h
   rw [heckeQuadraticTrace_eq_mul_algebraMap, heckeTrace_def, map_mul, map_mul, map_pow, hφinv,
-    hφzpow, AlgHom.commutes, ocneanuTrace_braidHom_algebraMap hq]
+    hφzpow, AlgHom.commutes, ← map_braidHom hq, ocneanuTrace_map]
 
 end MarkovBraid
 

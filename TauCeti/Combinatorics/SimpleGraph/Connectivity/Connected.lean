@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Connectedness and connected components
@@ -20,10 +21,14 @@ Deleting any vertex leaves each connected component not containing it as a singl
 
 ## Main results
 
+* `SimpleGraph.Reachable.apply_eq_apply`: a function constant along the edges is constant along
+  reachability.
 * `SimpleGraph.connected_of_exists_adj_lt`: a graph on a type with a well-founded `<`, in which
   every vertex other than `v₀` has an adjacent vertex below it, is connected.
 * `SimpleGraph.ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one`: deleting a
   vertex leaves each other connected component intact.
+* `SimpleGraph.Preconnected.finite_of_finite_edgeSet`: a preconnected simple graph with finitely
+  many edges has a finite vertex type.
 -/
 
 public section
@@ -66,16 +71,16 @@ theorem ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one
   constructor
   · constructor
     intro D E
-    obtain ⟨x, hxD⟩ := D.1.exists_rep
-    obtain ⟨y, hyE⟩ := E.1.exists_rep
+    obtain ⟨x, hxD⟩ := D.val.exists_rep
+    obtain ⟨y, hyE⟩ := E.val.exists_rep
     have hxC : G.connectedComponentMk (x : V) = C :=
       (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom x).symm.trans
         ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({v}ᶜ : Set V)).toHom) hxD).trans D.2)
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hxD).trans D.property)
     have hyC : G.connectedComponentMk (y : V) = C :=
       (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom y).symm.trans
         ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({v}ᶜ : Set V)).toHom) hyE).trans E.2)
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hyE).trans E.property)
     obtain ⟨p⟩ := ConnectedComponent.exact (hxC.trans hyC.symm)
     have hvp : v ∉ p.support := by
       intro hv
@@ -97,6 +102,15 @@ theorem ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one
     rw [ConnectedComponent.map_mk]
     exact hxC
 
+/-- A function that is constant along the edges of a graph is constant along reachability. -/
+theorem Reachable.apply_eq_apply {V β : Type*} {G : SimpleGraph V} {f : V → β}
+    (hf : ∀ ⦃i j : V⦄, G.Adj i j → f i = f j) {i j : V} (h : G.Reachable i j) : f i = f j := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => rfl
+  | cons hadj _ ih => exact (hf hadj).trans ih
+section
+
 variable {V : Type*} [LT V] [WellFoundedLT V] {G : SimpleGraph V}
 
 /-- **A graph on a well-founded order in which every vertex other than `v₀` has a neighbour below
@@ -110,5 +124,25 @@ theorem connected_of_exists_adj_lt (v₀ : V) (h : ∀ v ≠ v₀, ∃ w < v, G.
     · rfl
     · obtain ⟨w, hwv, hadj⟩ := h v hv
       exact (ih w hwv).trans hadj.reachable
+
+end
+
+/-- Every preconnected simple graph with finitely many edges has a finite vertex type: either `V` is
+a subsingleton, or every vertex is incident to at least one edge of `G`. -/
+theorem Preconnected.finite_of_finite_edgeSet {V : Type*} {G : SimpleGraph V} [Finite G.edgeSet]
+    (hG : G.Preconnected) : Finite V := by
+  by_cases hsub : Subsingleton V
+  · exact Finite.of_subsingleton
+  · rw [not_subsingleton_iff_nontrivial] at hsub
+    have hf : (⋃ e : G.edgeSet, {x : V | x ∈ (e : Sym2 V)}).Finite :=
+      Set.finite_iUnion fun e ↦ Sym2.ind
+        (fun u v ↦ ((Set.finite_singleton v).insert u).subset fun _ ↦ Sym2.mem_iff.mp) e.val
+    refine Set.finite_univ_iff.mp (hf.subset fun x _ ↦ ?_)
+    obtain ⟨y, hyx⟩ := exists_ne x
+    obtain ⟨p⟩ := hG x y
+    cases p with
+    | nil => exact (hyx rfl).elim
+    | @cons _ z _ hadj _ =>
+      exact Set.mem_iUnion.mpr ⟨⟨s(x, z), G.mem_edgeSet.mpr hadj⟩, Sym2.mem_mk_left x z⟩
 
 end SimpleGraph

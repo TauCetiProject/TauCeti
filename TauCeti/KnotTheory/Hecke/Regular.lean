@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Polynomial.Laurent.Regular
 public import TauCeti.KnotTheory.Burau.Skein
-public import TauCeti.KnotTheory.Hecke.Jimbo
+public import TauCeti.KnotTheory.Hecke.Homfly
 import TauCeti.RingTheory.Localization.Away.Basic
 import Mathlib.Tactic.LinearCombination
 
@@ -23,8 +23,7 @@ remains regular.
 Over every commutative ring `R`, `T (-1) - T 1` is regular (`LaurentPolynomial.isRegular_T_sub_T`),
 so `LaurentPolynomial R` embeds injectively into
 `Localization.Away (T (-1) - T 1 : LaurentPolynomial R)`
-(`IsLocalization.Away.injective_iff_isRegular`). Pole cancellation on each finite stage of
-`InfiniteTypeAHeckeAlgebra` (`TauCeti.InfiniteTypeAHeckeAlgebra.pow_mul_ocneanuTrace_map_mem`) shows
+(`IsLocalization.Away.injective_iff_isRegular`). Using `MarkovBraid.regularHeckeTrace` shows
 that the generic normalized Ocneanu braid trace `MarkovBraid.heckeUniversalTrace` equals the image
 of a unique Laurent polynomial `MarkovBraid.heckeRegularExtension` in `LaurentPolynomial R`.
 
@@ -231,24 +230,16 @@ private theorem exists_algebraMap_eq_heckeUniversalTrace (β : MarkovBraid) (q u
       algebraMap (LaurentPolynomial R)
           (Localization.Away (T (-1) - T 1 : LaurentPolynomial R)) P =
         β.heckeUniversalTrace q u := by
-  -- Apply finite-stage pole cancellation to the image `A` of `LaurentPolynomial R` inside `Away R`.
-  let A : Subalgebra R (Away R) := (IsScalarTower.toAlgHom R (LaurentPolynomial R) (Away R)).range
-  have hC : (↑(diffUnit R * (scalarUnit u)⁻¹) : Away R) ∈ A := by
-    rw [← algebraMap_strandFactor, ← IsScalarTower.toAlgHom_apply (R := R)]
-    exact AlgHom.mem_range_self _ _
-  have hCz : (↑(diffUnit R * (scalarUnit u)⁻¹) : Away R) *
-      ↑(scalarUnit u * (diffUnit R * writheUnit R)⁻¹) ∈ A := by
-    rw [← strandFactor_mul_param, ← IsScalarTower.toAlgHom_apply (R := R)]
-    exact AlgHom.mem_range_self _ _
-  obtain ⟨P, hP⟩ := InfiniteTypeAHeckeAlgebra.pow_mul_ocneanuTrace_map_mem
-    (coe_scalarUnit q).symm A hC hCz (InfiniteTypeAHeckeAlgebra.braidHom_mem_stage β.braid)
-  rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, IsScalarTower.toAlgHom_apply,
-    InfiniteTypeAHeckeAlgebra.map_braidHom] at hP
-  -- Reassemble the writhe monomial `T w` with the scaled Ocneanu trace `P`.
-  let w : ℤ := Multiplicative.toAdd (ArtinGroup.exponentSum _ β.braid)
-  refine ⟨T w * P, ?_⟩
-  rw [map_mul, hP, ← coe_writheUnit_zpow, heckeUniversalTrace, heckeTrace_def]
-  ring
+  let qLP : (LaurentPolynomial R)ˣ :=
+    Units.map (algebraMap R (LaurentPolynomial R) : R →* LaurentPolynomial R) q
+  have hqLP : algebraMap (LaurentPolynomial R) (Away R) qLP = scalarUnit q := by
+    simp [qLP, algebraMap_C_eq]
+  have hlLP : algebraMap (LaurentPolynomial R) (Away R) (genericUnit R) = writheUnit R := by
+    simp
+  refine ⟨β.regularHeckeTrace qLP ((T (-1) - T 1) * C (↑u⁻¹ : R)) (genericUnit R), ?_⟩
+  rw [map_regularHeckeTrace β hqLP ((T (-1) - T 1) * C (↑u⁻¹ : R)) hlLP, algebraMap_strandFactor,
+    heckeUniversalTrace]
+  exact regularHeckeTrace_eq_heckeTrace β (localizationAway_T_sub_T_mul_mul_eq_one u)
 
 /-- The unique regular Laurent polynomial in `LaurentPolynomial R` extending
 `MarkovBraid.heckeUniversalTrace` across the zero-factor locus `T (-1) - T 1 = 0`. -/
@@ -275,9 +266,28 @@ theorem eq_heckeRegularExtension_of_algebraMap_eq {β : MarkovBraid} {q u : Rˣ}
         (Localization.Away (T (-1) - T 1 : LaurentPolynomial R)) P =
       β.heckeUniversalTrace q u) :
     P = β.heckeRegularExtension q u :=
-  (IsLocalization.Away.injective_iff_isRegular (T (-1) - T 1 : LaurentPolynomial R)).2
+  (IsLocalization.Away.injective_iff_isRegular (T (-1) - T 1 : LaurentPolynomial R)).mpr
     (isRegular_T_sub_T (by decide : (-1 : ℤ) ≠ 1))
     (hP.trans (β.algebraMap_heckeRegularExtension q u).symm)
+
+/-- Identification of `heckeRegularExtension` with `regularHeckeTrace` over
+`LaurentPolynomial R`. -/
+theorem heckeRegularExtension_eq_regularHeckeTrace (β : MarkovBraid) (q u : Rˣ) :
+    β.heckeRegularExtension q u =
+      β.regularHeckeTrace
+        (Units.map (algebraMap R (LaurentPolynomial R) : R →* LaurentPolynomial R) q)
+        ((T (-1) - T 1) * C (↑u⁻¹ : R)) (genericUnit R) := by
+  symm
+  refine eq_heckeRegularExtension_of_algebraMap_eq ?_
+  have hqLP : algebraMap (LaurentPolynomial R) (Away R)
+      (Units.map (algebraMap R (LaurentPolynomial R) : R →* LaurentPolynomial R) q) =
+      scalarUnit q := by
+    simp [algebraMap_C_eq]
+  have hlLP : algebraMap (LaurentPolynomial R) (Away R) (genericUnit R) = writheUnit R := by
+    simp
+  rw [map_regularHeckeTrace β hqLP ((T (-1) - T 1) * C (↑u⁻¹ : R)) hlLP, algebraMap_strandFactor,
+    heckeUniversalTrace]
+  exact regularHeckeTrace_eq_heckeTrace β (localizationAway_T_sub_T_mul_mul_eq_one u)
 
 /-- **Existence and uniqueness of the regular Laurent polynomial extension** of the generic
 normalized Ocneanu braid trace across `T (-1) - T 1 = 0`, over every commutative ring `R`. -/
@@ -325,7 +335,7 @@ theorem heckeRegularExtension_skein (q u : Rˣ) {n : ℕ} (b c : BraidGroup (n +
         T 1 * heckeRegularExtension ⟨n, b * (sigma (n := n + 1) i)⁻¹ * c⟩ q u =
       C ((q : R) - ↑q⁻¹) * heckeRegularExtension ⟨n, b * c⟩ q u := by
   apply (IsLocalization.Away.injective_iff_isRegular (S := Away R)
-      (T (-1) - T 1 : LaurentPolynomial R)).2
+      (T (-1) - T 1 : LaurentPolynomial R)).mpr
     (isRegular_T_sub_T (by decide : (-1 : ℤ) ≠ 1))
   simp only [map_sub, map_mul, algebraMap_heckeRegularExtension, ← coe_writheUnit_inv,
     ← coe_writheUnit, algebraMap_C_eq, ← coe_scalarUnit, map_inv, heckeUniversalTrace]
@@ -379,10 +389,15 @@ theorem heckeRegularExtension_eq_eval₂_reducedHomfly {K : Type*} [Field K] (φ
       Units.map (ι : LaurentPolynomial R →* Away R) (genericUnit R)⁻¹ = (writheUnit R)⁻¹ := by
     ext
     simp [ι]
-  rw [hom_eval₂, hcomp, hl_inv, heckeUniversalTrace]
-  exact eval₂_reducedHomfly_eq_heckeTrace ((algebraMap R (Away R)).comp φ)
-    (isMarkovTrace_ocneanuTrace _) (localizationAway_T_sub_T_mul_mul_eq_one u)
-    (localizationAway_T_sub_T_mul_inv_mul_sub_eq_one hu) (coe_scalarUnit_eq_sub hu) β
+  have hdiff : ((↑(writheUnit R)⁻¹ : Away R) - writheUnit R) * ↑(scalarUnit u)⁻¹ =
+      ↑(diffUnit R * (scalarUnit u)⁻¹) := by
+    rw [← coe_diffUnit, Units.val_mul]
+  have hz : (((↑(writheUnit R)⁻¹ : Away R) - writheUnit R) * ↑(scalarUnit u)⁻¹) *
+      ↑(scalarUnit u * (diffUnit R * writheUnit R)⁻¹) = ↑(writheUnit R)⁻¹ := by
+    rw [hdiff, ← strandFactor_mul_param, coe_writheUnit_inv]
+  rw [hom_eval₂, hcomp, hl_inv, heckeUniversalTrace, ← hdiff]
+  exact eval₂_reducedHomfly_eq_heckeTrace β ((algebraMap R (Away R)).comp φ)
+    (scalarUnit q) (scalarUnit u) (writheUnit R) (coe_scalarUnit_eq_sub hu) hz
 
 /-- Evaluating `β.heckeRegularExtension q u` at any writhe unit `l₀ : Rˣ` agrees with
 `eval₂ (eval₂ φ u) l₀⁻¹ (β.reducedHomfly K)` whenever `φ : K →+* R` is a ring homomorphism from a
@@ -511,6 +526,45 @@ theorem eval₂_neg_one_heckeRegularExtension_eq_normalizedBurauAlexander {q u s
   · have h := eval₂_neg_one_heckeRegularExtension_skein q u (1 : BraidGroup (n + 1)) c i
     simp only [one_mul] at h
     simp only [Units.val_one, inv_one, smul_eq_mul]
+    linear_combination -h
+  · simpa [hs] using normalizedBurauAlexander_skein (1 : BraidGroup (n + 1)) c i s
+  · simp
+  · simp
+
+/-- **Comparison of `regularHeckeTrace` with `normalizedBurauAlexander` at `C = 0, l = 1`.** Over
+every commutative ring `R`, without requiring `q - q⁻¹` to be a unit, `β.regularHeckeTrace q 0 1`
+equals `β.normalizedBurauAlexander s` whenever `s⁻¹ - s = q - q⁻¹`. -/
+theorem regularHeckeTrace_zero_one_eq_normalizedBurauAlexander {q s : Rˣ}
+    (hs : ((s⁻¹ : Rˣ) : R) - (s : R) = (q : R) - ↑q⁻¹) (β : MarkovBraid) :
+    β.regularHeckeTrace q 0 1 = β.normalizedBurauAlexander s := by
+  have hstab : (0 : R) * ((q : R) - ↑q⁻¹) = (↑(1 : Rˣ)⁻¹ : R) - (1 : Rˣ) := by simp
+  refine congrFun (eq_of_skein (R := R) (M := R) 1 ((q : R) - ↑q⁻¹) 0
+    (F := fun γ ↦ γ.regularHeckeTrace q 0 1)
+    (G := fun γ ↦ γ.normalizedBurauAlexander s)
+    (fun _ _ h ↦ h.regularHeckeTrace_eq q 0 1 hstab)
+    (fun _ _ h ↦ h.normalizedBurauAlexander_eq s)
+    (fun n c i ↦ ?_) (fun n c i ↦ ?_) (fun n b ↦ ?_) (fun n b ↦ ?_) (by simp)) β
+  · simpa using regularHeckeTrace_skein q 0 1 (1 : BraidGroup (n + 1)) c i
+  · simpa [hs] using normalizedBurauAlexander_skein (1 : BraidGroup (n + 1)) c i s
+  · simp
+  · simp
+
+/-- **Comparison of `regularHeckeTrace` with `normalizedBurauAlexander` at `C = 0, l = -1`.** Over
+every commutative ring `R`, without requiring `q - q⁻¹` to be a unit,
+`β.regularHeckeTrace q 0 (-1)` equals `β.normalizedBurauAlexander s` whenever
+`s⁻¹ - s = q⁻¹ - q`. -/
+theorem regularHeckeTrace_zero_neg_one_eq_normalizedBurauAlexander {q s : Rˣ}
+    (hs : ((s⁻¹ : Rˣ) : R) - (s : R) = (↑q⁻¹ : R) - q) (β : MarkovBraid) :
+    β.regularHeckeTrace q 0 (-1) = β.normalizedBurauAlexander s := by
+  have hstab : (0 : R) * ((q : R) - ↑q⁻¹) = (↑(-1 : Rˣ)⁻¹ : R) - (-1 : Rˣ) := by simp
+  refine congrFun (eq_of_skein (R := R) (M := R) 1 ((↑q⁻¹ : R) - q) 0
+    (F := fun γ ↦ γ.regularHeckeTrace q 0 (-1))
+    (G := fun γ ↦ γ.normalizedBurauAlexander s)
+    (fun _ _ h ↦ h.regularHeckeTrace_eq q 0 (-1) hstab)
+    (fun _ _ h ↦ h.normalizedBurauAlexander_eq s)
+    (fun n c i ↦ ?_) (fun n c i ↦ ?_) (fun n b ↦ ?_) (fun n b ↦ ?_) (by simp)) β
+  · have h := regularHeckeTrace_skein q 0 (-1) (1 : BraidGroup (n + 1)) c i
+    simp only [one_mul, inv_neg, inv_one, Units.val_neg, Units.val_one] at h ⊢
     linear_combination -h
   · simpa [hs] using normalizedBurauAlexander_skein (1 : BraidGroup (n + 1)) c i s
   · simp

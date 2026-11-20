@@ -11,11 +11,11 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Finite
 # Change of coefficients for the type-A Hecke algebra
 
 Let `S` be an `R`-algebra and let `q' : Sˣ` be the image of the parameter `q : Rˣ`. The defining
-relations of `TauCeti.TypeAHeckeAlgebra R q n` are carried to those of
-`TauCeti.TypeAHeckeAlgebra S q' n`, so there is a coefficient-change map
-`TauCeti.TypeAHeckeAlgebra.map`, sending each generator `T i` to the generator `T i`. These maps
-are functorial in the coefficient algebra, and compatible with the braid homomorphisms and the
-tower maps.
+relations of `TauCeti.TypeAHeckeAlgebra R q n` and of `TauCeti.InfiniteTypeAHeckeAlgebra R q` are
+carried to those at `q'`, so there are coefficient-change maps `TauCeti.TypeAHeckeAlgebra.map` and
+`TauCeti.InfiniteTypeAHeckeAlgebra.map`, sending each generator `T i` to `T i`. These maps are
+functorial in the coefficient algebra, and compatible with the braid homomorphisms, the tower
+maps, the strand shifts, and the embeddings into the infinite algebra.
 
 Since the Hecke algebra is defined by generators and relations whose coefficients come from `R`,
 its formation commutes with base change: `S ⊗[R] TypeAHeckeAlgebra R q n` is isomorphic as an
@@ -25,17 +25,18 @@ This transports statements about the Hecke algebra over a ring of generic parame
 
 ## Main definitions
 
-* `TauCeti.TypeAHeckeAlgebra.map` and `TauCeti.InfiniteTypeAHeckeAlgebra.map`: the
+* `TauCeti.InfiniteTypeAHeckeAlgebra.map` and `TauCeti.TypeAHeckeAlgebra.map`: the
   coefficient-change maps along an `R`-algebra `S`.
 * `TauCeti.TypeAHeckeAlgebra.algebraTensorAlgEquiv`: the base change isomorphism
   `S ⊗[R] TypeAHeckeAlgebra R q n ≃ₐ[S] TypeAHeckeAlgebra S q' n`.
 
 ## Main results
 
-* `TauCeti.TypeAHeckeAlgebra.map_id` and `TauCeti.TypeAHeckeAlgebra.map_map`: functoriality.
-* `TauCeti.TypeAHeckeAlgebra.map_braidHom`, `TauCeti.TypeAHeckeAlgebra.map_strandIncl` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.map_toInfinite`: compatibility with the braid homomorphisms,
-  the tower maps and `toInfinite`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.map_id`, `TauCeti.InfiniteTypeAHeckeAlgebra.map_map`,
+  `TauCeti.TypeAHeckeAlgebra.map_id`, and `TauCeti.TypeAHeckeAlgebra.map_map`: functoriality.
+* `TauCeti.TypeAHeckeAlgebra.map_braidHom`, `TauCeti.TypeAHeckeAlgebra.map_strandIncl`, and
+  `TauCeti.TypeAHeckeAlgebra.toInfinite_map`: compatibility with the braid homomorphisms, the
+  tower maps, and the embeddings into the infinite algebra.
 * `TauCeti.TypeAHeckeAlgebra.algebraTensorAlgEquiv_tmul` and
   `TauCeti.TypeAHeckeAlgebra.algebraTensorAlgEquiv_symm_T`: the base change isomorphism and its
   inverse on pure tensors and generators.
@@ -54,7 +55,7 @@ namespace TauCeti
 
 section Helpers
 
-variable {R : Type*} [CommRing R] {q : Rˣ} {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {q : Rˣ} {q' : Sˣ}
 
 /-- The quadratic-relation coefficient `q - q⁻¹` maps to `q' - q'⁻¹`. -/
 private theorem algebraMap_sub_inv_eq (h : algebraMap R S q = q') :
@@ -63,6 +64,69 @@ private theorem algebraMap_sub_inv_eq (h : algebraMap R S q = q') :
     MonoidHom.coe_ofClass]
 
 end Helpers
+
+namespace InfiniteTypeAHeckeAlgebra
+
+variable {R : Type*} [CommRing R] {q : Rˣ}
+variable {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
+
+/-- The coefficient-change map of infinite type-A Hecke algebras along an `R`-algebra `S`, when
+the parameter `q : Rˣ` maps to `q' : Sˣ`: the generator `T i` goes to the generator `T i`. -/
+def map (h : algebraMap R S q = q') :
+    InfiniteTypeAHeckeAlgebra R q →ₐ[R] InfiniteTypeAHeckeAlgebra S q' :=
+  lift (fun i ↦ T q' i)
+    (fun i ↦ by rw [T_mul_self, ← algebraMap_sub_inv_eq h, algebraMap_smul])
+    (fun i ↦ T_braid i) (fun h ↦ (commute_T (Or.inl h)).eq)
+
+/-- The coefficient-change map sends each generator to the generator with the same index. -/
+@[simp]
+theorem map_T (h : algebraMap R S q = q') (i : ℕ) : map h (T q i) = T q' i := by
+  rw [map, lift_T]
+
+/-- Changing coefficients along the identity of `R` is the identity. -/
+@[simp]
+theorem map_id (h : algebraMap R R q = q) : map h = AlgHom.id R _ :=
+  hom_ext fun i ↦ by simp
+
+/-- Changing coefficients along `R → S` and then along `S → S'` is changing coefficients along
+the composite `R → S'`. -/
+@[simp]
+theorem map_map {S' : Type*} [CommRing S'] [Algebra R S'] [Algebra S S'] [IsScalarTower R S S']
+    {q'' : S'ˣ} (h : algebraMap R S q = q') (h' : algebraMap S S' q' = q'')
+    (x : InfiniteTypeAHeckeAlgebra R q) :
+    map h' (map h x) = map (by rw [IsScalarTower.algebraMap_apply R S S', h, h']) x := by
+  have hcomp : ((map h').restrictScalars R).comp (map h) =
+      map (by rw [IsScalarTower.algebraMap_apply R S S', h, h']) :=
+    hom_ext fun i ↦ by simp
+  exact DFunLike.congr_fun hcomp x
+
+/-- The coefficient-change map carries the stage `n` into the stage `n`. -/
+theorem map_mem_stage (h : algebraMap R S q = q') {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
+    (hx : x ∈ stage R q n) : map h x ∈ stage S q' n := by
+  have hle : stage R q n ≤ ((stage S q' n).restrictScalars R).comap (map h) :=
+    stage_le_iff.2 fun i hi ↦ by
+      rw [Subalgebra.mem_comap, Subalgebra.mem_restrictScalars, map_T]
+      exact T_mem_stage hi
+  exact hle hx
+
+/-- The coefficient-change map intertwines the braid homomorphisms. -/
+@[simp]
+theorem map_braidHom (h : algebraMap R S q = q') {n : ℕ} (b : BraidGroup n) :
+    map h (braidHom R q n b) = braidHom S q' n b := by
+  have hb : (Units.map (map h : InfiniteTypeAHeckeAlgebra R q →* _)).comp (braidHom R q n) =
+      braidHom S q' n :=
+    BraidGroup.hom_ext fun i ↦ Units.ext <| by simp
+  exact congrArg Units.val (DFunLike.congr_fun hb b)
+
+/-- The coefficient-change map commutes with the strand shifts. -/
+@[simp]
+theorem map_shift (h : algebraMap R S q = q') (k : ℕ) (x : InfiniteTypeAHeckeAlgebra R q) :
+    map h (shift R q k x) = shift S q' k (map h x) := by
+  have hcomp : (map h).comp (shift R q k) = ((shift S q' k).restrictScalars R).comp (map h) :=
+    hom_ext fun i ↦ by simp
+  exact DFunLike.congr_fun hcomp x
+
+end InfiniteTypeAHeckeAlgebra
 
 namespace TypeAHeckeAlgebra
 
@@ -117,6 +181,16 @@ theorem map_strandIncl (h : algebraMap R S q = q') (x : TypeAHeckeAlgebra R q n)
     map (n + 1) h (strandIncl R q n x) = strandIncl S q' n (map n h x) := by
   have hcomp : (map (n + 1) h).comp (strandIncl R q n) =
       ((strandIncl S q' n).restrictScalars R).comp (map n h) :=
+    hom_ext fun i ↦ by simp
+  exact DFunLike.congr_fun hcomp x
+
+/-- The coefficient-change maps of the finite and infinite type-A Hecke algebras are intertwined
+by `TauCeti.TypeAHeckeAlgebra.toInfinite`. -/
+@[simp]
+theorem toInfinite_map (h : algebraMap R S q = q') (x : TypeAHeckeAlgebra R q n) :
+    toInfinite S q' n (map n h x) = InfiniteTypeAHeckeAlgebra.map h (toInfinite R q n x) := by
+  have hcomp : ((toInfinite S q' n).restrictScalars R).comp (map n h) =
+      (InfiniteTypeAHeckeAlgebra.map h).comp (toInfinite R q n) :=
     hom_ext fun i ↦ by simp
   exact DFunLike.congr_fun hcomp x
 
@@ -189,69 +263,5 @@ theorem algebraTensorAlgEquiv_symm_map (h : algebraMap R S q = q')
 end BaseChange
 
 end TypeAHeckeAlgebra
-
-namespace InfiniteTypeAHeckeAlgebra
-
-variable {R : Type*} [CommRing R] {q : Rˣ}
-variable {S : Type*} [CommRing S] [Algebra R S] {q' : Sˣ}
-
-/-- The coefficient-change map of infinite type-A Hecke algebras along an `R`-algebra `S`, when
-the parameter `q : Rˣ` maps to `q' : Sˣ`: the generator `T i` goes to `T i`. -/
-def map (h : algebraMap R S q = q') :
-    InfiniteTypeAHeckeAlgebra R q →ₐ[R] InfiniteTypeAHeckeAlgebra S q' :=
-  lift (fun i ↦ T q' i)
-    (fun i ↦ by rw [T_mul_self, ← algebraMap_sub_inv_eq h, algebraMap_smul])
-    T_braid (fun h ↦ (commute_T (Or.inl h)).eq)
-
-/-- The coefficient-change map on `InfiniteTypeAHeckeAlgebra` sends each generator to the
-generator with the same index. -/
-@[simp]
-theorem map_T (h : algebraMap R S q = q') (i : ℕ) : map h (T q i) = T q' i := by
-  rw [map, lift_T]
-
-/-- Changing coefficients along the identity of `R` is the identity. -/
-@[simp]
-theorem map_id (h : algebraMap R R q = q) : map h = AlgHom.id R _ :=
-  hom_ext fun i ↦ by simp
-
-/-- Functoriality of `InfiniteTypeAHeckeAlgebra.map` along a scalar tower `R → S → S'`. -/
-@[simp]
-theorem map_map {S' : Type*} [CommRing S'] [Algebra R S'] [Algebra S S'] [IsScalarTower R S S']
-    {q'' : S'ˣ} (h : algebraMap R S q = q') (h' : algebraMap S S' q' = q'')
-    (x : InfiniteTypeAHeckeAlgebra R q) :
-    map h' (map h x) = map (by rw [IsScalarTower.algebraMap_apply R S S', h, h']) x := by
-  have hcomp : ((map h').restrictScalars R).comp (map h) =
-      map (by rw [IsScalarTower.algebraMap_apply R S S', h, h']) :=
-    hom_ext fun i ↦ by simp
-  exact DFunLike.congr_fun hcomp x
-
-/-- Coefficient change on `InfiniteTypeAHeckeAlgebra` preserves each finite stage. -/
-theorem map_mem_stage (h : algebraMap R S q = q') {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
-    (hx : x ∈ stage R q n) : map h x ∈ stage S q' n :=
-  (stage_le_iff (S := ((stage S q' n).restrictScalars R).comap (map h)).2 fun _ hi ↦ by
-    simpa only [Subalgebra.mem_comap, Subalgebra.mem_restrictScalars, map_T] using
-      T_mem_stage hi) hx
-
-/-- Coefficient change intertwines the braid homomorphisms into `InfiniteTypeAHeckeAlgebra`. -/
-@[simp]
-theorem map_braidHom (h : algebraMap R S q = q') {n : ℕ} (b : BraidGroup n) :
-    map h (braidHom R q n b) = braidHom S q' n b := by
-  have hb : (Units.map (map h : InfiniteTypeAHeckeAlgebra R q →* _)).comp (braidHom R q n) =
-      braidHom S q' n :=
-    BraidGroup.hom_ext fun i ↦ Units.ext <| by simp
-  simpa using congrArg Units.val (DFunLike.congr_fun hb b)
-
-/-- Coefficient change intertwines `TypeAHeckeAlgebra.toInfinite`. -/
-@[simp]
-theorem map_toInfinite (h : algebraMap R S q = q') {n : ℕ} (x : TypeAHeckeAlgebra R q n) :
-    map h (TypeAHeckeAlgebra.toInfinite R q n x) =
-      TypeAHeckeAlgebra.toInfinite S q' n (TypeAHeckeAlgebra.map n h x) := by
-  have hcomp : (map h).comp (TypeAHeckeAlgebra.toInfinite R q n) =
-      ((TypeAHeckeAlgebra.toInfinite S q' n).restrictScalars R).comp
-        (TypeAHeckeAlgebra.map n h) :=
-    TypeAHeckeAlgebra.hom_ext fun i ↦ by simp
-  exact DFunLike.congr_fun hcomp x
-
-end InfiniteTypeAHeckeAlgebra
 
 end TauCeti

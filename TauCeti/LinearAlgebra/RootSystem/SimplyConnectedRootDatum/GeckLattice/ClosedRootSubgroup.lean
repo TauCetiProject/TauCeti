@@ -283,14 +283,14 @@ noncomputable def geckRootSubgroupClosedSubgroup (i : Fin t.rank ⊕ Fin t.rank)
 /-- The bundled closed root subgroup is represented by the numbered root-subgroup morphism. -/
 @[simp]
 theorem coe_geckRootSubgroupClosedSubgroup (i : Fin t.rank ⊕ Fin t.rank) :
-    (t.geckRootSubgroupClosedSubgroup ht i).1 =
+    (t.geckRootSubgroupClosedSubgroup ht i).val =
       letI := t.mono_geckRootSubgroup ht i
       Subobject.mk (t.geckRootSubgroup ht i) := by
   exact ClosedSubgroupScheme.coe_mk _
 
 /-- The bundled numbered root subgroup is canonically isomorphic to the additive group scheme. -/
 noncomputable def geckRootSubgroupClosedSubgroupIso (i : Fin t.rank ⊕ Fin t.rank) :
-    ((t.geckRootSubgroupClosedSubgroup ht i).1 :
+    ((t.geckRootSubgroupClosedSubgroup ht i).val :
       Grp (Over (Spec (CommRingCat.of ℤ)))) ≅ AdditiveGroup.groupScheme ℤ :=
   ClosedSubgroupScheme.mkIso (t.geckRootSubgroup ht i)
 
@@ -299,7 +299,7 @@ numbered Geck root-subgroup map. -/
 @[simp]
 theorem geckRootSubgroupClosedSubgroupIso_inv_comp_arrow (i : Fin t.rank ⊕ Fin t.rank) :
     (t.geckRootSubgroupClosedSubgroupIso ht i).inv ≫
-        (t.geckRootSubgroupClosedSubgroup ht i).1.arrow =
+        (t.geckRootSubgroupClosedSubgroup ht i).val.arrow =
       t.geckRootSubgroup ht i :=
   ClosedSubgroupScheme.mkIso_inv_comp_arrow (t.geckRootSubgroup ht i)
 

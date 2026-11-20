@@ -734,10 +734,10 @@ theorem awayToSection_algebraMap (i : Fin 2) (c : R) :
 takes the value `r` in every localization. -/
 theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) (x : U) :
     ((((projectiveLine R).presheaf.map U.leTop.op
-      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val x).val) =
         algebraMap R _ r := by
-  obtain ⟨i, hi⟩ : ∃ i, x.1 ∈ Proj.basicOpen 𝒜 (coord R i) := by
-    have hx : x.1 ∈ (⊤ : (projectiveLine R).Opens) := trivial
+  obtain ⟨i, hi⟩ : ∃ i, x.val ∈ Proj.basicOpen 𝒜 (coord R i) := by
+    have hx : x.val ∈ (⊤ : (projectiveLine R).Opens) := trivial
     rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup] at hx
   -- on the chart `D₊(Xᵢ)` containing `x`, the constant `r` is the fraction `r / 1`
   have hres : (projectiveLine R).presheaf.map (homOfLE le_top).op
@@ -747,14 +747,14 @@ theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) 
     exact (awayToSection_algebraMap R i r).symm
   -- restricting a section keeps its values, which is `Proj.res_apply`, true by `rfl`
   have hx : ((((projectiveLine R).presheaf.map U.leTop.op
-      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val x).val) =
         ((((projectiveLine R).presheaf.map (homOfLE le_top).op
-          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 ⟨x.1, hi⟩).val) :=
+          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).val ⟨x.val, hi⟩).val) :=
     rfl
   refine hx.trans ((congrArg (fun s : Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) ↦
-    (s.1 ⟨x.1, hi⟩).val) hres).trans ?_)
+    (s.val ⟨x.val, hi⟩).val) hres).trans ?_)
   refine (ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (coord R i)
-    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.1, hi⟩).trans ?_
+    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.val, hi⟩).trans ?_
   have hR (L : Type u) [CommRing L] [Algebra (_root_.SymmetricAlgebra R (Fin 2 → R)) L]
       [Algebra R L] [IsScalarTower R (_root_.SymmetricAlgebra R (Fin 2 → R)) L] :
       algebraMap R L r = algebraMap _ L (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) :=

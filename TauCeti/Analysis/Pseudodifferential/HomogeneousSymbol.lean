@@ -15,6 +15,7 @@ public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
@@ -40,7 +41,9 @@ The file develops:
   composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
   `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
-  the degree and in particular restricts a symbol to a set of positions;
+  the degree and in particular restricts a symbol to a set of positions, and the linear change
+  of variables `HomogeneousSymbol.compProdMap`, `(x, ξ) ↦ a(P x, Q ξ)` for a linear map `P` and a
+  linear isomorphism `Q`;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
   degree, and `HomogeneousSymbol.frequencyDeriv` in a frequency direction, which lowers it by
   one; iterating them gives every mixed partial derivative `∂ₓ^α ∂_ξ^β a`, homogeneous of degree
@@ -69,7 +72,11 @@ The file develops:
   changes it by a smoothing term, whose derivatives are bounded by every power of `⟨ξ⟩`
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
 * on an inner product space, the symbol `HomogeneousSymbol.normRpow`, which is `‖ξ‖ ^ m` times
-  the identity and is homogeneous of every real degree `m`.
+  the identity and is homogeneous of every real degree `m`, and the homogeneous extension
+  `HomogeneousSymbol.ofSphere m g`, equal to `‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ)` at `ξ ≠ 0`, of a map `g`
+  smooth off the zero frequency; only the values of `g` on the unit sphere matter
+  (`HomogeneousSymbol.ofSphere_congr`), and every homogeneous symbol is the extension of its own
+  coefficient (`HomogeneousSymbol.ofSphere_coefficient`).
 * between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
   `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
   (`HomogeneousSymbol.adjoint_comp`).
@@ -487,6 +494,77 @@ theorem compPosition_compPosition (a : HomogeneousSymbol X E V W m) (g' : Z → 
   (rfl)
 
 end CompPosition
+
+/-! ### Linear change of variables -/
+
+section CompProdMap
+
+variable {X' X'' E' E'' : Type*} [NormedAddCommGroup X'] [NormedSpace ℝ X']
+  [NormedAddCommGroup X''] [NormedSpace ℝ X''] [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+
+/-- A linear change of variables `(x, ξ) ↦ a(P x, Q ξ)` in a homogeneous symbol of degree `m`, for
+a linear map `P` of positions and a linear isomorphism `Q` of frequencies. -/
+def compProdMap (a : HomogeneousSymbol X E V W m) (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E) :
+    HomogeneousSymbol X' E' V W m where
+  coefficient := a.coefficient ∘ P.prodMap (Q : E' →L[ℝ] E)
+  zero_covector x := by simp
+  contDiffOn_coefficient := a.contDiffOn_coefficient.comp
+    (P.prodMap (Q : E' →L[ℝ] E)).contDiff.contDiffOn fun p hp => by simpa using hp
+  homogeneous x ξ t ht := by simpa using a.homogeneous (P x) (Q ξ) t ht
+
+@[simp]
+theorem coefficient_compProdMap (a : HomogeneousSymbol X E V W m) (P : X' →L[ℝ] X)
+    (Q : E' ≃L[ℝ] E) (p : X' × E') :
+    (a.compProdMap P Q).coefficient p = a.coefficient (P p.1, Q p.2) :=
+  (rfl)
+
+variable (P : X' →L[ℝ] X) (Q : E' ≃L[ℝ] E)
+
+@[simp]
+theorem zero_compProdMap : (0 : HomogeneousSymbol X E V W m).compProdMap P Q = 0 :=
+  (rfl)
+
+@[simp]
+theorem add_compProdMap (a b : HomogeneousSymbol X E V W m) :
+    (a + b).compProdMap P Q = a.compProdMap P Q + b.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem neg_compProdMap (a : HomogeneousSymbol X E V W m) :
+    (-a).compProdMap P Q = -a.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem sub_compProdMap (a b : HomogeneousSymbol X E V W m) :
+    (a - b).compProdMap P Q = a.compProdMap P Q - b.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem smul_compProdMap {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)]
+    [SMulCommClass ℝ R (V →L[ℂ] W)] [ContinuousConstSMul R (V →L[ℂ] W)] (c : R)
+    (a : HomogeneousSymbol X E V W m) : (c • a).compProdMap P Q = c • a.compProdMap P Q :=
+  (rfl)
+
+@[simp]
+theorem comp_compProdMap (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b.comp a).compProdMap P Q = (b.compProdMap P Q).comp (a.compProdMap P Q) :=
+  (rfl)
+
+/-- The identity change of variables leaves a homogeneous symbol unchanged. -/
+@[simp]
+theorem compProdMap_id (a : HomogeneousSymbol X E V W m) :
+    a.compProdMap (.id ℝ X) (.refl ℝ E) = a :=
+  (rfl)
+
+/-- Two successive linear changes of variables compose: first `(P, Q)`, then `(P', Q')`. -/
+@[simp]
+theorem compProdMap_compProdMap (a : HomogeneousSymbol X E V W m) (P' : X'' →L[ℝ] X')
+    (Q' : E'' ≃L[ℝ] E') :
+    (a.compProdMap P Q).compProdMap P' Q' = a.compProdMap (P.comp P') (Q'.trans Q) :=
+  (rfl)
+
+end CompProdMap
 
 /-! ### Spatial and frequency derivatives -/
 
@@ -1037,6 +1115,62 @@ theorem normRpow_comp_normRpow (m m' : ℝ) :
   ext_of_ne_zero fun x ξ hξ ↦ by
     ext v
     simp [hξ, Real.rpow_add (norm_pos_iff.mpr hξ), mul_smul, smul_comm (‖ξ‖ ^ m)]
+
+end HomogeneousSymbol
+
+/-! ### Homogeneous extension from the unit sphere -/
+
+namespace HomogeneousSymbol
+
+variable {X E V W : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
+  [InnerProductSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] {m : ℝ}
+
+variable (m) in
+/-- The homogeneous symbol of degree `m` that agrees with `g` on the unit sphere of frequencies:
+its value at `ξ ≠ 0` is `‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ)`. Only the values of `g` on the unit sphere
+matter (`HomogeneousSymbol.ofSphere_congr`); smoothness off the zero frequency is assumed so that
+the extension is smooth. -/
+noncomputable def ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
+    HomogeneousSymbol X E V W m :=
+  mk' (fun p ↦ ‖p.2‖ ^ m • g (p.1, ‖p.2‖⁻¹ • p.2)) (hg.norm_rpow_smul_comp_normalize m)
+    fun x ξ _ t ht ↦ by
+      have hdir : (t * ‖ξ‖)⁻¹ • (t • ξ) = ‖ξ‖⁻¹ • ξ := by
+        rw [smul_smul]
+        simp [ht.ne']
+      simp only [norm_smul, Real.norm_of_nonneg ht.le, hdir, Real.mul_rpow ht.le (norm_nonneg ξ),
+        mul_smul]
+
+@[simp]
+theorem coefficient_ofSphere_of_ne_zero (g : X × E → V →L[ℂ] W)
+    (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+    (ofSphere m g hg).coefficient (x, ξ) = ‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ) :=
+  coefficient_mk'_of_ne_zero _ _ _ hξ
+
+/-- On the unit sphere of frequencies the homogeneous extension of `g` is `g`. -/
+theorem coefficient_ofSphere_of_norm_eq_one (g : X × E → V →L[ℂ] W)
+    (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) {x : X} {ξ : E} (hξ : ‖ξ‖ = 1) :
+    (ofSphere m g hg).coefficient (x, ξ) = g (x, ξ) := by
+  rw [coefficient_ofSphere_of_ne_zero g hg (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero)), hξ]
+  simp
+
+/-- The homogeneous extension only depends on the values on the unit sphere. -/
+theorem ofSphere_congr {g g' : X × E → V →L[ℂ] W} (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0})
+    (hg' : ContDiffOn ℝ ∞ g' {p | p.2 ≠ 0}) (h : ∀ x ξ, ‖ξ‖ = 1 → g (x, ξ) = g' (x, ξ)) :
+    ofSphere m g hg = ofSphere m g' hg' :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    rw [coefficient_ofSphere_of_ne_zero g hg hξ, coefficient_ofSphere_of_ne_zero g' hg' hξ,
+      h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)]
+
+/-- A homogeneous symbol is the homogeneous extension of its values on the unit sphere. -/
+@[simp]
+theorem ofSphere_coefficient (a : HomogeneousSymbol X E V W m) :
+    ofSphere m a.coefficient a.contDiffOn_coefficient = a :=
+  ext_of_ne_zero fun x ξ hξ ↦ by
+    have hn : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
+    rw [coefficient_ofSphere_of_ne_zero _ _ hξ, a.homogeneous x ξ _ (inv_pos.mpr hn), smul_smul,
+      ← Real.mul_rpow hn.le (by positivity)]
+    simp [hn.ne']
 
 end HomogeneousSymbol
 

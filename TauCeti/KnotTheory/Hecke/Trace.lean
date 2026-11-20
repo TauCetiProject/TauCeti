@@ -34,15 +34,15 @@ to the quotient by ordinary unframed Markov equivalence. The unknot value is one
 
 * `LinearMap.heckeTrace_strandIncl` and
   `TauCeti.MarkovBraid.heckeTrace_one_strand`: the split-unknot factor and unknot value.
+* `TauCeti.MarkovBraid.heckeTrace_two_strand_one`,
+  `TauCeti.MarkovBraid.heckeTrace_sigma_two`, and
+  `TauCeti.MarkovBraid.heckeTrace_sigma_two_inv`: explicit values on the two-strand unlink and
+  both single-crossing closures.
 * `LinearMap.heckeTrace_skein_of_eq_zero`: the skein relation attached to a linear
   relation between a generator and its inverse.
 * `TauCeti.MarkovBraid.heckeTrace_stabilize_eq_mul` and
   `TauCeti.MarkovBraid.heckeTrace_stabilizeInv_eq_mul`: general positive and negative stabilization
   formulas before imposing the normalization equations.
-* `TauCeti.MarkovBraid.heckeTrace_sigma_two`, `TauCeti.MarkovBraid.heckeTrace_sigma_two_inv`,
-  `TauCeti.MarkovBraid.heckeTrace_sigma_two_eq_one`, and
-  `TauCeti.MarkovBraid.heckeTrace_sigma_two_inv_eq_one`: explicit two-strand crossing formulas
-  before and after imposing stabilization.
 * `TauCeti.MarkovEquiv.heckeTrace_eq_of_sq_mul`: Markov invariance when `z` is a unit `a` and
   `l ^ 2 * z = z - (q - q⁻¹)`.
 
@@ -153,6 +153,47 @@ theorem heckeTrace_stabilizeInv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
       heckeTrace ⟨n, b⟩ τ C l := by
   rw [heckeTrace_stabilizeInv_eq_mul hτ, hneg, one_mul]
 
+/-- The two-strand unlink closure `⟨1, 1⟩` has normalized Hecke trace `C`. -/
+theorem heckeTrace_two_strand_one (h₁ : τ 1 = 1) (C : R) (l : Rˣ) :
+    heckeTrace ⟨1, 1⟩ τ C l = C := by
+  simpa using heckeTrace_one (n := 1) h₁ C l
+
+/-- Before imposing `C * l * z = 1`, the single positive crossing on two strands has normalized
+Hecke trace `C * l * z`. -/
+theorem heckeTrace_sigma_two_eq (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
+    heckeTrace ⟨1, sigma (n := 2) 0⟩ τ C l = C * (l : R) * z := by
+  have hT : τ (T q 0) = z := by
+    simpa [hτ.map_one] using hτ.map_mul_T (one_mem (stage R q 1))
+  have hexp : ArtinGroup.exponentSum (CoxeterMatrix.A 1) (sigma (n := 2) 0) =
+      Multiplicative.ofAdd 1 := exponentSum_sigma (0 : Fin (2 - 1))
+  simp [heckeTrace_def, hexp, val_unitT, hT]
+
+/-- When `C * l * z = 1`, the single positive crossing on two strands closes to `1`. -/
+theorem heckeTrace_sigma_two (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (hpos : C * (l : R) * z = 1) :
+    heckeTrace ⟨1, sigma (n := 2) 0⟩ τ C l = 1 := by
+  rw [heckeTrace_sigma_two_eq hτ, hpos]
+
+/-- Before imposing `C * l⁻¹ * (z - (q - q⁻¹)) = 1`, the single negative crossing on two strands
+has normalized Hecke trace `C * l⁻¹ * (z - (q - q⁻¹))`. -/
+theorem heckeTrace_sigma_two_inv_eq (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
+    heckeTrace ⟨1, (sigma (n := 2) 0)⁻¹⟩ τ C l =
+      C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) := by
+  have hT : τ ↑(unitT q 0)⁻¹ = z - ((q : R) - ↑q⁻¹) := by
+    simpa only [one_mul, hτ.map_one, mul_one] using
+      hτ.map_mul_val_inv_unitT (one_mem (stage R q 1))
+  have hexp : ArtinGroup.exponentSum (CoxeterMatrix.A 1) (sigma (n := 2) 0) =
+      Multiplicative.ofAdd 1 := exponentSum_sigma (0 : Fin (2 - 1))
+  simp only [heckeTrace_def, pow_one, map_inv, hexp, toAdd_inv, toAdd_ofAdd, zpow_neg_one,
+    braidHom_sigma, Fin.val_zero, hT]
+
+/-- When `C * l⁻¹ * (z - (q - q⁻¹)) = 1`, the single negative crossing on two strands closes to
+`1`. -/
+theorem heckeTrace_sigma_two_inv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+    (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) :
+    heckeTrace ⟨1, (sigma (n := 2) 0)⁻¹⟩ τ C l = 1 := by
+  rw [heckeTrace_sigma_two_inv_eq hτ, hneg]
+
 /-- **The skein relation attached to a linear relation between a generator and its inverse.** If
 `x • T i + y • (T i)⁻¹ + s • 1 = 0` in the Hecke algebra, then for a crossing `σ i` in any braid
 context the normalized traces of the positive crossing `L₊`, the negative crossing `L₋` and the
@@ -196,35 +237,6 @@ theorem heckeTrace_skein (C : R) (l : Rˣ) (b c : BraidGroup (n + 1)) (i : Fin n
       (sub_eq_zero.mpr (T_sub_val_inv_unitT (R := R) (q := q) i))
   have h := τ.heckeTrace_skein_of_eq_zero C l i hrel b c
   simpa only [one_mul, neg_one_mul, neg_mul, ← sub_eq_add_neg, sub_eq_zero] using h
-
-/-- On two strands, the single positive crossing has normalized trace `C * l * z` before imposing
-the stabilization relation. -/
-theorem heckeTrace_sigma_two (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
-    heckeTrace ⟨1, BraidGroup.sigma (n := 2) 0⟩ τ C l = C * (l : R) * z := by
-  simpa [Fin.last, heckeTrace_one hτ.map_one] using
-    heckeTrace_stabilize_eq_mul hτ C l (1 : BraidGroup 1)
-
-/-- On two strands, the single negative crossing has normalized trace
-`C * l⁻¹ * (z - (q - q⁻¹))` before imposing the stabilization relation. -/
-theorem heckeTrace_sigma_two_inv (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
-    heckeTrace ⟨1, (BraidGroup.sigma (n := 2) 0)⁻¹⟩ τ C l =
-      C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) := by
-  simpa [Fin.last, heckeTrace_one hτ.map_one] using
-    heckeTrace_stabilizeInv_eq_mul hτ C l (1 : BraidGroup 1)
-
-/-- Under positive stabilization normalization, the single positive crossing on two strands has
-normalized trace `1`. -/
-theorem heckeTrace_sigma_two_eq_one (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
-    (hpos : C * (l : R) * z = 1) :
-    heckeTrace ⟨1, BraidGroup.sigma (n := 2) 0⟩ τ C l = 1 := by
-  rw [heckeTrace_sigma_two hτ, hpos]
-
-/-- Under negative stabilization normalization, the single negative crossing on two strands has
-normalized trace `1`. -/
-theorem heckeTrace_sigma_two_inv_eq_one (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
-    (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) :
-    heckeTrace ⟨1, (BraidGroup.sigma (n := 2) 0)⁻¹⟩ τ C l = 1 := by
-  rw [heckeTrace_sigma_two_inv hτ, hneg]
 
 end MarkovBraid
 
