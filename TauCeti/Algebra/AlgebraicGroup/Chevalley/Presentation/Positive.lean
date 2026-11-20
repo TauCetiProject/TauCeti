@@ -464,7 +464,7 @@ noncomputable def steinbergPositiveSubgroupEquiv :
     t.steinbergPositiveSubgroup ht A ≃* (t.scChevalleyDatum ht).positivePoints A :=
   (MonoidHom.ofInjective (f := ((t.scChevalleyDatum ht).steinbergLift A).domRestrict
       (t.steinbergPositiveSubgroup ht A)) fun g g' h =>
-    Subtype.ext (injOn_steinbergLift_steinbergPositiveSubgroup A g.2 g'.2 h)).trans
+    Subtype.ext (injOn_steinbergLift_steinbergPositiveSubgroup A g.property g'.property h)).trans
     (MulEquiv.subgroupCongr (by
       rw [MonoidHom.domRestrict_range,
         ChevalleyDatum.map_steinbergLift_steinbergPositiveSubgroup]))
