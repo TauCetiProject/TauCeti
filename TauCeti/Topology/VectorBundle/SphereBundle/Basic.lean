@@ -573,7 +573,7 @@ theorem isIso_singularHomologyMap_gaugeDiscSpherePairMap
 
 /-- The zero section, as a map into the disc bundle of a fibre gauge. -/
 private def zeroSectionGaugeDisc : C(B, gaugeDiscBundle ρ) :=
-  ⟨fun b ↦ ⟨zeroSection F E b, (hρ.eq_zero_of_snd_eq_zero rfl).trans_le zero_le_one⟩,
+  ⟨fun b ↦ ⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩,
     (Trivialization.continuous_zeroSection ℝ).subtype_mk _⟩
 
 /-- The projection of the disc bundle of a fibre gauge. -/

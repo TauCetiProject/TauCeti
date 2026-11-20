@@ -78,11 +78,12 @@ variable {M : Type*} [TopologicalSpace M] {s t : M → ℝ} {ε : ℝ} {W : Set 
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
   {ρ : TotalSpace F V → ℝ} {g : TotalSpace F V → M}
 
-/-- **The critical submanifold of a Morse–Bott level is compact.** Let `g` restrict to a closed
-embedding of the disc bundle `D_ρ(V)` of a fibre gauge `ρ` on a bundle `V → B` onto the negative
-disc bundle `{x ∈ W | t x = 0, s x ≤ ε}` of the quadratic normal form `f = c - s + t`, with
+/-- **The base of a gauge disc bundle parametrizing a negative disc bundle is compact.** Let `g`
+restrict to a closed embedding of the disc bundle `D_ρ(V)` of a fibre gauge `ρ` on a bundle
+`V → B` onto the negative disc bundle `{x ∈ W | t x = 0, s x ≤ ε}`, with
 `{x ∈ W | s x + 2 t x ≤ 2ε}` compact. Then the base `B` is compact: `g` carries the disc bundle
-onto a closed subset of that compact set, and the disc bundle contains the zero section. -/
+onto a closed subset of that compact set, and the disc bundle contains the zero section. In the
+intended setting `f = c - s + t`, `B` is the critical submanifold of the Morse–Bott level `c`. -/
 theorem compactSpace_of_isClosedEmbedding_gaugeDiscBundle (hε : 0 ≤ ε)
     (hK : IsCompact {x | x ∈ W ∧ s x + 2 * t x ≤ 2 * ε}) (hρ : IsFiberGauge ρ)
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
