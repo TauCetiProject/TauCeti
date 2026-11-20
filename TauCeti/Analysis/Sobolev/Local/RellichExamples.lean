@@ -12,7 +12,7 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 public import TauCeti.Analysis.Sobolev.Local.Basic
-public import TauCeti.Analysis.Sobolev.Local.Compactness.HalfDisc
+public import TauCeti.Analysis.Sobolev.Local.Compactness
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
 import TauCeti.Data.ENNReal.Inv
