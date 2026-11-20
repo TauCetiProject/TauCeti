@@ -334,6 +334,23 @@ theorem differential_eq (h : σ.IsMomentMap a μ) (x : M) :
   ext v Z
   simp [h.differential_apply_eq_eval₂]
 
+/-- The differential of the moment map `x ↦ μ x ∘ f` of an action restricted along a Lie algebra
+homomorphism `f : 𝔥 → 𝔤` is the differential of `μ` composed with `f`. -/
+@[simp]
+theorem differential_comp_apply {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) (v : TangentSpace I x) :
+    (h.comp f).differential x v = (h.differential x v).comp (f : 𝔥 →ₗ[ℝ] 𝔤) :=
+  (rfl)
+
+/-- The level tangent space `ker dμ_x` of a moment map lies in that of its restriction along a Lie
+algebra homomorphism. -/
+theorem ker_differential_le_ker_differential_comp {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥]
+    (h : σ.IsMomentMap a μ) (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) (x : M) :
+    LinearMap.ker (h.differential x) ≤ LinearMap.ker ((h.comp f).differential x) := by
+  intro v hv
+  rw [LinearMap.mem_ker] at hv ⊢
+  rw [h.differential_comp_apply, hv, LinearMap.zero_comp]
+
 /-- The kernel of the differential of a moment map at `x` is the `σ`-orthogonal of the orbit
 tangent space: `ker dμ_x = (𝔤 · x)^σ`. -/
 theorem ker_differential (h : σ.IsMomentMap a μ) (x : M) :

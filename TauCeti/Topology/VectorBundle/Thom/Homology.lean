@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Pushforward
+public import TauCeti.CategoryTheory.Preadditive.Injective.Basic
+public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 
@@ -33,7 +35,8 @@ the rank, with the homology of the base, as in the relative homology of a sublev
 Morse–Bott critical level.
 
 This file sets up `TauCeti.homologyThomMap`, relates it to `TauCeti.thomMap` via Kronecker duality,
-and proves the Thom isomorphism in homology and cohomology over an arbitrary base over a field `K`:
+and proves the Thom isomorphism in homology and cohomology over an arbitrary base over a field `K`,
+and the passage from cohomology to homology over any commutative ring `K`:
 
 1. **Functoriality**: `TauCeti.homologyThomMap` is `K`-linear in `u`, natural
    (`TauCeti.homologyThomMap_naturality`, `TauCeti.homologyThomMap_pullback`), and restricts on
@@ -52,6 +55,17 @@ and proves the Thom isomorphism in homology and cohomology over an arbitrary bas
    (`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`) then gives
    `Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)` (`TauCeti.bijective_thomMap_of_field`,
    `TauCeti.thomEquivOfField`).
+4. **Over any commutative ring**: with injective coefficients `I` the Kronecker maps are bijective,
+   so the Thom map with values in `I` is `±` precomposition with `Φ_u` on morphisms to `I`.
+   Injective modules detect monomorphisms
+   (`CategoryTheory.Injective.mono_iff_forall_surjective_comp`) and, being coseparating
+   (`CategoryTheory.Injective.isCoseparating_isInjective`), epimorphisms. Hence `Φ_u` with
+   coefficients `A = K` is injective, surjective, or bijective exactly when every Thom map
+   `Hᵖ(B; I) ⟶ Hᵐ(E, E₀; I)` is surjective, injective, or bijective
+   (`TauCeti.injective_homologyThomMap_iff_forall_surjective_thomMap`,
+   `TauCeti.surjective_homologyThomMap_iff_forall_injective_thomMap`,
+   `TauCeti.bijective_homologyThomMap_iff_forall_bijective_thomMap`): the Thom isomorphism in
+   cohomology with all coefficient modules gives the Thom isomorphism in integral homology.
 
 ## Main definitions and results
 
@@ -65,6 +79,11 @@ and proves the Thom isomorphism in homology and cohomology over an arbitrary bas
   `u`, the homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over a field `K`.
 * `TauCeti.bijective_thomMap_of_field`, `TauCeti.thomEquivOfField`: the cohomology Thom isomorphism
   over a field and an arbitrary base with vector-space coefficients `M`.
+* `TauCeti.bijective_homologyThomMap_iff_forall_bijective_thomMap`: over any commutative ring, the
+  homology Thom map is bijective exactly when the Thom map is bijective with values in every
+  injective module, with the injective and surjective halves
+  `TauCeti.injective_homologyThomMap_iff_forall_surjective_thomMap` and
+  `TauCeti.surjective_homologyThomMap_iff_forall_injective_thomMap`.
 
 ## References
 
@@ -164,9 +183,9 @@ theorem singularHomologyMap_fiberThomPairMap_comp_homologyThomMap (b : B) {n p m
     ← Functor.map_comp, fiberThomPairMap_fst_comp_thomPairProj]
 
 /-- **The homology Thom map is the transpose of the Thom map**: for `u ∈ Hⁿ(E, E₀; K)`,
-`a ∈ Hᵖ(B; K, M)` and `x ∈ Hₘ(E, E₀; K)`, `m = n + p`, the Kronecker pairing of `a` with the
-homology Thom map `Φ_u(x) = π_*(x ⌢ u)` is `(-1)^(n p)` times the pairing of the Thom map
-`π^*a ⌣ u` (`TauCeti.thomMap`) with `x`. -/
+`a ∈ Hᵖ(B; M)` with coefficients in any `K`-module `M` and `x ∈ Hₘ(E, E₀; K)`, `m = n + p`, the
+Kronecker pairing of `a` with the homology Thom map `Φ_u(x) = π_*(x ⌢ u)` is `(-1)^(n p)` times
+the pairing of the Thom map `π^*a ⌣ u` (`TauCeti.thomMap`) with `x`, both with values in `M`. -/
 theorem homologyThomMap_comp_singularKronecker {M : ModuleCat.{w} K} {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
     (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
@@ -189,6 +208,91 @@ theorem bijective_homologyThomMap_iff {K : Type w} [Field K] {n p m : ℕ} (h : 
       Function.Bijective (thomMap F E (ModuleCat.of K K) n p m (by omega) u) := by
   rw [thomMap_def, homologyThomMap_def]
   exact (thomPair F E).bijective_pushforwardCap_iff (thomPairProj F E) h u
+
+section Injective
+
+variable {n p m : ℕ} (h : n + p = m)
+  (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n)
+  (I : ModuleCat.{w} K)
+
+/-- Through the Kronecker maps of `B` and of `(E, E₀)` with values in a `K`-module `I`, the Thom map
+`Hᵖ(B; I) ⟶ Hᵐ(E, E₀; I)` is `(-1)^(n p)` times the precomposition with the homology Thom map
+`Hₘ(E, E₀; K) ⟶ Hₚ(B; K)`. -/
+private theorem singularKronecker_comp_thomMap :
+    ⇑((thomPair F E).singularKronecker K m (R := ModuleCat.of K K) (M := I)) ∘
+        ⇑(thomMap F E I n p m (by omega) u) =
+      (fun g ↦ ((-1 : ℤ) ^ (n * p)) • g) ∘
+        (fun g ↦ homologyThomMap F E (ModuleCat.of K K) n p m h u ≫ g) ∘
+          ⇑((TopCat.of B).singularKronecker K p (R := ModuleCat.of K K) (M := I)) := by
+  funext a
+  simp [homologyThomMap_comp_singularKronecker F E h u a, smul_smul, ← mul_pow]
+
+/-- Multiplication by the sign `(-1)^(n p)` is an involution. -/
+private theorem involutive_neg_one_pow_smul {X Y : ModuleCat.{w} K} :
+    Function.Involutive fun g : X ⟶ Y ↦ ((-1 : ℤ) ^ (n * p)) • g := fun g ↦ by
+  simp [smul_smul, ← mul_pow]
+
+/-- With injective coefficients `I`, the Thom map is surjective exactly when precomposition with
+the homology Thom map is surjective on morphisms to `I`. -/
+private theorem surjective_thomMap_iff [Injective I] :
+    Function.Surjective (thomMap F E I n p m (by omega) u) ↔
+      Function.Surjective fun g : _ ⟶ I ↦ homologyThomMap F E (ModuleCat.of K K) n p m h u ≫ g := by
+  rw [← Function.Surjective.of_comp_iff' ((thomPair F E).singularKronecker_bijective K m),
+    singularKronecker_comp_thomMap F E h u I,
+    Function.Surjective.of_comp_iff' involutive_neg_one_pow_smul.bijective,
+    Function.Surjective.of_comp_iff _ ((TopCat.of B).singularKronecker_bijective K p).2]
+
+/-- With injective coefficients `I`, the Thom map is injective exactly when precomposition with
+the homology Thom map is injective on morphisms to `I`. -/
+private theorem injective_thomMap_iff [Injective I] :
+    Function.Injective (thomMap F E I n p m (by omega) u) ↔
+      Function.Injective fun g : _ ⟶ I ↦ homologyThomMap F E (ModuleCat.of K K) n p m h u ≫ g := by
+  rw [← ((thomPair F E).singularKronecker_bijective K m).1.of_comp_iff,
+    singularKronecker_comp_thomMap F E h u I, involutive_neg_one_pow_smul.injective.of_comp_iff,
+    Function.Injective.of_comp_iff' _ ((TopCat.of B).singularKronecker_bijective K p)]
+
+/-- **Injectivity of the homology Thom map over any commutative ring**: for `u ∈ Hⁿ(E, E₀; K)` and
+`m = n + p`, the homology Thom map `Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` is injective exactly when the Thom map
+`Hᵖ(B; I) ⟶ Hᵐ(E, E₀; I)` is surjective for every injective `K`-module `I`. With injective
+coefficients the Kronecker maps are the universal coefficient isomorphisms, through which the
+Thom map is `±` the transpose of the homology Thom map
+(`TauCeti.homologyThomMap_comp_singularKronecker`), and injective modules detect monomorphisms
+(`CategoryTheory.Injective.mono_iff_forall_surjective_comp`). -/
+theorem injective_homologyThomMap_iff_forall_surjective_thomMap :
+    Function.Injective (homologyThomMap F E (ModuleCat.of K K) n p m h u).hom ↔
+      ∀ (I : ModuleCat.{w} K) [Injective I],
+        Function.Surjective (thomMap F E I n p m (by omega) u) := by
+  rw [← ModuleCat.mono_iff_injective, Injective.mono_iff_forall_surjective_comp]
+  exact forall_congr' fun I ↦ forall_congr' fun _ ↦ (surjective_thomMap_iff F E h u I).symm
+
+/-- **Surjectivity of the homology Thom map over any commutative ring**: for `u ∈ Hⁿ(E, E₀; K)`
+and `m = n + p`, the homology Thom map `Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` is surjective exactly when the
+Thom map `Hᵖ(B; I) ⟶ Hᵐ(E, E₀; I)` is injective for every injective `K`-module `I`; injective
+modules are coseparating (`CategoryTheory.Injective.isCoseparating_isInjective`), so they detect
+epimorphisms. -/
+theorem surjective_homologyThomMap_iff_forall_injective_thomMap :
+    Function.Surjective (homologyThomMap F E (ModuleCat.of K K) n p m h u).hom ↔
+      ∀ (I : ModuleCat.{w} K) [Injective I],
+        Function.Injective (thomMap F E I n p m (by omega) u) := by
+  rw [← ModuleCat.epi_iff_surjective, Injective.isCoseparating_isInjective.epi_iff]
+  exact forall_congr' fun I ↦ forall_congr' fun _ ↦ (injective_thomMap_iff F E h u I).symm
+
+/-- **The Thom isomorphism in homology over any commutative ring**: for `u ∈ Hⁿ(E, E₀; K)` and
+`m = n + p`, the homology Thom map `Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` is bijective exactly when the Thom
+map `Hᵖ(B; I) ⟶ Hᵐ(E, E₀; I)` is bijective for every injective `K`-module `I`. So the Thom
+isomorphism in cohomology with all coefficient modules, for instance with `K = ℤ` for the Thom
+class of an orientation, gives the Thom isomorphism in integral homology. Over a field, where
+every module is injective, `TauCeti.bijective_homologyThomMap_iff` needs only the coefficients
+`K`. -/
+theorem bijective_homologyThomMap_iff_forall_bijective_thomMap :
+    Function.Bijective (homologyThomMap F E (ModuleCat.of K K) n p m h u).hom ↔
+      ∀ (I : ModuleCat.{w} K) [Injective I],
+        Function.Bijective (thomMap F E I n p m (by omega) u) := by
+  rw [Function.Bijective, injective_homologyThomMap_iff_forall_surjective_thomMap,
+    surjective_homologyThomMap_iff_forall_injective_thomMap]
+  exact ⟨fun h I _ ↦ ⟨h.2 I, h.1 I⟩, fun h ↦ ⟨fun I _ ↦ (h I).2, fun I _ ↦ (h I).1⟩⟩
+
+end Injective
 
 end HomologyThomMap
 
