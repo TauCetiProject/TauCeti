@@ -20,8 +20,9 @@ import Mathlib.RingTheory.Binomial
 
 This module provides basic lemmas for descending Pochhammer polynomials `descPochhammer R n`
 over general rings, together with their sums over integer intervals and their forward
-differences, as well as evaluation and inverse-shift identities for ascending Pochhammer
-polynomials `ascPochhammer S n` over general semirings and division semirings.
+differences, evaluation and inverse-shift identities for ascending Pochhammer polynomials
+`ascPochhammer R n` over general semirings and division semirings, and the Chu–Vandermonde
+identity over commutative rings.
 
 The monicity result holds over any ring, and the degree results require only a nontrivial ring.
 The summation identity also holds over arbitrary rings; no division by `m + 1` is needed.
@@ -62,13 +63,14 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.pow_eq_sum_stirlingSecond_mul_descPochhammer_eval`: in any ring, `x ^ m` is
   the sum of the falling factorials of degree `j` at `x` weighted by the Stirling numbers of the
   second kind `S(m, j)`.
-* `TauCeti.ascPochhammer_succ_left_eval`: `(ascPochhammer S (m + 1)).eval x =
-  x * (ascPochhammer S m).eval (x + 1)` over any semiring `S`.
-* `TauCeti.ascPochhammer_add_eval`: `(ascPochhammer S (m + n)).eval x =
-  (ascPochhammer S m).eval x * (ascPochhammer S n).eval (x + m)` over any semiring `S`.
+* `TauCeti.ascPochhammer_succ_left_eval`: `(x)_{m + 1} = x * (x + 1)_m`.
+* `TauCeti.ascPochhammer_add_eval`: `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`.
 * `TauCeti.inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval`:
-  `((ascPochhammer S m).eval x)⁻¹ = (x + m) * ((ascPochhammer S (m + 1)).eval x)⁻¹` for
-  `x + m ≠ 0`.
+  `((x)_m)⁻¹ = (x + m) * ((x)_{m + 1})⁻¹` for `x + m ≠ 0`.
+* `TauCeti.ascPochhammer_eval_neg_natCast`: `(−n)ₖ = (−1)ᵏ k! C(n, k)`.
+* `TauCeti.ascPochhammer_eval_neg_sub_add_one`: `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`.
+* `TauCeti.sum_neg_one_pow_mul_choose_ascPochhammer`: the Chu–Vandermonde identity
+  `∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`, from Mathlib's `Ring.descPochhammer_smeval_add`.
 -/
 
 public section
@@ -322,30 +324,70 @@ theorem pow_eq_sum_stirlingSecond_mul_descPochhammer_eval {R : Type*} [Ring R] (
     rw [aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
   simpa [hD] using congrArg (aeval x) hP
 
-/-! ### Rising Pochhammer evaluations -/
+section Ascending
+
+variable {R : Type*}
 
 /-- Shifting the argument of a rising Pochhammer polynomial by one peels off its leading factor:
 `(x)_{m + 1} = x * (x + 1)_m`. -/
-theorem ascPochhammer_succ_left_eval {S : Type*} [Semiring S] (m : ℕ) (x : S) :
-    (ascPochhammer S (m + 1)).eval x = x * (ascPochhammer S m).eval (x + 1) :=
+theorem ascPochhammer_succ_left_eval [Semiring R] (m : ℕ) (x : R) :
+    (ascPochhammer R (m + 1)).eval x = x * (ascPochhammer R m).eval (x + 1) :=
   (ascPochhammer_succ_eval m x).trans (ascPochhammer_eval_succ m x).symm
 
-/-- Evaluating a rising Pochhammer polynomial of degree `m + n` splits into the degree `m`
-evaluation at `x` times the degree `n` evaluation at `x + m`. -/
-theorem ascPochhammer_add_eval {S : Type*} [Semiring S] (m n : ℕ) (x : S) :
-    (ascPochhammer S (m + n)).eval x =
-      (ascPochhammer S m).eval x * (ascPochhammer S n).eval (x + m) := by
-  induction n with
+/-- `(x)ₖ₊ₘ = (x)ₖ (x + k)ₘ`. -/
+theorem ascPochhammer_add_eval [Semiring R] (x : R) (k m : ℕ) :
+    (ascPochhammer R (k + m)).eval x =
+      (ascPochhammer R k).eval x * (ascPochhammer R m).eval (x + k) := by
+  induction m with
   | zero => simp
-  | succ n ih =>
+  | succ m ih =>
     rw [← add_assoc, ascPochhammer_succ_eval, ih, ascPochhammer_succ_eval, mul_assoc,
       Nat.cast_add, add_assoc]
 
 /-- Stepping an inverse rising Pochhammer evaluation from `m` to `m + 1`: when `x + m ≠ 0`,
 `((x)_m)⁻¹ = (x + m) * ((x)_{m + 1})⁻¹`. -/
-theorem inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval {S : Type*} [DivisionSemiring S]
-    {x : S} {m : ℕ} (hx : x + m ≠ 0) :
-    ((ascPochhammer S m).eval x)⁻¹ = (x + m) * ((ascPochhammer S (m + 1)).eval x)⁻¹ := by
+theorem inv_ascPochhammer_eval_eq_mul_inv_ascPochhammer_succ_eval [DivisionSemiring R]
+    {x : R} {m : ℕ} (hx : x + m ≠ 0) :
+    ((ascPochhammer R m).eval x)⁻¹ = (x + m) * ((ascPochhammer R (m + 1)).eval x)⁻¹ := by
   rw [ascPochhammer_succ_eval, mul_inv_rev, ← mul_assoc, mul_inv_cancel₀ hx, one_mul]
+
+/-- `(−n)ₖ = (−1)ᵏ k! C(n, k)`. -/
+theorem ascPochhammer_eval_neg_natCast [Ring R] (n k : ℕ) :
+    (ascPochhammer R k).eval (-(n : R)) = (-1) ^ k * k.factorial * n.choose k := by
+  rw [ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_descFactorial,
+    Nat.descFactorial_eq_factorial_mul_choose, Nat.cast_mul, mul_assoc]
+
+/-- `(−b − k + 1)ₖ = (−1)ᵏ (b)ₖ`. -/
+theorem ascPochhammer_eval_neg_sub_add_one [Ring R] (b : R) (k : ℕ) :
+    (ascPochhammer R k).eval (-b - k + 1) = (-1) ^ k * (ascPochhammer R k).eval b := by
+  -- `-b - k + 1` is `-r` for `r = b + k - 1`, and the falling factorial of `r` of length `k`
+  -- is the rising factorial from `r - k + 1 = b`.
+  have hneg : -b - k + 1 = -(b + k - 1) := by abel
+  have hshift : b + k - 1 - k + 1 = b := by abel
+  rw [hneg, ascPochhammer_eval_neg_eq_descPochhammer, descPochhammer_eval_eq_ascPochhammer,
+    hshift]
+
+/-- **The Chu–Vandermonde identity** in Pochhammer form:
+`∑ₖ (−1)ᵏ C(n, k) (b)ₖ (c + k)ₙ₋ₖ = (c − b)ₙ`. It is Mathlib's `Ring.descPochhammer_smeval_add`
+at `r = −b`, `s = c + n − 1`, rewritten with ascending Pochhammer symbols. -/
+theorem sum_neg_one_pow_mul_choose_ascPochhammer [CommRing R] (n : ℕ) (b c : R) :
+    ∑ k ∈ Finset.range (n + 1), (-1 : R) ^ k * n.choose k * (ascPochhammer R k).eval b *
+      (ascPochhammer R (n - k)).eval (c + k) = (ascPochhammer R n).eval (c - b) := by
+  have hD (r : R) (m : ℕ) :
+      (descPochhammer ℤ m).smeval r = (ascPochhammer R m).eval (r - m + 1) := by
+    rw [descPochhammer_smeval_eq_ascPochhammer, ascPochhammer_smeval_eq_eval]
+  have h := Ring.descPochhammer_smeval_add (r := -b) (s := c + n - 1) n (Commute.all _ _)
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk] at h
+  simp only [hD] at h
+  have hcb : -b + (c + n - 1) - n + 1 = c - b := by ring
+  rw [hcb] at h
+  rw [h]
+  refine Finset.sum_congr rfl fun k hk => ?_
+  have hk' : k ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
+  have hck : c + (n : R) - 1 - ((n : R) - k) + 1 = c + k := by ring
+  rw [ascPochhammer_eval_neg_sub_add_one, Nat.cast_sub hk', hck]
+  ring
+
+end Ascending
 
 end TauCeti

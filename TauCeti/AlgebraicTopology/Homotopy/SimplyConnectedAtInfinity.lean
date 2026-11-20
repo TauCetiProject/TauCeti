@@ -147,9 +147,9 @@ theorem simplyConnectedAtInfinity_of_two_lt_rank {E : Type*} [NormedAddCommGroup
   let F := ((convex_closedBall (0 : E) R).starConvex h0).complRadialHomotopy h0 hB
     |>.symm.compContinuousMap f' |>.cast (ContinuousMap.id_comp f') (ContinuousMap.comp_assoc _ _ _)
   let H := F.trans (((Homotopy.refl j).comp G).cast rfl (ContinuousMap.comp_const j q))
-  exact ⟨j q, fun h => (j q).2 (hKR h),
+  exact ⟨j q, fun h => (j q).property (hKR h),
     ((Homotopy.refl (ContinuousMap.subtypeVal _)).comp H).cast rfl
-      (ContinuousMap.comp_const _ _), fun x h => (H x).2 (hKR h)⟩
+      (ContinuousMap.comp_const _ _), fun x h => (H x).property (hKR h)⟩
 
 /-- **`ℝⁿ` is simply connected at infinity for `n ≥ 3`.** -/
 theorem simplyConnectedAtInfinity_euclideanSpace {n : ℕ} (hn : 3 ≤ n) :

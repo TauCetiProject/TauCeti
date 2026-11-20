@@ -138,7 +138,7 @@ private theorem ofπ₁Tree_toπ₁Tree {x y : 𝔸.LetterVertex} (p : 𝔸.Path
 
 /-- The dart generators of `π₁(𝔸, T)` along a tree path multiply to `1`. -/
 @[simp] theorem π₁Tree.weight_path_edge_eq_one (a b : Γ.V) :
-    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T.darts e.1) = 1 :=
+    (T.path a b).weight (fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge (𝔸 := 𝔸) T.darts e.val) = 1 :=
   T.weight_path_eq_one (fun _ => π₁Tree.edge_eq_one) a b
 
 private theorem toπ₁Tree_comp_ofπ₁Tree :

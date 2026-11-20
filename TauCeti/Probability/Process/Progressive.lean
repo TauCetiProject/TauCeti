@@ -65,7 +65,7 @@ theorem MeasureTheory.StronglyAdapted.isStronglyProgressive_of_isRightContinuous
     have hmap : Measurable (fun p : Iic T × Ω =>
         (⌈((p.1 : ℝ≥0) : ℝ) * (n + 1)⌉₊, p.2)) :=
       ((NNReal.continuous_coe.measurable.comp
-        (measurable_subtype_coe.comp measurable_fst)).mul_const
+        (measurable_subtypeVal.comp measurable_fst)).mul_const
           (n + 1 : ℝ)).nat_ceil.prodMk measurable_snd
     simpa only [Function.uncurry_def, Function.comp_def, rightSample] using
       hs.comp_measurable hmap

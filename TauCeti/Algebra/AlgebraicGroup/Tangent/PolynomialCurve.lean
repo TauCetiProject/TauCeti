@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
-public import TauCeti.Algebra.DualNumber.Polynomial
+public import Mathlib.Algebra.Polynomial.Coeff
 
 /-!
 # Velocities of polynomial curves through the identity
@@ -44,9 +44,9 @@ open Polynomial
 
 namespace TauCeti.Bialgebra
 
-variable {R H : Type*} [CommRing R] [CommRing H]
-
 section Velocity
+
+variable {R H : Type*} [CommSemiring R] [CommSemiring H]
 
 variable [_root_.Bialgebra R H]
 
@@ -54,14 +54,27 @@ variable [_root_.Bialgebra R H]
 at the identity sending a coordinate function `h` to the coefficient of `t` in `γ h`. The
 hypothesis says that `γ` passes through the identity at `t = 0`.
 
-It is the derivation attached by `derivationToTrivSqZeroExtEquivLift` to the dual-number point
-obtained by substituting `t = ε` into `γ`. -/
+The coefficient formula gives the counit-valued Leibniz rule directly, so the construction
+also works over commutative semirings. -/
 noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
-    (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) :
-    Derivation R H (CounitAlgebra R H R) :=
-  (derivationToTrivSqZeroExtEquivLift R H (CounitAlgebra R H R)).symm
-    ⟨(aeval DualNumber.eps).comp γ, AlgHom.ext fun h ↦ (DualNumber.fst_aeval_eps (γ h)).trans
-      ((coeff_zero_eq_aeval_zero (γ h)).trans (DFunLike.congr_fun hγ h))⟩
+    (hγ : (aeval (0 : R)).comp γ = _root_.Bialgebra.counitAlgHom R H) :
+    Derivation R H (CounitAlgebra R H R) where
+  toLinearMap := (CounitAlgebra.algEquivSelf R H R).symm.toLinearMap.comp
+    ((lcoeff R 1).comp γ.toLinearMap)
+  map_one_eq_zero' := by
+    -- The linear-map fields return the counit coefficient synonym.
+    simp [Polynomial.coeff_one]
+    rfl
+  leibniz' a b := by
+    apply (CounitAlgebra.algEquivSelf R H R).injective
+    have hzero (x : H) : (γ x).coeff 0 = Coalgebra.counit (R := R) x := by
+      simpa only [AlgHom.comp_apply, Polynomial.coeff_zero_eq_aeval_zero,
+        _root_.Bialgebra.counitAlgHom_apply] using AlgHom.congr_fun hγ x
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, lcoeff_apply,
+      AlgHom.toLinearMap_apply, map_mul, map_add, AlgEquiv.apply_symm_apply,
+      CounitAlgebra.algEquivSelf_smul, Algebra.algebraMap_self, RingHom.id_apply]
+    rw [mul_coeff_one, hzero, hzero]
+    ring
 
 /-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
 `t` in its pullback, read through the identification of the counit coefficient algebra with
@@ -69,8 +82,9 @@ noncomputable def curveVelocity (γ : H →ₐ[R] R[X])
 @[simp]
 theorem curveVelocity_apply (γ : H →ₐ[R] R[X])
     (hγ : (aeval (0 : R)).comp γ = Bialgebra.counitAlgHom R H) (h : H) :
-    curveVelocity γ hγ h = (γ h).coeff 1 :=
-  (derivationToTrivSqZeroExtEquivLift_symm_apply ..).trans (DualNumber.snd_aeval_eps (γ h))
+    curveVelocity γ hγ h = (γ h).coeff 1 := by
+  simp [curveVelocity]
+  rfl
 
 /-- The velocity of a polynomial curve evaluates a coordinate function to the coefficient of
 `t` in its pullback.
@@ -83,6 +97,8 @@ theorem algEquivSelf_curveVelocity_apply (γ : H →ₐ[R] R[X])
   rw [CounitAlgebra.algEquivSelf_apply, curveVelocity_apply]
 
 end Velocity
+
+variable {R H : Type*} [CommRing R] [CommRing H]
 
 /-- A polynomial curve through the identity which lies in the closed subgroup cut out by a
 Hopf ideal `I` has its velocity in the Lie algebra of that subgroup. -/

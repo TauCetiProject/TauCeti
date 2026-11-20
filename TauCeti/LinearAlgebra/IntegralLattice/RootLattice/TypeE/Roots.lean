@@ -96,8 +96,8 @@ noncomputable def typeE₈RootEquiv : Fin 240 ≃ typeE₈RootLattice.vectorsOfN
   Equiv.ofBijective
     (fun i ↦ ⟨typeE₈RootVector i, mem_vectorsOfNorm.mpr (norm_typeE₈RootVector i)⟩)
     ⟨fun _ _ h ↦ typeE₈RootVector_injective (congrArg Subtype.val h), fun x ↦ by
-      obtain ⟨i, hi⟩ := (norm_typeE₈RootLattice_eq_two_iff x.1).mp
-        (mem_vectorsOfNorm.mp x.2)
+      obtain ⟨i, hi⟩ := (norm_typeE₈RootLattice_eq_two_iff x.val).mp
+        (mem_vectorsOfNorm.mp x.property)
       exact ⟨i, Subtype.ext hi⟩⟩
 
 /-- The shell equivalence sends each index to its enumerated root vector. -/

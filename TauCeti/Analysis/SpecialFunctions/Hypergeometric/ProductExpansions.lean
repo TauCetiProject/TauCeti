@@ -676,11 +676,11 @@ private theorem norm_bcGenTerm_coeff_eq (a b c u v y : ℂ) (s j k : ℕ) :
       ‖bcGenCoeff a b c s j k‖ * ‖u‖ ^ s * ‖v‖ ^ j * ‖y‖ ^ k := by
   have hp1 : (ascPochhammer ℂ s).eval a * (ascPochhammer ℂ j).eval (a + s) *
       (ascPochhammer ℂ k).eval (a + s + j) = (ascPochhammer ℂ (s + j + k)).eval a := by
-    rw [TauCeti.ascPochhammer_add_eval (s + j) k a, TauCeti.ascPochhammer_add_eval s j a]
+    rw [TauCeti.ascPochhammer_add_eval a (s + j) k, TauCeti.ascPochhammer_add_eval a s j]
     push_cast; ring_nf
   have hp2 : (ascPochhammer ℂ s).eval b * (ascPochhammer ℂ j).eval (b + s) *
       (ascPochhammer ℂ k).eval (b + s + j) = (ascPochhammer ℂ (s + j + k)).eval b := by
-    rw [TauCeti.ascPochhammer_add_eval (s + j) k b, TauCeti.ascPochhammer_add_eval s j b]
+    rw [TauCeti.ascPochhammer_add_eval b (s + j) k, TauCeti.ascPochhammer_add_eval b s j]
     push_cast; ring_nf
   have hc_eq : c + 2 * (s : ℂ) + j + k = c + (2 * s + j + k : ℕ) := by push_cast; ring
   simp only [bcGenPref, bcGenCoeff, coeff_regularizedGaussHGFunSeries, hc_eq]
@@ -732,14 +732,14 @@ private theorem exists_summable_norm_bcTerm_le (a b c : ℂ) {ζ : ℂ} {r : ℝ
   by_cases hr0 : 0 ≤ r
   · obtain ⟨K, P, Q, hK0, hbound⟩ := exists_bc_coeff_bound a b c
     have hrow_r : Summable fun k : ℕ ↦ ((k : ℝ) + 1) ^ Q * r ^ k :=
-      TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one Q (by rwa [Real.norm_of_nonneg hr0])
+      TauCeti.summable_add_pow_mul_geometric_of_norm_lt_one 1 Q (by rwa [Real.norm_of_nonneg hr0])
     refine ⟨fun s ↦ K * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * r ^ k) * (((s : ℝ) + 1) ^ P * (r * ‖ζ‖) ^ s),
-      (TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one P (r := r * ‖ζ‖)
+      (TauCeti.summable_add_pow_mul_geometric_of_norm_lt_one 1 P (r := r * ‖ζ‖)
         (by rw [Real.norm_of_nonneg (by positivity)]; nlinarith [norm_nonneg ζ])).mul_left _,
       fun s z hz hw ↦ ?_⟩
     set w := z + ζ - z * ζ
     have hw1 : ‖w‖ < 1 := hw.trans_lt hr1
-    have hrow_w0 := TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one Q
+    have hrow_w0 := TauCeti.summable_add_pow_mul_geometric_of_norm_lt_one 1 Q
       (r := ‖w‖) (by simpa using hw1)
     have hbc : ‖bcTerm a b c s z ζ‖ ≤
         K * ((s : ℝ) + 1) ^ P * ‖z * ζ‖ ^ s * (∑' k : ℕ, ((k : ℝ) + 1) ^ Q * ‖w‖ ^ k) := by
@@ -796,11 +796,11 @@ private theorem summable_norm_bcDoubleTerm (a b c : ℂ) {z ζ : ℂ} (hζ : ‖
   have hjk_sum : Summable fun q : ℕ × ℕ ↦
       ((q.1 + q.2 : ℝ) + 1) ^ Q * ((q.1 + q.2).choose q.1 : ℝ) * r₂ ^ q.1 * r₁ ^ q.2 := by
     have hdiag : Summable fun m : ℕ ↦ ((m : ℝ) + 1) ^ Q * (r₂ + r₁) ^ m :=
-      TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one Q (r := r₂ + r₁)
+      TauCeti.summable_add_pow_mul_geometric_of_norm_lt_one 1 Q (r := r₂ + r₁)
         (by rw [Real.norm_of_nonneg (by positivity)]; linarith)
     have hsigma : Summable fun x : Σ m : ℕ, antidiagonal m ↦
-        ((x.2.1.1 + x.2.1.2 : ℝ) + 1) ^ Q * ((x.2.1.1 + x.2.1.2).choose x.2.1.1 : ℝ) *
-          r₂ ^ x.2.1.1 * r₁ ^ x.2.1.2 := by
+        ((x.2.val.1 + x.2.val.2 : ℝ) + 1) ^ Q * ((x.2.val.1 + x.2.val.2).choose x.2.val.1 : ℝ) *
+          r₂ ^ x.2.val.1 * r₁ ^ x.2.val.2 := by
       rw [summable_sigma_of_nonneg (fun _ ↦ by positivity)]
       refine ⟨fun _ ↦ Summable.of_finite, hdiag.congr fun m ↦ ?_⟩
       rw [tsum_fintype]
@@ -813,7 +813,7 @@ private theorem summable_norm_bcDoubleTerm (a b c : ℂ) {z ζ : ℂ} (hζ : ‖
     exact HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff.mp hsigma
   obtain ⟨hk_row, hj_col⟩ := (summable_prod_of_nonneg (fun _ ↦ by positivity)).mp hjk_sum
   have hs_sum : Summable fun s : ℕ ↦ K * ((s : ℝ) + 1) ^ P * ‖z * ζ‖ ^ s :=
-    ((TauCeti.summable_add_one_pow_mul_geometric_of_norm_lt_one P (r := ‖z * ζ‖)
+    ((TauCeti.summable_add_pow_mul_geometric_of_norm_lt_one 1 P (r := ‖z * ζ‖)
       (by simpa using hzζ1)).mul_left K).congr fun _ ↦ by ring
   have hprod := Summable.mul_of_nonneg hs_sum hj_col (fun _ ↦ by positivity)
     (fun j ↦ tsum_nonneg fun _ ↦ by positivity)
@@ -832,11 +832,11 @@ private theorem bcDoubleTerm_antidiag_eq (a b c z ζ : ℂ) {n s : ℕ} (hsn : s
     rw [mul_comm, Nat.inv_factorial_mul_choose (K := ℂ) n s (n - s) hadd_n]
   have hshift (x : ℂ) : x + (s : ℂ) + (n - s : ℕ) = x + n := by
     rw [add_assoc, ← Nat.cast_add, hadd_n]
-  have hΓ := ascPochhammer_eval_mul_inv_Gamma_add (c + s) (n - s)
+  have hΓ := (inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add (c + s) (n - s)).symm
   rw [hshift c] at hΓ
   have hp (x : ℂ) : (ascPochhammer ℂ s).eval x * (ascPochhammer ℂ (n - s)).eval (x + s) =
       (ascPochhammer ℂ n).eval x := by
-    simpa [hadd_n] using (TauCeti.ascPochhammer_add_eval s (n - s) x).symm
+    simpa [hadd_n] using (TauCeti.ascPochhammer_add_eval x s (n - s)).symm
   have hζn : ζ ^ s * ζ ^ (n - s) = ζ ^ n := by rw [← pow_add, hadd_n]
   have hc2_shift : c + 2 * (s : ℂ) + (n - s : ℕ) = c + n + s := by
     rw [show c + 2 * (s : ℂ) = (c + s) + s by ring, hshift (c + s), add_right_comm]
