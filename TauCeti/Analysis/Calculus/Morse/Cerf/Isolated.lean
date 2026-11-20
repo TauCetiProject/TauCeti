@@ -40,7 +40,8 @@ Hessian of `f t` at `x`, `v` a kernel vector of `H(t₀, x₀)` and `ℓ` a func
 * The **bordered Hessian** `(w, μ) ↦ (H(t, x) w + μ ℓ, ℓ w)` is invertible at `(t₀, x₀)`, by the
   symmetry of the Hessian, and so near it. Near `(t₀, x₀)`, whenever `H(t, x)` is degenerate, its
   kernel is spanned by the vector `w(t, x)` read off the inverse of the bordered Hessian, which
-  depends continuously on `(t, x)` and tends to `v`.
+  depends continuously on `(t, x)` and tends to `v`
+  (`ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero`).
 * The map `Ψ ((t, x), w) = (d(f t)_x, H(t, x) w, ℓ w)` has an injective derivative at
   `((t₀, x₀), v)`: its first component cuts the critical locus transversally along the line of
   `(0, v)`, and along that line the cubic condition moves `H(t, x) v` off the range of the
@@ -81,39 +82,7 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ → E → ℝ} {t : ℝ} {x : E}
 
-/-! ### The bordered Hessian -/
-
-/-- The bordered operator `(w, μ) ↦ (L w + μ ℓ, ℓ w)` of `L : E → E*` and `ℓ ∈ E*`. -/
-private noncomputable def bordered (L : E →L[ℝ] StrongDual ℝ E) (ℓ : StrongDual ℝ E) :
-    E × ℝ →L[ℝ] StrongDual ℝ E × ℝ :=
-  ContinuousLinearMap.prodL ℝ (ContinuousLinearMap.coprodEquivL ℝ
-    (L, ContinuousLinearMap.toSpanSingleton ℝ ℓ), ℓ.comp (ContinuousLinearMap.fst ℝ E ℝ))
-
-private theorem bordered_apply (L : E →L[ℝ] StrongDual ℝ E) (ℓ : StrongDual ℝ E) (z : E × ℝ) :
-    bordered L ℓ z = (L z.1 + z.2 • ℓ, ℓ z.1) := by
-  simp [bordered]
-
-/-- If the kernel of a symmetric `H₀ : E → E*` is the line spanned by `v` and `ℓ v = 1`, the
-bordered operator of `H₀` and `ℓ` is injective. -/
-private theorem injective_bordered {H₀ : E →L[ℝ] StrongDual ℝ E}
-    (hsymm : ∀ u w, H₀ u w = H₀ w u) {v : E} (hv : H₀ v = 0) {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1)
-    (hker : ∀ u, H₀ u = 0 → ∃ c : ℝ, u = c • v) : Injective (bordered H₀ ℓ) := by
-  rw [injective_iff_map_eq_zero]
-  rintro ⟨w, μ⟩ h
-  rw [bordered_apply, Prod.mk_eq_zero] at h
-  obtain ⟨h1, h2⟩ := h
-  -- Pairing the first component with `v` kills `H₀ w`, by symmetry, and leaves `μ`.
-  have hμ : μ = 0 := by simpa [hsymm w v, hv, hℓ] using congrArg (· v) h1
-  subst hμ
-  obtain ⟨c, rfl⟩ := hker w (by simpa using h1)
-  simp_all
-
-/-- The bordered operator depends continuously on `L`. -/
-private theorem continuous_bordered (ℓ : StrongDual ℝ E) :
-    Continuous fun L : E →L[ℝ] StrongDual ℝ E ↦ bordered L ℓ :=
-  (ContinuousLinearMap.prodL ℝ).continuous.comp <|
-    ((ContinuousLinearMap.coprodEquivL ℝ).continuous.comp <| continuous_id.prodMk
-      continuous_const).prodMk continuous_const
+/-! ### The derivative at a birth–death point -/
 
 /-- **The derivative of the augmented critical-point map is injective at a birth–death point.**
 Here `H₀` stands for the Hessian, symmetric with kernel the line spanned by `v`, `a` for the
@@ -164,41 +133,6 @@ private theorem exists_eq_smul_of_fderiv_fderiv_apply_eq_zero
   rw [← hK] at huK
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 huK
   exact ⟨c, hc.symm⟩
-
-/-- **Kernel vectors near a corank-one symmetric operator.** Let `L z : E → E*` depend continuously
-on `z` at `z₀`, with `L z₀` symmetric and its kernel the line spanned by `v`, and let `ℓ v = 1`.
-Then there is a function `W`, tending to `v` at `z₀`, such that near `z₀`, whenever `L z` has a
-nonzero kernel vector, `W z` is the kernel vector of `L z` normalized by `ℓ`. It is read off the
-inverse of the bordered operator of `L z` and `ℓ`, which is invertible near `z₀`. -/
-private theorem exists_tendsto_eventually_apply_eq_zero {X : Type*} [TopologicalSpace X]
-    {L : X → E →L[ℝ] StrongDual ℝ E} {z₀ : X} (hL : ContinuousAt L z₀)
-    (hsymm : ∀ u w, L z₀ u w = L z₀ w u) {v : E} (hv : L z₀ v = 0) {ℓ : StrongDual ℝ E}
-    (hℓ : ℓ v = 1) (hker : ∀ u, L z₀ u = 0 → ∃ c : ℝ, u = c • v) :
-    ∃ W : X → E, Tendsto W (𝓝 z₀) (𝓝 v) ∧
-      ∀ᶠ z in 𝓝 z₀, ∀ u, L z u = 0 → u ≠ 0 → L z (W z) = 0 ∧ ℓ (W z) = 1 := by
-  set T := fun z ↦ bordered (L z) ℓ
-  have hdim : finrank ℝ (E × ℝ) = finrank ℝ (StrongDual ℝ E × ℝ) := by
-    simp [ContinuousLinearMap.dual_finrank_eq]
-  have hT₀ : (T z₀).IsInvertible := ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq _
-    hdim (injective_bordered hsymm hv hℓ hker)
-  have hTc : ContinuousAt T z₀ := (continuous_bordered ℓ).continuousAt.comp hL
-  -- The inverse of the bordered operator at `z₀` sends `(0, 1)` to `(v, 0)`.
-  have hT₀v : (T z₀).inverse (0, 1) = (v, 0) :=
-    hT₀.inverse_apply_eq.2 (by simp [T, bordered_apply, hv, hℓ])
-  refine ⟨fun z ↦ ((T z).inverse (0, 1)).1, ?_, ?_⟩
-  · have hinv : ContinuousAt (fun z ↦ (T z).inverse) z₀ :=
-      (hT₀.contDiffAt_map_inverse (n := 0)).continuousAt.comp hTc
-    have h := (continuous_fst.continuousAt.comp
-      ((ContinuousLinearMap.apply ℝ _ ((0 : StrongDual ℝ E), (1 : ℝ))).continuous.continuousAt.comp
-        hinv)).tendsto
-    simpa [Function.comp_def, hT₀v] using h
-  · filter_upwards [hTc.eventually hT₀.eventually_nhds] with z hz u hu hu0
-    -- The kernel vector `u` is not killed by `ℓ`, since `(u, 0)` is not killed by `T z`.
-    have hℓu : ℓ u ≠ 0 := fun h0 ↦ hu0 <| congrArg Prod.fst <|
-      hz.injective (a₁ := (u, 0)) (a₂ := 0) (by simp [T, bordered_apply, hu, h0])
-    have hW : (T z).inverse (0, 1) = ((ℓ u)⁻¹ • u, 0) :=
-      hz.inverse_apply_eq.2 (by simp [T, bordered_apply, hu, hℓu])
-    simp [hW, hu, hℓu]
 
 /-- **The augmented critical-point map is locally injective at a birth–death point.** Let `G` be
 the parametrized differential and `H` the Hessian of a family, differentiable at `p`, with
@@ -258,7 +192,7 @@ private theorem eventually_injective_of_birthDeath (hf : ContDiffAt ℝ 3 (uncur
     simpa [H] using fun h ↦ hv0 (h3 v hv h)
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv0
   obtain ⟨W, hWt, hWev⟩ :=
-    exists_tendsto_eventually_apply_eq_zero hH.continuousAt hsymm hv hℓ hker
+    ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero hH.continuousAt hsymm hv hℓ hker
   have hne := eventually_ne_of_birthDeath (hG.differentiableAt two_ne_zero)
     (hH.differentiableAt one_ne_zero) (fderiv_fderiv_apply hf2) hsymm hv hker ha hD hℓ
   -- The curve `z ↦ (z, W z)` approaches `((t, x), v)` from outside it.

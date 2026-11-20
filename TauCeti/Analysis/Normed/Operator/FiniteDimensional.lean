@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+-- Private: used only inside proofs.
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Bounded operators on a finite-dimensional space
@@ -22,6 +25,12 @@ Bounded operators between finite-dimensional spaces form a finite-dimensional sp
 finite extension of the scalars acting compatibly on the codomain, for instance over `ℂ` for
 real-linear operators into a complex space.
 
+The bordered operator `(w, μ) ↦ (L w + μ ℓ, ℓ w)` of `L : E → E*` and `ℓ ∈ E*`, on a real normed
+space `E`, is injective when `L` is symmetric with kernel the line spanned by `v` and `ℓ v = 1`.
+If `E` is finite-dimensional, its inverse then gives, for operators `L z` near such an `L z₀`, a
+kernel vector of `L z` normalized by `ℓ`, depending continuously on `z` whenever `L z` is
+degenerate.
+
 ## Main results
 
 * `ContinuousLinearMap.denseRange_comp`: on operators out of a finite-dimensional space,
@@ -30,6 +39,11 @@ real-linear operators into a complex space.
   every nonzero vector of a finite-dimensional real domain.
 * `ContinuousLinearMap.finiteDimensional_of_isScalarTower`: `E →L[𝕜] F` is finite-dimensional
   over a finite extension `𝕜'` of `𝕜` acting on a finite-dimensional codomain `F`.
+* `ContinuousLinearMap.injective_bordered`: the bordered operator of a symmetric operator with a
+  one-dimensional kernel is injective.
+* `ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero`: near a symmetric operator with a
+  one-dimensional kernel, the kernel vectors of degenerate operators normalized by `ℓ` depend
+  continuously on the operator.
 * `IsCompact.isCompact_setOfPred_mapsTo`: out of a finite-dimensional space over a complete field,
   the operators sending a neighbourhood of `0` into a compact set form a compact set.
 -/
@@ -119,6 +133,82 @@ theorem isInvertible_of_injective_of_finrank_eq (A : U →L[𝕜] G)
   exact ⟨((A : U →ₗ[𝕜] G).linearEquivOfInjective hinj hdim).toContinuousLinearEquiv, rfl⟩
 
 end Invertible
+
+section Bordered
+
+open Filter Function Module Topology
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The bordered operator `(w, μ) ↦ (L w + μ ℓ, ℓ w)` of `L : E → E*` and `ℓ ∈ E*`. -/
+noncomputable def bordered (L : E →L[ℝ] StrongDual ℝ E) (ℓ : StrongDual ℝ E) :
+    E × ℝ →L[ℝ] StrongDual ℝ E × ℝ :=
+  prodL ℝ (coprodEquivL ℝ (L, toSpanSingleton ℝ ℓ), ℓ.comp (fst ℝ E ℝ))
+
+theorem bordered_apply (L : E →L[ℝ] StrongDual ℝ E) (ℓ : StrongDual ℝ E) (z : E × ℝ) :
+    L.bordered ℓ z = (L z.1 + z.2 • ℓ, ℓ z.1) := by
+  simp [bordered]
+
+/-- If the kernel of a symmetric `H₀ : E → E*` is the line spanned by `v` and `ℓ v = 1`, the
+bordered operator of `H₀` and `ℓ` is injective. -/
+theorem injective_bordered {H₀ : E →L[ℝ] StrongDual ℝ E}
+    (hsymm : ∀ u w, H₀ u w = H₀ w u) {v : E} (hv : H₀ v = 0) {ℓ : StrongDual ℝ E} (hℓ : ℓ v = 1)
+    (hker : ∀ u, H₀ u = 0 → ∃ c : ℝ, u = c • v) : Injective (H₀.bordered ℓ) := by
+  rw [injective_iff_map_eq_zero]
+  rintro ⟨w, μ⟩ h
+  rw [bordered_apply, Prod.mk_eq_zero] at h
+  obtain ⟨h1, h2⟩ := h
+  -- Pairing the first component with `v` kills `H₀ w`, by symmetry, and leaves `μ`.
+  have hμ : μ = 0 := by simpa [hsymm w v, hv, hℓ] using congrArg (· v) h1
+  subst hμ
+  obtain ⟨c, rfl⟩ := hker w (by simpa using h1)
+  simp_all
+
+/-- The bordered operator depends continuously on `L`. -/
+theorem continuous_bordered (ℓ : StrongDual ℝ E) :
+    Continuous fun L : E →L[ℝ] StrongDual ℝ E ↦ L.bordered ℓ :=
+  (prodL ℝ).continuous.comp <|
+    ((coprodEquivL ℝ).continuous.comp <| continuous_id.prodMk continuous_const).prodMk
+      continuous_const
+
+variable [FiniteDimensional ℝ E]
+
+/-- **Kernel vectors near a corank-one symmetric operator.** Let `L z : E → E*` depend continuously
+on `z` at `z₀`, with `L z₀` symmetric and its kernel the line spanned by `v`, and let `ℓ v = 1`.
+Then there is a function `W`, tending to `v` at `z₀`, such that near `z₀`, whenever `L z` has a
+nonzero kernel vector, `W z` is the kernel vector of `L z` normalized by `ℓ`. It is read off the
+inverse of the bordered operator of `L z` and `ℓ`, which is invertible near `z₀`. -/
+theorem exists_tendsto_eventually_apply_eq_zero {X : Type*} [TopologicalSpace X]
+    {L : X → E →L[ℝ] StrongDual ℝ E} {z₀ : X} (hL : ContinuousAt L z₀)
+    (hsymm : ∀ u w, L z₀ u w = L z₀ w u) {v : E} (hv : L z₀ v = 0) {ℓ : StrongDual ℝ E}
+    (hℓ : ℓ v = 1) (hker : ∀ u, L z₀ u = 0 → ∃ c : ℝ, u = c • v) :
+    ∃ W : X → E, Tendsto W (𝓝 z₀) (𝓝 v) ∧
+      ∀ᶠ z in 𝓝 z₀, ∀ u, L z u = 0 → u ≠ 0 → L z (W z) = 0 ∧ ℓ (W z) = 1 := by
+  set T := fun z ↦ (L z).bordered ℓ
+  have hdim : finrank ℝ (E × ℝ) = finrank ℝ (StrongDual ℝ E × ℝ) := by
+    simp [dual_finrank_eq]
+  have hT₀ : (T z₀).IsInvertible := isInvertible_of_injective_of_finrank_eq _
+    hdim (injective_bordered hsymm hv hℓ hker)
+  have hTc : ContinuousAt T z₀ := (continuous_bordered ℓ).continuousAt.comp hL
+  -- The inverse of the bordered operator at `z₀` sends `(0, 1)` to `(v, 0)`.
+  have hT₀v : (T z₀).inverse (0, 1) = (v, 0) :=
+    hT₀.inverse_apply_eq.2 (by simp [T, bordered_apply, hv, hℓ])
+  refine ⟨fun z ↦ ((T z).inverse (0, 1)).1, ?_, ?_⟩
+  · have hinv : ContinuousAt (fun z ↦ (T z).inverse) z₀ :=
+      (hT₀.contDiffAt_map_inverse (n := 0)).continuousAt.comp hTc
+    have h := (continuous_fst.continuousAt.comp
+      ((apply ℝ _ ((0 : StrongDual ℝ E), (1 : ℝ))).continuous.continuousAt.comp
+        hinv)).tendsto
+    simpa [Function.comp_def, hT₀v] using h
+  · filter_upwards [hTc.eventually hT₀.eventually_nhds] with z hz u hu hu0
+    -- The kernel vector `u` is not killed by `ℓ`, since `(u, 0)` is not killed by `T z`.
+    have hℓu : ℓ u ≠ 0 := fun h0 ↦ hu0 <| congrArg Prod.fst <|
+      hz.injective (a₁ := (u, 0)) (a₂ := 0) (by simp [T, bordered_apply, hu, h0])
+    have hW : (T z).inverse (0, 1) = ((ℓ u)⁻¹ • u, 0) :=
+      hz.inverse_apply_eq.2 (by simp [T, bordered_apply, hu, hℓu])
+    simp [hW, hu, hℓu]
+
+end Bordered
 
 end ContinuousLinearMap
 
