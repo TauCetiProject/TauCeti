@@ -34,6 +34,10 @@ by any object of `C` (`CochainComplex.quasiIso_mapHomologicalComplex_tensorLeft_
 isomorphism of derived tensor endofunctors `CochainComplex.kFlatTensor`
 (`CochainComplex.isIso_kFlatTensorMap`).
 
+No boundedness or termwise flatness is required of either input. Complexes of modules over a
+commutative ring and complexes of sheaves of modules over a sheaf of commutative rings satisfy
+these hypotheses.
+
 ## References
 
 * The Stacks Project, More on Algebra, Section 15.60, Tags 064L and 064M.
