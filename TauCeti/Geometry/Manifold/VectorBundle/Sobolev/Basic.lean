@@ -544,6 +544,13 @@ theorem norm_le_sum_of_norm_le {w : C.sobolevSections μ p k}
       (Finset.single_le_sum (f := fun i ↦ ∑ j, b i j)
         (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ hb i j) (Finset.mem_univ i))
 
+variable {C μ p k} in
+/-- Every chartwise component of an element of the Sobolev sections has norm at most the norm of the
+element, the maximum of the component norms. -/
+theorem norm_component_le (w : C.sobolevSections μ p k) (i : Fin C.n) (j : Fin (finrank ℝ F)) :
+    ‖(w : C.SobolevData μ p k) i j‖ ≤ ‖w‖ :=
+  (norm_le_pi_norm _ j).trans (norm_le_pi_norm (w : C.SobolevData μ p k) i)
+
 /-- The continuous inclusion of the Sobolev sections of order `k + 1` into those of order `k`,
 forgetting the highest derivative of every component. -/
 def lowerOrderL : C.sobolevSections μ p (k + 1) →L[ℝ] C.sobolevSections μ p k :=
