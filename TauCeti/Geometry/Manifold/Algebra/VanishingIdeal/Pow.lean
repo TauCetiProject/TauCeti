@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -44,6 +45,9 @@ target, which lets one chart serve all nearby points. The converse is Hadamard's
   order at most `m` of `f ∘ φ⁻¹` vanish at `φ x`.
 * `TauCeti.mem_smoothVanishingIdeal_pow_succ_iff`: the same at every point of a boundaryless
   manifold.
+* `TauCeti.exists_mem_smoothVanishingIdeal_pow_eventuallyEq_comp_subtype_val`: on an open subset
+  `U ∋ x`, an element of `I_x(U) ^ n` agrees near `x` with the restriction of an element of
+  `I_x(M) ^ n`.
 * `TauCeti.quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff`: two smooth functions have the same
   class modulo `I_x ^ (m + 1)` if and only if their chart expressions have the same derivatives of
   order at most `m` at `φ x`.
@@ -175,6 +179,30 @@ theorem mem_smoothVanishingIdeal_pow_succ_iff [BoundarylessManifold I M] (x : M)
     f ∈ smoothVanishingIdeal I x ^ (m + 1) ↔ ∀ k ≤ m,
       iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 :=
   mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint BoundarylessManifold.isInteriorPoint m f
+
+/-- **Powers of the vanishing ideal on an open subset.** A smooth function on an open subset
+`U ∋ x` in the `n`-th power of the vanishing ideal at `x` agrees near `x` with the restriction of a
+smooth function on `M` in the `n`-th power of the vanishing ideal at `x`. -/
+theorem exists_mem_smoothVanishingIdeal_pow_eventuallyEq_comp_subtype_val
+    {U : TopologicalSpace.Opens M} {x : U} {n : ℕ} {h : C^∞⟮I, U; ℝ⟯}
+    (hh : h ∈ smoothVanishingIdeal I x ^ n) :
+    ∃ g ∈ smoothVanishingIdeal I (x : M) ^ n, (g : M → ℝ) ∘ Subtype.val =ᶠ[𝓝 x] h := by
+  induction n generalizing h with
+  | zero =>
+    obtain ⟨g, hg⟩ := h.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
+    exact ⟨g, by simp, hg⟩
+  | succ n ih =>
+    rw [pow_succ'] at hh
+    refine Submodule.mul_induction_on hh (fun a ha b hb ↦ ?_) fun h₁ h₂ ↦ ?_
+    · obtain ⟨g, hg⟩ := a.contMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := x)
+      obtain ⟨g', hg', hbg⟩ := ih hb
+      have hgx : g ∈ smoothVanishingIdeal I (x : M) := by
+        rw [mem_smoothVanishingIdeal_iff]
+        exact hg.eq_of_nhds.trans (mem_smoothVanishingIdeal_iff.1 ha)
+      exact ⟨g * g', pow_succ' (smoothVanishingIdeal I (x : M)) n ▸ Ideal.mul_mem_mul hgx hg',
+        hg.mul hbg⟩
+    · rintro ⟨g₁, hg₁, hgh₁⟩ ⟨g₂, hg₂, hgh₂⟩
+      exact ⟨g₁ + g₂, add_mem hg₁ hg₂, hgh₁.add hgh₂⟩
 
 /-- **Jets as quotients.** At an interior point `x`, two smooth functions have the same class in
 `C^∞(M) / I_x ^ (m + 1)`, the space of `m`-jets at `x`, if and only if their chart expressions have

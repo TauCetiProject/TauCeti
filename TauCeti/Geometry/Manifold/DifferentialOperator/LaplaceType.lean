@@ -179,13 +179,13 @@ theorem IsLaplaceType.restrictDifferentialOperators (hD : IsLaplaceType D c) (U 
   have hx' : I.IsInteriorPoint (x : M) := I.isInteriorPoint_iff_isInteriorPoint_val.mp hx
   -- Write `ξ` as `η ∘ ι` for the identification `ι : T_x U ≃ T_x M` of the tangent spaces, which
   -- is a linear isometric equivalence for the inherited metric, so `η` has the norm of `ξ`.
-  let e : TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace I (x : M) :=
-    { (tangentSpaceOpenEquiv (I := I) x).toLinearEquiv with
-      norm_map' := fun v ↦ (norm_tangentSpace_open U x v).symm }
-  have hξ : ξ = (ξ.comp (e.symm : TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
+  have hξ : ξ = (ξ.comp ((tangentSpaceOpenLinearIsometryEquiv (I := I) U x).symm :
+      TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
       (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
     ext v
-    exact congrArg ξ (e.symm_apply_apply v).symm
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      LinearIsometryEquiv.coe_coe'', ContinuousLinearEquiv.coe_coe,
+      ← coe_tangentSpaceOpenLinearIsometryEquiv, LinearIsometryEquiv.symm_apply_apply]
   conv_lhs => rw [hξ]
   rw [smoothPrincipalSymbol_restrictDifferentialOperators hx', hD.smoothPrincipalSymbol_eq hx',
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
