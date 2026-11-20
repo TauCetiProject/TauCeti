@@ -124,8 +124,7 @@ theorem eta_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
 
 private theorem sqrt_denom_mul_eta_ne_zero (γ : SL(2, ℤ)) (τ : ℍ) :
     Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η τ ≠ 0 :=
-  mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2
-    (ModularGroup.denom_apply γ τ ▸ UpperHalfPlane.denom_ne_zero γ τ))
+  mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2 (UpperHalfPlane.denom_ne_zero γ τ))
     (_root_.ModularForm.eta_ne_zero τ.2)
 
 /-- `Δ(γ τ) = (c τ + d)¹² Δ(τ)` for `γ ∈ SL(2, ℤ)`, in terms of `η`. -/
@@ -143,8 +142,7 @@ private noncomputable def etaQuotient (γ : SL(2, ℤ)) (τ : ℍ) : ℂ :=
 private theorem etaQuotient_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :
     etaQuotient γ τ ^ 24 = 1 := by
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero τ.2
-  have hden : (γ 1 0 : ℂ) * τ + γ 1 1 ≠ 0 :=
-    ModularGroup.denom_apply γ τ ▸ UpperHalfPlane.denom_ne_zero γ τ
+  have hden : (γ 1 0 : ℂ) * τ + γ 1 1 ≠ 0 := UpperHalfPlane.denom_ne_zero γ τ
   have hs : Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 24 = ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 12 :=
     (pow_mul _ 2 12).trans (congrArg (· ^ 12) (Complex.sq_sqrt _))
   rw [etaQuotient, div_pow, mul_pow, hs,
