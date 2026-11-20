@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Piecewise
 import TauCeti.Analysis.Calculus.FDeriv.InitialPositivity
+import TauCeti.Geometry.Manifold.ContMDiff.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.EndpointVariation
 
 /-!
@@ -58,6 +60,13 @@ only the interval values of the section; any endpoint where the section vanishes
   central curve.
 * `TauCeti.Manifold.isGeodesicCurveOnFrom_exponentialVariation`: its transverse curves are the
   geodesics leaving the curve with the velocities given by the field.
+* `TauCeti.Manifold.acceleration_exponentialVariation_zero`: its transverse curves have zero
+  covariant acceleration at `s = 0`.
+* `TauCeti.Manifold.isFixedEndpointVariation_exponentialVariation`: when `V` vanishes at both
+  endpoints, the exponential variation is a fixed-endpoint variation.
+* `TauCeti.Manifold.exists_contMDiffAt_exponentialVariation_eqOn`: a closed-interval `C^k`
+  section lift agrees on `uIcc a b` with a two-sided `C^k` lift having the same exponential
+  variation on `uIcc a b`.
 * `TauCeti.Manifold.isOpen_setOfPred_smul_mem_expDomain`: its natural domain over an open set of
   parameters is open.
 * `TauCeti.Manifold.contMDiffOn_exponentialVariation`: its joint regularity on that domain.
@@ -79,7 +88,7 @@ only the interval values of the section; any endpoint where the section vanishes
 
 public section
 
-open Bundle Filter Set
+open Bundle CovariantDerivative Filter Set
 open scoped ContDiff Manifold Topology
 
 noncomputable section
@@ -164,6 +173,48 @@ theorem isGeodesicCurveOnFrom_exponentialVariation (t : ℝ) :
     funext fun s ↦ riemannianExp_smul (γ t) (V t) s
   rw [hcurve]
   exact isGeodesicCurveOnFrom_maximalGeodesic (γ t) (V t)
+
+/-- At `s = 0`, every transverse curve `s ↦ exp_(γ t) (s • V t)` of the exponential variation has
+zero covariant acceleration. -/
+@[simp]
+theorem acceleration_exponentialVariation_zero (t : ℝ) :
+    acceleration (leviCivitaConnection I M) (fun s ↦ exponentialVariation I γ V s t) 0 = 0 := by
+  have hgeo := (isGeodesicCurveOnFrom_exponentialVariation γ V t).isGeodesicCurveOn
+  have hmem : geodesicInterval I M (γ t) (V t) ∈ 𝓝 (0 : ℝ) :=
+    isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval
+  rw [← accelerationWithin_of_mem_nhds (leviCivitaConnection I M)
+    (fun s ↦ exponentialVariation I γ V s t) hmem]
+  exact hgeo.accelerationWithin_eq_zero 0 zero_mem_geodesicInterval
+
+/-- If a field `V` along `γ` has a `C^n` tangent-bundle lift along `uIcc a b` and vanishes at `a`
+and `b`, then its exponential variation is a `C^n` fixed-endpoint variation between `a` and `b`. -/
+theorem isFixedEndpointVariation_exponentialVariation {n : ℕ∞} {a b : ℝ}
+    (hV : ∀ t ∈ uIcc a b,
+      ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n (fun r ↦ TotalSpace.mk' E (γ r) (V r)) t)
+    (ha : V a = 0) (hb : V b = 0) :
+    IsFixedEndpointVariation I n (exponentialVariation I γ V) a b where
+  contMDiffAt t ht := contMDiffAt_exponentialVariation_zero γ V (hV t ht)
+  eventually_apply_left := Eventually.of_forall fun s ↦ by
+    simp only [exponentialVariation_apply, ha, smul_zero, riemannianExp_zero]
+  eventually_apply_right := Eventually.of_forall fun s ↦ by
+    simp only [exponentialVariation_apply, hb, smul_zero, riemannianExp_zero]
+
+omit [T2Space M] in
+/-- A `C^k` (`k : ℕ`) section lift `(γ, V)` on `uIcc a b` agrees on `uIcc a b` with a pair
+`(γ', V')` whose tangent-bundle lift is two-sided `C^k` at every point of `uIcc a b`, and whose
+exponential variation agrees with `exponentialVariation I γ V` on `uIcc a b` for every `s`. -/
+theorem exists_contMDiffAt_exponentialVariation_eqOn {k : ℕ} {a b : ℝ}
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent k (fun t ↦ TotalSpace.mk' E (γ t) (V t)) (uIcc a b)) :
+    ∃ (γ' : ℝ → M) (V' : ∀ t, TangentSpace I (γ' t)),
+      (∀ t ∈ uIcc a b,
+        ContMDiffAt 𝓘(ℝ, ℝ) I.tangent k (fun r ↦ TotalSpace.mk' E (γ' r) (V' r)) t) ∧
+      (∀ t ∈ uIcc a b, TotalSpace.mk' E (γ' t) (V' t) = TotalSpace.mk' E (γ t) (V t)) ∧
+      ∀ s, EqOn (exponentialVariation I γ' V' s) (exponentialVariation I γ V s) (uIcc a b) := by
+  have : IsManifold I.tangent k (TangentBundle I M) :=
+    IsManifold.of_le (n := ∞) (by simp)
+  obtain ⟨σ, hσ, hEq⟩ := hV.exists_contMDiffAt_uIcc
+  refine ⟨fun t ↦ (σ t).proj, fun t ↦ (σ t).snd, hσ, fun t ht ↦ hEq ht, fun s t ht ↦ ?_⟩
+  exact congrArg (fun z : TangentBundle I M ↦ riemannianExp I M z.proj (s • z.snd)) (hEq ht)
 
 /-- Let `S` be an open set of parameters on which the lift of `V` to the tangent bundle is
 continuous. The pairs `(s, t)` with `t ∈ S` and `s • V t` in the domain of the exponential map at

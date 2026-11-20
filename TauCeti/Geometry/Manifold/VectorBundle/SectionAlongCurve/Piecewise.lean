@@ -397,6 +397,66 @@ theorem restrict_comp {c d e f : ℝ} (hac : a ≤ c) (hcd : c < d) (hdb : d ≤
   ext W t
   rfl
 
+/-- Extend a bundled interval section by zero outside `[a, b]`. -/
+def extendByZero (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) (t : ℝ) : V (γ t) :=
+  if ht : t ∈ Icc a b then W.val ⟨t, ht⟩ else 0
+
+/-- Inside `[a, b]`, the zero-extension agrees with the bundled section. -/
+@[simp]
+theorem extendByZero_of_mem (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ)
+    {t : ℝ} (ht : t ∈ Icc a b) : W.extendByZero t = W.val ⟨t, ht⟩ :=
+  dite_eq_left ht
+
+/-- Outside `[a, b]`, the zero-extension vanishes. -/
+@[simp]
+theorem extendByZero_of_notMem (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ)
+    {t : ℝ} (ht : t ∉ Icc a b) : W.extendByZero t = 0 :=
+  dite_eq_right ht
+
+/-- Zero-extension preserves the zero section. -/
+@[simp]
+theorem extendByZero_zero :
+    (0 : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ).extendByZero = 0 := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves addition. -/
+@[simp]
+theorem extendByZero_add (U W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (U + W).extendByZero = U.extendByZero + W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves negation. -/
+@[simp]
+theorem extendByZero_neg (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (-W).extendByZero = -W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves subtraction. -/
+@[simp]
+theorem extendByZero_sub (U W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (U - W).extendByZero = U.extendByZero - W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves scalar multiplication. -/
+@[simp]
+theorem extendByZero_smul (c : ℝ) (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (c • W).extendByZero = c • W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- The zero-extension of a bundled piecewise `C^n` section along `γ` on `[a, b]` has a piecewise
+`C^n` total-space lift on `[a, b]`. -/
+theorem isPiecewiseContMDiffOn_extendByZero
+    (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    IsPiecewiseContMDiffOn (I.prod 𝓘(ℝ, F)) n
+      (fun t ↦ TotalSpace.mk' F (γ t) (W.extendByZero t)) a b := by
+  obtain ⟨U, hU, hUW⟩ := W.exists_extension
+  exact hU.congr fun t ht ↦ by simp only [extendByZero_of_mem W ht, hUW ⟨t, ht⟩]
+
 end PiecewiseContMDiffSectionAlong
 
 end TauCeti.Manifold

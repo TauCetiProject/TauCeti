@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+import TauCeti.Analysis.Calculus.ContDiff.IntervalExtension
 
 /-!
 # Smooth curves joining points of a manifold
@@ -25,6 +26,10 @@ Curves which are constant near their endpoints can be concatenated smoothly
 `[0, 1/3]` and through `γ₂` on `[2/3, 1]`, and rests at the junction point in between, so that it
 is locally a reparametrization of one of the two curves.
 
+In a boundaryless `C^k` manifold (`k : ℕ`), a `C^k` curve on a closed real interval `[a, b]`
+extends across both endpoints to a curve that is two-sided `C^k` at every point of `[a, b]`
+(`ContMDiffOn.exists_contMDiffAt_Icc`, `ContMDiffOn.exists_contMDiffAt_uIcc`).
+
 These curves are the test curves of line integrals: a closed `1`-form whose integral along every
 smooth loop vanishes is exact, with primitive the integral along smooth curves from a base point.
 
@@ -35,6 +40,8 @@ smooth loop vanishes is exact, with primitive the integral along smooth curves f
   junction point is `C^n`.
 * `TauCeti.eventually_exists_contMDiff_curve`: nearby points are joined by short `C^n` curves.
 * `TauCeti.exists_contMDiff_curve`: a preconnected `C^n` manifold is `C^n`-path connected.
+* `ContMDiffOn.exists_contMDiffAt_Icc`, `ContMDiffOn.exists_contMDiffAt_uIcc`: two-sided `C^k`
+  extension of a closed-interval curve across its endpoints in a boundaryless manifold.
 -/
 
 public section
@@ -177,5 +184,106 @@ theorem exists_contMDiff_curve [IsManifold I n M] [PreconnectedSpace M] (x y : M
   · refine ⟨curveConcat γ₁ γ₂, ContMDiff.curveConcat hγ₁ hγ₂ h₁' h₂, fun t ht ↦ ?_, fun t ht ↦ ?_⟩
     · rw [curveConcat_of_le (by linarith), h₁ _ (by linarith)]
     · rw [curveConcat_of_lt (by linarith), h₂' _ (by linarith)]
+
+/-! ### Extending a closed-interval curve across its endpoints -/
+
+/-- Extend a `C^k` curve on `[a, b]` (`a < b`) in a boundaryless manifold across the left endpoint
+`a`, keeping `C^k` regularity on `[a, b]` and achieving two-sided `ContMDiffAt` at `a`. -/
+private theorem exists_contMDiffAt_left_Icc [I.Boundaryless] {k : ℕ} [IsManifold I k M]
+    {γ : ℝ → M} {a b : ℝ} (hab : a < b) (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I k γ (Icc a b)) :
+    ∃ δ : ℝ → M, ContMDiffAt 𝓘(ℝ, ℝ) I k δ a ∧ ContMDiffOn 𝓘(ℝ, ℝ) I k δ (Icc a b) ∧
+      EqOn δ γ (Icc a b) := by
+  let e := extChartAt I (γ a)
+  have hpre : γ ⁻¹' e.source ∈ 𝓝[Icc a b] a :=
+    hγ.continuousOn.continuousWithinAt ⟨le_rfl, hab.le⟩ (extChartAt_source_mem_nhds (I := I) (γ a))
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhdsWithin_iff.1 hpre
+  set c := min b (a + r / 2)
+  have hac : a < c := lt_min hab (by linarith)
+  have hcb : c ≤ b := min_le_left _ _
+  have hsub : MapsTo γ (Icc a c) e.source := fun t ht ↦ by
+    refine hball ⟨?_, ht.1, ht.2.trans hcb⟩
+    rw [Metric.mem_ball, Real.dist_eq, abs_of_nonneg (sub_nonneg.2 ht.1)]
+    have : t ≤ a + r / 2 := ht.2.trans (min_le_right _ _)
+    linarith
+  have hchart : ContDiffOn ℝ k (e ∘ γ) (Icc a c) :=
+    contMDiffOn_iff_contDiffOn.1 <|
+      (contMDiffOn_extChartAt (I := I) (x := γ a)).comp (hγ.mono (Icc_subset_Icc_right hcb))
+        (fun t ht ↦ by simpa only [e, extChartAt_source, mem_preimage] using hsub ht)
+  obtain ⟨g, hg, hgeq⟩ := TauCeti.exists_contDiff_extension_Icc (e ∘ γ) hchart
+  have hga : g a = e (γ a) := hgeq ⟨le_rfl, hac.le⟩
+  have hgtgt : g ⁻¹' e.target ∈ 𝓝 a := by
+    refine hg.continuous.continuousAt.preimage_mem_nhds ?_
+    rw [hga]
+    exact (isOpen_extChartAt_target (I := I) (γ a)).mem_nhds (mem_extChartAt_target (I := I) (γ a))
+  obtain ⟨ε, hε, hεball⟩ := Metric.mem_nhds_iff.1 hgtgt
+  set d := min c (a + ε)
+  have had : a < d := lt_min hac (by linarith)
+  have hdc : d ≤ c := min_le_left _ _
+  let δ : ℝ → M := fun t ↦ if t ≤ a then e.symm (g t) else γ t
+  have hEqOn : EqOn δ γ (Icc a b) := fun t ht ↦ by
+    by_cases hta : t ≤ a
+    · have hta' : t = a := le_antisymm hta ht.1
+      subst hta'
+      simp only [δ, le_refl, ↓reduceIte, hga]
+      exact e.left_inv (mem_extChartAt_source (I := I) _)
+    · simp only [δ, hta, ↓reduceIte]
+  have hnear : δ =ᶠ[𝓝 a] e.symm ∘ g := by
+    refine eventuallyEq_of_mem (Ioo_mem_nhds (by linarith : a - ε < a) had) fun t ht ↦ ?_
+    by_cases hta : t ≤ a
+    · simp only [δ, hta, ↓reduceIte, Function.comp_apply]
+    · have htc : t ∈ Icc a c := ⟨le_of_not_ge hta, ht.2.le.trans hdc⟩
+      simp only [δ, hta, ↓reduceIte, Function.comp_apply, hgeq htc, e.left_inv (hsub htc)]
+  have hsymm : ContMDiffAt 𝓘(ℝ, E) I k e.symm (g a) :=
+    (contMDiffOn_extChartAt_symm (I := I) (x := γ a)).contMDiffAt
+      ((isOpen_extChartAt_target (I := I) (γ a)).mem_nhds
+        (hga ▸ mem_extChartAt_target (I := I) (γ a)))
+  exact ⟨δ, (hsymm.comp a hg.contMDiff.contMDiffAt).congr_of_eventuallyEq hnear, hγ.congr hEqOn,
+    hEqOn⟩
+
+/-- A `C^k` curve (`k : ℕ`) on a closed interval `[a, b]` in a boundaryless `C^k` manifold agrees on
+`[a, b]` with a curve that is two-sided `C^k` at every point of `[a, b]`. -/
+theorem _root_.ContMDiffOn.exists_contMDiffAt_Icc [I.Boundaryless] {k : ℕ} [IsManifold I k M]
+    {γ : ℝ → M} {a b : ℝ} (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I k γ (Icc a b)) :
+    ∃ δ : ℝ → M, (∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ) I k δ t) ∧ EqOn δ γ (Icc a b) := by
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · obtain ⟨δ₁, hδ₁a, hδ₁, hEq₁⟩ := exists_contMDiffAt_left_Icc hab hγ
+    have hrev : ContMDiffOn 𝓘(ℝ, ℝ) I k (fun t ↦ δ₁ (-t)) (Icc (-b) (-a)) :=
+      hδ₁.comp contDiff_neg.contMDiff.contMDiffOn fun t ht ↦
+        ⟨by linarith [ht.2], by linarith [ht.1]⟩
+    obtain ⟨δ₂, hδ₂b, -, hEq₂⟩ := exists_contMDiffAt_left_Icc (neg_lt_neg hab) hrev
+    let m := (a + b) / 2
+    have ham : a < m := by dsimp only [m]; linarith
+    have hmb : m < b := by dsimp only [m]; linarith
+    let δ : ℝ → M := fun t ↦ if t < m then δ₁ t else δ₂ (-t)
+    have hEq : EqOn δ γ (Icc a b) := fun t ht ↦ by
+      by_cases htm : t < m
+      · simpa only [δ, htm, ↓reduceIte] using hEq₁ ht
+      · have hnt : -t ∈ Icc (-b) (-a) := ⟨by linarith [ht.2], by linarith [ht.1]⟩
+        have h2 : δ₂ (-t) = δ₁ t := by simpa only [neg_neg] using hEq₂ hnt
+        simpa only [δ, htm, ↓reduceIte] using h2.trans (hEq₁ ht)
+    refine ⟨δ, fun t ht ↦ ?_, hEq⟩
+    rcases eq_or_lt_of_le ht.1 with hta | hat
+    · rw [← hta]
+      refine hδ₁a.congr_of_eventuallyEq <|
+        eventuallyEq_of_mem (Iio_mem_nhds ham) fun s hs ↦ ?_
+      simp only [δ, mem_Iio.1 hs, ↓reduceIte]
+    · rcases eq_or_lt_of_le ht.2 with rfl | htb
+      · have hneg : ContMDiffAt 𝓘(ℝ, ℝ) I k (fun s ↦ δ₂ (-s)) t :=
+          hδ₂b.comp t contDiff_neg.contMDiff.contMDiffAt
+        refine hneg.congr_of_eventuallyEq <|
+          eventuallyEq_of_mem (Ioi_mem_nhds hmb) fun s hs ↦ ?_
+        simp only [δ, not_lt.2 (mem_Ioi.1 hs).le, ↓reduceIte]
+      · exact (hγ.contMDiffAt (Icc_mem_nhds hat htb)).congr_of_eventuallyEq
+          (eventuallyEq_of_mem (Icc_mem_nhds hat htb) hEq)
+  · exact ⟨fun _ ↦ γ a, fun _ _ ↦ contMDiffAt_const, fun t ht ↦ by
+      have : t = a := le_antisymm ht.2 ht.1
+      rw [this]⟩
+  · exact ⟨γ, fun _ ht ↦ absurd (ht.1.trans ht.2) (not_le.2 hba), fun _ _ ↦ rfl⟩
+
+/-- Unordered-interval version of `ContMDiffOn.exists_contMDiffAt_Icc`. -/
+theorem _root_.ContMDiffOn.exists_contMDiffAt_uIcc [I.Boundaryless] {k : ℕ} [IsManifold I k M]
+    {γ : ℝ → M} {a b : ℝ} (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I k γ (uIcc a b)) :
+    ∃ δ : ℝ → M, (∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ) I k δ t) ∧ EqOn δ γ (uIcc a b) :=
+  hγ.exists_contMDiffAt_Icc
 
 end TauCeti

@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Frame
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Covariant differentiation on a parametrized surface
@@ -44,6 +47,16 @@ first-variation formula for the energy of a curve.
 * `CovariantDerivative.alongCurve_curveVelocity_comm`: **the symmetry lemma**, that for a
   torsion-free connection the two mixed covariant derivatives of a `C²` parametrized surface
   agree.
+* `CovariantDerivative.sectionCoord_alongCurve_snd_eventuallyEq` and
+  `CovariantDerivative.sectionCoord_alongCurve_fst_eventuallyEq`: local chart formulas for the
+  along-curve covariant derivatives of a `C¹` field along a parametrized surface along each
+  parameter slice.
+* `CovariantDerivative.contMDiffAt_alongCurve_fst_slice` and
+  `CovariantDerivative.contMDiffAt_alongCurve_snd_slice`: a `C^(m + 1)` field on a parametrized
+  surface has `C^m` sliced covariant derivatives along each parameter curve for a locally `C^m`
+  connection.
+* `ContMDiffAt.contMDiffAt_acceleration_fst_slice`: regularity of the sliced transverse
+  acceleration `r ↦ D_q ∂_q f (u, r)` for a jointly `C^n` parametrized surface (`m + 2 ≤ n`).
 
 ## References
 
@@ -185,6 +198,145 @@ theorem alongCurve_curveVelocity_comm
 
 end CovariantDerivative
 
+namespace CovariantDerivative
+
+open TauCeti.Manifold
+
+variable
+  {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
+  {f : 𝕜 → 𝕜 → M} {W : ∀ q r, TangentSpace I (f q r)} {u v : 𝕜}
+
+/-- **Chart formula for the second-parameter covariant derivative along a surface.** Near `u`, the
+covariant derivative along the second-parameter curve `f q` of a `C¹` field `W` on a parametrized
+surface `f`, read in the trivialization at `f u v`, is given by the coordinate formula. -/
+theorem sectionCoord_alongCurve_snd_eventuallyEq
+    (cov : _root_.CovariantDerivative I E (fun y : M ↦ TangentSpace I y))
+    (hW : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent 1
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
+    letI e := trivializationAt E (TangentSpace I) (f u v)
+    letI Γ := christoffelMap (finBasis 𝕜 E) (cov.isCovariantDerivativeOn (s := e.baseSet))
+    sectionCoord 𝕜 (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v) (f u v) =ᶠ[𝓝 u]
+      fun q ↦
+        deriv (fun r ↦ e.continuousLinearMapAt 𝕜 (f q r) (W q r)) v +
+          Γ (f q v) (e.continuousLinearMapAt 𝕜 (f q v) (W q v))
+            (deriv (fun r ↦ extChartAt I (f u v) (f q r)) v) := by
+  set e := trivializationAt E (TangentSpace I) (f u v)
+  have hbase : f u v ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _
+  have hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I 1 (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v) :=
+    (contMDiff_proj (TangentSpace I)).contMDiffAt.comp (u, v) hW
+  have hslice : ∀ᶠ q in 𝓝 u, ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent 1
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (q, v) ∧ f q v ∈ e.baseSet :=
+    ((continuous_id.prodMk continuous_const).tendsto u).eventually
+      (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hW).and
+        (hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hbase)))
+  filter_upwards [hslice] with q ⟨hq, hqb⟩
+  have hcurve : ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (f q r) (W q r)) v :=
+    hq.comp v (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 1) q)).contMDiffAt
+  have hfq : MDifferentiableAt 𝓘(𝕜, 𝕜) I (f q) v :=
+    ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp v hcurve).mdifferentiableAt one_ne_zero
+  have hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) (f q) (W q) (f q v)) v :=
+    differentiableAt_sectionCoord (f q) (W q) (hcurve.mdifferentiableAt one_ne_zero)
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
+  have hcoord : sectionCoord 𝕜 (F := E) (f q) (W q) (f u v) =
+      fun r ↦ e.continuousLinearMapAt 𝕜 (f q r) (W q r) :=
+    funext fun r ↦ sectionCoord_apply (f q) (W q) (f u v) r
+  rw [sectionCoord_apply, ← alongCurveWithin_univ,
+    ← symmL_alongCurveInChartWithin cov (f q) (W q) hqb hfq.mdifferentiableWithinAt
+      hV.differentiableWithinAt,
+    e.continuousLinearMapAt_symmL (R := 𝕜) hqb, alongCurveInChartWithin_apply,
+    derivWithin_univ, derivWithin_univ, Function.comp_def, hcoord]
+
+/-- **Chart formula for the first-parameter covariant derivative along a surface.** Near `v`, the
+covariant derivative along the first-parameter curve `fun q ↦ f q r` of a `C¹` field `W` on a
+parametrized surface `f`, read in the trivialization at `f u v`, is given by the coordinate
+formula. -/
+theorem sectionCoord_alongCurve_fst_eventuallyEq
+    (cov : _root_.CovariantDerivative I E (fun y : M ↦ TangentSpace I y))
+    (hW : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent 1
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
+    letI e := trivializationAt E (TangentSpace I) (f u v)
+    letI Γ := christoffelMap (finBasis 𝕜 E) (cov.isCovariantDerivativeOn (s := e.baseSet))
+    sectionCoord 𝕜 (F := E) (f u)
+        (fun r ↦ alongCurve cov (fun q ↦ f q r) (fun q ↦ W q r) u) (f u v) =ᶠ[𝓝 v]
+      fun r ↦
+        deriv (fun q ↦ e.continuousLinearMapAt 𝕜 (f q r) (W q r)) u +
+          Γ (f u r) (e.continuousLinearMapAt 𝕜 (f u r) (W u r))
+            (deriv (fun q ↦ extChartAt I (f u v) (f q r)) u) :=
+  sectionCoord_alongCurve_snd_eventuallyEq (f := fun r q ↦ f q r) (W := fun r q ↦ W q r)
+    (u := v) (v := u) cov
+    (hW.comp (v, u) (contDiff_snd.prodMk contDiff_fst).contMDiff.contMDiffAt)
+
+/-- **Regularity of the first-parameter covariant derivative along a slice.** If a vector field `W`
+along a parametrized surface `f : 𝕜 → 𝕜 → M` has a `C^(m + 1)` lift to the tangent bundle at
+`(u, v)` and the connection is `C^m` on the trivialization base set at `f u v`, then its covariant
+derivative in the first parameter at `u` has a `C^m` lift along `f u` at `v`. -/
+theorem contMDiffAt_alongCurve_fst_slice {m : ℕ∞ω} [IsManifold I (m + 1) M]
+    [ContMDiffVectorBundle (m + 1) E (TangentSpace I : M → Type _) I]
+    (cov : _root_.CovariantDerivative I E (fun y : M ↦ TangentSpace I y))
+    [ContMDiffCovariantDerivativeOn E m cov.toFun
+      (trivializationAt E (TangentSpace I) (f u v)).baseSet]
+    (hW : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent (m + 1)
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun r ↦ TotalSpace.mk' E (f u r)
+        (alongCurve cov (fun q ↦ f q r) (fun q ↦ W q r) u)) v := by
+  set e := trivializationAt E (TangentSpace I) (f u v)
+  have hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
+  set Γ := christoffelMap (finBasis 𝕜 E) hcov
+  have : ContMDiffVectorBundle m E (TangentSpace I : M → Type _) I :=
+    ContMDiffVectorBundle.of_le (n := m + 1) le_self_add
+  have hbase : f u v ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _
+  have hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I (m + 1) (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v) :=
+    (contMDiff_proj (TangentSpace I)).contMDiffAt.comp (u, v) hW
+  have hfu : ContMDiffAt 𝓘(𝕜, 𝕜) I (m + 1) (f u) v :=
+    hf.comp v (contDiff_prodMk_right u).contMDiff.contMDiffAt
+  set φ : 𝕜 × 𝕜 → E := fun z ↦ extChartAt I (f u v) (f z.1 z.2)
+  set w : 𝕜 × 𝕜 → E := fun z ↦ e.continuousLinearMapAt 𝕜 (f z.1 z.2) (W z.1 z.2)
+  have hφ : ContDiffAt 𝕜 (m + 1) φ (u, v) := contMDiffAt_iff_contDiffAt.mp
+    ((contMDiffAt_extChartAt' (mem_chart_source H (f u v))).comp (u, v) hf)
+  have hw : ContDiffAt 𝕜 (m + 1) w (u, v) :=
+    hW.contDiffAt_continuousLinearMapAt_trivializationAt
+  have hΓv : ContDiffAt 𝕜 m (fun r ↦ Γ (f u r)) v := by
+    have hΓm : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E →L[𝕜] E) m Γ (f u v) :=
+      (contMDiffOn_christoffelMap (finBasis 𝕜 E) hcov).contMDiffAt (e.open_baseSet.mem_nhds hbase)
+    exact contMDiffAt_iff_contDiffAt.mp (hΓm.comp v (hfu.of_le le_self_add))
+  have hwv : ContDiffAt 𝕜 m (fun r ↦ w (u, r)) v :=
+    (hw.of_le le_self_add).comp v (contDiff_prodMk_right u).contDiffAt
+  have hcoord : ContDiffAt 𝕜 m
+      (fun r ↦ deriv (fun q ↦ w (q, r)) u + Γ (f u r) (w (u, r)) (deriv (fun q ↦ φ (q, r)) u)) v :=
+    (TauCeti.contDiffAt_deriv_slice_left hw).add
+      ((hΓv.clm_apply hwv).clm_apply (TauCeti.contDiffAt_deriv_slice_left hφ))
+  rw [contMDiffAt_totalSpace_iff]
+  refine ⟨hfu.of_le le_self_add, (contMDiffAt_iff_contDiffAt.mpr hcoord).congr_of_eventuallyEq ?_⟩
+  filter_upwards [sectionCoord_alongCurve_fst_eventuallyEq cov (hW.of_le le_add_self),
+    hfu.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hbase)] with r hr hrb
+  rw [← e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hrb]
+  rw [sectionCoord_apply] at hr
+  exact hr
+
+/-- **Regularity of the second-parameter covariant derivative along a slice.** If a vector field
+`W` along a parametrized surface `f : 𝕜 → 𝕜 → M` has a `C^(m + 1)` lift to the tangent bundle at
+`(u, v)` and the connection is `C^m` on the trivialization base set at `f u v`, then its covariant
+derivative in the second parameter at `v` has a `C^m` lift along `fun q ↦ f q v` at `u`. -/
+theorem contMDiffAt_alongCurve_snd_slice {m : ℕ∞ω} [IsManifold I (m + 1) M]
+    [ContMDiffVectorBundle (m + 1) E (TangentSpace I : M → Type _) I]
+    (cov : _root_.CovariantDerivative I E (fun y : M ↦ TangentSpace I y))
+    [ContMDiffCovariantDerivativeOn E m cov.toFun
+      (trivializationAt E (TangentSpace I) (f u v)).baseSet]
+    (hW : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent (m + 1)
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun q ↦ TotalSpace.mk' E (f q v) (alongCurve cov (f q) (W q) v)) u :=
+  contMDiffAt_alongCurve_fst_slice (f := fun r q ↦ f q r) (W := fun r q ↦ W q r) (u := v) (v := u)
+    cov (hW.comp (v, u) (contDiff_snd.prodMk contDiff_fst).contMDiff.contMDiffAt)
+
+end CovariantDerivative
+
 namespace ContMDiffAt
 
 open CovariantDerivative
@@ -234,5 +386,27 @@ theorem differentiableAt_sectionCoord_curveVelocity_snd [IsManifold I 2 M]
   |>.differentiableAt_sectionCoord_curveVelocity_fst (f := fun a b ↦ f b a)
     (u := v) (v := u) (x := x)
     hx
+
+/-- **Regularity of the transverse acceleration along a slice.** If a two-parameter family
+`f : 𝕜 → 𝕜 → M` is jointly `C^n` at `(u, v)`, `m + 2 ≤ n`, and `cov` is `C^m` on the
+trivialization base set at `f u v`, then the covariant accelerations `r ↦ D_q ∂_q f (u, r)` of its
+transverse curves form a `C^m` section along `f u` at `v`. -/
+theorem contMDiffAt_acceleration_fst_slice [IsManifold I 2 M]
+    {m n : ℕ∞ω} [IsManifold I (m + 1) M]
+    [ContMDiffVectorBundle (m + 1) E (TangentSpace I : M → Type _) I]
+    (cov : _root_.CovariantDerivative I E (fun y : M ↦ TangentSpace I y))
+    [ContMDiffCovariantDerivativeOn E m cov.toFun
+      (trivializationAt E (TangentSpace I) (f u v)).baseSet]
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v))
+    (hmn : m + 2 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
+      (fun r ↦ TotalSpace.mk' E (f u r) (acceleration cov (fun q ↦ f q r) u)) v := by
+  have : ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I :=
+    ContMDiffVectorBundle.of_le (n := m + 1) le_add_self
+  have hW : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent (m + 1)
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (curveVelocity I (fun q ↦ f q z.2) z.1))
+      (u, v) :=
+    hf.contMDiffAt_curveVelocity_fst (by rwa [add_assoc, one_add_one_eq_two])
+  simpa only [acceleration_def] using contMDiffAt_alongCurve_fst_slice cov hW
 
 end ContMDiffAt

@@ -42,6 +42,8 @@ that energy less than `(b - a) / 2` forces length less than `b - a`.
   a parameter set with unique derivatives, and `ContMDiffOn.continuousOn_norm_curveVelocity` is
   its open-set case.
 * `ContMDiffAt.continuousAt_norm_curveVelocity`: speed is continuous at each `C¹` parameter.
+* `TauCeti.Manifold.norm_curveVelocity_eq_Icc_of_Ioo`: a curve that is `C¹` at every point of
+  `[a, b]` (`a < b`) and has constant speed `C` on `(a, b)` has constant speed `C` on `[a, b]`.
 * `ContMDiffOn.setLIntegral_enorm_curveVelocity_lt_top`: a `C¹` curve on an open parameter set
   has finite length on every compact subset of it.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
@@ -145,6 +147,16 @@ theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocity {γ : ℝ → M} {O :
     ContinuousOn (fun t ↦ ‖curveVelocity I γ t‖) O :=
   (hγ.continuousOn_norm_curveVelocityWithin hO.uniqueMDiffOn).congr fun t ht ↦ by
     simp only [curveVelocityWithin_of_mem_nhds (hO.mem_nhds ht)]
+
+/-- If a curve `γ` is `C¹` at every point of `[a, b]` (`a < b`) and has constant Riemannian speed
+`C` on `(a, b)`, then it has constant Riemannian speed `C` on `[a, b]`. -/
+theorem norm_curveVelocity_eq_Icc_of_Ioo {γ : ℝ → M} {a b C : ℝ} (hab : a < b)
+    (hγ : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t)
+    (hspeed : ∀ t ∈ Ioo a b, ‖curveVelocity I γ t‖ = C) :
+    ∀ t ∈ Icc a b, ‖curveVelocity I γ t‖ = C :=
+  Set.EqOn.of_subset_closure hspeed
+    (fun t ht ↦ (hγ t ht).continuousAt_norm_curveVelocity.continuousWithinAt)
+    continuousOn_const Ioo_subset_Icc_self (by rw [closure_Ioo hab.ne])
 
 /-- A `C¹` curve on an open parameter set has finite length on every compact subset of it: the
 integral of its speed over such a set is finite. -/
