@@ -32,6 +32,8 @@ and sheafiness statements for such completed tensor products, are built on.
   finite type, so is the right coprojection `B → C ⊗̂_A B`.
 * `TauCeti.Huber.CompletedTensor.isTopologicallyFiniteType_inl`: if `A → C` is topologically of
   finite type, so is the left coprojection `B → B ⊗̂_A C`.
+* `TauCeti.Huber.CompletedTensor.isNoetherianType_of_isTopologicallyFiniteType`: if moreover `B`
+  is of noetherian type, so is `B ⊗̂_A C`.
 
 ## References
 
@@ -80,5 +82,13 @@ theorem isTopologicallyFiniteType_inl (h : IsTopologicallyFiniteType (algebraMap
   convert h' using 1
   ext b
   simp
+
+/-- **Completed base change preserves noetherian type** (Huber 1994, proof of Proposition 3.7;
+Wedhorn, proof of Theorem 8.56(ii)). If `B` is of noetherian type and `A → C` is topologically of
+finite type, then `B ⊗̂_A C` is of noetherian type, because the left coprojection
+`B → B ⊗̂_A C` is topologically of finite type. -/
+theorem isNoetherianType_of_isTopologicallyFiniteType [IsNoetherianType B]
+    (h : IsTopologicallyFiniteType (algebraMap A C)) : IsNoetherianType (CompletedTensor A B C) :=
+  IsNoetherianType.of_isTopologicallyFiniteType (isTopologicallyFiniteType_inl h)
 
 end TauCeti.Huber.CompletedTensor
