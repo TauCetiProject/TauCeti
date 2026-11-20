@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Bordered.TypeDA
+public import TauCeti.LowDimTopology.Bordered.TypeDA.Basic
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Matrix.Block
