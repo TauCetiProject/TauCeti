@@ -28,6 +28,8 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 
 * `Matrix.apply_last_eq_of_dotProduct_eq_zero`: if `w ⬝ᵥ v = 0` and the last coordinate of `w` is
   a unit, then the last coordinate of `v` is determined by its other coordinates.
+* `Module.Dual.apply_prod_eq_dotProduct_add_mul`: a linear functional on `(ι → R) × R` is
+  `(v, t) ↦ v ⬝ᵥ u + t * s`.
 * `LinearIndependent.exists_dotProduct_ne_zero`: `n` linearly independent forms on `K ^ n` do not
   all vanish at a nonzero point.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
@@ -98,3 +100,20 @@ theorem Matrix.apply_last_eq_of_dotProduct_eq_zero {n : ℕ} {R : Type*} [Ring R
       ((hwunit.unit⁻¹ : Rˣ) : R) * (w (Fin.last n) * v (Fin.last n)) := by
         rw [← mul_assoc, hwunit.val_inv_mul, one_mul]
     _ = _ := by rw [eq_neg_of_add_eq_zero_right hv, mul_neg, neg_mul]
+
+/-- A linear functional on `(ι → R) × R` is `(v, t) ↦ v ⬝ᵥ u + t * s`, where `u k` is its value at
+`(Pi.single k 1, 0)` and `s` its value at `(0, 1)`. -/
+theorem Module.Dual.apply_prod_eq_dotProduct_add_mul {ι R : Type*} [Fintype ι] [DecidableEq ι]
+    [CommSemiring R] (f : Module.Dual R ((ι → R) × R)) (v : ι → R) (t : R) :
+    f (v, t) = v ⬝ᵥ (fun k => f (Pi.single k 1, 0)) + t * f (0, 1) := by
+  have hsplit : (v, t) = (v, 0) + t • ((0 : ι → R), (1 : R)) := by ext <;> simp
+  rw [hsplit, map_add, map_smul, smul_eq_mul]
+  congr 1
+  have := LinearMap.pi_apply_eq_sum_univ (f.comp (LinearMap.inl R (ι → R) R)) v
+  simp only [LinearMap.comp_apply, LinearMap.inl_apply] at this
+  rw [this, dotProduct]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [smul_eq_mul]
+  congr 3
+  ext l
+  simp [Pi.single_apply, eq_comm]
