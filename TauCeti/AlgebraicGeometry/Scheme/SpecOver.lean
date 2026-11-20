@@ -76,7 +76,7 @@ noncomputable def specOverHomEquivAlgHom :
 /-- The inverse of `specOverHomEquivAlgHom` applies `Spec` to an algebra homomorphism. -/
 @[simp]
 theorem coe_specOverHomEquivAlgHom_symm_apply (φ : A →ₐ[R] B) :
-    (specOverHomEquivAlgHom.symm φ).1 = Spec.map (CommRingCat.ofHom (φ : A →+* B)) :=
+    (specOverHomEquivAlgHom.symm φ).val = Spec.map (CommRingCat.ofHom (φ : A →+* B)) :=
   (rfl)
 
 /-- Applying `Spec` to the algebra homomorphism of a morphism over `Spec R` recovers the
@@ -84,7 +84,7 @@ morphism. -/
 @[simp]
 theorem spec_map_specOverHomEquivAlgHom
     (f : {f : Spec (.of B) ⟶ Spec (.of A) // f.IsOver (Spec (.of R))}) :
-    Spec.map (CommRingCat.ofHom (specOverHomEquivAlgHom f : A →+* B)) = f.1 := by
+    Spec.map (CommRingCat.ofHom (specOverHomEquivAlgHom f : A →+* B)) = f.val := by
   rw [← coe_specOverHomEquivAlgHom_symm_apply, Equiv.symm_apply_apply]
 
 /-- A morphism `p : Spec B ⟶ X` over `Spec R` whose image lies in the image of an open immersion

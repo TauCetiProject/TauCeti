@@ -159,7 +159,7 @@ theorem coefficientDifferential_single_sub_apply_of_m_eq_zero (x : P) (α : M) {
   induction α using DirectSum.Decomposition.inductionOn ℳ with
   | zero => simp
   | @homogeneous q α =>
-    rw [m.coefficientDifferential_single hM x α.2, add_sub_cancel_left, Units.smul_def,
+    rw [m.coefficientDifferential_single hM x α.property, add_sub_cancel_left, Units.smul_def,
       Finsupp.smul_apply, Finsupp.sum_apply,
       Finsupp.sum_eq_single z (fun y _ hyz ↦ by simp [hyz]) (by simp)]
     simp [hz]
@@ -252,9 +252,10 @@ theorem coefficientDifferential_mapRange (f : DGRightModuleHom hM hN) (g : P →
     induction α using DirectSum.Decomposition.inductionOn ℳ with
     | zero => simp
     | @homogeneous q α =>
-      have hfα : f α ∈ 𝒩 q := f.map_mem' α.2
+      have hfα : f α ∈ 𝒩 q := f.map_mem' α.property
       rw [hF, m.coefficientDifferential_single hN x hfα,
-        m.coefficientDifferential_single hM x α.2, map_add, hF, Units.smul_def, Units.smul_def,
+        m.coefficientDifferential_single hM x α.property, map_add, hF, Units.smul_def,
+            Units.smul_def,
         map_zsmul, Finsupp.sum, Finsupp.sum, map_sum]
       simp only [hF, map_smul, DGRightModuleHom.map_d]
     | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]
@@ -372,8 +373,8 @@ theorem linearEquivFunOnFinite_coefficientDifferential [Fintype P] (f : P →₀
     induction α using DirectSum.Decomposition.inductionOn ℳ with
     | zero => simp
     | @homogeneous q α =>
-      rw [m.coefficientDifferential_single hM x α.2, Finsupp.linearEquivFunOnFinite_single,
-        twistedDifferential_single (fun x y ↦ m.m x y) dM x α.2]
+      rw [m.coefficientDifferential_single hM x α.property, Finsupp.linearEquivFunOnFinite_single,
+        twistedDifferential_single (fun x y ↦ m.m x y) dM x α.property]
       ext y
       simp [Finsupp.single_apply, Pi.single_apply, Finsupp.sum_fintype, eq_comm]
     | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]

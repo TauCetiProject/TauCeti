@@ -159,8 +159,9 @@ private theorem cast_det_intGram (d : ℤ) {κ ι : Type*} [Fintype κ] [Fintype
 Here `C X` is the inner variable `z'` and `X` is the outer variable `z`. -/
 private noncomputable def jetEval (d : ℤ) (N : ℕ) (P : (ℤ√d)[X][X])
     (k : Fin N × Fin N × Fin N) : ℤ√d :=
-  (Polynomial.derivative^[k.2.2.1]
-    (P.map (Polynomial.evalRingHom ⟨k.1.1, -(k.2.1.1 : ℤ)⟩))).eval ⟨k.1.1, (k.2.1.1 : ℤ)⟩
+  (Polynomial.derivative^[k.2.2.val]
+    (P.map (Polynomial.evalRingHom ⟨k.1.val, -(k.2.1.val : ℤ)⟩))).eval
+      ⟨k.1.val, (k.2.1.val : ℤ)⟩
 
 private theorem jetEval_sum (d : ℤ) (N : ℕ) {ι : Type*} (s : Finset ι) (c : ι → ℤ)
     (P : ι → (ℤ√d)[X][X]) (k : Fin N × Fin N × Fin N) :
@@ -170,7 +171,7 @@ private theorem jetEval_sum (d : ℤ) (N : ℕ) {ι : Type*} (s : Finset ι) (c 
 
 /-- The monomial `z ^ r * z' ^ s` in `(ℤ√d)[z', z]`. -/
 private noncomputable def basePoly (d : ℤ) {R S : ℕ} (i : Fin R × Fin S) : (ℤ√d)[X][X] :=
-  Polynomial.C (Polynomial.X ^ i.2.1) * Polynomial.X ^ i.1.1
+  Polynomial.C (Polynomial.X ^ i.2.val) * Polynomial.X ^ i.1.val
 
 private noncomputable def baseFam (d : ℤ) (N R S : ℕ) (i : Fin R × Fin S) :
     Fin N × Fin N × Fin N → ℤ√d :=
@@ -183,9 +184,9 @@ private noncomputable def baseVec (d : ℤ) (N R S : ℕ) (i : Fin R × Fin S) :
 private theorem jetEval_basePoly_eq (d : ℤ) (N : ℕ) {R S : ℕ} (i : Fin R × Fin S)
     (k : Fin N × Fin N × Fin N) :
     baseFam d N R S i k =
-      (⟨k.1.1, -(k.2.1.1 : ℤ)⟩ : ℤ√d) ^ i.2.1 *
-        (i.1.1.descFactorial k.2.2.1 : ℤ√d) *
-        (⟨k.1.1, (k.2.1.1 : ℤ)⟩ : ℤ√d) ^ (i.1.1 - k.2.2.1) := by
+      (⟨k.1.val, -(k.2.1.val : ℤ)⟩ : ℤ√d) ^ i.2.val *
+        (i.1.val.descFactorial k.2.2.val : ℤ√d) *
+        (⟨k.1.val, (k.2.1.val : ℤ)⟩ : ℤ√d) ^ (i.1.val - k.2.2.val) := by
   simp only [baseFam, jetEval, basePoly, Polynomial.map_mul, Polynomial.map_C, Polynomial.map_pow,
     Polynomial.map_X, coe_evalRingHom, eval_pow, eval_X, iterate_derivative_C_mul,
     iterate_derivative_X_pow_eq_C_mul, eval_mul, eval_C, C_eq_natCast, eval_natCast]
@@ -226,7 +227,7 @@ private theorem sum_embPos_baseFam_eq_zero_of_sum_smul_eq_zero {d : ℤ} (hd0 : 
     _ = 0 := by simp [hreC, himC]
 
 private noncomputable def relationPoly {R S : ℕ} (c : Fin R × Fin S → ℝ) : ℂ[X][X] :=
-  ∑ r : Fin R, Polynomial.monomial r.1 (∑ s : Fin S, Polynomial.monomial s.1 (c (r, s) : ℂ))
+  ∑ r : Fin R, Polynomial.monomial r.val (∑ s : Fin S, Polynomial.monomial s.val (c (r, s) : ℂ))
 
 private theorem dvd_map_evalRingHom_relationPoly {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
     {c : Fin R × Fin S → ℝ} (hc : ∑ i : Fin R × Fin S, c i • baseVec d N R S i = 0)
@@ -323,7 +324,7 @@ private theorem linearIndependent_baseVec {d : ℤ} (hd : Squarefree d) (hd1 : d
   have hF0 : F = 0 := eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube grid hL₁ hL₂
     hinj_hom hinj_β hmult hdeg_lt
   intro i
-  have hval : (F.coeff i.1.1).coeff i.2.1 = (c i : ℂ) := by
+  have hval : (F.coeff i.1.val).coeff i.2.val = (c i : ℂ) := by
     simp only [F, relationPoly, finsetSum_coeff, coeff_monomial_apply, ← Fin.ext_iff,
       Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
   exact Complex.ofReal_eq_zero.mp (hval.symm.trans (by simp [hF0]))
@@ -342,9 +343,9 @@ private theorem one_le_det_intGram {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
 private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
     (hN : 0 < N) (hR : 0 < R) (i : Fin R × Fin S) (k : Fin N × Fin N × Fin N) :
     ‖embPos d (baseFam d N R S i k)‖ ≤
-        (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) ∧
+        (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) ∧
       ‖embNeg d (baseFam d N R S i k)‖ ≤
-        (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) := by
+        (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) := by
   have hnorm : ‖Complex.sqrt (d : ℂ)‖ = Real.sqrt d.natAbs := by
     rw [← Real.sqrt_sq (norm_nonneg _), ← norm_pow, Complex.sq_sqrt, Complex.norm_intCast,
       Nat.cast_natAbs, Int.cast_abs]
@@ -353,40 +354,42 @@ private theorem norm_emb_baseFam_le {d : ℤ} (hd0 : d ≠ 0) {N R S : ℕ}
   have h2Nd_ge : (1 : ℝ) ≤ 2 * N * Real.sqrt d.natAbs := by
     nlinarith [show (1 : ℝ) ≤ N by exact_mod_cast hN]
   have hpt (sgn : ℤ) (hsgn : |sgn| ≤ 1) (ε : ℂ) (hε : ‖ε‖ = ‖Complex.sqrt (d : ℂ)‖) :
-      ‖((k.1.1 : ℂ) + ((sgn * (k.2.1.1 : ℤ) : ℤ) : ℂ) * ε)‖ ≤ 2 * N * Real.sqrt d.natAbs := by
-    have hx : (k.1.1 : ℝ) ≤ N := by exact_mod_cast k.1.2.le
-    have hy : ‖((sgn * (k.2.1.1 : ℤ) : ℤ) : ℂ)‖ ≤ N := by
+      ‖((k.1.val : ℂ) + ((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ) * ε)‖ ≤
+        2 * N * Real.sqrt d.natAbs := by
+    have hx : (k.1.val : ℝ) ≤ N := by exact_mod_cast k.1.isLt.le
+    have hy : ‖((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ)‖ ≤ N := by
       rw [Complex.norm_intCast, ← Int.cast_abs, abs_mul, Int.abs_natCast]
-      have : |sgn| * (k.2.1.1 : ℤ) ≤ N := by
-        simpa using mul_le_mul hsgn (by exact_mod_cast k.2.1.2.le) (by positivity) (by omega)
+      have : |sgn| * (k.2.1.val : ℤ) ≤ N := by
+        simpa using mul_le_mul hsgn (by exact_mod_cast k.2.1.isLt.le) (by positivity) (by omega)
       exact_mod_cast this
-    calc ‖(k.1.1 : ℂ) + ((sgn * (k.2.1.1 : ℤ) : ℤ) : ℂ) * ε‖
-        ≤ ‖(k.1.1 : ℂ)‖ + ‖((sgn * (k.2.1.1 : ℤ) : ℤ) : ℂ)‖ * ‖ε‖ :=
+    calc ‖(k.1.val : ℂ) + ((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ) * ε‖
+        ≤ ‖(k.1.val : ℂ)‖ + ‖((sgn * (k.2.1.val : ℤ) : ℤ) : ℂ)‖ * ‖ε‖ :=
           (norm_add_le _ _).trans (by rw [norm_mul])
       _ ≤ N + N * Real.sqrt d.natAbs := by
           rw [Complex.norm_natCast, hε, hnorm]
           exact add_le_add hx (mul_le_mul_of_nonneg_right hy (Real.sqrt_nonneg _))
       _ ≤ 2 * N * Real.sqrt d.natAbs := by nlinarith
-  have hdesc : (i.1.1.descFactorial k.2.2.1 : ℝ) ≤ (R : ℝ) ^ N := by
+  have hdesc : (i.1.val.descFactorial k.2.2.val : ℝ) ≤ (R : ℝ) ^ N := by
     exact_mod_cast (Nat.descFactorial_le_pow _ _).trans
-      ((Nat.pow_le_pow_left i.1.2.le _).trans (Nat.pow_le_pow_right hR k.2.2.2.le))
+      ((Nat.pow_le_pow_left i.1.isLt.le _).trans (Nat.pow_le_pow_right hR k.2.2.isLt.le))
   have hbound (φ : ℤ√d →+* ℂ) (ε : ℂ) (hε : ‖ε‖ = ‖Complex.sqrt (d : ℂ)‖)
       (hφ : ∀ a b : ℤ, φ ⟨a, b⟩ = (a : ℂ) + (b : ℂ) * ε) :
-      ‖φ (baseFam d N R S i k)‖ ≤ (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) := by
+      ‖φ (baseFam d N R S i k)‖ ≤
+        (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) := by
     rw [jetEval_basePoly_eq, map_mul, map_mul, map_pow, map_pow, map_natCast, norm_mul, norm_mul,
       norm_pow, norm_pow, Complex.norm_natCast]
-    have hp1 : ‖φ ⟨k.1.1, -(k.2.1.1 : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs := by
+    have hp1 : ‖φ ⟨k.1.val, -(k.2.1.val : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs := by
       simpa [hφ] using hpt (-1) (by norm_num) ε hε
-    have hp2 : ‖φ ⟨k.1.1, (k.2.1.1 : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs := by
+    have hp2 : ‖φ ⟨k.1.val, (k.2.1.val : ℤ)⟩‖ ≤ 2 * N * Real.sqrt d.natAbs := by
       simpa [hφ] using hpt 1 (by norm_num) ε hε
-    calc ‖φ ⟨k.1.1, -k.2.1.1⟩‖ ^ i.2.1 * i.1.1.descFactorial k.2.2.1 *
-            ‖φ ⟨k.1.1, k.2.1.1⟩‖ ^ (i.1.1 - k.2.2.1)
-        ≤ (2 * N * Real.sqrt d.natAbs) ^ i.2.1 * (R : ℝ) ^ N *
-            (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 - k.2.2.1) := by
+    calc ‖φ ⟨k.1.val, -k.2.1.val⟩‖ ^ i.2.val * i.1.val.descFactorial k.2.2.val *
+            ‖φ ⟨k.1.val, k.2.1.val⟩‖ ^ (i.1.val - k.2.2.val)
+        ≤ (2 * N * Real.sqrt d.natAbs) ^ i.2.val * (R : ℝ) ^ N *
+            (2 * N * Real.sqrt d.natAbs) ^ (i.1.val - k.2.2.val) := by
           gcongr
-      _ = (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 - k.2.2.1 + i.2.1) := by
+      _ = (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val - k.2.2.val + i.2.val) := by
           rw [pow_add]; ring
-      _ ≤ (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1) :=
+      _ ≤ (R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val) :=
           mul_le_mul_of_nonneg_left (pow_le_pow_right₀ h2Nd_ge (by omega)) (by positivity)
   exact ⟨hbound (embPos d) (Complex.sqrt d) rfl (fun _ _ ↦ rfl),
     hbound (embNeg d) (-Complex.sqrt d) (norm_neg _) (fun _ _ ↦ rfl)⟩
@@ -395,23 +398,23 @@ private theorem two_mul_log_norm_baseVec_le {d : ℤ} (hd0 : d ≠ 0) {N R S : �
     (hN : 0 < N) (hR : 0 < R) {i : Fin R × Fin S} (hi : baseVec d N R S i ≠ 0) :
     2 * Real.log ‖baseVec d N R S i‖ ≤
       Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log R +
-        2 * ((i.1.1 : ℝ) + i.2.1) * Real.log (2 * N * Real.sqrt d.natAbs) := by
+        2 * ((i.1.val : ℝ) + i.2.val) * Real.log (2 * N * Real.sqrt d.natAbs) := by
   have hv0 : 0 < ‖baseVec d N R S i‖ ^ 2 := sq_pos_of_pos (norm_pos_iff.mpr hi)
   have hsq : ‖baseVec d N R S i‖ ^ 2 ≤
       2 * (N : ℝ) ^ 3 * ((R : ℝ) ^ N) ^ 2 *
-        ((2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1)) ^ 2 := by
+        ((2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val)) ^ 2 := by
     rw [baseVec, norm_sq_zsqrtdFamToLp]
     calc ∑ k : Fin N × Fin N × Fin N,
             (‖embPos d (baseFam d N R S i k)‖ ^ 2 + ‖embNeg d (baseFam d N R S i k)‖ ^ 2)
         ≤ ∑ _k : Fin N × Fin N × Fin N,
-            2 * ((R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1)) ^ 2 := by
+            2 * ((R : ℝ) ^ N * (2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val)) ^ 2 := by
           refine Finset.sum_le_sum fun k _ ↦ ?_
           obtain ⟨h1, h2⟩ := norm_emb_baseFam_le hd0 hN hR i k
           have hp1 := sq_le_sq₀ (norm_nonneg _) (by positivity) |>.mpr h1
           have hp2 := sq_le_sq₀ (norm_nonneg _) (by positivity) |>.mpr h2
           linarith
       _ = 2 * (N : ℝ) ^ 3 * ((R : ℝ) ^ N) ^ 2 *
-            ((2 * N * Real.sqrt d.natAbs) ^ (i.1.1 + i.2.1)) ^ 2 := by
+            ((2 * N * Real.sqrt d.natAbs) ^ (i.1.val + i.2.val)) ^ 2 := by
           simp only [Finset.sum_const, Finset.card_univ, Fintype.card_prod, Fintype.card_fin,
             nsmul_eq_mul]
           push_cast; ring
@@ -436,16 +439,16 @@ private theorem log_det_intGram_le {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
   have hsq1 : (1 : ℝ) ≤ Real.sqrt d.natAbs := by
     rw [← Real.sqrt_one]
     exact Real.sqrt_le_sqrt (by exact_mod_cast Int.natAbs_pos.mpr hd.ne_zero)
-  have hfin_sq (n : ℕ) : ∑ r : Fin n, (2 * (r.1 : ℝ)) ≤ (n : ℝ) ^ 2 := by
-    have : (∑ r : Fin n, 2 * (r.1 : ℝ)) = 2 * ((∑ r ∈ Finset.range n, r : ℕ) : ℝ) := by
+  have hfin_sq (n : ℕ) : ∑ r : Fin n, (2 * (r.val : ℝ)) ≤ (n : ℝ) ^ 2 := by
+    have : (∑ r : Fin n, 2 * (r.val : ℝ)) = 2 * ((∑ r ∈ Finset.range n, r : ℕ) : ℝ) := by
       rw [← Fin.sum_univ_eq_sum_range (fun r : ℕ ↦ r) n]
       push_cast; rw [Finset.mul_sum]
     rw [this, Finset.sum_range_id, sq]
     exact_mod_cast (Nat.mul_div_le (n * (n - 1)) 2).trans (Nat.mul_le_mul_left n (Nat.sub_le n 1))
-  have hsum_idx : ∑ i : Fin R × Fin S, 2 * ((i.1.1 : ℝ) + i.2.1) ≤ (R : ℝ) * S * (R + S) := by
+  have hsum_idx : ∑ i : Fin R × Fin S, 2 * ((i.1.val : ℝ) + i.2.val) ≤ (R : ℝ) * S * (R + S) := by
     rw [Fintype.sum_prod_type]
-    have hsplit : (∑ r : Fin R, ∑ s : Fin S, 2 * ((r.1 : ℝ) + s.1)) =
-        (S : ℝ) * (∑ r : Fin R, 2 * (r.1 : ℝ)) + (R : ℝ) * (∑ s : Fin S, 2 * (s.1 : ℝ)) := by
+    have hsplit : (∑ r : Fin R, ∑ s : Fin S, 2 * ((r.val : ℝ) + s.val)) =
+        (S : ℝ) * (∑ r : Fin R, 2 * (r.val : ℝ)) + (R : ℝ) * (∑ s : Fin S, 2 * (s.val : ℝ)) := by
       simp only [mul_add, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
         Fintype.card_fin, nsmul_eq_mul, Finset.mul_sum]
     rw [hsplit]
@@ -454,11 +457,11 @@ private theorem log_det_intGram_le {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
       ≤ ∑ i : Fin R × Fin S, 2 * Real.log ‖baseVec d N R S i‖ := Matrix.log_det_gram_le hlin
     _ ≤ ∑ i : Fin R × Fin S,
           (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log R +
-            2 * ((i.1.1 : ℝ) + i.2.1) * Real.log (2 * N * Real.sqrt d.natAbs)) :=
+            2 * ((i.1.val : ℝ) + i.2.val) * Real.log (2 * N * Real.sqrt d.natAbs)) :=
         Finset.sum_le_sum fun i _ ↦
           two_mul_log_norm_baseVec_le hd.ne_zero hN hR (hlin.ne_zero i)
     _ = (R : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log R) +
-          (∑ i : Fin R × Fin S, 2 * ((i.1.1 : ℝ) + i.2.1)) *
+          (∑ i : Fin R × Fin S, 2 * ((i.1.val : ℝ) + i.2.val)) *
             Real.log (2 * N * Real.sqrt d.natAbs) := by
         rw [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_prod,
           Fintype.card_fin, Fintype.card_fin, nsmul_eq_mul, ← Finset.sum_mul]
@@ -509,13 +512,13 @@ private theorem inert_frobenius_sub_conj {d : ℤ} {p : ℕ} (hp : p.Prime) (hod
 /-- Exponent `h = min (r / p) (S - 1 - s)` and the modified polynomial
 `z ^ (r - p * h) * (z ^ p - z') ^ h * z' ^ s`. -/
 private def shiftExp (p S : ℕ) (i : Fin R × Fin S) : ℕ :=
-  min (i.1.1 / p) (S - 1 - i.2.1)
+  min (i.1.val / p) (S - 1 - i.2.val)
 
 private noncomputable def shiftPoly (d : ℤ) (p : ℕ) {R S : ℕ} (i : Fin R × Fin S) :
     (ℤ√d)[X][X] :=
   let h := shiftExp p S i
-  Polynomial.C (Polynomial.X ^ i.2.1) *
-    (Polynomial.X ^ (i.1.1 - p * h) * (Polynomial.X ^ p - Polynomial.C Polynomial.X) ^ h)
+  Polynomial.C (Polynomial.X ^ i.2.val) *
+    (Polynomial.X ^ (i.1.val - p * h) * (Polynomial.X ^ p - Polynomial.C Polynomial.X) ^ h)
 
 private noncomputable def shiftFam (d : ℤ) (p N R S : ℕ) (i : Fin R × Fin S) :
     Fin N × Fin N × Fin N → ℤ√d :=
@@ -525,17 +528,17 @@ private def shiftMatrix (p : ℕ) {R S : ℕ} : Matrix (Fin R × Fin S) (Fin R �
   Matrix.of fun i j ↦
     (if i = j then 1 else 0) +
       ∑ m ∈ Finset.range (shiftExp p S i),
-        if j.1.1 = i.1.1 - p * shiftExp p S i + p * m ∧
-            j.2.1 = i.2.1 + (shiftExp p S i - m) then
+        if j.1.val = i.1.val - p * shiftExp p S i + p * m ∧
+            j.2.val = i.2.val + (shiftExp p S i - m) then
           (-1 : ℤ) ^ (shiftExp p S i - m) * (shiftExp p S i).choose m
         else 0
 
 private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (i : Fin R × Fin S) :
     shiftPoly d p i = ∑ j : Fin R × Fin S, shiftMatrix p i j • basePoly d j := by
-  have h_le : p * shiftExp p S i ≤ i.1.1 :=
-    (Nat.mul_le_mul_left p (min_le_left _ _)).trans (Nat.mul_div_le i.1.1 p)
-  have htop : Polynomial.C (Polynomial.X ^ i.2.1 : (ℤ√d)[X]) *
-      (Polynomial.X ^ (i.1.1 - p * shiftExp p S i) *
+  have h_le : p * shiftExp p S i ≤ i.1.val :=
+    (Nat.mul_le_mul_left p (min_le_left _ _)).trans (Nat.mul_div_le i.1.val p)
+  have htop : Polynomial.C (Polynomial.X ^ i.2.val : (ℤ√d)[X]) *
+      (Polynomial.X ^ (i.1.val - p * shiftExp p S i) *
         (Polynomial.X ^ p) ^ shiftExp p S i) = basePoly d i := by
     rw [← pow_mul, ← pow_add, Nat.sub_add_cancel h_le, basePoly]
   simp only [shiftMatrix, Matrix.of_apply, add_smul, Finset.sum_add_distrib, ite_smul, one_smul,
@@ -550,29 +553,30 @@ private theorem shiftPoly_eq_sum_basePoly (d : ℤ) {p R S : ℕ} (hp : 0 < p) (
       (Commute.all (X ^ p : (ℤ√d)[X][X]) (-(C (X : (ℤ√d)[X])) : (ℤ√d)[X][X])).add_pow,
       Finset.sum_range_succ, Nat.sub_self, pow_zero, mul_one, Nat.choose_self, Nat.cast_one,
       mul_one]
-  rw [shiftPoly, hsub_pow, mul_add, mul_add, htop, add_comm _ (basePoly d i)]
+  dsimp only [shiftPoly]
+  rw [hsub_pow, mul_add, mul_add, htop, add_comm _ (basePoly d i)]
   congr 1
   rw [Finset.mul_sum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun m hm ↦ ?_
   have hm_lt : m < shiftExp p S i := Finset.mem_range.mp hm
-  have hr' : i.1.1 - p * shiftExp p S i + p * m < R := by
+  have hr' : i.1.val - p * shiftExp p S i + p * m < R := by
     have := Nat.mul_lt_mul_of_pos_left hm_lt hp
-    have := i.1.2
+    have := i.1.isLt
     omega
-  have hs' : i.2.1 + (shiftExp p S i - m) < S := by
-    have : shiftExp p S i ≤ S - 1 - i.2.1 := min_le_right _ _
-    have := i.2.2
+  have hs' : i.2.val + (shiftExp p S i - m) < S := by
+    have : shiftExp p S i ≤ S - 1 - i.2.val := min_le_right _ _
+    have := i.2.isLt
     omega
   let j₀ : Fin R × Fin S := (⟨_, hr'⟩, ⟨_, hs'⟩)
   rw [Finset.sum_eq_single j₀
     (fun j _ hj ↦ by
-      have hcond : ¬ (j.1.1 = j₀.1.1 ∧ j.2.1 = j₀.2.1) := fun ⟨h1, h2⟩ ↦
+      have hcond : ¬ (j.1.val = j₀.1.val ∧ j.2.val = j₀.2.val) := fun ⟨h1, h2⟩ ↦
         hj (Prod.ext (Fin.ext h1) (Fin.ext h2))
       simp [j₀, hcond])
     (fun h ↦ absurd (Finset.mem_univ j₀) h)]
   have hbase : basePoly d j₀ =
-      C (X ^ i.2.1) * C (X ^ (shiftExp p S i - m)) *
-        (X ^ (i.1.1 - p * shiftExp p S i) * (X ^ p) ^ m) := by
+      C (X ^ i.2.val) * C (X ^ (shiftExp p S i - m)) *
+        (X ^ (i.1.val - p * shiftExp p S i) * (X ^ p) ^ m) := by
     dsimp [basePoly, j₀]; rw [pow_add, C_mul, pow_add, pow_mul]
   rw [ite_eq_left ⟨rfl, rfl⟩, hbase, neg_pow (C (X : (ℤ√d)[X])), ← C_pow, zsmul_eq_mul]
   push_cast
@@ -591,21 +595,21 @@ private theorem det_intGram_shiftFam_eq (d : ℤ) {p N R S : ℕ} (hp : 0 < p) :
       simp only [shiftFam, shiftPoly_eq_sum_basePoly d hp i, U, baseFam, jetEval_sum]
     rw [hfam, zsqrtdFamToLp_sum]
     rfl
-  have hno_match {i j : Fin R × Fin S} (hij : i.1.1 ≤ j.1.1) (m : ℕ)
+  have hno_match {i j : Fin R × Fin S} (hij : i.1.val ≤ j.1.val) (m : ℕ)
       (hm : m ∈ Finset.range (shiftExp p S i)) :
-      ¬ (j.1.1 = i.1.1 - p * shiftExp p S i + p * m ∧
-        j.2.1 = i.2.1 + (shiftExp p S i - m)) := by
+      ¬ (j.1.val = i.1.val - p * shiftExp p S i + p * m ∧
+        j.2.val = i.2.val + (shiftExp p S i - m)) := by
     intro ⟨h1, _⟩
     have hpm : p * m < p * shiftExp p S i := Nat.mul_lt_mul_of_pos_left (Finset.mem_range.mp hm) hp
-    have h_le : p * shiftExp p S i ≤ i.1.1 :=
-      (Nat.mul_le_mul_left p (min_le_left _ _)).trans (Nat.mul_div_le i.1.1 p)
+    have h_le : p * shiftExp p S i ≤ i.1.val :=
+      (Nat.mul_le_mul_left p (min_le_left _ _)).trans (Nat.mul_div_le i.1.val p)
     omega
   let rank : Fin R × Fin S → OrderDual (Fin R ×ₗ Fin S) := OrderDual.toDual ∘ toLex
   have htri : (U.map (Int.castRingHom ℝ)).BlockTriangular rank := by
     intro i j hij
     have hlex : toLex i < toLex j := hij
     have hij_ne : i ≠ j := fun h ↦ lt_irrefl _ (h ▸ hlex)
-    have hi_le_j : i.1.1 ≤ j.1.1 := by
+    have hi_le_j : i.1.val ≤ j.1.val := by
       rcases Prod.Lex.lt_iff.mp hlex with h1 | ⟨h1, _⟩
       · exact Nat.le_of_lt h1
       · exact le_of_eq (congrArg Fin.val h1)
@@ -659,30 +663,30 @@ private theorem pow_dvd_shiftFam {d : ℤ} {p : ℕ} (hp : p.Prime) (hodd : Odd 
     (p : ℤ√d) ^ shiftExp p S i ∣ shiftFam d p N R S i k := by
   rw [shiftFam, jetEval]
   set h := shiftExp p S i
-  set α : ℤ√d := ⟨k.1.1, (k.2.1.1 : ℤ)⟩
-  set α_bar : ℤ√d := ⟨k.1.1, -(k.2.1.1 : ℤ)⟩
-  set j := k.2.2.1
+  set α : ℤ√d := ⟨k.1.val, (k.2.1.val : ℤ)⟩
+  set α_bar : ℤ√d := ⟨k.1.val, -(k.2.1.val : ℤ)⟩
+  set j := k.2.2.val
   set f : (ℤ√d)[X] := (shiftPoly d p i).map (evalRingHom α_bar)
   rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, ← taylor_coeff, nsmul_eq_mul]
-  have hf : f = C (α_bar ^ i.2.1) * X ^ (i.1.1 - p * h) * (X ^ p - C α_bar) ^ h := by
+  have hf : f = C (α_bar ^ i.2.val) * X ^ (i.1.val - p * h) * (X ^ p - C α_bar) ^ h := by
     simp [f, shiftPoly, h, mul_assoc]
-  obtain ⟨A, hA⟩ := exists_taylor_X_pow_sub_C_conj hp hodd hjac k.1.1 k.2.1.1
+  obtain ⟨A, hA⟩ := exists_taylor_X_pow_sub_C_conj hp hodd hjac k.1.val k.2.1.val
   have htf : taylor α f =
-      C (α_bar ^ i.2.1) * (X + C α) ^ (i.1.1 - p * h) * (X ^ p + C (p : ℤ√d) * A) ^ h := by
+      C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * (X ^ p + C (p : ℤ√d) * A) ^ h := by
     simp only [hf, taylor_apply, mul_comp, pow_comp, X_comp, C_comp]
     rw [← taylor_apply α (X ^ p - C α_bar), hA, add_comm (C (p : ℤ√d) * A) (X ^ p)]
   rw [htf, (Commute.all (X ^ p : (ℤ√d)[X]) (C (p : ℤ√d) * A)).add_pow h, Finset.mul_sum,
     finsetSum_coeff, Finset.mul_sum]
   refine Finset.dvd_sum fun m hm ↦ ?_
   have hm_le : m ≤ h := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
-  have hterm : C (α_bar ^ i.2.1) * (X + C α) ^ (i.1.1 - p * h) *
+  have hterm : C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) *
         ((X ^ p) ^ m * (C (p : ℤ√d) * A) ^ (h - m) * (h.choose m : (ℤ√d)[X])) =
       C ((p : ℤ√d) ^ (h - m)) *
-        (C (α_bar ^ i.2.1) * (X + C α) ^ (i.1.1 - p * h) * A ^ (h - m) *
+        (C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * A ^ (h - m) *
           (h.choose m : (ℤ√d)[X])) * X ^ (p * m) := by
     rw [mul_pow, ← C_pow, ← pow_mul]; ring
   rw [hterm, mul_assoc, coeff_C_mul]
-  set B := C (α_bar ^ i.2.1) * (X + C α) ^ (i.1.1 - p * h) * A ^ (h - m) *
+  set B := C (α_bar ^ i.2.val) * (X + C α) ^ (i.1.val - p * h) * A ^ (h - m) *
     (h.choose m : (ℤ√d)[X])
   rcases lt_or_ge j (p * m) with hlt | hge
   · simp only [coeff_mul_X_pow', not_le.mpr hlt, ↓reduceIte, mul_zero, dvd_zero]
@@ -738,7 +742,7 @@ theorem exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one {d : ℤ} (hd 
         (R : ℝ) * S * (Real.log (2 * (N : ℝ) ^ 3) + 2 * N * Real.log R) +
           (R : ℝ) * S * (R + S) * Real.log (2 * N * Real.sqrt d.natAbs) ∧
       ∀ p : ℕ, p.Prime → Odd p → jacobiSym d p = -1 →
-        p ^ (2 * ∑ i : Fin R × Fin S, min (i.1.1 / p) (S - 1 - i.2.1)) ∣ D := by
+        p ^ (2 * ∑ i : Fin R × Fin S, min (i.1.val / p) (S - 1 - i.2.val)) ∣ D := by
   open InertPrimeSum in
   rcases Nat.eq_zero_or_pos R with rfl | hR
   · exact ⟨1, Nat.one_pos, by simp, fun _ _ _ _ ↦ by simp⟩

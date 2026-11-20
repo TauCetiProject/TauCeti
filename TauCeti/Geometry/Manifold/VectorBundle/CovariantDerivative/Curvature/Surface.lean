@@ -75,7 +75,7 @@ private theorem sectionCoord_alongCurve_eventuallyEq
       (f z.1 z.2) (W z.1 z.2)) :
     letI e := trivializationAt E (TangentSpace I) (f u v)
     letI Γ := christoffelMap (finBasis ℝ E) (cov.isCovariantDerivativeOn (s := e.baseSet))
-    sectionCoord (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
+    sectionCoord ℝ (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
       (f u v) =ᶠ[𝓝 u]
       fun q ↦ deriv (fun r ↦ w (q, r)) v + Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v) := by
   set e := trivializationAt E (TangentSpace I) (f u v)
@@ -95,7 +95,7 @@ private theorem sectionCoord_alongCurve_eventuallyEq
     ((continuous_id.prodMk continuous_const).tendsto u).eventually
       (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hW).and
         (hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hbase)))
-  have hcoord (q : ℝ) : sectionCoord (F := E) (f q) (W q) (f u v) = fun r ↦ w (q, r) :=
+  have hcoord (q : ℝ) : sectionCoord ℝ (F := E) (f q) (W q) (f u v) = fun r ↦ w (q, r) :=
     funext fun r ↦ by rw [sectionCoord_apply, hwdef]
   filter_upwards [hslice] with q ⟨hq, hqb⟩
   have hcurve : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
@@ -104,7 +104,7 @@ private theorem sectionCoord_alongCurve_eventuallyEq
   have hfq : MDifferentiableAt 𝓘(ℝ, ℝ) I (f q) v :=
     ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp v hcurve).mdifferentiableAt
       (by norm_num)
-  have hV : DifferentiableAt ℝ (sectionCoord (F := E) (f q) (W q) (f q v)) v :=
+  have hV : DifferentiableAt ℝ (sectionCoord ℝ (F := E) (f q) (W q) (f q v)) v :=
     differentiableAt_sectionCoord (f q) (W q) (hcurve.mdifferentiableAt (by norm_num))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
   rw [sectionCoord_apply, ← alongCurveWithin_univ,

@@ -284,7 +284,7 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
     exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one hd hd1 hdeg
   set P := (Nat.primesLE X).filter fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1
   have hsum_log_le :
-      ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.1 / p) (S - 1 - i.2.1) : ℕ) : ℝ)) *
+      ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
           Real.log p ≤
         Real.log (D : ℝ) := by
     simpa [Nat.cast_mul, Nat.cast_sum] using
@@ -295,25 +295,26 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
           2 * (X : ℝ) ^ 2 * (∑ p ∈ P, Real.log p / p) -
           2 * (X : ℝ) * S * (∑ p ∈ P, Real.log p) -
           (X : ℝ) ^ 3 * (∑ p ∈ P, Real.log p / (p : ℝ) ^ 2) ≤
-        ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.1 / p) (S - 1 - i.2.1) : ℕ) : ℝ)) *
+        ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
           Real.log p := by
     rw [Finset.mul_sum, Finset.mul_sum, Finset.mul_sum, Finset.mul_sum,
       ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
     refine Finset.sum_le_sum fun p hp ↦ ?_
     have hp_pr := (Nat.mem_primesLE.mp (Finset.mem_filter.mp hp).1).2
     have hlog_nn : 0 ≤ Real.log p := Real.log_nonneg (by exact_mod_cast hp_pr.one_le)
-    have hsum_eq : (∑ i : Fin X × Fin S, ((min (i.1.1 / p) (S - 1 - i.2.1) : ℕ) : ℝ)) =
+    have hsum_eq : (∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) =
         ∑ r ∈ Finset.range X, ∑ s ∈ Finset.range S, ((min (r / p) s : ℕ) : ℝ) := by
       rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := X)]
       refine Finset.sum_congr rfl fun r _ ↦ ?_
-      rw [← Equiv.sum_comp Fin.revPerm (fun s : Fin S ↦ ((min (r.1 / p) (S - 1 - s.1) : ℕ) : ℝ)),
+      rw [← Equiv.sum_comp Fin.revPerm
+          (fun s : Fin S ↦ ((min (r.val / p) (S - 1 - s.val) : ℕ) : ℝ)),
         ← Fin.sum_univ_eq_sum_range (n := S)]
       exact Finset.sum_congr rfl fun s _ ↦ by
         congr 2; simp only [Fin.revPerm_apply, Fin.val_rev]; omega
     have hSX_R : (S : ℝ) ≤ X := by exact_mod_cast hSX
     have hexp := mul_le_mul_of_nonneg_right (show
         (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
-          2 * ∑ i : Fin X × Fin S, ((min (i.1.1 / p) (S - 1 - i.2.1) : ℕ) : ℝ) by
+          2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) by
       rw [hsum_eq]
       linarith [Finset.le_two_mul_sum_range_min_div (K := ℝ) p X S,
         show (X : ℝ) * S / p ≤ (X : ℝ) ^ 2 / p by rw [sq]; gcongr,

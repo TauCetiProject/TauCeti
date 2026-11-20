@@ -82,7 +82,7 @@ classification list; its derived subgroup has index three and is isomorphic to a
 named in another family, so the derived-subgroup recipe does not produce a new simple group there,
 and `²G₂(3)` is not a `ReeG2LieIndex`. The Suzuki--Ree relatives `²B₂`, `²F₄` and the Tits group
 are excluded too; they are the other three constructors of `TauCeti.SuzukiReeIndex`. -/
-abbrev ReeG2LieIndex : Type _ := {d : ValidLieTypeIndex // d.1.IsReeG2}
+abbrev ReeG2LieIndex : Type _ := {d : ValidLieTypeIndex // d.val.IsReeG2}
 
 namespace ReeG2LieIndex
 
@@ -101,16 +101,16 @@ theorem exists_eq_of (d : ReeG2LieIndex) :
   all_goals exact fun _ hs => by simp at hs
 
 /-- The Ree family of type `G₂` is built on the rank-two diagram `G₂`. -/
-@[simp] theorem dynkinType_eq (d : ReeG2LieIndex) : d.1.dynkinType = .G2 := by
+@[simp] theorem dynkinType_eq (d : ReeG2LieIndex) : d.val.dynkinType = .G2 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.dynkinType_reeG2 m
 
 /-- The Ree family of type `G₂` has rank two, that being the rank of `G₂`. -/
-@[simp] theorem rank_eq_two (d : ReeG2LieIndex) : d.1.rank = 2 :=
+@[simp] theorem rank_eq_two (d : ReeG2LieIndex) : d.val.rank = 2 :=
   congrArg DynkinType.rank d.dynkinType_eq
 
 /-- The Ree family of type `G₂` lives in characteristic three. -/
-@[simp] theorem characteristic_eq_three (d : ReeG2LieIndex) : d.1.characteristic = 3 := by
+@[simp] theorem characteristic_eq_three (d : ReeG2LieIndex) : d.val.characteristic = 3 := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of
   exact LieTypeIndex.characteristic_reeG2 m
 
@@ -118,16 +118,16 @@ theorem exists_eq_of (d : ReeG2LieIndex) :
 characteristic-three reading of `TauCeti.ValidLieTypeIndex.fieldOrder_eq_characteristic_pow`. It is
 the form a construction on a carrier defined over `𝔽₃` needs. -/
 theorem fieldOrder_eq_three_pow (d : ReeG2LieIndex) :
-    d.1.fieldOrder = 3 ^ d.1.fieldExponent := by
-  rw [d.1.fieldOrder_eq_characteristic_pow, d.characteristic_eq_three]
+    d.val.fieldOrder = 3 ^ d.val.fieldExponent := by
+  rw [d.val.fieldOrder_eq_characteristic_pow, d.characteristic_eq_three]
 
 /-- A Ree index of type `G₂` is a Suzuki--Ree index: its Steinberg map is an odd power of a
 half-Frobenius. -/
 abbrev toSuzukiReeIndex (d : ReeG2LieIndex) : SuzukiReeIndex :=
-  ⟨d.1, LieTypeIndex.usesHalfFrobenius_of_isReeG2 d.2⟩
+  ⟨d.val, LieTypeIndex.usesHalfFrobenius_of_isReeG2 d.property⟩
 
 /-- The indexed length permutation is the node swap in the short-root carrier. -/
-theorem finCongr_lengthPerm (d : ReeG2LieIndex) (i : Fin d.1.rank) :
+theorem finCongr_lengthPerm (d : ReeG2LieIndex) (i : Fin d.val.rank) :
     finCongr d.rank_eq_two (d.toSuzukiReeIndex.lengthPerm i) =
       Equiv.swap 0 1 (finCongr d.rank_eq_two i) := by
   obtain ⟨m, hvalid, rfl⟩ := d.exists_eq_of

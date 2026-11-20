@@ -20,6 +20,7 @@ import TauCeti.Analysis.Calculus.Deriv.AffineProfile
 import TauCeti.Analysis.Calculus.FDeriv.RadialField
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Smooth cutoffs for compact subsets
@@ -284,9 +285,9 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
         HasCompactSupport ψ ∧
           tsupport ψ ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) := by
   have hK : IsCompact ((Subtype.val : Omega → E) '' K n) :=
-    (K.isCompact n).image continuous_subtype_val
+    (K.isCompact n).image continuous_subtypeVal
   have hU : IsOpen ((Subtype.val : Omega → E) '' interior (K (n + 1))) :=
-    Omega.isOpen.isOpenMap_subtype_val _ isOpen_interior
+    Omega.isOpen.isOpenMap_subtypeVal _ isOpen_interior
   have hKU :
       (Subtype.val : Omega → E) '' K n ⊆ (Subtype.val : Omega → E) '' interior (K (n + 1)) :=
     image_mono (K.subset_interior_succ n)
@@ -390,14 +391,14 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   let V : ℕ → Set E := fun n => (Subtype.val : Omega → E) '' interior (K n)
   have hK0 : K 0 = ∅ := rfl
   have hL0 : L 0 = ∅ := by simp only [L, hK0, image_empty]
-  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtype_val
-  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtype_val _ isOpen_interior
+  have hLcpt : ∀ n, IsCompact (L n) := fun n => (K.isCompact n).image continuous_subtypeVal
+  have hVopen : ∀ n, IsOpen (V n) := fun n => hU.isOpenMap_subtypeVal _ isOpen_interior
   have hVL : ∀ n, V n ⊆ L n := fun n => image_mono interior_subset
   have hLmono : Monotone L := fun m n hmn => image_mono (K.subset hmn)
   have hVmono : Monotone V := fun m n hmn => image_mono (interior_mono (K.subset hmn))
   have hVsub : ∀ n, V n ⊆ U := fun n => by
     rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   have hcover : ∀ x ∈ U, ∃ n, x ∈ V n := fun x hx => by
     obtain ⟨n, hn⟩ := K.exists_mem ⟨x, hx⟩
     exact ⟨n + 1, ⟨x, hx⟩, K.subset_interior_succ n hn, rfl⟩
@@ -736,25 +737,10 @@ theorem setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall
     [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
     {mu : Measure E} [IsFiniteMeasureOnCompacts mu] {s : Set E} {ψ : E → ℝ} {x₀ : E} {R K : ℝ}
     (hψts : tsupport ψ ⊆ closedBall x₀ R) (hψg : ∀ x ∈ closedBall x₀ R, ‖∇ ψ x‖ ≤ K) :
-    ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
-  have hmeasB : MeasurableSet (closedBall x₀ R) := measurableSet_closedBall
-  calc ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu
-      ≤ ∫ x in s, (closedBall x₀ R).indicator (fun _ => K ^ 2) x ∂mu := by
-        refine integral_mono_of_nonneg (Filter.Eventually.of_forall fun x => by positivity)
-          ((integrableOn_const measure_closedBall_lt_top.ne).integrable_indicator
-            hmeasB).restrict
-          (Filter.Eventually.of_forall fun x => ?_)
-        by_cases hx : x ∈ closedBall x₀ R
-        · rw [indicator_of_mem hx]
-          exact pow_le_pow_left₀ (norm_nonneg _) (hψg x hx) 2
-        · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
-            hx (hψts (support_fderiv_subset ℝ hx'))
-          simp [indicator_of_notMem hx, _root_.gradient, hfd]
-    _ ≤ K ^ 2 * mu.real (closedBall x₀ R) := by
-        rw [integral_indicator_const _ hmeasB, smul_eq_mul, mul_comm]
-        gcongr
-        rw [measureReal_restrict_apply hmeasB]
-        exact measureReal_mono inter_subset_left measure_closedBall_lt_top.ne
+    ∫ x in s, ‖∇ ψ x‖ ^ 2 ∂mu ≤ K ^ 2 * mu.real (closedBall x₀ R) :=
+  setIntegral_sq_le_of_support_subset_closedBall (ψ := fun x => ‖∇ ψ x‖)
+    (fun x hx => hψts (support_fderiv_subset ℝ fun hfd => hx (by simp [_root_.gradient, hfd])))
+    fun x hx => by simpa using hψg x hx
 
 section ScaledCutoff
 

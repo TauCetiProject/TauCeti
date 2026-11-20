@@ -58,7 +58,8 @@ theorem Set.Countable.exists_lt_omega_one_forall_lt {s : Set X} (hs : s.Countabl
     (hr : ∀ x ∈ s, r x < ω₁) : ∃ β < ω₁, ∀ x ∈ s, r x < β := by
   have := hs.to_subtype
   refine ⟨⨆ x : s, Order.succ (r x),
-    Ordinal.iSup_lt_omega_one fun x ↦ (isSuccLimit_omega 1).succ_lt (hr x x.2), fun x hx ↦ ?_⟩
+    Ordinal.iSup_lt_omega_one fun x ↦ (isSuccLimit_omega 1).succ_lt (hr x x.property),
+        fun x hx ↦ ?_⟩
   exact (Order.lt_succ (r x)).trans_le
     (Ordinal.le_iSup (fun x : s ↦ Order.succ (r x)) ⟨x, hx⟩)
 
@@ -71,11 +72,11 @@ theorem mk_le_aleph_one_mul_of_mk_preimage_le {c : Cardinal.{u}} (hr : ∀ x, r 
   -- Corestrict `r` to the countable ordinals, a set of size `ℵ₁`, and count fibre by fibre.
   let f : X → Iio (ω₁ : Ordinal.{w}) := fun x ↦ ⟨r x, hr x⟩
   have hf : ∀ o, lift.{w + 1} #(f ⁻¹' {o}) ≤ lift.{w + 1} c := fun o ↦ by
-    have hpre : f ⁻¹' {o} = r ⁻¹' {o.1} := by
+    have hpre : f ⁻¹' {o} = r ⁻¹' {o.val} := by
       ext x
       simp [f, Subtype.ext_iff]
     rw [hpre, Cardinal.lift_le]
-    exact hc o.1 o.2
+    exact hc o.val o.property
   have h := lift_mk_le_lift_mk_mul_of_lift_mk_preimage_le f hf
   rw [← Cardinal.lift_le.{w + 1}]
   simpa using h

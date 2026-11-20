@@ -361,12 +361,12 @@ private theorem card_grid_eval_eq_zero_le {K : Type*} [Field K] [DecidableEq K]
     (hinj_hom : Function.Injective (aevalAeval L₂ L₁ : K[X][X] →ₐ[K] MvPolynomial (Fin 2) K))
     {H : K[X][X]} (hH : H ≠ 0) :
     #{p : ↥S × ↥S |
-        (H.map (evalRingHom (MvPolynomial.eval ![p.1.1, p.2.1] L₂))).eval
-          (MvPolynomial.eval ![p.1.1, p.2.1] L₁) = 0} ≤
+        (H.map (evalRingHom (MvPolynomial.eval ![p.1.val, p.2.val] L₂))).eval
+          (MvPolynomial.eval ![p.1.val, p.2.val] L₁) = 0} ≤
       S.card * (H.natDegree + (Bivariate.swap H).natDegree) := by
   set P : MvPolynomial (Fin 2) K := aevalAeval L₂ L₁ H
   have hP0 : P ≠ 0 := fun h ↦ hH (hinj_hom (h.trans (map_zero _).symm))
-  let emb : ↥S × ↥S → Fin 2 → K := fun p ↦ ![p.1.1, p.2.1]
+  let emb : ↥S × ↥S → Fin 2 → K := fun p ↦ ![p.1.val, p.2.val]
   have hemb_inj : Function.Injective emb := fun p q h ↦
     Prod.ext (Subtype.ext (congrFun h 0)) (Subtype.ext (congrFun h 1))
   have hsub : (Finset.univ.filter fun p : ↥S × ↥S ↦
@@ -376,7 +376,8 @@ private theorem card_grid_eval_eq_zero_le {K : Type*} [Field K] [DecidableEq K]
     intro f hf
     rcases Finset.mem_image.mp hf with ⟨p, hp, rfl⟩
     rw [Finset.mem_filter] at hp ⊢
-    refine ⟨Fintype.mem_piFinset.mpr fun i ↦ by fin_cases i <;> simp [emb, p.1.2, p.2.2], ?_⟩
+    refine ⟨Fintype.mem_piFinset.mpr fun i ↦ by
+      fin_cases i <;> simp [emb, p.1.property, p.2.property], ?_⟩
     rw [eval_aevalAeval, ← map_evalRingHom_eval]
     exact hp.2
   have hsz := MvPolynomial.schwartz_zippel_totalDegree hP0 S
@@ -430,17 +431,18 @@ theorem eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube {K : Type*} [Field K]
   have hS0 : 0 < S.card := by
     by_contra h0
     simp [Nat.eq_zero_of_not_pos h0] at hdeg
-  let α : ↥S × ↥S → K := fun p ↦ MvPolynomial.eval ![p.1.1, p.2.1] L₁
-  let β : ↥S × ↥S → K := fun p ↦ MvPolynomial.eval ![p.1.1, p.2.1] L₂
+  let α : ↥S × ↥S → K := fun p ↦ MvPolynomial.eval ![p.1.val, p.2.val] L₁
+  let β : ↥S × ↥S → K := fun p ↦ MvPolynomial.eval ![p.1.val, p.2.val] L₂
   have hβ : Function.Injective β := fun p q hpq ↦ by
-    obtain ⟨hx, hy⟩ := hinj_β p.1.1 p.1.2 p.2.1 p.2.2 q.1.1 q.1.2 q.2.1 q.2.2 hpq
+    obtain ⟨hx, hy⟩ :=
+      hinj_β p.1.val p.1.property p.2.val p.2.property q.1.val q.1.property q.2.val q.2.property hpq
     exact Prod.ext (Subtype.ext hx) (Subtype.ext hy)
   have hzero (H : K[X][X]) (hH : H ≠ 0) :
       #{p : ↥S × ↥S | (H.map (evalRingHom (β p))).eval (α p) = 0} ≤
         S.card * (H.natDegree + (Bivariate.swap H).natDegree) :=
     card_grid_eval_eq_zero_le hS0 hL₁ hL₂ hinj_hom hH
   have hbound := card_mul_le_of_pow_dvd_map_evalRingHom hβ hzero hF
-    (fun p ↦ hmult p.1.1 p.1.2 p.2.1 p.2.2)
+    (fun p ↦ hmult p.1.val p.1.property p.2.val p.2.property)
   have hcard : Fintype.card (↥S × ↥S) * S.card = S.card ^ 3 := by
     simp only [Fintype.card_prod, Fintype.card_coe]
     ring
