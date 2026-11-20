@@ -479,12 +479,12 @@ theorem testFunctionLp_dilateTestFunction (hr : 0 < r)
     (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     testFunctionLp (mu := mu) q (dilateTestFunction hr.ne' hVO phi) =
       r ^ ((finrank ℝ E : ℝ) / q.toReal) •
-        (mu.restrict (⊤ : Opens E)).dilateLp q r hr (testFunctionLp q phi) := by
+        (mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (testFunctionLp q phi) := by
   apply Lp.ext
   filter_upwards [testFunctionLp_apply_ae (mu := mu) q (dilateTestFunction hr.ne' hVO phi),
     Lp.coeFn_smul (r ^ ((finrank ℝ E : ℝ) / q.toReal))
-      ((mu.restrict (⊤ : Opens E)).dilateLp q r hr (testFunctionLp (mu := mu) q phi)),
-    Measure.coeFn_dilateLp hr (testFunctionLp (mu := mu) q phi),
+      ((mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (testFunctionLp (mu := mu) q phi)),
+    Measure.coeFn_dilateLp (𝕜 := ℝ) hr (testFunctionLp (mu := mu) q phi),
     (Measure.quasiMeasurePreserving_smul (mu.restrict (⊤ : Opens E))
       (inv_ne_zero hr.ne')).ae_eq_comp (testFunctionLp_apply_ae (mu := mu) q phi)]
     with x hx hy hz hw
@@ -510,12 +510,12 @@ theorem gradientTestFunctionLp_dilateTestFunction (hr : 0 < r)
     (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     gradientTestFunctionLp (mu := mu) q (dilateTestFunction hr.ne' hVO phi) =
       r ^ ((finrank ℝ E : ℝ) / q.toReal - 1) •
-        (mu.restrict (⊤ : Opens E)).dilateLp q r hr (gradientTestFunctionLp q phi) := by
+        (mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (gradientTestFunctionLp q phi) := by
   apply Lp.ext
   filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) q (dilateTestFunction hr.ne' hVO phi),
     Lp.coeFn_smul (r ^ ((finrank ℝ E : ℝ) / q.toReal - 1))
-      ((mu.restrict (⊤ : Opens E)).dilateLp q r hr (gradientTestFunctionLp (mu := mu) q phi)),
-    Measure.coeFn_dilateLp hr (gradientTestFunctionLp (mu := mu) q phi),
+      ((mu.restrict (⊤ : Opens E)).dilateLp ℝ q r hr (gradientTestFunctionLp (mu := mu) q phi)),
+    Measure.coeFn_dilateLp (𝕜 := ℝ) hr (gradientTestFunctionLp (mu := mu) q phi),
     (Measure.quasiMeasurePreserving_smul (mu.restrict (⊤ : Opens E))
       (inv_ne_zero hr.ne')).ae_eq_comp (gradientTestFunctionLp_apply_ae (mu := mu) q phi)]
     with x hx hy hz hw
