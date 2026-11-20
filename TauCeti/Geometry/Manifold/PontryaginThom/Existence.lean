@@ -88,7 +88,7 @@ theorem exists_isFramedTube (f : SmoothEmbedding I J ∞ M N) (hn : (∞ : ℕ�
   · simp only [hψ]
     exact hΦ x
   · rintro _ ⟨p, rfl⟩
-    exact hWO (Φ (ψ.symm p)).2
+    exact hWO (Φ (ψ.symm p)).property
 
 /-- **The Pontryagin–Thom collapse of a framed submanifold.** A framed smooth embedding `f` of a
 compact manifold has a continuous map `c : N → OnePoint P` that sends exactly the image of `f` to

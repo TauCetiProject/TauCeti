@@ -229,7 +229,7 @@ theorem windingNumber_ellipse_inside {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
     exact lt_irrefl _ hd
   let f : ball (0 : ℂ) 1 → {z : ℂ // z ∉ ellipse a b '' uIcc 0 (2 * Real.pi)} :=
     fun v ↦ ⟨A v, hoff v⟩
-  have hf : Continuous f := (A.continuous.comp continuous_subtype_val).subtype_mk _
+  have hf : Continuous f := (A.continuous.comp continuous_subtypeVal).subtype_mk _
   have hlc := (AbsolutelyContinuousOnInterval.isLocallyConstant_windingNumber
     (absolutelyContinuous_ellipse a b) (ellipse_closed a b)).comp_continuous hf
   let : PreconnectedSpace (ball (0 : ℂ) 1) :=

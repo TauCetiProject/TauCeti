@@ -100,24 +100,24 @@ keep their sides, and the merged face `X Y` has `sides g₁ + sides g₂ - 2`. I
 the positions along the faces of the merged complex are indices in these explicit ranges. -/
 abbrev mergeFacesSides : Option {g : C.Face // g ≠ g₁ ∧ g ≠ g₂} → ℕ
   | none => C.sides g₁ + C.sides g₂ - 2
-  | some g => C.sides g.1
+  | some g => C.sides g.val
 
 /-- The side occurrence of `C` at a position along a face of the merged complex. On the merged
 face `X Y`, the positions before `sides g₁ - 1` are the sides of `X`, those of `g₁`, and the
 position `k ≥ sides g₁ - 1` is the side `k + 2 - sides g₁` of `g₂`. -/
 def mergeFacesCornerOrigin :
     (Σ g : Option {g : C.Face // g ≠ g₁ ∧ g ≠ g₂}, Fin (C.mergeFacesSides g₁ g₂ g)) → C.Corner
-  | ⟨some g, k⟩ => ⟨g.1, k⟩
+  | ⟨some g, k⟩ => ⟨g.val, k⟩
   | ⟨none, k⟩ => if hk : (k : ℕ) < C.sides g₁ - 1 then ⟨g₁, ⟨k, by omega⟩⟩ else
       ⟨g₂, ⟨k + 2 - C.sides g₁, by
-        have : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.2
+        have : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.isLt
         have := C.sides_pos g₁
         omega⟩⟩
 
 variable {C g₁ g₂}
 
 @[simp] theorem mergeFacesCornerOrigin_some (g : {g : C.Face // g ≠ g₁ ∧ g ≠ g₂})
-    (k : Fin (C.sides g.1)) : C.mergeFacesCornerOrigin g₁ g₂ ⟨some g, k⟩ = ⟨g.1, k⟩ :=
+    (k : Fin (C.sides g.val)) : C.mergeFacesCornerOrigin g₁ g₂ ⟨some g, k⟩ = ⟨g.val, k⟩ :=
   (rfl)
 
 theorem mergeFacesCornerOrigin_none_of_lt {k : Fin (C.mergeFacesSides g₁ g₂ none)}
@@ -128,7 +128,7 @@ theorem mergeFacesCornerOrigin_none_of_lt {k : Fin (C.mergeFacesSides g₁ g₂ 
 theorem mergeFacesCornerOrigin_none_of_not_lt {k : Fin (C.mergeFacesSides g₁ g₂ none)}
     (hk : ¬(k : ℕ) < C.sides g₁ - 1) :
     C.mergeFacesCornerOrigin g₁ g₂ ⟨none, k⟩ = ⟨g₂, ⟨k + 2 - C.sides g₁, by
-      have : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.2
+      have : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.isLt
       have := C.sides_pos g₁
       omega⟩⟩ := by
   simp [mergeFacesCornerOrigin, hk]
@@ -168,10 +168,10 @@ theorem mergeFacesCornerOrigin_injective (hne : g₁ ≠ g₂) :
       omega
   · have := congrArg Sigma.fst hkk
     rcases mergeFacesCornerOrigin_none_fst k with h₁ | h₁ <;> rw [h₁] at this
-    exacts [absurd this.symm g'.2.1, absurd this.symm g'.2.2]
+    exacts [absurd this.symm g'.property.1, absurd this.symm g'.property.2]
   · have := congrArg Sigma.fst hkk
     rcases mergeFacesCornerOrigin_none_fst k' with h₁ | h₁ <;> rw [h₁] at this
-    exacts [absurd this g.2.1, absurd this g.2.2]
+    exacts [absurd this g.property.1, absurd this g.property.2]
   · simp only [mergeFacesCornerOrigin_some, Sigma.mk.injEq] at hkk
     obtain ⟨hg, hk⟩ := hkk
     obtain rfl := Subtype.ext hg
@@ -189,7 +189,7 @@ theorem mergeFacesCornerOrigin_ne_prevCorner (hne : g₁ ≠ g₂) (c) :
       omega
     · rw [mergeFacesCornerOrigin_none_of_not_lt hk]
       exact fun he => hne (congrArg Sigma.fst he).symm
-  · exact fun he => g.2.1 (congrArg Sigma.fst he)
+  · exact fun he => g.property.1 (congrArg Sigma.fst he)
 
 /-- The first side of `g₂` is not a side of the merged complex. -/
 theorem mergeFacesCornerOrigin_ne_mk_zero (hne : g₁ ≠ g₂) (c) :
@@ -201,7 +201,7 @@ theorem mergeFacesCornerOrigin_ne_mk_zero (hne : g₁ ≠ g₂) (c) :
     · rw [mergeFacesCornerOrigin_none_of_not_lt hk]
       simp only [ne_eq, Sigma.mk.injEq, heq_eq_eq, Fin.mk.injEq, true_and]
       omega
-  · exact fun he => g.2.2 (congrArg Sigma.fst he)
+  · exact fun he => g.property.2 (congrArg Sigma.fst he)
 
 /-- Every side occurrence of `C` other than the two occurrences of `d` is a side occurrence of the
 merged complex. -/
@@ -211,7 +211,7 @@ theorem exists_mergeFacesCornerOrigin_eq {c : C.Corner}
   obtain ⟨g, k⟩ := c
   have := C.sides_pos g₁
   have := C.sides_pos g₂
-  have hk := k.2
+  have hk := k.isLt
   by_cases hg₁ : g = g₁
   · subst hg₁
     rw [prevCorner_mk_zero] at h₁
@@ -293,7 +293,7 @@ private theorem tgt_outgoing_mergeFacesCornerOrigin_of_not_lt (h : C.IsMergeable
   have hN : C.mergeFacesSides g₁ g₂ none = C.sides g₁ + C.sides g₂ - 2 := rfl
   have := C.sides_pos g₁
   have := C.sides_pos g₂
-  have : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.2
+  have : (k : ℕ) < C.sides g₁ + C.sides g₂ - 2 := k.isLt
   have hd := h.outgoing_eq
   rw [incoming_mk_zero, outgoing_def] at hd
   rw [mergeFacesCornerOrigin_none_of_not_lt hk, outgoing_def]
@@ -324,7 +324,7 @@ private theorem tgt_outgoing_mergeFacesCornerOrigin (h : C.IsMergeable g₁ g₂
     exacts [tgt_outgoing_mergeFacesCornerOrigin_of_lt h hk,
       tgt_outgoing_mergeFacesCornerOrigin_of_not_lt h hk]
   · rw [mergeFacesCornerOrigin_some, mergeFacesCornerOrigin_some, outgoing_def, outgoing_def]
-    exact C.tgt_side g.1 k
+    exact C.tgt_side g.val k
 
 variable (C) in
 /-- The polygonal complex obtained from `C` by merging the faces `g₁ = X d` and `g₂ = d⁻¹ Y` along
@@ -337,7 +337,7 @@ abbrev mergeFaces (h : C.IsMergeable g₁ g₂) : PolygonalComplex.{u, v, w} whe
   sides := C.mergeFacesSides g₁ g₂
   sides_pos g := by
     obtain _ | g := g
-    exacts [Nat.sub_pos_of_lt h.two_lt_sides_add_sides, C.sides_pos g.1]
+    exacts [Nat.sub_pos_of_lt h.two_lt_sides_add_sides, C.sides_pos g.val]
   side := C.mergeFacesSide h
   tgt_side g k := by exact tgt_outgoing_mergeFacesCornerOrigin h g k
 
@@ -352,7 +352,7 @@ instance [Finite C.Face] : Finite (C.mergeFaces h).Face :=
 /-- The dart of a side occurrence of the merged complex is the dart of the side occurrence of `C`
 it comes from. -/
 @[simp] theorem coe_outgoing_mergeFaces (c : (C.mergeFaces h).Corner) :
-    ((C.mergeFaces h).outgoing c).1 = C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ c) := by
+    ((C.mergeFaces h).outgoing c).val = C.outgoing (C.mergeFacesCornerOrigin g₁ g₂ c) := by
   rw [outgoing_def]
   rfl
 
@@ -391,28 +391,28 @@ noncomputable def mergeFacesCornerEquiv : (C.mergeFaces h).Corner ⊕ Bool ≃ C
 attached along `e`. -/
 private noncomputable def outgoingFiberMergeFacesEquiv (e : (C.mergeFaces h).graph.E) :
     {c : (C.mergeFaces h).Corner // (C.mergeFaces h).outgoing c = e} ≃
-      {c : C.Corner // C.outgoing c = e.1} := by
-  refine Equiv.ofBijective (fun c => ⟨C.mergeFacesCornerOrigin g₁ g₂ c.1, by
-    rw [← coe_outgoing_mergeFaces h, c.2]⟩) ⟨fun c c' hc => ?_, fun ⟨c, hc⟩ => ?_⟩
+      {c : C.Corner // C.outgoing c = e.val} := by
+  refine Equiv.ofBijective (fun c => ⟨C.mergeFacesCornerOrigin g₁ g₂ c.val, by
+    rw [← coe_outgoing_mergeFaces h, c.property]⟩) ⟨fun c c' hc => ?_, fun ⟨c, hc⟩ => ?_⟩
   · exact Subtype.ext (mergeFacesCornerOrigin_injective h.ne (congrArg Subtype.val hc))
   · have h₁ : c ≠ C.prevCorner ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩ := by
       rintro rfl
-      exact e.2 (by rw [← hc, ← incoming_eq_outgoing_prevCorner])
+      exact e.property (by rw [← hc, ← incoming_eq_outgoing_prevCorner])
     have h₂ : c ≠ ⟨g₂, ⟨0, C.sides_pos g₂⟩⟩ := by
       rintro rfl
-      exact e.2 (by rw [← hc, h.outgoing_eq, SerreGraph.toGeomEdge_rev])
+      exact e.property (by rw [← hc, h.outgoing_eq, SerreGraph.toGeomEdge_rev])
     obtain ⟨c', rfl⟩ := exists_mergeFacesCornerOrigin_eq h₁ h₂
     exact ⟨⟨c', Subtype.ext ((coe_outgoing_mergeFaces h c').trans hc)⟩, rfl⟩
 
 /-- Merging two faces does not change the number of face sides attached along a remaining dart. -/
 @[simp] theorem sideCount_mergeFaces (e : (C.mergeFaces h).graph.E) :
-    (C.mergeFaces h).sideCount e = C.sideCount e.1 := by
+    (C.mergeFaces h).sideCount e = C.sideCount e.val := by
   rw [sideCount_def, sideCount_def]
   exact Nat.card_congr (C.outgoingFiberMergeFacesEquiv h e)
 
 /-- Merging two faces does not change the link degree of a remaining germ. -/
 @[simp] theorem linkDegree_mergeFaces (e : (C.mergeFaces h).graph.E) :
-    (C.mergeFaces h).linkDegree e = C.linkDegree e.1 := by
+    (C.mergeFaces h).linkDegree e = C.linkDegree e.val := by
   rw [linkDegree_eq_natCard_sum, linkDegree_eq_natCard_sum]
   exact Nat.card_congr ((C.outgoingFiberMergeFacesEquiv h _).sumCongr
     (C.outgoingFiberMergeFacesEquiv h e))
@@ -450,7 +450,7 @@ theorem isMergeable_splitFace (f : C.Face) (p : Fin (C.sides f)) :
     (C.splitFace f p).IsMergeable (.inr true) (.inr false) where
   ne := by simp
   two_lt_sides_add_sides := by
-    have := p.2
+    have := p.isLt
     simp only [splitFaceSides]
     omega
   outgoing_eq := by
@@ -473,15 +473,15 @@ variable (C) (f : C.Face) (p : Fin (C.sides f))
 face is the split face, and the other faces are the faces of `C` other than the split face. -/
 noncomputable def mergeFacesSplitFaceFaceEquiv :
     ((C.splitFace f p).mergeFaces (C.isMergeable_splitFace f p)).Face ≃ C.Face := by
-  refine Equiv.ofBijective (fun g => g.elim f fun g => Sum.elim Subtype.val (fun _ => f) g.1)
+  refine Equiv.ofBijective (fun g => g.elim f fun g => Sum.elim Subtype.val (fun _ => f) g.val)
     ⟨fun a b hab => ?_, fun g => ?_⟩
   · rcases a with _ | ⟨a | a, ha⟩ <;> rcases b with _ | ⟨b | b, hb⟩
     all_goals first
       | rfl
       | (cases a <;> simp at ha; done)
       | (cases b <;> simp at hb; done)
-      | exact absurd hab.symm b.2
-      | exact absurd hab a.2
+      | exact absurd hab.symm b.property
+      | exact absurd hab a.property
       | (simp only [Option.some.injEq, Subtype.mk.injEq, Sum.inl.injEq]; exact Subtype.ext hab)
   · by_cases hg : g = f
     · exact ⟨none, hg.symm⟩
@@ -493,7 +493,7 @@ noncomputable def mergeFacesSplitFaceFaceEquiv :
 @[simp] theorem mergeFacesSplitFaceFaceEquiv_some_inl (g : {g : C.Face // g ≠ f})
     (hg : (.inl g : (C.splitFace f p).Face) ≠ .inr true ∧
       (.inl g : (C.splitFace f p).Face) ≠ .inr false) :
-    C.mergeFacesSplitFaceFaceEquiv f p (some ⟨.inl g, hg⟩) = g.1 :=
+    C.mergeFacesSplitFaceFaceEquiv f p (some ⟨.inl g, hg⟩) = g.val :=
   (rfl)
 
 /-- Merging the two faces of a split face gives back the numbers of sides of the faces. -/
@@ -502,7 +502,7 @@ theorem sides_mergeFacesSplitFaceFaceEquiv
     C.sides (C.mergeFacesSplitFaceFaceEquiv f p g) =
       ((C.splitFace f p).mergeFaces (C.isMergeable_splitFace f p)).sides g := by
   rcases g with _ | ⟨_ | b, hb⟩
-  · have := p.2
+  · have := p.isLt
     have e : ((C.splitFace f p).mergeFaces (C.isMergeable_splitFace f p)).sides none =
         (p + 1) + (C.sides f - p + 1) - 2 := rfl
     rw [mergeFacesSplitFaceFaceEquiv_none, e]
@@ -562,7 +562,7 @@ the faces of `C`: the two new faces are `g₁` and `g₂`. -/
 noncomputable def splitFaceMergeFacesFaceEquiv :
     ((C.mergeFaces h).splitFace none
       ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).Face ≃ C.Face := by
-  refine Equiv.ofBijective (Sum.elim (fun g => g.1.elim g₁ Subtype.val) fun b => cond b g₁ g₂)
+  refine Equiv.ofBijective (Sum.elim (fun g => g.val.elim g₁ Subtype.val) fun b => cond b g₁ g₂)
     ⟨fun a b hab => ?_, fun g => ?_⟩
   · rcases a with ⟨_ | a, ha⟩ | _ | _ <;> rcases b with ⟨_ | b, hb⟩ | _ | _
     all_goals first
@@ -570,10 +570,10 @@ noncomputable def splitFaceMergeFacesFaceEquiv :
       | exact absurd rfl ha
       | exact absurd rfl hb
       | (simp only [Sum.inl.injEq, Subtype.mk.injEq, Option.some.injEq]; exact Subtype.ext hab)
-      | exact absurd hab a.2.1
-      | exact absurd hab a.2.2
-      | exact absurd hab.symm b.2.1
-      | exact absurd hab.symm b.2.2
+      | exact absurd hab a.property.1
+      | exact absurd hab a.property.2
+      | exact absurd hab.symm b.property.1
+      | exact absurd hab.symm b.property.2
       | exact absurd hab h.ne
       | exact absurd hab.symm h.ne
   · by_cases hg₁ : g = g₁
@@ -583,7 +583,7 @@ noncomputable def splitFaceMergeFacesFaceEquiv :
     exact ⟨.inl ⟨some ⟨g, hg₁, hg₂⟩, Option.some_ne_none _⟩, rfl⟩
 
 @[simp] theorem splitFaceMergeFacesFaceEquiv_inl_some (g : {g : C.Face // g ≠ g₁ ∧ g ≠ g₂})
-    (hg : some g ≠ none) : C.splitFaceMergeFacesFaceEquiv h h₂ (.inl ⟨some g, hg⟩) = g.1 :=
+    (hg : some g ≠ none) : C.splitFaceMergeFacesFaceEquiv h h₂ (.inl ⟨some g, hg⟩) = g.val :=
   (rfl)
 
 @[simp] theorem splitFaceMergeFacesFaceEquiv_inr (b : Bool) :
@@ -642,7 +642,7 @@ private theorem src_side_one_eq (h : C.IsMergeable g₁ g₂) (h₂ : 1 < C.side
 starts at the source of `d`. -/
 private theorem src_mergeFacesSide_sides_sub_one :
     C.graph.src ((C.mergeFaces h).side none
-      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).1 =
+      ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).val =
         C.graph.src (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
   rw [← outgoing_def _ ⟨_, _⟩, coe_outgoing_mergeFaces,
@@ -652,7 +652,7 @@ private theorem src_mergeFacesSide_sides_sub_one :
 
 /-- The side of the merged face at the position `0` starts at the target of `d`. -/
 private theorem src_mergeFacesSide_zero :
-    C.graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩).1 =
+    C.graph.src ((C.mergeFaces h).side none ⟨0, (C.mergeFaces h).sides_pos none⟩).val =
       C.graph.tgt (C.incoming ⟨g₁, ⟨0, C.sides_pos g₁⟩⟩) := by
   have := C.sides_pos g₁
   rw [← outgoing_def _ ⟨_, _⟩, coe_outgoing_mergeFaces]
@@ -689,7 +689,7 @@ private theorem outgoing_splitFaceMergeFacesCornerEquiv_inr_false
       C.graph.deleteEdgeSumEquiv _ (((C.mergeFaces h).splitFace none
         ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).outgoing ⟨.inr false, k⟩) := by
   have := C.sides_pos g₁
-  have := k.2
+  have := k.isLt
   rw [outgoing_splitFace]
   by_cases hk : (k : ℕ) = 0
   · rw [splitFaceCornerOrigin_inr_false_of_eq_zero hk, Sum.map_inr, id,
@@ -710,7 +710,7 @@ private theorem outgoing_splitFaceMergeFacesCornerEquiv_inr_true (k : Fin (C.sid
     C.outgoing (C.splitFaceMergeFacesCornerEquiv h h₂ ⟨.inr true, k⟩) =
       C.graph.deleteEdgeSumEquiv _ (((C.mergeFaces h).splitFace none
         ⟨C.sides g₁ - 1, sides_sub_one_lt_mergeFacesSides h₂⟩).outgoing ⟨.inr true, k⟩) := by
-  have := k.2
+  have := k.isLt
   rw [outgoing_splitFace]
   by_cases hk : (k : ℕ) < C.sides g₁ - 1
   · rw [splitFaceCornerOrigin_inr_true_of_lt hk, Sum.map_inl,

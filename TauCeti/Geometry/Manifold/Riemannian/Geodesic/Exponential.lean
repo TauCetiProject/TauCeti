@@ -71,6 +71,9 @@ defined for all time.
   `exp_p (t • (v + u • w))` is a smooth family of geodesics.
 * `TauCeti.Manifold.variationField_radialVariation`: the variation field of the radial variation
   is `t ↦ d(exp_p)_{t v}(t w)`.
+* `TauCeti.Manifold.neg_mfderiv_riemannianExp_radial_mem_expDomain` and
+  `TauCeti.Manifold.riemannianExp_neg_mfderiv_riemannianExp_radial`: reversing a radial geodesic at
+  `exp_p v` lands in the domain of `exp_{exp_p v}` and returns to `p`.
 * `TauCeti.Manifold.expDomain_eq_univ_iff`: the exponential map at `p` is defined on all of
   `T_p M` exactly when `M` is geodesically complete at `p`.
 
@@ -220,7 +223,7 @@ local instance tangentSpaceChartedSpace (p : M) :
 /-- **The domain of the exponential map in the tangent bundle is open**: the tangent vectors
 `z ∈ T_x M` lying in the natural domain of `exp_x` form an open subset of `TM`. -/
 theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
-    IsOpen {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := by
+    IsOpen {z : TangentBundle I M | z.snd ∈ expDomain I M z.proj} := by
   simp only [mem_expDomain_iff]
   exact isOpen_setOfPred_mem_geodesicInterval.preimage (continuous_id.prodMk continuous_const)
 
@@ -228,16 +231,16 @@ theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
 tangent vector at `x`, is smooth on the open subset of `TM` where it is naturally defined: it is
 the geodesic flow at time `1` followed by the base projection. -/
 theorem contMDiffOn_riemannianExp_tangentBundle [T2Space M] :
-    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   (contMDiffOn_maximalGeodesic.comp (contMDiff_id.prodMk contMDiff_const).contMDiffOn
-    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.2
+    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.snd
 
 /-- The exponential map is continuous on the open subset of the tangent bundle where it is
 naturally defined. -/
 theorem continuousOn_riemannianExp_tangentBundle [T2Space M] :
-    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   contMDiffOn_riemannianExp_tangentBundle.continuousOn
 
 /-- The natural domain of the Riemannian exponential map is open. -/
@@ -550,6 +553,51 @@ theorem contDiffOn_inner_angular_riemannianExp [T2Space M] (p : M) (w : TangentS
       (expDomain I M p) :=
   (contMDiffOn_riemannianExp p).contDiffOn_inner_mfderiv (by simp)
     (isOpen_expDomain p) w w
+
+/-! ### Reversing a radial geodesic -/
+
+/-- At time `1`, the velocity of the maximal geodesic from `p` with initial velocity `v ∈ expDomain`
+is the radial differential `d(exp_p)_v v`. -/
+private theorem curveVelocityWithin_maximalGeodesic_one [T2Space M] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) 1 =
+      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
+  have h1 : (1 : ℝ) ∈ geodesicInterval I M p v := mem_expDomain_iff.1 hv
+  have h := curveVelocity_riemannianExp_smul (I := I) (M := M) (v := v) (t := 1)
+    (by simpa only [one_smul] using hv)
+  rw [one_smul, funext (riemannianExp_smul p v)] at h
+  exact (curveVelocityWithin_of_mem_nhds (isOpen_geodesicInterval.mem_nhds h1)).trans h
+
+/-- **Reversing a radial geodesic stays in the exponential domain.** For `v` in the natural domain
+of `exp_p`, the negated arrival velocity `-d(exp_p)_v v` lies in the natural domain of
+`exp_{exp_p v}`. -/
+theorem neg_mfderiv_riemannianExp_radial_mem_expDomain [T2Space M] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    -mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v ∈
+      expDomain I M (riemannianExp I M p v) := by
+  have h1 : (1 : ℝ) ∈ geodesicInterval I M p v := mem_expDomain_iff.1 hv
+  have hmem : (-1 : ℝ) ∈ geodesicInterval I M (maximalGeodesic I M p v 1)
+      (curveVelocityWithin I (maximalGeodesic I M p v) (geodesicInterval I M p v) 1) :=
+    (mem_geodesicInterval_maximalGeodesic_iff h1).2
+      (by rw [add_neg_cancel]; exact zero_mem_geodesicInterval)
+  rw [curveVelocityWithin_maximalGeodesic_one hv, ← riemannianExp_def,
+    mem_geodesicInterval_iff_smul_mem_expDomain, neg_one_smul] at hmem
+  exact hmem
+
+/-- **Reversing a radial geodesic returns to the base point.** For `v` in the natural domain of
+`exp_p`, exponentiating the negated arrival velocity `-d(exp_p)_v v` at `exp_p v` recovers `p`. -/
+@[simp] theorem riemannianExp_neg_mfderiv_riemannianExp_radial [T2Space M] {p : M}
+    {v : TangentSpace I p} (hv : v ∈ expDomain I M p) :
+    riemannianExp I M (riemannianExp I M p v)
+      (-mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v) = p := by
+  have h1 : (1 : ℝ) ∈ geodesicInterval I M p v := mem_expDomain_iff.1 hv
+  have h0 : (1 : ℝ) + (-1 : ℝ) ∈ geodesicInterval I M p v := by
+    rw [add_neg_cancel]
+    exact zero_mem_geodesicInterval
+  have hadd := maximalGeodesic_add (I := I) (M := M) h1 h0
+  rw [add_neg_cancel, maximalGeodesic_zero, curveVelocityWithin_maximalGeodesic_one hv,
+    ← riemannianExp_def, ← riemannianExp_smul, neg_one_smul] at hadd
+  exact hadd.symm
 
 end Boundaryless
 

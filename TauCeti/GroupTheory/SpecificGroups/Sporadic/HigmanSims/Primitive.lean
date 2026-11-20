@@ -21,11 +21,24 @@ The 22-point orbit is certified by explicit words in the existing ATLAS generato
 Mathlib's convention that the last letter acts first. Its upper bound follows from the
 already established 77-point orbit and disjointness of orbits.
 
+The stabilizer of `0` acts doubly transitively on the 22-point orbit: further explicit words fix
+`0` and `4` and carry `8` to each of the other 20 points of the orbit.
+
+## Main results
+
+* `TauCeti.Sporadic.HS.orbit_stabilizerChain_one_four`: the 22-point orbit of the stabilizer
+  of `0`.
+* `TauCeti.Sporadic.HS.isPreprimitive`: the action of the model on its 100 points is primitive.
+* `TauCeti.Sporadic.HS.isMultiplyPretransitive_stabilizer_orbit`: the stabilizer of `0` acts
+  doubly transitively on its 22-point orbit.
+
 ## References
 
 * R. A. Wilson, R. A. Parker, J. N. Bray et al., *ATLAS of Finite Group Representations*,
   version 3, representation `HSG1-p100B0`,
   <https://brauer.maths.qmul.ac.uk/Atlas/v3/permrep/HSG1-p100B0>.
+* D. G. Higman and C. C. Sims, *A simple group of order 44,352,000*, Math. Z. **105** (1968),
+  110–113, for the rank-three action with suborbits of lengths 1, 22 and 77.
 * J. D. Dixon and B. Mortimer, *Permutation Groups*, §1.5 (blocks and primitivity).
 -/
 
@@ -202,5 +215,89 @@ instance isPreprimitive : IsPreprimitive HS (Fin 100) := by
       simp [h1, h4]
     rw [hEq]
     exact Set.subsingleton_singleton
+
+-- The points other than 4 in the 22-point orbit of the stabilizer of 0.
+private def restPoints : Fin 21 → Fin 100 :=
+  ![8, 9, 10, 11, 12, 26, 28, 32, 38, 39, 40, 44, 47, 49, 50, 52, 66, 67, 70, 71, 91]
+
+-- Breadth-first paths on ordered triples, from (0, 4, 8) to (0, 4, restPoints i). A word is
+-- read in Mathlib's product convention: its last letter acts first.
+private def restWords : Fin 21 → List HS :=
+  ![[],
+    [bb, aa, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, aa, bb],
+    [bb, bb, bb, bb, aa, bb, aa, bb, aa, bb, bb, bb, aa, bb, aa, bb, bb, aa, bb, bb, bb, aa],
+    [aa, bb, bb, aa, bb, bb, bb, aa, bb, bb, bb, bb, aa, bb, aa, bb, aa, bb, bb, bb, aa, bb],
+    [aa, bb, bb, aa, bb, bb, bb, aa],
+    [bb, aa, bb, aa, bb, bb, aa, bb, bb, aa, bb, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, aa,
+      bb, bb, aa, bb, aa],
+    [aa, bb, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, bb, aa, bb, aa, bb, bb, bb, aa, bb, aa],
+    [bb, aa, bb, bb, aa, bb, bb, bb, aa, bb, aa, bb, aa, bb, bb, aa, bb, bb, bb, bb, aa, bb,
+      bb, bb, bb],
+    [bb, aa, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, bb],
+    [aa, bb, bb, bb, aa, bb, aa, bb, aa, bb, bb, bb, bb, aa, bb, bb, bb, bb, aa, bb, bb, aa],
+    [bb, aa, bb, aa, bb, bb, aa, bb, aa, bb, aa, bb, bb, bb, aa, bb, bb, bb, bb, aa, bb, aa,
+      bb],
+    [bb, bb, bb, aa, bb, aa, bb, aa, bb, aa, bb, aa, bb, bb, bb, bb, aa, bb, bb, bb, aa, bb,
+      bb, aa, bb, bb, bb],
+    [bb, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, aa, bb],
+    [bb, bb, bb, bb, aa, bb, aa, bb, bb, bb, bb, aa, bb, aa, bb, bb, aa, bb, bb, bb, aa],
+    [bb, bb, bb, bb, aa, bb, aa, bb, aa, bb, bb, bb, aa, bb],
+    [bb, aa, bb, aa, bb, bb, bb, aa, bb, aa, bb, aa, bb, bb, bb, bb, aa, bb, aa, bb, bb],
+    [bb, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, aa, bb, aa, bb, bb, aa, bb, bb, bb, aa],
+    [bb, bb, bb, aa, bb, aa, bb, bb, bb, bb, aa, bb, bb, aa, bb, bb, aa, bb, bb, bb, aa],
+    [bb, bb, bb, bb, aa, bb, aa, bb, aa, bb, bb, bb, bb, aa, bb, aa, bb, bb, bb, aa, bb],
+    [bb, bb, bb, bb, aa, bb, bb, aa, bb, bb, bb, bb, aa, bb, aa, bb, bb, bb, aa, bb],
+    [bb, bb, bb, aa, bb, aa, bb, bb, bb, bb, aa, bb, bb]]
+
+private theorem restWords_apply : ∀ i,
+    ((restWords i).prod : Equiv.Perm (Fin 100)) 0 = 0 ∧
+      ((restWords i).prod : Equiv.Perm (Fin 100)) 4 = 4 ∧
+      ((restWords i).prod : Equiv.Perm (Fin 100)) 8 = restPoints i := by
+  decide +kernel
+
+private theorem exists_restPoints_eq : ∀ x ∈ ({4, 8, 9, 10, 11, 12, 26, 28, 32, 38, 39, 40, 44,
+    47, 49, 50, 52, 66, 67, 70, 71, 91} : Finset (Fin 100)), x ≠ 4 → ∃ i, restPoints i = x := by
+  decide +kernel
+
+/-- The stabilizer of `0` in the Higman--Sims model has the same orbits as the second member of
+the stabilizer chain of the model along `pointSequence`. -/
+theorem orbit_stabilizer_zero (x : Fin 100) :
+    orbit (stabilizer HS (0 : Fin 100)) x = orbit S x := by
+  have h0 : pointSequence 0 = 0 := by
+    rw [pointSequence_apply]
+    decide
+  rw [Subgroup.orbit_stabilizerChain_succ, Subgroup.stabilizerChain_zero, h0]
+
+/-- The stabilizer of `0` in the Higman--Sims model acts doubly transitively on its 22-point
+orbit, the orbit of `4`. -/
+instance isMultiplyPretransitive_stabilizer_orbit :
+    IsMultiplyPretransitive (stabilizer HS (0 : Fin 100))
+      (orbit (stabilizer HS (0 : Fin 100)) (4 : Fin 100)) 2 := by
+  have h8 : (8 : Fin 100) ∈ orbit (stabilizer HS (0 : Fin 100)) (4 : Fin 100) := by
+    rw [orbit_stabilizer_zero, orbit_stabilizerChain_one_four]
+    decide
+  apply (SubMulAction.ofStabilizer.isMultiplyPretransitive
+    (a := (⟨4, mem_orbit_self 4⟩ : orbit (stabilizer HS (0 : Fin 100)) (4 : Fin 100)))).mpr
+  apply is_one_pretransitive_iff.mpr
+  have h84 : (8 : Fin 100) ≠ 4 := by decide
+  refine IsPretransitive.of_orbit (x₀ := ⟨⟨8, h8⟩,
+    (SubMulAction.mem_ofStabilizer_iff _ _).mpr fun h ↦ h84 (congrArg Subtype.val h)⟩) fun c ↦ ?_
+  have hc : c.val.val ∈ orbit S (4 : Fin 100) := orbit_stabilizer_zero 4 ▸ c.val.property
+  rw [orbit_stabilizerChain_one_four, Finset.mem_coe] at hc
+  have hc4 : c.val.val ≠ 4 := fun h ↦ (SubMulAction.mem_ofStabilizer_iff _ _).mp c.property
+      (Subtype.ext h)
+  obtain ⟨i, hi⟩ := exists_restPoints_eq _ hc hc4
+  obtain ⟨h0, h4, h8'⟩ := restWords_apply i
+  -- The word fixes `0` and `4`, so it lies in the stabilizer of `4` in the stabilizer of `0`.
+  have hg0 : (restWords i).prod ∈ stabilizer HS (0 : Fin 100) := by
+    simpa only [mem_stabilizer_iff, Subgroup.smul_def, Equiv.Perm.smul_def] using h0
+  have hg4 : (⟨(restWords i).prod, hg0⟩ : stabilizer HS (0 : Fin 100)) ∈
+      stabilizer (stabilizer HS (0 : Fin 100))
+        (⟨4, mem_orbit_self 4⟩ : orbit (stabilizer HS (0 : Fin 100)) (4 : Fin 100)) := by
+    simpa only [mem_stabilizer_iff, Subtype.ext_iff, orbit.coe_smul, Subgroup.smul_def,
+      Equiv.Perm.smul_def] using h4
+  refine ⟨⟨⟨(restWords i).prod, hg0⟩, hg4⟩, ?_⟩
+  simpa only [Subtype.ext_iff, SubMulAction.val_smul, orbit.coe_smul, Subgroup.smul_def,
+    Equiv.Perm.smul_def] using h8'.trans hi
 
 end TauCeti.Sporadic.HS

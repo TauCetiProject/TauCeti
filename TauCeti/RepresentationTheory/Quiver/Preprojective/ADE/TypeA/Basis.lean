@@ -116,7 +116,7 @@ private theorem gridRep_arrow (a : Fin (DynkinType.A n).rank) {i j : Q} (f : i �
 private theorem gridRep_backtrack (a i : Fin (DynkinType.A n).rank) (s r : ℕ) :
     (∑ w : (AG).neighborSet i,
       QuiverRep.mapₗ k Q (gridRep k a)
-        (backtrackPath AG (((AG).mem_neighborSet i w).1 w.2)))
+        (backtrackPath AG (((AG).mem_neighborSet i w).1 w.property)))
           (gridVertexEquiv k a (vertex AG i) (Finsupp.single (s, r) 1)) = 0 := by
   classical
   simp only [LinearMap.sum_apply, backtrackPath_eq_comp,
@@ -161,7 +161,7 @@ private theorem gridRep_relator (a : Fin (DynkinType.A n).rank) (v : Q) :
   simp only [backtrackElem_eq_ofPath, QuiverRep.toEnd_ofPath]
   have hzero : (∑ w : (AG).neighborSet i,
       QuiverRep.mapₗ k Q (gridRep k a)
-        (backtrackPath AG (((AG).mem_neighborSet i w).1 w.2))) = 0 := by
+        (backtrackPath AG (((AG).mem_neighborSet i w).1 w.property))) = 0 := by
     apply LinearMap.ext
     intro z
     obtain ⟨x, rfl⟩ := (gridVertexEquiv k a (vertex AG i)).surjective z
