@@ -169,7 +169,6 @@ private theorem isSmoothEmbedding_torusKnotSphereMap {p q : ℤ} (h : IsCoprime 
       one_ne_zero)
     (hsmooth.mdifferentiableAt (by simp))
   have hcurve := injective_mfderiv_of_deriv_comp_circleExp_ne_zero
-    ((contMDiff_torusKnotMap p q).mdifferentiableAt (by simp))
     (deriv_torusKnotMap_comp_circleExp_ne_zero h t)
   have hfun : torusKnotMap p q = Subtype.val ∘ torusKnotSphereMap p q := (rfl)
   rw [hfun, hcomp, ContinuousLinearMap.coe_comp] at hcurve
