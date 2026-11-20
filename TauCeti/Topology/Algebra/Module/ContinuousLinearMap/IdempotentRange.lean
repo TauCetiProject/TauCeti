@@ -66,7 +66,7 @@ variable {R M : Type*} [Semiring R] [TopologicalSpace M] [AddCommMonoid M] [Modu
 
 /-- An idempotent continuous linear map composed with itself is itself. -/
 theorem comp_self (hp : IsIdempotentElem p) : p ∘L p = p :=
-  hp.eq
+  (mul_def p p).symm.trans hp.eq
 
 /-- Idempotence in the left-associated form `(X ∘L p) ∘L p = X ∘L p`, for any `X` out of `M`. -/
 theorem comp_comp_self {N : Type*} [TopologicalSpace N] [AddCommMonoid N] [Module R N]
