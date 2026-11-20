@@ -511,6 +511,7 @@ a `TauCeti.ContinuationCocycle.restrictSubcomplex`
 (`TauCeti.ContinuationCocycle.actionSublevel_eq_restrictSubcomplex`), so by
 `TauCeti.ContinuationCocycle.ofRestrict_continuationHom_comp` the continuation morphism of `ν`
 carries the first subcomplex into the second. -/
+@[expose]
 def actionSublevel :
     ContinuationCocycle
       (mP.restrict {x | actP x < a}
@@ -556,6 +557,7 @@ namespace TwistingCocycle
 /-- **The action short complex.** If the twisted differential does not raise the action, the
 inclusion of the twisted complex on the generators of action `< a` followed by the projection
 onto the twisted complex on the generators of action `≥ a`. -/
+@[expose]
 noncomputable def actionShortComplex :
     ShortComplex (CochainComplex (ModuleCat.{max uP uM} R) ℤ) :=
   m.restrictShortComplex hM {x | act x < a} {x | a ≤ act x} (m.m_eq_zero_of_mem_setOf_lt hm)
