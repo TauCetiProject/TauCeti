@@ -118,6 +118,7 @@ namespace GL2K0
 variable {I}
 
 /-- `g ∈ K₀(I)` exactly when its lower-left entry lies in `I`. -/
+@[simp]
 theorem mem_iff {g : GL (Fin 2) A} :
     g ∈ GL2K0 I ↔ (g : Matrix (Fin 2) (Fin 2) A) 1 0 ∈ I := by
   rw [GL2K0, Subgroup.mem_comap, GL2Borel.mem_iff, Matrix.GeneralLinearGroup.map_apply,
@@ -154,6 +155,7 @@ variable {I}
 
 /-- `g ∈ K₁(I)` exactly when its lower-left entry lies in `I` and its lower-right entry is `1`
 modulo `I`. -/
+@[simp]
 theorem mem_iff {g : GL (Fin 2) A} :
     g ∈ GL2K1 I ↔ (g : Matrix (Fin 2) (Fin 2) A) 1 0 ∈ I ∧
       (g : Matrix (Fin 2) (Fin 2) A) 1 1 - 1 ∈ I := by
@@ -237,7 +239,7 @@ variable {I}
 /-- An element lies in `K₁(I)` exactly when its bottom row is `(0, 1)` modulo `I`. -/
 theorem mem_iff_bottomRowMod {g : GL (Fin 2) A} :
     g ∈ GL2K1 I ↔ bottomRowMod I g = Pi.single 1 1 := by
-  simp [mem_iff, funext_iff, Fin.forall_fin_two, Ideal.Quotient.eq_zero_iff_mem,
+  simp [funext_iff, Fin.forall_fin_two, Ideal.Quotient.eq_zero_iff_mem,
     ← Ideal.Quotient.eq]
 
 /-- **Right cosets of `K₁(I)`**: over every commutative ring, `g` and `g'` lie in one right coset
@@ -281,6 +283,27 @@ theorem rightRel_iff {g g' : GL (Fin 2) A} :
 
 end GL2K0
 
+/-! ### The image of the lower-right character -/
+
+/-- The lower-right character of `K₀(I)` is surjective over every commutative ring: for lifts `a`
+of `w⁻¹` and `d` of `w`, the matrix `(a 1; ad - 1 d)` has determinant `1`, lies in `K₀(I)` and has
+lower-right entry `d`. -/
+theorem GL2K0.lowerRight_surjective : Function.Surjective (GL2K0.lowerRight I) := by
+  intro w
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective ((w⁻¹ : (A ⧸ I)ˣ) : A ⧸ I)
+  obtain ⟨d, hd⟩ := Ideal.Quotient.mk_surjective (w : A ⧸ I)
+  have hc : a * d - 1 ∈ I := by
+    rw [← Ideal.Quotient.eq, map_mul, ha, hd, map_one, Units.inv_mul]
+  refine ⟨⟨Matrix.GeneralLinearGroup.mk'' !![a, 1; a * d - 1, d] (by simp),
+    GL2K0.mem_iff.mpr (by simpa using hc)⟩, Units.ext ?_⟩
+  simp [hd]
+
+/-- **The index of `K₁(I)` in `K₀(I)`** is the number of units of `A ⧸ I`. -/
+theorem GL2K1.relIndex_GL2K0_eq_card_units :
+    (GL2K1 I).relIndex (GL2K0 I) = Nat.card (A ⧸ I)ˣ := by
+  rw [GL2K1.relIndex_GL2K0, MonoidHom.range_eq_top_of_surjective _
+    (GL2K0.lowerRight_surjective I), Subgroup.card_top]
+
 /-! ### Lifting over a local ring -/
 
 section IsLocalRing
@@ -309,23 +332,6 @@ theorem exists_bottomRowMod_eq {v : Fin 2 → A ⧸ I} (hv : Module.IsUnimodular
   · refine ⟨Matrix.GeneralLinearGroup.mk'' !![1, 0; x, (u : A)] (by simp), ?_⟩
     ext j
     fin_cases j <;> simp [hu', hx]
-
-/-- Over a local ring, the lower-right character of `K₀(I)` is surjective: `diag(1, u)` realizes
-a lift `u` of each unit of `A ⧸ I`. -/
-theorem GL2K0.lowerRight_surjective : Function.Surjective (GL2K0.lowerRight I) := by
-  intro w
-  by_cases hI : I = ⊤
-  · have : Subsingleton (A ⧸ I) := Ideal.Quotient.subsingleton_iff.mpr hI
-    exact ⟨1, Subsingleton.elim _ _⟩
-  obtain ⟨u, hu⟩ := Ideal.unitsMap_quotientMk_surjective_of_ne_top hI w
-  refine ⟨⟨GL2Borel.mk 1 u 0, GL2K0.mem_iff.mpr (by simp)⟩, Units.ext ?_⟩
-  simp [← hu]
-
-/-- **The index of `K₁(I)` in `K₀(I)`** over a local ring is the number of units of `A ⧸ I`. -/
-theorem GL2K1.relIndex_GL2K0_eq_card_units :
-    (GL2K1 I).relIndex (GL2K0 I) = Nat.card (A ⧸ I)ˣ := by
-  rw [GL2K1.relIndex_GL2K0, MonoidHom.range_eq_top_of_surjective _
-    (GL2K0.lowerRight_surjective I), Subgroup.card_top]
 
 /-- **`K₁(I)\GL₂(A)` is the set of unimodular rows of `(A ⧸ I)²`**: over a local ring `A`, the
 bottom row modulo `I` identifies the right cosets of `K₁(I)` with the unimodular rows. -/
