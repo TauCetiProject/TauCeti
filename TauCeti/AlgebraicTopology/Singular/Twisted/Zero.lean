@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
@@ -19,6 +20,10 @@ or basepoints, including for disconnected spaces.
 The relations come from the boundary of a path: the singular `1`-simplex of a path `γ` from `x`
 to `y`, carrying a coefficient `m` at `x`, has boundary `m` transported along `γ` at `y` minus `m`
 at `x` (`TauCeti.LocalCoefficientSystem.d_ιTwistedChainComplex_simplex₁_apply`).
+
+For a constant system, the class of a coefficient at a point is the ordinary class of the point
+in singular homology
+(`TauCeti.LocalCoefficientSystem.ιTwistedHomology₀_twistedHomologyConstantIso_hom`).
 
 ## Main definitions
 
@@ -462,5 +467,52 @@ lemma range_simplexMap_subset_range_of_ne_zero_vertex {x y : X} (q : Path x y)
   obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
   rintro _ ⟨_, rfl⟩
   exact ⟨0, q.source⟩
+
+section Constant
+
+/-- For a constant local coefficient system, the class of a coefficient in the fibre at a point is
+the class of that point in ordinary singular homology. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedHomology₀_twistedHomologyConstantIso_hom (M : ModuleCat.{max v w} R) (x : X) :
+    ιTwistedHomology₀ ((constantFunctor X).obj M) x ≫ (twistedHomologyConstantIso X M 0).hom =
+      singularHomology₀Section M x := by
+  obtain ⟨σ, rfl⟩ := TopCat.toSSetObj₀Equiv.surjective x
+  have h : ιTwistedHomology₀ ((constantFunctor X).obj M) (TopCat.toSSetObj₀Equiv σ) =
+      ιTwistedChainComplex ((constantFunctor X).obj M) 0 σ ≫
+        (twistedChainComplex ((constantFunctor X).obj M)).pOpcycles 0 ≫
+          (twistedChainComplex ((constantFunctor X).obj M)).isoHomologyι₀.inv := by
+    rw [ιTwistedChainComplex_pOpcycles_zero, constantFunctor_obj_map]
+    exact (Category.id_comp _).symm
+  rw [h, twistedHomologyConstantIso_hom]
+  -- After `rw [h]`, the inner composite runs from the fibre over `initialVertex σ` to
+  -- `homology (twistedChainComplex _) 0`, which are the fibre over `TopCat.toSSetObj₀Equiv σ` and
+  -- `twistedHomology _ 0` only definitionally, so the goal is not type-correct at reducible
+  -- transparency and plain `rw` cannot match `Category.assoc`.
+  erw [Category.assoc, Category.assoc,
+    ChainComplex.isoHomologyι₀_inv_naturality, HomologicalComplex.p_opcyclesMap_assoc,
+    ιTwistedChainComplex_twistedChainComplexConstantIso_hom_f_assoc]
+  rw [singularHomology₀Section_def, Equiv.symm_apply_apply, SSet.ιHomology₀_def]
+  -- The singular chain complex of `X` is the chain complex of its singular simplicial set, whose
+  -- summand inclusions are the coproduct inclusions.
+  have key : (TopCat.toSSet.obj X).ιChainComplex (R := M) σ ≫
+      ((TopCat.toSSet.obj X).chainComplex M).pOpcycles 0 ≫
+        ((TopCat.toSSet.obj X).chainComplex M).isoHomologyι₀.inv =
+      ((TopCat.toSSet.obj X).chainComplex M).liftCycles
+          ((TopCat.toSSet.obj X).ιChainComplex σ) 0 (by simp) (by simp) ≫
+        ((TopCat.toSSet.obj X).chainComplex M).homologyπ 0 := by
+    rw [← Category.assoc, Iso.comp_inv_eq]
+    simp
+  exact key
+
+/-- For a constant local coefficient system, the class of a point in ordinary singular homology is
+the class of the coefficient in the fibre at that point. -/
+@[reassoc]
+lemma singularHomology₀Section_twistedHomologyConstantIso_inv (M : ModuleCat.{max v w} R)
+    (x : X) :
+    singularHomology₀Section M x ≫ (twistedHomologyConstantIso X M 0).inv =
+      ιTwistedHomology₀ ((constantFunctor X).obj M) x := by
+  exact (Iso.comp_inv_eq _).2 (ιTwistedHomology₀_twistedHomologyConstantIso_hom M x).symm
+
+end Constant
 
 end TauCeti.LocalCoefficientSystem
