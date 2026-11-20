@@ -17,6 +17,8 @@ import TauCeti.ModelTheory.Infinitary.ConstantSupport
 import TauCeti.ModelTheory.Infinitary.Sublanguage
 import TauCeti.ModelTheory.ModelExistence.Morleyization
 import TauCeti.ModelTheory.Order
+import TauCeti.SetTheory.Cardinal.AlephOne
+import TauCeti.SetTheory.Ordinal.ToType
 
 /-!
 # Boundedness of well-orderings in `L_{ω₁ω}`
@@ -728,16 +730,6 @@ private def ltStructure (lt : L.Relations 2) {M : Type w} [LT M] (m : M) : L.Str
     | 2, R, xs => R = lt ∧ xs 0 < xs 1
     | _, _, _ => False
 
-/-- The inclusion of the ordinals below `α` into the ordinals below `α + 1`. -/
-private noncomputable def toTypeSuccEmbedding (α : Ordinal.{w}) : α.ToType ↪o (α + 1).ToType :=
-  OrderEmbedding.ofStrictMono
-    (fun a => ToType.mk ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩)
-    fun _ _ hxy => ToType.mk.strictMono (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy))
-
-private theorem countable_toType_add_one {α : Ordinal.{w}} (hα : α < ω₁) :
-    Countable (α + 1).ToType :=
-  Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
-
 /-- **Undefinability of well-ordering.** Among countable nonempty structures in `Type w`, no
 `L_{ω₁ω}` sentence holds in a structure if and only if `lt` is a well-order. A fortiori no
 sentence has as its models exactly the structures in `Type w` in which `lt` is a well-order, which
@@ -755,9 +747,9 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
   have hrel (x y : M) : RelMap lt ![x, y] ↔ x < y := and_iff_right rfl
   have hwo : IsWellOrder M fun x y : M => RelMap lt ![x, y] := by
     simpa only [hrel] using (inferInstance : IsWellOrder M (· < ·))
-  have hc : Countable M := countable_toType_add_one hα
-  exact hbound M _ hne ((hφ M _ hne hc).2 hwo) (toTypeSuccEmbedding α) fun x y hxy =>
-    (hrel _ _).2 ((toTypeSuccEmbedding α).strictMono hxy)
+  have hc : Countable M := TauCeti.countable_toType_add_one_of_lt_omega_one hα
+  let f := TauCeti.toTypeOrderEmbeddingOfLE (Order.le_succ α)
+  exact hbound M _ hne ((hφ M _ hne hc).2 hwo) f fun x y hxy => (hrel _ _).2 (f.strictMono hxy)
 
 /-! ### Well-orders in the language of orders -/
 
@@ -855,10 +847,11 @@ theorem wellFoundedLT_undefinable :
   let M := (α + 1).ToType
   let := orderStructure M
   let := morleyExpansion {⟨2, ltFormula⟩} M
-  have : Countable M := countable_toType_add_one hα
+  have : Countable M := countable_toType_add_one_of_lt_omega_one hα
   have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
-  exact hbound M _ hne (realize_ltSentence ((hσ M).2 inferInstance)) (toTypeSuccEmbedding α)
+  let f := toTypeOrderEmbeddingOfLE (Order.le_succ α)
+  exact hbound M _ hne (realize_ltSentence ((hσ M).2 inferInstance)) f
     (relChain_iff.2 fun x y hxy => ((morleyExpansion_relMap_morleyRel rfl _).trans
-      (realize_ltFormula _ _)).2 ((toTypeSuccEmbedding α).strictMono hxy))
+      (realize_ltFormula _ _)).2 (f.strictMono hxy))
 
 end TauCeti
