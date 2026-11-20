@@ -55,6 +55,7 @@ up to cyclic shifts correspond to the periodic orbits without a marked point
 
 When `Q` has an addition, translating every vertex by the same `a` preserves the action as soon as
 each `S_i` takes the same value on an edge and on its translate (`TauCeti.cyclicAction_add_const`).
+Negating the functions negates the action (`TauCeti.cyclicAction_neg`).
 
 With a single vertex, the differential of `ψ(q) = S(q, q)` is `d₁S(q, q) + d₂S(q, q)`
 (`TauCeti.mvfderiv_diag_eq_add`), and the dictionary identifies the fixed points of a map
@@ -158,6 +159,13 @@ theorem cyclicAction_add_const [Add Q] {S : ZMod N → Q × Q → ℝ} {q : ZMod
     (h : ∀ i, S i (q i + a, q (i + 1) + a) = S i (q i, q (i + 1))) :
     cyclicAction S (fun i ↦ q i + a) = cyclicAction S q :=
   Finset.sum_congr rfl fun i _ ↦ h i
+
+omit [TopologicalSpace Q] in
+/-- The cyclic discrete action of the functions `-S_i` is minus that of the `S_i`. -/
+theorem cyclicAction_neg (S : ZMod N → Q × Q → ℝ) :
+    cyclicAction (fun i z ↦ -S i z) = -cyclicAction S := by
+  ext q
+  simp [cyclicAction_apply]
 
 /-- **Cyclic shifts preserve critical configurations.** A configuration `q` is a critical point of
 the cyclic action `Σ_i S_i(q_i, q_(i+1))` exactly when its shift `i ↦ q (i + k)` is a critical

@@ -25,7 +25,7 @@ This is the convention of the generating functions `TauCeti.stripGeneratingFunct
 of a twist map generates it on the whole strip
 (`TauCeti.isStripGeneratingFunction_stripBandGeneratingFunction`). It is the cotangent convention
 `p = d₁S`, `P = -d₂S` of `TauCeti.CotangentBundle.generatingCorrespondence` for the function `-S`,
-reading a state `(x, y)` as the covector `y dx` of `T^*ℝ`.
+reading a state `(x, y)` as the covector `y dx` of `T^*ℝ` (`TauCeti.CotangentBundle.fieldEquiv`).
 
 If `S_k` generates `F_k` over `D_k`, the **cyclic action**
 
@@ -39,7 +39,7 @@ sends a chain to its positions `x_k`, and a critical configuration to the states
 `(x_k, -∂₁ S_k(x_k, x_(k+1)))`
 (`TauCeti.exists_equiv_periodic_of_isStripGeneratingFunction`). It is the chain dictionary
 `TauCeti.CotangentBundle.exists_equiv_periodic_of_generating` for the functions `-S_k` on
-`ℝ × ℝ`, whose cyclic action is `-W`.
+`ℝ × ℝ`, whose cyclic action is `-W` (`TauCeti.cyclicAction_neg`).
 
 The dictionary is compatible with the deck translation `T(x, y) = (x + 1, y)` of the strip. Suppose
 that every `F_k` commutes with the integer translations `T^m` on `D_k`, as lifts of annulus maps do,
@@ -57,15 +57,8 @@ give distinct fixed points of the composite on the annulus, all of zero displace
 chosen lift. Different cyclic markings `x ↦ (k ↦ x_(k + j))` are not identified here: for a
 factorization into several different maps they belong to different composites.
 
-## Main definitions
-
-* `TauCeti.IsStripGeneratingFunction S F D`: `S` generates `F` over `D`, with
-  `y = -∂₁ S(x, X)` and `Y = ∂₂ S(x, X)`.
-
 ## Main results
 
-* `TauCeti.isStripGeneratingFunction_stripBandGeneratingFunction`: the band generating function of
-  an area-preserving twist map of a strip generates it there.
 * `TauCeti.exists_equiv_periodic_of_isStripGeneratingFunction`: periodic chains of states are the
   critical points of the cyclic action.
 * `TauCeti.mvfderiv_cyclicAction_add_eq_zero_of_isStripGeneratingFunction`: critical
@@ -91,90 +84,9 @@ open scoped Manifold ContDiff Interval
 
 namespace TauCeti
 
-/-! ### Generating functions in the strip convention -/
-
-/-- **Generating functions in the strip convention.** A function `S` of the twist coordinates
-`(x, X)` generates a map `F = (X, Y)` of the plane over a set `D` of states if at the twist
-coordinates `(x, X(x, y))` of every state `(x, y) ∈ D` it has derivative `Y(x, y) dX - y dx`, that
-is `∂₁ S(x, X) = -y` and `∂₂ S(x, X) = Y(x, y)`. -/
-def IsStripGeneratingFunction (S : ℝ × ℝ → ℝ) (F : ℝ × ℝ → ℝ × ℝ) (D : Set (ℝ × ℝ)) : Prop :=
-  ∀ p ∈ D, HasFDerivAt S
-    ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
-    (stripTwistCoord F p)
-
-/-- Unfolding `TauCeti.IsStripGeneratingFunction`. -/
-theorem isStripGeneratingFunction_iff {S : ℝ × ℝ → ℝ} {F : ℝ × ℝ → ℝ × ℝ} {D : Set (ℝ × ℝ)} :
-    IsStripGeneratingFunction S F D ↔ ∀ p ∈ D, HasFDerivAt S
-      ((F p).2 • ContinuousLinearMap.snd ℝ ℝ ℝ - p.2 • ContinuousLinearMap.fst ℝ ℝ ℝ)
-      (stripTwistCoord F p) :=
-  Iff.rfl
-
-namespace IsStripGeneratingFunction
-
-variable {S : ℝ × ℝ → ℝ} {F : ℝ × ℝ → ℝ × ℝ} {D : Set (ℝ × ℝ)}
-  (hS : IsStripGeneratingFunction S F D) {p : ℝ × ℝ} (hp : p ∈ D)
-include hS hp
-
-/-- A generating function is differentiable at the twist coordinates of every state. -/
-theorem differentiableAt : DifferentiableAt ℝ S (stripTwistCoord F p) :=
-  (hS p hp).differentiableAt
-
-/-- **The first generating equation**, `∂₁ S(x, X) = -y`. -/
-theorem hasDerivAt_left : HasDerivAt (fun x ↦ S (x, (F p).1)) (-p.2) p.1 := by
-  have h := hS p hp
-  rw [stripTwistCoord_apply] at h
-  rw [hasDerivAt_iff_hasFDerivAt]
-  refine (h.comp p.1 (hasFDerivAt_prodMk_left p.1 (F p).1)).congr_fderiv ?_
-  ext
-  simp
-
-/-- **The second generating equation**, `∂₂ S(x, X) = Y`. -/
-theorem hasDerivAt_right : HasDerivAt (fun X ↦ S (p.1, X)) (F p).2 (F p).1 := by
-  have h := hS p hp
-  rw [stripTwistCoord_apply] at h
-  rw [hasDerivAt_iff_hasFDerivAt]
-  refine (h.comp (F p).1 (hasFDerivAt_prodMk_right p.1 (F p).1)).congr_fderiv ?_
-  ext
-  simp
-
-end IsStripGeneratingFunction
-
-/-- **Band generating functions are generating functions.** Let `F` be `C²` on a strip `ℝ × J`
-over an open interval `J ∋ 0`, preserve the area form `dx ∧ dy` and the line `y = 0` there, and
-twist, `∂_y X ≠ 0`. Then its band generating function generates it over the whole strip. -/
-theorem isStripGeneratingFunction_stripBandGeneratingFunction {F : ℝ × ℝ → ℝ × ℝ} {J : Set ℝ}
-    (hJ : IsOpen J) (hJc : J.OrdConnected) (h0 : (0 : ℝ) ∈ J)
-    (hF : ∀ q ∈ Prod.snd ⁻¹' J, ContDiffAt ℝ 2 F q) (hY : ∀ x, (F (x, 0)).2 = 0)
-    (hdet : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q).det = 1)
-    (htwist : ∀ q ∈ Prod.snd ⁻¹' J, (fderiv ℝ F q (0, 1)).1 ≠ 0) :
-    IsStripGeneratingFunction (stripBandGeneratingFunction F J) F (Prod.snd ⁻¹' J) :=
-  fun p hp ↦ hasFDerivAt_stripBandGeneratingFunction hJ (injOn_stripTwistCoord hJc htwist) hp
-    (fun _ ht ↦ hF _ (hJc.uIcc_subset h0 hp ht)) (hY p.1)
-    (fun _ ht ↦ hdet _ (hJc.uIcc_subset h0 hp (uIoo_subset_uIcc_self ht))) (htwist p hp)
+open CotangentBundle (fieldEquiv fieldEquiv_symm_apply)
 
 /-! ### States as covectors -/
-
-/-- States of the strip are the covectors of `ℝ`: the state `(x, y)` is the covector `y dx` at `x`,
-and a covector at `x` is `y dx` for its value `y` on the unit tangent vector. The tangent lines of
-`ℝ` are `ℝ` by definition. -/
-private def stripCovectorEquiv : ℝ × ℝ ≃ CotangentBundle 𝓘(ℝ) ℝ where
-  toFun p := TotalSpace.mk' (ℝ →L[ℝ] ℝ) p.1 ((1 : ℝ →L[ℝ] ℝ).smulRight p.2)
-  invFun z := (z.proj, z.2 (1 : ℝ))
-  -- Both inverse laws are `1 • y = y`, the tangent lines of `ℝ` being `ℝ` by definition.
-  left_inv p := Prod.ext rfl (one_smul ℝ p.2)
-  right_inv z := by
-    obtain ⟨x, c⟩ := z
-    refine congrArg (TotalSpace.mk' (ℝ →L[ℝ] ℝ) x) ?_
-    ext
-    exact one_smul ℝ (c (1 : ℝ))
-
-@[simp]
-private theorem proj_stripCovectorEquiv (p : ℝ × ℝ) : (stripCovectorEquiv p).proj = p.1 :=
-  (rfl)
-
-private theorem stripCovectorEquiv_symm_apply (z : CotangentBundle 𝓘(ℝ) ℝ) :
-    stripCovectorEquiv.symm z = (z.proj, z.2 (1 : ℝ)) :=
-  (rfl)
 
 /-- Over the twist coordinates of a state `p ∈ D` of a map `F` generated by `S`, the cotangent
 relation generated by `-S` is the pair of covectors of `p` and of `F p`. -/
@@ -182,7 +94,7 @@ private theorem generatingCorrespondence_neg_of_isStripGeneratingFunction {S : �
     {F : ℝ × ℝ → ℝ × ℝ} {D : Set (ℝ × ℝ)} (hS : IsStripGeneratingFunction S F D) {p : ℝ × ℝ}
     (hp : p ∈ D) :
     CotangentBundle.generatingCorrespondence 𝓘(ℝ) 𝓘(ℝ) (fun z ↦ -S z) (stripTwistCoord F p) =
-      (stripCovectorEquiv p, stripCovectorEquiv (F p)) := by
+      (fieldEquiv ℝ p, fieldEquiv ℝ (F p)) := by
   -- A derivative `c` of a real function of a real variable is the covector `c dx`; the tangent
   -- lines of `ℝ` and the identification `NormedSpace.fromTangentSpace` are `ℝ` by definition.
   have hcov {f : ℝ → ℝ} {x c : ℝ} (hf : HasDerivAt f c x) :
@@ -208,12 +120,6 @@ private theorem generatingCorrespondence_neg_of_isStripGeneratingFunction {S : �
 
 variable {N : ℕ} [NeZero N]
 
-/-- The cyclic action of the functions `-S_k` is minus that of the `S_k`. -/
-private theorem cyclicAction_neg (S : ZMod N → ℝ × ℝ → ℝ) :
-    cyclicAction (fun k z ↦ -S k z) = -cyclicAction S := by
-  ext q
-  simp [cyclicAction_apply]
-
 /-- **Periodic chains of strip maps and critical points of the cyclic action.** Let `S_k`
 generate `F_k` over `D_k` for `k ∈ ℤ/N`. Taking positions is a bijection from the periodic chains
 of states, the sequences `p_k ∈ D_k` with `F_k(p_k) = p_(k+1)`, onto the critical points of the
@@ -231,16 +137,16 @@ theorem exists_equiv_periodic_of_isStripGeneratingFunction {F : ZMod N → ℝ �
           (q.1 k, -deriv (fun x ↦ S k (x, q.1 (k + 1))) (q.1 k)) := by
   -- The strip maps, transported to covectors.
   let φ (k : ZMod N) (z : CotangentBundle 𝓘(ℝ) ℝ) : CotangentBundle 𝓘(ℝ) ℝ :=
-    stripCovectorEquiv (F k (stripCovectorEquiv.symm z))
-  have hφ (k : ZMod N) (p : ℝ × ℝ) : φ k (stripCovectorEquiv p) = stripCovectorEquiv (F k p) :=
-    congrArg (fun p ↦ stripCovectorEquiv (F k p)) (stripCovectorEquiv.symm_apply_apply p)
+    fieldEquiv ℝ (F k ((fieldEquiv ℝ).symm z))
+  have hφ (k : ZMod N) (p : ℝ × ℝ) : φ k (fieldEquiv ℝ p) = fieldEquiv ℝ (F k p) :=
+    congrArg (fun p ↦ fieldEquiv ℝ (F k p)) ((fieldEquiv ℝ).symm_apply_apply p)
   have hbase (k : ZMod N) (p : ℝ × ℝ) :
-      ((stripCovectorEquiv p).proj, (φ k (stripCovectorEquiv p)).proj) =
+      ((fieldEquiv ℝ p).proj, (φ k (fieldEquiv ℝ p)).proj) =
         stripTwistCoord (F k) p := by
     simp [hφ]
   obtain ⟨e₀, he₀, he₀'⟩ := CotangentBundle.exists_equiv_periodic_of_generating (N := N)
     (S := fun k z ↦ -S k z) (W := fun k ↦ stripTwistCoord (F k) '' D k)
-    (D := fun k ↦ stripCovectorEquiv '' D k) (φ := φ)
+    (D := fun k ↦ fieldEquiv ℝ '' D k) (φ := φ)
     (fun k _ ↦ by
       rintro ⟨p, hp, rfl⟩
       rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod]
@@ -252,15 +158,15 @@ theorem exists_equiv_periodic_of_isStripGeneratingFunction {F : ZMod N → ℝ �
         generatingCorrespondence_neg_of_isStripGeneratingFunction (hS k) hp⟩)
     (fun k _ ↦ by
       rintro ⟨p, hp, rfl⟩
-      exact ⟨stripCovectorEquiv p, mem_image_of_mem _ hp, hbase k p⟩)
+      exact ⟨fieldEquiv ℝ p, mem_image_of_mem _ hp, hbase k p⟩)
   -- Periodic chains of states are the periodic chains of their covectors.
   let e₁ : {p : ZMod N → ℝ × ℝ // ∀ k, p k ∈ D k ∧ F k (p k) = p (k + 1)} ≃
       {z : ZMod N → CotangentBundle 𝓘(ℝ) ℝ //
-        ∀ k, z k ∈ stripCovectorEquiv '' D k ∧ φ k (z k) = z (k + 1)} :=
-    (Equiv.piCongrRight fun _ ↦ stripCovectorEquiv).subtypeEquiv fun p ↦ by
+        ∀ k, z k ∈ fieldEquiv ℝ '' D k ∧ φ k (z k) = z (k + 1)} :=
+    (Equiv.piCongrRight fun _ ↦ fieldEquiv ℝ).subtypeEquiv fun p ↦ by
       refine forall_congr' fun k ↦ ?_
       simp only [Equiv.piCongrRight_apply, Pi.map_apply]
-      rw [stripCovectorEquiv.injective.mem_set_image, hφ, stripCovectorEquiv.injective.eq_iff]
+      rw [(fieldEquiv ℝ).injective.mem_set_image, hφ, (fieldEquiv ℝ).injective.eq_iff]
   -- Critical points of `-W` are those of `W`.
   let e₂ := Equiv.subtypeEquivRight (p := fun q : ZMod N → ℝ ↦
       (∀ k, (q k, q (k + 1)) ∈ stripTwistCoord (F k) '' D k) ∧
@@ -269,10 +175,10 @@ theorem exists_equiv_periodic_of_isStripGeneratingFunction {F : ZMod N → ℝ �
     fun q ↦ by rw [cyclicAction_neg, mvfderiv_neg, neg_eq_zero]
   refine ⟨(e₁.trans e₀).trans e₂, fun p k ↦ he₀ _ k, fun q k ↦ ?_⟩
   have h : ((((e₁.trans e₀).trans e₂).symm q : ZMod N → ℝ × ℝ) k) =
-      stripCovectorEquiv.symm (CotangentBundle.generatingSource 𝓘(ℝ) (fun z ↦ -S k z)
+      (fieldEquiv ℝ).symm (CotangentBundle.generatingSource 𝓘(ℝ) (fun z ↦ -S k z)
         (q.1 k, q.1 (k + 1))) :=
-    congrArg stripCovectorEquiv.symm (he₀' (e₂.symm q) k)
-  rw [h, stripCovectorEquiv_symm_apply, CotangentBundle.proj_generatingSource,
+    congrArg (fieldEquiv ℝ).symm (he₀' (e₂.symm q) k)
+  rw [h, fieldEquiv_symm_apply, CotangentBundle.proj_generatingSource,
     CotangentBundle.generatingSource_snd]
   -- The value of the covector `d₁(-S_k)` on the unit tangent vector is `-∂₁ S_k`.
   exact Prod.ext rfl (((mvfderiv_eq_fderiv_apply _ _ (1 : ℝ)).trans fderiv_apply_one_eq_deriv).trans
