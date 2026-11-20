@@ -41,6 +41,8 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   nonconstant.
 * `Polynomial.exists_forall_le_norm_eval`: a nonconstant polynomial has modulus at least `c`
   outside a closed ball, for every `c`.
+* `Polynomial.isBigO_cobounded_eval_norm_pow_of_natDegree_le`: a polynomial of degree at most `n`
+  is `O(‖z‖ ^ n)` at infinity.
 * `Polynomial.exists_norm_eval_le_mul_one_add_norm_eval`: a polynomial of degree at most that of
   `Q` is bounded by a multiple of `1 + ‖Q‖` everywhere.
 * `Polynomial.exists_tendsto_eventually_forall_norm_eval_le`: polynomials of degree at most
@@ -50,7 +52,7 @@ The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_mon
   converge to those of a nonconstant `Q`, with eventually `deg P i ≤ deg Q`, then
   `|‖P i‖ - ‖Q‖| ≤ δ (1 + ‖Q‖)` and `|‖P i'‖ - ‖Q'‖| ≤ δ (1 + ‖Q'‖)` everywhere, with `δ → 0`.
 
-These four hold over normed rings `R` with multiplicative norm; the last three assume `R` proper,
+These five hold over normed rings `R` with multiplicative norm; the last three assume `R` proper,
 and the last two also nontrivial; the last assumes characteristic zero as well.
 -/
 
@@ -262,6 +264,15 @@ theorem exists_forall_le_norm_eval {P : Polynomial R} (hP : 0 < P.natDegree) (c 
     ((P.tendsto_norm_atTop (natDegree_pos_iff_degree_pos.mp hP)
       tendsto_norm_cobounded_atTop).eventually_ge_atTop c)
   exact ⟨r, hr⟩
+
+/-- A polynomial of degree at most `n` is `O(‖z‖ ^ n)` at infinity. -/
+theorem isBigO_cobounded_eval_norm_pow_of_natDegree_le {Q : Polynomial R} {n : ℕ}
+    (hQ : Q.natDegree ≤ n) : Q.eval =O[Bornology.cobounded R] fun z ↦ ‖z‖ ^ n := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact (isBigO_zero _ _).congr_left fun z ↦ Subsingleton.elim _ _
+  have := NormMulClass.toNormOneClass (α := R)
+  simpa only [norm_pow] using
+    ((isBigO_cobounded_pow_natDegree Q).trans (isBigO_pow_pow_cobounded_of_le hQ)).norm_right
 
 variable [ProperSpace R]
 
