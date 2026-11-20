@@ -281,12 +281,11 @@ theorem hatDifferential_mem_supported {s : Set H.Generator}
     (hs : ∀ x ∈ s, ∀ y, H.hatCoefficient χ x y ≠ 0 → y ∈ s) {c : H.Generator →₀ ZMod 2}
     (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s) :
     H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s := by
-  rw [Finsupp.mem_supported'] at hc ⊢
+  rw [Finsupp.mem_supported']
   intro y hy
   rw [hatDifferential_apply, Finsupp.sum]
   refine Finset.sum_eq_zero fun x hx => ?_
-  have hxs : x ∈ s := by_contra fun h => Finsupp.mem_support_iff.mp hx (hc x h)
-  rw [not_ne_iff.mp (mt (hs x hxs y) hy), mul_zero]
+  rw [not_ne_iff.mp (mt (hs x ((Finsupp.mem_supported _ _).mp hc hx) y) hy), mul_zero]
 
 end Differential
 

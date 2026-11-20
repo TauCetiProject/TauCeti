@@ -50,8 +50,9 @@ multiples of the whole surface. Hence:
   differential vanishes and `HFK̂` has one generator in each of the Alexander gradings `1`, `0`,
   `-1`, with this normalization. The bigon `B_z` joins the generators of Alexander gradings `1`
   and `0` with `n_z - n_w = 1`, and is not counted;
-* the Alexander gradings `1`, `-1`, `0` filter the hat complex of the diagram `(Σ, α, β, w)`,
-  whose count of domains avoiding `w` does include `B_z`, from `x₀` to `x₂`. That count is
+* the Alexander gradings `1`, `-1`, `0` form an Alexander function for `w`, the hypothesis of the
+  Alexander filtration of the hat complex of the diagram `(Σ, α, β, w)`, whose count of domains
+  avoiding `w` does include `B_z`, from `x₀` to `x₂`. That count is
   combinatorial: the region `R` has eight corners, so this diagram is not nice, and the count
   of domains is not claimed to be the count of holomorphic disks.
 
@@ -86,8 +87,9 @@ Euler characteristic is its Alexander polynomial `t - 1 + t⁻¹`.
 * `TauCeti.HeegaardRegionSystem.hatDomains_trefoil` and
   `TauCeti.HeegaardRegionSystem.hatDifferential_trefoil`: the hat knot Floer differential
   vanishes.
-* `TauCeti.HeegaardRegionSystem.sub_eq_sum_of_isDomainBetween_trefoil`: the Alexander gradings
-  `1`, `-1`, `0` filter the hat complex of the diagram pointed at `w`.
+* `TauCeti.HeegaardRegionSystem.isAlexanderFunction_trefoil`: the Alexander gradings `1`, `-1`,
+  `0` satisfy the hypothesis of the Alexander filtration
+  of the hat complex of the diagram pointed at `w`.
 * `TauCeti.HeegaardRegionSystem.hatCoefficient_trefoil_zero_two`: in that complex the bigon
   `B_z` gives a coefficient one from `x₀` to `x₂`, lowering the Alexander grading by one.
 
@@ -413,21 +415,25 @@ theorem withBasepoints_trefoil {B' : Type*} (b' : B' → Fin 3) :
   (rfl)
 
 /-- **The Alexander filtration of the trefoil diagram.** The Alexander gradings `1`, `-1`, `0` of
-`x₀`, `x₁`, `x₂` are lowered by every domain avoiding `w` by its multiplicity at `z`, which is its
-total multiplicity at the two basepoints. So they filter the hat complex of the diagram pointed
-at `w` (`TauCeti.HeegaardRegionSystem.hatDifferential_withBasepoints_mem_supported_setOf_le`). -/
-theorem sub_eq_sum_of_isDomainBetween_trefoil (x y : (trefoil ![1, 2]).Generator) (D : Fin 3 → ℤ)
-    (hD : (trefoil ![1, 2]).IsDomainBetween x y D)
-    (hw : D ((trefoil ![1, 2]).basepoint 0) = 0) :
-    ![1, -1, 0] ((trefoil ![1, 2]).point x 0) - ![1, -1, 0] ((trefoil ![1, 2]).point y 0) =
-      ∑ t, D ((trefoil ![1, 2]).basepoint t) := by
-  rw [← trefoilGenerator_snd_zero x, ← trefoilGenerator_snd_zero y] at hD ⊢
-  rw [isDomainBetween_trefoil_iff] at hD
-  have h1 : D 1 = 0 := by simpa using hw
-  simp only [trefoilGenerator_point, Fin.sum_univ_two, trefoil_basepoint]
-  generalize (x.2 0 : Fin 3) = a at hD ⊢
-  generalize (y.2 0 : Fin 3) = c at hD ⊢
-  fin_cases a <;> fin_cases c <;> simp_all <;> omega
+`x₀`, `x₁`, `x₂`, relative to `x₂`, form an Alexander function for `w`: every domain avoiding `w`
+lowers them by its multiplicity at `z`. So they filter the hat complex of the diagram pointed at
+`w` (`IsAlexanderFunction.hatDifferential_withBasepoints_mem_supported_setOf_le`). -/
+theorem isAlexanderFunction_trefoil :
+    (trefoil ![1, 2]).IsAlexanderFunction (fun _ : Unit => 0)
+      fun x => ![1, -1, 0] ((trefoil ![1, 2]).point x 0) := by
+  have hx : ∀ x, ∃ E, (trefoil ![1, 2]).IsDomainBetween x (trefoilGenerator _ 2) E := by
+    intro x
+    rw [← trefoilGenerator_snd_zero x]
+    generalize (x.2 0 : Fin 3) = a
+    fin_cases a
+    exacts [⟨_, isDomainBetween_trefoil_single_two⟩, ⟨_, isDomainBetween_trefoil_single_one⟩,
+      ⟨_, isDomainBetween_zero _⟩]
+  convert isAlexanderFunction_relativeAlexanderGrading (fun b => by fin_cases b <;> simp)
+    (periodicAlexanderValues_trefoil 0 1) hx using 1
+  funext x
+  rw [← trefoilGenerator_snd_zero x]
+  generalize (x.2 0 : Fin 3) = a
+  fin_cases a <;> simp [relativeAlexanderGrading_self]
 
 /-- The bigon `B_z`, which avoids `w`, is counted by the hat differential of the diagram pointed
 at `w` alone, from `x₀` to `x₂`. It lowers the Alexander grading by one, so the hat differential
