@@ -45,6 +45,9 @@ foundational invariance and functoriality properties:
   with `i ≥ m` vanish, so weak regularity of `F.landweberSequence p n` for all `n` reduces to
   `n = m`
   (`FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_smul_top_eq_top`).
+  When `I_(n+1)(F) = R`, `v_n` is a unit modulo `I_n(F)`, so weak regularity for all `m` reduces
+  further to `m = n`
+  (`FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`).
   In particular, a module is Landweber regular for `𝔾ₘ` precisely when every prime acts
   injectively on it (`FormalGroup.isLandweberRegular_𝔾ₘ_iff`), and for `𝔾ₐ` precisely when every
   prime acts bijectively (`FormalGroup.isLandweberRegular_𝔾ₐ_iff`).
@@ -69,6 +72,9 @@ foundational invariance and functoriality properties:
 * `FormalGroup.isWeaklyRegular_ofFn_iff_landweberSequence` and
   `FormalGroup.isRegular_ofFn_iff_landweberSequence`: replacing each `v_i` by any lift modulo
   `I_i(F)` preserves weak regularity and regularity.
+* `FormalGroup.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top` and
+  `FormalGroup.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top`: when
+  `I_(n+1)(F) = R`, Landweber regularity at prime `p` reduces to `F.landweberSequence p n`.
 * `TauCeti.FormalGroupIso.isWeaklyRegular_landweberSequence_iff` and
   `TauCeti.FormalGroupIso.isLandweberRegular_iff`: invariance under arbitrary formal group
   isomorphisms.
@@ -260,6 +266,49 @@ theorem forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_eq_top (hp :
     (∀ n : ℕ, IsWeaklyRegular M (F.landweberSequence p n)) ↔
       IsWeaklyRegular M (F.landweberSequence p m) :=
   F.forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_smul_top_eq_top hp (by simp [hm])
+
+/-- If `I_(n+1)(F) = ⊤`, then `v_n` is a unit modulo `I_n(F)` (`isUnit_mk_coeff_nsmulSeries_iff`)
+and hence acts invertibly (in particular regularly) on `M ⧸ I_n(F) M`, while `M ⧸ I_i(F) M = 0` for
+`i > n`. Consequently, for `m ≥ n`, `F.landweberSequence p m` is weakly regular on `M` if and only
+if `F.landweberSequence p n` is. -/
+theorem isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p.Prime)
+    (M : Type*) [AddCommGroup M] [Module R M] {n m : ℕ} (hnm : n ≤ m)
+    (hI : F.heightIdeal p (n + 1) = ⊤) :
+    IsWeaklyRegular M (F.landweberSequence p m) ↔
+      IsWeaklyRegular M (F.landweberSequence p n) := by
+  refine ⟨fun hm ↦ ?_, fun hn ↦ ?_⟩
+  · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hm ⊢
+    exact fun i hi ↦ hm i (hi.trans_le hnm)
+  · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hn ⊢
+    intro i _
+    rcases lt_trichotomy i n with hin | rfl | hni
+    · exact hn i hin
+    · obtain ⟨u, hu⟩ := ((F.isUnit_mk_coeff_nsmulSeries_iff hp i).mpr hI).exists_left_inv
+      obtain ⟨c, hc⟩ := Ideal.Quotient.mk_surjective u
+      rw [isSMulRegular_quotient_iff_mem_of_smul_mem]
+      intro x hx
+      have h1 : (1 - c * PowerSeries.coeff (p ^ i) (F.nsmulSeries p)) • x ∈
+          F.heightIdeal p i • (⊤ : Submodule R M) := by
+        refine Submodule.smul_mem_smul ?_ Submodule.mem_top
+        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, map_mul, hc, hu, sub_self]
+      simpa [sub_smul, mul_smul] using
+        (F.heightIdeal p i • (⊤ : Submodule R M)).add_mem h1 (Submodule.smul_mem _ c hx)
+    · have htop : F.heightIdeal p i = ⊤ := top_unique (hI ▸ F.heightIdeal_mono hni)
+      have : Subsingleton (M ⧸ (F.heightIdeal p i • ⊤ : Submodule R M)) :=
+        Submodule.Quotient.subsingleton_iff.mpr (by simp [htop])
+      exact fun _ _ _ ↦ Subsingleton.elim _ _
+
+/-- If `I_(n+1)(F) = ⊤`, weak regularity of `F.landweberSequence p m` on `M` for every `m : ℕ`
+is equivalent to weak regularity at `m = n`. -/
+theorem forall_isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top (hp : p.Prime)
+    (M : Type*) [AddCommGroup M] [Module R M] {n : ℕ} (hI : F.heightIdeal p (n + 1) = ⊤) :
+    (∀ m : ℕ, IsWeaklyRegular M (F.landweberSequence p m)) ↔
+      IsWeaklyRegular M (F.landweberSequence p n) :=
+  ⟨fun h ↦ h n, fun hn m ↦ by
+    rcases le_total n m with hnm | hmn
+    · exact (F.isWeaklyRegular_landweberSequence_iff_of_heightIdeal_succ_eq_top hp M hnm hI).mpr hn
+    · rw [F.isWeaklyRegular_landweberSequence_iff hp M] at hn ⊢
+      exact fun i hi ↦ hn i (hi.trans_le hmn)⟩
 
 end Comm
 
