@@ -85,14 +85,12 @@ private theorem adjointCoeff_eq (ω : SymplecticForm V) {J : ℝ → V → V →
     fderiv ℝ (fun p ↦ J p.2 (w p)) z stdComplexLineImag -
         ω.floerLinearizationCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) w z =
       adjointCoeff ω J H (z.2, w z, fderiv ℝ w z stdComplexLineImag) := by
-  have hX0 : ω.hamiltonianVectorField (fun _ : V ↦ (0 : ℝ)) = fun _ ↦ 0 :=
-    funext fun _ ↦ by simp [hamiltonianVectorField_def]
   have hd := (hJ (z.2, w z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hw.hasFDerivAt)
   rw [show (fun p : ℝ × ℝ ↦ J p.2 (w p)) = uncurry J ∘ fun p ↦ (p.2, w p) from
     funext fun p ↦ (uncurry_apply_pair J p.2 (w p)).symm, hd.fderiv, adjointCoeff]
   congr 1
   ext y
-  simp [floerLinearizationCoeff_apply, hX0]
+  simp [floerLinearizationCoeff_apply]
 
 /-- `adjointCoeff` is continuous for `C¹` structures and `C²` Hamiltonians. -/
 private theorem continuous_adjointCoeff (ω : SymplecticForm V) {J : ℝ → V → V →L[ℝ] V}
