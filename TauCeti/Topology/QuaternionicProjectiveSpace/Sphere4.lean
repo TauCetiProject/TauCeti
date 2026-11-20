@@ -96,8 +96,8 @@ theorem coe_hopfSphere4_apply (v : sphere (0 : PiLp 2 fun _ : Fin 2 ↦ ℍ) 1) 
 theorem hopfSphere4_op_smul (q : sphere (0 : ℍ) 1) (v : sphere (0 : PiLp 2 fun _ : Fin 2 ↦ ℍ) 1) :
     hopfSphere4 (v <• q) = hopfSphere4 v := by
   have hq : ‖(q : ℍ)‖ = 1 := norm_eq_of_mem_sphere q
-  have hqq : (q : ℍ) * star (q : ℍ) = 1 := by
-    rw [self_mul_star, normSq_eq_norm_mul_self, hq, mul_one, coe_one]
+  have hqq : (q : ℍ) * star (q : ℍ) = 1 :=
+    Unitary.mul_star_self_of_mem (mem_unitary_of_mem_sphere q.2)
   have h (a b : ℍ) : a * (q : ℍ) * star (b * (q : ℍ)) = a * star b := by
     rw [star_mul, mul_assoc, ← mul_assoc (q : ℍ), hqq, one_mul]
   refine Subtype.ext ?_
@@ -115,8 +115,8 @@ theorem coe_hopfSphere4_conj (c : sphere (0 : ℍ) 1)
       ((hopfSphere4 v : WithLp 2 (ℝ × ℍ)).fst,
         star (c : ℍ) * (hopfSphere4 v : WithLp 2 (ℝ × ℍ)).snd * c) := by
   have hc : ‖(c : ℍ)‖ = 1 := norm_eq_of_mem_sphere c
-  have hcc : (c : ℍ) * star (c : ℍ) = 1 := by
-    rw [self_mul_star, normSq_eq_norm_mul_self, hc, mul_one, coe_one]
+  have hcc : (c : ℍ) * star (c : ℍ) = 1 :=
+    Unitary.mul_star_self_of_mem (mem_unitary_of_mem_sphere c.2)
   have hnorm (a : ℍ) : ‖star (c : ℍ) * a * c‖ = ‖a‖ := by
     rw [norm_mul, norm_mul, _root_.norm_star, hc, one_mul, mul_one]
   rw [coe_hopfSphere4_apply, coe_hopfSphere4_apply, hw, hw, hnorm, hnorm]

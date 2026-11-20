@@ -33,7 +33,7 @@ family of two-spheres
 
 (`TauCeti.QuaternionicProjectiveSpace.lineSphereFamily`): `σ (x, y, q)` is the great two-sphere of
 the quaternionic line through `[x]` and `[y]` consisting of `[y]` and the points `[x + y z]` with
-`z` in the real plane spanned by `1` and `q`. Every such sphere is embedded, sends the north pole
+`z` in the real plane spanned by `1` and `q`. Every such sphere is injective, sends the north pole
 of `S²` to `[x]` and the south pole to `[y]`, so the family lies over `HPⁿ` through evaluation at
 the north pole. Replacing `(x, y, q)` by `(x c, y c, c* q c)` for a unit quaternion `c`, with
 conjugate `c* = star c`, does not change the sphere
@@ -50,7 +50,8 @@ two-spheres.
   (`TauCeti.QuaternionicProjectiveSpace.exists_mem_twoFrame`).
 * `TauCeti.QuaternionicProjectiveSpace.lineIsometry`: the isometry `(a, b) ↦ x a + y b`.
 * `TauCeti.QuaternionicProjectiveSpace.lineMap`: the projective line `[a : b] ↦ [x a + y b]`.
-* `TauCeti.QuaternionicProjectiveSpace.isClosedEmbedding_lineMap`: it is a closed embedding.
+* `TauCeti.QuaternionicProjectiveSpace.isClosedEmbedding_lineMap_right`: the line of a fixed
+  two-frame is a closed embedding.
 * `TauCeti.QuaternionicProjectiveSpace.greatSphere4`: the great two-sphere of `S⁴` through the poles
   in the direction of a unit imaginary quaternion.
 * `TauCeti.QuaternionicProjectiveSpace.lineSphereFamily`: the family of great two-spheres of the
@@ -204,7 +205,7 @@ theorem lineMap_mk_single_one (f : twoFrame n) :
 
 /-- **The line of a two-frame is injective**: `x a + y b` determines `(a, b)` since the line
 isometry is injective, so `[x a + y b]` determines `[a : b]`. -/
-theorem lineMap_injective (f : twoFrame n) : Function.Injective fun p ↦ lineMap (f, p) := by
+theorem lineMap_right_injective (f : twoFrame n) : Function.Injective fun p ↦ lineMap (f, p) := by
   intro p p' h
   induction p using QuaternionicProjectiveSpace.inductionOn with | h v => ?_
   induction p' using QuaternionicProjectiveSpace.inductionOn with | h w => ?_
@@ -215,9 +216,10 @@ theorem lineMap_injective (f : twoFrame n) : Function.Injective fun p ↦ lineMa
   exact congrArg Subtype.val hq
 
 /-- **The line of a two-frame is a closed embedding** of the four-sphere `HP¹` into `HPⁿ`. -/
-theorem isClosedEmbedding_lineMap (f : twoFrame n) :
+theorem isClosedEmbedding_lineMap_right (f : twoFrame n) :
     Topology.IsClosedEmbedding fun p ↦ lineMap (f, p) :=
-  (lineMap.continuous.comp (Continuous.prodMk_right f)).isClosedEmbedding (lineMap_injective f)
+  (lineMap.continuous.comp (Continuous.prodMk_right f)).isClosedEmbedding
+    (lineMap_right_injective f)
 
 end Line
 
@@ -267,7 +269,7 @@ theorem coe_greatSphere4_apply (p : {q : sphere (0 : ℍ) 1 // (q : ℍ).re = 0}
   (rfl)
 
 /-- Each great two-sphere is injective: `1` and `q` are linearly independent over `ℝ`. -/
-theorem greatSphere4_injective (q : {q : sphere (0 : ℍ) 1 // (q : ℍ).re = 0}) :
+theorem greatSphere4_right_injective (q : {q : sphere (0 : ℍ) 1 // (q : ℍ).re = 0}) :
     Function.Injective fun s ↦ greatSphere4 (q, s) := by
   intro s s' h
   have h' := congrArg (fun x : sphere (0 : WithLp 2 (ℝ × ℍ)) 1 ↦
@@ -335,11 +337,13 @@ theorem mappingSpaceEval_comp_lineSphereFamily :
   ext p
   simp
 
-/-- **Each sphere of the family is embedded**: `σ (x, y, q)` is injective. -/
-theorem lineSphereFamily_injective (p : twoFrame n × {q : sphere (0 : ℍ) 1 // (q : ℍ).re = 0}) :
+/-- **Each sphere of the family is injective**: `σ (x, y, q)` is a one-to-one map
+`S² → HPⁿ`. -/
+theorem lineSphereFamily_apply_injective
+    (p : twoFrame n × {q : sphere (0 : ℍ) 1 // (q : ℍ).re = 0}) :
     Function.Injective (lineSphereFamily p) :=
-  (lineMap_injective p.1).comp
-    (homeomorphSphere4.symm.injective.comp (greatSphere4_injective p.2))
+  (lineMap_right_injective p.1).comp
+    (homeomorphSphere4.symm.injective.comp (greatSphere4_right_injective p.2))
 
 /-- **The family descends to tangent frames**: replacing a two-frame `(x, y)` by `(x c, y c)` and
 the imaginary unit `q` by `c* q c`, for a unit quaternion `c`, does not change the sphere. The
@@ -352,10 +356,10 @@ theorem lineSphereFamily_eq_of_op_smul {f f' : twoFrame n}
     (hq : ((q' : sphere (0 : ℍ) 1) : ℍ) = star (c : ℍ) * q * c) :
     lineSphereFamily (f', q') = lineSphereFamily (f, q) := by
   have hc : ‖(c : ℍ)‖ = 1 := norm_eq_of_mem_sphere c
-  have hcc : (c : ℍ) * star (c : ℍ) = 1 := by
-    rw [self_mul_star, normSq_eq_norm_mul_self, hc, mul_one, coe_one]
-  have hcc' : star (c : ℍ) * c = 1 := by
-    rw [star_mul_self, normSq_eq_norm_mul_self, hc, mul_one, coe_one]
+  have hcc : (c : ℍ) * star (c : ℍ) = 1 :=
+    Unitary.mul_star_self_of_mem (mem_unitary_of_mem_sphere c.2)
+  have hcc' : star (c : ℍ) * c = 1 :=
+    Unitary.star_mul_self_of_mem (mem_unitary_of_mem_sphere c.2)
   ext s : 1
   obtain ⟨v, hv⟩ := hopfSphere4_surjective (greatSphere4 (q, s))
   -- The conjugate `w = (c* a c, c* b c)` of a Hopf preimage `v = (a, b)` of the sphere point.
