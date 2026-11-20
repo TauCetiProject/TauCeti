@@ -227,7 +227,8 @@ theorem integral_norm_fderiv_one_sq_annulus_le_exp_mul
       (∫ z in {z : ℂ | r₁ ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ r₂}, ‖fderiv ℝ u z 1‖ ^ 2) =
         ∫ r in r₁..r₂, G r := by
     simpa only [smul_eq_mul] using integral_annulus_eq_integral_circleMap
-      (ha.le.trans h₁) h₁₂ (he.mono (setOf_le_norm_sub_le_subset h₁ h₂))
+      (ha.le.trans h₁) h₁₂
+      (integrableOn_norm_fderiv_one_sq_annulus (fun z hz ↦ (hu z hz).of_le one_le_two) h₁ h₂)
   -- Boundary control on every subannulus `a e^t ≤ |z - z₀| ≤ b e^{-t}` is `κ f ≤ -f'`.
   have hkey := exp_mul_integral_le_integral (κ := 2 * c / (1 + M) ^ 2) ha hT hTab
     (by simpa only [smul_eq_mul] using he.smul_integral_comp_circleMap ha.le) fun t ht ↦ by
