@@ -45,9 +45,10 @@ theorem DifferentiableAt.fderiv_piLp_apply (hf : DifferentiableAt 𝕜 f y) (i :
   rfl
 
 /-- A coordinate of a curve in a finite `L^p` product has the corresponding coordinate of the
-velocity as derivative. The factors are indexed by `Fin n`: the scalar action on `PiLp` is known
-to be continuous only for a `Fintype` index, which would otherwise appear in the statement only
-through that instance. -/
+velocity as derivative. The factors are indexed by `Fin n`: stating `HasDerivWithinAt` needs
+`ContinuousSMul 𝕜 (PiLp p F)`, which Mathlib provides only for a `Fintype` index, and a
+`Fintype` hypothesis used only through this `Prop`-valued instance is rejected by the
+`unusedFintypeInType` linter. -/
 theorem HasDerivWithinAt.piLp_apply {n : ℕ} {F : Fin n → Type*} [∀ i, NormedAddCommGroup (F i)]
     [∀ i, NormedSpace 𝕜 (F i)] {c : 𝕜 → PiLp p F} {c' : PiLp p F} {s : Set 𝕜} {t : 𝕜}
     (hc : HasDerivWithinAt c c' s t) (i : Fin n) :

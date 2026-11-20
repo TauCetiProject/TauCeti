@@ -41,7 +41,8 @@ and for its Hamiltonian monodromy around the focus–focus value `(1, 0)`.
 * **The first return.** At a turning point `p₃ = 0`, so the point of the phase space is determined
   by its height, its horizontal position and `J`. After one oscillation the height and `J` are
   back, and the horizontal position has been rotated by `Θ(h, j)`; the rotation flow does the same
-  in the time `Θ(h, j)` (`TauCeti.rotate_of_isMIntegralCurveOn_angularMomentum`,
+  in the time `Θ(h, j)`
+  (`TauCeti.horizontal_eq_exp_mul_and_apply_two_eq_of_isMIntegralCurveOn_angularMomentum`,
   `TauCeti.apply_add_sphericalPendulumPeriod_eq_apply_sphericalPendulumRotationAngle`).
 
 The motions here are integral curves on intervals of times, and no completeness of the flows is
@@ -50,8 +51,9 @@ here for other initial points of the same orbit.
 
 ## Main declarations
 
-* `TauCeti.rotate_of_isMIntegralCurveOn_angularMomentum`: the rotation flow rotates positions and
-  momenta about the vertical axis with unit angular velocity
+* `TauCeti.horizontal_eq_exp_mul_and_apply_two_eq_of_isMIntegralCurveOn_angularMomentum`:
+  the rotation flow rotates positions and momenta about the vertical axis with unit angular
+  velocity, multiplying their horizontal coordinates `x₁ + x₂ i` by `exp ((b - a) i)`
   (via `TauCeti.isIntegralCurveOn_angularMomentum_of_isMIntegralCurveOn`, its motions in `ℝ³ × ℝ³`).
 * `TauCeti.div_sqrt_eq_exp_integral_mul_I_mul_of_isMIntegralCurveOn_sphericalPendulum`: the
   horizontal direction turns by `∫ j dt / (1 - q₃²)`.
@@ -119,8 +121,8 @@ field of the vertical angular momentum on a preconnected set of times, between t
 the position and the momentum are rotated about the vertical axis by the angle `b - a`: their
 horizontal coordinates are multiplied by `exp ((b - a) i)` and their vertical components are
 unchanged. -/
-theorem rotate_of_isMIntegralCurveOn_angularMomentum {β : ℝ → sphericalPendulumPhaseSpace}
-    {s : Set ℝ} (hs : IsPreconnected s)
+theorem horizontal_eq_exp_mul_and_apply_two_eq_of_isMIntegralCurveOn_angularMomentum
+    {β : ℝ → sphericalPendulumPhaseSpace} {s : Set ℝ} (hs : IsPreconnected s)
     (hβ : IsMIntegralCurveOn β (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
         (y : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3))) s) {a b : ℝ} (ha : a ∈ s)
@@ -391,8 +393,9 @@ theorem apply_add_sphericalPendulumPeriod_eq_apply_sphericalPendulumRotationAngl
     hz₀ hV (γ t₁).2 (γ t₃).2 hF ((sphericalPendulumEnergyMomentum_eq_of_isMIntegralCurveOn
       isPreconnected_Icc hγ (left_mem_Icc.2 ht₁₃) (right_mem_Icc.2 ht₁₃)).trans hF) h₁ h₃ hQ
   -- The rotation flow rotates the initial point by `Θ` as well.
-  obtain ⟨⟨hβq, hβq₂⟩, hβp, hβp₂⟩ := rotate_of_isMIntegralCurveOn_angularMomentum
-    isPreconnected_uIcc hβ left_mem_uIcc right_mem_uIcc
+  obtain ⟨⟨hβq, hβq₂⟩, hβp, hβp₂⟩ :=
+    horizontal_eq_exp_mul_and_apply_two_eq_of_isMIntegralCurveOn_angularMomentum
+      isPreconnected_uIcc hβ left_mem_uIcc right_mem_uIcc
   simp only [hβ₀, sub_zero] at hβq hβq₂ hβp hβp₂
   have hq := hQ.trans hβq.symm
   have hp := hP.trans hβp.symm
