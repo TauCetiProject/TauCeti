@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Periodic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Alternating.Append
+import TauCeti.LinearAlgebra.Basis.Basic
 import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Determinant.Dual
 import TauCeti.LinearAlgebra.Matrix.Dual
@@ -127,32 +128,14 @@ private theorem range_eq_span (X : Basis (Fin (q + r)) F W') (Y : Basis (Fin (p 
     (h₁ : ∀ a, g (X (Fin.castAdd r a)) = Y (Fin.natAdd p a))
     (h₂ : ∀ a, g (X (Fin.natAdd q a)) = 0) :
     Submodule.span F (Set.range (Y ∘ Fin.natAdd p)) = LinearMap.range g := by
-  refine le_antisymm (Submodule.span_le.2 ?_) ?_
+  rw [X.range_eq_span_comp g]
+  refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
   · rintro _ ⟨a, rfl⟩
-    exact ⟨_, h₁ a⟩
-  · rintro _ ⟨y, rfl⟩
-    rw [← X.sum_repr y, map_sum]
-    refine Submodule.sum_mem _ fun m _ ↦ ?_
-    rw [map_smul]
-    refine Submodule.smul_mem _ _ ?_
+    exact Submodule.subset_span ⟨Fin.castAdd r a, h₁ a⟩
+  · rintro _ ⟨m, rfl⟩
     induction m using Fin.addCases with
-    | left a => exact h₁ a ▸ Submodule.subset_span ⟨a, rfl⟩
-    | right a => exact h₂ a ▸ Submodule.zero_mem _
-
-/-- The basis of the image of `g`, in the situation of `range_eq_span`, made of the last `q`
-vectors of `Y`. -/
-private def rangeBasis (X : Basis (Fin (q + r)) F W') (Y : Basis (Fin (p + q)) F W)
-    (h₁ : ∀ a, g (X (Fin.castAdd r a)) = Y (Fin.natAdd p a))
-    (h₂ : ∀ a, g (X (Fin.natAdd q a)) = 0) : Basis (Fin q) F (LinearMap.range g) :=
-  (Basis.span (Y.linearIndependent.comp _ (Fin.natAdd_injective q p))).map
-    (LinearEquiv.ofEq _ _ (range_eq_span X Y h₁ h₂))
-
-/-- The vectors of `rangeBasis` are the last `q` vectors of `Y`. -/
-private theorem coe_rangeBasis (X : Basis (Fin (q + r)) F W') (Y : Basis (Fin (p + q)) F W)
-    (h₁ : ∀ a, g (X (Fin.castAdd r a)) = Y (Fin.natAdd p a))
-    (h₂ : ∀ a, g (X (Fin.natAdd q a)) = 0) (a : Fin q) :
-    (rangeBasis X Y h₁ h₂ a : W) = Y (Fin.natAdd p a) := by
-  simp [rangeBasis]
+    | left a => rw [Function.comp_apply, h₁ a]; exact Submodule.subset_span ⟨a, rfl⟩
+    | right a => rw [Function.comp_apply, h₂ a]; exact Submodule.zero_mem _
 
 /-- The determinant, in a basis `e` identified with the dual basis of `c`, of the dual basis `Y`
 of a basis `U` of length `p + q`, with its last `q` vectors moved in front of its first `p`, is
@@ -315,12 +298,16 @@ private theorem parityTorsion_eq_inv_det_mul_inv_det
     rw [hW₀]; exact map_dualBasis_natAdd (Ψ := pairingEquiv (c 1) (e 1)) U₁ U₀ hΨ₀₁ hz₁ hm₁ a
   -- So the `σ` are bases of the boundaries of `D`, with lifts the `β`, and the brackets of `D` are
   -- the determinants of the reordered dual bases `(σⱼ, βⱼ)`.
-  rw [parityTorsion_eq hD (rangeBasis W₁ W₀ hβ₁ hσ₁) (rangeBasis W₀ W₁ hβ₀ hσ₀)
-      (fun a ↦ W₀ (Fin.castAdd q a)) (fun a ↦ by rw [coe_rangeBasis, hβ₀])
-      (fun a ↦ W₁ (Fin.castAdd p a)) (fun a ↦ by rw [coe_rangeBasis, hβ₁]),
+  rw [parityTorsion_eq hD
+      (Basis.ofSpanEq (W₀.linearIndependent.comp _ (Fin.natAdd_injective q p))
+        (range_eq_span W₁ W₀ hβ₁ hσ₁))
+      (Basis.ofSpanEq (W₁.linearIndependent.comp _ (Fin.natAdd_injective p q))
+        (range_eq_span W₀ W₁ hβ₀ hσ₀))
+      (fun a ↦ W₀ (Fin.castAdd q a)) (fun a ↦ by rw [Basis.coe_ofSpanEq, Function.comp_apply, hβ₀])
+      (fun a ↦ W₁ (Fin.castAdd p a)) (fun a ↦ by rw [Basis.coe_ofSpanEq, Function.comp_apply, hβ₁]),
     torsionBracket_eq_det_append _ _ _ _ _ _ _ _ (hn₁.trans (add_comm q p)),
     torsionBracket_eq_det_append _ _ _ _ _ _ _ _ (hn₀.trans (add_comm p q))]
-  simp only [coe_rangeBasis]
+  simp only [Basis.coe_ofSpanEq, Function.comp_apply]
   rw [det_append_dualBasis (c 1) (e 1) U₁ hW₁, det_append_dualBasis (c 0) (e 0) U₀ hW₀,
     mul_comm q p]
   have hpow : ((-1 : F) ^ (p * q)) ≠ 0 := pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)
