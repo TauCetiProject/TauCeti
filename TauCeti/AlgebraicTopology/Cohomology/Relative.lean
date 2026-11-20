@@ -58,7 +58,9 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   target subspace induces zero on cohomology; in particular, a pair with surjective subspace map
   has vanishing relative cohomology in every degree.
 * `TopPair.shortExact_singularCochainComplexShortComplex`: the cochain sequence of a pair is short
-  exact.
+  exact. In particular the cochains of `X` coming from relative cochains are those vanishing on the
+  singular simplices of `A`
+  (`TopPair.mem_range_linearYonedaFunctor_map_singularChainComplexπ_f_iff`).
 * `TopPair.singularCohomologyδ`: the connecting morphism `Hⁿ(A) ⟶ Hᵐ(X, A)` for `n + 1 = m`, with
   the three exactness statements `TopPair.singularCohomology_exact_relative`,
   `TopPair.singularCohomology_exact_space` and `TopPair.singularCohomology_exact_subspace`, and its
@@ -88,6 +90,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits Opposite
+open scoped Simplicial
 
 universe w v u
 
@@ -380,6 +383,34 @@ lemma shortExact_singularCochainComplexShortComplex :
     rw [singularCochainComplexShortComplex_eq_map]
     exact TauCeti.ChainComplex.shortExact_map_linearYonedaFunctor k M
       (P.shortExact_singularChainComplexShortComplex R)
+
+/-- **Relative cochains are the cochains vanishing on the subspace.** A singular cochain of the
+ambient space of a pair `(X, A)` comes from a relative cochain exactly when it vanishes on every
+singular simplex of `X` whose image lies in `A`. -/
+theorem mem_range_linearYonedaFunctor_map_singularChainComplexπ_f_iff (n : ℕ)
+    (y : ((TopCat.toSSet.obj P.fst).chainComplex R).X n ⟶ M) :
+    y ∈ LinearMap.range (((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+        (P.singularChainComplexπ R).op).f n).hom ↔
+      ∀ σ : (TopCat.toSSet.obj P.fst) _⦋n⦌,
+        Set.range (P.fst.toSSetObjEquiv _ σ) ⊆ Set.range P.map →
+          (TopCat.toSSet.obj P.fst).ιChainComplex (R := R) σ ≫ y = 0 := by
+  have hS := (HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
+    (P.shortExact_singularCochainComplexShortComplex R k M) n
+  refine (SetLike.ext_iff.1 hS.exact.moduleCat_range_eq_ker y).trans
+    ((LinearMap.mem_ker (f := ModuleCat.Hom.hom _)).trans ?_)
+  -- In degree `n` the restriction of cochains to the subspace is precomposition with the chain
+  -- map of the inclusion.
+  refine (congrArg (· = 0) (TopCat.singularCochainComplexMap_f_apply P.map n y)).to_iff.trans ?_
+  have hP := P.isEmbedding_map.isInducing
+  constructor
+  · intro h σ hσ
+    obtain ⟨τ, rfl⟩ := (hP.mem_range_toSSet_map_app_iff _ σ).2 hσ
+    rw [← SSet.ι_chainComplexMap_f_assoc, h]
+    exact comp_zero
+  · intro h
+    refine SSet.chainComplex_hom_ext fun τ ↦ ?_
+    rw [SSet.ι_chainComplexMap_f_assoc]
+    exact (h _ ((hP.mem_range_toSSet_map_app_iff _ _).1 ⟨τ, rfl⟩)).trans comp_zero.symm
 
 /-- The map `Hⁿ(X, A) ⟶ Hⁿ(X)` from relative to absolute singular cohomology, induced by the
 quotient map from the singular chains of `X` to the relative chains of `(X, A)`. -/
