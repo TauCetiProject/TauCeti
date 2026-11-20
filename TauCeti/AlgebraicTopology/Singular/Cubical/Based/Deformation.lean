@@ -227,11 +227,11 @@ private lemma exists_extension (hX : ∀ k < n, Subsingleton (HomotopyGroup (Fin
   · dsimp only [ContinuousMap.coe_mk]
     split_ifs with hs
     · exact hG₀B s y
-    · rw [K.eq_fst _ y.2]
+    · rw [K.eq_fst _ y.property]
       exact (hG₀B a y).trans ((hB hm a le_rfl y).trans (hB hm s (not_le.1 hs).le y).symm)
   · have h1 : ¬ ((1 : I) : ℝ) ≤ a := not_le.2 (threshold_lt_one m)
     simp only [ContinuousMap.curry_apply, ContinuousMap.coe_mk, h1, ite_false]
-    rw [hψ₁ (by exact_mod_cast b.2.2), hK₁]
+    rw [hψ₁ (by exact_mod_cast b.property.2), hK₁]
   · have hs' : ¬ (s : ℝ) ≤ a := not_le.2 (hab.trans_le hs)
     simp only [ContinuousMap.coe_mk, hs', ite_false]
     rw [hψ₁ hs, hK₁]
@@ -253,14 +253,14 @@ private lemma bdry_one (L : Level n x m) (c : SingularCube X (m + 1))
     (y : Cube.boundary (Fin (m + 1)))
     (hy : (Finset.univ.filter fun j ↦ (y : Fin (m + 1) → I) j ≠ 0 ∧
       (y : Fin (m + 1) → I) j ≠ 1).card < n) : L.boundaryHomotopy c (1, y) = x := by
-  obtain ⟨j, hj⟩ := y.2
+  obtain ⟨j, hj⟩ := y.property
   rw [L.boundaryHomotopy_apply c 1 y j hj]
   exact L.isBased_one _ _ ((card_free_removeNth_le j _).trans_lt hy)
 
 private lemma bdry_of_lt (L : Level n x m) (c : SingularCube X (m + 1)) (hm : m + 1 < n) (s : I)
     (hs : threshold (m + 1) ≤ s) (y : Cube.boundary (Fin (m + 1))) :
     L.boundaryHomotopy c (s, y) = x := by
-  obtain ⟨j, hj⟩ := y.2
+  obtain ⟨j, hj⟩ := y.property
   rw [L.boundaryHomotopy_apply c s y j hj]
   exact L.apply_of_lt (by omega) _ s hs _
 
@@ -364,7 +364,7 @@ private lemma exists_extension_zero (c : SingularCube X 0) :
       SingularCube.IsBased n x (G.curry 1) ∧
       (0 < n → ∀ s : I, threshold (0 + 1) ≤ s → ∀ y, G (s, y) = x) := by
   -- The boundary of the `0`-cube is empty, so any homotopy of it will do.
-  have hb (y : Cube.boundary (Fin 0)) : False := by simpa using y.2
+  have hb (y : Cube.boundary (Fin 0)) : False := by simpa using y.property
   obtain ⟨G, hG₀, -, hG⟩ := exists_extension hX c
     ⟨fun q ↦ (hb q.2).elim, continuous_of_const fun q ↦ (hb q.2).elim⟩ (fun y ↦ (hb y).elim)
     (fun y ↦ (hb y).elim) fun _ _ _ y ↦ (hb y).elim
@@ -467,21 +467,21 @@ theorem BasedCubeDeformation.homotopic_const (D : BasedCubeDeformation n x) {k :
   -- On the boundary the homotopy follows the homotopies of the faces of `p`, which are constant
   -- at `x` and hence `n`-based, so it is fixed there.
   have hbd (s : I) (y : Fin k → I) (hy : y ∈ Cube.boundary (Fin k)) :
-      D.homotopy p.1 (s, y) = x := by
+      D.homotopy p.val (s, y) = x := by
     cases k with
     | zero => simp at hy
     | succ _ =>
       obtain ⟨i, hi⟩ := hy
-      have hface : (SingularCube.face i (y i) p.1).IsBased n x := fun z _ ↦ by
+      have hface : (SingularCube.face i (y i) p.val).IsBased n x := fun z _ ↦ by
         rw [SingularCube.face_apply]
-        exact p.2 _ ⟨i, by simpa using hi⟩
+        exact p.property _ ⟨i, by simpa using hi⟩
       rw [← Fin.insertNth_self_removeNth i y, D.homotopy_insertNth _ _ hi,
         D.homotopy_of_isBased hface, SingularCube.face_apply]
-      exact p.2 _ ⟨i, by simpa using hi⟩
-  exact ⟨{ toFun := D.homotopy p.1
-           map_zero_left := D.homotopy_zero p.1
-           map_one_left := (SingularCube.isBased_iff_of_lt hk).1 (D.isBased_curry_one p.1)
-           prop' := fun s y hy ↦ (hbd s y hy).trans (p.2 y hy).symm }⟩
+      exact p.property _ ⟨i, by simpa using hi⟩
+  exact ⟨{ toFun := D.homotopy p.val
+           map_zero_left := D.homotopy_zero p.val
+           map_one_left := (SingularCube.isBased_iff_of_lt hk).1 (D.isBased_curry_one p.val)
+           prop' := fun s y hy ↦ (hbd s y hy).trans (p.property y hy).symm }⟩
 
 omit hX in
 /-- **The singular cubes of `X` deform into `n`-based cubes exactly when `X` is

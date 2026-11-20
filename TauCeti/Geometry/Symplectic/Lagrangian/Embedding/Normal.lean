@@ -132,7 +132,7 @@ theorem contMDiff_pairingCovector [IsManifold I 1 M] (σ : SmoothTwoForm J N) (h
     (hm' : m + 1 ≤ ∞) :
     ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
       (fun p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J)) ↦
-        (TotalSpace.mk' (E →L[ℝ] ℝ) p.proj (f.pairingCovector σ p.proj p.2) :
+        (TotalSpace.mk' (E →L[ℝ] ℝ) p.proj (f.pairingCovector σ p.proj p.snd) :
           CotangentBundle I M)) := by
   have : IsManifold J (m + 1) N := .of_le hm'
   have hfm : ContMDiff I J (m + 1) f := f.contMDiff.of_le hm
@@ -226,7 +226,7 @@ theorem contMDiff_normalSpaceEquivOfIsLagrangianMap (hf : hσ.IsLagrangianMap I 
     ContMDiff (I.prod 𝓘(ℝ, P)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) m
       (fun p : TotalSpace P (fun x ↦ f.NormalSpace x hn) ↦
         (TotalSpace.mk' (E →L[ℝ] ℝ) p.proj
-          (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.2) : CotangentBundle I M)) := by
+          (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.snd) : CotangentBundle I M)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have : IsManifold J (m + 1) N := .of_le hm'
   let := f.normalSpaceFiberBundle hn hdim
@@ -260,7 +260,7 @@ theorem normalBundleDiffeomorphOfIsLagrangianMap_apply (hf : hσ.IsLagrangianMap
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     f.normalBundleDiffeomorphOfIsLagrangianMap hf hn hm hm' hdim p =
-      ⟨p.proj, f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.2⟩ := by
+      ⟨p.proj, f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj p.snd⟩ := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
@@ -274,7 +274,7 @@ theorem normalBundleDiffeomorphOfIsLagrangianMap_symm_apply (hf : hσ.IsLagrangi
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     (f.normalBundleDiffeomorphOfIsLagrangianMap hf hn hm hm' hdim).symm p =
-      ⟨p.proj, (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj).symm p.2⟩ := by
+      ⟨p.proj, (f.normalSpaceEquivOfIsLagrangianMap hf hn p.proj).symm p.snd⟩ := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim

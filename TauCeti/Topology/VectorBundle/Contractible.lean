@@ -110,12 +110,12 @@ theorem exists_trivialization_baseSet_eq_univ_of_contractibleSpace :
   have hy₀ : y ∈ e₀.baseSet := mem_baseSet_trivializationAt F E y
   let Ψ : ∀ x, E x ≃L[𝕜] F := fun x ↦ (Φ x).trans (e₀.continuousLinearEquivAt 𝕜 y hy₀)
   -- The fibre coordinate `Ψ` is continuous on the total space.
-  have hpt : Continuous fun p : TotalSpace F E ↦ (TotalSpace.mk' F y (Φ p.proj p.2)) := by
+  have hpt : Continuous fun p : TotalSpace F E ↦ (TotalSpace.mk' F y (Φ p.proj p.snd)) := by
     have hι : Continuous fun p : TotalSpace F E ↦
-        (TotalSpace.mk' F (E := (ContinuousMap.id B : B → B) *ᵖ E) p.proj p.2) :=
+        (TotalSpace.mk' F (E := (ContinuousMap.id B : B → B) *ᵖ E) p.proj p.snd) :=
       Pullback.continuous_iff.2 ⟨FiberBundle.continuous_proj F E, continuous_id⟩
     exact (Pullback.continuous_lift F E _).comp (hΦ.comp hι)
-  have hfwd : Continuous fun p : TotalSpace F E ↦ Ψ p.proj p.2 :=
+  have hfwd : Continuous fun p : TotalSpace F E ↦ Ψ p.proj p.snd :=
     (e₀.continuousOn.comp_continuous hpt fun _ ↦ e₀.mem_source.2 hy₀).snd
   -- Its inverse is continuous on `B × F`.
   have hinv : Continuous fun q : B × F ↦ TotalSpace.mk' F q.1 ((Ψ q.1).symm q.2) := by
@@ -126,7 +126,7 @@ theorem exists_trivialization_baseSet_eq_univ_of_contractibleSpace :
         ((e₀.continuousLinearEquivAt 𝕜 y hy₀).symm.continuous.comp continuous_snd)⟩
     exact (Pullback.continuous_lift F E _).comp (hΦ'.comp hι)
   refine ⟨{
-    toFun p := (p.proj, Ψ p.proj p.2)
+    toFun p := (p.proj, Ψ p.proj p.snd)
     invFun q := ⟨q.1, (Ψ q.1).symm q.2⟩
     source := univ
     target := univ
@@ -239,7 +239,7 @@ carries the unit sphere bundle `S(E)` onto `B × S(F)`. -/
 theorem exists_homeomorph_discBundle_prod_closedBall_of_contractibleSpace :
     ∃ (h : discBundle F E ≃ₜ B × closedBall (0 : F) 1) (L : ∀ b, E b ≃ₗᵢ[ℝ] F),
       (∀ v : discBundle F E,
-        (h v).1 = (v : TotalSpace F E).proj ∧ ((h v).2 : F) = L _ (v : TotalSpace F E).2) ∧
+        (h v).1 = (v : TotalSpace F E).proj ∧ ((h v).2 : F) = L _ (v : TotalSpace F E).snd) ∧
       ∀ v : discBundle F E,
         (v : TotalSpace F E) ∈ sphereBundle F E ↔ ((h v).2 : F) ∈ sphere (0 : F) 1 := by
   obtain ⟨h, L, hL⟩ := exists_homeomorph_prod_of_contractibleSpace F E
@@ -250,7 +250,7 @@ theorem exists_homeomorph_discBundle_prod_closedBall_of_contractibleSpace :
     ((h.sets hdisc).trans (Homeomorph.Set.prod _ _)).trans
       ((Homeomorph.Set.univ B).prodCongr (Homeomorph.refl _))
   have hk (v : discBundle F E) :
-      (k v).1 = (v : TotalSpace F E).proj ∧ ((k v).2 : F) = L _ (v : TotalSpace F E).2 := by
+      (k v).1 = (v : TotalSpace F E).proj ∧ ((k v).2 : F) = L _ (v : TotalSpace F E).snd := by
     obtain ⟨⟨b, w⟩, hw⟩ := v
     simp [k, Homeomorph.Set.prod_apply _ _ (h.sets hdisc ⟨⟨b, w⟩, hw⟩), hL]
   refine ⟨k, L, hk, fun v ↦ ?_⟩

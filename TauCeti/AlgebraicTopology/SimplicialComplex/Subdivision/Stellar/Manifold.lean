@@ -11,10 +11,9 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.Li
 # Combinatorial manifolds under stellar subdivision
 
 The link API for a stellar subdivision already transports the sphere-or-ball condition at every
-old vertex. This file packages that calculation into the corresponding manifold preservation
-step, leaving the link of the new vertex as an explicit hypothesis. The hypothesis is the exact
-remaining local calculation: once it is supplied, every vertex link in the subdivision has the
-required type.
+old vertex. This file packages that calculation into the corresponding forward manifold
+preservation step (leaving the link of the new vertex as an explicit hypothesis) as well as the
+unconditional backward reflection `IsCombinatorialManifold.of_stellarSubdivision`.
 
 The new-vertex link is the join of the boundary of the starred face with its link. Showing that
 it has the required type needs the links of all faces of a combinatorial manifold, which

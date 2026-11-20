@@ -86,7 +86,7 @@ theorem Martingale.tendsto_eLpNorm_stoppedProcess_dyadicCeilTime
       (continuousWithinAt_Ioi_iff_Ici.1 (hω _))
   have hmem := hui.memLp_of_ae_tendsto hlim
   exact tendsto_Lp_finite_of_tendsto_ae hp hp_top
-    (fun n ↦ hui.aestronglyMeasurable n) hmem hui.1 hlim
+    (fun n ↦ hui.aestronglyMeasurable n) hmem hui.unifIntegrable hlim
 
 /-- Stopping a strongly progressive martingale with almost surely right-continuous paths
 preserves the martingale property on its original filtration. The stopping time may be

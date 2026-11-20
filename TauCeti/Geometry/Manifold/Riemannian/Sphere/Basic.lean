@@ -145,19 +145,19 @@ theorem mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv (x : sphere (0 : E) 1)
 theorem contMDiff_coe_sphereTangentEquiv {m : ℕ∞ω} :
     ContMDiff (𝓡 n).tangent 𝓘(ℝ, E) m
       (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
-        (sphereTangentEquiv p.proj p.2 : E)) := by
+        (sphereTangentEquiv p.proj p.snd : E)) := by
   have htan : ContMDiff (𝓡 n).tangent 𝓘(ℝ, E).tangent m
       (tangentMap (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)) :=
     (contMDiff_coe_sphere (E := E) (n := n) (m := ω)).contMDiff_tangentMap le_top
   exact ((contMDiff_snd_tangentBundle_modelSpace E 𝓘(ℝ, E)).comp htan).congr fun p ↦
-    coe_sphereTangentEquiv_apply p.proj p.2
+    coe_sphereTangentEquiv_apply p.proj p.snd
 
 /-- The image of a tangent vector under the differential of the sphere inclusion is orthogonal
 to the radius vector. -/
 theorem inner_coe_mvfderiv_subtypeVal_sphere (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
     inner ℝ (x : E) (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v) = 0 := by
-  have h := (sphereTangentEquiv x v).2
+  have h := (sphereTangentEquiv x v).property
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right, coe_sphereTangentEquiv_apply] at h
   rwa [mvfderiv_apply_eq_mfderiv_apply]
 

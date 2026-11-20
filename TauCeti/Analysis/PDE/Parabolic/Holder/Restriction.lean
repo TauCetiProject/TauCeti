@@ -85,7 +85,7 @@ private def restrict (hab' : a' < b') (f : ParabolicC2HolderSpace α E F hab) :
       have h := (f.hasTimeDerivWithinAt x (inclusion (Icc_subset_Icc ha hb) t)).mono
         (Icc_subset_Icc ha hb)
       rw [HolderSpace.compLipschitzL_apply, inclusion_slabMk]
-      refine h.congr_of_mem (fun s hs ↦ ?_) t.2
+      refine h.congr_of_mem (fun s hs ↦ ?_) t.property
       simp [ContinuousMap.inclusion, timeExtension_def, projIcc_of_mem hab'.le hs,
         projIcc_of_mem hab.le (Icc_subset_Icc ha hb hs)])
 
@@ -203,19 +203,19 @@ private def reverse (f : ParabolicC2HolderSpace α E F hab) :
     (-HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith (timeDerivL f))
     (fun t x ↦ by
       simpa [iccTimeReverse_apply] using
-        f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+        f.hasSpatialFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩ x)
     (fun t x ↦ by
       simpa [iccTimeReverse_apply] using
-        f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩ x)
+        f.hasSpatialSecondFDerivAt ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩ x)
     (fun x t ↦ by
       have h := HasDerivWithinAt.scomp (t : ℝ)
-        (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.2⟩)
+        (f.hasTimeDerivWithinAt x ⟨T - t, sub_mem_Icc_of_eq_sub T ha hb t.property⟩)
         ((hasDerivWithinAt_id (t : ℝ) (Icc a' b')).const_sub T)
         (fun s hs ↦ sub_mem_Icc_of_eq_sub T ha hb hs)
       rw [neg_one_smul] at h
       rw [HolderSpace.neg_apply, HolderSpace.compLipschitzL_apply, slabTimeReverse_slabMk,
         iccTimeReverse_apply]
-      refine h.congr_of_mem (fun s hs ↦ ?_) t.2
+      refine h.congr_of_mem (fun s hs ↦ ?_) t.property
       simp [timeExtension_def, iccTimeReverse_apply,
         projIcc_of_mem (ha ▸ hb ▸ sub_lt_sub_left hab T).le hs,
         projIcc_of_mem hab.le (sub_mem_Icc_of_eq_sub T ha hb hs)])

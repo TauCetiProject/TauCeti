@@ -296,6 +296,17 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
 
+/-- The orthogonal sum of isometric equivalences acts coordinatewise. -/
+@[simp]
+theorem IsometryEquiv.pi_apply {ι : Type*} [Fintype ι] {M N : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
+    {Q : ∀ i, QuadraticMap R (M i) P} {Q' : ∀ i, QuadraticMap R (N i) P}
+    (e : ∀ i, (Q i).IsometryEquiv (Q' i)) (x : ∀ i, M i) (i : ι) :
+    IsometryEquiv.pi e x i = e i (x i) := by
+  rw [← IsometryEquiv.coe_toLinearEquiv, IsometryEquiv.pi_toLinearEquiv,
+    LinearEquiv.piCongrRight_apply, IsometryEquiv.coe_toLinearEquiv]
+
 /-- `LinearEquiv.piCongrLeft` is isometric: reindexing an orthogonal sum along an equivalence of
 its finite index types does not change it. -/
 def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : ι → Type*}
@@ -304,7 +315,7 @@ def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : �
     (QuadraticMap.pi fun i' ↦ Q (e i')).IsometryEquiv (QuadraticMap.pi Q) where
   toLinearEquiv := LinearEquiv.piCongrLeft R M e
   map_app' x := by
-    rw [pi_apply, pi_apply]
+    rw [QuadraticMap.pi_apply, QuadraticMap.pi_apply]
     exact (Fintype.sum_equiv e (fun i' ↦ Q (e i') (x i')) _ fun i' ↦
       congrArg (Q (e i')) (Equiv.piCongrLeft_apply_apply M e x i').symm).symm
 
@@ -339,12 +350,13 @@ def IsometryEquiv.piSubtype {ι : Type*} [Fintype ι] {M : ι → Type*} [∀ i,
     · simp [hi]
     · have := hS i hi
       exact Subsingleton.elim _ _
-  right_inv y := funext fun i ↦ by simp [i.2]
+  right_inv y := funext fun i ↦ by simp [i.property]
   map_app' x := by
     have hzero : ∑ i : {i // ¬S i}, Q i (x i) = 0 := Finset.sum_eq_zero fun i _ ↦ by
-      have := hS i i.2
+      have := hS i i.property
       rw [Subsingleton.elim (x i) 0, map_zero]
-    rw [pi_apply, pi_apply, ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
+    rw [QuadraticMap.pi_apply, QuadraticMap.pi_apply,
+      ← Fintype.sum_subtype_add_sum_subtype S, hzero, add_zero]
 
 /-- The forward map of `QuadraticMap.IsometryEquiv.piSubtype` restricts to the retained summands. -/
 @[simp]
@@ -378,7 +390,8 @@ noncomputable def IsometryEquiv.prodRestrictOrthogonal (Q : QuadraticForm R V)
   map_app' x := by
     -- Expose the complementary-subspace equivalence as addition of the two components.
     change Q ((x.1 : V) + x.2) = Q x.1 + Q x.2
-    rw [QuadraticMap.map_add Q, (isOrtho_polarBilin.mp (x.2.2 x.1 x.1.2)).polar_eq_zero,
+    rw [QuadraticMap.map_add Q, (isOrtho_polarBilin.mp
+        (x.2.property x.1 x.1.property)).polar_eq_zero,
       add_zero]
 
 /-- The orthogonal-decomposition isometry sends a pair to the sum of its components. -/
@@ -433,7 +446,7 @@ orthogonal transformations of `Q₁.prod Q₂` that preserve both summands
 def orthogonalGroupProd :
     orthogonalGroup Q₁ × orthogonalGroup Q₂ →* orthogonalGroup (Q₁.prod Q₂) where
   toFun f := ⟨(f.1 : M₁ ≃ₗ[R] M₁).prodCongr (f.2 : M₂ ≃ₗ[R] M₂),
-    prodCongr_mem_orthogonalGroup f.1.2 f.2.2⟩
+    prodCongr_mem_orthogonalGroup f.1.property f.2.property⟩
   map_one' := by ext x <;> simp
   map_mul' f g := by ext x <;> simp
 
@@ -472,9 +485,9 @@ theorem mem_range_orthogonalGroupProd_iff {g : orthogonalGroup (Q₁.prod Q₂)}
   rintro ⟨e₁, e₂, he⟩
   -- The two factors are orthogonal because `g` is, evaluated on each summand.
   have he₁ : e₁ ∈ orthogonalGroup Q₁ := mem_orthogonalGroup_iff.mpr fun m ↦ by
-    simpa [← he] using map_app_of_mem_orthogonalGroup g.2 (m, 0)
+    simpa [← he] using map_app_of_mem_orthogonalGroup g.property (m, 0)
   have he₂ : e₂ ∈ orthogonalGroup Q₂ := mem_orthogonalGroup_iff.mpr fun m ↦ by
-    simpa [← he] using map_app_of_mem_orthogonalGroup g.2 (0, m)
+    simpa [← he] using map_app_of_mem_orthogonalGroup g.property (0, m)
   exact ⟨(⟨e₁, he₁⟩, ⟨e₂, he₂⟩), Subtype.ext he⟩
 
 /-- `orthogonalGroupProd` is natural with respect to products of isometric equivalences. -/
@@ -572,8 +585,8 @@ def specialOrthogonalGroupProd :
       specialOrthogonalGroup (Q₁.prod Q₂) where
   toFun f := ⟨(f.1 : M₁ ≃ₗ[R] M₁).prodCongr (f.2 : M₂ ≃ₗ[R] M₂),
     mem_specialOrthogonalGroup_iff.mpr
-      ⟨prodCongr_mem_orthogonalGroup (specialOrthogonalGroup_le_orthogonalGroup Q₁ f.1.2)
-        (specialOrthogonalGroup_le_orthogonalGroup Q₂ f.2.2), by
+      ⟨prodCongr_mem_orthogonalGroup (specialOrthogonalGroup_le_orthogonalGroup Q₁ f.1.property)
+        (specialOrthogonalGroup_le_orthogonalGroup Q₂ f.2.property), by
         rw [LinearEquiv.det_prodCongr, det_coe_specialOrthogonalGroup,
           det_coe_specialOrthogonalGroup, mul_one]⟩⟩
   map_one' := by ext x <;> simp
@@ -643,13 +656,13 @@ theorem mem_range_specialOrthogonalGroupProd_iff {g : specialOrthogonalGroup (Q�
     exact ⟨fun _ ↦ by simp, fun _ ↦ by simp, rfl, rfl⟩
   rintro ⟨h₁, h₂, d₁, d₂⟩
   obtain ⟨f, hf⟩ := (mem_range_orthogonalGroupProd_iff Q₁ Q₂
-    (g := ⟨g, specialOrthogonalGroup_le_orthogonalGroup _ g.2⟩)).mpr ⟨h₁, h₂⟩
+    (g := ⟨g, specialOrthogonalGroup_le_orthogonalGroup _ g.property⟩)).mpr ⟨h₁, h₂⟩
   have hg := congrArg Subtype.val hf
   rw [coe_orthogonalGroupProd] at hg
   rw [← hg, (key _ _).1, ← LinearEquiv.coe_det, Units.val_eq_one] at d₁
   rw [← hg, (key _ _).2, ← LinearEquiv.coe_det, Units.val_eq_one] at d₂
-  exact ⟨(⟨f.1, mem_specialOrthogonalGroup_iff.mpr ⟨f.1.2, d₁⟩⟩,
-    ⟨f.2, mem_specialOrthogonalGroup_iff.mpr ⟨f.2.2, d₂⟩⟩), Subtype.ext hg⟩
+  exact ⟨(⟨f.1, mem_specialOrthogonalGroup_iff.mpr ⟨f.1.property, d₁⟩⟩,
+    ⟨f.2, mem_specialOrthogonalGroup_iff.mpr ⟨f.2.property, d₂⟩⟩), Subtype.ext hg⟩
 
 /-- `specialOrthogonalGroupProd` is natural with respect to products of isometric equivalences. -/
 @[simp]
