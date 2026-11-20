@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Euclidean
 public import Mathlib.Geometry.Manifold.SmoothApprox
 public import Mathlib.Topology.Homotopy.Path
 import TauCeti.Topology.Homotopy.Homotopic.Rel
+import TauCeti.Topology.MetricSpace.ContinuousRadius
 
 /-!
 # Whitney approximation for maps into manifolds
@@ -102,24 +103,18 @@ theorem exists_contMDiff_homotopicRel (e : SmoothEmbedding J 𝓘(ℝ, V) ∞ M 
   have hF : Continuous F := e.contMDiff.continuous.comp f.continuous
   have hFW (x : N) : F x ∈ W := heW (mem_range_self (f x))
   -- A continuous positive radius `ε` such that the `ε x`-ball about `F x` lies in `W`.
-  obtain ⟨ε, hε, hεpos, hεW⟩ : ∃ ε : N → ℝ, Continuous ε ∧ (∀ x, 0 < ε x) ∧
-      ∀ x y, dist y (F x) < ε x → y ∈ W := by
-    rcases (Wᶜ).eq_empty_or_nonempty with h | h
-    · exact ⟨fun _ ↦ 1, continuous_const, fun _ ↦ one_pos, fun _ y _ ↦ by
-        simpa using congrArg (y ∈ ·) h⟩
-    · refine ⟨fun x ↦ infDist (F x) Wᶜ, (continuous_infDist_pt _).comp hF,
-        fun x ↦ (hW.isClosed_compl.notMem_iff_infDist_pos h).1 (not_not_intro (hFW x)),
-        fun x y hy ↦ ?_⟩
-      exact not_not.1 (notMem_of_dist_lt_infDist (dist_comm y (F x) ▸ hy))
-  obtain ⟨G, hGF, hGS, -⟩ := hF.exists_contMDiff_approx_and_eqOn I n hε hεpos hS hU
+  obtain ⟨ε, hε, -, hεpos, hεW⟩ := hW.exists_continuous_forall_dist_lt hF
+  obtain ⟨G, hGF, hGS, -⟩ := hF.exists_contMDiff_approx_and_eqOn I n hε
+    (fun x ↦ hεpos x (hFW x)) hS hU
     (e.contMDiff.of_le (WithTop.coe_le_coe.2 le_top) |>.comp_contMDiffOn hfU)
   -- The segment from `F x` to `G x` stays in `W`.
   let φ : unitInterval × N → V := fun p ↦ F p.2 + (p.1 : ℝ) • (G p.2 - F p.2)
   have hφ : Continuous φ := by fun_prop
   have hφW (p : unitInterval × N) : φ p ∈ W := by
     refine hεW p.2 _ ?_
-    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg p.1.2.1, ← dist_eq_norm]
-    exact (mul_le_of_le_one_left dist_nonneg p.1.2.2).trans_lt (hGF p.2)
+    rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg p.1.property.1,
+        ← dist_eq_norm]
+    exact (mul_le_of_le_one_left dist_nonneg p.1.property.2).trans_lt (hGF p.2)
   have hGW (x : N) : G x ∈ W := by simpa [φ] using hφW (1, x)
   have hrc : ContinuousOn r W := hr.continuousOn
   let g : C(N, M) := ⟨r ∘ G, hrc.comp_continuous G.contMDiff.continuous hGW⟩
@@ -206,9 +201,9 @@ theorem exists_contMDiff_homotopicRel_of_isCompact_closure_range (n : ℕ∞) (f
   let f' : C(N, W) := ⟨_, f.continuous.subtype_mk fun x ↦ hW (subset_closure (mem_range_self x))⟩
   obtain ⟨g', hg', hfg'⟩ := e.exists_contMDiff_homotopicRel n f' hS hU
     ((TauCeti.ContMDiffOn.subtypeVal_comp_iff W f' U).1 hfU)
-  let i : C(W, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  let i : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   have hif : i.comp f' = f := ContinuousMap.ext fun _ ↦ rfl
-  exact ⟨i.comp g', contMDiff_subtype_val.comp hg', hif ▸ hfg'.comp_continuousMap i⟩
+  exact ⟨i.comp g', contMDiff_subtypeVal.comp hg', hif ▸ hfg'.comp_continuousMap i⟩
 
 /-- **Whitney approximation with relatively compact image.** Every continuous map from a
 σ-compact Hausdorff manifold, possibly with corners, into a Hausdorff boundaryless manifold, whose
@@ -243,7 +238,7 @@ theorem Homotopy.exists_contMDiff_homotopy_of_isCompact_closure_range {f₀ f₁
   obtain ⟨K', hK', hK'₀, hK'₁⟩ := e.exists_contMDiff_homotopy n
     ((TauCeti.ContMDiff.subtypeVal_comp_iff W f₀').1 hf₀)
     ((TauCeti.ContMDiff.subtypeVal_comp_iff W f₁').1 hf₁) ⟨H'⟩
-  exact ⟨Subtype.val ∘ K', contMDiff_subtype_val.comp hK', fun x ↦ congr_arg Subtype.val (hK'₀ x),
+  exact ⟨Subtype.val ∘ K', contMDiff_subtypeVal.comp hK', fun x ↦ congr_arg Subtype.val (hK'₀ x),
     fun x ↦ congr_arg Subtype.val (hK'₁ x)⟩
 
 /-- **Relative Whitney approximation into a compact manifold.** A continuous map `f` from a
@@ -314,7 +309,7 @@ theorem exists_homotopic_contMDiff_extend (n : ℕ∞) (γ : Path x y) :
     (hfg.fst_eq_snd (Or.inl ht)).symm.trans (hf₀ (by linarith))
   have hg₁ {t : ℝ} (ht : 1 ≤ t) : g t = y :=
     (hfg.fst_eq_snd (Or.inr ht)).symm.trans (hf₁ (by linarith))
-  let ι : C(unitInterval, ℝ) := ⟨Subtype.val, continuous_subtype_val⟩
+  let ι : C(unitInterval, ℝ) := ⟨Subtype.val, continuous_subtypeVal⟩
   let γ' : Path x y := ⟨g.comp ι, hg₀ le_rfl, hg₁ le_rfl⟩
   have hext : γ'.extend = g := by
     ext t

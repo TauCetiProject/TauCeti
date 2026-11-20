@@ -42,18 +42,18 @@ variable {ι E : Type*} [DecidableEq ι] [NormedAddCommGroup E] [InnerProductSpa
 private def halfBallMap
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫})
     (x : closedStarRealization K {v}) : E :=
-  if h : x.1.1 v < 1 then
-    (1 - x.1.1 v) • ((e (starLinkProjection K v
-      ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, h⟩⟩)).1 : E)
+  if h : x.val.val v < 1 then
+    (1 - x.val.val v) • ((e (starLinkProjection K v
+      ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, h⟩⟩)).val : E)
   else 0
 
 private theorem norm_halfBallMap
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫})
-    (x : closedStarRealization K {v}) : ‖halfBallMap e x‖ = 1 - x.1.1 v := by
-  by_cases hx : x.1.1 v < 1
+    (x : closedStarRealization K {v}) : ‖halfBallMap e x‖ = 1 - x.val.val v := by
+  by_cases hx : x.val.val v < 1
   · simp [halfBallMap, hx, norm_smul, abs_of_nonneg (sub_pos.mpr hx).le,
       norm_eq_of_mem_sphere]
-  · have heq := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
+  · have heq := le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx)
     simp [halfBallMap, heq]
 
 private theorem halfBallMap_mem
@@ -62,19 +62,19 @@ private theorem halfBallMap_mem
     halfBallMap e x ∈ closedBall (0 : E) 1 ∩ {z | 0 ≤ ⟪z, (p : E)⟫} := by
   refine ⟨mem_closedBall_zero_iff.mpr ?_, ?_⟩
   · rw [norm_halfBallMap]
-    linarith [Realization.nonneg K x.1 v]
-  · by_cases hx : x.1.1 v < 1
+    linarith [Realization.nonneg K x.val v]
+  · by_cases hx : x.val.val v < 1
     · simp only [halfBallMap, hx, ↓reduceDIte, mem_ofPred_eq, real_inner_smul_left]
-      exact mul_nonneg (sub_pos.mpr hx).le (e _).2
+      exact mul_nonneg (sub_pos.mpr hx).le (e _).property
     · simp [halfBallMap, hx]
 
 private theorem halfBallMap_starRay
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫})
     (y : geometricLink K v) (t : Ico (0 : ℝ) 1) :
-    halfBallMap e ⟨(starRay K v y t).1, ((mem_puncturedClosedStar K v _).mp
-      (starRay K v y t).2).1⟩ =
-      (1 - t.1) • ((e y).1 : E) := by
-  simp [halfBallMap, t.2.2]
+    halfBallMap e ⟨(starRay K v y t).val, ((mem_puncturedClosedStar K v _).mp
+      (starRay K v y t).property).1⟩ =
+      (1 - t.val) • ((e y).val : E) := by
+  simp [halfBallMap, t.property.2]
 
 private theorem halfBallMap_bijective
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫}) :
@@ -84,31 +84,32 @@ private theorem halfBallMap_bijective
   constructor
   · intro x y hxy
     have h := congrArg Subtype.val hxy
-    have hc : x.1.1 v = y.1.1 v := by
+    have hc : x.val.val v = y.val.val v := by
       have hn := congrArg norm h
       rw [norm_halfBallMap, norm_halfBallMap] at hn
       linarith
-    by_cases hx : x.1.1 v < 1
-    · have hy : y.1.1 v < 1 := hc ▸ hx
-      have hlink : starLinkProjection K v ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩ =
-          starLinkProjection K v ⟨y.1, (mem_puncturedClosedStar K v _).mpr ⟨y.2, hy⟩⟩ := by
+    by_cases hx : x.val.val v < 1
+    · have hy : y.val.val v < 1 := hc ▸ hx
+      have hlink : starLinkProjection K v ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property,
+          hx⟩⟩ =
+          starLinkProjection K v ⟨y.val, (mem_puncturedClosedStar K v _).mpr ⟨y.property, hy⟩⟩ := by
         apply e.injective
         apply Subtype.ext
         apply Subtype.ext
         simp only [halfBallMap, hx, ↓reduceDIte, ← hc] at h
         exact (smul_right_injective E (sub_pos.mpr hx).ne').eq_iff.mp h
       have hr := congrArg Subtype.val (starRay_starLinkProjection K v
-        ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩)
+        ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, hx⟩⟩)
       have hs := congrArg Subtype.val (starRay_starLinkProjection K v
-        ⟨y.1, (mem_puncturedClosedStar K v _).mpr ⟨y.2, hy⟩⟩)
+        ⟨y.val, (mem_puncturedClosedStar K v _).mpr ⟨y.property, hy⟩⟩)
       apply Subtype.ext
       rw [← hr, ← hs, hlink]
       congr 2
       exact Subtype.ext hc
-    · have hx1 : x.1.1 v = 1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
+    · have hx1 : x.val.val v = 1 := le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx)
       apply Subtype.ext
-      exact ((Realization.eq_vertex_iff K x.1 v).mpr hx1).trans
-        ((Realization.eq_vertex_iff K y.1 v).mpr (hc ▸ hx1)).symm
+      exact ((Realization.eq_vertex_iff K x.val v).mpr hx1).trans
+        ((Realization.eq_vertex_iff K y.val v).mpr (hc ▸ hx1)).symm
   · intro z
     by_cases hz : (z : E) = 0
     · refine ⟨starApex K v, Subtype.ext ?_⟩
@@ -116,12 +117,12 @@ private theorem halfBallMap_bijective
     · let u : {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫} :=
         ⟨⟨‖(z : E)‖⁻¹ • (z : E), mem_sphere_zero_iff_norm.mpr (norm_smul_inv_norm hz)⟩,
           by simpa only [real_inner_smul_left] using
-            mul_nonneg (inv_nonneg.mpr (norm_nonneg (z : E))) z.2.2⟩
+            mul_nonneg (inv_nonneg.mpr (norm_nonneg (z : E))) z.property.2⟩
       let t : Ico (0 : ℝ) 1 := ⟨1 - ‖(z : E)‖,
-        sub_nonneg.mpr (mem_closedBall_zero_iff.mp z.2.1),
+        sub_nonneg.mpr (mem_closedBall_zero_iff.mp z.property.1),
         by linarith [norm_pos_iff.mpr hz]⟩
-      refine ⟨⟨(starRay K v (e.symm u) t).1, ((mem_puncturedClosedStar K v _).mp
-        (starRay K v (e.symm u) t).2).1⟩,
+      refine ⟨⟨(starRay K v (e.symm u) t).val, ((mem_puncturedClosedStar K v _).mp
+        (starRay K v (e.symm u) t).property).1⟩,
         Subtype.ext ?_⟩
       dsimp only
       rw [halfBallMap_starRay, e.apply_symm_apply]
@@ -131,27 +132,27 @@ private theorem continuous_halfBallMap
     (hcompact : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫}) :
     Continuous (halfBallMap e) := by
-  have hc : Continuous (fun x : closedStarRealization K {v} => x.1.1 v) :=
-    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtype_val)
-  let S : Set (closedStarRealization K {v}) := {x | x.1.1 v < 1}
+  have hc : Continuous (fun x : closedStarRealization K {v} => x.val.val v) :=
+    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtypeVal)
+  let S : Set (closedStarRealization K {v}) := {x | x.val.val v < 1}
   have hS : IsOpen S := isOpen_lt hc continuous_const
   have haway : ContinuousOn (halfBallMap e) S := by
     rw [continuousOn_iff_continuous_domRestrict]
     let q : S → puncturedClosedStar K v := fun x =>
-      ⟨x.1.1, (mem_puncturedClosedStar K v _).mpr ⟨x.1.2, x.2⟩⟩
+      ⟨x.val.val, (mem_puncturedClosedStar K v _).mpr ⟨x.val.property, x.property⟩⟩
     have hq : Continuous q :=
-      (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-    have he := continuous_subtype_val.comp (continuous_subtype_val.comp
+      (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+    have he := continuous_subtypeVal.comp (continuous_subtypeVal.comp
       (e.continuous.comp ((continuous_starLinkProjection_of_isCompact K v hcompact).comp hq)))
-    exact ((((continuous_const (y := (1 : ℝ))).sub hc).comp continuous_subtype_val).smul he).congr
+    exact ((((continuous_const (y := (1 : ℝ))).sub hc).comp continuous_subtypeVal).smul he).congr
       fun x => by
-        have hx : x.1.1.1 v < 1 := x.2
+        have hx : x.val.val.val v < 1 := x.property
         simp [halfBallMap, hx, q, Set.domRestrict]
   rw [continuous_iff_continuousAt]
   intro x
-  by_cases hx : x.1.1 v < 1
+  by_cases hx : x.val.val v < 1
   · exact haway.continuousAt (hS.mem_nhds hx)
-  · have hx1 := le_antisymm (Realization.le_one K x.1 v) (not_lt.mp hx)
+  · have hx1 := le_antisymm (Realization.le_one K x.val v) (not_lt.mp hx)
     have hnorm : Tendsto (fun y => ‖halfBallMap e y‖) (𝓝 x) (𝓝 0) := by
       simpa only [norm_halfBallMap, ContinuousAt, Pi.sub_def, hx1, sub_self] using
         ((continuous_const (y := (1 : ℝ))).sub hc).continuousAt (x := x)
@@ -185,7 +186,7 @@ theorem norm_closedStarHomeomorphHalfBall
     (hcompact : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ {z : sphere (0 : E) 1 // 0 ≤ ⟪(z : E), (p : E)⟫})
     (x : closedStarRealization K {v}) :
-    ‖(closedStarHomeomorphHalfBall hcompact e x : E)‖ = 1 - x.1.1 v := by
+    ‖(closedStarHomeomorphHalfBall hcompact e x : E)‖ = 1 - x.val.val v := by
   rw [coe_closedStarHomeomorphHalfBall, norm_halfBallMap]
 
 variable (hcompact : IsCompact (closedStarRealization K {v}))
@@ -195,10 +196,10 @@ variable (hcompact : IsCompact (closedStarRealization K {v}))
 mass outside the apex. -/
 @[simp]
 theorem coe_closedStarHomeomorphHalfBall_of_lt
-    (x : closedStarRealization K {v}) (hx : x.1.1 v < 1) :
+    (x : closedStarRealization K {v}) (hx : x.val.val v < 1) :
     (closedStarHomeomorphHalfBall hcompact e x : E) =
-      (1 - x.1.1 v) • ((e (starLinkProjection K v
-        ⟨x.1, (mem_puncturedClosedStar K v _).mpr ⟨x.2, hx⟩⟩)).1 : E) := by
+      (1 - x.val.val v) • ((e (starLinkProjection K v
+        ⟨x.val, (mem_puncturedClosedStar K v _).mpr ⟨x.property, hx⟩⟩)).val : E) := by
   rw [coe_closedStarHomeomorphHalfBall, halfBallMap, dite_eq_left hx]
 
 /-- The closed half-ball chart sends its apex to the origin. -/
@@ -213,15 +214,15 @@ theorem coe_closedStarHomeomorphHalfBall_starApex :
 theorem coe_closedStarHomeomorphHalfBall_starRay
     (y : geometricLink K v) (t : Ico (0 : ℝ) 1) :
     (closedStarHomeomorphHalfBall hcompact e
-      ⟨(starRay K v y t).1, ((mem_puncturedClosedStar K v _).mp
-        (starRay K v y t).2).1⟩ : E) = (1 - t.1) • ((e y).1 : E) := by
+      ⟨(starRay K v y t).val, ((mem_puncturedClosedStar K v _).mp
+        (starRay K v y t).property).1⟩ : E) = (1 - t.val) • ((e y).val : E) := by
   rw [coe_closedStarHomeomorphHalfBall, halfBallMap_starRay]
 
 /-- The inverse chart recovers the barycentric coordinate at the apex from the radius. -/
 @[simp]
 theorem closedStarHomeomorphHalfBall_symm_apex_coordinate
     (z : ↥(closedBall (0 : E) 1 ∩ {z | 0 ≤ ⟪z, (p : E)⟫})) :
-    ((closedStarHomeomorphHalfBall hcompact e).symm z).1.1 v = 1 - ‖(z : E)‖ := by
+    ((closedStarHomeomorphHalfBall hcompact e).symm z).val.val v = 1 - ‖(z : E)‖ := by
   have h := norm_closedStarHomeomorphHalfBall hcompact e
     ((closedStarHomeomorphHalfBall hcompact e).symm z)
   rw [Homeomorph.apply_symm_apply] at h
@@ -241,33 +242,33 @@ def openStarHomeomorphHalfBall :
     openStarRealization K v ≃ₜ ↥(ball (0 : E) 1 ∩ {z | 0 ≤ ⟪z, (p : E)⟫}) where
   toFun x :=
     let y := closedStarHomeomorphHalfBall hcompact e
-      ⟨x.1, openStarRealization_subset_closedStarRealization K v x.2⟩
+      ⟨x.val, openStarRealization_subset_closedStarRealization K v x.property⟩
     ⟨y, mem_ball_zero_iff.mpr (by
       rw [norm_closedStarHomeomorphHalfBall]
-      linarith [(mem_openStarRealization K).mp x.2]), y.2.2⟩
+      linarith [(mem_openStarRealization K).mp x.property]), y.property.2⟩
   invFun z :=
     let y := (closedStarHomeomorphHalfBall hcompact e).symm
-      ⟨z.1, ball_subset_closedBall z.2.1, z.2.2⟩
-    ⟨y.1, (mem_openStarRealization K).mpr (by
+      ⟨z.val, ball_subset_closedBall z.property.1, z.property.2⟩
+    ⟨y.val, (mem_openStarRealization K).mpr (by
       rw [closedStarHomeomorphHalfBall_symm_apex_coordinate]
-      linarith [mem_ball_zero_iff.mp z.2.1])⟩
+      linarith [mem_ball_zero_iff.mp z.property.1])⟩
   left_inv x := by
     dsimp only
     apply Subtype.ext
-    exact congrArg (fun y : closedStarRealization K {v} => y.1)
+    exact congrArg (fun y : closedStarRealization K {v} => y.val)
       ((closedStarHomeomorphHalfBall hcompact e).symm_apply_apply
-        ⟨x.1, openStarRealization_subset_closedStarRealization K v x.2⟩)
+        ⟨x.val, openStarRealization_subset_closedStarRealization K v x.property⟩)
   right_inv z := by
     dsimp only
     apply Subtype.ext
-    exact congrArg (fun y : ↥(closedBall (0 : E) 1 ∩ {z | 0 ≤ ⟪z, (p : E)⟫}) => y.1)
+    exact congrArg (fun y : ↥(closedBall (0 : E) 1 ∩ {z | 0 ≤ ⟪z, (p : E)⟫}) => y.val)
       ((closedStarHomeomorphHalfBall hcompact e).apply_symm_apply
-        ⟨z.1, ball_subset_closedBall z.2.1, z.2.2⟩)
+        ⟨z.val, ball_subset_closedBall z.property.1, z.property.2⟩)
   continuous_toFun := by
-    exact (continuous_subtype_val.comp ((closedStarHomeomorphHalfBall hcompact e).continuous.comp
+    exact (continuous_subtypeVal.comp ((closedStarHomeomorphHalfBall hcompact e).continuous.comp
       (continuous_inclusion (openStarRealization_subset_closedStarRealization K v)))).subtype_mk _
   continuous_invFun := by
-    exact (continuous_subtype_val.comp
+    exact (continuous_subtypeVal.comp
       ((closedStarHomeomorphHalfBall hcompact e).symm.continuous.comp
         (continuous_inclusion (inter_subset_inter_left _ ball_subset_closedBall)))).subtype_mk _
 
@@ -276,14 +277,14 @@ def openStarHomeomorphHalfBall :
 theorem coe_openStarHomeomorphHalfBall_apply (x : openStarRealization K v) :
     (openStarHomeomorphHalfBall hcompact e x : E) =
       closedStarHomeomorphHalfBall hcompact e
-        ⟨x.1, openStarRealization_subset_closedStarRealization K v x.2⟩ := (rfl)
+        ⟨x.val, openStarRealization_subset_closedStarRealization K v x.property⟩ := (rfl)
 
 /-- The inverse open chart is the restriction of the inverse closed chart. -/
 @[simp]
 theorem openStarHomeomorphHalfBall_symm_apply
     (z : ↥(ball (0 : E) 1 ∩ {z | 0 ≤ ⟪z, (p : E)⟫})) :
-    ((openStarHomeomorphHalfBall hcompact e).symm z).1 =
+    ((openStarHomeomorphHalfBall hcompact e).symm z).val =
       ((closedStarHomeomorphHalfBall hcompact e).symm
-        ⟨z.1, ball_subset_closedBall z.2.1, z.2.2⟩).1 := (rfl)
+        ⟨z.val, ball_subset_closedBall z.property.1, z.property.2⟩).val := (rfl)
 
 end AbstractSimplicialComplex

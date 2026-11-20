@@ -51,9 +51,9 @@ theorem isFaithful_of_isFaithful_cartanSubalgebra [IsFaithful K H M] : IsFaithfu
     rw [ker_eq_bot, LieSubmodule.mem_bot] at hx
     exact congrArg Subtype.val hx
   -- Hence it contains no root space: it would contain the nonzero coroot.
-  have hroot (α : H.root) : ¬ rootSpace H α.1 ≤ I.restr H := fun hα ↦ by
-    have hc := hH _ (I.corootSubmodule_le hα (coe_coroot_mem_corootSubmodule α.1))
-      (coroot α.1).2
+  have hroot (α : H.root) : ¬ rootSpace H α.val ≤ I.restr H := fun hα ↦ by
+    have hc := hH _ (I.corootSubmodule_le hα (coe_coroot_mem_corootSubmodule α.val))
+      (coroot α.val).property
     exact H.isNonZero_coe_root α
       (coroot_eq_zero_iff.mp (Subtype.ext hc))
   have hrestr : I.restr H = ⊥ := by

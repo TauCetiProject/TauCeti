@@ -170,9 +170,9 @@ theorem gradeProj_coeAddMonoidHom [DecidableEq D] (hA : ∀ k a, a ∈ A k ↔ a
     rw [DirectSum.coeAddMonoidHom_of]
     by_cases hjk : j = k
     · subst hjk
-      rw [DirectSum.of_eq_same, gradeProj_eq_self_of_mem_gradeBy ((hA _ _).1 x.2)]
+      rw [DirectSum.of_eq_same, gradeProj_eq_self_of_mem_gradeBy ((hA _ _).1 x.property)]
     · rw [DirectSum.of_eq_of_ne _ _ _ (Ne.symm hjk),
-        gradeProj_eq_zero_of_mem_gradeBy hjk ((hA _ _).1 x.2), ZeroMemClass.coe_zero]
+        gradeProj_eq_zero_of_mem_gradeBy hjk ((hA _ _).1 x.property), ZeroMemClass.coe_zero]
   | add f g hf hg => simp only [map_add, hf, hg, DirectSum.add_apply, AddMemClass.coe_add]
 
 /-- For a degree with finitely many values, the completed module is the internal direct sum of

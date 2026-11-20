@@ -76,8 +76,8 @@ theorem genusCharFunCoprimeIdealHom_eq_of_mk0_eq
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) (hts : t ⊆ s)
     {I J : genusCharFunCoprimeIdealSubmonoid (K := K) t}
-    (hIJ : NumberField.NarrowClassGroup.mk0 I.1 =
-      NumberField.NarrowClassGroup.mk0 J.1) :
+    (hIJ : NumberField.NarrowClassGroup.mk0 I.val =
+      NumberField.NarrowClassGroup.mk0 J.val) :
     genusCharFunCoprimeIdealHom (fun P hP => hs P (hts hP)) I =
       genusCharFunCoprimeIdealHom (fun P hP => hs P (hts hP)) J := by
   let m : ℤ := ∏ P ∈ t, P
@@ -89,22 +89,22 @@ theorem genusCharFunCoprimeIdealHom_eq_of_mk0_eq
     exact (hs P (hts hP)).isFundamentalDiscr.ne_zero
   obtain ⟨A, hAC, hAcop⟩ :=
     NumberField.NarrowClassGroup.exists_mk0_eq_and_isCoprime_absNorm
-      (NumberField.NarrowClassGroup.mk0 I.1)⁻¹ hm
+      (NumberField.NarrowClassGroup.mk0 I.val)⁻¹ hm
   let A' : genusCharFunCoprimeIdealSubmonoid (K := K) t := ⟨A, by
     simpa only [mem_genusCharFunCoprimeIdealSubmonoid_iff] using hAcop⟩
-  have hAC' : NumberField.NarrowClassGroup.mk0 A'.1 =
-      (NumberField.NarrowClassGroup.mk0 I.1)⁻¹ := by
+  have hAC' : NumberField.NarrowClassGroup.mk0 A'.val =
+      (NumberField.NarrowClassGroup.mk0 I.val)⁻¹ := by
     simpa [A'] using hAC
   let IA : genusCharFunCoprimeIdealSubmonoid (K := K) t := I * A'
   let JA : genusCharFunCoprimeIdealSubmonoid (K := K) t := J * A'
-  have hIA : NumberField.NarrowClassGroup.mk0 IA.1 = 1 := by
+  have hIA : NumberField.NarrowClassGroup.mk0 IA.val = 1 := by
     -- Expose the product carrier so the class-group homomorphism can rewrite it.
-    change NumberField.NarrowClassGroup.mk0 (I.1 * A'.1) = 1
+    change NumberField.NarrowClassGroup.mk0 (I.val * A'.val) = 1
     rw [map_mul, hAC']
     simp
-  have hJA : NumberField.NarrowClassGroup.mk0 JA.1 = 1 := by
+  have hJA : NumberField.NarrowClassGroup.mk0 JA.val = 1 := by
     -- As above, make the product visible before using the equality of the original classes.
-    change NumberField.NarrowClassGroup.mk0 (J.1 * A'.1) = 1
+    change NumberField.NarrowClassGroup.mk0 (J.val * A'.val) = 1
     rw [map_mul, ← hIJ, hAC']
     simp
   obtain ⟨a, _, hapos, hIAspan⟩ :=
@@ -144,8 +144,8 @@ noncomputable def genusCharFunNarrowClassGroupHom
   ((Con.ker q).lift χ (fun I J h =>
       genusCharFunCoprimeIdealHom_eq_of_mk0_eq hs heven hprod hmin hgen hsf hts
         -- The congruence kernel is exactly equality after applying `mk0`.
-        (show NumberField.NarrowClassGroup.mk0 I.1 =
-          NumberField.NarrowClassGroup.mk0 J.1 from h))).comp
+        (show NumberField.NarrowClassGroup.mk0 I.val =
+          NumberField.NarrowClassGroup.mk0 J.val from h))).comp
     (Con.quotientKerEquivOfSurjective q
       (genusCharFunCoprimeIdealClassMap_surjective
         (by
@@ -163,15 +163,15 @@ noncomputable def genusCharFunNarrowClassGroupHom
     (hsf : Squarefree d) (hts : t ⊆ s)
     (I : genusCharFunCoprimeIdealSubmonoid (K := K) t) :
     genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf hts
-        (NumberField.NarrowClassGroup.mk0 I.1) =
+        (NumberField.NarrowClassGroup.mk0 I.val) =
       genusCharFunCoprimeIdealHom (fun P hP => hs P (hts hP)) I := by
   let q := genusCharFunCoprimeIdealClassMap (K := K) t
   let χ := genusCharFunCoprimeIdealHom (K := K) (fun P hP => hs P (hts hP))
   have hχ : Con.ker q ≤ Con.ker χ := fun A B h =>
     genusCharFunCoprimeIdealHom_eq_of_mk0_eq hs heven hprod hmin hgen hsf hts
       -- Make the kernel relation explicit for the comparison theorem.
-      (show NumberField.NarrowClassGroup.mk0 A.1 =
-        NumberField.NarrowClassGroup.mk0 B.1 from h)
+      (show NumberField.NarrowClassGroup.mk0 A.val =
+        NumberField.NarrowClassGroup.mk0 B.val from h)
   let e := Con.quotientKerEquivOfSurjective q
       (genusCharFunCoprimeIdealClassMap_surjective (by
         rw [Finset.prod_ne_zero_iff]
@@ -228,7 +228,7 @@ theorem genusCharFunNarrowClassGroupHom_eq_prod_singleton
     (hsf : Squarefree d) (hts : t ⊆ s) :
     genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf hts =
       ∏ P : ↥t, genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
-        (Finset.singleton_subset_iff.mpr (hts P.2)) := by
+        (Finset.singleton_subset_iff.mpr (hts P.property)) := by
   apply MonoidHom.ext
   intro A
   have hm : (∏ P ∈ t, P) ≠ 0 := by
@@ -241,16 +241,16 @@ theorem genusCharFunNarrowClassGroupHom_eq_prod_singleton
     simpa only [mem_genusCharFunCoprimeIdealSubmonoid_iff] using hIcop⟩
   rw [← hIA]
   -- `It` and `I` carry the same ideal; expose that equality to use the quotient computation rule.
-  rw [← show NumberField.NarrowClassGroup.mk0 It.1 =
+  rw [← show NumberField.NarrowClassGroup.mk0 It.val =
       NumberField.NarrowClassGroup.mk0 I from rfl,
     genusCharFunNarrowClassGroupHom_mk0]
   have h_eval :
       (∏ P : ↥t, genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
-        (Finset.singleton_subset_iff.mpr (hts P.2)))
-          (NumberField.NarrowClassGroup.mk0 It.1) =
+        (Finset.singleton_subset_iff.mpr (hts P.property)))
+          (NumberField.NarrowClassGroup.mk0 It.val) =
         ∏ P : ↥t, genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
-          (Finset.singleton_subset_iff.mpr (hts P.2))
-          (NumberField.NarrowClassGroup.mk0 It.1) := by
+          (Finset.singleton_subset_iff.mpr (hts P.property))
+          (NumberField.NarrowClassGroup.mk0 It.val) := by
     simp
   rw [h_eval]
   apply Units.ext
@@ -258,17 +258,17 @@ theorem genusCharFunNarrowClassGroupHom_eq_prod_singleton
   -- Coercing the product of unit-valued characters leaves a product of their integer values.
   change _ = ∏ P : ↥t,
     ((genusCharFunNarrowClassGroupHom hs heven hprod hmin hgen hsf
-      (Finset.singleton_subset_iff.mpr (hts P.2))
-      (NumberField.NarrowClassGroup.mk0 It.1) : ℤˣ) : ℤ)
+      (Finset.singleton_subset_iff.mpr (hts P.property))
+      (NumberField.NarrowClassGroup.mk0 It.val) : ℤˣ) : ℤ)
   rw [Finset.prod_subtype t (fun _ => Iff.rfl)]
   apply Finset.prod_congr rfl
   intro P _
-  let IP : genusCharFunCoprimeIdealSubmonoid (K := K) {P.1} := ⟨I, by
+  let IP : genusCharFunCoprimeIdealSubmonoid (K := K) {P.val} := ⟨I, by
     rw [mem_genusCharFunCoprimeIdealSubmonoid_iff]
-    simpa using (IsCoprime.prod_right_iff.mp hIcop) P P.2⟩
+    simpa using (IsCoprime.prod_right_iff.mp hIcop) P P.property⟩
   -- `IP` only equips the same ideal with the weaker singleton coprimality property.
   rw [show NumberField.NarrowClassGroup.mk0 I =
-      NumberField.NarrowClassGroup.mk0 IP.1 from rfl,
+      NumberField.NarrowClassGroup.mk0 IP.val from rfl,
     genusCharFunNarrowClassGroupHom_mk0, genusCharFunCoprimeIdealHom_apply,
     genusCharFun_singleton]
 

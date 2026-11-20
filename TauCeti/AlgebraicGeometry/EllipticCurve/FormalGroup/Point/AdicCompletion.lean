@@ -60,12 +60,6 @@ local notation "O_v" => v.adicCompletionIntegers K
 local notation "K_v" => v.adicCompletion K
 local notation "m_v" => IsLocalRing.maximalIdeal O_v
 
-local instance : IsLinearTopology O_v O_v :=
-  v.isAdic_maximalIdeal_adicCompletionIntegers (K := K) ▸ Ideal.isLinearTopology m_v
-
-local instance : Fact (IsAdic m_v) :=
-  ⟨v.isAdic_maximalIdeal_adicCompletionIntegers (K := K)⟩
-
 variable (W : WeierstrassCurve (v.adicCompletionIntegers K))
 
 /-- A curve over the completed valuation ring is an integral model of its base change to the

@@ -51,15 +51,15 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : Opens V} {c
 /-- The smooth radial contraction `(t, x) ↦ c + Real.smoothTransition t • (x - c)` of a star-convex
 open subset `U` of a real normed space `V` onto its star-centre `c`, defined on all of `ℝ × U`. -/
 def smoothContraction (hU : StarConvex ℝ c (U : Set V)) (p : ℝ × U) : U :=
-  ⟨c + Real.smoothTransition p.1 • ((p.2 : V) - c),
-    hU.add_smul_sub_mem p.2.2 (Real.smoothTransition.nonneg p.1)
-      (Real.smoothTransition.le_one p.1)⟩
+  ⟨c + Real.smoothTransition p.fst • ((p.snd : V) - c),
+    hU.add_smul_sub_mem p.snd.prop (Real.smoothTransition.nonneg p.fst)
+      (Real.smoothTransition.le_one p.fst)⟩
 
 /-- In the ambient normed space `V`, `hU.smoothContraction (t, x)` is
 `c + Real.smoothTransition t • (x - c)`. -/
 @[simp]
 theorem coe_smoothContraction_apply (hU : StarConvex ℝ c (U : Set V)) (p : ℝ × U) :
-    (hU.smoothContraction p : V) = c + Real.smoothTransition p.1 • ((p.2 : V) - c) :=
+    (hU.smoothContraction p : V) = c + Real.smoothTransition p.fst • ((p.snd : V) - c) :=
   (rfl)
 
 /-- The radial contraction `hU.smoothContraction` is `C^n` on `ℝ × U` for every `n : ℕ∞` (including
@@ -67,16 +67,16 @@ theorem coe_smoothContraction_apply (hU : StarConvex ℝ c (U : Set V)) (p : ℝ
 theorem contMDiff_smoothContraction {n : ℕ∞} (hU : StarConvex ℝ c (U : Set V)) :
     ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) n hU.smoothContraction := by
   rw [← TauCeti.ContMDiff.subtypeVal_comp_iff U]
-  have hψ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) n fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
+  have hψ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) n fun p : ℝ × U ↦ Real.smoothTransition p.fst :=
     Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-  have hx : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) n fun p : ℝ × U ↦ (p.2 : V) :=
-    contMDiff_subtype_val.comp contMDiff_snd
+  have hx : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) n fun p : ℝ × U ↦ (p.snd : V) :=
+    contMDiff_subtypeVal.comp contMDiff_snd
   exact contMDiff_const.add (hψ.smul (hx.sub contMDiff_const))
 
 /-- For `t ≤ 0`, `hU.smoothContraction (t, x)` is the star-centre `c`. -/
 theorem smoothContraction_of_nonpos (hU : StarConvex ℝ c (U : Set V)) {t : ℝ} (ht : t ≤ 0)
     (x : U) :
-    hU.smoothContraction (t, x) = ⟨c, hU.mem ⟨x.1, x.2⟩⟩ :=
+    hU.smoothContraction (t, x) = ⟨c, hU.mem ⟨x.val, x.prop⟩⟩ :=
   Subtype.ext (by simp [coe_smoothContraction_apply, Real.smoothTransition.zero_of_nonpos ht])
 
 /-- For `1 ≤ t`, `hU.smoothContraction (t, x)` is `x`. -/
@@ -88,7 +88,7 @@ theorem smoothContraction_of_one_le (hU : StarConvex ℝ c (U : Set V)) {t : ℝ
 /-- At `t = 0`, `hU.smoothContraction (0, x)` is the star-centre `c`. -/
 @[simp]
 theorem smoothContraction_zero (hU : StarConvex ℝ c (U : Set V)) (x : U) :
-    hU.smoothContraction (0, x) = ⟨c, hU.mem ⟨x.1, x.2⟩⟩ :=
+    hU.smoothContraction (0, x) = ⟨c, hU.mem ⟨x.val, x.prop⟩⟩ :=
   hU.smoothContraction_of_nonpos le_rfl x
 
 /-- At `t = 1`, `hU.smoothContraction (1, x)` is `x`. -/

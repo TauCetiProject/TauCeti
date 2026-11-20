@@ -119,7 +119,8 @@ along every open embedding `f` whose image lies in the image of `g`: `X|_f` is t
 theorem isSheafy_restrict_of_range_subset {V : TopCat.{u}} {g : V ⟶ X.toTopCat}
     (hg : IsOpenEmbedding g) (hfg : Set.range f ⊆ Set.range g) (hX : isSheafy (X.restrict hg)) :
     isSheafy (X.restrict h) := by
-  let W : Opens (X.restrict hg) := ⟨g ⁻¹' Set.range f, h.isOpenMap.isOpen_range.preimage g.hom.2⟩
+  let W : Opens (X.restrict hg) := ⟨g ⁻¹' Set.range f, h.isOpenMap.isOpen_range.preimage
+      g.hom.continuous_toFun⟩
   -- the image of `W` in `X` is the image of `f`; the open `W` of the restriction is an open of
   -- `V` only up to unfolding, so the image is compared pointwise rather than rewritten
   have hW : Set.range (Opens.inclusion' (hg.isOpenMap.functor.obj W)) = Set.range f := by
