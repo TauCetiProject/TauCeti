@@ -73,6 +73,8 @@ indices of the periodic domains, and on the nose when those vanish.
   differential.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_eq_zero_iff`: the differential vanishes exactly
   when all of its coefficients do.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_mem_supported`: the differential preserves the
+  chains supported on a set of generators that no nonzero coefficient leaves.
 * `TauCeti.HeegaardRegionSystem.IsNice.hammingDist_eq_one_or_eq_two_of_hatCoefficient_ne_zero`:
   in a nice weakly admissible diagram the differential only joins generators differing on one
   or two `α`-curves.
@@ -272,6 +274,19 @@ theorem hatDifferential_eq_zero_iff :
   · simpa using DFunLike.congr_fun (LinearMap.congr_fun h (Finsupp.single x 1)) y
   · ext x y
     simp [h]
+
+/-- The hat differential maps the chains supported on a set `s` of generators to chains supported
+on `s`, when no nonzero coefficient leads out of `s`. -/
+theorem hatDifferential_mem_supported {s : Set H.Generator}
+    (hs : ∀ x ∈ s, ∀ y, H.hatCoefficient χ x y ≠ 0 → y ∈ s) {c : H.Generator →₀ ZMod 2}
+    (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s) :
+    H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s := by
+  rw [Finsupp.mem_supported'] at hc ⊢
+  intro y hy
+  rw [hatDifferential_apply, Finsupp.sum]
+  refine Finset.sum_eq_zero fun x hx => ?_
+  have hxs : x ∈ s := by_contra fun h => Finsupp.mem_support_iff.mp hx (hc x h)
+  rw [not_ne_iff.mp (mt (hs x hxs y) hy), mul_zero]
 
 end Differential
 

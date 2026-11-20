@@ -41,6 +41,22 @@ closed surfaces obtained by capping off the periodic domains of `(Σ, α, β, w)
 identification, and the comparison of domains with Whitney disks and relative spin^c structures,
 are geometric and are not formalized here.
 
+The filtration is made explicit for any number of basepoints. The diagram `H` carries all the
+basepoints, the `w`'s and the `z`'s, and `H.withBasepoints (H.basepoint ∘ ι)` keeps only the `w`'s,
+picked out by `ι`. An Alexander function `A` on the generators is required to satisfy
+`A(x) - A(y) = ∑_b n_b(D)` for the domains `D` from `x` to `y` avoiding the `w`'s, so that
+`A(x) - A(y)` is the total multiplicity of `D` at the `z`'s. For a doubly pointed diagram the
+relative Alexander gradings to a fixed generator are such a function
+(`TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeAlexanderGrading_sub_eq_sum`). For the
+multipointed diagram of a grid, with the `O`-markings as `w`'s and the `X`-markings as `z`'s, the
+requirement is the relation `A(x) - A(y) = n_X(D) - n_O(D)` of Manolescu, Ozsváth and Sarkar on
+these domains; that diagram is not constructed here. The hat differential of the diagram pointed at
+the `w`'s then maps the chains supported in Alexander gradings at most `k` to chains supported
+there, and the map it induces on the quotient by the chains in gradings below `k` is the hat
+differential of `H`, which counts only the domains with `n_z = 0`. This distinguishes the filtered
+differential, which counts the domains avoiding the `w`'s with any multiplicity at the `z`'s, from
+its associated graded differential.
+
 ## Main definitions
 
 * `TauCeti.HeegaardRegionSystem.periodicAlexanderValues`: the values of `n_z - n_w` on the
@@ -66,12 +82,30 @@ are geometric and are not formalized here.
   complex of the diagram pointed at `w`.
 * `TauCeti.HeegaardRegionSystem.relativeAlexanderGrading_eq_zero_of_hatCoefficient_ne_zero`: the
   hat differential of the doubly pointed diagram preserves the Alexander grading.
+* `TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeAlexanderGrading_sub_eq_sum`: relative
+  Alexander gradings to a fixed generator form an Alexander function.
+* `TauCeti.HeegaardRegionSystem.le_of_hatCoefficient_withBasepoints_ne_zero` and
+  `TauCeti.HeegaardRegionSystem.eq_of_hatCoefficient_ne_zero`: the hat differential of the
+  diagram pointed at the `w`'s does not raise an Alexander function, and that of `H` preserves
+  it.
+* `TauCeti.HeegaardRegionSystem.hatCoefficient_withBasepoints_of_le`: the two differentials have
+  the same coefficient from `x` to `y` unless `A(y) < A(x)`.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_withBasepoints_mem_supported_setOf_le`: the
+  Alexander filtration of the hat complex of the diagram pointed at the `w`'s.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_mem_supported_setOf_eq`: the hat differential of
+  `H` preserves each Alexander grading.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_withBasepoints_sub_hatDifferential_mem_supported`:
+  the associated graded differential of the Alexander filtration is the hat differential of `H`.
 
 ## References
 
 * P. Ozsváth and Z. Szabó, *Holomorphic disks and knot invariants*, Adv. Math. **186** (2004),
   [arXiv:math/0209056](https://arxiv.org/abs/math/0209056), §2: doubly pointed diagrams, the
   relative spin^c difference `(n_z(φ) - n_w(φ)) PD[μ]` (Lemma 2.5) and the Alexander filtration.
+* C. Manolescu, P. Ozsváth and S. Sarkar, *A combinatorial description of knot Floer homology*,
+  Ann. of Math. **169** (2009), [arXiv:math/0607691](https://arxiv.org/abs/math/0607691), §2,
+  for multipointed diagrams, in which the Alexander grading is computed from all the `z`
+  basepoints.
 -/
 
 public section
@@ -280,6 +314,26 @@ theorem IsDomainBetween.relativeAlexanderGrading_nonneg (hA : H.periodicAlexande
   rw [hD.relativeAlexanderGrading_eq hA, hw, sub_zero]
   exact hD0 _
 
+/-- In a diagram whose basepoints are `w` and `z`, with vanishing periodic Alexander values, the
+Alexander gradings `A(x) = A(x, x₀)` relative to a generator `x₀` joined to every generator by a
+domain satisfy `A(x) - A(y) = n_w(D) + n_z(D)` for every domain `D` from `x` to `y` avoiding `w`.
+This is the hypothesis on an Alexander function of the filtration
+`TauCeti.HeegaardRegionSystem.hatDifferential_withBasepoints_mem_supported_setOf_le`, with `w` the
+only basepoint kept. -/
+theorem IsDomainBetween.relativeAlexanderGrading_sub_eq_sum [Fintype Basepoint]
+    (hB : ∀ b, b = w ∨ b = z) (hA : H.periodicAlexanderValues w z = ⊥) {x₀ : H.Generator}
+    (hx₀ : ∀ x, ∃ E, H.IsDomainBetween x x₀ E) (hD : H.IsDomainBetween x y D)
+    (hw : D (H.basepoint w) = 0) :
+    H.relativeAlexanderGrading w z x x₀ - H.relativeAlexanderGrading w z y x₀ =
+      ∑ b, D (H.basepoint b) := by
+  obtain ⟨E, hE⟩ := hx₀ y
+  rw [← hD.relativeAlexanderGrading_add hA hE, add_sub_cancel_right,
+    hD.relativeAlexanderGrading_eq hA, hw, sub_zero]
+  rcases eq_or_ne w z with rfl | hwz
+  · rw [hw]
+    exact (Finset.sum_eq_zero fun b _ => by obtain rfl | rfl := hB b <;> exact hw).symm
+  · rw [Fintype.sum_eq_add w z hwz fun b hb => ((hB b).elim hb.1 hb.2).elim, hw, zero_add]
+
 variable [Fintype Point] [DecidableEq Region] [Fintype Region] {χ : Region → ℤ}
 
 /-- A domain counted by the hat differential has multiplicity zero at both `w` and `z`, so it
@@ -304,6 +358,152 @@ theorem relativeAlexanderGrading_eq_zero_of_hatCoefficient_ne_zero
   relativeAlexanderGrading_eq_zero_of_mem_hatDomains hA hD
 
 end RelativeAlexanderGrading
+
+section AlexanderFiltration
+
+/-! ### The Alexander filtration of the hat complex
+
+Here `H` carries all the basepoints of a knot or link diagram, the `w`'s and the `z`'s, and
+`ι : W → Basepoint` picks out the `w`'s. The diagram `H.withBasepoints (H.basepoint ∘ ι)` keeps
+only the `w`'s; its hat differential counts the domains with `n_w = 0`. An Alexander function
+`A` on the generators is assumed to satisfy `A(x) - A(y) = ∑_b n_b(D)` for every domain `D`
+from `x` to `y` avoiding the `w`'s, the sum running over all basepoints, so that it is the total
+multiplicity of `D` at the `z`'s. For a doubly pointed diagram this is
+`A(x) - A(y) = n_z(D) - n_w(D)` on such domains, and for a grid diagram, with the `O`-markings as
+`w`'s and the `X`-markings as `z`'s, it is `A(x) - A(y) = n_X(D) - n_O(D)` on them. -/
+
+variable [Fintype Point] [DecidableEq Region] [Fintype Region]
+  {W : Type*} {ι : W → Basepoint} {A : H.Generator → ℤ} {χ : Region → ℤ}
+  {x y : H.Generator} {D : Region → ℤ}
+
+variable (ι χ x y) in
+/-- A domain counted by the hat differential of `H` avoids all the basepoints, so it is counted
+by the hat differential of the diagram that keeps only some of them. -/
+theorem hatDomains_subset_hatDomains_withBasepoints :
+    H.hatDomains χ x y ⊆ (H.withBasepoints (H.basepoint ∘ ι)).hatDomains χ x y :=
+  fun _ hD =>
+    have ⟨hD, hz, hD0, hμ⟩ := mem_hatDomains_iff.mp hD
+    mem_hatDomains_iff.mpr ⟨(isDomainBetween_withBasepoints _).mpr hD, fun _ => hz _, hD0,
+      by rwa [maslovIndex_withBasepoints]⟩
+
+variable [Fintype Basepoint]
+
+/-- A domain counted by the hat differential of the diagram pointed at the `w`'s lowers the
+Alexander grading by its total multiplicity at the `z`'s, which is nonnegative. -/
+theorem le_of_mem_hatDomains_withBasepoints
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    (hD : D ∈ (H.withBasepoints (H.basepoint ∘ ι)).hatDomains χ x y) : A y ≤ A x := by
+  obtain ⟨hD, hw, hD0, -⟩ := mem_hatDomains_iff.mp hD
+  have h := hA x y D ((isDomainBetween_withBasepoints _).mp hD) hw
+  have h0 : 0 ≤ ∑ b, D (H.basepoint b) := Finset.sum_nonneg fun b _ => hD0 (H.basepoint b)
+  omega
+
+/-- **The hat differential of the diagram pointed at the `w`'s is filtered by the Alexander
+grading**: a nonzero coefficient from `x` to `y` forces `A(y) ≤ A(x)`. -/
+theorem le_of_hatCoefficient_withBasepoints_ne_zero
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    (h : (H.withBasepoints (H.basepoint ∘ ι)).hatCoefficient χ x y ≠ 0) : A y ≤ A x :=
+  have ⟨_, hD⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero h
+  le_of_mem_hatDomains_withBasepoints hA hD
+
+/-- A domain counted by the hat differential of `H` avoids every basepoint, so it joins
+generators of the same Alexander grading. -/
+theorem eq_of_mem_hatDomains
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    (hD : D ∈ H.hatDomains χ x y) : A x = A y := by
+  obtain ⟨hD, hz, -⟩ := mem_hatDomains_iff.mp hD
+  have h := hA x y D hD fun _ => hz _
+  simp only [hz, Finset.sum_const_zero] at h
+  omega
+
+/-- **The hat differential of `H` preserves the Alexander grading**: a nonzero coefficient from
+`x` to `y` forces `A(x) = A(y)`. -/
+theorem eq_of_hatCoefficient_ne_zero
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    (h : H.hatCoefficient χ x y ≠ 0) : A x = A y :=
+  have ⟨_, hD⟩ := nonempty_hatDomains_of_hatCoefficient_ne_zero h
+  eq_of_mem_hatDomains hA hD
+
+/-- Between generators of the same Alexander grading, the domains counted by the hat differential
+of the diagram pointed at the `w`'s are those counted by the hat differential of `H`: a
+nonnegative domain with total multiplicity zero at the `z`'s vanishes at each of them. -/
+theorem hatDomains_withBasepoints_of_eq
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    (hxy : A x = A y) :
+    (H.withBasepoints (H.basepoint ∘ ι)).hatDomains χ x y = H.hatDomains χ x y := by
+  refine Set.Subset.antisymm (fun D hD => ?_) (hatDomains_subset_hatDomains_withBasepoints ι χ x y)
+  obtain ⟨hD, hw, hD0, hμ⟩ := mem_hatDomains_iff.mp hD
+  have h := hA x y D ((isDomainBetween_withBasepoints _).mp hD) hw
+  rw [hxy, sub_self, eq_comm,
+    Finset.sum_eq_zero_iff_of_nonneg fun b _ => hD0 (H.basepoint b)] at h
+  rw [maslovIndex_withBasepoints] at hμ
+  exact mem_hatDomains_iff.mpr ⟨(isDomainBetween_withBasepoints _).mp hD,
+    fun b => h b (Finset.mem_univ b), hD0, hμ⟩
+
+/-- Unless the Alexander grading drops from `x` to `y`, the hat differential of the diagram
+pointed at the `w`'s has the same coefficient from `x` to `y` as that of `H`. -/
+theorem hatCoefficient_withBasepoints_of_le
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    (hxy : A x ≤ A y) :
+    (H.withBasepoints (H.basepoint ∘ ι)).hatCoefficient χ x y = H.hatCoefficient χ x y := by
+  rcases hxy.lt_or_eq with hxy | hxy
+  · rw [hatCoefficient_eq_zero_of_hatDomains_eq_empty
+        (Set.eq_empty_of_forall_notMem fun _ hD =>
+          hxy.not_ge (le_of_mem_hatDomains_withBasepoints hA hD)),
+      hatCoefficient_eq_zero_of_hatDomains_eq_empty
+        (Set.eq_empty_of_forall_notMem fun _ hD => hxy.ne (eq_of_mem_hatDomains hA hD))]
+  · rw [hatCoefficient_def, hatCoefficient_def, hatDomains_withBasepoints_of_eq hA hxy]
+
+/-- **The Alexander filtration.** The hat differential of the diagram pointed at the `w`'s maps
+the chains supported in Alexander gradings at most `k` to chains supported there. -/
+theorem hatDifferential_withBasepoints_mem_supported_setOf_le
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    {k : ℤ} {c : H.Generator →₀ ZMod 2}
+    (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) {x | A x ≤ k}) :
+    (H.withBasepoints (H.basepoint ∘ ι)).hatDifferential χ c ∈
+      Finsupp.supported (ZMod 2) (ZMod 2) {x | A x ≤ k} :=
+  hatDifferential_mem_supported
+    (fun _ hx _ h => (le_of_hatCoefficient_withBasepoints_ne_zero hA h).trans hx) hc
+
+/-- The hat differential of `H` maps the chains supported in Alexander grading `k` to chains
+supported there. -/
+theorem hatDifferential_mem_supported_setOf_eq
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    {k : ℤ} {c : H.Generator →₀ ZMod 2}
+    (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) {x | A x = k}) :
+    H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) {x | A x = k} :=
+  hatDifferential_mem_supported (fun _ hx _ h => (eq_of_hatCoefficient_ne_zero hA h).symm.trans hx)
+    hc
+
+/-- **The associated graded of the Alexander filtration.** On a chain `c` supported in Alexander
+gradings at most `k`, the hat differentials of the diagram pointed at the `w`'s and of `H` agree
+up to chains supported in Alexander gradings below `k`. So the map induced on the quotient of the
+`k`-th filtration level by the `(k - 1)`-st is the hat differential of `H`, which keeps the domains
+with `n_z = 0` and discards those that lower the Alexander grading. -/
+theorem hatDifferential_withBasepoints_sub_hatDifferential_mem_supported
+    (hA : ∀ x y D, H.IsDomainBetween x y D → (∀ i, D (H.basepoint (ι i)) = 0) →
+      A x - A y = ∑ b, D (H.basepoint b))
+    {k : ℤ} {c : H.Generator →₀ ZMod 2}
+    (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) {x | A x ≤ k}) :
+    (H.withBasepoints (H.basepoint ∘ ι)).hatDifferential χ c - H.hatDifferential χ c ∈
+      Finsupp.supported (ZMod 2) (ZMod 2) {x | A x < k} := by
+  rw [Finsupp.mem_supported'] at hc ⊢
+  intro y hy
+  rw [Set.mem_ofPred_eq, not_lt] at hy
+  rw [Finsupp.sub_apply, hatDifferential_apply, hatDifferential_apply, sub_eq_zero]
+  refine Finsupp.sum_congr fun x hx => ?_
+  have hxk : A x ≤ k := by_contra fun h => Finsupp.mem_support_iff.mp hx (hc x h)
+  rw [hatCoefficient_withBasepoints_of_le hA (hxk.trans hy)]
+
+end AlexanderFiltration
 
 end HeegaardRegionSystem
 
