@@ -129,6 +129,11 @@ end ChartedSpace
 
 section Zero
 
+/-- Over the single index of `Unit`, a nonempty `I` is everything, so `J \ I` is empty. -/
+private theorem isEmpty_sdiff_of_nonempty {I J : Finset Unit} (hI : I.Nonempty) :
+    IsEmpty ↥(J \ I) :=
+  ⟨fun α ↦ (Finset.mem_sdiff.1 α.2).2 (by simp [hI.eq_univ])⟩
+
 /-- Over the single index of `Unit`, an element of `Γ_J` whose restriction to a nonempty `I ⊆ J`
 is trivial is itself trivial, since then `I = J`. -/
 private theorem eq_one_of_restrict₂_eq_one {Γ : Unit → Type*} [∀ α, One (Γ α)]
@@ -181,11 +186,11 @@ noncomputable def zeroAtlas (hd : d + Module.finrank ℝ E = 0) :
     ⟨fun _ ↦ ⟨1, rfl, Subsingleton.elim _ _⟩, fun _ ↦ rfl⟩
   mem_regLocus_of_footprintMap_mem _ _ h _ hx := Finset.Nonempty.mono h hx
   eq_one_of_act_eq _ _ h _ hx _ hg _ := eq_one_of_restrict₂_eq_one h hx hg
-  exists_openPartialHomeomorph I J h x hx := by
-    obtain rfl : I = Finset.univ := hx.eq_univ
-    have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.2).2 (Finset.mem_univ _)⟩
-    refine ⟨0, by simp [hd], ((Homeomorph.homeomorphOfUnique Unit (EuclideanSpace ℝ (Fin 0))).trans
-      (Homeomorph.prodUnique _ _).symm).toOpenPartialHomeomorph, mem_univ _,
+  exists_openPartialHomeomorph _ J _ _ hx := by
+    have := isEmpty_sdiff_of_nonempty (J := J) hx
+    refine ⟨0, by simp [hd, hx.eq_univ],
+      ((Homeomorph.homeomorphOfUnique Unit (EuclideanSpace ℝ (Fin 0))).trans
+        (Homeomorph.prodUnique _ _).symm).toOpenPartialHomeomorph, mem_univ _,
       fun _ _ ↦ Subsingleton.elim _ _⟩
   exists_footprintMap_eq _ :=
     ⟨Finset.univ, ⟨(), mem_kuranishiZeroSet.2 fun _ _ ↦ rfl⟩, Finset.univ_nonempty, rfl⟩
@@ -276,6 +281,22 @@ private theorem range_powFootprintMap (hm : m ≠ 0) {I J : Finset Unit} (h : I 
     range (powFootprintMap hm h) = univ :=
   eq_univ_of_forall fun y ↦ ⟨_, powFootprintMap_powSection hm h y⟩
 
+private theorem continuous_powFootprintMap (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) :
+    Continuous (powFootprintMap hm h) :=
+  (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+
+private theorem isOpen_range_powFootprintMap (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) :
+    IsOpen (range (powFootprintMap hm h)) := by
+  rw [range_powFootprintMap hm h]
+  exact isOpen_univ
+
+private theorem isQuotientMap_powFootprintMap (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ J) :
+    IsQuotientMap (rangeFactorization (powFootprintMap hm h)) :=
+  IsQuotientMap.of_inverse (f := fun y : range (powFootprintMap hm h) ↦ powSection hm h y.1)
+    ((continuous_powSection hm h).comp continuous_subtype_val)
+    (continuous_powFootprintMap hm h).rangeFactorization
+    fun y ↦ Subtype.ext (powFootprintMap_powSection hm h y.1)
+
 /-- A thickening at a nonempty index set is the line `ℝ`. -/
 private def powThickeningHomeomorph {J : Finset Unit} (hJ : J.Nonempty) : PowThickening J ≃ₜ ℝ where
   toFun := Subtype.val
@@ -294,8 +315,8 @@ private theorem exists_powChart {I J : Finset Unit} (h : I ⊆ J) (hI : I.Nonemp
           (EuclideanSpace ℝ (Fin n) × ((α : ↥(J \ I)) → ℝ)),
         x ∈ e.source ∧ ∀ y ∈ e.source, (e y).2 = f y := by
   have hJ : J.Nonempty := hI.mono h
+  have := isEmpty_sdiff_of_nonempty (J := J) hI
   obtain rfl : I = Finset.univ := hI.eq_univ
-  have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.2).2 (Finset.mem_univ _)⟩
   exact ⟨1, by simp, ((powThickeningHomeomorph hJ).trans <|
     ((Homeomorph.funUnique (Fin 1) ℝ).symm.trans
       (EuclideanSpace.equiv (Fin 1) ℝ).symm.toHomeomorph).trans
@@ -317,22 +338,15 @@ noncomputable def powAtlas (hm : m ≠ 0) :
   isOpen_regLocus _ := isOpen_const
   act_mem_regLocus _ _ _ h := h
   footprintMap _ _ := powFootprintMap hm
-  continuous_footprintMap _ _ _ :=
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+  continuous_footprintMap _ _ := continuous_powFootprintMap hm
   footprintMap_act _ _ _ _ _ _ := by ext; simp [powFootprintMap]
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
   kuranishi_footprintMap _ _ _ _ _ := rfl
-  isOpen_range_footprintMap _ _ h := by
-    rw [range_powFootprintMap hm h]
-    exact isOpen_univ
+  isOpen_range_footprintMap _ _ := isOpen_range_powFootprintMap hm
   range_footprintMap_inter _ _ _ _ _ := by simp only [range_powFootprintMap, inter_self]
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp only [range_powFootprintMap, mem_univ]
-  isQuotientMap_footprintMap _ _ h :=
-    IsQuotientMap.of_inverse (f := fun y : range (powFootprintMap hm h) ↦ powSection hm h y.1)
-      ((continuous_powSection hm h).comp continuous_subtype_val)
-      (((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).rangeFactorization)
-      fun y ↦ Subtype.ext (powFootprintMap_powSection hm h y.1)
+  isQuotientMap_footprintMap _ _ := isQuotientMap_powFootprintMap hm
   footprintMap_eq_footprintMap_iff _ _ _ x y := by
     simp only [powFootprintMap, Subtype.mk.injEq, MonoidHom.one_apply, Homeomorph.one_apply]
     exact ⟨fun h ↦ ⟨1, Subsingleton.elim _ _, Subtype.ext h⟩, fun ⟨_, _, h⟩ ↦ congrArg _ h⟩
@@ -369,8 +383,8 @@ theorem regLocus_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).regLocus ∅ = �
 @[simp]
 theorem footprint_powAtlas_singleton (hm : m ≠ 0) : (powAtlas hm).footprint {()} = univ :=
   eq_univ_of_forall fun y ↦ (powAtlas hm).mem_footprint.2
-    ⟨powSection hm (Finset.empty_subset _) y, by simp [regLocus_powAtlas],
-      Subtype.ext (coe_footprintMap_powAtlas hm (Finset.empty_subset _) _)⟩
+    ⟨powSection hm (Finset.empty_subset _) y, Finset.singleton_nonempty _,
+      powFootprintMap_powSection hm _ y⟩
 
 end Pow
 
@@ -379,23 +393,15 @@ end Pow
 section Reflection
 
 /-- Multiplication by a unit `u = ±1` of `ℤ`, as a homeomorphism of the thickening
-`PowThickening I`; it is its own inverse. -/
-private def unitsMulHomeomorph (I : Finset Unit) (u : ℤˣ) : PowThickening I ≃ₜ PowThickening I where
-  toFun x := ⟨((u : ℤ) : ℝ) * x, fun hI ↦ by simp [x.2 hI]⟩
-  invFun x := ⟨((u : ℤ) : ℝ) * x, fun hI ↦ by simp [x.2 hI]⟩
-  left_inv x := Subtype.ext <| by
-    simp [← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-  right_inv x := Subtype.ext <| by
-    simp [← mul_assoc, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self]
-  continuous_toFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
-  continuous_invFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+`PowThickening I`: the restriction of `Homeomorph.smul u`. -/
+private def unitsMulHomeomorph (I : Finset Unit) (u : ℤˣ) : PowThickening I ≃ₜ PowThickening I :=
+  (Homeomorph.smul u : ℝ ≃ₜ ℝ).subtype fun x ↦ by simp [Units.smul_def]
 
 /-- The action of `ℤˣ` on the thickening `PowThickening I` by multiplication. -/
 private def unitsMulHom (I : Finset Unit) : ℤˣ →* (PowThickening I ≃ₜ PowThickening I) where
   toFun := unitsMulHomeomorph I
-  map_one' := Homeomorph.ext fun x ↦ Subtype.ext <| by simp [unitsMulHomeomorph]
-  map_mul' u v := Homeomorph.ext fun x ↦ Subtype.ext <| by
-    simp [unitsMulHomeomorph, mul_assoc]
+  map_one' := Homeomorph.ext fun x ↦ Subtype.ext (one_smul ℤˣ x.1)
+  map_mul' u v := Homeomorph.ext fun x ↦ Subtype.ext (mul_smul u v x.1)
 
 /-- The action of `Γ_I = ∏_(α ∈ I) ℤˣ` on the thickenings `PowThickening I` of
 `TauCeti.ImplicitAtlas.reflectionAtlas`: for `I = {α}` the element `g` acts on `X_α = ℝ` by the
@@ -408,7 +414,7 @@ noncomputable def reflectionAct (I : Finset Unit) :
 @[simp]
 theorem coe_reflectionAct_apply {I : Finset Unit} (h : () ∈ I) (g : (α : I) → ℤˣ)
     (x : PowThickening I) : (reflectionAct I g x : ℝ) = ((g ⟨(), h⟩ : ℤ) : ℝ) * x := by
-  simp [reflectionAct, h, unitsMulHom, unitsMulHomeomorph]
+  simp [reflectionAct, h, unitsMulHom, unitsMulHomeomorph, Units.smul_def]
 
 /-- The group `Γ_∅` acts trivially on the point `X_∅`. -/
 theorem reflectionAct_of_notMem {I : Finset Unit} (h : () ∉ I) : reflectionAct I = 1 := by
@@ -446,8 +452,7 @@ noncomputable def reflectionAtlas (hm : Even m) (hm₀ : m ≠ 0) :
   isOpen_regLocus _ := isOpen_const
   act_mem_regLocus _ _ _ h := h
   footprintMap _ _ := powFootprintMap hm₀
-  continuous_footprintMap _ _ _ :=
-    (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+  continuous_footprintMap _ _ := continuous_powFootprintMap hm₀
   footprintMap_act I J h g x hx := by
     by_cases hI : () ∈ I
     · exact Subtype.ext <| by simp [powFootprintMap, hI, h hI, Finset.restrict₂]
@@ -458,16 +463,10 @@ noncomputable def reflectionAtlas (hm : Even m) (hm₀ : m ≠ 0) :
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
   kuranishi_footprintMap _ _ _ _ _ := rfl
-  isOpen_range_footprintMap _ _ h := by
-    rw [range_powFootprintMap hm₀ h]
-    exact isOpen_univ
+  isOpen_range_footprintMap _ _ := isOpen_range_powFootprintMap hm₀
   range_footprintMap_inter _ _ _ _ _ := by simp only [range_powFootprintMap, inter_self]
   footprintMap_mem_range_iff _ _ _ _ _ _ := by simp only [range_powFootprintMap, mem_univ]
-  isQuotientMap_footprintMap _ _ h :=
-    IsQuotientMap.of_inverse (f := fun y : range (powFootprintMap hm₀ h) ↦ powSection hm₀ h y.1)
-      ((continuous_powSection hm₀ h).comp continuous_subtype_val)
-      (((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).rangeFactorization)
-      fun y ↦ Subtype.ext (powFootprintMap_powSection hm₀ h y.1)
+  isQuotientMap_footprintMap _ _ := isQuotientMap_powFootprintMap hm₀
   footprintMap_eq_footprintMap_iff I J h x y := by
     refine ⟨fun hxy ↦ ⟨1, rfl, by simpa [powFootprintMap, Subtype.ext_iff] using hxy⟩, ?_⟩
     rintro ⟨g, hg, hxy⟩
@@ -514,8 +513,8 @@ theorem coe_footprintMap_reflectionAtlas (hm : Even m) (hm₀ : m ≠ 0) {I J : 
 theorem footprint_reflectionAtlas_singleton (hm : Even m) (hm₀ : m ≠ 0) :
     (reflectionAtlas hm hm₀).footprint {()} = univ :=
   eq_univ_of_forall fun y ↦ (reflectionAtlas hm hm₀).mem_footprint.2
-    ⟨powSection hm₀ (Finset.empty_subset _) y, by simp [regLocus_reflectionAtlas],
-      Subtype.ext (coe_footprintMap_reflectionAtlas hm hm₀ (Finset.empty_subset _) _)⟩
+    ⟨powSection hm₀ (Finset.empty_subset _) y, Finset.singleton_nonempty _,
+      powFootprintMap_powSection hm₀ _ y⟩
 
 end Reflection
 
