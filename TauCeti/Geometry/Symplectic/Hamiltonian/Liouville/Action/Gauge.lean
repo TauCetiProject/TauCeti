@@ -276,10 +276,9 @@ theorem exists_eq_mulVec_add_and_angleMap_hamiltonianFlowAction_section_eq [Deci
     have hv : h c ⬝ᵥ v = ∑ i, w c i * (p i c ⬝ᵥ v) := by
       rw [← hw c hcD, sum_dotProduct]
       simp [smul_dotProduct]
+    rw [sum_smul_proj_apply, hv]
     simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
-      ContinuousLinearMap.proj_apply, fun i ↦ fderiv_apply_eq_of_hasFDerivAt_action
-        (hA c hcD i) v]
-    rw [← dotProduct.eq_1 (h c) v, hv]
+      fun i ↦ fderiv_apply_eq_of_hasFDerivAt_action (hA c hcD i) v]
     exact Finset.sum_congr rfl fun i _ ↦ by field_simp
   · rw [hσ.angleMap_hamiltonianFlowAction_section hF hcomm hc, (hPb c hcD).2.2 θ, ← hw c hcD,
       hσ.hamiltonianFlowAction_apply_angleMap hF hcomm hc]

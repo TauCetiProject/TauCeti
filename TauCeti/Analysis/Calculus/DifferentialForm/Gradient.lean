@@ -27,7 +27,8 @@ symmetric derivative is a gradient
 the regularity of the potential.
 
 In coordinates on `ι → ℝ`, the gradient field of `h : (ι → ℝ) → (ι → ℝ)` is the one-form
-`∑ⱼ hⱼ dcⱼ`, whose derivative is `(v, w) ↦ dh(v) ⬝ w` (`TauCeti.fderiv_sum_smul_proj_apply`).
+`∑ⱼ hⱼ dcⱼ`, with value `v ↦ h ⬝ v` (`TauCeti.sum_smul_proj_apply`). Its derivative is
+`(v, w) ↦ dh(v) ⬝ w` (`TauCeti.fderiv_sum_smul_proj_apply`).
 So the derivative of a differentiable gradient field is symmetric, `∂ⱼ hᵢ = ∂ᵢ hⱼ`
 (`TauCeti.fderiv_dotProduct_comm_of_eventually_hasFDerivAt`), by Mathlib's
 `second_derivative_symmetric_of_eventually_of_real`, and conversely on an open star-convex set
@@ -63,6 +64,11 @@ theorem extDeriv_ofSubsingletonLIE_apply_pair {𝕜 E F : Type*} [NontriviallyNo
     (hL.hasFDerivAt.clm_apply (hasFDerivAt_const v x)).fderiv]
 
 variable {ι : Type*} [Fintype ι] {h : (ι → ℝ) → ι → ℝ} {c : ι → ℝ}
+
+/-- **A coordinate covector.** The covector `∑ⱼ aⱼ dcⱼ` on `ι → ℝ` is `v ↦ a ⬝ v`. -/
+theorem sum_smul_proj_apply (a v : ι → ℝ) :
+    (∑ j, a j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) v = a ⬝ᵥ v := by
+  simp [dotProduct]
 
 /-- **The derivative of a coordinate one-form.** The covector field `∑ⱼ hⱼ dcⱼ` of a map
 `h : (ι → ℝ) → (ι → ℝ)` differentiable at `c` has derivative `(v, w) ↦ dh(v) ⬝ w` at `c`. -/
