@@ -66,6 +66,8 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_top`: the same on the whole line.
 * `TauCeti.HasWeakLineDerivOn.exists_continuousOn_ae_eq`: if the weak derivative is integrable,
   the function has a representative continuous on the closed interval.
+* `TauCeti.HasWeakLineDerivOn.eq_of_ae_eq_const_Ioo`: a weakly differentiable function has no
+  jump; if it is almost everywhere constant on each side of a point, the two constants agree.
 * `TauCeti.HasWeakLineDerivOn.integral_eq_sub`: the fundamental theorem of calculus for such a
   continuous representative.
 * `TauCeti.HasWeakLineDerivOn.absolutelyContinuousOnInterval` and
@@ -280,6 +282,46 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq
   exact ⟨_, continuousOn_const.add
     (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hu'
       (Ioo_subset_Icc_self ht₀)), hc⟩
+
+/-- **A weakly differentiable function has no jump.** Let `u` have a weak derivative on `(a, b)`
+and let `a < c < b`. If `u` is almost everywhere equal to `y₀` on `(a, c)` and to `y₁` on
+`(c, b)`, then `y₀ = y₁`. In particular the indicator function of a subinterval `(a, c)` is not
+weakly differentiable on `(a, b)`. -/
+theorem HasWeakLineDerivOn.eq_of_ae_eq_const_Ioo
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1) {c : ℝ} (hac : a < c)
+    (hcb : c < b) {y₀ y₁ : F} (h₀ : ∀ᵐ t ∂volume.restrict (Ioo a c), u t = y₀)
+    (h₁ : ∀ᵐ t ∂volume.restrict (Ioo c b), u t = y₁) : y₀ = y₁ := by
+  -- On a compact subinterval `[a', b']` around `c` the weak derivative is integrable, so `u` has
+  -- a representative `v` continuous there.
+  have ha' : a < (a + c) / 2 := by linarith
+  have hc' : (a + c) / 2 < c := by linarith
+  have hc'' : c < (c + b) / 2 := by linarith
+  have hb' : (c + b) / 2 < b := by linarith
+  have hu' : IntegrableOn u' (Ioo ((a + c) / 2) ((c + b) / 2)) :=
+    (h.locallyIntegrableOn_deriv.integrableOn_compact_subset (Icc_subset_Ioo ha' hb')
+      isCompact_Icc).mono_set Ioo_subset_Icc_self
+  obtain ⟨v, hv, huv⟩ := (h.mono (Ω' := ⟨Ioo ((a + c) / 2) ((c + b) / 2), isOpen_Ioo⟩)
+    (Ioo_subset_Ioo ha'.le hb'.le)).exists_continuousOn_ae_eq hu'
+  -- `v` is constant on each open side of `c`, hence, by continuity, on its closure, so `v c` is
+  -- both `y₀` and `y₁`.
+  have side : ∀ {s t : ℝ} {y : F}, s < t → Icc s t ⊆ Icc ((a + c) / 2) ((c + b) / 2) →
+      (∀ᵐ r ∂volume.restrict (Ioo s t), v r = y) → c ∈ Icc s t → v c = y := by
+    intro s t y hst hsub hy hc
+    have hIoo : Ioo s t ⊆ Icc ((a + c) / 2) ((c + b) / 2) := Ioo_subset_Icc_self.trans hsub
+    have hEq : EqOn v (fun _ ↦ y) (Ioo s t) :=
+      Measure.eqOn_open_of_ae_eq hy isOpen_Ioo (hv.mono hIoo) continuousOn_const
+    exact hEq.of_subset_closure (hv.mono hsub) continuousOn_const Ioo_subset_Icc_self
+      (by rw [closure_Ioo hst.ne]) hc
+  have hv₀ : ∀ᵐ r ∂volume.restrict (Ioo ((a + c) / 2) c), v r = y₀ := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hc''.le) huv,
+      ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_left ha'.le) h₀] with r h1 h2
+    rw [← h1, h2]
+  have hv₁ : ∀ᵐ r ∂volume.restrict (Ioo c ((c + b) / 2)), v r = y₁ := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_left hc'.le) huv,
+      ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hb'.le) h₁] with r h1 h2
+    rw [← h1, h2]
+  rw [← side hc' (Icc_subset_Icc_right hc''.le) hv₀ (right_mem_Icc.2 hc'.le),
+    side hc'' (Icc_subset_Icc_left hc'.le) hv₁ (left_mem_Icc.2 hc''.le)]
 
 /-- **The fundamental theorem of calculus for a continuous representative.** Let `u'` be the weak
 derivative of `u` on `Ioo a b`, integrable on `Ioo a b`, and let `v` be continuous on `Icc a b`
