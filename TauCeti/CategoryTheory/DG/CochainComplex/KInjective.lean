@@ -262,8 +262,28 @@ def rightMappingSpacePiAddEquiv (K L : KInjectiveDGCategory C) (n : ℕ) :
       (dgNerve.rightMappingSpaceZero (R := R) K L)) ≃+
       (Q.obj K.obj ⟶ (Q.obj L.obj)⟦-((n + 1 : ℕ) : ℤ)⟧) :=
   have := L.property
+  -- The Hom complex `dgHomComplex R K L` of the full DG subcategory is the ambient one
+  -- (`DGFullSubcategory.dgHomComplex_eq`), which is `linearHomComplex R K.obj L.obj` by the
+  -- definition of the enrichment of cochain complexes; both identifications hold by `rfl`.
   (dgNerve.rightMappingSpacePiAddEquivHomology K L n).trans
     (linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj _).toAddEquiv
+
+/-- `rightMappingSpacePiAddEquiv` is the Dold–Kan comparison
+`dgNerve.rightMappingSpacePiAddEquivHomology` followed by the K-injective cohomology comparison
+`linearHomComplexHomologyLinearEquivOfIsKInjective`. Together with
+`linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk`, this computes it on any element whose
+cohomology class is represented by a cocycle. -/
+theorem rightMappingSpacePiAddEquiv_apply (K L : KInjectiveDGCategory C) (n : ℕ)
+    (a : Additive (SSet.KanComplex.π (n + 1)
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm K)
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm L))
+      (dgNerve.rightMappingSpaceZero (R := R) K L))) :
+    have := L.property
+    rightMappingSpacePiAddEquiv R K L n a =
+      linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj _
+        (dgNerve.rightMappingSpacePiAddEquivHomology K L n a) :=
+  (rfl)
 
 /-- **Path components of mapping spaces in the K-injective enhancement.** For K-injective
 complexes `K` and `L`, the path components of the right mapping space from `K` to `L` in the
@@ -276,9 +296,29 @@ def rightMappingSpacePiZeroEquiv (K L : KInjectiveDGCategory C) :
       (dgNerve.rightMappingSpaceZero (R := R) K L) ≃
       (Q.obj K.obj ⟶ Q.obj L.obj) :=
   have := L.property
+  -- As for `rightMappingSpacePiAddEquiv`, `dgHomComplex R K L` is `linearHomComplex R K.obj L.obj`
+  -- by `rfl`.
   (dgNerve.rightMappingSpacePiZeroEquivHomology K L).trans
     ((linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj 0).toEquiv.trans
       ((Iso.refl _).homCongr ((shiftFunctorZero (DerivedCategory C) ℤ).app _)))
+
+/-- `rightMappingSpacePiZeroEquiv` is the Dold–Kan comparison
+`dgNerve.rightMappingSpacePiZeroEquivHomology` followed by the K-injective cohomology comparison
+`linearHomComplexHomologyLinearEquivOfIsKInjective` in degree zero and the identification
+`L⟦0⟧ ≅ L`. Together with `linearHomComplexHomologyLinearEquivOfIsKInjective_symm_mk`, this
+computes it on any element whose cohomology class is represented by a cocycle. -/
+theorem rightMappingSpacePiZeroEquiv_apply (K L : KInjectiveDGCategory C)
+    (a : SSet.KanComplex.π 0
+      ((dgNerve R (KInjectiveDGCategory C)).rightMappingSpace
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm K)
+        ((dgNerveEquiv R (KInjectiveDGCategory C)).symm L))
+      (dgNerve.rightMappingSpaceZero (R := R) K L)) :
+    have := L.property
+    rightMappingSpacePiZeroEquiv R K L a =
+      linearHomComplexHomologyLinearEquivOfIsKInjective R K.obj L.obj 0
+          (dgNerve.rightMappingSpacePiZeroEquivHomology K L a) ≫
+        (shiftFunctorZero (DerivedCategory C) ℤ).hom.app _ := by
+  simp [rightMappingSpacePiZeroEquiv, Iso.homCongr_apply]
 
 end KInjectiveDGCategory
 
