@@ -203,10 +203,11 @@ private lemma punctureSum_eventuallyEq {S : Set M} [Fintype S] {W : M → Set M}
     {b : ∀ p : S, SmoothBumpFunction I (p : M)} (hbW : ∀ p : S, tsupport (b p) ⊆ W p)
     (p : S) {x : M} (hx : x ∈ W p) :
     punctureSum b =ᶠ[𝓝 x] puncturePole (b p) := by
-  filter_upwards [(hWo p.1).mem_nhds hx] with y hy
+  filter_upwards [(hWo p.val).mem_nhds hx] with y hy
   rw [punctureSum, Finset.sum_eq_single p _ (by simp)]
   intro q _ hqp
-  have hdisj : Disjoint (W p.1) (W q.1) := hWd p.2 q.2 (Subtype.coe_ne_coe.2 hqp.symm)
+  have hdisj : Disjoint (W p.val) (W q.val) :=
+    hWd p.property q.property (Subtype.coe_ne_coe.2 hqp.symm)
   have hyq : y ∉ tsupport (puncturePole (b q)) := fun hts ↦
     hdisj.le_bot ⟨hy, hbW q (tsupport_puncturePole_subset (b q) hts)⟩
   exact image_eq_zero_of_notMem_tsupport hyq
@@ -245,7 +246,7 @@ private lemma isCompact_sublevel_punctureSum [T2Space M] [CompactSpace M] {S : S
       (by rw [Subtype.range_coe]; exact compl_subset_compl.2 hSO)
   refine hK.of_isClosed_subset (isClosed_le hcont continuous_const) fun x hx hp ↦ ?_
   obtain ⟨p, hp'⟩ := mem_iUnion.1 hp
-  have hlt : B < puncturePole (b p) x := hOB p x hp' fun h ↦ x.2 (h ▸ p.2)
+  have hlt : B < puncturePole (b p) x := hOB p x hp' fun h ↦ x.property (h ▸ p.property)
   have hle : puncturePole (b p) x ≤ punctureSum b x :=
     Finset.single_le_sum (fun q _ ↦ puncturePole_nonneg (b q) x) (Finset.mem_univ p)
   exact hx.not_gt (hlt.trans_le hle)
@@ -264,8 +265,9 @@ private theorem finiteCWType_compl_of_innerProductSpace [T2Space M] [CompactSpac
   let U : Opens M := ⟨Sᶜ, hS.isClosed.isOpen_compl⟩
   let F₀ : C^∞⟮I, U; 𝓘(ℝ), ℝ⟯ :=
     ⟨punctureSum b ∘ Subtype.val, fun x ↦ ContMDiffAt.comp x
-      (ContMDiffAt.sum fun p _ ↦ contMDiffAt_puncturePole (b p) fun h ↦ x.2 (h ▸ p.2))
-      contMDiff_subtype_val.contMDiffAt⟩
+      (ContMDiffAt.sum fun p _ ↦
+        contMDiffAt_puncturePole (b p) fun h ↦ x.property (h ▸ p.property))
+      contMDiff_subtypeVal.contMDiffAt⟩
   have hF₀_cont : Continuous F₀ := F₀.contMDiff.continuous
   have hF₀_crit {x : U} (hx : 1 < F₀ x) : x ∉ criticalPoints I F₀ := fun hcrit ↦
     notMem_criticalPoints_punctureSum (fun p ↦ (hW p).2) hWd hbW hx

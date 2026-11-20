@@ -180,7 +180,7 @@ theorem contMDiff_op_smul :
       (fun p : ManifoldTotalSpace G P × G ↦
         ManifoldTotalSpace.homeomorph G P
           ⟨((ManifoldTotalSpace.homeomorph G P).symm p.1).proj,
-            ((ManifoldTotalSpace.homeomorph G P).symm p.1).2⟩) :=
+            ((ManifoldTotalSpace.homeomorph G P).symm p.1).snd⟩) :=
     contMDiff_fst.congr fun p ↦ by simp only [TotalSpace.eta, Homeomorph.apply_symm_apply]
   exact (hp.totalSpaceMk_smul contMDiff_snd).congr fun ⟨x, g⟩ ↦ by
     obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
@@ -275,7 +275,7 @@ theorem contMDiffOn_trivializationOfSection [LieGroup IG n G]
   -- The fibre coordinate is the division map of `σ` at the base point and the point itself.
   have hdiv : ContMDiffOn (IB.prod IG) IG n
       (fun x ↦ division G (σ ((ManifoldTotalSpace.homeomorph G P).symm x).proj)
-        ((ManifoldTotalSpace.homeomorph G P).symm x).2)
+        ((ManifoldTotalSpace.homeomorph G P).symm x).snd)
       ((ManifoldTotalSpace.homeomorph G P).symm ⁻¹' (π G P ⁻¹' U)) :=
     ContMDiffOn.division (hσ'.comp hproj fun _ hx ↦ hx)
       (contMDiffOn_id.congr fun x _ ↦ by rw [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq])
