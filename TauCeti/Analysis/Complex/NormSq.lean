@@ -21,7 +21,6 @@ the norm along vertical lines through a point of the closed upper half-plane.
 
 * `Complex.normSq_sub_ofReal_sub_normSq_sub_ofReal`: the radical-line identity.
 * `Complex.norm_sq_add_I_mul_div_sqrt_two`: the squared norm of a normalized complex pair.
-* `Complex.norm_eq_iff_normSq_eq_sq`: for `0 ≤ ρ`, `‖z‖ = ρ` if and only if `normSq z = ρ ^ 2`.
 * `Complex.eq_sub_of_normSq_eq_of_lt_re`, `Complex.eq_add_of_normSq_eq_of_re_lt`: a real point of
   the circle of centre `m` and radius `ρ` is `m - ρ` or `m + ρ`, according to its side.
 * `Complex.lt_normSq_sub_of_normSq_eq`: points of one circle on one side of an intersection point
@@ -58,16 +57,12 @@ theorem normSq_sub_ofReal_sub_normSq_sub_ofReal {c₁ c₂ : ℝ} (C z : ℂ) :
     ofReal_im, sub_zero]
   ring
 
-/-- For `0 ≤ ρ`, a complex number has norm `ρ` exactly when its squared norm is `ρ ^ 2`. -/
-theorem norm_eq_iff_normSq_eq_sq {z : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ) : ‖z‖ = ρ ↔ normSq z = ρ ^ 2 := by
-  rw [normSq_eq_norm_sq, pow_left_inj₀ (norm_nonneg _) hρ two_ne_zero]
-
 /-- A point at squared distance `ρ ^ 2` from the real point `m`, with `0 ≤ ρ`, has real part in
 `[m - ρ, m + ρ]`. -/
 theorem re_mem_Icc_of_normSq_sub_eq {w : ℂ} {m ρ : ℝ} (hρ : 0 ≤ ρ)
     (h : normSq (w - m) = ρ ^ 2) : w.re ∈ Set.Icc (m - ρ) (m + ρ) := by
   have hre := abs_re_le_norm (w - m)
-  rw [(norm_eq_iff_normSq_eq_sq hρ).2 h, sub_re, ofReal_re, abs_le] at hre
+  rw [norm_def, h, Real.sqrt_sq hρ, sub_re, ofReal_re, abs_le] at hre
   constructor <;> linarith
 
 /-- A real point `x` of the circle of centre `m` and radius `ρ`, to the left of a complex point
@@ -142,9 +137,9 @@ going upward from `z` is at least as far from the origin as `z`. -/
 theorem norm_le_norm_add_ofReal_mul_I {z : ℂ} (hz : 0 ≤ z.im) {s : ℝ} (hs : 0 ≤ s) :
     ‖z‖ ≤ ‖z + (s : ℂ) * I‖ := by
   refine (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
-  simp only [← normSq_eq_norm_sq, normSq_apply, add_re, add_im, mul_re, mul_im, ofReal_re,
-    ofReal_im, I_re, I_im]
-  nlinarith
+  have h := sq_norm_sub_sq_re (z + s * I)
+  rw [add_re, add_im, mul_I_re, mul_I_im, ofReal_re, ofReal_im, neg_zero, add_zero] at h
+  linarith [sq_norm_sub_sq_re z, (sq_le_sq₀ hz (by linarith)).2 (by linarith : z.im ≤ z.im + s)]
 
 /-- For `z` in the closed upper half-plane and every real `s`, the point `z + s * I` of the
 vertical line through `z` is at distance at least `(‖z‖ + s) / 2` from the origin. -/
