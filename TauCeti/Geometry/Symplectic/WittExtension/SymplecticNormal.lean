@@ -77,12 +77,6 @@ variable {V V' Q Q' : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup V'] [
   [AddCommGroup Q] [Module ℝ Q] [AddCommGroup Q'] [Module ℝ Q']
   {B : V →ₗ[ℝ] V →ₗ[ℝ] Q} {B' : V' →ₗ[ℝ] V' →ₗ[ℝ] Q'} {W : Submodule ℝ V} {W' : Submodule ℝ V'}
 
-/-- Vectors of `W` and of `W^⊥` do not pair, so a reflexive form splits on `W + W^⊥`. -/
-private theorem IsRefl.apply_add_add_of_mem (hB : B.IsRefl) {w₁ w₂ u₁ u₂ : V} (hw₁ : w₁ ∈ W)
-    (hw₂ : w₂ ∈ W) (hu₁ : u₁ ∈ W.orthogonalBilin B) (hu₂ : u₂ ∈ W.orthogonalBilin B) :
-    B (w₁ + u₁) (w₂ + u₂) = B w₁ w₂ + B u₁ u₂ := by
-  simp [hu₂ w₁ hw₁, hB _ _ (hu₁ w₂ hw₂)]
-
 /-- If `σ` lifts classes of the symplectic normal space to `W^⊥`, then `(w, s) ↦ w + σ s` is
 injective on `W × (W^⊥ ⧸ (W ∩ W^⊥))`. -/
 private theorem injective_coprod_subtype {σ : SymplecticNormal B W →ₗ[ℝ] W.orthogonalBilin B}
@@ -108,25 +102,6 @@ private def symplecticFormOfInjective [FiniteDimensional ℝ V] (hB : B.IsAlt)
   nondegenerate := .ofSeparatingLeft fun v hv ↦ hinj <| by
     ext w
     exact he (by simpa using hv w)
-
-/-- A linear isomorphism `L : W ≃ W'` with `B'(L x, L y) = c (B(x, y))` matches the radicals of the
-restricted forms, so `W ∩ W^⊥` and `W' ∩ W'^⊥` have the same dimension. -/
-private theorem finrank_inf_orthogonalBilin_eq {c : Q ≃ₗ[ℝ] Q'} (L : W ≃ₗ[ℝ] W')
-    (hL : ∀ x y : W, B' (L x) (L y) = c (B x y)) :
-    finrank ℝ ↥(W ⊓ W.orthogonalBilin B) = finrank ℝ ↥(W' ⊓ W'.orthogonalBilin B') := by
-  have hmap : ((W.orthogonalBilin B).comap W.subtype).map (L : W →ₗ[ℝ] W') =
-      (W'.orthogonalBilin B').comap W'.subtype := by
-    ext y
-    obtain ⟨x, rfl⟩ := L.surjective y
-    simp only [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply, Submodule.mem_comap,
-      Submodule.subtype_apply, Submodule.mem_orthogonalBilin]
-    refine ⟨fun h n hn ↦ ?_, fun h n hn ↦ ?_⟩
-    · obtain ⟨m, hm⟩ := L.surjective ⟨n, hn⟩
-      rw [show n = L m by rw [hm], hL, h m m.2, map_zero]
-    · exact c.injective (by rw [← hL ⟨n, hn⟩ x, h _ (L ⟨n, hn⟩).2, map_zero])
-  rw [← Submodule.map_comap_subtype, ← Submodule.map_comap_subtype,
-    Submodule.finrank_map_subtype_eq, Submodule.finrank_map_subtype_eq, ← hmap,
-    LinearEquiv.finrank_map_eq]
 
 /-- **Witt's extension theorem for line-valued forms.** Let `B` and `B'` be nondegenerate
 alternating forms on real vector spaces of the same finite dimension, with values in the lines `Q`
@@ -201,7 +176,8 @@ theorem IsAlt.exists_linearEquiv_extend_symplecticNormal [FiniteDimensional ℝ 
   have hdim : finrank ℝ V = finrank ℝ V' := by
     rw [← finrank_symplecticNormal_add_finrank_inf_add_finrank W hinj hQ,
       ← finrank_symplecticNormal_add_finrank_inf_add_finrank W' hinj' (c.finrank_eq ▸ hQ),
-      S.finrank_eq, L.finrank_eq, finrank_inf_orthogonalBilin_eq L hL]
+      S.finrank_eq, L.finrank_eq,
+      Submodule.finrank_inf_orthogonalBilin_eq_of_isometry c.injective L hL]
   obtain ⟨A, hAB, hAext⟩ :=
     hB.exists_linearEquiv_extend_of_injective hB' hinj hinj' hQ c hdim hginj hfinj hfg
   have hAL (w : W) : A w = L w := by simpa [hg, hf] using hAext (w, 0)
