@@ -283,7 +283,7 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
         (fun _ ↦ (ψ.symm.isInvertible_mfderiv (by simp)).surjective)
         (fun _ ↦ (hF.contMDiff _).mdifferentiableAt (by simp)) hγ
     have hmem (y : ψ '' W) : ψ.symm y ∈ W := by
-      obtain ⟨x, hx, hxy⟩ := y.2
+      obtain ⟨x, hx, hxy⟩ := y.property
       rwa [← hxy, ψ.symm_apply_apply]
     have h := hF.eq_of_isMIntegralCurve T (ψ.symm ∘ γ) hT hT1 hγ' (hper.comp _)
       ⟨(⟨fun y ↦ ⟨ψ.symm y, hmem y⟩, by fun_prop⟩ : C(ψ '' W, W)).comp g, hg.comp_right _,
