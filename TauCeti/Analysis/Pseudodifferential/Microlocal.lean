@@ -526,7 +526,7 @@ theorem HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_quantize
       ⟨ψ, by simp [hψx], ?_⟩).isMicrolocallySobolevAt ξ
     rw [map_sub, hψc, hψc]
     exact memSobolev_toDistr_quantizeSobolev_sub_quantizeSobolev_smulLeftCLM hc
-      (fun y hy ↦ coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport ha (hψ' ▸ hy))
+      (fun y hy ↦ coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport ha (hψ' ▸ hy))
       (by simpa using φ.hasCompactSupport) (hφ1.mono fun y hy ↦ by simpa using hy) t
       (s - m) u
   convert hA.add hB using 1

@@ -42,7 +42,7 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
 * `TauCeti.Symbol.coefficient_sharp_of_coefficient_eq_smul`: at a position `x`, `a # b` only
   involves `a(x, ·)`. In particular, for a Schwartz function `ψ`, the composition `ψ # b` vanishes
   at positions outside `tsupport ψ`
-  (`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport`).
+  (`TauCeti.Symbol.coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport`).
 * `TauCeti.Symbol.spatialDeriv_sharp`, `TauCeti.Symbol.coefficient_frequencyDeriv_sharp`: the
   Leibniz rules `∂(a # b) = (∂a) # b + a # (∂b)` for position and frequency derivatives.
 * `TauCeti.Symbol.sharp_add`, `TauCeti.Symbol.add_sharp`, `TauCeti.Symbol.sharp_smul`,
@@ -738,7 +738,7 @@ theorem coefficient_sharp_of_coefficient_eq_smul {a' : Symbol n W U m'}
 
 /-- The composition `ψ # a` of multiplication by a Schwartz function `ψ` with a symbol `a`
 vanishes at positions outside `tsupport ψ`. -/
-theorem coefficient_ofSpatial_smul_id_sharp_of_notMem_tsupport {a : Symbol n V W m}
+theorem coefficient_ofSpatial_smul_id_sharp_eq_zero_of_notMem_tsupport {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) {ψ : 𝓢(CoordinateSpace n, ℂ)} {x : CoordinateSpace n}
     (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace n) :
     ((ofSpatial (fun y ↦ ψ y • ContinuousLinearMap.id ℂ W)
