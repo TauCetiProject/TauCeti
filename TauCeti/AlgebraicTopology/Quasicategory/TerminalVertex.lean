@@ -126,6 +126,12 @@ lemma isTerminalVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
   refine ⟨fun h ↦ ?_, fun h ↦ h.map_iso e⟩
   simpa using h.map_iso e.symm
 
+/-- In a simplicial set with at most one simplex in each dimension, such as `Δ[0]`, every vertex is
+terminal: a constant map extends every simplex boundary. -/
+lemma isTerminalVertex_of_subsingleton [∀ n, Subsingleton (X.obj n)] (x : X _⦋0⦌) :
+    X.IsTerminalVertex x :=
+  fun _ _ _ ↦ ⟨const x, by ext; exact Subsingleton.elim _ _⟩
+
 /-- In a strict Segal simplicial set, such as the nerve of a category, a vertex `x` is terminal
 exactly when every vertex has an edge to `x` and every triangle ending at `x` is filled: maps
 from the boundaries of higher simplices always extend. -/
