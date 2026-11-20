@@ -73,8 +73,6 @@ pullback of tempered distributions.
 * `TemperedDistribution.comp_add_mem_realSobolevFunctions_natCast`: translations.
 * `TemperedDistribution.comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast`: linear
   automorphisms.
-* `SchwartzMap.exists_norm_toBesselPotentialSpaceCLM_compCLM_le`: the bound
-  `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` on Schwartz functions, for every real `s`.
 * `TemperedDistribution.MemSobolev.compCLM`: the pullback preserves `H^s`.
 * `BesselPotentialSpace.compCLM`, `BesselPotentialSpace.compEquiv`: the pullback as a bounded
   operator and as a continuous linear automorphism of `H^s`.
@@ -352,19 +350,6 @@ theorem hasSobolevExtension_compCLM (hφ : (φ : E → E).HasTemperateGrowth)
     push_cast
     ring
   rwa [hs] at h
-
-/-- **Changes of variables on `H^s`, on Schwartz functions.** If `φ` and `φ⁻¹` have temperate
-growth and bounded derivatives of every positive order, then `‖u ∘ φ‖_{H^s} ≤ C ‖u‖_{H^s}` for
-every real `s` and every Schwartz function `u`, with `C` independent of `u`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le
-    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ x‖ ≤ C)
-    (hb' : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (s : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ u : 𝓢(E, F),
-      ‖toBesselPotentialSpaceCLM s 2
-          (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖ ≤
-        C * ‖toBesselPotentialSpaceCLM s 2 u‖ :=
-  hasSobolevExtension_iff_exists_norm_le.1 (hasSobolevExtension_compCLM hφ hψ hb hb' s)
 
 end SchwartzMap
 
