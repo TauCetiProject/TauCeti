@@ -23,7 +23,10 @@ are `E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃)`
 (`CategoryTheory.Abelian.SpectralObject.spectralSequenceHomologyData`).
 This file records what the identification does to these cycles. The canonical map
 `E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃)` to page `r` lands in the cycles
-(`mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d`), and the class in the homology of page `r` of
+(`mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d`), its lift to the cycles is an isomorphism
+(`isIso_liftCycles_mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv`), inverse to the identification
+of the cycles of page `r` with those of the homology data
+(`liftCycles_cyclesIsoSc'_hom_cyclesIso_hom`), and the class in the homology of page `r` of
 its lift is sent to the canonical map `E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃')` to
 page `r'` (`liftCycles_homologyπ_spectralSequence_iso_hom`).
 
@@ -89,11 +92,63 @@ lemma mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d (r r' : ℤ) (hrr' : r
   SpectralSequence.HomologyData.kf_w X data r r' hrr' hr pq pq'' i₀' i₀ i₁ i₂ i₃ hi₀' hi₀ hi₁ hi₂
     hi₃ n₀ n₁ n₂ hn₁'
 
+/-- The lift to the cycles of page `r` of the cycle
+`E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃)` of
+`mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d` is inverse to the identification of these
+cycles with the cycles `E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃)` of `X.spectralSequenceHomologyData`. -/
+@[reassoc]
+lemma liftCycles_cyclesIsoSc'_hom_cyclesIso_hom (r r' : ℤ) (hrr' : r + 1 = r')
+    (hr : r₀ ≤ r) (pq pq'' : κ) (hpq : (c r).next pq = pq'')
+    (i₀' i₀ i₁ i₂ i₃ i₃' : ι) (hi₀' : i₀' = data.i₀ r' pq) (hi₀ : i₀ = data.i₀ r pq)
+    (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (hi₃ : i₃ = data.i₃ r pq)
+    (hi₃' : i₃' = data.i₃ r' pq) (n₀ n₁ n₂ : ℤ) (hn₁' : n₁ = data.deg pq)
+    (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    ((X.spectralSequence data).page r).liftCycles
+        (X.mapFourδ₁Toδ₀' i₀' i₀ i₁ i₂ i₃ (data.i₀_le' hrr' hr pq hi₀' hi₀)
+          (data.le₀₁' r hr pq hi₀ hi₁) (data.le₁₂' pq hi₁ hi₂) (data.le₂₃' r hr pq hi₂ hi₃)
+          n₀ n₁ n₂ ≫
+          (X.spectralSequencePageXIso data r hr pq i₀ i₁ i₂ i₃ hi₀ hi₁ hi₂ hi₃ n₀ n₁ n₂ hn₁').inv)
+        pq'' hpq (X.mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d data r r' hrr' hr pq pq''
+          i₀' i₀ i₁ i₂ i₃ hi₀' hi₀ hi₁ hi₂ hi₃ n₀ n₁ n₂ hn₁') ≫
+      (((X.spectralSequence data).page r).cyclesIsoSc' _ pq pq'' rfl hpq).hom ≫
+        (X.spectralSequenceHomologyData data r r' hrr' hr _ pq pq'' rfl hpq
+          i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁').left.cyclesIso.hom =
+      𝟙 _ := by
+  refine (cancel_mono (X.spectralSequenceHomologyData data r r' hrr' hr _ pq pq'' rfl hpq
+    i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁').left.i).1 ?_
+  rw [Category.assoc, Category.assoc, ShortComplex.LeftHomologyData.cyclesIso_hom_comp_i,
+    HomologicalComplex.cyclesIsoSc'_hom_iCycles, HomologicalComplex.liftCycles_i]
+  exact ((Category.id_comp _).trans (X.spectralSequenceHomologyData_left_i data r r' hrr' hr _
+    pq pq'' rfl hpq i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁')).symm
+
+/-- The lift to the cycles of page `r` of the cycle
+`E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃)` of
+`mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d` is an isomorphism. -/
+lemma isIso_liftCycles_mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv (r r' : ℤ)
+    (hrr' : r + 1 = r') (hr : r₀ ≤ r) (pq pq'' : κ) (hpq : (c r).next pq = pq'')
+    (i₀' i₀ i₁ i₂ i₃ : ι) (hi₀' : i₀' = data.i₀ r' pq) (hi₀ : i₀ = data.i₀ r pq)
+    (hi₁ : i₁ = data.i₁ pq) (hi₂ : i₂ = data.i₂ pq) (hi₃ : i₃ = data.i₃ r pq)
+    (n₀ n₁ n₂ : ℤ) (hn₁' : n₁ = data.deg pq)
+    (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    IsIso (((X.spectralSequence data).page r).liftCycles
+      (X.mapFourδ₁Toδ₀' i₀' i₀ i₁ i₂ i₃ (data.i₀_le' hrr' hr pq hi₀' hi₀)
+        (data.le₀₁' r hr pq hi₀ hi₁) (data.le₁₂' pq hi₁ hi₂) (data.le₂₃' r hr pq hi₂ hi₃)
+        n₀ n₁ n₂ ≫
+        (X.spectralSequencePageXIso data r hr pq i₀ i₁ i₂ i₃ hi₀ hi₁ hi₂ hi₃ n₀ n₁ n₂ hn₁').inv)
+      pq'' hpq (X.mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d data r r' hrr' hr pq pq''
+        i₀' i₀ i₁ i₂ i₃ hi₀' hi₀ hi₁ hi₂ hi₃ n₀ n₁ n₂ hn₁')) :=
+  -- These morphisms are stated between objects that are only definitionally equal to those of
+  -- the isomorphisms they come from, so instance search does not find their `IsIso` instances.
+  @IsIso.of_isIso_fac_right _ _ _ _ _ _ _ _ (IsIso.comp_isIso' (Iso.isIso_hom _) (Iso.isIso_hom _))
+    (IsIso.id _) (X.liftCycles_cyclesIsoSc'_hom_cyclesIso_hom data r r' hrr' hr pq pq'' hpq
+      i₀' i₀ i₁ i₂ i₃ _ hi₀' hi₀ hi₁ hi₂ hi₃ rfl n₀ n₁ n₂ hn₁')
+
 /-- The identification `(X.spectralSequence data).iso r r' pq` of the homology at `pq` of page `r`
 with the object at `pq` on page `r' = r + 1`, on cycles: the class of the cycle
 `E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃)` is the canonical map
 `E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃) ⟶ E^n(i₀' ≤ i₁ ≤ i₂ ≤ i₃')`, where `i₀ ≤ i₁ ≤ i₂ ≤ i₃` and
 `i₀' ≤ i₁ ≤ i₂ ≤ i₃'` are the indices of the objects at `pq` on pages `r` and `r'`. -/
+@[reassoc]
 lemma liftCycles_homologyπ_spectralSequence_iso_hom (r r' : ℤ) (hrr' : r + 1 = r')
     (hr : r₀ ≤ r) (pq pq'' : κ) (hpq : (c r).next pq = pq'')
     (i₀' i₀ i₁ i₂ i₃ i₃' : ι) (hi₀' : i₀' = data.i₀ r' pq) (hi₀ : i₀ = data.i₀ r pq)
@@ -120,25 +175,9 @@ lemma liftCycles_homologyπ_spectralSequence_iso_hom (r r' : ℤ) (hrr' : r + 1 
   -- `E` that `spectralSequencePageXIso` starts from, so the composite of isomorphisms in
   -- `spectralSequence_iso` is not type correct at reducible transparency and `rw` cannot split it.
   erw [Iso.trans_hom, ShortComplex.LeftHomologyData.homologyπ_comp_homologyIso_hom_assoc]
-  have hK : ((X.spectralSequence data).page r).liftCycles
-        (X.mapFourδ₁Toδ₀' i₀' i₀ i₁ i₂ i₃ (data.i₀_le' hrr' hr pq hi₀' hi₀)
-          (data.le₀₁' r hr pq hi₀ hi₁) (data.le₁₂' pq hi₁ hi₂) (data.le₂₃' r hr pq hi₂ hi₃)
-          n₀ n₁ n₂ ≫
-          (X.spectralSequencePageXIso data r hr pq i₀ i₁ i₂ i₃ hi₀ hi₁ hi₂ hi₃ n₀ n₁ n₂ hn₁').inv)
-        pq'' hpq (X.mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv_d data r r' hrr' hr pq pq''
-          i₀' i₀ i₁ i₂ i₃ hi₀' hi₀ hi₁ hi₂ hi₃ n₀ n₁ n₂ hn₁') ≫
-      (((X.spectralSequence data).page r).cyclesIsoSc' _ pq pq'' rfl hpq).hom ≫
-        (X.spectralSequenceHomologyData data r r' hrr' hr _ pq pq'' rfl hpq
-          i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁').left.cyclesIso.hom =
-        𝟙 (X.spectralSequenceHomologyData data r r' hrr' hr _ pq pq'' rfl hpq
-          i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁').left.K := by
-    refine (cancel_mono (X.spectralSequenceHomologyData data r r' hrr' hr _ pq pq'' rfl hpq
-      i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁').left.i).1 ?_
-    rw [Category.assoc, Category.assoc, ShortComplex.LeftHomologyData.cyclesIso_hom_comp_i,
-      HomologicalComplex.cyclesIsoSc'_hom_iCycles, HomologicalComplex.liftCycles_i]
-    exact ((Category.id_comp _).trans (X.spectralSequenceHomologyData_left_i data r r' hrr' hr _
-      pq pq'' rfl hpq i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁')).symm
-  simp only [reassoc_of% hK, spectralSequenceHomologyData_left_π, Iso.symm_hom]
+  simp only [X.liftCycles_cyclesIsoSc'_hom_cyclesIso_hom_assoc data r r' hrr' hr pq pq'' hpq
+    i₀' i₀ i₁ i₂ i₃ i₃' hi₀' hi₀ hi₁ hi₂ hi₃ hi₃' n₀ n₁ n₂ hn₁',
+    spectralSequenceHomologyData_left_π, Iso.symm_hom]
   exact Category.id_comp _
 
 end General
@@ -152,6 +191,7 @@ variable {C : Type*} [Category* C] [Abelian C] (X : SpectralObject C EInt)
 `pq = (p, q)` on page `r` to the object at `pq` on page `r'` is the map of the spectral sequence:
 on cycles, it is the projection onto the homology of page `r` followed by the identification
 `(X.spectralSequence coreE₂Cohomological).iso r r' pq` of that homology with page `r'`. -/
+@[reassoc]
 lemma iCycles_spectralSequencePageXToPageX (r r' : ℤ) (hrr' : r + 1 = r') (hr : 2 ≤ r)
     (pq : ℤ × ℤ) (n : ℤ) (hn : n = pq.1 + pq.2)
     (h₀ : IsZero ((X.H (n + 1)).obj
@@ -165,49 +205,31 @@ lemma iCycles_spectralSequencePageXToPageX (r r' : ℤ) (hrr' : r + 1 = r') (hr 
   have hab : ((pq.2 - r' + 2 : ℤ) : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt) := by simp; lia
   have hb : ((pq.2 - r + 2 : ℤ) : EInt) ≤ pq.2 := by simp; lia
   have h₂₃ : ((pq.2 + 1 : ℤ) : EInt) ≤ ((pq.2 + r - 1 : ℤ) : EInt) := by simp; lia
-  have h₃₃ : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ((pq.2 + r' - 1 : ℤ) : EInt) := by simp; lia
-  -- `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)` maps isomorphically onto `E^n(q - r' + 2 ≤ q ≤ …)` and
-  -- onto `E^n(q - r + 2 ≤ q ≤ …)`, hence so does the first of these onto the second.
+  -- `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)` maps isomorphically onto `E^n(q - r' + 2 ≤ q ≤ …)`.
   have : IsIso (X.mapFourδ₁Toδ₀' ⊥ ((pq.2 - r' + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt)
       ((pq.2 + r - 1 : ℤ) : EInt) bot_le (hab.trans hb) (coe_le_coe_add_one pq.2) h₂₃
       (n - 1) n (n + 1)) :=
     X.isIso_mapFourδ₁Toδ₀' ⊥ _ _ _ _ bot_le (hab.trans hb) (coe_le_coe_add_one pq.2) h₂₃
       (n - 1) n (n + 1) h₀'
-  have : IsIso (X.mapFourδ₁Toδ₀' _ _ _ _ _ hab hb (coe_le_coe_add_one pq.2) h₂₃
-      (n - 1) n (n + 1)) := by
-    have := X.isIso_mapFourδ₁Toδ₀' ⊥ _ _ _ _ bot_le hb (coe_le_coe_add_one pq.2)
-      h₂₃ (n - 1) n (n + 1) h₀
-    rw [← X.mapFourδ₁Toδ₀'_comp ⊥ _ _ _ _ _ bot_le hab hb (coe_le_coe_add_one pq.2) h₂₃
-      (n - 1) n (n + 1)] at this
-    exact (isIso_comp_left_iff _ _).1 this
   -- The lift `L` of `E^n(q - r' + 2 ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E_r^{p,q}` to the cycles of page `r`
-  -- is therefore an isomorphism, so it suffices to compare both sides after composing with `L`.
-  obtain ⟨L, hL, hLπ⟩ := (⟨_, HomologicalComplex.liftCycles_i ..,
+  -- is an isomorphism, so it suffices to compare both sides after composing with `L`.
+  obtain ⟨L, hL, hLπ, _⟩ := (⟨_, HomologicalComplex.liftCycles_i ..,
     X.liftCycles_homologyπ_spectralSequence_iso_hom coreE₂Cohomological r r' hrr' hr pq _ rfl
-    ((pq.2 - r' + 2 : ℤ) : EInt)
-    ((pq.2 - r + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt)
-    ((pq.2 + r' - 1 : ℤ) : EInt) rfl rfl rfl rfl rfl rfl (n - 1) n (n + 1) hn⟩ : ∃ L,
-      L ≫ ((X.spectralSequence coreE₂Cohomological).page r).iCycles pq = _ ∧ L ≫ _ = _)
-  have : IsIso L := by
-    have : IsIso (L ≫ ((X.spectralSequence coreE₂Cohomological).page r).iCycles pq) := by
-      rw [hL]
-      infer_instance
-    have : Epi (((X.spectralSequence coreE₂Cohomological).page r).iCycles pq) :=
-      epi_of_epi L _
-    have : IsIso (((X.spectralSequence coreE₂Cohomological).page r).iCycles pq) :=
-      isIso_of_mono_of_epi _
-    exact IsIso.of_isIso_comp_right L
-      (((X.spectralSequence coreE₂Cohomological).page r hr).iCycles pq)
-  rw [← cancel_epi L, hLπ, ← Category.assoc, hL, spectralSequencePageXToPageX_def,
-    spectralSequencePageXIsoEBot_inv,
-    ← cancel_epi (X.mapFourδ₁Toδ₀' ⊥ ((pq.2 - r' + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt)
-      ((pq.2 + r - 1 : ℤ) : EInt) bot_le (hab.trans hb) (coe_le_coe_add_one pq.2) h₂₃
-      (n - 1) n (n + 1)),
-    X.mapFourδ₁Toδ₀'_mapFourδ₃Toδ₃'_assoc ⊥ _ _ _ _ _ bot_le (hab.trans hb)
-      (coe_le_coe_add_one pq.2) h₂₃ h₃₃ (n - 1) n (n + 1), Category.assoc,
-    X.mapFourδ₁Toδ₀'_comp_assoc ⊥ _ _ _ _ _ bot_le hab hb (coe_le_coe_add_one pq.2) h₂₃
-      (n - 1) n (n + 1), ← spectralSequencePageXIsoEBot_inv_assoc _ _ _ _ _ _ h₀,
-    Iso.inv_hom_id_assoc]
+      ((pq.2 - r' + 2 : ℤ) : EInt) ((pq.2 - r + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt)
+      ((pq.2 + r - 1 : ℤ) : EInt) ((pq.2 + r' - 1 : ℤ) : EInt) rfl rfl rfl rfl rfl rfl
+      (n - 1) n (n + 1) hn,
+    X.isIso_liftCycles_mapFourδ₁Toδ₀'_spectralSequencePageXIso_inv coreE₂Cohomological r r' hrr'
+      hr pq _ rfl ((pq.2 - r' + 2 : ℤ) : EInt) ((pq.2 - r + 2 : ℤ) : EInt) pq.2
+      ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl rfl (n - 1) n (n + 1)
+      hn⟩ : ∃ L,
+      L ≫ ((X.spectralSequence coreE₂Cohomological).page r).iCycles pq = _ ∧ L ≫ _ = _ ∧ IsIso L)
+  rw [← cancel_epi L, hLπ, ← Category.assoc, hL, ← cancel_epi (X.mapFourδ₁Toδ₀' ⊥
+    ((pq.2 - r' + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) bot_le
+    (hab.trans hb) (coe_le_coe_add_one pq.2) h₂₃ (n - 1) n (n + 1))]
+  have hE := (X.spectralSequencePageXIsoEBot r hr pq n hn h₀).inv_hom_id
+  rw [spectralSequencePageXIsoEBot_inv, Category.assoc] at hE
+  simp [spectralSequencePageXToPageX_def, spectralSequencePageXIsoEBot_inv,
+    mapFourδ₁Toδ₀'_mapFourδ₃Toδ₃'_assoc, mapFourδ₁Toδ₀'_comp_assoc, reassoc_of% hE]
 
 end EInt
 
