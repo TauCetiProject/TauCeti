@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
-public import TauCeti.GroupTheory.HNNExtension
+public import TauCeti.GroupTheory.HNNExtension.Basic
 public import TauCeti.GroupTheory.NoncommPiCoprod
 public import TauCeti.GroupTheory.PushoutI.Reduced
 public import Mathlib.GroupTheory.NoncommCoprod
