@@ -197,9 +197,11 @@ private theorem norm_preglue_sub_lt_and_norm_fderiv_preglue_sub_lt {R δ B : ℝ
   have hδB : δ ≤ 2 * (B + 1) * δ := by nlinarith
   rw [fderiv_comp_add_right, fderiv_comp_sub]
   refine ⟨⟨norm_preglue_sub_le.trans_lt (by nlinarith), ?_⟩,
-    ⟨ha.trans_le hδB, (norm_apply_stdComplexLineImag_sub_le _ _).trans_lt (hb.trans_le hδB)⟩,
-    ⟨hc.trans_le hδB, (norm_apply_stdComplexLineImag_sub_le _ _).trans_lt (hd.trans_le hδB)⟩⟩
-  refine (norm_apply_stdComplexLineImag_sub_le _ _).trans_lt
+    ⟨ha.trans_le hδB, (ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le _ _).trans_lt
+      (hb.trans_le hδB)⟩,
+    ⟨hc.trans_le hδB, (ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le _ _).trans_lt
+      (hd.trans_le hδB)⟩⟩
+  refine (ContinuousLinearMap.norm_apply_stdComplexLineImag_sub_le _ _).trans_lt
     ((norm_fderiv_preglue_sub_le hx hud hvd).trans_lt ?_)
   have h₁ := mul_le_mul (hB z.1) ha.le (norm_nonneg _) hB0
   have h₂ := mul_le_mul (hB (-z.1)) hc.le (norm_nonneg _) hB0
