@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.QuadraticEstimate
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Geometry.Symplectic.Floer.Splicing
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -90,19 +92,6 @@ namespace Floer
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
-/-- The `s`- and `t`-derivatives of a section cut off by a function `β(s)`:
-`∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`. -/
-private theorem fderiv_smul_fst_apply {ξ : ℝ × ℝ → E} {β : ℝ → ℝ} {β' : ℝ} {z : ℝ × ℝ}
-    (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
-    fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal =
-        β z.1 • fderiv ℝ ξ z stdComplexLineReal + β' • ξ z ∧
-      fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag =
-        β z.1 • fderiv ℝ ξ z stdComplexLineImag := by
-  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
-    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
-  rw [hd.fderiv]
-  simp [stdComplexLineReal_eq, stdComplexLineImag_eq, add_comm]
-
 /-- **The weighted energy of a cut-off section.** For `η = β ξ`, the `W^{1,2}` energy density of
 `ξ` weighted by `β²` is at most `2` times that of `η` plus `2 m² ‖ξ‖²`, where `|β'| ≤ m`. -/
 private theorem sq_mul_sobolev_le_smul_fst {ξ : ℝ × ℝ → E} {β β' : ℝ → ℝ} {z : ℝ × ℝ}
@@ -112,7 +101,8 @@ private theorem sq_mul_sobolev_le_smul_fst {ξ : ℝ × ℝ → E} {β β' : ℝ
       2 * (‖fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal‖ ^ 2 +
         ‖fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag‖ ^ 2 + ‖β z.1 • ξ z‖ ^ 2) +
         2 * m ^ 2 * ‖ξ z‖ ^ 2 := by
-  obtain ⟨hs, ht⟩ := fderiv_smul_fst_apply hβ hξ
+  have hs := fderiv_smul_fst_apply_stdComplexLineReal hβ hξ
+  have ht := fderiv_smul_fst_apply_stdComplexLineImag hβ.differentiableAt hξ
   set b := β z.1
   set b' := β' z.1
   set ds := ‖fderiv ℝ ξ z stdComplexLineReal‖
@@ -149,21 +139,13 @@ private theorem norm_sq_apply_smul_fst_le {P : (ℝ × ℝ → E) → ℝ × ℝ
   set b := β z.1
   set dt := ‖fderiv ℝ ξ z stdComplexLineImag‖
   set x := ‖ξ z‖
-  have hm0 : 0 ≤ m := (abs_nonneg _).trans hm
   -- `‖P η‖ ≤ |b| ‖P ξ‖ + m ‖σ‖ x` and `‖P ξ‖ ≤ ε (dt + x)`.
-  have h1 : ‖P (fun w ↦ β w.1 • ξ w) z‖ ≤ |b| * ‖P ξ z‖ + m * ‖σ‖ * x := by
-    rw [hPη]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · rw [norm_smul, Real.norm_eq_abs]
-    · rw [norm_smul, Real.norm_eq_abs, mul_assoc]
-      exact mul_le_mul hm (σ.le_opNorm _) (norm_nonneg _) hm0
+  have h1 : ‖P (fun w ↦ β w.1 • ξ w) z‖ ≤ |b| * ‖P ξ z‖ + m * ‖σ‖ * x :=
+    norm_apply_smul_fst_le σ hm hPη
   have hP0 : 0 ≤ ‖P ξ z‖ := norm_nonneg _
   have h2 : b ^ 2 * ‖P ξ z‖ ^ 2 ≤ 2 * ε ^ 2 * (b ^ 2 * (dt ^ 2 + x ^ 2)) := by
-    have hsq : ‖P ξ z‖ ^ 2 ≤ ε ^ 2 * (dt + x) ^ 2 := by
-      rw [← mul_pow]
-      exact pow_le_pow_left₀ hP0 ((le_abs_self _).trans' hsmall |>.trans (by
-        rw [abs_mul, abs_of_nonneg (by positivity : 0 ≤ dt + x)])) 2 |>.trans (by
-        rw [mul_pow, mul_pow, sq_abs])
+    have hsq : ‖P ξ z‖ ^ 2 ≤ ε ^ 2 * (dt + x) ^ 2 :=
+      (pow_le_pow_left₀ hP0 hsmall 2).trans_eq (mul_pow _ _ _)
     nlinarith [mul_le_mul_of_nonneg_left hsq (sq_nonneg b), sq_nonneg (dt - x),
       mul_nonneg (sq_nonneg b) (sq_nonneg ε), mul_nonneg (mul_nonneg (sq_nonneg b)
         (sq_nonneg ε)) (sq_nonneg (dt - x))]
@@ -211,23 +193,17 @@ private theorem setIntegral_sq_mul_sobolev_le {P : (ℝ × ℝ → E) → ℝ ×
     ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2 + ‖η z‖ ^ 2)
   have hI0 : 0 ≤ I := setIntegral_nonneg hrect fun z _ ↦ by positivity
   -- The weighted energy of `ξ` against that of `η`.
-  have hIS : I ≤ 2 * S + 2 * m ^ 2 * L := by
-    rw [← integral_const_mul, ← integral_const_mul,
-      ← integral_add (hsη.const_mul _).integrableOn_Icc_prod_Icc
-        (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))]
-    exact setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
-      ((hsη.const_mul _).integrableOn_Icc_prod_Icc.add
-        (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))) hrect fun z _ ↦ hpt₁ z
+  have hIS : I ≤ 2 * S + 2 * m ^ 2 * L :=
+    setIntegral_le_mul_add_mul_of_le hrect (fun z _ ↦ by positivity)
+      hsη.integrableOn_Icc_prod_Icc (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+      fun z _ ↦ hpt₁ z
   -- The injectivity estimate for `η` and the smallness of `P ξ`.
   have hSP : S ≤ C * (4 * ε ^ 2 * I + 2 * (m * ‖σ‖) ^ 2 * L) := by
     refine (hest hη (fun s t ↦ by simp only [η, hper]) hab fun s t hs ↦ by
       simp only [η, hβ₀ s hs, zero_smul]).trans (mul_le_mul_of_nonneg_left ?_ hC)
-    rw [← integral_const_mul, ← integral_const_mul,
-      ← integral_add (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
-        (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))]
-    refine integral_mono_of_nonneg (Eventually.of_forall fun z ↦ sq_nonneg _)
-      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop)) (Eventually.of_forall fun z ↦ ?_)
-    simpa only [mul_assoc] using hpt₂ z
+    exact setIntegral_le_mul_add_mul_of_le hrect (fun z _ ↦ sq_nonneg _)
+      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop))
+      (Continuous.integrableOn_Icc_prod_Icc (by fun_prop)) fun z _ ↦ hpt₂ z
   -- Absorb `8 C ε² I ≤ I / 2`.
   have hab' : 8 * C * ε ^ 2 * I ≤ I / 2 := by nlinarith
   nlinarith [mul_nonneg hC (sq_nonneg (m * ‖σ‖)), mul_nonneg (mul_nonneg hC (sq_nonneg m))
