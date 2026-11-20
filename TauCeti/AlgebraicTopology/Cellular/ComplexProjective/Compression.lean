@@ -31,13 +31,13 @@ most one of them, and:
 * the homology of the compression is `R` in each residue `2k`, `0 ≤ k ≤ n`
   (`TauCeti.ComplexProjectiveSpace.compressionHomologyIsoTwoMul`);
 * it vanishes in the other residues
-  (`TauCeti.ComplexProjectiveSpace.isZero_compression_homology_of_ne_two_mul`).
+  (`TauCeti.ComplexProjectiveSpace.isZero_homology_compression_of_ne_two_mul`).
 
 In the Floer degree `i = n - r` of a residue `r`, these are the degrees `i` for which `i + n` is
 one of `0, 2, …, 2n` modulo `2(n + 1)`. Over a division ring `𝕜` the homology of the compression
 is therefore one-dimensional in `n + 1` residues and zero in the others
-(`TauCeti.ComplexProjectiveSpace.finrank_compression_homology`,
-`TauCeti.ComplexProjectiveSpace.sum_finrank_compression_homology`). Consequently every complex of
+(`TauCeti.ComplexProjectiveSpace.finrank_homology_compression`,
+`TauCeti.ComplexProjectiveSpace.sum_finrank_homology_compression`). Consequently every complex of
 finite-dimensional vector spaces graded modulo `2(n + 1)` with the same homology has total
 dimension at least `n + 1` (`TauCeti.ComplexProjectiveSpace.add_one_le_sum_finrank_X`): a
 cyclically graded Floer complex of `CPⁿ` with this homology has at least `n + 1` generators.
@@ -142,10 +142,10 @@ include e hK a b in
 `K` be a complex supported in `[a, b]` whose homology in degree `2n - j` is `Hⱼ(CPⁿ; R)`, with no
 homology above `2n`. The homology of its compression modulo `2(n + 1)` vanishes in every residue
 `r` which is not `2k` for any `k ≤ n`. -/
-theorem isZero_compression_homology_of_ne_two_mul (r : ZMod (2 * (n + 1)))
+theorem isZero_homology_compression_of_ne_two_mul (r : ZMod (2 * (n + 1)))
     (hr : ∀ k : ℕ, k ≤ n → 2 * (k : ZMod (2 * (n + 1))) ≠ r) :
     IsZero ((compression (2 * (n + 1)) K).homology r) :=
-  PeriodicComplex.isZero_compression_homology _ K a b r fun q hq ↦
+  PeriodicComplex.isZero_homology_compression _ K a b r fun q hq ↦
     isZero_homology_of_forall_ne R K e hK q fun k hk hqk ↦ hr k hk (by
       subst hqk
       simpa using hq)
@@ -165,7 +165,7 @@ include e hK a b in
 /-- Over a division ring, the homology of the compression modulo `2(n + 1)` of a complex with
 the homology of `CPⁿ` has dimension one in the residues `2k`, `k ≤ n`, and zero in the others:
 its dimension in the residue `r` is the number of `k ≤ n` with `2k ≡ r`. -/
-theorem finrank_compression_homology (r : ZMod (2 * (n + 1))) :
+theorem finrank_homology_compression (r : ZMod (2 * (n + 1))) :
     finrank 𝕜 ((compression (2 * (n + 1)) K).homology r) =
       ((Finset.range (n + 1)).filter fun k : ℕ ↦ 2 * (k : ZMod (2 * (n + 1))) = r).card := by
   by_cases h : ∃ k : ℕ, k ≤ n ∧ 2 * (k : ZMod (2 * (n + 1))) = r
@@ -176,16 +176,16 @@ theorem finrank_compression_homology (r : ZMod (2 * (n + 1))) :
     exact ⟨fun hl ↦ eq_of_two_mul_natCast_eq (by omega) hk hl.2, fun hl ↦ hl ▸ ⟨by omega, rfl⟩⟩
   · simp only [not_exists, not_and] at h
     have := ModuleCat.isZero_iff_subsingleton.1
-      (isZero_compression_homology_of_ne_two_mul _ K e hK a b r h)
+      (isZero_homology_compression_of_ne_two_mul _ K e hK a b r h)
     rw [finrank_zero_of_subsingleton, eq_comm, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
     exact fun k hk ↦ h k (by simpa [Nat.lt_succ_iff] using hk)
 
 include e hK a b in
 /-- Over a division ring, the total dimension of the homology of the compression modulo
 `2(n + 1)` of a complex with the homology of `CPⁿ` is `n + 1`, the total Betti number of `CPⁿ`. -/
-theorem sum_finrank_compression_homology :
+theorem sum_finrank_homology_compression :
     ∑ r : ZMod (2 * (n + 1)), finrank 𝕜 ((compression (2 * (n + 1)) K).homology r) = n + 1 := by
-  simp_rw [finrank_compression_homology K e hK a b]
+  simp_rw [finrank_homology_compression K e hK a b]
   rw [← Finset.card_eq_sum_card_fiberwise fun _ _ ↦ Finset.mem_univ _, Finset.card_range]
 
 include e hK a b in
@@ -197,7 +197,7 @@ theorem add_one_le_sum_finrank_X {c : ComplexShape (ZMod (2 * (n + 1)))}
     (D : HomologicalComplex (ModuleCat.{u} 𝕜) c) [∀ r, Module.Finite 𝕜 (D.X r)]
     (f : ∀ r, D.homology r ≅ (compression (2 * (n + 1)) K).homology r) :
     n + 1 ≤ ∑ r, finrank 𝕜 (D.X r) := by
-  refine (sum_finrank_compression_homology K e hK a b).ge.trans <| Finset.sum_le_sum fun r _ ↦
+  refine (sum_finrank_homology_compression K e hK a b).ge.trans <| Finset.sum_le_sum fun r _ ↦
     (f r).toLinearEquiv.finrank_eq.symm.le.trans (D.finrank_homology_le_finrank_X r)
 
 end DivisionRing

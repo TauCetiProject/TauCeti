@@ -28,7 +28,7 @@ interval `[a, b]` containing the support of `K`, they form a biproduct bicone
 (`TauCeti.PeriodicComplex.isBilimitCompressionHomologyBicone`), which gives the isomorphism
 `TauCeti.PeriodicComplex.compressionHomologyIso`. In particular, `H^r(Δₙ K)` vanishes when the
 homology of `K` vanishes in every degree congruent to `r`
-(`TauCeti.PeriodicComplex.isZero_compression_homology`), and it is the homology of `K` in degree
+(`TauCeti.PeriodicComplex.isZero_homology_compression`), and it is the homology of `K` in degree
 `p` when that is the only degree of the class of `r` where the homology of `K` may be nonzero
 (`TauCeti.PeriodicComplex.compressionHomologyIsoOfIsZero`). These two cases compute the
 compression of complexes whose homology is spread out more sparsely than the period.
@@ -188,7 +188,7 @@ noncomputable def isBilimitCompressionHomologyBicone (r : ZMod n) :
 include a b in
 /-- For a complex supported in `[a, b]` whose homology vanishes in every degree of the residue
 class `r`, the homology of its `n`-periodic compression in residue `r` vanishes. -/
-lemma isZero_compression_homology (r : ZMod n)
+lemma isZero_homology_compression (r : ZMod n)
     (h : ∀ i : ℤ, (i : ZMod n) = r → IsZero (K.homology i)) :
     IsZero ((compression n K).homology r) := by
   rw [IsZero.iff_id_eq_zero, ← sum_πCompressionHomology_ιCompressionHomology n K a b r]
