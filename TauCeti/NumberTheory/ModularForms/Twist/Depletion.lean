@@ -31,19 +31,19 @@ Both sides are compared as functions on `ℍ`, since the two constructions land 
 levels. If `ψ` is induced from a character `ψ₀` of modulus `r ∣ m`, write `m = r p₁ ⋯ pₛ` with
 primes `pᵢ`. Applying the identity once for each `pᵢ`, the twist `f ⊗ ψ` is the iterated
 depletion of `f ⊗ ψ₀` at `p₁, …, pₛ`. A depletion at a prime that already divides the modulus
-changes nothing (`coe_depletion_twist_of_dvd`), and depleting twice at the same index is depleting
-once (`coe_depletion_depletion`), so only the primes dividing `m` but not `r` act, each once. The
-first case, `ψ₀ = 1` modulo `1`, says that the twist by the trivial character modulo `p` is the
-`p`-depletion. It is not `f`: the trivial character modulo `2` has conductor `1`, but it vanishes
-at the even integers.
+changes nothing (`coe_depletion_twist_of_not_coprime`), and depleting twice at the same index
+is depleting once (`coe_depletion_depletion`), so only the primes dividing `m` but not `r` act,
+each once. The first case, `ψ₀ = 1` modulo `1`, says that the twist by the trivial character
+modulo `p` is the `p`-depletion. It is not `f`: the trivial character modulo `2` has conductor
+`1`, but it vanishes at the even integers.
 
 ## Main results
 
 * `ModularForm.coe_twist_changeLevel_mul_eq_coe_depletion_twist`,
   `CuspForm.coe_twist_changeLevel_mul_eq_coe_depletion_twist`: raising the modulus of the character
   by a prime `p` replaces the twist by its `p`-depletion.
-* `ModularForm.coe_depletion_twist_of_dvd`, `CuspForm.coe_depletion_twist_of_dvd`: depleting at a
-  divisor `d ≠ 1` of the modulus of the character does not change the twist.
+* `ModularForm.coe_depletion_twist_of_not_coprime`, `CuspForm.coe_depletion_twist_of_not_coprime`:
+  depleting at an index `d` not coprime to the modulus of the character does not change the twist.
 * `ModularForm.coe_twist_one_eq_coe_depletion`, `CuspForm.coe_twist_one_eq_coe_depletion`: the
   twist by the trivial character modulo a prime `p` is the `p`-depletion.
 
@@ -86,11 +86,11 @@ theorem _root_.ModularForm.coe_twist_changeLevel_mul_eq_coe_depletion_twist [NeZ
     DirichletCharacter.changeLevel_mul_prime_natCast hp]
   split_ifs <;> simp
 
-/-- **Depleting at a divisor of the modulus does not change the twist.** If `d ∣ M` and `d ≠ 1`,
-the twist of `f` by a character modulo `M` already vanishes at the multiples of `d`, which share
-the factor `d` with `M`. -/
-theorem _root_.ModularForm.coe_depletion_twist_of_dvd [NeZero M] [NeZero d] {L' : ℕ} [NeZero L']
-    (hd : d ≠ 1) (hdM : d ∣ M) (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L)
+/-- **Depleting at an index not coprime to the modulus does not change the twist.** If `d` is
+not coprime to `M` (for instance a divisor `d ≠ 1` of `M`), the twist of `f` by a character
+modulo `M` already vanishes at the multiples of `d`, which share a factor with `M`. -/
+theorem _root_.ModularForm.coe_depletion_twist_of_not_coprime [NeZero M] [NeZero d] {L' : ℕ}
+    [NeZero L'] (hdM : ¬ d.Coprime M) (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L)
     (hML : M * M ∣ L) (hLL' : L * d ∣ L') (hdL' : d * d ∣ L')
     (f : _root_.ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     ⇑(ModularForm.depletion d hLL' hdL' (ModularForm.twist ψ hNL hML f)) =
@@ -100,8 +100,8 @@ theorem _root_.ModularForm.coe_depletion_twist_of_dvd [NeZero M] [NeZero d] {L' 
   rw [ModularForm.qExpansion_depletion_coeff]
   split_ifs with hdn
   · rw [ModularForm.qExpansion_twist_coeff,
-      ψ.map_nonunit (fun hu ↦ hd ((Nat.Coprime.coprime_dvd_right hdM
-        ((ZMod.isUnit_iff_coprime n M).mp hu)).symm.eq_one_of_dvd hdn)), zero_mul]
+      ψ.map_nonunit (fun hu ↦ hdM (Nat.Coprime.coprime_dvd_left hdn
+        ((ZMod.isUnit_iff_coprime n M).mp hu))), zero_mul]
   · rfl
 
 /-- **The twist by the trivial character modulo a prime `p` is the `p`-depletion.** The trivial
@@ -122,16 +122,16 @@ theorem _root_.ModularForm.coe_twist_one_eq_coe_depletion [NeZero p] {L' : ℕ}
   · rw [zero_mul]
   · exact absurd ((Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr hpn))) hn
 
-/-- **Depleting a twisted cusp form at a divisor of the modulus does not change it.** The
-cusp-form reading of `ModularForm.coe_depletion_twist_of_dvd`. -/
-theorem _root_.CuspForm.coe_depletion_twist_of_dvd [NeZero M] [NeZero d] {L' : ℕ} [NeZero L']
-    (hd : d ≠ 1) (hdM : d ∣ M) (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L)
+/-- **Depleting a twisted cusp form at an index not coprime to the modulus does not change
+it.** The cusp-form reading of `ModularForm.coe_depletion_twist_of_not_coprime`. -/
+theorem _root_.CuspForm.coe_depletion_twist_of_not_coprime [NeZero M] [NeZero d] {L' : ℕ}
+    [NeZero L'] (hdM : ¬ d.Coprime M) (ψ : DirichletCharacter ℂ M) (hNL : N * M ∣ L)
     (hML : M * M ∣ L) (hLL' : L * d ∣ L') (hdL' : d * d ∣ L')
     (f : _root_.CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     ⇑(CuspForm.depletion d hLL' hdL' (CuspForm.twist ψ hNL hML f)) =
       ⇑(CuspForm.twist ψ hNL hML f) := by
   rw [CuspForm.coe_depletion, CuspForm.coe_twist, ← ModularForm.twist_coe_cuspForm]
-  exact ModularForm.coe_depletion_twist_of_dvd hd hdM ψ hNL hML hLL' hdL' _
+  exact ModularForm.coe_depletion_twist_of_not_coprime hdM ψ hNL hML hLL' hdL' _
 
 /-- **Raising the modulus of the character by a prime depletes the twist of a cusp form.** The
 cusp-form reading of `ModularForm.coe_twist_changeLevel_mul_eq_coe_depletion_twist`. -/
