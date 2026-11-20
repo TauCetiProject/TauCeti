@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.Bialgebra.Equiv
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basis
-import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Functoriality and reflexivity of the finite Hopf dual
