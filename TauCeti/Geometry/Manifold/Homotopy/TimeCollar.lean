@@ -11,13 +11,17 @@ public import Mathlib.Topology.Homotopy.Basic
 /-!
 # Collaring the time parameter of a homotopy
 
-`ContinuousMap.Homotopy.exists_timeCollar` reparametrizes a continuous homotopy between `C^n`
-maps to a map on `N × ℝ` that is `C^n` near `N × {0, 1}` and agrees with the endpoint maps there.
-Its image stays in that of the original homotopy. This supplies endpoint collars for relative
-smooth approximation without requiring finite-dimensional models or `IsManifold` instances.
+`ContinuousMap.Homotopy.exists_timeCollar` turns a continuous homotopy `H` between `C^n` maps
+`f₀` and `f₁` into a continuous map `H' : N × ℝ → M` with image in that of `H`, which is `C^n` on
+a neighbourhood of `N × {0, 1}` and satisfies `H' (x, 0) = f₀ x` and `H' (x, 1) = f₁ x`. This
+supplies endpoint collars for relative smooth approximation without requiring
+finite-dimensional models or `IsManifold` instances.
 
-The reparametrization clamps `3 * t - 1` to the unit interval, so the map is constant in time
-for `t < 1 / 3` and `t > 2 / 3`.
+## Implementation notes
+
+The proof reparametrizes time by clamping `3 * t - 1` to the unit interval. The statement does
+not expose the resulting constancy in time near the endpoints, only the smoothness near
+`N × {0, 1}` and the endpoint values that relative smoothing uses.
 
 ## References
 
@@ -37,10 +41,10 @@ variable {E F H G M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ F G}
   [TopologicalSpace N] [ChartedSpace H N] [TopologicalSpace M] [ChartedSpace G M]
 
-/-- Reparametrizing time so that a homotopy `H` between `C^n` maps is `f₀` for `t < 1 / 3` and
-`f₁` for `t > 2 / 3` gives a map `N × ℝ → M` with image in that of `H`, which is `C^n` on a
-neighbourhood of `N × {0, 1}` and equal to `f₀` and `f₁` there. Smoothing it relative to
-`N × {0, 1}` gives a `C^n` homotopy from `f₀` to `f₁`. -/
+/-- A continuous homotopy `H` between `C^n` maps `f₀` and `f₁` gives a continuous map
+`H' : N × ℝ → M` with image in that of `H`, which is `C^n` on a neighbourhood of `N × {0, 1}` and
+satisfies `H' (x, 0) = f₀ x` and `H' (x, 1) = f₁ x`. Smoothing `H'` relative to `N × {0, 1}`
+gives a `C^n` homotopy from `f₀` to `f₁`. -/
 theorem exists_timeCollar {f₀ f₁ : C(N, M)} (H : f₀.Homotopy f₁) (n : ℕ∞)
     (hf₀ : ContMDiff I J n f₀) (hf₁ : ContMDiff I J n f₁) :
     ∃ H' : C(N × ℝ, M), range H' ⊆ range H ∧
