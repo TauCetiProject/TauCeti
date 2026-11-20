@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Nat.Log
 public import TauCeti.RingTheory.FormalGroup.Curve.Projector
 import TauCeti.Algebra.Algebra.NatCast
-import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.PowerSeries.Substitution
 

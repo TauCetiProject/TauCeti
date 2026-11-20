@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Nat.Factorization.Basic
+import TauCeti.Data.Nat.Factorization.Basic
 
 /-!
 # Splitting a gcd at a prime
@@ -91,14 +92,11 @@ If one argument is `0`, the other is the gcd and strictly shrinks by its `p`-par
 theorem gcd_ordCompl_lt {p m n : ℕ} (hp : p.Prime) (h : m ≠ 0 ∨ n ≠ 0)
     (hpm : p ∣ m) (hpn : p ∣ n) :
     Nat.gcd (ordCompl[p] m) (ordCompl[p] n) < Nat.gcd m n := by
-  have hlt {k : ℕ} (hk : k ≠ 0) (hpk : p ∣ k) : ordCompl[p] k < k :=
-    Nat.div_lt_self (Nat.pos_of_ne_zero hk)
-      (Nat.one_lt_pow (hp.factorization_pos_of_dvd hk hpk).ne' hp.one_lt)
   rcases eq_or_ne m 0 with rfl | hm
   · have hn : n ≠ 0 := h.resolve_left (by simp)
-    simpa using hlt hn hpn
+    simpa using ordCompl_lt_self_iff.2 (hp.mem_primeFactors hpn hn)
   rcases eq_or_ne n 0 with rfl | hn
-  · simpa using hlt hm hpm
+  · simpa using ordCompl_lt_self_iff.2 (hp.mem_primeFactors hpm hm)
   rw [gcd_eq_gcd_ordCompl_mul_pow_min hm hn]
   refine lt_mul_of_one_lt_right (Nat.pos_of_ne_zero fun h ↦
     (Nat.ordCompl_pos p hm).ne' (Nat.eq_zero_of_gcd_eq_zero_left h)) (Nat.one_lt_pow ?_ hp.one_lt)
