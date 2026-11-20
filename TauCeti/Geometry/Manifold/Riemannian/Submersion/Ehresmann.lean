@@ -11,9 +11,11 @@ public import TauCeti.Geometry.Manifold.Submersion.Ehresmann
 /-!
 # The Ehresmann connection of a Riemannian submersion
 
-Let `f : M → N` be a Riemannian submersion. When the metric of `M` is of class `C^m`, the
-orthogonal complements of the kernels of the derivative of `f` form an Ehresmann connection of `f`
-of class `C^m` (`Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker`). The horizontal lift
+Let `f : M → N` be a Riemannian submersion, so a `C^∞` submersion. When `m ≤ ∞` (so `m + 1 ≤ ∞`,
+which excludes the analytic case `m = ω`), `M` is a `C^(m+1)` manifold and the metric of `M` is of
+class `C^m`, the orthogonal complements of the kernels of the derivative of `f` form an Ehresmann
+connection of `f` of class `C^m`
+(`Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker`). The horizontal lift
 of any Ehresmann connection with these horizontal spaces is the isometric horizontal lift
 `TauCeti.IsRiemannianSubmersion.horizontalLift`, the adjoint of the derivative
 (`TauCeti.IsRiemannianSubmersion.horizontalLift_eq_isEhresmannConnection_horizontalLift`).

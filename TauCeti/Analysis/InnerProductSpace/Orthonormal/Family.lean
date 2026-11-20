@@ -108,9 +108,11 @@ theorem map_orthogonal_range_overlapOperator (hv : Orthonormal 𝕜 v)
   have hrange : LinearMap.range hv.synthesisMapIsometry.toLinearMap = ⊤ := by
     rw [range_synthesisMapIsometry]
     exact top_unique hsp
-  rw [← hv.synthesisMapIsometry_toLinearMap, Submodule.map_orthogonal, hrange, inf_top_eq,
-    hv.synthesisMapIsometry_toLinearMap, ← LinearMap.range_comp,
-    hv.synthesisMap_comp_overlapOperator hsp, TauCeti.range_synthesisMap]
+  have hmap := Submodule.map_orthogonal (LinearMap.range (TauCeti.overlapOperator 𝕜 v X))
+    hv.synthesisMapIsometry
+  rw [hrange, inf_top_eq, hv.synthesisMapIsometry_toLinearMap] at hmap
+  simpa [← LinearMap.range_comp, hv.synthesisMap_comp_overlapOperator hsp,
+    TauCeti.range_synthesisMap] using hmap
 
 /-- The adjoint of the coordinate synthesis isometry reads inner products with the family. -/
 @[simp]

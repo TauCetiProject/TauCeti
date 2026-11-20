@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Distribution.Orthogonal
 public import TauCeti.Geometry.Manifold.Distribution.Submersion
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Ehresmann connections
@@ -37,12 +38,13 @@ Conversely, a `C^n` submersion has Ehresmann connections of class `C^m` for `m +
 (`Manifold.IsSubmersion.isEhresmannConnection_orthogonal_ker`): the kernel distribution is a `C^m`
 distribution of rank `dim E - dim E'`
 (`Manifold.IsSubmersion.isContMDiffDistribution_ker_mfderiv`), so its orthogonal complement is a
-`C^m` distribution of rank `dim E'` (`TauCeti.IsContMDiffDistribution.orthogonal`). Such a metric
-exists on a σ-compact Hausdorff smooth manifold (`TauCeti.nonempty_contMDiffRiemannianMetric`), so
-there every `C^n` submersion has an Ehresmann connection of class `C^m`
-(`Manifold.IsSubmersion.exists_isEhresmannConnection`). No surjectivity, properness or
-connectedness is assumed: these enter only the transport along horizontal lifts of curves and
-Ehresmann's fibration theorem, which are not proved here.
+`C^m` distribution of rank `dim E'` (`TauCeti.IsContMDiffDistribution.orthogonal`). For
+`m ≤ ∞`, a `C^m` metric exists on a σ-compact Hausdorff `C^∞` manifold
+(`TauCeti.nonempty_contMDiffRiemannianMetric`), so there every `C^n` submersion has an Ehresmann
+connection of class `C^m` for every `m ≤ ∞` with `m + 1 ≤ n`
+(`Manifold.IsSubmersion.exists_isEhresmannConnection`). The analytic case `m = ω` is not covered.
+No surjectivity, properness or connectedness is assumed: these enter only the transport along
+horizontal lifts of curves and Ehresmann's fibration theorem, which are not proved here.
 
 ## Main definitions
 
@@ -129,7 +131,8 @@ theorem surjective_mfderiv_comp_subtype :
     Surjective ((mfderiv I J f x : TangentSpace I x →ₗ[𝕜] TangentSpace J (f x)) ∘ₗ
       (Hz x).subtype) :=
   (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    ((h.isContMDiffDistribution.finrank_eq x).trans rfl)).1 (h.injective_mfderiv_comp_subtype x)
+    ((h.isContMDiffDistribution.finrank_eq x).trans
+      (finrank_tangentSpace (I := J) (f x)).symm)).1 (h.injective_mfderiv_comp_subtype x)
 
 /-- **A map with an Ehresmann connection has surjective derivative** at every point. -/
 theorem surjective_mfderiv : Surjective (mfderiv I J f x) := fun w ↦
