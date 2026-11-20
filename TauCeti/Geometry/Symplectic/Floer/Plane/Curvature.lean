@@ -261,6 +261,29 @@ theorem realChart_positive_add_one (s t : ℝ) :
   simp only [realChart_apply, Complex.equivRealProdCLM_symm_apply]
   exact congrArg _ (positive.periodic_cylindricalEndLift s t)
 
+/-- **Change of variables on part of the end of the positive plane.** If `g` is the pullback of a
+density `f` under the end lift `φ` of the positive plane, `g = det (dφ) · f ∘ φ` on a measurable
+subset `s` of a half-strip `s > a`, `t₀ ≤ t < t₀ + 1` of angular width one, then the integral of
+`g` over `s` is at most the integral of `f` over the part `‖w‖ > exp (2πa)` of the plane: `φ` is
+injective on the half-strip and preserves orientation. -/
+theorem setLIntegral_ofReal_comp_realChart_positive_le_of_subset {a t₀ : ℝ} {s : Set (ℝ × ℝ)}
+    (hs : MeasurableSet s) (hst : s ⊆ Ioi a ×ˢ Ico t₀ (t₀ + 1)) {f g : ℝ × ℝ → ℝ}
+    (hfg : ∀ z ∈ s,
+      g z = (fderiv ℝ (realChart positive.cylindricalEndLift) z).det *
+        f (realChart positive.cylindricalEndLift z)) :
+    ∫⁻ z in s, ENNReal.ofReal (g z) ≤
+      ∫⁻ z in {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖},
+        ENNReal.ofReal (f z) := by
+  rw [← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
+    ((positive.injOn_realChart_cylindricalEndLift t₀).mono
+      (hst.trans (prod_mono (subset_univ _) subset_rfl)))
+    (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
+      one_ne_zero z) fun z hz ↦ by
+      rw [hfg z hz, abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos z)]]
+  refine lintegral_mono_set ?_
+  rintro _ ⟨z, hz, rfl⟩
+  exact exp_lt_norm_realChart_positive (hst hz).1
+
 /-- **Change of variables on the end of the positive plane.** If `g` is the pullback of a density
 `f` under the end lift `φ` of the positive plane, `g = det (dφ) · f ∘ φ` on the half-strip `s > a`,
 `0 ≤ t < 1`, then the integral of `g` over the half-cylinder `s > a`, `0 ≤ t ≤ 1` is at most the
@@ -273,20 +296,12 @@ theorem setLIntegral_ofReal_comp_realChart_positive_le {a : ℝ} {f g : ℝ × �
     ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (g z) ≤
       ∫⁻ z in {z | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖},
         ENNReal.ofReal (f z) := by
-  have hS : MeasurableSet (Ioi a ×ˢ Ico (0 : ℝ) 1) :=
-    measurableSet_Ioi.prod measurableSet_Ico
   have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi a ×ˢ Ico 0 1 := by
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
-  rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hS
-    ((positive.injOn_realChart_cylindricalEndLift 0).mono
-      (prod_mono (subset_univ _) (by rw [zero_add])))
-    (fun z _ ↦ (contDiff_realChart positive.contDiff_cylindricalEndLift).differentiable
-      one_ne_zero z) fun z hz ↦ by
-      rw [hfg z hz, abs_of_pos (positive.det_fderiv_realChart_cylindricalEndLift_pos z)]]
-  refine lintegral_mono_set ?_
-  rintro _ ⟨z, hz, rfl⟩
-  exact exp_lt_norm_realChart_positive hz.1
+  rw [setLIntegral_congr hae]
+  exact setLIntegral_ofReal_comp_realChart_positive_le_of_subset (t₀ := 0)
+    (measurableSet_Ioi.prod measurableSet_Ico) (by rw [zero_add]) hfg
 
 /-- The band `R ≤ ε s ≤ N` of the end, in the longitudinal coordinate `s`, is a closed interval
 `[a, b]` whose endpoints lie on the two boundary slices. -/
