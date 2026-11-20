@@ -72,6 +72,19 @@ lemma twistedHomologyIsoOfHomotopy_hom (P : TopPair.{v}) {x : P.fst}
         (P.twistedHomologyConstantIso _ k).hom :=
   (rfl)
 
+/-- The inverse of `TopPair.twistedHomologyIsoOfHomotopy` is the comparison of ordinary relative
+singular homology with relative twisted homology with constant coefficients, followed by the
+change of coefficients from the constant system back to `L`. -/
+lemma twistedHomologyIsoOfHomotopy_inv (P : TopPair.{v}) {x : P.fst}
+    (H : (ContinuousMap.id P.fst).Homotopy (ContinuousMap.const P.fst x))
+    (L : LocalCoefficientSystem.{u, v, max v w} R P.fst) (k : ℕ) :
+    (P.twistedHomologyIsoOfHomotopy H L k).inv =
+      (P.twistedHomologyConstantIso (L.obj (FundamentalGroupoid.mk x)) k).inv ≫
+        P.twistedHomologyCoefficientMap (isoConstantOfHomotopy H L).inv k := by
+  apply Iso.inv_ext
+  rw [twistedHomologyIsoOfHomotopy_hom, Category.assoc, Iso.hom_inv_id_assoc,
+    twistedHomologyCoefficientMap_hom_inv_id]
+
 /-- **The relative homology of a disk with local coefficients vanishes outside its dimension**:
 `Hₖ(Dⁿ, Sⁿ⁻¹; L) = 0` for `k ≠ n` and every local coefficient system `L` on `Dⁿ`. -/
 theorem isZero_twistedHomology_diskBoundaryPair_of_ne {n k : ℕ} (hk : k ≠ n)
