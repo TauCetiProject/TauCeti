@@ -29,9 +29,9 @@ other degrees. These degrees are distinct modulo `2(n + 1)`, so each residue cla
 most one of them, and:
 
 * the homology of the compression is `R` in each residue `2k`, `0 ≤ k ≤ n`
-  (`TauCeti.ComplexProjectiveSpace.compressionHomologyIso`);
+  (`TauCeti.ComplexProjectiveSpace.compressionHomologyIsoTwoMul`);
 * it vanishes in the other residues
-  (`TauCeti.ComplexProjectiveSpace.isZero_compression_homology`).
+  (`TauCeti.ComplexProjectiveSpace.isZero_compression_homology_of_ne_two_mul`).
 
 In the Floer degree `i = n - r` of a residue `r`, these are the degrees `i` for which `i + n` is
 one of `0, 2, …, 2n` modulo `2(n + 1)`. Over a division ring `𝕜` the homology of the compression
@@ -44,9 +44,8 @@ cyclically graded Floer complex of `CPⁿ` with this homology has at least `n + 
 
 The cellular chain complex of `CPⁿ`, placed in the degrees `2n - j` by
 `ComplexShape.embeddingUpIntLE (2 * n)`, is such a complex `K`: its homology in degree `2n - j` is
-`Hⱼ(CPⁿ; R)` (`TauCeti.ComplexProjectiveSpace.extendCellularChainComplexHomologyIso`), it has no
-homology above `2n` (`TauCeti.ComplexProjectiveSpace.isZero_extendCellularChainComplex_homology`),
-and it is supported in `[0, 2n]`.
+`Hⱼ(CPⁿ; R)` (`TauCeti.ComplexProjectiveSpace.extendCellularChainComplexHomologyIso`), and it is
+supported in `[0, 2n]`, so it has no homology above `2n` (`CochainComplex.isZero_of_isLE`).
 
 ## References
 
@@ -107,9 +106,9 @@ variable [HasCompression (2 * (n + 1)) K] (a b : ℤ) [K.IsStrictlyGE a] [K.IsSt
 `[a, b]` whose homology in degree `2n - j` is `Hⱼ(CPⁿ; R)`, with no homology above `2n`. For
 `k ≤ n`, the homology of its compression modulo `2(n + 1)` in the residue `2k` is `R`. It is the
 homology of `K` in degree `2k`, which is `H₂₍ₙ₋ₖ₎(CPⁿ; R) ≅ R`. -/
-def compressionHomologyIso (k : ℕ) (hk : k ≤ n) :
+def compressionHomologyIsoTwoMul (k : ℕ) (hk : k ≤ n) :
     (compression (2 * (n + 1)) K).homology (2 * (k : ZMod (2 * (n + 1)))) ≅ R :=
-  compressionHomologyIsoOfIsZero _ K a b _ (2 * k) (by push_cast; rfl) (fun q hq hqk ↦
+  compressionHomologyIsoOfIsZero _ K a b _ (2 * k) (by simp) (fun q hq hqk ↦
       isZero_homology_of_forall_ne R K e hK q fun l hl hql ↦ hqk <| by
         subst hql
         rw [eq_of_two_mul_natCast_eq hl hk (by simpa using hq)]) ≪≫
@@ -117,12 +116,33 @@ def compressionHomologyIso (k : ℕ) (hk : k ≤ n) :
     e (2 * (n - k)) ≪≫
     singularHomologyIso R (Nat.sub_le n k)
 
+/-- The isomorphism `compressionHomologyIsoTwoMul` is the projection `πCompressionHomology` onto
+the summand of degree `2k`, followed by the given identification of that homology with
+`H₂₍ₙ₋ₖ₎(CPⁿ; R)` and by `singularHomologyIso`. -/
+@[reassoc]
+lemma compressionHomologyIsoTwoMul_hom (k : ℕ) (hk : k ≤ n) :
+    (compressionHomologyIsoTwoMul R K e hK a b k hk).hom =
+      πCompressionHomology _ K _ (2 * k) ≫
+        eqToHom (by rw [show (2 * k : ℤ) = 2 * n - ((2 * (n - k) : ℕ) : ℤ) by omega]) ≫
+        (e (2 * (n - k))).hom ≫ (singularHomologyIso R (Nat.sub_le n k)).hom := by
+  simp [compressionHomologyIsoTwoMul]
+
+/-- The inverse of `compressionHomologyIsoTwoMul` ends with the inclusion `ιCompressionHomology` of
+the summand of degree `2k`. -/
+@[reassoc]
+lemma compressionHomologyIsoTwoMul_inv (k : ℕ) (hk : k ≤ n) :
+    (compressionHomologyIsoTwoMul R K e hK a b k hk).inv =
+      (singularHomologyIso R (Nat.sub_le n k)).inv ≫ (e (2 * (n - k))).inv ≫
+        eqToHom (by rw [show (2 * k : ℤ) = 2 * n - ((2 * (n - k) : ℕ) : ℤ) by omega]) ≫
+        ιCompressionHomology _ K _ (2 * k) := by
+  simp [compressionHomologyIsoTwoMul]
+
 include e hK a b in
 /-- **The compressed homology of `CPⁿ` vanishes in the residues other than `0, 2, …, 2n`.** Let
 `K` be a complex supported in `[a, b]` whose homology in degree `2n - j` is `Hⱼ(CPⁿ; R)`, with no
 homology above `2n`. The homology of its compression modulo `2(n + 1)` vanishes in every residue
 `r` which is not `2k` for any `k ≤ n`. -/
-theorem isZero_compression_homology (r : ZMod (2 * (n + 1)))
+theorem isZero_compression_homology_of_ne_two_mul (r : ZMod (2 * (n + 1)))
     (hr : ∀ k : ℕ, k ≤ n → 2 * (k : ZMod (2 * (n + 1))) ≠ r) :
     IsZero ((compression (2 * (n + 1)) K).homology r) :=
   PeriodicComplex.isZero_compression_homology _ K a b r fun q hq ↦
@@ -150,12 +170,13 @@ theorem finrank_compression_homology (r : ZMod (2 * (n + 1))) :
       ((Finset.range (n + 1)).filter fun k : ℕ ↦ 2 * (k : ZMod (2 * (n + 1))) = r).card := by
   by_cases h : ∃ k : ℕ, k ≤ n ∧ 2 * (k : ZMod (2 * (n + 1))) = r
   · obtain ⟨k, hk, rfl⟩ := h
-    rw [(compressionHomologyIso _ K e hK a b k hk).toLinearEquiv.finrank_eq]
+    rw [(compressionHomologyIsoTwoMul _ K e hK a b k hk).toLinearEquiv.finrank_eq]
     refine (finrank_self 𝕜).trans (Finset.card_eq_one.2 ⟨k, Finset.ext fun l ↦ ?_⟩).symm
     simp only [Finset.mem_filter, Finset.mem_range, Finset.mem_singleton]
     exact ⟨fun hl ↦ eq_of_two_mul_natCast_eq (by omega) hk hl.2, fun hl ↦ hl ▸ ⟨by omega, rfl⟩⟩
   · simp only [not_exists, not_and] at h
-    have := ModuleCat.isZero_iff_subsingleton.1 (isZero_compression_homology _ K e hK a b r h)
+    have := ModuleCat.isZero_iff_subsingleton.1
+      (isZero_compression_homology_of_ne_two_mul _ K e hK a b r h)
     rw [finrank_zero_of_subsingleton, eq_comm, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
     exact fun k hk ↦ h k (by simpa [Nat.lt_succ_iff] using hk)
 
@@ -197,16 +218,6 @@ def extendCellularChainComplexHomologyIso (j : ℕ) :
   have := finite_cwComplex (n := n)
   HomologicalComplex.extendHomologyIso _ _ (ComplexShape.embeddingUpIntLE_f _ j) ≪≫
     cellularSingularHomologyIsoUniv R j
-
-/-- The cellular chain complex of `CPⁿ`, placed in the degrees `2n - j`, has no homology above
-`2n`. -/
-theorem isZero_extendCellularChainComplex_homology (p : ℤ) (hp : 2 * n < p) :
-    IsZero (((cellularChainComplex (univ : Set (ComplexProjectiveSpace n)) R).extend
-      (ComplexShape.embeddingUpIntLE (2 * n))).homology p) :=
-  (HomologicalComplex.exactAt_iff_isZero_homology _ p).1 <|
-    HomologicalComplex.extend_exactAt _ _ p fun j hj ↦ by
-      rw [ComplexShape.embeddingUpIntLE_f] at hj
-      omega
 
 /-- The cellular chain complex of `CPⁿ`, placed in the degrees `2n - j`, vanishes below `0`. Like
 every extension along `ComplexShape.embeddingUpIntLE (2 * n)`, it also vanishes above `2n`. -/
