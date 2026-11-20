@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Subalgebra
 public import TauCeti.Geometry.ScatteringDiagram.WallSpace.Basic
 public import TauCeti.Algebra.DirectSum.Supported
+import Mathlib.LinearAlgebra.DFinsupp
 import TauCeti.Algebra.Lie.Basic
 
 /-!
@@ -59,6 +60,23 @@ theorem transverseJointSubmodule_eq_iSup :
       ⨆ p : {p : Γ × {m : Λ →+ ℤ // ∀ v ∈ W, m v = 0} // ρ p.1 ∉ W},
         H.wall p.val.1 p.val.2 := (rfl)
 
+/-- A transverse joint element is a finite sum of transverse wall elements whose normals
+annihilate the tangent set. -/
+theorem mem_transverseJointSubmodule_iff {x : L} :
+    x ∈ H.transverseJointSubmodule W ↔
+      ∃ f : {p : Γ × {m : Λ →+ ℤ // ∀ v ∈ W, m v = 0} // ρ p.1 ∉ W} →₀ L,
+        (∀ p, f p ∈ H.wall p.val.1 p.val.2) ∧ f.sum (fun _ y => y) = x := by
+  rw [H.transverseJointSubmodule_eq_iSup, Submodule.mem_iSup_iff_exists_finsupp]
+
+/-- Containing the transverse joint submodule is equivalent to containing each of its generating
+wall spaces. -/
+theorem transverseJointSubmodule_le_iff {S : Submodule R L} :
+    H.transverseJointSubmodule W ≤ S ↔
+      ∀ n m, ρ n ∉ W → (∀ v ∈ W, m v = 0) → H.wall n m ≤ S := by
+  rw [H.transverseJointSubmodule_eq_iSup, iSup_le_iff]
+  exact ⟨fun h n m hn hm => h ⟨⟨n, ⟨m, hm⟩⟩, hn⟩,
+    fun h p => h p.val.1 p.val.2 p.property p.val.2.property⟩
+
 variable {W} in
 /-- A wall space of transverse degree with normal annihilating the tangent set
 lies in the transverse submodule. -/
@@ -90,6 +108,23 @@ def jointSubalgebra : LieSubalgebra R L where
 theorem jointSubalgebra_toSubmodule :
     (H.jointSubalgebra W).toSubmodule =
       ⨆ p : Γ × {m : Λ →+ ℤ // ∀ v ∈ W, m v = 0}, H.wall p.1 p.2 := (rfl)
+
+/-- A joint element is a finite sum of wall elements whose normals annihilate the tangent set. -/
+theorem mem_jointSubalgebra_iff {x : L} :
+    x ∈ H.jointSubalgebra W ↔
+      ∃ f : (Γ × {m : Λ →+ ℤ // ∀ v ∈ W, m v = 0}) →₀ L,
+        (∀ p, f p ∈ H.wall p.1 p.2) ∧ f.sum (fun _ y => y) = x := by
+  change x ∈ (H.jointSubalgebra W).toSubmodule ↔ _
+  rw [H.jointSubalgebra_toSubmodule, Submodule.mem_iSup_iff_exists_finsupp]
+
+/-- A Lie subalgebra contains the joint subalgebra exactly when it contains each wall space
+whose normal annihilates the tangent set. -/
+theorem jointSubalgebra_le_iff {S : LieSubalgebra R L} :
+    H.jointSubalgebra W ≤ S ↔
+      ∀ n m, (∀ v ∈ W, m v = 0) → H.wall n m ≤ S.toSubmodule := by
+  change (H.jointSubalgebra W).toSubmodule ≤ S.toSubmodule ↔ _
+  rw [H.jointSubalgebra_toSubmodule, iSup_le_iff]
+  exact ⟨fun h n m hm => h ⟨n, ⟨m, hm⟩⟩, fun h p => h p.1 p.2 p.2.property⟩
 
 variable {W} in
 /-- A wall space with normal annihilating the tangent set lies in the joint subalgebra. -/
