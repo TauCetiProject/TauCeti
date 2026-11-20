@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothSingular.Chains
 public import Mathlib.Topology.Instances.AddCircle.Real
+import TauCeti.MeasureTheory.Integral.FullSimplex
 
 /-!
 # Forms with integer integrals over all smooth simplices
@@ -17,10 +18,11 @@ smooth singular `p`-simplex is an integer vanishes
 
 Consequently two smooth forms of positive degree whose integrals over every smooth singular chain
 with integer coefficients agree modulo `ℤ` are equal
-(`TauCeti.SmoothForm.eq_of_forall_coe_intIntegrationCochain_eq`). This is the uniqueness of the
-curvature of a differential character. The hypothesis `p ≥ 1` is needed,
-since in degree `0` the integral over a point is evaluation, and a nonzero constant integer
-function has integer integrals.
+(`TauCeti.SmoothForm.eq_of_forall_coe_integrationCochain_eq`). This is the uniqueness of the
+curvature of a differential character. The hypothesis `p ≥ 1` is needed, since in degree `0` the
+integral over a point is evaluation, and a nonzero constant integer function has integer integrals.
+The comparison modulo `ℤ` uses that a real number vanishes in `ℝ/ℤ` exactly when it is an integer
+(`UnitAddCircle.coe_eq_zero_iff`).
 
 ## Implementation notes
 
@@ -130,56 +132,6 @@ private theorem integral_affineChartSimplex (φ : RoughForm I M ℝ p)
 
 end Affine
 
-section Limit
-
-variable {Φ : E → E [⋀^Fin p]→L[ℝ] ℝ} {T U : Set E} {c : E}
-  (L : EuclideanSpace ℝ (Fin p) →L[ℝ] E)
-
-/-- For `t` near `0`, the affine simplex `y ↦ c + t • L y` maps `Δᵖ` into a given neighbourhood
-of `c`. -/
-private theorem eventually_forall_fullSimplex_mem (hU : U ∈ 𝓝 c) :
-    ∀ᶠ t in 𝓝 (0 : ℝ), ∀ y ∈ fullSimplex p, c + t • L y ∈ U := by
-  refine (isCompact_fullSimplex p).eventually_forall_of_forall_eventually fun y _ ↦ ?_
-  have hcont : Continuous fun q : ℝ × EuclideanSpace ℝ (Fin p) ↦ c + q.1 • L q.2 := by fun_prop
-  have hlim : Tendsto (fun q : ℝ × EuclideanSpace ℝ (Fin p) ↦ c + q.1 • L q.2) (𝓝 (0, y))
-      (𝓝 c) := by
-    simpa using hcont.tendsto (0, y)
-  exact hlim.eventually hU
-
-/-- If `Φ` is continuous at the points of an open set `T ∋ c`, the integral over `Δᵖ` of `Φ` along
-the affine simplex `y ↦ c + t • L y`, evaluated on `w`, tends to `vol Δᵖ · Φ c w` as `t → 0`. -/
-private theorem tendsto_setIntegral_fullSimplex (hT : IsOpen T) (hc : c ∈ T)
-    (hΦ : ∀ z ∈ T, ContinuousAt Φ z) (w : Fin p → E) :
-    Tendsto (fun t : ℝ ↦ ∫ y in fullSimplex p, Φ (c + t • L y) w) (𝓝 0)
-      (𝓝 (volume.real (fullSimplex p) * Φ c w)) := by
-  have hw : Continuous fun A : E [⋀^Fin p]→L[ℝ] ℝ ↦ A w :=
-    (ContinuousAlternatingMap.apply ℝ E ℝ w).continuous
-  -- For `t` near `0`, the affine simplex lies in `T`, where `Φ` is bounded by `‖Φ c‖ + 1`.
-  have hev : ∀ᶠ t in 𝓝 (0 : ℝ), ∀ y ∈ fullSimplex p,
-      c + t • L y ∈ {z | z ∈ T ∧ ‖Φ z‖ < ‖Φ c‖ + 1} :=
-    eventually_forall_fullSimplex_mem L (Filter.Eventually.and (hT.mem_nhds hc)
-      ((hΦ c hc).norm.eventually (gt_mem_nhds (lt_add_one _))))
-  -- Dominated convergence, with a constant bound on the compact simplex.
-  have hG : ContinuousAt (fun t : ℝ ↦ ∫ y in fullSimplex p, Φ (c + t • L y) w) 0 := by
-    refine continuousAt_of_dominated (bound := fun _ ↦ (‖Φ c‖ + 1) * ∏ i, ‖w i‖) ?_ ?_
-      (integrableOn_const (isCompact_fullSimplex p).measure_lt_top.ne) ?_
-    · filter_upwards [hev] with t ht
-      refine ContinuousOn.aestronglyMeasurable (fun y hy ↦ ?_)
-        (isClosed_fullSimplex p).measurableSet
-      exact (hw.continuousAt.comp ((hΦ _ (ht y hy).1).comp (f := fun y ↦ c + t • L y)
-        (by fun_prop : Continuous fun y ↦ c + t • L y).continuousAt)).continuousWithinAt
-    · filter_upwards [hev] with t ht
-      refine ae_restrict_of_forall_mem (isClosed_fullSimplex p).measurableSet fun y hy ↦ ?_
-      exact (ContinuousAlternatingMap.le_opNorm _ w).trans
-        (mul_le_mul_of_nonneg_right (ht y hy).2.le (by positivity))
-    · refine ae_of_all _ fun y ↦ ?_
-      have h0 : ContinuousAt Φ (c + (0 : ℝ) • L y) := by simpa using hΦ c hc
-      exact hw.continuousAt.comp (h0.comp (f := fun t : ℝ ↦ c + t • L y)
-        (by fun_prop : Continuous fun t : ℝ ↦ c + t • L y).continuousAt)
-  simpa using hG.tendsto
-
-end Limit
-
 /-- The key local step: the form read in the chart at an interior point `x` vanishes at the chart
 image of `x` on every tuple `L eᵢ`, if the integral of the form over every smooth simplex is an
 integer. -/
@@ -194,9 +146,12 @@ private theorem mpullback_extChartAt_symm_apply_eq_zero (hp : p ≠ 0) {φ : Rou
   set w : Fin p → E := fun i ↦ L (EuclideanSpace.single i 1)
   set G : ℝ → ℝ := fun t ↦ ∫ y in fullSimplex p, Φ (c + t • L y) w
   have hcT : c ∈ T := I.isInteriorPoint_iff.mp hx
-  have hlim : Tendsto G (𝓝 0) (𝓝 (volume.real (fullSimplex p) * Φ c w)) :=
-    tendsto_setIntegral_fullSimplex L isOpen_interior hcT
-      (fun z hz ↦ continuousAt_mpullback_extChartAt_symm hφ x (mem_interior_iff_mem_nhds.mp hz)) w
+  have hw : Continuous fun A : E [⋀^Fin p]→L[ℝ] ℝ ↦ A w :=
+    (ContinuousAlternatingMap.apply ℝ E ℝ w).continuous
+  have hlim : Tendsto G (𝓝 0) (𝓝 (volume.real (fullSimplex p) * Φ c w)) := by
+    simpa only [smul_eq_mul] using tendsto_setIntegral_fullSimplex L isOpen_interior hcT
+      (Φ := fun z ↦ Φ z w) fun z hz ↦ hw.continuousAt.comp
+        (continuousAt_mpullback_extChartAt_symm hφ x (mem_interior_iff_mem_nhds.mp hz))
   have hvol : 0 < volume.real (fullSimplex p) :=
     ENNReal.toReal_pos
       (Measure.measure_pos_of_nonempty_interior _ (nonempty_interior_fullSimplex p)).ne'
@@ -240,6 +195,12 @@ theorem eq_zero_of_forall_integral_eq_intCast [BoundarylessManifold I M] (hp : p
 
 end RoughForm
 
+/-- A real number is zero in `ℝ/ℤ` exactly when it is an integer. -/
+theorem _root_.UnitAddCircle.coe_eq_zero_iff {a : ℝ} :
+    (a : UnitAddCircle) = 0 ↔ ∃ n : ℤ, a = n := by
+  rw [AddCircle.coe_eq_zero_iff]
+  simp only [zsmul_one, eq_comm]
+
 section Uniqueness
 
 variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
@@ -248,10 +209,10 @@ variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 /-- **Curvatures of differential characters are unique.** On a boundaryless manifold, two smooth
 forms of positive degree whose integrals over every smooth singular integral chain agree modulo
 `ℤ` are equal. -/
-theorem SmoothForm.eq_of_forall_coe_intIntegrationCochain_eq {p : ℕ} (hp : p ≠ 0)
+theorem SmoothForm.eq_of_forall_coe_integrationCochain_eq {p : ℕ} (hp : p ≠ 0)
     {φ ψ : SmoothForm I M ℝ p}
     (h : ∀ c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X p,
-      ((intIntegrationCochain φ.1).hom c : UnitAddCircle) = (intIntegrationCochain ψ.1).hom c) :
+      ((integrationCochain φ.1).hom c : UnitAddCircle) = (integrationCochain ψ.1).hom c) :
     φ = ψ := by
   have hφ : IsSmoothForm I 0 φ.1 := φ.isSmoothForm.of_le (by simp)
   have hψ : IsSmoothForm I 0 ψ.1 := ψ.isSmoothForm.of_le (by simp)
@@ -260,12 +221,10 @@ theorem SmoothForm.eq_of_forall_coe_intIntegrationCochain_eq {p : ℕ} (hp : p �
   -- Test `h` on the chain of the simplex `σ` with coefficient `1`.
   have hσ := h (((smoothSingularSubcomplex I M : SSet).ιChainComplex
     (R := ModuleCat.of ℤ ℤ) σ).hom 1)
-  rw [intIntegrationCochain_ιChainComplex, intIntegrationCochain_ιChainComplex, one_smul,
-    one_smul, ← sub_eq_zero, ← AddCircle.coe_sub, AddCircle.coe_eq_zero_iff] at hσ
-  obtain ⟨n, hn⟩ := hσ
-  refine ⟨n, ?_⟩
-  rw [sub_eq_add_neg, SmoothSimplex.integral_add σ hφ hψ.neg, SmoothSimplex.integral_neg,
-    ← sub_eq_add_neg, ← hn, zsmul_one]
+  rw [integrationCochain_ιChainComplex, integrationCochain_ιChainComplex, one_smul,
+    one_smul, ← sub_eq_zero, ← AddCircle.coe_sub, UnitAddCircle.coe_eq_zero_iff] at hσ
+  rwa [sub_eq_add_neg, SmoothSimplex.integral_add σ hφ hψ.neg, SmoothSimplex.integral_neg,
+    ← sub_eq_add_neg]
 
 end Uniqueness
 

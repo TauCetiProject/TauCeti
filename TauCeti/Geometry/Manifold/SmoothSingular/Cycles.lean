@@ -15,9 +15,9 @@ The smooth singular `k`-chains of a manifold `M` with integer coefficients form 
 of the chain complex of the simplicial set `TauCeti.smoothSingularSubcomplex I M` with coefficients
 in `ℤ`. This file names its cycles, `TauCeti.smoothIntCycles I M k`, as an additive subgroup of the
 chains; the boundary of a `(k + 1)`-chain as a `k`-cycle, `TauCeti.smoothIntBoundary I M k`; and the
-pushforward of cycles along a smooth map, `TauCeti.smoothIntCyclesMap`, which commutes with
-boundaries. Homomorphisms out of these cycles are the differential characters of Cheeger and
-Simons.
+pushforward of cycles along a smooth map, `TauCeti.smoothIntCyclesMap`, which is functorial and
+commutes with boundaries. The differential characters of Cheeger and Simons are the homomorphisms
+from these cycles to `ℝ/ℤ` whose values on boundaries are integrals of a smooth form modulo `ℤ`.
 -/
 
 public section
@@ -106,6 +106,26 @@ theorem smoothIntCyclesMap_smoothIntBoundary (hf : ContMDiff I J ∞ f) (k : ℕ
   ext1
   rw [coe_smoothIntCyclesMap, coe_smoothIntBoundary, coe_smoothIntBoundary, ← LinearMap.comp_apply,
     ← ModuleCat.hom_comp, ← HomologicalComplex.Hom.comm, ModuleCat.hom_comp, LinearMap.comp_apply]
+
+variable (I M) in
+/-- The identity of `M` induces the identity on smooth singular integral cycles. -/
+@[simp]
+theorem smoothIntCyclesMap_id (k : ℕ) :
+    smoothIntCyclesMap (I := I) (J := I) (M := M) (f := id) contMDiff_id k =
+      AddMonoidHom.id _ := by
+  ext z
+  simp [smoothSingularSubcomplexMap_id]
+
+/-- Pushforward of cycles along a composite is the composite of the pushforwards. -/
+theorem smoothIntCyclesMap_comp {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''} {P : Type} [TopologicalSpace P]
+    [ChartedSpace H'' P] {g : N → P} (hg : ContMDiff J K ∞ g) (hf : ContMDiff I J ∞ f) (k : ℕ) :
+    smoothIntCyclesMap (hg.comp hf) k =
+      (smoothIntCyclesMap hg k).comp (smoothIntCyclesMap hf k) := by
+  ext z
+  rw [coe_smoothIntCyclesMap, smoothSingularSubcomplexMap_comp hg hf,
+    ← SSet.chainComplexMap_f_comp, ModuleCat.hom_comp, LinearMap.comp_apply,
+    AddMonoidHom.comp_apply, coe_smoothIntCyclesMap, coe_smoothIntCyclesMap]
 
 end Map
 
