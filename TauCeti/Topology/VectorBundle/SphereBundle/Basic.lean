@@ -31,7 +31,8 @@ on the negative normal bundle. Dividing a fibre gauge by a continuous positive r
 disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
 (`TauCeti.gaugeDiscBundle_div`, `TauCeti.gaugeSphereBundle_div`). Each point of `S(E)` gives a
 unit vector in its fibre (`TauCeti.unitSphereOfSphereBundle`), and the unit sphere bundle projects
-continuously onto the base (`TauCeti.sphereBundleProj`). The pair `(D(E), S(E))`
+continuously onto the base (`TauCeti.sphereBundleProj`). The disc bundle of a fibre gauge contains
+the zero section (`TauCeti.IsFiberGauge.zeroSection_mem_gaugeDiscBundle`). The pair `(D(E), S(E))`
 (`TauCeti.discSpherePair`) is the gauge disc-sphere pair of the fibre norm
 (`TauCeti.discSpherePair_eq_gaugeDiscSpherePair`). In rank zero every vector is zero, so the unit
 sphere bundle is empty and the unit disc bundle is the whole total space
@@ -276,6 +277,10 @@ theorem nonneg (v : TotalSpace F E) : 0 ≤ ρ v := by
 /-- A fibre gauge vanishes exactly on the zero section. -/
 theorem eq_zero_iff {v : TotalSpace F E} : ρ v = 0 ↔ v.snd = 0 :=
   ⟨fun h ↦ by_contra fun hv ↦ (hρ.pos hv).ne' h, hρ.eq_zero_of_snd_eq_zero⟩
+
+/-- The zero section lies in the disc bundle of a fibre gauge. -/
+theorem zeroSection_mem_gaugeDiscBundle (b : B) : zeroSection F E b ∈ gaugeDiscBundle ρ :=
+  mem_gaugeDiscBundle.2 ((hρ.eq_zero_of_snd_eq_zero (zeroSection_snd F E b)).trans_le zero_le_one)
 
 /-- Dividing a fibre gauge `ρ` by a continuous positive function `r` on the base yields a fibre
 gauge whose disc and sphere bundles are `{v | ρ v ≤ r v.proj}` and `{v | ρ v = r v.proj}`
@@ -641,7 +646,7 @@ theorem isIso_singularHomologyMap_gaugeDiscSpherePairMap
 
 /-- The zero section, as a map into the disc bundle of a fibre gauge. -/
 private def zeroSectionGaugeDisc : C(B, gaugeDiscBundle ρ) :=
-  ⟨fun b ↦ ⟨zeroSection F E b, (hρ.eq_zero_of_snd_eq_zero rfl).trans_le zero_le_one⟩,
+  ⟨fun b ↦ ⟨zeroSection F E b, hρ.zeroSection_mem_gaugeDiscBundle b⟩,
     (Trivialization.continuous_zeroSection ℝ).subtype_mk _⟩
 
 /-- The projection of the disc bundle of a fibre gauge. -/
