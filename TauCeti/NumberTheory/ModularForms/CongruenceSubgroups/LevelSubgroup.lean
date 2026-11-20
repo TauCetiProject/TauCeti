@@ -24,7 +24,7 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 A level of a modular curve is a subgroup `H` of `GL₂(ℤ / N)`: a level-`H` structure on an
 elliptic curve `E` is an `H`-orbit of ordered bases `(P, Q)` of `E[N]`, on which a matrix acts on
 the right by `(P, Q) • !![a, b; c, d] = (a P + c Q, b P + d Q)`. The standard levels are the
-images of the congruence subgroups of `SL(2, ℤ)`:
+following subgroups, whose preimages in `SL(2, ℤ)` are the congruence subgroups:
 
 * the trivial subgroup, for `Γ(N)` (full level);
 * `TauCeti.GL2Gamma1 (ZMod N) = {a = 1, c = 0}`, the stabiliser of `P`, for `Γ₁(N)`;
@@ -127,7 +127,7 @@ theorem comap_mapGL_GL2Gamma1 : (GL2Gamma1 (ZMod N)).comap (mapGL (ZMod N)) = Ga
   have hdet : ((γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 : ℤ) : ZMod N) = 1 := by
     rw [← det_fin_two, γ.det_coe, Int.cast_one]
   push_cast at hdet
-  rwa [h₀, h₁, one_mul, mul_zero, sub_zero] at hdet
+  simpa [h₀, h₁] using hdet
 
 /-- The kernel of the reduction `SL(2, ℤ) → GL₂(ℤ / N)`, the preimage of the trivial level, is
 `Γ(N)`. -/
@@ -197,18 +197,16 @@ theorem exists_map_castHom_eq_and_det_eq (g : GL (Fin 2) (ZMod n)) {u : (ZMod m)
     ext i j
     fin_cases i <;> fin_cases j <;>
       simp [f, GeneralLinearGroup.map_apply, ZMod.unitsMap_def, -ZMod.castHom_apply]
-  have hdetD {k : ℕ} (v : (ZMod k)ˣ) : GeneralLinearGroup.det (GL2Borel.mk v 1 0) = v :=
-    Units.ext (by simp [GeneralLinearGroup.val_det_apply, det_fin_two_of])
   -- The determinant-one factor `s = g * !![det g, 0; 0, 1]⁻¹` lifts through `SL(2, ℤ)`.
   set s := g * (GL2Borel.mk (GeneralLinearGroup.det g) 1 0)⁻¹ with hs
   have hs1 : s ∈ (GeneralLinearGroup.det : GL (Fin 2) (ZMod n) →* _).ker := by
-    simp [hs, hdetD]
+    simp [hs]
   obtain ⟨γ, hγ⟩ := (range_mapGL_zmod n).ge hs1
   have hγ' : f (mapGL (ZMod m) γ) = s := by
     rw [← hγ]
     ext i j
     simp [f, GeneralLinearGroup.map_apply, -ZMod.castHom_apply]
-  refine ⟨mapGL (ZMod m) γ * GL2Borel.mk u 1 0, ?_, by simp [hdetD]⟩
+  refine ⟨mapGL (ZMod m) γ * GL2Borel.mk u 1 0, ?_, by simp⟩
   rw [map_mul, hD, hu, hγ', hs, inv_mul_cancel_right]
 
 /-- **The reduction `GL₂(ℤ / m) → GL₂(ℤ / n)` is surjective** for `n ∣ m` and `m ≠ 0`. For

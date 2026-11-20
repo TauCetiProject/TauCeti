@@ -51,9 +51,10 @@ Over a finite field with `q` elements these give `|B| = q (q - 1)²` and hence `
 q + 1`, the number of points of the projective line.
 
 The kernel of the upper-left diagonal coordinate is the subgroup `TauCeti.GL2Gamma1` of matrices
-`!![1, b; 0, d]`, of relative index `#Rˣ` in `B`. Over `ℤ / N`, `B` and `TauCeti.GL2Gamma1` are the
-images of the congruence subgroups `Γ₀(N)` and `Γ₁(N)`, the levels of the modular curves `X₀(N)`
-and `X₁(N)`; both map onto the units under the determinant.
+`!![1, b; 0, d]`, of relative index `#Rˣ` in `B`. Over `ℤ / N`, the congruence subgroups `Γ₀(N)`
+and `Γ₁(N)` are the preimages of `B` and `TauCeti.GL2Gamma1` under the reduction
+`SL(2, ℤ) → GL₂(ℤ / N)`, and these are the levels of the modular curves `X₀(N)` and `X₁(N)`; both
+map onto the units under the determinant.
 
 ## Main definitions
 
@@ -229,6 +230,11 @@ theorem det_diag (g : GL2Borel R) :
     Matrix.det_of_isUpperTriangular (blockTriangular_id_iff.mpr (apply_one_zero g)),
     Fin.prod_univ_two]
 
+/-- The determinant of `!![a, b; 0, d]` is `a * d`. -/
+@[simp]
+theorem det_mk (a d : Rˣ) (b : R) : Matrix.GeneralLinearGroup.det (mk a d b) = a * d := by
+  simpa using det_diag ⟨mk a d b, mk_mem a d b⟩
+
 /-- The **split torus** `T`, as a homomorphic section of `TauCeti.GL2Borel.diag`: the diagonal
 matrix `!![a, 0; 0, d]`. Its existence is what upgrades the bijection
 `TauCeti.GL2Borel.equivProd` to a genuine splitting `B = T U`. -/
@@ -397,8 +403,8 @@ end GL2Borel
 /-- **`Γ₁` in `GL₂`**: the invertible matrices `!![1, b; 0, d]`, the kernel of the upper-left
 diagonal coordinate of the Borel subgroup. Under the right action
 `(P, Q) • !![a, b; c, d] = (a P + c Q, b P + d Q)` on ordered pairs it is the stabiliser of the
-first vector. Over `ℤ / N` it is the image of the congruence subgroup `Γ₁(N)`, the level of the
-points of exact order `N`. -/
+first vector. Over `ℤ / N` its preimage in `SL(2, ℤ)` is the congruence subgroup `Γ₁(N)`, and it
+is the level of the points of exact order `N`. -/
 def GL2Gamma1 : Subgroup (GL (Fin 2) R) :=
   ((MonoidHom.fst Rˣ Rˣ).comp (GL2Borel.diag (R := R))).ker.map (GL2Borel R).subtype
 
@@ -436,8 +442,7 @@ theorem relIndex_GL2Borel : (GL2Gamma1 R).relIndex (GL2Borel R) = Nat.card Rˣ :
 
 /-- The determinant maps `Γ₁` onto the units: `!![1, 0; 0, u]` has determinant `u`. -/
 theorem map_det : (GL2Gamma1 R).map Matrix.GeneralLinearGroup.det = ⊤ :=
-  eq_top_iff.mpr fun u _ ↦ ⟨GL2Borel.mk 1 u 0, mem_iff.mpr (by simp), Units.ext (by
-    simp [Matrix.GeneralLinearGroup.val_det_apply, Matrix.det_fin_two_of])⟩
+  eq_top_iff.mpr fun u _ ↦ ⟨GL2Borel.mk 1 u 0, mem_iff.mpr (by simp), by simp⟩
 
 /-- `-1` lies in `Γ₁` exactly when `-1 = 1` in `R`. -/
 theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Gamma1 R ↔ (-1 : R) = 1 := by

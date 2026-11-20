@@ -41,6 +41,7 @@ theorem map_injective {f : R →+* S} (hf : Function.Injective f) :
 /-- Change of scalars commutes with negation. Together with Mathlib's `map_one`, `map_mul` and
 `map_inv`, this lets subgroup constructions involving `-1`, such as `Subgroup.adjoinNegOne`, be
 transported along `Matrix.GeneralLinearGroup.map f`. -/
+@[simp]
 protected theorem map_neg (f : R →+* S) (g : GL n R) :
     Matrix.GeneralLinearGroup.map f (-g) = -Matrix.GeneralLinearGroup.map f g := by
   ext i j
