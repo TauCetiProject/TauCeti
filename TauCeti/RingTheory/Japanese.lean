@@ -24,6 +24,7 @@ import TauCeti.FieldTheory.Normal.FixedField
 import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.Localization.Away.FractionRing
+import TauCeti.RingTheory.Localization.Defs
 import TauCeti.RingTheory.Localization.FractionRing
 import TauCeti.RingTheory.Localization.Integral
 

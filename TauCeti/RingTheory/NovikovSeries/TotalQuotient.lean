@@ -11,7 +11,7 @@ import Mathlib.GroupTheory.FiniteAbelian.Basic
 import TauCeti.Algebra.Regular.NatCast
 import TauCeti.GroupTheory.Finiteness
 import TauCeti.RingTheory.Localization.FiniteFree
-import TauCeti.RingTheory.Localization.FractionRing
+import TauCeti.RingTheory.Localization.Ideal
 import TauCeti.RingTheory.NovikovSeries.LeadingTerm
 
 /-!

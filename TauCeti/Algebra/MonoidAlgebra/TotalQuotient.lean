@@ -16,7 +16,7 @@ public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Reduced
 public import TauCeti.Algebra.Regular.NatCast
 public import TauCeti.RingTheory.Localization.Reduced
-public import TauCeti.RingTheory.Localization.FractionRing
+public import TauCeti.RingTheory.Localization.Ideal
 
 /-!
 # Total quotient rings of monoid algebras

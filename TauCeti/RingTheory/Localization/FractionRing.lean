@@ -17,30 +17,15 @@ direction, from a fraction ring of `R` to one of `S`, as
 `IsFractionRing.isFractionRing_of_isLocalization`.
 This lets a statement about the fraction field of a localization of a domain be reduced to the
 fraction field of the domain itself. The non-zero-divisor hypothesis holds whenever a domain is
-localized to a nontrivial ring (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`).
+localized to a nontrivial ring (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`, in
+`TauCeti.RingTheory.Localization.Defs`).
 
 An injective ring homomorphism that carries non-zero-divisors to non-zero-divisors induces an
 injective map of total rings of fractions
 (`IsLocalization.map_injective_of_injective_of_le_nonZeroDivisors`), with no domain hypothesis.
-
-When `R` is localized at a submonoid containing every positive integer, for instance to a total
-ring of fractions of `R` when every positive integer is a non-zero-divisor of `R`, every quotient
-of the localization by a proper ideal has characteristic zero (`IsLocalization.charZero_quotient`).
 -/
 
 public section
-
-namespace TauCeti.IsLocalization
-
-/-- A submonoid of a commutative semiring without zero divisors along which the semiring localizes
-to a nontrivial semiring consists of non-zero-divisors. -/
-theorem le_nonZeroDivisors_of_nontrivial {R : Type*} [CommSemiring R] [NoZeroDivisors R]
-    (M : Submonoid R) (S : Type*) [CommSemiring S] [Nontrivial S] [Algebra R S]
-    [IsLocalization M S] : M ≤ nonZeroDivisors R :=
-  le_nonZeroDivisors_of_noZeroDivisors fun h ↦
-    not_subsingleton S (_root_.IsLocalization.subsingleton h)
-
-end TauCeti.IsLocalization
 
 namespace IsLocalization
 
@@ -58,21 +43,6 @@ theorem map_injective_of_injective_of_le_nonZeroDivisors {R S : Type*} [CommRing
   injective_of_map_algebraMap_zero (M := M) Rₘ _ fun x hx ↦ by
     rw [map_eq, to_map_eq_zero_iff Sₘ hT, _root_.map_eq_zero_iff f hf] at hx
     rw [hx, map_zero]
-
-variable (A K : Type*) [CommSemiring A] [CommRing K] [Algebra A K] {M : Submonoid A}
-  [IsLocalization M K]
-
-/-- If every positive integer of `A` lies in `M`, then every quotient of the localization `K` of `A`
-at `M` by a proper ideal has characteristic zero. For instance, `K` may be a total ring of
-fractions of `A` when every positive integer is a non-zero-divisor of `A`. -/
-theorem charZero_quotient (h : ∀ n : ℕ, n ≠ 0 → (n : A) ∈ M) {I : Ideal K} (hI : I ≠ ⊤) :
-    CharZero (K ⧸ I) := by
-  refine charZero_of_inj_zero fun n hn ↦ ?_
-  by_contra h0
-  have hu : IsUnit (n : K) := by
-    simpa using map_units K ⟨(n : A), h n h0⟩
-  have := Ideal.Quotient.nontrivial_iff.mpr hI
-  exact (hu.map (Ideal.Quotient.mk I)).ne_zero (by simpa using hn)
 
 end IsLocalization
 

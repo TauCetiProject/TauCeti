@@ -17,7 +17,9 @@ records that `IsLocalization.lift hg` is injective whenever `g` is injective
 (`IsLocalization.lift_injective_of_injective`).
 
 It also records that a localization of a commutative semiring in which sums vanish only when
-every summand does inherits this property (`IsLocalization.subsingleton_addUnits`).
+every summand does inherits this property (`IsLocalization.subsingleton_addUnits`), and that a
+submonoid along which a semiring without zero divisors localizes to a nontrivial semiring consists
+of non-zero-divisors (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`).
 -/
 
 public section
@@ -50,3 +52,15 @@ theorem lift_injective_of_injective (hg : ∀ y : M, IsUnit (g y)) (hinj : Funct
     ⟨eq_of_eq (S := S) hg, fun h ↦ congrArg (algebraMap R S) (hinj h)⟩
 
 end IsLocalization
+
+namespace TauCeti.IsLocalization
+
+/-- A submonoid of a commutative semiring without zero divisors along which the semiring localizes
+to a nontrivial semiring consists of non-zero-divisors. -/
+theorem le_nonZeroDivisors_of_nontrivial {R : Type*} [CommSemiring R] [NoZeroDivisors R]
+    (M : Submonoid R) (S : Type*) [CommSemiring S] [Nontrivial S] [Algebra R S]
+    [IsLocalization M S] : M ≤ nonZeroDivisors R :=
+  le_nonZeroDivisors_of_noZeroDivisors fun h ↦
+    not_subsingleton S (_root_.IsLocalization.subsingleton h)
+
+end TauCeti.IsLocalization
