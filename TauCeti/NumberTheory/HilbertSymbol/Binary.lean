@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.Binary
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
-public import TauCeti.LinearAlgebra.QuadraticForm.Binary
+public import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
 
 /-!

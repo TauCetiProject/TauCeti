@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Range
 public import TauCeti.NumberTheory.HilbertSymbol.NormSubgroup
-import TauCeti.LinearAlgebra.QuadraticForm.Binary
+import TauCeti.LinearAlgebra.QuadraticForm.Binary.Basic
 
 /-!
 # The spinor norm of a binary quadratic space
