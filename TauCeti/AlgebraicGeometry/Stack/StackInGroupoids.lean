@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
-public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
 public import Mathlib.CategoryTheory.Groupoid.Discrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.AlgebraicGeometry.Stack.Basic
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.Descent.Discrete
 
 /-!
@@ -27,6 +28,8 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom`: morphisms of stacks in groupoids, the strong
   transformations of the underlying pseudofunctors. Identities and composites are Mathlib's
   `Pseudofunctor.StrongTrans.id` and `Pseudofunctor.StrongTrans.vcomp`.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.isGroupoid_hom`: with modifications as morphisms,
+  the morphisms between two stacks in groupoids form a groupoid.
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFiberwiseEquiv`: a morphism whose component
   on every scheme is an equivalence of fibre groupoids. It holds for identities, is closed under
   composition, and satisfies two-out-of-three.
@@ -70,6 +73,19 @@ attribute [instance] StackInGroupoids.isGroupoid StackInGroupoids.isStack
 /-- Morphisms of stacks in groupoids: strong transformations of the underlying pseudofunctors. -/
 abbrev Hom (X Y : StackInGroupoids.{u}) : Type (u + 1) :=
   Pseudofunctor.StrongTrans X.toSchPseudofunctor Y.toSchPseudofunctor
+
+open Pseudofunctor.StrongTrans in
+/-- The category of morphisms between two stacks in groupoids, with modifications as morphisms,
+is a groupoid: a modification is invertible as soon as its components are, and these are natural
+transformations between functors into groupoids. -/
+instance isGroupoid_hom (X Y : StackInGroupoids.{u}) :
+    IsGroupoid (X.toSchPseudofunctor ⟶ Y.toSchPseudofunctor) where
+  all_isIso Θ := by
+    have (a : LocallyDiscrete Scheme.{u}ᵒᵖ) : IsIso (Θ.as.app a) := by
+      obtain ⟨⟨T⟩⟩ := a
+      have : IsIso (Θ.as.app (.mk (op T))).toNatTrans := NatIso.isIso_of_isIso_app _
+      exact (Cat.Hom.isoMk (asIso (Θ.as.app (.mk (op T))).toNatTrans)).isIso_hom
+    exact isIso_of_isIso_app Θ
 
 namespace Hom
 

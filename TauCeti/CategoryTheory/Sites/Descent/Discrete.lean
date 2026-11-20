@@ -21,6 +21,8 @@ topology `J` exactly when `P` is a sheaf for `J` (Stacks, Lemma 0432).
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.ofPresheaf`: the discrete pseudofunctor of a presheaf of types.
+* `CategoryTheory.Pseudofunctor.ofPresheafObjEquiv`: the objects of its fibre over `X` are the
+  sections of the presheaf over `X`.
 * `CategoryTheory.Pseudofunctor.isStackFor_ofPresheaf_iff`: it satisfies effective descent along
   a presieve if and only if `P` satisfies the sheaf condition for that presieve.
 * `CategoryTheory.Pseudofunctor.isStack_ofPresheaf_iff`: it is a stack for `J` if and only if
@@ -79,6 +81,26 @@ lemma ofPresheaf_obj (X : LocallyDiscrete Cᵒᵖ) :
 @[simp]
 lemma ofPresheaf_map_obj {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) (x : (ofPresheaf.{w'} P).obj X) :
     ((ofPresheaf.{w'} P).map f).toFunctor.obj x = ⟨⟨P.map f.as x.down.as⟩⟩ :=
+  rfl
+
+/-- The objects of the fibre of the discrete pseudofunctor of `P` over `X` are the sections of
+`P` over `X`. -/
+def ofPresheafObjEquiv (X : LocallyDiscrete Cᵒᵖ) : (ofPresheaf.{w'} P).obj X ≃ P.obj X.as where
+  toFun x := x.down.as
+  invFun s := ⟨⟨s⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+lemma ofPresheafObjEquiv_mk (X : LocallyDiscrete Cᵒᵖ) (s : P.obj X.as) :
+    ofPresheafObjEquiv.{w'} P X ⟨⟨s⟩⟩ = s :=
+  rfl
+
+/-- Pullback in the discrete pseudofunctor of `P` is pullback of sections of `P`. -/
+lemma ofPresheafObjEquiv_map_obj {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y)
+    (x : (ofPresheaf.{w'} P).obj X) :
+    ofPresheafObjEquiv.{w'} P Y (((ofPresheaf.{w'} P).map f).toFunctor.obj x) =
+      P.map f.as (ofPresheafObjEquiv.{w'} P X x) :=
   rfl
 
 /-- The fibres of the discrete pseudofunctor of a presheaf of types are discrete categories,
