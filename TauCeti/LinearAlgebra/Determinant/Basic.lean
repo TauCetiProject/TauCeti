@@ -71,6 +71,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   multiplies the determinant by `∏ i, d i`, over any commutative ring.
 * `LinearMap.det_one_add_comp_comm`: the Weinstein–Aronszajn identity
   `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for linear maps between free modules of finite rank.
+* `LinearMap.det_one_sub_comp_comm`: Sylvester's identity `det (1 - X ∘ₗ Y) = det (1 - Y ∘ₗ X)`
+  for linear maps between free modules of finite rank.
 * `LinearEquiv.det_eq_pow_of_forall_eq_smul`: an automorphism acting as multiplication by a unit
   `c` has determinant `c ^ finrank R V`.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
@@ -309,6 +311,15 @@ theorem det_one_add_comp_comm {F F' : Type*} [AddCommGroup F] [Module R F] [Modu
   rw [← det_toMatrix b, ← det_toMatrix b', map_add, map_add, toMatrix_one, toMatrix_one,
     toMatrix_comp b b' b, toMatrix_comp b' b b']
   exact Matrix.det_one_add_mul_comm _ _
+
+/-- **Sylvester's determinant identity** for linear maps: for linear maps `X : F' →ₗ[R] F` and
+`Y : F →ₗ[R] F'` between free modules of finite rank, `det (1 - X ∘ₗ Y) = det (1 - Y ∘ₗ X)`. This
+is the Weinstein–Aronszajn identity `LinearMap.det_one_add_comp_comm` applied to `-X` and `Y`. -/
+theorem det_one_sub_comp_comm {F F' : Type*} [AddCommGroup F] [Module R F] [Module.Free R F]
+    [Module.Finite R F] [AddCommGroup F'] [Module R F'] [Module.Free R F'] [Module.Finite R F']
+    (X : F' →ₗ[R] F) (Y : F →ₗ[R] F') :
+    LinearMap.det (1 - X ∘ₗ Y) = LinearMap.det (1 - Y ∘ₗ X) := by
+  simpa only [neg_comp, comp_neg, ← sub_eq_add_neg] using det_one_add_comp_comm (-X) Y
 
 /-- **Cramer's rule for an endomorphism.** The determinant of an endomorphism `φ` of a free
 module of finite rank multiplies every vector into the range of `φ`: `det φ • x = φ (adj φ x)`,
