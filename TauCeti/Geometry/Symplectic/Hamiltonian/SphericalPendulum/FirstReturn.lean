@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Motion
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.RotationAngle
-import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.InnerProductSpace.Euclidean.VerticalRotation
+import TauCeti.Analysis.ODE.ScalarLinear
 import Mathlib.Analysis.Complex.RealDeriv
-import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -41,8 +41,8 @@ and for its Hamiltonian monodromy around the focus–focus value `(1, 0)`.
 * **The first return.** At a turning point `p₃ = 0`, so the point of the phase space is determined
   by its height, its horizontal position and `J`. After one oscillation the height and `J` are
   back, and the horizontal position has been rotated by `Θ(h, j)`; the rotation flow does the same
-  in the time `Θ(h, j)`
-  (`TauCeti.apply_add_sphericalPendulumPeriod_eq_apply_sphericalPendulumRotationAngle`).
+  in the time `Θ(h, j)` (`TauCeti.rotate_of_isMIntegralCurveOn_angularMomentum`,
+  `TauCeti.apply_add_sphericalPendulumPeriod_eq_apply_sphericalPendulumRotationAngle`).
 
 The motions here are integral curves on intervals of times, and no completeness of the flows is
 used. The identity is stated for a motion starting at the lower turning point; it is not proved
@@ -50,6 +50,9 @@ here for other initial points of the same orbit.
 
 ## Main declarations
 
+* `TauCeti.rotate_of_isMIntegralCurveOn_angularMomentum`: the rotation flow rotates positions and
+  momenta about the vertical axis with unit angular velocity
+  (via `TauCeti.isIntegralCurveOn_angularMomentum_of_isMIntegralCurveOn`, its motions in `ℝ³ × ℝ³`).
 * `TauCeti.div_sqrt_eq_exp_integral_mul_I_mul_of_isMIntegralCurveOn_sphericalPendulum`: the
   horizontal direction turns by `∫ j dt / (1 - q₃²)`.
 * `TauCeti.integral_div_one_sub_sq_eq_sphericalPendulumRotationAngle_of_isMIntegralCurveOn`: over
@@ -72,16 +75,6 @@ open scoped InnerProductSpace
 
 namespace TauCeti
 
-/-- The horizontal coordinate `v₁ + v₂ i` of a curve in `ℝ³` has the horizontal coordinate of its
-velocity as derivative. -/
-private theorem hasDerivWithinAt_horizontal {c : ℝ → EuclideanSpace ℝ (Fin 3)}
-    {c' : EuclideanSpace ℝ (Fin 3)} {s : Set ℝ} {t : ℝ} (hc : HasDerivWithinAt c c' s t) :
-    HasDerivWithinAt (fun t ↦ (c t 0 : ℂ) + c t 1 * I) ((c' 0 : ℂ) + c' 1 * I) s t := by
-  have h (i : Fin 3) : HasDerivWithinAt (fun t ↦ c t i) (c' i) s t := by
-    simpa [Function.comp_def] using
-      (PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) i).hasFDerivAt.comp_hasDerivWithinAt t hc
-  exact (h 0).ofReal_comp.add ((h 1).ofReal_comp.mul_const I)
-
 /-- On the phase space the horizontal momentum is determined by the position, the vertical
 momentum `p₃` and the vertical angular momentum `J`: in the horizontal coordinates `q₁ + q₂ i` and
 `p₁ + p₂ i`, `(1 - q₃²) (p₁ + p₂ i) = (-q₃ p₃ + J i) (q₁ + q₂ i)`. -/
@@ -98,37 +91,10 @@ private theorem one_sub_sq_mul_horizontal_snd
   · linear_combination (-p 0) * hq + q 0 * hqp
   · linear_combination (-p 1) * hq + q 1 * hqp
 
-/-- A curve in `ℝ³` moving with the infinitesimal rotation `v ↦ ⟪v, e₁⟫ e₂ - ⟪v, e₂⟫ e₁` about the
-vertical axis on a preconnected set of times rotates rigidly: between times `a` and `b` its
-horizontal coordinate `v₁ + v₂ i` is multiplied by `exp ((b - a) i)` and its height is unchanged. -/
-private theorem rotate_of_hasDerivWithinAt {v : ℝ → EuclideanSpace ℝ (Fin 3)} {s : Set ℝ}
-    (hs : IsPreconnected s)
-    (hv : ∀ t ∈ s, HasDerivWithinAt v (⟪v t, EuclideanSpace.single 0 1⟫_ℝ •
-      EuclideanSpace.single 1 1 - ⟪v t, EuclideanSpace.single 1 1⟫_ℝ • EuclideanSpace.single 0 1)
-      s t) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
-    (v b 0 : ℂ) + v b 1 * I = exp (((b - a : ℝ) : ℂ) * I) * ((v a 0 : ℂ) + v a 1 * I) ∧
-      v b 2 = v a 2 := by
-  constructor
-  · -- Undoing the rotation by the elapsed angle gives a curve with zero velocity.
-    have hW : ∀ t ∈ s, HasDerivWithinAt
-        (fun t ↦ exp (-((t - a : ℝ) : ℂ) * I) * ((v t 0 : ℂ) + v t 1 * I)) 0 s t := by
-      intro t ht
-      have hl : HasDerivAt (fun u : ℝ ↦ u - a) 1 t := (hasDerivAt_id t).sub_const a
-      have he := (hl.ofReal_comp.neg.mul_const I).cexp
-      refine (he.hasDerivWithinAt.mul (hasDerivWithinAt_horizontal (hv t ht))).congr_deriv ?_
-      simp [EuclideanSpace.inner_single_right]
-      linear_combination (-(exp (((a : ℂ) - t) * I) * v t 1)) * I_sq
-    have h := hs.eq_of_hasDerivWithinAt_zero hW hb ha
-    simp only [sub_self, ofReal_zero, neg_zero, zero_mul, exp_zero, one_mul] at h
-    rw [← h, ← mul_assoc, ← exp_add, neg_mul, add_neg_cancel, exp_zero, one_mul]
-  · refine hs.eq_of_hasDerivWithinAt_zero (f := fun t ↦ v t 2) (fun t ht ↦ ?_) hb ha
-    simpa [Function.comp_def, EuclideanSpace.inner_single_right] using
-      (PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) 2).hasFDerivAt.comp_hasDerivWithinAt t (hv t ht)
-
 /-- The motions of the rotation flow of the spherical pendulum, the integral curves of the
 Hamiltonian vector field of the vertical angular momentum `J` on the phase space, solve
 `q' = ⟪q, e₁⟫ e₂ - ⟪q, e₂⟫ e₁`, `p' = ⟪p, e₁⟫ e₂ - ⟪p, e₂⟫ e₁` in `ℝ³ × ℝ³`. -/
-private theorem isIntegralCurveOn_angularMomentum_of_isMIntegralCurveOn
+theorem isIntegralCurveOn_angularMomentum_of_isMIntegralCurveOn
     {β : ℝ → sphericalPendulumPhaseSpace} {s : Set ℝ}
     (hβ : IsMIntegralCurveOn β (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
@@ -149,7 +115,7 @@ field of the vertical angular momentum on a preconnected set of times, between t
 the position and the momentum are rotated about the vertical axis by the angle `b - a`: their
 horizontal coordinates are multiplied by `exp ((b - a) i)` and their vertical components are
 unchanged. -/
-private theorem rotate_of_isMIntegralCurveOn_angularMomentum {β : ℝ → sphericalPendulumPhaseSpace}
+theorem rotate_of_isMIntegralCurveOn_angularMomentum {β : ℝ → sphericalPendulumPhaseSpace}
     {s : Set ℝ} (hs : IsPreconnected s)
     (hβ : IsMIntegralCurveOn β (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ angularMomentum (EuclideanSpace.single 0 1) (EuclideanSpace.single 1 1)
@@ -170,46 +136,48 @@ private theorem rotate_of_isMIntegralCurveOn_angularMomentum {β : ℝ → spher
       (β b : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2 =
         (β a : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) := by
   have hx := isIntegralCurveOn_angularMomentum_of_isMIntegralCurveOn hβ
-  refine ⟨rotate_of_hasDerivWithinAt
-      (v := fun t ↦ (β t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1) hs
+  refine ⟨hs.ofReal_apply_add_ofReal_apply_mul_I_eq_exp_mul_and_apply_two_eq
+      (v := fun t ↦ (β t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1)
       (fun t ht ↦ ?_) ha hb,
-    rotate_of_hasDerivWithinAt
-      (v := fun t ↦ (β t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2) hs
+    hs.ofReal_apply_add_ofReal_apply_mul_I_eq_exp_mul_and_apply_two_eq
+      (v := fun t ↦ (β t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2)
       (fun t ht ↦ ?_) ha hb⟩
   · simpa [Function.comp_def, stdSymplecticForm_hamiltonianVectorField_angularMomentum] using
       (ContinuousLinearMap.fst ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t (hx t ht)
   · simpa [Function.comp_def, stdSymplecticForm_hamiltonianVectorField_angularMomentum] using
       (ContinuousLinearMap.snd ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t (hx t ht)
 
-/-- Along a motion of the spherical pendulum, at a time `t` off the poles, rotating the horizontal
-direction `(q₁ + q₂ i) / √(1 - q₃²)` back by an angle `A` whose derivative is the angular velocity
-`J / (1 - q₃²)` gives a curve with zero velocity at `t`. -/
-private theorem hasDerivWithinAt_exp_mul_div_sqrt_of_isMIntegralCurveOn
-    {γ : ℝ → sphericalPendulumPhaseSpace} {s : Set ℝ} {A : ℝ → ℝ} {t : ℝ}
+/-- Along a motion of the spherical pendulum, at a time `t` off the poles, the horizontal direction
+`(q₁ + q₂ i) / √(1 - q₃²)` turns with angular velocity `J / (1 - q₃²)`: its derivative at `t` is
+its value times `J i / (1 - q₃²)`. -/
+private theorem hasDerivWithinAt_div_sqrt_of_isMIntegralCurveOn
+    {γ : ℝ → sphericalPendulumPhaseSpace} {s : Set ℝ} {t : ℝ}
     (hγ : IsMIntegralCurveOn γ (sphericalPendulumSymplecticForm.hamiltonianVectorField
       fun y ↦ sphericalPendulumHamiltonian y) s) (ht : t ∈ s)
-    (hA : HasDerivAt A ((sphericalPendulumEnergyMomentum (γ t)).2 /
-      (1 - (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2)) t)
     (hz : (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2 < 1) :
-    HasDerivWithinAt (fun t ↦ exp (-(A t : ℂ) * I) *
-      ((((γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 0 : ℂ) +
+    HasDerivWithinAt (fun t ↦
+      (((γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 0 : ℂ) +
         (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 1 * I) /
-        (√(1 - (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2) : ℂ)))
-      0 s t := by
+        (√(1 - (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2) : ℂ))
+      (((((sphericalPendulumEnergyMomentum (γ t)).2 /
+          (1 - (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2) : ℝ) : ℂ) * I) •
+        ((((γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 0 : ℂ) +
+          (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 1 * I) /
+          (√(1 - (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2) : ℂ)))
+      s t := by
   have hz1 : 0 < 1 - (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2 :=
     sub_pos.2 hz
-  have hq := hasDerivWithinAt_horizontal ((ContinuousLinearMap.fst ℝ _ _).hasFDerivAt
-    |>.comp_hasDerivWithinAt t (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht))
+  have hq := ((ContinuousLinearMap.fst ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t
+    (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)).ofReal_apply_add_ofReal_apply_mul_I
+      0 1
   have hr := ((((hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum hγ
     ht).pow 2).const_sub 1).sqrt hz1.ne').ofReal_comp
-  have he := (hA.ofReal_comp.neg.mul_const I).cexp
   have hρ0 := (Real.sqrt_pos.2 hz1).ne'
-  refine (he.hasDerivWithinAt.mul (hq.div hr (ofReal_ne_zero.2 hρ0))).congr_deriv ?_
+  refine (hq.div hr (ofReal_ne_zero.2 hρ0)).congr_deriv ?_
   have key := one_sub_sq_mul_horizontal_snd (γ t).2
   have hρ := Real.sq_sqrt hz1.le
-  simp only [Function.comp_apply, ContinuousLinearMap.coe_fst', Pi.div_apply, Pi.neg_apply,
-    Pi.pow_apply, sphericalPendulumVectorField_def] at key ⊢
-  generalize exp (-(A t : ℂ) * I) = e
+  simp only [Function.comp_apply, ContinuousLinearMap.coe_fst', Pi.pow_apply,
+    sphericalPendulumVectorField_def, smul_eq_mul] at key ⊢
   generalize (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) = y at key hρ hρ0 ⊢
   generalize √(1 - y.1 2 ^ 2) = ρ at hρ hρ0 ⊢
   have hρc : (ρ : ℂ) ^ 2 = 1 - (y.1 2 : ℂ) ^ 2 := by exact_mod_cast hρ
@@ -217,9 +185,9 @@ private theorem hasDerivWithinAt_exp_mul_div_sqrt_of_isMIntegralCurveOn
   have hρ0c : (ρ : ℂ) ≠ 0 := ofReal_ne_zero.2 hρ0
   push_cast at key ⊢
   field_simp
-  -- With `s = 1 - q₃²`, `Q = q₁ + q₂ i` and `P = p₁ + p₂ i`, the numerator is
+  -- With `s = 1 - q₃²`, `Q = q₁ + q₂ i` and `P = p₁ + p₂ i`, the difference of the two sides is
   -- `ρ² (s P - (-q₃ p₃ + J i) Q) + q₃ p₃ Q (s - ρ²)`, which vanishes by `key` and `ρ² = s`.
-  linear_combination (e * ρ ^ 2) * key - (e * y.1 2 * y.2 2 * (y.1 0 + y.1 1 * I)) * hρc
+  linear_combination (ρ : ℂ) ^ 2 * key - (y.1 2 * y.2 2 * (y.1 0 + y.1 1 * I) : ℂ) * hρc
 
 /-- **The azimuth of the spherical pendulum turns with angular velocity `J / (1 - q₃²)`.** Let a
 motion of the spherical pendulum on `[t₁, t₂]` have vertical angular momentum `j` and stay off the
@@ -264,17 +232,17 @@ theorem div_sqrt_eq_exp_integral_mul_I_mul_of_isMIntegralCurveOn_sphericalPendul
     intervalIntegral.integral_congr fun u hu ↦ by
       rw [uIcc_of_le ht] at hu
       simp only [ω, hcu u hu]
-  -- Undoing the rotation by the angle `A` gives a constant point of the unit circle.
   have hA (t : ℝ) (ht' : t ∈ Icc t₁ t₂) : HasDerivAt A ((sphericalPendulumEnergyMomentum
       (γ t)).2 / (1 - (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 ^ 2)) t := by
     convert (hωc.integral_hasStrictDerivAt t₁ t).hasDerivAt using 1
     simp only [ω, hcu t ht', hJ t ht', x]
-  have h := isPreconnected_Icc.eq_of_hasDerivWithinAt_zero (fun t ht' ↦
-    hasDerivWithinAt_exp_mul_div_sqrt_of_isMIntegralCurveOn (A := A) hγ ht' (hA t ht')
-      (hz t ht')) (right_mem_Icc.2 ht) (left_mem_Icc.2 ht)
-  simp only [A, intervalIntegral.integral_same, ofReal_zero, neg_zero, zero_mul, exp_zero,
-    one_mul] at h
-  rw [← h, ← mul_assoc, ← exp_add, ← hA₂, neg_mul, add_neg_cancel, exp_zero, one_mul]
+  -- The horizontal direction turns with angular velocity `A'`, so it is rotated by `A t₂ - A t₁`.
+  have h := isPreconnected_Icc.eq_exp_sub_smul_of_hasDerivWithinAt (A := fun t ↦ (A t : ℂ) * I)
+    (fun t ht' ↦ ((hA t ht').ofReal_comp.mul_const I).hasDerivWithinAt)
+    (fun t ht' ↦ hasDerivWithinAt_div_sqrt_of_isMIntegralCurveOn hγ ht' (hz t ht'))
+    (left_mem_Icc.2 ht) (right_mem_Icc.2 ht)
+  rwa [smul_eq_mul, ← sub_mul, ← ofReal_sub, hA₂, show A t₁ = 0 from intervalIntegral.integral_same,
+    sub_zero] at h
 
 /-- Along a motion of the spherical pendulum on a preconnected set of times, with nonzero vertical
 angular momentum at one time, the pendulum stays off the poles: `q₃² < 1`. -/
