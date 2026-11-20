@@ -63,6 +63,8 @@ in a trivialization have locally constant determinant sign.
   bases of the fibres give a continuous map to the cover.
 * `TauCeti.VectorBundleOrientationCover.exists_section_of_isClopen`: over a preconnected base, a
   nonempty proper clopen subset of the cover is the image of a continuous section.
+* `TauCeti.VectorBundleOrientationCover.mem_sheet_of_forall_proj_mem_baseSet`: a path in the
+  cover over the base set of a trivialization stays in the sheet through its starting point.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`: a bundle is orientable if and
   only if its orientation double cover has a continuous section.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_homeomorph`: a bundle is orientable if
@@ -463,6 +465,30 @@ theorem exists_section_of_isClopen [PreconnectedSpace B] (hι : Fintype.card ι 
     rwa [mem_preimage, hsunique q hqC]
   rw [hpre]
   exact (isCoveringMap_proj (F := F) (E := E) hι).isOpenMap _ (hV.inter hC.isOpen)
+
+/-- **Paths over a trivializing set stay in a sheet**: a path in the orientation double cover over
+the base set of a trivialization `e` of the atlas, starting in the sheet read as `ω`, stays in that
+sheet, provided `ι` has cardinality the rank of the bundle. -/
+theorem mem_sheet_of_forall_proj_mem_baseSet (hι : Fintype.card ι = finrank ℝ F)
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+    (ω : Orientation ℝ F ι) {Γ : C(unitInterval, VectorBundleOrientationCover F E ι)}
+    (hΓ : ∀ t, (Γ t).proj ∈ e.baseSet) (h₀ : Γ 0 ∈ sheet e ω) (t : unitInterval) :
+    Γ t ∈ sheet e ω := by
+  -- Over the base set the cover is the disjoint union of the open sheets read as `ω` and `-ω`,
+  -- so the preimage of the sheet read as `ω` is clopen.
+  have hcompl : (Γ ⁻¹' sheet e ω)ᶜ = Γ ⁻¹' sheet e (-ω) := by
+    ext u
+    simp only [mem_compl_iff, mem_preimage, mem_sheet_iff]
+    refine ⟨fun h ↦ ⟨hΓ u, ?_⟩, fun ⟨_, h⟩ ⟨_, h'⟩ ↦ Module.Ray.ne_neg_self ω (h'.symm.trans h)⟩
+    rcases Orientation.eq_or_eq_neg (e.mapOrientation ι (hΓ u) (Γ u).orientation) ω
+      (Nat.card_eq_fintype_card.trans hι) with h' | h'
+    · exact absurd ⟨hΓ u, h'⟩ h
+    · exact h'
+  have hclopen : IsClopen (Γ ⁻¹' sheet e ω) :=
+    ⟨by rw [← isOpen_compl_iff, hcompl]
+        exact (isOpen_sheet hι e (-ω)).preimage Γ.continuous,
+      (isOpen_sheet hι e ω).preimage Γ.continuous⟩
+  exact Set.eq_univ_iff_forall.1 (hclopen.eq_univ ⟨0, h₀⟩) t
 
 end VectorBundleOrientationCover
 
