@@ -24,31 +24,33 @@ this file derives the consequences for pushforwards of measures `μ` restricted 
 * If `J` is almost everywhere measurable and almost nowhere zero on `S`, then `T` pushes `μ ≪ ρ`
   restricted to `S` to a measure absolutely continuous with respect to `σ`.
 * If `T` is injective on `S`, maps measurable subsets of `S` to measurable sets, and pushes `μ`
-  restricted to `S` to a measure `T₊ (μ|S) ≪ σ`, then the Jacobian equation holds as an identity
+  restricted to `S` to a measure `T₊ (μ|S) ≪ σ` with a Lebesgue decomposition with respect to `σ`
+  (as when `μ` is s-finite and `σ` σ-finite), then the Jacobian equation holds as an identity
   of measures: `μ|S = ρ.withDensity (S.indicator fun x => J x * d(T₊ (μ|S))/dσ (T x))`. When `ρ`
   is σ-finite and this density is almost everywhere measurable, it follows that
   `dμ/dρ (x) = J x * d(T₊ (μ|S))/dσ (T x)` for `ρ`-almost every `x ∈ S`; the identity says
   nothing about `J` on `ρ`-null sets.
-* If moreover `T` is measurable and `J` is almost everywhere measurable on `S` (it is then almost
-  everywhere finite there, as `σ` is σ-finite), integrals of a function `Φ` with `Φ 0 = 0` of the
+* If moreover `T` is measurable, `ρ` and `σ` are σ-finite, `μ` has a Lebesgue decomposition with
+  respect to `ρ`, and `J` is almost everywhere measurable on `S` (it is then almost everywhere
+  finite there), integrals of a function `Φ` with `Φ 0 = 0` of the
   density of the pushforward are integrals over `S`:
   `∫ Φ (d(T₊ (μ|S))/dσ) dσ = ∫_S J x * Φ (dμ/dρ (x) / J x) dρ`.
 
 ## Main statements
 
-* `TauCeti.map_restrict_absolutelyContinuous_of_withDensity_image_eq`: the pushforward of an
-  absolutely continuous measure is absolutely continuous;
-* `TauCeti.restrict_eq_withDensity_indicator_rnDeriv_map_restrict`: the Jacobian equation, as an
-  identity of measures;
-* `TauCeti.lintegral_comp_rnDeriv_map_restrict`: integrals of functions of the density of the
-  pushforward, as integrals over the source.
+* `MeasureTheory.Measure.map_restrict_absolutelyContinuous_of_withDensity_image_eq`: the
+  pushforward of an absolutely continuous measure is absolutely continuous;
+* `MeasureTheory.Measure.restrict_eq_withDensity_indicator_rnDeriv_map_restrict`: the Jacobian
+  equation, as an identity of measures;
+* `MeasureTheory.Measure.lintegral_comp_rnDeriv_map_restrict`: integrals of functions of the
+  density of the pushforward, as integrals over the source.
 -/
 
 public section
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
-open MeasureTheory Measure Set
+open Set
 open scoped ENNReal
 
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] (ρ : Measure X) (σ : Measure Y)
@@ -96,15 +98,15 @@ theorem map_restrict_absolutelyContinuous_of_withDensity_image_eq {T : X → Y} 
   exact measure_mono_null (fun x hx => (em (x ∈ N)).symm.imp (fun h => ⟨hx, h⟩) (⟨·, hx.2⟩))
     (measure_union_null (hμ hρs) hN)
 
-variable [SigmaFinite σ]
-
 /-- Under the change of variables of `map_restrict_absolutelyContinuous_of_withDensity_image_eq`,
 with `T` injective on `S` and sending measurable subsets of `S` to measurable sets, if `T` pushes
-`μ` restricted to `S` to a measure `T₊ (μ|S) ≪ σ`, then `μ` restricted to `S` is `ρ` with density
+`μ` restricted to `S` to a measure `T₊ (μ|S) ≪ σ` with a Lebesgue decomposition with respect to `σ`,
+then `μ` restricted to `S` is `ρ` with density
 `J x * d(T₊ (μ|S))/dσ (T x)` on `S` (and `0` off `S`). This is an identity of measures: it
 determines the density, hence `dμ/dρ`, only `ρ`-almost everywhere. -/
 theorem restrict_eq_withDensity_indicator_rnDeriv_map_restrict {T : X → Y} {S : Set X}
-    {μ : Measure X} [SFinite μ] (hT : AEMeasurable T (μ.restrict S)) (hSm : MeasurableSet S)
+    {μ : Measure X} [HaveLebesgueDecomposition ((μ.restrict S).map T) σ]
+    (hT : AEMeasurable T (μ.restrict S)) (hSm : MeasurableSet S)
     (hinj : InjOn T S) (himage : ∀ s, MeasurableSet s → s ⊆ S → MeasurableSet (T '' s))
     {J : X → ℝ≥0∞}
     (hcov : ∀ s, MeasurableSet s → s ⊆ S → ∀ g : Y → ℝ≥0∞,
@@ -125,17 +127,19 @@ theorem restrict_eq_withDensity_indicator_rnDeriv_map_restrict {T : X → Y} {S 
     _ = _ := by rw [withDensity_apply _ hs, setLIntegral_indicator hSm, inter_comm S s]
 
 /-- Under the hypotheses of `restrict_eq_withDensity_indicator_rnDeriv_map_restrict`, with `T`
-measurable and `J` almost everywhere measurable on `S`, integrals of a function `Φ` with `Φ 0 = 0`
-of the density of `T₊ (μ|S)` are integrals over `S`:
+measurable, `ρ` and `σ` σ-finite, `μ` with a Lebesgue decomposition with respect to `ρ`, and `J`
+almost everywhere measurable on `S`, integrals of a function `Φ` with `Φ 0 = 0` of the density of
+`T₊ (μ|S)` are integrals over `S`:
 `∫ Φ (d(T₊ (μ|S))/dσ) dσ = ∫_S J x * Φ (dμ/dρ (x) / J x) dρ`. -/
-theorem lintegral_comp_rnDeriv_map_restrict [SigmaFinite ρ] {T : X → Y} (hT : Measurable T)
-    {S : Set X} (hSm : MeasurableSet S) (hinj : InjOn T S)
+theorem lintegral_comp_rnDeriv_map_restrict [SigmaFinite ρ] [SigmaFinite σ] {T : X → Y}
+    (hT : Measurable T) {S : Set X} (hSm : MeasurableSet S) (hinj : InjOn T S)
     (himage : ∀ s, MeasurableSet s → s ⊆ S → MeasurableSet (T '' s)) {J : X → ℝ≥0∞}
     (hJm : AEMeasurable J (ρ.restrict S))
     (hcov : ∀ s, MeasurableSet s → s ⊆ S → ∀ g : Y → ℝ≥0∞,
       σ.withDensity g (T '' s) = ∫⁻ x in s, J x * g (T x) ∂ρ)
-    {μ : Measure X} [SFinite μ] (hac : (μ.restrict S).map T ≪ σ) {Φ : ℝ≥0∞ → ℝ≥0∞}
-    (hΦ : Φ 0 = 0) :
+    {μ : Measure X} [HaveLebesgueDecomposition μ ρ]
+    [HaveLebesgueDecomposition ((μ.restrict S).map T) σ] (hac : (μ.restrict S).map T ≪ σ)
+    {Φ : ℝ≥0∞ → ℝ≥0∞} (hΦ : Φ 0 = 0) :
     ∫⁻ y, Φ (((μ.restrict S).map T).rnDeriv σ y) ∂σ =
       ∫⁻ x in S, J x * Φ (μ.rnDeriv ρ x / J x) ∂ρ := by
   set ν := (μ.restrict S).map T
@@ -189,4 +193,4 @@ theorem lintegral_comp_rnDeriv_map_restrict [SigmaFinite ρ] {T : X → Y} (hT :
         exact hcov S hSm subset_rfl _
     _ = _ := lintegral_congr_ae hJac
 
-end TauCeti
+end MeasureTheory.Measure
