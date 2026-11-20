@@ -178,13 +178,17 @@ variable [Finite ι] [Finite ι']
 
 section LocalFactor
 
-omit [AdmissibleAbsValues K]
+variable {F : Type*}
 
-variable {F : Type*} [FunLike F K ℝ] [MonoidWithZeroHomClass F K ℝ] [NonnegHomClass F K ℝ]
+section GroupWithZero
+
+variable {G₀ : Type*} [GroupWithZero G₀] [FunLike F G₀ ℝ] [MonoidWithZeroHomClass F G₀ ℝ]
+  [NonnegHomClass F G₀ ℝ]
 
 /-- The local sup norm `⨆ i, v (x i)` of a finite tuple is positive exactly when the tuple is
 nonzero. -/
-lemma iSup_apply_pos_iff {v : F} {x : ι → K} : 0 < ⨆ i, v (x i) ↔ x ≠ 0 := by
+@[simp]
+lemma iSup_apply_pos_iff {v : F} {x : ι → G₀} : 0 < ⨆ i, v (x i) ↔ x ≠ 0 := by
   refine ⟨?_, fun hx ↦ ?_⟩
   · rintro h rfl
     simp at h
@@ -192,15 +196,20 @@ lemma iSup_apply_pos_iff {v : F} {x : ι → K} : 0 < ⨆ i, v (x i) ↔ x ≠ 0
   exact ((apply_nonneg v _).lt_of_ne' ((map_ne_zero v).mpr hi)).trans_le
     (Finite.le_ciSup_of_le i le_rfl)
 
-omit [NonnegHomClass F K ℝ] in
+end GroupWithZero
+
+variable {M₀ : Type*} [MulZeroOneClass M₀] [FunLike F M₀ ℝ] [MonoidWithZeroHomClass F M₀ ℝ]
+  [NonnegHomClass F M₀ ℝ]
+
+omit [NonnegHomClass F M₀ ℝ] in
 /-- The local sup norm of a tuple with a coordinate `1` appended is at least `1`. -/
-lemma one_le_iSup_option_elim (v : F) (x : ι → K) : 1 ≤ ⨆ o : Option ι, v (o.elim 1 x) :=
+lemma one_le_iSup_option_elim (v : F) (x : ι → M₀) : 1 ≤ ⨆ o : Option ι, v (o.elim 1 x) :=
   Finite.le_ciSup_of_le none (by simp)
 
-omit [NonnegHomClass F K ℝ] in
+omit [NonnegHomClass F M₀ ℝ] in
 /-- The local factor of the affine height: the local sup norm of a tuple with a coordinate `1`
 appended is `max (⨆ i, v (x i)) 1`. -/
-lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
+lemma iSup_option_elim_eq_max (v : F) (x : ι → M₀) :
     ⨆ o : Option ι, v (o.elim 1 x) = max (⨆ i, v (x i)) 1 := by
   refine le_antisymm (ciSup_le fun o ↦ ?_) (max_le ?_ (one_le_iSup_option_elim v x))
   · cases o with
@@ -213,7 +222,7 @@ lemma iSup_option_elim_eq_max (v : F) (x : ι → K) :
 omit [Finite ι] in
 /-- The local factor of the affine height of a scalar multiple `c • x` is at most
 `max (v c * ⨆ i, v (x i)) 1`. -/
-lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
+lemma iSup_option_elim_smul_le (v : F) (c : M₀) (x : ι → M₀) :
     ⨆ o : Option ι, v (o.elim 1 (c • x)) ≤ max (v c * ⨆ i, v (x i)) 1 := by
   rw [Real.mul_iSup_of_nonneg (apply_nonneg v c)]
   by_cases hb : BddAbove (Set.range fun o : Option ι ↦ v (o.elim 1 (c • x)))
@@ -229,7 +238,7 @@ lemma iSup_option_elim_smul_le (v : F) (c : K) (x : ι → K) :
 
 /-- A logarithmic bound `m * log (v c) + m * log (⨆ i, v (x i)) ≤ B` with `0 ≤ B` bounds `m`
 times the logarithm of the local factor of the affine height of `c • x`. -/
-lemma mul_log_iSup_option_elim_smul_le (v : F) {x : ι → K} {c : K} {m B : ℝ} (hB : 0 ≤ B)
+lemma mul_log_iSup_option_elim_smul_le (v : F) {x : ι → M₀} {c : M₀} {m B : ℝ} (hB : 0 ≤ B)
     (h : m * log (v c) + m * log (⨆ i, v (x i)) ≤ B) :
     m * log (⨆ o : Option ι, v (o.elim 1 (c • x))) ≤ B := by
   have hA := one_le_iSup_option_elim v (c • x)
