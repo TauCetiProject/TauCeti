@@ -94,7 +94,7 @@ the components of `z`. -/
 theorem equivHomotopy_symm_hom {φ₁ φ₂ : F ⟶ G}
     (z : { z : Cochain F G (-1) // Cochain.ofHom φ₁ = δ (-1) 0 z + Cochain.ofHom φ₂ })
     (p q : ℤ) (hpq : p + -1 = q) :
-    ((Cochain.equivHomotopy φ₁ φ₂).symm z).hom p q = z.1.v p q hpq :=
+    ((Cochain.equivHomotopy φ₁ φ₂).symm z).hom p q = z.val.v p q hpq :=
   -- The components of `(Cochain.equivHomotopy φ₁ φ₂).symm z` are defined by cases on `p + -1 = q`.
   dite_eq_left hpq
 

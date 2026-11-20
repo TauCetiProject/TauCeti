@@ -17,6 +17,8 @@ public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSi
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Topology.Category.TopCat.Action
 
+import TauCeti.Topology.Homotopy.Contractible
+
 /-!
 # The topological simplices and the singular simplices of a space
 
@@ -67,7 +69,7 @@ instance metrizableSpace (n : SimplexCategory) :
 /-- Every topological simplex is contractible, being a universe lift of a standard simplex on a
 finite nonempty type. -/
 instance contractibleSpace (n : SimplexCategory) : ContractibleSpace (toTop.{u}.obj n) :=
-  (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).contractibleSpace
+  inferInstanceAs (ContractibleSpace (ULift (StdSimplex ℝ (Fin (n.len + 1)))))
 
 /-- The geometric realization `|Δ[n]|` of every standard simplex is contractible, being
 homeomorphic to a standard simplex on a finite nonempty type. -/
@@ -125,7 +127,8 @@ theorem mem_toTopInterior_iff_support_eq_univ {n : SimplexCategory} {t : toTop.{
 @[simp] theorem toTopInterior_zero : toTopInterior.{u} ⦋0⦌ = Set.univ :=
   Set.eq_univ_of_forall fun t ↦ mem_toTopInterior_iff_support_eq_univ.mpr <|
     let ⟨j, hj⟩ := t.down.support_weights_nonempty
-    Finset.eq_univ_of_forall fun i ↦ (Fin.ext (by have := i.2; have := j.2; simp at *) : j = i) ▸ hj
+    Finset.eq_univ_of_forall fun i ↦
+      (Fin.ext (by have := i.isLt; have := j.isLt; simp at *) : j = i) ▸ hj
 
 /-- Every epimorphism in `SimplexCategory` carries interior points to interior points. -/
 theorem toTop_map_mem_toTopInterior_of_epi {m n : SimplexCategory} (f : m ⟶ n) [Epi f]

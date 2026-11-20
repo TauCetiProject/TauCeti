@@ -139,7 +139,7 @@ class Amenable : Prop where
 variable (G) in
 /-- A topological group is amenable exactly when `UCB G` carries a left-invariant mean. -/
 theorem amenable_iff : Amenable G ↔ ∃ m : Mean G, m.IsLeftInvariant :=
-  ⟨fun h => h.1, fun h => ⟨h⟩⟩
+  ⟨fun h => h.exists_isLeftInvariant, fun h => ⟨h⟩⟩
 
 /-- The target of a continuous homomorphism with dense range from an amenable topological group
 is amenable; in particular, so is the image under a surjective continuous homomorphism. -/

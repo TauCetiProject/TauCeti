@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Interpolation.WeightedSequence
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Distribution.TemperedDistribution.DyadicSymbol
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -44,7 +45,9 @@ functions, whose real interpolation spaces are known
 
 ## Main declarations
 
-* `TauCeti.CompatibleCouple.besselPotentialSpace E F p s₀ s₁`: the couple `(H^{s₀,p}, H^{s₁,p})`.
+* `TauCeti.CompatibleCouple.besselPotentialSpace E F p s₀ s₁`: the couple `(H^{s₀,p}, H^{s₁,p})`,
+  with `TauCeti.CompatibleCouple.besselPotentialSpaceSumToMin`, the inclusion of its sum space
+  into `H^{min s₀ s₁, p}`.
 * `TauCeti.CompatibleCouple.besselPotentialSpaceKMethodEquiv`: the isomorphism
   `(H^{s₀,p}, H^{s₁,p})_{θ,q} ≃L[ℂ] B^{s_θ}_{p,q}`, which keeps the underlying tempered
   distribution.
@@ -101,6 +104,43 @@ theorem besselPotentialSpace_embed₀_apply (u : H^{s₀, p}(E, F)) :
 theorem besselPotentialSpace_embed₁_apply (u : H^{s₁, p}(E, F)) :
     (besselPotentialSpace E F p s₀ s₁).embed₁ u = u.toDistr :=
   toDistrCLM_apply u
+
+/-- A Schwartz function has the same class in the sum space `H^{s₀,p} + H^{s₁,p}` whether it is
+read in `H^{s₀,p}` or in `H^{s₁,p}`. -/
+theorem besselPotentialSpace_fstToSum_toBesselPotentialSpaceCLM (f : 𝓢(E, F)) :
+    (besselPotentialSpace E F p s₀ s₁).fstToSum (SchwartzMap.toBesselPotentialSpaceCLM s₀ p f) =
+      (besselPotentialSpace E F p s₀ s₁).sndToSum (SchwartzMap.toBesselPotentialSpaceCLM s₁ p f) :=
+  (besselPotentialSpace E F p s₀ s₁).sumSpace_ext <| by
+    simp [SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+
+variable (E F p s₀ s₁) in
+/-- The sum space `H^{s₀,p} + H^{s₁,p}` lies in `H^{min s₀ s₁, p}`: the map induced by the
+inclusions of `H^{s₀,p}` and `H^{s₁,p}` into `H^{min s₀ s₁, p}`. It keeps the underlying tempered
+distribution (`TauCeti.CompatibleCouple.toDistr_besselPotentialSpaceSumToMin`). -/
+def besselPotentialSpaceSumToMin :
+    (besselPotentialSpace E F p s₀ s₁).SumSpace →L[ℂ] H^{min s₀ s₁, p}(E, F) :=
+  (besselPotentialSpace E F p s₀ s₁).sumLift (inclusion (min_le_left s₀ s₁))
+    (inclusion (min_le_right s₀ s₁)) fun x ↦ BesselPotentialSpace.ext <| by
+      simpa [toDistr_inclusion] using (besselPotentialSpace E F p s₀ s₁).embed₀_interFst x
+
+@[simp]
+theorem besselPotentialSpaceSumToMin_fstToSum (x : H^{s₀, p}(E, F)) :
+    besselPotentialSpaceSumToMin E F p s₀ s₁ ((besselPotentialSpace E F p s₀ s₁).fstToSum x) =
+      inclusion (min_le_left s₀ s₁) x :=
+  sumLift_fstToSum _ _ _ _ x
+
+@[simp]
+theorem besselPotentialSpaceSumToMin_sndToSum (x : H^{s₁, p}(E, F)) :
+    besselPotentialSpaceSumToMin E F p s₀ s₁ ((besselPotentialSpace E F p s₀ s₁).sndToSum x) =
+      inclusion (min_le_right s₀ s₁) x :=
+  sumLift_sndToSum _ _ _ _ x
+
+@[simp]
+theorem toDistr_besselPotentialSpaceSumToMin (w : (besselPotentialSpace E F p s₀ s₁).SumSpace) :
+    (besselPotentialSpaceSumToMin E F p s₀ s₁ w).toDistr =
+      (besselPotentialSpace E F p s₀ s₁).sumSpaceEmbed w := by
+  obtain ⟨x₀, x₁, rfl⟩ := (besselPotentialSpace E F p s₀ s₁).exists_fstToSum_add_sndToSum_eq w
+  simp [toDistr_inclusion]
 
 end Couple
 
@@ -406,11 +446,13 @@ isomorphism keeps the underlying tempered distribution
 def besselPotentialSpaceKMethodEquiv :
     (besselPotentialSpace E F p s₀ s₁).KMethodSpace θ q ≃L[ℂ]
       BesovSpace F φ ((1 - θ) * s₀ + θ * s₁) p q :=
-  ContinuousLinearEquiv.equivOfInverse (kMethodToBesov φ hs hθ) (besovToKMethod φ hs hθ)
-    (fun u ↦ KMethodSpace.ext <| sumSpace_ext _ <| by
-      rw [sumSpaceEmbed_toSumₗ_besovToKMethod, toDistr_kMethodToBesov])
-    (fun v ↦ BesovSpace.ext <| by
-      rw [toDistr_kMethodToBesov, sumSpaceEmbed_toSumₗ_besovToKMethod])
+  ContinuousLinearEquiv.ofContinuousLinearMap (kMethodToBesov φ hs hθ) (besovToKMethod φ hs hθ)
+    (ContinuousLinearMap.ext fun v ↦ BesovSpace.ext <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        toDistr_kMethodToBesov, sumSpaceEmbed_toSumₗ_besovToKMethod])
+    (ContinuousLinearMap.ext fun u ↦ KMethodSpace.ext <| sumSpace_ext _ <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply,
+        sumSpaceEmbed_toSumₗ_besovToKMethod, toDistr_kMethodToBesov])
 
 @[simp]
 theorem toDistr_besselPotentialSpaceKMethodEquiv_apply

@@ -71,16 +71,16 @@ section NormalForm
 
 /-- The point of `X.geometricRealization` represented by a normal form. -/
 def NormalForm.toRealization (c : NormalForm X) : X.geometricRealization :=
-  ι X c.dim (c.simplex.1, c.point.1)
+  ι X c.dim (c.simplex.val, c.point.val)
 
 /-- `NormalForm.toRealization` applies the characteristic map in the normal form's dimension. -/
 theorem NormalForm.toRealization_def (c : NormalForm X) :
-    c.toRealization X = ι X c.dim (c.simplex.1, c.point.1) := (rfl)
+    c.toRealization X = ι X c.dim (c.simplex.val, c.point.val) := (rfl)
 
 private def IsNormalForm {n : ℕ} (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) (c : NormalForm X) : Prop :=
   ∃ (k : ℕ) (μ : ⦋k⦌ ⟶ ⦋n⦌) (_ : Mono μ) (u : toTop.{u}.obj ⦋k⦌)
     (_ : u ∈ toTopInterior.{u} ⦋k⦌) (π : ⦋k⦌ ⟶ ⦋c.dim⦌) (_ : Epi π),
-    toTop.map μ u = t ∧ X.map μ.op x = X.map π.op c.simplex.1 ∧ toTop.map π u = c.point.1
+    toTop.map μ u = t ∧ X.map μ.op x = X.map π.op c.simplex.val ∧ toTop.map π u = c.point.val
 
 private theorem exists_isNormalForm {n : ℕ} (x : X _⦋n⦌) (t : toTop.{u}.obj ⦋n⦌) :
     ∃ c : NormalForm X, IsNormalForm X x t c := by
@@ -103,8 +103,9 @@ private theorem IsNormalForm.unique {X : SimplicialObject TopCat.{u}} {n : ℕ} 
   obtain rfl : π₁ = π₂ := SSet.unique_nonDegenerate_map (X := S) _ π₁ y₁ hx₁ π₂ y₁ hx₂
   exact congrArg (NormalForm.mk d₁ y₁) (Subtype.ext (hp₁.symm.trans hp₂))
 
-private theorem IsNormalForm.self (c : NormalForm X) : IsNormalForm X c.simplex.1 c.point.1 c :=
-  ⟨c.dim, 𝟙 ⦋c.dim⦌, inferInstance, c.point.1, c.point.2, 𝟙 ⦋c.dim⦌, inferInstance,
+private theorem IsNormalForm.self (c : NormalForm X) : IsNormalForm X c.simplex.val c.point.val c :=
+  ⟨c.dim, 𝟙 ⦋c.dim⦌, inferInstance, c.point.val, c.point.property,
+    𝟙 ⦋c.dim⦌, inferInstance,
     by rw [toTop.map_id, TopCat.id_app], rfl, by rw [toTop.map_id, TopCat.id_app]⟩
 
 private theorem IsNormalForm.of_map {X : SimplicialObject TopCat.{u}} {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌)
@@ -135,7 +136,7 @@ private theorem isNormalForm_normalForm_ι {n : ℕ} (x : X _⦋n⦌) (t : toTop
 
 @[simp] theorem normalForm_toRealization (c : NormalForm X) :
     normalForm X (c.toRealization X) = c :=
-  (isNormalForm_normalForm_ι X c.simplex.1 c.point.1).unique (IsNormalForm.self X c)
+  (isNormalForm_normalForm_ι X c.simplex.val c.point.val).unique (IsNormalForm.self X c)
 
 /-- Evaluating `normalForm` on a nondegenerate simplex and an interior point recovers that normal
 form. -/
@@ -166,8 +167,9 @@ private abbrev mapNormalForm (hinj : ∀ n : ℕ, Function.Injective (φ.app (op
   have : ∀ Δ : SimplexCategoryᵒᵖ, Mono ((Functor.whiskerRight φ (forget TopCat)).app Δ) :=
     fun ⟨⟨n⟩⟩ ↦ (CategoryTheory.mono_iff_injective _).mpr (hinj n)
   have : Mono (Functor.whiskerRight φ (forget TopCat)) := NatTrans.mono_of_mono_app _
-  ⟨c.dim, ⟨φ.app (op ⦋c.dim⦌) c.simplex.1,
-    (SSet.nonDegenerate_iff_of_mono (Functor.whiskerRight φ (forget TopCat)) _).mpr c.simplex.2⟩,
+  ⟨c.dim, ⟨φ.app (op ⦋c.dim⦌) c.simplex.val,
+    (SSet.nonDegenerate_iff_of_mono (Functor.whiskerRight φ (forget TopCat)) _).mpr
+      c.simplex.property⟩,
     c.point⟩
 
 private theorem normalForm_map (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)))
@@ -195,15 +197,15 @@ private theorem preimage_ι_image_map_eq_iUnion
     (hinj : ∀ n : ℕ, Function.Injective (φ.app (op ⦋n⦌)))
     (W : Set Y.geometricRealization) (n : ℕ) :
     ι X n ⁻¹' (map φ '' W) =
-      ⋃ (m : Fin (n + 1)) (μ : ⦋m.1⦌ ⟶ ⦋n⦌) (_ : Mono μ),
+      ⋃ (m : Fin (n + 1)) (μ : ⦋m.val⦌ ⟶ ⦋n⦌) (_ : Mono μ),
         Prod.map id (toTop.map μ) '' (Prod.map (X.map μ.op) id ⁻¹'
-          (Prod.map (φ.app (op ⦋m.1⦌)) id '' (ι Y m.1 ⁻¹' W))) := by
+          (Prod.map (φ.app (op ⦋m.val⦌)) id '' (ι Y m.val ⁻¹' W))) := by
   ext ⟨x, t⟩; simp only [mem_iUnion, mem_preimage, mem_image]; constructor
   · rintro ⟨q, hq, hqx⟩
     have hnf : normalForm X (ι X n (x, t)) = mapNormalForm hinj (normalForm Y q) :=
       hqx ▸ normalForm_map hinj q
     rcases hnf ▸ isNormalForm_normalForm_ι X x t with ⟨k, μ, hμ, u, _, π, _, ht, hx, hp⟩
-    let y : Y _⦋k⦌ := Y.map π.op (normalForm Y q).simplex.1
+    let y : Y _⦋k⦌ := Y.map π.op (normalForm Y q).simplex.val
     have hiy : ι Y k (y, u) = q := (ι_map Y π _ u).trans (hp.symm ▸ toRealization_normalForm Y q)
     exact ⟨⟨k, Nat.lt_succ_of_le (le_of_mono μ)⟩, μ, hμ, (x, u),
       ⟨(y, u), (congrArg (· ∈ W) hiy).mpr hq,
@@ -211,7 +213,7 @@ private theorem preimage_ι_image_map_eq_iUnion
   · rintro ⟨m, μ, _, ⟨_, _⟩, ⟨⟨y, u⟩, hyW, hxy⟩, hxt⟩
     simp only [Prod.map_apply, id_eq, Prod.mk.injEq] at hxy hxt
     obtain ⟨hφy, rfl⟩ := hxy; obtain ⟨rfl, rfl⟩ := hxt
-    exact ⟨ι Y m.1 (y, u), hyW, by rw [map_ι, hφy, ι_map]⟩
+    exact ⟨ι Y m.val (y, u), hyW, by rw [map_ι, hφy, ι_map]⟩
 
 /-- **Closed restriction for thin geometric realization.** Any levelwise closed embedding
 `φ : Y ⟶ X` of simplicial spaces induces a closed embedding `|φ| : |Y| ⟶ |X|`, with no
@@ -225,7 +227,7 @@ theorem isClosedEmbedding_map (hφ : ∀ n : ℕ, IsClosedEmbedding (φ.app (op 
   refine isClosed_iUnion_of_finite fun m ↦ isClosed_iUnion_of_finite fun μ ↦
     isClosed_iUnion_of_finite fun _ ↦ ?_
   exact (IsClosedEmbedding.id.prodMap (isClosedEmbedding_toTop_map_of_mono μ)).isClosedMap _ <|
-    (((hφ m.1).prodMap .id).isClosedMap _ ((isClosed_iff Y).mp hW m.1)).preimage
+    (((hφ m.val).prodMap .id).isClosedMap _ ((isClosed_iff Y).mp hW m.val)).preimage
       (((X.map μ.op).hom.continuous.comp continuous_fst).prodMk continuous_snd)
 
 end MapEmbedding
@@ -233,8 +235,8 @@ end MapEmbedding
 section Skeleton
 
 private inductive SkeletonRel (n : ℕ) :
-    (Σ k : {k : ℕ // k ≤ n}, X _⦋k.1⦌ × toTop.{u}.obj ⦋k.1⦌) →
-      (Σ k : {k : ℕ // k ≤ n}, X _⦋k.1⦌ × toTop.{u}.obj ⦋k.1⦌) → Prop where
+    (Σ k : {k : ℕ // k ≤ n}, X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) →
+      (Σ k : {k : ℕ // k ≤ n}, X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) → Prop where
   | mk {l k : ℕ} (hl : l ≤ n) (hk : k ≤ n) (f : ⦋l⦌ ⟶ ⦋k⦌) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋l⦌) :
       SkeletonRel n ⟨⟨l, hl⟩, X.map f.op x, t⟩ ⟨⟨k, hk⟩, x, toTop.map f t⟩
 
@@ -243,13 +245,14 @@ of `Σ k ≤ n, X _⦋k⦌ × Δᵏ` by the simplicial identifications in degree
 def skeleton : ℕ ⥤ TopCat.{u} where
   obj n := TopCat.of (Quot (SkeletonRel X n))
   map {m n} f := TopCat.ofHom
-    { toFun := Quot.lift (fun p ↦ Quot.mk (SkeletonRel X n) ⟨⟨p.1.1, p.1.2.trans (leOfHom f)⟩, p.2⟩)
+    { toFun := Quot.lift
+        (fun p ↦ Quot.mk (SkeletonRel X n) ⟨⟨p.1.val, p.1.property.trans (leOfHom f)⟩, p.2⟩)
         (by rintro _ _ ⟨hl, hk, g, x, t⟩
             exact Quot.sound (SkeletonRel.mk (hl.trans (leOfHom f)) (hk.trans (leOfHom f)) g x t))
       continuous_toFun := continuous_quot_lift _ (continuous_sigma fun k ↦
         continuous_quot_mk.comp (continuous_sigmaMk
-          (σ := fun j : {j : ℕ // j ≤ n} ↦ X _⦋j.1⦌ × toTop.{u}.obj ⦋j.1⦌)
-          (i := ⟨k.1, k.2.trans (leOfHom f)⟩))) }
+          (σ := fun j : {j : ℕ // j ≤ n} ↦ X _⦋j.val⦌ × toTop.{u}.obj ⦋j.val⦌)
+          (i := ⟨k.val, k.property.trans (leOfHom f)⟩))) }
   map_id _ := by ext q; induction q using Quot.ind with | mk _ => rfl
   map_comp _ _ := by ext q; induction q using Quot.ind with | mk _ => rfl
 
@@ -265,12 +268,12 @@ def skeleton.ι (n : ℕ) {k : ℕ} (hk : k ≤ n) : C(X _⦋k⦌ × toTop.{u}.o
 theorem skeleton.ι_jointly_surjective {n : ℕ} (q : (skeleton X).obj n) :
     ∃ (k : ℕ) (hk : k ≤ n) (x : X _⦋k⦌) (t : toTop.{u}.obj ⦋k⦌),
       skeleton.ι X n hk (x, t) = q := by
-  induction q using Quot.ind with | mk p => exact ⟨p.1.1, p.1.2, p.2.1, p.2.2, rfl⟩
+  induction q using Quot.ind with | mk p => exact ⟨p.1.val, p.1.property, p.2.1, p.2.2, rfl⟩
 
 /-- The `n`-skeleton carries the quotient topology from `Σ k : {k // k ≤ n}, X _⦋k⦌ × Δᵏ`. -/
 theorem skeleton.isQuotientMap_sigma (n : ℕ) :
-    IsQuotientMap fun p : Σ k : {k : ℕ // k ≤ n}, X _⦋k.1⦌ × toTop.{u}.obj ⦋k.1⦌ ↦
-      skeleton.ι X n p.1.2 p.2 := isQuotientMap_quot_mk
+    IsQuotientMap fun p : Σ k : {k : ℕ // k ≤ n}, X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌ ↦
+      skeleton.ι X n p.1.property p.2 := isQuotientMap_quot_mk
 
 theorem skeleton.isOpen_iff {n : ℕ} {s : Set ((skeleton X).obj n)} :
     IsOpen s ↔ ∀ (k : ℕ) (hk : k ≤ n), IsOpen (skeleton.ι X n hk ⁻¹' s) := by
@@ -300,9 +303,10 @@ variable (n : ℕ) {Z : Type*} [TopologicalSpace Z]
 /-- Universal property of the `n`-skeleton: continuous maps `X _⦋k⦌ × Δᵏ → Z` (`k ≤ n`) compatible
 with all simplicial operators in degrees at most `n` descend to a continuous map `skₙ |X| → Z`. -/
 def skeleton.desc : C((skeleton X).obj n, Z) where
-  toFun := Quot.lift (fun p ↦ g p.1.1 p.1.2 p.2)
+  toFun := Quot.lift (fun p ↦ g p.1.val p.1.property p.2)
     (by rintro _ _ ⟨hl, hk, f, x, t⟩; exact hg hl hk f x t)
-  continuous_toFun := continuous_quot_lift _ (continuous_sigma fun k ↦ (g k.1 k.2).continuous)
+  continuous_toFun :=
+    continuous_quot_lift _ (continuous_sigma fun k ↦ (g k.val k.property).continuous)
 
 @[simp] theorem skeleton.desc_ι {k : ℕ} (hk : k ≤ n) (p : X _⦋k⦌ × toTop.{u}.obj ⦋k⦌) :
     skeleton.desc X n g hg (skeleton.ι X n hk p) = g k hk p := (rfl)
@@ -334,7 +338,8 @@ def skeleton.toRealization (n : ℕ) : (skeleton X).obj n ⟶ X.geometricRealiza
     (skeleton X).map f ≫ skeleton.toRealization X n = skeleton.toRealization X m := by
   ext k hk x t; simp
 
-instance (n : ℕ) [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.1⦌ × toTop.{u}.obj ⦋k.1⦌)] :
+instance (n : ℕ)
+    [∀ k : {k : ℕ // k ≤ n}, LindelofSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌)] :
     LindelofSpace ((skeleton X).obj n) := Quot.lindelofSpace
 
 /-- The canonical cocone exhibiting `X.geometricRealization` above `skeleton X`. -/
@@ -376,7 +381,8 @@ def isColimitSkeletonCocone : IsColimit (skeletonCocone X) where
 
 private theorem skeleton_ι_eq_normalForm {n k : ℕ} (hk : k ≤ n) (x : X _⦋k⦌)
     (t : toTop.{u}.obj ⦋k⦌) {c : NormalForm X} (hc : IsNormalForm X x t c) :
-    ∃ hd : c.dim ≤ n, skeleton.ι X n hk (x, t) = skeleton.ι X n hd (c.simplex.1, c.point.1) := by
+    ∃ hd : c.dim ≤ n,
+      skeleton.ι X n hk (x, t) = skeleton.ι X n hd (c.simplex.val, c.point.val) := by
   rcases hc with ⟨r, μ, _, u, _, π, _, ht, hx, hp⟩
   have hr : r ≤ n := (le_of_mono μ).trans hk
   refine ⟨(le_of_epi π).trans hr, ?_⟩
@@ -466,11 +472,11 @@ private theorem mem_range_succ_of_mem_attachingSet {n : ℕ}
         (skeleton.ι_map X (n + 1) n.le_succ le_rfl (SimplexCategory.δ i) x u)⟩
 
 private def attachingFun (n : ℕ) (a : attachingSet X (n + 1)) : (skeleton X).obj n :=
-  (mem_range_succ_of_mem_attachingSet X a.2).choose
+  (mem_range_succ_of_mem_attachingSet X a.property).choose
 
 private theorem attachingFun_spec {n : ℕ} (a : attachingSet X (n + 1)) :
-    (skeleton X).map (homOfLE n.le_succ) (attachingFun X n a) = skeleton.ι X (n + 1) le_rfl a.1 :=
-  (mem_range_succ_of_mem_attachingSet X a.2).choose_spec
+    (skeleton X).map (homOfLE n.le_succ) (attachingFun X n a) = skeleton.ι X (n + 1) le_rfl a.val :=
+  (mem_range_succ_of_mem_attachingSet X a.property).choose_spec
 
 private theorem attachingFun_map_left {n k : ℕ} (hk : k ≤ n) (f : ⦋n + 1⦌ ⟶ ⦋k⦌) (y : X _⦋k⦌)
     (t : toTop.{u}.obj ⦋n + 1⦌) (h : (X.map f.op y, t) ∈ attachingSet X (n + 1)) :
@@ -518,7 +524,7 @@ private theorem continuous_attachingFun {n : ℕ}
     (hσ : ∀ j : Fin (n + 1), IsClosedEmbedding (X.σ j)) : Continuous (attachingFun X n) := by
   rw [continuous_iff_isClosed]; intro F hF
   rw [← preimage_image_eq (attachingFun X n ⁻¹' F) Subtype.val_injective]
-  refine IsClosed.preimage continuous_subtype_val ?_; rw [image_val_preimage_attachingFun]
+  refine IsClosed.preimage continuous_subtypeVal ?_; rw [image_val_preimage_attachingFun]
   refine (isClosed_iUnion_of_finite fun j ↦ ?_).union (isClosed_iUnion_of_finite fun i ↦ ?_)
   · exact ((hσ j).prodMap .id).isClosedMap _ (hF.preimage <| (skeleton.ι X n le_rfl).continuous.comp
       (continuous_fst.prodMk ((toTop.map (SimplexCategory.σ j)).hom.continuous.comp
@@ -536,12 +542,12 @@ def attachingMap (n : ℕ) (hσ : ∀ j : Fin (n + 1), IsClosedEmbedding (X.σ j
 @[simp] theorem skeleton_map_attachingMap_apply {n : ℕ}
     (hσ : ∀ j : Fin (n + 1), IsClosedEmbedding (X.σ j)) (a : attachingSet X (n + 1)) :
     (skeleton X).map (homOfLE n.le_succ) (attachingMap X n hσ a) =
-      skeleton.ι X (n + 1) le_rfl a.1 := attachingFun_spec X a
+      skeleton.ι X (n + 1) le_rfl a.val := attachingFun_spec X a
 
 @[reassoc (attr := simp)]
 theorem attachingMap_comp_skeleton_map (n : ℕ) (hσ : ∀ j : Fin (n + 1), IsClosedEmbedding (X.σ j)) :
     attachingMap X n hσ ≫ (skeleton X).map (homOfLE n.le_succ) =
-      TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ skeleton.ιHom X (n + 1) le_rfl := by
+      TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ ≫ skeleton.ιHom X (n + 1) le_rfl := by
   ext a; exact attachingFun_spec X a
 
 /-- Evaluating `attachingMap` on a simplex factored through degree `k ≤ n`. -/
@@ -568,7 +574,7 @@ private def skeletonSuccComponent (inl : (skeleton X).obj n ⟶ Z)
     C(X _⦋k⦌ × toTop.{u}.obj ⦋k⦌, Z) :=
   if h : k ≤ n then inl.hom.comp (skeleton.ι X n h) else (by omega : k = n + 1) ▸ inr.hom
 
-variable (hw : attachingMap X n hσ ≫ inl = TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ ≫ inr)
+variable (hw : attachingMap X n hσ ≫ inl = TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ ≫ inr)
 include hw
 
 private theorem pushout_rel_le_succ {l : ℕ} (hl : l ≤ n) (f : ⦋l⦌ ⟶ ⦋n + 1⦌) (x : X _⦋n + 1⦌)
@@ -638,7 +644,7 @@ end PushoutDesc
 stage `n + 1` of the skeletal filtration is the pushout in `TopCat` of stage `n` and
 `X _⦋n + 1⦌ × Δⁿ⁺¹` along the closed attaching subspace `attachingSet X (n + 1)`. -/
 theorem isPushout_skeleton_succ (n : ℕ) (hσ : ∀ j : Fin (n + 1), IsClosedEmbedding (X.σ j)) :
-    IsPushout (attachingMap X n hσ) (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    IsPushout (attachingMap X n hσ) (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
       ((skeleton X).map (homOfLE (Nat.le_succ n))) (skeleton.ιHom X (n + 1) le_rfl) := by
   have w := attachingMap_comp_skeleton_map X n hσ
   refine IsPushout.of_isColimit' ⟨w⟩ (PushoutCocone.IsColimit.mk w
@@ -660,9 +666,10 @@ section Topology
 
 private theorem preimage_ι_singleton_eq_iUnion (p : X.geometricRealization) (n : ℕ) :
     ι X n ⁻¹' {p} =
-      ⋃ (m : Fin (n + 1)) (μ : ⦋m.1⦌ ⟶ ⦋n⦌) (_ : Mono μ) (π : ⦋m.1⦌ ⟶ ⦋(normalForm X p).dim⦌),
-        {x | X.map μ.op x = X.map π.op (normalForm X p).simplex.1} ×ˢ
-          (toTop.map μ '' (toTop.map π ⁻¹' {(normalForm X p).point.1})) := by
+      ⋃ (m : Fin (n + 1)) (μ : ⦋m.val⦌ ⟶ ⦋n⦌) (_ : Mono μ)
+          (π : ⦋m.val⦌ ⟶ ⦋(normalForm X p).dim⦌),
+        {x | X.map μ.op x = X.map π.op (normalForm X p).simplex.val} ×ˢ
+          (toTop.map μ '' (toTop.map π ⁻¹' {(normalForm X p).point.val})) := by
   ext ⟨x, t⟩; simp only [mem_iUnion, mem_preimage, mem_singleton_iff, prodMk_mem_set_prod_eq,
     mem_ofPred_eq, mem_image]; constructor
   · intro hp
@@ -672,11 +679,11 @@ private theorem preimage_ι_singleton_eq_iUnion (p : X.geometricRealization) (n 
     rw [← ι_map, hx, ι_map, hu]; exact toRealization_normalForm X p
 
 private theorem isClosed_preimage_ι_singleton (p : X.geometricRealization) (n : ℕ)
-    [hT : ∀ k : {k : ℕ // k ≤ n}, T1Space (X _⦋k.1⦌)] : IsClosed (ι X n ⁻¹' {p}) := by
+    [hT : ∀ k : {k : ℕ // k ≤ n}, T1Space (X _⦋k.val⦌)] : IsClosed (ι X n ⁻¹' {p}) := by
   rw [preimage_ι_singleton_eq_iUnion X p n]
   refine isClosed_iUnion_of_finite fun m ↦ isClosed_iUnion_of_finite fun μ ↦
     isClosed_iUnion_of_finite fun _ ↦ isClosed_iUnion_of_finite fun π ↦ ?_
-  have := hT ⟨m.1, Nat.lt_succ_iff.mp m.2⟩
+  have := hT ⟨m.val, Nat.lt_succ_iff.mp m.isLt⟩
   exact (isClosed_singleton.preimage (X.map μ.op).hom.continuous).prod <|
     (isClosedEmbedding_toTop_map_of_mono μ).isClosedMap _
       (isClosed_singleton.preimage (toTop.map π).hom.continuous)
@@ -686,9 +693,9 @@ instance instT1Space [∀ n : ℕ, T1Space (X _⦋n⦌)] : T1Space X.geometricRe
   ⟨fun p ↦ (isClosed_iff X).mpr fun n ↦ isClosed_preimage_ι_singleton X p n⟩
 
 /-- If each level `X _⦋k⦌` (`k ≤ n`) is `T1`, stage `skₙ |X|` of the skeletal filtration is `T1`. -/
-instance instT1SpaceSkeleton (n : ℕ) [hT : ∀ k : {k : ℕ // k ≤ n}, T1Space (X _⦋k.1⦌)] :
+instance instT1SpaceSkeleton (n : ℕ) [hT : ∀ k : {k : ℕ // k ≤ n}, T1Space (X _⦋k.val⦌)] :
     T1Space ((skeleton X).obj n) := ⟨fun q ↦ (skeleton.isClosed_iff X).mpr fun k hk ↦ by
-  have : ∀ m : {m : ℕ // m ≤ k}, T1Space (X _⦋m.1⦌) := fun m ↦ hT ⟨m.1, m.2.trans hk⟩
+  have : ∀ m : {m : ℕ // m ≤ k}, T1Space (X _⦋m.val⦌) := fun m ↦ hT ⟨m.val, m.property.trans hk⟩
   have hpre : skeleton.ι X n hk ⁻¹' {q} = ι X k ⁻¹' {skeleton.toRealization X n q} := by
     ext p; simp [← (skeleton.toRealization_injective X n).eq_iff]
   rw [hpre]; exact isClosed_preimage_ι_singleton X (skeleton.toRealization X n q) k⟩
@@ -725,7 +732,7 @@ theorem isClosedEmbedding_skeleton_map {m n : ℕ} (hmn : m ≤ n)
 embeddings, stage `skₙ |X|` is normal. -/
 theorem normalSpace_skeleton (n : ℕ)
     (hσ : ∀ {k : ℕ}, k < n → ∀ j : Fin (k + 1), IsClosedEmbedding (X.σ j))
-    [hN : ∀ k : {k : ℕ // k ≤ n}, NormalSpace (X _⦋k.1⦌ × toTop.{u}.obj ⦋k.1⦌)] :
+    [hN : ∀ k : {k : ℕ // k ≤ n}, NormalSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌)] :
     NormalSpace ((skeleton X).obj n) := by
   revert hN; induction n with
   | zero =>
@@ -734,8 +741,8 @@ theorem normalSpace_skeleton (n : ℕ)
     exact (TopCat.homeoOfIso (skeletonZeroIso X)).symm.normalSpace
   | succ n ih =>
     intro hN; have := hN ⟨n + 1, le_rfl⟩
-    have : ∀ k : {k : ℕ // k ≤ n}, NormalSpace (X _⦋k.1⦌ × toTop.{u}.obj ⦋k.1⦌) :=
-      fun k ↦ hN ⟨k.1, k.2.trans n.le_succ⟩
+    have : ∀ k : {k : ℕ // k ≤ n}, NormalSpace (X _⦋k.val⦌ × toTop.{u}.obj ⦋k.val⦌) :=
+      fun k ↦ hN ⟨k.val, k.property.trans n.le_succ⟩
     have := ih fun hk ↦ hσ (Nat.lt_succ_of_lt hk); have hσn := hσ (Nat.lt_succ_self n)
     exact TauCeti.TopCat.normalSpace_of_isPushout (isPushout_skeleton_succ X n hσn)
       (isClosed_attachingSet X (X.isClosed_degenerate_succ hσn)).isClosedEmbedding_subtypeVal

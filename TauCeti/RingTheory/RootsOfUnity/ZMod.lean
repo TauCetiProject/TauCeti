@@ -75,7 +75,7 @@ variable {M : Type*} [CommMonoid M] (k : ℕ)
 @[simp]
 theorem nsmul_additive_rootsOfUnity_eq_zero (x : Additive (rootsOfUnity k M)) : k • x = 0 :=
   Additive.toMul.injective <| Subtype.ext <| by
-    simpa [toMul_nsmul] using (mem_rootsOfUnity k _).1 x.toMul.2
+    simpa [toMul_nsmul] using (mem_rootsOfUnity k _).1 x.toMul.property
 
 /-- `μ_k`, written additively, is a `ZMod k`-module, being killed by `k`. -/
 instance instModuleZModAdditiveRootsOfUnity : Module (ZMod k) (Additive (rootsOfUnity k M)) :=
@@ -143,7 +143,7 @@ noncomputable def zmodEquivRootsOfUnity (h : IsPrimitiveRoot ζ k) :
     ZMod k ≃+ Additive (rootsOfUnity k M) :=
   zmodAddEquivOfGenerator (g := Additive.ofMul ⟨ζ, h.mem_rootsOfUnity⟩)
     (fun x => by
-      obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.1 (h.zpowers_eq_of_isCyclic.ge x.toMul.2)
+      obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.1 (h.zpowers_eq_of_isCyclic.ge x.toMul.property)
       refine ⟨i, Additive.toMul.injective (Subtype.ext ?_)⟩
       rwa [toMul_zsmul, Subgroup.coe_zpow, toMul_ofMul])
     ((Nat.card_congr Additive.toMul).trans h.natCard_rootsOfUnity_of_isCyclic)

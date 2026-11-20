@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Convex
+public import Mathlib.Topology.Algebra.Module.Basic
 
 /-!
 # Closed convex hulls and convex sets containing a ball
 
 Taking the closed convex hull of a set in a real seminormed space preserves both boundedness and
 diameter. These are the closed-hull counterparts of `isBounded_convexHull` and `convexHull_diam`.
+A norm bound `‖T x‖ ≤ r` for a continuous linear map on a set extends to its closed real convex
+hull (`ContinuousLinearMap.norm_le_of_mem_closure_convexHull`).
 
 A set that is star-convex with respect to every point of `ball x r` sends every point `y` of its
 closure into its interior along the segment toward `x`: the ball of radius `(1 - t) * r` about
@@ -128,6 +131,22 @@ theorem closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex
   exact closedBall_add_smul_sub_subset_interior_of_forall_starConvex hs hy hyz ht₀ ht₁
 
 end TauCeti
+
+/-- A norm bound `‖T x‖ ≤ r` for a continuous linear map on a set `s` extends to the closed real
+convex hull `closure (convexHull ℝ s)`. -/
+theorem ContinuousLinearMap.norm_le_of_mem_closure_convexHull
+    {𝕜 E F : Type*} [Semiring 𝕜] [SMul ℝ 𝕜]
+    [AddCommMonoid E] [TopologicalSpace E] [Module ℝ E] [Module 𝕜 E] [IsScalarTower ℝ 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace ℝ F] [Module 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+    (T : E →L[𝕜] F) {s : Set E} {r : ℝ} (hs : ∀ x ∈ s, ‖T x‖ ≤ r)
+    {x : E} (hx : x ∈ closure (convexHull ℝ s)) : ‖T x‖ ≤ r := by
+  have hsub : closure (convexHull ℝ s) ⊆
+      (T.toLinearMap.restrictScalars ℝ) ⁻¹' Metric.closedBall 0 r :=
+    closure_minimal
+      (convexHull_min (fun y hy ↦ by simpa using hs y hy)
+        ((convex_closedBall (0 : F) r).linear_preimage _))
+      (Metric.isClosed_closedBall.preimage T.continuous)
+  simpa using hsub hx
 
 /-- A convex set containing the ball `ball x r` and a point `y` contains the ball of radius
 `(1 - t) * r` about `x + t • (y - x)` for every `0 ≤ t ≤ 1`. -/
