@@ -179,7 +179,9 @@ theorem simplexEquiv_comp {S : Type*} [CommRing S] (k : CobarRing n →+* R) (g 
     simplexEquiv S n (g.comp k) =
       ((simplexEquiv R n k).1.map g, VariableChange.mapHom g ∘ (simplexEquiv R n k).2) := by
   induction n with
-  | zero => exact Prod.ext (WeierstrassCurve.map_map _ _ _).symm (funext fun i ↦ i.elim0)
+  | zero =>
+    rw [simplexEquiv_zero_apply, simplexEquiv_zero_apply]
+    exact Prod.ext (WeierstrassCurve.map_map _ _ _).symm (funext fun i ↦ i.elim0)
   | succ n ih =>
     rw [simplexEquiv_succ_apply, simplexEquiv_succ_apply, RingHom.comp_assoc, ih]
     refine Prod.ext rfl (funext fun i ↦ ?_)
@@ -424,7 +426,7 @@ theorem simplexEquiv_two_apply (k : CobarRing 2 →+* R) :
           (ChangeRing.universalChange ArrowRing).map k]) := by
   rw [simplexEquiv_succ_apply, simplexEquiv_one_apply, arrowEquiv_apply,
     includeLeft_eq_algebraMap, lastChange_eq_universalChange]
-  exact Prod.ext rfl (funext fun i ↦ by fin_cases i <;> rfl)
+  exact Prod.ext rfl (funext fun i ↦ by fin_cases i <;> simp [Fin.snoc])
 
 /-- The universal arrow `W → C • W` over `Γ`, as a `1`-simplex. -/
 theorem universalSimplex_one :
