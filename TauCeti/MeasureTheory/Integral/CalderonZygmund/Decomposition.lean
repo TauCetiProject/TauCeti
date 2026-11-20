@@ -298,7 +298,7 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
       pairwiseDisjoint_calderonZygmundCubes,
     ← ENNReal.tsum_mul_left]
   exact tsum_le_tsum fun q =>
-    (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
+    (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.property).le
 
 end Cubes
 
@@ -345,7 +345,7 @@ theorem calderonZygmundGood_of_mem (hq : q ∈ calderonZygmundCubes (‖f ·‖�
       calderonZygmundBad f q x := by
     refine tsum_eq_single (f := fun q' : calderonZygmundCubes (‖f ·‖ₑ) t =>
       calderonZygmundBad f q' x) ⟨q, hq⟩ fun q' hne => calderonZygmundBad_of_notMem fun hx' => ?_
-    exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q'.2 hq
+    exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q'.property hq
       fun h => hne (Subtype.ext h)) hx' hx
   rw [calderonZygmundGood, hsum, calderonZygmundBad_of_mem hx, sub_sub_cancel]
 
@@ -416,7 +416,7 @@ theorem lintegral_enorm_calderonZygmundGood_le (f : (ι → ℝ) → E) (t : ℝ
         pairwiseDisjoint_calderonZygmundCubes]
     refine tsum_le_tsum fun q => ?_
     rw [setLIntegral_congr_fun (measurableSet_dyadicCube _ _)
-      fun x hx => by rw [calderonZygmundGood_of_mem q.2 hx], setLIntegral_const, mul_comm]
+      fun x hx => by rw [calderonZygmundGood_of_mem q.property hx], setLIntegral_const, mul_comm]
     exact measure_mul_enorm_setAverage_le _ _ _
   · refine (setLIntegral_congr_fun hΩ.compl fun x hx => ?_).le
     rw [calderonZygmundGood_of_forall_notMem fun q hq hxq => hx (mem_biUnion hq hxq)]
@@ -431,9 +431,9 @@ theorem aestronglyMeasurable_calderonZygmundGood (hf : AEStronglyMeasurable f) (
   refine ⟨?_, ?_⟩
   · simp only [Ω, biUnion_eq_iUnion, aestronglyMeasurable_iUnion_iff]
     refine fun q =>
-      (aestronglyMeasurable_const (b := ⨍ y in dyadicCube q.1.1 q.1.2, f y ∂volume)).congr ?_
-    filter_upwards [ae_restrict_mem (measurableSet_dyadicCube q.1.1 q.1.2)] with x hx
-    rw [calderonZygmundGood_of_mem q.2 hx]
+      (aestronglyMeasurable_const (b := ⨍ y in dyadicCube q.val.1 q.val.2, f y ∂volume)).congr ?_
+    filter_upwards [ae_restrict_mem (measurableSet_dyadicCube q.val.1 q.val.2)] with x hx
+    rw [calderonZygmundGood_of_mem q.property hx]
   · refine hf.restrict.congr ?_
     filter_upwards [ae_restrict_mem hΩ.compl] with x hx
     rw [calderonZygmundGood_of_forall_notMem fun q hq hxq => hx (mem_biUnion hq hxq)]
@@ -496,14 +496,14 @@ theorem subsingleton_support_calderonZygmundBad (f : (ι → ℝ) → E) (t : �
     by_contra fun hx => h (calderonZygmundBad_of_notMem hx)
   intro q hq q' hq'
   by_contra hne
-  exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q.2 q'.2
+  exact Set.disjoint_left.1 (pairwiseDisjoint_calderonZygmundCubes q.property q'.property
     fun h => hne (Subtype.ext h)) (hmem hq) (hmem hq')
 
 /-- If `f` and its good part at height `t` are in `Lᵖ` for a finite `p ≥ 1`, then the bad parts sum
 in `Lᵖ` to `f` minus the good part. -/
 theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) (hf : MemLp f p)
     (hg : MemLp (calderonZygmundGood f t) p) :
-    HasSum (fun q : calderonZygmundCubes (‖f ·‖ₑ) t => (memLp_calderonZygmundBad hf q.1).toLp _)
+    HasSum (fun q : calderonZygmundCubes (‖f ·‖ₑ) t => (memLp_calderonZygmundBad hf q.val).toLp _)
       ((hf.sub hg).toLp (f - calderonZygmundGood f t)) := by
   set 𝒬 := calderonZygmundCubes (‖f ·‖ₑ) t
   set F : Finset 𝒬 → (ι → ℝ) → E := fun s x => ∑ q ∈ s, calderonZygmundBad f q x
@@ -519,15 +519,15 @@ theorem hasSum_toLp_calderonZygmundBad {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p
   rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
   refine (tendsto_eLpNorm_sub_of_ae_tendsto (f := F) (g := f - calderonZygmundGood f t)
     (C := 1) hp (.of_forall fun s => Finset.aestronglyMeasurable_fun_sum s fun q _ =>
-      (memLp_calderonZygmundBad hf q.1).aestronglyMeasurable)
+      (memLp_calderonZygmundBad hf q.val).aestronglyMeasurable)
     (hf.sub hg)
     (.of_forall fun s => .of_forall fun x => by
       simpa [F, hsum x] using (hpt x).enorm_sum_sub_tsum_le s)
     (.of_forall fun x => by
       simpa [F, hsum x, HasSum, SummationFilter.unconditional_filter] using hconv x)).congr
     fun s => eLpNorm_congr_ae ?_
-  filter_upwards [Lp.coeFn_finsetSum s fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).toLp _,
-    ae_all_iff.2 fun q : 𝒬 => (memLp_calderonZygmundBad hf q.1).coeFn_toLp,
+  filter_upwards [Lp.coeFn_finsetSum s fun q : 𝒬 => (memLp_calderonZygmundBad hf q.val).toLp _,
+    ae_all_iff.2 fun q : 𝒬 => (memLp_calderonZygmundBad hf q.val).coeFn_toLp,
     (hf.sub hg).coeFn_toLp] with x hx hq hfg
   simp only [Pi.sub_apply, F, hx, Finset.sum_apply, hq, hfg]
 

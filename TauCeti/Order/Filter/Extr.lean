@@ -8,12 +8,14 @@ module
 public import Mathlib.Order.Filter.Extr
 
 /-!
-# Minima on sublevels and images
+# Minima on sublevels and images, infimum values, and maxima attaining a bound
 
-A minimum on a sublevel transfers to the full admissible set, and at a minimizer the sublevel at
-the minimum value is exactly the set of all minimizers. Pullback objectives along a map `p` also
-transfer `IsMinOn`, feasible minimizers, and attained-minimum existence identically between `s` and
-`p '' s`.
+A minimum on a sublevel transfers to the full admissible set. At an admissible minimizer,
+the sublevel at the minimum value is the set of all minimizers, and in a conditionally complete
+lattice that value equals `sInf (f '' S)`. Pullback objectives along a map `p` also transfer
+`IsMinOn`, feasible minimizers, and attained-minimum existence identically between `s` and
+`p '' s`. When an upper bound of a function is attained, the global maximizers are exactly the
+points attaining it (`TauCeti.isMaxOn_univ_iff_eq`).
 -/
 
 public section
@@ -53,6 +55,20 @@ theorem exists_mem_image_isMinOn_iff {X Y β : Type*} [Preorder β] {p : X → Y
     (∃ y ∈ p '' s, IsMinOn f (p '' s) y) ↔ ∃ z ∈ s, IsMinOn (f ∘ p) s z := by
   simp only [exists_mem_image, isMinOn_image_iff]
 
+/-- If some point attains an upper bound `M` of `f`, then `s` is a global maximizer of `f` exactly
+when it attains `M`. -/
+theorem isMaxOn_univ_iff_eq {X β : Type*} [PartialOrder β] {f : X → β} {M : β} {s : X}
+    (hle : ∀ t, f t ≤ M) (hM : ∃ d, f d = M) : IsMaxOn f univ s ↔ f s = M :=
+  ⟨fun h ↦ hM.elim fun d hd ↦ le_antisymm (hle s) (hd ▸ h (mem_univ d)), fun h t _ ↦ h ▸ hle t⟩
+
+/-- At an admissible point of a set where `f` is bounded below, `IsMinOn f S u` holds
+if and only if `f u` equals `sInf (f '' S)`. -/
+theorem isMinOn_iff_eq_csInf {X β : Type*} [ConditionallyCompleteLattice β] {f : X → β}
+    {S : Set X} {u : X} (hu : u ∈ S) (hb : BddBelow (f '' S)) :
+    IsMinOn f S u ↔ f u = sInf (f '' S) :=
+  ⟨fun h ↦ ((h.isGLB hu).csInf_eq ⟨f u, u, hu, rfl⟩).symm,
+    fun h _ hx ↦ h ▸ csInf_le hb (mem_image_of_mem f hx)⟩
+
 end TauCeti
 
 /-- At an admissible minimizer, the sublevel at its value is the full minimizer set. -/
@@ -62,3 +78,9 @@ theorem IsMinOn.minimizers_eq_sublevel {X β : Type*} [Preorder β] {f : X → �
   ext x
   exact ⟨fun hx ↦ ⟨hx.1, hx.2 hu⟩,
     fun hx ↦ ⟨hx.1, fun y hy ↦ hx.2.trans (h hy)⟩⟩
+
+/-- At an admissible minimizer, the infimum `sInf (f '' S)` equals its value. -/
+theorem IsMinOn.csInf_eq {X β : Type*} [ConditionallyCompleteLattice β] {f : X → β}
+    {S : Set X} {u : X} (h : IsMinOn f S u) (hu : u ∈ S) :
+    sInf (f '' S) = f u :=
+  (h.isGLB hu).csInf_eq ⟨f u, u, hu, rfl⟩

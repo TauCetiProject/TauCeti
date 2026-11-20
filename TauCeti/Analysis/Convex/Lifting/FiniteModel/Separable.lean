@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Lifting.Basic
 public import TauCeti.Analysis.Convex.Lifting.FiniteModel.Basic
+public import TauCeti.Order.CompositionLift
 import TauCeti.Order.Filter.Extr
 
 /-!
@@ -24,11 +24,12 @@ integer-block bounds, and linear objective are retained, with zero objective coe
 appended height coordinates.
 
 Under `pointEquiv n m q : Point (n + q) m ≃ Point n m × (Fin q → ℝ)`, the lifted mixed-integer and
-relaxed feasible sets are preimages of `liftedSet` with inner map `fun x j => component j x`,
-outer map `fun y i => ∑ j, weight i j * y j` (coordinatewise-monotone when `0 ≤ weight i j`), and
-budget `0 : Fin l → ℝ` (`FiniteModel.separableLift_feasibleWith_eq_preimage_liftedSet`,
-`FiniteModel.feasibleWith_eq_originalSet`). This directly instantiates `projection_eq` to yield
-exact projection (`FiniteModel.separable_projection`,
+relaxed feasible sets are preimages of `CompositionLift.liftedSet` with inner map
+`fun x j => component j x`, outer map `fun y i => ∑ j, weight i j * y j`
+(coordinatewise-monotone when `0 ≤ weight i j`), and budget `0 : Fin l → ℝ`
+(`FiniteModel.separableLift_feasibleWith_eq_preimage_liftedSet`,
+`FiniteModel.feasibleWith_eq_originalSet`). This directly instantiates
+`CompositionLift.fst_image_liftedSet` to yield exact projection (`FiniteModel.separable_projection`,
 `FiniteModel.separable_relaxation_projection`), from which feasible-minimum equivalence
 (`FiniteModel.separable_minimum_iff`, `FiniteModel.separable_relaxation_minimum_iff`) and
 attainment equivalence (`FiniteModel.separable_attainment_iff`,
@@ -65,7 +66,7 @@ attainment equivalence (`FiniteModel.separable_attainment_iff`,
 
 public section
 
-open Set
+open Set TauCeti.CompositionLift
 
 namespace TauCeti.ConvexLifting.FiniteModel
 
@@ -193,7 +194,7 @@ theorem feasibleWith_eq_originalSet (d : FiniteModel n m l r) (D : Set (Point n 
       originalSet (d.affineFeasibleWith D P) (fun x j => component j x)
         (fun y i => ∑ j, weight i j * y j) 0 := by
   ext x
-  simp only [mem_feasibleWith_iff, mem_originalSet_iff, mem_affineFeasibleWith_iff, Pi.le_def,
+  simp only [mem_feasibleWith_iff, mem_originalSet, mem_affineFeasibleWith_iff, Pi.le_def,
     Pi.zero_apply, hg]
   tauto
 
@@ -210,7 +211,7 @@ theorem separableLift_feasibleWith_eq_preimage_liftedSet (d : FiniteModel n m l 
           (fun y i => ∑ j, weight i j * y j) 0 := by
   ext z
   simp only [mem_feasibleWith_iff, mem_preimage, separableLift_nonlinear_rows_iff,
-    separableLift_affine_rows_iff, mem_liftedSet_iff, pointEquiv_apply,
+    separableLift_affine_rows_iff, mem_liftedSet, pointEquiv_apply,
     mem_affineFeasibleWith_iff, mem_univ, true_and, Pi.le_def, Pi.zero_apply, project_snd]
   tauto
 
@@ -226,7 +227,7 @@ theorem insertHeight_component_mem_separableLift_feasibleWith (d : FiniteModel n
   rw [separableLift_feasibleWith_eq_preimage_liftedSet]
   rw [feasibleWith_eq_originalSet d D P component weight hg] at hx
   simpa only [mem_preimage, pointEquiv_apply, project_insertHeight, height_insertHeight] using
-    graph_mem_liftedSet (mapsTo_univ _ _) hx
+    mk_mem_liftedSet_of_mem_originalSet (mapsTo_univ _ _) hx
 
 /-- Exact projection for separable-height lifting under nonnegative weights and any integer-block
 predicate `P`. -/
@@ -239,7 +240,7 @@ theorem separable_feasibleWith_projection (d : FiniteModel n m l r) (D : Set (Po
   rw [separableLift_feasibleWith_eq_preimage_liftedSet,
     feasibleWith_eq_originalSet d D P component weight hg,
     ← fst_comp_pointEquiv (n := n) (m := m) (q := q), image_comp, Equiv.image_preimage]
-  exact projection_eq (mapsTo_univ _ _) fun _ _ _ _ hle i =>
+  exact fst_image_liftedSet (mapsTo_univ _ _) fun _ _ _ _ hle i =>
     Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hle j) (hw i j)
 
 /-- **Exact mixed-integer projection for separable-height lifting.** Under nonnegative weights
