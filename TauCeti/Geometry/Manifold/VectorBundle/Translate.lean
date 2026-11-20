@@ -50,7 +50,8 @@ section AddCommMonoid
 variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
   {b : X → B} {s t : ∀ x, V (b x)} {u : Set X} {x₀ : X}
 
-/-- The fibrewise sum of two `C^n` sections along the same map is `C^n`. -/
+/-- The fibrewise sum of two `C^n` sections along the same map is `C^n` within a set at
+a point. -/
 theorem ContMDiffWithinAt.add_sectionAlong
     (hs : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) u x₀)
     (ht : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) u x₀) :
@@ -67,14 +68,14 @@ theorem ContMDiffWithinAt.add_sectionAlong
     exact (e.linear 𝕜 hx).map_add (s x) (t x)
   · exact (e.linear 𝕜 (FiberBundle.mem_baseSet_trivializationAt' (b x₀))).map_add (s x₀) (t x₀)
 
-/-- The fibrewise sum of two `C^n` sections along the same map is `C^n`. -/
+/-- The fibrewise sum of two `C^n` sections along the same map is `C^n` at a point. -/
 theorem ContMDiffAt.add_sectionAlong
     (hs : ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) x₀)
     (ht : ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) x₀) :
     ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x + t x)) x₀ :=
-  ContMDiffWithinAt.add_sectionAlong hs ht
+  contMDiffWithinAt_univ.mp (hs.contMDiffWithinAt.add_sectionAlong ht.contMDiffWithinAt)
 
-/-- The fibrewise sum of two `C^n` sections along the same map is `C^n`. -/
+/-- The fibrewise sum of two `C^n` sections along the same map is `C^n` on a set. -/
 theorem ContMDiffOn.add_sectionAlong
     (hs : ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) u)
     (ht : ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) u) :
@@ -112,7 +113,8 @@ theorem ContMDiffAt.sum_sectionAlong {ι : Type*} (A : Finset ι) (s : ι → �
       (fun x ↦ TotalSpace.mk' F (b x) (s i x)) x₀) :
     ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n
       (fun x ↦ TotalSpace.mk' F (b x) (∑ i ∈ A, s i x)) x₀ :=
-  ContMDiffWithinAt.sum_sectionAlong A s hb hs
+  contMDiffWithinAt_univ.mp <| .sum_sectionAlong A s hb.contMDiffWithinAt fun i hi ↦
+    (hs i hi).contMDiffWithinAt
 
 /-- A finite sum of `C^n` sections along a `C^n` map is `C^n` on a set. -/
 theorem ContMDiffOn.sum_sectionAlong {ι : Type*} (A : Finset ι) (s : ι → ∀ x, V (b x))
@@ -139,7 +141,8 @@ section AddCommGroup
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
   {b : X → B} {s t : ∀ x, V (b x)} {u : Set X} {x₀ : X}
 
-/-- The fibrewise difference of two `C^n` sections along the same map is `C^n`. -/
+/-- The fibrewise difference of two `C^n` sections along the same map is `C^n` within a set at
+a point. -/
 theorem ContMDiffWithinAt.sub_sectionAlong
     (hs : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) u x₀)
     (ht : ContMDiffWithinAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) u x₀) :
@@ -155,14 +158,14 @@ theorem ContMDiffWithinAt.sub_sectionAlong
     exact (e.linear 𝕜 hx).map_sub (s x) (t x)
   · exact (e.linear 𝕜 (FiberBundle.mem_baseSet_trivializationAt' (b x₀))).map_sub (s x₀) (t x₀)
 
-/-- The fibrewise difference of two `C^n` sections along the same map is `C^n`. -/
+/-- The fibrewise difference of two `C^n` sections along the same map is `C^n` at a point. -/
 theorem ContMDiffAt.sub_sectionAlong
     (hs : ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) x₀)
     (ht : ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) x₀) :
     ContMDiffAt IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) x₀ :=
-  ContMDiffWithinAt.sub_sectionAlong hs ht
+  contMDiffWithinAt_univ.mp (hs.contMDiffWithinAt.sub_sectionAlong ht.contMDiffWithinAt)
 
-/-- The fibrewise difference of two `C^n` sections along the same map is `C^n`. -/
+/-- The fibrewise difference of two `C^n` sections along the same map is `C^n` on a set. -/
 theorem ContMDiffOn.sub_sectionAlong
     (hs : ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x)) u)
     (ht : ContMDiffOn IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (t x)) u) :
@@ -176,7 +179,8 @@ theorem ContMDiff.sub_sectionAlong
     ContMDiff IX (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) :=
   fun x ↦ (hs x).sub_sectionAlong (ht x)
 
-/-- The difference of differentiable sections along the same base map is differentiable. -/
+/-- The difference of differentiable sections along the same base map is differentiable within
+a set at a point. -/
 theorem MDifferentiableWithinAt.sub_sectionAlong
     (hs : MDifferentiableWithinAt IX (IB.prod 𝓘(𝕜, F))
       (fun x ↦ TotalSpace.mk' F (b x) (s x)) u x₀)
@@ -194,7 +198,8 @@ theorem MDifferentiableWithinAt.sub_sectionAlong
     exact (e.linear 𝕜 hx).map_sub (s x) (t x)
   · exact (e.linear 𝕜 (FiberBundle.mem_baseSet_trivializationAt' (b x₀))).map_sub (s x₀) (t x₀)
 
-/-- The difference of differentiable sections along the same base map is differentiable. -/
+/-- The difference of differentiable sections along the same base map is differentiable at a
+point. -/
 theorem MDifferentiableAt.sub_sectionAlong
     (hs : MDifferentiableAt IX (IB.prod 𝓘(𝕜, F))
       (fun x ↦ TotalSpace.mk' F (b x) (s x)) x₀)
@@ -202,19 +207,18 @@ theorem MDifferentiableAt.sub_sectionAlong
       (fun x ↦ TotalSpace.mk' F (b x) (t x)) x₀) :
     MDifferentiableAt IX (IB.prod 𝓘(𝕜, F))
       (fun x ↦ TotalSpace.mk' F (b x) (s x - t x)) x₀ :=
-  MDifferentiableWithinAt.sub_sectionAlong hs ht
-
-end AddCommGroup
+  mdifferentiableWithinAt_univ.mp
+    (hs.mdifferentiableWithinAt.sub_sectionAlong ht.mdifferentiableWithinAt)
 
 namespace TauCeti
-
-variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
 /-- Translation by a `C^n` section `σ` is `C^n` on the total space. -/
 private theorem contMDiff_translate {σ : ∀ y, V y}
     (hσ : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun y ↦ TotalSpace.mk' F y (σ y)) :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
       fun p : TotalSpace F V ↦ TotalSpace.mk' F p.proj (p.snd + σ p.proj) := by
+  -- The identity, written as the section `p ↦ ⟨p.proj, p.snd⟩` along the projection (structure
+  -- eta), so that `add_sectionAlong` can add `σ ∘ π` to it.
   have hid : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n
       fun p : TotalSpace F V ↦ TotalSpace.mk' F (E := V) p.proj p.snd :=
     contMDiff_id
@@ -253,7 +257,9 @@ theorem vectorBundleTranslateDiffeomorph_zero :
     vectorBundleTranslateDiffeomorph (0 : ∀ y, V y)
         (Bundle.contMDiff_zeroSection 𝕜 V : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n _) =
       Diffeomorph.refl (IB.prod 𝓘(𝕜, F)) (TotalSpace F V) n :=
-  Diffeomorph.ext fun p ↦ congrArg (TotalSpace.mk' F p.proj) (add_zero p.snd)
+  -- The `_apply` lemma is applied by hand: the proof argument above has type
+  -- `ContMDiff … (zeroSection F V)`, so `rw` and `simp` do not match it syntactically.
+  Diffeomorph.ext fun p ↦ (vectorBundleTranslateDiffeomorph_apply 0 _ p).trans (by simp)
 
 /-- Successive fibre translations add the sections. -/
 theorem vectorBundleTranslateDiffeomorph_trans (σ τ : ∀ y, V y)
@@ -261,6 +267,8 @@ theorem vectorBundleTranslateDiffeomorph_trans (σ τ : ∀ y, V y)
     (hτ : ContMDiff IB (IB.prod 𝓘(𝕜, F)) n fun y ↦ TotalSpace.mk' F y (τ y)) :
     (vectorBundleTranslateDiffeomorph σ hσ).trans (vectorBundleTranslateDiffeomorph τ hτ) =
       vectorBundleTranslateDiffeomorph (σ + τ) (hσ.add_section hτ) :=
-  Diffeomorph.ext fun p ↦ congrArg (TotalSpace.mk' F p.proj) (add_assoc p.snd (σ p.proj) (τ p.proj))
+  Diffeomorph.ext fun p ↦ by simp [add_assoc]
 
 end TauCeti
+
+end AddCommGroup
