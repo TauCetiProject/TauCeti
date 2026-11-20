@@ -18,7 +18,9 @@ integer, the kernel has `k` elements (`AddCircle.natCard_ker_coverMap`), so does
 (`AddCircle.ncard_preimage_coverMap_singleton`), and the kernel is canonically
 isomorphic to `ZMod k` (`AddCircle.zmodEquivZMultiples`), giving the deck group and degree of the
 finite cover of the circle of length `q` by the circle of length `p`. Half the period lies in this
-kernel exactly when `k` is even (`AddCircle.period_div_two_mem_zmultiples_iff`).
+kernel exactly when `k` is even (`AddCircle.period_div_two_mem_zmultiples_iff`). A nonzero natural
+number is a positive period (`TauCeti.fact_natCast_pos`), so `AddCircle (d : ℝ)` is a circle for
+every `d : ℕ` with `NeZero d`.
 
 This quotient-group API describes repeated traversal of periodic curves without requiring a smooth
 structure. Analyticity and the local diffeomorphism property for positive periods are developed in
@@ -26,6 +28,14 @@ structure. Analyticity and the local diffeomorphism property for positive period
 -/
 
 public noncomputable section
+
+namespace TauCeti
+
+/-- A nonzero natural number `d` is a positive real period, so `AddCircle (d : ℝ)` is a circle. -/
+instance fact_natCast_pos {d : ℕ} [NeZero d] : Fact (0 < (d : ℝ)) :=
+  ⟨Nat.cast_pos.2 (Nat.pos_of_neZero d)⟩
+
+end TauCeti
 
 namespace AddCircle
 
