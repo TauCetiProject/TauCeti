@@ -74,10 +74,9 @@ theorem _root_.RootPairing.Base.subtypePerm_mem_matrixSymmetryGroup [P.IsCrystal
     (b : P.Base) (u : P.Aut) (hu : ∀ i, u.indexEquiv i ∈ b.support ↔ i ∈ b.support) :
     Equiv.Perm.subtypePerm u.indexEquiv hu ∈ matrixSymmetryGroup b.cartanMatrix := by
   refine mem_matrixSymmetryGroup_iff.mpr (Matrix.ext fun i j ↦ ?_)
-  -- `pairingIn ℤ` is chosen from the pairing alone, which `u` preserves, so no injectivity of
-  -- `ℤ → R` is needed.
   simp only [Matrix.submatrix_apply, Equiv.Perm.subtypePerm_apply, RootPairing.Base.cartanMatrix,
-    RootPairing.Base.cartanMatrixIn_def, RootPairing.pairingIn, RootPairing.Hom.pairing]
+    RootPairing.Base.cartanMatrixIn_def]
+  exact u.toHom.pairingIn_indexEquiv ℤ i j
 
 variable [Finite ι] [IsDomain R] [CharZero R] [P.IsCrystallographic] [P.IsReduced]
 
