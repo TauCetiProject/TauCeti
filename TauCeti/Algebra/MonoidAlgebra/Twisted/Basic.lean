@@ -459,8 +459,7 @@ theorem algHom_ext_of_closure_eq_top {A : Type*} [Semiring A] [Algebra k A]
     simpa using congrArg (fun v : Aˣ ↦ ((v⁻¹ : Aˣ) : A)) hfg
 
 /-- **The coefficient at the identity is a trace** on a twisted group algebra: `f * g` and `g * f`
-have the same coefficient at `1`. On basis elements both sides vanish unless `h = g⁻¹`, where they
-are `α g g⁻¹` and `α g⁻¹ g` (`TauCeti.IsFactorSet.apply_inv_eq_inv_apply`). -/
+have the same coefficient at `1`. -/
 theorem repr_mul_apply_one_comm (f g : twistedMonoidAlgebra k G α) :
     (basis k G α).repr (f * g) 1 = (basis k G α).repr (g * f) 1 := by
   classical

@@ -10,8 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.LinearAlgebra.BilinearMap
 public import TauCeti.Algebra.MonoidAlgebra.Twisted.Basic
 public import TauCeti.Algebra.TemperleyLieb.Basic
--- Private: the cubic Temperley–Lieb identities for `1 + u + u ^ 2` are used only inside proofs.
+-- Private: these are used only inside proofs.
 import TauCeti.Algebra.Ring.Idempotent.Basic
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # The cubic quantum torus and the Temperley–Lieb algebra at `δ = √3`
@@ -56,7 +57,8 @@ in `TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace`.
 
 * `TauCeti.TemperleyLieb.finrank_cubicTorus`: `G_N` has dimension `3 ^ N`.
 * `TauCeti.TemperleyLieb.weyl_mul_weyl_comm`: `W(a) W(b) = ω ^ B(a, b) W(b) W(a)`.
-* `TauCeti.TemperleyLieb.cubicSite_pow_three`, `TauCeti.TemperleyLieb.cubicSite_mul_cubicSite` and
+* `TauCeti.TemperleyLieb.cubicSite_pow_three`,
+  `TauCeti.TemperleyLieb.cubicSite_mul_cubicSite_comm` and
   `TauCeti.TemperleyLieb.commute_cubicSite`: the relations of the site unitaries.
 * `TauCeti.TemperleyLieb.cubicScalarCoefficient_mul_comm`: `s_N` is a trace.
 * `TauCeti.TemperleyLieb.cubicProjection_mul_self`,
@@ -259,8 +261,7 @@ theorem weyl_pow (a : Fin N → ZMod 3) (n : ℕ) : weyl N a ^ n = weyl N (n •
   induction n with
   | zero => simp
   | succ n ih =>
-    rw [pow_succ, ih, weyl_mul_weyl, map_nsmul, LinearMap.smul_apply, chainForm_self, smul_zero,
-      mul_zero, AddChar.map_zero_eq_one, Units.val_one, one_smul, succ_nsmul]
+    simp [pow_succ, ih, succ_nsmul, -nsmul_eq_mul]
 
 /-! ### The scalar coefficient -/
 
@@ -291,8 +292,7 @@ theorem cubicScalarCoefficient_weyl_mul_weyl (a b : Fin N → ZMod 3) :
     cubicScalarCoefficient N (weyl N a * weyl N b) = if a + b = 0 then 1 else 0 := by
   rw [weyl_mul_weyl, map_smul, cubicScalarCoefficient_weyl, smul_eq_mul]
   split_ifs with h
-  · rw [eq_neg_of_add_eq_zero_right h, map_neg, chainForm_self, neg_zero, mul_zero,
-      AddChar.map_zero_eq_one, Units.val_one, mul_one]
+  · simp [eq_neg_of_add_eq_zero_right h]
   · rw [mul_zero]
 
 /-! ### Site unitaries and projections -/
@@ -315,7 +315,7 @@ theorem cubicSite_pow_three (j : Fin N) : cubicSite N j ^ 3 = 1 := by
 
 /-- The commutation relation of the site unitaries: `U_i U_j = ω U_j U_i` when `j = i + 1`,
 `U_i U_j = ω⁻¹ U_j U_i` when `i = j + 1`, and `U_i` and `U_j` commute otherwise. -/
-theorem cubicSite_mul_cubicSite (i j : Fin N) :
+theorem cubicSite_mul_cubicSite_comm (i j : Fin N) :
     cubicSite N i * cubicSite N j =
       (cubeRootPow (if (i : ℕ) + 1 = j then 1 else if (j : ℕ) + 1 = i then -1 else 0) : ℂ) •
         (cubicSite N j * cubicSite N i) := by
@@ -326,7 +326,7 @@ theorem commute_cubicSite {i j : Fin N} (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) +
     Commute (cubicSite N i) (cubicSite N j) := by
   have h₁ : ¬(i : ℕ) + 1 = j := by omega
   have h₂ : ¬(j : ℕ) + 1 = i := by omega
-  rw [Commute, SemiconjBy, cubicSite_mul_cubicSite]
+  rw [Commute, SemiconjBy, cubicSite_mul_cubicSite_comm]
   simp [h₁, h₂]
 
 variable (N) in
@@ -369,7 +369,7 @@ theorem cubicProjection_mul_cubicProjection_mul_cubicProjection {i j : Fin N}
     · simp [hx, h]
   have hji : cubicSite N j * cubicSite N i =
       (cubeRootPow x : ℂ) • (cubicSite N i * cubicSite N j) :=
-    cubicSite_mul_cubicSite j i
+    cubicSite_mul_cubicSite_comm j i
   rw [cubicProjection_def, cubicProjection_def, smul_mul_smul_comm, smul_mul_smul_comm,
     TauCeti.one_add_add_sq_mul_one_add_add_sq_mul_one_add_add_sq_of_pow_three_eq_one
       (one_add_cubeRootPow_add_sq hx0) (cubicSite_pow_three i) hji,
@@ -396,8 +396,8 @@ chain form satisfies `B(-a, -b) = B(a, b)`. It is an involution
 (`cubicInversion_cubicInversion`). -/
 noncomputable def cubicInversion : CubicTorus N →ₐ[ℂ] CubicTorus N :=
   TwistedMonoidAlgebra.lift (fun g ↦ weyl N (-g.toAdd)) (by simp) fun g h ↦ by
-    rw [weyl_mul_weyl, LinearMap.map_neg₂, map_neg, neg_neg, toAdd_mul, neg_add]
-    rfl
+    rw [weyl_mul_weyl, LinearMap.map_neg₂, map_neg, neg_neg, toAdd_mul, neg_add,
+      cubicFactor_apply]
 
 @[simp]
 theorem cubicInversion_weyl (a : Fin N → ZMod 3) : cubicInversion N (weyl N a) = weyl N (-a) :=
@@ -415,8 +415,8 @@ theorem cubicInversion_cubicInversion (x : CubicTorus N) :
 @[simp]
 theorem cubicInversion_cubicSite (j : Fin N) :
     cubicInversion N (cubicSite N j) = cubicSite N j ^ 2 := by
-  rw [cubicSite_pow, cubicSite, cubicInversion_weyl, ← Pi.single_neg]
-  rfl
+  rw [cubicSite_pow, cubicSite, cubicInversion_weyl, ← Pi.single_neg,
+    show (-1 : ZMod 3) = ((2 : ℕ) : ZMod 3) by decide]
 
 /-- The inversion fixes every cubic projection. -/
 @[simp]
@@ -424,8 +424,7 @@ theorem cubicInversion_cubicProjection (j : Fin N) :
     cubicInversion N (cubicProjection N j) = cubicProjection N j := by
   have h4 : cubicSite N j ^ 4 = cubicSite N j := by
     rw [pow_succ, cubicSite_pow_three, one_mul]
-  rw [cubicProjection_def, map_smul, map_add, map_add, map_one, map_pow, cubicInversion_cubicSite,
-    ← pow_mul, h4, add_assoc, add_comm (cubicSite N j ^ 2), ← add_assoc]
+  simp [cubicProjection_def, ← pow_mul, h4, add_right_comm]
 
 variable (N) in
 /-- **The inversion-fixed cubic quantum torus** `C_N`, the subalgebra of `G_N` fixed by
@@ -446,9 +445,6 @@ end CubicTorus
 
 section ComparisonMap
 
-private theorem sqrt_three_coe_mul_self : (Real.sqrt 3 : ℂ) * (Real.sqrt 3 : ℂ) = 3 := by
-  exact_mod_cast Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 3)
-
 /-- The `j`-th Temperley–Lieb generator `√3 p_j`, bundled as an element of `cubicFixed (m - 1)`. -/
 private noncomputable def cubicGenerator (m : ℕ) (j : Fin (m - 1)) : cubicFixed (m - 1) :=
   ⟨(Real.sqrt 3 : ℂ) • cubicProjection (m - 1) j,
@@ -466,7 +462,10 @@ noncomputable def cubicHom (m : ℕ) :
       simp only [Subalgebra.coe_mul, cubicGenerator, smul_mul_assoc, mul_smul_comm,
         cubicProjection_mul_cubicProjection_mul_cubicProjection h, smul_smul]
       congr 1
-      linear_combination ((Real.sqrt 3 : ℂ) / 3) * sqrt_three_coe_mul_self)
+      linear_combination (norm := skip)
+        ((Real.sqrt 3 : ℂ) / 3) * Complex.ofReal_sqrt_mul_self zero_le_three
+      push_cast
+      ring)
     (fun {i j} h ↦ Subtype.ext <| by
       simp only [Subalgebra.coe_mul, cubicGenerator]
       exact ((commute_cubicProjection h).smul_left _ |>.smul_right _).eq)

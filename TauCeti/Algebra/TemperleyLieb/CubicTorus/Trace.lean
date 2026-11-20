@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
+import TauCeti.Analysis.Complex.Sqrt
 
 /-!
 # The Markov trace at `δ = √3` through the cubic quantum torus
@@ -142,10 +143,7 @@ theorem cubicScalarCoefficient_cubicIncl_mul_cubicSite_last_pow (x : CubicTorus 
     (basis ℂ _ (cubicFactor N)).ext fun g ↦ by
       have hne : (Fin.snoc g.toAdd 0 + Pi.single (Fin.last N) (n : ZMod 3) :
           Fin (N + 1) → ZMod 3) ≠ 0 := fun h ↦ hn (by simpa using congrFun h (Fin.last N))
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, basis_apply, LinearMap.zero_apply,
-        LinearMap.mulRight_apply, AlgHom.toLinearMap_apply, of_eq_weyl, cubicIncl_weyl,
-        cubicSite_pow, cubicScalarCoefficient_weyl_mul_weyl]
-      simp [hne]
+      simp [of_eq_weyl, cubicSite_pow, hne]
   exact LinearMap.congr_fun h x
 
 /-- **The Markov property of the scalar coefficient**: multiplying an included element by the last
@@ -156,8 +154,7 @@ theorem cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last (x : CubicToru
   have h1 := cubicScalarCoefficient_cubicIncl_mul_cubicSite_last_pow x (n := 1) (by decide)
   have h2 := cubicScalarCoefficient_cubicIncl_mul_cubicSite_last_pow x (n := 2) (by decide)
   rw [pow_one] at h1
-  rw [cubicProjection_def, mul_smul_comm, map_smul, mul_add, mul_add, mul_one, map_add, map_add,
-    h1, h2, cubicScalarCoefficient_cubicIncl, add_zero, add_zero, smul_eq_mul]
+  simp [cubicProjection_def, mul_add, h1, h2]
 
 end Inclusion
 
@@ -207,21 +204,21 @@ theorem isMarkovTrace_cubicTrace : IsMarkovTrace ℂ (Real.sqrt 3 : ℂ) cubicTr
     rw [h]
     ring
   map_strandIncl_mul_e_last n x := by
-    have hsqrt : (Real.sqrt 3 : ℂ) * (Real.sqrt 3 : ℂ) = 3 := by
-      exact_mod_cast Real.mul_self_sqrt (by norm_num : (0 : ℝ) ≤ 3)
     have h : cubicScalarCoefficient (n + 1)
         ((cubicHom (n + 2) (strandIncl x * e (Real.sqrt 3 : ℂ) (Fin.last n))).1) =
           (Real.sqrt 3 : ℂ) * ((3 : ℂ)⁻¹ * cubicScalarCoefficient n (cubicHom (n + 1) x).1) := by
       rw [map_mul, Subalgebra.coe_mul, cubicHom_strandIncl, coe_cubicHom_e, mul_smul_comm,
         map_smul, smul_eq_mul]
       -- The last projection is indexed by `Fin (n + 2 - 1)`, which is `Fin (n + 1)`.
-      erw [cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last]
+      exact congrArg _ (cubicScalarCoefficient_cubicIncl_mul_cubicProjection_last _)
     rw [cubicTrace_apply, cubicTrace_apply]
     -- Restate the indices `n + 2 - 1` and `n + 1 - 1` as `n + 1` and `n`.
     change _ * cubicScalarCoefficient (n + 1) _ = _ * cubicScalarCoefficient n _
     rw [h, pow_succ]
-    linear_combination (Real.sqrt 3 : ℂ) ^ (n + 1) * (3 : ℂ)⁻¹ *
-      cubicScalarCoefficient n (cubicHom (n + 1) x).1 * hsqrt
+    linear_combination (norm := skip) (Real.sqrt 3 : ℂ) ^ (n + 1) * (3 : ℂ)⁻¹ *
+      cubicScalarCoefficient n (cubicHom (n + 1) x).1 * Complex.ofReal_sqrt_mul_self zero_le_three
+    push_cast
+    ring
 
 namespace IsMarkovTrace
 

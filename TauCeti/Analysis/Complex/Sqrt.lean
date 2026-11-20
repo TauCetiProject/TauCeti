@@ -14,7 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Real
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
 involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane.
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and that the real square root of a
+nonnegative real, cast to `ℂ`, squares back to it.
 -/
 
 public section
@@ -22,6 +23,11 @@ public section
 open scoped Real
 
 namespace Complex
+
+/-- The real square root of a nonnegative real, cast to `ℂ`, squares back to it:
+`(√x : ℂ) * √x = x`. -/
+theorem ofReal_sqrt_mul_self {x : ℝ} (hx : 0 ≤ x) : (√x : ℂ) * √x = x := by
+  exact_mod_cast Real.mul_self_sqrt hx
 
 /-- The square of the principal square root is the original complex number. -/
 @[simp]

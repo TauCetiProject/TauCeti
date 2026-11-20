@@ -41,6 +41,9 @@ projections `3⁻¹ • (1 + u + u ^ 2)` built from the generators of a cubic qu
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
   `u * v + v * u = 0`, then `(1 + u) * (1 + v) * (1 + u) = (1 + u) + (1 + u)`.
+* `TauCeti.one_add_add_sq_mul_of_pow_three_eq_one` and
+  `TauCeti.one_add_add_sq_mul_sq_of_pow_three_eq_one`: if `u ^ 3 = 1`, then right multiplication
+  by `u` and by `u ^ 2` fixes `1 + u + u ^ 2`.
 * `TauCeti.one_add_add_sq_mul_self_of_pow_three_eq_one`: if `u ^ 3 = 1`, then
   `(1 + u + u ^ 2) * (1 + u + u ^ 2) = 3 * (1 + u + u ^ 2)`.
 * `TauCeti.one_add_add_sq_mul_one_add_add_sq_mul_one_add_add_sq_of_pow_three_eq_one`: if
@@ -105,33 +108,38 @@ theorem one_add_mul_one_add_mul_one_add_of_mul_self_eq_one {R : Type*} [Semiring
     _ = (1 + u) + (1 + u) := by
           rw [hu, huv, hv, add_zero, add_zero, add_comm u 1]
 
+/-- If `u ^ 3 = 1`, then right multiplication by `u` fixes `1 + u + u ^ 2`. -/
+theorem one_add_add_sq_mul_of_pow_three_eq_one {R : Type*} [Semiring R] {u : R}
+    (hu : u ^ 3 = 1) : (1 + u + u ^ 2) * u = 1 + u + u ^ 2 := by
+  rw [add_mul, add_mul, one_mul, ← pow_two, ← pow_succ, hu, add_comm _ (1 : R), add_assoc]
+
+/-- If `u ^ 3 = 1`, then right multiplication by `u ^ 2` fixes `1 + u + u ^ 2`. -/
+theorem one_add_add_sq_mul_sq_of_pow_three_eq_one {R : Type*} [Semiring R] {u : R}
+    (hu : u ^ 3 = 1) : (1 + u + u ^ 2) * u ^ 2 = 1 + u + u ^ 2 := by
+  rw [sq u, ← mul_assoc, ← sq, one_add_add_sq_mul_of_pow_three_eq_one hu,
+    one_add_add_sq_mul_of_pow_three_eq_one hu]
+
 /-- If `u ^ 3 = 1`, then `1 + u + u ^ 2` squares to `3 * (1 + u + u ^ 2)` (so after dividing by
 `3`, `3⁻¹ • (1 + u + u ^ 2)` is idempotent). -/
 theorem one_add_add_sq_mul_self_of_pow_three_eq_one {R : Type*} [Semiring R] {u : R}
     (hu : u ^ 3 = 1) :
     (1 + u + u ^ 2) * (1 + u + u ^ 2) = 3 * (1 + u + u ^ 2) := by
-  have hS : (1 + u + u ^ 2) * u = 1 + u + u ^ 2 := by
-    rw [add_mul, add_mul, one_mul, ← pow_two, ← pow_succ, hu, add_comm _ (1 : R), add_assoc]
-  have hS2 : (1 + u + u ^ 2) * u ^ 2 = 1 + u + u ^ 2 := by
-    rw [sq u, ← mul_assoc, ← sq, hS, hS]
-  rw [mul_add, mul_add, mul_one, hS, hS2, ← two_add_one_eq_three, add_mul, two_mul, one_mul]
+  rw [mul_add, mul_add, mul_one, one_add_add_sq_mul_of_pow_three_eq_one hu,
+    one_add_add_sq_mul_sq_of_pow_three_eq_one hu, ← two_add_one_eq_three, add_mul, two_mul,
+    one_mul]
 
 /-- If `u ^ 3 = 1` and `v` commutes with `u` up to a scalar `c` with `1 + c + c ^ 2 = 0`
 (`v * u = c • (u * v)`), then `(1 + u + u ^ 2) * (1 + v + v ^ 2) * (1 + u + u ^ 2)` reduces to
 `3 * (1 + u + u ^ 2)`. -/
 theorem one_add_add_sq_mul_one_add_add_sq_mul_one_add_add_sq_of_pow_three_eq_one {k A : Type*}
-    [CommRing k] [Ring A] [Algebra k A] {c : k} {u v : A} (hc : 1 + c + c ^ 2 = 0)
+    [CommRing k] [Semiring A] [Algebra k A] {c : k} {u v : A} (hc : 1 + c + c ^ 2 = 0)
     (hu : u ^ 3 = 1) (hvu : v * u = c • (u * v)) :
     (1 + u + u ^ 2) * (1 + v + v ^ 2) * (1 + u + u ^ 2) = 3 * (1 + u + u ^ 2) := by
   -- Right multiplication by `u` fixes `1 + u + u ^ 2`, so it absorbs any `1 + a • u + b • u ^ 2`.
   have hSlin (a b : k) :
       (1 + u + u ^ 2) * (1 + a • u + b • u ^ 2) = (1 + a + b) • (1 + u + u ^ 2) := by
-    have hS : (1 + u + u ^ 2) * u = 1 + u + u ^ 2 := by
-      rw [add_mul, add_mul, one_mul, ← pow_two, ← pow_succ, hu, add_comm _ (1 : A), add_assoc]
-    have hS2 : (1 + u + u ^ 2) * u ^ 2 = 1 + u + u ^ 2 := by
-      rw [sq u, ← mul_assoc, ← sq, hS, hS]
-    rw [mul_add, mul_add, mul_smul_comm, mul_smul_comm, hS, hS2, mul_one, add_smul, add_smul,
-      one_smul]
+    rw [mul_add, mul_add, mul_smul_comm, mul_smul_comm, one_add_add_sq_mul_of_pow_three_eq_one hu,
+      one_add_add_sq_mul_sq_of_pow_three_eq_one hu, mul_one, add_smul, add_smul, one_smul]
   -- Moving `v` to the right through `1 + a • u + b • u ^ 2` twists the coefficients by `c`.
   have hvu2 : v * u ^ 2 = c ^ 2 • (u ^ 2 * v) := by
     rw [sq u, sq c, ← mul_assoc, hvu, smul_mul_assoc, mul_assoc, hvu, mul_smul_comm, smul_smul,
