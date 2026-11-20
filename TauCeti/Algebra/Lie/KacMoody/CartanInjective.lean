@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.KacMoody.Basic
 import Mathlib.Algebra.FreeMonoid.Basic
 import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Sl2.WeightString
 
 /-!
@@ -46,6 +47,9 @@ nonzero vector of weight `μ`.
 
 * `TauCeti.KacMoody.cartanElement_injective`: Cartan injectivity of the Kac–Moody algebra of a
   realization of a generalized Cartan matrix.
+* `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`: for a generalized Cartan matrix, the lowering
+  generators kill the raising Serre elements in any Lie algebra where the Chevalley relations
+  hold (Kac, §3.3).
 
 ## References
 
@@ -77,7 +81,7 @@ variable {L : Type*} [LieRing L] [LieAlgebra K L] {φ : H →ₗ[K] L} {E F : I 
 /-- For a generalized Cartan matrix, every `F k` commutes with each raising Serre element
 `(ad (E i)) ^ (-Aᵢⱼ) ⁅E i, E j⁆`, as soon as `φ`, `E` and `F` satisfy the Chevalley relations
 (Kac, §3.3). Neither Serre relation is used. -/
-private theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
+theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
     (hneg : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 → A j i = 0)
     (hφE : ∀ x j, ⁅φ x, E j⁆ = R.root j x • E j) (hφF : ∀ x j, ⁅φ x, F j⁆ = -(R.root j x • F j))
     (hself : ∀ i, ⁅E i, F i⁆ = φ (R.coroot i)) (hne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0)
@@ -87,13 +91,11 @@ private theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
   -- If `⁅f, e⁆ = 0`, then `ad f` commutes with the powers of `ad e`.
   have lie_ad_pow_of_lie_eq_zero {e f : L} (hfe : ⁅f, e⁆ = 0) (n : ℕ) (y : L) :
       ⁅f, (ad K L e ^ n) y⁆ = (ad K L e ^ n) ⁅f, y⁆ := by
-    have hc : Commute (ad K L f) (ad K L e) := by
-      rw [commute_iff_lie_eq, ← LieHom.map_lie, hfe, map_zero]
-    simpa only [mul_apply_eq_comp, ad_apply] using LinearMap.congr_fun (hc.pow_right n).eq y
+    simpa only [mul_apply_eq_comp, ad_apply] using
+      LinearMap.congr_fun ((LieAlgebra.commute_ad_of_lie_eq_zero hfe).pow_right n).eq y
   have hFE (a b : I) (hab : a ≠ b) : ⁅F b, E a⁆ = 0 := by rw [← lie_skew, hne a b hab, neg_zero]
   have hroot (a b : I) : R.root b (R.coroot a) = (A a b : K) := by simp
-  rw [show (ad K L (E i) ^ (-A i j).toNat) ⁅E i, E j⁆ = (ad K L (E i) ^ ((-A i j).toNat + 1)) (E j)
-    by rw [pow_succ, mul_apply_eq_comp, ad_apply]]
+  rw [← ad_pow_succ_apply]
   obtain rfl | hki := eq_or_ne k i
   · by_cases h0 : φ (R.coroot k) = 0
     · rw [lie_ad_pow_of_lie_eq_zero (by rw [← lie_skew, hself, h0, neg_zero]), hFE j k hij.symm,
@@ -121,6 +123,16 @@ private theorem lie_ad_pow_lie_eq_zero (hdiag : ∀ i, A i i = 2)
   · rw [hFE j k hkj.symm, map_zero]
 
 end SerreElement
+
+/-- The bracket of two operators, applied to a vector. -/
+private theorem lie_end_apply {M : Type*} [AddCommGroup M] [Module K M] (X Y : Module.End K M)
+    (m : M) : ⁅X, Y⁆ m = X (Y m) - Y (X m) := by
+  rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp]
+
+/-- A ring homomorphism into a commutative ring kills commutators. -/
+private theorem map_lie_eq_zero {B C F : Type*} [Ring B] [CommRing C] [FunLike F B C]
+    [RingHomClass F B C] (ε : F) (a b : B) : ε ⁅a, b⁆ = 0 := by
+  rw [Ring.lie_def, map_sub, map_mul, map_mul, mul_comm, sub_self]
 
 /-! ## Kac's representation on the tensor algebra -/
 
@@ -310,18 +322,15 @@ private theorem ad_pow_lie_raising_raising (i j : I) :
     induction n with
     | zero => simp [Ring.lie_def, raising_single_one, raisingWord_one]
     | succ n ih =>
-      rw [pow_succ', mul_apply_eq_comp, ad_apply, Ring.lie_def, LinearMap.sub_apply,
-        mul_apply_eq_comp, mul_apply_eq_comp, ih, raising_single_one, raisingWord_one, map_zero,
-        map_zero, sub_zero]
+      rw [pow_succ', mul_apply_eq_comp, ad_apply, lie_end_apply, ih]
+      simp [raising_single_one, raisingWord_one]
   refine (MonoidAlgebra.basis (FreeMonoid I) K).ext fun w => ?_
   rw [basis_apply, LinearMap.zero_apply]
   induction w using FreeMonoid.inductionOn' with
   | one => exact hone _
   | of_mul k w ih =>
     have h := LinearMap.congr_fun (hcomm k) (single w 1)
-    rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp, ih, map_zero,
-      zero_sub, LinearMap.zero_apply, neg_eq_zero, lowering_single] at h
-    exact h
+    simpa [lie_end_apply, ih, lowering_single] using h
 
 variable (K A) in
 /-- The lowering Serre element `(ad i) ^ (-Aᵢⱼ) ⁅i, j⁆` of the tensor algebra. -/
@@ -349,6 +358,15 @@ private theorem mul_serreElement_mul_mem (a c : K[FreeMonoid I]) (i j : I) :
   Submodule.subset_span ⟨a, c, i, j, rfl⟩
 
 omit [DecidableEq I] in
+/-- A linear operator preserves the Serre ideal once it carries every spanning element
+`a * serreElement K A i j * c` into it. -/
+private theorem map_mem_serreIdeal (f : Module.End K K[FreeMonoid I])
+    (hf : ∀ a c i j, f (a * serreElement K A i j * c) ∈ serreIdeal K A) {t : K[FreeMonoid I]}
+    (ht : t ∈ serreIdeal K A) : f t ∈ serreIdeal K A :=
+  (Submodule.span_le (p := (serreIdeal K A).comap f)).mpr
+    (by rintro _ ⟨a, c, i, j, rfl⟩; exact hf a c i j) ht
+
+omit [DecidableEq I] in
 /-- The Serre ideal lies in the augmentation ideal, so it does not contain `1`. -/
 private theorem one_notMem_serreIdeal : (1 : K[FreeMonoid I]) ∉ serreIdeal K A := by
   let ε := MonoidAlgebra.lift K K (FreeMonoid I) 1
@@ -356,8 +374,8 @@ private theorem one_notMem_serreIdeal : (1 : K[FreeMonoid I]) ∉ serreIdeal K A
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨a, c, i, j, rfl⟩
     have hs : ε (serreElement K A i j) = 0 := by
-      rw [serreElement, ← ad_apply (R := K), ← mul_apply_eq_comp, ← pow_succ, pow_succ',
-        mul_apply_eq_comp, ad_apply, Ring.lie_def, map_sub, map_mul, map_mul, mul_comm, sub_self]
+      rw [serreElement, ← ad_pow_succ_apply, pow_succ', mul_apply_eq_comp, ad_apply,
+        map_lie_eq_zero]
     simp [hs]
   intro h
   simpa [ε] using hle h
@@ -365,14 +383,9 @@ private theorem one_notMem_serreIdeal : (1 : K[FreeMonoid I]) ∉ serreIdeal K A
 omit [DecidableEq I] in
 private theorem lowering_mem_serreIdeal (k : I) {t : K[FreeMonoid I]} (ht : t ∈ serreIdeal K A) :
     lowering k t ∈ serreIdeal K A := by
-  induction ht using Submodule.span_induction with
-  | mem t ht =>
-    obtain ⟨a, c, i, j, rfl⟩ := ht
-    rw [lowering_apply, ← mul_assoc, ← mul_assoc]
-    exact mul_serreElement_mul_mem _ _ _ _
-  | zero => simp
-  | add t t' _ _ h h' => exact (map_add (lowering k) t t').symm ▸ add_mem h h'
-  | smul c t _ h => exact (map_smul (lowering k) c t).symm ▸ Submodule.smul_mem _ c h
+  refine map_mem_serreIdeal _ (fun a c i j => ?_) ht
+  rw [lowering_apply, ← mul_assoc, ← mul_assoc]
+  exact mul_serreElement_mul_mem _ _ _ _
 
 omit [DecidableEq I] in
 private theorem weightDerivation_lie (x : H) (a b : K[FreeMonoid I]) :
@@ -410,17 +423,12 @@ omit [DecidableEq I] in
 private theorem cartanAction_mem_serreIdeal (x : H) {t : K[FreeMonoid I]}
     (ht : t ∈ serreIdeal K A) : cartanAction R μ x t ∈ serreIdeal K A := by
   have hD : weightDerivation R x t ∈ serreIdeal K A := by
-    induction ht using Submodule.span_induction with
-    | mem t ht =>
-      obtain ⟨a, c, i, j, rfl⟩ := ht
-      obtain ⟨σ, hσ⟩ := exists_weightDerivation_serreElement R x i j
-      rw [weightDerivation_mul, weightDerivation_mul, hσ, mul_smul_comm, add_mul, smul_mul_assoc]
-      exact add_mem (add_mem (mul_serreElement_mul_mem _ _ _ _)
-        (Submodule.smul_mem _ _ (mul_serreElement_mul_mem _ _ _ _)))
-        (mul_serreElement_mul_mem _ _ _ _)
-    | zero => simp
-    | add t t' _ _ h h' => exact (map_add (weightDerivation R x) t t').symm ▸ add_mem h h'
-    | smul c t _ h => exact (map_smul (weightDerivation R x) c t).symm ▸ Submodule.smul_mem _ c h
+    refine map_mem_serreIdeal _ (fun a c i j => ?_) ht
+    obtain ⟨σ, hσ⟩ := exists_weightDerivation_serreElement R x i j
+    rw [weightDerivation_mul, weightDerivation_mul, hσ, mul_smul_comm, add_mul, smul_mul_assoc]
+    exact add_mem (add_mem (mul_serreElement_mul_mem _ _ _ _)
+      (Submodule.smul_mem _ _ (mul_serreElement_mul_mem _ _ _ _)))
+      (mul_serreElement_mul_mem _ _ _ _)
   simpa [cartanAction] using sub_mem (Submodule.smul_mem _ (μ x) ht) hD
 
 include hdiag hneg hzero in
@@ -437,36 +445,30 @@ private theorem raising_mem_serreIdeal (k : I) {t : K[FreeMonoid I]} (ht : t ∈
     · rw [LinearMap.neg_apply, neg_lie, lie_cartanAction_raising]
     · rw [← lie_skew, lie_raising_lowering_self, LinearMap.neg_apply]
     · rw [← lie_skew, lie_raising_lowering_of_ne R μ (Ne.symm h), neg_zero]
-  induction ht using Submodule.span_induction with
-  | mem t ht =>
-    obtain ⟨a, c, i, j, rfl⟩ := ht
-    induction a using MonoidAlgebra.induction_on with
-    | of w =>
-      rw [MonoidAlgebra.of_apply]
-      induction w using FreeMonoid.inductionOn' with
-      | one =>
-        have h := LinearMap.congr_fun (hcomm i j) c
-        rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
-          LinearMap.zero_apply, sub_eq_zero, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply',
-          LinearMap.mul_apply'] at h
-        rw [← MonoidAlgebra.one_def, one_mul, h, ← one_mul (serreElement K A i j)]
-        exact mul_serreElement_mul_mem _ _ _ _
-      | of_mul j' w ih =>
-        rw [← lowering_single, lowering_apply, mul_assoc, mul_assoc, ← lowering_apply,
-          raising_lowering, ← mul_assoc]
-        refine add_mem (lowering_mem_serreIdeal _ ih) ?_
-        split_ifs
-        · exact cartanAction_mem_serreIdeal R μ _ (mul_serreElement_mul_mem _ _ _ _)
-        · exact zero_mem _
-    | add a a' h h' =>
-      rw [add_mul, add_mul, map_add]
-      exact add_mem h h'
-    | smul r a h =>
-      rw [smul_mul_assoc, smul_mul_assoc, map_smul]
-      exact Submodule.smul_mem _ r h
-  | zero => simp
-  | add t t' _ _ h h' => exact (map_add (raising R μ k) t t').symm ▸ add_mem h h'
-  | smul c t _ h => exact (map_smul (raising R μ k) c t).symm ▸ Submodule.smul_mem _ c h
+  refine map_mem_serreIdeal _ (fun a c i j => ?_) ht
+  induction a using MonoidAlgebra.induction_on with
+  | of w =>
+    rw [MonoidAlgebra.of_apply]
+    induction w using FreeMonoid.inductionOn' with
+    | one =>
+      have h := LinearMap.congr_fun (hcomm i j) c
+      rw [lie_end_apply, LinearMap.zero_apply, sub_eq_zero, Algebra.coe_lmul_eq_mul,
+        LinearMap.mul_apply', LinearMap.mul_apply'] at h
+      rw [← MonoidAlgebra.one_def, one_mul, h, ← one_mul (serreElement K A i j)]
+      exact mul_serreElement_mul_mem _ _ _ _
+    | of_mul j' w ih =>
+      rw [← lowering_single, lowering_apply, mul_assoc, mul_assoc, ← lowering_apply,
+        raising_lowering, ← mul_assoc]
+      refine add_mem (lowering_mem_serreIdeal _ ih) ?_
+      split_ifs
+      · exact cartanAction_mem_serreIdeal R μ _ (mul_serreElement_mul_mem _ _ _ _)
+      · exact zero_mem _
+  | add a a' h h' =>
+    rw [add_mul, add_mul, map_add]
+    exact add_mem h h'
+  | smul r a h =>
+    rw [smul_mul_assoc, smul_mul_assoc, map_smul]
+    exact Submodule.smul_mem _ r h
 
 /-! ### The quotient module -/
 
