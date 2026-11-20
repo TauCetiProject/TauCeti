@@ -54,25 +54,22 @@ instance isReduced_pushout [IsReduced X] [IsReduced Y] : IsReduced (pushout f g)
 /-- Gluing two irreducible schemes along a nonempty common open gives an irreducible scheme. -/
 instance irreducibleSpace_pushout [IrreducibleSpace X] [IrreducibleSpace Y] [Nonempty U] :
     IrreducibleSpace ↑(pushout f g) := by
-  have isIrreducible_range {Z : Scheme.{u}} [IrreducibleSpace Z] (h : Z ⟶ pushout f g) :
-      IsIrreducible (Set.range h) := by
-    simpa only [Set.image_univ] using
-      (IrreducibleSpace.isIrreducible_univ _).image _ h.continuous.continuousOn
   obtain ⟨p⟩ := ‹Nonempty U›
-  -- The first chart is dense: it meets the irreducible second chart in a nonempty open set,
-  -- which is dense there.
-  have hmeet : (Set.range (pushout.inr f g) ∩ Set.range (pushout.inl f g)).Nonempty :=
-    ⟨pushout.inl f g (f p), ⟨g p, by rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply,
-      pushout.condition]⟩, ⟨_, rfl⟩⟩
-  have hdense : closure (Set.range (pushout.inl f g)) = Set.univ := by
-    refine Set.eq_univ_of_univ_subset ?_
-    rw [← range_pushout_inl_union_range_pushout_inr f g]
-    exact Set.union_subset subset_closure ((subset_closure_inter_of_isPreirreducible_of_isOpen
-      (isIrreducible_range (pushout.inr f g)).isPreirreducible
-      (pushout.inl f g).isOpenEmbedding.isOpen_range hmeet).trans
-      (closure_mono Set.inter_subset_right))
-  rw [irreducibleSpace_def, Set.top_eq_univ, ← hdense]
-  exact (isIrreducible_range (pushout.inl f g)).closure
+  -- The two charts meet at the image of a point of the common open.
+  have hmeet : ¬ Disjoint (pushout.inl f g).opensRange (pushout.inr f g).opensRange :=
+    fun h ↦ h.le_bot (show pushout.inl f g (f p) ∈ _ ⊓ _ from ⟨⟨_, rfl⟩, g p, by
+      rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, pushout.condition]⟩)
+  -- The chart images form an open cover by pairwise meeting irreducible pieces.
+  have : PreirreducibleSpace ↑(pushout f g) := by
+    refine .of_isOpenCover ?_ (pushoutOpenCover f g).isOpenCover_opensRange fun b ↦ ?_
+    · rintro (_ | _) (_ | _) h
+      exacts [(h rfl).elim, hmeet, fun h ↦ hmeet h.symm, (h rfl).elim]
+    · cases b
+      exacts [Set.rangeFactorization_surjective.preirreducibleSpace
+          (pushout.inl f g).continuous.rangeFactorization,
+        Set.rangeFactorization_surjective.preirreducibleSpace
+          (pushout.inr f g).continuous.rangeFactorization]
+  exact { toNonempty := ⟨pushout.inl f g (f p)⟩ }
 
 /-- Gluing two integral schemes along a nonempty common open gives an integral scheme. -/
 instance isIntegral_pushout [IsIntegral X] [IsIntegral Y] [Nonempty U] :
