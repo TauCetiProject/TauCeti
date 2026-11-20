@@ -8,6 +8,7 @@ module
 public import TauCeti.LowDimTopology.Bordered.TypeDA
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Data.Fin.StrictMono
+import TauCeti.Data.Matrix.Block
 
 /-!
 # The box tensor product of a type `DA` bimodule with morphisms of type `D` structures
@@ -159,19 +160,19 @@ private theorem coeff_update_eq_zero_of_lt (h : X → ℕ) (hh : ∀ x y, N.coef
       (Matrix.fromBlocks 0 F 0 0) t (r t.castSucc) (r t.succ)) = 0 := by
   by_contra hne
   -- Every entry along `r` is nonzero, so `sumHeight h h'` rises at every step of the path.
-  have hstep (t : Fin n) : TypeDStructure.sumHeight h h' (r t.castSucc) <
-      TypeDStructure.sumHeight h h' (r t.succ) := by
+  have hstep (t : Fin n) : sumHeight h h' (r t.castSucc) <
+      sumHeight h h' (r t.succ) := by
     have ht : Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l
         (Matrix.fromBlocks 0 F 0 0) t (r t.castSucc) (r t.succ) ≠ 0 := fun h0 =>
       hne ((P.coeff n).map_coord_zero t h0)
     rcases eq_or_ne t l with rfl | htl
     · rw [Function.update_self] at ht
-      exact TypeDStructure.sumHeight_lt_of_fromBlocks h (by simp) h' (by simp) F ht
+      exact sumHeight_lt_of_fromBlocks h (by simp) h' (by simp) F ht
     · rw [Function.update_of_ne htl] at ht
-      exact TypeDStructure.sumHeight_lt_of_fromBlocks h hh h' hh' 0 ht
-  have hr : StrictMono (TypeDStructure.sumHeight h h' ∘ r) := Fin.strictMono_iff_lt_succ.mpr hstep
+      exact sumHeight_lt_of_fromBlocks h hh h' hh' 0 ht
+  have hr : StrictMono (sumHeight h h' ∘ r) := Fin.strictMono_iff_lt_succ.mpr hstep
   have := hr.le_univ_sup_nat
-  have := TypeDStructure.univ_sup_sumHeight_le h h'
+  have := univ_sup_sumHeight_le h h'
   omega
 
 /-- **`P ⊠ F` for a bounded bimodule as a finite sum.** If the operations of `P` vanish from arity
@@ -214,11 +215,9 @@ private theorem boxMorphism_add_of_bound {K : ℕ}
       (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N'.coeff) l E t
         (r t.castSucc) (r t.succ)) =
       Function.update (fun t => Matrix.fromBlocks N.coeff 0 0 N'.coeff (r t.castSucc) (r t.succ))
-        l (E (r l.castSucc) (r l.succ)) := by
-    funext t
-    rcases eq_or_ne t l with rfl | htl
-    · simp
-    · simp [Function.update_of_ne htl]
+        l (E (r l.castSucc) (r l.succ)) :=
+    funext (Function.apply_update (fun t (E' : Matrix (X ⊕ X') (X ⊕ X') A) =>
+      E' (r t.castSucc) (r t.succ)) _ l E)
   have hE : Matrix.fromBlocks (0 : Matrix X X A) (F + G) (0 : Matrix X' X A) (0 : Matrix X' X' A) =
       Matrix.fromBlocks 0 F 0 0 + Matrix.fromBlocks 0 G 0 0 := by
     simp [Matrix.fromBlocks_add]

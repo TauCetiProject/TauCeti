@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Ungraded
 public import TauCeti.LowDimTopology.Bordered.TypeD
+import TauCeti.Data.Matrix.Block
 
 /-!
 # The box tensor product of a type `A` module with a type `D` structure
@@ -658,39 +659,6 @@ theorem typeABoxMap_add_typeABoxMap_of_act_eq_zero [CharP R 2] (N : TypeDStructu
         typeABoxMap N N' Mm H (N.typeABoxDifferential Mm φ) := by
   rw [typeABoxDifferential_typeABoxMap_of_act_eq_zero N N' Mm hK, hH,
     typeABoxMap_add_of_act_eq_zero N N' Mm hK, LinearMap.add_apply]
-
-/-- The height on `X ⊕ X'` of two heights on `X` and `X'`, that of `X'` shifted above that of
-`X`. -/
-def sumHeight (h : X → ℕ) (h' : X' → ℕ) : X ⊕ X' → ℕ :=
-  Sum.elim h fun y => univ.sup h + 1 + h' y
-
-omit [DecidableEq X] [DecidableEq X'] in
-/-- The largest value of `sumHeight h h'` is at most the sum of the largest heights plus one. -/
-theorem univ_sup_sumHeight_le (h : X → ℕ) (h' : X' → ℕ) :
-    univ.sup (sumHeight h h') ≤ univ.sup h + univ.sup h' + 1 :=
-  Finset.sup_le fun a _ => by
-    rcases a with x | y
-    · have := le_sup (f := h) (mem_univ x)
-      simp only [sumHeight, Sum.elim_inl]
-      omega
-    · have := le_sup (f := h') (mem_univ y)
-      simp only [sumHeight, Sum.elim_inr]
-      omega
-
-omit [DecidableEq X] [Fintype X'] [DecidableEq X'] in
-/-- A block upper-triangular matrix `fromBlocks D G 0 D'` increases `sumHeight h h'` along its
-nonzero entries when `D` and `D'` increase `h` and `h'`. -/
-theorem sumHeight_lt_of_fromBlocks {D : Matrix X X A} {D' : Matrix X' X' A} (h : X → ℕ)
-    (hD : ∀ x y, D x y ≠ 0 → h x < h y) (h' : X' → ℕ) (hD' : ∀ x y, D' x y ≠ 0 → h' x < h' y)
-    (G : Matrix X X' A) {a b : X ⊕ X'} (hab : Matrix.fromBlocks D G 0 D' a b ≠ 0) :
-    sumHeight h h' a < sumHeight h h' b := by
-  rcases a with x | x <;> rcases b with y | y <;>
-    simp only [sumHeight, Sum.elim_inl, Sum.elim_inr, Matrix.fromBlocks_apply₁₁,
-      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂] at hab ⊢
-  · exact hD x y hab
-  · have := le_sup (f := h) (mem_univ x); omega
-  · simp at hab
-  · have := hD' x y hab; omega
 
 /-- The block upper-triangular matrices increase `sumHeight h h'` when `δ` and `δ'` increase `h`
 and `h'`. -/
