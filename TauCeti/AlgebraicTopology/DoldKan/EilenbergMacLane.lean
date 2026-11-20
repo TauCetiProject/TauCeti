@@ -108,6 +108,22 @@ def simplicialEilenbergMacLanePiAddEquiv (n : ℕ) (A : ModuleCat.{u} R) :
     ((single (ModuleCat.{u} R) (ComplexShape.down ℕ) (n + 1)).obj A) n).trans
     (singleObjHomologySelfIso (ComplexShape.down ℕ) (n + 1) A).toLinearEquiv.toAddEquiv
 
+/-- The identification `π_n(K(A, n), 0) ≃+ A` is the Moore/Dold–Kan comparison
+`π_n(Γ(A[n]), 0) ≃+ H_n(A[n])` followed by `H_n(A[n]) ≅ A`. The class is transported along
+`simplicialEilenbergMacLane_obj`, since the body of the model is not exposed. -/
+lemma simplicialEilenbergMacLanePiAddEquiv_apply (n : ℕ) (A : ModuleCat.{u} R)
+    (a : Additive (SSet.KanComplex.π (n + 1)
+      ((simplicialEilenbergMacLane R (n + 1)).obj A ⋙ forget (ModuleCat R))
+      (0 : ((simplicialEilenbergMacLane R (n + 1)).obj A) _⦋0⦌))) :
+    simplicialEilenbergMacLanePiAddEquiv n A a =
+      (singleObjHomologySelfIso (ComplexShape.down ℕ) (n + 1) A).hom
+        (ChainComplex.doldKanPiAddEquivHomology
+          ((single (ModuleCat.{u} R) (ComplexShape.down ℕ) (n + 1)).obj A) n
+          (cast (congrArg (fun X : SimplicialObject (ModuleCat.{u} R) ↦
+            Additive (SSet.KanComplex.π (n + 1) (X ⋙ forget (ModuleCat R)) (0 : X _⦋0⦌)))
+            (simplicialEilenbergMacLane_obj R (n + 1) A)) a)) :=
+  (rfl)
+
 /-- The identification `π_n(K(A, n), 0) ≃+ A` is natural in the module `A`. -/
 @[simp]
 lemma simplicialEilenbergMacLanePiAddEquiv_map (n : ℕ) {A B : ModuleCat.{u} R} (f : A ⟶ B)
@@ -130,6 +146,28 @@ def simplicialEilenbergMacLanePiZeroEquiv (A : ModuleCat.{u} R) :
   (ChainComplex.doldKanPiZeroEquivHomology
     ((single (ModuleCat.{u} R) (ComplexShape.down ℕ) 0).obj A)).trans
     (singleObjHomologySelfIso (ComplexShape.down ℕ) 0 A).toLinearEquiv.toEquiv
+
+/-- The identification `π₀(K(A, 0), 0) ≃ A` is the Moore/Dold–Kan comparison
+`π₀(Γ(A[0]), 0) ≃ H_0(A[0])` followed by `H_0(A[0]) ≅ A`. The component is transported along
+`simplicialEilenbergMacLane_obj`, since the body of the model is not exposed. -/
+lemma simplicialEilenbergMacLanePiZeroEquiv_apply (A : ModuleCat.{u} R)
+    (a : SSet.KanComplex.π 0 ((simplicialEilenbergMacLane R 0).obj A ⋙ forget (ModuleCat R))
+      (0 : ((simplicialEilenbergMacLane R 0).obj A) _⦋0⦌)) :
+    simplicialEilenbergMacLanePiZeroEquiv A a =
+      (singleObjHomologySelfIso (ComplexShape.down ℕ) 0 A).hom
+        (ChainComplex.doldKanPiZeroEquivHomology
+          ((single (ModuleCat.{u} R) (ComplexShape.down ℕ) 0).obj A)
+          (cast (congrArg (fun X : SimplicialObject (ModuleCat.{u} R) ↦
+            SSet.KanComplex.π 0 (X ⋙ forget (ModuleCat R)) (0 : X _⦋0⦌))
+            (simplicialEilenbergMacLane_obj R 0 A)) a)) :=
+  (rfl)
+
+/-- The identification `π₀(K(A, 0), 0) ≃ A` sends the component of the vertex `0` to `0`. -/
+@[simp]
+lemma simplicialEilenbergMacLanePiZeroEquiv_one (A : ModuleCat.{u} R) :
+    simplicialEilenbergMacLanePiZeroEquiv A 1 = 0 :=
+  (congrArg (singleObjHomologySelfIso (ComplexShape.down ℕ) 0 A).hom
+    (ChainComplex.doldKanPiZeroEquivHomology_one _)).trans (map_zero _)
 
 /-- The identification `π₀(K(A, 0), 0) ≃ A` is natural in the module `A`. -/
 @[simp]
