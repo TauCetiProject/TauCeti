@@ -401,6 +401,31 @@ theorem coeFn_stationarySobolevEquiv {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)}
         fun t : ℝ ↦ S t) :=
   ContinuousLinearEquiv.coeFn_ofBijective _ _ _
 
+/-- The inverse of `TauCeti.Floer.stationarySobolevEquiv` is a right inverse of the Sobolev
+realization of the stationary cylinder operator. -/
+@[simp]
+theorem stationarySobolevOperator_stationarySobolevEquiv_symm_apply
+    {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)} (hS₁ : ContDiff ℝ 1 fun t : ℝ ↦ S t)
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft (fun t : ℝ ↦ S t) 1 : F →L[ℝ] F) :
+      F →ₗ[ℝ] F) ≠ 0) (η : Lp F 2 stripMeasure) :
+    stationarySobolevOperator (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
+        (fun t : ℝ ↦ S t) ((stationarySobolevEquiv hS₁ hS hdet).symm η) = η :=
+  ContinuousLinearEquiv.ofBijective_apply_symm_apply _ _ _ η
+
+/-- The inverse of `TauCeti.Floer.stationarySobolevEquiv` is a left inverse of the Sobolev
+realization of the stationary cylinder operator. -/
+@[simp]
+theorem stationarySobolevEquiv_symm_stationarySobolevOperator_apply
+    {S : C(AddCircle (1 : ℝ), F →L[ℝ] F)} (hS₁ : ContDiff ℝ 1 fun t : ℝ ↦ S t)
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
+    (hdet : LinearMap.det ((1 - dysonSeriesLeft (fun t : ℝ ↦ S t) 1 : F →L[ℝ] F) :
+      F →ₗ[ℝ] F) ≠ 0) (ξ : H1 F) :
+    (stationarySobolevEquiv hS₁ hS hdet).symm
+        (stationarySobolevOperator (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
+          (fun t : ℝ ↦ S t) ξ) = ξ :=
+  ContinuousLinearEquiv.ofBijective_symm_apply_apply _ _ _ ξ
+
 end Unitary
 
 end TauCeti.Floer
