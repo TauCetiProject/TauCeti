@@ -390,7 +390,7 @@ lemma MulAction.normalizerOrbitRelQuotientMap_apply (H : Subgroup G)
 /-- The normalizer representative `1` acts trivially on the orbit quotient. -/
 @[simp]
 lemma MulAction.normalizerOrbitRelQuotientMap_one (H : Subgroup G) :
-    MulAction.normalizerOrbitRelQuotientMap (X := X) H ⟨1, by simp⟩ = id := by
+    MulAction.normalizerOrbitRelQuotientMap (X := X) H 1 = id := by
   ext x
   refine Quotient.inductionOn' x ?_
   intro x
@@ -494,10 +494,11 @@ def MulAction.normalizerQuotientOrbitRelQuotientPermHom (H : Subgroup G) :
 
 /-- The descended normalizer-quotient action sends a normalizer representative to the
 corresponding translate on orbit classes. -/
+@[simp]
 lemma MulAction.normalizerQuotientOrbitRelQuotientPermHom_mk_apply (H : Subgroup G)
     (g : Subgroup.normalizer (H : Set G)) (x : X) :
     MulAction.normalizerQuotientOrbitRelQuotientPermHom (X := X) H
-        (Subgroup.normalizerQuotientMk H g)
+        (g : Subgroup.normalizerQuotient H)
         (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x) :=
   by simp [MulAction.normalizerQuotientOrbitRelQuotientPermHom]
@@ -511,10 +512,11 @@ def MulAction.normalizerQuotientOrbitRelQuotientMulAction (H : Subgroup G) :
 
 /-- A normalizer-quotient representative acts on the orbit quotient by translating
 representatives. -/
+@[simp]
 lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_mk (H : Subgroup G)
     (g : Subgroup.normalizer (H : Set G)) (x : X) :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
-    Subgroup.normalizerQuotientMk H g •
+    (g : Subgroup.normalizerQuotient H) •
         (Quotient.mk'' x : MulAction.orbitRel.Quotient H X) =
       Quotient.mk'' ((g : G) • x) :=
   by
@@ -574,10 +576,9 @@ lemma MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul
     [MulAction.IsPretransitive G X] [IsCancelSMul G X] (H : Subgroup G) [H.Normal] (x : X) (g : G) :
     MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x
         (Quotient.mk'' (g • x) : MulAction.orbitRel.Quotient H X) =
-      Subgroup.normalizerQuotientMk H
-        ⟨g⁻¹, by simp [H.normalizer_eq_top]⟩ := by
+      ((⟨g⁻¹, by simp [H.normalizer_eq_top]⟩ : Subgroup.normalizer (H : Set G)) :
+        Subgroup.normalizerQuotient H) := by
   rw [← (MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x).eq_symm_apply]
-  rw [Subgroup.normalizerQuotientMk_apply]
   rw [MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mk]
   simp
 
@@ -591,7 +592,7 @@ lemma MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_map_smul_eq_mul_
     MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀ (a • x) =
       MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal H x₀ x * a⁻¹ := by
   let := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
-  obtain ⟨g, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective a
   refine Quotient.inductionOn' x ?_
   intro x
   obtain ⟨k, hk⟩ := MulAction.exists_smul_eq G x₀ x
@@ -659,13 +660,14 @@ lemma MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff
   let := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
   constructor
   · intro h
-    obtain ⟨g, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H a
-    obtain ⟨k, rfl⟩ := Subgroup.normalizerQuotientMk_surjective H c
+    obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective a
+    obtain ⟨k, rfl⟩ := QuotientGroup.mk_surjective c
     refine Quotient.inductionOn' x ?_ h
     intro x h
     rw [MulAction.normalizerQuotientOrbitRelQuotient_smul_mk,
       MulAction.normalizerQuotientOrbitRelQuotient_smul_mk] at h
-    rw [Subgroup.normalizerQuotientMk_eq_iff_div_mem]
+    rw [← H.normalizerQuotientMk_apply, ← H.normalizerQuotientMk_apply,
+      Subgroup.normalizerQuotientMk_eq_iff_div_mem]
     simpa [div_eq_mul_inv] using
       (MulAction.orbitRelQuotient_smul_eq_smul_iff_mul_inv_mem_of_mem_normalizer H x g k).mp h
   · intro h
