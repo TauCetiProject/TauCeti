@@ -7,18 +7,25 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation
 public import TauCeti.Algebra.Homology.DG.Coalgebra.Cobar.TwistingCochain
+public import TauCeti.Algebra.Module.GradedModule.Quotient
+import TauCeti.LinearAlgebra.TensorAlgebra.Basic
 
 /-!
 # The canonical augmentation of the cobar construction
 
-For a noncounital differential graded coalgebra `C`, the cobar differential on `ΩC = T(s⁻¹ C)`
-sends every desuspended generator `s⁻¹ c` into the positive tensor powers (`cobarDifferential_ι`),
-so the algebra map `ΩC → R` annihilating all generators is a DG algebra augmentation
-(`IsNonCounitalDGCoalgebra.cobarAugmentation`), realized as the cobar lift of `0`.
+The cobar construction `ΩC = T(s⁻¹ C)` of a noncounital DG coalgebra `C` over `R` carries a
+canonical DG algebra augmentation `IsNonCounitalDGCoalgebra.cobarAugmentation : ΩC ⟶ R` induced by
+the zero twisting cochain `C →ₗ[R] R`, annihilating every desuspended generator `s⁻¹ c`.
 
-Under `cobarTwistingCochainEquiv`, a DG algebra morphism `φ : ΩC → A` into an augmented DG algebra
-`(A, e_A)` preserves the augmentations precisely when the corresponding twisting cochain `τ : C → A`
-lands in `e_A.augmentationIdeal` (`IsNonCounitalDGCoalgebra.cobarAugmentedHomEquiv`).
+Under `cobarTwistingCochainEquiv`, a DG algebra morphism `ΩC ⟶ A` into an augmented DG algebra
+`(A, ε_A)` intertwines augmentations if and only if its twisting cochain `τ : C →ₗ[R] A` lands in
+`ε_A.augmentationIdeal` (`IsNonCounitalDGCoalgebra.augmentedCobarTwistingCochainEquiv`).
+
+The augmentation ideal `Ω⁺C` is spanned by the nonempty products of generators
+(`IsNonCounitalDGCoalgebra.cobarAugmentation_augmentationIdeal_eq_span_tprod`), odd derivations
+mapping generators into `Ω⁺C` preserve it (`cobarAugmentation_derivation_eq_zero`), and the grading
+and differential of `ΩC` restrict to `Ω⁺C` (`IsNonCounitalDGCoalgebra.cobarReducedGrading`,
+`IsNonCounitalDGCoalgebra.cobarReducedDifferential`).
 
 ## References
 
@@ -30,99 +37,147 @@ public section
 
 open TensorProduct TensorAlgebra
 
-namespace TauCeti.IsNonCounitalDGCoalgebra
+namespace TauCeti
 
-universe uR uC uC' uA uB
+universe uR uC uD uA
 
-variable {R : Type uR} {C : Type uC} [CommRing R] [AddCommGroup C] [Module R C]
+variable {R : Type uR} {C : Type uC} {D : Type uD}
+  [CommRing R] [AddCommGroup C] [Module R C] [AddCommGroup D] [Module R D]
   {G : InternalGrading R C ℤ} {Δ : C →ₗ[R] C ⊗[R] C} {dC : C →ₗ[R] C}
-  (hC : IsNonCounitalDGCoalgebra G Δ dC)
 
-/-- The canonical augmentation of `ΩC = T(s⁻¹ C)`, annihilating every desuspended generator. -/
+namespace IsNonCounitalDGCoalgebra
+
+variable (hC : IsNonCounitalDGCoalgebra G Δ dC)
+
+/-- The canonical augmentation `ΩC ⟶ R` of the cobar construction, sending `ι c` to `0`. -/
 noncomputable def cobarAugmentation : DGAlgAugmentation hC.isDGAlgebra_cobarDifferential :=
-  hC.cobarLift (isDGAlgebra_trivialGrading R) 0 IsTwistingCochain.zero
+  hC.cobarLift (isDGAlgebra_trivialGrading R) 0
+    (isTwistingCochain_zero G Δ dC (trivialGrading R R) 0)
 
-/-- The canonical cobar augmentation kills every desuspended generator. -/
-@[simp]
-theorem cobarAugmentation_ι (c : C) : hC.cobarAugmentation (ι R c) = 0 := by
+@[simp] theorem cobarAugmentation_ι (c : C) : hC.cobarAugmentation (ι R c) = 0 := by
   simp [cobarAugmentation]
 
-/-- The twisting cochain associated to `cobarAugmentation` is zero. -/
-@[simp]
-theorem cobarTwistingCochainEquiv_cobarAugmentation :
+@[simp] theorem cobarTwistingCochainEquiv_cobarAugmentation :
     (hC.cobarTwistingCochainEquiv (isDGAlgebra_trivialGrading R) hC.cobarAugmentation).val = 0 :=
   LinearMap.ext fun _ ↦ by simp
 
-section Functoriality
+/-- The cobar morphism induced by a coalgebra map intertwines the canonical cobar augmentations. -/
+@[simp] theorem cobarAugmentation_comp_cobarMap
+    {GD : InternalGrading R D ℤ} {ΔD : D →ₗ[R] D ⊗[R] D} {dD : D →ₗ[R] D}
+    (hD : IsNonCounitalDGCoalgebra GD ΔD dD) (f : D →ₗ[R] C)
+    (hf_hom : LinearMap.IsHomogeneous f GD.piece G.piece 0)
+    (hf_comul : Δ ∘ₗ f = TensorProduct.map f f ∘ₗ ΔD) (hf_d : dC ∘ₗ f = f ∘ₗ dD) :
+    hC.cobarAugmentation.comp (hD.cobarMap hC f hf_hom hf_comul hf_d) = hD.cobarAugmentation :=
+  hD.cobarHom_ext _ fun _ ↦ by simp
 
-variable {C' : Type uC'} [AddCommGroup C'] [Module R C']
-  {G' : InternalGrading R C' ℤ} {Δ' : C' →ₗ[R] C' ⊗[R] C'} {dC' : C' →ₗ[R] C'}
-  (hC' : IsNonCounitalDGCoalgebra G' Δ' dC')
+theorem ι_mem_cobarAugmentation_augmentationIdeal (c : C) :
+    ι R c ∈ hC.cobarAugmentation.augmentationIdeal :=
+  hC.cobarAugmentation.mem_augmentationIdeal.2 (hC.cobarAugmentation_ι c)
 
-/-- Every induced cobar morphism preserves the canonical cobar augmentation. -/
-@[simp]
-theorem cobarAugmentation_comp_cobarMap (F : C →ₗ[R] C')
-    (hF_hom : LinearMap.IsHomogeneous F G.piece G'.piece 0)
-    (hF_comul : Δ' ∘ₗ F = TensorProduct.map F F ∘ₗ Δ) (hF_d : dC' ∘ₗ F = F ∘ₗ dC) :
-    hC'.cobarAugmentation.comp (hC.cobarMap hC' F hF_hom hF_comul hF_d) = hC.cobarAugmentation :=
-  hC.cobarHom_ext (isDGAlgebra_trivialGrading R) fun _ ↦ by simp
+/-- An odd derivation of `Ω C` mapping generators into `Ω⁺ C` maps all of `Ω C` into `Ω⁺ C`. -/
+theorem cobarAugmentation_derivation_eq_zero {f : C →ₗ[R] TensorAlgebra R C}
+    (hf : ∀ c, hC.cobarAugmentation (f c) = 0) (x : TensorAlgebra R C) :
+    hC.cobarAugmentation (tensorAlgebraDerivation (G.shift (-1)) f x) = 0 := by
+  induction x using TensorAlgebra.induction with
+  | algebraMap _ => simp
+  | ι c => simp [hf c]
+  | add _ _ hx hy => simp [hx, hy]
+  | mul _ _ hx hy => simp [tensorAlgebraDerivation_mul, hx, hy]
 
-end Functoriality
+theorem cobarAugmentation_tprod {n : ℕ} (hn : 0 < n) (x : Fin n → C) :
+    hC.cobarAugmentation (tprod R C n x) = 0 := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'; simp
 
-section UniversalProperty
+theorem tprod_mem_cobarAugmentation_augmentationIdeal {n : ℕ} (hn : 0 < n) (x : Fin n → C) :
+    tprod R C n x ∈ hC.cobarAugmentation.augmentationIdeal :=
+  hC.cobarAugmentation.mem_augmentationIdeal.2 (hC.cobarAugmentation_tprod hn x)
+
+/-- The augmentation ideal of the cobar construction is spanned by nonempty generator products. -/
+theorem cobarAugmentation_augmentationIdeal_eq_span_tprod :
+    hC.cobarAugmentation.augmentationIdeal.toSubmodule =
+      Submodule.span R {w | ∃ (n : ℕ) (x : Fin (n + 1) → C), w = tprod R C (n + 1) x} := by
+  set S := Submodule.span R {w | ∃ (n : ℕ) (x : Fin (n + 1) → C), w = tprod R C (n + 1) x}
+  refine le_antisymm (fun z hz ↦ ?_) (Submodule.span_le.2 fun _ ⟨n, x, hx⟩ ↦
+    hx ▸ hC.tprod_mem_cobarAugmentation_augmentationIdeal (Nat.succ_pos n) x)
+  have hq : S.mkQ ∘ₗ hC.cobarAugmentation.augmentationIdeal.toSubmodule.subtype ∘ₗ
+      hC.cobarAugmentation.reducedPart = 0 := linearMap_ext_tprod fun
+    | 0, _ => by simp [tprod_apply]
+    | k + 1, x => by
+      have hx : tprod R C (k + 1) x ∈ S := Submodule.subset_span ⟨k, x, rfl⟩
+      simpa [-tprod_apply, DGAlgAugmentation.coe_reducedPart,
+        hC.cobarAugmentation_tprod (Nat.succ_pos k)] using hx
+  simpa [hC.cobarAugmentation.mem_augmentationIdeal.1 hz] using
+    (Submodule.Quotient.mk_eq_zero S).1 (LinearMap.congr_fun hq z)
+
+theorem cobarAugmentation_augmentationIdeal_le_iff {S : Submodule R (TensorAlgebra R C)} :
+    hC.cobarAugmentation.augmentationIdeal.toSubmodule ≤ S ↔
+      ∀ (n : ℕ) (x : Fin (n + 1) → C), tprod R C (n + 1) x ∈ S := by
+  rw [hC.cobarAugmentation_augmentationIdeal_eq_span_tprod, Submodule.span_le]
+  exact ⟨fun h n x ↦ h ⟨n, x, rfl⟩, fun h _ ⟨n, x, hx⟩ ↦ hx ▸ h n x⟩
+
+/-- The internal grading inherited by the augmentation ideal `Ω⁺ C` of the cobar construction. -/
+noncomputable def cobarReducedGrading :
+    InternalGrading R hC.cobarAugmentation.augmentationIdeal.toSubmodule ℤ :=
+  (InternalGrading.ofDecomposition (tensorAlgebraPiece (G.shift (-1)))).submodule _
+    ((InternalGrading.isHomogeneous_ofDecomposition_piece_iff _ _).2
+      hC.cobarAugmentation.augmentationIdeal.is_homogeneous')
+
+@[simp] theorem mem_cobarReducedGrading_piece {p : ℤ}
+    {x : hC.cobarAugmentation.augmentationIdeal.toSubmodule} :
+    x ∈ hC.cobarReducedGrading.piece p ↔
+      (x : TensorAlgebra R C) ∈ tensorAlgebraPiece (G.shift (-1)) p := by simp [cobarReducedGrading]
+
+/-- The cobar differential restricted to the augmentation ideal `Ω⁺ C`. -/
+noncomputable def cobarReducedDifferential :
+    Module.End R hC.cobarAugmentation.augmentationIdeal.toSubmodule :=
+  (cobarDifferential G Δ dC).restrict fun x _ ↦ hC.cobarAugmentation.map_mem_augmentationIdeal x
+
+@[simp] theorem coe_cobarReducedDifferential
+    (x : hC.cobarAugmentation.augmentationIdeal.toSubmodule) :
+    (hC.cobarReducedDifferential x : TensorAlgebra R C) = cobarDifferential G Δ dC x := (rfl)
+
+theorem isHomogeneous_cobarReducedDifferential :
+    LinearMap.IsHomogeneous hC.cobarReducedDifferential
+      hC.cobarReducedGrading.piece hC.cobarReducedGrading.piece 1 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hC.mem_cobarReducedGrading_piece.2
+    (hC.isDGAlgebra_cobarDifferential.map_mem (hC.mem_cobarReducedGrading_piece.1 hx))
+
+@[simp] theorem cobarReducedDifferential_comp_self :
+    hC.cobarReducedDifferential ∘ₗ hC.cobarReducedDifferential = 0 :=
+  LinearMap.ext fun x ↦ Subtype.ext (hC.cobarDifferential_cobarDifferential x)
+
+section Target
 
 variable {A : Type uA} [Ring A] [Algebra R A] {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
   {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA} (eA : DGAlgAugmentation hA)
 
-/-- A DG algebra map out of `ΩC` preserves the augmentation if and only if it maps every
-desuspended generator into `eA.augmentationIdeal`. -/
+/-- A DG algebra morphism `ΩC ⟶ A` preserves augmentations if and only if its associated twisting
+cochain takes values in `eA.augmentationIdeal`. -/
 theorem comp_eq_cobarAugmentation_iff (φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA) :
-    eA.comp φ = hC.cobarAugmentation ↔ ∀ c, φ (ι R c) ∈ eA.augmentationIdeal := by
-  refine ⟨fun h c ↦ ?_, fun h ↦ hC.cobarHom_ext (isDGAlgebra_trivialGrading R) fun c ↦ ?_⟩
-  · rw [DGAlgAugmentation.mem_augmentationIdeal, ← DGAlgHom.comp_apply, h, cobarAugmentation_ι]
-  · rw [DGAlgHom.comp_apply, cobarAugmentation_ι]
-    exact (DGAlgAugmentation.mem_augmentationIdeal eA).mp (h c)
-
-/-- A DG algebra map out of `ΩC` preserves the augmentation if and only if its associated twisting
-cochain lands in `eA.augmentationIdeal`. -/
-theorem comp_eq_cobarAugmentation_iff_twistingCochain
-    (φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA) :
     eA.comp φ = hC.cobarAugmentation ↔
-      ∀ c, (hC.cobarTwistingCochainEquiv hA φ).val c ∈ eA.augmentationIdeal := by
-  simp [hC.comp_eq_cobarAugmentation_iff eA, DGAlgAugmentation.mem_augmentationIdeal,
-    cobarTwistingCochainEquiv_apply]
+      ∀ c, (hC.cobarTwistingCochainEquiv hA φ).val c ∈ eA.augmentationIdeal :=
+  ⟨fun h c ↦ by simpa [DGAlgAugmentation.mem_augmentationIdeal] using congrArg (· (ι R c)) h,
+    fun h ↦ hC.cobarHom_ext _ fun c ↦ by simpa [DGAlgAugmentation.mem_augmentationIdeal] using h c⟩
 
-/-- The cobar lift of a twisting cochain `τ` preserves the augmentation if and only if `τ` lands in
-`eA.augmentationIdeal`. -/
-@[simp]
-theorem comp_cobarLift_eq_cobarAugmentation_iff (τ : C →ₗ[R] A)
-    (hτ : IsTwistingCochain G Δ dC 𝒜 dA τ) :
-    eA.comp (hC.cobarLift hA τ hτ) = hC.cobarAugmentation ↔ ∀ c, τ c ∈ eA.augmentationIdeal := by
-  simp [hC.comp_eq_cobarAugmentation_iff eA, DGAlgAugmentation.mem_augmentationIdeal, cobarLift_ι]
-
-/-- The **augmented cobar universal property**: augmented DG algebra maps `(ΩC, ε_Ω) → (A, e_A)`
-correspond bijectively to twisting cochains `C → A` valued in `eA.augmentationIdeal`. -/
-noncomputable def cobarAugmentedHomEquiv :
+/-- The **augmented cobar universal property**: augmentation-preserving DG algebra morphisms
+`ΩC ⟶ A` correspond bijectively to twisting cochains `C →ₗ[R] A` landing in `ker ε_A`. -/
+noncomputable def augmentedCobarTwistingCochainEquiv :
     {φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA // eA.comp φ = hC.cobarAugmentation} ≃
       {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal} :=
-  ((hC.cobarTwistingCochainEquiv hA).subtypeEquiv
-      (hC.comp_eq_cobarAugmentation_iff_twistingCochain eA)).trans
+  ((hC.cobarTwistingCochainEquiv hA).subtypeEquiv (hC.comp_eq_cobarAugmentation_iff eA)).trans
     (Equiv.subtypeSubtypeEquivSubtypeInter _ _)
 
-/-- The forward direction of `cobarAugmentedHomEquiv` is negative restriction to generators. -/
-@[simp]
-theorem cobarAugmentedHomEquiv_apply
+@[simp] theorem augmentedCobarTwistingCochainEquiv_apply
     (φ : {φ : DGAlgHom hC.isDGAlgebra_cobarDifferential hA // eA.comp φ = hC.cobarAugmentation})
-    (c : C) : (hC.cobarAugmentedHomEquiv eA φ).val c = -φ.1 (ι R c) :=
-  hC.cobarTwistingCochainEquiv_apply hA φ.1 c
+    (c : C) : (hC.augmentedCobarTwistingCochainEquiv eA φ).val c = -φ.val (ι R c) :=
+  hC.cobarTwistingCochainEquiv_apply hA φ.val c
 
-/-- The inverse of `cobarAugmentedHomEquiv` sends a generator to `-τ c`. -/
-@[simp]
-theorem cobarAugmentedHomEquiv_symm_apply_ι
-    (τ : {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal})
-    (c : C) : ((hC.cobarAugmentedHomEquiv eA).symm τ).1 (ι R c) = -τ.1 c :=
-  hC.cobarTwistingCochainEquiv_symm_apply_ι hA ⟨τ.1, τ.2.1⟩ c
+@[simp] theorem augmentedCobarTwistingCochainEquiv_symm_apply_val
+    (τ : {τ : C →ₗ[R] A // IsTwistingCochain G Δ dC 𝒜 dA τ ∧ ∀ c, τ c ∈ eA.augmentationIdeal}) :
+    ((hC.augmentedCobarTwistingCochainEquiv eA).symm τ).val =
+      hC.cobarLift hA τ.val τ.property.1 :=
+  hC.cobarHom_ext _ fun _ ↦ by simp [augmentedCobarTwistingCochainEquiv]
 
-end UniversalProperty
-
-end TauCeti.IsNonCounitalDGCoalgebra
+end Target
+end IsNonCounitalDGCoalgebra
+end TauCeti

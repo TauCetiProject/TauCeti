@@ -84,8 +84,8 @@ and complexified tangent vectors `X` and `Y`, in particular two vectors of type 
 complex-bilinearly. -/
 theorem liftBaseChangeFinTwo_delBar_delBar_apply (f : SmoothForm I M F 0) (x : M)
     (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
-    ((J.delBar (J.delBar f)).1 x).liftBaseChangeFinTwo ℂ X Y =
-      -(4 : ℂ)⁻¹ • ((J.del f).1 x).liftBaseChangeFinOne ℂ
+    ((J.delBar (J.delBar f)).val x).liftBaseChangeFinTwo ℂ X Y =
+      -(4 : ℂ)⁻¹ • ((J.del f).val x).liftBaseChangeFinOne ℂ
         (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y) :=
   ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (J.delBar_delBar_apply f x) X Y
 
@@ -95,8 +95,8 @@ and complexified tangent vectors `X` and `Y`, in particular two vectors of type 
 complex-bilinearly. -/
 theorem liftBaseChangeFinTwo_del_del_apply (f : SmoothForm I M F 0) (x : M)
     (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
-    ((J.del (J.del f)).1 x).liftBaseChangeFinTwo ℂ X Y =
-      -(4 : ℂ)⁻¹ • ((J.delBar f).1 x).liftBaseChangeFinOne ℂ
+    ((J.del (J.del f)).val x).liftBaseChangeFinTwo ℂ X Y =
+      -(4 : ℂ)⁻¹ • ((J.delBar f).val x).liftBaseChangeFinOne ℂ
         (BilinMap.baseChange ℂ (J.nijenhuis x).toLinearMap₁₂ X Y) :=
   ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (J.del_del_apply f x) X Y
 
@@ -105,8 +105,8 @@ and real tangent vectors `v` and `w`, `∂bar ∂bar f(v, w) = -∂f(N_J(v, w)^(
 extended complex-linearly. -/
 theorem delBar_delBar_apply_eq_liftBaseChangeFinOne_holomorphicPart (f : SmoothForm I M F 0)
     (x : M) (v w : TangentSpace I x) :
-    (J.delBar (J.delBar f)).1 x ![v, w] =
-      -(4 : ℂ)⁻¹ • ((J.del f).1 x).liftBaseChangeFinOne ℂ
+    (J.delBar (J.delBar f)).val x ![v, w] =
+      -(4 : ℂ)⁻¹ • ((J.del f).val x).liftBaseChangeFinOne ℂ
         ((J.almostComplexStructureAt x).holomorphicPart (J.nijenhuis x v w)) := by
   rw [← ((SmoothForm.isOfType_zero_zero f J).delBar.delBar.apply x)
       |>.liftBaseChangeFinTwo_antiholomorphicPart_antiholomorphicPart
@@ -119,8 +119,8 @@ real tangent vectors `v` and `w`, `∂∂f(v, w) = -∂bar f(N_J(v, w)^(0,1)) / 
 extended complex-linearly. -/
 theorem del_del_apply_eq_liftBaseChangeFinOne_antiholomorphicPart (f : SmoothForm I M F 0)
     (x : M) (v w : TangentSpace I x) :
-    (J.del (J.del f)).1 x ![v, w] =
-      -(4 : ℂ)⁻¹ • ((J.delBar f).1 x).liftBaseChangeFinOne ℂ
+    (J.del (J.del f)).val x ![v, w] =
+      -(4 : ℂ)⁻¹ • ((J.delBar f).val x).liftBaseChangeFinOne ℂ
         ((J.almostComplexStructureAt x).antiholomorphicPart (J.nijenhuis x v w)) := by
   rw [← ((SmoothForm.isOfType_zero_zero f J).del.del.apply x)
       |>.liftBaseChangeFinTwo_holomorphicPart_holomorphicPart
@@ -132,8 +132,8 @@ smooth function `f` and complexified tangent vectors `X` and `Y`, in particular 
 type `(0,1)` or two real vectors `1 ⊗ v` and `1 ⊗ w`, `∂bar ∂bar f(X, Y) = -∂f(N'(X, Y))`. -/
 theorem liftBaseChangeFinTwo_delBar_delBar_apply_inv_four_smul_nijenhuis (f : SmoothForm I M F 0)
     (x : M) (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
-    ((J.delBar (J.delBar f)).1 x).liftBaseChangeFinTwo ℂ X Y =
-      -((J.del f).1 x).liftBaseChangeFinOne ℂ
+    ((J.delBar (J.delBar f)).val x).liftBaseChangeFinTwo ℂ X Y =
+      -((J.del f).val x).liftBaseChangeFinOne ℂ
         (BilinMap.baseChange ℂ ((4 : ℝ)⁻¹ • J.nijenhuis x).toLinearMap₁₂ X Y) := by
   rw [← neg_one_smul ℂ]
   refine ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (fun v w ↦ ?_) X Y
@@ -144,8 +144,8 @@ smooth function `f` and complexified tangent vectors `X` and `Y`, in particular 
 type `(1,0)` or two real vectors `1 ⊗ v` and `1 ⊗ w`, `∂∂f(X, Y) = -∂bar f(N'(X, Y))`. -/
 theorem liftBaseChangeFinTwo_del_del_apply_inv_four_smul_nijenhuis (f : SmoothForm I M F 0)
     (x : M) (X Y : ℂ ⊗[ℝ] TangentSpace I x) :
-    ((J.del (J.del f)).1 x).liftBaseChangeFinTwo ℂ X Y =
-      -((J.delBar f).1 x).liftBaseChangeFinOne ℂ
+    ((J.del (J.del f)).val x).liftBaseChangeFinTwo ℂ X Y =
+      -((J.delBar f).val x).liftBaseChangeFinOne ℂ
         (BilinMap.baseChange ℂ ((4 : ℝ)⁻¹ • J.nijenhuis x).toLinearMap₁₂ X Y) := by
   rw [← neg_one_smul ℂ]
   refine ContinuousAlternatingMap.liftBaseChangeFinTwo_apply_of_eq_smul ℂ (fun v w ↦ ?_) X Y
@@ -157,7 +157,7 @@ variable {x : M} {X Y : ℂ ⊗[ℝ] TangentSpace I x}
 theorem liftBaseChangeFinTwo_delBar_delBar_eq_zero_of_mem_left (f : SmoothForm I M F 0)
     (hX : X ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I)
     (Y : ℂ ⊗[ℝ] TangentSpace I x) :
-    ((J.delBar (J.delBar f)).1 x).liftBaseChangeFinTwo ℂ X Y = 0 := by
+    ((J.delBar (J.delBar f)).val x).liftBaseChangeFinTwo ℂ X Y = 0 := by
   have hf : (J.del f).IsOfType J 1 0 := (SmoothForm.isOfType_zero_zero f J).del
   rw [liftBaseChangeFinTwo_delBar_delBar_apply,
     SmoothForm.isOfType_one_zero_iff_eigenspace_le_ker.1 hf x
@@ -167,7 +167,7 @@ theorem liftBaseChangeFinTwo_delBar_delBar_eq_zero_of_mem_left (f : SmoothForm I
 theorem liftBaseChangeFinTwo_delBar_delBar_eq_zero_of_mem_right (f : SmoothForm I M F 0)
     (X : ℂ ⊗[ℝ] TangentSpace I x)
     (hY : Y ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I) :
-    ((J.delBar (J.delBar f)).1 x).liftBaseChangeFinTwo ℂ X Y = 0 := by
+    ((J.delBar (J.delBar f)).val x).liftBaseChangeFinTwo ℂ X Y = 0 := by
   rw [ContinuousAlternatingMap.liftBaseChangeFinTwo_swap,
     J.liftBaseChangeFinTwo_delBar_delBar_eq_zero_of_mem_left f hY, neg_zero]
 
@@ -175,7 +175,7 @@ theorem liftBaseChangeFinTwo_delBar_delBar_eq_zero_of_mem_right (f : SmoothForm 
 theorem liftBaseChangeFinTwo_del_del_eq_zero_of_mem_left (f : SmoothForm I M F 0)
     (hX : X ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I))
     (Y : ℂ ⊗[ℝ] TangentSpace I x) :
-    ((J.del (J.del f)).1 x).liftBaseChangeFinTwo ℂ X Y = 0 := by
+    ((J.del (J.del f)).val x).liftBaseChangeFinTwo ℂ X Y = 0 := by
   have hf : (J.delBar f).IsOfType J 0 1 := (SmoothForm.isOfType_zero_zero f J).delBar
   have hN := J.baseChange_nijenhuis_mem_eigenspace_neg_of_mem_left hX Y
   rw [_root_.neg_neg] at hN
@@ -186,7 +186,7 @@ theorem liftBaseChangeFinTwo_del_del_eq_zero_of_mem_left (f : SmoothForm I M F 0
 theorem liftBaseChangeFinTwo_del_del_eq_zero_of_mem_right (f : SmoothForm I M F 0)
     (X : ℂ ⊗[ℝ] TangentSpace I x)
     (hY : Y ∈ eigenspace ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I)) :
-    ((J.del (J.del f)).1 x).liftBaseChangeFinTwo ℂ X Y = 0 := by
+    ((J.del (J.del f)).val x).liftBaseChangeFinTwo ℂ X Y = 0 := by
   rw [ContinuousAlternatingMap.liftBaseChangeFinTwo_swap,
     J.liftBaseChangeFinTwo_del_del_eq_zero_of_mem_left f hY, neg_zero]
 

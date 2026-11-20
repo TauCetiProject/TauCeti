@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+public import TauCeti.Analysis.Normed.Ring.ProdSubProd
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!

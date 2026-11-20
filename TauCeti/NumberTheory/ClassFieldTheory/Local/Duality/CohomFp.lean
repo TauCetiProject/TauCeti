@@ -78,17 +78,18 @@ private theorem eq_zero_of_mem_H0_internalHom_kummerCoeff (h : rootsOfUnity n K 
     (φ : H0 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) (ZMod n) (KummerCoeff K n))) :
     φ = 0 := by
-  set y := φ.1.toAddMonoidHom 1 with hy
+  set y := φ.val.toAddMonoidHom 1 with hy
   -- `y = φ 1` is fixed by `G_K`, so it is the image of some `a : K`
   have hfix (g : AbsoluteGaloisGroup K) : g • y = y :=
-    (InternalHom.smul_eq_self_iff.1 (φ.2 g) 1).symm
+    (InternalHom.smul_eq_self_iff.1 (φ.property g) 1).symm
   obtain ⟨a, ha⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed
     ((y.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)).2 fun g ↦ by
       simpa using congrArg (fun v : KummerCoeff K n ↦
         ((v.toMul : (SeparableClosure K)ˣ) : SeparableClosure K)) (hfix g)
   -- `a` is an `n`th root of unity of `K`, hence `1`
   have hpow : a ^ n = 1 := (algebraMap K (SeparableClosure K)).injective (by
-    rw [map_pow, ha, RingHom.map_one, ← Units.val_pow_eq_pow_val, (y.toMul).2, Units.val_one])
+    rw [map_pow, ha, RingHom.map_one, ← Units.val_pow_eq_pow_val, (y.toMul).property,
+        Units.val_one])
   have ha0 : a ≠ 0 := by
     rintro rfl
     exact (y.toMul : (SeparableClosure K)ˣ).ne_zero (by rw [← ha, map_zero])
