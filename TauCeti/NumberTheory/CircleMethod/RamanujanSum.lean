@@ -238,13 +238,20 @@ theorem ramanujanSum_prime_pow_succ {p : ℕ} (hp : p.Prime) (k : ℕ) (n : ℤ)
       (if (p : ℤ) ^ (k + 1) ∣ n then (p : ℂ) ^ (k + 1) else 0) -
         if (p : ℤ) ^ k ∣ n then (p : ℂ) ^ k else 0 := by
   -- Only the divisors `p ^ (k + 1)` and `p ^ k` contribute: `μ (p ^ j) = 0` for `j ≥ 2`.
+  have hvanish : ∀ i < k, μ (p ^ (k + 1) / p ^ i) = 0 := fun i hi => by
+    rw [Nat.pow_div (by omega) hp.pos, ArithmeticFunction.moebius_apply_prime_pow hp (by omega)]
+    simp [show k + 1 - i ≠ 1 by omega]
+  have htop : μ (p ^ (k + 1) / p ^ (k + 1)) = 1 := by
+    rw [Nat.div_self (pow_pos hp.pos _), ArithmeticFunction.moebius_apply_one]
+  have hnext : μ (p ^ (k + 1) / p ^ k) = -1 := by
+    rw [Nat.pow_div k.le_succ hp.pos, show k + 1 - k = 1 by omega, pow_one,
+      ArithmeticFunction.moebius_apply_prime hp]
   rw [ramanujanSum_eq_sum_divisors_dvdWeight, Nat.sum_divisors_prime_pow hp,
-    Finset.sum_range_succ, Finset.sum_range_succ, Finset.sum_eq_zero fun i hi => by
-      have hi : i < k := mem_range.1 hi
-      rw [Nat.pow_div (by omega) hp.pos, ArithmeticFunction.moebius_apply_prime_pow hp (by omega)]
-      simp [show k + 1 - i ≠ 1 by omega]]
-  simp [Nat.pow_div, hp.pos, ArithmeticFunction.moebius_apply_prime hp, dvdWeight_apply]
-  split_ifs <;> ring
+    Finset.sum_range_succ, Finset.sum_range_succ,
+    Finset.sum_eq_zero fun i hi => by rw [hvanish i (mem_range.1 hi), Int.cast_zero, zero_mul],
+    htop, hnext, dvdWeight_apply, dvdWeight_apply]
+  push_cast
+  ring
 
 /-- `c_p(n)` is `p - 1` if `p ∣ n` and `-1` otherwise. -/
 theorem ramanujanSum_prime {p : ℕ} (hp : p.Prime) (n : ℤ) :
@@ -273,13 +280,16 @@ private theorem norm_ramanujanSum_prime_pow_le {p : ℕ} (hp : p.Prime) (k : ℕ
       (Int.natCast_dvd_natCast.1 (Int.dvd_coe_gcd hm (Int.natCast_dvd_natCast.2 hmq)))
   rw [ramanujanSum_prime_pow_succ hp]
   split_ifs with h1 h2 h2
-  · rw [← Nat.cast_pow, ← Nat.cast_pow,
-      ← Nat.cast_sub (Nat.pow_le_pow_right hp.pos k.le_succ), Complex.norm_natCast]
-    exact (Nat.cast_le.2 (Nat.sub_le _ _)).trans (hle (by exact_mod_cast h1) dvd_rfl)
-  · rw [sub_zero, ← Nat.cast_pow, Complex.norm_natCast]
-    exact hle (by exact_mod_cast h1) dvd_rfl
-  · rw [zero_sub, norm_neg, ← Nat.cast_pow, Complex.norm_natCast]
-    exact hle (by exact_mod_cast h2) (pow_dvd_pow _ k.le_succ)
+  · have hpow : (p : ℝ) ^ k ≤ (p : ℝ) ^ (k + 1) :=
+      pow_le_pow_right₀ (by exact_mod_cast hp.one_lt.le) k.le_succ
+    have hreal :
+        (p : ℂ) ^ (k + 1) - (p : ℂ) ^ k = (((p : ℝ) ^ (k + 1) - (p : ℝ) ^ k : ℝ) : ℂ) := by
+      push_cast
+      ring
+    rw [hreal, Complex.norm_real, Real.norm_of_nonneg (sub_nonneg.2 hpow)]
+    exact (sub_le_self _ (by positivity)).trans (by simpa using hle (by exact_mod_cast h1) dvd_rfl)
+  · simpa using hle (by exact_mod_cast h1) dvd_rfl
+  · simpa using hle (by exact_mod_cast h2) (pow_dvd_pow _ k.le_succ)
   · simp
 
 /-- `|c_q(n)| ≤ gcd(n, q)`. -/
