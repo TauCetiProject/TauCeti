@@ -487,14 +487,11 @@ private theorem starProjection_mul_imageGram (L : E →L[𝕜] F) (hP : IsStarPr
   simp only [imageGram, mul_add, mul_sub, mul_one, hP.isIdempotentElem.eq, sub_self, add_zero,
     mul_def, ← comp_assoc, starProjection_comp_adjoint_comp L hP]
 
-/-- The orthogonal projection onto the image `L (range P)` of the range of a star projection `P`
-is `Q A⁻¹ Q†`, where `Q = L ∘L P` and `A = Q† Q + (1 - P)`, when `A` is invertible. -/
-theorem starProjection_range_comp_eq (L : E →L[𝕜] F) (hP : IsStarProjection P)
-    (hA : IsUnit (adjoint (L ∘L P) ∘L (L ∘L P) + (1 - P)))
-    [(L ∘L P).range.HasOrthogonalProjection] :
+/-- `starProjection_range_comp_eq`, stated with the corrected Gram operator `imageGram L P`. -/
+private theorem starProjection_range_comp_eq_imageGram (L : E →L[𝕜] F) (hP : IsStarProjection P)
+    (hA : IsUnit (imageGram L P)) [(L ∘L P).range.HasOrthogonalProjection] :
     (L ∘L P).range.starProjection =
-      (L ∘L P) ∘L Ring.inverse (adjoint (L ∘L P) ∘L (L ∘L P) + (1 - P)) ∘L adjoint (L ∘L P) := by
-  rw [← imageGram] at hA ⊢
+      (L ∘L P) ∘L Ring.inverse (imageGram L P) ∘L adjoint (L ∘L P) := by
   -- `Q† Q A⁻¹ = P A A⁻¹ = P`, and `P Q† = Q†`.
   have hQQ : adjoint (L ∘L P) ∘L (L ∘L P) ∘L Ring.inverse (imageGram L P) = P := by
     rw [← comp_assoc, ← starProjection_mul_imageGram L hP]
@@ -503,18 +500,27 @@ theorem starProjection_range_comp_eq (L : E →L[𝕜] F) (hP : IsStarProjection
     simp only [← comp_assoc] at hQQ ⊢
     rw [hQQ, starProjection_comp_adjoint_comp L hP]
 
-/-- For a star projection `P` of a finite-dimensional space, the corrected Gram operator
-`(L P)† (L P) + (1 - P)` is invertible exactly when `L` is injective on the range of `P`. -/
-theorem isUnit_adjoint_comp_add_one_sub_iff_injOn [FiniteDimensional 𝕜 E] (L : E →L[𝕜] F)
-    (hP : IsStarProjection P) :
-    IsUnit (adjoint (L ∘L P) ∘L (L ∘L P) + (1 - P)) ↔ Set.InjOn L (P.range : Set E) := by
+/-- The orthogonal projection onto the image `L (range P)` of the range of a star projection `P`
+is `Q A⁻¹ Q†`, where `Q = L ∘L P` and `A = Q† Q + (1 - P)`, when `A` is invertible. -/
+theorem starProjection_range_comp_eq (L : E →L[𝕜] F) (hP : IsStarProjection P)
+    (hA : IsUnit (adjoint (L ∘L P) ∘L (L ∘L P) + (1 - P)))
+    [(L ∘L P).range.HasOrthogonalProjection] :
+    (L ∘L P).range.starProjection =
+      (L ∘L P) ∘L Ring.inverse (adjoint (L ∘L P) ∘L (L ∘L P) + (1 - P)) ∘L adjoint (L ∘L P) := by
+  rw [← imageGram] at hA ⊢
+  exact starProjection_range_comp_eq_imageGram L hP hA
+
+/-- `isUnit_adjoint_comp_add_one_sub_iff_injOn`, stated with the corrected Gram operator
+`imageGram L P`. -/
+private theorem isUnit_imageGram_iff [FiniteDimensional 𝕜 E] (L : E →L[𝕜] F)
+    (hP : IsStarProjection P) : IsUnit (imageGram L P) ↔ Set.InjOn L (P.range : Set E) := by
   have hPA := starProjection_mul_imageGram L hP
   have hinj : Set.InjOn L (P.range : Set E) ↔
       Disjoint P.range (LinearMap.ker (L : E →ₗ[𝕜] F)) := by
     rw [LinearMap.disjoint_ker_iff_injOn, coe_coe]
   have hPP (y : E) : P (P y) = P y :=
     congr($(IsIdempotentElem.comp_self hP.isIdempotentElem) y)
-  rw [← imageGram, hinj, isUnit_iff_isUnit_toLinearMap,
+  rw [hinj, isUnit_iff_isUnit_toLinearMap,
     LinearMap.isUnit_iff_ker_eq_bot, LinearMap.ker_eq_bot', Submodule.disjoint_def]
   simp only [coe_coe, LinearMap.mem_range, LinearMap.mem_ker]
   constructor
@@ -529,6 +535,14 @@ theorem isUnit_adjoint_comp_add_one_sub_iff_injOn [FiniteDimensional 𝕜 E] (L 
     refine h x ⟨x, hxP.symm⟩ ?_
     rw [hxP]
     exact hQ
+
+/-- For a star projection `P` of a finite-dimensional space, the corrected Gram operator
+`(L P)† (L P) + (1 - P)` is invertible exactly when `L` is injective on the range of `P`. -/
+theorem isUnit_adjoint_comp_add_one_sub_iff_injOn [FiniteDimensional 𝕜 E] (L : E →L[𝕜] F)
+    (hP : IsStarProjection P) :
+    IsUnit (adjoint (L ∘L P) ∘L (L ∘L P) + (1 - P)) ↔ Set.InjOn L (P.range : Set E) := by
+  rw [← imageGram]
+  exact isUnit_imageGram_iff L hP
 
 omit [CompleteSpace E] [CompleteSpace F] in
 private theorem continuous_comp_fst_snd :
@@ -557,8 +571,8 @@ theorem isOpen_setOf_injOn_range [FiniteDimensional 𝕜 E] :
       Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)} := by
   convert Units.isOpen.preimage (continuous_imageGram (𝕜 := 𝕜) (E := E) (F := F)) using 1
   ext x
-  simp only [Set.mem_ofPred_eq, Set.mem_preimage, imageGram]
-  exact (isUnit_adjoint_comp_add_one_sub_iff_injOn x.1 x.2.2).symm
+  simp only [Set.mem_ofPred_eq, Set.mem_preimage]
+  exact (isUnit_imageGram_iff x.1 x.2.2).symm
 
 /-- The orthogonal projection onto the image `L (range P)` depends continuously on the operator `L`
 and the star projection `P`, on the pairs where `L` is injective on the range of `P`. -/
@@ -567,16 +581,14 @@ theorem continuousOn_starProjection_range_comp [FiniteDimensional 𝕜 E] :
         (x.1 ∘L (x.2 : E →L[𝕜] E)).range.starProjection)
       {x | Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)} := by
   have hu {x : (E →L[𝕜] F) × {P : E →L[𝕜] E // IsStarProjection P}}
-      (hx : Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)) : IsUnit (imageGram x.1 x.2) := by
-    simpa only [imageGram] using (isUnit_adjoint_comp_add_one_sub_iff_injOn x.1 x.2.2).2 hx
+      (hx : Set.InjOn x.1 ((x.2 : E →L[𝕜] E).range : Set E)) : IsUnit (imageGram x.1 x.2) :=
+    (isUnit_imageGram_iff x.1 x.2.2).2 hx
   have hQ : Continuous fun x : (E →L[𝕜] F) × {P : E →L[𝕜] E // IsStarProjection P} ↦
       x.1 ∘L (x.2 : E →L[𝕜] E) :=
     continuous_comp_fst_snd.comp continuous_fst_val_snd
   refine ContinuousOn.congr (f := fun x ↦ (x.1 ∘L (x.2 : E →L[𝕜] E)) ∘L
       Ring.inverse (imageGram x.1 x.2) ∘L adjoint (x.1 ∘L (x.2 : E →L[𝕜] E)))
-    (fun x hx ↦ ?_) fun x hx ↦ by
-      simpa only [imageGram] using
-        starProjection_range_comp_eq x.1 x.2.2 (by simpa only [imageGram] using hu hx)
+    (fun x hx ↦ ?_) fun x hx ↦ starProjection_range_comp_eq_imageGram x.1 x.2.2 (hu hx)
   -- The formula is continuous wherever the corrected Gram operator is invertible.
   have hi := NormedRing.inverse_continuousAt (hu hx).unit
   rw [(hu hx).unit_spec] at hi
