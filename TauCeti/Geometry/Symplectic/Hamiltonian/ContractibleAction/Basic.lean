@@ -178,6 +178,19 @@ theorem symm (hw : IsLoopCylinder I w γ₀ γ₁) :
   apply_zero t := by simp [hw.apply_one]
   apply_one t := by simp [hw.apply_zero]
 
+/-- Reversing the second coordinate of a cylinder from `γ₀` to `γ₁` gives a cylinder from the
+reversed loop `t ↦ γ₀ (1 - t)` to the reversed loop `t ↦ γ₁ (1 - t)`. -/
+theorem comp_prodMap_id_one_sub (hw : IsLoopCylinder I w γ₀ γ₁) :
+    IsLoopCylinder I (w ∘ Prod.map id (fun t ↦ 1 - t)) (fun t ↦ γ₀ (1 - t))
+      (fun t ↦ γ₁ (1 - t)) where
+  contMDiff := hw.contMDiff.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff
+  apply_add_one z := by
+    obtain ⟨s, t⟩ := z
+    simp only [Function.comp_apply, Prod.map_apply, id_eq]
+    rw [show 1 - (t + 1) = -t by ring, ← neg_add_eq_sub, hw.apply_add_one (s, -t)]
+  apply_zero t := by simp [hw.apply_zero]
+  apply_one t := by simp [hw.apply_one]
+
 /-- The image of a cylinder from `γ₀` to `γ₁` under a `C²` map `f` is a cylinder from `f ∘ γ₀` to
 `f ∘ γ₁`. -/
 theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
