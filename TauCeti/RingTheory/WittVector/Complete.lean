@@ -191,7 +191,10 @@ theorem teichmuller_sub_teichmuller_mem_span_p_teichmuller_pow {ϖ a b : R} {k :
       rw [← hroot, ← constantCoeff_apply, map_sub, constantCoeff_apply, constantCoeff_apply,
         teichmuller_coeff_zero, teichmuller_coeff_zero]⟩
   have hpow := Ideal.pow_pow_sub_pow_pow_mem_pow_succ (n := p) (subset_span (by simp)) hmem k
-  simpa [e, ← map_pow, ← iterateFrobeniusEquiv_def] using hpow
+  -- The `p ^ k`-th powers of the `p ^ k`-th roots are `a` and `b` again.
+  have hpk (x : R) : e.symm x ^ p ^ k = x := by
+    rw [← iterateFrobeniusEquiv_def, e.apply_symm_apply]
+  simpa only [← map_pow, hpk] using hpow
 
 /-- If `R` is perfect of characteristic `p`, the zeroth Witt coordinate followed by reduction
 modulo `ϖ` has kernel `(p, [ϖ])`. -/
