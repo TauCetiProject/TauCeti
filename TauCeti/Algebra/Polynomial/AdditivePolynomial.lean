@@ -7,9 +7,25 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.LinearAlgebra.Lagrange
+public import TauCeti.Algebra.Polynomial.Bivariate
+public import TauCeti.RingTheory.PowerSeries.Additive
 
 /-!
-# The additive polynomial of a finite additive subgroup
+# Additive polynomials
+
+A polynomial `f` over a commutative ring `R` is *additive* when `f(X + Y) = f(X) + f(Y)` in the
+bivariate polynomial ring `R[X][Y]`; it then satisfies `f(x + y) = f(x) + f(y)` in every commutative
+`R`-algebra. Comparing the coefficients of `X ^ a * Y ^ b`, which are `(a + b).choose a • f_{a+b}`
+on the left, `f` is additive exactly when its constant coefficient vanishes and
+`(a + b).choose a • f_{a+b} = 0` for all positive `a` and `b`. This is the coefficient criterion
+`PowerSeries.subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero` for `f` viewed
+as a power series. In prime characteristic `p` every middle binomial coefficient of `n` vanishes
+exactly when `n` is a power of `p` (Lucas, via `PowerSeries.subst_add_eq_iff_coeff_eq_zero`), so
+the additive polynomials are the *`p`-polynomials*, the `R`-linear combinations of the `X ^ p ^ i`
+(Goss, Chapter 1). These are the endomorphisms of the additive group in characteristic
+`p`.
+
+The rest of the file is about the additive polynomial of a finite additive subgroup.
 
 For a finite additive subgroup `V` of a commutative ring `R`, the monic polynomial
 
@@ -40,6 +56,12 @@ characteristic `p`, `a_V = X ^ p - X`.
 
 ## Main results
 
+* `Polynomial.aeval_C_X_add_Y_eq_iff`: `f(X + Y) = f(X) + f(Y)` exactly when `f_0 = 0` and
+  `(a + b).choose a * f_{a+b} = 0` for all positive `a`, `b`.
+* `Polynomial.aeval_add_of_aeval_C_X_add_Y_eq`: an additive polynomial is additive in every
+  commutative algebra.
+* `Polynomial.aeval_C_X_add_Y_eq_iff_mem_span`: in prime characteristic `p`, the additive
+  polynomials are the `R`-linear combinations of the `X ^ p ^ i`.
 * `AddSubgroup.aeval_additivePolynomial_add_algebraMap`: `a_V (x + c) = a_V x` for `c ∈ V`.
 * `AddSubgroup.aeval_additivePolynomial_eq_zero_iff`: the roots of `a_V` in a domain are the
   elements of `V`.
@@ -64,6 +86,71 @@ characteristic `p`, `a_V = X ^ p - X`.
 public section
 
 open Polynomial
+
+namespace Polynomial
+
+open Bivariate
+
+section CommSemiring
+
+variable {R : Type*} [CommSemiring R]
+
+/-- A polynomial satisfying `f(X + Y) = f(X) + f(Y)` is additive in every commutative algebra. -/
+theorem aeval_add_of_aeval_C_X_add_Y_eq {A : Type*} [CommSemiring A] [Algebra R A] {f : R[X]}
+    (hf : aeval (C X + Y : R[X][Y]) f = C f + f.map C) (x y : A) :
+    aeval (x + y) f = aeval x f + aeval y f := by
+  have hmap : f.map C = aeval (Y : R[X][Y]) f := (aeval_X_left_eq_map f).symm
+  have h := congrArg (aevalAeval x y) hf
+  rwa [hmap, ← aeval_algHom_apply, map_add, aevalAeval_X, aevalAeval_Y, map_add, aevalAeval_C,
+    ← aeval_algHom_apply, aevalAeval_Y] at h
+
+/-- A polynomial satisfies `f(X + Y) = f(X) + f(Y)` exactly when its constant coefficient vanishes
+and `(a + b).choose a * f_{a+b} = 0` for all positive `a` and `b`. -/
+theorem aeval_C_X_add_Y_eq_iff [IsCancelAdd R] {f : R[X]} :
+    aeval (C X + Y : R[X][Y]) f = C f + f.map C ↔
+      f.coeff 0 = 0 ∧ ∀ a b, a ≠ 0 → b ≠ 0 → ((a + b).choose a : R) * f.coeff (a + b) = 0 := by
+  simp only [AddMonoidAlgebra.ext_iff, DFunLike.ext_iff, coeff_coeff_aeval_C_X_add_Y, coeff_add,
+    coeff_C, coeff_map]
+  constructor
+  · intro h
+    refine ⟨by simpa using h 0 0, fun a b ha hb => ?_⟩
+    rw [Nat.choose_symm_add]
+    simpa [ha, hb] using h b a
+  · rintro ⟨h0, h⟩ b a
+    rcases eq_or_ne a 0 with rfl | ha <;> rcases eq_or_ne b 0 with rfl | hb
+    · simp [h0]
+    · simp [hb]
+    · simp [ha]
+    · rw [← Nat.choose_symm_add]
+      simpa [ha, hb] using h a b ha hb
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R]
+
+/-- Over a ring killed by a prime `p`, a polynomial satisfies `f(X + Y) = f(X) + f(Y)` exactly
+when it is a `p`-polynomial: an `R`-linear combination of the powers `X ^ p ^ i`. -/
+theorem aeval_C_X_add_Y_eq_iff_mem_span (p : ℕ) [Fact p.Prime] (hR : (p : R) = 0) {f : R[X]} :
+    aeval (C X + Y : R[X][Y]) f = C f + f.map C ↔
+      f ∈ Submodule.span R (Set.range fun i => (X : R[X]) ^ p ^ i) := by
+  have hspan : Submodule.span R (Set.range fun i => (X : R[X]) ^ p ^ i) =
+      AddMonoidAlgebra.supported R R (Set.range (p ^ ·)) := by
+    rw [AddMonoidAlgebra.supported_eq_span_single, ← Set.range_comp]
+    simp [Function.comp_def, single_eq_monomial, X_pow_eq_monomial]
+  -- The coefficient criterion is the one for `f` as a power series, whose prime-characteristic
+  -- form is the support criterion `PowerSeries.subst_add_eq_iff_coeff_eq_zero`.
+  have hseries := (PowerSeries.subst_add_eq_iff_constantCoeff_eq_zero_and_choose_mul_coeff_eq_zero
+    (f : PowerSeries R)).symm.trans <|
+      PowerSeries.subst_add_eq_iff_coeff_eq_zero (f : PowerSeries R) (Fact.out : p.Prime) hR
+  simp only [coeff_coe, constantCoeff_coe, Nat.pos_iff_ne_zero] at hseries
+  rw [aeval_C_X_add_Y_eq_iff, hseries, hspan, AddMonoidAlgebra.mem_supported']
+  simp [eq_comm]
+
+end CommRing
+
+end Polynomial
 
 namespace AddSubgroup
 
