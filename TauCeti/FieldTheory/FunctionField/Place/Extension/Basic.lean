@@ -111,6 +111,8 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.isSeparable_residueField_of_isSeparable_restrict`: residue fields separable over
   the constants stay separable over the enlarged constants when the residue extension is
   separable.
+* `TauCeti.Place.linearIndependent_algebraMap_residueField_of_isPurelyInseparable`: for purely
+  inseparable `k' / k`, a residue field separable over `k` stays linearly disjoint from `k'`.
 * `TauCeti.Place.degree_restrict_le_degree_of_isPurelyInseparable`: for purely inseparable
   `k' / k`, a place with residue field separable over `k` has degree at most that of any place
   above it.
@@ -741,6 +743,24 @@ theorem isSeparable_residueField_of_isSeparable_restrict
   have := Algebra.IsSeparable.trans k (P'.restrict k F).ResidueField P'.ResidueField
   exact Algebra.isSeparable_tower_top_of_isSeparable k k' P'.ResidueField
 
+/-- **A separable residue field stays linearly disjoint from purely inseparable constants**: if
+`k' / k` is purely inseparable and the residue field `F_P` of the place `P` below `P'` is separable
+over `k`, then a family of `F_P` linearly independent over `k` stays linearly independent over
+`k'` in `F'_{P'}`. -/
+theorem linearIndependent_algebraMap_residueField_of_isPurelyInseparable
+    [IsPurelyInseparable k k'] [Algebra.IsSeparable k (P'.restrict k F).ResidueField] {ι : Type*}
+    {b : ι → (P'.restrict k F).ResidueField} (hb : LinearIndependent k b) :
+    LinearIndependent k' (algebraMap (P'.restrict k F).ResidueField P'.ResidueField ∘ b) := by
+  -- The residue field of `P'` is a `k`-algebra through the constants `k'`, compatibly with the
+  -- residue field of the place below.
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
+  have := isScalarTower_integers_restrict k F P'
+  let φ := IsScalarTower.toAlgHom k (P'.restrict k F).ResidueField P'.ResidueField
+  exact LinearIndependent.map_of_isPurelyInseparable_of_isSeparable k'
+    (fun i ↦ (Algebra.IsSeparable.isSeparable k (b i)).map φ φ.injective)
+    (hb.map' φ.toLinearMap (LinearMap.ker_eq_bot.mpr φ.injective))
+
 /-- **Purely inseparable constants keep separable residue degrees**: if `k' / k` is purely
 inseparable and the residue field `F_P` of the place `P` below `P'` is separable over `k`, then
 `deg P ≤ deg P'`. A `k`-basis of `F_P` stays linearly independent over `k'` in `F'_{P'}`. -/
@@ -752,19 +772,8 @@ theorem degree_restrict_le_degree_of_isPurelyInseparable [IsPurelyInseparable k 
   swap
   · rw [degree_eq_finrank, Module.finrank_of_not_finite hR]
     exact Nat.zero_le _
-  -- The residue field of `P'` is a `k`-algebra through the constants `k'`, compatibly with the
-  -- residue field of the place below.
-  let _ := integersAlgebraBase k P'
-  have := isScalarTower_integersAlgebraBase k P'
-  have := isScalarTower_integers_restrict k F P'
-  let ι := IsScalarTower.toAlgHom k R P'.ResidueField
-  let b := Module.finBasis k R
-  have hli : LinearIndependent k (ι ∘ b) :=
-    b.linearIndependent.map' ι.toLinearMap (LinearMap.ker_eq_bot.mpr ι.injective)
-  have hli' : LinearIndependent k' (ι ∘ b) :=
-    LinearIndependent.map_of_isPurelyInseparable_of_isSeparable k'
-      (fun i ↦ (Algebra.IsSeparable.isSeparable k (b i)).map ι ι.injective) hli
-  simpa [degree_eq_finrank] using hli'.fintype_card_le_finrank
+  simpa [degree_eq_finrank] using (linearIndependent_algebraMap_residueField_of_isPurelyInseparable
+    k F P' (Module.finBasis k R).linearIndependent).fintype_card_le_finrank
 
 end ResidueField
 

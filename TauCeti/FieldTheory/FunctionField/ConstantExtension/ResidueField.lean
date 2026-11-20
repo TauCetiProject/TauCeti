@@ -10,7 +10,11 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.SeparableResidueField
+import TauCeti.FieldTheory.FunctionField.Different.Tame
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
@@ -33,6 +37,23 @@ function representing a residue class at `P'` already lies in `F · L` for a fin
 The finite case writes its residue at the place below `P'` in `F · L` over the constants of `L`,
 and the residue-field map into `F'_{P'}` carries that expression to one over `k'`.
 
+The same holds for an inseparable algebraic `k' / k` at a place `P` whose residue field `F_P` is
+separable over `k`. This is the residue-field half of the separable-residue branch of constant
+field extension, next to `e(P' ∣ P) = 1`
+(`TauCeti.Place.ramificationIdx_eq_one_of_isSeparable_residueField`): `F'_{P'}` is the quotient
+of the fibre `F_P ⊗[k] k'` at `P'`. When `k' / k` is finite and purely inseparable,
+`f(P' ∣ P) = [k' : k]` (`TauCeti.Place.relativeDegree_eq_finrank_of_isPurelyInseparable`) gives
+`deg P' = deg P`. A `k`-basis of `F_P` stays linearly independent over `k'` in `F'_{P'}`
+(`TauCeti.Place.linearIndependent_algebraMap_residueField_of_isPurelyInseparable`), so it is a
+`k'`-basis there, and `F'_{P'}` is spanned over `F_P` by the constants. Counting dimensions, a
+`k`-basis of `k'` reduces to an `F_P`-basis of `F'_{P'}`: the natural map from the fibre
+`F_P ⊗[k] k'` to the residue field is bijective, so the fibre is a field. A general finite
+`k' / k` splits at its separable closure `k_s` into the separable step `F · k_s / F`, where `F_P`
+stays separable, and a purely inseparable step. Exactness of `k` in `F` is used only in the
+separable step. Without separability of `F_P` the fibre need not even be reduced: at the place of
+`t ^ p - a` of `k(t)`, with `a` not a `p`-th power in `k` and `k'` containing its `p`-th root, it
+has a nonzero nilpotent (`TauCeti.Place.exists_ne_zero_pow_eq_zero_inseparableFibre`).
+
 Consequently a place becomes rational as soon as the constants are enlarged enough: if `k' / k`
 is normal and the residue field `F_P` admits a `k`-embedding into `k'`, every place of `F'` over
 `P` has degree one.  Each element of `F_P` is a root of its minimal polynomial over `k`, which
@@ -46,6 +67,14 @@ place when `k` is perfect.
   `F'_{P'}` is spanned over `F_P` by the image of `k'`.
 * `TauCeti.Place.adjoin_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top`:
   **`F'_{P'} = F_P · k'`** (Stichtenoth, Theorem 3.6.3(g)).
+* `TauCeti.Place.span_range_algebraMap_residueField_eq_top_of_isSeparable_residueField` and
+  `TauCeti.Place.adjoin_range_algebraMap_residueField_eq_top_of_isSeparable_residueField`: the
+  same for an algebraic `k' / k`, separable or not, at a place with residue field separable over
+  `k`.
+* `TauCeti.Place.span_range_algebraMap_residueField_eq_top_of_isPurelyInseparable` and
+  `TauCeti.Place.linearIndependent_algebraMap_constants_of_isPurelyInseparable`: for finite purely
+  inseparable `k' / k` and `F_P` separable over `k`, with no exactness hypothesis, a `k`-basis of
+  `k'` reduces to an `F_P`-basis of `F'_{P'}`, so `F_P ⊗[k] k' → F'_{P'}` is bijective.
 * `TauCeti.Place.degree_eq_one_of_constantCompositum_eq_top`: a place over `P` is rational when
   `k' / k` is normal and `F_P` embeds into `k'` over `k`.
 * `TauCeti.Place.card_le_encard_setOf_degree_eq_one_of_constantCompositum_eq_top`: `F' / k'`
@@ -63,6 +92,8 @@ place when `k` is perfect.
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Theorem 3.6.3(g).
+* N. Bourbaki, *Algebra II*, Chapter V, §15, for linear disjointness of separable and purely
+  inseparable extensions.
 -/
 
 public section
@@ -81,15 +112,68 @@ variable {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
 variable [Field k] [Field k'] [Field F] [Field F']
 variable [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F']
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
-variable [Algebra.IsSeparable k k']
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+/-- Multiplying by the residue of a constant preserves the `F_P`-span of the residues of
+constants. -/
+private theorem mul_algebraMap_mem_span_range_algebraMap_residueField [Algebra.IsIntegral F F']
+    (P' : Place k' F') {x : P'.ResidueField}
+    (hx : x ∈ Submodule.span (P'.restrict k F).ResidueField
+      (Set.range (algebraMap k' P'.ResidueField))) (c : k') :
+    x * algebraMap k' P'.ResidueField c ∈ Submodule.span (P'.restrict k F).ResidueField
+      (Set.range (algebraMap k' P'.ResidueField)) := by
+  induction hx using Submodule.span_induction with
+  | mem _ hy =>
+    obtain ⟨d, rfl⟩ := hy
+    exact Submodule.subset_span ⟨d * c, map_mul _ _ _⟩
+  | zero => simp
+  | add _ _ _ _ hx hy => simpa [add_mul] using add_mem hx hy
+  | smul a _ _ hx => simpa [smul_mul_assoc] using Submodule.smul_mem _ a hx
+
+/-- Let `E` be an intermediate field of `F' / F` with constants an intermediate field `L` of
+`k' / k`, and let `Q` be the place of `E` below `P'`. The residue-field map `E_Q → F'_{P'}`
+carries the span of the residues of the constants of `L` over the residue field of the place of
+`F` below `Q` into the span of the residues of the constants of `k'` over `F_P`. -/
+private theorem algebraMap_mem_span_range_algebraMap_residueField (L : IntermediateField k k')
+    (E : IntermediateField F F') [Algebra L E] [IsScalarTower L E F'] [IsScalarTower k L E]
+    [Algebra.IsIntegral F E] [Algebra.IsIntegral E F'] [Algebra.IsIntegral F F'] (P' : Place k' F')
+    {y : (P'.restrict L E).ResidueField}
+    (hy : y ∈ Submodule.span ((P'.restrict L E).restrict k F).ResidueField
+      (Set.range (algebraMap L (P'.restrict L E).ResidueField))) :
+    algebraMap (P'.restrict L E).ResidueField P'.ResidueField y ∈ Submodule.span
+      (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) := by
+  set P := P'.restrict k F
+  set Q := P'.restrict L E
+  refine Submodule.map_mem_span_of_forall_exists
+    (algebraMap Q.ResidueField P'.ResidueField) _ _ ?_ ?_ hy
+  · -- A coefficient from the residue field of `Q ∩ F` is a coefficient from `F_P`.
+    intro r
+    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
+    have ha : (a : F) ∈ P.integers := by
+      rw [mem_integers_restrict_iff, IsScalarTower.algebraMap_apply F E F', ←
+        mem_integers_restrict_iff L E P', ← mem_integers_restrict_iff k F Q]
+      exact a.2
+    refine ⟨IsLocalRing.residue P.integers ⟨a, ha⟩, ?_⟩
+    rw [IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue,
+      IsLocalRing.ResidueField.algebraMap_residue]
+    refine congrArg _ (Subtype.ext ?_)
+    simp only [Q, P, coe_algebraMap_integers, IsScalarTower.algebraMap_apply F E F']
+  · -- The residue of a constant of `L` is the residue of the same constant in `k'`.
+    rintro _ ⟨c, rfl⟩
+    refine Submodule.subset_span ⟨c, ?_⟩
+    rw [algebraMap_residueField (R := k'), algebraMap_residueField (R := L),
+      IsLocalRing.ResidueField.algebraMap_residue]
+    refine congrArg _ (Subtype.ext ?_)
+    simpa [Q, coe_algebraMap_constants, coe_algebraMap_integers] using
+      (IsScalarTower.algebraMap_apply L k' F' c).symm.trans
+        (IsScalarTower.algebraMap_apply L E F' c)
 
 /-- In a finite separable constant field extension, the residues of constants span the residue
 field over the residue field of the restricted place. -/
 private theorem span_range_algebraMap_residueField_eq_top_of_finiteDimensional
-    [FiniteDimensional k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    [Algebra.IsSeparable k k'] [FiniteDimensional k k'] (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
     letI := finiteDimensional_of_constantCompositum_eq_top (k := k) (k' := k') h
     Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
       ⊤ := by
@@ -124,68 +208,178 @@ private theorem span_range_algebraMap_residueField_eq_top_of_finiteDimensional
     ← Algebra.smul_def]
   exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self _))
 
-/-- **The residue field of a constant field extension is spanned by the constants**: for a
-separable algebraic constant field extension `F' = F · k'` of `F / k` with exact constant field
-`k`, finite or not, the residue field of a place `P'` of `F' / k'` is spanned over the residue
-field of the place below by the image of `k'`. -/
-theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
-    letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+section IsPurelyInseparable
+
+variable [FiniteDimensional k k'] [IsPurelyInseparable k k'] [Algebra.IsIntegral F F']
+
+/-- **Purely inseparable constants span the residue field** at a place with separable residue
+field: if `k' / k` is finite and purely inseparable, `F' = F · k'`, and the residue field `F_P` of
+the place below `P'` is separable over `k`, then `F'_{P'}` is spanned over `F_P` by the image of
+`k'`. The constant field `k` need not be exact in `F`. -/
+theorem span_range_algebraMap_residueField_eq_top_of_isPurelyInseparable
+    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
     Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
       ⊤ := by
-  let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
   set P := P'.restrict k F
+  have := P.finiteDimensional_residueField hF
+  have := P'.finiteDimensional_residueField (hF.of_constantCompositum_eq_top h)
+  -- `[k' : k] · deg P' = f(P' ∣ P) · deg P` with `f(P' ∣ P) = [k' : k]`, so `deg P' = deg P`.
+  have hdeg : P'.degree = P.degree := by
+    have := finrank_mul_degree_eq_relativeDegree_mul_degree_restrict k F P'
+    rw [relativeDegree_eq_finrank_of_isPurelyInseparable hF h P'] at this
+    exact Nat.eq_of_mul_eq_mul_left Module.finrank_pos this
+  -- A `k`-basis of `F_P` stays linearly independent over `k'`, so it is a `k'`-basis of `F'_{P'}`.
+  have hspan := (linearIndependent_algebraMap_residueField_of_isPurelyInseparable k F P'
+    (Module.finBasis k P.ResidueField).linearIndependent).span_eq_top_of_card_eq_finrank'
+      (by simpa [degree_eq_finrank] using hdeg.symm)
+  -- A `k'`-combination of residues of `F_P` is an `F_P`-combination of residues of constants.
+  refine eq_top_iff.2 fun y _ ↦ ?_
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun k').1
+    (hspan ▸ Submodule.mem_top : y ∈ _)
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  rw [Function.comp_apply, Algebra.smul_def, mul_comm, ← Algebra.smul_def]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self _))
+
+/-- **Purely inseparable constants stay linearly independent over a separable residue field**: if
+`k' / k` is finite and purely inseparable, `F' = F · k'`, and the residue field `F_P` of the place
+below `P'` is separable over `k`, then constants linearly independent over `k` have residues
+linearly independent over `F_P`. With
+`TauCeti.Place.span_range_algebraMap_residueField_eq_top_of_isPurelyInseparable`, a `k`-basis of
+`k'` reduces to an `F_P`-basis of `F'_{P'}`: the natural map `F_P ⊗[k] k' → F'_{P'}` carries a
+basis to a basis. -/
+theorem linearIndependent_algebraMap_constants_of_isPurelyInseparable
+    (hF : IsFunctionField k F) (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] {ι : Type*} {b : ι → k'}
+    (hb : LinearIndependent k b) :
+    LinearIndependent (P'.restrict k F).ResidueField (algebraMap k' P'.ResidueField ∘ b) := by
+  classical
+  set P := P'.restrict k F
+  -- Extend `b` to a `k`-basis `B` of `k'`.
+  have hs := hb.linearIndepOn_id
+  let B := Basis.extend hs
+  have := Fintype.ofFinite (hs.extend (Set.subset_univ _))
+  -- The `[k' : k] = f(P' ∣ P)` residues of `B` span `F'_{P'}` over `F_P`, so they form a basis.
+  have hB : LinearIndependent P.ResidueField (algebraMap k' P'.ResidueField ∘ B) := by
+    refine linearIndependent_of_top_le_span_of_card_eq_finrank ?_ ?_
+    · rw [← span_range_algebraMap_residueField_eq_top_of_isPurelyInseparable hF h P']
+      refine Submodule.span_le.2 ?_
+      rintro _ ⟨c, rfl⟩
+      rw [← B.sum_repr c, map_sum]
+      refine Submodule.sum_mem _ fun i _ ↦ ?_
+      rw [Algebra.smul_def, map_mul, ← algebraMap_residueField_algebraMap (F := F) P',
+        ← Algebra.smul_def]
+      exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self i))
+    · rw [← Module.finrank_eq_card_basis B, ← relativeDegree_def k F P',
+        relativeDegree_eq_finrank_of_isPurelyInseparable hF h P']
+  -- `b` is a subfamily of `B`.
+  have hbB : algebraMap k' P'.ResidueField ∘ b = (algebraMap k' P'.ResidueField ∘ B) ∘
+      fun i ↦ ⟨b i, hs.subset_extend _ (Set.mem_range_self i)⟩ := by
+    ext i
+    simp [B, Basis.coe_extend]
+  rw [hbB]
+  exact hB.comp _ fun i j hij ↦ hb.injective (congrArg Subtype.val hij)
+
+end IsPurelyInseparable
+
+/-- The finite case of
+`TauCeti.Place.span_range_algebraMap_residueField_eq_top_of_isSeparable_residueField`: split
+`k ⊆ k_s ⊆ k'` at the separable closure `k_s` of `k` in `k'`. -/
+private theorem span_range_algebraMap_residueField_eq_top_of_finiteDimensional_of_isSeparable
+    [FiniteDimensional k k'] [Algebra.IsIntegral F F'] (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
+    Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+      ⊤ := by
+  let S := separableClosure k k'
+  let E := constantCompositum F S F'
+  let : Algebra S E := constantCompositumAlgebra F S F'
+  have : IsScalarTower S E F' := isScalarTower_constantCompositum F S F'
+  have : IsScalarTower k S E := isScalarTower_base_constantCompositum k F S F'
+  have hE : constantCompositum F S E = ⊤ := (constantCompositum_eq_top_iff F S F' E).mpr rfl
+  let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
+  let : Algebra.IsSeparable F E := isSeparable_of_constantCompositum_eq_top (k := k) hE
+  let : Algebra.IsIntegral E F' := Algebra.IsIntegral.tower_top F
+  let Q := P'.restrict S E
+  -- The separable step `F · k_s / F`: the residues of `k_s` span `E_Q`, which is unramified, hence
+  -- separable, over `F_P`.
+  have hQ := span_range_algebraMap_residueField_eq_top_of_finiteDimensional hF hex hE Q
+  obtain ⟨-, hQsep⟩ := (ramificationIdx_eq_one_and_isSeparable_iff_isUnramifiedAt k F Q).mpr
+    (isUnramifiedAt_of_constantCompositum_eq_top (k := k) hE Q)
+  have : Algebra.IsSeparable k (Q.restrict k F).ResidueField := by
+    rw [restrict_restrict]
+    infer_instance
+  have := isSeparable_residueField_of_isSeparable_restrict k F Q
+  -- The purely inseparable step `F' / F · k_s`: the residues of `k'` span `F'_{P'}` over `E_Q`.
+  have hP' := span_range_algebraMap_residueField_eq_top_of_isPurelyInseparable (k := S)
+    (hF.of_constantCompositum_eq_top hE) (constantCompositum_eq_top_of_eq_top F k' F' E h) P'
+  -- So an `E_Q`-combination of residues of `k'` is an `F_P`-combination of them, since its
+  -- coefficients are `F_P`-combinations of residues of `k_s`.
+  refine eq_top_iff.2 fun y _ ↦ ?_
+  obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1
+    (hP' ▸ Submodule.mem_top : y ∈ _)
+  refine Submodule.sum_mem _ fun d _ ↦ ?_
+  dsimp only
+  rw [Algebra.smul_def]
+  exact mul_algebraMap_mem_span_range_algebraMap_residueField P'
+    (algebraMap_mem_span_range_algebraMap_residueField S E P' (hQ ▸ Submodule.mem_top)) d
+
+/-- Both spanning theorems below, reduced to a finite subextension of `k' / k`: either `k' / k` is
+separable or the residue field below `P'` is separable over `k`. -/
+private theorem span_range_algebraMap_residueField_eq_top_of_isSeparable_or
+    [Algebra.IsAlgebraic k k'] [Algebra.IsIntegral F F'] (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
+    (hsep : Algebra.IsSeparable k k' ∨ Algebra.IsSeparable k (P'.restrict k F).ResidueField) :
+    Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+      ⊤ := by
   refine eq_top_iff.2 fun y _ ↦ ?_
   obtain ⟨g, rfl⟩ := IsLocalRing.residue_surjective y
   -- The function `g` already lies in `E = F · L` for a finite subextension `L` of `k' / k`.
   obtain ⟨L, hL, hgL⟩ := exists_finiteDimensional_constantSubfield_of_mem_constantCompositum
     (k := k) (F := F) (by rw [h]; exact IntermediateField.mem_top (x := (g : F')))
+  let : FiniteDimensional k L := hL
   let E := constantCompositum F L F'
   let : Algebra L E := constantCompositumAlgebra F L F'
   have : IsScalarTower L E F' := isScalarTower_constantCompositum F L F'
   have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
   have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
   let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
-  let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)
+  let : Algebra.IsIntegral E F' := Algebra.IsIntegral.tower_top F
   let Q := P'.restrict L E
   -- At the place `Q` below `P'`, the finite case writes the residue of `g` over `L`.
   have hgQ : (⟨g, hgL⟩ : E) ∈ Q.integers := by
     rw [mem_integers_restrict_iff]
     exact g.2
-  have hmem : IsLocalRing.residue Q.integers ⟨_, hgQ⟩ ∈
-      Submodule.span (Q.restrict k F).ResidueField (Set.range (algebraMap L Q.ResidueField)) := by
-    rw [span_range_algebraMap_residueField_eq_top_of_finiteDimensional hF hex hE Q]
-    exact Submodule.mem_top
+  have hspan : Submodule.span (Q.restrict k F).ResidueField
+      (Set.range (algebraMap L Q.ResidueField)) = ⊤ := by
+    rcases hsep with hsep | hsep
+    · have := Algebra.isSeparable_tower_bot_of_isSeparable k L k'
+      exact span_range_algebraMap_residueField_eq_top_of_finiteDimensional hF hex hE Q
+    · have : Algebra.IsSeparable k (Q.restrict k F).ResidueField := by
+        rw [restrict_restrict]
+        exact hsep
+      exact span_range_algebraMap_residueField_eq_top_of_finiteDimensional_of_isSeparable hF hex
+        hE Q
   -- The residue-field map `E_Q → F'_{P'}` carries that expression to one over `k'`.
   have hg : algebraMap Q.ResidueField P'.ResidueField (IsLocalRing.residue Q.integers ⟨_, hgQ⟩) =
       IsLocalRing.residue P'.integers g := by
     rw [IsLocalRing.ResidueField.algebraMap_residue]
     exact congrArg _ (Subtype.ext (by simp [Q]))
   rw [← hg]
-  refine Submodule.map_mem_span_of_forall_exists
-    (algebraMap Q.ResidueField P'.ResidueField) _ _ ?_ ?_ hmem
-  · -- A coefficient from the residue field of `Q ∩ F` is a coefficient from `F_P`.
-    intro r
-    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
-    have ha : (a : F) ∈ P.integers := by
-      rw [mem_integers_restrict_iff, IsScalarTower.algebraMap_apply F E F', ←
-        mem_integers_restrict_iff L E P', ← mem_integers_restrict_iff k F Q]
-      exact a.2
-    refine ⟨IsLocalRing.residue P.integers ⟨a, ha⟩, ?_⟩
-    rw [IsLocalRing.ResidueField.algebraMap_residue, IsLocalRing.ResidueField.algebraMap_residue,
-      IsLocalRing.ResidueField.algebraMap_residue]
-    refine congrArg _ (Subtype.ext ?_)
-    simp only [Q, P, coe_algebraMap_integers, IsScalarTower.algebraMap_apply F E F']
-  · -- The residue of a constant of `L` is the residue of the same constant in `k'`.
-    rintro _ ⟨c, rfl⟩
-    refine Submodule.subset_span ⟨c, ?_⟩
-    rw [algebraMap_residueField (R := k'), algebraMap_residueField (R := L),
-      IsLocalRing.ResidueField.algebraMap_residue]
-    refine congrArg _ (Subtype.ext ?_)
-    simpa [Q, coe_algebraMap_constants, coe_algebraMap_integers] using
-      (IsScalarTower.algebraMap_apply L k' F' c).symm.trans
-        (IsScalarTower.algebraMap_apply L E F' c)
+  exact algebraMap_mem_span_range_algebraMap_residueField L E P' (hspan ▸ Submodule.mem_top)
+
+/-- **The residue field of a constant field extension is spanned by the constants**: for a
+separable algebraic constant field extension `F' = F · k'` of `F / k` with exact constant field
+`k`, finite or not, the residue field of a place `P'` of `F' / k'` is spanned over the residue
+field of the place below by the image of `k'`. -/
+theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
+    [Algebra.IsSeparable k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
+    letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+    Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+      ⊤ := by
+  let := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
+  exact span_range_algebraMap_residueField_eq_top_of_isSeparable_or hF hex h P' (.inl ‹_›)
 
 /-- **The residue field of a constant field extension is a compositum** (Stichtenoth,
 Theorem 3.6.3(g)): for a separable algebraic constant field extension `F' = F · k'` of `F / k`
@@ -193,7 +387,7 @@ with exact constant field `k`, finite or not, the residue field of a place `P'` 
 generated over the residue field `F_P` of the place below by the constants:
 `F'_{P'} = F_P · k'`. -/
 theorem adjoin_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    [Algebra.IsSeparable k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
     letI := isAlgebraic_of_constantCompositum_eq_top (k := k) (k' := k') h
     IntermediateField.adjoin (P'.restrict k F).ResidueField
@@ -205,6 +399,41 @@ theorem adjoin_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
       (IntermediateField.subset_adjoin _ _) ?_
   rw [span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top hF hex h P']
   exact Submodule.mem_top
+
+section IsSeparableResidueField
+
+variable [Algebra.IsAlgebraic k k'] [Algebra.IsIntegral F F']
+
+/-- **The residue field is spanned by the constants at a place with separable residue field**:
+for an algebraic constant field extension `F' = F · k'` of `F / k` with exact constant field `k`,
+finite or not and separable or not, if the residue field `F_P` of the place below `P'` is separable
+over `k`, then `F'_{P'}` is spanned over `F_P` by the image of `k'`. -/
+theorem span_range_algebraMap_residueField_eq_top_of_isSeparable_residueField
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
+    Submodule.span (P'.restrict k F).ResidueField (Set.range (algebraMap k' P'.ResidueField)) =
+      ⊤ :=
+  span_range_algebraMap_residueField_eq_top_of_isSeparable_or hF hex h P' (.inr ‹_›)
+
+/-- **The residue field is a compositum at a place with separable residue field**: for an
+algebraic constant field extension `F' = F · k'` of `F / k` with exact constant field `k`, finite
+or not and separable or not, if the residue field `F_P` of the place below `P'` is separable over
+`k`, then `F'_{P'} = F_P · k'`. -/
+theorem adjoin_range_algebraMap_residueField_eq_top_of_isSeparable_residueField
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) (P' : Place k' F')
+    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
+    IntermediateField.adjoin (P'.restrict k F).ResidueField
+      (Set.range (algebraMap k' P'.ResidueField)) = ⊤ :=
+  IntermediateField.adjoin_eq_top_of_algebra _ _ <| eq_top_iff.2 fun _ _ ↦
+    Algebra.span_le_adjoin _ _ <|
+      (span_range_algebraMap_residueField_eq_top_of_isSeparable_residueField hF hex h P').symm ▸
+        Submodule.mem_top
+
+end IsSeparableResidueField
+
+variable [Algebra.IsSeparable k k']
 
 /-- **A place becomes rational in a large enough normal constant field extension**: for a
 separable normal algebraic constant field extension `F' = F · k'` of `F / k` with exact constant
