@@ -13,8 +13,9 @@ import TauCeti.RingTheory.WittVector.Units
 /-!
 # Coefficient maps and length-two Witt arithmetic
 
-The length-two Witt ring has ghost components `x₀` and `x₀ ^ p + p * x₁`. Its second
-addition coordinate is the integral correction polynomial from the definition of a δ-ring.
+The length-two Witt ring has ghost components `x₀` and `x₀ ^ p + p * x₁`. The second coordinate
+of a sum is the sum of the two second coordinates plus the integral δ-ring correction polynomial
+evaluated at the zeroth coordinates.
 The coordinate identities hold over arbitrary commutative rings, including rings with
 `p`-torsion. Cancellation by `p` is used only over a universal polynomial ring over `ℤ`.
 
@@ -141,7 +142,7 @@ theorem one_coeff_one : (1 : TruncatedWittVector p 2 A).coeff 1 = 0 := by
   rw [← map_one (WittVector.truncate (p := p) (R := A) 2), WittVector.coeff_truncate]
   exact WittVector.one_coeff_eq_of_pos p A 1 (by decide)
 
-/-- The second addition coordinate is the integral δ-ring correction polynomial. -/
+/-- The second coordinate of `x + y` is `x₁ + y₁ + TauCeti.DeltaRing.addCorrection p x₀ y₀`. -/
 theorem add_coeff_one (x y : TruncatedWittVector p 2 A) :
     (x + y).coeff 1 = x.coeff 1 + y.coeff 1 +
       TauCeti.DeltaRing.addCorrection p (x.coeff 0) (y.coeff 0) := by
