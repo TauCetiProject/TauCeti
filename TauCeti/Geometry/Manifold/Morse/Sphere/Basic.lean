@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -57,7 +58,6 @@ multiple of `x`.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
   is infinite.
-* `TauCeti.image_val_setOf_sphereHeight_eq`: the levels of the height function are round spheres.
 * `TauCeti.isConnected_setOf_sphereHeight_eq`: on a sphere of dimension at least `2` every level of
   the height function is connected.
 
@@ -498,63 +498,32 @@ theorem infinite_setOf_sphereHeight_eq_zero (hE : 3 ≤ finrank ℝ E) (v : sphe
   rw [mem_ofPred_eq, sphereHeight_apply]
   exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).2
 
-omit [Fact (finrank ℝ E = n + 1)] in
-/-- **The levels of the height are round spheres.** For `-1 ≤ c ≤ 1`, the points of the unit
-sphere at height `c` in the direction of a unit vector `v` are the points `c v + w` with `w`
-orthogonal to `v` and of norm `√(1 - c²)`. -/
-theorem image_val_setOf_sphereHeight_eq (v : sphere (0 : E) 1) {c : ℝ} (hc : c ∈ Icc (-1) 1) :
-    Subtype.val '' {x : sphere (0 : E) 1 | sphereHeight v x = c} =
-      (fun w : (ℝ ∙ (v : E))ᗮ ↦ c • (v : E) + w) '' sphere 0 √(1 - c ^ 2) := by
-  have hv : ⟪(v : E), (v : E)⟫ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere v, one_pow]
-  have hr : √(1 - c ^ 2) ^ 2 = 1 - c ^ 2 := Real.sq_sqrt (by nlinarith [hc.1, hc.2])
-  -- `c v + w` with `w ⊥ v` is an orthogonal decomposition.
-  have hpyth : ∀ w ∈ (ℝ ∙ (v : E))ᗮ, ‖c • (v : E) + w‖ ^ 2 = c ^ 2 + ‖w‖ ^ 2 := fun w hw ↦ by
-    simp only [sq]
-    rw [norm_add_sq_eq_norm_sq_add_norm_sq_real (by rw [real_inner_smul_left,
-      Submodule.mem_orthogonal_singleton_iff_inner_right.1 hw, mul_zero]), norm_smul,
-      norm_eq_of_mem_sphere v, mul_one, Real.norm_eq_abs, abs_mul_abs_self]
-  ext y
-  simp only [mem_image, mem_ofPred_eq, sphereHeight_apply, Subtype.exists, exists_and_right,
-    exists_eq_right, mem_sphere_zero_iff_norm]
-  constructor
-  · rintro ⟨hy, hyc⟩
-    have hyK : y - c • (v : E) ∈ (ℝ ∙ (v : E))ᗮ := by
-      rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
-        real_inner_smul_left, hv, hyc]
-      ring
-    refine ⟨_, ⟨hyK, ?_⟩, add_sub_cancel _ _⟩
-    have h := hpyth _ hyK
-    rw [add_sub_cancel, hy] at h
-    rw [← Submodule.norm_coe, Submodule.coe_mk, ← Real.sqrt_sq (norm_nonneg _)]
-    congr 1
-    linarith
-  · rintro ⟨w, ⟨hw, hwr⟩, rfl⟩
-    refine ⟨?_, ?_⟩
-    · have h := hpyth w hw
-      rw [(Submodule.norm_coe (⟨w, hw⟩ : (ℝ ∙ (v : E))ᗮ)).trans hwr, hr] at h
-      nlinarith [norm_nonneg (c • (v : E) + w)]
-    · rw [inner_add_left, real_inner_smul_left, hv,
-        Submodule.mem_orthogonal_singleton_iff_inner_left.1 hw]
-      ring
-
 /-- **The levels of the height are connected in dimension at least two.** On the unit sphere
 `Sⁿ` with `n ≥ 2`, every level `h = c` with `-1 ≤ c ≤ 1` is connected: it is a pole when
 `c = ±1`, and otherwise the round sphere of radius `√(1 - c²)` centred at `c v` in the hyperplane
 `h = c`. On the circle the levels strictly between the poles have two points. -/
 theorem isConnected_setOf_sphereHeight_eq (hn : 2 ≤ n) (v : sphere (0 : E) 1) {c : ℝ}
     (hc : c ∈ Icc (-1) 1) : IsConnected {x | sphereHeight v x = c} := by
-  -- The sphere of radius `√(1 - c²)` of `(ℝ ∙ v)ᗮ` is connected, since its dimension is `n ≥ 2`.
+  -- The unit sphere of `(ℝ ∙ v)ᗮ` is connected, since its dimension is `n ≥ 2`, and the level
+  -- `h = c` is its image under the latitude map at height `c`.
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have hrank : 1 < Module.rank ℝ (ℝ ∙ (v : E))ᗮ := by
     rw [← Module.finrank_eq_rank,
       Submodule.finrank_orthogonal_span_singleton (n := n) (ne_zero_of_mem_unit_sphere v)]
     exact_mod_cast hn
-  have hconn : IsConnected (Subtype.val '' {x : sphere (0 : E) 1 | sphereHeight v x = c}) :=
-    image_val_setOf_sphereHeight_eq v hc ▸
-      (isConnected_sphere hrank 0 (Real.sqrt_nonneg _)).image _ (by fun_prop)
-  exact ⟨hconn.nonempty.of_image,
-    Topology.IsInducing.subtypeVal.isPreconnected_image.1 hconn.isPreconnected⟩
+  have hconn := isConnected_sphere hrank (0 : (ℝ ∙ (v : E))ᗮ) zero_le_one
+  have := isConnected_iff_connectedSpace.1 hconn
+  obtain ⟨u₀, hu₀⟩ := hconn.nonempty
+  have hlevel : {x | sphereHeight v x = c} = range fun u ↦ latitude v u c := by
+    ext x
+    simp only [mem_ofPred_eq, mem_range, sphereHeight_apply]
+    constructor
+    · rintro rfl
+      obtain ⟨u, t, ht, rfl⟩ := exists_latitude_eq v ⟨u₀, hu₀⟩ x
+      exact ⟨u, by rw [inner_latitude, projIcc_of_mem _ ht]⟩
+    · rintro ⟨u, rfl⟩
+      rw [inner_latitude, projIcc_of_mem _ hc]
+  exact hlevel ▸ isConnected_range (continuous_latitude v continuous_id continuous_const)
 
 end Sphere
 
