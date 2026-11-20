@@ -45,6 +45,11 @@ genus `g` and first Chern number `c` in a target of complex dimension `m`. -/
 def unmarkedVirtualDimension (m : ℤ) (g : ℕ) (c : ℤ) : ℤ :=
   (m - 3) * (2 - 2 * g) + 2 * c
 
+/-- The defining formula of `TauCeti.unmarkedVirtualDimension`. -/
+theorem unmarkedVirtualDimension_def (m : ℤ) (g : ℕ) (c : ℤ) :
+    unmarkedVirtualDimension m g c = (m - 3) * (2 - 2 * g) + 2 * c := by
+  rw [unmarkedVirtualDimension]
+
 namespace RiemannSurface
 
 namespace FiniteHolomorphicMap
@@ -65,7 +70,7 @@ theorem unmarkedVirtualDimension_eq_degree_mul_unmarkedVirtualDimension_sub (m c
     (hX : eulerChar X = 2 - 2 * genus X) (hY : eulerChar Y = 2 - 2 * genus Y) :
     unmarkedVirtualDimension m (genus X) (degree f * c) =
       degree f * unmarkedVirtualDimension m (genus Y) c - (m - 3) * ramificationDegree f := by
-  unfold unmarkedVirtualDimension
+  rw [unmarkedVirtualDimension_def, unmarkedVirtualDimension_def]
   linear_combination (3 - m) * f.two_mul_genus_sub_two_eq_of_eulerChar_eq hX hY
 
 end FiniteHolomorphicMap
