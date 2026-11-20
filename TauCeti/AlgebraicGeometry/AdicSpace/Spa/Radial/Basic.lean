@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Comap
 import TauCeti.AlgebraicGeometry.AdicSpace.Cont.DominatingUnit
+import TauCeti.RingTheory.Valuation.Continuous.TopologicallyNilpotent
 
 /-!
 # Closed and strict radial regions in the adic spectrum
@@ -41,8 +42,9 @@ whereas strict inequalities do not in general give an open subset.
   the same unit does not change the disc.
 * `TauCeti.ValuationSpectrum.closedAnnulus_eq_inter_rationalSubset`: for arbitrary radii, the
   closed annulus is `R({T} / b) ∩ R({a} / T)`; no unit hypothesis is needed.
-* `TauCeti.ValuationSpectrum.iUnion_closedAnnulus_pow`: for a topologically nilpotent `ϖ`, the
-  annuli `ϖⁿ ≤ |T| ≤ b` exhaust the punctured disc.
+* `TauCeti.ValuationSpectrum.iUnion_closedAnnulus_pow` and
+  `TauCeti.ValuationSpectrum.monotone_closedAnnulus_pow`: for a topologically nilpotent `ϖ`, the
+  annuli `ϖⁿ ≤ |T| ≤ b` increase with `n` and exhaust the punctured disc.
 * `TauCeti.ValuationSpectrum.strictAnnulus_subset_closedAnnulus` and
   `TauCeti.ValuationSpectrum.strictAnnulus_self`: the strict annulus lies in the closed one, and
   equal radii give the empty strict annulus but the weak circle as closed annulus.
@@ -60,6 +62,15 @@ public section
 namespace TauCeti.ValuationSpectrum
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A]
+
+/-- Pulling back a subset of `Spa (A, A⁺)` cut out by a condition `S`: the points of
+`Spa (B, B⁺)` whose pullback lies in `Spa (A, A⁺) ∩ S` are those whose pullback lies in `S`. -/
+private theorem comap_preimage_spa_inter_inter_spa {B : Type*} [CommRing B] [TopologicalSpace B]
+    {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A} {Bplus : Subring B}
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (S : Set (Spv A)) :
+    comap φ ⁻¹' (spa Aplus ∩ S) ∩ spa Bplus = spa Bplus ∩ comap φ ⁻¹' S := by
+  ext v
+  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
 
 /-! ### Closed discs -/
 
@@ -110,9 +121,8 @@ theorem comap_preimage_closedDisc_inter_spa {B : Type*} [CommRing B] [Topologica
     {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A} {Bplus : Subring B}
     (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (T b : A) :
     comap φ ⁻¹' closedDisc Aplus T b ∩ spa Bplus = closedDisc Bplus (φ T) (φ b) := by
-  ext v
-  simp only [Set.mem_inter_iff, Set.mem_preimage, mem_closedDisc_iff, comap_vle]
-  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
+  simp only [closedDisc_def, comap_preimage_spa_inter_inter_spa hφ hplus, Set.preimage_ofPred_eq,
+    comap_vle]
 
 /-- **Concentric closed discs are nested**: if `v(b) ≤ v(b')` at every point of `Spa (A, A⁺)`,
 then `𝔻(A⁺, T, b) ⊆ 𝔻(A⁺, T, b')`. -/
@@ -184,10 +194,9 @@ theorem comap_preimage_puncturedClosedDisc_inter_spa {B : Type*} [CommRing B]
     {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (T b : A) :
     comap φ ⁻¹' puncturedClosedDisc Aplus T b ∩ spa Bplus =
       puncturedClosedDisc Bplus (φ T) (φ b) := by
-  ext v
-  simp only [Set.mem_inter_iff, Set.mem_preimage, mem_puncturedClosedDisc_iff, comap_vle,
-    map_zero]
-  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
+  rw [puncturedClosedDisc_def, Set.preimage_inter, Set.inter_right_comm,
+    comap_preimage_closedDisc_inter_spa hφ hplus, puncturedClosedDisc_def]
+  simp only [Set.preimage_ofPred_eq, comap_vle, map_zero]
 
 /-- The punctured closed disc with coordinate `0` is empty, whatever the radius. -/
 @[simp]
@@ -266,9 +275,8 @@ theorem comap_preimage_closedAnnulus_inter_spa {B : Type*} [CommRing B] [Topolog
     (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (T a b : A) :
     comap φ ⁻¹' closedAnnulus Aplus T a b ∩ spa Bplus =
       closedAnnulus Bplus (φ T) (φ a) (φ b) := by
-  ext v
-  simp only [Set.mem_inter_iff, Set.mem_preimage, mem_closedAnnulus_iff, comap_vle, map_zero]
-  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
+  simp only [closedAnnulus_def, comap_preimage_spa_inter_inter_spa hφ hplus,
+    Set.preimage_ofPred_eq, comap_vle, map_zero]
 
 /-- Every point of a closed annulus lies in the punctured outer disc. -/
 theorem closedAnnulus_subset_puncturedClosedDisc (Aplus : Subring A) (T a b : A) :
@@ -298,6 +306,20 @@ theorem iUnion_closedAnnulus_pow (Aplus : Subring A) (T b : A) {ϖ : A}
     hϖ (by rwa [mem_supp_iff])
   let := v.toValuativeRel
   exact Set.mem_iUnion.mpr ⟨n, hspa, hn.vle, hTb, hT⟩
+
+/-- **The exhaustion annuli increase**: for a topologically nilpotent `ϖ`, every point of
+`Spa (A, A⁺)` is continuous, so `v(ϖ) ≤ 1` and `v(ϖᵐ) ≤ v(ϖⁿ)` for `n ≤ m`; hence
+`𝔸(A⁺, T, ϖⁿ, b) ⊆ 𝔸(A⁺, T, ϖᵐ, b)`. -/
+theorem monotone_closedAnnulus_pow (Aplus : Subring A) (T b : A) {ϖ : A}
+    (hϖ : IsTopologicallyNilpotent ϖ) : Monotone fun n : ℕ ↦ closedAnnulus Aplus T (ϖ ^ n) b :=
+  fun _ _ hnm ↦ closedAnnulus_subset_closedAnnulus Aplus T
+    (fun v hv ↦ by
+      let := v.toValuativeRel
+      refine ValuativeRel.pow_vle_pow_of_vle_one ((valuation_le_iff v ϖ 1).mp ?_) hnm
+      rw [map_one]
+      exact ((isContinuous_def v).mp ((mem_spa_iff Aplus v).mp hv).1
+        |>.lt_one_of_isTopologicallyNilpotent hϖ).le)
+    (fun v _ ↦ v.toValuativeRel.vle_refl b)
 
 /-- **A closed annulus with inner radius `0` is the punctured closed disc**: `v(0) ≤ v(T)` always
 holds. -/
@@ -358,9 +380,8 @@ theorem comap_preimage_strictAnnulus_inter_spa {B : Type*} [CommRing B] [Topolog
     (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (T a b : A) :
     comap φ ⁻¹' strictAnnulus Aplus T a b ∩ spa Bplus =
       strictAnnulus Bplus (φ T) (φ a) (φ b) := by
-  ext v
-  simp only [Set.mem_inter_iff, Set.mem_preimage, mem_strictAnnulus_iff, comap_vlt]
-  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
+  simp only [strictAnnulus_def, comap_preimage_spa_inter_inter_spa hφ hplus,
+    Set.preimage_ofPred_eq, comap_vlt]
 
 /-- **The strict annulus lies in the closed annulus** with the same radii. -/
 theorem strictAnnulus_subset_closedAnnulus (Aplus : Subring A) (T a b : A) :

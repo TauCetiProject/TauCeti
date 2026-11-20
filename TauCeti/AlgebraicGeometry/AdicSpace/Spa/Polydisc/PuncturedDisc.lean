@@ -83,9 +83,8 @@ has nonzero valuation. -/
 @[simp]
 theorem mem_puncturedDisc (v : closedPolydisc 1 A) :
     v ∈ puncturedDisc A ↔ ¬ v.1.toValuativeRel.vle T 0 := by
-  rw [puncturedDisc_eq_val_preimage_puncturedClosedDisc, Set.mem_preimage,
-    puncturedClosedDisc_def, Set.mem_inter_iff, and_iff_right (val_mem_closedDisc_one v),
-    Set.mem_ofPred_eq]
+  obtain ⟨hv, hT⟩ := (mem_closedDisc_iff _ _ _ _).mp (val_mem_closedDisc_one v)
+  simp [puncturedDisc_eq_val_preimage_puncturedClosedDisc, hv, hT]
 
 /-- The annulus `|c|^(n+1) ≤ |T| ≠ 0` in the closed unit disc: the trace of the closed annulus
 `𝔸(A⟨T⟩°, T, c^(n+1), 1)`. -/
@@ -143,18 +142,10 @@ theorem isCompact_puncturedDiscAnnulus [IsHuberRing A] {c : A} (hc : IsUnit c) (
 
 /-- Annuli increase with the exponent of a topologically nilpotent radius parameter. -/
 theorem monotone_puncturedDiscAnnulus {c : A} (hc : IsTopologicallyNilpotent c) :
-    Monotone (puncturedDiscAnnulus c) := by
-  intro n m hnm v hv
-  rw [mem_puncturedDiscAnnulus] at hv ⊢
-  have hcont := (isContinuous_def v.1).mp ((mem_closedPolydisc_iff 1 A v.1).mp v.2).1
-  have hnil : IsTopologicallyNilpotent (C c) :=
-    hc.map (continuous_weightedC isWeightFamily_one_weight)
-  have hn : v.1.valuation (C c) ^ (n + 1) ≤ v.1.valuation T := by
-    simpa only [map_pow] using (valuation_le_iff v.1 _ _).mpr hv.1
-  refine ⟨(valuation_le_iff v.1 _ _).mp ?_, hv.2⟩
-  simpa only [map_pow] using (pow_le_pow_of_le_one zero_le
-    (hcont.lt_one_of_isTopologicallyNilpotent hnil).le
-      (Nat.add_le_add_right hnm 1)).trans hn
+    Monotone (puncturedDiscAnnulus c) := fun n m hnm ↦ by
+  simp only [puncturedDiscAnnulus_eq_val_preimage_closedAnnulus, map_pow]
+  exact Set.preimage_mono (monotone_closedAnnulus_pow _ _ _
+    (hc.map (continuous_weightedC isWeightFamily_one_weight)) (Nat.succ_le_succ hnm))
 
 /-- The annuli exhaust the punctured closed disc: this is `iUnion_closedAnnulus_pow` for the
 radius parameter `C c`, shifted by one exponent. -/
@@ -166,13 +157,9 @@ theorem iUnion_puncturedDiscAnnulus {c : A} (hc : IsTopologicallyNilpotent c) :
   rw [puncturedDisc_eq_val_preimage_puncturedClosedDisc, Set.mem_preimage,
     ← iUnion_closedAnnulus_pow _ _ _ hnil, Set.mem_iUnion] at hv
   obtain ⟨n, hn⟩ := hv
-  -- a continuous point has `v(C c) < 1`, so `v(C c^(n+1)) ≤ v((C c)^n)`
-  refine Set.mem_iUnion.mpr ⟨n, closedAnnulus_subset_closedAnnulus _ _ (fun w hw ↦ ?_)
-    (fun w _ ↦ w.toValuativeRel.vle_refl _) hn⟩
-  have hcont := (isContinuous_def w).mp ((mem_spa_iff _ w).mp hw).1
-  apply (valuation_le_iff w _ _).mp
-  simpa only [map_pow] using pow_le_pow_of_le_one zero_le
-    (hcont.lt_one_of_isTopologicallyNilpotent hnil).le (Nat.le_succ n)
+  refine Set.mem_iUnion.mpr ⟨n, ?_⟩
+  rw [puncturedDiscAnnulus_eq_val_preimage_closedAnnulus, Set.mem_preimage, map_pow]
+  exact monotone_closedAnnulus_pow _ _ _ hnil n.le_succ hn
 
 /-- Every compact subset of the punctured disc is bounded away from the missing origin. -/
 theorem exists_subset_puncturedDiscAnnulus_of_isCompact {c : A}
