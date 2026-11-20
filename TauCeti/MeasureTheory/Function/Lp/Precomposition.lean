@@ -222,13 +222,9 @@ theorem range_normalizedCompOfMapEqSmul (hf : Measurable f) (hC₀ : C ≠ 0) (h
       Set.range (compOfMapLeSmul (E := E) (p := p) 𝕜 hf hC hmap.le) := by
   have hc : algebraMap ℝ 𝕜 (C.toReal ^ (-(1 / p).toReal)) ≠ 0 :=
     (map_ne_zero _).2 (Real.rpow_pos_of_pos (ENNReal.toReal_pos hC₀ hC) _).ne'
-  ext h
-  constructor
-  · rintro ⟨g, rfl⟩
-    exact ⟨_ • g, by rw [map_smul, normalizedCompOfMapEqSmul_apply]⟩
-  · rintro ⟨g, rfl⟩
-    refine ⟨(algebraMap ℝ 𝕜 (C.toReal ^ (-(1 / p).toReal)))⁻¹ • g, ?_⟩
-    rw [normalizedCompOfMapEqSmul_apply, map_smul, smul_smul, mul_inv_cancel₀ hc, one_smul]
+  have := congrArg SetLike.coe <|
+    LinearMap.range_smul (compOfMapLeSmul (E := E) (p := p) 𝕜 hf hC hmap.le).toLinearMap _ hc
+  rwa [LinearMap.coe_range, LinearMap.coe_range] at this
 
 /-- If `μ.map f = C • ν` with `0 < C < ∞`, then `h ∈ Lᵖ(μ)` lies in the range of the normalized
 precomposition with `f` exactly when it agrees almost everywhere with `u ∘ f` for a strongly
