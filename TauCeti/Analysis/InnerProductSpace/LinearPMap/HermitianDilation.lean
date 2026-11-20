@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.AdjointComp
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SubmoduleAdjoint
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.ProdLp
 public import TauCeti.LinearAlgebra.LinearPMap.DomainPow
 
 /-!
@@ -28,13 +29,16 @@ nonnegative self-adjoint operators `T†T` and `TT†` (`LinearPMap.adjointComp`
 kernel and the cokernel of `T` appear as the zero modes of `D_T` in the two summands.
 
 For bounded operators between finite-dimensional spaces the same block matrix is
-`LinearMap.hermitianDilation`.
+`LinearMap.hermitianDilation`. Here `D_T` is the direct sum `T ⊕ T†` of
+`LinearPMap.withLpProdMap` followed by the swap of the two summands.
 
 ## Main declarations
 
 * `LinearPMap.hermitianDilation`: the operator `(x, y) ↦ (T† y, T x)` on `dom T × dom T†`.
 * `LinearPMap.mem_hermitianDilation_domain`: its domain is `dom T × dom T†`.
 * `LinearPMap.hermitianDilation_toLp`: `D_T (x, y) = (T† y, T x)`.
+* `LinearPMap.mem_graph_hermitianDilation_iff`: the graph of `D_T` in terms of the graphs of `T`
+  and `T†`.
 * `LinearPMap.norm_hermitianDilation_apply_sq`: `‖D_T (x, y)‖² = ‖T† y‖² + ‖T x‖²`.
 * `LinearPMap.mem_ker_hermitianDilation`: `ker D_T = ker T × ker T†`.
 * `LinearPMap.isFormalAdjoint_hermitianDilation`: `D_T` is symmetric when `T` is densely defined.
@@ -69,14 +73,10 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 
 /-- The *Hermitian dilation* `D_T = [[0, T†], [T, 0]]` of a partially defined operator `T`, the
 operator `(x, y) ↦ (T† y, T x)` on the `L²` direct sum `WithLp 2 (E × F)`, defined on
-`dom T × dom T†`. -/
-def hermitianDilation (T : E →ₗ.[𝕜] F) : WithLp 2 (E × F) →ₗ.[𝕜] WithLp 2 (E × F) where
-  domain := (T.domain.prod T†.domain).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap
-  toFun :=
-    let D := (T.domain.prod T†.domain).comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap
-    (WithLp.linearEquiv 2 𝕜 (E × F)).symm.toLinearMap ∘ₗ
-      ((T†.toFun ∘ₗ ((WithLp.sndₗ 2 𝕜 E F ∘ₗ D.subtype).codRestrict T†.domain fun u ↦ u.2.2)).prod
-        (T.toFun ∘ₗ ((WithLp.fstₗ 2 𝕜 E F ∘ₗ D.subtype).codRestrict T.domain fun u ↦ u.2.1)))
+`dom T × dom T†`: the direct sum `T ⊕ T†` followed by the swap of the two summands. -/
+def hermitianDilation (T : E →ₗ.[𝕜] F) : WithLp 2 (E × F) →ₗ.[𝕜] WithLp 2 (E × F) :=
+  (LinearIsometryEquiv.withLpProdComm 2 𝕜 F E).toLinearEquiv.toLinearMap.compPMap
+    (T.withLpProdMap 2 T†)
 
 variable {T : E →ₗ.[𝕜] F}
 
@@ -84,7 +84,7 @@ variable {T : E →ₗ.[𝕜] F}
 @[simp]
 theorem mem_hermitianDilation_domain {u : WithLp 2 (E × F)} :
     u ∈ T.hermitianDilation.domain ↔ u.fst ∈ T.domain ∧ u.snd ∈ T†.domain :=
-  Iff.rfl
+  mem_withLpProdMap_domain
 
 /-- The first component of a vector in the domain of the Hermitian dilation, as a vector of
 `dom T`. -/
@@ -96,36 +96,53 @@ abbrev hermitianDilationFst (u : T.hermitianDilation.domain) : T.domain :=
 abbrev hermitianDilationSnd (u : T.hermitianDilation.domain) : T†.domain :=
   ⟨(u : WithLp 2 (E × F)).snd, (mem_hermitianDilation_domain.mp u.2).2⟩
 
-/-- The Hermitian dilation sends `(x, y)` to `(T† y, T x)`. -/
-theorem hermitianDilation_apply (u : T.hermitianDilation.domain) :
-    T.hermitianDilation u =
-      WithLp.toLp 2 (T† (hermitianDilationSnd u), T (hermitianDilationFst u)) :=
-  (rfl)
-
 /-- The first component of `D_T (x, y)` is `T† y`. -/
 @[simp]
 theorem fst_hermitianDilation_apply (u : T.hermitianDilation.domain) :
     (T.hermitianDilation u).fst = T† (hermitianDilationSnd u) :=
-  (rfl)
+  withLpProdMap_apply_snd u
 
 /-- The second component of `D_T (x, y)` is `T x`. -/
 @[simp]
 theorem snd_hermitianDilation_apply (u : T.hermitianDilation.domain) :
     (T.hermitianDilation u).snd = T (hermitianDilationFst u) :=
-  (rfl)
+  withLpProdMap_apply_fst u
+
+/-- The Hermitian dilation sends `(x, y)` to `(T† y, T x)`. -/
+theorem hermitianDilation_apply (u : T.hermitianDilation.domain) :
+    T.hermitianDilation u =
+      WithLp.toLp 2 (T† (hermitianDilationSnd u), T (hermitianDilationFst u)) :=
+  WithLp.ofLp_injective 2 (Prod.ext (fst_hermitianDilation_apply u) (snd_hermitianDilation_apply u))
 
 /-- The Hermitian dilation on a pair `(x, y)` with `x ∈ dom T` and `y ∈ dom T†`. -/
 theorem hermitianDilation_toLp (x : T.domain) (y : T†.domain) :
     T.hermitianDilation ⟨WithLp.toLp 2 ((x : E), (y : F)),
       mem_hermitianDilation_domain.mpr ⟨x.2, y.2⟩⟩ =
       WithLp.toLp 2 (T† y, T x) :=
-  (rfl)
+  hermitianDilation_apply _
 
 /-- The graph norm identity `‖D_T (x, y)‖² = ‖T† y‖² + ‖T x‖²`. -/
 theorem norm_hermitianDilation_apply_sq (u : T.hermitianDilation.domain) :
     ‖T.hermitianDilation u‖ ^ 2 =
-      ‖T† (hermitianDilationSnd u)‖ ^ 2 + ‖T (hermitianDilationFst u)‖ ^ 2 :=
-  WithLp.prod_norm_sq_eq_of_L2 _
+      ‖T† (hermitianDilationSnd u)‖ ^ 2 + ‖T (hermitianDilationFst u)‖ ^ 2 := by
+  rw [hermitianDilation_apply]
+  exact WithLp.prod_norm_sq_eq_of_L2 _
+
+/-- The graph of the Hermitian dilation: `((x, y), (a, b))` lies on it exactly when `(x, b)` lies
+on the graph of `T` and `(y, a)` on the graph of `T†`. -/
+theorem mem_graph_hermitianDilation_iff {z : WithLp 2 (E × F) × WithLp 2 (E × F)} :
+    z ∈ T.hermitianDilation.graph ↔
+      (z.1.fst, z.2.snd) ∈ T.graph ∧ (z.1.snd, z.2.fst) ∈ T†.graph := by
+  refine Iff.trans ?_ (mem_graph_withLpProdMap_iff (z := (z.1, WithLp.toLp 2 (z.2.snd, z.2.fst))))
+  rw [mem_graph_iff, mem_graph_iff]
+  -- `D_T` is `T ⊕ T†` followed by the swap, so `D_T u = z.2` exactly when `(T ⊕ T†) u` is the
+  -- swap of `z.2`.
+  refine exists_congr fun u ↦ and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [← h]
+    rfl
+  · change WithLp.toLp 2 ((T.withLpProdMap 2 T† u).snd, (T.withLpProdMap 2 T† u).fst) = z.2
+    rw [h]
+    rfl
 
 /-- The kernel of the Hermitian dilation is `ker T × ker T†`. -/
 @[simp]
@@ -136,7 +153,10 @@ theorem mem_ker_hermitianDilation {u : WithLp 2 (E × F)} :
   · rintro ⟨u, hu, rfl, h⟩
     have hfst := congrArg WithLp.fst h
     have hsnd := congrArg WithLp.snd h
-    exact ⟨⟨_, hu.1, rfl, hsnd⟩, ⟨_, hu.2, rfl, hfst⟩⟩
+    exact ⟨⟨_, (mem_hermitianDilation_domain.mp hu).1, rfl,
+        (snd_hermitianDilation_apply _).symm.trans hsnd⟩,
+      ⟨_, (mem_hermitianDilation_domain.mp hu).2, rfl,
+        (fst_hermitianDilation_apply _).symm.trans hfst⟩⟩
   · rintro ⟨⟨x, hx, hux, hTx⟩, ⟨y, hy, huy, hTy⟩⟩
     have hu : u ∈ T.hermitianDilation.domain := by
       rw [mem_hermitianDilation_domain, hux, huy]
@@ -150,19 +170,8 @@ theorem mem_ker_hermitianDilation {u : WithLp 2 (E × F)} :
 /-- The domain of the Hermitian dilation is dense when the domains of `T` and of `T†` are. -/
 theorem dense_hermitianDilation_domain (hT : Dense (T.domain : Set E))
     (hT' : Dense (T†.domain : Set F)) :
-    Dense (T.hermitianDilation.domain : Set (WithLp 2 (E × F))) := by
-  have h : (T.hermitianDilation.domain : Set (WithLp 2 (E × F))) =
-      WithLp.toLp 2 '' ((T.domain : Set E) ×ˢ (T†.domain : Set F)) := by
-    ext u
-    simp only [SetLike.mem_coe, mem_hermitianDilation_domain]
-    constructor
-    · intro hu
-      exact ⟨WithLp.ofLp u, hu, rfl⟩
-    · rintro ⟨v, hv, rfl⟩
-      exact hv
-  rw [h]
-  exact (WithLp.toLp_surjective 2).denseRange.dense_image (WithLp.prod_continuous_toLp 2 E F)
-    (hT.prod hT')
+    Dense (T.hermitianDilation.domain : Set (WithLp 2 (E × F))) :=
+  dense_withLpProdMap_domain hT hT'
 
 /-- The Hermitian dilation of a densely defined operator is symmetric. -/
 theorem isFormalAdjoint_hermitianDilation (hT : Dense (T.domain : Set E)) :
@@ -209,7 +218,8 @@ theorem adjoint_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
     mem_adjoint_domain_of_exists _ ⟨_, (key w).2⟩
   have hfst (w : T.hermitianDilation†.domain) : (w : WithLp 2 (E × F)).fst ∈ T.domain := by
     simpa only [adjoint_adjoint hT hd] using hfst' w
-  refine ⟨fun w hw ↦ ⟨hfst ⟨w, hw⟩, hsnd ⟨w, hw⟩⟩, fun w u hwu ↦ ?_⟩
+  refine ⟨fun w hw ↦ mem_hermitianDilation_domain.mpr ⟨hfst ⟨w, hw⟩, hsnd ⟨w, hw⟩⟩,
+    fun w u hwu ↦ ?_⟩
   obtain ⟨u, hu⟩ := u
   obtain rfl : u = w := hwu.symm
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
@@ -217,7 +227,7 @@ theorem adjoint_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
     exact (adjoint_apply_eq hd _ (key w).1).symm
   · rw [WithLp.ofLp_snd, WithLp.ofLp_snd, snd_hermitianDilation_apply,
       ← adjoint_apply_eq hd' ⟨_, hfst' w⟩ (key w).2]
-    exact (LinearPMap.ext_iff.mp (adjoint_adjoint hT hd)).2 (x := _) (hf := _) (hg := _)
+    exact adjoint_adjoint_apply hT hd (hermitianDilationFst ⟨w, hu⟩)
 
 /-- **The Hermitian dilation of a closed densely defined operator is self-adjoint.** -/
 theorem isSelfAdjoint_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set E)) :
@@ -248,7 +258,7 @@ theorem hermitianDilation_apply_hermitianDilation (hT : T.IsClosed)
       hermitianDilationSnd, snd_hermitianDilation_apply]
   · simp only [WithLp.ofLp_snd, snd_hermitianDilation_apply, adjointComp_apply,
       hermitianDilationFst, fst_hermitianDilation_apply]
-    exact ((LinearPMap.ext_iff.mp (adjoint_adjoint hT hd)).2 (x := _) (hf := _) (hg := _)).symm
+    exact (adjoint_adjoint_apply hT hd _).symm
 
 /-- **Cores of the Hermitian dilation.** If `S` is a core of a closed densely defined operator `T`
 and `S'` is a core of `T†`, then `S × S'` is a core of the Hermitian dilation. For instance,
@@ -290,16 +300,20 @@ theorem hasCore_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
     obtain ⟨y, rfl⟩ := (mem_graph_iff' _).mp hyb
     have hu : WithLp.toLp 2 ((x : E), (y : F)) ∈ (T.hermitianDilation.domRestrict C).domain :=
       ⟨⟨x.2.1, y.2.1⟩, mem_hermitianDilation_domain.mpr ⟨x.2.2, y.2.2⟩⟩
-    -- Both restrictions evaluate by their defining formulas, `(x, y) ↦ (T† y, T x)`.
-    exact (mem_graph_iff' _).mpr ⟨⟨_, hu⟩, rfl⟩
+    -- All three restrictions evaluate by their unrestricted formulas, `(x, y) ↦ (T† y, T x)`.
+    have hDu : T.hermitianDilation.domRestrict C ⟨_, hu⟩ = T.hermitianDilation ⟨_, hu.2⟩ :=
+      domRestrict_apply rfl
+    have hTx : T.domRestrict S x = T ⟨(x : E), x.2.2⟩ := domRestrict_apply rfl
+    have hTy : T†.domRestrict S' y = T† ⟨(y : F), y.2.2⟩ := domRestrict_apply rfl
+    refine (mem_graph_iff' _).mpr ⟨⟨_, hu⟩, ?_⟩
+    rw [hDu, hTx, hTy, hermitianDilation_toLp (T := T) ⟨_, x.2.2⟩ ⟨_, y.2.2⟩]
   intro p hp
-  obtain ⟨u, rfl⟩ := (mem_graph_iff' _).mp hp
-  have hmem : (((u : WithLp 2 (E × F)).fst, T (hermitianDilationFst u)),
-      ((u : WithLp 2 (E × F)).snd, T† (hermitianDilationSnd u))) ∈
+  obtain ⟨hp₁, hp₂⟩ := mem_graph_hermitianDilation_iff.mp hp
+  have hmem : ((p.1.fst, p.2.snd), (p.1.snd, p.2.fst)) ∈
       _root_.closure (((T.domRestrict S).graph : Set (E × F)) ×ˢ
         ((T†.domRestrict S').graph : Set (F × E))) := by
     rw [closure_prod_eq]
-    exact ⟨hgT (T.mem_graph (hermitianDilationFst u)), hgT' (T†.mem_graph (hermitianDilationSnd u))⟩
+    exact ⟨hgT hp₁, hgT' hp₂⟩
   have h := _root_.closure_mono himage (image_closure_subset_closure_image hΦ ⟨_, hmem, rfl⟩)
   rw [← Submodule.topologicalClosure_coe] at h
   exact h
