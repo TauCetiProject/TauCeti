@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Sobolev.Basic
+public import TauCeti.Analysis.Complex.Wirtinger.Lp
 public import TauCeti.Analysis.Complex.Pompeiu.Holder.Beurling
 public import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 

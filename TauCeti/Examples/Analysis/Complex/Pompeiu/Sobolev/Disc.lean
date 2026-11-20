@@ -25,6 +25,7 @@ radii give zero graph elements; real scalar projection recovers the real weak gr
 
 public noncomputable section
 
+open TauCeti.Wirtinger
 open MeasureTheory Complex ComplexConjugate Metric Set TopologicalSpace Function
 open scoped ENNReal NNReal InnerProductSpace
 

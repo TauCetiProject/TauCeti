@@ -39,8 +39,10 @@ between `Lp ℝ p μ` and `Lp 𝕜 p μ`.
 * `MeasureTheory.Lp.coeFn_add_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_sub_ae_eq_of_ae_eq`,
   `MeasureTheory.Lp.coeFn_neg_ae_eq_of_ae_eq`, `MeasureTheory.Lp.coeFn_smul_ae_eq_of_ae_eq`: if
   `⇑u =ᵐ[μ] g` and `⇑v =ᵐ[μ] h`, then `⇑(u + v) =ᵐ[μ] g + h`, and similarly for `-` and `•`.
-* `ContinuousLinearMap.compLp_comp`, `ContinuousLinearMap.compLp_comp_toSpanSingleton`:
-  simplification laws for linear composition and scalar-functional reconstruction.
+* `ContinuousLinearMap.compLp_comp`: semilinear composition at every exponent.
+* `ContinuousLinearMap.compLp_id`, `ContinuousLinearMap.compLp_comp_linear`,
+  `ContinuousLinearMap.compLp_comp_toSpanSingleton`: simplification laws for linear composition
+  and scalar-functional reconstruction at every exponent.
 * `ContinuousLinearMap.compLpL_comp`: postcomposition preserves semilinear composition.
 * `ContinuousLinearMap.compLpL_toSpanSingleton`: a scalar functional after rank-one
   reconstruction is scalar multiplication.
@@ -128,15 +130,20 @@ variable {α 𝕜 𝕜' 𝕜'' E F G : Type*} [MeasurableSpace α]
   [NormedAddCommGroup G] [NormedSpace 𝕜'' G]
   {σ : 𝕜 →+* 𝕜'} {τ : 𝕜' →+* 𝕜''} {ρ : 𝕜 →+* 𝕜''}
   [RingHomIsometric σ] [RingHomIsometric τ] [RingHomIsometric ρ]
-  [RingHomCompTriple σ τ ρ] {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  [RingHomCompTriple σ τ ρ] {μ : Measure α} {p : ℝ≥0∞}
+
+/-- Postcomposition by continuous semilinear maps preserves composition for every exponent. -/
+theorem compLp_comp (g : F →SL[τ] G) (f : E →SL[σ] F) (u : Lp E p μ) :
+    g.compLp (f.compLp u) = (g.comp f).compLp u := by
+  apply Lp.ext
+  filter_upwards [g.coeFn_compLp (f.compLp u), f.coeFn_compLp u,
+    (g.comp f).coeFn_compLp u] with x hg hf hgf
+  simp only [hg, hf, hgf, ContinuousLinearMap.comp_apply]
 
 /-- Postcomposition of `Lp` classes preserves composition of continuous semilinear maps. -/
-theorem compLpL_comp (g : F →SL[τ] G) (f : E →SL[σ] F) (u : Lp E p μ) :
-    g.compLpL p μ (f.compLpL p μ u) = (g.comp f).compLpL p μ u := by
-  apply Lp.ext
-  filter_upwards [g.coeFn_compLpL (f.compLpL p μ u), f.coeFn_compLpL u,
-    (g.comp f).coeFn_compLpL u] with x hg hf hgf
-  simp only [hg, hf, hgf, ContinuousLinearMap.comp_apply]
+theorem compLpL_comp [Fact (1 ≤ p)] (g : F →SL[τ] G) (f : E →SL[σ] F) (u : Lp E p μ) :
+    g.compLpL p μ (f.compLpL p μ u) = (g.comp f).compLpL p μ u :=
+  compLp_comp g f u
 
 end ContinuousLinearMap
 
@@ -148,13 +155,20 @@ variable {α 𝕜 E F G : Type*} [MeasurableSpace α] [NontriviallyNormedField �
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-  {μ : Measure α} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+  {μ : Measure α} {p : ℝ≥0∞}
+
+/-- The identity coefficient map acts as the identity on `Lp` at every exponent. -/
+@[simp]
+theorem compLp_id (u : Lp E p μ) : (ContinuousLinearMap.id 𝕜 E).compLp u = u := by
+  apply Lp.ext
+  filter_upwards [(ContinuousLinearMap.id 𝕜 E).coeFn_compLp u] with x hx
+  exact hx
 
 /-- Composition of continuous linear maps acts functorially on `Lp` classes. -/
 @[simp]
-theorem compLp_comp (g : F →L[𝕜] G) (f : E →L[𝕜] F) (u : Lp E p μ) :
+theorem compLp_comp_linear (g : F →L[𝕜] G) (f : E →L[𝕜] F) (u : Lp E p μ) :
     g.compLp (f.compLp u) = (g.comp f).compLp u :=
-  compLpL_comp g f u
+  compLp_comp g f u
 
 end ContinuousLinearMap
 
@@ -176,12 +190,16 @@ theorem compLpL_toSpanSingleton (ℓ : F →L[𝕜] 𝕜) (v : F) (u : Lp 𝕜 p
   simp only [hℓ, hv, hs, ContinuousLinearMap.toSpanSingleton_apply, map_smul,
     Pi.smul_apply, smul_eq_mul, mul_comm]
 
+omit [Fact (1 ≤ p)] in
 /-- A scalar functional on rank-one reconstructed `Lp` data is scalar multiplication. -/
 @[simp]
 theorem compLp_comp_toSpanSingleton (ℓ : F →L[𝕜] 𝕜) (v : F) (u : Lp 𝕜 p μ) :
     (ℓ.comp (ContinuousLinearMap.toSpanSingleton 𝕜 v)).compLp u = ℓ v • u := by
-  rw [← compLp_comp]
-  exact compLpL_toSpanSingleton ℓ v u
+  apply Lp.ext
+  filter_upwards [(ℓ.comp (ContinuousLinearMap.toSpanSingleton 𝕜 v)).coeFn_compLp u,
+    Lp.coeFn_smul (ℓ v) u] with x hℓ hs
+  simp only [hℓ, hs, ContinuousLinearMap.comp_apply, ContinuousLinearMap.toSpanSingleton_apply,
+    map_smul, Pi.smul_apply, smul_eq_mul, mul_comm]
 
 end ContinuousLinearMap
 

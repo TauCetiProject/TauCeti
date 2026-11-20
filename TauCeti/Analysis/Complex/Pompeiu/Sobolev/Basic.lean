@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Lp
+public import TauCeti.Analysis.Complex.Wirtinger.Lp
 public import TauCeti.Analysis.Sobolev.GraphStep.Coordinates
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
@@ -50,6 +51,8 @@ open MeasureTheory Complex ComplexConjugate Metric Set TopologicalSpace Function
 open scoped ENNReal NNReal
 
 namespace TauCeti.CauchyTransform
+
+open Wirtinger
 
 section Scalar
 
@@ -198,19 +201,6 @@ section Naturality
 variable [CompleteSpace F]
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
 
-/-- Cauchy integration commutes a.e. with a complex-linear coefficient map. -/
-theorem cauchyTransform_comp_ae (L : F →L[ℂ] G) {f : ℂ → F} {c : ℂ} {r R : ℝ≥0}
-    (hf : MemLp f p (volume.restrict (closedBall c (r : ℝ))))
-    (hs : support f ⊆ closedBall c (r : ℝ)) :
-    cauchyTransform (fun z ↦ L (f z)) =ᵐ[volume.restrict (closedBall c (R : ℝ))]
-      fun w ↦ L (cauchyTransform f w) := by
-  filter_upwards [ae_integrable_cauchyTransform (R := R) Fact.out hf hs] with w hw
-  simp only [cauchyTransform_apply, map_smul]
-  rw [← L.integral_comp_comm hw]
-  apply congrArg fun t : G ↦ (Real.pi : ℂ)⁻¹ • t
-  apply integral_congr_ae
-  exact .of_forall fun z ↦ (L.map_smul _ _).symm
-
 omit [CompleteSpace F] [CompleteSpace G] in
 /-- Taking a complex-linear coefficient map commutes with zero extension a.e. -/
 theorem zeroExtendFn_comp_ae (L : F →L[ℂ] G) (c : ℂ) (r : ℝ≥0)
@@ -249,45 +239,6 @@ theorem valueL_comp (L : F →L[ℂ] G) (c : ℂ) (r R : ℝ≥0)
   rw [hv, heq, hT, hL, hu]
 
 end Naturality
-
-/-- A bounded operator on values determines a bounded global Wirtinger jet. -/
-def jetL
-    (B : Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ)) :
-    Lp F p (volume : Measure ℂ) →L[ℝ] Lp (ℂ →L[ℝ] F) p (volume : Measure ℂ) :=
-  (((wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inl ℝ F F)).compLpL p (volume :
-    Measure ℂ)).comp
-      (B.restrictScalars ℝ) +
-    ((wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inr ℝ F F)).compLpL p (volume : Measure ℂ)
-
-/-- The global jet has the Wirtinger formula. -/
-theorem coe_jetL
-    (B : Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ))
-    (u : Lp F p (volume : Measure ℂ)) :
-    jetL B u =ᵐ[(volume : Measure ℂ)] fun w ↦ wirtingerPartsCLM (B u w) (u w) := by
-  let a : F →L[ℝ] ℂ →L[ℝ] F :=
-    (wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inl ℝ F F)
-  let b : F →L[ℝ] ℂ →L[ℝ] F :=
-    (wirtingerPartsL (W := F)).comp (ContinuousLinearMap.inr ℝ F F)
-  -- Expose the two native component fields for their separate a.e. evaluation laws.
-  change (a.compLpL p volume (B u) + b.compLpL p volume u :
-    Lp (ℂ →L[ℝ] F) p volume) =ᵐ[volume] _
-  filter_upwards [Lp.coeFn_add (a.compLpL p volume (B u)) (b.compLpL p volume u),
-    a.coeFn_compLpL (B u), b.coeFn_compLpL u] with w hadd ha hb
-  rw [hadd]
-  simp only [Pi.add_apply]
-  rw [ha, hb]
-  ext v
-  simp [a, b, wirtingerPartsCLM_apply]
-
-/-- The global Wirtinger jet respects the complex scalar action. -/
-theorem jetL_smul (B : Lp F p (volume : Measure ℂ) →L[ℂ] Lp F p (volume : Measure ℂ))
-    (a : ℂ) (u : Lp F p (volume : Measure ℂ)) : jetL B (a • u) = a • jetL B u := by
-  apply Lp.ext
-  have hB := map_smul B a u
-  filter_upwards [coe_jetL B (a • u), coe_jetL B u, Lp.coeFn_smul a u,
-    Lp.coeFn_smul a (B u), Lp.coeFn_smul a (jetL B u)] with w h₁ h₂ h₃ h₄ h₅
-  rw [hB] at h₁
-  simp only [h₁, h₂, h₃, h₄, h₅, Pi.smul_apply, wirtingerPartsCLM_smul]
 
 /-- The scalar value and global jet form a weak derivative on each output disc. -/
 private theorem scalar_weak (hp : 1 < p) (hp_top : p ≠ ∞) (c : ℂ) (r R : ℝ≥0)
