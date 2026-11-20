@@ -46,7 +46,8 @@ Scalar multiples of the identity and constant maps are the two basic cases, and 
 * `TemperedDistribution.applyLeftCLM_smul_id`, `TemperedDistribution.applyLeftCLM_const`,
   `TemperedDistribution.applyLeftCLM_id_apply`: scalar functions times the identity act as
   `smulLeftCLM`, constant maps act on the values, and the identity acts as the identity.
-* `TemperedDistribution.applyLeftCLM_applyLeftCLM_apply`: multiplications compose.
+* `TemperedDistribution.applyLeftCLM_applyLeftCLM_apply`,
+  `TemperedDistribution.applyLeftCLM_compL_applyLeftCLM`: multiplications compose.
 -/
 
 public section
@@ -84,6 +85,7 @@ theorem applyLeftCLM_def {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth) :
   simp [applyLeftCLM, hA]
 
 /-- Multiplication by a function without temperate growth is `0` by convention. -/
+@[simp]
 theorem applyLeftCLM_of_not_hasTemperateGrowth {A : E → F →L[ℂ] G}
     (hA : ¬A.HasTemperateGrowth) : applyLeftCLM A = 0 := by
   simp [applyLeftCLM, hA]
@@ -221,20 +223,32 @@ theorem applyLeftCLM_applyLeftCLM_apply {A : E → F →L[ℂ] G} {B : E → G �
     Pi.mul_def]
   exact Finset.sum_comm
 
+/-- **Multiplications compose**, as operators: multiplication by `A` followed by multiplication by
+`B` is multiplication by `x ↦ B x ∘L A x`, for `A` and `B` of temperate growth. -/
+theorem applyLeftCLM_compL_applyLeftCLM {A : E → F →L[ℂ] G} {B : E → G →L[ℂ] H}
+    (hA : A.HasTemperateGrowth) (hB : B.HasTemperateGrowth) :
+    applyLeftCLM B ∘L applyLeftCLM A = applyLeftCLM (fun x ↦ B x ∘L A x) := by
+  ext1 u
+  exact applyLeftCLM_applyLeftCLM_apply hA hB u
+
 end TemperedDistribution
 
 namespace TemperedDistribution
+
+open MeasureTheory
 
 variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
   [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
 
-/-- On Schwartz functions, multiplication by `A` is `u ↦ (x ↦ A x (u x))`. -/
-theorem applyLeftCLM_toTemperedDistributionCLM_eq {A : E → F →L[ℂ] G}
-    (hA : A.HasTemperateGrowth) (u : 𝓢(E, F)) :
-    applyLeftCLM A (u : 𝓢'(E, F)) =
-      ((SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA u : 𝓢(E, G)) : 𝓢'(E, G)) := by
+/-- On Schwartz functions, multiplication by `A` is `u ↦ (x ↦ A x (u x))`, for the embedding of
+Schwartz functions against any measure of temperate growth. -/
+theorem applyLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTemperateGrowth]
+    {A : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth) (u : 𝓢(E, F)) :
+    applyLeftCLM A (SchwartzMap.toTemperedDistributionCLM E F μ u) =
+      SchwartzMap.toTemperedDistributionCLM E G μ
+        (SchwartzMap.bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA u) := by
   -- Expand `A` in a basis of `F →L[ℂ] G` on both sides.
   set b := Module.finBasis ℂ (F →L[ℂ] G)
   have hg := hA.basis_coord b
