@@ -238,8 +238,7 @@ protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖
   rw [CFC.norm_sqrt _ inner_self_nonneg, ← norm_eq_sqrt_norm_inner_self]
 
 variable (A) in
-/-- The bound `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`, from `CStarModule.norm_smul_le` and the
-Cauchy–Schwarz inequality `CStarModule.norm_inner_le`. -/
+/-- The bound `‖⟪y, z⟫_A x‖ ≤ ‖x‖ ‖y‖ ‖z‖`. -/
 theorem norm_inner_smul_le {F : Type*} [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F]
     [CStarModule A F] (x : F) (y z : E) : ‖inner A y z • x‖ ≤ ‖x‖ * ‖y‖ * ‖z‖ :=
   calc ‖inner A y z • x‖ ≤ ‖inner A y z‖ * ‖x‖ := CStarModule.norm_smul_le _ _

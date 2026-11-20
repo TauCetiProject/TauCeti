@@ -99,10 +99,10 @@ noncomputable def rankOne (x : F) (y : E) : AdjointableMap A E F where
 theorem rankOne_apply (x : F) (y z : E) : rankOne A x y z = inner A y z • x :=
   (rfl)
 
-/-- The adjoint of `θ_{x,y}` is `θ_{y,x}`: by construction, the adjoint field of `rankOne A x y`
-is the map underlying `rankOne A y x`, so no inner-product computation is repeated here. -/
+/-- The adjoint of `θ_{x,y}` is `θ_{y,x}`. -/
 @[simp]
 theorem adjoint_rankOne (x : F) (y : E) : (rankOne A x y).adjoint = rankOne A y x :=
+  -- The adjoint field of `rankOne A x y` is by construction the map underlying `rankOne A y x`.
   ext fun z ↦ adjoint_mk_apply _ _ _ z
 
 /-- The norm bound `‖θ_{x,y}‖ ≤ ‖x‖ ‖y‖`. -/
