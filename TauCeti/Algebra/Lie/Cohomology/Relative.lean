@@ -170,6 +170,7 @@ def relativeCochains (n : ℕ) : Submodule R (L [⋀^Fin n]→ₗ[R] M) :=
 
 variable {R M H}
 
+@[simp]
 theorem mem_relativeCochains_iff {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M} :
     ω ∈ relativeCochains R M H n ↔
       (∀ (v : Fin n → L) (i : Fin n), v i ∈ H → ω v = 0) ∧ ∀ y ∈ H, ⁅y, ω⁆ = 0 :=
@@ -350,6 +351,7 @@ def equivariantRelativeCochains (n : ℕ) : Submodule R (L [⋀^Fin n]→ₗ[R] 
 
 variable {R M Ad ρ H}
 
+@[simp]
 theorem mem_equivariantRelativeCochains_iff {n : ℕ} {ω : L [⋀^Fin n]→ₗ[R] M} :
     ω ∈ equivariantRelativeCochains R M Ad ρ H n ↔
       ω ∈ relativeCochains R M H n ∧
