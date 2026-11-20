@@ -21,13 +21,14 @@ multiplication it is the left-translation shear `(x, g) ↦ (x, c x * g)`; for a
 acting on the fiber of a trivial bundle it is the change of trivialization given by the transition
 map `c`.
 
-When `A` is a monoid with a topology, `B` a commutative topological group and `c = φ` a continuous
-homomorphism `φ : A →* B`, the shear `(a, b) ↦ (a, φ a * b)` of `A × B` is moreover multiplicative,
-hence a continuous multiplicative automorphism (a `ContinuousMulEquiv`), `MonoidHom.prodShear`.
-Shears of this form are the automorphisms of `A × B` that fix the first coordinate and act on
-each fiber over `A` by a translation of `B`, so they describe how two splittings `G ≃ₜ* A × B`
-differ when their transition has this fiberwise-translation form; for instance, the splittings of
-the multiplicative group of a local field attached to two uniformizers differ by a shear.
+When `A` is a topological space with a multiplication and a one (`MulOne`), `B` a commutative
+topological group and `c = φ` a continuous homomorphism `φ : A →* B`, the shear
+`(a, b) ↦ (a, φ a * b)` of `A × B` is moreover multiplicative, hence a continuous multiplicative
+automorphism (a `ContinuousMulEquiv`), `MonoidHom.prodShear`. Shears of this form are the
+automorphisms of `A × B` that fix the first coordinate and act on each fiber over `A` by a
+translation of `B`, so they describe how two splittings `G ≃ₜ* A × B` differ when their transition
+has this fiberwise-translation form; for instance, the splittings of the multiplicative group of a
+local field attached to two uniformizers differ by a shear.
 
 ## Main definitions
 
@@ -113,8 +114,12 @@ end TauCeti
 
 namespace MonoidHom
 
-variable {A B : Type*} [MulOneClass A] [TopologicalSpace A] [CommGroup B] [TopologicalSpace B]
+variable {A B : Type*} [TopologicalSpace A] [CommGroup B] [TopologicalSpace B]
   [IsTopologicalGroup B]
+
+section MulOne
+
+variable [MulOne A]
 
 /-- The **shear** of `A × B` by a continuous homomorphism `φ : A →* B` into a commutative
 topological group: the continuous multiplicative automorphism `(a, b) ↦ (a, φ a * b)`, with
@@ -143,10 +148,13 @@ theorem prodShear_one :
       ContinuousMulEquiv.refl (A × B) :=
   ContinuousMulEquiv.ext fun p ↦ by simp
 
+end MulOne
+
 /-- Shears compose by multiplying the homomorphisms: shearing by `φ` and then by `ψ` is shearing
 by `ψ * φ`. -/
 @[simp]
-theorem prodShear_trans_prodShear (φ ψ : A →* B) (hφ : Continuous φ) (hψ : Continuous ψ) :
+theorem prodShear_trans_prodShear [MulOneClass A] (φ ψ : A →* B) (hφ : Continuous φ)
+    (hψ : Continuous ψ) :
     (prodShear φ hφ).trans (prodShear ψ hψ) =
       prodShear (ψ * φ) ((hψ.mul hφ).congr fun a ↦ (mul_apply ψ φ a).symm) :=
   ContinuousMulEquiv.ext fun p ↦ by simp [mul_assoc]
