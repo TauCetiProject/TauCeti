@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.Integral
