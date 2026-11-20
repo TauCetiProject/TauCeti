@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.Lorentz
+import TauCeti.Data.ENNReal.InterpolatedExponent
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
@@ -96,9 +97,10 @@ private theorem toReal_inv_facts (hθ : θ ∈ Ioo 0 1) (hp₀₁ : p₀ < p₁)
   have hδ : (p₀⁻¹ - p₁⁻¹).toReal = (p₀⁻¹).toReal - (p₁⁻¹).toReal :=
     ENNReal.toReal_sub_of_le hlt.le h₀t
   have ha : (p⁻¹).toReal = (1 - θ) * (p₀⁻¹).toReal + θ * (p₁⁻¹).toReal := by
-    rw [hp, ENNReal.toReal_add (ENNReal.mul_ne_top ENNReal.ofReal_ne_top h₀t)
-      (ENNReal.mul_ne_top ENNReal.ofReal_ne_top h₁t), ENNReal.toReal_mul, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (sub_nonneg.2 hθ.2.le), ENNReal.toReal_ofReal hθ.1.le]
+    rw [inv_eq_ofReal_of_inv_eq (zero_lt_one.trans_le Fact.out).ne'
+      (zero_lt_one.trans_le Fact.out).ne' (Ioo_subset_Icc_self hθ) hp,
+      ENNReal.toReal_ofReal (add_nonneg (mul_nonneg (sub_nonneg.2 hθ.2.le) ENNReal.toReal_nonneg)
+        (mul_nonneg hθ.1.le ENNReal.toReal_nonneg))]
   have hlt' : (p₁⁻¹).toReal < (p₀⁻¹).toReal := (ENNReal.toReal_lt_toReal h₁t h₀t).2 hlt
   have h₀' : (p₀⁻¹).toReal ≤ 1 := ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using h₀)
   have h₁' : 0 ≤ (p₁⁻¹).toReal := ENNReal.toReal_nonneg
@@ -263,7 +265,7 @@ theorem kMethodENorm_lpToLebesgueSum_le (hθ : θ ∈ Ioo 0 1) (hp₀₁ : p₀ 
         (1 - ENNReal.ofReal (2⁻¹ ^ ((1 - θ) * (p₀⁻¹ - p₁⁻¹).toReal)))⁻¹) * eLpNorm f p μ := by
   obtain ⟨-, -, ha, -, -⟩ := toReal_inv_facts hθ hp₀₁ hp
   have hp0 : p ≠ 0 := ENNReal.inv_ne_top.1 (ENNReal.toReal_pos_iff.1 ha).2.ne
-  have hptop : p ≠ ∞ := ENNReal.inv_ne_zero.1 (ENNReal.toReal_pos_iff.1 ha).1.ne'
+  have hptop : p ≠ ∞ := fun h ↦ hp₀₁.ne_top ((eq_top_iff_of_inv_eq hθ hp).1 h).1
   refine (kMethodENorm_lebesgue_le_eLorentzNorm hθ hp₀₁ hp ((Fact.out : 1 ≤ p).trans hpq)
     (f := f) ?_).trans ?_
   · rw [sumSpaceEmbed_lpToLebesgueSum, L1AddLinfty.toAEEqFun_ofLp]

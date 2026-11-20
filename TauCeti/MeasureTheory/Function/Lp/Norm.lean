@@ -470,12 +470,11 @@ theorem MemLp.norm_toLp_le_of_ae_bound {α E : Type*} [MeasurableSpace α] [Norm
 
 /-- The cost `‖g‖ + t ‖h‖` of a pair of `Lᵖ` functions, `t ≥ 0`, in terms of `eLpNorm`. -/
 theorem Lp.ofReal_norm_add_mul_norm {α E : Type*} [MeasurableSpace α] {μ : Measure α}
-    [NormedAddCommGroup E] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] (g : Lp E p μ)
-    (h : Lp E q μ) {t : ℝ} (ht : 0 ≤ t) :
+    [NormedAddCommGroup E] {p q : ℝ≥0∞} (g : Lp E p μ) (h : Lp E q μ) {t : ℝ} (ht : 0 ≤ t) :
     ENNReal.ofReal (‖g‖ + t * ‖h‖) = eLpNorm g p μ + ENNReal.ofReal t * eLpNorm h q μ := by
-  rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), ENNReal.ofReal_mul ht, Lp.norm_def,
-    Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g),
-    ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
+  rw [Lp.norm_def, Lp.norm_def, ENNReal.ofReal_add ENNReal.toReal_nonneg
+    (mul_nonneg ht ENNReal.toReal_nonneg), ENNReal.ofReal_mul ht,
+    ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top g), ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top h)]
 
 /-- A splitting of finite cost `‖f₀‖_{p₀} + t ‖f₁‖_{p₁}`, with `t > 0`, is a pair of `L^{p₀}` and
 `L^{p₁}` functions. -/
