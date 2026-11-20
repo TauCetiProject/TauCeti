@@ -39,9 +39,9 @@ def orbitFiberEquivCompactifiedFiber (h : Δ ≤ Γ) (p : orbitRel.Quotient Γ �
       Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p} ≃
     {y : Δ.CompactifiedQuotient //
       compactifiedQuotientMap h y = .ofQuotient p} where
-  toFun q := ⟨CompactifiedQuotient.ofQuotient q.1, by
+  toFun q := ⟨CompactifiedQuotient.ofQuotient q.val, by
     simpa only [compactifiedQuotientMap_ofQuotient] using
-      congrArg CompactifiedQuotient.ofQuotient q.2
+      congrArg CompactifiedQuotient.ofQuotient q.property
   ⟩
   invFun y := by
     obtain ⟨y, hy⟩ := y
@@ -67,7 +67,7 @@ theorem orbitFiberEquivCompactifiedFiber_apply (h : Δ ≤ Γ)
     (p : orbitRel.Quotient Γ ℍ)
     (q : {q : orbitRel.Quotient Δ ℍ //
       Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le (X := ℍ) h) q = p}) :
-    (orbitFiberEquivCompactifiedFiber h p q).1 = .ofQuotient q.1 :=
+    (orbitFiberEquivCompactifiedFiber h p q).val = .ofQuotient q.val :=
   (rfl)
 
 /-- The fibre of a compactified Fuchsian quotient map over the interior orbit of `z` is the
@@ -84,7 +84,7 @@ represented by the corresponding inverse translate of `z`. -/
 @[simp]
 theorem stabilizerOrbitRelQuotientEquivCompactifiedFiber_mk (h : Δ ≤ Γ) (z : ℍ)
     (q : Γ ⧸ Δ.subgroupOf Γ) :
-    (stabilizerOrbitRelQuotientEquivCompactifiedFiber h z (Quotient.mk'' q)).1 =
+    (stabilizerOrbitRelQuotientEquivCompactifiedFiber h z (Quotient.mk'' q)).val =
       .ofQuotient (TauCeti.orbitOfCosetTranslate z q) := by
   simp [stabilizerOrbitRelQuotientEquivCompactifiedFiber]
 
@@ -107,8 +107,8 @@ theorem finite_fiber_cuspOrbitMap (C : Γ.CuspOrbit) :
     Finite {D : Δ.CuspOrbit // cuspOrbitMap h D = C} := by
   have : Finite {q : Δ.BoundaryOrbit //
       Setoid.map_of_le (TauCeti.MulAction.orbitRel_le_of_subgroup_le
-        (X := OnePoint ℝ) h) q = C.1} :=
-    TauCeti.finite_fiber_orbitRel_map_of_isFiniteRelIndex h C.1
+        (X := OnePoint ℝ) h) q = C.val} :=
+    TauCeti.finite_fiber_orbitRel_map_of_isFiniteRelIndex h C.val
   exact Finite.of_equiv _ (cuspOrbitFiberEquivBoundaryOrbitFiber h C).symm
 
 /-- Every fibre of the map of compactified quotients for a finite-index inclusion is finite. -/

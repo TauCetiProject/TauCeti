@@ -58,7 +58,7 @@ theorem exists_fg_subalgebra_and_span_eq_top [Algebra.FiniteType R A] [Algebra.Q
     obtain ⟨M, hM, hle⟩ := Ideal.exists_le_maximal _ hne
     exact hr ⟨M, hM.isPrime⟩ (hle (Ideal.subset_span ⟨_, rfl⟩))
   obtain ⟨s, hs, hspan⟩ := (Ideal.span_eq_top_iff_finite _).mp hspan
-  choose P hP using fun x : s ↦ hs x.2
+  choose P hP using fun x : s ↦ hs x.property
   replace hP (x : s) : (r (P x) : A) = x := hP x
   -- Merge the finitely many module-finite subalgebras.
   choose t ht using fun x : s ↦ hB (P x)
@@ -68,7 +68,7 @@ theorem exists_fg_subalgebra_and_span_eq_top [Algebra.FiniteType R A] [Algebra.Q
     have : y ∈ Submodule.span R (t x : Set A) := by rwa [ht x]
     exact Algebra.span_le_adjoin R _ (Submodule.span_mono (Set.subset_iUnion _ x) this)
   have hsA' : (s : Set A) ⊆ A' := fun y hy ↦ by
-    simpa [hP ⟨y, hy⟩] using hle _ (r (P ⟨y, hy⟩)).2
+    simpa [hP ⟨y, hy⟩] using hle _ (r (P ⟨y, hy⟩)).property
   refine ⟨A', s, fg_adjoin_of_finite (Set.finite_iUnion fun x ↦ (t x).finite_toSet) ?_, hsA',
     hspan, fun y hy z ↦ ?_⟩
   · simp only [Set.mem_iUnion]
@@ -81,6 +81,6 @@ theorem exists_fg_subalgebra_and_span_eq_top [Algebra.FiniteType R A] [Algebra.Q
   have hb' : (b : A) = y ^ m * z := by simpa [hP ⟨y, hy⟩] using hb
   refine eventually_atTop.mpr ⟨m, fun n hn ↦ ?_⟩
   rw [← Nat.sub_add_cancel hn, pow_add, mul_assoc, ← hb']
-  exact A'.mul_mem (A'.pow_mem (hsA' hy) _) (hle _ b.2)
+  exact A'.mul_mem (A'.pow_mem (hsA' hy) _) (hle _ b.property)
 
 end Algebra.QuasiFinite

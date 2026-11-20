@@ -11,8 +11,8 @@ public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 import Mathlib.NumberTheory.Cyclotomic.Gal
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
+import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
-import TauCeti.RingTheory.Norm.Congruence
 
 /-!
 # Cyclotomic Galois characters as ray class characters

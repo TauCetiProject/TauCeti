@@ -178,7 +178,7 @@ private theorem continuous_toResidue : Continuous (toResidue p) := by
   refine continuous_of_continuousAt_zero (toResidue p).toAddMonoidHom ?_
   rw [ContinuousAt, map_zero, nhds_discrete (FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal)),
     Filter.tendsto_pure]
-  filter_upwards [(mem_carrier.mp p.2).mem_nhds (zero_mem _)] with a ha
+  filter_upwards [(mem_carrier.mp p.property).mem_nhds (zero_mem _)] with a ha
   exact (toResidue_eq_zero_iff p).mpr ha
 
 omit [IsTopologicalRing A] [IsAdicRing A] in
@@ -211,7 +211,7 @@ private theorem residueAway_eq_zero_of_mem (f : BasicNeighbourhood p) {x : Compl
     residueAway p f x = 0 := by
   refine (Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_ : _ ≤ RingHom.ker (residueAway p f)) hx
   rw [Ideal.mem_comap, RingHom.mem_ker, residueAway_algebraMap, toResidue_eq_zero_iff]
-  exact (mem_carrier_iff_le (IsAdicRing.ideal_spec A).2.1).mp p.2 ha
+  exact (mem_carrier_iff_le (IsAdicRing.ideal_spec A).2.1).mp p.property ha
 
 /-- An element of `A_{f}` with nonzero value at `p` becomes a unit in `A_{g}` for some basic
 neighbourhood `D(g) ⊆ D(f)` of `p`. -/

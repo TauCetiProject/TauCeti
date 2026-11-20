@@ -39,7 +39,8 @@ of singular cochains and cap products of singular chains with singular cochains 
 * `TopCat.alexanderWhitney_coassoc`: it is coassociative.
 * `TopCat.alexanderWhitneyDiagonal`: the Alexander–Whitney diagonal of a space, with
   `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f` its value on a singular simplex,
-  `TopCat.alexanderWhitneyDiagonal_naturality` its naturality, and
+  `TopCat.alexanderWhitneyDiagonal_naturality` its naturality in the space,
+  `TopCat.alexanderWhitneyDiagonal_comp_tensorHom` its naturality in the coefficients, and
   `TopCat.alexanderWhitney_eq_alexanderWhitneyDiagonal_comp` factoring `TopCat.alexanderWhitney`
   through it.
 * `TopCat.ιChainComplex_alexanderWhitneyDiagonal_f_tensorCochain`: the tensor product of two
@@ -262,6 +263,20 @@ lemma alexanderWhitney_eq_alexanderWhitneyDiagonal_comp (X Y : TopCat.{w}) (R S 
   rw [← alexanderWhitney_naturality (fst X Y) (snd X Y) R S, ← Category.assoc,
     ← ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp, ← toSSet.map_comp, hdiag,
     toSSet.map_id, ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_id, Category.id_comp]
+
+/-- The Alexander–Whitney diagonal is natural in the coefficients of its two factors: the diagonal
+along `u ≫ (f ⊗ g)` is the diagonal along `u` followed by the changes of coefficients along `f`
+and `g`. -/
+@[reassoc]
+lemma alexanderWhitneyDiagonal_comp_tensorHom (X : TopCat.{w}) (u : T ⟶ R ⊗ S) {R' S' : C}
+    (f : R ⟶ R') (g : S ⟶ S') :
+    X.alexanderWhitneyDiagonal (u ≫ (f ⊗ₘ g)) =
+      X.alexanderWhitneyDiagonal u ≫
+        (((SSet.chainComplexFunctor C).map f).app (toSSet.obj X) ⊗ₘ
+          ((SSet.chainComplexFunctor C).map g).app (toSSet.obj X)) := by
+  rw [alexanderWhitneyDiagonal, alexanderWhitneyDiagonal, Functor.map_comp, NatTrans.comp_app,
+    Category.assoc, Category.assoc, Category.assoc, ← alexanderWhitney_coefficient_naturality,
+    ← ((SSet.chainComplexFunctor C).map (f ⊗ₘ g)).naturality_assoc]
 
 end AlexanderWhitneyDiagonal
 

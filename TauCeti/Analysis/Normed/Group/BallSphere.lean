@@ -69,7 +69,7 @@ theorem _root_.IsOpen.isOpenEmbedding_coe_openSubset_closedBall
     ext v
     refine ⟨?_, fun hv => ⟨⟨⟨v, ball_subset_closedBall hv.2⟩, hv.1⟩, rfl⟩⟩
     rintro ⟨z, rfl⟩
-    exact ⟨z.2, mem_ball_zero_iff.2 (h z z.2)⟩
+    exact ⟨z.property, mem_ball_zero_iff.2 (h z z.property)⟩
   rw [hrange]
   exact hO.inter isOpen_ball
 

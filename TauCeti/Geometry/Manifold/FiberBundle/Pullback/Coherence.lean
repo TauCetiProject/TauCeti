@@ -58,8 +58,8 @@ noncomputable def idDiffeomorph :
     Diffeomorph (IB.prod IF) (IB.prod IF)
       (ManifoldTotalSpace F ((ContinuousMap.id B : B → B) *ᵖ E))
       (ManifoldTotalSpace F E) n where
-  toFun x := homeomorph F E ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).2⟩
-  invFun x := homeomorph F _ ⟨((homeomorph F E).symm x).proj, ((homeomorph F E).symm x).2⟩
+  toFun x := homeomorph F E ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).snd⟩
+  invFun x := homeomorph F _ ⟨((homeomorph F E).symm x).proj, ((homeomorph F E).symm x).snd⟩
   left_inv x := by
     -- Unfold the fibre identity through the pullback type synonym before cancellation.
     dsimp only
@@ -80,17 +80,17 @@ noncomputable def idDiffeomorph :
 theorem idDiffeomorph_homeomorph (p : TotalSpace F ((ContinuousMap.id B : B → B) *ᵖ E)) :
     idDiffeomorph (n := n) (F := F) (E := E) IB IF
         (homeomorph F ((ContinuousMap.id B : B → B) *ᵖ E) p) =
-      homeomorph F E ⟨p.proj, p.2⟩ := by
+      homeomorph F E ⟨p.proj, p.snd⟩ := by
   exact congrArg (fun q : TotalSpace F ((ContinuousMap.id B : B → B) *ᵖ E) ↦
-    homeomorph F E ⟨q.proj, q.2⟩)
+    homeomorph F E ⟨q.proj, q.snd⟩)
       ((homeomorph F ((ContinuousMap.id B : B → B) *ᵖ E)).symm_apply_apply p)
 
 /-- The inverse identity comparison preserves the displayed base point and fibre element. -/
 theorem idDiffeomorph_symm_homeomorph (p : TotalSpace F E) :
     (idDiffeomorph (n := n) (F := F) (E := E) IB IF).symm (homeomorph F E p) =
-      homeomorph F ((ContinuousMap.id B : B → B) *ᵖ E) ⟨p.proj, p.2⟩ := by
+      homeomorph F ((ContinuousMap.id B : B → B) *ᵖ E) ⟨p.proj, p.snd⟩ := by
   exact congrArg (fun q : TotalSpace F E ↦
-    homeomorph F ((ContinuousMap.id B : B → B) *ᵖ E) ⟨q.proj, q.2⟩)
+    homeomorph F ((ContinuousMap.id B : B → B) *ᵖ E) ⟨q.proj, q.snd⟩)
       ((homeomorph F E).symm_apply_apply p)
 
 variable (n F E IB'' IF) in
@@ -101,8 +101,8 @@ noncomputable def compDiffeomorph (g : C(B', B)) (f : C(B'', B')) :
     Diffeomorph (IB''.prod IF) (IB''.prod IF)
       (ManifoldTotalSpace F ((g.comp f : B'' → B) *ᵖ E))
       (ManifoldTotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) n where
-  toFun x := homeomorph F _ ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).2⟩
-  invFun x := homeomorph F _ ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).2⟩
+  toFun x := homeomorph F _ ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).snd⟩
+  invFun x := homeomorph F _ ⟨((homeomorph F _).symm x).proj, ((homeomorph F _).symm x).snd⟩
   left_inv x := by
     -- Unfold the fibre identity through the pullback type synonym before cancellation.
     dsimp only
@@ -135,9 +135,9 @@ theorem compDiffeomorph_homeomorph (g : C(B', B)) (f : C(B'', B'))
     (p : TotalSpace F ((g.comp f : B'' → B) *ᵖ E)) :
     compDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f
         (homeomorph F ((g.comp f : B'' → B) *ᵖ E) p) =
-      homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) ⟨p.proj, p.2⟩ := by
+      homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) ⟨p.proj, p.snd⟩ := by
   exact congrArg (fun q : TotalSpace F ((g.comp f : B'' → B) *ᵖ E) ↦
-    homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) ⟨q.proj, q.2⟩)
+    homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) ⟨q.proj, q.snd⟩)
       ((homeomorph F ((g.comp f : B'' → B) *ᵖ E)).symm_apply_apply p)
 
 /-- The inverse composition comparison preserves the displayed base point and fibre element. -/
@@ -145,9 +145,9 @@ theorem compDiffeomorph_symm_homeomorph (g : C(B', B)) (f : C(B'', B'))
     (p : TotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))) :
     (compDiffeomorph (n := n) (F := F) (E := E) IB'' IF g f).symm
         (homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) p) =
-      homeomorph F ((g.comp f : B'' → B) *ᵖ E) ⟨p.proj, p.2⟩ := by
+      homeomorph F ((g.comp f : B'' → B) *ᵖ E) ⟨p.proj, p.snd⟩ := by
   exact congrArg (fun q : TotalSpace F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E)) ↦
-    homeomorph F ((g.comp f : B'' → B) *ᵖ E) ⟨q.proj, q.2⟩)
+    homeomorph F ((g.comp f : B'' → B) *ᵖ E) ⟨q.proj, q.snd⟩)
       ((homeomorph F ((f : B'' → B') *ᵖ ((g : B' → B) *ᵖ E))).symm_apply_apply p)
 
 /-- The comparison intertwines the lift from a composite pullback with the two successive

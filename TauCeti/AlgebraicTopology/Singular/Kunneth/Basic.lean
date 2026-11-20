@@ -378,13 +378,13 @@ variable {k : Type w} [CommRing k]
 the direct sum of the `Hₚ(X; M) ⊗ H_q(Y; N)` with `p + q = n`. -/
 private def singularHomologyKunnethDirectSumIso (n : ℕ) :
     ModuleCat.of k (DirectSum ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) fun i ↦
-      TensorProduct k (((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X)
-        (((singularHomologyFunctor (ModuleCat.{w} k) i.1.2).obj N).obj Y)) ≅
+      TensorProduct k (((singularHomologyFunctor (ModuleCat.{w} k) i.val.1).obj M).obj X)
+        (((singularHomologyFunctor (ModuleCat.{w} k) i.val.2).obj N).obj Y)) ≅
       ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (M ⊗ N)).obj (X ⊗ Y) :=
   -- The source of the Künneth map is by definition the coproduct of the summands.
   (ModuleCat.coprodIsoDirectSum fun i : ((fun x : ℕ × ℕ ↦ x.1 + x.2) ⁻¹' {n}) ↦
-    ((singularHomologyFunctor (ModuleCat.{w} k) i.1.1).obj M).obj X ⊗
-      ((singularHomologyFunctor (ModuleCat.{w} k) i.1.2).obj N).obj Y).symm ≪≫
+    ((singularHomologyFunctor (ModuleCat.{w} k) i.val.1).obj M).obj X ⊗
+      ((singularHomologyFunctor (ModuleCat.{w} k) i.val.2).obj N).obj Y).symm ≪≫
     -- `TopCat.isIso_singularHomologyKunneth_of_projective_homology` is a theorem rather than an
     -- instance, so it is supplied to `asIso` explicitly.
     @asIso _ _ _ _ (singularHomologyKunneth X Y M N n)

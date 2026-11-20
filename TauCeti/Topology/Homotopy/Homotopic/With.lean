@@ -41,10 +41,10 @@ theorem homotopicWith_iff_joined [LocallyCompactPair X Y] {f g : C(X, Y)} (hf : 
         source' := Subtype.ext F.toHomotopy.curry_zero
         target' := Subtype.ext F.toHomotopy.curry_one }
   · exact
-      { toFun p := (γ p.1).1 p.2
+      { toFun p := (γ p.1).val p.2
         continuous_toFun := by fun_prop
         map_zero_left x := by simp
         map_one_left x := by simp
-        prop' t := (γ t).2 }
+        prop' t := (γ t).property }
 
 end ContinuousMap
