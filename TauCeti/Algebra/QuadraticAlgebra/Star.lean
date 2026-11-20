@@ -15,8 +15,8 @@ import Mathlib.Tactic.LinearCombination
 The quadratic involution `star` of `QuadraticAlgebra R a b`, sending `x + yω` to
 `(x + by) - yω`, fixes `R`. Mathlib bundles it as the `R`-algebra automorphism
 `QuadraticAlgebra.starAlgEquiv`. This file records that it sends `ω` to `b - ω`, that the bundled
-automorphism is its own inverse, and that `R`-algebra maps out of `QuadraticAlgebra R a b` are
-determined up to conjugation.
+automorphism is its own inverse, and that two `R`-algebra maps from `QuadraticAlgebra R a b` into a
+commutative `R`-algebra without zero divisors agree up to conjugation.
 
 ## Main results
 
@@ -35,7 +35,8 @@ namespace QuadraticAlgebra
 
 variable {R : Type*} [CommRing R] {a b : R}
 
-/-- Conjugation sends the generator `ω` to the other root `b - ω` of `X ^ 2 - b X - a`. -/
+/-- Conjugation sends the generator `ω` to the conjugate root `b - ω` of `X ^ 2 - b X - a`, which
+may coincide with `ω`. -/
 @[simp] theorem star_omega : star (ω : QuadraticAlgebra R a b) = algebraMap R _ b - ω := by
   rw [star_eq, trace_omega]
 
