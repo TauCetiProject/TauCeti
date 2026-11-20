@@ -466,7 +466,6 @@ private theorem relativeProjTwistingSheafTensorProductIso_hom :
 
 /-- On a pure tensor `s ⊗ t` of sections over `W`, sent into `𝒪(m) ⊗ 𝒪(n)` by the unit of
 sheafification, the isomorphism `𝒪(m) ⊗ 𝒪(n) ≅ 𝒪(m + n)` is multiplication of sections. -/
-@[simp]
 theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafTensorProductIso_hom_tmul
     (W : A.relativeProj.Opens) (s : Γ(A.relativeProjTwistingSheaf m, W))
     (t : Γ(A.relativeProjTwistingSheaf n, W)) :
