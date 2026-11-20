@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Geometry.Lie.Subgroup.Quotient
+import TauCeti.Algebra.Lie.Quotient
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Submersion.Basic
 
@@ -26,13 +28,16 @@ of `G ⧸ N` is smooth, and describes its Lie algebra and its actions.
   surjective submersions (`Manifold.IsSubmersion.lieGroup`). So `π` is a smooth homomorphism
   (`Subgroup.quotientMkSmoothHom`).
 * **Descent of homomorphisms.** A smooth homomorphism `φ : G → G'` vanishing on `N` factors
-  through a smooth homomorphism `G ⧸ N → G'` (`Subgroup.quotientLiftSmoothHom`).
+  through a smooth homomorphism `G ⧸ N → G'` (`Subgroup.quotientLiftSmoothHom`), and uniquely so
+  (`Subgroup.eq_quotientLiftSmoothHom`).
 * **The Lie algebra.** The Lie map of `π`, its differential at the identity read on
   left-invariant derivations, is surjective
   (`Subgroup.surjective_lieMap_quotientMkSmoothHom`), and its kernel is the Lie algebra
   `𝔫 = TauCeti.Lie.lieSubalgebraOfSubgroup N` of `N`
-  (`Subgroup.lieMap_quotientMkSmoothHom_eq_zero_iff`). Together these identify the Lie algebra of
-  `G ⧸ N` with the quotient `𝔤 ⧸ 𝔫` through the Lie map of `π`.
+  (`Subgroup.lieMap_quotientMkSmoothHom_eq_zero_iff`,
+  `Subgroup.toLieSubalgebra_ker_lieMap_quotientMkSmoothHom`). Together these identify the Lie
+  algebra of `G ⧸ N` with the quotient `𝔤 ⧸ 𝔫` through the Lie map of `π`
+  (`Subgroup.quotientLieAlgebraEquiv`).
 * **The residual action.** Let `G` act smoothly on a boundaryless manifold `M`, with `N` acting
   freely and properly. By the quotient manifold theorem the orbit space `M ⧸ N` is a smooth
   manifold (`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`,
@@ -125,6 +130,19 @@ theorem quotientLiftSmoothHom_mk [N.Normal] (hN : IsClosed (N : Set G))
     quotientLiftSmoothHom hN φ hφ (g : G ⧸ N) = φ g :=
   (rfl)
 
+/-- **Uniqueness of the descended homomorphism.** A smooth homomorphism `G ⧸ N → G'` that sends
+the class of every `g` to `φ g` is `Subgroup.quotientLiftSmoothHom`. -/
+theorem eq_quotientLiftSmoothHom [N.Normal] (hN : IsClosed (N : Set G))
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : N ≤ φ.toMonoidHom.ker) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    ∀ ψ : ContMDiffMonoidMorphism 𝓘(ℝ, QuotientModelSpace I N) I' ∞ (G ⧸ N) G',
+      (∀ g : G, ψ g = φ g) → ψ = quotientLiftSmoothHom hN φ hφ := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  intro ψ hψ
+  refine DFunLike.ext _ _ fun x ↦ ?_
+  obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
+  exact hψ g
+
 end Lift
 
 /-! ### The Lie algebra of the quotient -/
@@ -186,6 +204,20 @@ theorem lieMap_quotientMkSmoothHom_eq_zero_iff [N.Normal] (hN : IsClosed (N : Se
     _ ↔ D ∈ Lie.lieSubalgebraOfSubgroup (I := I) N :=
         (LieHom.mem_range _ _).symm.trans (SetLike.ext_iff.1 d.range_lieMapSubtypeVal_eq D)
 
+/-- **The kernel of the Lie map of the projection onto `G ⧸ N` is the Lie algebra of `N`**, as an
+equality of Lie subalgebras of the Lie algebra of `G`. -/
+theorem toLieSubalgebra_ker_lieMap_quotientMkSmoothHom [N.Normal] (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    haveI := lieGroup_quotientOfIsClosed (I := I) hN
+    letI : T2Space G := I.t2Space_of_lieGroup ∞
+    (lieMap (quotientMkSmoothHom I hN)).ker.toLieSubalgebra =
+      Lie.lieSubalgebraOfSubgroup (I := I) N := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  have := lieGroup_quotientOfIsClosed (I := I) hN
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  ext D
+  exact LieHom.mem_ker.trans (lieMap_quotientMkSmoothHom_eq_zero_iff hN D)
+
 /-- **The Lie map of the projection onto `G ⧸ N` is surjective.** With
 `Subgroup.lieMap_quotientMkSmoothHom_eq_zero_iff`, it identifies the Lie algebra of `G ⧸ N` with
 the quotient of the Lie algebra of `G` by that of `N`. -/
@@ -212,6 +244,31 @@ theorem surjective_lieMap_quotientMkSmoothHom [N.Normal] (hN : IsClosed (N : Set
     leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap (quotientMkSmoothHom I hN) (e.symm w)
   rw [LieEquiv.apply_symm_apply, hw] at hπ
   exact hπ
+
+variable (I) in
+/-- **The Lie algebra of `G ⧸ N` is the quotient `𝔤 ⧸ 𝔫`**: the Lie map of the projection onto
+`G ⧸ N` induces an isomorphism from the quotient of the Lie algebra of `G` by its kernel, which is
+the Lie algebra of `N` (`Subgroup.toLieSubalgebra_ker_lieMap_quotientMkSmoothHom`). -/
+def quotientLieAlgebraEquiv [N.Normal] (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    haveI := lieGroup_quotientOfIsClosed (I := I) hN
+    (LeftInvariantDerivation I G ⧸ (lieMap (quotientMkSmoothHom I hN)).ker) ≃ₗ⁅ℝ⁆
+      LeftInvariantDerivation 𝓘(ℝ, QuotientModelSpace I N) (G ⧸ N) :=
+  letI := quotientChartedSpaceOfIsClosed I hN
+  haveI := lieGroup_quotientOfIsClosed (I := I) hN
+  (lieMap (quotientMkSmoothHom I hN)).quotKerEquivOfSurjective
+    (surjective_lieMap_quotientMkSmoothHom hN)
+
+/-- The identification of the Lie algebra of `G ⧸ N` with `𝔤 ⧸ 𝔫` sends the class of `D` to its
+image under the Lie map of the projection. -/
+@[simp]
+theorem quotientLieAlgebraEquiv_apply_mk [N.Normal] (hN : IsClosed (N : Set G))
+    (D : LeftInvariantDerivation I G) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    haveI := lieGroup_quotientOfIsClosed (I := I) hN
+    quotientLieAlgebraEquiv I hN (LieSubmodule.Quotient.mk D) =
+      lieMap (quotientMkSmoothHom I hN) D :=
+  LieHom.quotKerEquivOfSurjective_apply_mk _ _ D
 
 /-! ### The residual action on an orbit space -/
 
