@@ -482,11 +482,11 @@ theorem IsRowCompact.one_sub_smul_mul_resolventAt {u : C₀(I, R) →L[R] C₀(I
   -- The sum `∑ₘ aᵐ • Vₘ x` satisfies a first-order recurrence in `C₀(I, R)`, with `a • u` acting
   -- by evaluation and inhomogeneous terms `(cₘ aᵐ) • x` summing to `H_u(a) • x`.
   refine ContinuousLinearMap.ext fun x ↦ ?_
-  have h := (hasSum_apply (hu.hasSum_resolventAt a) x).sub_smul_eq_of_linearRec₁ (D := a • u)
+  have h := (hasSum_apply (hu.hasSum_resolventAt a) x).eq_smul_add_of_linearRec₁ (D := a • u)
     ((hu.isEntire_charPowerSeries.hasSum_evalAt a).smul_const x)
     (by simp)
     fun m ↦ by simpa using congr($(pow_succ_smul_resolventCoeff_succ u a m) x)
-  simpa using h
+  simpa using sub_eq_of_eq_add' h
 
 /-- **The evaluated resolvent identity** `V(a) (1 - a • u) = H_u(a) • 1` for a row-compact `u`. -/
 theorem IsRowCompact.resolventAt_mul_one_sub_smul {u : C₀(I, R) →L[R] C₀(I, R)}
@@ -547,7 +547,7 @@ theorem IsRowCompact.one_sub_smul_mul_resolventHasseDerivAt_succ
   have hW (j : ℕ) := (hu.isEntire_resolventSeries.hasseDeriv j).hasSum_evalScalar a
   have hb := ((hu.isEntire_charPowerSeries.hasseDeriv (k + 1)).hasSum_evalAt a).smul_const x
     |>.add ((hasSum_apply (hW k) x).mapL u)
-  have h := (hasSum_apply (hW (k + 1)) x).sub_smul_eq_of_linearRec₁ (D := a • u) hb
+  have h := (hasSum_apply (hW (k + 1)) x).eq_smul_add_of_linearRec₁ (D := a • u) hb
     (by simpa using congr($(u.coeff_zero_hasseDeriv_succ_resolventSeries k) x))
     fun m ↦ by
       have hm := congr(a ^ (m + 1) • $(u.coeff_succ_hasseDeriv_succ_resolventSeries k m) x)
@@ -557,7 +557,7 @@ theorem IsRowCompact.one_sub_smul_mul_resolventHasseDerivAt_succ
         coeff_resolventSeries, mul_apply_eq_comp, natCast_apply_eq_smul, map_smul_of_tower,
         Matrix.coeff_charPowerSeries, ContinuousLinearMap.smul_def, smul_eq_mul]
       module
-  simpa [resolventHasseDerivAt_eq_evalScalar] using h
+  simpa [resolventHasseDerivAt_eq_evalScalar] using sub_eq_of_eq_add' h
 
 /-- **The differentiated resolvent identity** `Δᵏ⁺¹V(a) (1 - a • u) = Δᵏ⁺¹H_u(a) • 1 + u ΔᵏV(a)`
 for a row-compact `u`. -/
