@@ -165,7 +165,7 @@ theorem ihomComparison_whiskerLeft {A A' : C} [Closed A] [Closed A']
   unfold ihomComparison pre
   -- Across the mate bijection, the claim is that the tensorator square of `A'` whiskered on its
   -- left side by `f` agrees with that of `A` whiskered on its right side by `F.map f`.
-  refine ((TwoSquare.whiskerLeft_eq_whiskerRight_iff_mateEquiv (ihom.adjunction A)
+  refine (((ihom.adjunction A).whiskerLeft_eq_whiskerRight_iff_mateEquiv
     (ihom.adjunction A') (ihom.adjunction (F.obj A')) (ihom.adjunction (F.obj A))).1 ?_).symm
   ext B
   simp only [Functor.comp_obj, curriedTensor_obj_obj, TwoSquare.whiskerLeft_app,
