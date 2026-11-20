@@ -12,6 +12,7 @@ import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 
 /-!
 # The flow of an adapted pseudo-gradient
@@ -36,6 +37,9 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_of_mfderiv_eq_zero`: critical points are rest points.
 * `TauCeti.IsAdaptedPseudoGradient.flow_apply_eq_of_isMIntegralCurve`: every integral curve is an
   orbit.
+* `TauCeti.IsAdaptedPseudoGradient.isMIntegralCurve_flow_mul` and
+  `TauCeti.IsAdaptedPseudoGradient.flow_mul_eq_of_isMIntegralCurve`: the integral curves of a
+  constant multiple `a • X` are the orbits of `X` run at speed `a`.
 * `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_inter_stableSet_of_isMIntegralCurve`: an
   integral curve from `p` to `q` is the orbit of a point of `W^u(p) ∩ W^s(q)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
@@ -154,6 +158,24 @@ boundaryless manifold is the orbit of its value at time `0`. -/
 theorem flow_apply_eq_of_isMIntegralCurve {γ : ℝ → M} (hγ : IsMIntegralCurve γ X) (t : ℝ) :
     hX.flow t (γ 0) = γ t :=
   globalFlow_eq_of_isMIntegralCurve _ hX.isCompleteVectorField hγ t
+
+/-- **Rescaling time rescales the field.** For every `a : ℝ`, the orbit `t ↦ φ_{a t}(y)` run at
+speed `a` is an integral curve of `a • X`. -/
+theorem isMIntegralCurve_flow_mul (a : ℝ) (y : M) :
+    IsMIntegralCurve (fun t ↦ hX.flow (a * t) y) (a • X) := by
+  simpa only [Function.comp_def, mul_comm] using (hX.isMIntegralCurve_flow y).comp_mul a
+
+/-- **Integral curves of a rescaled field are orbits run at the rescaled speed.** Every integral
+curve `γ` of `a • X` satisfies `γ t = φ_{a t}(γ 0)`, where `φ` is the flow of `X`. For `a = 0`
+both sides are constant. -/
+theorem flow_mul_eq_of_isMIntegralCurve {a : ℝ} {γ : ℝ → M} (hγ : IsMIntegralCurve γ (a • X))
+    (t : ℝ) : hX.flow (a * t) (γ 0) = γ t := by
+  have hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1
+      (fun x ↦ (⟨x, (a • X) x⟩ : TangentBundle 𝓘(ℝ, E) M)) :=
+    (ContMDiff.const_smul_section (a := a) hX.contMDiff).of_le (by simp)
+  have h := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (t₀ := 0) hv
+    (hX.isMIntegralCurve_flow_mul a (γ 0)) hγ (by simp [hX.flow_apply])
+  exact congrFun h t
 
 /-- An integral curve of an adapted pseudo-gradient from `p` to `q` is the orbit of a point of
 `W^u(p) ∩ W^s(q)`. -/
