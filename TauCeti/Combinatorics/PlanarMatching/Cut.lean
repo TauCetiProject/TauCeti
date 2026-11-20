@@ -202,4 +202,18 @@ theorem ext_halves {D E : TLDiagram n m}
     (hc : D.circles = E.circles) : D = E :=
   TLDiagram.ext (matching_eq_of_halves hb ht) hc
 
+/-- An endomorphism diagram `n → n` whose strands all go through has the fully nested identity
+matching. -/
+theorem matching_eq_nested_of_through_eq {D : TLDiagram n n} (h : D.through = n) :
+    D.matching = PlanarMatching.nested n :=
+  (matching_eq_of_halves (D := D) (E := id n)
+    ((HalfDiagram.val_eq_one_iff.mpr h).trans (bottomHalf_id_val n).symm)
+    ((HalfDiagram.val_eq_one_iff.mpr h).trans (topHalf_id_val n).symm)).trans (matching_id n)
+
+/-- An endomorphism diagram `n → n` whose strands all go through is the identity matching together
+with its closed circles. -/
+theorem eq_mk_nested_of_through_eq {D : TLDiagram n n} (h : D.through = n) :
+    D = ⟨PlanarMatching.nested n, D.circles⟩ :=
+  TLDiagram.ext (matching_eq_nested_of_through_eq h) rfl
+
 end TauCeti.TLDiagram
