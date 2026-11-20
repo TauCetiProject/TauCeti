@@ -138,14 +138,14 @@ def prodSigmaIco (a : ℕ) : ℕ → BraidGroup n
   | b + 1 => if h : a ≤ b ∧ b < n - 1 then prodSigmaIco a b * sigma ⟨b, h.2⟩ else prodSigmaIco a b
 
 /-- An ascending product over an empty range is `1`. -/
-theorem prodSigmaIco_of_le {a b : ℕ} (h : b ≤ a) : prodSigmaIco (n := n) a b = 1 := by
+theorem prodSigmaIco_eq_one_of_le {a b : ℕ} (h : b ≤ a) : prodSigmaIco (n := n) a b = 1 := by
   induction b with
   | zero => rw [prodSigmaIco]
   | succ b ih => rw [prodSigmaIco, dite_eq_right_of_eq_false (eq_false (by omega)), ih (by omega)]
 
 @[simp]
 theorem prodSigmaIco_self (a : ℕ) : prodSigmaIco (n := n) a a = 1 :=
-  prodSigmaIco_of_le le_rfl
+  prodSigmaIco_eq_one_of_le le_rfl
 
 /-- Extending the range of an ascending product by one index multiplies it on the right by the next
 elementary braid. -/
@@ -197,11 +197,13 @@ theorem prodSigmaIco_mul_prodSigmaIco {a b c d : ℕ} (hac : a ≤ c) (hdb : d <
     prodSigmaIco (n := n) a b * prodSigmaIco c d =
       prodSigmaIco (c + 1) (d + 1) * prodSigmaIco a b := by
   induction d with
-  | zero => simp [prodSigmaIco_of_le (Nat.zero_le c), prodSigmaIco_of_le (by omega : 1 ≤ c + 1)]
+  | zero =>
+    simp [prodSigmaIco_eq_one_of_le (Nat.zero_le c),
+      prodSigmaIco_eq_one_of_le (by omega : 1 ≤ c + 1)]
   | succ d ih =>
     rcases Nat.lt_or_ge d c with hdc | hcd
-    · rw [prodSigmaIco_of_le (by omega : d + 1 ≤ c), prodSigmaIco_of_le (by omega : d + 2 ≤ c + 1),
-        mul_one, one_mul]
+    · rw [prodSigmaIco_eq_one_of_le (by omega : d + 1 ≤ c),
+        prodSigmaIco_eq_one_of_le (by omega : d + 2 ≤ c + 1), mul_one, one_mul]
     · rw [prodSigmaIco_succ hcd (by omega), prodSigmaIco_succ (by omega) (by omega), ← mul_assoc,
         ih (by omega), mul_assoc, prodSigmaIco_mul_sigma (d := ⟨d + 1, by omega⟩) rfl
           (by simp only; omega) (by simp only; omega) hb, ← mul_assoc]
