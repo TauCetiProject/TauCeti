@@ -22,7 +22,8 @@ complement of the orbit tangent space `𝔤 · σ s₀`. By equivariance it is t
 diffeomorphism at `(g, s)` for every `g` and every `s` near `s₀`.
 
 At a locally free point `x`, every complement `W` of `𝔤 · x` gives such a slice, namely the
-preimage of the affine subspace `φ x + W` under the extended chart `φ` at `x`.
+preimage of the affine subspace `φ x + W` under the extended chart `φ` at `x`, parametrized by any
+injective linear map with range `W`.
 
 These are the transverse local charts from which quotient charts of free proper actions are
 built: properness of the action makes the slice map injective after shrinking the slice, and the
@@ -38,8 +39,8 @@ slice then parametrises the orbits near `x`.
 * `TauCeti.IsLocalDiffeomorphAt.eventually_forall_smul_slice`: a slice map which is a local
   diffeomorphism at `(1, s₀)` is one at `(g, s)` for all `g` and all `s` near `s₀`.
 * `TauCeti.isLocalDiffeomorphAt_smul_extChartAt_symm`: at a locally free point `x`, the chart
-  slice `w ↦ φ.symm (φ x + w)` along a complement `W` of `𝔤 · x` gives a slice map which is a
-  local diffeomorphism at `(1, 0)`.
+  slice `v ↦ φ.symm (φ x + L v)` along a linear parametrization `L` of a complement of `𝔤 · x`
+  gives a slice map which is a local diffeomorphism at `(1, 0)`.
 
 ## References
 
@@ -176,51 +177,51 @@ theorem isLocalDiffeomorphAt_smul_slice_iff
   exact ⟨e, ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
 /-- **Chart slices at locally free points.** Let `x` be a point where the action is locally free,
-let `φ` be the extended chart at `x`, and let `W` be a complement of the orbit tangent space
-`𝔤 · x` in `T_x M`, which is the model space `E'`. Then the slice map
-`(g, w) ↦ g • φ.symm (φ x + w)` on `G × W` is a smooth local diffeomorphism at `(1, 0)`. -/
-theorem isLocalDiffeomorphAt_smul_extChartAt_symm [FiniteDimensional ℝ E'] [I'.Boundaryless] {x : M}
-    (hx : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) {W : Submodule ℝ E'}
-    (hW : IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) W) :
-    IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, W)) I' ∞
-      (fun p : G × W ↦ p.1 • (extChartAt I' x).symm (extChartAt I' x x + p.2)) (1, 0) := by
+let `φ` be the extended chart at `x`, and let `L : F →L[ℝ] E'` be an injective linear map whose
+range is a complement of the orbit tangent space `𝔤 · x` in `T_x M`, which is the model space `E'`.
+Then the slice map `(g, v) ↦ g • φ.symm (φ x + L v)` on `G × F` is a smooth local diffeomorphism
+at `(1, 0)`. Taking `L` to be the inclusion of a complement `W` gives the slice along `W` itself. -/
+theorem isLocalDiffeomorphAt_smul_extChartAt_symm [I'.Boundaryless] {x : M}
+    (hx : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {L : F →L[ℝ] E'}
+    (hL : Injective L)
+    (hLW : IsCompl ((InfinitesimalAction.fundamental I G I' M).orbitTangent x)
+      (LinearMap.range (L : F →ₗ[ℝ] E'))) :
+    IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, F)) I' ∞
+      (fun p : G × F ↦ p.1 • (extChartAt I' x).symm (extChartAt I' x x + L p.2)) (1, 0) := by
   set φ := extChartAt I' x with hφ
-  -- The slice is the preimage under `φ` of the affine subspace `φ x + W`.
-  set τ : W → E' := fun w ↦ φ x + w with hτ
-  have hτd : HasFDerivAt τ W.subtypeL 0 := W.subtypeL.hasFDerivAt.const_add (φ x)
-  have hτsmooth : ContMDiff 𝓘(ℝ, W) 𝓘(ℝ, E') ∞ τ :=
-    (contDiff_const.add W.subtypeL.contDiff).contMDiff
+  -- The slice is the preimage under `φ` of the affine subspace `φ x + range L`.
+  set τ : F → E' := fun v ↦ φ x + L v with hτ
+  have hτd : HasFDerivAt τ L 0 := L.hasFDerivAt.const_add (φ x)
+  have hτsmooth : ContMDiff 𝓘(ℝ, F) 𝓘(ℝ, E') ∞ τ := (contDiff_const.add L.contDiff).contMDiff
   have hτ0 : τ 0 = φ x := by simp [hτ]
   have ht : IsOpen (τ ⁻¹' φ.target) :=
     (isOpen_extChartAt_target x).preimage hτsmooth.continuous
-  have h0t : (0 : W) ∈ τ ⁻¹' φ.target := by
+  have h0t : (0 : F) ∈ τ ⁻¹' φ.target := by
     rw [mem_preimage, hτ0]
     exact mem_extChartAt_target x
-  have hσ : ContMDiffOn 𝓘(ℝ, W) I' ∞ (φ.symm ∘ τ) (τ ⁻¹' φ.target) :=
+  have hσ : ContMDiffOn 𝓘(ℝ, F) I' ∞ (φ.symm ∘ τ) (τ ⁻¹' φ.target) :=
     (contMDiffOn_extChartAt_symm x).comp hτsmooth.contMDiffOn fun _ hw ↦ hw
   have hx0 : (φ.symm ∘ τ) 0 = x := by rw [comp_apply, hτ0, hφ, extChartAt_to_inv]
-  -- The differential of the slice at `0` is the inclusion of `W`.
-  have hd : ⇑(mfderiv 𝓘(ℝ, W) I' (φ.symm ∘ τ) 0) = W.subtype := by
+  -- The differential of the slice at `0` is `L`.
+  have hd : ⇑(mfderiv 𝓘(ℝ, F) I' (φ.symm ∘ τ) 0) = L := by
     have hsymm : mfderiv 𝓘(ℝ, E') I' φ.symm (φ x) = ContinuousLinearMap.id ℝ E' := by
       rw [← mfderivWithin_univ, ← I'.range_eq_univ, hφ]
       exact mfderivWithin_range_extChartAt_symm
     have hsymmd : MDifferentiableAt 𝓘(ℝ, E') I' φ.symm (τ 0) :=
       ((contMDiffOn_extChartAt_symm (n := ∞) x).contMDiffAt
         ((isOpen_extChartAt_target x).mem_nhds h0t)).mdifferentiableAt (by simp)
-    rw [mfderiv_comp (0 : W) hsymmd hτd.hasMFDerivAt.mdifferentiableAt, hτd.hasMFDerivAt.mfderiv,
+    rw [mfderiv_comp (0 : F) hsymmd hτd.hasMFDerivAt.mdifferentiableAt, hτd.hasMFDerivAt.mfderiv,
       hτ0, hsymm]
-    -- `id ∘ W.subtypeL` is `W.subtype`; `simp` cannot see this through the identification of
+    -- `id ∘ L` is `L`; `simp` cannot see this through the identification of
     -- `TangentSpace 𝓘(ℝ, E') (φ x)` with `E'`, but the two maps agree by definition.
     rfl
   refine (isLocalDiffeomorphAt_smul_slice_iff (G := G) hσ ht h0t).2 ⟨?_, ?_, ?_⟩
   · rwa [hx0]
   · rw [hd]
-    exact W.injective_subtype
-  · have hrange : LinearMap.range (mfderiv 𝓘(ℝ, W) I' (φ.symm ∘ τ) 0).toLinearMap = W := by
-      rw [LinearMap.ext (congrFun hd)]
-      exact W.range_subtype
-    rw [hrange, hx0]
-    exact hW
+    exact hL
+  · rw [LinearMap.ext (g := (L : F →ₗ[ℝ] E')) (congrFun hd), hx0]
+    exact hLW
 
 end Real
 
