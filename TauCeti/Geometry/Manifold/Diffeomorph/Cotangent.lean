@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Topology.FiberBundle.Separation
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # Cotangent lifts of diffeomorphisms
@@ -52,10 +53,10 @@ cotangent lift of each `x ↦ g • x` is the action of `g` on `T*M`
 (`Diffeomorph.cotangent_constSmul`). Cotangent lifts are equivariant for these actions: the
 cotangent lift of a diffeomorphism intertwines the lifted actions exactly when the diffeomorphism
 intertwines the actions on the base (`Diffeomorph.cotangent_smul`,
-`Diffeomorph.forall_cotangent_smul_iff`). Since an element fixing a covector fixes its base point,
-the lift of a free action is free (`TauCeti.CotangentBundle.instIsCancelSMul`), and since the
-projection is continuous and equivariant, the lift of a proper smooth action of a Lie group is
-proper (`TauCeti.CotangentBundle.properSMul`). These are the hypotheses under which `T*M` is
+`Diffeomorph.forall_cotangent_smul_iff`). Since the projection is equivariant, the lift of a free
+action is free (`TauCeti.CotangentBundle.instIsCancelSMul`), and since it is moreover continuous,
+the lift of a proper smooth action of a Lie group is proper
+(`TauCeti.CotangentBundle.properSMul`). These are the hypotheses under which `T*M` is
 reduced by `G`.
 
 ## References
@@ -316,15 +317,10 @@ instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 
     exact (((contMDiff_inv IG ∞).comp (contMDiff_fst.comp contMDiff_fst)).smul
       contMDiff_snd).contMDiffAt
 
-/-- An element fixing a covector under the cotangent-lifted action fixes its base point. -/
-theorem stabilizer_le_stabilizer_proj (z : CotangentBundle I M) :
-    MulAction.stabilizer G z ≤ MulAction.stabilizer G z.proj := fun g hg ↦ by
-  rw [MulAction.mem_stabilizer_iff, ← proj_smul, MulAction.mem_stabilizer_iff.1 hg]
-
-/-- **The cotangent lift of a free action is free.** -/
+/-- **The cotangent lift of a free action is free**, since the projection `T*M → M` is
+equivariant. -/
 instance instIsCancelSMul [IsCancelSMul G M] : IsCancelSMul G (CotangentBundle I M) :=
-  isCancelSMul_iff_stabilizer_eq_bot.2 fun z ↦ eq_bot_iff.2 <|
-    (stabilizer_le_stabilizer_proj z).trans (IsCancelSMul.stabilizer_eq_bot z.proj).le
+  .of_smul_comm proj_smul
 
 variable (I M G) in
 /-- **The cotangent lift of a proper action is proper.** If a Lie group `G` acts smoothly and

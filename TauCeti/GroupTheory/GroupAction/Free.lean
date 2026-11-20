@@ -30,6 +30,11 @@ some point must return to itself under a product `e * p ≠ 1`, which freeness f
 If a group `G` acts freely on `X`, every orbit is a copy of `G`, so `Nat.card G` divides
 `Nat.card X`.
 
+## Pulling back freeness
+
+An element fixing `y` fixes `f y` for any map `f : Y → X` intertwining two actions, so the action
+on `Y` is free whenever the action on `X` is.
+
 ## Orbit decomposition
 
 Mathlib's `MulAction.selfEquivOrbitsQuotientProd` identifies `X` with the product of its orbit space
@@ -46,6 +51,7 @@ of a quotient chart in the free proper quotient theorem.
 * `MulAction.eq_empty_of_forall_exists_smul_mem`: the descent principle.
 * `MulAction.natCard_dvd_natCard_of_isCancelSMul`: the order of a group acting freely divides
   the number of points.
+* `IsCancelSMul.of_smul_comm`: an action intertwined with a free action by some map is free.
 * `MulAction.selfEquivOrbitsQuotientProd_symm_apply`: the inverse of the orbit decomposition of a
   free action evaluated at `(q, g)` is `g • q.out`.
 * `MulAction.injOn_smul_univ_prod_iff`: injectivity of `(g, s) ↦ g • σ s` on a tube `G × U`.
@@ -106,6 +112,17 @@ theorem natCard_dvd_natCard_of_isCancelSMul [IsCancelSMul G X] :
   rw [Nat.card_congr (selfEquivOrbitsQuotientProd (G := G) (X := X)
     IsCancelSMul.stabilizer_eq_bot), Nat.card_prod]
   exact Dvd.intro_left _ rfl
+
+/-- **Free actions pull back along equivariant maps.** If a map `f : Y → X` intertwines an action
+of `G` on `Y` with a free action on `X`, then the action on `Y` is free: an element fixing `y`
+fixes `f y`. The map need not be injective; for instance it may be a bundle projection. -/
+@[to_additive /-- **Free actions pull back along equivariant maps.** If a map `f : Y → X`
+intertwines an additive action of `G` on `Y` with a free additive action on `X`, then the action on
+`Y` is free: an element fixing `y` fixes `f y`. -/]
+theorem _root_.IsCancelSMul.of_smul_comm {Y : Type*} [MulAction G Y] [IsCancelSMul G X]
+    {f : Y → X} (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) : IsCancelSMul G Y where
+  left_cancel' g _ _ h := MulAction.injective g h
+  right_cancel' g g' y h := IsCancelSMul.right_cancel g g' (f y) (by rw [← hsmul, h, hsmul])
 
 /-- For a free action, the inverse of the orbit decomposition `selfEquivOrbitsQuotientProd'`
 attached to a choice `φ` of orbit representatives sends `(q, g)` to `g • φ q`. -/
