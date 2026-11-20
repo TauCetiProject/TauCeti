@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.NilpotentCone
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Scheme
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 
 /-!
 # The adjoint quotient and its scheme-theoretic zero fibre
 
-The invariant polynomial ring defines the adjoint quotient of the Lie algebra of an affine
-group. Its fibre over the origin is the spectrum of the quotient by `nilpotentConeIdeal`,
-with its full, possibly nonreduced, scheme structure. The pullback theorem identifies this
-presentation with the scheme-theoretic zero fibre, without characteristic or reductivity
-assumptions.
+The invariant polynomial ring defines the adjoint quotient of the Lie algebra scheme from
+`TauCeti.Algebra.AlgebraicGroup.Tangent.Scheme`. Its fibre over the origin is the spectrum of the
+quotient by `nilpotentConeIdeal`, with its full, possibly nonreduced, scheme structure. The pullback
+theorem identifies this presentation with the scheme-theoretic zero fibre, without characteristic
+or reductivity assumptions.
 -/
 
 public section
@@ -28,21 +29,6 @@ open CategoryTheory CategoryTheory.Limits AlgebraicGeometry
 namespace TauCeti
 
 universe u
-
-/-- The affine scheme of tangent vectors at the identity of the monoid represented by `H`. -/
-abbrev lieAlgebraScheme (k : Type u) [CommRing k] (H : Type u) [CommRing H] [Bialgebra k H] :
-    Scheme :=
-  Spec (.of (SymmetricAlgebra k (Bialgebra.CotangentSpace k H)))
-
-/-- For a reflexive cotangent space, evaluation into the double dual identifies the tangent
-scheme with the spectrum of polynomial functions on its dual. In particular, this applies to
-finite-dimensional cotangent spaces over a field. -/
-abbrev lieAlgebraSchemeIso (k : Type u) [CommRing k] (H : Type u) [CommRing H]
-    [Bialgebra k H] [Module.IsReflexive k (Bialgebra.CotangentSpace k H)] :
-    lieAlgebraScheme k H ≅ Spec (.of (SymmetricAlgebra k
-      (Module.Dual k (Module.Dual k (Bialgebra.CotangentSpace k H))))) :=
-  Scheme.Spec.mapIso (SymmetricAlgebra.mapEquiv k
-    (Module.evalEquiv k (Bialgebra.CotangentSpace k H))).symm.toRingEquiv.toCommRingCatIso.op
 
 variable (k : Type u) [Field k] (H : Type u) [CommRing H] [HopfAlgebra k H]
   [Module.Finite k (Bialgebra.CotangentSpace k H)]

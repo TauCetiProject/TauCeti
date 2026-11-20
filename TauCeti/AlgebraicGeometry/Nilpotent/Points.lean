@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Nilpotent.AdjointQuotient
-public import Mathlib.AlgebraicGeometry.Group.Affine
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
@@ -77,6 +76,7 @@ theorem nilpotentConePointEquiv_comp_ι
 
 /-- The cone point attached to a vector is the spectrum of evaluation factored through
 the full coordinate ideal. -/
+@[simp]
 theorem nilpotentConePointEquiv_symm_apply
     (x : {x : Module.Dual k 𝔤 →ₗ[k] A // I ≤ RingHom.ker (SymmetricAlgebra.lift x)}) :
     ((nilpotentConePointEquiv k H).symm x).val = Spec.map (CommRingCat.ofHom
@@ -105,6 +105,7 @@ noncomputable def nilpotentConeRationalPointEquiv [LieAlgebra.IsKilling k 𝔤�
         (k := k) (H := G) (x := (Module.evalEquiv k 𝔤₀).symm x))
 
 /-- The vector corresponding to a rational point evaluates precisely its linear coordinates. -/
+@[simp]
 theorem nilpotentConeRationalPointEquiv_eval [LieAlgebra.IsKilling k 𝔤₀]
     (f : {f : Spec (.of k) ⟶ nilpotentCone k G // f.IsOver (Spec (.of k))}) :
     Module.Dual.eval k 𝔤₀ (nilpotentConeRationalPointEquiv G f).val =
