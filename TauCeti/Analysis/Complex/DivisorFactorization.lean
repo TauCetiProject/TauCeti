@@ -134,7 +134,7 @@ theorem finprod_zpow_factorization {E : Type*} [NormedAddCommGroup E] [NormedSpa
       WithTop.coe_untop₀_of_ne_top (hfinorder z (hsub hz))]
   have hzeros : closedBall z₀ r ∩ f ⁻¹' {0} = D.support :=
     hinner.meromorphicNFOn.zero_set_eq_divisor_support
-      (fun u ↦ hfinorder u (hsub u.2))
+      (fun u ↦ hfinorder u (hsub u.property))
   have hqm : MeromorphicOn q D.support := fun z hz ↦
     (hP z).inv.smul (hf z (hsub (D.supportWithinDomain hz))).meromorphicAt
   -- Normalize only on the divisor support. On the rest of the outer disc, the raw quotient
@@ -173,11 +173,8 @@ theorem finprod_zpow_factorization {E : Type*} [NormedAddCommGroup E] [NormedSpa
     change f z = P z • G z
     by_cases hs : z ∈ D.support
     · have hfz : f z = 0 := (hzeros.symm ▸ hs).2
-      have hPz : P z = 0 := by
-        have hdz : D z ≠ 0 := hs
-        dsimp only [P]
-        rw [Function.FactorizedRational.extractFactor z hfin]
-        simp only [Pi.mul_apply, Pi.pow_apply, sub_self, zero_zpow _ hdz, zero_mul]
+      have hPz : P z = 0 :=
+        Function.FactorizedRational.eq_zero (d := (D : ℂ → ℤ)) hfin hs
       simp [hfz, hPz]
     · have hPz : P z ≠ 0 := Function.FactorizedRational.ne_zero (Function.notMem_support.mp hs)
       rw [hraw hs]
