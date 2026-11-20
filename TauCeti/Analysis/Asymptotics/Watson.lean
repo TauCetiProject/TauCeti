@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
+import TauCeti.MeasureTheory.Integral.Exp.Damped
+import TauCeti.MeasureTheory.Integral.RpowLaplace
 import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 
@@ -35,11 +37,6 @@ together with integrability of `e^{-σt} q(t)` on `(1, ∞)`.
 
 ## Main results
 
-* `MeasureTheory.IntegrableOn.exp_neg_mul_smul_of_le`: integrability of `e^{-xt} G(t)` on
-  `(0, ∞)` for `x ≥ σ`, given that of `e^{-σt} G(t)`.
-* `Asymptotics.norm_setIntegral_Ioc_exp_neg_mul_smul_le`,
-  `Asymptotics.norm_setIntegral_Ioi_exp_neg_mul_smul_le`: bounds for the parts of a Laplace
-  integral near `0` and beyond `δ`.
 * `Asymptotics.isBigO_integral_exp_neg_mul_smul`: if `G(t) = O(t^{s-1})` as `t → 0+`, then
   `∫₀^∞ e^{-xt} G(t) dt = O(x^{-s})` as `x → +∞`.
 * `Asymptotics.integrableOn_exp_neg_mul_smul_iff`: the two forms of the integrability
@@ -47,6 +44,10 @@ together with integrability of `e^{-σt} q(t)` on `(1, ∞)`.
 * `Asymptotics.hasAsymptoticExpansion_laplace`: Watson's lemma, and
   `Asymptotics.hasAsymptoticExpansion_laplace_of_locallyIntegrableOn`, the same with the second
   form of the integrability hypothesis.
+
+The integrability of `e^{-xt} G(t)` for `x ≥ σ` and the tail bound beyond `δ` are in
+`TauCeti.MeasureTheory.Integral.Exp.Damped`, the bound near `0` through the Gamma integral in
+`TauCeti.MeasureTheory.Integral.RpowLaplace`.
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMFMathlib/Analysis/Asymptotics/Watson.lean`, and generalized from exponents in steps
@@ -67,60 +68,7 @@ open scoped Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- If `t ↦ e^{-σt} G(t)` is integrable on `(0, ∞)`, then so is `t ↦ e^{-xt} G(t)` for every
-`x ≥ σ`. -/
-theorem MeasureTheory.IntegrableOn.exp_neg_mul_smul_of_le {G : ℝ → E} {σ x : ℝ}
-    (hint : IntegrableOn (fun t => Real.exp (-σ * t) • G t) (Ioi 0)) (hx : σ ≤ x) :
-    IntegrableOn (fun t => Real.exp (-x * t) • G t) (Ioi 0) := by
-  have h := hint.bdd_smul 1 (φ := fun t => Real.exp (-(x - σ) * t))
-    (by fun_prop : Continuous fun t : ℝ => Real.exp (-(x - σ) * t)).aestronglyMeasurable
-    (by
-      filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-      rw [Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_le_one_iff]
-      nlinarith)
-  refine IntegrableOn.congr_fun h (fun t _ => ?_) measurableSet_Ioi
-  simp only [Pi.smul_apply', smul_smul, ← Real.exp_add]
-  ring_nf
-
 namespace Asymptotics
-
-/-- The part of a Laplace integral near `0`: if `‖G t‖ ≤ K t^{s-1}` on `(0, δ]` with `s > 0`, then
-`‖∫₀^δ e^{-xt} G(t) dt‖ ≤ K Γ(s) x^{-s}` for every `x > 0`. -/
-theorem norm_setIntegral_Ioc_exp_neg_mul_smul_le {G : ℝ → E} {s x K δ : ℝ} (hs : 0 < s)
-    (hx : 0 < x) (hK : 0 ≤ K) (hGb : ∀ t ∈ Ioc 0 δ, ‖G t‖ ≤ K * t ^ (s - 1)) :
-    ‖∫ t in Ioc 0 δ, Real.exp (-x * t) • G t‖ ≤ K * Real.Gamma s * x ^ (-s) := by
-  have hint : IntegrableOn (fun t : ℝ => t ^ (s - 1) * Real.exp (-(x * t))) (Ioi 0) := by
-    simpa [neg_mul] using integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := s - 1) (b := x)
-      (by linarith) one_pos hx
-  calc ‖∫ t in Ioc 0 δ, Real.exp (-x * t) • G t‖
-      ≤ ∫ t in Ioc 0 δ, K * (t ^ (s - 1) * Real.exp (-(x * t))) := by
-        refine norm_integral_le_of_norm_le ((hint.mono_set Ioc_subset_Ioi_self).const_mul K) ?_
-        filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-        rw [norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le, neg_mul, mul_comm,
-          ← mul_assoc]
-        exact mul_le_mul_of_nonneg_right (hGb t ht) (Real.exp_pos _).le
-    _ ≤ ∫ t in Ioi 0, K * (t ^ (s - 1) * Real.exp (-(x * t))) := by
-        refine setIntegral_mono_set (hint.const_mul K) ?_
-          (Eventually.of_forall Ioc_subset_Ioi_self)
-        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-        exact mul_nonneg hK (mul_nonneg (Real.rpow_nonneg ht.le _) (Real.exp_pos _).le)
-    _ = K * Real.Gamma s * x ^ (-s) := by
-        rw [integral_const_mul, Real.integral_rpow_mul_exp_neg_mul_Ioi hs hx, one_div,
-          Real.inv_rpow hx.le, ← Real.rpow_neg hx.le]
-        ring
-
-/-- The part of a Laplace integral beyond `δ`: if `t ↦ e^{-σt} G(t)` is integrable on `(δ, ∞)`
-and `x ≥ σ`, then `‖∫_δ^∞ e^{-xt} G(t) dt‖ ≤ e^{-(x-σ)δ} ∫_δ^∞ ‖e^{-σt} G(t)‖ dt`. -/
-theorem norm_setIntegral_Ioi_exp_neg_mul_smul_le {G : ℝ → E} {σ x δ : ℝ}
-    (hint : IntegrableOn (fun t => Real.exp (-σ * t) • G t) (Ioi δ)) (hx : σ ≤ x) :
-    ‖∫ t in Ioi δ, Real.exp (-x * t) • G t‖ ≤
-      Real.exp (-(x - σ) * δ) * ∫ t in Ioi δ, ‖Real.exp (-σ * t) • G t‖ := by
-  rw [← integral_const_mul]
-  refine norm_integral_le_of_norm_le (hint.norm.const_mul _) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : δ < t)
-  rw [norm_smul, norm_smul, Real.norm_of_nonneg (Real.exp_pos _).le,
-    Real.norm_of_nonneg (Real.exp_pos _).le, ← mul_assoc, ← Real.exp_add]
-  exact mul_le_mul_of_nonneg_right (Real.exp_le_exp.mpr (by nlinarith)) (norm_nonneg _)
 
 /-- `isBigO_integral_exp_neg_mul_smul` when `t ↦ e^{-σt} G(t)` is integrable on `(0, ∞)`. -/
 private theorem isBigO_integral_exp_neg_mul_smul_of_integrableOn {G : ℝ → E} {s σ : ℝ}
@@ -132,7 +80,7 @@ private theorem isBigO_integral_exp_neg_mul_smul_of_integrableOn {G : ℝ → E}
   · -- for `s ≤ 0` the integral is at most `A ≤ A x^{-s}`
     refine IsBigO.of_bound A ?_
     filter_upwards [eventually_ge_atTop σ, eventually_ge_atTop 1] with x hxσ hx1
-    have h := norm_setIntegral_Ioi_exp_neg_mul_smul_le hint hxσ
+    have h := TauCeti.norm_setIntegral_Ioi_exp_neg_mul_smul_le hint hxσ
     rw [mul_zero, Real.exp_zero, one_mul] at h
     refine h.trans (le_mul_of_one_le_right (integral_nonneg fun _ => norm_nonneg _) ?_)
     rw [Real.norm_of_nonneg (by positivity)]
@@ -148,12 +96,10 @@ private theorem isBigO_integral_exp_neg_mul_smul_of_integrableOn {G : ℝ → E}
       (Eventually.of_forall (Ioi_subset_Ioi hδ0.le))
   -- `e^{-δx}` is eventually smaller than `x^{-s}`
   have hexp : ∀ᶠ x in atTop, Real.exp (-δ * x) ≤ x ^ (-s) := by
-    filter_upwards [(isLittleO_rpow_exp_pos_mul_atTop s hδ0).bound one_pos,
+    filter_upwards [(isLittleO_exp_neg_mul_rpow_atTop hδ0 (-s)).bound one_pos,
       eventually_gt_atTop 0] with x hx hx0
-    rw [one_mul, Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _),
-      Real.norm_of_nonneg (Real.exp_pos _).le] at hx
-    rw [Real.rpow_neg hx0.le, neg_mul, Real.exp_neg]
-    exact inv_anti₀ (Real.rpow_pos_of_pos hx0 _) hx
+    rwa [one_mul, Real.norm_of_nonneg (Real.exp_pos _).le,
+      Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _)] at hx
   refine IsBigO.of_bound (K * Real.Gamma s + Real.exp (σ * δ) * A) ?_
   filter_upwards [hexp, eventually_ge_atTop σ, eventually_gt_atTop 0] with x hxe hxσ hx0
   rw [Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _), add_mul]
@@ -161,9 +107,9 @@ private theorem isBigO_integral_exp_neg_mul_smul_of_integrableOn {G : ℝ → E}
   rw [← Ioc_union_Ioi_eq_Ioi hδ0.le, setIntegral_union (Ioc_disjoint_Ioi le_rfl)
     measurableSet_Ioi (hI.mono_set Ioc_subset_Ioi_self) (hI.mono_set (Ioi_subset_Ioi hδ0.le))]
   refine (norm_add_le _ _).trans
-    (add_le_add (norm_setIntegral_Ioc_exp_neg_mul_smul_le hs hx0 hK0.le hGb) ?_)
+    (add_le_add (TauCeti.norm_setIntegral_Ioc_exp_neg_mul_smul_le hs hx0 hK0.le hGb) ?_)
   -- the tail: `e^{-(x-σ)δ} = e^{σδ} e^{-δx}`
-  refine (norm_setIntegral_Ioi_exp_neg_mul_smul_le
+  refine (TauCeti.norm_setIntegral_Ioi_exp_neg_mul_smul_le
     (hint.mono_set (Ioi_subset_Ioi hδ0.le)) hxσ).trans ?_
   have hsplit : -(x - σ) * δ = σ * δ + -δ * x := by ring
   rw [hsplit, Real.exp_add, mul_right_comm]
