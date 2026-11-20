@@ -108,6 +108,7 @@ theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : slab (E := E) a b → 
 omit [NormedSpace ℝ E] in
 /-- Clamped time extension commutes with applying a continuous linear map to a bounded continuous
 slab map. -/
+@[simp]
 theorem timeExtension_compLeftContinuousBounded (hab : a ≤ b) {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] (L : F →L[ℝ] G) (f : slab (E := E) a b →ᵇ F)
     (x : E) :
