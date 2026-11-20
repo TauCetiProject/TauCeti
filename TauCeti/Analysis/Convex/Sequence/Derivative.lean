@@ -45,26 +45,9 @@ theorem exists_pos_supportingValue_eq_left (hf : IsFiniteFace h σ l u)
     (hh : IsConvexSeq h) :
     ∃ ε > (0 : ℝ), ∀ τ ∈ Icc (σ - ε) σ,
       supportingValue h τ = (((h l).untop₀ - τ * l : ℝ) : EReal) := by
-  have hthrough := hf.isSupportingLine_untop₀_sub ⟨le_rfl, hf.left_le_right⟩
-  have hbounds := (hh.isSupportingLine_iff_unitSlope hf.left_ne_top σ).mp hthrough
-  have hgap : ∃ ε > (0 : ℝ), ∀ i, i + 1 = l → h i ≠ ⊤ →
-      unitSlope h i ≤ σ - ε := by
-    by_cases hp : ∃ i, i + 1 = l ∧ h i ≠ ⊤
-    · obtain ⟨i, hi, hif⟩ := hp
-      have hs := hf.unitSlope_lt hh (i := i)
-        (mem_finiteEdges.mpr ⟨hif, hi ▸ hf.left_ne_top⟩) (by omega)
-      refine ⟨σ - unitSlope h i, sub_pos.mpr hs, fun j hj _ => ?_⟩
-      have : j = i := by omega
-      subst j
-      linarith
-    · exact ⟨1, zero_lt_one, fun i hi hif => (hp ⟨i, hi, hif⟩).elim⟩
-  obtain ⟨ε, hε, hgap⟩ := hgap
+  obtain ⟨ε, hε, ht⟩ := hf.exists_pos_isSupportingLine_left hh
   refine ⟨ε, hε, fun τ hτ => ?_⟩
-  have ht : IsSupportingLine h τ ((h l).untop₀ - τ * l) :=
-    (hh.isSupportingLine_iff_unitSlope hf.left_ne_top τ).mpr
-      ⟨fun i hi hif => (hgap i hi hif).trans hτ.1,
-        fun hn => hτ.2.trans (hbounds.2 hn)⟩
-  apply supportingValue_eq_coe_of_mem_supportingFace ht (n := l)
+  apply supportingValue_eq_coe_of_mem_supportingFace (ht τ hτ) (n := l)
   simp [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hf.left_ne_top]
 
 /-- Immediately to the right of a finite face slope, the supporting value is computed
@@ -73,20 +56,9 @@ theorem exists_pos_supportingValue_eq_right (hf : IsFiniteFace h σ l u)
     (hh : IsConvexSeq h) :
     ∃ ε > (0 : ℝ), ∀ τ ∈ Icc σ (σ + ε),
       supportingValue h τ = (((h u).untop₀ - τ * u : ℝ) : EReal) := by
-  have hthrough := hf.isSupportingLine_untop₀_sub ⟨hf.left_le_right, le_rfl⟩
-  have hbounds := (hh.isSupportingLine_iff_unitSlope hf.right_ne_top σ).mp hthrough
-  have hgap : ∃ ε > (0 : ℝ), h (u + 1) ≠ ⊤ → σ + ε ≤ unitSlope h u := by
-    by_cases hn : h (u + 1) ≠ ⊤
-    · have hs := hf.lt_unitSlope hh (i := u) (mem_finiteEdges.mpr ⟨hf.right_ne_top, hn⟩) le_rfl
-      exact ⟨unitSlope h u - σ, sub_pos.mpr hs, fun _ => by linarith⟩
-    · exact ⟨1, zero_lt_one, fun h => (hn h).elim⟩
-  obtain ⟨ε, hε, hgap⟩ := hgap
+  obtain ⟨ε, hε, ht⟩ := hf.exists_pos_isSupportingLine_right hh
   refine ⟨ε, hε, fun τ hτ => ?_⟩
-  have ht : IsSupportingLine h τ ((h u).untop₀ - τ * u) :=
-    (hh.isSupportingLine_iff_unitSlope hf.right_ne_top τ).mpr
-      ⟨fun i hi hif => (hbounds.1 i hi hif).trans hτ.1,
-        fun hn => hτ.2.trans (hgap hn)⟩
-  apply supportingValue_eq_coe_of_mem_supportingFace ht (n := u)
+  apply supportingValue_eq_coe_of_mem_supportingFace (ht τ hτ) (n := u)
   simp [mem_supportingFace, sub_add_cancel, WithTop.coe_untop₀_of_ne_top hf.right_ne_top]
 
 /-- The left derivative of the real supporting value at a finite face is minus

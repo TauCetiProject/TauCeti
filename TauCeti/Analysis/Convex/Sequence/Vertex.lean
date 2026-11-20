@@ -18,6 +18,11 @@ introduce geometric vertices, and a missing coefficient cannot be a vertex. The 
 of every finite face, including a singleton, are original points as well, whether they are
 interior vertices or boundaries of the finite domain.
 
+This gives a criterion for finite faces in terms of the original points alone
+(`IsLowerConvexEnvelope.isFiniteFace_iff`): a line of slope `σ` supports the points and passes
+through the points at `l` and `u`, and the lines through these two points with some strictly
+smaller slope at `l` and some strictly larger slope at `u` also support the points.
+
 The stronger local characterization `IsLowerConvexEnvelope.eq_min_of_finite_neighbors`
 says that each interior height is the minimum of its coefficient height and the
 average of its two neighboring heights. All results allow unbounded finite domains
@@ -184,6 +189,65 @@ theorem exists_isSupportingLine_isLeast_isGreatest_of_isFiniteFace
     exact mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
   · rw [mem_supportingFace, ← hh.eq_right_of_isFiniteFace hf]
     exact mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+
+/-- Sufficiency in the finite-face criterion: if a line of slope `σ` supports the point heights
+and passes through the points at `l ≤ u`, and the lines through these two points with some
+strictly smaller slope at `l` and some strictly larger slope at `u` also support the point
+heights, then the envelope has a finite face of slope `σ` from `l` to `u`. -/
+theorem isFiniteFace_of_isSupportingLine (hh : IsLowerConvexEnvelope a h) {σ c τ₁ τ₂ : ℝ}
+    {l u : ℕ} (hlu : l ≤ u) (hc : IsSupportingLine a σ c) (hl : l ∈ supportingFace a σ c)
+    (hu : u ∈ supportingFace a σ c) (hτ₁ : τ₁ < σ)
+    (hc₁ : IsSupportingLine a τ₁ (c + (σ - τ₁) * l)) (hτ₂ : σ < τ₂)
+    (hc₂ : IsSupportingLine a τ₂ (c + (σ - τ₂) * u)) : IsFiniteFace h σ l u := by
+  have hch := hh.isSupportingLine_iff.mpr hc
+  refine isFiniteFace_iff.mpr ⟨hlu, c, hch, Set.Subset.antisymm (fun n hn => ?_) fun n hn => ?_⟩
+  · -- Off `[l, u]` one of the two tilted lines lies strictly above the line of slope `σ`.
+    rw [mem_supportingFace] at hn
+    have h₁ := isSupportingLine_iff_forall.mp (hh.isSupportingLine_iff.mpr hc₁) n
+    have h₂ := isSupportingLine_iff_forall.mp (hh.isSupportingLine_iff.mpr hc₂) n
+    rw [hn, WithTop.coe_le_coe] at h₁ h₂
+    refine ⟨Nat.cast_le.mp (le_of_not_gt fun (hnl : (n : ℝ) < l) => ?_),
+      Nat.cast_le.mp (le_of_not_gt fun (hun : (u : ℝ) < n) => ?_)⟩
+    · nlinarith [mul_pos (sub_pos.mpr hτ₁) (sub_pos.mpr hnl)]
+    · nlinarith [mul_pos (sub_pos.mpr hτ₂) (sub_pos.mpr hun)]
+  · exact mem_supportingFace.mpr <| hh.isConvexSeq.eq_affine_of_affine_le
+      (mem_supportingFace.mp (hh.supportingFace_subset hc hl))
+      (mem_supportingFace.mp (hh.supportingFace_subset hc hu)) hn.1 hn.2
+      (isSupportingLine_iff_forall.mp hch n)
+
+/-- **Finite-face criterion.** A lower convex envelope has a finite face of slope `σ` from `l` to
+`u` exactly when some line of slope `σ` supports the point heights and passes through the points
+at `l` and `u`, and the lines through these two points with some strictly smaller slope at `l` and
+some strictly larger slope at `u` also support the point heights.
+
+The tilted lines cannot be replaced by asking the other points to lie strictly above the line of
+slope `σ`: infinitely many points may approach that line, and the envelope then follows it. -/
+theorem isFiniteFace_iff (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l u : ℕ} :
+    IsFiniteFace h σ l u ↔ l ≤ u ∧ ∃ c : ℝ, IsSupportingLine a σ c ∧
+      l ∈ supportingFace a σ c ∧ u ∈ supportingFace a σ c ∧
+      (∃ τ < σ, IsSupportingLine a τ (c + (σ - τ) * l)) ∧
+      ∃ τ > σ, IsSupportingLine a τ (c + (σ - τ) * u) := by
+  refine ⟨fun hf => ?_, fun ⟨hlu, c, hc, hl, hu, ⟨τ₁, hτ₁, hc₁⟩, τ₂, hτ₂, hc₂⟩ =>
+    hh.isFiniteFace_of_isSupportingLine hlu hc hl hu hτ₁ hc₁ hτ₂ hc₂⟩
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hl : h l = ((c + σ * l : ℝ) : WithTop ℝ) :=
+    mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
+  have hu : h u = ((c + σ * u : ℝ) : WithTop ℝ) :=
+    mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+  obtain ⟨ε₁, hε₁, hc₁⟩ := hf.exists_pos_isSupportingLine_left hh.isConvexSeq
+  obtain ⟨ε₂, hε₂, hc₂⟩ := hf.exists_pos_isSupportingLine_right hh.isConvexSeq
+  have hc₁' := hc₁ (σ - ε₁) ⟨le_rfl, by linarith⟩
+  have hc₂' := hc₂ (σ + ε₂) ⟨by linarith, le_rfl⟩
+  rw [hl, WithTop.untop₀_coe] at hc₁'
+  rw [hu, WithTop.untop₀_coe] at hc₂'
+  refine ⟨hf.left_le_right, c, hh.isSupportingLine_iff.mp hc, ?_, ?_,
+    ⟨σ - ε₁, by linarith, ?_⟩, σ + ε₂, by linarith, ?_⟩
+  · rw [mem_supportingFace, ← hh.eq_left_of_isFiniteFace hf, hl]
+  · rw [mem_supportingFace, ← hh.eq_right_of_isFiniteFace hf, hu]
+  · convert hh.isSupportingLine_iff.mp hc₁' using 1
+    ring
+  · convert hh.isSupportingLine_iff.mp hc₂' using 1
+    ring
 
 end IsLowerConvexEnvelope
 
