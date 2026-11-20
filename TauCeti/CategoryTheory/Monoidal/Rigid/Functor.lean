@@ -421,7 +421,8 @@ theorem NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate (τ : F ⟶ 
 `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate`: a monoidal natural
 transformation `τ : F ⟶ G` between strong monoidal functors satisfies
 `(τ_X)ᘁ ≫ (δ^F_X)⁻¹ ≫ τ_{Xᘁ} = (δ^G_X)⁻¹` as morphisms `(G.obj X)ᘁ ⟶ G.obj Xᘁ`. Together, the two
-identities make the mate of `τ_{Xᘁ}` a two-sided inverse of `τ` at a right dual `Xᘁ`. -/
+identities make the mate `(τ_X)ᘁ`, transported through the dual-comparison isomorphisms as
+`δ^G_X ≫ (τ_X)ᘁ ≫ (δ^F_X)⁻¹`, a two-sided inverse of `τ_{Xᘁ}`. -/
 @[reassoc]
 theorem NatTrans.rightAdjointMate_comp_mapRightDualIso_inv_comp_app (τ : F ⟶ G) [τ.IsMonoidal]
     (X : C) [HasRightDual X] [HasRightDual (F.obj X)] [HasRightDual (G.obj X)] :

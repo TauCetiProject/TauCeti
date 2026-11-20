@@ -8,20 +8,18 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
-import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Flat.Basic
 
 /-!
 # Point actions on finite subcomodules
 
 Over a coalgebra `C` that is projective as an `R`-module, every comodule is the directed union of
-its finite subcomodules. This file records the scalar-extension form of that covering and uses it
-to reduce bijectivity of a point action `TauCeti.Comodule.endOfPoint` to finite subcomodules.
+its finite subcomodules. This file uses the scalar-extension form of that covering,
+`TauCeti.Subcomodule.exists_finite_subcomodule_subset_range`, to reduce bijectivity of a point
+action `TauCeti.Comodule.endOfPoint` to finite subcomodules.
 
 ## Main declarations
 
-* `TauCeti.Subcomodule.exists_finite_subcomodule_subset_range`: finitely many elements of a scalar
-  extension `A ⊗[R] M` lie in the scalar extension of one finite subcomodule.
 * `TauCeti.Comodule.bijective_endOfPoint_of_forall_finite`: bijectivity on all finite
   subcomodules gives bijectivity on the comodule, for a flat value algebra.
 
@@ -38,30 +36,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 universe u v w x
-
-namespace Subcomodule
-
-variable {R : Type u} [CommSemiring R] {C : Type v} [AddCommMonoid C] [Module R C]
-  [Coalgebra R C] [Module.Projective R C]
-  {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
-  {A : Type x} [CommSemiring A] [Algebra R A]
-
-/-- Over a projective coalgebra, finitely many elements of a scalar extension `A ⊗[R] M` lie in
-the scalar extension of one finite subcomodule. -/
-theorem exists_finite_subcomodule_subset_range (s : Set (A ⊗[R] M)) (hs : s.Finite) :
-    ∃ N : Subcomodule R C M, Module.Finite R N.toSubmodule ∧
-      s ⊆ LinearMap.range ((Subcomodule.subtype N).toLinearMap.baseChange A) := by
-  obtain ⟨P, hP, hsP⟩ := TensorProduct.exists_finite_submodule_right_of_setFinite s hs
-  obtain ⟨N, hN, hPN⟩ := exists_finite_subcomodule_of_fg (R := R) (C := C) P
-    (Module.Finite.iff_fg.mp hP)
-  refine ⟨N, hN, hsP.trans ?_⟩
-  rintro _ ⟨z, rfl⟩
-  obtain ⟨w, hw⟩ := Submodule.baseChange_mono (A := A) hPN
-    ⟨z, congrFun (LinearMap.baseChange_eq_lTensor (A := A) P.subtype) z⟩
-  rw [Subcomodule.subtype_toLinearMap]
-  exact ⟨w, hw⟩
-
-end Subcomodule
 
 namespace Comodule
 
