@@ -298,12 +298,10 @@ theorem homogeneousComponent_coeAddMonoidHom [DecidableEq ι] {f : H → ι}
   induction x using DirectSum.induction_on with
   | zero => simp
   | of j y =>
-    rw [DirectSum.coeAddMonoidHom_of, homogeneousComponent_of_mem_gradeBy y.2,
-      DirectSum.of_apply]
-    split_ifs with hji
-    · subst hji
-      rfl
-    · rfl
+    rw [DirectSum.coeAddMonoidHom_of, homogeneousComponent_of_mem_gradeBy y.2]
+    obtain rfl | hji := eq_or_ne j i
+    · simp
+    · simp [hji, DirectSum.of_eq_of_ne _ _ _ hji.symm]
   | add x y hx hy => rw [map_add, map_add, hx, hy, DirectSum.add_apply, Submodule.coe_add]
 
 /-- The homogeneous series span exactly the series whose support meets only finitely many

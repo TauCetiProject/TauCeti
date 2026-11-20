@@ -62,12 +62,13 @@ theorem AddMonoidHom.infinite_image_setOf_le {H G ι : Type*} [AddGroup H] [AddC
     · exact this b a hab.symm he.symm (hab.symm.lt_of_le (not_lt.1 hlt))
     obtain ⟨t, rfl⟩ := Nat.exists_eq_add_of_lt hlt
     refine ⟨t + 1, t.succ_pos, ?_⟩
-    have hsplit : -(a • u) + (a + t + 1) • u = (t + 1) • u := by
-      rw [add_assoc, add_nsmul, neg_add_cancel_left]
-    rw [← hsplit, map_add, ← he, ← map_add, neg_add_cancel, map_zero]
+    have hsplit : (t + 1) • u = -(a • u) + (a + t + 1) • u := by
+      simp [add_assoc, add_nsmul]
+    rw [hsplit, map_add, ← he, ← map_add]
+    simp
   -- Hence every value of `δ` is already a value on the upper set.
   refine hδ (hfin.subset ?_)
   rintro _ ⟨h, rfl⟩
   obtain ⟨m, hm⟩ := key h
-  have hδtm : δ ((t * m) • u) = 0 := by rw [mul_comm, mul_nsmul', map_nsmul, hδt, nsmul_zero]
+  have hδtm : δ ((t * m) • u) = 0 := by simp [mul_nsmul, hδt]
   simpa only [map_add, hδtm, add_zero] using hm (t * m) (Nat.le_mul_of_pos_left m ht)
