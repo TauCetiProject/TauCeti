@@ -361,7 +361,7 @@ theorem orbit_stabilizer_eq_orbit_zpowers_of_isArithFrobAt {X : Type*} [MulActio
     simp only [MulAction.subgroup_smul_def, Subgroup.coe_zpow, mul_smul,
       hI _ (Ideal.coe_mem_inertia.mpr hz)]
   · rintro _ ⟨g, rfl⟩
-    exact ⟨⟨g, Subgroup.zpowers_le.mpr hσ.mem_stabilizer g.2⟩, rfl⟩
+    exact ⟨⟨g, Subgroup.zpowers_le.mpr hσ.mem_stabilizer g.property⟩, rfl⟩
 
 omit [IsGalois K L] in
 /-- **The residue degree divides the order of a Frobenius.** At any prime `Q`, ramified or not,

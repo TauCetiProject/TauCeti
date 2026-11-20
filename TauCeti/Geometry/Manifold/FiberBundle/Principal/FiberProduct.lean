@@ -46,13 +46,13 @@ local notation "π₀" => fun p : T ↦ Bundle.TotalSpace.proj
 local notation "R" => {z : T × T // π₀ (Prod.fst z) = π₀ (Prod.snd z)}
 
 -- Transport only the fibre element; the total-space point remains unchanged.
-private def secondInFirstFiber (z : R) : P (π₀ z.1.1) :=
-  cast (congrArg P z.2.symm) ((ι).symm z.1.2).2
+private def secondInFirstFiber (z : R) : P (π₀ z.val.1) :=
+  cast (congrArg P z.property.symm) ((ι).symm z.val.2).snd
 
 private theorem totalSpaceMk_secondInFirstFiber (z : R) :
-    ι ⟨π₀ z.1.1, secondInFirstFiber z⟩ = z.1.2 := by
-  exact (congrArg ι (TotalSpace.mk_cast z.2.symm ((ι).symm z.1.2).2)).trans
-    ((ι).apply_symm_apply z.1.2)
+    ι ⟨π₀ z.val.1, secondInFirstFiber z⟩ = z.val.2 := by
+  exact (congrArg ι (TotalSpace.mk_cast z.property.symm ((ι).symm z.val.2).snd)).trans
+    ((ι).apply_symm_apply z.val.2)
 
 variable [TopologicalSpace B] [Group G] [TopologicalSpace G]
   [∀ b, TopologicalSpace (P b)] [FiberBundle G P]
@@ -61,7 +61,7 @@ variable [TopologicalSpace B] [Group G] [TopologicalSpace G]
 /-- Division on the equal-projection subtype: the unique group element taking the first
 point to the second by the principal right action. -/
 noncomputable def fiberProductDivision (z : R) : G :=
-  division G ((ι).symm z.1.1).2 (secondInFirstFiber z)
+  division G ((ι).symm z.val.1).snd (secondInFirstFiber z)
 
 /-- On a pair in a displayed common fibre, division is the original fibrewise division. -/
 @[simp]
@@ -75,11 +75,11 @@ theorem fiberProductDivision_mk {b : B} (p q : P b) :
 
 /-- Division is characterized by the equation for the principal right action. -/
 theorem fiberProductDivision_eq_iff (z : R) {g : G} :
-    fiberProductDivision z = g ↔ op g • z.1.1 = z.1.2 := by
+    fiberProductDivision z = g ↔ op g • z.val.1 = z.val.2 := by
   rw [fiberProductDivision, division_eq_iff]
   constructor
   · intro h
-    have h' := congrArg (fun p ↦ ι ⟨π₀ z.1.1, p⟩) h
+    have h' := congrArg (fun p ↦ ι ⟨π₀ z.val.1, p⟩) h
     rw [← ManifoldTotalSpace.smul_homeomorph, Homeomorph.apply_symm_apply,
       totalSpaceMk_secondInFirstFiber] at h'
     exact h'
@@ -93,7 +93,7 @@ theorem fiberProductDivision_eq_iff (z : R) {g : G} :
 /-- The division element sends the first point of a same-base pair to the second. -/
 @[simp]
 theorem op_fiberProductDivision_smul (z : R) :
-    op (fiberProductDivision z) • z.1.1 = z.1.2 :=
+    op (fiberProductDivision z) • z.val.1 = z.val.2 :=
   (fiberProductDivision_eq_iff z).1 rfl
 
 section Smooth
@@ -165,10 +165,10 @@ theorem contMDiff_fiberProductDivision :
   have hp := contMDiff_fst.comp h
   have hq := contMDiff_snd.comp h
   have hp' : ContMDiff K (IB.prod IG) n
-      (fun z : R ↦ ι ⟨π₀ z.1.1, ((ι).symm z.1.1).2⟩) := by
+      (fun z : R ↦ ι ⟨π₀ z.val.1, ((ι).symm z.val.1).snd⟩) := by
     simpa only [TotalSpace.eta, Homeomorph.apply_symm_apply, Function.comp_def] using hp
   have hq' : ContMDiff K (IB.prod IG) n
-      (fun z : R ↦ ι ⟨π₀ z.1.1, secondInFirstFiber z⟩) := by
+      (fun z : R ↦ ι ⟨π₀ z.val.1, secondInFirstFiber z⟩) := by
     simpa only [totalSpaceMk_secondInFirstFiber, Function.comp_def] using hq
   exact hp'.division hq'
 
@@ -181,7 +181,7 @@ noncomputable def actionDiffeomorph :
   exact {
     toFun x := ⟨(x.1, op x.2 • x.1), by
       simp only [ManifoldTotalSpace.homeomorph_symm_smul]⟩
-    invFun z := (z.1.1, fiberProductDivision z)
+    invFun z := (z.val.1, fiberProductDivision z)
     left_inv x := by
       obtain ⟨⟨b, p⟩, hp⟩ := (ι).surjective x.1
       rcases x with ⟨x, g⟩
@@ -204,7 +204,7 @@ noncomputable def actionDiffeomorph :
 @[simp]
 theorem actionDiffeomorph_apply (p : T) (g : G) :
     letI := fiberProductChartedSpace (G := G) (P := P) (IB := IB) (IG := IG) hn
-    (actionDiffeomorph (G := G) (P := P) (IB := IB) (IG := IG) hn (p, g)).1 = (p, op g • p) :=
+    (actionDiffeomorph (G := G) (P := P) (IB := IB) (IG := IG) hn (p, g)).val = (p, op g • p) :=
   (rfl)
 
 /-- The inverse comparison records the first point and its division element. -/
@@ -212,7 +212,7 @@ theorem actionDiffeomorph_apply (p : T) (g : G) :
 theorem actionDiffeomorph_symm_apply (z : R) :
     letI := fiberProductChartedSpace (G := G) (P := P) (IB := IB) (IG := IG) hn
     (actionDiffeomorph (G := G) (P := P) (IB := IB) (IG := IG) hn).symm z =
-      (z.1.1, fiberProductDivision z) :=
+      (z.val.1, fiberProductDivision z) :=
   (rfl)
 
 end Smooth

@@ -177,7 +177,7 @@ theorem ResolutionVanishesOn.exists_isOpen {T : Set G} (hT : IsCompact T) (n : �
     have : Finite (F' '' T) := ((hT.image F'.continuous).finite_of_discrete).to_subtype
     -- each of the finitely many values of `F'` on `T` vanishes on an open set containing `T`
     choose W hWopen hTW hW using fun v : F' '' T ↦
-      ih (F := v) (by obtain ⟨g, hg, hgv⟩ := v.2; exact hgv ▸ hF g hg)
+      ih (F := v) (by obtain ⟨g, hg, hgv⟩ := v.property; exact hgv ▸ hF g hg)
     refine ⟨F' ⁻¹' (F' '' T) ∩ ⋂ v, W v, ((isOpen_discrete _).preimage F'.continuous).inter
       (isOpen_iInter_of_finite fun v ↦ hWopen v),
       Set.subset_inter (Set.subset_preimage_image _ _) (Set.subset_iInter fun v ↦ hTW v),

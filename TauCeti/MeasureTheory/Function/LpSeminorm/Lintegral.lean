@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
-import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # The `Lᵖ` integral is bounded by the `p`-th power of the `Lᵖ` seminorm
@@ -19,11 +18,7 @@ measurability the seminorm is `∞` by convention, so the inequality
 (`TauCeti.lintegral_rpow_enorm_le_rpow_eLpNorm`). This is the form in which a bound on the `Lᵖ`
 seminorm is used to bound an integral, with no measurability side condition. For a natural
 exponent `n ≠ 0` and measurable `f` the identity reads `∫⁻ ‖f‖ₑ ^ n ∂μ = eLpNorm f n μ ^ n`
-(`TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow`). Integrating the squared triangle inequality through
-an intermediate function `h` bounds `∫⁻ ‖f - g‖ₑ ^ 2 ∂μ` by twice the sum of the two intermediate
-square integrals whenever `x ↦ ‖f x - h x‖ₑ ^ 2` is `μ`-almost everywhere measurable, with no
-measurability required of `g` (`TauCeti.lintegral_enorm_sq_sub_le_two_mul`). For an almost
-everywhere strongly
+(`TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow`). For an almost everywhere strongly
 measurable `f` and `p ≠ 0, ∞` in `ℝ≥0∞`, the two sides agree
 (`MeasureTheory.lintegral_rpow_enorm_eq_eLpNorm_rpow`), so `∫⁻ ‖f‖ₑ ^ p ∂μ ≤ t ^ p` gives
 `eLpNorm f p μ ≤ t` (`MeasureTheory.eLpNorm_le_of_lintegral_rpow_le`). In particular a pointwise
@@ -67,24 +62,6 @@ theorem lintegral_enorm_pow_eq_eLpNorm_pow {n : ℕ} (hn : n ≠ 0) {f : α → 
     (hf : AEStronglyMeasurable f μ) : ∫⁻ x, ‖f x‖ₑ ^ n ∂μ = eLpNorm f n μ ^ n := by
   simpa only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] using
     (eLpNorm_nnreal_pow_eq_lintegral (p := (n : ℝ≥0)) (Nat.cast_ne_zero.2 hn) hf).symm
-
-/-- **Lower-integral squared triangle inequality.** In a seminormed group, when
-`x ↦ ‖f x - h x‖ₑ ^ 2` is `μ`-almost everywhere measurable (with no measurability required of `g`),
-the lower integral of `‖f x - g x‖ₑ ^ 2` is at most twice the sum of the lower integrals of
-`‖f x - h x‖ₑ ^ 2` and `‖g x - h x‖ₑ ^ 2` through the intermediate function `h`. -/
-theorem lintegral_enorm_sq_sub_le_two_mul {E : Type*} [SeminormedAddCommGroup E]
-    (f g h : α → E) (hf : AEMeasurable (fun x ↦ ‖f x - h x‖ₑ ^ 2) μ) :
-    ∫⁻ x, ‖f x - g x‖ₑ ^ 2 ∂μ ≤
-      2 * ∫⁻ x, ‖f x - h x‖ₑ ^ 2 ∂μ + 2 * ∫⁻ x, ‖g x - h x‖ₑ ^ 2 ∂μ := by
-  have hpt (x : α) : ‖f x - g x‖ₑ ^ 2 ≤ 2 * ‖f x - h x‖ₑ ^ 2 + 2 * ‖g x - h x‖ₑ ^ 2 := by
-    have hreal := ENNReal.ofReal_le_ofReal (norm_sub_sq_le_two_mul (f x) (g x) (h x))
-    simp only [ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2),
-      ENNReal.ofReal_add (sq_nonneg _) (sq_nonneg _), ENNReal.ofReal_pow (norm_nonneg _),
-      ofReal_norm, ENNReal.ofReal_ofNat] at hreal
-    simpa only [mul_add] using hreal
-  refine (lintegral_mono hpt).trans_eq ?_
-  rw [lintegral_add_left' (hf.const_mul 2),
-    lintegral_const_mul' _ _ (by norm_num), lintegral_const_mul' _ _ (by norm_num)]
 
 end TauCeti
 

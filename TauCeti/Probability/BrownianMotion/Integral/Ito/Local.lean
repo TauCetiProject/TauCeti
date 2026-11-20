@@ -18,12 +18,12 @@ import TauCeti.Probability.Process.StoppingApproximation
 /-!
 # Stopping and localizing the Brownian Itô integral process
 
-This file proves stability of `TauCeti.IsItoIntegral` under stopping at raw-filtration stopping
-times (`stoppedProcess`, `ite_Ioc`, `ite_Ioc_mul`) without assuming path continuity of `W` or
-adaptation of `I`, deduces local congruence on `[0, τ]` (`stoppedProcess_indist_of_ae_eq`) and the
-native local-martingale property (`locally_martingale`), and constructs predictable almost surely
-continuous local-martingale Itô integral processes across `TauCeti.LocallyBrownianIntegrable`
-(`LocallyBrownianIntegrable.exists_isItoIntegral`).
+This file proves stability of `TauCeti.Probability.IsItoIntegral` under stopping at raw-filtration
+stopping times (`stoppedProcess`, `ite_Ioc`, `ite_Ioc_mul`) without assuming path continuity of `W`
+or adaptation of `I`, deduces local congruence on `[0, τ]` (`stoppedProcess_indist_of_ae_eq`) and
+the native local-martingale property (`locally_martingale`), and constructs predictable
+almost surely continuous local-martingale Itô integral processes across
+`TauCeti.LocallyBrownianIntegrable` (`LocallyBrownianIntegrable.exists_isItoIntegral`).
 
 ## References
 
@@ -46,13 +46,13 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
 
 private theorem stoppedProcess_dyadicCeilTime
     (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) (hτ : IsStoppingTime ℱ τ) (d : ℕ) :
-    IsItoIntegral ℱ P W
+    (hI : Probability.IsItoIntegral ℱ P W H I) (hτ : IsStoppingTime ℱ τ) (d : ℕ) :
+    Probability.IsItoIntegral ℱ P W
       (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ dyadicCeilTime d (τ ω) then H t ω else 0)
       (stoppedProcess I (fun ω ↦ dyadicCeilTime d (τ ω))) := by
   refine ⟨hI.isStronglyPredictable.ite_le (hτ.dyadicCeilTime d),
     hI.ae_continuous.mono fun _ hc ↦ hc.stoppedProcess, fun T ↦ ?_⟩
-  obtain ⟨n, g, a, hg, ha, hE, _⟩ := hI.exists_seq_approx T
+  obtain ⟨n, g, a, hg, ha, hE, _⟩ := hI.exists_approx T
   choose N r b _ hr hb _ hhold hgains using fun m ↦
     Finance.exists_simpleHolding_simpleGains_stoppedProcess_dyadicCeilTime hτ d T (hg m) (ha m)
   refine ⟨N, r, b, fun m ↦ (hr m).monotoneOn, hb, fun ε hε ↦
@@ -73,11 +73,11 @@ private theorem stoppedProcess_dyadicCeilTime
           simpa only [mem_ofPred_eq, eval_dyadicGrid_dyadicStopIndex,
             hgains m W T le_rfl ω] using hω).trans (measure_biUnion_finset_le S _)
 
-namespace IsItoIntegral
+namespace Probability.IsItoIntegral
 
 /-- **Stopping an Itô integral.** Against a filtered pre-Brownian motion, stopping an Itô integral
 at a stopping time `τ` on the raw filtration yields an Itô integral of `H · 1_{[0, τ]}`. -/
-theorem stoppedProcess (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem stoppedProcess (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hτ : IsStoppingTime ℱ τ) :
     IsItoIntegral ℱ P W (fun t ω ↦ if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
       (MeasureTheory.stoppedProcess I τ) := by
@@ -93,7 +93,7 @@ theorem stoppedProcess (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
 
 /-- **Restricting an Itô integral to `(σ, τ]`.** Against a filtered pre-Brownian motion, restricting
 an integrand `H` to `(σ, τ]` yields `stoppedProcess I τ - stoppedProcess I (σ ⊓ τ)`. -/
-theorem ite_Ioc {σ : Ω → WithTop ℝ≥0} (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem ite_Ioc {σ : Ω → WithTop ℝ≥0} (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hσ : IsStoppingTime ℱ σ) (hτ : IsStoppingTime ℱ τ) :
     IsItoIntegral ℱ P W
       (fun t ω ↦ if σ ω < t ∧ (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0)
@@ -105,7 +105,7 @@ theorem ite_Ioc {σ : Ω → WithTop ℝ≥0} (hW : Probability.IsFilteredPreBro
 /-- **Predictable `ℱ s`-multiplier rule on `(s, τ]`.** Against a filtered pre-Brownian motion,
 multiplying `H` on `(s, τ]` by an `ℱ s`-measurable `ξ` yields the Itô integral
 `t ↦ ξ * (stoppedProcess I τ t - stoppedProcess I τ (min s t))`. -/
-theorem ite_Ioc_mul (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem ite_Ioc_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (s : ℝ≥0) (hτ : IsStoppingTime ℱ τ)
     {ξ : Ω → ℝ} (hξ : StronglyMeasurable[ℱ s] ξ) :
     IsItoIntegral ℱ P W
@@ -120,9 +120,9 @@ theorem ite_Ioc_mul (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
 /-- **Local congruence of Itô integrals.** Against a filtered pre-Brownian motion and at a stopping
 time `τ`, two Itô integrals whose integrands agree `(timeMeasure T).prod P`-almost everywhere on
 `[0, τ]` for every finite horizon `T` have indistinguishable stopped processes. -/
-theorem stoppedProcess_indist_of_ae_eq (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem stoppedProcess_indist_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) (hτ : IsStoppingTime ℱ τ)
-    (hHK : ∀ T : ℝ≥0, ∀ᵐ p ∂(Probability.timeMeasure T).prod P,
+    (hHK : ∀ T : ℝ≥0, ∀ᵐ p ∂(timeMeasure T).prod P,
       (p.1 : WithTop ℝ≥0) ≤ τ p.2 → H p.1 p.2 = K p.1 p.2) :
     MeasureTheory.stoppedProcess I τ ≡ᵐ[P] MeasureTheory.stoppedProcess J τ :=
   (hI.stoppedProcess hW hτ).indist_of_ae_eq_prod hW (hJ.stoppedProcess hW hτ) fun T ↦
@@ -130,7 +130,7 @@ theorem stoppedProcess_indist_of_ae_eq (hW : Probability.IsFilteredPreBrownianRe
 
 /-- **Local martingale property of the Itô integral.** Every strongly progressive Itô integral
 against a filtered pre-Brownian motion is a native local martingale on the raw filtration. -/
-theorem locally_martingale (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem locally_martingale (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hProg : IsStronglyProgressive ℱ I) :
     Locally (fun U ↦ Martingale U ℱ P) ℱ I P := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -142,7 +142,7 @@ theorem locally_martingale (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     rw [stoppedProcess_indicator_comm']
     exact (Set.indicator_of_mem (nnvolume.energyLocalizer_pos H (by positivity) ω) _).symm
 
-end IsItoIntegral
+end Probability.IsItoIntegral
 
 /-- **Existence of the localized Brownian Itô integral process.** Against a filtered pre-Brownian
 motion `W` with almost surely continuous paths, every `LocallyBrownianIntegrable` integrand admits
@@ -150,7 +150,7 @@ a predictable almost surely continuous local-martingale Itô integral on the raw
 theorem LocallyBrownianIntegrable.exists_isItoIntegral
     (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (hH : LocallyBrownianIntegrable ℱ P H) :
-    ∃ I : ℝ≥0 → Ω → ℝ, IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧
+    ∃ I : ℝ≥0 → Ω → ℝ, Probability.IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧
       Locally (fun U ↦ Martingale U ℱ P) ℱ I P := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure; have hτ := hH.isLocalizingSequence_energyLocalizer
   choose U hU_ito hU_pred _ using fun n : ℕ ↦
@@ -165,14 +165,16 @@ theorem LocallyBrownianIntegrable.exists_isItoIntegral
   obtain ⟨I, hI_pred, hIX⟩ :=
     hX_prog.stronglyAdapted.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
       (hX_cont.mono fun _ hc ↦ hc.isLeftContinuous)
-  have hI_ito : IsItoIntegral ℱ P W H I := IsItoIntegral.of_seq hH.isStronglyPredictable
-    (by filter_upwards [hX_cont, hIX] with _ hc hω using hc.congr fun t ↦ (hω t).symm) hU_ito
-    (fun T _ hε ↦ hH.tendsto_measure_lintegral_energyLocalizer T hε) fun T ↦
-    tendstoInMeasure_of_tendsto_ae (fun n ↦ ((hU_pred n).isStronglyProgressive.stronglyAdapted T
-      |>.mono (ℱ.le T)).aestronglyMeasurable) (by
-      filter_upwards [hτ.tendsto_top, hIX, ae_all_iff.2 hX_stop] with ω hlim hIXω hstop
-      exact tendsto_const_nhds.congr' <| ((WithTop.tendsto_nhds_top_iff _).1 hlim T).mono fun n hn ↦
-        by dsimp only; rw [← hstop n T, stoppedProcess_eq_of_le hn.le, hIXω T])
+  have hI_ito : Probability.IsItoIntegral ℱ P W H I :=
+    Probability.IsItoIntegral.of_seq hH.isStronglyPredictable
+      (by filter_upwards [hX_cont, hIX] with _ hc hω using hc.congr fun t ↦ (hω t).symm) hU_ito
+      (fun T _ hε ↦ hH.tendsto_measure_lintegral_energyLocalizer T hε) fun T ↦
+      tendstoInMeasure_of_tendsto_ae (fun n ↦ ((hU_pred n).isStronglyProgressive.stronglyAdapted T
+        |>.mono (ℱ.le T)).aestronglyMeasurable) (by
+        filter_upwards [hτ.tendsto_top, hIX, ae_all_iff.2 hX_stop] with ω hlim hIXω hstop
+        exact tendsto_const_nhds.congr' <|
+          ((WithTop.tendsto_nhds_top_iff _).1 hlim T).mono fun n hn ↦ by
+            dsimp only; rw [← hstop n T, stoppedProcess_eq_of_le hn.le, hIXω T])
   exact ⟨I, hI_ito, hI_pred, hI_ito.locally_martingale hW hI_pred.isStronglyProgressive⟩
 
 end TauCeti

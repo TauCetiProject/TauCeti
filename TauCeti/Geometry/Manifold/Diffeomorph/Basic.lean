@@ -18,11 +18,12 @@ The differentials of a diffeomorphism and its inverse undo each other, and the d
 diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
-assumptions, and the tangent images of a map, the ranges of its differentials, are unchanged by
-precomposition with a diffeomorphism and are mapped by the differential under postcomposition.
-These facts support inverse isometries and transport of curve differentiability through
-diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
-diffeomorphism is also characterized, for composition with partial coordinates.
+assumptions, injectivity of the differential is preserved by precomposition and postcomposition,
+and the tangent images of a map, the ranges of its differentials, are unchanged by precomposition
+with a diffeomorphism and are mapped by the differential under postcomposition.
+These facts support inverse isometries, calibrated immersions, and transport of curve
+differentiability through diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as
+a partial diffeomorphism is also characterized, for composition with partial coordinates.
 -/
 
 public section
@@ -83,8 +84,8 @@ original tangent vector. -/
 theorem tangentMap_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (z : TangentBundle I M) :
     tangentMap J I h.symm (tangentMap I J h z) = z := by
-  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable hn) (h z.1))
-    ((h.mdifferentiable hn) z.1)]
+  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable hn) (h z.proj))
+    ((h.mdifferentiable hn) z.proj)]
   have hinv : (h.symm : N → M) ∘ h = id := funext h.symm_apply_apply
   rw [hinv]
   exact congrFun tangentMap_id z
@@ -200,6 +201,22 @@ theorem range_mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
   rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.toLinearMap_comp,
     LinearMap.range_comp_of_range_eq_top]
   exact LinearMap.range_eq_top.mpr (h.isInvertible_mfderiv hn).surjective
+
+/-- Postcomposition with a diffeomorphism preserves injectivity of the differential at the point.
+No differentiability of `f` is assumed. -/
+theorem mfderiv_diffeomorph_comp_injective_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {f : P → M}
+    {x : P} :
+    Function.Injective (mfderiv K J (h ∘ f) x) ↔ Function.Injective (mfderiv K I f x) := by
+  rw [h.mfderiv_diffeomorph_comp hn, ContinuousLinearMap.coe_comp]
+  exact (h.isInvertible_mfderiv hn).injective.of_comp_iff _
+
+/-- Precomposition with a diffeomorphism preserves injectivity of the differential at the
+corresponding point. No differentiability of `f` is assumed. -/
+theorem mfderiv_comp_diffeomorph_injective_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {f : N → P}
+    {x : M} :
+    Function.Injective (mfderiv I K (f ∘ h) x) ↔ Function.Injective (mfderiv J K f (h x)) := by
+  rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.coe_comp]
+  exact Function.Injective.of_comp_iff' _ (h.isInvertible_mfderiv hn).bijective
 
 end TangentImage
 

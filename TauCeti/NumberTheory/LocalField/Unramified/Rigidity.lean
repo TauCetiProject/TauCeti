@@ -105,7 +105,7 @@ theorem IsUnramified.residueFieldHom_bijective :
   -- Lift the image under `φ` of the residue of `ζ` to an `N`-th root of unity `ξ` of `𝒪[M]`.
   have hφ : φ (residue 𝒪[L] z) ^ N = 1 := by rw [← map_pow, ← map_pow, hz.pow_eq_one, map_one,
     map_one]
-  obtain ⟨u, hu⟩ := rootsOfUnityResidue_surjective hNM (rootsOfUnity.mkOfPowEq _ hφ)
+  obtain ⟨u, hu⟩ := rootsOfUnityResidue_surjective (rootsOfUnity.mkOfPowEq _ hφ)
   have hres : residue 𝒪[M] ((u : 𝒪[M]ˣ) : 𝒪[M]) = φ (residue 𝒪[L] z) := by
     simpa using congrArg (fun v : rootsOfUnity N 𝓀[M] ↦ ((v : 𝓀[M]ˣ) : 𝓀[M])) hu
   -- The image under `φ` of the residue of `ζ` is a root of the reduction of the minimal
@@ -118,7 +118,7 @@ theorem IsUnramified.residueFieldHom_bijective :
   -- So `ζ ↦ ξ` defines a `K`-embedding, whose residue map agrees with `φ` on the residue of `ζ`.
   have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 := by
     have hgξ := aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
-      ((mem_rootsOfUnity' N _).1 u.2) hgφ
+      ((mem_rootsOfUnity' N _).1 u.property) hgφ
     rw [hpbgen, minpoly.isIntegrallyClosed_eq_field_fractions' K hζO,
       aeval_map_algebraMap, ← Algebra.algebraMap_ofSubsemiring_apply, aeval_algebraMap_apply,
       hgξ, map_zero]

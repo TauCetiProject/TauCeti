@@ -22,6 +22,8 @@ any finite family, preserving both holdings and gains against every price path. 
 bottom time and has strictly increasing dates, including when some input intervals are empty or
 reversed. The new heights are bounded pointwise by the sum of the original absolute heights;
 thus boundedness and Lᵖ control survive refinement without additional moment assumptions.
+`exists_simpleHolding_simpleGains_eq_sub` specializes this to the difference of two simple
+strategies on monotone grids, subtracting both their holdings and their gains.
 
 This bridges finite sums of predictable rectangles and finite-grid trading strategies. In
 particular, `exists_simpleHolding_simpleGains_sub` clips two finite-grid strategies to `[⊥, t]` and
@@ -220,17 +222,17 @@ theorem exists_simpleHolding_simpleGains_sub [OrderBot ι] {mΩ : MeasurableSpac
     (fun i ↦ if τ₁ i < t then a₁ i else 0) (fun i ↦ if τ₂ i < t then (-a₂) i else 0)
   have hc : ∀ k ∈ (Finset.univ : Finset (Fin n₁ ⊕ Fin n₂)), StronglyMeasurable[ℱ (l k)] (c k) := by
     rintro (i | i) _ <;> dsimp only [c, Sum.elim_inl, Sum.elim_inr] <;> split_ifs with h
-    · have hl : l (.inl i) = τ₁ i := min_eq_left h.le; exact hl ▸ ha₁ i i.2
+    · have hl : l (.inl i) = τ₁ i := min_eq_left h.le; exact hl ▸ ha₁ i i.isLt
     · exact stronglyMeasurable_zero
-    · have hl : l (.inr i) = τ₂ i := min_eq_left h.le; exact hl ▸ (ha₂ i i.2).neg
+    · have hl : l (.inr i) = τ₂ i := min_eq_left h.le; exact hl ▸ (ha₂ i i.isLt).neg
     · exact stronglyMeasurable_zero
   obtain ⟨N, g, b, hg0, hg, hb, hb_norm, hhold, hgains⟩ :=
     exists_simpleHolding_simpleGains_eq_sum ℱ Finset.univ l u c hc
   let grid (j : ℕ) : ι := min (g j) t
   let height (j : ℕ) : Ω → ℝ := if g j < t then b j else 0
   have hlu : ∀ k : Fin n₁ ⊕ Fin n₂, l k ≤ u k
-    | .inl i => min_le_min_right t (hτ₁ i.2.le i.2 (Nat.le_succ i))
-    | .inr i => min_le_min_right t (hτ₂ i.2.le i.2 (Nat.le_succ i))
+    | .inl i => min_le_min_right t (hτ₁ i.isLt.le i.isLt (Nat.le_succ i))
+    | .inr i => min_le_min_right t (hτ₂ i.isLt.le i.isLt (Nat.le_succ i))
   have hut : ∀ k : Fin n₁ ⊕ Fin n₂, u k ≤ t := by rintro (i | i) <;> exact min_le_right _ _
   refine ⟨N, grid, height, by simp [grid, hg0],
     fun i hi j hj hij ↦ min_le_min_right t (hg.monotoneOn hi hj hij),
@@ -259,5 +261,38 @@ theorem exists_simpleHolding_simpleGains_sub [OrderBot ι] {mΩ : MeasurableSpac
     rw [sub_eq_add_neg, ← simpleGains_neg, ← sum_ite_lt_mul_sub_min_eq_simpleGains hτ₁ X t ω,
       ← sum_ite_lt_mul_sub_min_eq_simpleGains (b := -a₂) hτ₂ X t ω,
       ← Fin.sum_univ_eq_sum_range, ← Fin.sum_univ_eq_sum_range]
+
+/-- The difference of two simple strategies is one simple strategy on a strictly increasing
+common grid starting at the bottom time, with heights still chosen at the left endpoints of
+their intervals. Holdings and gains against every price path are subtracted. -/
+theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableSpace Ω}
+    (ℱ : Filtration ι mΩ) {τ σ : ℕ → ι} {n m : ℕ} {a b : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (hσ : MonotoneOn σ (Set.Iic m))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < m, StronglyMeasurable[ℱ (σ j)] (b j)) :
+    ∃ (N : ℕ) (ρ : ℕ → ι) (c : ℕ → Ω → ℝ),
+      ρ 0 = ⊥ ∧ StrictMonoOn ρ (Set.Iic N) ∧
+      (∀ j < N, StronglyMeasurable[ℱ (ρ j)] (c j)) ∧
+      (∀ t ω, simpleHolding ρ N c t ω = simpleHolding τ n a t ω - simpleHolding σ m b t ω) ∧
+      ∀ (X : ι → Ω → ℝ) t ω, simpleGains ρ N c X t ω =
+        simpleGains τ n a X t ω - simpleGains σ m b X t ω := by
+  obtain ⟨N, ρ, c, hρ₀, hρ, hc, -, hhold, hgain⟩ := exists_simpleHolding_simpleGains_eq_sum ℱ
+    ((range n).disjSum (range m)) (Sum.elim τ σ) (Sum.elim (fun j ↦ τ (j + 1)) fun j ↦ σ (j + 1))
+    (Sum.elim a fun j ω ↦ -b j ω) (by
+      rintro (j | j) hj <;> simp only [inl_mem_disjSum, inr_mem_disjSum, mem_range] at hj
+      · exact ha j hj
+      · exact (hb j hj).neg)
+  refine ⟨N, ρ, c, hρ₀, hρ, hc, fun t ω ↦ ?_, fun X t ω ↦ ?_⟩
+  · rw [hhold, sum_disjSum, simpleHolding_def, simpleHolding_def, sub_eq_add_neg,
+      ← sum_neg_distrib]
+    simp only [Sum.elim_inl, Sum.elim_inr]
+    congr 1
+    refine sum_congr rfl fun j _ ↦ ?_
+    by_cases ht : t ∈ Set.Ioc (σ j) (σ (j + 1)) <;> simp [ht]
+  · rw [hgain, sum_disjSum, simpleGains_def, simpleGains_def, sub_eq_add_neg, ← sum_neg_distrib]
+    simp only [Sum.elim_inl, Sum.elim_inr]
+    congr 1 <;> refine sum_congr rfl fun j hj ↦ ?_
+    · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
+    · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
 end TauCeti.Finance

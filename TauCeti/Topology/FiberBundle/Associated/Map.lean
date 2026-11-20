@@ -65,7 +65,7 @@ theorem map_mk (f : F →[G] F') {b : B} (p : P b) (v : F) :
 /-- The map induced on total spaces by an equivariant fibre map. -/
 def totalSpaceMap (f : F →[G] F') (v : TotalSpace F (AssociatedBundle G P F)) :
     TotalSpace F' (AssociatedBundle G P F') :=
-  ⟨v.proj, map f v.2⟩
+  ⟨v.proj, map f v.snd⟩
 
 @[simp]
 theorem totalSpaceMap_proj (f : F →[G] F') (v : TotalSpace F (AssociatedBundle G P F)) :

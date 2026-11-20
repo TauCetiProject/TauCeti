@@ -10,8 +10,8 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 public import TauCeti.Probability.Process.ElementaryDensity
 public import TauCeti.Probability.Process.Predictable.Measure
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Function.LpSeminorm.Truncation
+import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
@@ -242,8 +242,8 @@ theorem exists_seq_simpleHolding_ae_tendsto_lintegral_eNorm_sub_sq
       2 * E m ω + 2 * ∫⁻ t, ‖K m t ω - H t ω‖ₑ ^ 2 ∂ν := by
     have hmω : Measurable (fun t ↦ ‖L m t ω - K m t ω‖ₑ ^ 2) :=
       (hmeas m).comp (measurable_id.prodMk (measurable_const (a := ω)))
-    simpa only [E, eNorm_sub_rev (H _ ω)] using TauCeti.lintegral_enorm_sq_sub_le_two_mul
-      (μ := ν) (fun t ↦ L m t ω) (fun t ↦ H t ω) (fun t ↦ K m t ω) hmω.aemeasurable
+    simpa only [eNorm_sub_rev (H _ ω), mul_add] using
+      TauCeti.lintegral_enorm_sub_sq_le_two_mul (g := fun t ↦ H t ω) hmω.aemeasurable
   have hlim := (ENNReal.Tendsto.const_mul (a := 2) hEω (Or.inr (by norm_num))).add
     (ENNReal.Tendsto.const_mul (a := 2) hKω (Or.inr (by norm_num)))
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds

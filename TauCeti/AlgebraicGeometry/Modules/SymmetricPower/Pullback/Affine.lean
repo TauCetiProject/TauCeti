@@ -58,10 +58,10 @@ variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
 -- monomial. The degree of a monomial in the image of a list map is not definitionally its length.
 private lemma tildeSymmetricPowerIso_hom_toOpen_of_eq_prod (M : ModuleCat.{u} R)
     (U : (Spec R).Opens) (l : List M) {n : ℕ} (hl : l.length = n) (x : M.symmetricPower n)
-    (hx : x.1 = (l.map (SymmetricAlgebra.ι R M)).prod)
+    (hx : x.val = (l.map (SymmetricAlgebra.ι R M)).prod)
     (y : (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val
       (.op U)).symmetricPower n)
-    (hy : y.1 = (l.map fun m ↦ SymmetricAlgebra.ι ((Spec R).presheaf.obj (.op U))
+    (hy : y.val = (l.map fun m ↦ SymmetricAlgebra.ι ((Spec R).presheaf.obj (.op U))
       (PresheafOfModulesOfCommRing.obj (R := (Spec R).presheaf) (tilde M).val (.op U))
       (tilde.toOpen M U m)).prod) :
     (tildeSymmetricPowerIso n M).hom.val.app (.op U) (tilde.toOpen (M.symmetricPower n) U x) =

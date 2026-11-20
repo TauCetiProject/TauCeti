@@ -372,7 +372,7 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
   let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
   let f (i : Fin n) (p : ℝ≥0 × Ω) := (Ioc (τ i) (τ (i + 1))).indicator (fun _ ↦ a i p.2) p.1
   have hmi (i : Fin n) := ℱ.memLp_indicator_Ioc_predictableMeasure P T (τ i) (τ (i + 1))
-    (ha i i.2) (ha₂ i i.2)
+    (ha i i.isLt) (ha₂ i i.isLt)
   have hms' : MemLp (fun p ↦ ∑ i : Fin n, f i p) 2 (ℱ.predictableMeasure P T) :=
     memLp_finsetSum Finset.univ fun i _ ↦ hmi i
   rw [(MemLp.toLp_congr (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T) hms'
@@ -382,10 +382,11 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
   filter_upwards [Lp.coeFn_fun_finsetSum Finset.univ fun i : Fin n ↦ hW.l2Integral T
       ((hmi i).toLp (f i)),
     ae_all_iff.2 fun i : Fin n ↦
-      hW.coeFn_l2Integral_indicator_Ioc T (τ i) (τ (i + 1)) (ha i i.2) (ha₂ i i.2)] with ω hfin hi
+      hW.coeFn_l2Integral_indicator_Ioc T (τ i) (τ (i + 1)) (ha i i.isLt)
+        (ha₂ i i.isLt)] with ω hfin hi
   rw [hfin, Finance.simpleGains_def, ← Fin.sum_univ_eq_sum_range]
   refine Finset.sum_congr rfl fun i _ ↦ (hi i).trans ?_
-  have hle : τ i ≤ τ (i + 1) := hτ i.2.le i.2 (Nat.le_succ i)
+  have hle : τ i ≤ τ (i + 1) := hτ i.isLt.le i.isLt (Nat.le_succ i)
   rcases le_total (τ i) T with hiT | hTi
   · rw [min_eq_left hiT, max_eq_right (le_min hle hiT)]
   · rw [min_eq_right hTi, min_eq_right (hTi.trans hle), max_eq_left hTi, sub_self, sub_self]

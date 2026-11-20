@@ -21,7 +21,7 @@ import TauCeti.Probability.Martingale.ContinuousLimit
 # The square-integrable Itô integral process and Itô's isometry
 
 Where `MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)`, this file identifies
-`TauCeti.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
+`TauCeti.Probability.IsItoIntegral` almost surely with `IsFilteredPreBrownianReal.l2Integral`
 (`ae_eq_l2Integral`) and deduces `L²` membership (`memLp_two`), zero expectation
 (`integral_eq_zero`), covariance (`integral_mul`), Itô's isometry (`integral_sq`), and for
 deterministic `L²` integrands identification with `wienerIntegral` (`ae_eq_wienerIntegral`) and its
@@ -47,13 +47,13 @@ namespace TauCeti
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
   {P : Measure Ω} {W H K I J : ℝ≥0 → Ω → ℝ}
 
-namespace IsItoIntegral
+namespace Probability.IsItoIntegral
 
 /-- Against a filtered pre-Brownian motion, every Itô integral of an integrand with finite expected
 square energy on `(0, t]` agrees almost surely at `t` with `hW.l2Integral t`. -/
-theorem ae_eq_l2Integral (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)) :
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
     I t =ᵐ[P] hW.l2Integral t
       (((ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).2 hH).toLp
         (Function.uncurry H)) := by
@@ -74,9 +74,9 @@ theorem ae_eq_l2Integral (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
 
 /-- Against a filtered pre-Brownian motion, every Itô integral of a deterministic `L²` integrand
 `u` agrees almost surely at horizon `t` with `hW.toIsPreBrownianReal.wienerIntegral`. -/
-theorem ae_eq_wienerIntegral (hW : Probability.IsFilteredPreBrownianReal ℱ W P) {u : ℝ≥0 → ℝ}
+theorem ae_eq_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ W P) {u : ℝ≥0 → ℝ}
     (hI : IsItoIntegral ℱ P W (fun s _ ↦ u s) I) {t : ℝ≥0}
-    (hu : MemLp u 2 (Probability.timeMeasure t)) :
+    (hu : MemLp u 2 (timeMeasure t)) :
     I t =ᵐ[P] hW.toIsPreBrownianReal.wienerIntegral t (hu.toLp u) := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   have h := hI.ae_eq_l2Integral hW (hu.comp_measurePreserving measurePreserving_fst)
@@ -86,11 +86,11 @@ theorem ae_eq_wienerIntegral (hW : Probability.IsFilteredPreBrownianReal ℱ W P
 
 /-- Against a filtered pre-Brownian motion, every Itô integral of a deterministic `L²` integrand
 `u` is centered Gaussian at horizon `t` with variance `∫ s, u s ^ 2 ∂Probability.timeMeasure t`. -/
-theorem hasLaw_gaussianReal (hW : Probability.IsFilteredPreBrownianReal ℱ W P) {u : ℝ≥0 → ℝ}
+theorem hasLaw_gaussianReal (hW : IsFilteredPreBrownianReal ℱ W P) {u : ℝ≥0 → ℝ}
     (hI : IsItoIntegral ℱ P W (fun s _ ↦ u s) I) {t : ℝ≥0}
-    (hu : MemLp u 2 (Probability.timeMeasure t)) :
-    HasLaw (I t) (gaussianReal 0 (Real.toNNReal (∫ s, u s ^ 2 ∂Probability.timeMeasure t))) P := by
-  have hvar : ‖hu.toLp u‖₊ ^ 2 = Real.toNNReal (∫ s, u s ^ 2 ∂Probability.timeMeasure t) :=
+    (hu : MemLp u 2 (timeMeasure t)) :
+    HasLaw (I t) (gaussianReal 0 (Real.toNNReal (∫ s, u s ^ 2 ∂timeMeasure t))) P := by
+  have hvar : ‖hu.toLp u‖₊ ^ 2 = Real.toNNReal (∫ s, u s ^ 2 ∂timeMeasure t) :=
     NNReal.eq <| by
       simpa only [NNReal.coe_pow, coe_nnNorm, Real.norm_eq_abs, sq_abs, hu.norm_toLp_sq] using
         (Real.coe_toNNReal _ (integral_nonneg fun _ ↦ sq_nonneg _)).symm
@@ -98,26 +98,26 @@ theorem hasLaw_gaussianReal (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     (hI.ae_eq_wienerIntegral hW hu)
 
 /-- Every Itô integral with finite expected square energy on `(0, t]` lies in `L²(P)`. -/
-theorem memLp_two (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem memLp_two (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)) : MemLp (I t) 2 P :=
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) : MemLp (I t) 2 P :=
   (Lp.memLp _).ae_eq (hI.ae_eq_l2Integral hW hH).symm
 
 /-- Every Itô integral against `W` with finite expected square energy on `(0, t]` has zero mean. -/
-theorem integral_eq_zero (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem integral_eq_zero (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)) : ∫ ω, I t ω ∂P = 0 :=
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) : ∫ ω, I t ω ∂P = 0 :=
   (integral_congr_ae (hI.ae_eq_l2Integral hW hH)).trans (hW.integral_l2Integral t _)
 
 /-- **Itô's covariance identity.** Against a filtered pre-Brownian motion, the inner product of two
 Itô integrals at horizon `t` with finite expected square energy on `(0, t]` equals the time-product
 integral of `H * K` on `(0, t] × Ω`. -/
-theorem integral_mul (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem integral_mul (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P))
-    (hK : MemLp (Function.uncurry K) 2 ((Probability.timeMeasure t).prod P)) :
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
+    (hK : MemLp (Function.uncurry K) 2 ((timeMeasure t).prod P)) :
     ∫ ω, I t ω * J t ω ∂P =
-      ∫ p, H p.1 p.2 * K p.1 p.2 ∂(Probability.timeMeasure t).prod P := by
+      ∫ p, H p.1 p.2 * K p.1 p.2 ∂(timeMeasure t).prod P := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   let hHp := (ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable t 2).2 hH
   let hKp := (ℱ.memLp_predictableMeasure_iff P hJ.isStronglyPredictable t 2).2 hK
@@ -132,15 +132,15 @@ theorem integral_mul (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
 
 /-- **Itô's `L²` isometry.** The second moment of an Itô integral at horizon `t` with finite
 expected square energy on `(0, t]` equals its expected square energy on `(0, t] × Ω`. -/
-theorem integral_sq (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem integral_sq (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) {t : ℝ≥0}
-    (hH : MemLp (Function.uncurry H) 2 ((Probability.timeMeasure t).prod P)) :
-    ∫ ω, I t ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(Probability.timeMeasure t).prod P := by
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    ∫ ω, I t ω ^ 2 ∂P = ∫ p, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
   simpa only [sq] using hI.integral_mul hW hI hH hH
 
 /-- Against a filtered pre-Brownian motion, any strongly adapted Itô integral of a
 `BrownianIntegrable` integrand is a true martingale on the raw filtration. -/
-theorem martingale (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+theorem martingale (hW : IsFilteredPreBrownianReal ℱ W P)
     (hI : IsItoIntegral ℱ P W H I) (hH : BrownianIntegrable ℱ P H)
     (hAdapt : StronglyAdapted ℱ I) : Martingale I ℱ P := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
@@ -155,14 +155,14 @@ theorem martingale (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
         (hhold t)).congr fun _ ↦ eLpNorm_congr_ae
           (EventuallyEq.rfl.sub (hI.ae_eq_l2Integral hW (hH.memLp_timeMeasure t)).symm)
 
-end IsItoIntegral
+end Probability.IsItoIntegral
 
 /-- **Existence of the `L²` Brownian Itô integral process.** Against a filtered pre-Brownian motion
 `W` with almost surely continuous paths, every `BrownianIntegrable` integrand admits a predictable
 almost surely continuous martingale Itô integral on the raw filtration. -/
 theorem BrownianIntegrable.exists_isItoIntegral (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
     (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (hH : BrownianIntegrable ℱ P H) :
-    ∃ I : ℝ≥0 → Ω → ℝ, IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧
+    ∃ I : ℝ≥0 → Ω → ℝ, Probability.IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧
       Martingale I ℱ P := by
   let := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n, τ, a, C, -, hτ, ha, hb, hhold⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
@@ -173,7 +173,7 @@ theorem BrownianIntegrable.exists_isItoIntegral (hW : Probability.IsFilteredPreB
   obtain ⟨I, hImart, hIpred, hIlim, _, _, _, hIpath⟩ := exists_continuous_martingale_of_cauchySeq_Lp
     (p := 2) (fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
       ⟨C m, .of_forall fun ω ↦ by simpa only [Real.norm_eq_abs] using hb m j hj ω⟩)
-    (fun _ ↦ hcont.mono fun _ hω ↦ hω.simpleGains) hmem fun t ↦
+    (fun _ ↦ hcont.mono fun _ hω ↦ Finance.continuous_simpleGains hω) hmem fun t ↦
       let g := hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))
       Tendsto.cauchySeq (x := (Lp.memLp g).toLp g) <|
         (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun m ↦ hmem m t) g (Lp.memLp g)).2

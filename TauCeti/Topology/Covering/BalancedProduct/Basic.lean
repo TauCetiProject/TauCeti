@@ -203,7 +203,7 @@ theorem mapRight_comp (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a
 central element is an equivariant map of labels. -/
 instance : MulAction (Subgroup.center G) (BalancedProduct G E A) where
   smul c := mapRight ((c : G) • ·) fun g a => by
-    rw [smul_smul, smul_smul, Subgroup.mem_center_iff.mp c.2 g]
+    rw [smul_smul, smul_smul, Subgroup.mem_center_iff.mp c.property g]
   one_smul z := Quotient.inductionOn z fun ⟨e, a⟩ =>
     (mapRight_mk _ _ e a).trans (congrArg (mk G e) (one_smul G a))
   mul_smul c c' z := Quotient.inductionOn z fun ⟨e, a⟩ =>
@@ -418,14 +418,14 @@ noncomputable def fiberEquiv [IsCancelSMul G E]
     A ≃ proj A hq ⁻¹' {x} := by
   refine Equiv.ofBijective (fun a => ⟨mk G (e : E) a, ?_⟩) ⟨?_, ?_⟩
   · rw [Set.mem_preimage, Set.mem_singleton_iff, proj_mk]
-    exact e.2
+    exact e.property
   · intro a a' hEq
     obtain ⟨g, hg, rfl⟩ := mk_eq_mk_iff.mp (congrArg Subtype.val hEq)
     rw [IsCancelSMul.eq_one_of_smul hg, one_smul]
   · rintro ⟨z, hz⟩
     obtain ⟨⟨w, b⟩, rfl⟩ := Quotient.mk''_surjective z
     rw [Set.mem_preimage, Set.mem_singleton_iff, proj_mk] at hz
-    obtain ⟨g, hge⟩ := MulAction.mem_orbit_iff.mp (hfiber (hz.trans e.2.symm))
+    obtain ⟨g, hge⟩ := MulAction.mem_orbit_iff.mp (hfiber (hz.trans e.property.symm))
     exact ⟨g⁻¹ • b, Subtype.ext <| by dsimp only; rw [← mk_smul_left, hge]⟩
 
 variable (A) in
