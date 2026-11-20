@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
-import TauCeti.Analysis.ODE.Yorke
-import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.Geometry.Symplectic.Hamiltonian.SmallPeriodicOrbit
 
 /-!
 # The energy of Floer trajectories of small autonomous Hamiltonians
@@ -18,10 +17,10 @@ solutions `u : ℝ × ℝ → V` of `∂_s u + J (∂_t u - ε X_F(u)) = 0` with
 uniformly tame almost complex structures `J z`. When `F` is a Morse function and `ε` is small,
 these are the cylinders whose counts are compared with the Morse trajectories of `F`.
 
-This file shows that for `ε` small, depending only on `ω`, `F` and `K`, the two ends of every
-finite-energy Floer trajectory of `ε F` with loops in `K` are rest points `x₀`, `x₁ ∈ K` of the
-Hamiltonian vector field of `ε F`, that is, critical points of `F` when `ε ≠ 0`, and that its
-energy is
+This file shows that for `ε` small, depending only on `ω`, `F` and `K`, the limiting actions at
+the two ends of every finite-energy Floer trajectory of `ε F` with loops in `K` are `ε F(x₀)` and
+`ε F(x₁)` for rest points `x₀`, `x₁ ∈ K` of the Hamiltonian vector field of `ε F`, that is,
+critical points of `F` when `ε ≠ 0`, and that its energy is
 
 `E(u) = ε (F(x₁) - F(x₀))`
 
@@ -31,15 +30,13 @@ so for every `δ > 0` it is at most `δ` once `ε` is small enough
 (`TauCeti.SymplecticForm.exists_pos_forall_lintegral_floerEnergyDensity_const_mul_le`). No energy
 bound is assumed beyond finiteness, and `J` may depend on the domain point.
 
-Two inputs combine. The ends of a finite-energy Floer trajectory are realized by `1`-periodic
-orbits in `K`, and its energy is the difference of their actions
+Two inputs combine. The limiting actions at the two ends of a finite-energy Floer trajectory are
+realized by `1`-periodic orbits in `K`, and its energy is the difference of their actions
 (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq`). The
 `1`-periodic orbits of `ε F` in `K` are constant once `ε` is small
-(`TauCeti.SymplecticForm.exists_pos_forall_eq_const_of_periodic_hamiltonianVectorField_const_mul`):
-the field `ε X_F` is `|ε| L`-Lipschitz on `K`, and a `1`-periodic orbit of a field that is
-Lipschitz with a small constant along it is constant by Yorke's period bound
-(`TauCeti.exists_pos_forall_periodic_eq_const_of_lipschitzOnWith`). The action of the constant
-loop at `x` is `ε F(x)` (`TauCeti.SymplecticForm.hamiltonianAction_const`).
+(`TauCeti.SymplecticForm.exists_pos_forall_eq_const_of_periodic_hamiltonianVectorField_const_mul`,
+by Yorke's period bound). The action of the constant loop at `x` is `ε F(x)`
+(`TauCeti.SymplecticForm.hamiltonianAction_const`).
 
 On a closed manifold the corresponding statement about the `1`-periodic orbits of `ε F` is
 `exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints` in the
@@ -48,11 +45,10 @@ space, the local model of a symplectic manifold.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.exists_pos_forall_eq_const_of_periodic_hamiltonianVectorField_const_mul`:
-  for small `ε`, the `1`-periodic orbits of `ε F` in a bounded set are constant.
 * `TauCeti.SymplecticForm.exists_pos_forall_lintegral_floerEnergyDensity_const_mul_eq`: for small
-  `ε`, a finite-energy Floer trajectory of `ε F` in `K` runs between rest points `x₀`, `x₁` of the
-  field of `ε F`, and its energy is `ε (F(x₁) - F(x₀))`.
+  `ε`, the loop actions of a finite-energy Floer trajectory of `ε F` in `K` tend to `ε F(x₀)` and
+  `ε F(x₁)` for rest points `x₀`, `x₁` of the field of `ε F`, and its energy is
+  `ε (F(x₁) - F(x₀))`.
 * `TauCeti.SymplecticForm.exists_pos_forall_lintegral_floerEnergyDensity_const_mul_le`: for every
   `δ > 0` and small `ε`, such trajectories have energy at most `δ`.
 
@@ -75,29 +71,6 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {F : V → ℝ} {K : Set V}
-
-/-- **Small autonomous Hamiltonians have only constant `1`-periodic orbits in a bounded set.** For
-a `C²` function `F` and a bounded set `K`, there is `ε₀ > 0` such that for `|ε| < ε₀` every
-`1`-periodic orbit of the Hamiltonian vector field of `ε F` with values in `K` is constant. -/
-theorem exists_pos_forall_eq_const_of_periodic_hamiltonianVectorField_const_mul
-    (hF : ContDiff ℝ 2 F) (hK : Bornology.IsBounded K) :
-    ∃ ε₀ > (0 : ℝ), ∀ ⦃ε : ℝ⦄, |ε| < ε₀ → ∀ ⦃x : ℝ → V⦄, Periodic x 1 →
-      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (fun y ↦ ε * F y) (x t)) t) →
-      (∀ t, x t ∈ K) → x = fun _ ↦ x 0 := by
-  obtain ⟨L, hL⟩ := ω.exists_forall_lipschitzOnWith_hamiltonianVectorField (H := fun _ ↦ F)
-    (hF.comp contDiff_snd) (fun _ ↦ rfl) hK
-  obtain ⟨c, hc, hyorke⟩ := exists_pos_forall_periodic_eq_const_of_lipschitzOnWith (E := V)
-  refine ⟨c / (L + 1), by positivity, fun ε hε x hper hx hxK ↦ ?_⟩
-  -- The field of `ε F` is `ε X_F`, which is `|ε| L`-Lipschitz on `K`, and `|ε| L < c`.
-  have hX : ω.hamiltonianVectorField (fun y ↦ ε * F y) = (ε • ·) ∘ ω.hamiltonianVectorField F :=
-    funext (ω.hamiltonianVectorField_const_mul ε F)
-  have hlip : LipschitzOnWith (‖ε‖₊ * L) (ω.hamiltonianVectorField (fun y ↦ ε * F y))
-      (range x) :=
-    hX ▸ (lipschitzWith_smul ε).comp_lipschitzOnWith ((hL 0).mono (range_subset_iff.2 hxK))
-  refine hyorke _ x _ 1 hper one_pos hx hlip ?_
-  have hεL : |ε| * (L + 1) < c := (lt_div_iff₀ (by positivity)).1 hε
-  simp only [NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs, mul_one]
-  nlinarith [abs_nonneg ε]
 
 /-- **The energy of a Floer trajectory of a small autonomous Hamiltonian.** Let `F` be a `C²`
 function and `K` a compact set. There is `ε₀ > 0` such that for `|ε| < ε₀` the following holds.
