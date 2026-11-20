@@ -17,6 +17,8 @@ topological space `V`, with the compact-open topology:
 uniform space is a uniform limit of locally constant functions. This is the density
 statement used to extend functionals from locally constant test functions to all continuous
 ones, for instance to extend the coefficients of measures on profinite spaces.
+`LocallyConstant.denseRange_toContinuousMapLinearMap_range_subtype` gives the dense inclusion
+of the range of the corresponding linear map, for extending linear maps defined on that range.
 
 `ContinuousMap.intCastLocallyConstant` casts integer-valued continuous functions to locally
 constant functions with values in any type with an integer cast.
@@ -56,6 +58,16 @@ theorem denseRange_toContinuousMap :
   refine ⟨_, ⟨⟨(f ∘ g) ∘ q, (IsLocallyConstant.of_discrete _).comp_continuous hq⟩, rfl⟩,
     mem_iInter₂_of_mem fun KU hKU x hx ↦ ?_⟩
   exact (mem_iInter₂.mp (hqg x) KU hKU).resolve_left (not_not_intro hx)
+
+/-- The inclusion of the range of locally constant functions into continuous functions has dense
+range on a profinite space. This formulation supports extending linear maps defined on that
+submodule. -/
+theorem denseRange_toContinuousMapLinearMap_range_subtype (R : Type*) [Semiring R]
+    [AddCommMonoid V] [Module R V] [ContinuousAdd V] [ContinuousConstSMul R V] :
+    DenseRange (toContinuousMapLinearMap R (X := X) (Y := V)).range.subtype := by
+  apply denseRange_subtype_val.mpr
+  rw [SetLike.setOfPred_mem_eq, LinearMap.coe_range]
+  exact denseRange_toContinuousMap
 
 end LocallyConstant
 

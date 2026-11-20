@@ -35,24 +35,58 @@ variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
 /-- Extension from coefficients in the closed unit ball of a field has weakly closed range. -/
 theorem isClosed_range_extendCoefficients_weak [T2Space X] [TotallyDisconnectedSpace X]
     {O K : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
-    [NontriviallyNormedField K] [CompleteSpace K] [IsUltrametricDist K]
+    [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
     (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ 1) (hje : Topology.IsEmbedding j)
     (hjr : Metric.closedBall 0 1 ⊆ Set.range j) :
     @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
-  have hball : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
-      toCLMEquiv ⁻¹' Metric.closedBall 0 1 :=
-    Set.ext fun _ ↦ (mem_range_extendCoefficients_iff hj hje hjr).trans
-      mem_closedBall_zero_iff.symm
-  rw [hball]
-  apply isClosed_induced_iff'.2
-  intro μ hμ
-  apply ContinuousLinearMap.is_weak_closed_closedBall 0 1
-  have hcoe (ν : D(X, K)) : ⇑(toCLMEquiv ν) = (fun f ↦ ν f) :=
-    funext (coe_toCLMEquiv ν)
-  rw [hcoe]
-  refine closure_mono ?_ hμ
-  rintro _ ⟨ν, hν, rfl⟩
-  exact ⟨toCLMEquiv ν, hν, hcoe ν⟩
+  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with hK | ⟨_, rfl⟩
+  · let := hK
+    classical
+    have hsurj : Function.Surjective j := fun k ↦ hjr (by simp)
+    let e := RingEquiv.ofBijective j ⟨hje.injective, hsurj⟩
+    have he (k : K) : j (e.symm k) = k := e.apply_symm_apply k
+    let J := j.compLeftContinuous X hje.continuous
+    have hJf (f : C(X, O)) : J f = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
+      ext; simp [J]
+    have hfull : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) = Set.univ := by
+      apply Set.eq_univ_of_forall
+      intro ν
+      let L : C(X, O) →ₗ[O] O :=
+        { toFun f := e.symm (ν (J f))
+          map_add' f g := by simp
+          map_smul' a f := by
+            have hJ : J (a • f) = j a • J f := by ext; simp [J]
+            apply e.injective
+            simp only [hJ, map_smul, smul_eq_mul, map_mul, e.apply_symm_apply]
+            rfl }
+      have hL : Continuous L := hje.continuous_iff.mpr <| by
+        simpa only [Function.comp_def, L, LinearMap.coe_mk, AddHom.coe_mk,
+          AddMonoidHom.coe_mk, he, hJf] using
+          (map_continuous ν).comp
+            (ContinuousMap.continuous_postcomp (⟨j, hje.continuous⟩ : C(O, K)))
+      refine ⟨toCLMEquiv.symm ⟨L, hL⟩, ?_⟩
+      symm
+      apply eq_extendCoefficients_of_apply_comp j _ hj hje.continuous
+      intro f
+      rw [coe_symm_toCLMEquiv]
+      change ν _ = j (L f)
+      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, he, hJf]
+    rw [hfull]
+    exact @isClosed_univ _ WeakTopology
+  · have hball : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
+        toCLMEquiv ⁻¹' Metric.closedBall 0 1 :=
+      Set.ext fun _ ↦ (mem_range_extendCoefficients_iff hj hje hjr).trans
+        mem_closedBall_zero_iff.symm
+    rw [hball]
+    apply isClosed_induced_iff'.2
+    intro μ hμ
+    apply ContinuousLinearMap.is_weak_closed_closedBall 0 1
+    have hcoe (ν : D(X, K)) : ⇑(toCLMEquiv ν) = (fun f ↦ ν f) :=
+      funext (coe_toCLMEquiv ν)
+    rw [hcoe]
+    refine closure_mono ?_ hμ
+    rintro _ ⟨ν, hν, rfl⟩
+    exact ⟨toCLMEquiv ν, hν, hcoe ν⟩
 
 variable {p : ℕ} [Fact p.Prime] [T2Space X] [TotallyDisconnectedSpace X]
 
