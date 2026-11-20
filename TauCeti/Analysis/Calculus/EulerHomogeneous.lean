@@ -6,9 +6,7 @@ Authors: Giada Franz, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
-public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Inv
-public import Mathlib.Analysis.Calculus.Deriv.Slope
 public import Mathlib.Analysis.Calculus.FDeriv.Comp
 public import Mathlib.Analysis.Calculus.MeanValue
 
@@ -26,15 +24,17 @@ cone near its vertex, smooth at the vertex, is a hyperplane.
 
 ## Main results
 
-* `eq_fderiv_apply_of_forall_eq_fderiv_apply`: `v(y) = v(0) + Dv(0) y`, here with `v(0) = 0`.
-* `eq_zero_of_forall_eq_fderiv_apply`: the case `Dv(0) = 0`.
-* `exists_ne_fderiv_apply_of_iteratedFDeriv_two_ne_zero`: if moreover `D²v(0) ≠ 0`, Euler's
+* `TauCeti.eq_fderiv_apply_of_forall_eq_fderiv_apply`: `v(y) = Dv(0) y`.
+* `TauCeti.eq_zero_of_forall_eq_fderiv_apply`: the case `Dv(0) = 0`.
+* `TauCeti.exists_ne_fderiv_apply_of_iteratedFDeriv_two_ne_zero`: if `D²v(0) ≠ 0`, Euler's
   identity fails somewhere in every ball around `0`.
 -/
 
 public section
 
 open Filter Metric Set Topology
+
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -101,16 +101,20 @@ theorem eq_zero_of_forall_eq_fderiv_apply {v : E → ℝ} {r : ℝ}
   rfl
 
 /-- **A graph which is curved at the vertex is not a cone.** If `r > 0`, `v` is differentiable on
-`B_r(0)`, `Dv(0) = 0` and `D²v(0) ≠ 0`, then `v(y) ≠ Dv(y) y` for some `y ∈ B_r(0)`. -/
+`B_r(0)` and `D²v(0) ≠ 0`, then `v(y) ≠ Dv(y) y` for some `y ∈ B_r(0)`. -/
 theorem exists_ne_fderiv_apply_of_iteratedFDeriv_two_ne_zero {v : E → ℝ} {r : ℝ} (hr : 0 < r)
-    (hv : DifferentiableOn ℝ v (ball 0 r)) (hdv0 : fderiv ℝ v 0 = 0)
+    (hv : DifferentiableOn ℝ v (ball 0 r))
     (h2 : iteratedFDeriv ℝ 2 v 0 ≠ 0) : ∃ y ∈ ball (0 : E) r, v y ≠ fderiv ℝ v y y := by
   by_contra h
   push Not at h
   refine h2 ?_
-  have hev : v =ᶠ[𝓝 0] fun _ ↦ (0 : ℝ) := by
+  have hev : v =ᶠ[𝓝 0] (fderiv ℝ v 0) := by
     filter_upwards [ball_mem_nhds (0 : E) hr] with y hy
-    exact eq_zero_of_forall_eq_fderiv_apply hv hdv0 h hy
-  rw [(Filter.EventuallyEq.iteratedFDeriv ℝ hev 2).eq_of_nhds,
-    iteratedFDeriv_const_of_ne (by norm_num)]
-  rfl
+    exact eq_fderiv_apply_of_forall_eq_fderiv_apply hv h hy
+  rw [(Filter.EventuallyEq.iteratedFDeriv ℝ hev 2).eq_of_nhds]
+  have hlin : fderiv ℝ (fderiv ℝ v 0) = fun _ ↦ fderiv ℝ v 0 :=
+    funext fun _ ↦ ContinuousLinearMap.fderiv _
+  ext m
+  simp [iteratedFDeriv_two_apply, hlin]
+
+end TauCeti
