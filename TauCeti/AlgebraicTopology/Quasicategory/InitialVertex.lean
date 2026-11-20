@@ -130,6 +130,12 @@ lemma isInitialVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
     Y.IsInitialVertex (e.hom.app _ x) ↔ X.IsInitialVertex x :=
   isTerminalVertex_iff_of_iso (opFunctor.mapIso e) _
 
+/-- In a simplicial set with at most one simplex in each dimension, such as `Δ[0]`, every vertex is
+initial: a constant map extends every simplex boundary. -/
+lemma isInitialVertex_of_subsingleton [∀ n, Subsingleton (X.obj n)] (x : X _⦋0⦌) :
+    X.IsInitialVertex x :=
+  (isInitialVertex_iff x).2 fun _ _ _ ↦ ⟨const x, by ext; exact Subsingleton.elim _ _⟩
+
 end SSet
 
 namespace CategoryTheory.nerve

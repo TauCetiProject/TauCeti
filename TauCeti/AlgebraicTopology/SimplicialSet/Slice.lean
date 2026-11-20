@@ -120,6 +120,11 @@ lemma objEquiv_map_coe {n m : SimplexCategoryᵒᵖ} (f : n ⟶ m) (σ : (slice 
         :=
   (rfl)
 
+/-- All simplices of a slice of the point `Δ[0]` agree: they are maps to `Δ[0]`. -/
+instance subsingleton_obj_stdSimplex_zero {L : SSet.{u}} (q : L ⟶ Δ[0]) (n : SimplexCategoryᵒᵖ) :
+    Subsingleton ((slice q).obj n) :=
+  ⟨fun _ _ ↦ objEquiv.injective (Subtype.ext (stdSimplex.isTerminalObj₀.hom_ext _ _))⟩
+
 variable (p) in
 /-- The projection `C_{/p} ⟶ C`, restricting a simplex `Δ[n] ⋆ K ⟶ C` of the slice to `Δ[n]`. -/
 def π : slice p ⟶ C where
