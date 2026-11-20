@@ -44,6 +44,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
 * `Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow`: the step
   `(-1) ^ C(m + 1, 2) * (-1) ^ m = (-1) ^ C(m, 2)`.
+* `Nat.neg_one_pow_add_add_one_choose_two_mul`: the Koszul sign
+  `(-1) ^ C(p + q + 1, 2) * (-1) ^ C(q + 1, 2) * (-1) ^ C(p + 1, 2) = (-1) ^ (p q)`.
 * `Nat.sum_Icc_choose_eq_two_pow_sub_two`: the binomial coefficients `C(n, i)`, `0 < i < n`,
   sum to `2ⁿ - 2`.
 * `Nat.descFactorial_mul_choose`: a falling factorial of the lower index lowers both indices,
@@ -166,6 +168,17 @@ theorem neg_one_pow_succ_choose_two_mul_neg_one_pow {R : Type*} [Monoid R] [HasD
     (m : ℕ) : (-1 : R) ^ (m + 1).choose 2 * (-1) ^ m = (-1) ^ m.choose 2 := by
   rw [choose_succ_succ', choose_one_right, add_comm, pow_add, mul_assoc, ← pow_add,
     Even.neg_one_pow ⟨m, rfl⟩, mul_one]
+
+/-- The signs `(-1) ^ C(p + q + 1, 2)`, `(-1) ^ C(q + 1, 2)` and `(-1) ^ C(p + 1, 2)` of the
+reversals of `p + q + 1`, `q + 1` and `p + 1` letters multiply to the Koszul sign `(-1) ^ (p q)`,
+since `C(p + q + 1, 2) = C(p + 1, 2) + C(q + 1, 2) + p q`. -/
+theorem neg_one_pow_add_add_one_choose_two_mul {R : Type*} [Monoid R] [HasDistribNeg R]
+    (p q : ℕ) :
+    (-1 : R) ^ (p + q + 1).choose 2 * ((-1) ^ (q + 1).choose 2 * (-1) ^ (p + 1).choose 2) =
+      (-1) ^ (p * q) := by
+  rw [← pow_add, ← pow_add, choose_succ_succ' (p + q), add_choose_two, choose_succ_succ' q,
+    choose_succ_succ' p, choose_one_right, choose_one_right, choose_one_right]
+  exact neg_one_pow_congr (by simp only [Nat.reduceAdd, Nat.even_iff]; omega)
 
 /-- The binomial coefficients `C(n, i)` with `0 < i < n` sum to `2ⁿ - 2`. -/
 theorem sum_Icc_choose_eq_two_pow_sub_two (n : ℕ) :
