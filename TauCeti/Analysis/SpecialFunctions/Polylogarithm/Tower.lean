@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
@@ -94,7 +95,8 @@ theorem not_analyticAt_polylogTower_of_one_lt {N : ℕ} (hN : 1 ≤ N) {x : ℝ}
     ¬ AnalyticAt ℂ (polylogTower N) x := fun h => by
   have : NeZero N := ⟨Nat.ne_of_gt hN⟩; have h1 := analyticAt_pi_iff.1 h 1
   simp only [polylogTower_one] at h1
-  exact not_continuousAt_polylog_one_of_one_lt hx h1.continuousAt
+  exact (Complex.mem_slitPlane_iff.mp (continuousAt_polylog_one_iff.mp h1.continuousAt)).elim
+    (fun hlt => by simp at hlt; linarith) (fun him => by simp at him)
 
 /-- For `1 ≤ N`, `polylogTower N` is not complex analytic at `z = 3`. -/
 theorem not_analyticAt_polylogTower_three {N : ℕ} (hN : 1 ≤ N) :
@@ -230,7 +232,7 @@ theorem eventuallyEq_iff_eq (hF : IsPolylogTowerGerm N F w) (hG : IsPolylogTower
   refine ⟨EventuallyEq.eq_of_nhds, fun hFG => ?_⟩
   suffices hcoord : ∀ (k : ℕ) (hk : k < N + 1),
       (fun z => F z ⟨k, hk⟩) =ᶠ[𝓝 w] fun z => G z ⟨k, hk⟩ from
-    (eventually_all.mpr fun i : Fin (N + 1) => hcoord i.1 i.2).mono fun _ => funext
+    (eventually_all.mpr fun i : Fin (N + 1) => hcoord i.val i.isLt).mono fun _ => funext
   intro k; induction k with
   | zero =>
     intro _
@@ -247,12 +249,12 @@ theorem eventuallyEq_iff_eq (hF : IsPolylogTowerGerm N F w) (hG : IsPolylogTower
     let j : Fin N := ⟨k, Nat.lt_of_succ_lt_succ hk⟩; have hj_succ : j.succ = ⟨k + 1, hk⟩ := rfl
     have hfac_ne : ∀ᶠ z in 𝓝 w, (if (j : ℕ) = 0 then 1 - z else z) ≠ 0 := by
       by_cases hj0 : (j : ℕ) = 0
-      · exact (eventually_ne_nhds (hF.ne_one (Nat.ne_of_gt (Nat.zero_lt_of_lt j.2)))).mono
+      · exact (eventually_ne_nhds (hF.ne_one (Nat.ne_of_gt (Nat.zero_lt_of_lt j.isLt)))).mono
           fun z hz => by simp [hj0, sub_ne_zero, hz.symm]
       · simpa [hj0] using eventually_ne_nhds hF.ne_zero
     have hderiv_eq : deriv (fun u => F u j.succ) =ᶠ[𝓝 w] deriv (fun u => G u j.succ) := by
       filter_upwards [hF.eventually_deriv_succ j, hG.eventually_deriv_succ j,
-        ih (Nat.lt_succ_of_lt j.2), hfac_ne] with z hdF hdG hp hne
+        ih (Nat.lt_succ_of_lt j.isLt), hfac_ne] with z hdF hdG hp hne
       apply mul_left_cancel₀ hne; rw [hdF, hdG]; by_cases hj0 : (j : ℕ) = 0 <;> simp [hj0, j, hp]
     obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.mp
       ((analyticAt_pi_iff.1 hF.analyticAt j.succ).eventually_analyticAt.and
@@ -367,8 +369,8 @@ theorem continuesAlong {c : I → ℂ} (hF : IsPolylogTowerGerm N F (c 0)) (hc :
   let S : Set I := {b | ∃ f : I → ℂ → Fin (N + 1) → ℂ,
     IsAnalyticContinuationAlong f c (Iic b) ∧ f 0 =ᶠ[𝓝 (c 0)] F}
   have h0S : (0 : I) ∈ S := ⟨fun _ => F, .const hc.continuousOn fun t ht =>
-    (Subtype.ext (le_antisymm (Subtype.coe_le_coe.mpr (mem_Iic.mp ht)) t.2.1)) ▸ hF.analyticAt,
-    .rfl⟩
+    (Subtype.ext (le_antisymm (Subtype.coe_le_coe.mpr (mem_Iic.mp ht)) t.property.left)) ▸
+      hF.analyticAt, .rfl⟩
   let b₀ : I := sSup S; let r : ℝ := if N = 0 then ‖c b₀‖ else min ‖c b₀‖ ‖c b₀ - 1‖
   have hr : 0 < r := by by_cases hN : N = 0 <;> simp [r, hN, hc0 b₀, sub_ne_zero, hc1]
   have h0_b₀ : 0 ∉ ball (c b₀) r := by by_cases hN : N = 0 <;> simp [r, hN, dist_zero_left]
@@ -392,17 +394,18 @@ theorem continuesAlong {c : I → ℂ} (hF : IsPolylogTowerGerm N F (c 0)) (hc :
     have ht_dist : dist t b₀ < δ := by
       rw [Subtype.dist_eq, Real.dist_eq, abs_lt]
       have ht2 : (t : ℝ) ≤ (b₀ : ℝ) + δ / 2 := (Subtype.coe_le_coe.mpr ht.2).trans
-        (by rw [coe_projIcc]; exact max_le (by linarith [b₀.2.1]) (min_le_right _ _))
+        (by rw [coe_projIcc]; exact max_le (by linarith [b₀.property.left]) (min_le_right _ _))
       exact ⟨by linarith [Subtype.coe_le_coe.mpr ht.1], by linarith⟩
     linarith [dist_triangle (c t) (c b₀) (c t₁), hδc ht_dist, dist_comm (c t₁) (c b₀)]
   have hf_ext := hf₁.extend_Iic (.const hc.continuousOn hGan_Icc) hGeq.symm
   have hf_ext0 : (if (0 : I) ≤ t₁ then f₁ 0 else G) =ᶠ[𝓝 (c 0)] F := by simpa [bot_le] using hf₁0
   have ht₂_one : t₂ = 1 := Subtype.ext <| by
     have hle := Subtype.coe_le_coe.mpr (le_csSup (OrderTop.bddAbove S) ⟨_, hf_ext, hf_ext0⟩)
-    rw [coe_projIcc, max_eq_right (le_min zero_le_one (by linarith [b₀.2.1]))] at hle ⊢
+    rw [coe_projIcc, max_eq_right (le_min zero_le_one (by linarith [b₀.property.left]))] at hle ⊢
     by_contra hne; rw [min_eq_right (le_of_not_ge fun h => hne (min_eq_left h))] at hle; linarith
   exact continuesAlong_iff_exists.mpr
-    ⟨_, hf_ext.mono fun t _ => ht₂_one ▸ mem_Iic.mpr (Subtype.coe_le_coe.mp t.2.2), hf_ext0⟩
+    ⟨_, hf_ext.mono fun t _ => ht₂_one ▸ mem_Iic.mpr (Subtype.coe_le_coe.mp t.property.right),
+      hf_ext0⟩
 
 /-- **Continuation inside `ℂ \ {0, 1}`.** -/
 theorem continuesInside (hF : IsPolylogTowerGerm N F w) :
@@ -465,8 +468,8 @@ theorem isPolylogTowerGerm_polylogTower (N : ℕ) {w : ℂ} (hw0 : w ∈ Complex
     simp [Complex.exp_log hz]
   eventually_deriv_succ i := by
     rw [funext fun u => polylogTower_succ N u i]
-    filter_upwards [isOpen_one_sub_mem_slitPlane.mem_nhds
-      (hw1 (Nat.ne_of_gt (Nat.zero_lt_of_lt i.2)))] with z hz
+    filter_upwards [Complex.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds
+      (hw1 (Nat.ne_of_gt (Nat.zero_lt_of_lt i.isLt)))] with z hz
     by_cases hi : (i : ℕ) = 0
     · simp only [hi, ↓reduceIte, Fin.val_succ, zero_add, Nat.cast_one,
         (hasDerivAt_polylog_one hz).deriv, mul_inv_cancel₀ (Complex.slitPlane_ne_zero hz)]

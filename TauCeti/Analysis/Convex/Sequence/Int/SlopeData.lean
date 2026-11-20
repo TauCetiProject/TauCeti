@@ -33,8 +33,6 @@ public section
 
 namespace TauCeti
 
-variable {Γ Γ' : Type*} [Preorder Γ] [Preorder Γ']
-
 /-- A finite polygon with integer initial abscissa and nondecreasing unit slopes.
 Length zero describes just its anchor, with no edges. -/
 structure IntFiniteSlopeData (Γ : Type*) [Preorder Γ] where
@@ -50,6 +48,8 @@ structure IntFiniteSlopeData (Γ : Type*) [Preorder Γ] where
   monotone : Monotone slope
 
 namespace IntFiniteSlopeData
+
+variable {Γ Γ' : Type*} [Preorder Γ] [Preorder Γ']
 
 /-- Read the relative slope data at the natural-number anchor zero. -/
 def toFiniteSlopeData (d : IntFiniteSlopeData Γ) : FiniteSlopeData Γ where
@@ -313,6 +313,8 @@ structure IntInfiniteSlopeData (Γ : Type*) [Preorder Γ] where
   monotone : Monotone slope
 
 namespace IntInfiniteSlopeData
+
+variable {Γ Γ' : Type*} [Preorder Γ] [Preorder Γ']
 
 /-- Read the relative slope data at the natural-number anchor zero. -/
 def toInfiniteSlopeData (d : IntInfiniteSlopeData Γ) : InfiniteSlopeData Γ where
@@ -599,6 +601,8 @@ end IntInfiniteSlopeData
 
 namespace FiniteSlopeData
 
+variable {Γ Γ' : Type*} [Preorder Γ] [Preorder Γ']
+
 /-- Preserve a natural-anchored presentation while viewing its anchor as an integer. -/
 def toInt (d : FiniteSlopeData Γ) : IntFiniteSlopeData Γ where
   start := d.start
@@ -647,6 +651,8 @@ theorem heights_toInt [AddCommMonoid Γ] (d : FiniteSlopeData Γ) :
 end FiniteSlopeData
 
 namespace InfiniteSlopeData
+
+variable {Γ Γ' : Type*} [Preorder Γ] [Preorder Γ']
 
 /-- Preserve a natural-anchored presentation while viewing its anchor as an integer. -/
 def toInt (d : InfiniteSlopeData Γ) : IntInfiniteSlopeData Γ where

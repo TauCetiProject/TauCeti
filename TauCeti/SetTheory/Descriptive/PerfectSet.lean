@@ -71,10 +71,10 @@ theorem Setoid.hasCantorAntichainOn_ker_univ_of_not_countable_range [Topological
   -- the open sets with uncountable image
   let P := {U : Set Y // IsOpen U ∧ ¬(f '' U).Countable}
   choose W hW hsep using fun (U : P) (n : ℕ) =>
-    hf.exists_split_of_not_countable_image U.2.1 U.2.2 (hu n).1
+    hf.exists_split_of_not_countable_image U.property.1 U.property.2 (hu n).1
   let D : List Bool → P := fun l => l.rec ⟨univ, isOpen_univ, by rwa [image_univ]⟩
     fun a l U => ⟨W U l.length a, (hW U l.length a).1, (hW U l.length a).2.1⟩
-  let A : List Bool → Set Y := fun l => (D l).1
+  let A : List Bool → Set Y := fun l => (D l).val
   have hA (a : Bool) (l : List Bool) : A (a :: l) = W (D l) l.length a := rfl
   have hanti : ClosureAntitone A := fun l a => by
     rw [hA]
@@ -86,7 +86,7 @@ theorem Setoid.hasCantorAntichainOn_ker_univ_of_not_countable_range [Topological
     rw [PiNat.res_succ, hA, PiNat.res_length]
     exact (hW (D (PiNat.res x n)) n (x n)).2.2.2
   have hne (l : List Bool) : (A l).Nonempty :=
-    nonempty_iff_ne_empty.2 fun h => (D l).2.2 (by simp [A, h])
+    ne_empty_iff_nonempty.1 fun h => (D l).property.2 (by simp [A, h])
   have hdom := hanti.map_of_vanishingDiam hdiam hne
   have hlim (x : ℕ → Bool) : (⋂ n, A (PiNat.res x n)).Nonempty :=
     ⟨_, mem_iInter.2 (map_mem ⟨x, hdom ▸ mem_univ x⟩)⟩

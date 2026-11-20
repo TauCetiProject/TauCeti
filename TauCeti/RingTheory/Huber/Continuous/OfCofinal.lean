@@ -95,7 +95,7 @@ theorem isContinuous_of_forall_le_of_cofinalValue [SeparatelyContinuousAdd A]
   rw [isContinuous_iff_forall_exists_idealImage_subset P]
   intro b hb
   obtain ⟨n, hn⟩ :=
-    cofinalValue_iff.mp hcof (v.restrict b) (by simpa using zero_lt_iff.mpr hb)
+    cofinalValue_iff.mp hcof (v.restrict b) (by simpa using pos_iff_ne_zero.mpr hb)
   have hlt : v ((t₀ : P.ringOfDefinition) : A) ^ n < v b := by
     have hemb := MonoidWithZeroHom.ValueGroup₀.embedding_strictMono hn
     simpa only [map_pow, _root_.Valuation.embedding_restrict] using hemb
@@ -138,7 +138,7 @@ theorem isContinuous_of_forall_cofinalValue [SeparatelyContinuousAdd A]
     obtain ⟨y, hy, rfl⟩ := (P.mem_idealImage 1).mp hx
     rw [← hgen] at hy
     simp only [Finset.coe_empty, Ideal.span_empty, pow_one, Ideal.mem_bot] at hy
-    simpa [hy] using zero_lt_iff.mpr hb
+    simpa [hy] using pos_iff_ne_zero.mpr hb
   · obtain ⟨t₀, ht₀s, ht₀max⟩ := s.exists_max_image (fun t ↦ v ((t : P.ringOfDefinition) : A)) hne
     exact isContinuous_of_forall_le_of_cofinalValue P v hgen
       (fun t ht ↦ ht₀max t (Finset.mem_coe.mp ht)) h1 (hcof t₀ ht₀s)

@@ -41,7 +41,7 @@ theorem exists_continuousOn_proj_eq_of_isSimplyConnected {X : Type*} [Topologica
   obtain ⟨s, ⟨hs0, hsproj⟩, -⟩ := existsUnique_continuousMap_lifts x₀ incl ⟨w₀, hw₀⟩ p₀
     (Subtype.ext hp₀)
   refine ⟨fun x => if hx : x ∈ V then s ⟨x, hx⟩ else p₀,
-    continuousOn_iff_continuous_domRestrict.mpr (s.continuous.congr fun x => by simp [x.2]),
+    continuousOn_iff_continuous_domRestrict.mpr (s.continuous.congr fun x => by simp [x.property]),
     fun x hx => by simpa [hx, incl] using congrArg Subtype.val (congrFun hsproj ⟨x, hx⟩),
     by simp [hw₀, hs0]⟩
 

@@ -16,6 +16,7 @@ import Mathlib.Analysis.Complex.HasPrimitives
 import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.GroupTheory.GroupAction.Closure
 
@@ -142,10 +143,13 @@ theorem exists_mvPolynomial_polylogMonodromy (N : ℕ)
   let HasPoly (Φ : (Fin (N + 1) → ℂ) → Fin (N + 1) → ℂ) : Prop :=
     ∀ j, ∃ P : MvPolynomial (Fin (N + 1)) ℂ, ∀ w, Φ w j = MvPolynomial.eval w P
   have hcomp : ∀ {Φ Ψ}, HasPoly Φ → HasPoly Ψ → HasPoly (Φ ∘ Ψ) := fun {Φ Ψ} hΦ hΨ j => by
-    choose Q hQ using hΨ; obtain ⟨P, hP⟩ := hΦ j; refine ⟨MvPolynomial.bind₁ Q P, fun w => ?_⟩
+    choose Q hQ using hΨ; obtain ⟨P, hP⟩ := hΦ j; refine ⟨MvPolynomial.aeval Q P, fun w => ?_⟩
     have hQw : (fun k => MvPolynomial.eval w (Q k)) = Ψ w := funext fun k => (hQ k w).symm
     simp only [MvPolynomial.eval] at hQw hP ⊢
-    rw [Function.comp_apply, hP, MvPolynomial.eval₂Hom_bind₁, hQw]
+    have hcomp_id : (MvPolynomial.eval₂Hom (RingHom.id ℂ) w).comp
+        (algebraMap ℂ (MvPolynomial (Fin (N + 1)) ℂ)) = RingHom.id ℂ := by
+      ext c; simp
+    rw [Function.comp_apply, hP, MvPolynomial.map_aeval, hcomp_id, hQw]
   refine Subgroup.closure_induction'' (p := fun x _ => HasPoly (polylogMonodromy N x))
     (by rintro _ (rfl | rfl) <;>
           simp only [polylogMonodromy_periph0_eq, polylogMonodromy_periph1_eq]
@@ -297,7 +301,7 @@ private theorem exp_logCont0 (t : I) {z : ℂ} (hz : z ≠ 0) : Complex.exp (log
 
 private theorem isAnalyticContinuationAlong_logCont0 :
     IsAnalyticContinuationAlong logCont0 (fun t => (γ0 t : ℂ)) univ where
-  continuousOn := (continuous_subtype_val.comp γ0.continuous).continuousOn
+  continuousOn := (continuous_subtypeVal.comp γ0.continuous).continuousOn
   analyticAt t _ := by
     have hval : (γ0 t : ℂ) * Complex.exp (-(2 * Real.pi * Complex.I * (t : ℂ))) ∈
         Complex.slitPlane := (γ0_mul_exp_neg t).symm ▸ half_mem_slitPlane
@@ -319,7 +323,7 @@ private theorem isAnalyticContinuationAlong_logCont0 :
     obtain ⟨V, hV, W', hW', hVW'⟩ := Filter.mem_prod_iff.mp hmem
     obtain ⟨ε, hε, hεW⟩ := Metric.mem_nhds_iff.mp hW'
     filter_upwards [nhdsWithin_le_nhds (Filter.inter_mem hV
-      ((continuous_subtype_val.comp γ0.continuous).continuousAt.preimage_mem_nhds
+      ((continuous_subtypeVal.comp γ0.continuous).continuousAt.preimage_mem_nhds
         (isOpen_ball.mem_nhds (mem_ball_self hε))))] with u ⟨huV, huW⟩
     filter_upwards [isOpen_ball.mem_nhds huW] with z hzW
     obtain ⟨hnorm, hz0⟩ := hVW' (mk_mem_prod huV (hεW hzW))
@@ -339,7 +343,7 @@ private theorem li1Cont1_one (z : ℂ) : li1Cont1 1 z = polylog 1 z - 2 * Real.p
 
 private theorem isAnalyticContinuationAlong_li1Cont1 :
     IsAnalyticContinuationAlong li1Cont1 (fun t => (γ1 t : ℂ)) univ where
-  continuousOn := (continuous_subtype_val.comp γ1.continuous).continuousOn
+  continuousOn := (continuous_subtypeVal.comp γ1.continuous).continuousOn
   analyticAt t _ := (((one_sub_γ1 t).symm ▸ isAnalyticContinuationAlong_logCont0.analyticAt t
     (mem_univ t)).comp (analyticAt_const.sub analyticAt_id)).neg
   locallyEq t _ := by
@@ -365,7 +369,7 @@ private theorem analyticAt_add_logSing1 {N : ℕ} {A : ℂ → Fin (N + 1) → �
     (hAan : AnalyticOnNhd ℂ A (ball 1 (3 / 4))) :
     AnalyticAt ℂ (fun z => A z + logSing1 N (polylog 1 z) z) (1 / 2) :=
   (hAan _ (by rw [mem_ball, dist_eq_norm]; norm_num)).add
-    (analyticAt_logSing1 N (analyticAt_polylog_one sub_half_mem_slitPlane) half_mem_slitPlane)
+    (analyticAt_logSing1 N (analyticAt_polylog 1 sub_half_mem_slitPlane) half_mem_slitPlane)
 
 private theorem eventually_deriv_last_logSing1 {K : ℕ} {g a : ℂ → ℂ}
     (haderiv : ∀ z ∈ ball (1 : ℂ) (3 / 4), HasDerivAt a
@@ -376,7 +380,7 @@ private theorem eventually_deriv_last_logSing1 {K : ℕ} {g a : ℂ → ℂ}
   let B : ℂ → ℂ := fun u => (Complex.log u) ^ (K + 1) / ((K + 1).factorial : ℂ)
   filter_upwards [isOpen_ball.mem_nhds (by rw [mem_ball, dist_eq_norm]; norm_num :
       (1 / 2 : ℂ) ∈ ball 1 (3 / 4)), Complex.isOpen_slitPlane.mem_nhds half_mem_slitPlane,
-    isOpen_one_sub_mem_slitPlane.mem_nhds sub_half_mem_slitPlane] with z hzb hz0 hz1
+    Complex.isOpen_setOf_one_sub_mem_slitPlane.mem_nhds sub_half_mem_slitPlane] with z hzb hz0 hz1
   have hz_ne : z ≠ 0 := Complex.slitPlane_ne_zero hz0
   have h1z_ne : 1 - z ≠ 0 := Complex.slitPlane_ne_zero hz1
   have hd_B : HasDerivAt B ((Complex.log z) ^ K / (K.factorial : ℂ) / z) z := by
@@ -486,7 +490,7 @@ theorem eventuallyEq_periph0_inv_comp_of_γ0 {N : ℕ} {F : ℂ → Fin (N + 1) 
   have hγ0_ball : ∀ t : I, (γ0 t : ℂ) ∈ ball 0 1 := fun t => by
     rw [mem_ball, dist_zero_right, norm_coe_γ0]; norm_num
   have hg : IsAnalyticContinuationAlong g (fun t => (γ0 t : ℂ)) univ :=
-    ⟨(continuous_subtype_val.comp γ0.continuous).continuousOn, fun t _ => AnalyticAt.pi <| Fin.cases
+    ⟨(continuous_subtypeVal.comp γ0.continuous).continuousOn, fun t _ => AnalyticAt.pi <| Fin.cases
       (isAnalyticContinuationAlong_logCont0.analyticAt t (mem_univ t))
       (fun i => analyticAt_pi_iff.1 (hGan _ (hγ0_ball t)) i), fun t _ =>
       (isAnalyticContinuationAlong_logCont0.locallyEq t (mem_univ t)).mono fun _ hu =>
@@ -517,7 +521,7 @@ theorem eventuallyEq_periph1_inv_comp_of_γ1 {N : ℕ} {F : ℂ → Fin (N + 1) 
   have hγ1_slit : ∀ t : I, (γ1 t : ℂ) ∈ Complex.slitPlane := fun t =>
     Complex.mem_slitPlane_iff.mpr (Or.inl (mem_rightOpen.1 (γ1_mem_rightOpen t)))
   have hg : IsAnalyticContinuationAlong g (fun t => (γ1 t : ℂ)) univ :=
-    ⟨(continuous_subtype_val.comp γ1.continuous).continuousOn, fun t _ => (hAan _ (hγ1_ball t)).add
+    ⟨(continuous_subtypeVal.comp γ1.continuous).continuousOn, fun t _ => (hAan _ (hγ1_ball t)).add
       (analyticAt_logSing1 N (isAnalyticContinuationAlong_li1Cont1.analyticAt t (mem_univ t))
         (hγ1_slit t)), fun t _ =>
       (isAnalyticContinuationAlong_li1Cont1.locallyEq t (mem_univ t)).mono fun _ hu =>

@@ -56,12 +56,12 @@ theorem eventuallyEq_of_homotopic {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
     (hf0 : f 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀) (hg : IsAnalyticContinuationAlong g (fun t => (δ t : ℂ)) univ)
     (hg0 : g 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀) : f 1 =ᶠ[𝓝 (z : ℂ)] g 1 := by
   let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL; obtain ⟨K⟩ := hγδ
-  let incl : C(U, ℂ) := ⟨Subtype.val, continuous_subtype_val⟩
+  let incl : C(U, ℂ) := ⟨Subtype.val, continuous_subtypeVal⟩
   let K' : (γ.map incl.continuous).Homotopy (δ.map incl.continuous) := K.map incl
   have hHe := H.analyticOnNhd_univ_comp (e.analyticOnNhd univ)
   have hKzero : ∀ t : I, K' (t, 0) = (z₀ : ℂ) := fun t => by simp [K', incl]
   choose F hF hF₀ using fun t : I => continuesAlong_iff_exists.1
-    (hHe.continuesAlong (by fun_prop) (fun x => (K (t, x)).2) (hKzero t))
+    (hHe.continuesAlong (by fun_prop) (fun x => (K (t, x)).property) (hKzero t))
   have hF₀' : ∀ t : I, F t 0 =ᶠ[𝓝 (z₀ : ℂ)] e ∘ f₀ := fun t => by simpa [hKzero t] using hF₀ t
   have hmono := monodromy_theorem K' hF (fun t => (hF₀' t).trans (hF₀' 0).symm) 1
   have hKp : (fun x => K' (0, x)) = fun x => (γ x : ℂ) := funext fun x => by simp [K', incl]
@@ -80,7 +80,7 @@ theorem eventuallyEq_of_homotopic {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
 /-- A germ continuing inside `U` from `z₀` continues along every `γ : Path z₀ z` in `U`. -/
 theorem continuesAlong_path {U : Set ℂ} {z₀ z : U} {f₀ : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) (γ : Path z₀ z) : ContinuesAlong f₀ (fun t => (γ t : ℂ)) :=
-  H.continuesAlong (continuous_subtype_val.comp γ.continuous) (fun t => (γ t).2)
+  H.continuesAlong (continuous_subtypeVal.comp γ.continuous) (fun t => (γ t).property)
     (congrArg Subtype.val γ.source)
 
 /-- **The universal-cover branch of a continuable germ** on `UniversalCover z₀`. -/
@@ -123,8 +123,8 @@ theorem exists_isAnalyticContinuationAlong_universalCoverBranch {U : Set ℂ} {z
     H.universalCoverBranch ⟨z₀, Path.Homotopic.Quotient.refl z₀⟩ = f₀ (z₀ : ℂ) := by
   rw [← Path.Homotopic.Quotient.mk_refl]
   exact H.universalCoverBranch_eq_of_isAnalyticContinuationAlong
-    (.const (continuous_subtype_val.comp (Path.refl z₀).continuous).continuousOn
-      fun _ _ => H.analyticAt z₀.2) .rfl
+    (.const (continuous_subtypeVal.comp (Path.refl z₀).continuous).continuousOn
+      fun _ _ => H.analyticAt z₀.property) .rfl
 
 /-- At `UniversalCover.basepointLift z₀`, `universalCoverBranch` equals `f₀ z₀`. -/
 theorem universalCoverBranch_basepointLift {U : Set ℂ} {z₀ : U} {f₀ : ℂ → E}
@@ -147,7 +147,7 @@ theorem universalCoverBranch_trans {U : Set ℂ} {z₀ z₁ z₂ : U} {f₀ : �
     (hg : IsAnalyticContinuationAlong g (fun t => (δ t : ℂ)) univ) (hg0 : g 0 =ᶠ[𝓝 (z₁ : ℂ)] f 1) :
     H.universalCoverBranch ⟨z₂, Path.Homotopic.Quotient.mk (γ.trans δ)⟩ = g 1 (z₂ : ℂ) := by
   have htr : IsAnalyticContinuationAlong (transFamily f g) (fun t => ((γ.trans δ) t : ℂ)) univ :=
-    (hf.trans (p := γ.map continuous_subtype_val) (q := δ.map continuous_subtype_val) hg
+    (hf.trans (p := γ.map continuous_subtypeVal) (q := δ.map continuous_subtypeVal) hg
       hg0.symm).congr_path fun _ _ => by rw [← Path.map_trans]; rfl
   simpa using H.universalCoverBranch_eq_of_isAnalyticContinuationAlong htr
     (transFamily_zero f g ▸ hf0)
@@ -233,14 +233,14 @@ theorem universalCoverBranch_eq_of_analyticAt {U : Set ℂ} {z₀ z : U} {f₀ :
     (hF : ∀ t, AnalyticAt ℂ F (γ t)) (hF0 : F =ᶠ[𝓝 (z₀ : ℂ)] f₀) :
     H.universalCoverBranch ⟨z, Path.Homotopic.Quotient.mk γ⟩ = F (z : ℂ) :=
   H.universalCoverBranch_eq_of_isAnalyticContinuationAlong
-    (.const (continuous_subtype_val.comp γ.continuous).continuousOn fun t _ => hF t) hF0
+    (.const (continuous_subtypeVal.comp γ.continuous).continuousOn fun t _ => hF t) hF0
 
 /-- **Comparison with a single-valued function analytic throughout `U`.** -/
 theorem universalCoverBranch_eq_of_analyticOnNhd {U : Set ℂ} {z₀ : U} {f₀ F : ℂ → E}
     (H : ContinuesInside f₀ U (z₀ : ℂ)) (hF : AnalyticOnNhd ℂ F U) (hF0 : F =ᶠ[𝓝 (z₀ : ℂ)] f₀)
     (p : UniversalCover z₀) : H.universalCoverBranch p = F (p.proj : ℂ) := by
   rcases p with ⟨z, q⟩; induction q with
-  | mk γ => exact H.universalCoverBranch_eq_of_analyticAt γ (fun t => hF _ (γ t).2) hF0
+  | mk γ => exact H.universalCoverBranch_eq_of_analyticAt γ (fun t => hF _ (γ t).property) hF0
 
 private theorem toPath_fromPath {X : Type*} [TopologicalSpace X] {x₀ : X}
     (q : Path.Homotopic.Quotient x₀ x₀) : (FundamentalGroup.fromPath q).toPath = q := rfl
@@ -287,18 +287,18 @@ private theorem isOpen_germSet {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     (eventually_eventuallyEq_iff_of_analyticAt ((hGan z₁ hz₁).congr hKG.symm) (hGan z₁ hz₁))
   let r := min ρ₁ (min ρ₂ (ρ₀ - dist z₁ w))
   have hr : 0 < r := lt_min hρ₁ (lt_min hρ₂ (sub_pos.mpr (mem_ball.mp hz₁)))
-  refine ⟨Subtype.val ⁻¹' Metric.ball α.1 r, fun β hβ => ?_,
-    Metric.isOpen_ball.preimage continuous_subtype_val, Metric.mem_ball_self hr⟩
+  refine ⟨Subtype.val ⁻¹' Metric.ball α.val r, fun β hβ => ?_,
+    Metric.isOpen_ball.preimage continuous_subtypeVal, Metric.mem_ball_self hr⟩
   simp only [mem_preimage, UniversalCover.ofBasedPath_def, germSet, Set.mem_ofPred_eq]
   have hβ_le : ∀ t : I, dist (β t : ℂ) (α t : ℂ) < r := fun t =>
-    lt_of_le_of_lt (ContinuousMap.dist_apply_le_dist (f := β.1) (g := α.1) t)
+    lt_of_le_of_lt (ContinuousMap.dist_apply_le_dist (f := β.val) (g := α.val) t)
       (Metric.mem_ball.mp hβ)
   have hr_le : r ≤ ρ₀ - dist z₁ w := (min_le_right _ _).trans (min_le_right _ _)
   refine ⟨?_, fun δ g' hδ hg' hg'0 => ?_⟩
   · rw [BasedPath.endpoint_def]
     exact mem_ball.mpr (by linarith [dist_triangle (β 1 : ℂ) z₁ w, hr_le, hβ_le 1])
   · have hKβ : IsAnalyticContinuationAlong K (fun t => (β.toPath t : ℂ)) univ :=
-      hKcont _ (continuous_subtype_val.comp β.toPath.continuous).continuousOn
+      hKcont _ (continuous_subtypeVal.comp β.toPath.continuous).continuousOn
         fun t _ => lt_of_lt_of_le (hβ_le t) (min_le_left _ _)
     have hK0 : K 0 =ᶠ[𝓝 (z₀ : ℂ)] f₀ :=
       (by simpa [α.toPath.source] using hKg 0 (mem_univ 0) : K 0 =ᶠ[𝓝 (z₀ : ℂ)] g 0).trans hg0
@@ -347,7 +347,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   obtain ⟨f, hf, hf0, -⟩ := H'.exists_isAnalyticContinuationAlong_universalCoverBranch γ
   obtain ⟨S, G, hSo, hpS, hGan, -, hval⟩ := exists_isOpen_universalCoverBranch_eq H' p hγ hf hf0
   exact (hGan.continuousAt.comp (f := fun q : UniversalCover z₀ => (q.proj : ℂ))
-    (continuous_subtype_val.comp (UniversalCover.continuous_proj z₀)).continuousAt).congr
+    (continuous_subtypeVal.comp (UniversalCover.continuous_proj z₀)).continuousAt).congr
     (eventually_of_mem (hSo.mem_nhds hpS) fun q hq => (hval q hq).symm)
 
 /-- **Germ of a local determination along a continuous section.** -/
@@ -398,7 +398,7 @@ theorem eqOn_universalCoverBranch_comp_of_analyticOnNhd {U : Set ℂ} {z₀ : U}
   obtain ⟨S, G, hSo, hpS, -, hGF, hval⟩ := exists_isOpen_universalCoverBranch_eq
     (H.analyticOnNhd_univ_comp (e.analyticOnNhd univ)) ⟨z₀, Path.Homotopic.Quotient.refl z₀⟩
     (Path.Homotopic.Quotient.mk_refl z₀)
-    (.const (continuous_subtype_val.comp (Path.refl z₀).continuous).continuousOn
+    (.const (continuous_subtypeVal.comp (Path.refl z₀).continuous).continuousOn
       fun _ _ => AnalyticAt.comp (e.analyticAt _) (hF _ hz₀)) (hF0.fun_comp e)
   have hsecS : sec (z₀ : ℂ) ∈ S := by rwa [hsec0, UniversalCover.basepointLift_coe]
   have hev : (H.universalCoverBranch ∘ sec) =ᶠ[𝓝 (z₀ : ℂ)] F := by

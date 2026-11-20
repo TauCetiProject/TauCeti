@@ -217,14 +217,14 @@ theorem nullhomotopic_subtypeVal_compl_singleton (c : AddCircle p) :
   obtain ⟨a, rfl⟩ := QuotientAddGroup.mk_surjective c
   have hL : Continuous fun x : ({(a : AddCircle p)}ᶜ : Set (AddCircle p)) ↦
       (equivIco p a x : ℝ) :=
-    continuous_iff_continuousAt.2 fun x ↦ continuous_subtype_val.continuousAt.comp
-      ((continuousAt_equivIco p a x.2).comp continuous_subtype_val.continuousAt)
+    continuous_iff_continuousAt.2 fun x ↦ continuous_subtypeVal.continuousAt.comp
+      ((continuousAt_equivIco p a x.property).comp continuous_subtypeVal.continuousAt)
   refine ⟨((a + p / 2 : ℝ) : AddCircle p), ⟨{
     toFun := fun q ↦ ((((1 : ℝ) - q.1) * equivIco p a q.2 + q.1 * (a + p / 2) : ℝ) : AddCircle p)
     continuous_toFun := continuous_quotient_mk'.comp
-      (((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).mul
+      (((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).mul
         (hL.comp continuous_snd)).add
-        ((continuous_subtype_val.comp continuous_fst).mul continuous_const))
+        ((continuous_subtypeVal.comp continuous_fst).mul continuous_const))
     map_zero_left := fun x ↦ by simp
     map_one_left := fun x ↦ by simp }⟩⟩
 
