@@ -46,9 +46,7 @@ theorem Monotone.eq_of_card_filter_eq (hf : Monotone f) (hg : Monotone g)
     (h : ∀ a, #{i | f i = a} = #{i | g i = a}) : f = g := by
   refine List.ofFn_injective ((List.perm_iff_count.2 fun a ↦ ?_).eq_of_sortedLE
     hf.sortedLE_ofFn hg.sortedLE_ofFn)
-  have hcount (u : Fin n → α) : #{i | u i = a} = (List.ofFn u).count a := by
-    simp
-  rw [← hcount, ← hcount, h]
+  rw [List.count_ofFn, List.count_ofFn, h]
 
 /-- Two antitone tuples in which every value occurs equally often are equal. -/
 theorem Antitone.eq_of_card_filter_eq (hf : Antitone f) (hg : Antitone g)
