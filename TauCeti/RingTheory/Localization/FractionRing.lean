@@ -19,32 +19,9 @@ This lets a statement about the fraction field of a localization of a domain be 
 fraction field of the domain itself. The non-zero-divisor hypothesis holds whenever a domain is
 localized to a nontrivial ring (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`, in
 `TauCeti.RingTheory.Localization.Defs`).
-
-An injective ring homomorphism that carries non-zero-divisors to non-zero-divisors induces an
-injective map of total rings of fractions
-(`IsLocalization.map_injective_of_injective_of_le_nonZeroDivisors`), with no domain hypothesis.
 -/
 
 public section
-
-namespace IsLocalization
-
-open scoped nonZeroDivisors
-
-/-- Let `f : R →+* S` be injective, carrying a submonoid `M` into a submonoid `T` of
-non-zero-divisors of `S`. Then the induced map from the localization of `R` at `M` to that of `S`
-at `T` is injective. Unlike `IsLocalization.map_injective_of_injective'`, `S` need not be a domain;
-the main case is the induced map of total quotient rings, `M = R⁰` and `T = S⁰`. -/
-theorem map_injective_of_injective_of_le_nonZeroDivisors {R S : Type*} [CommRing R] [CommRing S]
-    {M : Submonoid R} {T : Submonoid S} (Rₘ Sₘ : Type*) [CommRing Rₘ] [CommRing Sₘ]
-    [Algebra R Rₘ] [Algebra S Sₘ] [IsLocalization M Rₘ] [IsLocalization T Sₘ] {f : R →+* S}
-    (hf : Function.Injective f) (hMT : M ≤ T.comap f) (hT : T ≤ S⁰) :
-    Function.Injective (map Sₘ f hMT : Rₘ →+* Sₘ) :=
-  injective_of_map_algebraMap_zero (M := M) Rₘ _ fun x hx ↦ by
-    rw [map_eq, to_map_eq_zero_iff Sₘ hT, _root_.map_eq_zero_iff f hf] at hx
-    rw [hx, map_zero]
-
-end IsLocalization
 
 namespace TauCeti.IsFractionRing
 
