@@ -265,6 +265,21 @@ def embeddedCurveConfigurations (A : secondHomology X) : Set (Set X →₀ ℕ) 
 
 variable {J}
 
+/-- A subset is an embedded pseudoholomorphic image exactly when it is the image of an embedded
+pseudoholomorphic curve. -/
+theorem isEmbeddedPseudoholomorphicImage_iff {S : Set X} :
+    IsEmbeddedPseudoholomorphicImage J S ↔
+      ∃ C : EmbeddedPseudoholomorphicCurve J, range C.toFun = S :=
+  Iff.rfl
+
+/-- The configurations of embedded pseudoholomorphic curves are the compatible configurations of
+pairwise disjoint embedded pseudoholomorphic images. -/
+theorem embeddedCurveConfigurations_def (A : secondHomology X) :
+    embeddedCurveConfigurations J A =
+      compatibleConfigurations Disjoint (embeddedCurveClass J)
+        {S | IsEmbeddedPseudoholomorphicImage J S} A :=
+  (rfl)
+
 /-- The image of an embedded pseudoholomorphic curve is an embedded pseudoholomorphic image. -/
 theorem EmbeddedPseudoholomorphicCurve.isEmbeddedPseudoholomorphicImage
     (C : EmbeddedPseudoholomorphicCurve J) : IsEmbeddedPseudoholomorphicImage J (range C.toFun) :=
@@ -303,6 +318,7 @@ variable {A : secondHomology X} {l : Set X →₀ ℕ}
 /-- A configuration in class `A` is a finitely supported multiplicity function on pairwise
 disjoint embedded pseudoholomorphic images, the sum of whose classes with these multiplicities
 is `A`. -/
+@[simp]
 theorem mem_embeddedCurveConfigurations :
     l ∈ embeddedCurveConfigurations J A ↔
       (∀ S ∈ l.support, IsEmbeddedPseudoholomorphicImage J S) ∧
