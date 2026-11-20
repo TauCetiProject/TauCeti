@@ -8,8 +8,8 @@ module
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.Inductions
-import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Eval.Degree
 import TauCeti.Algebra.Ring.GeomSum
 
 /-!
@@ -146,15 +146,6 @@ theorem qDerivative_C_mul (a : R) (f : R[X]) :
     qDerivative q (C a * f) = C a * qDerivative q f := by
   rw [C_mul', map_smul, C_mul']
 
-/-- Rescaling the variable of a monomial: `(a Xⁿ)(qX) = a qⁿ Xⁿ`. -/
-private theorem monomial_comp_C_mul_X (a : R) (n : ℕ) :
-    (monomial n a).comp (C q * X) = monomial n (a * q ^ n) := by
-  ext k
-  simp only [comp_C_mul_X_coeff, coeff_monomial, Finsupp.single_apply]
-  split_ifs with h
-  · rw [h]
-  · rw [zero_mul]
-
 /-- At `q = 1` the `q`-derivative is the ordinary derivative. -/
 @[simp]
 theorem qDerivative_one_eq_derivative : qDerivative (1 : R) = derivative := by
@@ -168,6 +159,7 @@ theorem qDerivative_zero_eq_divX (f : R[X]) : qDerivative 0 f = divX f := by
   simp [coeff_qDerivative, coeff_divX]
 
 /-- The `q`-derivative commutes with coefficient maps: `σ (∇_q f) = ∇_{σ q} (σ f)`. -/
+@[simp]
 theorem qDerivative_map (σ : R →+* S) (f : R[X]) :
     qDerivative (σ q) (f.map σ) = (qDerivative q f).map σ := by
   ext n
@@ -203,7 +195,8 @@ theorem qDerivative_mul (f g : R[X]) :
       rw [show m + 1 + (n + 1) - 1 = m + n + 1 by omega,
         show m + 1 - 1 + (n + 1) = m + n + 1 by omega,
         show m + 1 + (n + 1 - 1) = m + n + 1 by omega, ← map_add, hsum]
-      ring_nf
+      congr 1
+      ring
 
 /-- The chain rule for `X ↦ X ^ m`: `∇_q (f(X ^ m)) = (∇_{q ^ m} f)(X ^ m) · [m]_q X ^ (m - 1)`.
 It is the `q`-analogue of `Polynomial.derivative_expand`. -/
@@ -220,7 +213,7 @@ theorem qDerivative_expand (m : ℕ) (f : R[X]) :
     rcases m with _ | m
     · simp
     rw [show (n + 1) * (m + 1) - 1 = (n + 1 - 1) * (m + 1) + (m + 1 - 1) by
-        simp only [Nat.add_sub_cancel]; ring_nf; omega,
+        rw [Nat.add_sub_cancel, Nat.add_sub_cancel, Nat.succ_mul, Nat.add_succ_sub_one],
       mul_comm (n + 1), TauCeti.geom_sum_range_mul]
     congr 1
     ring
