@@ -542,8 +542,9 @@ private theorem iteratedDerivWithin_toFun (f : ParabolicCkHolderSpace k α E F h
       hd'.derivWithin (uniqueDiffOn_Icc hab s hs)]
     simp only [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab.le hs]
 
-/-- The recorded spatial derivatives of `D_t^r u` form a Taylor series up to order `k - 2 r`. -/
-private theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) (r : ℕ)
+/-- The recorded spatial derivatives of `D_t^r u` form a Taylor series up to order `k - 2 r`: the
+fields `D_t^r D_x^m u` on a time slice are the spatial derivatives of `D_t^r u`. -/
+theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k α E F hab) (r : ℕ)
     (t : Icc a b) :
     HasFTaylorSeriesUpTo ((k - 2 * r : ℕ) : WithTop ℕ∞)
       (fun y ↦ (mixedDerivL r 0 f (slabMk y t)).curry0)
@@ -556,7 +557,7 @@ private theorem hasFTaylorSeriesUpTo_mixedDerivL (f : ParabolicCkHolderSpace k �
     (continuous_id.prodMk continuous_const))
 
 /-- The spatial derivatives of `D_t^r u` are the fields `D_t^r D_x^m u`. -/
-private theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
+theorem iteratedFDeriv_mixedDerivL_zero (f : ParabolicCkHolderSpace k α E F hab)
     {r m : ℕ} (h : 2 * r + m ≤ k) (x : E) (t : Icc a b) :
     iteratedFDeriv ℝ m (fun y ↦ (mixedDerivL r 0 f (slabMk y t)).curry0) x =
       mixedDerivL r m f (slabMk x t) :=
@@ -672,6 +673,15 @@ theorem coe_add (f g : ParabolicCkHolderSpace k α E F hab) : ⇑(f + g) = f + g
 theorem coe_smul (c : ℝ) (f : ParabolicCkHolderSpace k α E F hab) : ⇑(c • f) = c • ⇑f := by
   ext p
   simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
+
+@[simp]
+theorem coe_neg (f : ParabolicCkHolderSpace k α E F hab) : ⇑(-f) = -⇑f := by
+  ext p
+  simp [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_apply, -mixedDerivL_zero_zero_apply]
+
+@[simp]
+theorem coe_sub (f g : ParabolicCkHolderSpace k α E F hab) : ⇑(f - g) = f - g := by
+  rw [sub_eq_add_neg, coe_add, coe_neg, sub_eq_add_neg]
 
 /-! ### Construction from the fields -/
 
@@ -828,6 +838,12 @@ theorem norm_mixedDerivL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ
     exact le_add_of_nonneg_right (by positivity)
   · rw [mixedDerivL_of_lt (by simpa using h), zero_apply, norm_zero]
     exact norm_nonneg f
+
+/-- The values are bounded by the norm. -/
+theorem norm_apply_le (f : ParabolicCkHolderSpace k α E F hab) (p : slab (E := E) a b) :
+    ‖f p‖ ≤ ‖f‖ := by
+  rw [← toFun_eq_coe, toFun, ContinuousMultilinearMap.curry0_norm]
+  exact ((mixedDerivL 0 0 f).norm_coe_le_norm p).trans (f.norm_mixedDerivL_le 0 0)
 
 /-- Each family of time slices is bounded by the norm. -/
 theorem norm_timeSliceL_le (f : ParabolicCkHolderSpace k α E F hab) (r m : ℕ) :
