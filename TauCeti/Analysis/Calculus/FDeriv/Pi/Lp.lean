@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Calculus.Gradient
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 
@@ -14,7 +15,8 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 # Derivatives of coordinates on finite `L^p` products
 
 The derivative of a coordinate of a function into a finite `L^p` product is the corresponding
-coordinate of its derivative (`DifferentiableAt.fderiv_piLp_apply`).
+coordinate of its derivative (`DifferentiableAt.fderiv_piLp_apply`); likewise for curves
+(`HasDerivWithinAt.piLp_apply`).
 
 Freezing all but one coordinate of a scalar function on `PiLp 2 E` gives a function on
 that factor. At a differentiability point, its derivative norm equals the norm of the
@@ -41,6 +43,16 @@ theorem DifferentiableAt.fderiv_piLp_apply (hf : DifferentiableAt 𝕜 f y) (i :
   rw [(hasFDerivWithinAt_univ.1 ((hasFDerivWithinAt_piLp p).1
     hf.hasFDerivAt.hasFDerivWithinAt i)).fderiv]
   rfl
+
+/-- A coordinate of a curve in a finite `L^p` product has the corresponding coordinate of the
+velocity as derivative. The factors are indexed by `Fin n`: the scalar action on `PiLp` is known
+to be continuous only for a `Fintype` index, which would otherwise appear in the statement only
+through that instance. -/
+theorem HasDerivWithinAt.piLp_apply {n : ℕ} {F : Fin n → Type*} [∀ i, NormedAddCommGroup (F i)]
+    [∀ i, NormedSpace 𝕜 (F i)] {c : 𝕜 → PiLp p F} {c' : PiLp p F} {s : Set 𝕜} {t : 𝕜}
+    (hc : HasDerivWithinAt c c' s t) (i : Fin n) :
+    HasDerivWithinAt (fun t ↦ c t i) (c' i) s t :=
+  (PiLp.hasFDerivAt_apply (𝕜 := 𝕜) p (c t) i).comp_hasDerivWithinAt t hc
 
 end Coordinate
 

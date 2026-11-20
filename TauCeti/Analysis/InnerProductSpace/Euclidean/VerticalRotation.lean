@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Exp
-import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Complex.RealDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.ODE.ScalarLinear
 
@@ -38,11 +38,8 @@ coordinate of the velocity as derivative. -/
 theorem HasDerivWithinAt.ofReal_apply_add_ofReal_apply_mul_I {n : ℕ}
     {c : ℝ → EuclideanSpace ℝ (Fin n)} {c' : EuclideanSpace ℝ (Fin n)} {s : Set ℝ} {t : ℝ}
     (hc : HasDerivWithinAt c c' s t) (i j : Fin n) :
-    HasDerivWithinAt (fun t ↦ (c t i : ℂ) + c t j * I) ((c' i : ℂ) + c' j * I) s t := by
-  have h (k : Fin n) : HasDerivWithinAt (fun t ↦ c t k) (c' k) s t := by
-    simpa [Function.comp_def] using
-      (PiLp.proj 2 (fun _ : Fin n ↦ ℝ) k).hasFDerivAt.comp_hasDerivWithinAt t hc
-  exact (h i).ofReal_comp.add ((h j).ofReal_comp.mul_const I)
+    HasDerivWithinAt (fun t ↦ (c t i : ℂ) + c t j * I) ((c' i : ℂ) + c' j * I) s t :=
+  (hc.piLp_apply i).ofReal_comp.add ((hc.piLp_apply j).ofReal_comp.mul_const I)
 
 namespace IsPreconnected
 
@@ -64,13 +61,9 @@ theorem ofReal_apply_add_ofReal_apply_mul_I_eq_exp_mul_and_apply_two_eq
       (fun t _ ↦ by simpa using ((hasDerivAt_id t).ofReal_comp.mul_const I).hasDerivWithinAt)
       (fun t ht ↦ ((hv t ht).ofReal_apply_add_ofReal_apply_mul_I 0 1).congr_deriv ?_) ha hb
     · rwa [smul_eq_mul, ← sub_mul, ← ofReal_sub] at h
-    · simp only [EuclideanSpace.inner_single_right, conj_trivial, one_mul, PiLp.sub_apply,
-        PiLp.smul_apply, smul_eq_mul, PiLp.single_eq_same, PiLp.single_eq_of_ne, ne_eq,
-        zero_ne_one, one_ne_zero, not_false_eq_true, mul_zero, mul_one, zero_sub, sub_zero,
-        ofReal_neg]
+    · simp [EuclideanSpace.inner_single_right]
       linear_combination (-(v t 1 : ℂ)) * I_sq
   · refine hs.eq_of_hasDerivWithinAt_zero (f := fun t ↦ v t 2) (fun t ht ↦ ?_) hb ha
-    simpa [Function.comp_def, EuclideanSpace.inner_single_right] using
-      (PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) 2).hasFDerivAt.comp_hasDerivWithinAt t (hv t ht)
+    simpa [EuclideanSpace.inner_single_right] using (hv t ht).piLp_apply 2
 
 end IsPreconnected

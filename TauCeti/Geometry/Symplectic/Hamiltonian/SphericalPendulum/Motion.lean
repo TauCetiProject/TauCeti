@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningPoint
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.MeasureTheory.Function.Jacobian.OneDim
 
@@ -232,8 +233,8 @@ theorem hasDerivWithinAt_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
     HasDerivWithinAt (fun t ↦ (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2)
       ((γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) s t := by
   simpa [Function.comp_def, sphericalPendulumVectorField_def] using
-    ((PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) 2).comp (ContinuousLinearMap.fst ℝ _ _)).hasFDerivAt
-      |>.comp_hasDerivWithinAt t (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)
+    ((ContinuousLinearMap.fst ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t
+      (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)).piLp_apply 2
 
 /-- Along a motion of the spherical pendulum, the vertical momentum `p₃` changes with velocity
 `(q₃ - ‖p‖²) q₃ - 1`, the vertical component of the gravitational and constraint forces. -/
@@ -245,8 +246,8 @@ theorem hasDerivWithinAt_snd_apply_two_of_isMIntegralCurveOn_sphericalPendulum
         ‖(γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2‖ ^ 2) *
           (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).1 2 - 1) s t := by
   simpa [Function.comp_def, sphericalPendulumVectorField_def] using
-    ((PiLp.proj 2 (fun _ : Fin 3 ↦ ℝ) 2).comp (ContinuousLinearMap.snd ℝ _ _)).hasFDerivAt
-      |>.comp_hasDerivWithinAt t (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)
+    ((ContinuousLinearMap.snd ℝ _ _).hasFDerivAt.comp_hasDerivWithinAt t
+      (isIntegralCurveOn_sphericalPendulumVectorField hγ t ht)).piLp_apply 2
 
 /-- **Time integrals along a passage are height quadratures.** Let a motion of the spherical
 pendulum on `[t₁, t₂]` have energy `h` and vertical angular momentum `j`, and suppose its height
