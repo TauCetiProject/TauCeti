@@ -62,9 +62,8 @@ projections of `X × Y` form the pair `(X × Y, A × Y ∪ X × B)` of a product
 in the union when `A`, respectively `B`, is open
 (`TopCat.isOpen_subtypeVal_preimage_preimage_fst_union`), and a product of maps of pairs carries
 them, and so their union, into each other (`TopCat.mapsTo_tensorHom_preimage_fst`,
-`TopCat.mapsTo_tensorHom_preimage_union`). The pairs `(X × Y, X × B)` of `TopPair.prodLeft`
-and `(X × Y, A × Y)` include into this pair (`TopPair.prodLeftToPreimageUnion`,
-`TopPair.preimageFstToPreimageUnion`). The product `A × Y` of the subspace
+`TopCat.mapsTo_tensorHom_preimage_union`). The pair `(X × Y, X × B)` of `TopPair.prodLeft`
+includes into this pair (`TopPair.prodLeftToPreimageUnion`). The product `A × Y` of the subspace
 `A` with `Y` is homeomorphic to the preimage of `A` under the first projection
 (`TopCat.prodPreimageFstIso`).
 
@@ -558,14 +557,6 @@ def prodLeftToPreimageUnion :
 theorem prodLeftToPreimageUnion_fst :
     Hom.fst (prodLeftToPreimageUnion A B) = 𝟙 (X ⊗ Y) :=
   (rfl)
-
-/-- The inclusion of pairs `(X × Y, A × Y) ⟶ (X × Y, A × Y ∪ X × B)`, with `A × Y` and
-`A × Y ∪ X × B` the preimages of `A` and of `A` or `B` under the projections. It is the identity of
-`X × Y`. -/
-abbrev preimageFstToPreimageUnion :
-    ofSubset (CartesianMonoidalCategory.fst X Y ⁻¹' A) ⟶ ofSubset
-      (CartesianMonoidalCategory.fst X Y ⁻¹' A ∪ CartesianMonoidalCategory.snd X Y ⁻¹' B) :=
-  ofSubsetMap (𝟙 _) fun _ hz ↦ Or.inl hz
 
 end prodLeft
 
