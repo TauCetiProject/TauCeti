@@ -36,7 +36,8 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.mul_add_succ_self_div_two_eq_succ_choose_two_add`:
   `p * (q + (p + 1)) / 2 = C(p + 1, 2) + p * q / 2`.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
-* `Nat.two_mul_choose_two_add_mul_sub`: `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`.
+* `Nat.two_mul_choose_two_add_mul`: `2 C(a, 2) + ab = a(a + b - 1)`, and its form
+  `Nat.two_mul_choose_two_add_mul_sub`: `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`.
 * `Nat.add_choose_two_add_choose_two`: `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
@@ -104,14 +105,18 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
       rw [h1, h2, ih, choose_one_right, choose_one_right]
       ring
 
+/-- Twice `C(a, 2)`, plus `ab`, is `a(a + b - 1)`, with truncated subtraction. -/
+theorem two_mul_choose_two_add_mul (a b : ℕ) : 2 * a.choose 2 + a * b = a * (a + b - 1) := by
+  rcases a with _ | a
+  · simp
+  · have := add_one_mul_choose_eq a 1
+    simp only [choose_one_right, Nat.add_right_comm a 1 b, Nat.add_sub_cancel] at this ⊢
+    linarith
+
 /-- `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`, that is `i(i-1) + i(n-i) = i(n-1)`. -/
 theorem two_mul_choose_two_add_mul_sub {n i : ℕ} (hi : i ≤ n) :
     2 * i.choose 2 + i * (n - i) = (n - 1) * i := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp [Nat.le_zero.mp hi]
-  qify [hi, hn]
-  push_cast [Nat.cast_choose_two]
-  ring
+  rw [two_mul_choose_two_add_mul, Nat.add_sub_cancel' hi, mul_comm]
 
 /-- `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`. -/
 theorem add_choose_two_add_choose_two (m i : ℕ) :
