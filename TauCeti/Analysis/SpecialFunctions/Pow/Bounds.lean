@@ -120,6 +120,8 @@ function that does not need a derivative.
 * `Real.rpow_neg_le_one_div_two_mul_sq`: `d ^ (-p) ≤ 1 / (2 d ^ 2)` for `2 ≤ d ^ (p - 2)`.
 * `Real.rpow_le_two_mul_rpow_of_le_two_mul`: `r ^ p ≤ 2 h ^ p` for `0 ≤ r ≤ 2 h` and
   `0 ≤ p ≤ 1`.
+* `Real.rpow_le_two_rpow_abs_mul`: `y ^ p ≤ 2 ^ |p| x ^ p` for `x / 2 ≤ y ≤ 2 x` and every real
+  `p`.
 * `Real.lt_log_div_log_of_rpow_lt`: `t < log q' / log q` for `2 ≤ q ≤ q'`,
   `q ^ p < q (q + q')` and `log 2 < (p - 1 - t) log q`.
 * `Real.min_rpow_lt_two_rpow_sub_one_mul`: `min (1 + r) (2 - δ) ^ q < 2 ^ (q - 1) * (1 + r ^ q)`
@@ -495,6 +497,23 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
     _ = (1 - φ r₀ / 2 ^ q) * 2 ^ (q - 1) * (s ^ q + t ^ q) := by
         rw [hr_def, div_rpow ht hs.le]
         field_simp
+
+/-- If `x / 2 ≤ y ≤ 2 x`, then `y ^ p ≤ 2 ^ |p| x ^ p`, for positive and negative exponents
+alike. -/
+theorem rpow_le_two_rpow_abs_mul {x y p : ℝ} (hxy : x / 2 ≤ y) (hyx : y ≤ 2 * x) :
+    y ^ p ≤ 2 ^ |p| * x ^ p := by
+  rcases (by linarith : (0 : ℝ) ≤ x).eq_or_lt with rfl | hx
+  · have hy : y = 0 := by linarith
+    rw [hy]
+    exact le_mul_of_one_le_left (Real.rpow_nonneg le_rfl p)
+      (Real.one_le_rpow (by norm_num) (abs_nonneg p))
+  rcases le_total 0 p with hp | hp
+  · calc y ^ p ≤ (2 * x) ^ p := Real.rpow_le_rpow (by linarith) hyx hp
+      _ = 2 ^ |p| * x ^ p := by rw [Real.mul_rpow (by norm_num) hx.le, abs_of_nonneg hp]
+  · calc y ^ p ≤ (x / 2) ^ p := Real.rpow_le_rpow_of_nonpos (by positivity) hxy hp
+      _ = 2 ^ |p| * x ^ p := by
+        rw [Real.div_rpow hx.le (by norm_num), abs_of_nonpos hp, Real.rpow_neg (by norm_num)]
+        ring
 
 end Real
 
