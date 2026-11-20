@@ -476,6 +476,24 @@ theorem IsUpperUnitriangular.mul {T p : Type*} [NonAssocSemiring T] [Fintype p]
   refine ⟨hM.1.mul hN.1, fun i ↦ ?_⟩
   rw [mul_apply_diag_of_isUpperTriangular hM.1 hN.1, hM.2 i, hN.2 i, one_mul]
 
+/-- An entry strictly above the diagonal of a product of upper-unitriangular matrices is the sum
+of the two entries and of the products through the intermediate indices:
+`(M * N) i j = M i j + N i j + ∑_{i < k < j} M i k * N k j`. -/
+theorem IsUpperUnitriangular.mul_apply_of_lt {T p : Type*} [NonAssocSemiring T] [Fintype p]
+    [LinearOrder p] [LocallyFiniteOrder p] {M N : Matrix p p T} (hM : M.IsUpperUnitriangular)
+    (hN : N.IsUpperUnitriangular) {i j : p} (hij : i < j) :
+    (M * N) i j = M i j + N i j + ∑ k ∈ Finset.Ioo i j, M i k * N k j := by
+  rw [Matrix.mul_apply, ← Finset.sum_subset (Finset.subset_univ (Finset.Icc i j))]
+  · rw [Finset.Icc_eq_cons_Ioc hij.le, Finset.sum_cons, Finset.Ioc_eq_cons_Ioo hij,
+      Finset.sum_cons, hM.apply_diag, hN.apply_diag, one_mul, mul_one]
+    abel
+  · intro k _ hk
+    rcases lt_trichotomy k i with hki | rfl | hik
+    · rw [hM.isUpperTriangular hki, zero_mul]
+    · exact absurd (Finset.left_mem_Icc.2 hij.le) hk
+    · have hjk : j < k := lt_of_not_ge fun hkj ↦ hk (Finset.mem_Icc.2 ⟨hik.le, hkj⟩)
+      rw [hN.isUpperTriangular hjk, mul_zero]
+
 /-- Every natural power of an upper-unitriangular matrix is upper unitriangular. -/
 theorem IsUpperUnitriangular.pow {T p : Type*} [Semiring T] [Fintype p] [LinearOrder p]
     {M : Matrix p p T} (hM : M.IsUpperUnitriangular) (k : ℕ) :

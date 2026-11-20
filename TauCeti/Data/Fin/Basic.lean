@@ -30,7 +30,8 @@ import Mathlib.Tactic.Ring
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
+permutations of `Fin 2`, the consecutive pair `(castSucc i, succ i)` that is the extreme pair
+`(0, n)` of `Fin (n + 1)`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
 value of a partial product, sums of families vanishing beyond an index, and the cyclic index
 arithmetic of `Fin 3`.
 
@@ -211,6 +212,14 @@ theorem card_filter_val_lt_le {n : ℕ} (S : Finset (Fin n)) (j : ℕ) : #{s ∈
 end Finset
 
 namespace Fin
+
+/-- Two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are the extreme pair `(0, n)`
+only when `n = 1`. -/
+theorem castSucc_eq_zero_and_succ_eq_last_iff {n : ℕ} (i : Fin n) :
+    i.castSucc = 0 ∧ i.succ = last n ↔ n = 1 := by
+  rw [Fin.ext_iff, Fin.ext_iff, val_castSucc, val_zero, val_succ, val_last]
+  have := i.isLt
+  constructor <;> intro h <;> omega
 
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
