@@ -62,13 +62,16 @@ subalgebra, equal weighted Dynkin diagrams force the neutral elements to coincid
   `IsSl2Triple.isOpen_range_projectiveOrbitMap_eigenspace_two_identityComponent`, and
   `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_basePointsRepresentation_eq`:
   specializations to `C_G(h)` and to the connected centralizer `C_G(h)°`.
-* `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq`: two `sl₂` triples sharing `h` have the same
-  topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
-* `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDiagram_eq`
-  and `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq`: triples whose
-  neutral elements are dominant in the same Weyl chamber and have equal weighted Dynkin diagrams
-  share their neutral element, hence are conjugate under `C_G(h₁)°(k)` and have the same
-  topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
+* `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq` and `IsSl2Triple.vectorOrbit_mk_eq`: two `sl₂`
+  triples sharing `h` have nilpositive elements in the same rational adjoint `G`-orbit and with the
+  same topological adjoint `G`-orbit image in `P(𝔤 × k)`, including nonclosed points.
+* `IsSl2Triple.exists_mem_quotientPointsSubgroup_identityComponent_of_weightedDynkinDiagram_eq`,
+  `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq`, and
+  `IsSl2Triple.vectorOrbit_mk_eq_of_weightedDynkinDiagram_eq`: triples whose neutral elements are
+  dominant in the same Weyl chamber and have equal weighted Dynkin diagrams share their neutral
+  element, hence are conjugate under `C_G(h₁)°(k)` and have nilpositive elements in the same
+  rational adjoint `G`-orbit and with the same topological adjoint `G`-orbit image in `P(𝔤 × k)`,
+  including nonclosed points.
 
 ## References
 
@@ -289,6 +292,15 @@ theorem range_projectiveOrbitMap_adjoint_eq (t : IsSl2Triple h e f) (t' : IsSl2T
     t.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq t'
   exact (Comodule.range_projectiveOrbitMap_mk_one_basePointsRepresentation g e).symm
 
+/-- **Two `sl₂` triples sharing `h` have nilpositive elements in the same rational adjoint
+`G`-orbit.** -/
+theorem vectorOrbit_mk_eq (t : IsSl2Triple h e f) (t' : IsSl2Triple h e' f') :
+    Comodule.VectorOrbit.mk (k := k) (H := H) e =
+      Comodule.VectorOrbit.mk (k := k) (H := H) e' := by
+  obtain ⟨g, -, -, rfl, -⟩ :=
+    t.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq t'
+  exact (Comodule.VectorOrbit.mk_basePointsRepresentation g e).symm
+
 end Subgroup
 
 section IdentityComponent
@@ -458,6 +470,27 @@ theorem range_projectiveOrbitMap_adjoint_eq_of_weightedDynkinDiagram_eq
   -- `b.weightedDynkinDiagram_injective`, reducing to `range_projectiveOrbitMap_adjoint_eq`.
   obtain rfl := b.weightedDynkinDiagram_injective hdiag
   exact t₁.range_projectiveOrbitMap_adjoint_eq t₂
+
+/-- **Rational adjoint orbit equality for dominant `sl₂` triples with equal weighted Dynkin
+diagrams.** Over an algebraically closed field `k` of characteristic zero, if `G = Spec H` is of
+finite type with Killing Lie algebra `𝔤` and two `sl₂` triples `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)`
+in `𝔤` have neutral elements dominant with respect to the same root-system base `b` of a Cartan
+subalgebra `𝔥` and equal weighted Dynkin diagrams, then `e₁` and `e₂` lie in the same rational
+adjoint `G`-orbit. -/
+theorem vectorOrbit_mk_eq_of_weightedDynkinDiagram_eq
+    {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+    {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+    [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
+    {𝔥 : LieSubalgebra k (Module.Dual k (Bialgebra.CotangentSpace k H))} [𝔥.IsCartanSubalgebra]
+    {b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base} {h₁ h₂ : b.dominantNeutralElements}
+    {e₁ f₁ e₂ f₂ : Module.Dual k (Bialgebra.CotangentSpace k H)}
+    (t₁ : IsSl2Triple (h₁ : Module.Dual k (Bialgebra.CotangentSpace k H)) e₁ f₁)
+    (t₂ : IsSl2Triple (h₂ : Module.Dual k (Bialgebra.CotangentSpace k H)) e₂ f₂)
+    (hdiag : b.weightedDynkinDiagram h₁ = b.weightedDynkinDiagram h₂) :
+    Comodule.VectorOrbit.mk (k := k) (H := H) e₁ =
+      Comodule.VectorOrbit.mk (k := k) (H := H) e₂ := by
+  obtain rfl := b.weightedDynkinDiagram_injective hdiag
+  exact t₁.vectorOrbit_mk_eq t₂
 
 end WeightedDynkinDiagram
 

@@ -5,15 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
-public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
-public import TauCeti.LinearAlgebra.TensorProduct.Basic
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.Nilpotent.Lemmas
+public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.AlgebraicGroup.Representation.ComoduleAlgebra
-import TauCeti.RingTheory.Derivation.Nilpotent
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
+import TauCeti.LinearAlgebra.End.LocallyNilpotent
 import TauCeti.RingTheory.Derivation.Basic
+import TauCeti.RingTheory.Derivation.Nilpotent
 
 /-!
 # Invariant derivations and nilpotent functions
@@ -28,7 +32,10 @@ D h = ∑ h₍₁₎ d(h₍₂₎)
 of the whole coordinate ring: the left-invariant vector field with value `d` at the identity.
 As a linear map it is the action of `d` in the differentiated regular representation
 (`TauCeti.Comodule.differential`); the point here is that this action satisfies the Leibniz
-rule. It satisfies `ε ∘ D = d` and the invariance identity `Δ ∘ D = (id ⊗ D) ∘ Δ`.
+rule. It satisfies `ε ∘ D = d` and the invariance identity `Δ ∘ D = (id ⊗ D) ∘ Δ`. More generally,
+on any right `H`-comodule `M`, the differentiated action `ρ'(d)` intertwines the coaction with
+`id ⊗ D`, so local nilpotence of `D` passes to `ρ'(d)` on every comodule and, when `H` is
+projective over `R`, can be detected on finite subcomodules of `H`.
 
 Over a domain of characteristic zero, every derivation of `H` sends nilpotent functions into the
 prime ideal `ker ε`. Applied to the invariant extension of `d`, this shows that every tangent
@@ -54,6 +61,12 @@ tangent space as the ambient group. This is the infinitesimal input to Cartier's
   descends through surjective coordinate maps and is reflected by injective ones.
 * `BialgEquiv.exists_iterate_leftInvariantDerivation_eq_zero_iff`: local nilpotence
   is invariant under a bialgebra isomorphism.
+* `TauCeti.Bialgebra.exists_iterate_leftInvariantDerivation_smul_eq_zero`: scaling preserves local
+  nilpotence of `leftInvariantDerivation`.
+* `TauCeti.Bialgebra.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_subcomodule` and
+  `TauCeti.Bialgebra.exists_iterate_leftInvariantDerivation_eq_zero_of_forall_isNilpotent`: when `H`
+  is projective over `R`, (local) nilpotence on finite subcomodules of `H` implies local nilpotence
+  of `leftInvariantDerivation d`.
 * `Derivation.apply_eq_zero_of_isNilpotent`: in characteristic zero, tangent vectors at the
   identity vanish on nilpotent functions.
 * `TauCeti.Bialgebra.nilradical_le_augmentationIdeal_sq`: over a field of characteristic zero,
@@ -191,6 +204,16 @@ theorem eq_leftInvariantDerivation (D : Derivation R H H)
     ← leftInvariantDerivation_apply] at hc
   simpa [LinearMap.tensorComponent_def] using hc
 
+/-- Scaling a tangent vector whose left-invariant derivation is locally nilpotent preserves local
+nilpotence of its left-invariant derivation. -/
+theorem exists_iterate_leftInvariantDerivation_smul_eq_zero
+    {d : Derivation R H (CounitAlgebra R H R)}
+    (hd : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) (t : R) :
+    ∀ h, ∃ n, (leftInvariantDerivation (t • d))^[n] h = 0 := by
+  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
+    (leftInvariantDerivation (R := R) (H := H)).toLinearMap.map_smul t d
+  simpa only [hsmul] using (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t
+
 end TauCeti.Bialgebra
 
 namespace BialgHom
@@ -309,3 +332,50 @@ theorem nilradical_le_augmentationIdeal_sq :
   rw [hf, Derivation.apply_eq_zero_of_isNilpotent _ hx', map_zero]
 
 end TauCeti.Bialgebra
+
+namespace TauCeti.Bialgebra
+
+section Converse
+
+variable {R H : Type*} [CommRing R] [CommRing H] [_root_.Bialgebra R H] [Module.Projective R H]
+
+/-- **Local nilpotence on finite subcomodules implies local nilpotence of the invariant vector
+field.** When `H` is projective over `R`, every element of `H` belongs to a finite subcomodule of
+the regular comodule, so local nilpotence of `Comodule.differential d` on all finite subcomodules of
+`H` implies local nilpotence of `leftInvariantDerivation d` on `H`. -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_subcomodule
+    {d : Derivation R H (CounitAlgebra R H R)}
+    (hd : ∀ N : Subcomodule R H H, Module.Finite R N.toSubmodule →
+      ∀ x : N, ∃ n, (Comodule.differential (R := R) (H := H) (M := N) d ^ n) x = 0)
+    (h : H) : ∃ n, (leftInvariantDerivation d)^[n] h = 0 := by
+  obtain ⟨N, hN, hh⟩ := Subcomodule.exists_finite_subcomodule_mem (R := R) (C := H) h
+  obtain ⟨n, hn⟩ := hd N hN ⟨h, hh⟩
+  have hmap : ∀ (k : ℕ) (x : N),
+      (((Comodule.differential (R := R) (H := H) (M := N) d ^ k) x : N) : H) =
+        (leftInvariantDerivation d)^[k] (x : H) := by
+    intro k
+    induction k with
+    | zero => intro x; rfl
+    | succ k ih =>
+      intro x
+      have hsub := (Subcomodule.subtype N).map_differential d
+        ((Comodule.differential (R := R) (H := H) (M := N) d ^ k) x)
+      simp only [Subcomodule.subtype_apply, ← toLinearMap_leftInvariantDerivation,
+        Derivation.coeFn_coe] at hsub
+      rw [pow_succ', mul_apply_eq_comp, hsub, ih, Function.iterate_succ_apply']
+  refine ⟨n, ?_⟩
+  simpa only [hn, ZeroMemClass.coe_zero] using (hmap n ⟨h, hh⟩).symm
+
+/-- **Nilpotence on finite subcomodules implies local nilpotence of the invariant vector field.** -/
+theorem exists_iterate_leftInvariantDerivation_eq_zero_of_forall_isNilpotent
+    {d : Derivation R H (CounitAlgebra R H R)}
+    (hd : ∀ N : Subcomodule R H H, Module.Finite R N.toSubmodule →
+      IsNilpotent (Comodule.differential (R := R) (H := H) (M := N) d))
+    (h : H) : ∃ n, (leftInvariantDerivation d)^[n] h = 0 :=
+  exists_iterate_leftInvariantDerivation_eq_zero_of_forall_subcomodule
+    (fun N hN ↦ (hd N hN).exists_pow_apply_eq_zero) h
+
+end Converse
+
+end TauCeti.Bialgebra
+

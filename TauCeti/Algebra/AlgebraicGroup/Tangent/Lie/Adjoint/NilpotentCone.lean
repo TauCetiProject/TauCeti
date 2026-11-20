@@ -74,6 +74,10 @@ central element and a point of the cone
 * `TauCeti.adjointInvariantPolynomials_le_lieInvariants` and
   `TauCeti.adjointInvariantPolynomials_eq_lieInvariants`: they are Lie invariants, and for
   connected `G` over an algebraically closed field of characteristic zero they are all of them.
+* `TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials` and
+  `TauCeti.lift_eval_basePointsRepresentation_of_mem_lieInvariants`: invariant polynomial
+  functions (and, for connected `G`, Lie-invariant polynomial functions) are constant on rational
+  adjoint orbits.
 * `TauCeti.nilpotentConeIdeal`: the ideal of the zero fibre of the adjoint quotient.
 * `TauCeti.nilpotentConeIdeal_isHomogeneous` and `TauCeti.nilpotentConeSubcomodule`: it is
   stable under scaling and under the adjoint action.
@@ -441,6 +445,27 @@ theorem isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_
     and_assoc]
 
 end Connected
+
+section ConnectedUnbundled
+
+variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
+  {H : Type u} [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+  [ConnectedSpace (PrimeSpectrum H)]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- **Lie-invariant polynomial functions are constant on rational adjoint orbits of a connected
+group.** -/
+theorem lift_eval_basePointsRepresentation_of_mem_lieInvariants
+    {p : SymmetricAlgebra k (Module.Dual k 𝔤)}
+    (hp : p ∈ SymmetricAlgebra.lieInvariants k 𝔤 (Module.Dual k 𝔤))
+    (g : WithConv (H →ₐ[k] k)) (x : 𝔤) :
+    SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (Comodule.basePointsRepresentation 𝔤 g x)) p =
+      SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x) p :=
+  lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials g x
+    (by rwa [adjointInvariantPolynomials_eq_lieInvariants (H := FiniteTypeCommHopfAlgCat.of k H)])
+
+end ConnectedUnbundled
 
 namespace Comodule.VectorOrbit
 

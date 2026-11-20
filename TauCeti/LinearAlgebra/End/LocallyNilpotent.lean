@@ -35,6 +35,8 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
 ## Main results
 
 * `IsNilpotent.exists_pow_apply_eq_zero`: a nilpotent endomorphism is locally nilpotent.
+* `Module.End.exists_pow_smul_apply_eq_zero`: scaling a locally nilpotent endomorphism preserves
+  local nilpotence.
 * `Module.End.sum_range_smul_pow_apply_eq_of_le`: at a vector killed by `f ^ k`, a power series in
   `f` may be truncated at any length beyond `k`.
 * `Module.End.span_range_pow_apply_eq_span_range_fin`: the orbit of a vector killed by
@@ -64,6 +66,13 @@ theorem IsNilpotent.exists_pow_apply_eq_zero {R M : Type*} [Semiring R] [AddComm
     [Module R M] {f : Module.End R M} (hf : IsNilpotent f) (x : M) : ∃ n, (f ^ n) x = 0 := by
   obtain ⟨n, hn⟩ := hf
   exact ⟨n, by rw [hn, LinearMap.zero_apply]⟩
+
+/-- Scaling a locally nilpotent endomorphism preserves local nilpotence. -/
+theorem Module.End.exists_pow_smul_apply_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {f : Module.End R M} (hf : ∀ x, ∃ n, (f ^ n) x = 0) (t : R) (x : M) :
+    ∃ n, ((t • f) ^ n) x = 0 := by
+  obtain ⟨n, hn⟩ := hf x
+  exact ⟨n, by rw [smul_pow, LinearMap.smul_apply, hn, smul_zero]⟩
 
 /-- A power series in `f` applied to a vector killed by `f ^ k` does not change when it is
 truncated at any length beyond `k`, whatever its coefficients. -/

@@ -6,43 +6,69 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
+public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Dominant
+import Mathlib.Data.Set.Card
 import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
+import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.OrbitSeparation
 import TauCeti.Algebra.Lie.HighestWeight.ChevalleyRestriction
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
+import TauCeti.LinearAlgebra.RootSystem.IntegralCoweight
 
 /-!
 # Uniqueness of dominant neutral elements and weighted Dynkin diagrams
 
-Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over an algebraically
-closed field `K` of characteristic zero, let `H` be a Cartan subalgebra, and let `b` be a base of
-the root system `LieAlgebra.IsKilling.rootSystem H`.
+Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over a field `K` of
+characteristic zero, let `H` be a splitting Cartan subalgebra, and let `b` be a base of the root
+system `LieAlgebra.IsKilling.rootSystem H`.
 
-By Chevalley's restriction theorem and Weyl-chamber uniqueness
-(`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant`), at most one element
-of `H` where every simple root of `b` takes a natural value realizes a given invariant character on
-`S(L*)^L`.
+Every `sl₂` triple over an algebraically closed field can be conjugated by `Int(L)` so that its
+neutral element lies in `RootPairing.Base.dominantNeutralElements b`
+(`IsSl2Triple.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed`). This file
+proves the complementary uniqueness statements:
 
-For `sl₂` triples `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` whose neutral elements lie in
-`RootPairing.Base.dominantNeutralElements b`, any Lie algebra automorphism `φ : L ≃ₗ⁅K⁆ L` carrying
-`e₁` to `e₂` and preserving `S(L*)^L` forces `h₁ = h₂`
-(`IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`): Kostant's conjugacy theorem
-conjugates `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` by an element of `expAdSubgroup K e₂ ≤ Int(L)`,
-which also preserves `S(L*)^L`, so `h₁` and `h₂` agree on `S(L*)^L`. In particular, each
-`Int(L)`-orbit of neutral elements meets `b.dominantNeutralElements` in a unique point
-(`RootPairing.Base.injOn_orbit_dominantNeutralElements`), and the weighted Dynkin diagram depends
-only on the `Int(L)`-orbit of the nilpositive element.
+1. **Uniqueness in a Weyl orbit and under Weyl invariants.** Over any field of characteristic zero
+   splitting `H`, at most one dominant neutral element lies in a given Weyl orbit or realizes a
+   given character on `S(H)^W`
+   (`RootPairing.Base.eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq`,
+   `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_forall_mem_linearInvariants_lift_eq`).
+2. **Separation by `S(L*)^L`.** Over an algebraically closed field, Chevalley's restriction theorem
+   and Weyl-chamber uniqueness
+   (`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant`)
+   show that at most one element of `H` where every simple root of `b` takes a natural value
+   realizes a given invariant character on `S(L*)^L`.
+3. **Passage from the nilpositive element to the neutral element.** For `sl₂` triples
+   `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` whose neutral elements lie in
+   `RootPairing.Base.dominantNeutralElements b`, any Lie algebra automorphism `φ : L ≃ₗ⁅K⁆ L`
+   carrying `e₁` to `e₂` and preserving `S(L*)^L` forces `h₁ = h₂`
+   (`IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`): Kostant's conjugacy
+   theorem conjugates `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` by an element of
+   `expAdSubgroup K e₂ ≤ Int(L)`, which also preserves `S(L*)^L`, so `h₁` and `h₂` agree on
+   `S(L*)^L`. In particular, each `Int(L)`-orbit of neutral elements meets
+   `b.dominantNeutralElements` in a unique point
+   (`RootPairing.Base.injOn_orbit_dominantNeutralElements`), and the weighted Dynkin diagram depends
+   only on the `Int(L)`-orbit of the nilpositive element.
 
 ## Main results
 
-* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
-  `RootPairing.Base.injOn_orbit_dominantNeutralElements`: distinct dominant neutral elements have
-  disjoint `Int(L)`-orbits.
-* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
-  automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂`.
-* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
-  `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`: `Int(L)`-conjugate
-  nilpositive elements share the same dominant neutral element and weighted Dynkin diagram.
+* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq` and
+  `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_forall_mem_linearInvariants_lift_eq`:
+  dominant neutral elements in the same Weyl orbit, or agreeing on `S(H)^W`, coincide.
+* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
+  `RootPairing.Base.injOn_orbit_dominantNeutralElements`,
+  `IsSl2Triple.existsUnique_mem_dominantNeutralElements_mem_orbit_intLieAlgebra`, and
+  `TauCeti.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral elements have
+  disjoint `Int(L)`-orbits, so the number of `Int(L)`-orbits of neutral elements equals
+  `b.dominantNeutralElements.ncard`.
+* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq` and
+  `IsSl2Triple.weightedDynkinDiagram_eq_of_lieEquiv_apply_eq`: an invariant-preserving Lie
+  automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂` and
+  their weighted Dynkin diagrams.
+* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
+  `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`, and
+  `TauCeti.existsUnique_mem_dominantNeutralElements_exists_mem_intLieAlgebra_isSl2Triple`:
+  `Int(L)`-conjugate nilpositive elements share a unique dominant neutral element and equal
+  weighted Dynkin diagrams.
 
 ## References
 
@@ -50,6 +76,7 @@ only on the `Int(L)`-orbit of the nilpositive element.
   Nostrand Reinhold, 1993, §3.5.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, Wiley,
   1985, §5.6.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 7–9, Chapter VIII, §11, no. 2, Proposition 3.
 -/
 
 public section
@@ -60,6 +87,36 @@ open TauCeti.SymmetricAlgebra
 namespace RootPairing.Base
 
 open TauCeti
+
+section Split
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+  [IsTriangularizable K H L]
+
+/-- **At most one dominant neutral element lies in each Weyl orbit.** -/
+theorem eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq (b : (rootSystem H).Base)
+    {h₁ h₂ : H} (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements)
+    (hw : ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv h₁ = h₂) :
+    h₁ = h₂ := by
+  obtain ⟨w, rfl⟩ := hw
+  exact (b.coweightEquiv_eq_self_of_forall_exists_nat_root'_apply
+    ((b.mem_dominantNeutralElements_iff _).mp hh₁).2
+    ((b.mem_dominantNeutralElements_iff _).mp hh₂).2).symm
+
+/-- **Weyl invariants separate dominant neutral elements** when read through
+`LieAlgebra.IsKilling.cartanEquivDual`. -/
+theorem eq_of_mem_dominantNeutralElements_of_forall_mem_linearInvariants_lift_eq
+    (b : (rootSystem H).Base) {h₁ h₂ : H} (hh₁ : h₁ ∈ b.dominantNeutralElements)
+    (hh₂ : h₂ ∈ b.dominantNeutralElements)
+    (heq : ∀ p ∈ linearInvariants H,
+      _root_.SymmetricAlgebra.lift (cartanEquivDual H h₁) p =
+        _root_.SymmetricAlgebra.lift (cartanEquivDual H h₂) p) :
+    h₁ = h₂ :=
+  b.eq_of_mem_dominantNeutralElements_of_coweightEquiv_eq hh₁ hh₂
+    (forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff.mp heq)
+
+end Split
 
 section IntOrbits
 
@@ -132,6 +189,21 @@ theorem eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq (b : (rootSystem 
     ((b.mem_dominantNeutralElements_iff h₂).mp hh₂).2 fun p hp ↦ ?_
   rw [← hφinv p hp (h₁ : L), ← hgh, lift_eval_smul_of_mem_intLieAlgebra hg hp]
 
+/-- **Invariance of the weighted Dynkin diagram under nilpositive conjugacy.** Under the hypotheses
+of `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`, `h₁` and `h₂` have the same
+weighted Dynkin diagram. -/
+theorem weightedDynkinDiagram_eq_of_lieEquiv_apply_eq (b : (rootSystem H).Base)
+    {h₁ h₂ : H} {e₁ f₁ e₂ f₂ : L}
+    (t₁ : IsSl2Triple (h₁ : L) e₁ f₁) (t₂ : IsSl2Triple (h₂ : L) e₂ f₂)
+    (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements)
+    (φ : L ≃ₗ⁅K⁆ L) (hφe : φ e₁ = e₂)
+    (hφinv : ∀ p ∈ lieInvariants K L (Dual K L), ∀ z : L,
+      lift (Dual.eval K L (φ z)) p = lift (Dual.eval K L z) p) :
+    b.weightedDynkinDiagram ⟨h₁, hh₁⟩ = b.weightedDynkinDiagram ⟨h₂, hh₂⟩ := by
+  congr 1
+  exact Subtype.ext (t₁.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq b t₂ hh₁ hh₂ φ hφe
+    hφinv)
+
 end LieEquiv
 
 section IntConjugacy
@@ -139,6 +211,21 @@ section IntConjugacy
 variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra ℚ L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
   [H.IsCartanSubalgebra]
+
+/-- **Every `sl₂` triple has a unique dominant neutral element in the `Int(L)`-orbit of `h`.** -/
+theorem existsUnique_mem_dominantNeutralElements_mem_orbit_intLieAlgebra
+    (b : (rootSystem H).Base) {h e f : L} (t : IsSl2Triple h e f) :
+    ∃! h' : H, h' ∈ b.dominantNeutralElements ∧
+      (h' : L) ∈ MulAction.orbit (intLieAlgebra K L) h := by
+  obtain ⟨g, hg, h', hh', hgh, -⟩ :=
+    t.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed b
+  refine ⟨h', ⟨hh', ⟨⟨g, hg⟩, hgh⟩⟩, ?_⟩
+  rintro h'' ⟨hh'', g₁, hg₁⟩
+  refine b.injOn_orbit_dominantNeutralElements hh'' hh' ?_
+  dsimp only
+  have hgh' : (⟨g, hg⟩ : intLieAlgebra K L) • h = (h' : L) := hgh
+  have hg₁' : g₁ • h = (h'' : L) := hg₁
+  rw [← hg₁', ← hgh', MulAction.orbit_smul, MulAction.orbit_smul]
 
 /-- **Conjugate nilpositive elements under `Int(L)` share the same dominant neutral element.** -/
 theorem eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq (b : (rootSystem H).Base)
@@ -166,3 +253,33 @@ theorem weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq (b : (rootSystem H
 end IntConjugacy
 
 end IsSl2Triple
+
+namespace TauCeti
+
+variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra ℚ L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
+  [H.IsCartanSubalgebra]
+
+/-- **Exact count of `Int(L)`-orbits of neutral elements.** Over an algebraically closed field of
+characteristic zero, the `Int(L)`-orbits of neutral elements of `sl₂` triples are in bijection with
+`b.dominantNeutralElements`, so the two sets have the same cardinality. -/
+theorem ncard_image_orbit_setOf_exists_isSl2Triple_eq (b : (rootSystem H).Base) :
+    (MulAction.orbit (intLieAlgebra K L) '' {h : L | ∃ e f, IsSl2Triple h e f}).ncard =
+      b.dominantNeutralElements.ncard := by
+  rw [← b.image_orbit_dominantNeutralElements]
+  exact b.injOn_orbit_dominantNeutralElements.ncard_image
+
+/-- **Every nonzero `ad`-nilpotent element determines a unique dominant neutral element up to
+`Int(L)`.** -/
+theorem existsUnique_mem_dominantNeutralElements_exists_mem_intLieAlgebra_isSl2Triple
+    (b : (rootSystem H).Base) {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
+    ∃! h : H, h ∈ b.dominantNeutralElements ∧
+      ∃ g ∈ intLieAlgebra K L, ∃ f : L, IsSl2Triple (h : L) (g • e) f := by
+  obtain ⟨g₁, hg₁, h₁, hh₁, f₁, t₁⟩ :=
+    exists_mem_intLieAlgebra_isSl2Triple_smul_of_isNilpotent_ad b he he0
+  refine ⟨h₁, ⟨hh₁, g₁, hg₁, f₁, t₁⟩, ?_⟩
+  rintro h₂ ⟨hh₂, g₂, hg₂, f₂, t₂⟩
+  exact (t₁.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq b t₂ hh₁ hh₂
+    (mul_mem hg₂ (inv_mem hg₁)) (by rw [mul_smul, inv_smul_smul])).symm
+
+end TauCeti

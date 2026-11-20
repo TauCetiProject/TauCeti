@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.Algebra.Lie.HighestWeight.TracePower
 public import TauCeti.Algebra.Lie.Killing.ChevalleyRestriction
 import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
+import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.OrbitSeparation
 import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
@@ -51,6 +52,8 @@ invariant character (`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_
 
 * `TauCeti.lieCartanRestriction_mem_linearInvariants`: the restriction of an invariant is a Weyl
   invariant.
+* `TauCeti.lift_eval_coe_eq_of_coweightEquiv_eq`: Weyl-conjugate elements of `H` agree on
+  `S(L*)^L`.
 * `LieSubalgebra.linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants`: a homogeneous
   Weyl invariant of degree `m` is the restriction of an invariant of degree `m`.
 * `LieSubalgebra.map_lieInvariants_lieCartanRestriction`: the image of `S(L)^L` is `S(H)^W`.
@@ -76,7 +79,7 @@ open LieAlgebra LieAlgebra.IsKilling _root_.LieModule Module TauCeti.SymmetricAl
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [IsKilling K L] (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
 
-/-! ### Weyl invariance of the restriction -/
+/-! ### Weyl invariance -/
 
 section Weyl
 
@@ -104,6 +107,20 @@ theorem lieCartanRestriction_mem_linearInvariants {p : _root_.SymmetricAlgebra K
     rw [hs, hlift, AlgHom.comp_apply, map_coreflection_lieCartanRestriction i hp]
   | one => simp
   | mul x y hx hy ihx ihy => rw [← MulMemClass.mk_mul_mk (hx := hx) (hy := hy), mul_smul, ihx, ihy]
+
+variable {H} in
+/-- Weyl-conjugate elements of a splitting Cartan subalgebra take equal values at every invariant
+polynomial function `p ∈ S(L*)^L`. -/
+theorem lift_eval_coe_eq_of_coweightEquiv_eq {h₁ h₂ : H}
+    (hw : ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv h₁ = h₂)
+    {p : _root_.SymmetricAlgebra K (Dual K L)} (hp : p ∈ lieInvariants K L (Dual K L)) :
+    _root_.SymmetricAlgebra.lift (Dual.eval K L (h₁ : L)) p =
+      _root_.SymmetricAlgebra.lift (Dual.eval K L (h₂ : L)) p := by
+  rw [← (killingSymmetricEquiv K L).apply_symm_apply p] at hp ⊢
+  rw [lift_eval_killingSymmetricEquiv_coe, lift_eval_killingSymmetricEquiv_coe]
+  exact forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff.mpr hw _
+    (lieCartanRestriction_mem_linearInvariants
+      ((killingSymmetricEquiv_mem_lieInvariants_iff K L).mp hp))
 
 end Weyl
 

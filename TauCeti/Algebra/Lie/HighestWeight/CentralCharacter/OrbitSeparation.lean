@@ -6,11 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.DotOrbit
+public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Linear
+import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.Algebra.Algebra.Pi
+import TauCeti.Algebra.Lie.Weights.InvariantForm
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
-# Dot-invariant polynomials separate dot orbits
+# Dot-invariant and Weyl-invariant polynomials separate orbits
 
 For two weights in distinct dot orbits, finite interpolation produces a polynomial taking
 values zero and one on the respective orbits. Its product over Weyl pullbacks remains zero
@@ -19,6 +22,14 @@ values on every dot-invariant polynomial exactly when they lie in one dot orbit.
 
 This is the invariant-theoretic step of the Harish-Chandra central-character orbit theorem.
 It is independent of surjectivity of the Harish-Chandra projection.
+
+Transporting the dot-orbit separation along translation by `-ρ` gives the analogous separation
+for linear Weyl invariants `S(H)^W` (`TauCeti.linearInvariants H`): distinct linear Weyl orbits
+on `H*` are separated by a Weyl invariant taking value `0` at one weight and `1` at the other
+(`TauCeti.exists_mem_linearInvariants_lift_eq_zero_one`,
+`TauCeti.forall_mem_linearInvariants_lift_eq_iff`), and via `LieAlgebra.IsKilling.cartanEquivDual`
+they separate Weyl orbits on `H`
+(`TauCeti.forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff`).
 
 ## References
 
@@ -36,7 +47,10 @@ universe u v
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
-  {b : (IsKilling.rootSystem H).Base}
+
+section Dot
+
+variable {b : (IsKilling.rootSystem H).Base}
 
 /-- Finite interpolation on the dot orbits of `lam` and `mu`: if the orbits are distinct, some
 polynomial vanishes on the orbit of `lam` and is `1` on the orbit of `mu`. -/
@@ -152,5 +166,60 @@ theorem forall_mem_dotInvariants_lift_eq_iff {lam mu : Dual K H} :
     simpa [hlam, hmu] using heq p hp
   · rintro ⟨w, rfl⟩ p hp
     exact ((mem_dotInvariants_iff.mp hp) w lam).symm
+
+end Dot
+
+section Linear
+
+open LieAlgebra.IsKilling
+
+/-- **Distinct linear Weyl orbits on `H*` are separated by a Weyl invariant** taking value `0` at
+`lam` and `1` at `mu`. -/
+theorem exists_mem_linearInvariants_lift_eq_zero_one {lam mu : Dual K H}
+    (h : ¬ ∃ w : (rootSystem H).weylGroup, w • lam = mu) :
+    ∃ p ∈ linearInvariants H,
+      SymmetricAlgebra.lift lam p = 0 ∧ SymmetricAlgebra.lift mu p = 1 := by
+  obtain ⟨b⟩ := (rootSystem H).nonempty_base
+  have hdot : ¬ ∃ w, dotAction (rootSystem H) b w
+      (lam - weylVector (rootSystem H) b) = mu - weylVector (rootSystem H) b := by
+    rintro ⟨w, hw⟩
+    apply h
+    refine ⟨w, ?_⟩
+    have hw' := congrArg (· + weylVector (rootSystem H) b) hw
+    rwa [dotAction_def, sub_add_cancel, sub_add_cancel, sub_add_cancel] at hw'
+  obtain ⟨q, hq, hqlam, hqmu⟩ := exists_mem_dotInvariants_lift_eq_zero_one (b := b) hdot
+  refine ⟨SymmetricAlgebra.translation (-weylVector (rootSystem H) b) q,
+    (translation_neg_weylVector_mem_linearInvariants_iff b).mpr hq, ?_, ?_⟩
+  · simpa [sub_eq_add_neg] using hqlam
+  · simpa [sub_eq_add_neg] using hqmu
+
+/-- **The Weyl invariants `S(H)^W` separate linear Weyl orbits on `H*`.** -/
+theorem forall_mem_linearInvariants_lift_eq_iff {lam mu : Dual K H} :
+    (∀ p ∈ linearInvariants H,
+        SymmetricAlgebra.lift lam p = SymmetricAlgebra.lift mu p) ↔
+      ∃ w : (rootSystem H).weylGroup, w • lam = mu := by
+  refine ⟨fun heq ↦ ?_, ?_⟩
+  · by_contra h
+    obtain ⟨p, hp, h0, h1⟩ := exists_mem_linearInvariants_lift_eq_zero_one h
+    exact zero_ne_one ((h0.symm.trans (heq p hp)).trans h1)
+  · rintro ⟨w, rfl⟩ p hp
+    exact ((mem_linearInvariants_iff.mp hp) w lam).symm
+
+/-- **The Weyl invariants `S(H)^W` separate Weyl orbits on `H`** when read through
+`LieAlgebra.IsKilling.cartanEquivDual`. -/
+theorem forall_mem_linearInvariants_lift_cartanEquivDual_eq_iff {h₁ h₂ : H} :
+    (∀ p ∈ linearInvariants H,
+        SymmetricAlgebra.lift (cartanEquivDual H h₁) p =
+          SymmetricAlgebra.lift (cartanEquivDual H h₂) p) ↔
+      ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv h₁ = h₂ := by
+  rw [forall_mem_linearInvariants_lift_eq_iff]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨w⁻¹, (cartanEquivDual H).injective ?_⟩
+    rw [cartanEquivDual_coweightEquiv, inv_inv, hw]
+  · rintro ⟨w, rfl⟩
+    exact ⟨w⁻¹, (cartanEquivDual_coweightEquiv w h₁).symm⟩
+
+end Linear
 
 end TauCeti
