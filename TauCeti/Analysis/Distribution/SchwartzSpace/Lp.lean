@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-import Mathlib.Analysis.Calculus.BumpFunction.Convolution
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import Mathlib.Geometry.Manifold.SmoothApprox
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -27,7 +25,7 @@ positive on nonempty open sets, a bounded continuous function lies in the `L^∞
 Schwartz functions exactly when it vanishes at infinity along `cocompact E`
 (`BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`): uniform limits of
 Schwartz functions vanish at infinity, and conversely cutting off a function vanishing at infinity
-by a smooth bump and mollifying produces a smooth compactly supported (hence Schwartz) uniform
+by a smooth bump and taking a support-preserving smooth approximation produces a Schwartz uniform
 approximant.
 
 ## Main declarations
@@ -40,8 +38,8 @@ approximant.
 ## References
 
 * L. Grafakos, *Classical Fourier Analysis*, 3rd ed., §2.2 (Schwartz functions and approximation).
-* G. B. Folland, *Real Analysis*, 2nd ed., §8.1 (mollification and density of smooth compactly
-  supported functions in `C₀`).
+* G. B. Folland, *Real Analysis*, 2nd ed., §8.1 (density of smooth compactly supported functions in
+  `C₀`).
 -/
 
 public section
@@ -49,7 +47,7 @@ public section
 noncomputable section
 
 open MeasureTheory Filter
-open scoped ENNReal SchwartzMap Convolution Topology
+open scoped ENNReal SchwartzMap Topology
 
 namespace SchwartzMap
 
@@ -76,7 +74,7 @@ variable {E F 𝕜 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDi
 temperate measure `μ` that is positive on nonempty open sets, a bounded continuous function
 `f : E →ᵇ F` lies in the `L^∞(μ)` closure of the Schwartz functions exactly when `f` vanishes at
 infinity along `cocompact E`. -/
-theorem toLpTop_mem_closure_range_schwartz_toLp_top_iff [CompleteSpace F] {μ : Measure E}
+theorem toLpTop_mem_closure_range_schwartz_toLp_top_iff {μ : Measure E}
     [μ.HasTemperateGrowth] [μ.IsOpenPosMeasure] (f : E →ᵇ F) :
     toLpTop μ 𝕜 f ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp ∞ μ) ↔
       Tendsto f (cocompact E) (𝓝 0) := by
@@ -120,26 +118,15 @@ theorem toLpTop_mem_closure_range_schwartz_toLp_top_iff [CompleteSpace F] {μ : 
           simp only [fcut, sub_smul, one_smul]
         rw [hsub, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 χ.le_one)]
         exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [χ.nonneg' x])).trans hfx.le
-    -- Mollify `fcut` against a Haar measure at a scale `δ` where it oscillates by `< ε / 3`.
-    obtain ⟨δ, hδ, hδf⟩ := Metric.uniformContinuous_iff.1
-      (hfcut_supp.uniformContinuous_of_continuous hfcut_cont) (ε / 3) (by positivity)
-    let ν : Measure E := (Module.finBasis ℝ E).addHaar
-    let ρ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
-    set g₀ : E → F := ρ.normed ν ⋆[ContinuousLinearMap.lsmul ℝ ℝ, ν] fcut
-    have hg₀_smooth : ContDiff ℝ (⊤ : ℕ∞) g₀ :=
-      ρ.hasCompactSupport_normed.contDiff_convolution_left (ContinuousLinearMap.lsmul ℝ ℝ)
-        ρ.contDiff_normed hfcut_cont.locallyIntegrable
-    have hg₀_supp : HasCompactSupport g₀ :=
-      ρ.hasCompactSupport_normed.convolution (ContinuousLinearMap.lsmul ℝ ℝ) hfcut_supp
-    set g : 𝓢(E, F) := hg₀_supp.toSchwartzMap hg₀_smooth
+    -- Smoothly approximate `fcut` within `ε / 3` while preserving compact support.
+    obtain ⟨g₀, hg₀_smooth, hg₀_approx, hg₀_supp⟩ := hfcut_cont.exists_contDiff_approx ⊤
+      (ε := fun _ ↦ ε / 3) continuous_const fun _ ↦ by positivity
+    set g : 𝓢(E, F) := (hfcut_supp.mono hg₀_supp).toSchwartzMap hg₀_smooth
     refine ⟨g.toLp ∞ μ, ⟨g, rfl⟩, ?_⟩
     have hpt : ∀ x, ‖f x - g x‖ ≤ 2 * ε / 3 := fun x ↦ by
-      have hconv : dist (g x) (fcut x) ≤ ε / 3 :=
-        ρ.dist_normed_convolution_le (μ := ν) hfcut_cont.aestronglyMeasurable
-          fun y hy ↦ (hδf (Metric.mem_ball.1 hy)).le
       calc ‖f x - g x‖ ≤ ‖f x - fcut x‖ + ‖fcut x - g x‖ := norm_sub_le_norm_sub_add_norm_sub _ _ _
         _ = ‖f x - fcut x‖ + dist (g x) (fcut x) := by rw [dist_comm, dist_eq_norm]
-        _ ≤ ε / 3 + ε / 3 := add_le_add (hfcut_dist x) hconv
+        _ ≤ ε / 3 + ε / 3 := add_le_add (hfcut_dist x) (hg₀_approx x).le
         _ = 2 * ε / 3 := by ring
     rw [dist_eq_norm]
     refine (Lp.norm_top_le_of_ae_bound (c := 2 * ε / 3) (by positivity) ?_).trans_lt (by linarith)

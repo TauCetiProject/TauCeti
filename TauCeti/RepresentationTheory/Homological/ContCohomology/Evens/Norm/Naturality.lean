@@ -269,10 +269,10 @@ private theorem resolutionComparison_ι [LinearOrder (G ⧸ U.toSubgroup)]
     (tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom
         ((smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen'
           (s.map (φ : H →* G) e he) (coeffs U.toSubgroup)
-          (trivialF2_add_self U.toSubgroup)).ι.hom x).1 =
+          (trivialF2_add_self U.toSubgroup)).ι.hom x).val =
       ((smoothTensorInducedGradedResolutionContraction V.toSubgroup V.isOpen' s
           (coeffs V.toSubgroup) (trivialF2_add_self V.toSubgroup)).ι.hom
-        ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom x)).1 := by
+        ((tensorComparisonHom φ ψ hψ he s (coeffPullback ψ)).hom x)).val := by
   have key : PiTensorProduct.map (fun _ ↦ (resolutionPullback ψ).toLinearMap) ∘ₗ
       (PiTensorProduct.reindex ℤ (fun _ ↦ (resolutionRep U.toSubgroup).V) e.symm).toLinearMap ∘ₗ
         PiTensorProduct.map (fun _ ↦ (coeffs U.toSubgroup).obj.gradedResolutionAugmentation) =

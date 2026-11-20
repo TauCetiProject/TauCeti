@@ -483,10 +483,11 @@ and a pair `(L, c)` to the loop `c` run in time `L`. In particular, over positiv
 length of Moore loops is a product projection, with fibre the loop space `Path x x`. -/
 def posLengthHomeomorph :
     (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace X x)) ≃ₜ Set.Ioi (0 : ℝ≥0) × Path x x where
-  toFun γ := (⟨γ.1.length, γ.2⟩, γ.1.toPath)
+  toFun γ := (⟨γ.val.length, γ.property⟩, γ.val.toPath)
   invFun q := ⟨⟨q.2.toMoorePath.rescale q.1, by simp, by
-    rw [MoorePath.target_rescale _ (ne_of_gt q.1.2), Path.target_toMoorePath]⟩, by
-    simpa only [Set.mem_preimage, ← length_toMoorePath, MoorePath.length_rescale] using q.1.2⟩
+    rw [MoorePath.target_rescale _ (ne_of_gt q.1.property), Path.target_toMoorePath]⟩, by
+    simpa only [Set.mem_preimage, ← length_toMoorePath, MoorePath.length_rescale] using
+        q.1.property⟩
   left_inv γ := Subtype.ext <| ext <| by
     simp only
     rw [toMoorePath_toPath, MoorePath.rescale_rescale _ one_ne_zero, ← length_toMoorePath,
@@ -496,37 +497,37 @@ def posLengthHomeomorph :
     · simp only [← length_toMoorePath, MoorePath.length_rescale]
     simp only [toPath_apply, MoorePath.length_rescale, MoorePath.rescale_apply,
       Path.length_toMoorePath, one_mul, Path.toMoorePath_apply]
-    rw [mul_div_cancel_left₀ (toNNReal s) (ne_of_gt q.1.2 : (q.1 : ℝ≥0) ≠ 0)]
+    rw [mul_div_cancel_left₀ (toNNReal s) (ne_of_gt q.1.property : (q.1 : ℝ≥0) ≠ 0)]
     exact q.2.extend_extends' s
   continuous_toFun := by fun_prop
   continuous_invFun := by
     refine Continuous.subtype_mk (isEmbedding_toMoorePath.continuous_iff.2 ?_) _
     exact (Path.continuous_toMoorePath.comp continuous_snd).moorePath_rescale
-      (continuous_subtype_val.comp continuous_fst) fun q ↦ ne_of_gt q.1.2
+      (continuous_subtypeVal.comp continuous_fst) fun q ↦ ne_of_gt q.1.property
 
 @[simp]
 theorem posLengthHomeomorph_apply_fst (γ : (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace X x))) :
-    ((posLengthHomeomorph x γ).1 : ℝ≥0) = γ.1.length :=
+    ((posLengthHomeomorph x γ).1 : ℝ≥0) = γ.val.length :=
   (rfl)
 
 @[simp]
 theorem posLengthHomeomorph_apply_snd (γ : (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace X x))) :
-    (posLengthHomeomorph x γ).2 = γ.1.toPath :=
+    (posLengthHomeomorph x γ).2 = γ.val.toPath :=
   (rfl)
 
 @[simp]
 theorem toMoorePath_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) × Path x x) :
-    ((posLengthHomeomorph x).symm q).1.toMoorePath = q.2.toMoorePath.rescale q.1 :=
+    ((posLengthHomeomorph x).symm q).val.toMoorePath = q.2.toMoorePath.rescale q.1 :=
   (rfl)
 
 @[simp]
 theorem length_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) × Path x x) :
-    ((posLengthHomeomorph x).symm q).1.length = q.1 :=
+    ((posLengthHomeomorph x).symm q).val.length = q.1 :=
   congrArg (fun q ↦ (q.1 : ℝ≥0)) ((posLengthHomeomorph x).apply_symm_apply q)
 
 @[simp]
 theorem toPath_posLengthHomeomorph_symm_apply (q : Set.Ioi (0 : ℝ≥0) × Path x x) :
-    ((posLengthHomeomorph x).symm q).1.toPath = q.2 :=
+    ((posLengthHomeomorph x).symm q).val.toPath = q.2 :=
   congrArg Prod.snd ((posLengthHomeomorph x).apply_symm_apply q)
 
 /-- Reparametrizing to the unit interval commutes with the Moore loop map of a continuous map. -/

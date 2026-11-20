@@ -132,7 +132,7 @@ theorem bfScattered_of_observation {β : Ordinal.{0} → Type*} (obs : ∀ α, K
   have := (hcount α hα).to_subtype
   -- Each class is the class of a chosen member with a given observed value.
   exact Function.Surjective.countable
-    (f := fun y : range (obs α) => Quotient.mk _ y.2.choose) fun q =>
+    (f := fun y : range (obs α) => Quotient.mk _ y.property.choose) fun q =>
       Quotient.inductionOn q fun c =>
         ⟨⟨obs α c, c, rfl⟩,
           Quotient.sound (hobs α hα _ _ (⟨c, rfl⟩ : ∃ d, obs α d = obs α c).choose_spec)⟩

@@ -123,7 +123,7 @@ theorem single_self_mem_diagonalCartan (i : n) (c : R) : single i i c ∈ diagon
   exact diagonal_mem_diagonalCartan _
 
 instance : IsLieAbelian (diagonalCartan R n) where
-  trivial A B := Subtype.ext (by simpa using lie_eq_zero_of_isDiag A.2 B.2)
+  trivial A B := Subtype.ext (by simpa using lie_eq_zero_of_isDiag A.property B.property)
 
 /-! ### The adjoint action of the diagonal -/
 
@@ -209,7 +209,7 @@ def diagonalEquiv : (n → R) ≃ₗ[R] diagonalCartan R n where
   map_smul' _ _ := Subtype.ext (by ext a b; by_cases h : a = b <;> simp [h])
   invFun A := diag (A : Matrix n n R)
   left_inv _ := diag_diagonal _
-  right_inv A := Subtype.ext (mem_diagonalCartan_iff_isDiag.mp A.2).diagonal_diag
+  right_inv A := Subtype.ext (mem_diagonalCartan_iff_isDiag.mp A.property).diagonal_diag
 
 /-- `diagonalEquiv` sends a tuple to the corresponding diagonal matrix. -/
 @[simp]
@@ -452,6 +452,6 @@ theorem single_mem_rootSpace (i j : n) (c : R) :
   refine fun A => ⟨1, ?_⟩
   simp only [pow_one, LinearMap.sub_apply, LieModule.toEnd_apply_apply, LinearMap.smul_apply,
     _root_.one_apply_eq_self, LieSubalgebra.coe_bracket_of_module, glWeightSub_apply,
-    lie_single_of_mem_diagonalCartan A.2 i j c, sub_self]
+    lie_single_of_mem_diagonalCartan A.property i j c, sub_self]
 
 end TauCeti
