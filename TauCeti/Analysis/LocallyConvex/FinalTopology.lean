@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
@@ -12,15 +13,21 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 # Final locally convex topologies
 
 Given linear maps from a family of topological real vector spaces into a real vector space,
-`finalLocallyConvexTopology` is the finest locally convex vector topology making them continuous.
-The source topologies need not themselves be vector topologies. No separation or injectivity
-assumption is imposed; in particular, this construction does not assert Hausdorffness.
+`finalLocallyConvexTopology` is the finest locally convex real vector topology making them
+continuous. The source topologies need not themselves be vector topologies. No separation or
+injectivity assumption is imposed; in particular, this construction does not assert Hausdorffness.
 
 A linear map out of this topology into a locally convex space is continuous exactly when its
-composites with the generating maps are continuous. The comparison criterion permits replacing
-the generating family by another family through finite sums of continuous factorizations. This
-allows partition-of-unity decompositions when comparing chart-generated test-section topologies
-with fixed-support inductive limits.
+composites with the generating maps are continuous. When a scalar action `R` on `F` is distributive
+and commutes with real scalars, each generator is `R`-equivariant, and constant `R`-scalar
+multiplication is continuous on each source, constant `R`-scalar multiplication is also continuous
+on the target (`TauCeti.FinalLocallyConvexTopology.continuousConstSMul`); for `ℝ` or `ℂ`
+(`RCLike R`), `RCLike.continuousSMul_of_continuousConstSMul` upgrades this to joint continuity of
+scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`).
+
+The comparison criterion permits replacing the generating family by another family through finite
+sums of continuous factorizations. This allows partition-of-unity decompositions when comparing
+chart-generated test-section topologies with fixed-support inductive limits.
 
 The construction and universal-property proof generalize Mathlib's
 `TestFunction.topologicalSpace` and `TestFunction.continuous_iff_continuous_comp` from a particular
@@ -156,6 +163,33 @@ theorem eq_of_rightInverse [t : TopologicalSpace F] [IsTopologicalAddGroup F]
       s (f i) (continuous f i) s.continuous
     rwa [Function.comp_def, funext hs] at hc
   exact (@continuous_id_iff_le F t (finalLocallyConvexTopology f)).1 h
+
+section SMul
+
+/-- Constant scalar multiplication by `R` is continuous for the final locally convex topology when
+the `R`-action on `F` is distributive and commutes with real scalars, every generator is
+`R`-equivariant, and each source has continuous constant `R`-scalar multiplication. -/
+theorem continuousConstSMul {R : Type*} [DistribSMul R F] [SMulCommClass ℝ R F]
+    [∀ i, SMul R (E i)] [∀ i, ContinuousConstSMul R (E i)]
+    (hf : ∀ i (c : R) x, f i (c • x) = c • f i x) :
+    @ContinuousConstSMul R F (finalLocallyConvexTopology f) _ := by
+  let := finalLocallyConvexTopology f
+  have := SMulCommClass.symm ℝ R F
+  exact ⟨fun c ↦ (continuous_iff_continuous_comp f (DistribSMul.toLinearMap ℝ F c)).2 fun i ↦
+    ((continuous f i).comp (continuous_const_smul c)).congr fun x ↦ hf i c x⟩
+
+/-- Joint scalar multiplication over `ℝ` or `ℂ` is continuous for the final locally convex
+topology when every generator is `R`-equivariant and each source has continuous constant `R`-scalar
+multiplication. -/
+theorem continuousSMul {R : Type*} [RCLike R] [Module R F] [IsScalarTower ℝ R F]
+    [∀ i, SMul R (E i)] [∀ i, ContinuousConstSMul R (E i)]
+    (hf : ∀ i (c : R) x, f i (c • x) = c • f i x) :
+    @ContinuousSMul R F _ _ (finalLocallyConvexTopology f) :=
+  let := finalLocallyConvexTopology f
+  have := continuousConstSMul f hf
+  RCLike.continuousSMul_of_continuousConstSMul
+
+end SMul
 
 end FinalLocallyConvexTopology
 

@@ -307,6 +307,22 @@ lemma matrixBilinearForm_opNorm_le_of_upper_bound (A : Matrix n n ℝ) {Lam : �
   intro η ξ
   exact norm_matrixBilinearForm_le_of_upper_bound A hA η ξ
 
+/-- Young's inequality for a matrix bilinear form: for `C > 0`,
+`ηᵀ A ξ ≤ C ‖η‖² / 2 + ‖A‖² ‖ξ‖² / (2 C)`, where `‖A‖` is the operator norm of the attached
+bilinear form. -/
+lemma matrixBilinearForm_apply_le_young (A : Matrix n n ℝ) {C : ℝ} (hC : 0 < C)
+    (η ξ : EuclideanSpace ℝ n) :
+    matrixBilinearForm A η ξ ≤
+      C / 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 / (2 * C) := by
+  have h := (le_abs_self _).trans ((matrixBilinearForm A).le_opNorm₂ η ξ)
+  have key : 2 * C * matrixBilinearForm A η ξ ≤
+      C ^ 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 := by
+    nlinarith [sq_nonneg (C * ‖η‖ - ‖matrixBilinearForm A‖ * ‖ξ‖)]
+  rw [show C / 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2 / (2 * C) =
+      (C ^ 2 * ‖η‖ ^ 2 + ‖matrixBilinearForm A‖ ^ 2 * ‖ξ‖ ^ 2) / (2 * C) by
+    field_simp, le_div_iff₀ (by positivity)]
+  linarith
+
 /-- The operator norm of a matrix bilinear form is at most the sum of the absolute values of the
 entries of the matrix. -/
 lemma norm_matrixBilinearForm_le_sum_abs (A : Matrix n n ℝ) :
@@ -695,6 +711,16 @@ lemma congr (h : UniformlyEllipticOn Ω a lam Lam) (hab : Set.EqOn b a Ω) :
     exact h.lower_bound hx ξ
   · rw [hab hx]
     exact h.upper_bound hx η ξ
+
+/-- Freezing the parameter of a family of uniformly elliptic coefficients keeps uniform
+ellipticity: if every `a(·, s)` is uniformly elliptic on `Ω` with the constants `λ, Λ`, then so
+is `x ↦ a(x, v x)` for every `v : X → S`. This is the frozen coefficient of a quasilinear
+equation `-div (a(x, u) ∇u) = ℓ`. -/
+lemma apply_of_forall {S : Type*} [Nonempty S] {a : X → S → Matrix n n ℝ}
+    (h : ∀ s, UniformlyEllipticOn Ω (fun x => a x s) lam Lam) (v : X → S) :
+    UniformlyEllipticOn Ω (fun x => a x (v x)) lam Lam :=
+  of_bounds (h (Classical.arbitrary S)).pos (h (Classical.arbitrary S)).le
+    (fun _ hx ξ => (h _).lower_bound hx ξ) (fun _ hx η ξ => (h _).upper_bound hx η ξ)
 
 /-- At every point of the domain, uniform ellipticity gives a norm bound for the attached
 matrix bilinear form. -/
