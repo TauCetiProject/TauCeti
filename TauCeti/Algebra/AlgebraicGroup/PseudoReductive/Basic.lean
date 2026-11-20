@@ -59,7 +59,7 @@ This file defines the predicate and establishes its basic theory:
 ## References
 
 * B. Conrad, O. Gabber, G. Prasad, *Pseudo-reductive Groups*, 2nd ed. (2015), §1.1.
-* J. S. Milne, *Algebraic Groups* (2017), §§6.45–6.46 and Chapter 19.
+* J. S. Milne, *Algebraic Groups* (2017), §§6.45–6.46, Proposition 19.11, and Chapter 19.
 -/
 
 public section
