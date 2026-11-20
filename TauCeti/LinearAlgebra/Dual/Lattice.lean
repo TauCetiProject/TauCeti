@@ -111,7 +111,9 @@ end Module.Basis
 
 namespace Submodule
 
-variable {R K V : Type*} [CommRing R] [IsDomain R] [Field K] [Algebra R K]
+section IsFractionRing
+
+variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K]
   [IsFractionRing R K] [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
 
 /-- The integral dual of a free full lattice is again a full lattice. -/
@@ -122,6 +124,8 @@ instance isFullLattice_dualLattice (N : Submodule R V) [N.IsFullLattice K] [Modu
   let b := Module.Free.chooseBasis R N
   rw [← b.span_range_extendOfIsFullLattice (K := K), (b.extendOfIsFullLattice K).dualLattice_span]
   exact isFullLattice_span (Set.finite_range _) (b.extendOfIsFullLattice K).dualBasis.span_eq
+
+end IsFractionRing
 
 section Pairing
 

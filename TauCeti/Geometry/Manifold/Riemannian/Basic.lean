@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
+public import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -50,6 +51,10 @@ differentiability criterion for maps whose tangent maps preserve inner products.
   norms of vectors in the tangent spaces at two equal points agree.
 * `TauCeti.mfderiv_mem_ball_of_apply_eq_self`: if `f` fixes `p` and its differential at `p`
   preserves the metric there, it maps every ball around the origin of `T_p M` into itself.
+* `TauCeti.Manifold.inner_tangentSpace_vectorSpace` and
+  `TauCeti.Manifold.inner_mfderiv_eq_inner_mvfderiv`: the canonical identification of a tangent
+  space of a real inner-product space with the model space preserves inner products, and rewrites
+  inner products of `mfderiv` into `mvfderiv`.
 -/
 
 public section
@@ -58,6 +63,14 @@ open Bundle Manifold
 open scoped Bundle ContDiff Manifold
 
 noncomputable section
+
+/-- The native tangent-space metric on a real inner product space has the same inner products
+as its standard bundled Riemannian metric. -/
+theorem TauCeti.riemannianBundle_g_inner_vectorSpace
+    (F : Type*) [NormedAddCommGroup F] [InnerProductSpace ℝ F] :
+    (RiemannianBundle.g (E := fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)).inner =
+      (riemannianMetricVectorSpace F).inner :=
+  (rfl)
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -291,6 +304,15 @@ theorem norm_tangentSpace_congr {q p : M} (h : q = p) {w : TangentSpace I q}
     {v : TangentSpace I p} (hw : (w : E) = v) : ‖w‖ = ‖v‖ := by
   rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, inner_tangentSpace_congr h hw hw]
 
+/-- Normalization of equal model vectors at equal base points gives equal model vectors.
+The metric used to normalize each vector is the metric at its base point. -/
+theorem normalize_tangentSpace_congr {p q : M} (hp : p = q)
+    {v : TangentSpace I p} {w : TangentSpace I q} (hv : (v : E) = w) :
+    (NormedSpace.normalize (V := TangentSpace I p) v : E) =
+      NormedSpace.normalize (V := TangentSpace I q) w := by
+  subst hp hv
+  rfl
+
 /-- **Ball stability at a fixed point.** If `f` fixes `p` and its differential at `p` preserves
 the metric there, that differential maps every ball around the origin of `T_p M` into itself. -/
 theorem mfderiv_mem_ball_of_apply_eq_self {f : M → M} {p : M} (hfp : f p = p)
@@ -307,3 +329,32 @@ theorem mfderiv_mem_ball_of_apply_eq_self {f : M → M} {p : M} (hfp : f p = p)
   exact mem_ball_zero_iff.1 hw
 
 end TauCeti
+
+namespace TauCeti.Manifold
+
+/-- The canonical identification of a tangent space of a real inner-product space with the
+model space preserves inner products. -/
+theorem inner_tangentSpace_vectorSpace {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {x : F}
+    (v w : TangentSpace 𝓘(ℝ, F) x) :
+    inner ℝ v w = inner ℝ (NormedSpace.fromTangentSpace x v)
+      (NormedSpace.fromTangentSpace x w) := by
+  -- `TangentSpace` is a type synonym for `F`, `fromTangentSpace` is its
+  -- canonical `tangentSpaceCastModel`, and the standard metric has `innerSL` as
+  -- its inner product. This is the same definitional transport used by
+  -- Mathlib's `norm_tangentSpace_vectorSpace`.
+  rfl
+
+/-- For a map into a real inner product space, the inner product of `mfderiv` values in the target
+tangent space equals the inner product of `mvfderiv` values in the model space. -/
+theorem inner_mfderiv_eq_inner_mvfderiv
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (f : M → F) (x : M) (v w : TangentSpace I x) :
+    inner ℝ (mfderiv I 𝓘(ℝ, F) f x v) (mfderiv I 𝓘(ℝ, F) f x w) =
+      inner ℝ (mvfderiv I f x v) (mvfderiv I f x w) := by
+  simp [inner_tangentSpace_vectorSpace, mvfderiv]
+
+end TauCeti.Manifold
