@@ -24,6 +24,7 @@ and deduces the multiplicative and conjugation-twisted product laws for the two 
 
 * `Subgroup.IsComplement'.normal_left_of_le_normalizer`: a subgroup complemented by a subgroup
   normalizing it is normal in the ambient group.
+* `Subgroup.IsComplement'.eq_of_le`: nested complements of the same subgroup are equal.
 * `Subgroup.IsComplement.leftQuotientEquiv_mk`: `leftQuotientEquiv` sends the coset of `g` to the
   left component of `g` in `Subgroup.IsComplement.equiv`.
 * `Subgroup.IsComplement'.quotientMulEquiv_mk`,
@@ -44,6 +45,15 @@ variable {G : Type*} [Group G] {N K H : Subgroup G}
 theorem IsComplement'.normal_left_of_le_normalizer (h : N.IsComplement' K)
     (hLE : K ≤ normalizer (N : Set G)) : N.Normal :=
   normal_of_le_normalizer_of_sup_eq_top hLE h.sup_eq_top
+
+/-- Of two complements of the same subgroup, one contained in the other, the two are equal. -/
+theorem IsComplement'.eq_of_le (hK : N.IsComplement' K) (hH : N.IsComplement' H) (hKH : K ≤ H) :
+    K = H := by
+  refine le_antisymm hKH fun g hg => ?_
+  obtain ⟨⟨n, k⟩, rfl⟩ := hK.surjective g
+  have hn : (n : G) ∈ H := by
+    simpa using H.mul_mem hg (H.inv_mem (hKH k.property))
+  simp [show (n : G) = 1 from hH.disjoint.le_bot ⟨n.property, hn⟩]
 
 /-- Evaluating `Subgroup.IsComplement.leftQuotientEquiv` at the coset of `g` returns the left
 component of `g` in the complement decomposition. -/
