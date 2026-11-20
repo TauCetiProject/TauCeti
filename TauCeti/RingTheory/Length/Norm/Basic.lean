@@ -173,12 +173,12 @@ end Fraction
 
 section BaseRing
 
-variable {A K B L B₀ : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
-  [IsLocalRing A] [Field K] [Algebra A K] [IsFractionRing A K] [CommRing B] [IsDomain B]
+variable {A K B L B₀ : Type*} [CommRing A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+  [IsLocalRing A] [Field K] [Algebra A K] [IsFractionRing A K] [CommRing B]
   [Algebra A B] [Module.Finite A B] [Field L] [Algebra B L] [IsFractionRing B L] [Algebra K L]
   [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L] [CommRing B₀] [Algebra B₀ B]
   (S : Submonoid B₀) [IsLocalization S B] [Algebra B₀ L] [IsScalarTower B₀ B L]
-  (R : MaximalSpectrum B → Type*) [∀ m, CommRing (R m)] [∀ m, IsDomain (R m)]
+  (R : MaximalSpectrum B → Type*) [∀ m, CommRing (R m)] [∀ m, Nontrivial (R m)]
   [∀ m, IsNoetherianRing (R m)] [∀ m, Ring.KrullDimLE 1 (R m)] [∀ m, Algebra B₀ (R m)]
   [∀ m, IsLocalization.AtPrime (R m) (m.asIdeal.comap (algebraMap B₀ B))] [∀ m, Algebra (R m) L]
   [∀ m, IsScalarTower B₀ (R m) L] [∀ m, IsFractionRing (R m) L]
