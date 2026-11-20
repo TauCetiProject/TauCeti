@@ -27,7 +27,9 @@ linear combinations. On products they satisfy the general Leibniz rule
 `Dⁿ (a * b) = ∑ (n choose i) Dⁱ a Dⁿ⁻ⁱ b`.
 
 The derivative of the total inverse `Ring.inverse a` is `-(Ring.inverse a) ^ 2 • D a`, as for
-`⅟a`; for instance a derivation kills the inverse of every invertible natural number.
+`⅟a`; for instance a derivation kills the inverse of every invertible natural number. Hence, if
+`D x = 1`, the divided power `x ^ (j + 1) / (j + 1)!` differentiates to `x ^ j / j!` whenever
+`(j + 1)!` is a unit.
 
 An element whose derivative is a unit is squarefree, since a square factor `x * x` of `a` makes
 `x` divide `D a`. This detects squarefreeness of a polynomial from a partial derivative that is a
@@ -44,6 +46,8 @@ unit, without factoring it.
 * `Derivation.iterate_smul_apply`: iterates of scalar multiples of a derivation.
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
+* `Derivation.leibniz_inverse_factorial_mul_pow_succ`: the derivative of the divided power
+  `x ^ (j + 1) / (j + 1)!` when `D x = 1`.
 * `Derivation.squarefree_of_isUnit`: an element whose derivative is a unit is squarefree.
 -/
 
@@ -151,6 +155,18 @@ theorem leibniz_ringInverse (D : Derivation R A M) (a : A) :
   by_cases ha : IsUnit a
   · exact D.leibniz_of_mul_eq_one (Ring.inverse_mul_cancel a ha)
   · simp [Ring.inverse_non_unit a ha]
+
+open scoped Nat in
+/-- If `D x = 1` and `(j + 1)!` is a unit, the derivative of the divided power
+`x ^ (j + 1) / (j + 1)!` is `x ^ j / j!`. -/
+theorem leibniz_inverse_factorial_mul_pow_succ (D : Derivation R A A) {x : A} (hx : D x = 1)
+    {j : ℕ} (hj : IsUnit ((j + 1)! : A)) :
+    D (Ring.inverse ((j + 1)! : A) * x ^ (j + 1)) = Ring.inverse (j ! : A) * x ^ j := by
+  have hfac : ((j + 1)! : A) = (j + 1 : A) * j ! := by
+    rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_succ]
+  have hj₁ : IsUnit (j + 1 : A) := isUnit_of_mul_isUnit_left (hfac ▸ hj)
+  rw [leibniz, leibniz_ringInverse, map_natCast, leibniz_pow, hx, hfac, Ring.inverse_mul (.inl hj₁)]
+  simp [mul_assoc, Ring.inverse_mul_cancel_left _ _ hj₁]
 
 end Ring
 

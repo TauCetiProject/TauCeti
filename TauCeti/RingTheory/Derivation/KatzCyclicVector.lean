@@ -9,10 +9,10 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.RingTheory.Derivation.DifferentialRing
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
-import Mathlib.LinearAlgebra.Vandermonde
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.LinearAlgebra.PolynomialFamily
+import TauCeti.RingTheory.Jacobson.Polynomial
 
 /-!
 # Katz's explicit cyclic vectors
@@ -48,16 +48,20 @@ at most `n (n - 1)`, which depends only on `D` and `e`.
 
 ## Main results
 
-* `TauCeti.eval_katzPolynomial`: `P(x) = det (D^i c(b, x))_{i < n}` when `x′ = 1`.
+* `TauCeti.eval_katzPolynomial`: `P(x) = det (D^i c(b, x))_{i < n}` when `D` satisfies the
+  Leibniz rule, `(n - 1)!` is a unit and `x′ = 1`.
 * `TauCeti.coeff_katzPolynomial_zero`, `TauCeti.natDegree_katzPolynomial_le`: `P(0) = 1` and
   `deg P ≤ n (n - 1)`.
 * `TauCeti.isCyclicVector_katzCandidate_iff`: `c(b, x)` is cyclic if and only if `P(x)` is a unit.
 * `TauCeti.isCyclicVector_katzCandidate_of_mem_jacobson`: if `x` lies in the Jacobson radical,
   for instance in the maximal ideal of a local ring
   (`TauCeti.isCyclicVector_katzCandidate_of_mem_maximalIdeal`), then `c(b, x)` is cyclic.
-* `TauCeti.span_eval_katzPolynomial_eq_top`: for `N > n (n - 1)` elements `xᵢ` with `xᵢ′ = 1`
-  whose pairwise differences are units, the values `P(xᵢ)` generate the unit ideal, so the loci
-  where the candidates `c(b, xᵢ)` are cyclic cover `Spec R`.
+* `TauCeti.span_eval_katzPolynomial_eq_top`: for `N > n (n - 1)` elements `xᵢ` whose pairwise
+  differences are units, the values `P(xᵢ)` generate the unit ideal.
+* `TauCeti.span_det_pow_apply_katzCandidate_eq_top`: if moreover `D` satisfies the Leibniz rule,
+  `(n - 1)!` is a unit and `xᵢ′ = 1`, the determinants of the iterates of the candidates
+  `c(b, xᵢ)` generate the unit ideal, so the loci where these candidates are cyclic cover
+  `Spec R`.
 
 ## References
 
@@ -87,6 +91,18 @@ def IsCyclicVector (D : AddMonoid.End M) (n : ℕ) (v : M) : Prop :=
   LinearIndependent R (fun i : Fin n ↦ (D ^ (i : ℕ)) v) ∧
     Submodule.span R (Set.range fun i : Fin n ↦ (D ^ (i : ℕ)) v) = ⊤
 
+/-- Unfolds `IsCyclicVector`: the first `n` iterates are linearly independent and span `M`. -/
+theorem isCyclicVector_iff : IsCyclicVector R D n v ↔
+    LinearIndependent R (fun i : Fin n ↦ (D ^ (i : ℕ)) v) ∧
+      Submodule.span R (Set.range fun i : Fin n ↦ (D ^ (i : ℕ)) v) = ⊤ :=
+  Iff.rfl
+
+/-- A vector whose first `n` iterates form a basis is cyclic of rank `n`. -/
+theorem IsCyclicVector.of_basis (b : Basis (Fin n) R M) (hb : ∀ i, b i = (D ^ (i : ℕ)) v) :
+    IsCyclicVector R D n v := by
+  have : ⇑b = fun i : Fin n ↦ (D ^ (i : ℕ)) v := funext hb
+  exact ⟨this ▸ b.linearIndependent, this ▸ b.span_eq⟩
+
 /-- A vector is cyclic of rank `n` if and only if the determinant of its first `n` iterates in a
 basis indexed by `Fin n` is a unit. -/
 theorem isCyclicVector_iff_isUnit_det (b : Basis (Fin n) R M) :
@@ -112,8 +128,9 @@ variable (D : AddMonoid.End M) {n : ℕ} (e : Fin n → M)
 
 /-- The vectors `c(i, j)` of Katz's construction, for a family `e₀, …, eₙ₋₁`: for `j < n`,
 `c(0, j) = ∑_{k ≤ j} (-1) ^ k (j choose k) D^k (e_{j-k})`, while `c(0, j) = 0` for `j ≥ n`, and
-`c(i + 1, j) = D c(i, j) + c(i, j + 1)`. With `x′ = 1`, the `i`-th iterate of Katz's candidate is
-`∑_{j < n} (x ^ j / j!) c(i, j)` (`TauCeti.pow_apply_katzCandidate`). -/
+`c(i + 1, j) = D c(i, j) + c(i, j + 1)`. If `D` satisfies the Leibniz rule, `(n - 1)!` is a unit
+and `x′ = 1`, the `i`-th iterate of Katz's candidate is `∑_{j < n} (x ^ j / j!) c(i, j)`
+(`TauCeti.pow_apply_katzCandidate`). -/
 def katzJetCoeff : ℕ → ℕ → M
   | 0, j =>
     if j < n then
@@ -132,7 +149,7 @@ theorem katzJetCoeff_succ (i j : ℕ) :
   rw [katzJetCoeff]
 
 /-- The vectors `c(i, j)` vanish for `j ≥ n`. -/
-theorem katzJetCoeff_of_le {j : ℕ} (hj : n ≤ j) (i : ℕ) : katzJetCoeff D e i j = 0 := by
+theorem katzJetCoeff_eq_zero_of_le {j : ℕ} (hj : n ≤ j) (i : ℕ) : katzJetCoeff D e i j = 0 := by
   induction i generalizing j with
   | zero => simp [katzJetCoeff_zero, hj.not_gt]
   | succ i ih => rw [katzJetCoeff_succ, ih hj, ih (hj.trans j.le_succ), map_zero, add_zero]
@@ -144,7 +161,7 @@ private theorem sum_choose_succ (h : ℕ → M) (i j : ℕ) :
     ∑ k ∈ range (j + 1 + 1), (j + 1).choose k • (-1 : ℤ) ^ k • (D ^ k) (h (i + (j + 1 - k))) =
       ∑ k ∈ range (j + 1), j.choose k • (-1 : ℤ) ^ k • (D ^ k) (h (i + 1 + (j - k))) -
         D (∑ k ∈ range (j + 1), j.choose k • (-1 : ℤ) ^ k • (D ^ k) (h (i + (j - k)))) := by
-  rw [show j + 1 + 1 = j + 2 from rfl,
+  rw [show j + 1 + 1 = j + 2 by omega,
     sum_choose_succ_nsmul (fun k l ↦ (-1 : ℤ) ^ k • (D ^ k) (h (i + l))) j, sub_eq_add_neg,
     map_sum, ← sum_neg_distrib]
   congr 1
@@ -152,9 +169,7 @@ private theorem sum_choose_succ (h : ℕ → M) (i j : ℕ) :
     have := mem_range.mp hk
     rw [show i + (j + 1 - k) = i + 1 + (j - k) by omega]
   · refine sum_congr rfl fun k _ ↦ ?_
-    rw [map_nsmul, map_zsmul, ← smul_neg, ← zsmul_neg, pow_succ, mul_neg_one, neg_smul, pow_succ',
-      AddMonoid.End.coe_mul, Function.comp_apply]
-    simp only [smul_neg]
+    simp [pow_succ, pow_succ' D, smul_neg]
 
 /-- For `i + j < n`, the vector `c(i, j)` is the alternating binomial sum
 `∑_{k ≤ j} (-1) ^ k (j choose k) D^k (e_{i+j-k})`. -/
@@ -184,12 +199,12 @@ theorem katzCandidate_def (x : R) :
 
 /-- In rank zero the candidate is zero. -/
 @[simp]
-theorem katzCandidate_of_rank_zero (e : Fin 0 → M) (x : R) : katzCandidate D e x = 0 := by
+theorem katzCandidate_fin_zero (e : Fin 0 → M) (x : R) : katzCandidate D e x = 0 := by
   simp [katzCandidate]
 
 /-- In rank one the candidate is `e₀`. -/
 @[simp]
-theorem katzCandidate_of_rank_one (e : Fin 1 → M) (x : R) : katzCandidate D e x = e 0 := by
+theorem katzCandidate_fin_one (e : Fin 1 → M) (x : R) : katzCandidate D e x = e 0 := by
   simpa [katzCandidate] using katzJetCoeff_zero_right D e 0
 
 /-- An additive map intertwining two additive endomorphisms carries the vectors `c(i, j)` of a
@@ -198,15 +213,12 @@ theorem map_katzJetCoeff {N F : Type*} [AddCommGroup N] [FunLike F M N] [AddMono
     (D' : AddMonoid.End N) (f : F) (hf : ∀ m, f (D m) = D' (f m)) (i j : ℕ) :
     f (katzJetCoeff D e i j) = katzJetCoeff D' (f ∘ e) i j := by
   have hpow (k : ℕ) (m : M) : f ((D ^ k) m) = (D' ^ k) (f m) := by
-    induction k generalizing m with
-    | zero => rfl
-    | succ k ih => rw [pow_succ, AddMonoid.End.coe_mul, Function.comp_apply, ih, hf, pow_succ,
-        AddMonoid.End.coe_mul, Function.comp_apply]
+    rw [AddMonoid.End.coe_pow, AddMonoid.End.coe_pow]
+    exact Function.Semiconj.iterate_right hf k m
   have hext (l : ℕ) : f (Function.extend Fin.val e 0 l) = Function.extend Fin.val (f ∘ e) 0 l := by
-    by_cases hl : ∃ a : Fin n, (a : ℕ) = l
-    · obtain ⟨a, rfl⟩ := hl
-      simp [Fin.val_injective.extend_apply]
-    · simp [Function.extend_apply' _ _ _ hl]
+    rw [Function.apply_extend f]
+    congr
+    exact funext fun _ ↦ map_zero f
   induction i generalizing j with
   | zero =>
     rw [katzJetCoeff_zero, katzJetCoeff_zero]
@@ -229,19 +241,6 @@ section Iterates
 
 variable [Differential R] {x : R}
 
-/-- If `x′ = 1` and `(j + 1)!` is a unit, the derivative of `x ^ (j + 1) / (j + 1)!` is
-`x ^ j / j!`. -/
-private theorem deriv_inverse_factorial_mul_pow_succ (hx : x′ = 1) {j : ℕ}
-    (hj : IsUnit ((j + 1)! : R)) :
-    (((j + 1)! : R)⁻¹ʳ * x ^ (j + 1))′ = (j ! : R)⁻¹ʳ * x ^ j := by
-  have hfac : ((j + 1)! : R) = (j + 1 : R) * j ! := by
-    rw [Nat.factorial_succ, Nat.cast_mul, Nat.cast_succ]
-  have hj₁ : IsUnit (j + 1 : R) := isUnit_of_mul_isUnit_left (hfac ▸ hj)
-  rw [Derivation.leibniz, Derivation.leibniz_ringInverse, Derivation.map_natCast, smul_zero,
-    smul_zero, add_zero, Derivation.leibniz_pow, hx, hfac, Ring.inverse_mul (.inl hj₁)]
-  simp only [smul_eq_mul, nsmul_eq_mul, Nat.add_sub_cancel, mul_one, Nat.cast_add, Nat.cast_one]
-  rw [mul_assoc, Ring.inverse_mul_cancel_left _ _ hj₁]
-
 variable {D}
 
 /-- Applying `D` to `∑_{j < n} (x ^ j / j!) c(i, j)` gives
@@ -256,11 +255,11 @@ private theorem apply_sum_katzJetCoeff (hD : ∀ (r : R) (m : M), D (r • m) = 
   -- The derivatives of the coefficients shift the index `j` down by one.
   obtain _ | m := n
   · simp
-  rw [sum_range_succ', sum_range_succ, katzJetCoeff_of_le D e le_rfl, smul_zero, add_zero,
-    Nat.factorial_zero, Nat.cast_one, Ring.inverse_one, pow_zero, mul_one,
-    Derivation.map_one_eq_zero, zero_smul, add_zero]
+  rw [sum_range_succ', sum_range_succ, katzJetCoeff_eq_zero_of_le D e le_rfl]
+  simp only [Nat.factorial_zero, Nat.cast_one, Ring.inverse_one, pow_zero, mul_one,
+    Derivation.map_one_eq_zero, zero_smul, smul_zero, add_zero]
   refine sum_congr rfl fun j hj ↦ ?_
-  rw [deriv_inverse_factorial_mul_pow_succ hx (isUnit_of_dvd_unit
+  rw [Differential.deriv.leibniz_inverse_factorial_mul_pow_succ hx (isUnit_of_dvd_unit
     (Nat.cast_dvd_cast (Nat.factorial_dvd_factorial (by simp at hj ⊢; omega))) hn)]
 
 /-- **The iterates of Katz's candidate.** If `D` satisfies the Leibniz rule, `(n - 1)!` is a unit
@@ -270,7 +269,7 @@ theorem pow_apply_katzCandidate (hD : ∀ (r : R) (m : M), D (r • m) = r′ �
     (D ^ i) (katzCandidate D e x) =
       ∑ j ∈ range n, ((j ! : R)⁻¹ʳ * x ^ j) • katzJetCoeff D e i j := by
   induction i with
-  | zero => rfl
+  | zero => rw [pow_zero, AddMonoid.End.coe_one, id, katzCandidate_def]
   | succ i ih =>
     rw [pow_succ', AddMonoid.End.coe_mul, Function.comp_apply, ih,
       apply_sum_katzJetCoeff e hD hn hx]
@@ -285,8 +284,8 @@ variable (b : Basis (Fin n) R M)
 
 /-- The polynomial `P` of Katz's construction for a basis `b`: the determinant of the matrix
 whose `(k, i)` entry is `∑_{j < n} (X ^ j / j!) bₖ*(c(i, j))`, with `bₖ*` the `k`-th coordinate.
-When `x′ = 1`, its value at `x` is the determinant of the iterates of `c(b, x)` in the basis `b`
-(`TauCeti.eval_katzPolynomial`). -/
+If `D` satisfies the Leibniz rule, `(n - 1)!` is a unit and `x′ = 1`, its value at `x` is the
+determinant of the iterates of `c(b, x)` in the basis `b` (`TauCeti.eval_katzPolynomial`). -/
 def katzPolynomial : R[X] :=
   (Matrix.of fun k i : Fin n ↦
     ∑ j ∈ range n, C ((j ! : R)⁻¹ʳ * b.repr (katzJetCoeff D b i j) k) * X ^ j).det
@@ -358,11 +357,8 @@ theorem isCyclicVector_katzCandidate_iff (hD : ∀ (r : R) (m : M), D (r • m) 
 omit [Differential R] in
 /-- The value at `x` of `katzPolynomial D b` is a unit when `x` lies in the Jacobson radical. -/
 theorem isUnit_eval_katzPolynomial_of_mem_jacobson (hx : x ∈ Ring.jacobson R) :
-    IsUnit ((katzPolynomial D b).eval x) := by
-  obtain ⟨r, hr⟩ := sub_dvd_eval_sub x 0 (katzPolynomial D b)
-  rw [← coeff_zero_eq_eval_zero, coeff_katzPolynomial_zero, sub_zero, sub_eq_iff_eq_add] at hr
-  rw [hr]
-  exact Ring.mem_jacobson_iff.mp hx r
+    IsUnit ((katzPolynomial D b).eval x) :=
+  isUnit_eval_of_isUnit_coeff_zero_of_mem_jacobson (by simp) hx
 
 /-- **Katz's cyclic-vector theorem, local form.** If `D` satisfies the Leibniz rule, `(n - 1)!` is
 a unit, `x′ = 1` and `x` lies in the Jacobson radical of `R`, then Katz's candidate `c(b, x)` is a
@@ -390,20 +386,8 @@ omit [Differential R] in
 `katzPolynomial D b` at them generate the unit ideal. -/
 theorem span_eval_katzPolynomial_eq_top {N : ℕ} (hN : n * (n - 1) < N) {x : Fin N → R}
     (hx : Pairwise fun i j ↦ IsUnit (x i - x j)) :
-    Ideal.span (Set.range fun i ↦ (katzPolynomial D b).eval (x i)) = ⊤ := by
-  set P := katzPolynomial D b
-  have hP : P.natDegree < N := (natDegree_katzPolynomial_le D b).trans_lt hN
-  -- Cramer's rule recovers the constant term `1` of `P` from its values, up to the Vandermonde
-  -- determinant of the `xᵢ`, which is a unit.
-  have hV : IsUnit (Matrix.vandermonde x).det := by
-    simp only [Matrix.det_vandermonde, IsUnit.prod_iff]
-    exact fun i _ j hj ↦ hx (mem_Ioi.mp hj).ne'
-  have key := det_vandermonde_smul_eq_sum_adjugate_smul x P.coeff ⟨0, by omega⟩
-  rw [show P.coeff 0 = 1 from coeff_katzPolynomial_zero D b, smul_eq_mul, mul_one] at key
-  refine Ideal.eq_top_of_isUnit_mem _ ?_ hV
-  rw [key]
-  refine Submodule.sum_mem _ fun i _ ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨i, ?_⟩)
-  simp only [eval_eq_sum_range' hP, mul_comm (P.coeff _), smul_eq_mul]
+    Ideal.span (Set.range fun i ↦ (katzPolynomial D b).eval (x i)) = ⊤ :=
+  span_eval_eq_top_of_natDegree_lt _ ((natDegree_katzPolynomial_le D b).trans_lt hN) (by simp) hx
 
 /-- **Katz's cyclic-vector theorem, global form.** Suppose `D` satisfies the Leibniz rule,
 `(n - 1)!` is a unit, and `x₀, …, x_{N-1}` are `N > n (n - 1)` elements with `xᵢ′ = 1` whose

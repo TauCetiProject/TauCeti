@@ -28,7 +28,10 @@ has torsion, `c ↦ c • 1` and `c ↦ c ^ 2 • 1` agree.
 Over an arbitrary commutative ring the values still determine the coefficients up to the
 Vandermonde determinant of the evaluation points, by Cramer's rule
 (`TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul`). For instance, if the points and the values
-lie in a subring `S`, then the determinant times each coefficient lies in `S`.
+lie in a subring `S`, then the determinant times each coefficient lies in `S`. If the pairwise
+differences of the points are units, so is the determinant, and the values at the points of a
+polynomial of smaller degree whose constant term is a unit generate the unit ideal
+(`Polynomial.span_eval_eq_top_of_natDegree_lt`).
 
 *Producing the coefficients.* Conversely, let `K` be a commutative semiring and `f c` a family
 of `K`-linear maps between modules with finite bases. If every matrix entry of `f c` against
@@ -44,6 +47,8 @@ functions is expanded along a one-parameter subgroup and its terms then identifi
 * `TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul`: over any commutative ring, the
   Vandermonde determinant of `d` points times a coefficient of a power sum of length `d` is a
   linear combination of the values of the power sum at the points.
+* `Polynomial.span_eval_eq_top_of_natDegree_lt`: the values of a polynomial with unit constant
+  term at more points than its degree, with unit pairwise differences, generate the unit ideal.
 * `TauCeti.eq_zero_of_forall_sum_range_pow_smul_eq_zero`: the coefficients below `d` of an
   identically vanishing power sum `∑ m < d, c ^ m • u m` are zero.
 * `TauCeti.eq_of_forall_sum_range_pow_smul_eq`: two power sums of length `d` agreeing at every
@@ -114,6 +119,30 @@ theorem eq_of_forall_sum_range_pow_smul_eq {d : ℕ} {u v : ℕ → M}
 end Coefficients
 
 end TauCeti
+
+-- The leading explicit argument is a polynomial, so this lives in its namespace and is used
+-- through dot notation.
+namespace Polynomial
+
+/-- If a polynomial `P` has a unit constant term and degree less than `N`, and `N` points `x i`
+have pairwise differences that are units, then the values `P (x i)` generate the unit ideal. -/
+theorem span_eval_eq_top_of_natDegree_lt {R : Type u} [CommRing R] (P : R[X]) {N : ℕ}
+    (hP : P.natDegree < N) (h0 : IsUnit (P.coeff 0)) {x : Fin N → R}
+    (hx : Pairwise fun i j ↦ IsUnit (x i - x j)) :
+    Ideal.span (Set.range fun i ↦ P.eval (x i)) = ⊤ := by
+  -- Cramer's rule recovers the constant term of `P` from its values, up to the Vandermonde
+  -- determinant of the `xᵢ`, which is a unit.
+  have hV : IsUnit (Matrix.vandermonde x).det := by
+    simp only [Matrix.det_vandermonde, IsUnit.prod_iff]
+    exact fun i _ j hj ↦ hx (Finset.mem_Ioi.mp hj).ne'
+  have key := TauCeti.det_vandermonde_smul_eq_sum_adjugate_smul x P.coeff ⟨0, by omega⟩
+  rw [smul_eq_mul] at key
+  refine Ideal.eq_top_of_isUnit_mem _ ?_ (hV.mul h0)
+  rw [key]
+  refine Submodule.sum_mem _ fun i _ ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span ⟨i, ?_⟩)
+  simp only [eval_eq_sum_range' hP, mul_comm (P.coeff _), smul_eq_mul]
+
+end Polynomial
 
 /-! ## Producing the coefficients from polynomial matrix entries -/
 
