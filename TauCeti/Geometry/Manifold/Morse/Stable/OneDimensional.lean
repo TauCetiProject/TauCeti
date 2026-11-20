@@ -38,6 +38,9 @@ the image of `-v`. The unstable side is the stable side for `-X`, adapted to `-f
   index `n - 1`, the stable manifold is the critical point together with two disjoint orbits.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_eq_insert_union_orbit`: at a critical point
   of index `1`, the unstable manifold is the critical point together with two disjoint orbits.
+* `TauCeti.IsAdaptedPseudoGradient.unstableSet_inter_stableSet_eq_orbit`: at a critical point of
+  index `n - 1`, the trajectories from `p` form a single orbit when one of the two trajectories
+  into the critical point comes from `p` and the other does not.
 * `TauCeti.IsAdaptedPseudoGradient.eventually_unstableSet_eq_insert_union_orbit`: at a critical
   point of index `1` at which `X` is linear in a Morse chart, the two orbits are those of the
   points `y_c` and `y_{-c}` of the chart with coordinates `c` and `-c` in the direction of negative
@@ -128,6 +131,47 @@ theorem exists_unstableSet_eq_insert_union_orbit (hf : IsMorse 𝓘(ℝ, E) f)
     Flow.orbit_reverse] at hW
   rw [hX.neg_flow hf, Flow.orbit_reverse, Flow.orbit_reverse] at hdisj
   exact ⟨y₁, y₂, h₁, h₂, hdisj, hW⟩
+
+/-- **A single trajectory into a critical point of index `n - 1`.** Let `x` be a critical point of
+index `n - 1`, so that `W^s(x) - {x}` consists of two trajectories. If a point `y ≠ x` of `W^s(x)`
+lies in the unstable manifold of `p` and another point `z ≠ x` of `W^s(x)` does not, then the
+trajectories from `p` to `x` form the single orbit of `y`: membership in `W^u(p)` is constant along
+each of the two trajectories, and `z` lies on the other one. -/
+theorem unstableSet_inter_stableSet_eq_orbit (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x + 1 = finrank ℝ E) {p y z : M}
+    (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet x) (hyx : y ≠ x)
+    (hz : z ∈ hX.flow.stableSet x) (hzx : z ≠ x) (hzp : z ∉ hX.flow.unstableSet p) :
+    hX.flow.unstableSet p ∩ hX.flow.stableSet x = hX.flow.orbit y := by
+  obtain ⟨y₁, y₂, -, -, -, hW⟩ := hX.exists_stableSet_eq_insert_union_orbit hx hind
+  have horbit {a b : M} (ha : a ∈ hX.flow.orbit b) :
+      a ∈ hX.flow.unstableSet p ↔ b ∈ hX.flow.unstableSet p := by
+    obtain ⟨s, rfl⟩ := ha
+    exact Flow.apply_mem_unstableSet_iff _ s
+  have hside {a : M} (ha : a ∈ hX.flow.stableSet x) (hax : a ≠ x) :
+      a ∈ hX.flow.orbit y₁ ∨ a ∈ hX.flow.orbit y₂ := by
+    rw [hW] at ha
+    exact (mem_insert_iff.1 ha).resolve_left hax
+  -- Not both trajectories come from `p`, since the one through `z` does not.
+  have hboth (h₁ : y₁ ∈ hX.flow.unstableSet p) (h₂ : y₂ ∈ hX.flow.unstableSet p) : False := by
+    rcases hside hz hzx with h | h
+    · exact hzp ((horbit h).2 h₁)
+    · exact hzp ((horbit h).2 h₂)
+  refine Subset.antisymm (fun w hw ↦ ?_) fun w ⟨s, hs⟩ ↦
+    hs ▸ Flow.isInvariant_unstableSet_inter_stableSet _ p x s hy
+  -- The rest point `x` is not in `W^u(p)`: otherwise `x = p`, and `y ∈ W^u(x) ∩ W^s(x)` is `x`.
+  have hwx : w ≠ x := by
+    rintro rfl
+    have hlim := Flow.mem_unstableSet.1 hw.1
+    simp only [hX.flow_apply_of_mfderiv_eq_zero hx] at hlim
+    obtain rfl := tendsto_nhds_unique tendsto_const_nhds hlim
+    exact hyx (hX.eq_of_mem_unstableSet_inter_stableSet hy)
+  obtain ⟨b, hwb, hyb⟩ : ∃ b, w ∈ hX.flow.orbit b ∧ y ∈ hX.flow.orbit b := by
+    rcases hside hw.2 hwx with hw' | hw' <;> rcases hside hy.2 hyx with hy' | hy'
+    · exact ⟨y₁, hw', hy'⟩
+    · exact (hboth ((horbit hw').1 hw.1) ((horbit hy').1 hy.1)).elim
+    · exact (hboth ((horbit hy').1 hy.1) ((horbit hw').1 hw.1)).elim
+    · exact ⟨y₂, hw', hy'⟩
+  rwa [(Flow.orbit_eq_iff _).2 hyb]
 
 section UnstableAxis
 

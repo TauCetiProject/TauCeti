@@ -118,8 +118,8 @@ private theorem fderiv_fderiv_ambient (x a b : E) :
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- A point of the sphere whose components along the orthonormal vectors `u` and `v` have squares
 summing to `1` lies in the plane spanned by `u` and `v`. -/
-private theorem coe_eq_of_sq_add_sq_eq_one (huv : ⟪(u : E), (v : E)⟫ = 0) {x : sphere (0 : E) 1}
-    (hx : sphereHeight u x ^ 2 + sphereHeight v x ^ 2 = 1) :
+theorem coe_eq_sphereHeight_smul_add_sphereHeight_smul (huv : ⟪(u : E), (v : E)⟫ = 0)
+    {x : sphere (0 : E) 1} (hx : sphereHeight u x ^ 2 + sphereHeight v x ^ 2 = 1) :
     (x : E) = sphereHeight u x • (u : E) + sphereHeight v x • (v : E) := by
   have hx1 : ‖(x : E)‖ = 1 := norm_eq_of_mem_sphere x
   rw [← sub_eq_zero, ← norm_eq_zero, ← sq_eq_zero_iff, norm_sub_sq_real, hx1]
@@ -135,7 +135,7 @@ private theorem mem_span_of_sphereHeight_eq (huv : ⟪(u : E), (v : E)⟫ = 0)
     (h1 : sphereHeight v p = t / 2) (h2 : sphereHeight u p ^ 2 = 1 - t ^ 2 / 4) :
     (2 * ⟪(p : E), (u : E)⟫) • (u : E) + t • (v : E) ∈ ℝ ∙ (p : E) := by
   refine Submodule.mem_span_singleton.2 ⟨2, ?_⟩
-  have hx := coe_eq_of_sq_add_sq_eq_one huv (x := p) (by rw [h1, h2]; ring)
+  have hx := coe_eq_sphereHeight_smul_add_sphereHeight_smul huv (x := p) (by rw [h1, h2]; ring)
   rw [h1, sphereHeight_apply] at hx
   nth_rewrite 1 [hx]
   rw [smul_add, smul_smul, smul_smul]
@@ -466,7 +466,7 @@ private theorem encard_setOf_sphereHeight_eq (huv : ⟪(u : E), (v : E)⟫ = 0) 
   simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff]
   constructor
   · rintro ⟨h1, h2⟩
-    have hx := coe_eq_of_sq_add_sq_eq_one huv (x := x) (by rw [h1, h2]; ring)
+    have hx := coe_eq_sphereHeight_smul_add_sphereHeight_smul huv (x := x) (by rw [h1, h2]; ring)
     rw [h1] at hx
     rcases sq_eq_sq_iff_eq_or_eq_neg.1 (h2.trans hs.symm) with h | h
     · exact Or.inl (Subtype.ext (by rw [hx, h]))
