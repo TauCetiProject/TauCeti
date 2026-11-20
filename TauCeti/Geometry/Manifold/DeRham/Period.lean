@@ -50,6 +50,8 @@ is the subgroup of loops lifting to loops, so this decides which covers make a c
   manifold is exact exactly when its periods vanish.
 * `TauCeti.deRhamCohomology.period`: the periods of de Rham classes in degree one, an injective
   linear map on a connected manifold.
+* `TauCeti.pathClassIntegral_mapCoeff`: integration commutes with continuous linear maps of the
+  coefficients.
 * `TauCeti.pathClassIntegral_mpullback`, `TauCeti.periodHom_mpullback`,
   `TauCeti.deRhamCohomology.period_map`: naturality of integrals and periods under pullback.
 * `TauCeti.mpullback_mem_exactForms_one_iff_periodHom_map_eq_zero`: the pullback of a closed form
@@ -328,6 +330,37 @@ theorem pathClassIntegral_smul (a : ℝ) (γ : Path.Homotopic.Quotient x y) :
     · have h' : ¬(IsSmoothForm I 1 (a • φ) ∧ mextDeriv (a • φ) = 0) := fun h' ↦ h
         ⟨by simpa [ha] using h'.1.smul a⁻¹, by simpa [ha] using h'.2⟩
       rw [pathClassIntegral_undef h, pathClassIntegral_undef h', smul_zero]
+
+/-- Integration along path classes commutes with continuous linear maps of the coefficients. -/
+theorem pathClassIntegral_mapCoeff {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv φ = 0) (L : F →L[ℝ] G)
+    (γ : Path.Homotopic.Quotient x y) :
+    pathClassIntegral (RoughForm.mapCoeff L φ) γ = L (pathClassIntegral φ γ) := by
+  induction γ with | mk γ =>
+  have hpφ := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hφ hφc
+  obtain ⟨Γ, hΓγ, -⟩ := hpφ.exists_path_lifts γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
+    (by simp)
+  have hΓγ' (t : unitInterval) : PrimitiveSpace.proj φ (Γ t) = γ t := congrFun hΓγ t
+  have hclosed : mextDeriv (RoughForm.mapCoeff L φ) = 0 := by
+    rw [mextDeriv_mapCoeff L hφ, hφc, RoughForm.mapCoeff_zero]
+  -- applying `L` to the values of a lift of `γ` for `φ` gives a lift of `γ` for `L φ`
+  let Λ (t : unitInterval) : PrimitiveSpace (RoughForm.mapCoeff L φ) :=
+    PrimitiveSpace.graph _ (fun _ ↦ L (PrimitiveSpace.value φ (Γ t))) (γ t)
+  have hΛ : Continuous Λ := continuous_iff_continuousAt.mpr fun t₀ ↦ by
+    obtain ⟨g, -, U, hxU, hgU, c, hc⟩ :=
+      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq le_rfl hφ hφc
+        Γ.continuous.continuousAt (t := t₀)
+    refine PrimitiveSpace.continuousAt_of_eventually_value_eq
+      (by simp only [Λ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
+      ((hgU.mapCoeff L).add_const (L c))
+      (by simp only [Λ, PrimitiveSpace.proj_graph]; rw [hΓγ'] at hxU; exact hxU) ?_
+    filter_upwards [hc] with s hcs
+    simp only [PrimitiveSpace.value_graph, PrimitiveSpace.proj_graph, Λ, hcs.2, hΓγ', map_add,
+      Function.comp_apply]
+  rw [pathClassIntegral_mk_eq_sub (hφ.mapCoeff L) hclosed hΛ
+      fun t ↦ PrimitiveSpace.proj_graph (γ t),
+    pathClassIntegral_mk_eq_sub hφ hφc Γ.continuous hΓγ']
+  simp only [PrimitiveSpace.value_graph, Λ, map_sub]
 
 /-! ### The period homomorphism -/
 

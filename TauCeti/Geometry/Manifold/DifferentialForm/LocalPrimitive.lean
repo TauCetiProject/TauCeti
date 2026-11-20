@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
@@ -114,6 +115,19 @@ theorem IsPrimitiveOn.const_smul (hg : IsPrimitiveOn φ g U) (c : ℝ) :
     IsPrimitiveOn (c • φ) (c • g) U := by
   refine ⟨hg.isOpen, hg.mdifferentiableOn.const_smul c, fun y hy ↦ ?_⟩
   rw [RoughForm.ofFunction_smul, mextDeriv_smul, Pi.smul_apply, Pi.smul_apply, hg.mextDeriv_eq y hy]
+
+/-- A continuous linear map `L` of coefficient spaces takes a primitive `g` of `φ` to the primitive
+`L ∘ g` of the form `L φ` with coefficients mapped by `L`. -/
+theorem IsPrimitiveOn.mapCoeff {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (hg : IsPrimitiveOn φ g U) (L : F →L[ℝ] G) :
+    IsPrimitiveOn (RoughForm.mapCoeff L φ) (L ∘ g) U := by
+  refine ⟨hg.isOpen, fun y hy ↦ L.mdifferentiableAt.comp_mdifferentiableWithinAt y
+    (hg.mdifferentiableOn y hy), fun y hy ↦ ?_⟩
+  have hgy := (hg.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
+  ext v
+  rw [RoughForm.mapCoeff_apply, ← hg.mextDeriv_eq y hy]
+  simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+  exact L.mvfderiv_comp_apply hgy (v 0)
 
 section Chart
 

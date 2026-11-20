@@ -83,6 +83,9 @@ connected manifold the kernel of `dlog` itself is the constants
   by `ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom`.
 * `TauCeti.circlePeriodHom_eq_one_iff`, `TauCeti.exists_mlogDeriv_coe_eq`,
   `TauCeti.mem_range_circlePeriodHom_iff`: the kernel and the image of the period homomorphism.
+* `TauCeti.homologyPeriodHom_circleLogDeriv`, `TauCeti.exists_circleLogDeriv_eq`: the real
+  logarithmic derivatives `-i dlog u` of smooth circle-valued maps are exactly the closed real
+  `1`-forms with periods in `2πℤ`.
 
 ## References
 
@@ -497,5 +500,39 @@ theorem mem_range_circlePeriodHom_iff
     refine ⟨u, Multiplicative.toAdd.injective ?_⟩
     refine AddMonoidHom.ext fun c ↦ Complex.intCast_mul_two_pi_I_injective ?_
     simp only [← ContMDiffMap.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom, hu, hper]
+
+/-- **The periods of the real logarithmic derivative.** The integral of `circleLogDeriv u` over a
+singular `1`-cycle `c` is `2π` times the period of the smooth circle-valued map `u` on `c`. -/
+theorem homologyPeriodHom_circleLogDeriv (u : C^∞⟮I, M; 𝓡 1, Circle⟯)
+    (c : ((singularChains ℤ).obj (.of M)).homology 1) :
+    homologyPeriodHom (circleLogDeriv u : RoughForm I M ℝ 1) c =
+      Multiplicative.toAdd (circlePeriodHom I M u) c * (2 * π) := by
+  rw [coe_circleLogDeriv, homologyPeriodHom_mapCoeff (u.isSmoothForm_mlogDeriv_coe.of_le (by simp))
+    u.mextDeriv_mlogDeriv_coe, u.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom]
+  simp
+
+/-- **Closed real forms with periods in `2πℤ` are real logarithmic derivatives.** A smooth closed
+real `1`-form whose integrals over singular `1`-cycles lie in `2πℤ` is `circleLogDeriv u` for a
+smooth map `u : M → U(1)`. -/
+theorem exists_circleLogDeriv_eq {φ : SmoothForm I M ℝ 1} (hclosed : mextDeriv φ.1 = 0)
+    (hper : ∀ c, ∃ n : ℤ, homologyPeriodHom φ.1 c = n * (2 * π)) :
+    ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, circleLogDeriv u = φ := by
+  -- `i φ` is a closed imaginary form with periods in `2πiℤ`, hence `dlog u` for some `u`.
+  let L : ℝ →L[ℝ] ℂ := Complex.I • Complex.ofRealCLM
+  have hφ₁ : IsSmoothForm I 1 φ.1 := φ.isSmoothForm.of_le (by simp)
+  obtain ⟨u, hu⟩ := exists_mlogDeriv_coe_eq (φ := RoughForm.mapCoeff L φ.1)
+    (φ.isSmoothForm.mapCoeff L)
+    (by rw [mextDeriv_mapCoeff L hφ₁, hclosed, RoughForm.mapCoeff_zero])
+    (fun x v ↦ by simp [L])
+    fun c ↦ by
+      obtain ⟨n, hn⟩ := hper c
+      refine ⟨n, ?_⟩
+      rw [homologyPeriodHom_mapCoeff hφ₁ hclosed, hn]
+      simp only [L, smul_apply, Complex.ofRealCLM_apply, smul_eq_mul]
+      push_cast
+      ring
+  refine ⟨u, Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ ?_)⟩
+  rw [circleLogDeriv_apply, hu]
+  simp [L]
 
 end TauCeti
