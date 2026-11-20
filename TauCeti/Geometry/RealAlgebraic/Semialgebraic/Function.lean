@@ -17,8 +17,9 @@ useful before projection closure is available: semialgebraicity of a graph alone
 us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
-piecewise-gluing laws and shows that polynomial maps, and more generally functions whose graph
-over a semialgebraic domain is cut out by polynomial equations
+piecewise-gluing laws and shows that polynomial maps, coordinatewise rational maps over a linearly
+ordered field (`TauCeti.isSemialgebraicOn_eval_div`, `TauCeti.isSemialgebraicMap_eval_div`), and
+more generally functions whose graph over a semialgebraic domain is cut out by polynomial equations
 (`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the
 operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
 eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
@@ -199,6 +200,38 @@ theorem isSemialgebraicMap_eval [Finite τ] (p : τ → MvPolynomial σ R) :
     IsSemialgebraicMap (fun x i => eval x (p i)) := by
   rw [← isSemialgebraicOn_univ]
   exact isSemialgebraicOn_eval p isSemialgebraic_univ
+
+/-- Over a linearly ordered field, a coordinatewise rational map
+`x ↦ (eval x (N i) / eval x (D i))` (with Lean's total division `a / 0 = 0`) into a
+finite-dimensional coordinate space is semialgebraic on every semialgebraic domain. -/
+theorem isSemialgebraicOn_eval_div {K : Type*} [Field K] [LinearOrder K] [Finite τ]
+    (N D : τ → MvPolynomial σ K) {s : Set (σ → K)} (hs : IsSemialgebraic s) :
+    IsSemialgebraicOn (fun x i ↦ eval x (N i) / eval x (D i)) s := by
+  refine isSemialgebraicOn_def.2 ⟨hs, ?_⟩
+  convert (hs.preimage_comp Sum.inl).inter
+    (IsSemialgebraic.iInter fun i ↦
+      ((isSemialgebraic_eval_eq_zero (rename Sum.inl (D i))).inter
+        (isSemialgebraic_eval_eq_zero (X (Sum.inr i)))).union
+      ((isSemialgebraic_eval_ne_zero (rename Sum.inl (D i))).inter
+        (isSemialgebraic_eval_eq_zero
+          (rename Sum.inl (D i) * X (Sum.inr i) - rename Sum.inl (N i))))) using 1
+  ext z
+  rw [mem_preimage_sumArrowEquivProdArrow_graphOn]
+  simp only [mem_inter_iff, mem_preimage, mem_iInter, mem_union, mem_ofPred_eq, map_sub, map_mul,
+    eval_rename, eval_X, Function.comp_apply, funext_iff, sub_eq_zero]
+  refine and_congr_right fun _ ↦ forall_congr' fun i ↦ ?_
+  by_cases hD : eval (z ∘ Sum.inl) (D i) = 0
+  · simp [hD, eq_comm]
+  · simp only [hD, false_and, true_and, false_or, ne_eq, not_false_eq_true]
+    rw [div_eq_iff hD, mul_comm, eq_comm]
+
+/-- Over a linearly ordered field, a coordinatewise rational map
+`x ↦ (eval x (N i) / eval x (D i))` into a finite-dimensional coordinate space is semialgebraic. -/
+theorem isSemialgebraicMap_eval_div {K : Type*} [Field K] [LinearOrder K] [Finite τ]
+    (N D : τ → MvPolynomial σ K) :
+    IsSemialgebraicMap (fun x i ↦ eval x (N i) / eval x (D i)) := by
+  rw [← isSemialgebraicOn_univ]
+  exact isSemialgebraicOn_eval_div N D isSemialgebraic_univ
 
 /-- A constant map into a finite-dimensional coordinate space is semialgebraic on every
 semialgebraic domain. -/

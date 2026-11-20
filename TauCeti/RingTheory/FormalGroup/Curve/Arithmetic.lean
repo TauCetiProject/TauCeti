@@ -6,14 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Basic
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # Arithmetic of curves
 
 For the additive formal group, forgetting a curve preserves addition of power series.
-For any commutative formal group, multiplication by an invertible natural number is an
-additive automorphism of curves. Its inverse supplies division by that number even when the
+Finite-order agreement of formal group laws and curves is preserved by curve addition and finite
+curve sums (`FormalGroup.Curve.le_order_add_sub`, `FormalGroup.Curve.le_order_sum_sub`).
+Monomial curves `c Tⁿ` (`n ≠ 0`, `FormalGroup.monomialCurve`) provide the elementary summands in
+curve expansions such as Ravenel's modulo-`p` `[p]`-series formula, and commute with base change
+(`FormalGroup.map_monomialCurve`, `FormalGroup.map_toPowerSeries_sum_monomialCurve`) and
+Verschiebung. For any commutative formal group, multiplication by an invertible natural number
+is an additive automorphism of curves. Its inverse supplies division by that number even when the
 formal group law does not give a scalar action of the coefficient ring. These arithmetic maps
 support normalized Cartier operators on curves. Verschiebung `Vₙ` (the substitution of `X^n`
 for the curve parameter `X`) is injective for every nonzero index `n`, without commutativity of
@@ -38,7 +44,90 @@ noncomputable def additiveToPowerSeriesHom : (𝔾ₐ (R := R)).Curve →+ Power
 theorem additiveToPowerSeriesHom_apply (γ : (𝔾ₐ (R := R)).Curve) :
     additiveToPowerSeriesHom γ = γ.toPowerSeries := (rfl)
 
+/-- If formal group laws `F` and `G` agree below degree `M`, and curves `γ₁, γ₂` on `F` agree
+below degree `M` with curves `δ₁, δ₂` on `G`, then `γ₁ + γ₂` and `δ₁ + δ₂` agree below degree
+`M`. -/
+theorem le_order_add_sub {F G : FormalGroup R} {M : ℕ}
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order)
+    {γ₁ γ₂ : F.Curve} {δ₁ δ₂ : G.Curve}
+    (h₁ : (M : ℕ∞) ≤ (γ₁.toPowerSeries - δ₁.toPowerSeries).order)
+    (h₂ : (M : ℕ∞) ≤ (γ₂.toPowerSeries - δ₂.toPowerSeries).order) :
+    (M : ℕ∞) ≤ ((γ₁ + γ₂).toPowerSeries - (δ₁ + δ₂).toPowerSeries).order := by
+  rw [toPowerSeries_add, toPowerSeries_add, PowerSeries.order_eq_order]
+  exact le_order_subst_pair_sub hFG
+    (by rw [← PowerSeries.constantCoeff_eq]; exact γ₁.constantCoeff_toPowerSeries)
+    (by rw [← PowerSeries.constantCoeff_eq]; exact γ₂.constantCoeff_toPowerSeries)
+    (by rw [← PowerSeries.constantCoeff_eq]; exact δ₁.constantCoeff_toPowerSeries)
+    (by rw [← PowerSeries.constantCoeff_eq]; exact δ₂.constantCoeff_toPowerSeries)
+    (by rwa [← PowerSeries.order_eq_order]) (by rwa [← PowerSeries.order_eq_order])
+
+/-- If commutative formal group laws `F` and `G` agree below degree `M`, and finite families of
+curves `γ` on `F` and `δ` on `G` agree below degree `M` at every index in `I`, then their
+formal-group sums agree below degree `M`. -/
+theorem le_order_sum_sub {ι : Type*} {F G : FormalGroup R} [F.IsComm] [G.IsComm] {M : ℕ}
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order)
+    (I : Finset ι) (γ : ι → F.Curve) (δ : ι → G.Curve)
+    (hγδ : ∀ i ∈ I, (M : ℕ∞) ≤ ((γ i).toPowerSeries - (δ i).toPowerSeries).order) :
+    (M : ℕ∞) ≤ ((∑ i ∈ I, γ i).toPowerSeries - (∑ i ∈ I, δ i).toPowerSeries).order := by
+  classical
+  induction I using Finset.induction_on with
+  | empty => simp
+  | @insert a J haJ ih =>
+    rw [Finset.sum_insert haJ, Finset.sum_insert haJ]
+    exact le_order_add_sub hFG (hγδ a (Finset.mem_insert_self a J))
+      (ih fun i hi ↦ hγδ i (Finset.mem_insert_of_mem hi))
+
 end Curve
+
+/-! ### Monomial curves -/
+
+/-- The monomial curve `c Tⁿ` (`n ≠ 0`) on a formal group law `F`. -/
+noncomputable def monomialCurve (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) (c : R) : F.Curve :=
+  ⟨c • PowerSeries.X ^ n, by simp [zero_pow hn]⟩
+
+/-- The underlying power series of `F.monomialCurve n hn c` is `c • X ^ n`. -/
+@[simp]
+theorem toPowerSeries_monomialCurve (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) (c : R) :
+    (F.monomialCurve n hn c).toPowerSeries = c • PowerSeries.X ^ n := (rfl)
+
+/-- A monomial curve with zero coefficient is the zero curve. -/
+@[simp]
+theorem monomialCurve_zero (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0) :
+    F.monomialCurve n hn 0 = 0 :=
+  Curve.ext (zero_smul R _)
+
+/-- The degree-`1` monomial curve with coefficient `1` is the tautological curve `X`. -/
+@[simp]
+theorem monomialCurve_one (F : FormalGroup R) :
+    F.monomialCurve 1 one_ne_zero 1 = F.tautologicalCurve :=
+  Curve.ext (by simp)
+
+/-- Base change sends a monomial curve `c Tⁿ` to `(φ c) Tⁿ`. -/
+@[simp]
+theorem map_monomialCurve (F : FormalGroup R) (φ : R →+* S) (n : ℕ) (hn : n ≠ 0) (c : R) :
+    Curve.map φ (F.monomialCurve n hn c) = (F.map φ).monomialCurve n hn (φ c) := by
+  ext k
+  simp [apply_ite φ]
+
+/-- Base change along `φ : R →+* S` identifying `F.map φ = G` sends the power series of a finite
+sum of monomial curves `∑ j ∈ s, (u j) T^(e j)` on `F` to `∑ j ∈ s, (v j) T^(e j)` on `G`. -/
+theorem map_toPowerSeries_sum_monomialCurve {ι : Type*} {F : FormalGroup R} {G : FormalGroup S}
+    [F.IsComm] [G.IsComm] (φ : R →+* S) (hFG : F.map φ = G) (s : Finset ι)
+    (e : ι → ℕ) (he : ∀ j, e j ≠ 0) (u : ι → R) (v : ι → S) (huv : ∀ j ∈ s, φ (u j) = v j) :
+    PowerSeries.map φ (∑ j ∈ s, F.monomialCurve (e j) (he j) (u j)).toPowerSeries =
+      (∑ j ∈ s, G.monomialCurve (e j) (he j) (v j)).toPowerSeries := by
+  subst hFG
+  rw [← Curve.toPowerSeries_map, map_sum]
+  congr 1
+  exact Finset.sum_congr rfl fun j hj ↦ by rw [map_monomialCurve, huv j hj]
+
+/-- Verschiebung `Vₘ` sends a monomial curve `c Tⁿ` to `c T^(n m)`. -/
+@[simp]
+theorem verschiebungCurve_monomialCurve (F : FormalGroup R) {m n : ℕ} (hm : m ≠ 0) (hn : n ≠ 0)
+    (c : R) :
+    F.verschiebungCurve m hm (F.monomialCurve n hn c) =
+      F.monomialCurve (n * m) (mul_ne_zero hn hm) c :=
+  Curve.ext (by simp [← pow_mul, mul_comm])
 
 /-! ### Division by invertible natural numbers -/
 
@@ -82,6 +171,17 @@ theorem map_nsmulCurveEquiv_symm {G : FormalGroup S} [G.IsComm]
   apply (G.nsmulCurveEquiv n hS).injective
   rw [nsmulCurveEquiv_apply, nsmulCurveEquiv_apply, ← map_nsmul,
     nsmul_nsmulCurveEquiv_symm, nsmul_nsmulCurveEquiv_symm]
+
+/-- The degree-`k` coefficient of `(F.nsmulCurveEquiv n hunit).symm γ` depends only on the
+coefficients of `γ` in degrees `≤ k`. -/
+theorem coeff_nsmulCurveEquiv_symm_congr {n k : ℕ} (hunit : IsUnit (n : R))
+    {γ₁ γ₂ : F.Curve}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k ((F.nsmulCurveEquiv n hunit).symm γ₁).toPowerSeries =
+      PowerSeries.coeff k ((F.nsmulCurveEquiv n hunit).symm γ₂).toPowerSeries := by
+  rw [nsmulCurveEquiv, TauCeti.FormalGroupIso.curveEquiv_symm_apply,
+    TauCeti.FormalGroupIso.curveEquiv_symm_apply]
+  exact TauCeti.FormalGroupHom.coeff_mapCurve_congr _ h
 
 end CurveDivision
 
