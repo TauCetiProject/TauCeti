@@ -107,7 +107,7 @@ noncomputable def chartExhaustionSeminormFamily
     (A : ∀ i, CompactExhaustion (extChartAt I (c i)).target) :
     SeminormFamily 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ (ι × ℕ × {k : ℕ // k ≤ n}) :=
   fun j ↦ chartCkSeminorm (c j.1) ⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩
-    j.2.2.1 j.2.2.2
+    j.2.2.val j.2.2.property
 
 /-- The exhaustion family uses exactly the native compact chart seminorms. -/
 @[simp]
@@ -188,7 +188,7 @@ noncomputable def chartExhaustionJet (A : ∀ i, CompactExhaustion (extChartAt I
     C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
       ∀ j : ι × ℕ × {m : ℕ // m ≤ n},
         C((⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩ :
-          TopologicalSpace.Compacts (extChartAt I (c j.1)).target), E [×j.2.2.1]→L[𝕜] F) :=
+          TopologicalSpace.Compacts (extChartAt I (c j.1)).target), E [×j.2.2.val]→L[𝕜] F) :=
   (LinearMap.pi fun j ↦ LinearMap.proj
     (⟨c j.1, j.2.2, ⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩⟩ :
       Σ x : M, {m : ℕ // m ≤ n} × TopologicalSpace.Compacts (extChartAt I x).target)) ∘ₗ
@@ -203,9 +203,9 @@ theorem chartExhaustionJet_apply (A : ∀ i, CompactExhaustion (extChartAt I (c 
     DFunLike.coe (F := C^n⟮I, M; 𝓘(𝕜, F), F⟯ →ₗ[𝕜]
       ∀ j : ι × ℕ × {m : ℕ // m ≤ n},
         C((⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩ : TopologicalSpace.Compacts
-          ↥(I.target ∩ I.symm ⁻¹' (chartAt H (c j.1)).target)), E [×j.2.2.1]→L[𝕜] F))
+          ↥(I.target ∩ I.symm ⁻¹' (chartAt H (c j.1)).target)), E [×j.2.2.val]→L[𝕜] F))
       (chartExhaustionJet c A) f j =
-      (chartIteratedFDeriv f (c j.1) j.2.2.1 j.2.2.2).restrict (A j.1 j.2.1) :=
+      (chartIteratedFDeriv f (c j.1) j.2.2.val j.2.2.property).restrict (A j.1 j.2.1) :=
   -- The compact piece, bundled as a compact set, coerces back to the same set.
   compactChartJet_apply f ⟨c j.1, j.2.2, ⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩⟩
 
@@ -227,7 +227,7 @@ theorem isInducing_chartExhaustionJet (A : ∀ i, CompactExhaustion (extChartAt 
   classical
   let Φ := chartExhaustionJet (F := F) (n := n) c A
   let P (j : ι × ℕ × {m : ℕ // m ≤ n}) := C((⟨A j.1 j.2.1, (A j.1).isCompact j.2.1⟩ :
-    TopologicalSpace.Compacts (extChartAt I (c j.1)).target), E [×j.2.2.1]→L[𝕜] F)
+    TopologicalSpace.Compacts (extChartAt I (c j.1)).target), E [×j.2.2.val]→L[𝕜] F)
   let q : SeminormFamily 𝕜 C^n⟮I, M; 𝓘(𝕜, F), F⟯ ((_ : ι × ℕ × {m : ℕ // m ≤ n}) × Unit) :=
     (SeminormFamily.sigma fun j ↦
       SeminormFamily.comp (fun _ : Unit ↦ normSeminorm 𝕜 (P j)) (LinearMap.proj j)).comp Φ
@@ -245,10 +245,11 @@ theorem isInducing_chartExhaustionJet (A : ∀ i, CompactExhaustion (extChartAt 
   have hWW : WithSeminorms q := (withSeminorms_chartExhaustion (F := F) (n := n) c hcover A).congr
     (Seminorm.IsBounded.of_real fun j ↦ ⟨{(j.1.1, j.1.2.1, j.1.2.2)}, 1, fun f ↦ ?_⟩)
     (Seminorm.IsBounded.of_real fun j ↦
-      ⟨Finset.univ.image fun m : Fin (j.2.2.1 + 1) ↦
-        (⟨(j.1, j.2.1, ⟨m, (Nat.cast_le.mpr (Nat.le_of_lt_succ m.isLt)).trans j.2.2.2⟩), ()⟩ :
+      ⟨Finset.univ.image fun m : Fin (j.2.2.val + 1) ↦
+        (⟨(j.1, j.2.1, ⟨m, (Nat.cast_le.mpr (Nat.le_of_lt_succ m.isLt)).trans j.2.2.property⟩),
+            ()⟩ :
           (_ : ι × ℕ × {m : ℕ // m ≤ n}) × Unit), 1, fun f ↦ ?_⟩)
-  · exact ⟨hWW.1.trans
+  · exact ⟨hWW.topology_eq_withSeminorms.trans
       (WithSeminorms.topology_eq_withSeminorms (topology := .induced Φ inferInstance) hind).symm⟩
   · -- A derivative seminorm is at most the `C^k` seminorm of the same order.
     obtain ⟨⟨i, l, m, hm⟩, -⟩ := j

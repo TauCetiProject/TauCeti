@@ -74,14 +74,14 @@ codimension being the rank of `E ⧸ M`. The indexing is zero-based, so `c₀(T)
 (`gelfandNumber_zero`). -/
 noncomputable def gelfandNumber (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨅ M : {M : Submodule 𝕜 E // IsClosed (M : Set E) ∧ Module.rank 𝕜 (E ⧸ M) ≤ n},
-    ‖T ∘L M.1.subtypeL‖₊
+    ‖T ∘L M.val.subtypeL‖₊
 
 /-- `cₙ(T)` is the infimum of `‖T|_M‖` over the closed subspaces `M` of codimension at most
 `n`. -/
 theorem gelfandNumber_def (T : E →L[𝕜] F) (n : ℕ) :
     T.gelfandNumber n =
       ⨅ M : {M : Submodule 𝕜 E // IsClosed (M : Set E) ∧ Module.rank 𝕜 (E ⧸ M) ≤ n},
-        ‖T ∘L M.1.subtypeL‖₊ := by
+        ‖T ∘L M.val.subtypeL‖₊ := by
   rw [gelfandNumber]
 
 private instance (n : ℕ) :
@@ -98,7 +98,7 @@ theorem gelfandNumber_le (T : E →L[𝕜] F) {n : ℕ} {M : Submodule 𝕜 E}
     (LinearMap.rank_le_of_surjective _
       (Submodule.factor_surjective M.le_topologicalClosure)).trans hM
   exact ciInf_le (f := fun M : {M : Submodule 𝕜 E // IsClosed (M : Set E) ∧
-      Module.rank 𝕜 (E ⧸ M) ≤ n} ↦ ‖T ∘L M.1.subtypeL‖₊) (OrderBot.bddBelow _)
+      Module.rank 𝕜 (E ⧸ M) ≤ n} ↦ ‖T ∘L M.val.subtypeL‖₊) (OrderBot.bddBelow _)
     ⟨M.topologicalClosure, M.isClosed_topologicalClosure, hrank⟩
 
 /-- **Lower-bound characterization.** `c ≤ cₙ(T)` exactly when `c ≤ ‖T|_M‖` for every closed
@@ -152,7 +152,7 @@ theorem gelfandNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.
     have h := (LinearMap.quotKerEquivRange (T : E →ₗ[𝕜] F)).lift_rank_eq
     exact Cardinal.lift_le_nat_iff.mp (h.trans_le (Cardinal.lift_le_nat_iff.mpr hT))
   refine le_antisymm ((T.gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)) bot_le
-  have hx : T x = 0 := x.2
+  have hx : T x = 0 := x.property
   simp [hx]
 
 /-- **Mixed-index additivity.** `c_{m+n}(S + T) ≤ cₘ(S) + cₙ(T)`: the intersection of subspaces
@@ -161,9 +161,9 @@ theorem gelfandNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
     (S + T).gelfandNumber (m + n) ≤ S.gelfandNumber m + T.gelfandNumber n := by
   rw [gelfandNumber_def S, gelfandNumber_def T]
   refine NNReal.le_iInf_add_iInf fun M N ↦ ?_
-  have hrank : Module.rank 𝕜 (E ⧸ (M.1 ⊓ N.1)) ≤ ↑(m + n) := by
+  have hrank : Module.rank 𝕜 (E ⧸ (M.val ⊓ N.val)) ≤ ↑(m + n) := by
     rw [Nat.cast_add]
-    exact (Submodule.rank_quotient_inf_le M.1 N.1).trans (add_le_add M.2.2 N.2.2)
+    exact (Submodule.rank_quotient_inf_le M.val N.val).trans (add_le_add M.property.2 N.property.2)
   refine ((S + T).gelfandNumber_le hrank).trans ?_
   rw [add_comp]
   exact (nnNorm_add_le _ _).trans (add_le_add (S.nnnorm_comp_subtypeL_mono inf_le_left)
@@ -188,14 +188,14 @@ theorem gelfandNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G) (A 
   rw [gelfandNumber_def T, NNReal.mul_iInf, NNReal.iInf_mul]
   refine le_ciInf fun M ↦ ?_
   -- `E ⧸ A⁻¹(M)` embeds into `F ⧸ M`, so the preimage has codimension at most `n`.
-  refine ((B ∘L T ∘L A).gelfandNumber_le (rank_quotient_comap_le M.2.2 A)).trans
+  refine ((B ∘L T ∘L A).gelfandNumber_le (rank_quotient_comap_le M.property.2 A)).trans
     (opNNNorm_le_bound _ _ fun x ↦ ?_)
-  have hx : A x ∈ M.1 := x.2
+  have hx : A x ∈ M.val := x.property
   calc ‖B (T (A x))‖₊ ≤ ‖B‖₊ * ‖T (A x)‖₊ := B.le_opNNNorm _
-    _ ≤ ‖B‖₊ * (‖T ∘L M.1.subtypeL‖₊ * ‖A x‖₊) := by
-      gcongr; exact (T ∘L M.1.subtypeL).le_opNNNorm ⟨A x, hx⟩
-    _ ≤ ‖B‖₊ * (‖T ∘L M.1.subtypeL‖₊ * (‖A‖₊ * ‖x‖₊)) := by gcongr; exact A.le_opNNNorm _
-    _ = ‖B‖₊ * ‖T ∘L M.1.subtypeL‖₊ * ‖A‖₊ * ‖x‖₊ := by ring
+    _ ≤ ‖B‖₊ * (‖T ∘L M.val.subtypeL‖₊ * ‖A x‖₊) := by
+      gcongr; exact (T ∘L M.val.subtypeL).le_opNNNorm ⟨A x, hx⟩
+    _ ≤ ‖B‖₊ * (‖T ∘L M.val.subtypeL‖₊ * (‖A‖₊ * ‖x‖₊)) := by gcongr; exact A.le_opNNNorm _
+    _ = ‖B‖₊ * ‖T ∘L M.val.subtypeL‖₊ * ‖A‖₊ * ‖x‖₊ := by ring
 
 /-- **Mixed-index multiplicativity.** `c_{m+n}(S T) ≤ cₘ(S) cₙ(T)`: intersect a subspace
 admissible for `T` with the preimage under `T` of a subspace admissible for `S`. -/
@@ -205,19 +205,19 @@ theorem gelfandNumber_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) 
   refine le_ciInf fun N ↦ ?_
   rw [NNReal.mul_iInf]
   refine le_ciInf fun M ↦ ?_
-  have hrank : Module.rank 𝕜 (E ⧸ (M.1 ⊓ N.1.comap (T : E →ₗ[𝕜] F))) ≤ ↑(m + n) := by
+  have hrank : Module.rank 𝕜 (E ⧸ (M.val ⊓ N.val.comap (T : E →ₗ[𝕜] F))) ≤ ↑(m + n) := by
     rw [Nat.cast_add, add_comm (m : Cardinal)]
     exact (Submodule.rank_quotient_inf_le _ _).trans
-      (add_le_add M.2.2 (rank_quotient_comap_le N.2.2 T))
+      (add_le_add M.property.2 (rank_quotient_comap_le N.property.2 T))
   refine ((S ∘L T).gelfandNumber_le hrank).trans (opNNNorm_le_bound _ _ fun x ↦ ?_)
-  have hxM : (x : E) ∈ M.1 := x.2.1
-  have hxN : T x ∈ N.1 := x.2.2
-  calc ‖S (T x)‖₊ ≤ ‖S ∘L N.1.subtypeL‖₊ * ‖T x‖₊ :=
-        (S ∘L N.1.subtypeL).le_opNNNorm ⟨T x, hxN⟩
-    _ ≤ ‖S ∘L N.1.subtypeL‖₊ * (‖T ∘L M.1.subtypeL‖₊ * ‖x‖₊) := by
+  have hxM : (x : E) ∈ M.val := x.property.1
+  have hxN : T x ∈ N.val := x.property.2
+  calc ‖S (T x)‖₊ ≤ ‖S ∘L N.val.subtypeL‖₊ * ‖T x‖₊ :=
+        (S ∘L N.val.subtypeL).le_opNNNorm ⟨T x, hxN⟩
+    _ ≤ ‖S ∘L N.val.subtypeL‖₊ * (‖T ∘L M.val.subtypeL‖₊ * ‖x‖₊) := by
       gcongr
-      exact (T ∘L M.1.subtypeL).le_opNNNorm ⟨x, hxM⟩
-    _ = ‖S ∘L N.1.subtypeL‖₊ * ‖T ∘L M.1.subtypeL‖₊ * ‖x‖₊ := (mul_assoc _ _ _).symm
+      exact (T ∘L M.val.subtypeL).le_opNNNorm ⟨x, hxM⟩
+    _ = ‖S ∘L N.val.subtypeL‖₊ * ‖T ∘L M.val.subtypeL‖₊ * ‖x‖₊ := (mul_assoc _ _ _).symm
 
 /-- **Identity normalization.** If `n` is strictly below the rank of a normed space `E`, then
 `cₙ(id_E) = 1`: every subspace of codimension at most `n` is nonzero, so its inclusion has

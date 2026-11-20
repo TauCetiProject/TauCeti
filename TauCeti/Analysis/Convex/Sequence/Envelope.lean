@@ -166,7 +166,7 @@ open scoped Classical in
 sequence it is the pointwise supremum of all convex minorants. For an inadmissible
 sequence it is the all-infinite fallback, which is not an envelope of that sequence. -/
 noncomputable def lowerConvexEnvelope (a : ℕ → WithTop ℝ) : ℕ → WithTop ℝ :=
-  if IsAdmissible a then fun n => ⨆ g : {g : ℕ → WithTop ℝ // IsConvexSeq g ∧ g ≤ a}, g.1 n
+  if IsAdmissible a then fun n => ⨆ g : {g : ℕ → WithTop ℝ // IsConvexSeq g ∧ g ≤ a}, g.val n
   else ⊤
 
 variable {a b h : ℕ → WithTop ℝ}

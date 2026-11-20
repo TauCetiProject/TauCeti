@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.HopfAlgebra.Antipode
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
 # The antipode of a group algebra
 
 The group algebra `k[G]` of a group is a Hopf algebra whose antipode `S` is the linear extension
-of inversion, `S(g) = g⁻¹` (`MonoidAlgebra.antipode_single`); it reverses products. This file
-records how `S` interacts with the operations that move elements between group algebras: it
-commutes with mapping the coefficients along a ring homomorphism `k → K` and with transporting
-along an isomorphism of groups, and it fixes the character sum `∑_{h ∈ H} χ(h) h` of a character
-that takes the same value on `h` and `h⁻¹`.
+of inversion, `S(g) = g⁻¹` (`MonoidAlgebra.antipode_single`); it reverses products and squares
+to the identity. This file records how `S` interacts with the operations that move elements
+between group algebras: it commutes with mapping the coefficients along a ring homomorphism
+`k → K` and with transporting along an isomorphism of groups, and it fixes the character sum
+`∑_{h ∈ H} χ(h) h` of a character that takes the same value on `h` and `h⁻¹`.
 
 Through `v · g = g⁻¹ v`, a representation becomes a right module over `k[G]`, and an element `x`
 acts on the right as `S(x)` acts on the left. This is how the antipode enters tensor products
@@ -25,6 +26,8 @@ the two factors of a Young symmetrizer, are both fixed by `S`.
 
 ## Main results
 
+* `MonoidAlgebra.antipode_antipode` and `MonoidAlgebra.antipode_bijective`: the antipode is
+  involutive, hence bijective.
 * `MonoidAlgebra.antipode_mapRingHom`, `MonoidAlgebra.antipode_mapAlgHom` and
   `MonoidAlgebra.antipode_domCongr`: the antipode commutes with mapping the coefficients and with
   transport along a group isomorphism.
@@ -35,6 +38,17 @@ the two factors of a Young symmetrizer, are both fixed by `S`.
 public section
 
 namespace MonoidAlgebra
+
+/-- The antipode of a group algebra is involutive: `S(S(x)) = x`. This is the cocommutative case
+`TauCeti.HopfAlgebra.antipode_antipode_of_isCocomm`, which is the simp lemma. -/
+theorem antipode_antipode {k G : Type*} [CommSemiring k] [Group G] (x : MonoidAlgebra k G) :
+    HopfAlgebra.antipode k (HopfAlgebra.antipode k x) = x :=
+  TauCeti.HopfAlgebra.antipode_antipode_of_isCocomm x
+
+/-- The antipode of a group algebra is bijective, being involutive. -/
+theorem antipode_bijective {k G : Type*} [CommSemiring k] [Group G] :
+    Function.Bijective (HopfAlgebra.antipode k : MonoidAlgebra k G →ₗ[k] MonoidAlgebra k G) :=
+  Function.Involutive.bijective antipode_antipode
 
 /-- The antipode commutes with mapping the coefficients of a group algebra along a ring
 homomorphism. -/
@@ -77,6 +91,6 @@ theorem antipode_subgroupCharSum {k G : Type*} [CommSemiring k] [Group G] (χ : 
     HopfAlgebra.antipode k (subgroupCharSum χ H) = subgroupCharSum χ H := by
   rw [subgroupCharSum_def, map_sum]
   refine Fintype.sum_equiv (Equiv.inv H) _ _ fun h => ?_
-  simp [MonoidAlgebra.of_apply, hχ h h.2]
+  simp [MonoidAlgebra.of_apply, hχ h h.property]
 
 end TauCeti

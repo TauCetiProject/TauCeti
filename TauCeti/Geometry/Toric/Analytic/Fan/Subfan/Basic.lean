@@ -60,8 +60,8 @@ same topology. -/
 theorem subfan_analyticAffineChartDiagram_obj_str (σ : (Φ.subfan S hS hface).cones) :
     (((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ).str =
       ((Φ.analyticAffineChartDiagram).obj
-        ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩).str := by
-  let g := Φ.analyticChartGenerators ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩
+        ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩).str := by
+  let g := Φ.analyticChartGenerators ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩
   exact ((Φ.subfan S hS hface).analyticAffineChart_str_eq σ g.2).trans
     (Φ.analyticAffineChart_str_eq _ g.2).symm
 
@@ -70,7 +70,7 @@ same cone in the ambient fan. -/
 noncomputable def subfanAnalyticChartMap (σ : (Φ.subfan S hS hface).cones) :
     ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ ≃ₜ
       (Φ.analyticAffineChartDiagram).obj
-        ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩ where
+        ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩ where
   toEquiv := Equiv.refl _
   continuous_toFun :=
     continuous_id_iff_le.mpr (Φ.subfan_analyticAffineChartDiagram_obj_str S hS hface σ).le
@@ -82,16 +82,16 @@ noncomputable def subfanAnalyticChartMap (σ : (Φ.subfan S hS hface).cones) :
 theorem subfanAnalyticChartMap_apply (σ : (Φ.subfan S hS hface).cones)
     (x : ((Φ.subfan S hS hface).analyticAffineChartDiagram).obj σ) :
     (Φ.subfanAnalyticChartMap S hS hface σ x :
-      AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) = x :=
+      AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) = x :=
   (rfl)
 
 /-- The inverse chart comparison of a subfan is the identity on complex points. -/
 @[simp]
 theorem subfanAnalyticChartMap_symm_apply (σ : (Φ.subfan S hS hface).cones)
     (x : (Φ.analyticAffineChartDiagram).obj
-      ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩) :
+      ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩) :
     ((Φ.subfanAnalyticChartMap S hS hface σ).symm x :
-      AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.1)) = x :=
+      AffineSemigroupComplexPoint (dualSemigroup Φ.lattice σ.val)) = x :=
   (rfl)
 
 /-- The chart comparisons of a subfan commute with the face maps of the two chart diagrams. -/
@@ -196,7 +196,7 @@ theorem range_subfanAnalyticMap :
     Set.range (Φ.subfanAnalyticMap hΦ S hS hface) =
       ⋃ σ : (Φ.subfan S hS hface).cones,
         Set.range (Φ.analyticAffineChartι hΦ
-          ⟨σ.1, hS (by simpa only [subfan_cones] using σ.2)⟩) := by
+          ⟨σ.val, hS (by simpa only [subfan_cones] using σ.property)⟩) := by
   ext x
   constructor
   · rintro ⟨y, rfl⟩

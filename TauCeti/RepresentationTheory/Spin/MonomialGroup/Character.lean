@@ -102,7 +102,7 @@ theorem finrank_eq_one_of_apply_monomialGroupEpsilon_eq_one
   have htriv : Representation.IsTrivial (ρ.comp (monomialGroupSign Q v).subtype) := by
     refine ⟨fun g ↦ ?_⟩
     rw [← Module.End.one_eq_id]
-    rcases (mem_monomialGroupSign_iff v).mp g.2 with hg | hg
+    rcases (mem_monomialGroupSign_iff v).mp g.property with hg | hg
     · simp [hg]
     · simp [hg, hρ]
   have : IsMulCommutative (monomialGroup Q v ⧸ monomialGroupSign Q v) :=
@@ -168,7 +168,7 @@ theorem natCard_monoidHom_monomialGroup_apply_monomialGroupEpsilon_eq_one [Finty
     ⟨fun t t' h ↦ ?_, fun χ ↦ ?_⟩)).symm
   · exact (existsUnique_monomialGroupCharacter_eq hb hQ _ (by simp)).unique rfl
       (congrArg Subtype.val h).symm
-  · obtain ⟨t, ht, -⟩ := existsUnique_monomialGroupCharacter_eq hb hQ χ.1 χ.2
+  · obtain ⟨t, ht, -⟩ := existsUnique_monomialGroupCharacter_eq hb hQ χ.val χ.property
     exact ⟨t, Subtype.ext ht⟩
 
 end CliffordAlgebra

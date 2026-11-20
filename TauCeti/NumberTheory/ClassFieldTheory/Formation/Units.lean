@@ -121,13 +121,13 @@ theorem range_localFormationHom :
   ext g
   refine ⟨?_, fun hg => ⟨(TauCeti.galoisSubgroupEquiv K L σ).symm ⟨g, hg⟩, ?_⟩⟩
   · rintro ⟨h, rfl⟩
-    exact (TauCeti.galoisSubgroupEquiv K L σ h).2
+    exact (TauCeti.galoisSubgroupEquiv K L σ h).property
   · rw [localFormationHom_apply, ContinuousMulEquiv.apply_symm_apply]
 
 /-- The embedding of absolute Galois groups underlying restriction of the units formation is
 continuous. -/
 theorem continuous_localFormationHom : Continuous (localFormationHom K L σ) :=
-  continuous_subtype_val.comp (TauCeti.galoisSubgroupEquiv K L σ).continuous_toFun
+  continuous_subtypeVal.comp (TauCeti.galoisSubgroupEquiv K L σ).continuous_toFun
 
 /-- The embedding of absolute Galois groups underlying restriction of the units formation is
 injective. -/
@@ -137,7 +137,7 @@ theorem injective_localFormationHom : Function.Injective (localFormationHom K L 
 /-- The embedding of absolute Galois groups underlying restriction of the units formation is an
 open map. -/
 theorem isOpenMap_localFormationHom : IsOpenMap (localFormationHom K L σ) :=
-  (TauCeti.galoisSubgroup K L σ).isOpen.isOpenMap_subtype_val.comp
+  (TauCeti.galoisSubgroup K L σ).isOpen.isOpenMap_subtypeVal.comp
     (TauCeti.galoisSubgroupEquiv K L σ).isOpenMap
 
 /-- **The inverse of the embedding `G_L → G_K` on a subgroup of the image of `U ≤ G_L`**: the
@@ -150,13 +150,13 @@ def localFormationHomInv {U : Subgroup (AbsoluteGaloisGroup L)}
       (Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
         (range_localFormationHom K L σ).le)))).codRestrict U
     fun u => by
-      obtain ⟨v, hv, hvu⟩ := h u.2
+      obtain ⟨v, hv, hvu⟩ := h u.property
       have hu : Subgroup.inclusion (h.trans ((Subgroup.map_le_range _ U).trans
           (range_localFormationHom K L σ).le)) u = TauCeti.galoisSubgroupEquiv K L σ v :=
         Subtype.ext (hvu.symm.trans (localFormationHom_apply K L σ v))
       simpa [hu] using hv
   continuous_toFun := ((TauCeti.galoisSubgroupEquiv K L σ).symm.continuous.comp
-    (continuous_subtype_val.subtype_mk _)).subtype_mk _
+    (continuous_subtypeVal.subtype_mk _)).subtype_mk _
 
 /-- On underlying elements, `localFormationHomInv` is the inverse of
 `TauCeti.galoisSubgroupEquiv`. -/
@@ -165,7 +165,8 @@ theorem localFormationHomInv_apply_coe {U : Subgroup (AbsoluteGaloisGroup L)}
     (u : U') :
     (localFormationHomInv K L σ h u : AbsoluteGaloisGroup L) =
       (TauCeti.galoisSubgroupEquiv K L σ).symm
-        ⟨u, (h.trans ((Subgroup.map_le_range _ U).trans (range_localFormationHom K L σ).le)) u.2⟩ :=
+        ⟨u, (h.trans ((Subgroup.map_le_range _ U).trans (range_localFormationHom K L σ).le))
+            u.property⟩ :=
   (rfl)
 
 /-- `localFormationHomInv` is a right inverse of the embedding `G_L → G_K`. -/
@@ -402,8 +403,8 @@ theorem subsingleton_h1_unitsFormation (L : NormalLayer (AbsoluteGaloisGroup K))
   -- The cocycle `f`, read with values in the fixed points of `V` in `(Kˢ)ˣ`, is a coboundary.
   have : (L.top.toSubgroup.subgroupOf L.ground.toSubgroup).Normal := L.normal
   obtain ⟨m, hm⟩ := isCoboundary₁_of_isCocycle₁_quotient L.ground.toSubgroup L.ground.isClosed
-    (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (L.top.isOpen.preimage continuous_subtype_val)
-    (f := unitsCocycle L f) (isCocycle₁_unitsCocycle L ((mem_cocycles₁_iff f).1 f.2))
+    (L.top.toSubgroup.subgroupOf L.ground.toSubgroup) (L.top.isOpen.preimage continuous_subtypeVal)
+    (f := unitsCocycle L f) (isCocycle₁_unitsCocycle L ((mem_cocycles₁_iff f).1 f.property))
   let e := L.coeffFixedPointsEquiv (unitsCoeffEquivUnitsFormation K)
     (unitsCoeffEquivUnitsFormation_smul K)
   refine ⟨e.symm m, funext fun σ => e.injective ?_⟩
