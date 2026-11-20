@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.TensorProduct
 public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.RingTheory.Derivation.Lie
 public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
@@ -35,9 +36,14 @@ with zero endpoints. The transvections `!![1, t; 0, 1]` and `!![1, 0; t, 1]` act
 exponentials of `t E` and `t F`. The `sl₂`-triple itself and the primitive vector `x ^ d` are in
 `TauCeti/Algebra/Lie/Sl2/BinaryForm.lean`.
 
+On a tensor product of two polynomial rings, `X a ∂_b` acts by the Leibniz rule on both factors;
+over a ring this is Mathlib's tensor product of Lie modules. Multiplication of polynomials
+intertwines this action with the action on the product.
+
 ## Main definitions
 
 * `TauCeti.polynomialOperator`: the operator `X a ∂_b`.
+* `TauCeti.tensorPolynomialOperator`: the action of `X a ∂_b` on `R[X_σ] ⊗ R[X_σ]`.
 
 ## Main results
 
@@ -54,6 +60,11 @@ exponentials of `t E` and `t F`. The `sl₂`-triple itself and the primitive vec
   `TauCeti.pow_polynomialOperator_one_zero_polynomialMonomial`: the ladder formulas on the binary
   monomials.
 * `TauCeti.lie_polynomialOperator_zero_one_one_zero`: `⁅x ∂_y, y ∂_x⁆ = x ∂_x - y ∂_y`.
+* `TauCeti.polynomialOperator_X_pow_mul_X_pow_succ` and
+  `TauCeti.polynomialOperator_self_sub_polynomialOperator_self_X_pow_mul_X_pow`: the action of
+  `x ∂_y` and of `x ∂_x - y ∂_y` on the monomials `x ^ i y ^ j` in two distinct variables.
+* `TauCeti.tensorPolynomialOperator_tmul` and `TauCeti.lie_tensorPolynomialOperator`: the
+  Leibniz rule on pure tensors and the `gl_σ` relations on the tensor product.
 
 ## References
 
@@ -104,6 +115,15 @@ theorem polynomialOperator_C (a b : σ) (r : R) : polynomialOperator R a b (C r)
 theorem polynomialOperator_X [DecidableEq σ] (a b c : σ) :
     polynomialOperator R a b (X c) = if c = b then X a else 0 := by
   simp [polynomialOperator_apply, Pi.single_apply]
+
+@[simp]
+theorem polynomialOperator_X_self (a b : σ) : polynomialOperator R a b (X b) = X a := by
+  simp [polynomialOperator_apply]
+
+@[simp]
+theorem polynomialOperator_X_of_ne {a b c : σ} (h : c ≠ b) :
+    polynomialOperator R a b (X c) = 0 := by
+  simp [polynomialOperator_apply, h]
 
 /-- `X a ∂_b` sends the monomial `r X^s` to `s_b r X^(s - e_b + e_a)`. -/
 @[simp]
@@ -193,7 +213,31 @@ theorem pow_polynomialOperator_monomial (hab : a ≠ b) (k : ℕ) (s : σ →₀
   rw [monomial_eq_X_pow_mul_monomial_erase b s r, pow_polynomialOperator_mul_of_eq_zero hkill,
     pow_polynomialOperator_X_pow hab, smul_mul_assoc]
 
+/-- For distinct variables `x = X a` and `y = X b`,
+`x ∂_y (x ^ i y ^ (j + 1)) = (j + 1) x ^ (i + 1) y ^ j`. -/
+theorem polynomialOperator_X_pow_mul_X_pow_succ (hab : a ≠ b) (i j : ℕ) :
+    polynomialOperator R a b (X a ^ i * X b ^ (j + 1)) =
+      ((j : R) + 1) • (X a ^ (i + 1) * X b ^ j) := by
+  simp [polynomialOperator_apply, pderiv_X_of_ne hab, Algebra.smul_def]
+  ring
+
 end Power
+
+section Weight
+
+variable {σ R : Type*} [CommRing R] {a b : σ}
+
+/-- For distinct variables `x = X a` and `y = X b`, `x ∂_x - y ∂_y` acts on `x ^ i y ^ j` by the
+weight `i - j`. -/
+theorem polynomialOperator_self_sub_polynomialOperator_self_X_pow_mul_X_pow (hab : a ≠ b)
+    (i j : ℕ) :
+    (polynomialOperator R a a - polynomialOperator R b b) (X a ^ i * X b ^ j) =
+      ((i : R) - j) • (X a ^ i * X b ^ j) := by
+  rcases i with _ | i <;> rcases j with _ | j <;>
+    simp [polynomialOperator_apply, pderiv_X_of_ne hab, pderiv_X_of_ne hab.symm,
+      Algebra.smul_def] <;> ring
+
+end Weight
 
 section Transvection
 
@@ -356,5 +400,75 @@ theorem lie_polynomialOperator_zero_one_one_zero :
   simp [lie_polynomialOperator]
 
 end Lie
+
+section Tensor
+
+/-! ### The action on a tensor product -/
+
+open TensorProduct
+
+variable {σ : Type*}
+
+section CommSemiring
+
+variable (R : Type*) [CommSemiring R]
+
+/-- The action of `X a ∂_b` on `R[X_σ] ⊗ R[X_σ]`: `X a ∂_b ⊗ 1 + 1 ⊗ X a ∂_b`. Over a ring, this
+is the action of the tensor product of Lie modules, see
+`TauCeti.tensorPolynomialOperator_eq_toEnd`. -/
+noncomputable def tensorPolynomialOperator (a b : σ) :
+    Module.End R (MvPolynomial σ R ⊗[R] MvPolynomial σ R) :=
+  (polynomialOperator R a b).rTensor _ + (polynomialOperator R a b).lTensor _
+
+/-- The action on the tensor product is `X a ∂_b ⊗ 1 + 1 ⊗ X a ∂_b`. -/
+theorem tensorPolynomialOperator_def (a b : σ) :
+    tensorPolynomialOperator R a b =
+      (polynomialOperator R a b).rTensor _ + (polynomialOperator R a b).lTensor _ :=
+  (rfl)
+
+/-- **The Leibniz rule on pure tensors**: `X a ∂_b` acts on `p ⊗ q` through each factor in
+turn. -/
+@[simp]
+theorem tensorPolynomialOperator_tmul (a b : σ) (p q : MvPolynomial σ R) :
+    tensorPolynomialOperator R a b (p ⊗ₜ q) =
+      polynomialOperator R a b p ⊗ₜ q + p ⊗ₜ polynomialOperator R a b q := by
+  simp [tensorPolynomialOperator_def]
+
+/-- Multiplication of polynomials intertwines the action of `X a ∂_b` on the tensor product with
+its action on `R[X_σ]`: this is the Leibniz rule `D (p q) = D p q + p D q`. -/
+theorem mul'_tensorPolynomialOperator (a b : σ) (x : MvPolynomial σ R ⊗[R] MvPolynomial σ R) :
+    LinearMap.mul' R _ (tensorPolynomialOperator R a b x) =
+      polynomialOperator R a b (LinearMap.mul' R _ x) := by
+  have : LinearMap.mul' R _ ∘ₗ tensorPolynomialOperator R a b =
+      polynomialOperator R a b ∘ₗ LinearMap.mul' R (MvPolynomial σ R) :=
+    TensorProduct.ext' fun p q ↦ by simp [polynomialOperator_mul]
+  exact congr($this x)
+
+end CommSemiring
+
+/- The commutator of two endomorphisms is the bracket of `LieRing.ofAssociativeRing`, which is a
+local instance here, as in Mathlib. -/
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable (R : Type*) [CommRing R]
+
+/-- The action of `X a ∂_b` on `R[X_σ] ⊗ R[X_σ]` is that of the tensor product of Lie modules
+over the endomorphisms of `R[X_σ]`. -/
+theorem tensorPolynomialOperator_eq_toEnd (a b : σ) :
+    tensorPolynomialOperator R a b =
+      LieModule.toEnd R (Module.End R (MvPolynomial σ R)) _ (polynomialOperator R a b) :=
+  TensorProduct.ext' fun p q ↦ by simp [LieModule.toEnd_apply_apply]
+
+/-- **The `gl_σ` relations on the tensor product**: the total operators commute like the
+elementary matrices. -/
+theorem lie_tensorPolynomialOperator [DecidableEq σ] (a b c d : σ) :
+    ⁅tensorPolynomialOperator R a b, tensorPolynomialOperator R c d⁆ =
+      (if b = c then tensorPolynomialOperator R a d else 0) -
+        if d = a then tensorPolynomialOperator R c b else 0 := by
+  simp only [tensorPolynomialOperator_eq_toEnd]
+  rw [← LieHom.map_lie, lie_polynomialOperator, map_sub]
+  split_ifs <;> simp only [map_zero]
+
+end Tensor
 
 end TauCeti
