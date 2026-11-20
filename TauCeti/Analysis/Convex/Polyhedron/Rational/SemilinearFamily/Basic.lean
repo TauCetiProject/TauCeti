@@ -82,6 +82,24 @@ def IsFiniteBranchOn (h : TauCeti.Toric.IsIntegralLattice i)
       TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧ Set.InjOn (g k) (S k) ∧
         ∀ x : D, x.val ∈ S k → f x = g k x
 
+/-- A rational piecewise-affine map is characterized by a finite rational semilinear cover
+and rational affine representatives for the values on each piece. -/
+theorem isRationalPiecewiseAffine_iff {D : Set V} {f : D → W} :
+    IsRationalPiecewiseAffine h h' D f ↔
+      ∃ (κ : Type) (_ : Finite κ) (S : κ → Set V) (g : κ → (V →ᵃ[ℝ] W)),
+        (⋃ k, S k) = D ∧ ∀ k, IsRationalSemilinear h (S k) ∧
+          TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧
+            ∀ x : D, x.val ∈ S k → f x = g k x := (Iff.rfl)
+
+/-- A finite branch is characterized by a finite locally closed polyhedral cover and rational
+affine representatives that are injective on their respective pieces. -/
+theorem isFiniteBranchOn_iff {D : Set V} {f : D → W} :
+    IsFiniteBranchOn h h' D f ↔
+      ∃ (κ : Type) (_ : Finite κ) (S : κ → Set V) (g : κ → (V →ᵃ[ℝ] W)),
+        (⋃ k, S k) = D ∧ ∀ k, IsLocallyClosedPolyhedron h (S k) ∧
+          TauCeti.Toric.IsRationalLinearMap h h' (g k).linear ∧ Set.InjOn (g k) (S k) ∧
+            ∀ x : D, x.val ∈ S k → f x = g k x := (Iff.rfl)
+
 namespace IsRationalPiecewiseAffine
 
 /-- The domain of a rational piecewise-affine map is rational semilinear. -/
@@ -187,6 +205,10 @@ theorem fiber_cast_fst {F G : FiniteSemilinearFamily h h' ι} (e : F = G)
 
 /-- A family whose charts are all finite branches. -/
 def IsFiniteBranch : Prop := ∀ c, IsFiniteBranchOn h h' (F.domain c) (F.eval c)
+
+/-- A finite semilinear family consists of finite branches exactly when every chart does. -/
+theorem isFiniteBranch_iff :
+    F.IsFiniteBranch ↔ ∀ c, IsFiniteBranchOn h h' (F.domain c) (F.eval c) := (Iff.rfl)
 
 /-- A family of finite branches has finite fibers. -/
 theorem IsFiniteBranch.finite_fiber {F : FiniteSemilinearFamily h h' ι} (hF : F.IsFiniteBranch)
