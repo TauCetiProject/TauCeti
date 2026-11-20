@@ -25,8 +25,10 @@ For a real-linear map `L` into a complex module, its defect from complex lineari
 A real-linear map is unchanged by conjugating its argument exactly when it vanishes at `I`
 (`LinearMap.forall_apply_conj_eq_iff`). A real-linear map with `L I = A (L 1)`, for `A`
 squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
-(`LinearMap.apply_mul_I_eq_of_apply_I_eq`), and a real-linear map intertwines multiplication by
-`I` with such an `A` exactly when `L 1 + A (L I) = 0` (`LinearMap.forall_apply_I_mul_eq_iff`).
+(`LinearMap.apply_mul_I_eq_of_apply_I_eq`), so it vanishes once it vanishes at one nonzero point
+(`LinearMap.eq_zero_of_apply_I_eq_of_apply_eq_zero`), and a real-linear map intertwines
+multiplication by `I` with such an `A` exactly when `L 1 + A (L I) = 0`
+(`LinearMap.forall_apply_I_mul_eq_iff`).
 A real-bilinear map is unchanged by conjugating both arguments exactly when it vanishes at
 `(1, I)` and `(I, 1)` (`LinearMap.forall_apply_conj_apply_conj_eq_iff`).
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
@@ -44,7 +46,10 @@ conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds eve
 at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
-half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`). Multiplication by
+`-I` is a real linear equivalence from the skew-adjoint onto the self-adjoint elements, with
+inverse multiplication by `I` (`skewAdjoint.negISMulEquiv`), extending Mathlib's
+`skewAdjoint.negISMul`.
 
 A vector lies in the real span of a complex basis exactly when its coordinates are real
 (`Module.Basis.mem_span_real_range_iff`). In particular, the real span of the standard basis of
@@ -148,6 +153,23 @@ theorem apply_mul_I_eq_of_apply_I_eq {F : Type*} [AddCommGroup F] [Module ℝ F]
   simp [hA]
   module
 
+/-- A real-linear map out of the complex plane with `L I = A (L 1)`, where `A` squares to `-1`,
+vanishes as soon as it vanishes at a single nonzero point. -/
+theorem eq_zero_of_apply_I_eq_of_apply_eq_zero {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) {A : F →ₗ[ℝ] F} (hL : L I = A (L 1)) (hA : ∀ v, A (A v) = -v) {w : ℂ}
+    (hw : w ≠ 0) (h : L w = 0) : L = 0 := by
+  have hwI : L (w * I) = 0 := by rw [L.apply_mul_I_eq_of_apply_I_eq hL hA, h, map_zero]
+  ext v
+  -- Every `v` is a real combination of `w` and `w * I`.
+  have hv : v = (v / w).re • w + (v / w).im • (w * I) :=
+    calc v = v / w * w := (div_mul_cancel₀ v hw).symm
+      _ = _ := by
+        conv_lhs => rw [← re_add_im (v / w)]
+        rw [real_smul, real_smul]
+        ring
+  rw [hv]
+  simp [-real_smul, h, hwI]
+
 /-- A real-linear map `L` out of the complex plane intertwines multiplication by `I` with an
 endomorphism `A` squaring to `-1` exactly when `L 1 + A (L I) = 0`: the value at `I` is then
 determined by the value at `1`. -/
@@ -193,6 +215,32 @@ theorem mem_span_real_range_basisFun_iff {ι : Type*} [Finite ι] (w : ι → �
   simp [(Pi.basisFun ℂ ι).mem_span_real_range_iff]
 
 end TauCeti
+
+namespace skewAdjoint
+
+open Complex
+
+variable {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A] [StarModule ℂ A]
+
+/-- **The skew-adjoint elements are `-I` times the self-adjoint ones**: Mathlib's
+`skewAdjoint.negISMul`, `a ↦ -I • a`, is a real linear equivalence from the skew-adjoint onto the
+self-adjoint elements of a complex star module, with inverse `a ↦ I • a`. -/
+def negISMulEquiv : skewAdjoint A ≃ₗ[ℝ] selfAdjoint A :=
+  { skewAdjoint.negISMul with
+    invFun a := ⟨I • (a : A), I_smul_mem_skewAdjoint_iff_isSelfAdjoint.mpr a.property⟩
+    left_inv a := Subtype.ext (skewAdjoint.I_smul_neg_I a)
+    right_inv a := Subtype.ext (by simp [smul_smul]) }
+
+@[simp]
+theorem coe_negISMulEquiv_apply (a : skewAdjoint A) : (negISMulEquiv a : A) = -I • (a : A) :=
+  skewAdjoint.negISMul_apply_coe a
+
+@[simp]
+theorem coe_negISMulEquiv_symm_apply (a : selfAdjoint A) :
+    (negISMulEquiv.symm a : A) = I • (a : A) :=
+  (rfl)
+
+end skewAdjoint
 
 section ComplexOfMapISmul
 

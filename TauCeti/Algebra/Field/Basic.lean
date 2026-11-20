@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Field.Basic
+import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.Tactic.Abel
 
@@ -65,11 +66,7 @@ theorem exists_add_map_eq_of_add_map_ne_zero {K : Type*} [DivisionRing K] {σ : 
     ∃ t : K, t + σ t = s := by
   refine ⟨s * (y + σ y)⁻¹ * y, ?_⟩
   have hσy : σ (y + σ y) = y + σ y := by rw [map_add, hσ y, add_comm]
-  have hσinv : σ (y + σ y)⁻¹ = (y + σ y)⁻¹ := by
-    apply mul_left_cancel₀ hy
-    calc (y + σ y) * σ (y + σ y)⁻¹ = σ ((y + σ y) * (y + σ y)⁻¹) := by rw [map_mul, hσy]
-      _ = 1 := by rw [mul_inv_cancel₀ hy, map_one]
-      _ = (y + σ y) * (y + σ y)⁻¹ := (mul_inv_cancel₀ hy).symm
+  have hσinv : σ (y + σ y)⁻¹ = (y + σ y)⁻¹ := by rw [map_inv₀, hσy]
   rw [map_mul, map_mul, hs, hσinv, ← mul_add, mul_assoc, inv_mul_cancel₀ hy, mul_one]
 
 variable {K : Type*} [DivisionRing K]

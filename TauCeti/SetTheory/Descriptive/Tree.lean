@@ -91,11 +91,11 @@ variable {A : Type u} {S T : tree A}
 /-- Immediate one-element extension on the nodes of a descriptive tree `T`: `ChildRel T v u` holds
 when `v` is obtained by appending a single symbol to `u`. -/
 def ChildRel (T : tree A) (v u : T) : Prop :=
-  ∃ a : A, v.1 = u.1 ++ [a]
+  ∃ a : A, v.val = u.val ++ [a]
 
 /-- Unfolding lemma for `Descriptive.Tree.ChildRel`. -/
 @[simp]
-theorem childRel_iff {v u : T} : ChildRel T v u ↔ ∃ a : A, v.1 = u.1 ++ [a] :=
+theorem childRel_iff {v u : T} : ChildRel T v u ↔ ∃ a : A, v.val = u.val ++ [a] :=
   Iff.rfl
 
 /-- A descriptive tree `T` is **well-founded** when its immediate-extension relation `ChildRel T`
@@ -114,18 +114,18 @@ theorem IsWellFounded.apply (hT : IsWellFounded T) (u : T) : Acc (ChildRel T) u 
 /-- The empty tree is well-founded. -/
 @[simp]
 theorem isWellFounded_bot : IsWellFounded (⊥ : tree A) :=
-  ⟨fun u => False.elim u.2⟩
+  ⟨fun u => False.elim u.property⟩
 
 /-- A subtree of a well-founded tree is well-founded. -/
 theorem IsWellFounded.mono (hST : S ≤ T) (hT : IsWellFounded T) : IsWellFounded S := by
-  let incl : S → T := fun u => ⟨u.1, hST u.2⟩
+  let incl : S → T := fun u => ⟨u.val, hST u.property⟩
   exact Subrelation.wf (r := InvImage (ChildRel T) incl) (fun ⟨a, h⟩ => ⟨a, h⟩)
     (InvImage.wf incl hT)
 
 /-- Every residual subtree `Tree.subAt T x` of a well-founded tree is well-founded. -/
 theorem IsWellFounded.subAt (hT : IsWellFounded T) (x : List A) :
     IsWellFounded (Tree.subAt T x) := by
-  let push : Tree.subAt T x → T := fun u => ⟨x ++ u.1, u.2⟩
+  let push : Tree.subAt T x → T := fun u => ⟨x ++ u.val, u.property⟩
   refine Subrelation.wf (r := InvImage (ChildRel T) push) ?_ (InvImage.wf push hT)
   rintro v u ⟨a, h⟩
   exact ⟨a, by simp [push, h, List.append_assoc]⟩
@@ -164,18 +164,18 @@ theorem not_isWellFounded_iff :
       by_contra! hall
       exact hnot ⟨hall⟩
     obtain ⟨u₀, hu₀⟩ := hex
-    have hnil : [] ∈ T := mem_of_prefix List.nil_prefix u₀.2
+    have hnil : [] ∈ T := mem_of_prefix List.nil_prefix u₀.property
     have hroot : ¬ Acc (ChildRel T) ⟨[], hnil⟩ :=
-      not_acc_of_append (x := []) (l := u₀.1) (by simp) (by simp [hu₀])
+      not_acc_of_append (x := []) (l := u₀.val) (by simp) (by simp [hu₀])
     obtain ⟨c, hc0, hstep⟩ := not_acc_iff_exists_descending_chain.mp hroot
     choose f hf using hstep
-    have hpath (n : ℕ) : (c n).1 = List.ofFn (fun i : Fin n => f i) := by
+    have hpath (n : ℕ) : (c n).val = List.ofFn (fun i : Fin n => f i) := by
       induction n with
       | zero => simp [hc0]
       | succ n ih =>
         rw [hf n, ih, List.ofFn_succ', List.concat_eq_append]
         simp
-    exact ⟨f, fun n => hpath n ▸ (c n).2⟩
+    exact ⟨f, fun n => hpath n ▸ (c n).property⟩
   · obtain ⟨n, hn⟩ := hT.exists_notMem f
     exact hn (hf n)
 
@@ -209,7 +209,7 @@ theorem IsWellFounded.rank_eq_iSup (hT : IsWellFounded T) :
 @[simp]
 theorem rank_bot : rank (⊥ : tree A) = 0 := by
   rw [isWellFounded_bot.rank_eq_iSup]
-  exact le_antisymm (Ordinal.iSup_le fun u => False.elim u.2) zero_le
+  exact le_antisymm (Ordinal.iSup_le fun u => False.elim u.property) zero_le
 
 /-- Any tree not containing the root `[]` is empty and therefore has rank `0`. -/
 theorem rank_eq_zero_of_notMem (h : [] ∉ T) : rank T = 0 := by
@@ -260,38 +260,39 @@ private theorem rank_eq_succ_root (hT : IsWellFounded T) (h : [] ∈ T) :
   rw [hT.rank_eq_iSup]
   refine le_antisymm (Ordinal.iSup_le fun u => Order.succ_le_succ ?_)
     (Ordinal.le_iSup (fun u : T => Order.succ (hT.apply u).rank) ⟨[], h⟩)
-  simpa using nodeRank_le_of_append hT (x := []) (l := u.1) (by simp)
+  simpa using nodeRank_le_of_append hT (x := []) (l := u.val) (by simp)
 
 /-- Node rank in the residual tree `Tree.subAt T x` equals node rank at the shifted node in `T`. -/
 private theorem nodeRank_subAt_eq (hT : IsWellFounded T) (x : List A) (u : Tree.subAt T x) :
-    ((hT.subAt x).apply u).rank = (hT.apply ⟨x ++ u.1, u.2⟩).rank := by
+    ((hT.subAt x).apply u).rank = (hT.apply ⟨x ++ u.val, u.property⟩).rank := by
   induction u using (hT.subAt x).induction with
   | h u ih =>
-    rw [((hT.subAt x).apply u).rank_eq, (hT.apply ⟨x ++ u.1, u.2⟩).rank_eq]
+    rw [((hT.subAt x).apply u).rank_eq, (hT.apply ⟨x ++ u.val, u.property⟩).rank_eq]
     refine le_antisymm (Ordinal.iSup_le fun v => ?_) (Ordinal.iSup_le fun w => ?_)
-    · obtain ⟨a, hv⟩ := v.2
-      have hw : ChildRel T ⟨x ++ v.1, v.1.2⟩ ⟨x ++ u.1, u.2⟩ :=
+    · obtain ⟨a, hv⟩ := v.property
+      have hw : ChildRel T ⟨x ++ v.val, v.val.property⟩ ⟨x ++ u.val, u.property⟩ :=
         ⟨a, by simp [hv, List.append_assoc]⟩
-      have hih : (((hT.subAt x).apply u).inv v.2).rank = (hT.apply ⟨x ++ v.1, v.1.2⟩).rank :=
-        ih v.1 v.2
+      have hih : (((hT.subAt x).apply u).inv v.property).rank = (hT.apply ⟨x ++ v.val,
+          v.val.property⟩).rank :=
+        ih v.val v.property
       rw [hih]
       exact Ordinal.le_iSup
-        (fun w : {w : T // ChildRel T w ⟨x ++ u.1, u.2⟩} =>
-          Order.succ ((hT.apply ⟨x ++ u.1, u.2⟩).inv w.2).rank)
-        ⟨⟨x ++ v.1, v.1.2⟩, hw⟩
-    · obtain ⟨a, hw⟩ := w.2
-      have hmem : u.1 ++ [a] ∈ Tree.subAt T x := by
+        (fun w : {w : T // ChildRel T w ⟨x ++ u.val, u.property⟩} =>
+          Order.succ ((hT.apply ⟨x ++ u.val, u.property⟩).inv w.property).rank)
+        ⟨⟨x ++ v.val, v.val.property⟩, hw⟩
+    · obtain ⟨a, hw⟩ := w.property
+      have hmem : u.val ++ [a] ∈ Tree.subAt T x := by
         rw [mem_subAt, ← List.append_assoc, ← hw]
-        exact w.1.2
-      let v : Tree.subAt T x := ⟨u.1 ++ [a], hmem⟩
+        exact w.val.property
+      let v : Tree.subAt T x := ⟨u.val ++ [a], hmem⟩
       have hv : ChildRel (Tree.subAt T x) v u := ⟨a, rfl⟩
-      have hweq : (⟨x ++ v.1, v.2⟩ : T) = w.1 :=
+      have hweq : (⟨x ++ v.val, v.property⟩ : T) = w.val :=
         Subtype.ext (by simp [v, List.append_assoc, hw])
       have hle := Ordinal.le_iSup
         (fun v' : {v' : Tree.subAt T x // ChildRel (Tree.subAt T x) v' u} =>
-          Order.succ (((hT.subAt x).apply u).inv v'.2).rank)
+          Order.succ (((hT.subAt x).apply u).inv v'.property).rank)
         ⟨v, hv⟩
-      have hih : (((hT.subAt x).apply u).inv hv).rank = (hT.apply w.1).rank := by
+      have hih : (((hT.subAt x).apply u).inv hv).rank = (hT.apply w.val).rank := by
         simpa only [hweq] using ih v hv
       exact hih ▸ hle
 
@@ -301,10 +302,10 @@ theorem IsWellFounded.rank_eq_succ_iSup (hT : IsWellFounded T) (h : [] ∈ T) :
     rank T = Order.succ (⨆ a : A, rank (Tree.subAt T [a])) := by
   rw [rank_eq_succ_root hT h, Order.succ_eq_succ_iff, (hT.apply ⟨[], h⟩).rank_eq]
   refine le_antisymm (Ordinal.iSup_le fun v => ?_) (Ordinal.iSup_le fun a => ?_)
-  · obtain ⟨a, hv⟩ := v.2
-    have ha : [] ∈ Tree.subAt T [a] := by simpa [hv] using v.1.2
-    have hveq : (⟨[a] ++ ([] : List A), ha⟩ : T) = v.1 := Subtype.ext (by simp [hv])
-    have hrw : rank (Tree.subAt T [a]) = Order.succ (hT.apply v.1).rank := by
+  · obtain ⟨a, hv⟩ := v.property
+    have ha : [] ∈ Tree.subAt T [a] := by simpa [hv] using v.val.property
+    have hveq : (⟨[a] ++ ([] : List A), ha⟩ : T) = v.val := Subtype.ext (by simp [hv])
+    have hrw : rank (Tree.subAt T [a]) = Order.succ (hT.apply v.val).rank := by
       rw [rank_eq_succ_root (hT.subAt [a]) ha, nodeRank_subAt_eq hT [a] ⟨[], ha⟩, hveq]
     exact hrw ▸ Ordinal.le_iSup (fun b : A => rank (Tree.subAt T [b])) a
   · by_cases ha : [a] ∈ T
@@ -314,7 +315,7 @@ theorem IsWellFounded.rank_eq_succ_iSup (hT : IsWellFounded T) (h : [] ∈ T) :
       rw [rank_eq_succ_root (hT.subAt [a]) ha', nodeRank_subAt_eq hT [a] ⟨[], ha'⟩]
       exact Ordinal.le_iSup
         (fun w : {w : T // ChildRel T w ⟨[], h⟩} =>
-          Order.succ ((hT.apply ⟨[], h⟩).inv w.2).rank)
+          Order.succ ((hT.apply ⟨[], h⟩).inv w.property).rank)
         ⟨v, hv⟩
     · rw [rank_subAt_eq_zero_of_notMem ha]
       exact zero_le
@@ -329,21 +330,21 @@ theorem IsWellFounded.rank_subAt_eq_succ_iSup (hT : IsWellFounded T) {x : List A
 /-- Tree rank is monotone among subtrees of a well-founded tree. -/
 theorem IsWellFounded.rank_mono (hST : S ≤ T) (hT : IsWellFounded T) : rank S ≤ rank T := by
   have hS : IsWellFounded S := hT.mono hST
-  have hnode : ∀ u : S, (hS.apply u).rank ≤ (hT.apply ⟨u.1, hST u.2⟩).rank := by
+  have hnode : ∀ u : S, (hS.apply u).rank ≤ (hT.apply ⟨u.val, hST u.property⟩).rank := by
     intro u
     induction u using hS.induction with
     | h u ih =>
-      rw [(hS.apply u).rank_eq, (hT.apply ⟨u.1, hST u.2⟩).rank_eq]
+      rw [(hS.apply u).rank_eq, (hT.apply ⟨u.val, hST u.property⟩).rank_eq]
       refine Ordinal.iSup_le fun v => ?_
-      obtain ⟨a, hv⟩ := v.2
-      exact (Order.succ_le_succ (ih v.1 v.2)).trans
+      obtain ⟨a, hv⟩ := v.property
+      exact (Order.succ_le_succ (ih v.val v.property)).trans
         (Ordinal.le_iSup
-          (fun w : {w : T // ChildRel T w ⟨u.1, hST u.2⟩} =>
-            Order.succ ((hT.apply ⟨u.1, hST u.2⟩).inv w.2).rank)
-          ⟨⟨v.1.1, hST v.1.2⟩, ⟨a, hv⟩⟩)
+          (fun w : {w : T // ChildRel T w ⟨u.val, hST u.property⟩} =>
+            Order.succ ((hT.apply ⟨u.val, hST u.property⟩).inv w.property).rank)
+          ⟨⟨v.val.val, hST v.val.property⟩, ⟨a, hv⟩⟩)
   rw [hS.rank_eq_iSup, hT.rank_eq_iSup]
   exact Ordinal.iSup_le fun u => (Order.succ_le_succ (hnode u)).trans
-    (Ordinal.le_iSup (fun w : T => Order.succ (hT.apply w).rank) ⟨u.1, hST u.2⟩)
+    (Ordinal.le_iSup (fun w : T => Order.succ (hT.apply w).rank) ⟨u.val, hST u.property⟩)
 
 /-- **Countable-alphabet bound.** Every well-founded descriptive tree over a countable alphabet `A`
 has ordinal rank strictly below `ω₁`. -/
@@ -354,7 +355,7 @@ theorem IsWellFounded.rank_lt_omega_one [Countable A] (hT : IsWellFounded T) : r
     | h u ih =>
       rw [(hT.apply u).rank_eq]
       exact Ordinal.iSup_lt_omega_one fun v =>
-        (Cardinal.isSuccLimit_omega 1).succ_lt (ih v.1 v.2)
+        (Cardinal.isSuccLimit_omega 1).succ_lt (ih v.val v.property)
   rw [hT.rank_eq_iSup]
   exact Ordinal.iSup_lt_omega_one fun u =>
     (Cardinal.isSuccLimit_omega 1).succ_lt (hnode u)
@@ -418,31 +419,31 @@ private theorem exists_branch_of_rankUnboundedOnCylinder [Countable A] {F : (ℕ
   let State := {q : (ℕ → ℕ) × ℕ × List A // RankUnboundedOnCylinder F q.1 q.2.1 q.2.2}
   have hstep : ∀ s : State,
       ∃ (k : ℕ) (a : A),
-        RankUnboundedOnCylinder F (Function.update s.1.1 s.1.2.1 k) (s.1.2.1 + 1)
-          (s.1.2.2 ++ [a]) := fun s => by
-    obtain ⟨k, hk⟩ := exists_cylinder_succ_unbounded s.2
+        RankUnboundedOnCylinder F (Function.update s.val.1 s.val.2.1 k) (s.val.2.1 + 1)
+          (s.val.2.2 ++ [a]) := fun s => by
+    obtain ⟨k, hk⟩ := exists_cylinder_succ_unbounded s.property
     obtain ⟨a, ha⟩ := exists_append_unbounded hwf hk
     exact ⟨k, a, ha⟩
   choose nextCoord nextSym nextUnb using hstep
   let next : State → State := fun s =>
-    ⟨(Function.update s.1.1 s.1.2.1 (nextCoord s), s.1.2.1 + 1, s.1.2.2 ++ [nextSym s]),
+    ⟨(Function.update s.val.1 s.val.2.1 (nextCoord s), s.val.2.1 + 1, s.val.2.2 ++ [nextSym s]),
       nextUnb s⟩
   let s₀ : State := ⟨(fun _ => 0, 0, []), hroot⟩
   let s : ℕ → State := fun n => next^[n] s₀
-  have hlen (n : ℕ) : (s n).1.2.1 = n := by
+  have hlen (n : ℕ) : (s n).val.2.1 = n := by
     induction n with
     | zero => rfl
     | succ n ih => simp [s, next, Function.iterate_succ_apply', ih]
   have hs (n : ℕ) : s (n + 1) = next (s n) := Function.iterate_succ_apply' next n s₀
   let zStar : ℕ → ℕ := fun n => nextCoord (s n)
   let branch : ℕ → A := fun n => nextSym (s n)
-  have hbranch (n : ℕ) : (s n).1.2.2 = List.ofFn (fun i : Fin n => branch i) := by
+  have hbranch (n : ℕ) : (s n).val.2.2 = List.ofFn (fun i : Fin n => branch i) := by
     induction n with
     | zero => simp [s, s₀]
     | succ n ih =>
       rw [hs n, List.ofFn_succ', List.concat_eq_append]
       simp [next, ih, branch]
-  have hcyl (n : ℕ) : ∀ i < n, (s n).1.1 i = zStar i := by
+  have hcyl (n : ℕ) : ∀ i < n, (s n).val.1 i = zStar i := by
     induction n with
     | zero => intro i hi; exact absurd hi (Nat.not_lt_zero i)
     | succ n ih =>
@@ -458,7 +459,7 @@ private theorem exists_branch_of_rankUnboundedOnCylinder [Countable A] {F : (ℕ
     simpa using (Cardinal.isSuccLimit_omega 1).succ_lt (Ordinal.omega_pos 1)
   have hwit (m : ℕ) :
       ∃ w ∈ PiNat.cylinder zStar m, List.ofFn (fun i : Fin m => branch i) ∈ F w := by
-    obtain ⟨w, hw, hle⟩ := (s m).2 1 h1
+    obtain ⟨w, hw, hle⟩ := (s m).property 1 h1
     rw [hlen m] at hw
     rw [hbranch m] at hle
     refine ⟨w, PiNat.mem_cylinder_iff.mpr fun i hi => ?_, ?_⟩
@@ -506,7 +507,7 @@ some countable ordinal `β < ω₁` strictly bounds `rank (F x)` across all `x �
 theorem AnalyticSet.exists_treeRank_lt_omega_one {X : Type*} [TopologicalSpace X] {A : Type u}
     [Countable A] {s : Set X} (hs : AnalyticSet s) (F : X → tree A)
     (hwf : ∀ x ∈ s, IsWellFounded (F x))
-    (hcl : ∀ u : List A, IsClosed {x : s | u ∈ F x.1}) :
+    (hcl : ∀ u : List A, IsClosed {x : s | u ∈ F x.val}) :
     ∃ β : Ordinal.{u}, β < ω₁ ∧ ∀ x ∈ s, rank (F x) < β := by
   obtain ⟨Y, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.mp hs
   rcases isEmpty_or_nonempty Y with hY | hY
@@ -516,8 +517,8 @@ theorem AnalyticSet.exists_treeRank_lt_omega_one {X : Type*} [TopologicalSpace X
   · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective Y
     let toS : (ℕ → ℕ) → range f := fun z => ⟨f (g z), mem_range_self (g z)⟩
     have htoS : Continuous toS := (hf.comp hg).subtype_mk fun z => mem_range_self (g z)
-    obtain ⟨β, hβ, hb⟩ := exists_rank_lt_omega_one_of_nat_nat (fun z => F (toS z).1)
-      (fun z => hwf (toS z).1 (toS z).2)
+    obtain ⟨β, hβ, hb⟩ := exists_rank_lt_omega_one_of_nat_nat (fun z => F (toS z).val)
+      (fun z => hwf (toS z).val (toS z).property)
       (fun u => (hcl u).preimage htoS)
     refine ⟨β, hβ, ?_⟩
     rintro _ ⟨y, rfl⟩
@@ -533,6 +534,6 @@ theorem AnalyticSet.exists_treeRank_lt_omega_one_of_isClosed {X : Type*} [Topolo
     (hwf : ∀ x ∈ s, IsWellFounded (F x))
     (hcl : ∀ u : List A, IsClosed {x : X | u ∈ F x}) :
     ∃ β : Ordinal.{u}, β < ω₁ ∧ ∀ x ∈ s, rank (F x) < β :=
-  hs.exists_treeRank_lt_omega_one F hwf fun u => (hcl u).preimage continuous_subtype_val
+  hs.exists_treeRank_lt_omega_one F hwf fun u => (hcl u).preimage continuous_subtypeVal
 
 end MeasureTheory

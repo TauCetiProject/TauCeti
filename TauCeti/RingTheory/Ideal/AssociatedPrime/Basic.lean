@@ -94,10 +94,11 @@ theorem ringKrullDim_quotient_le_supportDim (hp : IsAssociatedPrime p M) :
     ringKrullDim (R ⧸ p) ≤ Module.supportDim R M := by
   obtain ⟨-, z, rfl⟩ := hp
   rw [ringKrullDim_quotient, Module.supportDim]
-  refine Order.krullDim_le_of_strictMono (fun q ↦ ⟨q.1,
+  refine Order.krullDim_le_of_strictMono (fun q ↦ ⟨q.val,
     Module.mem_support_iff_exists_annihilator.2 ⟨z, ?_⟩⟩) fun _ _ h ↦ h
   rw [← Submodule.bot_colon']
-  exact Ideal.le_radical.trans (SetLike.coe_subset_coe.1 ((PrimeSpectrum.mem_zeroLocus _ _).1 q.2))
+  exact Ideal.le_radical.trans (SetLike.coe_subset_coe.1 ((PrimeSpectrum.mem_zeroLocus _ _).1
+      q.property))
 
 /-- Let `M` be a finite module over a Noetherian ring and `x` an `M`-regular element of the
 Jacobson radical of the annihilator of `M`. Every associated prime of `M` is contained in an
@@ -127,7 +128,7 @@ theorem exists_le_isAssociatedPrime_quotSMulTop [IsNoetherianRing R] [Module.Fin
       rintro rfl
       exact hp.isPrime.ne_top (by simp)
     refine hz <| (Submodule.mem_bot R).1 <| hN ▸ (Submodule.mem_torsionBySet_iff _ _).2 ?_
-    exact fun a ↦ Submodule.mem_colon_singleton.1 a.2
+    exact fun a ↦ Submodule.mem_colon_singleton.1 a.property
   have hw' : (Submodule.Quotient.mk w : QuotSMulTop x M) ≠ 0 :=
     (Submodule.Quotient.mk_eq_zero _).not.2 hw
   obtain ⟨q, hq, hle⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing R _ hw'

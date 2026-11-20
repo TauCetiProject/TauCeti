@@ -34,12 +34,12 @@ nonzero `a ∈ K` satisfying `a ^ 2 ≠ σ a` (in particular, in characteristic 
 
 * **Normal generation (`normalClosure_unipotentSubgroup_eq_top`) and Borel normal core
   (`normalCore_borelSubgroup_eq_center`).** Over any commutative ring `R`, the rank-one matrix
-  identity `weyl_mul_torus_eq` expresses `w · torus(z)` as a product of two elements of `U` and one
-  `w`-conjugate of `U` whenever `z ∈ Rˣ` satisfies `z + σ z = x * σ x`. Over a field `K`, assuming
-  a nonzero skew-trace element `d ≠ 0` with `d + σ d = 0` (which holds whenever `σ ≠ id` or
-  `char K = 2`, while excluding all characteristic-`≠ 2` cases with `σ = id`, including
-  `SO₃(𝔽₃) ≅ S₄` where `normalClosure U = A₄`), scaling `d` by `σ`-fixed units puts `torus(s)` into
-  `normalClosure U` for every `σ`-fixed `s ∈ Kˣ`, and for any `t ∈ Kˣ` with `σ t ≠ t` the
+  identity `weyl_mul_torusHom_eq` expresses `w · torusHom(z)` as a product of two elements of `U`
+  and one `w`-conjugate of `U` whenever `z ∈ Rˣ` satisfies `z + σ z = x * σ x`. Over a field `K`,
+  assuming a nonzero skew-trace element `d ≠ 0` with `d + σ d = 0` (which holds whenever `σ ≠ id`
+  or `char K = 2`, while excluding all characteristic-`≠ 2` cases with `σ = id`, including
+  `SO₃(𝔽₃) ≅ S₄` where `normalClosure U = A₄`), scaling `d` by `σ`-fixed units puts `torusHom(s)`
+  into `normalClosure U` for every `σ`-fixed `s ∈ Kˣ`, and for any `t ∈ Kˣ` with `σ t ≠ t` the
   skew-trace adjustment `s = d * (t - σ t)` makes `s * d * t` have trace `s²`, putting every torus
   element, `w`, `B`, and hence all of `G = B ∪ B w B` into `normalClosure U`. Disjointness of
   `normalCore B` from `U` then forces `normalCore B` to centralize `U`, hence all of `G`, while
@@ -48,9 +48,9 @@ nonzero `a ∈ K` satisfying `a ^ 2 ≠ σ a` (in particular, in characteristic 
   some nonzero `a ∈ K` satisfies `a ^ 2 ≠ σ a` (which excludes `SU₃(2)` of order `216`, where
   `σ a = a ^ 2` on `𝔽₄ˣ`), either some `y ∈ K` has `y + σ y ≠ 0` — so `K^σ`-linearity makes the
   trace `t ↦ t + σ t` surjective onto `{s | σ s = s}`, root-group commutators produce every central
-  root element `u(0, z₀)` with `z₀ + σ z₀ = 0`, and torus commutators `⁅torus(a), u(x₁, z₁)⁆`
+  root element `u(0, z₀)` with `z₀ + σ z₀ = 0`, and torus commutators `⁅torusHom(a), u(x₁, z₁)⁆`
   produce every first coordinate `x` — or else `y + σ y = 0` identically, forcing `2 = 0` and
-  `σ = id`, in which case `U` lies on the central `z`-axis and `⁅torus(a), u(0, z₁)⁆ =
+  `σ = id`, in which case `U` lies on the central `z`-axis and `⁅torusHom(a), u(0, z₁)⁆ =
   u(0, (a ^ 2 + 1) z₁)` spans `U`. In both cases `U ≤ ⁅G, G⁆`.
 * **Simplicity (`isSimpleGroup_quotient_center` and `isSimpleGroup_derivedCentralQuotient`), and
   finite-field specialization (`commutator_eq_top_of_natCard_eq_sq` and
@@ -63,8 +63,8 @@ nonzero `a ∈ K` satisfying `a ^ 2 ≠ σ a` (in particular, in characteristic 
 
 ## Main results
 
-* `TauCeti.UnitaryRankOne.weyl_mul_torus_eq`: the rank-one identity expressing `w * torus(z)` in
-  `U * (w U w) * U` over a commutative ring whenever `z : Rˣ` satisfies `z + σ z = x * σ x`.
+* `TauCeti.UnitaryRankOne.weyl_mul_torusHom_eq`: the rank-one identity expressing `w * torusHom(z)`
+  in `U * (w U w) * U` over a commutative ring whenever `z : Rˣ` satisfies `z + σ z = x * σ x`.
 * `TauCeti.UnitaryRankOne.normalClosure_unipotentSubgroup_eq_top`: the conjugates of `U` generate
   `G` whenever `∃ d ≠ 0, d + σ d = 0`.
 * `TauCeti.UnitaryRankOne.normalCore_borelSubgroup_eq_center`: the normal core of `B` is `Z(G)`
@@ -109,12 +109,12 @@ private theorem map_inv_add_map_map_inv_eq (hσ : Function.Involutive σ) {x c :
   linear_combination ((z⁻¹ : Rˣ) : R) * σ ((z⁻¹ : Rˣ) : R) * hz - x * σ x * hc -
     σ ((z⁻¹ : Rˣ) : R) * z.mul_inv - ((z⁻¹ : Rˣ) : R) * map_mul_eq_one σ z.mul_inv
 
-/-- Every product `weyl * torus z` for root parameters `(x, z)` with `z : Rˣ` and
+/-- Every product `weyl * torusHom z` for root parameters `(x, z)` with `z : Rˣ` and
 `z + σ z = x * σ x` factors as a product of two upper-unitriangular root elements and one
 `weyl`-conjugated root element. -/
-theorem weyl_mul_torus_eq (hσ : Function.Involutive σ) {x : R} {z : Rˣ}
+theorem weyl_mul_torusHom_eq (hσ : Function.Involutive σ) {x : R} {z : Rˣ}
     (hz : (z : R) + σ (z : R) = x * σ x) :
-    weyl R σ * torus R σ hσ z =
+    weyl R σ * torusHom R σ hσ z =
       unipotentHom R σ (HeisenbergGroup.unitaryMk σ hσ (x * σ ((z⁻¹ : Rˣ) : R))
           (σ ((z⁻¹ : Rˣ) : R))
           (by exact map_inv_add_map_map_inv_eq hσ hz (by simp [hσ ((z⁻¹ : Rˣ) : R), mul_comm]))) *
@@ -131,8 +131,8 @@ theorem weyl_mul_torus_eq (hσ : Function.Involutive σ) {x : R} {z : Rˣ}
   apply Matrix.SpecialLinearGroup.ext
   intro i j
   simp only [Subgroup.coe_mul, Matrix.SpecialLinearGroup.coe_mul, hL, coe_unipotentHom,
-    HeisenbergGroup.coe_toSpecialLinear, coe_weyl, coe_torus, HeisenbergGroup.coe_unitaryMk,
-    Matrix.mul_apply, Fin.sum_univ_three]
+    HeisenbergGroup.coe_toSpecialLinear, coe_weyl, coe_typeAGraphConjugator_two, coe_torusHom,
+    HeisenbergGroup.coe_unitaryMk, Matrix.mul_apply, Fin.sum_univ_three]
   fin_cases i <;> fin_cases j <;>
     simp [HeisenbergGroup.toMatrix_apply, hσ ((z⁻¹ : Rˣ) : R)]
   · linear_combination σ ((z⁻¹ : Rˣ) : R) * hz - map_mul_eq_one σ z.mul_inv
@@ -155,10 +155,10 @@ section Field
 
 variable {K : Type*} [Field K] {σ : K →+* K}
 
-private theorem weyl_mul_torus_mem_normalClosure (hσ : Function.Involutive σ) {x : K} {z : Kˣ}
+private theorem weyl_mul_torusHom_mem_normalClosure (hσ : Function.Involutive σ) {x : K} {z : Kˣ}
     (hz : (z : K) + σ (z : K) = x * σ x) :
-    weyl K σ * torus K σ hσ z ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
-  rw [weyl_mul_torus_eq hσ hz]
+    weyl K σ * torusHom K σ hσ z ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
+  rw [weyl_mul_torusHom_eq hσ hz]
   refine mul_mem (mul_mem (Subgroup.subset_normalClosure (unipotentHom_mem_unipotentSubgroup _))
     ?_) (Subgroup.subset_normalClosure (unipotentHom_mem_unipotentSubgroup _))
   have hconj :=
@@ -167,43 +167,45 @@ private theorem weyl_mul_torus_mem_normalClosure (hσ : Function.Involutive σ) 
         (HeisenbergGroup.unitaryMk σ hσ x (z : K) hz))) (weyl K σ)
   rwa [weyl_inv] at hconj
 
-private theorem torus_mem_normalClosure_of_mul_add_map_eq (hσ : Function.Involutive σ)
+private theorem torusHom_mem_normalClosure_of_mul_add_map_eq (hσ : Function.Involutive σ)
     {d : K} (hd0 : d ≠ 0) (hd : d + σ d = 0) {u : Kˣ} {x : K}
     (h : (u : K) * d + σ ((u : K) * d) = x * σ x) :
-    torus K σ hσ u ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
+    torusHom K σ hσ u ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
   let d₀ : Kˣ := Units.mk0 d hd0
-  have hg₁ := weyl_mul_torus_mem_normalClosure hσ (x := 0) (z := d₀) (by simpa [d₀] using hd)
-  have hg₂ := weyl_mul_torus_mem_normalClosure hσ (x := x) (z := u * d₀) (by simpa [d₀] using h)
-  have hmul : (weyl K σ * torus K σ hσ d₀)⁻¹ * (weyl K σ * torus K σ hσ (u * d₀)) =
-      torus K σ hσ u := by
+  have hg₁ := weyl_mul_torusHom_mem_normalClosure hσ (x := 0) (z := d₀) (by simpa [d₀] using hd)
+  have hg₂ :=
+    weyl_mul_torusHom_mem_normalClosure hσ (x := x) (z := u * d₀) (by simpa [d₀] using h)
+  have hmul : (weyl K σ * torusHom K σ hσ d₀)⁻¹ * (weyl K σ * torusHom K σ hσ (u * d₀)) =
+      torusHom K σ hσ u := by
     rw [_root_.mul_inv_rev, weyl_inv, mul_assoc, ← mul_assoc (weyl K σ), weyl_mul_self, one_mul,
       ← map_inv, ← map_mul, mul_comm u d₀, inv_mul_cancel_left]
   exact hmul ▸ mul_mem (inv_mem hg₁) hg₂
 
-private theorem torus_mem_normalClosure_of_map_eq (hσ : Function.Involutive σ)
+private theorem torusHom_mem_normalClosure_of_map_eq (hσ : Function.Involutive σ)
     (hadm : ∃ d : K, d ≠ 0 ∧ d + σ d = 0) {s : Kˣ} (hs : σ (s : K) = (s : K)) :
-    torus K σ hσ s ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
+    torusHom K σ hσ s ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
   obtain ⟨d, hd0, hd⟩ := hadm
-  exact torus_mem_normalClosure_of_mul_add_map_eq hσ hd0 hd (x := 0)
+  exact torusHom_mem_normalClosure_of_mul_add_map_eq hσ hd0 hd (x := 0)
     (by simp only [map_mul, hs, map_zero, mul_zero]; linear_combination (s : K) * hd)
 
-private theorem torus_mem_normalClosure (hσ : Function.Involutive σ)
+private theorem torusHom_mem_normalClosure (hσ : Function.Involutive σ)
     (hadm : ∃ d : K, d ≠ 0 ∧ d + σ d = 0) (t : Kˣ) :
-    torus K σ hσ t ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
+    torusHom K σ hσ t ∈ Subgroup.normalClosure (unipotentSubgroup K σ : Set _) := by
   by_cases ht : σ (t : K) = (t : K)
-  · exact torus_mem_normalClosure_of_map_eq hσ hadm ht
+  · exact torusHom_mem_normalClosure_of_map_eq hσ hadm ht
   · obtain ⟨d, hd0, hd⟩ := hadm
     set s : K := d * ((t : K) - σ (t : K)) with hs
     have hs0 : s ≠ 0 := mul_ne_zero hd0 (sub_ne_zero.mpr (Ne.symm ht))
     have hσs : σ s = s := by
       simp only [hs, map_mul, map_sub, hσ (t : K)]
       linear_combination -((t : K) - σ (t : K)) * hd
-    have hst : torus K σ hσ (Units.mk0 s hs0 * t) ∈
+    have hst : torusHom K σ hσ (Units.mk0 s hs0 * t) ∈
         Subgroup.normalClosure (unipotentSubgroup K σ : Set _) :=
-      torus_mem_normalClosure_of_mul_add_map_eq hσ hd0 hd (x := s) (by
+      torusHom_mem_normalClosure_of_mul_add_map_eq hσ hd0 hd (x := s) (by
         simp only [Units.val_mul, Units.val_mk0, map_mul, hσs]
         linear_combination s * σ (t : K) * hd - s * hs)
-    have hs_mem := torus_mem_normalClosure_of_map_eq hσ ⟨d, hd0, hd⟩ (s := Units.mk0 s hs0) hσs
+    have hs_mem :=
+      torusHom_mem_normalClosure_of_map_eq hσ ⟨d, hd0, hd⟩ (s := Units.mk0 s hs0) hσs
     rw [map_mul] at hst
     simpa only [inv_mul_cancel_left] using mul_mem (inv_mem hs_mem) hst
 
@@ -218,14 +220,15 @@ theorem normalClosure_unipotentSubgroup_eq_top (hσ : Function.Involutive σ)
       Set ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
     rw [borelSubgroup_eq_sup hσ]
     refine sup_le ?_ Subgroup.le_normalClosure
+    rw [torus_eq_range_torusHom K σ hσ]
     rintro _ ⟨t, rfl⟩
-    exact torus_mem_normalClosure hσ hadm t
+    exact torusHom_mem_normalClosure hσ hadm t
   obtain ⟨d, hd0, hd⟩ := hadm
   have hw : weyl K σ ∈ Subgroup.normalClosure (unipotentSubgroup K σ :
       Set ((typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).specialIsometryGroup σ)) := by
-    have hwd := weyl_mul_torus_mem_normalClosure hσ (x := 0) (z := Units.mk0 d hd0)
+    have hwd := weyl_mul_torusHom_mem_normalClosure hσ (x := 0) (z := Units.mk0 d hd0)
       (by simpa using hd)
-    have hd_mem := torus_mem_normalClosure hσ ⟨d, hd0, hd⟩ (Units.mk0 d hd0)
+    have hd_mem := torusHom_mem_normalClosure hσ ⟨d, hd0, hd⟩ (Units.mk0 d hd0)
     simpa only [mul_inv_cancel_right] using mul_mem hwd (inv_mem hd_mem)
   rw [eq_top_iff]
   intro g _
@@ -318,7 +321,7 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
   obtain ⟨z₁, hz₁⟩ := htr (x₁ * σ x₁) (by simp only [map_mul, hσ x₁]; ring)
   let u₁ := HeisenbergGroup.unitaryMk σ hσ x₁ z₁ hz₁
   let t : Kˣ := Units.mk0 a ha0
-  have hconj := torus_mul_unipotentHom_unitaryMk_mul_inv hσ t x₁ z₁ hz₁
+  have hconj := torusHom_mul_unipotentHom_unitaryMk_mul_inv hσ t x₁ z₁ hz₁
   set u₂ := HeisenbergGroup.unitaryMk σ hσ ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * x₁)
     ((t : K) * σ (t : K) * z₁) _
   refine ⟨u₂ * u₁⁻¹, ?_, ?_⟩
@@ -327,7 +330,7 @@ private theorem exists_unipotentHom_mem_commutator_x_eq (hσ : Function.Involuti
       Units.val_mk0, Units.val_inv_eq_inv_val, map_inv₀]
     calc a ^ 2 * (σ a)⁻¹ * x₁ + -x₁ = c * x₁ := by simp only [c]; ring
       _ = x := mul_inv_cancel_left₀ hc0 x
-  · have hb_eq : unipotentHom K σ (u₂ * u₁⁻¹) = ⁅torus K σ hσ t, unipotentHom K σ u₁⁆ := by
+  · have hb_eq : unipotentHom K σ (u₂ * u₁⁻¹) = ⁅torusHom K σ hσ t, unipotentHom K σ u₁⁆ := by
       rw [commutatorElement_def, hconj, ← map_inv, ← map_mul]
     rw [hb_eq]
     exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
@@ -383,7 +386,7 @@ private theorem unipotentSubgroup_le_commutator_of_add_map_eq_zero
   have hz₁ : z₁ + σ z₁ = 0 * σ 0 := by simp [htr0 z₁]
   let u₁ := HeisenbergGroup.unitaryMk σ hσ 0 z₁ hz₁
   let t : Kˣ := Units.mk0 a ha0
-  have hconj := torus_mul_unipotentHom_unitaryMk_mul_inv hσ t 0 z₁ hz₁
+  have hconj := torusHom_mul_unipotentHom_unitaryMk_mul_inv hσ t 0 z₁ hz₁
   set u₂ := HeisenbergGroup.unitaryMk σ hσ ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * 0)
     ((t : K) * σ (t : K) * z₁) _
   have ha₀_eq : u₂ * u₁⁻¹ = a₀ := by

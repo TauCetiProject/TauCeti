@@ -82,7 +82,7 @@ being stated for valuations. -/
 theorem valuation_ne_zero_of_mem_rationalSubset {Aplus : Subring A} {T : Finset A} {s : A}
     {v : Spv A} (hv : v ∈ rationalSubset Aplus T s) : v.valuation s ≠ 0 := by
   have h := ((mem_rationalSubset_iff Aplus T s v).mp hv).2.2
-  rwa [← valuation_le_iff, map_zero, le_zero_iff] at h
+  rwa [← valuation_le_iff, map_zero, nonpos_iff_eq_zero] at h
 
 variable [IsTopologicalRing A]
 

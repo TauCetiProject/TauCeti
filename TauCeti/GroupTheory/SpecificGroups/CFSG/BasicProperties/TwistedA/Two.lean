@@ -95,15 +95,15 @@ namespace TauCeti.TypeALieIndex
 /-- A valid `²A₂(q)` index has Frobenius parameter `q ≥ 3`; `²A₂(2)` is excluded as solvable. -/
 theorem three_le_fieldOrder_ofTwistedA_two (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
-    3 ≤ (ofTwistedA 2 q hv).1.fieldOrder := by
+    3 ≤ (ofTwistedA 2 q hv).val.fieldOrder := by
   simpa only [ValidLieTypeIndex.fieldOrder, LieTypeIndex.fieldOrder_twistedA] using
     (((LieTypeIndex.inStandardRange_iff _).mp ((LieTypeIndex.valid_iff _).mp hv).1).2 rfl)
 
 /-- **The finite special unitary group `SU₃(q)` of a valid `²A₂(q)` is perfect.** -/
 theorem commutator_specialUnitary_two_eq_top (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
-    commutator (fixedSubgroup ((ofTwistedA 2 q hv).1.galoisFieldTwistedFrobenius 2)) = ⊤ :=
-  (ofTwistedA 2 q hv).1.commutator_fixedSubgroup_galoisFieldTwistedFrobenius_two_eq_top
+    commutator (fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2)) = ⊤ :=
+  (ofTwistedA 2 q hv).val.commutator_fixedSubgroup_galoisFieldTwistedFrobenius_two_eq_top
     (three_le_fieldOrder_ofTwistedA_two q hv)
 
 /-- **The group attached to `²A₂(q)` is the projective special unitary group `PSU₃(q)`.**
@@ -113,8 +113,8 @@ The Steinberg fixed points are isomorphic to `SU₃(q)` by
 derived subgroup is the whole group and the derived central quotient is `SU₃(q) ⧸ Z(SU₃(q))`. -/
 def projectiveSpecialUnitaryEquivGroupTwo (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
-    fixedSubgroup ((ofTwistedA 2 q hv).1.galoisFieldTwistedFrobenius 2) ⧸
-        Subgroup.center (fixedSubgroup ((ofTwistedA 2 q hv).1.galoisFieldTwistedFrobenius 2)) ≃*
+    fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2) ⧸
+        Subgroup.center (fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2)) ≃*
       (ofTwistedA 2 q hv).Group :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect (commutator_specialUnitary_two_eq_top q hv)
     (specialUnitaryEquivFixedPoints 2 q hv)
@@ -124,9 +124,9 @@ the class of the corresponding Steinberg fixed point. -/
 @[simp]
 theorem projectiveSpecialUnitaryEquivGroupTwo_mk (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid)
-    (x : commutator (fixedSubgroup ((ofTwistedA 2 q hv).1.galoisFieldTwistedFrobenius 2))) :
+    (x : commutator (fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2))) :
     projectiveSpecialUnitaryEquivGroupTwo q hv (QuotientGroup.mk (s := Subgroup.center _)
-        (x : fixedSubgroup ((ofTwistedA 2 q hv).1.galoisFieldTwistedFrobenius 2))) =
+        (x : fixedSubgroup ((ofTwistedA 2 q hv).val.galoisFieldTwistedFrobenius 2))) =
       ((MulEquiv.commutatorCongr (specialUnitaryEquivFixedPoints 2 q hv) x :
         commutator (ofTwistedA 2 q hv).FixedPoints) : (ofTwistedA 2 q hv).Group) :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
@@ -135,7 +135,7 @@ theorem projectiveSpecialUnitaryEquivGroupTwo_mk (q : PrimePower)
 theorem isSimpleGroup_group_ofTwistedA_two (q : PrimePower)
     (hv : (LieTypeIndex.twistedA 2 q).Valid) :
     IsSimpleGroup (ofTwistedA 2 q hv).Group :=
-  let d := (ofTwistedA 2 q hv).1
+  let d := (ofTwistedA 2 q hv).val
   have := d.isSimpleGroup_quotient_center_fixedSubgroup_galoisFieldTwistedFrobenius_two
     (three_le_fieldOrder_ofTwistedA_two q hv)
   (projectiveSpecialUnitaryEquivGroupTwo q hv).symm.isSimpleGroup
