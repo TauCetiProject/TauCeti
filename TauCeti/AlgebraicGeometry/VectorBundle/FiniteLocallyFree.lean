@@ -187,6 +187,16 @@ noncomputable def pullbackFreeIso {Y : Scheme.{u}} (f : X ⟶ Y) (J : Type u) [F
       eqToIso (free_obj X J).symm)
 
 variable {X} in
+/-- Pullback of finite locally free sheaves is the lift of module pullback to the full subcategories
+of finite locally free sheaves. -/
+lemma pullback_def {Y : Scheme.{u}} (f : X ⟶ Y) :
+    pullback f = (Scheme.Modules.isFiniteLocallyFree X).lift
+      ((Scheme.Modules.isFiniteLocallyFree Y).ι ⋙ Scheme.Modules.pullback f)
+      (fun E ↦ ⟨Scheme.Modules.isLocallyFree_pullback f E.obj,
+        Scheme.Modules.isFinitePresentation_pullback f E.obj⟩) :=
+  (rfl)
+
+variable {X} in
 /-- Pullback acts on a morphism of finite locally free sheaves by the underlying pullback of
 modules. -/
 @[simp]
@@ -199,6 +209,25 @@ lemma pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : FiniteLocallyFreeSh
   cases pullback_obj_obj f F
   unfold pullback
   simp
+
+variable {X} in
+/-- Pullback of finite locally free sheaves commutes with the inclusion into all modules. -/
+def pullbackCompιIso {Y : Scheme.{u}} (f : X ⟶ Y) :
+    pullback f ⋙ (Scheme.Modules.isFiniteLocallyFree X).ι ≅
+      (Scheme.Modules.isFiniteLocallyFree Y).ι ⋙ Scheme.Modules.pullback f :=
+  ObjectProperty.liftCompιIso _ _ _
+
+variable {X} in
+@[simp]
+lemma pullbackCompιIso_hom_app {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    (pullbackCompιIso f).hom.app E = eqToHom (pullback_obj_obj f E) :=
+  (rfl)
+
+variable {X} in
+@[simp]
+lemma pullbackCompιIso_inv_app {Y : Scheme.{u}} (f : X ⟶ Y) (E : FiniteLocallyFreeSheaf Y) :
+    (pullbackCompιIso f).inv.app E = eqToHom (pullback_obj_obj f E).symm :=
+  (rfl)
 
 /-- The fully faithful inclusion of finite locally free sheaves into finitely presented
 sheaves. -/

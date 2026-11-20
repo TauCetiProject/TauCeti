@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.MeasureTheory.Measure.OpenPos
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.WithDensity
 
@@ -118,16 +118,16 @@ private theorem isOpenPosMeasure_comap_range_inter
   have hsub : (O ∩ I.symm ⁻¹' U) ∩ interior (range I) ⊆ Subtype.val '' W := by
     rintro w ⟨⟨hwO, hwU⟩, hwI⟩
     exact ⟨⟨w, ⟨hwU, interior_subset hwI⟩⟩, by simpa [← hOW] using hwO, rfl⟩
-  rw [(MeasurableEmbedding.subtype_coe hV).comap_apply]
+  rw [(MeasurableEmbedding.subtypeVal hV).comap_apply]
   exact ((hopen.measure_pos ν ⟨z, hz⟩).trans_le (measure_mono hsub)).ne'
 
 private theorem isLocallyFiniteMeasure_comap_subtype [FiniteDimensional ℝ E]
     [MeasurableSpace E] (ν : Measure E) [ν.IsAddHaarMeasure]
     {V : Set E} (hV : MeasurableSet V) :
     IsLocallyFiniteMeasure (ν.comap (Subtype.val : V → E)) := by
-  refine ⟨fun y ↦ ⟨Subtype.val ⁻¹' Metric.ball y.1 1,
-    continuous_subtype_val.continuousAt.preimage_mem_nhds (Metric.ball_mem_nhds _ one_pos), ?_⟩⟩
-  rw [(MeasurableEmbedding.subtype_coe hV).comap_apply]
+  refine ⟨fun y ↦ ⟨Subtype.val ⁻¹' Metric.ball y.val 1,
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds (Metric.ball_mem_nhds _ one_pos), ?_⟩⟩
+  rw [(MeasurableEmbedding.subtypeVal hV).comap_apply]
   exact (measure_mono (image_preimage_subset _ _)).trans_lt measure_ball_lt_top
 
 /-- Continuous nonnegative real densities presenting the same weighted Haar measure on a
@@ -145,14 +145,14 @@ private theorem eqOn_of_withDensity_ofReal_eq [FiniteDimensional ℝ E]
   set V : Set E := I.symm ⁻¹' U ∩ range I
   have hV : MeasurableSet V :=
     (hU.preimage I.continuous_symm).measurableSet.inter I.isClosed_range.measurableSet
-  have hval : MeasurableEmbedding (Subtype.val : V → E) := .subtype_coe hV
+  have hval : MeasurableEmbedding (Subtype.val : V → E) := .subtypeVal hV
   have : (ν.comap (Subtype.val : V → E)).IsOpenPosMeasure :=
     isOpenPosMeasure_comap_range_inter (I := I) ν hU
   have : IsLocallyFiniteMeasure (ν.comap (Subtype.val : V → E)) :=
     isLocallyFiniteMeasure_comap_subtype ν hV
   have hcomap (w : E → ℝ) :
       ((ν.restrict V).withDensity (fun y ↦ ENNReal.ofReal (w y))).comap (Subtype.val : V → E) =
-        (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w y.1) := by
+        (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w y.val) := by
     ext A hA
     rw [hval.comap_apply, withDensity_apply _ (hval.measurableSet_image' hA),
       withDensity_apply _ hA, Measure.restrict_restrict (hval.measurableSet_image' hA),
@@ -161,13 +161,13 @@ private theorem eqOn_of_withDensity_ofReal_eq [FiniteDimensional ℝ E]
       Subtype.range_coe, Measure.restrict_restrict hV,
       inter_eq_right.2 (Subtype.coe_image_subset V A)]
   have hsubEq :
-      (ν.comap (Subtype.val : V → E)).withDensity (fun y ↦ ENNReal.ofReal (w₁ y.1)) =
-        (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w₂ y.1) := by
+      (ν.comap (Subtype.val : V → E)).withDensity (fun y ↦ ENNReal.ofReal (w₁ y.val)) =
+        (ν.comap (Subtype.val : V → E)).withDensity fun y ↦ ENNReal.ofReal (w₂ y.val) := by
     rw [← hcomap w₁, ← hcomap w₂, heq]
   have hfun := MeasureTheory.continuous_eq_of_withDensity_ofReal_eq
     (continuousOn_iff_continuous_domRestrict.1 hw₁)
     (continuousOn_iff_continuous_domRestrict.1 hw₂)
-    (fun y ↦ h1 y.1 y.2) (fun y ↦ h2 y.1 y.2) hsubEq
+    (fun y ↦ h1 y.val y.property) (fun y ↦ h2 y.val y.property) hsubEq
   exact fun y hy ↦ congrFun hfun ⟨y, hy⟩
 
 private theorem comap_restrict_eq_comap_withDensity [MeasurableSpace E] [BorelSpace E]
@@ -180,7 +180,7 @@ private theorem comap_restrict_eq_comap_withDensity [MeasurableSpace E] [BorelSp
         (e.source.domRestrict (e.extend I)) := by
   have hR := e.measurableEmbedding_extend_restrict I
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    .subtype_coe e.open_source.measurableSet
+    .subtypeVal e.open_source.measurableSet
   ext B hB
   have hBs : MeasurableSet (Subtype.val '' B : Set M) := hval.measurableSet_image' hB
   have hBim : MeasurableSet (e.source.domRestrict (e.extend I) '' B) := hR.measurableSet_image' hB
@@ -190,8 +190,8 @@ private theorem comap_restrict_eq_comap_withDensity [MeasurableSpace E] [BorelSp
   ext x
   refine ⟨fun ⟨z, hzB, hzx⟩ ↦ ?_, fun ⟨⟨z, hzB, hzx⟩, hxe⟩ ↦ ?_⟩
   · subst hzx
-    exact ⟨⟨z, hzB, rfl⟩, z.2⟩
-  · have hzs : z.1 ∈ (e.extend I).source := by simpa only [e.extend_source] using z.2
+    exact ⟨⟨z, hzB, rfl⟩, z.property⟩
+  · have hzs : z.val ∈ (e.extend I).source := by simpa only [e.extend_source] using z.property
     have hxs : x ∈ (e.extend I).source := by rwa [e.extend_source]
     exact ⟨z, hzB, (e.extend I).injOn hzs hxs hzx⟩
 
@@ -207,7 +207,7 @@ private theorem setLIntegral_eq_of_map_restrict_eq [MeasurableSpace E] [BorelSpa
       ∫⁻ y in e.extend I '' s, ENNReal.ofReal (w y) * f ((e.extend I).symm y) ∂ν := by
   have hR := e.measurableEmbedding_extend_restrict I
   have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-    .subtype_coe e.open_source.measurableSet
+    .subtypeVal e.open_source.measurableSet
   have hT := e.measurableSet_extend_target I
   have hA := e.measurableSet_image_extend I hs hsub
   have hAT : e.extend I '' s ⊆ (e.extend I).target := (image_mono hsub).trans
@@ -224,7 +224,7 @@ private theorem setLIntegral_eq_of_map_restrict_eq [MeasurableSpace E] [BorelSpa
       ∫⁻ z, f z ∂ρ =
         ∫⁻ z, (fun y ↦ f ((e.extend I).symm y)) (e.source.domRestrict (e.extend I) z) ∂ρ :=
     lintegral_congr fun z ↦ by
-      have hz : z.1 ∈ (e.extend I).source := by simpa only [e.extend_source] using z.2
+      have hz : z.val ∈ (e.extend I).source := by simpa only [e.extend_source] using z.property
       simp only [domRestrict_apply, (e.extend I).left_inv hz]
   rw [hrestrict, hval.lintegral_map, hR.restrict_comap, him, hcongr]
   refine (hR.lintegral_map (fun y ↦ f ((e.extend I).symm y))).symm.trans ?_

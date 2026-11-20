@@ -127,7 +127,7 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
     ∀ i ∈ t, eLpNorm (fun y ↦ x.1 y - x.2.1 i) p (μ.restrict (V i)) ≤ C i * x.2.2}
   -- Constants on overlapping pieces are uniformly close.
   have hadj : ∀ i j, (i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty) →
-      ∃ D : ℝ≥0, ∀ x : K, ‖x.1.2.1 j - x.1.2.1 i‖ₑ ≤ D * x.1.2.2 := by
+      ∃ D : ℝ≥0, ∀ x : K, ‖x.val.2.1 j - x.val.2.1 i‖ₑ ≤ D * x.val.2.2 := by
     rintro i j ⟨hi, hj, hij⟩
     have h0 : μ (V i ∩ V j) ≠ 0 := ((hV i hi).inter (hV j hj)).measure_ne_zero μ hij
     refine ⟨((C i + C j : ℝ≥0∞) / μ (V i ∩ V j) ^ (1 / p.toReal)).toNNReal, fun x ↦ ?_⟩
@@ -135,11 +135,11 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
       (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) (measure_ne_top _ _)).ne'
     rw [ENNReal.coe_toNNReal (ENNReal.div_ne_top (by simp) hm0)]
     refine (enorm_sub_le_div_of_eLpNorm_restrict_sub_le hp h0 (measure_ne_top _ _)
-      (x.2 i hi) (x.2 j hj)).trans_eq ?_
+      (x.property i hi) (x.property j hj)).trans_eq ?_
     rw [← add_mul, ENNReal.mul_div_right_comm]
   -- On each piece, `f` is uniformly close to the constant of `V i₀`.
   have hpiece : ∀ j ∈ t, ∃ D : ℝ≥0, ∀ x : K,
-      eLpNorm (fun y ↦ x.1.1 y - x.1.2.1 i₀) p (μ.restrict (V j)) ≤ D * x.1.2.2 := by
+      eLpNorm (fun y ↦ x.val.1 y - x.val.2.1 i₀) p (μ.restrict (V j)) ≤ D * x.val.2.2 := by
     intro j hj
     rcases (V j).eq_empty_or_nonempty with hVj | hVj
     · exact ⟨0, fun _ ↦ by simp [hVj]⟩
@@ -147,14 +147,14 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
       (reflTransGen_inter_nonempty_of_isOpen_cover (t := (t : Set ι))
         (by simpa only [Finset.mem_coe, hU] using isPreconnected_univ) hV hi₀ ⟨x₀, hx₀⟩ hj hVj)
     refine ⟨C j + D * (μ (V j) ^ (1 / p.toReal)).toNNReal, fun x ↦ ?_⟩
-    calc _ ≤ eLpNorm (fun y ↦ x.1.1 y - x.1.2.1 j) p (μ.restrict (V j)) +
-          ‖x.1.2.1 j - x.1.2.1 i₀‖ₑ * μ (V j) ^ (1 / p.toReal) :=
+    calc _ ≤ eLpNorm (fun y ↦ x.val.1 y - x.val.2.1 j) p (μ.restrict (V j)) +
+          ‖x.val.2.1 j - x.val.2.1 i₀‖ₑ * μ (V j) ^ (1 / p.toReal) :=
           eLpNorm_restrict_sub_le_add_enorm_mul hp
-      _ ≤ C j * x.1.2.2 + D * x.1.2.2 * μ (V j) ^ (1 / p.toReal) := by
+      _ ≤ C j * x.val.2.2 + D * x.val.2.2 * μ (V j) ^ (1 / p.toReal) := by
           gcongr
-          · exact x.2 j hj
+          · exact x.property j hj
           · exact hD x
-      _ = ↑(C j + D * (μ (V j) ^ (1 / p.toReal)).toNNReal) * x.1.2.2 := by
+      _ = ↑(C j + D * (μ (V j) ^ (1 / p.toReal)).toNNReal) * x.val.2.2 := by
           rw [ENNReal.coe_add, ENNReal.coe_mul, ENNReal.coe_toNNReal
             (ENNReal.rpow_ne_top_of_nonneg (by positivity) (measure_ne_top _ _))]
           ring

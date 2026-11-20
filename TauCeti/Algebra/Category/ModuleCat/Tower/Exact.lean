@@ -89,7 +89,7 @@ private theorem exists_lift (f : F ⟶ G) (g : G ⟶ H)
   obtain ⟨b, hb⟩ := productMap_surjective hg (c : H.Product)
   refine ⟨b, hb, (exact_productMap hfg (G.shift b)).1 ?_⟩
   rw [← shift_natural_apply, hb]
-  exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ c.2)
+  exact LinearMap.mem_ker.1 (H.lim_eq_ker ▸ c.property)
 
 end Product
 
@@ -109,7 +109,7 @@ theorem exact_limMap (hf : ∀ n, Function.Injective (f.app (op n)).hom)
     rw [lim_eq_ker, LinearMap.mem_ker]
     refine productMap_injective hf ?_
     rw [← shift_natural_apply, hx, map_zero]
-    exact LinearMap.mem_ker.1 (G.lim_eq_ker ▸ y.2)
+    exact LinearMap.mem_ker.1 (G.lim_eq_ker ▸ y.property)
   exact ⟨⟨x, hxlim⟩, Subtype.ext <| (coe_limMap_apply f _).trans hx⟩
 
 /-- If `lim¹ A` vanishes in a levelwise exact sequence `A → B → C`, every compatible

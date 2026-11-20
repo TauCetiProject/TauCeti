@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Measure.NullFilter
+public import TauCeti.Geometry.Manifold.Measure.AE
 public import TauCeti.Geometry.Manifold.Measure.PositiveDensity.Basic
 public import Mathlib.MeasureTheory.Measure.OpenPos
 public import Mathlib.Topology.Compactness.Paracompact
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Measure
 
 /-!
 # Existence and basic properties of positive continuous density measures
@@ -108,7 +108,7 @@ private theorem localChartMeasure_apply (ν : Measure E) (i : M) (f : M → ℝ)
   have hRi : MeasurableEmbedding (ei.source.domRestrict (extChartAt I i)) :=
     ei.measurableEmbedding_extend_restrict I
   have hval : MeasurableEmbedding (Subtype.val : ei.source → M) :=
-    .subtype_coe ei.open_source.measurableSet
+    .subtypeVal ei.open_source.measurableSet
   have him : ei.source.domRestrict (extChartAt I i) '' (Subtype.val ⁻¹' s) =
       extChartAt I i '' (s ∩ ei.source) := image_domRestrict _ _ _
   have hB : MeasurableSet (extChartAt I i '' (s ∩ ei.source)) :=
@@ -245,11 +245,11 @@ private theorem continuousOn_finsum_partitionSummand (ρ : PartitionOfUnity M M 
       (extChartAt I x₀).target := by
   refine continuousOn_iff_continuous_domRestrict.2 <|
     continuous_finsum (f := fun i (y : (extChartAt I x₀).target) ↦
-        partitionSummand (I := I) ρ x₀ i y.1)
+        partitionSummand (I := I) ρ x₀ i y.val)
       (fun i ↦ continuousOn_iff_continuous_domRestrict.1
         (continuousOn_summand (I := I) x₀ i (ρ i).continuous (hρ i))) fun y ↦ ?_
-  obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ y.2
-  refine ⟨Subtype.val ⁻¹' N, ?_, hNfin.subset fun i ⟨z, hzh, hzN⟩ ↦ ⟨z.1, hzN, hzh⟩⟩
+  obtain ⟨N, hN, hNfin⟩ := partitionSummand_locallyFinite (I := I) ρ x₀ y.property
+  refine ⟨Subtype.val ⁻¹' N, ?_, hNfin.subset fun i ⟨z, hzh, hzN⟩ ↦ ⟨z.val, hzN, hzh⟩⟩
   rw [nhds_subtype_eq_comap_nhdsWithin]
   exact Filter.preimage_mem_comap hN
 
@@ -300,9 +300,9 @@ private theorem countable_support_partitionSummand (ρ : PartitionOfUnity M M un
   choose O hO hyO hOfin using hnhds
   obtain ⟨t, ht, hsub⟩ :=
     (HereditarilyLindelofSpace.isLindelof (extChartAt I x₀).target).elim_countable_subcover
-      (fun y : (extChartAt I x₀).target ↦ O y.1 y.2) (fun y ↦ hO y.1 y.2)
+      (fun y : (extChartAt I x₀).target ↦ O y.val y.property) (fun y ↦ hO y.val y.property)
       fun y hy ↦ mem_iUnion.2 ⟨⟨y, hy⟩, hyO y hy⟩
-  refine (ht.biUnion fun y _ ↦ (hOfin y.1 y.2).countable).mono ?_
+  refine (ht.biUnion fun y _ ↦ (hOfin y.val y.property).countable).mono ?_
   rintro i ⟨z, hzT, hzh⟩
   obtain ⟨y, hyt, hzy⟩ := mem_iUnion₂.1 (hsub hzT)
   exact mem_iUnion₂.2 ⟨y, hyt, ⟨z, ⟨hzy, hzT⟩, hzh⟩⟩
@@ -313,7 +313,7 @@ private theorem tsum_ofReal_partitionSummand (ρ : PartitionOfUnity M M univ) (x
     {y : E} (hy : y ∈ (extChartAt I x₀).target) :
     ∑' i : {i : M | ((extChartAt I x₀).target ∩
         Function.support (partitionSummand (I := I) ρ x₀ i)).Nonempty},
-        ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.1 y) =
+        ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.val y) =
       ENNReal.ofReal (∑ᶠ i : M, partitionSummand (I := I) ρ x₀ i y) := by
   classical
   set S := {i : M | ((extChartAt I x₀).target ∩
@@ -322,14 +322,14 @@ private theorem tsum_ofReal_partitionSummand (ρ : PartitionOfUnity M M univ) (x
   have hfin : (Function.support fun i : M ↦ partitionSummand (I := I) ρ x₀ i y).Finite :=
     hNfin.subset fun i hi ↦ ⟨y, mem_of_mem_nhdsWithin hy hN, hi⟩
   have hfinS : (Function.support fun i : S ↦
-      ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.1 y)).Finite :=
+      ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.val y)).Finite :=
     (hfin.preimage Subtype.val_injective.injOn).subset fun i hi h0 ↦ hi (by simp [h0])
   rw [tsum_eq_sum (s := hfinS.toFinset) fun i hi ↦
       notMem_support.1 fun h' ↦ hi (hfinS.mem_toFinset.2 h'),
-    ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ partitionSummand_nonneg (I := I) ρ x₀ i.1 y,
+    ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ partitionSummand_nonneg (I := I) ρ x₀ i.val y,
     finsum_eq_sum_of_support_subset _ (s := hfin.toFinset) fun i hi ↦ hfin.mem_toFinset.2 hi]
   congr 1
-  refine Finset.sum_bij (fun i _ ↦ i.1) (fun i hi ↦ ?_) (fun _ _ _ _ h ↦ Subtype.ext h)
+  refine Finset.sum_bij (fun i _ ↦ i.val) (fun i hi ↦ ?_) (fun _ _ _ _ h ↦ Subtype.ext h)
     (fun i hi ↦ ?_) (fun _ _ ↦ rfl)
   · have hne := hfinS.mem_toFinset.1 hi
     exact hfin.mem_toFinset.2 fun h0 ↦ hne (by simp [h0])
@@ -365,10 +365,10 @@ private theorem map_restrict_sum_localChartMeasure (ν : Measure E) [ν.IsAddHaa
     rw [← (chartAt H x₀).map_restrict_extend_apply I _ hA, ← extChartAt]
     exact map_localChartMeasure_apply (I := I) ν hA
   have haem (i : S) : AEMeasurable
-      (fun y ↦ ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.1 y))
+      (fun y ↦ ENNReal.ofReal (partitionSummand (I := I) ρ x₀ i.val y))
       (ν.restrict (A ∩ (extChartAt I x₀).target)) :=
     ((ENNReal.continuous_ofReal.comp_continuousOn
-      (continuousOn_summand (I := I) x₀ i.1 (ρ i.1).continuous (hρ i.1))).aemeasurable
+      (continuousOn_summand (I := I) x₀ i.val (ρ i.val).continuous (hρ i.val))).aemeasurable
       hT₀).mono_measure (Measure.restrict_mono inter_subset_right le_rfl)
   simp_rw [hterm]
   rw [← tsum_subtype_eq_of_support_subset (s := S) fun i hi ↦ by

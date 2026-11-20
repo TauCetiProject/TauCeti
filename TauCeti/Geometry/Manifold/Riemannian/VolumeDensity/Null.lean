@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
-public import TauCeti.Geometry.Manifold.Measure.NullFilter
+public import TauCeti.Geometry.Manifold.Measure.AE
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -15,10 +15,9 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 The chart density of a continuous Riemannian metric is positive, so a set has Riemannian volume
 zero exactly when its images in the charts are null for Haar measure. In other words, the null sets
-of `TauCeti.riemannianVolume` are the chartwise null sets `TauCeti.IsNullSet`, and the
-almost-everywhere filter of `TauCeti.riemannianVolume` coincides with the metric-free filter
-`TauCeti.Manifold.ae`. This makes chartwise results such as Sard's theorem apply to the Riemannian
-volume, also on manifolds with boundary or corners.
+of `TauCeti.riemannianVolume` are the chartwise null sets `TauCeti.IsNullSet`. This makes
+chartwise results such as Sard's theorem apply to the Riemannian volume, also on manifolds with
+boundary or corners.
 
 ## Main results
 
@@ -26,17 +25,15 @@ volume, also on manifolds with boundary or corners.
   zero exactly when its image in the chart is null for an additive Haar measure.
 * `TauCeti.isNullSet_iff_riemannianVolume_eq_zero`: a set is chartwise null exactly when it has
   Riemannian volume zero.
-* `TauCeti.Manifold.ae_eq_ae_riemannianVolume`,
-  `TauCeti.Manifold.eventually_ae_iff_ae_riemannianVolume`: on a Lindelöf `C¹` manifold, the
-  metric-free almost-everywhere filter coincides with that of any continuous Riemannian volume
-  measure.
+* `TauCeti.ae_riemannianVolume`: almost everywhere for the Riemannian volume of any continuous
+  metric means almost everywhere for the chartwise null sets, `TauCeti.Manifold.ae I M`.
 * `TauCeti.nullSingletonClass_riemannianVolume`: on a manifold of positive dimension, every point
   has Riemannian volume zero.
 -/
 
 public noncomputable section
 
-open Bundle Filter MeasureTheory Set
+open Bundle MeasureTheory Set
 open scoped ENNReal Manifold
 
 namespace TauCeti
@@ -108,7 +105,7 @@ private theorem riemannianVolume_eq_zero_iff_finBasis_image {α : M} {s : Set M}
     let A := toMeasurable μ (e '' s)
     let t := Subtype.val '' (e.source.domRestrict e ⁻¹' A)
     have hval : MeasurableEmbedding (Subtype.val : e.source → M) :=
-      MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source α).measurableSet
+      MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source α).measurableSet
     have htm : MeasurableSet t := hval.measurableSet_image.mpr
       ((measurableSet_toMeasurable _ _).preimage
         (measurableEmbedding_extChartAt_restrict α).measurable)
@@ -163,18 +160,11 @@ theorem isNullSet_iff_riemannianVolume_eq_zero {s : Set M} :
 theorem IsNullSet.riemannianVolume_eq_zero {s : Set M} (hs : IsNullSet I s) :
     riemannianVolume I M s = 0 := isNullSet_iff_riemannianVolume_eq_zero.mp hs
 
-/-- On a Lindelöf `C¹` manifold with any continuous Riemannian metric, the metric-free
-almost-everywhere filter coincides with the almost-everywhere filter of the Riemannian volume. -/
-theorem Manifold.ae_eq_ae_riemannianVolume :
-    Manifold.ae I M = MeasureTheory.ae (riemannianVolume I M) := by
-  ext s
-  rw [Manifold.mem_ae_iff, MeasureTheory.mem_ae_iff, isNullSet_iff_riemannianVolume_eq_zero]
-
-/-- A property holds almost everywhere for the Riemannian volume of any continuous Riemannian
-metric iff it holds in the metric-free filter `TauCeti.Manifold.ae I M`. -/
-theorem Manifold.eventually_ae_iff_ae_riemannianVolume {p : M → Prop} :
-    (∀ᶠ x in Manifold.ae I M, p x) ↔ ∀ᵐ x ∂riemannianVolume I M, p x := by
-  rw [Manifold.ae_eq_ae_riemannianVolume]
+/-- **Almost everywhere does not depend on the metric.** The almost-everywhere filter of the
+Riemannian volume of a continuous metric is the almost-everywhere filter of chartwise null sets. -/
+theorem ae_riemannianVolume : ae (riemannianVolume I M) = Manifold.ae I M :=
+  Manifold.ae_eq_iff_forall_measure_eq_zero_iff.2 fun _ ↦
+    isNullSet_iff_riemannianVolume_eq_zero.symm
 
 end Null
 
