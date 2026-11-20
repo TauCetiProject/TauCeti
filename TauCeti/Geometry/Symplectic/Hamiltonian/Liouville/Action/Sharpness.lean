@@ -117,13 +117,11 @@ theorem exists_injective_mem_preimage_of_image_eq
     ∃ g : (ι → AddCircle p) → X, Injective g ∧
       ∀ θ, g θ ∈ U ∧ F (g θ) = F y ∧ (Φ (g θ)).proj = θ := by
   -- Lift each point of the torus to angles, and take the point of the level over it.
-  have hlift (θ : ι → AddCircle p) : ∃ t : ι → ℝ, (fun i ↦ (t i : AddCircle p)) = θ :=
-    ⟨fun i ↦ (QuotientAddGroup.mk_surjective (θ i)).choose,
-      funext fun i ↦ (QuotientAddGroup.mk_surjective (θ i)).choose_spec⟩
-  choose t ht using hlift
+  choose t ht using fun θ : ι → AddCircle p ↦ QuotientAddGroup.mk_surjective.comp_left θ
   choose g hgU hgF hgΦ using fun θ ↦ exists_mem_eq_actionAngleCover_of_image_eq hΦ hF hy (t θ)
   have hproj (θ : ι → AddCircle p) : (Φ (g θ)).proj = θ := by
-    rw [hgΦ, CotangentBundle.proj_actionAngleCover, ht]
+    rw [hgΦ, CotangentBundle.proj_actionAngleCover]
+    exact ht θ
   refine ⟨g, fun θ θ' hθ ↦ ?_, fun θ ↦ ⟨hgU θ, hgF θ, hproj θ⟩⟩
   rw [← hproj θ, ← hproj θ', hθ]
 
@@ -209,13 +207,7 @@ theorem not_isRegularPoint_oscillatorHamiltonian_zero :
     ¬IsRegularPoint 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, Fin 1 → ℝ)
       (fun x ↦ fun _ : Fin 1 ↦ oscillatorHamiltonian m ν x) 0 := by
   have hH : HasFDerivAt (oscillatorHamiltonian m ν) (0 : ℝ × ℝ →L[ℝ] ℝ) 0 := by
-    have h := (((hasFDerivAt_snd (𝕜 := ℝ) (p := (0 : ℝ × ℝ))).pow 2).mul_const (2 * m)⁻¹).add
-      ((((hasFDerivAt_fst (𝕜 := ℝ) (p := (0 : ℝ × ℝ))).pow 2).const_mul (m * ν ^ 2)).mul_const 2⁻¹)
-    rw [show oscillatorHamiltonian m ν =
-      fun x : ℝ × ℝ ↦ x.2 ^ 2 * (2 * m)⁻¹ + m * ν ^ 2 * x.1 ^ 2 * 2⁻¹ from
-        funext fun x ↦ by simp [oscillatorHamiltonian_apply, div_eq_mul_inv]]
-    refine h.congr_fderiv ?_
-    ext <;> simp
+    simpa using hasFDerivAt_oscillatorHamiltonian m ν 0
   have hF : HasFDerivAt (fun x ↦ fun _ : Fin 1 ↦ oscillatorHamiltonian m ν x)
       (0 : ℝ × ℝ →L[ℝ] Fin 1 → ℝ) 0 :=
     hasFDerivAt_pi.2 fun _ ↦ by simpa using hH

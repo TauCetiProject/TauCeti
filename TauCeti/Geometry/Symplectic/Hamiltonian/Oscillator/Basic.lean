@@ -137,10 +137,10 @@ theorem oscillatorHamiltonian_eq_zero_iff {m ν : ℝ} (hm : m ≠ 0) (hν : ν 
   simp only [pow_eq_zero_iff two_ne_zero, mul_eq_zero, hm, hν, false_or] at hp hq
   exact Prod.ext hq hp
 
-/-- **Hamilton's equations** of the harmonic oscillator: `q' = p / m`, `p' = -m ν² q`. -/
-theorem stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) :
-    (stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν) x =
-      (x.2 / m, -(m * ν ^ 2 * x.1)) := by
+/-- The derivative of the oscillator energy at `(q, p)` is `m ν² q dq + (p / m) dp`. -/
+theorem hasFDerivAt_oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) :
+    HasFDerivAt (oscillatorHamiltonian m ν)
+      ((m * ν ^ 2 * x.1) • fst ℝ ℝ ℝ + (x.2 / m) • snd ℝ ℝ ℝ) x := by
   have hH : oscillatorHamiltonian m ν =
       fun y ↦ y.2 ^ 2 * (2 * m)⁻¹ + m * ν ^ 2 * y.1 ^ 2 * 2⁻¹ := by
     ext y
@@ -148,7 +148,15 @@ theorem stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian (m ν : �
   have h := (((hasFDerivAt_snd (𝕜 := ℝ) (p := x)).pow 2).mul_const (2 * m)⁻¹).add
     ((((hasFDerivAt_fst (𝕜 := ℝ) (p := x)).pow 2).const_mul (m * ν ^ 2)).mul_const 2⁻¹)
   rw [hH]
-  refine stdSymplecticForm_hamiltonianVectorField (h.congr_fderiv ?_)
-  ext <;> simp [RCLike.inner_apply] <;> ring
+  refine h.congr_fderiv ?_
+  ext <;> simp <;> ring
+
+/-- **Hamilton's equations** of the harmonic oscillator: `q' = p / m`, `p' = -m ν² q`. -/
+theorem stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) :
+    (stdSymplecticForm (V := ℝ)).hamiltonianVectorField (oscillatorHamiltonian m ν) x =
+      (x.2 / m, -(m * ν ^ 2 * x.1)) := by
+  refine stdSymplecticForm_hamiltonianVectorField
+    ((hasFDerivAt_oscillatorHamiltonian m ν x).congr_fderiv ?_)
+  ext <;> simp [RCLike.inner_apply]
 
 end TauCeti
