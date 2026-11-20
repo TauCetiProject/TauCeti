@@ -68,8 +68,8 @@ cohomological proofs of Gaschütz's splitting theorem and of Sylow complement de
   forces `[G : H]` to kill the class of the quotient extension.
 * `Subgroup.map_subtype_injective_of_coprime_exponent`: injectivity of restriction across an index
   prime to the exponent of `N`.
-* `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`: detection of
-  the extension class across an index prime to `|N|`.
+* `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_exponent`: detection
+  of the extension class across an index prime to the exponent of `N`.
 * `IsPGroup.map_sylow_injective` and
   `IsPGroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`: injectivity of
   restriction and detection of the extension class on a finite-index Sylow `p`-subgroup.
@@ -309,24 +309,28 @@ theorem IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero {K
     ⟨hK.index_nsmul_cohomologyClass_eq_zero σ hσ,
       TauCeti.FactorSet.exponent_nsmul_cohomologyClass_eq_zero _⟩
 
-/-- When `[G : H]` is prime to `|N|`, the class of the quotient extension of `G` by `N` vanishes
-if and only if the class of the quotient extension of `H` by `N.subgroupOf H` vanishes. That
-`N ≤ H` follows automatically from normality of `N` and coprimality of `[G : H]` with `|N|`. -/
-theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
-    (hcop : Nat.Coprime H.index (Nat.card N))
+/-- When `[G : H]` is prime to the exponent of `N`, the class of the quotient extension of `G` by
+`N` vanishes if and only if the class of the quotient extension of `H` by `N.subgroupOf H`
+vanishes. That `N ≤ H` follows automatically: `[N : N ⊓ H]` divides `[G : H]`, and the exponent of
+`N ⧸ (N ⊓ H)` divides both its order and the exponent of `N`, so it is `1`. Coprimality of
+`[G : H]` with `|N|` implies the hypothesis, by `Group.exponent_dvd_nat_card`. -/
+theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_exponent
+    (hcop : Nat.Coprime H.index (Monoid.exponent N))
     (σ : N.quotientExtension.Section) (hσ : σ 1 = 1)
     (τ : (N.subgroupOf H).quotientExtension.Section) (hτ : τ 1 = 1) :
     (TauCeti.GroupExtension.factorSet σ hσ
         N.quotientExtension_inducesAction).cohomologyClass = 0 ↔
       (TauCeti.GroupExtension.factorSet τ hτ
         (N.subgroupOf H).quotientExtension_inducesAction).cohomologyClass = 0 := by
-  have hNH : N ≤ H := relIndex_eq_one.1 <| Nat.eq_one_of_dvd_coprimes hcop
-    (relIndex_sup_of_le_normalizer (le_normalizer_of_normal (H := N)) ▸
-      relIndex_dvd_index_of_le le_sup_left)
-    (H.relIndex_dvd_card N)
-  exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_exponent
-      (hcop.coprime_dvd_right Group.exponent_dvd_nat_card) 2)).symm.trans
-    (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hNH σ hσ τ hτ)
+  have hdvd : H.relIndex N ∣ H.index :=
+    relIndex_sup_of_le_normalizer (le_normalizer_of_normal (H := N)) ▸
+      relIndex_dvd_index_of_le le_sup_left
+  have := Monoid.exp_eq_one_iff.1 <| Nat.Coprime.eq_one_of_dvd
+    ((hcop.coprime_dvd_left hdvd).coprime_dvd_right
+      (Group.exponent_quotient_dvd (H.subgroupOf N))).symm Group.exponent_dvd_nat_card
+  exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_exponent hcop 2)).symm.trans
+    (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
+      (relIndex_eq_one.1 Nat.card_unique) σ hσ τ hτ)
 
 /-- **Gaschütz's splitting theorem for abelian normal subgroups of bounded exponent.** If `N` has
 a local complement in `H` and `[G : H]` is prime to the exponent of `N`, then `N` has a
