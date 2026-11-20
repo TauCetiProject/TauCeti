@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.W1p.Zero
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Sobolev.W1p.Interval.Basic
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
@@ -30,6 +32,11 @@ derivative `u''`, and has integral zero, so `|u'| ≤ 2 ‖u''‖_{L¹}`; since 
 Conversely, for `p < ∞` every `g ∈ Lᵖ(a, b)` is `u''` for such a `u`: integrate twice, adjusting
 the first primitive by a constant so that the second vanishes at both endpoints.
 
+Every `u ∈ W^{2,p}(a, b)`, with no boundary condition, is `C¹` on the open interval: its precise
+representative `ū` is continuously differentiable on `(a, b)`, `ū'` agrees almost everywhere with
+the weak derivative `u'`, and `ū'(y) - ū'(x) = ∫_x^y u''`. This is the one-dimensional Sobolev
+embedding `W^{2,1} ⊆ C¹`, used to turn bounds on `u''` into bounds on the classical derivative.
+
 For all `a, b : ℝ`, every `1 ≤ p ≤ ∞`, and every order `k`, integrating from `a` (or using that
 `W^{k,p}(∅)` is zero when `b ≤ a`) shows that weak differentiation
 `lineDerivL 1 k : W^{k+1,p}(a, b) →L[ℝ] W^{k,p}(a, b)` is surjective. At `p = ∞`,
@@ -45,6 +52,11 @@ every order `k` whenever `a < b`.
   the first-order part in `W^{1,p}(a, b)`.
 * `TauCeti.Wkp.exists_firstOrder_mem_w1p0Submodule_and_iteratedGradient_ae_eq`: every
   `g ∈ Lᵖ(a, b)`, `p < ∞`, is the weak second derivative of such a `u`.
+* `TauCeti.Wkp.contDiffOn_preciseRepresentative_Ioo`,
+  `TauCeti.Wkp.deriv_preciseRepresentative_ae_eq_gradient_lowerOrder`,
+  `TauCeti.Wkp.deriv_preciseRepresentative_sub_deriv_eq_integral`: the precise
+  representative of `u ∈ W^{2,p}(a, b)` is `C¹` on `(a, b)`, its derivative is the weak
+  derivative, and the increments of the derivative are the integrals of `u''`.
 * `TauCeti.Wkp.lineDerivL_one_surjective_Ioo`: weak differentiation
   `W^{k+1,p}(a, b) → W^{k,p}(a, b)` is surjective for `1 ≤ p ≤ ∞`.
 * `TauCeti.Wkp.not_dense_contDiff_representatives_Ioo_top`,
@@ -60,7 +72,7 @@ every order `k` whenever `a < b`.
 
 public section
 
-open MeasureTheory Set Filter TopologicalSpace intervalIntegral
+open MeasureTheory Set Filter TopologicalSpace intervalIntegral TauCeti.MeasureTheory
 open scoped ContDiff
 
 namespace TauCeti
@@ -248,6 +260,105 @@ theorem exists_firstOrder_mem_w1p0Submodule_and_iteratedGradient_ae_eq
     · exact integral_same
     · exact hw0
   · exact iteratedGradient_one_ae_eq_of_value_firstOrder hu hdv hdw
+
+/-! ### `W^{2,p}` functions are `C¹` on an open interval -/
+
+/-- The derivative of the precise representative of `u ∈ W^{2,p}(a, b)`: it is
+`t ↦ k + ∫_a^t u''` for a constant `k`, which is continuous on `[a, b]` and agrees almost
+everywhere with the weak derivative `u'`. -/
+private theorem exists_hasDerivAt_preciseRepresentative_Ioo (hab : a < b)
+    (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2) :
+    ∃ k : ℝ, ContinuousOn (fun t => k + ∫ s in a..t, iteratedGradient 1 u s 1) (Icc a b) ∧
+      (W1p.gradient (lowerOrder 1 u) =ᵐ[volume.restrict (Ioo a b)]
+        fun t => k + ∫ s in a..t, iteratedGradient 1 u s 1) ∧
+      ∀ x ∈ Ioo a b, HasDerivAt (preciseRepresentative volume (value 2 u))
+        (k + ∫ s in a..x, iteratedGradient 1 u s 1) x := by
+  have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
+    Real.isFiniteMeasure_restrict_Ioo a b
+  have hDint : IntegrableOn (fun x => iteratedGradient 1 u x 1) (Ioo a b) :=
+    ((Lp.memLp (iteratedGradient 1 u)).integrable Fact.out).apply_continuousLinearMap 1
+  -- The weak derivative `u'` is a constant `k` plus the primitive `G` of `u''`.
+  obtain ⟨k, hk⟩ :=
+    (hasWeakLineDerivOn_gradient_lowerOrder u).exists_ae_eq_add_intervalIntegral_left hDint
+  set G : ℝ → ℝ := fun t => k + ∫ s in a..t, iteratedGradient 1 u s 1
+  have hGc : ContinuousOn G (Icc a b) := continuousOn_const.add
+    (TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo hDint
+      (left_mem_Icc.2 hab.le))
+  have hGi : IntegrableOn G (Ioo a b) := hGc.integrableOn_Icc.mono_set Ioo_subset_Icc_self
+  -- So `u` has weak derivative `G`, and is a constant `c` plus the primitive `U` of `G`.
+  have hv : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (value 2 u) G 1 := by
+    have h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ (W1p.value (lowerOrder 1 u))
+        (W1p.gradient (lowerOrder 1 u)) 1 := by
+      simpa using (W1p.hasWeakFDerivOn (lowerOrder 1 u)).hasWeakLineDerivOn (1 : ℝ)
+    rw [value_lowerOrder_one] at h
+    exact h.congr_ae_deriv hk
+  obtain ⟨c, hc⟩ := hv.exists_ae_eq_add_intervalIntegral_left hGi
+  have hU (x : ℝ) (hx : x ∈ Ioo a b) : HasDerivAt (fun t => c + ∫ s in a..t, G s) (G x) x :=
+    (integral_hasDerivAt_right
+      ((hGc.mono (Icc_subset_Icc_right hx.2.le)).intervalIntegrable_of_Icc hx.1.le)
+      ((hGc.mono Ioo_subset_Icc_self).stronglyMeasurableAtFilter isOpen_Ioo x hx)
+      (hGc.continuousAt (Icc_mem_nhds hx.1 hx.2))).const_add c
+  -- The precise representative agrees with the continuous function `U` on `(a, b)`.
+  have heq : EqOn (preciseRepresentative volume (value 2 u)) (fun t => c + ∫ s in a..t, G s)
+      (Ioo a b) :=
+    eqOn_preciseRepresentative_of_continuousOn isOpen_Ioo
+      (by simpa using Lp.locallyIntegrableOn (value 2 u) Fact.out) hc
+      fun x hx => (hU x hx).continuousAt.continuousWithinAt
+  exact ⟨k, hGc, hk, fun x hx =>
+    (hU x hx).congr_of_eventuallyEq (eventuallyEq_of_mem (isOpen_Ioo.mem_nhds hx) heq)⟩
+
+/-- **`W^{2,p}` functions are differentiable on an open interval.** The precise representative of
+`u ∈ W^{2,p}(a, b)` is differentiable at every point of `(a, b)`. -/
+theorem differentiableOn_preciseRepresentative_Ioo (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2) :
+    DifferentiableOn ℝ (preciseRepresentative volume (value 2 u)) (Ioo a b) := by
+  rcases le_or_gt b a with hba | hab
+  · exact fun x hx => absurd (hx.1.trans hx.2) (not_lt.2 hba)
+  obtain ⟨k, -, -, h⟩ := exists_hasDerivAt_preciseRepresentative_Ioo hab u
+  exact fun x hx => (h x hx).differentiableAt.differentiableWithinAt
+
+/-- The classical derivative of the precise representative of `u ∈ W^{2,p}(a, b)` agrees almost
+everywhere on `(a, b)` with the weak derivative `u'`. -/
+theorem deriv_preciseRepresentative_ae_eq_gradient_lowerOrder
+    (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2) :
+    deriv (preciseRepresentative volume (value 2 u)) =ᵐ[volume.restrict (Ioo a b)]
+      W1p.gradient (lowerOrder 1 u) := by
+  rcases le_or_gt b a with hba | hab
+  · simp [EventuallyEq, Ioo_eq_empty_of_le hba]
+  obtain ⟨k, -, hk, h⟩ := exists_hasDerivAt_preciseRepresentative_Ioo hab u
+  filter_upwards [hk, ae_restrict_mem measurableSet_Ioo] with t ht htI
+  rw [(h t htI).deriv, ht]
+
+/-- **The fundamental theorem of calculus for the derivative of a `W^{2,p}` function.** For
+`u ∈ W^{2,p}(a, b)` and `x, y ∈ (a, b)`, the derivative of the precise representative `ū` of `u`
+satisfies `ū'(y) - ū'(x) = ∫_x^y u''`, where `u''` is the weak second derivative. -/
+theorem deriv_preciseRepresentative_sub_deriv_eq_integral
+    (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2) {x y : ℝ} (hx : x ∈ Ioo a b) (hy : y ∈ Ioo a b) :
+    deriv (preciseRepresentative volume (value 2 u)) y -
+        deriv (preciseRepresentative volume (value 2 u)) x =
+      ∫ t in x..y, iteratedGradient 1 u t 1 := by
+  have hab : a < b := hx.1.trans hx.2
+  have : IsFiniteMeasure (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) :=
+    Real.isFiniteMeasure_restrict_Ioo a b
+  have hDint : IntegrableOn (fun x => iteratedGradient 1 u x 1) (Ioo a b) :=
+    ((Lp.memLp (iteratedGradient 1 u)).integrable Fact.out).apply_continuousLinearMap 1
+  have hD (z : ℝ) (hz : z ∈ Ioo a b) :
+      IntervalIntegrable (fun t => iteratedGradient 1 u t 1) volume a z :=
+    (intervalIntegrable_iff_integrableOn_Ioo_of_le hz.1.le).2
+      (hDint.mono_set (Ioo_subset_Ioo_right hz.2.le))
+  obtain ⟨k, -, -, h⟩ := exists_hasDerivAt_preciseRepresentative_Ioo hab u
+  rw [(h y hy).deriv, (h x hx).deriv, add_sub_add_left_eq_sub,
+    integral_interval_sub_left (hD y hy) (hD x hx)]
+
+/-- **`W^{2,p}` functions are `C¹` on an open interval.** The precise representative of
+`u ∈ W^{2,p}(a, b)` is continuously differentiable on `(a, b)`. -/
+theorem contDiffOn_preciseRepresentative_Ioo (u : Wkp volume ⟨Ioo a b, isOpen_Ioo⟩ p 2) :
+    ContDiffOn ℝ 1 (preciseRepresentative volume (value 2 u)) (Ioo a b) := by
+  rcases le_or_gt b a with hba | hab
+  · exact fun x hx => absurd (hx.1.trans hx.2) (not_lt.2 hba)
+  obtain ⟨k, hGc, -, h⟩ := exists_hasDerivAt_preciseRepresentative_Ioo hab u
+  refine (contDiffOn_succ_iff_deriv_of_isOpen (n := 0) isOpen_Ioo).2
+    ⟨differentiableOn_preciseRepresentative_Ioo u, by simp, ?_⟩
+  exact contDiffOn_zero.2 ((hGc.mono Ioo_subset_Icc_self).congr fun x hx => (h x hx).deriv)
 
 /-- On any bounded open interval `(a, b)`, weak differentiation
 `lineDerivL 1 k : W^{k+1,p}(a, b) →L[ℝ] W^{k,p}(a, b)` is surjective for every `1 ≤ p ≤ ∞` and
