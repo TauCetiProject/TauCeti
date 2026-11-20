@@ -33,6 +33,7 @@ weight. The substitution `x = t ^ 2` on the positive half-line is the case a squ
 
 A weight `exp ∘ g` whose exponent is bounded above almost everywhere keeps a finite measure finite.
 A weight equal to one on a measurable set leaves the mass of that set unchanged.
+A measure restricted to a measurable set and then weighted still lives on that set.
 
 The topological support of a weighted measure is also computed: an almost-everywhere nonzero
 density preserves it, and, when the reference measure is positive on nonempty open sets, a density
@@ -79,6 +80,8 @@ measure that is positive on nonempty open sets are equal.
   sets are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
+* `MeasureTheory.withDensity_restrict_apply_compl`: a measure restricted to a measurable set and
+  then weighted gives no mass to the complement of the set.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
   along a map injective and differentiable on a measurable set.
 * `TauCeti.MeasureTheory.map_sq_withDensity_restrict_Ioi`: its instance for squaring on the
@@ -348,6 +351,14 @@ theorem isFiniteMeasure_withDensity_ofReal_exp {α : Type*} [MeasurableSpace α]
     (hgM.mono fun x hx ↦ ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 hx))) ?_
   rw [lintegral_const]
   exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top (measure_lt_top _ _)
+
+/-- A measure restricted to a measurable set `s` and then weighted gives no mass to the complement
+of `s`. The weight `f` is arbitrary; no measurability of it is required. -/
+theorem withDensity_restrict_apply_compl {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {s : Set α} (hs : MeasurableSet s) (f : α → ℝ≥0∞) :
+    (μ.restrict s).withDensity f sᶜ = 0 :=
+  withDensity_absolutelyContinuous _ _ <| by
+    rw [Measure.restrict_apply hs.compl, Set.compl_inter_self, measure_empty]
 
 end MeasureTheory
 
