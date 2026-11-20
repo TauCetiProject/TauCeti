@@ -12,12 +12,15 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 # Singular chain complexes
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
-simplicial sets, and the singular homology functor to the simplicial homology map it induces.
+simplicial sets, and the singular homology functor to the simplicial homology of the singular
+simplicial set and the map it induces.
 It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
 without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
+A commuting square of continuous maps gives a commuting square of homology maps
+(`TauCeti.homologyMap_toSSet_ofHom_comp_comm`).
 -/
 
 public section
@@ -48,12 +51,32 @@ lemma singularChainComplexFunctor_map_app {R R' : C} (g : R ⟶ R') (X : TopCat.
       ((SSet.chainComplexFunctor C).map g).app (TopCat.toSSet.obj X) :=
   (rfl)
 
+/-- The singular homology functor with coefficients in `R` evaluates on a space `X` to the
+simplicial homology of its singular simplicial set `TopCat.toSSet.obj X`. -/
+lemma singularHomologyFunctor_obj_obj_eq_toSSet_homology [CategoryWithHomology C] (n : ℕ)
+    (X : TopCat.{w}) :
+    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X =
+      (TopCat.toSSet.obj X).homology R n := rfl
+
 /-- The singular homology functor with coefficients in `R` sends a continuous map `f` to the
 simplicial homology map induced by the singular simplicial map `TopCat.toSSet.map f`. -/
 lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : TopCat.{w}}
     (f : X ⟶ Y) :
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
+
+/-- A commuting square of continuous maps gives a commuting square of the simplicial homology maps
+of the singular simplicial sets. -/
+lemma homologyMap_toSSet_ofHom_comp_comm [CategoryWithHomology C] (n : ℕ)
+    {X Y Y' Z : Type w} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Y']
+    [TopologicalSpace Z] {f : C(X, Y)} {g : C(Y, Z)} {f' : C(X, Y')} {g' : C(Y', Z)}
+    (h : g.comp f = g'.comp f') :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f')) R n ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g')) R n := by
+  rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
+    ← TopCat.ofHom_comp, ← TopCat.ofHom_comp, h]
 
 /-- Mathlib's identification of the singular chains of a totally disconnected space with the
 alternating constant complex sends the summand of a singular vertex to the summand of the point

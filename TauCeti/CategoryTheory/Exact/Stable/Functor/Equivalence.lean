@@ -87,6 +87,15 @@ noncomputable def stableEquivalenceInverseCommShift :
   letI := stableEquivalenceFunctorCommShift hF hG hE hE'
   exact (stableEquivalence e hF hG hE hE').commShiftInverse ℤ
 
+/-- The inverse stable equivalence's shift comparison agrees with `Equivalence.commShiftInverse`. -/
+theorem stableEquivalenceInverse_commShiftIso (n : ℤ) :
+    letI := hE.stableHasShift; letI := hE'.stableHasShift
+    letI := stableEquivalenceFunctorCommShift hF hG hE hE'
+    (letI := stableEquivalenceInverseCommShift hF hG hE hE';
+      (stableEquivalence e hF hG hE hE').inverse.commShiftIso n) =
+      (letI := (stableEquivalence e hF hG hE hE').commShiftInverse ℤ;
+        (stableEquivalence e hF hG hE hE').inverse.commShiftIso n) := (rfl)
+
 /-- The identification of the stable equivalence's forward functor with the descended
 exact functor is compatible with every integral shift. -/
 theorem stableEquivalence_functor_commShift :
