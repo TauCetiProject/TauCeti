@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.Hom
+public import TauCeti.Algebra.Bialgebra.ReducedComul
 public import TauCeti.Algebra.WordFiltration.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Primitive
 import Mathlib.Algebra.Algebra.Rat
@@ -45,7 +46,7 @@ the statement is false: `x ^ p` is primitive in `SymmetricAlgebra k k`.
 
 public section
 
-open TensorProduct TauCeti.Algebra
+open TensorProduct TauCeti.Algebra TauCeti.Bialgebra
 
 namespace SymmetricAlgebra
 
@@ -95,27 +96,6 @@ section Filtration
 
 variable {k M : Type*} [CommRing k] [AddCommMonoid M] [Module k M]
 
-variable (k) in
-/-- The reduced coproduct defect `Δ x - x ⊗ 1 - 1 ⊗ x + ε(x) (1 ⊗ 1)`, which vanishes on scalars
-and on primitive elements. -/
-private noncomputable def reducedComul (B : Type*) [Ring B] [Bialgebra k B] :
-    B →ₗ[k] B ⊗[k] B :=
-  Coalgebra.comul - (TensorProduct.mk k B B).flip 1 - TensorProduct.mk k B B 1 +
-    Coalgebra.counit.smulRight (1 ⊗ₜ[k] 1)
-
-private theorem reducedComul_apply {B : Type*} [Ring B] [Bialgebra k B] (x : B) :
-    reducedComul k B x = Coalgebra.comul x - x ⊗ₜ[k] 1 - 1 ⊗ₜ[k] x +
-      algebraMap k (B ⊗[k] B) (Coalgebra.counit (R := k) x) := by
-  simp [reducedComul, Algebra.algebraMap_eq_smul_one, Algebra.TensorProduct.one_def]
-
-/-- Bialgebra maps commute with the reduced coproduct defect. -/
-private theorem map_reducedComul {B C : Type*} [Ring B] [Bialgebra k B] [Ring C] [Bialgebra k C]
-    (φ : B →ₐc[k] C) (x : B) :
-    TensorProduct.map (φ : B →ₗ[k] C) (φ : B →ₗ[k] C) (reducedComul k B x) =
-      reducedComul k C (φ x) := by
-  simp [reducedComul_apply, CoalgHomClass.map_comp_comul_apply, Algebra.algebraMap_eq_smul_one,
-    Algebra.TensorProduct.one_def]
-
 local notation "S" => SymmetricAlgebra k M
 local notation "F" => wordFiltration (ι k M)
 
@@ -127,15 +107,6 @@ private abbrev tensorFiltration (d : ℕ) : Submodule k (S ⊗[k] S) :=
 private theorem tmul_mem_tensorFiltration {d : ℕ} {p q : S} (hp : p ∈ F d) (hq : q ∈ F d) :
     p ⊗ₜ[k] q ∈ tensorFiltration k M d :=
   ⟨⟨p, hp⟩ ⊗ₜ ⟨q, hq⟩, rfl⟩
-
-private theorem tensorFiltration_mono {d e : ℕ} (hde : d ≤ e) :
-    tensorFiltration k M d ≤ tensorFiltration k M e := by
-  rintro _ ⟨u, rfl⟩
-  induction u using TensorProduct.inductionOn with
-  | tmul p q =>
-    exact tmul_mem_tensorFiltration (wordFiltration_mono _ hde p.2)
-      (wordFiltration_mono _ hde q.2)
-  | add u v hu hv => simpa using add_mem hu hv
 
 /-- Multiplying by a tensor `a ⊗ b` with `a` and `b` of degree at most one raises the tensor
 filtration by one. -/
@@ -199,7 +170,9 @@ private theorem reducedComul_mem_tensorFiltration (d : ℕ) {x : S} (hx : x ∈ 
       have hι' : ι k M m ∈ F (d + 1) := wordFiltration_mono _ (by omega) hι
       have hred := ih ha
       rw [mul_add, map_add, mul_comm, ← Algebra.smul_def, map_smul, reducedComul_mul_ι]
-      refine add_mem (Submodule.smul_mem _ _ (tensorFiltration_mono d.le_succ hred)) ?_
+      have hmono := TensorProduct.range_mapIncl_mono (wordFiltration_mono (ι k M) d.le_succ)
+        (wordFiltration_mono (ι k M) d.le_succ)
+      refine add_mem (Submodule.smul_mem _ _ (hmono hred)) ?_
       refine sub_mem (add_mem (add_mem ?_ ?_) ?_) ?_
       · rw [mul_add]
         exact add_mem (mul_mem_tensorFiltration_succ hred hι h1)
@@ -214,7 +187,7 @@ private theorem reducedComul_mem_tensorFiltration (d : ℕ) {x : S} (hx : x ∈ 
 
 end Filtration
 
-section Injective
+section InjOn
 
 variable {k M A : Type*} [Field k] [AddCommMonoid M] [Module k M] [CommRing A] [Bialgebra k A]
 
@@ -265,31 +238,46 @@ private theorem injOn_wordFiltration_succ [CharZero k] {f : M →ₗ[k] A}
   have hm0 : m = 0 := hinj (by rw [hfm, hc, map_zero, neg_zero, map_zero])
   simpa [hc, hm0, sub_eq_zero] using hm.symm
 
+/-- By induction on the degree, the extension of an injective linear map with primitive values is
+injective on each step of the degree filtration. -/
+private theorem injOn_wordFiltration [CharZero k] {f : M →ₗ[k] A}
+    (hf : ∀ m, Bialgebra.IsPrimitiveElem k (f m)) (hinj : Function.Injective f) (d : ℕ) :
+    Set.InjOn (liftBialgHom f hf) (F d) := by
+  induction d with
+  | zero =>
+    intro x hx y hy hxy
+    rw [SetLike.mem_coe, wordFiltration_zero, Submodule.mem_one] at hx hy
+    obtain ⟨c, rfl⟩ := hx
+    obtain ⟨e, rfl⟩ := hy
+    have := congrArg (Coalgebra.counit (R := k)) hxy
+    simp only [AlgHomClass.commutes, Bialgebra.counit_algebraMap] at this
+    rw [this]
+  | succ d ih => exact injOn_wordFiltration_succ hf hinj ih
+
+end InjOn
+
+section Injective
+
+variable {k M A : Type*} [Field k] [AddCommMonoid M] [Module k M] [CommSemiring A]
+  [Bialgebra k A]
+
+local notation "F" => wordFiltration (ι k M)
+
 /-- **Over a field of characteristic zero, the bialgebra map out of a symmetric algebra
 extending an injective linear map with primitive values is injective.** Equivalently, linearly
 independent primitive elements of a commutative bialgebra are algebraically independent. -/
 theorem liftBialgHom_injective [CharZero k] {f : M →ₗ[k] A}
     (hf : ∀ m, Bialgebra.IsPrimitiveElem k (f m)) (hinj : Function.Injective f) :
     Function.Injective (liftBialgHom f hf) := by
-  -- By induction on the degree, the map is injective on each step of the degree filtration.
-  have key (d : ℕ) : Set.InjOn (liftBialgHom f hf) (F d) := by
-    induction d with
-    | zero =>
-      intro x hx y hy hxy
-      rw [SetLike.mem_coe, wordFiltration_zero, Submodule.mem_one] at hx hy
-      obtain ⟨c, rfl⟩ := hx
-      obtain ⟨e, rfl⟩ := hy
-      have := congrArg (Coalgebra.counit (R := k)) hxy
-      simp only [AlgHomClass.commutes, Bialgebra.counit_algebraMap] at this
-      rw [this]
-    | succ d ih => exact injOn_wordFiltration_succ hf hinj ih
+  -- An algebra over a field is a ring, so the degreewise injectivity applies.
+  let : CommRing A := { Algebra.semiringToRing k with mul_comm := mul_comm }
   -- Every element lies in some step of the degree filtration.
   have hmem := exists_mem_wordFiltration_of_iSup_eq_top (ι k M)
     (by rw [iSup_wordFiltration_eq_adjoin, adjoin_range_ι, Algebra.top_toSubmodule])
   intro x y hxy
   obtain ⟨d, hd⟩ := hmem x
   obtain ⟨e, he⟩ := hmem y
-  exact key (max d e) (wordFiltration_mono _ (le_max_left d e) hd)
+  exact injOn_wordFiltration hf hinj (max d e) (wordFiltration_mono _ (le_max_left d e) hd)
     (wordFiltration_mono _ (le_max_right d e) he) hxy
 
 end Injective
