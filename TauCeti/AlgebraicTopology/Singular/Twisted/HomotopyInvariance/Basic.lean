@@ -36,6 +36,8 @@ coefficient system `L` on `Y` (`ContinuousMap.HomotopyEquiv.isIso_twistedHomolog
 * `ContinuousMap.HomotopyEquiv.isIso_twistedHomologyMap`,
   `ContinuousMap.HomotopyEquiv.quasiIso_twistedChainComplexMap`: a homotopy equivalence induces
   isomorphisms on twisted homology.
+* `ContinuousMap.HomotopyEquiv.twistedHomologyIso`: the isomorphism `H_k(X; e⁎L) ≅ H_k(Y; L)`
+  induced by a homotopy equivalence `e : X ≃ₕ Y`.
 
 ## Implementation notes
 
@@ -372,6 +374,20 @@ theorem isIso_twistedHomologyMap (e : X ≃ₕ Y)
     @epi_of_epi _ _ _ _ _ _ _ (@IsIso.epi_of_iso _ _ _ _ _ h₂)
   have := isIso_of_mono_of_epi (twistedHomologyMap g ((pullback f.hom).obj L) k)
   exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ (twistedHomologyMap f L k) (by infer_instance) h₁
+
+/-- The isomorphism `H_k(X; e⁎L) ≅ H_k(Y; L)` on singular homology with local coefficients induced
+by a homotopy equivalence `e : X ≃ₕ Y`. -/
+def twistedHomologyIso (e : X ≃ₕ Y)
+    (L : TauCeti.LocalCoefficientSystem.{u, v, max v w} R (TopCat.of Y)) (k : ℕ) :
+    ((pullback (TopCat.ofHom e.toFun).hom).obj L).twistedHomology k ≅ L.twistedHomology k :=
+  have := e.isIso_twistedHomologyMap L k
+  asIso (twistedHomologyMap (TopCat.ofHom e.toFun) L k)
+
+@[simp]
+lemma twistedHomologyIso_hom (e : X ≃ₕ Y)
+    (L : TauCeti.LocalCoefficientSystem.{u, v, max v w} R (TopCat.of Y)) (k : ℕ) :
+    (e.twistedHomologyIso L k).hom = twistedHomologyMap (TopCat.ofHom e.toFun) L k := by
+  simp [twistedHomologyIso]
 
 /-- **A homotopy equivalence induces a quasi-isomorphism of singular chains with local
 coefficients.** -/
