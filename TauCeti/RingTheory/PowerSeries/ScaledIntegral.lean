@@ -126,12 +126,12 @@ theorem mem_scaledIntegralSeries_iff {M : R} {f : R⟦X⟧} :
     f ∈ scaledIntegralSeries A M ↔ ∀ n, M ^ n * coeff n f ∈ (algebraMap A R).range := by
   simp only [mem_scaledIntegralSeries_iff_rescale_mem_range_map, mem_map_range, coeff_rescale]
 
-/-- A power series lies in the integral lattice at scale `M` exactly when `f(M X)` is
-`A`-integral. -/
-theorem mem_scaledIntegralSeries_iff_integralSeries_rescale {M : R} {f : R⟦X⟧} :
-    f ∈ scaledIntegralSeries A M ↔ IntegralSeries A (rescale M f) := by
+/-- The rescaling `f(M X)` is `A`-integral exactly when `f` lies in the integral lattice at
+scale `M`. -/
+@[simp]
+theorem integralSeries_rescale_iff {M : R} {f : R⟦X⟧} :
+    IntegralSeries A (rescale M f) ↔ f ∈ scaledIntegralSeries A M := by
   simp [mem_scaledIntegralSeries_iff, integralSeries_iff]
-
 
 /-- At scale `M`, a power series lies in the `ℤ`-integral lattice exactly when every `Mⁿ aₙ` is an
 integer. -/
@@ -180,7 +180,7 @@ integral: rescaling does not change the constant coefficient. -/
 @[simp]
 theorem C_mem_scaledIntegralSeries_iff {M a : R} :
     C a ∈ scaledIntegralSeries A M ↔ a ∈ (algebraMap A R).range := by
-  rw [mem_scaledIntegralSeries_iff_integralSeries_rescale, rescale_C]
+  rw [← integralSeries_rescale_iff, rescale_C]
   refine ⟨fun h ↦ by simpa using h 0, fun h n ↦ ?_⟩
   rw [coeff_C]
   split_ifs
