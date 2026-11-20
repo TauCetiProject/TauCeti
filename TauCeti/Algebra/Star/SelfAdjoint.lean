@@ -22,7 +22,8 @@ adjoint anticommuting with `γ`, as needed for gradings. Similarly, taking stars
 one-sided relations with a self-adjoint element: `x * q = x` becomes `q * x = x` for self-adjoint
 `x`, and `q * u = 0` becomes `star u * q = 0`. For a self-adjoint `p`, the
 element `2 p - 1` is again self-adjoint, and its commutator `ξ p - p ξ` with a skew-adjoint `ξ`
-is self-adjoint.
+is self-adjoint. For a self-adjoint `x` in an additive group with a star-additive involution,
+`Fact (IsSelfAdjoint (-x))` is packaged from `Fact (IsSelfAdjoint x)`.
 
 ## Main results
 
@@ -37,6 +38,8 @@ is self-adjoint.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
 * `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
   `ξ` with a self-adjoint `H` is self-adjoint.
+* `TauCeti.isSelfAdjoint_neg_fact`: packages `Fact (IsSelfAdjoint (-x))` from
+  `Fact (IsSelfAdjoint x)`.
 -/
 
 public section
@@ -97,3 +100,14 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
 theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]
     {ξ H : R} (hH : IsSelfAdjoint H) (hξ : ξ ∈ skewAdjoint R) : IsSelfAdjoint (ξ * H - H * ξ) := by
   simp [IsSelfAdjoint, hH.star_eq, skewAdjoint.mem_iff.mp hξ, neg_add_eq_sub]
+
+namespace TauCeti
+
+/-- Package `IsSelfAdjoint (-x)` as a `Fact` from `Fact (IsSelfAdjoint x)`. Kept as a theorem
+rather than a global instance (for use via `have` or `attribute [local instance]`) so
+`Fact (IsSelfAdjoint ?x)` cannot loop on `-?y`. -/
+theorem isSelfAdjoint_neg_fact {R : Type*} [AddGroup R] [StarAddMonoid R] (x : R)
+    [h : Fact (IsSelfAdjoint x)] : Fact (IsSelfAdjoint (-x)) :=
+  ⟨h.out.neg⟩
+
+end TauCeti
