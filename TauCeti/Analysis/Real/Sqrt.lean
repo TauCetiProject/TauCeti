@@ -24,11 +24,16 @@ The rational square-root map `k ↦ 2√k / (1 + k)` has complementary square
 These identities are used by both kinds of complete elliptic integral in Landen's transformation.
 For `|t| ≤ 1`, the square of `√(1 - t²)` is `1 - t²`; for any nonzero `t`, this square
 is strictly less than `1`. In particular, for nonnegative ordered inputs `0 ≤ b ≤ a`,
-squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluations.
+squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluations. For
+`t ∈ (-1, 1)` the square root `√(1 - t²)` itself is positive.
 
 A real number `x` of the same sign as `c` is rescaled to `c` by the positive square of
 `√(c / x)`. For `0 ≤ t < √2 - 1`, completing `(t + 1)² < 2` bounds the quadratic majorant
 `2 t + t² < 1`.
+
+For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
+`√(ab) ≤ (a + b) / 2`, as `NNReal.sqrt_mul_le_half_add` states in `ℝ≥0`, and the square of
+`√a - √b` expands to `a + b - 2√(ab)`.
 
 ## Main results
 
@@ -43,13 +48,46 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 * `Real.sq_sqrt_one_sub_sq`: `√(1 - t²)² = 1 - t²` for `|t| ≤ 1`.
 * `Real.sq_sqrt_one_sub_sq_div`: the same identity for `t = b / a` when `0 ≤ b ≤ a`.
 * `Real.sq_sqrt_one_sub_sq_lt_one`: `√(1 - t²)² < 1` for nonzero `t`.
+* `Real.sqrt_one_sub_sq_pos`: `0 < √(1 - t²)` for `t ∈ (-1, 1)`.
 * `Real.exists_pos_sq_mul_eq_of_mul_pos`: `μ ^ 2 * x = c` for some `μ > 0` when `0 < c * x`.
 * `Real.two_mul_add_sq_lt_one`: `2 * t + t ^ 2 < 1` for `0 ≤ t < √2 - 1`.
+* `Real.sqrt_mul_le_half_add`: `√(ab) ≤ (a + b) / 2` for `0 ≤ a` and `0 ≤ b`.
+* `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 -/
 
 public section
 
 namespace Real
+
+/-- For `0 ≤ a` and `0 ≤ t`, if `t < |a - √r|`, then both `√r * t` and `t ^ 2`
+are strictly less than `|a ^ 2 - r|`. No sign hypothesis on `r` is required. -/
+theorem max_sqrt_mul_sq_lt_abs_sq_sub {a r t : ℝ} (ha : 0 ≤ a) (ht : 0 ≤ t)
+    (h : t < |a - √r|) : max (√r * t) (t ^ 2) < |a ^ 2 - r| := by
+  rcases le_total 0 r with hr | hr
+  swap
+  · rw [sqrt_eq_zero_of_nonpos hr]
+    simp only [sqrt_eq_zero_of_nonpos hr, sub_zero, abs_of_nonneg ha] at h
+    rw [abs_of_nonneg (by nlinarith : 0 ≤ a ^ 2 - r)]
+    simp only [zero_mul, max_eq_right (sq_nonneg t)]
+    nlinarith [mul_self_lt_mul_self ht h]
+  have hab : |a - √r| ≤ a + √r :=
+    abs_le.mpr ⟨by linarith, by nlinarith [sqrt_nonneg r]⟩
+  have heq : |a ^ 2 - r| = |a - √r| * (a + √r) := by
+    rw [← abs_of_nonneg (by positivity : 0 ≤ a + √r), ← abs_mul]
+    congr 1
+    nlinarith [sq_sqrt hr]
+  rw [heq]
+  refine max_lt_iff.mpr ⟨?_, ?_⟩
+  · by_cases hr0 : r = 0
+    · simp only [hr0, sqrt_zero, zero_mul, add_zero, sub_zero, abs_of_nonneg ha] at h ⊢
+      have ha' : 0 < a := ht.trans_lt h
+      positivity
+    · simpa only [mul_comm] using
+        (mul_lt_mul_of_pos_right h (sqrt_pos.mpr (lt_of_le_of_ne hr (Ne.symm hr0)))).trans_le
+          (mul_le_mul_of_nonneg_left (le_add_of_nonneg_left ha) (abs_nonneg (a - √r)))
+  · nlinarith [mul_self_lt_mul_self ht h,
+      mul_le_mul_of_nonneg_left hab (abs_nonneg (a - √r))]
+
 
 /-- Multiplying by `(√a)⁻¹` and squaring divides the square by `a`. -/
 @[simp]
@@ -136,6 +174,10 @@ theorem sq_sqrt_one_sub_sq_lt_one {t : ℝ} (ht : t ≠ 0) :
   rw [sq_sqrt']
   exact max_lt (by nlinarith [sq_pos_of_ne_zero ht]) zero_lt_one
 
+/-- For `t ∈ (-1, 1)`, the square root `√(1 - t²)` is positive. -/
+theorem sqrt_one_sub_sq_pos {t : ℝ} (ht : t ∈ Set.Ioo (-1) 1) : 0 < √(1 - t ^ 2) :=
+  sqrt_pos.2 (by nlinarith [ht.1, ht.2])
+
 /-- A value `x` of the same sign as `c` can be rescaled to `c` by a positive square. -/
 theorem exists_pos_sq_mul_eq_of_mul_pos {c x : ℝ} (h : 0 < c * x) :
     ∃ μ : ℝ, 0 < μ ∧ μ ^ 2 * x = c := by
@@ -152,5 +194,17 @@ theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
   have hsq : (t + 1) ^ 2 < √2 ^ 2 := pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
   rw [sq_sqrt zero_le_two] at hsq
   linarith
+
+/-- For nonnegative `a`, `b`, the geometric mean is at most the arithmetic mean:
+`√(ab) ≤ (a + b) / 2`. This is `NNReal.sqrt_mul_le_half_add` for real numbers. -/
+theorem sqrt_mul_le_half_add {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    √(a * b) ≤ (a + b) / 2 :=
+  sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (a - b)]⟩
+
+/-- For nonnegative `a`, `b`, `(√a - √b)² = a + b - 2 √(ab)`. -/
+theorem sq_sqrt_sub_sqrt {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    (√a - √b) ^ 2 = a + b - 2 * √(a * b) := by
+  rw [sub_sq, sq_sqrt ha, sq_sqrt hb, sqrt_mul ha]
+  ring
 
 end Real

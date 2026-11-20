@@ -129,7 +129,7 @@ theorem tangentMatrix_mul_of_constantMultiplicationDefiningHopfIdeal_le
   rw [HopfIdeal.mem_lieSubalgebra_iff]
   intro y hy
   have hcarrier := (HopfIdeal.mem_lieSubalgebra_iff _ _).mp
-    (HopfIdeal.quotientLieEquiv (B := B) (CommHopfAlgCat.commonKernelHopfIdeal f) d).2
+    (HopfIdeal.quotientLieEquiv (B := B) (CommHopfAlgCat.commonKernelHopfIdeal f) d).property
   rw [HopfIdeal.quotientLieEquiv_apply_coe] at hcarrier
   exact hcarrier y (HopfIdeal.toIdeal_le_toIdeal.mpr hC hy)
 

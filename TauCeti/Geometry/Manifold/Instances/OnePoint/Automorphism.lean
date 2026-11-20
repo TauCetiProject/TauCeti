@@ -25,7 +25,9 @@ distinct points form the trivial group (`Diffeomorph.fixingSubgroup_eq_bot_of_tw
 Together with `Diffeomorph.infinite_fixingSubgroup_of_encard_le_two`, the biholomorphisms fixing a
 set `s` are finite exactly when `s` has at least three points
 (`Diffeomorph.finite_fixingSubgroup_iff_two_lt_encard`). This is the stability criterion
-`2 g - 2 + n > 0` for a component of genus zero of a marked nodal curve.
+`2 g - 2 + n > 0` for a component of genus zero of a marked nodal curve. Equivalently, a
+manifold biholomorphic to the Riemann sphere has exactly one biholomorphism to it sending three
+given distinct points to `0`, `1` and `∞` (`Diffeomorph.existsUnique_apply_eq_zero_one_infty`).
 
 ## Main results
 
@@ -39,6 +41,8 @@ set `s` are finite exactly when `s` has at least three points
   `Diffeomorph.finite_fixingSubgroup_iff_two_lt_encard`: on a manifold biholomorphic to the
   Riemann sphere, the biholomorphisms fixing at least three points are trivial, and those fixing a
   set `s` are finite exactly when `s` has at least three points.
+* `Diffeomorph.existsUnique_apply_eq_zero_one_infty`: on a manifold biholomorphic to the Riemann
+  sphere, three distinct points are sent to `0`, `1` and `∞` by exactly one biholomorphism to it.
 
 ## References
 
@@ -207,5 +211,26 @@ theorem finite_fixingSubgroup_iff_two_lt_encard (e : M ≃ₘ^n⟮I, 𝓘(ℂ)�
   · exact not_finite_iff_infinite.mpr (e.infinite_fixingSubgroup_of_encard_le_two hle) h
   · rw [fixingSubgroup_eq_bot_of_two_lt_encard e hn hs]
     infer_instance
+
+/-- **Normalizing three marked points.** If `M` is biholomorphic to the Riemann sphere, then for
+any three distinct points `x`, `y`, `z` of `M` exactly one biholomorphism `M ≃ OnePoint ℂ` sends
+them to `0`, `1` and `∞`. -/
+theorem existsUnique_apply_eq_zero_one_infty (e : M ≃ₘ^n⟮I, 𝓘(ℂ)⟯ OnePoint ℂ) (hn : n ≠ 0)
+    {x y z : M} (hxy : x ≠ y) (hxz : x ≠ z) (hyz : y ≠ z) :
+    ∃! φ : M ≃ₘ^n⟮I, 𝓘(ℂ)⟯ OnePoint ℂ, φ x = (0 : ℂ) ∧ φ y = (1 : ℂ) ∧ φ z = ∞ := by
+  obtain ⟨g, h0, h1, hinf⟩ := exists_smul_zero_one_infty_eq (e.injective.ne hxy)
+    (e.injective.ne hxz) (e.injective.ne hyz)
+  simp only [coe_toEquiv] at h0 h1 hinf
+  refine ⟨e.trans (constSmul 𝓘(ℂ) n g⁻¹), by simp [inv_smul_eq_iff, h0, h1, hinf], ?_⟩
+  rintro ψ ⟨hψ0, hψ1, hψinf⟩
+  replace hψ0 : ψ.symm (0 : ℂ) = x := by rw [← hψ0, symm_apply_apply]
+  replace hψ1 : ψ.symm (1 : ℂ) = y := by rw [← hψ1, symm_apply_apply]
+  replace hψinf : ψ.symm ∞ = z := by rw [← hψinf, symm_apply_apply]
+  -- `ψ` followed by the inverse of the normalization fixes `0`, `1` and `∞`.
+  let χ := ψ.symm.trans (e.trans (constSmul 𝓘(ℂ) n g⁻¹))
+  have hid := χ.eq_refl_of_apply_zero_one_infty_eq_self hn (by simp [χ, inv_smul_eq_iff, h0, hψ0])
+    (by simp [χ, inv_smul_eq_iff, h1, hψ1]) (by simp [χ, inv_smul_eq_iff, hinf, hψinf])
+  ext m
+  simpa [χ] using congr($hid (ψ m)).symm
 
 end Diffeomorph

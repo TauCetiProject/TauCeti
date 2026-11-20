@@ -41,6 +41,8 @@ for set and probability integrals.
 * `TauCeti.MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub` bounds the difference
   of two integrals by the integral of the norm of the difference, with no integrability
   assumption.
+* `TauCeti.MeasureTheory.norm_integral_le_of_eLpNorm_one_le` bounds the norm of an integral by any
+  real bound on the `L¹` norm of the integrand.
 
 ## Counting measures of multisets
 
@@ -69,6 +71,8 @@ for set and probability integrals.
   integrable function `N`.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
+* `integral_mono_of_integral_nonneg` gives `∫ g ≤ ∫ h` for `g ≤ h` almost everywhere,
+  with `h` integrable and `∫ h ≥ 0`, without assuming `g` integrable.
 * `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
   integral of `‖f‖ₑ ^ 2`.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
@@ -114,6 +118,12 @@ for set and probability integrals.
   assumed to be finite.
 * `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
   within `δ` of `M`, then `f` comes within `δ / μ B` of `M` on every set `B` of positive mass.
+
+## Uniformly bounded centers
+
+* `TauCeti.exists_forall_norm_le_of_integral_norm_sub_le`: a family with a common almost
+  everywhere envelope and uniformly bounded `L¹` deviations has bounded centers, for any nonzero
+  measure. The envelope need not be measurable or integrable.
 
 ## `L¹` convergence
 
@@ -269,6 +279,52 @@ theorem integral_norm_sq_le_of_ae_bound {Ω E : Type*} [MeasurableSpace Ω]
       (hb.mono fun ω hω ↦ pow_le_pow_left₀ (norm_nonneg _) hω 2)
     _ = _ := by simp [mul_comm]
 
+/-- A family bounded in norm almost everywhere by a common real function, with uniformly bounded
+`L¹` deviations from given centers, has uniformly bounded centers under any nonzero measure.
+Only the norms of the deviations need to be integrable, and no measurability or integrability of
+the envelope is required. -/
+theorem exists_forall_norm_le_of_integral_norm_sub_le {ι Ω E : Type*}
+    [MeasurableSpace Ω] [SeminormedAddGroup E] {μ : Measure Ω} (hμ : μ ≠ 0)
+    {f : Ω → ℝ} {g : ι → Ω → E} {m : ι → E} {D : ℝ}
+    (hgf : ∀ n, ∀ᵐ x ∂μ, ‖g n x‖ ≤ f x)
+    (hint : ∀ n, Integrable (fun x ↦ ‖g n x - m n‖) μ)
+    (hD : ∀ n, ∫ x, ‖g n x - m n‖ ∂μ ≤ D) : ∃ B, ∀ n, ‖m n‖ ≤ B := by
+  -- Some sublevel set of the envelope has positive outer measure.
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, μ {x | f x ≤ N} ≠ 0 := by
+    by_contra! H
+    have hU : (⋃ N : ℕ, {x | f x ≤ N}) = Set.univ :=
+      Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.2 (exists_nat_ge (f x))
+    exact hμ (Measure.measure_univ_eq_zero.1 (by simpa [hU] using measure_iUnion_null_iff.2 H))
+  -- Truncating the mass, rather than the measure, also handles infinite measures.
+  let p := min (μ {x | f x ≤ N}) 1
+  have hp0 : p ≠ 0 := ne_of_gt (lt_min (pos_iff_ne_zero.2 hN) zero_lt_one)
+  have hp_top : p ≠ ∞ := ne_of_lt ((min_le_right _ _).trans_lt ENNReal.one_lt_top)
+  have hp : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
+  refine ⟨N + D / p.toReal, fun n ↦ ?_⟩
+  have hD0 : 0 ≤ D := (integral_nonneg fun x ↦ norm_nonneg (g n x - m n)).trans (hD n)
+  by_cases hm : ‖m n‖ ≤ N
+  · exact hm.trans (le_add_of_nonneg_right (div_nonneg hD0 hp.le))
+  have ht : 0 < ‖m n‖ - N := by linarith
+  -- Markov's inequality does not require the envelope's sublevel set to be measurable.
+  have hle : p ≤ μ {x | ‖m n‖ - N ≤ ‖g n x - m n‖} := by
+    refine (min_le_left _ _).trans (measure_mono_ae ?_)
+    filter_upwards [hgf n] with x hx hxf
+    have : f x ≤ N := hxf
+    have hnorm := norm_le_norm_add_norm_sub (g n x) (m n)
+    linarith
+  have hfin : μ {x | ‖m n‖ - N ≤ ‖g n x - m n‖} ≠ ∞ := by
+    simpa only [Real.norm_of_nonneg (norm_nonneg _)] using
+      ((hint n).measure_norm_ge_lt_top ht).ne
+  have hpμ : p.toReal ≤ μ.real {x | ‖m n‖ - N ≤ ‖g n x - m n‖} := by
+    rw [measureReal_def]
+    exact ENNReal.toReal_mono hfin hle
+  have hreal : (‖m n‖ - N) * p.toReal ≤ D :=
+    (mul_le_mul_of_nonneg_left hpμ ht.le).trans <|
+      (mul_meas_ge_le_integral_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
+        (hint n) (‖m n‖ - N)).trans (hD n)
+  have : ‖m n‖ - N ≤ D / p.toReal := (le_div_iff₀ hp).2 hreal
+  linarith
+
 namespace MeasureTheory
 
 /-- The negative exponential of an almost-everywhere nonnegative, almost-everywhere measurable
@@ -306,6 +362,14 @@ theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α E : Type*} [Measu
   · have hui : ¬Integrable u μ := fun hui =>
       hvi ((hui.sub huv).congr (.of_forall fun x => by simp))
     simp [integral_undef hui, integral_undef hvi]
+
+/-- An integral is bounded in norm by any real bound on the `L¹` norm of the integrand. -/
+theorem norm_integral_le_of_eLpNorm_one_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E} {ε : ℝ} (hε : 0 ≤ ε)
+    (h : eLpNorm f 1 μ ≤ ENNReal.ofReal ε) : ‖∫ x, f x ∂μ‖ ≤ ε := by
+  have h1 := eNorm_integral_le_lintegral_eNorm (μ := μ) f
+  rw [← ofReal_norm] at h1
+  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans (lintegral_eNorm_le_eLpNorm_one.trans h))
 
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/
@@ -575,6 +639,15 @@ pointwise maximum. -/
 theorem integral_le_integral_max {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
     (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, f x ∂μ ≤ ∫ x, max (f x) (g x) ∂μ :=
   integral_mono hf (hf.sup hg) fun _ ↦ le_max_left _ _
+
+/-- `∫ g ≤ ∫ h` when `g ≤ h` almost everywhere, `h` is integrable and `∫ h ≥ 0`, also when `g` is
+not integrable, since then `∫ g = 0`. -/
+theorem integral_mono_of_integral_nonneg {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {g h : α → ℝ} (hgh : g ≤ᵐ[μ] h) (hh : Integrable h μ)
+    (h0 : 0 ≤ ∫ x, h x ∂μ) : ∫ x, g x ∂μ ≤ ∫ x, h x ∂μ := by
+  by_cases hg : Integrable g μ
+  · exact integral_mono_ae hg hh hgh
+  · rwa [integral_undef hg]
 
 /-- A probability density `ρ`, almost everywhere nonnegative with `∫ ρ = 1`, has total extended
 mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
@@ -881,7 +954,7 @@ theorem integral_biUnion_finset₀ {X E ι : Type*} [MeasurableSpace X] [NormedA
     simp only [← Finset.mem_coe, Set.biUnion_eq_iUnion]
   rw [hcoe] at hf ⊢
   rw [integral_iUnion_ae (s := fun i : (↑s : Set ι) ↦ t (i : ι))
-    (fun i ↦ hm (i : ι) i.2) (hd.subtype _ _) hf]
+    (fun i ↦ hm (i : ι) i.property) (hd.subtype _ _) hf]
   exact Finset.tsum_subtype' s fun i ↦ ∫ x in t i, f x ∂μ
 
 open Polynomial in
