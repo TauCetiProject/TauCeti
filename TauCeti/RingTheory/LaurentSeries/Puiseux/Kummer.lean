@@ -80,7 +80,7 @@ private noncomputable def kummerAlgHom (ζ : PrimeToPTateModule 1 K) :
   map_zero' := Subtype.ext (map_zero _)
   map_add' x y := Subtype.ext (map_add _ _ _)
   commutes' f := Subtype.ext <| HahnSeries.ext <| funext fun q ↦ by
-    simp only [coeff_twistEquiv]
+    simp only [coeff_twistEquiv, smul_eq_mul]
     rw [coe_algebraMap_laurentSeries]
     by_cases hq : q.den = 1
     · rw [← Rat.intCast_num_of_den_eq_one hq, ratChar_ofAdd_intCast, Units.val_one, one_mul]
@@ -99,11 +99,11 @@ noncomputable def kummer : PrimeToPTateModule 1 K →* Gal(puiseuxField K/K⸨X�
     ({ toFun := kummerAlgHom K
        map_one' := AlgHom.ext fun x ↦ Subtype.ext <| HahnSeries.ext <| funext fun q ↦ by
          rw [coe_kummerAlgHom_apply, coeff_twistEquiv, map_one, MonoidHom.one_apply,
-           Units.val_one, one_mul, AlgHom.one_apply]
+           Units.val_one, one_smul, AlgHom.one_apply]
        map_mul' ζ η := AlgHom.ext fun x ↦ Subtype.ext <| HahnSeries.ext <| funext fun q ↦ by
          rw [coe_kummerAlgHom_apply, AlgHom.mul_apply, coe_kummerAlgHom_apply, coeff_twistEquiv,
            coeff_twistEquiv, coe_kummerAlgHom_apply, coeff_twistEquiv, map_mul,
-           MonoidHom.mul_apply, Units.val_mul, mul_assoc] } :
+           MonoidHom.mul_apply, Units.val_mul, mul_smul] } :
       PrimeToPTateModule 1 K →* (puiseuxField K →ₐ[K⸨X⸩] puiseuxField K)).toHomUnits
 
 variable {K}
@@ -120,7 +120,7 @@ character of `ζ` at `q`, that is, by `ζ_{q.den} ^ q.num`. -/
 theorem coeff_kummer (ζ : PrimeToPTateModule 1 K) (x : puiseuxField K) (q : ℚ) :
     (kummer K ζ x : HahnSeries ℚ K).coeff q =
       (ratChar K ζ (.ofAdd q) : K) * (x : HahnSeries ℚ K).coeff q := by
-  rw [coe_kummer_apply, coeff_twistEquiv]
+  rw [coe_kummer_apply, coeff_twistEquiv, smul_eq_mul]
 
 /-- The automorphism attached to `ζ` multiplies the coefficient of `t ^ (k / n)` by `ζₙ ^ k`. -/
 theorem coeff_kummer_intCast_div (ζ : PrimeToPTateModule 1 K) (x : puiseuxField K) (n : ℕ+)
@@ -138,7 +138,7 @@ theorem kummer_single (ζ : PrimeToPTateModule 1 K) (q : ℚ) (a : K) :
     kummer K ζ (single K q a) = single K q ((ratChar K ζ (.ofAdd q) : K) * a) := by
   apply Subtype.ext
   rw [coe_kummer_apply, coe_single, coe_single, twistEquiv_apply, twist_single,
-    MonoidHom.comp_apply, Units.coeHom_apply]
+    MonoidHom.comp_apply, Units.coeHom_apply, smul_eq_mul]
 
 /-- **Compatibility with the finite levels.** On the level-`n` subfield `K⸨t ^ (1 / n)⸩`, the
 automorphism attached to `ζ` is the Kummer automorphism `t ^ (1 / n) ↦ ζₙ t ^ (1 / n)`. -/
