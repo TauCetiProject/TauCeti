@@ -259,9 +259,9 @@ theorem eval₂_fubiniStudyForm_I_mul (x : OnePoint ℂ) (v w : ℂ) :
   simp
 
 /-- The Fubini–Study form vanishes at no point. -/
-theorem fubiniStudyForm_apply_ne_zero (x : OnePoint ℂ) : fubiniStudyForm.1 x ≠ 0 := by
+theorem fubiniStudyForm_apply_ne_zero (x : OnePoint ℂ) : fubiniStudyForm.val x ≠ 0 := by
   intro h
-  have h1 : fubiniStudyForm.1 x (![1, Complex.I] : Fin 2 → ℂ) =
+  have h1 : fubiniStudyForm.val x (![1, Complex.I] : Fin 2 → ℂ) =
       fubiniStudyDensity (chartAt ℂ x x) :=
     (fubiniStudyRough_apply x _).trans (by simp)
   rw [h] at h1

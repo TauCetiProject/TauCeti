@@ -161,7 +161,7 @@ theorem accelerationWithin_comp {φ : 𝕜 → 𝕜} {s u : Set 𝕜} {t : 𝕜}
     (hφ' : DifferentiableWithinAt 𝕜 (derivWithin φ u) u t) (hmaps : MapsTo φ u s)
     (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s)
     (hV : DifferentiableWithinAt 𝕜
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t)) :
+      (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) (γ (φ t))) s (φ t)) :
     accelerationWithin cov (γ ∘ φ) u t =
       derivWithin (derivWithin φ u) u t • curveVelocityWithin I γ s (φ t) +
         derivWithin φ u t ^ 2 • accelerationWithin cov γ s (φ t) := by
@@ -175,7 +175,7 @@ theorem accelerationWithin_comp {φ : 𝕜 → 𝕜} {s u : Set 𝕜} {t : 𝕜}
   have hchart : DifferentiableWithinAt 𝕜 (extChartAt I (γ (φ t)) ∘ γ) s (φ t) :=
     (hasDerivWithinAt_extChartAt_comp_curve
       (hasMFDerivWithinAt_curveVelocityWithin (hγ (φ t) (hmaps ht)))).differentiableWithinAt
-  have hVcomp : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) (γ ∘ φ)
+  have hVcomp : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := E) (γ ∘ φ)
       (fun r ↦ curveVelocityWithin I γ s (φ r)) ((γ ∘ φ) t)) u t := by
     rw [sectionCoord_comp]
     exact hV.comp t (hφ t ht) hmaps
@@ -185,18 +185,41 @@ theorem accelerationWithin_comp {φ : 𝕜 → 𝕜} {s u : Set 𝕜} {t : 𝕜}
     sq]
 
 /-- **The chain rule for the unrestricted covariant acceleration**:
-`D_t (γ ∘ φ)' = φ''(t) γ'(φ t) + φ'(t)² D_t γ'(φ t)`. -/
-theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜} (hφ : Differentiable 𝕜 φ)
-    (hφ' : DifferentiableAt 𝕜 (deriv φ) t) (hγ : MDifferentiable 𝓘(𝕜, 𝕜) I γ)
-    (hV : DifferentiableAt 𝕜 (sectionCoord (F := E) γ (curveVelocity I γ) (γ (φ t))) (φ t)) :
+`D_t (γ ∘ φ)' = φ''(t) γ'(φ t) + φ'(t)² D_t γ'(φ t)`. Differentiability of the curve and
+reparametrization is needed only in neighbourhoods of the relevant parameters. -/
+theorem acceleration_comp {φ : 𝕜 → 𝕜} {t : 𝕜}
+    (hφ : ∀ᶠ r in 𝓝 t, DifferentiableAt 𝕜 φ r)
+    (hφ' : DifferentiableAt 𝕜 (deriv φ) t)
+    (hγ : ∀ᶠ r in 𝓝 (φ t), MDifferentiableAt 𝓘(𝕜, 𝕜) I γ r)
+    (hV : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ (φ t))) (φ t)) :
     acceleration cov (γ ∘ φ) t =
       deriv (deriv φ) t • curveVelocity I γ (φ t) + deriv φ t ^ 2 • acceleration cov γ (φ t) := by
-  rw [← accelerationWithin_univ, ← accelerationWithin_univ, ← curveVelocityWithin_univ,
-    ← derivWithin_univ, ← derivWithin_univ]
-  rw [← curveVelocityWithin_univ] at hV
-  exact accelerationWithin_comp cov γ uniqueDiffOn_univ (mem_univ t) hφ.differentiableOn
-    (by rwa [derivWithin_univ, differentiableWithinAt_univ]) (mapsTo_univ φ univ)
-    hγ.mdifferentiableOn (hV.differentiableWithinAt)
+  have hφd := hφ.self_of_nhds
+  have hvelocity : curveVelocity I (γ ∘ φ) =ᶠ[𝓝 t]
+      fun r ↦ deriv φ r • curveVelocity I γ (φ r) := by
+    filter_upwards [hφd.continuousAt.eventually hγ, hφ] with r hγr hφr
+    exact curveVelocity_comp hφr.hasDerivAt hγr
+  have hVcomp : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) (γ ∘ φ)
+      (fun r ↦ curveVelocity I γ (φ r)) (γ (φ t))) t := by
+    rw [sectionCoord_comp]
+    exact hV.comp t hφd
+  rw [acceleration_def, alongCurve_congr cov (γ ∘ φ) _ hvelocity,
+    alongCurve_smul cov (γ ∘ φ) _ (deriv φ) hφ' hVcomp,
+    alongCurve_comp cov γ _ φ hφd
+      (hasDerivAt_extChartAt_comp_curve
+        (hasMFDerivAt_curveVelocity hγ.self_of_nhds)).differentiableAt hV,
+    ← acceleration_def, smul_smul, ← sq]
+
+/-- Reflecting the parameter preserves covariant acceleration, without regularity assumptions
+on the curve. -/
+theorem acceleration_comp_const_sub (d t : 𝕜) :
+    acceleration cov (fun r ↦ γ (d - r)) t = acceleration cov γ (d - t) := by
+  have hv : curveVelocity I (fun r ↦ γ (d - r)) =
+      fun r ↦ (-1 : 𝕜) • curveVelocity I γ (d - r) := by
+    funext r
+    simpa only [neg_smul, one_smul] using curveVelocity_comp_const_sub γ d r
+  rw [acceleration_def, hv, alongCurve_const_smul,
+    alongCurve_comp_const_sub, neg_smul, one_smul, neg_neg, acceleration_def]
 
 end Basic
 
@@ -215,8 +238,8 @@ theorem _root_.Filter.EventuallyEq.acceleration_eq (h : γ =ᶠ[𝓝 t] η) :
     exact congrArg (fun L : TangentSpace 𝓘(𝕜, 𝕜) u →L[𝕜] TangentSpace I (γ u) ↦
       L ((1 : 𝕜) : TangentSpace 𝓘(𝕜, 𝕜) u))
       (Filter.EventuallyEq.mfderiv_eq (I := 𝓘(𝕜, 𝕜)) (I' := I) hu)
-  have hcoord (x : M) : sectionCoord (F := E) γ (curveVelocity I γ) x =ᶠ[𝓝 t]
-      sectionCoord (F := E) η (curveVelocity I η) x := by
+  have hcoord (x : M) : sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) x =ᶠ[𝓝 t]
+      sectionCoord 𝕜 (F := E) η (curveVelocity I η) x := by
     filter_upwards [h, hvel] with u hu hv
     rw [sectionCoord_apply, sectionCoord_apply, hv]
     -- The two sides read the same vector in the trivialization at base points `γ u` and `η u`,

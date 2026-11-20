@@ -212,27 +212,29 @@ quasi-separatedness. -/
 instance quasiSeparatedSpace_pushout [QuasiSeparatedSpace X] [QuasiSeparatedSpace Y]
     [QuasiCompact g] : QuasiSeparatedSpace ↑(pushout f g) := by
   let chart : X.affineOpens ⊕ Y.affineOpens → (pushout f g).Opens
-    | .inl A => pushout.inl f g ''ᵁ A.1
-    | .inr B => pushout.inr f g ''ᵁ B.1
+    | .inl A => pushout.inl f g ''ᵁ A.val
+    | .inr B => pushout.inr f g ''ᵁ B.val
   refine Scheme.quasiSeparatedSpace_of_isOpenCover chart ?_ ?_ ?_
   · apply TopologicalSpace.IsOpenCover.mk
     rw [iSup_sum]
     simp only [← Scheme.Hom.image_iSup, iSup_affineOpens_eq_top,
       Scheme.Hom.image_top_eq_opensRange, opensRange_pushout_inl_sup_opensRange_pushout_inr]
   · rintro (A | B)
-    · exact A.2.image_of_isOpenImmersion _
-    · exact B.2.image_of_isOpenImmersion _
+    · exact A.property.image_of_isOpenImmersion _
+    · exact B.property.image_of_isOpenImmersion _
   · rintro (A | B) (A' | B') <;> simp only [chart, Scheme.Hom.coe_image]
     · rw [← Set.image_inter (pushout.inl f g).isOpenEmbedding.injective]
-      exact (A.2.isCompact.inter_of_isOpen A'.2.isCompact A.1.2 A'.1.2).image
+      exact (A.property.isCompact.inter_of_isOpen A'.property.isCompact A.val.is_open'
+          A'.val.is_open').image
         (pushout.inl f g).continuous
     · exact isCompact_image_pushout_inl_inter_image_pushout_inr f g
-        A.1.2 A.2.isCompact B'.1.2 B'.2.isCompact
+        A.val.is_open' A.property.isCompact B'.val.is_open' B'.property.isCompact
     · rw [Set.inter_comm]
       exact isCompact_image_pushout_inl_inter_image_pushout_inr f g
-        A'.1.2 A'.2.isCompact B.1.2 B.2.isCompact
+        A'.val.is_open' A'.property.isCompact B.val.is_open' B.property.isCompact
     · rw [← Set.image_inter (pushout.inr f g).isOpenEmbedding.injective]
-      exact (B.2.isCompact.inter_of_isOpen B'.2.isCompact B.1.2 B'.1.2).image
+      exact (B.property.isCompact.inter_of_isOpen B'.property.isCompact B.val.is_open'
+          B'.val.is_open').image
         (pushout.inr f g).continuous
 
 end QuasiSeparated

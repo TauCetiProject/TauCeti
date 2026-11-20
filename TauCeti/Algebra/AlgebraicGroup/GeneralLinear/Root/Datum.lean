@@ -137,7 +137,7 @@ theorem diagonalRootDatum_toLinearMap (n : ℕ) :
 @[simp]
 theorem diagonalRootDatum_root {n : ℕ} (p : DiagonalRootIndex n) :
     (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).root p =
-      diagonalRoot p.1.1.down p.1.2.down := by
+      diagonalRoot p.val.1.down p.val.2.down := by
   rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_root]
   ext a
   rw [SplitTorus.coordinateRoot_apply, diagonalRoot_apply]
@@ -148,7 +148,7 @@ theorem diagonalRootDatum_root {n : ℕ} (p : DiagonalRootIndex n) :
 @[simp]
 theorem diagonalRootDatum_coroot {n : ℕ} (p : DiagonalRootIndex n) :
     (diagonalRootDatum n : RootDatum _ _ (ULift.{u} (Fin n) → ℤ)).coroot p =
-      diagonalCoroot p.1.1.down p.1.2.down := by
+      diagonalCoroot p.val.1.down p.val.2.down := by
   rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_coroot]
   ext a
   rw [SplitTorus.coordinateCoroot_apply, diagonalCoroot_apply]
@@ -160,8 +160,8 @@ This bridge is not a simp lemma; `diagonalRootDatum_pairing_apply` is the normal
 theorem diagonalRootDatum_pairing {n : ℕ} (p q : DiagonalRootIndex n) :
     (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).pairing p q =
       SplitTorus.dotPairing (σ := ULift.{u} (Fin n))
-        (diagonalRoot p.1.1.down p.1.2.down)
-        (diagonalCoroot q.1.1.down q.1.2.down) := by
+        (diagonalRoot p.val.1.down p.val.2.down)
+        (diagonalCoroot q.val.1.down q.val.2.down) := by
   rw [← RootPairing.root_coroot_eq_pairing, diagonalRootDatum_root,
     diagonalRootDatum_coroot, diagonalRootDatum_toLinearMap]
 
@@ -170,8 +170,8 @@ open Classical in
 @[simp]
 theorem diagonalRootDatum_pairing_apply {n : ℕ} (p q : DiagonalRootIndex n) :
     (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).pairing p q =
-      (if p.1.1 = q.1.1 then 1 else 0) - (if p.1.1 = q.1.2 then 1 else 0) -
-        ((if p.1.2 = q.1.1 then 1 else 0) - (if p.1.2 = q.1.2 then 1 else 0)) := by
+      (if p.val.1 = q.val.1 then 1 else 0) - (if p.val.1 = q.val.2 then 1 else 0) -
+        ((if p.val.2 = q.val.1 then 1 else 0) - (if p.val.2 = q.val.2 then 1 else 0)) := by
   rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_pairing_apply]
   split_ifs <;> rfl
 
@@ -183,21 +183,21 @@ before this lemma could fire. -/
 theorem diagonalRootDatum_coroot'_apply {n : ℕ} (p : DiagonalRootIndex.{u} n)
     (x : ULift.{u} (Fin n) →₀ ℤ) :
     (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).coroot' p x =
-      x p.1.1 - x p.1.2 := by
+      x p.val.1 - x p.val.2 := by
   rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_coroot'_apply]
 
 /-- The index of the root obtained by applying the reflection in the root indexed by `p` to the
 root indexed by `q`: both entries of `q` are transposed by `Equiv.swap p.1.1 p.1.2`. -/
 noncomputable def diagonalReflectionIndex {n : ℕ} (p q : DiagonalRootIndex n) :
     DiagonalRootIndex n :=
-  SplitTorus.coordinatePermRootIndex (Equiv.swap p.1.1 p.1.2) q
+  SplitTorus.coordinatePermRootIndex (Equiv.swap p.val.1 p.val.2) q
 
 open Classical in
 /-- The two entries of `diagonalReflectionIndex p q` are the corresponding coordinate swaps. -/
 @[simp]
 theorem diagonalReflectionIndex_coe {n : ℕ} (p q : DiagonalRootIndex n) :
-    (diagonalReflectionIndex p q).1 =
-      ((Equiv.swap p.1.1 p.1.2) q.1.1, (Equiv.swap p.1.1 p.1.2) q.1.2) := by
+    (diagonalReflectionIndex p q).val =
+      ((Equiv.swap p.val.1 p.val.2) q.val.1, (Equiv.swap p.val.1 p.val.2) q.val.2) := by
   rw [diagonalReflectionIndex, SplitTorus.coordinatePermRootIndex_coe]
 
 /-- The reflection associated to a root acts on indices by transposing both coordinates. -/
@@ -214,7 +214,7 @@ corresponding coordinate transposition. -/
 theorem diagonalRootDatum_reflection_apply {n : ℕ} (p : DiagonalRootIndex n)
     (x : ULift.{u} (Fin n) →₀ ℤ) (a : ULift.{u} (Fin n)) :
     (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).reflection p x a =
-      x ((Equiv.swap p.1.1 p.1.2) a) := by
+      x ((Equiv.swap p.val.1 p.val.2) a) := by
   rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_reflection_apply]
   simp only [Equiv.swap_apply_def]
   split_ifs <;> rfl
@@ -225,7 +225,7 @@ corresponding coordinate transposition. -/
 theorem diagonalRootDatum_coreflection_apply {n : ℕ} (p : DiagonalRootIndex n)
     (x : ULift.{u} (Fin n) → ℤ) (a : ULift.{u} (Fin n)) :
     (diagonalRootDatum n : RootDatum _ _ (ULift.{u} (Fin n) → ℤ)).coreflection p x a =
-      x ((Equiv.swap p.1.1 p.1.2) a) := by
+      x ((Equiv.swap p.val.1 p.val.2) a) := by
   rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_coreflection_apply]
   simp only [Equiv.swap_apply_def]
   split_ifs <;> rfl
@@ -272,8 +272,8 @@ theorem cocharEquiv_diagonalCorootCocharacter {n : ℕ} (i j : Fin n) :
 diagonal coordinate root datum. -/
 theorem pairing_matrixUnitWeight_diagonalCorootCocharacter {n : ℕ}
     (p q : DiagonalRootIndex n) :
-    DiagonalizableGroup.pairing (matrixUnitWeight p.1.1.down p.1.2.down)
-        (diagonalCorootCocharacter q.1.1.down q.1.2.down :
+    DiagonalizableGroup.pairing (matrixUnitWeight p.val.1.down p.val.2.down)
+        (diagonalCorootCocharacter q.val.1.down q.val.2.down :
           Multiplicative (ULift.{u} (Fin n) →₀ ℤ) →* Multiplicative ℤ) =
       (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).pairing p q := by
   rw [← ofAdd_diagonalRoot, SplitTorus.pairing_eq_dotPairing,

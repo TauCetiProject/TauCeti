@@ -25,7 +25,7 @@ variable {F E L : Type*} [Field F] [Field E] [Field L] [Algebra F E] [Algebra F 
 is finite over `F`: restricting `g` embeds it `F`-linearly into `M`. -/
 instance finiteDimensional_comap (M : IntermediateField F E) [FiniteDimensional F M]
     (g : L →ₐ[F] E) : FiniteDimensional F (M.comap g) :=
-  .of_injective ((g.comp (val _)).codRestrict M.toSubalgebra fun x ↦ x.2).toLinearMap
+  .of_injective ((g.comp (val _)).codRestrict M.toSubalgebra fun x ↦ x.property).toLinearMap
     (RingHom.injective _)
 
 end IntermediateField

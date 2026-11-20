@@ -128,7 +128,7 @@ def trefoil (b : B → Fin 3) : HeegaardRegionSystem 1 (Fin 3) (Fin 3) B where
   betaLeft j := if j = 2 then 2 else 0
   betaRight j := if j = 1 then 1 else 0
   regionNonempty := inferInstance
-  crossingCompatible := by decide
+  crossingCompatible := by simp only [isCrossingCompatible_iff]; decide
   regionCovered r := Or.inl (by revert r; decide)
   basepoint := b
 
@@ -350,9 +350,10 @@ theorem maslovIndex_trefoil_single_one :
 computed from the bigon `B_z`, which avoids `w`. -/
 @[simp]
 theorem relativeGrading_trefoil_zero_two :
-    (trefoil fun _ : Unit => 1).relativeGrading 1 () (trefoilGenerator _ 0)
+    (trefoil fun _ : Unit => 1).relativeGrading 1 (trefoilGenerator _ 0)
       (trefoilGenerator _ 2) = 1 := by
-  rw [isDomainBetween_trefoil_single_two.relativeGrading_eq () (by decide)
+  rw [isDomainBetween_trefoil_single_two.relativeGrading_eq
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))
     (by simp [periodicDomains_trefoil]), maslovIndex_trefoil_single_two]
   simp
 
@@ -360,9 +361,10 @@ theorem relativeGrading_trefoil_zero_two :
 computed from the bigon `B_w`, which contains `w`. -/
 @[simp]
 theorem relativeGrading_trefoil_one_two :
-    (trefoil fun _ : Unit => 1).relativeGrading 1 () (trefoilGenerator _ 1)
+    (trefoil fun _ : Unit => 1).relativeGrading 1 (trefoilGenerator _ 1)
       (trefoilGenerator _ 2) = -1 := by
-  rw [isDomainBetween_trefoil_single_one.relativeGrading_eq () (by decide)
+  rw [isDomainBetween_trefoil_single_one.relativeGrading_eq
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))
     (by simp [periodicDomains_trefoil]), maslovIndex_trefoil_single_one]
   norm_num
 
