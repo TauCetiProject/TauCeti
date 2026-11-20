@@ -36,7 +36,8 @@ This file defines `D_(I,J,B)` (`TauCeti.ImplicitAtlas.deformationSpace`) as a su
   representations, trivially on `ℝ^B` and on `X_J` through the restriction `Γ_B → Γ_J`. It is a
   homomorphism into the homeomorphisms of `D_(I,J,B)`.
 * **The supports** (`TauCeti.ImplicitAtlas.deformationSupport`): for `K ⊆ X`, the set
-  `Z_K ⊆ D_(I,J,B)` of the points with `e = 0` and `ψ_∅J(x) ∈ K`. It is closed when `K` is
+  `Z_K ⊆ D_(I,J,B)` of the points with `e = 0` and `ψ_∅J(x) ∈ K`. It is monotone in `K`
+  (`TauCeti.ImplicitAtlas.deformationSupport_mono`), closed when `K` is
   (`TauCeti.ImplicitAtlas.isClosed_deformationSupport`) and invariant under `Γ_B`
   (`TauCeti.ImplicitAtlas.deformationAction_mem_deformationSupport_iff`).
 * **The comparison maps** (`TauCeti.ImplicitAtlas.deformationMap`): for `I ⊆ I'`, `I ⊆ J'`,
@@ -297,6 +298,11 @@ theorem mem_deformationSupport_iff_of_eq_zero {I J B : Finset A} {hJB : J ⊆ B}
         K :=
   ⟨fun ⟨_, _, hK⟩ ↦ hK, fun hK ↦ ⟨he, _, hK⟩⟩
 
+/-- The support `Z_K` is monotone in `K`. -/
+theorem deformationSupport_mono {I J B : Finset A} {hJB : J ⊆ B} {K L : Set X} (h : K ⊆ L) :
+    𝒜.deformationSupport I hJB K ⊆ 𝒜.deformationSupport I hJB L :=
+  fun _ ⟨he, hx, hK⟩ ↦ ⟨he, hx, h hK⟩
+
 /-- The support `Z_K` of a closed set `K` is closed in `D_(I,J,B)`. It need not be compact. -/
 theorem isClosed_deformationSupport {I J B : Finset A} {hJB : J ⊆ B} {K : Set X}
     (hK : IsClosed K) : IsClosed (𝒜.deformationSupport I hJB K) := by
@@ -316,6 +322,7 @@ theorem isClosed_deformationSupport {I J B : Finset A} {hJB : J ⊆ B} {K : Set 
   exact hW.isClosedMap_subtype_val _ (hK.preimage hf)
 
 /-- The supports are invariant under `Γ_B`. -/
+@[simp]
 theorem deformationAction_mem_deformationSupport_iff {I J B : Finset A} {hJB : J ⊆ B}
     {K : Set X} (g : (α : B) → Γ α) (p : 𝒜.deformationSpace I hJB) :
     𝒜.deformationAction I hJB g p ∈ 𝒜.deformationSupport I hJB K ↔
@@ -513,6 +520,7 @@ theorem deformationMap_deformationAction (g : (α : B') → Γ α) (p : 𝒜.def
 
 /-- The comparison maps are maps of pairs: the image of `(p, e')` lies in the support `Z_K`
 exactly when `p ∈ Z_K` and `e' = 0`. -/
+@[simp]
 theorem deformationMap_mem_deformationSupport_iff {K : Set X} (p : 𝒜.deformationSpace I hJB)
     (e' : (α : ↥(B' \ B)) → E α) :
     𝒜.deformationMap hII' hIJ' hJ'J hJB hBB' p e' ∈
