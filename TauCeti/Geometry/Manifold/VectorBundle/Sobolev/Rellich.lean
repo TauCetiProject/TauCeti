@@ -144,7 +144,7 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
     ((ContinuousLinearMap.proj m).comp ((ContinuousLinearMap.proj j).comp
     (A.sectionChartData.sobolevSections μ p k).subtypeL)).comp
       (A.sectionChartData.lowerOrderL μ p k)
-  refine IsCompactOperator.of_norm_le_mul_sum T
+  refine IsCompactOperator.of_norm_le_mul_sum T.toLinearMap
     (fun i ↦ (Wkp.restrictL (hPj i j) k).comp T) (fun i ↦ ?_) (C := 1) ?_
   · convert (hrel i).clm_comp ((ContinuousLinearMap.proj m).comp
       (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
@@ -152,7 +152,8 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
     exact A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2 (hP i j)
       (hPc i j) (hPD i j) (hQi i) (hPQ i j) m
   · intro w
-    simpa only [one_mul, ContinuousLinearMap.coe_comp, Function.comp_apply] using
+    simpa only [one_mul, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_coe,
+      Function.comp_apply] using
       Wkp.norm_le_sum_norm_restrictL (fun i ↦ hPj i j) (hcov j) k (T w)
 
 /-- **Rellich's theorem for Sobolev sections**, for any loss of derivatives: the inclusion

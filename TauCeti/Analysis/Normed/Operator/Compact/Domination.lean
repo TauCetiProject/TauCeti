@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Group.Constructions
 /-!
 # Operators dominated by compact operators
 
-Let `T : X → Y` be a continuous linear map into a Banach space and `K₁, …, Kₘ` finitely many
+Let `T : X → Y` be a linear map into a Banach space and `K₁, …, Kₘ` finitely many
 compact operators out of `X`. If `‖T x‖ ≤ C (‖K₁ x‖ + ⋯ + ‖Kₘ x‖)` for every `x`, then `T` is
 compact. Indeed the image of the unit ball under `(K₁, …, Kₘ)` is totally bounded, and the
 domination transfers a finite net of it to a finite net of the image of the unit ball under `T`.
@@ -36,9 +36,9 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
   [CompleteSpace Y]
   {Z : ι → Type*} [∀ i, SeminormedAddCommGroup (Z i)] [∀ i, NormedSpace 𝕜 (Z i)]
 
-/-- **Domination by compact operators.** A continuous linear map into a Banach space whose norm is
+/-- **Domination by compact operators.** A linear map into a Banach space whose norm is
 bounded by a multiple of the sum of the norms of finitely many compact operators is compact. -/
-theorem IsCompactOperator.of_norm_le_mul_sum (T : X →L[𝕜] Y) (K : ∀ i, X →L[𝕜] Z i)
+theorem IsCompactOperator.of_norm_le_mul_sum (T : X →ₗ[𝕜] Y) (K : ∀ i, X →L[𝕜] Z i)
     (hK : ∀ i, IsCompactOperator (K i)) {C : ℝ} (h : ∀ x, ‖T x‖ ≤ C * ∑ i, ‖K i x‖) :
     IsCompactOperator T := by
   classical
@@ -50,21 +50,20 @@ theorem IsCompactOperator.of_norm_le_mul_sum (T : X →L[𝕜] Y) (K : ∀ i, X 
           mul_le_mul_of_nonneg_right (le_max_left _ _) (Finset.sum_nonneg fun i _ ↦ norm_nonneg _)
       _ ≤ C' * (Fintype.card ι * ‖P x‖) := by
           refine mul_le_mul_of_nonneg_left ?_ (le_max_right _ _)
-          calc ∑ i, ‖K i x‖ ≤ ∑ _i : ι, ‖P x‖ :=
-                Finset.sum_le_sum fun i _ ↦ norm_le_pi_norm (P x) i
-            _ = Fintype.card ι * ‖P x‖ := by simp
+          simpa only [nsmul_eq_mul, P, ContinuousLinearMap.pi_apply] using
+            Pi.sum_norm_apply_le_norm (P x)
       _ = C' * Fintype.card ι * ‖P x‖ := by ring
   refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
     (T₀ := P.toLinearMap) (IsCompactOperator.pi hK) (ContinuousLinearMap.id 𝕜 X)
-    (T := T.toLinearMap) (C := C' * Fintype.card ι) (θ := 0) (by norm_num) (by norm_num)
+    (T := T) (C := C' * Fintype.card ι) (θ := 0) (by norm_num) (by norm_num)
     fun x ↦ ?_
   simpa only [sub_zero, Real.rpow_one, Real.rpow_zero, mul_one, ContinuousLinearMap.coe_coe]
     using hdom x
 
-/-- **Domination by compact operators, extended-norm form.** A continuous linear map into a Banach
+/-- **Domination by compact operators, extended-norm form.** A linear map into a Banach
 space whose extended norm is bounded by a finite multiple of the sum of the extended norms of
 finitely many compact operators is compact. -/
-theorem IsCompactOperator.of_enorm_le_mul_sum (T : X →L[𝕜] Y) (K : ∀ i, X →L[𝕜] Z i)
+theorem IsCompactOperator.of_enorm_le_mul_sum (T : X →ₗ[𝕜] Y) (K : ∀ i, X →L[𝕜] Z i)
     (hK : ∀ i, IsCompactOperator (K i)) {C : ENNReal} (hC : C ≠ ⊤)
     (h : ∀ x, ‖T x‖ₑ ≤ C * ∑ i, ‖K i x‖ₑ) : IsCompactOperator T := by
   refine IsCompactOperator.of_norm_le_mul_sum T K hK (C := C.toReal) fun x ↦ ?_
