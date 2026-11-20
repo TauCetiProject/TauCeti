@@ -15,6 +15,7 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 A function `g` on `AddCircle p` gives the function `t ↦ g t` on `𝕜` by composing with the quotient
 map `𝕜 → AddCircle p`. This file records that this function is `p`-periodic, and continuous when
 `g` is, and that continuous maps on `AddCircle p` agreeing at every element of `𝕜` are equal.
+Conversely, continuous periodic functions on `𝕜` descend to `AddCircle p`.
 
 ## Main results
 
@@ -45,3 +46,19 @@ theorem continuousMap_ext_coe {g g' : C(AddCircle p, Y)} (h : ∀ t : 𝕜, g t 
   ContinuousMap.ext <| QuotientAddGroup.mk_surjective.forall.2 h
 
 end TauCeti.AddCircle
+
+namespace Function.Periodic
+
+variable {A X : Type*} [AddCommGroup A] [TopologicalSpace A] [TopologicalSpace X]
+  {p : A} {f : A → X}
+
+/-- A continuous periodic function factors through the additive circle of its period. -/
+def liftContinuousMap (hp : Periodic f p) (hf : Continuous f) : C(AddCircle p, X) :=
+  ⟨hp.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.mpr
+    (by simpa only [Function.comp_def, hp.lift_coe] using hf)⟩
+
+/-- The descended map takes the value of the periodic function on each representative. -/
+@[simp] theorem liftContinuousMap_coe (hp : Periodic f p) (hf : Continuous f) (t : A) :
+    hp.liftContinuousMap hf (t : AddCircle p) = f t := hp.lift_coe t
+
+end Function.Periodic
