@@ -65,7 +65,9 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
 * `TauCeti.SmoothAlmostComplexStructure.fderiv_extChartAt_comp_apply_eq_inChart`,
   `TauCeti.SmoothAlmostComplexStructure.fderiv_comp_extChartAt_symm_inChart_apply`: relations
   between derivatives of maps into and out of `M` involving `J` read in the chart.
-* `TauCeti.SmoothAlmostComplexStructure.inChart_inChart`: it squares to `-1` on the chart target.
+* `TauCeti.SmoothAlmostComplexStructure.inChart_inChart`,
+  `TauCeti.SmoothAlmostComplexStructure.inChart_comp_inChart`: it squares to `-1` on the chart
+  target, pointwise and as a composite of continuous linear maps.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_self`: it is `J x` at the chart point.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_modelWithCornersSelf`: on a model space it is the
   structure's own endomorphism field.
@@ -116,6 +118,12 @@ theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (v : E) :
     J.inChart x z (J.inChart x z v) = -v :=
   almostComplexCoordinates_apply_apply _ J
     (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hz) v
+
+/-- On the actual chart target the model endomorphism composed with itself is minus the
+identity. -/
+theorem inChart_comp_inChart {z : E} (hz : z ∈ (extChartAt I x).target) :
+    J.inChart x z ∘L J.inChart x z = -ContinuousLinearMap.id ℝ E :=
+  ContinuousLinearMap.ext (J.inChart_inChart x hz)
 
 /-- At the chart center the model field agrees with the original fibre endomorphism. -/
 theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorphism x := by
@@ -612,6 +620,11 @@ theorem fderiv_comp_extChartAt_symm_inChart_apply {F : Type*} [NormedAddCommGrou
 theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
     J.inChart x z (J.inChart x z w) = -w := by
   simpa only [toContMDiff_inChart] using (J.toContMDiff ⊤).inChart_inChart x hz w
+
+/-- In the chart, the almost complex structure composed with itself is minus the identity. -/
+theorem inChart_comp_inChart {z : E} (hz : z ∈ (extChartAt I x).target) :
+    J.inChart x z ∘L J.inChart x z = -ContinuousLinearMap.id ℝ E :=
+  ContinuousLinearMap.ext (J.inChart_inChart x hz)
 
 /-- At the chart point, the almost complex structure read in the chart is `J x`. -/
 theorem inChart_extChartAt_self : J.inChart x (extChartAt I x x) = J.toEndomorphism x := by

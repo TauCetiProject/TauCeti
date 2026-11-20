@@ -113,6 +113,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative after an inverse chart, including derivatives within the model range.
 * `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
   manifolds read in arbitrary preferred charts of the source and the target.
+* `TauCeti.tangentCoordChange_tangentCoordChange`: changing tangent coordinates to another chart
+  and back is the identity.
+* `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff`: such a coordinate
+  expression has vanishing derivative exactly when the map has vanishing manifold derivative.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
   arbitrary preferred charts, is `C^n` at interior points of the source chart target.
 * `TauCeti.contDiffAt_ext_coord_change`: on a boundaryless manifold, a change of extended charts
@@ -953,6 +957,39 @@ theorem _root_.ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm {f : M 
       fderivWithin_zero_of_not_differentiableWithinAt hd]
     ext _
     exact (map_zero (tangentCoordChange I' (f x) α (f x))).symm
+
+/-- Changing tangent coordinates from the chart at `x` to the chart at `y` and back is the
+identity at every point of both chart sources. -/
+theorem tangentCoordChange_tangentCoordChange {x y z : M} (hx : z ∈ (extChartAt I x).source)
+    (hy : z ∈ (extChartAt I y).source) (v : E) :
+    tangentCoordChange I y x z (tangentCoordChange I x y z v) = v := by
+  rw [tangentCoordChange_comp ⟨⟨hx, hy⟩, hx⟩, tangentCoordChange_self hx]
+
+/-- The coordinate expression of a map between manifolds in arbitrary preferred charts at `β` and
+`α` has vanishing derivative within the model range at the chart image of `x` exactly when the
+map has vanishing manifold derivative at `x`: the tangent coordinate changes are invertible. -/
+theorem _root_.ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm_eq_zero_iff
+    {f : M → N} {x : M} (hc : ContinuousAt f x) {β : M} {α : N}
+    (hx : x ∈ (extChartAt I β).source) (hfx : f x ∈ (extChartAt I' α).source) :
+    fderivWithin 𝕜 (extChartAt I' α ∘ f ∘ (extChartAt I β).symm) (range I) (extChartAt I β x) = 0 ↔
+      mfderiv I I' f x = 0 := by
+  rw [hc.fderivWithin_extChartAt_comp_extChartAt_symm hx hfx]
+  refine ⟨fun h0 ↦ ContinuousLinearMap.ext fun (v : E) ↦ ?_,
+    fun h0 ↦ ContinuousLinearMap.ext fun w ↦ ?_⟩
+  · -- Evaluate at the preimage of `v` under the source coordinate change; the tangent spaces are
+    -- the model spaces by definition, so the composite applies pointwise.
+    have hv : tangentCoordChange I' (f x) α (f x) (mfderiv I I' f x
+        (tangentCoordChange I β x x (tangentCoordChange I x β x v))) = 0 :=
+      congr($h0 (tangentCoordChange I x β x v))
+    rw [tangentCoordChange_tangentCoordChange (mem_extChartAt_source x) hx] at hv
+    -- Undo the target coordinate change.
+    have hm := tangentCoordChange_tangentCoordChange (mem_extChartAt_source (f x)) hfx
+      (mfderiv I I' f x v)
+    rw [hv, map_zero] at hm
+    exact hm.symm
+  · -- With `df = 0` the composite sends `w` to the image of `0` under the target coordinate change.
+    rw [h0]
+    exact map_zero (tangentCoordChange I' (f x) α (f x))
 
 end ManifoldCharts
 
