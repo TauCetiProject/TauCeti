@@ -11,6 +11,7 @@ public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import TauCeti.CategoryTheory.EqToHom
+import TauCeti.CategoryTheory.EpiMono
 import TauCeti.Topology.UnitInterval.Contractible
 
 /-!
@@ -370,9 +371,9 @@ theorem homotopyEquivalences_twistedChainComplexMap (e : X ≃ₕ Y)
   let f := TopCat.ofHom e.toFun
   let g := TopCat.ofHom e.invFun
   let Q := quotient (ModuleCat.{max v w} R) (ComplexShape.down ℕ)
-  -- In the homotopy category, `g ≃ 𝟙` after `f` makes the map of `g` on chains with coefficients
-  -- in `f⁎L` a monomorphism, and `f ≃ 𝟙` after `g` makes it a split epimorphism. So it is an
-  -- isomorphism, and then so is the map of `f`.
+  -- In the homotopy category, `f ≫ g ≃ 𝟙` and `g ≫ f ≃ 𝟙` make the composites of the map of `g`
+  -- on chains with coefficients in `f⁎L` with the maps of `f` on either side isomorphisms. So it
+  -- is an isomorphism, and then so is the map of `f`.
   have h₁ := TopCat.Homotopy.isIso_quotient_map_twistedChainComplexMap_comp (a := g) (b := f)
     e.right_inv.some L
   have h₂ := TopCat.Homotopy.isIso_quotient_map_twistedChainComplexMap_comp (a := f) (b := g)
@@ -381,16 +382,11 @@ theorem homotopyEquivalences_twistedChainComplexMap (e : X ≃ₕ Y)
   set φ := Q.map (twistedChainComplexMap g ((pullback f.hom).obj L))
   set ψ := Q.map (twistedChainComplexMap f L)
   set c₁ := Q.map (twistedChainComplexCoefficientMap ((pullbackCompIso g.hom f.hom).hom.app L))
-  set c₂ := Q.map (twistedChainComplexCoefficientMap
-    ((pullbackCompIso f.hom g.hom).hom.app ((pullback f.hom).obj L)))
-  set u := Q.map (twistedChainComplexMap f ((pullback g.hom).obj ((pullback f.hom).obj L)))
-  rw [← Category.assoc] at h₁
-  have : Mono φ := (mono_comp_iff_of_isIso c₁ φ).1 (mono_of_mono _ ψ)
-  have : IsSplitEpi φ := IsSplitEpi.mk' ⟨inv (c₂ ≫ u ≫ φ) ≫ c₂ ≫ u, by
-    rw [Category.assoc, Category.assoc, IsIso.inv_hom_id]⟩
-  have := isIso_of_mono_of_isSplitEpi φ
+  rw [← Category.assoc] at h₂
+  have h₃ : IsIso (φ ≫ ψ) := IsIso.of_isIso_comp_left c₁ _
+  have := IsIso.of_isIso_comp_of_isIso_comp h₂ h₃
   rw [← HomologicalComplex.isIso_quotient_map_iff_homotopyEquivalences]
-  exact IsIso.of_isIso_comp_left (c₁ ≫ φ) ψ
+  exact IsIso.of_isIso_comp_left φ ψ
 
 /-- **A homotopy equivalence induces a quasi-isomorphism of singular chains with local
 coefficients.** -/
