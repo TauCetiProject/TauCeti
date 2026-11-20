@@ -57,13 +57,13 @@ of supported triples whose underlying unordered triple has color `c`. It is `0` 
 support. -/
 def relDensityOn (H : Colored3Graph κ V) (c : κ)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) : ℚ :=
-  #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} / #supp
+  #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} / #supp
 
 /-- The relative density counts supported triples whose underlying triple has color `c`. -/
 theorem relDensityOn_def (H : Colored3Graph κ V) (c : κ)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
     H.relDensityOn c supp =
-      #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} / #supp :=
+      #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} / #supp :=
   (rfl)
 
 /-- Multiplying a relative density by the support size recovers the color count, including
@@ -71,7 +71,7 @@ when the support is empty. -/
 theorem relDensityOn_mul_card (H : Colored3Graph κ V) (c : κ)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
     H.relDensityOn c supp * #supp =
-      (#{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} : ℚ) := by
+      (#{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} : ℚ) := by
   obtain rfl | hs := supp.eq_empty_or_nonempty
   · simp
   · rw [relDensityOn_def, div_mul_cancel₀ _ (by exact_mod_cast hs.card_pos.ne')]
@@ -88,8 +88,8 @@ theorem abs_relDensityOn_sub_mul_card_le_card_editedOn (H H' : Colored3Graph κ 
   simp only [← sum_boole]
   rw [← sum_sub_distrib]
   refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun x _ ↦ ?_)
-  by_cases h : H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) =
-      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
+  by_cases h : H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) =
+      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩)
   · simp [h]
   · split_ifs <;> simp
 
@@ -143,9 +143,9 @@ theorem abs_relDensityOn_sub_mul_card_le_card_sdiff (H : Colored3Graph κ V) (c 
   have hcard : (#(B \ A) : ℚ) + #A = #B := by exact_mod_cast card_sdiff_add_card_eq_card hAB
   -- The colored triples of `B` are those of `A` together with at most the removed ones.
   have hlow := card_le_card (filter_subset_filter
-    (fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c) hAB)
-  have hsub : {x ∈ B | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} ⊆
-      {x ∈ A | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} ∪ (B \ A) := by
+    (fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c) hAB)
+  have hsub : {x ∈ B | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} ⊆
+      {x ∈ A | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c} ∪ (B \ A) := by
     intro x hx
     obtain ⟨hxB, hx⟩ := mem_filter.1 hx
     by_cases hxA : x ∈ A

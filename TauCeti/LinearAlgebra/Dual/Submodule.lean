@@ -37,8 +37,8 @@ into `Set.range (algebraMap R K)`. Consequently, when `K` is the fraction field 
   finite-dimensional `K`-space `V` sending `M` into `Set.range (algebraMap R K)` separate nonzero
   elements of `M`, then `M` embeds `R`-linearly into `Fin d → R` with `d ≤ Module.finrank K V`
   (without assuming `R` is Noetherian).
-* `Submodule.fg_of_forall_exists_dual_ne_zero`: over a Noetherian ring `R`, the same separation
-  hypothesis implies `M.FG`.
+* `Submodule.fg_of_forall_exists_dual_mem_range_ne_zero`: over a Noetherian ring `R`, the same
+  separation hypothesis implies `M.FG`.
 * `Submodule.exists_dual_apply_eq_algebraMap`: if `K` is a localization of `R`, every `R`-linear
   functional `M →ₗ[R] R` extends to a `K`-linear functional `V →ₗ[K] K`.
 * `Submodule.FG.exists_dual_ne_zero`: for a finitely generated `R`-submodule `M`, every nonzero
@@ -75,7 +75,7 @@ theorem exists_injective_linearMap_fin_of_forall_exists_dual_ne_zero [FiniteDime
   obtain ⟨f, hf_mem, hf_span, _⟩ := exists_fun_fin_finrank_span_eq K S
   let ψ (i : Fin (Module.finrank K (span K S))) : M →ₗ[R] R :=
     LinearMap.restrictScalarsRange M.subtype (Algebra.linearMap R K)
-      (FaithfulSMul.algebraMap_injective R K) (f i) fun y ↦ hf_mem i y.1 y.2
+      (FaithfulSMul.algebraMap_injective R K) (f i) fun y ↦ hf_mem i y.val y.property
   refine ⟨Module.finrank K (span K S), LinearMap.pi ψ, ?_, ?_⟩
   · calc Module.finrank K (span K S)
         ≤ Module.finrank K (Module.Dual K V) := Submodule.finrank_le _
@@ -83,12 +83,12 @@ theorem exists_injective_linearMap_fin_of_forall_exists_dual_ne_zero [FiniteDime
   · rw [injective_iff_map_eq_zero]
     intro x hx
     by_contra hx0
-    obtain ⟨φ, hφM, hφx⟩ := h x.1 x.2 (Subtype.coe_ne_coe.mpr hx0)
-    have hker : span K S ≤ LinearMap.ker (Module.Dual.eval K V x.1) := by
+    obtain ⟨φ, hφM, hφx⟩ := h x.val x.property (Subtype.coe_ne_coe.mpr hx0)
+    have hker : span K S ≤ LinearMap.ker (Module.Dual.eval K V x.val) := by
       rw [← hf_span, span_le]
       rintro _ ⟨i, rfl⟩
       exact (LinearMap.restrictScalarsRange_apply_eq_zero_iff M.subtype (Algebra.linearMap R K)
-        (FaithfulSMul.algebraMap_injective R K) (f i) (fun y ↦ hf_mem i y.1 y.2) x).mp
+        (FaithfulSMul.algebraMap_injective R K) (f i) (fun y ↦ hf_mem i y.val y.property) x).mp
         (congrFun hx i)
     exact hφx (hker (subset_span hφM))
 
@@ -96,7 +96,7 @@ theorem exists_injective_linearMap_fin_of_forall_exists_dual_ne_zero [FiniteDime
 finitely generated whenever `K`-linear functionals carrying `M` into `Set.range (algebraMap R K)`
 separate the nonzero elements of `M`
 (Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §4.1, Lemma 3). -/
-theorem fg_of_forall_exists_dual_ne_zero [IsNoetherianRing R] [FiniteDimensional K V]
+theorem fg_of_forall_exists_dual_mem_range_ne_zero [IsNoetherianRing R] [FiniteDimensional K V]
     (M : Submodule R V)
     (h : ∀ x ∈ M, x ≠ 0 → ∃ φ : Module.Dual K V,
       (∀ y ∈ M, φ y ∈ Set.range (algebraMap R K)) ∧ φ x ≠ 0) :
@@ -116,7 +116,7 @@ variable {R V : Type*} [CommRing R] (K : Type*) [Field K] [Algebra R K]
 (Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §4.1, Proposition 4, `(ii) ⇒ (iii)`). -/
 theorem exists_dual_apply_eq_algebraMap (S : Submonoid R) [IsLocalization S K]
     (M : Submodule R V) (f : Module.Dual R M) :
-    ∃ φ : Module.Dual K V, ∀ y : M, φ y.1 = algebraMap R K (f y) := by
+    ∃ φ : Module.Dual K V, ∀ y : M, φ y.val = algebraMap R K (f y) := by
   have : IsLocalizedModule S (LinearMap.id : V →ₗ[R] V) := isLocalizedModule_id S V K
   let g : M.localized' K S (LinearMap.id : V →ₗ[R] V) →ₗ[K] K :=
     (IsLocalizedModule.map S (M.toLocalized' K S (LinearMap.id : V →ₗ[R] V))
@@ -166,7 +166,7 @@ theorem fg_iff_forall_exists_dual_ne_zero [IsNoetherianRing R] [FiniteDimensiona
     M.FG ↔ ∀ x ∈ M, x ≠ 0 → ∃ φ : Module.Dual K V,
       (∀ y ∈ M, φ y ∈ Set.range (algebraMap R K)) ∧ φ x ≠ 0 :=
   ⟨fun hM _ _ hx ↦ hM.exists_dual_ne_zero K (nonZeroDivisors R) hx,
-    M.fg_of_forall_exists_dual_ne_zero⟩
+    M.fg_of_forall_exists_dual_mem_range_ne_zero⟩
 
 /-- Over a Noetherian ring `R` with fraction field `K`, an `R`-submodule `M` of a
 finite-dimensional `K`-vector space `V` is finitely generated if and only if `Module.Dual R M`
@@ -178,13 +178,13 @@ theorem fg_iff_forall_exists_dual_submodule_ne_zero [IsNoetherianRing R] [Finite
   rw [M.fg_iff_forall_exists_dual_ne_zero K]
   constructor
   · intro h x hx
-    obtain ⟨φ, hφM, hφx⟩ := h x.1 x.2 (Subtype.coe_ne_coe.mpr hx)
+    obtain ⟨φ, hφM, hφx⟩ := h x.val x.property (Subtype.coe_ne_coe.mpr hx)
     let f : Module.Dual R M :=
       LinearMap.restrictScalarsRange M.subtype (Algebra.linearMap R K)
-        (IsFractionRing.injective R K) φ fun y ↦ hφM y.1 y.2
+        (IsFractionRing.injective R K) φ fun y ↦ hφM y.val y.property
     refine ⟨f, fun hf0 ↦ hφx <| (LinearMap.restrictScalarsRange_apply_eq_zero_iff M.subtype
       (Algebra.linearMap R K) (IsFractionRing.injective R K) φ
-      (fun y ↦ hφM y.1 y.2) x).mp hf0⟩
+      (fun y ↦ hφM y.val y.property) x).mp hf0⟩
   · intro h x hxM hx0
     obtain ⟨f, hf⟩ := h ⟨x, hxM⟩ (Subtype.coe_ne_coe.mp hx0)
     obtain ⟨φ, hφ⟩ := M.exists_dual_apply_eq_algebraMap K (nonZeroDivisors R) f

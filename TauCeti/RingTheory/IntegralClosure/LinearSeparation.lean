@@ -64,7 +64,7 @@ theorem IsIntegralClosure.finite_of_forall_exists_dual_ne_zero [IsNoetherianRing
     Module.Finite.iff_fg.symm.trans <| Module.Finite.equiv_iff <|
       (integralClosure R L).toSubmoduleEquiv.trans
         (IsIntegralClosure.equiv R (integralClosure R L) L C).toLinearEquiv
-  exact heq.mp <| (integralClosure R L).toSubmodule.fg_of_forall_exists_dual_ne_zero h
+  exact heq.mp <| (integralClosure R L).toSubmodule.fg_of_forall_exists_dual_mem_range_ne_zero h
 
 /-- Over a Noetherian ring `R` with fraction field `K`, an integral closure `C` of `R` in `L` is a
 finite `R`-module if and only if `K`-linear forms on `L` carrying integral elements into

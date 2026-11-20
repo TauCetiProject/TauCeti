@@ -88,7 +88,7 @@ theorem hom_map_mkOfObjOfMapSucc (obj : Fin (n + 1) → ActionCategory G X)
     ((ComposableArrows.mkOfObjOfMapSucc obj mapSucc).map (homOfLE k.castSucc_le_succ)).hom =
       ((mapSucc k).hom : G) :=
   congrArg (fun f ↦ Functor.Elements.Hom.hom f)
-    (ComposableArrows.mkOfObjOfMapSucc_map_succ obj mapSucc k.1 k.2)
+    (ComposableArrows.mkOfObjOfMapSucc_map_succ obj mapSucc k.val k.isLt)
 
 end CategoryTheory.ComposableArrows
 

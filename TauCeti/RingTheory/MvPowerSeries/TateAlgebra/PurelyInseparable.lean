@@ -8,42 +8,40 @@ module
 public import TauCeti.Analysis.Normed.Field.FrobeniusRoot
 public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 public import TauCeti.FieldTheory.PurelyInseparable.Exponent
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FractionField
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FrobeniusRoot
 
-import Mathlib.Algebra.CharP.Reduced
 import Mathlib.Data.Finsupp.Encodable
 import Mathlib.RingTheory.Localization.Integer
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Normed.Module.Bases.CountableType
 import TauCeti.FieldTheory.PurelyInseparable.Embedding
 import TauCeti.LinearAlgebra.Basis.Basic
+import TauCeti.RingTheory.MvPowerSeries.Convolution
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Expand
 
 /-!
 # Purely inseparable extensions of Tate fraction fields via Frobenius roots
 
 Let `K` be an ultrametric normed field of exponential characteristic `p`, `σ` a variable type, and
 `c : σ → ℝ` a positive polyradius. Given `e : ℕ`, let `q := p ^ e`, `K' := FrobeniusRoot K p e`,
-and `r : σ → ℝ` a positive polyradius satisfying `r i ^ q = c i`. Building on the general
-base-changed expansion and coefficient-submodule separation infrastructure in
-`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Expand`, this file constructs the Frobenius-root and
-purely inseparable extension machinery for analyzing finite purely inseparable extensions `M` of
-`F := GaussFractionField σ K c` of exponent at most `e`:
+and `r : σ → ℝ` a positive polyradius satisfying `r i ^ q = c i`. Building on the Frobenius-root
+embedding in `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FrobeniusRoot` and the `q`-adic
+component-dual projections in `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Expand`, this
+file proves:
 
-1. `TauCeti.MvPowerSeries.restrictedFrobeniusRoot`: applying `FrobeniusRoot.root K p e`
-   coefficientwise gives a ring homomorphism `K{X / c} →+* K'{X / r}` extracting explicit `q`-th
-   roots with respect to `TauCeti.MvPowerSeries.restrictedExpandAlgebraMap`.
-2. `TauCeti.MvPowerSeries.exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable`: embeds `M`
-   into `GaussFractionField σ K' r` compatibly with `restrictedExpandAlgebraMap`, satisfying
+1. `TauCeti.MvPowerSeries.exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable`: embeds a
+   finite purely inseparable extension `M` of `F := GaussFractionField σ K c` of exponent at most
+   `e` into `GaussFractionField σ K' r` compatibly with `frobeniusRootRestrictedHom`, satisfying
    `‖ι y‖ = spectralNorm F M y` and sending an `F`-basis of `M` into `K'{X / r}`.
-3. `TauCeti.MvPowerSeries.exists_dual_norm_le_spectralNorm_of_isPurelyInseparable`: when `K` is
-   complete and `σ` is countable, every nonzero `x₀ : M` is separated from `0` by an `F`-linear
-   functional `φ : Module.Dual F M` that is bounded by `spectralNorm F M` and sends every element
-   of `M` whose `p ^ e`-th power lies in `K{X / c}` into `Set.range (algebraMap T F)`.
+2. `TauCeti.MvPowerSeries.exists_dual_norm_le_spectralNorm_of_isPurelyInseparable`: when `K` is
+   complete (trivially or nontrivially normed) and `σ` is countable, every nonzero `x₀ : M` is
+   separated from `0` by an `F`-linear functional `φ : Module.Dual F M` that is bounded by
+   `spectralNorm F M` and sends every element of `M` whose `p ^ e`-th power lies in `K{X / c}` into
+   `Set.range (algebraMap T F)`.
 
-These constructions feed both characteristic-free weak stability of `GaussFractionField`
-(Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §5.3.1, Theorem 1) and the Japanese property of
-integrally closed restricted-series rings (Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*,
-§5.3.2, Theorem 1).
+These results feed characteristic-free weak stability of `GaussFractionField`
+(Bosch–Güntzer–Remmert, *Non-Archimedean Analysis*, §5.3.1, Theorem 1) for both trivially and
+nontrivially normed complete fields `K`.
 
 ## References
 
@@ -54,141 +52,15 @@ public section
 
 namespace TauCeti.MvPowerSeries
 
-open _root_.MvPowerSeries Filter
-open scoped Topology IntermediateField
+open _root_.MvPowerSeries
 
-section FrobeniusRoot
+section SpectralEmbedding
 
 variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
 
-omit [IsUltrametricDist K] in
-private theorem rpow_inv_eq_of_pow_eq {p e : ℕ} [ExpChar K p] {c r : σ → ℝ}
-    [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i) (i : σ) :
-    c i ^ (((p ^ e : ℕ) : ℝ)⁻¹) = r i := by
-  have hq : ((p ^ e : ℕ) : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (pow_pos (expChar_pos K p) e).ne'
-  rw [← hr i, ← Real.rpow_natCast, ← Real.rpow_mul (Fact.out : 0 < r i).le,
-    mul_inv_cancel₀ hq, Real.rpow_one]
-
-private theorem norm_coeff_frobeniusRoot_mul_prod {p e : ℕ} [ExpChar K p] {c r : σ → ℝ}
-    [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i)
-    (f : IsRestricted.subring (R := K) c) (μ : σ →₀ ℕ) :
-    ‖coeff μ (MvPowerSeries.map (FrobeniusRoot.root K p e) (f : _root_.MvPowerSeries σ K))‖ *
-        μ.prod (r · ^ ·) =
-      (‖coeff μ (f : _root_.MvPowerSeries σ K)‖ * μ.prod (c · ^ ·)) ^ (((p ^ e : ℕ) : ℝ)⁻¹) := by
-  have hc_pos (i : σ) : 0 < c i := hr i ▸ pow_pos (Fact.out : 0 < r i) _
-  have hprod_nonneg : 0 ≤ μ.prod (c · ^ ·) :=
-    Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc_pos i).le _
-  rw [Real.mul_rpow (norm_nonneg _) hprod_nonneg, coeff_map, FrobeniusRoot.norm_root,
-    μ.prod_pow_rpow fun i _ ↦ (hc_pos i).le]
-  congr 1
-  exact Finset.prod_congr rfl fun i _ ↦ by
-    dsimp only
-    rw [rpow_inv_eq_of_pow_eq (K := K) hr i]
-
-/-- Applying `FrobeniusRoot.root K p e` coefficientwise gives a ring homomorphism
-`K{X / c} →+* (FrobeniusRoot K p e){X / r}` whenever `r i ^ p ^ e = c i`. -/
-noncomputable def restrictedFrobeniusRoot (p : ℕ) [ExpChar K p] (e : ℕ)
-    {c r : σ → ℝ} [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i) :
-    IsRestricted.subring (R := K) c →+* IsRestricted.subring (R := FrobeniusRoot K p e) r :=
-  ((MvPowerSeries.map (FrobeniusRoot.root K p e)).comp
-    (IsRestricted.subring (R := K) c).subtype).codRestrict _ fun f ↦ by
-    have hq_inv : 0 < (((p ^ e : ℕ) : ℝ)⁻¹) :=
-      inv_pos.mpr (Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e))
-    have hlim :=
-      ((Real.continuousAt_rpow_const 0 (((p ^ e : ℕ) : ℝ)⁻¹) (Or.inr hq_inv.le)).tendsto.comp f.2)
-    rw [Real.zero_rpow hq_inv.ne'] at hlim
-    refine hlim.congr fun μ ↦ ?_
-    exact (norm_coeff_frobeniusRoot_mul_prod hr f μ).symm
-
-/-- The underlying formal power series of `restrictedFrobeniusRoot` is
-`MvPowerSeries.map (FrobeniusRoot.root K p e)`. -/
-theorem coe_restrictedFrobeniusRoot (p : ℕ) [ExpChar K p] (e : ℕ)
-    {c r : σ → ℝ} [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i)
-    (f : IsRestricted.subring (R := K) c) :
-    (restrictedFrobeniusRoot p e hr f : _root_.MvPowerSeries σ (FrobeniusRoot K p e)) =
-      MvPowerSeries.map (FrobeniusRoot.root K p e) (f : _root_.MvPowerSeries σ K) :=
-  (rfl)
-
-/-- `restrictedFrobeniusRoot` acts coefficientwise by `FrobeniusRoot.root K p e`. -/
-@[simp]
-theorem coeff_restrictedFrobeniusRoot (p : ℕ) [ExpChar K p] (e : ℕ)
-    {c r : σ → ℝ} [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i)
-    (f : IsRestricted.subring (R := K) c) (μ : σ →₀ ℕ) :
-    coeff μ (restrictedFrobeniusRoot p e hr f : _root_.MvPowerSeries σ (FrobeniusRoot K p e)) =
-      FrobeniusRoot.root K p e (coeff μ (f : _root_.MvPowerSeries σ K)) := by
-  rw [coe_restrictedFrobeniusRoot, coeff_map]
-
-/-- `restrictedFrobeniusRoot` sends scalar constants to their `p ^ e`-th roots in
-`FrobeniusRoot K p e`. -/
-@[simp]
-theorem restrictedFrobeniusRoot_algebraMap (p : ℕ) [ExpChar K p] (e : ℕ)
-    {c r : σ → ℝ} [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i) (a : K) :
-    restrictedFrobeniusRoot p e hr (algebraMap K (IsRestricted.subring (R := K) c) a) =
-      algebraMap (FrobeniusRoot K p e) (IsRestricted.subring (R := FrobeniusRoot K p e) r)
-        (FrobeniusRoot.root K p e a) := by
-  apply Subtype.ext
-  simp [coe_restrictedFrobeniusRoot, coe_algebraMap_isRestrictedSubring]
-
-/-- `restrictedFrobeniusRoot` fixes each coordinate indeterminate `X i`. -/
-@[simp]
-theorem restrictedFrobeniusRoot_X (p : ℕ) [ExpChar K p] (e : ℕ)
-    {c r : σ → ℝ} [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i) (i : σ) :
-    restrictedFrobeniusRoot p e hr
-        (⟨X i, isRestricted_X c i⟩ : IsRestricted.subring (R := K) c) =
-      ⟨X i, isRestricted_X r i⟩ := by
-  apply Subtype.ext
-  simp [coe_restrictedFrobeniusRoot]
-
-/-- `restrictedFrobeniusRoot` is injective. -/
-theorem restrictedFrobeniusRoot_injective (p : ℕ) [ExpChar K p] (e : ℕ)
-    {c r : σ → ℝ} [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i) :
-    Function.Injective (restrictedFrobeniusRoot (σ := σ) (K := K) p e hr) := by
-  intro f g h
-  apply Subtype.ext
-  ext μ
-  have hμ := congrArg (fun u : IsRestricted.subring (R := FrobeniusRoot K p e) r ↦
-    coeff μ (u : _root_.MvPowerSeries σ (FrobeniusRoot K p e))) h
-  simp only [coeff_restrictedFrobeniusRoot] at hμ
-  exact FrobeniusRoot.root_injective hμ
-
-/-- `restrictedFrobeniusRoot` raises Gauss norms to the `(p ^ e)⁻¹`-th power. -/
-@[simp]
-theorem norm_restrictedFrobeniusRoot (p : ℕ) [ExpChar K p] (e : ℕ)
-    {c r : σ → ℝ} [∀ i, Fact (0 < c i)] [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i)
-    (f : IsRestricted.subring (R := K) c) :
-    ‖restrictedFrobeniusRoot p e hr f‖ = ‖f‖ ^ (((p ^ e : ℕ) : ℝ)⁻¹) := by
-  have hq_pos : (0 : ℝ) < ((p ^ e : ℕ) : ℝ) := Nat.cast_pos.mpr (pow_pos (expChar_pos K p) e)
-  have hq_inv : 0 < (((p ^ e : ℕ) : ℝ)⁻¹) := inv_pos.mpr hq_pos
-  refine le_antisymm (norm_le_iff.2 fun μ ↦ ?_) ?_
-  · rw [coe_restrictedFrobeniusRoot, norm_coeff_frobeniusRoot_mul_prod hr f μ]
-    exact Real.rpow_le_rpow (mul_nonneg (norm_nonneg _) (prod_pow_pos μ).le)
-      (norm_coeff_mul_prod_le f μ) hq_inv.le
-  · rw [Real.rpow_inv_le_iff_of_pos (norm_nonneg _) (norm_nonneg _) hq_pos, norm_le_iff]
-    intro μ
-    rw [← Real.rpow_inv_le_iff_of_pos (mul_nonneg (norm_nonneg _) (prod_pow_pos μ).le)
-      (norm_nonneg _) hq_pos, ← norm_coeff_frobeniusRoot_mul_prod hr f μ,
-      ← coe_restrictedFrobeniusRoot p e hr f]
-    exact norm_coeff_mul_prod_le (restrictedFrobeniusRoot p e hr f) μ
-
-/-- Raising `restrictedFrobeniusRoot p e hr f` to the `p ^ e`-th power equals the
-Frobenius-expanded image of `f` under `restrictedExpandAlgebraMap`. -/
-theorem restrictedFrobeniusRoot_pow {p : ℕ} [ExpChar K p] {e : ℕ}
-    {c r : σ → ℝ} [∀ i, Fact (0 < r i)] (hr : ∀ i, r i ^ p ^ e = c i)
-    (f : IsRestricted.subring (R := K) c) :
-    restrictedFrobeniusRoot p e hr f ^ p ^ e =
-      restrictedExpandAlgebraMap (K' := FrobeniusRoot K p e) (p ^ e)
-        (pow_pos (expChar_pos K p) e).ne' hr f := by
-  have hp : p ≠ 0 := (expChar_pos K p).ne'
-  have hhom : (iterateFrobenius (FrobeniusRoot K p e) p e).comp (FrobeniusRoot.root K p e) =
-      algebraMap K (FrobeniusRoot K p e) := RingHom.ext FrobeniusRoot.root_pow_expChar_pow
-  apply Subtype.ext
-  rw [SubmonoidClass.coe_pow, coe_restrictedFrobeniusRoot, coe_restrictedExpandAlgebraMap,
-    ← MvPowerSeries.map_iterateFrobenius_expand p hp _ e, ← MvPowerSeries.map_expand,
-    MvPowerSeries.map_map, hhom, MvPowerSeries.map_expand]
-
 /-- Embeds a finite purely inseparable extension `M` of `GaussFractionField σ K c` of exponent at
 most `e` in exponential characteristic `p` into `GaussFractionField σ (FrobeniusRoot K p e) r`
-(for positive `r` with `r i ^ p ^ e = c i`) compatibly with `restrictedExpandAlgebraMap`, with
+(for positive `r` with `r i ^ p ^ e = c i`) compatibly with `frobeniusRootRestrictedHom`, with
 `‖ι y‖ = spectralNorm F M y` and sending an `F`-basis of `M` into restricted series over
 `FrobeniusRoot K p e`. -/
 theorem exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable
@@ -206,8 +78,7 @@ theorem exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable
           (algebraMap (IsRestricted.subring (R := K) c) (GaussFractionField σ K c) f)) =
         algebraMap (IsRestricted.subring (R := FrobeniusRoot K p e) r)
           (GaussFractionField σ (FrobeniusRoot K p e) r)
-          (restrictedExpandAlgebraMap (K' := FrobeniusRoot K p e) (p ^ e)
-            (pow_pos (expChar_pos K p) e).ne' hr f)) ∧
+          (frobeniusRootRestrictedHom p e hr f)) ∧
       (∀ y : M, ‖ι y‖ = spectralNorm (GaussFractionField σ K c) M y) ∧
       (∀ j : Fin m, ι (b j) =
         algebraMap (IsRestricted.subring (R := FrobeniusRoot K p e) r)
@@ -216,57 +87,26 @@ theorem exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable
   let K' := FrobeniusRoot K p e
   let T := IsRestricted.subring (R := K) c
   let F := GaussFractionField σ K c
-  let T' := IsRestricted.subring (R := K') r
   let F' := GaussFractionField σ K' r
-  let Ψ := restrictedExpandAlgebraMap (K := K) (K' := K') (p ^ e)
-    (pow_pos (expChar_pos K p) e).ne' hr
+  let Ψ := frobeniusRootRestrictedHom (K := K) p e hr
+  have hΨ_norm : ∀ f : T, ‖Ψ f‖ = ‖f‖ := norm_frobeniusRootRestrictedHom p e hr
+  have hΨ_inj : Function.Injective Ψ := frobeniusRootRestrictedHom_injective p e hr
+  let _ : Algebra F F' := (Ψ.gaussFractionFieldMap hΨ_inj).toAlgebra
+  have hF_alg : algebraMap F F' = Ψ.gaussFractionFieldMap hΨ_inj := RingHom.algebraMap_toAlgebra _
   have : ExpChar F p := expChar_of_injective_algebraMap (algebraMap K F).injective p
-  have : ExpChar F' p := expChar_of_injective_algebraMap (algebraMap K' F').injective p
-  have hΨ_norm (f : T) : ‖Ψ f‖ = ‖f‖ := norm_restrictedExpandAlgebraMap _ _ hr f
-  have hΨ_inj : Function.Injective Ψ.toRingHom :=
-    restrictedExpandAlgebraMap_injective _ _ hr
-  let _ : Algebra F F' := (Ψ.toRingHom.gaussFractionFieldMap hΨ_inj).toAlgebra
-  have hF_alg : algebraMap F F' = Ψ.toRingHom.gaussFractionFieldMap hΨ_inj :=
-    RingHom.algebraMap_toAlgebra _
-  -- Pick an `F`-basis `b` of `M` whose `p ^ e`-th powers lie in `T`, with roots in `T'`.
-  let m := Module.finrank F M
-  obtain ⟨w, g, hg⟩ :=
-    IsPurelyInseparable.exists_iterateFrobenius_unitsSMul_eq_algebraMap T F M p he
-      (Module.finBasis F M)
-  let b := (Module.finBasis F M).unitsSMul w
-  let rootG (j : Fin m) : T' := restrictedFrobeniusRoot p e hr (g j)
-  have hrootG_pow (j : Fin m) : rootG j ^ p ^ e = Ψ (g j) := restrictedFrobeniusRoot_pow hr (g j)
-  -- Embed `M` `F`-linearly into `F'` by sending `b` to the `p ^ e`-th roots `rootG`.
-  have hspan_b : IntermediateField.adjoin F (Set.range b) = ⊤ := eq_top_iff.mpr fun y _ ↦ by
-    rw [← b.sum_repr y]
-    refine sum_mem fun j _ ↦ ?_
-    rw [Algebra.smul_def]
-    exact mul_mem (IntermediateField.algebraMap_mem _ _)
-      (IntermediateField.subset_adjoin F _ ⟨j, rfl⟩)
-  have hΨ_map (f : T) :
-      Ψ.toRingHom.gaussFractionFieldMap hΨ_inj (algebraMap T F f) = algebraMap T' F' (Ψ f) :=
-    Ψ.toRingHom.gaussFractionFieldMap_algebraMap hΨ_inj f
-  have ⟨ι₀⟩ : Nonempty (M →ₐ[F] F') :=
-    IsPurelyInseparable.nonempty_algHom_of_forall_exists_pow_eq F M p he F' hspan_b <| by
-      rintro _ ⟨j, rfl⟩
-      exact ⟨algebraMap T' F' (rootG j), by
-        rw [← map_pow, hrootG_pow, ← hΨ_map, ← hF_alg, ← hg]⟩
-  refine ⟨m, b, rootG, ι₀.toRingHom, fun f ↦ ?_, fun y ↦ ?_, fun j ↦ ?_⟩
-  · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes, hF_alg, hΨ_map]
-  · obtain ⟨k, a, ha⟩ := IsPurelyInseparable.pow_mem F p y
-    have hpk : p ^ k ≠ 0 := (pow_pos (expChar_pos K p) k).ne'
-    refine (pow_left_inj₀ (norm_nonneg _) (spectralNorm_nonneg _) hpk).mp ?_
-    have hι_pow : (ι₀ y) ^ p ^ k = Ψ.toRingHom.gaussFractionFieldMap hΨ_inj a := by
-      rw [← map_pow, ← ha, AlgHom.commutes, hF_alg]
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← norm_pow, hι_pow,
-      Ψ.toRingHom.norm_gaussFractionFieldMap hΨ_inj hΨ_norm,
-      TauCeti.spectralNorm_pow_eq_norm_of_pow_eq_algebraMap hpk ha.symm]
-  · refine iterateFrobenius_inj F' p e ?_
-    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, iterateFrobenius_def]
-    rw [← map_pow, ← IsPurelyInseparable.algebraMap_iterateFrobenius F p he (b j),
-      AlgHom.commutes, hF_alg, ← map_pow, hrootG_pow, hg, hΨ_map]
+  obtain ⟨m, b, rootG, ι₀, hι_alg, hι_b⟩ :=
+    exists_algHom_gaussFractionField_frobeniusRoot_of_isPurelyInseparable M p e he hr
+  refine ⟨m, b, rootG, ι₀.toRingHom, hι_alg, fun y ↦ ?_, hι_b⟩
+  obtain ⟨k, a, ha⟩ := IsPurelyInseparable.pow_mem F p y
+  have hpk : p ^ k ≠ 0 := (pow_pos (expChar_pos K p) k).ne'
+  refine (pow_left_inj₀ (norm_nonneg _) (spectralNorm_nonneg _) hpk).mp ?_
+  have hι_pow : (ι₀ y) ^ p ^ k = Ψ.gaussFractionFieldMap hΨ_inj a := by
+    rw [← map_pow, ← ha, AlgHom.commutes, hF_alg]
+  rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← norm_pow, hι_pow,
+    Ψ.norm_gaussFractionFieldMap hΨ_inj hΨ_norm,
+    TauCeti.spectralNorm_pow_eq_norm_of_pow_eq_algebraMap hpk ha.symm]
 
-end FrobeniusRoot
+end SpectralEmbedding
 
 section SeparatingDual
 
@@ -300,67 +140,92 @@ theorem exists_dual_norm_le_spectralNorm_of_isPurelyInseparable
   let e := IsPurelyInseparable.exponent F M
   set q := p ^ e
   have hq : q ≠ 0 := (pow_pos (expChar_pos K p) e).ne'
-  have hqR_ne : (q : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hq
   let K' := FrobeniusRoot K p e
   let r : σ → ℝ := fun i ↦ c i ^ ((q : ℝ)⁻¹)
   have hr_fact : ∀ i, Fact (0 < r i) := fun i ↦ ⟨Real.rpow_pos_of_pos (Fact.out : 0 < c i) _⟩
-  have hr (i : σ) : r i ^ q = c i := by
-    dsimp only [r]
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (Fact.out : 0 < c i).le, inv_mul_cancel₀ hqR_ne,
-      Real.rpow_one]
+  have hr (i : σ) : r i ^ q = c i := Real.rpow_inv_natCast_pow (Fact.out : 0 < c i).le hq
   let T' := IsRestricted.subring (R := K') r
   let F' := GaussFractionField σ K' r
-  let Ψ := restrictedExpandAlgebraMap (K := K) (K' := K') q hq hr
+  let Ψ := frobeniusRootRestrictedHom (K := K) p e hr
+  have h_iso (a : K) : ‖algebraMap K K' a‖ ≤ 1 * ‖a‖ := by
+    rw [one_mul, FrobeniusRoot.norm_algebraMap]
+  have hΨ_def (t : T) : Ψ t = restrictedExpand q hq hr
+      (restrictedMap (algebraMap K K') h_iso t) :=
+    frobeniusRootRestrictedHom_apply p e hr t
+  have hΨ_inj : Function.Injective Ψ := frobeniusRootRestrictedHom_injective p e hr
   have : ExpChar F' p := expChar_of_injective_algebraMap (algebraMap K' F').injective p
   obtain ⟨m, b, rootG, ι, hι_alg, hι_norm, hι_b⟩ :=
     exists_ringHom_norm_eq_spectralNorm_of_isPurelyInseparable M p e le_rfl hr
   -- Span a countably generated `K`-subspace `E ⊆ K'` from all coefficients of `rootG`.
-  let S : Set K' := Set.range fun idx : Fin m × (σ →₀ ℕ) ↦
-    coeff idx.2 (rootG idx.1 : _root_.MvPowerSeries σ K')
-  let E : Submodule K K' := Submodule.span K S
-  let rootGSub (j : Fin m) : restrictedCoeffSubmodule r E :=
-    ⟨rootG j, mem_restrictedCoeffSubmodule.mpr fun α ↦ Submodule.subset_span ⟨(j, α), rfl⟩⟩
-  let linComb (a : Fin m → T) : restrictedCoeffSubmodule r E :=
-    ∑ j, ⟨Ψ (a j) * rootG j, mul_mem_restrictedCoeffSubmodule hq hr (a j) (rootGSub j).2⟩
-  have hlin (a : Fin m → T) : (linComb a).1 = ∑ j, Ψ (a j) * rootG j := by simp [linComb]
-  have hmul_eq (z : M) (s : nonZeroDivisors T) (a : Fin m → T)
+  let E : Submodule K K' := Submodule.span K (Set.range fun idx : Fin m × (σ →₀ ℕ) ↦
+    coeff idx.snd (rootG idx.fst : _root_.MvPowerSeries σ K'))
+  have hrootG_mem (j : Fin m) (α : σ →₀ ℕ) :
+      coeff α (rootG j : _root_.MvPowerSeries σ K') ∈ E :=
+    Submodule.subset_span ⟨(j, α), rfl⟩
+  have hterm_mem (a : Fin m → T) (j : Fin m) (α : σ →₀ ℕ) :
+      coeff α ((Ψ (a j) * rootG j : T') : _root_.MvPowerSeries σ K') ∈ E := by
+    rw [hΨ_def]
+    exact coeff_restrictedExpand_restrictedMap_mul_mem hq hr h_iso E (a j) (hrootG_mem j) α
+  have hsum_mem (a : Fin m → T) (α : σ →₀ ℕ) :
+      coeff α ((∑ j, Ψ (a j) * rootG j : T') : _root_.MvPowerSeries σ K') ∈ E := by
+    rw [AddSubmonoidClass.coe_finsetSum, map_sum]
+    exact E.sum_mem fun j _ ↦ hterm_mem a j α
+  have hι_clear (z : M) (s : nonZeroDivisors T) (a : Fin m → T)
       (ha : ∀ j, algebraMap T F (a j) = (s : T) • b.repr z j) :
-      algebraMap T' F' (linComb a).1 = algebraMap T' F' (Ψ (s : T)) * ι z := by
-    rw [hlin]
-    exact b.algebraMap_sum_mul_eq_mul Ψ.toRingHom rootG ι hι_alg hι_b z (s : T) a ha
-  -- Clear denominators of `b.repr x₀` and pick a separating bounded map `π` into `T`.
+      algebraMap T' F' (∑ j, Ψ (a j) * rootG j) = algebraMap T' F' (Ψ (s : T)) * ι z :=
+    b.map_sum_mul_eq_map_mul_apply (algebraMap T' F') ι (x := z) (r := algebraMap T F (s : T))
+      (hι_alg (s : T))
+      (fun j ↦ by rw [← Algebra.smul_def (s : T) (b.repr z j), ← ha j, hι_alg]) hι_b
+  -- Clear denominators of `b.repr x₀` and separate `∑ j, Ψ (a₀ j) * rootG j` via `π`.
   obtain ⟨s₀, hs₀⟩ :=
     IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T) (b.repr x₀)
   choose a₀ ha₀ using hs₀
-  have hu₀_ne : linComb a₀ ≠ 0 := fun h0 ↦ by
+  have hu₀_ne : ∑ j, Ψ (a₀ j) * rootG j ≠ 0 := fun h0 ↦ by
     have hs₀_ne : algebraMap T' F' (Ψ (s₀ : T)) ≠ 0 := by
-      rw [← norm_ne_zero_iff, norm_algebraMap_gaussFractionField, norm_restrictedExpandAlgebraMap,
+      rw [← norm_ne_zero_iff, norm_algebraMap_gaussFractionField, norm_frobeniusRootRestrictedHom,
         norm_ne_zero_iff]
-      exact nonZeroDivisors.ne_zero s₀.2
+      exact nonZeroDivisors.ne_zero s₀.property
     have hmul : algebraMap T' F' (Ψ (s₀ : T)) * ι x₀ = 0 := by
-      rw [← hmul_eq x₀ s₀ a₀ ha₀, congrArg Subtype.val h0, ZeroMemClass.coe_zero, map_zero]
+      rw [← hι_clear x₀ s₀ a₀ ha₀, h0, map_zero]
     exact mul_ne_zero hs₀_ne ((map_ne_zero_iff ι ι.injective).mpr hx₀) hmul
-  obtain ⟨π, C_π, hC_π, hπ_mul, hπ_norm, hπ_ne⟩ :=
-    exists_linearMap_restrictedCoeffSubmodule_ne_zero hq hr
-      (FrobeniusRoot.exists_dual_norm_le_and_ne_zero_span_of_countable (Set.countable_range _))
-      (linComb a₀) hu₀_ne
-  let g (j : Fin m) : T := π (rootGSub j)
-  have hπ_lin (a : Fin m → T) : ∑ j, a j * g j = π (linComb a) := by
-    rw [map_sum]
-    exact Finset.sum_congr rfl fun j _ ↦ (hπ_mul (a j) (rootGSub j)).symm
+  obtain ⟨ν, hν, φ_E, C_φ, hφ_E, hπ_ne⟩ :=
+    exists_toSubringDualOfBound_restrictedExpandComponentFamily_ne_zero hq hr E
+      (fun _ hx ↦ Submodule.exists_bounded_dual_ne_zero_span_of_countable
+        (Set.countable_range _) hx)
+      hu₀_ne (hsum_mem a₀)
+  let C_φ' : ℝ := max C_φ 0
+  have hC_φ' : 0 ≤ C_φ' := le_max_right _ _
+  let π := IsRestrictedFamily.toSubringDualOfBound (c := c) φ_E hφ_E
+  let wE (j : Fin m) := restrictedExpandComponentFamily hq hr ν E (rootG j) (hrootG_mem j)
+  have hcomp_sum (a : Fin m → T) :
+      restrictedExpandComponentFamily hq hr ν E (∑ j, Ψ (a j) * rootG j) (hsum_mem a) =
+        ∑ j, a j • wE j := by
+    rw [restrictedExpandComponentFamily_sum hq hr ν E Finset.univ _ (hterm_mem a)]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← restrictedExpandComponentFamily_restrictedExpand_mul hq hr hν h_iso E (a j) (rootG j)
+        (hrootG_mem j) (hz_mul := coeff_restrictedExpand_restrictedMap_mul_mem hq hr h_iso E
+          (a j) (hrootG_mem j))]
+    exact restrictedExpandComponentFamily_congr hq hr ν E
+      (congrArg (· * rootG j) (hΨ_def (a j)))
+  let g (j : Fin m) : T := π (wE j)
+  have hπ_sum (a : Fin m → T) :
+      ∑ j, a j * g j =
+        π (restrictedExpandComponentFamily hq hr ν E (∑ j, Ψ (a j) * rootG j) (hsum_mem a)) := by
+    rw [hcomp_sum a, map_sum]
+    exact Finset.sum_congr rfl fun j _ ↦ by rw [map_smul, smul_eq_mul]
   let φ : Module.Dual F M := b.constr F fun j ↦ algebraMap T F (g j)
-  refine ⟨φ, C_π, hC_π, fun y ↦ ?_, fun y ⟨fy, hfy⟩ ↦ ?_, fun hφ0 ↦ ?_⟩
+  refine ⟨φ, C_φ' / ν.prod (r · ^ ·), div_nonneg hC_φ' (prod_pow_pos ν).le,
+    fun y ↦ ?_, fun y ⟨fy, hfy⟩ ↦ ?_, fun hφ0 ↦ ?_⟩
   · -- Spectral-norm bound for `φ`.
     obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T)
       (b.repr y)
     choose a ha using hs
-    have hu_norm : ‖linComb a‖ = ‖(s : T)‖ * spectralNorm F M y := by
-      rw [← Submodule.norm_coe, ← norm_algebraMap_gaussFractionField σ K' r _,
-        hmul_eq y s a ha, norm_mul, norm_algebraMap_gaussFractionField σ K' r _,
-        norm_restrictedExpandAlgebraMap, hι_norm]
+    have hu_norm : ‖∑ j, Ψ (a j) * rootG j‖ = ‖(s : T)‖ * spectralNorm F M y := by
+      rw [← norm_algebraMap_gaussFractionField σ K' r _, hι_clear y s a ha, norm_mul,
+        norm_algebraMap_gaussFractionField σ K' r _, norm_frobeniusRootRestrictedHom, hι_norm]
     have hs_pos : 0 < ‖(s : T)‖ := by
       rw [← norm_algebraMap_gaussFractionField σ K c (s : T), norm_pos_iff]
-      exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2
+      exact IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.property
     refine le_of_mul_le_mul_left ?_ hs_pos
     calc ‖(s : T)‖ * ‖φ y‖
         = ‖algebraMap T F (s : T) * φ y‖ := by
@@ -368,33 +233,62 @@ theorem exists_dual_norm_le_spectralNorm_of_isPurelyInseparable
       _ = ‖∑ j, a j * g j‖ := by
           rw [b.algebraMap_mul_constr_eq_algebraMap_sum g y (s : T) a ha,
             norm_algebraMap_gaussFractionField σ K c _]
-      _ ≤ C_π * ‖linComb a‖ := by rw [hπ_lin]; exact hπ_norm (linComb a)
-      _ = ‖(s : T)‖ * (C_π * spectralNorm F M y) := by rw [hu_norm]; ring
+      _ ≤ (C_φ / ν.prod (r · ^ ·)) * ‖∑ j, Ψ (a j) * rootG j‖ := by
+          rw [hπ_sum a]
+          exact norm_toSubringDualOfBound_restrictedExpandComponentFamily_le hq hr ν E φ_E hφ_E _ _
+      _ ≤ (C_φ' / ν.prod (r · ^ ·)) * ‖∑ j, Ψ (a j) * rootG j‖ :=
+          mul_le_mul_of_nonneg_right
+            (div_le_div_of_nonneg_right (le_max_left C_φ 0) (prod_pow_pos ν).le)
+            (norm_nonneg _)
+      _ = ‖(s : T)‖ * ((C_φ' / ν.prod (r · ^ ·)) * spectralNorm F M y) := by rw [hu_norm]; ring
   · -- Membership in `Set.range (algebraMap T F)` whenever `y ^ q ∈ T`.
-    let ry : T' := restrictedFrobeniusRoot p e hr fy
+    let ry : T' := frobeniusRootRestrictedEquiv p e (fun _ ↦ rfl) fy
     have hι_y : ι y = algebraMap T' F' ry := iterateFrobenius_inj F' p e <| by
       simp only [iterateFrobenius_def]
-      rw [← map_pow, ← hfy, Function.comp_apply, hι_alg fy, ← restrictedFrobeniusRoot_pow hr fy,
-        map_pow]
+      rw [← map_pow, ← hfy, Function.comp_apply, hι_alg fy,
+        ← frobeniusRootRestrictedEquiv_pow (fun _ ↦ rfl) hr fy, map_pow]
     obtain ⟨s, hs⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors T)
       (b.repr y)
     choose a ha using hs
-    have hmul_T' : Ψ (s : T) * ry = (linComb a).1 := IsFractionRing.injective T' F' <| by
-      rw [hmul_eq y s a ha, map_mul, ← hι_y]
-    have hry_mem : ry ∈ restrictedCoeffSubmodule r E :=
-      mem_restrictedCoeffSubmodule_of_mul_mem hq hr (nonZeroDivisors.ne_zero s.2)
-        (hmul_T'.symm ▸ (linComb a).2)
-    have hπ_eq : (s : T) * π ⟨ry, hry_mem⟩ = ∑ j, a j * g j := by
-      rw [hπ_lin, ← hπ_mul (s : T) ⟨ry, hry_mem⟩]
-      exact congrArg π (Subtype.ext hmul_T')
-    refine ⟨π ⟨ry, hry_mem⟩,
-      mul_left_cancel₀ (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.2) ?_⟩
+    have hmul_T' : Ψ (s : T) * ry = ∑ j, Ψ (a j) * rootG j := IsFractionRing.injective T' F' <| by
+      rw [hι_clear y s a ha, map_mul, ← hι_y]
+    have hexp_ne : _root_.MvPowerSeries.expand q hq ((s : T) : _root_.MvPowerSeries σ K) ≠ 0 :=
+      fun h0 ↦ hΨ_inj.ne (nonZeroDivisors.ne_zero s.property) <| by
+        rw [Ψ.map_zero]
+        exact Subtype.ext <| by
+          rw [coe_frobeniusRootRestrictedHom p e hr (s : T), h0, map_zero, ZeroMemClass.coe_zero]
+    have hry_mem : ∀ α, coeff α (ry : _root_.MvPowerSeries σ K') ∈ E := by
+      refine _root_.MvPowerSeries.coeff_mem_of_coeff_map_mul_mem E hexp_ne
+        (g := (ry : _root_.MvPowerSeries σ K')) fun β ↦ ?_
+      have hβ : _root_.MvPowerSeries.map (algebraMap K K')
+          (_root_.MvPowerSeries.expand q hq ((s : T) : _root_.MvPowerSeries σ K)) *
+            (ry : _root_.MvPowerSeries σ K') =
+          ((∑ j, Ψ (a j) * rootG j : T') : _root_.MvPowerSeries σ K') := by
+        rw [← coe_frobeniusRootRestrictedHom p e hr (s : T), ← Subring.coe_mul, ← hmul_T']
+      rw [hβ]
+      exact hsum_mem a β
+    have hcomp_ry :
+        restrictedExpandComponentFamily hq hr ν E (∑ j, Ψ (a j) * rootG j) (hsum_mem a) =
+          (s : T) • restrictedExpandComponentFamily hq hr ν E ry hry_mem := by
+      rw [← restrictedExpandComponentFamily_restrictedExpand_mul hq hr hν h_iso E (s : T) ry
+          hry_mem (hz_mul := coeff_restrictedExpand_restrictedMap_mul_mem hq hr h_iso E (s : T)
+            hry_mem)]
+      exact restrictedExpandComponentFamily_congr hq hr ν E
+        (hmul_T'.symm.trans (congrArg (· * ry) (hΨ_def (s : T))))
+    have hπ_eq : (s : T) * π (restrictedExpandComponentFamily hq hr ν E ry hry_mem) =
+        ∑ j, a j * g j := by
+      rw [hπ_sum a, hcomp_ry, map_smul, smul_eq_mul]
+    refine ⟨π (restrictedExpandComponentFamily hq hr ν E ry hry_mem),
+      mul_left_cancel₀ (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors s.property) ?_⟩
     rw [← map_mul, hπ_eq]
     exact (b.algebraMap_mul_constr_eq_algebraMap_sum g y (s : T) a ha).symm
   · refine hπ_ne (IsFractionRing.injective T F ?_)
+    change algebraMap T F
+      (π (restrictedExpandComponentFamily hq hr ν E (∑ j, Ψ (a₀ j) * rootG j) (hsum_mem a₀))) =
+      algebraMap T F 0
+    rw [← hπ_sum a₀]
     dsimp only [φ] at hφ0
-    rw [← hπ_lin, map_zero, ← b.algebraMap_mul_constr_eq_algebraMap_sum g x₀ (s₀ : T) a₀ ha₀,
-      hφ0, mul_zero]
+    rw [map_zero, ← b.algebraMap_mul_constr_eq_algebraMap_sum g x₀ (s₀ : T) a₀ ha₀, hφ0, mul_zero]
 
 end SeparatingDual
 
