@@ -138,10 +138,7 @@ private theorem isNilpotent_of_forall_regularTraceForm_eq_zero [CharZero K] {x :
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
     have hk := h (x ^ k)
     rwa [regularTraceForm_apply, ← pow_succ, map_pow] at hk
-  obtain ⟨n, hn⟩ := hL
-  refine ⟨n, ?_⟩
-  rw [← map_pow] at hn
-  simpa using congr($hn (1 : A))
+  exact (LinearMap.isNilpotent_mulLeft_iff K x).1 hL
 
 /-- **The Jacobson radical is the kernel of the regular trace form.** Over a field of
 characteristic zero, an element `x` of a finite-dimensional algebra lies in its Jacobson radical
