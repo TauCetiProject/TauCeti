@@ -24,8 +24,11 @@ to `t * of z` exists exactly when `z` centralizes `A`
 (`HNNExtension.exists_map_t_eq_iff_mem_centralizer`), and any such endomorphism is the identity
 exactly when `z = 1` (`HNNExtension.eq_id_iff_of_map_t_eq`).
 
-These are the one-edge twists used in modular groups of splittings. The construction uses
-Mathlib's `HNNExtension.lift` and its injective base inclusion.
+These are the one-edge twists used in modular groups of splittings. On each conjugate `w G w⁻¹` of
+the base group a twist `τ` is the inner automorphism by `τ(w) w⁻¹`
+(`HNNExtension.eqOn_dehnTwist_conj_of`), so it carries every subgroup of such a conjugate to a
+conjugate of itself. The construction uses Mathlib's `HNNExtension.lift` and its injective base
+inclusion.
 
 ## References
 
@@ -157,6 +160,16 @@ theorem dehnTwist_injective : Function.Injective (dehnTwist φ) := by
       K.map of := by
   rw [Subgroup.map_map]
   congr 1
+
+/-- On every conjugate `w G w⁻¹` of the base group, an HNN twist `τ` is the inner automorphism by
+`τ(w) w⁻¹`. -/
+theorem eqOn_dehnTwist_conj_of (z : Subgroup.centralizer (A : Set G))
+    (w : HNNExtension G A B φ) :
+    Set.EqOn (dehnTwist φ z) (MulAut.conj (dehnTwist φ z w * w⁻¹))
+      ((of : G →* HNNExtension G A B φ).range.map
+        (MulAut.conj w : HNNExtension G A B φ →* HNNExtension G A B φ)) := by
+  rintro _ ⟨_, ⟨g, rfl⟩, rfl⟩
+  simp [MulAut.conj_apply, mul_assoc]
 
 /-! ### Necessity of the centralizer hypothesis and uniqueness -/
 

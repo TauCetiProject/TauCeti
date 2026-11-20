@@ -161,6 +161,11 @@ noncomputable def π₁Equiv : π₁ 𝔸 v₀ ≃* π₁Tree 𝔸 T.darts :=
 theorem π₁Equiv_apply (g : π₁ 𝔸 v₀) : π₁Equiv 𝔸 v₀ T g = π₁.toπ₁Tree 𝔸 v₀ T.darts g :=
   (rfl)
 
+/-- Relative to the darts of a spanning tree, reading the letters of closed `𝔸`-paths is a
+bijection `π₁(𝔸, v₀) → π₁(𝔸, T)`. -/
+theorem π₁.toπ₁Tree_bijective : Function.Bijective (π₁.toπ₁Tree 𝔸 v₀ T.darts) :=
+  (π₁Equiv 𝔸 v₀ T).bijective
+
 @[simp] theorem π₁Equiv_mk (p : 𝔸.Path ⟨v₀⟩ ⟨v₀⟩) :
     π₁Equiv 𝔸 v₀ T (π₁.mk p) = p.toπ₁Tree T.darts := by
   rw [π₁Equiv_apply, π₁.toπ₁Tree_mk]

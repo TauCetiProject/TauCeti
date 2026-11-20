@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
+public import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 public import TauCeti.GroupTheory.PushoutI.TrivialBase
 public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.HNNExtension
@@ -29,6 +30,12 @@ fundamental group is Mathlib's amalgamated product or HNN extension respectively
   `ω = g`, to `t⁻¹`: Mathlib's relation `t f(c) t⁻¹ = g(c)` is the relation
   `e g(c) e⁻¹ = f(c)` of the dart `e = ((), true)`, read for `e = t⁻¹`.
 
+The same holds for the group `π₁(𝔸, a)` of closed `𝔸`-paths: reading the letters of a closed path
+identifies it with `π₁(𝔸, T)` for a maximal tree `T` (`π₁Equiv`), so `π₁(segment, a)` is `A ∗_C B`
+at either vertex `a` and `π₁(loop, ())` is the HNN extension. Along these isomorphisms the vertex
+group at the base vertex maps to its factor, or to the base group, by the identity; for the
+segment so does the vertex group at the other end, conjugated into `π₁(𝔸, a)` along the dart.
+
 These comparisons transport the normal form theorems of `Monoid.PushoutI` and `HNNExtension` to
 one-edge graphs of groups; in particular the vertex groups of a one-edge graph of groups embed in
 its fundamental group.
@@ -44,6 +51,8 @@ its fundamental group.
   which the HNN extension of the loop is taken.
 * `TauCeti.GraphOfGroups.π₁Tree.equivHNNExtension`: `π₁(loop, ∅) ≃* HNNExtension G (range f)
   (range g) (loopEquiv f g hf hg)`.
+* `TauCeti.GraphOfGroups.π₁.equivPushoutI`, `TauCeti.GraphOfGroups.π₁.equivHNNExtension`: the same
+  isomorphisms for the groups `π₁(segment, a)` and `π₁(loop, ())` of closed paths.
 
 ## Main results
 
@@ -81,6 +90,13 @@ def segmentMaps : ∀ b : SerreGraph.segment.V, C →* (segment f g hf hg).verte
 @[simp] theorem segmentMaps_false : segmentMaps f g hf hg false = f := (rfl)
 
 @[simp] theorem segmentMaps_true : segmentMaps f g hf hg true = g := (rfl)
+
+/-- The group structures of the vertex groups of the segment at Boolean indices. The vertex type of
+the segment is only definitionally `Bool`, so instance search does not find the group structures of
+the family at an index of type `Bool`, as the API of `Monoid.PushoutI` over `Bool` (for instance its
+Dehn twists) requires. -/
+instance (b : Bool) : Group ((segment f g hf hg).vertexGroup b) :=
+  (segment f g hf hg).instGroupVertexGroup b
 
 namespace π₁Tree
 
@@ -233,6 +249,59 @@ end Coprod
 
 end π₁Tree
 
+namespace π₁
+
+variable {f g hf hg}
+
+/- Relative to the set of all darts of the segment, which is a spanning tree since the segment is a
+tree, reading the letters of closed `𝔸`-paths is a bijection. -/
+private theorem toπ₁Tree_univ_bijective (a : SerreGraph.segment.V) :
+    Function.Bijective (toπ₁Tree (segment f g hf hg) a Set.univ) := by
+  obtain ⟨T, hT⟩ := SerreGraph.exists_spanningTree_superset _
+    SerreGraph.segment_isTree.connected Set.univ (fun _ _ => Set.mem_univ _)
+    ((SerreGraph.isAcyclic_restrict_iff _ _ _).mpr fun _ p hp _ =>
+      SerreGraph.segment_isTree.eq_nil_of_isReduced _ p hp)
+  rw [← Set.univ_subset_iff.mp hT]
+  exact toπ₁Tree_bijective _ a T
+
+variable (f g hf hg) in
+/-- The group `π₁(𝔸, a)` of closed `𝔸`-paths of the segment `𝔸`, at either vertex `a`, is the
+amalgamated product `A ∗_C B`. Reading the letters of a closed path in `π₁(𝔸, T)`, for the set `T`
+of all darts of the segment, is an isomorphism because `T` is a spanning tree, and `π₁(𝔸, T)` is
+`A ∗_C B` by `π₁Tree.equivPushoutI`. -/
+noncomputable def equivPushoutI (a : SerreGraph.segment.V) :
+    π₁ (segment f g hf hg) a ≃* Monoid.PushoutI (segmentMaps f g hf hg) :=
+  (MulEquiv.ofBijective _ (toπ₁Tree_univ_bijective a)).trans
+    (π₁Tree.equivPushoutI f g hf hg ⟨false, Set.mem_univ _⟩)
+
+/-- The vertex group at the base vertex `a` maps to the factor `A_a` by the identity. -/
+@[simp] theorem equivPushoutI_mk_ofVertex (a : SerreGraph.segment.V)
+    (x : (segment f g hf hg).vertexGroup a) :
+    equivPushoutI f g hf hg a (mk (Path.ofVertex x)) = Monoid.PushoutI.of a x := by
+  simp only [equivPushoutI, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_mk,
+    Path.toπ₁Tree_ofVertex]
+  -- `π₁Tree.equivPushoutI_of` does not fire as a `simp` lemma on this term; apply it directly.
+  exact π₁Tree.equivPushoutI_of _ a x
+
+/-- The inverse sends the factor `A_a` at the base vertex `a` to the vertex group at `a`. -/
+@[simp] theorem equivPushoutI_symm_of_self (a : SerreGraph.segment.V)
+    (x : (segment f g hf hg).vertexGroup a) :
+    (equivPushoutI f g hf hg a).symm (Monoid.PushoutI.of a x) = mk (Path.ofVertex x) :=
+  (MulEquiv.symm_apply_eq _).2 (equivPushoutI_mk_ofVertex a x).symm
+
+/-- The vertex group at the other end `b` of a dart `d` from the base vertex `a`, conjugated into
+`π₁(𝔸, a)` along `d`, maps to the factor `A_b` by the identity. -/
+@[simp] theorem equivPushoutI_vertexHom_ofDart {a b : SerreGraph.segment.V} (d : a ⟶ b)
+    (x : (segment f g hf hg).vertexGroup b) :
+    equivPushoutI f g hf hg a (vertexHom (Path.ofDart d) x) = Monoid.PushoutI.of b x := by
+  -- The dart reads `1` in `π₁(𝔸, univ)`, which leaves the image of `x` in the factor `A_b`.
+  simp only [equivPushoutI, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_vertexHom,
+    Path.toπ₁Tree_ofDart, π₁Tree.edge_segment_eq_one ⟨false, Set.mem_univ _⟩, one_mul, inv_one,
+    mul_one]
+  exact π₁Tree.equivPushoutI_of _ b x
+
+end π₁
+
 end segment
 
 /-! ### The loop: HNN extensions -/
@@ -365,6 +434,55 @@ theorem of_injective_loop : Function.Injective (of (𝔸 := loop f g hf hg) ∅ 
       ((congrArg _ h).trans (equivHNNExtension_of f g hf hg a'))
 
 end π₁Tree
+
+namespace π₁
+
+variable {f g hf hg}
+
+variable (f g hf hg) in
+/-- The group `π₁(𝔸, v)` of closed `𝔸`-paths of the loop `𝔸`, at its only vertex `v`, is the HNN
+extension `HNNExtension G (range f) (range g) (loopEquiv f g hf hg)`. Reading the letters of a
+closed path in `π₁(𝔸, ∅)` is an isomorphism because `∅` is the spanning tree of the rose, and
+`π₁(𝔸, ∅)` is the HNN extension by `π₁Tree.equivHNNExtension`. -/
+noncomputable def equivHNNExtension (v : (SerreGraph.rose Unit).V) :
+    π₁ (loop f g hf hg) v ≃* HNNExtension G f.range g.range (loopEquiv f g hf hg) :=
+  (MulEquiv.ofBijective (toπ₁Tree (loop f g hf hg) v ∅) (by
+    have h := toπ₁Tree_bijective (loop f g hf hg) v (SerreGraph.roseTree Unit)
+    rwa [SerreGraph.roseTree_darts] at h)).trans
+    (π₁Tree.equivHNNExtension f g hf hg)
+
+/-- The vertex group maps to the base group of the HNN extension by the identity. -/
+@[simp] theorem equivHNNExtension_mk_ofVertex (v : (SerreGraph.rose Unit).V) (x : G) :
+    equivHNNExtension f g hf hg v (mk (Path.ofVertex x)) = HNNExtension.of x := by
+  simp only [equivHNNExtension, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_mk]
+  -- The vertex group of the loop is only definitionally `G`, so `simp` and `rw` do not match
+  -- `Path.toπ₁Tree_ofVertex` here; it is instantiated explicitly.
+  exact (congrArg _ (Path.toπ₁Tree_ofVertex (𝔸 := loop f g hf hg) ∅ (a := v) x)).trans
+    (π₁Tree.equivHNNExtension_of f g hf hg x)
+
+/-- The loop traversing the dart `((), false)`, whose boundary maps are `α = g` and `ω = f`, maps
+to the stable letter `t`. -/
+@[simp] theorem equivHNNExtension_mk_ofDart_false (v : (SerreGraph.rose Unit).V) :
+    equivHNNExtension f g hf hg v (mk (Path.ofDart ((SerreGraph.rose Unit).dart ((), false)))) =
+      HNNExtension.t := by
+  simp only [equivHNNExtension, MulEquiv.trans_apply, MulEquiv.ofBijective_apply, toπ₁Tree_mk]
+  -- As above, the dart of the rose is only definitionally a dart of the loop.
+  exact (congrArg _ ((Path.toπ₁Tree_ofDart (𝔸 := loop f g hf hg) ∅ _).trans
+    (congrArg (π₁Tree.edge ∅) ((SerreGraph.rose Unit).dart_val ((), false))))).trans
+    (π₁Tree.equivHNNExtension_edge_false f g hf hg)
+
+/-- The inverse sends the base group of the HNN extension to the vertex group. -/
+@[simp] theorem equivHNNExtension_symm_of (v : (SerreGraph.rose Unit).V) (x : G) :
+    (equivHNNExtension f g hf hg v).symm (HNNExtension.of x) = mk (Path.ofVertex x) :=
+  (MulEquiv.symm_apply_eq _).2 (equivHNNExtension_mk_ofVertex v x).symm
+
+/-- The inverse sends the stable letter `t` to the loop traversing the dart `((), false)`. -/
+@[simp] theorem equivHNNExtension_symm_t (v : (SerreGraph.rose Unit).V) :
+    (equivHNNExtension f g hf hg v).symm HNNExtension.t =
+      mk (Path.ofDart ((SerreGraph.rose Unit).dart ((), false))) :=
+  (MulEquiv.symm_apply_eq _).2 (equivHNNExtension_mk_ofDart_false v).symm
+
+end π₁
 
 end loop
 

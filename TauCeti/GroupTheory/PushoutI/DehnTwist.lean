@@ -19,7 +19,11 @@ twist is the identity exactly when its parameter is central in the right factor.
 The construction works even for noninjective boundary maps; the identity criterion and the
 necessity of the centralizer hypothesis need injectivity. The two factors are indexed by `false`
 and `true`. Subgroup image formulas express preservation of their conjugacy classes, as used in
-modular groups of one-edge splittings. The construction uses Mathlib's `Monoid.PushoutI.lift`.
+modular groups of one-edge splittings. More generally, on each conjugate `w G_i w⁻¹` of a factor
+the twist `τ` is an inner automorphism, by `τ(w) w⁻¹` on the conjugates of the left factor and by
+`τ(w) z w⁻¹` on those of the right factor (`Monoid.PushoutI.eqOn_dehnTwist_conj_of_false`,
+`Monoid.PushoutI.eqOn_dehnTwist_conj_of_true`). The construction uses Mathlib's
+`Monoid.PushoutI.lift`.
 
 The centralizer hypothesis is necessary: with injective boundary maps, the rule fixing the left
 factor and conjugating the right factor by an element `z` of the right factor extends to an
@@ -186,6 +190,24 @@ exactly when its parameter is central in the right factor. -/
       (K.map (of true)).map (MulAut.conj (of (φ := φ) true z) : PushoutI φ →* PushoutI φ) := by
   simp only [Subgroup.map_map]
   exact congrArg K.map (MonoidHom.ext fun b => by simp [MulAut.conj_apply])
+
+/-- On every conjugate `w A w⁻¹` of the left factor `A`, the twist is the inner automorphism by
+`τ(w) w⁻¹`, where `τ` is the twist. -/
+theorem eqOn_dehnTwist_conj_of_false (z : Subgroup.centralizer (Set.range (φ true)))
+    (w : PushoutI φ) :
+    Set.EqOn (dehnTwist φ z) (MulAut.conj (dehnTwist φ z w * w⁻¹))
+      ((of false).range.map (MulAut.conj w : PushoutI φ →* PushoutI φ)) := by
+  rintro _ ⟨_, ⟨a, rfl⟩, rfl⟩
+  simp [MulAut.conj_apply, mul_assoc]
+
+/-- On every conjugate `w B w⁻¹` of the right factor `B`, the twist is the inner automorphism by
+`τ(w) z w⁻¹`, where `τ` is the twist and `z` its parameter. -/
+theorem eqOn_dehnTwist_conj_of_true (z : Subgroup.centralizer (Set.range (φ true)))
+    (w : PushoutI φ) :
+    Set.EqOn (dehnTwist φ z) (MulAut.conj (dehnTwist φ z w * of true (z : G true) * w⁻¹))
+      ((of true).range.map (MulAut.conj w : PushoutI φ →* PushoutI φ)) := by
+  rintro _ ⟨_, ⟨b, rfl⟩, rfl⟩
+  simp [MulAut.conj_apply, mul_assoc]
 
 /-! ### Necessity of the centralizer hypothesis -/
 
