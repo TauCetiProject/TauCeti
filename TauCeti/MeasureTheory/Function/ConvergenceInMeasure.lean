@@ -316,7 +316,7 @@ theorem tendstoInMeasure_of_tendsto_integral_norm_sq {Ω E ι : Type*}
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
     (Eventually.of_forall fun _ ↦ zero_le) ?_
   filter_upwards [hint] with k hk
-  exact TauCeti.meas_ge_le_integral_norm_sq_div_sq hk hε
+  exact TauCeti.meas_ge_le_integral_sq_div_sq hk hε
 
 section Algebra
 
