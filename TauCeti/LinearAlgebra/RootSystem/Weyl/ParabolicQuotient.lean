@@ -52,6 +52,10 @@ saturated chains of orbit weights, in which each step is a reflection `ξ ↦ s_
   of that parabolic subgroup exactly when they move the dominant weight to the same point.
 * `TauCeti.existsUnique_isMinimalCosetRep_smul_eq`: each orbit weight has a unique minimal coset
   representative.
+* `TauCeti.eq_of_isMinimalCosetRep_of_apply_smul_eq` and
+  `TauCeti.eq_of_isMinimalCosetRep_of_smul_apply_smul_eq`: a minimal coset representative is
+  determined by the image (or a nonzero scalar multiple of the image) of its orbit weight under any
+  map injective on the Weyl orbit.
 * `TauCeti.bruhatLE_of_isMinimalCosetRep_of_smul_eq`: that representative lies below every
   Weyl-group element with the same orbit weight.
 * `TauCeti.bruhatStep_ofIdx_mul_of_coroot'_neg`: `s_β w < w` in the Weyl group itself when
@@ -213,6 +217,26 @@ theorem eq_of_isMinimalCosetRep_of_smul_eq (hlam : lam ∈ dominantChamber P b)
     (hv : (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) v)
     (h : u • lam = v • lam) : u = v :=
   hu.eq_of_inv_mul_mem _ hv ((inv_mul_mem_parabolic_wallIndices_iff hlam).mpr h.symm)
+
+/-- Minimal coset representatives are determined by the image of their orbit weight under any map
+`f` injective on the Weyl orbit of a dominant weight `λ`. -/
+theorem eq_of_isMinimalCosetRep_of_apply_smul_eq {α : Type*} {f : M → α}
+    (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+    {u v : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    (h : f (u.1 • lam) = f (v.1 • lam)) : u = v :=
+  Subtype.ext (eq_of_isMinimalCosetRep_of_smul_eq hlam u.2 v.2 (hf ⟨_, rfl⟩ ⟨_, rfl⟩ h))
+
+/-- Minimal coset representatives are determined by a nonzero scalar multiple of the image of their
+orbit weight under any map `f` injective on the Weyl orbit of a dominant weight `λ`. -/
+theorem eq_of_isMinimalCosetRep_of_smul_apply_smul_eq {𝕜 V : Type*}
+    [GroupWithZero 𝕜] [MulAction 𝕜 V] {f : M → V}
+    (hlam : lam ∈ dominantChamber P b)
+    (hf : Set.InjOn f (Set.range fun w : P.weylGroup ↦ w • lam))
+    {u v : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
+    {a : 𝕜} (ha : a ≠ 0) (h : a • f (u.1 • lam) = a • f (v.1 • lam)) : u = v :=
+  eq_of_isMinimalCosetRep_of_apply_smul_eq hlam hf
+    (by simpa only [inv_smul_smul₀ ha] using congrArg (a⁻¹ • ·) h)
 
 /-- **The minimal coset representative of an orbit weight is Bruhat-below every Weyl-group element
 with that orbit weight.** -/
