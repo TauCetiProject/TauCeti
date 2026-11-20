@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import Mathlib.Analysis.Complex.Schwarz
 
 /-!
 # Schwarz's lemma with prescribed zeros
@@ -34,6 +35,8 @@ at one of its zeros, as in Gelfond's proof of the Gelfond–Schneider theorem.
 * `TauCeti.norm_le_mul_three_mul_div_pow`: the bound `M * (3 * R / T) ^ ∑ x ∈ s, k x`.
 * `TauCeti.norm_iteratedDeriv_le_mul_prod_div_pow`: the bound for the derivative of order `k a`
   at a zero `a ∈ s`.
+* `TauCeti.norm_le_half_of_eq_zero_on_net`: a vector-valued sampling bound from zeros
+  on a metric net.
 
 ## References
 
@@ -50,6 +53,50 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E} {c : ℂ} {T M : ℝ}
   {s : Finset ℂ} {k : ℂ → ℕ}
+
+/-- A vector-valued holomorphic function bounded by `C * M` on the radius-`2 * r` disc and
+vanishing on an `r / (4 * C)`-net of the closed radius-`r` disc has norm at most `M / 2` there.
+The sampling set may be infinite and the complex normed codomain need not be complete. -/
+theorem norm_le_half_of_eq_zero_on_net {r C : ℝ}
+    (hf : DifferentiableOn ℂ f (ball c (2 * r)))
+    (hb : ∀ z ∈ ball c (2 * r), ‖f z‖ ≤ C * M)
+    {P : Set ℂ} (hP : P ⊆ closedBall c r)
+    (hnet : closedBall c r ⊆ ⋃ w ∈ P, ball w (r / (4 * C)))
+    (hzero : ∀ w ∈ P, f w = 0) {z : ℂ} (hz : z ∈ closedBall c r) :
+    ‖f z‖ ≤ M / 2 := by
+  obtain ⟨w, hw, hzw⟩ := Set.mem_iUnion₂.mp (hnet hz)
+  have hr₀ : 0 ≤ r := dist_nonneg.trans (mem_closedBall.mp hz)
+  have hnet₀ : 0 < r / (4 * C) := dist_nonneg.trans_lt (mem_ball.mp hzw)
+  have hrC : 0 < r ∧ 0 < C := by
+    rcases div_pos_iff.mp hnet₀ with h | h
+    · exact ⟨h.1, by linarith [h.2]⟩
+    · exact (not_lt_of_ge hr₀ h.1).elim
+  obtain ⟨hr, hC⟩ := hrC
+  have hM : 0 ≤ M := nonneg_of_mul_nonneg_right
+    ((norm_nonneg (f c)).trans (hb c (mem_ball_self (by linarith)))) hC
+  by_cases hsmallC : C ≤ 1 / 2
+  · calc ‖f z‖ ≤ C * M := hb z (closedBall_subset_ball (by linarith) hz)
+         _ ≤ M / 2 := by nlinarith
+  have hwr : ∀ y ∈ ball w r, y ∈ ball c (2 * r) := by
+    intro y hy
+    have := (hP hw)
+    simp only [mem_ball, mem_closedBall] at *
+    calc dist y c ≤ dist y w + dist w c := dist_triangle _ _ _
+      _ < 2 * r := by linarith
+  have hε : r / (4 * C) ≤ r := by
+    apply (div_le_iff₀ (mul_pos (by norm_num) hC)).2
+    nlinarith
+  have hzw' : z ∈ ball w r := (ball_subset_ball hε) hzw
+  have hmaps : Set.MapsTo f (ball w r) (closedBall (f w) (C * M)) := by
+    intro y hy
+    simpa [hzero w hw, mem_closedBall, dist_zero_right] using hb y (hwr y hy)
+  have h := Complex.dist_le_div_mul_dist_of_mapsTo_ball (hf.mono hwr) hmaps hzw'
+  rw [hzero w hw, dist_zero_right] at h
+  have hdist : dist z w ≤ r / (4 * C) := (mem_ball.mp hzw).le
+  calc ‖f z‖ ≤ C * M / r * dist z w := h
+    _ ≤ C * M / r * (r / (4 * C)) := by gcongr
+    _ = M / 4 := by field_simp
+    _ ≤ M / 2 := by linarith
 
 /-- The norm of `f = (∏ x ∈ s, (· - x) ^ k x) • g` is the product of the distances to the zeros
 times the norm of the quotient. -/
