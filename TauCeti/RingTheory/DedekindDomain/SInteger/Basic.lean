@@ -79,8 +79,8 @@ instance : IsIntegrallyClosed (S.integer K) := by
   -- `𝒪_S` is the intersection of the valuation subalgebras at the `v ∉ S`, each of which is
   -- integrally closed, so `IsIntegrallyClosed.iInf` applies.
   have he : S.integer K = ⨅ v : {v : HeightOneSpectrum R // v ∉ S},
-      ({ (v.1.valuation K).valuationSubring.toSubring with
-          algebraMap_mem' := fun r ↦ v.1.valuation_le_one r } : Subalgebra R K) := by
+      ({ (v.val.valuation K).valuationSubring.toSubring with
+          algebraMap_mem' := fun r ↦ v.val.valuation_le_one r } : Subalgebra R K) := by
     ext x
     simp only [Algebra.mem_iInf, Subtype.forall, Set.mem_integer_iff]
     -- What remains is membership in the anonymous `Subalgebra` assembled above. Mathlib has no
@@ -91,7 +91,7 @@ instance : IsIntegrallyClosed (S.integer K) := by
     rfl
   rw [he]
   exact IsIntegrallyClosed.iInf _ fun v ↦
-    inferInstanceAs (IsIntegrallyClosed (v.1.valuation K).valuationSubring)
+    inferInstanceAs (IsIntegrallyClosed (v.val.valuation K).valuationSubring)
 
 /-!
 ### Primes in `S` become the unit ideal
@@ -247,7 +247,7 @@ lemma integer_comap_ne_bot {P : Ideal (S.integer K)} (hP : P ≠ ⊥) :
 noncomputable abbrev integerIdealUnder (I : (Ideal (S.integer K))⁰) : (Ideal R)⁰ :=
   ⟨(I : Ideal (S.integer K)).under R,
     mem_nonZeroDivisors_iff_ne_zero.mpr
-      (integer_comap_ne_bot K S (mem_nonZeroDivisors_iff_ne_zero.mp I.2))⟩
+      (integer_comap_ne_bot K S (mem_nonZeroDivisors_iff_ne_zero.mp I.property))⟩
 
 @[simp] lemma coe_integerIdealUnder (I : (Ideal (S.integer K))⁰) :
     (integerIdealUnder K S I : Ideal R) = (I : Ideal (S.integer K)).under R := rfl

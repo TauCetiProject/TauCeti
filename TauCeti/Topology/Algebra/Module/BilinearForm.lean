@@ -261,12 +261,12 @@ theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
   set Q := L.toBilinForm.toQuadraticMap.restrict N
   have hQ : Q.Anisotropic := fun x hx ↦ by
     by_contra hx0
-    have h := hN x x.2 (by simpa using hx0)
+    have h := hN x x.property (by simpa using hx0)
     simp only [Q, QuadraticMap.restrict_apply, LinearMap.BilinMap.toQuadraticMap_apply,
       ContinuousLinearMap.toBilinForm_apply] at hx
     linarith
   have hcont : Continuous Q :=
-    (L.continuous.comp continuous_subtype_val).clm_apply continuous_subtype_val
+    (L.continuous.comp continuous_subtypeVal).clm_apply continuous_subtypeVal
   obtain ⟨c, hc, hle⟩ := hQ.exists_pos_mul_norm_sq_le hcont
   refine ⟨c, hc, fun x hx ↦ ?_⟩
   rcases eq_or_ne x 0 with rfl | hx0

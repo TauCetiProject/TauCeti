@@ -38,7 +38,8 @@ the inverse of `v ↦ [τ v]` on `U` (`TauCeti.MulAction.isOpenEmbedding_quotien
 transitions are smooth by `TauCeti.exists_contMDiffAt_quotientMk_slice_eq_iff`.
 
 The model space is `ℝ^(dim M - dim G)`, the Euclidean space
-`ProperSMul.QuotientModelSpace E E'` for the model spaces `E` of `G` and `E'` of `M`. The charted
+`ProperSMul.QuotientModelSpace E E'` for the model spaces `E` of `G` and `E'` of `M`
+(`ProperSMul.finrank_quotientModelSpace`). The charted
 space is the definition `ProperSMul.orbitRelQuotientChartedSpace`, not an instance, because its
 model depends on the model with corners of `G`, which instance search cannot recover from the
 orbit space. Once it is in place, the manifold structure is found by instance search.
@@ -81,6 +82,12 @@ modelled on `E` on a manifold modelled on `E'`. -/
 abbrev QuotientModelSpace (E E' : Type*) [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] : Type :=
   EuclideanSpace ℝ (Fin (finrank ℝ E' - finrank ℝ E))
+
+/-- The model space of the orbit space has dimension `dim E' - dim E`. -/
+theorem finrank_quotientModelSpace {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] :
+    finrank ℝ (QuotientModelSpace E E') = finrank ℝ E' - finrank ℝ E :=
+  finrank_euclideanSpace_fin
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -171,7 +178,7 @@ private theorem exists_sliceDomain (x : M) :
   set B := (fun v ↦ extChartAt I' x x + (sliceEquiv I G I' x v : E')) ⁻¹'
     (extChartAt I' x).target
   have hB : IsOpen B := (isOpen_extChartAt_target x).preimage (continuous_const.add
-    (continuous_subtype_val.comp (sliceEquiv I G I' x).continuous))
+    (continuous_subtypeVal.comp (sliceEquiv I G I' x).continuous))
   have h0B : (0 : QuotientModelSpace E E') ∈ B := by simp [B]
   -- Properness upgrades local injectivity near `(1, 0)` to injectivity on a tube.
   obtain ⟨N, hN, hinjN⟩ := hloc.exists_mem_nhds_injOn

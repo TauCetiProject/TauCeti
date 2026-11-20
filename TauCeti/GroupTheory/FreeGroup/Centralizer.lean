@@ -132,7 +132,7 @@ theorem commute_of_commute {x y z : G} (hy : y ≠ 1) (hxy : Commute x y) (hyz :
   have hyH : y ∈ H := Subgroup.subset_closure (by simp)
   have hcen : (⟨y, hyH⟩ : H) ∈ Subgroup.center H :=
     Subgroup.mem_center_iff.2 fun g ↦
-      Subtype.ext (Subgroup.mem_centralizer_singleton_iff.1 (hle g.2))
+      Subtype.ext (Subgroup.mem_centralizer_singleton_iff.1 (hle g.property))
   have : IsMulCommutative H :=
     isMulCommutative_of_mem_center hcen (by simpa [Subtype.ext_iff] using hy)
   have hxH : x ∈ H := Subgroup.subset_closure (by simp)
@@ -143,8 +143,8 @@ theorem commute_of_commute {x y z : G} (hy : y ≠ 1) (hxy : Commute x y) (hyz :
 theorem isMulCommutative_centralizer {x : G} (hx : x ≠ 1) :
     IsMulCommutative (Subgroup.centralizer {x}) :=
   ⟨⟨fun a b ↦ Subtype.ext <| commute_of_commute hx
-    (Subgroup.mem_centralizer_singleton_iff.1 a.2)
-    (Subgroup.mem_centralizer_singleton_iff.1 b.2).symm⟩⟩
+    (Subgroup.mem_centralizer_singleton_iff.1 a.property)
+    (Subgroup.mem_centralizer_singleton_iff.1 b.property).symm⟩⟩
 
 end IsFreeGroup
 

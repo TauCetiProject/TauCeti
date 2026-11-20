@@ -138,7 +138,7 @@ theorem sectionIndex_eq_analyticOrderNatAt (φ : OpenPartialHomeomorph M ℂ) {z
     HomologicalOrientation.ofSimplyConnectedSpace_apply_self _ _
   let W : TopologicalSpace.Opens M := ⟨φ.source, φ.open_source⟩
   have hj : IsOpenEmbedding (fun x : U ↦ φ x) := φ.isOpenEmbedding_restrict.comp
-    ((IsOpenEmbedding.of_comp_iff (fun x : U ↦ (⟨x.1, hUφ x.2⟩ : W)) W.isOpenEmbedding').1
+    ((IsOpenEmbedding.of_comp_iff (fun x : U ↦ (⟨x.val, hUφ x.property⟩ : W)) W.isOpenEmbedding').1
       U.isOpenEmbedding')
   -- The orientation of `U` pulled back from `oF` along `φ` agrees at `z` with the one restricted
   -- from `oM`.
@@ -149,7 +149,7 @@ theorem sectionIndex_eq_analyticOrderNatAt (φ : OpenPartialHomeomorph M ℂ) {z
       (p' := oF.comap IsOpenEmbedding.id) (by rw [HomologicalOrientation.comap_id]),
     HomologicalOrientation.localIndex_comap_eq_analyticOrderNatAt_sub oF hj IsOpenEmbedding.id
       (f := fiberCoord hs e hUe) (φ := f)
-      (.of_forall fun x ↦ (hfφ x.1 (hUφ x.2)).trans (fiberCoord_apply hs e hUe x).symm) hA]
+      (.of_forall fun x ↦ (hfφ x.val (hUφ x.property)).trans (fiberCoord_apply hs e hUe x).symm) hA]
   simp only [hf0, sub_zero]
 
 /-- **The local index of a section at an isolated holomorphic zero is positive.** Under the

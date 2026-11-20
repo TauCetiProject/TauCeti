@@ -188,7 +188,7 @@ private theorem blockInsertUpTo_singleton (n : ℕ) (hn : n ≤ k) (c : (Fin k �
 
 private theorem isUnsplit_map_blockInsertUpTo {u : List ((Fin k ⊕ A) × Bool)}
     {L : List (List ((Fin k ⊕ A) × Bool))} (n : ℕ) (hn : n ≤ k) (huL : u.IsUnsplit L)
-    (hu : ∀ c ∈ u, ∀ i : Fin k, i.1 < n → c.1 ≠ Sum.inl i) :
+    (hu : ∀ c ∈ u, ∀ i : Fin k, i.val < n → c.1 ≠ Sum.inl i) :
     u.IsUnsplit (L.map (blockInsertUpTo a b m n hn)) := by
   induction n with
   | zero => simpa [blockInsertUpTo] using huL
@@ -203,7 +203,7 @@ private theorem isUnsplit_map_blockInsertUpTo {u : List ((Fin k ⊕ A) × Bool)}
       fun c hc ↦ hu c hc ⟨n, hn⟩ (Nat.lt_succ_self n)
 
 private theorem blockInsertUpTo_flatten {L : List (List ((Fin k ⊕ A) × Bool))} (n : ℕ) (hn : n ≤ k)
-    (h : ∀ i : Fin k, i.1 < n → (merzljakovBlock (Sum.inr a) (Sum.inr b) (m i)).IsUnsplit L ∧
+    (h : ∀ i : Fin k, i.val < n → (merzljakovBlock (Sum.inr a) (Sum.inr b) (m i)).IsUnsplit L ∧
       (invRev (merzljakovBlock (Sum.inr a) (Sum.inr b) (m i))).IsUnsplit L) :
     blockInsertUpTo a b m n hn L.flatten = (L.map (blockInsertUpTo a b m n hn)).flatten := by
   induction n with
@@ -230,7 +230,7 @@ private theorem isInfix_of_isInfix_blockInsertUpTo {u v : List ((Fin k ⊕ A) ×
 private theorem fst_mem_of_mem_blockInsertUpTo {v : List ((Fin k ⊕ A) × Bool)}
     (hv : ∀ c ∈ v, c.1 ∈ Set.range Sum.inr) (n : ℕ) (hn : n ≤ k)
     {c : (Fin k ⊕ A) × Bool} (hc : c ∈ blockInsertUpTo a b m n hn v) :
-    c.1 ∈ Set.range Sum.inr ∨ ∃ t : Fin k, t.1 < n ∧ c.1 = Sum.inl t := by
+    c.1 ∈ Set.range Sum.inr ∨ ∃ t : Fin k, t.val < n ∧ c.1 = Sum.inl t := by
   induction n with
   | zero => exact .inl (hv c hc)
   | succ n ih =>
@@ -242,7 +242,7 @@ private theorem fst_mem_of_mem_blockInsertUpTo {v : List ((Fin k ⊕ A) × Bool)
 
 private theorem blockInsertUpTo_eq_of_ge {v : List (A × Bool)} (j : ℕ) (hj : j ≤ k)
     (n : ℕ) (hn : n ≤ k) (hjn : j ≤ n)
-    (hnot : ∀ t : Fin k, j ≤ t.1 → t.1 < n →
+    (hnot : ∀ t : Fin k, j ≤ t.val → t.val < n →
       ¬ merzljakovBlock a b (m t) <:+: v ∧ ¬ invRev (merzljakovBlock a b (m t)) <:+: v) :
     blockInsertUpTo a b m n hn (v.map (Prod.map Sum.inr id)) =
       blockInsertUpTo a b m j hj (v.map (Prod.map Sum.inr id)) := by
@@ -291,7 +291,7 @@ private theorem map_flatMap_patterns_blockInsertUpTo {α ι : Type*} (W : List (
     have hL₀_map : L₀ = (V.map (substituteLetter P.piece)).map
         (List.map (Prod.map Sum.inr id)) := by
       simp only [L₀, piece₀, List.map_map, Function.comp_def, map_prodMap_substituteLetter]
-    have hL₀_unsplit (i : Fin k) (_ : i.1 < k) :
+    have hL₀_unsplit (i : Fin k) (_ : i.val < k) :
         (merzljakovBlock (Sum.inr a : Fin k ⊕ A) (Sum.inr b) (m i)).IsUnsplit L₀ ∧
           (invRev (merzljakovBlock (Sum.inr a : Fin k ⊕ A) (Sum.inr b) (m i))).IsUnsplit L₀ := by
       rw [hL₀_map, ← map_prodMap_merzljakovBlock, ← map_prodMap_invRev,
@@ -325,19 +325,20 @@ private theorem exists_mul_of_mul_blockInsertUpTo_merzljakovWord (hab : a ≠ b)
         map Sum.inr u * of (Sum.inl i) * map Sum.inr v := by
   have hab' : (Sum.inr a : Fin k ⊕ A) ≠ Sum.inr b := Sum.inr_injective.ne hab
   -- Steps before `i` leave `merzljakovWord a b (ms i)` unchanged.
-  have hbefore : blockInsertUpTo a b m i.1 i.2.le
+  have hbefore : blockInsertUpTo a b m i.val i.isLt.le
       ((merzljakovWord a b (ms i)).map (Prod.map Sum.inr id)) =
       (merzljakovWord a b (ms i)).map (Prod.map Sum.inr id) := by
-    refine blockInsertUpTo_eq_of_ge 0 (Nat.zero_le k) i.1 i.2.le (Nat.zero_le _) fun t _ ht ↦ ?_
+    refine blockInsertUpTo_eq_of_ge 0 (Nat.zero_le k) i.val i.isLt.le
+        (Nat.zero_le _) fun t _ ht ↦ ?_
     have hne : t ≠ i := fun heq ↦ ht.ne (congrArg Fin.val heq)
     exact ⟨hms.not_merzljakovBlock_isInfix_merzljakovWord hab hne (hm t),
       not_invRev_merzljakovBlock_isInfix_merzljakovWord a b (m t) (ms i)⟩
   -- Steps after `i` leave the result of step `i + 1` unchanged.
   have hafter : blockInsertUpTo a b m k le_rfl
       ((merzljakovWord a b (ms i)).map (Prod.map Sum.inr id)) =
-      blockInsertUpTo a b m (i.1 + 1) i.2
+      blockInsertUpTo a b m (i.val + 1) i.isLt
         ((merzljakovWord a b (ms i)).map (Prod.map Sum.inr id)) := by
-    refine blockInsertUpTo_eq_of_ge (i.1 + 1) i.2 k le_rfl i.2 fun t ht _ ↦ ?_
+    refine blockInsertUpTo_eq_of_ge (i.val + 1) i.isLt k le_rfl i.isLt fun t ht _ ↦ ?_
     have hne : t ≠ i := fun heq ↦ (Nat.lt_of_succ_le ht).ne' (congrArg Fin.val heq)
     exact ⟨hms.not_merzljakovBlock_isInfix_merzljakovWord hab hne (hm t),
       not_invRev_merzljakovBlock_isInfix_merzljakovWord a b (m t) (ms i)⟩
@@ -366,8 +367,8 @@ private theorem mk_blockInsertUpTo_toWord_mem_closure {ms : Fin k → List ℕ}
     mk (blockInsertUpTo a b m k le_rfl (((h j).toWord).map (Prod.map Sum.inr id))) ∈
       Subgroup.closure (Set.range (of ∘ Sum.inr) ∪ (of ∘ Sum.inl) '' Set.Iic j) := by
   have heq : blockInsertUpTo a b m k le_rfl (((h j).toWord).map (Prod.map Sum.inr id)) =
-      blockInsertUpTo a b m (j.1 + 1) j.2 (((h j).toWord).map (Prod.map Sum.inr id)) := by
-    refine blockInsertUpTo_eq_of_ge (j.1 + 1) j.2 k le_rfl j.2 fun t ht _ ↦ ?_
+      blockInsertUpTo a b m (j.val + 1) j.isLt (((h j).toWord).map (Prod.map Sum.inr id)) := by
+    refine blockInsertUpTo_eq_of_ge (j.val + 1) j.isLt k le_rfl j.isLt fun t ht _ ↦ ?_
     have hjt : j < t := Fin.lt_def.2 (Nat.lt_of_succ_le ht)
     exact ⟨hms.not_isInfix_toWord hjt (hm t), hms.not_invRev_isInfix_toWord hjt (hm t)⟩
   have himg : of '' (Set.range (Sum.inr : A → Fin k ⊕ A) ∪ Sum.inl '' Set.Iic j) =
@@ -380,7 +381,7 @@ private theorem mk_blockInsertUpTo_toWord_mem_closure {ms : Fin k → List ℕ}
     intro d hd
     obtain ⟨e, _, rfl⟩ := mem_map.1 hd
     exact ⟨e.1, rfl⟩
-  rcases fst_mem_of_mem_blockInsertUpTo hv₀ (j.1 + 1) j.2 hc with ha' | ⟨t, ht, htc⟩
+  rcases fst_mem_of_mem_blockInsertUpTo hv₀ (j.val + 1) j.isLt hc with ha' | ⟨t, ht, htc⟩
   · exact .inl ha'
   · exact .inr ⟨t, Fin.le_iff_val_le_val.2 (Nat.le_of_lt_succ ht), htc.symm⟩
 

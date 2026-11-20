@@ -142,7 +142,7 @@ theorem rootSpaceSpan_eq_iSup (S : Set H.root) :
   refine le_antisymm (genWeightSpaceSpan_le_iff.mpr ?_) (iSup_le fun α => ?_)
   · rintro _ ⟨α, hα, rfl⟩
     exact le_iSup (fun β : S => rootSpace H ((β : H.root) : H → K)) ⟨α, hα⟩
-  · exact rootSpace_le_rootSpaceSpan α.2
+  · exact rootSpace_le_rootSpaceSpan α.property
 
 omit [IsKilling K L] [IsTriangularizable K H L] in
 /-- Spans of root spaces are monotone in the indexing set. -/
@@ -171,7 +171,7 @@ theorem lie_mem_rootSpaceSpan {S : Set H.root}
     (fun α x hx => ?_) (by simp) (fun x z hx hz => by rw [add_lie]; exact add_mem hx hz)
   refine LieSubmodule.iSup_induction (motive := fun y => ⁅x, y⁆ ∈ rootSpaceSpan H S) _ hy
     (fun β y hy => ?_) (by simp) (fun y z hy hz => by rw [lie_add]; exact add_mem hy hz)
-  exact hS α α.2 β β.2 (lie_mem_genWeightSpace_of_mem_genWeightSpace hx hy)
+  exact hS α α.property β β.property (lie_mem_genWeightSpace_of_mem_genWeightSpace hx hy)
 
 /-! ### Special closed sets of roots -/
 
@@ -405,7 +405,7 @@ theorem rootSpaceSubalgebra_le_iff {S : Set H.root} (hS : IsSpecialClosedRootSet
   refine ⟨fun h α hα _ hx => h (rootSpace_le_rootSpaceSpan hα hx), fun h => ?_⟩
   rw [← LieSubalgebra.toSubmodule_le_toSubmodule, rootSpaceSubalgebra_toSubmodule,
     rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
-  exact iSup_le fun α => h α α.2
+  exact iSup_le fun α => h α α.property
 
 /-! ### The nilradicals and the Borel subalgebra -/
 
@@ -622,7 +622,7 @@ theorem disjoint_negativeNilradical_borelSubalgebra :
   have hST : Disjoint S T := by
     rw [Set.disjoint_left]
     rintro _ ⟨α, hα, rfl⟩ (h0 | ⟨β, hβ, hβα⟩)
-    · exact (Finset.mem_filter.mp α.2).2 h0
+    · exact (Finset.mem_filter.mp α.property).2 h0
     · obtain rfl : β = α := Subtype.ext (DFunLike.coe_injective hβα)
       exact (not_mem_posRoots_iff_mem_negRoots _ b β).mpr hα hβ
   have hS : rootSpaceSpan H (negRoots (IsKilling.rootSystem H) b) ≤
@@ -656,7 +656,7 @@ omit [CharZero K] in
 /-- A nonzero vector of the root space `L_{-α}`, for a root `α`. -/
 private theorem exists_ne_zero_mem_rootSpace_neg (i : H.root) :
     ∃ x ∈ rootSpace H (-((i : Weight K H L) : H → K)), x ≠ 0 :=
-  Weight.exists_ne_zero (R := K) (L := H) (M := L) (-i).1
+  Weight.exists_ne_zero (R := K) (L := H) (M := L) (-i).val
 
 /-- The chosen root vector of weight `-α`, for a root `α`. -/
 private noncomputable def negRootVector (i : H.root) : L :=
@@ -676,7 +676,7 @@ nilradical. -/
 private noncomputable def negRootVectorNilradical (i : posRoots (IsKilling.rootSystem H) b) :
     negativeNilradical H b :=
   ⟨negRootVector (i : H.root), mem_negativeNilradical_of_mem_rootSpace H b
-    (neg_mem_negRoots_of_mem_posRoots b i.2) (negRootVector_mem_rootSpace (i : H.root))⟩
+    (neg_mem_negRoots_of_mem_posRoots b i.property) (negRootVector_mem_rootSpace (i : H.root))⟩
 
 /-- The root vectors of weights `-α`, for `α` ranging over the positive roots, are linearly
 independent: they are nonzero vectors of independent root spaces. -/
@@ -701,7 +701,7 @@ private theorem rootSpace_le_span_negRootVector (i : H.root) :
   intro x hx
   have hone : finrank K (rootSpace H (-((i : Weight K H L) : H → K))) = 1 :=
     IsKilling.finrank_rootSpace_eq_one (-(i : Weight K H L))
-      (Weight.IsNonZero.neg (Finset.mem_filter.mp i.2).2)
+      (Weight.IsNonZero.neg (Finset.mem_filter.mp i.property).2)
   obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero'
     (⟨negRootVector i, negRootVector_mem_rootSpace i⟩ :
       rootSpace H (-((i : Weight K H L) : H → K)))
@@ -723,7 +723,7 @@ private theorem span_range_negRootVectorNilradical :
         (negativeNilradical H b).toSubmodule.subtype := by
     rw [Submodule.map_span, ← Set.range_comp]
     refine iSup_le fun α ↦ ?_
-    have hα := neg_mem_posRoots_of_mem_negRoots b α.2
+    have hα := neg_mem_posRoots_of_mem_negRoots b α.property
     refine (le_of_eq ?_).trans ((rootSpace_le_span_negRootVector (-(α : H.root))).trans
       (Submodule.span_mono (Set.singleton_subset_iff.mpr ⟨⟨_, hα⟩, rfl⟩)))
     simp
@@ -766,12 +766,12 @@ theorem disjoint_cartan_positiveNilradical :
   have h0 : (0 : H → K) ∉
       (fun α : H.root ↦ (α : H → K)) '' posRoots (IsKilling.rootSystem H) b := by
     rintro ⟨α, -, hα⟩
-    exact (Finset.mem_filter.mp α.2).2 hα
+    exact (Finset.mem_filter.mp α.property).2 hα
   have hdisj :
       Disjoint (rootSpace H 0) (rootSpaceSpan H (posRoots (IsKilling.rootSystem H) b)) := by
     refine ((iSupIndep_genWeightSpace K H L).disjoint_biSup h0).mono_right ?_
     rw [rootSpaceSpan_eq_iSup]
-    exact iSup_le fun α ↦ le_biSup (fun χ : H → K ↦ genWeightSpace L χ) ⟨α, α.2, rfl⟩
+    exact iSup_le fun α ↦ le_biSup (fun χ : H → K ↦ genWeightSpace L χ) ⟨α, α.property, rfl⟩
   rw [← LieSubmodule.disjoint_toSubmodule, rootSpace_zero_eq K L H, H.coe_toLieSubmodule] at hdisj
   exact hdisj.mono_right fun x hx ↦ (mem_positiveNilradical H b x).mp hx
 
@@ -801,11 +801,12 @@ noncomputable def borelCharacter : LieCharacter K (borelSubalgebra H b) where
   map_lie' {x y} := by
     rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self]
     exact borelPMap_apply H b lam _ 0 ⟨⁅x, y⁆,
-      lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra H b x.2 y.2⟩
+      lie_mem_positiveNilradical_of_mem_borelSubalgebra_of_mem_borelSubalgebra H b x.property
+          y.property⟩
       (zero_add _) |>.trans (map_zero lam)
 
 private theorem borelCharacter_eq_borelPMap (x : borelSubalgebra H b) :
-    borelCharacter H b lam x = borelPMap H b lam ⟨x, x.2⟩ :=
+    borelCharacter H b lam x = borelPMap H b lam ⟨x, x.property⟩ :=
   (rfl)
 
 /-- The character of weight `lam` restricts to `lam` on the Cartan subalgebra. -/

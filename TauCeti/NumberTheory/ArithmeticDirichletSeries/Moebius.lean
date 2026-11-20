@@ -242,7 +242,7 @@ theorem sum_moebius_divisorsAntidiagonal_of_ne_one {A : (Ideal (𝓞 K))⁰} (hA
   classical
   have hA0 : (A : Ideal (𝓞 K)) ≠ 0 := nonZeroDivisors.coe_ne_zero A
   have hPne : (normalizedFactors (A : Ideal (𝓞 K))).toFinset.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty, Ne, Multiset.toFinset_eq_empty,
+    rw [← Finset.ne_empty_iff_nonempty, Ne, Multiset.toFinset_eq_empty,
       normalizedFactors_eq_zero_iff hA0, _root_.Ideal.isUnit_iff]
     exact fun h ↦ hA (Subtype.ext (by simpa [_root_.Ideal.one_eq_top] using h))
   rw [← Finset.sum_filter_of_ne
@@ -343,7 +343,7 @@ theorem not_exists_unitaryIdealWeight_eq_moebius :
     ¬ ∃ χ : UnitaryIdealWeight K,
       χ.toIdealArithmeticFunction = (moebius : IdealArithmeticFunction K) := by
   rintro ⟨χ, hχ⟩
-  refine not_exists_multiplicativeIdealWeight_eq_moebius ⟨χ.1, ?_⟩
+  refine not_exists_multiplicativeIdealWeight_eq_moebius ⟨χ.val, ?_⟩
   ext I
   rw [MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, ← hχ,
     UnitaryIdealWeight.toIdealArithmeticFunction_apply]

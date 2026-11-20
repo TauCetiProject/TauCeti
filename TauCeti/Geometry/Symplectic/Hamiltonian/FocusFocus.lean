@@ -103,7 +103,7 @@ theorem exists_ne_zero_apply_eq_self [Nontrivial V]
   have hA' : (A : Module.End ℝ V) = (-1 : ℝ) • 1 := LinearMap.ext fun u ↦ by
     rw [LinearMap.smul_apply, one_apply_eq_self, neg_one_smul]
     exact eq_neg_of_add_eq_zero_right (hfix u)
-  have := eq_zero_of_smul_one_mem (ω := ω) (hA' ▸ A.2)
+  have := eq_zero_of_smul_one_mem (ω := ω) (hA' ▸ A.property)
   norm_num at this
 
 /-- If `A₁, A₂ ∈ sp(V, ω)` commute with `A₁² = 1` and `A₂² = -1`, some vector `v` makes

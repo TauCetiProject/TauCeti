@@ -155,7 +155,7 @@ theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s)
   replace hr : 0 < r := pos_iff_ne_zero.2 hr
   have hu : UniformContinuous (s.domRestrict f) := hf.holderWith.uniformContinuous hr
   have hi := isUniformInducing_val s
-  have hd : DenseRange ((↑) : s → X) := hs.denseRange_val
+  have hd : DenseRange ((↑) : s → X) := hs.denseRange_subtypeVal
   set g := (hi.isDenseInducing hd).extend (s.domRestrict f)
   have hg : Continuous g := (uniformContinuous_uniformly_extend hi hd hu).continuous
   have heq : EqOn f g s := fun x hx => (uniformly_extend_of_ind hi hd hu ⟨x, hx⟩).symm
@@ -542,7 +542,7 @@ theorem MemHolder.eHolderNorm_comp_le {X' X Z : Type*} [PseudoEMetricSpace X']
     ⟨⟨D, hD⟩, ENNReal.rpow_ne_top_of_nonneg α.coe_nonneg ENNReal.coe_ne_top⟩
     fun C D ↦ ?_
   rw [← ENNReal.coe_rpow_of_nonneg _ α.coe_nonneg, ← ENNReal.coe_mul]
-  exact (C.2.comp D.2).eHolderNorm_le
+  exact (C.property.comp D.property).eHolderNorm_le
 
 /-- **The Hölder seminorm of a composition.** If `f` is `α`-Hölder and `g` is `β`-Hölder, then the
 `α β`-Hölder seminorm of `f ∘ g` is at most `nnHolderNorm α f * nnHolderNorm β g ^ α`. For a

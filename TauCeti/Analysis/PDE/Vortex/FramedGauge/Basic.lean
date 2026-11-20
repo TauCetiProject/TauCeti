@@ -560,6 +560,26 @@ theorem equation_gaugeTransform {u : ℂ → Circle}
   · ring
   · ring
 
+/-- Rotating the last two entries of a vector of `ℝ³` by a circle element preserves and reflects
+its vanishing. This is how gauge covariance of the complex defect is used. -/
+theorem circle_rotate_tail_eq_zero_iff (u : Circle) (v : EuclideanSpace ℝ (Fin 3)) :
+    !₂[v 0, (u : ℂ).re * v 1 - (u : ℂ).im * v 2, (u : ℂ).im * v 1 + (u : ℂ).re * v 2] = 0 ↔
+      v = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by ext i; fin_cases i <;> simp [h]⟩
+  have h₀ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 0) h
+  have h₁ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) h
+  have h₂ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) h
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply] at h₀ h₁ h₂
+  have hn := Circle.re_sq_add_im_sq u
+  ext i
+  have hi : i = 0 ∨ i = 1 ∨ i = 2 := by omega
+  rcases hi with rfl | rfl | rfl
+  all_goals simp only [PiLp.zero_apply]
+  · exact h₀
+  · linear_combination (u : ℂ).re * h₁ + (u : ℂ).im * h₂ - v 1 * hn
+  · linear_combination -(u : ℂ).im * h₁ + (u : ℂ).re * h₂ - v 2 * hn
+
 /-- A gauge transformation preserves the vortex equation in both directions. -/
 @[simp]
 theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
@@ -567,21 +587,7 @@ theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z)
     (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
     equation (gaugeTransform u x) z = 0 ↔ equation x z = 0 := by
-  rw [equation_gaugeTransform hu hx]
-  refine ⟨fun h ↦ ?_, fun h ↦ by ext i; fin_cases i <;> simp [h]⟩
-  have h₀ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 0) h
-  have h₁ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) h
-  have h₂ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) h
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply] at h₀ h₁ h₂
-  have hn := Circle.re_sq_add_im_sq (u z)
-  ext i
-  have hi : i = 0 ∨ i = 1 ∨ i = 2 := by omega
-  rcases hi with rfl | rfl | rfl
-  all_goals simp only [PiLp.zero_apply]
-  · exact h₀
-  · linear_combination (u z : ℂ).re * h₁ + (u z : ℂ).im * h₂ - equation x z 1 * hn
-  · linear_combination -(u z : ℂ).im * h₁ + (u z : ℂ).re * h₂ - equation x z 2 * hn
+  rw [equation_gaugeTransform hu hx, circle_rotate_tail_eq_zero_iff]
 
 /-- The section transforms by the charge-one representation, not its square. -/
 @[simp]
@@ -706,7 +712,7 @@ theorem tendsto_sectionValue_gaugeTransform {u : ℂ → Circle}
     Tendsto (fun z ↦ sectionValue (gaugeTransform u x) z * phase z)
       (cocompact ℂ) (𝓝 1) := by
   have huc : Tendsto (fun z ↦ (u z : ℂ)) (cocompact ℂ) (𝓝 1) := by
-    have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtype_val
+    have hc : Continuous (fun w : Circle ↦ (w : ℂ)) := continuous_subtypeVal
     simpa only [Function.comp_def, Circle.coe_one] using (hc.tendsto 1).comp hu
   simpa only [sectionValue_gaugeTransform, mul_assoc, one_mul] using huc.mul hx
 

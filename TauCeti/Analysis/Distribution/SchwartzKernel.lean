@@ -143,15 +143,16 @@ private abbrev SmallBall {d : Type*} [Fintype d] (U : Set (d → ℝ)) : Type _ 
 
 /-- The open balls of half the radius of the small balls in an open set cover it. -/
 private theorem subset_iUnion_ball_smallBall {d : Type*} [Fintype d] {U : Set (d → ℝ)}
-    (hU : IsOpen U) : U ⊆ ⋃ i : SmallBall U, ball i.1.1 (i.1.2 / 2) := fun x hx ↦ by
+    (hU : IsOpen U) : U ⊆ ⋃ i : SmallBall U, ball i.val.1 (i.val.2 / 2) := fun x hx ↦ by
   obtain ⟨r, hr₀, hr, hrU⟩ :=
     TauCeti.exists_pos_lt_closedBall_subset (hU.mem_nhds hx) one_half_pos
   exact mem_iUnion.2 ⟨⟨(x, r), hr₀, hr, hrU⟩, mem_ball_self (by positivity)⟩
 
 /-- The open ball of half the radius of a small ball in `U` lies in `U`. -/
 private theorem ball_smallBall_subset {d : Type*} [Fintype d] {U : Set (d → ℝ)} (i : SmallBall U) :
-    ball i.1.1 (i.1.2 / 2) ⊆ U :=
-  ball_subset_closedBall.trans ((closedBall_subset_closedBall (by linarith [i.2.1])).trans i.2.2.2)
+    ball i.val.1 (i.val.2 / 2) ⊆ U :=
+  ball_subset_closedBall.trans ((closedBall_subset_closedBall (by linarith
+      [i.property.1])).trans i.property.2.2)
 
 /-- The products of two small balls, in `Ω` and in `O`. -/
 private abbrev SmallBox (Ω : Opens (a → ℝ)) (O : Opens (b → ℝ)) : Type _ :=
@@ -164,7 +165,8 @@ supported in open balls of half the radius of small balls takes this value on ev
 private theorem apply_tensor_of_forall_smallBall {V : Opens ((a → ℝ) × (b → ℝ))}
     (hV : (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ)) ⊆ V) (S : 𝓓(V, ℂ) →L[ℂ] F)
     (hS : ∀ (i : SmallBall (Ω : Set (a → ℝ))) (j : SmallBall (O : Set (b → ℝ))) (φ : 𝓓(Ω, ℂ))
-      (ψ : 𝓓(O, ℂ)), tsupport φ ⊆ ball i.1.1 (i.1.2 / 2) → tsupport ψ ⊆ ball j.1.1 (j.1.2 / 2) →
+      (ψ : 𝓓(O, ℂ)), tsupport φ ⊆ ball i.val.1 (i.val.2 / 2) → tsupport ψ ⊆ ball j.val.1
+          (j.val.2 / 2) →
         S (φ.tensor ψ hV) = B φ ψ)
     (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)) : S (φ.tensor ψ hV) = B φ ψ := by
   obtain ⟨s₁, φs, hφs, hφsum, -⟩ := φ.exists_sum_subordinate _ (fun _ ↦ isOpen_ball)
@@ -175,7 +177,7 @@ private theorem apply_tensor_of_forall_smallBall {V : Opens ((a → ℝ) × (b �
     ext p
     simp [← hφsum, ← hψsum, Finset.sum_mul_sum]
   have hterm (i : s₁) (j : s₂) : S ((φs i).tensor (ψs j) hV) = B (φs i) (ψs j) :=
-    hS i.1 j.1 (φs i) (ψs j) (hφs i) (hψs j)
+    hS i.val j.val (φs i) (ψs j) (hφs i) (hψs j)
   rw [hsplit, map_sum]
   simp only [map_sum, hterm]
   conv_rhs => rw [← hφsum, ← hψsum]
@@ -348,7 +350,8 @@ theorem existsUnique_schwartzKernel_testFunction {V : Opens ((a → ℝ) × (b �
     simp [hχ]
   -- The open boxes `ball x (r / 2) ×ˢ ball y (s / 2)` of the small boxes in `Ω × O`.
   let U (ij : SmallBox Ω O) : Opens ((a → ℝ) × (b → ℝ)) :=
-    ⟨ball ij.1.1.1 (ij.1.1.2 / 2) ×ˢ ball ij.2.1.1 (ij.2.1.2 / 2), isOpen_ball.prod isOpen_ball⟩
+    ⟨ball ij.1.val.1 (ij.1.val.2 / 2) ×ˢ ball ij.2.val.1 (ij.2.val.2 / 2),
+        isOpen_ball.prod isOpen_ball⟩
   have hUV (ij : SmallBox Ω O) : (U ij : Set ((a → ℝ) × (b → ℝ))) ⊆ Ω ×ˢ O :=
     prod_mono (ball_smallBall_subset ij.1) (ball_smallBall_subset ij.2)
   have hU : ⨆ ij, U ij = V := by
@@ -358,8 +361,9 @@ theorem existsUnique_schwartzKernel_testFunction {V : Opens ((a → ℝ) × (b �
     obtain ⟨i, hi⟩ := mem_iUnion.1 (subset_iUnion_ball_smallBall Ω.isOpen hp.1)
     obtain ⟨j, hj⟩ := mem_iUnion.1 (subset_iUnion_ball_smallBall O.isOpen hp.2)
     exact mem_iUnion.2 ⟨(i, j), hi, hj⟩
-  choose T hT using fun ij : SmallBox Ω O ↦ exists_isKernelOn_box hB ij.1.2.1 ij.1.2.2.1 ij.2.2.1
-    ij.2.2.2.1 ij.1.2.2.2 ij.2.2.2.2 (U := U ij) rfl
+  choose T hT using fun ij : SmallBox Ω O ↦ exists_isKernelOn_box hB ij.1.property.1
+      ij.1.property.2.1 ij.2.property.1
+    ij.2.property.2.1 ij.1.property.2.2 ij.2.property.2.2 (U := U ij) rfl
   -- The local kernels agree on overlaps, since both restrict to kernels of `B` there.
   have hcompat (ij kl : SmallBox Ω O) (θ : 𝓓(U ij ⊓ U kl, ℂ)) :
       T ij (monoCLM ℂ θ) = T kl (monoCLM ℂ θ) := by

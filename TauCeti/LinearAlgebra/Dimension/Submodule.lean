@@ -150,7 +150,7 @@ theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) 
   have hv' : LinearIndependent 𝕜 (M.subtype ∘ v) := hv.map' M.subtype M.ker_subtype
   have := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range (M.subtype ∘ v))
   refine ⟨span 𝕜 (Set.range (M.subtype ∘ v)),
-    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).2), ?_⟩
+    span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
 
 /-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension

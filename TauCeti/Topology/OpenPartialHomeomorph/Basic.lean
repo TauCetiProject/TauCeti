@@ -66,6 +66,6 @@ theorem sub_preimage_zero_subset [AddGroup Y] {z : X} (hz : z ∈ e.source) :
   intro x hx
   rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
   rw [Set.mem_singleton_iff]
-  exact Subtype.ext (e.injOn x.2 hz (sub_eq_zero.1 hx))
+  exact Subtype.ext (e.injOn x.property hz (sub_eq_zero.1 hx))
 
 end OpenPartialHomeomorph
