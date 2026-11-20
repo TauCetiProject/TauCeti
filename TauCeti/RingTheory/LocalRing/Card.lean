@@ -7,10 +7,8 @@ module
 
 -- `IsLocalRing.ResidueField` occurs in the statements below.
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
--- Non-public: `TauCeti.quotientEquivResidueField` identifies `R ⧸ 𝔪` with the residue field, and
--- `TauCeti.IsLocalRing.unitsEquivNotMemMaximalIdeal` the units with the complement of `𝔪`.
+-- Non-public: `TauCeti.quotientEquivResidueField` identifies `R ⧸ 𝔪` with the residue field.
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
-import TauCeti.RingTheory.LocalRing.Basic
 -- `Module.IsUnimodular` occurs in the statements below; the coordinate criterion
 -- `TauCeti.Module.isUnimodular_iff_exists_isUnit` is what the count runs on.
 public import TauCeti.LinearAlgebra.Unimodular
@@ -84,7 +82,8 @@ theorem card_residueField_mul_card_units :
   refine mul_eq_of_add_eq (m := Nat.card (maximalIdeal R))
     (card_eq_card_maximalIdeal_mul_card_residueField R) ?_
   classical
-  rw [Nat.card_congr unitsEquivNotMemMaximalIdeal, add_comm, ← Nat.card_sum,
+  rw [Nat.card_congr (Submonoid.unitsTypeEquivIsUnitSubmonoid.toEquiv.trans
+      (Equiv.subtypeEquivRight fun _ ↦ notMem_maximalIdeal.symm)), add_comm, ← Nat.card_sum,
     Nat.card_congr (Equiv.sumCompl fun x : R ↦ x ∈ maximalIdeal R)]
 
 /-- **The unimodular vectors over a finite local ring**: for a finite index type `ι` with `n`

@@ -24,7 +24,6 @@ is the residue field `κ`. Likewise, any surjective `R₀`-algebra map `ψ : R �
   sending the class of `r` to `residue R r`.
 * `TauCeti.residueFieldAlgEquivOfSurjective`: `ResidueField R ≃ₐ[R₀] L` induced by a surjective
   `R₀`-algebra map `ψ : R →ₐ[R₀] L` onto a field `L`.
-* `TauCeti.isLocalRing_quotient`: the quotient of a local ring by a proper ideal is local.
 * `TauCeti.card_residueField_of_surjective`: along a surjective ring homomorphism of
   local rings, the residue fields have the same number of elements.
 -/
@@ -86,12 +85,6 @@ theorem residueFieldAlgEquivOfSurjective_symm_apply {R₀ L : Type*} [CommRing R
     (residueFieldAlgEquivOfSurjective hψ).symm (ψ r) = residue R r :=
   (residueFieldAlgEquivOfSurjective hψ).symm_apply_eq.mpr
     (residueFieldAlgEquivOfSurjective_residue hψ r).symm
-
-/-- The quotient of a commutative local ring by a proper ideal is a local ring. -/
-theorem isLocalRing_quotient {A : Type*} [CommRing A] [IsLocalRing A] {I : Ideal A} (hI : I ≠ ⊤) :
-    IsLocalRing (A ⧸ I) :=
-  have : Nontrivial (A ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
-  .of_surjective' _ Ideal.Quotient.mk_surjective
 
 /-- Along a surjective ring homomorphism of local rings, the residue fields have the same number
 of elements, so the residue field of a quotient `A ⧸ I` by a proper ideal has as many elements as

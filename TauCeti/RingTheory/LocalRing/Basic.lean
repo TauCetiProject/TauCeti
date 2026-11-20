@@ -24,8 +24,6 @@ characteristic two the idempotent criterion identifies the zeros of the Artin–
 * `IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing`: an idempotent of a local ring is `0`
   or `1`.
 * `TauCeti.IsLocalRing.isDedekindFiniteMonoid`: a local ring is Dedekind-finite.
-* `TauCeti.IsLocalRing.unitsEquivNotMemMaximalIdeal`: the units of a commutative local semiring
-  are the elements outside the maximal ideal.
 * `TauCeti.IsLocalRing.maximalIdeal_pow_ne_top`: a positive power of the maximal ideal is proper.
 * `TauCeti.isUnit_add_of_isUnit_of_not_isUnit`: adding a nonunit to a unit in a local ring
   yields a unit.
@@ -66,16 +64,6 @@ instance IsLocalRing.isDedekindFiniteMonoid {R : Type*} [Ring R] [IsLocalRing R]
       rw [IsIdempotentElem, mul_assoc, ← mul_assoc p, hpq, one_mul]
     refine he.eq_zero_or_eq_one_of_isLocalRing.resolve_left fun h0 ↦ one_ne_zero (α := R) ?_
     simpa only [mul_assoc, hpq, mul_one, mul_zero, zero_mul] using congr(p * $h0 * q)
-
-/-- In a commutative local semiring, the units are the elements outside the maximal ideal. -/
--- Exposed: the generated `@[simps]` field lemmas are `rfl`-proofs about this body.
-@[expose, simps]
-noncomputable def IsLocalRing.unitsEquivNotMemMaximalIdeal {R : Type*} [CommSemiring R]
-    [IsLocalRing R] : Rˣ ≃ {x : R // x ∉ IsLocalRing.maximalIdeal R} where
-  toFun u := ⟨u, IsLocalRing.notMem_maximalIdeal.mpr u.isUnit⟩
-  invFun x := (IsLocalRing.notMem_maximalIdeal.mp x.2).unit
-  left_inv _ := Units.ext rfl
-  right_inv _ := Subtype.ext rfl
 
 /-- A positive power of the maximal ideal of a commutative local semiring is a proper ideal. -/
 theorem IsLocalRing.maximalIdeal_pow_ne_top {R : Type*} [CommSemiring R] [IsLocalRing R]

@@ -26,6 +26,7 @@ import Mathlib.RingTheory.LocalRing.Quotient
 -- `𝔭ᵉ`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
+import TauCeti.RingTheory.LocalRing.Quotient
 import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 import TauCeti.RingTheory.LocalRing.Basic
 
