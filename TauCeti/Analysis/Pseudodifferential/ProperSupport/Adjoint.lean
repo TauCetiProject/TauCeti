@@ -601,17 +601,15 @@ theorem integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff {χ : 𝓢(Co
       ∫ x, inner ℂ (u x)
         (Symbol.quantizeTestFunctionCLM (hasNearDiagonalKernel_adjointKernelCutoff hχ hχR a) v
           x) := by
-  let us := u.hasCompactSupport.toSchwartzMap u.contDiff
-  let vs := v.hasCompactSupport.toSchwartzMap v.contDiff
-  have hus : HasCompactSupport us := by
-    rw [show ⇑us = ⇑u from funext (HasCompactSupport.toSchwartzMap_toFun _ _)]
-    exact u.hasCompactSupport
-  have hvs : HasCompactSupport vs := by
-    rw [show ⇑vs = ⇑v from funext (HasCompactSupport.toSchwartzMap_toFun _ _)]
-    exact v.hasCompactSupport
-  have h := integral_inner_quantizeSchwartzValue_adjointKernelCutoff χ hχ a us hus vs hvs
-  simp only [Symbol.quantizeTestFunctionCLM_apply]
-  simpa only [us, vs, HasCompactSupport.toSchwartzMap_toFun] using h
+  have h := integral_inner_quantizeSchwartzValue_adjointKernelCutoff χ hχ a
+    (TestFunction.toSchwartzMapCLM ℂ u) (TestFunction.hasCompactSupport_toSchwartzMapCLM (𝕜 := ℂ) u)
+    (TestFunction.toSchwartzMapCLM ℂ v) (TestFunction.hasCompactSupport_toSchwartzMapCLM (𝕜 := ℂ) v)
+  -- Quantization still uses the raw Schwartz constructor; its pointwise value law
+  -- must be promoted to a function equality under the Fourier transform.
+  simpa only [Symbol.quantizeTestFunctionCLM_apply, quantizeSchwartzValue_def,
+    SchwartzMap.fourier_coe, TestFunction.coe_toSchwartzMapCLM,
+    funext (HasCompactSupport.toSchwartzMap_toFun u.hasCompactSupport u.contDiff),
+    funext (HasCompactSupport.toSchwartzMap_toFun v.hasCompactSupport v.contDiff)] using h
 
 /-- The quantization of the explicit adjoint symbol equals `adjointTestFunctionCLM`
 of the kernel-cutoff operator. -/

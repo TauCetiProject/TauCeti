@@ -571,21 +571,14 @@ theorem explicitAdjoint_convolution {χ : 𝓢(CoordinateSpace 1, ℂ)}
   apply TestFunction.eq_of_forall_integral_inner_eq (𝕜 := ℂ) (μ := volume)
   intro u
   rw [← Symbol.integral_inner_quantizeTestFunctionCLM_adjointKernelCutoff hχ hχR]
-  let us := u.hasCompactSupport.toSchwartzMap u.contDiff
-  let vs := v.hasCompactSupport.toSchwartzMap v.contDiff
-  have hu : HasCompactSupport us := by
-    have he : (us : CoordinateSpace 1 → ℂ) = u :=
-      funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-    rw [he]
-    exact u.hasCompactSupport
-  have hv : HasCompactSupport vs := by
-    have he : (vs : CoordinateSpace 1 → ℂ) = v :=
-      funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-    rw [he]
-    exact v.hasCompactSupport
-  simpa only [Symbol.quantizeTestFunctionCLM_apply, us, vs,
-    HasCompactSupport.toSchwartzMap_toFun] using
-    integral_inner_convolution_cutoff χ m us vs hu hv
+  simpa only [Symbol.quantizeTestFunctionCLM_apply, quantizeSchwartzValue_def,
+    SchwartzMap.fourier_coe, TestFunction.coe_toSchwartzMapCLM,
+    funext (HasCompactSupport.toSchwartzMap_toFun u.hasCompactSupport u.contDiff),
+    funext (HasCompactSupport.toSchwartzMap_toFun v.hasCompactSupport v.contDiff)] using
+    integral_inner_convolution_cutoff χ m (TestFunction.toSchwartzMapCLM ℂ u)
+      (TestFunction.toSchwartzMapCLM ℂ v)
+      (TestFunction.hasCompactSupport_toSchwartzMapCLM (𝕜 := ℂ) u)
+      (TestFunction.hasCompactSupport_toSchwartzMapCLM (𝕜 := ℂ) v)
 
 /-- The asymmetric cutoff is supported in the open ball of radius two about zero. -/
 theorem positiveCutoff_support :
