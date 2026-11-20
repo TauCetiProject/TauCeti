@@ -67,6 +67,13 @@ private theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Ioo (-
   norm_cast at h₁ h₂
   omega
 
+/-- At a nonpositive integer `a = −n`, `γ*(a, x) = xⁿ` (DLMF 8.4.12) does not vanish for real
+`x ≠ 0`. -/
+private theorem tricomiIncompleteGamma_ofReal_ne_zero_of_eq_neg_natCast {x : ℝ} (hx : x ≠ 0)
+    {a : ℝ} {n : ℕ} (ha : a = -n) : tricomiIncompleteGamma a x ≠ 0 := by
+  rw [ha, ofReal_neg, ofReal_natCast, tricomiIncompleteGamma_neg_natCast]
+  exact pow_ne_zero _ (ofReal_ne_zero.2 hx)
+
 /-- For `x < 0`, the real sum `∑ (−x)ᵏ / (k! (a + k))` is strictly decreasing in `a` on each
 interval `−(k + 1) < a < −k`: every term is a positive multiple of `1 / (a + j)`, and `a + j` keeps
 its sign there. -/
@@ -108,18 +115,18 @@ private theorem exists_mem_Ioo_tricomiIncompleteGamma_eq_zero {x : ℝ} (hx : x 
     · have := hk.pow_neg hx
       exact Or.inr ⟨this.le, by nlinarith⟩
   obtain ⟨c, hc, hfc⟩ := intermediate_value_uIcc hf.continuousOn hsign
-  have hle : (-(k + 1 : ℕ) : ℝ) ≤ -k := by push_cast; linarith
-  rw [uIcc_of_le hle] at hc
-  have hcIoo : c ∈ Ioo (-(k + 1 : ℝ)) (-k) := by
-    refine ⟨lt_of_le_of_ne (by exact_mod_cast hc.1) ?_, lt_of_le_of_ne hc.2 ?_⟩
-    · rintro rfl
-      rw [show (-(k + 1 : ℝ)) = -((k + 1 : ℕ) : ℝ) by push_cast; ring, hval] at hfc
-      exact pow_ne_zero _ hx0 hfc
-    · rintro rfl
-      exact pow_ne_zero _ hx0 ((hval k).symm.trans hfc)
   -- `γ*(c, x)` is real, so the vanishing of its real part is enough
   have hre : (tricomiIncompleteGamma c x).re = 0 := hfc
-  exact ⟨c, hcIoo, by rw [← ofReal_tricomiIncompleteGamma_ofReal_re, hre, ofReal_zero]⟩
+  have hc0 : tricomiIncompleteGamma c x = 0 := by
+    rw [← ofReal_tricomiIncompleteGamma_ofReal_re, hre, ofReal_zero]
+  have hle : (-(k + 1 : ℕ) : ℝ) ≤ -k := by push_cast; linarith
+  rw [uIcc_of_le hle] at hc
+  refine ⟨c, ⟨lt_of_le_of_ne (by exact_mod_cast hc.1) ?_, lt_of_le_of_ne hc.2 ?_⟩, hc0⟩
+  · rintro rfl
+    exact tricomiIncompleteGamma_ofReal_ne_zero_of_eq_neg_natCast hx0 (n := k + 1)
+      (by push_cast; ring) hc0
+  · rintro rfl
+    exact tricomiIncompleteGamma_ofReal_ne_zero_of_eq_neg_natCast hx0 rfl hc0
 
 /-- Uniqueness of the zero of `γ*(·, x)` in `−(k + 1) < a < −k` for `x < 0`: there
 `∑ (−x)ʲ / (j! (a + j)) = Γ(a) γ*(a, x)`, and the sum is strictly decreasing. -/
@@ -162,9 +169,8 @@ theorem tricomiIncompleteGamma_param_zeros_of_neg {x : ℝ} (hx : x < 0) {n : �
     push_cast at h₁ h₂
     rcases lt_trichotomy a (-(2 * m + 1)) with h | h | h
     · exact Or.inl (hu₁ a ⟨⟨by linarith, by linarith⟩, ha0⟩)
-    · rw [h, show ((-(2 * m + 1) : ℝ) : ℂ) = -((2 * m + 1 : ℕ) : ℂ) by push_cast; ring,
-        tricomiIncompleteGamma_neg_natCast] at ha0
-      exact absurd ha0 (pow_ne_zero _ (ofReal_ne_zero.2 hx.ne))
+    · exact absurd ha0 (tricomiIncompleteGamma_ofReal_ne_zero_of_eq_neg_natCast hx.ne
+        (n := 2 * m + 1) (by rw [h]; push_cast; ring))
     · exact Or.inr (hu₂ a ⟨⟨by linarith, by linarith⟩, ha0⟩)
   · rintro (rfl | rfl)
     · exact ⟨⟨by push_cast; linarith [ha₁.1], by push_cast; linarith [ha₁.2]⟩, ha₁0⟩

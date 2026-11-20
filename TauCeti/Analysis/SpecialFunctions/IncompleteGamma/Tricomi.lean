@@ -99,8 +99,7 @@ theorem ofReal_tricomiIncompleteGamma_ofReal_re (a x : ℝ) :
   have h : HasSum (fun k : ℕ => ((Real.exp (-x) * x ^ k / Real.Gamma (a + k + 1) : ℝ) : ℂ))
       (tricomiIncompleteGamma a x) := by
     refine (hasSum_tricomiIncompleteGamma a x).congr_fun fun k => ?_
-    push_cast [← Gamma_ofReal]
-    rfl
+    simp [← Gamma_ofReal]
   rw [← (hasSum_ofReal.mpr (summable_ofReal.mp h.summable).hasSum).unique h, ofReal_re]
 
 /-- Tricomi's function has vanishing imaginary part for real `a` and `x`. -/
