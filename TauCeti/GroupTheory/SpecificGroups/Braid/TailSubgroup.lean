@@ -21,7 +21,7 @@ The *ascending product* `TauCeti.BraidGroup.prodSigmaIco a b = σ a * σ (a + 1)
 is the positive braid that carries strand `a` over the strands `a + 1, …, b`. It commutes with
 the elementary braids two or more steps away from its range, and conjugating an elementary braid in
 the interior of its range across it raises the index by one; repeating this gives the commutation
-rule `TauCeti.BraidGroup.prodSigmaIco_mul_prodSigmaIco_comm` between two ascending products.
+rule `TauCeti.BraidGroup.prodSigmaIco_mul_prodSigmaIco` between two ascending products.
 
 These are the algebraic ingredients of the braid-coset model of the arc complex of a punctured disc
 (Ellenberg–Venkatesh–Westerland, §5.2), whose simplices are cosets of tail subgroups and whose face
@@ -43,7 +43,7 @@ maps are right multiplications by ascending products; see
   commutes with every ascending product ending below `b`.
 * `TauCeti.BraidGroup.prodSigmaIco_mul_sigma`: `(σ a ⋯ σ (b - 1)) σ c = σ (c + 1) (σ a ⋯ σ (b - 1))`
   for `a ≤ c` and `c + 2 ≤ b`.
-* `TauCeti.BraidGroup.prodSigmaIco_mul_prodSigmaIco_comm`: the corresponding rule for two ascending
+* `TauCeti.BraidGroup.prodSigmaIco_mul_prodSigmaIco`: the corresponding rule for two ascending
   products.
 
 ## References
@@ -192,7 +192,7 @@ theorem prodSigmaIco_mul_sigma {a b : ℕ} {c d : Fin (n - 1)} (hcd : (c : ℕ) 
 
 /-- Two ascending products commute up to a shift of the second: if `a ≤ c` and `d < b ≤ n - 1`,
 then `(σ a ⋯ σ (b - 1)) (σ c ⋯ σ (d - 1)) = (σ (c + 1) ⋯ σ d) (σ a ⋯ σ (b - 1))`. -/
-theorem prodSigmaIco_mul_prodSigmaIco_comm {a b c d : ℕ} (hac : a ≤ c) (hdb : d < b)
+theorem prodSigmaIco_mul_prodSigmaIco {a b c d : ℕ} (hac : a ≤ c) (hdb : d < b)
     (hb : b ≤ n - 1) :
     prodSigmaIco (n := n) a b * prodSigmaIco c d =
       prodSigmaIco (c + 1) (d + 1) * prodSigmaIco a b := by

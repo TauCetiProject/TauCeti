@@ -109,7 +109,7 @@ theorem cosetFace_cosetFace {q : ℕ} (hq : q + 2 < n) {i j : Fin (q + 2)} (hij 
   | H b =>
     simp only [cosetFace_mk, Fin.val_succ, Fin.val_castSucc]
     -- Both sides are `b s_(q+2,j+1) s_(q+1,i)`, up to a final `σ (q + 1) ∈ L_q` on the right.
-    have hcomm := prodSigmaIco_mul_prodSigmaIco_comm (n := n) (a := i) (b := q + 1 + 1) (c := j)
+    have hcomm := prodSigmaIco_mul_prodSigmaIco (n := n) (a := i) (b := q + 1 + 1) (c := j)
       (d := q + 1) hij (by omega) (by omega)
     have hsucc := prodSigmaIco_succ (n := n) (a := i) (b := q + 1) (by omega) (by omega)
     rw [mul_assoc b (prodSigmaIco i (q + 1 + 1)), hcomm, hsucc, ← mul_assoc, ← mul_assoc,
