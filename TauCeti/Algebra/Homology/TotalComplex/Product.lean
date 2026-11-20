@@ -180,6 +180,8 @@ lemma totalProduct_d_πTotalProduct (i₁₂ i₁₂' : I₁₂) (i₁ : I₁) (
   dsimp only [totalProduct, πTotalProduct, πTotalProductOrZero]
   simp only [op_add, op_comp, HomologicalComplex.unop_d, Quiver.Hom.op_unop, total_d,
     Preadditive.comp_add, ι_D₁, ι_D₂, d₁, d₂]
+  -- the differentials of `(opFunctor C c₁ c₂).obj (op K)` are by definition the opposites of
+  -- those of `K`; the body of `opFunctor` is not exposed, so this cannot be a public simp lemma
   rfl
 
 
@@ -201,6 +203,8 @@ lemma map_f_πTotalProduct (i₁ : I₁) (i₂ : I₂) (i₁₂ : I₁₂)
   dsimp only [map, πTotalProduct]
   simp only [op_comp, HomologicalComplex.unopFunctor_map_f, Quiver.Hom.op_unop, Quiver.Hom.unop_op,
     ιTotal_map]
+  -- the components of `(opFunctor C c₁ c₂).map φ.op` are by definition the opposites of those
+  -- of `φ`; the body of `opFunctor` is not exposed, so this cannot be a public simp lemma
   rfl
 
 variable (K) in
@@ -335,11 +339,6 @@ variable {I : Type*} [AddMonoid I] [DecidableEq I] {c : ComplexShape I} [c.Tenso
   (K L : HomologicalComplex₂ C c c) (φ : K ⟶ L)
   [K.HasTotal c] [K.HasTotalProduct c] [L.HasTotal c] [L.HasTotalProduct c]
 
-omit [DecidableEq I] in
-/-- A complex shape with tensor signs has no relation from an index to itself. -/
-private lemma not_rel_self (p : I) : ¬ c.Rel p p := fun h ↦
-  units_ne_neg_self (c.ε p) (c.ε_succ h)
-
 /-- The degreewise components of `totalToTotalProduct`. -/
 private noncomputable def totalToTotalProductX (n : I) :
     (K.total c).X n ⟶ (K.totalProduct c).X n :=
@@ -431,7 +430,7 @@ noncomputable def totalToTotalProduct : K.total c ⟶ K.totalProduct c where
       ι_D₁_assoc, ι_D₂_assoc, Preadditive.comp_add, Linear.comp_units_smul]
     by_cases h₁ : c.Rel p p' ∧ q = q'
     · obtain ⟨hp, rfl⟩ := h₁
-      have h₂ : ¬ (p = p' ∧ c.Rel q q) := fun h ↦ not_rel_self _ (h.1 ▸ hp)
+      have h₂ : ¬ (p = p' ∧ c.Rel q q) := fun h ↦ c.not_rel_self _ (h.1 ▸ hp)
       rw [K.ιTotal_totalToTotalProductX_dVertical _ _ _ _ _ _ h₂,
         K.d₂_totalToTotalProductX_πTotalProduct _ _ _ _ _ _ h₂, c.prev_eq' hp,
         K.d₁_eq _ hp _ _ (by simpa using h'), πTotalProductOrZero_eq _ _ _ _ _ (by simpa using h),

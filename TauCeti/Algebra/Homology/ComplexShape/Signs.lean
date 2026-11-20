@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ComplexShapeSigns
+public import Mathlib.Algebra.Homology.HasNoLoop
 
 /-!
 # Computations for additive total-complex shapes
 
 The total-complex shape induced by tensor signs adds the two input indices.
 This characteristic equation is independent of the category or bifunctor
-used to form a total complex.
+used to form a total complex. Tensor signs change sign along every relation, so a complex shape
+with tensor signs has no loops.
 
 The instance `HomologicalComplex₂.totalComplexShapeSymmetryDownNat` identifies the total
 complexes of a first-quadrant bicomplex and of its flip by the Koszul sign `(-1)^(p*q)` in
@@ -35,6 +37,12 @@ theorem π_eq_add {I : Type*} [AddMonoid I] (c : ComplexShape I) [c.TensorSigns]
     (p q : I) : π c c c (p, q) = p + q := by
   -- This is the index component of the additive total-complex-shape instance.
   rfl
+
+/-- A complex shape with tensor signs has no relation from an index to itself, since the sign
+changes along every relation. -/
+instance hasNoLoop_of_tensorSigns {I : Type*} [AddMonoid I] (c : ComplexShape I)
+    [c.TensorSigns] : c.HasNoLoop where
+  not_rel_self p h := units_ne_neg_self (c.ε p) (c.ε_succ h)
 
 section Symm
 
