@@ -44,6 +44,7 @@ public section
 open Polynomial
 
 open scoped IsMulCommutative in
+attribute [local instance] Polynomial.algebra in
 /-- **If `y ^ 2 + b * y + c = 0` with `b` and `c` integral over `R` and `b` commuting with `y`,
 then `y` is integral over `R`.**
 `y`, `b` and `c` live in an arbitrary `R`-algebra `A`, which need not be commutative, and the
@@ -66,8 +67,7 @@ theorem IsIntegral.of_sq_add_mul_add_eq_zero {R A : Type*} [CommRing R] [Ring A]
   have hS (x : S) : IsIntegral R x ↔ IsIntegral R (x : A) :=
     (isIntegral_algHom_iff S.val Subtype.val_injective).symm
   refine (hS ⟨y, hyS⟩).1 ?_
-  -- `IsIntegral.of_aeval_monic_of_isIntegral_coeff` for `X ^ 2 + (C b * X + C c)` over `S`,
-  -- whose coefficients are `c`, `b`, `1` and then `0`.
+  -- `IsIntegral.of_aeval_monic_of_isIntegral_coeff` for `X ^ 2 + (C b * X + C c)` over `S`.
   have hdeg : (X ^ 2 + (C ⟨b, hbS⟩ * X + C ⟨c, hcS⟩) : S[X]).natDegree = 2 := by
     simpa only [C_1, one_mul, add_assoc] using
       natDegree_quadratic (b := (⟨b, hbS⟩ : S)) (c := ⟨c, hcS⟩) (one_ne_zero : (1 : S) ≠ 0)
@@ -78,7 +78,11 @@ theorem IsIntegral.of_sq_add_mul_add_eq_zero {R A : Type*} [CommRing R] [Ring A]
       Subtype.ext (by simpa [← add_assoc] using h)
     rw [hroot]
     exact isIntegral_zero
-  · rcases i with _ | _ | _ | i <;>
-      simp [coeff_X, coeff_C, hS, hb, hc, isIntegral_one, isIntegral_zero]
+  · -- The polynomial is integral over `R[X]`, hence so are its coefficients over `R`.
+    have hC {a : S} (ha : IsIntegral R (a : A)) : IsIntegral R[X] (C a) :=
+      (((hS a).2 ha).map (CAlgHom (R := R))).tower_top
+    have hX : IsIntegral R[X] (X : S[X]) := by
+      simpa using isIntegral_algebraMap (R := R[X]) (A := S[X]) (x := X)
+    exact ((hX.pow 2).add (((hC hb).mul hX).add (hC hc))).coeff i
 
 end
