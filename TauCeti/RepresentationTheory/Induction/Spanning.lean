@@ -181,8 +181,8 @@ theorem eq_zero_of_characterPairing_indSpan_eq_zero [Invertible (Nat.card G : k)
     refine characterPairing_nondegenerate.2 _ fun ψ => ?_
     rw [← characterPairing_ind hG ψ h]
     exact hh _ (ind_mem_indSpan hS ψ)
-  have hzero := congrArg (fun f : ClassFunction k S => f.1 ⟨y * x * y⁻¹, hy⟩) hres
-  rw [← mem_iff.mp h.2 x y]
+  have hzero := congrArg (fun f : ClassFunction k S => f.val ⟨y * x * y⁻¹, hy⟩) hres
+  rw [← mem_iff.mp h.property x y]
   simpa using hzero
 
 /-- **Induction from a covering family of subgroups is surjective on class functions.**  If every
@@ -233,7 +233,7 @@ theorem exists_sum_smul_ind_cyclic [Invertible (Nat.card G : k)] (f : ClassFunct
   have hf : f ∈ indSpan k G {S | IsCyclic S} :=
     (indSpan_cyclic_eq_top (k := k) (G := G)).symm ▸ Submodule.mem_top
   obtain ⟨n, c, g, hg⟩ := Submodule.mem_span_set'.mp hf
-  choose C hC ψ hψ using fun i => (g i).2
+  choose C hC ψ hψ using fun i => (g i).property
   exact ⟨n, C, hC, ψ, c, by simpa only [hψ] using hg⟩
 
 /-! ### Characters induced from a family of subgroups -/
@@ -457,7 +457,7 @@ theorem exists_sum_smul_ind_ofCharacter_cyclic [IsAlgClosed k] [Invertible (Nat.
   have hf : f ∈ indCharacterSpan k G {S | IsCyclic S} :=
     (indCharacterSpan_cyclic_eq_top (k := k) (G := G)).symm ▸ Submodule.mem_top
   obtain ⟨n, c, g, hg⟩ := Submodule.mem_span_set'.mp hf
-  choose C hC d ρ hρ hfg using fun i => (g i).2
+  choose C hC d ρ hρ hfg using fun i => (g i).property
   exact ⟨n, C, hC, d, ρ, hρ, c, by simpa only [hfg] using hg⟩
 
 end ClassFunction

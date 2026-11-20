@@ -46,8 +46,8 @@ theorem exists_maximal_ramificationLocus_over_of_maximal_branchLocus
   let : QuasiSober f.ramificationLocus :=
     (f.isClosed_ramificationLocus).isClosedEmbedding_subtypeVal.quasiSober
   obtain ⟨z, hz, hzx⟩ := (f.isClosed_ramificationLocus).exists_genericPoint_specializes hx
-  refine ⟨z, z.2, hzx, hy _ ?_ (hxy ▸ hzx.map f.continuous), ?_⟩
-  · exact mem_branchLocus_iff.mpr ⟨z, z.2, rfl⟩
+  refine ⟨z, z.property, hzx, hy _ ?_ (hxy ▸ hzx.map f.continuous), ?_⟩
+  · exact mem_branchLocus_iff.mpr ⟨z, z.property, rfl⟩
   · intro z' hz' hzz'
     exact congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hz) ⟨z', hz'⟩
       ((subtype_specializes_iff _ _).mpr hzz'))

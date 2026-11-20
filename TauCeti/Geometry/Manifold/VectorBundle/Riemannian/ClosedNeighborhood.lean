@@ -55,10 +55,10 @@ theorem exists_contMDiffMap_isClosedEmbedding_norm_le
     (hcore : IsClosed (range (e ∘ zeroSection F V)))
     {ε : B → ℝ} (hε : Continuous ε) (hεpos : ∀ b, 0 < ε b) (n : ℕ∞) :
     ∃ r : C^n⟮I, B; 𝓘(ℝ), ℝ⟯, (∀ b, 0 < r b) ∧ (∀ b, r b < ε b) ∧
-      {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj} ⊆ e.source ∧
-      IsOpenEmbedding ({p : TotalSpace F V | ‖p.2‖ < r p.proj}.domRestrict e) ∧
-      IsClosedEmbedding ({p : TotalSpace F V | ‖p.2‖ ≤ r p.proj}.domRestrict e) ∧
-      IsClosedEmbedding ({p : TotalSpace F V | ‖p.2‖ = r p.proj}.domRestrict e) := by
+      {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj} ⊆ e.source ∧
+      IsOpenEmbedding ({p : TotalSpace F V | ‖p.snd‖ < r p.proj}.domRestrict e) ∧
+      IsClosedEmbedding ({p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj}.domRestrict e) ∧
+      IsClosedEmbedding ({p : TotalSpace F V | ‖p.snd‖ = r p.proj}.domRestrict e) := by
   have hcoretarget : range (e ∘ zeroSection F V) ⊆ e.target := by
     rintro _ ⟨b, rfl⟩
     exact e.map_source (hzero b)
@@ -67,21 +67,21 @@ theorem exists_contMDiffMap_isClosedEmbedding_norm_le
   obtain ⟨r, hr, hrε, hdisc⟩ :=
     (e.isOpen_inter_preimage hW).exists_contMDiffMap_norm_le_subset_bundle
       (I := I) (n := n) (fun b => ⟨hzero b, hcoreW (mem_range_self b)⟩) hε hεpos
-  let D := {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj}
-  let S := {p : TotalSpace F V | ‖p.2‖ = r p.proj}
-  let T := {p : TotalSpace F V | ‖p.2‖ < r p.proj}
+  let D := {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj}
+  let S := {p : TotalSpace F V | ‖p.snd‖ = r p.proj}
+  let T := {p : TotalSpace F V | ‖p.snd‖ < r p.proj}
   have hnorm := TauCeti.continuous_norm_bundle F V
   have hrad : Continuous (fun p : TotalSpace F V => r p.proj) :=
     r.contMDiff.continuous.comp (FiberBundle.continuous_proj _ _)
   have hD : IsClosed D := isClosed_le hnorm hrad
   have hS : IsClosed S := isClosed_eq hnorm hrad
   have hT : IsOpen T := isOpen_lt hnorm hrad
-  have hDsource : D ⊆ e.source := fun p hp => (hdisc p.proj p.2 hp).1
-  have hTD : T ⊆ D := fun p (hp : ‖p.2‖ < r p.proj) => hp.le
-  have hSD : S ⊆ D := fun p (hp : ‖p.2‖ = r p.proj) => hp.le
+  have hDsource : D ⊆ e.source := fun p hp => (hdisc p.proj p.snd hp).1
+  have hTD : T ⊆ D := fun p (hp : ‖p.snd‖ < r p.proj) => hp.le
+  have hSD : S ⊆ D := fun p (hp : ‖p.snd‖ = r p.proj) => hp.le
   have hDW : e '' D ⊆ W := by
     rintro _ ⟨p, hp, rfl⟩
-    exact (hdisc p.proj p.2 hp).2
+    exact (hdisc p.proj p.snd hp).2
   have hclosed : IsClosed (e '' D) := e.isClosed_image_of_closure_subset_target hD hDsource
     ((closure_mono hDW).trans hclosureW)
   have hd : IsClosedEmbedding (D.domRestrict e) :=
@@ -89,7 +89,7 @@ theorem exists_contMDiffMap_isClosedEmbedding_norm_le
       simpa only [range_domRestrict] using hclosed⟩
   exact ⟨r, hr, hrε, hDsource,
     e.isOpenEmbedding_restrict.comp (IsOpenEmbedding.inclusion (hTD.trans hDsource)
-      (hT.preimage continuous_subtype_val)), hd,
-    hd.comp (IsClosedEmbedding.inclusion hSD (hS.preimage continuous_subtype_val))⟩
+      (hT.preimage continuous_subtypeVal)), hd,
+    hd.comp (IsClosedEmbedding.inclusion hSD (hS.preimage continuous_subtypeVal))⟩
 
 end OpenPartialHomeomorph

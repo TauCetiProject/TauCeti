@@ -30,8 +30,13 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exists_rpow_mul_exp_neg_mul_le`: `x ^ σ exp (-c x)` is bounded on `x ≥ 0`, for `0 ≤ σ`,
   `0 < c`.
 * `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
+* `TauCeti.exp_neg_mul_abs_sub_le_abs_exp_sub_exp`: `exp (-M) |a - b| ≤ |exp a - exp b|` for
+  `a, b ≥ -M`.
+* `TauCeti.abs_exp_sub_one_le_mul_exp`: `|exp t - 1| ≤ a exp b` when `|t| ≤ a` and `|t| ≤ b`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
+* `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
+* `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
 -/
 
 public section
@@ -114,6 +119,31 @@ theorem abs_exp_sub_one_le_mul_exp_abs (t : ℝ) : |exp t - 1| ≤ |t| * exp |t|
   rwa [← Complex.ofReal_exp, ← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
     Complex.norm_real, Real.norm_eq_abs, Real.norm_eq_abs] at h
 
+/-- The exponential expands distances on `[-M, ∞)` by at least `exp (-M)`:
+`exp (-M) |a - b| ≤ |exp a - exp b|` for `a, b ≥ -M`. -/
+theorem exp_neg_mul_abs_sub_le_abs_exp_sub_exp {M a b : ℝ} (ha : -M ≤ a) (hb : -M ≤ b) :
+    exp (-M) * |a - b| ≤ |exp a - exp b| := by
+  wlog hab : b ≤ a generalizing a b
+  · rw [abs_sub_comm a, abs_sub_comm (exp a)]
+    exact this hb ha (le_of_not_ge hab)
+  -- `exp a - exp b = exp b (exp (a - b) - 1) ≥ exp b (a - b) ≥ exp (-M) (a - b) ≥ 0`.
+  have h1 : exp b * (a - b) ≤ exp a - exp b := by
+    have h := mul_le_mul_of_nonneg_left (add_one_le_exp (a - b)) (exp_pos b).le
+    rw [← exp_add, add_sub_cancel] at h
+    linarith
+  have h2 : exp (-M) * (a - b) ≤ exp b * (a - b) :=
+    mul_le_mul_of_nonneg_right (exp_le_exp.2 hb) (by linarith)
+  rw [abs_of_nonneg (by linarith : 0 ≤ a - b),
+    abs_of_nonneg (by linarith [mul_nonneg (exp_pos (-M)).le (by linarith : 0 ≤ a - b)])]
+  linarith
+
+/-- If `|t| ≤ a` and `|t| ≤ b`, then `|exp t - 1| ≤ a exp b`. This decouples the linear error scale
+`a` from a coarser uniform bound `b` inside the exponential factor. -/
+theorem abs_exp_sub_one_le_mul_exp {t a b : ℝ} (hta : |t| ≤ a) (htb : |t| ≤ b) :
+    |exp t - 1| ≤ a * exp b :=
+  (abs_exp_sub_one_le_mul_exp_abs t).trans <|
+    mul_le_mul hta (exp_le_exp.mpr htb) (exp_nonneg _) ((abs_nonneg t).trans hta)
+
 /-- `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real `t`. The right-hand side is the power series
 `∑ 2 · 4ⁿ t ^ (2n + 2) / (2n)!`, so this bounds `(exp t - 1)²` by a series of even powers. -/
 theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
@@ -127,8 +157,27 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
   calc (exp t - 1) ^ 2 = |exp t - 1| ^ 2 := (sq_abs _).symm
     _ ≤ (|t| * exp |t|) ^ 2 := by gcongr
     _ = t ^ 2 * exp (2 * |t|) := by
-        rw [mul_pow, sq_abs, ← exp_nat_mul]; push_cast; ring_nf
+        rw [mul_pow, sq_abs, ← exp_natCast_mul]; push_cast; ring_nf
     _ ≤ t ^ 2 * (2 * cosh (2 * t)) := by gcongr
     _ = 2 * t ^ 2 * cosh (2 * t) := by ring
+
+/-- `2 exp (2π)` is at least `14`. -/
+theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * exp (2 * π) := by
+  nlinarith [quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), two_le_pi]
+
+/-- On `(-∞, M]`, the real exponential is `exp M`-Lipschitz: for `a ≤ M` and `b ≤ M`,
+`|exp a - exp b| ≤ exp M * |a - b|`. -/
+theorem _root_.Real.abs_exp_sub_exp_le {a b M : ℝ} (ha : a ≤ M) (hb : b ≤ M) :
+    |exp a - exp b| ≤ exp M * |a - b| := by
+  wlog hba : b ≤ a generalizing a b
+  · rw [abs_sub_comm, abs_sub_comm a b]
+    exact this hb ha (le_of_not_ge hba)
+  rw [abs_of_nonneg (sub_nonneg.2 (exp_le_exp.2 hba)), abs_of_nonneg (sub_nonneg.2 hba)]
+  have h1 : 1 - exp (b - a) ≤ a - b := by linarith [add_one_le_exp (b - a)]
+  have h2 : exp a - exp b = exp a * (1 - exp (b - a)) := by
+    rw [mul_sub, mul_one, ← exp_add, add_sub_cancel]
+  rw [h2]
+  exact (mul_le_mul_of_nonneg_left h1 (exp_pos a).le).trans
+    (mul_le_mul_of_nonneg_right (exp_le_exp.2 ha) (sub_nonneg.2 hba))
 
 end TauCeti

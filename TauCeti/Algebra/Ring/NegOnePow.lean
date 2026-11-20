@@ -22,6 +22,7 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 
 ## Main results
 
+* `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
 * `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
   factor is replaced by a two-term correction, telescopes.
@@ -84,6 +85,11 @@ theorem negOnePowCast_even {e : ℤ} (he : Even e) : negOnePowCast R e = 1 := by
 
 theorem negOnePowCast_odd {e : ℤ} (he : Odd e) : negOnePowCast R e = -1 := by
   simp [negOnePowCast, Int.negOnePow_odd _ he]
+
+/-- Two exponents of the same parity give the same ground-ring sign. -/
+theorem negOnePowCast_eq_of_even_sub {a b : ℤ} (h : Even (a - b)) :
+    negOnePowCast R a = negOnePowCast R b := by
+  rw [negOnePowCast, negOnePowCast, (Int.negOnePow_eq_iff _ _).2 h]
 
 section
 

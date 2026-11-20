@@ -87,7 +87,7 @@ theorem IsSheaf.map_surjective_of_locally_flasque {F : Presheaf (Type w) X} (hF 
   -- The extensions of `s` to opens between `U` and `V`, preordered by extension of domain.
   let E := {p : Σ O : Opens X, F.obj (op O) //
     ∃ hUO : U ≤ p.1, p.1 ≤ V ∧ F.map (homOfLE hUO).op p.2 = s}
-  let r : E → E → Prop := fun p q ↦ ∃ h : p.1.1 ≤ q.1.1, F.map (homOfLE h).op q.1.2 = p.1.2
+  let r : E → E → Prop := fun p q ↦ ∃ h : p.val.1 ≤ q.val.1, F.map (homOfLE h).op q.val.2 = p.val.2
   -- Below, `rfl` closes goals that differ only in the choice of a morphism between two opens,
   -- and these morphisms are unique.
   have r_trans {p q q' : E} (hpq : r p q) (hqq' : r q q') : r p q' := by
@@ -98,20 +98,21 @@ theorem IsSheaf.map_surjective_of_locally_flasque {F : Presheaf (Type w) X} (hF 
   -- A nonempty chain of extensions glues to an extension over the union of its domains.
   have hbound (c : Set E) (hc : IsChain r c) (hne : c.Nonempty) : ∃ ub, ∀ p ∈ c, r p ub := by
     obtain ⟨p₀, hp₀⟩ := hne
-    have hcompat : IsCompatible F (fun p : c ↦ p.1.1.1) (fun p ↦ p.1.1.2) := by
+    have hcompat : IsCompatible F (fun p : c ↦ p.val.val.1) (fun p ↦ p.val.val.2) := by
       refine isCompatible_of_directed fun p q ↦ ?_
       rcases eq_or_ne p q with rfl | hne
       · exact ⟨p, le_rfl, le_rfl, by simp, by simp⟩
-      rcases hc p.2 q.2 (Subtype.coe_injective.ne hne) with ⟨hpq, hq⟩ | ⟨hqp, hp⟩
+      rcases hc p.property q.property (Subtype.coe_injective.ne hne) with ⟨hpq, hq⟩ | ⟨hqp, hp⟩
       · exact ⟨q, hpq, le_rfl, hq, by simp⟩
       · exact ⟨p, le_rfl, hqp, by simp, hp⟩
     obtain ⟨g, hg, -⟩ := hF.isSheafUniqueGluing_types _ hcompat
-    have hle (p : c) : p.1.1.1 ≤ iSup fun p : c ↦ p.1.1.1 := le_iSup (fun p : c ↦ p.1.1.1) p
-    refine ⟨⟨⟨_, g⟩, (p₀.2.1).trans (hle ⟨p₀, hp₀⟩),
-      iSup_le fun p ↦ p.1.2.2.1, ?_⟩, fun p hp ↦ ⟨hle ⟨p, hp⟩, hg ⟨p, hp⟩⟩⟩
-    have := congrArg (F.map (homOfLE p₀.2.1).op) (hg ⟨p₀, hp₀⟩)
+    have hle (p : c) : p.val.val.1 ≤ iSup fun p : c ↦ p.val.val.1 := le_iSup
+        (fun p : c ↦ p.val.val.1) p
+    refine ⟨⟨⟨_, g⟩, (p₀.property.1).trans (hle ⟨p₀, hp₀⟩),
+      iSup_le fun p ↦ p.val.property.2.1, ?_⟩, fun p hp ↦ ⟨hle ⟨p, hp⟩, hg ⟨p, hp⟩⟩⟩
+    have := congrArg (F.map (homOfLE p₀.property.1).op) (hg ⟨p₀, hp₀⟩)
     rw [← Functor.map_comp_apply] at this
-    exact this.trans p₀.2.2.2
+    exact this.trans p₀.property.2.2
   obtain ⟨⟨⟨O, t⟩, hUO, hOV, ht⟩, hmax⟩ := exists_maximal_of_nonempty_chains_bounded hbound r_trans
   -- A maximal extension is defined on all of `V`.
   have hVO : V ≤ O := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
+public import TauCeti.Analysis.PDE.Vortex.KernelDimension
 public import TauCeti.Analysis.PDE.Vortex.SobolevScale
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.MeasureTheory.Function.L2Space
@@ -362,8 +362,8 @@ theorem gaugeFixedKernelToLp_mem_weakGaugeFixedKernel (hx : Continuous x)
     (y : gaugeFixedKernel x) : gaugeFixedKernelToLp x y ∈ weakGaugeFixedKernel x := by
   rw [gaugeFixedKernelToLp_apply]
   exact toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero hx
-    ((mem_gaugeFixedKernel.1 y.2).1.of_le one_le_two)
-    (memLp_of_mem_gaugeFixedKernel y.2) (mem_gaugeFixedKernel.1 y.2).2.2
+    ((mem_gaugeFixedKernel.1 y.property).1.of_le one_le_two)
+    (memLp_of_mem_gaugeFixedKernel y.property) (mem_gaugeFixedKernel.1 y.property).2.2
 
 /-- The real-linear map sending a classical solution `y ∈ gaugeFixedKernel x` to its `L²`
 equivalence class in `weakGaugeFixedKernel x`. -/
@@ -450,7 +450,7 @@ theorem gaugeFixedKernelToWeak_surjective (hx : ContDiff ℝ ∞ x)
   intro u
   have hu : (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) ∈
       LinearMap.range (gaugeFixedKernelToLp x) :=
-    (range_gaugeFixedKernelToLp hx hbound).symm ▸ u.2
+    (range_gaugeFixedKernelToLp hx hbound).symm ▸ u.property
   obtain ⟨y, hy⟩ := hu
   exact ⟨y, Subtype.ext hy⟩
 
@@ -497,7 +497,7 @@ theorem contDiff_and_mem_sobolevFields_of_mem_gaugeFixedKernel (hx : ContDiff �
     ContDiff ℝ ∞ y ∧ ∀ s, y ∈ sobolevFields s := by
   set u := gaugeFixedKernelToWeak hx.continuous ⟨y, hy⟩
   obtain ⟨y', hy's, hy'S, -, huy'⟩ :=
-    exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel hx hbound u.2
+    exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel hx hbound u.property
   have hae : y' =ᵐ[volume] y :=
     huy'.symm.trans (coe_gaugeFixedKernelToWeak_ae_eq hx.continuous ⟨y, hy⟩)
   have heq : y' = y :=

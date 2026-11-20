@@ -271,6 +271,17 @@ theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F}
   nlinarith [norm_nonneg (y - x), norm_nonneg (y - (ℝ ∙ v)ᗮ.reflection x),
     mul_pos hxw hyw]
 
+/-- If `x` and `y` both lie in the closed half-space `⟪v, ·⟫ ≥ 0`, then `y` is at least as close
+to `x` as to the reflection of `x` in the hyperplane `⟪v, ·⟫ = 0`. -/
+theorem norm_sub_le_norm_sub_reflection_orthogonal_singleton {v x y : F}
+    (hx : 0 ≤ ⟪v, x⟫_ℝ) (hy : 0 ≤ ⟪v, y⟫_ℝ) :
+    ‖y - x‖ ≤ ‖y - (ℝ ∙ v)ᗮ.reflection x‖ := by
+  rcases hx.eq_or_lt with hx | hx
+  · rw [reflection_orthogonal_singleton_eq_self_of_inner_eq_zero hx.symm]
+  rcases hy.eq_or_lt with hy | hy
+  · rw [norm_sub_reflection_orthogonal_singleton_eq_of_inner_eq_zero x hy.symm]
+  · exact (norm_sub_lt_norm_sub_reflection_orthogonal_singleton hx hy).le
+
 /-- Reflection in the hyperplane orthogonal to a nonzero vector has determinant `-1`. -/
 theorem linearEquiv_det_reflection_orthogonal_singleton [FiniteDimensional ℝ F] {v : F}
     (hv : v ≠ 0) : (LinearEquiv.det (ℝ ∙ v)ᗮ.reflection.toLinearEquiv : ℝ) = -1 := by
@@ -305,10 +316,7 @@ determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vecto
 theorem exists_det_eq_neg_one [Nontrivial F] [FiniteDimensional ℝ F] :
     ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 := by
   obtain ⟨v, hv⟩ := exists_ne (0 : F)
-  refine ⟨(ℝ ∙ v)ᗮ.reflection, ?_⟩
-  rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
-    finrank_span_singleton hv]
-  simp
+  exact ⟨(ℝ ∙ v)ᗮ.reflection, linearEquiv_det_reflection_orthogonal_singleton hv⟩
 
 /-- A nontrivial finite-dimensional real inner product space has a linear isometry whose
 underlying continuous linear map has negative determinant, the form taken by the
@@ -506,14 +514,14 @@ theorem exists_forall_add_ne_zero {v : F}
     exact hq ⟨(0, 0), Subtype.ext (by simp [g, h])⟩
   refine ⟨‖(q : F)‖⁻¹ • (q : F), norm_smul_inv_norm hq0, ?_, fun s hs => hq ⟨(s, ‖(q : F)‖), ?_⟩⟩
   · rw [real_inner_smul_left, real_inner_comm,
-      Submodule.mem_orthogonal_singleton_iff_inner_right.1 q.2, mul_zero]
+      Submodule.mem_orthogonal_singleton_iff_inner_right.1 q.property, mul_zero]
   · -- From `u s + ‖q‖⁻¹ • q = 0`, the point `q` is `‖q‖ • (-u s)`.
     have hqs : (q : F) = ‖(q : F)‖ • -u s := by
       rw [← eq_neg_of_add_eq_zero_right hs, smul_smul,
         mul_inv_cancel₀ (norm_ne_zero_iff.2 hq0), one_smul]
     have hmem : -u s ∈ K := by
       rw [← eq_neg_of_add_eq_zero_right hs]
-      exact K.smul_mem _ q.2
+      exact K.smul_mem _ q.property
     refine Subtype.ext ?_
     simp only [g, Submodule.coe_smul,
       K.orthogonalProjectionOnto_mem_subspace_eq_self ⟨-u s, hmem⟩]

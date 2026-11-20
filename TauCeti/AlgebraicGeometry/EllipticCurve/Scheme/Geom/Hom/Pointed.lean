@@ -102,7 +102,7 @@ theorem isMonHom_of_zero_comp {B : Over S} [GrpObj B]
     [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
     (f : Over.mk E.structureMap ⟶ B) (h0 : E.zero ≫ f.left = η[B].left) :
     IsMonHom f :=
-  isMonHom_of_one_hom_of_flat (fun V ↦ E.isIso_structureMap_app V.1) f
+  isMonHom_of_one_hom_of_flat (fun V ↦ E.isIso_structureMap_app V.val) f
     (Over.OverMorphism.ext (by simpa only [Over.comp_left, one_left] using h0))
 
 /-- **Katz–Mazur Theorem 2.5.1.** Every morphism of schemes `f : E.carrier ⟶ E'.carrier` over `S`
@@ -120,7 +120,7 @@ noncomputable def homOfMapsZero (f : E.carrier ⟶ E'.carrier)
     (hf : f ≫ E'.structureMap = E.structureMap) (h0 : E.zero ≫ f = E'.zero) :
     E.toCommGrp ⟶ E'.toCommGrp :=
   commGrpHomOfOneHom (A := E.toCommGrp) (B := E'.toCommGrp)
-    (fun V ↦ E.isIso_structureMap_app V.1) (Over.homMk f hf)
+    (fun V ↦ E.isIso_structureMap_app V.val) (Over.homMk f hf)
     (Over.OverMorphism.ext (by simp [h0]))
 
 @[simp]
@@ -207,10 +207,10 @@ noncomputable def homEquivPointed (E E' : EllipticCurveGeom S) :
     (E.toCommGrp ⟶ E'.toCommGrp) ≃
       {f : E.carrier ⟶ E'.carrier //
         f ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ f = E'.zero} :=
-  (commGrpHomEquivPointed E.toCommGrp E'.toCommGrp (fun V ↦ E.isIso_structureMap_app V.1)).trans
-    { toFun g := ⟨g.1.left, Over.w g.1,
-        by simpa only [Over.comp_left, one_left] using congrArg Over.Hom.left g.2⟩
-      invFun f := ⟨Over.homMk f.1 f.2.1, Over.OverMorphism.ext (by simp [f.2.2])⟩
+  (commGrpHomEquivPointed E.toCommGrp E'.toCommGrp (fun V ↦ E.isIso_structureMap_app V.val)).trans
+    { toFun g := ⟨g.val.left, Over.w g.val,
+        by simpa only [Over.comp_left, one_left] using congrArg Over.Hom.left g.property⟩
+      invFun f := ⟨Over.homMk f.val f.property.1, Over.OverMorphism.ext (by simp [f.property.2])⟩
       left_inv _ := Subtype.ext (Over.OverMorphism.ext rfl)
       right_inv _ := Subtype.ext rfl }
 
@@ -224,7 +224,7 @@ theorem coe_homEquivPointed_apply (F : E.toCommGrp ⟶ E'.toCommGrp) :
 theorem homEquivPointed_symm_apply
     (f : {f : E.carrier ⟶ E'.carrier //
       f ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ f = E'.zero}) :
-    (homEquivPointed E E').symm f = homOfMapsZero f.1 f.2.1 f.2.2 :=
+    (homEquivPointed E E').symm f = homOfMapsZero f.val f.property.1 f.property.2 :=
   hom_ext_left _ (by
     simp [homEquivPointed,
       commGrpHomEquivPointed_symm_apply (A := E.toCommGrp) (B := E'.toCommGrp)])
@@ -232,7 +232,7 @@ theorem homEquivPointed_symm_apply
 theorem homEquivPointed_symm_apply_hom_hom_hom_left
     (f : {f : E.carrier ⟶ E'.carrier //
       f ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ f = E'.zero}) :
-    ((homEquivPointed E E').symm f).hom.hom.hom.left = f.1 := by
+    ((homEquivPointed E E').symm f).hom.hom.hom.left = f.val := by
   rw [homEquivPointed_symm_apply, homOfMapsZero_hom_hom_hom_left]
 
 /-! ### Pointed isomorphisms -/
@@ -284,7 +284,7 @@ noncomputable def isoEquivPointed (E E' : EllipticCurveGeom S) :
         Over.forget S).mapIso e,
       hom_hom_hom_left_comp_structureMap e.hom,
       zero_comp_hom_hom_hom_left e.hom⟩
-  invFun e := isoOfPointedIso e.1 e.2.1 e.2.2
+  invFun e := isoOfPointedIso e.val e.property.1 e.property.2
   left_inv _ := by ext1; exact hom_ext_left _ (isoOfPointedIso_hom_hom_hom_hom_left _ _ _)
   right_inv _ := by ext1; exact Iso.ext (isoOfPointedIso_hom_hom_hom_hom_left _ _ _)
 
@@ -304,7 +304,7 @@ theorem coe_isoEquivPointed_apply_inv (e : E.toCommGrp ≅ E'.toCommGrp) :
 theorem isoEquivPointed_symm_apply
     (e : {e : E.carrier ≅ E'.carrier //
       e.hom ≫ E'.structureMap = E.structureMap ∧ E.zero ≫ e.hom = E'.zero}) :
-    (isoEquivPointed E E').symm e = isoOfPointedIso e.1 e.2.1 e.2.2 := by
+    (isoEquivPointed E E').symm e = isoOfPointedIso e.val e.property.1 e.property.2 := by
   simp [isoEquivPointed]
 
 /-! ### Uniqueness of the group law -/
@@ -319,7 +319,7 @@ on `Over.mk E.structureMap` whose identity morphism has underlying scheme morphi
 theorem monObj_eq_of_one_left_eq (m : MonObj (Over.mk E.structureMap))
     (h0 : m.one.left = E.zero) :
     m = E.grpObj.toMonObj :=
-  monObj_eq_of_one_eq_of_flat (fun V ↦ E.isIso_structureMap_app V.1) m E.grpObj
+  monObj_eq_of_one_eq_of_flat (fun V ↦ E.isIso_structureMap_app V.val) m E.grpObj
     (Over.OverMorphism.ext h0)
 
 /-- **Uniqueness of the group law on an elliptic curve over a scheme.** Any group-object structure

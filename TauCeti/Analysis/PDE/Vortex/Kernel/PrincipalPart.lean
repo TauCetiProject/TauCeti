@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
+public import TauCeti.Analysis.PDE.Vortex.KernelDimension
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
-# Isomorphism of the gauge-fixed vortex kernel with principal-part data
+# Bijectivity of the principal-part map on the gauge-fixed vortex kernel
 
 Let `x` be a smooth field on the plane whose holomorphicity rows `∂bar_a α = 0` vanish, with
 `|α| → 1` at infinity, and let `D` be the zero divisor of its section `α = 2 (p + i q)`. For any
@@ -24,26 +24,20 @@ Taylor derivatives `H⁽ʲ⁾(z)` for `j < count z D` defines the real-linear pr
 `principalPartMap` from `gaugeFixedKernel x` to `D → ℂ`, proved injective in
 `TauCeti.Analysis.PDE.Vortex.PrincipalPart`.
 
-This file combines injectivity of `principalPartMap` with the exact real dimension `2 |D|` and
-smoothness of `gaugeFixedKernel x` from `TauCeti.Analysis.PDE.Vortex.Kernel.Dimension`
-(`finrank_gaugeFixedKernel_eq_two_mul_card`, `contDiff_of_mem_gaugeFixedKernel`) to show that
-`principalPartMap` is bijective (`principalPartMap_bijective`, `principalPartMap_surjective`),
-defining the real-linear equivalence `gaugeFixedKernelEquivPrincipalPart :
-gaugeFixedKernel x ≃ₗ[ℝ] (Multiset.ToType D → ℂ)` and producing a smooth kernel element realizing
-any prescribed principal-part tuple (`exists_contDiff_mem_gaugeFixedKernel_principalPart_eq`). The
-comparison with the weak `L²` and Sobolev `H^s` kernels of `L_x` is proved in
-`TauCeti.Analysis.PDE.Vortex.WeakKernel`; no Fredholm operator bundle is constructed here.
+This file combines injectivity of `principalPartMap` with the exact real dimension `2 |D|` from
+`TauCeti.Analysis.PDE.Vortex.KernelDimension` (`finrank_gaugeFixedKernel_eq_two_mul_card`) to
+show that `principalPartMap` is bijective (`principalPartMap_bijective`,
+`principalPartMap_surjective`) for any decomposition hypothesis `hdec` and any differentiable
+integrating factor `ν`, complementing the canonical equivalence `principalPartEquiv` and
+realization `exists_contDiff_gaugeFixedOperator_eq_zero_principalPart_eq` in
+`TauCeti.Analysis.PDE.Vortex.KernelDimension`.
 
-## Main declarations
+## Main results
 
 * `TauCeti.Vortex.exists_continuous_and_differentiable_sectionValue_eq_of_mem_gaugeFixedKernel`:
   decomposition `δα = α G + e^ν H` on `gaugeFixedKernel x`.
 * `TauCeti.Vortex.principalPartMap_bijective` and `TauCeti.Vortex.principalPartMap_surjective`:
   bijectivity and surjectivity of `principalPartMap` on `gaugeFixedKernel x`.
-* `TauCeti.Vortex.gaugeFixedKernelEquivPrincipalPart`: the real-linear equivalence
-  `gaugeFixedKernel x ≃ₗ[ℝ] (Multiset.ToType D → ℂ)`.
-* `TauCeti.Vortex.exists_contDiff_mem_gaugeFixedKernel_principalPart_eq`: every tuple in `D → ℂ`
-  is the principal-part data of a smooth element of `gaugeFixedKernel x`.
 
 ## References
 
@@ -119,7 +113,7 @@ theorem principalPartMap_bijective (hx : ContDiff ℝ ∞ x)
         obtain ⟨hyc, hy₂, hker⟩ := mem_gaugeFixedKernel.1 hy
         exact eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
           (hx.of_le (by simp)) hhol hlim hyc.continuous hy₂ hker hη hyη
-  have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := volume) hx₂ hhol hlim hD
+  have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := volume) hx₂ hhol hlim
     fun _ ↦ mem_gaugeFixedKernel.1
   have hfin : Module.finrank ℝ (gaugeFixedKernel x) =
       Module.finrank ℝ (Multiset.ToType D → ℂ) := by
@@ -140,53 +134,5 @@ theorem principalPartMap_surjective (hx : ContDiff ℝ ∞ x)
         ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) :
     Function.Surjective (principalPartMap hD hν.continuous hdec) :=
   (principalPartMap_bijective hx hhol hlim hD hν hνeq hdec).2
-
-/-- **The principal-part linear equivalence.** At a smooth field `x` with `∂bar_a α = 0`,
-`|α|² → 1` at infinity, and section zero divisor `D`, the principal-part map for any
-differentiable integrating factor `ν` is a real-linear isomorphism
-`gaugeFixedKernel x ≃ₗ[ℝ] (D → ℂ)`. -/
-def gaugeFixedKernelEquivPrincipalPart (hx : ContDiff ℝ ∞ x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
-    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {ν : ℂ → ℂ}
-    (hν : Differentiable ℝ ν)
-    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2) :
-    gaugeFixedKernel x ≃ₗ[ℝ] (Multiset.ToType D → ℂ) :=
-  LinearEquiv.ofBijective
-    (principalPartMap hD hν.continuous fun _ hy ↦
-      exists_continuous_and_differentiable_sectionValue_eq_of_mem_gaugeFixedKernel
-        (hx.differentiable (by simp)) hhol hν hνeq hy)
-    (principalPartMap_bijective hx hhol hlim hD hν hνeq _)
-
-/-- `gaugeFixedKernelEquivPrincipalPart` evaluates at `(z, k)` to `principalPart x ν y z k`. -/
-@[simp]
-theorem gaugeFixedKernelEquivPrincipalPart_apply (hx : ContDiff ℝ ∞ x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
-    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {ν : ℂ → ℂ}
-    (hν : Differentiable ℝ ν)
-    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
-    (y : gaugeFixedKernel x) (i : Multiset.ToType D) :
-    gaugeFixedKernelEquivPrincipalPart hx hhol hlim hD hν hνeq y i =
-      principalPart x ν y i.1 i.2 := by
-  simp [gaugeFixedKernelEquivPrincipalPart]
-
-/-- **Existence of smooth kernel elements with arbitrary principal-part data.** Let `x` be a smooth
-field on the plane with `∂bar_a α = 0` and `|α|² → 1` at infinity, let `D` be the zero divisor of
-`α`, and let `∂bar ν = (b₂ - i b₁) / 2`. Every tuple `φ : D → ℂ` is realized as the principal-part
-data of a smooth element of `gaugeFixedKernel x`. -/
-theorem exists_contDiff_mem_gaugeFixedKernel_principalPart_eq (hx : ContDiff ℝ ∞ x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
-    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {ν : ℂ → ℂ}
-    (hν : Differentiable ℝ ν)
-    (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
-    (φ : Multiset.ToType D → ℂ) :
-    ∃ y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ y ∧ y ∈ gaugeFixedKernel x ∧
-      ∀ i : Multiset.ToType D, principalPart x ν y i.1 i.2 = φ i := by
-  set e := gaugeFixedKernelEquivPrincipalPart hx hhol hlim hD hν hνeq
-  refine ⟨(e.symm φ : ℂ → EuclideanSpace ℝ (Fin 4)),
-    contDiff_of_mem_gaugeFixedKernel hx hhol hlim (e.symm φ).2, (e.symm φ).2, fun i ↦ ?_⟩
-  simpa [e] using congrFun (e.apply_symm_apply φ) i
 
 end TauCeti.Vortex
