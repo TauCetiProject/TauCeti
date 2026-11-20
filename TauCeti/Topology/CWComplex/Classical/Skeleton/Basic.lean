@@ -139,6 +139,11 @@ lemma map_notMem_skeletonLT {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : �
     map n j y ∉ (skeletonLT C (n : ℕ∞) : Set X) := fun h ↦
   (disjoint_skeletonLT_openCell le_rfl).notMem_of_mem_left h ⟨y, mem_ball_zero_iff.2 hy, rfl⟩
 
+/-- The characteristic map of an `n`-cell sends the unit sphere into `skeletonLT C n`. -/
+lemma map_mem_skeletonLT_of_norm_eq_one {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ = 1) :
+    map n j y ∈ (skeletonLT C (n : ℕ∞) : Set X) :=
+  cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩
+
 /-- A point of `skeletonLT C (n + 1)` lies in `skeletonLT C n` or is the image of a point of the
 open unit ball under the characteristic map of an `n`-cell. -/
 lemma mem_skeletonLT_or_exists_map {n : ℕ} {x : X}
@@ -151,7 +156,7 @@ lemma mem_skeletonLT_or_exists_map {n : ℕ} {x : X}
   obtain ⟨j, y, hy, rfl⟩ := mem_iUnion.1 hx
   rcases (mem_closedBall_zero_iff.1 hy).lt_or_eq with hy | hy
   · exact .inr ⟨j, y, hy, rfl⟩
-  · exact .inl (cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩)
+  · exact .inl (map_mem_skeletonLT_of_norm_eq_one j hy)
 
 /-- The characteristic map of a closed `n`-cell lands in the `(n + 1)`-skeleton. -/
 lemma map_mem_skeletonLT_succ {n : ℕ} (j : cell C n) {y : Fin n → ℝ} (hy : ‖y‖ ≤ 1) :
@@ -163,8 +168,7 @@ variable (C) in
 /-- The end points `χⱼ(-1)` and `χⱼ(1)` of a `1`-cell `j` lie in the `0`-skeleton. -/
 lemma map_mem_skeletonLT_one (j : cell C 1) {c : ℝ} (hc : |c| = 1) :
     map 1 j (fun _ ↦ c) ∈ (skeletonLT C ((0 + 1 : ℕ) : ℕ∞) : Set X) :=
-  cellFrontier_subset_skeletonLT 1 j
-    ⟨_, mem_sphere_zero_iff_norm.2 (by rw [pi_norm_const, Real.norm_eq_abs, hc]), rfl⟩
+  map_mem_skeletonLT_of_norm_eq_one j (by rw [pi_norm_const, Real.norm_eq_abs, hc])
 
 /-- A map out of a relative CW complex sends `skeletonLT C (n + 1)` into a set `T` exactly when
 it sends `skeletonLT C n` into `T` and sends every closed `n`-cell, read through its
