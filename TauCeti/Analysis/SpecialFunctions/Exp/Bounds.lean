@@ -37,6 +37,7 @@ is bounded on `x ≥ 0`.
   `t`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
+* `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
 -/
 
 public section
@@ -179,5 +180,11 @@ theorem _root_.Real.abs_exp_sub_exp_le {a b M : ℝ} (ha : a ≤ M) (hb : b ≤ 
   rw [h2]
   exact (mul_le_mul_of_nonneg_left h1 (exp_pos a).le).trans
     (mul_le_mul_of_nonneg_right (exp_le_exp.2 ha) (sub_nonneg.2 hba))
+
+/-- A natural power of a nonnegative real number is at most the exponential of the exponent
+times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp x`. -/
+theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
+  rw [exp_nat_mul]
+  exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
 end TauCeti
