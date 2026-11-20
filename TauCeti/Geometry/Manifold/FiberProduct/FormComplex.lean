@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.PartitionOfUni
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Geometry.Manifold.Submersion.Basic
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Basic
 
 /-!
 # The alternating pullback complex of forms on the Čech nerve of a submersion
@@ -58,108 +59,6 @@ open Function Set Module Topology CategoryTheory
 open scoped Manifold ContDiff Simplicial
 
 namespace TauCeti
-
-namespace IteratedFiberProduct
-
-variable {Y M : Type*} {π : Y → M}
-
-/-- Prepend a point `z` of the fibre over `baseProj y` to the tuple `y`, giving the tuple
-`(z, y₀, …, y_m)` of `Y^[m + 2]`. -/
-def cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
-    IteratedFiberProduct π (m + 2) :=
-  ⟨Fin.cons z y.1, by
-    have key : ∀ i : Fin (m + 2), π (Fin.cons (α := fun _ ↦ Y) z y.1 i) = baseProj y :=
-      Fin.cases h fun j ↦ by rw [Fin.cons_succ, ← eval_apply]; exact map_eval_eq_baseProj y j
-    exact fun i j ↦ (key i).trans (key j).symm⟩
-
-/-- The underlying tuple of `cons z y h` is `Fin.cons z y`. -/
-@[simp]
-theorem coe_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
-    (cons z y h : Fin (m + 2) → Y) = Fin.cons z y.1 := (rfl)
-
-/-- Coordinate `0` of `cons z y h` is the prepended point `z`. -/
-theorem eval_zero_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
-    (h : π z = baseProj y) :
-    eval 0 (cons z y h) = z := by
-  simp [eval_apply]
-
-/-- Coordinate `j + 1` of `cons z y h` is coordinate `j` of `y`. -/
-theorem eval_succ_cons {m : ℕ} (j : Fin (m + 1)) (z : Y) (y : IteratedFiberProduct π (m + 1))
-    (h : π z = baseProj y) :
-    eval j.succ (cons z y h) = eval j y := by
-  simp [eval_apply]
-
-/-- Prepending a point does not change the base point. -/
-@[simp]
-theorem baseProj_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
-    (h : π z = baseProj y) :
-    baseProj (cons z y h) = baseProj y := by
-  rw [baseProj_eq_apply _ 0]
-  exact h
-
-/-- Omitting the prepended point recovers the original tuple. -/
-@[simp]
-theorem face_zero_cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1))
-    (h : π z = baseProj y) :
-    face 0 (cons z y h) = y :=
-  ext fun j ↦ by simp [eval_apply]
-
-/-- Omitting coordinate `i + 1` after prepending `z` is prepending `z` after omitting
-coordinate `i`. -/
-@[simp]
-theorem face_succ_cons {m : ℕ} (i : Fin (m + 2)) (z : Y) (y : IteratedFiberProduct π (m + 2))
-    (h : π z = baseProj y) :
-    face i.succ (cons z y h) = cons z (face i y) (h.trans (baseProj_face i y).symm) := by
-  refine ext fun j ↦ ?_
-  cases j using Fin.cases with
-  | zero => simp [eval_apply]
-  | succ j => simp [eval_apply, Fin.succ_succAbove_succ]
-
-/-- On `Y^[1]`, omitting the original coordinate after prepending `z` leaves the one-point tuple
-`z`. -/
-@[simp]
-theorem face_one_cons (z : Y) (y : IteratedFiberProduct π 1) (h : π z = baseProj y) :
-    face 1 (cons z y h) = const 1 z :=
-  ext fun j ↦ by simp [eval_apply, Fin.fin_one_eq_zero j]
-
-end IteratedFiberProduct
-
-section ConsSection
-
-variable {EY HY Y EM HM M : Type*}
-  [NormedAddCommGroup EY] [NormedSpace ℝ EY] [TopologicalSpace HY]
-  [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
-  {IY : ModelWithCorners ℝ EY HY} {IM : ModelWithCorners ℝ EM HM}
-  [TopologicalSpace Y] [ChartedSpace HY Y]
-  [TopologicalSpace M] [ChartedSpace HM M]
-  {n : ℕ∞ω}
-  [IsManifold IY n Y] [IsManifold IM n M]
-  [IY.Boundaryless] [IM.Boundaryless]
-  [FiniteDimensional ℝ EY] [FiniteDimensional ℝ EM]
-  {π : Y → M} (hn : 1 ≤ n) (hπ : Manifold.IsSubmersion IY IM n π)
-
-/-- For a section `s` of `π`, prepending `s (baseProj y)` to `y`, a map `Y^[m + 1] → Y^[m + 2]`,
-is `C^{m'}` at `y` whenever `s` is `C^{m'}` at `baseProj y`. -/
-theorem contMDiffAt_cons_section {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) {s : M → Y}
-    (hs : ∀ x, π (s x) = x) {y : IteratedFiberProduct π (m + 1)}
-    (hsy : ContMDiffAt IM IY m' s (IteratedFiberProduct.baseProj y)) :
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    letI := iteratedFiberProductChartedSpace hn hπ (m + 1)
-    ContMDiffAt 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ)
-      𝓘(ℝ, Fin ((m + 2) * finrank ℝ EY - (m + 1) * finrank ℝ EM) → ℝ) m'
-      (fun y ↦ IteratedFiberProduct.cons (s (IteratedFiberProduct.baseProj y)) y (hs _)) y := by
-  let := iteratedFiberProductChartedSpace hn hπ m
-  let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  refine (contMDiffAt_iteratedFiberProduct_iff hn hπ hm').2 fun i ↦ ?_
-  cases i using Fin.cases with
-  | zero =>
-    simp only [IteratedFiberProduct.eval_zero_cons]
-    exact hsy.comp y (contMDiff_baseProj hn hπ hm' y)
-  | succ j =>
-    simp only [IteratedFiberProduct.eval_succ_cons]
-    exact contMDiff_eval hn hπ hm' j y
-
-end ConsSection
 
 universe uY uF
 
@@ -260,9 +159,12 @@ theorem iteratedFiberProductForms_objD_hom_apply {m : ℕ}
       ∑ i : Fin (m + 2), (-1 : ℤ) ^ (i : ℕ) •
         SmoothForm.mpullback (IteratedFiberProduct.face i)
           (contMDiff_face ENat.LEInfty.out hπ le_rfl i) φ := by
-  simp [AlgebraicTopology.AlternatingCofaceMapComplex.objD, iteratedFiberProductForms_δ_hom_apply]
-  -- The two sums differ only by `⦋m⦌.len = m` inside the chosen atlases, which holds by
-  -- definition.
+  simp only [AlgebraicTopology.AlternatingCofaceMapComplex.objD, ModuleCat.hom_sum,
+    ModuleCat.hom_smul, LinearMap.coe_sum, LinearMap.coe_smul, Finset.sum_apply, Pi.smul_apply,
+    iteratedFiberProductForms_δ_hom_apply]
+  -- The two sums have the same summands. Their addition and `ℤ`-action are those of the
+  -- `ModuleCat` carrier over `⦋m + 1⦌.len` and of `SmoothForm` over `m + 1`, which agree by
+  -- `SimplexCategory.len_mk`; that index sits in instance arguments, where it cannot be rewritten.
   rfl
 
 section Homotopy
@@ -355,19 +257,15 @@ private theorem homotopy_mpullback_face_zero (m : ℕ)
   have := isManifold_iteratedFiberProduct ENat.LEInfty.out hπ (m + 1)
   refine Subtype.ext (funext fun y ↦ ?_)
   rw [coe_homotopy]
-  calc _ = ∑ i ∈ ρ.finsupport (IteratedFiberProduct.baseProj y),
-        ρ i (IteratedFiberProduct.baseProj y) • φ.1 y := by
-        refine Finset.sum_congr rfl fun i hi ↦ ?_
-        have hy : IteratedFiberProduct.baseProj y ∈ U i :=
-          hρ i (subset_tsupport _ ((ρ.mem_finsupport _).1 hi))
-        have hcomp : (IteratedFiberProduct.face (m := m) 0 ∘ fun y ↦ IteratedFiberProduct.cons
-            (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) = id :=
-          funext fun y ↦ IteratedFiberProduct.face_zero_cons _ _ _
-        rw [SmoothForm.coe_mpullback, ← mpullback_comp_at
-          ((contMDiffAt_cons_section_of_mem hπ hU hs hsU hy).mdifferentiableAt (by simp))
-          ((contMDiff_face ENat.LEInfty.out hπ le_rfl 0 _).mdifferentiableAt (by simp)),
-          hcomp, mpullback_id]
-    _ = φ.1 y := by rw [← Finset.sum_smul, ρ.sum_finsupport _ (mem_univ _), one_smul]
+  refine ρ.sum_finsupport_smul_eq_of_forall_eq (mem_univ _) fun i hi ↦ ?_
+  have hcomp : (IteratedFiberProduct.face (m := m) 0 ∘ fun y ↦ IteratedFiberProduct.cons
+      (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) = id :=
+    funext fun y ↦ IteratedFiberProduct.face_zero_cons _ _ _
+  rw [SmoothForm.coe_mpullback, ← mpullback_comp_at
+    ((contMDiffAt_cons_section_of_mem hπ hU hs hsU
+      (hρ.mem_of_mem_finsupport hi)).mdifferentiableAt (by simp))
+    ((contMDiff_face ENat.LEInfty.out hπ le_rfl 0 _).mdifferentiableAt (by simp)),
+    hcomp, mpullback_id]
 
 /-- `K ∘ (face (j + 1))^* = (face j)^* ∘ K`: prepending a point commutes with omitting a later
 coordinate. -/
@@ -397,8 +295,7 @@ private theorem homotopy_mpullback_face_succ (m : ℕ) (j : Fin (m + 2))
   rw [SmoothForm.coe_mpullback, coe_homotopy, coe_homotopy, mpullback_sum_smul]
   simp only [IteratedFiberProduct.baseProj_face]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
-  have hy : IteratedFiberProduct.baseProj y ∈ U i :=
-    hρ i (subset_tsupport _ ((ρ.mem_finsupport _).1 hi))
+  have hy : IteratedFiberProduct.baseProj y ∈ U i := hρ.mem_of_mem_finsupport hi
   have hy' : IteratedFiberProduct.baseProj (IteratedFiberProduct.face j y) ∈ U i := by
     rwa [IteratedFiberProduct.baseProj_face]
   have hcomp : (IteratedFiberProduct.face j.succ ∘ fun y ↦ IteratedFiberProduct.cons
@@ -475,58 +372,32 @@ private theorem exists_mpullback_baseProj_eq_of_mpullback_face_eq
       (fun x ↦ IteratedFiberProduct.const (π := π) 1 (s i x)) φ.1 x,
     (isSmoothForm_sum_finsupport_smul_mpullback hρ hU contMDiff_id hσ
       φ).mem_smoothBundleForms⟩, Subtype.ext (funext fun y ↦ ?_)⟩
-  have hy : ∀ i ∈ ρ.finsupport (IteratedFiberProduct.baseProj y),
-      IteratedFiberProduct.baseProj y ∈ U i := fun i hi ↦
-    hρ i (subset_tsupport _ ((ρ.mem_finsupport _).1 hi))
   -- Pulling back the pointwise sum along `baseProj` pulls back each summand.
   rw [SmoothForm.coe_mpullback, mpullback_sum_smul]
-  calc _ = ∑ i ∈ ρ.finsupport (IteratedFiberProduct.baseProj y),
-        ρ i (IteratedFiberProduct.baseProj y) • φ.1 y := by
-        refine Finset.sum_congr rfl fun i hi ↦ ?_
-        have hins := (contMDiffAt_cons_section_of_mem hπ hU hs hsU (hy i hi)).mdifferentiableAt
-          (n := ∞) (by simp)
-        -- `x ↦ (s i x)` after `baseProj` is `face 1` after prepending `s i (baseProj y)`, and
-        -- `face 0` after prepending is the identity.
-        have h₁ : ((fun x ↦ IteratedFiberProduct.const (π := π) 1 (s i x)) ∘
-            IteratedFiberProduct.baseProj) = IteratedFiberProduct.face 1 ∘ fun y ↦
-              IteratedFiberProduct.cons (s i (IteratedFiberProduct.baseProj y)) y (hs i _) :=
-          funext fun y ↦ (IteratedFiberProduct.face_one_cons _ _ _).symm
-        have h₀ : (IteratedFiberProduct.face (m := 0) 0 ∘ fun y ↦ IteratedFiberProduct.cons
-            (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) = id :=
-          funext fun y ↦ IteratedFiberProduct.face_zero_cons _ _ _
-        rw [← mpullback_comp_at
-          ((contMDiff_baseProj ENat.LEInfty.out hπ le_rfl y).mdifferentiableAt (by simp))
-          ((hσ i _ (hy i hi)).mdifferentiableAt (by simp)), h₁,
-          mpullback_comp_at hins
-            ((contMDiff_face ENat.LEInfty.out hπ le_rfl 1 _).mdifferentiableAt (by simp)),
-          ← SmoothForm.coe_mpullback _ (contMDiff_face ENat.LEInfty.out hπ le_rfl 1), ← hφ,
-          SmoothForm.coe_mpullback, ← mpullback_comp_at hins
-            ((contMDiff_face ENat.LEInfty.out hπ le_rfl 0 _).mdifferentiableAt (by simp)),
-          h₀, mpullback_id]
-    _ = φ.1 y := by rw [← Finset.sum_smul, ρ.sum_finsupport _ (mem_univ _), one_smul]
+  refine ρ.sum_finsupport_smul_eq_of_forall_eq (mem_univ _) fun i hi ↦ ?_
+  have hy : IteratedFiberProduct.baseProj y ∈ U i := hρ.mem_of_mem_finsupport hi
+  have hins := (contMDiffAt_cons_section_of_mem hπ hU hs hsU hy).mdifferentiableAt
+    (n := ∞) (by simp)
+  -- `x ↦ (s i x)` after `baseProj` is `face 1` after prepending `s i (baseProj y)`, and
+  -- `face 0` after prepending is the identity.
+  have h₁ : ((fun x ↦ IteratedFiberProduct.const (π := π) 1 (s i x)) ∘
+      IteratedFiberProduct.baseProj) = IteratedFiberProduct.face 1 ∘ fun y ↦
+        IteratedFiberProduct.cons (s i (IteratedFiberProduct.baseProj y)) y (hs i _) :=
+    funext fun y ↦ (IteratedFiberProduct.face_one_cons _ _ _).symm
+  have h₀ : (IteratedFiberProduct.face (m := 0) 0 ∘ fun y ↦ IteratedFiberProduct.cons
+      (s i (IteratedFiberProduct.baseProj y)) y (hs i _)) = id :=
+    funext fun y ↦ IteratedFiberProduct.face_zero_cons _ _ _
+  rw [← mpullback_comp_at
+    ((contMDiff_baseProj ENat.LEInfty.out hπ le_rfl y).mdifferentiableAt (by simp))
+    ((hσ i _ hy).mdifferentiableAt (by simp)), h₁,
+    mpullback_comp_at hins
+      ((contMDiff_face ENat.LEInfty.out hπ le_rfl 1 _).mdifferentiableAt (by simp)),
+    ← SmoothForm.coe_mpullback _ (contMDiff_face ENat.LEInfty.out hπ le_rfl 1), ← hφ,
+    SmoothForm.coe_mpullback, ← mpullback_comp_at hins
+      ((contMDiff_face ENat.LEInfty.out hπ le_rfl 0 _).mdifferentiableAt (by simp)),
+    h₀, mpullback_id]
 
 end Homotopy
-
-include hπ in
-omit [IsManifold IY ∞ Y] [IM.Boundaryless] [FiniteDimensional ℝ EY] in
-/-- A surjective smooth submersion with boundaryless source over a Hausdorff `σ`-compact base admits
-global set-theoretic sections, each smooth on an open set, together with a smooth partition of unity
-subordinate to those open sets. -/
-private theorem exists_smoothPartitionOfUnity_sections [T2Space M] [SigmaCompactSpace M]
-    (hsurj : Surjective π) :
-    ∃ (ρ : SmoothPartitionOfUnity M IM M univ) (U : M → Set M) (s : M → M → Y),
-      ρ.IsSubordinate U ∧ (∀ i, IsOpen (U i)) ∧ (∀ i x, π (s i x) = x) ∧
-        ∀ i, ContMDiffOn IM IY ∞ (s i) (U i) := by
-  classical
-  choose U hU hxU s₀ hs₀ hπs₀ using fun x ↦ hπ.exists_contMDiffOn_section_of_surjective hsurj x
-  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate IM isClosed_univ U hU
-    fun x _ ↦ mem_iUnion.2 ⟨x, hxU x⟩
-  refine ⟨ρ, U, fun i z ↦ if z ∈ U i then s₀ i z else surjInv hsurj z, hρ, hU, fun i z ↦ ?_,
-    fun i ↦ (hs₀ i).congr fun z hz ↦ ite_eq_left_iff.2 fun h ↦ (h hz).elim⟩
-  dsimp only
-  split_ifs with h
-  · exact hπs₀ i z h
-  · exact surjInv_eq hsurj z
 
 /-- **Exactness of the alternating pullback complex in positive degrees.** For a surjective smooth
 submersion `π : Y → M` over a Hausdorff `σ`-compact base, a smooth form `φ` on `Y^[m + 2]` is
@@ -542,7 +413,8 @@ theorem iteratedFiberProductForms_exists_objD_eq_iff [T2Space M] [SigmaCompactSp
   · rw [← hη, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
       AlgebraicTopology.AlternatingCofaceMapComplex.d_squared, ModuleCat.hom_zero,
       LinearMap.zero_apply]
-  · obtain ⟨ρ, U, s, hρ, hU, hs, hsU⟩ := exists_smoothPartitionOfUnity_sections hπ hsurj
+  · obtain ⟨ρ, U, s, hρ, hU, hs, hsU⟩ :=
+      hπ.exists_smoothPartitionOfUnity_sections_of_surjective hsurj
     refine ⟨homotopy hπ F k hρ hU hs hsU m φ, ?_⟩
     rw [iteratedFiberProductForms_objD_hom_apply] at hφ
     rw [iteratedFiberProductForms_objD_hom_apply hπ F k (homotopy hπ F k hρ hU hs hsU m φ)]
@@ -581,8 +453,13 @@ theorem iteratedFiberProductForms_objD_zero_mpullback_baseProj (β : SmoothForm 
     fun i ↦ funext (IteratedFiberProduct.baseProj_face i)
   rw [iteratedFiberProductForms_objD_hom_apply hπ F k (SmoothForm.mpullback
     IteratedFiberProduct.baseProj (contMDiff_baseProj ENat.LEInfty.out hπ le_rfl) β)]
-  simp [Fin.sum_univ_two, SmoothForm.mpullback_mpullback, hface]
-  -- The two sides are the zeros of `SmoothForm` and of its `ModuleCat` carrier, which agree.
+  simp only [Nat.reduceAdd, Int.reduceNeg, SmoothForm.mpullback_mpullback, hface,
+    Fin.sum_univ_two, Fin.isValue,
+    Fin.coe_ofNat_eq_mod, Nat.zero_mod, pow_zero, one_smul, Nat.mod_succ, pow_one, neg_smul,
+    add_neg_cancel]
+  -- The two sides are the zeros of `SmoothForm` over `0 + 1` and of the `ModuleCat` carrier over
+  -- `⦋0⦌.len + 1`, which agree by `SimplexCategory.len_mk`; that index sits in instance arguments,
+  -- where it cannot be rewritten.
   rfl
 
 /-- **Exactness of the augmented alternating pullback complex in degree zero.** For a surjective
@@ -603,7 +480,7 @@ theorem iteratedFiberProductForms_existsUnique_mpullback_baseProj_eq_iff [T2Spac
   have := isManifold_iteratedFiberProduct ENat.LEInfty.out hπ 1
   refine ⟨fun ⟨β, hβ, _⟩ ↦ hβ ▸ iteratedFiberProductForms_objD_zero_mpullback_baseProj hπ F k β,
     fun hφ ↦ ?_⟩
-  obtain ⟨ρ, U, s, hρ, hU, hs, hsU⟩ := exists_smoothPartitionOfUnity_sections hπ hsurj
+  obtain ⟨ρ, U, s, hρ, hU, hs, hsU⟩ := hπ.exists_smoothPartitionOfUnity_sections_of_surjective hsurj
   rw [iteratedFiberProductForms_objD_hom_apply, Fin.sum_univ_two] at hφ
   simp only [Fin.val_zero, pow_zero, one_smul, Fin.val_one, pow_one, neg_smul,
     ← sub_eq_add_neg] at hφ
