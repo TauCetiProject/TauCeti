@@ -285,6 +285,15 @@ theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=
     let ⟨I, x, hx, hxy⟩ := 𝒜.exists_footprintMap_eq y
     ⟨I, 𝒜.mem_footprint.2 ⟨x, hx, hxy⟩⟩
 
+/-- An implicit atlas, viewed as an implicit atlas with empty boundary, has the same regular
+footprints. -/
+@[simp]
+theorem _root_.TauCeti.ImplicitAtlas.footprint_toImplicitAtlasWithBoundary
+    (𝒜 : ImplicitAtlas Γ E ρ T act X d) (I : Finset A) :
+    𝒜.toImplicitAtlasWithBoundary.footprint I = 𝒜.footprint I := by
+  ext
+  simp [mem_footprint, ImplicitAtlas.mem_footprint]
+
 /-! ### The boundary restriction -/
 
 /-- The action of `Γ_I` on the boundary `∂X_I`. -/
@@ -507,6 +516,19 @@ theorem coe_footprintMap_boundaryAtlas {I J : Finset A} (h : I ⊆ J)
     (𝒜.boundaryAtlas.footprintMap h x : T I) =
       𝒜.footprintMap h ⟨x.1.1, by simpa using x.2⟩ :=
   (rfl)
+
+/-- The regular footprints of the boundary restriction are the traces on `Y` of the regular
+footprints: `V_I ∩ Y`, viewed in the subtype `Y`. -/
+@[simp]
+theorem footprint_boundaryAtlas (I : Finset A) :
+    𝒜.boundaryAtlas.footprint I = Subtype.val ⁻¹' 𝒜.footprint I := by
+  ext y
+  simp only [ImplicitAtlas.mem_footprint, mem_preimage, mem_footprint]
+  refine ⟨fun ⟨x, hx, hxy⟩ ↦ ⟨𝒜.toKuranishiZeroSet x, hx, congrArg Subtype.val hxy⟩,
+    fun ⟨x, hx, hxy⟩ ↦ ?_⟩
+  have hxb : x.1 ∈ 𝒜.boundary I := (𝒜.footprintMap_mem_boundary_iff _ x).1 <|
+    (𝒜.baseHomeomorph_mem_iff _).1 (hxy ▸ y.2)
+  exact ⟨𝒜.ofKuranishiZeroSet x hxb, hx, Subtype.ext hxy⟩
 
 /-- **Regular charts of dimension `0` have empty boundary.** Where the expected dimension
 `d + m_I` is at most `0`, the regular locus `X_I^reg` misses the boundary `∂X_I`: there the
