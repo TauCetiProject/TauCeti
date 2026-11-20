@@ -171,7 +171,7 @@ private theorem Wkp.exists_wkp_lineDeriv (v : E) :
 
 /-- The first-order case of `TauCeti.Wkp.exists_hasWeakLineDerivOn_value`: the derivative of an
 element of `W^{1,p}(Ω)` in the direction `v` is the component `⟪v, ∇u⟫` of its weak gradient. -/
-private theorem Wkp.hasWeakLineDerivOn_value_innerSL_compLp (v : E) (w : Wkp mu Omega p 1) :
+theorem Wkp.hasWeakLineDerivOn_value_innerSL_compLp (v : E) (w : Wkp mu Omega p 1) :
     HasWeakLineDerivOn mu Omega (Wkp.value 1 w)
       (Wkp.value 0 ((innerSL ℝ v).compLp (Wkp.iteratedGradient 0 w))) v := by
   rw [Wkp.value_zero]
