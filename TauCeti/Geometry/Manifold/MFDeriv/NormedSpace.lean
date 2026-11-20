@@ -25,6 +25,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
+* `HasDerivAt.mvfderiv`: on the model line, a derivative `f'` gives the vector-valued manifold
+  derivative `t ↦ t • f'`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
 * `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
@@ -103,6 +105,13 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
     mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
+
+/-- A derivative `f'` of a function of one variable at `x` is its vector-valued manifold derivative
+`t ↦ t • f'` on the model line. -/
+theorem _root_.HasDerivAt.mvfderiv {f : 𝕜 → F} {f' : F} {x : 𝕜} (hf : HasDerivAt f f' x) :
+    mvfderiv 𝓘(𝕜) f x = ContinuousLinearMap.toSpanSingleton 𝕜 f' := by
+  rw [_root_.mvfderiv, hf.hasFDerivAt.hasMFDerivAt.mfderiv]
+  rfl
 
 /-- For a normed vector-space target, evaluating `mvfderiv` agrees with evaluating
 `mfderiv` under the canonical tangent-space identification. -/

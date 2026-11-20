@@ -162,7 +162,7 @@ theorem cyclicAction_add_const [Add Q] {S : ZMod N → Q × Q → ℝ} {q : ZMod
 
 omit [TopologicalSpace Q] in
 /-- The cyclic discrete action of the functions `-S_i` is minus that of the `S_i`. -/
-theorem cyclicAction_neg (S : ZMod N → Q × Q → ℝ) :
+@[simp] theorem cyclicAction_neg (S : ZMod N → Q × Q → ℝ) :
     cyclicAction (fun i z ↦ -S i z) = -cyclicAction S := by
   ext q
   simp [cyclicAction_apply]

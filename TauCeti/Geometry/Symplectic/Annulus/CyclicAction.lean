@@ -95,25 +95,20 @@ private theorem generatingCorrespondence_neg_of_isStripGeneratingFunction {S : �
     (hp : p ∈ D) :
     CotangentBundle.generatingCorrespondence 𝓘(ℝ) 𝓘(ℝ) (fun z ↦ -S z) (stripTwistCoord F p) =
       (fieldEquiv ℝ p, fieldEquiv ℝ (F p)) := by
-  -- A derivative `c` of a real function of a real variable is the covector `c dx`; the tangent
-  -- lines of `ℝ` and the identification `NormedSpace.fromTangentSpace` are `ℝ` by definition.
-  have hcov {f : ℝ → ℝ} {x c : ℝ} (hf : HasDerivAt f c x) :
-      mvfderiv 𝓘(ℝ) f x = (1 : ℝ →L[ℝ] ℝ).smulRight c := by
-    rw [mvfderiv, hf.hasFDerivAt.hasMFDerivAt.mfderiv]
-    rfl
   rw [stripTwistCoord_apply, CotangentBundle.generatingCorrespondence_apply]
   refine Prod.ext (CotangentBundle.ext (by simp) fun u ↦ ?_)
     (CotangentBundle.ext (by simp) fun u ↦ ?_)
   · rw [CotangentBundle.generatingSource_snd]
     simp only
-    rw [hcov (hS.hasDerivAt_left hp).fun_neg, neg_neg]
+    rw [(hS.hasDerivAt_left hp).fun_neg.mvfderiv, neg_neg]
     exact (CotangentBundle.fieldEquiv_snd_apply p u).symm
   · rw [CotangentBundle.generatingTarget_snd]
     simp only
-    have h : -(1 : ℝ →L[ℝ] ℝ).smulRight (-(F p).2) = (1 : ℝ →L[ℝ] ℝ).smulRight (F p).2 := by
+    have h : -ContinuousLinearMap.toSpanSingleton ℝ (-(F p).2) =
+        ContinuousLinearMap.toSpanSingleton ℝ (F p).2 := by
       ext
       simp
-    rw [hcov (hS.hasDerivAt_right hp).fun_neg]
+    rw [(hS.hasDerivAt_right hp).fun_neg.mvfderiv]
     exact (congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L u) h).trans
       (CotangentBundle.fieldEquiv_snd_apply (F p) u).symm
 
