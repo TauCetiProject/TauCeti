@@ -330,11 +330,8 @@ private theorem norm_gradient_truncation_sq_le
       (hz : AEStronglyMeasurable (fun x ↦ A x (W1p.value z x)) (mu.restrict Omega)) :
       Integrable (fun x ↦ matrixBilinearForm (A x (W1p.value z x))
         (W1p.gradient (truncation hε (u - v)) x) (W1p.gradient z x)) (mu.restrict Omega) := by
-    have hz' : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι))
-        (fun x ↦ A x (W1p.value z x)) lam Lam :=
-      uniformlyEllipticOn_iff.2 ⟨hlam, (hA 0).le, fun x hx ↦
-        ⟨(hA (W1p.value z x)).lower_bound hx, (hA (W1p.value z x)).upper_bound hx⟩⟩
-    exact hz'.integrable_matrixBilinearForm_gradient hz z (truncation hε (u - v))
+    exact (UniformlyEllipticOn.apply_of_forall hA
+      (W1p.value z)).integrable_matrixBilinearForm_gradient hz z (truncation hε (u - v))
   -- Testing both inequalities with `φ_ε`, the difference of the two energy densities has
   -- nonpositive integral, and it dominates `1_S ((λ / 2) ‖∇w‖² - ((L ε)² / (2 λ)) ‖∇v‖²)`.
   rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral] at huv

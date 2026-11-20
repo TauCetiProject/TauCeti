@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
+public import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -40,9 +40,10 @@ boundary values and `‖∇v‖ ≤ K`, then
 `‖u - v‖_{H¹} ≤ (P² + 1) ‖ℓ - ℓ'‖ / (λ - L K P)`
 
 (`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq`), with the bounded-domain form
-`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball`. Only `v` needs a
-bounded gradient. For a coefficient independent of `u` (`L = 0`) this is the energy estimate of
-the linear problem, with no condition on `K`.
+`TauCeti.PDE.norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_norm_gradient_le_of_subset_ball`.
+Only `v` needs a bounded gradient. For a coefficient independent of `u` (`L = 0`) the smallness
+condition `L K P < λ` holds for every `K`, but `∇v` must still be essentially bounded; the general
+linear estimate is in `TauCeti/Analysis/PDE/DirichletProblem/ContinuousDependence.lean`.
 
 ## The argument
 
@@ -114,21 +115,6 @@ private theorem ae_le_matrixBilinearForm_sub {K : ℝ}
   exact le_matrixBilinearForm_add_sub_of_norm_le hL ((hA _).lower_bound hxΩ _)
     (hlip x hxΩ _ _ _ _) hxK
 
-omit [DecidableEq ι] in
-/-- **Cauchy–Schwarz for the value and the gradient.** For `w ∈ W^{1,2}(Ω)`,
-`∫_Ω |w| ‖∇w‖ ≤ ‖w‖₂ ‖∇w‖₂`. -/
-private theorem integral_norm_value_mul_norm_gradient_le (w : W1p mu Omega 2) :
-    ∫ x in Omega, ‖W1p.value w x‖ * ‖W1p.gradient w x‖ ∂mu ≤
-      ‖W1p.value w‖ * ‖W1p.gradient w‖ := by
-  have hf : MemLp (fun x ↦ ‖W1p.value w x‖) (ENNReal.ofReal (2 : ℝ)) (mu.restrict Omega) := by
-    simpa using (Lp.memLp (W1p.value w)).norm
-  have hg : MemLp (fun x ↦ ‖W1p.gradient w x‖) (ENNReal.ofReal (2 : ℝ)) (mu.restrict Omega) := by
-    simpa using (Lp.memLp (W1p.gradient w)).norm
-  have h := integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
-  simp only [norm_norm, Real.rpow_two, ← Real.sqrt_eq_rpow, Lp.integral_norm_sq_eq_norm_sq,
-    Real.sqrt_sq_eq_abs, abs_norm] at h
-  exact h
-
 /-- **Strong monotonicity of the quasilinear operator near a function with bounded gradient.**
 Let `A(x, s)` be uniformly elliptic with constants `λ, Λ` on `Ω` for every `s` and Lipschitz in
 `s` with constant `L ≥ 0`, uniformly in `x ∈ Ω`, and let `Ω` carry the Poincaré inequality
@@ -153,17 +139,13 @@ theorem mul_norm_gradient_sub_sq_le_energyFormH1_quasilinear_sub {P K : ℝ}
       energyFormH1 (fun x ↦ A x (W1p.value u x)) 0 0 u (u - v) -
         energyFormH1 (fun x ↦ A x (W1p.value v x)) 0 0 v (u - v) := by
   set w := u - v
-  have hlam := (hA 0).pos
   -- Freezing the coefficient at `z` gives a uniformly elliptic matrix field.
   have hint (z : W1p mu Omega 2)
       (hz : AEStronglyMeasurable (fun x ↦ A x (W1p.value z x)) (mu.restrict Omega)) :
       Integrable (fun x ↦ matrixBilinearForm (A x (W1p.value z x)) (W1p.gradient w x)
         (W1p.gradient z x)) (mu.restrict Omega) := by
-    have hz' : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι))
-        (fun x ↦ A x (W1p.value z x)) lam Lam :=
-      uniformlyEllipticOn_iff.2 ⟨hlam, (hA 0).le, fun x hx ↦
-        ⟨(hA (W1p.value z x)).lower_bound hx, (hA (W1p.value z x)).upper_bound hx⟩⟩
-    exact hz'.integrable_matrixBilinearForm_gradient hz z w
+    exact (UniformlyEllipticOn.apply_of_forall hA
+      (W1p.value z)).integrable_matrixBilinearForm_gradient hz z w
   have hsq : Integrable (fun x ↦ ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
     (memLp_two_iff_integrable_sq_norm (Lp.aestronglyMeasurable _)).1 (Lp.memLp _)
   have hprod : Integrable (fun x ↦ ‖W1p.value w x‖ * ‖W1p.gradient w x‖) (mu.restrict Omega) :=
@@ -179,7 +161,7 @@ theorem mul_norm_gradient_sub_sq_le_energyFormH1_quasilinear_sub {P K : ℝ}
   -- Cauchy–Schwarz and Poincaré: `∫ |w| ‖∇w‖ ≤ ‖w‖₂ ‖∇w‖₂ ≤ P ‖∇w‖₂²`.
   have hCS : ∫ x in Omega, ‖W1p.value w x‖ * ‖W1p.gradient w x‖ ∂mu ≤
       P * ‖W1p.gradient w‖ ^ 2 := by
-    refine (integral_norm_value_mul_norm_gradient_le w).trans ?_
+    refine (W1p.integral_norm_value_mul_norm_gradient_le w).trans ?_
     rw [sq, ← mul_assoc]
     exact mul_le_mul_of_nonneg_right (hpoincare ⟨w, huv⟩) (norm_nonneg _)
   have hLK : L * K * ∫ x in Omega, ‖W1p.value w x‖ * ‖W1p.gradient w x‖ ∂mu ≤
@@ -207,20 +189,6 @@ private theorem energyFormH1_sub_le_opNorm_mul_norm {u v : W1p mu Omega 2}
     _ ≤ ‖(ℓ - ℓ') W‖ := le_abs_self _
     _ ≤ ‖ℓ - ℓ'‖ * ‖W‖ := (ℓ - ℓ').le_opNorm W
     _ = ‖ℓ - ℓ'‖ * ‖u - v‖ := by rw [hW]
-
-omit [DecidableEq ι] in
-/-- Under the Poincaré inequality `‖w‖₂ ≤ P ‖∇w‖₂`, the `H¹` norm of `w ∈ W^{1,2}_0(Ω)` satisfies
-`‖w‖² ≤ (P² + 1) ‖∇w‖₂²`. -/
-private theorem norm_sq_le_of_mem_w1p0Submodule {P : ℝ}
-    (hpoincare : ∀ w : W1p0 mu Omega 2,
-      ‖W1p.value (w : W1p mu Omega 2)‖ ≤ P * ‖W1p.gradient (w : W1p mu Omega 2)‖)
-    {w : W1p mu Omega 2} (hw : w ∈ w1p0Submodule mu Omega 2) :
-    ‖w‖ ^ 2 ≤ (P ^ 2 + 1) * ‖W1p.gradient w‖ ^ 2 := by
-  have hP2 : ‖W1p.value w‖ ^ 2 ≤ P ^ 2 * ‖W1p.gradient w‖ ^ 2 := by
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (hpoincare ⟨w, hw⟩) 2
-  rw [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
-  linarith
 
 /-- The arithmetic of the Lipschitz estimate: if `c > 0`, `Q, D, N ≥ 0`, `c G² ≤ D N` and
 `N² ≤ Q G²`, then `N ≤ Q D / c`. -/
@@ -270,7 +238,7 @@ theorem norm_sub_le_of_forall_energyFormH1_quasilinear_eq {P K : ℝ}
     (norm_nonneg _)
     ((mul_norm_gradient_sub_sq_le_energyFormH1_quasilinear_sub hA hlip hL hK hpoincare hAu hAv hvK
       huv).trans (energyFormH1_sub_le_opNorm_mul_norm huv hu hv))
-    (norm_sq_le_of_mem_w1p0Submodule hpoincare huv)
+    (W1p.norm_sq_le_mul_norm_gradient_sq_of_norm_value_le (hpoincare ⟨_, huv⟩))
 
 /-- **Lipschitz dependence on the forcing on a bounded domain.** Let `Ω ⊆ B(z, R) ⊆ ℝⁿ⁺¹`, let
 `A(x, s)` be uniformly elliptic with constants `λ, Λ` on `Ω` for every `s` and Lipschitz in `s`
@@ -278,7 +246,8 @@ with constant `L ≥ 0`, uniformly in `x ∈ Ω`. Let `u, v ∈ W^{1,2}(Ω)` be 
 `-div(A(x, u) ∇u) = ℓ` and `-div(A(x, v) ∇v) = ℓ'` with the same boundary values `g`, and with
 `x ↦ A(x, u(x))` and `x ↦ A(x, v(x))` measurable. If `‖∇v‖ ≤ K` almost everywhere, with `K ≥ 0`
 and `2 L K R < λ`, then `‖u - v‖_{H¹} ≤ ((2R)² + 1) ‖ℓ - ℓ'‖ / (λ - 2 L K R)`. -/
-theorem norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_subset_ball {n : ℕ}
+theorem norm_sub_le_of_forall_energyFormH1_quasilinear_eq_of_norm_gradient_le_of_subset_ball
+    {n : ℕ}
     {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
     {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (hA : ∀ s, UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
