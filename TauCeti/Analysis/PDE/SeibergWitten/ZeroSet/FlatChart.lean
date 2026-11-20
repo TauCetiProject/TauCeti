@@ -57,9 +57,10 @@ inequality propagates it to Taubes's quadratic lower bound
 `E_r(B_σ) ≥ c σ²`  for `c₀ / √r ≤ σ ≤ ρ₀`
 
 (`TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq`).
-By the maximal disjoint half-ball argument the zeros of `α` in a region where the equations hold
-are then covered by `N(σ) ≤ 4 E_r(A_{σ/2}) / (c σ²)` balls of radius `σ` centred at zeros, for
-`r ≥ (2 c₀ / σ)²` (`TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_add_hodgeStar_eq`).
+By the maximal disjoint half-ball argument a set `Z` of zeros of `α` in a region where the
+equations hold is then covered by `N(σ) ≤ 4 E_r(Z_{σ/2}) / (c σ²)` balls of radius `σ` centred at
+zeros, for `r ≥ (2 c₀ / σ)²`
+(`TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_add_hodgeStar_eq`).
 The constants `c₀`, `c` and `ρ₀` depend only on `K`, `C`, `H`, the radius `R` of the balls on which
 the equations hold, and the volume of the unit ball; they depend neither on `r` nor on the
 solution. The factor `1 + C r^(-1/2)` is absorbed into the constants, since it is integrated only
@@ -76,7 +77,8 @@ The curvature geometry of the manifold, which turns the factor `1` in front of `
 * `TauCeti.SeibergWitten.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq`:
   the quadratic lower bound for the defect energy of balls centred at zeros of `α`.
 * `TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_add_hodgeStar_eq`: the covering
-  bound `N(σ) ≤ C σ⁻²` for the zeros of `α`.
+  bound `N(σ) ≤ 4 E_r(Z_{σ/2}) / (c σ²)` for a set `Z` of zeros of `α`, where `Z_{σ/2}` is the
+  closed `σ / 2`-thickening of `Z`; it becomes `N(σ) ≤ C σ⁻²` once the defect energy is bounded.
 
 ## References
 
