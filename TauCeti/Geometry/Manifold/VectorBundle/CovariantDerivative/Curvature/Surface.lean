@@ -87,7 +87,7 @@ private theorem alongCurve_alongCurve_eq_symmL
   have hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
   set Γ := christoffelMap (finBasis ℝ E) hcov
   have : ContMDiffCovariantDerivativeOn E ∞ cov.toFun e.baseSet :=
-    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov e.open_baseSet
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ∞) cov e.open_baseSet
   have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : ContMDiffVectorBundle (∞ + 1) E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
@@ -103,7 +103,7 @@ private theorem alongCurve_alongCurve_eq_symmL
   have hw : ContDiffAt ℝ 2 w (u, v) :=
     hwdef ▸ hW.contDiffAt_continuousLinearMapAt_trivializationAt
   -- Near `u`, the inner covariant derivatives read in the chart by the coordinate formula.
-  have hinner : sectionCoord (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
+  have hinner : sectionCoord ℝ (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
       (f u v) =ᶠ[𝓝 u]
       fun q ↦ deriv (fun r ↦ w (q, r)) v + Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v) := by
     subst hφdef hwdef

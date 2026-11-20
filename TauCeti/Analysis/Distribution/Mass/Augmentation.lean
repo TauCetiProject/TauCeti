@@ -15,17 +15,21 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 The augmentation of a compactly supported functional is bounded by its mass times the norm
 of the constant being tested. Since augmentation vanishes on compactly supported boundaries,
 this gives a lower bound for the mass of every boundary perturbation. For a weighted point
-current the bound is sharp: its mass is the absolute value of its coefficient, and adding a
-compactly supported boundary cannot decrease that mass.
+current on a finite-dimensional space the bound is sharp: its mass is the absolute value of its
+coefficient, and adding a compactly supported boundary cannot decrease that mass. On an
+infinite-dimensional space every test form is zero, so every functional, in particular every
+point current, has mass and augmentation zero
+(`Distribution.augmentation_eq_zero_of_not_finiteDimensional`).
 
 These statements use the existing Euclidean test-form model, including its actual exterior
 derivative. They apply to real-linear functionals, so in particular to currents, without a
 finite-mass assumption on the competitor. Constants are evaluated only through compactly
 supported cutoffs. No constant function is treated as a test on a noncompact domain.
 
-In degree zero this distinguishes boundary perturbations from arbitrary competitors with the
-same ordinary boundary: zero has smaller mass than a nonzero point current, but has different
-augmentation and cannot be obtained by a compactly supported boundary perturbation.
+In degree zero, on a finite-dimensional space, this distinguishes boundary perturbations from
+arbitrary competitors with the same ordinary boundary: zero has smaller mass than a nonzero point
+current, but has different augmentation and cannot be obtained by a compactly supported boundary
+perturbation.
 
 ## References
 
@@ -42,7 +46,7 @@ open scoped Distributions Topology ENNReal
 namespace Distribution
 
 variable {E F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup V] [NormedSpace ℝ V] {Ω : Opens E} {n : ℕ∞}
 
 /-- The mass bounds augmentation against a constant vector, evaluated using a cutoff near the
@@ -51,6 +55,9 @@ theorem enorm_augmentation_le_mass_mul {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω,
     [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) V] (T : 𝓕) (hT : IsCompact (dsupport T))
     (hTΩ : dsupport T ⊆ Ω) (c : F) :
     ‖augmentation T c‖ₑ ≤ mass T * ‖c‖ₑ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · simp [augmentation_eq_zero_of_not_finiteDimensional hE]
   obtain ⟨χ, hχ, hχ01⟩ := TestFunction.exists_eventually_eq_one (n := n) hT hTΩ
   rw [augmentation_eq T hχ]
   refine (enorm_apply_le_mass_mul T _).trans (mul_le_mul_right ?_ _)
@@ -105,6 +112,11 @@ theorem mass_mul_apply_finZero_le_mass_add_comp_extDerivCLM {𝓖 : Type*}
     mass (fun ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) => a * ω x ![]) ≤
       mass (fun ω : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) =>
         a * ω x ![] + Q (TestFunction.extDerivCLM ω)) := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- Every test form is zero, so the point current has zero mass.
+    refine (mass_le_iff.2 fun ω _ => ?_).trans zero_le
+    simp [TestFunction.eq_zero_of_not_finiteDimensional ω hE]
   let T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] ℝ) →ₗ[ℝ] ℝ :=
     { toFun ω := a * ω x ![]
       map_add' ω η := by simp [mul_add]

@@ -142,7 +142,7 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
   have hcurve : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ F q t) 0 :=
     (hf.comp 0 (contMDiff_iff_contDiff.mpr
       (contDiff_prodMk_left (n := 3) t)).contMDiffAt).mdifferentiableAt (by norm_num)
-  have hXcoord : DifferentiableAt ℝ (sectionCoord (F := E) (fun q ↦ F q t)
+  have hXcoord : DifferentiableAt ℝ (sectionCoord ℝ (F := E) (fun q ↦ F q t)
       (fun q ↦ alongCurve cov (F q) (W q) t) (F 0 t)) 0 :=
     differentiableAt_sectionCoord (fun q ↦ F q t) _
       ((contMDiffAt_alongCurve_snd_slice cov hW).mdifferentiableAt one_ne_zero) hbase
@@ -155,13 +155,13 @@ theorem hasDerivAt_deriv_norm_sq_curveVelocity {t : ℝ}
     ((isTorsionFree_iff_torsion_eq_zero _).2 (torsion_leviCivitaConnection_eq_zero I))
     (hf.of_le (by rw [minSmoothness_of_isRCLikeNormedField]; norm_num))
   -- The product rule for `⟪A, γ'⟫` along `γ`.
-  have hAcoord : DifferentiableAt ℝ (sectionCoord (F := E) (F 0) A (F 0 t)) t :=
+  have hAcoord : DifferentiableAt ℝ (sectionCoord ℝ (F := E) (F 0) A (F 0 t)) t :=
     differentiableAt_sectionCoord (F 0) A
       ((contMDiffAt_acceleration_slice hf).mdifferentiableAt one_ne_zero) hbase
   have hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 3 (F 0) t :=
     hf.comp t (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 3) (0 : ℝ))).contMDiffAt
   have hγcoord : DifferentiableAt ℝ
-      (sectionCoord (F := E) (F 0) (curveVelocity I (F 0)) (F 0 t)) t :=
+      (sectionCoord ℝ (F := E) (F 0) (curveVelocity I (F 0)) (F 0 t)) t :=
     differentiableAt_sectionCoord (F 0) _
       ((hγ.contMDiffAt_curveVelocity (m := 2) (by norm_num)).mdifferentiableAt
         two_ne_zero) hbase

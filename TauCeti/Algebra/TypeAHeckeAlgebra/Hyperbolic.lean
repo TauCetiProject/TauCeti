@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection
+public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
 public import Mathlib.Analysis.Complex.Trigonometric
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
@@ -22,7 +22,7 @@ two eigenvalues `q` and `-q⁻¹`, and
 `T i = q • P i - q⁻¹ • (1 - P i)` and `T i⁻¹ = q⁻¹ • P i - q • (1 - P i)`. A Markov trace with
 parameter `z` multiplies by the projection parameter `η` when the last projection is appended,
 where `z = q * η - q⁻¹ * (1 - η)`, that is `η = (z + q⁻¹) / (q + q⁻¹)`. These general facts are in
-`TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection`.
+`TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic`.
 
 Over `ℂ`, put `q = exp (-θ)` (`TauCeti.hyperbolicHeckeParam`) and rescale the braid generators to
 `γ i = I * exp (-α) • T i` (`TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen`). In terms of the
