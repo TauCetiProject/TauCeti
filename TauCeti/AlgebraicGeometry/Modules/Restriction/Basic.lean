@@ -110,6 +110,15 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open CategoryTheory Limits
 
+/-- Restriction acts on the sections over `U` of a morphism `φ` as `φ` on the sections over the
+image `f ''ᵁ U`, under the identifications `Scheme.Modules.restrictAppIso`. -/
+@[reassoc (attr := simp)]
+lemma restrictFunctor_map_app_restrictAppIso_hom {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsOpenImmersion f] {M N : Y.Modules} (φ : M ⟶ N) (U : X.Opens) :
+    ((restrictFunctor f).map φ).app U ≫ (N.restrictAppIso f U).hom =
+      (M.restrictAppIso f U).hom ≫ φ.app (f ''ᵁ U) :=
+  rfl
+
 /-- Restricting along `e.inv` and then along `e.hom` is naturally isomorphic to the identity
 of `X.Modules`. -/
 noncomputable def restrictFunctorInvCompHomIso {X Y : Scheme.{u}} (e : X ≅ Y) :
@@ -142,6 +151,25 @@ lemma restrictFunctorInvCompHomIso_inv_app_app {X Y : Scheme.{u}} (e : X ≅ Y)
   erw [← Functor.map_comp, ← Functor.map_comp]
   rfl
 
+/-- Restriction along an isomorphism of schemes `e : X ≅ Y` is an equivalence
+`Y.Modules ≌ X.Modules`, with inverse the restriction along `e.inv` and with unit and counit
+given by `Scheme.Modules.restrictFunctorInvCompHomIso`. -/
+noncomputable def restrictEquivalence {X Y : Scheme.{u}} (e : X ≅ Y) : Y.Modules ≌ X.Modules :=
+  CategoryTheory.Equivalence.mk (restrictFunctor e.hom) (restrictFunctor e.inv)
+    (restrictFunctorInvCompHomIso e.symm).symm (restrictFunctorInvCompHomIso e)
+
+/-- The functor of `restrictEquivalence e` is the restriction along `e.hom`. -/
+@[simp]
+lemma restrictEquivalence_functor {X Y : Scheme.{u}} (e : X ≅ Y) :
+    (restrictEquivalence e).functor = restrictFunctor e.hom :=
+  (rfl)
+
+/-- The inverse of `restrictEquivalence e` is the restriction along `e.inv`. -/
+@[simp]
+lemma restrictEquivalence_inverse {X Y : Scheme.{u}} (e : X ≅ Y) :
+    (restrictEquivalence e).inverse = restrictFunctor e.inv :=
+  (rfl)
+
 /-- Restriction to an open subscheme preserves injective module sheaves. In particular,
 restricting the terms of an injective resolution gives injective terms. -/
 private instance restrictFunctorPreservesInjectiveObjectsInclusion {X : Scheme.{u}} (U : X.Opens) :
@@ -159,12 +187,8 @@ instance (priority := low) restrictFunctorPreservesInjectiveObjects {X Y : Schem
     -- Factor through the open image. Restriction along the intervening isomorphism
     -- is an equivalence, with comparison isomorphisms supplied by functoriality.
     let e := f.isoOpensRange
-    let E : f.opensRange.toScheme.Modules ≌ X.Modules :=
-      CategoryTheory.Equivalence.mk (restrictFunctor e.hom) (restrictFunctor e.inv)
-        (restrictFunctorInvCompHomIso e.symm).symm
-        (restrictFunctorInvCompHomIso e)
     have : (restrictFunctor e.hom).PreservesInjectiveObjects :=
-      inferInstanceAs E.functor.PreservesInjectiveObjects
+      inferInstanceAs (restrictEquivalence e).functor.PreservesInjectiveObjects
     let i : restrictFunctor f ≅ restrictFunctor f.opensRange.ι ⋙ restrictFunctor e.hom :=
       restrictFunctorCongr f.isoOpensRange_hom_ι.symm ≪≫
         restrictFunctorComp e.hom f.opensRange.ι
