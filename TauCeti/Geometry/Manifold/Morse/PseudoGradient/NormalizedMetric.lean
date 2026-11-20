@@ -25,10 +25,12 @@ while its normalized chart `ψ` (`TauCeti.MorseChart.normalizedChart`) writes it
 
 the coordinates `v⁻` of negative weight first. This file treats the metrics which are the
 Euclidean metric of the normalized coordinates near the critical points
-(`TauCeti.MorseChart.IsNormalizedEuclidean`). They are the standard metrics near the critical
-points used to construct smooth structures on Morse trajectory spaces by gluing (Wehrheim), and
-their conventions differ from those of the Euclidean metric of a Morse chart
-(`TauCeti.MorseChart.IsEuclidean`) by factors of `2`, which this file makes explicit.
+(`TauCeti.MorseChart.IsNormalizedEuclidean`). Wehrheim's standard metrics near the critical
+points, used to construct smooth structures on Morse trajectory spaces by gluing, are stated in the
+half-quadratic convention of the Euclidean metric of a Morse chart
+(`TauCeti.MorseChart.IsEuclidean`). The metrics here are their normalized-coordinate version, half
+the Euclidean metric of the chart, and their conventions differ from the half-quadratic ones by
+factors of `2`, such as the time conversion `T = 2t`, which this file makes explicit.
 
 * The normalized coordinates are `zᵢ / √2`, reordered, so the Euclidean metric of the normalized
   coordinates is half that of the chart coordinates
@@ -40,7 +42,9 @@ their conventions differ from those of the Euclidean metric of a Morse chart
   is the linear flow `(v⁻, v⁺) ↦ (e^{2t} v⁻, e^{-2t} v⁺)`
   (`TauCeti.normalizedLinearFlow`), with rates `±2`.
 * Consequently the negative gradient is not itself an adapted pseudo-gradient, whose rates are
-  `±1`, but half of it is (`TauCeti.isAdaptedPseudoGradient_inv_two_smul_neg_mgradient`). Its
+  `±1`, but half of it is (`TauCeti.isAdaptedPseudoGradient_inv_two_smul_neg_mgradient`), being
+  the linear field of the chart
+  (`TauCeti.MorseChart.IsNormalizedEuclidean.coord_mfderiv_inv_two_smul_neg_mgradient`). Its
   integral curves are the orbits of the flow of this adapted pseudo-gradient run at double speed
   (`TauCeti.IsAdaptedPseudoGradient.flow_mul_eq_of_isMIntegralCurve`): a time `t` of the negative
   gradient flow is the time `T = 2t` of the half-quadratic convention, and `e^{-T} = e^{-2t}`
@@ -214,6 +218,15 @@ theorem IsNormalizedEuclidean.neg_mgradient_eq_two_smul_field (hφ : φ.IsNormal
     ring
   rw [← h, neg_neg]
 
+/-- **In normalized Euclidean coordinates half the negative gradient is the linear field** of the
+Morse chart: its chart coordinates are `z ↦ (-wᵢ zᵢ)ᵢ`. -/
+theorem IsNormalizedEuclidean.coord_mfderiv_inv_two_smul_neg_mgradient
+    (hφ : φ.IsNormalizedEuclidean) {y : M} (hy : y ∈ φ.toChart.source) :
+    φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y ((2⁻¹ : ℝ) • -mgradient 𝓘(ℝ, E) f y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i) := by
+  rw [hφ.neg_mgradient_eq_two_smul_field hy, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul,
+    φ.coord_mfderiv_field hy]
+
 /-- **The negative gradient in normalized coordinates is `(2 v⁻, -2 v⁺)`**, where `v = ψ y` are
 the normalized coordinates of the point and `v⁻` its first `λ` coordinates, `λ` the Morse
 index. -/
@@ -267,8 +280,7 @@ theorem isAdaptedPseudoGradient_inv_two_smul_neg_mgradient
     exact mul_neg_of_pos_of_neg (by norm_num) (neg_lt_zero.2 (real_inner_self_pos.2 hg))
   exists_morseChart x hx := by
     obtain ⟨φ, hφ⟩ := hφ x hx
-    exact ⟨φ, fun y hy ↦ by rw [hφ.neg_mgradient_eq_two_smul_field hy, smul_smul,
-      inv_mul_cancel₀ two_ne_zero, one_smul, φ.coord_mfderiv_field hy]⟩
+    exact ⟨φ, fun y hy ↦ hφ.coord_mfderiv_inv_two_smul_neg_mgradient hy⟩
 
 end Adapted
 
@@ -305,16 +317,13 @@ theorem IsNormalizedEuclidean.normalizedChart_flow_two_mul
   -- `X` is the linear field of the chart.
   have hXφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y
       ((2⁻¹ : ℝ) • -mgradient 𝓘(ℝ, E) f y)) = fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i) :=
-    fun y hy ↦ by rw [hφ.neg_mgradient_eq_two_smul_field hy, smul_smul,
-      inv_mul_cancel₀ two_ne_zero, one_smul, φ.coord_mfderiv_field hy]
+    fun _ hy ↦ hφ.coord_mfderiv_inv_two_smul_neg_mgradient hy
   have hyz : y = φ.toChart.symm (φ.coord.symm z) := by
     rw [LinearEquiv.symm_apply_apply, φ.toChart.left_inv hy]
   have hflow := hX.flow_toChart_symm_of_forall_mem_uIcc φ hXφ (z := z) (t := 2 * t) fun s hs ↦ by
     have hs' : s / 2 ∈ uIcc 0 t := by
-      rw [mem_uIcc] at hs ⊢
-      rcases hs with hs | hs
-      · exact Or.inl ⟨by linarith [hs.1], by linarith [hs.2]⟩
-      · exact Or.inr ⟨by linarith [hs.1], by linarith [hs.2]⟩
+      have h := mem_image_of_mem (· / 2) hs
+      rwa [image_div_const_uIcc, zero_div, mul_div_cancel_left₀ t two_ne_zero] at h
     simpa only [mul_div_cancel₀ s two_ne_zero] using hmem hs'
   rw [← hyz] at hflow
   rw [hflow, normalizedChart_apply, φ.toChart.right_inv (hmem right_mem_uIcc), hlin,
