@@ -132,16 +132,12 @@ private theorem exists_continuousLinearMap_value_ae (hp : p ≠ ⊤) [T2Space M]
   -- The chart-`i` components, restricted to `Q i`.
   let D (i : Fin A.n) :
       SobolevSection A μ p k →L[ℝ] (Fin (finrank ℝ F) → Wkp μ (Q i) p k) :=
-    ContinuousLinearMap.pi fun l ↦ (Wkp.restrictL (hQ i) k).comp ((ContinuousLinearMap.proj l).comp
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun i : Fin A.sectionChartData.n ↦
-          ∀ _ : Fin (finrank ℝ F), Wkp μ (A.sectionChartData.image i) p k) i).comp
-        (A.sectionChartData.sobolevSections μ p k).subtypeL))
-  -- The inclusion followed by the two projections evaluates `w` at `i`. This holds by
-  -- definition only, unfolding `pi`, `proj`, `comp` and `subtypeL`, as the index type
-  -- `Fin A.sectionChartData.n` of the projection unfolds to `Fin A.n`.
+    ContinuousLinearMap.pi fun l ↦ (Wkp.restrictL (hQ i) k).comp
+      ((ContinuousLinearMap.proj l).comp (A.sectionChartData.componentsL μ p k i))
   have hD (w : SobolevSection A μ p k) (i : Fin A.n) :
       D i w = fun l ↦ Wkp.restrictL (hQ i) k ((w : A.sectionChartData.SobolevData μ p k) i l) :=
-    (rfl)
+    funext fun l ↦ congrArg (Wkp.restrictL (hQ i) k)
+      (congrFun (A.sectionChartData.componentsL_apply μ p k i w) l)
   -- On the piece `P i j`, the transfer of the chart-`i` components to chart `j` of `B`.
   let f (i : Fin A.n) : SobolevSection A μ p k →L[ℝ] Wkp μ (P i j) p k :=
     (ContinuousLinearMap.proj m).comp (((A.append B).transferL μ p k hp (Fin.castAdd B.n i)

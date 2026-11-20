@@ -22,8 +22,10 @@ the coordinate change of the bundle, read in chart `j`, is `C^n` on the transfer
 If `M` and `E` are Hausdorff, the image of each chart is covered by finitely many open pieces with
 compact closure in a transfer domain, each mapped by the chart coordinate change
 `(A.chart j).symm ≫ₕ A.chart i` into an open set with compact closure in the image of another chart.
-These pieces are built from a shrinking of the chart domains, and the charts they are mapped into
-may be restricted to any family of charts whose domains still cover the manifold.
+These pieces are built from the shrinking
+`TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom` of the chart domains, and the charts
+they are mapped into may be restricted to any family of charts whose domains still cover the
+manifold.
 
 ## Main definitions
 
@@ -116,9 +118,7 @@ theorem exists_transfer_cover_of_iUnion_dom_eq [T2Space E] [T2Space M] {ι : Typ
       (∀ l j, MapsTo ((A.chart j).symm ≫ₕ A.chart (σ l)) (P l j) (Q l)) ∧
       ∀ j, A.image j ≤ ⨆ l, P l j := by
   -- A shrinking `D l` of the chart domains of the family, still covering `M`.
-  have := A.compactSpace
-  obtain ⟨D, hcov, hDo, hD⟩ := exists_subset_iUnion_closure_subset isClosed_univ
-    (fun l ↦ A.isOpen_dom (σ l)) (fun _ _ ↦ toFinite _) (hσ ▸ subset_rfl)
+  obtain ⟨D, hDo, hD, hcov⟩ := A.exists_isOpen_closure_subset_dom σ hσ
   have hDdom (l : ι) : D l ⊆ A.dom (σ l) := subset_closure.trans (hD l)
   have hKc (l : ι) (j : Fin A.n) :
       IsCompact (A.chart j '' (closure (A.dom j) ∩ closure (D l))) :=
@@ -156,7 +156,7 @@ theorem exists_transfer_cover_of_iUnion_dom_eq [T2Space E] [T2Space M] {ι : Typ
       (A.chart j).left_inv (A.dom_subset_chart_source j hx₁)]
   · intro j y hy
     obtain ⟨x, hx, rfl⟩ := A.mem_image.1 hy
-    obtain ⟨l, hl⟩ := mem_iUnion.1 (hcov (mem_univ x))
+    obtain ⟨l, hl⟩ := hcov x
     exact Opens.mem_iSup.2 ⟨l, ⟨x, ⟨hx, hl⟩, rfl⟩⟩
 
 /-- **Transfer cover.** For a finite bundle atlas of a Hausdorff manifold, the image of each chart

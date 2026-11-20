@@ -21,7 +21,7 @@ trivialization at a point `center i`. Every compact Hausdorff manifold modelled 
 compact space has one (`TauCeti.FiniteBundleAtlas.nonempty`), even one whose chart domains have
 closures inside any prescribed open neighbourhoods of their centres
 (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset`), and the chart domains of a finite bundle
-atlas of a Hausdorff manifold have a shrinking
+atlas of a Hausdorff manifold, or of any subfamily of charts still covering it, have a shrinking
 (`TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`). Such atlases are the finite chart
 data from which function spaces of sections, such as Sobolev spaces, are built chartwise.
 
@@ -60,7 +60,8 @@ closed upper half-plane are read in `ℂ` in
   to given neighbourhoods, and of joint atlases.
 * `TauCeti.FiniteBundleAtlas.compactSpace`: a manifold with a finite bundle atlas is compact.
 * `TauCeti.FiniteBundleAtlas.exists_isOpen_closure_subset_dom`: the chart domains of a finite
-  bundle atlas of a Hausdorff manifold have a shrinking.
+  bundle atlas of a Hausdorff manifold, or of any subfamily of charts still covering it, have a
+  shrinking.
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
   coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn`: functions continuous on the chart
@@ -169,14 +170,16 @@ theorem compactSpace : CompactSpace M := by
   rw [huniv]
   exact isCompact_iUnion fun i ↦ A.isCompact_closure_dom i
 
-/-- The chart domains of a finite bundle atlas of a Hausdorff manifold have a shrinking: open sets
-`D j` with `closure (D j) ⊆ A.dom j` still covering `M`. -/
-theorem exists_isOpen_closure_subset_dom [T2Space M] :
-    ∃ D : Fin A.n → Set M, (∀ j, IsOpen (D j)) ∧ (∀ j, closure (D j) ⊆ A.dom j) ∧
-      ∀ x, ∃ j, x ∈ D j := by
+/-- The chart domains of a finite bundle atlas of a Hausdorff manifold have a shrinking: for any
+finite family `σ` of charts whose domains cover `M`, open sets `D l` with
+`closure (D l) ⊆ A.dom (σ l)` still covering `M`. -/
+theorem exists_isOpen_closure_subset_dom [T2Space M] {ι : Type*} [Finite ι] (σ : ι → Fin A.n)
+    (hσ : ⋃ l, A.dom (σ l) = univ) :
+    ∃ D : ι → Set M, (∀ l, IsOpen (D l)) ∧ (∀ l, closure (D l) ⊆ A.dom (σ l)) ∧
+      ∀ x, ∃ l, x ∈ D l := by
   have := A.compactSpace
-  obtain ⟨D, hcov, hDo, hD⟩ := exists_subset_iUnion_closure_subset isClosed_univ A.isOpen_dom
-    (fun _ _ ↦ toFinite _) (A.iUnion_dom ▸ subset_rfl)
+  obtain ⟨D, hcov, hDo, hD⟩ := exists_subset_iUnion_closure_subset isClosed_univ
+    (fun l ↦ A.isOpen_dom (σ l)) (fun _ _ ↦ toFinite _) (hσ ▸ subset_rfl)
   exact ⟨D, hDo, hD, fun x ↦ mem_iUnion.1 (hcov (mem_univ x))⟩
 
 /-- The manifold chart of the `i`th bundle chart. -/
