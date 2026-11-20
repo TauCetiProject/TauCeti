@@ -176,6 +176,33 @@ theorem eventually_finsum_mem_preimage_singleton_eq_sum
     obtain ⟨e, he, he'W⟩ := he'L
     exact ⟨e, he, hWinj e (hbσ e he).1 he'W ((hbσ e he).2.trans hpe'.symm)⟩
 
+/-- A continuous function on the domain of a local homeomorphism of Hausdorff spaces has a
+continuous fiberwise sum if the base is weakly locally compact and its support meets the
+preimage of every compact set in a compact set. The codomain has continuous addition. -/
+theorem continuous_finsum_mem_preimage_singleton
+    [T2Space E] [T2Space B] [WeaklyLocallyCompactSpace B]
+    {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [ContinuousAdd M]
+    {p : E → B} (hp : IsLocalHomeomorph p) {f : E → M} (hf : Continuous f)
+    (hproper : ∀ ⦃K : Set B⦄, IsCompact K → IsCompact (p ⁻¹' K ∩ tsupport f)) :
+    Continuous fun b ↦ ∑ᶠ e ∈ p ⁻¹' {b}, f e := by
+  classical
+  refine continuous_iff_continuousAt.2 fun b ↦ ?_
+  obtain ⟨F, hF, hev⟩ := hp.eventually_finsum_mem_preimage_singleton_eq_sum hproper
+    (σ := fun e ↦ hp.localInverseAt e)
+    (fun e ↦ (hp.localInverseAt e).continuousAt hp.apply_self_mem_localInverseAt_source)
+    (fun _ ↦ hp.localInverseAt_apply_self)
+    (fun e ↦ by
+      filter_upwards [(hp.localInverseAt e).open_source.mem_nhds
+        hp.apply_self_mem_localInverseAt_source] with b hb
+      exact hp.apply_localInverseAt_of_mem hb) b
+  have hcont : ContinuousAt (fun b ↦ ∑ e ∈ F, f (hp.localInverseAt e b)) b := by
+    apply tendsto_finsetSum
+    intro e he
+    rw [← hF e he]
+    exact hf.continuousAt.comp
+      ((hp.localInverseAt e).continuousAt hp.apply_self_mem_localInverseAt_source)
+  exact hcont.congr_of_eventuallyEq hev
+
 end FiberSum
 
 section Prod
