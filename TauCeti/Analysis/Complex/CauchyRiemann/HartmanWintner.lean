@@ -9,9 +9,10 @@ public import Mathlib.Analysis.Analytic.IsolatedZeros
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Normed.Module.Complexification
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.RankOne
@@ -63,7 +64,7 @@ In the second case `Du = O(‖z - z₀‖ ^ m)`, so `u = O(‖z - z₀‖ ^ (m +
 first component of `c` vanishes. Its second component `c₂` is therefore nonzero and
 `ψ z = (z - z₀) ^ m • c₂ + o(‖z - z₀‖ ^ m)`. Since `Du z h = Re (h • ψ z)`, the derivative of `u`
 is that of `Re ((· - z₀) ^ (m + 1) • c₂ / (m + 1))` up to `o(‖z - z₀‖ ^ m)`, and integrating along
-segments from `z₀` (`TauCeti.sub_isLittleO_norm_pow_add_one_of_fderiv`) gives the expansion of
+segments from `z₀` (`TauCeti.sub_isLittleO_norm_rpow_add_one_of_fderiv`) gives the expansion of
 `u` with `k = m + 1`.
 
 ## Main results
@@ -72,11 +73,8 @@ segments from `z₀` (`TauCeti.sub_isLittleO_norm_pow_add_one_of_fderiv`) gives 
   alternative at a zero of `u`.
 * `TauCeti.eqOn_zero_or_exists_isLittleO_sub_re_pow_smul`: its global form on a connected open
   set.
-* `TauCeti.eventually_eq_zero_or_exists_isLittleO_sub_pow_smul_of_eventually_eq_clm_apply`: a
-  function `Φ σ` with `Φ` complex-linear, continuous and invertible and `σ` analytic vanishes near
-  a point or has a nonzero leading term `(z - z₀) ^ m • c` there.
-* `TauCeti.sub_isLittleO_norm_pow_add_one_of_fderiv`: a derivative of size `o(‖x - a‖ ^ m)`
-  integrates to an increment of size `o(‖x - a‖ ^ (m + 1))`.
+* `TauCeti.hasFDerivAt_re_sub_pow_smul`, `TauCeti.fderiv_re_sub_pow_smul_apply`: the derivative
+  of the leading polynomial `w ↦ Re ((w - z₀) ^ k • c)`.
 
 ## References
 
@@ -94,77 +92,6 @@ open Asymptotics Filter Metric Set Topology
 open scoped Laplacian
 
 namespace TauCeti
-
-/-! ### Integrating a little-o derivative bound -/
-
-section LittleO
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] {f : E → F} {a : E} {m : ℕ}
-
-/-- Let `f : E → F` be differentiable in a neighbourhood of `a`. If `Df(x) = o(‖x - a‖ ^ m)` as
-`x → a`, then `f(x) - f(a) = o(‖x - a‖ ^ (m + 1))`. This is the little-o counterpart of Mathlib's
-`sub_isBigO_norm_rpow_add_one_of_fderiv`. -/
-theorem sub_isLittleO_norm_pow_add_one_of_fderiv (hdf : ∀ᶠ x in 𝓝 a, DifferentiableAt ℝ f x)
-    (hderiv : fderiv ℝ f =o[𝓝 a] fun x ↦ ‖x - a‖ ^ m) :
-    (fun x ↦ f x - f a) =o[𝓝 a] fun x ↦ ‖x - a‖ ^ (m + 1) := by
-  -- the mean value inequality on balls about `a`, as for `sub_isBigO_norm_rpow_add_one_of_fderiv`
-  refine IsLittleO.of_bound fun C hC ↦ ?_
-  obtain ⟨ε, hε₀, hε⟩ := eventually_nhds_iff_ball.mp (hdf.and (hderiv.bound hC))
-  rw [eventually_nhds_iff_ball]
-  refine ⟨ε, hε₀, fun y hy ↦ ?_⟩
-  have hsub : closedBall a ‖y - a‖ ⊆ ball a ε := closedBall_subset_ball (mem_ball_iff_norm.mp hy)
-  have h := (convex_closedBall a ‖y - a‖).norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
-    (C := C * ‖y - a‖ ^ m) (fun z hz ↦ (hε z (hsub hz)).1) (fun z hz ↦ ?_)
-    (mem_closedBall_self (norm_nonneg _)) (mem_closedBall_iff_norm.mpr le_rfl)
-  · rw [Real.norm_of_nonneg (by positivity), pow_succ, ← mul_assoc]
-    exact h
-  · refine (hε z (hsub hz)).2.trans ?_
-    rw [Real.norm_of_nonneg (by positivity)]
-    gcongr
-    exact mem_closedBall_iff_norm.mp hz
-
-end LittleO
-
-/-! ### Leading terms of complex-linear similarity factorizations -/
-
-section Leading
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- **Leading term of a similarity factorization.** Let `ξ = Φ σ` near `z₀`, with `Φ` a family of
-complex-linear maps, continuous at `z₀` and invertible there, and `σ` analytic at `z₀`. Then
-either `ξ` vanishes near `z₀`, or there are `m` and `c ≠ 0` with
-`ξ z = (z - z₀) ^ m • c + o(‖z - z₀‖ ^ m)`: the leading term is `Φ z₀` applied to the leading
-coefficient of `σ`. -/
-theorem eventually_eq_zero_or_exists_isLittleO_sub_pow_smul_of_eventually_eq_clm_apply
-    {ξ σ : ℂ → V} {Φ : ℂ → V →L[ℂ] V} {z₀ : ℂ} (hΦ : ContinuousAt Φ z₀) (hΦ₀ : IsUnit (Φ z₀))
-    (hσ : AnalyticAt ℂ σ z₀) (hξ : ∀ᶠ z in 𝓝 z₀, ξ z = Φ z (σ z)) :
-    (∀ᶠ z in 𝓝 z₀, ξ z = 0) ∨ ∃ (m : ℕ) (c : V), c ≠ 0 ∧
-      (fun z ↦ ξ z - (z - z₀) ^ m • c) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ m := by
-  by_cases h : ∀ᶠ z in 𝓝 z₀, σ z = 0
-  · refine .inl ?_
-    filter_upwards [h, hξ] with z hz hzξ
-    rw [hzξ, hz, map_zero]
-  obtain ⟨m, g, hg, hg₀, hσg⟩ := hσ.exists_eventuallyEq_pow_smul_ne_zero_iff.2 h
-  refine .inr ⟨m, Φ z₀ (g z₀), fun h0 ↦ hg₀ ?_, ?_⟩
-  · obtain ⟨e, he⟩ := hΦ₀
-    have h1 := DFunLike.congr_fun e.inv_mul (g z₀)
-    simp only [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-      one_apply_eq_self, he, h0, map_zero] at h1
-    exact h1.symm
-  -- near `z₀`, `ξ z - (z - z₀) ^ m • c = (z - z₀) ^ m • (Φ z (g z) - c)`, and the last factor
-  -- tends to `0`
-  have hlim : Tendsto (fun z ↦ Φ z (g z) - Φ z₀ (g z₀)) (𝓝 z₀) (𝓝 0) :=
-    tendsto_sub_nhds_zero_iff.2 (hΦ.clm_apply hg.continuousAt)
-  refine IsLittleO.of_bound fun ε hε ↦ ?_
-  filter_upwards [hξ, hσg, hlim.eventually (closedBall_mem_nhds 0 hε)] with z hzξ hzσ hzε
-  rw [dist_zero_right] at hzε
-  rw [hzξ, hzσ, map_smul, ← smul_sub, norm_smul, norm_pow, Real.norm_of_nonneg (by positivity),
-    mul_comm ε]
-  gcongr
-
-end Leading
 
 /-! ### The complexified derivative -/
 
@@ -241,6 +168,17 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 
 open Complexification
 
+/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℝ`. -/
+private theorem finiteDimensional_real_complexification [FiniteDimensional ℝ X] :
+    FiniteDimensional ℝ (Complexification X) :=
+  Module.Finite.equiv (equivProd X).symm.toLinearEquiv
+
+/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℂ`. -/
+private theorem finiteDimensional_complex_complexification [FiniteDimensional ℝ X] :
+    FiniteDimensional ℂ (Complexification X) :=
+  have := finiteDimensional_real_complexification (X := X)
+  Module.Finite.of_restrictScalars_finite ℝ ℂ _
+
 /-- The space `X_ℂ × X_ℂ` in which the pair `ξ = (u, ψ)` takes its values. -/
 private abbrev CPair (X : Type*) :=
   Complexification X × Complexification X
@@ -271,8 +209,8 @@ private theorem fderiv_hwPair_one_add_I_smul {u : ℂ → X} {z : ℂ} (hu : Con
       (conj X (cxDeriv u z), ofReal (Δ u z)) := by
   have h1 : DifferentiableAt ℝ (fun w ↦ ofReal (u w) : ℂ → Complexification X) z := hξ.fst
   have h2 : DifferentiableAt ℝ (cxDeriv u) z := hξ.snd
-  rw [show hwPair u = fun w ↦ (ofReal (u w), cxDeriv u w) from rfl,
-    (h1.hasFDerivAt.prodMk h2.hasFDerivAt).fderiv]
+  unfold hwPair
+  rw [(h1.hasFDerivAt.prodMk h2.hasFDerivAt).fderiv]
   ext1
   · simpa using fderiv_ofReal_comp_one_add_I_smul (hu.differentiableAt (by norm_num))
   · simpa using fderiv_cxDeriv_one_add_I_smul hu
@@ -386,8 +324,7 @@ private theorem exists_coeff_hwPair [FiniteDimensional ℝ X] {Ω : Set ℂ} (h�
       (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) ∧
       ∀ z ∈ Ω, fderiv ℝ (hwPair u) z 1 + Complex.I • fderiv ℝ (hwPair u) z Complex.I +
         C z (hwPair u z) = 0 := by
-  have : FiniteDimensional ℝ (Complexification X) :=
-    Module.Finite.equiv (equivProd X).symm.toLinearEquiv
+  have := finiteDimensional_real_complexification (X := X)
   let e := toEuclidean (E := CPair X)
   let T : CPair X →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ (CPair X))) := e
   let T' : EuclideanSpace ℝ (Fin (Module.finrank ℝ (CPair X))) →L[ℝ] CPair X := e.symm
@@ -407,7 +344,7 @@ variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
 open Complexification
 
 /-- The derivative of the homogeneous harmonic polynomial `w ↦ Re ((w - z₀) ^ k • c)`. -/
-private theorem hasFDerivAt_re_sub_pow_smul (k : ℕ) (c : Complexification X) (z₀ z : ℂ) :
+theorem hasFDerivAt_re_sub_pow_smul (k : ℕ) (c : Complexification X) (z₀ z : ℂ) :
     HasFDerivAt (fun w ↦ ((w - z₀) ^ k • c).re)
       ((reCLM X).comp ((ContinuousLinearMap.toSpanSingleton ℂ
         (((k : ℂ) * (z - z₀) ^ (k - 1)) • c)).restrictScalars ℝ)) z := by
@@ -417,23 +354,13 @@ private theorem hasFDerivAt_re_sub_pow_smul (k : ℕ) (c : Complexification X) (
   funext w
   simp
 
-private theorem fderiv_re_sub_pow_smul_apply (k : ℕ) (c : Complexification X) (z₀ z h : ℂ) :
+/-- The derivative of `w ↦ Re ((w - z₀) ^ k • c)` at `z` in the direction `h` is
+`Re (h • k (z - z₀) ^ (k - 1) • c)`. -/
+theorem fderiv_re_sub_pow_smul_apply (k : ℕ) (c : Complexification X) (z₀ z h : ℂ) :
     fderiv ℝ (fun w ↦ ((w - z₀) ^ k • c).re) z h =
       (h • (((k : ℂ) * (z - z₀) ^ (k - 1)) • c)).re := by
   rw [(hasFDerivAt_re_sub_pow_smul k c z₀ z).fderiv]
   simp
-
-/-- A vector `v` with `(z - z₀) ^ m • v = o(‖z - z₀‖ ^ m)` vanishes. -/
-private theorem eq_zero_of_isLittleO_sub_pow_smul {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℂ V] {v : V} {z₀ : ℂ} {m : ℕ}
-    (h : (fun z : ℂ ↦ (z - z₀) ^ m • v) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ m) : v = 0 := by
-  by_contra hv
-  have hpos : 0 < ‖v‖ := norm_pos_iff.2 hv
-  obtain ⟨z, hz, hzne⟩ := ((h.bound (half_pos hpos)).filter_mono nhdsWithin_le_nhds).and
-    (self_mem_nhdsWithin (s := {z₀}ᶜ)) |>.exists
-  have hz₀ : 0 < ‖z - z₀‖ ^ m := pow_pos (norm_pos_iff.2 (sub_ne_zero.2 hzne)) m
-  rw [norm_smul, norm_pow, Real.norm_of_nonneg hz₀.le] at hz
-  nlinarith
 
 /-- **From the leading term of `ψ` to the leading polynomial of `u`.** If `u z₀ = 0`, `u` is
 differentiable near `z₀` and `ψ z = (z - z₀) ^ m • c + o(‖z - z₀‖ ^ m)` with `c ≠ 0`, then `u` is
@@ -468,10 +395,13 @@ private theorem exists_isLittleO_sub_re_pow_smul_of_isLittleO_cxDeriv {u : ℂ �
   -- integrate the derivative estimate along segments from `z₀`
   have hdP (z : ℂ) : DifferentiableAt ℝ (fun w ↦ ((w - z₀) ^ (m + 1) • c').re) z :=
     (hasFDerivAt_re_sub_pow_smul (m + 1) c' z₀ z).differentiableAt
-  have h := sub_isLittleO_norm_pow_add_one_of_fderiv
-    (f := fun z ↦ u z - ((z - z₀) ^ (m + 1) • c').re) (hdiff.mono fun z hz ↦ hz.sub (hdP z))
-    (hD.congr' (hdiff.mono fun z hz ↦ (fderiv_sub hz (hdP z)).symm) EventuallyEq.rfl)
-  simpa [hu₀] using h
+  have h := sub_isLittleO_norm_rpow_add_one_of_fderiv
+    (f := fun z ↦ u z - ((z - z₀) ^ (m + 1) • c').re) (Nat.cast_nonneg m)
+    (hdiff.mono fun z hz ↦ hz.sub (hdP z))
+    (hD.congr' (hdiff.mono fun z hz ↦ (fderiv_sub hz (hdP z)).symm)
+      (Eventually.of_forall fun z ↦ (Real.rpow_natCast _ _).symm))
+  exact (h.congr_right fun z ↦ by rw [← Nat.cast_add_one, Real.rpow_natCast]).congr_left
+    fun z ↦ by simp [hu₀]
 
 /-- **The leading term of `ξ` is carried by `ψ`.** If `u z₀ = 0`, `u` is differentiable near `z₀`
 and `ξ z = (z - z₀) ^ m • c + o(‖z - z₀‖ ^ m)` with `c ≠ 0`, then the first component of `c`
@@ -505,8 +435,12 @@ private theorem isLittleO_cxDeriv_of_isLittleO_hwPair {u : ℂ → X} {z₀ : �
       (fun z ↦ (ofReal (u z) : Complexification X)) =O[𝓝 z₀] u)).trans_isLittleO
       (hu₁.trans_isLittleO ((isLittleO_norm_pow_norm_pow (Nat.lt_succ_self m)).comp_tendsto
         (tendsto_sub_nhds_zero_iff.2 tendsto_id)))
-  have hc₁ : c.1 = 0 := eq_zero_of_isLittleO_sub_pow_smul
-    ((hU.sub hlo₁).congr_left fun z ↦ sub_sub_cancel _ _)
+  have hne : ∃ᶠ z in 𝓝 z₀, (z - z₀) ^ m ≠ 0 :=
+    (eventually_nhdsWithin_of_forall (s := {z₀}ᶜ) fun z hz ↦
+      pow_ne_zero m (sub_ne_zero.2 hz)).frequently
+      |>.filter_mono nhdsWithin_le_nhds
+  have hc₁ : c.1 = 0 := eq_zero_of_smul_isLittleO hne <| isLittleO_norm_right.1 <|
+    ((hU.sub hlo₁).congr_left fun z ↦ sub_sub_cancel _ _).congr_right fun z ↦ (norm_pow _ _).symm
   exact ⟨fun h ↦ hc (Prod.ext hc₁ h), hlo₂⟩
 
 variable [FiniteDimensional ℝ X]
@@ -525,17 +459,17 @@ theorem eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul {Ω : Set ℂ} (h
       (fun z ↦ u z - ((z - z₀) ^ k • c).re) =o[𝓝 z₀] (fun z ↦ ‖z - z₀‖ ^ k) ∧
       (fun z ↦ fderiv ℝ u z - fderiv ℝ (fun w ↦ ((w - z₀) ^ k • c).re) z) =o[𝓝 z₀]
         fun z ↦ ‖z - z₀‖ ^ (k - 1) := by
-  have : FiniteDimensional ℝ (Complexification X) :=
-    Module.Finite.equiv (equivProd X).symm.toLinearEquiv
-  have : FiniteDimensional ℂ (Complexification X) :=
-    Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  have := finiteDimensional_complex_complexification (X := X)
   -- the similarity principle for `ξ = (u, ψ)` at `z₀`, and the leading term of `ξ`
   obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_hwPair hΩ hu hK
   obtain ⟨r, hr, -, Φ, σ, hΦ, hΦu, hσ, hEq⟩ :=
     exists_similarity_of_contDiffOn hΩ (contDiffOn_hwPair hΩ hu) hCm hCb heq hz₀
   have hb := ball_mem_nhds z₀ hr
+  have hΦ₀ : Function.Injective (Φ z₀) := by
+    obtain ⟨e, he⟩ := hΦu z₀ (mem_ball_self hr)
+    exact he ▸ (ContinuousLinearEquiv.ofUnit e).injective
   rcases eventually_eq_zero_or_exists_isLittleO_sub_pow_smul_of_eventually_eq_clm_apply
-      (hΦ.continuousAt hb) (hΦu z₀ (mem_ball_self hr)) (hσ.analyticAt hb)
+      (hΦ.continuousAt hb) hΦ₀ (hσ.analyticAt hb)
       (eventually_of_mem hb hEq) with h0 | ⟨m, c, hc, hlo⟩
   · exact .inl (h0.mono fun z hz ↦ by simpa [hwPair] using congrArg (fun p ↦ p.1.re) hz)
   have hdiff : ∀ᶠ z in 𝓝 z₀, DifferentiableAt ℝ u z :=
@@ -560,10 +494,7 @@ theorem eqOn_zero_or_exists_isLittleO_sub_re_pow_smul {Ω : Set ℂ} (hΩ : IsOp
         fun z ↦ ‖z - z₀‖ ^ (k - 1) := by
   refine (eventually_eq_zero_or_exists_isLittleO_sub_re_pow_smul hΩ hu hK hz₀ hu₀).imp_left
     fun h0 ↦ ?_
-  have : FiniteDimensional ℝ (Complexification X) :=
-    Module.Finite.equiv (equivProd X).symm.toLinearEquiv
-  have : FiniteDimensional ℂ (Complexification X) :=
-    Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  have := finiteDimensional_complex_complexification (X := X)
   have := FiniteDimensional.completeSpace ℂ (CPair X)
   obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_hwPair hΩ hu hK
   have hξ := contDiffOn_hwPair hΩ hu
