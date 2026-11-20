@@ -13,6 +13,7 @@ public import TauCeti.Algebra.BigOperators.AlternatingSum
 public import TauCeti.Algebra.BigOperators.Fin
 public import TauCeti.Algebra.Group.Conj
 import Mathlib.Tactic.Group
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The K-complex of a module over an algebra with Hurwitz generators
@@ -102,11 +103,6 @@ theorem suffixConj_last (w : Fin (n + 1) → c.carrier) :
     suffixConj w (Fin.last n) = w (Fin.last n) :=
   Subtype.ext <| by simp [coe_suffixConj]
 
-/-- Taking values in `G` commutes with deleting an entry, since `Fin.removeNth` only reindexes. -/
-private theorem coe_removeNth (p : Fin (n + 1)) (w : Fin (n + 1) → c.carrier) :
-    (fun l ↦ ((p.removeNth w l : c.carrier) : G)) = p.removeNth fun l ↦ (w l : G) :=
-  funext fun l ↦ by rw [Fin.removeNth_apply, Fin.removeNth_apply]
-
 /-- Deleting an entry at or before position `i` leaves the entries after the following one, and
 hence the conjugate at that position, unchanged. -/
 private theorem suffixConj_removeNth_castSucc (w : Fin (n + 2) → c.carrier) {i j : Fin (n + 1)}
@@ -115,10 +111,10 @@ private theorem suffixConj_removeNth_castSucc (w : Fin (n + 2) → c.carrier) {i
   have hlast : i.castSucc ≤ Fin.last (n + 1) := Fin.le_last _
   have hsucc : i.castSucc ≤ j.succ := (Fin.castSucc_lt_succ_iff.2 hij).le
   have hcast : i.castSucc ≤ j.castSucc := Fin.castSucc_le_castSucc_iff.2 hij
-  rw [coe_suffixConj_eq_partialProd, coe_suffixConj_eq_partialProd, coe_removeNth,
-    Fin.partialProd_removeNth_of_ge _ hlast, Fin.partialProd_removeNth_of_ge _ hsucc,
-    Fin.partialProd_removeNth_of_ge _ hcast]
-  simp only [Fin.succ_last, Fin.succ_castSucc]
+  rw [coe_suffixConj_eq_partialProd, coe_suffixConj_eq_partialProd, ← Function.comp_def,
+    Fin.comp_removeNth, Fin.partialProd_removeNth_of_ge _ hlast,
+    Fin.partialProd_removeNth_of_ge _ hsucc, Fin.partialProd_removeNth_of_ge _ hcast]
+  simp only [Fin.succ_last, Fin.succ_castSucc, Function.comp_def]
   group
 
 /-- Deleting an entry after position `i` conjugates the conjugate at `i` by the conjugate of the
@@ -131,9 +127,9 @@ private theorem suffixConj_removeNth_succ (w : Fin (n + 2) → c.carrier) {i j :
   have hsucc : i.succ ≤ j.succ := Fin.succ_le_succ_iff.2 hij
   have hcast : i.castSucc ≤ j.succ := (Fin.castSucc_lt_succ_iff.2 hij).le
   simp only [coe_suffixConj_eq_partialProd]
-  rw [coe_removeNth, Fin.partialProd_removeNth_of_ge _ hlast,
+  rw [← Function.comp_def, Fin.comp_removeNth, Fin.partialProd_removeNth_of_ge _ hlast,
     Fin.partialProd_removeNth_of_le _ hsucc, Fin.partialProd_removeNth_of_le _ hcast]
-  simp only [Fin.succ_last, Fin.succ_castSucc]
+  simp only [Fin.succ_last, Fin.succ_castSucc, Function.comp_def]
   group
 
 variable (k : Type*) {A : Type*} (M : Type*) [CommRing k] [Semiring A] [Algebra k A]
