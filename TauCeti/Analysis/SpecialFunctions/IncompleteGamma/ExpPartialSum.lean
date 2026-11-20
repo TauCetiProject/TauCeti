@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Artanh
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
@@ -128,26 +127,6 @@ theorem one_sub_exp_neg_mul_sum_pow_div_factorial_le_of_le {n : ℕ} {y : ℝ} (
 
 /-! ### The density `tⁿ e^{-t}` on either side of its mode -/
 
-/-- For `0 ≤ u ≤ 1 / 2`, `(1 + u) e^{-u} ≤ e^{(8 / 3) u³} (1 - u) e^u`. -/
-private lemma one_add_mul_exp_neg_le {u : ℝ} (hu0 : 0 ≤ u) (hu1 : u ≤ 1 / 2) :
-    (1 + u) * rexp (-u) ≤ rexp (8 / 3 * u ^ 3) * ((1 - u) * rexp u) := by
-  have h := Real.log_div_le_sum_range_add hu0 (by linarith) 1
-  norm_num at h
-  have hpos : 0 < 1 - u := by linarith
-  have h3 : u ^ 3 / (1 - u ^ 2) ≤ 4 / 3 * u ^ 3 := by
-    rw [div_le_iff₀ (by nlinarith)]
-    nlinarith [mul_nonneg (pow_nonneg hu0 3) (show 0 ≤ 1 / 4 - u ^ 2 by nlinarith)]
-  have hexp : (1 + u) / (1 - u) ≤ rexp (2 * u + 8 / 3 * u ^ 3) := by
-    rw [← Real.exp_log (div_pos (by linarith) hpos)]
-    exact Real.exp_le_exp.2 (by linarith)
-  rw [div_le_iff₀ hpos] at hexp
-  have h1 : rexp u * rexp (-u) = 1 := by rw [← Real.exp_add, add_neg_cancel, Real.exp_zero]
-  have h2 : rexp (2 * u + 8 / 3 * u ^ 3) = rexp (8 / 3 * u ^ 3) * rexp u * rexp u := by
-    rw [← Real.exp_add, ← Real.exp_add]; ring_nf
-  calc (1 + u) * rexp (-u) ≤ rexp (2 * u + 8 / 3 * u ^ 3) * (1 - u) * rexp (-u) := by gcongr
-    _ = rexp (8 / 3 * u ^ 3) * ((1 - u) * rexp u) := by
-        rw [h2]; linear_combination (rexp (8 / 3 * u ^ 3) * (1 - u) * rexp u) * h1
-
 /-- The density `tᵐ e^{-t}` at `t = m (1 + v)` is `(m (1 + v) e^{-v})ᵐ e^{-m}`. -/
 private lemma pow_mul_exp_neg_eq (m : ℕ) (v : ℝ) :
     ((m : ℝ) + m * v) ^ m * rexp (-((m : ℝ) + m * v)) =
@@ -189,7 +168,8 @@ private lemma pow_mul_exp_neg_add_le (m : ℕ) {u : ℝ} (hu0 : 0 ≤ u) (hu1 : 
       ≤ (rexp (8 / 3 * u ^ 3) * (m * ((1 - u) * rexp u))) ^ m * rexp (-m) := by
         gcongr ?_ ^ _ * _
         rw [mul_left_comm (rexp (8 / 3 * u ^ 3))]
-        exact mul_le_mul_of_nonneg_left (one_add_mul_exp_neg_le hu0 hu1) m.cast_nonneg
+        exact mul_le_mul_of_nonneg_left
+          (Real.one_add_mul_exp_neg_le_exp_mul_one_sub_mul_exp hu0 hu1) m.cast_nonneg
     _ = _ := by
         rw [mul_pow, show (8 / 3 : ℝ) * m * u ^ 3 = m * (8 / 3 * u ^ 3) by ring,
           Real.exp_nat_mul]
@@ -267,21 +247,6 @@ private lemma exp_neg_mul_integral_reflect_right_le {n : ℕ} (hn : 0 < n) {v : 
     _ = ((n : ℝ) - n * u) ^ n * rexp (-((n : ℝ) - n * u)) := by
         rw [← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul]
 
-/-- For `0 ≤ v ≤ 1 / 8`, `1 + v ≤ e^{v - v² / 4}`. -/
-private lemma one_add_le_exp_sub_sq_div_four {v : ℝ} (hv0 : 0 ≤ v) (hv : v ≤ 1 / 8) :
-    1 + v ≤ rexp (v - v ^ 2 / 4) := by
-  have h := Real.abs_log_sub_add_sum_range_le (x := -v)
-    (by rw [abs_neg, abs_of_nonneg hv0]; linarith) 2
-  rw [abs_neg, abs_of_nonneg hv0, sub_neg_eq_add] at h
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero] at h
-  norm_num at h
-  have h' := (abs_le.1 h).2
-  have h3 : v ^ 3 / (1 - v) ≤ v ^ 2 / 4 := by
-    rw [div_le_iff₀ (by linarith)]
-    nlinarith [mul_nonneg (sq_nonneg v) (show 0 ≤ 1 - 5 * v by linarith)]
-  rw [← Real.exp_log (by linarith : (0 : ℝ) < 1 + v)]
-  exact Real.exp_le_exp.2 (by nlinarith)
-
 /-- The lower tail at `n + n v`: for `0 ≤ v ≤ 1 / 8`,
 `e^{-(n + n v)} e_n(n + n v) ≤ e^{-n v² / 4}`. -/
 private lemma exp_neg_mul_sum_pow_div_factorial_add_le {n : ℕ} (hn : 0 < n) {v : ℝ}
@@ -294,7 +259,7 @@ private lemma exp_neg_mul_sum_pow_div_factorial_add_le {n : ℕ} (hn : 0 < n) {v
     show (n : ℝ) - (n + n * v) = n * -v by ring, Real.exp_nat_mul, ← mul_pow]
   calc ((1 + v) * rexp (-v)) ^ n ≤ (rexp (v - v ^ 2 / 4) * rexp (-v)) ^ n := by
         gcongr
-        exact one_add_le_exp_sub_sq_div_four hv0 hv
+        exact Real.one_add_le_exp_sub_sq_div_four hv0 hv
     _ = rexp (-(n * v ^ 2 / 4)) := by
         rw [← Real.exp_add, ← Real.exp_nat_mul]; ring_nf
 
