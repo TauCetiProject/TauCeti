@@ -324,9 +324,10 @@ theorem sliceMoment_const_eq_sliceMoment_const (hK : IsCompact K) (hTc : ContDif
   rw [fderiv_sliceMoment_apply hK hTc contDiff_const hT (fun w ↦ hdT _) v]
   simp
 
-/-- The value of `T ∧ π^*β` on the product frame `(b₀, 0), (b₁, 0), (0, 1), (0, i)` is the slice
-density of `T` times the value of `β` on `b`: every other way of distributing the four vectors
-gives `β` a fibre vector, on which the pullback vanishes. -/
+/-- The value of `θ ∧ π^*β` on the product frame `(b₀, 0), (b₁, 0), (0, 1), (0, i)` is
+`θ((0, 1), (0, i))` times the value of `β` on `b`; when `θ` is a value of a two-form `T`, the first
+factor is the slice density of `T`. Every other way of distributing the four vectors gives `β` a
+fibre vector, on which the pullback vanishes. -/
 theorem wedge_compContinuousLinearMap_fst_apply (b : Module.Basis (Fin 2) ℝ E)
     (θ : (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (β : E [⋀^Fin 2]→L[ℝ] ℝ) :
     θ.wedge (β.compContinuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ))

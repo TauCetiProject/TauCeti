@@ -16,6 +16,7 @@ public import Mathlib.LinearAlgebra.Complex.Orientation
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -26,9 +27,9 @@ curve `C`, and let `M × ℂ` be a tubular neighbourhood of it with trivial norm
 the product of the orientation of `M` and the standard orientation of `ℂ`. A compactly supported
 two-form `T` on `M × ℂ` has a **fibre flux** through each normal fibre `{x} × ℂ`,
 
-`RoughForm.fibreFlux T x = ∫_ℂ T(x, w)((0, 1), (0, i)) dw`
+`RoughForm.fiberFlux T x = ∫_ℂ T(x, w)((0, 1), (0, i)) dw`
 
-(`TauCeti.RoughForm.fibreFlux`), the total mass of the normal slice `μ_x` of
+(`TauCeti.RoughForm.fiberFlux`), the total mass of the normal slice `μ_x` of
 `TauCeti.Analysis.Calculus.DifferentialForm.SliceMoment` at `x`. In Taubes's analysis of
 Seiberg–Witten solutions concentrating along `C`, `T` is the dilated cutoff curvature current,
 which is closed and has flux `m` through every fibre; its mass is controlled by its pairing with
@@ -49,8 +50,8 @@ The proof replaces a partition of unity on the curve by de Rham theory on `M`.
   (`TauCeti.wedge_compContinuousLinearMap_fst_apply`), so Fubini's theorem gives
   `∫ T ∧ π^*θ = m ∫ θ` when the flux is `m` over the support of `θ`
   (`TauCeti.integralTopForm_wedge_mpullback_fst_of_tsupport_subset`). No closedness is needed.
-* **The whole base.** Fix such a `θ` with `∫_M θ = 1`. On a compact connected surface the form
-  `β - (∫_M β) θ` has integral zero, so it is exact
+* **The whole base.** Fix such a `θ` with `∫_M θ = 1`. On a connected surface, for a compactly
+  supported `β` the form `β - (∫_M β) θ` has integral zero, so it is exact
   (`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`), and so is its pullback.
   Since `T` is closed and compactly supported, its wedge with an exact form is a compactly
   supported exact form, which integrates to zero by Stokes' theorem. Hence
@@ -59,11 +60,11 @@ The proof replaces a partition of unity on the curve by de Rham theory on `M`.
 
 ## Main definitions and results
 
-* `TauCeti.RoughForm.fibreFlux`: the flux of a two-form on `M × ℂ` through a normal fibre.
+* `TauCeti.RoughForm.fiberFlux`: the flux of a two-form on `M × ℂ` through a normal fibre.
 * `TauCeti.integralTopForm_wedge_mpullback_fst_of_tsupport_subset`: `∫ T ∧ π^*θ = m ∫ θ` for `θ`
   supported in one chart of the base.
-* `TauCeti.integralTopForm_wedge_mpullback_fst`: `∫ T ∧ π^*β = m ∫_M β` for a closed `T` over a
-  compact connected base.
+* `TauCeti.integralTopForm_wedge_mpullback_fst`: `∫ T ∧ π^*β = m ∫_M β` for a closed `T` and a
+  compactly supported `β` over a connected base.
 * `TauCeti.integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv`: the taming pairing
   `∫ T ∧ (K π^*β + dη) = K m ∫_M β`.
 
@@ -88,11 +89,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- The flux of a two-form `T` on `M × ℂ` through the normal fibre `{x} × ℂ`: the integral over
 `ℂ` of its value on the frame `(0, 1), (0, i)` of the fibre. -/
-def RoughForm.fibreFlux (T : RoughForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2) (x : M) : ℝ :=
+def RoughForm.fiberFlux (T : RoughForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2) (x : M) : ℝ :=
   ∫ w : ℂ, T (x, w) ![((0 : E), (1 : ℂ)), (0, Complex.I)]
 
-theorem RoughForm.fibreFlux_def (T : RoughForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2) (x : M) :
-    RoughForm.fibreFlux T x = ∫ w : ℂ, T (x, w) ![((0 : E), (1 : ℂ)), (0, Complex.I)] :=
+theorem RoughForm.fiberFlux_def (T : RoughForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2) (x : M) :
+    RoughForm.fiberFlux T x = ∫ w : ℂ, T (x, w) ![((0 : E), (1 : ℂ)), (0, Complex.I)] :=
   (rfl)
 
 section chart
@@ -112,45 +113,7 @@ private theorem tsupport_wedge_mpullback_fst_subset (T : RoughForm (I.prod 𝓘(
 
 variable [IsManifold I ∞ M]
 
-/-- A product lift whose second factor has trivial chart signs has the chart signs of its first
-factor. -/
-private theorem signAt_prod_ofHasGroupoid [FiniteDimensional ℝ E] {k : ℕ}
-    (l : Manifold.OrientationLift I M (Fin k)) (o : _root_.Orientation ℝ ℂ (Fin 2))
-    (h : Fintype.card (Fin 2) = Module.finrank ℝ ℂ) (α p : M × ℂ) :
-    (l.prod (Manifold.OrientationLift.ofHasGroupoid (I := 𝓘(ℝ, ℂ)) (M := ℂ) o h)).signAt α p =
-      l.signAt α.1 p.1 := by
-  by_cases hp : p.1 ∈ (chartAt H α.1).source
-  · have hp' : p ∈ (chartAt (ModelProd H ℂ) α).source := by
-      simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod,
-        chartAt_self_eq, OpenPartialHomeomorph.refl_source, mem_univ, and_true] using hp
-    rw [Manifold.OrientationLift.signAt_of_mem _ hp', Manifold.OrientationLift.signAt_of_mem _ hp]
-    exact (Manifold.OrientationLift.prod_sign l _ α ⟨p.1, hp⟩ ⟨p.2, by simp⟩).trans
-      (by rw [Manifold.OrientationLift.ofHasGroupoid_sign, mul_one])
-  · have hp' : p ∉ (chartAt (ModelProd H ℂ) α).source := by
-      simpa only [prodChartedSpace_chartAt, OpenPartialHomeomorph.prod_source, mem_prod,
-        chartAt_self_eq, OpenPartialHomeomorph.refl_source, mem_univ, and_true] using hp
-    rw [Manifold.OrientationLift.signAt_of_notMem _ hp',
-      Manifold.OrientationLift.signAt_of_notMem _ hp]
-
 variable [I.Boundaryless]
-
-/-- In the chart `(extChartAt I x₀).symm × id` of `M × ℂ`, the derivative of the inverse chart is
-the derivative of the inverse chart of `M` on the base and the identity on the fibre. -/
-private theorem hasMFDerivAt_extChartAt_prod_symm (x₀ : M) (w₀ : ℂ) {y : E × ℂ}
-    (hy : y.1 ∈ (extChartAt I x₀).target) :
-    HasMFDerivAt 𝓘(ℝ, E × ℂ) (I.prod 𝓘(ℝ, ℂ)) (extChartAt (I.prod 𝓘(ℝ, ℂ)) (x₀, w₀)).symm y
-      (((mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm y.1).comp
-        (ContinuousLinearMap.fst ℝ E ℂ)).prod (ContinuousLinearMap.snd ℝ E ℂ)) := by
-  have hsymm : ⇑(extChartAt (I.prod 𝓘(ℝ, ℂ)) (x₀, w₀)).symm =
-      fun z : E × ℂ ↦ ((extChartAt I x₀).symm z.1, z.2) := by
-    rw [extChartAt_prod, extChartAt_model_space_eq_id]
-    rfl
-  have hd : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x₀).symm y.1 := by
-    have := mdifferentiableWithinAt_extChartAt_symm hy
-    rwa [ModelWithCorners.range_eq_univ, mdifferentiableWithinAt_univ] at this
-  rw [hsymm]
-  exact (hd.hasMFDerivAt.comp y (ContinuousLinearMap.fst ℝ E ℂ).hasMFDerivAt).prodMk
-    (ContinuousLinearMap.snd ℝ E ℂ).hasMFDerivAt
 
 /-- In the chart `(extChartAt I x₀).symm × id` of `M × ℂ`, the coefficient of `T ∧ π^*θ` on the
 product frame `(b₀, 0), (b₁, 0), (0, 1), (0, i)` is the slice density of `T` times the coefficient
@@ -163,7 +126,19 @@ private theorem mpullback_extChartAt_prod_symm_wedge_apply
         ((b.prod Complex.basisOneI).reindex finSumFinEquiv) =
       T ((extChartAt I x₀).symm y.1, y.2) ![((0 : E), (1 : ℂ)), (0, Complex.I)] *
         mpullback 𝓘(ℝ, E) I (extChartAt I x₀).symm θ y.1 b := by
-  have hD := hasMFDerivAt_extChartAt_prod_symm (I := I) x₀ w₀ hy
+  -- The derivative of the inverse chart is that of the inverse chart of `M` on the base and the
+  -- identity on the fibre.
+  have hD (v : E × ℂ) : mfderiv 𝓘(ℝ, E × ℂ) (I.prod 𝓘(ℝ, ℂ))
+      (extChartAt (I.prod 𝓘(ℝ, ℂ)) (x₀, w₀)).symm y v =
+      (mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm y.1 v.1, v.2) := by
+    have hz : y ∈ (extChartAt (I.prod 𝓘(ℝ, ℂ)) (x₀, w₀)).target := by
+      rw [extChartAt_prod_target]
+      exact ⟨hy, by simp⟩
+    rw [← mfderivWithin_univ, ← (I.prod 𝓘(ℝ, ℂ)).range_eq_univ,
+      mfderivWithin_extChartAt_symm_prod_apply hz, I.range_eq_univ, mfderivWithin_univ,
+      𝓘(ℝ, ℂ).range_eq_univ, mfderivWithin_univ, extChartAt_model_space_eq_id,
+      PartialEquiv.refl_symm, PartialEquiv.refl_coe, mfderiv_id]
+    rfl
   -- The pullback of `π^*θ` is the pullback of `θ` composed with the projection to `E`.
   have hθ : mpullback 𝓘(ℝ, E × ℂ) (I.prod 𝓘(ℝ, ℂ)) (extChartAt (I.prod 𝓘(ℝ, ℂ)) (x₀, w₀)).symm
       (mpullback (I.prod 𝓘(ℝ, ℂ)) I Prod.fst θ) y =
@@ -174,15 +149,8 @@ private theorem mpullback_extChartAt_prod_symm_wedge_apply
     refine ContinuousAlternatingMap.ext fun (v : Fin 2 → E × ℂ) ↦ ?_
     erw [ContinuousAlternatingMap.compContinuousLinearMap_apply, mpullback_apply, mpullback_apply,
       mpullback_apply]
-    rw [hD.mfderiv, mfderiv_fst]
+    simp only [hD, mfderiv_fst]
     rfl
-  -- The derivative of the inverse chart fixes the fibre directions.
-  have h0 (v : ℂ) : (((mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm y.1).comp
-      (ContinuousLinearMap.fst ℝ E ℂ)).prod (ContinuousLinearMap.snd ℝ E ℂ)) ((0 : E), v) =
-      ((0 : E), v) := by
-    ext
-    · exact (mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm y.1).map_zero
-    · rfl
   rw [mpullback_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply']
   -- Read both pulled-back forms as alternating maps on the model `E × ℂ` rather than on its
   -- tangent space, the type in which `wedge_compContinuousLinearMap_fst_apply` is stated.
@@ -200,7 +168,7 @@ private theorem mpullback_extChartAt_prod_symm_wedge_apply
   · exact congrArg (fun f : (E × ℂ) [⋀^Fin (2 + 2)]→L[ℝ] ℝ ↦ f _)
       (ContinuousAlternatingMap.wedge_def (E := E × ℂ) _ _).symm
   -- As above, the frame vectors of `E × ℂ` are tangent vectors only up to unfolding.
-  erw [mpullback_apply_pair, hD.mfderiv, h0, h0]
+  erw [mpullback_apply_pair, hD, hD, (mfderiv 𝓘(ℝ, E) I (extChartAt I x₀).symm y.1).map_zero]
   rfl
 
 variable [FiniteDimensional ℝ E]
@@ -211,7 +179,7 @@ the flux is `m` over the support of `θ`. -/
 private theorem integral_signAt_mul_mpullback_wedge_eq {k : ℕ}
     (l : Manifold.OrientationLift I M (Fin k)) (h2 : Fintype.card (Fin 2) = Module.finrank ℝ ℂ)
     (T : RoughForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2) (θ : RoughForm I M ℝ 2) (x₀ : M) {m : ℝ}
-    (hm : ∀ x ∈ _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ, RoughForm.fibreFlux T x = m)
+    (hm : ∀ x ∈ _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ, RoughForm.fiberFlux T x = m)
     {a : E} (ha : a ∈ (extChartAt I x₀).target) (b : Module.Basis (Fin 2) ℝ E) :
     ∫ w : ℂ, ((l.prod (Manifold.OrientationLift.ofHasGroupoid (I := 𝓘(ℝ, ℂ)) (M := ℂ)
         Complex.orientation h2)).signAt (x₀, 0)
@@ -230,10 +198,10 @@ private theorem integral_signAt_mul_mpullback_wedge_eq {k : ℕ}
       (l.signAt x₀ ((extChartAt I x₀).symm a) : ℝ) *
         (T ((extChartAt I x₀).symm a, w) ![((0 : E), (1 : ℂ)), (0, Complex.I)] *
           mpullback 𝓘(ℝ, E) I (extChartAt I x₀).symm θ a b) :=
-    congrArg₂ (fun (s : ℤˣ) t ↦ (s : ℝ) * t) (signAt_prod_ofHasGroupoid l _ h2 _ _)
+    congrArg₂ (fun (s : ℤˣ) t ↦ (s : ℝ) * t) (l.prod_ofHasGroupoid_signAt _ h2 _ _)
       (mpullback_extChartAt_prod_symm_wedge_apply T θ x₀ 0 (y := (a, w)) ha b)
   refine (integral_congr_ae (ae_of_all _ hpt)).trans ?_
-  rw [integral_const_mul, integral_mul_const, ← RoughForm.fibreFlux_def]
+  rw [integral_const_mul, integral_mul_const, ← RoughForm.fiberFlux_def]
   by_cases hθa : θ ((extChartAt I x₀).symm a) = 0
   · have h0 : mpullback 𝓘(ℝ, E) I (extChartAt I x₀).symm θ a b = 0 := by
       -- `b` is a frame of `E`, a tangent space of the model only up to unfolding.
@@ -256,7 +224,7 @@ theorem integralTopForm_wedge_mpullback_fst_of_tsupport_subset
     {θ : SmoothForm I M ℝ 2} {x₀ : M}
     (hθ : IsCompact (_root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.1))
     (hθx : _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.1 ⊆ (chartAt H x₀).source) {m : ℝ}
-    (hm : ∀ x ∈ _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.1, RoughForm.fibreFlux T.1 x = m) :
+    (hm : ∀ x ∈ _root_.tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ) θ.1, RoughForm.fiberFlux T.1 x = m) :
     integralTopForm (o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
         (by simp [Complex.finrank_real_complex])))
       (RoughForm.wedge T.1 (SmoothForm.mpullback Prod.fst contMDiff_fst θ).1) =
@@ -341,38 +309,48 @@ private theorem isCompact_tsupport_wedge {T : SmoothForm (I.prod 𝓘(ℝ, ℂ))
   exact (mem_compactlySupportedForms _).mp (SmoothForm.wedge_mem_compactlySupportedForms ψ
     ((mem_compactlySupportedClosedForms _).mp hT).1)
 
-/-- **The pairing of a closed two-form with a pulled-back base form.** Let `M` be a compact
+omit [I.Boundaryless] [T2Space M] in
+/-- `∫ (φ - c • ψ) = ∫ φ - c ∫ ψ` for compactly supported smooth top forms `φ` and `ψ`. -/
+private theorem integralTopForm_sub_smul {k : ℕ} (o : Manifold.Orientation I M (Fin k))
+    {φ ψ : SmoothForm I M ℝ k} (hφ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1))
+    (hψ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ.1)) (c : ℝ) :
+    integralTopForm o (φ - c • ψ).1 = integralTopForm o φ.1 - c * integralTopForm o ψ.1 := by
+  rw [Submodule.coe_sub, Submodule.coe_smul, sub_eq_add_neg, ← neg_smul,
+    integralTopForm_add o (φ.isSmoothForm.of_le (by simp))
+      ((ψ.isSmoothForm.smul (-c)).of_le (by simp)) hφ
+      (hψ.of_isClosed_subset (isClosed_tsupport _) (RoughForm.tsupport_smul_subset _ _)),
+    integralTopForm_smul]
+  ring
+
+/-- **The pairing of a closed two-form with a pulled-back base form.** Let `M` be a σ-compact
 connected oriented surface and `T` a compactly supported closed two-form on `M × ℂ` whose flux
-through every fibre `{x} × ℂ` is `m`. Then `∫_{M × ℂ} T ∧ π^*β = m ∫_M β` for every two-form `β`
-on `M`, for the product of the orientation of `M` and the standard orientation of `ℂ`. -/
-theorem integralTopForm_wedge_mpullback_fst [CompactSpace M] [ConnectedSpace M]
+through every fibre `{x} × ℂ` is `m`. Then `∫_{M × ℂ} T ∧ π^*β = m ∫_M β` for every compactly
+supported two-form `β` on `M`, for the product of the orientation of `M` and the standard
+orientation of `ℂ`. -/
+theorem integralTopForm_wedge_mpullback_fst [SigmaCompactSpace M] [ConnectedSpace M]
     (o : Manifold.Orientation I M (Fin 2)) {T : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
     (hT : T ∈ compactlySupportedClosedForms (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) 2) {m : ℝ}
-    (hm : ∀ x, RoughForm.fibreFlux T.1 x = m) (β : SmoothForm I M ℝ 2) :
+    (hm : ∀ x, RoughForm.fiberFlux T.1 x = m) {β : SmoothForm I M ℝ 2}
+    (hβ : β ∈ compactlySupportedForms I M 2) :
     integralTopForm (o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
         (by simp [Complex.finrank_real_complex])))
       (SmoothForm.wedge T (SmoothForm.mpullback Prod.fst contMDiff_fst β)).1 =
       m * integralTopForm o β.1 := by
   set oP := o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
     (by simp [Complex.finrank_real_complex]))
-  have hcpt (φ : SmoothForm I M ℝ 2) : φ ∈ compactlySupportedForms I M 2 :=
-    (mem_compactlySupportedForms I).mpr (isCompact_univ.of_isClosed_subset (isClosed_tsupport _)
-      (subset_univ _))
   -- A bump form `θ` of integral one supported in the chart at some point `x₀`.
   obtain ⟨x₀⟩ := (inferInstance : Nonempty M)
   obtain ⟨θ, hθx, hθ⟩ := exists_compactlySupportedClosedForms_integralTopForm_eq_one o x₀
     (chart_source_mem_nhds H x₀)
+  have hθc := ((mem_compactlySupportedClosedForms I).mp θ.2).1
   -- `β - (∫ β) θ` has integral zero, so it is exact.
   set c := integralTopForm o β.1
   have hex : β - c • θ.1 ∈ exactForms I M 2 := by
     refine exactCompactlySupportedForms_le_exactForms I 2
-      ((mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero o (hcpt _)).mpr ?_)
-    rw [Submodule.coe_sub, Submodule.coe_smul, sub_eq_add_neg, ← neg_smul,
-      integralTopForm_add o (β.isSmoothForm.of_le (by simp))
-        ((θ.1.isSmoothForm.smul (-c)).of_le (by simp)) ((mem_compactlySupportedForms I).mp (hcpt _))
-        ((mem_compactlySupportedForms I).mp (hcpt (-c • θ.1))),
-      integralTopForm_smul, hθ]
-    ring
+      ((mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero o
+        (sub_mem hβ (Submodule.smul_mem _ c hθc))).mpr ?_)
+    rw [integralTopForm_sub_smul o ((mem_compactlySupportedForms I).mp hβ)
+      ((mem_compactlySupportedForms I).mp hθc), hθ, mul_one, sub_self]
   -- Its pullback is exact, so it pairs to zero with `T`.
   have h0 := integralTopForm_wedge_eq_zero_of_mem_exactForms o hT
     (closedForms.mpullback_mem_exactForms (I := I.prod 𝓘(ℝ, ℂ)) (I' := I)
@@ -385,29 +363,25 @@ theorem integralTopForm_wedge_mpullback_fst [CompactSpace M] [ConnectedSpace M]
   have hY : integralTopForm oP Y.1 = m := by
     rw [SmoothForm.coe_wedge, integralTopForm_wedge_mpullback_fst_of_tsupport_subset o
       ((mem_compactlySupportedForms _).mp ((mem_compactlySupportedClosedForms _).mp hT).1)
-      ((mem_compactlySupportedForms I).mp (hcpt _)) hθx (fun x _ ↦ hm x), hθ, mul_one]
-  rw [Submodule.coe_sub, Submodule.coe_smul, sub_eq_add_neg, ← neg_smul,
-    integralTopForm_add oP (X.isSmoothForm.of_le (by simp))
-      ((Y.isSmoothForm.smul (-c)).of_le (by simp)) (isCompact_tsupport_wedge hT _)
-      ((isCompact_tsupport_wedge hT _).of_isClosed_subset (isClosed_tsupport _)
-        (RoughForm.tsupport_smul_subset _ _)),
-    integralTopForm_smul, hY] at h0
+      ((mem_compactlySupportedForms I).mp hθc) hθx (fun x _ ↦ hm x), hθ, mul_one]
+  rw [integralTopForm_sub_smul oP (isCompact_tsupport_wedge hT _) (isCompact_tsupport_wedge hT _),
+    hY] at h0
   linarith
 
-/-- **The taming pairing of a closed current of transverse flux `m`.** Let `M` be a compact
+/-- **The taming pairing of a closed current of transverse flux `m`.** Let `M` be a σ-compact
 connected oriented surface and `T` a compactly supported closed two-form on `M × ℂ` whose flux
-through every fibre `{x} × ℂ` is `m`. For a two-form `β` on `M`, a one-form `η` on `M × ℂ` and a
-constant `K`, the two-form `Ω = K π^*β + dη` pairs with `T` to
+through every fibre `{x} × ℂ` is `m`. For a compactly supported two-form `β` on `M`, a one-form `η`
+on `M × ℂ` and a constant `K`, the two-form `Ω = K π^*β + dη` pairs with `T` to
 
 `∫_{M × ℂ} T ∧ (K π^*β + dη) = K m ∫_M β`,
 
 for the product of the orientation of `M` and the standard orientation of `ℂ`. -/
-theorem integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv [CompactSpace M]
+theorem integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv [SigmaCompactSpace M]
     [ConnectedSpace M] (o : Manifold.Orientation I M (Fin 2))
     {T : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 2}
     (hT : T ∈ compactlySupportedClosedForms (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) 2) {m : ℝ}
-    (hm : ∀ x, RoughForm.fibreFlux T.1 x = m) (K : ℝ) (β : SmoothForm I M ℝ 2)
-    (η : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 1) :
+    (hm : ∀ x, RoughForm.fiberFlux T.1 x = m) (K : ℝ) {β : SmoothForm I M ℝ 2}
+    (hβ : β ∈ compactlySupportedForms I M 2) (η : SmoothForm (I.prod 𝓘(ℝ, ℂ)) (M × ℂ) ℝ 1) :
     integralTopForm (o.prod (Manifold.Orientation.model (I := 𝓘(ℝ, ℂ)) Complex.orientation
         (by simp [Complex.finrank_real_complex])))
       (SmoothForm.wedge T (K • SmoothForm.mpullback Prod.fst contMDiff_fst β +
@@ -419,7 +393,7 @@ theorem integralTopForm_wedge_smul_mpullback_fst_add_mextDeriv [CompactSpace M]
     integralTopForm_add _ ((X.isSmoothForm.smul K).of_le (by simp)) (Y.isSmoothForm.of_le (by simp))
       ((isCompact_tsupport_wedge hT _).of_isClosed_subset (isClosed_tsupport _)
         (RoughForm.tsupport_smul_subset _ _)) (isCompact_tsupport_wedge hT _),
-    integralTopForm_smul, integralTopForm_wedge_mpullback_fst o hT hm,
+    integralTopForm_smul, integralTopForm_wedge_mpullback_fst o hT hm hβ,
     integralTopForm_wedge_eq_zero_of_mem_exactForms o hT
       (by rw [exactForms_succ]; exact ⟨η, rfl⟩)]
   ring
