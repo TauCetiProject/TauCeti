@@ -36,7 +36,7 @@ second covariant derivative `∇²G(u, v) = ∇_u ∇_V G - ∇_{∇_u V} G`
   the third covariant derivative of `f` is symmetric in its last two slots.
 * The Ricci identity `∇²G(u, v) - ∇²G(v, u) = R(u, v) G` moves the traced direction past the
   free one, and the trace of `∇_w Hess f` is `d(Δ f)(w)`
-  (`CovariantDerivative.IsMetricCompatible.mvfderiv_bilinFormTrace`). Together they give the
+  (`CovariantDerivative.IsMetricCompatible.mvfderiv_metricTrace`). Together they give the
   contracted identity `∑ᵢ ⟨∇²G(eᵢ, eᵢ), w⟩ = d(Δ f)(w) + Ric(w, G)`, which says that the rough
   Laplacian of `grad f` is `grad Δ f + Ric(grad f)`.
 
@@ -152,13 +152,13 @@ theorem sum_inner_secondCovariantDerivative_mgradient_self (hf : ContMDiff I �
       real_inner_comm (b i), real_inner_comm (b i)]
     ring
   -- The trace of `∇_w Hess f` is `d(Δ f)(w)`.
-  have hlap : (fun y ↦ TauCeti.bilinFormTrace
+  have hlap : (fun y ↦ LinearMap.BilinMap.metricTrace
       (ContinuousLinearMap.toLinearMap₁₂ (hessianForm (I := I) f y))) = laplaceBeltrami I f := by
     funext y
-    rw [TauCeti.bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I y)),
+    rw [LinearMap.BilinMap.metricTrace_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I y)),
       laplaceBeltrami_eq_sum_hessian I f y (stdOrthonormalBasis ℝ (TangentSpace I y))]
     simp [hessianForm_apply]
-  have htr := hcov.mvfderiv_bilinFormTrace
+  have htr := hcov.mvfderiv_metricTrace
     (fun _ _ hσ hτ ↦ mdifferentiableAt_hessianForm_apply hf hσ hτ) b w
   rw [hlap] at htr
   rw [Finset.sum_congr rfl fun i _ ↦ hswap i, Finset.sum_add_distrib, ← htr,

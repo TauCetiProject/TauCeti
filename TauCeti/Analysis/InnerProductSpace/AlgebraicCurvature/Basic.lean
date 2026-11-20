@@ -29,7 +29,7 @@ convention `r(u, v, u, v)` is positive on the round sphere.
 On a finite-dimensional real inner product space the *Ricci contraction*
 `Ric(u, v) = ∑ᵢ r(eᵢ, u, eᵢ, v)` and the *scalar contraction* `Scal = ∑ᵢ Ric(eᵢ, eᵢ)` do not depend
 on the orthonormal basis `(eᵢ)`; they are defined through the metric trace
-`TauCeti.bilinFormTrace`. This matches `Ric(u, v) = tr(w ↦ R(w, u)v)`.
+`LinearMap.BilinMap.metricTrace`. This matches `Ric(u, v) = tr(w ↦ R(w, u)v)`.
 
 The Kulkarni–Nomizu product `LinearMap.BilinForm.kulkarniNomizu` of two bilinear forms becomes a
 four-tensor `TauCeti.FourTensor.kulkarniNomizu` after reordering it to the convention above:
@@ -448,7 +448,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 trace over its first and third arguments. In an orthonormal basis it is
 `∑ᵢ r(eᵢ, u, eᵢ, v)`, see `TauCeti.FourTensor.ricci_apply_orthonormalBasis`. -/
 def ricci : FourTensor V →ₗ[ℝ] BilinForm ℝ V where
-  toFun r := LinearMap.mk₂ ℝ (fun u v ↦ bilinFormTrace (ricciSlice r u v))
+  toFun r := LinearMap.mk₂ ℝ (fun u v ↦ LinearMap.BilinMap.metricTrace (ricciSlice r u v))
     (fun _ _ _ ↦ by rw [← map_add]; congr 1; ext; exact apply_add_second ..)
     (fun _ _ _ ↦ by rw [← map_smul]; congr 1; ext; exact apply_smul_second ..)
     (fun _ _ _ ↦ by rw [← map_add]; congr 1; ext; exact apply_add_fourth ..)
@@ -469,7 +469,7 @@ def ricci : FourTensor V →ₗ[ℝ] BilinForm ℝ V where
 /-- In every orthonormal basis `(eᵢ)`, the Ricci contraction is `∑ᵢ r(eᵢ, u, eᵢ, v)`. -/
 theorem ricci_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (r : FourTensor V) (u v : V) : ricci r u v = ∑ i, r ![b i, u, b i, v] :=
-  bilinFormTrace_eq_sum (ricciSlice r u v) b
+  LinearMap.BilinMap.metricTrace_eq_sum (ricciSlice r u v) b
 
 /-- The Ricci contraction of a four-tensor symmetric under pair interchange is symmetric. -/
 theorem isSymm_ricci_of_swap_pairs {r : FourTensor V}
@@ -496,16 +496,17 @@ theorem ricci_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAdd
 
 /-- The scalar contraction of a four-tensor: the metric trace of its Ricci contraction. -/
 def scalar : FourTensor V →ₗ[ℝ] ℝ :=
-  bilinFormTrace ∘ₗ ricci
+  LinearMap.BilinMap.metricTrace ∘ₗ ricci
 
 /-- The scalar contraction is the metric trace of the Ricci contraction. -/
-theorem scalar_apply (r : FourTensor V) : scalar r = bilinFormTrace (ricci r) :=
+theorem scalar_apply (r : FourTensor V) : scalar r = LinearMap.BilinMap.metricTrace (ricci r) :=
   (rfl)
 
 /-- In every orthonormal basis `(eᵢ)`, the scalar contraction is `∑ᵢ ∑ⱼ r(eᵢ, eⱼ, eᵢ, eⱼ)`. -/
 theorem scalar_apply_orthonormalBasis {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
     (r : FourTensor V) : scalar r = ∑ j, ∑ i, r ![b i, b j, b i, b j] := by
-  simp only [scalar_apply, bilinFormTrace_eq_sum _ b, ricci_apply_orthonormalBasis b]
+  simp only [scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b,
+    ricci_apply_orthonormalBasis b]
 
 /-- The scalar contraction is invariant under linear isometric equivalences. -/
 theorem scalar_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAddCommGroup W]
@@ -521,7 +522,7 @@ theorem scalar_compContinuousLinearMap_linearIsometryEquiv {W : Type*} [NormedAd
 `Ric(h ⊙ g) = (n - 2) h + (tr h) g`. -/
 theorem ricci_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
     ricci (kulkarniNomizu h (innerₗ V)) =
-      ((Module.finrank ℝ V : ℝ) - 2) • h + bilinFormTrace h • innerₗ V := by
+      ((Module.finrank ℝ V : ℝ) - 2) • h + LinearMap.BilinMap.metricTrace h • innerₗ V := by
   ext u v
   rw [ricci_apply_orthonormalBasis (stdOrthonormalBasis ℝ V)]
   simp only [kulkarniNomizu_apply_eq, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
@@ -532,9 +533,9 @@ theorem ricci_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
 `Scal(h ⊙ g) = 2 (n - 1) tr h`. -/
 theorem scalar_kulkarniNomizu_innerₗ (h : BilinForm ℝ V) :
     scalar (kulkarniNomizu h (innerₗ V)) =
-      2 * ((Module.finrank ℝ V : ℝ) - 1) * bilinFormTrace h := by
+      2 * ((Module.finrank ℝ V : ℝ) - 1) * LinearMap.BilinMap.metricTrace h := by
   rw [scalar_apply, ricci_kulkarniNomizu_innerₗ, map_add, map_smul, map_smul,
-    bilinFormTrace_inner, smul_eq_mul, smul_eq_mul]
+    LinearMap.BilinMap.metricTrace_inner, smul_eq_mul, smul_eq_mul]
   ring
 
 variable (V) in
@@ -598,16 +599,16 @@ theorem constantCurvature_compContinuousLinearMap_linearIsometry {W : Type*}
 /-- The Ricci contraction of the constant-curvature tensor is `(n - 1) g`. -/
 theorem ricci_constantCurvature :
     ricci (constantCurvature V) = ((Module.finrank ℝ V : ℝ) - 1) • innerₗ V := by
-  rw [constantCurvature, map_smul, ricci_kulkarniNomizu_innerₗ, bilinFormTrace_inner, ← add_smul,
-    smul_smul]
+  rw [constantCurvature, map_smul, ricci_kulkarniNomizu_innerₗ,
+    LinearMap.BilinMap.metricTrace_inner, ← add_smul, smul_smul]
   congr 1
   ring
 
 /-- The scalar contraction of the constant-curvature tensor is `n (n - 1)`. -/
 theorem scalar_constantCurvature :
     scalar (constantCurvature V) = Module.finrank ℝ V * ((Module.finrank ℝ V : ℝ) - 1) := by
-  rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ, bilinFormTrace_inner,
-    smul_eq_mul]
+  rw [constantCurvature, map_smul, scalar_kulkarniNomizu_innerₗ,
+    LinearMap.BilinMap.metricTrace_inner, smul_eq_mul]
   ring
 
 /-- A curvature operator of constant curvature `κ`, `R(w, u)v = κ (⟪u, v⟫ w - ⟪w, v⟫ u)` as in

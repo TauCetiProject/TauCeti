@@ -392,12 +392,12 @@ theorem IsMetricCompatible.sum_derivRicciTensor_self_eq_mvfderiv_scalarCurvature
         cov.ricciTensor y := by
     ext u w
     simp [LinearMap.toContinuousBilinearMap_apply]
-  have hScal : cov.scalarCurvature = fun y ↦ TauCeti.bilinFormTrace
+  have hScal : cov.scalarCurvature = fun y ↦ LinearMap.BilinMap.metricTrace
       (ContinuousLinearMap.toLinearMap₁₂ (cov.ricciTensor y).toContinuousBilinearMap) := by
     funext y
     rw [hRic, scalarCurvature_apply]
   simp only [derivRicciTensor_def]
-  rw [hScal, hcov.mvfderiv_bilinFormTrace (fun _ _ h₁ h₂ ↦ by
+  rw [hScal, hcov.mvfderiv_metricTrace (fun _ _ h₁ h₂ ↦ by
     simpa only [LinearMap.toContinuousBilinearMap_apply] using
       cov.mdifferentiableAt_ricciTensor_apply h₁ h₂) b v]
 
