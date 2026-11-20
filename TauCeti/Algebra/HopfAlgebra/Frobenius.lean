@@ -19,9 +19,10 @@ Frobenius functionals as well.
 A Frobenius functional on a finite-dimensional bialgebra pairs nontrivially with
 both integral spaces: each has a unique element on which the functional is one.
 For a right invariant functional, strong invariance gives a reconstruction formula
-from the coproduct of its normalized left integral. In particular the antipode is
-bijective. These statements assume a nonzero invariant functional; they do not
-assert its existence.
+from the coproduct of its normalized left integral; for a left invariant functional,
+the same holds with its normalized right integral. In particular the antipode is
+bijective. These statements assume a nonzero invariant functional; its existence
+is proved in `TauCeti.Algebra.HopfAlgebra.Cointegral.Existence`.
 
 ## References
 
@@ -160,6 +161,32 @@ theorem IsRightInvariantIntegral.antipode_surjective [FiniteDimensional k H]
 a nonzero right invariant functional. -/
 theorem IsRightInvariantIntegral.antipode_bijective [FiniteDimensional k H]
     (hφ : φ.IsRightInvariantIntegral) (h0 : φ ≠ 0) :
+    Function.Bijective (antipode k : H → H) :=
+  ⟨LinearMap.injective_iff_surjective.mpr (hφ.antipode_surjective h0),
+    hφ.antipode_surjective h0⟩
+
+/-- A nonzero left invariant functional makes the antipode surjective in finite
+dimension, via the normalized right integral's reconstruction formula
+`x = S (∑ φ (t₂ x) t₁)`. -/
+theorem IsLeftInvariantIntegral.antipode_surjective [FiniteDimensional k H]
+    (hφ : φ.IsLeftInvariantIntegral) (h0 : φ ≠ 0) :
+    Function.Surjective (antipode k : H → H) := by
+  classical
+  obtain ⟨t, ht, _⟩ :=
+    (hφ.isFrobeniusFunctional h0).existsUnique_rightIntegral_apply_eq_one
+  let r := ℛ k (t : H)
+  intro x
+  refine ⟨∑ i ∈ r.index, φ (r.right i * x) • r.left i, ?_⟩
+  have htx (y : H) : φ ((t : H) * y) = counit (R := k) y := by
+    simp [(mem_rightIntegral_iff.mp t.property) y, ht]
+  have h := hφ.strong_invariance (ℛ k x) r (b := (t : H))
+  simp only [htx, sum_smul_counit] at h
+  simpa only [map_sum, map_smul] using h.symm
+
+/-- The antipode is bijective whenever a finite-dimensional Hopf algebra admits
+a nonzero left invariant functional. -/
+theorem IsLeftInvariantIntegral.antipode_bijective [FiniteDimensional k H]
+    (hφ : φ.IsLeftInvariantIntegral) (h0 : φ ≠ 0) :
     Function.Bijective (antipode k : H → H) :=
   ⟨LinearMap.injective_iff_surjective.mpr (hφ.antipode_surjective h0),
     hφ.antipode_surjective h0⟩
