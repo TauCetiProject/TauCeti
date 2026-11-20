@@ -45,8 +45,11 @@ env:
 
 jobs:
   build-docs:
-    # Keep hourly docs builds independent of the hosted-runner backlog.
-    runs-on: ubuntu-24.04
+    # The Fleet PR pool, as full-lint-label.yml and nightly-verify.yml use, so that the full
+    # re-analysis after a pin bump (about 5 h on a 4-core hosted runner) does not hold a scarce
+    # GitHub-hosted runner. This job runs only on main. Set vars.PICKER_GITHUB_FALLBACK='true'
+    # to return it to ubuntu-24.04 without a PR.
+    runs-on: ${{ (vars.FLEET_CI_ENABLED == 'true' && vars.PICKER_GITHUB_FALLBACK != 'true') && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet-pr"]}') || 'ubuntu-24.04' }}
     # A full rebuild (after a pin bump) analyzes all of TauCeti; everything else is far quicker.
     # The doc-gen4 step has a shorter limit of its own, so that a build too long for one run still
     # leaves time to save its progress for the next (see "Save the doc-gen4 build state").
