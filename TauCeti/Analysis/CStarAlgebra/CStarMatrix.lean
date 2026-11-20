@@ -33,7 +33,8 @@ and the transpose as a linear map. It also restates `Matrix`'s lemmas on rectang
 conjugate transposes for `CStarMatrix`: associativity, distributivity over subtraction, the
 conjugate transpose of sums and products, entrywise maps of products and conjugate transposes,
 and `conjTranspose_mul_self_eq_zero`. From these it shows that a rectangular matrix `v` with
-`vᴴ * v` or `v * vᴴ` idempotent satisfies `v * vᴴ * v = v`.
+`vᴴ * v` or `v * vᴴ` idempotent satisfies `v * vᴴ * v = v`. Finally, it defines the block sum
+`M ⊕ N` of rectangular C⋆-matrices, with zero off-diagonal blocks.
 
 ## Main declarations
 
@@ -44,13 +45,18 @@ and `conjTranspose_mul_self_eq_zero`. From these it shows that a rectangular mat
 * `CStarMatrix.of_mul_of`, `CStarMatrix.conjTranspose_of`: rectangular products and conjugate
   transposes of C⋆-matrices are those of the underlying matrices.
 * `CStarMatrix.mul_assoc`, `CStarMatrix.conjTranspose_mul`, `CStarMatrix.map_mul`,
-  `CStarMatrix.map_conjTranspose`, `CStarMatrix.conjTranspose_mul_self_eq_zero`: the rectangular
+  `CStarMatrix.conjTranspose_map`, `CStarMatrix.conjTranspose_mul_self_eq_zero`: the rectangular
   product and conjugate-transpose calculus of `Matrix`, restated for `CStarMatrix`.
 * `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem_conjTranspose_mul_self` and
   `CStarMatrix.mul_conjTranspose_mul_self_of_isIdempotentElem_mul_conjTranspose_self`: a
   rectangular matrix whose initial or final matrix is idempotent is a partial isometry.
-* `CStarMatrix.conjTranspose_mul_eq_zero_of_orthogonal`: partial isometries with orthogonal final
-  matrices have orthogonal ranges.
+* `CStarMatrix.conjTranspose_mul_eq_zero_of_orthogonal` and
+  `CStarMatrix.mul_conjTranspose_eq_zero_of_orthogonal`: partial isometries `v` and `w` with
+  orthogonal final matrices have orthogonal ranges, `vᴴ * w = 0`, and those with orthogonal
+  initial matrices satisfy `v * wᴴ = 0`.
+* `CStarMatrix.blockSum`: the block sum `M ⊕ N` of rectangular C⋆-matrices, with
+  `CStarMatrix.conjTranspose_blockSum`, `CStarMatrix.blockSum_mul_blockSum`,
+  `CStarMatrix.blockSum_map` and `CStarMatrix.isStarProjection_blockSum`.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
@@ -172,7 +178,7 @@ theorem map_mul [Fintype m] [NonUnitalNonAssocSemiring A] [NonUnitalNonAssocSemi
   Matrix.map_mul
 
 /-- Applying a star-preserving map to every entry commutes with the conjugate transpose. -/
-theorem map_conjTranspose [Star A] [Star B] {F : Type*} [FunLike F A B] [StarHomClass F A B]
+theorem conjTranspose_map [Star A] [Star B] {F : Type*} [FunLike F A B] [StarHomClass F A B]
     (f : F) (M : CStarMatrix m n A) :
     M.conjTranspose.map f = (M.map f).conjTranspose :=
   Matrix.conjTranspose_map f (map_star f)
@@ -196,6 +202,20 @@ theorem conjTranspose_mul_eq_zero_of_orthogonal [NonUnitalSemiring A] [StarRing 
   calc v.conjTranspose * w
       = v.conjTranspose * v * v.conjTranspose * (w * w.conjTranspose * w) := by rw [hv', hw]
     _ = v.conjTranspose * (v * v.conjTranspose * (w * w.conjTranspose)) * w := by
+      simp only [CStarMatrix.mul_assoc]
+    _ = 0 := by rw [h, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
+
+/-- The dual of `conjTranspose_mul_eq_zero_of_orthogonal`, for orthogonal initial matrices: if
+`v * vᴴ * v = v`, `w * wᴴ * w = w` and `(vᴴ * v) * (wᴴ * w) = 0`, then `v * wᴴ = 0`. -/
+theorem mul_conjTranspose_eq_zero_of_orthogonal [NonUnitalSemiring A] [StarRing A] [Fintype l]
+    [Fintype m] [Fintype n] {v : CStarMatrix n m A} {w : CStarMatrix l m A}
+    (hv : v * v.conjTranspose * v = v) (hw : w * w.conjTranspose * w = w)
+    (h : v.conjTranspose * v * (w.conjTranspose * w) = 0) : v * w.conjTranspose = 0 := by
+  have hw' : w.conjTranspose * w * w.conjTranspose = w.conjTranspose := by
+    simpa [CStarMatrix.mul_assoc] using congrArg conjTranspose hw
+  calc v * w.conjTranspose
+      = v * v.conjTranspose * v * (w.conjTranspose * w * w.conjTranspose) := by rw [hv, hw']
+    _ = v * (v.conjTranspose * v * (w.conjTranspose * w)) * w.conjTranspose := by
       simp only [CStarMatrix.mul_assoc]
     _ = 0 := by rw [h, CStarMatrix.mul_zero, CStarMatrix.zero_mul]
 
@@ -228,6 +248,58 @@ theorem mul_conjTranspose_mul_self_of_isIdempotentElem_mul_conjTranspose_self
   simpa [CStarMatrix.mul_assoc] using congrArg conjTranspose this
 
 end Proper
+
+/-! ### Block sums -/
+
+/-- The block sum `M ⊕ N` of two rectangular C⋆-matrices: the block matrix with `M` and `N` on
+the diagonal and zero off-diagonal blocks. -/
+@[expose] def blockSum [Zero A] (M : CStarMatrix l m A) (N : CStarMatrix n o A) :
+    CStarMatrix (l ⊕ n) (m ⊕ o) A :=
+  ofMatrix (Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N))
+
+/-- Reading a block sum of C⋆-matrices as an ordinary matrix gives `Matrix.fromBlocks` with zero
+off-diagonal blocks. -/
+@[simp]
+theorem ofMatrix_symm_blockSum [Zero A] (M : CStarMatrix l m A) (N : CStarMatrix n o A) :
+    ofMatrix.symm (blockSum M N) = Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N) :=
+  (rfl)
+
+/-- The conjugate transpose of a block sum is the block sum of the conjugate transposes. -/
+@[simp]
+theorem conjTranspose_blockSum [AddMonoid A] [StarAddMonoid A] (M : CStarMatrix l m A)
+    (N : CStarMatrix n o A) :
+    (blockSum M N).conjTranspose = blockSum M.conjTranspose N.conjTranspose := by
+  change ofMatrix (Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N))ᴴ = _
+  simp only [Matrix.fromBlocks_conjTranspose, Matrix.conjTranspose_zero]
+  rfl
+
+/-- Block sums multiply blockwise. -/
+@[simp]
+theorem blockSum_mul_blockSum {p q : Type*} [Fintype m] [Fintype o] [NonUnitalNonAssocSemiring A]
+    (M : CStarMatrix l m A) (N : CStarMatrix n o A) (M' : CStarMatrix m p A)
+    (N' : CStarMatrix o q A) : blockSum M N * blockSum M' N' = blockSum (M * M') (N * N') := by
+  change ofMatrix (Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N) *
+    Matrix.fromBlocks (ofMatrix.symm M') 0 0 (ofMatrix.symm N')) = _
+  rw [Matrix.fromBlocks_multiply]
+  simp only [Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
+  rfl
+
+/-- Applying a zero-preserving map to every entry of a block sum gives the block sum of the
+entrywise images. -/
+theorem blockSum_map [Zero A] [Zero B] (M : CStarMatrix l m A) (N : CStarMatrix n o A)
+    {f : A → B} (hf : f 0 = 0) : (blockSum M N).map f = blockSum (M.map f) (N.map f) := by
+  change ofMatrix ((Matrix.fromBlocks (ofMatrix.symm M) 0 0 (ofMatrix.symm N)).map f) = _
+  simp only [Matrix.fromBlocks_map, Matrix.map_zero f hf]
+  rfl
+
+/-- The block sum of two star projections is a star projection. -/
+theorem isStarProjection_blockSum [Fintype m] [Fintype n] [NonUnitalNonAssocSemiring A]
+    [StarAddMonoid A] {p : CStarMatrix m m A} {q : CStarMatrix n n A} (hp : IsStarProjection p)
+    (hq : IsStarProjection q) : IsStarProjection (blockSum p q) := by
+  refine ⟨?_, ?_⟩
+  · rw [IsIdempotentElem, blockSum_mul_blockSum, hp.isIdempotentElem.eq, hq.isIdempotentElem.eq]
+  · rw [IsSelfAdjoint, star_eq_conjTranspose, conjTranspose_blockSum, ← star_eq_conjTranspose,
+      ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq, hq.isSelfAdjoint.star_eq]
 
 end Rectangular
 
