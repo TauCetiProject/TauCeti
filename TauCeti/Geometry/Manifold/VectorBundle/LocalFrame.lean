@@ -187,6 +187,33 @@ theorem contMDiffOn_symm_baseSet {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] 
   e.contMDiffOn_section_baseSet_iff.2 <| (contMDiffOn_const (c := v)).congr fun y hy ↦ by
     simp only [e.apply_mk_symm hy]
 
+section OtherField
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' F]
+  [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- A local frame formed using another scalar field is smooth for the given smooth bundle
+structure: its vectors still have constant coordinates in the same trivialization. -/
+theorem _root_.Bundle.Trivialization.contMDiffOn_localFrame_baseSet_of_basis
+    {n : ℕ∞ω} [ContMDiffVectorBundle n F V I]
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (b' : Basis ι 𝕜' F) (i : ι) :
+    ContMDiffOn I (I.prod 𝓘(𝕜, F)) n (T% (e.localFrame b' i)) e.baseSet := by
+  refine (contMDiffOn_symm_baseSet (I := I) (e := e) (b' i)).congr fun x hx ↦ ?_
+  exact congrArg (TotalSpace.mk' F x)
+    ((symmL_basis_eq_localFrame b' hx i).symm.trans (e.symmL_apply hx _))
+
+end OtherField
+
+/-- In a rank-one model coordinate, the singleton local frame has constant coordinate
+`c.symm 1` in the original trivialization. -/
+theorem _root_.Bundle.Trivialization.continuousLinearMapAt_localFrame_singleton
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (c : F ≃L[𝕜] 𝕜)
+    (hx : x ∈ e.baseSet) :
+    e.continuousLinearMapAt 𝕜 x
+      (e.localFrame ((Basis.singleton Unit 𝕜).map c.symm.toLinearEquiv) () x) = c.symm 1 := by
+  rw [continuousLinearMapAt_localFrame _ hx, Basis.map_apply, Basis.singleton_apply,
+    ContinuousLinearEquiv.coe_toLinearEquiv]
+
 /-- The section with constant coordinates `v` in a trivialization `e` is differentiable at each
 point of the base set of `e`. -/
 theorem mdifferentiableAt_symm_of_mem_baseSet [ContMDiffVectorBundle 1 F V I] (v : F)
