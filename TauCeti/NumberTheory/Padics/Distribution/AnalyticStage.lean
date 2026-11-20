@@ -687,7 +687,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
   set b : ℤ_[p] := ((a'.val / p ^ h : ℕ) : ℤ_[p])
   have hx : (a'.val : ℤ_[p]) + (p : ℤ_[p]) ^ (h + 1) * v =
       (a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * (b + p * v) := by
-    rw [PadicInt.natCast_val_eq_natCast_val_add_mul h a']
+    rw [PadicInt.natCast_eq_natCast_val_add_mul h a'.val]
     ring
   rw [PadicInt.discHomeomorph_apply, transition, eval_reexpandMap_natCast_val_add_mul, hx]
 
