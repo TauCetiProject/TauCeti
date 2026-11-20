@@ -320,7 +320,7 @@ instance instContMDiffSMul {EG HG : Type*} [NormedAddCommGroup EG] [NormedSpace 
 /-- **The cotangent lift of a free action is free**, since the projection `T*M → M` is
 equivariant. -/
 instance instIsCancelSMul [IsCancelSMul G M] : IsCancelSMul G (CotangentBundle I M) :=
-  .of_smul_comm proj_smul
+  .of_map_smul proj_smul
 
 variable (I M G) in
 /-- **The cotangent lift of a proper action is proper.** If a Lie group `G` acts smoothly and

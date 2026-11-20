@@ -38,6 +38,10 @@ lifts to a proper action on a Hausdorff total space carrying a continuous action
   the image come from the smaller group.
 * `Continuous.properSMul`: an action on a Hausdorff space which a continuous map intertwines with
   a proper action is proper.
+
+## References
+
+* N. Bourbaki, *General Topology*, Chapter III, §4 (proper actions).
 -/
 
 public section
@@ -108,7 +112,8 @@ open Filter Topology in
 /-- **Proper actions pull back along continuous equivariant maps.** If a continuous map
 `f : Y → X` intertwines a continuous action of `G` on a Hausdorff space `Y` with a proper action of
 `G` on `X`, then the action on `Y` is proper. Unlike `Topology.IsEmbedding.properSMul`, the map
-need not be injective; for instance it may be a bundle projection. -/
+need not be injective; for instance it may be a bundle projection. This is the pullback of proper
+actions in N. Bourbaki, *General Topology*, Chapter III, §4. -/
 theorem Continuous.properSMul {G X Y : Type*} [Group G] [TopologicalSpace G] [MulAction G X]
     [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y] [T2Space Y]
     [ContinuousSMul G Y] {f : Y → X} (hf : Continuous f)
