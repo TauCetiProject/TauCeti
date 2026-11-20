@@ -44,8 +44,9 @@ exact form `d (avg β)`. A form vanishing at every point of an orbit has average
 vanishing there (`TauCeti.SmoothForm.measureAverage_eq_zero_of_forall_smul`), so averaging
 preserves vanishing on an invariant subset. Since the derivative of the coordinate expression of the
 average is likewise the integral of the derivatives of the coordinate expressions of the pullbacks,
-a form whose first jet vanishes along an orbit has average whose first jet vanishes there
-(`TauCeti.SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul`). These are the
+a form whose first jet vanishes along an orbit has average whose coordinate expression has zero
+derivative there (`TauCeti.SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul`);
+together with value vanishing, the first jet of the average vanishes there. These are the
 properties used to make the forms and primitives of an equivariant Moser argument invariant under a
 compact group.
 
@@ -71,7 +72,8 @@ same way.
 * `TauCeti.SmoothForm.measureAverage_eq_zero_of_forall_smul`: a form vanishing along an orbit has
   average vanishing there.
 * `TauCeti.SmoothForm.hasFDerivAt_inChartAt_measureAverage_of_forall_smul`: a form whose first jet
-  vanishes along an orbit has average whose first jet vanishes there.
+  vanishes along an orbit has average whose coordinate expression has zero derivative there (with
+  `TauCeti.SmoothForm.measureAverage_eq_zero_of_forall_smul`, its first jet vanishes).
 
 ## References
 
@@ -396,8 +398,10 @@ theorem IsClosed.measureAverage {α : SmoothForm I M F k} (hα : α.IsClosed) :
 
 omit [CompleteSpace F] in
 /-- **Averaging preserves zero first jets along orbits.** If a smooth form vanishes, with zero first
-derivative in charts, at every point of the orbit of `x`, then so does its average at `x`. In
-particular, averaging preserves vanishing of first jets on an invariant subset. -/
+derivative in charts, at every point of the orbit of `x`, then the coordinate expression of its
+average in the chart at `x` has zero derivative at `x`. The average also vanishes at `x` by
+`measureAverage_eq_zero_of_forall_smul`, so together the two give that averaging preserves
+vanishing of first jets on an invariant subset. -/
 theorem hasFDerivAt_inChartAt_measureAverage_of_forall_smul (α : SmoothForm I M F k) {x : M}
     (h₀ : ∀ a : G, α.1 (a • x) = 0)
     (h₁ : ∀ a : G, HasFDerivAt (RoughForm.inChartAt (F := F) α.1 (a • x))
