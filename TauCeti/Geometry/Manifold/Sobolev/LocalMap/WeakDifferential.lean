@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -44,6 +45,8 @@ read in its charts.
   for `u` continuous on an open set, it suffices to test charts covering the set and its image,
   for instance the preferred charts.
 * `TauCeti.HasWeakMFDerivOn.ae_eq`: two weak differentials agree almost everywhere in every chart.
+  Conversely, a field agreeing almost everywhere in every chart with a weak differential is one
+  (`TauCeti.HasWeakMFDerivOn.congr_ae_deriv`).
 * `TauCeti.MemWkpLocMapOn.exists_hasWeakMFDerivOn`: on an open subset of a second countable Riemann
   surface, every map in `W^{1,p}_loc` has a weak differential, and its coordinate expressions are
   locally `Lᵖ` (`TauCeti.HasWeakMFDerivOn.memLpLoc_chartDifferential`).
@@ -52,8 +55,7 @@ read in its charts.
   locally `Lᵖ`.
 * `ContMDiffOn.hasWeakMFDerivOn_mfderiv`: the differential of a map of class `C¹` on an open set
   is a weak differential there. For example, the weak differential of `z ↦ conj z` on `ℂ` is the
-  constant conjugation map (`TauCeti.hasWeakMFDerivOn_conj`), whose complex-linear part vanishes
-  and whose complex-antilinear part does not.
+  constant conjugation map (`TauCeti.hasWeakMFDerivOn_conj`).
 
 ## Implementation notes
 
@@ -131,6 +133,16 @@ theorem HasWeakMFDerivOn.mono {du : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[�
   fun φ hφ ψ hψ ↦ (h φ hφ ψ hψ).mono (interior_mono
     (inter_subset_inter_right _ (preimage_mono (inter_subset_inter_left _ hts))))
 
+omit [ChartedSpace ℂ X] [ChartedSpace H M] in
+/-- For `u` continuous on an open set `s`, the part of the target of a chart `φ` lying over `s`
+where `u` maps into the source of `ψ` is open, hence its own interior. -/
+private theorem coe_interior_chartDomain (hs : IsOpen s) (hc : ContinuousOn u s)
+    (φ : OpenPartialHomeomorph X ℂ) (ψ : OpenPartialHomeomorph M H) :
+    (Opens.interior (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) : Set ℂ) =
+      φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source) := by
+  rw [Opens.coe_interior,
+    (φ.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source).interior_eq]
+
 section ChartChange
 
 variable [I.Boundaryless]
@@ -163,11 +175,10 @@ theorem chartDifferential_eq_comp {φ φ' : OpenPartialHomeomorph X ℂ}
     have hev : ψ.extend I =ᶠ[nhds (u x)] I.extendCoordChange ψ' ψ ∘ ψ'.extend I := by
       filter_upwards [(ψ.open_source.inter ψ'.open_source).mem_nhds ⟨hzψ, hzψ'⟩] with y hy
       simp [ψ'.left_inv hy.2]
-    rw [hev.mvfderiv_eq, mvfderiv_comp _ ((hΘ.contDiffAt
-      (I.isOpen_extendCoordChange_source.mem_nhds hw)).differentiableAt (by simp)).mdifferentiableAt
-      ((ψ'.contMDiffAt_extend hψ' hzψ').mdifferentiableAt (by simp)), mvfderiv_eq_fderiv]
-    -- The two sides differ by the identification `fromTangentSpace` of `T F` with `F`.
-    rfl
+    ext v
+    rw [hev.mvfderiv_eq, ContinuousLinearMap.comp_apply, mvfderiv_comp_apply_of_differentiableAt
+      ((hΘ.contDiffAt (I.isOpen_extendCoordChange_source.mem_nhds hw)).differentiableAt (by simp))
+      ((ψ'.contMDiffAt_extend hψ' hzψ').mdifferentiableAt (by simp))]
   -- The derivative of the inverse chart of `X` factors through the change of chart.
   have h2 : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z =
       mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ'.symm (φ' x) ∘L fderiv ℝ (φ' ∘ φ.symm) z := by
@@ -180,10 +191,15 @@ theorem chartDifferential_eq_comp {φ φ' : OpenPartialHomeomorph X ℂ}
     rw [hev.mfderiv_eq, mfderiv_comp_of_eq
       (mdifferentiableAt_symm_of_mem_maximalAtlas hφ'R (φ'.map_source hzφ'))
       hτ.mdifferentiableAt rfl, mfderiv_eq_fderiv]
-    -- The two sides differ by the identifications `fromTangentSpace` of `T ℂ` with `ℂ`.
-    rfl
+    ext v
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_symm_apply]
+    -- `tangentSpaceCast` transports along `φ'.symm (φ' x) = x`.
+    exact eq_of_heq (heq_tangentSpaceCast (φ'.left_inv hzφ') _)
   rw [chartDifferential_def, chartDifferential_def, φ'.left_inv hzφ', h1, h2]
-  -- Both sides are the same composite, associated differently.
+  -- Both sides are the same composite, associated differently. `ContinuousLinearMap.comp_assoc`
+  -- does not apply: the composite passes between `TangentSpace 𝓘(ℝ, ℂ) _` and `ℂ`, whose
+  -- module instances agree only after unfolding `TangentSpace`.
   rfl
 
 /-- **Change of chart for weak derivatives of coordinate expressions.** Let `u` be continuous on
@@ -209,16 +225,15 @@ private theorem HasWeakFDerivOn.comp_chartChange (hs : IsOpen s) (hcu : Continuo
   have hφ'R := IsManifold.maximalAtlas_subset_restrictScalars ℝ (M := X) hφ'
   have hΘ := I.contDiffOn_extendCoordChange hψ' hψ
   have hWs : (W : Set ℂ) ⊆ (φ.symm.trans φ').source := fun z hz ↦ ⟨(hW hz).1, (hW hz).2.1⟩
-  have hU' := φ'.isOpen_inter_preimage_symm_inter_preimage hcu hs ψ'.open_source
   have hWW' : MapsTo (φ' ∘ φ.symm) W
       (Opens.interior (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ'.source))) := fun w hw ↦ by
     obtain ⟨-, hwφ', hws, -, hwψ'⟩ := hW hw
-    rw [Opens.coe_interior, hU'.interior_eq]
+    rw [coe_interior_chartDomain hs hcu φ' ψ']
     refine ⟨φ'.map_source hwφ', ?_⟩
     simpa [φ'.left_inv hwφ'] using And.intro hws hwψ'
   have hc : ContinuousOn (ψ'.extend I ∘ u ∘ φ'.symm)
       (Opens.interior (φ'.target ∩ φ'.symm ⁻¹' (s ∩ u ⁻¹' ψ'.source))) := by
-    rw [Opens.coe_interior, hU'.interior_eq]
+    rw [coe_interior_chartDomain hs hcu φ' ψ']
     exact φ'.continuousOn_comp_comp_symm (ψ'.continuousOn_extend.mono ψ'.extend_source.ge) hcu
   have hτ : ContDiffOn ℝ 1 (φ' ∘ φ.symm) W := by
     simpa only [OpenPartialHomeomorph.coe_trans] using
@@ -314,6 +329,18 @@ theorem HasWeakMFDerivOn.ae_eq {du₁ du₂ : ∀ x, TangentSpace 𝓘(ℝ, ℂ)
   obtain ⟨w, rfl⟩ := hC.surjective v
   exact hA.injective (DFunLike.congr_fun hz w)
 
+/-- A field agreeing almost everywhere in every chart with a weak differential of `u` on `s` is
+again a weak differential of `u` on `s`. -/
+theorem HasWeakMFDerivOn.congr_ae_deriv
+    {du₁ du₂ : ∀ x, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] TangentSpace I (u x)}
+    (h : HasWeakMFDerivOn I u du₁ s)
+    (hae : ∀ φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X, ∀ ψ ∈ IsManifold.maximalAtlas I ∞ M,
+      ∀ᵐ z ∂volume.restrict (interior (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))),
+        du₁ (φ.symm z) = du₂ (φ.symm z)) :
+    HasWeakMFDerivOn I u du₂ s := fun φ hφ ψ hψ ↦
+  (h φ hφ ψ hψ).congr_ae_deriv <| (hae φ hφ ψ hψ).mono fun z hz ↦ by
+    rw [chartDifferential_def, chartDifferential_def, hz]
+
 end Uniqueness
 
 /-- The coordinate expressions of a weak differential of a local Sobolev map of order one are
@@ -326,8 +353,7 @@ theorem HasWeakMFDerivOn.memLpLoc_chartDifferential
     MemLpLoc p (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) (chartDifferential I φ ψ u du) := by
   obtain ⟨D, hD, hDp⟩ := (hu.memWkpLoc_chart hφ hψ).exists_weakFDeriv
   have hae := hD.ae_eq (hdu φ hφ ψ hψ)
-  rw [Opens.coe_interior, (φ.isOpen_inter_preimage_symm_inter_preimage hu.continuousOn hs
-    ψ.open_source).interior_eq] at hae
+  rw [coe_interior_chartDomain hs hu.continuousOn φ ψ] at hae
   exact (memWkpLoc_zero_iff.1 hDp).congr_ae hae
 
 section Existence
@@ -378,7 +404,6 @@ private theorem ae_eq_chartDifferential_of_chartAt (hs : IsOpen s) (hc : Continu
       P (φ.symm z) → D z = chartDifferential I φ ψ u du z := by
   have hφt := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℂ)) (n := 1) t
   have hψt := IsManifold.chart_mem_maximalAtlas (I := I) (n := ∞) (u t)
-  have hU := φ.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source
   let W : Opens ℂ := ⟨_, φ.isOpen_inter_preimage_symm
     ((hc.isOpen_inter_preimage hs ψ.open_source).inter ((chartAt ℂ t).open_source.inter
       (hc.isOpen_inter_preimage hs (chartAt H (u t)).open_source)))⟩
@@ -386,7 +411,7 @@ private theorem ae_eq_chartDifferential_of_chartAt (hs : IsOpen s) (hc : Continu
   have hT := hDₜ.comp_chartChange hs hc hφ hφt hψ hψt (W := W)
     fun w hw ↦ ⟨hw.1, hw.2.2.1, hw.2.1.1, hw.2.1.2, hw.2.2.2.2⟩
   have hDW := hD.mono (Ω' := W) fun w hw ↦ by
-    rw [← SetLike.mem_coe, Opens.coe_interior, hU.interior_eq]
+    rw [← SetLike.mem_coe, coe_interior_chartDomain hs hc φ ψ]
     exact ⟨hw.1, hw.2.1⟩
   filter_upwards [(ae_restrict_iff' W.isOpen.measurableSet).1 (hDW.ae_eq hT)] with z hz hzW hPz
   obtain ⟨hzφ, ⟨hzs, hzψ⟩, hzt, hzs', hzψt⟩ := hzW
@@ -431,8 +456,7 @@ theorem MemWkpLocMapOn.exists_hasWeakMFDerivOn [SecondCountableTopology X]
       fun x (hx : τ x = t) ↦ by rw [hx]; rfl
   rw [Filter.EventuallyEq, ae_restrict_iff' (Opens.interior _).isOpen.measurableSet]
   filter_upwards [(ae_ball_iff hTc).2 hloc] with z hz hzU
-  rw [Opens.coe_interior,
-    (φ.isOpen_inter_preimage_symm_inter_preimage hc hs ψ.open_source).interior_eq] at hzU
+  rw [coe_interior_chartDomain hs hc φ ψ] at hzU
   exact hz _ (hτT _ hzU.2.1) ⟨hzU.1, hzU.2, hτV _ hzU.2.1⟩ rfl
 
 /-- **Local Sobolev maps of order one through their weak differentials.** On an open subset `s`
@@ -461,7 +485,8 @@ variable [CompleteSpace F]
 
 /-- **Weak differentials of `C¹` maps.** On an open set on which `u` is `C¹`, its differential is
 a weak differential. -/
-theorem ContMDiffOn.hasWeakMFDerivOn_mfderiv (hs : IsOpen s) (hu : ContMDiffOn 𝓘(ℝ, ℂ) I 1 u s) :
+theorem _root_.ContMDiffOn.hasWeakMFDerivOn_mfderiv (hs : IsOpen s)
+    (hu : ContMDiffOn 𝓘(ℝ, ℂ) I 1 u s) :
     HasWeakMFDerivOn I u (mfderiv 𝓘(ℝ, ℂ) I u) s := by
   intro φ hφ ψ hψ
   have hφR := IsManifold.maximalAtlas_subset_restrictScalars ℝ (M := X) hφ
@@ -475,20 +500,24 @@ theorem ContMDiffOn.hasWeakMFDerivOn_mfderiv (hs : IsOpen s) (hu : ContMDiffOn �
       fun _ hz ↦ hz.2.2)
   have hf' : ContDiffOn ℝ 1 (ψ.extend I ∘ u ∘ φ.symm)
       (Opens.interior (φ.target ∩ φ.symm ⁻¹' (s ∩ u ⁻¹' ψ.source))) := by
-    rwa [Opens.coe_interior, hU.interior_eq]
+    rwa [coe_interior_chartDomain hs hu.continuousOn φ ψ]
   refine hf'.hasWeakFDerivOn_fderiv.congr_ae_deriv
     (ae_restrict_of_forall_mem (Opens.interior _).isOpen.measurableSet fun z hz ↦ ?_)
-  rw [Opens.coe_interior, hU.interior_eq] at hz
+  rw [coe_interior_chartDomain hs hu.continuousOn φ ψ] at hz
   -- The chain rule for `ψ̂ ∘ u ∘ φ⁻¹` at `z`.
   have key := mvfderiv_comp z ((ψ.contMDiffAt_extend hψ hz.2.2).mdifferentiableAt (by simp))
     ((hg.contMDiffAt (hU.mem_nhds hz)).mdifferentiableAt one_ne_zero)
   rw [mfderiv_comp z ((hu.contMDiffAt (hs.mem_nhds hz.2.1)).mdifferentiableAt one_ne_zero)
-    (mdifferentiableAt_symm_of_mem_maximalAtlas hφR hz.1), mvfderiv_eq_fderiv] at key
+    (mdifferentiableAt_symm_of_mem_maximalAtlas hφR hz.1)] at key
   ext v
-  exact DFunLike.congr_fun key v
+  refine (mvfderiv_eq_fderiv_apply _ z v).symm.trans ?_
+  rw [key, chartDifferential_def]
+  -- The two sides agree after unfolding the composition `(u ∘ φ.symm) z = u (φ.symm z)`, which
+  -- also occurs inside the tangent-space types, where `rw` cannot rewrite it.
+  rfl
 
 /-- On `X = M = ℂ`, the weak differential of the conjugation `z ↦ conj z` is the constant
-conjugation map, which is complex-antilinear rather than complex-linear. -/
+conjugation map. -/
 theorem hasWeakMFDerivOn_conj :
     HasWeakMFDerivOn 𝓘(ℝ, ℂ) (fun z : ℂ ↦ (starRingEnd ℂ) z)
       (fun _ ↦ (Complex.conjCLE : ℂ →L[ℝ] ℂ) :
@@ -499,12 +528,8 @@ theorem hasWeakMFDerivOn_conj :
       (fun _ ↦ (Complex.conjCLE : ℂ →L[ℝ] ℂ) :
         ∀ z : ℂ, TangentSpace 𝓘(ℝ, ℂ) z →L[ℝ] TangentSpace 𝓘(ℝ, ℂ) ((starRingEnd ℂ) z)) := by
     funext z
-    have hf : fderiv ℝ (fun z : ℂ ↦ (starRingEnd ℂ) z) z = Complex.conjCLE :=
-      Complex.conjCLE.fderiv
-    rw [mfderiv_eq_fderiv]
-    ext v
-    exact DFunLike.congr_fun hf v
-  have h := ContMDiffOn.hasWeakMFDerivOn_mfderiv isOpen_univ hc
+    exact (Complex.conjCLE.hasFDerivAt (x := z)).hasMFDerivAt.mfderiv
+  have h := hc.hasWeakMFDerivOn_mfderiv isOpen_univ
   rwa [heq] at h
 
 end Smooth
