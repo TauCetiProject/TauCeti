@@ -14,9 +14,10 @@ For a continuous linear map `T : E → F` between Hilbert spaces with closed ran
 `T x = y` is solvable exactly when `y` is orthogonal to the kernel of the adjoint `T†`. If
 `z₁, …, z_m` is a basis of `ker T†`, the solvability conditions are the `m` equations
 `⟪zᵢ, y⟫ = 0`: these compatibility functionals are continuous and linearly independent, and their
-number `m = dim coker T` is the least number of linear functionals, continuous or not, whose
-common zero set is the range of `T`
-(`LinearMap.isLeast_finrank_ker_iff_index_eq_zero` and `Submodule.isLeast_card_iInf_ker_eq`).
+number `m` is the dimension of `ker T†`, which is isomorphic to the cokernel of `T`. That no
+family of fewer than `dim coker T` linear functionals, continuous or not, has the range of `T` as
+its common kernel is the general codimension count of the module
+`TauCeti.LinearAlgebra.Dual.Codimension`.
 
 For a Fredholm operator of index zero this gives the **Fredholm alternative** in its quantitative
 form: either `T` is bijective, or `T` has a nonzero kernel and `T x = y` is solvable exactly when
@@ -50,10 +51,8 @@ open scoped InnerProduct InnerProductSpace
 
 /-- The inner-product functionals `⟪vᵢ, ·⟫` of a linearly independent family `vᵢ` are linearly
 independent, since `v ↦ ⟪v, ·⟫` is injective and conjugate-linear. Applied to a basis `zᵢ` of
-the kernel of the adjoint of a closed-range operator `T`, the compatibility functionals
-`⟪zᵢ, ·⟫` are linearly independent; their number is the dimension of the cokernel of `T`, so by
-`Submodule.isLeast_card_iInf_ker_eq` no smaller family of functionals, continuous or not, has
-the range of `T` as its common kernel. -/
+the kernel of the adjoint of a closed-range operator `T`, it shows that the compatibility
+functionals `⟪zᵢ, ·⟫` are linearly independent. -/
 theorem LinearIndependent.innerSL {𝕜 F ι : Type*} [RCLike 𝕜] [NormedAddCommGroup F]
     [InnerProductSpace 𝕜 F] {v : ι → F} (hv : LinearIndependent 𝕜 v) :
     LinearIndependent 𝕜 fun i ↦ _root_.innerSL 𝕜 (v i) :=
