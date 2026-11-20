@@ -40,18 +40,19 @@ open scoped nonZeroDivisors
 
 namespace Module.Basis
 
-variable {A K B L ι : Type*} [CommRing A] [IsDomain A] [Field K]
+variable {A K B L ι : Type*} [CommRing A] [Field K]
   [CommRing B] [Field L] [Algebra A K] [Algebra A B] [Algebra B L]
   [Algebra K L] [Algebra A L] [IsScalarTower A K L] [IsScalarTower A B L]
   [IsFractionRing A K]
   [IsLocalization (Algebra.algebraMapSubmonoid B A⁰) L]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L] [Finite ι] [DecidableEq ι]
+  [Algebra.IsSeparable K L] [DecidableEq ι]
 
-variable (b : Basis ι A B)
+section Finite
 
-omit [IsDomain A] in
+variable [Finite ι] (b : Basis ι A B)
+
 /-- The complementary module is spanned over the base ring by the field trace-dual basis. -/
-theorem dualSubmodule_one_eq_span_traceDual :
+theorem dualSubmodule_one_eq_span_traceDual [FiniteDimensional K L] :
     (Algebra.traceForm K L).dualSubmodule ((1 : Submodule B L).restrictScalars A) =
       Submodule.span A (Set.range (b.localizationLocalization K A⁰ L).traceDual) := by
   have hspan : (1 : Submodule B L).restrictScalars A =
@@ -67,14 +68,17 @@ theorem dualSubmodule_one_eq_span_traceDual :
 noncomputable def traceDualIntegralBasis :
     Basis ι A ((Algebra.traceForm K L).dualSubmodule
       ((1 : Submodule B L).restrictScalars A)) :=
+  have : IsDomain A := .of_faithfulSMul A K
+  have : FiniteDimensional K L := .of_basis (b.localizationLocalization K A⁰ L)
   ((b.localizationLocalization K A⁰ L).traceDual.restrictScalars A).map
     (LinearEquiv.ofEq _ _ b.dualSubmodule_one_eq_span_traceDual.symm)
 
 /-- The vectors of the complementary-module basis are the field trace-dual vectors. -/
 @[simp]
-theorem coe_traceDualIntegralBasis (i : ι) :
+theorem coe_traceDualIntegralBasis [FiniteDimensional K L] (i : ι) :
     (b.traceDualIntegralBasis (K := K) (L := L) i : L) =
       (b.localizationLocalization K A⁰ L).traceDual i := by
+  have : IsDomain A := .of_faithfulSMul A K
   rw [traceDualIntegralBasis, Basis.map_apply]
   exact (LinearEquiv.coe_ofEq_apply _ _).trans (Basis.restrictScalars_apply _ _ _)
 
@@ -86,6 +90,8 @@ theorem algebraMap_traceDualIntegralBasis_repr
     algebraMap A K ((b.traceDualIntegralBasis (K := K) (L := L)).repr x i) =
       Algebra.trace K L ((x : L) * algebraMap B L (b i)) := by
   classical
+  have : IsDomain A := .of_faithfulSMul A K
+  have : FiniteDimensional K L := .of_basis (b.localizationLocalization K A⁰ L)
   simp only [traceDualIntegralBasis, Basis.map_repr, LinearEquiv.trans_apply,
     Basis.restrictScalars_repr_apply, Basis.traceDual_repr_apply,
     Algebra.traceForm_apply, Basis.localizationLocalization_apply,
@@ -108,14 +114,14 @@ noncomputable def algebraToTraceDual :
     ← map_mul, Algebra.trace_localization A A⁰]
   exact Submodule.mem_one.mpr ⟨Algebra.trace A B (x * y), rfl⟩
 
-omit [IsDomain A] [FiniteDimensional K L] [Algebra.IsSeparable K L] [DecidableEq ι] in
+omit [Algebra.IsSeparable K L] [DecidableEq ι] in
 /-- The inclusion into the complementary module is the usual embedding in `L`. -/
 @[simp]
 theorem coe_algebraToTraceDual (x : B) :
     (b.algebraToTraceDual (K := K) (L := L) x : L) = algebraMap B L x :=
   (rfl)
 
-omit [IsDomain A] [FiniteDimensional K L] [Algebra.IsSeparable K L] [DecidableEq ι] in
+omit [Algebra.IsSeparable K L] [DecidableEq ι] in
 /-- The inclusion of a finite free algebra in its trace dual is injective. -/
 theorem algebraToTraceDual_injective :
     Function.Injective (b.algebraToTraceDual (K := K) (L := L)) := by
@@ -139,7 +145,11 @@ theorem traceDualIntegralBasis_repr_algebraToTraceDual (x : B) (i : ι) :
   rw [b.algebraMap_traceDualIntegralBasis_repr, coe_algebraToTraceDual,
     ← map_mul, Algebra.trace_localization A A⁰]
 
-variable [Fintype ι]
+end Finite
+
+section Fintype
+
+variable [Fintype ι] (b : Basis ι A B)
 
 /-- The matrix of the algebra inclusion, with the trace-dual basis in the target,
 is the trace matrix of the original integral basis. -/
@@ -189,5 +199,7 @@ theorem traceDualQuotientEquiv_symm_mk (v : ι → A) :
     (b.traceDualQuotientEquiv (K := K) (L := L)).symm (Submodule.Quotient.mk v) =
       Submodule.Quotient.mk ((b.traceDualIntegralBasis (K := K) (L := L)).equivFun.symm v) :=
   (rfl)
+
+end Fintype
 
 end Module.Basis
