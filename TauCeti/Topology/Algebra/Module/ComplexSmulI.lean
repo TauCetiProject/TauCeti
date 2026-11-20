@@ -8,6 +8,9 @@ module
 public import TauCeti.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Algebra.Module.Complement
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 
 /-!
 # Multiplication by `i` on complex modules
@@ -16,7 +19,9 @@ Multiplication by `i` is a real continuous linear automorphism of any complex mo
 compatible real scalar action (`IsScalarTower ℝ ℂ X`) and continuous multiplication by constant
 scalars, with inverse multiplication by `-i`. It is the conjugating operator by which complex
 linearity of a real-linear map is tested: a continuous real-linear map between complex modules that
-commutes with it is continuous complex-linear.
+commutes with it is continuous complex-linear. Averaging over multiplication by `i` likewise turns
+a continuous real-linear projection onto a complex submodule into a complex-linear one, so a
+complex submodule complemented over the reals is complemented over the complex numbers.
 
 ## Main definitions and results
 
@@ -24,6 +29,8 @@ commutes with it is continuous complex-linear.
   `smulIEquiv_apply` and `smulIEquiv_symm_apply`.
 * `ContinuousLinearMap.complexOfMapISmul`: a continuous real-linear map between complex modules
   that commutes with multiplication by `i`, as a continuous complex-linear map.
+* `Submodule.ClosedComplemented.of_restrictScalars`: a complex submodule with a continuous
+  real-linear projection onto it has a continuous complex-linear one.
 -/
 
 public section
@@ -82,5 +89,36 @@ end ContinuousLinearMap
 
 
 end ComplexOfMapISmul
+
+section ClosedComplemented
+
+open Complex
+
+variable {V : Type*} [AddCommGroup V] [TopologicalSpace V] [IsTopologicalAddGroup V] [Module ℝ V]
+  [Module ℂ V] [IsScalarTower ℝ ℂ V] [ContinuousConstSMul ℂ V]
+
+/-- **Complex complements from real ones.** A complex submodule `K` that is the range of a
+continuous real-linear projection `P` is the range of a continuous complex-linear projection,
+the average `x ↦ (P x - i • P (i • x)) / 2` of `P` over multiplication by `i`. -/
+theorem Submodule.ClosedComplemented.of_restrictScalars {K : Submodule ℂ V}
+    (hK : (K.restrictScalars ℝ).ClosedComplemented) : K.ClosedComplemented := by
+  obtain ⟨P, hP⟩ := hK
+  -- `K.restrictScalars ℝ` and `K` have the same elements.
+  let P' : V →L[ℝ] K := P
+  have hP' (x : K) : P' x = x := hP x
+  -- `R x = P x - i • P (i • x)` commutes with `i`, and `R x = 2 x` on `K`.
+  let R : V →L[ℝ] K := P' - (smulIEquiv K : K →L[ℝ] K) ∘L P' ∘L (smulIEquiv V : V →L[ℝ] V)
+  have hR (v : V) : R v = P' v - I • P' (I • v) := by simp [R]
+  have hRI (v : V) : R (I • v) = I • R v := by
+    have hIIv : P' (I • I • v) = -P' v := by rw [smul_smul, I_mul_I, neg_one_smul, map_neg]
+    have hIIP : I • I • P' (I • v) = -P' (I • v) := by rw [smul_smul, I_mul_I, neg_one_smul]
+    rw [hR, hR, hIIv, smul_sub, hIIP, smul_neg, sub_neg_eq_add, sub_neg_eq_add, add_comm]
+  refine ⟨(2⁻¹ : ℂ) • R.complexOfMapISmul hRI, fun x ↦ ?_⟩
+  have hIx : P' (I • (x : V)) = I • x := hP' (I • x)
+  rw [smul_apply, ContinuousLinearMap.coe_complexOfMapISmul, hR, hP', hIx,
+    smul_smul, I_mul_I, neg_one_smul, sub_neg_eq_add, ← two_smul ℂ x, smul_smul,
+    inv_mul_cancel₀ two_ne_zero, one_smul]
+
+end ClosedComplemented
 
 end
