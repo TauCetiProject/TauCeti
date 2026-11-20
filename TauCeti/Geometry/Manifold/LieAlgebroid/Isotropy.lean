@@ -95,7 +95,7 @@ theorem mem_isotropy_iff {x : M} {v : V x} : v ∈ A.isotropy x ↔ A.anchor x v
 /-- The anchor vanishes on every isotropy vector. -/
 @[simp]
 theorem anchor_coe_isotropy {x : M} (v : A.isotropy x) : A.anchor x v = 0 :=
-  A.mem_isotropy_iff.mp v.2
+  A.mem_isotropy_iff.mp v.property
 
 /-- The isotropy at `x` is zero exactly when the anchor at `x` is injective. -/
 theorem isotropy_eq_bot_iff {x : M} : A.isotropy x = ⊥ ↔ Function.Injective (A.anchor x) := by
@@ -181,7 +181,7 @@ private theorem isotropyExtension_apply {x : M} (v : A.isotropy x) :
 omit [FiniteDimensional ℝ F] in
 private theorem isotropyExtension_apply_mem {x : M} (v : A.isotropy x) :
     isotropyExtension A v x ∈ A.isotropy x := by
-  simpa only [isotropyExtension_apply] using v.2
+  simpa only [isotropyExtension_apply] using v.property
 
 /-- The bracket of the isotropy Lie algebra at `x`: the value at `x` of the bracket of chosen
 smooth sections through the two isotropy vectors. By `TauCeti.LieAlgebroid.bracket_apply_congr`
@@ -284,7 +284,7 @@ variable [FiniteDimensional ℝ F]
 /-- Evaluation at `x` of the sections isotropic at `x`, a Lie algebra homomorphism onto the
 isotropy Lie algebra at `x`. -/
 def isotropyEval (x : M) : A.isotropySections x →ₗ⁅ℝ⁆ A.isotropy x where
-  toFun s := ⟨A.sectionsEquiv s x, s.2⟩
+  toFun s := ⟨A.sectionsEquiv s x, s.property⟩
   map_add' s t := by
     ext
     simp only [AddMemClass.coe_add, map_add, ContMDiffSection.coe_add, Pi.add_apply]
