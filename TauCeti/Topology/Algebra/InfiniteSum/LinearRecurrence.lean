@@ -11,19 +11,22 @@ import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 /-!
 # The sums of first- and second-order linear recurrences
 
-For a summable sequence `d` obeying the inhomogeneous first-order recurrence
-`d (r + 1) = D • d r + b (r + 1)` with `d 0 = b 0`, where `b` has sum `β`, its sum `σ` satisfies
-`σ = D • σ + β`. This evaluates the formal identity `∑ d r xʳ = D x ∑ d r xʳ + ∑ b r xʳ` at
-`x = 1`, without assuming that `1 - D` is invertible. The values lie in a Hausdorff topological
-additive monoid, and each fixed scalar acts additively and continuously.
+For a sequence `d` with sum `σ` obeying the inhomogeneous first-order recurrence
+`d (r + 1) = D • d r + b (r + 1)` with `d 0 = b 0`, where `b` has sum `β`, the sum satisfies
+`σ = D • σ + β`: termwise, `d` is the sum of `b` and of the shifted sequence
+`0, D • d 0, D • d 1, …`, whose sum is `D • σ`. The values lie in a Hausdorff commutative additive
+monoid with continuous addition, and each fixed scalar acts additively and continuously.
 
 For a summable sequence `d` obeying `d (r + 2) = D • d (r + 1) - S • d r`, its sum `σ`
 satisfies the identity:
 
 `σ - D • σ + S • σ = d 0 + (d 1 - D • d 0)`.
 
-Here the values lie in a Hausdorff topological additive group. For a nonassociative ring acting
-on itself by left multiplication, this gives `(1 - D + S) * σ = d 0 + (d 1 - D * d 0)`.
+Here the values lie in a Hausdorff additive group with continuous addition; negation need not be
+continuous, since the proof sums the subtraction-free recurrence
+`d (r + 2) + S • d r = D • d (r + 1)` and only rearranges the resulting equality. For a
+nonassociative ring acting on itself by left multiplication, this gives
+`(1 - D + S) * σ = d 0 + (d 1 - D * d 0)`.
 
 In an associative ring, this corresponds to evaluating the characteristic polynomial at `1`
 in the formal generating-function identity
@@ -59,7 +62,7 @@ theorem HasSum.eq_smul_add_of_linearRec₁ {b : ℕ → M} {β : M} (h : HasSum 
 
 end AddCommMonoid
 
-variable [AddCommGroup M] [DistribSMul A M] [IsTopologicalAddGroup M] [ContinuousConstSMul A M]
+variable [AddCommGroup M] [DistribSMul A M] [ContinuousAdd M] [ContinuousConstSMul A M]
 
 /-- **The sum of a second-order linear recurrence.** If `d` has sum `σ` and obeys
 `d (r + 2) = D • d (r + 1) - S • d r`, then
@@ -67,22 +70,27 @@ variable [AddCommGroup M] [DistribSMul A M] [IsTopologicalAddGroup M] [Continuou
 theorem HasSum.sub_smul_add_smul_eq_of_linearRec₂ (h : HasSum d σ)
     (hd : ∀ r, d (r + 2) = D • d (r + 1) - S • d r) :
     σ - D • σ + S • σ = d 0 + (d 1 - D • d 0) := by
-  -- `d` obeys the first-order recurrence with inhomogeneous terms
-  -- `d 0, d 1 - D • d 0, -(S • d 0), -(S • d 1), …`
-  let b : ℕ → M := fun | 0 => d 0 | 1 => d 1 - D • d 0 | r + 2 => -(S • d r)
-  have hb : HasSum b (d 0 + (d 1 - D • d 0) - S • σ) :=
-    (hasSum_nat_add_iff' 2).mp <| by simpa [b, Finset.sum_range_succ] using (h.const_smul S).neg
-  have hσ := h.eq_smul_add_of_linearRec₁ (D := D) hb (by simp [b]) fun
-    | 0 => by simp [b]
-    | r + 1 => by simp [b, hd, sub_eq_add_neg]
-  -- rearrange `σ = D • σ + (d 0 + (d 1 - D • d 0) - S • σ)`
-  exact eq_sub_iff_add_eq.mp (sub_eq_iff_eq_add'.mpr hσ)
+  -- sum `d (r + 2) + S • d r = D • d (r + 1)`: termwise, `d` plus `0, 0, S • d 0, S • d 1, …`
+  -- is `0, D • d 0, D • d 1, …` plus `d 0, d 1 - D • d 0, 0, 0, …`
+  let c₁ : ℕ → M := fun | 0 => 0 | r + 1 => D • d r
+  let c₂ : ℕ → M := fun | 0 => 0 | 1 => 0 | r + 2 => S • d r
+  let b : ℕ → M := fun | 0 => d 0 | 1 => d 1 - D • d 0 | _ + 2 => 0
+  have hc₁ : HasSum c₁ (D • σ) := by simpa [c₁] using (h.const_smul D).zero_add (f := c₁)
+  have hc₂ : HasSum c₂ (S • σ) := by
+    simpa [c₂, Finset.sum_range_succ] using (h.const_smul S).sum_range_add (f := c₂) (k := 2)
+  have hb : HasSum b (d 0 + (d 1 - D • d 0)) := by
+    simpa [b, Finset.sum_range_succ] using hasSum_zero.sum_range_add (f := b) (k := 2)
+  have hσ : σ + S • σ = D • σ + (d 0 + (d 1 - D • d 0)) :=
+    (h.add hc₂).unique <| (hc₁.add hb).congr_fun fun
+      | 0 | 1 => by simp [c₁, c₂, b]
+      | r + 2 => by simp [c₁, c₂, b, hd]
+  rw [sub_add_eq_add_sub, hσ, add_sub_cancel_left]
 
 /-- **The sum of a second-order linear recurrence in a ring.** If `d` has sum `σ` and obeys
 `d (r + 2) = D * d (r + 1) - S * d r`, then `(1 - D + S) * σ = d 0 + (d 1 - D * d 0)`. -/
 theorem HasSum.one_sub_add_mul_eq_of_linearRec₂
     {R : Type*} [NonAssocRing R] [TopologicalSpace R]
-    [IsTopologicalAddGroup R] [ContinuousConstSMul R R] [T2Space R]
+    [ContinuousAdd R] [ContinuousConstSMul R R] [T2Space R]
     {D S σ : R} {d : ℕ → R} (h : HasSum d σ)
     (hd : ∀ r, d (r + 2) = D * d (r + 1) - S * d r) :
     (1 - D + S) * σ = d 0 + (d 1 - D * d 0) := by
