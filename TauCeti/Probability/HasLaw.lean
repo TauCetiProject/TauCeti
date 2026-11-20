@@ -287,15 +287,6 @@ theorem _root_.ProbabilityTheory.HasLaw.prod_extension {Ω α E : Type*}
     measurable_id.aemeasurable]
   rw [hX.map_eq, Measure.map_id]
 
-/-- Extending a random variable by a constant coordinate gives the product with the point law,
-without changing its source or its original law. -/
-theorem _root_.ProbabilityTheory.HasLaw.prod_extension_dirac
-    {Ω α E : Type*} [MeasurableSpace Ω] [MeasurableSpace α] [MeasurableSpace E]
-    {X : Ω → α} {μ : Measure α} {P : Measure Ω} (hX : HasLaw X μ P)
-    [SFinite μ] (y : E) :
-    HasLaw (fun ω => (X ω, y)) (μ.prod (Measure.dirac y)) P := by
-  convert (measurePreserving_prodMk_right_dirac μ y).fun_comp_hasLaw hX using 1
-
 /-- Applying an indexed family to an independent selector and noise variable gives the bind of the
 component pushforwards. -/
 theorem _root_.ProbabilityTheory.IndepFun.hasLaw_apply_bind_map
