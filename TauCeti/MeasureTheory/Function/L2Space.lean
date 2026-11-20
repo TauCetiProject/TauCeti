@@ -40,6 +40,8 @@ L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
+almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
@@ -279,6 +281,27 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
+
+/-- An L² function orthogonal to every L² function vanishing outside a measurable set `A`
+vanishes almost everywhere on `A`: it is orthogonal to its own restriction to `A`. -/
+theorem L2.ae_restrict_eq_zero_of_forall_inner_eq_zero {A : Set α} (hA : MeasurableSet A)
+    (f : Lp E 2 μ) (h : ∀ φ : Lp E 2 μ, (∀ᵐ x ∂μ, x ∉ A → φ x = 0) → ⟪φ, f⟫_𝕜 = 0) :
+    f =ᵐ[μ.restrict A] 0 := by
+  have hmem : MemLp (A.indicator f) 2 μ := (Lp.memLp f).indicator hA.nullMeasurableSet
+  have hφ : ∀ᵐ x ∂μ, x ∉ A → hmem.toLp (A.indicator f) x = 0 := by
+    filter_upwards [hmem.coeFn_toLp] with x hx hxA
+    rw [hx, Set.indicator_of_notMem hxA]
+  -- The restriction of `f` to `A` is orthogonal to `f`, hence to itself.
+  have hself : ⟪hmem.toLp (A.indicator f), hmem.toLp (A.indicator f)⟫_𝕜 = 0 := by
+    rw [← h _ hφ, L2.inner_def, L2.inner_def]
+    refine integral_congr_ae ?_
+    filter_upwards [hmem.coeFn_toLp] with x hx
+    rw [hx]
+    by_cases hxA : x ∈ A <;> simp [hxA]
+  have h0 := hmem.coeFn_toLp.symm.trans (Lp.eq_zero_iff_ae_eq_zero.1 (inner_self_eq_zero.1 hself))
+  rw [Filter.EventuallyEq, ae_restrict_iff' hA]
+  filter_upwards [h0] with x hx hxA
+  rwa [Set.indicator_of_mem hxA] at hx
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map

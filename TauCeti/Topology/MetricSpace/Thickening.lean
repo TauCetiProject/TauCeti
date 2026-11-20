@@ -43,6 +43,9 @@ neighbourhoods, each with compact closure inside the previous one and with every
 component meeting the set (`IsCompact.exists_hasAntitoneBasis_nhdsSet`). Holomorphic germs along
 a compact subset of `ℂⁿ` are the inductive limit of the bounded holomorphic functions on such a
 basis, whose restriction maps are then compact and injective.
+If the `δ`-thickenings of two sets are disjoint, every point of the first is at distance at least
+`δ / 2` from the closed `δ / 2`-thickening of the second
+(`Disjoint.half_le_dist_of_mem_cthickening`).
 
 On the real line, the terms of an injective two-sided sequence tending to `-∞` and `+∞` at its two
 ends have pairwise disjoint closed intervals around them forming a locally finite family
@@ -170,6 +173,16 @@ theorem _root_.LipschitzWith.cthickening_preimage_subset_preimage_cthickening
     mul_div_cancel₀ _ (by simpa using hK)]
 
 end TauCeti
+
+/-- If the `δ`-thickenings of `A` and `s` are disjoint, every point of `A` is at distance at least
+`δ / 2` from the closed `δ / 2`-thickening of `s`. -/
+theorem Disjoint.half_le_dist_of_mem_cthickening {X : Type*} [PseudoMetricSpace X]
+    {A s : Set X} {δ : ℝ} (h : Disjoint (thickening δ A) (thickening δ s)) (hδ : 0 < δ)
+    {x y : X} (hx : x ∈ A) (hy : y ∈ cthickening (δ / 2) s) : δ / 2 ≤ dist x y := by
+  by_contra! hxy
+  exact disjoint_left.1 h
+    (mem_thickening_iff.2 ⟨x, hx, ((dist_comm _ _).trans_lt hxy).trans (half_lt_self hδ)⟩)
+    (cthickening_subset_thickening' hδ (half_lt_self hδ) s hy)
 
 /-- A closed set `K` in a pseudometric space contained in the interior of a set `L` is the
 intersection of an antitone sequence of open sets `W n` with `K ⊆ W n ⊆ L`. -/
