@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Functor.RingEquivEnd
+public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.RingTheory.LocalRing.Basic
 
@@ -21,8 +22,9 @@ isomorphism classes even though they are not faithful.
 No splitting of idempotents in the quotient is required: locality of its endomorphism ring
 already rules out nontrivial biproduct decompositions.
 
-A fully faithful additive functor both preserves and reflects local endomorphism rings
-(`CategoryTheory.Functor.isLocalRing_end_obj_iff`).
+A full additive functor preserves local endomorphism rings of objects it does not send to zero
+(`CategoryTheory.Functor.isLocalRing_end_obj`), and a fully faithful one both preserves and
+reflects them (`CategoryTheory.Functor.isLocalRing_end_obj_iff`).
 -/
 
 public section
@@ -51,20 +53,30 @@ theorem isIso_of_map_eq_id_of_isLocalRing_end [IsLocalRing (End X)]
     rw [hzero] at hunit
     exact (not_isUnit_zero hunit).elim
 
+/-- A nonzero image under an additive functor has a local endomorphism ring if the original
+object's endomorphism ring is local and the functor is surjective on its endomorphisms. -/
+theorem isLocalRing_end_obj_of_mapEndRingHom_surjective [IsLocalRing (End X)]
+    (hX : ¬ IsZero (F.obj X)) (hF : Function.Surjective (F.mapEndRingHom X)) :
+    IsLocalRing (End (F.obj X)) := by
+  have : Nontrivial (End (F.obj X)) :=
+    nontrivial_of_ne 1 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr
+      (congrArg End.asHom h)))
+  exact IsLocalRing.of_surjective' (F.mapEndRingHom X) hF
+
+/-- **A full additive functor preserves local endomorphism rings**, unless it sends the object
+to zero. -/
+theorem isLocalRing_end_obj [F.Full] [IsLocalRing (End X)] (hX : ¬ IsZero (F.obj X)) :
+    IsLocalRing (End (F.obj X)) :=
+  F.isLocalRing_end_obj_of_mapEndRingHom_surjective hX (F.mapEndRingHom_surjective X)
+
 /-- A nonzero image under an additive functor is indecomposable if the original object's
 endomorphism ring is local and the functor is surjective on its endomorphisms. -/
 theorem indecomposable_obj_of_map_surjective_of_isLocalRing_end [HasBinaryBiproducts D]
     [IsLocalRing (End X)] (hX : ¬ IsZero (F.obj X))
-    (hF : Function.Surjective (F.mapEnd X)) : Indecomposable (F.obj X) := by
-  have : Nontrivial (End (F.obj X)) :=
-    nontrivial_of_ne 1 0 (fun h ↦ hX ((IsZero.iff_id_eq_zero _).mpr
-      (congrArg End.asHom h)))
-  let φ : End X →+* End (F.obj X) :=
-    { F.mapEnd X with
-      map_zero' := by apply End.ext; exact F.map_zero X X
-      map_add' := fun _ _ ↦ by apply End.ext; exact F.map_add }
-  have := IsLocalRing.of_surjective' φ hF
-  exact TauCeti.indecomposable_of_isLocalRing_end
+    (hF : Function.Surjective (F.mapEnd X)) : Indecomposable (F.obj X) :=
+  have := F.isLocalRing_end_obj_of_mapEndRingHom_surjective hX fun f ↦
+    (hF f).imp fun g hg ↦ by subst hg; ext; simp
+  TauCeti.indecomposable_of_isLocalRing_end
 
 /-- An additive functor surjective on morphisms from `Y` to `X` reflects invertibility
 of a morphism from `X` to `Y` when their endomorphism rings are local and the source image
