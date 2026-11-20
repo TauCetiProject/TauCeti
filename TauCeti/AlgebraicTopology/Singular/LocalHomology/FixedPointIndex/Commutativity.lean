@@ -302,11 +302,12 @@ private theorem exists_fixedPointIndex_eq_comp_add (hφ : ContinuousOn φ U)
       continuous_toFun := hcont
       map_zero_left := fun w ↦ by simp [hl]
       map_one_left := fun w ↦ by simp [hlv] }
+  have hHp (p : unitInterval × W₂) : H p = φ (ψ p.2 + (p.1 : ℝ) • v) := rfl
   -- The fixed set of `H`, read in `[0, 1] × E₂`, is the compact set of
   -- `isCompact_setOf_comp_add_smul_eq`.
   have hH : IsCompact {p : unitInterval × W₂ | H p = p.2} :=
     isCompact_setOf_homotopy_apply_eq H hF (fun p hp ↦ hW₂ ▸ hFC p hp.1 hp.2)
-      fun _ w ↦ ⟨fun h ↦ ⟨hWC w, h⟩, And.right⟩
+      fun t w ↦ by rw [hHp, mem_ofPred_eq, and_iff_right (hWC w)]
   exact ⟨lv, hlv, fixedPointIndex_eq_of_homotopy H hH, H.isCompact_setOf_apply_one_eq hH⟩
 
 omit [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂] in
@@ -340,6 +341,7 @@ private theorem exists_fixedPointIndex_eq_comp_add_const (hφ : ContinuousOn φ 
       continuous_toFun := hcont
       map_zero_left := fun z ↦ by simp [hk]
       map_one_left := fun z ↦ by simp [hkv] }
+  have hHp (p : unitInterval × W₁) : H p = ψ (φ p.2) + (p.1 : ℝ) • v := rfl
   -- The fixed set of `H`, read in `[0, 1] × E₁`, is the image of that of `φ ∘ (ψ + t v)` under
   -- `(t, w) ↦ (t, ψ w + t v)`.
   have hG : IsCompact ((fun p : unitInterval × E₂ ↦ (p.1, ψ p.2 + (p.1 : ℝ) • v)) ''
@@ -355,16 +357,11 @@ private theorem exists_fixedPointIndex_eq_comp_add_const (hφ : ContinuousOn φ 
         exact hFC (t, w) hwC hp
       rw [hW₁]
       exact ⟨(hηC w hwC _ (norm_smul_lt hv t)).1, hw⟩
-    · have hp' : ψ (φ z) + (t : ℝ) • v = z := hp
-      refine ⟨(t, φ z), ⟨(hW₁m z z.2).2, ?_⟩, ?_⟩
-      · change φ (ψ (φ z) + (t : ℝ) • v) = φ z
-        rw [hp']
-      · change (t, ψ (φ z) + (t : ℝ) • v) = (t, (z : E₁))
-        rw [hp']
+    · rw [hHp] at hp
+      refine ⟨(t, φ z), ⟨(hW₁m z z.2).2, by rw [hp]⟩, Prod.ext rfl hp⟩
     · rintro ⟨⟨t', w⟩, ⟨-, hp⟩, he⟩
       obtain ⟨rfl, hz⟩ := Prod.mk.inj he
-      change ψ (φ z) + (t' : ℝ) • v = z
-      rw [← hz, hp]
+      rw [hHp, ← hz, hp]
   exact ⟨kv, hkv, fixedPointIndex_eq_of_homotopy H hH, H.isCompact_setOf_apply_one_eq hH⟩
 
 /-- Commutativity of the fixed-point index, given a compact neighbourhood `C ⊆ V ∩ ψ⁻¹(U)` of the
