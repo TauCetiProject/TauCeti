@@ -28,6 +28,7 @@ is expressed in every chart and every model basis, independently of a cover or a
 For the mathematical construction of integration on oriented manifolds, see J. M. Lee,
 *Introduction to Smooth Manifolds*, Chapter 16. Here finite disjoint Borel chart pieces provide
 the localization, and their common refinement proves independence of the chosen cover.
+`TauCeti.integralTopForm_congr_cast` transports the integral along a cast of degree `m = n`.
 -/
 
 noncomputable section
@@ -740,5 +741,15 @@ public theorem integralTopForm_eq_chartIntegral [IsManifold I 1 M]
   apply (isNullSet_boundary (I := I)).mono
   intro x hx
   exact False.elim (hx.2 (hs (_root_.subset_tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ hx.1)))
+
+/-- Reindexing the tangent tuple along `h : m = n` transports `integralTopForm` to the
+reindexed orientation `o.reindex (finCongr h)`. -/
+public theorem integralTopForm_congr_cast {m n : ℕ} (h : m = n)
+    (o : Manifold.Orientation I M (Fin m)) (φ : RoughForm I M ℝ m) (ψ : RoughForm I M ℝ n)
+    (hφψ : ∀ x (v : Fin m → TangentSpace I x), φ x v = ψ x (v ∘ Fin.cast h.symm)) :
+    integralTopForm o φ = integralTopForm (o.reindex (finCongr h)) ψ := by
+  subst h
+  rw [finCongr_refl, Manifold.Orientation.reindex_refl]
+  exact congrArg (integralTopForm o) (funext fun x ↦ ContinuousAlternatingMap.ext (hφψ x))
 
 end TauCeti

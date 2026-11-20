@@ -42,6 +42,8 @@ supported. Surjectivity comes from a normalized bump function times `dx`
   with integral zero is compactly supported exact.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`: integration
   `H¹_c(ℝ) → ℝ` is bijective, for either orientation of `ℝ`.
+* `TauCeti.poincarePairing_real_const_one_mk`: on the oriented real line `ℝ`, the Poincaré pairing
+  `⟨[1], [ψ]⟩` evaluates to `∫ t, ψ t (fun _ ↦ 1)`.
 
 ## References
 
@@ -128,5 +130,18 @@ theorem compactlySupportedDeRhamCohomology.bijective_integral_real
   · rw [compactlySupportedDeRhamCohomology.integral_neg]
     exact ⟨fun x y hxy ↦ hi (neg_injective hxy),
       fun y ↦ (hs (-y)).imp fun x hx ↦ by simp [hx]⟩
+
+/-- On the oriented real line `ℝ`, `⟨[1], [ψ]⟩ = ∫ t, ψ t (fun _ ↦ 1)`. -/
+theorem poincarePairing_real_const_one_mk
+    (ψ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1) :
+    poincarePairing 𝓘(ℝ, ℝ) ℝ (Manifold.Orientation.real.reindex (finCongr (zero_add 1).symm))
+        (deRhamCohomology.const 𝓘(ℝ, ℝ) ℝ 1)
+        (compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, ℝ) 1 ψ) = ∫ t : ℝ, ψ.1.1 t (fun _ ↦ 1) := by
+  rw [poincarePairing_const_one_left, Manifold.Orientation.reindex_finCongr_reindex_finCongr,
+    finCongr_refl, Manifold.Orientation.reindex_refl,
+    compactlySupportedDeRhamCohomology.integral_mk]
+  exact integralTopForm_real_eq_integral (ψ.1.isSmoothForm.of_le (by simp))
+    ((mem_compactlySupportedForms 𝓘(ℝ, ℝ)).mp
+      ((mem_compactlySupportedClosedForms 𝓘(ℝ, ℝ)).mp ψ.2).1)
 
 end TauCeti

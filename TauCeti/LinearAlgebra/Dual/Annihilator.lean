@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -26,7 +27,8 @@ identifies the annihilator of `q` with the dual of `p`
 The dual map `f^* : N^* → M^*` of a linear map `f : M → N` exchanges kernel and cokernel up to
 duality. Over any commutative ring, `ker f^*` is the space of functionals vanishing on `range f`,
 which is `(coker f)^*` (`LinearMap.kerDualMapEquiv`). Over a field, `coker f^* = M^* ⧸ range f^*`
-is `(ker f)^*` by restriction (`LinearMap.cokerDualMapEquiv`).
+is `(ker f)^*` by restriction (`LinearMap.cokerDualMapEquiv`), and taking dual maps preserves and
+reflects exactness (`LinearMap.exact_dualMap_iff`).
 
 The linear algebra of Lagrange multipliers follows over a field: if `DF` does not map `ker D` onto
 its codomain, then some nonzero functional `f` makes `f ∘ DF` a pullback `g ∘ D`
@@ -150,6 +152,16 @@ theorem finrank_quotient_range_dualMap :
   f.cokerDualMapEquiv.finrank_eq.trans Subspace.dual_finrank_eq
 
 end Field
+
+/-- Over a field, taking dual maps preserves and reflects exactness: `g.dualMap` and `f.dualMap`
+are exact if and only if `f` and `g` are exact. -/
+@[simp]
+theorem exact_dualMap_iff {K M N P : Type*} [Field K]
+    [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+    [AddCommGroup P] [Module K P] {f : M →ₗ[K] N} {g : N →ₗ[K] P} :
+    Function.Exact g.dualMap f.dualMap ↔ Function.Exact f g := by
+  rw [exact_iff, ker_dualMap_eq_dualAnnihilator_range, range_dualMap_eq_dualAnnihilator_ker,
+    Subspace.dualAnnihilator_inj, eq_comm, ← exact_iff]
 
 section Lagrange
 

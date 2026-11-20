@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
+public import TauCeti.Geometry.Manifold.DeRham.Poincare.Pairing
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import Mathlib.Geometry.Manifold.Instances.Sphere
@@ -48,6 +49,10 @@ absolute value is `2π` for either orientation of the circle.
 * `TauCeti.circleOrientation`: the orientation of the circle on which `dθ` is positive.
 * `TauCeti.integralTopForm_circleOrientation_circleAngularForm`: `∫_{S¹} dθ = 2π`.
 * `TauCeti.abs_integralTopForm_circleAngularForm`: `|∫_{S¹} dθ| = 2π` for every orientation.
+* `TauCeti.poincarePairing_circleOrientation_circleAngularClosedForm_const_one`: on the
+  counterclockwise circle, the Poincaré pairing `⟨[dθ], [1]⟩ = 2π`.
+* `TauCeti.abs_poincarePairing_circleAngularClosedForm_const_one`: `|⟨[dθ], [1]⟩| = 2π` for every
+  orientation of `S¹`.
 
 ## References
 
@@ -347,6 +352,44 @@ theorem abs_integralTopForm_circleAngularForm (o : Manifold.Orientation (𝓡 1)
   rcases o.eq_or_eq_neg circleOrientation with rfl | rfl
   · rw [integralTopForm_circleOrientation_circleAngularForm, abs_of_pos Real.two_pi_pos]
   · rw [integralTopForm_neg, abs_neg, integralTopForm_circleOrientation_circleAngularForm,
+      abs_of_pos Real.two_pi_pos]
+
+/-- On the counterclockwise circle `S¹`, `⟨[dθ], [1]⟩ = 2π`. -/
+theorem poincarePairing_circleOrientation_circleAngularClosedForm_const_one :
+    poincarePairing (𝓡 1) Circle (circleOrientation.reindex (finCongr (Nat.add_zero 1).symm))
+        (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
+        (compactlySupportedDeRhamCohomology.const (𝓡 1) Circle 1) = 2 * Real.pi := by
+  let ψ : compactlySupportedClosedForms (𝓡 1) Circle 1 :=
+    ⟨circleAngularClosedForm.1, (mem_compactlySupportedClosedForms (𝓡 1)).mpr
+      ⟨(mem_compactlySupportedForms (𝓡 1)).mpr
+        (isCompact_univ.of_isClosed_subset (_root_.isClosed_tsupport _) (Set.subset_univ _)),
+        circleAngularClosedForm.2⟩⟩
+  have hmk : (LinearEquiv.ofBijective _
+      (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective (𝓡 1) 1)).symm
+      (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm) =
+      compactlySupportedDeRhamCohomology.mk (𝓡 1) 1 ψ :=
+    (LinearEquiv.ofBijective _
+      (compactlySupportedDeRhamCohomology.toDeRhamCohomology_bijective (𝓡 1) 1)).injective <| by
+      rw [LinearEquiv.apply_symm_apply]
+      exact (compactlySupportedDeRhamCohomology.toDeRhamCohomology_mk (𝓡 1) 1 ψ).symm
+  rw [poincarePairing_const_right, one_mul, hmk,
+    Manifold.Orientation.reindex_finCongr_reindex_finCongr, finCongr_refl,
+    Manifold.Orientation.reindex_refl, compactlySupportedDeRhamCohomology.integral_mk]
+  dsimp only [ψ]
+  rw [coe_circleAngularClosedForm]
+  exact integralTopForm_circleOrientation_circleAngularForm
+
+/-- For any orientation of `S¹`, `|⟨[dθ], [1]⟩| = 2π`. -/
+theorem abs_poincarePairing_circleAngularClosedForm_const_one
+    (o : Manifold.Orientation (𝓡 1) Circle (Fin (1 + 0))) :
+    |poincarePairing (𝓡 1) Circle o
+        (deRhamCohomology.mk (𝓡 1) 1 circleAngularClosedForm)
+        (compactlySupportedDeRhamCohomology.const (𝓡 1) Circle 1)| = 2 * Real.pi := by
+  rcases o.eq_or_eq_neg (circleOrientation.reindex (finCongr (Nat.add_zero 1).symm)) with rfl | rfl
+  · rw [poincarePairing_circleOrientation_circleAngularClosedForm_const_one,
+      abs_of_pos Real.two_pi_pos]
+  · rw [poincarePairing_neg, LinearMap.neg_apply, LinearMap.neg_apply, abs_neg,
+      poincarePairing_circleOrientation_circleAngularClosedForm_const_one,
       abs_of_pos Real.two_pi_pos]
 
 end TauCeti

@@ -29,6 +29,8 @@ one for which the inclusion preserves orientation.
 * `TauCeti.Manifold.Orientation.eq_restrict_iff`: this property characterizes the restriction.
 * `TauCeti.Manifold.Orientation.restrict_neg`: restriction commutes with taking the opposite
   orientation.
+* `TauCeti.Manifold.Orientation.reindex_restrict`: reindexing commutes with restriction to an open
+  subset.
 -/
 
 public section
@@ -77,5 +79,16 @@ orientation at every point. -/
 theorem eq_restrict_iff {o : Orientation I M ι} {U : Opens M} {o' : Orientation I U ι} :
     o' = o.restrict U ↔ ∀ x, IsOrientationPreservingAt o' o Subtype.val x :=
   eq_pullback_iff _ _ _ _
+
+/-- Reindexing a restricted orientation agrees with restricting the reindexed orientation. -/
+@[simp]
+theorem reindex_restrict {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι)
+    (U : Opens M) : (o.restrict U).reindex e = (o.reindex e).restrict U := by
+  rw [eq_restrict_iff]
+  intro x
+  obtain ⟨D, hD, hx⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp
+    (o.isOrientationPreservingAt_restrict U x)
+  refine (isOrientationPreservingAt_iff_of_coe_eq _ _ _ _ D hD).mpr ?_
+  rw [orientationAt_reindex, orientationAt_reindex, _root_.Orientation.map_reindex, hx]
 
 end TauCeti.Manifold.Orientation

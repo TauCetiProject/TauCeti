@@ -35,6 +35,8 @@ indexed by.
   locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
   σ-compact.
+* `TopologicalSpace.Opens.isClopen_preimage_coe_of_pairwise_disjoint` : in the supremum of a
+  pairwise disjoint family of open sets, each member is clopen.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
   open set has a neighbourhood inside it which is a finite union of basis members.
 -/
@@ -103,6 +105,23 @@ instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : Locally
 /-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
 instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=
   IsClosed.sigmaCompactSpace (by simp)
+
+/-- In the supremum of a pairwise disjoint family of open sets, each member is clopen: it is open
+as the preimage of `U i`, and its complement is the union of the remaining members. -/
+theorem isClopen_preimage_coe_of_pairwise_disjoint {ι : Type*} {U : ι → Opens X}
+    (hdisj : Pairwise (Function.onFun Disjoint U)) (i : ι) :
+    IsClopen (((↑) : (⨆ j, U j : Opens X) → X) ⁻¹' (U i : Set X)) := by
+  refine ⟨?_, (U i).isOpen.preimage continuous_subtype_val⟩
+  rw [← isOpen_compl_iff]
+  have hcompl : (((↑) : (⨆ j, U j : Opens X) → X) ⁻¹' (U i : Set X))ᶜ =
+      ⋃ (j : ι) (_ : j ≠ i), ((↑) : (⨆ k, U k : Opens X) → X) ⁻¹' (U j : Set X) := by
+    ext x
+    simp only [Set.mem_compl_iff, Set.mem_preimage, SetLike.mem_coe, Set.mem_iUnion, exists_prop]
+    refine ⟨fun hni ↦ ?_, fun ⟨j, hji, hj⟩ hxi ↦ ((hdisj hji).le_bot ⟨hj, hxi⟩).elim⟩
+    obtain ⟨j, hj⟩ := mem_iSup.mp x.2
+    exact ⟨j, fun hji ↦ hni (hji ▸ hj), hj⟩
+  rw [hcompl]
+  exact isOpen_iUnion fun j ↦ isOpen_iUnion fun _ ↦ (U j).isOpen.preimage continuous_subtype_val
 
 end TopologicalSpace.Opens
 
