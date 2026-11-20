@@ -61,10 +61,11 @@ simplicial set on these edges.
 * `SSet.coslice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
 * `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
-* `SSet.coslice.opSliceIso_inv_comp_map`: maps of coslices are the opposites of maps of slices.
-* `SSet.coslice.opSliceRestrictionMapArrowIso j p τ`: the relative coslice map for `j`, `p` and
-  `τ` is isomorphic, as an arrow, to the opposite of the relative slice map for `jᵒᵖ`, `pᵒᵖ` and
-  `τᵒᵖ`.
+* `SSet.coslice.opSliceIso_inv_comp_map`: through `SSet.coslice.opSliceIso`, a map of coslices
+  is the image under the reversal functor `SSet.opFunctor` of a map of slices.
+* `SSet.coslice.opSliceRestrictionMapArrowIso j p τ`: applying the reversal functor
+  `SSet.opFunctor` to the relative slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ` gives an arrow isomorphic
+  to the relative coslice map for `j`, `p` and `τ`.
 * `SSet.coslice.hasLiftingProperty_restrictionMap_iff_slice`: a map `i` lifts against the relative
   coslice map for `j`, `p` and `τ` exactly when `iᵒᵖ` lifts against the relative slice map for
   `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ`.
@@ -156,8 +157,11 @@ private def opHomEquiv : (X ⟶ coslice p) ≃ (X.op ⟶ slice (opFunctor.map p)
     (opEquivalence.toAdjunction.homEquiv X (slice (opFunctor.map p))).symm
 
 private lemma opHomEquiv_comp (f : Y ⟶ X) (F : X ⟶ coslice p) :
-    opHomEquiv (f ≫ F) = opFunctor.map f ≫ opHomEquiv F :=
-  opEquivalence.toAdjunction.homEquiv_naturality_left_symm f (F ≫ (opSliceIso p).hom)
+    opHomEquiv (f ≫ F) = opFunctor.map f ≫ opHomEquiv F := by
+  -- `opHomEquiv` postcomposes with `(opSliceIso p).hom` before the adjunction bijection.
+  have h : (f ≫ F) ≫ (opSliceIso p).hom = f ≫ F ≫ (opSliceIso p).hom := Category.assoc _ _ _
+  exact (congrArg (opEquivalence.toAdjunction.homEquiv Y (slice (opFunctor.map p))).symm h).trans
+    (opEquivalence.toAdjunction.homEquiv_naturality_left_symm f (F ≫ (opSliceIso p).hom))
 
 /-- **The universal property of the coslice**: maps `X ⟶ C_{p/}` correspond to maps `K ⋆ X ⟶ C`
 extending `p`. -/
@@ -180,9 +184,8 @@ lemma homEquiv_comp_coe (f : Y ⟶ X) (F : X ⟶ coslice p) :
   apply opFunctor.map_injective
   rw [← cancel_epi (join.opIso K Y).inv, opIso_inv_comp_opFunctor_map_homEquiv_coe,
     opHomEquiv_comp, slice.homEquiv_comp_coe, Functor.map_comp,
-    ← opIso_inv_comp_opFunctor_map_homEquiv_coe, ← cancel_epi (join.opIso K Y).hom,
-    Iso.hom_inv_id_assoc, ← CategoryTheory.Functor.map_id opFunctor K,
-    ← join.opFunctor_map_map_comp_opIso_hom_assoc, Iso.hom_inv_id_assoc]
+    ← opIso_inv_comp_opFunctor_map_homEquiv_coe, join.opIso_inv_comp_opFunctor_map_map_assoc,
+    CategoryTheory.Functor.map_id]
 
 variable (p) in
 /-- The coslice `C_{p/}` represents the presheaf of maps `K ⋆ X ⟶ C` extending `p`. -/
@@ -300,11 +303,6 @@ lemma map_π (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q) : map i g h ≫
   rw [comp_π, ← Category.id_comp (map i g h), homEquiv_comp_map_coe, join.inr_map_assoc,
     Category.id_comp, π, Category.assoc]
 
-/-- Pushing cocones forward along an isomorphism is an isomorphism of coslices. -/
-instance isIso_map (g : C ⟶ D) [IsIso g] {r : K ⟶ D} (h : 𝟙 K ≫ p ≫ g = r) :
-    IsIso (map (𝟙 K) g h) :=
-  ⟨map (𝟙 K) (inv g) (by simp [← h]), by simp [map_comp], by simp [map_comp]⟩
-
 /-- Composing a map `F : X ⟶ C_{p/}` with the opposite of a map of slices
 `M : Cᵒᵖ_{/pᵒᵖ} ⟶ Dᵒᵖ_{/qᵒᵖ}` corresponds, on opposites, to composing with `M`. -/
 private lemma opHomEquiv_comp_opFunctor_map (F : X ⟶ coslice p)
@@ -338,7 +336,7 @@ lemma opSliceIso_inv_comp_map (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q
         rw [← Functor.map_comp, ← homEquiv_comp_map_coe, Category.id_comp]
     _ = join.map (opFunctor.map (𝟙 _)) (opFunctor.map i) ≫ (join.opIso K (coslice p)).inv ≫
           opFunctor.map ((homEquiv (𝟙 (coslice p))).val ≫ g) := by
-        rw [Iso.inv_comp_eq, ← join.opFunctor_map_map_comp_opIso_hom_assoc, Iso.hom_inv_id_assoc]
+        rw [join.opIso_inv_comp_opFunctor_map_map_assoc]
     _ = (slice.homEquiv (opHomEquiv (𝟙 (coslice p)) ≫ slice.map (opFunctor.map i)
           (opFunctor.map g) (by simp [← h]) :
             (coslice p).op ⟶ slice (opFunctor.map q))).val := by
@@ -350,6 +348,16 @@ lemma opSliceIso_inv_comp_map (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q
             slice (opFunctor.map p) ⟶ slice (opFunctor.map q)) ≫ (opSliceIso q).inv)).val := by
         rw [opIso_inv_comp_opFunctor_map_homEquiv_coe, ← opHomEquiv_comp_opFunctor_map,
           Category.id_comp]
+
+/-- Pushing cocones forward along an isomorphism is an isomorphism of coslices: through
+`SSet.coslice.opSliceIso`, it is the image under `SSet.opFunctor` of the map of slices pushing
+cones forward along `gᵒᵖ` (`SSet.coslice.opSliceIso_inv_comp_map`), which is an isomorphism
+(`SSet.slice.isIso_map`). -/
+instance isIso_map (g : C ⟶ D) [IsIso g] {r : K ⟶ D} (h : 𝟙 K ≫ p ≫ g = r) :
+    IsIso (map (𝟙 K) g h) := by
+  rw [(Iso.inv_comp_eq _).1 (opSliceIso_inv_comp_map (𝟙 K) g h (CategoryTheory.Functor.map_id _ _)
+    rfl)]
+  infer_instance
 
 variable (p) in
 /-- A coslice of a terminal simplicial set is terminal. It is the opposite of a slice of the
@@ -370,23 +378,19 @@ noncomputable def restrictionMap (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X) :
       (map i (𝟙 S) (by simp) : coslice (σ ≫ p) ⟶ coslice (i ≫ σ ≫ p)) :=
   Limits.pullback.lift (map i (𝟙 X) (by simp)) (map (𝟙 K) p (by simp)) (by simp [map_comp])
 
+/-- The first component of the relative coslice map restricts a cocone under `σ` along `i`, to a
+cocone under `i ≫ σ`. -/
 @[reassoc (attr := simp)]
 lemma restrictionMap_fst (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X) :
     restrictionMap i p σ ≫ Limits.pullback.fst _ _ = map i (𝟙 X) (by simp) :=
   Limits.pullback.lift_fst _ _ _
 
+/-- The second component of the relative coslice map pushes a cocone under `σ` forward along `p`,
+to a cocone under `σ ≫ p`. -/
 @[reassoc (attr := simp)]
 lemma restrictionMap_snd (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X) :
     restrictionMap i p σ ≫ Limits.pullback.snd _ _ = map (𝟙 K) p (by simp) :=
   Limits.pullback.lift_snd _ _ _
-
-/-- For an isomorphism `p`, the map `SSet.coslice.restrictionMap i p σ` is an isomorphism. -/
-instance isIso_restrictionMap (i : L ⟶ K) (p : X ⟶ S) [IsIso p] (σ : K ⟶ X) :
-    IsIso (restrictionMap i p σ) := by
-  have : IsIso (restrictionMap i p σ ≫ Limits.pullback.snd _ _) := by
-    rw [restrictionMap_snd]
-    infer_instance
-  exact IsIso.of_isIso_comp_right _ (Limits.pullback.snd _ _)
 
 end restrictionMap
 
@@ -402,69 +406,108 @@ variable {A B L P S : SSet.{u}}
 
 namespace coslice
 
-/-- **Relative coslice maps are opposite to relative slice maps**: for maps `j : A ⟶ B`,
-`p : X ⟶ S` and `τ : B ⟶ X`, the relative coslice map
-`X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}` is isomorphic, as an arrow, to the opposite
-of the relative slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ`. The isomorphisms are the identification of
-coslices with opposite slices (`SSet.coslice.opSliceIso`) and the comparison of pullbacks, since
-`SSet.opFunctor` preserves pullbacks and maps of coslices are the opposites of maps of slices
-(`SSet.coslice.opSliceIso_inv_comp_map`). -/
+/-- **Relative coslice maps are isomorphic to opposites of relative slice maps**: for maps
+`j : A ⟶ B`, `p : X ⟶ S` and `τ : B ⟶ X`, applying the reversal functor `SSet.opFunctor` to the
+relative slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ` gives an arrow isomorphic to the relative coslice map
+`X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}`. On sources the isomorphism is the
+identification of coslices with opposite slices (`SSet.coslice.opSliceIso`). On targets it is the
+comparison of pullbacks, since `SSet.opFunctor` preserves pullbacks and maps of coslices are the
+opposites of maps of slices (`SSet.coslice.opSliceIso_inv_comp_map`); the slices indexed by the
+composites `jᵒᵖ ≫ τᵒᵖ`, `τᵒᵖ ≫ pᵒᵖ` and `jᵒᵖ ≫ τᵒᵖ ≫ pᵒᵖ` are identified with those indexed by the
+opposites of `j ≫ τ`, `τ ≫ p` and `j ≫ τ ≫ p` through `Functor.map_comp`. -/
 noncomputable def opSliceRestrictionMapArrowIso (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     Arrow.mk (opFunctor.map
       (slice.restrictionMap (opFunctor.map j) (opFunctor.map p) (opFunctor.map τ))) ≅
         Arrow.mk (restrictionMap j p τ) := by
-  -- The opposite of the pullback of slices is a pullback of the corresponding coslices.
+  -- The opposite of the target of the relative slice map is a pullback of coslices.
   have hP := ((IsPullback.of_hasPullback
       (slice.map (𝟙 _) (opFunctor.map p) (by simp) :
-        slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ ≫ p)))
+        slice (opFunctor.map j ≫ opFunctor.map τ) ⟶
+          slice (opFunctor.map j ≫ opFunctor.map τ ≫ opFunctor.map p))
       (slice.map (opFunctor.map j) (𝟙 _) (by simp) :
-        slice (opFunctor.map (τ ≫ p)) ⟶ _)).map opFunctor).of_iso (Iso.refl _)
-    (opSliceIso (j ≫ τ)).symm (opSliceIso (τ ≫ p)).symm (opSliceIso (j ≫ τ ≫ p)).symm
-    (fst' := opFunctor.map (pullback.fst _ _) ≫ (opSliceIso (j ≫ τ)).inv)
-    (snd' := opFunctor.map (pullback.snd _ _) ≫ (opSliceIso (τ ≫ p)).inv)
+        slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ _)).map opFunctor).of_iso (Iso.refl _)
+    (opFunctor.mapIso (asIso (slice.map (𝟙 _) (𝟙 _) (by simp) :
+      slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ)))) ≪≫
+        (opSliceIso (j ≫ τ)).symm)
+    (opFunctor.mapIso (asIso (slice.map (𝟙 _) (𝟙 _) (by simp) :
+      slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ slice (opFunctor.map (τ ≫ p)))) ≪≫
+        (opSliceIso (τ ≫ p)).symm)
+    (opFunctor.mapIso (asIso (slice.map (𝟙 _) (𝟙 _) (by simp) :
+      slice (opFunctor.map j ≫ opFunctor.map τ ≫ opFunctor.map p) ⟶
+        slice (opFunctor.map (j ≫ τ ≫ p)))) ≪≫ (opSliceIso (j ≫ τ ≫ p)).symm)
+    (fst' := opFunctor.map (pullback.fst _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
+      slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ))) ≫
+        (opSliceIso (j ≫ τ)).inv)
+    (snd' := opFunctor.map (pullback.snd _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
+      slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ slice (opFunctor.map (τ ≫ p))) ≫
+        (opSliceIso (τ ≫ p)).inv)
     (f' := map (𝟙 A) p (by simp)) (g' := map j (𝟙 S) (by simp)) (Category.id_comp _).symm
     (Category.id_comp _).symm
-    (opSliceIso_inv_comp_map (p := j ≫ τ) (𝟙 A) p _ (CategoryTheory.Functor.map_id _ _) rfl).symm
-    (opSliceIso_inv_comp_map (p := τ ≫ p) j (𝟙 S) _ rfl (CategoryTheory.Functor.map_id _ _)).symm
-  -- The mapped diagrams are definitionally equal via `opFunctor.map_comp`; `erw` lets
-  -- rewriting recognize them without unfolding the slice or pullback constructions.
-  exact Arrow.isoMk (opSliceIso τ).symm hP.isoPullback (pullback.hom_ext
     (by
-      simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc, restrictionMap_fst]
-      erw [hP.isoPullback_hom_fst]
-      refine (opSliceIso_inv_comp_map (p := τ) j (𝟙 X) _ rfl
-        (CategoryTheory.Functor.map_id _ _)).trans ?_
-      exact (congrArg (opFunctor.map · ≫ (opSliceIso (j ≫ τ)).inv)
-        (slice.restrictionMap_fst _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _))
+      simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, asIso_hom]
+      rw [Category.assoc _ (opSliceIso (j ≫ τ)).inv,
+        opSliceIso_inv_comp_map (p := j ≫ τ) (𝟙 A) p _ (CategoryTheory.Functor.map_id _ _) rfl]
+      simp only [← Functor.map_comp_assoc, slice.map_comp, Category.id_comp, Category.comp_id])
     (by
-      simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc, restrictionMap_snd]
-      erw [hP.isoPullback_hom_snd]
-      refine (opSliceIso_inv_comp_map (p := τ) (𝟙 B) p _
-        (CategoryTheory.Functor.map_id _ _) rfl).trans ?_
-      exact (congrArg (opFunctor.map · ≫ (opSliceIso (τ ≫ p)).inv)
-        (slice.restrictionMap_snd _ _ _)).symm.trans (Functor.map_comp_assoc _ _ _ _)))
+      simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, asIso_hom]
+      rw [Category.assoc _ (opSliceIso (τ ≫ p)).inv,
+        opSliceIso_inv_comp_map (p := τ ≫ p) j (𝟙 S) _ rfl (CategoryTheory.Functor.map_id _ _)]
+      simp only [← Functor.map_comp_assoc, slice.map_comp, Category.id_comp, Category.comp_id])
+  refine Arrow.isoMk (opSliceIso τ).symm hP.isoPullback (pullback.hom_ext ?_ ?_)
+  · simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc]
+    rw [restrictionMap_fst, hP.isoPullback_hom_fst,
+      opSliceIso_inv_comp_map (p := τ) j (𝟙 X) _ rfl (CategoryTheory.Functor.map_id _ _)]
+    simp only [← Functor.map_comp_assoc, slice.restrictionMap_fst_assoc,
+      slice.map_comp, Category.id_comp, Category.comp_id]
+  · simp only [Arrow.mk_hom, Iso.symm_hom, Category.assoc]
+    rw [restrictionMap_snd, hP.isoPullback_hom_snd,
+      opSliceIso_inv_comp_map (p := τ) (𝟙 B) p _ (CategoryTheory.Functor.map_id _ _) rfl]
+    simp only [← Functor.map_comp_assoc, slice.restrictionMap_snd_assoc,
+      slice.map_comp, Category.comp_id]
 
+/-- On sources, the isomorphism `SSet.coslice.opSliceRestrictionMapArrowIso` is the identification
+`(Xᵒᵖ_{/τᵒᵖ})ᵒᵖ ≅ X_{τ/}` of `SSet.coslice.opSliceIso`. -/
 @[simp]
 lemma opSliceRestrictionMapArrowIso_hom_left (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     (opSliceRestrictionMapArrowIso j p τ).hom.left = (opSliceIso τ).inv :=
   (rfl)
 
+/-- On targets, the first component of the isomorphism `SSet.coslice.opSliceRestrictionMapArrowIso`
+is the opposite of the first projection of the pullback of slices, to `Xᵒᵖ_{/jᵒᵖ ≫ τᵒᵖ}`,
+followed by the identification of this slice with `Xᵒᵖ_{/(j ≫ τ)ᵒᵖ}` and of its opposite with the
+coslice `X_{j ≫ τ/}`. -/
 @[reassoc (attr := simp)]
 lemma opSliceRestrictionMapArrowIso_hom_right_fst (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     (opSliceRestrictionMapArrowIso j p τ).hom.right ≫ pullback.fst _ _ =
-      opFunctor.map (pullback.fst _ _) ≫ (opSliceIso (j ≫ τ)).inv := by
+      opFunctor.map (pullback.fst _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
+        slice (opFunctor.map j ≫ opFunctor.map τ) ⟶ slice (opFunctor.map (j ≫ τ))) ≫
+          (opSliceIso (j ≫ τ)).inv := by
   apply IsPullback.isoPullback_hom_fst
 
+/-- On targets, the second component of the isomorphism
+`SSet.coslice.opSliceRestrictionMapArrowIso` is the opposite of the second projection of the
+pullback of slices, to `Sᵒᵖ_{/τᵒᵖ ≫ pᵒᵖ}`, followed by the identification of this slice with
+`Sᵒᵖ_{/(τ ≫ p)ᵒᵖ}` and of its opposite with the coslice `S_{τ ≫ p/}`. -/
 @[reassoc (attr := simp)]
 lemma opSliceRestrictionMapArrowIso_hom_right_snd (j : A ⟶ B) (p : X ⟶ S) (τ : B ⟶ X) :
     (opSliceRestrictionMapArrowIso j p τ).hom.right ≫ pullback.snd _ _ =
-      opFunctor.map (pullback.snd _ _) ≫ (opSliceIso (τ ≫ p)).inv := by
+      opFunctor.map (pullback.snd _ _) ≫ opFunctor.map (slice.map (𝟙 _) (𝟙 _) (by simp) :
+        slice (opFunctor.map τ ≫ opFunctor.map p) ⟶ slice (opFunctor.map (τ ≫ p))) ≫
+          (opSliceIso (τ ≫ p)).inv := by
   apply IsPullback.isoPullback_hom_snd
+
+/-- For an isomorphism `p`, the map `SSet.coslice.restrictionMap j p τ` is an isomorphism: through
+`SSet.coslice.opSliceRestrictionMapArrowIso`, it is isomorphic to the opposite of a relative slice
+map, which is an isomorphism (`SSet.slice.isIso_restrictionMap`). -/
+instance isIso_restrictionMap (j : A ⟶ B) (p : X ⟶ S) [IsIso p] (τ : B ⟶ X) :
+    IsIso (restrictionMap j p τ) :=
+  (Arrow.isIso_iff_isIso_of_isIso (opSliceRestrictionMapArrowIso j p τ).hom).1 inferInstance
 
 /-- **Lifting against relative coslice maps is lifting against relative slice maps**: for maps
 `i : L ⟶ K`, `j : A ⟶ B`, `p : X ⟶ S` and `τ : B ⟶ X`, the map `i` lifts against the relative
 coslice map `X_{τ/} ⟶ X_{j ≫ τ/} ×_{S_{j ≫ τ ≫ p/}} S_{τ ≫ p/}` exactly when `iᵒᵖ` lifts against the
-relative slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ`. The first map is the opposite of the second
+relative slice map for `jᵒᵖ`, `pᵒᵖ` and `τᵒᵖ`: applying the reversal functor `SSet.opFunctor`
+to the second map gives an arrow isomorphic to the first
 (`SSet.coslice.opSliceRestrictionMapArrowIso`), and `SSet.opFunctor` is an equivalence. -/
 theorem hasLiftingProperty_restrictionMap_iff_slice (i : L ⟶ K) (j : A ⟶ B) (p : X ⟶ S)
     (τ : B ⟶ X) :
