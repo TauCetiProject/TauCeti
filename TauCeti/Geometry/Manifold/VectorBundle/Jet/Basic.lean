@@ -562,7 +562,11 @@ theorem truncate_comp_truncate {r'' : ℕ} [IsManifold I r'' M] [ContMDiffVector
 @[simp]
 theorem truncate_jet (hr : r' ≤ r) (s : ∀ x, V x) (x : M) :
     truncate hr x (jet I F r s x) = jet I F r' s x :=
-  -- Truncating the derivatives up to order `r` leaves the derivatives up to order `r'`.
+  -- Truncating the derivatives up to order `r` leaves the derivatives up to order `r'`. The term
+  -- relies on `truncate` and `jet` unfolding by definition to `SymmetricJet.truncate` and
+  -- `jetSymmetrize` (the fibre `JetBundle` is `SymmetricJet` only by definition, so rewriting
+  -- with the `SymmetricJet` lemma fails to match even after `unfold truncate jet`), and on the
+  -- derivative order `(Fin.castLE _ k).val` produced by `jetTruncate_apply` reducing to `k.val`.
   (SymmetricJet.truncate_jetSymmetrize hr _).trans (congrArg _ (funext (jetTruncate_apply hr _)))
 
 /-- **The truncation is intrinsic**: in the chart and trivialization at `i`, it reads as the
