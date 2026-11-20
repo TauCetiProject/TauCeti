@@ -47,19 +47,12 @@ variable {R : Type u} {M₁ M₂ M₃ : Type*} [CommRing R]
   [AddCommGroup M₃] [Module R M₃]
   {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} {Q₃ : QuadraticForm R M₃}
 
-/-- An isometric equivalence pulls the polar form of the target back to the polar form of the
-source. -/
-private theorem polarBilin_compl₁₂ (e : Q₁.IsometryEquiv Q₂) :
-    (polarBilin Q₂).compl₁₂ (e.toLinearEquiv : M₁ →ₗ[R] M₂) e.toLinearEquiv = polarBilin Q₁ := by
-  ext x y
-  exact e.polar_apply x y
-
 /-- **The orthogonal Lie algebras of isometric quadratic forms are isomorphic.** Conjugation by an
 isometric equivalence `e : Q₁.IsometryEquiv Q₂` carries the endomorphisms skew-adjoint for the
 polar form of `Q₁` onto those skew-adjoint for the polar form of `Q₂`. -/
 def skewAdjointLieSubalgebraCongr (e : Q₁.IsometryEquiv Q₂) :
     skewAdjointLieSubalgebra (polarBilin Q₁) ≃ₗ⁅R⁆ skewAdjointLieSubalgebra (polarBilin Q₂) :=
-  (LieEquiv.ofEq _ _ (by rw [polarBilin_compl₁₂ e])).trans
+  (LieEquiv.ofEq _ _ (by rw [e.polarBilin_compl₁₂])).trans
     (skewAdjointLieSubalgebraEquiv (polarBilin Q₂) e.toLinearEquiv)
 
 /-- The transported endomorphism is the conjugate `e ∘ f ∘ e⁻¹`. -/

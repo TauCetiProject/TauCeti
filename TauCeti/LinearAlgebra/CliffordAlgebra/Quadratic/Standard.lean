@@ -106,16 +106,17 @@ end Standard
 section Transport
 
 variable {κ : Type*} [Fintype κ] [DecidableEq κ] {K : Type u} [Field K] [Invertible (2 : K)]
-  {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  {V : Type v} [AddCommGroup V] [Module K V]
 
 /-- **The matrix orthogonal Lie algebra realized by quadratic Clifford elements.** A specified
 isometry `e` from a nondegenerate quadratic form `Q` to the sum-of-squares form on `κ → K`
 identifies `LieAlgebra.Orthogonal.so κ K` with the quadratic elements of `CliffordAlgebra Q`:
 a skew matrix is read as a skew-adjoint endomorphism of `κ → K`, conjugated back to `V` along
-`e`, and realized by `soEquivQuadratic`. -/
+`e`, and realized by `soEquivQuadratic`. The space `V` is finite-dimensional through `e`. -/
 noncomputable def matrixSoEquivQuadratic (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (e : Q.IsometryEquiv (QuadraticMap.weightedSumSquares K (1 : κ → K))) :
     LieAlgebra.Orthogonal.so κ K ≃ₗ⁅K⁆ quadraticLieSubalgebra Q :=
+  haveI := e.symm.toLinearEquiv.finiteDimensional
   ((QuadraticForm.standardSkewAdjointLieEquiv K κ).symm.trans
     e.symm.skewAdjointLieSubalgebraCongr).trans (soEquivQuadratic Q hQ)
 
@@ -127,6 +128,7 @@ theorem matrixSoEquivQuadratic_lie_ι (Q : QuadraticForm K V) (hQ : Q.Nondegener
     (A : LieAlgebra.Orthogonal.so κ K) (x : V) :
     ⁅(matrixSoEquivQuadratic Q hQ e A : CliffordAlgebra Q), ι Q x⁆ =
       ι Q (e.symm ((A : Matrix κ κ K) *ᵥ e x)) := by
+  have := e.symm.toLinearEquiv.finiteDimensional
   rw [matrixSoEquivQuadratic, LieEquiv.trans_apply, LieEquiv.trans_apply, soEquivQuadratic_lie_ι,
     QuadraticMap.IsometryEquiv.coe_skewAdjointLieSubalgebraCongr_apply,
     QuadraticForm.coe_standardSkewAdjointLieEquiv_symm_apply, lieEquivMatrix'_symm_apply,

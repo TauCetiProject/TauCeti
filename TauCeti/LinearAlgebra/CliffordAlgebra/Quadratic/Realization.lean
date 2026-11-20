@@ -269,13 +269,16 @@ theorem quadraticLieSubalgebra_eq_bivector_of_lie_ι (Q : QuadraticForm K V) (hQ
 
 /-- **Naturality of the quadratic realization under isometries.** Conjugating a skew-adjoint
 endomorphism by an isometric equivalence and then realizing it in the Clifford algebra of the
-target gives the transport of its realization in the Clifford algebra of the source. -/
+target gives the transport of its realization in the Clifford algebra of the source. The target
+is finite-dimensional through `e`. -/
 theorem soEquivQuadratic_skewAdjointLieSubalgebraCongr {V₂ : Type*} [AddCommGroup V₂]
-    [Module K V₂] [FiniteDimensional K V₂] {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K V₂}
+    [Module K V₂] {Q₁ : QuadraticForm K V} {Q₂ : QuadraticForm K V₂}
     (hQ₁ : Q₁.Nondegenerate) (hQ₂ : Q₂.Nondegenerate) (e : Q₁.IsometryEquiv Q₂)
     (f : skewAdjointLieSubalgebra (QuadraticMap.polarBilin Q₁)) :
+    haveI := e.toLinearEquiv.finiteDimensional
     soEquivQuadratic Q₂ hQ₂ (e.skewAdjointLieSubalgebraCongr f) =
       quadraticLieSubalgebraCongr e (soEquivQuadratic Q₁ hQ₁ f) := by
+  have := e.toLinearEquiv.finiteDimensional
   apply quadraticLieSubalgebra_ext Q₂ hQ₂
   intro x
   rw [← e.apply_symm_apply x, soEquivQuadratic_lie_ι, lie_quadraticLieSubalgebraCongr_ι,
