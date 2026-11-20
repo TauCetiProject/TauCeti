@@ -55,6 +55,8 @@ these are the bases `⟨1, ω, θ⟩` through which a binary cubic form is attac
 * `Module.free_quotient_one_of_isLocalRing`, `Module.free_quotient_one_of_isPrincipalIdealRing`:
   over a local ring or a principal ideal domain, the quotient of a finite free algebra by its
   scalars is free.
+* `Module.free_quotient_one_iff`: the quotients `A ⧸ (1 : Submodule R A)` and `A ⧸ R ∙ 1` are
+  free together.
 * `Module.Free.finrank_quotient_one_add_one`, `Module.Free.exists_basis_zero_eq_one`: when that
   quotient is free, it has rank one less than the algebra, and `1` is the first vector of a
   basis.
@@ -204,8 +206,9 @@ namespace Module
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
 /-- The scalars `(1 : Submodule R A)` are the line `R ∙ 1`, so the two quotients are free
-together. -/
-private theorem free_quotient_one_iff :
+together. This moves the freeness instances below to `A ⧸ R ∙ 1`, the quotient in which
+`Module.IsUnimodular.exists_basis_finCons` places the images of a basis. -/
+theorem free_quotient_one_iff :
     Module.Free R (A ⧸ (1 : Submodule R A)) ↔ Module.Free R (A ⧸ R ∙ (1 : A)) := by
   rw [Submodule.one_eq_span]
 
