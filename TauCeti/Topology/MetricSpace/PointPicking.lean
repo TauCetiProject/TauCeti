@@ -12,7 +12,7 @@ public import Mathlib.Topology.Order.Compact
 /-!
 # Point picking along a map into a metric space
 
-Let `g⁻¹(B̄_{r₀}(x))` be compact, with `A` nonnegative and the weighted quantity
+Let `g ⁻¹' closedBall x r₀` be compact, with `A` nonnegative and the weighted quantity
 `(r₀ - d(g(y), x)) A(y)` continuous there. Maximizing that quantity gives a point `p`
 such that, with
 `d = r₀ - d(g(p), x)`,
@@ -36,8 +36,8 @@ namespace Metric
 
 variable {X Y : Type*} [TopologicalSpace X] [PseudoMetricSpace Y]
 
-/-- **Point picking.** If `g⁻¹(B̄_{r₀}(x))` is compact, the weighted quantity is continuous there,
-`A ≥ 0` there, and `(r₀ - d(g(q), x)) A(q) > 0` for some `q` in the preimage, then
+/-- **Point picking.** If `g ⁻¹' closedBall x r₀` is compact and the weighted quantity is
+continuous there, `A ≥ 0` there, and `(r₀ - d(g(q), x)) A(q) > 0` for some `q` in the preimage, then
 there is `p` with
 `g(p) ∈ B_{r₀}(x)`, `(r₀ - d(g(q), x)) A(q) ≤ (r₀ - d(g(p), x)) A(p)`, and `A ≤ 2 A(p)` on
 `g⁻¹(B_{d/2}(g(p)))`, where `d = r₀ - d(g(p), x)`. -/
