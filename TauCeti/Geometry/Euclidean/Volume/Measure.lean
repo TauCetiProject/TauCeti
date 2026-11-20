@@ -9,8 +9,8 @@ public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.Hausdorff
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.Isodiametric
-import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Comparing Euclidean and raw Hausdorff measures
