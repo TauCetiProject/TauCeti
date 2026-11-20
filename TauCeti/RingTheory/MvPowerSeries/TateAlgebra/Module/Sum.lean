@@ -39,7 +39,7 @@ open Filter _root_.MvPowerSeries
 open scoped Topology
 
 variable {σ τ E R : Type*} [SeminormedAddCommGroup E] {c : σ → ℝ} {d : τ → ℝ}
-  [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)]
+  [∀ i, Fact (0 < c i)]
 
 namespace IsRestrictedFamily.Gauss
 
@@ -48,10 +48,11 @@ def sumSlice (a : Gauss (Sum.elim c d) E) (s : σ →₀ ℕ) : Gauss d E :=
   ofAddSubgroup ⟨fun t ↦ a (s.sumElim t),
     mem_addSubgroup.mpr ((mem_addSubgroup.mp a.toAddSubgroup.2).comp_sumElim s)⟩
 
-omit [∀ j, Fact (0 < d j)] in
 @[simp]
 theorem sumSlice_apply (a : Gauss (Sum.elim c d) E) (s : σ →₀ ℕ) (t : τ →₀ ℕ) :
     sumSlice a s t = a (s.sumElim t) := (rfl)
+
+variable [∀ j, Fact (0 < d j)]
 
 /-- The Gauss norms of the slices of a jointly restricted family themselves decay with the
 outer weights. Merely knowing that every slice is restricted would not suffice. -/

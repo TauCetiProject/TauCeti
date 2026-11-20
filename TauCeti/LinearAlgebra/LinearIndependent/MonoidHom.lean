@@ -41,8 +41,10 @@ sum. This is what makes the trace of a character over its Galois orbit determine
 
 ## Main results
 
-* `TauCeti.finite_monoidHom` and `TauCeti.natCard_monoidHom_le`: a finite monoid `G` has finitely
-  many homomorphisms into a domain `M`, and at most `#G` of them.
+* `TauCeti.finite_monoidHom`, `TauCeti.natCard_monoidHom_le`, and
+  `TauCeti.bijective_of_injective_to_monoidHom`: a finite monoid `G` has finitely many
+  homomorphisms into a domain `M`, at most `#G` of them, and any injective map from `G` into
+  `G →* N` for a monoid `N` embedding multiplicatively into `M` is bijective.
 * `MonoidHom.eq_and_eq_or_eq_and_eq_of_add_eq_add`: from `a + b = c + d` pointwise, either
   `a = c` and `b = d`, or `a = d` and `b = c`.
 * `MonoidHom.finset_eq_of_forall_sum_apply_eq`: two finite sets of homomorphisms with the same
@@ -67,6 +69,19 @@ theorem natCard_monoidHom_le : Nat.card (G →* M) ≤ Nat.card G := by
   have h := (linearIndependent_monoidHom G M).cardinalMk_le_finrank
   rw [Module.finrank_fintype_fun_eq_card, ← Nat.card_eq_fintype_card] at h
   rwa [← Nat.cast_le (α := Cardinal), Nat.cast_card]
+
+/-- Any injective map from a finite monoid `G` into `G →* N`, where `N` admits an injective
+monoid homomorphism into a domain `M`, is bijective (by Dedekind's bound
+`#(G →* N) ≤ #(G →* M) ≤ #G`). -/
+theorem bijective_of_injective_to_monoidHom {G N M : Type*} [MulOneClass G] [Finite G]
+    [MulOneClass N] [CommRing M] [IsDomain M] {ι : N →* M} (hι : Function.Injective ι)
+    {f : G → (G →* N)} (hf : Function.Injective f) :
+    Function.Bijective f := by
+  have hpost : Function.Injective (fun g : G →* N ↦ ι.comp g) :=
+    fun g₁ g₂ h ↦ MonoidHom.ext fun x ↦ hι (DFunLike.congr_fun h x)
+  have : Finite (G →* N) := .of_injective _ hpost
+  exact hf.bijective_of_nat_card_le
+    ((Nat.card_le_card_of_injective _ hpost).trans (natCard_monoidHom_le G M))
 
 end TauCeti
 

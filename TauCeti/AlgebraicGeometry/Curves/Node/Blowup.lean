@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicGeometry.Curves.Node.FiniteEtale
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import TauCeti.RingTheory.Node.TangentCone
 
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Blowup.Pullback
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.RingTheory.LocalRing.Localization

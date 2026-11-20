@@ -237,8 +237,8 @@ theorem commute_ofProd_of (p : centralizer {u} × (Fin n → Multiplicative ℤ)
     Commute (ofProd p : CentralizerExt u n) (of u) := by
   have hu : u ∈ centralizer {u} := mem_centralizer_singleton_iff.2 rfl
   rw [← ofProd_inl ⟨u, hu⟩]
-  exact (((commute_iff_eq _ _).2 (Subtype.ext (mem_centralizer_singleton_iff.1 p.1.2))).prod
-    (Commute.one_right _)).map ofProd
+  have hc : Commute p.1 ⟨u, hu⟩ := Subtype.ext (mem_centralizer_singleton_iff.1 p.1.2).eq
+  exact (hc.prod (Commute.one_right _)).map ofProd
 
 /-- The normal form for the amalgam `G(u, ℤⁿ)`: every element is `g * a₁ * ⋯ * aᵣ` with `g ∈ G`
 and letters `aⱼ` alternately in `C_G(u) × ℤⁿ` and in `G`, none of them in `C_G(u)`, the first one
