@@ -105,6 +105,9 @@ the constructed one, so it is available before, and independently of, uniqueness
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`: the Lax--Milgram solution and the
   existence-and-uniqueness theorem.
 * `TauCeti.PDE.norm_le_of_isWeakSolutionDirichlet`: the energy estimate `‖u‖ ≤ ‖f‖/C`.
+* `TauCeti.PDE.IsWeakSolutionDirichlet.setIntegral_mul_value_eq_of_isSymm_ae`: reciprocity
+  `∫_Ω f w = ∫_Ω g u` of the weak solutions `u`, `w` with data `f`, `g` of a symmetric
+  drift-free operator.
 * `TauCeti.PDE.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq`: existence and
   uniqueness for prescribed boundary values `u = g` on `∂Ω`, `g ∈ H¹(Ω)`, and forcing
   `ℓ ∈ H⁻¹(Ω)`, with its case of a ball-contained domain
@@ -273,6 +276,18 @@ theorem IsWeakSolutionDirichlet.energyFormH1_eq_dirichletForcing {f : Lp ℝ 2 (
     {u : W1p0 mu Omega 2} (hu : IsWeakSolutionDirichlet a b c f u) (v : W1p0 mu Omega 2) :
     energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) = dirichletForcing f v :=
   hu v
+
+/-- **Reciprocity of weak solutions.** For a drift-free operator `-∂ᵢ(aⁱʲ ∂ⱼu) + c u` with an
+almost everywhere symmetric principal coefficient, if `u` solves `L u = f` and `w` solves
+`L w = g` weakly in `H¹₀(Ω)`, then `∫_Ω f w = ∫_Ω g u`: both sides are the energy `a(u, w)`. -/
+theorem IsWeakSolutionDirichlet.setIntegral_mul_value_eq_of_isSymm_ae
+    (ha : ∀ᵐ x ∂mu.restrict (Omega : Set (EuclideanSpace ℝ ι)), (a x).IsSymm)
+    {f g : Lp ℝ 2 (mu.restrict Omega)} {u w : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 c f u) (hw : IsWeakSolutionDirichlet a 0 c g w) :
+    ∫ x in Omega, f x * W1p.value (w : W1p mu Omega 2) x ∂mu =
+      ∫ x in Omega, g x * W1p.value (u : W1p mu Omega 2) x ∂mu := by
+  rw [isWeakSolutionDirichlet_iff] at hu hw
+  rw [← hu w, ← hw u, energyFormH1_comm_of_isSymm_ae ha]
 
 /-- **Testing against test functions suffices.** When the energy density is essentially bounded,
 so that the energy form is continuous on `H¹(Ω)`, a function `u ∈ H¹(Ω)` satisfies the weak
