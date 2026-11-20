@@ -112,8 +112,9 @@ theorem cappedCylinderComponent_add_const (Hb : Puncture → ℝ → M → ℝ) 
   have h : (fun r t y ↦ Hb r t y + d r t) = Hb + fun r t (_ : M) ↦ d r t := by
     funext r t y
     simp
-  rw [h, cappedCylinderComponent_def, Pi.add_apply Hb _ one, Pi.single_add, plumbedPerturbation_add,
-    Pi.add_apply, Pi.add_apply, add_apply, cappedCylinderComponent_def, cappedCylinderComponent_def]
+  rw [h]
+  simp only [cappedCylinderComponent_def, Pi.add_apply, Pi.single_add, plumbedPerturbation_add,
+    add_apply]
 
 /-- The capped datum on the cylinder of target-independent Hamiltonians does not depend on the
 target: its values at points of `M` and of `N` agree. -/
@@ -165,10 +166,13 @@ theorem cappedExchangePerturbation_add_const (H : Puncture → ℝ → M → ℝ
   have h : (fun q t y ↦ H q t y + d q t) = H + fun q t (_ : M) ↦ d q t := by
     funext q t y
     simp
-  rw [h, cappedExchangePerturbation_def, Pi.add_apply H _ zero, Pi.single_add,
-    ← add_zero (0 : ℝ → M → ℝ), update_add, plumbedPerturbation_add]
-  simp only [Pi.add_apply, cappedExchangePerturbation_def, negativePlanePerturbation_def, mul_add,
-    add_smul]
+  -- Replacing the Hamiltonian at `∞` by `0` is additive, since `0 = 0 + 0`.
+  have hu : update (H + fun q t (_ : M) ↦ d q t) inf 0 =
+      update H inf 0 + update (fun q t (_ : M) ↦ d q t) inf 0 := by
+    rw [← update_add, add_zero]
+  rw [h]
+  simp only [cappedExchangePerturbation_def, hu, Pi.add_apply, Pi.single_add,
+    plumbedPerturbation_add, negativePlanePerturbation_def, mul_add, add_smul]
   abel
 
 /-- The input-exchange family capped at `0` of target-independent Hamiltonians does not depend on
@@ -273,8 +277,8 @@ private theorem integrableOn_hamiltonianCurvature_cappedCylinderComponent_const
         (cappedCylinderComponent (fun r t (_ : V) ↦ d r t) L 1)
         (cappedCylinderComponent (fun r t (_ : V) ↦ d r t) L Complex.I) z (u z))
       (univ ×ˢ Icc 0 1) := by
-  choose B hB using fun r ↦ isBounded_iff_forall_norm_le.1
-    ((hd r).isBounded_of_continuous one_ne_zero (hds r).continuous)
+  obtain ⟨B, hB⟩ := exists_forall_abs_le_const_target (M := V) hd one_ne_zero
+    fun r ↦ (hds r).continuous
   have hd' := periodic_const_target (M := V) hd
   have hds' := contDiff_uncurry_const_target (V := V) hds
   -- Along the constant map `0`, the curvature is a continuous function of the cylinder point.
@@ -301,7 +305,7 @@ private theorem integrableOn_hamiltonianCurvature_cappedCylinderComponent_const
       (((hk 1).continuous_fderiv one_ne_zero).clm_apply continuous_const)
   -- Its integral over one period is finite by the uniform curvature bound.
   have hfin := ω.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le hd' hds' hL
-    (Bb := B) (fun r t _ ↦ hB r _ (mem_range_self t)) 0 fun _ ↦ 0
+    (Bb := B) hB 0 fun _ ↦ 0
   have hsets : ((univ : Set ℝ) ×ˢ Ico (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] univ ×ˢ Icc 0 1 := by
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc
@@ -678,8 +682,8 @@ theorem setIntegral_hamiltonianCurvature_cappedExchangePerturbation_const (ω : 
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       (∫ t in (0 : ℝ)..1, d one t) - ∫ t in (0 : ℝ)..1, d inf t := by
   simp only [ω.hamiltonianCurvature_cappedExchangePerturbation_const_eq]
-  choose B hB using fun q ↦ isBounded_iff_forall_norm_le.1
-    ((hd q).isBounded_of_continuous one_ne_zero (hds q).continuous)
+  obtain ⟨B, hB⟩ := exists_forall_abs_le_const_target (M := ℂ) hd one_ne_zero
+    fun q ↦ (hds q).continuous
   -- Along the constant map `0` into `ℂ`, the energy density and the area density vanish.
   have hE : stdComplexSymplecticForm.constSmooth.floerEnergyDensity
       (fun z x ↦ cappedExchangePerturbation (fun q t (_ : ℂ) ↦ d q t) L c
@@ -703,7 +707,7 @@ theorem setIntegral_hamiltonianCurvature_cappedExchangePerturbation_const (ω : 
   have h := (SymplecticForm.isNondegenerate_constSmooth stdComplexSymplecticForm
     ).integral_floerEnergyDensity_cappedExchangePerturbation (H := fun q t (_ : ℂ) ↦ d q t)
     (periodic_const_target hd) (contMDiff_uncurry_const_target hds)
-    (B := B) (fun q t _ ↦ hB q _ (mem_range_self t)) hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ))
+    (B := B) hB hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ))
     contMDiffOn_const
     (x₁ := fun _ ↦ 0) (xinf := fun _ ↦ 0) (fun _ ↦ tendsto_const_nhds)
     (fun _ ↦ tendsto_const_nhds) (by rw [hE]; exact integrableOn_zero)
@@ -745,12 +749,12 @@ theorem setIntegral_hamiltonianCurvature_cappedExchangePerturbation_add_const
       (fun z x ↦ cappedExchangePerturbation (fun q t (_ : M) ↦ d q t) L c
         (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) thricePuncturedSphereReal := by
     simp only [ω.hamiltonianCurvature_cappedExchangePerturbation_const_eq]
-    choose B hB using fun q ↦ isBounded_iff_forall_norm_le.1
-      ((hd q).isBounded_of_continuous one_ne_zero (hds q).continuous)
+    obtain ⟨B, hB⟩ := exists_forall_abs_le_const_target (M := ℂ) hd one_ne_zero
+      fun q ↦ (hds q).continuous
     exact ((SymplecticForm.isNondegenerate_constSmooth stdComplexSymplecticForm
       ).integrable_hamiltonianCurvature_cappedExchangePerturbation (H := fun q t (_ : ℂ) ↦ d q t)
       (periodic_const_target hd) (contMDiff_uncurry_const_target hds)
-      (B := B) (fun q t _ ↦ hB q _ (mem_range_self t)) hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ))
+      (B := B) hB hL hc₀ hc₁ (u := fun _ ↦ (0 : ℂ))
       continuousOn_const).integrableOn
   rw [← ω.setIntegral_hamiltonianCurvature_cappedExchangePerturbation_const hd hds hL hc₀ hc₁ u,
     ← integral_add hu hk]

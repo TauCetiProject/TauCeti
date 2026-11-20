@@ -99,6 +99,14 @@ theorem periodic_const_target {T : ℝ} (hc : ∀ q, Periodic (c q) T) (q : Punc
     Periodic (fun t (_ : M) ↦ c q t) T :=
   fun t ↦ funext fun _ ↦ hc q t
 
+/-- Continuous periodic normalizations `c_q` give target-independent Hamiltonians with uniform
+bounds `B q`, as the energy identities take them. -/
+theorem exists_forall_abs_le_const_target {T : ℝ} (hc : ∀ q, Periodic (c q) T) (hT : T ≠ 0)
+    (hcs : ∀ q, Continuous (c q)) : ∃ B : Puncture → ℝ, ∀ q t (_ : M), |c q t| ≤ B q := by
+  choose B hB using fun q ↦ isBounded_iff_forall_norm_le.1
+    ((hc q).isBounded_of_continuous hT (hcs q))
+  exact ⟨B, fun q t _ ↦ hB q _ (mem_range_self t)⟩
+
 /-- `Cⁿ` normalizations `c_q` give `Cⁿ` target-independent Hamiltonians on a normed space. -/
 theorem contDiff_uncurry_const_target {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     {n : WithTop ℕ∞} (hcs : ∀ q, ContDiff ℝ n (c q)) (q : Puncture) :
@@ -187,8 +195,8 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
         (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)
           (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) =
       ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, c q t := by
-  choose B hB using fun q ↦ isBounded_iff_forall_norm_le.1
-    ((hc q).isBounded_of_continuous one_ne_zero (hcs q).continuous)
+  obtain ⟨B, hB⟩ := exists_forall_abs_le_const_target (M := V) hc one_ne_zero
+    fun q ↦ (hcs q).continuous
   -- Along the constant map `0`, the energy density and the area density vanish.
   have hE : ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation (fun q t (_ : V) ↦ c q t)
@@ -205,7 +213,7 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_const (ω : Sym
     simp
   -- The energy identity for the constant map `0` leaves only the curvature and the end terms.
   have h := ω.integral_floerEnergyDensity_pairOfPantsPerturbation (periodic_const_target hc)
-    (contDiff_uncurry_const_target hcs) (B := B) (fun q t _ ↦ hB q _ (mem_range_self t))
+    (contDiff_uncurry_const_target hcs) (B := B) hB
     (u := fun _ ↦ (0 : V)) contDiffOn_const (x := fun _ _ ↦ 0) (fun _ _ ↦ tendsto_const_nhds)
     (by rw [hE]; exact integrableOn_zero) (by rw [hA]; exact integrableOn_zero)
   rw [hE, hA] at h
