@@ -142,6 +142,10 @@ enough. -/
     (C * D).map φ = C.map φ * D.map φ :=
   _root_.map_mul (VariableChange.mapHom φ) C D
 
+/-- The identity change of variables has scaling factor `1`. -/
+@[simp] lemma one_u : (1 : VariableChange R).u = 1 :=
+  rfl
+
 /-! ### Components of `C * D⁻¹`
 
 `C * D⁻¹` is the change of variables carrying `D • W` to `C • W`. Its components are the

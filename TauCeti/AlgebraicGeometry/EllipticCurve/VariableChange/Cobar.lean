@@ -145,6 +145,20 @@ variable (n) in
 def lastChange : VariableChange (CobarRing (n + 1)) :=
   ChangeRing.universalChange (CobarRing n)
 
+variable (n) in
+/-- The inclusion `includeLeft n` is the structure map of `Γ^{⊗(n+1)} = Γ^{⊗n}[u, u⁻¹, r, s, t]`
+as a `Γ^{⊗n}`-algebra. -/
+theorem includeLeft_eq_algebraMap :
+    includeLeft n = algebraMap (CobarRing n) (ChangeRing (CobarRing n)) :=
+  (rfl)
+
+variable (n) in
+/-- The last arrow `lastChange n` is the universal change of variables of
+`Γ^{⊗(n+1)} = Γ^{⊗n}[u, u⁻¹, r, s, t]`. -/
+theorem lastChange_eq_universalChange :
+    lastChange n = ChangeRing.universalChange (CobarRing n) :=
+  (rfl)
+
 theorem simplexEquiv_zero_apply (k : CobarRing 0 →+* R) :
     simplexEquiv R 0 k = (Universal.curve.map k, Fin.elim0) :=
   (rfl)
@@ -156,10 +170,8 @@ theorem simplexEquiv_succ_apply (k : CobarRing (n + 1) →+* R) :
     simplexEquiv R (n + 1) k =
       ((simplexEquiv R n (k.comp (includeLeft n))).1,
         Fin.snoc (simplexEquiv R n (k.comp (includeLeft n))).2 ((lastChange n).map k)) := by
-  rw [simplexEquiv, Equiv.coe_fn_mk, ChangeRing.lift_symm_apply]
-  -- `includeLeft n` and `lastChange n` are the inclusion and the universal change of
-  -- `ChangeRing (CobarRing n)`.
-  rfl
+  rw [simplexEquiv, Equiv.coe_fn_mk, ChangeRing.lift_symm_apply, includeLeft_eq_algebraMap,
+    lastChange_eq_universalChange]
 
 /-- **Naturality of the classification**: composing with `g : R →+* S` extends the
 coefficients of the classified simplex along `g`. -/
@@ -258,23 +270,35 @@ is `u^k` times the corresponding section trivialized at `W₀`. -/
 def cobarWeight {m n : ℕ} (θ : Fin (m + 1) → Fin (n + 1)) : (CobarRing n)ˣ :=
   (vertexLabel (universalSimplex n).2 (θ 0)).u
 
+/-- The weight of `θ` is the scaling factor of the arrow from `W₀` to `W_{θ 0}`. -/
+theorem cobarWeight_def {m n : ℕ} (θ : Fin (m + 1) → Fin (n + 1)) :
+    cobarWeight θ = (vertexLabel (universalSimplex n).2 (θ 0)).u :=
+  (rfl)
+
+/-- `cobarMap θ` carries the change of variables from the initial vertex `W₀` to the vertex `W_i`
+of the universal `m`-simplex to the change from `W_{θ 0}` to `W_{θ i}` of the universal
+`n`-simplex. -/
+theorem map_vertexLabel_universalSimplex {m n : ℕ} (θ : Fin (m + 1) → Fin (n + 1))
+    (i : Fin (m + 1)) :
+    (vertexLabel (universalSimplex m).2 i).map (cobarMap θ) =
+      vertexLabel (universalSimplex n).2 (θ i) * (vertexLabel (universalSimplex n).2 (θ 0))⁻¹ := by
+  have h := (simplexEquiv_eq (cobarMap θ)).symm.trans (simplexEquiv_cobarMap θ)
+  simpa using congrArg (vertexLabel · i) (congrArg Prod.snd h)
+
 /-- The scaling factors are a cocycle: transporting from `W_{θ (ψ 0)}` to `W_{θ 0}` and then to
 `W₀` is transporting from `W_{θ (ψ 0)}` to `W₀`. -/
 theorem map_cobarWeight_mul_cobarWeight {l m n : ℕ} (θ : Fin (m + 1) → Fin (n + 1))
     (ψ : Fin (l + 1) → Fin (m + 1)) :
-    Units.map (cobarMap θ).toMonoidHom (cobarWeight ψ) * cobarWeight θ = cobarWeight (θ ∘ ψ) := by
-  have h := congrArg (fun x ↦ (vertexLabel x.2 (ψ 0)).u)
-    ((simplexEquiv_eq (cobarMap θ)).symm.trans (simplexEquiv_cobarMap θ))
-  simp only [vertexLabel_comp, vertexLabel_nerveMap, VariableChange.mul_inv_u] at h
-  simp only [VariableChange.mapHom_apply, VariableChange.map_u] at h
-  rw [cobarWeight, cobarWeight, cobarWeight, RingHom.toMonoidHom_eq_coe, h, inv_mul_cancel_right,
+    Units.map (cobarMap θ : CobarRing m →* CobarRing n) (cobarWeight ψ) * cobarWeight θ =
+      cobarWeight (θ ∘ ψ) := by
+  rw [cobarWeight_def, cobarWeight_def, cobarWeight_def, ← VariableChange.map_u,
+    map_vertexLabel_universalSimplex, VariableChange.mul_inv_u, inv_mul_cancel_right,
     Function.comp_apply]
 
 /-- A map `θ` keeping the initial vertex has trivial weight. -/
 theorem cobarWeight_eq_one_of_apply_zero_eq_zero {m n : ℕ} {θ : Fin (m + 1) → Fin (n + 1)}
     (h : θ 0 = 0) : cobarWeight θ = 1 := by
-  rw [cobarWeight, h, vertexLabel_zero]
-  simpa using map_one (VariableChange.scalingHom (CobarRing n))
+  rw [cobarWeight_def, h, vertexLabel_zero, VariableChange.one_u]
 
 @[simp]
 theorem cobarWeight_id (n : ℕ) : cobarWeight (id : Fin (n + 1) → Fin (n + 1)) = 1 :=
@@ -284,7 +308,7 @@ theorem cobarWeight_id (n : ℕ) : cobarWeight (id : Fin (n + 1) → Fin (n + 1)
 `C₀ : W₀ → W₁` as its weight. -/
 theorem cobarWeight_eq_of_apply_zero_eq_one {m n : ℕ} {θ : Fin (m + 1) → Fin (n + 2)}
     (h : θ 0 = 1) : cobarWeight θ = ((universalSimplex (n + 1)).2 0).u := by
-  rw [cobarWeight, h, vertexLabel_one]
+  rw [cobarWeight_def, h, vertexLabel_one]
 
 /-- The weight-`k` coface map `f ↦ u^k · θ^* f` of `θ : {0, …, m} → {0, …, n}`: a function on
 `m`-simplices, read as a section of `ω^k` trivialized at the initial vertex, is pulled back along
@@ -307,8 +331,8 @@ theorem cobarAddMap_cobarAddMap (k : ℤ) {l m n : ℕ} (θ : Fin (m + 1) → Fi
     (ψ : Fin (l + 1) → Fin (m + 1)) (f : CobarRing l) :
     cobarAddMap k θ (cobarAddMap k ψ f) = cobarAddMap k (θ ∘ ψ) f := by
   have h : cobarMap θ ↑(cobarWeight ψ ^ k) =
-      ↑(Units.map (cobarMap θ).toMonoidHom (cobarWeight ψ) ^ k) := by
-    rw [← map_zpow, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
+      ↑(Units.map (cobarMap θ : CobarRing m →* CobarRing n) (cobarWeight ψ) ^ k) := by
+    rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
   rw [cobarAddMap_apply, cobarAddMap_apply, cobarAddMap_apply, map_mul, h, cobarMap_cobarMap,
     ← map_cobarWeight_mul_cobarWeight θ ψ, mul_zpow, Units.val_mul]
   ring
@@ -384,8 +408,8 @@ variable {R : Type*} [CommRing R]
 `arrowEquiv`. -/
 theorem simplexEquiv_one_apply (k : CobarRing 1 →+* R) :
     simplexEquiv R 1 k = ((arrowEquiv R k).1, fun _ ↦ (arrowEquiv R k).2) := by
-  rw [simplexEquiv_succ_apply, simplexEquiv_zero_apply, arrowEquiv_apply]
-  -- `includeLeft 0` and `lastChange 0` are the left unit and the universal change of `Γ`, and
+  rw [simplexEquiv_succ_apply, simplexEquiv_zero_apply, arrowEquiv_apply,
+    includeLeft_eq_algebraMap, lastChange_eq_universalChange]
   -- `Fin.snoc` of the empty tuple is the constant tuple.
   exact Prod.ext rfl (funext fun i ↦ by fin_cases i; rfl)
 
@@ -398,8 +422,8 @@ theorem simplexEquiv_two_apply (k : CobarRing 2 →+* R) :
         ![(ChangeRing.universalChange (MvPolynomial Coeff ℤ)).map
             (k.comp (algebraMap ArrowRing (ChangeRing ArrowRing))),
           (ChangeRing.universalChange ArrowRing).map k]) := by
-  rw [simplexEquiv_succ_apply, simplexEquiv_one_apply, arrowEquiv_apply]
-  -- As in degree one, `includeLeft 1` is `algebraMap` and `lastChange 1` the universal change.
+  rw [simplexEquiv_succ_apply, simplexEquiv_one_apply, arrowEquiv_apply,
+    includeLeft_eq_algebraMap, lastChange_eq_universalChange]
   exact Prod.ext rfl (funext fun i ↦ by fin_cases i <;> rfl)
 
 /-- The universal arrow `W → C • W` over `Γ`, as a `1`-simplex. -/
@@ -465,8 +489,8 @@ theorem cobarMap_succAbove_one_eq_coproduct :
 inclusion `id ⊗ 1 = algebraMap` of the left factor. -/
 theorem cobarMap_succAbove_two_eq_algebraMap :
     cobarMap (m := 1) (n := 2) (Fin.succAbove 2) = algebraMap ArrowRing (ChangeRing ArrowRing) :=
-  -- `2 : Fin 3` is `Fin.last 2`, and `includeLeft 1` is `algebraMap` of `Γ = Γ^{⊗1}`.
-  cobarMap_succAbove_last_eq_includeLeft 1
+  -- `2 : Fin 3` is `Fin.last 2`.
+  (cobarMap_succAbove_last_eq_includeLeft 1).trans (includeLeft_eq_algebraMap 1)
 
 end LowDegree
 
@@ -489,8 +513,11 @@ theorem ker_cobarDifferential_zero (k : ℕ) :
   ext f
   rw [AddMonoidHom.mem_ker, cobarDifferential_zero_apply, sub_eq_zero,
     Submodule.mem_toAddSubgroup, TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule,
-    isIntegralModularForm_iff_rightUnit, zpow_natCast, ← Units.val_pow_eq_pow_val, inv_pow,
-    Units.eq_inv_mul_iff_mul_eq]
+    isIntegralModularForm_iff_rightUnit]
+  -- What remains is `uᵏ x = y ↔ x = u⁻ᵏ y` for the unit `u` of the universal change.
+  generalize (ChangeRing.universalChange (MvPolynomial Coeff ℤ)).u = u, rightUnit f = x,
+    algebraMap (MvPolynomial Coeff ℤ) ArrowRing f = y
+  constructor <;> rintro rfl <;> simp [← mul_assoc, ← mul_pow]
 
 /-- **The cobar differential in degree one** is the cobar differential of the Hopf algebroid with
 coefficients in `ω^k`: `γ ↦ u₁ᵏ (1 ⊗ γ) - Δ(γ) + γ ⊗ 1`, where `u₁` is the scaling factor of the
