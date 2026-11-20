@@ -60,9 +60,10 @@ section Ring
 variable {R : Type*} [Ring R] (v : AddValuation R (WithTop ℝ)) {f : R⟦X⟧}
 
 /-- For a power series of order `i`, a first break of its Newton polygon at `j` with slope `σ` is a
-finite face of slope `σ` from `i` to `j` with `i < j`. Only zero has infinite valuation. -/
-theorem isFirstBreak_newtonPolygon_iff_isFiniteFace (hv0 : ∀ x, v x = ⊤ → x = 0) {i : ℕ}
-    (hord : f.order = i) {σ : ℝ} {j : ℕ} :
+finite face of slope `σ` from `i` to `j` with `i < j`, provided the coefficient of index `i` has
+finite valuation. -/
+theorem isFirstBreak_newtonPolygon_iff_isFiniteFace {i : ℕ} (hord : f.order = i)
+    (hi : v (coeff i f) ≠ ⊤) {σ : ℝ} {j : ℕ} :
     IsFirstBreak (f.newtonPolygon v) σ j ↔ i < j ∧ IsFiniteFace (f.newtonPolygon v) σ i j := by
   have hfirst : ∀ n < i, f.newtonPolygon v n = ⊤ := fun n hn =>
     f.newtonPolygon_eq_top_of_lt_order v (by rw [hord]; exact_mod_cast hn)
@@ -71,27 +72,24 @@ theorem isFirstBreak_newtonPolygon_iff_isFiniteFace (hv0 : ∀ x, v x = ⊤ → 
       hfirst).mpr ⟨hij, hface⟩⟩
   have hadm : IsAdmissible fun n => v (coeff n f) :=
     isAdmissible_of_lowerConvexEnvelope_ne_top (f.newtonPolygon_def v ▸ hb.ne_top)
-  have hi : f.newtonPolygon v i ≠ ⊤ := by
-    rw [newtonPolygon_eq_of_order_eq v hadm hord]
-    exact mt (hv0 _) (order_eq_nat.mp hord).1
-  exact ((f.isConvexSeq_newtonPolygon v).isFirstBreak_iff_isFiniteFace hi hfirst).mp hb
+  exact ((f.isConvexSeq_newtonPolygon v).isFirstBreak_iff_isFiniteFace
+    (newtonPolygon_eq_of_order_eq v hadm hord ▸ hi) hfirst).mp hb
 
 /-- **First-break criterion for Newton polygons.** Let `f` have order `i`. Its Newton polygon has a
 first break at `j` with slope `σ` exactly when `i < j`, every coefficient lies on or above the line
 of slope `σ` through `(i, v (coeff i f))`, the coefficient of index `j` lies on that line, and
 every coefficient after `j` lies above a line of some strictly larger slope `τ` through
-`(j, v (coeff j f))`. Only zero has infinite valuation. -/
-theorem isFirstBreak_newtonPolygon_iff (hv0 : ∀ x, v x = ⊤ → x = 0) {i : ℕ}
-    (hord : f.order = i) {σ : ℝ} {j : ℕ} :
+`(j, v (coeff j f))`. Here the coefficient of index `i` has finite valuation. -/
+theorem isFirstBreak_newtonPolygon_iff {i : ℕ} (hord : f.order = i) (hi : v (coeff i f) ≠ ⊤)
+    {σ : ℝ} {j : ℕ} :
     IsFirstBreak (f.newtonPolygon v) σ j ↔
       i < j ∧ IsSupportingLine (fun n => v (coeff n f)) σ ((v (coeff i f)).untop₀ - σ * i) ∧
         v (coeff j f) = (((v (coeff i f)).untop₀ + σ * ((j : ℝ) - i) : ℝ) : WithTop ℝ) ∧
         ∃ τ, σ < τ ∧ ∀ n, j ≤ n →
           (((v (coeff j f)).untop₀ + τ * ((n : ℝ) - j) : ℝ) : WithTop ℝ) ≤ v (coeff n f) := by
-  obtain ⟨hi, hfirst⟩ := order_eq_nat.mp hord
   rw [newtonPolygon_def]
-  exact isFirstBreak_lowerConvexEnvelope_iff (a := fun n => v (coeff n f)) (mt (hv0 _) hi)
-    fun n hn => by rw [hfirst n hn, AddValuation.map_zero]
+  exact isFirstBreak_lowerConvexEnvelope_iff (a := fun n => v (coeff n f)) hi
+    fun n hn => by rw [(order_eq_nat.mp hord).2 n hn, AddValuation.map_zero]
 
 end Ring
 
@@ -131,7 +129,8 @@ theorem isFirstBreak_newtonPolygon_iff_isLowestDominant_and_isDistinguished {i :
       i < j ∧ (∃ τ, σ < τ ∧ f.HasGaussNorm norm (b ^ τ)) ∧
         TauCeti.PowerSeries.IsLowestDominant (b ^ σ) i f ∧
         TauCeti.PowerSeries.IsDistinguished (b ^ σ) j f := by
-  rw [isFirstBreak_newtonPolygon_iff_isFiniteFace v (fun _ => v.top_iff.mp) hord]
+  rw [isFirstBreak_newtonPolygon_iff_isFiniteFace v hord
+    (v.ne_top_iff.mpr (order_eq_nat.mp hord).1)]
   constructor
   · rintro ⟨hij, hface⟩
     obtain ⟨τ, hστ, hG⟩ := exists_lt_hasGaussNorm_of_isFirstBreak v hb hv
@@ -165,7 +164,8 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq_of_isFirstBreak {f : K⟦X⟧} {σ 
     exact hbrk.ne_top (by simp)
   have hord : f.order = f.order.toNat := (ENat.natCast_toNat (order_eq_top.not.mpr hf0)).symm
   obtain ⟨-, hface⟩ :=
-    (isFirstBreak_newtonPolygon_iff_isFiniteFace v (fun _ => v.top_iff.mp) hord).mp hbrk
+    (isFirstBreak_newtonPolygon_iff_isFiniteFace v hord
+      (v.ne_top_iff.mpr (order_eq_nat.mp hord).1)).mp hbrk
   have hd := isDistinguished_of_isFiniteFace v hb hv hr hface
   have hadm : IsAdmissible fun n => v (coeff n f) :=
     isAdmissible_of_lowerConvexEnvelope_ne_top (f.newtonPolygon_def v ▸ hbrk.ne_top)
@@ -187,15 +187,12 @@ namespace Polynomial
 variable {R : Type*} [Ring R] (v : AddValuation R (WithTop ℝ))
 
 /-- A polynomial with `natTrailingDegree < natDegree` has a first break at its degree with slope `σ`
-exactly when it is pure of slope `σ`: the first segment is then the whole Newton polygon. Only zero
-has infinite valuation. -/
-theorem isFirstBreak_newtonPolygon_natDegree_iff (hv0 : ∀ x, v x = ⊤ → x = 0) {f : R[X]}
-    (hf : f.natTrailingDegree < f.natDegree) {σ : ℝ} :
+exactly when it is pure of slope `σ`: the first segment is then the whole Newton polygon. Here the
+trailing and leading coefficients have finite valuation. -/
+theorem isFirstBreak_newtonPolygon_natDegree_iff {f : R[X]} (htr : v f.trailingCoeff ≠ ⊤)
+    (hld : v f.leadingCoeff ≠ ⊤) (hf : f.natTrailingDegree < f.natDegree) {σ : ℝ} :
     IsFirstBreak (f.newtonPolygon v) σ f.natDegree ↔ ∀ m ∈ f.newtonSlopes v, m = σ := by
-  have hf0 : f ≠ 0 := by
-    rintro rfl
-    simp at hf
-  have hdom (n : ℕ) := f.newtonPolygon_ne_top_iff v hv0 hf0 (n := n)
+  have hdom (n : ℕ) := f.newtonPolygon_ne_top_iff_of_ne_top v htr hld (n := n)
   rw [isFirstBreak_iff]
   constructor
   · rintro ⟨i, -, hfirst, hseg, -⟩ m hm
