@@ -16,7 +16,8 @@ no nonemptiness hypothesis: a point of the convex hull of `insert a s` is either
 lies on a segment from `a` to a point of the convex hull of `s` (`TauCeti.mem_convexHull_insert`).
 
 The convex join of a point `x` with any set is star-convex about `x`
-(`TauCeti.starConvex_convexJoin_singleton_left`).
+(`TauCeti.starConvex_convexJoin_singleton_left`), and it lies in every set star-convex about `x`
+that contains the set (`StarConvex.convexJoin_singleton_subset`).
 -/
 
 public section
@@ -60,3 +61,17 @@ theorem starConvex_convexJoin_singleton_left (x : E) (t : Set E) :
 end OrderedSemiring
 
 end TauCeti
+
+section OrderedSemiring
+
+variable {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+  {s t : Set E} {x : E}
+
+/-- The convex join of `{x}` with a subset `t` of a set `s` star-convex about `x`, the union of the
+segments from `x` to the points of `t`, lies in `s`. -/
+theorem StarConvex.convexJoin_singleton_subset (hs : StarConvex 𝕜 x s) (ht : t ⊆ s) :
+    convexJoin 𝕜 {x} t ⊆ s := by
+  rw [convexJoin_singleton_left]
+  exact iUnion₂_subset fun y hy ↦ hs.segment_subset (ht hy)
+
+end OrderedSemiring
