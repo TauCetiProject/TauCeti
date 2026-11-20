@@ -27,8 +27,8 @@ identity `-Δ G = δ₀`: for every `C²` function `f : ℂ → ℝ` with compac
 `∫ z, Δ f z * G z = -f 0`,
 
 and, with the pole moved to `a`, `∫ z, Δ f z * G (z - a) = -f a`. This is the two-dimensional
-counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n ≥ 3`, and it is the
-identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
+counterpart of `TauCeti.integral_laplacian_mul_newtonianKernel` for `ℝⁿ`, `n = 1` or `n ≥ 3`, and
+it is the identity that makes the planar Newtonian potential `G ⋆ f` solve Poisson's equation.
 
 The argument has the same two steps as in higher dimensions.
 

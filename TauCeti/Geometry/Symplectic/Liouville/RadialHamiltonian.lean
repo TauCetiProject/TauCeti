@@ -112,10 +112,10 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 `α` takes the value `-r` on the Hamiltonian vector field `X_r` of the radial coordinate:
 `α(X_r) = ω(Z, X_r) = -dr(Z) = -r`. -/
 theorem apply_hamiltonianVectorField_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
-    α.1 x ![ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x] =
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W) :
+    α.val x ![ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x] =
       -liouvilleRadialCoordinate Z W x := by
-  have hα : α.1 x ![ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x] =
+  have hα : α.val x ![ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x] =
       SmoothBundleForm.eval₂ ω x (Z x)
         (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x) := by
     rw [← hZ, RoughForm.interior_apply, SmoothBundleForm.eval₂_apply]
@@ -125,7 +125,7 @@ theorem apply_hamiltonianVectorField_liouvilleRadialCoordinate (h : IsLiouvilleC
 /-- The Hamiltonian vector field of the radial coordinate vanishes nowhere on the cylindrical
 end. -/
 theorem hamiltonianVectorField_liouvilleRadialCoordinate_ne_zero
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W) :
     ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x ≠ 0 := by
   intro h0
   have := h.apply_hamiltonianVectorField_liouvilleRadialCoordinate hZ hx
@@ -135,7 +135,7 @@ theorem hamiltonianVectorField_liouvilleRadialCoordinate_ne_zero
 /-- **Hamiltonian vector fields of radial functions.** On the cylindrical end of a completion,
 if a Hamiltonian `F` agrees with `φ ∘ r` near `x`, then `X_F(x) = φ'(r x) X_r(x)`. -/
 theorem hamiltonianVectorField_eq_smul_of_eventuallyEq (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W)
     (hF : F =ᶠ[𝓝 x] φ ∘ liouvilleRadialCoordinate Z W)
     (hφ : DifferentiableAt ℝ φ (liouvilleRadialCoordinate Z W x)) :
     ω.hamiltonianVectorField F x =
@@ -147,10 +147,10 @@ theorem hamiltonianVectorField_eq_smul_of_eventuallyEq (h : IsLiouvilleCompletio
 /-- **The primitive on the field of a radial Hamiltonian.** On the cylindrical end of a
 completion, if a Hamiltonian `F` agrees with `φ ∘ r` near `x`, then `α(X_F) = -r φ'(r)` at `x`. -/
 theorem apply_hamiltonianVectorField_of_eventuallyEq (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W)
     (hF : F =ᶠ[𝓝 x] φ ∘ liouvilleRadialCoordinate Z W)
     (hφ : DifferentiableAt ℝ φ (liouvilleRadialCoordinate Z W x)) :
-    α.1 x ![ω.hamiltonianVectorField F x] =
+    α.val x ![ω.hamiltonianVectorField F x] =
       -(liouvilleRadialCoordinate Z W x * deriv φ (liouvilleRadialCoordinate Z W x)) := by
   rw [h.hamiltonianVectorField_eq_smul_of_eventuallyEq hZ hx hF hφ,
     ← SmoothForm.degreeOneEquiv_coe_apply, map_smul, SmoothForm.degreeOneEquiv_coe_apply,
@@ -162,7 +162,7 @@ the Liouville flow carries the Hamiltonian vector field of the radial coordinate
 the cylindrical end to the same field at `ψ_s x`, provided `ψ_s x` also lies on the cylindrical
 end: `ψ_s` multiplies both `ω` and `r` by `e^s` there, and `X^{e^s ω}_{e^s r} = X^ω_r`. -/
 theorem mfderiv_flowOf_hamiltonianVectorField_liouvilleRadialCoordinate
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) {s : ℝ}
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) {s : ℝ}
     (hx : x ∉ W) (hsx : flowOf Z s x ∉ W) :
     mfderiv I I (flowOf Z s) x (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x) =
       ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) (flowOf Z s x) := by
@@ -194,7 +194,7 @@ completion, if `γ` is an integral curve of the Hamiltonian vector field `X_r` o
 coordinate along the cylindrical end, and its image under the time-`s` map `ψ_s` of the Liouville
 flow also lies on the cylindrical end, then `ψ_s ∘ γ` is an integral curve of `X_r`. -/
 theorem isMIntegralCurve_flowOf_comp (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) {s : ℝ} {γ : ℝ → M}
+    (hZ : RoughForm.interior Z ω.val = α.val) {s : ℝ} {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)))
     (hγW : ∀ t, γ t ∉ W) (hsγW : ∀ t, flowOf Z s (γ t) ∉ W) :
     IsMIntegralCurve (flowOf Z s ∘ γ)
@@ -210,7 +210,7 @@ theorem isMIntegralCurve_flowOf_comp (h : IsLiouvilleCompletion ω α W)
 has a `T`-periodic integral curve on the level `c` exactly when it has one on the level `c'`: the
 Liouville flow `ψ_{log (c' / c)}` carries one to the other. -/
 theorem exists_periodic_hamiltonianVectorField_liouvilleRadialCoordinate_iff
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) {c c' T : ℝ}
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) {c c' T : ℝ}
     (hc : 1 < c) (hc' : 1 < c') :
     (∃ δ : ℝ → M, IsMIntegralCurve δ (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)) ∧
         Periodic δ T ∧ ∀ t, liouvilleRadialCoordinate Z W (δ t) = c) ↔
@@ -244,7 +244,7 @@ variable {R c : ℝ}
 /-- On the region `{r > R}`, `R ≥ 1`, where a Hamiltonian agrees with `φ ∘ r`, its Hamiltonian
 vector field is `φ'(r) X_r`. -/
 private theorem hamiltonianVectorField_eq_smul_of_lt (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hR : 1 ≤ R)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hR : 1 ≤ R)
     (hF : ∀ y, R < liouvilleRadialCoordinate Z W y → F y = φ (liouvilleRadialCoordinate Z W y))
     (hx : R < liouvilleRadialCoordinate Z W x)
     (hφ : DifferentiableAt ℝ φ (liouvilleRadialCoordinate Z W x)) :
@@ -261,7 +261,7 @@ completion, let `F` agree with `φ ∘ r` on the region `{r > R}`, `R ≥ 1`, wi
 on `(R, ∞)`. Then an integral curve of the Hamiltonian vector field of `F` which meets the region
 `{r > R}` stays on the level of `r` it meets it on. -/
 theorem liouvilleRadialCoordinate_eq_of_isMIntegralCurve (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hR : 1 ≤ R)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hR : 1 ≤ R)
     (hF : ∀ y, R < liouvilleRadialCoordinate Z W y → F y = φ (liouvilleRadialCoordinate Z W y))
     (hφ : DifferentiableOn ℝ φ (Ioi R)) {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ (ω.hamiltonianVectorField F)) {t₀ : ℝ}
@@ -306,7 +306,7 @@ theorem liouvilleRadialCoordinate_eq_of_isMIntegralCurve (h : IsLiouvilleComplet
 field `X_r` is smooth only on the cylindrical end, so both curves are compared as integral curves
 of the Hamiltonian field of a smooth function equal to `r` near the level. -/
 theorem eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleRadialCoordinate
-    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1) (hc : 1 < c)
+    (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) (hc : 1 < c)
     {δ δ' : ℝ → M}
     (hδ : IsMIntegralCurve δ (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)))
     (hδ' : IsMIntegralCurve δ' (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)))
@@ -357,7 +357,7 @@ when the Hamiltonian vector field `X_r` of the radial coordinate has a `φ'(c)`-
 curve on some, equivalently any, level `c' > 1`. On the level `c` the orbits of `F` are those of
 `X_r` run at speed `φ'(c)`, and the Liouville flow moves them between levels. -/
 theorem exists_periodic_hamiltonianVectorField_iff (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hR : 1 ≤ R)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hR : 1 ≤ R)
     (hF : ∀ y, R < liouvilleRadialCoordinate Z W y → F y = φ (liouvilleRadialCoordinate Z W y))
     (hc : R < c) (hφ : DifferentiableAt ℝ φ c) (hφc : deriv φ c ≠ 0) {c' : ℝ} (hc' : 1 < c') :
     (∃ γ : ℝ → M, IsMIntegralCurve γ (ω.hamiltonianVectorField F) ∧ Periodic γ 1 ∧
@@ -400,7 +400,7 @@ theorem IsLinearAtInfinity.exists_isCompact_forall_mem {E H M : Type*} [NormedAd
     [T2Space M] {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M}
     {Z : (x : M) → TangentSpace I x} {F : M → ℝ} {a : ℝ}
     (hF : IsLinearAtInfinity Z W F a) (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (ha : a ≠ 0) {c' : ℝ} (hc' : 1 < c')
+    (hZ : RoughForm.interior Z ω.val = α.val) (ha : a ≠ 0) {c' : ℝ} (hc' : 1 < c')
     (hper : ¬∃ δ : ℝ → M,
       IsMIntegralCurve δ (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)) ∧
         Periodic δ a ∧ ∀ t, liouvilleRadialCoordinate Z W (δ t) = c') :

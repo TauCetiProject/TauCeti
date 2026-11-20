@@ -314,11 +314,9 @@ module, `Fin.castAdd 10`. -/
 
 /-- The Bourbaki numbering identifies the nodes with the support of the pinned integral base. -/
 def simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid) :
-    Fin t.rank ≃ (t.simplyConnectedBase ht).support where
-  toFun i := ⟨t.simpleIndex ht i, by simp⟩
-  invFun k := ⟨(k : Fin t.numRoots), (mem_support_simplyConnectedBase t ht).mp k.2⟩
-  left_inv i := Fin.ext (by simp [simpleIndex_val])
-  right_inv k := Subtype.ext (Fin.ext (by simp [simpleIndex_val]))
+    Fin t.rank ≃ (t.simplyConnectedBase ht).support :=
+  (Fin.castLEquiv (rank_le_numRoots ht)).trans
+    (Equiv.subtypeEquivRight fun _ ↦ (mem_support_simplyConnectedBase t ht).symm)
 
 @[simp] theorem coe_simpleSupportEquivSimplyConnectedBase (t : DynkinType) (ht : t.Valid)
     (i : Fin t.rank) :
@@ -348,7 +346,6 @@ zero-based value. -/
 @[simp]
 theorem card_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid) :
     (t.simplyConnectedBase ht).support.card = t.rank := by
-  classical
   rw [← Fintype.card_coe,
     ← Fintype.card_congr (t.simpleSupportEquivSimplyConnectedBase ht), Fintype.card_fin]
 

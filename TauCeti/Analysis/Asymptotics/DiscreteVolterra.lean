@@ -120,8 +120,9 @@ private lemma norm_tsum_smul_smul_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ 
   have hbound : ∀ m : Ioi n, ‖K n m • ψ m • x m‖ ≤ c * P n / k ! * (a m * Ψ m ^ k) := fun m ↦
     calc ‖K n m • ψ m • x m‖
         ≤ P n * (Q m * ‖ψ m‖ * (c * P m * Ψ m ^ k / k !)) :=
-          (norm_kernel_smul_smul_le hK m.2 _).trans (mul_le_mul_of_nonneg_left
-            (mul_le_mul_of_nonneg_left (hx m m.2) (mul_nonneg (hQ m) (norm_nonneg _))) (hP n))
+          (norm_kernel_smul_smul_le hK m.property _).trans (mul_le_mul_of_nonneg_left
+            (mul_le_mul_of_nonneg_left (hx m m.property) (mul_nonneg (hQ m) (norm_nonneg _)))
+                (hP n))
       _ = c * P n / k ! * (a m * Ψ m ^ k) := by rw [← ha]; ring
   have hc' : 0 ≤ c * P n / k ! := by have := hP n; positivity
   refine (tsum_of_norm_bounded (hg.hasSum.mul_left (c * P n / k !)) hbound).trans ?_
@@ -146,7 +147,7 @@ private lemma norm_picardTerm_le (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0 ≤ Q m)
   | zero =>
     simpa [picardTerm, mul_comm] using
       tsum_of_norm_bounded ((hJ.subtype (· ∈ Ioi n)).hasSum.mul_left (P n))
-        fun m : Ioi n ↦ norm_kernel_smul_le hK m.2 (J m)
+        fun m : Ioi n ↦ norm_kernel_smul_le hK m.property (J m)
   | succ k ih =>
     rw [picardTerm, mul_div_assoc']
     refine norm_tsum_smul_smul_le hP hQ hK hψ
@@ -175,7 +176,7 @@ private lemma summable_uncurry_smul_smul_picardTerm (hP : ∀ n, 0 ≤ P n) (hQ 
   have hΨ0 : ∀ n, 0 ≤ Ψ n := fun n ↦ tsum_nonneg fun m ↦ ha0 m
   have hbound : ∀ (m : Ioi n) (k : ℕ), ‖K n m • ψ m • picardTerm K J ψ k m‖ ≤
       Φ n * P n * (a m * (Ψ n ^ k / k !)) := fun m k ↦ by
-    have hm := m.2
+    have hm := m.property
     have hPm := hP m
     have := hΦ0 n
     have := hΨ0 m
@@ -234,7 +235,7 @@ theorem summable_norm_discrete_volterra_of_isBigO (hP : ∀ n, 0 ≤ P n) (hQ : 
   rw [norm_norm]
   calc ‖K n m • (J m + ψ m • h m)‖
       ≤ P n * (Q m * (‖J m‖ + ‖ψ m‖ * (max C 0 * P m))) := by
-        refine (norm_kernel_smul_le hK m.2 _).trans (mul_le_mul_of_nonneg_left
+        refine (norm_kernel_smul_le hK m.property _).trans (mul_le_mul_of_nonneg_left
           (mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans ?_) (hQ m)) (hP n))
         rw [norm_smul]
         gcongr
@@ -280,7 +281,7 @@ theorem exists_discrete_volterra_solution (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0
   -- split the series into its `J`-part and its `h`-part
   have hKJ : Summable fun m : Ioi n ↦ K n m • J m :=
     ((hJ.subtype (· ∈ Ioi n)).mul_left (P n)).of_norm_bounded fun m ↦
-      norm_kernel_smul_le hK m.2 (J m)
+      norm_kernel_smul_le hK m.property (J m)
   have hsum := summable_discrete_volterra_of_isBigO hP hQ hK hJ hψ
     (isBigO_of_norm_le_discrete_volterra_bound hP hQ hJ hψ hh) n
   simp only [smul_add] at hsum ⊢
@@ -345,7 +346,7 @@ theorem discrete_volterra_solution_unique (hP : ∀ n, 0 ≤ P n) (hQ : ∀ m, 0
       intro n hn
       rw [hd n]
       refine (tsum_congr fun m ↦ ?_).trans tsum_zero
-      rw [ih m (by have := m.2; simp only [mem_Ioi] at this; omega), smul_zero, smul_zero]
+      rw [ih m (by have := m.property; simp only [mem_Ioi] at this; omega), smul_zero, smul_zero]
   funext n
   exact sub_eq_zero.1 (hdown N n (by omega))
 

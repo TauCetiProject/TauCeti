@@ -94,9 +94,10 @@ private theorem exists_notMem_image_closedBall (hEF : finrank ℝ F = finrank �
   by_contra! h
   have hne {x : E} (hx : x ∈ sphere (0 : E) 1) : f x ≠ y := fun h ↦ hy ⟨x, hx, h⟩
   have hc : Continuous fun x : sphere (0 : E) 1 ↦ f x :=
-    hf.comp_continuous continuous_subtype_val fun x ↦ sphere_subset_closedBall x.2
+    hf.comp_continuous continuous_subtypeVal fun x ↦ sphere_subset_closedBall x.property
   have hi : Injective fun x : sphere (0 : E) 1 ↦ f x := fun x x' h ↦ Subtype.ext <|
-    eq_of_apply_eq hinj (sphere_subset_closedBall x.2) (sphere_subset_closedBall x'.2) h (hne x.2)
+    eq_of_apply_eq hinj (sphere_subset_closedBall x.property) (sphere_subset_closedBall x'.property)
+        h (hne x.property)
   -- The complement of `f(∂Q)` is the image of the open ball, which is connected.
   have hrange : (range fun x : sphere (0 : E) 1 ↦ f x)ᶜ = f '' ball 0 1 := by
     ext z
@@ -106,8 +107,8 @@ private theorem exists_notMem_image_closedBall (hEF : finrank ℝ F = finrank �
       rw [← closedBall_sdiff_sphere]
       exact ⟨hx, fun hxs ↦ hz ⟨⟨x, hxs⟩, rfl⟩⟩
     · rintro ⟨x, hx, rfl⟩ ⟨s, hs⟩
-      exact sphere_disjoint_ball.ne_of_mem s.2 hx <| eq_of_apply_eq hinj
-        (sphere_subset_closedBall s.2) (ball_subset_closedBall hx) hs (hne s.2)
+      exact sphere_disjoint_ball.ne_of_mem s.property hx <| eq_of_apply_eq hinj
+        (sphere_subset_closedBall s.property) (ball_subset_closedBall hx) hs (hne s.property)
   exact not_isPreconnected_compl_range_sphere hEF hc hi
     (hrange ▸ isPreconnected_ball.image f (hf.mono ball_subset_closedBall))
 
@@ -172,91 +173,46 @@ private theorem exists_continuousOn_injOn_preimage_singleton [FiniteDimensional 
     {w : sphere (0 : F) 1} (hw : g w ∉ ({p, q} : Set (sphere (0 : F) 1))) (hwQ : w ∉ Q) :
     ∃ φ : sphere (0 : F) 1 → sphere (0 : F) 1, ∃ w', ContinuousOn φ Q ∧
       InjOn φ (Q \ g ⁻¹' {q}) ∧ ∀ x ∈ Q, φ x = w' ↔ g x = q := by
-  classical
   have : Nonempty (sphere (0 : F) 1) := ⟨p⟩
   set P := (g ⁻¹' {p, q})ᶜ
   have hP {x : sphere (0 : F) 1} : x ∈ P ↔ g x ∉ ({p, q} : Set (sphere (0 : F) 1)) := Iff.rfl
   have hps : p ≠ g w := fun h ↦ hw (h ▸ .inl rfl)
+  have hqs : q ≠ g w := fun h ↦ hw (h ▸ .inr rfl)
   -- `g(Q)` misses `g w`, since `g` is injective at `w`.
   have hgQ {x : sphere (0 : F) 1} (hx : x ∈ Q) : g x ≠ g w := fun h ↦
     hwQ (hinj (hP.2 (h ▸ hw)) (hP.2 hw) h ▸ hx)
   obtain ⟨k, hkc, hki, hkid, hkN⟩ := exists_continuousOn_injOn_mapsTo_sphere hps
     (hQ.image hg) (fun ⟨x, hx, h⟩ ↦ hgQ hx h) (isOpen_compl_singleton.mem_nhds hpq)
   have hkp : k p = p := hkid.eq_of_nhds
-  -- An open neighbourhood `W` of `p`, missing `q`, on which `k` is the identity.
-  obtain ⟨W, hWk, hW, hpW⟩ := _root_.eventually_nhds_iff.1
-    (hkid.and (isOpen_compl_singleton.mem_nhds hpq))
   -- Off `A`, `k ∘ g` avoids `p` and `q` on `Q`.
   have hkpq {x : sphere (0 : F) 1} (hx : x ∈ Q) (hxp : g x ≠ p) :
       k (g x) ∉ ({p, q} : Set (sphere (0 : F) 1)) := by
     rintro (h | h)
     · exact hxp (hki (hgQ hx) hps (h.trans hkp.symm))
     · exact hkN (mem_image_of_mem g hx) h
-  -- The inverse of `g` off the two fibres.
-  set ginv := invFunOn g P
-  have hginv {y : sphere (0 : F) 1} (hy : y ∉ ({p, q} : Set (sphere (0 : F) 1))) :
-      ginv y ∈ P ∧ g (ginv y) = y := by
-    obtain ⟨x, rfl⟩ := hgs y
-    exact ⟨invFunOn_mem ⟨x, hy, rfl⟩, invFunOn_eq ⟨x, hy, rfl⟩⟩
-  set φ : sphere (0 : F) 1 → sphere (0 : F) 1 := fun x ↦ if g x ∈ W then x else ginv (k (g x))
-  have hgφ {x : sphere (0 : F) 1} (hx : x ∈ Q) : g (φ x) = k (g x) := by
-    by_cases hxW : g x ∈ W
-    · simp only [φ, hxW, ite_true, (hWk _ hxW).1, id]
-    · simp only [φ, hxW, ite_false, (hginv (hkpq hx fun h ↦ hxW (h ▸ hpW))).2]
-  -- Off `A`, `φ` is `g⁻¹ ∘ k ∘ g`.
-  have hφ {x : sphere (0 : F) 1} (hxp : g x ≠ p) : φ x = ginv (k (g x)) := by
-    by_cases hxW : g x ∈ W
-    · have hxP : x ∈ P := by
-        rintro (h | h)
-        exacts [hxp h, (hWk _ hxW).2 h]
-      simp only [φ, hxW, ite_true, (hWk _ hxW).1, id]
-      exact (hinj.leftInvOn_invFunOn hxP).symm
-    · simp only [φ, hxW, ite_false]
+  -- Off the two fibres, `g` is inverted by `invFunOn g P`, continuously since the sphere is
+  -- compact.
+  have hgP : g '' P = ({p, q} : Set (sphere (0 : F) 1))ᶜ := hgs.image_preimage ({p, q}ᶜ)
+  have hinv : ContinuousOn (invFunOn g P) (g '' P) :=
+    hg.continuousOn.continuousOn_invFunOn_image_of_isCompact isCompact_univ (subset_univ P)
+      hinj (by rw [hgP, disjoint_image_left]; exact disjoint_sdiff_left)
+  -- The map `φ`: the identity on `A` and `g⁻¹ ∘ k ∘ g` elsewhere. It is injective off `B`, since
+  -- `g` is injective off `A ∪ B`.
+  have hgQ' : g '' Q ⊆ {g w}ᶜ := fun _ ⟨x, hx, hxz⟩ ↦ hxz ▸ hgQ hx
+  obtain ⟨φ, hφc, hgφ, -, hφP, hφi⟩ := hg.continuousOn.exists_continuousOn_injOn_lift hinv
+    hinj (fun x _ _ hx ↦ (hgP ▸ hx :)) (hkc.mono hgQ') (hkid.filter_mono nhdsWithin_le_nhds)
+    fun x hx hxp ↦ hgP ▸ hkpq hx hxp
+  -- `φ` sends exactly the points of `B` in `Q` to `φ b`, for any `b ∈ B`.
   obtain ⟨b, hb⟩ := hgs q
   have hbQ : b ∈ Q := hBQ hb
-  have hqs : q ≠ g w := hb ▸ hgQ hbQ
-  have hqp : k q ∉ ({p, q} : Set (sphere (0 : F) 1)) := hb ▸ hkpq hbQ (hb ▸ hpq.symm)
-  refine ⟨φ, ginv (k q), fun x hx ↦ ?_, fun x hx x' hx' h ↦ ?_,
-    fun x hx ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩⟩
-  · by_cases hxp : g x = p
-    · -- Near `A`, `φ` is the identity.
-      have hid : φ =ᶠ[𝓝 x] id := by
-        filter_upwards [hg.continuousAt.preimage_mem_nhds (hW.mem_nhds (hxp ▸ hpW))] with x' hx'
-        simp only [φ, mem_preimage.1 hx', ite_true, id]
-      exact (continuousAt_id.congr hid.symm).continuousWithinAt
-    · -- Elsewhere it is `g⁻¹ ∘ k ∘ g`, and `g⁻¹` is continuous since the sphere is compact.
-      have hinv : ContinuousOn ginv (g '' P) :=
-        hg.continuousOn.continuousOn_invFunOn_image_of_isCompact isCompact_univ (subset_univ P)
-          hinj (disjoint_left.2 fun _ ⟨y, hy, hyz⟩ ⟨y', hy', hy'z⟩ ↦
-            hy' (by rw [mem_preimage, hy'z, ← hyz]; exact not_not.1 hy.2))
-      have hO : g ⁻¹' {p}ᶜ ∈ 𝓝 x :=
-        hg.continuousAt.preimage_mem_nhds (isOpen_compl_singleton.mem_nhds hxp)
-      have hkg : ContinuousAt (fun x ↦ k (g x)) x :=
-        (hkc.continuousAt (isOpen_compl_singleton.mem_nhds (hgQ hx))).comp hg.continuousAt
-      have hmaps : MapsTo (fun x ↦ k (g x)) (Q ∩ g ⁻¹' {p}ᶜ) (g '' P) := fun x' hx' ↦
-        ⟨_, (hginv (hkpq hx'.1 hx'.2)).1, (hginv (hkpq hx'.1 hx'.2)).2⟩
-      have hΦ : ContinuousWithinAt (fun x ↦ ginv (k (g x))) (Q ∩ g ⁻¹' {p}ᶜ) x :=
-        ContinuousWithinAt.comp (f := fun x ↦ k (g x)) (hinv _ (hmaps ⟨hx, hxp⟩))
-          hkg.continuousWithinAt hmaps
-      have hφΦ : φ =ᶠ[𝓝 x] fun x ↦ ginv (k (g x)) := by
-        filter_upwards [hO] with x' hx' using hφ hx'
-      exact (hΦ.mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin
-        (mem_nhdsWithin_of_mem_nhds hO))).congr_of_eventuallyEq
-        (nhdsWithin_le_nhds hφΦ) (hφ hxp)
-  · have hgx : g x = g x' := hki (hgQ hx.1) (hgQ hx'.1) (by rw [← hgφ hx.1, ← hgφ hx'.1, h])
-    by_cases hxp : g x = p
-    · have hxW : g x ∈ W := hxp ▸ hpW
-      have hx'W : g x' ∈ W := hgx ▸ hxW
-      simpa only [φ, hxW, hx'W, ite_true] using h
-    · refine hinj (hP.2 ?_) (hP.2 ?_) hgx
-      · rintro (h' | h')
-        exacts [hxp h', hx.2 h']
-      · rintro (h' | h')
-        exacts [hxp (hgx.trans h'), hx'.2 h']
-  · have h' := hgφ hx
-    rw [h, (hginv hqp).2] at h'
-    exact (hki hqs (hgQ hx) h').symm
-  · rw [hφ (h ▸ hpq.symm), h]
+  have hbp : g b ≠ p := hb ▸ hpq.symm
+  refine ⟨φ, φ b, hφc, hφi (Q \ g ⁻¹' {q}) sdiff_subset
+    (hki.mono ((image_mono sdiff_subset).trans hgQ')) (hinj.mono fun x ⟨⟨_, hxq⟩, hxp⟩ ↦ by
+      simp only [P, mem_compl_iff, mem_preimage, mem_insert_iff, mem_singleton_iff, not_or]
+      exact ⟨hxp, hxq⟩),
+    fun x hx ↦ ⟨fun h ↦ hki (hgQ hx) hqs (by rw [← hgφ x hx, h, hgφ b hbQ, hb]),
+      fun h ↦ hinj (hφP x hx (h ▸ hpq.symm)) (hφP b hbQ hbp)
+        (by rw [hgφ x hx, hgφ b hbQ, h, hb])⟩⟩
 
 /-- **Brown's theorem on two inverse sets.** Let `E` be a real normed space of dimension `n ≥ 1`,
 and let `g` be a continuous surjection of the unit sphere `Sⁿ` of a real inner product space of
@@ -276,7 +232,7 @@ theorem isCellularSet_preimage_singleton_of_injOn (hn : 1 ≤ finrank ℝ E)
       exact_mod_cast (by omega : 1 < finrank ℝ F)
     have : Infinite (sphere (0 : F) 1) := Set.Infinite.to_subtype <|
       IsPreconnected.infinite_of_nontrivial (isPreconnected_sphere hF 0 1)
-        ⟨p, p.2, q, q.2, Subtype.coe_injective.ne hpq⟩
+        ⟨p, p.property, q, q.property, Subtype.coe_injective.ne hpq⟩
     exact (Set.toFinite _).infinite_compl.nonempty
   obtain ⟨w, rfl⟩ := hgs z
   -- The cell `Q`: a large closed ball in the stereographic chart from `w`, read on `E`. It
