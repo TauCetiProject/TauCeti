@@ -7,23 +7,39 @@ module
 
 public import Mathlib.GroupTheory.FixedPointFree
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import TauCeti.GroupTheory.FixedSubgroup
 
 /-!
 # Surjective Lang maps and fixed lifts
 
 The Lang map is written in Mathlib's convention as `MonoidHom.commutatorMap F`, namely
-`t ↦ t / F t`. On a commutative group, surjectivity for an iterate of `F` implies
-surjectivity for `F`, by the telescoping product of the iterates. In particular, if an
-iterate is a power map and the corresponding roots exist, the Lang map is surjective.
+`t ↦ t / F t`, and in the algebraic-group convention as `t ↦ t⁻¹ * F t`; the two maps differ
+by precomposition with inversion and therefore have the same surjectivity
+(`MonoidHom.surjective_inv_mul_iff_surjective_commutatorMap`). On a commutative group, surjectivity
+for an iterate of `F` implies surjectivity for `F`, by the telescoping product of the iterates. In
+particular, if an iterate is a power map and the corresponding roots exist, the Lang map is
+surjective.
 
-A surjective Lang map on an invariant subgroup corrects an element whose Frobenius defect
-lies in that subgroup to a fixed element in the same coset. This is useful for lifting
-fixed elements of a normalizer quotient; it does not require a finite kernel or claim
-uniqueness of a fixed lift.
+Every fiber `{g | g⁻¹ * F g = a}` of the Lang map embeds into `TauCeti.fixedSubgroup F` via
+right multiplication by the inverse of a chosen fiber point, so finiteness of `fixedSubgroup F`
+makes every Lang fiber finite (`MonoidHom.finite_setOf_inv_mul_eq`).
+
+A surjective Lang map on an invariant subgroup corrects an element whose Frobenius defect lies in
+that subgroup to a fixed element in the same coset
+(`exists_fixed_inv_mul_of_surjective_commutatorMap` for left multiplication and
+`exists_fixed_mul_of_surjective_inv_mul` for a left coset `hJ`, without requiring `J` to be
+normal). When `J` is `F`-invariant (`J ≤ J.comap F`), `F` induces a map on the left-coset space
+`G ⧸ J` (`MonoidHom.quotientMap`), the canonical map `G^F ⧸ J^F ↪ (G ⧸ J)^F` is injective
+(`MonoidHom.fixedSubgroupQuotientEmbedding`), and surjectivity of the Lang map on `J` upgrades it
+to a bijection `G^F ⧸ J^F ≃ (G ⧸ J)^F` (`MonoidHom.fixedSubgroupQuotientEquiv`). This is useful
+for lifting fixed elements of a normalizer or coset quotient; it does not require a finite kernel
+or claim uniqueness of a fixed lift.
 
 The telescoping calculation follows the argument of
 `MonoidHom.FixedPointFree.prod_pow_eq_one` in Mathlib. The correction argument is the
-usual torus correction in Steinberg, *Lectures on Chevalley Groups*, Chapter 11.
+usual torus correction in Steinberg, *Lectures on Chevalley Groups*, Chapter 11; the non-normal
+coset lifting form is used in X. He, *Cocenters of p-adic groups, I: Newton decomposition*,
+Forum Math. Pi 6 (2018), e2 (arXiv:1610.04791v3, Lemma 4.5; published Lemma 15).
 -/
 
 public section
@@ -76,6 +92,132 @@ end CommGroup
 section Group
 
 variable {T G : Type*} [Group T] [Group G]
+
+/-- The Lang map `g ↦ g⁻¹ * F g` is surjective if and only if `commutatorMap F`
+(`g ↦ g / F g`) is surjective: the two maps differ by precomposition with inversion. -/
+theorem surjective_inv_mul_iff_surjective_commutatorMap (F : G →* G) :
+    Function.Surjective (fun g : G ↦ g⁻¹ * F g) ↔ Function.Surjective (commutatorMap F) := by
+  have hcomp : (fun g : G ↦ g⁻¹ * F g) = commutatorMap F ∘ Inv.inv := by
+    ext g
+    simp [commutatorMap_apply, div_eq_mul_inv]
+  rw [hcomp]
+  exact Function.Surjective.of_comp_iff (commutatorMap F) inv_surjective
+
+/-- If the fixed subgroup of an endomorphism `F` is finite, then every fiber of the Lang map
+`g ↦ g⁻¹ * F g` is finite: translating by the inverse of a chosen fiber point embeds the fiber
+into `TauCeti.fixedSubgroup F`. -/
+theorem finite_setOf_inv_mul_eq (F : G →* G) [Finite (TauCeti.fixedSubgroup F)] (a : G) :
+    Finite {g : G | g⁻¹ * F g = a} := by
+  by_cases hne : Nonempty {g : G | g⁻¹ * F g = a}
+  · obtain ⟨⟨g₀, hg₀⟩⟩ := hne
+    refine Finite.of_injective
+      (fun g : {g : G | g⁻¹ * F g = a} ↦
+        (⟨g.val * g₀⁻¹, by
+          rw [TauCeti.mem_fixedSubgroup, map_mul, map_inv]
+          have hgF : F g.val = g.val * a := eq_mul_of_inv_mul_eq g.property
+          have hg₀F : F g₀ = g₀ * a := eq_mul_of_inv_mul_eq hg₀
+          rw [hgF, hg₀F, mul_inv_rev, mul_assoc, mul_inv_cancel_left]⟩ :
+          TauCeti.fixedSubgroup F))
+      fun g₁ g₂ h => Subtype.ext (mul_right_cancel (congrArg Subtype.val h))
+  · have : IsEmpty {g : G | g⁻¹ * F g = a} := not_nonempty_iff.mp hne
+    infer_instance
+
+/-- Fixed-coset lifting: if `J ≤ G` is a subgroup (not necessarily normal) such that every
+element of `J` has the form `z⁻¹ * F z` with `z ∈ J`, then every left coset `hJ` satisfying
+`h⁻¹ * F h ∈ J` contains an `F`-fixed element `h * z` with `z ∈ J`. -/
+theorem exists_fixed_mul_of_surjective_inv_mul (F : G →* G) (J : Subgroup G)
+    (hJ : ∀ d ∈ J, ∃ z ∈ J, z⁻¹ * F z = d) {h : G} (hh : h⁻¹ * F h ∈ J) :
+    ∃ z ∈ J, F (h * z) = h * z := by
+  obtain ⟨z, hzJ, hz⟩ := hJ _ hh
+  refine ⟨z⁻¹, J.inv_mem hzJ, ?_⟩
+  have hFh : F h = h * (z⁻¹ * F z) := eq_mul_of_inv_mul_eq hz.symm
+  rw [map_mul, map_inv, hFh, mul_assoc, mul_assoc, mul_inv_cancel, mul_one]
+
+/-- The map on left coset spaces `G ⧸ I → H ⧸ J` induced by a group homomorphism `f : G →* H`
+with `I ≤ J.comap f`, without requiring `I` or `J` to be normal. -/
+def quotientMap {H : Type*} [Group H] (f : G →* H) {I : Subgroup G} {J : Subgroup H}
+    (hf : I ≤ J.comap f) : G ⧸ I → H ⧸ J :=
+  Quotient.map' f fun _ _ hab => by
+    rw [QuotientGroup.leftRel_apply] at hab ⊢
+    rw [← map_inv, ← map_mul]
+    exact hf hab
+
+/-- Evaluation of `MonoidHom.quotientMap` on a left coset `QuotientGroup.mk g`. -/
+@[simp]
+theorem quotientMap_mk {H : Type*} [Group H] (f : G →* H) {I : Subgroup G} {J : Subgroup H}
+    (hf : I ≤ J.comap f) (g : G) :
+    f.quotientMap hf (QuotientGroup.mk g) = QuotientGroup.mk (f g) := by
+  rfl
+
+/-- A left coset `gJ` is fixed by the induced endomorphism `F.quotientMap hJF` on `G ⧸ J` if and
+only if the Lang defect `g⁻¹ * F g` lies in `J`. -/
+theorem quotientMap_mk_eq_self_iff (F : G →* G) {J : Subgroup G} (hJF : J ≤ J.comap F) (g : G) :
+    F.quotientMap hJF (QuotientGroup.mk g) = QuotientGroup.mk g ↔ g⁻¹ * F g ∈ J := by
+  rw [quotientMap_mk, eq_comm, QuotientGroup.eq]
+
+/-- Membership of a left coset `gJ` in the fixed points of `F.quotientMap hJF` is equivalent to
+`g⁻¹ * F g ∈ J`. -/
+theorem mem_fixedPoints_quotientMap_mk_iff (F : G →* G) {J : Subgroup G} (hJF : J ≤ J.comap F)
+    (g : G) :
+    QuotientGroup.mk g ∈ Function.fixedPoints (F.quotientMap hJF) ↔ g⁻¹ * F g ∈ J :=
+  F.quotientMap_mk_eq_self_iff hJF g
+
+/-- The canonical injection `G^F ⧸ J^F ↪ (G ⧸ J)^F` sending the coset of a fixed element `g ∈ G^F`
+modulo `J.subgroupOf G^F` to the `F`-fixed coset `gJ ∈ (G ⧸ J)^F`. -/
+def fixedSubgroupQuotientEmbedding (F : G →* G) {J : Subgroup G} (hJF : J ≤ J.comap F) :
+    ↥(TauCeti.fixedSubgroup F) ⧸ J.subgroupOf (TauCeti.fixedSubgroup F) ↪
+      Function.fixedPoints (F.quotientMap hJF) where
+  toFun := Quotient.lift
+    (fun g : TauCeti.fixedSubgroup F =>
+      ⟨QuotientGroup.mk (g : G), by
+        rw [Function.mem_fixedPoints_iff, quotientMap_mk, TauCeti.mem_fixedSubgroup.mp g.property]⟩)
+    (fun a b hab => Subtype.ext <| by
+      have hab' : (a : G)⁻¹ * (b : G) ∈ J :=
+        Subgroup.mem_subgroupOf.mp (QuotientGroup.leftRel_apply.mp hab)
+      exact Quotient.sound (QuotientGroup.leftRel_apply.mpr hab'))
+  inj' := Quotient.ind₂' fun a b h => by
+    have h' : QuotientGroup.mk (a : G) = QuotientGroup.mk (b : G) := congrArg Subtype.val h
+    rw [QuotientGroup.eq] at h'
+    exact Quotient.sound (QuotientGroup.leftRel_apply.mpr (Subgroup.mem_subgroupOf.mpr h'))
+
+/-- `fixedSubgroupQuotientEmbedding` sends the coset of `g ∈ G^F` to the coset `gJ`. -/
+@[simp]
+theorem coe_fixedSubgroupQuotientEmbedding_mk (F : G →* G) {J : Subgroup G} (hJF : J ≤ J.comap F)
+    (g : TauCeti.fixedSubgroup F) :
+    (F.fixedSubgroupQuotientEmbedding hJF (QuotientGroup.mk g) : G ⧸ J) =
+      QuotientGroup.mk (g : G) := by
+  rfl
+
+/-- If the Lang map `z ↦ z⁻¹ * F z` is surjective on an `F`-invariant subgroup `J ≤ G`, then
+every `F`-fixed left coset in `G ⧸ J` has a fixed representative, so `G^F ⧸ J^F ↪ (G ⧸ J)^F` is
+surjective. -/
+theorem fixedSubgroupQuotientEmbedding_surjective (F : G →* G) {J : Subgroup G}
+    (hJF : J ≤ J.comap F) (hJ : ∀ d ∈ J, ∃ z ∈ J, z⁻¹ * F z = d) :
+    Function.Surjective (F.fixedSubgroupQuotientEmbedding hJF) := by
+  rintro ⟨q, hq⟩
+  obtain ⟨h, rfl⟩ := QuotientGroup.mk_surjective q
+  have hh : h⁻¹ * F h ∈ J := (F.mem_fixedPoints_quotientMap_mk_iff hJF h).mp hq
+  obtain ⟨z, hzJ, hfix⟩ := F.exists_fixed_mul_of_surjective_inv_mul J hJ hh
+  refine ⟨QuotientGroup.mk ⟨h * z, hfix⟩, Subtype.ext ?_⟩
+  rw [coe_fixedSubgroupQuotientEmbedding_mk, QuotientGroup.eq]
+  simpa only [mul_inv_rev, mul_assoc, inv_mul_cancel, mul_one] using J.inv_mem hzJ
+
+/-- **Non-normal fixed-coset bijection**: if `J ≤ G` is an `F`-invariant subgroup (not necessarily
+normal) on which `z ↦ z⁻¹ * F z` is surjective, then `G^F ⧸ J^F ≃ (G ⧸ J)^F`. -/
+noncomputable def fixedSubgroupQuotientEquiv (F : G →* G) {J : Subgroup G}
+    (hJF : J ≤ J.comap F) (hJ : ∀ d ∈ J, ∃ z ∈ J, z⁻¹ * F z = d) :
+    ↥(TauCeti.fixedSubgroup F) ⧸ J.subgroupOf (TauCeti.fixedSubgroup F) ≃
+      Function.fixedPoints (F.quotientMap hJF) :=
+  Equiv.ofBijective _ ⟨(F.fixedSubgroupQuotientEmbedding hJF).injective,
+    F.fixedSubgroupQuotientEmbedding_surjective hJF hJ⟩
+
+/-- `fixedSubgroupQuotientEquiv` sends the coset of `g ∈ G^F` to the coset `gJ`. -/
+@[simp]
+theorem coe_fixedSubgroupQuotientEquiv_mk (F : G →* G) {J : Subgroup G} (hJF : J ≤ J.comap F)
+    (hJ : ∀ d ∈ J, ∃ z ∈ J, z⁻¹ * F z = d) (g : TauCeti.fixedSubgroup F) :
+    (F.fixedSubgroupQuotientEquiv hJF hJ (QuotientGroup.mk g) : G ⧸ J) =
+      QuotientGroup.mk (g : G) := by
+  rfl
 
 /-- Correct an element to a fixed element by left multiplication from an invariant
 subgroup with surjective Lang map. The defect must lie in the subgroup's image. -/

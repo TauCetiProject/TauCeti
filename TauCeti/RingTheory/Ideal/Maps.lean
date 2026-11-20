@@ -78,6 +78,13 @@ theorem map_algebraMap_map_algebraMap {R A B : Type*} [CommSemiring R] [CommSemi
     (I.map (algebraMap R A)).map (algebraMap A B) = I.map (algebraMap R B) := by
   rw [map_map, ← IsScalarTower.algebraMap_eq]
 
+/-- A ring homomorphism `f` with `I ≤ J.comap f` satisfies `I ^ n ≤ (J ^ n).comap f`. -/
+theorem pow_le_comap_pow {R S F : Type*} [CommSemiring R] [CommSemiring S]
+    [FunLike F R S] [RingHomClass F R S] {I : Ideal R} {J : Ideal S} {f : F}
+    (h : I ≤ J.comap f) (n : ℕ) :
+    I ^ n ≤ (J ^ n).comap f :=
+  (pow_right_mono h n).trans (le_comap_pow f n)
+
 /-- A ring homomorphism `f` with `I ≤ J.comap f` maps `I ^ n` into `J ^ n`. -/
 theorem map_mem_pow_of_le_comap {R S : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
     {I : Ideal R} {J : Ideal S} (h : I ≤ J.comap f) {n : ℕ} {x : R} (hx : x ∈ I ^ n) :

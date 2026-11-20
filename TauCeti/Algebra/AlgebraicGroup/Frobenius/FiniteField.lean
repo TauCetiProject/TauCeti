@@ -58,6 +58,8 @@ to the inclusion of a closed subgroup scheme, whose coordinate algebra is again 
 
 * `TauCeti.FiniteField.frobeniusPoints_apply_apply`: the Frobenius raises every value of a point
   to the `q ^ n`-th power.
+* `TauCeti.FiniteField.frobeniusPoints_one`, `TauCeti.FiniteField.toConv_comp_eq_frobeniusPoints`:
+  identifying post-composition with a `q ^ n`-power endomorphism as `frobeniusPoints K n`.
 * `TauCeti.FiniteField.mapDomain_frobeniusBialgHom`: for commutative `H`, the `q`-Frobenius on
   points is pre-composition with the Frobenius endomorphism `TauCeti.frobeniusBialgHom K H`.
 * `TauCeti.FiniteField.mapDomain_comp_frobeniusPoints`: the Frobenius on points commutes with
@@ -126,6 +128,23 @@ variable (K) in
 @[simp]
 theorem frobeniusPoints_zero : frobeniusPoints K 0 (H := H) (A := A) = MonoidHom.id _ :=
   MonoidHom.ext fun f => ofConv_injective (AlgHom.ext fun h => by simp)
+
+variable (K) in
+/-- The first iterate of the Frobenius on points is post-composition with the `q`-Frobenius
+algebra endomorphism. -/
+theorem frobeniusPoints_one :
+    frobeniusPoints K 1 (H := H) (A := A) =
+      AlgHom.mapValue (_root_.FiniteField.frobeniusAlgHom K A) := by
+  rw [frobeniusPoints, pow_one]
+
+/-- Post-composing a point with any `K`-algebra endomorphism `σ` of `A` acting as `z ↦ z ^ q ^ n`
+coincides with `frobeniusPoints K n`. -/
+theorem toConv_comp_eq_frobeniusPoints {n : ℕ} (σ : A →ₐ[K] A)
+    (hσ : ∀ z, σ z = z ^ Fintype.card K ^ n) (g : WithConv (H →ₐ[K] A)) :
+    toConv (σ.comp g.ofConv) = frobeniusPoints K n g := by
+  apply ofConv_injective
+  ext h
+  rw [ofConv_toConv, AlgHom.comp_apply, hσ, frobeniusPoints_apply_apply, Nat.card_eq_fintype_card]
 
 variable (K) in
 /-- Iterates of the Frobenius on points compose by adding exponents. -/
