@@ -63,6 +63,9 @@ easy half of Sarason's characterization.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
   dilation invariance, and `TauCeti.vmoModulus_comp_add_right`: translation invariance of the VMO
   modulus.
+* `ContinuousLinearMap.bmoSeminorm_eq_top`, `ContinuousLinearMap.not_memBMO`: by dilation
+  invariance, a nonzero continuous linear map, such as the identity of `ℝ`, has infinite BMO
+  seminorm.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
 * `LipschitzWith.bmoSeminorm_comp_le`, `LipschitzWith.vmoModulus_comp_le`: Lipschitz
@@ -644,6 +647,43 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       exact (preimage_smul_ball_smul_norm c (norm_pos_iff.2 ht) r).symm⟩)
     (fun c' r' => ⟨t⁻¹ • c', ‖t⁻¹‖ * r', ?_⟩) f
   rw [MeasurableEquiv.coe_smul₀, Set.preimage_smul₀ ht, smul_ball (inv_ne_zero ht)]
+
+/-- **Nonzero linear maps have unbounded mean oscillation.** On a finite-dimensional real normed
+space with an additive Haar measure, a nonzero continuous linear map `ℓ` into a Banach space has
+infinite BMO seminorm. For instance the identity of `ℝ` does not have bounded mean
+oscillation. -/
+theorem _root_.ContinuousLinearMap.bmoSeminorm_eq_top {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] [CompleteSpace F] {ℓ : E →L[ℝ] F} (hℓ : ℓ ≠ 0) :
+    bmoSeminorm ℓ μ = ∞ := by
+  -- Dilation by `2` leaves the seminorm unchanged and multiplies `ℓ` by `2`, so the seminorm is
+  -- `0` or `∞`, and it is not `0` since `ℓ` is not a.e. constant.
+  have h2 : bmoSeminorm ℓ μ = 2 * bmoSeminorm ℓ μ := by
+    have hfun : (fun x => ℓ ((2 : ℝ) • x)) = (2 : ℝ) • (ℓ : E → F) :=
+      funext fun x => ℓ.map_smul 2 x
+    calc bmoSeminorm ℓ μ = bmoSeminorm (fun x => ℓ ((2 : ℝ) • x)) μ :=
+          (bmoSeminorm_comp_smul ℓ two_ne_zero).symm
+      _ = 2 * bmoSeminorm ℓ μ := by
+        rw [hfun, bmoSeminorm_const_smul]
+        norm_num [Real.eNorm_eq_ofReal_abs]
+  have h0 : bmoSeminorm ℓ μ ≠ 0 := by
+    rw [Ne, bmoSeminorm_eq_zero_iff (ℓ.continuous.locallyIntegrable)]
+    rintro ⟨b, hb⟩
+    have hb' : (ℓ : E → F) = fun _ => b :=
+      (ℓ.continuous.ae_eq_iff_eq μ continuous_const).1 hb
+    refine hℓ (ContinuousLinearMap.ext fun x => ?_)
+    rw [zero_apply, congrFun hb' x, ← congrFun hb' 0, map_zero]
+  by_contra htop
+  have h12 : (1 : ℝ≥0∞) * bmoSeminorm ℓ μ = 2 * bmoSeminorm ℓ μ := by rw [one_mul]; exact h2
+  have := (ENNReal.mul_left_inj h0 htop).1 h12
+  norm_num at this
+
+/-- A nonzero continuous linear map on a finite-dimensional real normed space with an additive
+Haar measure does not have bounded mean oscillation. -/
+theorem _root_.ContinuousLinearMap.not_memBMO {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E}
+    [μ.IsAddHaarMeasure] [CompleteSpace F] {ℓ : E →L[ℝ] F} (hℓ : ℓ ≠ 0) :
+    ¬ MemBMO ℓ μ := fun h => h.bmoSeminorm_ne_top (ℓ.bmoSeminorm_eq_top hℓ)
 
 end Invariance
 
