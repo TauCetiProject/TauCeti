@@ -412,13 +412,15 @@ theorem reexpand_coeff_smul (P : ℤ_[p][X]) (s t : ℤ_[p]) (e : E) (j : ℕ) :
   simp [coeff_eq_zero_of_natDegree_lt (Nat.lt_of_succ_le hk)]
 
 omit [CompleteSpace E] in
-/-- A coefficient of a re-expansion is bounded by the coefficients of the same or higher degree. -/
+/-- The coefficient of `vʲ` in a re-expansion along `s + t v` is bounded by `‖t‖ʲ` times the
+coefficients of the same or higher degree. -/
 theorem norm_reexpand_le (s t : ℤ_[p]) {c : ℕ → E} {C : ℝ} (hC : 0 ≤ C) {j : ℕ}
-    (hc : ∀ n, j ≤ n → ‖c n‖ ≤ C) : ‖reexpand s t c j‖ ≤ C :=
-  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hC fun n ↦ by
+    (hc : ∀ n, j ≤ n → ‖c n‖ ≤ C) : ‖reexpand s t c j‖ ≤ ‖t‖ ^ j * C :=
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun n ↦ by
     rcases lt_or_ge n j with hn | hn
-    · simpa [reexpandScalar_of_lt s t hn] using hC
-    · exact (norm_smul_le_of_norm_le_one _ (PadicInt.norm_le_one _)).trans (hc n hn)
+    · simpa [reexpandScalar_of_lt s t hn] using mul_nonneg (pow_nonneg (norm_nonneg t) j) hC
+    · exact (norm_smul_le _ _).trans <|
+        mul_le_mul (norm_reexpandScalar_le s t n j) (hc n hn) (norm_nonneg _) (by positivity)
 
 /-- **Composition of re-expansions.** Re-expanding `∑ₙ (s₁ + t₁ v)ⁿ • cₙ` along
 `v = s₂ + t₂ u` is the re-expansion along `s₁ + t₁ (s₂ + t₂ u)`. -/
@@ -474,7 +476,8 @@ variable {k : ℕ} (σ : ZMod (p ^ k) → ZMod (p ^ h)) (s t : ZMod (p ^ k) → 
 omit [CompleteSpace E] in
 private theorem norm_reexpand_apply_le (c : AnalyticStage p h E) (i : ZMod (p ^ k) × ℕ) :
     ‖reexpand (s i.1) (t i.1) (fun n ↦ c (σ i.1, n)) i.2‖ ≤ ‖c‖ :=
-  norm_reexpand_le _ _ (norm_nonneg c) fun _ _ ↦ c.norm_coe_le_norm _
+  (norm_reexpand_le _ _ (norm_nonneg c) fun _ _ ↦ c.norm_coe_le_norm _).trans <|
+    mul_le_of_le_one_left (norm_nonneg c) (pow_le_one₀ (norm_nonneg _) (PadicInt.norm_le_one _))
 
 omit [CompleteSpace E] in
 private theorem tendsto_reexpand_apply (c : AnalyticStage p h E) :
@@ -489,7 +492,9 @@ private theorem tendsto_reexpand_apply (c : AnalyticStage p h E) :
   refine (Set.finite_univ.prod (Set.finite_Iic N)).subset fun i hi ↦ ⟨trivial, ?_⟩
   by_contra hiN
   rw [Set.mem_Iic, not_le] at hiN
-  refine hi ((norm_reexpand_le _ _ (half_pos hε).le fun n hn ↦ ?_).trans_lt (half_lt_self hε))
+  refine hi (((norm_reexpand_le _ _ (half_pos hε).le fun n hn ↦ ?_).trans
+    (mul_le_of_le_one_left (half_pos hε).le (pow_le_one₀ (norm_nonneg _)
+      (PadicInt.norm_le_one _)))).trans_lt (half_lt_self hε))
   by_contra hcn
   have hmem : (σ i.1, n) ∈ {x | ¬‖c x‖ < ε / 2} := not_lt.mpr (not_le.mp hcn).le
   have := hN ⟨_, hmem, rfl⟩
@@ -586,9 +591,7 @@ theorem transition_injective (hpE : IsSMulRegular E (p : ℤ_[p])) :
 theorem norm_transition_apply_le (c : AnalyticStage p h E) (a' : ZMod (p ^ (h + 1))) (j : ℕ) :
     ‖transition S c (a', j)‖ ≤ ‖(p : ℤ_[p])‖ ^ j * ‖c‖ := by
   rw [transition_apply]
-  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun k ↦
-    (norm_smul_le _ _).trans <| mul_le_mul (norm_reexpandScalar_le _ _ _ _)
-      (c.norm_coe_le_norm _) (norm_nonneg _) (by positivity)
+  exact norm_reexpand_le _ _ (norm_nonneg c) fun _ _ ↦ c.norm_coe_le_norm _
 
 /-- The transition does not increase norms. -/
 theorem norm_transition_le (c : AnalyticStage p h E) : ‖transition S c‖ ≤ ‖c‖ :=
