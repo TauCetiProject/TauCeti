@@ -102,6 +102,8 @@ positive exponent, is equicontinuous on that set
 * `HolderOnWith.inv₀`: the reciprocal of a Hölder function bounded away from zero is Hölder.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
   a common constant is Hölder with that constant.
+* `HolderOnWith.of_subset_closure`: a Hölder bound on `s` holds on every `t ⊆ closure s` at whose
+  points the function is continuous within `s`.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
   constant `2 M`.
 * `TauCeti.exists_holderWith_tsum_of_rpow_mul_le`: for `0 < α < 1`, a series `∑ⱼ fⱼ` whose terms
@@ -404,6 +406,25 @@ theorem HolderOnWith.of_tendsto {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoE
     (hC : ∀ᶠ n in l, HolderOnWith C r (u n) s) :
     HolderOnWith C r v s := fun x hx y hy ↦
   le_of_tendsto ((hu x hx).edist (hu y hy)) (hC.mono fun _ hn ↦ hn x hx y hy)
+
+/-- A function that is Hölder on `s` and continuous within `s` at the points of `t ⊆ closure s`
+is Hölder on `t` with the same constant and exponent: the Hölder inequality passes to the closure
+of `s × s` by continuity within that product. -/
+theorem HolderOnWith.of_subset_closure {X Y : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] {C r : ℝ≥0} {f : X → Y} {s t : Set X} (h : HolderOnWith C r f s)
+    (hts : t ⊆ closure s) (hf : ∀ x ∈ t, ContinuousWithinAt f s x) : HolderOnWith C r f t := by
+  intro a ha b hb
+  have hab : (a, b) ∈ closure (s ×ˢ s) := by
+    rw [closure_prod_eq]
+    exact ⟨hts ha, hts hb⟩
+  have h1 : ContinuousWithinAt (fun q : X × X => edist (f q.1) (f q.2)) (s ×ˢ s) (a, b) :=
+    ((hf a ha).comp continuousWithinAt_fst mapsTo_fst_prod).edist
+      ((hf b hb).comp continuousWithinAt_snd mapsTo_snd_prod)
+  have h2 : Continuous fun q : X × X => (C : ℝ≥0∞) * edist q.1 q.2 ^ (r : ℝ) :=
+    (ENNReal.continuous_const_mul ENNReal.coe_ne_top).comp
+      (ENNReal.continuous_rpow_const.comp continuous_edist)
+  exact ContinuousWithinAt.closure_le hab h1 h2.continuousWithinAt
+    fun q hq => h q.1 hq.1 q.2 hq.2
 
 /-- A pointwise limit of maps that are `r`-Hölder with a common constant `C` is `r`-Hölder with
 constant `C`. -/
