@@ -410,9 +410,10 @@ private theorem hasDerivWithinAt_heatField {r m : ℕ} (h : m + 2 * r ≤ k) (x 
       (Icc 0 T) t := by
   have hext : ParabolicC2HolderSpace.timeExtension hT.le (heatField hα₀ hα₁ f r m) x =
       iteratedTraceLastTwoL E F r m ∘
-        ParabolicC2HolderSpace.timeExtension hT.le (derivFieldBCF hα₀ hα₁ f (m + 2 * r)) x :=
-    ParabolicC2HolderSpace.timeExtension_comp _ (iteratedTraceLastTwoL E F r m)
-      (derivFieldBCF hα₀ hα₁ f (m + 2 * r)) x
+        ParabolicC2HolderSpace.timeExtension hT.le (derivFieldBCF hα₀ hα₁ f (m + 2 * r)) x := by
+    funext s
+    simp only [ParabolicC2HolderSpace.timeExtension_def, heatField,
+      ContinuousLinearMap.compLeftContinuousBounded_apply, Function.comp_apply]
   have hd := (iteratedTraceLastTwoL E F r m).hasFDerivAt.comp_hasDerivWithinAt (t : ℝ)
     (hasDerivWithinAt_derivFieldBCF hα₀ hα₁ f h x t)
   rw [hext]
@@ -430,9 +431,10 @@ private theorem hasDerivWithinAt_forcingField {m i a : ℕ} (h : 2 * i + (m + 2 
       (forcingField f m (i + 1) a (slabMk x t)) (Icc 0 T) t := by
   have hext : ParabolicC2HolderSpace.timeExtension hT.le (forcingField f m i a) x =
       iteratedTraceLastTwoL E F a m ∘
-        ParabolicC2HolderSpace.timeExtension hT.le (mixedDerivL i (m + 2 * a) f) x :=
-    ParabolicC2HolderSpace.timeExtension_comp _ (iteratedTraceLastTwoL E F a m)
-      (mixedDerivL i (m + 2 * a) f) x
+        ParabolicC2HolderSpace.timeExtension hT.le (mixedDerivL i (m + 2 * a) f) x := by
+    funext s
+    simp only [ParabolicC2HolderSpace.timeExtension_def, forcingField,
+      ContinuousLinearMap.compLeftContinuousBounded_apply, Function.comp_apply]
   rw [hext]
   exact (iteratedTraceLastTwoL E F a m).hasFDerivAt.comp_hasDerivWithinAt (t : ℝ)
     (f.hasDerivWithinAt_mixedDerivL h x t)
