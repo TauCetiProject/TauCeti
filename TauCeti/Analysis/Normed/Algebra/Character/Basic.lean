@@ -35,6 +35,14 @@ Banach algebras are automatically continuous.
 
 ## Main results
 
+* `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`,
+  `NonUnitalAlgHom.toContinuousLinearMap`, `NonUnitalAlgHom.norm_toContinuousLinearMap_le`:
+  nonunital characters of Banach algebras are contractive, hence continuous linear functionals of
+  operator norm at most `1`.
+* `NonUnitalAlgHom.tendsto_one_of_tendsto_mul_right`,
+  `NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_tendsto_mul_right`: a nonzero character
+  tends to `1` along any one-sided approximate identity, and has operator norm `1` when that
+  approximate identity is eventually bounded by `1`.
 * `WeakDual.CharacterSpace.isCompact_union_zero`,
   `WeakDual.CharacterSpace.instLocallyCompactSpace`: the character space of any nonunital Banach
   algebra over a proper nontrivially normed field is locally compact, realized inside the weak-star
@@ -95,9 +103,29 @@ def toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : A →L[𝕜] 𝕜 :=
 theorem coe_toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : ⇑φ.toContinuousLinearMap = φ :=
   (rfl)
 
+@[simp]
 theorem toContinuousLinearMap_apply (φ : A →ₙₐ[𝕜] 𝕜) (a : A) :
     φ.toContinuousLinearMap a = φ a :=
   (rfl)
+
+theorem toContinuousLinearMap_injective :
+    Function.Injective (toContinuousLinearMap (𝕜 := 𝕜) (A := A)) := fun _ _ h =>
+  DFunLike.ext _ _ fun a => congrArg (fun f : A →L[𝕜] 𝕜 => f a) h
+
+@[simp]
+theorem toContinuousLinearMap_inj {φ ψ : A →ₙₐ[𝕜] 𝕜} :
+    φ.toContinuousLinearMap = ψ.toContinuousLinearMap ↔ φ = ψ :=
+  toContinuousLinearMap_injective.eq_iff
+
+@[simp]
+theorem toContinuousLinearMap_zero :
+    (0 : A →ₙₐ[𝕜] 𝕜).toContinuousLinearMap = 0 :=
+  DFunLike.ext _ _ fun _ => rfl
+
+@[simp]
+theorem toContinuousLinearMap_eq_zero {φ : A →ₙₐ[𝕜] 𝕜} :
+    φ.toContinuousLinearMap = 0 ↔ φ = 0 := by
+  rw [← toContinuousLinearMap_zero, toContinuousLinearMap_inj]
 
 end NonUnitalAlgHom
 

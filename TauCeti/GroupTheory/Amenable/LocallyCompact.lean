@@ -7,8 +7,6 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Convolution
 public import TauCeti.GroupTheory.Amenable.Linfty
-public import Mathlib.Topology.ContinuousMap.BoundedCompactlySupported
-public import TauCeti.MeasureTheory.Function.AEEqOfIntegralContinuous
 public import TauCeti.MeasureTheory.Integral.PeakFunction
 
 /-!
@@ -35,14 +33,10 @@ approximate identity** in `L¹(G, μ)`: `h ⋆ e` is close to `h` in `L¹` when 
 kernel of integral one vanishing outside a small neighbourhood of `1`.
 
 The right approximate identity comes from writing a convolution as an average of right
-translates, `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ`, where `(R_(z⁻¹) h)(x) = c(z) * h (x * z⁻¹)` and
-`c` is the modular character, together with the strong continuity of right translation on `L¹`.
-Since `μ` need not be σ-finite, this identity is not obtained from Fubini's theorem. Instead both
-sides are convolved with the classes of functions `ψ ∈ UCB G`, where they agree by
-moving continuous linear maps through `L¹`- and `UCB`-valued Bochner integrals. Evaluating at `1`
-shows that their difference integrates to zero against every compactly supported continuous
-function, and such functions determine an integrable function for a regular measure
-(`MeasureTheory.Integrable.ae_eq_zero_of_forall_integral_hasCompactSupport_smul_eq_zero`).
+translates, `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ`
+(`MeasureTheory.Lp.convolutionL_eq_integral_smul_rightTranslation_inv`), where
+`(R_(z⁻¹) h)(x) = c(z) * h (x * z⁻¹)` and `c` is the modular character, together with the strong
+continuity of right translation on `L¹`.
 
 ## Main definitions
 
@@ -51,8 +45,6 @@ function, and such functions determine an integrable function for a regular meas
 
 ## Main results
 
-* `MeasureTheory.Lp.convolutionL_eq_integral_smul_rightTranslation`: the convolution `h ⋆ k` of
-  `L¹` functions is the `L¹`-valued integral `∫ z, k z • R_(z⁻¹) h ∂μ`.
 * `MeasureTheory.Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le`: **right approximate
   identity**, quantitatively: `‖h ⋆ k - h‖₁` is small for nonnegative kernels `k` of integral one
   concentrated near `1` (compare `MeasureTheory.Lp.tendsto_convolutionL_right`).
@@ -86,50 +78,6 @@ namespace MeasureTheory.Lp
 
 open TauCeti
 
-/-- Smoothing the class of `ψ ∈ UCB G` by the average `∫ z, k z • R_(z⁻¹) h ∂μ` of right
-translates of `h` is smoothing it by `k` and then by `h`. -/
-private theorem convolutionUCB_integral_smul_rightTranslation (h k : Lp ℝ 1 μ) (ψ : UCB G) :
-    convolutionUCB (∫ z, k z • rightTranslation μ 1 ℝ z⁻¹ h ∂μ) (toLpTop μ ℝ (ψ : G →ᵇ ℝ)) =
-      convolutionUCB h (toLpTop μ ℝ (convolutionUCB k (toLpTop μ ℝ (ψ : G →ᵇ ℝ)) : G →ᵇ ℝ)) := by
-  -- Push the continuous linear map `u ↦ u ⋆ ψ` inside the `L¹`-valued integral.
-  have h₁ := ((convolutionUCBL (μ := μ)).flip (toLpTop μ ℝ (ψ : G →ᵇ ℝ))).integral_comp_comm
-    (integrable_smul_rightTranslation_inv (L1.integrable_coeFn k) h)
-  -- Push the continuous linear map `f ↦ h ⋆ [f]` inside the `UCB G`-valued orbit integral.
-  have h₂ := ((convolutionUCB h).comp ((toLpTop μ ℝ).comp (ucb G).toSubmodule.subtypeL) :
-    UCB G →L[ℝ] UCB G).integral_comp_comm
-    (UCB.integrable_smul_leftTranslation (L1.integrable_coeFn k) ψ)
-  simp only [ContinuousLinearMap.flip_apply, convolutionUCBL_apply, map_smul,
-    ContinuousLinearMap.comp_apply] at h₁ h₂
-  rw [← h₁, convolutionUCB_toLpTop k ψ]
-  refine (integral_congr_ae (.of_forall fun z => ?_)).trans h₂
-  rw [← convolutionUCB_apply_leftTranslation, leftTranslation_toLpTop,
-    ← UCB.coe_leftTranslation]
-  -- `(ucb G).toSubmodule.subtypeL` applies the coercion `UCB G → G →ᵇ ℝ`.
-  rfl
-
-/-- **Convolution as an average of right translates.** For `h, k ∈ L¹(G, μ)`, the convolution
-`h ⋆ k = ∫ y, h y • L_y k ∂μ` is also the `L¹`-valued integral `∫ z, k z • R_(z⁻¹) h ∂μ`, where
-`(R_(z⁻¹) h)(x) = c(z) * h (x * z⁻¹)` for the modular character `c`. -/
-theorem convolutionL_eq_integral_smul_rightTranslation (h k : Lp ℝ 1 μ) :
-    convolutionL μ 1 ENNReal.one_ne_top h k = ∫ z, k z • rightTranslation μ 1 ℝ z⁻¹ h ∂μ := by
-  set D := convolutionL μ 1 ENNReal.one_ne_top h k - ∫ z, k z • rightTranslation μ 1 ℝ z⁻¹ h ∂μ
-  -- Both sides have the same convolution with the class of every function in `UCB G`.
-  have hD (ψ : UCB G) : convolutionUCB D (toLpTop μ ℝ (ψ : G →ᵇ ℝ)) = 0 := by
-    rw [convolutionUCB_sub, sub_apply, convolutionUCB_convolutionL,
-      convolutionUCB_integral_smul_rightTranslation, sub_self]
-  -- Evaluating at `1` integrates `D` against every compactly supported continuous function.
-  refine sub_eq_zero.1 (eq_zero_iff_ae_eq_zero.2 ?_)
-  refine (L1.integrable_coeFn D).ae_eq_zero_of_forall_integral_hasCompactSupport_smul_eq_zero
-    fun φ hφ hφc => ?_
-  have hψc : HasCompactSupport fun y : G => φ y⁻¹ := hφc.comp_homeomorph (Homeomorph.inv G)
-  let ψ : UCB G := ⟨ofCompactSupport _ (hφ.comp continuous_inv) hψc,
-    mem_ucb_of_hasCompactSupport hψc⟩
-  -- Mathlib has no evaluation lemma for `ofCompactSupport`, whose coercion is the given function.
-  have hψ (y : G) : (ψ : G →ᵇ ℝ) y = φ y⁻¹ := rfl
-  have h₁ := congrArg (fun F : UCB G => (F : G →ᵇ ℝ) 1) (hD ψ)
-  simp only [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) (coeFn_toLpTop μ (ψ : G →ᵇ ℝ))] at h₁
-  simpa [hψ, mul_comm] using h₁
-
 /-- **Right approximate identity estimate.** If `k ∈ L¹(G, μ)` is nonnegative of integral one and
 vanishes almost everywhere outside `U`, then `‖h ⋆ k - h‖₁` is at most any bound `C` for
 `‖R_(z⁻¹) h - h‖₁` over `z ∈ U`. -/
@@ -137,10 +85,11 @@ theorem norm_convolutionL_sub_le_of_rightTranslation {h k : Lp ℝ 1 μ} (hk : 0
     (hk₁ : ∫ z, k z ∂μ = 1) {U : Set G} (hkU : ∀ᵐ z ∂μ, z ∉ U → k z = 0) {C : ℝ}
     (hC : ∀ z ∈ U, ‖rightTranslation μ 1 ℝ z⁻¹ h - h‖ ≤ C) :
     ‖convolutionL μ 1 ENNReal.one_ne_top h k - h‖ ≤ C := by
-  rw [convolutionL_eq_integral_smul_rightTranslation, ← mul_one C,
+  rw [convolutionL_eq_integral_smul_rightTranslation_inv, ← mul_one C,
     ← (L1.norm_eq_integral_of_nonneg hk).trans hk₁]
   exact norm_integral_smul_sub_le hk₁ hkU
-    (integrable_smul_rightTranslation_inv (L1.integrable_coeFn k) h).aestronglyMeasurable
+    (Integrable.aestronglyMeasurable
+      (integrable_smul_rightTranslation_inv ENNReal.one_ne_top (L1.integrable_coeFn k) h))
     (ae_of_all _ hC)
 
 /-- **Right approximate identity**, quantitatively. For `h ∈ L¹(G, μ)` and `ε > 0` there is a
