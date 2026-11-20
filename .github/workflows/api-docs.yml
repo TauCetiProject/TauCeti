@@ -252,7 +252,7 @@ jobs:
           # Lake starts; its id is recorded for the backstop step below.
           group_file="$RUNNER_TEMP/docgen-process-group"
           rm -f "$group_file"
-          setsid --wait bash -c 'echo "$$" > "$1"; exec lake build TauCetiDocs:docs' _ "$group_file" &
+          setsid --wait bash -c 'echo "$$" > "$1" && exec lake build TauCetiDocs:docs' _ "$group_file" &
           build=$!
           until [ -s "$group_file" ] || ! kill -0 "$build" 2>/dev/null; do sleep 1; done
           deadline=$((SECONDS + 255 * 60))
@@ -317,8 +317,12 @@ jobs:
         if: ${{ always() && steps.docgen.outcome != 'skipped' && steps.docgen.outcome != '' }}
         run: |
           group_file="$RUNNER_TEMP/docgen-process-group"
-          if [ -s "$group_file" ]; then
+          # The build writes this file before it starts Lake, so without it nothing was started.
+          if [ -e "$group_file" ]; then
             group=$(cat "$group_file")
+            case "$group" in
+              ''|*[!0-9]*) echo "::warning::unreadable docs build process group; not saving its state"; exit 0 ;;
+            esac
             if pgrep -g "$group" >/dev/null; then
               echo "::warning::the docs build was still running; stopping it"
               kill -TERM -- "-$group" 2>/dev/null || true
