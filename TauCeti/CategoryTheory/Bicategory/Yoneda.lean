@@ -312,7 +312,7 @@ def yonedaUnitIsoApp (η : ofPresheaf.{w'} (yoneda.obj X) ⟶ F) :
     simp only [Category.assoc, Functor.map_comp, Cat.Hom.inv_hom_id_toNatTrans_app]
     rw [← reassoc_of% key, ← Functor.map_comp_assoc]
     congr 1
-    · exact IsDiscrete.map_eq _ _ _
+    · exact Functor.congr_map _ (Subsingleton.elim _ _)
     · simp
 
 @[simp]
