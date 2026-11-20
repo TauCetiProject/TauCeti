@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fin.Tuple.Sort
 public import TauCeti.Algebra.Order.BigOperators.Dominance
 public import TauCeti.Combinatorics.Young.OfRowLens
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # Dominant weights for the general linear group
@@ -263,12 +264,17 @@ theorem isPolynomial_iff_zero_le_detShift (l : DominantWeight n) :
   | 0, _, _ => simp
   | _ + 1, _, h => exact h _
 
-/-- Subtracting its last entry makes any dominant weight polynomial. -/
-theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :
-    (l.shift (-l.detShift)).IsPolynomial := fun i => by
+/-- Shifting a dominant weight by at least `-l.detShift` produces a polynomial weight. -/
+theorem isPolynomial_shift_of_neg_detShift_le {l : DominantWeight n} {m : ℤ}
+    (hm : -l.detShift ≤ m) : (l.shift m).IsPolynomial := fun i => by
   have h := l.detShift_le i
   simp only [shift_apply]
   omega
+
+/-- Subtracting its last entry makes any dominant weight polynomial. -/
+theorem isPolynomial_shift_neg_detShift (l : DominantWeight n) :
+    (l.shift (-l.detShift)).IsPolynomial :=
+  isPolynomial_shift_of_neg_detShift_le le_rfl
 
 /-- The entries of a dominant weight, truncated to `ℕ`, are still weakly decreasing. -/
 theorem toNat_antitone (l : DominantWeight n) : Antitone fun i => (l.val i).toNat :=
@@ -297,6 +303,22 @@ theorem colLen_zero_shape_le (l : DominantWeight n) : l.shape.colLen 0 ≤ n :=
 theorem natCast_rowLen_shape {l : DominantWeight n} (hl : l.IsPolynomial) (i : Fin n) :
     (l.shape.rowLen i : ℤ) = l.val i := by
   rw [rowLen_shape, Int.toNat_of_nonneg (hl i)]
+
+/-- On a polynomial weight, prefix sums of entries match `Finset.range` sums of row lengths of
+`l.shape`. -/
+theorem sum_filter_lt_eq_sum_range_rowLen {l : DominantWeight n} (hl : l.IsPolynomial) (j : ℕ) :
+    (∑ r : Fin n with r.val < j, l.val r) = ∑ r ∈ Finset.range j, (l.shape.rowLen r : ℤ) := by
+  induction j with
+  | zero => simp
+  | succ m ih =>
+    by_cases hm : m < n
+    · rw [sum_filter_val_lt_succ hm l.val, Finset.sum_range_succ, ih,
+        natCast_rowLen_shape hl ⟨m, hm⟩]
+    · have hnm : n ≤ m := Nat.le_of_not_lt hm
+      have hfilt : (Finset.univ.filter fun r : Fin n => r.val < m + 1) =
+          Finset.univ.filter fun r : Fin n => r.val < m := by ext r; simp; omega
+      rw [hfilt, Finset.sum_range_succ, rowLen_shape_eq_zero_of_le l hnm, Nat.cast_zero,
+        add_zero, ih]
 
 /-- The Young diagram of a polynomial weight has `∑ λᵢ` cells. -/
 theorem natCast_card_shape {l : DominantWeight n} (hl : l.IsPolynomial) :
@@ -365,6 +387,12 @@ variable {n : ℕ}
 length `λᵢ - λₙ`.  Together with `TauCeti.DominantWeight.detShift` it presents `λ` as a
 determinant twist of a polynomial weight. -/
 def detShiftShape (l : DominantWeight n) : YoungDiagram := (l.shift (-l.detShift)).shape
+
+/-- The Young diagram of `l.shift (-l.detShift)` is `l.detShiftShape`. -/
+@[simp]
+theorem shape_shift_neg_detShift (l : DominantWeight n) :
+    (l.shift (-l.detShift)).shape = l.detShiftShape :=
+  (rfl)
 
 @[simp]
 theorem rowLen_detShiftShape (l : DominantWeight n) (i : Fin n) :
