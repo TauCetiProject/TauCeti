@@ -59,15 +59,17 @@ theorem le_singularValue_diagonalCLM (d : ℓ^∞(ι, 𝕜)) {n : ℕ} {s : Fins
   rcases eq_zero_or_pos c with h | h
   · exact h ▸ zero_le
   obtain ⟨M, B, hM, hB, hBDA⟩ := exists_comp_diagonalCLM_comp_subtypeL_eq_id (p := p) d s h hc
-  have h1 : 1 ≤ ‖B‖₊ * (diagonalCLM (p := p) d).singularValue n * ‖M.subtypeL‖₊ := by
-    simpa [hBDA, hM, hs] using B.singularValue_comp_comp_le (diagonalCLM d) M.subtypeL n
-  have hBA : c * ‖B‖₊ * ‖M.subtypeL‖₊ ≤ 1 :=
-    (mul_le_of_le_one_right' (by exact_mod_cast Submodule.norm_subtypeL_le M)).trans hB
+  -- The left inverse `B` makes the diagonal operator `c`-coercive on `M`.
+  refine NNReal.coe_le_coe.mp <| (diagonalCLM (p := p) d).le_singularValue_of_lt_rank
+    (V := M) (by simpa [hM] using hs) fun x hx ↦ ?_
+  have hBx : B (diagonalCLM d x) = ⟨x, hx⟩ := by simpa using congr($hBDA ⟨x, hx⟩)
   calc
-    c = c * 1 := (mul_one c).symm
-    _ ≤ c * (‖B‖₊ * (diagonalCLM (p := p) d).singularValue n * ‖M.subtypeL‖₊) := by gcongr
-    _ = c * ‖B‖₊ * ‖M.subtypeL‖₊ * (diagonalCLM (p := p) d).singularValue n := by ring
-    _ ≤ (diagonalCLM (p := p) d).singularValue n := mul_le_of_le_one_left' hBA
+    (c : ℝ) * ‖x‖ = c * ‖B (diagonalCLM d x)‖ := by rw [hBx, ← Submodule.norm_coe]
+    _ ≤ c * ‖B‖ * ‖diagonalCLM (p := p) d x‖ := by
+      rw [mul_assoc]
+      gcongr
+      exact B.le_opNorm _
+    _ ≤ ‖diagonalCLM (p := p) d x‖ := mul_le_of_le_one_left (norm_nonneg _) (by exact_mod_cast hB)
 
 /-- The approximation numbers of a diagonal operator with decreasing coefficient magnitudes
 are exactly those magnitudes. No convergence-to-zero assumption is needed. -/
