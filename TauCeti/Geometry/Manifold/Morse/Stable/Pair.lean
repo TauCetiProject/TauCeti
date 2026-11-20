@@ -41,11 +41,11 @@ For a Morse–Smale pair the following hold, for critical points `a` of `f₀` a
 * **Breaking.** If `X₀` and `X₁` are moreover Morse–Smale, a limit of points of
   `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` lies in `W^u_{X₀}(a) ∩ W^s_{X₁}(b)` with `a = p` or
   `ind a < ind p`, and `b = q` or `ind q < ind b`
-  (`IsMorseSmalePair.exists_mem_unstableSet_inter_stableSet_of_mem_closure`). The limit has broken
-  off trajectories of `X₀` from `p` to `a` and of `X₁` from `b` to `q`.
+  (`IsMorseSmalePair.exists_mem_unstableSet_inter_stableSet_of_mem_closure`).
 * **Finiteness.** Hence when `ind p ≤ ind q` the intersection is finite
-  (`IsMorseSmalePair.finite_unstableSet_inter_stableSet`): its points are the rigid continuation
-  trajectories, counted by the continuation map between Morse complexes.
+  (`IsMorseSmalePair.finite_unstableSet_inter_stableSet`). Once continuation trajectories are
+  identified with these intersections, its points are expected to give the counts of the
+  continuation map between Morse complexes.
 * **One-dimensional ends.** When `ind p = ind q + 1`, the intersection is one-dimensional, and its
   closure adds only once-broken configurations: a trajectory of `X₀` from `p` to a critical point
   `a` with `ind a = ind q`, followed by a point of `W^u_{X₀}(a) ∩ W^s_{X₁}(q)`, or a point of
@@ -164,19 +164,8 @@ theorem exists_isSliceChart_unstableSet_inter_stableSet (h : IsMorseSmalePair hX
       q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
       IsSliceChart q ((Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) :
-          Submodule ℝ E) : Set E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) := by
-  obtain ⟨L₁, q₁, -, hy₁, hq₁, h₁⟩ :=
-    hX₀.exists_isSliceChart_unstableSet hf₀ (hX₀.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
-  obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
-    hX₁.exists_isSliceChart_stableSet (hX₁.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
-  exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
-    hy₂ (h hy)
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
+          Submodule ℝ E) : Set E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) :=
+  hX₀.exists_unstableSet_inter_stableSet_chart hX₁ hf₀ hy (h hy)
 
 /-- **The tangent space of a transverse intersection for a pair.** For a Morse–Smale pair, the
 tangent space of `W^u_{X₀}(a) ∩ W^s_{X₁}(b)` at each of its points is the intersection of the
@@ -186,19 +175,8 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (h : IsMorseSmalePair hX
     Submodule.span ℝ
         (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) y) =
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
-        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) := by
-  obtain ⟨L₁, q₁, -, hy₁, hq₁, h₁⟩ :=
-    hX₀.exists_isSliceChart_unstableSet hf₀ (hX₀.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
-  obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
-    hX₁.exists_isSliceChart_stableSet (hX₁.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
-  exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
-    hy₂ (h hy)
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) :=
+  hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ hy (h hy)
 
 /-- **The intersection for a pair has dimension the index difference.** For a Morse–Smale pair, the
 tangent space of `W^u_{X₀}(a) ∩ W^s_{X₁}(b)` at each of its points has dimension `ind a - ind b`,
@@ -208,14 +186,9 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMors
     (hy : y ∈ hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) :
     Module.finrank ℝ (Submodule.span ℝ
         (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) y)) +
-      manifoldMorseIndex 𝓘(ℝ, E) f₁ b = manifoldMorseIndex 𝓘(ℝ, E) f₀ a := by
-  have hdim := Submodule.finrank_sup_add_finrank_inf_eq
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y))
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y))
-  rw [h hy, finrank_top, hX₀.finrank_span_mtangentConeAt_unstableSet hf₀ hy.1,
-    ← h.span_mtangentConeAt_unstableSet_inter_stableSet hf₀ hy] at hdim
-  have hs := hX₁.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hy.2
-  omega
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ b = manifoldMorseIndex 𝓘(ℝ, E) f₀ a :=
+  hX₀.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX₁ hf₀ hy
+    (h hy)
 
 /-- **Intersections for a pair are manifolds.** For a Morse–Smale pair, if `W^u_{X₀}(a)` meets
 `W^s_{X₁}(b)`, then their intersection carries a smooth manifold structure, modelled on a subspace
@@ -227,21 +200,8 @@ theorem exists_unstableSet_inter_stableSet_isManifold (h : IsMorseSmalePair hX�
       ∃ C : ChartedSpace L ↥(hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b), letI := C
         IsManifold 𝓘(ℝ, L) ∞ ↥(hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) ∧
         ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) ∞
-          (Subtype.val : ↥(hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) → M) := by
-  obtain ⟨y₀, hy₀⟩ := hne
-  -- Every tangent space of the intersection has dimension `ind a - ind b`; model it on one of them.
-  refine ⟨Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) y₀),
-    h.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf₀ hy₀,
-    exists_isManifold_of_finrankSubspaceCharts fun y hy ↦ ?_⟩
-  obtain ⟨q, hyq, hq, hs⟩ := h.exists_isSliceChart_unstableSet_inter_stableSet hf₀ hy
-  have hdim₀ :=
-    h.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf₀ hy₀
-  have hdim :=
-    h.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf₀ hy
-  rw [h.span_mtangentConeAt_unstableSet_inter_stableSet hf₀ hy] at hdim
-  exact ⟨q, _, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
-    fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, isSliceChart_iff.1 hs, by omega⟩
+          (Subtype.val : ↥(hX₀.flow.unstableSet a ∩ hX₁.flow.stableSet b) → M) :=
+  hX₀.exists_unstableSet_inter_stableSet_isManifold hX₁ hf₀ (fun _ hy ↦ h hy) hne
 
 /-- **The index does not increase along a transverse pair.** For a Morse–Smale pair, if
 `W^u_{X₀}(a)` meets `W^s_{X₁}(b)`, then the index of `b` for `f₁` is at most the index of `a` for
@@ -323,8 +283,10 @@ theorem isClosed_unstableSet_inter_stableSet (h : IsMorseSmalePair hX₀ hX₁)
 
 /-- **Finiteness of the rigid trajectories for a pair.** Let `(X₀, X₁)` be a Morse–Smale pair of
 Morse–Smale pseudo-gradients. If the index of `p` for `f₀` is at most the index of `q` for `f₁`,
-then `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` is finite; it is empty unless the indices are equal. These are the
-counts of a continuation map between Morse complexes. -/
+then `W^u_{X₀}(p) ∩ W^s_{X₁}(q)` is finite. By `unstableSet_inter_stableSet_eq_empty` it is empty
+unless the indices are equal. Once continuation trajectories are identified with these
+intersections, they are expected to give the counts of a continuation map between Morse complexes.
+-/
 theorem finite_unstableSet_inter_stableSet (h : IsMorseSmalePair hX₀ hX₁)
     (h₀ : hX₀.IsMorseSmale) (h₁ : hX₁.IsMorseSmale) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
