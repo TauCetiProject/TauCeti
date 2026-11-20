@@ -101,6 +101,8 @@ computed in any chart, also on manifolds with boundary or corners
   fixed-point derivative of `f^[n]` is the `n`-th power of that of `f`.
 * `HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub`: on a normed space, a fixed point at
   which `f` has derivative `D` is nondegenerate exactly when `1 - D` is injective.
+* `HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub`: in finite dimensions, exactly when
+  `1 - D` is invertible.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
@@ -453,6 +455,18 @@ theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_injective_id_sub {f : E �
   -- The tangent space `TangentSpace 𝓘(𝕜, E) x` is `E` by definition.
   exact forall_congr' fun v ↦ imp_congr_left
     ⟨fun h ↦ sub_eq_zero.2 h.symm, fun h ↦ (sub_eq_zero.1 h).symm⟩
+
+/-- **Nondegeneracy on a finite-dimensional space.** If `f` has Fréchet derivative `D` at a fixed
+point `x` of a finite-dimensional normed space over a complete field, with its trivial chart, then
+`x` is nondegenerate exactly when `1 - D` is invertible. -/
+theorem _root_.HasFDerivAt.isNondegenerateFixedPt_iff_isInvertible_id_sub [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E] {f : E → E} {D : E →L[𝕜] E} {x : E} (hD : HasFDerivAt f D x)
+    (hx : IsFixedPt f x) :
+    IsNondegenerateFixedPt 𝓘(𝕜, E) f x ↔ (ContinuousLinearMap.id 𝕜 E - D).IsInvertible := by
+  rw [hD.isNondegenerateFixedPt_iff_injective_id_sub hx]
+  refine ⟨fun h ↦ ⟨(LinearEquiv.ofInjectiveEndo _ h).toContinuousLinearEquiv, rfl⟩, ?_⟩
+  rintro ⟨e, he⟩
+  exact he ▸ e.injective
 
 /-- **The fixed-point derivative of an iterate.** If `f` is differentiable at a fixed point `x`,
 the fixed-point derivative of `f^[n]` at `x` is the `n`-th power of that of `f`. -/
