@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import TauCeti.LinearAlgebra.TotallyReal.Basic
+import TauCeti.Data.Fin.Sum
 
 /-!
 # Doubled frames for totally real subspaces
@@ -75,12 +76,6 @@ namespace IsMaximalTotallyReal
 
 variable {L : Submodule R E}
 
-/-- The pairs `(i, 0)` and `(i, 1)` of `ι × Fin 2` correspond to the left and right copies of `i`
-in `ι ⊕ ι`. -/
-private def sumEquivProdFinTwo (ι : Type*) : ι ⊕ ι ≃ ι × Fin 2 :=
-  (Equiv.boolProdEquivSum ι).symm.trans
-    ((finTwoEquiv.symm.prodCongr (Equiv.refl ι)).trans (Equiv.prodComm (Fin 2) ι))
-
 /-- The **doubled basis** of a basis `a` of a maximal totally real submodule `L`: the basis of the
 ambient module whose pair of vectors indexed by `(i, 0)` and `(i, 1)` is `(a i, J (a i))`
 (`TauCeti.IsMaximalTotallyReal.doubledBasis_apply_zero`,
@@ -100,15 +95,13 @@ variable (hL : IsMaximalTotallyReal J L) (hJ : Function.Injective (J.domRestrict
 /-- The vector of the doubled basis indexed by `(i, 0)` is the basis vector `a i`. -/
 @[simp]
 theorem doubledBasis_apply_zero (i : ι) : hL.doubledBasis hJ a (i, 0) = a i := by
-  simp [doubledBasis, sumEquivProdFinTwo, Module.Basis.prod_apply,
-    show finTwoEquiv 0 = false from rfl]
+  simp [doubledBasis, ← sumEquivProdFinTwo_inl, Module.Basis.prod_apply]
 
 /-- The vector of the doubled basis indexed by `(i, 1)` is the image `J (a i)` of the basis vector
 `a i`. -/
 @[simp]
 theorem doubledBasis_apply_one (i : ι) : hL.doubledBasis hJ a (i, 1) = J (a i) := by
-  simp [doubledBasis, sumEquivProdFinTwo, Module.Basis.prod_apply,
-    show finTwoEquiv 1 = true from rfl]
+  simp [doubledBasis, ← sumEquivProdFinTwo_inr, Module.Basis.prod_apply]
 
 end IsMaximalTotallyReal
 

@@ -38,8 +38,6 @@ totally real one.
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.injective_domRestrict`: an almost complex structure is injective
-  on every subspace, the injectivity hypothesis of the totally real API.
 * `TauCeti.SymplecticForm.IsIsotropic.disjoint_map_of_tames`: an isotropic subspace of a taming
   pair is disjoint from its `J`-image.
 * `TauCeti.SymplecticForm.IsLagrangian.isMaximalTotallyReal_of_tames`: a Lagrangian subspace of a
@@ -56,13 +54,6 @@ Sections 2.3 and 2.6.
 public section
 
 namespace TauCeti
-
-/-- An almost complex structure is injective on every subspace. This is the injectivity hypothesis
-of the totally real API, such as `TauCeti.IsMaximalTotallyReal.normalEquiv`. -/
-theorem AlmostComplexStructure.injective_domRestrict {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (J : AlmostComplexStructure V) (L : Submodule ℝ V) :
-    Function.Injective (J.toLinearMap.domRestrict L) :=
-  J.injective.comp L.subtype_injective
 
 namespace SymplecticForm
 
