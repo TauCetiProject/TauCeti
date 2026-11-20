@@ -199,27 +199,14 @@ theorem quasiIso_subsetTwistedChainComplexMap {Z : TopCat.{v}} {A B : Set Z} {h 
     (hf : (ContinuousMap.inclusion h).IsWeakHomotopyEquivalence)
     (L : LocalCoefficientSystem.{u, v, v} R Z) :
     QuasiIso (subsetTwistedChainComplexMap L h) := by
-  have : Mono (TopCat.ofHom (ContinuousMap.subtypeVal B)) :=
-    (TopCat.mono_iff_injective _).2 Subtype.val_injective
-  -- The map of subspaces is a change of coefficients followed by the map of the inclusion, as
-  -- both are followed by the map of `B ⊆ Z` to the map of `A ⊆ Z`.
-  have e : subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
-      ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
-        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
-      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
-        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) := by
-    apply (cancel_mono (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal B)) L)).1
-    rw [subsetTwistedChainComplexMap_twistedChainComplexMap]
-    exact (twistedChainComplexMap_comp (TopCat.ofHom (ContinuousMap.inclusion h))
-      (TopCat.ofHom (ContinuousMap.subtypeVal B)) L).trans (Category.assoc _ _ _).symm
   have := hf.quasiIso_twistedChainComplexMap
     ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
-  have hq : QuasiIso (twistedChainComplexCoefficientMap
-      ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
-        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
-      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
-        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)) := inferInstance
-  exact e ▸ hq
+  rw [subsetTwistedChainComplexMap_def]
+  -- The change of coefficients starts at the pullback along `(subtypeVal B).comp (inclusion h)`,
+  -- which is the pullback along `subtypeVal A` only after unfolding, so instance search cannot
+  -- see that it is an isomorphism and the instance is given explicitly.
+  exact quasiIso_comp (hφ := @quasiIso_of_isIso _ _ _ _ _ _ _ _
+    (isIso_twistedChainComplexCoefficientMap _) _ _) _ _
 
 /-- **A weak homotopy equivalence induces a quasi-isomorphism of normalized cubical chains with
 local coefficients.** -/

@@ -34,16 +34,13 @@ The hypotheses are stated on the twisted chains of the subspaces. They are trans
 of `X` supported in the subspaces by the identification
 `TauCeti.LocalCoefficientSystem.subspaceTwistedChainComplexIso`, under which the map induced by an
 inclusion of subspaces is the inclusion of supports
-(`LocalCoefficientSystem.subspaceTwistedChainComplexIso_hom_smallTwistedChainComplexInclusion`).
+(`TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexInclusion_iff`).
 
 ## Main results
 
 * `TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexι_of_nhds`: subsets with open
   neighbourhoods covering `X` whose inclusions, and that of their intersections, are
   quasi-isomorphisms on twisted chains form an excisive couple for `L`.
-* `TauCeti.LocalCoefficientSystem.quasiIso_smallTwistedChainComplexInclusion_iff`: the inclusion of
-  chains supported in `S` into those supported in `T ⊇ S` is a quasi-isomorphism exactly when the
-  inclusion `S ⊆ T` induces one on twisted chains.
 
 ## References
 
@@ -61,33 +58,8 @@ universe u v w
 
 namespace TauCeti.LocalCoefficientSystem
 
-variable {R : Type u} [Ring R] {X : TopCat.{v}} (L : LocalCoefficientSystem.{u, v, max v w} R X)
-
-/-- **The inclusion of supports is the map of the inclusion of subspaces.** For `S ⊆ T`, under
-the identifications of the twisted chains of `S` and `T`, with `L` restricted, with the twisted
-chains of `X` supported in `S` and in `T`, the map induced by the inclusion `S ⊆ T` is the
-inclusion of the chains supported in `S` into those supported in `T`. -/
-@[reassoc]
-lemma subspaceTwistedChainComplexIso_hom_smallTwistedChainComplexInclusion {S T : Set X}
-    (h : S ⊆ T) :
-    (subspaceTwistedChainComplexIso L S).hom ≫ smallTwistedChainComplexInclusion
-        (smallTwistedChains_mono L (fun _ : Unit ↦ S) (fun _ : Unit ↦ T) id fun _ ↦ h) =
-      subsetTwistedChainComplexMap L h ≫ (subspaceTwistedChainComplexIso L T).hom := by
-  apply (cancel_mono (smallTwistedChainComplexι L (fun _ : Unit ↦ T))).1
-  simp
-
-/-- The inclusion of the twisted chains of `X` supported in `S` into those supported in `T` is a
-quasi-isomorphism exactly when the inclusion `S ⊆ T` induces a quasi-isomorphism on twisted chains,
-with `L` restricted to `S` and `T`. -/
-lemma quasiIso_smallTwistedChainComplexInclusion_iff {S T : Set X} (h : S ⊆ T) :
-    QuasiIso (smallTwistedChainComplexInclusion
-        (smallTwistedChains_mono L (fun _ : Unit ↦ S) (fun _ : Unit ↦ T) id fun _ ↦ h)) ↔
-      QuasiIso (subsetTwistedChainComplexMap L h) := by
-  rw [← quasiIso_iff_comp_left (subspaceTwistedChainComplexIso L S).hom,
-    subspaceTwistedChainComplexIso_hom_smallTwistedChainComplexInclusion L h,
-    quasiIso_iff_comp_right]
-
-variable {L} {A B U V : Set X} (hAU : A ⊆ U) (hBV : B ⊆ V)
+variable {R : Type u} [Ring R] {X : TopCat.{v}} {L : LocalCoefficientSystem.{u, v, max v w} R X}
+  {A B U V : Set X} (hAU : A ⊆ U) (hBV : B ⊆ V)
 
 /-- The inclusions of the twisted chains supported in `A ∩ B`, in `A` and `B`, and in `A` or `B`
 into those supported in `U ∩ V`, in `U` and `V`, and in `U` or `V`, as a map of the short exact
@@ -133,12 +105,9 @@ theorem quasiIso_smallTwistedChainComplexι_of_nhds (hU : IsOpen U) (hV : IsOpen
     have := (quasiIso_smallTwistedChainComplexInclusion_iff L hAU).2 inferInstance
     have := (quasiIso_smallTwistedChainComplexInclusion_iff L hBV).2 inferInstance
     HomologicalComplex.quasiIso_biprod_map _ _
-  have hS (A B : Set X) :
-      (ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L A B)).ShortExact := by
-    rw [← smallTwistedMayerVietorisShortComplex_def]
-    exact shortExact_smallTwistedMayerVietorisShortComplex L A B
-  have h₃ : QuasiIso ψ.τ₃ :=
-    HomologicalComplex.HomologySequence.quasiIso_τ₃ ψ (hS A B) (hS U V) h₁ h₂
+  have h₃ : QuasiIso ψ.τ₃ := HomologicalComplex.HomologySequence.quasiIso_τ₃ ψ
+    (shortExact_mk_smallTwistedMayerVietoris L A B) (shortExact_mk_smallTwistedMayerVietoris L U V)
+    h₁ h₂
   -- Compose with the small-chain theorem for the open cover by `U` and `V`.
   have hUV' := quasiIso_smallTwistedChainComplexι_bool L hU hV hUV
   rw [← smallTwistedChainComplexInclusion_ι (smallTwistedChains_mono L _ (Bool.rec U V) id

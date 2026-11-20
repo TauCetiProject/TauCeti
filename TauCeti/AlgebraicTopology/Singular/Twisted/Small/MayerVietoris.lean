@@ -258,4 +258,10 @@ theorem shortExact_smallTwistedMayerVietorisShortComplex :
           mono_f := mono_smallTwistedMayerVietorisToBiprod L U V n
           epi_g := epi_smallTwistedMayerVietorisFromBiprod L U V n }
 
+/-- The signed small twisted chain sequence, written with its two arrows, is short exact. -/
+theorem shortExact_mk_smallTwistedMayerVietoris :
+    (ShortComplex.mk _ _ (smallTwistedMayerVietorisToBiprod_fromBiprod L U V)).ShortExact := by
+  rw [← smallTwistedMayerVietorisShortComplex_def]
+  exact shortExact_smallTwistedMayerVietorisShortComplex L U V
+
 end TauCeti.LocalCoefficientSystem
