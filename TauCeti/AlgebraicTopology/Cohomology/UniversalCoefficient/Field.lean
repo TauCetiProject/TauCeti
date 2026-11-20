@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 
@@ -98,6 +99,33 @@ lemma singularCohomologyDualEquiv_singularCohomologyMap {Y : TopCat.{w}} (f : X 
       Dual.transpose (((singularHomologyFunctor (ModuleCat.{w} k) n).obj
         (ModuleCat.of k k)).map f).hom (Y.singularCohomologyDualEquiv n α) := by
   simp [singularKronecker_naturality, Dual.transpose_apply]
+
+/-- **The determinant of `𝟙 - f^*` is that of `𝟙 - f_*`**: for a self-map `f` of `X` and
+`Hₙ(X; k)` finite-dimensional, `𝟙 - f^*` on `Hⁿ(X; k)` and `𝟙 - f_*` on `Hₙ(X; k)` have the
+same determinant, since `f^*` is the transpose of `f_*` under the universal coefficient
+isomorphism. In particular one is invertible exactly when the other is. -/
+theorem det_id_sub_singularCohomologyMap (f : X ⟶ X) (n : ℕ)
+    [FiniteDimensional k
+      (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).obj X)] :
+    (LinearMap.id - (TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k)
+        (M := ModuleCat.of k k) f n).hom).det =
+      (LinearMap.id - (((singularHomologyFunctor (ModuleCat.{w} k) n).obj
+        (ModuleCat.of k k)).map f).hom).det := by
+  set e := X.singularCohomologyDualEquiv (k := k) n
+  set g := ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (ModuleCat.of k k)).map f
+  have h : LinearMap.id - (TopCat.singularCohomologyMap (R := ModuleCat.of k k) (k := k)
+      (M := ModuleCat.of k k) f n).hom =
+      e.symm.toLinearMap ∘ₗ (LinearMap.id - g.hom).dualMap ∘ₗ e.toLinearMap := by
+    ext α
+    apply e.injective
+    simp only [e, g, LinearMap.sub_apply, LinearMap.id_apply, map_sub,
+      singularCohomologyDualEquiv_singularCohomologyMap, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+    ext x
+    simp [Dual.transpose_apply]
+  have hconj := LinearMap.det_conj (LinearMap.id - g.hom).dualMap e.symm
+  rw [LinearEquiv.symm_symm] at hconj
+  rw [h, hconj, LinearMap.det_dualMap]
 
 /-- Over a field, singular cohomology and singular homology have the same `finrank` in every
 degree.  When `Hₙ(X; k)` is infinite-dimensional both sides have `finrank` zero; their cardinal
