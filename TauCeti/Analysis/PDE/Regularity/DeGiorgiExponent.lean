@@ -62,24 +62,6 @@ namespace TauCeti
 
 namespace PDE
 
-/-- For `0 < κ ≤ 1` the positive root `μ = (√(n² + 4 (n + 1) κ) - n) / 2` of
-`μ (μ + n) = (n + 1) κ` lies in `(0, 1]`. -/
-private theorem exists_mul_add_eq_mul (n : ℕ) {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) :
-    ∃ μ : ℝ, 0 < μ ∧ μ ≤ 1 ∧ μ * (μ + n) = (n + 1) * κ := by
-  set s := √((n : ℝ) ^ 2 + 4 * (n + 1) * κ)
-  have hD : 0 ≤ (n : ℝ) ^ 2 + 4 * (n + 1) * κ := by positivity
-  have hs2 : s ^ 2 = (n : ℝ) ^ 2 + 4 * (n + 1) * κ := Real.sq_sqrt hD
-  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
-  refine ⟨(s - n) / 2, ?_, ?_, ?_⟩
-  · -- `s² > n²` since `κ > 0`.
-    have : (n : ℝ) < s := by nlinarith [mul_pos (by positivity : (0 : ℝ) < n + 1) hκ0]
-    linarith
-  · -- `s² ≤ (n + 2)²` since `κ ≤ 1`.
-    have : s ≤ n + 2 := by
-      nlinarith [mul_le_mul_of_nonneg_left hκ1 (by positivity : (0 : ℝ) ≤ n + 1)]
-    linarith
-  · linear_combination hs2 / 4
-
 /-- **The exponent in De Giorgi's theorem degenerates with the ellipticity ratio.** Let
 `0 < λ ≤ Λ`, let `Ω ⊆ ℝ^{n+2}` be a bounded open set containing the origin and let `s` be a
 neighbourhood of the origin. Suppose that for every measurable coefficient field `a`, uniformly
@@ -103,7 +85,7 @@ theorem mul_add_le_mul_div_of_forall_exists_holderOnWith {n : ℕ} {lam Lam : �
       ∃ C, HolderOnWith C α (preciseRepresentative volume (W1p.value u)) s) :
     (α : ℝ) * (α + n) ≤ (n + 1) * (lam / Lam) := by
   have hLam0 : 0 < Lam := hlam.trans_le hLam
-  obtain ⟨μ, hμ0, hμ1, hμ⟩ := exists_mul_add_eq_mul n (div_pos hlam hLam0)
+  obtain ⟨μ, hμ0, hμ1, hμ⟩ := exists_meyersEigenvalue_eq (n := n) (div_pos hlam hLam0)
     ((div_le_one hLam0).2 hLam)
   -- Meyers' solution for the field `Λ a`, uniformly elliptic with constants `Λ κ = λ` and `Λ`.
   obtain ⟨u, hu⟩ := exists_w1p_value_ae_eq_meyersSolution hμ0 (p := 2) (by norm_num) hb
@@ -112,7 +94,7 @@ theorem mul_add_le_mul_div_of_forall_exists_holderOnWith {n : ℕ} {lam Lam : �
       (Lam • meyersCoefficient μ) lam Lam := by
     have := (uniformlyEllipticOn_meyersCoefficient hμ0 hμ1
       (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))).const_smul hLam0
-    rwa [meyersEigenvalue_eq_iff.2 hμ, mul_div_cancel₀ _ hLam0.ne', mul_one] at this
+    rwa [hμ, mul_div_cancel₀ _ hLam0.ne', mul_one] at this
   have hsol : ∀ v : W1p0 volume Ω 2,
       energyFormH1 (Lam • meyersCoefficient μ) 0 0 u (v : W1p volume Ω 2) = 0 := fun v => by
     have := energyFormH1_smul_coefficients (meyersCoefficient μ) 0 0 Lam u (v : W1p volume Ω 2)
@@ -132,7 +114,7 @@ theorem mul_add_le_mul_div_of_forall_exists_holderOnWith {n : ℕ} {lam Lam : �
     by_contra hα
     exact not_holderOnWith_meyersSolution (not_le.1 hα) C
       (Filter.inter_mem hs (Ω.isOpen.mem_nhds h0)) hC'
-  rw [← hμ]
+  rw [← meyersEigenvalue_eq_iff.1 hμ]
   exact mul_le_mul hαμ (by linarith) (by positivity) hμ0.le
 
 /-- **The exponent of De Giorgi's theorem in `ℝ^{n+2}` satisfies `α (α + n) ≤ (n + 1) λ / Λ`.**

@@ -50,7 +50,11 @@ cannot be chosen independently of the ellipticity ratio either; this is drawn ou
 ## Main declarations
 
 * `TauCeti.PDE.meyersEigenvalue`: the tangential eigenvalue `μ (μ + n) / (n + 1)` of Meyers'
-  coefficient, characterized by `TauCeti.PDE.meyersEigenvalue_eq_iff`.
+  coefficient, characterized by `TauCeti.PDE.meyersEigenvalue_eq_iff`;
+  `TauCeti.PDE.meyersEigenvalue_pos`, `TauCeti.PDE.meyersEigenvalue_le_one` and
+  `TauCeti.PDE.one_le_meyersEigenvalue`: it is positive for `μ > 0`, at most `1` for `0 ≤ μ ≤ 1`
+  and at least `1` for `μ ≥ 1`; `TauCeti.PDE.exists_meyersEigenvalue_eq`: it takes every value in
+  `(0, 1]` at some `μ ∈ (0, 1]`.
 * `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient`: for `μ ≤ 1`, Meyers' coefficient is
   uniformly elliptic with constants `μ (μ + n) / (n + 1)` and `1`;
   `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient_of_one_le`: for `μ ≥ 1`, with constants `1`
@@ -190,20 +194,38 @@ theorem abs_dotProduct_meyersCoefficient_mulVec_le (x η ξ : EuclideanSpace ℝ
     _ ≤ (|κ| + |1 - κ|) * ‖η‖ * ‖ξ‖ := by gcongr
 
 /-- The tangential eigenvalue of Meyers' coefficient is positive for `μ > 0`. -/
-private theorem meyersEigenvalue_pos (hμ : 0 < μ) : 0 < meyersEigenvalue n μ := by
+theorem meyersEigenvalue_pos (hμ : 0 < μ) : 0 < meyersEigenvalue n μ := by
   rw [meyersEigenvalue_apply]
   positivity
 
 /-- The tangential eigenvalue of Meyers' coefficient is at most `1` for `0 ≤ μ ≤ 1`. -/
-private theorem meyersEigenvalue_le_one (hμ0 : 0 ≤ μ) (hμ1 : μ ≤ 1) :
+theorem meyersEigenvalue_le_one (hμ0 : 0 ≤ μ) (hμ1 : μ ≤ 1) :
     meyersEigenvalue n μ ≤ 1 := by
   rw [meyersEigenvalue_apply, div_le_one (by positivity)]
   nlinarith
 
 /-- The tangential eigenvalue of Meyers' coefficient is at least `1` for `μ ≥ 1`. -/
-private theorem one_le_meyersEigenvalue (hμ : 1 ≤ μ) : 1 ≤ meyersEigenvalue n μ := by
+theorem one_le_meyersEigenvalue (hμ : 1 ≤ μ) : 1 ≤ meyersEigenvalue n μ := by
   rw [meyersEigenvalue_apply, one_le_div (by positivity)]
   nlinarith
+
+/-- Every `κ ∈ (0, 1]` is the tangential eigenvalue of Meyers' coefficient for some `μ ∈ (0, 1]`,
+namely the positive root `μ = (√(n² + 4 (n + 1) κ) - n) / 2` of `μ (μ + n) = (n + 1) κ`. -/
+theorem exists_meyersEigenvalue_eq {κ : ℝ} (hκ0 : 0 < κ) (hκ1 : κ ≤ 1) :
+    ∃ μ : ℝ, 0 < μ ∧ μ ≤ 1 ∧ meyersEigenvalue n μ = κ := by
+  set s := √((n : ℝ) ^ 2 + 4 * (n + 1) * κ)
+  have hD : 0 ≤ (n : ℝ) ^ 2 + 4 * (n + 1) * κ := by positivity
+  have hs2 : s ^ 2 = (n : ℝ) ^ 2 + 4 * (n + 1) * κ := Real.sq_sqrt hD
+  have hs0 : 0 ≤ s := Real.sqrt_nonneg _
+  refine ⟨(s - n) / 2, ?_, ?_, meyersEigenvalue_eq_iff.2 ?_⟩
+  · -- `s² > n²` since `κ > 0`.
+    have : (n : ℝ) < s := by nlinarith [mul_pos (by positivity : (0 : ℝ) < n + 1) hκ0]
+    linarith
+  · -- `s² ≤ (n + 2)²` since `κ ≤ 1`.
+    have : s ≤ n + 2 := by
+      nlinarith [mul_le_mul_of_nonneg_left hκ1 (by positivity : (0 : ℝ) ≤ n + 1)]
+    linarith
+  · linear_combination hs2 / 4
 
 /-- For `0 < μ ≤ 1`, Meyers' coefficient is uniformly elliptic with constants
 `μ (μ + n) / (n + 1)` and `1`, so its ellipticity ratio is `(n + 1) / (μ (μ + n))`. -/
