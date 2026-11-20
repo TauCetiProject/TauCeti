@@ -9,13 +9,17 @@ public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
-# Proper actions: compact groups and invariant subspaces
+# Proper actions: compact groups, products and invariant subspaces
 
 A continuous action of a compact group `G` on a Hausdorff space `X` is proper: the map
 `(g, x) ↦ (g • x, x)` is proper because its first coordinate ranges over a compact space. In
 particular the orbit space `X ⧸ G` is Hausdorff (`t2Space_quotient_mulAction_of_properSMul`), which
 is how quotients such as complex projective space, the orbit space of the circle acting on an odd
 sphere, are shown to be Hausdorff.
+
+The product of a proper action with any continuous action on a Hausdorff space is proper:
+forgetting the second coordinate of the moved point leaves the product of a proper map with an
+identity.
 
 A proper action also restricts to a proper action on every invariant subspace, and more generally
 pulls back along any equivariant topological embedding. It even pulls back to a subgroup acting on
@@ -28,6 +32,8 @@ quotient.
 
 * `TauCeti.properSMul_of_compactSpace`, `TauCeti.properVAdd_of_compactSpace`: a continuous action
   of a compact group, or of a compact additive group, on a Hausdorff space is proper.
+* `TauCeti.properSMul_prod`, `TauCeti.properVAdd_prod`: a proper action times a continuous action
+  on a Hausdorff space is proper.
 * `Topology.IsEmbedding.properSMul`: an action which a topological embedding intertwines with a
   proper action is proper.
 * `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
@@ -52,6 +58,25 @@ theorem properSMul_of_compactSpace (G X : Type*) [Group G] [TopologicalSpace G] 
       exact (𝒰.map Prod.fst).le_nhds_lim
     exact ⟨_, tendsto_nhds_unique (hg.smul ((continuous_snd.tendsto _).comp hxx))
       ((continuous_fst.tendsto _).comp hxx), hg⟩⟩
+
+/-- **A proper action times a continuous action is proper.** If `G` acts properly on a Hausdorff
+space `X` and continuously on a Hausdorff space `Y`, then the diagonal action
+`g • (x, y) = (g • x, g • y)` on `X × Y` is proper. For instance a group acting properly on a space
+of maps out of `Y` and continuously on `Y` itself acts properly on the space of maps with a marked
+point. -/
+@[to_additive properVAdd_prod /-- **A proper additive action times a continuous additive action
+is proper.** If `G` acts properly on a Hausdorff space `X` and continuously on a Hausdorff space
+`Y`, then the diagonal action on `X × Y` is proper. -/]
+instance properSMul_prod {G X Y : Type*} [Group G] [TopologicalSpace G] [MulAction G X]
+    [TopologicalSpace X] [T2Space X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y]
+    [T2Space Y] [ContinuousSMul G Y] : ProperSMul G (X × Y) where
+  isProperMap_smul_pair := by
+    -- Forgetting the coordinate `g • y` leaves the product of the proper map
+    -- `(g, x) ↦ (g • x, x)` with the identity of `Y`, which is proper.
+    refine isProperMap_of_comp_of_t2 (g := fun q : (X × Y) × (X × Y) ↦ ((q.1.1, q.2.1), q.2.2))
+      (by fun_prop) (by fun_prop) ?_
+    exact (ProperSMul.isProperMap_smul_pair.prodMap isProperMap_id).comp
+      (Homeomorph.prodAssoc G X Y).symm.isProperMap
 
 end TauCeti
 
