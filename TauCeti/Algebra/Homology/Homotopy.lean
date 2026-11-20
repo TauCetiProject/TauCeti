@@ -21,6 +21,10 @@ transport and iteration of homotopies, and assembly of null-homotopies from comp
 `Homotopy.compSquare` composes specified square homotopies by postcomposing the first
 and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
+`Homotopy.restrict` restricts a homotopy to subcomplexes: when its components, restricted to a
+complex mapping into the source, lift through a degreewise monomorphism into the target, the lifts
+form a homotopy between the restricted maps.
+
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
 complexes.  A chain homotopy between morphisms `L ⟶ L'` whose components send the image of `u`
@@ -112,6 +116,38 @@ lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
   simp [compSquare]
 
 end Squares
+
+section Restrict
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
+  {K L A B : HomologicalComplex C c} {f g : K ⟶ L} {f' g' : A ⟶ B}
+
+/-- **The restriction of a homotopy to subcomplexes.** Let `h` be a homotopy between
+`f g : K ⟶ L`, let `e : A ⟶ K` be a morphism and `m : B ⟶ L` a degreewise monomorphism, and let
+`f' g' : A ⟶ B` lift `e ≫ f` and `e ≫ g` through `m`. If the components of `h` precomposed with
+`e` lift through `m`, as `k i j : Aⁱ ⟶ Bʲ`, then these lifts form a homotopy between `f'` and
+`g'`. -/
+@[no_expose]
+def restrict (h : Homotopy f g) (e : A ⟶ K) (m : B ⟶ L) [∀ i, Mono (m.f i)]
+    (hf : f' ≫ m = e ≫ f) (hg : g' ≫ m = e ≫ g) (k : ∀ i j, A.X i ⟶ B.X j)
+    (hk : ∀ i j, k i j ≫ m.f j = e.f i ≫ h.hom i j) : Homotopy f' g' where
+  hom := k
+  zero i j hij := by rw [← cancel_mono (m.f j), hk, h.zero i j hij, comp_zero, zero_comp]
+  comm i := by
+    have hk' : (fun i j ↦ k i j ≫ m.f j) = fun i j ↦ e.f i ≫ h.hom i j :=
+      funext fun i ↦ funext fun j ↦ hk i j
+    rw [← cancel_mono (m.f i), Preadditive.add_comp, Preadditive.add_comp,
+      ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f, hf, hg, ← dNext_comp_right,
+      ← prevD_comp_right, hk', dNext_comp_left, prevD_comp_left, HomologicalComplex.comp_f,
+      HomologicalComplex.comp_f, ← Preadditive.comp_add, ← Preadditive.comp_add, ← h.comm i]
+
+@[simp]
+lemma restrict_hom (h : Homotopy f g) (e : A ⟶ K) (m : B ⟶ L) [∀ i, Mono (m.f i)]
+    (hf : f' ≫ m = e ≫ f) (hg : g' ≫ m = e ≫ g) (k : ∀ i j, A.X i ⟶ B.X j)
+    (hk : ∀ i j, k i j ≫ m.f j = e.f i ≫ h.hom i j) : (h.restrict e m hf hg k hk).hom = k :=
+  (rfl)
+
+end Restrict
 
 /-- On cycles, the difference of homotopic maps factors through the preceding target term.
 This identity does not require exactness of either complex. -/
