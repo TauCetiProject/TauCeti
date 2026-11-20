@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -18,9 +19,10 @@ The trivial bundle `Bundle.Trivial B F` has the single global trivialization
 map and its fibre map into `F` are smooth, a section is differentiable at a point exactly when its
 fibre map is (`Bundle.Trivial.mdifferentiableAt_section_iff`), and `Bundle.Trivial.homeomorphProd`
 upgrades to a `C^n` diffeomorphism `Bundle.Trivial.diffeomorphProd` between
-`TotalSpace F (Bundle.Trivial B F)` and `B × F`. When the fibre `W` is instead a
-finite-dimensional Hausdorff topological module over a complete nontrivially normed field `𝕜`
-without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies `Fin (Module.finrank 𝕜 W) → 𝕜` as a
+`TotalSpace F (Bundle.Trivial B F)` and `B × F`. In particular the underlying `F`-valued function
+of a smooth section is smooth (`ContMDiffSection.contMDiff_coe_trivial`). When the fibre `W` is
+instead a finite-dimensional Hausdorff topological module over a complete nontrivially normed field
+`𝕜` without a fixed norm, `TauCeti.TrivialModel 𝕜 W` supplies `Fin (Module.finrank 𝕜 W) → 𝕜` as a
 nominal coordinate model fibre equipping `Bundle.Trivial B W` with a `C^n` vector bundle structure
 without `AddCommGroup` diamonds on `W`.
 
@@ -73,6 +75,11 @@ theorem mdifferentiableAt_section_iff {σ : B → F} {x : B} :
       MDifferentiableAt I 𝓘(𝕜, F) σ x := by
   rw [mdifferentiableAt_section]
   simp only [Trivial.fiberBundle_trivializationAt', Trivial.trivialization_apply]
+
+/-- The underlying `F`-valued function of a smooth section of the trivial bundle is smooth. -/
+theorem _root_.ContMDiffSection.contMDiff_coe_trivial (s : Cₛ^n⟮I; F, Trivial B F⟯) :
+    ContMDiff I 𝓘(𝕜, F) n (fun x ↦ (s x : F)) :=
+  (contMDiff_mk_iff.1 s.contMDiff).2
 
 section Diffeomorph
 
