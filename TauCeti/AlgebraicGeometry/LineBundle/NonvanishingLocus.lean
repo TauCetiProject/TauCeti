@@ -185,12 +185,13 @@ theorem surjective_smul_of_le_nonvanishingLocus {U : X.Opens} {s : Γ(M, U)}
   -- multiple `r x • s` on a neighbourhood `N x ⊆ U` of `x`.
   have hloc (x : U) : ∃ (N : X.Opens) (_ : (x : X) ∈ N) (k : N ⟶ U) (r : Γ(X, N)),
       r • M.presheaf.map k.op s = M.presheaf.map k.op m := by
-    have hs := (mem_nonvanishingLocus_iff_of_mem x.2).mp (h x.2)
-    obtain ⟨a, ha⟩ := (Submodule.span_singleton_eq_top_iff _ _).mp hs (M.presheaf.germ U x x.2 m)
+    have hs := (mem_nonvanishingLocus_iff_of_mem x.property).mp (h x.property)
+    obtain ⟨a, ha⟩ := (Submodule.span_singleton_eq_top_iff _ _).mp hs
+        (M.presheaf.germ U x x.property m)
     obtain ⟨W, hxW, r, rfl⟩ := X.presheaf.exists_germ_eq a
     let p : W ⊓ U ⟶ W := homOfLE inf_le_left
     let q : W ⊓ U ⟶ U := homOfLE inf_le_right
-    have hxWU : (x : X) ∈ W ⊓ U := ⟨hxW, x.2⟩
+    have hxWU : (x : X) ∈ W ⊓ U := ⟨hxW, x.property⟩
     have ha' : M.presheaf.germ (W ⊓ U) x hxWU
         (X.presheaf.map p.op r • M.presheaf.map q.op s) =
           M.presheaf.germ (W ⊓ U) x hxWU (M.presheaf.map q.op m) := by
