@@ -232,10 +232,9 @@ private theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_self
           ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v b, (u : E)⟫ -
         t * ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v a,
           mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v b⟫ := by
-  have hvu : sphereHeight u v = 0 := by rw [sphereHeight_apply, real_inner_comm, huv]
   rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight_apply
     ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht).2 (Or.inl rfl)),
-    hvu, sphereHeight_self]
+    sphereHeight_eq_zero_of_inner_eq_zero huv, sphereHeight_self]
   ring
 
 /-- **The north pole of `hᵤ² + t hᵥ`.** For `t ≠ 0, 2`, the north pole `v` is a nondegenerate

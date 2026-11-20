@@ -97,11 +97,6 @@ private theorem apply_le_of_sphereHeight_eq_zero (ht : 0 ≤ t) {x : sphere (0 :
   nlinarith [sphereHeight_le_one v x]
 
 omit [Fact (finrank ℝ E = n + 1)] in
-private theorem sphereHeight_eq_zero_of_inner (huv : ⟪(u : E), (v : E)⟫ = 0) :
-    sphereHeight u v = 0 := by
-  rw [sphereHeight_apply, real_inner_comm, huv]
-
-omit [Fact (finrank ℝ E = n + 1)] in
 private theorem apply_self (huv : ⟪(u : E), (v : E)⟫ = 0) :
     (sphereHeight u ^ 2 + t • sphereHeight v) v = t := by
   simp [sphereHeight_apply, real_inner_comm, huv]
@@ -309,7 +304,8 @@ private theorem exists_mem_stableSet_sphereHeight_neg_and_pos
     nlinarith [sphereHeight_le_one v (γ r)]
   have h0 : sphereHeight u (γ 0) = 0 := by
     simp only [γ, zero_smul]
-    rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source, sphereHeight_eq_zero_of_inner huv]
+    rw [← φ.apply_self, φ.toChart.left_inv φ.mem_source,
+      sphereHeight_eq_zero_of_inner_eq_zero huv]
   have hdiff := differentiableAt_sphereHeight_symm_smul (u := u) φ.mem_maximalAtlas
     (by simpa using hT 0 (by rwa [abs_zero])) a
   -- So `hᵤ` grows at least linearly along the line, and takes both signs near `v`.
@@ -334,7 +330,7 @@ theorem mem_unstableSet_iff_sphereHeight_mul_sphereHeight_pos
     y ∈ hX.flow.unstableSet m ↔ 0 < sphereHeight u y * sphereHeight u m := by
   -- The saddle is on neither side: `hᵤ v = 0`, and the rest point `v` lies only in `W^u(v)`.
   rcases eq_or_ne y v with rfl | hyv
-  · rw [sphereHeight_eq_zero_of_inner huv, zero_mul, lt_self_iff_false, iff_false]
+  · rw [sphereHeight_eq_zero_of_inner_eq_zero huv, zero_mul, lt_self_iff_false, iff_false]
     intro hym
     obtain rfl := hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero
       (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne') hym
@@ -387,7 +383,7 @@ theorem exists_unstableSet_inter_stableSet_eq_orbit_sphereHeight_sq_add_smul_sph
   -- The saddle `v` is not `z`, since `hᵤ v = 0`.
   have hzv : z ≠ v := by
     rintro rfl
-    rw [sphereHeight_eq_zero_of_inner huv, zero_mul] at hneg
+    rw [sphereHeight_eq_zero_of_inner_eq_zero huv, zero_mul] at hneg
     exact hneg.false
   exact ⟨y, hX.unstableSet_inter_stableSet_eq_orbit
     (mfderiv_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀.ne')

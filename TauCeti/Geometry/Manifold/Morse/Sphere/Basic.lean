@@ -317,6 +317,13 @@ theorem sphereHeight_eq_neg_one_iff {v x : sphere (0 : E) 1} :
   rw [← neg_eq_iff_eq_neg, ← Pi.neg_apply, ← sphereHeight_neg, sphereHeight_eq_one_iff]
 
 omit [Fact (finrank ℝ E = n + 1)] in
+/-- If the unit vectors `u` and `v` are orthogonal, the height function in the direction `u`
+vanishes at `v`. -/
+theorem sphereHeight_eq_zero_of_inner_eq_zero {u v : sphere (0 : E) 1}
+    (huv : ⟪(u : E), (v : E)⟫ = 0) : sphereHeight u v = 0 := by
+  rw [sphereHeight_apply, real_inner_comm, huv]
+
+omit [Fact (finrank ℝ E = n + 1)] in
 /-- A point of the sphere whose components along the orthonormal vectors `u` and `v` have squares
 summing to `1` lies in the plane spanned by `u` and `v`. -/
 theorem coe_eq_sphereHeight_smul_add_sphereHeight_smul {u v : sphere (0 : E) 1}
