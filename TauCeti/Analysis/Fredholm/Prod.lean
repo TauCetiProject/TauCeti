@@ -29,6 +29,8 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
   factors are.
 * `ContinuousLinearMap.isFredholm_withLpProdMap_iff`: the same for the block sum on an `L^p`
   product.
+* `ContinuousLinearMap.isFredholm_inl`: the inclusion of a factor beside a finite-dimensional
+  space is Fredholm.
 -/
 
 public section
@@ -126,5 +128,23 @@ lemma isFredholm_withLpProdMap_iff {p : ℝ≥0∞} :
     IsFredholm (T.withLpProdMap p S) ↔ IsFredholm T ∧ IsFredholm S := by
   rw [isFredholm_iff_of_comp_eq (S := T.prodMap S) (WithLp.prodContinuousLinearEquiv p K E₁ E₂)
     (WithLp.prodContinuousLinearEquiv p K F₁ F₂) (by ext x <;> simp), isFredholm_prodMap_iff]
+
+section Inclusion
+
+variable (F₁ F₂) [T1Space F₂] [FiniteDimensional K F₂]
+
+/-- The inclusion `y ↦ (y, 0)` of `F₁` into `F₁ × F₂` is Fredholm when `F₂` is finite
+dimensional. -/
+lemma isFredholm_inl : IsFredholm (inl K F₁ F₂) := by
+  refine Topology.IsClosedEmbedding.isFredholm ⟨isEmbedding_prodMkLeft 0, ?_⟩ ?_
+  · have : Set.range (inl K F₁ F₂) = Prod.snd ⁻¹' {0} := by
+      ext ⟨y, g⟩
+      simp [eq_comm]
+    rw [this]
+    exact isClosed_singleton.preimage continuous_snd
+  · rw [coe_inl, LinearMap.range_inl]
+    exact Submodule.CoFG.ker _
+
+end Inclusion
 
 end ContinuousLinearMap
