@@ -86,6 +86,32 @@ variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [Field L] [LinearOrder L] [IsStrictOrderedRing L]
   {m p ι : Type*} [Fintype m] [Fintype p] [Fintype ι]
 
+/-- The generators of the cone of consequences of `A *ᵥ x ≤ b`, `E *ᵥ x = d`: the rows
+`(A i, b i)`, the rows `±(E j, d j)` and `(0, 1)`. -/
+private def farkasGenerators (A : Matrix m ι K) (b : m → K) (E : Matrix p ι K) (d : p → K) :
+    m ⊕ p ⊕ p ⊕ Unit → (ι → K) × K :=
+  Sum.elim (fun i => (A i, b i))
+    (Sum.elim (fun j => (E j, d j)) (Sum.elim (fun j => -(E j, d j)) fun _ => (0, 1)))
+
+omit [Fintype ι] in
+/-- A point `(c, δ)` of the cone spanned by `farkasGenerators` is a combination
+`y ᵥ* A + z ᵥ* E = c`, `y ⬝ᵥ b + z ⬝ᵥ d ≤ δ` with `y ≥ 0`. -/
+private theorem exists_of_mem_hull_farkasGenerators {A : Matrix m ι K} {b : m → K}
+    {E : Matrix p ι K} {d : p → K} {c : ι → K} {δ : K}
+    (hmem : (c, δ) ∈ PointedCone.hull K (Set.range (farkasGenerators A b E d))) :
+    ∃ (y : m → K) (z : p → K), 0 ≤ y ∧ y ᵥ* A + z ᵥ* E = c ∧ y ⬝ᵥ b + z ⬝ᵥ d ≤ δ := by
+  obtain ⟨a, ha⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp hmem
+  obtain ⟨rfl, rfl⟩ := Prod.ext_iff.mp ha
+  refine ⟨fun i => a (.inl i), fun j => a (.inr (.inl j)) - a (.inr (.inr (.inl j))),
+    fun i => (a (.inl i)).2, ?_, ?_⟩
+  · ext k
+    simp [farkasGenerators, Fintype.sum_sum_type, Prod.fst_sum, Finset.sum_apply, vecMul,
+      dotProduct, sub_eq_add_neg, mul_add, Finset.sum_add_distrib, mul_comm, ← Nonneg.coe_smul]
+  · have h0 := (a (.inr (.inr (.inr ())))).2
+    simp [farkasGenerators, Fintype.sum_sum_type, Prod.snd_sum, dotProduct, sub_mul,
+      ← Nonneg.coe_smul]
+    linarith
+
 /-- The separation step: if `(c, δ)` is not a combination `y ᵥ* A + z ᵥ* E = c`,
 `y ⬝ᵥ b + z ⬝ᵥ d ≤ δ` with `y ≥ 0`, then some `(u, s)` with `s ≥ 0` pairs nonnegatively with every
 row `(A i, b i)`, vanishes on every row `(E j, d j)`, and pairs negatively with `(c, δ)`. -/
@@ -95,33 +121,10 @@ private theorem exists_dual_of_not_exists (A : Matrix m ι K) (b : m → K) (E :
     ∃ (u : ι → K) (s : K), 0 ≤ s ∧ (∀ i, 0 ≤ A i ⬝ᵥ u + s * b i) ∧
       (∀ j, E j ⬝ᵥ u + s * d j = 0) ∧ c ⬝ᵥ u + s * δ < 0 := by
   classical
-  -- The generators of the cone: the rows `(A i, b i)`, the rows `±(E j, d j)` and `(0, 1)`.
-  let g : m ⊕ p ⊕ p ⊕ Unit → (ι → K) × K :=
-    Sum.elim (fun i => (A i, b i))
-      (Sum.elim (fun j => (E j, d j)) (Sum.elim (fun j => -(E j, d j)) fun _ => (0, 1)))
+  let g := farkasGenerators A b E d
   let C : PointedCone K ((ι → K) × K) := PointedCone.hull K (Set.range g)
   have hC : C.FG := Submodule.fg_span (Set.finite_range g)
-  have hnot : (c, δ) ∉ C := by
-    intro hmem
-    obtain ⟨a, ha⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp hmem
-    have hfst := congrArg Prod.fst ha
-    have hsnd := congrArg Prod.snd ha
-    simp only [← Nonneg.coe_smul, Fintype.sum_sum_type, Fintype.sum_unique, g, Sum.elim_inl,
-      Sum.elim_inr, smul_neg, Finset.sum_neg_distrib] at hfst hsnd
-    simp only [Prod.fst_add, Prod.snd_add, Prod.fst_sum, Prod.snd_sum, Prod.fst_neg,
-      Prod.snd_neg, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_one, smul_zero,
-      add_zero] at hfst hsnd
-    refine h ⟨fun i => a (.inl i), fun j => a (.inr (.inl j)) - a (.inr (.inr (.inl j))),
-      fun i => (a (.inl i)).2, ?_, ?_⟩
-    · rw [← hfst]
-      ext k
-      simp only [Pi.add_apply, vecMul, dotProduct, Finset.sum_apply, Pi.neg_apply,
-        Pi.smul_apply, smul_eq_mul, sub_eq_add_neg]
-      simp only [mul_add, mul_neg, Finset.sum_add_distrib, Finset.sum_neg_distrib, mul_comm]
-    · have h0 := (a (.inr (.inr (.inr default)))).2
-      rw [← hsnd]
-      simp only [dotProduct, sub_mul, Finset.sum_sub_distrib]
-      linarith
+  have hnot : (c, δ) ∉ C := fun hmem => h (exists_of_mem_hull_farkasGenerators hmem)
   obtain ⟨f, hf, hfc⟩ := hC.exists_cone_dual_nonneg_and_lt_zero hnot
   have hgC (k) : 0 ≤ f (g k) := hf _ (PointedCone.subset_hull (Set.mem_range_self k))
   set s := f (0, 1)
@@ -129,14 +132,15 @@ private theorem exists_dual_of_not_exists (A : Matrix m ι K) (b : m → K) (E :
   have hf_apply (v : ι → K) (t : K) : f (v, t) = v ⬝ᵥ u + t * s :=
     f.apply_prod_eq_dotProduct_add_mul v t
   have h₀ := hgC (.inr (.inr (.inr ())))
-  simp only [g, Sum.elim_inr] at h₀
+  simp only [g, farkasGenerators, Sum.elim_inr] at h₀
   refine ⟨u, s, h₀, fun i => ?_, fun j => ?_, ?_⟩
   · have := hgC (.inl i)
-    simp only [g, Sum.elim_inl, hf_apply] at this
+    simp only [g, farkasGenerators, Sum.elim_inl, hf_apply] at this
     rwa [mul_comm] at this
   · have h₁ := hgC (.inr (.inl j))
     have h₂ := hgC (.inr (.inr (.inl j)))
-    simp only [g, Sum.elim_inl, Sum.elim_inr, Prod.neg_mk, hf_apply, neg_dotProduct] at h₁ h₂
+    simp only [g, farkasGenerators, Sum.elim_inl, Sum.elim_inr, Prod.neg_mk, hf_apply,
+      neg_dotProduct] at h₁ h₂
     linarith
   · rw [hf_apply] at hfc
     linarith

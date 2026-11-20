@@ -44,7 +44,8 @@ parallelograms traps every entry `h p` between explicit linear combinations `ent
    (`TauCeti.Hive.map_eqMatrix`, `TauCeti.Hive.map_rhombusMatrix`, `TauCeti.Hive.eqRHS_map`), and
    over any partially ordered ring `R` with order-compatible addition (`[IsOrderedAddMonoid R]`,
    in particular `ℤ`, `ℚ`, `ℝ`), fixed-boundary hives are characterized as the solutions of
-   `eqMatrix R n *ᵥ f = eqRHS B` and `rhombusMatrix R n *ᵥ f ≤ 0`.
+   `eqMatrix R n *ᵥ f = eqRHS B` and `rhombusMatrix R n *ᵥ f ≤ 0`; every solution normalizes to a
+   hive with boundary `B` (`TauCeti.Hive.exists_hive_boundary_eq_of_mulVec`).
 3. **Compact real polytopes and proper boundary projection** (`TauCeti.Hive.properCone`,
    `TauCeti.Hive.isConvexPolyhedron_realFibre`, `TauCeti.Hive.isCompact_realFibre`,
    `TauCeti.Hive.isProperMap_boundary_properCone`): `‖f‖ ≤ 3 * n * ‖boundaryLinear ℝ n ℝ f‖` makes
@@ -345,6 +346,14 @@ theorem rhombusMatrix_mulVec_coe_nonpos {n : ℕ} {R : Type*} [Ring R] [PartialO
     [IsOrderedAddMonoid R] (h : Hive n R) : rhombusMatrix R n *ᵥ (h : Vertex n → R) ≤ 0 :=
   ((mem_fixedBoundary_iff_mulVec h.boundary h).mp
     ⟨h.apply_cornerA, h.isRhombusConcave, boundaryLinear_coe ℤ h⟩).2
+
+/-- A solution of the fixed-boundary matrix system for `B` is a hive with boundary `B`. -/
+theorem exists_hive_boundary_eq_of_mulVec {n : ℕ} {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] {B : Fin 3 → Fin n → R} {f : Vertex n → R}
+    (heq : eqMatrix R n *ᵥ f = eqRHS B) (hineq : rhombusMatrix R n *ᵥ f ≤ 0) :
+    ∃ h : Hive n R, h.boundary = B := by
+  obtain ⟨-, hconc, hB⟩ := (mem_fixedBoundary_iff_mulVec B f).mpr ⟨heq, hineq⟩
+  exact ⟨ofRhombusConcave f hconc, by rw [boundary_ofRhombusConcave, hB]⟩
 
 end MatrixPresentation
 
