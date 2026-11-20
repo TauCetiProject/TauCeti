@@ -18,6 +18,7 @@ import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Lipschitz and Hölder representatives on convex domains
@@ -30,6 +31,16 @@ domain nor boundary regularity is needed.
 Local continuity comes from the interior Morrey theorem. Mollification on a neighborhood of
 each segment gives the sharp constant, without assuming that smooth functions are dense in
 the `W^{1,∞}` norm.
+
+A `W^{1,p}` function of any exponent whose value is essentially bounded on an open convex subset
+`V` of its domain, with weak gradient essentially bounded by `M` there, restricts to a `W^{1,∞}`
+class on `V`, so its precise representative is `M`-Lipschitz on `V`
+(`TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`). This is how a weak
+solution of an elliptic equation whose gradient is known to be locally bounded, for instance
+Hölder continuous, is shown to be locally Lipschitz. If the precise representatives of the value
+and of the gradient are bounded on the `ρ`-thickening of a set `S`, the precise representative of
+the value is therefore Hölder on the `ρ / 2`-thickening with every exponent at most one
+(`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`).
 
 For `p` above the dimension `n`, **Morrey's inequality holds up to the boundary of a bounded
 convex domain** `Ω`: the precise representative of `u ∈ W^{1,p}(Ω)` is Hölder continuous
@@ -49,6 +60,10 @@ then gives the Hölder bound.
 
 * `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_convex`: the sharp Lipschitz bound for
   `W^{1,∞}` on convex subsets of the domain.
+* `TauCeti.W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le`: the Lipschitz
+  bound for `W^{1,p}` functions with essentially bounded value and gradient on a convex subset.
+* `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le`: Hölder bounds
+  on thickenings from pointwise bounds on the value and the gradient.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_convex`: Morrey's inequality on a
   bounded convex domain, for the precise representative.
 * `TauCeti.W1p.exists_holderOnWith_closure_ae_eq_of_convex`: a representative Hölder continuous
@@ -173,6 +188,96 @@ theorem W1p.lipschitzWith_preciseRepresentative (u : W1p μ ⊤ ∞) :
   rw [← lipschitzOnWith_univ]
   exact W1p.lipschitzOnWith_preciseRepresentative_of_convex u convex_univ subset_rfl
 
+/-- A Sobolev function whose value is essentially bounded on an open convex subset `V` of its
+domain, and whose weak gradient is essentially bounded by `M` there, has a precise representative
+that is `M`-Lipschitz on `V`. The exponent `p` of the Sobolev space is arbitrary. -/
+theorem W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (u : W1p μ Ω p) {V : Opens E} (hV : V ≤ Ω) (hVc : Convex ℝ (V : Set E))
+    (hval : MemLp (W1p.value u) ∞ (μ.restrict V)) {M : NNReal}
+    (hM : ∀ᵐ x ∂μ.restrict V, ‖W1p.gradient u x‖ ≤ M) :
+    LipschitzOnWith M (preciseRepresentative μ (W1p.value u)) V := by
+  -- The restriction of `u` to `V` is a `W^{1,∞}(V)` class.
+  have hv : MemLp (W1p.value (W1p.restrictL hV u)) ∞ (μ.restrict V) :=
+    hval.ae_eq (W1p.value_restrictL_ae hV u).symm
+  have hgM : ∀ᵐ x ∂μ.restrict V, ‖W1p.gradient (W1p.restrictL hV u) x‖ ≤ M := by
+    filter_upwards [W1p.gradient_restrictL_ae hV u, hM] with x hx hxM
+    rwa [hx]
+  have hg : MemLp (W1p.gradient (W1p.restrictL hV u)) ∞ (μ.restrict V) :=
+    memLp_top_of_bound (Lp.aestronglyMeasurable _) M hgM
+  let w : W1p μ V ∞ := W1p.mk (hv.toLp _) (hg.toLp _)
+    (((W1p.hasWeakFDerivOn (W1p.restrictL hV u)).congr_ae hv.coeFn_toLp.symm).congr_ae_deriv
+      (hg.coeFn_toLp.symm.mono fun x hx => congrArg (fun v => innerSL ℝ v) hx))
+  have hw : ‖W1p.gradient w‖₊ ≤ M := by
+    rw [← NNReal.coe_le_coe, coe_nnNorm, W1p.gradient_mk, Lp.norm_toLp,
+      eLpNorm_exponent_top]
+    · exact ENNReal.toReal_le_of_le_ofReal M.coe_nonneg (eLpNormEssSup_le_of_ae_bound hgM)
+    · exact Lp.aestronglyMeasurable _
+  -- On `V` the precise representatives of `w` and `u` agree.
+  have heq : ∀ x ∈ (V : Set E), preciseRepresentative μ (W1p.value w) x =
+      preciseRepresentative μ (W1p.value u) x := fun x hx => by
+    refine preciseRepresentative_congr_ae_nhds (V.isOpen.mem_nhds hx) ?_
+    rw [W1p.value_mk]
+    exact hv.coeFn_toLp.trans (W1p.value_restrictL_ae hV u)
+  have hL := (W1p.lipschitzOnWith_preciseRepresentative_of_convex w hVc le_rfl).weaken hw
+  intro x hx y hy
+  rw [← heq x hx, ← heq y hy]
+  exact hL hx hy
+
+/-- A Sobolev function whose precise representative and the precise representative of whose
+gradient are bounded on the `ρ`-thickening of a set `S` inside its domain has a precise
+representative that is Lipschitz on the balls of radius `ρ / 2` about the points of the
+`ρ / 2`-thickening, hence Hölder on the `ρ / 2`-thickening with every exponent at most one. -/
+theorem W1p.exists_holderOnWith_preciseRepresentative_of_forall_norm_le {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (u : W1p μ Ω p) {S : Set E} {ρ : ℝ} (hρ : 0 < ρ)
+    (hρS : thickening ρ S ⊆ Ω) {M₁ M₂ : ℝ}
+    (hv : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.value u) x‖ ≤ M₁)
+    (hg : ∀ x ∈ thickening ρ S, ‖preciseRepresentative μ (W1p.gradient u) x‖ ≤ M₂)
+    {γ : NNReal} (hγ : γ ≤ 1) :
+    ∃ C : NNReal,
+      HolderOnWith C γ (preciseRepresentative μ (W1p.value u)) (thickening (ρ / 2) S) := by
+  have hval : (W1p.value u : E → ℝ) =ᵐ[μ.restrict Ω] preciseRepresentative μ (W1p.value u) :=
+    W1p.ae_eq_preciseRepresentative u
+  have hgrad : (W1p.gradient u : E → E) =ᵐ[μ.restrict Ω]
+      preciseRepresentative μ (W1p.gradient u) :=
+    ae_eq_restrict_preciseRepresentative Ω.isOpen
+      (W1p.hasWeakFDerivOn u).locallyIntegrableOn_gradient
+  have hball : ∀ x ∈ thickening (ρ / 2) S, ball x (ρ / 2) ⊆ thickening ρ S := fun x hx =>
+    (ball_subset_thickening hx _).trans
+      ((thickening_thickening_subset _ _ _).trans (by rw [add_halves]))
+  -- On each such ball, the value and the gradient of `u` are essentially bounded.
+  have hlip : ∀ x ∈ thickening (ρ / 2) S,
+      LipschitzOnWith M₂.toNNReal (preciseRepresentative μ (W1p.value u)) (ball x (ρ / 2)) := by
+    intro x hx
+    let V : Opens E := ⟨ball x (ρ / 2), isOpen_ball⟩
+    have hVU : (V : Set E) ⊆ thickening ρ S := hball x hx
+    have hV : V ≤ Ω := hVU.trans hρS
+    have hae : ae (μ.restrict (V : Set E)) ≤ ae (μ.restrict Ω) :=
+      ae_mono (Measure.restrict_mono hV le_rfl)
+    refine W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le u hV
+      (convex_ball x _) ?_ ?_
+    · refine memLp_top_of_bound ((Lp.aestronglyMeasurable _).mono_measure
+        (Measure.restrict_mono hV le_rfl)) M₁ ?_
+      filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hval.filter_mono hae] with y hy hy'
+      rw [hy']
+      exact hv y (hVU hy)
+    · filter_upwards [ae_restrict_mem V.isOpen.measurableSet, hgrad.filter_mono hae] with y hy hy'
+      rw [hy']
+      exact (hg y (hVU hy)).trans (Real.le_coe_toNNReal _)
+  have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
+  refine ⟨_, HolderOnWith.of_le_of_dist_le (K := M₂.toNNReal) (D := (2 * M₁).toNNReal)
+    (δ := (ρ / 2).toNNReal) (β := 1) (fun x hx y _ hxy => ?_) (fun x hx y hy => ?_) hγ
+    (by rw [← NNReal.coe_pos, hρ2]; positivity)⟩
+  · rw [hρ2] at hxy
+    rw [NNReal.coe_one, Real.rpow_one]
+    exact (hlip x hx).dist_le_mul x (mem_ball_self (by positivity)) y
+      (mem_ball_comm.1 (mem_ball.2 hxy))
+  · have hsub : thickening (ρ / 2) S ⊆ thickening ρ S := thickening_mono (by linarith) S
+    calc dist (preciseRepresentative μ (W1p.value u) x)
+          (preciseRepresentative μ (W1p.value u) y)
+        ≤ ‖preciseRepresentative μ (W1p.value u) x‖ +
+          ‖preciseRepresentative μ (W1p.value u) y‖ := dist_le_norm_add_norm _ _
+      _ ≤ 2 * M₁ := by linarith [hv x (hsub hx), hv y (hsub hy)]
+      _ ≤ (2 * M₁).toNNReal := Real.le_coe_toNNReal _
 
 /-! ### Morrey's inequality on bounded convex domains -/
 
