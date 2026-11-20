@@ -191,6 +191,6 @@ theorem sigNeg_toBilinForm_eq_of_isPreconnected {X : Type*} [TopologicalSpace X]
   rw [continuousWithinAt_iff_continuousAt_domRestrict _ ht]
   exact tendsto_nhds_of_eventually_eq <|
     eventually_sigNeg_toBilinForm_eq_of_continuousAt (V := s.domRestrict V) (x := ⟨t, ht⟩)
-      (Eventually.of_forall fun u ↦ hsymm u u.2) hc.domRestrict.continuousAt (hnd t ht)
+      (Eventually.of_forall fun u ↦ hsymm u u.property) hc.domRestrict.continuousAt (hnd t ht)
 
 end ContinuousLinearMap

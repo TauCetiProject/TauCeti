@@ -108,7 +108,7 @@ example : ∃ E : AdicSpace.{0}, IsEmpty E.obj ∧
         inferInstance))
   refine ⟨_, hempty, fun f ↦ ⟨.of_isEmpty f (.ofPair _ _), .of_isEmpty f (.ofPair _ _), fun h ↦ ?_⟩⟩
   obtain ⟨x₀, hx₀⟩ : (spa (basePair p).plus).Nonempty :=
-    Set.nonempty_iff_ne_empty.mpr fun h ↦ not_subsingleton ℚ_[p]
+    Set.ne_empty_iff_nonempty.mp fun h ↦ not_subsingleton ℚ_[p]
       ((spa_eq_empty_iff_subsingleton _ (basePair p).isRingOfIntegralElements).mp h)
   rw [Pair.powerBounded_plus] at hx₀
   obtain ⟨e, _⟩ := h ((AdicSpace.ofPairHomeomorph _ (isSheafy_discPair p)).symm

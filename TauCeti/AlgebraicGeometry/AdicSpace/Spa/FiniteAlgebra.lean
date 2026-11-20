@@ -194,13 +194,14 @@ theorem range_spaComap_of_finite {φ : Hom S T} (hfin : φ.toRingHom.Finite)
     (hmod : letI := φ.toRingHom.toAlgebra; IsModuleTopology A B)
     (hplus : T.plus = (integralClosure (S.plus.map φ.toRingHom) B).toSubring) :
     Set.range φ.spaComap =
-      {x : spa S.plus | suppFun x.1 ∈ Set.range (PrimeSpectrum.comap φ.toRingHom)} := by
+      {x : spa S.plus | suppFun x.val ∈ Set.range (PrimeSpectrum.comap φ.toRingHom)} := by
   let _ : Algebra A B := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hfin
   have : IsModuleTopology A B := hmod
   ext x; refine ⟨fun ⟨y, hy⟩ ↦ ?_, fun ⟨q, hq⟩ ↦ ?_⟩
-  · exact ⟨suppFun y.1, by rw [← hy, spaComap_val]; exact (suppFun_comap φ.toRingHom y.1).symm⟩
-  · obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.2 q.asIdeal
+  · exact ⟨suppFun y.val,
+      by rw [← hy, spaComap_val]; exact (suppFun_comap φ.toRingHom y.val).symm⟩
+  · obtain ⟨w, hw, -, hwx⟩ := exists_mem_spa_supp_eq_comap_eq x.property q.asIdeal
       (by rw [← suppFun_asIdeal]; exact congrArg PrimeSpectrum.asIdeal hq)
     exact ⟨⟨w, hplus ▸ hw⟩, Subtype.ext <| by rw [spaComap_val]; exact hwx⟩
 
@@ -213,13 +214,13 @@ theorem IsFiniteEtale.surjective_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale
     (hff : φ.toRingHom.FaithfullyFlat) : Function.Surjective φ.spaComap := by
   rw [← Set.range_eq_univ, range_spaComap_of_finite hφ.finite hφ.isModuleTopology hφ.plus_eq,
     Set.eq_univ_iff_forall]
-  exact fun x ↦ (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hff).2 (suppFun x.1)
+  exact fun x ↦ (RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mp hff).2 (suppFun x.val)
 
 /-- **The image on adic spectra of a finite étale morphism is cut out by an idempotent.** For a
 finite étale morphism `φ : (A, A⁺) → (B, B⁺)` over a Tate ring `A`, there is an idempotent `e : A`
 such that `Set.range φ.spaComap` consists of the points `x ∈ Spa(A, A⁺)` with `e ∉ supp x`. -/
 theorem IsFiniteEtale.exists_isIdempotentElem_range_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale) :
-    ∃ e : A, IsIdempotentElem e ∧ Set.range φ.spaComap = {x : spa S.plus | e ∉ x.1.supp} := by
+    ∃ e : A, IsIdempotentElem e ∧ Set.range φ.spaComap = {x : spa S.plus | e ∉ x.val.supp} := by
   let _ : Algebra A B := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hφ.finite
   have : Algebra.Etale A B := hφ.etale
@@ -227,7 +228,7 @@ theorem IsFiniteEtale.exists_isIdempotentElem_range_spaComap {φ : Hom S T} (hφ
   obtain ⟨e, he, hsupp⟩ := Module.exists_isIdempotentElem_basicOpen_eq_support (R := A) B
   refine ⟨e, he, (range_spaComap_of_finite hφ.finite hφ.isModuleTopology hφ.plus_eq).trans
     (Set.ext fun x ↦ ?_)⟩
-  have hx := Set.ext_iff.mp hsupp (suppFun x.1)
+  have hx := Set.ext_iff.mp hsupp (suppFun x.val)
   rw [SetLike.mem_coe, PrimeSpectrum.mem_basicOpen, suppFun_asIdeal,
     ← Module.rankAtStalk_pos_iff_mem_support, PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap]
     at hx
@@ -237,10 +238,10 @@ theorem IsFiniteEtale.exists_isIdempotentElem_range_spaComap {φ : Hom S T} (hφ
 theorem IsFiniteEtale.isClopen_range_spaComap {φ : Hom S T} (hφ : φ.IsFiniteEtale) :
     IsClopen (Set.range φ.spaComap) := by
   obtain ⟨e, he, hrange⟩ := hφ.exists_isIdempotentElem_range_spaComap
-  have hpre : {x : spa S.plus | e ∉ x.1.supp} =
-      (fun x : spa S.plus ↦ suppFun x.1) ⁻¹' (PrimeSpectrum.basicOpen e : Set _) := by ext; simp
+  have hpre : {x : spa S.plus | e ∉ x.val.supp} =
+      (fun x : spa S.plus ↦ suppFun x.val) ⁻¹' (PrimeSpectrum.basicOpen e : Set _) := by ext; simp
   exact hrange ▸ hpre ▸ (PrimeSpectrum.isClopen_iff.mpr ⟨e, he, rfl⟩).preimage
-    (continuous_suppFun.comp continuous_subtype_val)
+    (continuous_suppFun.comp continuous_subtypeVal)
 
 section Complete
 
@@ -275,24 +276,24 @@ variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [
 theorem IsFiniteEtale.finite_fibre {φ : Hom S T} (hφ : φ.IsFiniteEtale) (x : spa S.plus) :
     (φ.spaComap ⁻¹' {x}).Finite ∧
       Nat.card (φ.spaComap ⁻¹' {x}) ≤
-        letI := φ.toRingHom.toAlgebra; Module.rankAtStalk (R := A) B (suppFun x.1) := by
+        letI := φ.toRingHom.toAlgebra; Module.rankAtStalk (R := A) B (suppFun x.val) := by
   let := φ.toRingHom.toAlgebra
   have : Module.Finite A B := hφ.finite
   have : Module.Flat A B := (RingHom.Etale.iff_flat_and_formallyUnramified.mp hφ.etale).1
   -- the fibre of `Spa` embeds in the fibre of `Spv`
-  let ι : φ.spaComap ⁻¹' {x} → ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1} :=
-    fun y ↦ ⟨y.1.1, (spaComap_val φ y).symm.trans (congrArg Subtype.val y.2)⟩
+  let ι : φ.spaComap ⁻¹' {x} → ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.val} :=
+    fun y ↦ ⟨y.val.val, (spaComap_val φ y).symm.trans (congrArg Subtype.val y.property)⟩
   have hι : Function.Injective ι := fun y y' h ↦ by
     have h' := congrArg Subtype.val h
     exact Subtype.ext (Subtype.ext h')
-  have hfin := finite_preimage_comap_singleton (B := B) x.1
+  have hfin := finite_preimage_comap_singleton (B := B) x.val
   have := hfin.to_subtype
   refine ⟨Set.finite_coe_iff.mp (Finite.of_injective ι hι), ?_⟩
   calc Nat.card (φ.spaComap ⁻¹' {x})
-      ≤ Nat.card (ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1}) :=
+      ≤ Nat.card (ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.val}) :=
         Nat.card_le_card_of_injective ι hι
-    _ ≤ Module.rankAtStalk (R := A) B (suppFun x.1) :=
-      ncard_preimage_comap_singleton_le_rankAtStalk x.1
+    _ ≤ Module.rankAtStalk (R := A) B (suppFun x.val) :=
+      ncard_preimage_comap_singleton_le_rankAtStalk x.val
 
 end Huber.Pair.Hom
 

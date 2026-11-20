@@ -474,7 +474,7 @@ theorem isHomeomorph_comapOfPair_quotientHom_base (S : Pair A)
   have hsurj : Function.Surjective (Pair.quotientHom S J).spaComap := by
     rw [← Set.range_eq_univ, Pair.Hom.range_spaComap_quotientHom, Set.eq_univ_iff_forall]
     intro v a ha; obtain ⟨n, hn⟩ := hJ a ha
-    exact (inferInstance : v.1.supp.IsPrime).mem_of_pow_mem n (hn ▸ v.1.supp.zero_mem)
+    exact (inferInstance : v.val.supp.IsPrime).mem_of_pow_mem n (hn ▸ v.val.supp.zero_mem)
   have hspa : IsHomeomorph (Pair.quotientHom S J).spaComap :=
     isHomeomorph_iff_isEmbedding_surjective.mpr
       ⟨(Pair.Hom.isClosedEmbedding_spaComap_quotientHom S J).isEmbedding, hsurj⟩

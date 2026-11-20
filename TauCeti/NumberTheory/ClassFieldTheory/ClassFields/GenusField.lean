@@ -41,10 +41,9 @@ theorem fieldRange_candidateGenusField_eq_hilbertClassField {d : ℤ} (hd : Squa
     (ι : candidateGenusField hd →ₐ[candidateGenusFieldBase hd]
       SeparableClosure (candidateGenusFieldBase hd)) :
     ι.fieldRange = hilbertClassField (candidateGenusFieldBase hd) := by
-  have hnsq : ¬ IsSquare (d : ℚ) := not_isSquare_of_neg (by exact_mod_cast hneg)
   apply fieldRange_eq_hilbertClassField_of_unramified_of_finrank_eq_classNumber ι
   · intro w
-    exact isUnramifiedIn_candidateGenusField hd hnsq
+    exact isUnramifiedIn_candidateGenusField hd
       (w.asIdeal.under (𝓞 (candidateGenusFieldBase hd))) w.asIdeal inferInstance inferInstance
   · exact isUnramifiedAtInfinitePlaces_candidateGenusField hd hneg
   · rw [finrank_candidateGenusField_over_candidateGenusFieldBase hd, hclass]

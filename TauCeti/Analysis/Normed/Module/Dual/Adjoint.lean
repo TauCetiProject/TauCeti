@@ -206,7 +206,7 @@ theorem isClosed_range_of_isClosed_range_precomp [CompleteSpace E]
     refine Z.isEmbedding_subtypeL.isInducing.dense_iff.2 fun z ↦ ?_
     have hz : (z : F) ∈ closure (T.range : Set F) := by
       rw [← Submodule.topologicalClosure_coe]
-      exact z.2
+      exact z.property
     rwa [← Set.range_comp, hT₀, ← coe_coe, ← LinearMap.coe_range]
   -- The adjoint of `T₀` is injective, and by Hahn–Banach it has the same range as that of `T`.
   let A : StrongDual 𝕜 Z →L[𝕜] StrongDual 𝕜 E := precomp 𝕜 T₀
@@ -297,7 +297,7 @@ noncomputable def kerPrecompEquivKerDualMap :
     ⟨fun φ ψ h ↦ Subtype.ext <| coe_injective <| congrArg Subtype.val h, fun ψ ↦ by
       have hψ : T.range ≤ LinearMap.ker (ψ : Dual 𝕜 F) := by
         rintro _ ⟨x, rfl⟩
-        exact LinearMap.congr_fun (LinearMap.mem_ker.1 ψ.2) x
+        exact LinearMap.congr_fun (LinearMap.mem_ker.1 ψ.property) x
       -- `ψ` factors through the Hausdorff finite-dimensional quotient by the closed range.
       have : IsClosed (T.range : Set F) := hT
       have hcont : Continuous (ψ : Dual 𝕜 F) := by
