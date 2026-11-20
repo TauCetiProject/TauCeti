@@ -73,6 +73,8 @@ indices of the periodic domains, and on the nose when those vanish.
   differential.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_eq_zero_iff`: the differential vanishes exactly
   when all of its coefficients do.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_mem_supported`: the differential preserves the
+  chains supported on a set of generators that no nonzero coefficient leaves.
 * `TauCeti.HeegaardRegionSystem.IsNice.hammingDist_eq_one_or_eq_two_of_hatCoefficient_ne_zero`:
   in a nice weakly admissible diagram the differential only joins generators differing on one
   or two `α`-curves.
@@ -126,6 +128,16 @@ theorem mem_hatDomains_iff : D ∈ H.hatDomains χ x y ↔
     H.IsDomainBetween x y D ∧ (∀ z, D (H.basepoint z) = 0) ∧ 0 ≤ D ∧
       H.maslovIndex χ x y D = 1 :=
   Iff.rfl
+
+/-- A domain counted by the hat differential of `H` avoids all the basepoints, so it is counted
+by the hat differential of the diagram that keeps only some of them. -/
+theorem hatDomains_subset_hatDomains_withBasepoints {W : Type*} (ι : W → Basepoint)
+    (χ : Region → ℤ) (x y : H.Generator) :
+    H.hatDomains χ x y ⊆ (H.withBasepoints (H.basepoint ∘ ι)).hatDomains χ x y :=
+  fun _ hD =>
+    have ⟨hD, hz, hD0, hμ⟩ := mem_hatDomains_iff.mp hD
+    mem_hatDomains_iff.mpr ⟨(isDomainBetween_withBasepoints _).mpr hD, fun _ => hz _, hD0,
+      by rwa [maslovIndex_withBasepoints]⟩
 
 /-- In a diagram weakly admissible at `y` only finitely many domains are counted by the hat
 differential from any generator to `y`. -/
@@ -269,6 +281,18 @@ theorem hatDifferential_apply (c : H.Generator →₀ ZMod 2) (y : H.Generator) 
 theorem hatDifferential_eq_zero_iff :
     H.hatDifferential χ = 0 ↔ ∀ x y, H.hatCoefficient χ x y = 0 :=
   Finsupp.linearCombination_equivFunOnFinite_symm_eq_zero_iff
+
+/-- The hat differential maps the chains supported on a set `s` of generators to chains supported
+on `s`, when no nonzero coefficient leads out of `s`. -/
+theorem hatDifferential_mem_supported {s : Set H.Generator}
+    (hs : ∀ x ∈ s, ∀ y, H.hatCoefficient χ x y ≠ 0 → y ∈ s) {c : H.Generator →₀ ZMod 2}
+    (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s) :
+    H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s := by
+  rw [Finsupp.mem_supported']
+  intro y hy
+  rw [hatDifferential_apply, Finsupp.sum]
+  refine Finset.sum_eq_zero fun x hx => ?_
+  rw [not_ne_iff.mp (mt (hs x ((Finsupp.mem_supported _ _).mp hc hx) y) hy), mul_zero]
 
 end Differential
 
