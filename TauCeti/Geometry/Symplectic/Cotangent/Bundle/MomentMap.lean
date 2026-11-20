@@ -60,6 +60,8 @@ reduced.
   larger group.
 * `TauCeti.CotangentBundle.isEquivariantMomentMap_momentMap`: `μ` is a coadjoint-equivariant
   moment map for the canonical symplectic form.
+* `TauCeti.CotangentBundle.differential_surjective_momentMap`: for a free action, `μ` is a
+  submersion, so every value is regular.
 * `TauCeti.CotangentBundle.hamiltonianTorusData_momentMap`: the cotangent lift of a smooth action
   of a commutative Lie group, such as a torus, is a Hamiltonian torus action with moment map `μ`.
 
@@ -233,6 +235,17 @@ theorem isEquivariantMomentMap_momentMap :
     ext v
     simp [RoughForm.interior_apply, X]
   apply_smul := momentMap_smul
+
+/-- **The cotangent moment map of a free action is a submersion**: its differential is surjective
+at every covector, since the cotangent lift of a free action is free. In particular every value,
+such as `0`, is a regular value. -/
+theorem differential_surjective_momentMap [FiniteDimensional ℝ EG] [IsCancelSMul G M]
+    (z : CotangentBundle I M) :
+    Function.Surjective
+      ((isEquivariantMomentMap_momentMap (IG := IG) (G := G) (I := I) (M := M)).differential z) :=
+  isEquivariantMomentMap_momentMap.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot
+    (isSymplectic_symplecticForm.isNondegenerate.nondegenerate_bilinFormAt z)
+    (IsCancelSMul.stabilizer_eq_bot z)
 
 end Equivariant
 

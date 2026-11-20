@@ -67,11 +67,11 @@ For the orbit projection of a free proper action, all these hypotheses hold
 **The symplectomorphism.** The cotangent lift of a free proper action is free
 (`TauCeti.CotangentBundle.instIsCancelSMul`) and proper
 (`TauCeti.CotangentBundle.properSMul`), so the cotangent moment map is a submersion
-(`ProperSMul.differential_surjective_momentMap`) and the Marsden–Weinstein–Meyer theorem applies at
-the value `0`, whose coadjoint stabilizer is all of `G`. It makes `μ⁻¹(0) ⧸ G` a smooth manifold
-(`ProperSMul.isManifold_cotangentReduced`), for a choice `d` of Lie group structure on `G_0 = G`,
-carrying a unique symplectic form `η` with `π^* η = i^* ω` for the orbit projection `π` and the
-inclusion `i : μ⁻¹(0) → T*Q`. It has dimension `2 (dim Q - dim G)`
+(`TauCeti.CotangentBundle.differential_surjective_momentMap`) and the Marsden–Weinstein–Meyer
+theorem applies at the value `0`, whose coadjoint stabilizer is all of `G`. It makes `μ⁻¹(0) ⧸ G`
+a smooth manifold (`ProperSMul.isManifold_cotangentReduced`), for a choice `d` of Lie group
+structure on `G_0 = G`, carrying a unique symplectic form `η` with `π^* η = i^* ω` for the orbit
+projection `π` and the inclusion `i : μ⁻¹(0) → T*Q`. It has dimension `2 (dim Q - dim G)`
 (`ProperSMul.finrank_quotientModelSpace_cotangentReduced`).
 Since `Ψ` is `G`-invariant on the zero level, it descends to the reduced cotangent map
 `ProperSMul.cotangentReducedMap : μ⁻¹(0) ⧸ G → T*(Q ⧸ G)`, which is a smooth bijection pulling the
@@ -502,23 +502,12 @@ variable (h : (symplecticForm I Q).IsEquivariantMomentMap (momentMap IG G)) {n :
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   (d : Lie.EmbeddedLieSubgroupData IG ((Lie.coadjointRepresentation ℝ IG G).stabilizer 0) F)
 
-omit [ProperSMul G Q] in
-/-- **The cotangent moment map of a free action is a submersion**: its differential is surjective
-at every covector, since the cotangent lift of a free action is free. In particular `0` is a
-regular value. -/
-theorem differential_surjective_momentMap [T2Space Q] (z : CotangentBundle I Q) :
-    Function.Surjective (h.differential z) :=
-  have : T2Space G := IG.t2Space_of_lieGroup ∞
-  h.toIsMomentMap.differential_surjective_of_stabilizer_eq_bot
-    (isSymplectic_symplecticForm.isNondegenerate.nondegenerate_bilinFormAt z)
-    (IsCancelSMul.stabilizer_eq_bot z)
-
 /-- For a free proper action, `0` is a regular value of the cotangent moment map. -/
 private theorem differential_surjective_of_momentMap_eq_zero (z : CotangentBundle I Q)
     (_ : momentMap IG G z = 0) : Function.Surjective (h.differential z) :=
   have : T2Space G := IG.t2Space_of_lieGroup ∞
   have : T2Space Q := t2Space_of_properSMul_of_t1Group (G := G)
-  differential_surjective_momentMap h z
+  CotangentBundle.differential_surjective_momentMap z
 
 include hn in
 /-- **The atlas of the zero level `μ⁻¹(0)`** of the cotangent moment map of a free proper action, as
@@ -607,11 +596,11 @@ theorem existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback_symplecticFo
     (differential_surjective_of_momentMap_eq_zero h) hn d isSymplectic_symplecticForm
     mpullback_smul_symplecticForm
 
-/-- In the Lie algebra `𝔤` of `G`, the annihilator of the zero covector is all of `𝔤`, of the
-dimension of the model space of `G`. -/
+/-- In the Lie algebra `𝔤` of `G`, the annihilator of the zero covector is all of `𝔤`, so it has
+the dimension of `𝔤`. -/
 private theorem finrank_lieAnnihilator_zero :
     finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra IG G) (0 : Module.Dual ℝ (GroupLieAlgebra IG G))) =
-      finrank ℝ EG := by
+      finrank ℝ (GroupLieAlgebra IG G) := by
   rw [lieAnnihilator_zero]
   exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
 
