@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShortExact
+public import TauCeti.CategoryTheory.Subobject.Cokernel
 
 /-!
 # The first differential of the spectral sequence of a filtered complex
@@ -36,7 +37,11 @@ connecting maps of the short exact sequences of graded pieces
   `CochainComplex.spectralObjectHIsoCokernel_inv_comp_spectralObject_δ`: the connecting maps of the
   spectral object, for monomorphic transition maps.
 * `CochainComplex.spectralSequence_first_page_d_eq`: the first differential of the spectral
-  sequence of a filtered complex.
+  sequence of a filtered complex, with `CochainComplex.spectralSequence_first_page_d_eq_of_eq` its
+  form with the indices given by equations.
+* `CochainComplex.δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom`: for a filtration,
+  the connecting maps of the graded pieces of its functor are those of the quotients of the
+  subobjects in the filtration.
 
 ## References
 
@@ -128,6 +133,76 @@ theorem spectralSequence_first_page_d_eq (p q : ℤ)
   congr 1
   exact (Category.assoc _ _ _).trans (Category.assoc _ _ _)
 
+/-- The form of `CochainComplex.spectralSequence_first_page_d_eq` in which the bidegrees, the
+filtration indices `i ≤ j ≤ k` and the cohomological degrees are given together with equations, for
+flexibility. -/
+theorem spectralSequence_first_page_d_eq_of_eq (pq pq' : ℤ × ℤ)
+    (hpq : pq' = (pq.1 + 2, pq.2 - 1)) (i j k : ℤ) (hi : i = pq'.2) (hj : j = pq.2)
+    (hk : k = pq.2 + 1) (n n' : ℤ) (hn : n = pq.1 + pq.2) (hn' : n + 1 = n')
+    [hij : Mono (F.map (TauCeti.eIntHomOfLE (show i ≤ j by lia)))]
+    [hjk : Mono (F.map (TauCeti.eIntHomOfLE (show j ≤ k by lia)))] :
+    ((spectralSequence F).page 2).d pq pq' =
+      (spectralSequenceFirstPageXIsoCokernel F pq j k hj hk n hn).hom ≫
+        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+          (F.map (TauCeti.eIntHomOfLE (show i ≤ j by lia)))
+          (F.map (TauCeti.eIntHomOfLE (show j ≤ k by lia)))).δ n n' (by simp [← hn']) ≫
+        (spectralSequenceFirstPageXIsoCokernel F pq' i j hi (by lia) n' (by lia)).inv := by
+  -- The instances mention the equations through the proofs of `i ≤ j` and `j ≤ k`.
+  revert hij hjk
+  subst hpq hj hk hn hn' hi
+  intro _ _
+  exact spectralSequence_first_page_d_eq F pq.1 pq.2
+
 end SpectralSequence
+
+section Filtration
+
+variable {K : CochainComplex C ℤ} (F : ℤ → Subobject K) (hF : Monotone F)
+
+/-- For a filtration `F` and subobjects `A ≤ B ≤ D` equal to `F i`, `F j` and `F k`, the connecting
+map of the graded pieces `F_j/F_i ⟶ F_k/F_i ⟶ F_k/F_j` of the functor of the filtration is the
+connecting map of the sequence `B/A ⟶ D/A ⟶ D/B`, under the identifications
+`CochainComplex.cokernelFiltrationFunctorMapIso` and `CategoryTheory.Subobject.cokernelOfLEIsoOfEq`
+of the graded pieces. -/
+lemma δ_comp_homologyMap_cokernelFiltrationFunctorMapIso_trans_hom {i j k : ℤ} (hij : i ≤ j)
+    (hjk : j ≤ k) {A B D : Subobject K} (hA : F i = A) (hB : F j = B) (hD : F k = D)
+    (hAB : A ≤ B) (hBD : B ≤ D) (n₀ n₁ : ℤ) (h : (ComplexShape.up ℤ).Rel n₀ n₁) :
+    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
+        ((filtrationFunctor F hF).map (TauCeti.eIntHomOfLE hij))
+        ((filtrationFunctor F hF).map (TauCeti.eIntHomOfLE hjk))).δ n₀ n₁ h ≫
+      HomologicalComplex.homologyMap
+        (cokernelFiltrationFunctorMapIso F hF (TauCeti.eIntHomOfLE hij) ≪≫
+          Subobject.cokernelOfLEIsoOfEq ((filtrationEInt_coe F i).trans hA)
+            ((filtrationEInt_coe F j).trans hB) _ hAB).hom n₁ =
+    HomologicalComplex.homologyMap
+        (cokernelFiltrationFunctorMapIso F hF (TauCeti.eIntHomOfLE hjk) ≪≫
+          Subobject.cokernelOfLEIsoOfEq ((filtrationEInt_coe F j).trans hB)
+            ((filtrationEInt_coe F k).trans hD) _ hBD).hom n₀ ≫
+      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact (Subobject.ofLE A B hAB)
+        (Subobject.ofLE B D hBD)).δ n₀ n₁ h := by
+  -- The comparison maps from the pieces of the functor of the filtration to `A`, `B` and `D`.
+  let u : ∀ (a : ℤ) {S : Subobject K}, F a = S → ((filtrationFunctor F hF).obj a ⟶ S) :=
+    fun a _ hS ↦ (filtrationFunctorObjIso F hF a).hom ≫
+      Subobject.ofLE _ _ ((filtrationEInt_coe F a).trans hS).le
+  have w : ∀ {a b : ℤ} (hab : a ≤ b) {S T : Subobject K} (hS : F a = S) (hT : F b = T)
+      (hST : S ≤ T), (filtrationFunctor F hF).map (TauCeti.eIntHomOfLE hab) ≫ u b hT =
+        u a hS ≫ Subobject.ofLE S T hST := fun hab _ _ hS hT hST ↦ by
+    simp [u, reassoc_of% filtrationFunctor_map_comp_objIso_hom, Subobject.ofLE_comp_ofLE]
+  -- Under these comparisons, the induced maps of cokernels are the identifications of the
+  -- graded pieces.
+  have e : ∀ {a b : ℤ} (hab : a ≤ b) {S T : Subobject K} (hS : F a = S) (hT : F b = T)
+      (hST : S ≤ T), cokernel.map _ _ (u a hS) (u b hT) (w hab hS hT hST) =
+        (cokernelFiltrationFunctorMapIso F hF (TauCeti.eIntHomOfLE hab) ≪≫
+          Subobject.cokernelOfLEIsoOfEq ((filtrationEInt_coe F a).trans hS)
+            ((filtrationEInt_coe F b).trans hT) _ hST).hom := fun hab _ _ hS hT hST ↦ by
+    apply coequalizer.hom_ext
+    simp [u]
+  have key := HomologicalComplex.HomologySequence.δ_naturality
+    (TauCeti.snakeInputL₃Map (u i hA) (u j hB) (u k hD) (w hij hA hB hAB) (w hjk hB hD hBD))
+    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _)
+    (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _) n₀ n₁ h
+  rwa [TauCeti.snakeInputL₃Map_τ₁, TauCeti.snakeInputL₃Map_τ₃, e, e] at key
+
+end Filtration
 
 end CochainComplex

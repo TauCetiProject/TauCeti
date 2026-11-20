@@ -41,6 +41,8 @@ simultaneously.
   `a` is the target of `a`.
 * `TauCeti.cokernelSequenceToSnakeInputL₃`: the morphism from `Y ⟶ Z ⟶ cokernel b` to that
   sequence.
+* `TauCeti.snakeInputL₃Map`: the morphism between two such sequences induced by a commutative
+  ladder between the composable pairs.
 * `CategoryTheory.ShortComplex.shortExact_of_forall_evaluation`: a short complex of functors is
   short exact if it is short exact after evaluation at every object.
 * `CategoryTheory.ShortComplex.Exact.shortExact_factorThruImage`: an exact sequence
@@ -222,6 +224,50 @@ lemma cokernelSequenceToSnakeInputL₃_τ₂ :
 @[simp]
 lemma cokernelSequenceToSnakeInputL₃_τ₃ : (cokernelSequenceToSnakeInputL₃ a b).τ₃ = 𝟙 _ := by
   rw [cokernelSequenceToSnakeInputL₃]
+
+variable {a b} {X' Y' Z' : C} {a' : X' ⟶ Y'} {b' : Y' ⟶ Z'} (u₁ : X ⟶ X') (u₂ : Y ⟶ Y')
+  (u₃ : Z ⟶ Z') (w₁ : a ≫ u₂ = u₁ ≫ a') (w₂ : b ≫ u₃ = u₂ ≫ b')
+
+/-- A commutative ladder `u₁, u₂, u₃` from the composable pair `(a, b)` to the composable pair
+`(a', b')` induces a morphism of short complexes from
+`cokernel a ⟶ cokernel (a ≫ b) ⟶ cokernel b` to `cokernel a' ⟶ cokernel (a' ≫ b') ⟶ cokernel b'`,
+whose components are the maps of cokernels induced by the ladder. -/
+noncomputable def snakeInputL₃Map :
+    (kernelCokernelCompSequence.snakeInput a b).L₃ ⟶
+      (kernelCokernelCompSequence.snakeInput a' b').L₃ where
+  τ₁ := cokernel.map a a' u₁ u₂ w₁
+  τ₂ := cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, w₂, reassoc_of% w₁])
+  τ₃ := cokernel.map b b' u₂ u₃ w₂
+  -- The objects of the two sequences are the cokernels only after unfolding `snakeInput`, so the
+  -- squares are proved for the cokernel maps and then read in the sequences by `exact`.
+  comm₁₂ := by
+    have h : cokernel.map a a' u₁ u₂ w₁ ≫ cokernel.map a' (a' ≫ b') (𝟙 _) b' (by simp) =
+        cokernel.map a (a ≫ b) (𝟙 _) b (by simp) ≫
+          cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, w₂, reassoc_of% w₁]) := by
+      ext
+      simp [reassoc_of% w₂]
+    exact h
+  comm₂₃ := by
+    have h : cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, w₂, reassoc_of% w₁]) ≫
+          cokernel.map (a' ≫ b') b' a' (𝟙 _) (by simp) =
+        cokernel.map (a ≫ b) b a (𝟙 _) (by simp) ≫ cokernel.map b b' u₂ u₃ w₂ := by
+      ext
+      simp
+    exact h
+
+@[simp]
+lemma snakeInputL₃Map_τ₁ : (snakeInputL₃Map u₁ u₂ u₃ w₁ w₂).τ₁ = cokernel.map a a' u₁ u₂ w₁ := by
+  rw [snakeInputL₃Map]
+
+@[simp]
+lemma snakeInputL₃Map_τ₂ :
+    (snakeInputL₃Map u₁ u₂ u₃ w₁ w₂).τ₂ =
+      cokernel.map (a ≫ b) (a' ≫ b') u₁ u₃ (by rw [Category.assoc, w₂, reassoc_of% w₁]) := by
+  rw [snakeInputL₃Map]
+
+@[simp]
+lemma snakeInputL₃Map_τ₃ : (snakeInputL₃Map u₁ u₂ u₃ w₁ w₂).τ₃ = cokernel.map b b' u₂ u₃ w₂ := by
+  rw [snakeInputL₃Map]
 
 end Comp
 
