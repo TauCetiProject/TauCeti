@@ -55,34 +55,35 @@ example : ¬ Disjoint ({2, 2} : Multiset ℕ) {2, 1} := by
 example : (({3} : Multiset ℕ).map Nat.totient).sum ≠ (({1} : Multiset ℕ).map Nat.totient).sum := by
   simp [Nat.totient_prime Nat.prime_three]
 
-/-- The datum `A = {4}`, `B = {2, 1}`. -/
-def quarter : CyclotomicData where
+/-- The datum `A = {4}`, `B = {2, 1}`, the cyclotomic form of the parameters
+`TauCeti.Hypergeometric.Examples.quarter`. -/
+def cyclotomicQuarter : CyclotomicData where
   A := {4}
   B := {2, 1}
   pos := by decide
   disjoint := Multiset.disjoint_left.2 (by simp)
   totient_sum_eq := by decide
 
-theorem phiA_quarter : quarter.phiA ℤ = X ^ 2 + 1 := by
+theorem phiA_cyclotomicQuarter : cyclotomicQuarter.phiA ℤ = X ^ 2 + 1 := by
   have h : cyclotomic 4 ℤ = 1 + X ^ 2 := by
     simpa [Finset.sum_range_succ] using
       cyclotomic_prime_pow_eq_geom_sum (R := ℤ) Nat.prime_two (n := 1)
-  simp [CyclotomicData.phiA_def, quarter, h, add_comm]
+  simp [CyclotomicData.phiA_def, cyclotomicQuarter, h, add_comm]
 
-theorem phiB_quarter : quarter.phiB ℤ = X ^ 2 - 1 := by
-  simp [CyclotomicData.phiB_def, quarter, cyclotomic_two]
+theorem phiB_cyclotomicQuarter : cyclotomicQuarter.phiB ℤ = X ^ 2 - 1 := by
+  simp [CyclotomicData.phiB_def, cyclotomicQuarter, cyclotomic_two]
   ring
 
--- Over `ℚ` the cyclotomic products of `quarter` are coprime.
-example : IsCoprime (quarter.phiA ℚ) (quarter.phiB ℚ) :=
-  quarter.isCoprime_phiA_phiB ℚ
+-- Over `ℚ` the cyclotomic products of `cyclotomicQuarter` are coprime.
+example : IsCoprime (cyclotomicQuarter.phiA ℚ) (cyclotomicQuarter.phiB ℚ) :=
+  cyclotomicQuarter.isCoprime_phiA_phiB ℚ
 
 -- Over `ℤ` they are not: evaluating a Bézout identity at `1` would give `2 * u(1) = 1`.
-example : ¬ IsCoprime (quarter.phiA ℤ) (quarter.phiB ℤ) := by
+example : ¬ IsCoprime (cyclotomicQuarter.phiA ℤ) (cyclotomicQuarter.phiB ℤ) := by
   rintro ⟨u, v, h⟩
   have h1 := congrArg (eval 1) h
-  simp only [phiA_quarter, phiB_quarter, eval_add, eval_mul, eval_pow, eval_X, eval_one,
-    eval_sub, one_pow, sub_self, mul_zero, add_zero] at h1
+  simp only [phiA_cyclotomicQuarter, phiB_cyclotomicQuarter, eval_add, eval_mul, eval_pow, eval_X,
+    eval_one, eval_sub, one_pow, sub_self, mul_zero, add_zero] at h1
   omega
 
 end TauCeti.Hypergeometric.Examples
