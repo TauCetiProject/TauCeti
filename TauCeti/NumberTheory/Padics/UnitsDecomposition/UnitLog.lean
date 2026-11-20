@@ -90,18 +90,15 @@ private theorem unitsToZModPow_pow (x : ℤ_[p]ˣ) :
 private theorem natCast_two_mul_ne_zero : ((2 * (p - 1) : ℕ) : ℚ_[p]) ≠ 0 :=
   Nat.cast_ne_zero.mpr (by have := hp.out.two_le; omega)
 
-private theorem q_ne_zero : (p : ℚ_[p]) ^ padicUnitsDepth p ≠ 0 :=
-  pow_ne_zero _ (Nat.cast_ne_zero.mpr hp.out.ne_zero)
-
 /-- **The unit logarithm is `q` times the logarithmic coordinate** of the decomposition
 `ℤ_pˣ ≃ₜ* (ℤ/qℤ)ˣ × ℤ_p`, with `q = p ^ padicUnitsDepth p`. -/
 theorem padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd (x : ℤ_[p]ˣ) :
     padicUnitLog p x = (p : ℚ_[p]) ^ padicUnitsDepth p *
       ((padicIntUnitsEquivZModUnitsProd p x).2.toAdd : ℚ_[p]) := by
   have h := coe_padicIntUnitsEquivZModUnitsProd_apply_snd (x ^ (2 * (p - 1)))
-  rw [unitsToZModPow_pow, map_one, inv_one, one_mul, map_pow, Prod.pow_snd, toAdd_pow,
-    nsmul_eq_mul, PadicInt.coe_mul, PadicInt.coe_natCast, Units.val_pow_eq_pow_val,
-    PadicInt.coe_pow, eq_div_iff q_ne_zero] at h
+  rw [unitsToZModPow_pow, map_one, inv_one, one_mul, eq_div_iff pow_padicUnitsDepth_ne_zero] at h
+  simp only [map_pow, Prod.pow_snd, toAdd_pow, nsmul_eq_mul, PadicInt.coe_mul,
+    PadicInt.coe_natCast, Units.val_pow_eq_pow_val, PadicInt.coe_pow] at h
   rw [padicUnitLog_def, ← h, inv_mul_eq_iff_eq_mul₀ natCast_two_mul_ne_zero]
   ring
 
@@ -111,22 +108,25 @@ theorem padicUnitLog_eq_log_inv_padicUnitsSection_mul (x : ℤ_[p]ˣ) :
     padicUnitLog p x = log ((((padicUnitsSection p
       (PadicInt.unitsToZModPow (padicUnitsDepth p) x))⁻¹ * x : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) := by
   rw [padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd,
-    coe_padicIntUnitsEquivZModUnitsProd_apply_snd, mul_div_cancel₀ _ q_ne_zero]
+    coe_padicIntUnitsEquivZModUnitsProd_apply_snd, mul_div_cancel₀ _ pow_padicUnitsDepth_ne_zero]
+
+/-- The element `x ^ m - 1`, `m = 2 (p - 1)`, lies in the disc of convergence of the logarithm
+series. -/
+private theorem norm_coe_pow_sub_one_lt_one (x : ℤ_[p]ˣ) :
+    ‖((x : ℤ_[p]) : ℚ_[p]) ^ (2 * (p - 1)) - 1‖ < 1 := by
+  have h := mem_unitsPrincipal_iff_norm.mp (unitsToZModPow_eq_one_iff.mp (unitsToZModPow_pow x))
+  rw [← norm_coe_sub_one] at h
+  push_cast at h
+  exact h.trans_lt (zpow_lt_one_of_neg₀ (by exact_mod_cast hp.out.one_lt)
+    (by simpa using padicUnitsDepth_pos p))
 
 /-- **The series form of the unit logarithm**:
 `padicUnitLog p x = m⁻¹ ∑_{n ≥ 0} (-1) ^ n (x ^ m - 1) ^ (n + 1) / (n + 1)`, `m = 2 (p - 1)`. -/
 theorem padicUnitLog_eq_tsum (x : ℤ_[p]ˣ) :
     padicUnitLog p x = ((2 * (p - 1) : ℕ) : ℚ_[p])⁻¹ * ∑' n : ℕ,
       (-1 : ℚ_[p]) ^ n * (((x : ℤ_[p]) : ℚ_[p]) ^ (2 * (p - 1)) - 1) ^ (n + 1) / (n + 1) := by
-  have hy : ‖((x : ℤ_[p]) : ℚ_[p]) ^ (2 * (p - 1)) - 1‖ < 1 := by
-    have hmem := mem_unitsPrincipal_iff_norm.mp
-      (unitsToZModPow_eq_one_iff.mp (unitsToZModPow_pow (p := p) x))
-    rw [PadicInt.norm_def, Units.val_pow_eq_pow_val, PadicInt.coe_sub, PadicInt.coe_pow,
-      PadicInt.coe_one] at hmem
-    exact hmem.trans_lt (zpow_lt_one_of_neg₀ (by exact_mod_cast hp.out.one_lt)
-      (by simpa using padicUnitsDepth_pos p))
-  rw [padicUnitLog_def, congrFun (log_eq_tsum ℚ_[p]),
-    (logSeries_summable_of_norm_lt_one ℚ_[p] ℚ_[p] hy).tsum_eq_zero_add]
+  rw [padicUnitLog_def, congrFun (log_eq_tsum ℚ_[p]), (logSeries_summable_of_norm_lt_one ℚ_[p]
+    ℚ_[p] (norm_coe_pow_sub_one_lt_one x)).tsum_eq_zero_add]
   congr 1
   simp only [Nat.cast_zero, div_zero, zero_mul, zero_add, smul_eq_mul, Nat.cast_add,
     Nat.cast_one]
@@ -187,8 +187,9 @@ theorem padicUnitLog_pow (x : ℤ_[p]ˣ) (n : ℕ) :
 /-- **The unit logarithm vanishes exactly on the roots of unity** of `ℤ_p`: the `(p - 1)`-st
 roots of unity for odd `p` and `±1` for `p = 2`. -/
 theorem padicUnitLog_eq_zero_iff {x : ℤ_[p]ˣ} : padicUnitLog p x = 0 ↔ IsOfFinOrder x := by
-  rw [padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd, mul_eq_zero, or_iff_right q_ne_zero,
-    PadicInt.coe_eq_zero, toAdd_eq_zero, ← mem_torsion_padicIntUnits_iff, CommGroup.mem_torsion]
+  rw [padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd, mul_eq_zero,
+    or_iff_right pow_padicUnitsDepth_ne_zero, PadicInt.coe_eq_zero, toAdd_eq_zero,
+    ← mem_torsion_padicIntUnits_iff, CommGroup.mem_torsion]
 
 variable (p) in
 @[simp]
@@ -222,20 +223,14 @@ theorem range_padicUnitLog :
   ext y
   constructor
   · rintro ⟨x, rfl⟩
-    rw [Set.mem_ofPred_eq, padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd, norm_mul,
-      Padic.norm_p_pow, ← PadicInt.norm_def]
-    exact mul_le_of_le_one_right (zpow_pos (by exact_mod_cast hp.out.pos) _).le
-      (PadicInt.norm_le_one _)
+    rw [Set.mem_ofPred_eq, padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd]
+    exact norm_pow_padicUnitsDepth_mul_le _
   · intro hy
-    have hs : y / (p : ℚ_[p]) ^ padicUnitsDepth p ∈ PadicInt.subring p := by
-      rw [PadicInt.mem_subring_iff, norm_div, Padic.norm_p_pow,
-        div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _)]
-      exact hy
-    let s : ℤ_[p] := ⟨y / (p : ℚ_[p]) ^ padicUnitsDepth p, hs⟩
+    let s : ℤ_[p] := ⟨y / (p : ℚ_[p]) ^ padicUnitsDepth p, div_pow_padicUnitsDepth_mem_subring hy⟩
     obtain ⟨x, hx⟩ := (padicIntUnitsEquivZModUnitsProd p).surjective (1, .ofAdd s)
     refine ⟨x, ?_⟩
     rw [padicUnitLog_eq_mul_padicIntUnitsEquivZModUnitsProd_snd, hx, toAdd_ofAdd]
-    exact mul_div_cancel₀ y q_ne_zero
+    exact mul_div_cancel₀ y pow_padicUnitsDepth_ne_zero
 
 /-- The unit logarithm takes values in `qℤ_p`; in particular in `ℤ_p`. -/
 theorem norm_padicUnitLog_le (x : ℤ_[p]ˣ) :
