@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.MetricSpace.CyclicDistanceCut
 public import TauCeti.Topology.MetricSpace.DiscreteEnergy.Insertion
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Discrete energy of closed metric chains
@@ -42,9 +43,10 @@ closed-loop analogue of the fixed-endpoint discrete energy `TauCeti.discreteEner
 * **Subdivision.** Repeating the base vertex, the embedding `ιⁿ` of the distance cuts
   (`TauCeti.cyclicDistanceCutRepeatFirst`), preserves the energy for any step of the new edge of
   length zero (`TauCeti.cyclicDiscreteEnergy_cons_self`), and so maps energy carriers into each
-  other (`TauCeti.cyclicDiscreteEnergyRepeatFirst`). Forgetting vertices, with the steps of the
-  coarse edges the sums of the fine steps they span, does not increase the energy
-  (`TauCeti.cyclicDiscreteEnergy_cyclicDiscreteEnergyForget_le`), and in a geodesic space every
+  other by an embedding (`TauCeti.cyclicDiscreteEnergyRepeatFirst`). Forgetting vertices, with the
+  steps of the coarse edges the sums of the fine steps they span, does not increase the energy
+  (`TauCeti.cyclicDiscreteEnergy_cyclicDiscreteEnergyForget_le`), the induced maps of carriers
+  compose (`TauCeti.cyclicDiscreteEnergyForgetMap_trans`), and in a geodesic space every
   coarse closed chain is the image of a fine one of the same energy
   (`TauCeti.exists_cyclicDiscreteEnergyForget_eq_and_cyclicDiscreteEnergy_eq`).
 
@@ -116,14 +118,11 @@ theorem cyclicDiscreteEnergy_eq_discreteEnergy_snoc {τ : Fin (n + 1) → ℝ}
     {t : Fin (n + 2) → ℝ} (ht : ∀ k : Fin (n + 1), t k.succ - t k.castSucc = τ (k + 1))
     (q : Fin (n + 1) → X) :
     cyclicDiscreteEnergy τ q = discreteEnergy t (Fin.snoc q (q 0)) := by
-  have hsnoc (k : Fin (n + 1)) : (Fin.snoc q (q 0) : Fin (n + 2) → X) k.succ = q (k + 1) := by
-    induction k using Fin.lastCases with
-    | last => simp [Fin.last_add_one]
-    | cast j => rw [Fin.succ_castSucc, Fin.snoc_castSucc, Fin.coeSucc_eq_succ]
   rw [cyclicDiscreteEnergy_def, discreteEnergy_def, ← Equiv.sum_comp (Equiv.addRight 1)]
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [Equiv.coe_addRight, add_sub_cancel_right, Fin.snoc_castSucc, hsnoc, ht, dist_comm]
+  rw [Equiv.coe_addRight, add_sub_cancel_right, Fin.snoc_castSucc, Fin.snoc_self_zero_succ, ht,
+    dist_comm]
 
 /-! ### Estimates -/
 
@@ -164,6 +163,7 @@ theorem dist_le_sqrt_cyclicDiscreteEnergy (hτ : ∀ i, 0 < τ i) (q : Fin (n + 
 
 /-- For positive steps in a metric space, a closed chain has cyclic energy zero exactly when it
 is a constant loop. -/
+@[simp]
 theorem cyclicDiscreteEnergy_eq_zero_iff {X : Type*} [MetricSpace X] (hτ : ∀ i, 0 < τ i)
     (q : Fin (n + 1) → X) : cyclicDiscreteEnergy τ q = 0 ↔ ∀ j, q j = q 0 := by
   refine ⟨fun hq j ↦ ?_, fun hq ↦ ?_⟩
@@ -303,6 +303,18 @@ theorem coe_cyclicDiscreteEnergyRepeatFirst_apply (τ : Fin (n + 1) → ℝ) (s 
     (cyclicDiscreteEnergyRepeatFirst τ s c q : Fin (n + 2) → X) = Fin.cons (q.1 0) q.1 :=
   (rfl)
 
+/-- Repeating the base vertex is an embedding of energy carriers: forgetting the first vertex is a
+continuous left inverse on tuples. -/
+theorem isEmbedding_cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
+    Topology.IsEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) := by
+  refine Topology.IsEmbedding.of_comp (map_continuous _) continuous_subtype_val.finTail ?_
+  have hcomp : (fun p : cyclicDiscreteEnergyStrictSublevel (X := X)
+      (Fin.cons (τ 0) (Fin.cons s (Fin.tail τ)) : Fin (n + 2) → ℝ) c ↦ Fin.tail p.1) ∘
+      cyclicDiscreteEnergyRepeatFirst τ s c = Subtype.val := by
+    funext q
+    simp
+  exact hcomp ▸ Topology.IsEmbedding.subtypeVal
+
 /-! ### Forgetting and inserting vertices -/
 
 section Forget
@@ -324,6 +336,15 @@ theorem cyclicDiscreteEnergyForget_apply (r : Fin (m + 2) ↪o Fin (n + 2)) (q :
     cyclicDiscreteEnergyForget r q j = (Fin.snoc q (q 0) : Fin (n + 2) → X) (r j.castSucc) :=
   (rfl)
 
+omit [PseudoMetricSpace X] in
+/-- Retaining every vertex is the identity. -/
+@[simp]
+theorem cyclicDiscreteEnergyForget_refl (q : Fin (n + 1) → X) :
+    cyclicDiscreteEnergyForget (RelEmbedding.refl (· ≤ · : Fin (n + 2) → Fin (n + 2) → Prop)) q =
+      q := by
+  funext j
+  simp
+
 /-- Forgetting vertices is continuous. -/
 @[fun_prop]
 theorem continuous_cyclicDiscreteEnergyForget (r : Fin (m + 2) ↪o Fin (n + 2)) :
@@ -344,9 +365,21 @@ theorem snoc_cyclicDiscreteEnergyForget {r : Fin (m + 2) ↪o Fin (n + 2)} (h0 :
   induction j using Fin.lastCases with
   | last =>
     rw [Fin.snoc_last, cyclicDiscreteEnergyForget_apply, Function.comp_apply, hlast,
-      Fin.snoc_last, Fin.castSucc_zero, h0]
-    rw [← Fin.castSucc_zero (n := n + 1), Fin.snoc_castSucc]
+      Fin.snoc_last, Fin.castSucc_zero, h0, Fin.snoc_apply_zero]
   | cast j => rw [Fin.snoc_castSucc, cyclicDiscreteEnergyForget_apply, Function.comp_apply]
+
+omit [PseudoMetricSpace X] in
+/-- Successive vertex-forgetting agrees with selecting the composite subsequence, when the first
+selection retains the first and last slots. -/
+@[simp]
+theorem cyclicDiscreteEnergyForget_trans {l : ℕ} {r : Fin (m + 2) ↪o Fin (n + 2)} (h0 : r 0 = 0)
+    (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (s : Fin (l + 2) ↪o Fin (m + 2))
+    (q : Fin (n + 1) → X) :
+    cyclicDiscreteEnergyForget s (cyclicDiscreteEnergyForget r q) =
+      cyclicDiscreteEnergyForget (s.trans r) q := by
+  funext j
+  rw [cyclicDiscreteEnergyForget_apply, snoc_cyclicDiscreteEnergyForget h0 hlast,
+    Function.comp_apply, cyclicDiscreteEnergyForget_apply, RelEmbedding.trans_apply]
 
 /-- **Forgetting vertices does not increase the cyclic energy.** Let the fine steps `τ` be those
 of the times `t`, and the coarse steps `τ'` those of the selected times `t ∘ r`, the steps of the
@@ -389,6 +422,33 @@ theorem coe_cyclicDiscreteEnergyForgetMap_apply (ht : StrictMono t)
       cyclicDiscreteEnergyForget r q.1 :=
   (rfl)
 
+/-- The identity selection induces the identity on the energy carrier. -/
+@[simp]
+theorem cyclicDiscreteEnergyForgetMap_refl (ht : StrictMono t)
+    (hτ : ∀ k : Fin (n + 1), t k.succ - t k.castSucc = τ (k + 1)) (c : ℝ) :
+    cyclicDiscreteEnergyForgetMap ht hτ (r := RelEmbedding.refl (· ≤ ·)) rfl rfl hτ c =
+      ContinuousMap.id (cyclicDiscreteEnergyStrictSublevel (X := X) τ c) := by
+  ext q : 2
+  exact cyclicDiscreteEnergyForget_refl q.1
+
+/-- The continuous maps between energy carriers commute with further vertex-forgetting. -/
+@[simp]
+theorem cyclicDiscreteEnergyForgetMap_trans {l : ℕ} {τ'' : Fin (l + 1) → ℝ} (ht : StrictMono t)
+    (hτ : ∀ k : Fin (n + 1), t k.succ - t k.castSucc = τ (k + 1))
+    {r : Fin (m + 2) ↪o Fin (n + 2)} (hr0 : r 0 = 0)
+    (hrlast : r (Fin.last (m + 1)) = Fin.last (n + 1))
+    (hτ' : ∀ k : Fin (m + 1), t (r k.succ) - t (r k.castSucc) = τ' (k + 1))
+    {s : Fin (l + 2) ↪o Fin (m + 2)} (hs0 : s 0 = 0)
+    (hslast : s (Fin.last (l + 1)) = Fin.last (m + 1))
+    (hτ'' : ∀ k : Fin (l + 1), t (r (s k.succ)) - t (r (s k.castSucc)) = τ'' (k + 1)) (c : ℝ) :
+    (cyclicDiscreteEnergyForgetMap (ht.comp r.strictMono) hτ' hs0 hslast hτ'' c).comp
+        (cyclicDiscreteEnergyForgetMap (X := X) ht hτ hr0 hrlast hτ' c) =
+      cyclicDiscreteEnergyForgetMap ht hτ (r := s.trans r)
+        (by rw [RelEmbedding.trans_apply, hs0, hr0])
+        (by rw [RelEmbedding.trans_apply, hslast, hrlast]) hτ'' c := by
+  ext q : 2
+  exact cyclicDiscreteEnergyForget_trans hr0 hrlast s q.1
+
 /-- **Geodesic insertion for closed chains.** In a geodesic space, for times `t` and a selection
 `r` retaining the first and last slots, every coarse closed chain is obtained by forgetting
 vertices of a fine closed chain with the same energy, for the steps of `t ∘ r` and of `t`: insert,
@@ -408,13 +468,13 @@ theorem exists_cyclicDiscreteEnergyForget_eq_and_cyclicDiscreteEnergy_eq [IsGeod
   have hy0 : y 0 = p 0 := by
     have h := congrFun hyr 0
     rw [Function.comp_apply, h0] at h
-    rwa [← Fin.castSucc_zero (n := m + 1), Fin.snoc_castSucc] at h
+    rwa [Fin.snoc_apply_zero] at h
   have hylast : y (Fin.last (n + 1)) = p 0 := by
     have := congrFun hyr (Fin.last (m + 1))
     rwa [Function.comp_apply, hlast, Fin.snoc_last] at this
   have hsnoc : (Fin.snoc (Fin.init y) (Fin.init y 0) : Fin (n + 2) → X) = y := by
-    rw [show Fin.init y 0 = y (Fin.last (n + 1)) by
-      rw [hylast, ← hy0, Fin.init, Fin.castSucc_zero], Fin.snoc_init_self]
+    rw [show Fin.init y 0 = y (Fin.last (n + 1)) by simp [Fin.init, hy0, hylast],
+      Fin.snoc_init_self]
   refine ⟨Fin.init y, ?_, ?_⟩
   · funext j
     rw [cyclicDiscreteEnergyForget_apply, hsnoc, ← Function.comp_apply (f := y), hyr,
