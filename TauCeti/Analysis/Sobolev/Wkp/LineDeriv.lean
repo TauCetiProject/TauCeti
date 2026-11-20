@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -56,6 +57,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
 * `TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`: the weak Hessian is self-adjoint almost
   everywhere.
+* `TauCeti.Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm`: weak derivatives of the
+  entries of the weak Hessian commute with its slots.
 * `TauCeti.Wkp.hasWeakLineDerivOn_iteratedGradient`: weak directional differentiation commutes
   with `Wkp.iteratedGradient`.
 * `TauCeti.Wkp.iteratedGradient_lineDerivL`: the top weak derivative of `Wkp.lineDerivL v (j + 1) u`
@@ -520,6 +523,19 @@ theorem Wkp.adjoint_iteratedGradient_one_ae_eq (u : Wkp mu Omega p 2) :
   refine (LinearMap.eq_adjoint_iff_basis b.toBasis b.toBasis _ _).2 fun i j => ?_
   simpa only [ContinuousLinearMap.coe_coe, OrthonormalBasis.coe_toBasis] using
     (hx i j).trans (real_inner_comm _ _).symm
+
+/-- **Symmetry of the third weak derivatives.** For `u ∈ W^{2,p}(Ω)`, if the entry
+`⟪D²u w, v⟫ = ∂_w ∂_v u` of the weak Hessian has the weak derivative `G` in the direction `z`,
+then the entry `⟪D²u z, v⟫ = ∂_z ∂_v u` has the same weak derivative `G` in the direction `w`.
+Together with `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq` this makes the third weak
+derivatives `∂_z ∂_w ∂_v u` symmetric in all three directions. -/
+theorem Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm (u : Wkp mu Omega p 2)
+    {v w z : E} {G : E → ℝ}
+    (hG : HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x w, v⟫_ℝ) G z) :
+    HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 u x z, v⟫_ℝ) G w := by
+  -- `∂_v u ∈ W^{1,p}(Ω)`, whose gradient components are the entries `⟪D²u ·, v⟫`
+  obtain ⟨d, -, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq u v
+  exact (W1p.hasWeakLineDerivOn_inner_gradient_comm (hG.congr_ae (hd w).symm)).congr_ae (hd z)
 
 /-! ### Commutativity of directional derivatives with `iteratedGradient` -/
 
