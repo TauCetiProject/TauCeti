@@ -51,7 +51,8 @@ every finite `q`. The finite-exponent change of variables gives weak derivative 
 on the sets `U_R`, which glue to one on `U`, and bounds its fields in `L^q(U_R)` by
 `compLBound q k L c * μ(V_R) ^ (1/q) * ‖u‖`. Letting `q → ∞` bounds them in `L^∞(U_R)` by
 `compLBound ∞ k L c * ‖u‖`, uniformly in `R`. The operator is linear because its value determines
-it, and continuous by the closed graph theorem.
+it, and continuous by the closed graph theorem. Since the fields are then bounded in `L^∞(U)` by the
+same constant, its norm is at most `(k + 1) * compLBound ∞ k L c`.
 
 At order two and for `1 ≤ p < ∞`, the weak Hessian of `u ∘ Φ` is given by the chain rule
 
@@ -100,6 +101,8 @@ derivatives gives the chain rule for the weak Hessian.
 * `TauCeti.Wkp.compL`: precomposition with a change of variables, a bounded operator on `W^{k,p}`
   for every `1 ≤ p ≤ ∞`, with value `u ∘ Φ` (`TauCeti.Wkp.value_compL_ae`).
 * `TauCeti.Wkp.opNorm_compL_le`: its norm is at most `compLBound p k L c` for `p < ∞`.
+* `TauCeti.Wkp.opNorm_compL_top_le`: its norm is at most `(k + 1) * compLBound ∞ k L c` for
+  `p = ∞`.
 * `TauCeti.Wkp.compLEquiv`: precomposition with a diffeomorphism as an isomorphism of `W^{k,p}`.
 * `TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`: precomposition with a linear
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
@@ -615,6 +618,16 @@ theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0
   have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
   positivity
 
+/-- The constant `compLBound ∞ k L c` is at least one: the exponent of `c` vanishes, and the
+summand for `i = 0` is one. -/
+theorem one_le_compLBound_top (k : ℕ) (L c : ℝ) : 1 ≤ compLBound ⊤ k L c := by
+  rw [compLBound, ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero, one_mul]
+  have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
+  calc (1 : ℝ) = max 1 L ^ 0 * (Fintype.card (OrderedFinpartition 0) : ℝ) := by simp
+    _ ≤ _ := Finset.single_le_sum (f := fun i => max 1 L ^ i *
+        (Fintype.card (OrderedFinpartition i) : ℝ)) (fun i _ => by positivity)
+        (Finset.mem_range.2 k.succ_pos)
+
 open scoped NNReal in
 /-- As the finite exponent `q` tends to `∞`, the constant `compLBound q k L c` tends to
 `compLBound ∞ k L c`. -/
@@ -1010,6 +1023,28 @@ private theorem aestronglyMeasurable_and_eLpNorm_top_le_of_chain {n : ℕ}
   rw [← (ENNReal.tendsto_ofReal hK).liminf_eq]
   exact liminf_le_liminf (eventually_atTop.2 ⟨1, fun q hq1 => (hq q hq1).2⟩)
 
+/-- The fields of a weak derivative chain of the precomposition of a bounded Sobolev function are
+essentially bounded on `U`, by `compLBound ∞ (n + 1) L c * ‖u‖`. -/
+private theorem memLp_top_and_eLpNorm_top_le_of_chain {n : ℕ}
+    (h : IsChangeOfVariables (n + 1) U V Φ L c) (u : Wkp mu V ⊤ (n + 1))
+    {G : (i : ℕ) → E → IteratedGradient E i}
+    (hG0 : HasWeakFDerivOn mu U (fun x => value (n + 1) u (Φ x)) (fun x => innerSL ℝ (G 0 x)))
+    (hG : ∀ i < n, HasWeakFDerivOn mu U (G i) (G (i + 1))) {i : ℕ} (hi : i ≤ n) :
+    MemLp (G i) ⊤ (mu.restrict U) ∧
+      eLpNorm (G i) ⊤ (mu.restrict U) ≤ ENNReal.ofReal (compLBound ⊤ (n + 1) L c * ‖u‖) := by
+  have hb := fun R : ℕ => aestronglyMeasurable_and_eLpNorm_top_le_of_chain h u hG0 hG hi R
+  have hm : AEStronglyMeasurable (G i) (mu.restrict U) := by
+    rw [coe_eq_iUnion_preimageBall h]
+    exact aestronglyMeasurable_iUnion_iff.2 fun R => (hb R).1
+  have hle : eLpNorm (G i) ⊤ (mu.restrict U) ≤
+      ENNReal.ofReal (compLBound ⊤ (n + 1) L c * ‖u‖) := by
+    rw [eLpNorm_exponent_top hm, coe_eq_iUnion_preimageBall h]
+    refine essSup_le_of_ae_le _ ((ae_restrict_iUnion_iff _ _).2 fun R => ?_)
+    filter_upwards [ae_le_eLpNormEssSup (f := G i) (μ := mu.restrict (preimageBall h R))]
+      with x hx
+    exact hx.trans (eLpNormEssSup_le_eLpNorm_top.trans (hb R).2)
+  exact ⟨hle.trans_lt ENNReal.ofReal_lt_top, hle⟩
+
 /-- **Change of variables in `W^{k,∞}`.** The precomposition of an element of `W^{k,∞}(V)` with a
 change of variables of order `k` is represented by an element of `W^{k,∞}(U)`. -/
 private theorem exists_comp_top (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V ⊤ k) :
@@ -1020,16 +1055,8 @@ private theorem exists_comp_top (h : IsChangeOfVariables k U V Φ L c) (u : Wkp 
   | zero => exact ⟨compLp h (value 0 u), by simpa only [value_zero] using compLp_ae h (value 0 u)⟩
   | succ n =>
     obtain ⟨G, hG0, hG⟩ := exists_chain_comp h u
-    have hGtop : ∀ i ≤ n, MemLp (G i) ⊤ (mu.restrict U) := by
-      intro i hi
-      have hb := fun R : ℕ => aestronglyMeasurable_and_eLpNorm_top_le_of_chain h u hG0 hG hi R
-      rw [coe_eq_iUnion_preimageBall h, memLp_iff,
-        eLpNorm_exponent_top (aestronglyMeasurable_iUnion_iff.2 fun R => (hb R).1)]
-      refine lt_of_le_of_lt (essSup_le_of_ae_le _ ((ae_restrict_iUnion_iff _ _).2 fun R => ?_))
-        (ENNReal.ofReal_lt_top (r := compLBound ⊤ (n + 1) L c * ‖u‖))
-      filter_upwards [ae_le_eLpNormEssSup (f := G i) (μ := mu.restrict (preimageBall h R))]
-        with x hx
-      exact hx.trans (eLpNormEssSup_le_eLpNorm_top.trans (hb R).2)
+    have hGtop : ∀ i ≤ n, MemLp (G i) ⊤ (mu.restrict U) := fun i hi =>
+      (memLp_top_and_eLpNorm_top_le_of_chain h u hG0 hG hi).1
     have hval : MemLp (fun x => value (n + 1) u (Φ x)) ⊤ (mu.restrict U) :=
       (Lp.memLp (compLp h (value (n + 1) u))).ae_eq (compLp_ae h _)
     obtain ⟨w, hw, -⟩ := exists_value_iteratedGradient_ae_eq_of_chain n hval hG0 hG hGtop
@@ -1086,7 +1113,8 @@ private theorem value_compₗ (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu
 into `V` (`TauCeti.Wkp.IsChangeOfVariables`) and `1 ≤ p ≤ ∞`, then precomposition with `Φ` is a
 bounded linear operator `W^{k,p}(V) →L[ℝ] W^{k,p}(U)`. Its value is `u ∘ Φ`
 (`TauCeti.Wkp.value_compL_ae`), which characterizes it (`TauCeti.Wkp.compL_eq_iff`). For `p < ∞`
-its norm is at most `compLBound p k L c` (`TauCeti.Wkp.opNorm_compL_le`). -/
+its norm is at most `compLBound p k L c` (`TauCeti.Wkp.opNorm_compL_le`), and for `p = ∞` at most
+`(k + 1) * compLBound ∞ k L c` (`TauCeti.Wkp.opNorm_compL_top_le`). -/
 def compL (h : IsChangeOfVariables k U V Φ L c) : Wkp mu V p k →L[ℝ] Wkp mu U p k :=
   -- The value of a limit is the limit of the values, so the graph is closed.
   ContinuousLinearMap.ofSeqClosedGraph (g := compₗ h) fun u x y hu hy => by
@@ -1122,6 +1150,44 @@ theorem norm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u
 theorem opNorm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
     ‖(compL h : Wkp mu V p k →L[ℝ] Wkp mu U p k)‖ ≤ compLBound p k L c :=
   ContinuousLinearMap.opNorm_le_bound _ (compLBound_nonneg p k L h.pos) (norm_compL_le h hp)
+
+/-- For `p = ∞`, `compL h` increases norms by at most the factor `(k + 1) * compLBound ∞ k L c`:
+the value of `compL h u` and each of its `k` weak derivatives are bounded in `L^∞` by
+`compLBound ∞ k L c * ‖u‖`. -/
+theorem norm_compL_top_le (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V ⊤ k) :
+    ‖compL h u‖ ≤ (k + 1) * compLBound ⊤ k L c * ‖u‖ := by
+  have hB := mul_le_mul_of_nonneg_right (one_le_compLBound_top k L c) (norm_nonneg u)
+  -- The value of `compL h u` is `u ∘ Φ`, whose `L^∞` norm is at most that of `u`.
+  have hval : ‖value k (compL h u)‖ ≤ ‖u‖ := by
+    refine le_trans ?_ (norm_value_le k u)
+    rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (value_compL_ae h u)]
+    refine ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) ?_
+    simpa only [ENNReal.div_top, ENNReal.toReal_zero, ENNReal.rpow_zero, one_mul,
+      Function.comp_def] using
+      eLpNorm_comp_le_of_map_le_smul (g := (value k u : E → ℝ)) h.aemeasurable
+        (h.map_restrict_le mu) ⊤
+  cases k with
+  | zero =>
+    rw [← value_zero (compL h u), Nat.cast_zero, zero_add, one_mul]
+    linarith
+  | succ n =>
+    obtain ⟨G, hG0, hG⟩ := exists_chain_comp h u
+    refine (norm_le_norm_value_add_sum_eLpNorm_of_chain n (compL h u) (value_compL_ae h u)
+      hG0 hG).trans ?_
+    have hsum : ∑ i ∈ Finset.range (n + 1), (eLpNorm (G i) ⊤ (mu.restrict U)).toReal ≤
+        ∑ _i ∈ Finset.range (n + 1), compLBound ⊤ (n + 1) L c * ‖u‖ :=
+      Finset.sum_le_sum fun i hi => ENNReal.toReal_le_of_le_ofReal
+        (mul_nonneg (compLBound_nonneg _ _ _ h.pos) (norm_nonneg u))
+        (memLp_top_and_eLpNorm_top_le_of_chain h u hG0 hG
+          (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))).2
+    rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul] at hsum
+    linarith
+
+/-- For `p = ∞`, `compL h` has operator norm at most `(k + 1) * compLBound ∞ k L c`. -/
+theorem opNorm_compL_top_le (h : IsChangeOfVariables k U V Φ L c) :
+    ‖(compL h : Wkp mu V ⊤ k →L[ℝ] Wkp mu U ⊤ k)‖ ≤ (k + 1) * compLBound ⊤ k L c :=
+  ContinuousLinearMap.opNorm_le_bound _
+    (mul_nonneg (by positivity) (compLBound_nonneg ⊤ k L h.pos)) (norm_compL_top_le h)
 
 end General
 
