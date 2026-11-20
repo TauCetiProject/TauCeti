@@ -324,10 +324,9 @@ theorem mem_normalFan_cones_iff (hi : IsIntegralLattice i) {σ : PointedCone ℝ
   · rintro ⟨_, ⟨v, hv, rfl⟩, hσ⟩
     -- A face of the normal cone at `v` is spanned by the normals at `v` that it contains, and some
     -- point of the polytope lies on exactly those facets.
-    set s := {j | j ∈ activeSet (facetPairing i u) c v ∧ i (u j) ∈ σ}
+    set s := activeSet (facetPairing i u) c v ∩ (fun j ↦ i (u j)) ⁻¹' σ
     have hσs : σ = PointedCone.hull ℝ ((fun j ↦ i (u j)) '' s) := by
       rw [hσ.eq_hull_inter_of_eq_hull normalCone_def, ← image_inter_preimage]
-      rfl
     have hs : (facetFace i u c s).Nonempty :=
       ⟨v, mem_facetFace.2 ⟨extremePoints_subset hv, fun j hj ↦ by
         simpa [mem_activeSet] using hj.1⟩⟩
