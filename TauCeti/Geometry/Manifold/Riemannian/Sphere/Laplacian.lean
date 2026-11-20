@@ -114,7 +114,7 @@ theorem hessian_comp_coe_sphere [CompleteSpace E] {F : E → ℝ} {p : sphere (0
       =ᶠ[𝓝 p] (fun z : E ↦ ∇ F z - inner ℝ (∇ F z) z • z) ∘ ι := by
     have hFd : ∀ᶠ z in 𝓝 (p : E), DifferentiableAt ℝ F z :=
       (hF.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt (by simp)
-    exact (continuous_subtype_val.continuousAt.eventually hFd).mono fun q hq ↦
+    exact (continuous_subtypeVal.continuousAt.eventually hFd).mono fun q hq ↦
       mvfderiv_coe_mgradient_comp_coe_sphere hq
   have hgrad : DifferentiableAt ℝ (∇ F) p :=
     (hF.gradient_right (m := 1) le_rfl).differentiableAt one_ne_zero
@@ -158,8 +158,8 @@ theorem laplaceBeltrami_comp_coe_sphere [FiniteDimensional ℝ E] {F : E → ℝ
     rw [Fintype.card_fin, (Fact.out : finrank ℝ E = n + 1)]
   have hv : Orthonormal ℝ (({Fin.last n} : Set (Fin (n + 1))).domRestrict fun _ ↦ (p : E)) :=
     ⟨fun _ ↦ norm_eq_of_mem_sphere p, fun x y hxy ↦
-      (hxy (Subtype.ext ((Set.mem_singleton_iff.1 x.2).trans
-        (Set.mem_singleton_iff.1 y.2).symm))).elim⟩
+      (hxy (Subtype.ext ((Set.mem_singleton_iff.1 x.property).trans
+        (Set.mem_singleton_iff.1 y.property).symm))).elim⟩
   obtain ⟨B, hB⟩ := hv.exists_orthonormalBasis_extension_of_card_eq hcard
   have hBlast : B (Fin.last n) = (p : E) := hB (Fin.last n) rfl
   let b : OrthonormalBasis (Fin n) ℝ (TangentSpace (𝓡 n) p) :=

@@ -130,7 +130,7 @@ theorem mvfderiv_coe_mgradient_inner_coe_sphere (a : E) (p : sphere (0 : E) 1) :
       a - inner ℝ a (p : E) • (p : E) := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  simpa only [Function.comp_def, coe_innerSL_apply, gradient_inner_left] using
+  simpa only [Function.comp_def, coe_innerSL_apply, gradient_inner_const_left] using
     mvfderiv_coe_mgradient_comp_coe_sphere (n := n) (p := p) (innerSL ℝ a).differentiableAt
 
 /-- **The length of the round gradient of a height function.** The squared length at `p` of the
@@ -140,7 +140,7 @@ theorem norm_mgradient_inner_coe_sphere_sq (a : E) (p : sphere (0 : E) 1) :
       ‖a‖ ^ 2 - inner ℝ a (p : E) ^ 2 := by
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  simpa only [Function.comp_def, coe_innerSL_apply, gradient_inner_left] using
+  simpa only [Function.comp_def, coe_innerSL_apply, gradient_inner_const_left] using
     norm_mgradient_comp_coe_sphere_sq (n := n) (p := p) (innerSL ℝ a).differentiableAt
 
 /-- Expanding `w ∈ (ℝ ∙ (x : E))ᗮ` in any finite orthonormal basis `b` of `E` expresses its
@@ -156,7 +156,7 @@ theorem sphereTangentEquiv_symm_eq_sum_mgradient {ι : Type*} [Fintype ι]
     map_sum]
   have hwx : ⟪(w : E), (x : E)⟫_ℝ = 0 := by
     rw [real_inner_comm]
-    exact Submodule.mem_orthogonal_singleton_iff_inner_right.mp w.2
+    exact Submodule.mem_orthogonal_singleton_iff_inner_right.mp w.property
   calc
     (w : E) = (∑ j : ι, ⟪b j, (w : E)⟫_ℝ • b j) -
         (∑ j : ι, ⟪(w : E), b j⟫_ℝ * ⟪b j, (x : E)⟫_ℝ) • (x : E) := by

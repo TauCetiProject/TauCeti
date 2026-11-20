@@ -119,11 +119,11 @@ theorem laplaceBeltrami_harmonicSphereRestriction (d : ℕ)
     (p : MvPolynomial.harmonicSubmodule σ ℝ d) (x : sphere (0 : EuclideanSpace ℝ σ) 1) :
     Manifold.laplaceBeltrami (𝓡 m) (MvPolynomial.harmonicSphereRestriction σ d p) x =
       -(d : ℝ) * ((d : ℝ) + m - 1) * MvPolynomial.harmonicSphereRestriction σ d p x := by
-  obtain ⟨hp_hom, hp_lap⟩ := MvPolynomial.mem_harmonicSubmodule_iff.1 p.2
+  obtain ⟨hp_hom, hp_lap⟩ := MvPolynomial.mem_harmonicSubmodule_iff.1 p.property
   let F : EuclideanSpace ℝ σ → ℝ := fun y ↦ MvPolynomial.eval y (p : MvPolynomial σ ℝ)
   have hF : ContDiffAt ℝ 2 F x := by
     simpa only [F, Algebra.algebraMap_self, RingHom.id_apply] using
-      (MvPolynomial.contDiff_eval_euclidean_algebraMap (R := ℝ) (k := 2) p.1).contDiffAt
+      (MvPolynomial.contDiff_eval_euclidean_algebraMap (R := ℝ) (k := 2) p.val).contDiffAt
         (x := (x : EuclideanSpace ℝ σ))
   have hrestr : ⇑(MvPolynomial.harmonicSphereRestriction σ d p) = F ∘ Subtype.val := by
     funext y
@@ -136,7 +136,7 @@ theorem laplaceBeltrami_harmonicSphereRestriction (d : ℕ)
       rw [Real.rpow_natCast]
       exact hp_hom.eval_smul t (x : EuclideanSpace ℝ σ)
   have hΔ : Δ F x = 0 := by
-    rw [congrFun (MvPolynomial.laplacian_eval_euclidean p.1) x, hp_lap, map_zero]
+    rw [congrFun (MvPolynomial.laplacian_eval_euclidean p.val) x, hp_lap, map_zero]
   rw [hrestr, laplaceBeltrami_comp_coe_sphere_of_smul hF hsmul, hΔ]
   simp only [Function.comp_apply, F]
   ring
@@ -146,8 +146,9 @@ degree `d : ℕ`. -/
 theorem strictMono_natCast_mul_add_sub_one {m : ℕ} (hm : 1 ≤ m) :
     StrictMono fun d : ℕ ↦ (d : ℝ) * ((d : ℝ) + m - 1) := by
   intro d₁ d₂ hd
-  nlinarith [show (d₁ : ℝ) < d₂ from Nat.cast_lt.2 hd,
-    show (1 : ℝ) ≤ m from Nat.one_le_cast.2 hm, Nat.cast_nonneg (α := ℝ) d₁]
+  have hd_lt : (d₁ : ℝ) < d₂ := Nat.cast_lt.2 hd
+  have hm_ge : (1 : ℝ) ≤ m := Nat.one_le_cast.2 hm
+  nlinarith [hd_lt, hm_ge, Nat.cast_nonneg (α := ℝ) d₁]
 
 /-- Any `C²` function `g` on `Sᵐ` satisfying `Δ_{Sᵐ} g = -λ g` with `λ ≠ d (d + m - 1)` is
 `L²`-orthogonal (with respect to `riemannianVolume`) to every degree-`d` spherical harmonic. -/

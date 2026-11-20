@@ -313,15 +313,15 @@ theorem map_mem_harmonicSubmodule {S : Type*} [CommSemiring S] (f : R →+* S) {
 /-- Apply an additive monoid homomorphism coefficientwise to a harmonic homogeneous polynomial. -/
 noncomputable def mapHarmonicSubmodule {S : Type*} [CommSemiring S] (f : R →+ S) (d : ℕ) :
     harmonicSubmodule σ R d →+ harmonicSubmodule σ S d where
-  toFun p := ⟨AddMonoidAlgebra.map f p.1, addMonoidAlgebra_map_mem_harmonicSubmodule f p.2⟩
+  toFun p := ⟨AddMonoidAlgebra.map f p.val, addMonoidAlgebra_map_mem_harmonicSubmodule f p.property⟩
   map_zero' := Subtype.ext (AddMonoidAlgebra.map_zero f)
-  map_add' p q := Subtype.ext (AddMonoidAlgebra.map_add f p.1 q.1)
+  map_add' p q := Subtype.ext (AddMonoidAlgebra.map_add f p.val q.val)
 
 /-- Coercing `mapHarmonicSubmodule f d p` to a polynomial applies `AddMonoidAlgebra.map f`. -/
 @[simp]
 theorem coe_mapHarmonicSubmodule_apply {S : Type*} [CommSemiring S] (f : R →+ S) {d : ℕ}
     (p : harmonicSubmodule σ R d) :
-    (mapHarmonicSubmodule f d p : MvPolynomial σ S) = AddMonoidAlgebra.map f p.1 := by
+    (mapHarmonicSubmodule f d p : MvPolynomial σ S) = AddMonoidAlgebra.map f p.val := by
   rfl
 
 /-- With no variables, every harmonic polynomial of positive degree is zero. -/
@@ -478,7 +478,7 @@ theorem exists_laplacian_normSq_mul_eq {p : MvPolynomial σ K} {e : ℕ} (hp : p
     refine (injective_iff_map_eq_zero T).2 fun q hq ↦ Subtype.ext ?_
     exact eq_zero_of_laplacian_normSq_mul_eq_zero (congrArg Subtype.val hq)
   obtain ⟨q, hq⟩ := LinearMap.injective_iff_surjective.1 hT ⟨p, hp⟩
-  exact ⟨q, q.2, congrArg Subtype.val hq⟩
+  exact ⟨q, q.property, congrArg Subtype.val hq⟩
 
 omit [Nonempty σ] in
 /-- **The Fischer decomposition**: every homogeneous polynomial of degree `e + 2` is the sum of a
@@ -526,7 +526,7 @@ private noncomputable def fischerLinearMap (σ K : Type*) [Field K] [Fintype σ]
     refine IsHomogeneous.sum _ _ _ fun k _ ↦ ?_
     have hk : 2 * (k : ℕ) + (d - 2 * (k : ℕ)) = d := by omega
     simpa only [hk] using
-      ((isHomogeneous_normSq σ K).pow (k : ℕ)).mul (mem_harmonicSubmodule_iff.1 (h k).2).1⟩
+      ((isHomogeneous_normSq σ K).pow (k : ℕ)).mul (mem_harmonicSubmodule_iff.1 (h k).property).1⟩
   map_add' g h := Subtype.ext <| by simp [mul_add, Finset.sum_add_distrib]
   map_smul' c h := Subtype.ext <| by simp [Finset.smul_sum]
 
@@ -552,7 +552,7 @@ private theorem fischerLinearMap_injective (d : ℕ) :
     simp only [h', dite_eq_left (Nat.le_of_lt_succ j.isLt)]
   have hzero := (sum_normSq_pow_mul_eq_zero_iff (h := h') fun j hj ↦ by
     simp only [h', dite_eq_left hj]
-    exact (mem_harmonicSubmodule_iff.1 (h ⟨j, Nat.lt_succ_of_le hj⟩).2).2).1
+    exact (mem_harmonicSubmodule_iff.1 (h ⟨j, Nat.lt_succ_of_le hj⟩).property).2).1
       hsum k (Nat.le_of_lt_succ k.isLt)
   simpa [h', dite_eq_left (Nat.le_of_lt_succ k.isLt)] using hzero
 
@@ -565,7 +565,7 @@ private theorem fischerLinearMap_surjective (d : ℕ) :
   have hp : (p : MvPolynomial σ K) ∈
       ⨆ k ≤ d / 2, (harmonicSubmodule σ K (d - 2 * k)).map
         (LinearMap.mulLeft K (normSq σ K ^ k)) := by
-    rw [← homogeneousSubmodule_eq_iSup_map_mulLeft_normSq_pow]; exact p.2
+    rw [← homogeneousSubmodule_eq_iSup_map_mulLeft_normSq_pow]; exact p.property
   suffices hle : ⨆ k ≤ d / 2, (harmonicSubmodule σ K (d - 2 * k)).map
       (LinearMap.mulLeft K (normSq σ K ^ k)) ≤
       (LinearMap.range (fischerLinearMap σ K d)).map (homogeneousSubmodule σ K d).subtype by
@@ -662,8 +662,9 @@ theorem finrank_harmonicSubmodule_eq_choose_sub {m : ℕ} (hσ : Fintype.card σ
   rw [finrank_harmonicSubmodule, hσ]
   split_ifs with hd
   · obtain ⟨e, rfl⟩ : ∃ e, d = e + 2 := ⟨d - 2, by omega⟩
-    simp [Nat.multichoose_eq, show m + 1 + (e + 1) = m + (e + 2) by omega,
-      show m + (e + 2) - 2 = m + e by omega]
+    have hmul : m + 1 + (e + 1) = m + (e + 2) := by omega
+    have hsub : m + (e + 2) - 2 = m + e := by omega
+    simp [Nat.multichoose_eq, hmul, hsub]
   · simp [Nat.multichoose_eq]
 
 end Fischer

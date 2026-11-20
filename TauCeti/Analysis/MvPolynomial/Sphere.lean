@@ -18,6 +18,8 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.Topology.Sphere.Coord
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
 # Polynomial restriction to the Euclidean unit sphere and spherical-harmonic density
@@ -100,28 +102,17 @@ section CommSemiring
 variable {σ R : Type*} [Fintype σ] [CommSemiring R] [Algebra ℝ R]
   [TopologicalSpace R] [IsTopologicalSemiring R] [ContinuousSMul ℝ R]
 
-private def sphereCoord (i : σ) : C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, R) :=
-  ⟨fun x ↦ algebraMap ℝ R (x.val i),
-    (continuous_algebraMap ℝ R).comp
-      ((EuclideanSpace.proj i).continuous.comp continuous_subtype_val)⟩
-
-omit [IsTopologicalSemiring R] in
-@[simp]
-private theorem sphereCoord_apply (i : σ)
-    (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
-    sphereCoord (R := R) i x = algebraMap ℝ R (x.val i) := (rfl)
-
 /-- Restriction of a polynomial over an `ℝ`-algebra `R` to the Euclidean unit sphere, as an
 `R`-valued continuous function. -/
 def sphereEval : MvPolynomial σ R →ₐ[R] C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, R) :=
-  aeval sphereCoord
+  aeval (TauCeti.sphereCoord R)
 
 @[simp]
 theorem sphereEval_apply (p : MvPolynomial σ R)
     (x : Metric.sphere (0 : EuclideanSpace ℝ σ) 1) :
     sphereEval p x = eval (fun i ↦ algebraMap ℝ R (x.val i)) p := by
   rw [sphereEval, ← ContinuousMap.evalAlgHom_apply R R x, comp_aeval_apply]
-  simp only [ContinuousMap.evalAlgHom_apply, sphereCoord_apply, aeval_eq_eval]
+  simp only [ContinuousMap.evalAlgHom_apply, TauCeti.sphereCoord_apply, aeval_eq_eval]
 
 /-- Applying an `ℝ`-linear map coefficientwise to a polynomial intertwines with `sphereEval`,
 since the coordinates of points on the unit sphere are real. -/
@@ -219,7 +210,7 @@ theorem range_sphereEval_eq_iSup_range_harmonicSphereRestriction :
       ⨆ d, LinearMap.range (harmonicSphereRestriction (R := R) σ d) := by
   refine le_antisymm ?_ (iSup_le fun d ↦ by
     rintro _ ⟨p, rfl⟩
-    exact ⟨p.1, (harmonicSphereRestriction_coe d p).symm⟩)
+    exact ⟨p.val, (harmonicSphereRestriction_coe d p).symm⟩)
   let f : MvPolynomial σ ℝ →ₗ[ℝ] C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, R) :=
     (sphereEval (σ := σ) (R := R)).toLinearMap.restrictScalars ℝ ∘ₗ
       (mapAlgHom (Algebra.ofId ℝ R)).toLinearMap
@@ -402,7 +393,7 @@ theorem finrank_range_harmonicSphereRestriction_add_two (e : ℕ) :
     have hrange : LinearMap.range (harmonicSphereRestriction (R := K) σ (e + 2)) = ⊥ := by
       refine eq_bot_iff.2 ?_
       rintro _ ⟨p, rfl⟩
-      have hp : p = 0 := Subtype.ext ((Submodule.mem_bot K).1 (hbot ▸ p.2))
+      have hp : p = 0 := Subtype.ext ((Submodule.mem_bot K).1 (hbot ▸ p.property))
       simp [hp]
     rw [hrange, finrank_bot]
     simp [Fintype.card_eq_zero]

@@ -145,8 +145,8 @@ theorem skeletonLT_subset_interior_skeletonNeighborhood (n : ℕ) :
   have hK := isClosed_iUnion_map_closedBall (C := C) n (r := 2⁻¹) (by norm_num)
   refine fun x hx ↦ interior_maximal (t := (Subtype.val ⁻¹'
     (⋃ j : cell C n, map n j '' closedBall 0 2⁻¹))ᶜ) (fun y hy ↦ ?_)
-    (hK.preimage continuous_subtype_val).isOpen_compl ?_
-  · refine mem_skeletonNeighborhood.2 ⟨y.2, fun j z hz h ↦ hy (mem_iUnion.2 ⟨j, z, ?_, h⟩)⟩
+    (hK.preimage continuous_subtypeVal).isOpen_compl ?_
+  · refine mem_skeletonNeighborhood.2 ⟨y.property, fun j z hz h ↦ hy (mem_iUnion.2 ⟨j, z, ?_, h⟩)⟩
     exact mem_closedBall_zero_iff.2 hz.le
   · rintro hx'
     obtain ⟨j, y, hy, hxy⟩ := mem_iUnion.1 hx'
@@ -197,7 +197,7 @@ variable (C) in
 private def pushMap (n : ℕ) :
     C(I × (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X), (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :=
   ⟨fun p ↦ ⟨cellDeformation (univ : Set (cell C n)) (radialPushMap n) (p.1, p.2),
-      cellDeformation_mem (norm_radialPushMap_le_one n) p.1 p.2.2⟩,
+      cellDeformation_mem (norm_radialPushMap_le_one n) p.1 p.2.property⟩,
     (continuous_cellDeformation univ (radialPushMap_of_norm_eq_one n)
       (norm_radialPushMap_le_one n)).subtype_mk _⟩
 
@@ -226,7 +226,7 @@ def skeletonNeighborhoodHomotopy (n : ℕ) :
   toContinuousMap := pushMap C n
   map_zero_left x := by
     refine Subtype.ext ?_
-    obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
+    obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
     · exact cellDeformation_of_mem_skeletonLT hx
     · rw [ContinuousMap.toFun_eq_coe, pushMap_apply_coe, ContinuousMap.id_apply, ← hxy,
         cellDeformation_radialPushMap_map 0 j hy.le, radialPush_zero]
@@ -267,7 +267,7 @@ lemma skeletonNeighborhoodHomotopy_mem {n : ℕ} (t : I)
     (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
     (hx : (x : X) ∈ skeletonNeighborhood C n) :
     (skeletonNeighborhoodHomotopy C n (t, x) : X) ∈ skeletonNeighborhood C n := by
-  obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
+  obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
   · rw [skeletonNeighborhoodHomotopy_apply_of_mem t x hx']
     exact hx
   have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNeighborhood.1 hx).2 j y h hxy
@@ -288,7 +288,7 @@ lemma skeletonNeighborhoodHomotopy_mem {n : ℕ} (t : I)
 lemma skeletonNeighborhoodEndpoint_mem {n : ℕ} (x : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X))
     (hx : (x : X) ∈ skeletonNeighborhood C n) :
     (skeletonNeighborhoodEndpoint C n x : X) ∈ (skeletonLT C n : Set X) := by
-  obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.2
+  obtain hx' | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property
   · rw [← (skeletonNeighborhoodHomotopy C n).apply_one,
       skeletonNeighborhoodHomotopy_apply_of_mem 1 x hx']
     exact hx'

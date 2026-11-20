@@ -288,6 +288,19 @@ theorem f4ShortRootQuotientBasis_thirteen :
   apply congrArg f4ModularRootVector
   exact (f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv γ).symm
 
+/-- A short-root lift vanishes after quotienting by the short-root ideal. -/
+@[simp] theorem f4ShortRootSubspace_quotientMk_rootVector_eq_zero_of_short
+    (α : Fin 48) (hα : f4Length α = 1) :
+    (Submodule.Quotient.mk (f4ModularRootVector α) :
+      f4ModularChevalleyLieAlgebra ⧸ f4ShortRootSubspace) = 0 :=
+  (Submodule.Quotient.mk_eq_zero _).2 (f4ModularRootVector_mem_shortRootSubspace α hα)
+
+/-- A short-root lift vanishes under the bundled quotient map by the short-root ideal. -/
+theorem f4ShortRootSubspace_mkQ_rootVector_eq_zero_of_short
+    (α : Fin 48) (hα : f4Length α = 1) :
+    f4ShortRootSubspace.mkQ (f4ModularRootVector α) = 0 :=
+  (Submodule.mkQ_apply _ _).trans (f4ShortRootSubspace_quotientMk_rootVector_eq_zero_of_short α hα)
+
 
 end
 

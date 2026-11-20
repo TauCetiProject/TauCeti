@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.Sign
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.ModEq
+import Mathlib.Data.Set.Card.Arithmetic
 
 /-!
 # The signed count of a fibre over a regular value
@@ -43,8 +44,10 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
 * `TauCeti.degreeAtRegularValue_of_notMem_range`: the degree vanishes at a value outside the range.
 * `TauCeti.degreeAtRegularValue_id`, `TauCeti.degreeAtRegularValue_const`: the identity has degree
   `1` and a constant map into a manifold of positive dimension has degree `0`.
-* `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with an orientation-preserving
-  bijection does not change the degree.
+* `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with a bijection that preserves
+  orientation on the fibre does not change the degree.
+* `TauCeti.degreeAtRegularValue_eq_ncard`: where `f` preserves orientations along the fibre, the
+  degree is the number of preimages.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
@@ -87,6 +90,12 @@ manifold, this is the signed count of the preimages of `y`; elsewhere the value 
 def degreeAtRegularValue (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι)
     (f : M → N) (y : N) : ℤ :=
   ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x
+
+/-- Unfolding `degreeAtRegularValue`: the `finsum` of orientation signs over `f ⁻¹' {y}`. -/
+theorem degreeAtRegularValue_def (o : Manifold.Orientation I M ι)
+    (o' : Manifold.Orientation J N ι) (f : M → N) (y : N) :
+    degreeAtRegularValue o o' f y = ∑ᶠ x ∈ f ⁻¹' {y}, orientationSign o o' f x :=
+  (rfl)
 
 /-- The degree is the sum of the orientation signs over any finset enumerating the fibre. -/
 theorem degreeAtRegularValue_eq_sum {s : Finset M} (hs : ∀ x, x ∈ s ↔ f x = y) :
@@ -143,18 +152,18 @@ variable {E₀ H₀ M₀ : Type*} [NormedAddCommGroup E₀] [NormedSpace ℝ E�
   [ChartedSpace H₀ M₀] [IsManifold I₀ 1 M₀] {o₀ : Manifold.Orientation I₀ M₀ ι}
 
 /-- **Precomposing with an orientation-preserving bijection preserves the degree.** If
-`e : M₀ → M` is a bijection preserving the orientations `o₀` and `o` at every point and `f` is
-differentiable, then `f ∘ e` has the same degree as `f` at every value: `e` matches the fibres of
-`f ∘ e` and `f`, and the orientation signs at matched points agree. -/
+`e : M₀ → M` is a bijection preserving the orientations `o₀` and `o` on the fibre over `y` and `f`
+is differentiable at the image points of that fibre, then `f ∘ e` has the same degree as `f` at
+`y`: `e` matches the fibres of `f ∘ e` and `f`, and the orientation signs at matched points
+agree. -/
 theorem degreeAtRegularValue_comp_of_bijective {e : M₀ → M} (he : Bijective e)
-    (hpres : ∀ x, IsOrientationPreservingAt o₀ o e x) (hf : MDifferentiable I J f) (y : N) :
+    (hpres : ∀ x, f (e x) = y → IsOrientationPreservingAt o₀ o e x)
+    (hf : ∀ x, f (e x) = y → MDifferentiableAt I J f (e x)) :
     degreeAtRegularValue o₀ o' (f ∘ e) y = degreeAtRegularValue o o' f y := by
-  refine finsum_mem_eq_of_bijOn e ⟨fun x hx ↦ hx, he.injective.injOn, fun z hz ↦ ?_⟩ fun x _ ↦ ?_
-  · obtain ⟨x, rfl⟩ := he.surjective z
-    exact ⟨x, hz, rfl⟩
-  · rw [orientationSign_comp (hf (e x))
-      (mdifferentiableAt_of_isInvertible_mfderiv (hpres x).isInvertible_mfderiv),
-      orientationSign_of_isOrientationPreservingAt (hpres x), mul_one]
+  refine finsum_mem_eq_of_bijOn e (he.bijOn_preimage (t := f ⁻¹' {y})) fun x hx ↦ ?_
+  rw [orientationSign_comp (hf x hx)
+    (mdifferentiableAt_of_isInvertible_mfderiv (hpres x hx).isInvertible_mfderiv),
+    orientationSign_of_isOrientationPreservingAt (hpres x hx), mul_one]
 
 end Comp
 
@@ -165,6 +174,19 @@ theorem abs_degreeAtRegularValue_le_ncard (h : (f ⁻¹' {y}).Finite) :
   refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
   simpa using Finset.sum_le_sum fun x (_ : x ∈ h.toFinset) ↦
     abs_orientationSign_le_one (o := o) (o' := o') (f := f) (x := x)
+
+/-- If `f` preserves orientations at every point of the fibre over `y`, the degree at `y` is the
+number of preimages. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
+conventions. -/
+theorem degreeAtRegularValue_eq_ncard
+    (h : ∀ x ∈ f ⁻¹' {y}, IsOrientationPreservingAt o o' f x) :
+    degreeAtRegularValue o o' f y = (f ⁻¹' {y}).ncard := by
+  rw [degreeAtRegularValue, finsum_mem_congr rfl fun x hx ↦
+    orientationSign_of_isOrientationPreservingAt (h x hx)]
+  rcases (f ⁻¹' {y}).finite_or_infinite with hf | hf
+  · rw [← finsum_one, Nat.cast_finsum_mem hf, Nat.cast_one]
+  · rw [hf.ncard, Nat.cast_zero]
+    exact finsum_mem_eq_zero_of_infinite (by simpa [Function.support_const one_ne_zero] using hf)
 
 /-- Over a regular value, the degree has the parity of the number of preimages: every orientation
 sign is `1` or `-1`. For an infinite fibre both sides are `0` by the `finsum` and `ncard`
@@ -203,10 +225,15 @@ theorem degree_eq_degreeAtRegularValue_choose (h : ∃ y, IsRegularValue I J f y
     degree o o' f = degreeAtRegularValue o o' f h.choose :=
   dite_eq_left h
 
+/-- If `f` has no regular value, its degree is `0`. -/
+theorem degree_eq_zero_of_not_exists (h : ¬∃ y, IsRegularValue I J f y) :
+    degree o o' f = 0 :=
+  dite_eq_right h
+
 /-- A map to an empty manifold has degree `0`, since it has no regular value. -/
 @[simp]
 theorem degree_of_isEmpty [IsEmpty N] : degree o o' f = 0 :=
-  dite_eq_right (by simp)
+  degree_eq_zero_of_not_exists (by simp)
 
 /-- Reversing the orientation of the source negates the degree. -/
 @[simp]

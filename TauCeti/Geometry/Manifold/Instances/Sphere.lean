@@ -175,7 +175,7 @@ theorem injective_fderiv_stereoInvFunAux_comp_coe {v : E} (hv : ‖v‖ = 1) (w 
   have hd : DifferentiableAt ℝ ψ w :=
     (contDiff_stereoInvFunAux.comp (ℝ ∙ v)ᗮ.subtypeL.contDiff).differentiable one_ne_zero w
   -- Stereographic projection is a left inverse of `ψ`, differentiable near `ψ w ≠ v`.
-  have hnorm : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.2)
+  have hnorm : ‖ψ w‖ = 1 := mem_sphere_zero_iff_norm.1 (stereoInvFunAux_mem hv w.property)
   have hne : innerSL ℝ v (ψ w) ≠ 1 := by
     rw [innerSL_apply_apply, Ne, inner_eq_one_iff_of_norm_eq_one hv hnorm]
     exact fun h => stereoInvFun_ne_north_pole hv w (Subtype.ext h.symm)
@@ -327,7 +327,7 @@ def stereographicDiffeomorph (v : sphere (0 : E) 1) :
   right_inv y := (stereographic' n v).right_inv (by simp)
   contMDiff_toFun :=
     (contMDiffOn_of_mem_maximalAtlas (stereographic'_mem_maximalAtlas v)).comp_contMDiff
-      contMDiff_subtype_val fun x ↦ by simp
+      contMDiff_subtypeVal fun x ↦ by simp
   contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff _ _).mp
     (isSmoothEmbedding_stereographic'_symm v).contMDiff
 
@@ -351,20 +351,21 @@ def stereographicPuncturedDiffeomorph (v : sphere (0 : E) 1) :
     (⟨{v}ᶜ ∩ {-v}ᶜ, isOpen_compl_singleton.inter isOpen_compl_singleton⟩ :
         Opens (sphere (0 : E) 1)) ≃ₘ⟮𝓡 n, 𝓘(ℝ, EuclideanSpace ℝ (Fin n))⟯
       (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens (EuclideanSpace ℝ (Fin n))) where
-  toFun x := ⟨stereographic' n v x, fun h ↦ x.2.2 ((stereographic'_eq_zero_iff x.2.1).mp h)⟩
+  toFun x := ⟨stereographic' n v x, fun h ↦ x.property.2
+      ((stereographic'_eq_zero_iff x.property.1).mp h)⟩
   invFun y := ⟨(stereographic' n v).symm y, by
     have hv : (stereographic' n v).symm y ≠ v := by
       simpa using (stereographic' n v).map_target (x := y) (by simp)
-    refine ⟨hv, fun h ↦ y.2 ?_⟩
+    refine ⟨hv, fun h ↦ y.property ?_⟩
     have := (stereographic'_eq_zero_iff (n := n) hv).mpr (mem_singleton_iff.mp h)
     rwa [(stereographic' n v).right_inv (by simp)] at this⟩
-  left_inv x := Subtype.ext ((stereographic' n v).left_inv (by simpa using x.2.1))
+  left_inv x := Subtype.ext ((stereographic' n v).left_inv (by simpa using x.property.1))
   right_inv y := Subtype.ext ((stereographic' n v).right_inv (by simp))
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff _ _).mp <|
     (contMDiffOn_of_mem_maximalAtlas (stereographic'_mem_maximalAtlas v)).comp_contMDiff
-      contMDiff_subtype_val fun x ↦ by simpa using x.2.1
+      contMDiff_subtypeVal fun x ↦ by simpa using x.property.1
   contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff _ _).mp
-    ((isSmoothEmbedding_stereographic'_symm v).contMDiff.comp contMDiff_subtype_val)
+    ((isSmoothEmbedding_stereographic'_symm v).contMDiff.comp contMDiff_subtypeVal)
 
 /-- The diffeomorphism `TauCeti.stereographicPuncturedDiffeomorph v` is stereographic projection
 from `v`. -/
@@ -978,8 +979,9 @@ theorem contMDiff_normalize_compl_zero :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) m
       (fun x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) ↦ NormedSpace.normalize (x : E)) := by
   simp only [NormedSpace.normalize]
-  exact fun x ↦ (((contDiffAt_norm ℝ x.2).inv (norm_ne_zero_iff.2 x.2)).contMDiffAt.comp x
-    contMDiff_subtype_val.contMDiffAt).smul contMDiff_subtype_val.contMDiffAt
+  exact fun x ↦ (((contDiffAt_norm ℝ x.property).inv
+      (norm_ne_zero_iff.2 x.property)).contMDiffAt.comp x
+    contMDiff_subtypeVal.contMDiffAt).smul contMDiff_subtypeVal.contMDiffAt
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
@@ -996,7 +998,7 @@ onto the unit sphere is smooth. -/
 theorem contMDiff_normalize_sphere :
     ContMDiff 𝓘(ℝ, E) (𝓡 n) m (fun x : (⟨{0}ᶜ, isOpen_compl_singleton⟩ : Opens E) ↦
       (⟨NormedSpace.normalize (x : E), mem_sphere_zero_iff_norm.2
-        (NormedSpace.norm_normalize_eq_one_iff.2 x.2)⟩ : sphere (0 : E) 1)) :=
+        (NormedSpace.norm_normalize_eq_one_iff.2 x.property)⟩ : sphere (0 : E) 1)) :=
   contMDiff_normalize_compl_zero.codRestrict_sphere _
 
 /-- Away from the origin, `sphereExtend f` inherits `C^m` regularity from `f` at `x / ‖x‖`. -/
@@ -1009,7 +1011,7 @@ theorem contDiffAt_sphereExtend {G : Type*} [NormedAddCommGroup G] [NormedSpace 
   let xU : U := ⟨x, hx⟩
   have hcomp : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, G) m (sphereExtend f ∘ (Subtype.val : U → E)) xU := by
     refine (hf.comp xU (contMDiff_normalize_sphere xU)).congr_of_eventuallyEq ?_
-    exact .of_forall fun y ↦ sphereExtend_of_ne_zero f y.2
+    exact .of_forall fun y ↦ sphereExtend_of_ne_zero f y.property
   exact contMDiffAt_iff_contDiffAt.1 (contMDiffAt_subtype_iff.1 hcomp)
 
 end Punctured
@@ -1035,7 +1037,7 @@ attribute [local instance] finrank_real_complex_fact'
 /-- Complex conjugation on the unit circle is smooth. -/
 theorem contMDiff_conjSphere {m : ℕ∞ω} : ContMDiff (𝓡 1) (𝓡 1) m conjSphere :=
   ContMDiff.codRestrict_sphere ((Complex.conjCLE : ℂ →L[ℝ] ℂ).contMDiff.comp contMDiff_coe_sphere)
-    fun z ↦ (conjSphere z).2
+    fun z ↦ (conjSphere z).property
 
 end Conj
 

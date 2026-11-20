@@ -86,7 +86,7 @@ variable [NormedCommRing R] [IsUltrametricDist R] (p : ℕ) (hp : p ≠ 0)
 `R{X/r^p} → R{X/r}`. -/
 noncomputable def restrictedExpand :
     IsRestricted.subring (R := R) t →ₐ[R] IsRestricted.subring (R := R) r where
-  toFun f := ⟨expand p hp f, (isRestricted_expand_iff p hp ht).mpr f.2⟩
+  toFun f := ⟨expand p hp f, (isRestricted_expand_iff p hp ht).mpr f.property⟩
   map_one' := Subtype.ext (map_one (expand p hp))
   map_mul' f g := Subtype.ext (map_mul (expand p hp) (f : MvPowerSeries σ R) g)
   map_zero' := Subtype.ext (map_zero (expand p hp))
@@ -146,7 +146,7 @@ polyradii `r`: the restricted series at the polyradii `r ^ p` whose coefficient 
 coefficient of `f` at `p • μ + ν`. -/
 noncomputable def restrictedExpandComponent (ν : σ →₀ ℕ) (f : IsRestricted.subring (R := R) r) :
     IsRestricted.subring (R := R) t :=
-  ⟨fun μ ↦ coeff (p • μ + ν) (f : MvPowerSeries σ R), f.2.coeff_nsmul_add hp ht ν⟩
+  ⟨fun μ ↦ coeff (p • μ + ν) (f : MvPowerSeries σ R), f.property.coeff_nsmul_add hp ht ν⟩
 
 /-- The coefficients of the component `f_ν`. -/
 @[simp]
@@ -199,7 +199,7 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
     (f : IsRestricted.subring (R := R) r) :
     ∃ ν : σ →₀ ℕ, (∀ i, ν i < p) ∧
       ‖restrictedExpandComponent hp ht ν f‖ * ν.prod (r · ^ ·) = ‖f‖ := by
-  obtain ⟨α, hα⟩ := f.2.exists_achievesGaussNorm
+  obtain ⟨α, hα⟩ := f.property.exists_achievesGaussNorm
   set ν := α.mapRange (· % p) (Nat.zero_mod p)
   set μ := α.mapRange (· / p) (Nat.zero_div p)
   refine ⟨ν, fun i ↦ Nat.mod_lt _ (Nat.pos_of_ne_zero hp),

@@ -154,10 +154,10 @@ theorem continuous_sphereCone (hf : Continuous f) {c : ℝ} (hc : ∀ u, ‖f u�
       have heq : ({0}ᶜ : Set E).domRestrict (sphereCone f) =
           (fun p => (p.2 : ℝ) • f p.1) ∘ homeomorphUnitSphereProd E := by
         funext y
-        rw [domRestrict_apply, sphereCone_of_ne_zero y.2, Function.comp_apply,
+        rw [domRestrict_apply, sphereCone_of_ne_zero y.property, Function.comp_apply,
           homeomorphUnitSphereProd_apply_snd_coe]
       rw [heq]
-      exact ((continuous_subtype_val.comp continuous_snd).smul (hf.comp continuous_fst)).comp
+      exact ((continuous_subtypeVal.comp continuous_snd).smul (hf.comp continuous_fst)).comp
         (homeomorphUnitSphereProd E).continuous
     exact hcont.continuousAt (isOpen_compl_singleton.mem_nhds hx)
 
@@ -249,7 +249,8 @@ theorem continuousAt_sphereExtend {H : Type*} [TopologicalSpace H] [Zero H]
   have heq : (({0}ᶜ : Set E).domRestrict (sphereExtend f)) =
       (f ∘ Prod.fst) ∘ homeomorphUnitSphereProd E := by
     funext y
-    rw [domRestrict_apply, sphereExtend_of_ne_zero f y.2, Function.comp_apply, Function.comp_apply]
+    rw [domRestrict_apply, sphereExtend_of_ne_zero f y.property, Function.comp_apply,
+      Function.comp_apply]
     congr 1
     ext
     simp only [homeomorphUnitSphereProd_apply_fst_coe, NormedSpace.normalize]

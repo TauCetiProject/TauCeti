@@ -43,6 +43,10 @@ chain rule for the gradient of a real profile composed with a real function.
 
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
+* `TauCeti.gradient_add_const` and `TauCeti.gradient_const_add`: adding a constant does not change
+  the gradient.
+* `TauCeti.hasGradientAt_inner_const_left` and `TauCeti.gradient_inner_const_left`: the functional
+  `y ↦ ⟪v, y⟫_𝕜` has gradient `v`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
@@ -67,7 +71,6 @@ chain rule for the gradient of a real profile composed with a real function.
   `y ↦ ‖y - x₀‖ ^ 2` has gradient `2 • (x - x₀)` at `x`.
 * `HasDerivAt.comp_hasGradientAt`: over `ℝ`, the chain rule for the gradient of `f ∘ g`, namely
   `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
-* `TauCeti.gradient_inner_left`: `∇ (fun y ↦ ⟪a, y⟫_𝕜) x = a`.
 * `TauCeti.inner_fderiv_gradient`: over `ℝ`,
   `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
@@ -112,6 +115,30 @@ theorem gradient_add (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt �
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_add, fderiv_add hf hg]
 
+/-- Adding a constant to a function does not change its gradient. -/
+@[simp]
+theorem gradient_add_const (c : 𝕜) : ∇ (fun y => f y + c) x = ∇ f x := by
+  simp only [gradient, fderiv_add_const]
+
+/-- Adding a constant on the left to a function does not change its gradient. -/
+@[simp]
+theorem gradient_const_add (c : 𝕜) : ∇ (fun y => c + f y) x = ∇ f x := by
+  simp only [gradient, fderiv_const_add]
+
+/-- The continuous linear functional `y ↦ inner 𝕜 v y` has gradient `v` at every point `x`. -/
+theorem hasGradientAt_inner_const_left (v x : F) :
+    HasGradientAt (fun y : F => inner 𝕜 v y) v x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (innerSL 𝕜 v).hasFDerivAt.congr_fderiv ?_
+  ext y
+  simp
+
+/-- The continuous linear functional `y ↦ inner 𝕜 v y` has gradient `v` at every point `x`. -/
+@[simp]
+theorem gradient_inner_const_left (v x : F) :
+    ∇ (fun y : F => inner 𝕜 v y) x = v :=
+  (hasGradientAt_inner_const_left v x).gradient
+
 /-- The gradient is conjugate-homogeneous: `toDual` is conjugate-linear, so scaling the function
 by `c` scales the gradient by `conj c`. Over `ℝ` the conjugation is the identity. -/
 theorem gradient_const_smul (c : 𝕜) :
@@ -150,12 +177,6 @@ theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
 theorem gradient_eq_zero_iff : ∇ f x = 0 ↔ fderiv 𝕜 f x = 0 := by
   rw [gradient, map_eq_zero_iff _ (toDual 𝕜 F).symm.injective]
 
-/-- The gradient of the continuous linear functional `y ↦ ⟪a, y⟫` is constantly `a`. -/
-@[simp]
-theorem gradient_inner_left (a x : F) : ∇ (fun y : F ↦ inner 𝕜 a y) x = a := by
-  have h : (fun y : F ↦ inner 𝕜 a y) = ⇑(toDual 𝕜 F a) := funext fun _ ↦ toDual_apply_apply.symm
-  exact (hasGradientAt_iff_hasFDerivAt.2 (h ▸ (toDual 𝕜 F a).hasFDerivAt)).gradient
-
 /-- The gradient of a compactly supported function is compactly supported, as is its Fréchet
 derivative (`HasCompactSupport.fderiv`). -/
 theorem _root_.HasCompactSupport.gradient (hf : HasCompactSupport f) : HasCompactSupport (∇ f) :=
@@ -169,15 +190,18 @@ theorem _root_.HasCompactSupport.mono_of_forall_gradient {M : Type*} [Zero M] {g
   hf.mono' fun y hy ↦ by_contra fun h ↦
     hy (hg y (image_eq_zero_of_notMem_tsupport h) (gradient_of_notMem_tsupport h))
 
+/-- The gradient is the Riesz representative of the Fréchet derivative, pointwise: `∇ f` is
+`(toDual 𝕜 F).symm ∘ fderiv 𝕜 f`. -/
+theorem gradient_eq_toDual_symm_comp_fderiv (f : F → 𝕜) :
+    ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f :=
+  rfl
+
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
 differentiable. -/
 @[fun_prop]
 theorem measurable_gradient [MeasurableSpace F] [BorelSpace F] (f : F → 𝕜) : Measurable (∇ f) := by
-  have h : ∇ f = (toDual 𝕜 F).symm ∘ fderiv 𝕜 f := by
-    ext1 x
-    rw [Function.comp_apply, ← toDual_gradient, LinearIsometryEquiv.symm_apply_apply]
-  rw [h]
+  rw [gradient_eq_toDual_symm_comp_fderiv]
   exact (toDual 𝕜 F).symm.continuous.measurable.comp (measurable_fderiv 𝕜 f)
 
 /-- Over `ℝ` the Riesz isomorphism is a linear isometry, so the gradient of a `C^{m+1}` function
