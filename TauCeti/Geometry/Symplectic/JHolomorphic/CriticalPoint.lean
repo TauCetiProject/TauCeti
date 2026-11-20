@@ -79,9 +79,9 @@ gives `W^{2,p}` solutions, which are not treated here.
   connected domain has finitely many critical points in each compact subset.
 * `TauCeti.exists_isTheta_pow_fderiv_of_cauchyRiemann`: the differential vanishes to a finite
   positive order at each critical point of a nonconstant solution.
-* `TauCeti.finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp`: a
-  nonconstant J-holomorphic curve has finitely many points over its critical values, in compact
-  sets.
+* `TauCeti.finite_inter_preimage_image_inter_setOf_fderiv_eq_zero_of_cauchyRiemann_comp`: for
+  compact `K, K' ⊆ Ω`, a nonconstant J-holomorphic curve has finitely many points of `K` over the
+  values of `u` at its critical points in `K'`.
 
 ## References
 
