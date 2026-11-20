@@ -63,7 +63,7 @@ theorem empiricalLogPotential_eq_log_norm_det
     rw [← hshift, Matrix.det_aeval_eq_prod_roots_charpoly]
     apply congrArg Multiset.prod
     apply Multiset.map_congr rfl
-    intro w hw
+    intro w _
     simp
   have hroot_ne : ∀ w ∈ A.charpoly.roots, w - z ≠ 0 := by
     have hdet' : (Polynomial.aeval A (Polynomial.X - Polynomial.C z)).det ≠ 0 := by
