@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
@@ -36,8 +35,6 @@ period `T` in `t`, together with the splitting of the integral of `‖ξ‖²` o
 * `TauCeti.hasDerivAt_intervalIntegral_two_mul_inner_fderiv`: for a `C²` map, the derivative
   `∫ₐᵇ 2 (⟪ξ, ∂s² ξ⟫ + ‖∂s ξ‖²) dt` of `s ↦ ∫ₐᵇ 2 ⟪ξ, ∂s ξ⟫ dt`, the second derivative of the
   slice energy.
-* `TauCeti.intervalIntegral_sub_intervalIntegral_zero_one`: subtracting its integral over `[0, 1]`
-  leaves a function of integral zero over `[0, 1]`, so the slices of `ξ - ξbar` have mean zero.
 * `TauCeti.setIntegral_norm_add_sq_eq`: over a rectangle `[a₁, b₁] × [a, b]`,
   `∫ ‖m(s) + w‖² = (b - a) ∫ₛ ‖m‖² + ∫ ‖w‖²` when every slice of `w` integrates to zero.
 -/
@@ -102,15 +99,6 @@ theorem hasDerivAt_intervalIntegral_two_mul_inner_fderiv {V : Type*} [NormedAddC
   refine h.congr_deriv (intervalIntegral.integral_congr fun t _ ↦ ?_)
   simp only [real_inner_self_eq_norm_sq]
   ring
-
-/-- Subtracting its integral over `[0, 1]` from a function leaves a function of integral zero over
-`[0, 1]`. For the slices of a map `ξ` of two variables, this says that every slice of `ξ - ξbar`
-has mean zero, where `ξbar(s) = ∫₀¹ ξ(s, t) dt` is the slice average. -/
-theorem intervalIntegral_sub_intervalIntegral_zero_one {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] (f : ℝ → E) :
-    ∫ t in (0 : ℝ)..1, (f t - ∫ t in (0 : ℝ)..1, f t) = 0 := by
-  simpa [← intervalIntegral.integral_of_le zero_le_one, setAverage_eq] using
-    integral_sub_average (volume.restrict (Ioc (0 : ℝ) 1)) f
 
 /-- **Splitting off a function of the first variable.** If every slice `t ↦ w(s, t)` of the
 continuous map `w` into a real inner product space has integral zero over `[a, b]`, then for every

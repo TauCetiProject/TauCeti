@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
 
@@ -37,6 +38,8 @@ not belong to any particular application.
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
+* `TauCeti.intervalIntegral_sub_intervalIntegral_zero_one`: subtracting its integral over `[0, 1]`
+  from a function leaves a function of integral zero over `[0, 1]`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -376,6 +379,14 @@ theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
     ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
   simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
   rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
+/-- Subtracting its integral over `[0, 1]` from a function leaves a function of integral zero over
+`[0, 1]`. -/
+theorem intervalIntegral_sub_intervalIntegral_zero_one {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (f : ℝ → E) :
+    ∫ t in (0 : ℝ)..1, (f t - ∫ t in (0 : ℝ)..1, f t) = 0 := by
+  simpa [← _root_.intervalIntegral.integral_of_le zero_le_one, setAverage_eq] using
+    integral_sub_average (volume.restrict (Ioc (0 : ℝ) 1)) f
 
 open Filter in
 /-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below

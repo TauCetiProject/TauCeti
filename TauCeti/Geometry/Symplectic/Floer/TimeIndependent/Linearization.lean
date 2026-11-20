@@ -12,6 +12,7 @@ import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IntervalIntegral.Slice
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The linearized Floer operator along a time-independent cylinder

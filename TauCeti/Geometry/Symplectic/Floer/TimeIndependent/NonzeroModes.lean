@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.IntervalIntegral.Slice
 import TauCeti.Analysis.Fourier.Wirtinger
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.Geometry.Symplectic.CompatibleMetric
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -48,7 +49,7 @@ of `J ∂t` minus `a`, and the whole estimate for `D` reduces to the estimate fo
   (`TauCeti.SymplecticForm.mul_setIntegral_norm_sq_le_setIntegral_norm_floerLinearization_sq`, and
   `mul_setIntegral_norm_fderiv_sq_add_le_setIntegral_norm_floerLinearization_sq` in the same
   namespace for the derivatives).
-  No bound on the second derivative of `X_H` or on `γ'` is needed, and `γ` is arbitrary.
+  No bound on the second derivative of `X_H` or on `γ'` is needed, and `γ` need only be continuous.
 * **Splitting off the zero mode.** For a `C¹` map `ξ` of period one in `t` and a `C²`
   Hamiltonian, `∫ ‖D ξ‖² = ∫ₛ ‖M ξbar‖² + ∫ ‖D (ξ - ξbar)‖²`
   (`TauCeti.SymplecticForm.setIntegral_norm_floerLinearization_sq_eq`), since the slice average of
