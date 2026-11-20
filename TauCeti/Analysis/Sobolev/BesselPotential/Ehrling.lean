@@ -85,7 +85,9 @@ theorem norm_inclusion_le_norm_inclusion_rpow_mul_norm_rpow (hrt : r ≤ t) (hts
     ‖inclusion hts u‖ ≤ ‖inclusion (hrt.trans hts) u‖ ^ (1 - θ) * ‖u‖ ^ θ := by
   rw [← norm_fourier_toLp_eq (inclusion hts u), ← norm_fourier_toLp_eq (inclusion _ u),
     ← norm_fourier_toLp_eq u]
-  refine Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le hθ ?_
+  refine Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le hθ ?_ ?_
+  · rw [← add_mul, ← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel,
+      ENNReal.ofReal_one, one_mul]
   filter_upwards [coeFn_fourier_toLp_inclusion hts u,
     coeFn_fourier_toLp_inclusion (hrt.trans hts) u] with ξ h₁ h₂
   have hpos : 0 < 1 + ‖ξ‖ ^ 2 := by positivity

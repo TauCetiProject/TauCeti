@@ -33,7 +33,7 @@ everywhere, then `‖g‖_p ≤ ‖g₀‖_{p₀} ^ (1 - θ) ‖g₁‖_{p₁} ^
 (`MeasureTheory.eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow_of_ae_le`), for all exponents. The same
 bounds for elements of `Lᵖ` spaces are `MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq`
 (for elements representing one function) and
-`MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le` (for elements of one `Lᵖ` space). Both
+`MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le` (for a pointwise geometric mean). Both
 pass from extended `Lᵖ` norms to norms of `Lᵖ` elements by
 `MeasureTheory.Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le`. Since the exponent `1 - θ` is
 positive for `θ < 1`, smallness in `L^{p₀}` and boundedness in `L^{p₁}` give smallness in `Lᵖ`;
@@ -317,9 +317,10 @@ theorem eLpNorm_le_max_of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (h
 
 /-- A bound `‖f‖_p ≤ ‖f₀‖_{p₀} ^ (1 - θ) ‖f₁‖_{p₁} ^ θ` on the extended `Lᵖ` norms of elements
 `f ∈ Lᵖ`, `f₀ ∈ L^{p₀}` and `f₁ ∈ L^{p₁}`, for `0 ≤ θ ≤ 1`, is the same bound on their norms. -/
-theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le {E : Type*} [NormedAddCommGroup E]
-    {p₀ p₁ p : ℝ≥0∞} {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {f : Lp E p μ} {f₀ : Lp E p₀ μ}
-    {f₁ : Lp E p₁ μ} (h : eLpNorm f p μ ≤ eLpNorm f₀ p₀ μ ^ (1 - θ) * eLpNorm f₁ p₁ μ ^ θ) :
+theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le {E E₀ E₁ : Type*} [NormedAddCommGroup E]
+    [NormedAddCommGroup E₀] [NormedAddCommGroup E₁] {p₀ p₁ p : ℝ≥0∞} {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {f : Lp E p μ} {f₀ : Lp E₀ p₀ μ} {f₁ : Lp E₁ p₁ μ}
+    (h : eLpNorm f p μ ≤ eLpNorm f₀ p₀ μ ^ (1 - θ) * eLpNorm f₁ p₁ μ ^ θ) :
     ‖f‖ ≤ ‖f₀‖ ^ (1 - θ) * ‖f₁‖ ^ θ := by
   rw [Lp.norm_def, Lp.norm_def, Lp.norm_def, ENNReal.toReal_rpow, ENNReal.toReal_rpow,
     ← ENNReal.toReal_mul]
@@ -340,20 +341,21 @@ theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_eq {E : Type*} [NormedAddCommGr
     exact eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow hθ hp
   exact Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le hθ key
 
-/-- **Hölder's inequality for a pointwise geometric mean**, for elements `g`, `g₀` and `g₁` of one
-`Lᵖ` space: if `0 ≤ θ ≤ 1` and `‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ` almost everywhere, then
-`‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ`. -/
-theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le {E : Type*} [NormedAddCommGroup E]
-    {p : ℝ≥0∞} {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) 1) {g g₀ g₁ : Lp E p μ}
+/-- **Hölder's inequality for a pointwise geometric mean**, for elements `g ∈ Lᵖ`, `g₀ ∈ L^{p₀}`
+and `g₁ ∈ L^{p₁}`: if `0 ≤ θ ≤ 1`, `1 / p = (1 - θ) / p₀ + θ / p₁` and
+`‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ` almost everywhere, then `‖g‖ ≤ ‖g₀‖ ^ (1 - θ) ‖g₁‖ ^ θ`. -/
+theorem Lp.norm_le_norm_rpow_mul_norm_rpow_of_ae_le {E E₀ E₁ : Type*} [NormedAddCommGroup E]
+    [NormedAddCommGroup E₀] [NormedAddCommGroup E₁] {p₀ p₁ p : ℝ≥0∞} {θ : ℝ}
+    (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
+    (hp : p⁻¹ = ENNReal.ofReal (1 - θ) * p₀⁻¹ + ENNReal.ofReal θ * p₁⁻¹) {g : Lp E p μ}
+    {g₀ : Lp E₀ p₀ μ} {g₁ : Lp E₁ p₁ μ}
     (h : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖g₀ x‖ ^ (1 - θ) * ‖g₁ x‖ ^ θ) :
     ‖g‖ ≤ ‖g₀‖ ^ (1 - θ) * ‖g₁‖ ^ θ := by
   refine Lp.norm_le_norm_rpow_mul_norm_rpow_of_eLpNorm_le hθ
-    (eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow_of_ae_le hθ ?_ (Lp.aestronglyMeasurable g)
+    (eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow_of_ae_le hθ hp (Lp.aestronglyMeasurable g)
       (Lp.aestronglyMeasurable g₀) (Lp.aestronglyMeasurable g₁) (h.mono fun x hx ↦ ?_))
-  · rw [← add_mul, ← ENNReal.ofReal_add (sub_nonneg.2 hθ.2) hθ.1, sub_add_cancel,
-      ENNReal.ofReal_one, one_mul]
-  · simpa only [ofReal_norm, ENNReal.ofReal_mul (Real.rpow_nonneg (norm_nonneg _) _),
-      ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (sub_nonneg.2 hθ.2),
-      ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ.1] using ENNReal.ofReal_le_ofReal hx
+  simpa only [ofReal_norm, ENNReal.ofReal_mul (Real.rpow_nonneg (norm_nonneg _) _),
+    ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (sub_nonneg.2 hθ.2),
+    ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hθ.1] using ENNReal.ofReal_le_ofReal hx
 
 end MeasureTheory
