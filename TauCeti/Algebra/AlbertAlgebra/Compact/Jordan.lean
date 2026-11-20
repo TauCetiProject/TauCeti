@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Jordan.Basic
 public import TauCeti.Algebra.AlbertAlgebra.Compact.Determinant
-
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # The Jordan identity of the compact Albert algebra
@@ -25,7 +22,10 @@ algebra of Jordan, von Neumann and Wigner, and Mathlib's Jordan-algebra API (`Is
 `commute_lmul_lmul_sq` and the linearized Jordan identities) applies to it.
 
 As for the split Albert algebra in `TauCeti/Algebra/AlbertAlgebra/Jordan.lean`, no coordinate
-computation of the identity itself is needed. It follows from three facts of
+computation of the identity itself is needed. The instance is
+`TauCeti.Jordan.IsCubicMinimalPolynomial.isCommJordan` of
+`TauCeti/Algebra/Jordan/CubicMinimalPolynomial.lean`, applied to
+`TauCeti.CompactAlbertAlgebra.isCubicMinimalPolynomial`, and so follows from three facts of
 `TauCeti/Algebra/AlbertAlgebra/Compact/Determinant.lean` and
 `TauCeti/Algebra/AlbertAlgebra/Compact.lean`:
 
@@ -64,24 +64,8 @@ namespace CompactAlbertAlgebra
 variable {R : Type*} [CommRing R] [Invertible (2 : R)]
 
 /-- **The compact Albert algebra is a Jordan algebra**: `(A ∘ B) ∘ A² = A ∘ (B ∘ A²)`. -/
-instance : IsCommJordan (CompactAlbertAlgebra R) where
-  lmul_comm_rmul_rmul A B := by
-    -- The linearized cubic equation at `(A, A ∘ B)`, and `A` times the one at `(A, B)`, express
-    -- the two sides through `A ∘ (A ∘ (A ∘ B))`, which cancels. What is left is a combination of
-    -- `A²`, `A` and `1`. Its `A²`-coefficient vanishes identically, and its `A`- and
-    -- `1`-coefficients vanish by the cubic equation and the associativity of the trace form.
-    have hL := mul_mul_self_add_two_smul_mul_mul A (A * B)
-    have hM := congrArg (A * ·) (mul_mul_self_add_two_smul_mul_mul A B)
-    simp only [mul_add, mul_sub, mul_smul_comm, mul_one] at hM
-    have hC := mul_mul_self A
-    have hT := congrArg (fun C => trace (C * B)) hC
-    simp only [add_mul, sub_mul, smul_mul_assoc, one_mul, map_add, map_sub, map_smul,
-      smul_eq_mul] at hT
-    have hA₁ := trace_mul_assoc A A B
-    have hA₂ := trace_mul_assoc (A * A) A B
-    rw [mul_comm (A * A) A] at hA₂
-    linear_combination (norm := module)
-      hL - hM - trace B • hC - hA₁ • A + (hT - hA₂ + trace A * hA₁) • (1 : CompactAlbertAlgebra R)
+instance : IsCommJordan (CompactAlbertAlgebra R) :=
+  isCubicMinimalPolynomial.isCommJordan
 
 end CompactAlbertAlgebra
 

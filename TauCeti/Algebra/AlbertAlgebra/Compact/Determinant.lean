@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlbertAlgebra.Compact
+public import TauCeti.Algebra.Jordan.CubicMinimalPolynomial
 
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.Fin.Basic
@@ -62,15 +63,19 @@ equation needs `2` to be invertible, because the Jordan product does.
 
 * `TauCeti.CompactAlbertAlgebra.det_smul` and `TauCeti.CompactAlbertAlgebra.spur_smul`: the
   determinant is homogeneous of degree three and the spur homogeneous of degree two.
-* `TauCeti.CompactAlbertAlgebra.two_mul_spur`: twice the spur is `T(A)² - T(A ∘ A)`.
+* `TauCeti.CompactAlbertAlgebra.two_mul_spur` and
+  `TauCeti.CompactAlbertAlgebra.spur_eq_invOf_two_mul`: the spur is `(T(A)² - T(A ∘ A)) / 2`.
 * `TauCeti.CompactAlbertAlgebra.spur_add` and `TauCeti.CompactAlbertAlgebra.spur_sub`: the
   polarization of the spur, `S(A + B) = S(A) + S(B) + T(A) T(B) - T(A ∘ B)`.
 * `TauCeti.CompactAlbertAlgebra.det_add_sub_det_sub`: the gradient of the determinant, in
   polarized form.
 * `TauCeti.CompactAlbertAlgebra.mul_mul_self`: **the cubic equation** satisfied by every element.
+* `TauCeti.CompactAlbertAlgebra.isCubicMinimalPolynomial`: the trace, the spur and the determinant
+  satisfy the hypotheses of `TauCeti.Jordan.IsCubicMinimalPolynomial`.
 * `TauCeti.CompactAlbertAlgebra.mul_mul_self_add_two_smul_mul_mul`: the linearized cubic equation.
-* `TauCeti.CompactAlbertAlgebra.six_mul_det`: **Newton's formula** for the determinant in terms
-  of the traces of the powers.
+* `TauCeti.CompactAlbertAlgebra.six_mul_det` and
+  `TauCeti.CompactAlbertAlgebra.det_eq_invOf_two_mul_invOf_three_mul`: **Newton's formula** for
+  the determinant in terms of the traces of the powers.
 
 ## Implementation notes
 
@@ -80,6 +85,11 @@ the symmetric bilinear form of the norm is written through the octonion trace, a
 `N (x + y) = N x + N y + T (x * star y)` (`TauCeti.CayleyDickson.normSq_add_eq_add_trace_mul_star`),
 and the octonion products that occur cancel to norms by the inverse properties
 `TauCeti.CayleyDickson.mul_star_mul_left` and `TauCeti.CayleyDickson.mul_star_mul_right`.
+
+Only the coordinate facts, the spur formula, the cubic equation, the gradient of the determinant
+and the associativity of the trace form, are proved here. The polarization of the spur, the
+linearized cubic equation and Newton's formula are specializations of the carrier-independent
+results of `TauCeti/Algebra/Jordan/CubicMinimalPolynomial.lean`, shared with the split carrier.
 
 ## References
 
@@ -207,21 +217,6 @@ theorem two_mul_spur (A : CompactAlbertAlgebra R) :
   simp only [Fin.sum_univ_three]
   ring
 
-/-- **The polarization of the spur**: `S(A + B) = S(A) + S(B) + T(A) T(B) - T(A ∘ B)`. -/
-theorem spur_add (A B : CompactAlbertAlgebra R) :
-    spur (A + B) = spur A + spur B + (trace A * trace B - trace (A * B)) := by
-  apply (isUnit_of_invertible (2 : R)).mul_left_cancel
-  have h := two_mul_spur (A + B)
-  simp only [add_mul, mul_add, map_add, mul_comm B A] at h
-  linear_combination h - two_mul_spur A - two_mul_spur B
-
-/-- The polarization of the spur at a difference:
-`S(A - B) = S(A) + S(B) - (T(A) T(B) - T(A ∘ B))`. -/
-theorem spur_sub (A B : CompactAlbertAlgebra R) :
-    spur (A - B) = spur A + spur B - (trace A * trace B - trace (A * B)) := by
-  rw [sub_eq_add_neg, spur_add, spur_neg, map_neg, mul_neg, mul_neg, map_neg]
-  ring
-
 /-- **The gradient of the determinant**, in polarized form: the part of `det (A + B)` linear in
 `B` is `T(A^# ∘ B) = T(A² ∘ B) - T(A) T(A ∘ B) + S(A) T(B)`, where `A^# = A² - T(A) A + S(A) 1`
 is the adjoint of `A`. -/
@@ -285,6 +280,33 @@ theorem mul_mul_self (A : CompactAlbertAlgebra R) :
       + (A.diag i + A.diag (i + 1) + A.diag (i + 2)) • h2 •
         (star (A.offDiag (i + 2)) * star (A.offDiag (i + 1)))
 
+/-- The trace, the spur and the determinant of the compact Albert algebra satisfy the hypotheses of
+`TauCeti.Jordan.IsCubicMinimalPolynomial`: the spur formula, the cubic equation, the gradient of the
+determinant and the associativity of the trace form. -/
+theorem isCubicMinimalPolynomial :
+    Jordan.IsCubicMinimalPolynomial (trace : CompactAlbertAlgebra R →ₗ[R] R) spur det where
+  two_mul_spur := two_mul_spur
+  mul_mul_self := mul_mul_self
+  det_add_sub_det_sub := det_add_sub_det_sub
+  trace_mul_assoc := trace_mul_assoc
+
+/-- **The spur is half of `T(A)² - T(A ∘ A)`**, the usual coefficient of a characteristic
+polynomial in terms of traces of powers. -/
+theorem spur_eq_invOf_two_mul (A : CompactAlbertAlgebra R) :
+    spur A = ⅟2 * (trace A ^ 2 - trace (A * A)) :=
+  isCubicMinimalPolynomial.spur_eq_invOf_two_mul A
+
+/-- **The polarization of the spur**: `S(A + B) = S(A) + S(B) + T(A) T(B) - T(A ∘ B)`. -/
+theorem spur_add (A B : CompactAlbertAlgebra R) :
+    spur (A + B) = spur A + spur B + (trace A * trace B - trace (A * B)) :=
+  isCubicMinimalPolynomial.spur_add A B
+
+/-- The polarization of the spur at a difference:
+`S(A - B) = S(A) + S(B) - (T(A) T(B) - T(A ∘ B))`. -/
+theorem spur_sub (A B : CompactAlbertAlgebra R) :
+    spur (A - B) = spur A + spur B - (trace A * trace B - trace (A * B)) :=
+  isCubicMinimalPolynomial.spur_sub A B
+
 /-- **The linearized cubic equation** of the compact Albert algebra: the part linear in `B` of the
 cubic equation `TauCeti.CompactAlbertAlgebra.mul_mul_self` at `A + B`,
 `B ∘ A² + 2 A ∘ (A ∘ B) = T(B) A² + 2 T(A) A ∘ B - (T(A) T(B) - T(A ∘ B)) A - S(A) B
@@ -292,26 +314,21 @@ cubic equation `TauCeti.CompactAlbertAlgebra.mul_mul_self` at `A + B`,
 theorem mul_mul_self_add_two_smul_mul_mul (A B : CompactAlbertAlgebra R) :
     B * (A * A) + (2 : R) • (A * (A * B)) =
       trace B • (A * A) + (2 * trace A) • (A * B) - (trace A * trace B - trace (A * B)) • A
-        - spur A • B + (trace (A * A * B) - trace A * trace (A * B) + spur A * trace B) • 1 := by
-  -- The cubic equation at `A + B`, minus the one at `A - B`, minus twice the one at `B`, is twice
-  -- the claimed identity.
-  have h₁ := mul_mul_self (A + B)
-  have h₂ := mul_mul_self (A - B)
-  rw [spur_add] at h₁
-  rw [spur_sub] at h₂
-  simp only [add_mul, mul_add, sub_mul, mul_sub, mul_comm B A, map_add, map_sub] at h₁ h₂
-  apply (isUnit_of_invertible (2 : R)).smul_left_cancel.mp
-  linear_combination (norm := module)
-    h₁ - h₂ - (2 : R) • mul_mul_self B + det_add_sub_det_sub A B • (1 : CompactAlbertAlgebra R)
+        - spur A • B + (trace (A * A * B) - trace A * trace (A * B) + spur A * trace B) • 1 :=
+  isCubicMinimalPolynomial.mul_mul_self_add_two_smul_mul_mul A B
 
 /-- **Newton's formula for the determinant**, without division:
 `6 det A = T(A)³ - 3 T(A) T(A ∘ A) + 2 T(A ∘ (A ∘ A))`. -/
 theorem six_mul_det (A : CompactAlbertAlgebra R) :
-    6 * det A = trace A ^ 3 - 3 * trace A * trace (A * A) + 2 * trace (A * (A * A)) := by
-  have h := congrArg trace (mul_mul_self A)
-  rw [map_add, map_sub, map_smul, map_smul, map_smul, trace_one, smul_eq_mul, smul_eq_mul,
-    smul_eq_mul] at h
-  linear_combination (-2) * h + trace A * two_mul_spur A
+    6 * det A = trace A ^ 3 - 3 * trace A * trace (A * A) + 2 * trace (A * (A * A)) :=
+  isCubicMinimalPolynomial.six_mul_det trace_one A
+
+/-- **Newton's formula for the determinant**: when `2` and `3` are invertible,
+`det A = (T(A)³ - 3 T(A) T(A ∘ A) + 2 T(A ∘ (A ∘ A))) / 6`. -/
+theorem det_eq_invOf_two_mul_invOf_three_mul [Invertible (3 : R)] (A : CompactAlbertAlgebra R) :
+    det A = ⅟2 * ⅟3 *
+      (trace A ^ 3 - 3 * trace A * trace (A * A) + 2 * trace (A * (A * A))) :=
+  isCubicMinimalPolynomial.det_eq_invOf_two_mul_invOf_three_mul trace_one A
 
 end Invertible
 
