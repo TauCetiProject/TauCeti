@@ -24,7 +24,9 @@ Quantities invariant under rescaling therefore agree along such a family. The on
 the first moment `∫ ‖t‖ ‖∂ᵥ (φ.normed μ) t‖ dt` of a directional derivative of the normalized
 bump (`ContDiffBump.lintegral_eNorm_mul_eNorm_fderiv_normed_apply_eq`): it bounds the commutator of
 mollification with a first-order operator with Lipschitz coefficients, and its invariance makes
-these commutators uniformly bounded along a family of mollifiers.
+these commutators uniformly bounded along a family of mollifiers. The first moment of a directional
+derivative of any `C¹` compactly supported function is finite
+(`HasCompactSupport.lintegral_eNorm_mul_eNorm_fderiv_apply_ne_top`).
 
 ## Main results
 
@@ -35,6 +37,7 @@ these commutators uniformly bounded along a family of mollifiers.
   directional derivatives.
 * `ContDiffBump.lintegral_eNorm_mul_eNorm_fderiv_normed_apply_eq`: the first moment of a
   directional derivative of a normalized bump only depends on the ratio of its radii.
+* `HasCompactSupport.lintegral_eNorm_mul_eNorm_fderiv_apply_ne_top`: this first moment is finite.
 -/
 
 public section
@@ -45,6 +48,19 @@ open ContinuousLinearMap MeasureTheory
 open scoped ENNReal NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The first moment `∫ ‖t‖ ‖∂ᵥ ρ t‖ dt` of a directional derivative of a `C¹` compactly supported
+function is finite. -/
+theorem HasCompactSupport.lintegral_eNorm_mul_eNorm_fderiv_apply_ne_top [MeasurableSpace E]
+    [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ] {ρ : E → ℝ}
+    (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ) (v : E) :
+    ∫⁻ t, ‖t‖ₑ * ‖fderiv ℝ ρ t v‖ₑ ∂μ ≠ ∞ := by
+  have hc : Continuous fun t : E ↦ ‖t‖ * fderiv ℝ ρ t v :=
+    continuous_norm.mul ((hρ.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+  have hs : HasCompactSupport fun t : E ↦ ‖t‖ * fderiv ℝ ρ t v :=
+    (hρc.fderiv_apply (𝕜 := ℝ) v).mul_left
+  simpa [HasFiniteIntegral, eNorm_mul] using
+    (hc.integrable_of_hasCompactSupport hs (μ := μ)).hasFiniteIntegral.ne
 
 namespace ContDiffBump
 
