@@ -41,10 +41,12 @@ on.
 
 * `TopCat.Homotopy.isFiltered_extend_singularChainComplexFunctorObjMap`: the singular chain
   homotopy of a homotopy carrying `X q` into `X' (q + s)` raises the filtrations by `s`.
-* `TauCeti.filteredSpaceSpectralSequenceMap_eq_of_homotopy`: homotopic maps of filtered spaces
-  induce the same morphism of spectral sequences.
+* `TauCeti.filteredSpaceSpectralSequenceMap_eq_of_homotopy`: maps of filtered spaces that are
+  homotopic through a homotopy keeping each `X q` inside `X' q` induce the same morphism of
+  spectral sequences.
 * `TauCeti.isIso_filteredSpaceSpectralSequenceMap_of_homotopy`: a homotopy equivalence of filtered
-  spaces induces an isomorphism of spectral sequences.
+  spaces whose two homotopies preserve the filtrations induces an isomorphism of spectral
+  sequences.
 * `TauCeti.filteredSpaceSpectralSequenceMap_preimage_eq_of_homotopy`: homotopic maps over a base
   induce the same morphism of the spectral sequences of preimage filtrations.
 
@@ -113,9 +115,8 @@ theorem isFiltered_extend_singularChainComplexFunctorObjMap (H : TopCat.Homotopy
   refine ⟨(TauCeti.chainFiltrationIso F X q).hom.f i ≫
     ((K.singularChainComplexFunctorObjMap R).extend ComplexShape.embeddingDownNat).hom i j ≫
       (TauCeti.chainFiltrationIso F X' (q + s)).inv.f j, ?_⟩
-  rw [← TauCeti.chainFiltrationIso_hom_comp_chainFiltrationι,
-    ← TauCeti.chainFiltrationIso_hom_comp_chainFiltrationι, Category.assoc, Category.assoc,
-    ← comp_f, Iso.inv_hom_id_assoc, comp_f, Category.assoc, h]
+  simpa [← TauCeti.chainFiltrationIso_hom_comp_chainFiltrationι] using
+    congrArg ((TauCeti.chainFiltrationIso F X q).hom.f i ≫ ·) h.symm
 
 end TopCat.Homotopy
 
@@ -123,10 +124,11 @@ namespace TauCeti
 
 variable {X : ℤ → Set Y} {X' : ℤ → Set Y'} (hX : Monotone X) (hX' : Monotone X')
 
-/-- **Homotopic maps of filtered spaces induce the same morphism of spectral sequences.** If `H`
-is a homotopy between maps `g₀ g₁ : Y ⟶ Y'` which carries each `X q` into `X' q` at every time,
-then `g₀` and `g₁` induce the same morphism from the spectral sequence of the filtration of `Y` by
-the `X q` to that of the filtration of `Y'` by the `X' q`, on every page. -/
+/-- **Maps homotopic through filtration-preserving homotopies induce the same morphism of
+spectral sequences.** If `H` is a homotopy between maps `g₀ g₁ : Y ⟶ Y'` which carries each `X q`
+into `X' q` at every time, then `g₀` and `g₁` induce the same morphism from the spectral sequence
+of the filtration of `Y` by the `X q` to that of the filtration of `Y'` by the `X' q`, on every
+page. -/
 theorem filteredSpaceSpectralSequenceMap_eq_of_homotopy (H : TopCat.Homotopy g₀ g₁)
     (hH : ∀ q τ x, x ∈ X q → H (τ, x) ∈ X' q) (hg₀ : ∀ q, MapsTo g₀ (X q) (X' q))
     (hg₁ : ∀ q, MapsTo g₁ (X q) (X' q)) :
@@ -143,11 +145,12 @@ theorem filteredSpaceSpectralSequenceMap_eq_of_homotopy (H : TopCat.Homotopy g�
   rw [CochainComplex.spectralObjectMap_filtrationFunctorMap_eq_of_homotopy
     ((H.singularChainComplexFunctorObjMap R).extend ComplexShape.embeddingDownNat) hH']
 
-/-- **A homotopy equivalence of filtered spaces induces an isomorphism of spectral sequences.** If
-`g : Y ⟶ Y'` carries each `X q` into `X' q`, `g' : Y' ⟶ Y` carries each `X' q` into `X q`, and the
-composites `g ≫ g'` and `g' ≫ g` are homotopic to the identities through homotopies which keep
-each `X q`, respectively each `X' q`, inside itself at every time, then `g` induces an isomorphism
-of spectral sequences of filtered spaces, on every page. -/
+/-- **A homotopy equivalence of filtered spaces through filtration-preserving homotopies induces
+an isomorphism of spectral sequences.** If `g : Y ⟶ Y'` carries each `X q` into `X' q`,
+`g' : Y' ⟶ Y` carries each `X' q` into `X q`, and the composites `g ≫ g'` and `g' ≫ g` are
+homotopic to the identities through homotopies which keep each `X q`, respectively each `X' q`,
+inside itself at every time, then `g` induces an isomorphism of spectral sequences of filtered
+spaces, on every page. -/
 theorem isIso_filteredSpaceSpectralSequenceMap_of_homotopy (g : Y ⟶ Y')
     (hg : ∀ q, MapsTo g (X q) (X' q)) (g' : Y' ⟶ Y) (hg' : ∀ q, MapsTo g' (X' q) (X q))
     (H : TopCat.Homotopy (g ≫ g') (𝟙 Y)) (hH : ∀ q τ x, x ∈ X q → H (τ, x) ∈ X q)
