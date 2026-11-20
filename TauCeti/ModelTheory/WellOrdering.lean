@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.ModelTheory.Order
 public import Mathlib.SetTheory.Cardinal.Aleph
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
 import Mathlib.Algebra.Order.Ring.Rat
@@ -14,6 +15,8 @@ import Mathlib.SetTheory.Cardinal.Regular
 import TauCeti.Logic.Function.Update
 import TauCeti.ModelTheory.Infinitary.ConstantSupport
 import TauCeti.ModelTheory.Infinitary.Sublanguage
+import TauCeti.ModelTheory.ModelExistence.Morleyization
+import TauCeti.ModelTheory.Order
 
 /-!
 # Boundedness of well-orderings in `L_{ω₁ω}`
@@ -25,6 +28,10 @@ not well-founded, so a sentence all of whose models are well-founded for `lt` bo
 by a countable ordinal. Consequently the order types of the models of a sentence all of whose
 models are well-ordered are bounded by a countable ordinal, and no sentence defines the class of
 well-orders.
+
+The language of orders names `≤` but no strict order, so it is not covered directly. Morleyizing it
+by the formula `x₀ < x₁` adds a symbol for the strict order, and boundedness for the resulting
+sentence shows that no sentence in the language of orders defines the countable well-orders.
 
 The proof applies model existence to a consistency property. Name each rational `q` by a Henkin
 constant `d_q`. A member is `{φ} ∪ {d_q < d_r : q < r} ∪ σ` with `σ` finite and mentioning finitely
@@ -58,6 +65,8 @@ constant that does not occur in `σ`.
   sentence, the order types of its models are bounded by a countable ordinal.
 * `FirstOrder.Language.wellOrdering_undefinable`: no `L_{ω₁ω}` sentence defines the structures in
   which `lt` is a well-order, not even among the countable nonempty structures.
+* `FirstOrder.Language.wellFoundedLT_undefinable`: in the language of orders, no `L_{ω₁ω}`
+  sentence defines the well-orders among the countable nonempty linear orders.
 
 ## References
 
@@ -742,5 +751,107 @@ theorem wellOrdering_undefinable (lt : L.Relations 2) :
     Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
   exact hbound M _ hne ((hφ M _ hne hc).2 hwo) f fun x y hxy => (hrel _ _).2
     (ToType.mk.strictMono (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy)))
+
+/-! ### Well-orders in the language of orders -/
+
+section Order
+
+/-- The strict order `x₀ < x₁` of the language of orders. -/
+private abbrev ltFormula : Language.order.BoundedFormulaω Empty 2 :=
+  BoundedFormula.toOmega ((&0).lt (&1))
+
+/-- The Morleyization of the language of orders by the strict order. -/
+private abbrev ltLanguage : Language := morleyize Language.order {⟨2, ltFormula⟩}
+
+/-- The symbol of `ltLanguage` for the strict order. -/
+private noncomputable abbrev ltSymb : ltLanguage.Relations 2 := morleyRel ltFormula rfl
+
+private theorem countable_linearOrderTheory :
+    (BoundedFormula.toOmega '' Language.order.linearOrderTheory).Countable :=
+  (Set.to_countable _).image _
+
+/-- The sentence of `ltLanguage` saying that `≤` is a linear order satisfying `σ` and that
+`ltSymb` is its strict order. -/
+private noncomputable def ltSentence (σ : Language.order.Sentenceω) : ltLanguage.Sentenceω :=
+  (lhomMorleyize _).onBoundedFormulaInf
+      (σ ⊓ Theoryω.conjunction _ countable_linearOrderTheory) ⊓
+    definingAxiom _ ltFormula rfl
+
+variable {M : Type w}
+
+private theorem realize_ltFormula [Language.order.Structure M] [Preorder M]
+    [Language.order.OrderedStructure M] (x y : M) :
+    ltFormula.Realize Empty.elim ![x, y] ↔ x < y := by
+  simp
+
+/-- A linear order satisfying `σ`, with its canonical expansion, satisfies `ltSentence σ`. -/
+private theorem realize_ltSentence [Language.order.Structure M] [LinearOrder M]
+    [Language.order.OrderedStructure M] {σ : Language.order.Sentenceω}
+    (hσ : SentenceInf.Realize σ M) :
+    letI := morleyExpansion {⟨2, ltFormula⟩} M
+    SentenceInf.Realize (ltSentence σ) M := by
+  let := morleyExpansion {⟨2, ltFormula⟩} M
+  refine SentenceInf.realize_inf.2 ⟨?_, (realize_definingAxiom_iff _ rfl).2
+    (morleyExpansion_relMap_morleyRel rfl)⟩
+  have h : SentenceInf.Realize (σ ⊓ Theoryω.conjunction _ countable_linearOrderTheory) M :=
+    SentenceInf.realize_inf.2 ⟨hσ, (Theoryω.realize_conjunction_iff _).2
+      (Theoryω.model_image_toOmega_iff.2 inferInstance)⟩
+  simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
+    LHom.realize_onBoundedFormulaInf] using h
+
+/-- In a model of `ltSentence σ`, `ltSymb` is the strict order of a linear order satisfying
+`σ`; so it is well-founded when every such linear order is well-founded. -/
+private theorem wellFounded_of_realize_ltSentence [ltLanguage.Structure M]
+    {σ : Language.order.Sentenceω}
+    (hσ : ∀ [Language.order.Structure M] [LinearOrder M] [Language.order.OrderedStructure M],
+      SentenceInf.Realize σ M → WellFoundedLT M)
+    (h : SentenceInf.Realize (ltSentence σ) M) :
+    WellFounded fun x y : M => RelMap ltSymb ![x, y] := by
+  classical
+  let := (lhomMorleyize {⟨2, ltFormula⟩}).reduct M
+  obtain ⟨h₁, h₂⟩ := SentenceInf.realize_inf.1 h
+  obtain ⟨hσM, hLO⟩ := SentenceInf.realize_inf.1 <| by
+    simpa only [SentenceInf.realize_def, FormulaInf.realize_def,
+      LHom.realize_onBoundedFormulaInf] using h₁
+  have : M ⊨ Language.order.linearOrderTheory :=
+    Theoryω.model_image_toOmega_iff.1 ((Theoryω.realize_conjunction_iff _).1 hLO)
+  let := Language.order.linearOrderOfModels M
+  have hlt := (realize_definingAxiom_iff _ rfl).1 h₂
+  refine Subrelation.wf (fun {x y} hxy => (realize_ltFormula x y).1 ((hlt ![x, y]).1 ?_))
+    (hσ hσM)
+  simpa only [Matrix.cons_val_fin_one, Matrix.cons_val_zero, Matrix.cons_val_one] using hxy
+
+end Order
+
+/-- **Undefinability of well-ordering for the language of orders.** No `L_{ω₁ω}` sentence in the
+language of orders holds in a countable nonempty linear order in `Type w` exactly when that order
+is well-founded. It is the counterpart of `wellOrdering_undefinable`, which concerns a symbol
+interpreted as a strict well-order, for the language whose only symbol `≤` is interpreted
+reflexively.
+
+By `TauCeti.exists_sentenceω_realize_iff_exists_lt_nonempty_orderIso`, the well-orders of type
+below each countable ordinal do form a definable class; so the countable well-orders are a union
+of `ω₁` definable classes, one for each countable ordinal, that is not itself definable. -/
+theorem wellFoundedLT_undefinable :
+    ¬∃ σ : Language.order.Sentenceω, ∀ (N : Type w) [Language.order.Structure N] [LinearOrder N]
+      [Language.order.OrderedStructure N] [Countable N] [Nonempty N],
+      SentenceInf.Realize σ N ↔ WellFoundedLT N := by
+  rintro ⟨σ, hσ⟩
+  obtain ⟨α, hα, hbound⟩ := Sentenceω.wellFounded_boundedness.{_, _, w, w}
+    (φ := ltSentence σ) (lt := ltSymb) fun M _ _ _ h =>
+      wellFounded_of_realize_ltSentence (fun h => (hσ M).1 h) h
+  -- `α + 1`, with its canonical expansion, satisfies `ltSentence σ` and has an `α`-chain
+  let M := (α + 1).ToType
+  let := orderStructure M
+  let := morleyExpansion {⟨2, ltFormula⟩} M
+  have : Countable M :=
+    Cardinal.countable_toType_of_lt_omega_one ((Cardinal.isSuccLimit_omega 1).add_one_lt hα)
+  have hne : Nonempty M := nonempty_toType_iff.2 (by simp)
+  let f : α.ToType → M := fun a => ToType.mk
+    ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le (Order.le_succ α)⟩
+  exact hbound M _ hne (realize_ltSentence ((hσ M).2 inferInstance)) f
+    (relChain_iff.2 fun x y hxy => ((morleyExpansion_relMap_morleyRel rfl _).trans
+      (realize_ltFormula _ _)).2 (ToType.mk.strictMono
+        (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy))))
 
 end FirstOrder.Language
