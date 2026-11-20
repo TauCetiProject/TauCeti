@@ -123,4 +123,18 @@ lemma extToHomology_coefficient_naturality {Z : C} (g : Y ⟶ Z) (i j : α)
   apply extToHomology_extClass_comp_mk₀
   rw [X.iCycles_cyclesMap_linearYonedaObjMap_apply k, hφ, Category.assoc]
 
+/-- For a fixed choice of cycle retractions on `X`, the splitting
+`TauCeti.ChainComplex.universalCoefficientEquiv` commutes with postcomposition by a coefficient
+morphism `g : Y ⟶ Z`. -/
+lemma universalCoefficientEquiv_coefficient_naturality {Z : C} (g : Y ⟶ Z) {i j : α}
+    (hij : j + 1 = i) [Projective (X.cycles j)] [IsSplitMono (X.iCycles j)]
+    [IsSplitMono (X.iCycles i)] (x : (X.linearYonedaObj k Y).homology i) :
+    universalCoefficientEquiv.{w} k X Z hij (homologyMap (X.linearYonedaObjMap k g) i x) =
+      ((universalCoefficientEquiv.{w} k X Y hij x).1.comp (Ext.mk₀ g) (add_zero 1),
+        (universalCoefficientEquiv.{w} k X Y hij x).2 ≫ g) := by
+  apply (universalCoefficientEquiv.{w} k X Z hij).symm.injective
+  rw [LinearEquiv.symm_apply_apply, universalCoefficientEquiv_symm_apply,
+    extToHomology_coefficient_naturality, ← kroneckerSection_coefficient_naturality,
+    ← map_add, ← universalCoefficientEquiv_symm_apply hij, LinearEquiv.symm_apply_apply]
+
 end TauCeti.ChainComplex
