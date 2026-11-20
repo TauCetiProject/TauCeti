@@ -19,11 +19,13 @@ of its denominator with `n`. Annihilation follows either from divisibility by th
 order or, by Lagrange's theorem, from divisibility by the native group's cardinality.
 For an elliptic model the latter is the projective point count.
 
-Only a vanishing cross difference with the coordinate pair is needed. The reduced raw
-pair may even be zero: annihilation still forces its denominator to vanish. Consequently
-these implications do not require `B ≠ 0`, ellipticity, or an odd characteristic. They
-apply to any pair with the stated coordinate relation, not just outputs of a particular
-formula.
+Only a vanishing cross difference with the coordinate pair is needed in the forward
+direction. The reduced raw pair may even be zero: annihilation still forces its
+denominator to vanish. Consequently these implications do not require `B ≠ 0`,
+ellipticity, or an odd characteristic. They apply to any pair with the stated
+coordinate relation, not just outputs of a particular formula. Conversely, when `B ≠ 0`
+and the reduced raw pair is nonzero, `p` divides the denominator gcd if and only if
+`addOrderOf P ∣ m`.
 
 Divisibility by `p` alone need not give a proper factor: every prime divisor might divide
 the gcd. For positive `n`, a nonzero reduction of the denominator modulo another divisor
@@ -54,6 +56,25 @@ theorem prime_dvd_gcd_of_addOrderOf_dvd (hpn : p ∣ n)
   have hz : ZMod.castHom hpn (ZMod p) R.z = 0 := by
     simpa using hR
   exact (R.z.dvd_gcd_val_iff_castHom_eq_zero hpn).mpr hz
+
+/-- When `B ≠ 0` and a raw pair reduces modulo `p` to a nonzero representative of
+`coordinates A B (m • P)`, `p` divides `gcd(R.z.val, n)` if and only if `addOrderOf P ∣ m`. -/
+theorem prime_dvd_gcd_iff_addOrderOf_dvd (hB : B ≠ 0) (hpn : p ∣ n)
+    (P : (model A B).toAffine.Point) (R : Pair (ZMod n))
+    (hR₀ : R.map (ZMod.castHom hpn (ZMod p)) ≠ 0)
+    (hR : (R.map (ZMod.castHom hpn (ZMod p))).cross (coordinates A B (m • P)) = 0) :
+    p ∣ Nat.gcd R.z.val n ↔ addOrderOf P ∣ m := by
+  refine ⟨fun hp ↦ ?_, fun hm ↦ prime_dvd_gcd_of_addOrderOf_dvd hpn P R hm hR⟩
+  have hz : ZMod.castHom hpn (ZMod p) R.z = 0 :=
+    (R.z.dvd_gcd_val_iff_castHom_eq_zero hpn).mp hp
+  have h0 : (coordinates A B 0).cross (R.map (ZMod.castHom hpn (ZMod p))) = 0 := by
+    rw [coordinates_zero, Pair.cross_def, Pair.map_z, hz]
+    ring
+  have h0m : (coordinates A B 0).cross (coordinates A B (m • P)) = 0 :=
+    Pair.cross_eq_zero_trans hR₀ h0 hR
+  rcases (cross_coordinates_eq_zero_iff hB).mp h0m with h | h
+  · exact addOrderOf_dvd_iff_nsmul_eq_zero.mpr h.symm
+  · exact addOrderOf_dvd_iff_nsmul_eq_zero.mpr (neg_eq_zero.mp h.symm)
 
 /-- **Stage-1 detection by the native group cardinality.** A multiple of the group order
 annihilates every point, so a raw pair representing that multiple modulo `p` has denominator

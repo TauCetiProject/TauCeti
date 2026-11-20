@@ -104,6 +104,15 @@ lemma isZero_filtrationAbutmentFiltration {a : ℤ} (ha : F a = ⊥) (n : ℤ) :
   Abelian.SpectralObject.isZero_abutmentFiltration _
     (isZero_spectralObject_H_bot F hF a n ((F a).isZero_homology_of_eq_bot ha n))
 
+/-- The `s`th piece of the filtration of `H^n(K)` vanishes when the stage `F_s` vanishes in
+degree `n`: a filtration bounded below in degree `n` induces a filtration of `H^n(K)` bounded
+below. -/
+lemma isZero_filtrationAbutmentFiltration_of_isZero_X {s n : ℤ}
+    (hs : IsZero ((F s : CochainComplex C ℤ).X n)) :
+    IsZero ((spectralObject (filtrationFunctor F hF)).abutmentFiltration s n) :=
+  Abelian.SpectralObject.isZero_abutmentFiltration _
+    (isZero_spectralObject_H_bot_of_isZero_X F hF hs le_rfl)
+
 /-- The `b`th piece of the filtration of `H^n(K)` is everything when `F_b = ⊤`. -/
 lemma isIso_filtrationAbutmentFiltrationι {b : ℤ} (hb : F b = ⊤) (n : ℤ) :
     IsIso ((spectralObject (filtrationFunctor F hF)).abutmentFiltrationι b n) :=
