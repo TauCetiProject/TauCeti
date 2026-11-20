@@ -10,10 +10,12 @@ public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 
 /-!
 # Real powers of the norm
@@ -44,6 +46,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 
 * `hasFDerivAt_norm_rpow_of_ne`: the derivative of an arbitrary real power away from zero.
 * `norm_fderiv_norm_rpow_of_ne`: that derivative has norm `|p| ‖x‖ ^ (p - 1)`.
+* `gradient_norm_rpow_of_ne`: the corresponding gradient `p ‖x‖ ^ (p - 2) x`.
+* `tendsto_norm_sub_rpow_nhdsNE_atTop`: for `p < 0`, `‖x - c‖ ^ p` tends to infinity at `c`.
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `DifferentiableAt.hasFDerivAt_comp_norm`, `ContDiff.comp_norm`: the derivative and the
   smoothness of a radial function `x ↦ ψ ‖x‖` when `ψ` vanishes near `0`.
@@ -63,6 +67,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
   `Δ (⟪a, x⟫ ‖x‖^p) = p (p + dim E) ⟪a, x⟫ ‖x‖^(p-2)` away from zero.
 * `harmonicAt_norm_rpow_two_sub_finrank`, `harmonicAt_inner_mul_norm_rpow_neg_finrank`: the
   harmonic radial and dipole powers.
+* `harmonicAt_norm_sub_rpow_two_sub_finrank`: the fundamental solution `‖x - c‖ ^ (2 - dim E)`
+  with pole `c` is harmonic away from `c`.
 * `hasFDerivAt_log_norm_of_ne`, `laplacian_log_norm_of_ne`: the derivative and the Laplacian of
   `x ↦ log ‖x‖` away from zero.
 * `norm_gradient_comp_log_norm_sub_log_norm`, `laplacian_comp_log_norm_sub_log_norm`: the norm of
@@ -139,6 +145,20 @@ theorem hasFDerivAt_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
 theorem fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
     fderiv ℝ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • innerSL ℝ x :=
   (hasFDerivAt_norm_rpow_of_ne p hx).fderiv
+
+omit [InnerProductSpace ℝ E] in
+/-- For a negative exponent `p`, `‖x - c‖ ^ p` tends to infinity as `x` tends to `c`. -/
+theorem tendsto_norm_sub_rpow_nhdsNE_atTop {p : ℝ} (hp : p < 0) (c : E) :
+    Tendsto (fun y : E ↦ ‖y - c‖ ^ p) (𝓝[≠] c) atTop :=
+  (tendsto_rpow_neg_nhdsGT_zero hp).comp (tendsto_norm_sub_self_nhdsNE c)
+
+/-- Away from the origin, the gradient of `x ↦ ‖x‖ ^ p` is `p ‖x‖ ^ (p - 2) x`. -/
+theorem gradient_norm_rpow_of_ne [CompleteSpace E] (p : ℝ) {x : E} (hx : x ≠ 0) :
+    ∇ (fun y : E ↦ ‖y‖ ^ p) x = (p * ‖x‖ ^ (p - 2)) • x := by
+  refine (hasGradientAt_iff_hasFDerivAt.2 ?_).gradient
+  convert hasFDerivAt_norm_rpow_of_ne p hx using 1
+  ext v
+  simp
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` has norm `|p| ‖x‖ ^ (p - 1)`. -/
 theorem norm_fderiv_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
@@ -580,6 +600,16 @@ theorem harmonicAt_norm_rpow_two_sub_finrank {x : E} (hx : x ≠ 0) :
   filter_upwards [eventually_ne_nhds hx] with y hy
   rw [laplacian_norm_rpow_of_ne _ hy, Pi.zero_apply]
   ring
+
+/-- Away from `c`, the fundamental solution `x ↦ ‖x - c‖ ^ (2 - dim E)` with pole `c` is
+harmonic. -/
+theorem harmonicAt_norm_sub_rpow_two_sub_finrank {c x : E} (hx : x ≠ c) :
+    HarmonicAt (fun y : E ↦ ‖y - c‖ ^ (2 - Module.finrank ℝ E : ℝ)) x := by
+  have h := (harmonicAt_comp_add_right_iff (f := fun y : E ↦ ‖y‖ ^ (2 - Module.finrank ℝ E : ℝ))
+    (a := -c) (x := x)).2 (by
+      rw [← sub_eq_add_neg]
+      exact harmonicAt_norm_rpow_two_sub_finrank (sub_ne_zero.2 hx))
+  simpa only [← sub_eq_add_neg] using h
 
 /-- Away from the origin, the dipole `x ↦ ⟪a, x⟫ ‖x‖ ^ (-dim E)` is harmonic. -/
 theorem harmonicAt_inner_mul_norm_rpow_neg_finrank (a : E) {x : E} (hx : x ≠ 0) :

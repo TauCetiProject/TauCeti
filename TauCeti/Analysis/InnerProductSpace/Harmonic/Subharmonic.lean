@@ -61,6 +61,7 @@ family with upper barriers.
 * `TauCeti.eqOn_closure_of_laplacian_eq_of_eqOn_frontier`: uniqueness for Poisson's equation on a
   bounded open set.
 * `TauCeti.SubharmonicOn.le_of_le_sphere`: the comparison principle on a ball.
+* `TauCeti.SubharmonicOn.le_of_le_sphere_of_le_sphere`: the comparison principle on an annulus.
 * `TauCeti.SubharmonicOn.le_of_le_frontier_of_subharmonicOn_neg`: the comparison principle
   between a subharmonic and a superharmonic function on a bounded open set.
 
@@ -294,6 +295,33 @@ theorem SubharmonicOn.le_of_le_sphere {c : E} {r : ℝ} (hu : SubharmonicOn u (b
   rw [← closure_ball c hr.ne'] at huc hhc ⊢
   exact hu.le_of_le_frontier isOpen_ball isBounded_ball huc hh hhc
     (by rwa [frontier_ball c hr.ne'])
+
+/-- **The comparison principle on an annulus.** A function subharmonic on the open annulus
+`ball c ρ \ closedBall c δ` and continuous on the closed annulus `closedBall c ρ \ ball c δ` lies
+below every function harmonic on the open annulus and continuous on the closed one that dominates
+it on both boundary spheres `sphere c ρ` and `sphere c δ`. -/
+theorem SubharmonicOn.le_of_le_sphere_of_le_sphere {c : E} {δ ρ : ℝ}
+    (hu : SubharmonicOn u (ball c ρ \ closedBall c δ))
+    (huc : ContinuousOn u (closedBall c ρ \ ball c δ))
+    (hh : HarmonicOnNhd h (ball c ρ \ closedBall c δ))
+    (hhc : ContinuousOn h (closedBall c ρ \ ball c δ))
+    (hρ : ∀ x ∈ sphere c ρ, u x ≤ h x) (hδ : ∀ x ∈ sphere c δ, u x ≤ h x) :
+    ∀ x ∈ ball c ρ \ closedBall c δ, u x ≤ h x := by
+  set A := ball c ρ \ closedBall c δ
+  have hA : IsOpen A := isOpen_ball.sdiff isClosed_closedBall
+  have hcl : closure A ⊆ closedBall c ρ \ ball c δ :=
+    closure_minimal (sdiff_subset_sdiff ball_subset_closedBall ball_subset_closedBall)
+      (isClosed_closedBall.sdiff isOpen_ball)
+  refine fun x hx ↦ hu.le_of_le_frontier hA (isBounded_ball.subset sdiff_subset) (huc.mono hcl) hh
+    (hhc.mono hcl) (fun z hz ↦ ?_) x (subset_closure hx)
+  -- A frontier point of the annulus lies on one of its two boundary spheres.
+  rw [hA.frontier_eq] at hz
+  obtain ⟨hzρ, hzδ⟩ := hcl hz.1
+  have hzA := hz.2
+  simp only [A, Set.mem_sdiff, mem_ball, mem_closedBall, not_and, not_le, not_lt] at hzρ hzδ hzA
+  rcases hzρ.lt_or_eq with hlt | heq
+  · exact hδ z (mem_sphere.2 (le_antisymm (hzA hlt) hzδ))
+  · exact hρ z (mem_sphere.2 heq)
 
 /-- If `u` is subharmonic and `-w` is subharmonic on `ball c r`, both continuous on
 `closedBall c r`, and `u - w` on `sphere c r` is at most its value at the centre, then `u - w` is
