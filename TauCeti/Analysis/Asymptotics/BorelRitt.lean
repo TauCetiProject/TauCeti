@@ -6,10 +6,10 @@ Authors: Bastiaan J Braams
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.SpecificLimits.RCLike
+import TauCeti.Analysis.Complex.SectorBounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
@@ -57,15 +57,6 @@ namespace Asymptotics
 
 /-! ### A function with the zero expansion -/
 
-/-- The real part of the principal fourth root is at least half its modulus. -/
-private lemma norm_rpow_le_two_mul_re_cpow_quarter (z : ℂ) :
-    ‖z‖ ^ (1 / 4 : ℝ) ≤ 2 * (z ^ (1 / 4 : ℂ)).re := by
-  have h := TauCeti.cos_mul_norm_rpow_le_re_cpow (z := z) (y := 1 / 4)
-    (by rw [abs_of_pos (by norm_num)]; norm_num)
-  rw [one_div_mul_eq_div, Real.cos_pi_div_four] at h
-  push_cast at h
-  nlinarith [Real.one_lt_sqrt_two, Real.rpow_nonneg (norm_nonneg z) (1 / 4 : ℝ)]
-
 /-- For `c > 0`, `‖exp(-c z^{1/4})‖ ≤ (4N)! (2/c)^{4N} |z|⁻ᴺ`. -/
 theorem norm_cexp_neg_mul_cpow_quarter_le {c : ℝ} (hc : 0 < c) (N : ℕ) {z : ℂ} (hz : z ≠ 0) :
     ‖cexp (-(c * z ^ (1 / 4 : ℂ)))‖ ≤ (4 * N).factorial * (2 / c) ^ (4 * N) * (‖z‖ ^ N)⁻¹ := by
@@ -74,7 +65,7 @@ theorem norm_cexp_neg_mul_cpow_quarter_le {c : ℝ} (hc : 0 < c) (N : ℕ) {z : 
   have h4 : t ^ (4 * N) = ‖z‖ ^ N := by
     rw [pow_mul, ht_def, ← Real.rpow_mul_natCast (norm_nonneg z)]
     norm_num
-  have hre := norm_rpow_le_two_mul_re_cpow_quarter z
+  have hre := TauCeti.norm_rpow_le_two_mul_re_cpow_quarter (z := z)
   have hexp := Real.pow_div_factorial_le_exp (c / 2 * t) (by positivity) (4 * N)
   rw [Complex.norm_exp, neg_re, re_ofReal_mul]
   calc Real.exp (-(c * (z ^ (1 / 4 : ℂ)).re)) ≤ Real.exp (-(c / 2 * t)) :=
@@ -134,7 +125,7 @@ private lemma norm_borelRittTerm_le (a : ℕ → ℂ) (k : ℕ) (z : ℂ) :
   set ζ : ℂ := b * z ^ (1 / 4 : ℂ)
   have hre : 0 ≤ ζ.re := by
     rw [re_ofReal_mul]
-    nlinarith [norm_rpow_le_two_mul_re_cpow_quarter z,
+    nlinarith [TauCeti.norm_rpow_le_two_mul_re_cpow_quarter (z := z),
       Real.rpow_nonneg (norm_nonneg z) (1 / 4 : ℝ)]
   have hζ : ‖ζ‖ = b * ‖z‖ ^ (1 / 4 : ℝ) := by
     have hq : (1 / 4 : ℂ) = ((1 / 4 : ℝ) : ℂ) := by norm_num
@@ -155,7 +146,7 @@ private lemma norm_borelRittTerm_le (a : ℕ → ℂ) (k : ℕ) (z : ℂ) :
     _ ≤ 2 * (1 / 2) ^ (k + 1) * (‖z‖ ^ (1 / 4 : ℝ) * (‖z‖ ^ (k + 1))⁻¹) := by gcongr
     _ = _ := by rw [pow_succ]; ring
 
-/-- For `|z| ≥ 1` and `m ≤ k + 1`, the damped term of index `k + 1` is at most `2⁻ᵏ |z|⁻ᵐ`. -/
+/-- For `|z| ≥ 1` and `m ≤ k`, the damped term of index `k + 1` is at most `2⁻ᵏ |z|⁻ᵐ`. -/
 private lemma norm_borelRittTerm_le_pow (a : ℕ → ℂ) {k m : ℕ} (hm : m ≤ k) {z : ℂ}
     (hz : 1 ≤ ‖z‖) : ‖borelRittTerm a (k + 1) z‖ ≤ (1 / 2) ^ k * (‖z‖ ^ m)⁻¹ := by
   refine (norm_borelRittTerm_le a k z).trans (mul_le_mul_of_nonneg_left ?_ (by positivity))
@@ -252,13 +243,6 @@ theorem exists_hasAsymptoticExpansion_cobounded (a : ℕ → ℂ) :
       HasAsymptoticExpansion (cobounded ℂ) (fun n z => (z ^ n)⁻¹) a f :=
   ⟨borelRitt a, differentiableOn_borelRitt a, hasAsymptoticExpansion_borelRitt a⟩
 
-/-- The open sector `{1 < |z|, |ph z| < θ}` with `θ ≤ π` avoids the negative real axis. -/
-private lemma sector_subset_slitPlane {θ : ℝ} (hθπ : θ ≤ π) :
-    {z : ℂ | 1 < ‖z‖ ∧ |arg z| < θ} ⊆ {z | 1 < ‖z‖} ∩ slitPlane := fun z hz =>
-  ⟨hz.1, mem_slitPlane_iff_arg.2 ⟨fun h => by
-    have := hz.2; rw [h, abs_of_pos Real.pi_pos] at this; linarith,
-    norm_pos_iff.1 (by linarith [hz.1])⟩⟩
-
 /-- **Borel–Ritt** in a sector (DLMF §2.1(iii)): for `θ ≤ π`, every sequence `a` is the
 expansion `∑ aₛ z⁻ˢ` along `cobounded ℂ ⊓ 𝓟 {|ph z| ≤ θ}` of a function holomorphic in
 `{1 < |z|, |ph z| < θ}`. -/
@@ -267,7 +251,8 @@ theorem exists_hasAsymptoticExpansion_sector (a : ℕ → ℂ) {θ : ℝ} (hθπ
       HasAsymptoticExpansion (cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ})
         (fun n z => (z ^ n)⁻¹) a f := by
   obtain ⟨f, hfd, hf⟩ := exists_hasAsymptoticExpansion_cobounded a
-  exact ⟨f, hfd.mono (sector_subset_slitPlane hθπ), hf.mono inf_le_left⟩
+  refine ⟨f, hfd.mono fun z hz => ⟨hz.1, ?_⟩, hf.mono inf_le_left⟩
+  exact mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθπ) (norm_pos_iff.1 (by linarith [hz.1]))
 
 /-- Non-uniqueness in Borel–Ritt (DLMF §2.1(iii), 2.1.17): for `θ ≤ π`, every sequence `a` is
 the expansion in the sector of two holomorphic functions that differ at every point. -/
@@ -280,9 +265,9 @@ theorem exists_ne_hasAsymptoticExpansion_sector (a : ℕ → ℂ) {θ : ℝ} (h�
   have he := (hasAsymptoticExpansion_cexp_neg_mul_cpow_quarter one_pos).mono
     (inf_le_left : cobounded ℂ ⊓ 𝓟 {z | |arg z| ≤ θ} ≤ _)
   refine ⟨f, fun z => f z + cexp (-((1 : ℝ) * z ^ (1 / 4 : ℂ))), hfd,
-    hfd.add ((differentiableOn_cexp_neg_mul_cpow_quarter.mono
-      (sector_subset_slitPlane hθπ |>.trans Set.inter_subset_right))), fun z h => ?_, hf,
-    (hf.add he).congr_coeff fun n => add_zero _⟩
+    hfd.add (differentiableOn_cexp_neg_mul_cpow_quarter.mono fun z hz =>
+      mem_slitPlane_of_abs_arg_lt (hz.2.trans_le hθπ) (norm_pos_iff.1 (by linarith [hz.1]))),
+    fun z h => ?_, hf, (hf.add he).congr_coeff fun n => add_zero _⟩
   exact Complex.exp_ne_zero _ (by linear_combination -h)
 
 /-- **Borel–Ritt** on the positive real axis (DLMF §2.1(iii)): every sequence `a` is the
