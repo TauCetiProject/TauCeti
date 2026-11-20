@@ -61,8 +61,9 @@ to `p`.
   (`CategoryTheory.SimplicialObject.piAddEquivAlternatingFaceMapComplexHomology_mk`) and its
   naturality (`CategoryTheory.SimplicialObject.piAddEquivAlternatingFaceMapComplexHomology_map`).
 * `CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology`: the isomorphism
-  `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))` and its naturality
-  (`CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology_map`).
+  `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))`, with its value on a class represented by a normalized cycle
+  (`CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology_mk`) and its
+  naturality (`CategoryTheory.SimplicialObject.piAddEquivNormalizedMooreComplexHomology_map`).
 * `CategoryTheory.SimplicialObject.piZeroEquivAlternatingFaceMapComplexHomology`,
   `CategoryTheory.SimplicialObject.piZeroEquivNormalizedMooreComplexHomology`: the bijections in
   degree zero, with their naturality.
@@ -521,6 +522,23 @@ lemma homologyMap_inclusionOfMooreComplexMap_piAddEquivNormalizedMooreComplexHom
       piAddEquivAlternatingFaceMapComplexHomology G n a :=
   homologyMap_inclusionOfMooreComplexMap_toNormalizedMooreComplexHomology _
 
+/-- The isomorphism `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))` sends the class of a pointed simplex
+represented by a normalized cycle to the homology class of that cycle. -/
+lemma piAddEquivNormalizedMooreComplexHomology_mk
+    (p : SSet.PtSimplex (G ⋙ forget (ModuleCat R)) (n + 1) (0 : G _⦋0⦌))
+    (c : ((normalizedMooreComplex (ModuleCat R)).obj G).cycles (n + 1))
+    (hc : (inclusionOfMooreComplexMap G).f (n + 1)
+        (((normalizedMooreComplex (ModuleCat R)).obj G).iCycles (n + 1) c) =
+      SSet.yonedaEquiv p.map) :
+    piAddEquivNormalizedMooreComplexHomology G n (.ofMul (KanComplex.π.mk p)) =
+      ((normalizedMooreComplex (ModuleCat R)).obj G).homologyπ (n + 1) c := by
+  apply homologyMap_inclusionOfMooreComplexMap_injective
+  rw [homologyMap_inclusionOfMooreComplexMap_piAddEquivNormalizedMooreComplexHomology,
+    piAddEquivAlternatingFaceMapComplexHomology_mk p
+      (HomologicalComplex.cyclesMap (inclusionOfMooreComplexMap G) (n + 1) c)
+      (by simpa only [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i] using hc),
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
+
 /-- The isomorphism `π_{n+1}(G, 0) ≃+ H_{n+1}(N(G))` is natural in the simplicial module `G`. -/
 lemma piAddEquivNormalizedMooreComplexHomology_map {G' : SimplicialObject (ModuleCat.{u} R)}
     (f : G ⟶ G') (a : KanComplex.π (n + 1) (G ⋙ forget (ModuleCat R)) (0 : G _⦋0⦌)) :
@@ -550,6 +568,23 @@ lemma homologyMap_inclusionOfMooreComplexMap_piZeroEquivNormalizedMooreComplexHo
         (piZeroEquivNormalizedMooreComplexHomology G a) =
       piZeroEquivAlternatingFaceMapComplexHomology G a :=
   homologyMap_inclusionOfMooreComplexMap_toNormalizedMooreComplexHomology _
+
+/-- The isomorphism `π₀(G, 0) ≃ H₀(N(G))` sends the class of a vertex represented by a
+normalized cycle to the homology class of that cycle. -/
+lemma piZeroEquivNormalizedMooreComplexHomology_mk
+    (p : SSet.PtSimplex (G ⋙ forget (ModuleCat R)) 0 (0 : G _⦋0⦌))
+    (c : ((normalizedMooreComplex (ModuleCat R)).obj G).cycles 0)
+    (hc : (inclusionOfMooreComplexMap G).f 0
+        (((normalizedMooreComplex (ModuleCat R)).obj G).iCycles 0 c) =
+      SSet.yonedaEquiv p.map) :
+    piZeroEquivNormalizedMooreComplexHomology G (KanComplex.π.mk p) =
+      ((normalizedMooreComplex (ModuleCat R)).obj G).homologyπ 0 c := by
+  apply homologyMap_inclusionOfMooreComplexMap_injective
+  rw [homologyMap_inclusionOfMooreComplexMap_piZeroEquivNormalizedMooreComplexHomology,
+    piZeroEquivAlternatingFaceMapComplexHomology_mk p
+      (HomologicalComplex.cyclesMap (inclusionOfMooreComplexMap G) 0 c)
+      (by simpa only [← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i] using hc),
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
 
 /-- The isomorphism `π₀(G, 0) ≃ H₀(N(G))` is natural in the simplicial module `G`. -/
 lemma piZeroEquivNormalizedMooreComplexHomology_map {G' : SimplicialObject (ModuleCat.{u} R)}
