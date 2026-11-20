@@ -121,7 +121,8 @@ private theorem mem_boundary_iff_transHomeomorph_prodUnique :
     ∀ w ∈ (e.transHomeomorph (Homeomorph.prodUnique _ Unit).symm).source,
       w ∈ (𝓡∂ (n + 1)).boundary M ↔
         (e.transHomeomorph (Homeomorph.prodUnique _ Unit).symm w).1.1 0 = 0 :=
-  fun _ hw ↦ ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hw
+  fun _ hw ↦ by
+    simpa using ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (by simpa using hw)
 
 /-- The boundary chart attached to an ambient chart `e` of `M`: read a boundary point through `e`
 and delete its (vanishing) zeroth coordinate. This is the hyperplane chart

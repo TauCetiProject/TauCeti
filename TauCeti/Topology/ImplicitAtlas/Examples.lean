@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Geometry.Manifold.Boundary.Charts
 import TauCeti.Geometry.Manifold.Boundary.Invariance
+import TauCeti.Topology.Homeomorph.Prod
 
 /-!
 # Examples of implicit atlases
@@ -163,8 +164,7 @@ noncomputable def ofChartedSpace :
     refine Or.inr ⟨n, by simp [Finset.eq_empty_of_isEmpty I],
       (chartAt (EuclideanHalfSpace (n + 1)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
       by simp, fun y hy ↦ ?_, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
-    rw [OpenPartialHomeomorph.transHomeomorph_source] at hy
-    exact ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hy
+    simpa using ModelWithCorners.mem_boundary_euclideanHalfSpace_iff (by simpa using hy)
 
 /-- The boundaries of the thickenings of the manifold atlas with boundary are the manifold
 boundary. -/
