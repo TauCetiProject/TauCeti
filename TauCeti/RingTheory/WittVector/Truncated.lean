@@ -6,20 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.WittVector.Truncated
-public import TauCeti.RingTheory.DeltaRing.Basic
 public import TauCeti.RingTheory.WittVector.Units
 
 /-!
-# The first two coordinates of Witt vectors
+# The first two coordinates of truncated Witt vectors
 
 Let `p` be a prime and `R` any commutative ring (with no torsion hypothesis). The first
 coordinates of a sum of Witt vectors are `(x + y)₀ = x₀ + y₀` and
-`(x + y)₁ = x₁ + y₁ + C_p(x₀, y₀)`, where `C_p = TauCeti.DeltaRing.addCorrection p` is the
-integral polynomial `(X ^ p + Y ^ p - (X + Y) ^ p) / p`; together with the product formula
+`(x + y)₁ = x₁ + y₁ + C_p(x₀, y₀)` (`WittVector.add_coeff_one`), where
+`C_p = TauCeti.DeltaRing.addCorrection p` is the integral polynomial
+`(X ^ p + Y ^ p - (X + Y) ^ p) / p`; together with the product formula
 `(x * y)₁ = x₀ ^ p * y₁ + y₀ ^ p * x₁ + p * x₁ * y₁` (`WittVector.mul_coeff_one`) these are the
-sum and product rules of a `δ`-structure. The sum formula is computed from Mathlib's universal
-Witt addition polynomial `WittVector.wittAdd p 1`, cancelling `p` in the `p`-torsion-free ring
-`ℤ[X₀, X₁, Y₀, Y₁]` before evaluating in `R`.
+sum and product rules of a `δ`-structure.
 
 We transfer these formulas to the truncated Witt vectors `TruncatedWittVector p n R` of length
 at least two, and show that a length-two Witt vector `(z₀, z₁)` is a unit exactly when `z₀` and
@@ -27,8 +25,6 @@ its first ghost component `z₀ ^ p + p * z₁` are units.
 
 ## Main results
 
-* `WittVector.wittAdd_one`, `WittVector.add_coeff_one`: the first coordinate of a sum.
-* `WittVector.ghostComponent_one`: the first ghost component is `x₀ ^ p + p * x₁`.
 * `TruncatedWittVector.add_coeff_one`, `TruncatedWittVector.mul_coeff_one`: the first coordinate
   of a sum and a product of truncated Witt vectors of length at least two.
 * `TruncatedWittVector.isUnit_iff_isUnit_coeff_zero_and_ghost_one`: the units of the length-two
@@ -41,41 +37,6 @@ its first ghost component `z₀ ^ p + p * z₁` are units.
 -/
 
 public section
-
-open MvPolynomial
-
-namespace WittVector
-
-variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R]
-
-/-- The Witt polynomial computing the first coordinate of a sum:
-`(x + y)₁ = x₁ + y₁ + C_p(x₀, y₀)`. -/
-theorem wittAdd_one :
-    wittAdd p 1 =
-      X (0, 1) + X (1, 1) + TauCeti.DeltaRing.addCorrection p (X (0, 0)) (X (1, 0)) := by
-  have h := wittStructureInt_prop p (X 0 + X 1 : MvPolynomial (Fin 2) ℤ) 1
-  simp only [wittPolynomial_one, map_add, map_mul, map_pow, bind₁_X_right, algHom_C,
-    rename_X, ← wittAdd.eq_1] at h
-  have hc := TauCeti.DeltaRing.natCast_mul_addCorrection (p := p)
-    (X (0, 0) : MvPolynomial (Fin 2 × ℕ) ℤ) (X (1, 0))
-  rw [wittAdd_zero] at h
-  apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero : (p : MvPolynomial _ ℤ) ≠ 0)
-  simp only [eq_intCast, Int.cast_natCast] at h
-  linear_combination h - hc
-
-/-- The first coordinate of a sum of Witt vectors is `x₁ + y₁ + C_p(x₀, y₀)`, where
-`C_p = TauCeti.DeltaRing.addCorrection p` is the polynomial `(X ^ p + Y ^ p - (X + Y) ^ p) / p`. -/
-theorem add_coeff_one (x y : WittVector p R) :
-    (x + y).coeff 1 =
-      x.coeff 1 + y.coeff 1 + TauCeti.DeltaRing.addCorrection p (x.coeff 0) (y.coeff 0) := by
-  simp [add_coeff, wittAdd_one, peval, TauCeti.DeltaRing.addCorrection_def]
-
-/-- The first ghost component of a Witt vector is `x₀ ^ p + p * x₁`. -/
-theorem ghostComponent_one (x : WittVector p R) :
-    ghostComponent 1 x = x.coeff 0 ^ p + p * x.coeff 1 := by
-  simp [ghostComponent_apply, add_comm]
-
-end WittVector
 
 namespace TruncatedWittVector
 

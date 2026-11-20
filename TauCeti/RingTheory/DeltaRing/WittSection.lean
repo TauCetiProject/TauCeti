@@ -112,6 +112,7 @@ def ofWittSection (s : A →+* TruncatedWittVector p 2 A) (hs : ∀ x, (s x).coe
   delta_mul x y := by simp [TruncatedWittVector.mul_coeff_one, hs]
 
 /-- The `δ`-operation of `ofWittSection s hs` is the first coordinate of `s`. -/
+@[simp]
 theorem delta_ofWittSection (s : A →+* TruncatedWittVector p 2 A)
     (hs : ∀ x, (s x).coeff 0 = x) (x : A) :
     @delta p A _ (ofWittSection s hs) x = (s x).coeff 1 :=
