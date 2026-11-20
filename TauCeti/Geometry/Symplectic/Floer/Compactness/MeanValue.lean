@@ -37,7 +37,9 @@ centre. Contrapositively, a disc on which `r² e(u)` is large at the centre carr
 amount of energy: this is the lower bound for the energy concentrating at a point where the energy
 densities of a sequence of solutions blow up, once the discs about the centres chosen by
 `TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv` are known to lie in a
-chart. That localization of small discs into charts is not treated here.
+chart. That localization of small discs into charts, and the resulting energy concentration and
+compactness off finitely many bubbling points, are in
+`TauCeti.Geometry.Symplectic.Floer.Compactness.Bubbling`.
 
 ## References
 
