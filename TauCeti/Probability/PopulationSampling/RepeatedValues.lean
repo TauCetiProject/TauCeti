@@ -60,25 +60,6 @@ open scoped ENNReal
 
 namespace TauCeti.Probability
 
-section Arithmetic
-
-/-- For `2 ≤ m ≤ n`, the correction `t * min p (1 - p)` separating the repeated-value error from
-the collision probability `1 - p` is positive. -/
-private theorem descFactorial_div_mul_min_pos {m n : ℕ} (hm : 2 ≤ m) (hmn : m ≤ n) :
-    0 < (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
-      min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
-  have hn : 0 < n := by omega
-  have hpow : (0 : ℝ) < (n : ℝ) ^ m := by positivity
-  have hd : (0 : ℝ) < n.descFactorial m := by exact_mod_cast Nat.descFactorial_pos.2 hmn
-  have hp1 : (n.descFactorial m / (n : ℝ) ^ m) < 1 :=
-    (div_lt_one hpow).2 (by exact_mod_cast Nat.descFactorial_lt_pow hn.ne' hm)
-  have ht : (0 : ℝ) < m.descFactorial 2 / n.descFactorial 2 :=
-    div_pos (by exact_mod_cast Nat.descFactorial_pos.2 hm)
-      (by exact_mod_cast Nat.descFactorial_pos.2 (hm.trans hmn))
-  exact mul_pos ht (lt_min (div_pos hd hpow) (sub_pos.2 hp1))
-
-end Arithmetic
-
 variable {ι κ α : Type*} [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
   [MeasurableSpace α] {x : κ → α}
 
