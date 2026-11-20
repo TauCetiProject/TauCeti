@@ -699,49 +699,33 @@ theorem exists_spanning_ιMulti_append_sixTerm :
         ∀ z : detLine K A₂, ∃ r : K, z = r • β := by
   have : FiniteDimensional K A₄ := finiteDimensional_of_exact h₃₄
   have : FiniteDimensional K A₆ := Module.Finite.of_surjective f₅ hf₅
-  -- Vectors lifting bases of `range f₂`, `range f₃`, `range f₄` and `A₆`.
-  choose v hv using fun i ↦ f₂.surjective_rangeRestrict (Module.finBasis K (LinearMap.range f₂) i)
-  choose w hw using fun i ↦ f₃.surjective_rangeRestrict (Module.finBasis K (LinearMap.range f₃) i)
+  -- The first four-term sequence `0 → A₁ → A₂ → A₃ → range f₃ → 0` supplies `v`, `w`, `β`, `γ`.
+  obtain ⟨v, w, β, γ, ξ, hβ, hγ, hξ, hspan⟩ :=
+    exists_spanning_ιMulti_append hf₁ h₁₂ h₂₃.rangeRestrict f₃.surjective_rangeRestrict
+  -- Vectors lifting bases of `range f₄` and `A₆`.
   choose x hx using fun i ↦ f₄.surjective_rangeRestrict (Module.finBasis K (LinearMap.range f₄) i)
   choose y hy using fun i ↦ hf₅ (Module.finBasis K A₆ i)
-  have hv' : f₂.rangeRestrict ∘ v = ⇑(Module.finBasis K (LinearMap.range f₂)) := funext hv
-  have hw' : f₃.rangeRestrict ∘ w = ⇑(Module.finBasis K (LinearMap.range f₃)) := funext hw
-  have hx' : f₄.rangeRestrict ∘ x = ⇑(Module.finBasis K (LinearMap.range f₄)) := funext hx
-  have hy' : f₅ ∘ y = ⇑(Module.finBasis K A₆) := funext hy
-  -- The exterior product `δ` spans the line `det A₄`, so it is nonzero.
+  have hx' : exteriorPower.ιMulti K _ (f₄.rangeRestrict ∘ x) ≠ 0 := by
+    rw [show f₄.rangeRestrict ∘ x = ⇑(Module.finBasis K (LinearMap.range f₄)) from funext hx]
+    exact (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K _).linearIndependent
+  obtain ⟨η, hη⟩ := Projective.exists_dual_eq_one K hx'
+  -- The exterior product `δ` is nonzero: `ξ ⊗ η` contracts it to `1`.
   have hδ : detLineShortExactEquiv (LinearMap.range f₃).injective_subtype
       h₃₄.rangeRestrict.range_subtype f₄.surjective_rangeRestrict
       (exteriorPower.ιMulti K _ (f₃.rangeRestrict ∘ w) ⊗ₜ
         exteriorPower.ιMulti K _ (f₄.rangeRestrict ∘ x)) ≠ 0 := by
-    have : Nontrivial (detLine K A₄) :=
-      Module.nontrivial_of_finrank_eq_succ (finrank_detLine K A₄)
-    obtain ⟨z, hz⟩ := exists_ne (0 : detLine K A₄)
-    obtain ⟨r, rfl⟩ := exists_eq_smul_detLineShortExactEquiv
-      (LinearMap.range f₃).injective_subtype h₃₄.rangeRestrict.range_subtype
-      f₄.surjective_rangeRestrict z
-    rw [hw', hx']
-    exact fun h ↦ hz (by rw [h, smul_zero])
+    refine (LinearEquiv.map_ne_zero_iff _).2 fun h ↦ one_ne_zero (α := K) ?_
+    simpa [hξ, hη] using congrArg (TensorProduct.lid K K ∘ TensorProduct.map ξ η) h
   obtain ⟨ψ, hψ⟩ := Projective.exists_dual_eq_one K hδ
   have hω : exteriorPower.ιMulti K _ (f₅ ∘ y) ≠ 0 := by
-    rw [hy']
+    rw [show f₅ ∘ y = ⇑(Module.finBasis K A₆) from funext hy]
     exact (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K A₆).linearIndependent
   obtain ⟨χ, hχ⟩ := Projective.exists_dual_eq_one K hω
-  refine ⟨v, w, x, y,
-    detLineShortExactEquiv hf₁ h₁₂.rangeRestrict f₂.surjective_rangeRestrict
-      (exteriorPower.ιMulti K _ (Module.finBasis K A₁) ⊗ₜ
-        exteriorPower.ιMulti K _ (f₂.rangeRestrict ∘ v)),
-    detLineShortExactEquiv (LinearMap.range f₂).injective_subtype
-      h₂₃.rangeRestrict.range_subtype f₃.surjective_rangeRestrict
-      (exteriorPower.ιMulti K _ (f₂.rangeRestrict ∘ v) ⊗ₜ
-        exteriorPower.ιMulti K _ (f₃.rangeRestrict ∘ w)), _,
+  refine ⟨v, w, x, y, β, γ, _,
     detLineShortExactEquiv (LinearMap.range f₄).injective_subtype h₄₅.range_subtype hf₅
       (exteriorPower.ιMulti K _ (f₄.rangeRestrict ∘ x) ⊗ₜ exteriorPower.ιMulti K _ (f₅ ∘ y)),
-    ψ, χ, coe_detLineShortExactEquiv_tmul _ _ _ _ v, ?_, ?_, ?_, hψ, hχ, ?_⟩
-  · rw [coe_detLineShortExactEquiv_tmul, LinearMap.subtype_comp_rangeRestrict_comp]
-  · rw [coe_detLineShortExactEquiv_tmul, LinearMap.subtype_comp_rangeRestrict_comp]
-  · rw [coe_detLineShortExactEquiv_tmul, LinearMap.subtype_comp_rangeRestrict_comp]
-  · rw [hv']
-    exact exists_eq_smul_detLineShortExactEquiv hf₁ h₁₂.rangeRestrict f₂.surjective_rangeRestrict
+    ψ, χ, hβ, hγ, ?_, ?_, hψ, hχ, hspan⟩ <;>
+  rw [coe_detLineShortExactEquiv_tmul, LinearMap.subtype_comp_rangeRestrict_comp]
 
 section Naturality
 
@@ -793,18 +777,18 @@ private theorem detLineSixTermEquiv_congr_tmul (u : Fin (finrank K A₁) → A�
         (TensorProduct.congr e₁.detLineCongr e₄.detLineCongr.symm.dualMap)
         (TensorProduct.congr e₃.detLineCongr e₆.detLineCongr.symm.dualMap)
         (detLineSixTermEquiv hf₁ h₁₂ h₂₃ h₃₄ h₄₅ hf₅ (β ⊗ₜ φ)) := by
-  have hψ' : (ψ ∘ₗ e₄.detLineCongr.symm.toLinearMap) (e₄.detLineCongr δ) = 1 := by
-    rw [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, hψ]
+  -- The transported functionals `ψ ∘ e₄⁻¹` and `χ ∘ e₆⁻¹` are normalized for the second sequence.
+  have hψ' : e₄.detLineCongr.symm.dualMap ψ (e₄.detLineCongr δ) = 1 := by
+    rw [LinearEquiv.dualMap_apply, LinearEquiv.symm_apply_apply, hψ]
+  have hχ'' : e₆.detLineCongr.symm.dualMap χ (exteriorPower.ιMulti K _ (f₅' ∘ y')) = 1 := by
+    rw [LinearEquiv.dualMap_apply, hχ']
   have hs : e₅.detLineCongr.symm.dualMap φ (e₅.detLineCongr ε) = φ ε := by
     rw [LinearEquiv.dualMap_apply, LinearEquiv.symm_apply_apply]
   rw [TensorProduct.congr_tmul,
     detLineSixTermEquiv_tmul hf₁' h₁₂' h₂₃' h₃₄' h₄₅' hf₅' u' v' w' x' y' hβ' hγ' hδ' hε' _ hψ'
-      (χ := χ ∘ₗ e₆.detLineCongr.symm.toLinearMap) hχ',
+      hχ'',
     detLineSixTermEquiv_tmul hf₁ h₁₂ h₂₃ h₃₄ h₄₅ hf₅ u v w x y hβ hγ hδ hε φ hψ hχ, map_smul, hs,
     hu, TensorProduct.congr_tmul, TensorProduct.congr_tmul, TensorProduct.congr_tmul]
-  -- The functionals `ψ ∘ e₄⁻¹` and `χ ∘ e₆⁻¹` are the dual maps of `e₄⁻¹` and `e₆⁻¹` at `ψ`
-  -- and `χ`, by the definition of `LinearEquiv.dualMap` (`LinearEquiv.dualMap_apply`).
-  congr 3
 
 include hf₁ h₁₂ h₂₃ h₃₄ h₄₅ hf₅ hf₁' h₁₂' h₂₃' h₃₄' h₄₅' hf₅' in
 /-- **Naturality of the six-term isomorphism.** An isomorphism of six-term exact sequences,

@@ -157,7 +157,8 @@ theorem detLineCompEquiv_detLineCongr (hf : f' ∘ₗ eM.toLinearMap = eN.toLine
   -- They commute with the maps of the two sequences.
   have h₁ : Submodule.inclusion (ker_le_ker_comp f' g') ∘ₗ e₁.toLinearMap =
       e₂.toLinearMap ∘ₗ Submodule.inclusion (ker_le_ker_comp f g) := by
-    ext; rfl
+    ext
+    simp [e₁, e₂, LinearEquiv.ofSubmodules_apply]
   have h₂ : f'.kerCompToKer g' ∘ₗ e₂.toLinearMap = e₃.toLinearMap ∘ₗ f.kerCompToKer g := by
     ext z
     simp only [e₂, e₃, comp_apply, LinearEquiv.coe_coe, coe_kerCompToKer_apply,
