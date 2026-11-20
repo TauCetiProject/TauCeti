@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Comma.Over.Basic
 
@@ -29,7 +30,11 @@ slice `Over U` is the instance `P = (Over.forget U).op.toPseudofunctor` of such 
 Finally, `CategoryTheory.LocallyDiscrete.mkCatPseudofunctor` builds a pseudofunctor
 `LocallyDiscrete B₀ ⥤ᵖ Cat` from functors, unit isomorphisms and composition isomorphisms
 `map fg ≅ map f ⋙ map g` given at arbitrary factorizations `f ≫ g = fg`, from componentwise
-associativity and unit laws.
+associativity and unit laws. The comparisons of a pseudofunctor `LocallyDiscrete B₀ ⥤ᵖ Cat`
+satisfy these laws (`CategoryTheory.Pseudofunctor.mapComp'_hom_app_comp_map_mapComp'_hom_app`),
+the unit laws even at `1`-morphisms that are only propositionally identities
+(`CategoryTheory.Pseudofunctor.mapComp'_hom_app_comp_map_mapId'_hom_app` and
+`CategoryTheory.Pseudofunctor.mapComp'_hom_app_comp_mapId'_hom_app`).
 -/
 
 @[expose] public section
@@ -347,3 +352,48 @@ lemma mkCatPseudofunctor_mapComp_inv_toNatTrans_app {b₀ b₁ b₂ : LocallyDis
 end
 
 end CategoryTheory.LocallyDiscrete
+
+namespace CategoryTheory.Pseudofunctor
+
+open Bicategory
+
+universe v u
+
+variable {B₀ : Type*} [Category B₀] (P : LocallyDiscrete B₀ ⥤ᵖ Cat.{v, u})
+
+/-- The associativity law of the comparisons of a pseudofunctor into `Cat`, componentwise and at
+arbitrary factorizations, in the form of the associativity condition of
+`CategoryTheory.LocallyDiscrete.mkCatPseudofunctor`. This is
+`mapComp'₀₂₃_hom_comp_mapComp'_hom_whiskerRight_app` with the identity associator removed. -/
+@[reassoc]
+lemma mapComp'_hom_app_comp_map_mapComp'_hom_app {X₀ X₁ X₂ X₃ : LocallyDiscrete B₀}
+    (f : X₀ ⟶ X₁) (g : X₁ ⟶ X₂) (h : X₂ ⟶ X₃) (fg : X₀ ⟶ X₂) (gh : X₁ ⟶ X₃) (fgh : X₀ ⟶ X₃)
+    (hfg : f ≫ g = fg) (hgh : g ≫ h = gh) (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh)
+    (x : P.obj X₀) :
+    (P.mapComp' fg h fgh hfgh).hom.toNatTrans.app x ≫
+        (P.map h).toFunctor.map ((P.mapComp' f g fg hfg).hom.toNatTrans.app x) =
+      (P.mapComp' f gh fgh hfgh').hom.toNatTrans.app x ≫
+        (P.mapComp' g h gh hgh).hom.toNatTrans.app ((P.map f).toFunctor.obj x) := by
+  simpa using P.mapComp'₀₂₃_hom_comp_mapComp'_hom_whiskerRight_app f g h fg gh fgh hfg hgh hfgh x
+
+/-- The left unit law of the comparisons of a pseudofunctor into `Cat`, componentwise and at a
+`1`-morphism `e` equal to an identity. -/
+@[reassoc]
+lemma mapComp'_hom_app_comp_map_mapId'_hom_app {X Y : LocallyDiscrete B₀} (e : X ⟶ X)
+    (he : e = 𝟙 X) (f : X ⟶ Y) (h : e ≫ f = f) (x : P.obj X) :
+    (P.mapComp' e f f h).hom.toNatTrans.app x ≫
+        (P.map f).toFunctor.map ((P.mapId' e he).hom.toNatTrans.app x) = 𝟙 _ := by
+  subst he
+  simp [mapId'_eq_mapId, mapComp'_id_comp_hom_app, ← Functor.map_comp]
+
+/-- The right unit law of the comparisons of a pseudofunctor into `Cat`, componentwise and at a
+`1`-morphism `e` equal to an identity. -/
+@[reassoc]
+lemma mapComp'_hom_app_comp_mapId'_hom_app {X Y : LocallyDiscrete B₀} (e : Y ⟶ Y)
+    (he : e = 𝟙 Y) (f : X ⟶ Y) (h : f ≫ e = f) (x : P.obj X) :
+    (P.mapComp' f e f h).hom.toNatTrans.app x ≫
+        (P.mapId' e he).hom.toNatTrans.app ((P.map f).toFunctor.obj x) = 𝟙 _ := by
+  subst he
+  simp [mapId'_eq_mapId, mapComp'_comp_id_hom_app]
+
+end CategoryTheory.Pseudofunctor
