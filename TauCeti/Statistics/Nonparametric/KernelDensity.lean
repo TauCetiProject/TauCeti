@@ -21,9 +21,14 @@ is `(n h)⁻¹ ∑ᵢ K((t - xᵢ) / h)` at `t`, where `n` is the size of the sa
 Its sequence form uses the first `n` observations of a sequence and a bandwidth `hₙ`.
 
 For `h ≥ 0` the estimator of a nonnegative kernel is nonnegative, and for `h > 0` and a nonempty
-sample it integrates to `∫ K` for an integrable kernel. For a nonnegative measurable kernel it is
-the density of the convolution of the empirical distribution of the sample with the measure of
-density `K_h(t) = h⁻¹ K(t / h)`; for a probability density `K` this measure is a law.
+sample it integrates to `∫ K` for an integrable kernel. For a nonnegative measurable kernel and any
+bandwidth `h`, the convolution of the empirical measure of the sample with
+`volume.withDensity (ENNReal.ofReal ∘ K_h)`, where `K_h(t) = h⁻¹ K(t / h)`, is
+`volume.withDensity (ENNReal.ofReal ∘ fₙ)` for the estimator `fₙ`. For `h > 0` both `K_h` and `fₙ`
+are nonnegative, so the clipping by `ENNReal.ofReal` does nothing and `fₙ` is the density of that
+convolution; if moreover `K` is a probability density and the sample is nonempty, both measures
+are probability laws (the empirical distribution of the sample convolved with the law of
+density `K_h`). For `h < 0` both clipped densities vanish.
 
 ## Main definitions
 
@@ -35,8 +40,10 @@ density `K_h(t) = h⁻¹ K(t / h)`; for a probability density `K` this measure i
 
 * `TauCeti.finiteKernelDensityEstimator_nonneg`: the estimator is nonnegative.
 * `TauCeti.integral_finiteKernelDensityEstimator`: the estimator integrates to `∫ K`.
-* `TauCeti.conv_withDensity_eq_withDensity_finiteKernelDensityEstimator`: the estimator is the
-  density of the empirical distribution convolved with the measure of density `K_h`.
+* `TauCeti.conv_withDensity_eq_withDensity_finiteKernelDensityEstimator`: the empirical measure
+  convolved with `volume.withDensity (ENNReal.ofReal ∘ K_h)` is
+  `volume.withDensity (ENNReal.ofReal ∘ fₙ)`; for `h > 0`, the estimator is the density of that
+  convolution.
 
 ## References
 
@@ -115,9 +122,11 @@ theorem integral_finiteKernelDensityEstimator [Nonempty κ] {K : ℝ → ℝ} (h
   have hn : (Fintype.card κ : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
   field_simp
 
-/-- For a nonnegative measurable kernel `K` and any bandwidth `h`, the kernel density
-estimator of `x` is the density of the convolution of the empirical distribution of `x` with the
-measure of density `K_h(t) = h⁻¹ K(t / h)`. -/
+/-- For a nonnegative measurable kernel `K` and any bandwidth `h`, the convolution of the empirical
+measure of `x` with `volume.withDensity (ENNReal.ofReal ∘ K_h)`, `K_h(t) = h⁻¹ K(t / h)`, is
+`volume.withDensity` of `ENNReal.ofReal` of the kernel density estimator of `x`. For `h > 0` both
+functions are nonnegative, so the estimator itself is the density of the convolution; for
+`h < 0` both clipped densities are zero, and for an empty sample both measures are zero. -/
 theorem conv_withDensity_eq_withDensity_finiteKernelDensityEstimator {K : ℝ → ℝ}
     (hK : ∀ u, 0 ≤ K u) (hKm : Measurable K) (h : ℝ) (x : κ → ℝ) :
     (Probability.empiricalFiniteMeasure x : Measure ℝ) ∗
