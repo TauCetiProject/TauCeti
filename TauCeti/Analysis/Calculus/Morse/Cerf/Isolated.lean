@@ -40,8 +40,7 @@ Hessian of `f t` at `x`, `v` a kernel vector of `H(t₀, x₀)` and `ℓ` a func
 * The **bordered Hessian** `(w, μ) ↦ (H(t, x) w + μ ℓ, ℓ w)` is invertible at `(t₀, x₀)`, by the
   symmetry of the Hessian, and so near it. Near `(t₀, x₀)`, whenever `H(t, x)` is degenerate, its
   kernel is spanned by the vector `w(t, x)` read off the inverse of the bordered Hessian, which
-  depends continuously on `(t, x)` and tends to `v`
-  (`ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero`).
+  tends to `v` (`ContinuousLinearMap.exists_tendsto_eventually_apply_eq_zero`).
 * The map `Ψ ((t, x), w) = (d(f t)_x, H(t, x) w, ℓ w)` has an injective derivative at
   `((t₀, x₀), v)`: its first component cuts the critical locus transversally along the line of
   `(0, v)`, and along that line the cubic condition moves `H(t, x) v` off the range of the
