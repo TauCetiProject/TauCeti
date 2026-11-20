@@ -187,7 +187,8 @@ orbit lies in the chart at time `T` is invertible. -/
 theorem isInvertible_mfderiv_toChart_comp_flow {y : M} {T : ℝ}
     (hT : hX.flow T y ∈ φ.toChart.source) :
     (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow T) y).IsInvertible := by
-  have hq := (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas φ.mem_maximalAtlas
+  have hq := (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
+    φ.mem_maximalAtlas
   have hcoe : ((hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph φ.toChart :
       M → E) = φ.toChart ∘ hX.flow T := by
     funext z
@@ -404,7 +405,7 @@ theorem eventually_span_mtangentConeAt_stableSet_eq_comap {y : M}
   -- `φ ∘ Φ_T`, restricted to the preimage of `D`, is a slice chart of `W^s(x)` at `y`.
   set q := (hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D)
   have hq : q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
-    (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
+    (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
       (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD)
   have hyq : y ∈ q.source := by simpa [q, hD.interior_eq] using ⟨hDs hTD, hTD⟩
   have hqf : (q : M → E) = φ.toChart ∘ hX.flow T := by
