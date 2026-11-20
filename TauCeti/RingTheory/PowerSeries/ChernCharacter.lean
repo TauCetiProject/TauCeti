@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Exp
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
 import Mathlib.Algebra.Module.Rat
+import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Elementary
 import TauCeti.RingTheory.PowerSeries.Derivative
 
@@ -348,18 +349,13 @@ theorem X_mul_derivative_chernSeries (R : Type*) [CommRing R] [Algebra R A] (c :
       PowerSeries.X * d⁄dX (chernSeries (MvPolynomial.X : Fin n → MvPolynomial (Fin n) R)) =
         chernSeries MvPolynomial.X * mk fun k =>
         if k = 0 then 0 else (-1) ^ (k + 1) * newtonMvPolynomial R n k := by
-    set ψ := aeval (R := R) fun j : Fin n => esymm (Fin n) R (j + 1)
-    have hψ : Function.Injective ψ := fun p q h =>
-      esymmAlgHom_injective R (Fintype.card_fin n).ge (Subtype.ext (by
-        simpa [esymmAlgHom_apply] using h))
+    set ψ := aeval (R := R) fun j : Fin n =>
+      (univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))).esymm (j + 1)
+    have hψ : Function.Injective ψ :=
+      aeval_multiset_esymm_X_injective R (Fintype.card_fin n).ge
     have hesymm : chernSeries (ψ ∘ MvPolynomial.X) = mk fun k => esymm (Fin n) R k := by
-      have h := chernSeries_esymm (n := n)
-        (univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))) (by simp)
-      simp only [← esymm_eq_multiset_esymm] at h
-      rw [← h]
-      congr 1
-      ext j
-      simp [ψ]
+      rw [esymm_eq_multiset_esymm, ← chernSeries_esymm (n := n) _ (by simp)]
+      exact congrArg chernSeries (funext fun j => aeval_X _ j)
     refine PowerSeries.map_injective ψ.toRingHom hψ ?_
     rw [map_X_mul_derivative_chernSeries, map_mul, map_chernSeries]
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hesymm ⊢
@@ -369,7 +365,8 @@ theorem X_mul_derivative_chernSeries (R : Type*) [CommRing R] [Algebra R A] (c :
     simp only [PowerSeries.coeff_map, coeff_mk]
     split_ifs
     · simp
-    · simp [ψ, aeval_esymm_newtonMvPolynomial]
+    · simp only [ψ, ← esymm_eq_multiset_esymm]
+      simp [aeval_esymm_newtonMvPolynomial]
   -- Specialize the universal identity along `aeval c`.
   have h := congrArg (PowerSeries.map (aeval (R := R) c).toRingHom) huniv
   rw [map_X_mul_derivative_chernSeries, map_mul, map_chernSeries] at h
