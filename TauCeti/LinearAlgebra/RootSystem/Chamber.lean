@@ -131,6 +131,12 @@ simp-normal form, and would dissolve `IsRegularWeight` out of the goals its own 
 about. Use it explicitly, as `rw [isRegularWeight_iff]` or `simp [isRegularWeight_iff]`. -/
 lemma isRegularWeight_iff (x : M) : IsRegularWeight P x ↔ ∀ i, P.coroot' i x ≠ 0 := Iff.rfl
 
+variable {P} in
+/-- A regular weight is nonzero as soon as there is a root: every coroot functional vanishes at
+zero. -/
+lemma IsRegularWeight.ne_zero [Nonempty ι] {x : M} (hx : IsRegularWeight P x) : x ≠ 0 :=
+  fun h ↦ hx (Classical.arbitrary ι) (by rw [h, map_zero])
+
 /-- **Regularity is a Weyl-invariant condition on weights.** A Weyl-group element matches the
 coroot functional of a root with that of its image, so it can neither create nor destroy a
 zero. -/

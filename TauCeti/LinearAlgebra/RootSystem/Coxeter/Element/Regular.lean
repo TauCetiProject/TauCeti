@@ -349,9 +349,7 @@ private theorem exists_isRegularWeight_smul_eq_of_subsingleton
     module
   have hreg : P.IsRegularWeight x :=
     isRegularWeight_of_forall_exists_pos_coroot'_eq P b _ (algebraMap ℝ K).injective hx
-  obtain ⟨j₀⟩ := ‹Nonempty ι›
-  have hx0 : x ≠ 0 := fun h ↦ (P.isRegularWeight_iff x).1 hreg j₀ (by rw [h, map_zero])
-  exact ⟨x, -1, hreg, hgx, isPrimitiveRoot_orderOf_of_smul_eq hx0 hgx fun l hl ↦
+  exact ⟨x, -1, hreg, hgx, isPrimitiveRoot_orderOf_of_smul_eq hreg.ne_zero hgx fun l hl ↦
     P.eq_one_of_isRegularWeight_of_smul_eq b hreg
       (by rw [pow_smul_eq_of_smul_eq hgx, hl, one_smul])⟩
 
@@ -377,9 +375,7 @@ theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveR
   have hreg := isRegularWeight_one_add_smul_colorPart_add_smul (c := c) hy hy0 hκ hκ2 hμ
   have hgv := bipartiteCoxeterElement_smul_eigen (c := c) hy hμ
   set v := (1 + μ) • colorPart P b c y true + algebraMap ℝ K (2 - κ) • colorPart P b c y false
-  obtain ⟨j₀⟩ := ‹Nonempty ι›
-  have hv0 : v ≠ 0 := fun h ↦ (P.isRegularWeight_iff v).1 hreg j₀ (by rw [h, map_zero])
-  exact ⟨v, μ, hreg, hgv, isPrimitiveRoot_orderOf_of_smul_eq hv0 hgv fun l hl ↦
+  exact ⟨v, μ, hreg, hgv, isPrimitiveRoot_orderOf_of_smul_eq hreg.ne_zero hgv fun l hl ↦
     pow_eq_one_of_pow_eq_one hy hy0 hκ hκ2 hμ hl⟩
 
 end RootPairing
