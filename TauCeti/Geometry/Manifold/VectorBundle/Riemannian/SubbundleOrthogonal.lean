@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 import TauCeti.Analysis.InnerProductSpace.RangeProjection
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Synthesis
 
 /-!
 # Orthogonal complements of smooth subbundles
@@ -56,33 +57,6 @@ variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
   [FiberBundle F V] [VectorBundle ℝ F V]
   {n : ℕ∞ω} [ContMDiffVectorBundle n F V IB] [IsContMDiffRiemannianBundle IB n F V]
   {k : ℕ} {W : Π x, Submodule ℝ (V x)}
-
-omit [FiniteDimensional ℝ F] [ContMDiffVectorBundle n F V IB] in
-/-- The overlap operators of `C^n` sections `ε` and `X`, reading `X` in the coordinates of `ε`,
-depend `C^n` on the base point. -/
-private theorem contMDiffOn_overlapOperator {d : ℕ} {ε : Fin d → Π x, V x} {X : Fin k → Π x, V x}
-    {U : Set B} (hε : ∀ i, CMDiff[U] n (T% (ε i))) (hX : ∀ j, CMDiff[U] n (T% (X j))) :
-    ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ (Fin d)) n
-      (fun y ↦ (overlapOperator ℝ (ε · y) (X · y)).toContinuousLinearMap) U := by
-  -- The coordinates `⟪ε i y, X j y⟫` are `C^n`.
-  have hw (j : Fin k) : ContMDiffOn IB 𝓘(ℝ, EuclideanSpace ℝ (Fin d)) n
-      (fun y ↦ analysisMap ℝ (ε · y) (X j y)) U := by
-    have hcoord : ContMDiffOn IB 𝓘(ℝ, Fin d → ℝ) n (fun y i ↦ ⟪ε i y, X j y⟫_ℝ) U :=
-      contMDiffOn_pi_module_iff.2 fun i ↦ (hε i).inner_bundle (hX j)
-    refine (((EuclideanSpace.equiv (Fin d) ℝ).symm.contDiff (n := n)).contMDiff.comp_contMDiffOn
-      hcoord).congr fun y _ ↦ ?_
-    ext i
-    simp
-  -- The overlap operator is the sum of the rank-one maps `a ↦ a j • w j y`.
-  have hsum : (fun y ↦ (overlapOperator ℝ (ε · y) (X · y)).toContinuousLinearMap) = fun y ↦
-      ∑ j, (EuclideanSpace.proj j : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ).smulRight
-        (analysisMap ℝ (ε · y) (X j y)) := by
-    ext y a : 2
-    simp [overlapOperator_def, map_sum, map_smul]
-  rw [hsum]
-  exact contMDiffOn_finsetSum fun j _ ↦
-    ((ContinuousLinearMap.smulRightL ℝ (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin d))
-      (EuclideanSpace.proj j)).contDiff (n := n)).contMDiff.comp_contMDiffOn (hw j)
 
 /-- **Orthogonal complements of smooth subbundles have smooth local frames.** Let `X` be a `C^n`
 local frame of size `k` of the subspaces `W x` of the fibres of a finite-rank `C^n` Riemannian
