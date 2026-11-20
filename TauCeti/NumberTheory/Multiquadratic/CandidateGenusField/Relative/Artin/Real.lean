@@ -49,7 +49,7 @@ theorem autCandidateGenusFieldRealEquivElementaryTwoQuotient_artinHomAway
         (NumberFieldArithmetic.artinHomAway (L := candidateGenusFieldReal hd)
           (fun σ τ ↦ (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ)) S
           (isUnramifiedAway_of_intermediateField (candidateGenusFieldReal hd) S
-            (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+            (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
               inferInstance inferInstance)) I) =
       Multiplicative.ofAdd (TauCeti.elementaryTwoQuotientMk
         (ClassGroup.mk (candidateGenusFieldBase hd)
@@ -62,7 +62,7 @@ theorem autCandidateGenusFieldRealEquivElementaryTwoQuotient_artinHomAway
     (NumberFieldArithmetic.artinHomAway_restrict
       (L := candidateGenusField hd)
       (fun σ τ ↦ (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ)) S
-      (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+      (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
         inferInstance inferInstance) (candidateGenusFieldReal hd)) I
   rw [MonoidHom.comp_apply] at hrestrict
   rw [← candidateGenusFieldRestrictionToReal_def hd hpos] at hrestrict
@@ -91,7 +91,7 @@ theorem artinHomAway_candidateGenusFieldReal_eq_one_iff
     NumberFieldArithmetic.artinHomAway (L := candidateGenusFieldReal hd)
         (fun σ τ ↦ (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ)) S
         (isUnramifiedAway_of_intermediateField (candidateGenusFieldReal hd) S
-          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
             inferInstance inferInstance)) I = 1 ↔
       IsSquare (ClassGroup.mk (candidateGenusFieldBase hd)
         (I : (FractionalIdeal (𝓞 (candidateGenusFieldBase hd))⁰
@@ -116,7 +116,7 @@ theorem artinHomAwayIntegral_candidateGenusFieldReal_surjective
         (genusFieldArtinExcludedPrimes hd)
         (isUnramifiedAway_of_intermediateField (candidateGenusFieldReal hd)
           (genusFieldArtinExcludedPrimes hd)
-          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
             inferInstance inferInstance))) := by
   let _ := candidateGenusFieldRealAlgebra hd hpos
   let _ := candidateGenusFieldRealIsScalarTower hd hpos
@@ -130,7 +130,7 @@ theorem artinHomAwayIntegral_candidateGenusFieldReal_surjective
       (L := candidateGenusField hd)
       (fun σ τ ↦ (commute_iff_eq σ τ).2 (IsMulCommutative.is_comm.comm σ τ))
       (genusFieldArtinExcludedPrimes hd)
-      (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+      (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
         inferInstance inferInstance) (candidateGenusFieldReal hd))
     (NumberFieldArithmetic.integralIdealsAwayHom (candidateGenusFieldBase hd) _ I)
   rw [NumberFieldArithmetic.artinHomAwayIntegral_apply] at hI ⊢
@@ -150,7 +150,7 @@ theorem artinHomAway_candidateGenusFieldReal_surjective
         (genusFieldArtinExcludedPrimes hd)
         (isUnramifiedAway_of_intermediateField (candidateGenusFieldReal hd)
           (genusFieldArtinExcludedPrimes hd)
-          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd hnsq v.asIdeal Q
+          (fun v _ Q _ _ ↦ isUnramifiedIn_candidateGenusField hd v.asIdeal Q
             inferInstance inferInstance))) := by
   let _ := candidateGenusFieldRealAlgebra hd hpos
   let _ := candidateGenusFieldRealIsScalarTower hd hpos

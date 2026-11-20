@@ -19,7 +19,9 @@ Let `f` be a smooth real function on a boundaryless finite-dimensional manifold 
 sublevel `{f ≤ a}` is a strong deformation retract of `{f ≤ b}`
 (`TauCeti.exists_sublevelDeformation`), so the relative singular homology of the sublevel pair
 `({f ≤ b}, {f ≤ a})` vanishes in every degree, for coefficients in any preadditive category with
-coproducts and homology (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
+coproducts and homology (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`), and
+the inclusion `{f ≤ a} ⊆ {f ≤ b}` induces isomorphisms on singular homology
+(`TauCeti.isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero`).
 
 The band `f⁻¹[a, b]` itself, relative to its lower level `f⁻¹(a)`, has the same relative homology
 as the sublevel pair, whatever the critical points inside the band, as soon as `a` is a regular
@@ -56,6 +58,8 @@ cut.
 
 * `TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`: a compact band without
   critical points carries no relative homology.
+* `TauCeti.isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero`: so the inclusion of the lower
+  sublevel into the upper one induces isomorphisms on homology.
 * `TauCeti.isIso_singularHomologyMap_bandPairInclusion`: above a regular value, a compact band
   relative to its lower level has the relative homology of the sublevel pair.
 * `TauCeti.singularHomologySublevelPairIsoOfCollars`: regular collars can be cut off a band
@@ -101,6 +105,21 @@ theorem isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff 
   exact TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel (X := TopCat.of M)
     (sublevel_mono f hab) r G R n
 
+/-- **Crossing a band without critical points does not change homology.** If the band `f⁻¹[a, b]`
+is compact and contains no critical point of the smooth function `f`, the inclusion of
+`{f ≤ a}` into `{f ≤ b}` induces isomorphisms on singular homology in every degree. -/
+theorem isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) (R : C) (n : ℕ) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (sublevelPair f hab).map) R n) := by
+  obtain ⟨e, he⟩ := exists_sublevelHomotopyEquiv hf hab hcompact hreg
+  have h : (sublevelPair f hab).map = TopCat.ofHom e.toFun := by
+    ext x
+    exact Subtype.ext (he x).symm
+  have := (e.singularHomologyIso R n).isIso_hom
+  rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, singularHomologyFunctor_obj_map] at this
+  rwa [h]
+
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- A collar `f⁻¹[a, a']` which the flow `φ` crosses at unit speed carries no homology relative to
 its lower level `f⁻¹(a)`: following the flow down to the level `a` is a strong deformation
@@ -113,11 +132,11 @@ private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (�
   -- `s * (f x - a)`, for `0 ≤ s ≤ 1`.
   have hval (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
       f (φ (s * (f x - a)) x) = f x - s * (f x - a) := by
-    have hx : a ≤ f x ∧ f x ≤ a' := x.2
+    have hx : a ≤ f x ∧ f x ≤ a' := x.property
     exact hφf x _ (mul_nonneg hs₀ (by linarith)) (by nlinarith) hx.2
   have hmem (x : f ⁻¹' Icc a a') (s : ℝ) (hs₀ : 0 ≤ s) (hs₁ : s ≤ 1) :
       φ (s * (f x - a)) x ∈ f ⁻¹' Icc a a' := by
-    have hx : a ≤ f x ∧ f x ≤ a' := x.2
+    have hx : a ≤ f x ∧ f x ≤ a' := x.property
     rw [mem_preimage, hval x s hs₀ hs₁, mem_Icc]
     constructor <;> nlinarith
   let r : C(f ⁻¹' Icc a a', f ⁻¹' {a}) :=
@@ -129,7 +148,7 @@ private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (�
         exact φ.continuous (by fun_prop) (by fun_prop) }
   refine TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel hLN r
     { toFun := fun p ↦ ⟨φ ((1 - (p.1 : ℝ)) * (f p.2 - a)) p.2,
-        hmem p.2 _ (by linarith [p.1.2.2]) (by linarith [p.1.2.1])⟩
+        hmem p.2 _ (by linarith [p.1.property.2]) (by linarith [p.1.property.1])⟩
       continuous_toFun := by
         refine Continuous.subtype_mk ?_ _
         exact φ.continuous (by fun_prop) (by fun_prop)
@@ -162,30 +181,30 @@ private theorem isIso_singularHomologyMap_excision_collar {a' : ℝ} (hf : Conti
   -- `{a < f}`, inside the band.
   refine TopPair.isIso_singularHomologyMap_of_open_cover R ι
     (hι ▸ Topology.IsEmbedding.inclusion hWb) ?_
-    (fun i : Bool ↦ bif i then ({x | f x.1 < a' ∨ b ≤ a'} : Set {x | f x ≤ b})
-      else ({x | a < f x.1} : Set {x | f x ≤ b})) (fun i ↦ ?_) ?_ (fun i ↦ ?_) n
+    (fun i : Bool ↦ bif i then ({x | f x.val < a' ∨ b ≤ a'} : Set {x | f x ≤ b})
+      else ({x | a < f x.val} : Set {x | f x ≤ b})) (fun i ↦ ?_) ?_ (fun i ↦ ?_) n
   · rintro x ⟨y, hy⟩
-    have hy' : f x.1 ≤ a' := by
+    have hy' : f x.val ≤ a' := by
       have h := congrArg Subtype.val (hy.trans (congrFun hι x))
-      exact h ▸ y.2
-    exact ⟨⟨x.1, x.2.1, hy'⟩, rfl⟩
+      exact h ▸ y.property
+    exact ⟨⟨x.val, x.property.1, hy'⟩, rfl⟩
   · cases i
-    · exact isOpen_lt continuous_const (hf.comp continuous_subtype_val)
-    · exact (isOpen_lt (hf.comp continuous_subtype_val) continuous_const).union isOpen_const
+    · exact isOpen_lt continuous_const (hf.comp continuous_subtypeVal)
+    · exact (isOpen_lt (hf.comp continuous_subtypeVal) continuous_const).union isOpen_const
   · refine eq_univ_of_forall fun x ↦ mem_iUnion.2 ?_
-    by_cases hx : f x.1 < a'
+    by_cases hx : f x.val < a'
     · exact ⟨true, Or.inl hx⟩
     rcases hlt with hlt | rfl
-    · exact ⟨false, show a < f x.1 by linarith⟩
+    · exact ⟨false, show a < f x.val by linarith⟩
     · exact ⟨true, Or.inr le_rfl⟩
   · cases i
-    · refine Or.inr fun x (hx : a < f x.1) ↦ ⟨⟨x.1, hx.le, x.2⟩, ?_⟩
+    · refine Or.inr fun x (hx : a < f x.val) ↦ ⟨⟨x.val, hx.le, x.property⟩, ?_⟩
       rw [hι]
       rfl
-    · refine Or.inl fun x (hx : f x.1 < a' ∨ b ≤ a') ↦ ⟨⟨x.1, ?_⟩, rfl⟩
+    · refine Or.inl fun x (hx : f x.val < a' ∨ b ≤ a') ↦ ⟨⟨x.val, ?_⟩, rfl⟩
       rcases hx with hx | hx
       · exact hx.le
-      · exact (x.2 : f x.1 ≤ b).trans hx
+      · exact (x.property : f x.val ≤ b).trans hx
 
 /-- **The relative homology of a band over a regular level** (Milnor, *Lectures on the h-cobordism
 theorem*, §3). If `a ≤ b`, the band `f⁻¹[a, b]` is compact and `a` is a regular value of the

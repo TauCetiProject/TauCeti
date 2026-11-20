@@ -11,10 +11,8 @@ public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.Topology.Algebra.Module.Star
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Order
-import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Set
@@ -80,12 +78,15 @@ vector space with an additive Haar measure.
 * `MeasureTheory.Lp.integral_convolutionL`: `∫ (h ⋆ f) = (∫ h) • ∫ f`.
 * `MeasureTheory.Lp.convolutionL_toL1_ae_eq`: for compactly supported continuous `h` and `f`, the
   convolution `h ⋆ f` is represented by `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`.
+* `MeasureTheory.Lp.convolutionL_ofRealCLM_compLp_left`: convolving on the left with a real `L¹`
+  kernel coerced into an `RCLike` field agrees with convolving with the real kernel directly.
 * `MeasureTheory.Lp.modularInversion_convolutionL`: the modular inversion reverses convolution,
   `J (h ⋆ k) = J k ⋆ J h`.
 * `MeasureTheory.Lp.convolutionL_eq_integral_smul_rightTranslation_inv`: on `L¹`,
   `h ⋆ k = ∫ z, k z • R_(z⁻¹) h ∂μ` over any `RCLike` scalar field.
-* `MeasureTheory.Lp.star_convolutionL`: pointwise `star` distributes over operator convolution,
-  `star (h ⋆ f) = star h ⋆ star f`.
+* `MeasureTheory.Lp.convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_inv`:
+  for `h ∈ L¹(G, μ; 𝕜)` (`[RCLike 𝕜]`) and `k ∈ L¹(G, μ; ℝ)`, right convolution with `k` is the
+  Bochner integral `∫ z, k z • R_(z⁻¹) h ∂μ` of weighted right translates.
 
 ## References
 
@@ -209,18 +210,6 @@ theorem leftTranslation_convolutionL (g : G) (h : Lp 𝕜 1 μ) (f : Lp E p μ) 
   simp only [hy, inv_mul_cancel_left, map_smul, map_mul, LinearIsometryEquiv.coe_mul,
     Function.comp_apply]
 
-/-- Pointwise `star` on `Lp` distributes over operator convolution:
-`star (h ⋆ f) = star h ⋆ star f`. -/
-theorem star_convolutionL [StarAddMonoid 𝕜] [NormedStarGroup 𝕜] [StarAddMonoid E]
-    [NormedStarGroup E] [StarModule ℝ E] [StarModule 𝕜 E] (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
-    star (convolutionL μ p hp h f) = convolutionL μ p hp (star h) (star f) := by
-  have hcomm := (starL' ℝ : Lp E p μ ≃L[ℝ] Lp E p μ).integral_comp_comm
-    (μ := μ) fun y => h y • leftTranslation μ p 𝕜 y f
-  rw [convolutionL_apply, convolutionL_apply, ← starL'_apply (R := ℝ), ← hcomm]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_star h] with y hy
-  rw [starL'_apply, star_smul, hy, Pi.star_apply, star_leftTranslation]
-
 end NontriviallyNormedField
 
 section RCLike
@@ -298,6 +287,21 @@ theorem convolutionL_toL1_ae_eq [CompleteSpace E] {h : G → 𝕜} {f : G → E}
   -- Fubini's theorem for the compactly supported continuous integrand `(y, x) ↦ F x y`.
   exact integral_integral_swap_of_hasCompactSupport (f := fun y x => F x y)
     (hFc.comp continuous_swap) (hFs.comp_homeomorph (Homeomorph.prodComm G G))
+
+/-- Convolving on the left with a real `L¹` kernel coerced into an `RCLike` scalar field `𝕜` agrees
+with convolving with the real kernel directly. -/
+theorem convolutionL_ofRealCLM_compLp_left [IsScalarTower ℝ 𝕜 E] (k : Lp ℝ 1 μ) (u : Lp E p μ) :
+    convolutionL μ p hp ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) u =
+      convolutionL μ p hp k u := by
+  rw [convolutionL_apply, convolutionL_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp k] with y hy
+  rw [RCLike.ofRealCLM_apply] at hy
+  rw [hy, leftTranslation_apply, leftTranslation_apply]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smul (k y : 𝕜) (DomMulAct.mk y⁻¹ • u),
+    coeFn_smul (k y) (DomMulAct.mk y⁻¹ • u)] with x h₁ h₂
+  rw [h₁, h₂, Pi.smul_apply, Pi.smul_apply, ← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
 
 end RCLike
 
@@ -387,6 +391,18 @@ theorem convolutionL_eq_integral_smul_rightTranslation_inv (h k : Lp 𝕜 1 μ) 
           (coeFn_modularInversion (𝕜 := 𝕜) k)] with z hz
         rw [hz, inv_inv, ENNReal.toReal_one, inv_one, Real.rpow_one, smul_assoc, smul_smul,
           modularCharacter_mul_inv, one_smul]
+
+/-- **Right convolution as a Bochner integral of right translates.** For `h ∈ L¹(G, μ; 𝕜)` over an
+`RCLike` field `𝕜` and a real kernel `k ∈ L¹(G, μ; ℝ)`, convolving `h` on the right with `k` equals
+`∫ z, k z • R_(z⁻¹) h ∂μ`. -/
+theorem convolutionL_ofRealCLM_compLp_right_eq_integral_smul_rightTranslation_inv
+    (h : Lp 𝕜 1 μ) (k : Lp ℝ 1 μ) :
+    convolutionL μ 1 ENNReal.one_ne_top h ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) =
+      ∫ z, k z • rightTranslation μ 1 𝕜 z⁻¹ h ∂μ := by
+  rw [convolutionL_eq_integral_smul_rightTranslation_inv]
+  refine integral_congr_ae ?_
+  filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp k] with z hz
+  rw [hz, RCLike.ofRealCLM_apply, ← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
 
 end ModularInversion
 section RightTranslation

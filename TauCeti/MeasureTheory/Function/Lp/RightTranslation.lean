@@ -63,6 +63,10 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
   translation are order automorphisms of real `Lᵖ`.
 * `MeasureTheory.Lp.integral_modularInversion`, `MeasureTheory.Lp.integral_rightTranslation`: on
   `L¹` they preserve the integral.
+* `MeasureTheory.Lp.modularInversion_star`, `MeasureTheory.Lp.rightTranslation_star`: modular
+  inversion and right translation commute with pointwise `star`.
+* `MeasureTheory.Lp.modularInversion_ofRealCLM_compLp`: modular inversion commutes with coercing
+  a real `Lᵖ` function into an `RCLike` field.
 * `MeasureTheory.Lp.modularInversion_toL1`: on `L¹`, the modular inversion of a compactly
   supported continuous function is the class of `x ↦ c(x) • f x⁻¹`.
 * `MeasureTheory.Lp.continuous_rightTranslation_apply`: right translation is strongly continuous
@@ -241,16 +245,6 @@ theorem modularInversion_mul_self :
     modularInversion μ p 𝕜 * modularInversion μ p 𝕜 = (1 : Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) :=
   LinearIsometryEquiv.ext modularInversion_modularInversion
 
-/-- Pointwise `star` on `Lp` commutes with the modular inversion `J`. -/
-theorem modularInversion_star [StarAddMonoid E] [NormedStarGroup E] [StarModule ℝ E]
-    (f : Lp E p μ) :
-    modularInversion μ p 𝕜 (star f) = star (modularInversion μ p 𝕜 f) := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) (star f),
-    coeFn_star (modularInversion μ p 𝕜 f), coeFn_modularInversion (𝕜 := 𝕜) f,
-    (quasiMeasurePreserving_inv_of_regular μ).ae (coeFn_star f)] with x hx₁ hx₂ hx₃ hx₄
-  rw [hx₁, hx₂, Pi.star_apply, hx₃, star_smul, star_trivial (_ : ℝ), hx₄, Pi.star_apply]
-
 variable (μ p 𝕜)
 
 /-- Right translation `g ↦ R_g` on `Lp E p μ` for a regular Haar measure `μ`, where
@@ -398,6 +392,40 @@ theorem integrable_smul_rightTranslation_inv (hp : p ≠ ∞) {k : G → 𝕜} (
     ((continuous_rightTranslation_apply (𝕜 := 𝕜) hp h).comp continuous_inv))
     (.of_forall fun z => ?_)
   exact (norm_smul_le _ _).trans_eq (by rw [LinearIsometryEquiv.norm_map])
+
+/-- Modular inversion commutes with pointwise `star` on `Lᵖ`. -/
+theorem modularInversion_star [StarAddMonoid E] [NormedStarGroup E] [StarModule ℝ E]
+    (f : Lp E p μ) :
+    modularInversion μ p 𝕜 (star f) = star (modularInversion μ p 𝕜 f) := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) (star f),
+    (quasiMeasurePreserving_inv_of_regular μ).ae (coeFn_star f),
+    coeFn_star (modularInversion μ p 𝕜 f),
+    coeFn_modularInversion (𝕜 := 𝕜) f] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, Pi.star_apply, h₃, Pi.star_apply, h₄, star_smul, star_trivial (_ : ℝ)]
+
+/-- Right translation commutes with pointwise `star` on `Lᵖ`. -/
+theorem rightTranslation_star [StarAddMonoid E] [NormedStarGroup E] [StarModule ℝ E]
+    (g : G) (f : Lp E p μ) :
+    rightTranslation μ p 𝕜 g (star f) = star (rightTranslation μ p 𝕜 g f) := by
+  rw [rightTranslation_apply, rightTranslation_apply, modularInversion_star, leftTranslation_star,
+    modularInversion_star]
+
+end Lp
+
+namespace Lp
+
+/-- Modular inversion commutes with coercing a real `Lᵖ` function into an `RCLike` field `𝕜`. -/
+theorem modularInversion_ofRealCLM_compLp {𝕜 : Type*} [RCLike 𝕜] [Fact (1 ≤ p)]
+    (k : Lp ℝ p μ) :
+    modularInversion μ p 𝕜 ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) =
+      (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (modularInversion μ p ℝ k) := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k),
+    (quasiMeasurePreserving_inv_of_regular μ).ae ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp k),
+    (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp (modularInversion μ p ℝ k),
+    coeFn_modularInversion (𝕜 := ℝ) k] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, ← map_smul]
 
 end Lp
 

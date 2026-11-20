@@ -270,7 +270,7 @@ is the KKS form of the coadjoint sphere of radius `r` transported to `S²`
 is a signed integral. -/
 theorem integralTopForm_smul_sphereAreaForm (r : ℝ) :
     integralTopForm (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation
-      (r • sphereAreaForm).1 = 4 * Real.pi * r := by
+      (r • sphereAreaForm).val = 4 * Real.pi * r := by
   rw [Submodule.coe_smul, integralTopForm_smul, sphereAreaForm_eq_sphereVolumeForm,
     Orientation.integralTopForm_sphereOrientation_sphereVolumeForm, mul_comm]
 

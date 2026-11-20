@@ -200,8 +200,8 @@ structure IsNondegeneratePoint (F : E → G) (x : E) : Prop where
   isNondegenerateQuadraticFamily :
     (ω.reduction ((fderiv ℝ F x).ker)).IsNondegenerateQuadraticFamily
       fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
-        ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ.1 ∘ F) x)
-          (polar_hessianQuadraticForm_eq_zero ℓ.1 ℓ.2)
+        ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ.val ∘ F) x)
+          (polar_hessianQuadraticForm_eq_zero ℓ.val ℓ.property)
 
 variable {ω} {F : E → G} {x : E}
 
@@ -213,9 +213,11 @@ private theorem isNondegeneratePoint_iff_of_fderiv_eq {T : E →L[ℝ] G} (hT : 
           QuadraticMap.polar (hessianQuadraticForm (ℓ ∘ F) x) w u = 0,
         (ω.reduction T.ker).IsNondegenerateQuadraticFamily
           fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦
-            ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ.1 ∘ F) x) (hQ ℓ.1 ℓ.2) := by
+            ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ.val ∘ F) x) (hQ ℓ.val ℓ.property)
+                := by
   subst hT
-  exact ⟨fun h ↦ ⟨h.1, h.2, h.3⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
+  exact ⟨fun h ↦ ⟨h.contDiffAt, h.polar_hessianQuadraticForm_eq_zero,
+      h.isNondegenerateQuadraticFamily⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩⟩
 
 /-- Being a nondegenerate point depends only on the germ of the map at the point. -/
 theorem IsNondegeneratePoint.congr_of_eventuallyEq {F' : E → G}
@@ -235,9 +237,9 @@ theorem isNondegeneratePoint_iff_of_poissonBracket (hF : ContDiffAt ℝ 2 F x)
     ω.IsNondegeneratePoint F x ↔
       (ω.reduction ((fderiv ℝ F x).ker)).IsNondegenerateQuadraticFamily
         fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
-          ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ.1 ∘ F) x)
-            fun _ hw _ _ ↦ ω.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal hF ℓ.2
-              (hcomm ℓ.1) hw.2 _ :=
+          ω.reducedQuadraticForm _ (hessianQuadraticForm (ℓ.val ∘ F) x)
+            fun _ hw _ _ ↦ ω.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal hF ℓ.property
+              (hcomm ℓ.val) hw.2 _ :=
   ⟨fun h ↦ h.isNondegenerateQuadraticFamily, fun h ↦ ⟨hF, fun ℓ hℓ _ hw _ _ ↦
     ω.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal hF hℓ (hcomm ℓ) hw.2 _, h⟩⟩
 
@@ -270,14 +272,14 @@ theorem isNondegeneratePoint_iff_isNondegenerateRankZeroPoint (h : fderiv ℝ F 
     rw [hw, QuadraticMap.polar_zero_left]
   -- Every functional vanishes on the image of `dF_x = 0`.
   have hspan : Submodule.span ℝ (Set.range fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦
-      hessianQuadraticForm (ℓ.1 ∘ F) x) =
+      hessianQuadraticForm (ℓ.val ∘ F) x) =
       Submodule.span ℝ (Set.range fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x) := by
     congr 1
     ext Q
-    exact ⟨fun ⟨ℓ, hℓ⟩ ↦ ⟨ℓ.1, hℓ⟩,
+    exact ⟨fun ⟨ℓ, hℓ⟩ ↦ ⟨ℓ.val, hℓ⟩,
       fun ⟨ℓ, hℓ⟩ ↦ ⟨⟨ℓ, by rw [h, ContinuousLinearMap.comp_zero]⟩, hℓ⟩⟩
   have key := (isNondegenerateQuadraticFamily_reduction_iff_of_eq_top hker _
-    fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦ hpolar ℓ.1).trans
+    fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (fderiv ℝ F x) = 0} ↦ hpolar ℓ.val).trans
       (isNondegenerateQuadraticFamily_iff_of_span_eq hspan)
   exact ⟨fun hx ↦ ⟨hx.contDiffAt, h, key.1 hx.isNondegenerateQuadraticFamily⟩,
     fun hx ↦ ⟨hx.contDiffAt, fun ℓ _ ↦ hpolar ℓ, key.2 hx.isNondegenerateQuadraticFamily⟩⟩

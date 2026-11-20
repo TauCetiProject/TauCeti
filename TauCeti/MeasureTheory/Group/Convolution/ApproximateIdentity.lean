@@ -47,6 +47,7 @@ concentrated near `1`. Neither σ-finiteness of `μ` nor any countability of `G`
   concentrating at the identity (`1 ≤ p < ∞`), over any `RCLike` scalar field and for nonnegative
   real kernels.
 * `MeasureTheory.Lp.tendsto_convolutionL_right_of_norm_le`,
+  `MeasureTheory.Lp.tendsto_convolutionL_ofRealCLM_compLp_right`,
   `MeasureTheory.Lp.tendsto_convolutionL_right`: `h ⋆ k i → h` in `L¹` for such
   kernels, over any `RCLike` scalar field and for nonnegative real kernels.
 
@@ -150,6 +151,32 @@ theorem tendsto_convolutionL_right_of_norm_le {𝕜 : Type*} [RCLike 𝕜] {ι :
   filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) (k i),
     (quasiMeasurePreserving_inv_of_regular μ).ae hi] with x hx hx' hxU
   rw [hx, hx' (by simpa using hxU), smul_zero]
+
+/-- **Right approximate identity over an `RCLike` field.** Convolution on the right with nonnegative
+real kernels of integral one which concentrate at the identity converges strongly to the identity on
+`L¹(G, μ; 𝕜)`. -/
+theorem tendsto_convolutionL_ofRealCLM_compLp_right {𝕜 : Type*} [RCLike 𝕜] {ι : Type*}
+    {l : Filter ι} {k : ι → Lp ℝ 1 μ} (hk : ∀ i, 0 ≤ k i) (hk1 : ∀ i, ∫ y, k i y ∂μ = 1)
+    (hkl : ∀ U ∈ 𝓝 (1 : G), ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ U → k i y = 0) (h : Lp 𝕜 1 μ) :
+    Tendsto (fun i =>
+      convolutionL μ 1 ENNReal.one_ne_top h ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (k i)))
+      l (𝓝 h) := by
+  refine tendsto_convolutionL_right_of_norm_le (C := 1) (.of_forall fun i => ?_)
+    (.of_forall fun i => ?_) (fun U hU => ?_) h
+  · have hcomm := (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).integral_comp_comm (L1.integrable_coeFn (k i))
+    refine (integral_congr_ae ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp _)).trans ?_
+    rw [hcomm, hk1, RCLike.ofRealCLM_apply, RCLike.ofReal_one]
+  · calc ‖(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (k i)‖
+        ≤ ‖(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜)‖ * ‖k i‖ := ContinuousLinearMap.norm_compLp_le _ _
+      _ ≤ 1 * 1 := by
+        gcongr
+        · exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by
+            simp [RCLike.ofRealCLM_apply]
+        · rw [L1.norm_eq_integral_of_nonneg (hk i), hk1]
+      _ = 1 := one_mul 1
+  · filter_upwards [hkl U hU] with i hi
+    filter_upwards [(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp (k i), hi] with x hx₁ hx₂ hxU
+    rw [hx₁, RCLike.ofRealCLM_apply, hx₂ hxU, RCLike.ofReal_zero]
 
 /-- **Right approximate identity.** Convolution on the right with nonnegative kernels of integral
 one which concentrate at the identity converges strongly to the identity on real `L¹`. -/
