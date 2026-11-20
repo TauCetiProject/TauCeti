@@ -24,8 +24,8 @@ The generic restriction compatibility used to establish this result is provided 
   to its image along an open immersion;
 * `AlgebraicGeometry.Scheme.Modules.unitIsoRestrictPullback`: pull back a local trivialization
   to an open contained in the preimage of its domain;
-* `AlgebraicGeometry.Scheme.Modules.unitIsoRestrictOfLE`: restrict a local trivialization to a
-  smaller open;
+* `AlgebraicGeometry.Scheme.Modules.nonempty_unitIsoRestrict_of_le`: a sheaf trivial over an
+  open is trivial over every smaller open;
 * `AlgebraicGeometry.Scheme.Modules.exists_isAffineOpen_mem_trivialization_le`: every point of an
   open `W` has an affine neighbourhood inside `W` trivializing a given invertible sheaf;
 * `AlgebraicGeometry.Scheme.Modules.restrictFunctor_map_pullback_map_eq_iff`: through
@@ -74,11 +74,12 @@ def unitIsoRestrictPullback (f : X ⟶ Y) {V : Y.Opens} {W : X.Opens}
     (pullback (f.resLE V W hW)).mapIso e ≪≫
     ((restrictPullbackIso f V W hW).app M).symm
 
-/-- Restrict a local trivialization to any smaller open. -/
-def unitIsoRestrictOfLE {U V : X.Opens} (hUV : U ≤ V) {M : X.Modules}
-    (e : SheafOfModules.unit V.toScheme.ringCatSheaf ≅ M.restrict V.ι) :
-    SheafOfModules.unit U.toScheme.ringCatSheaf ≅ M.restrict U.ι :=
-  unitIsoRestrictPullback (𝟙 X) hUV e ≪≫ (restrictFunctor U.ι).mapIso ((pullbackId X).app M)
+/-- A sheaf of modules trivial over an open `V` is trivial over every smaller open `U`. -/
+theorem nonempty_unitIsoRestrict_of_le {U V : X.Opens} (hUV : U ≤ V) {M : X.Modules}
+    (h : Nonempty (SheafOfModules.unit V.toScheme.ringCatSheaf ≅ M.restrict V.ι)) :
+    Nonempty (SheafOfModules.unit U.toScheme.ringCatSheaf ≅ M.restrict U.ι) :=
+  ⟨unitIsoRestrictPullback (𝟙 X) hUV h.some ≪≫
+    (restrictFunctor U.ι).mapIso ((pullbackId X).app M)⟩
 
 /-- Every point `x` of an open `W` has an affine open neighbourhood contained in `W` over which a
 given invertible sheaf is trivial. -/
@@ -93,7 +94,7 @@ theorem exists_isAffineOpen_mem_trivialization_le (M : X.Modules)
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, hUle⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
     (show x ∈ V k ⊓ W from ⟨hk, hx⟩) (V k ⊓ W).isOpen
   exact ⟨U, hU, hxU, fun _ hy ↦ (hUle hy).2,
-    ⟨unitIsoRestrictOfLE (fun _ hy ↦ (hUle hy).1) (e k).some⟩⟩
+    nonempty_unitIsoRestrict_of_le (fun _ hy ↦ (hUle hy).1) (e k)⟩
 
 /-- Every point has an affine open neighbourhood over which two invertible sheaves are both
 trivial. -/
@@ -105,7 +106,7 @@ theorem exists_isAffineOpen_mem_trivializations (M N : X.Modules)
       Nonempty (SheafOfModules.unit U.toScheme.ringCatSheaf ≅ N.restrict U.ι) := by
   obtain ⟨V, -, hxV, -, ⟨eM⟩⟩ := exists_isAffineOpen_mem_trivialization_le M (Opens.mem_top x)
   obtain ⟨U, hU, hxU, hUV, ⟨eN⟩⟩ := exists_isAffineOpen_mem_trivialization_le N hxV
-  exact ⟨U, hU, hxU, ⟨unitIsoRestrictOfLE hUV eM⟩, ⟨eN⟩⟩
+  exact ⟨U, hU, hxU, nonempty_unitIsoRestrict_of_le hUV ⟨eM⟩, ⟨eN⟩⟩
 
 end
 
@@ -222,12 +223,14 @@ theorem restrictFunctor_map_pullback_map_eq_iff (g : Z ⟶ X) {M N : X.Modules}
     (NatIso.naturality_2 α φ).symm
   rw [key, key, ha, hb]
   simp only [Functor.map_comp, cancel_epi, cancel_mono, pullback_map_globalSectionsSmul]
-  have hinj : Function.Injective (globalSectionsSmul
-      ((pullback (g.resLE U (g ⁻¹ᵁ U) le_rfl)).obj (𝟙_ U.toScheme.Modules))) :=
-    fun r s h ↦ globalSectionsAction_injective _ (by rw [globalSectionsAction_apply,
-      globalSectionsAction_apply, h])
-  rw [hinj.eq_iff, Scheme.Hom.appTop, Scheme.Hom.resLE_app_top, ← Scheme.Hom.app_eq_appLE]
-  simp only [CommRingCat.comp_apply]
+  rw [(globalSectionsSmul_injective _).eq_iff]
+  -- On global sections, `g.resLE U (g ⁻¹ᵁ U)` is `g.app U` up to the identifications
+  -- `topIso` of the global sections of an open subscheme with the sections over that open.
+  have happTop (r : Γ(U, ⊤)) : (g.resLE U (g ⁻¹ᵁ U) le_rfl).appTop r =
+      (g ⁻¹ᵁ U).topIso.inv (g.app U (U.topIso.hom r)) := by
+    rw [Scheme.Hom.appTop, Scheme.Hom.resLE_app_top, ← Scheme.Hom.app_eq_appLE]
+    simp only [CommRingCat.comp_apply]
+  rw [happTop, happTop]
   exact (ConcreteCategory.bijective_of_isIso (g ⁻¹ᵁ U).topIso.inv).injective.eq_iff
 
 end AlgebraicGeometry.Scheme.Modules

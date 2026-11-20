@@ -41,7 +41,9 @@ still act on the rigidified bundle.
   `Scheme.Modules.Hom.map_trivializationScalar_eq` comparing two trivializations on their common
   domain;
 * `Scheme.Modules.globalSectionsAction_bijective`: for an invertible sheaf, the action of global
-  functions on the sheaf is a bijection onto its endomorphisms;
+  functions on the sheaf is a bijection onto its endomorphisms, and
+  `Scheme.Modules.globalSectionsSmul_injective` records that distinct global functions give
+  distinct multiplication maps;
 * `Scheme.Modules.existsUnique_eq_inv_comp_globalSectionsSmul_comp_hom`: through trivializations,
   every morphism between trivial sheaves is multiplication by a unique global function;
 * `Scheme.Modules.globalSectionsActionRingEquiv`: the ring isomorphism `Γ(X, 𝒪_X) ≃+* End M`;
@@ -150,6 +152,11 @@ theorem globalSectionsAction_injective : Function.Injective (globalSectionsActio
       LinearEquiv.map_smul, trivializationCoordinate_trivializationGenerator, smul_eq_mul,
       mul_one] using h
   exact key
+
+/-- Distinct global functions give distinct multiplication maps on an invertible sheaf. -/
+theorem globalSectionsSmul_injective : Function.Injective (globalSectionsSmul M) :=
+  fun r s h ↦ globalSectionsAction_injective M (by
+    rw [globalSectionsAction_apply, globalSectionsAction_apply, h])
 
 /-- Every endomorphism of an invertible sheaf is multiplication by a global function. -/
 theorem globalSectionsAction_surjective : Function.Surjective (globalSectionsAction M) := by
