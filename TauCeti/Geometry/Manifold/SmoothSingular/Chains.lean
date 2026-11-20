@@ -198,6 +198,58 @@ theorem integrationCochain_add [IsManifold I 1 M] {φ ψ : RoughForm I M F p}
   ext c
   simp [integrationCochain_apply (I := I), chainIntegral_add_form _ hφ hψ]
 
+/-- The additive functional on Mathlib's smooth singular chains with integer coefficients given by
+integrating a form. Differential characters are defined on the integral cycles, and compared with
+these integrals modulo `ℤ`. -/
+def intIntegrationCochain (φ : RoughForm I M F p) :
+    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X p ⟶
+      ModuleCat.of ℤ F :=
+  ModuleCat.ofHom ((Finsupp.linearCombination ℤ (fun σ : SmoothSimplex I M p ↦ σ.integral φ)).comp
+    (SSet.chainsLinearEquivFinsupp _ ℤ p).toLinearMap)
+
+/-- On canonical integral simplicial chains, integration is the finite coefficient sum. -/
+theorem intIntegrationCochain_apply (φ : RoughForm I M F p)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).X p) :
+    (intIntegrationCochain φ).hom c =
+      ((smoothSingularSubcomplex I M : SSet).chainsLinearEquivFinsupp ℤ p c).sum
+        fun (σ : SmoothSimplex I M p) n ↦ n • σ.integral φ :=
+  Finsupp.linearCombination_apply ℤ _
+
+/-- The integral integration cochain takes a simplex with coefficient `n` to `n` times its
+integral. -/
+@[simp]
+theorem intIntegrationCochain_ιChainComplex (φ : RoughForm I M F p) (σ : SmoothSimplex I M p)
+    (n : ℤ) :
+    (intIntegrationCochain φ).hom (((smoothSingularSubcomplex I M : SSet).ιChainComplex
+      (R := ModuleCat.of ℤ ℤ) σ).hom n) = n • σ.integral φ := by
+  rw [intIntegrationCochain_apply (I := I),
+    _root_.SSet.chainsLinearEquivFinsupp_ιChainComplex
+      (smoothSingularSubcomplex I M : SSet) σ n, Finsupp.sum_single_index (by simp)]
+
+/-- Integrating the zero form gives the zero integral cochain. -/
+@[simp]
+theorem intIntegrationCochain_zero : intIntegrationCochain (0 : RoughForm I M F p) = 0 := by
+  apply ModuleCat.hom_ext
+  ext c
+  simp [intIntegrationCochain_apply (I := I)]
+
+/-- The integral integration cochain of the negative of a form is the negative cochain. -/
+@[simp]
+theorem intIntegrationCochain_neg (φ : RoughForm I M F p) :
+    intIntegrationCochain (-φ) = -intIntegrationCochain φ := by
+  apply ModuleCat.hom_ext
+  ext c
+  simp [intIntegrationCochain_apply (I := I)]
+
+/-- Integration takes addition of continuous forms to addition of integral cochains. -/
+theorem intIntegrationCochain_add [IsManifold I 1 M] {φ ψ : RoughForm I M F p}
+    (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) :
+    intIntegrationCochain (φ + ψ) = intIntegrationCochain φ + intIntegrationCochain ψ := by
+  apply ModuleCat.hom_ext
+  ext c
+  simp [intIntegrationCochain_apply (I := I), SmoothSimplex.integral_add _ hφ hψ, Finsupp.sum,
+    Finset.sum_add_distrib]
+
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type} [TopologicalSpace N] [ChartedSpace H' N]
 
@@ -212,6 +264,20 @@ theorem integrationCochain_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply, integrationCochain_apply (I := I),
     integrationCochain_apply (I := J),
     SSet.chainsLinearEquivFinsupp_chainComplexMap_f, chainIntegral_mapDomain hf]
+
+/-- The integral integration cochain is natural for the actual chain map induced by a smooth
+map. -/
+@[reassoc]
+theorem intIntegrationCochain_naturality {f : M → N} (hf : ContMDiff I J ∞ f)
+    (ψ : RoughForm J N F p) :
+    (SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) (ModuleCat.of ℤ ℤ)).f p ≫
+      intIntegrationCochain ψ = intIntegrationCochain (mpullback I J f ψ) := by
+  apply ModuleCat.hom_ext
+  ext c
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, intIntegrationCochain_apply (I := I),
+    intIntegrationCochain_apply (I := J), SSet.chainsLinearEquivFinsupp_chainComplexMap_f]
+  rw [Finsupp.sum_mapDomain_index (by simp) (by simp [add_smul])]
+  simp only [SmoothSimplex.integral_smoothSingularSubcomplexMap_app hf]
 
 end Cochain
 

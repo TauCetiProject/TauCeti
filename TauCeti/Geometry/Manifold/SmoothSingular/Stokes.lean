@@ -313,6 +313,22 @@ theorem d_comp_integrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I
     ← Int.cast_smul_eq_zsmul ℝ]
   simp
 
+/-- **Stokes' theorem for smooth singular chains with integer coefficients.** The integral
+integration cochain of a `C¹` form, precomposed with the differential of the integral smooth
+singular chain complex, is the integral integration cochain of its exterior derivative. -/
+@[reassoc]
+theorem d_comp_intIntegrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ) :
+    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℤ ℤ)).d (p + 1) p ≫
+      intIntegrationCochain φ = intIntegrationCochain (mextDeriv φ) := by
+  refine SSet.chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext_ring ?_)
+  simp only [SSet.ιChainComplex_d_assoc, Preadditive.sum_comp, Preadditive.zsmul_comp,
+    ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_sum, LinearMap.sum_apply,
+    ModuleCat.hom_zsmul, LinearMap.smul_apply, LinearMap.comp_apply]
+  rw [intIntegrationCochain_ιChainComplex, one_smul, SmoothSimplex.integral_mextDeriv σ hφ]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [intIntegrationCochain_ιChainComplex, one_smul, ← Int.cast_smul_eq_zsmul ℝ]
+  simp
+
 /-- The integration cochain of a closed `C¹` form is a cocycle. -/
 theorem d_comp_integrationCochain_eq_zero {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) :
