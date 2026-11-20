@@ -11,6 +11,8 @@ public import TauCeti.RingTheory.Etale.Torsor.Trivial
 public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.PiTensorProduct.MulSemiringAction
 
+import TauCeti.Algebra.Group.Pi.Lemmas
+
 /-!
 # Finite tensor products of finite étale torsors
 
@@ -94,6 +96,9 @@ private theorem piTensorProduct_aux (ι : Type u) [Finite ι] {G : ι → Type v
     | smul_tprod r a => simp [φ, smul_comm _ r]
     | add x y hx hy =>
       rw [smul_add, map_add, map_add, hx, hy]
+      -- The goal's action is an `SMulZeroClass` on the tensor product, and neither `rw [smul_add]`
+      -- nor unification with the goal can recover the `DistribSMul` instance `smul_add` needs;
+      -- naming the tensor product lets instance synthesis find it.
       exact (smul_add (A := (⨂[A] i, B (some i)) ⊗[A] B none) (φ g) _ _).symm
 
 /-- **Finite tensor products of torsors.** If `B i` is a finite étale `G i`-torsor over `A` for
@@ -106,18 +111,6 @@ instance piTensorProduct {ι : Type u} [Finite ι] {G : ι → Type v} {B : ι �
     [∀ i, IsFiniteEtaleTorsor (G i) A (B i)] :
     IsFiniteEtaleTorsor (∀ i, G i) A (⨂[A] i, B i) :=
   piTensorProduct_aux ι
-
-/-- Restriction `g ↦ g ∘ f` of a product of groups along an injective map is surjective: extend
-by `1` off the range of `f`. -/
-private theorem surjective_restrict {σ τ : Type*} {G : τ → Type*} [∀ j, Group (G j)]
-    {f : σ → τ} (hf : Function.Injective f) :
-    Function.Surjective (MonoidHom.pi fun i ↦ Pi.evalMonoidHom G (f i)) := fun k ↦ by
-  classical
-  let e := Equiv.ofInjective f hf
-  refine ⟨fun j ↦ if hj : j ∈ Set.range f then
-    Equiv.piCongrLeft (fun j : Set.range f ↦ G j) e k ⟨j, hj⟩ else 1, funext fun i ↦ ?_⟩
-  simp only [MonoidHom.pi_apply, Pi.evalMonoidHom_apply, Set.mem_range_self, ↓reduceDIte]
-  exact Equiv.piCongrLeft_apply_apply (fun j : Set.range f ↦ G j) e k i
 
 section FiberwiseMul
 
@@ -141,7 +134,7 @@ theorem fiberwiseMul {f : σ → τ} (hf : Function.Injective f) :
   let := (PiTensorProduct.fiberwiseMul (R := A) (A := B) f).toAlgebra
   have : IsScalarTower A (⨂[A] i, B (f i)) (⨂[A] j, B j) :=
     .of_algebraMap_eq' (PiTensorProduct.fiberwiseMul f).comp_algebraMap.symm
-  exact of_surjective (A := A) (surjective_restrict hf)
+  exact of_surjective (A := A) (MonoidHom.pi_evalMonoidHom_surjective_of_injective hf)
     fun g x ↦ (fiberwiseMul_piMulSemiringAction_smul f g x).symm
 
 variable (G) in
