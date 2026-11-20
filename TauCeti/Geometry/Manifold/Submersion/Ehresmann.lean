@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution.Orthogonal
 public import TauCeti.Geometry.Manifold.Distribution.Submersion
-public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Submersion.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
@@ -69,8 +68,6 @@ Ehresmann's fibration theorem, which are not proved here.
   vertical distribution of a submersion is an Ehresmann connection.
 * `Manifold.IsSubmersion.exists_isEhresmannConnection`: existence of Ehresmann connections on
   σ-compact Hausdorff manifolds.
-* `TauCeti.IsRiemannianSubmersion.horizontalLift_eq_isEhresmannConnection_horizontalLift`: for a
-  Riemannian submersion this horizontal lift is the isometric one.
 
 ## References
 
@@ -153,6 +150,12 @@ theorem mfderivEquiv_apply (v : Hz x) : h.mfderivEquiv x v = mfderiv I J f x v :
 at `x`: the inverse of the derivative on the horizontal space. -/
 def horizontalLift : TangentSpace J (f x) →ₗ[𝕜] TangentSpace I x :=
   (Hz x).subtype ∘ₗ (h.mfderivEquiv x).symm.toLinearMap
+
+/-- The inverse of `TauCeti.IsEhresmannConnection.mfderivEquiv` is the horizontal lift. -/
+@[simp]
+theorem coe_mfderivEquiv_symm_apply (w : TangentSpace J (f x)) :
+    ((h.mfderivEquiv x).symm w : TangentSpace I x) = h.horizontalLift x w :=
+  (rfl)
 
 /-- The horizontal lift is horizontal. -/
 theorem horizontalLift_mem (w : TangentSpace J (f x)) : h.horizontalLift x w ∈ Hz x :=
@@ -249,8 +252,9 @@ theorem IsSubmersion.isEhresmannConnection_orthogonal_ker
 manifold modelled on a finite-dimensional real space has an Ehresmann connection of class `C^k`
 for every `k ≤ ∞` with `k + 1 ≤ n`. -/
 theorem IsSubmersion.exists_isEhresmannConnection {k : ℕ∞} [T2Space M] [SigmaCompactSpace M]
-    [IsManifold I ∞ M] [IsManifold I (k + 1) M] (hf : IsSubmersion I J n f) (hkn : k + 1 ≤ n) :
+    [IsManifold I ∞ M] (hf : IsSubmersion I J n f) (hkn : k + 1 ≤ n) :
     ∃ Hz : Π x : M, Submodule ℝ (TangentSpace I x), IsEhresmannConnection I J k f Hz := by
+  have : IsManifold I (k + 1) M := .of_le (n := ∞) (by exact_mod_cast le_top)
   have := TangentBundle.contMDiffVectorBundle (n := k) (I := I) (M := M)
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := k) (F := E)
     (E := fun x : M ↦ TangentSpace I x)
@@ -258,21 +262,5 @@ theorem IsSubmersion.exists_isEhresmannConnection {k : ℕ∞} [T2Space M] [Sigm
   have : IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x) :=
     Bundle.instIsContMDiffRiemannianBundle g
   exact ⟨_, hf.isEhresmannConnection_orthogonal_ker hkn⟩
-
-/-- For a Riemannian submersion, the horizontal lift of the orthogonal Ehresmann connection is the
-isometric horizontal lift `TauCeti.IsRiemannianSubmersion.horizontalLift`, the adjoint of the
-derivative. -/
-theorem _root_.TauCeti.IsRiemannianSubmersion.horizontalLift_eq_isEhresmannConnection_horizontalLift
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold I (m + 1) M]
-    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
-    (h : IsRiemannianSubmersion I J f) (hm : m + 1 ≤ ∞) (x : M) (w : TangentSpace J (f x)) :
-    h.horizontalLift x w =
-      (h.isSubmersion.isEhresmannConnection_orthogonal_ker hm).horizontalLift x w := by
-  obtain ⟨u, rfl⟩ := h.isSubmersion.surjective_mfderiv (by simp) x w
-  rw [h.horizontalLift_mfderiv]
-  exact ((h.isSubmersion.isEhresmannConnection_orthogonal_ker hm).eq_horizontalLift_iff x).2
-    ⟨Submodule.starProjection_apply_mem _ _, by rw [← h.horizontalLift_mfderiv,
-      h.mfderiv_horizontalLift]⟩
 
 end Manifold
