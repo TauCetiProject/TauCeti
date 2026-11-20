@@ -41,8 +41,9 @@ sublevel exactly in `Θ(S_ε)` (`IsCriticalSubmanifold.mem_negativeSphereBundle_
 of a closed embedding of the disc bundle `TauCeti.gaugeDiscBundle` of a fibre gauge on a vector
 bundle attached along its sphere bundle. `D_ε` is cut out of the whole normal bundle by the normal
 Hessian, as the disc bundle of the gauge `v ↦ √(-Hess(v, v) / (2ε))` on the negative normal
-spaces, so applying that theorem to `D_ε` still needs the negative normal bundle as a vector bundle
-with that gauge.
+spaces (`IsCriticalSubmanifold.negativeNormalGauge`); with the negative normal bundle as a vector
+bundle, `IsNondegenerateCriticalSubmanifold.exists_isIso_singularHomologyMap_negativeNormalGauge`
+applies that theorem to `D_ε`.
 
 When `D_ε` is compact, as it is for a compact Morse–Bott submanifold and a smooth fibre metric
 (`IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`), a normal form which is
