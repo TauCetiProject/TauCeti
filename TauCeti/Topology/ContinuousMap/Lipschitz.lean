@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Topology.ContinuousMap.StoneWeierstrass
-public import TauCeti.Analysis.Normed.Operator.Holder
 public import TauCeti.Topology.MetricSpace.Holder
 
 /-!
