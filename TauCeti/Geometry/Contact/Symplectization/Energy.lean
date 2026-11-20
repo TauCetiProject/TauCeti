@@ -353,7 +353,11 @@ theorem hasMFDerivAt_trivialCylinder (hγ : IsMIntegralCurve γ R) (c : ℝ) (z 
     hasFDerivAt_fst.const_mul c
   have hf₂ : HasFDerivAt (fun z : ℝ × ℝ ↦ c * z.2) (c • ContinuousLinearMap.snd ℝ ℝ ℝ) z :=
     hasFDerivAt_snd.const_mul c
-  -- The chain rule gives `R(γ (c t))` times the derivative `c • snd` of `(s, t) ↦ c t`.
+  -- The chain rule gives `R(γ (c t))` times the derivative `c • snd` of `(s, t) ↦ c t`, that is
+  -- `v ↦ (c v₁, 1 (c v₂) • R(γ (c t)))`. As `1 : ℝ →L[ℝ] ℝ` is the identity, this unfolds to
+  -- `trivialCylinderDeriv R γ c z v = (c v₁, (c v₂) • R(γ (c t)))`, so the maps agree by `rfl`.
+  -- (`simp` cannot do this step: the chain-rule map is typed between the `TangentSpace` type
+  -- synonyms of `ℝ × ℝ` and `ℝ × TangentSpace I _`, where the `ℝ × ℝ` lemmas do not apply.)
   exact (hf₁.hasMFDerivAt.prodMk ((hγ (c * z.2)).comp z hf₂.hasMFDerivAt)).congr_mfderiv
     (ContinuousLinearMap.ext fun _ ↦ rfl)
 
@@ -376,8 +380,9 @@ theorem endEnergyDensity_trivialCylinder {α : SmoothForm I M ℝ 1}
     α.endEnergyDensity (fun z ↦ γ (c * z.2))
         (fun z ↦ (trivialCylinderDeriv R γ c z : (ℝ × ℝ) →ₗ[ℝ] ℝ × TangentSpace I (γ (c * z.2))))
         z = c ^ 2 := by
-  simp [endEnergyDensity_def, stdComplexLineReal_eq, stdComplexLineImag_eq,
-    degreeOneEquiv_coe_apply, hR]
+  simp only [endEnergyDensity_def, stdComplexLineReal_eq, ContinuousLinearMap.coe_coe,
+    trivialCylinderDeriv_apply, mul_one, mul_zero, zero_smul, stdComplexLineImag_eq, map_smul,
+    degreeOneEquiv_coe_apply, hR, smul_eq_mul, zero_mul, sub_zero]
   ring
 
 /-- **The end energy of a trivial cylinder is its action.** Let `γ` be a curve along which
