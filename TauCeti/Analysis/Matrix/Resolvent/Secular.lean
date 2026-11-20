@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Ring.Finset
 public import TauCeti.Analysis.Matrix.DotProduct
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.LinearAlgebra.Matrix.SecularEquation
@@ -24,8 +25,9 @@ For a unit eigenvector `x` of `A + c • u uᴴ` at such a `μ`, the squared ove
 
 `‖uᴴ x‖ ^ 2 = (c ^ 2 * ∑ j, ‖b j‖ ^ 2 / (λ j - μ) ^ 2)⁻¹`.
 
-Above the spectrum of `A` the secular sum is strictly increasing, so `A + c • u uᴴ` has at most
-one eigenvalue exceeding every eigenvalue of `A`.
+Above the spectrum of `A` the secular sum is strictly increasing
+(`Finset.sum_div_sub_lt_sum_div_sub`), so `A + c • u uᴴ` has at most one eigenvalue exceeding every
+eigenvalue of `A`, and none when `c ≤ 0`.
 
 These are the finite-dimensional identities behind the location of the outlier eigenvalues of
 spiked random matrices and the limit of the overlap of their eigenvectors with the spike: the
@@ -42,6 +44,8 @@ derivative of that transform.
   form;
 * `Matrix.IsHermitian.norm_star_dotProduct_sq_eq_inv` — the squared overlap of a unit eigenvector
   with the perturbation direction;
+* `Matrix.IsHermitian.notMem_spectrum_add_smul_vecMulVec_of_nonpos` — for `c ≤ 0` no eigenvalue
+  of `A + c • u uᴴ` lies above the spectrum of `A`;
 * `Matrix.IsHermitian.eq_of_mem_spectrum_add_smul_vecMulVec` — at most one eigenvalue of
   `A + c • u uᴴ` lies above the spectrum of `A`.
 
@@ -59,20 +63,6 @@ noncomputable section
 open Unitary
 
 namespace Matrix.IsHermitian
-
-/-- Above every pole, a secular sum `∑ j, w j / (f j - t)` with nonnegative weights is strictly
-increasing in `t` once some weight is positive. -/
-private theorem sum_div_sub_lt_sum_div_sub {n : Type*} [Fintype n] {f w : n → ℝ}
-    (hw : ∀ j, 0 ≤ w j) (hw₀ : ∃ j, 0 < w j) {s t : ℝ} (hs : ∀ j, f j < s) (hst : s < t) :
-    ∑ j, w j / (f j - s) < ∑ j, w j / (f j - t) := by
-  have key {a : ℝ} (ha : 0 < a) (j : n) : a / (f j - s) < a / (f j - t) := by
-    rw [← neg_sub s, ← neg_sub t, div_neg, div_neg, neg_lt_neg_iff]
-    exact div_lt_div_of_pos_left ha (sub_pos.2 (hs j)) (by linarith)
-  obtain ⟨j₀, hj₀⟩ := hw₀
-  refine Finset.sum_lt_sum (fun j _ ↦ ?_) ⟨j₀, Finset.mem_univ _, key hj₀ j₀⟩
-  rcases (hw j).lt_or_eq with hj | hj
-  · exact (key hj j).le
-  · simp [← hj]
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
   (hA : A.IsHermitian)
@@ -95,14 +85,18 @@ theorem star_inv_sub_smul_one_mulVec_dotProduct {z : 𝕜} (hz : z ∉ spectrum 
     star ((A - z • 1)⁻¹ *ᵥ u) ⬝ᵥ (A - z • 1)⁻¹ *ᵥ u =
       ∑ j, ((‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 /
         ‖(hA.eigenvalues j : 𝕜) - z‖ ^ 2 : ℝ) : 𝕜) := by
-  rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, ← star_eq_conjTranspose,
-    hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, ← map_star, ← map_mul, star_eq_conjTranspose,
-    diagonal_conjTranspose, diagonal_mul_diagonal, conjStarAlgAut_apply, star_eq_conjTranspose,
-    star_dotProduct_mul_diagonal_mul_conjTranspose_mulVec]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Pi.star_apply, RCLike.star_def, RCLike.conj_mul, norm_inv]
+  -- `Rᴴ R = U diag(‖λ j - z‖⁻²) Uᴴ` for the resolvent `R = (A - z • 1)⁻¹`.
+  have hRR : (A - z • 1)⁻¹ᴴ * (A - z • 1)⁻¹ = conjStarAlgAut 𝕜 _ hA.eigenvectorUnitary
+      (diagonal fun j ↦ (((‖(hA.eigenvalues j : 𝕜) - z‖ ^ 2)⁻¹ : ℝ) : 𝕜)) := by
+    rw [← star_eq_conjTranspose, hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, ← map_star,
+      ← map_mul, star_eq_conjTranspose, diagonal_conjTranspose, diagonal_mul_diagonal]
+    congr 2
+    ext j
+    rw [Pi.star_apply, RCLike.star_def, RCLike.conj_mul, norm_inv, ← RCLike.ofReal_pow, inv_pow]
+  rw [star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, hRR, conjStarAlgAut_apply,
+    star_eq_conjTranspose, star_dotProduct_mul_diagonal_mul_conjTranspose_mulVec]
   push_cast
-  ring
+  simp_rw [inv_mul_eq_div]
 
 /-- **The secular equation in spectral form.** For a Hermitian `A`, real `c`, and a real `μ`
 that is not an eigenvalue of `A`, `μ` is an eigenvalue of `A + c • u uᴴ` exactly when
@@ -143,13 +137,33 @@ theorem norm_star_dotProduct_sq_eq_inv (c : ℝ) {u x : n → 𝕜} {μ : ℝ} (
   rw [hx₁, eq_comm, ← RCLike.ofReal_one, RCLike.ofReal_inj] at hnorm
   exact eq_inv_of_mul_eq_one_left hnorm
 
+/-- **No outlier above the spectrum for a nonpositive perturbation.** For `c ≤ 0`, no eigenvalue
+of `A + c • u uᴴ` exceeds every eigenvalue of the Hermitian matrix `A`. -/
+theorem notMem_spectrum_add_smul_vecMulVec_of_nonpos {c : ℝ} (hc : c ≤ 0) (u : n → 𝕜) {μ : ℝ}
+    (hμA : ∀ j, hA.eigenvalues j < μ) :
+    μ ∉ spectrum ℝ (A + (c : 𝕜) • vecMulVec u (star u)) := by
+  have hμ : μ ∉ spectrum ℝ A := by
+    rw [hA.spectrum_real_eq_range_eigenvalues]
+    rintro ⟨j, rfl⟩
+    exact lt_irrefl _ (hμA j)
+  rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u hμ]
+  -- Above the spectrum every term of the secular sum is nonpositive.
+  have hsum : ∑ j, ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 /
+      (hA.eigenvalues j - μ) ≤ 0 :=
+    Finset.sum_nonpos fun j _ ↦ div_nonpos_of_nonneg_of_nonpos (by positivity)
+      (sub_nonpos.2 (hμA j).le)
+  intro h
+  nlinarith
+
 /-- **At most one outlier above the spectrum.** A real rank-one perturbation `A + c • u uᴴ` of a
-Hermitian matrix `A` has at most one eigenvalue that exceeds every eigenvalue of `A`. For
-`c ≤ 0` it has none. -/
+Hermitian matrix `A` has at most one eigenvalue that exceeds every eigenvalue of `A`; for `c ≤ 0`
+it has none, by `Matrix.IsHermitian.notMem_spectrum_add_smul_vecMulVec_of_nonpos`. -/
 theorem eq_of_mem_spectrum_add_smul_vecMulVec (c : ℝ) (u : n → 𝕜) {μ ν : ℝ}
     (hμ : μ ∈ spectrum ℝ (A + (c : 𝕜) • vecMulVec u (star u)))
     (hν : ν ∈ spectrum ℝ (A + (c : 𝕜) • vecMulVec u (star u)))
     (hμA : ∀ j, hA.eigenvalues j < μ) (hνA : ∀ j, hA.eigenvalues j < ν) : μ = ν := by
+  rcases le_or_gt c 0 with hc | hc
+  · exact absurd hμ (hA.notMem_spectrum_add_smul_vecMulVec_of_nonpos hc u hμA)
   have hnot {t : ℝ} (ht : ∀ j, hA.eigenvalues j < t) : t ∉ spectrum ℝ A := by
     rw [hA.spectrum_real_eq_range_eigenvalues]
     rintro ⟨j, rfl⟩
@@ -157,24 +171,17 @@ theorem eq_of_mem_spectrum_add_smul_vecMulVec (c : ℝ) (u : n → 𝕜) {μ ν 
   rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u (hnot hμA)] at hμ
   rw [hA.mem_spectrum_add_smul_vecMulVec_iff c u (hnot hνA)] at hν
   have hw (j : n) : 0 ≤ ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 := by positivity
-  -- Above the spectrum every term of the secular sum is nonpositive, so for `c ≤ 0` the secular
-  -- equation has no root there.
-  rcases le_or_gt c 0 with hc | hc
-  · have hsum : ∑ j, ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 /
-        (hA.eigenvalues j - μ) ≤ 0 :=
-      Finset.sum_nonpos fun j _ ↦ div_nonpos_of_nonneg_of_nonpos (hw j) (by linarith [hμA j])
-    nlinarith
   -- Some weight is positive, since otherwise the secular equation reads `1 = 0`.
-  have hw₀ : ∃ j, 0 < ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 := by
+  have hw₀ : ∃ j ∈ Finset.univ, 0 < ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 := by
     by_contra! h
     have h0 (j : n) : ‖((hA.eigenvectorUnitary : Matrix n n 𝕜)ᴴ *ᵥ u) j‖ ^ 2 = 0 :=
-      le_antisymm (h j) (hw j)
+      le_antisymm (h j (Finset.mem_univ j)) (hw j)
     simp [h0] at hμ
   rcases lt_trichotomy μ ν with h | h | h
-  · have := sum_div_sub_lt_sum_div_sub hw hw₀ hμA h
+  · have := Finset.sum_div_sub_lt_sum_div_sub (fun j _ ↦ hw j) hw₀ (fun j _ ↦ hμA j) h
     nlinarith
   · exact h
-  · have := sum_div_sub_lt_sum_div_sub hw hw₀ hνA h
+  · have := Finset.sum_div_sub_lt_sum_div_sub (fun j _ ↦ hw j) hw₀ (fun j _ ↦ hνA j) h
     nlinarith
 
 end Matrix.IsHermitian

@@ -83,6 +83,17 @@ theorem add_vecMulVec_mulVec_inv_sub_smul_one_mulVec (hμ : μ ∉ spectrum R A)
     rw [← zero_smul R u, ← h, add_smul, one_smul]
   rw [add_mulVec, vecMulVec_mulVec, op_smul_eq_smul, hw, add_right_comm, hsum, zero_add]
 
+/-- At a root `μ` of the secular equation outside the spectrum of `A`, the eigenspace of
+`A + u vᵀ` for `μ` is the line spanned by `(A - μ • 1)⁻¹ *ᵥ u`. -/
+theorem eigenspace_mulVecLin_add_vecMulVec (hμ : μ ∉ spectrum R A) {u v : n → R}
+    (h : 1 + v ⬝ᵥ ((A - μ • 1)⁻¹ *ᵥ u) = 0) :
+    Module.End.eigenspace (A + vecMulVec u v).mulVecLin μ = R ∙ ((A - μ • 1)⁻¹ *ᵥ u) := by
+  ext x
+  rw [Module.End.mem_eigenspace_iff, mulVecLin_apply, Submodule.mem_span_singleton]
+  refine ⟨fun hx ↦ ⟨-(v ⬝ᵥ x), (eq_neg_dotProduct_smul_inv_sub_smul_one_mulVec hμ hx).symm⟩, ?_⟩
+  rintro ⟨a, rfl⟩
+  rw [mulVec_smul, add_vecMulVec_mulVec_inv_sub_smul_one_mulVec hμ h, smul_comm]
+
 end CommRing
 
 section Field
@@ -96,17 +107,6 @@ theorem mem_spectrum_add_vecMulVec_iff (hμ : μ ∉ spectrum K A) (u v : n → 
   have h := isUnit_add_vecMulVec_iff (A - μ • 1) (isUnit_sub_smul_one_of_notMem_spectrum hμ) u v
   rw [isUnit_iff_ne_zero, sub_add_eq_add_sub] at h
   rw [spectrum.mem_iff, Algebra.algebraMap_eq_smul_one, ← IsUnit.neg_iff, neg_sub, h, not_not]
-
-/-- At a root `μ` of the secular equation outside the spectrum of `A`, the eigenspace of
-`A + u vᵀ` for `μ` is the line spanned by `(A - μ • 1)⁻¹ *ᵥ u`. -/
-theorem eigenspace_mulVecLin_add_vecMulVec (hμ : μ ∉ spectrum K A) {u v : n → K}
-    (h : 1 + v ⬝ᵥ ((A - μ • 1)⁻¹ *ᵥ u) = 0) :
-    Module.End.eigenspace (A + vecMulVec u v).mulVecLin μ = K ∙ ((A - μ • 1)⁻¹ *ᵥ u) := by
-  ext x
-  rw [Module.End.mem_eigenspace_iff, mulVecLin_apply, Submodule.mem_span_singleton]
-  refine ⟨fun hx ↦ ⟨-(v ⬝ᵥ x), (eq_neg_dotProduct_smul_inv_sub_smul_one_mulVec hμ hx).symm⟩, ?_⟩
-  rintro ⟨a, rfl⟩
-  rw [mulVec_smul, add_vecMulVec_mulVec_inv_sub_smul_one_mulVec hμ h, smul_comm]
 
 /-- At a root `μ` of the secular equation outside the spectrum of `A`, the eigenvalue `μ` of
 `A + u vᵀ` has geometric multiplicity one. -/
