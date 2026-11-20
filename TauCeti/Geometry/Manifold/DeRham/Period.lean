@@ -23,7 +23,8 @@ Equivalently, the monodromy of the covering along `γ` translates values by the 
 (`TauCeti.PrimitiveSpace.value_monodromy`), which gives homotopy invariance for free.
 
 The integral is additive under concatenation (`TauCeti.pathClassIntegral_trans`), linear in the
-form (`TauCeti.pathClassIntegral_smul_add_smul`), equal to the endpoint difference of a primitive
+form (`TauCeti.pathClassIntegral_smul_add_smul`), natural in the coefficients
+(`TauCeti.pathClassIntegral_mapCoeff`), equal to the endpoint difference of a primitive
 for exact forms (`TauCeti.pathClassIntegral_mextDeriv_ofFunction`), and equal to the line integral
 `TauCeti.pathIntegral` along `C¹` curves (`TauCeti.pathClassIntegral_mk_eq_pathIntegral`).
 
@@ -329,6 +330,41 @@ theorem pathClassIntegral_smul (a : ℝ) (γ : Path.Homotopic.Quotient x y) :
         ⟨by simpa [ha] using h'.1.smul a⁻¹, by simpa [ha] using h'.2⟩
       rw [pathClassIntegral_undef h, pathClassIntegral_undef h', smul_zero]
 
+section MapCoeff
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- **Integrals are natural in the coefficients.** A continuous linear map `L` of coefficient
+spaces carries the integral of a closed `C¹` form `φ` along a path class to the integral of the
+form `L ∘ φ`. -/
+theorem pathClassIntegral_mapCoeff (L : F →L[ℝ] G) (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) (γ : Path.Homotopic.Quotient x y) :
+    pathClassIntegral (RoughForm.mapCoeff L φ) γ = L (pathClassIntegral φ γ) := by
+  induction γ with | mk γ =>
+  have hp := PrimitiveSpace.isCoveringMap_proj (r := 1) le_rfl hφ hclosed
+  -- A lift `Γ` of `γ` for `φ`; applying `L` to its values gives a lift `Λ` for `L ∘ φ`.
+  obtain ⟨Γ, hΓγ, -⟩ := hp.exists_path_lifts γ.toContinuousMap (PrimitiveSpace.graph φ 0 x)
+    (by simp)
+  have hΓγ' (t : unitInterval) : PrimitiveSpace.proj φ (Γ t) = γ t := congrFun hΓγ t
+  let Λ (t : unitInterval) : PrimitiveSpace (RoughForm.mapCoeff L φ) :=
+    PrimitiveSpace.graph _ (fun _ ↦ L (PrimitiveSpace.value φ (Γ t))) (γ t)
+  have hΛ : Continuous Λ := continuous_iff_continuousAt.mpr fun t₀ ↦ by
+    obtain ⟨g, -, U, hxU, hgU, c, hc⟩ :=
+      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq le_rfl hφ hclosed
+        Γ.continuous.continuousAt (t := t₀)
+    refine PrimitiveSpace.continuousAt_of_eventually_value_eq
+      (by simp only [Λ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
+      ((hgU.mapCoeff L).add_const (L c)) (by simpa [Λ, hΓγ'] using hxU) ?_
+    filter_upwards [hc] with s hcs
+    simp [Λ, hcs.2, hΓγ']
+  rw [pathClassIntegral_mk_eq_sub (hφ.mapCoeff L)
+      (by rw [mextDeriv_mapCoeff L hφ, hclosed, RoughForm.mapCoeff_zero]) hΛ
+      fun t ↦ PrimitiveSpace.proj_graph (γ t),
+    pathClassIntegral_mk_eq_sub hφ hclosed Γ.continuous hΓγ']
+  simp [Λ]
+
+end MapCoeff
+
 /-! ### The period homomorphism -/
 
 variable (φ) in
@@ -362,6 +398,13 @@ theorem periodHom_smul (a : ℝ) (x : M) : periodHom (a • φ) x = a • period
 @[simp]
 theorem periodHom_zero (x : M) : periodHom (0 : RoughForm I M F 1) x = 0 :=
   AddMonoidHom.ext fun _ ↦ pathClassIntegral_zero _
+
+/-- **Periods are natural in the coefficients.** A continuous linear map `L` of coefficient spaces
+carries the periods of a closed `C¹` form `φ` to the periods of the form `L ∘ φ`. -/
+theorem periodHom_mapCoeff {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    (L : F →L[ℝ] G) (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0) (x : M) :
+    periodHom (RoughForm.mapCoeff L φ) x = (L : F →+ G).comp (periodHom φ x) :=
+  AddMonoidHom.ext fun _ ↦ pathClassIntegral_mapCoeff L hφ hclosed _
 
 /-- The period of a closed `C¹` form along the class of a `C¹` loop is its line integral. -/
 theorem periodHom_ofMul_eq_pathIntegral (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0)
