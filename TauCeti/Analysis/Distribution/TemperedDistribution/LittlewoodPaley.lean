@@ -148,6 +148,7 @@ blocks `Δⱼ u`.
   `O(2^{-jα})`.
 * `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`: the kernels `𝓕⁻ ψⱼ`,
   `j ≥ 1`, have integral zero.
+* `ContDiffBump.fourierInv_inhomogeneousLittlewoodPaley_neg`: the kernels `𝓕⁻ ψⱼ` are even.
 * `TemperedDistribution.littlewoodPaleyBlock_delta_zero` and
   `TemperedDistribution.littlewoodPaleyBlock_delta_zero_eq_toLp`: the blocks of the Dirac mass `δ₀`
   are the kernels `𝓕⁻ ψⱼ`.
@@ -327,6 +328,13 @@ theorem integral_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
     φ.coe_inhomogeneousLittlewoodPaleySchwartz] at h0
   rw [h0, φ.inhomogeneousLittlewoodPaley_succ_apply]
   simp
+
+/-- The kernels `𝓕⁻ ψⱼ` are even, since the symbols `ψⱼ` are. -/
+theorem fourierInv_inhomogeneousLittlewoodPaley_neg (j : ℕ) (x : E) :
+    𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) (-x) =
+      𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) x := by
+  rw [Real.fourierInv_eq_fourier_neg, neg_neg, Real.fourierInv_eq_fourier_comp_neg]
+  simp only [φ.inhomogeneousLittlewoodPaley_neg]
 
 open MeasureTheory in
 /-- **The `Lʳ` norms of the dyadic kernels.** Since `𝓕⁻ ψ_{j+1} = 2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in
