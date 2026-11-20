@@ -88,6 +88,7 @@ namespace ContinuousMap
 
 /-- The functor between fundamental groupoids induced by a continuous map is injective on objects
 if and only if the map is injective. -/
+@[simp]
 theorem fundamentalGroupoid_map_obj_injective_iff (f : C(X, Y)) :
     Function.Injective (FundamentalGroupoid.map f).obj ↔ Function.Injective f := by
   -- On objects, `map f` is `f` conjugated by the equivalence `FundamentalGroupoid.equiv`.
