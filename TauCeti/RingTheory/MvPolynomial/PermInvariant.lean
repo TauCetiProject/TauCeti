@@ -76,12 +76,6 @@ def permInvariants (G : Subgroup (Equiv.Perm σ)) : Subalgebra R (MvPolynomial �
 
 variable {G H : Subgroup (Equiv.Perm σ)} {p : MvPolynomial σ R}
 
-/-- Mapping the domain of a finitely supported function by `g⁻¹` and then by `g` gives it back. -/
-private theorem mapDomain_mapDomain_perm_inv {M : Type*} [AddCommMonoid M] (g : Equiv.Perm σ)
-    (e : σ →₀ M) : (e.mapDomain ⇑g⁻¹).mapDomain g = e := by
-  rw [← Finsupp.mapDomain_comp, ← Equiv.Perm.coe_mul, mul_inv_cancel, Equiv.Perm.coe_one,
-    Finsupp.mapDomain_id]
-
 @[simp]
 theorem mem_permInvariants : p ∈ permInvariants R G ↔ ∀ g ∈ G, rename g p = p :=
   Iff.rfl
@@ -94,7 +88,8 @@ theorem mem_permInvariants_iff_forall_coeff_mapDomain :
   · conv_lhs => rw [← hp g hg]
     exact coeff_rename_mapDomain _ g.injective p e
   · ext e
-    rw [← mapDomain_mapDomain_perm_inv g e, coeff_rename_mapDomain _ g.injective, h g hg]
+    obtain ⟨e, rfl⟩ := Finsupp.mapDomain_surjective g.surjective e
+    rw [coeff_rename_mapDomain _ g.injective, h g hg]
 
 /-- Invariance under a larger group is a stronger condition. -/
 theorem permInvariants_anti (hGH : G ≤ H) : permInvariants R H ≤ permInvariants R G :=
@@ -103,8 +98,7 @@ theorem permInvariants_anti (hGH : G ≤ H) : permInvariants R H ≤ permInvaria
 @[simp]
 theorem permInvariants_bot : permInvariants R (⊥ : Subgroup (Equiv.Perm σ)) = ⊤ := by
   ext p
-  simp only [mem_permInvariants, Subgroup.mem_bot, forall_eq, Algebra.mem_top, iff_true]
-  exact rename_id_apply p
+  simp
 
 /-- The invariants of the full permutation group are the symmetric polynomials. -/
 @[simp]
@@ -126,8 +120,7 @@ def permOrbitRel (G : Subgroup (Equiv.Perm σ)) : Setoid (σ →₀ ℕ) where
     { refl e := ⟨1, G.one_mem, by simp⟩
       symm := by
         rintro e f ⟨g, hg, rfl⟩
-        refine ⟨g⁻¹, G.inv_mem hg, ?_⟩
-        simpa using mapDomain_mapDomain_perm_inv g⁻¹ e
+        exact ⟨g⁻¹, G.inv_mem hg, by simp [← Finsupp.mapDomain_comp]⟩
       trans := by
         rintro e f d ⟨g, hg, rfl⟩ ⟨h, hh, rfl⟩
         exact ⟨h * g, G.mul_mem hh hg, by rw [Equiv.Perm.coe_mul, Finsupp.mapDomain_comp]⟩ }
@@ -290,8 +283,8 @@ private theorem coeff_linearCombination_orbitSumQuotient (c : Quotient (permOrbi
     ((Finsupp.linearCombination R (orbitSumQuotient R G) c : permInvariants R G) :
       MvPolynomial σ R).coeff O.out = c O := by
   classical
-  rw [Finsupp.linearCombination_apply, Finsupp.sum, AddSubmonoidClass.coe_finsetSum, coeff_sum]
-  simp only [SetLike.val_smul, coeff_smul]
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, AddSubmonoidClass.coe_finsetSum,
+    coeff_sum, SetLike.val_smul, coeff_smul]
   rw [Finset.sum_eq_single O]
   · rw [orbitSumQuotient, coeff_orbitSum_of_rel ((permOrbitRel G).refl' _), smul_eq_mul, mul_one]
   · intro O' _ hO'
