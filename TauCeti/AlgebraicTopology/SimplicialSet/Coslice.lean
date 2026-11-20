@@ -40,6 +40,9 @@ simplicial set on these edges.
 * `SSet.coslice.map i g h`: the map of coslices `C_{p/} ⟶ D_{q/}` induced by `i : L ⟶ K` and
   `g : C ⟶ D` with `i ≫ p ≫ g = q`, restricting along `i` and composing with `g`; it is functorial
   (`SSet.coslice.map_id`, `SSet.coslice.map_comp`).
+* `SSet.coslice.restrictionMap i p σ`: for `p : X ⟶ S` and `σ : K ⟶ X`, the map
+  `X_{σ/} ⟶ X_{i ≫ σ/} ×_{S_{i ≫ σ ≫ p/}} S_{σ ≫ p/}`, dual to `SSet.slice.restrictionMap`.
+* `SSet.coslice.isTerminal p hC`: a coslice of a terminal simplicial set is terminal.
 * `SSet.coslice.pullbackConstHomEquiv x y`: maps to the fibre `{x} ×_C C_{y/}` are the maps
   `Δ[0] ⋆ Z ⟶ C` sending the cone point to `y` and `Z` to `x`.
 * `SSet.coslice.pullbackConstObj₀Equiv x y`: the vertices of this fibre are the edges from `y`
@@ -278,6 +281,37 @@ lemma map_comp {M E : SSet.{u}} {r : M ⟶ E} (i : L ⟶ K) (g : C ⟶ D) (h : i
 lemma map_π (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q) : map i g h ≫ π q = π p ≫ g := by
   rw [comp_π, ← Category.id_comp (map i g h), homEquiv_comp_map_coe, join.inr_map_assoc,
     Category.id_comp, π, Category.assoc]
+
+variable (p) in
+/-- A coslice of a terminal simplicial set is terminal: there is exactly one map `K ⋆ X ⟶ C` to a
+terminal `C`. -/
+noncomputable def isTerminal (hC : Limits.IsTerminal C) : Limits.IsTerminal (coslice p) :=
+  Limits.IsTerminal.ofUniqueHom (fun _ ↦ homEquiv.symm ⟨hC.from _, hC.hom_ext _ _⟩)
+    fun _ _ ↦ hom_ext (hC.hom_ext _ _)
+
+section restrictionMap
+
+variable {S : SSet.{u}}
+
+/-- For maps `i : L ⟶ K`, `p : X ⟶ S` and a diagram `σ : K ⟶ X`, the map
+`X_{σ/} ⟶ X_{i ≫ σ/} ×_{S_{i ≫ σ ≫ p/}} S_{σ ≫ p/}` which restricts a cocone under `σ` along `i`
+and pushes it forward along `p`. It is dual to `SSet.slice.restrictionMap`. -/
+noncomputable def restrictionMap (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X) :
+    coslice σ ⟶ Limits.pullback (map (𝟙 L) p (by simp) : coslice (i ≫ σ) ⟶ coslice (i ≫ σ ≫ p))
+      (map i (𝟙 S) (by simp) : coslice (σ ≫ p) ⟶ coslice (i ≫ σ ≫ p)) :=
+  Limits.pullback.lift (map i (𝟙 X) (by simp)) (map (𝟙 K) p (by simp)) (by simp [map_comp])
+
+@[reassoc (attr := simp)]
+lemma restrictionMap_fst (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X) :
+    restrictionMap i p σ ≫ Limits.pullback.fst _ _ = map i (𝟙 X) (by simp) :=
+  Limits.pullback.lift_fst _ _ _
+
+@[reassoc (attr := simp)]
+lemma restrictionMap_snd (i : L ⟶ K) (p : X ⟶ S) (σ : K ⟶ X) :
+    restrictionMap i p σ ≫ Limits.pullback.snd _ _ = map (𝟙 K) p (by simp) :=
+  Limits.pullback.lift_snd _ _ _
+
+end restrictionMap
 
 end coslice
 

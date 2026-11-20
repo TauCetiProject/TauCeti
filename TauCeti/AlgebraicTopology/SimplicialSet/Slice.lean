@@ -32,6 +32,7 @@ to standard simplices.
   `g : C ⟶ D` with `i ≫ p ≫ g = q`, restricting cones along `i` and pushing them forward along `g`.
 * `SSet.slice.restrictionMap i p σ`: for `p : X ⟶ S` and `σ : K ⟶ X`, the map
   `X_{/σ} ⟶ X_{/i ≫ σ} ×_{S_{/i ≫ σ ≫ p}} S_{/σ ≫ p}`, through which Cartesian edges are defined.
+* `SSet.slice.isTerminal p hC`: a slice of a terminal simplicial set is terminal.
 
 ## Main results
 
@@ -364,6 +365,13 @@ lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
   · have := join.isIso_inl (K := X) hK
     refine ⟨homEquiv.symm ⟨inv (join.inl X K) ≫ g, (isInitialOfNotNonempty hK).hom_ext _ _⟩, ?_⟩
     simp
+
+variable (p) in
+/-- A slice of a terminal simplicial set is terminal: there is exactly one map `X ⋆ K ⟶ C` to a
+terminal `C`. -/
+noncomputable def isTerminal (hC : Limits.IsTerminal C) : Limits.IsTerminal (slice p) :=
+  Limits.IsTerminal.ofUniqueHom (fun _ ↦ homEquiv.symm ⟨hC.from _, hC.hom_ext _ _⟩)
+    fun _ _ ↦ hom_ext (hC.hom_ext _ _)
 
 section map
 
