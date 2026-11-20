@@ -27,7 +27,9 @@ with tilt `(R, R⁺)` arises in this way (*Étale cohomology of diamonds*, Theor
 instance `J = (p)` gives back `(R, R⁺)`, and `R = ℂ_p♭`, `J = (p - [p♭])` gives `(ℂ_p, 𝒪_{ℂ_p})`.
 This file constructs `A` and `A⁺`, makes `A` a Tate ring in which `A⁺` is open and bounded when
 `R` is a Tate ring, and proves that `A` is complete and Hausdorff for `J = (ξ)` when `R` is a
-perfect complete Hausdorff Tate ring of characteristic `p` and `ξ` is primitive.
+perfect complete Hausdorff Tate ring of characteristic `p` and `ξ` is primitive. It also constructs
+the sharp map `♯_J : R → A`, the multiplicative map sending `x ∈ R⁺` to the class of `[x]`, from
+which Scholze's identification of `R` with the tilt of `A` is built.
 
 To make the ring independent of a choice of `ϖ`, `TauCeti.Perfectoid.untilt p P J` is defined as
 the localisation of `𝕎 R⁺ ⧸ J` at the classes of the Teichmüller representatives `[a]` of all
@@ -46,12 +48,24 @@ nonzerodivisor of `𝕎 R⁺ ⧸ (ξ)`, for which this quotient is adically comp
 (`WittVector.IsDistinguished.isAdicComplete_quotient`). Hence `𝕎 R⁺ ⧸ (ξ)` embeds into the
 untilt, and the untilt is Hausdorff and complete.
 
+Every element of `R` is a quotient of an element of `R⁺` by an element of `R⁺` which is a unit of
+`R`, and the Teichmüller representatives of the latter are inverted in the untilt; so
+`x ↦ [x]` extends uniquely to a multiplicative map `♯_J : R → A`. It is not additive in general.
+For `R` perfect of characteristic `p` and `J = (ξ)` with `ξ` primitive it is continuous: if
+`ϖ ^ p ^ k` divides `a - b` in `R⁺`, then `[a] - [b]` lies in `(p, [ϖ]) ^ (k + 1)`, and modulo `ξ`
+a power of `(p, [ϖ])` lies in `([ϖ])`. If moreover `ϖ` divides `ξ₀`, then
+`A⁺ ⧸ (♯ϖ) = 𝕎 R⁺ ⧸ (ξ, [ϖ]) = R⁺ ⧸ (ϖ)`.
+
 ## Main definitions
 
 * `TauCeti.Perfectoid.untiltDenominators p P`: the Teichmüller representatives of the elements
   of `R⁺` that are units of `R`.
 * `TauCeti.Perfectoid.untilt p P J`: the untilt of `P` along `J`.
 * `TauCeti.Perfectoid.untiltPlus p P J`: its subring `A⁺`, the image of `𝕎 R⁺ ⧸ J`.
+* `TauCeti.Perfectoid.untilt.sharp p P J`: the sharp map `♯_J : R → A`, for a Tate ring `R`.
+* `TauCeti.Perfectoid.untilt.untiltPlusEquiv`: `𝕎 R⁺ ⧸ (ξ) ≃+* A⁺` for primitive `ξ`.
+* `TauCeti.Perfectoid.untilt.quotEquiv`: `A⁺ ⧸ (♯ϖ) ≃+* R⁺ ⧸ (ϖ)` for primitive `ξ` with
+  `ϖ ∣ ξ₀`.
 
 ## Main results
 
@@ -68,6 +82,13 @@ untilt, and the untilt is Hausdorff and complete.
 * `TauCeti.Perfectoid.untilt.t2Space`, `TauCeti.Perfectoid.untilt.completeSpace`: for `R` a
   perfect complete Hausdorff Tate ring of characteristic `p` and primitive `ξ`, the untilt along
   `(ξ)` is Hausdorff and complete.
+* `TauCeti.Perfectoid.untilt.sharp_apply`, `TauCeti.Perfectoid.untilt.sharp_unique`: `♯_J` is the
+  unique multiplicative map sending `x ∈ R⁺` to the class of `[x]`.
+* `TauCeti.Perfectoid.untilt.isPseudoUniformizer_sharp`: `♯_J` sends pseudouniformisers in `R⁺`
+  to pseudouniformisers.
+* `TauCeti.Perfectoid.untilt.sharp_eq_natCast`: `♯_J t = p` when `p - [t] ∈ J`.
+* `TauCeti.Perfectoid.untilt.continuous_sharp`: for `R` a perfect Tate ring of characteristic `p`
+  and primitive `ξ`, the sharp map along `(ξ)` is continuous.
 
 ## References
 
@@ -268,6 +289,84 @@ theorem isPseudoUniformizer_algebraMap {ϖ : P.plus} (hϖ : IsPseudoUniformizer 
   haveI := isLocalizationAway (J := J) hϖ
   isPseudoUniformizer_algebraMap_of_hasBasis (hasBasis_nhds_zero hϖ)
 
+/-! ### The sharp map -/
+
+variable (J) in
+/-- The sharp map on `R⁺`: `x ↦ [x]`, followed by the map `𝕎 R⁺ → 𝕎 R⁺ ⧸ J → untilt`. -/
+private noncomputable def sharpPlus : P.plus →*₀ untilt p P J where
+  toFun x := algebraMap (𝕎 P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J (teichmuller p x))
+  map_zero' := by simp
+  map_one' := by simp
+  map_mul' x y := by simp
+
+private theorem sharpPlus_apply (x : P.plus) :
+    sharpPlus J x =
+      algebraMap (𝕎 P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J (teichmuller p x)) :=
+  rfl
+
+private theorem isUnit_sharpPlus (x : (IsUnit.submonoid R).comap P.plus.subtype) :
+    IsUnit (sharpPlus J (x : P.plus)) := by
+  rw [sharpPlus_apply]
+  exact IsLocalization.map_units (untilt p P J)
+    (⟨_, Submonoid.mem_map_of_mem _ (mem_untiltDenominators.mpr
+      ⟨x, (IsUnit.mem_submonoid_iff _).mp (Submonoid.mem_comap.mp x.2), rfl⟩)⟩ :
+      (untiltDenominators p P).map (Ideal.Quotient.mk J))
+
+variable (P) in
+/-- `R` as the localisation of `R⁺` at the elements of `R⁺` that are units of `R`
+(`TauCeti.Huber.IsRingOfIntegralElements.isLocalization`). -/
+private noncomputable def plusLocalizationMap :
+    ((IsUnit.submonoid R).comap P.plus.subtype).LocalizationMap R :=
+  haveI := P.isRingOfIntegralElements.isLocalization
+  IsLocalization.toLocalizationMap _ R
+
+private theorem plusLocalizationMap_apply (x : P.plus) : plusLocalizationMap P x = x := by
+  simp [plusLocalizationMap, Algebra.algebraMap_ofSubsemiring_apply]
+
+variable (p P J) in
+/-- **The sharp map `♯_J : R → untilt p P J`.** On `x ∈ R⁺` it is the class `θ_J([x])` of the
+Teichmüller representative `[x]` (`TauCeti.Perfectoid.untilt.sharp_apply`); it is extended to `R`
+multiplicatively, every element of `R` being a quotient of an element of `R⁺` by a unit of `R`
+lying in `R⁺`. It is multiplicative and sends zero to zero, but is not additive in general. -/
+noncomputable def sharp : R →*₀ untilt p P J :=
+  (plusLocalizationMap P).lift₀ (sharpPlus J) isUnit_sharpPlus
+
+/-- **The sharp map on `R⁺`**: `♯_J x` is the class of the Teichmüller representative `[x]`. -/
+@[simp]
+theorem sharp_apply (x : P.plus) :
+    sharp p P J x =
+      algebraMap (𝕎 P.plus ⧸ J) (untilt p P J) (Ideal.Quotient.mk J (teichmuller p x)) := by
+  rw [sharp, Submonoid.LocalizationMap.lift₀_def, ← plusLocalizationMap_apply,
+    Submonoid.LocalizationMap.lift_eq, MonoidHom.coe_ofClass, sharpPlus_apply]
+
+/-- **Uniqueness of the sharp map**: a multiplicative map `R → untilt p P J` which sends each
+`x ∈ R⁺` to the class of `[x]` is `♯_J`. -/
+theorem sharp_unique {f : R →* untilt p P J}
+    (hf : ∀ x : P.plus, f x = algebraMap (𝕎 P.plus ⧸ J) (untilt p P J)
+      (Ideal.Quotient.mk J (teichmuller p x))) :
+    f = (sharp p P J : R →* untilt p P J) := by
+  ext x
+  rw [MonoidHom.coe_ofClass, sharp, Submonoid.LocalizationMap.lift₀_def,
+    (plusLocalizationMap P).lift_unique (g := (sharpPlus J : P.plus →* untilt p P J))
+      isUnit_sharpPlus fun y ↦ by rw [plusLocalizationMap_apply, hf, MonoidHom.coe_ofClass,
+        sharpPlus_apply]]
+
+/-- The sharp map sends `R⁺` into `A⁺`. -/
+theorem sharp_mem_untiltPlus (x : P.plus) : sharp p P J x ∈ untiltPlus p P J := by
+  simp
+
+/-- **The sharp image of a pseudouniformiser is a pseudouniformiser** of the untilt. -/
+theorem isPseudoUniformizer_sharp {ϖ : P.plus} (hϖ : IsPseudoUniformizer (ϖ : R)) :
+    IsPseudoUniformizer (sharp p P J ϖ) := by
+  rw [sharp_apply]
+  exact isPseudoUniformizer_algebraMap hϖ
+
+/-- If `J` contains `p - [t]`, then `♯_J t = p`. For instance `♯_J (p♭) = p` for
+`J = (p - [p♭]) ⊆ 𝕎 𝒪_{ℂ_p♭}`. -/
+theorem sharp_eq_natCast {t : P.plus} (ht : (p : 𝕎 P.plus) - teichmuller p t ∈ J) :
+    sharp p P J t = p := by
+  rw [sharp_apply, ← Ideal.Quotient.eq.mpr ht, map_natCast, map_natCast]
+
 end untilt
 
 end Topology
@@ -307,6 +406,106 @@ theorem algebraMap_injective (hξ : ξ.IsPrimitive) :
   haveI := isLocalizationAway (J := Ideal.span {ξ}) hϖ
   IsLocalization.injective (M := Submonoid.powers _) _
     (Submonoid.powers_le.mpr (mk_teichmuller_mem_nonZeroDivisors hξ hϖ))
+
+/-- **`A⁺` is `𝕎 R⁺ ⧸ (ξ)`** along a primitive element `ξ`, for `R` a perfect Tate ring of
+characteristic `p`. -/
+noncomputable def untiltPlusEquiv (hξ : ξ.IsPrimitive) :
+    𝕎 P.plus ⧸ Ideal.span {ξ} ≃+* untiltPlus p P (Ideal.span {ξ}) :=
+  RingEquiv.ofBijective (algebraMap _ _).rangeRestrict
+    ⟨fun _ _ h ↦ algebraMap_injective hξ (congrArg Subtype.val h),
+      RingHom.rangeRestrict_surjective _⟩
+
+@[simp]
+theorem coe_untiltPlusEquiv (hξ : ξ.IsPrimitive) (a : 𝕎 P.plus ⧸ Ideal.span {ξ}) :
+    (untiltPlusEquiv hξ a : untilt p P (Ideal.span {ξ})) = algebraMap _ _ a :=
+  (congrArg Subtype.val (RingEquiv.ofBijective_apply _ _ a)).trans
+    (RingHom.coe_rangeRestrict _ a)
+
+/-- **The reduction of `A⁺` modulo `♯ϖ` is `R⁺ ⧸ (ϖ)`**, along a primitive element `ξ` whose zeroth
+Witt coordinate is divisible by `ϖ ∈ R⁺`, for `R` a perfect Tate ring of characteristic `p`. It
+sends the class of `♯x` to the class of `x` (`TauCeti.Perfectoid.untilt.quotEquiv_mk_sharp`). -/
+noncomputable def quotEquiv (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0) :
+    untiltPlus p P (Ideal.span {ξ}) ⧸
+        Ideal.span {(⟨sharp p P _ ϖ, sharp_mem_untiltPlus ϖ⟩ : untiltPlus p P (Ideal.span {ξ}))} ≃+*
+      P.plus ⧸ Ideal.span {ϖ} :=
+  (Ideal.quotientEquiv _ _ (untiltPlusEquiv hξ) (by
+    rw [Ideal.map_span, Set.image_singleton]
+    congr 2
+    exact Subtype.ext (sharp_apply ϖ))).symm.trans
+    (hξ.isDistinguished.quotientTeichmullerEquiv hξ₀)
+
+/-- `quotEquiv` sends the class of the image of `a ∈ 𝕎 R⁺` to the class of its zeroth Witt
+coordinate. -/
+@[simp]
+theorem quotEquiv_mk (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0) (a : 𝕎 P.plus) :
+    quotEquiv hξ hξ₀ (Ideal.Quotient.mk _ (untiltPlusEquiv hξ (Ideal.Quotient.mk _ a))) =
+      Ideal.Quotient.mk _ (a.coeff 0) := by
+  simp [quotEquiv]
+
+/-- `quotEquiv` sends the class of the image of `a ∈ 𝕎 R⁺`, written as an element of `A⁺` with
+any membership proof, to the class of its zeroth Witt coordinate. This is the form `simp` reaches
+from `♯x` after `TauCeti.Perfectoid.untilt.sharp_apply`. -/
+@[simp]
+theorem quotEquiv_mk_algebraMap (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0)
+    (a : 𝕎 P.plus)
+    (h : algebraMap _ _ (Ideal.Quotient.mk (Ideal.span {ξ}) a) ∈ untiltPlus p P (Ideal.span {ξ})) :
+    quotEquiv hξ hξ₀ (Ideal.Quotient.mk _ ⟨algebraMap _ _ (Ideal.Quotient.mk _ a), h⟩) =
+      Ideal.Quotient.mk _ (a.coeff 0) := by
+  have he : (⟨_, h⟩ : untiltPlus p P (Ideal.span {ξ})) =
+      untiltPlusEquiv hξ (Ideal.Quotient.mk _ a) :=
+    Subtype.ext (coe_untiltPlusEquiv hξ _).symm
+  rw [he, quotEquiv_mk]
+
+/-- `quotEquiv` sends the class of `♯x` to the class of `x`, for `x ∈ R⁺`. Not `@[simp]`: `simp`
+first rewrites `♯x` by `TauCeti.Perfectoid.untilt.sharp_apply`, and then proves this by
+`TauCeti.Perfectoid.untilt.quotEquiv_mk_algebraMap`. -/
+theorem quotEquiv_mk_sharp (hξ : ξ.IsPrimitive) {ϖ : P.plus} (hξ₀ : ϖ ∣ ξ.coeff 0)
+    (x : P.plus) :
+    quotEquiv hξ hξ₀ (Ideal.Quotient.mk _ ⟨sharp p P _ x, sharp_mem_untiltPlus x⟩) =
+      Ideal.Quotient.mk _ x := by
+  simp
+
+/-- **The sharp map is continuous** along a primitive element `ξ`, for `R` a perfect Tate ring of
+characteristic `p`. -/
+theorem continuous_sharp (hξ : ξ.IsPrimitive) : Continuous (sharp p P (Ideal.span {ξ})) := by
+  obtain ⟨ϖ, hϖ⟩ := P.isRingOfIntegralElements.exists_isPseudoUniformizer
+  refine continuous_iff_continuousAt.mpr fun x ↦ ?_
+  rw [ContinuousAt, ← tendsto_sub_nhds_zero_iff, (hasBasis_nhds_zero hϖ).tendsto_right_iff]
+  intro n _
+  -- Choose `k` with `ϖ ^ k x ∈ R⁺`, and `N` such that `ϖ ^ N ∣ b - a` in `R⁺` forces
+  -- `[b] ≡ [a]` modulo `[ϖ] ^ (n + k)`. Then `y - x ∈ ϖ ^ N R⁺` forces
+  -- `♯ y - ♯ x ∈ [ϖ] ^ n A⁺`, after multiplying by the unit `♯ (ϖ) ^ k`.
+  obtain ⟨k, hk⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hϖ.isTopologicallyNilpotent
+    P.isRingOfIntegralElements.isOpen x
+  obtain ⟨N, hN⟩ :=
+    hξ.isDistinguished.exists_mk_teichmuller_sub_mem (coeff_zero_mem_radical hξ hϖ) (n + k)
+  obtain ⟨u, hu⟩ := hϖ.isUnit.pow N
+  have hU : {y : R | ((u⁻¹ : Rˣ) : R) * (y - x) ∈ P.plus} ∈ 𝓝 x :=
+    (continuous_const.mul (continuous_id.sub continuous_const)).continuousAt.preimage_mem_nhds
+      (P.isRingOfIntegralElements.isOpen.mem_nhds (by simp))
+  filter_upwards [hU] with y hy
+  set c : P.plus := ⟨_, hy⟩
+  have hyx : y - x = ϖ ^ N * c := by
+    rw [← hu]
+    exact (u.mul_inv_cancel_left (y - x)).symm
+  have hb : y * ϖ ^ k ∈ P.plus := by
+    rw [← sub_add_cancel y x, add_mul, hyx]
+    exact add_mem (mul_mem (mul_mem (pow_mem ϖ.2 _) c.2) (pow_mem ϖ.2 _)) hk
+  obtain ⟨d, hd⟩ := Ideal.mem_span_singleton'.mp
+    ((Ideal.span_singleton_pow _ _).le (hN ⟨_, hb⟩ ⟨_, hk⟩ ⟨c * ϖ ^ k, Subtype.ext (by
+      push_cast
+      linear_combination (ϖ : R) ^ k * hyx)⟩))
+  refine mem_awayNhd.mpr ⟨d, ((isPseudoUniformizer_sharp (J := Ideal.span {ξ}) hϖ).isUnit.pow
+    k).mul_right_cancel ?_⟩
+  have key (z : R) (hz : z * ϖ ^ k ∈ P.plus) :
+      sharp p P (Ideal.span {ξ}) z * sharp p P (Ideal.span {ξ}) (ϖ : R) ^ k =
+        algebraMap _ (untilt p P (Ideal.span {ξ}))
+          (Ideal.Quotient.mk (Ideal.span {ξ}) (teichmuller p ⟨_, hz⟩)) := by
+    rw [← map_pow, ← map_mul]
+    exact sharp_apply ⟨_, hz⟩
+  rw [sub_mul, key y hb, key x hk, ← map_sub, ← map_sub, ← hd]
+  simp only [sharp_apply, map_pow, map_mul]
+  ring
 
 end Primitive
 
