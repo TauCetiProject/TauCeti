@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # The complex lower incomplete Gamma function
@@ -25,6 +26,10 @@ both defined through Tricomi's entire function `γ*` of
   (`Complex.tendsto_add_natCast_mul_Gamma`);
 * `Complex.differentiable_regularizedGamma_left`: for `z ≠ 0`, `P(·, z)` is entire;
 * `Complex.differentiableAt_lowerIncompleteGamma_left`: `γ(·, z)` is holomorphic off `−ℕ`;
+* `Complex.differentiableAt_lowerIncompleteGamma_right`,
+  `Complex.analyticOnNhd_lowerIncompleteGamma`: `γ(a, ·)` is holomorphic on the slit plane;
+* `Complex.lowerIncompleteGamma_ofReal_eq_partialGamma`: on the real axis `γ(a, x)` is Mathlib's
+  `Complex.partialGamma a x`, for `0 < Re a`;
 * `Complex.regularizedGamma_one_left`, `Complex.regularizedGamma_neg_natCast`,
   `Complex.regularizedGammaQ_neg_natCast`: `P(1, z) = 1 − e^{−z}`, and `P(−n, z) = 1`,
   `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12).
@@ -40,6 +45,8 @@ At the poles `a ∈ −ℕ`, `γ(a, z)` takes the value given by Mathlib's junk 
 
 The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
 file `DLMF/IncompleteGamma/ContinuedProperties.lean`, and restated on Tricomi's `γ*`.
+The slit-plane holomorphy in `z` and the identification with `Complex.partialGamma` are new
+proofs.
 -/
 
 public section
@@ -111,6 +118,44 @@ theorem differentiableAt_lowerIncompleteGamma_left {a : ℂ} (ha : ∀ m : ℕ, 
   · simp only [lowerIncompleteGamma_zero_right]
     exact differentiableAt_const _
   · exact (differentiableAt_Gamma a ha).mul (differentiable_regularizedGamma_left hz a)
+
+/-- `γ(a, ·)` is holomorphic on the slit plane. -/
+theorem differentiableAt_lowerIncompleteGamma_right (a : ℂ) {z : ℂ} (hz : z ∈ slitPlane) :
+    DifferentiableAt ℂ (lowerIncompleteGamma a) z := by
+  have h := ((((hasDerivAt_id z).cpow_const (c := a) hz).differentiableAt.mul
+    (differentiable_tricomiIncompleteGamma a z)).const_mul (Gamma a))
+  exact h.congr_of_eventuallyEq (.of_forall fun w => by
+    simp [lowerIncompleteGamma_def, regularizedGamma_def])
+
+/-- `γ(a, ·)` is analytic on the slit plane. -/
+theorem analyticOnNhd_lowerIncompleteGamma (a : ℂ) :
+    AnalyticOnNhd ℂ (lowerIncompleteGamma a) slitPlane :=
+  DifferentiableOn.analyticOnNhd
+    (fun _ hz => (differentiableAt_lowerIncompleteGamma_right a hz).differentiableWithinAt)
+    isOpen_slitPlane
+
+/-- On the real axis, `γ(a, x)` is Mathlib's `Complex.partialGamma a x` when `0 < Re a`. -/
+theorem lowerIncompleteGamma_ofReal_eq_partialGamma {a : ℂ} (ha : 0 < a.re) (x : ℝ) :
+    lowerIncompleteGamma a x = partialGamma a x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [partialGamma]
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx
+  have hsub := intervalIntegral.integral_comp_mul_left
+    (fun t : ℝ => (Real.exp (-t) : ℂ) * (t : ℂ) ^ (a - 1)) (a := 0) (b := 1) hx
+  have hscale : ∫ s in (0 : ℝ)..1, (Real.exp (-(x * s)) : ℂ) * ((x * s : ℝ) : ℂ) ^ (a - 1) =
+      (x : ℂ) ^ (a - 1) * ∫ s in (0 : ℝ)..1, (s : ℂ) ^ (a - 1) * cexp (-(x * s)) := by
+    rw [← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun s hs => ?_
+    have hs0 : 0 ≤ s := by
+      rw [uIcc_of_le zero_le_one] at hs
+      exact hs.1
+    simp only [ofReal_mul, mul_comm (x : ℂ), TauCeti.ofReal_mul_cpow hs0, ofReal_exp, ofReal_neg]
+    ring
+  simp only [mul_zero, mul_one] at hsub
+  rw [hscale] at hsub
+  rw [lowerIncompleteGamma_eq_integral ha, partialGamma, ← mul_div_cancel₀ ((x : ℂ) ^ a) hx0,
+    ← cpow_sub_one hx0, mul_assoc, hsub, real_smul, ofReal_inv, ← mul_assoc, mul_inv_cancel₀ hx0,
+    one_mul]
 
 /-- `P(−n, z) = 1` for `z ≠ 0` (DLMF 8.4.12). -/
 @[simp]
