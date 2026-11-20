@@ -257,6 +257,7 @@ private theorem exists_opens_isOpenEmbedding_conj {V : Opens E} {f : C(U, E)} {g
         ‖h z - h (f (inclusion hWU z)) - A (z - f (inclusion hWU z))‖ ≤
           ‖A (z - f (inclusion hWU z))‖ / 2 := by
   set e := HasStrictFDerivAt.toOpenPartialHomeomorph h hh
+  have he : ⇑e = h := HasStrictFDerivAt.toOpenPartialHomeomorph_coe hh
   have hsrc : ∀ᶠ z : U in 𝓝 x, (z : E) ∈ e.source ∧ h z ∈ V :=
     ((continuous_subtype_val.tendsto x).eventually (e.open_source.mem_nhds
       (HasStrictFDerivAt.mem_toOpenPartialHomeomorph_source hh))).and
@@ -272,16 +273,16 @@ private theorem exists_opens_isOpenEmbedding_conj {V : Opens E} {f : C(U, E)} {g
     exact (Subtype.ext hzz' : z' = inclusion hWU z) ▸ hz'
   have hWsrc (z : W) : (z : E) ∈ e.source := (ht _ (hWt z)).1.1.1
   have hWV (z : W) : h z ∈ V := (ht _ (hWt z)).1.1.2
-  have hk_cont : Continuous fun z : W ↦ h z :=
-    e.continuousOn.comp_continuous continuous_subtype_val hWsrc
+  have hk_cont : Continuous fun z : W ↦ h z := by
+    rw [← he]; exact e.continuousOn.comp_continuous continuous_subtype_val hWsrc
   -- `h` is injective and open on the source of `e`, which contains `W`.
   let k : C(W, V) := ⟨fun z ↦ ⟨h z, hWV z⟩, hk_cont.subtype_mk _⟩
   have hk : IsOpenEmbedding k := by
     refine (IsOpenEmbedding.of_comp_iff k V.isOpenEmbedding').1
       (.of_continuous_injective_isOpenMap hk_cont (fun a b hab ↦ Subtype.ext
-        (e.injOn (hWsrc a) (hWsrc b) hab)) fun s hs ↦ ?_)
-    -- `Subtype.val ∘ k` is `e ∘ Subtype.val` by construction of `k`.
-    rw [show (Subtype.val ∘ k) '' s = e '' (Subtype.val '' s) by rw [image_image]; rfl]
+        (e.injOn (hWsrc a) (hWsrc b) (by rwa [he]))) fun s hs ↦ ?_)
+    -- `Subtype.val ∘ k` is `h ∘ Subtype.val` by construction of `k`.
+    rw [show (Subtype.val ∘ k) '' s = e '' (Subtype.val '' s) by rw [image_image, he]; rfl]
     exact e.isOpen_image_of_subset_source (W.isOpenEmbedding'.isOpenMap s hs)
       (by rintro _ ⟨z, -, rfl⟩; exact hWsrc z)
   refine ⟨W, hWU, k, ⟨x, hxt, rfl⟩, hk, fun z ↦ ?_⟩
@@ -311,7 +312,7 @@ theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)}
   set xW : W := ⟨x, hxW⟩
   -- `ι xW` is `x`, by definition of the inclusion.
   have hιx : inclusion hWU xW = x := rfl
-  have hfW : (f.comp ι) xW = xW := hx
+  have hfW : (f.comp ι) xW = xW := by rw [comp_apply, hιx]; exact hx
   have hkx : k xW = ⟨h x, hxV⟩ := Subtype.ext (hkW xW).1
   -- Read on `W`, the displacement of `g` through `k` is `z ↦ h z - h (f z)`, within half its
   -- norm of `z ↦ A (z - f z)`; so the two maps have the same local index at `x`.
