@@ -21,7 +21,8 @@ ramified primes are included.
 For the monic polynomial `X² + BX + C`, take `a = -C` and `b = -B`. Over `R = ZMod N`, this is
 the finite matrix group used to act on quadratic division points. The coefficient-change law
 for `periodUnitMatrix` identifies reduction of actual integral units inside this group; it does
-not replace their image by the scalar signs.
+not replace their image by the scalar signs. Over `(a, b) = (0, 0)`, `unipotentPeriodMatrixHom`
+embeds `Multiplicative R` as the lower-triangular unipotent matrices `!![1, 0; s, 1]`.
 
 ## References
 
@@ -56,6 +57,15 @@ theorem periodUnitMatrix_injective :
     simpa only [Function.Injective, periodMulMatrixHom_apply] using
       (periodMulMatrix_injective (a := a) (b := b)))
 
+/-- The unit representation preserves negation. -/
+@[simp]
+theorem periodUnitMatrix_neg (u : (QuadraticAlgebra R a b)ˣ) :
+    periodUnitMatrix (-u) = -periodUnitMatrix u := by
+  apply Units.ext
+  simp only [coe_periodUnitMatrix, Units.val_neg, periodMulMatrix_eq]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [add_comm]
+
 /-- The group of invertible quadratic multiplication matrices. -/
 def periodMatrixGroup (a b : R) : Subgroup (GL (Fin 2) R) :=
   (periodUnitMatrix : (QuadraticAlgebra R a b)ˣ →* GL (Fin 2) R).range
@@ -65,6 +75,22 @@ quotients without a separate normality hypothesis. -/
 instance : IsMulCommutative (periodMatrixGroup a b) :=
   inferInstanceAs (IsMulCommutative
     (periodUnitMatrix : (QuadraticAlgebra R a b)ˣ →* GL (Fin 2) R).range)
+
+/-- Entrywise negation preserves invertible quadratic multiplication matrices. -/
+instance : Neg (periodMatrixGroup a b) where
+  neg g := ⟨-g.val, by
+    rcases g.property with ⟨u, hu⟩
+    exact ⟨-u, by rw [periodUnitMatrix_neg, hu]⟩⟩
+
+/-- Coercing `-g` from `periodMatrixGroup a b` to `GL (Fin 2) R` negates in `GL (Fin 2) R`. -/
+@[simp]
+theorem coe_neg_periodMatrixGroup (g : periodMatrixGroup a b) :
+    ((-g : periodMatrixGroup a b) : GL (Fin 2) R) = -(g : GL (Fin 2) R) :=
+  (by rfl)
+
+/-- Distributive negation on invertible quadratic multiplication matrices. -/
+instance : HasDistribNeg (periodMatrixGroup a b) :=
+  Subtype.coe_injective.hasDistribNeg _ coe_neg_periodMatrixGroup (periodMatrixGroup a b).coe_mul
 
 /-- An invertible matrix is a quadratic multiplication matrix exactly when its entries satisfy
 the two linear equations imposed by its bottom row. -/
@@ -93,6 +119,13 @@ def periodUnitMatrixEquiv : (QuadraticAlgebra R a b)ˣ ≃* periodMatrixGroup a 
 theorem coe_periodUnitMatrixEquiv (u : (QuadraticAlgebra R a b)ˣ) :
     (periodUnitMatrixEquiv u : GL (Fin 2) R) = periodUnitMatrix u :=
   (by rfl)
+
+/-- `periodUnitMatrixEquiv` commutes with negation. -/
+@[simp]
+theorem periodUnitMatrixEquiv_neg (u : (QuadraticAlgebra R a b)ˣ) :
+    periodUnitMatrixEquiv (-u) = -periodUnitMatrixEquiv u := by
+  apply Subtype.ext
+  simp
 
 /-- The bottom row gives the algebra element underlying the inverse equivalence. -/
 @[simp]
@@ -129,5 +162,32 @@ theorem card_periodMatrixGroup_eq_card_norm_units :
     (Equiv.subtypeEquiv (equivProd a b) ?_))
   intro z
   exact isUnit_iff_norm_isUnit.trans (by simp [norm_def, equivProd, sq, mul_assoc])
+
+variable (R) in
+/-- Over `(a, b) = (0, 0)` (where `ω² = 0`), the unipotent unit `1 + sω` has multiplication
+matrix `!![1, 0; s, 1]`, giving `Multiplicative R →* periodMatrixGroup (0 : R) (0 : R)`. -/
+def unipotentPeriodMatrixHom : Multiplicative R →* periodMatrixGroup (0 : R) (0 : R) where
+  toFun s := periodUnitMatrixEquiv
+    { val := ⟨1, s.toAdd⟩
+      inv := ⟨1, -s.toAdd⟩
+      val_inv := by ext <;> simp
+      inv_val := by ext <;> simp }
+  map_one' := by rw [← map_one periodUnitMatrixEquiv]; congr 1; apply Units.ext; ext <;> simp
+  map_mul' s t := by
+    rw [← map_mul periodUnitMatrixEquiv]; congr 1; apply Units.ext; ext <;> simp [add_comm]
+
+/-- Underlying `2 × 2` matrix of `unipotentPeriodMatrixHom R s`. -/
+@[simp]
+theorem coe_unipotentPeriodMatrixHom (s : Multiplicative R) :
+    (((unipotentPeriodMatrixHom R s :
+        periodMatrixGroup (0 : R) (0 : R)) : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) =
+      !![1, 0; s.toAdd, 1] := by
+  simp [unipotentPeriodMatrixHom, periodMulMatrix_eq]
+
+/-- `periodUnitMatrixEquiv.symm` sends `unipotentPeriodMatrixHom R s` to the unit `1 + sω`. -/
+theorem val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom (s : Multiplicative R) :
+    ((periodUnitMatrixEquiv.symm (unipotentPeriodMatrixHom R s) :
+      (QuadraticAlgebra R 0 0)ˣ) : QuadraticAlgebra R 0 0) = ⟨1, s.toAdd⟩ := by
+  simp
 
 end QuadraticAlgebra
