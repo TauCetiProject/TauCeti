@@ -195,7 +195,7 @@ theorem _root_.IsClosed.exists_measurable_forall_mem [TopologicalSpace Z] [Measu
   have hK {K : Set X} (hK : IsCompact K) : IsClosed {z | (M z ∩ K).Nonempty} := by
     have : CompactSpace K := isCompact_iff_compactSpace.1 hK
     have hpre : IsClosed {q : Z × K | (q.2 : X) ∈ M q.1} :=
-      hclosed.preimage (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+      hclosed.preimage (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
     have hfst : Prod.fst '' {q : Z × K | (q.2 : X) ∈ M q.1} = {z | (M z ∩ K).Nonempty} := by
       ext z
       simp only [mem_image, mem_ofPred_eq, Prod.exists, exists_and_right, exists_eq_right,

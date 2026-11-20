@@ -421,10 +421,10 @@ theorem _root_.ConvexOn.exists_measurable_forall_add_inner_le [MeasurableSpace E
     rw [hEq]
     exact isClosed_iInter fun y => isClosed_iInter fun _ =>
       isClosed_le (((hu.continuousOn hΩ).domRestrict.comp continuous_fst).add
-        ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).inner continuous_snd))
+        ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).inner continuous_snd))
         continuous_const
   obtain ⟨S, hSm, hS⟩ := hclosed.exists_measurable_forall_mem
-    fun x => hu.exists_forall_add_inner_le hΩ x.2
+    fun x => hu.exists_forall_add_inner_le hΩ x.property
   refine ⟨fun x => if hx : x ∈ Ω then S ⟨x, hx⟩ else 0,
     hSm.dite measurable_const hΩ.measurableSet, fun x hx y hy => by
       simpa only [dite_eq_left hx] using hS ⟨x, hx⟩ y hy⟩
@@ -443,12 +443,12 @@ theorem _root_.ConvexOn.exists_convexOn_lipschitzWith_eqOn {Ω : Set E} {u : E �
     (f := fun z => if z ∈ Ω then (u z : EReal) else ⊤) (convexOn_iff_convex_epigraph_ite.1 hu)
     ite_ne_bot hK (by rwa [setOf_ite_ne_top, hΩ.interior_eq])
   let L : NNReal := ⟨max M 0, le_max_right _ _⟩
-  choose p hp using fun z : K => hu.exists_forall_add_inner_le hΩ (hKΩ z.2)
-  have hpL (z : K) : ‖p z‖ ≤ (L : ℝ) := (hM z z.2 (p z)
-    ((mem_subdifferential_ite_iff (innerₗ E) (hKΩ z.2)).2 fun y hy => by
+  choose p hp using fun z : K => hu.exists_forall_add_inner_le hΩ (hKΩ z.property)
+  have hpL (z : K) : ‖p z‖ ≤ (L : ℝ) := (hM z z.property (p z)
+    ((mem_subdifferential_ite_iff (innerₗ E) (hKΩ z.property)).2 fun y hy => by
       simpa only [innerₗ_apply_apply] using hp z y hy)).trans (le_max_left _ _)
   obtain ⟨v, hconv, hlip, hv⟩ := exists_convexOn_lipschitzWith_apply_eq (x := fun z : K => (z : E))
-    (a := fun z : K => u z) hpL fun z₁ z₂ => hp z₁ z₂ (hKΩ z₂.2)
+    (a := fun z : K => u z) hpL fun z₁ z₂ => hp z₁ z₂ (hKΩ z₂.property)
   exact ⟨L, v, hconv, hlip, fun y hy => (hv ⟨y, hy⟩).symm⟩
 
 end OpenDomain
@@ -613,9 +613,10 @@ theorem eventually_biUnion_subset_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
   have hclose : ∀ᶠ k in l, ∀ i ∈ t, |F k i.1 - u i.1| < (i.2 : ℝ) / 2 ∧
       ∀ x ∈ K, |F k x - u x| < (i.2 : ℝ) / 2 := by
     refine (Filter.eventually_all_finset t).2 fun i _ => ?_
-    have hi : 0 < (i.2 : ℝ) / 2 := half_pos i.2.2
+    have hi : 0 < (i.2 : ℝ) / 2 := half_pos i.2.property
     filter_upwards [hFu.eventually_forall_dist_lt isCompact_singleton
-      (singleton_subset_iff.2 i.1.2) hi, hFu.eventually_forall_dist_lt hK hKΩ hi] with k h₁ h₂
+      (singleton_subset_iff.2 i.1.property) hi, hFu.eventually_forall_dist_lt hK hKΩ hi] with k h₁
+          h₂
     simp only [Real.dist_eq] at h₁ h₂
     exact ⟨h₁ _ rfl, h₂⟩
   filter_upwards [hbd, hclose] with k hk hk' y hy
@@ -625,7 +626,7 @@ theorem eventually_biUnion_subset_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
     ⟨hx, mem_closedBall_zero_iff.2 (hk x hx y hxy), hyV⟩
   refine disjoint_left.1 ht hmem (mem_iInter₂.2 fun i hi => ⟨subset_closure hx, ?_⟩)
   obtain ⟨h₁, h₂⟩ := hk' i hi
-  have h₃ := hxy i.1 i.1.2
+  have h₃ := hxy i.1 i.1.property
   dsimp only
   linarith [(abs_lt.1 h₁).2, (abs_lt.1 (h₂ x hx)).1]
 

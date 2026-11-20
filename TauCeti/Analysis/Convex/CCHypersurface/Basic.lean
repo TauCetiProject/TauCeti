@@ -353,7 +353,7 @@ private theorem exists_unit_of_linearIsometryEquiv
       norm_map' := fun y => by
         rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← norm_coe, ← Φ.norm_map (y : E),
           WithLp.prod_norm_sq_eq_of_L2, ← hin (y : E),
-          Submodule.mem_orthogonal_singleton_iff_inner_left.mp y.2]; simp }
+          Submodule.mem_orthogonal_singleton_iff_inner_left.mp y.property]; simp }
   refine ⟨e, he, ψ, fun x => ?_, hin⟩
   simpa [ψ, map_add, map_smul, show (Φ e).fst = 0 by simp [e, p₀]] using
     congrArg (fun z => (Φ z).fst) (orthogonalProjectionOnto_add_inner_smul (𝕜 := ℝ) he x)
@@ -400,7 +400,7 @@ private theorem range_eq_singleton_of_finrank_eq_one (hdim : Module.finrank ℝ 
   have horth := Submodule.orthogonal_span_singleton_eq_bot_of_finrank_eq_one hdim (v := e)
     (fun h => by simp [h] at he)
   ext z; refine ⟨?_, by rintro rfl; exact ⟨0, by simp⟩⟩
-  rintro ⟨y, rfl⟩; simp [show y = 0 from Subtype.ext ((Submodule.mem_bot ℝ).1 (horth ▸ y.2))]
+  rintro ⟨y, rfl⟩; simp [show y = 0 from Subtype.ext ((Submodule.mem_bot ℝ).1 (horth ▸ y.property))]
 
 private theorem exists_unit_singleton_eq_setOf_inner_eq (hdim : Module.finrank ℝ E = 1) (x : E) :
     ∃ (e : E) (_ : ‖e‖ = 1), {x} = {z : E | inner ℝ z e = inner ℝ x e} := by
@@ -536,9 +536,9 @@ theorem exists_isCCHypersurface_of_subdifferential_separation {u : E → EReal} 
       ‖p‖ ≤ M ∧ ‖q‖ ≤ M ∧ inner ℝ p e ≤ a ∧ b ≤ inner ℝ q e}
   rcases S.eq_empty_or_nonempty with hS0 | hSne
   · exact ⟨{x | inner ℝ x e = 0}, isCCHypersurface_setOf_inner_eq he 0, hS0 ▸ empty_subset _⟩
-  choose α hα using fun x : S => let ⟨_, hp, _, hq, hpM, hqM, hpa, hbq⟩ := x.2
+  choose α hα using fun x : S => let ⟨_, hp, _, hq, hpM, hqM, hpa, hbq⟩ := x.property
     exists_mem_subdifferential_inner_eq hp hq hpM hqM hpa (hab.le.trans hbq)
-  choose β hβ using fun x : S => let ⟨_, hp, _, hq, hpM, hqM, hpa, hbq⟩ := x.2
+  choose β hβ using fun x : S => let ⟨_, hp, _, hq, hpM, hqM, hpa, hbq⟩ := x.property
     exists_mem_subdifferential_inner_eq hp hq hpM hqM (hpa.trans hab.le) hbq
   obtain ⟨Fa, hFa_cont, hFa_conv, hFa⟩ := exists_convexOn_eq_toReal_sub_mul_inner he a hSne α hα
   obtain ⟨Fb, hFb_cont, hFb_conv, hFb⟩ := exists_convexOn_eq_toReal_sub_mul_inner he b hSne β hβ
@@ -562,9 +562,9 @@ theorem exists_countable_isCCHypersurface_cover_not_subsingleton_subdifferential
   let I := {t : {d : E // d ∈ D ∧ d ≠ 0} × ℚ × ℚ × ℕ | t.2.1 < t.2.2.1}
   have : Countable I := Subtype.countable
   choose s hs hsub using fun t : I => exists_isCCHypersurface_of_subdifferential_separation (u := u)
-    (e := ‖(t.1.1 : E)‖⁻¹ • (t.1.1 : E))
-    (by simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 t.1.1.2.2)])
-    (Rat.cast_lt.2 t.2) (t.1.2.2.2 : ℝ)
+    (e := ‖(t.val.1 : E)‖⁻¹ • (t.val.1 : E))
+    (by simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 t.val.1.property.2)])
+    (Rat.cast_lt.2 t.property) (t.val.2.2.2 : ℝ)
   refine ⟨range s, countable_range s, forall_mem_range.2 hs, fun x hx => ?_⟩
   obtain ⟨p, hp, q, hq, hpq⟩ := Set.not_subsingleton_iff.1 hx
   obtain ⟨d, hd_in, hdD⟩ := hD_dense.inter_open_nonempty {w : E | inner ℝ (p - q) w ≠ 0}
@@ -796,16 +796,17 @@ theorem IsCCHypersurface.exists_convexOn_lipschitzWith_measurable_forall_add_inn
       (le_max_right (f' (P z)) _)]
   obtain ⟨T₁, T₂, hT₁m, hT₂m, hT₁, hT₂, hTeq⟩ := exists_measurable_piecewise_subgradient_max
     (hLf'.continuous.comp P.continuous) ((hLg'.continuous.comp P.continuous).add (by fun_prop))
-    (measurable_subtype_coe.comp (hGf_meas.comp P.measurable))
-    ((measurable_subtype_coe.comp (hGg_meas.comp P.measurable)).add measurable_const) hsub₁ hsub₂
+    (measurable_subtypeVal.comp (hGf_meas.comp P.measurable))
+    ((measurable_subtypeVal.comp (hGg_meas.comp P.measurable)).add measurable_const) hsub₁ hsub₂
   refine ⟨max Lf (Lg + 1), _, T₁, T₂, hconv, hlip, hT₁m, hT₂m, hT₁, hT₂,
     fun x => hlip.norm_le_of_forall_add_inner_le (hT₁ x),
     fun x => hlip.norm_le_of_forall_add_inner_le (hT₂ x), fun x hx hEq => ?_⟩
   obtain ⟨h₁, h₂⟩ := hTeq x (heq_on x hx).symm
   have hin₁ : inner ℝ (T₁ x) e = 0 :=
-    h₁ ▸ Submodule.mem_orthogonal_singleton_iff_inner_left.mp (Gf (P x)).2
+    h₁ ▸ Submodule.mem_orthogonal_singleton_iff_inner_left.mp (Gf (P x)).property
   have hin₂ : inner ℝ (T₂ x) e = 1 := by
-    simp [h₂, inner_add_left, Submodule.mem_orthogonal_singleton_iff_inner_left.mp (Gg (P x)).2, he]
+    simp [h₂, inner_add_left,
+      Submodule.mem_orthogonal_singleton_iff_inner_left.mp (Gg (P x)).property, he]
   linarith [congrArg (inner ℝ · e) hEq]
 
 private theorem exists_convexOn_subset_not_differentiableAt_of_seq (s : ℕ → Set E)

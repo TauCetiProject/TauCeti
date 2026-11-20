@@ -36,6 +36,9 @@ annuli `‖ξ‖ ≈ 2^j` (Tao, Section 2.2).
 * `TauCeti.halfWavePropagator`: the propagator `W₊(t) = exp(itD)` on `L²(E, F)`.
 * `TauCeti.coeFn_fourier_halfWavePropagator`: `𝓕 (W₊(t) f) = exp(2πi t ‖·‖) • 𝓕 f`.
 * `TauCeti.halfWavePropagator_neg`: `W₊(-t) = W₋(t)`, the multiplier with phase `-2π ‖·‖`.
+* `TauCeti.halfWavePropagator_add_apply`, `TauCeti.adjoint_halfWavePropagator` and
+  `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM`: the group law, the adjoint
+  `W₊(t)* = W₊(-t)` and commutation with Fourier multipliers.
 * `TauCeti.contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol`: the symbol `exp(2πi t ‖ξ‖)` is smooth
   away from the origin.
 
@@ -49,7 +52,7 @@ public section
 
 noncomputable section
 
-open scoped FourierTransform ContDiff
+open scoped ENNReal FourierTransform ContDiff
 open MeasureTheory Complex Real
 
 namespace TauCeti
@@ -68,6 +71,26 @@ abbrev halfWavePropagator (t : ℝ) :
 theorem halfWavePropagator_def (t : ℝ) :
     halfWavePropagator F t = phasePropagator (E := E) F sqrtNegLaplacianSymbol t :=
   (rfl)
+
+/-- **The group law** `W₊(s + t) = W₊(s) W₊(t)`. -/
+theorem halfWavePropagator_add_apply (s t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    halfWavePropagator F (s + t) f = halfWavePropagator F s (halfWavePropagator F t f) :=
+  phasePropagator_add_apply _ s t f
+
+/-- The adjoint of `W₊(t)` is `W₊(-t)`. -/
+theorem adjoint_halfWavePropagator (t : ℝ) :
+    ContinuousLinearMap.adjoint (halfWavePropagator (E := E) F t) = halfWavePropagator F (-t) :=
+  adjoint_phasePropagator _ t
+
+/-- `W₊(t)` is a contraction on `L²`. -/
+theorem norm_halfWavePropagator_le (t : ℝ) : ‖halfWavePropagator (E := E) F t‖ ≤ 1 :=
+  norm_phasePropagator_le _ t
+
+/-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
+theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
+    halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =
+      Lp.fourierMultiplierCLM F m ∘L halfWavePropagator F t :=
+  phasePropagator_comp_fourierMultiplierCLM _ t m
 
 /-- On the Fourier side, `W₊(t)` is pointwise multiplication by `exp(2πi t ‖ξ‖)`, almost
 everywhere. -/

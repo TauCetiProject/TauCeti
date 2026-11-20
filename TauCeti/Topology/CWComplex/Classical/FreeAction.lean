@@ -219,13 +219,13 @@ private lemma apply_gluedMap_openCell {n : ℕ}
     (ψ : cell (univ : Set E) n → C(Fin n → ℝ, ℝ))
     (L : (r : cell (univ : Set E) n) → C(closedCell n r, ℝ))
     (hL : ∀ (r : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
-      L r ⟨map n r v, v, v.2, rfl⟩ = ψ r v)
+      L r ⟨map n r v, v, v.property, rfl⟩ = ψ r v)
     (hmem : ∀ (j : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
       (cellElt G j)⁻¹ • map n j v ∈ closedCell n (cellRep G j))
     (F : C(Unit × (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E), ℝ))
     (hFK : ∀ (j : cell (univ : Set E) n) (z : Unit)
       (v : closedBall (0 : Fin n → ℝ) 1),
-      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.2)⟩) =
+      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.property)⟩) =
         L (cellRep G j) ⟨(cellElt G j)⁻¹ • map n j v, hmem j v⟩)
     (j r : cell (univ : Set E) n) (hr : cellRep G j = r) (g : G)
     (hg : g • openCell n r = openCell n j) (u : Fin n → ℝ) (hu : ‖u‖ < 1)
@@ -254,7 +254,7 @@ private lemma SepStage.apply_descended_eq {n : ℕ} (S : SepStage G x y n)
       ψ r v = S.toFun ((), ⟨map n r v, cellFrontier_subset_skeletonLT n r ⟨v, hv, rfl⟩⟩))
     (L : (r : cell (univ : Set E) n) → C(closedCell n r, ℝ))
     (hL : ∀ (r : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
-      L r ⟨map n r v, v, v.2, rfl⟩ = ψ r v)
+      L r ⟨map n r v, v, v.property, rfl⟩ = ψ r v)
     (hmem : ∀ (j : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
       (cellElt G j)⁻¹ • map n j v ∈ closedCell n (cellRep G j))
     (j : cell (univ : Set E) n) (z : Unit) (v : closedBall (0 : Fin n → ℝ) 1)
@@ -273,7 +273,7 @@ private lemma SepStage.apply_descended_eq {n : ℕ} (S : SepStage G x y n)
       · exact mem_sphere_zero_iff_norm.2 hu1
     let vu : closedBall (0 : Fin n → ℝ) 1 := ⟨u, hu⟩
     have hKL : L (cellRep G j) ⟨(cellElt G j)⁻¹ • map n j v, hmem j v⟩ =
-        L (cellRep G j) ⟨map n (cellRep G j) vu, vu, vu.2, rfl⟩ :=
+        L (cellRep G j) ⟨map n (cellRep G j) vu, vu, vu.property, rfl⟩ :=
       congrArg (L _) (Subtype.ext hu'.symm)
     cases z
     rw [hKL, hL, hψs _ u hus,
@@ -287,7 +287,7 @@ private lemma SepStage.glued_properties {n : ℕ} (S : SepStage G x y n)
     (ψ : cell (univ : Set E) n → C(Fin n → ℝ, ℝ))
     (L : (r : cell (univ : Set E) n) → C(closedCell n r, ℝ))
     (hL : ∀ (r : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
-      L r ⟨map n r v, v, v.2, rfl⟩ = ψ r v)
+      L r ⟨map n r v, v, v.property, rfl⟩ = ψ r v)
     (hmem : ∀ (j : cell (univ : Set E) n) (v : closedBall (0 : Fin n → ℝ) 1),
       (cellElt G j)⁻¹ • map n j v ∈ closedCell n (cellRep G j))
     (F : C(Unit × (skeletonLT (univ : Set E) ((n + 1 : ℕ) : ℕ∞) : Set E), ℝ))
@@ -295,7 +295,7 @@ private lemma SepStage.glued_properties {n : ℕ} (S : SepStage G x y n)
       F ((), ⟨z, skeletonLT_mono (by exact_mod_cast n.le_succ) hz⟩) = S.toFun ((), ⟨z, hz⟩))
     (hFKL : ∀ (j : cell (univ : Set E) n) (z : Unit)
       (v : closedBall (0 : Fin n → ℝ) 1),
-      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.2)⟩) =
+      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.property)⟩) =
         L (cellRep G j) ⟨(cellElt G j)⁻¹ • map n j v, hmem j v⟩)
     (hψx : ∀ (r : cell (univ : Set E) n) v, ‖v‖ < 1 → map n r v ∈ MulAction.orbit G x →
       ψ r v = 1)
@@ -362,7 +362,7 @@ private theorem SepStage.exists_succ [ContinuousConstSMul G E] (hxy : y ∉ MulA
       (cellElt G j)⁻¹ • map n j v ∈ closedCell n (cellRep G j) := by
     rw [← mem_smul_set_iff_inv_smul_mem,
       smul_closedCell_of_smul_openCell (cellElt_smul_openCell j)]
-    exact ⟨v, v.2, rfl⟩
+    exact ⟨v, v.property, rfl⟩
   let K (j : cell (univ : Set E) n) : C(Unit × closedBall (0 : Fin n → ℝ) 1, ℝ) :=
     (L (cellRep G j)).comp ⟨fun p ↦ ⟨(cellElt G j)⁻¹ • map n j p.2, hmem j p.2⟩,
       ((continuous_const_smul _).comp
@@ -374,7 +374,7 @@ private theorem SepStage.exists_succ [ContinuousConstSMul G E] (hxy : y ∉ MulA
   obtain ⟨F, hF, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ S.toFun K hK
   have hFKL (j : cell (univ : Set E) n) (z : Unit)
       (v : closedBall (0 : Fin n → ℝ) 1) :
-      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.2)⟩) =
+      F (z, ⟨map n j v, map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 v.property)⟩) =
         L (cellRep G j) ⟨(cellElt G j)⁻¹ • map n j v, hmem j v⟩ := by
     rw [hFK]
     rfl

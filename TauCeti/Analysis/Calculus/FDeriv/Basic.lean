@@ -35,6 +35,9 @@ differentiable at that point.
 * `TauCeti.not_differentiableAt_of_add_sub_two_mul_ge`: a linear lower bound on the symmetric
   second difference `u (x + t • v) + u (x - t • v) - 2 * u x` for small `t > 0` precludes
   differentiability at `x`.
+* `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
+  dominated near a point by a function with zero value and zero derivative there has zero
+  derivative there as well.
 -/
 
 public section
@@ -112,3 +115,33 @@ theorem not_differentiableAt_of_add_sub_two_mul_ge {V : Type*} [NormedAddCommGro
   rw [le_inv_mul_iff₀ ht.1, mul_comm]; linarith [h t ht]
 
 end TauCeti
+
+section Domination
+
+open scoped Topology
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {f : E → F} {g : E → G} {s : Set E} {x : E}
+
+/-- **Domination preserves zero first jets.** If `f = O(g)` near `x` within a set `s` containing
+`x`, and `g` has value `0` and derivative `0` at `x` within `s`, then `f` has derivative `0` at `x`
+within `s`. -/
+theorem Asymptotics.IsBigO.hasFDerivWithinAt_zero (h : f =O[𝓝[s] x] g)
+    (hg : HasFDerivWithinAt g (0 : E →L[𝕜] G) s x) (hgx : g x = 0) (hx : x ∈ s) :
+    HasFDerivWithinAt f (0 : E →L[𝕜] F) s x := by
+  have hfx : f x = 0 := by
+    obtain ⟨C, hC⟩ := h.bound
+    simpa [hgx] using hC.self_of_nhdsWithin hx
+  rw [hasFDerivWithinAt_iff_isLittleO] at hg ⊢
+  simp only [hfx, hgx, sub_zero, zero_apply] at hg ⊢
+  exact h.trans_isLittleO hg
+
+/-- **Domination preserves zero first jets.** If `f = O(g)` near `x`, and `g` has value `0` and
+derivative `0` at `x`, then `f` has derivative `0` at `x`. -/
+theorem Asymptotics.IsBigO.hasFDerivAt_zero (h : f =O[𝓝 x] g)
+    (hg : HasFDerivAt g (0 : E →L[𝕜] G) x) (hgx : g x = 0) : HasFDerivAt f (0 : E →L[𝕜] F) x := by
+  rw [← hasFDerivWithinAt_univ] at hg ⊢
+  exact (nhdsWithin_univ x ▸ h).hasFDerivWithinAt_zero hg hgx (Set.mem_univ x)
+
+end Domination

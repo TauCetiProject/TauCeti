@@ -65,6 +65,15 @@ diffeomorphisms.
   `TauCeti.orthogonalProjectionOnto_coe_add_smul`, `TauCeti.setOf_inner_eq_eq_range`, and
   `TauCeti.vadd_setOf_inner_eq`: orthogonal decomposition along a unit vector and parametric
   graphs and translations over `(𝕜 ∙ e)ᗮ`.
+* `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
+  conjugated by a linear isometry equivalence.
+* `LinearIsometryEquiv.forall_orthonormal_iff`: a condition holds along all orthonormal families
+  in the target of a linear isometry equivalence exactly when it holds for the images of all
+  orthonormal families in its source.
+* `LinearIsometryEquiv.forall_orthonormal_sum_inner_conj_iff`,
+  `LinearIsometryEquiv.forall_orthonormal_sum_re_inner_conj_iff`: a condition on the diagonal sums
+  `∑ᵢ ⟪T wᵢ, wᵢ⟫` (resp. on their real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫`) of an operator along all
+  orthonormal families is invariant under conjugation by a linear isometry equivalence.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -93,7 +102,7 @@ of `v` to the orthogonal complement of its image `w`. -/
 def orthogonalComplementSingletonMap (f : E →ₗᵢ[𝕜] F) {v : E} {w : F} (hw : f v = w) :
     (𝕜 ∙ v)ᗮ →ₗᵢ[𝕜] (𝕜 ∙ w)ᗮ where
   toLinearMap := (f.toLinearMap.domRestrict (𝕜 ∙ v)ᗮ).codRestrict (𝕜 ∙ w)ᗮ fun y ↦
-    f.map_mem_orthogonal_singleton hw y.2
+    f.map_mem_orthogonal_singleton hw y.property
   norm_map' y := f.norm_map y
 
 @[simp]
@@ -225,6 +234,48 @@ theorem eq_extendOrthogonalComplement_iff
 
 end LinearIsometryEquiv
 
+namespace LinearIsometryEquiv
+
+open scoped InnerProductSpace
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+/-- The matrix entries of an operator conjugated by a linear isometry equivalence `U` are the
+matrix entries of the operator at the pulled-back vectors. -/
+theorem inner_toLinearEquiv_conj_apply (U : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) (a b : F) :
+    ⟪U.toLinearEquiv.conj T a, b⟫_𝕜 = ⟪T (U.symm a), U.symm b⟫_𝕜 := by
+  simp [LinearEquiv.conj_apply_apply, U.inner_map_eq_flip]
+
+/-- A condition `P` holds along all orthonormal families in `F` exactly when it holds for the
+images under a linear isometry equivalence `U : E ≃ₗᵢ[𝕜] F` of all orthonormal families in `E`. -/
+theorem forall_orthonormal_iff (U : E ≃ₗᵢ[𝕜] F) {ι : Type*} (P : (ι → F) → Prop) :
+    (∀ w : ι → F, Orthonormal 𝕜 w → P w) ↔ ∀ w : ι → E, Orthonormal 𝕜 w → P (U ∘ w) := by
+  refine ⟨fun h w hw ↦ h _ (hw.comp_linearIsometryEquiv U), fun h w hw ↦ ?_⟩
+  simpa [Function.comp_def] using h _ (hw.comp_linearIsometryEquiv U.symm)
+
+/-- A condition on the diagonal sums `∑ᵢ ⟪T wᵢ, wᵢ⟫` along all orthonormal families indexed by `ι`
+holds for the conjugate of `T` by a linear isometry equivalence `U` exactly when it holds for
+`T`. -/
+theorem forall_orthonormal_sum_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : E →ₗ[𝕜] E} {ι : Type*}
+    [Fintype ι] (P : 𝕜 → Prop) :
+    (∀ w : ι → F, Orthonormal 𝕜 w → P (∑ i, ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)) ↔
+      ∀ w : ι → E, Orthonormal 𝕜 w → P (∑ i, ⟪T (w i), w i⟫_𝕜) := by
+  refine (U.forall_orthonormal_iff fun w ↦ P (∑ i, ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)).trans ?_
+  simp
+
+/-- A condition on the real parts `∑ᵢ re ⟪T wᵢ, wᵢ⟫` of the diagonal sums along all orthonormal
+families indexed by `ι` holds for the conjugate of `T` by a linear isometry equivalence `U`
+exactly when it holds for `T`. -/
+theorem forall_orthonormal_sum_re_inner_conj_iff (U : E ≃ₗᵢ[𝕜] F) {T : E →ₗ[𝕜] E} {ι : Type*}
+    [Fintype ι] (P : ℝ → Prop) :
+    (∀ w : ι → F, Orthonormal 𝕜 w →
+        P (∑ i, RCLike.re ⟪U.toLinearEquiv.conj T (w i), w i⟫_𝕜)) ↔
+      ∀ w : ι → E, Orthonormal 𝕜 w → P (∑ i, RCLike.re ⟪T (w i), w i⟫_𝕜) := by
+  simpa only [map_sum] using U.forall_orthonormal_sum_inner_conj_iff fun z ↦ P (RCLike.re z)
+
+end LinearIsometryEquiv
+
 namespace TauCeti
 
 open scoped RealInnerProductSpace
@@ -314,7 +365,7 @@ theorem orthogonalProjectionOnto_coe_add_smul {𝕜 F : Type*} [RCLike 𝕜] [No
   rw [map_add, map_smul, Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero,
     smul_zero, add_zero]
   exact Subtype.ext ((Submodule.coe_orthogonalProjectionOnto_apply _ _).trans
-    ((Submodule.starProjection_eq_self_iff (K := (𝕜 ∙ e)ᗮ)).2 y.2))
+    ((Submodule.starProjection_eq_self_iff (K := (𝕜 ∙ e)ᗮ)).2 y.property))
 
 /-- A graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` for a unit vector `e` is the parametric
 range `y ↦ y + φ y • e`. -/
@@ -326,7 +377,7 @@ theorem setOf_inner_eq_eq_range {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGro
   refine ⟨fun hx => ⟨_, hx ▸ orthogonalProjectionOnto_add_inner_smul he x⟩, ?_⟩
   rintro ⟨y, rfl⟩
   simp [inner_add_right, inner_smul_right,
-    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.2, he]
+    Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.property, he]
 
 open scoped Pointwise in
 /-- Translating a graph `{x | ⟪e, x⟫_𝕜 = φ (P x)}` over `(𝕜 ∙ e)ᗮ` by `v` translates the base

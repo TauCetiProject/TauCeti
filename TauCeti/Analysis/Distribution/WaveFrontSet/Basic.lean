@@ -387,6 +387,7 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
+omit [FiniteDimensional ℝ E] in
 /-- The localized Fourier transform vanishes for a cutoff whose support is disjoint from the
 support of the distribution. -/
 theorem localFourier_eq_zero_of_disjoint_dsupport {T : 𝓓'(Ω, ℂ)} {φ : 𝓓(Ω, ℂ)}
@@ -564,7 +565,7 @@ private theorem isMicrolocallySmoothAt_ofFun_one_map_subtype_of_notMem (V : Subm
     inter_subset_right (1 : ℂ)
   -- The cutoff vanishes on `V`, so the localized Fourier transform vanishes identically.
   have hg : (fun v : V => φ v) = 0 :=
-    funext fun v => image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 v.2
+    funext fun v => image_eq_zero_of_notMem_tsupport fun h => (hφ h).1 v.property
   exact isMicrolocallySmoothAt_of_forall_decay (φ := φ) (by simp [hφx])
     (fun N => ⟨0, fun η => by simp [hg, Real.fourier_eq]⟩) ξ
 

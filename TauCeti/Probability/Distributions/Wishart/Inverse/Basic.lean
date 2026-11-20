@@ -213,7 +213,7 @@ private theorem measurable_inverseWishartPDFReal_comp {γ : Type*} [MeasurableSp
   classical
   have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
   have hg' : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ) :=
-    measurable_subtype_coe.comp hg
+    measurable_subtypeVal.comp hg
   have hdetg : Measurable fun c => (g c : Matrix (Fin p) (Fin p) ℝ).det :=
     (Continuous.matrix_det continuous_id).measurable.comp hg'
   have hdetT : Measurable fun c => (T c).det :=
@@ -375,7 +375,7 @@ theorem inverseWishartMeasure_of_posDef (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     have hrpow : Measurable fun z : ℝ × ℝ => z.1 ^ z.2 := by fun_prop
     have hdet : Measurable fun B : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
         (B : Matrix (Fin p) (Fin p) ℝ).det :=
-      (Continuous.matrix_det continuous_id).measurable.comp measurable_subtype_coe
+      (Continuous.matrix_det continuous_id).measurable.comp measurable_subtypeVal
     exact (hrpow.comp (hdet.prodMk measurable_const)).ennreal_ofReal
   -- A density supported on the cone may equally be taken against the restricted measure.
   have hrestrict : ∀ f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → ℝ≥0∞,
