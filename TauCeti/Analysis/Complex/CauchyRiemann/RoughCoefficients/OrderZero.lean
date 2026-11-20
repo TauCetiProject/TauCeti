@@ -260,10 +260,10 @@ private theorem setLIntegral_coeffTerm_le {K : Set ℂ} {B : ℂ → V →L[ℝ]
           (norm_coeffTerm_le B DB z).trans (by gcongr; exact hB z hz)
         rw [← ofReal_norm]
         refine (ENNReal.ofReal_le_ofReal h).trans_eq ?_
-        rw [ENNReal.ofReal_mul (norm_nonneg v₀), ENNReal.ofReal_add (by positivity)
-          (by positivity), ENNReal.ofReal_mul hδ, ENNReal.ofReal_mul (norm_nonneg (DB z)),
-          ofReal_norm, ofReal_norm, ofReal_norm,
-          Real.eNorm_eq_ofReal (by positivity : 0 ≤ ‖fieldY ψ ξ z‖ + ‖fieldZ ψ J ξ z‖)]
+        -- `ofReal_norm` is instantiated at `DB z`: its operator norm does not unify with the
+        -- generic one at reducible transparency.
+        simp (disch := positivity) [ENNReal.ofReal_mul, ENNReal.ofReal_add, Real.eNorm_eq_ofReal,
+          ofReal_norm (DB z)]
     _ = _ := by
         rw [lintegral_const_mul' _ _ eNorm_ne_top, lintegral_add_left' (hX.const_mul _),
           lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
@@ -378,13 +378,11 @@ private theorem lintegral_enorm_coeffTerm_le [ENNReal.HolderTriple p q r] (hr : 
   have hDBm : AEStronglyMeasurable (DJ - fderiv ℝ A) (volume.restrict K) :=
     (memLpLoc_iff.1 hc.memLpLoc_deriv K hKΩ hK).aestronglyMeasurable.sub
       (hA.continuous_fderiv (by simp)).aestronglyMeasurable
-  have hneg : (fun z => fderiv ℝ A z - DJ z) = -(DJ - fderiv ℝ A) := by
-    funext z
-    simp
   have hHolder :=
     (MeasureTheory.lintegral_enorm_mul_enorm_le_eLpNorm_mul_eLpNorm_mul_rpow_measure_univ (p := p)
-      (q := q) hr hDBm hWK.aestronglyMeasurable).trans (mul_le_mul_left (mul_le_mul_left
-        ((eLpNorm_neg (DJ - fderiv ℝ A) p _).symm.trans_le (hneg ▸ hAD)) _) _)
+      (q := q) hr hDBm hWK.aestronglyMeasurable).trans
+        (mul_le_mul_left (mul_le_mul_left
+          ((eLpNorm_sub_comm DJ (fderiv ℝ A) p _).trans_le hAD) _) _)
   rw [← setLIntegral_eq_of_support_subset hsupp]
   refine (setLIntegral_coeffTerm_le hδ hK.measurableSet (fun z hz => ?_)
     hXK.aestronglyMeasurable.eNorm).trans ?_
