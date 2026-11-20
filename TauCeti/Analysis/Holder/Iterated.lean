@@ -620,6 +620,16 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • �
     _root_.smul_apply]
   simp
 
+/-- The underlying function of a negation is the negation of the underlying function. -/
+@[simp]
+theorem coe_neg (f : CkHolderSpace k α E F) : ⇑(-f) = -⇑f := by
+  rw [← neg_one_smul ℝ f, coe_smul, neg_one_smul]
+
+/-- The underlying function of a difference is the difference of the underlying functions. -/
+@[simp]
+theorem coe_sub (f g : CkHolderSpace k α E F) : ⇑(f - g) = f - g := by
+  rw [sub_eq_add_neg, coe_add, coe_neg, sub_eq_add_neg]
+
 /-- The underlying bounded continuous function of a sum. -/
 @[simp]
 theorem toBoundedContinuousFunction_add (f g : CkHolderSpace k α E F) :
