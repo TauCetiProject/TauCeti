@@ -51,6 +51,8 @@ Euler formal power series agree if and only if the series is supported on the di
 * `TauCeti.Bigraded.HasEulerPowerSeries.of_lowerTriangular` and
   `TauCeti.Bigraded.coeff_eulerPowerSeries_of_lowerTriangular`: lower-triangular bigraded formal
   power series have well-defined Alexander-graded Euler series truncated at `a + 1` in degree `a`.
+* `TauCeti.Bigraded.eulerPowerSeries_of_diagonal`: a diagonally supported series has
+  Alexander-graded Euler series `∑ n, (-1)ⁿ [qⁿ][tⁿ] P qⁿ`.
 * `TauCeti.Bigraded.eulerPowerSeries_eq_maslovEulerPowerSeries_iff`: on nonnegative
   lower-triangular bigraded formal power series, the two Euler series agree if and only if all
   off-diagonal coefficients vanish.
@@ -262,6 +264,18 @@ theorem eulerPowerSeries_C_mul {P : PowerSeries (LaurentPolynomial R)}
   rw [PowerSeries.coeff_C_mul, coeff_C_mul, ← mul_assoc, ← mul_assoc,
     ((Commute.neg_one_left c).pow_left n).eq]
 
+/-- On a diagonally supported bigraded formal power series, `eulerPowerSeries` has `a`-th
+coefficient `(-1)ᵃ [qᵃ][tᵃ] P`. -/
+theorem coeff_eulerPowerSeries_of_diagonal {P : PowerSeries (LaurentPolynomial R)}
+    (hP : HasEulerPowerSeries P)
+    (hdiag : ∀ (n : ℕ) (a : ℤ), (n : ℤ) ≠ a → (PowerSeries.coeff n P).coeff a = 0) (a : ℕ) :
+    PowerSeries.coeff a (eulerPowerSeries hP) =
+      (-1 : R) ^ a * (PowerSeries.coeff a P).coeff (a : ℤ) := by
+  rw [coeff_eulerPowerSeries_of_lowerTriangular hP (fun n b hb ↦ hdiag n b (by omega)) a,
+    Finset.sum_range_succ, Finset.sum_eq_zero (fun m hm ↦ by
+      rw [Finset.mem_range] at hm
+      rw [hdiag m a (by omega), mul_zero]), zero_add]
+
 end EulerPowerSeries
 
 section MaslovEulerPowerSeries
@@ -298,6 +312,16 @@ theorem coeff_maslovEulerPowerSeries_of_diagonal {P : PowerSeries (LaurentPolyno
   rw [coeff_maslovEulerPowerSeries, laurentEval_one_eq_sum,
     Finsupp.sum_eq_single (n : ℤ) (fun b _ hb ↦ hdiag n b (Ne.symm hb)) (fun _ ↦ rfl)]
 
+/-- The Alexander-graded Euler power series of a diagonally supported series is the series of its
+diagonal coefficients `[qⁿ][tⁿ] P`, evaluated at `-q`. -/
+theorem eulerPowerSeries_of_diagonal {P : PowerSeries (LaurentPolynomial R)}
+    (hP : HasEulerPowerSeries P)
+    (hdiag : ∀ (n : ℕ) (a : ℤ), (n : ℤ) ≠ a → (PowerSeries.coeff n P).coeff a = 0) :
+    eulerPowerSeries hP =
+      PowerSeries.rescale (-1 : R) (PowerSeries.mk fun n ↦ (PowerSeries.coeff n P).coeff n) := by
+  ext a
+  rw [coeff_eulerPowerSeries_of_diagonal hP hdiag, PowerSeries.coeff_rescale, PowerSeries.coeff_mk]
+
 end MaslovEulerPowerSeries
 
 section DiagonalCriterion
@@ -331,12 +355,7 @@ theorem eulerPowerSeries_eq_maslovEulerPowerSeries_iff {P : PowerSeries (Laurent
         (((IsUnit.neg isUnit_one).pow n).mul_left_cancel hcoeff).symm a hna.symm
   · intro hdiag
     ext a
-    rw [coeff_eulerPowerSeries_of_lowerTriangular hP hl a,
-      coeff_maslovEulerPowerSeries_of_diagonal hdiag a, Finset.sum_range_succ,
-      Finset.sum_eq_zero (fun m hm ↦ by
-        rw [Finset.mem_range] at hm
-        rw [hdiag m a (by omega), mul_zero]),
-      zero_add]
+    rw [coeff_eulerPowerSeries_of_diagonal hP hdiag, coeff_maslovEulerPowerSeries_of_diagonal hdiag]
 
 end DiagonalCriterion
 
