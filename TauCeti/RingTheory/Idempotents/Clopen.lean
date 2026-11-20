@@ -103,24 +103,25 @@ def spanSingletonAddEquivProd (he : IsIdempotentElem e) (hf : IsIdempotentElem f
     (Ideal.span {e + f} : Ideal R) ≃ₗ[R]
       (Ideal.span {e} : Ideal R) × (Ideal.span {f} : Ideal R) where
   toFun x :=
-    (⟨x.1 * e, Ideal.mem_span_singleton'.2 ⟨x.1, rfl⟩⟩,
-     ⟨x.1 * f, Ideal.mem_span_singleton'.2 ⟨x.1, rfl⟩⟩)
-  map_add' x y := Prod.ext (Subtype.ext (add_mul x.1 y.1 e)) (Subtype.ext (add_mul x.1 y.1 f))
-  map_smul' r x := Prod.ext (Subtype.ext (mul_assoc r x.1 e)) (Subtype.ext (mul_assoc r x.1 f))
+    (⟨x.val * e, Ideal.mem_span_singleton'.2 ⟨x.val, rfl⟩⟩,
+     ⟨x.val * f, Ideal.mem_span_singleton'.2 ⟨x.val, rfl⟩⟩)
+  map_add' x y :=
+    Prod.ext (Subtype.ext (add_mul x.val y.val e)) (Subtype.ext (add_mul x.val y.val f))
+  map_smul' r x := Prod.ext (Subtype.ext (mul_assoc r x.val e)) (Subtype.ext (mul_assoc r x.val f))
   invFun p :=
-    ⟨p.1.1 + p.2.1, (TauCeti.mem_span_singleton_iff_mul_eq_self
+    ⟨p.1.val + p.2.val, (TauCeti.mem_span_singleton_iff_mul_eq_self
       (he.add hf (by rw [hef, hfe, add_zero]))).2 <| by
-        have h1 := (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 p.1.2
-        have h2 := (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 p.2.2
+        have h1 := (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 p.1.property
+        have h2 := (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 p.2.property
         rw [add_mul, mul_add, mul_add, ← h1, ← h2]
         simp [mul_assoc, he.eq, hf.eq, hef, hfe]⟩
   left_inv x := Subtype.ext <| by
     dsimp only
     rw [← mul_add, (TauCeti.mem_span_singleton_iff_mul_eq_self
-      (he.add hf (by rw [hef, hfe, add_zero]))).1 x.2]
+      (he.add hf (by rw [hef, hfe, add_zero]))).1 x.property]
   right_inv p := by
-    have h1 := (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 p.1.2
-    have h2 := (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 p.2.2
+    have h1 := (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 p.1.property
+    have h2 := (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 p.2.property
     exact Prod.ext
       (Subtype.ext <| by dsimp only; rw [add_mul, h1, ← h2, mul_assoc, hfe, mul_zero, add_zero])
       (Subtype.ext <| by dsimp only; rw [add_mul, ← h1, mul_assoc, hef, mul_zero, zero_add, h2])
@@ -128,18 +129,18 @@ def spanSingletonAddEquivProd (he : IsIdempotentElem e) (hf : IsIdempotentElem f
 @[simp]
 theorem coe_spanSingletonAddEquivProd_fst (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (hef : e * f = 0) (hfe : f * e = 0) (x : (Ideal.span {e + f} : Ideal R)) :
-    ((he.spanSingletonAddEquivProd hf hef hfe x).1 : R) = x.1 * e := (rfl)
+    ((he.spanSingletonAddEquivProd hf hef hfe x).1 : R) = x.val * e := (rfl)
 
 @[simp]
 theorem coe_spanSingletonAddEquivProd_snd (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (hef : e * f = 0) (hfe : f * e = 0) (x : (Ideal.span {e + f} : Ideal R)) :
-    ((he.spanSingletonAddEquivProd hf hef hfe x).2 : R) = x.1 * f := (rfl)
+    ((he.spanSingletonAddEquivProd hf hef hfe x).2 : R) = x.val * f := (rfl)
 
 @[simp]
 theorem coe_spanSingletonAddEquivProd_symm (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (hef : e * f = 0) (hfe : f * e = 0)
     (p : (Ideal.span {e} : Ideal R) × (Ideal.span {f} : Ideal R)) :
-    ((he.spanSingletonAddEquivProd hf hef hfe).symm p : R) = p.1.1 + p.2.1 := (rfl)
+    ((he.spanSingletonAddEquivProd hf hef hfe).symm p : R) = p.1.val + p.2.val := (rfl)
 
 end Semiring
 
@@ -153,10 +154,10 @@ noncomputable def balancedExtensionSpanSingletonEquiv (he : IsIdempotentElem e) 
     TauCeti.BalancedExtension f (Ideal.span {e} : Ideal R) ≃ₗ[S]
       (Ideal.span {f e} : Ideal S) := by
   let g : (Ideal.span {e} : Ideal R) →ₛₗ[f] (Ideal.span {f e} : Ideal S) :=
-    { toFun x := ⟨f x.1, (TauCeti.mem_span_singleton_iff_mul_eq_self (he.map f)).2 <| by
-        rw [← map_mul, (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.2]⟩
-      map_add' x y := Subtype.ext (map_add f x.1 y.1)
-      map_smul' r x := Subtype.ext (map_mul f r x.1) }
+    { toFun x := ⟨f x.val, (TauCeti.mem_span_singleton_iff_mul_eq_self (he.map f)).2 <| by
+        rw [← map_mul, (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.property]⟩
+      map_add' x y := Subtype.ext (map_add f x.val y.val)
+      map_smul' r x := Subtype.ext (map_mul f r x.val) }
   let inv : (Ideal.span {f e} : Ideal S) →ₗ[S]
       TauCeti.BalancedExtension f (Ideal.span {e} : Ideal R) :=
     (LinearMap.toSpanSingleton S _
@@ -164,25 +165,25 @@ noncomputable def balancedExtensionSpanSingletonEquiv (he : IsIdempotentElem e) 
       (Ideal.span {f e} : Ideal S).subtype
   refine LinearEquiv.ofLinearMap (TauCeti.BalancedExtension.lift g) inv
     (LinearMap.ext fun y ↦ Subtype.ext ?_) (TauCeti.BalancedExtension.hom_ext fun x ↦ ?_)
-  · simpa [inv, g] using (TauCeti.mem_span_singleton_iff_mul_eq_self (he.map f)).1 y.2
+  · simpa [inv, g] using (TauCeti.mem_span_singleton_iff_mul_eq_self (he.map f)).1 y.property
   · simp only [LinearMap.comp_apply, LinearMap.id_apply, TauCeti.BalancedExtension.lift_tmul,
       one_smul, inv, LinearMap.toSpanSingleton_apply, Submodule.subtype_apply, g,
       LinearMap.coe_mk, AddHom.coe_mk]
-    rw [TauCeti.BalancedExtension.smul_tmul, mul_one, ← one_mul (f x.1),
+    rw [TauCeti.BalancedExtension.smul_tmul, mul_one, ← one_mul (f x.val),
       ← TauCeti.BalancedExtension.tmul_smul, TauCeti.smul_spanSingletonGenerator he x]
 
 @[simp]
 theorem coe_balancedExtensionSpanSingletonEquiv_tmul (he : IsIdempotentElem e)
     (s : S) (x : (Ideal.span {e} : Ideal R)) :
     (he.balancedExtensionSpanSingletonEquiv f (TauCeti.BalancedExtension.tmul f s x) : S) =
-      s * f x.1 := by
+      s * f x.val := by
   simp [balancedExtensionSpanSingletonEquiv]
 
 @[simp]
 theorem balancedExtensionSpanSingletonEquiv_symm_apply (he : IsIdempotentElem e)
     (y : (Ideal.span {f e} : Ideal S)) :
     (he.balancedExtensionSpanSingletonEquiv f).symm y =
-      y.1 • TauCeti.BalancedExtension.tmul f (1 : S) (TauCeti.spanSingletonGenerator e) := by
+      y.val • TauCeti.BalancedExtension.tmul f (1 : S) (TauCeti.spanSingletonGenerator e) := by
   simp [balancedExtensionSpanSingletonEquiv]
 
 end Ring
@@ -199,9 +200,9 @@ noncomputable def spanSingletonTensorEquiv (he : IsIdempotentElem e) (hf : IsIde
   let bil : (Ideal.span {e} : Ideal R) →ₗ[R] (Ideal.span {f} : Ideal R) →ₗ[R]
       (Ideal.span {e * f} : Ideal R) :=
     LinearMap.mk₂ R
-      (fun x y ↦ ⟨x.1 * y.1, (TauCeti.mem_span_singleton_iff_mul_eq_self (he.mul hf)).2 <| by
-        rw [mul_mul_mul_comm, (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.2,
-          (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 y.2]⟩)
+      (fun x y ↦ ⟨x.val * y.val, (TauCeti.mem_span_singleton_iff_mul_eq_self (he.mul hf)).2 <| by
+        rw [mul_mul_mul_comm, (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.property,
+          (TauCeti.mem_span_singleton_iff_mul_eq_self hf).1 y.property]⟩)
       (fun _ _ _ ↦ Subtype.ext (add_mul _ _ _)) (fun _ _ _ ↦ Subtype.ext (mul_assoc _ _ _))
       (fun _ _ _ ↦ Subtype.ext (mul_add _ _ _)) (fun _ _ _ ↦ Subtype.ext (by simp [mul_left_comm]))
   let incl : (Ideal.span {e * f} : Ideal R) →ₗ[R] (Ideal.span {e} : Ideal R) :=
@@ -214,17 +215,17 @@ noncomputable def spanSingletonTensorEquiv (he : IsIdempotentElem e) (hf : IsIde
   · simp only [LinearMap.comp_apply, LinearMap.id_apply, inv, LinearMap.flip_apply,
       TensorProduct.mk_apply, TensorProduct.lift.tmul, bil, LinearMap.mk₂_apply, incl,
       Submodule.coe_inclusion, TauCeti.coe_spanSingletonGenerator]
-    have hz := (TauCeti.mem_span_singleton_iff_mul_eq_self (he.mul hf)).1 z.2
+    have hz := (TauCeti.mem_span_singleton_iff_mul_eq_self (he.mul hf)).1 z.property
     rw [← hz, mul_assoc, mul_assoc, hf.eq, hz]
   · simp only [LinearMap.comp_apply, LinearMap.id_apply, TensorProduct.lift.tmul, inv,
       LinearMap.flip_apply, TensorProduct.mk_apply]
-    rw [show incl (bil x y) = y.1 • x from Subtype.ext (by simp [incl, bil, mul_comm]),
+    rw [show incl (bil x y) = y.val • x from Subtype.ext (by simp [incl, bil, mul_comm]),
       TensorProduct.smul_tmul, TauCeti.smul_spanSingletonGenerator hf y]
 
 @[simp]
 theorem coe_spanSingletonTensorEquiv_tmul (he : IsIdempotentElem e) (hf : IsIdempotentElem f)
     (x : (Ideal.span {e} : Ideal R)) (y : (Ideal.span {f} : Ideal R)) :
-    (he.spanSingletonTensorEquiv hf (x ⊗ₜ[R] y) : R) = x.1 * y.1 := by
+    (he.spanSingletonTensorEquiv hf (x ⊗ₜ[R] y) : R) = x.val * y.val := by
   simp [spanSingletonTensorEquiv]
 
 end CommSemiring
@@ -257,12 +258,12 @@ def spanSingletonEquivQuotientOneSub (he : IsIdempotentElem e) :
     simp only [LinearMap.comp_apply, LinearMap.id_apply, fwd, Submodule.mkQ_apply,
       Submodule.subtype_apply, inv, Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply,
       SetLike.val_smul, smul_eq_mul, TauCeti.coe_spanSingletonGenerator]
-    exact (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.2
+    exact (TauCeti.mem_span_singleton_iff_mul_eq_self he).1 x.property
 
 @[simp]
 theorem spanSingletonEquivQuotientOneSub_apply (he : IsIdempotentElem e)
     (x : (Ideal.span {e} : Ideal R)) :
-    he.spanSingletonEquivQuotientOneSub x = Ideal.Quotient.mk (Ideal.span {1 - e}) x.1 := by
+    he.spanSingletonEquivQuotientOneSub x = Ideal.Quotient.mk (Ideal.span {1 - e}) x.val := by
   simp [spanSingletonEquivQuotientOneSub]
 
 @[simp]
@@ -304,15 +305,15 @@ variable {R : Type*} [CommRing R]
 /-- The idempotent of a clopen `U` lies in a prime ideal `p` if and only if `p ∉ U`. -/
 theorem mem_asIdeal_isIdempotentElemEquivClopens_symm_iff
     (U : Clopens (PrimeSpectrum R)) (p : PrimeSpectrum R) :
-    (isIdempotentElemEquivClopens.symm U).1 ∈ p.asIdeal ↔ p ∉ U := by
-  have h : p ∈ basicOpen (isIdempotentElemEquivClopens.symm U).1 ↔ p ∈ U := by
+    (isIdempotentElemEquivClopens.symm U).val ∈ p.asIdeal ↔ p ∉ U := by
+  have h : p ∈ basicOpen (isIdempotentElemEquivClopens.symm U).val ↔ p ∈ U := by
     rw [basicOpen_isIdempotentElemEquivClopens_symm]; rfl
   exact (not_iff_comm.1 h).symm
 
 /-- Disjoint clopens have orthogonal idempotents. -/
 theorem isIdempotentElemEquivClopens_symm_mul_eq_zero_of_disjoint
     {U V : Clopens (PrimeSpectrum R)} (h : Disjoint U V) :
-    (isIdempotentElemEquivClopens.symm U).1 * (isIdempotentElemEquivClopens.symm V).1 = 0 := by
+    (isIdempotentElemEquivClopens.symm U).val * (isIdempotentElemEquivClopens.symm V).val = 0 := by
   have hinf := congrArg Subtype.val (isIdempotentElemEquivClopens_symm_inf (R := R) U V)
   rw [h.eq_bot, isIdempotentElemEquivClopens_symm_bot] at hinf
   exact hinf.symm
@@ -320,8 +321,8 @@ theorem isIdempotentElemEquivClopens_symm_mul_eq_zero_of_disjoint
 /-- The idempotent of a disjoint union of two clopens is the sum of their idempotents. -/
 theorem isIdempotentElemEquivClopens_symm_sup_of_disjoint
     {U V : Clopens (PrimeSpectrum R)} (h : Disjoint U V) :
-    (isIdempotentElemEquivClopens.symm (U ⊔ V)).1 =
-      (isIdempotentElemEquivClopens.symm U).1 + (isIdempotentElemEquivClopens.symm V).1 := by
+    (isIdempotentElemEquivClopens.symm (U ⊔ V)).val =
+      (isIdempotentElemEquivClopens.symm U).val + (isIdempotentElemEquivClopens.symm V).val := by
   rw [congrArg Subtype.val (isIdempotentElemEquivClopens_symm_sup (R := R) U V)]
   dsimp only
   rw [isIdempotentElemEquivClopens_symm_mul_eq_zero_of_disjoint h, sub_zero]
@@ -330,8 +331,8 @@ theorem isIdempotentElemEquivClopens_symm_sup_of_disjoint
 idempotents. -/
 theorem isIdempotentElemEquivClopens_symm_finset_sup {ι : Type*} (s : Finset ι)
     (U : ι → Clopens (PrimeSpectrum R)) (hdisj : (s : Set ι).PairwiseDisjoint U) :
-    (isIdempotentElemEquivClopens.symm (s.sup U)).1 =
-      ∑ i ∈ s, (isIdempotentElemEquivClopens.symm (U i)).1 := by
+    (isIdempotentElemEquivClopens.symm (s.sup U)).val =
+      ∑ i ∈ s, (isIdempotentElemEquivClopens.symm (U i)).val := by
   classical
   induction s using Finset.induction_on with
   | empty => rw [Finset.sup_empty, Finset.sum_empty, isIdempotentElemEquivClopens_symm_bot]
@@ -345,8 +346,8 @@ theorem isIdempotentElemEquivClopens_symm_finset_sup {ι : Type*} (s : Finset ι
 theorem completeOrthogonalIdempotents_isIdempotentElemEquivClopens_symm {ι : Type*} [Fintype ι]
     (U : ι → Clopens (PrimeSpectrum R)) (hdisj : Pairwise (Function.onFun Disjoint U))
     (hcover : Finset.univ.sup U = ⊤) :
-    CompleteOrthogonalIdempotents fun i ↦ (isIdempotentElemEquivClopens.symm (U i)).1 where
-  idem i := (isIdempotentElemEquivClopens.symm (U i)).2
+    CompleteOrthogonalIdempotents fun i ↦ (isIdempotentElemEquivClopens.symm (U i)).val where
+  idem i := (isIdempotentElemEquivClopens.symm (U i)).property
   ortho _ _ hij := isIdempotentElemEquivClopens_symm_mul_eq_zero_of_disjoint (hdisj hij)
   complete := by
     rw [← isIdempotentElemEquivClopens_symm_finset_sup Finset.univ U (fun _ _ _ _ h ↦ hdisj h),
@@ -356,11 +357,11 @@ theorem completeOrthogonalIdempotents_isIdempotentElemEquivClopens_symm {ι : Ty
 preimage in `Spec S`. -/
 theorem map_isIdempotentElemEquivClopens_symm {S : Type*} [CommRing S] (f : R →+* S)
     (U : Clopens (PrimeSpectrum R)) :
-    f (isIdempotentElemEquivClopens.symm U).1 =
+    f (isIdempotentElemEquivClopens.symm U).val =
       (isIdempotentElemEquivClopens.symm
-        ⟨comap f ⁻¹' U, U.isClopen.preimage (continuous_comap f)⟩).1 := by
-  apply basicOpen_injOn_isIdempotentElem ((isIdempotentElemEquivClopens.symm U).2.map f)
-    (isIdempotentElemEquivClopens.symm _).2
+        ⟨comap f ⁻¹' U, U.isClopen.preimage (continuous_comap f)⟩).val := by
+  apply basicOpen_injOn_isIdempotentElem ((isIdempotentElemEquivClopens.symm U).property.map f)
+    (isIdempotentElemEquivClopens.symm _).property
   rw [← comap_basicOpen, basicOpen_isIdempotentElemEquivClopens_symm,
     basicOpen_isIdempotentElemEquivClopens_symm]
   rfl
@@ -371,7 +372,7 @@ theorem completeOrthogonalIdempotents_fiberClopens {α : Type*}
     (f : LocallyConstant (PrimeSpectrum R) α) :
     CompleteOrthogonalIdempotents
       fun a : f.range_finite.toFinset ↦
-        (isIdempotentElemEquivClopens.symm (f.fiberClopens a.1)).1 :=
+        (isIdempotentElemEquivClopens.symm (f.fiberClopens a.val)).val :=
   completeOrthogonalIdempotents_isIdempotentElemEquivClopens_symm _
     (fun _ _ hab ↦ f.pairwise_disjoint_fiberClopens (Subtype.coe_ne_coe.2 hab))
     (by simpa [Finset.sup_coe] using f.finset_sup_fiberClopens)
@@ -390,41 +391,41 @@ namespace TauCeti
 along the clopen rank fibers of a locally constant function `f : PrimeSpectrum R → ℕ`. -/
 def ClopenRankModule (R : Type u) [CommRing R] (f : LocallyConstant (PrimeSpectrum R) ℕ) :
     Type u :=
-  ∀ k : f.range_finite.toFinset, Fin k.1 →
-    (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R)
+  ∀ k : f.range_finite.toFinset, Fin k.val →
+    (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)
 
 namespace ClopenRankModule
 
 variable (R : Type u) [CommRing R] (f : LocallyConstant (PrimeSpectrum R) ℕ)
 
 noncomputable instance instAddCommGroup : AddCommGroup (ClopenRankModule R f) :=
-  inferInstanceAs (AddCommGroup (∀ k : f.range_finite.toFinset, Fin k.1 →
-    (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R)))
+  inferInstanceAs (AddCommGroup (∀ k : f.range_finite.toFinset, Fin k.val →
+    (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)))
 
 noncomputable instance instModule : Module R (ClopenRankModule R f) :=
-  inferInstanceAs (Module R (∀ k : f.range_finite.toFinset, Fin k.1 →
-    (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R)))
+  inferInstanceAs (Module R (∀ k : f.range_finite.toFinset, Fin k.val →
+    (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)))
 
 /-- The defining identification of `ClopenRankModule R f` with the product over the finite range
 of `f`. -/
 noncomputable def equivPi :
     ClopenRankModule R f ≃ₗ[R]
-      ∀ k : f.range_finite.toFinset, Fin k.1 →
-        (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R) :=
+      ∀ k : f.range_finite.toFinset, Fin k.val →
+        (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R) :=
   LinearEquiv.refl R _
 
 instance instFinite : Module.Finite R (ClopenRankModule R f) :=
   have (k : f.range_finite.toFinset) : Module.Finite R
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R) :=
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R) :=
     Module.Finite.iff_fg.2 (Submodule.fg_span_singleton _)
   Module.Finite.equiv (equivPi R f).symm
 
 instance instProjective : Module.Projective R (ClopenRankModule R f) :=
   have (k : f.range_finite.toFinset) : Module.Projective R
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R) :=
-    (isIdempotentElemEquivClopens.symm _).2.projective_span_singleton
-  have (k : f.range_finite.toFinset) : Module.Projective R (Fin k.1 →
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R)) :=
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R) :=
+    (isIdempotentElemEquivClopens.symm _).property.projective_span_singleton
+  have (k : f.range_finite.toFinset) : Module.Projective R (Fin k.val →
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)) :=
     Module.Projective.of_equiv (DFinsupp.linearEquivFunOnFintype (R := R))
   Module.Projective.of_equiv
     ((DFinsupp.linearEquivFunOnFintype (R := R)).trans (equivPi R f).symm)
@@ -434,37 +435,38 @@ instance instProjective : Module.Projective R (ClopenRankModule R f) :=
 theorem rankAtStalk_eq (p : PrimeSpectrum R) :
     Module.rankAtStalk (R := R) (ClopenRankModule R f) p = f p := by
   have (k : f.range_finite.toFinset) : Module.Projective R
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R) :=
-    (isIdempotentElemEquivClopens.symm _).2.projective_span_singleton
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R) :=
+    (isIdempotentElemEquivClopens.symm _).property.projective_span_singleton
   have (k : f.range_finite.toFinset) : Module.Finite R
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R) :=
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R) :=
     Module.Finite.iff_fg.2 (Submodule.fg_span_singleton _)
-  have (k : f.range_finite.toFinset) : Module.Projective R (Fin k.1 →
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R)) :=
+  have (k : f.range_finite.toFinset) : Module.Projective R (Fin k.val →
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)) :=
     Module.Projective.of_equiv (DFinsupp.linearEquivFunOnFintype (R := R))
-  have (k : f.range_finite.toFinset) : Module.Flat R (Fin k.1 →
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.1)).1} : Ideal R)) :=
+  have (k : f.range_finite.toFinset) : Module.Flat R (Fin k.val →
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (f.fiberClopens k.val)).val} : Ideal R)) :=
     Module.Flat.of_projective
   rw [Module.rankAtStalk_eq_of_equiv (equivPi R f), Module.rankAtStalk_pi,
     finsum_eq_sum_of_fintype,
     Finset.sum_eq_single_of_mem ⟨f p, f.range_finite.mem_toFinset.2 ⟨p, rfl⟩⟩ (Finset.mem_univ _)]
   · rw [Module.rankAtStalk_pi, finsum_eq_sum_of_fintype]
-    simp [(isIdempotentElemEquivClopens.symm _).2.rankAtStalk_span_singleton,
+    simp [(isIdempotentElemEquivClopens.symm _).property.rankAtStalk_span_singleton,
       PrimeSpectrum.mem_asIdeal_isIdempotentElemEquivClopens_symm_iff]
   · intro k _ hkne
     rw [Module.rankAtStalk_pi, finsum_eq_sum_of_fintype]
-    have hne : f p ≠ k.1 := fun h ↦ hkne (Subtype.ext h.symm)
-    simp [(isIdempotentElemEquivClopens.symm _).2.rankAtStalk_span_singleton,
+    have hne : f p ≠ k.val := fun h ↦ hkne (Subtype.ext h.symm)
+    simp [(isIdempotentElemEquivClopens.symm _).property.rankAtStalk_span_singleton,
       PrimeSpectrum.mem_asIdeal_isIdempotentElemEquivClopens_symm_iff, hne]
 
 /-- The clopen-glued module for the zero rank function is trivial. -/
 instance subsingleton_zero : Subsingleton (ClopenRankModule R 0) :=
   let z : LocallyConstant (PrimeSpectrum R) ℕ := 0
   (equivPi R z).toEquiv.subsingleton_congr.2 <|
-    have (k : z.range_finite.toFinset) : Subsingleton (Fin k.1 →
-        (Ideal.span {(isIdempotentElemEquivClopens.symm (z.fiberClopens k.1)).1} : Ideal R)) := by
-      obtain ⟨_, hp⟩ := z.range_finite.mem_toFinset.1 k.2
-      rw [show k.1 = 0 from hp.symm]; infer_instance
+    have (k : z.range_finite.toFinset) : Subsingleton (Fin k.val →
+        (Ideal.span {(isIdempotentElemEquivClopens.symm (z.fiberClopens k.val)).val} : Ideal R)) :=
+      by
+      obtain ⟨_, hp⟩ := z.range_finite.mem_toFinset.1 k.property
+      rw [show k.val = 0 from hp.symm]; infer_instance
     inferInstance
 
 /-- The clopen-glued module for the constant rank function `n` is linearly isomorphic to `Rⁿ`. -/
@@ -480,8 +482,8 @@ noncomputable def constEquiv (n : ℕ) :
     let k₀ : c.range_finite.toFinset :=
       ⟨n, c.range_finite.mem_toFinset.2 ⟨Classical.arbitrary _, rfl⟩⟩
     have huniq (k : c.range_finite.toFinset) : k = k₀ :=
-      let ⟨_, hp⟩ := c.range_finite.mem_toFinset.1 k.2; Subtype.ext hp.symm
-    have he1 : (isIdempotentElemEquivClopens.symm (c.fiberClopens n)).1 = 1 := by
+      let ⟨_, hp⟩ := c.range_finite.mem_toFinset.1 k.property; Subtype.ext hp.symm
+    have he1 : (isIdempotentElemEquivClopens.symm (c.fiberClopens n)).val = 1 := by
       rw [show c.fiberClopens n = ⊤ from Clopens.ext (by ext; simp [c]),
         PrimeSpectrum.isIdempotentElemEquivClopens_symm_top]
     exact (equivPi R c).trans
@@ -489,8 +491,8 @@ noncomputable def constEquiv (n : ℕ) :
         map_add' _ _ := rfl
         map_smul' _ _ := rfl
         invFun y k i := ⟨y (Fin.cast (congrArg Subtype.val (huniq k)) i), by
-          have hek : (isIdempotentElemEquivClopens.symm (c.fiberClopens k.1)).1 = 1 := by
-            rw [show k.1 = n from congrArg Subtype.val (huniq k), he1]
+          have hek : (isIdempotentElemEquivClopens.symm (c.fiberClopens k.val)).val = 1 := by
+            rw [show k.val = n from congrArg Subtype.val (huniq k), he1]
           rw [hek, Ideal.span_singleton_one]; trivial⟩
         left_inv x := by funext k; cases huniq k; rfl
         right_inv _ := rfl }
@@ -500,25 +502,26 @@ the range of `g` drops only zero factors. -/
 private noncomputable def piRestrictRangeEquiv {S : Type v} [CommRing S]
     (g : LocallyConstant (PrimeSpectrum S) ℕ) {s : Finset ℕ}
     (hsub : g.range_finite.toFinset ⊆ s) :
-    (∀ k : s, Fin k.1 →
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (g.fiberClopens k.1)).1} : Ideal S)) ≃ₗ[S]
-    (∀ k : g.range_finite.toFinset, Fin k.1 →
-      (Ideal.span {(isIdempotentElemEquivClopens.symm (g.fiberClopens k.1)).1} : Ideal S)) := by
+    (∀ k : s, Fin k.val →
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (g.fiberClopens k.val)).val} : Ideal S)) ≃ₗ[S]
+    (∀ k : g.range_finite.toFinset, Fin k.val →
+      (Ideal.span {(isIdempotentElemEquivClopens.symm (g.fiberClopens k.val)).val} : Ideal S)) := by
   classical
   refine
-    { toFun x k := x ⟨k.1, hsub k.2⟩
+    { toFun x k := x ⟨k.val, hsub k.property⟩
       map_add' _ _ := rfl
       map_smul' _ _ := rfl
-      invFun y k := if hk : k.1 ∈ g.range_finite.toFinset then y ⟨k.1, hk⟩ else 0
+      invFun y k := if hk : k.val ∈ g.range_finite.toFinset then y ⟨k.val, hk⟩ else 0
       left_inv x := funext fun k ↦ funext fun j ↦ ?_
-      right_inv y := by funext k j; simp [k.2] }
-  by_cases hk : k.1 ∈ g.range_finite.toFinset
+      right_inv y := by funext k j; simp [k.property] }
+  by_cases hk : k.val ∈ g.range_finite.toFinset
   · simp [hk]
   · simp only [hk, ↓reduceDIte, Pi.zero_apply]
-    have hbot : g.fiberClopens k.1 = ⊥ := Clopens.ext <| Set.eq_empty_iff_forall_notMem.2
+    have hbot : g.fiberClopens k.val = ⊥ := Clopens.ext <| Set.eq_empty_iff_forall_notMem.2
       fun q hq ↦ hk (g.range_finite.mem_toFinset.2 ⟨q, by simpa using hq⟩)
     have : Subsingleton
-        (Ideal.span {(isIdempotentElemEquivClopens.symm (g.fiberClopens k.1)).1} : Ideal S) := by
+        (Ideal.span
+          {(isIdempotentElemEquivClopens.symm (g.fiberClopens k.val)).val} : Ideal S) := by
       rw [hbot, PrimeSpectrum.isIdempotentElemEquivClopens_symm_bot, Ideal.span_singleton_zero]
       infer_instance
     exact Subsingleton.elim _ _
@@ -532,8 +535,8 @@ noncomputable def balancedExtensionEquiv {S : Type v} [CommRing S] (φ : R →+*
   have hsub : f'.range_finite.toFinset ⊆ f.range_finite.toFinset := fun k hk ↦
     let ⟨q, hq⟩ := f'.range_finite.mem_toFinset.1 hk
     f.range_finite.mem_toFinset.2 ⟨PrimeSpectrum.comap φ q, hq⟩
-  have hmap (k : ℕ) : φ (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).1 =
-      (isIdempotentElemEquivClopens.symm (f'.fiberClopens k)).1 := by
+  have hmap (k : ℕ) : φ (isIdempotentElemEquivClopens.symm (f.fiberClopens k)).val =
+      (isIdempotentElemEquivClopens.symm (f'.fiberClopens k)).val := by
     rw [PrimeSpectrum.map_isIdempotentElemEquivClopens_symm φ (f.fiberClopens k)]
     congr 2; ext q; simp [f']
   exact ((BalancedExtension.congr φ (equivPi R f)).trans <|
@@ -541,7 +544,8 @@ noncomputable def balancedExtensionEquiv {S : Type v} [CommRing S] (φ : R →+*
       LinearEquiv.piCongrRight fun k ↦
         (BalancedExtension.piEquiv φ _ _).trans <|
           LinearEquiv.piCongrRight fun _ ↦
-            ((isIdempotentElemEquivClopens.symm _).2.balancedExtensionSpanSingletonEquiv φ).trans
+            ((isIdempotentElemEquivClopens.symm
+              _).property.balancedExtensionSpanSingletonEquiv φ).trans
               (LinearEquiv.ofEq _ _ (by rw [hmap]))).trans
     ((piRestrictRangeEquiv f' hsub).trans (equivPi S f').symm)
 
@@ -595,7 +599,7 @@ theorem ranks_eq_empty_of_subsingleton [Subsingleton R] : ranks R M = ∅ := by
 complete orthogonal family. -/
 theorem completeOrthogonalIdempotents_rank :
     CompleteOrthogonalIdempotents fun k : ranks R M ↦
-      (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.1)).1 :=
+      (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val :=
   PrimeSpectrum.completeOrthogonalIdempotents_fiberClopens (rankLocallyConstant R M)
 
 /-- A finitely presented flat module splits as the product of its base changes to the quotients
@@ -603,7 +607,8 @@ cutting out its constant-rank loci. -/
 noncomputable def equivPiRankPieces :
     M ≃ₗ[R] ∀ k : ranks R M,
       (R ⧸ Ideal.span
-        {1 - (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.1)).1})
+        {1 -
+          (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val})
         ⊗[R] M :=
   (completeOrthogonalIdempotents_rank R M).moduleTensorProductEquiv M
 
@@ -611,12 +616,13 @@ noncomputable def equivPiRankPieces :
 constant stalk rank `k`. -/
 theorem rankAtStalk_rankPiece (k : ranks R M)
     (q : PrimeSpectrum (R ⧸ Ideal.span
-      {1 - (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.1)).1})) :
+      {1 -
+        (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val})) :
     rankAtStalk ((R ⧸ Ideal.span
-      {1 - (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.1)).1})
-      ⊗[R] M) q = k.1 := by
-  let e := (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.1)).1
-  have he : IsIdempotentElem e := (isIdempotentElemEquivClopens.symm _).2
+      {1 - (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val})
+      ⊗[R] M) q = k.val := by
+  let e := (isIdempotentElemEquivClopens.symm ((rankLocallyConstant R M).fiberClopens k.val)).val
+  have he : IsIdempotentElem e := (isIdempotentElemEquivClopens.symm _).property
   rw [rankAtStalk_baseChange]
   have hD : q.comap (algebraMap R (R ⧸ Ideal.span {1 - e})) ∈ PrimeSpectrum.basicOpen e := by
     rw [← SetLike.mem_coe, PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he,
@@ -668,17 +674,18 @@ theorem nonempty_linearEquiv_clopenRankModule_of_finite_maximalSpectrum
     Nonempty (M ≃ₗ[R] ClopenRankModule R (Module.rankLocallyConstant R M)) := by
   let r := Module.rankLocallyConstant R M
   have hpiece (k : Module.ranks R M) : Nonempty
-      (((R ⧸ Ideal.span {1 - (isIdempotentElemEquivClopens.symm (r.fiberClopens k.1)).1}) ⊗[R] M)
-        ≃ₗ[R] (Fin k.1 →
+      (((R ⧸ Ideal.span
+          {1 - (isIdempotentElemEquivClopens.symm (r.fiberClopens k.val)).val}) ⊗[R] M)
+        ≃ₗ[R] (Fin k.val →
           (Ideal.span
-            {(isIdempotentElemEquivClopens.symm (r.fiberClopens k.1)).1} : Ideal R))) := by
-    let e := (isIdempotentElemEquivClopens.symm (r.fiberClopens k.1)).1
+            {(isIdempotentElemEquivClopens.symm (r.fiberClopens k.val)).val} : Ideal R))) := by
+    let e := (isIdempotentElemEquivClopens.symm (r.fiberClopens k.val)).val
     let Rk := R ⧸ Ideal.span {1 - e}
-    obtain ⟨b⟩ := Module.nonempty_basis_of_flat_of_finrank_eq Rk (Rk ⊗[R] M) k.1 fun P ↦ by
+    obtain ⟨b⟩ := Module.nonempty_basis_of_flat_of_finrank_eq Rk (Rk ⊗[R] M) k.val fun P ↦ by
       rw [Module.finrank_quotient_tensorProduct_eq_rankAtStalk]
       exact Module.rankAtStalk_rankPiece R M k P.toPrimeSpectrum
     exact ⟨(b.equivFun.restrictScalars R).trans <| LinearEquiv.piCongrRight fun _ ↦
-      (isIdempotentElemEquivClopens.symm _).2.spanSingletonEquivQuotientOneSub.symm⟩
+      (isIdempotentElemEquivClopens.symm _).property.spanSingletonEquivQuotientOneSub.symm⟩
   exact ⟨(Module.equivPiRankPieces R M).trans
     ((LinearEquiv.piCongrRight fun k ↦ Classical.choice (hpiece k)).trans
       (ClopenRankModule.equivPi R r).symm)⟩

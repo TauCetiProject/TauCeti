@@ -220,7 +220,7 @@ theorem exists_vectorField_mvfderiv_eq_neg_one (hf : ContMDiff 𝓘(ℝ, E) 𝓘
   -- Near each `x ∈ K` take a local field `s x` with `df(s x) = -1` on `V x`, and a bump function
   -- `ρ x` supported in the interior of `V x`.
   choose V hV s hs hsf using fun x : K ↦ exists_mem_nhds_contMDiffOn_mvfderiv_eq_neg_one hf
-    (hreg x x.2)
+    (hreg x x.property)
   choose ρ hρ using fun x : K ↦
     (SmoothBumpFunction.nhds_basis_tsupport (I := 𝓘(ℝ, E)) (x : M)).mem_iff.1
       (interior_mem_nhds.2 (hV x))

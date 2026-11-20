@@ -270,9 +270,9 @@ variable (R : Type u) [CommRing R]
 `U ⊆ Spec R`. -/
 noncomputable def clopenObj (U : Clopens (PrimeSpectrum R)) :
     (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R (Ideal.span {(isIdempotentElemEquivClopens.symm U).1} : Ideal R),
+  ⟨ModuleCat.of R (Ideal.span {(isIdempotentElemEquivClopens.symm U).val} : Ideal R),
     finiteProjectiveModules_iff.2 ⟨Module.Finite.iff_fg.2 (Submodule.fg_span_singleton _),
-      (isIdempotentElemEquivClopens.symm U).2.projective_span_singleton⟩⟩
+      (isIdempotentElemEquivClopens.symm U).property.projective_span_singleton⟩⟩
 
 /-- The class `[R e_U]` in `K₀(proj R)` attached to a clopen subset `U ⊆ Spec R`. -/
 noncomputable def clopenClass (U : Clopens (PrimeSpectrum R)) :
@@ -308,8 +308,8 @@ theorem clopenClass_inf (U V : Clopens (PrimeSpectrum R)) :
   exact SplitK0.of_congr (ObjectProperty.isoMk _
     ((LinearEquiv.ofEq _ _ (by
       rw [congrArg Subtype.val (PrimeSpectrum.isIdempotentElemEquivClopens_symm_inf U V)])).trans
-      ((isIdempotentElemEquivClopens.symm U).2.spanSingletonTensorEquiv
-        (isIdempotentElemEquivClopens.symm V).2).symm).toModuleIso)
+      ((isIdempotentElemEquivClopens.symm U).property.spanSingletonTensorEquiv
+        (isIdempotentElemEquivClopens.symm V).property).symm).toModuleIso)
 
 theorem clopenClass_sup_of_disjoint {U V : Clopens (PrimeSpectrum R)} (h : Disjoint U V) :
     clopenClass R (U ⊔ V) = clopenClass R U + clopenClass R V :=
@@ -317,8 +317,8 @@ theorem clopenClass_sup_of_disjoint {U V : Clopens (PrimeSpectrum R)} (h : Disjo
     (P := clopenObj R U) (Q := clopenObj R V) <|
     (LinearEquiv.ofEq _ _ (by
       rw [PrimeSpectrum.isIdempotentElemEquivClopens_symm_sup_of_disjoint h])).trans
-      ((isIdempotentElemEquivClopens.symm U).2.spanSingletonAddEquivProd
-        (isIdempotentElemEquivClopens.symm V).2
+      ((isIdempotentElemEquivClopens.symm U).property.spanSingletonAddEquivProd
+        (isIdempotentElemEquivClopens.symm V).property
         (PrimeSpectrum.isIdempotentElemEquivClopens_symm_mul_eq_zero_of_disjoint h)
         (PrimeSpectrum.isIdempotentElemEquivClopens_symm_mul_eq_zero_of_disjoint h.symm))
 
@@ -344,8 +344,8 @@ theorem rankHom_clopenClass (U : Clopens (PrimeSpectrum R)) :
   ext p
   rw [clopenClass, rankHom_of]
   change (Module.rankAtStalk (R := R)
-    (Ideal.span {(isIdempotentElemEquivClopens.symm U).1} : Ideal R) p : ℤ) = _
-  rw [(isIdempotentElemEquivClopens.symm U).2.rankAtStalk_span_singleton p,
+    (Ideal.span {(isIdempotentElemEquivClopens.symm U).val} : Ideal R) p : ℤ) = _
+  rw [(isIdempotentElemEquivClopens.symm U).property.rankAtStalk_span_singleton p,
     PrimeSpectrum.mem_asIdeal_isIdempotentElemEquivClopens_symm_iff]
   by_cases hp : p ∈ U <;> simp [LocallyConstant.coe_charFn, hp]
 
@@ -358,7 +358,7 @@ theorem extend_clopenClass {S : Type u} [CommRing S] (f : R →+* S)
   exact SplitK0.of_extendScalars_obj
     (Q := clopenObj S ⟨PrimeSpectrum.comap f ⁻¹' U,
       U.isClopen.preimage (PrimeSpectrum.continuous_comap f)⟩) <|
-    ((isIdempotentElemEquivClopens.symm U).2.balancedExtensionSpanSingletonEquiv f).trans
+    ((isIdempotentElemEquivClopens.symm U).property.balancedExtensionSpanSingletonEquiv f).trans
       (LinearEquiv.ofEq _ _ (by rw [PrimeSpectrum.map_isIdempotentElemEquivClopens_symm]))
 
 /-- Refining a clopen class along any finite clopen partition of `Spec R`. -/
@@ -418,7 +418,7 @@ private theorem rankSectionFun_eq_sum_of_partition (g : LocallyConstant (PrimeSp
     (g.pairwise_disjoint_fiberClopens.set_pairwise _) g.finset_sup_fiberClopens hdisj hcover
     fun n _ i hi hne ↦ ?_
   have ⟨p, hpn, hpi⟩ : (↑(g.fiberClopens n ⊓ U i) : Set (PrimeSpectrum R)).Nonempty :=
-    Set.nonempty_iff_ne_empty.2 fun h ↦ hne (Clopens.ext h)
+    Set.ne_empty_iff_nonempty.1 fun h ↦ hne (Clopens.ext h)
   exact (LocallyConstant.mem_fiberClopens.1 hpn).symm.trans (hval i hi p hpi)
 
 /-- Pairwise disjointness and covering of the product refinement of the fiber partitions of two
@@ -525,13 +525,13 @@ theorem rankSection_map_natCast (f : LocallyConstant (PrimeSpectrum R) ℕ) :
     (f.pairwise_disjoint_fiberClopens.set_pairwise _) f.finset_sup_fiberClopens
     (fun _ _ _ hp ↦ congrArg (Nat.cast : ℕ → ℤ) (LocallyConstant.mem_fiberClopens.1 hp))]
   let piece (k : s) : (finiteProjectiveModules R).FullSubcategory :=
-    ⟨ModuleCat.of R (Fin k.1 → (clopenObj R (f.fiberClopens k.1)).obj),
+    ⟨ModuleCat.of R (Fin k.val → (clopenObj R (f.fiberClopens k.val)).obj),
       finiteProjectiveModules_iff.2
         ⟨inferInstance, Module.Projective.of_equiv (DFinsupp.linearEquivFunOnFintype (R := R))⟩⟩
   rw [SplitK0.of_eq_sum_of_linearEquiv_pi piece (ClopenRankModule.equivPi R f),
     ← Finset.sum_coe_sort s]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ : Fin k.1 ↦ clopenObj R (f.fiberClopens k.1))
+  rw [SplitK0.of_eq_sum_of_linearEquiv_pi (fun _ : Fin k.val ↦ clopenObj R (f.fiberClopens k.val))
     (LinearEquiv.refl R _), Finset.sum_const, Finset.card_univ, Fintype.card_fin, ← natCast_zsmul]
   rfl
 
@@ -618,12 +618,12 @@ noncomputable def splitK0EquivProdReducedK0 :
     SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+
       LocallyConstant (PrimeSpectrum R) ℤ × reducedK0 R where
   toFun x := (rankHom R x, ⟨x - rankSection R (rankHom R x), by simp⟩)
-  invFun p := rankSection R p.1 + p.2.1
+  invFun p := rankSection R p.1 + p.2.val
   map_add' x y := Prod.ext (map_add (rankHom R) x y) (Subtype.ext <| by
     simp only [Prod.snd_add, Submodule.coe_add, map_add]; abel)
   left_inv x := by simp
-  right_inv p := Prod.ext (by simp [mem_reducedK0_iff.1 p.2.2])
-    (Subtype.ext <| by simp [mem_reducedK0_iff.1 p.2.2])
+  right_inv p := Prod.ext (by simp [mem_reducedK0_iff.1 p.2.property])
+    (Subtype.ext <| by simp [mem_reducedK0_iff.1 p.2.property])
 
 @[simp]
 theorem splitK0EquivProdReducedK0_fst
@@ -640,7 +640,7 @@ theorem splitK0EquivProdReducedK0_snd
 @[simp]
 theorem splitK0EquivProdReducedK0_symm_apply
     (p : LocallyConstant (PrimeSpectrum R) ℤ × reducedK0 R) :
-    (splitK0EquivProdReducedK0 R).symm p = rankSection R p.1 + p.2.1 := (rfl)
+    (splitK0EquivProdReducedK0 R).symm p = rankSection R p.1 + p.2.val := (rfl)
 
 end ReducedK0
 

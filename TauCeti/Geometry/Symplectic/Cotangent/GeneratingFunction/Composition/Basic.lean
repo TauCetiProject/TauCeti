@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Legendre
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.SecondDerivative
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 
 /-!
@@ -25,6 +26,13 @@ and the target of `T`. Its domain is an open neighborhood of the chosen outer po
 uniqueness concerns stationary branches through the chosen intermediate position, not other
 critical points elsewhere. The construction applies Mathlib’s smooth implicit function theorem
 to the intermediate momentum, using `cotangentLegendreHessian` for its spatial derivative.
+For `C^(n+2)` inputs the branch is `C^(n+1)`, and the resulting generating function keeps the
+regularity `C^(n+2)` of the inputs, since its derivative is read off the covectors of `S` and `T`
+along the branch.
+
+`fderiv_fderiv_cotangentGeneratingSum_apply` splits the second derivative of the sum into those
+of `S` and `T`; in particular the negative intermediate Hessian is the sum of the negative
+`a`-Hessians of `S` and of `T` (`cotangentLegendreHessian_cotangentGeneratingSum_apply_apply`).
 
 ## References
 
@@ -77,6 +85,55 @@ theorem fderiv_cotangentGeneratingSum_apply {S : V × W → ℝ} {T : W × U →
       (hT.hasFDerivAt.comp x
         ((hasFDerivAt_snd (𝕜 := ℝ) (p := x)).prodMk (hasFDerivAt_fst (𝕜 := ℝ)).snd))
   exact congrArg (fun L ↦ L u) hd.fderiv
+
+/-- The second derivative of `S(q, a) + T(a, Q)` in the variables `((q, Q), a)` is the sum of the
+second derivatives of `S` and `T`, each read on its own pair of variables. -/
+theorem fderiv_fderiv_cotangentGeneratingSum_apply {S : V × W → ℝ} {T : W × U → ℝ}
+    {x : (V × U) × W} (hS : ContDiffAt ℝ 2 S (x.1.1, x.2)) (hT : ContDiffAt ℝ 2 T (x.2, x.1.2))
+    (u v : (V × U) × W) :
+    fderiv ℝ (fderiv ℝ (cotangentGeneratingSum S T)) x u v =
+      fderiv ℝ (fderiv ℝ S) (x.1.1, x.2) (u.1.1, u.2) (v.1.1, v.2) +
+        fderiv ℝ (fderiv ℝ T) (x.2, x.1.2) (u.2, u.1.2) (v.2, v.1.2) := by
+  -- The two summands are `S` and `T` composed with continuous linear maps.
+  let P₁ : (V × U) × W →L[ℝ] V × W := ((fst ℝ V U).comp (fst ℝ (V × U) W)).prod (snd ℝ (V × U) W)
+  let P₂ : (V × U) × W →L[ℝ] W × U := (snd ℝ (V × U) W).prod ((snd ℝ V U).comp (fst ℝ (V × U) W))
+  have hsum : cotangentGeneratingSum S T = (fun y ↦ (S ∘ P₁) y) + fun y ↦ (T ∘ P₂) y := by
+    funext ⟨⟨_, _⟩, _⟩
+    simp [P₁, P₂]
+  -- At `x` the two projections read off the arguments of `S` and of `T`.
+  have hP₁x : P₁ x = (x.1.1, x.2) := by simp [P₁]
+  have hP₂x : P₂ x = (x.2, x.1.2) := by simp [P₂]
+  have hS' : ContDiffAt ℝ 2 S (P₁ x) := hP₁x ▸ hS
+  have hT' : ContDiffAt ℝ 2 T (P₂ x) := hP₂x ▸ hT
+  have h₁ : ContDiffAt ℝ 2 (S ∘ P₁) x := hS'.comp x P₁.contDiff.contDiffAt
+  have h₂ : ContDiffAt ℝ 2 (T ∘ P₂) x := hT'.comp x P₂.contDiff.contDiffAt
+  -- Near `x` both summands are differentiable, so the first derivative splits.
+  have hev : fderiv ℝ (cotangentGeneratingSum S T) =ᶠ[𝓝 x]
+      fun y ↦ fderiv ℝ (S ∘ P₁) y + fderiv ℝ (T ∘ P₂) y := by
+    filter_upwards [h₁.eventually (by simp), h₂.eventually (by simp)] with y hy₁ hy₂
+    rw [hsum]
+    exact fderiv_add (hy₁.differentiableAt two_ne_zero) (hy₂.differentiableAt two_ne_zero)
+  have hd : HasFDerivAt (fun y ↦ fderiv ℝ (S ∘ P₁) y + fderiv ℝ (T ∘ P₂) y)
+      (fderiv ℝ (fderiv ℝ (S ∘ P₁)) x + fderiv ℝ (fderiv ℝ (T ∘ P₂)) x) x :=
+    (h₁.hasFDerivAt_fderiv le_rfl).add (h₂.hasFDerivAt_fderiv le_rfl)
+  have hP₁ : fderiv ℝ P₁ = fun _ ↦ P₁ := funext fun _ ↦ P₁.fderiv
+  have hP₂ : fderiv ℝ P₂ = fun _ ↦ P₂ := funext fun _ ↦ P₂.fderiv
+  rw [hev.fderiv_eq, hd.fderiv, _root_.add_apply, _root_.add_apply,
+    fderiv_fderiv_comp_apply hS' P₁.contDiff.contDiffAt,
+    fderiv_fderiv_comp_apply hT' P₂.contDiff.contDiffAt, hP₁, hP₂, hP₁x, hP₂x]
+  simp [P₁, P₂]
+
+/-- The negative intermediate Hessian of `S(q, a) + T(a, Q)` is the sum of the negative
+`a`-Hessians of `S` and of `T`. -/
+theorem cotangentLegendreHessian_cotangentGeneratingSum_apply_apply
+    {S : V × W → ℝ} {T : W × U → ℝ} {q : V} {a : W} {Q : U}
+    (hS : ContDiffAt ℝ 2 S (q, a)) (hT : ContDiffAt ℝ 2 T (a, Q)) (c d : W) :
+    cotangentLegendreHessian (cotangentGeneratingSum S T) ((q, Q), a) c d =
+      -(fderiv ℝ (fderiv ℝ S) (q, a) (0, c) (0, d) +
+        fderiv ℝ (fderiv ℝ T) (a, Q) (c, 0) (d, 0)) := by
+  rw [cotangentLegendreHessian_apply_apply,
+    fderiv_fderiv_cotangentGeneratingSum_apply (x := ((q, Q), a)) hS hT]
+  simp
 
 /-- Zero intermediate momentum for the sum is equality of the intermediate
 cotangent points of the two relations. -/
@@ -174,6 +231,62 @@ private theorem eventually_cotangentGeneratingSum_comp_graph_relations
     ext u
     simp [cotangentGeneratingTarget_snd_apply, hd, ← Prod.zero_eq_mk]
 
+/-- A function `R(q, Q)` whose source covector is that of `S` and whose target covector is that of
+`T` along a `C^(n+1)` branch `b` is `C^(n+2)` when `S` and `T` are: its derivative is
+`(δq, δQ) ↦ ∂_q S(q, b) δq + ∂_Q T(b, Q) δQ`, which is `C^(n+1)`. -/
+private theorem contDiffAt_add_two_of_cotangentGeneratingSource_eq
+    {S : V × W → ℝ} {T : W × U → ℝ} {b : V × U → W} {R : V × U → ℝ}
+    {q : V} {a : W} {Q : U} {n : WithTop ℕ∞}
+    (hS : ContDiffAt ℝ (n + 2) S (q, a)) (hT : ContDiffAt ℝ (n + 2) T (a, Q))
+    (hb : ContDiffAt ℝ (n + 1) b (q, Q)) (hb₀ : b (q, Q) = a)
+    (hR : ContDiffAt ℝ (n + 1) R (q, Q))
+    (hrel : ∀ᶠ y in 𝓝 (q, Q),
+      cotangentGeneratingSource R y = cotangentGeneratingSource S (y.1, b y) ∧
+      cotangentGeneratingTarget R y = cotangentGeneratingTarget T (b y, y.2)) :
+    ContDiffAt ℝ (n + 2) R (q, Q) := by
+  -- The derivative of `R`, written through the source and target covectors of `S` and `T`.
+  let R' : V × U → V × U →L[ℝ] ℝ := fun y ↦
+    (cotangentGeneratingSource S (y.1, b y)).2 ∘L fst ℝ V U -
+      (cotangentGeneratingTarget T (b y, y.2)).2 ∘L snd ℝ V U
+  have hn : n + 2 = n + 1 + 1 := by rw [add_assoc, one_add_one_eq_two]
+  have hS₁ : ContDiffAt ℝ (n + 1) (cotangentGeneratingSource S) (q, b (q, Q)) := by
+    rw [hb₀]
+    exact contDiffAt_cotangentGeneratingSource (hn ▸ hS)
+  have hT₁ : ContDiffAt ℝ (n + 1) (cotangentGeneratingTarget T) (b (q, Q), Q) := by
+    rw [hb₀]
+    exact contDiffAt_cotangentGeneratingTarget (hn ▸ hT)
+  have hR' : ContDiffAt ℝ (n + 1) R' (q, Q) :=
+    ((hS₁.comp (q, Q) (contDiffAt_fst.prodMk hb)).snd.clm_comp contDiffAt_const).sub
+      ((hT₁.comp (q, Q) (hb.prodMk contDiffAt_snd)).snd.clm_comp contDiffAt_const)
+  -- Near `(q₀, Q₀)` the map `R'` is the derivative of `R`.
+  have hderiv : ∃ D ∈ 𝓝 (q, Q), ∀ y ∈ D, HasFDerivAt R (R' y) y := by
+    obtain ⟨D, hD, hDR⟩ := (hrel.and (hR.eventually_differentiableAt (by simp))).exists_mem
+    refine ⟨D, hD, fun y hy ↦ ?_⟩
+    obtain ⟨⟨hsrc, htgt⟩, hRy⟩ := hDR y hy
+    have hd := hRy.hasFDerivAt
+    convert hd using 1
+    refine ContinuousLinearMap.ext fun u ↦ ?_
+    have h₁ := congrArg (fun p ↦ p.2 u.1) hsrc
+    have h₂ := congrArg (fun p ↦ p.2 u.2) htgt
+    simp only [cotangentGeneratingSource_snd_apply, cotangentGeneratingTarget_snd_apply] at h₁ h₂
+    simp only [R', _root_.sub_apply, ContinuousLinearMap.comp_apply, coe_fst', coe_snd',
+      cotangentGeneratingSource_snd_apply, cotangentGeneratingTarget_snd_apply]
+    rw [← h₁, ← h₂, sub_neg_eq_add, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+  -- For infinite `n` the order `n + 2` is `n + 1`; for finite `n` integrate `R'` once.
+  induction n using WithTop.recTopCoe with
+  | top => simpa using hR
+  | coe m =>
+    induction m using ENat.recTopCoe with
+    | top =>
+      have h : ((⊤ : ℕ∞) : WithTop ℕ∞) + 2 = ((⊤ : ℕ∞) : WithTop ℕ∞) + 1 := by norm_cast
+      exact h ▸ hR
+    | coe k =>
+      have hk : ((k : ℕ∞) : WithTop ℕ∞) + 2 = ((k + 1 : ℕ) : WithTop ℕ∞) + 1 := by
+        push_cast
+        rw [add_assoc, one_add_one_eq_two]
+      rw [hk]
+      exact contDiffAt_succ_iff_hasFDerivAt.2 ⟨R', hderiv, by exact_mod_cast hR'⟩
+
 section Elimination
 
 variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
@@ -182,7 +295,8 @@ variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 /-- **Composition by stationary elimination.** Near a matched pair of cotangent relations,
 an invertible negative intermediate Hessian of `S(q,a) + T(a,Q)` gives a stationary
 branch `b(q,Q)` and the generating function `R(q,Q) = S(q,b) + T(b,Q)` of their composition.
-For `C^(n+2)` inputs the branch and critical value are `C^(n+1)`, including the smooth case.
+For `C^(n+2)` inputs the branch is `C^(n+1)` and the critical value is `C^(n+2)`, including the
+smooth case.
 The stationary equation characterizes this branch on a joint neighborhood of `((q,Q),a)`.
 
 Only local smoothness is required. In particular, no assertion of a globally defined
@@ -194,7 +308,7 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
     ∃ (b : V × U → W) (R : V × U → ℝ) (D : Set (V × U)),
       IsOpen D ∧ (q, Q) ∈ D ∧ b (q, Q) = a ∧
       (∀ y, R y = S (y.1, b y) + T (b y, y.2)) ∧
-      ContDiffAt ℝ (n + 1) b (q, Q) ∧ ContDiffAt ℝ (n + 1) R (q, Q) ∧
+      ContDiffAt ℝ (n + 1) b (q, Q) ∧ ContDiffAt ℝ (n + 2) R (q, Q) ∧
       (∀ y ∈ D,
         cotangentGeneratingTarget S (y.1, b y) = cotangentGeneratingSource T (b y, y.2) ∧
         cotangentGeneratingSource R y = cotangentGeneratingSource S (y.1, b y) ∧
@@ -231,8 +345,7 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
   have hunique : ∀ᶠ x in 𝓝 ((q, Q), a), G x = 0 ↔ b x.1 = x.2 := by
     simpa only [hz] using hG.eventually_apply_eq_iff_implicitFunction (by simp) hinv
   let R : V × U → ℝ := fun y ↦ F (y, b y)
-  have hFat : ContDiffAt ℝ (n + 2) F ((q, Q), b (q, Q)) := by
-    simpa only [hb₀] using hF
+  have hFat : ContDiffAt ℝ (n + 2) F ((q, Q), b (q, Q)) := hb₀ ▸ hF
   have hR : ContDiffAt ℝ (n + 1) R (q, Q) := by
     simpa only [R, Function.comp_def, id_eq] using
       (hFat.of_le (by gcongr; norm_num : n + 1 ≤ n + 2)).comp (q, Q)
@@ -249,8 +362,10 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
   -- Along the stationary branch, differentiation gives both endpoint covectors.
   have hrelations := eventually_cotangentGeneratingSum_comp_graph_relations hs
     (hb.of_le (by simp : (1 : WithTop ℕ∞) ≤ n + 1)) hb₀ hmatching
+  have hR₂ := contDiffAt_add_two_of_cotangentGeneratingSource_eq hS hT hb hb₀ hR
+    (hrelations.mono fun _ h ↦ h.2)
   obtain ⟨D, hD, hopen, hmem⟩ := mem_nhds_iff.1 hrelations
-  exact ⟨b, R, D, hopen, hmem, hb₀, fun _ ↦ rfl, hb, hR, fun y hy ↦ hD hy, hmatching⟩
+  exact ⟨b, R, D, hopen, hmem, hb₀, fun _ ↦ rfl, hb, hR₂, fun y hy ↦ hD hy, hmatching⟩
 
 end Elimination
 

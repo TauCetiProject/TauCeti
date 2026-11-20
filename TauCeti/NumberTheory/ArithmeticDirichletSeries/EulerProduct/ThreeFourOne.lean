@@ -61,16 +61,16 @@ variable {χ₀ : MultiplicativeIdealWeight K}
 /-- The local `3-4-1` inequality at a single prime. It needs only `σ > 0`, which puts
 `N(𝔭) ^ (-σ)` in the open unit interval. -/
 private theorem threeFourOne_local_nonneg {χ : UnitaryIdealWeight K}
-    (h₀ : χ₀.IsTrivialOnGood) (hbad : χ₀.badPrimes ⊆ χ.1.badPrimes)
+    (h₀ : χ₀.IsTrivialOnGood) (hbad : χ₀.badPrimes ⊆ χ.val.badPrimes)
     (P : HeightOneSpectrum (𝓞 K)) {σ : ℝ} (hσ : 0 < σ) (t : ℝ) :
     0 ≤ 3 * (-log (1 - χ₀ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ (σ : ℂ))).re +
-      4 * (-log (1 - χ.1 P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ ((σ : ℂ) + I * t))).re +
-      (-log (1 - (χ ^ 2).1 P.asIdeal /
+      4 * (-log (1 - χ.val P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ ((σ : ℂ) + I * t))).re +
+      (-log (1 - (χ ^ 2).val P.asIdeal /
         (Ideal.absNorm P.asIdeal : ℂ) ^ ((σ : ℂ) + 2 * I * t))).re := by
   rw [val_pow, MultiplicativeIdealWeight.pow_apply _ two_ne_zero]
   by_cases hP : χ₀ P.asIdeal = 0
   · -- a bad prime of `χ₀` is a bad prime of `χ`, so every Euler factor is `1`
-    have hχ : χ.1 P.asIdeal = 0 :=
+    have hχ : χ.val P.asIdeal = 0 :=
       MultiplicativeIdealWeight.mem_badPrimes.mp
         (hbad (MultiplicativeIdealWeight.mem_badPrimes.mpr hP))
     simp [hP, hχ]
@@ -79,7 +79,7 @@ private theorem threeFourOne_local_nonneg {χ : UnitaryIdealWeight K}
     have hN : (0 : ℝ) < Ideal.absNorm P.asIdeal := by positivity
     have hNc : (Ideal.absNorm P.asIdeal : ℂ) ≠ 0 := by exact_mod_cast hN.ne'
     set a : ℝ := (Ideal.absNorm P.asIdeal : ℝ) ^ (-σ) with ha
-    set z : ℂ := χ.1 P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ (I * t) with hz
+    set z : ℂ := χ.val P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ (I * t) with hz
     have ha1 : a < 1 :=
       Real.rpow_lt_one_of_one_lt_of_neg (by exact_mod_cast hN1) (neg_lt_zero.2 hσ)
     have hnz : ‖z‖ ≤ 1 := by
@@ -92,10 +92,10 @@ private theorem threeFourOne_local_nonneg {χ : UnitaryIdealWeight K}
       rw [ha, Real.rpow_neg hN.le, Complex.ofReal_inv]
     have e₀ : χ₀ P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ (σ : ℂ) = a := by
       rw [h1, hbase, hainv, one_div]
-    have e₁ : χ.1 P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ ((σ : ℂ) + I * t) = a * z := by
+    have e₁ : χ.val P.asIdeal / (Ideal.absNorm P.asIdeal : ℂ) ^ ((σ : ℂ) + I * t) = a * z := by
       rw [cpow_add _ _ hNc, hbase, hainv, hz]
       field_simp
-    have e₂ : χ.1 P.asIdeal ^ 2 / (Ideal.absNorm P.asIdeal : ℂ) ^ ((σ : ℂ) + 2 * I * t) =
+    have e₂ : χ.val P.asIdeal ^ 2 / (Ideal.absNorm P.asIdeal : ℂ) ^ ((σ : ℂ) + 2 * I * t) =
         a * z ^ 2 := by
       rw [mul_assoc, cpow_add _ _ hNc, cpow_ofNat_mul, hbase, hainv, hz]
       field_simp
@@ -107,7 +107,7 @@ weight that is trivial on its good ideals, with every bad prime of `χ₀` a bad
 real `σ > 1` and real `t`, the `L`-series of `χ₀` at `σ` cubed, times that of `χ` at `σ + it` to
 the fourth power, times that of `χ²` at `σ + 2it`, has norm at least one. -/
 theorem norm_LSeries_threeFourOne_ge_one (χ : UnitaryIdealWeight K)
-    (h₀ : χ₀.IsTrivialOnGood) (hbad : χ₀.badPrimes ⊆ χ.1.badPrimes) {σ : ℝ} (hσ : 1 < σ)
+    (h₀ : χ₀.IsTrivialOnGood) (hbad : χ₀.badPrimes ⊆ χ.val.badPrimes) {σ : ℝ} (hσ : 1 < σ)
     (t : ℝ) :
     1 ≤ ‖LSeries (normCoeff K χ₀.toIdealArithmeticFunction) σ ^ 3 *
       LSeries (normCoeff K χ.toIdealArithmeticFunction) ((σ : ℂ) + I * t) ^ 4 *
@@ -117,23 +117,23 @@ theorem norm_LSeries_threeFourOne_ge_one (χ : UnitaryIdealWeight K)
   have hS₀ := summable_idealTerm_of_bounded_of_one_lt_re
     (f := χ₀.toIdealArithmeticFunction) (C := 1) (s := (σ : ℂ))
     (fun I ↦ (χ₀.toIdealArithmeticFunction_apply I).symm ▸ h₀.norm_apply_le_one) (by simpa using hσ)
-  have hS₁ : Summable (idealTerm K χ.1.toIdealArithmeticFunction ((σ : ℂ) + I * t)) := by
+  have hS₁ : Summable (idealTerm K χ.val.toIdealArithmeticFunction ((σ : ℂ) + I * t)) := by
     simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] using
       summable_idealTerm_of_unitary_of_one_lt_re χ (s := (σ : ℂ) + I * t)
         (by simpa using hσ)
-  have hS₂ : Summable (idealTerm K (χ ^ 2).1.toIdealArithmeticFunction
+  have hS₂ : Summable (idealTerm K (χ ^ 2).val.toIdealArithmeticFunction
       ((σ : ℂ) + 2 * I * t)) := by
     rw [← (χ ^ 2).toIdealArithmeticFunction_eq_val]
     exact summable_idealTerm_of_unitary_of_one_lt_re (χ ^ 2)
       (s := (σ : ℂ) + 2 * I * t) (by simpa using hσ)
   have hs₀ := χ₀.summable_neg_log_one_sub hS₀
-  have hs₁ := χ.1.summable_neg_log_one_sub hS₁
-  have hs₂ := (χ ^ 2).1.summable_neg_log_one_sub hS₂
+  have hs₁ := χ.val.summable_neg_log_one_sub hS₁
+  have hs₂ := (χ ^ 2).val.summable_neg_log_one_sub hS₂
   have hE₀ := χ₀.exp_tsum_neg_log_one_sub_eq_LSeries hS₀
-  have hE₁ := χ.1.exp_tsum_neg_log_one_sub_eq_LSeries hS₁
-  have hE₂ := (χ ^ 2).1.exp_tsum_neg_log_one_sub_eq_LSeries hS₂
+  have hE₁ := χ.val.exp_tsum_neg_log_one_sub_eq_LSeries hS₁
+  have hE₂ := (χ ^ 2).val.exp_tsum_neg_log_one_sub_eq_LSeries hS₂
   simp only [toIdealArithmeticFunction_eq_val]
-  rw [← hE₀, ← hE₁, ← hE₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add, norm_exp,
+  rw [← hE₀, ← hE₁, ← hE₂, ← exp_natCast_mul, ← exp_natCast_mul, ← exp_add, ← exp_add, norm_exp,
     Real.one_le_exp_iff]
   have hsum := Complex.hasSum_re
     (((hs₀.hasSum.mul_left 3).add (hs₁.hasSum.mul_left 4)).add hs₂.hasSum)

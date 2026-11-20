@@ -61,10 +61,10 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardProjection
   classical
   let A := F.map (finSuccEquiv ℝ n).toEquiv.toEmbedding
   let G : A → MvPolynomial (Fin (n + 1)) ℝ := fun b ↦
-    rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.1)
+    rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b.val)
   -- The family lifting theorem reads the distinguished variable last. Rotation recovers
   -- the original polynomial in the ambient coordinate-zero convention.
-  have hG (b : A) : rename (finRotate (n + 1)) (G b) = (finSuccEquiv ℝ n).symm b.1 := by
+  have hG (b : A) : rename (finRotate (n + 1)) (G b) = (finSuccEquiv ℝ n).symm b.val := by
     apply (finSuccEquiv ℝ n).injective
     rw [finSuccEquiv_rename_finRotate]
     simp only [G, rename_rename, Equiv.self_comp_symm, rename_id_apply,
@@ -75,7 +75,7 @@ theorem IsCAD.exists_isCAD_lazardValuation_eq_of_lazardProjection
       (h𝓓.isConnected hC).isPreconnected (fun q hq ↦ hproj q hq C hC)
   obtain ⟨𝓒, h𝓒, htail, ha, hv, hs⟩ :=
     h𝓓.exists_isCAD_lazardValuation_eq_of_lazardDelineation hanalytic hD
-  have hmem (f : F) : finSuccEquiv ℝ n f.1 ∈ A := Finset.mem_map.2 ⟨f, f.2, rfl⟩
+  have hmem (f : F) : finSuccEquiv ℝ n f.val ∈ A := Finset.mem_map.2 ⟨f, f.property, rfl⟩
   refine ⟨𝓒, h𝓒, htail, ha, fun f hf ↦ ?_, fun f hf E hE ↦ ?_⟩
   · simpa only [hG, AlgEquiv.symm_apply_apply] using
       hv ⟨finSuccEquiv ℝ n f, hmem ⟨f, hf⟩⟩
