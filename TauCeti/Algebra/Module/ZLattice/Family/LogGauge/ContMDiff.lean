@@ -25,7 +25,7 @@ logarithm, near any nonzero point it agrees modulo periods with a formula using 
 branch. No constancy of the period family is needed.
 
 Both discs carry their inherited open-subset complex atlases. This is the upstairs regularity
-step for descent to the punctured cyclic quotient; the downstairs biholomorphism
+step for descent to the punctured cyclic quotient; the downstairs diffeomorphism
 `TauCeti.torusFamilyLogGaugeDiffeomorph` is built from it in
 `TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Diffeomorph`.
 

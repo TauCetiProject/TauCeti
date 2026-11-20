@@ -68,8 +68,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   exponential of `(c log n) s`.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
-  extends to a `k`-th root function complex differentiable at that point.
+* `TauCeti.exists_contDiffAt_pow_eq_and_exp_eq` -- near a nonzero point, a prescribed `k`-th
+  root extends to a `k`-th root function holomorphic at that point, with a holomorphic logarithm.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
@@ -214,14 +214,25 @@ theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : 
   have hp : f z ^ ((β⁻¹ : ℝ) : ℂ) = f w ^ ((β⁻¹ : ℝ) : ℂ) := mul_left_cancel₀ I_ne_zero hzw
   exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
 
-/-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
-root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
-value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
-theorem exists_differentiableAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
-    (hc : c ^ k = z₀) :
-    ∃ f : ℂ → ℂ, DifferentiableAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
-  refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), ?_, by simp [div_self hz₀], fun z ↦ ?_⟩
-  · exact ((differentiableAt_id.div_const _).cpow_const (by simp [div_self hz₀])).const_mul c
+/-- **A local holomorphic branch of the `k`-th root and of its logarithm.** Near a nonzero `z₀`
+with a chosen `k`-th root `c`, there is a `k`-th root function `f` with `f z₀ = c`, namely
+`z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`, together with a logarithm `L` of `f` off `0`. Both are `C^n` at
+`z₀` for every `n`, so holomorphic there. -/
+theorem exists_contDiffAt_pow_eq_and_exp_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
+    (hc : c ^ k = z₀) {n : WithTop ℕ∞} :
+    ∃ f L : ℂ → ℂ, ContDiffAt ℂ n f z₀ ∧ ContDiffAt ℂ n L z₀ ∧ f z₀ = c ∧
+      (∀ z, f z ^ k = z) ∧ ∀ z, z ≠ 0 → exp (L z) = f z := by
+  have hc₀ : c ≠ 0 := by rintro rfl; exact hz₀ (by rw [← hc, zero_pow hk])
+  let L : ℂ → ℂ := fun z ↦ log c + (k : ℂ)⁻¹ * log (z / z₀)
+  have hexp (z : ℂ) (hz : z ≠ 0) : exp (L z) = c * (z / z₀) ^ (k⁻¹ : ℂ) := by
+    rw [exp_add, exp_log hc₀, cpow_def_of_ne_zero (div_ne_zero hz hz₀), mul_comm (log _)]
+  have hL : ContDiffAt ℂ n L z₀ := contDiffAt_const.add (contDiffAt_const.mul
+    ((contDiffAt_log (by rw [div_self hz₀]; exact one_mem_slitPlane)).comp z₀
+      (contDiffAt_id.div_const z₀)))
+  refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), L, ?_, hL, by simp [div_self hz₀], fun z ↦ ?_, hexp⟩
+  · refine (contDiff_exp.contDiffAt.comp z₀ hL).congr_of_eventuallyEq ?_
+    filter_upwards [isOpen_ne.mem_nhds hz₀] with z hz
+    exact (hexp z hz).symm
   · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
