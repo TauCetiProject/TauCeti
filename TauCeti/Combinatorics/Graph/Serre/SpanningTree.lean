@@ -458,6 +458,19 @@ def roseTree (α : Type*) : (rose α).SpanningTree where
 
 @[simp] theorem roseTree_darts (α : Type*) : (roseTree α).darts = ∅ := (rfl)
 
+/-- Every spanning tree of the segment contains both of its darts: the tree path between the two
+vertices crosses the edge. -/
+@[simp] theorem segment_spanningTree_darts (T : segment.SpanningTree) : T.darts = Set.univ := by
+  obtain ⟨e, he⟩ : ∃ e, e ∈ Path.darts _ (T.path false true) := by
+    generalize T.path false true = q
+    cases q with
+    | cons q e => exact ⟨e.val, (Path.darts_cons _ q e).symm ▸
+        List.mem_append_right _ (List.mem_singleton_self _)⟩
+  refine Set.eq_univ_of_forall fun b => ?_
+  rcases Bool.eq_or_eq_not b e with rfl | rfl
+  · exact T.mem_of_mem_darts_path he
+  · exact T.rev_mem _ (T.mem_of_mem_darts_path he)
+
 /-- A rose has exactly one spanning tree, the one with no darts. -/
 instance (α : Type*) : Unique (rose α).SpanningTree where
   default := roseTree α
