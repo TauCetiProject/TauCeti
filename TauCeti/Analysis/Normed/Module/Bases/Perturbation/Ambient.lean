@@ -71,7 +71,7 @@ theorem ambientPerturbationMap_apply_basis
     (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖c i - j (b i)‖)) (i : β) :
     b.ambientPerturbationMap j c (b i) = c i := by
   simp only [ambientPerturbationMap, add_apply, LinearIsometry.coe_toContinuousLinearMap,
-    b.tsum_coord_smulRight_apply_basis (fun k ↦ c k - j (b k)) hs i, add_sub_cancel]
+    b.tsum_coord_smulRight_apply_basis _ (b.summable_coord_smulRight _ hs) i, add_sub_cancel]
 
 end CompleteTarget
 

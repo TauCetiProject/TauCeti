@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Bases
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Basic facts about generalized Schauder bases
@@ -62,21 +63,16 @@ theorem proj_sum_of_subset (a : β → 𝕜) {A B : Finset β} (hBA : B ⊆ A) :
 filter are uniformly bounded, then the basis expansion of every vector converges unconditionally. -/
 theorem hasSum_of_forall_norm_proj_le [L.NeBot] {C : ℝ} (hC : ∀ A : Finset β, ‖b.proj A‖ ≤ C)
     (x : X) : HasSum (fun i ↦ b.coord i x • b i) x := by
-  -- Uniformly bounded projections are equicontinuous (the `show` picks the two needed items of
-  -- the TFAE list), so the set of `y` with `b.proj A y → y` along `atTop` is closed. It contains
-  -- the span of the basis vectors, which is dense.
-  have hF : Equicontinuous ((↑) ∘ b.proj) :=
-    (show _ ↔ ∃ C, ∀ A, ‖b.proj A‖ ≤ C from (NormedSpace.equicontinuous_tfae b.proj).out 2 6).2
-      ⟨C, hC⟩
-  have hspan : (Submodule.span 𝕜 (range b) : Set X) ⊆
-      {y | Tendsto (fun A : Finset β ↦ b.proj A y) atTop (𝓝 y)} := fun y hy ↦ by
+  -- The projections are uniformly bounded and converge to the identity on the span of the basis
+  -- vectors, which is dense, so they converge to the identity everywhere.
+  have hspan : ∀ y ∈ (Submodule.span 𝕜 (range b) : Set X),
+      Tendsto (fun A : Finset β ↦ b.proj A y) atTop (𝓝 ((1 : X →L[𝕜] X) y)) := fun y hy ↦ by
     obtain ⟨c, rfl⟩ := Finsupp.mem_span_range_iff_exists_finsupp.1 hy
     exact tendsto_atTop_of_eventually_const fun A hA ↦ by
-      rw [Finsupp.sum, b.proj_sum_of_subset c hA]
-  have hx : Tendsto (fun A : Finset β ↦ b.proj A x) atTop (𝓝 x) :=
-    (hF.isClosed_setOfPred_tendsto continuous_id).closure_subset_iff.2 hspan (b.dense_span x)
+      rw [Finsupp.sum, b.proj_sum_of_subset c hA, one_apply_eq_self]
   rw [HasSum, SummationFilter.unconditional_filter]
-  simpa only [proj_apply] using hx
+  simpa only [proj_apply, one_apply_eq_self] using
+    ContinuousLinearMap.tendsto_apply_of_dense b.dense_span (.of_forall hC) hspan x
 
 /-- A generalized Schauder basis whose expansion converges unconditionally is an unconditional
 Schauder basis, with the same basis vectors and coordinate functionals. -/
@@ -161,12 +157,12 @@ theorem summable_coord_smulRight [CompleteSpace F] (v : β → F)
   hs.of_norm_bounded fun i ↦
     (ContinuousLinearMap.norm_smulRight_apply (b.coord i) (v i)).le
 
-/-- The sum of rank-one coordinate maps takes each basis vector to its prescribed vector. -/
-theorem tsum_coord_smulRight_apply_basis [CompleteSpace F] (v : β → F)
-    (hs : Summable (fun i ↦ ‖b.coord i‖ * ‖v i‖)) (i : β) :
+/-- A summable series of rank-one coordinate maps takes each basis vector to its prescribed
+vector. -/
+theorem tsum_coord_smulRight_apply_basis (v : β → F)
+    (hs : Summable (fun k ↦ (b.coord k).smulRight (v k))) (i : β) :
     (∑' k, (b.coord k).smulRight (v k)) (b i) = v i := by
-  rw [tsum_apply (b.summable_coord_smulRight v hs),
-    tsum_eq_single i fun k hki ↦ by simp [b.ortho, hki.symm]]
+  rw [tsum_apply hs, tsum_eq_single i fun k hki ↦ by simp [b.ortho, hki.symm]]
   simp [b.ortho]
 
 end CoordinateSeries
