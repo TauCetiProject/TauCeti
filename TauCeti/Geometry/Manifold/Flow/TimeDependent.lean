@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 
 /-!
 # Time-dependent flows on manifolds
@@ -180,6 +181,12 @@ theorem mem_timeDependentFlowDomain :
 theorem timeDependentFlowOf_def :
     timeDependentFlowOf X s t x = (flowOf (timeDependentSuspensionField X) (t - s) (s, x)).2 :=
   (rfl)
+
+/-- Outside the domain of the time-dependent flow, the flow takes the junk value `x`. -/
+theorem timeDependentFlowOf_of_not_mem (h : ((s, t), x) ∉ timeDependentFlowDomain X) :
+    timeDependentFlowOf X s t x = x := by
+  rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
+  rw [timeDependentFlowOf_def, flowOf_apply, maximalIntegralCurve_eq_of_not_mem h]
 
 /-! ### Solutions of the time-dependent equation -/
 
@@ -389,13 +396,8 @@ theorem timeDependentFlowOf_comp_add_right_of_mem (θ : ℝ)
   have hγ (u : ℝ) (hu : u ∈ Ioo (a - θ) (b - θ)) :
       HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ timeDependentFlowOf X (s + θ) (r + θ) x) u
         ((1 : ℝ →L[ℝ] ℝ).smulRight (X (u + θ) (timeDependentFlowOf X (s + θ) (u + θ) x))) := by
-    have hd := hasMFDerivAt_timeDependentFlowOf hX
-      (hab (u + θ) ⟨by linarith [hu.1], by linarith [hu.2]⟩)
-    have hadd : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun r : ℝ ↦ r + θ) u
-        (ContinuousLinearMap.id ℝ ℝ) :=
-      hasMFDerivAt_iff_hasFDerivAt.2 ((hasFDerivAt_id u).add_const θ)
-    -- Composing with the derivative `id` of the translation leaves the velocity unchanged.
-    exact (hd.comp u hadd).congr_mfderiv (ContinuousLinearMap.ext fun r ↦ rfl)
+    exact (hasMFDerivAt_timeDependentFlowOf hX
+      (hab (u + θ) ⟨by linarith [hu.1], by linarith [hu.2]⟩)).comp_add_right
   have hs' : s ∈ Ioo (a - θ) (b - θ) := ⟨by linarith [hs.1], by linarith [hs.2]⟩
   have ht' : t ∈ Ioo (a - θ) (b - θ) := ⟨by linarith [ht.1], by linarith [ht.2]⟩
   have hmem := mem_timeDependentFlowDomain_of_hasMFDerivAt (X := fun u ↦ X (u + θ)) hγ hs' ht'
@@ -423,10 +425,8 @@ theorem timeDependentFlowOf_comp_add_right (θ s t : ℝ) (x : M) :
     timeDependentFlowOf (fun u ↦ X (u + θ)) s t x = timeDependentFlowOf X (s + θ) (t + θ) x := by
   by_cases h : ((s + θ, t + θ), x) ∈ timeDependentFlowDomain X
   · exact (timeDependentFlowOf_comp_add_right_of_mem hX θ h).2
-  · have h' := mt (mem_timeDependentFlowDomain_comp_add_right_iff hX θ).1 h
-    rw [mem_timeDependentFlowDomain, mem_flowDomain] at h h'
-    rw [timeDependentFlowOf_def, timeDependentFlowOf_def, flowOf_apply, flowOf_apply,
-      maximalIntegralCurve_eq_of_not_mem h, maximalIntegralCurve_eq_of_not_mem h']
+  · rw [timeDependentFlowOf_of_not_mem h, timeDependentFlowOf_of_not_mem
+      (mt (mem_timeDependentFlowDomain_comp_add_right_iff hX θ).1 h)]
 
 /-- On a complete normed model space, the domain of the time-dependent flow of a `C¹` field
 is open. -/

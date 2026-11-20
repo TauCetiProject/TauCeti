@@ -40,12 +40,12 @@ only these need to be nondegenerate: if they are, there are finitely many of the
 Shifting the time of `H` by `θ`, `H_θ (t) = H (t + θ)`, rotates its 1-periodic orbits: `γ` is an
 orbit of `H` exactly when `t ↦ γ (t + θ)` is an orbit of `H_θ`
 (`TauCeti.comp_add_right_mem_periodicSolutions_iff`). On a closed manifold the rotated orbit is
-nondegenerate exactly when `γ` is
-(`SmoothTwoForm.IsNondegenerate.isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff`),
-although the time-one maps of `H_θ` and `H` differ: they are conjugate by the flow of `H` from time
-`0` to time `θ`. So `H_θ` satisfies the nondegeneracy hypothesis of Floer theory exactly when `H`
-does. Such shifts arise when an end of a Floer solution is read with a rotated asymptotic marker,
-as for the output end of a pair of pants with exchanged inputs.
+nondegenerate exactly when `γ` is, although the time-one maps of `H_θ` and `H` differ: they are
+conjugate by the flow of `H` from time `0` to time `θ`
+(`isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff` in the namespace
+`TauCeti.SmoothTwoForm.IsNondegenerate`). So `H_θ` satisfies the nondegeneracy hypothesis of
+Floer theory exactly when `H` does. Such shifts arise when an end of a Floer solution is read with
+a rotated asymptotic marker, as for the output end of a pair of pants with exchanged inputs.
 
 For an autonomous `C²` Hamiltonian `F` on a closed manifold, the `1`-periodic orbits of `ε F`, for
 `ε > 0` small, are exactly the constant curves at the critical points of `F`
@@ -60,9 +60,9 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 
 * `TauCeti.SmoothTwoForm.comp_neg_mem_periodicSolutions_hamiltonianVectorField_iff`: reversing
   time turns the 1-periodic orbits of the reversed Hamiltonian `-H(-t)` into those of `H`.
-* `SmoothTwoForm.IsNondegenerate.isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff`,
-  `forall_isNondegenerateFixedPt_contractiblePeriodicSolutions_comp_add_right_iff` (in
-  `TauCeti.SmoothTwoForm.IsNondegenerate`): on a closed manifold, shifting the time of a
+* `isNondegenerateFixedPt_timeDependentFlowOf_comp_add_right_iff` and
+  `forall_isNondegenerateFixedPt_contractiblePeriodicSolutions_comp_add_right_iff`, both in the
+  namespace `TauCeti.SmoothTwoForm.IsNondegenerate`: on a closed manifold, shifting the time of a
   Hamiltonian preserves the nondegeneracy of its (contractible) 1-periodic orbits.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose 1-periodic orbits are all nondegenerate has

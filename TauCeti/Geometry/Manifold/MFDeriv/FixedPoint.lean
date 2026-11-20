@@ -38,15 +38,15 @@ expression `g` of `f` has `g - id` with injective derivative at `x`, so `g z ≠
 to `x`, because an injective linear map of a finite-dimensional space is bounded below. Without
 finite dimensionality, injectivity of `df_x - 1` does not imply isolation. The argument is carried
 out within the range of the model with corners, so it also applies at boundary points.
-Nondegeneracy is invariant under conjugation by a diffeomorphism
-(`TauCeti.isNondegenerateFixedPt_iff_of_semiconj`): if `Φ ∘ f = g ∘ Φ`, the differential of `Φ`
-at `x` identifies the vectors fixed by `df_x` with those fixed by `dg_{Φ x}`.
-
 Consequently a compact set of nondegenerate fixed points is discrete, hence finite
 (`IsCompact.finite_of_isNondegenerateFixedPt`). In particular a continuous self-map of such a
 compact manifold all of whose fixed points are nondegenerate has only finitely many fixed points
 (`TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`), since its fixed-point set is closed,
 hence compact.
+
+Nondegeneracy is invariant under conjugation by a diffeomorphism
+(`Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj`): if `Φ ∘ f = g ∘ Φ`, the differential of
+`Φ` at `x` identifies the vectors fixed by `df_x` with those fixed by `dg_{Φ x}`.
 
 At a fixed point the differential of `f^[n]` is `(df_x) ^ n`, so `x` is a nondegenerate fixed point
 of `f^[n]` exactly when `(df_x) ^ n` fixes no nonzero vector. For a periodic point of period `k`,
@@ -84,8 +84,8 @@ computed in any chart, also on manifolds with boundary or corners
 
 ## Main results
 
-* `TauCeti.isNondegenerateFixedPt_iff_of_semiconj`: nondegeneracy is invariant under conjugation by
-  a diffeomorphism.
+* `Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj`: nondegeneracy is invariant under
+  conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
   finite-dimensional space over a complete field, nondegenerate fixed points are isolated.
 * `IsCompact.finite_of_isNondegenerateFixedPt`: on a manifold modelled on a finite-dimensional
@@ -180,9 +180,9 @@ end IsNondegenerateFixedPt
 intertwines `f` and `g`, `Φ ∘ f = g ∘ Φ`, then `Φ x` is a nondegenerate fixed point of `g` exactly
 when `x` is a nondegenerate fixed point of `f`: the differential of `Φ` at `x` carries the vectors
 fixed by `df_x` bijectively to those fixed by `dg_{Φ x}`. -/
-theorem isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type*} [NormedAddCommGroup F]
-    [NormedSpace 𝕜 F] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'} [TopologicalSpace N]
-    [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
+theorem _root_.Diffeomorph.isNondegenerateFixedPt_iff_of_semiconj {F H' N : Type*}
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
+    [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω} (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {g : N → N}
     (h : Semiconj Φ f g) :
     IsNondegenerateFixedPt J g (Φ x) ↔ IsNondegenerateFixedPt I f x := by
   have hcomp : (Φ : M → N) ∘ f = g ∘ Φ := funext h

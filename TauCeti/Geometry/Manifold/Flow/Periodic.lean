@@ -13,6 +13,7 @@ public import TauCeti.Topology.Homotopy.AddCircle
 public import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Geometry.Manifold.Immersion.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 import TauCeti.Topology.Compactness.Compact
 
 /-!
@@ -184,12 +185,9 @@ theorem comp_neg_mem_periodicSolutions_iff {γ : ℝ → M} :
 /-- **Shifting time.** If `γ` is a `T`-periodic solution of `X`, then its shift `t ↦ γ (t + θ)` is a
 `T`-periodic solution of the shifted field `t ↦ X (t + θ)`. -/
 theorem comp_add_right_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
-    (θ : ℝ) : (fun t ↦ γ (t + θ)) ∈ periodicSolutions (fun t ↦ X (t + θ)) T := by
-  refine ⟨fun t ↦ ?_, fun t ↦ by simp only [add_right_comm t T θ, hγ.2 (t + θ)]⟩
-  have hadd : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun r : ℝ ↦ r + θ) t (ContinuousLinearMap.id ℝ ℝ) :=
-    hasMFDerivAt_iff_hasFDerivAt.2 ((hasFDerivAt_id t).add_const θ)
-  -- Composing with the derivative `id` of the translation leaves the velocity unchanged.
-  exact ((hγ.1 (t + θ)).comp t hadd).congr_mfderiv (ContinuousLinearMap.ext fun r ↦ rfl)
+    (θ : ℝ) : (fun t ↦ γ (t + θ)) ∈ periodicSolutions (fun t ↦ X (t + θ)) T :=
+  ⟨fun t ↦ HasMFDerivAt.comp_add_right (hγ.1 (t + θ)),
+    fun t ↦ by simp only [add_right_comm t T θ, hγ.2 (t + θ)]⟩
 
 /-- **Shifting time**, as a characterization: `t ↦ γ (t + θ)` is a `T`-periodic solution of the
 shifted field `t ↦ X (t + θ)` exactly when `γ` is a `T`-periodic solution of `X`. -/
@@ -491,7 +489,7 @@ theorem isNondegenerateFixedPt_timeDependentFlowOf_iff (hT : Periodic X T) (s s'
   set Φ := timeDependentFlowDiffeomorph hc le_rfl hX s s'
   have hΦ : ⇑Φ = timeDependentFlowOf X s s' :=
     funext (timeDependentFlowDiffeomorph_apply hc _ hX s s')
-  have h := isNondegenerateFixedPt_iff_of_semiconj (x := x) Φ one_ne_zero
+  have h := Φ.isNondegenerateFixedPt_iff_of_semiconj (x := x) one_ne_zero
     (hΦ ▸ semiconj_timeDependentFlowOf_add_period hX hc hT s s')
   rwa [hΦ] at h
 
