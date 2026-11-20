@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
@@ -36,16 +37,18 @@ finiteness of the lower integral of its squared extended norm
 
 The same identification gives monotone convergence for the seminorm: the `Lᵖ` seminorm of the
 supremum of an increasing sequence of functions with values in `[0, ∞]` is the supremum of their
-seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`. With the triangle
-inequality it gives Minkowski's inequality for series: for `1 ≤ p` the `Lᵖ` seminorm of the sum of
-a countable family of functions with values in `[0, ∞]` is at most the sum of their seminorms
-(`MeasureTheory.eLpNorm_tsum_le`). In particular a step function `∑ᵢ cᵢ 1_{Aᵢ}` has `Lᵖ` seminorm
-at most `∑ᵢ cᵢ μ(Aᵢ) ^ (1 / p)` (`MeasureTheory.eLpNorm_tsum_indicator_const_le`).
+seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`. Fatou's lemma bounds
+the seminorm of an almost everywhere limit of such functions by the `liminf` of their seminorms
+(`MeasureTheory.eLpNorm_le_liminf_eLpNorm_of_ae_tendsto`), also for `p = ∞`. With the triangle
+inequality the identification gives Minkowski's inequality for series: for `1 ≤ p` the `Lᵖ`
+seminorm of the sum of a countable family of functions with values in `[0, ∞]` is at most the sum
+of their seminorms (`MeasureTheory.eLpNorm_tsum_le`). In particular a step function `∑ᵢ cᵢ 1_{Aᵢ}`
+has `Lᵖ` seminorm at most `∑ᵢ cᵢ μ(Aᵢ) ^ (1 / p)` (`MeasureTheory.eLpNorm_tsum_indicator_const_le`).
 -/
 
 public section
 
-open MeasureTheory
+open Filter MeasureTheory Topology
 open scoped ENNReal NNReal
 
 variable {α ε : Type*} [MeasurableSpace α] {μ : Measure α} [TopologicalSpace ε] [ContinuousENorm ε]
@@ -178,6 +181,38 @@ theorem eLpNorm_tsum_indicator_const_le {ι : Type*} [Countable ι] {A : ι → 
   (eLpNorm_tsum_le (fun i ↦ aemeasurable_const.indicator₀ (hA i)) hp).trans <|
     tsum_le_tsum fun i ↦ by
       simpa only [eNorm_eq_self] using eLpNorm_indicator_const_le (c i) p (hA i)
+
+/-- **Fatou's lemma for the `Lᵖ` seminorm.** If functions `h n` with values in `[0, ∞]` converge
+almost everywhere to `H`, then `‖H‖_q ≤ liminf ‖h n‖_q`, for every exponent `q`. -/
+theorem eLpNorm_le_liminf_eLpNorm_of_ae_tendsto {q : ℝ≥0∞} {h : ℕ → α → ℝ≥0∞} {H : α → ℝ≥0∞}
+    (hh : ∀ n, AEMeasurable (h n) μ) (hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ h n x) atTop (𝓝 (H x))) :
+    eLpNorm H q μ ≤ liminf (fun n ↦ eLpNorm (h n) q μ) atTop := by
+  have hH : AEMeasurable H μ := aemeasurable_of_tendsto_metrizable_ae' hh hlim
+  rcases eq_or_ne q 0 with rfl | hq0
+  · simp [eLpNorm_exponent_zero hH.aestronglyMeasurable]
+  rcases eq_or_ne q ∞ with rfl | hq
+  · rw [eLpNorm_exponent_top hH.aestronglyMeasurable]
+    have hbd : ∀ᵐ x ∂μ, ∀ n, h n x ≤ eLpNorm (h n) ∞ μ := ae_all_iff.2 fun n ↦ by
+      simpa only [eLpNorm_exponent_top (hh n).aestronglyMeasurable, eNorm_eq_self] using
+        ae_le_eLpNormEssSup (f := h n) (μ := μ)
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
+    filter_upwards [hlim, hbd] with x hx hb
+    rw [eNorm_eq_self, ← hx.liminf_eq]
+    exact liminf_le_liminf (.of_forall hb)
+  have hq' : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  have hpow {f : α → ℝ≥0∞} (hf : AEMeasurable f μ) :
+      ∫⁻ x, f x ^ q.toReal ∂μ = eLpNorm f q μ ^ q.toReal := by
+    simpa only [eNorm_eq_self] using
+      lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hf.aestronglyMeasurable
+  have hmono : Monotone fun t : ℝ≥0∞ ↦ t ^ q.toReal := fun _ _ hst ↦ ENNReal.rpow_le_rpow hst hq'.le
+  rw [← ENNReal.rpow_le_rpow_iff hq', ← hpow hH,
+    hmono.map_liminf_of_continuousAt _ (ENNReal.continuous_rpow_const.continuousAt)]
+  calc ∫⁻ x, H x ^ q.toReal ∂μ = ∫⁻ x, liminf (fun n ↦ h n x ^ q.toReal) atTop ∂μ :=
+        lintegral_congr_ae (hlim.mono fun x hx ↦
+          ((ENNReal.continuous_rpow_const.tendsto _).comp hx).liminf_eq.symm)
+    _ ≤ liminf (fun n ↦ ∫⁻ x, h n x ^ q.toReal ∂μ) atTop :=
+        lintegral_liminf_le' fun n ↦ (hh n).pow_const _
+    _ = _ := by simp only [hpow (hh _), Function.comp_def]
 
 end MeasureTheory
 
