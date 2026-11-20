@@ -232,6 +232,10 @@ section Pow
 `ℝ` for `I = {α}`. -/
 abbrev PowThickening (I : Finset Unit) : Type := {x : ℝ // I = ∅ → x = 0}
 
+/-- The thickening `X_∅ = {0}` of `TauCeti.ImplicitAtlas.powAtlas` is a point. -/
+instance : Subsingleton (PowThickening ∅) :=
+  ⟨fun x y ↦ Subtype.ext <| (x.2 rfl).trans (y.2 rfl).symm⟩
+
 /-- The Kuranishi map `s_α(x) = xᵐ` of `TauCeti.ImplicitAtlas.powAtlas`. -/
 def powKuranishi (m : ℕ) (J : Finset Unit) (_ : J) (x : PowThickening J) : ℝ := (x : ℝ) ^ m
 
@@ -457,9 +461,7 @@ noncomputable def reflectionAtlas (hm : Even m) (hm₀ : m ≠ 0) :
     by_cases hI : () ∈ I
     · exact Subtype.ext <| by simp [powFootprintMap, hI, h hI, Finset.restrict₂]
     · obtain rfl := eq_empty_of_notMem hI
-      exact Subtype.ext <| ((powFootprintMap hm₀ h _).2 rfl).trans (by
-        rw [reflectionAct_of_notMem hI]
-        exact ((powFootprintMap hm₀ h x).2 rfl).symm)
+      exact Subsingleton.elim _ _
   footprintMap_self _ _ := rfl
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
   kuranishi_footprintMap _ _ _ _ _ := rfl
@@ -474,8 +476,7 @@ noncomputable def reflectionAtlas (hm : Even m) (hm₀ : m ≠ 0) :
     · rw [eq_one_of_restrict₂_eq_one h hI hg, map_one, Homeomorph.one_apply] at hxy
       simp [powFootprintMap, hxy]
     · obtain rfl := Finset.not_nonempty_iff_eq_empty.1 hI
-      exact Subtype.ext
-        (((powFootprintMap hm₀ h x).2 rfl).trans ((powFootprintMap hm₀ h y).2 rfl).symm)
+      exact Subsingleton.elim _ _
   mem_regLocus_of_footprintMap_mem _ _ h _ hx := Finset.Nonempty.mono h hx
   eq_one_of_act_eq _ _ h _ hx _ hg _ := eq_one_of_restrict₂_eq_one h hx hg
   exists_openPartialHomeomorph _ _ h x hx := exists_powChart h hx x.1 _
