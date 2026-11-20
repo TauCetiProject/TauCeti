@@ -5,22 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 
 /-!
 # Continuous homomorphisms out of the circle through `Circle.exp`
 
 Mathlib's exponential `Circle.exp t = e^{it}` is a surjective continuous homomorphism from the
-real line onto the circle with kernel `2πℤ`. So a continuous homomorphism `f : ℝ → G` with
-`f (2π) = 1` descends to a continuous homomorphism `ψ : Circle → G` with
-`ψ (Circle.exp t) = f t`. This file packages that descent.
+real line onto the circle with kernel `2πℤ`, and a quotient map. So a continuous homomorphism
+`f : ℝ → G` with `f (2π) = 1` descends to a continuous homomorphism `ψ : Circle → G` with
+`ψ (Circle.exp t) = f t`. This file packages that descent as an instance of
+`ContinuousMonoidHom.liftOfIsQuotientMap` for `Circle.expContinuousMonoidHom`.
 
 ## Main declarations
 
+* `ContinuousMonoidHom.ext_circleExp`: continuous homomorphisms out of the circle agreeing on
+  every `Circle.exp t` are equal.
 * `ContinuousMonoidHom.circleLift`: the continuous homomorphism `Circle →ₜ* G` induced by a
   continuous homomorphism `Multiplicative ℝ →ₜ* G` that is trivial at `2π`.
 * `ContinuousMonoidHom.circleLift_circleExp`: its value at `Circle.exp t` is `f t`.
+* `ContinuousMonoidHom.circleLift_unique`: it is the only such continuous homomorphism.
 -/
 
 public section
@@ -33,40 +38,47 @@ namespace ContinuousMonoidHom
 
 variable {G : Type*} [Monoid G] [TopologicalSpace G]
 
-/-- A continuous homomorphism `f` from the real line that is trivial at `2π` is `2π`-periodic. -/
-theorem periodic_two_pi_of_apply_eq_one (f : Multiplicative ℝ →ₜ* G)
-    (hf : f (.ofAdd (2 * π)) = 1) :
-    Function.Periodic (fun t : ℝ ↦ f (.ofAdd t)) (2 * π) := fun t ↦ by
-  beta_reduce
-  rw [ofAdd_add, map_mul, hf, mul_one]
+/-- Continuous homomorphisms out of the circle are determined by their values on `Circle.exp t`. -/
+theorem ext_circleExp {ψ φ : Circle →ₜ* G} (h : ∀ t : ℝ, ψ (Circle.exp t) = φ (Circle.exp t)) :
+    ψ = φ :=
+  ext fun z ↦ by
+    obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+    exact h t
+
+private theorem isQuotientMap_expContinuousMonoidHom :
+    Topology.IsQuotientMap Circle.expContinuousMonoidHom := by
+  rw [show ⇑Circle.expContinuousMonoidHom = Circle.exp ∘ Multiplicative.toAdd from
+    funext Circle.expContinuousMonoidHom_apply]
+  exact (Circle.isCoveringMap_exp.isQuotientMap Circle.exp_surjective).comp
+    (isOpenMap_toAdd.isQuotientMap continuous_toAdd Multiplicative.toAdd.surjective)
 
 /-- **Descent through `Circle.exp`.** A continuous homomorphism `f : ℝ → G` with `f (2π) = 1`
 induces the continuous homomorphism `Circle.exp t ↦ f t` from the circle
 (`ContinuousMonoidHom.circleLift_circleExp`). -/
-def circleLift (f : Multiplicative ℝ →ₜ* G) (hf : f (.ofAdd (2 * π)) = 1) : Circle →ₜ* G where
-  toFun z := (periodic_two_pi_of_apply_eq_one f hf).lift (AddCircle.homeomorphCircle'.symm z)
-  map_one' := by
-    rw [← Circle.exp_zero, ← AddCircle.homeomorphCircle'_apply_mk,
-      AddCircle.homeomorphCircle'.symm_apply_apply, Function.Periodic.lift_coe, ofAdd_zero,
-      map_one]
-  map_mul' z w := by
-    obtain ⟨s, rfl⟩ := Circle.exp_surjective z
-    obtain ⟨t, rfl⟩ := Circle.exp_surjective w
-    rw [← Circle.exp_add, ← AddCircle.homeomorphCircle'_apply_mk,
-      ← AddCircle.homeomorphCircle'_apply_mk, ← AddCircle.homeomorphCircle'_apply_mk]
-    simp only [Homeomorph.symm_apply_apply, Function.Periodic.lift_coe]
-    rw [ofAdd_add, map_mul]
-  continuous_toFun := by
-    have hlift : Continuous (periodic_two_pi_of_apply_eq_one f hf).lift :=
-      continuous_coinduced_dom.2 (f.continuous.comp continuous_ofAdd)
-    exact hlift.comp AddCircle.homeomorphCircle'.symm.continuous
+def circleLift (f : Multiplicative ℝ →ₜ* G) (hf : f (.ofAdd (2 * π)) = 1) : Circle →ₜ* G :=
+  liftOfIsQuotientMap Circle.expContinuousMonoidHom isQuotientMap_expContinuousMonoidHom f
+    fun t ht ↦ by
+      change Circle.expContinuousMonoidHom t = 1 at ht
+      change f t = 1
+      rw [Circle.expContinuousMonoidHom_apply] at ht
+      obtain ⟨n, hn⟩ := Circle.exp_eq_one.1 ht
+      have hper : Function.Periodic (fun s : ℝ ↦ f (.ofAdd s)) (2 * π) := fun s ↦ by
+        beta_reduce
+        rw [ofAdd_add, map_mul, hf, mul_one]
+      rw [← ofAdd_toAdd t, hn, hper.int_mul_eq, ofAdd_zero, map_one]
 
 /-- The descent of `f` through `Circle.exp` sends `Circle.exp t` to `f t`. -/
 @[simp]
 theorem circleLift_circleExp (f : Multiplicative ℝ →ₜ* G) (hf : f (.ofAdd (2 * π)) = 1)
     (t : ℝ) : circleLift f hf (Circle.exp t) = f (.ofAdd t) := by
-  change (periodic_two_pi_of_apply_eq_one f hf).lift (AddCircle.homeomorphCircle'.symm _) = _
-  rw [← AddCircle.homeomorphCircle'_apply_mk, AddCircle.homeomorphCircle'.symm_apply_apply,
-    Function.Periodic.lift_coe]
+  rw [← toAdd_ofAdd t, ← Circle.expContinuousMonoidHom_apply, circleLift,
+    liftOfIsQuotientMap_comp_apply, toAdd_ofAdd]
+
+/-- **Uniqueness of the descent through `Circle.exp`.** A continuous homomorphism `ψ` out of the
+circle with `ψ (Circle.exp t) = f t` for every `t` is `circleLift f hf`. -/
+theorem circleLift_unique (f : Multiplicative ℝ →ₜ* G) (hf : f (.ofAdd (2 * π)) = 1)
+    {ψ : Circle →ₜ* G} (h : ∀ t : ℝ, ψ (Circle.exp t) = f (.ofAdd t)) :
+    ψ = circleLift f hf :=
+  ext_circleExp fun t ↦ by rw [h, circleLift_circleExp]
 
 end ContinuousMonoidHom

@@ -188,9 +188,7 @@ theorem eq_lieCoweight {ψ : Circle →ₜ* G} {X : LeftInvariantDerivation I G}
 theorem lieCoweight_injective :
     Function.Injective (lieCoweight (I := I) : (Circle →ₜ* G) → LeftInvariantDerivation I G) := by
   intro ψ φ h
-  ext z
-  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
-  rw [apply_circleExp (I := I), apply_circleExp (I := I), h]
+  exact ext_circleExp fun t ↦ by rw [apply_circleExp (I := I), apply_circleExp (I := I), h]
 
 /-- The trivial cocharacter has coweight zero. -/
 @[simp]
@@ -234,9 +232,9 @@ end Commutative
 
 end ContinuousMonoidHom
 
-namespace TauCeti
-
 open ContinuousMonoidHom
+
+namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -254,8 +252,8 @@ def periodLatticeEquivCocharacter : periodLattice I G ≃ (Circle →ₜ* G) whe
   invFun ψ := ⟨lieCoweight ψ, lieCoweight_mem_periodLattice ψ⟩
   left_inv X := Subtype.ext (eq_lieCoweight fun t ↦ by
     rw [circleLift_circleExp, oneParameterSubgroup_apply]).symm
-  right_inv _ := lieCoweight_injective (eq_lieCoweight fun t ↦ by
-    rw [circleLift_circleExp, oneParameterSubgroup_apply]).symm
+  right_inv ψ := (circleLift_unique _ _ fun t ↦ by
+    rw [oneParameterSubgroup_apply, apply_circleExp (I := I)]).symm
 
 /-- The cocharacter of an element `X` of the period lattice sends `Circle.exp t` to `exp (t X)`. -/
 @[simp]
