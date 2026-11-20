@@ -25,7 +25,9 @@ The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
 the norm of the gradient by the sum of the absolute values of the partial derivatives. Its square
 form `‖L‖² ≤ (card ι) ∑ i, ‖L (b i)‖²`
 (`ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis`) bounds the norm
-of a matrix by its columns in square mean.
+of a matrix by its columns in square mean, and the sharper `‖L‖² ≤ ∑ i, ‖L (b i)‖²`
+(`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`) bounds the operator norm by
+the Hilbert–Schmidt norm.
 
 Conversely, the entries `H ![b i, b j]` of a bilinear map on an orthonormal basis are bounded by
 the operator norm (`ContinuousMultilinearMap.norm_apply_orthonormalBasis_le`). For a bilinear map
@@ -66,6 +68,24 @@ theorem opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis (L : E →L[�
     ?_
   simpa only [Finset.card_univ] using
     sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i => ‖L (b i)‖)
+
+/-- The squared operator norm of a continuous linear map on an inner product space is at most the
+sum of the squared norms of its values on the vectors of an orthonormal basis: the operator norm
+is at most the Hilbert–Schmidt norm. -/
+theorem opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
+    (b : OrthonormalBasis ι 𝕜 E) : ‖L‖ ^ 2 ≤ ∑ i, ‖L (b i)‖ ^ 2 := by
+  have hS : 0 ≤ ∑ i, ‖L (b i)‖ ^ 2 := Finset.sum_nonneg fun _ _ => sq_nonneg _
+  have h : ‖L‖ ≤ √(∑ i, ‖L (b i)‖ ^ 2) := by
+    refine L.opNorm_le_bound (Real.sqrt_nonneg _) fun x => ?_
+    -- Expand the argument in the basis and apply the Cauchy–Schwarz inequality to the sum.
+    conv_lhs => rw [← b.sum_repr x]
+    rw [map_sum]
+    refine (norm_sum_le _ _).trans ?_
+    simp only [map_smul, norm_smul]
+    refine (Real.sum_mul_le_sqrt_mul_sqrt _ _ _).trans_eq ?_
+    rw [mul_comm, ← b.repr.norm_map x, EuclideanSpace.norm_eq]
+  calc ‖L‖ ^ 2 ≤ √(∑ i, ‖L (b i)‖ ^ 2) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
+    _ = _ := Real.sq_sqrt hS
 
 end ContinuousLinearMap
 
