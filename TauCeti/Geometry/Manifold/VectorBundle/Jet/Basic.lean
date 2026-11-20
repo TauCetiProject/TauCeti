@@ -22,11 +22,13 @@ iterated derivatives at `φᵢ y` of a local representative `z ↦ eᵢ (s (φ�
 `s`. Changing from `i` to `j` transforms these by the higher-order chain and product rules for the
 coordinate change of `V` and the change of charts, `TauCeti.symmetricJetCoordChange`.
 
-For `r = 1` the fibre is that of the first-jet bundle `TauCeti.FirstJetBundle`, a value and a
-derivative; this file reuses its chart domains `TauCeti.FirstJetBundle.baseSet`, coordinate
-changes of `V` written in charts `TauCeti.FirstJetBundle.fiberCoordChange` and local
-representatives `TauCeti.FirstJetBundle.localRep`. Iterated derivatives are taken on the whole
-model space, which is why the base is assumed boundaryless.
+For `r = 1` a fibre element corresponds to an element of the fibre of the first-jet bundle
+`TauCeti.FirstJetBundle`, a value and a derivative, up to the identifications of `E [×0]→L[𝕜] F`
+with `F` and of `E [×1]→L[𝕜] F` with `E →L[𝕜] F`. This file reuses its chart domains
+`TauCeti.FirstJetBundle.baseSet`, coordinate changes of `V` written in charts
+`TauCeti.FirstJetBundle.fiberCoordChange` and local representatives
+`TauCeti.FirstJetBundle.localRep`. Iterated derivatives are taken on the whole model space, which
+is why the base is assumed boundaryless.
 
 ## Main definitions and results
 
@@ -61,8 +63,7 @@ open scoped Manifold Topology ContDiff
 namespace TauCeti
 
 open SymmetricJet
-open FirstJetBundle (mem_baseSet_trivializationAt_of_mem_baseSet mem_chartAt_source_of_mem_baseSet
-  contDiffAt_fiberCoordChange contDiffAt_localRep)
+open FirstJetBundle (mem_baseSet_iff contDiffAt_fiberCoordChange contDiffAt_localRep)
 
 variable {𝕜 : Type*} [RCLike 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
@@ -102,16 +103,14 @@ theorem coordChange_self_apply {i y : M} (hy : y ∈ FirstJetBundle.baseSet (H :
     exact (extChartAt I i).right_inv hz
   have hg : FirstJetBundle.fiberCoordChange I F V i i =ᶠ[𝓝 (extChartAt I i y)]
       fun _ ↦ ContinuousLinearMap.id 𝕜 F := by
-    have h := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet I hy
-      (mem_chartAt_source_of_mem_baseSet hy)
-    rw [I.range_eq_univ, nhdsWithin_univ] at h
-    filter_upwards [h] with z hz
+    filter_upwards [FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hy
+      ((mem_baseSet_iff F V).1 hy).2] with z hz
     ext w
     rw [FirstJetBundle.fiberCoordChange_apply]
     exact (trivializationAt F V i).coordChangeL_same_apply 𝕜
-      (mem_baseSet_trivializationAt_of_mem_baseSet hz) w
-  rw [coordChange_def, symmetricJetCoordChange_congr hh hg, symmetricJetCoordChange_id]
-  rfl
+      ((mem_baseSet_iff F V).1 hz).1 w
+  rw [coordChange_def, symmetricJetCoordChange_congr hh hg, symmetricJetCoordChange_id,
+    ContinuousLinearMap.id_apply]
 
 section Laws
 
@@ -125,9 +124,9 @@ theorem toJets_coordChange {i j y : M} (hi : y ∈ FirstJetBundle.baseSet (H := 
       linearJetCoordChange r (extChartAt I i ∘ (extChartAt I j).symm)
         (FirstJetBundle.fiberCoordChange I F V i j) (extChartAt I j y) (toJets 𝕜 E F r A) :=
   toJets_symmetricJetCoordChange (n := r)
-    (contDiffAt_ext_coord_change_extChartAt (mem_chartAt_source_of_mem_baseSet hi)
-      (mem_chartAt_source_of_mem_baseSet hj))
-    (contDiffAt_fiberCoordChange (mem_baseSet_trivializationAt_of_mem_baseSet hi) hj) (by simp) A
+    (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hi).2
+      ((mem_baseSet_iff F V).1 hj).2)
+    (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hi).1 hj) (by simp) A
 
 /-- **Cocycle law for `r`-jet coordinate changes**. -/
 theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ FirstJetBundle.baseSet (H := H) F V i)
@@ -141,19 +140,18 @@ theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ FirstJetBundle.baseSet 
   have hhij : ContDiffAt 𝕜 r (extChartAt I i ∘ (extChartAt I j).symm)
       ((extChartAt I j ∘ (extChartAt I k).symm) (extChartAt I k y)) := by
     rw [← hjk]
-    exact contDiffAt_ext_coord_change_extChartAt (mem_chartAt_source_of_mem_baseSet hi)
-      (mem_chartAt_source_of_mem_baseSet hj)
+    exact contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hi).2
+      ((mem_baseSet_iff F V).1 hj).2
   have hgij : ContDiffAt 𝕜 r (FirstJetBundle.fiberCoordChange I F V i j)
       ((extChartAt I j ∘ (extChartAt I k).symm) (extChartAt I k y)) := by
     rw [← hjk]
-    exact contDiffAt_fiberCoordChange (mem_baseSet_trivializationAt_of_mem_baseSet hi) hj
+    exact contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hi).1 hj
   -- Near the image of `y` in the chart at `k`, the composite coordinate changes are the ones
   -- from `i` to `k`.
-  have hk₂ := mem_chartAt_source_of_mem_baseSet hk
-  have hnear := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet I hj hk₂
-  have hnear_i := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet I hi hk₂
-  have hnear_k := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet I hk hk₂
-  rw [I.range_eq_univ, nhdsWithin_univ] at hnear hnear_i hnear_k
+  have hk₂ := ((mem_baseSet_iff F V).1 hk).2
+  have hnear := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hj hk₂
+  have hnear_i := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hi hk₂
+  have hnear_k := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hk hk₂
   have hh : (extChartAt I i ∘ (extChartAt I j).symm) ∘ (extChartAt I j ∘ (extChartAt I k).symm)
       =ᶠ[𝓝 (extChartAt I k y)] extChartAt I i ∘ (extChartAt I k).symm := by
     filter_upwards [hnear] with z hz
@@ -168,13 +166,12 @@ theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ FirstJetBundle.baseSet 
       ContinuousLinearMap.coe_comp,
       (extChartAt I j).left_inv (FirstJetBundle.mem_extChartAt_source_of_mem_baseSet I hzj)]
     exact (trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _
-      (mem_baseSet_trivializationAt_of_mem_baseSet hzi)
-      (mem_baseSet_trivializationAt_of_mem_baseSet hzj)
-      (mem_baseSet_trivializationAt_of_mem_baseSet hzk) w
+      ((mem_baseSet_iff F V).1 hzi).1 ((mem_baseSet_iff F V).1 hzj).1
+      ((mem_baseSet_iff F V).1 hzk).1 w
   rw [coordChange_def, coordChange_def, hjk,
     symmetricJetCoordChange_comp hhij hgij
-      (contDiffAt_ext_coord_change_extChartAt (mem_chartAt_source_of_mem_baseSet hj) hk₂)
-      (contDiffAt_fiberCoordChange (mem_baseSet_trivializationAt_of_mem_baseSet hj) hk) (by simp),
+      (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hj).2 hk₂)
+      (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hj).1 hk) (by simp),
     symmetricJetCoordChange_congr hh hg, ← coordChange_def]
 
 end Laws
@@ -197,18 +194,18 @@ theorem contMDiffOn_coordChange {n : ℕ∞ω} [IsManifold I (n + r) M]
     (extChartAt I j).right_inv hz.1
   have hh : ContDiffOn 𝕜 (n + r) (extChartAt I i ∘ (extChartAt I j).symm) T := fun z hz ↦ by
     rw [← hTpt z hz]
-    exact (contDiffAt_ext_coord_change_extChartAt (mem_chartAt_source_of_mem_baseSet hz.2.1)
-      (mem_chartAt_source_of_mem_baseSet hz.2.2)).contDiffWithinAt
+    exact (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hz.2.1).2
+      ((mem_baseSet_iff F V).1 hz.2.2).2).contDiffWithinAt
   have hg : ContDiffOn 𝕜 (n + r) (FirstJetBundle.fiberCoordChange I F V i j) T := fun z hz ↦ by
     rw [← hTpt z hz]
-    exact (contDiffAt_fiberCoordChange (mem_baseSet_trivializationAt_of_mem_baseSet hz.2.1)
+    exact (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hz.2.1).1
       hz.2.2).contDiffWithinAt
   have hΨ := ContDiffOn.symmetricJetCoordChange hT hh hg le_rfl
   have hmaps : MapsTo (extChartAt I j) U T := fun y hy ↦ by
     have hy' := FirstJetBundle.mem_extChartAt_source_of_mem_baseSet I hy.2
     exact ⟨(extChartAt I j).map_source hy', by rwa [mem_preimage, (extChartAt I j).left_inv hy']⟩
   exact (contMDiffOn_iff_contDiffOn.2 hΨ).comp (contMDiffOn_extChartAt.mono fun y hy ↦
-    mem_chartAt_source_of_mem_baseSet hy.2)
+    ((mem_baseSet_iff F V).1 hy.2).2)
     hmaps
 
 end JetBundle
@@ -318,8 +315,10 @@ of `V` at `i`. -/
 theorem trivializationAt_apply_snd (i : M)
     (p : TotalSpace (SymmetricJet 𝕜 E F r) (JetBundle I F V r)) :
     (trivializationAt (SymmetricJet 𝕜 E F r) (JetBundle I F V r) i p).2 =
-      coordChange I F V r p.1 i p.1 p.2 :=
-  (rfl)
+      coordChange I F V r p.1 i p.1 p.2 := by
+  rw [VectorBundleCore.trivializationAt, ← VectorBundleCore.localTrivAt_def,
+    VectorBundleCore.localTriv_apply, jetBundleCore_indexAt, jetBundleCore_indexAt,
+    jetBundleCore_coordChange]
 
 /-- **The `r`-jet in an arbitrary chart.** In the preferred trivialization of `JᵣV` at `i`, the
 `r`-jet of a section that is `C^r` at `y` is the tuple of iterated derivatives at the image of `y`
@@ -346,13 +345,12 @@ theorem toJets_trivializationAt_jet {s : ∀ x, V x} {y : M}
     rw [toJets_jet hs, toJets_mk, hx]
   rw [trivializationAt_apply_snd, coordChange_def, hjet,
     toJets_symmetricJetCoordChange_iteratedFDeriv hrep (by simp)
-      (contDiffAt_ext_coord_change_extChartAt (mem_chartAt_source_of_mem_baseSet hy)
-        (mem_chartAt_source_of_mem_baseSet hi))
-      (contDiffAt_fiberCoordChange (mem_baseSet_trivializationAt_of_mem_baseSet hy) hi)]
+      (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hy).2
+        ((mem_baseSet_iff F V).1 hi).2)
+      (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hy).1 hi)]
   -- Near the image of `y`, the local representative at `i` is the transformed local
   -- representative at `y`.
-  have hloc := FirstJetBundle.localRep_eventuallyEq_fiberCoordChange I F s hy hi
-  rw [I.range_eq_univ, nhdsWithin_univ] at hloc
+  have hloc := FirstJetBundle.localRep_eventuallyEq_fiberCoordChange_nhds I F s hy hi
   funext k
   exact ((hloc.iteratedFDeriv 𝕜 k.val).eq_of_nhds).symm
 
@@ -373,16 +371,15 @@ theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (A : JetBundle I F V r 
     exact ((contDiff_finiteJetPolynomial r _ _).contMDiff.contMDiffAt.comp x
       contMDiffAt_extChartAt).congr_of_eventuallyEq
       (eventually_of_mem (e.open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt_of_mem_baseSet hx)) hsg)
+        ((mem_baseSet_iff F V).1 hx).1) hsg)
   refine ⟨fun y ↦ e.symm y (P (extChartAt I x y)), hs n, toJets_injective ?_⟩
   -- Near the image of `x`, the local representative is the Taylor polynomial `P`.
-  have hloc := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet I hx
-    (mem_chartAt_source_of_mem_baseSet hx)
-  rw [I.range_eq_univ, nhdsWithin_univ] at hloc
+  have hloc := FirstJetBundle.eventually_extChartAt_symm_mem_baseSet_nhds I hx
+    ((mem_baseSet_iff F V).1 hx).2
   have hrep : FirstJetBundle.localRep I F (fun y ↦ e.symm y (P (extChartAt I x y))) x
       =ᶠ[𝓝 (extChartAt I x x)] P := by
     filter_upwards [hloc, extChartAt_target_mem_nhds x] with z hz hzt
-    rw [FirstJetBundle.localRep_apply, hsg _ (mem_baseSet_trivializationAt_of_mem_baseSet hz),
+    rw [FirstJetBundle.localRep_apply, hsg _ ((mem_baseSet_iff F V).1 hz).1,
       (extChartAt I x).right_inv hzt]
   rw [toJets_jet (hs r)]
   funext k
@@ -391,7 +388,9 @@ theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (A : JetBundle I F V r 
 
 end Jet
 
-/-- **The `r`-jet of a `C^(n+r)` section is a `C^n` section of `JᵣV`.** -/
+/-- **The `r`-jet of a section that is `C^(n+r)` on an open set is `C^n` there.** If a section
+`s` of `V` is `C^(n+r)` on an open set `U`, then its `r`-jet is a section of `JᵣV` that is `C^n` on
+`U`. -/
 theorem contMDiffOn_jet {n : ℕ∞ω} [IsManifold I (n + r) M] [ContMDiffVectorBundle (n + r) F V I]
     {s : ∀ x, V x} {U : Set M} (hU : IsOpen U)
     (hs : ContMDiffOn I (I.prod 𝓘(𝕜, F)) (n + r) (fun x ↦ TotalSpace.mk' F x (s x)) U) :

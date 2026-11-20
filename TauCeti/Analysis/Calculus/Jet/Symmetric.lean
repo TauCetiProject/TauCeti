@@ -261,20 +261,19 @@ theorem symmetricJetCoordChange_id [CharZero 𝕜] (x : E) :
   exact toJets_injective ((toJets_symmetricJetCoordChange (n := ω) contDiffAt_id
     contDiffAt_const le_top A).trans (linearJetCoordChange_id x (toJets_mem A)))
 
-/-- **The cocycle law.** If `h₁` and `g₁` are `C^n` at `h₂ x` and `h₂` and `g₂` are `C^n` at `x`,
-with `minSmoothness 𝕜 r ≤ n` (`C^r` over `ℝ` or `ℂ`, analytic otherwise), then transforming a
+/-- **The cocycle law.** If `h₁` and `g₁` are `C^n` at `h₂ x`, with `minSmoothness 𝕜 r ≤ n`
+(`C^r` over `ℝ` or `ℂ`, analytic otherwise), and `h₂` and `g₂` are `C^r` at `x`, then transforming a
 symmetric jet first by `(h₁, g₁)` at `h₂ x` and then by `(h₂, g₂)` at `x` is transforming it by
 the composite coordinate change `(h₁ ∘ h₂, z ↦ g₂ z ∘ g₁ (h₂ z))` at `x`. -/
 theorem symmetricJetCoordChange_comp [CharZero 𝕜] {n : ℕ∞ω} {h₁ : E' → E}
     {g₁ : E' → F →L[𝕜] G} {h₂ : E'' → E'} {g₂ : E'' → G →L[𝕜] H} {x : E''}
     (hh₁ : ContDiffAt 𝕜 n h₁ (h₂ x)) (hg₁ : ContDiffAt 𝕜 n g₁ (h₂ x))
-    (hh₂ : ContDiffAt 𝕜 n h₂ x) (hg₂ : ContDiffAt 𝕜 n g₂ x) (hn : minSmoothness 𝕜 r ≤ n)
+    (hh₂ : ContDiffAt 𝕜 r h₂ x) (hg₂ : ContDiffAt 𝕜 r g₂ x) (hn : minSmoothness 𝕜 r ≤ n)
     (A : SymmetricJet 𝕜 E F r) :
     symmetricJetCoordChange r h₂ g₂ x (symmetricJetCoordChange r h₁ g₁ (h₂ x) A) =
       symmetricJetCoordChange r (h₁ ∘ h₂) (fun z ↦ (g₂ z).comp (g₁ (h₂ z))) x A := by
-  have hr : (r : ℕ∞ω) ≤ n := le_minSmoothness.trans hn
   rw [symmetricJetCoordChange_apply r h₂, toJets_symmetricJetCoordChange hh₁ hg₁ hn,
-    linearJetCoordChange_comp hh₁ hg₁ hn (hh₂.of_le hr) (hg₂.of_le hr),
+    linearJetCoordChange_comp hh₁ hg₁ hn hh₂ hg₂,
     symmetricJetCoordChange_apply]
 
 /-- **Coordinate changes of jets of maps.** If `h` and `g` are `C^n` at `x` and `s` is `C^n` at

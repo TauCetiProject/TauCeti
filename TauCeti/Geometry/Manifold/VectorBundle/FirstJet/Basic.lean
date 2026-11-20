@@ -124,17 +124,13 @@ theorem mem_extChartAt_source_of_mem_baseSet {i y : M}
   rw [extChartAt_source]
   exact hy.2
 
-/-- A point of the first-jet chart domain at `i` lies in the base set of the preferred
-trivialization of `V` at `i`. -/
-theorem mem_baseSet_trivializationAt_of_mem_baseSet {i y : M}
-    (hy : y ∈ baseSet (H := H) F V i) : y ∈ (trivializationAt F V i).baseSet :=
-  hy.1
-
-/-- A point of the first-jet chart domain at `i` lies in the source of the preferred chart at
-`i`. -/
-theorem mem_chartAt_source_of_mem_baseSet {i y : M} (hy : y ∈ baseSet (H := H) F V i) :
-    y ∈ (chartAt H i).source :=
-  hy.2
+/-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
+and the chart domain at `j`, in the whole model space, the inverse of that extended chart lands in
+the first-jet chart domain at `i`. -/
+theorem eventually_extChartAt_symm_mem_baseSet_nhds {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
+    ∀ᶠ z in 𝓝 (extChartAt I j y), (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
+  extChartAt_preimage_mem_nhds' (by rwa [extChartAt_source]) ((isOpen_baseSet F V i).mem_nhds hi)
 
 /-- Near the image in the extended chart at `j` of a point `y` of the first-jet chart domain at `i`
 and the chart domain at `j`, the inverse of that extended chart lands in the first-jet chart domain
@@ -142,8 +138,7 @@ at `i`. -/
 theorem eventually_extChartAt_symm_mem_baseSet {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
     ∀ᶠ z in 𝓝[range I] extChartAt I j y, (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
-  mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds'
-    (by rwa [extChartAt_source]) ((isOpen_baseSet F V i).mem_nhds hi))
+  mem_nhdsWithin_of_mem_nhds (eventually_extChartAt_symm_mem_baseSet_nhds I hi hj)
 
 end FirstJetBundle
 
@@ -560,18 +555,28 @@ theorem contDiffAt_localRep [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
   have h := contDiffWithinAt_localRep I F hs hi
   rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
+/-- **Transformation law for local representatives**, in the whole model space. Near the image of
+a point `y` of the first-jet chart domains at `i` and `j`, the local representative at `j` is the
+coordinate change of `V` from `i` to `j` applied to the local representative at `i` after the
+change of charts. -/
+theorem localRep_eventuallyEq_fiberCoordChange_nhds (s : ∀ x, V x) {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    localRep I F s j =ᶠ[𝓝 (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
+      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
+  filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hj.2,
+    eventually_extChartAt_symm_mem_baseSet_nhds I hj hj.2] with z hzi hzj
+  rw [Function.comp_apply, localRep_extChartAt I F s hzi.2, fiberCoordChange_apply,
+    ContinuousLinearEquiv.coe_coe,
+    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
+
 /-- **Transformation law for local representatives.** Near the image of a point `y` of the
 first-jet chart domains at `i` and `j`, the local representative at `j` is the coordinate change
 of `V` from `i` to `j` applied to the local representative at `i` after the change of charts. -/
 theorem localRep_eventuallyEq_fiberCoordChange (s : ∀ x, V x) {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
     localRep I F s j =ᶠ[𝓝[range I] (extChartAt I j y)] fun z ↦ fiberCoordChange I F V i j z
-      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
-  filter_upwards [eventually_extChartAt_symm_mem_baseSet I hi hj.2,
-    eventually_extChartAt_symm_mem_baseSet I hj hj.2] with z hzi hzj
-  rw [Function.comp_apply, localRep_extChartAt I F s hzi.2, fiberCoordChange_apply,
-    ContinuousLinearEquiv.coe_coe,
-    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hzi.1 hzj.1, localRep_apply]
+      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) :=
+  (localRep_eventuallyEq_fiberCoordChange_nhds I F s hi hj).filter_mono nhdsWithin_le_nhds
 
 section
 
