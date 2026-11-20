@@ -268,6 +268,14 @@ theorem rename_apply (f : K → K') (p : LaurentRing R K) :
     rename f p = mapDomain (Finsupp.mapDomain f) p :=
   (rfl)
 
+/-- An injective renaming preserves the coefficient at the corresponding exponent. -/
+@[simp]
+theorem coeff_rename_mapDomain {f : K → K'} (hf : Function.Injective f)
+    (p : LaurentRing R K) (m : K →₀ ℤ) :
+    (rename f p).coeff (Finsupp.mapDomain f m) = p.coeff m := by
+  rw [rename_apply, AddMonoidAlgebra.coeff_mapDomain]
+  exact Finsupp.mapDomain_apply_of_injective (Finsupp.mapDomain_injective hf) _ m
+
 @[simp]
 theorem rename_single (f : K → K') (m : K →₀ ℤ) (r : R) :
     rename f (single m r) = single (m.mapDomain f) r := by
