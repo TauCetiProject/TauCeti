@@ -22,10 +22,11 @@ for the virtual fundamental class.
 * **The atlas `s(x) = xᵐ` on a point** (`TauCeti.ImplicitAtlas.powAtlas`, Pardon, Example 2.3.2).
   The point `X = {0}` of virtual dimension `0`, with one index `α`, trivial group `Γ_α`, obstruction
   space `E_α = ℝ`, thickening `X_α = ℝ` and Kuranishi map `s_α(x) = xᵐ`, `m ≥ 1`. The regular locus
-  of `X_∅ = X` is empty, while `X_α` is regular. The zero set `Z_∅α = {0}`
-  (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the footprint
-  `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not cut out
-  transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
+  of `X_∅ = X` is empty, so the footprint `V_∅` is empty
+  (`TauCeti.ImplicitAtlas.footprint_powAtlas_empty`), while `X_α` is regular. The zero set
+  `Z_∅α = {0}` (`TauCeti.ImplicitAtlas.kuranishiZeroSet_powKuranishi_empty`) maps onto `X`, so the
+  footprint `V_α = X` covers. For `m ≥ 2` the zero `0` of `s_α` is not transverse, so `X` is not
+  cut out transversally by `s_α`; the atlas describes it through the regular thickening `X_α`.
 
 The thickenings of `powAtlas` are the subtypes `{x : ℝ // I = ∅ → x = 0}` of `ℝ`
 (`TauCeti.ImplicitAtlas.PowThickening`): the point `{0}` for `I = ∅` and `ℝ` for `I = {α}`.
@@ -245,6 +246,14 @@ theorem coe_footprintMap_powAtlas (hm : m ≠ 0) {I J : Finset Unit} (h : I ⊆ 
 @[simp]
 theorem regLocus_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).regLocus ∅ = ∅ := by
   simp [regLocus_powAtlas]
+
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.powAtlas` is empty, since the regular locus of
+`X_∅` is. So the footprints of the subsets of the empty set of indices do not cover the point. -/
+@[simp]
+theorem footprint_powAtlas_empty (hm : m ≠ 0) : (powAtlas hm).footprint ∅ = ∅ :=
+  eq_empty_of_forall_notMem fun _ hy ↦ by
+    obtain ⟨x, hx, -⟩ := (powAtlas hm).mem_footprint.1 hy
+    simp at hx
 
 /-- The footprint `V_α` of `TauCeti.ImplicitAtlas.powAtlas` is the whole point. -/
 @[simp]
