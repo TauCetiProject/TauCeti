@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.Exposed
 public import TauCeti.Analysis.Convex.Polyhedron.Basic
 public import TauCeti.LinearAlgebra.AffineSpace.Codimension
+import TauCeti.LinearAlgebra.AffineSpace.Span
 
 /-!
 # Relative interiors and boundaries of polyhedra
@@ -53,12 +54,6 @@ namespace TauCeti
 
 variable {V ι : Type*} [AddCommGroup V] [Module ℝ V]
 
-/-- A set description may be restricted to its own affine span without changing its carrier. -/
-theorem eq_setOf_mem_affineSpan_and {P : Set V} {p : V → Prop} (hP : P = {x | p x}) :
-    P = {x | x ∈ affineSpan ℝ P ∧ p x} := by
-  rw [Set.ofPred_and, SetLike.setOfPred_mem_eq, ← hP]
-  exact (Set.inter_eq_right.mpr (subset_affineSpan ℝ P)).symm
-
 variable [TopologicalSpace V]
 
 /-- Strictness of every row which is nonzero on the carrier gives relative interior,
@@ -97,7 +92,7 @@ theorem mem_intrinsicInterior_of_forall_lt [Finite ι] (g : ι → (V →ᴬ[ℝ
       simp only [ContinuousAffineMap.coe_toAffineMap, FunLike.coe_zero, Pi.zero_apply] at hspan
       exact le_of_eq hspan
   have hxint : xA ∈ interior U := by rwa [hU.interior_eq]
-  exact ⟨xA, interior_mono hUP hxint, rfl⟩
+  exact mem_intrinsicInterior.mpr ⟨xA, interior_mono hUP hxint, rfl⟩
 
 /-- A finite continuous relative presentation covers its relative frontier by the active
 faces of rows which do not vanish on the carrier. Only the ambient topology is used. -/
@@ -172,7 +167,7 @@ theorem exists_isExposed_ne_of_mem_intrinsicFrontier {P : Set V}
     (hP : IsConvexPolyhedron P) {x : V} (hx : x ∈ intrinsicFrontier ℝ P) :
     ∃ F, IsExposed ℝ P F ∧ x ∈ F ∧ F ≠ P := by
   obtain ⟨_, g, hg⟩ := isConvexPolyhedron_iff.mp hP
-  have hrel := eq_setOf_mem_affineSpan_and hg
+  have hrel := eq_setOf_mem_affineSpan_and (k := ℝ) hg
   obtain ⟨j, ⟨p, hp, hjp⟩, hxP, hjx⟩ :=
     Set.mem_iUnion₂.mp (intrinsicFrontier_subset_iUnion_active g hrel hx)
   refine ⟨_, (g j).isExposed_setOf_eq_of_le (fun y hy => (hg ▸ hy) j),

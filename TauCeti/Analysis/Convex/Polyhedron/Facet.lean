@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.Polyhedron.Direction
 public import Mathlib.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.Polyhedron.Boundary
+import TauCeti.LinearAlgebra.AffineSpace.Span
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Order.Minimal
 import TauCeti.LinearAlgebra.Dual.Lemmas
@@ -31,8 +32,9 @@ The selected indices belong to the input family, so their original normal and of
 preserved. The thinning and active-row witnesses need neither a topology nor finite dimension.
 The continuous irredundant presentation additionally retains exposedness, without finite
 dimension. The facet dimension formulas and facet coverage assume that the parent direction is
-finite-dimensional. With continuous scalar multiplication the intrinsic frontier is the union of
-its nonempty exposed facets. General proper-exposed boundary characterizations belong to
+finite-dimensional. With continuous addition and scalar multiplication, the intrinsic frontier
+is the union of its nonempty exposed facets.
+General proper-exposed boundary characterizations belong to
 `TauCeti.Analysis.Convex.Polyhedron.Boundary`.
 -/
 
@@ -43,22 +45,6 @@ open Set Module AffineSubspace
 namespace TauCeti
 
 variable {V ι : Type*} [AddCommGroup V] [Module ℝ V] {P : Set V}
-
-/-- The segment from a strictly feasible point to a point violating just row `j` crosses that
-row at zero while all the other rows remain strict. -/
-theorem exists_mem_openSegment_single_active (g : ι → (V →ᵃ[ℝ] ℝ)) (j : ι) {q x : V}
-    (hq : ∀ l, g l q < 0) (hxj : 0 < g j x) (hx : ∀ l ≠ j, g l x ≤ 0) :
-    ∃ p ∈ openSegment ℝ q x, g j p = 0 ∧ ∀ l ≠ j, g l p < 0 := by
-  have hzero : 0 ∈ (g j) '' openSegment ℝ q x := by
-    rw [image_openSegment, openSegment_eq_Ioo ((hq j).trans hxj)]
-    exact ⟨hq j, hxj⟩
-  obtain ⟨p, hp, hpj⟩ := hzero
-  refine ⟨p, hp, hpj, fun l hl => ?_⟩
-  rw [openSegment_eq_image_lineMap] at hp
-  obtain ⟨t, ht, rfl⟩ := hp
-  rw [(g l).apply_lineMap, AffineMap.lineMap_apply_ring]
-  exact add_neg_of_neg_of_nonpos (mul_neg_of_pos_of_neg (sub_pos.mpr ht.2) (hq l))
-    (mul_nonpos_of_nonneg_of_nonpos ht.1.le (hx l hl))
 
 /-- Select a minimal finite subfamily of a relative presentation. Each retained row has a
 point in the affine span violating it while satisfying every other retained inequality. -/
@@ -87,8 +73,7 @@ theorem exists_affine_subfamily_with_exterior_witness [Finite ι] (f : ι → (V
         · subst l
           exact hn x hxA hx
         · exact hx l (Finset.mem_erase.mpr ⟨he, hl⟩)
-    have he := hS.2 herase (Finset.erase_subset _ _)
-    exact Finset.notMem_erase j.val S (he j.property)
+    exact hS.not_prop_of_lt (Finset.erase_ssubset j.property) herase
   obtain ⟨x, hx, hother, hj⟩ := hw
   exact ⟨x, hx, hj, fun l hl => hother l
     (Finset.mem_erase.mpr ⟨fun e => hl (Subtype.ext e), l.property⟩)⟩
@@ -186,7 +171,7 @@ theorem IsConvexPolyhedron.exists_irredundant_presentation (hP : IsConvexPolyhed
         vectorSpan ℝ {x ∈ P | g j x = 0} = vectorSpan ℝ P ⊓ (g j).toAffineMap.linear.ker ∧
         ¬ vectorSpan ℝ P ≤ (g j).toAffineMap.linear.ker := by
   obtain ⟨_, f, hf⟩ := isConvexPolyhedron_iff.mp hP
-  have hrel := eq_setOf_mem_affineSpan_and hf
+  have hrel := eq_setOf_mem_affineSpan_and (k := ℝ) hf
   obtain ⟨S, hS, hrows⟩ := exists_irredundant_subfamily f hrel
   exact ⟨S, inferInstance, fun j => f j, by simpa only [Subtype.forall] using hS, hrows⟩
 

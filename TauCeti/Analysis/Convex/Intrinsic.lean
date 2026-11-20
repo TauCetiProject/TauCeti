@@ -348,7 +348,7 @@ variable {𝕜 E : Type*} [Ring 𝕜] [AddCommGroup E] [Module 𝕜 E] [Topologi
 the affine span of `C` with `c + v ∈ C` form a neighbourhood of `0`. -/
 theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior 𝕜 C) :
     {v : (affineSpan 𝕜 C).direction | c + (v : E) ∈ C} ∈ 𝓝 0 := by
-  obtain ⟨y, hy, rfl⟩ := hc
+  obtain ⟨y, hy, rfl⟩ := mem_intrinsicInterior.mp hc
   -- Translating the direction by `y` is a continuous map into the affine span sending `0` to `y`.
   let φ : (affineSpan 𝕜 C).direction → affineSpan 𝕜 C :=
     fun v ↦ ⟨(v : E) + y,
@@ -379,7 +379,7 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [Conti
 
 /-- Any point of the carrier can be extended past an intrinsic-interior point along an
 open segment, without convexity or finite dimension. -/
-theorem exists_mem_openSegment_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
+theorem exists_mem_and_mem_openSegment_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
     {y : E} (hy : y ∈ C) : ∃ z ∈ C, c ∈ openSegment ℝ y z := by
   have hv : c - y ∈ (affineSpan ℝ C).direction := by
     rw [direction_affineSpan]
@@ -388,19 +388,15 @@ theorem exists_mem_openSegment_of_mem_intrinsicInterior (hc : c ∈ intrinsicInt
   obtain ⟨ε, hε, hεpos⟩ := ((he.filter_mono nhdsWithin_le_nhds).and
     (self_mem_nhdsWithin (s := Ioi 0))).exists
   replace hεpos : 0 < ε := mem_Ioi.1 hεpos
-  refine ⟨_, hε, ε / (1 + ε), 1 / (1 + ε), by positivity, by positivity,
-    by field_simp; ring, ?_⟩
-  match_scalars
-  · field_simp
-    ring
-  · field_simp
+  refine ⟨_, hε, mem_openSegment_iff_div.mpr ⟨ε, 1, hεpos, zero_lt_one, ?_⟩⟩
+  match_scalars <;> field_simp <;> ring
 
 /-- An affine function which is nonnegative on a set `C` and vanishes at an intrinsic interior
 point `c` of `C` vanishes on all of `C`. -/
 theorem eq_zero_of_nonneg_of_mem_intrinsicInterior {g : E →ᵃ[ℝ] ℝ} (hg : ∀ y ∈ C, 0 ≤ g y)
     (hc : c ∈ intrinsicInterior ℝ C) (hgc : g c = 0) {y : E} (hy : y ∈ C) : g y = 0 := by
   obtain ⟨z, hz, a, b, ha, hb, hab, he⟩ :=
-    exists_mem_openSegment_of_mem_intrinsicInterior hc hy
+    exists_mem_and_mem_openSegment_of_mem_intrinsicInterior hc hy
   have heq := congrArg g he
   rw [Convex.combo_affine_apply hab, hgc] at heq
   simp only [smul_eq_mul] at heq
@@ -509,7 +505,7 @@ theorem intrinsicInterior_mono_of_inter_intrinsicInterior_nonempty {s u : Set E}
     intrinsicInterior ℝ u ⊆ intrinsicInterior ℝ s := by
   intro y hy
   obtain ⟨z, hzu, hzs⟩ := h
-  obtain ⟨w, hw, hseg⟩ := exists_mem_openSegment_of_mem_intrinsicInterior hy hzu
+  obtain ⟨w, hw, hseg⟩ := exists_mem_and_mem_openSegment_of_mem_intrinsicInterior hy hzu
   exact hs.openSegment_intrinsicInterior_intrinsicClosure_subset_intrinsicInterior hzs
     (subset_intrinsicClosure (hus hw)) hseg
 

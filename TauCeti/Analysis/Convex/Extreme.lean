@@ -222,7 +222,7 @@ Neither convexity nor finite dimension is required. -/
 theorem IsExtreme.eq_of_mem_intrinsicInterior (hF : IsExtreme ℝ P F) {x : V} (hxF : x ∈ F)
     (hx : x ∈ intrinsicInterior ℝ P) : F = P := by
   refine hF.subset.antisymm fun y hy => ?_
-  obtain ⟨z, hz, hseg⟩ := TauCeti.exists_mem_openSegment_of_mem_intrinsicInterior hx hy
+  obtain ⟨z, hz, hseg⟩ := TauCeti.exists_mem_and_mem_openSegment_of_mem_intrinsicInterior hx hy
   exact hF.left_mem_of_mem_openSegment hy hz hxF hseg
 
 /-- Every proper extreme subset lies in the intrinsic frontier of its ambient set. -/
