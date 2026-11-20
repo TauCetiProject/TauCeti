@@ -291,12 +291,12 @@ Access its vertices and darts through `toSerreGraphVertexEquiv` and `toSerreGrap
 def toSerreGraph (d : LambdaMetric ℤ X) : SerreGraph where
   V := X
   E := { p : X × X // d p.1 p.2 = 1 }
-  src e := e.1.1
-  rev e := ⟨e.1.swap, by rw [Prod.fst_swap, Prod.snd_swap, d.symm]; exact e.2⟩
-  rev_rev e := Subtype.ext (Prod.swap_swap e.1)
+  src e := e.val.1
+  rev e := ⟨e.val.swap, by rw [Prod.fst_swap, Prod.snd_swap, d.symm]; exact e.property⟩
+  rev_rev e := Subtype.ext (Prod.swap_swap e.val)
   rev_ne e he := by
-    have hxy : e.1.2 = e.1.1 := congrArg (fun f : { p : X × X // d p.1 p.2 = 1 } => f.1.1) he
-    have h1 := e.2
+    have hxy : e.val.2 = e.val.1 := congrArg (fun f : { p : X × X // d p.1 p.2 = 1 } => f.val.1) he
+    have h1 := e.property
     rw [hxy, d.refl] at h1
     omega
 
@@ -313,18 +313,18 @@ variable {d : LambdaMetric ℤ X}
 
 @[simp]
 theorem toSerreGraphVertexEquiv_src (e : d.toSerreGraph.E) :
-    d.toSerreGraphVertexEquiv (d.toSerreGraph.src e) = (d.toSerreGraphDartEquiv e).1.1 :=
+    d.toSerreGraphVertexEquiv (d.toSerreGraph.src e) = (d.toSerreGraphDartEquiv e).val.1 :=
   (rfl)
 
 @[simp]
 theorem toSerreGraphVertexEquiv_tgt (e : d.toSerreGraph.E) :
-    d.toSerreGraphVertexEquiv (d.toSerreGraph.tgt e) = (d.toSerreGraphDartEquiv e).1.2 :=
+    d.toSerreGraphVertexEquiv (d.toSerreGraph.tgt e) = (d.toSerreGraphDartEquiv e).val.2 :=
   (rfl)
 
 @[simp]
 theorem toSerreGraphDartEquiv_rev (e : d.toSerreGraph.E) :
-    (d.toSerreGraphDartEquiv (d.toSerreGraph.rev e)).1 =
-      (d.toSerreGraphDartEquiv e).1.swap :=
+    (d.toSerreGraphDartEquiv (d.toSerreGraph.rev e)).val =
+      (d.toSerreGraphDartEquiv e).val.swap :=
   (rfl)
 
 /-- Two darts of `d.toSerreGraph` with the same source and the same target are equal. -/
@@ -341,7 +341,7 @@ private theorem toSerreGraph_hom_dist {a b : d.toSerreGraph.V} (e : Quiver.Hom a
     d (d.toSerreGraphVertexEquiv a) (d.toSerreGraphVertexEquiv b) = 1 := by
   rcases e with ⟨e, rfl, rfl⟩
   rw [toSerreGraphVertexEquiv_src, toSerreGraphVertexEquiv_tgt]
-  exact (d.toSerreGraphDartEquiv e).2
+  exact (d.toSerreGraphDartEquiv e).property
 
 /-- Every path in `d.toSerreGraph` has length at least the `d`-distance between its endpoints. -/
 theorem dist_le_toSerreGraph_length {u v : d.toSerreGraph.V} (p : d.toSerreGraph.Path u v) :
@@ -464,8 +464,8 @@ theorem IsTree.dist_eq_toSerreGraph_length (hd : d.IsTree) {u v : d.toSerreGraph
           intro haw
           obtain rfl := φ.injective haw
           refine hne (toSerreGraph_dart_eq_of_src_eq_of_tgt_eq ?_ ?_)
-          · rw [d.toSerreGraph.src_rev, f.2.1, e.2.2]
-          · rw [d.toSerreGraph.tgt_rev, f.2.2, e.2.1]
+          · rw [d.toSerreGraph.src_rev, f.property.1, e.property.2]
+          · rw [d.toSerreGraph.tgt_rev, f.property.2, e.property.1]
         have haw_pos : 0 < d (φ a) (φ w) := d.pos_iff.2 haw_ne
         have haw_le : d (φ a) (φ w) ≤ 2 := by
           have := d.triangle (φ a) (φ b) (φ w)

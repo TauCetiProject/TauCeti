@@ -163,7 +163,7 @@ noncomputable def inducedEval :
             rw [hsub, ← LinearMap.comp_apply ((f : C →ₗ[R] D).lTensor M),
               LinearMap.lTensor_comp_rTensor, cofree_coact, cofreeCoact_def]
         _ = coact (R := R) (C := D) (M := M) (counitEval (C := C) M (t : M ⊗[R] C)) := by
-            rw [hev, coact_counitEval_of_mem f t.2] }
+            rw [hev, coact_counitEval_of_mem f t.property] }
 
 private theorem inducedEval_toLinearMap :
     letI := Corestrict (M := induced f M) f

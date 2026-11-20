@@ -142,7 +142,7 @@ private def sigmaCriticalPointsIocEquiv {a : ℕ → ℝ} (hmono : StrictMono a)
     (htop : Tendsto a atTop atTop) (ha0 : ∀ x, a 0 < f x) (m : ℕ) :
     (Σ k, ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc (a k) (a (k + 1)) | manifoldMorseIndex I f x = m})
       ≃ ↥{x ∈ criticalPoints I f | manifoldMorseIndex I f x = m} :=
-  Equiv.ofBijective (fun p ↦ ⟨p.2.1, p.2.2.1.1, p.2.2.2⟩) <| by
+  Equiv.ofBijective (fun p ↦ ⟨p.2.val, p.2.property.1.1, p.2.property.2⟩) <| by
     refine ⟨fun ⟨k, x, hx⟩ ⟨l, y, hy⟩ hxy ↦ ?_, fun ⟨x, hx, hxm⟩ ↦ ?_⟩
     · obtain rfl : x = y := congrArg Subtype.val hxy
       -- The intervals `(a k, a (k + 1)]` are pairwise disjoint.
@@ -202,12 +202,12 @@ private theorem IsMorse.exists_sublevelCWModel_tower (hf : IsMorse I f) (hp : Is
     hf.exists_sublevelCWModel_extension (hmono k.lt_succ_self).le
       (hp.isCompact_preimage isCompact_Icc) (hreg k) (hreg (k + 1)) S
   -- The models start from the empty one, since the sublevel `M_{a 0}` is empty.
-  have : IsEmpty {x | f x ≤ a 0} := ⟨fun x ↦ (not_le.2 (ha0 x)) x.2⟩
+  have : IsEmpty {x | f x ≤ a 0} := ⟨fun x ↦ (not_le.2 (ha0 x)) x.property⟩
   have hcell0 (m : ℕ) : cell (univ : Set PEmpty.{u + 1}) m ≃
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a 0) | manifoldMorseIndex I f x = m} :=
     have : IsEmpty (cell (univ : Set PEmpty.{u + 1}) m) := ⟨fun j ↦ PEmpty.elim (map m j 0)⟩
     have : IsEmpty ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Iic (a 0) | manifoldMorseIndex I f x = m} :=
-      ⟨fun x ↦ (not_le.2 (ha0 x.1)) x.2.1.2⟩
+      ⟨fun x ↦ (not_le.2 (ha0 x.val)) x.property.1.2⟩
     Equiv.equivOfIsEmpty _ _
   let S := sublevelCWModelSeq ⟨PEmpty.{u + 1}, Homeomorph.empty.toHomotopyEquiv, hcell0⟩ S'
   -- The inclusions of the regular sublevels are closed cofibrations, by collars of the levels.
@@ -277,7 +277,7 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse
   -- The cells of `X` are the cells of the first, empty, stage, and the new cells of the later
   -- stages, which are the critical points in the bands `(a k, a (k + 1)]`.
   have hempty (m : ℕ) : IsEmpty (cell (univ : Set (F.obj 0)) m) :=
-    ⟨fun j ↦ (not_le.2 (ha0 _)) ((S 0).h (map m j 0)).2⟩
+    ⟨fun j ↦ (not_le.2 (ha0 _)) ((S 0).h (map m j 0)).property⟩
   let eX (m : ℕ) := (cwComplexOfIsColimitCellEquiv hF hιc hc m).trans <|
     (Equiv.emptySum _ _).trans <|
       (Equiv.sigmaCongrRight fun k ↦ (e k m).complRangeSymmInl).trans
@@ -289,7 +289,7 @@ theorem IsMorse.exists_cwComplex_homotopyEquiv_subcomplex_sublevel (hf : IsMorse
     -- critical point has value in `(a k', a (k' + 1)]`.
     obtain ⟨s | ⟨k', x⟩, rfl⟩ := (cwComplexOfIsColimitCellEquiv hF hιc hc m).symm.surjective j
     · exact (hempty m).elim s
-    have hx := ((e k' m).complRangeSymmInl x).2.1.2
+    have hx := ((e k' m).complRangeSymmInl x).property.1.2
     refine (cwComplexOfIsColimitCellEquiv_symm_inr_mem_I_iff hF hιc hc _).trans ?_
     simp only [eX, Equiv.trans_apply, Equiv.apply_symm_apply]
     refine ⟨fun hk ↦ hx.2.trans (hmono.monotone hk), fun hk ↦ ?_⟩
@@ -353,7 +353,7 @@ theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv (hf : IsMorse I f) (hp
     (iUnion_sublevel_eq_univ_of_tendsto f htop)
     (isCoherentWith_range_sublevel_of_tendsto hf.contMDiff.continuous htop) hBH (fun k ↦ (S k).h)
     fun k w ↦ by rw [Functor.ofSequence_map_homOfLE_succ]; exact hh k w
-  have : IsEmpty (F.obj 0) := ⟨fun w ↦ (not_le.2 (ha0 _)) ((S 0).h w).2⟩
+  have : IsEmpty (F.obj 0) := ⟨fun w ↦ (not_le.2 (ha0 _)) ((S 0).h w).property⟩
   refine ⟨a, c.pt, c.pt.str, inferInstance, ‹_›, cwComplexOfIsColimitSubcomplex hF hιc hc,
     h, hW, hmono, htop, ha0, hreg, monotone_cwComplexOfIsColimitSubcomplex hF hιc hc,
     (coe_cwComplexOfIsColimitSubcomplex hF hιc hc 0).trans (range_eq_empty _),
@@ -396,9 +396,11 @@ theorem IsMorse.exists_cwComplex_subcomplex_homotopyEquiv_of_manifoldMorseIndex_
       hWfin, hhW, hsymm, hcell, hWcell⟩ :=
     hf.exists_cwComplex_subcomplex_homotopyEquiv hp hbdd
   have hempty (m : ℕ) (hm : d < m) : IsEmpty (cell (univ : Set X) m) :=
-    (hcell m).some.isEmpty_congr.2 ⟨fun x ↦ ((x.2.2 ▸ hidx x.1 x.2.1).trans_lt hm).false⟩
+    (hcell m).some.isEmpty_congr.2 ⟨fun x ↦ ((x.property.2 ▸ hidx x.val x.property.1).trans_lt
+        hm).false⟩
   have hWempty (k m : ℕ) (hm : d < m) : IsEmpty (cell (W k : Set X) m) :=
-    (hWcell k m).some.isEmpty_congr.2 ⟨fun x ↦ ((x.2.2 ▸ hidx x.1 x.2.1.1).trans_lt hm).false⟩
+    (hWcell k m).some.isEmpty_congr.2 ⟨fun x ↦ ((x.property.2 ▸ hidx x.val x.property.1.1).trans_lt
+        hm).false⟩
   exact ⟨a, X, instTop, instT2, instCW, W, h, hW, hmono, htop, ha0, hreg, hWmono, hW0, hWuniv,
     hWfin, RelCWComplex.finiteDimensional_of_isEmpty_cell_gt (univ : Set X) hempty, hhW, hsymm,
     hcell, hWcell, hempty, hWempty⟩

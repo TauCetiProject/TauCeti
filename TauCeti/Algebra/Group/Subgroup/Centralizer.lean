@@ -63,7 +63,7 @@ theorem exists_maximal_isMulCommutative {G : Type*} [Group G] (H : Subgroup G)
   classical
   apply zorn_le_nonempty₀ {K : Subgroup G | IsMulCommutative K} ?_ H hH
   intro c hc hcc y hy
-  have : ∀ K : c, IsMulCommutative (K : Subgroup G) := fun K => hc K.2
+  have : ∀ K : c, IsMulCommutative (K : Subgroup G) := fun K => hc K.property
   have hcomm : IsMulCommutative (sSup c : Subgroup G) := by
     rw [sSup_eq_iSup']
     have : Nonempty c := ⟨⟨y, hy⟩⟩

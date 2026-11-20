@@ -899,9 +899,10 @@ distribution of) such a map. The isomorphism is `TauCeti.BesovSpace.toCkHolderSp
 `TauCeti.BesovSpace.ofCkHolderSpace`. -/
 def ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
     BesovSpace F φ (k + α) ∞ ∞ ≃L[ℝ] CkHolderSpace k α E F :=
-  ContinuousLinearEquiv.equivOfInverse (toCkHolderSpace F φ k hα0 hα1) (ofCkHolderSpace F φ k α)
-    (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1)
-    (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1)
+  ContinuousLinearEquiv.ofContinuousLinearMap (toCkHolderSpace F φ k hα0 hα1)
+    (ofCkHolderSpace F φ k α)
+    (ContinuousLinearMap.ext (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1))
+    (ContinuousLinearMap.ext (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1))
 
 @[simp]
 theorem coe_ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
@@ -984,8 +985,9 @@ variable (F) in
 `toHolderSpace` and its inverse `ofHolderSpace`. -/
 def holderSpaceEquiv {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) :
     BesovSpace F φ α ∞ ∞ ≃L[ℝ] HolderSpace α E F :=
-  ContinuousLinearEquiv.equivOfInverse (toHolderSpace F φ hα0 hα1) (ofHolderSpace F φ α)
-    (ofHolderSpace_toHolderSpace φ hα0 hα1) (toHolderSpace_ofHolderSpace φ hα0 hα1)
+  ContinuousLinearEquiv.ofContinuousLinearMap (toHolderSpace F φ hα0 hα1) (ofHolderSpace F φ α)
+    (ContinuousLinearMap.ext (toHolderSpace_ofHolderSpace φ hα0 hα1))
+    (ContinuousLinearMap.ext (ofHolderSpace_toHolderSpace φ hα0 hα1))
 
 /-- `holderSpaceEquiv` acts as `toHolderSpace`. -/
 @[simp]

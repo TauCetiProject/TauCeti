@@ -82,7 +82,7 @@ private theorem collapsesTo_deletion_vertex_aux (v w : ι) (hwv : w ≠ v) :
     · rw [deletion_singleton_eq_of_forall_notMem hempty]
     push Not at hempty
     obtain ⟨σ, hfree, hvσ, hwσ⟩ := exists_isFreePair_incident hwv hfin hdom hempty
-    have hσ : σ ∈ K := hfree.1
+    have hσ : σ ∈ K := hfree.lower_mem
     have hstep : ElementaryCollapsesTo K (deletion K σ) :=
       ElementaryCollapsesTo.of_isFreePair hfree rfl
     have hT : {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ}.Finite :=

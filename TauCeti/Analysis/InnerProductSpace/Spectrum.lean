@@ -143,7 +143,7 @@ theorem exists_hilbertBasis_forall_hasEigenvector_of_dense_eigenspaces
   have hv : Orthonormal 𝕜 v :=
     hT'.orthonormal_sigma_orthonormal fun mu => (bw mu).orthonormal
   have hinj : Function.Injective v := hv.linearIndependent.injective
-  have hmem : ∀ p, v p ∈ eigenspace (T : Module.End 𝕜 E) p.1 := fun p => (bw p.1 p.2).2
+  have hmem : ∀ p, v p ∈ eigenspace (T : Module.End 𝕜 E) p.1 := fun p => (bw p.1 p.2).property
   have hvspan : (Submodule.span 𝕜 (Set.range v))ᗮ = ⊥ := by
     refine le_antisymm ?_ bot_le
     rw [← hspan, ← Submodule.iInf_orthogonal]

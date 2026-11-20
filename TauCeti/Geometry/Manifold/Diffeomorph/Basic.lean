@@ -84,8 +84,8 @@ original tangent vector. -/
 theorem tangentMap_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (z : TangentBundle I M) :
     tangentMap J I h.symm (tangentMap I J h z) = z := by
-  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable hn) (h z.1))
-    ((h.mdifferentiable hn) z.1)]
+  rw [← tangentMap_comp_at z ((h.symm.mdifferentiable hn) (h z.proj))
+    ((h.mdifferentiable hn) z.proj)]
   have hinv : (h.symm : N → M) ∘ h = id := funext h.symm_apply_apply
   rw [hinv]
   exact congrFun tangentMap_id z

@@ -207,7 +207,8 @@ theorem finrank_cartanCenter_inf_corootSpan_add_rank :
       (LinearMap.ker A.transpose.mulVecLin)).finrank_eq]
   have h := A.transpose.mulVecLin.finrank_range_add_finrank_ker
   -- Matrix rank is the dimension of the range of its coordinate linear map.
-  have hr : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := rfl
+  have hr : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank :=
+    A.transpose.finrank_range_mulVecLin
   rw [hr, Matrix.rank_transpose, Module.finrank_fintype_fun_eq_card] at h
   omega
 
@@ -582,7 +583,8 @@ theorem isMinimal_ofSupplement (hZ : IsCompl (LinearMap.range A.transpose.mulVec
   classical
   refine ⟨inferInstance, ?_⟩
   -- Matrix rank is defined as the dimension of the range of mulVecLin.
-  have hrank : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank := rfl
+  have hrank : finrank K (LinearMap.range A.transpose.mulVecLin) = A.transpose.rank :=
+    A.transpose.finrank_range_mulVecLin
   rw [Matrix.rank_transpose] at hrank
   have h := Submodule.finrank_add_eq_of_isCompl hZ
   rw [hrank, Module.finrank_fintype_fun_eq_card] at h

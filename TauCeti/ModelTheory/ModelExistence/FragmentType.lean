@@ -94,18 +94,18 @@ namespace Fragment
 /-- The realized truth assignment of a tuple on the arity slice of a fragment. -/
 def truthAssignment (A : Fragment L) (M : Type w) [L.Structure M] {n : ℕ} (a : Fin n → M) :
     A.slice n → Prop :=
-  fun φ => φ.1.Realize Empty.elim a
+  fun φ => φ.val.Realize Empty.elim a
 
 /-- Evaluation of a realized truth assignment is realization of the formula. -/
 @[simp]
 theorem truthAssignment_apply (A : Fragment L) (a : Fin n → M) (φ : A.slice n) :
-    A.truthAssignment M a φ ↔ φ.1.Realize Empty.elim a :=
+    A.truthAssignment M a φ ↔ φ.val.Realize Empty.elim a :=
   Iff.rfl
 
 /-- On the slice, the truth assignment records membership in the fragment type. -/
 theorem truthAssignment_iff_mem_fragmentType (A : Fragment L) (a : Fin n → M) (φ : A.slice n) :
-    A.truthAssignment M a φ ↔ φ.1 ∈ fragmentType A M a := by
-  simp only [truthAssignment_apply, mem_fragmentType, mem_slice.1 φ.2, true_and]
+    A.truthAssignment M a φ ↔ φ.val ∈ fragmentType A M a := by
+  simp only [truthAssignment_apply, mem_fragmentType, mem_slice.1 φ.property, true_and]
 
 /-- The truth assignment restricts along fragment inclusion by precomposition with the slice map.
 The slice map is Mathlib's `Set.inclusion`, so its identity and composition laws apply directly. -/
@@ -167,7 +167,8 @@ theorem LHom.fragmentType_map (g : L →ᴸ L') (A : Fragment L)
 theorem Fragment.truthAssignment_comap (g : L →ᴸ L') (B : Fragment L')
     [L'.Structure M] [g.IsExpansionOn M] (a : Fin n → M) :
     (B.comap g).truthAssignment M a =
-      B.truthAssignment M a ∘ fun φ => ⟨g.onBoundedFormulaInf φ.1, by simpa using φ.2⟩ := by
+      B.truthAssignment M a ∘ fun φ => ⟨g.onBoundedFormulaInf φ.val,
+          by simpa using φ.property⟩ := by
   ext φ
   simp [LHom.realize_onBoundedFormulaInf]
 
