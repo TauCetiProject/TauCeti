@@ -411,9 +411,7 @@ variable {R : Type*} [CommRing R]
 theorem simplexEquiv_one_apply (k : CobarRing 1 →+* R) :
     simplexEquiv R 1 k = ((arrowEquiv R k).1, fun _ ↦ (arrowEquiv R k).2) := by
   rw [simplexEquiv_succ_apply, simplexEquiv_zero_apply, arrowEquiv_apply,
-    includeLeft_eq_algebraMap, lastChange_eq_universalChange]
-  -- `Fin.snoc` of the empty tuple is the constant tuple.
-  exact Prod.ext rfl (funext fun i ↦ by fin_cases i; rfl)
+    includeLeft_eq_algebraMap, lastChange_eq_universalChange, Fin.snoc_zero]
 
 /-- In degree two, `Γ^{⊗2}` is the ring `Γ ⊗_A Γ = Γ[u, u⁻¹, r, s, t]` of the coproduct: the
 first arrow is classified by its left factor `algebraMap` and the second by its coordinates. -/
@@ -426,7 +424,10 @@ theorem simplexEquiv_two_apply (k : CobarRing 2 →+* R) :
           (ChangeRing.universalChange ArrowRing).map k]) := by
   rw [simplexEquiv_succ_apply, simplexEquiv_one_apply, arrowEquiv_apply,
     includeLeft_eq_algebraMap, lastChange_eq_universalChange]
-  exact Prod.ext rfl (funext fun i ↦ by fin_cases i <;> simp [Fin.snoc])
+  refine Prod.ext rfl (funext fun i ↦ Fin.lastCases ?_ (fun j ↦ ?_) i) <;> dsimp only
+  · rw [Fin.snoc_last]
+    simp
+  · rw [Fin.snoc_castSucc, Subsingleton.elim j 0, Fin.castSucc_zero, Matrix.cons_val_zero]
 
 /-- The universal arrow `W → C • W` over `Γ`, as a `1`-simplex. -/
 theorem universalSimplex_one :
