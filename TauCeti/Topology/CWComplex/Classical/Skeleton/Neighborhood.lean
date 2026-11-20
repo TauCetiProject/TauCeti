@@ -193,7 +193,7 @@ lemma map_mem_skeletonNeighborhood_iff {n : ℕ} (j : cell C n) {y : Fin n → �
       exact (not_lt.2 h) hz
   · -- A point of the boundary sphere lands in the cell frontier, inside `Xⁿ⁻¹`.
     refine iff_of_true (skeletonLT_subset_skeletonNeighborhood n ?_) (by rw [hy]; norm_num)
-    exact cellFrontier_subset_skeletonLT n j ⟨y, mem_sphere_zero_iff_norm.2 hy, rfl⟩
+    exact map_mem_skeletonLT_of_norm_eq_one j hy
 
 variable (C) in
 /-- The radial push of the `n`-cells as a homotopy of `skeletonLT C (n + 1)`. -/
@@ -284,7 +284,7 @@ lemma skeletonNeighborhoodHomotopy_mem {n : ℕ} (t : I)
     obtain ⟨-, rfl⟩ := (map_eq_map_iff (hw.trans (by norm_num)) hz1).1 h
     linarith
   · exact skeletonLT_subset_skeletonNeighborhood n
-      (cellFrontier_subset_skeletonLT n j ⟨_, mem_sphere_zero_iff_norm.2 hz1, rfl⟩)
+      (map_mem_skeletonLT_of_norm_eq_one j hz1)
 
 /-- The endpoint of the deformation sends `TauCeti.skeletonNeighborhood C n` into
 `Xⁿ⁻¹ = skeletonLT C n`. -/
@@ -298,8 +298,7 @@ lemma skeletonNeighborhoodEndpoint_mem {n : ℕ} (x : (skeletonLT C ((n + 1 : �
   have hy2 : (2 : ℝ)⁻¹ ≤ ‖y‖ := not_lt.1 fun h ↦ (mem_skeletonNeighborhood.1 hx).2 j y h hxy
   rw [← (skeletonNeighborhoodHomotopy C n).apply_one, coe_skeletonNeighborhoodHomotopy_apply, ← hxy,
     cellDeformation_radialPushMap_map 1 j hy.le]
-  exact cellFrontier_subset_skeletonLT n j
-    ⟨_, mem_sphere_zero_iff_norm.2 (norm_radialPush_one (by norm_num) hy2), rfl⟩
+  exact map_mem_skeletonLT_of_norm_eq_one j (norm_radialPush_one (by norm_num) hy2)
 
 variable (C) in
 /-- **The skeletal neighbourhood deforms onto the `(n-1)`-skeleton relative to it.** The
