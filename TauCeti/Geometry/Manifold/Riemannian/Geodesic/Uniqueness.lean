@@ -89,12 +89,14 @@ theorem IsGeodesicCurveOn.eqOn_of_curveVelocityLift_eq
 
 /-- Equality of actual endpoint position and velocity determines ambient geodesics. -/
 theorem IsGeodesicCurveOn.eqOn_Icc_of_curveVelocityLift_left_eq
-    {b : ℝ} (hab : a < b)
+    {b : ℝ}
     (hγ : IsGeodesicCurveOn I γ (Icc a b)) (hδ : IsGeodesicCurveOn I δ (Icc a b))
     (hγdiff : MDifferentiableAt 𝓘(ℝ) I γ a) (hδdiff : MDifferentiableAt 𝓘(ℝ) I δ a)
-    (heq : curveVelocityLift I γ a = curveVelocityLift I δ a) : EqOn γ δ (Icc a b) :=
-  hγ.eqOn_of_curveVelocityLift_eq hδ isPreconnected_Icc (left_mem_Icc.mpr hab.le)
-    hγdiff hδdiff heq
+    (heq : curveVelocityLift I γ a = curveVelocityLift I δ a) : EqOn γ δ (Icc a b) := by
+  by_cases hab : a ≤ b
+  · exact hγ.eqOn_of_curveVelocityLift_eq hδ isPreconnected_Icc (left_mem_Icc.mpr hab)
+      hγdiff hδdiff heq
+  · simp only [Icc_eq_empty hab, eqOn_empty]
 
 end FiniteRegularity
 
