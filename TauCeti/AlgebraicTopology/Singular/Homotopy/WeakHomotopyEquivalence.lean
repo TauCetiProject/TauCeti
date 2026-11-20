@@ -78,6 +78,9 @@ are what the dual statements for singular cohomology are deduced from, in
   coefficients.
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_normalizedTwistedCubicalChainComplexMap`: the
   cubical form with local coefficients.
+* `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_subsetTwistedChainComplexMap`: an inclusion of
+  subspaces which is a weak homotopy equivalence induces a quasi-isomorphism of twisted chains,
+  with the local system restricted to each subspace.
 * `ContinuousMap.IsWeakHomotopyEquivalence.isIso_singularHomologyMap`: a weak homotopy
   equivalence induces isomorphisms on singular homology with coefficients in any module.
 * `ContinuousMap.IsWeakHomotopyEquivalence.quasiIso_chainComplexMap`,
@@ -187,6 +190,36 @@ theorem isIso_twistedHomologyMap (hf : f.IsWeakHomotopyEquivalence)
     IsIso (twistedHomologyMap (TopCat.ofHom f) L n) :=
   have := hf.quasiIso_twistedChainComplexMap L
   inferInstance
+
+/-- **An inclusion of subspaces which is a weak homotopy equivalence induces a quasi-isomorphism
+of singular chains with local coefficients**: if `A ⊆ B ⊆ X` and the inclusion of `A` in `B` is a
+weak homotopy equivalence, then for every local coefficient system `L` on `X` the map of twisted
+chains of `A` and of `B`, with `L` restricted to each, is a quasi-isomorphism. -/
+theorem quasiIso_subsetTwistedChainComplexMap {Z : TopCat.{v}} {A B : Set Z} {h : A ⊆ B}
+    (hf : (ContinuousMap.inclusion h).IsWeakHomotopyEquivalence)
+    (L : LocalCoefficientSystem.{u, v, v} R Z) :
+    QuasiIso (subsetTwistedChainComplexMap L h) := by
+  have : Mono (TopCat.ofHom (ContinuousMap.subtypeVal B)) :=
+    (TopCat.mono_iff_injective _).2 Subtype.val_injective
+  -- The map of subspaces is a change of coefficients followed by the map of the inclusion, as
+  -- both are followed by the map of `B ⊆ Z` to the map of `A ⊆ Z`.
+  have e : subsetTwistedChainComplexMap L h = twistedChainComplexCoefficientMap
+      ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L) := by
+    apply (cancel_mono (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal B)) L)).1
+    rw [subsetTwistedChainComplexMap_twistedChainComplexMap]
+    exact (twistedChainComplexMap_comp (TopCat.ofHom (ContinuousMap.inclusion h))
+      (TopCat.ofHom (ContinuousMap.subtypeVal B)) L).trans (Category.assoc _ _ _).symm
+  have := hf.quasiIso_twistedChainComplexMap
+    ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)
+  have hq : QuasiIso (twistedChainComplexCoefficientMap
+      ((pullbackCompIso (TopCat.ofHom (ContinuousMap.inclusion h)).hom
+        (TopCat.ofHom (ContinuousMap.subtypeVal B)).hom).hom.app L) ≫
+      twistedChainComplexMap (TopCat.ofHom (ContinuousMap.inclusion h))
+        ((pullback (X := TopCat.of ↥B) (ContinuousMap.subtypeVal B)).obj L)) := inferInstance
+  exact e ▸ hq
 
 /-- **A weak homotopy equivalence induces a quasi-isomorphism of normalized cubical chains with
 local coefficients.** -/
