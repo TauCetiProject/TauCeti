@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
+public import TauCeti.Analysis.PDE.EnergyForm.LowerOrder
 public import TauCeti.Analysis.PDE.Parabolic.Existence
 import TauCeti.Analysis.PDE.Parabolic.EnergyEstimate
 import TauCeti.Analysis.PDE.Parabolic.TimeRegularity
