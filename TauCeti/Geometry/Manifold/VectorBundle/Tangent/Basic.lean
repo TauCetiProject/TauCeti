@@ -130,6 +130,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.isInvertible_mfderiv_prodMap`: the differential of a product map is invertible
   where the differentials of both factors are, and
   `TauCeti.Manifold.isInvertible_mfderiv_prodMap_id_right` is the case `(x, y) ↦ (f x, y)`.
+* `TauCeti.Manifold.injective_mfderiv_prodMap`: the differential of a product map is injective
+  where the differentials of both factors are.
 * `TauCeti.Manifold.contMDiff_prod_right_comm` and
   `TauCeti.Manifold.isInvertible_mfderiv_prod_right_comm`: the map `((x, y), z) ↦ ((x, z), y)`
   exchanging the last two factors of a triple product is smooth with invertible differential;
@@ -1180,6 +1182,26 @@ theorem isInvertible_mfderiv_prodMap
   obtain ⟨e₂, he₂⟩ := hg'
   rw [mfderiv_prodMap hf hg, ← he₁, ← he₂]
   exact ⟨e₁.prodCongr e₂, rfl⟩
+
+/-- The differential of a product map is injective at a point where the differentials of both
+factors are injective. -/
+theorem injective_mfderiv_prodMap
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
+    {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 F' G'}
+    {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
+    {f : M → M'} {g : N → N'} {p : M × N}
+    (hf : MDifferentiableAt I I' f p.1) (hg : MDifferentiableAt J J' g p.2)
+    (hf' : Function.Injective (mfderiv I I' f p.1))
+    (hg' : Function.Injective (mfderiv J J' g p.2)) :
+    Function.Injective (mfderiv (I.prod J) (I'.prod J') (Prod.map f g) p) := by
+  rw [mfderiv_prodMap hf hg]
+  -- `ContinuousLinearMap.prodMap` acts as `Prod.map` by definition; rewriting with
+  -- `ContinuousLinearMap.coe_prodMap'` fails, because the tangent space of the product is only
+  -- definitionally the product of the tangent spaces.
+  exact hf'.prodMap hg'
 
 /-- The differential of `(x, y) ↦ (f x, y)` is invertible at a point where the differential of `f`
 is invertible. -/

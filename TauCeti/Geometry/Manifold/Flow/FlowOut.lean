@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Transverse
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # The flow-out of a transverse hypersurface
@@ -105,9 +106,7 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
   rcases isEmpty_or_nonempty S with hS | ⟨⟨s₀⟩⟩
   · exact fun p ↦ isEmptyElim p.2
   -- The tangent space of `S` embeds in that of `M`, so it is finite-dimensional.
-  have : FiniteDimensional ℝ E' := by
-    have : FiniteDimensional ℝ (TangentSpace I (ι s₀)) := inferInstanceAs (FiniteDimensional ℝ E)
-    exact FiniteDimensional.of_injective (mfderiv J I ι s₀).toLinearMap (himm s₀)
+  have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv (himm s₀)
   refine isLocalDiffeomorph_of_mfderiv_eq hΦ hn' fun p ↦ ?_
   set L := mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) p
   -- The differential `dψₜ` is injective, since `ψₜ` is a diffeomorphism.
@@ -123,16 +122,10 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
     have hL := mfderiv_globalFlow_comp_apply hc (hv.of_le hn') p
       (hι.mdifferentiableAt hn0) a w
     rw [Manifold.tangentSpaceProdEquiv_symm_apply] at hL
-    have h0 : a • v (ι p.2) + mfderiv J I ι p.2 w = 0 :=
-      hψinj (hL.symm.trans (hx.trans (map_zero _).symm))
-    obtain rfl : a = 0 := by
-      by_contra ha
-      refine isTransverseAlong_iff.1 htr p.2 (LinearMap.mem_range.2
-        ⟨-a⁻¹ • w, ((mfderiv J I ι p.2).map_smul _ _).trans ?_⟩)
-      rw [eq_neg_of_add_eq_zero_right h0, smul_neg, smul_smul, neg_mul, inv_mul_cancel₀ ha,
-        neg_smul, one_smul, neg_neg]
-    rw [zero_smul, zero_add] at h0
-    exact Prod.ext rfl ((himm p.2) (h0.trans (map_zero _).symm))
+    obtain ⟨rfl, rfl⟩ :=
+      (smul_add_mfderiv_eq_zero_iff (himm p.2) (isTransverseAlong_iff.1 htr p.2)).1
+        (hψinj (hL.symm.trans (hx.trans (map_zero _).symm)))
+    rfl
   -- Source and target have the same dimension, so the differential is invertible.
   have hfin : finrank ℝ (TangentSpace (𝓘(ℝ).prod J) p) =
       finrank ℝ (TangentSpace I (ψ p.1 (ι p.2))) := by

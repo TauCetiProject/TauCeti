@@ -11,6 +11,8 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.VectorField.Transverse
 
 /-!
 # The transport equation along a vector field, with zero values on a transverse slice
@@ -51,7 +53,7 @@ gives a function `h` smooth in the parameter and the point which solves `v a (h 
 `T × ι(K)` for a compact set `T` of parameters, with zero values on the slice
 (`TauCeti.exists_contMDiff_mvfderiv_eq_param`). For the Reeb vector fields of a smooth family of
 contact forms this is the Reeb-direction equation of the strict contact-Moser method
-(`TauCeti.SmoothForm.exists_contMDiff_strictMoserVectorField_eq_zero`).
+(`TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq`).
 
 ## Main results
 
@@ -95,6 +97,12 @@ private def transportField (Z : (x : M) → TangentSpace I x) (g : M → ℝ) :
     (p : ℝ × M) → TangentSpace (𝓘(ℝ).prod I) p :=
   fun p ↦ (g p.2, Z p.2)
 
+/-- The extended field at `(y, x)` is `(g x, Z x)`. -/
+@[simp]
+private theorem transportField_apply (Z : (x : M) → TangentSpace I x) (g : M → ℝ) (p : ℝ × M) :
+    transportField Z g p = (g p.2, Z p.2) :=
+  rfl
+
 /-- The extended vector field of a `C^n` vector field and a `C^n` function is `C^n`. -/
 private theorem contMDiff_transportField [IsManifold I 1 M] {n : ℕ∞ω}
     {Z : (x : M) → TangentSpace I x} {g : M → ℝ} (hZ : ContMDiff I I.tangent n (T% Z))
@@ -123,8 +131,7 @@ theorem mvfderiv_eq_zero_of_eventuallyEq_zero [FiniteDimensional ℝ E]
     (htr : Z (ι s) ∉ (mfderiv J I ι s).range) (hZ : mvfderiv I h (ι s) (Z (ι s)) = 0) :
     mvfderiv I h (ι s) = 0 := by
   set L := (mfderiv J I ι s).toLinearMap
-  have : FiniteDimensional ℝ (TangentSpace I (ι s)) := inferInstanceAs (FiniteDimensional ℝ E)
-  have : FiniteDimensional ℝ E' := Module.Finite.of_injective L himm
+  have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv himm
   -- The differential of `h` kills the tangent space of the slice, since `h ∘ ι` vanishes near `s`.
   have hL (w : TangentSpace J s) : mvfderiv I h (ι s) (L w) = 0 := by
     have hc := mvfderiv_comp_apply s hh hιs w
@@ -139,7 +146,8 @@ theorem mvfderiv_eq_zero_of_eventuallyEq_zero [FiniteDimensional ℝ E]
   have hv : v ∈ LinearMap.range L ⊔ ℝ ∙ Z (ι s) := htop ▸ Submodule.mem_top
   obtain ⟨_, ⟨w, rfl⟩, _, hz, rfl⟩ := Submodule.mem_sup.1 hv
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hz
-  rw [map_add, map_smul, hL, hZ, smul_zero, add_zero, zero_apply]
+  rw [map_add, map_smul, hL, hZ]
+  simp
 
 /-! ### Local solutions near a compact part of the slice -/
 
@@ -207,8 +215,11 @@ private theorem mfderiv_snd_transportFlowOut_zero_apply
       (fun τ : ℝ ↦ flowOf (transportField Z g) τ ((0 : ℝ), ι s)) 0 :=
     mdifferentiableAt_flowOf hW1 (mem_flowDomain_zero hW1 _)
   refine (mfderiv_comp_apply (g := Prod.snd) (0 : ℝ) mdifferentiableAt_snd htraj v.1).trans ?_
-  rw [mfderiv_snd, mfderiv_flowOf_trajectory_zero_apply hW1]
-  -- The second component of `a • (g (ι s), Z (ι s))` is `a • Z (ι s)`.
+  rw [mfderiv_snd, mfderiv_flowOf_trajectory_zero_apply hW1, transportField_apply]
+  -- The second component of `a • (g (ι s), Z (ι s))` is `a • Z (ι s)`. The simp lemma
+  -- `ContinuousLinearMap.snd_apply` does not fire, because the tangent space of `ℝ × M` is only
+  -- definitionally the product of the tangent spaces; `ContinuousLinearMap.snd` is `Prod.snd` by
+  -- definition.
   rfl
 
 /-- **The flow out of a transverse slice is a local diffeomorphism along the slice.** At a point
@@ -225,15 +236,9 @@ private theorem isLocalDiffeomorphAt_snd_transportFlowOut [FiniteDimensional ℝ
       Injective (mfderiv (𝓘(ℝ).prod J) I (fun q ↦ (transportFlowOut Z g ι q).2) (0, s)) := by
     refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
     obtain ⟨a, w⟩ := v
-    have h0 : a • Z (ι s) + mfderiv J I ι s w = 0 :=
-      (mfderiv_snd_transportFlowOut_zero_apply hZ hg hι s (a, w)).symm.trans hv
-    obtain rfl : a = 0 := by
-      by_contra ha
-      refine htr (LinearMap.mem_range.2 ⟨-a⁻¹ • w, ((mfderiv J I ι s).map_smul _ _).trans ?_⟩)
-      rw [eq_neg_of_add_eq_zero_right h0, smul_neg, smul_smul, neg_mul, inv_mul_cancel₀ ha,
-        neg_smul, one_smul, neg_neg]
-    rw [zero_smul, zero_add] at h0
-    exact Prod.ext rfl (himm (h0.trans (map_zero _).symm))
+    obtain ⟨rfl, rfl⟩ := (smul_add_mfderiv_eq_zero_iff himm htr).1
+      ((mfderiv_snd_transportFlowOut_zero_apply hZ hg hι s (a, w)).symm.trans hv)
+    rfl
   -- Source and target have the same dimension, so the inverse function theorem applies.
   exact isLocalDiffeomorphAt_of_injective_mfderiv
     (fun q hq ↦ (contMDiffAt_snd.comp q (hΨ q hq)).contMDiffWithinAt) hD (hD0 s)
@@ -262,8 +267,10 @@ private theorem mvfderiv_apply_eq_of_eventually
   rw [mvfderiv_comp_snd_apply] at h1
   have h3 := h1.unique (h2.congr_of_eventuallyEq hkH)
   -- The derivative of the real coordinate of `ℝ × M` is the real component of a tangent vector.
-  rw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_fst] at h3
-  -- Both sides are read at the point `Φ q` and its extended field `(g, Z)`.
+  rw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_fst, transportField_apply] at h3
+  -- Both sides are read at the point `Φ q`, which is `transportFlowOut Z g ι q` by definition,
+  -- and `ContinuousLinearMap.fst` is `Prod.fst` by definition; as above, its simp lemma does not
+  -- fire on the tangent space of `ℝ × M`.
   exact h3
 
 /-- By compactness, the `M`-component of the flow out of a transverse slice is injective and a
@@ -279,10 +286,7 @@ private theorem exists_isOpen_injOn_isLocalDiffeomorphOn_snd_transportFlowOut
   rcases K.eq_empty_or_nonempty with rfl | ⟨s₀, hs₀⟩
   · exact ⟨∅, empty_subset _, isOpen_empty, by simp, injOn_empty _, fun q ↦ q.2.elim⟩
   -- The tangent spaces of `S` embed in those of `M`, so `S` is finite-dimensional.
-  have : FiniteDimensional ℝ E' := by
-    have : FiniteDimensional ℝ (TangentSpace I (ι s₀)) :=
-      inferInstanceAs (FiniteDimensional ℝ E)
-    exact FiniteDimensional.of_injective (mfderiv J I ι s₀).toLinearMap (himm s₀ hs₀)
+  have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv (himm s₀ hs₀)
   obtain ⟨hD, hD0, -, hΨ0⟩ := transportFlowOut_basic hZ hg hι
   obtain ⟨U, hUo, hKU, hUinj, hUloc⟩ :=
     (show InjOn (fun q ↦ (transportFlowOut Z g ι q).2) ((fun s ↦ ((0 : ℝ), s)) '' K) by
@@ -379,25 +383,6 @@ variable {F G P : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Topological
   {L : ModelWithCorners ℝ F G} [TopologicalSpace P] [ChartedSpace G P]
   {v : P → (x : M) → TangentSpace I x} {ι : S → M}
 
-/-- The differential of `id × ι` at `(a, s)` is `(u, w) ↦ (u, dι w)`. -/
-private theorem mfderiv_prodMap_id_apply (hι : ContMDiff J I ∞ ι) (z : P × S)
-    (w : TangentSpace (L.prod J) z) :
-    mfderiv (L.prod J) (L.prod I) (Prod.map id ι) z w = (w.1, mfderiv J I ι z.2 w.2) := by
-  rw [mfderiv_prodMap (mdifferentiableAt_id (I := L) (M := P))
-    ((hι.mdifferentiable (by simp)) z.2), mfderiv_id]
-  rfl
-
-/-- The map `id × ι` has injective differential at `(a, s)` when `ι` has injective differential
-at `s`. -/
-private theorem injective_mfderiv_prodMap_id (hι : ContMDiff J I ∞ ι) {z : P × S}
-    (himm : Injective (mfderiv J I ι z.2)) :
-    Injective (mfderiv (L.prod J) (L.prod I) (Prod.map id ι) z) := fun w w' hww' ↦ by
-  have h' : ((w.1, mfderiv J I ι z.2 w.2) : TangentSpace L z.1 × TangentSpace I (ι z.2)) =
-      (w'.1, mfderiv J I ι z.2 w'.2) :=
-    (mfderiv_prodMap_id_apply hι z w).symm.trans (hww'.trans (mfderiv_prodMap_id_apply hι z w'))
-  obtain ⟨h1, h2⟩ := Prod.mk.inj h'
-  exact Prod.ext h1 (himm h2)
-
 /-- The vertical field of the family `v` is transverse to `id × ι` at `(a, s)` when `v a` is
 transverse to `ι` at `s`. -/
 private theorem verticalField_notMem_range_mfderiv_prodMap_id (hι : ContMDiff J I ∞ ι)
@@ -405,9 +390,13 @@ private theorem verticalField_notMem_range_mfderiv_prodMap_id (hι : ContMDiff J
     verticalField L v (Prod.map id ι z) ∉
       (mfderiv (L.prod J) (L.prod I) (Prod.map id ι) z).range := fun hmem ↦ by
   obtain ⟨w, hw⟩ := LinearMap.mem_range.1 hmem
-  have h' := congrArg Prod.snd ((mfderiv_prodMap_id_apply hι z w).symm.trans hw)
-  simp only [verticalField_snd, Prod.map_fst, Prod.map_snd, id_eq] at h'
-  exact htr (LinearMap.mem_range.2 ⟨w.2, h'⟩)
+  have h' := Manifold.mfderiv_prodMap_apply (mdifferentiableAt_id (I := L))
+    ((hι.mdifferentiable (by simp)) z.2) (Manifold.tangentSpaceProdEquiv z w)
+  rw [ContinuousLinearEquiv.symm_apply_apply, Manifold.tangentSpaceProdEquiv_symm_apply] at h'
+  replace h' := congrArg Prod.snd (hw.symm.trans h')
+  simp only [verticalField_snd, Prod.map_fst, Prod.map_snd, id_eq,
+    Manifold.tangentSpaceProdEquiv_apply] at h'
+  exact htr (LinearMap.mem_range.2 ⟨w.2, h'.symm⟩)
 
 end ProdMapId
 
@@ -442,21 +431,22 @@ theorem exists_contMDiff_mvfderiv_eq_param
   rcases K.eq_empty_or_nonempty with rfl | ⟨s₀, hs₀⟩
   · exact ⟨0, contMDiff_const, by simp, by simp, by simp⟩
   -- The tangent spaces of `S` embed in those of `M`, so `S` is finite-dimensional.
-  have : FiniteDimensional ℝ E' := by
-    have : FiniteDimensional ℝ (TangentSpace I (ι s₀)) :=
-      inferInstanceAs (FiniteDimensional ℝ E)
-    exact FiniteDimensional.of_injective (mfderiv J I ι s₀).toLinearMap (himm s₀ hs₀)
+  have : FiniteDimensional ℝ E' := finiteDimensional_of_injective_mfderiv (himm s₀ hs₀)
   -- Apply the single-field statement to the vertical field on `P × M` and the slice `id × ι`.
   have hι' : ContMDiff (L.prod J) (L.prod I) ∞ (Prod.map id ι) :=
     (contMDiff_id (I := L) (M := P)).prodMap hι
   have hdim' : finrank ℝ (F × E) = finrank ℝ (F × E') + 1 := by
     rw [Module.finrank_prod, Module.finrank_prod, hdim, add_assoc]
+  have himm' (z : P × S) (hz : z.2 ∈ K) :
+      Injective (mfderiv (L.prod J) (L.prod I) (Prod.map id ι) z) :=
+    Manifold.injective_mfderiv_prodMap mdifferentiableAt_id ((hι.mdifferentiable (by simp)) z.2)
+      (by rw [mfderiv_id]; exact injective_id) (himm z.2 hz)
   obtain ⟨h, hh, hZh, hι0⟩ := exists_contMDiff_mvfderiv_eq (contMDiff_verticalField hv)
     (I := L.prod I) hg hι' hdim' (hT.prod hK)
     (fun z hz z' hz' hzz' ↦ by
       simp only [Prod.map, id_eq, Prod.mk.injEq] at hzz'
       exact Prod.ext hzz'.1 (hinj hz.2 hz'.2 hzz'.2))
-    (fun z hz ↦ injective_mfderiv_prodMap_id hι (himm z.2 hz.2))
+    (fun z hz ↦ himm' z hz.2)
     (fun z hz ↦ verticalField_notMem_range_mfderiv_prodMap_id hι (htr z.1 hz.1 z.2 hz.2))
   -- The derivative of a slice `h (a, ·)` along `v a` is that of `h` along the vertical field.
   have hslice (z : P × M) (w : TangentSpace I z.2) : mvfderiv I (fun y ↦ h (z.1, y)) z.2 w =
@@ -475,7 +465,7 @@ theorem exists_contMDiff_mvfderiv_eq_param
       mvfderiv_eq_zero_of_eventuallyEq_zero (Z := verticalField L v) (s := (a, s)) hdim'
         ((hh.mdifferentiable (by simp)) _) ((hι'.mdifferentiable (by simp)) (a, s))
         (hι0.filter_mono (nhds_le_nhdsSet (show (a, s) ∈ T ×ˢ K from ⟨ha, hs⟩)))
-        (injective_mfderiv_prodMap_id hι (himm s hs))
+        (himm' (a, s) hs)
         (verticalField_notMem_range_mfderiv_prodMap_id hι (htr a ha s hs))
         ((hZh.self_of_nhdsSet (a, ι s)
           (show (a, ι s) ∈ T ×ˢ (ι '' K) from ⟨ha, mem_image_of_mem ι hs⟩)).trans hg0)

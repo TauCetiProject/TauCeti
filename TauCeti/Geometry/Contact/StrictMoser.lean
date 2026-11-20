@@ -97,7 +97,7 @@ compact, and the Reeb-direction equation need only hold near `K`.
 
 The Reeb-direction equation is solved by integrating along the Reeb flows out of a hypersurface
 transverse to them, with zero values on the hypersurface
-(`TauCeti.SmoothForm.exists_contMDiff_strictMoserVectorField_eq_zero`). Let `ι : S → M` be a
+(`TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq`). Let `ι : S → M` be a
 smooth map from a manifold of one dimension less, injective with injective differential on a
 compact set `K ⊆ S`, and transverse to the Reeb fields of `α_t` along `K` for the times `t` of a
 compact set `T`. On a σ-compact manifold there is then a smooth time-dependent function `h_t` which
@@ -122,7 +122,7 @@ transport equation `TauCeti.exists_contMDiff_mvfderiv_eq_param` for the family o
   partial flow pulls `α_t` back to `α_s` at every point along whose trajectory `h` solves the
   Reeb-direction equation.
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq`: the relative strict Moser theorem.
-* `TauCeti.SmoothForm.exists_contMDiff_strictMoserVectorField_eq_zero`: a solution of the
+* `TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq`: a solution of the
   Reeb-direction equation on a transverse slice, with zero values on the slice.
 * `TauCeti.SmoothForm.strictMoserDiffeomorph`: on a compact manifold, its flow as a diffeomorphism.
 * `TauCeti.SmoothForm.isStrictContactomorphism_strictMoserDiffeomorph`: the flow pulls `α_t` back
@@ -870,7 +870,7 @@ transverse to `ι` along `K` for every `t ∈ T`. Then there is a smooth time-de
 which solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` near `T × ι(K)` and
 vanishes on the slice near `T × K`. At a point `ι s` with `s ∈ K` where `∂_t α_t` vanishes for a
 time `t ∈ T`, the strict Moser vector field of `(α, h)` vanishes at time `t`. -/
-theorem exists_contMDiff_strictMoserVectorField_eq_zero {ι : S → M} (hι : ContMDiff J I ∞ ι)
+theorem exists_contMDiff_mvfderiv_reebVectorField_eq {ι : S → M} (hι : ContMDiff J I ∞ ι)
     (hdim : Module.finrank ℝ E = Module.finrank ℝ E' + 1) {T : Set ℝ} (hT : IsCompact T)
     {K : Set S} (hK : IsCompact K) (hinj : Set.InjOn ι K)
     (himm : ∀ s ∈ K, Function.Injective (mfderiv J I ι s))
