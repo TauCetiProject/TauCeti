@@ -19,8 +19,8 @@ and each edge `a` on its own is a maximal tree `SerreGraph.parallelTree a`. For 
 `𝔸` over it, based at the vertex `true`, the change of maximal tree
 `π₁(𝔸, parallelTree a) ≃* π₁(𝔸, parallelTree a')` sends the generator of the dart `(b, true)`,
 which crosses the edge `b` from `true` to `false`, to the product of the generators of `(b, true)`
-and of `(a, false)`; it fixes the vertex group `A_true` and conjugates `A_false` by the generator
-of `(a, true)`.
+and of `(a, false)`; it conjugates the vertex group `A_false` by the generator of `(a, true)`,
+while, as for every change of maximal tree, the vertex group `A_true` at the base is fixed.
 
 With trivial vertex groups the fundamental group relative to `parallelTree a` is free on the
 edges other than `a`: once each edge `b` is given a direction, the generators of the oriented
@@ -92,13 +92,6 @@ theorem π₁TreeEquiv_parallelTree_edge_false (a a' b : α) :
   rw [Bool.not_false]
   simp [Quiver.Hom.toPath, reverse_val (parallelGraph α)]
 
-/-- Based at the vertex `true`, changing the maximal tree fixes the vertex group `A_true`. -/
-theorem π₁TreeEquiv_parallelTree_of_true (a a' : α) (g : 𝔸.vertexGroup true) :
-    π₁TreeEquiv 𝔸 true (parallelTree a) (parallelTree a')
-        (π₁Tree.of (parallelTree a).darts true g) =
-      π₁Tree.of (parallelTree a').darts true g := by
-  simp
-
 /-- Based at the vertex `true`, changing the maximal tree from the edge `a` to the edge `a'`
 conjugates the vertex group `A_false` by the generator of the dart `(a, true)`. -/
 theorem π₁TreeEquiv_parallelTree_of_false (a a' : α) (g : 𝔸.vertexGroup false) :
@@ -118,8 +111,8 @@ variable {α : Type*} (𝔸 : GraphOfGroups (parallelGraph α)) [∀ v, Subsingl
 
 private def parallelIndexEquiv (a : α) :
     ↥({e : (parallelGraph α).E | e.2 = o e.1} \ (parallelTree a).darts) ≃ {b // b ≠ a} where
-  toFun e := ⟨e.1.1, fun h => e.2.2 (mem_parallelTree_darts.2 h)⟩
-  invFun b := ⟨(b.1, o b.1), rfl, fun h => b.2 (mem_parallelTree_darts.1 h)⟩
+  toFun e := ⟨e.val.1, fun h => e.property.2 (mem_parallelTree_darts.2 h)⟩
+  invFun b := ⟨(b.val, o b.val), rfl, fun h => b.property (mem_parallelTree_darts.1 h)⟩
   left_inv := by
     rintro ⟨⟨b, x⟩, hx, hb⟩
     obtain rfl : x = o b := hx
@@ -136,12 +129,12 @@ noncomputable def parallelBasis (a : α) :
     (FreeGroup.freeGroupCongr (parallelIndexEquiv o a)))
 
 @[simp] theorem parallelBasis_apply (a : α) (b : {b // b ≠ a}) : parallelBasis 𝔸 o a b =
-    π₁Tree.edge (parallelTree a).darts (b.1, o b.1) := by
+    π₁Tree.edge (parallelTree a).darts ((b : α), o b) := by
   apply (parallelBasis 𝔸 o a).repr.injective
   rw [FreeGroupBasis.repr_apply_coe]
   simp [parallelBasis, parallelIndexEquiv,
     π₁Tree.equivFreeGroup_edge (parallelGraph_isOrientation o) (parallelTree a).rev_mem
-      (e := (b.1, o b.1)) ⟨rfl, fun h => b.2 (mem_parallelTree_darts.1 h)⟩]
+      (e := ((b : α), o b)) ⟨rfl, fun h => b.property (mem_parallelTree_darts.1 h)⟩]
 
 end freeBasis
 

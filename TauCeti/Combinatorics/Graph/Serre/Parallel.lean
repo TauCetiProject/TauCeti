@@ -246,10 +246,10 @@ def parallelTree (a : α) : (parallelGraph α).SpanningTree where
   isTree := by
     -- Forgetting the edge label identifies the restriction to the edge `a` with the segment.
     let f : ((parallelGraph α).restrict {e | e.1 = a} fun _ h => h).Hom segment :=
-      { mapV := id, mapE := fun e => e.1.2, map_src := fun _ => rfl, map_rev := fun _ => rfl }
+      { mapV := id, mapE := fun e => e.val.2, map_src := fun _ => rfl, map_rev := fun _ => rfl }
     refine (f.toIso Function.bijective_id ⟨fun e e' h => ?_, fun b => ⟨⟨(a, b), rfl⟩, rfl⟩⟩
       ).isTree_iff.mpr segment_isTree
-    exact Subtype.ext (Prod.ext (e.2.trans e'.2.symm) h)
+    exact Subtype.ext (Prod.ext (e.property.trans e'.property.symm) h)
 
 @[simp] theorem mem_parallelTree_darts {a : α} {e : (parallelGraph α).E} :
     e ∈ (parallelTree a).darts ↔ e.1 = a :=
