@@ -15,9 +15,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 subspace. Their support-change and boundary laws use the native relative small-chain quotient.
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Simplicial Topology TopologicalSpace
 
@@ -34,7 +32,6 @@ attribute [local instance] MonoidalPreadditive.monoidalLinearInt
 variable {X : TopCat.{0}} (L : ModuleCat.{0} ℤ)
   (S : (TopCat.toSSet.obj X).Subcomplex) (U V W A B C : Opens X)
 
--- These local notations expand to the original native chains, relative chains and cochains.
 local notation "C[" U "]" => SSet.chainComplex
   (CategoryTheory.Functor.obj TopCat.toSSet (CategoryTheory.Functor.obj (Opens.toTopCat X) U)) L
 local notation "Q[" A "]" => TopPair.singularChainComplex (TopPair.ofSubset (A : Set X)) ℤₘ
@@ -115,34 +112,13 @@ lemma capInto_inclusion (p q n : ℕ) (h : p + q = n)
   · erw [Category.assoc, cap_naturality, ← Category.assoc, SSet.ι_chainComplexMap_f,
       TopCat.toSSet_map_inclusion'_toSSetObjCodRestrict]
     rw [← Category.assoc, SSet.ι_chainComplexMap_f]
+    -- Subcomplex inclusion evaluates a subtype simplex to its underlying ambient simplex.
     rfl
   · rw [zero_comp, ← Category.assoc, SSet.ι_chainComplexMap_f]
     rw [TopCat.ιChainComplex_capChain_alexanderWhitneyDiagonal]
     have he : S.ι.app _ σ = σ.val := rfl
     rw [he, hφ σ hσ]
     simp
-
-private lemma relative_simplex_zero {p : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋p⦌)
-    (hσ : Set.range (X.toSSetObjEquiv _ σ) ⊆ A) :
-    (TopCat.toSSet.obj X).ιChainComplex σ ≫
-        ((TopPair.ofSubset (A : Set X)).singularChainComplexπ ℤₘ).f p = 0 := by
-  have hτ := TopCat.toSSet_map_inclusion'_toSSetObjCodRestrict σ hσ
-  -- The source of the relative quotient is the ambient singular set after `toSSetPair` unfolds.
-  erw [← hτ, ← SSet.ι_chainComplexMap_f, Category.assoc, ← HomologicalComplex.comp_f]
-  have hz := TopPair.chainComplexMap_comp_singularChainComplexπ (TopPair.ofSubset (A : Set X)) ℤₘ
-  change (TopCat.toSSet.obj ((Opens.toTopCat X).obj A)).ιChainComplex _ ≫
-      (SSet.chainComplexMap (TopCat.toSSet.map (Opens.inclusion' A)) ℤₘ ≫ _).f p = 0
-  erw [hz]
-  exact comp_zero
-
-private lemma face_range_subset (A : Set X) {m n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (hσ : Set.range (X.toSSetObjEquiv _ σ) ⊆ A)
-    (f : SimplexCategory.mk m ⟶ SimplexCategory.mk n) :
-    Set.range (X.toSSetObjEquiv _ ((TopCat.toSSet.obj X).map f.op σ)) ⊆ A := by
-  rintro _ ⟨z, rfl⟩
-  rw [TopCat.toSSetObjEquiv_naturality_apply]
-  exact hσ ⟨_, rfl⟩
 
 private lemma capInto_inclusion_relative (p q n : ℕ) (h : p + q = n)
     (hS : ∀ (σ : (S : SSet) _⦋n⦌),
@@ -159,7 +135,10 @@ private lemma capInto_inclusion_relative (p q n : ℕ) (h : p + q = n)
   intro σ hσ
   obtain hA := (hS σ).resolve_left hσ
   -- The quotient source is definitionally the ambient singular chains, through `toSSetPair`.
-  erw [← Category.assoc, relative_simplex_zero A _ (face_range_subset _ _ hA _), zero_comp]
+  erw [← Category.assoc, TopPair.ιChainComplex_comp_singularChainComplexπ_eq_zero
+    (TopPair.ofSubset (A : Set X)) ℤₘ _ (by
+      rw [TopPair.range_ofSubset_map]
+      exact TopCat.range_toSSetObjEquiv_map_subset _ _ hA _), zero_comp]
 
 private lemma capInto_zero_of_front (p q n : ℕ) (h : p + q = n)
     (φ : ((TopCat.toSSet.obj X).chainComplex ℤₘ).X p ⟶ L)
@@ -193,7 +172,10 @@ private lemma relative_capInto_zero (p q n : ℕ) (h : p + q = n)
     (((TopPair.toSSetPair.obj (TopPair.ofSubset (A : Set X))).restrict S).hom.app _ τ)).1
     ⟨τ, rfl⟩
   rw [TopPair.range_ofSubset_map] at hA
-  erw [← Category.assoc, relative_simplex_zero A _ (face_range_subset _ _ hA _), zero_comp]
+  erw [← Category.assoc, TopPair.ιChainComplex_comp_singularChainComplexπ_eq_zero
+    (TopPair.ofSubset (A : Set X)) ℤₘ _ (by
+      rw [TopPair.range_ofSubset_map]
+      exact TopCat.range_toSSetObjEquiv_map_subset _ _ hA _), zero_comp]
 
 /-- The support-local cap on the original relative small chains. -/
 def relativeCapInto (p q n : ℕ) (h : p + q = n)

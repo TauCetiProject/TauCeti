@@ -282,35 +282,32 @@ lemma mayerVietorisδ_naturality (sq' : IsPushout t' l' r' b') [Mono t']
   HomologicalComplex.HomologySequence.δ_naturality
     (mayerVietorisShortComplexMap R sq sq' ht hl hr hb) _ _ n m h
 
-section ModuleCat
-
-open HomologicalComplex
-
+omit [Mono t] in
 /-- Chain lifts with the same boundary determine a cycle in the union term. -/
-lemma exists_cycle_of_chain_lifts {X₁ X₂ X₃ X₄ : SSet.{0}}
-    {t : X₁ ⟶ X₂} {l : X₁ ⟶ X₃} {r : X₂ ⟶ X₄} {b : X₃ ⟶ X₄}
-    (sq : CommSq t l r b) (L A : ModuleCat.{0} ℤ) (q : ℕ)
-    (w : A ⟶ (X₁.chainComplex L).X q)
-    (u : A ⟶ (X₂.chainComplex L).X (q + 1))
-    (v : A ⟶ (X₃.chainComplex L).X (q + 1))
-    (hu : u ≫ (X₂.chainComplex L).d (q + 1) q = w ≫ (SSet.chainComplexMap t L).f q)
-    (hv : v ≫ (X₃.chainComplex L).d (q + 1) q = w ≫ (SSet.chainComplexMap l L).f q) :
-    ∃ z : A ⟶ (X₄.chainComplex L).cycles (q + 1),
-      u ≫ (SSet.chainComplexMap r L).f (q + 1) -
-        v ≫ (SSet.chainComplexMap b L).f (q + 1) = z ≫ (X₄.chainComplex L).iCycles (q + 1) := by
-  let x := u ≫ (SSet.chainComplexMap r L).f (q + 1) -
-    v ≫ (SSet.chainComplexMap b L).f (q + 1)
-  have hx : x ≫ (X₄.chainComplex L).d (q + 1) q = 0 := by
+lemma exists_cycle_of_chain_lifts (sq : CommSq t l r b) {A : C} (q : ℕ)
+    (w : A ⟶ (X₁.chainComplex R).X q)
+    (u : A ⟶ (X₂.chainComplex R).X (q + 1))
+    (v : A ⟶ (X₃.chainComplex R).X (q + 1))
+    (hu : u ≫ (X₂.chainComplex R).d (q + 1) q = w ≫ (SSet.chainComplexMap t R).f q)
+    (hv : v ≫ (X₃.chainComplex R).d (q + 1) q = w ≫ (SSet.chainComplexMap l R).f q) :
+    ∃ z : A ⟶ (X₄.chainComplex R).cycles (q + 1),
+      u ≫ (SSet.chainComplexMap r R).f (q + 1) -
+        v ≫ (SSet.chainComplexMap b R).f (q + 1) = z ≫ (X₄.chainComplex R).iCycles (q + 1) := by
+  let x := u ≫ (SSet.chainComplexMap r R).f (q + 1) -
+    v ≫ (SSet.chainComplexMap b R).f (q + 1)
+  have hx : x ≫ (X₄.chainComplex R).d (q + 1) q = 0 := by
     dsimp only [x]
     rw [Preadditive.sub_comp, Category.assoc, Category.assoc,
       HomologicalComplex.Hom.comm, HomologicalComplex.Hom.comm,
       ← Category.assoc, ← Category.assoc, hu, hv]
-    apply sub_eq_zero.mpr
-    have hs := congrArg (fun f ↦ (SSet.chainComplexMap f L).f q) sq.w
-    simp only [CategoryTheory.Functor.map_comp, HomologicalComplex.comp_f] at hs
-    simpa only [Category.assoc] using congrArg (w ≫ ·) hs
-  exact ⟨(X₄.chainComplex L).liftCycles x q (ChainComplex.next_nat_succ q) hx,
-    ((X₄.chainComplex L).liftCycles_i x q (ChainComplex.next_nat_succ q) hx).symm⟩
+    simp only [Category.assoc, ← HomologicalComplex.comp_f, ← Functor.map_comp,
+      sq.w, sub_self]
+  exact ⟨(X₄.chainComplex R).liftCycles x q (ChainComplex.next_nat_succ q) hx,
+    ((X₄.chainComplex R).liftCycles_i x q (ChainComplex.next_nat_succ q) hx).symm⟩
+
+section ModuleCat
+
+open HomologicalComplex
 
 /-- Two chain lifts with a common boundary compute the native Mayer–Vietoris connecting map. -/
 lemma homologyπ_mayerVietorisδ_of_chain_lifts {X₁ X₂ X₃ X₄ : SSet.{0}}

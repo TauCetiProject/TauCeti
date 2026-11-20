@@ -14,9 +14,7 @@ Native relative small cycles cap with a cochain and then map by the singular May
 connecting morphism. This equals the localized cap of its coboundary with sign `(-1)^(p+1)`.
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 open CategoryTheory Limits HomologicalComplex MonoidalCategory Simplicial Topology TopologicalSpace
 
@@ -71,7 +69,7 @@ private lemma localized_cap_ambient (hCA : C ≤ A)
     ((TopPair.toSSetPair.obj (TopPair.ofSubset (C : Set X))).restrictι S) ℤₘ).f n ≫ ·) hn
 
 /-- The difference of the two localized cap chains is the ambient cap of their difference. -/
-lemma restrictSubsetMap_relativeCapInto_sub_eq_capChain (hCA : C ≤ A) (hCB : C ≤ B)
+private lemma restrictSubsetMap_relativeCapInto_sub_eq_capChain (hCA : C ≤ A) (hCB : C ≤ B)
     (hSU : ∀ m (σ : (S : SSet) _⦋m⦌),
       Set.range (X.toSSetObjEquiv _ σ.val) ⊆ U ∨
         Set.range (X.toSSetObjEquiv _ σ.val) ⊆ A)
@@ -120,7 +118,8 @@ private lemma relativeCapInto_open_mono (hUV : U ≤ V)
     relativeCapInto_inclusion L S V A p q n h (fun σ ↦ (hS n σ).imp (fun hs ↦ hs.trans hUV) id) φ]
 
 /-- The localized cap boundary has sign `(-1)^(p+1)` on native cycles. -/
-lemma relativeCapInto_comp_d_eq_zsmul_relativeCapInto (hWU : W ≤ U) (hCA : C ≤ A) (hAB : A ≤ B)
+private lemma relativeCapInto_comp_d_eq_zsmul_relativeCapInto
+    (hWU : W ≤ U) (hCA : C ≤ A) (hAB : A ≤ B)
     (hSU : ∀ m (σ : (S : SSet) _⦋m⦌),
       Set.range (X.toSSetObjEquiv _ σ.val) ⊆ U ∨
         Set.range (X.toSSetObjEquiv _ σ.val) ⊆ A)
@@ -155,7 +154,8 @@ lemma relativeCapInto_comp_d_eq_zsmul_relativeCapInto (hWU : W ≤ U) (hCA : C �
     ← HomologicalComplex.comp_f, hc, hm]
 
 /-- The signed localized boundary, with its target expressed as native cycles. -/
-lemma relativeCapInto_comp_d_eq_zsmul_capIntoCycles (hWU : W ≤ U) (hCA : C ≤ A) (hAB : A ≤ B)
+private lemma relativeCapInto_comp_d_eq_zsmul_capIntoCycles
+    (hWU : W ≤ U) (hCA : C ≤ A) (hAB : A ≤ B)
     (hSU : ∀ m (σ : (S : SSet) _⦋m⦌),
       Set.range (X.toSSetObjEquiv _ σ.val) ⊆ U ∨
         Set.range (X.toSSetObjEquiv _ σ.val) ⊆ A)
@@ -186,16 +186,6 @@ lemma relativeCapInto_comp_d_eq_zsmul_capIntoCycles (hWU : W ≤ U) (hCA : C ≤
     hWU hCA hAB hSU hSW p q n h φ _ hφ
 
 variable {S U V W A B C}
-
-private lemma small_chain_inclusion {ι : Type} (L : ModuleCat.{0} ℤ)
-    (F : ι → Set X) {A : Set X} {i : ι} (hA : A ⊆ F i) (n : ℕ) :
-    (SSet.chainComplexMap (TopCat.toSmallSingularSubcomplex F hA) L).f n ≫
-      (SSet.chainComplexMap (X.smallSingularSubcomplex F).ι L).f n =
-      (SSet.chainComplexMap
-        (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal A))) L).f n := by
-  have hc := congrArg (fun f ↦ (SSet.chainComplexMap f L).f n)
-    (TopCat.toSmallSingularSubcomplex_ι F hA)
-  simpa only [CategoryTheory.Functor.map_comp, HomologicalComplex.comp_f] using hc
 
 /-- On native relative small cycles, cap with `α` followed by Mayer–Vietoris δ is
 `(-1)^(p+1)` times the cap with `ζ` in the original intersection, for lifts whose difference is `α`.
@@ -256,7 +246,7 @@ lemma capCycles_homologyπ_mayerVietorisδ (S : (TopCat.toSSet.obj X).Subcomplex
     inf_le_left hCA hAD hSU hSW p q n h φ ζ hφ
   have hb := relativeCapInto_comp_d_eq_zsmul_capIntoCycles L S V (U ⊓ V) B D C
     inf_le_right hCB hBD hSV hSW p q n h ψ ζ hψ
-  obtain ⟨z, hz⟩ := SSet.exists_cycle_of_chain_lifts sq.toCommSq L (R.cycles (n + 1)) q
+  obtain ⟨z, hz⟩ := SSet.exists_cycle_of_chain_lifts L sq.toCommSq q
     (((( -1 : ℤ) ^ (p + 1)) • w) ≫ CW.iCycles q) a b ha hb
   have hd := SSet.homologyπ_mayerVietorisδ_of_chain_lifts sq L (R.cycles (n + 1)) q z
     (((-1 : ℤ) ^ (p + 1)) • w) a b hz ha hb
@@ -274,7 +264,7 @@ lemma capCycles_homologyπ_mayerVietorisδ (S : (TopCat.toSSet.obj X).Subcomplex
     conv_lhs =>
       erw [Category.assoc, HomologicalComplex.cyclesMap_i, ← Category.assoc, ← hz,
         Preadditive.sub_comp, Category.assoc a, Category.assoc b,
-        small_chain_inclusion, small_chain_inclusion]
+        chainComplexMap_f_toSmallSingularSubcomplex, chainComplexMap_f_toSmallSingularSubcomplex]
     have hcapi := ChainComplex.capCycles_i (k := ℤ)
       ((TopPair.ofSubset (C : Set X)).alexanderWhitneyDiagonal (ρ_ ℤₘ).inv)
       ((TopCat.toSSet.obj X).chainComplexPairing (ρ_ L).hom) p (q + 1) (n + 1) (by omega) α

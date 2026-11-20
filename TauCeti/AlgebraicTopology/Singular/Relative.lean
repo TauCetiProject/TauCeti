@@ -49,7 +49,7 @@ functor.
 
 noncomputable section
 
-open CategoryTheory Limits TopologicalSpace
+open Simplicial CategoryTheory Limits TopologicalSpace
 
 universe w v u
 
@@ -290,6 +290,16 @@ lemma chainComplexMap_comp_singularChainComplexπ :
     SSet.chainComplexMap (TopCat.toSSet.map P.map) R ≫ P.singularChainComplexπ R = 0 := by
   rw [← toSSetPair_obj_hom]
   exact (toSSetPair.obj P).chainComplex_condition R
+
+/-- A simplex lying in the subspace of a pair vanishes in relative singular chains. -/
+lemma ιChainComplex_comp_singularChainComplexπ_eq_zero {n : ℕ}
+    (σ : (TopCat.toSSet.obj P.fst) _⦋n⦌)
+    (hσ : Set.range (P.fst.toSSetObjEquiv _ σ) ⊆ Set.range P.map) :
+    (TopCat.toSSet.obj P.fst).ιChainComplex σ ≫ (P.singularChainComplexπ R).f n = 0 := by
+  obtain ⟨τ, hτ⟩ := (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff _ σ).2 hσ
+  -- The relative quotient source is the ambient singular chains after toSSetPair unfolds.
+  erw [← hτ, ← SSet.ι_chainComplexMap_f, Category.assoc, ← HomologicalComplex.comp_f,
+    chainComplexMap_comp_singularChainComplexπ, HomologicalComplex.zero_f, comp_zero]
 
 variable {P P'} in
 /-- A map of pairs `f : (X, A) ⟶ (X', A')` whose map of ambient spaces factors through the
@@ -694,6 +704,10 @@ variable {X : TopCat.{0}} (U : Opens X) (A : Set X)
 abbrev openSubspacePair : TopPair.{0} :=
   TopPair.ofSubset (Opens.inclusion' U ⁻¹' (A : Set X))
 
+/-- The open-subspace pair of a complement is the complement pair of the inverse image. -/
+lemma openSubspacePair_compl :
+    openSubspacePair U Aᶜ = ofSubset (Opens.inclusion' U ⁻¹' A)ᶜ := rfl
+
 /-- The map of original relative pairs induced by the open inclusion. -/
 def openSubspaceInclusion :
     openSubspacePair U A ⟶ TopPair.ofSubset (A : Set X) :=
@@ -726,6 +740,7 @@ lemma restrictSubsetMap_right
   apply Subtype.ext
   erw [restrictSubsetMap, SSetPair.restrictMap_right_app_coe]
   erw [TopPair.toSSetPair_map_right, TopPair.ofSubsetMap_fst, CategoryTheory.Functor.map_id]
+  -- The identity natural transformation evaluates to the original simplex.
   rfl
 
 /-- Relative quotient maps commute with support restriction. -/

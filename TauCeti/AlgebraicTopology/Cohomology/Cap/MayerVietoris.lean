@@ -19,9 +19,7 @@ The equality takes place in the homology of the original intersection, for integ
 coefficients, including torsion and zero coefficients.
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Simplicial Topology TopologicalSpace
 
@@ -94,7 +92,9 @@ private def openFundamentalClass (W : Opens Mₜ)
     ((openSubspacePair W (K : Set Mₜ)ᶜ).singularChainComplex
       ℤₘ).homology d := by
   let oW := o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding
-  convert oW.fundamentalClassOn hn (Opens.isCompact_preimage_inclusion' W K hKW) using 1
+  rw [TopPair.openSubspacePair_compl]
+  exact oW.fundamentalClassOn hn (W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion']))
 
 private lemma fundamentalClassOn_open_preimage (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W) :
@@ -102,29 +102,21 @@ private lemma fundamentalClassOn_open_preimage (W : Opens Mₜ)
       (openSubspaceInclusion W (K : Set Mₜ)ᶜ) ℤₘ d
       (openFundamentalClass o hn W K hKW) = o.fundamentalClassOn hn K.isCompact := by
   have hy := o.localHomologyMap_fundamentalClassOn_comap hn
-    (j := (Opens.inclusion' W).hom) W.isOpenEmbedding (Opens.isCompact_preimage_inclusion' W K hKW)
-  have hKI := (Opens.image_preimage_inclusion' W K hKW).symm.subset
+    (j := (Opens.inclusion' W).hom) W.isOpenEmbedding (
+      W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion']))
+  have hKI := (Set.image_preimage_eq_of_subset (f := Opens.inclusion' W)
+    (s := (K : Set Mₜ)) (by rwa [Opens.set_range_inclusion'])).symm.subset
   have hh := congrArg
     (localHomologyRestriction ℤₘ hKI d) hy
   rw [o.localHomologyRestriction_fundamentalClassOn_of_subset hn
-    ((Opens.isCompact_preimage_inclusion' W K hKW).image (Opens.inclusion' W).hom.continuous)
+    ((W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])).image (Opens.inclusion' W).hom.continuous)
     K.isCompact hKI] at hh
   rw [← ConcreteCategory.comp_apply, localHomologyMap_comp_localHomologyRestriction,
     localHomologyMap_def] at hh
   -- The open-subspace pair is the complement pair used by local homology.
-  convert hh using 1
-  erw [openSubspaceInclusion]
-  rfl
-
-omit [T2Space M] in
-private lemma isIso_small_restrictι (A : Set Mₜ) {ι : Type}
-    (F : ι → Set Mₜ) (hF : ∀ i, IsOpen (F i)) (hcov : ⋃ i, F i = Set.univ) (n : ℕ) :
-    IsIso (SSetPair.homologyMap ((TopPair.toSSetPair.obj (TopPair.ofSubset A)).restrictι
-      ((Mₜ).smallSingularSubcomplex F)) ℤₘ n) := by
-  have hi := TopPair.isIso_homologyMap_restrictι_smallSingularSubcomplex
-    ℤₘ (TopPair.ofSubset A) F hF hcov n
-  erw [TopPair.smallSingularSubcomplex_eq (TopPair.ofSubset A) F] at hi
-  exact hi
+  exact hh
 
 private lemma localized_cap_fundamentalClass (W : Opens Mₜ) (K : Compacts Mₜ)
     (hKW : (K : Set Mₜ) ⊆ W) {ι : Type}
@@ -143,7 +135,8 @@ private lemma localized_cap_fundamentalClass (W : Opens Mₜ) (K : Compacts Mₜ
     capIntoHomology L ((Mₜ).smallSingularSubcomplex F) W
         ⟨(K : Set Mₜ)ᶜ, K.isCompact.isClosed.isOpen_compl⟩ hSW p q d h ζ z =
       (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).capFundamentalClassOn
-        hn L (Opens.isCompact_preimage_inclusion' W K hKW) p q h (TopPair.singularCohomologyMap
+        hn L (W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])) p q h (TopPair.singularCohomologyMap
           (openSubspaceInclusion W (K : Set Mₜ)ᶜ) p
           (((TopPair.ofSubset (K : Set Mₜ)ᶜ).singularCochainComplex ℤₘ ℤ L).homologyπ
             p ζ)) := by
@@ -158,7 +151,8 @@ private lemma localized_cap_fundamentalClass (W : Opens Mₜ) (K : Compacts Mₜ
     exact ht
   have : IsIso (SSetPair.homologyMap
       ((TopPair.toSSetPair.obj (TopPair.ofSubset (D : Set Mₜ))).restrictι S) ℤₘ d) :=
-    isIso_small_restrictι (D : Set Mₜ) F hF hcov d
+    TopPair.isIso_homologyMap_restrictι_smallSingularSubcomplex_ofSubset
+      ℤₘ (D : Set Mₜ) F hF hcov d
   have : IsIso (SSetPair.homologyMap ((TopPair.toSSetPair.obj P).restrictι T) ℤₘ d) :=
     TopPair.isIso_homologyMap_restrictι_smallSingularSubcomplex
       ℤₘ P (fun i ↦ TopPair.Hom.fst f ⁻¹' F i)
@@ -178,11 +172,14 @@ private lemma support_excision_preimage (W : Opens Mₜ)
     (K : Compacts Mₜ) (hKW : (K : Set Mₜ) ⊆ W) (p : ℕ)
     (hN : (K : Set Mₜ) ⊆
       ((⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ),
-          Opens.isCompact_preimage_inclusion' W K hKW⟩ : Compacts ((Opens.toTopCat Mₜ).obj W)).map
+          W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])⟩ : Compacts ((Opens.toTopCat Mₜ).obj W)).map
         (Opens.inclusion' W) (Opens.inclusion' W).hom.continuous : Set Mₜ)) :
     TopCat.singularCohomologyComplRestrict ℤₘ ℤ L hN p ≫
       TopCat.singularCohomologyComplCompactsMap W.isOpenEmbedding.injective
-        ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ), Opens.isCompact_preimage_inclusion' W K hKW⟩ p =
+        ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ),
+      W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])⟩ p =
       TopPair.singularCohomologyMap
         (R := ℤₘ) (k := ℤ) (M := L)
         (openSubspaceInclusion W (K : Set Mₜ)ᶜ) p := by
@@ -209,7 +206,8 @@ private lemma exists_small_fundamentalCycle (K : Compacts Mₜ) {ι : Type}
   let S := (Mₜ).smallSingularSubcomplex F
   let Q := (TopPair.toSSetPair.obj P).restrict S
   let j := SSetPair.homologyMap ((TopPair.toSSetPair.obj P).restrictι S) ℤₘ d
-  have : IsIso j := isIso_small_restrictι (K : Set Mₜ)ᶜ F hF hcov d
+  have : IsIso j := TopPair.isIso_homologyMap_restrictι_smallSingularSubcomplex_ofSubset
+    ℤₘ (K : Set Mₜ)ᶜ F hF hcov d
   obtain ⟨y, hy⟩ := (ConcreteCategory.bijective_of_isIso j).surjective
     (o.fundamentalClassOn hn K.isCompact)
   obtain ⟨z, hz⟩ :=
@@ -272,21 +270,29 @@ private lemma duality_excision_preimage (W : Opens Mₜ)
     (p q : ℕ) (h : p + q = d)
     (hN : (K : Set Mₜ) ⊆
       ((⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ),
-          Opens.isCompact_preimage_inclusion' W K hKW⟩ : Compacts ((Opens.toTopCat Mₜ).obj W)).map
+          W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])⟩ : Compacts ((Opens.toTopCat Mₜ).obj W)).map
         (Opens.inclusion' W) (Opens.inclusion' W).hom.continuous : Set Mₜ))
     (a : (TopPair.ofSubset (K : Set Mₜ)ᶜ).singularCohomology ℤₘ ℤ L p) :
     (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).dualityMap hn L p q h
         (TopCat.compactSupportCohomologyι p
-          ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ), Opens.isCompact_preimage_inclusion' W K hKW⟩
+          ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ),
+      W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])⟩
           (TopCat.singularCohomologyComplCompactsMap W.isOpenEmbedding.injective
-            ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ), Opens.isCompact_preimage_inclusion' W K hKW⟩ p
+            ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ),
+      W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])⟩ p
             (TopCat.singularCohomologyComplRestrict ℤₘ ℤ L hN p a))) =
       (o.comap (j := (Opens.inclusion' W).hom) W.isOpenEmbedding).capFundamentalClassOn
-        hn L (Opens.isCompact_preimage_inclusion' W K hKW) p q h (TopPair.singularCohomologyMap
+        hn L (W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])) p q h (TopPair.singularCohomologyMap
           (openSubspaceInclusion W (K : Set Mₜ)ᶜ)
           p a) := by
   let NW : Compacts ((Opens.toTopCat Mₜ).obj W) :=
-    ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ), Opens.isCompact_preimage_inclusion' W K hKW⟩
+    ⟨Opens.inclusion' W ⁻¹' (K : Set Mₜ),
+      W.isOpenEmbedding.isInducing.isCompact_preimage' K.isCompact
+      (by rwa [Opens.set_range_inclusion'])⟩
   have hc := ConcreteCategory.congr_hom (support_excision_preimage L W K hKW p hN) a
   erw [ConcreteCategory.comp_apply] at hc
   have hd := HomologicalOrientation.dualityMap_compactSupportCohomologyι_apply
@@ -296,6 +302,7 @@ private lemma duality_excision_preimage (W : Opens Mₜ)
   erw [hc] at hd
   erw [hc]
   rw [HomologicalOrientation.capFundamentalClassOn_apply]
+  -- The native complement-preimage pair and its inclusion are the open-subspace pair/map.
   convert hd using 1
 
 private lemma localized_duality_compact_union (U V : Opens Mₜ)
@@ -369,10 +376,10 @@ private lemma localized_duality_compact_union (U V : Opens Mₜ)
   erw [hζ] at hright
   let NW : Compacts ((Opens.toTopCat Mₜ).obj W) :=
     ⟨Opens.inclusion' W ⁻¹' ((K ⊓ N : Compacts Mₜ) : Set Mₜ),
-      Opens.isCompact_preimage_inclusion' W (K ⊓ N) hKW⟩
-  have hN : ((K ⊓ N : Compacts Mₜ) : Set Mₜ) ⊆
-      (NW.map (Opens.inclusion' W) (Opens.inclusion' W).hom.continuous : Set Mₜ) :=
-    (Opens.image_preimage_inclusion' W (K ⊓ N) hKW).symm.subset
+      W.isOpenEmbedding.isInducing.isCompact_preimage' (K ⊓ N).isCompact
+      (by rwa [Opens.set_range_inclusion'])⟩
+  have hN := (Set.image_preimage_eq_of_subset (f := Opens.inclusion' W)
+    (s := ((K ⊓ N : Compacts Mₜ) : Set Mₜ)) (by rwa [Opens.set_range_inclusion'])).symm.subset
   have hδc := ConcreteCategory.congr_hom
     (TopCat.compactSupportCohomologyι_compactSupportCohomologyMayerVietorisδ ℤₘ ℤ L U V hUV (K ⊔ N)
       K.isCompact N.isCompact hKU hNV (by exact Set.Subset.rfl) NW hN p (p + 1) rfl) a
