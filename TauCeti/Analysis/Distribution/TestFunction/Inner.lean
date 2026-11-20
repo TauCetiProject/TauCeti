@@ -107,7 +107,9 @@ theorem ae_eq_of_forall_integral_inner_eq_rclike {𝕜 F : Type*} [RCLike 𝕜] 
     g =ᵐ[μ.restrict Ω] h := by
   have hsmul (r : ℝ) (a b : F) : ⟪r • a, b⟫_𝕜 = r • ⟪a, b⟫_𝕜 := by
     rw [← algebraMap_smul 𝕜 r a, RCLike.algebraMap_eq_ofReal, inner_smul_real_left]
-  -- The real parts of the pairings form the underlying real inner product.
+  -- The real parts of the pairings form the underlying real inner product. It is built by hand,
+  -- rather than as `InnerProductSpace.rclikeToReal`, so that it extends the given
+  -- `[NormedSpace ℝ F]` on which `𝓓(Ω, F)` depends instead of the restricted-scalars structure.
   let _ : InnerProductSpace ℝ F :=
     { inner a b := RCLike.re ⟪a, b⟫_𝕜
       norm_sq_eq_re_inner a := by simp [sq]
@@ -119,10 +121,14 @@ theorem ae_eq_of_forall_integral_inner_eq_rclike {𝕜 F : Type*} [RCLike 𝕜] 
     (LinearMap.mk₂ ℝ (fun a b ↦ ⟪a, b⟫_𝕜) inner_add_left hsmul inner_add_right
       fun r a b ↦ by rw [← inner_conj_symm, hsmul, RCLike.conj_smul, inner_conj_symm]) 1
     fun a b ↦ by simpa using norm_inner_le_norm (𝕜 := 𝕜) a b
+  have hB (a b : F) : B a b = ⟪a, b⟫_𝕜 := rfl
+  have hre (a b : F) : ⟪a, b⟫_ℝ = RCLike.re ⟪a, b⟫_𝕜 := rfl
   refine ae_eq_of_forall_integral_inner_eq hg hh fun φ ↦ ?_
-  change ∫ x, RCLike.re (B (φ x) (g x)) ∂μ = ∫ x, RCLike.re (B (φ x) (h x)) ∂μ
-  rw [integral_re (φ.integrable_bilin B hg), integral_re (φ.integrable_bilin B hh)]
-  exact congrArg _ (H φ)
+  have hint {f : E → F} (hf : LocallyIntegrableOn f Ω μ) :
+      Integrable (fun x ↦ ⟪(φ : E → F) x, f x⟫_𝕜) μ := by
+    simpa only [hB] using φ.integrable_bilin B hf
+  simp only [hre]
+  rw [integral_re (hint hg), integral_re (hint hh), H φ]
 
 /-- The **fundamental lemma** for continuous fields valued in an inner product space `F` over
 `𝕜 = ℝ` or `ℂ`: continuous `g, h : E → F` with `∫ ⟪φ, g⟫_𝕜 = ∫ ⟪φ, h⟫_𝕜` for every `φ ∈ 𝓓(E, F)`
