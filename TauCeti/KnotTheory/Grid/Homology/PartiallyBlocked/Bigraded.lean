@@ -67,32 +67,6 @@ local notation "F" => ZMod 2
 
 /-! ### Blocked chains form a homogeneous submodule -/
 
-/-- Every monomial of a homogeneous component of a chain of `GC⁻` is a monomial of the chain. -/
-private theorem support_decompose_bigradedChainMinusGrading_subset (R : Type*) [CommRing R]
-    (c : GridChainMinus R n) (g : ℤ × ℤ) (x : GridState n) :
-    ((DirectSum.decompose (G.bigradedChainMinusGrading R).piece c g : GridChainMinus R n)
-      x).support ⊆ (c x).support := by
-  classical
-  intro e he
-  have hmem (q : ℤ × ℤ) {f : Fin n →₀ ℕ}
-      (hf : f ∈ ((DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q :
-        GridChainMinus R n) x).support) : G.monomialBidegree x f = q := by
-    have hq : (DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q :
-        GridChainMinus R n) ∈ G.bigradedChainMinusPiece R q := by
-      rw [← bigradedChainMinusGrading_piece]
-      exact (DirectSum.decompose (G.bigradedChainMinusGrading R).piece c q).2
-    rw [mem_bigradedChainMinusPiece] at hq
-    exact hq x f hf
-  rw [MvPolynomial.mem_support_iff] at he ⊢
-  rw [← DirectSum.sum_support_decompose (G.bigradedChainMinusGrading R).piece c,
-    Finsupp.finsetSum_apply, MvPolynomial.coeff_sum,
-    Finset.sum_eq_single_of_mem g (DFinsupp.mem_support_iff.mpr fun h0 => he (by simp [h0]))]
-  · exact he
-  · intro q _ hqg
-    by_contra hne
-    exact hqg ((hmem q (MvPolynomial.mem_support_iff.mpr hne)).symm.trans
-      (hmem g (MvPolynomial.mem_support_iff.mpr he)))
-
 /-- The chains blocked for a set of columns form a homogeneous submodule of `GC⁻`: a monomial
 involves a blocked variable whatever its bidegree. -/
 theorem isHomogeneous_blockedChains (R : Type*) [CommRing R] (S : Finset (Fin n)) :

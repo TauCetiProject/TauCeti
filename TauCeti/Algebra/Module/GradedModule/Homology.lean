@@ -142,21 +142,11 @@ variable [Ring R] [Ring S] [SMul R S]
   (hd : d ∘ₗ d = 0) {N : Submodule S M} (hN : N ≤ N.comap d)
   (hNG : SetLike.IsHomogeneous G.piece N)
 
-include hdG in
-/-- The endomorphism of `M ⧸ N` induced by a homogeneous `d` is homogeneous of the same degree
-for the quotient grading. -/
-theorem isHomogeneous_mapQ :
-    LinearMap.IsHomogeneous (N.mapQ N d hN) (G.quotient N hNG).piece (G.quotient N hNG).piece r :=
-  LinearMap.isHomogeneous_def.2 fun _ y hy ↦ by
-    obtain ⟨x, hx, rfl⟩ := (G.mem_quotient_piece_iff N hNG).1 hy
-    rw [Submodule.mapQ_apply]
-    exact G.mk_mem_quotient_piece N hNG (hdG.map_mem hx)
-
 /-- The internal grading of the homology of the endomorphism induced by `d` on `M ⧸ N`, for a
 homogeneous `d` and a homogeneous `d`-stable submodule `N`: its degree-`p` piece consists of the
 classes of the elements of degree `p` whose image under `d` lies in `N`. -/
 noncomputable def quotientHomology : InternalGrading R (d.quotientHomology hd N hN) ι :=
-  (G.quotient N hNG).homology (G.isHomogeneous_mapQ hdG hN hNG) (d.mapQ_comp_mapQ_eq_zero hd N hN)
+  (G.quotient N hNG).homology (G.isHomogeneous_mapQ N hNG hdG hN) (d.mapQ_comp_mapQ_eq_zero hd N hN)
 
 /-- A class of quotient homology is homogeneous of degree `p` exactly when it is the class of an
 element `m` of degree `p` with `d m ∈ N`. -/
