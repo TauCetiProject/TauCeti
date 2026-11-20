@@ -374,34 +374,6 @@ namespace ClassicalSymbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m R : ℝ}
 
-open HomogeneousSymbol Finset
-
-/-- The remainder of the adjoint symbol of a properly supported classical symbol after `N` terms
-has order `m - N`: it is the remainder of the adjoint expansion after `N` terms, plus the remainder
-after `N - k` homogeneous terms of each term `adjointTerm a k`, `k < N`. -/
-private theorem exists_remainder_properAdjoint (a : ClassicalSymbol n V W m)
-    (ha : a.toSymbol.HasNearDiagonalKernel R) (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
-    ∃ r : Symbol n W V (m - N), ∀ p, r.coefficient p =
-      (a.toSymbol.properAdjoint ha).coefficient p -
-        ∑ j ∈ range N, χ p.2 • (adjointTerms a.term j).coefficient p := by
-  obtain ⟨r₀, hr₀⟩ := Symbol.isAsymptoticSum_iff.1 (Symbol.isAsymptoticSum_properAdjoint ha) N
-  -- The remainder of `adjointTerm a k` after `N - k` terms has order `m - N` for `k ≤ N`.
-  have hord (k : ℕ) : m - k - ((N - k : ℕ) : ℝ) ≤ m - N := by
-    have : (N : ℝ) ≤ k + ((N - k : ℕ) : ℝ) := by exact_mod_cast le_add_tsub
-    linarith
-  refine ⟨r₀ + ∑ k ∈ range N, Symbol.inclusion (hord k) ((a.adjointTerm k).remainder χ (N - k)),
-    fun p ↦ ?_⟩
-  have hp := congrFun hr₀ p
-  simp only [Pi.sub_apply, Finset.sum_apply, Symbol.coefficient_inclusion] at hp
-  simp only [Symbol.coefficient_add, Symbol.coefficient_sum, Symbol.coefficient_inclusion,
-    Pi.add_apply, Finset.sum_apply, ← hp, coefficient_remainder, toSymbol_adjointTerm,
-    term_adjointTerm, coefficient_castDegree, coefficient_adjointTerms, Finset.smul_sum,
-    Finset.sum_sub_distrib]
-  -- Reindex the double sum over `k + i = j < N` by `k < N`, `i < N - k`.
-  rw [Finset.sum_range_diag_flip N
-    fun k i ↦ χ p.2 • (HomogeneousSymbol.adjointTerm k (a.term i)).coefficient p]
-  abel
-
 /-- **The adjoint of a properly supported classical symbol is classical.** For a classical symbol
 `a` of order `m` between complex Hilbert spaces whose quantization has kernel supported within
 distance `R` of the diagonal, the adjoint symbol `a*` (`TauCeti.Symbol.properAdjoint`), whose
@@ -411,7 +383,8 @@ def properAdjoint (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasNearDiagonal
     ClassicalSymbol n W V m where
   toSymbol := a.toSymbol.properAdjoint ha
   term := adjointTerms a.term
-  exists_remainder' := ⟨default, exists_remainder_properAdjoint a ha default⟩
+  exists_remainder' := ⟨default, exists_remainder_adjointTerms_of_isAsymptoticSum a
+    (Symbol.isAsymptoticSum_properAdjoint ha) default⟩
 
 variable (a : ClassicalSymbol n V W m) (ha : a.toSymbol.HasNearDiagonalKernel R)
 
