@@ -63,16 +63,16 @@ noncomputable def zeroPatternSetHomeomorph [Zero K] [TopologicalSpace K] [Topolo
     zeroPatternSet α β K A ≃ₜ (({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) := by
   classical
   exact {
-    toFun z := (fun a ↦ ⟨z.1.1 a.1, fun hz ↦ a.2 ((z.2 a.1).mp hz)⟩, z.1.2)
-    invFun w := ⟨(fun a ↦ if ha : a ∈ A then 0 else (w.1 ⟨a, ha⟩).1, w.2), fun a ↦ by
-      by_cases ha : a ∈ A <;> simp [ha, (w.1 _).2]⟩
+    toFun z := (fun a ↦ ⟨z.val.1 a.val, fun hz ↦ a.property ((z.property a.val).mp hz)⟩, z.val.2)
+    invFun w := ⟨(fun a ↦ if ha : a ∈ A then 0 else (w.1 ⟨a, ha⟩).val, w.2), fun a ↦ by
+      by_cases ha : a ∈ A <;> simp [ha, (w.1 _).property]⟩
     left_inv z := by
       ext a
-      · by_cases ha : a ∈ A <;> simp [ha, (z.2 a).mpr]
+      · by_cases ha : a ∈ A <;> simp [ha, (z.property a).mpr]
       · rfl
     right_inv w := by
       ext a
-      · simp [a.2]
+      · simp [a.property]
       · rfl
     continuous_toFun := by fun_prop
     continuous_invFun := by
@@ -83,14 +83,14 @@ noncomputable def zeroPatternSetHomeomorph [Zero K] [TopologicalSpace K] [Topolo
 @[simp]
 theorem val_zeroPatternSetHomeomorph_fst_apply [Zero K] [TopologicalSpace K]
     [TopologicalSpace β] {A : Set α} (z : zeroPatternSet α β K A) (a : {a : α // a ∉ A}) :
-    ((zeroPatternSetHomeomorph α β K A z).1 a).1 = z.1.1 a.1 := by
+    ((zeroPatternSetHomeomorph α β K A z).1 a).val = z.val.1 a.val := by
   simp [zeroPatternSetHomeomorph]
 
 /-- The unrestricted factor is unchanged by the zero-pattern homeomorphism. -/
 @[simp]
 theorem zeroPatternSetHomeomorph_snd_apply [Zero K] [TopologicalSpace K] [TopologicalSpace β]
     {A : Set α} (z : zeroPatternSet α β K A) :
-    (zeroPatternSetHomeomorph α β K A z).2 = z.1.2 := by
+    (zeroPatternSetHomeomorph α β K A z).2 = z.val.2 := by
   simp [zeroPatternSetHomeomorph]
 
 /-- The inverse fills the prescribed zero coordinates with zero. -/
@@ -98,7 +98,7 @@ theorem zeroPatternSetHomeomorph_snd_apply [Zero K] [TopologicalSpace K] [Topolo
 theorem zeroPatternSetHomeomorph_symm_fst_apply_of_mem [Zero K] [TopologicalSpace K]
     [TopologicalSpace β] {A : Set α} (w : ({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) {a : α}
     (ha : a ∈ A) :
-    ((zeroPatternSetHomeomorph α β K A).symm w).1.1 a = 0 := by
+    ((zeroPatternSetHomeomorph α β K A).symm w).val.1 a = 0 := by
   simp [zeroPatternSetHomeomorph, ha]
 
 /-- Outside the zero set, the inverse restores the retained coordinate. -/
@@ -106,14 +106,14 @@ theorem zeroPatternSetHomeomorph_symm_fst_apply_of_mem [Zero K] [TopologicalSpac
 theorem zeroPatternSetHomeomorph_symm_fst_apply_of_notMem [Zero K] [TopologicalSpace K]
     [TopologicalSpace β] {A : Set α} (w : ({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) {a : α}
     (ha : a ∉ A) :
-    ((zeroPatternSetHomeomorph α β K A).symm w).1.1 a = (w.1 ⟨a, ha⟩).1 := by
+    ((zeroPatternSetHomeomorph α β K A).symm w).val.1 a = (w.1 ⟨a, ha⟩).val := by
   simp [zeroPatternSetHomeomorph, ha]
 
 /-- The inverse also leaves the unrestricted factor unchanged. -/
 @[simp]
 theorem zeroPatternSetHomeomorph_symm_snd_apply [Zero K] [TopologicalSpace K]
     [TopologicalSpace β] {A : Set α} (w : ({a : α // a ∉ A} → {z : K // z ≠ 0}) × β) :
-    ((zeroPatternSetHomeomorph α β K A).symm w).1.2 = w.2 := by
+    ((zeroPatternSetHomeomorph α β K A).symm w).val.2 = w.2 := by
   simp [zeroPatternSetHomeomorph]
 
 /-- A coordinate stratum is locally closed when only finitely many first coordinates are required

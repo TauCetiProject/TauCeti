@@ -65,6 +65,6 @@ theorem coe_mem_smul_iff_dvd {c y : s} : (y : A) ∈ (c : A) • (s : Set A) ↔
   · rintro ⟨r, hr, h⟩
     exact ⟨⟨r, hr⟩, Subtype.ext (by simpa using h.symm)⟩
   · rintro ⟨r, rfl⟩
-    exact ⟨r, r.2, by simp⟩
+    exact ⟨r, r.property, by simp⟩
 
 end SubsemiringClass

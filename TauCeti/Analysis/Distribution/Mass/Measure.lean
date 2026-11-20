@@ -47,6 +47,8 @@ them by open sets of almost the same measure.
   `L M(T)`.
 * `Distribution.enorm_apply_le_lintegral_massMeasure`: the domination `|T φ| ≤ ∫ ‖φ‖ d‖T‖`.
 * `Distribution.massMeasure_le_of_enorm_apply_le`: minimality among outer regular measures.
+* `Distribution.massMeasure_coe_linearMap`: coercing a continuous linear functional to a linear
+  map preserves its mass measure.
 
 ## References
 
@@ -158,9 +160,9 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
     (hε : 0 < ε) (N : ℕ) {W : Set E} (hφW : tsupport φ ⊆ W) :
     ∑ j : Fin N, μ (levelSet φ ε j) * ENNReal.ofReal ((j + 2) * ε) ≤
       ∫⁻ x, ‖φ x‖ₑ ∂μ + ENNReal.ofReal (2 * ε) * μ ((↑) ⁻¹' W) := by
-  have hφc : Continuous fun x : Ω => φ x := φ.continuous.comp continuous_subtype_val
+  have hφc : Continuous fun x : Ω => φ x := φ.continuous.comp continuous_subtypeVal
   have hmeas (j : Fin N) : MeasurableSet (levelSet φ ε j) :=
-    ((isClosed_tsupport φ).preimage continuous_subtype_val).measurableSet.inter
+    ((isClosed_tsupport φ).preimage continuous_subtypeVal).measurableSet.inter
       ((hφc.norm.div_const ε).measurable.nat_ceil (measurableSet_singleton _))
   have hdisj : Pairwise (Disjoint on fun j : Fin N => levelSet φ ε j) := fun i j hij =>
     disjoint_left.2 fun x hi hj => hij <| Fin.ext <| by simpa using hi.2.symm.trans hj.2
@@ -290,7 +292,7 @@ private theorem enorm_apply_le_lintegral_add_mul (hT : HasLocallyFiniteMass T)
   have hVo (i : Option (Fin N)) : IsOpen (V i) := by
     rcases i with _ | j
     · exact hW.inter (isOpen_lt hφn continuous_const)
-    · exact ((Ω.isOpen.isOpenMap_subtype_val _ (hGo j)).inter hW).inter
+    · exact ((Ω.isOpen.isOpenMap_subtypeVal _ (hGo j)).inter hW).inter
         (isOpen_lt hφn continuous_const)
   have hVb (i : Option (Fin N)) (y : E) (hy : y ∈ V i) : ‖φ y‖ₑ ≤ b i := by
     rw [← ofReal_norm]
@@ -371,6 +373,17 @@ theorem eq_massMeasure_of_preimage_coe (hT : HasLocallyFiniteMass T) (ν : Measu
   refine Measure.OuterRegular.ext_isOpen fun U hU => ?_
   obtain ⟨U', hU', rfl⟩ := isOpen_induced_iff.1 hU
   rw [h U' hU', massMeasure_preimage_coe hT hU']
+
+/-- Coercing a continuous linear functional `T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ` to a linear map does not
+change its mass measure. -/
+theorem massMeasure_coe_linearMap (T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ) :
+    massMeasure (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) = massMeasure T := by
+  by_cases hT : HasLocallyFiniteMass T
+  · refine eq_massMeasure_of_preimage_coe hT _ fun U hU => ?_
+    rw [massMeasure_preimage_coe (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT hU]
+    rfl
+  · rw [massMeasure_of_not_hasLocallyFiniteMass hT,
+      massMeasure_of_not_hasLocallyFiniteMass (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT]
 
 end Measure
 

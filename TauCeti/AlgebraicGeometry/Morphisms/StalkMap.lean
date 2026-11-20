@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.KrullDimension.Basic
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Etale.Locus
@@ -137,7 +137,7 @@ theorem formallyUnramified_stalkMap_iff {f : X ⟶ Y} {x : X} (U : Y.Opens) (hU 
   rw [RingHom.FormallyUnramified.respectsIso.arrow_mk_iso_iff
     (IsAffineOpen.arrowStalkMapIso f U hU V hV hVU hx)]
   exact Localization.formallyUnramified_localRingHom_iff _ _
-    congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hx).1).symm
+    congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hx).asIdeal).symm
 
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
 
@@ -216,7 +216,7 @@ theorem unramifiedAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFiniteType f] (x : X) 
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.2.preimage f.continuous)
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
   have := f.finiteType_appLE hU hV hVU
   algebraize [(f.appLE U V hVU).hom]
   have := (formallyUnramified_stalkMap_iff U hU V hV hVU hxV).mp H
@@ -239,7 +239,7 @@ theorem etaleAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFinitePresentation f] (x : 
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.2.preimage f.continuous)
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
   have := f.finitePresentation_appLE hU hV hVU
   algebraize [(f.appLE U V hVU).hom]
   have : Algebra.IsEtaleAt Γ(Y, U) (hV.primeIdealOf ⟨x, hxV⟩).asIdeal :=
@@ -373,7 +373,7 @@ theorem exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le (f : X �
   obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.2.preimage f.continuous)
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
   have : IsNoetherianRing Γ(Y, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
   have := f.finiteType_appLE hU hV hVU
   have := f.finitePresentation_appLE hU hV hVU
@@ -437,7 +437,7 @@ theorem quasiFiniteAt_of_appLE {f : X ⟶ Y} {x : X} {V : X.Opens} (hV : IsAffin
   rw [QuasiFiniteAt, RingHom.QuasiFinite.respectsIso.arrow_mk_iso_iff
     (IsAffineOpen.arrowStalkMapIso f U hU V hV hVU hxV)]
   exact (Localization.quasiFinite_localRingHom_iff _ _
-    congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV).1).symm).mpr h
+    congr($(IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV).asIdeal).symm).mpr h
 
 /-- The morphism `Spec S ⟶ Spec R` is quasi-finite at `q` iff `S` is quasi-finite over `R` at
 `q` in Mathlib's sense `Algebra.QuasiFiniteAt`. -/
@@ -471,7 +471,7 @@ theorem exists_appLE_quasiFiniteAt_iff (f : X ⟶ Y) (x : X) :
   obtain ⟨_, ⟨U : Y.Opens, hU, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
   obtain ⟨_, ⟨V : X.Opens, hV, rfl⟩, hxV, hVWU⟩ := X.isBasis_affineOpens.exists_subset_of_mem_open
-    (Set.mem_inter hxW hxU) (W.2.inter (U.2.preimage f.continuous))
+    (Set.mem_inter hxW hxU) (W.is_open'.inter (U.is_open'.preimage f.continuous))
   have hVU : V ≤ f ⁻¹ᵁ U := fun _ hy ↦ (hVWU hy).2
   -- `V.ι ≫ f` factors through `W.ι ≫ f`, hence so does the restriction `V ⟶ U` of `f`.
   have : LocallyOfFiniteType (f.resLE U V hVU ≫ U.ι) := by

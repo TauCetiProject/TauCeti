@@ -98,26 +98,26 @@ when `d = 0` or `s = t`. So there is no infinite sequence of such flows of stric
 value. -/
 theorem wellFounded_val_lt (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ zmultiples d) :
     WellFounded fun g f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d} ↦
-      f.1.val < g.1.val := by
+      f.val.val < g.val.val := by
   classical
   wlog hd : 0 < d generalizing d
   · obtain hd | rfl := (not_lt.1 hd).lt_or_eq
     · rw [← zmultiples_neg (g := d)] at hcap ⊢
       exact this hcap (neg_pos.2 hd)
     · have h (f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples (0 : K)}) :
-          f.1.val = 0 := by
-        simpa [BoundedFlow.val_def] using excessAt_mem f.2 t
+          f.val.val = 0 := by
+        simpa [BoundedFlow.val_def] using excessAt_mem f.property t
       exact ⟨fun f ↦ ⟨f, fun g hg ↦ by simp [h] at hg⟩⟩
   rcases eq_or_ne s t with hst | hst
   · exact ⟨fun f ↦ ⟨f, fun g hg ↦ by simp [BoundedFlow.val_eq_zero_of_eq hst] at hg⟩⟩
   obtain ⟨m, hm⟩ := mem_zmultiples_iff.1 (arrowSum_mem hcap {s} {s}ᶜ)
   choose n hn using fun f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d} ↦
-    exists_nsmul_eq_val hd f.2
+    exists_nsmul_eq_val hd f.property
   have hnm (f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d}) :
       (n f : ℤ) ≤ m := by
     refine (zsmul_le_zsmul_iff_left hd).1 ?_
     rw [natCast_zsmul, hn, hm]
-    exact f.1.val_le_arrowSum (mem_singleton_self s) (by simpa using hst.symm)
+    exact f.val.val_le_arrowSum (mem_singleton_self s) (by simpa using hst.symm)
   refine Subrelation.wf (fun {g f} h ↦ ?_)
     (InvImage.wf (fun f ↦ (m - n f).toNat) wellFounded_lt)
   have hlt : n f < n g := (nsmul_lt_nsmul_iff_left hd).1 (by rwa [hn, hn])
@@ -131,10 +131,10 @@ theorem acc_augmentsTo (hst : s ≠ t) (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e 
     {f : Flow cap s t} (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d) :
     Acc (fun g f : Flow cap s t ↦ f.AugmentsTo g) f := by
   suffices ∀ f : {f : Flow cap s t // ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ zmultiples d},
-      Acc (fun g f : Flow cap s t ↦ f.AugmentsTo g) f.1 from this ⟨f, hf⟩
+      Acc (fun g f : Flow cap s t ↦ f.AugmentsTo g) f.val from this ⟨f, hf⟩
   intro f
   induction f using (wellFounded_val_lt hcap).induction with
-  | _ f ih => exact ⟨_, fun g hg ↦ ih ⟨g, fun _ _ ↦ hg.mem hcap f.2⟩ (hg.val_lt hst)⟩
+  | _ f ih => exact ⟨_, fun g hg ↦ ih ⟨g, fun _ _ ↦ hg.mem hcap f.property⟩ (hg.val_lt hst)⟩
 
 /-- For capacities in `zmultiples d`, finitely many augmentation steps
 lead from a flow with arrow values in `zmultiples d` to a maximum flow, again with arrow values in

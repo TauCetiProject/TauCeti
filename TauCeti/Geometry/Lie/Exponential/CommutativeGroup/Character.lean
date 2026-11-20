@@ -133,7 +133,7 @@ instance discreteTopology_periodLattice : DiscreteTopology (periodLattice I G) :
   DiscreteTopology.of_continuous_injective
     (f := fun X : periodLattice I G ↦
       (⟨(2 * π) • (X : LeftInvariantDerivation I G),
-        mem_ker_lieExpAddMonoidHom.2 (mem_periodLattice.1 X.2)⟩ :
+        mem_ker_lieExpAddMonoidHom.2 (mem_periodLattice.1 X.property)⟩ :
         (lieExpAddMonoidHom (I := I) (G := G)).ker))
     (by fun_prop)
     (fun X Y h ↦ Subtype.ext (smul_right_injective _ two_pi_pos.ne' (congrArg Subtype.val h)))

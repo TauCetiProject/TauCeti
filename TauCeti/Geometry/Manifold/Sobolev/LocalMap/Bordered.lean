@@ -166,7 +166,7 @@ theorem MemWkpLocMapOn.memWkpLocMapOnBordered_image [CompleteSpace F]
     (φ.extend closedUpperHalfPlaneModel).symm ⁻¹' ((↑) '' s ∩ u ⁻¹' ψ.source)
   obtain ⟨Ω, hΩ, hV⟩ := φ.exists_isOpen_extend_target_inter_preimage
     (hcont.isOpen_inter_preimage
-      ((borderedInterior X).isOpen.isOpenMap_subtype_val s hs) ψ.open_source)
+      ((borderedInterior X).isOpen.isOpenMap_subtypeVal s hs) ψ.open_source)
   rcases V.eq_empty_or_nonempty with hV₀ | ⟨z₀, hz₀⟩
   · rw [hV₀]
     exact memWkpLoc_iff_locally.2 fun x hx ↦ hx.elim
@@ -189,7 +189,7 @@ theorem MemWkpLocMapOn.memWkpLocMapOnBordered_image [CompleteSpace F]
       have hxφ : (x : X) ∈ φ.source := by
         rw [hxz]
         exact φ.map_target hzt.1
-      have h := (mem_borderedInterior_iff_im_pos hφ1 hxφ).1 x.2
+      have h := (mem_borderedInterior_iff_im_pos hφ1 hxφ).1 x.property
       rw [hxz, φ.right_inv hzt.1, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hzt.2] at h
       exact ⟨hzt.1, h⟩
     have hsymm : φi.symm z = x :=

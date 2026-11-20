@@ -78,8 +78,8 @@ private theorem memLp_intervalIntegral_mul_smoothTransition_smul {G : Type*}
         continuous_const.mul (continuous_snd.sub (hu.continuous.comp continuous_fst))) a b
   refine ((TestFunction.memLp_subtype (p := 1) (μ := μ) η).norm.const_mul
     (∫ t in uIoc a b, |g t|)).mono
-    (((hJcont.comp continuous_subtype_val).smul
-      (η.continuous.comp continuous_subtype_val)).aestronglyMeasurable)
+    (((hJcont.comp continuous_subtypeVal).smul
+      (η.continuous.comp continuous_subtypeVal)).aestronglyMeasurable)
     (ae_of_all _ fun x => ?_)
   rw [norm_smul, Real.norm_eq_abs]
   exact (mul_le_mul_of_nonneg_right (abs_intervalIntegral_mul_smoothTransition_le hg a b m (u x))

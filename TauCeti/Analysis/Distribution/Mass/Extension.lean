@@ -329,17 +329,17 @@ theorem tendsto_apply_smulLeftCLM_massRestrict (hT : HasLocallyFiniteMass T)
   refine tendsto_lintegral_of_dominated_convergence' (fun x => (‖C‖ₑ + 1) * ‖φ x‖ₑ)
     (fun i => ?_) (fun i => ae_of_all _ fun x => ?_) ?_ (ae_of_all _ fun x => ?_)
   · have hc : Continuous fun x : Ω => f i x • φ x :=
-      (((hf i).continuous.comp continuous_subtype_val).smul
-        (φ.continuous.comp continuous_subtype_val))
+      (((hf i).continuous.comp continuous_subtypeVal).smul
+        (φ.continuous.comp continuous_subtypeVal))
     exact (hc.aestronglyMeasurable.sub ((φ.continuous.comp
-      continuous_subtype_val).aestronglyMeasurable.indicator hA)).eNorm.congr
+      continuous_subtypeVal).aestronglyMeasurable.indicator hA)).eNorm.congr
       (ae_of_all _ fun x => by by_cases hx : x ∈ A <;> simp [hx, sub_smul])
   · dsimp only
     rw [eNorm_smul]
     gcongr
     refine (eNorm_sub_le).trans (add_le_add ?_ ?_)
     · rw [← ofReal_norm, ← ofReal_norm, Real.norm_eq_abs]
-      exact ENNReal.ofReal_le_ofReal ((hfC i x x.2).trans (le_abs_self C))
+      exact ENNReal.ofReal_le_ofReal ((hfC i x x.property).trans (le_abs_self C))
     · by_cases hx : x ∈ A <;> simp [hx]
   · rw [lintegral_const_mul' _ _ (by simp), ← TestFunction.enorm_toLp_one]
     exact ENNReal.mul_ne_top (by simp) eNorm_ne_top
@@ -522,16 +522,6 @@ theorem massRestrict_massRestrict (hA : MeasurableSet A) (hB : MeasurableSet B) 
       massRestrict_zero,
       massRestrict_eq_zero (hA.inter hB) (by simp [massMeasure_of_not_hasLocallyFiniteMass hT])]
 
-omit [CompleteSpace F] in
-private theorem massMeasure_coe_linearMap (hT : HasLocallyFiniteMass T) :
-    massMeasure (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) = massMeasure T := by
-  apply Measure.OuterRegular.ext_isOpen
-  intro U hU
-  obtain ⟨W, hW, rfl⟩ := isOpen_induced_iff.1 hU
-  rw [massMeasure_preimage_coe (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT hW,
-    massMeasure_preimage_coe hT hW]
-  rfl
-
 /-- **Borel restriction commutes with open restriction.** For `Ω' ≤ Ω` and `T` of locally finite
 mass on `Ω`, restricting `T ⌞ A` to tests on `Ω'` is restricting `T|_{Ω'}` to `A ∩ Ω'`. -/
 theorem massRestrict_comp_monoCLM {Ω' : Opens E} {T : 𝓓^{n}(Ω, F) →L[ℝ] ℝ}
@@ -583,7 +573,7 @@ theorem massRestrict_comp_monoCLM {Ω' : Opens E} {T : 𝓓^{n}(Ω, F) →L[ℝ]
       exact hx (by by_cases hxA : x ∈ A <;> simp [hxA, hφ0])).symm
   have hmap : (massMeasure T').map (Set.inclusion h) =
       (massMeasure T).restrict ((↑) ⁻¹' (Ω' : Set E)) := by
-    rw [← massMeasure_coe_linearMap hT', ← massMeasure_coe_linearMap hT]
+    rw [← massMeasure_coe_linearMap T', ← massMeasure_coe_linearMap T]
     exact map_massMeasure_comp_monoCLM (T := (T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ)) hT h
   simp_rw [Pi.sub_apply]
   rw [hvanish, ← hmap]

@@ -82,7 +82,7 @@ theorem exists_contDiff_lipschitzWith_slice_tendsto (hu : LipschitzOnWith K u Ω
       simpa [g, add_sub_add_right_eq_sub] using (hw_lip j).dist_le_mul x y
   have hg_bounds (x : Ω) (j : ℕ) : u x < g j x ∧ g j x - u x < ((j : ℝ) + 1)⁻¹ := by
     have hdist : |w j x - u x| < ((j : ℝ) + 1)⁻¹ / 4 := by
-      simpa [Real.dist_eq, hu_eq x.2] using hw_dist j x
+      simpa [Real.dist_eq, hu_eq x.property] using hw_dist j x
     obtain ⟨hd1, hd2⟩ := abs_lt.1 hdist
     exact ⟨by dsimp [g]; linarith, by dsimp [g]; linarith⟩
   have hg_lim (x : Ω) : Tendsto (fun j => g j x) atTop (𝓝 (u x)) := by
@@ -94,7 +94,7 @@ theorem exists_contDiff_lipschitzWith_slice_tendsto (hu : LipschitzOnWith K u Ω
     exact (hg_bounds x j).2.le
   have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
   have hg_meas (j : ℕ) : Measurable fun x : Ω => g j x :=
-    ((hg_smooth j).continuous.comp continuous_subtype_val).measurable
+    ((hg_smooth j).continuous.comp continuous_subtypeVal).measurable
   refine ⟨g, hg_smooth, hg_lip, fun x j => (hg_bounds x j).1, hg_lim, fun T t φ => ?_⟩
   have hiff (x : Ω) : ∀ᶠ j in atTop, g j x < t ↔ u x < t := by
     by_cases hx : u x < t
@@ -230,10 +230,10 @@ theorem ae_hasLocallyFiniteMass_slice_of_locallyLipschitzOn
   have hu_meas : Measurable fun x : Ω => u x := hu.continuousOn.domRestrict.measurable
   let Kex := CompactExhaustion.choice Ω
   let C (n : ℕ) : Set E := (↑) '' Kex (n + 1)
-  have hC_cpt (n : ℕ) : IsCompact (C n) := (Kex.isCompact (n + 1)).image continuous_subtype_val
+  have hC_cpt (n : ℕ) : IsCompact (C n) := (Kex.isCompact (n + 1)).image continuous_subtypeVal
   have hC_sub (n : ℕ) : C n ⊆ Ω := Subtype.coe_image_subset _ _
   let W (n : ℕ) : Opens E :=
-    ⟨(↑) '' interior (Kex (n + 1)), Ω.isOpen.isOpenMap_subtype_val _ isOpen_interior⟩
+    ⟨(↑) '' interior (Kex (n + 1)), Ω.isOpen.isOpenMap_subtypeVal _ isOpen_interior⟩
   have hW_sub_C (n : ℕ) : (W n : Set E) ⊆ C n := image_mono interior_subset
   have hW_le (n : ℕ) : W n ≤ Ω := (hW_sub_C n).trans (hC_sub n)
   choose L hL using fun n =>
@@ -355,7 +355,8 @@ private theorem slice_eq_zero_of_lipschitzOnWith_zero
   by_cases hne : ∃ x : Ω, u x < t
   · obtain ⟨x₀, hx₀⟩ := hne
     have h : {x : Ω | u x < t} = univ := eq_univ_of_forall fun x => by
-      have hux : u x = u x₀ := by simpa using hu.dist_le_mul x.1 x.2 x₀.1 x₀.2
+      have hux : u x = u x₀ := by
+        simpa using hu.dist_le_mul (x : E) x.property (x₀ : E) x₀.property
       simpa only [mem_ofPred_eq, hux] using hx₀
     rw [massRestrict_congr_set (T := T) hA MeasurableSet.univ h,
       massRestrict_congr_set (T := T ∘L extDerivCLM) hA MeasurableSet.univ h,
