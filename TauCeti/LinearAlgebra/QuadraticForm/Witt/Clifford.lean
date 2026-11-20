@@ -143,7 +143,7 @@ noncomputable def cliffordHomI2 : ↥(fundamentalIdeal K ^ 2) →+ Additive (Bra
   toFun x := Additive.ofMul (WittRing.cliffordInvariant (x : WittRing K))
   map_zero' := by rw [ZeroMemClass.coe_zero, WittRing.cliffordInvariant_zero, ofMul_one]
   map_add' x y := by
-    rw [AddMemClass.coe_add, WittRing.cliffordInvariant_add_of_mem_fundamentalIdeal_sq x.2,
+    rw [AddMemClass.coe_add, WittRing.cliffordInvariant_add_of_mem_fundamentalIdeal_sq x.property,
       ofMul_mul]
 
 /-- `cliffordHomI2` evaluates the Clifford invariant. -/

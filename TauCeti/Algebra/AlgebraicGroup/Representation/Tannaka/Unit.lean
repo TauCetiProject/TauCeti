@@ -49,40 +49,40 @@ variable (k H A : Type u) [Field k] [CommRing H] [HopfAlgebra k H]
 /-- The comodule morphism from the tensor unit to a finite regular subcomodule containing one. -/
 private noncomputable def regularUnitHom
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (hOne : (1 : H) ∈ N.1) :
+    (hOne : (1 : H) ∈ N.val) :
     𝟙_ (FGComoduleCat.{u, u, u} k H) ⟶ finiteRegularObject k H N := by
-  letI : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
+  letI : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
   letI : Comodule k H k := Comodule.trivial (R := k) (C := H) (M := k)
   exact FGComoduleCat.ofHom (R := k) (C := H)
-    ((Comodule.Hom.trivialToRegular (R := k) (C := H)).codRestrict N.1 fun r ↦ by
-      simpa [Algebra.smul_def] using N.1.toSubmodule.smul_mem r hOne)
+    ((Comodule.Hom.trivialToRegular (R := k) (C := H)).codRestrict N.val fun r ↦ by
+      simpa [Algebra.smul_def] using N.val.toSubmodule.smul_mem r hOne)
 
 @[simp]
 private theorem regularUnitHom_apply
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (hOne : (1 : H) ∈ N.1) (r : k) :
+    (hOne : (1 : H) ∈ N.val) (r : k) :
     regularUnitHom k H N hOne r =
-      ⟨r • (1 : H), N.1.toSubmodule.smul_mem r hOne⟩ :=
+      ⟨r • (1 : H), N.val.toSubmodule.smul_mem r hOne⟩ :=
   by
     let _ : Comodule k H k := Comodule.trivial (R := k) (C := H) (M := k)
     -- The application lemmas below do not rewrite through the bundled `FGComoduleCat`
     -- coercion, so expose first the underlying comodule map and then its `codRestrict`.
     change (regularUnitHom k H N hOne).hom.toLinearMap r = _
     unfold regularUnitHom
-    change ((Comodule.Hom.trivialToRegular (R := k) (C := H)).codRestrict N.1 _ r) = _
+    change ((Comodule.Hom.trivialToRegular (R := k) (C := H)).codRestrict N.val _ r) = _
     apply Subtype.ext
     rw [Comodule.Hom.codRestrict_apply, Comodule.Hom.trivialToRegular_apply]
     simp [Algebra.smul_def]
 
 private theorem map_regularUnitHom_ε_one
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (hOne : (1 : H) ∈ N.1) :
+    (hOne : (1 : H) ∈ N.val) :
     (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).map
           (regularUnitHom k H N hOne)
         (ε (FGComoduleCat.scalarExtensionMonoidalFunctor k H A).toFunctor (1 : A)) =
       eqToHom (FGComoduleCat.scalarExtensionFunctor_obj k H A
         (finiteRegularObject k H N)).symm (1 ⊗ₜ[k] ⟨1, hOne⟩) := by
-  let _ : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
+  let _ : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
   let hN := FGComoduleCat.scalarExtensionFunctor_obj k H A
     (finiteRegularObject k H N)
   have hExplicit :
@@ -127,10 +127,10 @@ regular subcomodule containing the unit. -/
 theorem scalarExtensionComponent_one_tmul
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (hOne : (1 : H) ∈ N.1) :
+    (hOne : (1 : H) ∈ N.val) :
     scalarExtensionComponent k H A η (finiteRegularObject k H N)
         (1 ⊗ₜ[k] ⟨1, hOne⟩) = 1 ⊗ₜ[k] ⟨1, hOne⟩ := by
-  let _ : Module.Finite k N.1 := Subcomodule.mem_finiteSubcomodules.mp N.2
+  let _ : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
   let i := regularUnitHom k H N hOne
   have hnat := η.asIso.hom.hom.naturality i
   have hunit := CategoryTheory.NatTrans.IsMonoidal.unit (τ := η.asIso.hom.hom)
@@ -169,10 +169,10 @@ glued functional on `H` to an algebra homomorphism. -/
 theorem localFunctional_one
     (η : Aut (FGComoduleCat.scalarExtensionMonoidalFunctor k H A))
     (N : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H))
-    (hOne : (1 : H) ∈ N.1) :
+    (hOne : (1 : H) ∈ N.val) :
     localFunctional k H A η N ⟨1, hOne⟩ = 1 := by
   rw [localFunctional_apply, scalarExtensionComponent_one_tmul]
-  rw [counitEvaluation_tmul k H A N.1 (1 : A) ⟨1, hOne⟩]
+  rw [counitEvaluation_tmul k H A N.val (1 : A) ⟨1, hOne⟩]
   simp only [Bialgebra.counit_one, map_one, one_mul]
 
 end TauCeti.Tannaka

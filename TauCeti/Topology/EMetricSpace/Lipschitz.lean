@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+import Mathlib.Topology.Compactness.Lindelof
+import Mathlib.Topology.Metrizable.Basic
 
 /-!
 # Lipschitz maps from extended metric spaces
@@ -15,8 +17,8 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point,
 shows that the inclusion of a subset into a larger subset is `1`-Lipschitz, records that a map
 Lipschitz on a set is locally Lipschitz on that set (`LipschitzOnWith.locallyLipschitzOn`), covers
-any set in a second-countable space on which a map is locally Lipschitz by countably many open sets
-on whose intersections with the set the map is Lipschitz
+any separable set on which a map is locally Lipschitz by countably many open sets on whose
+intersections with the set the map is Lipschitz
 (`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows that composing a function
 locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on that set.
 
@@ -70,12 +72,13 @@ protected theorem LipschitzOnWith.locallyLipschitzOn {α β : Type*} [PseudoEMet
     LocallyLipschitzOn s f :=
   fun _ _ ↦ ⟨K, s, self_mem_nhdsWithin, hf⟩
 
-/-- If `f` is locally Lipschitz on a set `s` in a second-countable extended pseudometric space,
+/-- If `f` is locally Lipschitz on a separable set `s` in an extended pseudometric space (for
+instance any set in a second-countable space, by `TopologicalSpace.IsSeparable.of_separableSpace`),
 then `s` can be covered by countably many open sets `U n` such that `f` is Lipschitz on each
 `s ∩ U n`. -/
 theorem LocallyLipschitzOn.exists_open_cover_lipschitzOnWith {α β : Type*}
-    [PseudoEMetricSpace α] [SecondCountableTopology α] [PseudoEMetricSpace β]
-    {s : Set α} {f : α → β} (hf : LocallyLipschitzOn s f) :
+    [PseudoEMetricSpace α] [PseudoEMetricSpace β]
+    {s : Set α} {f : α → β} (hf : LocallyLipschitzOn s f) (hs : TopologicalSpace.IsSeparable s) :
     ∃ (U : ℕ → Set α) (K : ℕ → ℝ≥0),
       (∀ n, IsOpen (U n)) ∧ s ⊆ ⋃ n, U n ∧ ∀ n, LipschitzOnWith (K n) f (s ∩ U n) := by
   have hloc : ∀ x ∈ s, ∃ U, IsOpen U ∧ x ∈ U ∧ ∃ K, LipschitzOnWith K f (s ∩ U) := by
@@ -84,15 +87,17 @@ theorem LocallyLipschitzOn.exists_open_cover_lipschitzOnWith {α β : Type*}
     obtain ⟨U, hU, hxU, hUt⟩ := mem_nhdsWithin.1 ht
     exact ⟨U, hU, hxU, K, hK.mono ((inter_comm s U).subset.trans hUt)⟩
   choose! U hU hxU K hK using hloc
-  obtain ⟨c, hcs, hc, hcov⟩ := TopologicalSpace.countable_cover_nhdsWithin
-    (f := fun x ↦ s ∩ U x) fun x hx ↦ inter_mem_nhdsWithin s ((hU x hx).mem_nhds (hxU x hx))
+  -- A separable set is Lindelöf, since its subtype is second countable.
+  have : SecondCountableTopology s := hs.secondCountableTopology
+  obtain ⟨c, hc, hcs, hcov⟩ := (isLindelof_iff_lindelofSpace.2 inferInstance).elim_nhds_subcover U
+    fun x hx ↦ (hU x hx).mem_nhds (hxU x hx)
   rcases c.eq_empty_or_nonempty with rfl | hne
   · refine ⟨fun _ ↦ ∅, fun _ ↦ 0, fun _ ↦ isOpen_empty, ?_, fun _ ↦ by simp⟩
     simpa using hcov
   · obtain ⟨g, rfl⟩ := hc.exists_eq_range hne
-    refine ⟨fun n ↦ U (g n), fun n ↦ K (g n), fun n ↦ hU _ (hcs (mem_range_self n)),
-      fun x hx ↦ ?_, fun n ↦ hK _ (hcs (mem_range_self n))⟩
-    obtain ⟨_, ⟨n, rfl⟩, -, hxU'⟩ := mem_iUnion₂.1 (hcov hx)
+    refine ⟨fun n ↦ U (g n), fun n ↦ K (g n), fun n ↦ hU _ (hcs _ (mem_range_self n)),
+      fun x hx ↦ ?_, fun n ↦ hK _ (hcs _ (mem_range_self n))⟩
+    obtain ⟨_, ⟨n, rfl⟩, hxU'⟩ := mem_iUnion₂.1 (hcov hx)
     exact mem_iUnion.2 ⟨n, hxU'⟩
 
 /-- A locally Lipschitz map composed with a function locally Lipschitz on `s` is locally Lipschitz

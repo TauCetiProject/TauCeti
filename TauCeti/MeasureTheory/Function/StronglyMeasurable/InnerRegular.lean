@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Regular
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 
 /-!
 # Continuous functions are a.e. strongly measurable for inner regular measures
@@ -44,9 +45,10 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 * `ContinuousLinearMap.aestronglyMeasurable_comp₂_continuous`: a continuous bilinear map `L`
   applied to an a.e. finitely strongly measurable `f` and a continuous `g` is a.e. strongly
   measurable.
-* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous`: an a.e. finitely
-  strongly measurable family of continuous linear maps `f` applied to a continuous `g` is a.e.
-  strongly measurable.
+* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous`: a separately
+  continuous zero-preserving family `g : α → γ → β` applied to an a.e. finitely strongly
+  measurable `f : α → γ` is a.e. strongly measurable, covering point-norm continuous group actions
+  without operator-norm continuity.
 -/
 
 public section
@@ -143,12 +145,19 @@ theorem ContinuousLinearMap.aestronglyMeasurable_comp₂_continuous {𝕜 E F G 
     AEStronglyMeasurable (fun x ↦ L (f x) (g x)) μ :=
   hf.aestronglyMeasurable_clm_apply (L.flip.continuous.comp hg)
 
-/-- An a.e. finitely strongly measurable family `f` of continuous linear maps applied to a
-continuous function `g` is a.e. strongly measurable, for a measure that is inner regular with
-respect to compact sets on sets of finite measure. -/
-theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous
-    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : α → E →L[𝕜] F}
-    (hf : AEFinStronglyMeasurable f μ) {g : α → E} (hg : Continuous g) :
-    AEStronglyMeasurable (fun x ↦ f x (g x)) μ :=
-  (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).aestronglyMeasurable_comp₂_continuous hf hg
+/-- A separately continuous zero-preserving family `g : α → γ → β` applied to an a.e. finitely
+strongly measurable function `f : α → γ` is a.e. strongly measurable, for a measure that is inner
+regular with respect to compact sets on sets of finite measure. Unlike
+`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`, `x ↦ g x` need only be
+pointwise continuous rather than norm-continuous. -/
+theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous {γ : Type*}
+    [TopologicalSpace γ] [T2Space γ] [Zero γ] [Zero β] {f : α → γ}
+    (hf : AEFinStronglyMeasurable f μ) {g : α → γ → β} (hg₁ : ∀ y, Continuous fun x ↦ g x y)
+    (hg₂ : ∀ x, Continuous fun y ↦ g x y) (hg₀ : ∀ x, g x 0 = 0) :
+    AEStronglyMeasurable (fun x ↦ g x (f x)) μ :=
+  hf.aestronglyMeasurable_of_restrict
+    ((AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+      hf.ae_eq_mk⟩).apply_of_forall_of_continuousAt
+      (fun y ↦ (hg₁ y).aestronglyMeasurable_of_sigmaFinite)
+      (.of_forall fun x ↦ (hg₂ x).continuousAt))
+    fun x hx ↦ by simp [hx, hg₀]

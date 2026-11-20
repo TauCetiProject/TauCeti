@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure
+public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
 public import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!

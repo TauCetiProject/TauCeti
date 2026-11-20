@@ -5,69 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
-public import TauCeti.Analysis.CStarAlgebra.Completion
-public import TauCeti.Analysis.Normed.Ring.Completion
-public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
-import TauCeti.Analysis.Normed.Operator.Completion
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
-import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Group.Convolution.Support
 
 /-!
-# Bochner `L¹` realization of the twisted `L¹` Banach ⋆-algebra
+# Pointwise Bochner formulas for twisted `L¹` convolution and involution
 
-For a locally compact group `G`, a possibly nonunital (or zero) C⋆-algebra `A`, and a locally
-finite Borel measure `μ` that is inner regular on sets of finite measure with respect to compact
-sets — in particular any regular or inner regular Haar measure — compactly supported continuous
-functions are dense in the Bochner space `L¹(G, A, μ)`. Consequently, the canonical linear isometry
-`TauCeti.CStarAction.ConvolutionAlgebra.toL1LI` extends to a linear isometric equivalence
-`TauCeti.CStarAction.ConvolutionAlgebra.toL1Equiv` from the twisted `L¹` completion
-`UniformSpace.Completion (ConvolutionAlgebra α μ)` onto `Lp A 1 μ`.
-
-Under this identification, the Banach ⋆-algebra operations of the twisted `L¹` completion are
-represented almost everywhere on integrable functions `f, g : G → A` by the pointwise Bochner
-formulas
+For a locally compact group `G`, a possibly nonunital (or zero) C⋆-algebra `A`, and a left-invariant
+Borel measure `μ` finite on compact sets and inner regular on sets of finite measure with
+`μ.inv ≪ μ` (in particular any inner regular or regular Haar measure via
+`MeasureTheory.Measure.inv_absolutelyContinuous_of_innerRegular` and
+`MeasureTheory.Measure.inv_absolutelyContinuous_of_regular`, without any σ-finiteness, second
+countability, or Hausdorff separation assumption), the abstract twisted `L¹` convolution
+`TauCeti.CStarAction.convolutionL1` and twisted `L¹` involution
+`TauCeti.CStarAction.twistedInvolutionL1` on `Lp A 1 μ` are represented almost everywhere on
+integrable functions `f, g : G → A` by the pointwise Bochner formulas
 
 * `(α.bochnerConvolution μ f g) s = ∫ r, f r * α r (g (r⁻¹ * s)) ∂μ`, and
 * `(α.bochnerInvolution f) s = c(s) • α s (star (f s⁻¹))`,
 
 where `c = MeasureTheory.Measure.modularCharacter` is Mathlib's modular character
-(`g ↦ μ(· * g⁻¹) / μ`, equal to `Δ⁻¹` in Williams' normalization), whenever `μ` is left-invariant
-and `μ.inv ≪ μ` (in particular for both inner regular and regular Haar measures via
-`MeasureTheory.Measure.inv_absolutelyContinuous_of_innerRegular` and
-`MeasureTheory.Measure.inv_absolutelyContinuous_of_regular`, without any σ-finiteness, second
-countability, or Hausdorff separation assumption). To avoid global Fubini hypotheses on
-non-σ-compact groups, the proof expands `L¹` approximations into telescopic series in `C_c(G, A)`
-and exchanges integration on each compactly supported term.
-
-For the trivial action on `ℂ`, the transported multiplication and involution agree with scalar
-group convolution `MeasureTheory.Lp.convolutionL` and conjugated modular inversion
-`MeasureTheory.Lp.modularInversion`.
+(`g ↦ μ(· * g⁻¹) / μ`, equal to `Δ⁻¹` in Williams' normalization). To avoid global Fubini or
+second-countability hypotheses on non-σ-compact groups, the proof expands `L¹` approximations into
+telescopic series in `C_c(G, A)` and exchanges integration on each compactly supported term.
 
 ## Main definitions
 
-* `TauCeti.CStarAction.ConvolutionAlgebra.toL1CompletionLI`: the linear isometric extension of
-  `toL1LI` to `UniformSpace.Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp A 1 μ`.
-* `TauCeti.CStarAction.ConvolutionAlgebra.toL1Equiv`: the linear isometric equivalence
-  `UniformSpace.Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ`.
 * `TauCeti.CStarAction.bochnerConvolution`: the pointwise Bochner twisted convolution of two
   functions `G → A`.
 * `TauCeti.CStarAction.bochnerInvolution`: the pointwise twisted involution of a function `G → A`.
 
 ## Main statements
 
-* `TauCeti.CStarAction.ConvolutionAlgebra.denseRange_toL1`: `toL1` has dense range in `Lp A 1 μ`.
-* `TauCeti.CStarAction.integrable_bochnerConvolution` and
-  `TauCeti.CStarAction.toL1Equiv_mul_symm_toL1`: twisted convolution of integrable functions is
-  integrable and represents multiplication in the twisted `L¹` completion.
-* `TauCeti.CStarAction.integrable_bochnerInvolution` and
-  `TauCeti.CStarAction.toL1Equiv_star_symm_toL1`: twisted involution of an integrable function is
-  integrable with the same `L¹` norm and represents the involution of the twisted `L¹` completion.
-* `TauCeti.CStarAction.ConvolutionAlgebra.toL1Equiv_trivial_mul` and
-  `TauCeti.CStarAction.ConvolutionAlgebra.toL1Equiv_trivial_star`: comparison with
-  `MeasureTheory.Lp.convolutionL` and `MeasureTheory.Lp.modularInversion` for the trivial action.
+* `TauCeti.CStarAction.ae_integrable_bochnerConvolution_integrand`,
+  `TauCeti.CStarAction.integrable_bochnerConvolution`,
+  `TauCeti.CStarAction.convolutionL1_toL1_eq_bochnerConvolution`, and
+  `TauCeti.CStarAction.coeFn_convolutionL1`: for any left-invariant measure finite on compact sets,
+  inner regular on finite-measure sets, and satisfying `μ.inv ≪ μ` (with no second-countability
+  assumption on `G`), the twisted convolution integrand is a.e. integrable, `bochnerConvolution` is
+  integrable, and it represents `convolutionL1` almost everywhere.
+* `TauCeti.CStarAction.integrable_bochnerInvolution`,
+  `TauCeti.CStarAction.twistedInvolutionL1_toL1_eq_bochnerInvolution`, and
+  `TauCeti.CStarAction.coeFn_twistedInvolutionL1_of_inv_absolutelyContinuous`: twisted involution
+  of an integrable function is integrable with the same `L¹` norm and represents
+  `twistedInvolutionL1` almost everywhere whenever `μ.inv ≪ μ` (without `[μ.Regular]`).
 
 ## References
 
@@ -79,108 +62,10 @@ public section
 
 noncomputable section
 
-open Filter Function MeasureTheory Topology UniformSpace
+open Filter Function MeasureTheory Topology
 open scoped CompactlySupported ENNReal NNReal
 
-namespace TauCeti
-
-namespace CStarAction.ConvolutionAlgebra
-
-variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
-  [MeasurableSpace G]
-
-section CompletionLI
-
-variable [OpensMeasurableSpace G] {α : CStarAction G A} {μ : Measure G}
-  [IsFiniteMeasureOnCompacts μ]
-
-/-- For `f : ConvolutionAlgebra α μ`, `toL1 f` is the `L¹` class of `f.ofConv : C_c(G, A)`. -/
-theorem toL1_eq_toL1_ofConv (f : ConvolutionAlgebra α μ) :
-    toL1 f = f.ofConv.integrable.toL1 f.ofConv :=
-  Lp.ext ((coeFn_toL1 f).trans f.ofConv.integrable.coeFn_toL1.symm)
-
-/-- On `toConv f`, `toL1` produces the `L¹` class of `f : C_c(G, A)`. -/
-@[simp]
-theorem toL1_toConv (f : C_c(G, A)) :
-    toL1 (α := α) (μ := μ) (toConv f) = f.integrable.toL1 f := by
-  rw [toL1_eq_toL1_ofConv, ofConv_toConv]
-
-variable (α μ) in
-/-- Extend `toL1LI` to a linear isometry from the completion of the compact-support convolution
-algebra into Bochner `L¹(G, A, μ)`. When `μ` lacks full support, the completion quotients out the
-almost-everywhere zero compactly supported functions. -/
-def toL1CompletionLI : Completion (ConvolutionAlgebra α μ) →ₗᵢ[ℂ] Lp A 1 μ :=
-  (toL1LI α μ).fromCompletion
-
-/-- On compactly supported convolution coefficients, `toL1CompletionLI` agrees with `toL1`. -/
-@[simp]
-theorem toL1CompletionLI_coe (f : ConvolutionAlgebra α μ) :
-    toL1CompletionLI α μ f = toL1 f :=
-  ((toL1LI α μ).fromCompletion_apply_coe f).trans (toL1LI_apply f)
-
-end CompletionLI
-
-section DenseEquiv
-
-variable [R1Space G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
-  {α : CStarAction G A} {μ : Measure G} [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
-
-/-- Compactly supported convolution coefficients have dense image in Bochner `L¹(G, A, μ)`,
-including for zero or nonunital coefficient algebras and measures without full support. -/
-theorem denseRange_toL1 : DenseRange (toL1 (α := α) (μ := μ)) := by
-  refine (Lp.dense_setOf_continuous_hasCompactSupport (E := A) (μ := μ)
-    ENNReal.one_ne_top).mono ?_
-  rintro u ⟨f, hfc, hfs, huf⟩
-  let g : C_c(G, A) := ⟨⟨f, hfc⟩, hfs⟩
-  exact ⟨toConv g, Lp.ext ((coeFn_toL1 (toConv g)).trans huf.symm)⟩
-
-/-- `toL1LI` has dense range in Bochner `L¹(G, A, μ)`. -/
-theorem denseRange_toL1LI : DenseRange (toL1LI α μ) := by
-  have hcoe : ⇑(toL1LI α μ) = toL1 (α := α) (μ := μ) := funext toL1LI_apply
-  exact hcoe ▸ denseRange_toL1
-
-variable (α μ) in
-/-- **Bochner `L¹` realization of the twisted `L¹` completion**: the linear isometric equivalence
-identifying `UniformSpace.Completion (ConvolutionAlgebra α μ)` with `Lp A 1 μ` via `toL1`. -/
-def toL1Equiv : Completion (ConvolutionAlgebra α μ) ≃ₗᵢ[ℂ] Lp A 1 μ :=
-  (toL1LI α μ).fromCompletionEquiv denseRange_toL1LI
-
-/-- As a linear isometry, `toL1Equiv` is `toL1CompletionLI`. -/
-@[simp]
-theorem toLinearIsometry_toL1Equiv :
-    (toL1Equiv α μ).toLinearIsometry = toL1CompletionLI α μ :=
-  (toL1LI α μ).toLinearIsometry_fromCompletionEquiv denseRange_toL1LI
-
-/-- Evaluation of `toL1Equiv` agrees with `toL1CompletionLI`. -/
-theorem toL1Equiv_apply (x : Completion (ConvolutionAlgebra α μ)) :
-    toL1Equiv α μ x = toL1CompletionLI α μ x := by
-  rw [← LinearIsometryEquiv.coe_toLinearIsometry, toLinearIsometry_toL1Equiv]
-
-/-- On elements of `ConvolutionAlgebra α μ`, `toL1Equiv` is `toL1`. -/
-@[simp]
-theorem toL1Equiv_coe (f : ConvolutionAlgebra α μ) :
-    toL1Equiv α μ f = toL1 f :=
-  ((toL1LI α μ).fromCompletionEquiv_apply_coe denseRange_toL1LI f).trans (toL1LI_apply f)
-
-/-- The inverse of `toL1Equiv` maps `toL1 f` back to the image of `f` in the completion. -/
-@[simp]
-theorem toL1Equiv_symm_toL1 (f : ConvolutionAlgebra α μ) :
-    (toL1Equiv α μ).symm (toL1 f) = f := by
-  rw [← toL1LI_apply]
-  exact (toL1LI α μ).fromCompletionEquiv_symm_apply_apply denseRange_toL1LI f
-
-/-- For `f : C_c(G, A)`, the inverse of `toL1Equiv` sends `f`'s `L¹` class to `toConv f`. -/
-@[simp]
-theorem toL1Equiv_symm_integrable_toL1 (f : C_c(G, A)) :
-    (toL1Equiv α μ).symm (f.integrable.toL1 f) =
-      ((toConv f : ConvolutionAlgebra α μ) : Completion (ConvolutionAlgebra α μ)) := by
-  rw [← toL1_toConv (α := α) (μ := μ), toL1Equiv_symm_toL1]
-
-end DenseEquiv
-
-end CStarAction.ConvolutionAlgebra
-
-namespace CStarAction
+namespace TauCeti.CStarAction
 
 variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
 
@@ -337,7 +222,7 @@ section InvAbsolutelyContinuous
 
 variable [MeasurableSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G]
   (α : CStarAction G A) {μ : Measure G}
-  [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
+  [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
 
 omit [LocallyCompactSpace G] [μ.InnerRegularCompactLTTop] in
 /-- Construct the convolved `L¹` majorant `W` for telescopic `C_c(G, A)` series `u` and `v` with
@@ -436,9 +321,7 @@ private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
     (hf : Integrable f μ) (hg : Integrable g μ) :
     (∀ᵐ s ∂μ, Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ) ∧
       ∃ hh : Integrable (α.bochnerConvolution μ f g) μ,
-        ConvolutionAlgebra.toL1Equiv α μ
-          ((ConvolutionAlgebra.toL1Equiv α μ).symm (hf.toL1 f) *
-            (ConvolutionAlgebra.toL1Equiv α μ).symm (hg.toL1 g)) =
+        α.convolutionL1 μ (hf.toL1 f) (hg.toL1 g) =
           hh.toL1 (α.bochnerConvolution μ f g) := by
   -- 1. Approximate `f` and `g` in `L¹` and a.e. by telescopic `C_c` series, and build the
   -- convolved `L¹` majorant `W`.
@@ -466,22 +349,25 @@ private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
       hh_memLp hW_memLp (.of_forall fun n => .of_forall fun s => hconv_le n s)
       (hconv_ae.mono fun _ h => h.2)
   refine ⟨hconv_ae.mono fun _ h => h.1, hh, ?_⟩
-  -- 3. Identify the `L¹` limit with the completion product by continuity of `toL1Equiv` and `*`.
-  let e := ConvolutionAlgebra.toL1Equiv α μ
+  -- 3. Identify the `L¹` limit with `convolutionL1` by joint continuity.
   have hmul_tendsto :
-      Tendsto (fun n => e ((e.symm ((φ n).integrable.toL1 (φ n))) *
-          (e.symm ((ψ n).integrable.toL1 (ψ n))))) atTop
-        (𝓝 (e (e.symm (hf.toL1 f) * e.symm (hg.toL1 g)))) :=
-    (e.continuous.tendsto _).comp
-      (((e.symm.continuous.tendsto _).comp hφ_L1).mul ((e.symm.continuous.tendsto _).comp hψ_L1))
+      Tendsto (fun n => α.convolutionL1 μ ((φ n).integrable.toL1 (φ n))
+          ((ψ n).integrable.toL1 (ψ n))) atTop
+        (𝓝 (α.convolutionL1 μ (hf.toL1 f) (hg.toL1 g))) :=
+    ((α.convolutionL1 μ).continuous₂.tendsto (hf.toL1 f, hg.toL1 g)).comp
+      (hφ_L1.prodMk_nhds hψ_L1)
   have hmul_eq (n : ℕ) :
-      e ((e.symm ((φ n).integrable.toL1 (φ n))) * (e.symm ((ψ n).integrable.toL1 (ψ n)))) =
+      α.convolutionL1 μ ((φ n).integrable.toL1 (φ n)) ((ψ n).integrable.toL1 (ψ n)) =
         (α.convolution μ (φ n) (ψ n)).integrable.toL1 (α.convolution μ (φ n) (ψ n)) := by
-    dsimp only [e]
-    rw [ConvolutionAlgebra.toL1Equiv_symm_integrable_toL1,
-      ConvolutionAlgebra.toL1Equiv_symm_integrable_toL1,
-      ← Completion.coe_mul', ConvolutionAlgebra.toL1Equiv_coe,
-      ← ConvolutionAlgebra.toConv_convolution, ConvolutionAlgebra.toL1_toConv]
+    have hφn : (φ n).integrable.toL1 (φ n) = CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ n) :=
+      Lp.ext ((φ n).integrable.coeFn_toL1.trans
+        (CompactlySupportedContinuousMap.coeFn_toLp ℂ (φ n)).symm)
+    have hψn : (ψ n).integrable.toL1 (ψ n) = CompactlySupportedContinuousMap.toLp 1 μ ℂ (ψ n) :=
+      Lp.ext ((ψ n).integrable.coeFn_toL1.trans
+        (CompactlySupportedContinuousMap.coeFn_toLp ℂ (ψ n)).symm)
+    rw [hφn, hψn, α.convolutionL1_toLp]
+    exact Lp.ext ((CompactlySupportedContinuousMap.coeFn_toLp ℂ _).trans
+      (α.convolution μ (φ n) (ψ n)).integrable.coeFn_toL1.symm)
   simp_rw [hmul_eq] at hmul_tendsto
   exact tendsto_nhds_unique hmul_tendsto hh_tendsto
 
@@ -501,15 +387,12 @@ theorem integrable_bochnerConvolution
     Integrable (α.bochnerConvolution μ f g) μ :=
   (α.bochnerConvolution_core hinv hf hg).2.choose
 
-/-- Multiplication in the twisted `L¹` completion corresponds under `toL1Equiv` to the `L¹` class
-of `bochnerConvolution` on integrable functions, whenever `μ.inv ≪ μ`. -/
-theorem toL1Equiv_mul_symm_toL1
+/-- Twisted `L¹` convolution `convolutionL1` of the `L¹` classes of integrable functions agrees
+with the `L¹` class of their pointwise `bochnerConvolution`, whenever `μ.inv ≪ μ`. -/
+theorem convolutionL1_toL1_eq_bochnerConvolution
     (hinv : μ.inv ≪ μ) {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
-    ConvolutionAlgebra.toL1Equiv α μ
-      ((ConvolutionAlgebra.toL1Equiv α μ).symm (hf.toL1 f) *
-        (ConvolutionAlgebra.toL1Equiv α μ).symm (hg.toL1 g)) =
-      (α.integrable_bochnerConvolution hinv hf hg).toL1
-        (α.bochnerConvolution μ f g) :=
+    α.convolutionL1 μ (hf.toL1 f) (hg.toL1 g) =
+      (α.integrable_bochnerConvolution hinv hf hg).toL1 (α.bochnerConvolution μ f g) :=
   (α.bochnerConvolution_core hinv hf hg).2.choose_spec
 
 /-- Submultiplicativity of the `L¹` norm for `bochnerConvolution` of integrable functions when
@@ -519,16 +402,24 @@ theorem integral_norm_bochnerConvolution_le
     ∫ s, ‖α.bochnerConvolution μ f g s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := by
   have hint := α.integrable_bochnerConvolution hinv hf hg
   rw [← L1.norm_of_fun_eq_integral_norm hint, ← L1.norm_of_fun_eq_integral_norm hf,
-    ← L1.norm_of_fun_eq_integral_norm hg,
-    ← α.toL1Equiv_mul_symm_toL1 hinv hf hg,
-    LinearIsometryEquiv.norm_map]
-  exact (norm_mul_le _ _).trans_eq (by simp)
+    ← L1.norm_of_fun_eq_integral_norm hg, ← α.convolutionL1_toL1_eq_bochnerConvolution hinv hf hg]
+  exact α.norm_convolutionL1_apply_le _ _
+
+/-- For arbitrary `u, v : Lp A 1 μ`, `α.convolutionL1 μ u v` is represented `μ`-almost everywhere
+by `α.bochnerConvolution μ u v` whenever `μ.inv ≪ μ`, with no second-countability assumption on
+`G`. -/
+theorem coeFn_convolutionL1 (hinv : μ.inv ≪ μ) (u v : Lp A 1 μ) :
+    α.convolutionL1 μ u v =ᵐ[μ] α.bochnerConvolution μ u v := by
+  have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
+  have hv : (L1.integrable_coeFn v).toL1 v = v := Integrable.toL1_coeFn v (L1.integrable_coeFn v)
+  conv_lhs => rw [← hu, ← hv]
+  rw [α.convolutionL1_toL1_eq_bochnerConvolution hinv
+    (L1.integrable_coeFn u) (L1.integrable_coeFn v)]
+  exact Integrable.coeFn_toL1 _
 
 private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
     ∃ hh : Integrable (α.bochnerInvolution f) μ,
-      ConvolutionAlgebra.toL1Equiv α μ
-        (star ((ConvolutionAlgebra.toL1Equiv α μ).symm (hf.toL1 f))) =
-        hh.toL1 (α.bochnerInvolution f) := by
+      α.twistedInvolutionL1 μ (hf.toL1 f) = hh.toL1 (α.bochnerInvolution f) := by
   obtain ⟨φ, u, hsum_u, hφ_L1, hφ_ae, hu_fin⟩ := hf.exists_sum_compactlySupported_tendsto
   -- Each `w k = α.twistedInvolution (u k)` has the same `L¹` norm as `u k`.
   let w : ℕ → C_c(G, A) := fun k => α.twistedInvolution (u k)
@@ -572,19 +463,19 @@ private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf 
       (fun n => memLp_one_iff_integrable.2 (α.twistedInvolution (φ n)).integrable)
       hh_memLp hW_memLp (.of_forall fun n => .of_forall fun s => hk_le n s) hlim
   refine ⟨hh, ?_⟩
-  let e := ConvolutionAlgebra.toL1Equiv α μ
   have hstar_tendsto :
-      Tendsto (fun n => e (star (e.symm ((φ n).integrable.toL1 (φ n))))) atTop
-        (𝓝 (e (star (e.symm (hf.toL1 f))))) :=
-    (e.continuous.tendsto _).comp ((continuous_star.tendsto _).comp
-      ((e.symm.continuous.tendsto _).comp hφ_L1))
+      Tendsto (fun n => α.twistedInvolutionL1 μ ((φ n).integrable.toL1 (φ n))) atTop
+        (𝓝 (α.twistedInvolutionL1 μ (hf.toL1 f))) :=
+    ((α.twistedInvolutionL1 μ).continuous.tendsto (hf.toL1 f)).comp hφ_L1
   have hstar_eq (n : ℕ) :
-      e (star (e.symm ((φ n).integrable.toL1 (φ n)))) =
+      α.twistedInvolutionL1 μ ((φ n).integrable.toL1 (φ n)) =
         (α.twistedInvolution (φ n)).integrable.toL1 (α.twistedInvolution (φ n)) := by
-    dsimp only [e]
-    rw [ConvolutionAlgebra.toL1Equiv_symm_integrable_toL1, ← Completion.coe_star,
-      ConvolutionAlgebra.toL1Equiv_coe, ← ConvolutionAlgebra.toConv_twistedInvolution,
-      ConvolutionAlgebra.toL1_toConv]
+    have hφn : (φ n).integrable.toL1 (φ n) = CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ n) :=
+      Lp.ext ((φ n).integrable.coeFn_toL1.trans
+        (CompactlySupportedContinuousMap.coeFn_toLp ℂ (φ n)).symm)
+    rw [hφn, α.twistedInvolutionL1_toLp]
+    exact Lp.ext ((CompactlySupportedContinuousMap.coeFn_toLp ℂ _).trans
+      (α.twistedInvolution (φ n)).integrable.coeFn_toL1.symm)
   simp_rw [hstar_eq] at hstar_tendsto
   exact tendsto_nhds_unique hstar_tendsto hh_tendsto
 
@@ -595,14 +486,12 @@ theorem integrable_bochnerInvolution
     Integrable (α.bochnerInvolution f) μ :=
   (α.bochnerInvolution_core hinv hf).choose
 
-/-- Involution in the twisted `L¹` completion corresponds under `toL1Equiv` to the `L¹` class of
-`bochnerInvolution` on integrable functions, whenever `μ.inv ≪ μ`. -/
-theorem toL1Equiv_star_symm_toL1
+/-- Twisted `L¹` involution `twistedInvolutionL1` of the `L¹` class of an integrable function
+agrees with the `L¹` class of `bochnerInvolution`, whenever `μ.inv ≪ μ`. -/
+theorem twistedInvolutionL1_toL1_eq_bochnerInvolution
     (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
-    ConvolutionAlgebra.toL1Equiv α μ
-      (star ((ConvolutionAlgebra.toL1Equiv α μ).symm (hf.toL1 f))) =
-      (α.integrable_bochnerInvolution hinv hf).toL1
-        (α.bochnerInvolution f) :=
+    α.twistedInvolutionL1 μ (hf.toL1 f) =
+      (α.integrable_bochnerInvolution hinv hf).toL1 (α.bochnerInvolution f) :=
   (α.bochnerInvolution_core hinv hf).choose_spec
 
 /-- The twisted involution preserves the `L¹` norm of any integrable function when `μ.inv ≪ μ`. -/
@@ -611,108 +500,18 @@ theorem integral_norm_bochnerInvolution
     ∫ s, ‖α.bochnerInvolution f s‖ ∂μ = ∫ s, ‖f s‖ ∂μ := by
   have hint := α.integrable_bochnerInvolution hinv hf
   rw [← L1.norm_of_fun_eq_integral_norm hint, ← L1.norm_of_fun_eq_integral_norm hf,
-    ← α.toL1Equiv_star_symm_toL1 hinv hf,
-    LinearIsometryEquiv.norm_map, norm_star, LinearIsometryEquiv.norm_map]
+    ← α.twistedInvolutionL1_toL1_eq_bochnerInvolution hinv hf, LinearIsometryEquiv.norm_map]
 
-/-- For elements `u, v : Lp A 1 μ`, the product of their preimages in the twisted `L¹` completion
-is represented `μ`-almost everywhere by `α.bochnerConvolution μ u v` whenever `μ.inv ≪ μ`. -/
-theorem coeFn_toL1Equiv_mul
-    (hinv : μ.inv ≪ μ) (u v : Lp A 1 μ) :
-    ConvolutionAlgebra.toL1Equiv α μ
-      ((ConvolutionAlgebra.toL1Equiv α μ).symm u *
-        (ConvolutionAlgebra.toL1Equiv α μ).symm v) =ᵐ[μ]
-      α.bochnerConvolution μ u v := by
-  have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
-  have hv : (L1.integrable_coeFn v).toL1 v = v := Integrable.toL1_coeFn v (L1.integrable_coeFn v)
-  conv_lhs => rw [← hu, ← hv]
-  rw [α.toL1Equiv_mul_symm_toL1 hinv
-    (L1.integrable_coeFn u) (L1.integrable_coeFn v)]
-  exact Integrable.coeFn_toL1 _
-
-/-- For `u : Lp A 1 μ`, the star of its preimage in the twisted `L¹` completion is represented
-`μ`-almost everywhere by `α.bochnerInvolution u` whenever `μ.inv ≪ μ`. -/
-theorem coeFn_toL1Equiv_star
+/-- For `u : Lp A 1 μ`, `α.twistedInvolutionL1 μ u` is represented `μ`-almost everywhere by
+`α.bochnerInvolution u` whenever `μ.inv ≪ μ` (without assuming `[μ.Regular]`). -/
+theorem coeFn_twistedInvolutionL1_of_inv_absolutelyContinuous
     (hinv : μ.inv ≪ μ) (u : Lp A 1 μ) :
-    ConvolutionAlgebra.toL1Equiv α μ
-      (star ((ConvolutionAlgebra.toL1Equiv α μ).symm u)) =ᵐ[μ]
-      α.bochnerInvolution u := by
+    α.twistedInvolutionL1 μ u =ᵐ[μ] α.bochnerInvolution u := by
   have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
   conv_lhs => rw [← hu]
-  rw [α.toL1Equiv_star_symm_toL1 hinv (L1.integrable_coeFn u)]
+  rw [α.twistedInvolutionL1_toL1_eq_bochnerInvolution hinv (L1.integrable_coeFn u)]
   exact Integrable.coeFn_toL1 _
 
 end InvAbsolutelyContinuous
 
-/-! ### Trivial-action comparison with `Lp.convolutionL` and `Lp.modularInversion` -/
-
-namespace ConvolutionAlgebra
-
-section TrivialMul
-
-variable [MeasurableSpace G] [IsTopologicalGroup G] [WeaklyLocallyCompactSpace G] [BorelSpace G]
-  (μ : Measure G) [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant]
-
-/-- For the trivial action on `ℂ`, `toL1Equiv` intertwines multiplication in the twisted `L¹`
-completion with scalar group convolution `MeasureTheory.Lp.convolutionL`. -/
-theorem toL1Equiv_trivial_mul
-    (x y : Completion (ConvolutionAlgebra (CStarAction.trivial (G := G) (A := ℂ)) μ)) :
-    toL1Equiv (CStarAction.trivial (G := G) (A := ℂ)) μ (x * y) =
-      Lp.convolutionL μ 1 ENNReal.one_ne_top
-        (toL1Equiv (CStarAction.trivial (G := G) (A := ℂ)) μ x)
-        (toL1Equiv (CStarAction.trivial (G := G) (A := ℂ)) μ y) := by
-  induction x, y using Completion.induction_on₂ with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih f g =>
-    rw [← Completion.coe_mul', toL1Equiv_coe, toL1Equiv_coe, toL1Equiv_coe,
-      toL1_eq_toL1_ofConv f, toL1_eq_toL1_ofConv g]
-    refine Lp.ext ((coeFn_toL1 (f * g)).trans ?_)
-    refine EventuallyEq.trans (.of_forall fun s => ?_)
-      (Lp.convolutionL_toL1_ae_eq (μ := μ) f.ofConv.continuous f.ofConv.hasCompactSupport
-        g.ofConv.continuous g.ofConv.hasCompactSupport).symm
-    simp [ofConv_mul]
-
-/-- Transported form of `toL1Equiv_trivial_mul` on classes `u, v : Lp ℂ 1 μ`. -/
-theorem toL1Equiv_symm_convolutionL (u v : Lp ℂ 1 μ) :
-    (toL1Equiv (CStarAction.trivial (G := G) (A := ℂ)) μ).symm
-      (Lp.convolutionL μ 1 ENNReal.one_ne_top u v) =
-      (toL1Equiv (CStarAction.trivial (G := G) (A := ℂ)) μ).symm u *
-        (toL1Equiv (CStarAction.trivial (G := G) (A := ℂ)) μ).symm v := by
-  apply (toL1Equiv (CStarAction.trivial (G := G) (A := ℂ)) μ).injective
-  simp [toL1Equiv_trivial_mul]
-
-end TrivialMul
-
-section TrivialStar
-
-variable [MeasurableSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G]
-  (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular]
-
-/-- For the trivial action on any C⋆-algebra `A` (in particular `A = ℂ`), `toL1Equiv` intertwines
-the involution of the twisted `L¹` completion with pointwise star followed by
-`MeasureTheory.Lp.modularInversion`. -/
-theorem toL1Equiv_trivial_star
-    (x : Completion (ConvolutionAlgebra (CStarAction.trivial (G := G) (A := A)) μ)) :
-    toL1Equiv (CStarAction.trivial (G := G) (A := A)) μ (star x) =
-      Lp.modularInversion μ 1 ℂ
-        (star (toL1Equiv (CStarAction.trivial (G := G) (A := A)) μ x)) := by
-  induction x using Completion.induction_on with
-  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih f =>
-    rw [← Completion.coe_star, toL1Equiv_coe, toL1Equiv_coe]
-    refine Lp.ext ?_
-    filter_upwards [coeFn_toL1 (star f),
-      Lp.coeFn_modularInversion (𝕜 := ℂ) (star (toL1 f)),
-      (μ.quasiMeasurePreserving_inv_of_regular).ae
-        ((Lp.coeFn_star (toL1 f)).trans (coeFn_toL1 f).star)] with s h₁ h₂ h₃
-    rw [h₁, h₂]
-    simp only [ofConv_star, twistedInvolution_apply, trivial_apply, ENNReal.toReal_one, inv_one,
-      Real.rpow_one, Complex.coe_smul]
-    exact congrArg ((Measure.modularCharacter s : ℝ) • ·) h₃.symm
-
-end TrivialStar
-
-end ConvolutionAlgebra
-
-end CStarAction
-
-end TauCeti
+end TauCeti.CStarAction

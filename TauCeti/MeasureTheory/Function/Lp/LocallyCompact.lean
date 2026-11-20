@@ -10,27 +10,28 @@ public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
 public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 
 /-!
 # `Lᵖ` functions on a locally compact space
 
-Let `μ` be a locally finite measure on a weakly locally compact `R₁` space `X` with its Borel
-σ-algebra that is inner regular on sets of finite measure with respect to compact sets
-(`[IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]`), for instance either a regular or an
-inner regular Haar measure on a locally compact group. This file proves that compactly supported
-continuous functions are dense in `Lᵖ(X, μ)` for `p < ∞`, and that every integrable function is
-the `L¹` and almost-everywhere sum of an `L¹`-absolutely convergent series of compactly supported
-continuous functions.
+Let `μ` be a measure on a weakly locally compact `R₁` space `X` with its Borel σ-algebra that is
+finite on compact sets and inner regular with respect to compact sets on measurable sets of finite
+measure (`IsFiniteMeasureOnCompacts μ` and `μ.InnerRegularCompactLTTop`), for instance a Haar
+measure on a locally compact group. This file proves that compactly supported continuous functions
+are dense in `Lᵖ(X, μ)` for `p < ∞`, and that every integrable function is the `L¹` and
+almost-everywhere sum of an `L¹`-absolutely convergent series of compactly supported continuous
+functions.
 
 Mathlib's `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le` assumes `NormalSpace X`
-in addition to `R1Space X` and `WeaklyLocallyCompactSpace X`, and Mathlib provides no
-`NormalSpace` instance for locally compact groups. Here normality and global outer regularity are
-not needed: the indicator function of a measurable set `t` of finite measure is approximated
-directly. Choose a compact closed `K ⊆ t` with `μ (t \ K)` small and an open `U ⊇ K` with
-`μ (U \ K)` small, and apply Urysohn's lemma for the compact set `K` inside the open set `U`,
-which holds in every locally compact regular space. Mathlib's
-`MeasureTheory.MemLp.induction_dense` extends the approximation from indicator functions to all
-of `Lᵖ`.
+and `μ.Regular` in addition to `R1Space X` and `WeaklyLocallyCompactSpace X`, and Mathlib provides
+no `NormalSpace` instance for locally compact groups. Neither normality nor global outer
+regularity is needed here: the indicator function of a measurable set `t` of finite measure is
+approximated directly. Choose a compact closed `K ⊆ t` with `μ (t \ K)` small and, by local
+finiteness and inner regularity on compact sets, an open `U ⊇ K` with `μ (U \ K)` small, then
+apply Urysohn's lemma for the compact set `K` inside the open set `U`, which holds in every
+locally compact regular space. Mathlib's `MeasureTheory.MemLp.induction_dense` extends the
+approximation from indicator functions to all of `Lᵖ`.
 
 ## Main results
 
@@ -39,8 +40,9 @@ of `Lᵖ`.
   supported continuous functions.
 * `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace`: every
   `Lᵖ` function, `p < ∞`, is approximated in `Lᵖ` by compactly supported continuous functions.
-* `MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport`: the classes of compactly supported
-  continuous functions are dense in `Lᵖ`, `p < ∞`.
+* `MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport` and
+  `CompactlySupportedContinuousMap.denseRange_toLp`: the classes of compactly supported continuous
+  functions are dense in `Lᵖ`, `p < ∞`.
 * `MeasureTheory.Integrable.exists_sum_compactlySupported_tendsto`: every integrable function is
   approximated in `L¹` and almost everywhere by partial sums of a sequence in `C_c(X, E)` with
   summable `L¹` norms.
@@ -55,7 +57,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Topology
-open scoped CompactlySupported ENNReal
+open scoped ENNReal CompactlySupported
 
 namespace MeasureTheory
 
@@ -64,7 +66,7 @@ variable {X E : Type*} [TopologicalSpace X] [R1Space X] [WeaklyLocallyCompactSpa
 
 section Dense
 
-variable [BorelSpace X] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
+variable [BorelSpace X] [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
 
 /-- In a weakly locally compact `R₁` space, the indicator function of a measurable set of finite
 measure with constant value `c` is approximated in `Lᵖ`, `p < ∞`, by compactly supported continuous
@@ -76,15 +78,18 @@ theorem exists_hasCompactSupport_eLpNorm_sub_indicator_le (hp : p ≠ ∞) (c : 
   obtain ⟨η, hη0, hη⟩ := exists_eLpNorm_indicator_le (μ := μ) hp c hε
   have hη2 : (η : ℝ≥0∞) / 2 ≠ 0 := (ENNReal.half_pos (by exact_mod_cast hη0.ne')).ne'
   obtain ⟨K, hKt, hKc, hKcl, hK⟩ := ht.exists_isCompact_isClosed_sdiff_lt htμ.ne hη2
-  obtain ⟨U, hKU, hUo, hU⟩ := hKc.exists_isOpen_lt_add (μ := μ) hη2
+  obtain ⟨U, hKU, hUo, hμU⟩ := hKc.exists_isOpen_lt_add (μ := μ) hη2
+  have hUK : μ (U \ K) < η / 2 :=
+    measure_sdiff_lt_of_lt_add hKcl.nullMeasurableSet hKU
+      (ne_top_of_le_ne_top htμ.ne (measure_mono hKt)) hμU
   obtain ⟨f, hfK, hfU, hfs, hf01⟩ := exists_continuous_one_zero_of_isCompact hKc
     hUo.isClosed_compl (Set.disjoint_compl_right_iff_subset.2 hKU)
   refine ⟨fun x => f x • c,
     (eLpNorm_mono ((f.continuous.aestronglyMeasurable.smul_const c).sub
       (aestronglyMeasurable_const.indicator ht)) fun x => ?_).trans
-      (hη (U \ K ∪ t \ K) ?_
-        ((hUo.measurableSet.diff hKcl.measurableSet).union
-          (ht.diff hKcl.measurableSet)).nullMeasurableSet),
+      (hη ((U \ K) ∪ (t \ K)) ?_
+        (((hUo.measurableSet.diff hKcl.measurableSet).union
+          (ht.diff hKcl.measurableSet)).nullMeasurableSet)),
     f.continuous.smul continuous_const, hfs.smul_right⟩
   · -- `f • c` agrees with `c` on `K` and with `0` outside `U ∪ t`, and is bounded by `‖c‖`.
     simp only [Pi.sub_apply]
@@ -92,28 +97,26 @@ theorem exists_hasCompactSupport_eLpNorm_sub_indicator_le (hp : p ≠ ∞) (c : 
       abs_sub_le_iff.2 ⟨by linarith [(hf01 x).2], by linarith [(hf01 x).1]⟩
     by_cases hxK : x ∈ K
     · simp [hfK hxK, hKt hxK]
-    by_cases hxt : x ∈ t
-    · have hfc : f x • c - c = (f x - 1) • c := by rw [sub_smul, one_smul]
-      have hmem : x ∈ U \ K ∪ t \ K := Set.mem_union_right _ ⟨hxt, hxK⟩
-      rw [Set.indicator_of_mem hxt, Set.indicator_of_mem hmem, hfc, norm_smul, Real.norm_eq_abs]
-      exact mul_le_of_le_one_left (norm_nonneg c) hf1
-    by_cases hxU : x ∈ U
-    · have hmem : x ∈ U \ K ∪ t \ K := Set.mem_union_left _ ⟨hxU, hxK⟩
-      rw [Set.indicator_of_notMem hxt, Set.indicator_of_mem hmem, sub_zero, norm_smul,
-        Real.norm_eq_abs, abs_of_nonneg (hf01 x).1]
-      exact mul_le_of_le_one_left (norm_nonneg c) (hf01 x).2
-    · simp [hfU hxU, Set.indicator_of_notMem hxt]
-  · -- Both `U \ K` and `t \ K` have measure less than `η / 2`.
-    have hUK : μ (U \ K) < η / 2 :=
-      measure_sdiff_lt_of_lt_add hKcl.nullMeasurableSet hKU hKc.measure_lt_top.ne hU
-    calc μ (U \ K ∪ t \ K) ≤ μ (U \ K) + μ (t \ K) := measure_union_le _ _
+    by_cases hxUt : x ∈ U ∨ x ∈ t
+    · rw [Set.indicator_of_mem
+        (hxUt.elim (fun h => Set.mem_union_left _ (And.intro h hxK))
+          (fun h => Set.mem_union_right _ (And.intro h hxK)))]
+      by_cases hxt : x ∈ t
+      · have hsub : f x • c - c = (f x - 1) • c := by rw [sub_smul, one_smul]
+        rw [Set.indicator_of_mem hxt, hsub, norm_smul, Real.norm_eq_abs]
+        exact mul_le_of_le_one_left (norm_nonneg c) hf1
+      · rw [Set.indicator_of_notMem hxt, sub_zero, norm_smul, Real.norm_eq_abs,
+          abs_of_nonneg (hf01 x).1]
+        exact mul_le_of_le_one_left (norm_nonneg c) (hf01 x).2
+    · simp [hfU (not_or.1 hxUt).1, Set.indicator_of_notMem (not_or.1 hxUt).2]
+  · calc μ ((U \ K) ∪ (t \ K)) ≤ μ (U \ K) + μ (t \ K) := measure_union_le _ _
       _ ≤ η / 2 + η / 2 := add_le_add hUK.le hK.le
       _ = η := ENNReal.add_halves _
 
-/-- **Density of compactly supported continuous functions in `Lᵖ`** for a locally finite measure
-inner regular on finite-measure sets on a weakly locally compact `R₁` space, `p < ∞`. Unlike
-`MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le`, neither normality of the space nor
-outer regularity on sets of infinite measure is assumed. -/
+/-- **Density of compactly supported continuous functions in `Lᵖ`** for a measure on a weakly
+locally compact `R₁` space that is finite on compact sets and inner regular on sets of finite
+measure, `p < ∞`. Unlike `MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le`, neither
+normality of the space nor global outer regularity of the measure is assumed. -/
 theorem MemLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace (hp : p ≠ ∞)
     {f : X → E} (hf : MemLp f p μ) {ε : ℝ≥0∞} (hε : ε ≠ 0) :
     ∃ g : X → E, HasCompactSupport g ∧ eLpNorm (f - g) p μ ≤ ε ∧ Continuous g ∧ MemLp g p μ := by
@@ -126,9 +129,10 @@ theorem MemLp.exists_hasCompactSupport_eLpNorm_sub_le_of_locallyCompactSpace (hp
     (fun _ _ hf hg => ⟨hf.1.add hg.1, hf.2.add hg.2⟩) hε
   exact ⟨g, hgs, hfg, hgc, hgc.memLp_of_hasCompactSupport hgs⟩
 
-/-- **Density of compactly supported continuous functions in `Lᵖ`** for a locally finite measure
-inner regular on finite-measure sets on a weakly locally compact `R₁` space, `p < ∞`: the classes
-of compactly supported continuous functions are dense in `Lp E p μ`. -/
+/-- **Density of compactly supported continuous functions in `Lᵖ`** for a measure on a weakly
+locally compact `R₁` space that is finite on compact sets and inner regular on sets of finite
+measure, `p < ∞`: the classes of compactly supported continuous functions are dense in
+`Lp E p μ`. -/
 theorem Lp.dense_setOf_continuous_hasCompactSupport [Fact (1 ≤ p)] (hp : p ≠ ∞) :
     Dense {u : Lp E p μ | ∃ f : X → E, Continuous f ∧ HasCompactSupport f ∧ u =ᵐ[μ] f} := by
   refine Metric.dense_iff.2 fun u r hr => ?_
@@ -201,3 +205,20 @@ theorem Integrable.exists_sum_compactlySupported_tendsto {f : X → E} (hf : Int
 end Dense
 
 end MeasureTheory
+
+namespace CompactlySupportedContinuousMap
+
+variable {X E : Type*} [TopologicalSpace X] [MeasurableSpace X] [NormedAddCommGroup E]
+
+/-- Compactly supported continuous functions have dense range in `Lp E p μ` for `p < ∞`. -/
+theorem denseRange_toLp [R1Space X] [WeaklyLocallyCompactSpace X] [BorelSpace X]
+    [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞) (μ : Measure X)
+    [IsFiniteMeasureOnCompacts μ] [μ.InnerRegularCompactLTTop]
+    (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] :
+    DenseRange (toLp (X := X) (E := E) p μ 𝕜) := by
+  refine (Lp.dense_setOf_continuous_hasCompactSupport (X := X) (E := E) (μ := μ) hp).mono ?_
+  rintro u ⟨f, hfc, hfs, hfu⟩
+  let f' : C_c(X, E) := ⟨⟨f, hfc⟩, hfs⟩
+  exact ⟨f', Lp.ext ((coeFn_toLp 𝕜 f').trans hfu.symm)⟩
+
+end CompactlySupportedContinuousMap

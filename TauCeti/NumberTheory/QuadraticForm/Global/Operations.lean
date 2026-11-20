@@ -54,9 +54,9 @@ def atRealPlaceProd (Q : _root_.QuadraticForm K V) (R : _root_.QuadraticForm K W
     (place : {w : InfinitePlace K // w.IsReal}) :
     (atRealPlace (Q.prod R) place).IsometryEquiv
       ((atRealPlace Q place).prod (atRealPlace R place)) := by
-  let : CharZero K := RingHom.charZero place.1.embedding
+  let : CharZero K := RingHom.charZero place.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
   let e := baseChangeProd (A := ℝ) Q R
   refine { toLinearEquiv := e, map_app' := ?_ }
   intro x
@@ -110,11 +110,11 @@ theorem atFinitePlaceProd_symm_tmul [NumberField K] (Q : _root_.QuadraticForm K 
 theorem atRealPlaceProd_tmul (Q : _root_.QuadraticForm K V)
     (R : _root_.QuadraticForm K W) (place : {w : InfinitePlace K // w.IsReal})
     (a : ℝ) (x : V × W) :
-    let _ : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+    let _ : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
     atRealPlaceProd Q R place (a ⊗ₜ x) = (a ⊗ₜ x.1, a ⊗ₜ x.2) := by
-  let : CharZero K := RingHom.charZero place.1.embedding
+  let : CharZero K := RingHom.charZero place.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
   calc
     atRealPlaceProd Q R place (a ⊗ₜ x) =
         baseChangeProd (A := ℝ) Q R (a ⊗ₜ x) := by
@@ -127,11 +127,11 @@ theorem atRealPlaceProd_tmul (Q : _root_.QuadraticForm K V)
 theorem atRealPlaceProd_symm_tmul (Q : _root_.QuadraticForm K V)
     (R : _root_.QuadraticForm K W) (place : {w : InfinitePlace K // w.IsReal})
     (a : ℝ) (x : V) (y : W) :
-    let _ : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+    let _ : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
     (atRealPlaceProd Q R place).symm (a ⊗ₜ x, a ⊗ₜ y) = a ⊗ₜ (x, y) := by
-  let : CharZero K := RingHom.charZero place.1.embedding
+  let : CharZero K := RingHom.charZero place.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
   calc
     (atRealPlaceProd Q R place).symm (a ⊗ₜ x, a ⊗ₜ y) =
         (baseChangeProd (A := ℝ) Q R).symm (a ⊗ₜ x, a ⊗ₜ y) := by
@@ -188,9 +188,9 @@ theorem atFinitePlace_neg [NumberField K] (Q : _root_.QuadraticForm K V)
 theorem atRealPlace_neg (Q : _root_.QuadraticForm K V)
     (place : {w : InfinitePlace K // w.IsReal}) :
     atRealPlace (-Q) place = -(atRealPlace Q place) := by
-  let : CharZero K := RingHom.charZero place.1.embedding
+  let : CharZero K := RingHom.charZero place.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
   rw [atRealPlace_def, atRealPlace_def, baseChange_neg]
 
 /-- Complex localization commutes with negation. -/
@@ -221,10 +221,10 @@ place. -/
 @[simp]
 theorem atRealPlace_smul (a : K) (Q : _root_.QuadraticForm K V)
     (place : {w : InfinitePlace K // w.IsReal}) :
-    atRealPlace (a • Q) place = embedding_of_isReal place.2 a • atRealPlace Q place := by
-  let : CharZero K := RingHom.charZero place.1.embedding
+    atRealPlace (a • Q) place = embedding_of_isReal place.property a • atRealPlace Q place := by
+  let : CharZero K := RingHom.charZero place.val.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  let : Algebra K ℝ := (embedding_of_isReal place.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
   rw [atRealPlace_def, atRealPlace_def, baseChange_smul, RingHom.algebraMap_toAlgebra]
 
 /-- Complex localization turns scaling by a global scalar into scaling by its value at the

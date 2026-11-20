@@ -1053,6 +1053,7 @@ theorem cIco_eq_singleton_iff {a b c : Fin n} :
     have hab : a ≠ b := by
       rintro rfl
       simp at h
+      exact (Finset.singleton_nonempty c).ne_empty h.symm
     have hac : a = c := Finset.mem_singleton.mp (h ▸ left_mem_cIco hab)
     subst c
     refine ⟨rfl, ?_, hab⟩

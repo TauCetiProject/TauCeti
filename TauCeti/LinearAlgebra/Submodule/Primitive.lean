@@ -97,7 +97,7 @@ theorem exists_isCompl_iff_isTorsionFree_quotient
       have hx : S.mkQ (x : M) = 0 := by
         apply LinearMap.mem_ker.mp
         rw [S.ker_mkQ]
-        exact x.2
+        exact x.property
       simp [p, e, hx]
     exact ⟨LinearMap.ker p, LinearMap.isCompl_of_proj hp⟩
 
