@@ -156,12 +156,6 @@ private def linearHomComplexSingleXIso (i : ℤ) :
       (K.negChainComplex.linearYonedaObj k Y).X i :=
   (HomComplex.Cochain.toSingleLinearEquiv (neg_add_cancel i)).toModuleIso
 
-private lemma linearHomComplexSingleXIso_hom_apply (i : ℤ)
-    (f : (linearHomComplex k K ((singleFunctor C 0).obj Y)).X i) :
-    (linearHomComplexSingleXIso K k Y i).hom f =
-      HomComplex.Cochain.toSingleEquiv (neg_add_cancel i) f :=
-  rfl
-
 /-- **The dual of `K` is the `Hom` complex of `K.negChainComplex`**: the cochain complex
 `Hom(K, Y[0])` is isomorphic to `Hom(K.negChainComplex, Y)`, through the identification of cochains
 of degree `i` with morphisms `K⁻ⁱ ⟶ Y` (`CochainComplex.HomComplex.Cochain.toSingleEquiv`). -/
