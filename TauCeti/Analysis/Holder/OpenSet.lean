@@ -585,6 +585,24 @@ theorem norm_iteratedFDeriv_extend_le (f : CkHolderSpaceOn k α Ω F) {i : ℕ} 
     (x : Ω) : ‖_root_.iteratedFDeriv ℝ i f.extend x‖ ≤ ‖f‖ :=
   f.norm_iteratedFDeriv_apply_le f.extend_apply hi x
 
+/-- On a convex open set and for `α ≤ 1`, every derivative through order `k` of a function that
+agrees with an element of `C^{k,α}(Ω)` on `Ω` is `α`-Hölder on `Ω`, with constant `3 * ‖f‖`.
+Lower derivatives are controlled by their supremum norm and the bound on the next derivative,
+through the mean value inequality; without convexity this can fail, as for the inclusion
+`CkHolderSpaceOn.inclusionSuccL`. -/
+theorem holderOnWith_iteratedFDeriv_of_le (f : CkHolderSpaceOn k α Ω F)
+    (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) {g : E → F} (hg : ∀ x : Ω, g x = f x) {j : ℕ}
+    (hj : j ≤ k) : HolderOnWith (3 * ‖f‖₊) α (_root_.iteratedFDeriv ℝ j g) Ω := by
+  rcases hj.eq_or_lt with rfl | hj
+  · exact (f.holderOnWith_iteratedFDeriv hg).mono_const (by
+      exact_mod_cast (f.nnHolderNorm_iteratedFDeriv_le.trans
+        (by nlinarith [norm_nonneg f] : ‖f‖ ≤ 3 * ‖f‖)))
+  · have h := (f.contDiffOn hg).holderOnWith_iteratedFDeriv_of_lt Ω.isOpen hconv
+      (M := ‖f‖₊) (L := ‖f‖₊) hj hα (fun x hx ↦ f.norm_iteratedFDeriv_apply_le hg hj.le ⟨x, hx⟩)
+      (fun x hx ↦ f.norm_iteratedFDeriv_apply_le hg hj ⟨x, hx⟩)
+    convert h using 1
+    ring
+
 /-- The underlying function on `Ω` of an element of `C^{k,α}(Ω)` is continuous. -/
 theorem continuous (f : CkHolderSpaceOn k α Ω F) : Continuous f := by
   have h := continuousOn_iff_continuous_domRestrict.1 f.contDiffOn_extend.continuousOn
