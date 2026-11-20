@@ -161,8 +161,8 @@ theorem reverse_mem_stage_iff {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q} :
 variable (q) in
 /-- The reversal restricted to the stage of the first `n` strands, as a linear isomorphism. -/
 def stageReverse (n : ℕ) : stage R q n ≃ₗ[R] stage R q n where
-  toFun x := ⟨reverse q x, reverse_mem_stage_iff.2 x.2⟩
-  invFun x := ⟨reverse q x, reverse_mem_stage_iff.2 x.2⟩
+  toFun x := ⟨reverse q x, reverse_mem_stage_iff.2 x.property⟩
+  invFun x := ⟨reverse q x, reverse_mem_stage_iff.2 x.property⟩
   left_inv x := Subtype.ext (reverse_reverse (x : InfiniteTypeAHeckeAlgebra R q))
   right_inv x := Subtype.ext (reverse_reverse (x : InfiniteTypeAHeckeAlgebra R q))
   map_add' x y := Subtype.ext (map_add (reverse q) (x : InfiniteTypeAHeckeAlgebra R q) y)

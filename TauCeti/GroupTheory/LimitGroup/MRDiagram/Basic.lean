@@ -508,7 +508,7 @@ theorem isComplete_iff_of_equiv {D : MRDiagram ι} {x : X → H} (e : GHom ι ι
     D.IsComplete ιL ↔ ∀ v ∈ V ιL S, ∃ φ ∈ D.branchHoms ιL, ∀ i, φ (x i) = v i := by
   refine ⟨fun h v hv => ⟨_, h (e.symm ⟨v, hv⟩), fun i => ?_⟩, fun h φ => ?_⟩
   · rw [← he, e.apply_symm_apply]
-  · obtain ⟨ψ, hψ, hψv⟩ := h _ (e φ).2
+  · obtain ⟨ψ, hψ, hψv⟩ := h _ (e φ).property
     rwa [← e.injective (Subtype.ext (funext fun i => (he ψ i).trans (hψv i)))]
 
 /-- A diagram of the coordinate group of a system `S` over the target is sound for `S` at the
@@ -518,7 +518,7 @@ theorem isSound_coordGroup (D : MRDiagram (CoordGroup.coeff ιL S)) :
   D.isSound_of_forall S fun φ => by
     have : (CoordGroup.homEquiv ιL S φ : X → L) = fun x => φ (CoordGroup.genericPoint ιL S x) :=
       funext fun x => by simp [CoordGroup.genericPoint_apply]
-    exact this ▸ (CoordGroup.homEquiv ιL S φ).2
+    exact this ▸ (CoordGroup.homEquiv ιL S φ).property
 
 /-- A diagram of the coordinate group of a system `S` over the target is complete exactly when
 every solution of `S` in the target is the value on the variables of a branch composite. -/
@@ -533,7 +533,7 @@ branch composite is a solution of `S`. -/
 theorem isSound_systemGroup (D : MRDiagram (SystemGroup.coeff S)) :
     D.IsSound ιL S fun x => ((inr (FreeGroup.of x) : GX A X) : SystemGroup A S) :=
   D.isSound_of_forall S fun φ =>
-    funext (SystemGroup.homEquiv_apply_coe φ) ▸ (SystemGroup.homEquiv ιL S φ).2
+    funext (SystemGroup.homEquiv_apply_coe φ) ▸ (SystemGroup.homEquiv ιL S φ).property
 
 /-- A diagram of the group presented by a system `S` is complete exactly when every solution of
 `S` in the target is the value on the variables of a branch composite. -/

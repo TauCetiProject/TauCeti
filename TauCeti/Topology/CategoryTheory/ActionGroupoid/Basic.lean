@@ -161,15 +161,15 @@ first arrow is followed by the second, so the second label multiplies on the lef
 theorem continuous_comp [ContinuousMul G] :
     Continuous (fun p : {p : Quiver.Total (ActionCategory G X) ×
         Quiver.Total (ActionCategory G X) // p.1.right = p.2.left} =>
-      p.1.1.comp p.1.2 p.2) := by
+      p.val.1.comp p.val.2 p.property) := by
   apply (arrowHomeomorph G X).isInducing.continuous_iff.mpr
   simpa only [Function.comp_def, Quiver.Total.comp_def, arrowHomeomorph_apply,
     ActionCategory.comp_hom, eqToHom_hom, one_mul, mul_one, Pi.mul_apply,
     objectHomeomorph_apply] using
-    (((continuous_label G X).comp (continuous_snd.comp continuous_subtype_val)).mul
-      ((continuous_label G X).comp (continuous_fst.comp continuous_subtype_val))).prodMk
+    (((continuous_label G X).comp (continuous_snd.comp continuous_subtypeVal)).mul
+      ((continuous_label G X).comp (continuous_fst.comp continuous_subtypeVal))).prodMk
         ((objectHomeomorph G X).continuous.comp
-          ((continuous_source G X).comp (continuous_fst.comp continuous_subtype_val)))
+          ((continuous_source G X).comp (continuous_fst.comp continuous_subtypeVal)))
 
 section Discrete
 

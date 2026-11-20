@@ -69,7 +69,7 @@ def sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) : C(sphere (0 : W) 1, 
   toFun s := ⟨⟨(e s : V), by
       rw [mem_sphere_zero_iff_norm, Submodule.norm_coe, LinearIsometryEquiv.norm_map,
         norm_eq_of_mem_sphere]⟩,
-    mem_sphereEquator.2 (Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).2)⟩
+    mem_sphereEquator.2 (Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).property)⟩
   continuous_toFun := by fun_prop
 
 @[simp]
@@ -86,8 +86,8 @@ theorem injective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
 /-- The map `LinearIsometryEquiv.sphereToEquator e` onto the equator is surjective. -/
 theorem surjective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
     Function.Surjective e.sphereToEquator := fun q =>
-  ⟨⟨e.symm ⟨q.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2
-      (mem_sphereEquator.1 q.2)⟩, by simp [norm_eq_of_mem_sphere]⟩,
+  ⟨⟨e.symm ⟨q.val.val, Submodule.mem_orthogonal_singleton_iff_inner_left.2
+      (mem_sphereEquator.1 q.property)⟩, by simp [norm_eq_of_mem_sphere]⟩,
     Subtype.ext (Subtype.ext (by simp))⟩
 
 end LinearIsometryEquiv

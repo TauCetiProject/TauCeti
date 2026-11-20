@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.AEEqFun
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
@@ -17,7 +18,9 @@ import TauCeti.Topology.MetricSpace.Pseudo.Defs
 space and `μ` is finite, its distance is the integral of `dist f g / (1 + dist f g)`.
 This is a metric when `E` is separated. The separate carrier permits these structures without
 changing any structures on `AEEqFun` or on the native `Lp` spaces. Constants and continuous
-unary and binary post-composition are available for arbitrary topological codomains.
+unary and binary post-composition are available for arbitrary topological codomains, and on
+finite measure spaces `L0.const μ` is `(μ univ).toNNReal`-Lipschitz with all distances strictly
+below `μ.real univ` when `μ ≠ 0`.
 -/
 
 public section
@@ -99,6 +102,18 @@ theorem aemeasurable [PseudoMetrizableSpace E] [MeasurableSpace E] [BorelSpace E
 theorem ext {f g : L0 E μ} (h : f =ᵐ[μ] g) : f = g :=
   equivAEEqFun.injective (AEEqFun.ext h)
 
+/-- An inhabited codomain induces an inhabited `L0` space via the default constant class. -/
+instance instInhabited [Inhabited E] : Inhabited (L0 E μ) :=
+  ⟨⟨default⟩⟩
+
+/-- Over an empty domain, `L0 E μ` is a subsingleton. -/
+instance instSubsingleton [IsEmpty Ω] : Subsingleton (L0 E μ) :=
+  ⟨fun _ _ ↦ ext (ae_of_all _ isEmptyElim)⟩
+
+/-- When `μ = 0`, `L0 E μ` is a subsingleton. -/
+theorem subsingleton_of_measure_zero (hμ : μ = 0) : Subsingleton (L0 E μ) :=
+  ⟨fun _ _ ↦ ext (by simp [EventuallyEq, hμ])⟩
+
 /-- Construct a random variable from an almost-everywhere strongly measurable function. -/
 def ofFun (f : Ω → E) (hf : AEStronglyMeasurable f μ) : L0 E μ :=
   ⟨AEEqFun.mk f hf⟩
@@ -139,6 +154,10 @@ theorem toAEEqFun_const (c : E) : (const μ c).toAEEqFun = AEEqFun.const Ω c :=
 /-- A constant random variable is almost everywhere equal to its constant value. -/
 theorem coeFn_const (c : E) : (const μ c : Ω → E) =ᵐ[μ] fun _ ↦ c :=
   AEEqFun.coeFn_const Ω c
+
+/-- On a nonzero measure space, the chosen representative of `const μ c` is identically `c`. -/
+theorem coeFn_const_eq [NeZero μ] (c : E) (x : Ω) : const μ c x = c :=
+  AEEqFun.coeFn_const_eq Ω c x
 
 /-- Constructing a random variable from a constant function gives `const`. -/
 @[simp]
@@ -278,12 +297,54 @@ theorem dist_const (c d : E) :
   rw [← ofFun_const, ← ofFun_const, dist_ofFun]
   simp
 
+/-- Embedding a constant value into `L0 E μ` is `(μ univ).toNNReal`-Lipschitz on a finite
+measure space. -/
+theorem lipschitzWith_const :
+    LipschitzWith (μ univ).toNNReal (const μ : E → L0 E μ) :=
+  LipschitzWith.of_dist_le_mul fun a b ↦ by
+    rw [dist_const, measureReal_def, ENNReal.toReal]
+    exact mul_le_mul_of_nonneg_left
+      (div_le_self dist_nonneg (le_add_of_nonneg_right dist_nonneg)) (NNReal.coe_nonneg _)
+
+/-- On the zero measure, every `L⁰` distance is `0`. -/
+theorem dist_eq_zero_of_measure_zero (hμ : μ = 0) (f g : L0 E μ) : dist f g = 0 := by
+  have := subsingleton_of_measure_zero (E := E) hμ
+  rw [Subsingleton.elim f g, dist_self]
+
 /-- Every distance is bounded by the total mass of the finite measure. -/
 theorem dist_le_measureReal_univ (f g : L0 E μ) : dist f g ≤ μ.real univ := by
   rw [dist_def]
   simpa using integral_mono (integrable_dist_div_one_add_dist f g) (integrable_const (1 : ℝ))
     (fun x ↦ (div_le_one (by positivity)).2 (by linarith [dist_nonneg (x := f x) (y := g x)]))
 
+/-- On a nonzero finite measure space, the distance between any two elements of `L0 E μ` is
+strictly smaller than the total mass `μ.real univ`. -/
+theorem dist_lt_measureReal_univ [NeZero μ] (f g : L0 E μ) : dist f g < μ.real univ := by
+  refine lt_of_le_of_ne (dist_le_measureReal_univ f g) fun heq ↦ ?_
+  have hone : ∫ _ : Ω, (1 : ℝ) ∂μ = μ.real univ := by simp
+  rw [dist_def, ← hone, integral_eq_iff_of_ae_le (integrable_dist_div_one_add_dist f g)
+    (integrable_const 1) (ae_of_all _ fun _ ↦ div_one_add_le_one dist_nonneg)] at heq
+  have hbot : ∀ᵐ _ ∂μ, False :=
+    heq.mono fun _ hx ↦ (div_one_add_lt_one dist_nonneg).ne hx
+  exact NeZero.ne μ (Measure.measure_univ_eq_zero.mp (by simpa using ae_iff.mp hbot))
+
+/-- On a probability space, the convergence-in-measure distance is strictly bounded by `1`. -/
+theorem dist_lt_one [IsProbabilityMeasure μ] (f g : L0 E μ) : dist f g < 1 := by
+  simpa using dist_lt_measureReal_univ f g
+
 end FiniteMeasure
+
+/-- Norm form of the bounded-integral distance on `L0 E μ` when `E` is a seminormed additive
+group. -/
+theorem dist_eq_integral_norm_div_one_add {E : Type*} [SeminormedAddCommGroup E]
+    [IsFiniteMeasure μ] (f g : L0 E μ) :
+    dist f g = ∫ x, ‖f x - g x‖ / (1 + ‖f x - g x‖) ∂μ := by
+  simp_rw [dist_def, dist_eq_norm]
+
+/-- Absolute-value form of the bounded-integral distance on `L0 ℝ μ`. -/
+theorem dist_eq_integral_abs_div_one_add [IsFiniteMeasure μ] (f g : L0 ℝ μ) :
+    dist f g = ∫ x, |f x - g x| / (1 + |f x - g x|) ∂μ := by
+  simp_rw [dist_def, Real.dist_eq]
+
 end L0
 end TauCeti

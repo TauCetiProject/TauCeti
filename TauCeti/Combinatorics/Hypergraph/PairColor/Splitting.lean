@@ -93,7 +93,7 @@ private theorem extendLabel_of_mem {g : U.sym2 → ι} {z : Sym2 V} (hz : z ∈ 
   dite_eq_left hz
 
 private theorem extendLabel_update_of_ne (g : U.sym2 → ι) (e : U.sym2) (v : ι) {z : Sym2 V}
-    (hz : z ≠ e.1) : extendLabel U (Function.update g e v) z = extendLabel U g z := by
+    (hz : z ≠ e.val) : extendLabel U (Function.update g e v) z = extendLabel U g z := by
   unfold extendLabel
   split_ifs
   · exact Function.update_of_ne (fun h ↦ hz (congrArg Subtype.val h)) _ _

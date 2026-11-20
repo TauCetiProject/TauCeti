@@ -41,7 +41,7 @@ theorem hasLengthBound_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) 
   rw [coaugmentedBarDifferential_def, barDifferential_def]
   exact TensorWords.hasLengthBound_extendReduced_gradedCoderiv
     (𝒜.grading.shift 1) 𝒜.taylor 1 c fun n hn ↦
-      𝒜.taylor_comp_of_eq_zero_of_m_eq_zero n (h𝒜 n.1 hn)
+      𝒜.taylor_comp_of_eq_zero_of_m_eq_zero n (h𝒜 n.val hn)
 
 /-- The finite-prefix extension of the coaugmented bar differential to completed tensor words.
 When operations above arity `c + 1` vanish, it agrees with the original differential on finite

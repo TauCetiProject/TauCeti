@@ -86,11 +86,11 @@ theorem coeff_upperTriangularSum (x : TraceFormulaMatrixModule n) :
 variable (k n) in
 /-- `Tₙ^∞` is the sum of the classes of the matrices `(a b; 0 d)` of `FixedDetMatrices.reps n`. -/
 theorem upperTriangularSum_eq_sum_reps :
-    upperTriangularSum k n = ∑ A : FixedDetMatrices.reps n, single (mk A.1) 1 := by
+    upperTriangularSum k n = ∑ A : FixedDetMatrices.reps n, single (mk A.val) 1 := by
   classical
   rw [upperTriangularSum, ← Finset.sum_image (s := Finset.univ) (f := fun x ↦ single x (1 : k))
-    (g := fun A : FixedDetMatrices.reps n ↦ mk A.1)
-    fun A _ B _ h ↦ Subtype.ext (mk_injOn_reps A.2 B.2 h)]
+    (g := fun A : FixedDetMatrices.reps n ↦ mk A.val)
+    fun A _ B _ h ↦ Subtype.ext (mk_injOn_reps A.property B.property h)]
   congr 1
   ext x
   simp [mem_upperTriangularReps]
