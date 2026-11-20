@@ -98,8 +98,10 @@ ambient `F`-module, such as a full lattice, is a localization of `R`-modules at 
 theorem isLocalizedModule_subtype_of_span_eq_top (hM : span F (M : Set E) = ⊤) :
     IsLocalizedModule S M.subtype := by
   have := isLocalizedModule_id S E F
-  exact IsLocalizedModule.of_linearEquiv S (M.toLocalized' F S LinearMap.id)
-    ((LinearEquiv.ofTop _ (by simpa [localized'_eq_span] using hM)).restrictScalars R)
+  let e := (LinearEquiv.ofTop (M.localized' F S LinearMap.id)
+    (by simpa [localized'_eq_span] using hM)).restrictScalars R
+  have h : e.toLinearMap ∘ₗ M.toLocalized' F S LinearMap.id = M.subtype := by ext; simp [e]
+  exact h ▸ IsLocalizedModule.of_linearEquiv S _ e
 
 end ClearDenominators
 
