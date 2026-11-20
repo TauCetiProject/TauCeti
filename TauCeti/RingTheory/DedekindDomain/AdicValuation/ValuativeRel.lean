@@ -395,7 +395,7 @@ namespace TauCeti
 /-- An integral lift of a global field element to an adic completion is a unit exactly when
 the global element has valuation one. -/
 theorem isUnit_integer_adicCompletion_iff_valuation_eq_one
-    (R : Type*) [CommRing R] [IsDedekindDomain R]
+    {R : Type*} [CommRing R] [IsDedekindDomain R]
     {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
     (v : IsDedekindDomain.HeightOneSpectrum R)
     {x : K} {y : 𝒪[v.adicCompletion K]}

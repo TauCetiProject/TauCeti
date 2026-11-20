@@ -67,7 +67,7 @@ theorem eventually_isElliptic_integralModel_adicCompletion (W : WeierstrassCurve
     isIntegral_of_exists_lift _ h₁ h₂ h₃ h₄ h₆
   refine ⟨hI, ?_⟩
   rw [isElliptic_iff]
-  exact (isUnit_integer_adicCompletion_iff_valuation_eq_one R v
+  exact (isUnit_integer_adicCompletion_iff_valuation_eq_one v
     (by rw [integralModel_Δ_eq, baseChange, map_Δ])).mpr hΔ'
 
 /-- Outside a finite set containing any prescribed finite set of primes, an elliptic equation
