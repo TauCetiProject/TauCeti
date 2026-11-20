@@ -27,6 +27,7 @@ open TensorProduct
 
 /-- The ordered product of pure tensors is the pure tensor of the ordered products.
 Neither algebra is required to be commutative. -/
+@[simp]
 theorem List.prod_map_tmul {R A B ι : Type*} [CommSemiring R]
     [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
     (l : List ι) (a : ι → A) (b : ι → B) :
@@ -37,13 +38,6 @@ theorem List.prod_map_tmul {R A B ι : Type*} [CommSemiring R]
       Algebra.TensorProduct.tmul_mul_tmul]
 
 namespace Algebra.TensorProduct
-
-/-- The ordered product of a `Fin n`-indexed family of pure tensors is the pure tensor of the
-ordered products. Neither algebra is required to be commutative. -/
-theorem list_prod_ofFn_tmul {R A B : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
-    [Semiring B] [Algebra R B] {n : ℕ} (a : Fin n → A) (b : Fin n → B) :
-    (List.ofFn fun t ↦ a t ⊗ₜ[R] b t).prod = (List.ofFn a).prod ⊗ₜ[R] (List.ofFn b).prod := by
-  simpa only [← List.ofFn_eq_map] using List.prod_map_tmul (R := R) (List.finRange n) a b
 
 variable {R A B ι : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [CommSemiring B]
   [Algebra R B]
@@ -60,6 +54,14 @@ theorem prod_tmul (s : Finset ι) (a : ι → A) (b : ι → B) :
 end Algebra.TensorProduct
 
 namespace TauCeti
+
+/-- The ordered product of a `Fin n`-indexed family of pure tensors is the pure tensor of the
+ordered products. Neither algebra is required to be commutative. -/
+@[simp]
+theorem list_prod_ofFn_tmul {R A B : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Semiring B] [Algebra R B] {n : ℕ} (a : Fin n → A) (b : Fin n → B) :
+    (List.ofFn fun t ↦ a t ⊗ₜ[R] b t).prod = (List.ofFn a).prod ⊗ₜ[R] (List.ofFn b).prod := by
+  simpa only [← List.ofFn_eq_map] using List.prod_map_tmul (R := R) (List.finRange n) a b
 
 section RightAlgebra
 
