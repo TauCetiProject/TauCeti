@@ -22,9 +22,10 @@ involution, namely its sheet in a trivialization
 
 Pull `E` back to `B'`. A point of the total space `E'` of the pullback is a point `p` of the cover
 and a vector of the fibre of `E` over the base point of `p`; since the action fixes base points,
-`ℤˣ` acts on `E'` by acting on `p` and keeping the vector. This action covers the action on `B'` and
-fixes the image of each point in the total space of `E`, so the canonical map `E' → E` is again the
-quotient map of a free action of `ℤˣ`
+`ℤˣ` acts on `E'` by acting on `p` and keeping the vector
+(`TauCeti.VectorBundleOrientationCover.pullbackMulAction`). This action covers the action on `B'`
+and fixes the image of each point in the total space of `E`, so the canonical map `E' → E` is again
+the quotient map of a free action of `ℤˣ`
 (`TauCeti.VectorBundleOrientationCover.isQuotientCoveringMap_lift`), by the general statement for
 pullbacks of quotient covering maps (`Bundle.Pullback.isQuotientCoveringMap_lift`). This map
 preserves vectors, so the preimage of the nonzero vectors `E₀` of `E` is the set of nonzero vectors
@@ -82,6 +83,14 @@ instance : MulAction ℤˣ (VectorBundleOrientationCover F E ι) where
 
 omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [TopologicalSpace (TotalSpace F E)] in
+/-- A unit `u` keeps the base point of a point of the orientation double cover and multiplies its
+orientation by the sign `u`. -/
+theorem smul_def (u : ℤˣ) (p : VectorBundleOrientationCover F E ι) :
+    u • p = ⟨p.proj, Units.map (Int.castRingHom ℝ : ℤ →* ℝ) u • p.orientation⟩ :=
+  (rfl)
+
+omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [TopologicalSpace (TotalSpace F E)] in
 /-- The action of `ℤˣ` on the orientation double cover fixes the base point. -/
 @[simp]
 theorem proj_smul (u : ℤˣ) (p : VectorBundleOrientationCover F E ι) : (u • p).proj = p.proj :=
@@ -101,7 +110,7 @@ variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E
 
 /-- The unit `-1` acts on the orientation double cover by the deck involution. -/
 theorem neg_one_smul_eq_deck (p : VectorBundleOrientationCover F E ι) : (-1 : ℤˣ) • p = deck p := by
-  rw [deck_apply]
+  rw [smul_def, deck_apply]
   refine congrArg (mk p.proj) (Module.Ray.units_smul_of_neg _ ?_ _)
   simp
 
@@ -137,15 +146,21 @@ theorem isQuotientCoveringMap_proj [Fintype ι] [FiniteDimensional ℝ F]
 
 /-- The units `ℤˣ` act on the total space of the bundle pulled back to the orientation double
 cover through their action on the cover, keeping the vector: the fibre over `u • p` is the fibre
-over `p`, since both are the fibre of the original bundle over the base point of `p`. -/
-instance : MulAction ℤˣ (TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E))
-    where
+over `p`, since both are the fibre of the original bundle over the base point of `p`.
+
+This is not a global instance: when the fibres are additive groups, the total space already
+carries the fibrewise action `Bundle.TotalSpace.instMulAction` of `ℤˣ` by `v ↦ ±v`, which keeps
+the base point instead. The statements below use this action as a local instance. -/
+abbrev pullbackMulAction :
+    MulAction ℤˣ (TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)) where
   smul u z := ⟨u • z.proj, z.2⟩
   one_smul z := Pullback.totalSpace_ext (one_smul ℤˣ z.proj) rfl
   mul_smul u v z := Pullback.totalSpace_ext (mul_smul u v z.proj) rfl
 
-/-- The action of `ℤˣ` on the total space of the pulled-back bundle covers its action on the
-orientation double cover. -/
+attribute [local instance] pullbackMulAction
+
+/-- The action `pullbackMulAction` of `ℤˣ` on the total space of the pulled-back bundle covers its
+action on the orientation double cover. -/
 @[simp]
 theorem proj_smul_totalSpace (u : ℤˣ)
     (z : TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)) :
@@ -154,8 +169,8 @@ theorem proj_smul_totalSpace (u : ℤˣ)
 
 -- Not a simp lemma: simplifying the coercion of the bundled projection rewrites the left-hand
 -- side, as for `TauCeti.VectorBundleOrientationCover.tautologicalOrientation_apply`.
-/-- The action of `ℤˣ` on the total space of the pulled-back bundle fixes the image of each point in
-the total space of the original bundle. -/
+/-- The action `pullbackMulAction` of `ℤˣ` on the total space of the pulled-back bundle fixes the
+image of each point in the total space of the original bundle. -/
 theorem lift_smul (u : ℤˣ)
     (z : TotalSpace F ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E)) :
     Pullback.lift (projection : VectorBundleOrientationCover F E ι → B) (u • z) =
@@ -164,9 +179,10 @@ theorem lift_smul (u : ℤˣ)
 
 /-- **The pulled-back total space is a double cover of the original one.** If `ι` has cardinality
 the rank of the bundle, the canonical map from the total space of the bundle pulled back to its
-orientation double cover to the total space of the bundle is the quotient map of the action of
-`ℤˣ` lifted from the cover. By `TauCeti.preimage_pullbackLift_zeroSectionCompl`, the preimage of
-the nonzero vectors is the set of nonzero vectors of the pulled-back bundle. -/
+orientation double cover to the total space of the bundle is the quotient map of the action
+`pullbackMulAction` of `ℤˣ` lifted from the cover. By
+`TauCeti.preimage_pullbackLift_zeroSectionCompl`, the preimage of the nonzero vectors is the set of
+nonzero vectors of the pulled-back bundle. -/
 theorem isQuotientCoveringMap_lift [Fintype ι] [FiniteDimensional ℝ F]
     (hι : Fintype.card ι = finrank ℝ F) :
     IsQuotientCoveringMap (Pullback.lift (projection : VectorBundleOrientationCover F E ι → B) :
