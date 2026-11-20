@@ -350,7 +350,7 @@ theorem map_constantCoeff_wittenSeries : map constantCoeff (wittenSeries A) = aH
       coeff_zero_eq_constantCoeff_apply, constantCoeff_wittenProduct]
   rw [wittenSeries, map_mul, h, mul_one]
   ext n
-  simp [coeff_map]
+  simp
 
 /-- The logarithm of `Q` is the sum of the logarithms of the Â series and of the product. -/
 theorem logOf_wittenSeries :
