@@ -912,11 +912,9 @@ theorem contDiffAt_ext_coord_change [I.Boundaryless] (x x' : M) {y : E}
 image under the chart at `x'` of every point of both chart domains. -/
 theorem contDiffAt_ext_coord_change_extChartAt [I.Boundaryless] {x x' y : M}
     (hx : y ∈ (chartAt H x).source) (hx' : y ∈ (chartAt H x').source) :
-    ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) (extChartAt I x' y) := by
-  have hy : y ∈ (extChartAt I x').source := by rwa [extChartAt_source]
-  exact contDiffAt_ext_coord_change x x' ⟨(extChartAt I x').map_source hy, by
-    simpa only [mem_preimage, PartialEquiv.symm_symm, (extChartAt I x').left_inv hy,
-      extChartAt_source] using hx⟩
+    ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) (extChartAt I x' y) :=
+  contDiffAt_ext_coord_change x x' (PartialEquiv.mem_symm_trans_source _
+    (by rwa [extChartAt_source]) (by rwa [extChartAt_source]))
 
 end InteriorCharts
 
