@@ -49,12 +49,12 @@ Hessian of `f t` at `x`, `v` a kernel vector of `H(t₀, x₀)` and `ℓ` a func
   `Ψ ((t, x), w(t, x)) = Ψ ((t₀, x₀), v)`.
 
 The cubic condition cannot be dropped. The family `f t x = t x` on `ℝ` is transverse at `(0, 0)`
-(`TauCeti.surjective_fderiv_fderiv_mul`), but its Hessians all vanish, and every point `(0, x)` is
-a degenerate critical point (`TauCeti.not_eventually_isNondegenerateCriticalPoint_mul`). The
-birth–death family `x³ / 3 - s x` of `TauCeti.Analysis.Calculus.Morse.BirthDeath` is the model
-case: it is transverse at its degenerate critical point `(0, 0)`
-(`TauCeti.surjective_fderiv_fderiv_birthDeathPotential`), and its third derivative is `2`
-(`TauCeti.iteratedDeriv_three_birthDeathPotential`).
+(`TauCeti.surjective_fderiv_fderiv_mul_zero_zero`), but its Hessians all vanish, and every point
+`(0, x)` is a degenerate critical point
+(`TauCeti.not_eventually_isNondegenerateCriticalPoint_mul_zero_zero`). The birth–death family
+`x³ / 3 - s x` of `TauCeti.Analysis.Calculus.Morse.BirthDeath` is the model case: it is transverse
+at its degenerate critical point `(0, 0)` (`TauCeti.surjective_fderiv_fderiv_birthDeathPotential`),
+and its third derivative is `2` (`TauCeti.iteratedDeriv_three_birthDeathPotential`).
 
 ## Main results
 
@@ -280,7 +280,7 @@ private theorem fderiv_mul_left (s y : ℝ) :
 
 /-- **The family `f t x = t x` is transverse at `(0, 0)`.** The parameter derivative of its
 differential is the identity, which is injective on the kernel of every Hessian. -/
-theorem surjective_fderiv_fderiv_mul :
+theorem surjective_fderiv_fderiv_mul_zero_zero :
     Surjective (fderiv ℝ (fun w : ℝ × ℝ ↦ fderiv ℝ (fun y ↦ w.1 * y) w.2) (0, 0)) := by
   refine (surjective_fderiv_fderiv_iff (f := fun s y ↦ s * y) (by fun_prop)).2 fun v _ hv ↦ ?_
   have hd : HasDerivAt (fun s : ℝ ↦ s • ContinuousLinearMap.id ℝ ℝ)
@@ -290,11 +290,11 @@ theorem surjective_fderiv_fderiv_mul :
   simpa using hv
 
 /-- **Without the cubic condition degeneracies need not be isolated.** The family `f t x = t x` is
-transverse at `(0, 0)` (`TauCeti.surjective_fderiv_fderiv_mul`), but its Hessians all vanish, and
-every point `(0, x)` is a degenerate critical point. Its third derivative vanishes, so it does not
-satisfy the cubic condition of
+transverse at `(0, 0)` (`TauCeti.surjective_fderiv_fderiv_mul_zero_zero`), but its Hessians all
+vanish, and every point `(0, x)` is a degenerate critical point. Its third derivative vanishes, so
+it does not satisfy the cubic condition of
 `TauCeti.eventually_isNondegenerateCriticalPoint_of_fderiv_eq_zero`. -/
-theorem not_eventually_isNondegenerateCriticalPoint_mul :
+theorem not_eventually_isNondegenerateCriticalPoint_mul_zero_zero :
     ¬ ∀ᶠ z in 𝓝[≠] ((0 : ℝ), (0 : ℝ)), fderiv ℝ (fun y ↦ z.1 * y) z.2 = 0 →
       IsNondegenerateCriticalPoint (fun y ↦ z.1 * y) z.2 := by
   intro h

@@ -180,9 +180,9 @@ theorem exists_eq_smul_of_fderiv_fderiv_apply_eq_zero
     (hu : fderiv ℝ (fderiv ℝ (f t)) x u = 0) : ∃ c : ℝ, u = c • v := by
   set K := LinearMap.ker (fderiv ℝ (fderiv ℝ (f t)) x).toLinearMap
   have hK : ℝ ∙ v = K := Submodule.eq_of_le_of_finrank_le
-    ((Submodule.span_singleton_le_iff_mem _ _).2 hv)
+    ((Submodule.span_singleton_le_iff_mem _ _).2 (LinearMap.mem_ker.2 hv))
     ((finrank_ker_fderiv_fderiv_le_one hf hs).trans (finrank_span_singleton hv0).ge)
-  have huK : u ∈ K := hu
+  have huK : u ∈ K := LinearMap.mem_ker.2 hu
   rw [← hK] at huK
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 huK
   exact ⟨c, hc.symm⟩
