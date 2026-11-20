@@ -31,7 +31,7 @@ For a density in a real normed space that is integrable on the closed annulus,
 `TauCeti.integral_annulus_eq_integral_circleMap` expresses the same integral as an iterated
 integral with the radial variable outermost. The complex polar pullback with radial Jacobian is
 integrable on the polar chart exactly when the planar function is integrable
-(`Complex.integrableOn_comp_polarCoord_symm_iff`).
+(`TauCeti.integrableOn_comp_complexPolarCoord_symm_iff`).
 
 The derivative formulas describe the radial and angular vectors of the inverse complex polar
 map. Evaluating the alternating part of a bilinear pairing on those vectors gives its value on
@@ -115,7 +115,7 @@ variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 /-- The complex polar pullback of a planar function, weighted by the radial Jacobian, is
 integrable on the polar chart exactly when the function is integrable. Integrability of the
 pullback does not give integrability on every angular slice; exceptional radii are only null. -/
-theorem integrableOn_comp_polarCoord_symm_iff {f : ℂ → W} :
+theorem _root_.TauCeti.integrableOn_comp_complexPolarCoord_symm_iff {f : ℂ → W} :
     IntegrableOn (fun p : ℝ × ℝ => p.1 • f (Complex.polarCoord.symm p))
       _root_.polarCoord.target ↔ Integrable f := by
   rw [← volume_preserving_equiv_real_prod.symm.integrable_comp_emb
@@ -135,7 +135,7 @@ theorem _root_.MeasureTheory.Integrable.integral_eq_integral_circleMap {f : ℂ 
     (hf : Integrable f volume) (c : ℂ) :
     (∫ z, f z) = ∫ r in Ioi (0 : ℝ), r • ∫ θ in -π..π, f (circleMap c r θ) := by
   have hg : Integrable (fun z : ℂ => f (c + z)) volume := hf.comp_add_left c
-  have hp := integrableOn_comp_polarCoord_symm_iff.mpr hg
+  have hp := TauCeti.integrableOn_comp_complexPolarCoord_symm_iff.mpr hg
   rw [← integral_add_left_eq_self f c, ← Complex.integral_comp_polarCoord_symm]
   rw [_root_.polarCoord_target, Measure.volume_eq_prod] at hp ⊢
   rw [setIntegral_prod _ hp]
