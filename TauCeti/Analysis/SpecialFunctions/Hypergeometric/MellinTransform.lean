@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 
 /-!
@@ -22,7 +21,7 @@ For `0 < Re s < min (Re a) (Re b)` and `Re b < Re c`, the Mellin transform of
 This is DLMF 15.14.1 in the region `0 < Re b < Re c` where Euler's integral represents the
 regularized Gauss function `𝐅(a, b; c; -x)`. The proof inserts Euler's integral, exchanges the
 two integrals by Fubini, evaluates the inner `x`-integral as a scaled Beta integral of the second
-kind (`Complex.hasMellin_one_add_cpow_neg`),
+kind (`Complex.hasMellin_one_add_mul_cpow_neg`),
 
 `∫₀^∞ x^{s - 1} (1 + x t)^{-a} dx = t^{-s} Γ(s) Γ(a - s) / Γ(a)`,
 
@@ -48,47 +47,6 @@ open Real Set MeasureTheory
 open Complex hiding exp continuous_exp log
 
 namespace Complex
-
-/-- The scaled Beta integral of the second kind: for `t > 0` and `0 < Re s < Re a`, the Mellin
-transform of `x ↦ (1 + x t)^{-a}` at `s` is `t^{-s} Γ(s) Γ(a - s) / Γ(a)`. -/
-private lemma hasMellin_one_add_mul_cpow_neg {s a : ℂ} (hs : 0 < s.re) (hsa : s.re < a.re)
-    {t : ℝ} (ht : 0 < t) :
-    HasMellin (fun x : ℝ ↦ (1 + (x : ℂ) * t) ^ (-a)) s
-      ((t : ℂ) ^ (-s) * (Gamma s * Gamma (a - s) / Gamma a)) := by
-  simpa only [ofReal_mul, smul_eq_mul] using (hasMellin_one_add_cpow_neg hs hsa).comp_mul_right ht
-
-/-- The norm of the scaled Mellin integrand of `(1 + x t)^{-a}` integrates to
-`t^{-Re s} ‖Γ(Re s) Γ(Re a - Re s) / Γ(Re a)‖`, by the same Beta integral at the real parts. -/
-private lemma integral_norm_cpow_mul_one_add_mul_cpow_neg {s a : ℂ} (hs : 0 < s.re)
-    (hsa : s.re < a.re) {t : ℝ} (ht : 0 < t) :
-    ∫ x : ℝ in Ioi 0, ‖(x : ℂ) ^ (s - 1) * (1 + (x : ℂ) * t) ^ (-a)‖ =
-      t ^ (-s.re) * ‖Gamma s.re * Gamma (a.re - s.re) / Gamma a.re‖ := by
-  -- the real integrand `x^{Re s - 1} (1 + x t)^{-Re a}`
-  set r : ℝ → ℝ := fun x ↦ x ^ (s.re - 1) * (1 + x * t) ^ (-a.re)
-  have hnorm : ∀ x ∈ Ioi (0 : ℝ),
-      ‖(x : ℂ) ^ (s - 1) * (1 + (x : ℂ) * t) ^ (-a)‖ = r x := fun x hx ↦ by
-    have hbase : (1 + (x : ℂ) * t) = ((1 + x * t : ℝ) : ℂ) := by push_cast; ring
-    rw [norm_mul, hbase, norm_cpow_eq_rpow_re_of_pos hx,
-      norm_cpow_eq_rpow_re_of_pos (by have := mul_pos (show (0 : ℝ) < x from hx) ht; linarith)]
-    simp [r]
-  have hreal : ∀ x ∈ Ioi (0 : ℝ),
-      (x : ℂ) ^ ((s.re : ℂ) - 1) • (1 + (x : ℂ) * t) ^ (-(a.re : ℂ)) = ((r x : ℝ) : ℂ) :=
-    fun x hx ↦ by
-      have hx0 : (0 : ℝ) ≤ x := le_of_lt hx
-      have h1 : (0 : ℝ) ≤ 1 + x * t := by positivity
-      simp only [r, smul_eq_mul, ofReal_mul, ofReal_cpow hx0, ofReal_cpow h1]
-      push_cast
-      ring_nf
-  obtain ⟨-, hval⟩ := hasMellin_one_add_mul_cpow_neg (s := s.re) (a := a.re) (by simpa)
-    (by simpa) ht
-  rw [mellin, setIntegral_congr_fun measurableSet_Ioi hreal, integral_complex_ofReal] at hval
-  have hr0 : 0 ≤ ∫ x : ℝ in Ioi 0, r x :=
-    setIntegral_nonneg measurableSet_Ioi fun x hx ↦ by
-      have := mul_pos (show (0 : ℝ) < x from hx) ht
-      exact mul_nonneg (rpow_nonneg (le_of_lt hx) _) (rpow_nonneg (by linarith) _)
-  rw [setIntegral_congr_fun measurableSet_Ioi hnorm, ← abs_of_nonneg hr0, ← Real.norm_eq_abs,
-    ← norm_real, hval, norm_mul, norm_cpow_eq_rpow_re_of_pos ht]
-  simp
 
 /-- Lowering the exponent of `t` in the Beta weight of Euler's integral by `s`. -/
 private lemma cpow_mul_one_sub_cpow_mul_cpow_neg (b c s : ℂ) {t : ℝ} (ht : 0 < t) :
