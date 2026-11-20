@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.WhitneyEmbedding
 public import TauCeti.Analysis.Calculus.Deriv.DominatedLimit
+public import TauCeti.Analysis.Calculus.Equicontinuity
 public import TauCeti.Geometry.Manifold.Flow.Periodic
-public import TauCeti.Geometry.Manifold.Immersion.Curve
 public import TauCeti.Geometry.Manifold.LocallyEquiconnected
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -58,7 +58,7 @@ the pushforward of `X a₀` along `e`, and since `d e` is injective, `y = e ∘ 
 solution `γ₀` of `X a₀` in `K` (`TauCeti.exists_mem_periodicSolutions_comp_eq`).
 
 For contractibility, the loops converge in the mapping space `C(ℝ ⧸ ℤ, M)`, measured through the
-closed embedding `e` of `K` (`IsCompact.tendsto_of_tendstoUniformly_comp`). If `M` is locally
+closed embedding `e` of `K` (`IsCompact.tendsto_of_tendstoLocallyUniformly_comp`). If `M` is locally
 equiconnected, so is this mapping space (`TauCeti.instLocallyEquiconnectedSpaceContinuousMap`), so
 the path component of the limit loop is
 open, and the limit loop is joined to, hence homotopic to (`ContinuousMap.homotopic_iff_joined`),
@@ -193,10 +193,10 @@ theorem exists_strictMono_mem_contractiblePeriodicSolutions_tendstoUniformly
   -- On the circle, the loops lie in `K` and converge uniformly after applying `e`, so they converge
   -- in the mapping space.
   have hconv : Tendsto (fun n ↦ g (ψ n)) atTop (𝓝 g₀) :=
-    hK.tendsto_of_tendstoUniformly_comp he.continuous.continuousOn he_inj
+    hK.tendsto_of_tendstoLocallyUniformly_comp he.continuous.continuousOn he_inj
       (fun n ↦ QuotientAddGroup.mk_surjective.forall.2 fun t ↦ by rw [hgγ]; exact hγK _ t)
       (QuotientAddGroup.mk_surjective.forall.2 fun t ↦ by rw [hg₀]; exact hγ₀K t)
-      fun u hu ↦ (hunif u hu).mono fun n hn ↦
+      <| TendstoUniformly.tendstoLocallyUniformly fun u hu ↦ (hunif u hu).mono fun n hn ↦
         QuotientAddGroup.mk_surjective.forall.2 fun t ↦ by simpa [hg₀, hgγ] using hn t
   -- The mapping space is locally path-connected, so the path component of the limit is open and
   -- contains the contractible loops `g (ψ n)` for large `n`.

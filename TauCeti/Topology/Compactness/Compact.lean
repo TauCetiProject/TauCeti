@@ -25,7 +25,7 @@ A continuous injection on a compact set `K` restricts to a closed embedding of `
 (`IsCompact.exists_mem_nhds_inter_preimage_subset`) and convergence to a point of `K` of a family
 eventually in `K` (`IsCompact.tendsto_nhds_of_tendsto_comp`) can be read through it. So can
 convergence in the compact-open topology of continuous maps with values in `K`, when the target of
-the injection is a uniform space (`IsCompact.tendsto_of_tendstoUniformly_comp`).
+the injection is a uniform space (`IsCompact.tendsto_of_tendstoLocallyUniformly_comp`).
 -/
 
 public section
@@ -123,12 +123,13 @@ theorem _root_.IsCompact.tendsto_nhds_of_tendsto_comp {Y ι : Type*} [Topologica
 
 /-- **Convergence of maps into a compact set is read through a continuous injection.** Let `f` be
 continuous and injective on a compact set `K`, with values in a Hausdorff uniform space, and let
-`g i` and `g₀` be continuous maps with values in `K`. If the maps `f ∘ g i` converge uniformly to
-`f ∘ g₀`, then the maps `g i` converge to `g₀` in the compact-open topology. -/
-theorem _root_.IsCompact.tendsto_of_tendstoUniformly_comp {T Y ι : Type*} [TopologicalSpace T]
-    [UniformSpace Y] [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K) (hf : ContinuousOn f K)
-    (hinj : InjOn f K) {l : Filter ι} {g : ι → C(T, X)} {g₀ : C(T, X)} (hg : ∀ i t, g i t ∈ K)
-    (hg₀ : ∀ t, g₀ t ∈ K) (h : TendstoUniformly (fun i t ↦ f (g i t)) (f ∘ g₀) l) :
+`g i` and `g₀` be continuous maps with values in `K`. If the maps `f ∘ g i` converge locally
+uniformly to `f ∘ g₀`, then the maps `g i` converge to `g₀` in the compact-open topology. -/
+theorem _root_.IsCompact.tendsto_of_tendstoLocallyUniformly_comp {T Y ι : Type*}
+    [TopologicalSpace T] [UniformSpace Y] [T2Space Y] {K : Set X} {f : X → Y} (hK : IsCompact K)
+    (hf : ContinuousOn f K) (hinj : InjOn f K) {l : Filter ι} {g : ι → C(T, X)} {g₀ : C(T, X)}
+    (hg : ∀ i t, g i t ∈ K) (hg₀ : ∀ t, g₀ t ∈ K)
+    (h : TendstoLocallyUniformly (fun i t ↦ f (g i t)) (f ∘ g₀) l) :
     Tendsto g l (𝓝 g₀) := by
   -- As maps into `K`, the `g i` converge, measured by the closed embedding `f` of `K`.
   let k : ι → C(T, K) := fun i ↦ ⟨fun t ↦ ⟨g i t, hg i t⟩, (map_continuous (g i)).codRestrict _⟩
@@ -136,7 +137,7 @@ theorem _root_.IsCompact.tendsto_of_tendstoUniformly_comp {T Y ι : Type*} [Topo
   have hemb := hK.isClosedEmbedding_domRestrict hf hinj
   have hk : Tendsto k l (𝓝 k₀) :=
     (ContinuousMap.isEmbedding_postcomp ⟨_, hemb.continuous⟩ hemb.isEmbedding).tendsto_nhds_iff.2
-      (ContinuousMap.tendsto_of_tendstoLocallyUniformly h.tendstoLocallyUniformly)
+      (ContinuousMap.tendsto_of_tendstoLocallyUniformly h)
   exact ((ContinuousMap.continuous_postcomp ⟨Subtype.val, continuous_subtype_val⟩).tendsto k₀).comp
     hk
 

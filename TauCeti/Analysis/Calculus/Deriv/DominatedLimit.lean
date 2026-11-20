@@ -7,8 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.Analysis.Calculus.MeanValue
-import TauCeti.Topology.ContinuousMap.Ascoli
 
 /-!
 # Derivatives of limits under dominated convergence of the derivatives
@@ -25,11 +23,6 @@ variants, the derivatives need not converge uniformly on any set. This is the fo
 derivative passes to the limit along a subsequence of solutions of `x' = X_n(t, x)` extracted by
 the Arzelà–Ascoli theorem: the fields along the solutions converge pointwise, and boundedly, to
 the limit field along the limit curve.
-
-The subsequence itself comes from the Arzelà–Ascoli theorem for periodic loops: `1`-periodic
-curves in a compact set whose derivatives are bounded on `[0, 1]` uniformly are uniformly
-Lipschitz, so a subsequence converges uniformly on `ℝ` to a continuous `1`-periodic curve
-(`TauCeti.exists_strictMono_tendstoUniformly_of_periodic_of_norm_deriv_le`).
 -/
 
 public section
@@ -67,24 +60,5 @@ theorem hasDerivAt_of_tendsto_of_norm_le (hf : ∀ i t, HasDerivAt (f i) (f' i t
   -- Differentiate `y s = y 0 + ∫₀ˢ g`.
   exact (((hg.integral_hasStrictDerivAt 0 t).hasDerivAt).const_add (y 0)).congr_of_eventuallyEq
     (Eventually.of_forall fun s ↦ eq_add_of_sub_eq' (hint s))
-
-omit [CompleteSpace F] in
-/-- **Periodic Arzelà–Ascoli for curves of bounded velocity.** A sequence of `1`-periodic curves
-`u n` in a compact set `K`, whose derivatives `u' n` are bounded on `[0, 1]` uniformly in `n`, has
-a subsequence converging uniformly on `ℝ` to a continuous `1`-periodic curve. -/
-theorem exists_strictMono_tendstoUniformly_of_periodic_of_norm_deriv_le {K : Set F}
-    (hK : IsCompact K) {u u' : ℕ → ℝ → F} (hper : ∀ n, Function.Periodic (u n) 1)
-    (huK : ∀ n t, u n t ∈ K) (hu : ∀ n t, HasDerivAt (u n) (u' n t) t) {B : ℝ}
-    (hB : ∀ n, ∀ t ∈ Icc (0 : ℝ) 1, ‖u' n t‖ ≤ B) :
-    ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ ∃ z : ℝ → F, Function.Periodic z 1 ∧ Continuous z ∧
-      TendstoUniformly (fun n ↦ u (ψ n)) z atTop := by
-  -- The curves are uniformly Lipschitz on `[0, 1]`, by the mean value inequality.
-  refine exists_tendstoUniformly_subseq_of_periodic_of_modulus hK
-    (fun n ↦ continuous_iff_continuousAt.2 fun t ↦ (hu n t).continuousAt) hper huK
-    (ρ := fun h ↦ B * h) (by simpa using (continuous_const_mul B).tendsto 0)
-    fun n t₁ ht₁ t₂ ht₂ h₁₂ ↦ ?_
-  rw [dist_eq_norm]
-  exact norm_image_sub_le_of_norm_deriv_le_segment' (fun t _ ↦ (hu n t).hasDerivWithinAt)
-    (fun t ht ↦ hB n t ⟨ht₁.1.trans ht.1, ht.2.le.trans ht₂.2⟩) t₂ ⟨h₁₂, le_rfl⟩
 
 end TauCeti
