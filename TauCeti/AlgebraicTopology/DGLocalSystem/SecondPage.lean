@@ -162,10 +162,10 @@ theorem indexClassicalAction_apply_eq_linearCombination {x y : P} (hxy : ind x =
     (loopChainToGroupAlgebra B b R (m.m x y)).coeff
   simp only [Submodule.subtype_apply, Function.comp_def,
     IsDGRightModule.coe_cohomologyGradingRepresentation_apply] at hcoe
-  rw [coe_indexClassicalAction_apply]
-  refine ((congrArg (fun a ↦ (hM.cohomologyAction a).unop (c : hM.Cohomology))
-    (m.indexClassicalClass_eq_groupAlgebraToLoopChainCohomology hxy)).trans ?_).trans hcoe.symm
-  exact hM.cohomologyAction_groupAlgebraToLoopChainCohomology _ _
+  rw [coe_indexClassicalAction_apply, indexClassicalClass_eq_groupAlgebraToLoopChainCohomology]
+  -- Rewriting with the action lemma times out in `isDefEq` while locating its left-hand side in the
+  -- goal, so the last step is closed by `exact`, which unifies the two sides directly.
+  exact (hM.cohomologyAction_groupAlgebraToLoopChainCohomology _ _).trans hcoe.symm
 
 /-- **The classical complex with local coefficients**: for a loop cocycle, the differential of the
 classical complex with coefficients in `H^k(𝓕)` sends a family `c` indexed by the generators of
