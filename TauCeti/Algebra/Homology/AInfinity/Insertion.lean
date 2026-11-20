@@ -48,6 +48,8 @@ bar convention.
 
 ## Main results
 
+* `TauCeti.InsertionSlots.eq_univ_of_fst_eq`: a word of length `k` with `k` marked slots has every
+  slot marked.
 * `TauCeti.insertionTerm_mem`: an insertion term has energy at least the energy of its inputs plus
   `n - k` times the energy of `b`.
 * `TauCeti.summable_insertionTerm`: the insertion series converges for `b` of positive energy.
@@ -55,9 +57,9 @@ bar convention.
   energy bound.
 * `TauCeti.deformedOperation_sub_mem`: `μᵇₖ - μₖ` has energy at least the energy of the inputs plus
   the energy of `b`.
-* `TauCeti.deformedOperation_zero_eq_tsum`: in arity zero the deformed operation is
+* `TauCeti.deformedOperation_arity_zero_eq_tsum`: in arity zero the deformed operation is
   `∑ₙ μₙ(b, …, b)`.
-* `TauCeti.deformedOperation_of_eq_zero`: inserting `b = 0` returns the original operation.
+* `TauCeti.deformedOperation_zero`: inserting `b = 0` returns the original operation.
 
 ## References
 
@@ -79,6 +81,14 @@ variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
 slots, out of `n`, holding the inputs. The other `n - k` slots hold the inserted element. -/
 abbrev InsertionSlots (k : ℕ) : Type := Σ n : ℕ, {s : Finset (Fin n) // #s = k}
 
+/-- A word of length `k` with `k` marked slots has every slot marked. -/
+theorem InsertionSlots.eq_univ_of_fst_eq {k : ℕ} {i : InsertionSlots k} (h : i.1 = k) :
+    i = ⟨k, univ, by simp⟩ := by
+  obtain ⟨n, s, hs⟩ := i
+  obtain rfl : n = k := h
+  obtain rfl : s = univ := eq_univ_of_card _ (by simpa using hs)
+  rfl
+
 /-- The insertion term of `μ` at `i = ⟨n, s⟩`: the multilinear map sending `x : Fin k → M` to
 `μₙ` evaluated with the inputs `x` at the slots of `s`, in increasing order, and `b` at the
 other slots. -/
@@ -87,11 +97,9 @@ noncomputable def insertionTerm (μ : ∀ n : ℕ, MultilinearMap (RingHom.id R)
     MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ M) M where
   toFun x := MultilinearMap.curryFinFinset (RingHom.id R) M M i.2.2 rfl (μ i.1) x fun _ ↦ b
   map_update_add' x j u v := by
-    rw [MultilinearMap.map_update_add]
-    rfl
+    rw [MultilinearMap.map_update_add, add_apply]
   map_update_smul' x j r u := by
-    rw [MultilinearMap.map_update_smul]
-    rfl
+    rw [MultilinearMap.map_update_smul, smul_apply]
 
 variable (μ : ∀ n : ℕ, MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ M) M) (b : M)
 
@@ -101,7 +109,7 @@ splitting `finSumEquivOfFinset` of `Fin n` into the slots of `s` and of its comp
 theorem insertionTerm_apply {k : ℕ} (i : InsertionSlots k) (x : Fin k → M) :
     insertionTerm μ b i x =
       μ i.1 fun p ↦ Sum.elim x (fun _ ↦ b) ((finSumEquivOfFinset i.2.2 rfl).symm p) :=
-  (rfl)
+  MultilinearMap.curryFinFinset_apply _ _ _ _ _
 
 /-- With every input equal to `a`, the insertion term at `⟨n, s⟩` is `μₙ` on the word with `a` at
 the slots of `s` and `b` elsewhere. -/
@@ -278,12 +286,8 @@ theorem deformedOperation_sub_mem {δ : ℝ} (hδ : 0 ≤ δ) (hbδ : b ∈ F δ
   rcases eq_or_ne i i₀ with rfl | hi
   · simp
   · rw [Function.update_of_ne hi]
-    refine insertionTerm_mem_of_ne μ b hF.antitone hμ hδ hbδ i (fun h ↦ hi ?_) hx
-    obtain ⟨n, s, hs⟩ := i
-    obtain rfl : n = k := h
-    have : s = univ := eq_univ_of_card _ (by simpa using hs)
-    subst this
-    rfl
+    exact insertionTerm_mem_of_ne μ b hF.antitone hμ hδ hbδ i
+      (fun h ↦ hi (InsertionSlots.eq_univ_of_fst_eq h)) hx
 
 /-- The words with no marked slot are indexed by their length. -/
 private def insertionSlotsZeroEquiv : InsertionSlots 0 ≃ ℕ where
@@ -297,13 +301,13 @@ private def insertionSlotsZeroEquiv : InsertionSlots 0 ≃ ℕ where
 
 /-- **The nullary deformed operation** is `∑ₙ μₙ(b, …, b)`. In the bar convention its vanishing is
 the Maurer–Cartan equation for `b`. -/
-theorem deformedOperation_zero_eq_tsum (x : Fin 0 → M) :
+theorem deformedOperation_arity_zero_eq_tsum (x : Fin 0 → M) :
     deformedOperation μ b hF hμ hb 0 x = ∑' n, μ n fun _ ↦ b := by
   rw [deformedOperation_apply, ← insertionSlotsZeroEquiv.symm.tsum_eq]
   exact tsum_congr fun n ↦ insertionTerm_apply_of_arity_zero μ b _ x
 
 /-- The nullary insertion series `∑ₙ μₙ(b, …, b)` converges to the nullary deformed operation. -/
-theorem hasSum_deformedOperation_zero (x : Fin 0 → M) :
+theorem hasSum_deformedOperation_arity_zero (x : Fin 0 → M) :
     HasSum (fun n ↦ μ n fun _ ↦ b) (deformedOperation μ b hF hμ hb 0 x) := by
   rw [← insertionSlotsZeroEquiv.hasSum_iff]
   convert hasSum_deformedOperation μ b hF hμ hb x using 1
@@ -311,16 +315,13 @@ theorem hasSum_deformedOperation_zero (x : Fin 0 → M) :
   exact (insertionTerm_apply_of_arity_zero μ b i x).symm
 
 /-- **Inserting zero changes nothing**: `μ⁰ₖ = μₖ`. -/
-theorem deformedOperation_of_eq_zero (h0 : ∃ δ, 0 < δ ∧ (0 : M) ∈ F δ) (k : ℕ) :
+theorem deformedOperation_zero (h0 : ∃ δ, 0 < δ ∧ (0 : M) ∈ F δ) (k : ℕ) :
     deformedOperation μ 0 hF hμ h0 k = μ k := by
   ext x
   rw [deformedOperation_apply, tsum_eq_single (⟨k, univ, by simp⟩ : InsertionSlots k),
     insertionTerm_univ]
   intro i hi
-  refine (congrArg (· x) (insertionTerm_zero_of_ne μ i fun h ↦ hi ?_)).trans rfl
-  obtain ⟨n, s, hs⟩ := i
-  obtain rfl : n = k := h
-  obtain rfl : s = univ := eq_univ_of_card _ (by simpa using hs)
-  rfl
+  rw [DFunLike.congr_fun (insertionTerm_zero_of_ne μ i
+    fun h ↦ hi (InsertionSlots.eq_univ_of_fst_eq h)) x, zero_apply]
 
 end TauCeti

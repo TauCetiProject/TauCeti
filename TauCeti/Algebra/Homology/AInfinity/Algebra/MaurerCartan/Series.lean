@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.EnergyFiltration
 import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Order.Filter.AtTopBot.Archimedean
 import Mathlib.Order.Filter.AtTopBot.Field
-import Mathlib.Tactic.Positivity
 
 /-!
 # The convergent Maurer–Cartan series of a filtered `A∞` algebra
@@ -39,8 +38,8 @@ For an `A∞` algebra with operations `mₙ`, the **Maurer–Cartan series** of 
 
 For `α` of degree one, the sign `(-1)^{n(n-1)/2}` is the Koszul sign of the suspension, so the
 series is the sign-free sum `∑_{n ≥ 1} b((sα)^{⊗n})` of the suspended Taylor map
-(`TauCeti.AInfinityAlgebra.hasSum_taylor_of_tprod_const`). This is the nullary term of the
-insertion of `α` into the suspended operations, `TauCeti.deformedOperation`.
+(`TauCeti.AInfinityAlgebra.hasSum_taylor_of_tprod_const`). Informally, this is the nullary term
+of inserting `sα` into the suspended operations, cf. `TauCeti.deformedOperation`.
 
 ## Main definitions
 
@@ -109,12 +108,6 @@ theorem isMaurerCartan_iff_maurerCartanSeries_eq_zero {α : A} {N : ℕ}
 end TopologicalSpace
 
 /-! ### The complete filtered regime -/
-
-/-- A sign `(-1)^e` preserves every subgroup. -/
-private theorem negOnePowCast_smul_mem {S : AddSubgroup A} (e : ℤ) {a : A} (ha : a ∈ S) :
-    negOnePowCast R e • a ∈ S := by
-  rw [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def]
-  exact S.zsmul_mem ha _
 
 variable {𝒜} {F : ℝ → AddSubgroup A}
   (hm : ∀ n, MultilinearMap.IsHomogeneous (𝒜.m n) (fun _ ↦ F) F 0) {δ : ℝ} {α : A}
