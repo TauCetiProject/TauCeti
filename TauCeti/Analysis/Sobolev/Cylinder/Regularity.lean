@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
@@ -72,20 +74,21 @@ theorem eq_zero_of_ae_eq_zero {ξ : ℝ × ℝ → V} (hξ : Continuous ξ)
   -- By periodicity every point has the value of a point of the closed strip.
   funext ⟨s, t⟩
   have hp : Function.Periodic (fun t ↦ ξ (s, t)) 1 := fun t ↦ hper s t
-  rw [← hp.sub_int_mul_eq ⌊t⌋, mul_one, Int.self_sub_floor]
+  rw [← hp.apply_fract t]
   exact hclosed ⟨mem_univ s, Int.fract_nonneg t, (Int.fract_lt_one t).le⟩
 
 /-- A sequence of cutoffs in `s`: smooth functions `ρ n` with values in `[0, 1]`, equal to `1`
 for `|s| ≤ n + 1` and to `0` for `|s| > 2 (n + 1)`, with derivatives bounded independently of
 `n`. -/
-private theorem exists_cutoff_seq : ∃ B : ℝ, ∃ ρ ρ' : ℕ → ℝ → ℝ, ∀ n : ℕ,
-    ContDiff ℝ 2 (ρ n) ∧ (∀ s, 0 ≤ ρ n s ∧ ρ n s ≤ 1) ∧ (∀ s : ℝ, |s| ≤ n + 1 → ρ n s = 1) ∧
-      (∀ s : ℝ, 2 * (n + 1) < |s| → ρ n s = 0) ∧ (∀ s, HasDerivAt (ρ n) (ρ' n s) s) ∧
-        ∀ s, |ρ' n s| ≤ B := by
+private theorem exists_cutoff_seq : ∃ B : ℝ, ∃ ρ ρ' : ℕ → ℝ → ℝ,
+    (∀ n, ContDiff ℝ 2 (ρ n)) ∧ (∀ n s, 0 ≤ ρ n s ∧ ρ n s ≤ 1) ∧
+      (∀ (n : ℕ) (s : ℝ), |s| ≤ n + 1 → ρ n s = 1) ∧
+        (∀ (n : ℕ) (s : ℝ), 2 * (n + 1) < |s| → ρ n s = 0) ∧
+          (∀ n s, HasDerivAt (ρ n) (ρ' n s) s) ∧ ∀ n s, |ρ' n s| ≤ B := by
   obtain ⟨C, hC, h⟩ := exists_cutoff_fderiv_bound (E := ℝ)
   choose ρ ρ' hρ h01 h1 h0 hd hb using fun n : ℕ ↦ h 0 (n + 1) (by positivity)
-  refine ⟨C, ρ, fun n s ↦ ρ' n s 1, fun n ↦ ⟨hρ n 2, h01 n, fun s hs ↦ h1 n s ?_,
-    fun s hs ↦ h0 n s ?_, fun s ↦ (hd n s).hasDerivAt, fun s ↦ ?_⟩⟩
+  refine ⟨C, ρ, fun n s ↦ ρ' n s 1, fun n ↦ hρ n 2, h01, fun n s hs ↦ h1 n s ?_,
+    fun n s hs ↦ h0 n s ?_, fun n s ↦ (hd n s).hasDerivAt, fun n s ↦ ?_⟩
   · rwa [Metric.mem_closedBall, Real.dist_0_eq_abs]
   · rwa [Real.dist_0_eq_abs]
   · rw [← Real.norm_eq_abs]
@@ -93,6 +96,13 @@ private theorem exists_cutoff_seq : ∃ B : ℝ, ∃ ρ ρ' : ℕ → ℝ → �
     rw [norm_one, mul_one]
     exact (hb n s).trans (mul_le_of_le_one_right hC
       (inv_le_one_of_one_le₀ (le_add_of_nonneg_left (Nat.cast_nonneg n))))
+
+/-- The norm of the jet-shaped triple `(0, c v, 0)`, the correction term in `jet (β(s) ξ)`. -/
+private theorem norm_zero_smul_zero (c : ℝ) (v : V) :
+    ‖((0 : V), c • v, (0 : V))‖ = |c| * ‖v‖ := by
+  simp only [Prod.norm_def, norm_zero, norm_smul, Real.norm_eq_abs]
+  have ha : 0 ≤ |c| * ‖v‖ := by positivity
+  rw [max_eq_left ha, max_eq_right ha]
 
 variable {M : ℝ × ℝ → V × V × V →L[ℝ] W} {C T : ℝ} {ξ : ℝ × ℝ → V}
 
@@ -114,11 +124,7 @@ private theorem norm_apply_jet_smul_fst_le {ρ : ℝ → ℝ} {ρ' : ℝ} {B : �
     ‖M z (jet (fun w ↦ ρ w.1 • ξ w) z)‖ ≤ ‖M z (jet ξ z)‖ + B * ‖M z‖ * ‖ξ z‖ := by
   have h0 : ‖M z ((0 : V), ρ' • ξ z, (0 : V))‖ ≤ B * ‖M z‖ * ‖ξ z‖ := by
     refine ((M z).le_opNorm _).trans ?_
-    have : ‖((0 : V), ρ' • ξ z, (0 : V))‖ = |ρ'| * ‖ξ z‖ := by
-      simp only [Prod.norm_def, norm_zero, norm_smul, Real.norm_eq_abs]
-      have ha : 0 ≤ |ρ'| * ‖ξ z‖ := by positivity
-      rw [max_eq_left ha, max_eq_right ha]
-    rw [this]
+    rw [norm_zero_smul_zero]
     calc ‖M z‖ * (|ρ'| * ‖ξ z‖) ≤ ‖M z‖ * (B * ‖ξ z‖) :=
           mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hρ'B (norm_nonneg _))
             (norm_nonneg _)
@@ -138,13 +144,7 @@ private theorem exists_eLpNorm_jet_smul_fst_le (hM : MemLp M ∞ stripMeasure)
     ∃ A : ℝ≥0∞, A ≠ ∞ ∧ ∀ ⦃ρ ρ' : ℝ → ℝ⦄ ⦃R : ℝ⦄, ContDiff ℝ 2 ρ →
       (∀ s, 0 ≤ ρ s ∧ ρ s ≤ 1) → (∀ s, R < |s| → ρ s = 0) → (∀ s, HasDerivAt ρ (ρ' s) s) →
         (∀ s, |ρ' s| ≤ B) → eLpNorm (jet fun w ↦ ρ w.1 • ξ w) 2 stripMeasure ≤ A := by
-  obtain ⟨K, hK⟩ : ∃ K : ℝ, ∀ᵐ z ∂stripMeasure, ‖M z‖ ≤ K := by
-    have heq : eLpNorm M ∞ stripMeasure = eLpNormEssSup M stripMeasure :=
-      eLpNorm_exponent_top hM.aestronglyMeasurable
-    refine ⟨(eLpNorm M ∞ stripMeasure).toReal, ?_⟩
-    filter_upwards [ae_le_eLpNormEssSup (f := M) (μ := stripMeasure)] with z hz
-    rw [← toReal_eNorm, heq]
-    exact ENNReal.toReal_mono (heq ▸ hM.eLpNorm_ne_top) hz
+  obtain ⟨K, hK⟩ : ∃ K : ℝ, ∀ᵐ z ∂stripMeasure, ‖M z‖ ≤ K := ⟨_, ae_le_lpNorm_exponent_top hM⟩
   set G : ℝ × ℝ → ℝ := fun z ↦ ‖M z (jet ξ z)‖ + B * K * ‖ξ z‖
   have hG : MemLp G 2 stripMeasure := hD.norm.add (hξ2.norm.const_mul (B * K))
   refine ⟨ENNReal.ofReal (√(max C 0) * ((eLpNorm G 2 stripMeasure).toReal +
@@ -208,15 +208,15 @@ theorem memLp_jet_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasure)
     (hest : HasSemiFredholmEstimate M C T) (hξ : ContDiff ℝ 2 ξ)
     (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hξ2 : MemLp ξ 2 stripMeasure)
     (hD : MemLp (fun z ↦ M z (jet ξ z)) 2 stripMeasure) : MemLp (jet ξ) 2 stripMeasure := by
-  obtain ⟨B, ρ, ρ', hρ⟩ := exists_cutoff_seq
+  obtain ⟨B, ρ, ρ', hρ, h01, h1, h0, hd, hb⟩ := exists_cutoff_seq
   obtain ⟨A, hA, hbound⟩ := exists_eLpNorm_jet_smul_fst_le hM hest hξ hper hξ2 hD B
   have hj (n : ℕ) : Continuous (jet fun w ↦ ρ n w.1 • ξ w) :=
-    continuous_jet ((((hρ n).1.comp contDiff_fst).smul hξ).of_le (by norm_num))
+    continuous_jet ((((hρ n).comp contDiff_fst).smul hξ).of_le (by norm_num))
   refine memLp_iff.2 ((Lp.eLpNorm_le_of_ae_tendsto (Eventually.of_forall fun n ↦
-    hbound (hρ n).1 (hρ n).2.1 (hρ n).2.2.2.1 (hρ n).2.2.2.2.1 (hρ n).2.2.2.2.2)
+    hbound (hρ n) (h01 n) (h0 n) (hd n) (hb n))
     (fun n ↦ (hj n).aestronglyMeasurable)
     (continuous_jet (hξ.of_le (by norm_num))).aestronglyMeasurable
-    (Eventually.of_forall (tendsto_jet_smul_fst fun n ↦ (hρ n).2.2.1))).trans_lt hA.lt_top)
+    (Eventually.of_forall (tendsto_jet_smul_fst h1))).trans_lt hA.lt_top)
 
 /-- **Square-integrable sections with square-integrable image lie in `W^{1,2}`.** Let
 `D ξ = M (ξ, ∂s ξ, ∂t ξ)` have an essentially bounded coefficient field and satisfy the
@@ -229,10 +229,10 @@ theorem toLp_jet_mem_H1_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasur
     (hD : MemLp (fun z ↦ M z (jet ξ z)) 2 stripMeasure) :
     (memLp_jet_of_hasSemiFredholmEstimate hM hest hξ hper hξ2 hD).toLp (jet ξ) ∈ H1 V := by
   set hj := memLp_jet_of_hasSemiFredholmEstimate hM hest hξ hper hξ2 hD
-  obtain ⟨B, ρ, ρ', hρ⟩ := exists_cutoff_seq
-  have hB : 0 ≤ B := (abs_nonneg _).trans ((hρ 0).2.2.2.2.2 0)
+  obtain ⟨B, ρ, ρ', hρ, h01, h1, h0, hd, hb⟩ := exists_cutoff_seq
+  have hB : 0 ≤ B := (abs_nonneg _).trans (hb 0 0)
   have hmem (n : ℕ) : (fun w : ℝ × ℝ ↦ ρ n w.1 • ξ w) ∈ testSection V :=
-    smul_fst_mem_testSection (hρ n).1 (hρ n).2.2.2.1 hξ hper
+    smul_fst_mem_testSection (hρ n) (h0 n) hξ hper
   refine isClosed_H1.mem_of_tendsto (b := atTop)
     (f := fun n : ℕ ↦ jetₗ V ⟨_, hmem n⟩) ?_ (Eventually.of_forall fun n ↦ jetₗ_mem_H1 _)
   -- The cut-off jets converge to the jet of `ξ` in `L²`, dominated by `‖jet ξ‖ + B ‖ξ‖`.
@@ -242,12 +242,12 @@ theorem toLp_jet_mem_H1_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasur
     (Eventually.of_forall fun n ↦ (memLp_jet (hmem n)).aestronglyMeasurable)
     (hj.norm.add (hξ2.norm.const_mul B)) (Eventually.of_forall fun n ↦
       Eventually.of_forall fun z ↦ ?_)
-    (Eventually.of_forall (tendsto_jet_smul_fst fun n ↦ (hρ n).2.2.1))).congr fun n ↦
+    (Eventually.of_forall (tendsto_jet_smul_fst h1))).congr fun n ↦
       eLpNorm_congr_ae (((coeFn_jetₗ ⟨_, hmem n⟩).sub hj.coeFn_toLp).symm)
   rw [ENNReal.coe_one, one_mul, eNorm_le_iff_norm_le, Pi.add_apply,
     Real.norm_of_nonneg (add_nonneg (norm_nonneg _) (mul_nonneg hB (norm_nonneg _))),
-    jet_smul_fst ((hρ n).2.2.2.2.1 z.1) (hξd z)]
-  have h01 := (hρ n).2.1 z.1
+    jet_smul_fst (hd n z.1) (hξd z)]
+  have hρz := h01 n z.1
   calc ‖ρ n z.1 • jet ξ z + ((0 : V), ρ' n z.1 • ξ z, (0 : V)) - jet ξ z‖
       = ‖(ρ n z.1 - 1) • jet ξ z + ((0 : V), ρ' n z.1 • ξ z, (0 : V))‖ := by
         congr 1
@@ -255,14 +255,12 @@ theorem toLp_jet_mem_H1_of_hasSemiFredholmEstimate (hM : MemLp M ∞ stripMeasur
         abel
     _ ≤ |ρ n z.1 - 1| * ‖jet ξ z‖ + |ρ' n z.1| * ‖ξ z‖ := by
         refine (norm_add_le _ _).trans (add_le_add (by rw [norm_smul, Real.norm_eq_abs]) ?_)
-        simp only [Prod.norm_def, norm_zero, norm_smul, Real.norm_eq_abs]
-        have ha : 0 ≤ |ρ' n z.1| * ‖ξ z‖ := by positivity
-        rw [max_eq_left ha, max_eq_right ha]
+        rw [norm_zero_smul_zero]
     _ ≤ 1 * ‖jet ξ z‖ + B * ‖ξ z‖ := by
         gcongr
         · rw [abs_le]
-          constructor <;> linarith [h01.1, h01.2]
-        · exact (hρ n).2.2.2.2.2 z.1
+          constructor <;> linarith [hρz.1, hρz.2]
+        · exact hb n z.1
     _ = ‖jet ξ z‖ + B * ‖ξ z‖ := by rw [one_mul]
 
 end TauCeti.CylinderSobolev
