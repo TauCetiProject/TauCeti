@@ -544,18 +544,14 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul {b : B} (hb 
       (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
         TopPair.singularCohomologyMap
           (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
-  have hf : Set.MapsTo (e.coordChangeL ℝ e' b : F →L[ℝ] F) ({0}ᶜ : Set F) {0}ᶜ :=
-    (e.coordChangeL ℝ e' b).mapsTo_compl_zero
   -- The fibre of `e'` at `b` is the fibre of `e` followed by the coordinate change.
-  have hcomp : (e'.continuousLinearEquivAt ℝ b hb').complZeroPairIso.hom =
-      (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom ≫
-        TopPair.ofSubsetMap (TopCat.ofHom ((e.coordChangeL ℝ e' b : F →L[ℝ] F) : C(F, F))) hf := by
-    have h := (e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb').symm
-    rw [h, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom]
-    exact congrArg _ (ContinuousLinearEquiv.complZeroPairIso_hom _)
-  rw [hcomp, TopPair.singularCohomologyMap_comp,
-    singularCohomologyMap_continuousLinearMap_compl_zero, Preadditive.zsmul_comp, Category.id_comp]
-  exact congr($(ModuleCat.hom_zsmul _ _) g)
+  have h : (e.continuousLinearEquivAt ℝ b hb).symm.trans (e'.continuousLinearEquivAt ℝ b hb') =
+      e.coordChangeL ℝ e' b := by
+    rw [← e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb']
+    ext
+    simp [e.apply_mk_symm hb]
+  rw [ContinuousLinearEquiv.singularCohomologyMap_complZeroPairIso_hom_eq_sign_det_smul
+    (e.continuousLinearEquivAt ℝ b hb), h]
 
 /-- **Fibre classes read in two trivializations differ by the sign of the coordinate change**, in
 homology: for linear trivializations `e` and `e'` whose base sets contain `b`, the map
