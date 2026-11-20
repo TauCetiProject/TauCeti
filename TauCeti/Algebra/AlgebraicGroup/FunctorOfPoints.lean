@@ -130,6 +130,13 @@ noncomputable instance convGroupOfSemiring : Group (WithConv (H →ₐ[R] A)) wh
     simp only [LinearMap.comp_apply, AlgHom.coe_toLinearMap, LinearMap.convOne_apply,
       ← map_mul, ← map_sum, sum_antipode_mul_eq_algebraMap_counit, AlgHom.commutes]
 
+/-- Precomposing an algebra homomorphism into a commutative algebra twice with the antipode gives
+it back: `f ∘ S² = f`, since `f ∘ S` is the convolution inverse of `f` and inversion in the
+convolution group is involutive. The antipode itself need not be involutive. -/
+@[simp]
+lemma antipodeComp_antipodeComp (f : H →ₐ[R] A) : antipodeComp (antipodeComp f) = f :=
+  congrArg WithConv.ofConv (inv_inv (toConv f))
+
 end Hopf
 
 section Bialgebra
