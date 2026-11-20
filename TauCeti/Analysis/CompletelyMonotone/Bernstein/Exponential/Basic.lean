@@ -125,7 +125,8 @@ theorem isBernsteinFunction_iff_nonneg_and_forall_isContinuousCompletelyMonotone
     hf.isContinuousCompletelyMonotoneOnIoi_exp_neg_mul hx.le⟩, fun ⟨hnonneg, h⟩ => ?_⟩
   refine isBernsteinFunction_of_forall_isCompletelyMonotoneOnIoi_exp_neg_mul ?_ hnonneg
     fun x hx => (h x hx).isCompletelyMonotoneOnIoi
-  exact (continuousOn_exp_const_mul_iff (neg_ne_zero.mpr one_ne_zero)).mp
-    (h 1 one_pos).continuousOn 0 (mem_Ici.mpr le_rfl)
+  exact (Real.isOpenEmbedding_exp.comp (Homeomorph.mulLeft₀ (-1 : ℝ)
+    (neg_ne_zero.mpr one_ne_zero)).isOpenEmbedding).isInducing.continuousWithinAt_iff.mpr
+    ((h 1 one_pos).continuousOn 0 (mem_Ici.mpr le_rfl))
 
 end TauCeti
