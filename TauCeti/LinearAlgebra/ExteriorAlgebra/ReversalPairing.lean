@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.ExteriorAlgebra.End
@@ -28,8 +27,8 @@ Clifford action is adjoint to reversal.
 This file develops the pairing on the exterior algebra alone.
 
 * Exterior multiplication by a vector is always self-adjoint
-  (`ExteriorAlgebra.reversalPairing_ι_mul`), contraction is self-adjoint as soon as `φ`
-  kills every contraction (`ExteriorAlgebra.reversalPairing_contractLeft`), and the grade
+  (`ExteriorAlgebra.reversalPairing_ι_mul`), contraction by `d` is self-adjoint as soon as `φ`
+  kills every contraction by `d` (`ExteriorAlgebra.reversalPairing_contractLeft`), and the grade
   involution is self-adjoint as soon as `φ` is invariant under it
   (`ExteriorAlgebra.reversalPairing_involute`).
 * If `φ ∘ reverse = c • φ`, the pairing is `c`-symmetric
@@ -43,8 +42,9 @@ This file develops the pairing on the exterior algebra alone.
   multiply it by `(-1) ^ (n.choose 2)` and `(-1) ^ n` in rank `n`
   (`Module.Basis.exteriorAlgebra_coord_univ_contractLeft`,
   `Module.Basis.exteriorAlgebra_coord_univ_reverse`,
-  `Module.Basis.exteriorAlgebra_coord_univ_involute`). The resulting pairing is alternating when
-  `(-1) ^ (n.choose 2) = -1` and `n > 0`, in every characteristic
+  `Module.Basis.exteriorAlgebra_coord_univ_involute`, in
+  `TauCeti/LinearAlgebra/ExteriorAlgebra/Contraction.lean`). The resulting pairing is alternating
+  when `(-1) ^ (n.choose 2) = -1` and `n > 0`, in every characteristic
   (`ExteriorAlgebra.isAlt_reversalPairing_coord_univ`).
 * In rank two, `⟨w₁, w₂⟩ = 1` and `⟨1, w₁ ∧ w₂⟩ = 1`
   (`ExteriorAlgebra.reversalPairing_coord_univ_ι_zero_ι_one`,
@@ -59,8 +59,7 @@ This file develops the pairing on the exterior algebra alone.
 public section
 
 open CliffordAlgebra Module
-open TauCeti.ExteriorAlgebra (basis_pair contractLeft_coord_basis creation_contraction_adjoin_eq_top
-  involute_basis)
+open TauCeti.ExteriorAlgebra (basis_pair creation_contraction_adjoin_eq_top)
 
 namespace ExteriorAlgebra
 
@@ -90,11 +89,11 @@ theorem reversalPairing_ι_mul (m : M) (x y : ExteriorAlgebra R M) :
       reversalPairing φ x (ExteriorAlgebra.ι R m * y) := by
   simp only [reversalPairing_apply, reverse.map_mul, reverse_ι, mul_assoc]
 
-/-- Contraction by a functional is self-adjoint for the reversal pairing of a functional that
-kills every contraction. -/
+/-- Contraction by a functional `d` is self-adjoint for the reversal pairing of a functional that
+kills every contraction by `d`. -/
 theorem reversalPairing_contractLeft
-    (hφ : ∀ (d : Module.Dual R M) (x : ExteriorAlgebra R M), φ (contractLeft d x) = 0)
-    (d : Module.Dual R M) (x y : ExteriorAlgebra R M) :
+    (d : Module.Dual R M) (hφ : ∀ x : ExteriorAlgebra R M, φ (contractLeft d x) = 0)
+    (x y : ExteriorAlgebra R M) :
     reversalPairing φ (contractLeft d x) y = reversalPairing φ x (contractLeft d y) := by
   induction x using CliffordAlgebra.left_induction generalizing y with
   | algebraMap r => simp [← Algebra.smul_def, hφ]
@@ -137,7 +136,7 @@ theorem reversalPairing_nondegenerate [Module.Free R M] [Module.Finite R M]
     reversalPairing_ι_mul φ m
   have hd (d : Module.Dual R M) : LinearMap.IsAdjointPair (reversalPairing φ) (reversalPairing φ)
       (contractLeft d) (contractLeft d) :=
-    reversalPairing_contractLeft φ hφ d
+    reversalPairing_contractLeft φ d (hφ d)
   have htop (f : Module.Dual R (ExteriorAlgebra R M)) :
       LinearMap.smulRight f (1 : ExteriorAlgebra R M) ∈ Algebra.adjoin R
         (Set.range (fun m : M ↦ (LinearMap.mulLeft R (ExteriorAlgebra.ι R m) :
@@ -167,66 +166,7 @@ section Basis
 
 variable {I : Type w} [LinearOrder I] (b : Module.Basis I R M)
 
-/-- **Reversal acts on an exterior-basis vector by the sign `(-1) ^ (k.choose 2)`** of reversing
-its `k` generators. -/
-@[simp]
-theorem reverse_basis (s : Finset I) :
-    reverse (Q := (0 : QuadraticForm R M)) (b.ExteriorAlgebra s) =
-      (-1 : R) ^ s.card.choose 2 • b.ExteriorAlgebra s := by
-  rw [b.exteriorAlgebra_eq_prod_map_sort, reverse_prod_map_ι_of_pairwise_isOrtho
-    (List.pairwise_of_forall fun _ _ ↦ by simp [QuadraticMap.IsOrtho]),
-    List.length_map, Finset.length_sort]
-
 variable [Fintype I]
-
-/-- **The top-degree coefficient kills every contraction**: contraction lowers the degree. -/
-theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_contractLeft (d : Module.Dual R M)
-    (x : ExteriorAlgebra R M) : b.ExteriorAlgebra.coord Finset.univ (contractLeft d x) = 0 := by
-  classical
-  -- Contraction by a coordinate functional erases its coordinate, so the result has no
-  -- component on the full index set.
-  have key (i : I) :
-      b.ExteriorAlgebra.coord Finset.univ ∘ₗ contractLeft (b.coord i) = 0 := by
-    refine b.ExteriorAlgebra.ext fun s ↦ ?_
-    rw [LinearMap.comp_apply, contractLeft_coord_basis, LinearMap.zero_apply]
-    split_ifs with hi
-    · have hs : s.erase i ≠ Finset.univ := fun h ↦ by
-        simpa using (h ▸ Finset.mem_univ i : i ∈ s.erase i)
-      rw [Units.smul_def, map_zsmul, Module.Basis.coord_apply, Module.Basis.repr_self_apply]
-      simp [hs]
-    · exact map_zero _
-  rw [← b.sum_dual_apply_smul_coord d]
-  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul]
-  exact Finset.sum_eq_zero fun i _ ↦ by rw [← LinearMap.comp_apply, key, LinearMap.zero_apply,
-    mul_zero]
-
-/-- The grade involution multiplies the top-degree coefficient by `(-1) ^ n` in rank `n`. -/
-theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_involute (x : ExteriorAlgebra R M) :
-    b.ExteriorAlgebra.coord Finset.univ (involute x) =
-      (-1 : R) ^ Fintype.card I * b.ExteriorAlgebra.coord Finset.univ x := by
-  have h : b.ExteriorAlgebra.coord Finset.univ ∘ₗ involute.toLinearMap =
-      ((-1 : R) ^ Fintype.card I) • b.ExteriorAlgebra.coord Finset.univ := by
-    refine b.ExteriorAlgebra.ext fun s ↦ ?_
-    rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, involute_basis, map_smul,
-      LinearMap.smul_apply, Module.Basis.coord_apply, Module.Basis.repr_self_apply]
-    split_ifs with hs
-    · rw [hs, Finset.card_univ]
-    · simp
-  simpa using LinearMap.congr_fun h x
-
-/-- Reversal multiplies the top-degree coefficient by `(-1) ^ (n.choose 2)` in rank `n`. -/
-theorem _root_.Module.Basis.exteriorAlgebra_coord_univ_reverse (x : ExteriorAlgebra R M) :
-    b.ExteriorAlgebra.coord Finset.univ (reverse x) =
-      (-1 : R) ^ (Fintype.card I).choose 2 * b.ExteriorAlgebra.coord Finset.univ x := by
-  have h : b.ExteriorAlgebra.coord Finset.univ ∘ₗ reverse =
-      ((-1 : R) ^ (Fintype.card I).choose 2) • b.ExteriorAlgebra.coord Finset.univ := by
-    refine b.ExteriorAlgebra.ext fun s ↦ ?_
-    rw [LinearMap.comp_apply, reverse_basis, map_smul, LinearMap.smul_apply,
-      Module.Basis.coord_apply, Module.Basis.repr_self_apply]
-    split_ifs with hs
-    · rw [hs, Finset.card_univ]
-    · simp
-  simpa using LinearMap.congr_fun h x
 
 /-- **The top-degree reversal pairing is alternating** in rank `n > 0` whenever reversal acts on
 the top degree by `-1`, in every characteristic: it is skew, and it vanishes on the diagonal of the
@@ -261,8 +201,7 @@ theorem isAlt_reversalPairing_coord_univ [Nonempty I]
 theorem reversalPairing_coord_univ_ι_zero_ι_one (b : Module.Basis (Fin 2) R M) :
     reversalPairing (b.ExteriorAlgebra.coord Finset.univ)
       (ExteriorAlgebra.ι R (b 0)) (ExteriorAlgebra.ι R (b 1)) = 1 := by
-  rw [reversalPairing_apply, reverse_ι, ← basis_pair b Fin.zero_lt_one,
-    show ({0, 1} : Finset (Fin 2)) = Finset.univ by decide]
+  rw [reversalPairing_apply, reverse_ι, ← basis_pair b Fin.zero_lt_one, ← Finset.univ_fin2]
   simp [Module.Basis.coord_apply]
 
 /-- In rank two the top-degree reversal pairing has `⟨1, w₁ ∧ w₂⟩ = 1`. -/
@@ -270,7 +209,7 @@ theorem reversalPairing_coord_univ_one_ι_zero_mul_ι_one (b : Module.Basis (Fin
     reversalPairing (b.ExteriorAlgebra.coord Finset.univ)
       1 (ExteriorAlgebra.ι R (b 0) * ExteriorAlgebra.ι R (b 1)) = 1 := by
   rw [reversalPairing_apply, reverse.map_one, one_mul, ← basis_pair b Fin.zero_lt_one,
-    show ({0, 1} : Finset (Fin 2)) = Finset.univ by decide]
+    ← Finset.univ_fin2]
   simp [Module.Basis.coord_apply]
 
 end Basis

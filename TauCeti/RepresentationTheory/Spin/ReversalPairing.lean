@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.ReversalPairing
 public import TauCeti.RepresentationTheory.Spin.Representation
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # The reversal pairing on the spinor module
@@ -22,7 +23,7 @@ group, the pairing is invariant under the spin representation
 (`TauCeti.reversalPairing_spinRep`).
 
 For a basis of `W` indexed by a finite linear order, the top-degree coefficient kills every
-contraction, and is involution-invariant exactly in even rank, so its reversal pairing
+contraction, and is involution-invariant whenever the rank is even, so its reversal pairing
 `⟨s, t⟩ = [reverse s ∧ t]_top` is Spin-invariant whenever `L = 0` or `dim W` is even
 (`TauCeti.reversalPairing_coord_univ_spinRep`).
 
@@ -69,7 +70,7 @@ theorem reversalPairing_spinAction_ι
         ExteriorAlgebra.reversalPairing_involute φ hinv]
   simp only [P.decompositionEquiv_apply, map_add, LinearMap.add_apply, spinAction_ι_wedge,
     spinAction_ι_contract, spinAction_ι_lineOperator, ExteriorAlgebra.reversalPairing_ι_mul,
-    ExteriorAlgebra.reversalPairing_contractLeft φ hφ, hz]
+    fun d ↦ ExteriorAlgebra.reversalPairing_contractLeft φ d (hφ d), hz]
 
 /-- **A Clifford element is adjoint to its reverse** for the reversal pairing of a functional
 killing every contraction and, unless the remainder of the polarization is zero, invariant under
