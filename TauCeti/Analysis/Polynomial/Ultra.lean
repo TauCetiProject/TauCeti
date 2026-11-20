@@ -27,11 +27,14 @@ bounds the coefficients of determinants such as `det (1 - X A)` and of the adjug
 An integral polynomial has norm at most one on the closed unit ball of an ultrametric
 seminormed ring with `‖1‖ = 1` (`Polynomial.norm_aeval_le_one`).
 
-For a nonarchimedean, nonnegative, submultiplicative function `f` with `f 0 = 0` on a semiring,
-such as a nonarchimedean ring seminorm, bounds `f (p.coeff i) ≤ M ^ (d - i)` on the coefficients
-of a polynomial `p` of degree at most `d` pass to products and powers, since each coefficient of a
-product is a sum of products of coefficients (`Polynomial.apply_coeff_mul_le_pow`,
-`Polynomial.apply_coeff_pow_le_pow`, `Polynomial.apply_coeff_prod_le_pow`).
+Let `f` be a nonarchimedean, nonnegative, submultiplicative function with `f 0 = 0` from a
+semiring to a linearly ordered monoid with zero `Γ` whose multiplication is monotone on
+nonnegative elements, such as a nonarchimedean ring seminorm (`Γ = ℝ`). Bounds
+`f (p.coeff i) ≤ M ^ (d - i)` on the coefficients of polynomials `p` of degree at most `d` pass to
+the product of two polynomials, since each coefficient of a product is a sum of products of
+coefficients (`Polynomial.apply_coeff_mul_le_pow`). If moreover `f 1 ≤ 1`, they pass to powers
+(`Polynomial.apply_coeff_pow_le_pow`) and, over a commutative semiring, to finite products
+(`Polynomial.apply_coeff_prod_le_pow`).
 
 ## References
 
@@ -56,17 +59,19 @@ theorem norm_aeval_le_one {K : Type*} [SeminormedRing K] [NormOneClass K] [IsUlt
 
 section CoeffBound
 
-variable {R F : Type*} [FunLike F R ℝ] {f : F} {M : ℝ}
+variable {R F Γ : Type*} [MonoidWithZero Γ] [LinearOrder Γ] [PosMulMono Γ] [MulPosMono Γ]
+  [FunLike F R Γ] {f : F} {M : Γ}
 
 section Semiring
 
-variable [Semiring R] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
-  [SubmultiplicativeHomClass F R ℝ]
+variable [Semiring R] [ZeroHomClass F R Γ] [NonnegHomClass F R Γ]
+  [SubmultiplicativeHomClass F R Γ]
 
 /-- **Coefficient bounds multiply.** Let `p` and `q` be polynomials of degree at most `d` and `e`
 with `f (p.coeff i) ≤ M ^ (d - i)` and `f (q.coeff i) ≤ M ^ (e - i)` for every `i`. Then
 `f ((p * q).coeff k) ≤ M ^ (d + e - k)` for every `k`, for every nonarchimedean, nonnegative,
-submultiplicative `f` with `f 0 = 0`, such as a nonarchimedean ring seminorm. -/
+submultiplicative `f` with `f 0 = 0` into a linearly ordered monoid with zero whose multiplication
+is monotone on nonnegative elements, such as a nonarchimedean ring seminorm. -/
 theorem apply_coeff_mul_le_pow (hf_na : IsNonarchimedean f) {p q : R[X]}
     {d e : ℕ} (hpd : p.natDegree ≤ d) (hqe : q.natDegree ≤ e)
     (hp : ∀ i, f (p.coeff i) ≤ M ^ (d - i)) (hq : ∀ i, f (q.coeff i) ≤ M ^ (e - i)) (k : ℕ) :
@@ -97,15 +102,15 @@ theorem apply_coeff_pow_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
     {p : R[X]} {d : ℕ} (hpd : p.natDegree ≤ d) (hp : ∀ i, f (p.coeff i) ≤ M ^ (d - i))
     (n k : ℕ) : f ((p ^ n).coeff k) ≤ M ^ (n * d - k) := by
   induction n generalizing k with
-  | zero => rw [pow_zero, coeff_one]; split_ifs <;> simp [hf1]
+  | zero => rw [pow_zero, coeff_one]; split_ifs <;> simp [hf1, (apply_nonneg f 1).trans hf1]
   | succ n ih =>
     rw [pow_succ, Nat.succ_mul]
     exact apply_coeff_mul_le_pow hf_na (natDegree_pow_le_of_le n hpd) hpd ih hp k
 
 end Semiring
 
-variable [CommSemiring R] [ZeroHomClass F R ℝ] [NonnegHomClass F R ℝ]
-  [SubmultiplicativeHomClass F R ℝ]
+variable [CommSemiring R] [ZeroHomClass F R Γ] [NonnegHomClass F R Γ]
+  [SubmultiplicativeHomClass F R Γ]
 
 /-- **Coefficient bounds pass to finite products.** Suppose that for each `a ∈ s`, the polynomial
 `p a` has degree at most `d a` and satisfies `f ((p a).coeff i) ≤ M ^ (d a - i)` for every `i`.
@@ -118,7 +123,9 @@ theorem apply_coeff_prod_le_pow (hf1 : f 1 ≤ 1) (hf_na : IsNonarchimedean f)
     f ((∏ a ∈ s, p a).coeff k) ≤ M ^ (∑ a ∈ s, d a - k) := by
   classical
   induction s using Finset.induction_on generalizing k with
-  | empty => rw [prod_empty, sum_empty, coeff_one]; split_ifs <;> simp [hf1]
+  | empty =>
+    rw [prod_empty, sum_empty, coeff_one]
+    split_ifs <;> simp [hf1, (apply_nonneg f 1).trans hf1]
   | insert a s ha ih =>
     rw [prod_insert ha, sum_insert ha]
     simp only [forall_mem_insert] at hpd hp
