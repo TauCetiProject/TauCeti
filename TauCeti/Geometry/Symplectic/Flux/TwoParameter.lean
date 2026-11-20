@@ -73,32 +73,14 @@ variable {φ : ℝ × ℝ → M ≃ M}
   (hφ : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) I ∞ (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2))
 include hφ
 
-/-- Along a curve `s ↦ (g s, y)` of parameters through a fixed point `y`, the differential of the
-uncurried family computes the velocity of `s ↦ φ_(g s) y`. -/
-private theorem mfderiv_apply_mk_zero {g : ℝ → ℝ × ℝ} {w : ℝ × ℝ} {s₀ : ℝ}
-    (hg : HasDerivAt g w s₀) (y : M) :
-    mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) (g s₀, y) (w, 0) =
-      curveVelocity I (fun s ↦ φ (g s) y) s₀ := by
-  have hc : HasMFDerivAt 𝓘(ℝ, ℝ) (𝓘(ℝ, ℝ × ℝ).prod I) (fun s ↦ (g s, y)) s₀
-      ((1 : ℝ →L[ℝ] ℝ).smulRight ((w, (0 : E)) : TangentSpace (𝓘(ℝ, ℝ × ℝ).prod I) (g s₀, y))) :=
-    -- Both derivatives are determined by their value at `1`, which agree up to `1 • 0 = 0`.
-    ((hasMFDerivAt_iff_hasFDerivAt.2 hg.hasFDerivAt).prodMk
-      (hasMFDerivAt_const y s₀)).congr_mfderiv
-      (ContinuousLinearMap.ext_ring (Prod.ext rfl (smul_zero _).symm))
-  have h := curveVelocityWithin_map (s := Set.univ)
-    ((hφ (g s₀, y)).mdifferentiableAt (by simp)) uniqueDiffWithinAt_univ
-    hc.mdifferentiableAt.mdifferentiableWithinAt
-  rw [curveVelocityWithin_eq_of_hasMFDerivWithinAt hc.hasMFDerivWithinAt
-    uniqueDiffWithinAt_univ, curveVelocityWithin_univ] at h
-  exact h.symm
-
 /-- The differential of the uncurried family sends `∂_t` to the Eulerian velocity of
 `t ↦ φ_(t, u)`. -/
 private theorem mfderiv_apply_one_zero (q : ℝ × ℝ) (y : M) :
     mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) (q, y) ((1, 0), 0) =
       eulerianField I (fun s ↦ φ (s, q.2)) q.1 (φ q y) := by
   rw [eulerianField_apply_apply]
-  exact mfderiv_apply_mk_zero hφ ((hasDerivAt_id q.1).prodMk (hasDerivAt_const q.1 q.2)) y
+  exact (((hφ (q, y)).mdifferentiableAt (by simp)).curveVelocity_eq_mfderiv_uncurry_apply_mk_zero
+    (f := fun q y ↦ φ q y) ((hasDerivAt_id q.1).prodMk (hasDerivAt_const q.1 q.2))).symm
 
 /-- The differential of the uncurried family sends `∂_u` to the Eulerian velocity of
 `u ↦ φ_(t, u)`. -/
@@ -106,16 +88,14 @@ private theorem mfderiv_apply_zero_one (q : ℝ × ℝ) (y : M) :
     mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) (q, y) ((0, 1), 0) =
       eulerianField I (fun s ↦ φ (q.1, s)) q.2 (φ q y) := by
   rw [eulerianField_apply_apply]
-  exact mfderiv_apply_mk_zero hφ ((hasDerivAt_const q.2 q.1).prodMk (hasDerivAt_id q.2)) y
+  exact (((hφ (q, y)).mdifferentiableAt (by simp)).curveVelocity_eq_mfderiv_uncurry_apply_mk_zero
+    (f := fun q y ↦ φ q y) ((hasDerivAt_const q.2 q.1).prodMk (hasDerivAt_id q.2))).symm
 
 /-- The differential of the uncurried family sends a vertical vector `(0, w)` to `dφ_q w`. -/
 private theorem mfderiv_apply_zero_mk (q : ℝ × ℝ) (y : M) (w : TangentSpace I y) :
     mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) (q, y) (0, w) =
-      mfderiv I I (φ q) y w := by
-  have hcomp : (φ q : M → M) = (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) ∘ fun y' ↦ (q, y') := rfl
-  rw [hcomp, mfderiv_comp y ((hφ (q, y)).mdifferentiableAt (by simp))
-    (mdifferentiableAt_const.prodMk mdifferentiableAt_id), mfderiv_prod_right]
-  rfl
+      mfderiv I I (φ q) y w :=
+  ((hφ (q, y)).mdifferentiableAt (by simp)).mfderiv_uncurry_apply_zero_mk (f := fun q y ↦ φ q y) w
 
 end Family
 
@@ -141,9 +121,8 @@ theorem SmoothForm.IsClosed.deriv_sub_deriv_eq_mvfderiv_eulerianField {σ : Smoo
           eulerianField I (fun s ↦ φ (t, s)) u (φ (t, u) y)]) x v := by
   -- The pullback `η = Φ^* σ` along the uncurried family is a closed form on `(ℝ × ℝ) × M`.
   set η := SmoothForm.mpullback (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) hφ σ
-  have hηc : mextDeriv η.1 ((t, u), x) = 0 := by
-    rw [(isClosed_def _).1 (hσ.mpullback _ hφ)]
-    rfl
+  have hηc : mextDeriv η.1 ((t, u), x) = 0 :=
+    congrFun ((isClosed_def _).1 (hσ.mpullback _ hφ)) ((t, u), x)
   have hval (z : (ℝ × ℝ) × M) (w₁ w₂ : TangentSpace (𝓘(ℝ, ℝ × ℝ).prod I) z) :
       η.1 z ![w₁, w₂] = σ.1 (φ z.1 z.2) ![mfderiv _ I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) z w₁,
         mfderiv _ I (fun z : (ℝ × ℝ) × M ↦ φ z.1 z.2) z w₂] := by

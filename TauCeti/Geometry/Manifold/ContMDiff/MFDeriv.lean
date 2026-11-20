@@ -39,6 +39,8 @@ its regularity at a point also loses one derivative.
   of a jointly `C^n` family is jointly `C^m` when `m + i ≤ n`.
 * `ContMDiff.contMDiff_tangentMap_family`: the tangent maps of a jointly `C^m` family of maps
   between manifolds form a jointly `C^n` map when `n + 1 ≤ m`.
+* `MDifferentiableAt.mfderiv_uncurry_apply_zero_mk`: the differential of an uncurried family on
+  a vertical vector `(0, v)` is the differential of the member of the family on `v`.
 
 Applying the differential of a `C^(n+1)` map to a `C^n` tangent section gives a `C^n`
 tangent field along the map (`ContMDiffAt.mfderiv_apply_sectionAlong`).
@@ -158,6 +160,25 @@ theorem ContMDiffAt.iteratedFDeriv_right {i : ℕ}
       |>.contMDiff.contMDiffAt.comp z
         (hi.fderiv_right (g := fun p ↦ iteratedFDeriv 𝕜 i (g p)) le_rfl)
 
+section Uncurry
+
+variable {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace 𝕜 EQ] [TopologicalSpace HQ]
+  {IQ : ModelWithCorners 𝕜 EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+  {HM M : Type*} [TopologicalSpace HM] {I : ModelWithCorners 𝕜 E HM}
+  [TopologicalSpace M] [ChartedSpace HM M]
+  {HN N : Type*} [TopologicalSpace HN] {I' : ModelWithCorners 𝕜 F HN}
+  [TopologicalSpace N] [ChartedSpace HN N]
+
+/-- The differential of an uncurried family `(q, x) ↦ f q x` on a vertical tangent vector `(0, v)`
+is the differential of the member `f q` on `v`. -/
+theorem MDifferentiableAt.mfderiv_uncurry_apply_zero_mk {f : Q → M → N} {q : Q} {x : M}
+    (hf : MDifferentiableAt (IQ.prod I) I' (Function.uncurry f) (q, x)) (v : TangentSpace I x) :
+    mfderiv (IQ.prod I) I' (Function.uncurry f) (q, x) (0, v) = mfderiv I I' (f q) x v :=
+  -- The product rule, whose first summand vanishes at the zero vector.
+  (mfderiv_prod_eq_add_apply hf).trans ((congrArg (· + _) (map_zero _)).trans (zero_add _))
+
+end Uncurry
+
 section TangentMap
 
 open Bundle
@@ -192,10 +213,8 @@ theorem ContMDiff.contMDiff_tangentMap_family [IsManifold IQ m Q] {f : Q → M �
   change (⟨f q x, mfderiv I I' (f q) x v⟩ : TangentBundle I' N) =
     ⟨f q x, mfderiv (IQ.prod I) I' (Function.uncurry f) (q, x) (0, v)⟩
   congr 1
-  -- The product rule, whose first summand vanishes at the zero vector.
-  have hd := (mfderiv_prod_eq_add_apply ((hf.mdifferentiable (zero_lt_one.trans_le h1).ne')
-    (q, x)) (v := ((0, v) : EQ × E))).trans ((congrArg (· + _) (map_zero _)).trans (zero_add _))
-  exact hd.symm
+  exact ((hf.mdifferentiable (zero_lt_one.trans_le h1).ne' (q, x)).mfderiv_uncurry_apply_zero_mk
+    v).symm
 
 end TangentMap
 

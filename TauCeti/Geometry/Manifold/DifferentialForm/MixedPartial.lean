@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Prod
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
@@ -77,8 +76,7 @@ theorem differentiableAt_apply_prodMk [IsManifold I 1 M] {k : ℕ}
       (fun z ↦ (W i z : TangentBundle (𝓘(ℝ, P).prod I) (P × M))) (p, x) := by
     refine Manifold.mdifferentiableAt_prodVectorField (p := (p, x))
       ((contMDiff_vectorSpace_iff_contDiff.2 contDiff_const).mdifferentiableAt one_ne_zero) ?_
-    rw [Manifold.extend_eq_trivializationAt_symm (I := I) (x := x) (w i).2]
-    exact TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (I := I) x (w i).2
+    exact FiberBundle.mdifferentiableAt_extend (V := TangentSpace I) (x := x) I E (w i).2
   have h := (η.mdifferentiableAt_apply_vectorField hW).comp p
     (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
   -- Along the slice through `x` the fields take the values `w i`.
@@ -117,6 +115,14 @@ private theorem paramFrame_two (q : P × M) :
     paramFrame a b W 2 q = ((0, W q.2) : TangentSpace (𝓘(ℝ, P).prod I) q) :=
   Prod.ext (paramFrame_fst 2 q) (paramFrame_snd 2 q)
 
+/-- The values of the frame at a point. -/
+private theorem paramFrame_apply (q : P × M) :
+    (paramFrame a b W · q) =
+      ![((a, 0) : TangentSpace (𝓘(ℝ, P).prod I) q), (b, 0), (0, W q.2)] := by
+  funext l
+  fin_cases l
+  exacts [paramFrame_zero q, paramFrame_one q, paramFrame_two q]
+
 variable [IsManifold I 1 M] {p : P} {x : M}
 
 private theorem removeNth_paramFrame (η : SmoothForm (𝓘(ℝ, P).prod I) (P × M) F 2)
@@ -128,16 +134,22 @@ private theorem removeNth_paramFrame (η : SmoothForm (𝓘(ℝ, P).prod I) (P �
   funext m
   fin_cases m <;> simp [Fin.removeNth, hjl]
 
-private theorem mdifferentiableAt_paramFrame
+/-- The vertical components `0`, `0` and `W` of the frame are differentiable where `W` is. -/
+private theorem mdifferentiableAt_vertical
     (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) (i : Fin 3) :
-    MDifferentiableAt (𝓘(ℝ, P).prod I) (𝓘(ℝ, P).prod I).tangent
-      (fun q ↦ (paramFrame a b W i q : TangentBundle (𝓘(ℝ, P).prod I) (P × M))) (p, x) := by
-  refine Manifold.mdifferentiableAt_prodVectorField (p := (p, x))
-    ((contMDiff_vectorSpace_iff_contDiff.2 contDiff_const).mdifferentiableAt one_ne_zero) ?_
+    MDifferentiableAt I I.tangent (fun y ↦ (![0, 0, W] i y : TangentBundle I M)) x := by
   fin_cases i
   · exact (contMDiff_zeroSection ℝ (TangentSpace I)).mdifferentiableAt one_ne_zero
   · exact (contMDiff_zeroSection ℝ (TangentSpace I)).mdifferentiableAt one_ne_zero
   · exact hW
+
+private theorem mdifferentiableAt_paramFrame
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) (i : Fin 3) :
+    MDifferentiableAt (𝓘(ℝ, P).prod I) (𝓘(ℝ, P).prod I).tangent
+      (fun q ↦ (paramFrame a b W i q : TangentBundle (𝓘(ℝ, P).prod I) (P × M))) (p, x) :=
+  Manifold.mdifferentiableAt_prodVectorField (p := (p, x))
+    ((contMDiff_vectorSpace_iff_contDiff.2 contDiff_const).mdifferentiableAt one_ne_zero)
+    (mdifferentiableAt_vertical hW i)
 
 /-- Evaluating a smooth two-form on two fields of the frame and differentiating along a third
 splits into a parameter derivative and a derivative along `M`. -/
@@ -156,9 +168,11 @@ private theorem mvfderiv_apply_paramFrame (η : SmoothForm (𝓘(ℝ, P).prod I)
   have hev (q : P × M) : (fun l ↦ ![paramFrame a b W j, paramFrame a b W k] l q) =
       ![paramFrame a b W j q, paramFrame a b W k q] := by
     funext l
-    fin_cases l <;> rfl
+    fin_cases l <;> simp
   simp only [hev] at hd
   rw [hd.mvfderiv_prod_eq_add_apply, mvfderiv_eq_fderiv, paramFrame_fst, paramFrame_snd]
+  -- What remains is the identification `NormedSpace.fromTangentSpace p`, which is the identity
+  -- of `P` up to unfolding `TangentSpace 𝓘(ℝ, P) p`, and the reduction of `(p, x).1`, `(p, x).2`.
   rfl
 
 variable [CompleteSpace E] [CompleteSpace P] [IsManifold I 2 M]
@@ -171,14 +185,8 @@ private theorem mlieBracket_paramFrame
   have hc (c : P) : MDifferentiableAt 𝓘(ℝ, P) 𝓘(ℝ, P).tangent
       (fun q ↦ (⟨q, c⟩ : TangentBundle 𝓘(ℝ, P) P)) p :=
     (contMDiff_vectorSpace_iff_contDiff.2 contDiff_const).mdifferentiableAt one_ne_zero
-  have hU (l : Fin 3) : MDifferentiableAt I I.tangent
-      (fun y ↦ (![0, 0, W] l y : TangentBundle I M)) x := by
-    fin_cases l
-    · exact (contMDiff_zeroSection ℝ (TangentSpace I)).mdifferentiableAt one_ne_zero
-    · exact (contMDiff_zeroSection ℝ (TangentSpace I)).mdifferentiableAt one_ne_zero
-    · exact hW
-  rw [paramFrame, paramFrame,
-    Manifold.mlieBracket_prodVectorField (p := (p, x)) (hc _) (hc _) (hU i) (hU j)]
+  rw [paramFrame, paramFrame, Manifold.mlieBracket_prodVectorField (p := (p, x)) (hc _) (hc _)
+    (mdifferentiableAt_vertical hW i) (mdifferentiableAt_vertical hW j)]
   -- The zero of the tangent space of `P × M` is the zero of `P × E` only definitionally.
   refine Prod.ext ?_ ?_
   · simp only [Manifold.prodVectorField_fst, mlieBracket_const_model_space]
@@ -201,35 +209,31 @@ theorem mextDeriv_apply_eq_fderiv_sub_fderiv_add_mvfderiv
         fderiv ℝ (fun q ↦ η.1 (q, x) ![(a, 0), (0, v)]) p b +
         mvfderiv I (fun y ↦ η.1 (p, y) ![(a, 0), (b, 0)]) x v := by
   -- Evaluate on the frame `(a, 0)`, `(b, 0)`, `(0, W)` for a vertical extension `W` of `v`.
-  set W : (y : M) → TangentSpace I y := FiberBundle.extend E v with hWdef
-  have hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x := by
-    simpa [hWdef, Manifold.extend_eq_trivializationAt_symm] using
-      TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (I := I) x v
+  set W : (y : M) → TangentSpace I y := FiberBundle.extend E v
+  have hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x :=
+    FiberBundle.mdifferentiableAt_extend I E v
   have hW0 : W x = v := FiberBundle.extend_apply_self _ v
   have h := mextDeriv_apply_vectorField_of_mlieBracket_eq_zero (η.mdifferentiableAt (p, x))
     (mdifferentiableAt_paramFrame (a := a) (b := b) (p := p) hW) (mlieBracket_paramFrame hW)
   have hpt : (paramFrame a b W · (p, x)) = ![(a, 0), (b, 0), (0, v)] := by
-    funext l
-    fin_cases l
-    exacts [paramFrame_zero _, paramFrame_one _, (paramFrame_two _).trans (by rw [hW0]; rfl)]
+    rw [paramFrame_apply, hW0]
+    -- The right side elaborates as a vector in `P × E`, the frame's values as a vector in the
+    -- tangent space of `P × M`; the two types agree only by unfolding `TangentSpace`.
+    rfl
   rw [Fin.sum_univ_three] at h
   rw [removeNth_paramFrame η 0 1 2 (by decide), removeNth_paramFrame η 1 0 2 (by decide),
     removeNth_paramFrame η 2 0 1 (by decide), mvfderiv_apply_paramFrame η hW,
     mvfderiv_apply_paramFrame η hW, mvfderiv_apply_paramFrame η hW] at h
   -- Along the slices through `(p, x)`, the fields take their values at `(p, x)`.
-  have hW2 (q : P) : paramFrame a b W 2 (q, x) = ((0, v) : TangentSpace (𝓘(ℝ, P).prod I) (q, x)) :=
-    (paramFrame_two _).trans (by rw [hW0])
   have hf₀ : (fun q ↦ η.1 (q, x) ![paramFrame a b W 1 (q, x), paramFrame a b W 2 (q, x)]) =
-      fun q ↦ η.1 (q, x) ![(b, 0), (0, v)] :=
-    funext fun q ↦ congrArg (η.1 (q, x))
-      (by funext m; fin_cases m; exacts [paramFrame_one _, hW2 q])
+      fun q ↦ η.1 (q, x) ![(b, 0), (0, v)] := by
+    simp only [paramFrame_one, paramFrame_two, hW0]
   have hf₁ : (fun q ↦ η.1 (q, x) ![paramFrame a b W 0 (q, x), paramFrame a b W 2 (q, x)]) =
-      fun q ↦ η.1 (q, x) ![(a, 0), (0, v)] :=
-    funext fun q ↦ congrArg (η.1 (q, x))
-      (by funext m; fin_cases m; exacts [paramFrame_zero _, hW2 q])
+      fun q ↦ η.1 (q, x) ![(a, 0), (0, v)] := by
+    simp only [paramFrame_zero, paramFrame_two, hW0]
   have hf₂ : (fun y ↦ η.1 (p, y) ![paramFrame a b W 0 (p, y), paramFrame a b W 1 (p, y)]) =
-      fun y ↦ η.1 (p, y) ![(a, 0), (b, 0)] := funext fun y ↦ congrArg (η.1 (p, y))
-    (by funext m; fin_cases m; exacts [paramFrame_zero _, paramFrame_one _])
+      fun y ↦ η.1 (p, y) ![(a, 0), (b, 0)] := by
+    simp only [paramFrame_zero, paramFrame_one]
   refine (congrArg (mextDeriv η.1 (p, x)) hpt.symm).trans ?_
   rw [h, hf₀, hf₁, hf₂]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
