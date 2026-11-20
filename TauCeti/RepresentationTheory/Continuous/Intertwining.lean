@@ -59,16 +59,15 @@ variable {R G V W : Type*} [CommRing R] [Monoid G]
   [ContinuousConstSMul R W] {π : ContRepresentation R G V} {ρ : ContRepresentation R G W}
 
 /-- Continuous intertwiners from a finitely generated representation to a Noetherian one form a
-finitely generated module: forgetting the intertwining condition and continuity embeds them into
-the linear maps. Over a field, continuous intertwiners between finite-dimensional representations
-thus form a finite-dimensional space.
+finitely generated module. In particular, over a field, continuous intertwiners between
+finite-dimensional representations form a finite-dimensional space.
 
 This is the continuous counterpart of Mathlib's instance
-`Representation.IntertwiningMap.instFiniteOfIsNoetherian` for algebraic intertwiners, and the
-proof follows it: `Module.Finite.of_injective` into the linear maps, which are Noetherian by
-`isNoetherian_linearMap`. -/
+`Representation.IntertwiningMap.instFiniteOfIsNoetherian` for algebraic intertwiners. -/
 instance instModuleFinite [Module.Finite R V] [IsNoetherian R W] :
     Module.Finite R (ContIntertwiningMap π ρ) :=
+  -- As in Mathlib's algebraic instance: embed into the linear maps `V →ₗ[R] W`, which form a
+  -- Noetherian module by `isNoetherian_linearMap`.
   .of_injective (σ := RingHom.id R)
     { toFun f := (f.toContinuousLinearMap : V →ₗ[R] W)
       map_add' _ _ := rfl
