@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Adjoin.PowerBasis
 public import TauCeti.RingTheory.RootsOfUnity.CompatibleRoots
 import Mathlib.RingTheory.Norm.Basic
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
+import TauCeti.RingTheory.PowerBasis
 
 /-!
 # The local cyclotomic tower over `ℚ_p`
@@ -210,21 +211,9 @@ theorem norm_root_succ (n : ℕ) :
 theorem norm_root_succ_sub_one (n : ℕ) :
     Algebra.norm (padicCyclotomicField p Ω n) (root p Ω (n + 1) - 1) =
       (-1) ^ (p + 1) * (root p Ω n - 1) := by
-  have hgen : (relativePowerBasis p Ω n).gen ∈
-      Algebra.adjoin (padicCyclotomicField p Ω n) {root p Ω (n + 1) - 1} := by
-    simpa using add_mem (Algebra.self_mem_adjoin_singleton (padicCyclotomicField p Ω n)
-      (root p Ω (n + 1) - 1)) (one_mem _)
-  have hint := Algebra.IsIntegral.isIntegral (R := padicCyclotomicField p Ω n)
-    (root p Ω (n + 1) - 1)
-  have htop := (relativePowerBasis p Ω n).adjoin_eq_top_of_gen_mem_adjoin hgen
-  have hdim : (PowerBasis.ofAdjoinEqTop hint htop).dim = p := by
-    rw [← PowerBasis.finrank, finrank_succ]
-  have hmin : minpoly (padicCyclotomicField p Ω n) (root p Ω (n + 1) - 1) =
-      (X ^ p - C (root p Ω n)).comp (X + C 1) := by
-    rw [← minpoly_root_succ, ← minpoly.sub_algebraMap, map_one]
-  rw [← PowerBasis.ofAdjoinEqTop_gen hint htop, Algebra.PowerBasis.norm_gen_eq_coeff_zero_minpoly,
-    PowerBasis.ofAdjoinEqTop_gen, hmin, hdim, coeff_zero_eq_eval_zero]
-  simp only [eval_comp, eval_sub, eval_pow, eval_add, eval_X, eval_C, zero_add, one_pow]
+  have h := (relativePowerBasis p Ω n).norm_gen_sub_algebraMap 1
+  rw [relativePowerBasis_gen, map_one, minpoly_root_succ, relativePowerBasis_dim] at h
+  rw [h, eval_sub, eval_pow, eval_X, eval_C, one_pow]
   ring
 
 end padicCyclotomicField
