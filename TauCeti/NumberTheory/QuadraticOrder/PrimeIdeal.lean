@@ -36,7 +36,8 @@ generators, following the Dedekind–Kummer recipe:
   `p` divides the discriminant `b² + 4a` of `f`
   (`span_natCast_omega_sub_eq_span_natCast_omega_sub_iff`);
 * if `f` has no root modulo `p`, then `(p)` itself is maximal, so `p` is inert
-  (`isMaximal_span_natCast_iff`), and conversely;
+  (`isMaximal_span_natCast_iff`), and conversely; in `ℤ[√r]` this says that `r` is not a square
+  modulo `p` (`isMaximal_span_natCast_iff_not_isSquare`);
 * together, the primes of `ℤ[ω]` above `p` are exactly `(p)` when `f` has no root modulo `p`, and
   the ideals `𝔭_r` otherwise (`isPrime_and_natCast_mem_iff`).
 
@@ -383,6 +384,23 @@ theorem isMaximal_span_natCast_iff :
     have : Fact _ := ⟨hroot⟩
     rw [← ker_mapRingHom_intCastRingHom]
     exact RingHom.ker_isMaximal_of_surjective _ (mapRingHom_intCastRingHom_surjective a b p)
+
+/-- **The inert case in `ℤ[√r]`.** The ideal `(p)` of `ℤ[√r] = QuadraticAlgebra ℤ r 0` is maximal
+exactly when `r` is not a square modulo `p`. This is `isMaximal_span_natCast_iff` at `X² - r`. -/
+theorem isMaximal_span_natCast_iff_not_isSquare :
+    (Ideal.span {(p : QuadraticAlgebra ℤ r 0)}).IsMaximal ↔ ¬IsSquare (r : ZMod p) := by
+  rw [isMaximal_span_natCast_iff, not_iff_not.symm, not_forall]
+  simp only [not_not, zero_mul, sub_zero]
+  constructor
+  · rintro ⟨s, hs⟩
+    have := (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mpr hs
+    push_cast at this
+    exact ⟨s, by linear_combination -this⟩
+  · rintro ⟨t, ht⟩
+    obtain ⟨s, rfl⟩ := ZMod.intCast_surjective t
+    refine ⟨s, (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp ?_⟩
+    push_cast
+    rw [ht, sq, sub_self]
 
 /-- **When the two primes above `p` coincide.** For a root `r` of `X² - b X - a` modulo `p`, the
 ideals `(p, ω - r)` and `(p, ω - (b - r))` coincide exactly when `p` divides the discriminant

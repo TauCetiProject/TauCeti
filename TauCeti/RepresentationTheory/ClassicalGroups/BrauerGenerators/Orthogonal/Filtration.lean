@@ -8,6 +8,10 @@ module
 public import TauCeti.Algebra.BrauerAlgebra.DiagramIdeal
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Equivariance
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.TraceSplitting
+public import TauCeti.RepresentationTheory.Subrepresentation.Quotient
+-- Non-public: the star-ordered ring structure on `ℚ`, for the two-strand check of the top graded
+-- piece.
+import Mathlib.Algebra.Order.Star.Rat
 
 /-!
 # The trace filtration of the orthogonal tensor powers
@@ -24,7 +28,8 @@ the tensors obtained by inserting at least `j` copies of the invariant form `∑
 Its graded pieces `F_j / F_(j+1)` carry commuting actions of the orthogonal group and of the
 Brauer algebra, and they are how Goodman and Wallach organize the tensor power on the Brauer side
 of Schur-Weyl duality. Over a star-ordered field the top piece `F_0 / F_1` is a copy of the
-harmonic tensors, by the complement proved below; the lower pieces are not treated here.
+harmonic tensors (`TauCeti.quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors`); the lower
+pieces are not treated here.
 
 Each `F_j` is a subrepresentation of the orthogonal group, because the Brauer algebra acts by
 intertwiners, and it is stable under the whole Brauer algebra, because `I_j` is a left ideal.
@@ -41,12 +46,16 @@ an arc. Over a star-ordered field such as `ℚ`, `ℝ` or `ℂ` the harmonic ten
 complement `F_1`: rewriting by `TauCeti.orthogonalTraceFiltration_one` turns
 `TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceTensors` into this statement, so
 `V^{⊗d}` is the direct sum of the harmonic tensors and `F_1` as a representation of the
-orthogonal group.
+orthogonal group, and the top graded piece `V^{⊗d} / F_1` is equivalent to the harmonic tensors
+by `Subrepresentation.quotientEquivOfIsCompl`.
 
 ## Main definitions
 
 * `TauCeti.orthogonalTraceFiltration`: the step `F_j` of the trace filtration, a
   subrepresentation of the orthogonal group acting on `V^{⊗d}`.
+* `TauCeti.quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors`: over a star-ordered field,
+  the top graded piece `V^{⊗d} / F_1` is equivalent to the harmonic tensors, as a representation
+  of the orthogonal group.
 
 ## Main results
 
@@ -222,11 +231,54 @@ theorem orthogonalTraceFiltration_one :
 
 end CommRing
 
--- Over a star-ordered field the harmonic tensors complement `F_1`, by the trace-tensor complement.
-example (k : Type u) [Field k] [PartialOrder k] [StarRing k] [StarOrderedRing k] (n d : ℕ) :
-    IsCompl (harmonicTensorsSubrep k n d) (orthogonalTraceFiltration k n d 1) := by
-  rw [orthogonalTraceFiltration_one]
-  exact isCompl_harmonicTensorsSubrep_orthogonalTraceTensors k n d
+/-! ### The top graded piece -/
+
+section StarOrderedField
+
+variable (k : Type u) [Field k] [PartialOrder k] [StarRing k] [StarOrderedRing k] (n d : ℕ)
+
+/-- **The top graded piece of the trace filtration is the space of harmonic tensors.** Over a
+star-ordered field, such as `ℚ`, `ℝ` or `ℂ` (with `ComplexOrder`), the quotient `V^{⊗d} / F_1` is
+equivalent, as a representation of the orthogonal group, to the harmonic tensors: these
+complement `F_1`, the space of trace tensors
+(`TauCeti.isCompl_harmonicTensorsSubrep_orthogonalTraceTensors`), and the equivalence sends the
+class of a tensor to its harmonic component (`Subrepresentation.quotientEquivOfIsCompl`). -/
+noncomputable def quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors :
+    (orthogonalTraceFiltration k n d 1).quotient.Equiv
+      (harmonicTensorsSubrep k n d).toRepresentation :=
+  Subrepresentation.quotientEquivOfIsCompl <| by
+    rw [orthogonalTraceFiltration_one]
+    exact (isCompl_harmonicTensorsSubrep_orthogonalTraceTensors k n d).symm
+
+variable {k n d}
+
+/-- The inverse of the equivalence sends a harmonic tensor to its class modulo `F_1`. -/
+@[simp]
+theorem quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors_symm_apply
+    (v : (harmonicTensorsSubrep k n d).toSubmodule) :
+    (quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors k n d).symm v =
+      Submodule.Quotient.mk (v : ⨂[k]^d (Fin n → k)) :=
+  Subrepresentation.quotientEquivOfIsCompl_symm_apply _ v
+
+/-- The class of a harmonic tensor goes back to that tensor. -/
+theorem quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors_apply_mk_of_mem
+    {x : ⨂[k]^d (Fin n → k)} (hx : x ∈ harmonicTensors k n d) :
+    (quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors k n d
+      (Submodule.Quotient.mk x) : ⨂[k]^d (Fin n → k)) = x := by
+  have h := (quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors k n d).apply_symm_apply
+    ⟨x, by rwa [harmonicTensorsSubrep_toSubmodule]⟩
+  rw [quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors_symm_apply] at h
+  exact congrArg Subtype.val h
+
+/-- A tensor differs from the harmonic tensor its class corresponds to by an element of `F_1`, a
+sum of trace tensors. -/
+theorem sub_quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors_apply_mk_mem
+    (x : ⨂[k]^d (Fin n → k)) :
+    x - (quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors k n d
+      (Submodule.Quotient.mk x) : ⨂[k]^d (Fin n → k)) ∈ orthogonalTraceFiltration k n d 1 :=
+  Subrepresentation.sub_quotientEquivOfIsCompl_apply_mk_mem _ x
+
+end StarOrderedField
 
 -- On two strands `F_1` is the trace line spanned by the invariant form, a line for `n ≠ 0`, and
 -- `F_2 = 0`; on one strand already `F_1 = 0`, since a single strand carries no cap.
@@ -242,5 +294,15 @@ example : orthogonalTraceFiltration ℚ 3 2 2 = ⊥ :=
 
 example : orthogonalTraceFiltration ℚ 3 1 1 = ⊥ :=
   orthogonalTraceFiltration_eq_bot ℚ 3 1 (by norm_num)
+
+-- On two strands the top graded piece `V^{⊗2} / F_1` is the harmonic tensor square, of dimension
+-- `3 ^ 2 - 1 = 8` for `n = 3`.
+example : Module.finrank ℚ
+    (⨂[ℚ]^2 (Fin 3 → ℚ) ⧸ (orthogonalTraceFiltration ℚ 3 2 1).toSubmodule) = 8 := by
+  rw [LinearEquiv.finrank_eq
+      (quotientOrthogonalTraceFiltrationOneEquivHarmonicTensors ℚ 3 2).toLinearEquiv,
+    harmonicTensorsSubrep_toSubmodule]
+  have h := finrank_harmonicTensors_two ℚ 3
+  omega
 
 end TauCeti

@@ -49,20 +49,20 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- The archimedean logarithms of an idele, omitting Mathlib's distinguished infinite place.
 Each coordinate is the logarithm of the normalized local absolute value. -/
 def ideleLog : Additive (IdeleGroup (𝓞 K) K) →+ logSpace K where
-  toFun x w := Real.log (completionNormalizedAbsValue w.1 (w.1.ideleInfiniteCoord x.toMul))
+  toFun x w := Real.log (completionNormalizedAbsValue w.val (w.val.ideleInfiniteCoord x.toMul))
   map_zero' := by ext w; simp
   map_add' x y := by
     ext w
     simp only [toMul_add, map_mul, Units.val_mul, Pi.add_apply]
     exact Real.log_mul
-      ((map_ne_zero _).mpr (w.1.ideleInfiniteCoord x.toMul).ne_zero)
-      ((map_ne_zero _).mpr (w.1.ideleInfiniteCoord y.toMul).ne_zero)
+      ((map_ne_zero _).mpr (w.val.ideleInfiniteCoord x.toMul).ne_zero)
+      ((map_ne_zero _).mpr (w.val.ideleInfiniteCoord y.toMul).ne_zero)
 
 /-- The coordinate formula for the logarithmic idele map. -/
 @[simp]
 theorem ideleLog_apply (x : IdeleGroup (𝓞 K) K) (w : {w : InfinitePlace K // w ≠ w₀}) :
     ideleLog (Additive.ofMul x) w =
-      Real.log (completionNormalizedAbsValue w.1 (w.1.ideleInfiniteCoord x)) := (rfl)
+      Real.log (completionNormalizedAbsValue w.val (w.val.ideleInfiniteCoord x)) := (rfl)
 
 /-- The logarithmic idele map is continuous. -/
 @[fun_prop]
@@ -71,10 +71,10 @@ theorem continuous_ideleLog : Continuous (ideleLog (K := K)) := by
   intro w
   apply Continuous.log
   · simp only [InfinitePlace.coe_ideleInfiniteCoord]
-    exact (continuous_completionNormalizedAbsValue w.1).comp
-      (((continuous_apply w.1).comp continuous_fst).comp Units.continuous_val)
+    exact (continuous_completionNormalizedAbsValue w.val).comp
+      (((continuous_apply w.val).comp continuous_fst).comp Units.continuous_val)
   · intro x
-    exact (map_ne_zero _).mpr (w.1.ideleInfiniteCoord x.toMul).ne_zero
+    exact (map_ne_zero _).mpr (w.val.ideleInfiniteCoord x.toMul).ne_zero
 
 /-- On principal ideles of global units, the logarithmic map is Mathlib's unit embedding. -/
 @[simp]
@@ -90,8 +90,8 @@ private abbrev integralIdeles := ideleCongruenceSubgroup (Modulus.one K)
 private abbrev integralClasses := raySubgroup (Modulus.one K)
 
 private def integralClassMap : C(integralIdeles (K := K), integralClasses (K := K)) :=
-  ⟨fun x ↦ ⟨(x.1 : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x.1, x.2, rfl⟩⟩,
-    (QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _⟩
+  ⟨fun x ↦ ⟨(x.val : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x.val, x.property, rfl⟩⟩,
+    (QuotientGroup.continuous_mk.comp continuous_subtypeVal).subtype_mk _⟩
 
 private theorem integralClassMap_isQuotientMap :
     IsQuotientMap (integralClassMap (K := K)) := by
@@ -105,19 +105,19 @@ private theorem integralClassMap_isQuotientMap :
 
 private def integralIdeleLog :
     C(integralIdeles (K := K), logSpace K ⧸ (unitLattice K).toAddSubgroup) :=
-  ⟨fun x ↦ QuotientAddGroup.mk (ideleLog (Additive.ofMul x.1)),
-    QuotientAddGroup.continuous_mk.comp (continuous_ideleLog.comp continuous_subtype_val)⟩
+  ⟨fun x ↦ QuotientAddGroup.mk (ideleLog (Additive.ofMul x.val)),
+    QuotientAddGroup.continuous_mk.comp (continuous_ideleLog.comp continuous_subtypeVal)⟩
 
 private theorem integralIdeleLog_factorsThrough :
     Function.FactorsThrough (integralIdeleLog (K := K)) integralClassMap := by
   intro x y hxy
-  have h : ((x.1 : IdeleClassGroup (𝓞 K) K)) = (y.1 : IdeleClassGroup (𝓞 K) K) :=
+  have h : ((x.val : IdeleClassGroup (𝓞 K) K)) = (y.val : IdeleClassGroup (𝓞 K) K) :=
     congrArg Subtype.val hxy
   obtain ⟨a, ha⟩ := QuotientGroup.eq.mp h
   have hai : IdeleGroup.unitEmbedding (𝓞 K) K a ∈ integralIdeles (K := K) :=
-    ha ▸ (integralIdeles (K := K)).mul_mem ((integralIdeles (K := K)).inv_mem x.2) y.2
+    ha ▸ (integralIdeles (K := K)).mul_mem ((integralIdeles (K := K)).inv_mem x.property) y.property
   obtain ⟨u, -, hu⟩ := unitEmbedding_mem_ideleCongruenceSubgroup_iff.mp hai
-  have hlog : ideleLog (Additive.ofMul (x.1⁻¹ * y.1)) = logEmbedding K (Additive.ofMul u) := by
+  have hlog : ideleLog (Additive.ofMul (x.val⁻¹ * y.val)) = logEmbedding K (Additive.ofMul u) := by
     rw [← ha, ← hu]
     simpa only [RingHom.toMonoidHom_eq_coe] using ideleLog_unitEmbedding u
   apply QuotientAddGroup.eq.mpr
@@ -149,15 +149,15 @@ def unitLogQuotient :
       integralUnitLog c.toMul + integralUnitLog d.toMul
     rw [← hx, ← hy]
     have hmul : integralClassMap x * integralClassMap y = integralClassMap (x * y) :=
-      Subtype.ext (QuotientGroup.mk_mul _ x.1 y.1).symm
+      Subtype.ext (QuotientGroup.mk_mul _ x.val y.val).symm
     rw [hmul]
     calc
-      _ = QuotientAddGroup.mk (ideleLog (Additive.ofMul (x.1 * y.1))) :=
-        integralUnitLog_mk _ (mul_mem x.2 y.2)
+      _ = QuotientAddGroup.mk (ideleLog (Additive.ofMul (x.val * y.val))) :=
+        integralUnitLog_mk _ (mul_mem x.property y.property)
       _ = _ := by
         rw [ofMul_mul, map_add, QuotientAddGroup.mk_add]
-        exact congrArg₂ (· + ·) (integralUnitLog_mk x.1 x.2).symm
-          (integralUnitLog_mk y.1 y.2).symm
+        exact congrArg₂ (· + ·) (integralUnitLog_mk x.val x.property).symm
+          (integralUnitLog_mk y.val y.property).symm
 
 /-- The logarithmic quotient homomorphism is continuous. -/
 @[fun_prop]
@@ -182,8 +182,8 @@ theorem exists_ideleLog_eq_and_norm_eq_one (y : logSpace K) :
     if h : w = w₀ then -∑ v, y v else y ⟨w, h⟩
   have ht : ∑ w, t w = 0 := by
     rw [Fintype.sum_eq_add_sum_subtype_ne t w₀]
-    have hn (v : {w : InfinitePlace K // w ≠ w₀}) : t v.1 = y v := by
-      simp [t, v.2]
+    have hn (v : {w : InfinitePlace K // w ≠ w₀}) : t v.val = y v := by
+      simp [t, v.property]
     rw [show t w₀ = -∑ v, y v by simp [t]]
     simp_rw [hn]
     exact neg_add_cancel _
@@ -204,13 +204,13 @@ theorem exists_ideleLog_eq_and_norm_eq_one (y : logSpace K) :
       Units.val_one, norm_one, finprod_one, mul_one]
     rw [← Real.exp_sum, ht, Real.exp_zero]
   · ext w
-    simp [x, hu, t, w.2]
+    simp [x, hu, t, w.property]
 
 /-- The logarithmic quotient map remains surjective on norm-one classes in the trivial
 ray subgroup. -/
 theorem unitLogQuotient_normOne_surjective
     (z : logSpace K ⧸ (unitLattice K).toAddSubgroup) :
-    ∃ c : raySubgroup (Modulus.one K), c.1 ∈ IdeleClassGroup.normOne K ∧
+    ∃ c : raySubgroup (Modulus.one K), c.val ∈ IdeleClassGroup.normOne K ∧
       unitLogQuotient (Additive.ofMul c) = z := by
   obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective z
   obtain ⟨x, hx, hnorm, hlog⟩ := exists_ideleLog_eq_and_norm_eq_one y
@@ -223,7 +223,7 @@ lattice is cocompact in Mathlib's coordinates omitting the distinguished infinit
 instance compactSpace_logSpace_quotient_unitLattice :
     CompactSpace (logSpace K ⧸ (unitLattice K).toAddSubgroup) := by
   let S : Set (raySubgroup (Modulus.one K)) :=
-    {c | c.1 ∈ IdeleClassGroup.normOne K}
+    {c | c.val ∈ IdeleClassGroup.normOne K}
   have hS : IsCompact S := by
     have hc : IsCompact ((raySubgroup (Modulus.one K) : Set (IdeleClassGroup (𝓞 K) K)) ∩
         IdeleClassGroup.normOne K) :=
@@ -232,14 +232,14 @@ instance compactSpace_logSpace_quotient_unitLattice :
     apply IsEmbedding.subtypeVal.isCompact_iff.mpr
     convert hc using 1
     ext c
-    exact ⟨fun ⟨a, ha, hac⟩ ↦ hac ▸ ⟨a.2, ha⟩,
+    exact ⟨fun ⟨a, ha, hac⟩ ↦ hac ▸ ⟨a.property, ha⟩,
       fun ⟨hc₁, hc₂⟩ ↦ ⟨⟨c, hc₁⟩, hc₂, rfl⟩⟩
   let : CompactSpace S := isCompact_iff_compactSpace.mp hS
-  have hs : Function.Surjective (fun c : S ↦ unitLogQuotient (Additive.ofMul c.1)) := by
+  have hs : Function.Surjective (fun c : S ↦ unitLogQuotient (Additive.ofMul c.val)) := by
     intro z
     obtain ⟨c, hc, hlog⟩ := unitLogQuotient_normOne_surjective z
     exact ⟨⟨c, hc⟩, hlog⟩
   exact hs.compactSpace
-    (continuous_unitLogQuotient.comp (continuous_ofMul.comp continuous_subtype_val))
+    (continuous_unitLogQuotient.comp (continuous_ofMul.comp continuous_subtypeVal))
 
 end TauCeti.GlobalNumberFields

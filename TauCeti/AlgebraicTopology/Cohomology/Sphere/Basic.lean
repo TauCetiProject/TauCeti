@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kunneth
+public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Zero
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 
@@ -25,7 +27,10 @@ applied to a nonzero coefficient gives a nonzero top cohomology class.
 
 Dually to the standard generator `TauCeti.singularHomologyTopCatSphereGenerator` of
 `Hₙ₊₁(Sⁿ⁺¹; k)`, the class `TauCeti.singularCohomologyTopCatSphereGenerator` of `Hⁿ⁺¹(Sⁿ⁺¹; k)`
-takes the value `1` on it.
+takes the value `1` on it, while `TauCeti.singularCohomologyTopCatSphereTopClass` unifies this class
+with `TauCeti.singularCohomologyTopCatSphereZeroClass` across all sphere dimensions `d ≥ 0`. The
+cup square of `TauCeti.singularCohomologyTopCatSphereGenerator` vanishes, since `H²ⁿ⁺²(Sⁿ⁺¹; k) = 0`
+(`TopCat.singularCup_singularCohomologyTopCatSphereGenerator_self`).
 
 Since the homology of a sphere is free of finite rank, the Künneth theorem for cohomology applies
 to a product with a sphere over every commutative ring and with no hypothesis on the other factor
@@ -118,6 +123,30 @@ lemma singularKronecker_singularCohomologyTopCatSphereGenerator (n : ℕ) :
         (singularHomologyTopCatSphereGenerator k n) = (1 : k) :=
   singularKronecker_singularCohomologyTopCatSphereEquiv_symm k _ n 1
 
+/-- **The standard top cohomology class of `Sᵈ`**: the indicator class of the positive pole for
+`d = 0` (`TauCeti.singularCohomologyTopCatSphereZeroClass`), and the generator dual to the standard
+homology generator for `d ≥ 1` (`TauCeti.singularCohomologyTopCatSphereGenerator`). -/
+def singularCohomologyTopCatSphereTopClass :
+    (d : ℕ) → (TopCat.sphere.{w} d).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) d
+  | 0 => singularCohomologyTopCatSphereZeroClass k
+  | d + 1 => singularCohomologyTopCatSphereGenerator k d
+
+/-- In degree `0`, `TauCeti.singularCohomologyTopCatSphereTopClass` is the indicator class of the
+positive pole. -/
+@[simp]
+theorem singularCohomologyTopCatSphereTopClass_zero :
+    singularCohomologyTopCatSphereTopClass k 0 = singularCohomologyTopCatSphereZeroClass k :=
+  (rfl)
+
+/-- In positive degree `d + 1`, `TauCeti.singularCohomologyTopCatSphereTopClass` is the standard
+generator of `Hᵈ⁺¹(Sᵈ⁺¹; k)`. -/
+@[simp]
+theorem singularCohomologyTopCatSphereTopClass_succ (d : ℕ) :
+    singularCohomologyTopCatSphereTopClass k (d + 1) =
+      singularCohomologyTopCatSphereGenerator k d :=
+  (rfl)
+
 /-- Positive-degree singular cohomology of a sphere vanishes away from its dimension,
 with arbitrary module coefficients over any commutative ring. -/
 theorem isZero_singularCohomology_topCatSphere_of_ne (d q : ℕ) (h : q + 1 ≠ d) :
@@ -157,6 +186,20 @@ theorem singularCohomologyKunneth_sphere_bijective (d n : ℕ) :
     Function.Bijective (singularCohomologyKunneth (sphere.{w} d) Y (𝟙_ (ModuleCat.{w} k))
       (𝟙_ (ModuleCat.{w} k)) k (λ_ (𝟙_ (ModuleCat.{w} k))).hom n) :=
   singularCohomologyKunneth_bijective _ Y n fun _ _ ↦ inferInstance
+
+/-- The cup square of the generator `θ` of `Hᵈ⁺¹(Sᵈ⁺¹; k)` vanishes, since
+`H²ᵈ⁺²(Sᵈ⁺¹; k) = 0`. -/
+@[simp]
+theorem singularCup_singularCohomologyTopCatSphereGenerator_self (d : ℕ) :
+    (TopCat.sphere.{w} (d + 1)).singularCup k (λ_ _).inv (λ_ _).hom (d + 1) (d + 1)
+      (d + 1 + (d + 1)) rfl (TauCeti.singularCohomologyTopCatSphereGenerator k d)
+      (TauCeti.singularCohomologyTopCatSphereGenerator k d) = 0 := by
+  have hz : IsZero ((TopCat.sphere.{w} (d + 1)).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (d + 1 + (d + 1))) := by
+    rw [show d + 1 + (d + 1) = 2 * d + 1 + 1 by omega]
+    exact TauCeti.isZero_singularCohomology_topCatSphere_of_ne k _ (d + 1) (2 * d + 1) (by omega)
+  have := ModuleCat.subsingleton_of_isZero hz
+  exact Subsingleton.elim _ _
 
 end TopCat
 

@@ -43,7 +43,7 @@ variable {R : Type uR} [CommRing R]
   [AddCommGroup A] [Module R A] [AddCommGroup H] [Module R H]
   [AddCommGroup B] [Module R B] [AddCommGroup K] [Module R K]
   {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
-  {GH : InternalGrading R H} {GK : InternalGrading R K}
+  {GH : InternalGrading R H ℤ} {GK : InternalGrading R K ℤ}
   {dH : Module.End R H} {dK : Module.End R K}
   (c : LinearSpecialContraction 𝒜.differential dH)
   (c' : LinearSpecialContraction ℬ.differential dK)

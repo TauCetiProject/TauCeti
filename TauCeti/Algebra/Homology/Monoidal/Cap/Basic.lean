@@ -37,6 +37,7 @@ evaluates `φ` on the front `p`-face of a singular simplex and keeps its back `q
 
 * `TauCeti.ChainComplex.capChain`: the cap product of a chain and a cochain.
 * `TauCeti.ChainComplex.capChain_comp_d`: the boundary formula.
+* `TauCeti.ChainComplex.capChain_comp_d_of_cycles`: the boundary formula for a cocycle.
 * `TauCeti.ChainComplex.capChain_naturality`: naturality along maps of diagonals and actions.
 * `TauCeti.ChainComplex.capCycles`: the cap product of a cycle and a cocycle.
 * `TauCeti.ChainComplex.cap`: the cap product on homology, with
@@ -139,7 +140,7 @@ variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B B' E : Ch
   (a : ((tensorLeft M).mapHomologicalComplex _).obj B ⟶ B')
 
 /-- The boundary formula for the cap product with a cocycle: `∂(x ⌢ φ) = (-1)^p ∂x ⌢ φ`. -/
-private lemma capChain_comp_d_of_cycles (p q n : ℕ) (h : p + q = n)
+lemma capChain_comp_d_of_cycles (p q n : ℕ) (h : p + q = n)
     (φ : (A.linearYonedaObj k M).cycles p) :
     capChain k D a p (q + 1) (n + 1) (by omega) ((A.linearYonedaObj k M).iCycles p φ) ≫
         B'.d (q + 1) q =
@@ -223,13 +224,13 @@ private def capHomologyOfCycles (p q n : ℕ) (h : p + q = n)
   (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp))
     (capCycles k D a p q n h φ ≫ B'.homologyπ q)
     (by rw [← Category.assoc, toCycles_capCycles, Category.assoc, toCycles_comp_homologyπ,
-      comp_zero])).1
+      comp_zero])).val
 
 private lemma homologyπ_capHomologyOfCycles (p q n : ℕ) (h : p + q = n)
     (φ : (A.linearYonedaObj k M).cycles p) :
     E.homologyπ n ≫ capHomologyOfCycles k D a p q n h φ =
       capCycles k D a p q n h φ ≫ B'.homologyπ q :=
-  (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp)) _ _).2
+  (CokernelCofork.IsColimit.desc' (E.homologyIsCokernel (n + 1) n (by simp)) _ _).property
 
 /-- Capping with a coboundary is zero on homology. -/
 private lemma capHomologyOfCycles_toCycles (p q n : ℕ) (h : p + q = n) (i : ℕ)
@@ -271,7 +272,7 @@ a cycle `x`, the class of `x ⌢ φ` (`TauCeti.ChainComplex.cap_homologyπ`). -/
 def cap (p q n : ℕ) (h : p + q = n) :
     (A.linearYonedaObj k M).homology p →ₗ[k] (E.homology n ⟶ B'.homology q) :=
   (CokernelCofork.IsColimit.desc' ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl)
-    (capCyclesHomology k D a p q n h) (toCycles_comp_capCyclesHomology D a p q n h)).1.hom
+    (capCyclesHomology k D a p q n h) (toCycles_comp_capCyclesHomology D a p q n h)).val.hom
 
 /-- **The cap product on classes**: capping the class of a cycle with the class of a cocycle `φ`
 is the class of the cap product of the cycle with `φ`. -/
@@ -281,7 +282,7 @@ lemma cap_homologyπ (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj k M)
       capCycles k D a p q n h φ ≫ B'.homologyπ q := by
   have hfac := ConcreteCategory.congr_hom (CokernelCofork.IsColimit.desc'
     ((A.linearYonedaObj k M).homologyIsCokernel _ p rfl) (capCyclesHomology k D a p q n h)
-    (toCycles_comp_capCyclesHomology D a p q n h)).2 φ
+    (toCycles_comp_capCyclesHomology D a p q n h)).property φ
   rw [cap]
   exact (congrArg (E.homologyπ n ≫ ·) hfac).trans (homologyπ_capHomologyOfCycles D a p q n h φ)
 

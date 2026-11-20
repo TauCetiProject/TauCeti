@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.RE
+import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
 # Closure properties of computable and c.e. predicates
@@ -20,7 +21,10 @@ computable pieces:
 * `ComputablePred.exists_lt`: a bounded existential quantifier over a computable predicate is
   computable, uniformly in the bound;
 * `ComputablePred.rePred_exists`: an unbounded existential quantifier over a computable predicate
-  is c.e., by unbounded search.
+  is c.e., by unbounded search;
+* `Computable.rePred_mem_range`: the range of a total computable function is c.e.;
+* `Set.Finite.computablePred`, `Set.Infinite.of_not_computablePred`: membership in a finite set is
+  computable, so every noncomputable set is infinite.
 
 ## References
 
@@ -67,7 +71,7 @@ theorem exists_lt {p : α → ℕ → Prop} (hp : ComputablePred fun x : α × �
   obtain ⟨a, n⟩ := x
   induction n with
   | zero => simp
-  | succ n ih => simp [ih, Nat.lt_succ_iff_lt_or_eq, or_and_right, exists_or]
+  | succ n ih => simp [ih, Nat.le_iff_lt_or_eq, or_and_right, exists_or]
 
 /-- An unbounded existential quantifier over a computable predicate is c.e.: search for a
 witness. -/
@@ -81,3 +85,37 @@ theorem rePred_exists {p : α → ℕ → Prop} (hp : ComputablePred fun x : α 
   simpa using Nat.rfind_dom (p := fun n => Part.some (decide (p a n)))
 
 end ComputablePred
+
+namespace Computable
+
+/-- The range of a total computable function is c.e. -/
+theorem rePred_mem_range {β : Type*} [Primcodable β] {f : α → β} (hf : Computable f) :
+    REPred (· ∈ Set.range f) := by
+  classical
+  have hmap : Computable fun p : β × ℕ => (Encodable.decode p.2).map f :=
+    (Computable.decode.comp Computable.snd).option_map (hf.comp Computable.snd)
+  have heq : ComputablePred fun p : β × ℕ => (Encodable.decode p.2).map f = some p.1 :=
+    (Primrec.eq.decide.to_comp.comp hmap
+      (Computable.option_some.comp Computable.fst)).computablePred
+  refine (ComputablePred.rePred_exists
+    (p := fun b n => (Encodable.decode (α := α) n).map f = some b) heq).of_eq fun b => ?_
+  constructor
+  · rintro ⟨n, hn⟩
+    obtain ⟨a, -, hab⟩ := Option.map_eq_some_iff.mp hn
+    exact ⟨a, hab⟩
+  · rintro ⟨a, rfl⟩
+    exact ⟨Encodable.encode a, by simp⟩
+
+end Computable
+
+namespace Set
+
+/-- Membership in a finite subset of a primitive-codable type is computable. -/
+theorem Finite.computablePred {A : Set α} (hA : A.Finite) : ComputablePred (· ∈ A) :=
+  hA.primrecPred.computablePred
+
+/-- Every set whose membership predicate is not computable is infinite. -/
+theorem Infinite.of_not_computablePred {A : Set α} (h : ¬ComputablePred (· ∈ A)) : A.Infinite :=
+  fun hfin => h hfin.computablePred
+
+end Set

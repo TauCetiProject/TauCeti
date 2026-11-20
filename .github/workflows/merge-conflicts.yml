@@ -6,10 +6,9 @@ name: Merge conflicts
 # this repository is scoped to the PR — pull_request_target, a pr-build / Review
 # workflow_run, an issue_comment — but a PR conflicts because *its base moved*, which
 # fires none of them. Until this existed a PR could pick up a conflict and nothing
-# anywhere said so: no label, no comment, no alert. stuck-alerts deliberately skips
-# a conflicting PR (it is not being wrongly withheld by the merge path) and
-# housekeeping only retires PRs that are blocking under review, so a
-# conflicted-but-approved PR was reaped by nothing either. It rotted silently.
+# anywhere said so: no label, no comment, no alert. Housekeeping only retires PRs
+# that are blocking under review, so a conflicted-but-approved PR was reaped by
+# nothing either. It rotted silently.
 #
 # The `merge-conflict` label is deliberately NOT part of the mutually-exclusive set
 # that pr-labels.yml maintains. It is orthogonal to where a PR sits in the pipeline:
@@ -31,9 +30,8 @@ name: Merge conflicts
 # mergeability that action returns from the middle of its loop and, once its
 # retries are spent, returns an empty result — abandoning that page of PRs and
 # every later one. A PR whose head has diverged from its branch tip sits at
-# `mergeable: null` indefinitely, which is exactly what stuck-alerts' diverged-head
-# detector exists to catch, so one such PR could stop every other conflict being
-# labelled. scripts/pr_status/conflicts.py skips an unknown PR and keeps going.
+# `mergeable: null` indefinitely, so one such PR could stop every other conflict
+# being labelled. scripts/pr_status/conflicts.py skips an unknown PR and keeps going.
 
 on:
   push:
@@ -63,7 +61,7 @@ jobs:
   label:
     if: github.repository == 'TauCetiProject/TauCeti'
     # This control job must keep labelling conflicts when ordinary hosted jobs queue.
-    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       # Pinned to a full SHA, not a floating major tag: this step receives the App
@@ -90,10 +88,9 @@ jobs:
           sparse-checkout: scripts/pr_status
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@main
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
           project-directory: .
       - name: Label conflicting PRs
         env:

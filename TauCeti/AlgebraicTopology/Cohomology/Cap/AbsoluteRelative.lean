@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.Cap.Connecting
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Pairing
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
@@ -43,11 +44,20 @@ abelian monoidal category.
   `j_*(x ⌢ α) = j_*x ⌢ α` for `j_* : Hₙ(X) ⟶ Hₙ(X, A)`.
 * `TopPair.absoluteSingularCap_naturality`: naturality in maps of pairs, the projection formula
   `f_*(x ⌢ f^*α) = f_*x ⌢ α`.
+* `TopPair.absoluteSingularCap_comp_singularHomologyδ`: compatibility with the connecting morphism
+  `∂` of the pair, `∂(x ⌢ α) = (-1)^p ∂x ⌢ α|_A`.
+
+With the absolute cap product on `X` and on `A`, capping with `α` therefore commutes, up to the
+sign `(-1)^p` at the connecting morphisms, with the maps of the long exact sequence of the pair:
+with `i_*` by `TopCat.singularCap_naturality`, with `j_*` by
+`TopPair.singularHomologyπ_comp_absoluteSingularCap`, and with `∂` by
+`TopPair.absoluteSingularCap_comp_singularHomologyδ`.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 3.3, the relative cap product `Hₙ(X, A) × Hᵖ(X) ⟶ H_{n - p}(X, A)`.
+  Section 3.3, the relative cap product `Hₙ(X, A) × Hᵖ(X) ⟶ H_{n - p}(X, A)` and its
+  compatibility with the long exact sequences of pairs used for Lefschetz duality.
 -/
 
 public section
@@ -141,5 +151,29 @@ lemma absoluteSingularCap_naturality {P P' : TopPair.{w}} (f : P ⟶ P') (k : Ty
   TauCeti.ChainComplex.cap_naturality _ _ _ _ _ _ _ _
     (rightAlexanderWhitneyDiagonal_naturality f u)
     (SSetPair.chainComplexPairing_naturality (toSSetPair.map f) μ).symm p q n h α
+
+/-- **The cap product with an absolute class commutes with the connecting morphism of a pair**, up
+to the sign `(-1)^p`: for a class `x` of `H_{n'}(X, A)` and a class `α` of `Hᵖ(X)`, the connecting
+morphism `∂ : H_{q'}(X, A) ⟶ H_q(A)` sends `x ⌢ α` to `(-1)^p ∂x ⌢ α|_A`, where `α|_A` is the
+restriction of `α` to the subspace, `p + q = n`, `q + 1 = q'` and `n + 1 = n'`. -/
+theorem absoluteSingularCap_comp_singularHomologyδ (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q n q' n' : ℕ)
+    (h : p + q = n) (h' : p + q' = n') (α : P.fst.singularCohomology R k M p)
+    (hq : q + 1 = q' := by lia) (hn : n + 1 = n' := by lia) :
+    P.absoluteSingularCap k u μ p q' n' h' α ≫ P.singularHomologyδ N q' q hq =
+      ((-1 : ℤ) ^ p) • (P.singularHomologyδ T n' n hn ≫
+        P.snd.singularCap k u μ p q n h (TopCat.singularCohomologyMap P.map p α)) := by
+  rw [absoluteSingularCap_def, TopCat.singularCap_def]
+  exact TauCeti.ChainComplex.cap_comp_δ (P.shortExact_singularChainComplexShortComplex T)
+    (P.shortExact_singularChainComplexShortComplex N) (P.snd.alexanderWhitneyDiagonal u)
+    (P.fst.alexanderWhitneyDiagonal u) (P.rightAlexanderWhitneyDiagonal u)
+    ((TopCat.toSSet.obj P.snd).chainComplexPairing μ)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) ((toSSetPair.obj P).chainComplexPairing μ)
+    (SSet.chainComplexMap (TopCat.toSSet.map P.map) R)
+    (SSet.chainComplexMap (TopCat.toSSet.map P.map) S) (P.singularChainComplexπ S)
+    (TopCat.alexanderWhitneyDiagonal_naturality P.map u)
+    (SSet.chainComplexPairing_naturality (TopCat.toSSet.map P.map) μ).symm
+    (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
+    (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n q' n' h h' α hq hn
 
 end TopPair

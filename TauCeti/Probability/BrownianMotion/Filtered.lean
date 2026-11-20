@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Process.Adapted
+public import TauCeti.Probability.Process.Filtration.Comp
+import Mathlib.Probability.Process.FiniteDimensionalLaws
 import TauCeti.Probability.Independence.Filtration
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
@@ -29,6 +31,11 @@ produce a new Brownian motion.
 
 * `TauCeti.Probability.IsFilteredPreBrownianReal`: a pre-Brownian motion relative to a
   filtration.
+* `TauCeti.Probability.IsFilteredPreBrownianReal.hasLaw_shift`,
+  `TauCeti.Probability.IsFilteredPreBrownianReal.indep_shift`, and
+  `TauCeti.Probability.IsFilteredPreBrownianReal.shift`: deterministic time shifts share the full
+  path-space law of `W`, have full future increment path independent of `ℱ s`, and remain filtered
+  pre-Brownian relative to `ℱ.comp (monotone_id.const_add s)`.
 * `ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`: the natural
   filtration.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
@@ -50,7 +57,7 @@ produce a new Brownian motion.
 public section
 
 open MeasureTheory ProbabilityTheory
-open scoped NNReal
+open scoped NNReal ENNReal
 
 namespace TauCeti.Probability
 
@@ -87,6 +94,46 @@ theorem indepFun_eval_of_measurable_zero {P : Measure Ω} {ℱ : Filtration ℝ�
   refine h.congr ?_ Filter.EventuallyEq.rfl
   filter_upwards [hW.eval_zero_ae_eq_zero] with ω hω
   simp [hω]
+
+/-- Every deterministic shifted increment path `t ↦ W (s + t) ω - W s ω` has the same full
+path-space law `P.map W` as `W`. -/
+theorem hasLaw_shift {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ≥0) :
+    HasLaw (fun ω t ↦ W (s + t) ω - W s ω) (P.map (fun ω t ↦ W t ω)) P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hshift_ae : AEMeasurable (fun ω t ↦ W (s + t) ω - W s ω) P :=
+    (measurable_pi_iff.2 fun t ↦
+      (hW.adapted.measurable (i := s + t)).sub (hW.adapted.measurable (i := s))).aemeasurable
+  have hW_ae : AEMeasurable (fun ω t ↦ W t ω) P :=
+    (measurable_pi_iff.2 fun _ ↦ hW.adapted.measurable).aemeasurable
+  refine ⟨hshift_ae, (map_eq_iff_forall_finset_map_restrict_eq hshift_ae hW_ae).2 fun I ↦ ?_⟩
+  exact ((hW.toIsPreBrownianReal.shift s).hasLaw I).map_eq.trans (hW.hasLaw I).map_eq.symm
+
+/-- At a deterministic time `s`, the entire shifted increment process `t ↦ W (s + t) - W s`
+is independent of `ℱ s`. -/
+theorem indep_shift {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ≥0) :
+    Indep (.comap (fun ω t ↦ W (s + t) ω - W s ω) inferInstance) (ℱ s) P := by
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  exact hW.adapted.indep_comap_shift_sub hW.indep_sub s
+
+/-- Shifting time by `s` and recentering at `W s` produces a filtered pre-Brownian motion
+relative to the shifted filtration `ℱ.comp (monotone_id.const_add s)`. -/
+theorem shift {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {W : ℝ≥0 → Ω → ℝ}
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s : ℝ≥0) :
+    IsFilteredPreBrownianReal (ℱ.comp (monotone_id.const_add s))
+      (fun t ω ↦ W (s + t) ω - W s ω) P where
+  toIsPreBrownianReal := hW.toIsPreBrownianReal.shift s
+  adapted t := by
+    rw [Filtration.measurable_comp_iff]
+    exact (hW.adapted (s + t)).sub ((hW.adapted s).mono (ℱ.mono le_self_add) le_rfl)
+  indep_sub u v huv := by
+    rw [Filtration.comp_apply]
+    dsimp only [id_eq]
+    have heq : ((fun ω ↦ W (s + v) ω - W s ω) - fun ω ↦ W (s + u) ω - W s ω) =
+        W (s + v) - W (s + u) := funext fun ω ↦ sub_sub_sub_cancel_right _ _ _
+    rw [heq]
+    exact hW.indep_sub (add_le_add_right huv s)
 
 end IsFilteredPreBrownianReal
 
@@ -128,6 +175,32 @@ theorem isFilteredPreBrownianReal_natural (hB : IsPreBrownianReal B P)
       simp [add_tsub_cancel_of_le hst]
     rw [this, ← MeasurableSpace.comap_comp]
     exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
+
+/-- Every natural power of a pre-Brownian value has every finite `Lᵖ` moment. -/
+theorem memLp_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ) {p : ℝ≥0∞}
+    (hp : p ≠ ∞) : MemLp (fun ω ↦ B t ω ^ n) p P := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · have := (hB.hasLaw_eval 0).isProbabilityMeasure
+    simpa only [pow_zero] using (memLp_const (μ := P) (p := p) (1 : ℝ))
+  have hn' : (n : ℝ≥0∞) ≠ 0 := by exact_mod_cast hn
+  have h := (hB.hasLaw_eval t).memLp (memLp_id_gaussianReal' (p * n) (by finiteness))
+  have hpow : MemLp (fun ω ↦ ‖B t ω‖ ^ n) p P := by
+    simpa only [ENNReal.toReal_natCast, Real.rpow_natCast,
+      ENNReal.mul_div_cancel_right hn' (ENNReal.natCast_ne_top n)] using h.norm_rpow_div n
+  exact hpow.congr_norm (h.aestronglyMeasurable.pow n)
+    (ae_of_all _ fun ω ↦ by simp [norm_pow])
+
+/-- Every natural power of a pre-Brownian value is integrable. -/
+theorem integrable_pow_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) (n : ℕ) :
+    Integrable (fun ω ↦ B t ω ^ n) P :=
+  memLp_one_iff_integrable.mp (hB.memLp_pow_eval t n ENNReal.one_ne_top)
+
+/-- The second moment of a pre-Brownian value is its time. -/
+theorem integral_sq_eval (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
+    ∫ ω, B t ω ^ 2 ∂P = (t : ℝ) := by
+  have h := (hB.hasLaw_eval t).integral_comp (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
+  simpa only [Function.comp_apply, integral_sq_gaussianReal, zero_pow two_ne_zero,
+    add_zero] using h
 
 /-- For `s ≤ t`, the increment `B t - B s` of a pre-Brownian motion has law `N(0, t - s)`. -/
 theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :

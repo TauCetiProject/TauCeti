@@ -59,7 +59,11 @@ open LaurentPolynomial Polynomial
 
 universe u w
 
-variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) [Field k] {V : Type u} (G : SimpleGraph V)
+
+section Finite
+
+variable [Finite V]
 
 /-! ### Finite support and the q-Hom polynomial -/
 
@@ -188,7 +192,13 @@ theorem zigzagProjectiveQHomMatrix_eq :
     Matrix.smul_apply, Matrix.one_apply, SimpleGraph.adjMatrix_apply]
   split_ifs <;> simp
 
-variable [Fintype V]
+end Nonisolated
+
+end Finite
+
+section Form
+
+variable [Fintype V] [DecidableEq V] (hns : ∀ i : V, ∃ j, G.Adj i j)
 
 /-- The **projective q-Hom form** on Laurent-polynomial vertex coordinates.  It is semilinear in
 the first variable for `q ↦ q⁻¹` and linear in the second. -/
@@ -199,7 +209,6 @@ noncomputable def zigzagProjectiveQHomForm :
     (LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom (RingHom.id _)
       (zigzagProjectiveQHomMatrix k G hns)
 
-omit [DecidableRel G.Adj] in
 /-- On vertex basis vectors, the projective q-Hom form is the q-Hom value of the corresponding
 vertex projectives. -/
 @[simp]
@@ -209,6 +218,6 @@ theorem zigzagProjectiveQHomForm_single (i j : V) :
   rw [zigzagProjectiveQHomForm, Matrix.toLinearMapₛₗ₂'_single,
     zigzagProjectiveQHomMatrix_apply_eq_qHom]
 
-end Nonisolated
+end Form
 
 end TauCeti

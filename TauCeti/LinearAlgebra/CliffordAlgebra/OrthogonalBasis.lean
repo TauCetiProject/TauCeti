@@ -68,8 +68,9 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   the product of a generator, respectively a basis vector `e_s`, with a basis vector `e_t` is
   `(-1) ^ N * (∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where `N` counts the pairs of an index of `s`
   and a smaller index of `t`.
-* `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
-  multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.basis_mul_basis_eq_or`, `CliffordAlgebra.mul_eq_or_of_eq_basis_or` and
+  `CliffordAlgebra.basis_mul_self_eq_or`: signed multiplication and square laws when the
+  generators square to `±1`.
 * `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
   orthogonal basis.
 * `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
@@ -141,7 +142,7 @@ theorem exists_basis_eq_ι_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (s : Set.powersetCard I 2) :
     ∃ k l, (∀ i, i ∈ s.val ↔ i = k ∨ i = l) ∧ basis Q b s = ι Q (b k) * ι Q (b l) := by
   obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
-    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.2] :
+    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.property] :
       ((s : Finset I).sort (· ≤ ·)).length = 2)
   refine ⟨k, l, fun i ↦ ?_, ?_⟩
   · rw [← Finset.mem_sort (· ≤ ·), hsort]
@@ -363,6 +364,16 @@ theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
   rw [basis_mul_basis hb]
   rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
 
+/-- When every generator squares to `±1`, the product of signed basis vectors `±e_s` and `±e_t`
+is `±e_{s ∆ t}`. -/
+theorem mul_eq_or_of_eq_basis_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) {x y : CliffordAlgebra Q} {s t : Finset I}
+    (hx : x = basis Q b s ∨ x = -basis Q b s) (hy : y = basis Q b t ∨ y = -basis Q b t) :
+    x * y = basis Q b (s ∆ t) ∨ x * y = -basis Q b (s ∆ t) := by
+  rcases basis_mul_basis_eq_or hb hQ s t with hst | hst <;>
+    rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;>
+    simp only [neg_mul, mul_neg, neg_neg, hst, true_or, or_true]
+
 /-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
 theorem basis_commuteOrNeg
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
@@ -424,7 +435,7 @@ theorem basis_comm_ι_iff [Fintype I] [Nontrivial R]
     · exact Or.inl hempty
     · right
       have hsodd : Odd s.card := by
-        obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hempty
+        obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.mp hempty
         have h := hs i
         rw [basis_mul_ι_of_mem hb hi] at h
         have heven : Even (s.card - 1) :=

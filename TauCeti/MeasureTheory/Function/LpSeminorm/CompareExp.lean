@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Comparison of `Lᵖ` seminorms
@@ -91,16 +92,6 @@ namespace MeasureTheory
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 
-/-- The exponent `1 / 1 - 1 / p` comparing `L¹` with `Lᵖ` on a finite measure is nonnegative
-when `1 ≤ p`. -/
-theorem sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) :
-    0 ≤ 1 / (1 : ℝ≥0∞).toReal - 1 / p.toReal := by
-  rcases eq_or_ne p ⊤ with rfl | hp'
-  · simp
-  · have : 1 ≤ p.toReal := by
-      simpa using ENNReal.toReal_mono hp' hp
-    simpa using inv_le_one_of_one_le₀ this
-
 /-- On a finite measure space, convergence to zero in `Lᵖ` for `1 ≤ p` implies convergence
 to zero in `L¹`. No measurability hypothesis or finiteness assumption on `p` is needed. -/
 theorem tendsto_eLpNorm_one_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGroup E]
@@ -109,9 +100,8 @@ theorem tendsto_eLpNorm_one_of_tendsto_eLpNorm {ι E : Type*} [NormedAddCommGrou
     Tendsto (fun i => eLpNorm (f i) 1 μ) l (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => zero_le)
     fun _ => eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hp one_pos
-  simpa using ENNReal.Tendsto.mul_const h
-    (.inr (ENNReal.rpow_ne_top_of_nonneg (sub_one_div_toReal_nonneg hp)
-      (measure_ne_top μ Set.univ)))
+  simpa using ENNReal.Tendsto.mul_const h (.inr (ENNReal.rpow_ne_top_of_nonneg
+    (ENNReal.one_div_toReal_sub_one_div_toReal_nonneg one_ne_zero hp) (measure_ne_top μ Set.univ)))
 
 /-- On a finite measure space, convergence to zero in `L¹` implies convergence to zero in `Lᵖ`
 for every exponent `p ≤ 1`. No measurability hypothesis is needed: `eLpNorm (F i) 1 μ` is finite

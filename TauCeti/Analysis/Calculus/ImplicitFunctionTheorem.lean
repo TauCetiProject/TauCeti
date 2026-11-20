@@ -196,7 +196,30 @@ theorem implicitCoordEquiv_symm_apply_zero_mk (f' : E →L[K] F) (hf' : f'.range
     (hker : f'.ker.ClosedComplemented) (k : f'.ker) :
     (f'.implicitCoordEquiv hf' hker).symm (0, k) = k := by
   rw [ContinuousLinearEquiv.symm_apply_eq, implicitCoordEquiv_apply, Classical.choose_spec hker k,
-    ← ContinuousLinearMap.coe_coe, LinearMap.mem_ker.1 k.2]
+    ← ContinuousLinearMap.coe_coe, LinearMap.mem_ker.1 k.property]
+
+/-- A surjective map `f' : E → F` with complemented kernel, together with an identification `φ`
+of its kernel with a model space `G`, gives a linear homeomorphism `G × F ≃ E` whose inverse has
+the model coordinate of the chosen kernel projection as first component and `f'` itself as second
+component. -/
+theorem exists_continuousLinearEquiv_symm_eq {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace K G] (f' : E →L[K] F) (hf' : Function.Surjective f')
+    (hker : f'.ker.ClosedComplemented) (φ : f'.ker ≃L[K] G) :
+    ∃ A : (G × F) ≃L[K] E,
+      (∀ x, (A.symm x).1 = φ (Classical.choose hker x)) ∧ ∀ x, (A.symm x).2 = f' x := by
+  let L := f'.implicitCoordEquiv (LinearMap.range_eq_top.2 hf') hker
+  let A : (G × F) ≃L[K] E :=
+    ((φ.symm.prodCongr (ContinuousLinearEquiv.refl K F)).trans
+      (ContinuousLinearEquiv.prodComm K _ _)).trans L.symm
+  -- Inverting the product equivalences puts the kernel coordinate first.
+  have hA_symm (x : E) : A.symm x = (φ (L x).2, (L x).1) := by
+    simp only [A, ContinuousLinearEquiv.symm_trans_apply, ContinuousLinearEquiv.symm_symm,
+      ContinuousLinearEquiv.prodCongr_symm, ContinuousLinearEquiv.prodComm_symm,
+      ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.prodComm_apply,
+      ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.refl_apply,
+      Prod.fst_swap, Prod.snd_swap]
+  exact ⟨A, fun x ↦ by rw [hA_symm, implicitCoordEquiv_apply],
+    fun x ↦ by rw [hA_symm, implicitCoordEquiv_apply]⟩
 
 end ContinuousLinearMap
 

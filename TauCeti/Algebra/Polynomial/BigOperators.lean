@@ -20,9 +20,14 @@ factors in the degrees `n i`. Mathlib proves this for a uniform bound `n`
 what is needed to read off the top coefficient of a determinant whose columns have different
 degree bounds.
 
+A product of monomials over a list is the monomial of the summed degrees and the ordered product
+of the coefficients.
+
 This file also groups products of linear factors according to their constant terms, records
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
+
+A finite product of powers `(X - a i) ^ m i` of linear factors is monic of degree `∑ i, m i`.
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -53,6 +58,14 @@ theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
   have := mem_range.1 hj
   omega
 
+/-- A product of monomials over a list is the monomial of the summed degrees and the product
+of the coefficients, in the same order. -/
+theorem list_prod_map_monomial {α : Type*} (l : List α) (e : α → ℕ) (a : α → R) :
+    (l.map fun i ↦ monomial (e i) (a i)).prod = monomial (l.map e).sum (l.map a).prod := by
+  induction l with
+  | nil => simp
+  | cons i l ih => simp [ih, monomial_mul_monomial]
+
 end Semiring
 
 section MapProd
@@ -67,6 +80,24 @@ theorem natDegree_map_prod (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (
   exact natDegree_prod _ _ h
 
 end MapProd
+
+section ProdXSubCPow
+
+variable {ι R : Type*} [CommRing R]
+
+/-- A finite product of powers `(X - a i) ^ m i` of linear factors is monic. -/
+theorem monic_prod_X_sub_C_pow (s : Finset ι) (a : ι → R) (m : ι → ℕ) :
+    (∏ i ∈ s, (X - C (a i)) ^ m i).Monic :=
+  monic_prod_of_monic _ _ fun i _ ↦ (monic_X_sub_C (a i)).pow (m i)
+
+/-- A finite product of powers `(X - a i) ^ m i` of linear factors has degree `∑ i, m i`. -/
+@[simp]
+theorem natDegree_prod_X_sub_C_pow [Nontrivial R] (s : Finset ι) (a : ι → R) (m : ι → ℕ) :
+    (∏ i ∈ s, (X - C (a i)) ^ m i).natDegree = ∑ i ∈ s, m i := by
+  rw [natDegree_prod_of_monic _ _ fun i _ ↦ (monic_X_sub_C (a i)).pow (m i)]
+  simp [(monic_X_sub_C _).natDegree_pow]
+
+end ProdXSubCPow
 
 variable {ι R : Type*} [CommSemiring R]
 

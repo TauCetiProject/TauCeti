@@ -68,34 +68,18 @@ private def fromTreePresentation : GraphOfGroups.π₁Tree 𝔸 T.darts →* Pat
 @[simp] private theorem toTreePresentation_ofPath (p : Γ.Path v v) :
     T.toTreePresentation v 𝔸 (PathGroup.ofPath p) =
       p.weight (fun {a b : Γ.V} (e : a ⟶ b) =>
-        GraphOfGroups.π₁Tree.edge T.darts e.1) := by
+        GraphOfGroups.π₁Tree.edge T.darts e.val) := by
   simp only [toTreePresentation, PathGroup.lift_ofPath]
-
-private theorem weight_tree_path (a b : Γ.V) :
-    (T.path a b).weight
-      (fun {a b : Γ.V} (e : a ⟶ b) =>
-        (GraphOfGroups.π₁Tree.edge T.darts e.1 : GraphOfGroups.π₁Tree 𝔸 T.darts)) = 1 := by
-  have hw {a b : Γ.V} (p : Γ.Path a b)
-      (hp : ∀ e ∈ Path.darts Γ p, e ∈ T.darts) :
-      p.weight (fun {a b : Γ.V} (e : a ⟶ b) => (GraphOfGroups.π₁Tree.edge T.darts e.1 :
-        GraphOfGroups.π₁Tree 𝔸 T.darts)) = 1 := by
-    induction p with
-    | nil => simp
-    | cons p e ih =>
-      simp only [Quiver.Path.weight_cons]
-      rw [ih (fun d hd => hp d (by simp [hd])),
-        GraphOfGroups.π₁Tree.edge_eq_one (hp e.1 (by simp))]
-      simp
-  exact hw _ (fun _ => T.mem_of_mem_darts_path)
 
 @[simp] private theorem toTreePresentation_loop (e : Γ.E) :
     T.toTreePresentation v 𝔸 (T.loop v e) = GraphOfGroups.π₁Tree.edge T.darts e := by
-  simp [loop_def, Quiver.Path.weight_comp, weight_tree_path]
+  simp [loop_def, Quiver.Path.weight_comp,
+    T.weight_path_eq_one (fun _ => GraphOfGroups.π₁Tree.edge_eq_one (𝔸 := 𝔸))]
 
 private theorem fromTreePresentation_weight {a b : Γ.V} (p : Γ.Path a b) :
     T.fromTreePresentation v 𝔸
       (p.weight (fun {a b : Γ.V} (e : a ⟶ b) =>
-        GraphOfGroups.π₁Tree.edge T.darts e.1)) = T.basedPath v p := by
+        GraphOfGroups.π₁Tree.edge T.darts e.val)) = T.basedPath v p := by
   induction p with
   | nil => simp
   | cons p e ih =>
@@ -118,7 +102,7 @@ def pathGroupEquivTreePresentation : PathGroup Γ v ≃* GraphOfGroups.π₁Tree
 @[simp] theorem pathGroupEquivTreePresentation_ofPath (p : Γ.Path v v) :
     T.pathGroupEquivTreePresentation v 𝔸 (PathGroup.ofPath p) =
       p.weight (fun {a b : Γ.V} (e : a ⟶ b) =>
-        GraphOfGroups.π₁Tree.edge T.darts e.1) :=
+        GraphOfGroups.π₁Tree.edge T.darts e.val) :=
   T.toTreePresentation_ofPath v 𝔸 p
 
 /-- The tree loop through a dart maps to its presentation generator. -/
@@ -137,24 +121,19 @@ omit [∀ a, Subsingleton (𝔸.vertexGroup a)]
 /-- The reduced path group is free on the positive non-tree darts. -/
 def pathGroupEquivFreeGroup {O : Set Γ.E} (hO : Γ.IsOrientation O) :
     PathGroup Γ v ≃* FreeGroup ↥(O \ T.darts) :=
-  let 𝔸 : GraphOfGroups.{u, w, 0, 0} Γ :=
-    { vertexGroup _ := PUnit
-      edgeGroup _ := PUnit
-      ω _ := 1
-      ω_injective _ := Function.injective_of_subsingleton _ }
-  (T.pathGroupEquivTreePresentation v 𝔸).trans
-    (GraphOfGroups.π₁Tree.equivFreeGroup 𝔸 hO T.rev_mem)
+  (T.pathGroupEquivTreePresentation v (GraphOfGroups.trivial Γ)).trans
+    (GraphOfGroups.π₁Tree.equivFreeGroup _ hO T.rev_mem)
 
 /-- A free generator corresponds to its based tree loop. -/
 @[simp] theorem pathGroupEquivFreeGroup_symm_of {O : Set Γ.E} (hO : Γ.IsOrientation O)
     (e : ↥(O \ T.darts)) :
-    (T.pathGroupEquivFreeGroup v hO).symm (FreeGroup.of e) = T.loop v e.1 := by
+    (T.pathGroupEquivFreeGroup v hO).symm (FreeGroup.of e) = T.loop v e.val := by
   simp [pathGroupEquivFreeGroup]
 
 /-- Positive non-tree loops are the free generators in tree coordinates. -/
 @[simp] theorem pathGroupEquivFreeGroup_loop {O : Set Γ.E} (hO : Γ.IsOrientation O)
     (e : ↥(O \ T.darts)) :
-    T.pathGroupEquivFreeGroup v hO (T.loop v e.1) = FreeGroup.of e := by
+    T.pathGroupEquivFreeGroup v hO (T.loop v e.val) = FreeGroup.of e := by
   apply (T.pathGroupEquivFreeGroup v hO).symm.injective
   simp
 
@@ -164,7 +143,7 @@ generator, and tree darts contribute nothing. The path need not be reduced. -/
 theorem pathGroupEquivFreeGroup_ofPath {O : Set Γ.E} (hO : Γ.IsOrientation O) (p : Γ.Path v v) :
     T.pathGroupEquivFreeGroup v hO (PathGroup.ofPath p) =
       p.weight (fun {a b : Γ.V} (e : a ⟶ b) =>
-        GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+        GraphOfGroups.π₁Tree.dartWord O T.darts e.val) := by
   simp [pathGroupEquivFreeGroup, Quiver.Path.map_weight,
     GraphOfGroups.π₁Tree.equivFreeGroup_edge_eq_dartWord]
 
@@ -173,7 +152,7 @@ of its darts. -/
 theorem pathGroupEquivFreeGroup_apply {O : Set Γ.E} (hO : Γ.IsOrientation O) (g : PathGroup Γ v) :
     T.pathGroupEquivFreeGroup v hO g =
       g.toPath.weight (fun {a b : Γ.V} (e : a ⟶ b) =>
-        GraphOfGroups.π₁Tree.dartWord O T.darts e.1) := by
+        GraphOfGroups.π₁Tree.dartWord O T.darts e.val) := by
   rw [← T.pathGroupEquivFreeGroup_ofPath v hO, PathGroup.ofPath_toPath]
 
 end
@@ -219,11 +198,12 @@ theorem pathGroupEquivFreeGroup_map (f : Γ.Hom Δ) (T' : Δ.SpanningTree) {O' :
 of the free group on the positive non-tree darts of the subgraph. -/
 theorem pathGroupEquivFreeGroup_map_restrictInclusion (S : Set Γ.E)
     (hS : ∀ e ∈ S, Γ.rev e ∈ S) (hTS : T.darts ⊆ S) {O' : Set (Γ.restrict S hS).E}
-    (hO' : (Γ.restrict S hS).IsOrientation O') (hOO' : ∀ e ∈ O', e.1 ∈ O) {w : Γ.V}
+    (hO' : (Γ.restrict S hS).IsOrientation O') (hOO' : ∀ e ∈ O', e.val ∈ O) {w : Γ.V}
     (h : (Γ.restrictInclusion S hS).mapV v = w) (g : PathGroup (Γ.restrict S hS) v) :
     T.pathGroupEquivFreeGroup w hO (PathGroup.map (Γ.restrictInclusion S hS) h g) =
       FreeGroup.map (fun e : ↥(O' \ (T.restrict S hS hTS).darts) =>
-          (⟨e.1.1, hOO' e.1 e.2.1, fun he => e.2.2 ((T.mem_restrict_darts S hS hTS).mpr he)⟩ :
+          (⟨e.val.val, hOO' e.val e.property.1, fun he => e.property.2
+              ((T.mem_restrict_darts S hS hTS).mpr he)⟩ :
             ↥(O \ T.darts)))
         ((T.restrict S hS hTS).pathGroupEquivFreeGroup v hO' g) :=
   (T.restrict S hS hTS).pathGroupEquivFreeGroup_map v hO' (Γ.restrictInclusion S hS) T hO

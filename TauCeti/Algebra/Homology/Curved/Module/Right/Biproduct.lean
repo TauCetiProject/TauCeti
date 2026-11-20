@@ -38,7 +38,7 @@ variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
 @[expose, implicit_reducible]
 noncomputable def zero (h : IsCurvedDGAlgebra 𝒜 d w) :
     CurvedDGRightModuleCat.{uR, uA, uM} h := by
-  let G : InternalGrading R PUnit.{uM + 1} :=
+  let G : InternalGrading R PUnit.{uM + 1} ℤ :=
     { piece := fun _ ↦ ⊥
       isInternal := ⟨fun _ _ _ ↦ Subsingleton.elim _ _,
         fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩ }

@@ -52,7 +52,8 @@ localization arguments need.
 * `TauCeti.W1p.norm_gradient_contDiffSMul_sq_le`: at exponent two, the weighted bound
   `‖∇(ψ u)‖₂² ≤ 2 ∫ ψ² ‖∇u‖² + 2 ∫ ‖∇ψ‖² u²`.
 * `TauCeti.W1p.contDiffSMul_mem_w1p0Submodule`: it preserves `W^{1,p}_0(Ω)`, the closure of
-  `C_c^∞(Ω)`.
+  `C_c^∞(Ω)`; `TauCeti.W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule` is the form for a
+  compactly supported cutoff, with no bounds to supply.
 * `TauCeti.W1p.testFunctionSMulComp`: for `p < ∞`, a test function `φ` and a `C¹` function `G`
   with bounded derivative, the product `φ G(u)`, with weak gradient `φ G'(u) ∇u + G(u) ∇φ`.
   Unlike `TauCeti.W1p.contDiffComp`, it does not require `G(0) = 0`.
@@ -272,7 +273,8 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         2 * ∫ x in Omega, ‖∇ psi x‖ ^ 2 * W1p.value u x ^ 2 ∂mu := by
   have hmem := ae_restrict_mem (μ := mu) Omega.isOpen.measurableSet
   have hI1 : Integrable (fun x => psi x ^ 2 * ‖W1p.gradient u x‖ ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_sq u).bdd_mul (hpsi.continuous.pow 2).aestronglyMeasurable
+    (Lp.memLp (W1p.gradient u)).norm.integrable_sq.bdd_mul
+      (hpsi.continuous.pow 2).aestronglyMeasurable
       (c := M ^ 2) (hmem.mono fun x hx => by
         rw [Real.norm_eq_abs, abs_pow]
         exact pow_le_pow_left₀ (abs_nonneg _) (hpsiM x hx) 2)
@@ -284,7 +286,7 @@ theorem W1p.norm_gradient_contDiffSMul_sq_le (hpsi : ContDiff ℝ ∞ psi) (hM :
         exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x hx) 2)
   rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, ← integral_const_mul,
     ← integral_const_mul, ← integral_add (hI1.const_mul 2) (hI2.const_mul 2)]
-  refine integral_mono_ae (W1p.integrable_norm_gradient_sq _)
+  refine integral_mono_ae (Lp.memLp (W1p.gradient _)).norm.integrable_sq
     ((hI1.const_mul 2).add (hI2.const_mul 2)) ?_
   filter_upwards [W1p.gradient_contDiffSMul_ae hpsi hM hpsiM hgradM u] with x hx
   have htri := norm_add_le (psi x • W1p.gradient u x) (W1p.value u x • ∇ psi x)
@@ -337,6 +339,17 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule (hpsi : ContDiff ℝ ∞ psi) (hM : 0
     exact W1p.ofTestFunctionₗ_mem_w1p0Submodule Phi
   have := w1p0Submodule_subset_of_isClosed hclosed htest hu
   simpa using this
+
+/-- If `u ∈ W^{1,p}_0(Ω)` and `ψ` is smooth and compactly supported, then `ψ u` is the value of an
+element of `W^{1,p}_0(Ω)`. The bounds on `ψ` and `∇ψ` come from the compact support. -/
+theorem W1p.exists_w1p0_value_ae_eq_mul_of_mem_w1p0Submodule (hpsi : ContDiff ℝ ∞ psi)
+    (hpsic : HasCompactSupport psi) {u : W1p mu Omega p} (hu : u ∈ w1p0Submodule mu Omega p) :
+    ∃ v : W1p0 mu Omega p,
+      W1p.value (v : W1p mu Omega p) =ᵐ[mu.restrict Omega] fun x => psi x * W1p.value u x := by
+  obtain ⟨M, hM, hpsiM, hgradM⟩ := (hpsi.of_le (by simp)).exists_abs_le_and_norm_gradient_le hpsic
+  exact ⟨⟨_, W1p.contDiffSMul_mem_w1p0Submodule hpsi hM (fun x _ => hpsiM x)
+    (fun x _ => hgradM x) hu⟩, (W1p.value_contDiffSMul_ae hpsi hM (fun x _ => hpsiM x)
+      (fun x _ => hgradM x) u).mono fun x hx => by rw [hx, smul_eq_mul]⟩
 
 /-- The operator norm of multiplication by `ψ` is at most `2 M`. -/
 theorem W1p.norm_contDiffSMulL_le (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M)

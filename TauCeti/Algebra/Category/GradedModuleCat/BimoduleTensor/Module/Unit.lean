@@ -35,7 +35,7 @@ open scoped TensorProduct
 universe v uk uA
 
 variable {k : Type uk} {A : Type uA} [CommRing k] [Ring A] [Algebra k A]
-  (Γ : InternalGrading k A) [GradedAlgebra Γ.piece]
+  (Γ : InternalGrading k A ℤ) [GradedAlgebra Γ.piece]
   (N : GradedModuleCat.{max v uA} Γ.piece)
 
 private def unitAction : bimoduleUnit.{v} Γ →ₗ[k] N →ₗ[k] N :=
@@ -163,8 +163,7 @@ def bimoduleModuleTensorLeftUnitorNatIso :
     apply (cancel_epi (eqToHom
       (bimoduleModuleTensor_obj_obj Γ Γ (M := bimoduleUnit.{v} Γ) (N := N)).symm)).1
     simp only [Iso.trans_hom, eqToIso.hom, bimoduleModuleTensor_obj_map,
-      Category.assoc, eqToHom_refl,
-      Category.id_comp, Functor.id_map]
+      eqToHom_refl, Category.id_comp, Functor.id_map]
     simpa only [bimoduleModuleTensorLeftUnitor_hom] using
       bimoduleModuleTensorLeftUnitorHom_naturality.{v} Γ N f)
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Basic
+public import TauCeti.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
 import TauCeti.Order.Interval.Set.Pi
 
@@ -145,7 +145,7 @@ private lemma boxLifts_of_mapsTo [TopologicalSpace B] [TopologicalSpace F]
   refine ⟨fun x ↦ e.lift (g (lowerRetract a hT x)) (H x), ?_,
     fun x hx ↦ e.proj_lift (hab hx), fun x hx ↦ ?_⟩
   · rw [continuousOn_iff_continuous_domRestrict]
-    exact continuous_subtype_val.comp <| e.liftCM.continuous.comp <|
+    exact continuous_subtypeVal.comp <| e.liftCM.continuous.comp <|
       ((hg.comp (continuous_lowerRetract a hT).continuousOn hr).mapsToRestrict hsrc).prodMk
         (hH.continuousOn.mapsToRestrict hab)
   · have hpx : p (g x) ∈ e.baseSet := by
@@ -371,8 +371,8 @@ theorem hasHomotopyLiftingProperty_cube_of_exists_trivialization [TopologicalSpa
     (Finset.singleton_nonempty none) g hg.continuousOn hgH
   have hemb : Continuous emb := continuous_pi fun o ↦ by
     cases o
-    · exact continuous_subtype_val.comp continuous_fst
-    · exact continuous_subtype_val.comp ((continuous_apply _).comp continuous_snd)
+    · exact continuous_subtypeVal.comp continuous_fst
+    · exact continuous_subtypeVal.comp ((continuous_apply _).comp continuous_snd)
   have hembI : ∀ y, emb y ∈ Icc (0 : Option κ → ℝ) 1 := fun y ↦
     ⟨fun o ↦ by cases o <;> simp [emb, unitInterval.nonneg],
       fun o ↦ by cases o <;> simp [emb, unitInterval.le_one]⟩
@@ -404,7 +404,7 @@ cube. -/
 theorem hasHomotopyLiftingProperty_proj_cube (κ : Type*) [Finite κ] :
     TauCeti.HasHomotopyLiftingProperty (TotalSpace.proj : TotalSpace F E → B) (κ → I) :=
   TauCeti.hasHomotopyLiftingProperty_cube_of_exists_trivialization
-    (fun b ↦ ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩) κ
+    (exists_trivialization_mem_baseSet F E) κ
 
 end FiberBundle
 
