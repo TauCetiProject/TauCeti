@@ -92,6 +92,9 @@ private theorem thue_key_inequality {α : ℂ} (hd : 2 ≤ (minpoly ℚ α).natD
     have := aeval_algebraMap_apply ℂ ξ₁ R
     simp only [eq_ratCast] at this
     rw [← this, aeval_def, eval_map, algebraMap_int_eq]
+  -- `thueC₂ α b ε` is the constant `2 ^ δ (1 + ‖α‖) ^ (1 + δ) C₁` of
+  -- `norm_eval_hasseDeriv_sub_mul_le` with `δ = (1 / 2 + ε) d`.
+  unfold thueC₂
   refine ⟨k, hkN, hk, hlow.trans_eq ?_ |>.trans <| norm_eval_hasseDeriv_sub_mul_le (ξ₂ : ℂ) k hr
     (hdeg hP) (hdeg hQ) ((hlen P).trans_le hPC) ((hlen Q).trans_le hQC) hdvd h₁⟩
   rw [← Complex.norm_ratCast]
