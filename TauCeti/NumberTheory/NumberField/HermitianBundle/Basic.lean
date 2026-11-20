@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.FractionalIdeal.Operations
 public import Mathlib.RingTheory.IsTensorProduct
 public import TauCeti.NumberTheory.NumberField.ComplexEmbedding.Codomain
 public import TauCeti.RingTheory.FractionalIdeal.BaseChange
+public import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.RingTheory.Localization.BaseChange
@@ -125,6 +126,12 @@ def toCore (σ : K →+* ℂ) : InnerProductSpace.Core ℂ (Codomain σ ⊗[𝓞
   smul_left u v r := by simp only [LinearMap.map_smulₛₗ₂, smul_eq_mul]
   definite _ hu := h.form_self_eq_zero_iff.mp hu
 
+/-- The inner product of the core `h.toCore σ` is the form `h_σ`. -/
+@[simp]
+theorem inner_toCore (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
+    @inner ℂ _ (h.toCore σ).toInner u v = h.form σ u v :=
+  (rfl)
+
 /-- The norm `‖u‖_σ = h_σ(u, u)^{1/2}` of a vector in the complex fibre at `σ`, the norm of the
 inner product core `h.toCore σ`. -/
 protected def norm (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) : ℝ :=
@@ -133,6 +140,14 @@ protected def norm (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) : ℝ :=
 
 theorem norm_def (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
     h.norm σ u = √(h.form σ u u).re := (rfl)
+
+/-- Complex scalars come out of the form on pure tensors: conjugate-linearly on the left and
+linearly on the right. -/
+theorem form_tmul_tmul (σ : K →+* ℂ) (c d : Codomain σ) (x y : E) :
+    h.form σ (c ⊗ₜ x) (d ⊗ₜ y) =
+      conj (Codomain.equiv σ c) * Codomain.equiv σ d * h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) := by
+  rw [Codomain.tmul_eq_smul σ c, Codomain.tmul_eq_smul σ d, LinearMap.map_smulₛₗ₂, map_smul,
+    smul_eq_mul, smul_eq_mul, mul_assoc]
 
 /-- The normed group structure on the complex fibre at `σ` given by the core `h.toCore σ`, whose
 norm is `HermitianMetric.norm`; used locally to read off the norm axioms. -/
@@ -243,8 +258,7 @@ instance [Subsingleton E] : Unique (HermitianMetric K E) where
 /-- `√(e^{-2c} a) = e^{-c} √a`: multiplying a form by `e^{-2c}` multiplies its norm by `e^{-c}`. -/
 private theorem sqrt_exp_neg_two_mul_mul (c a : ℝ) :
     √(Real.exp (-2 * c) * a) = Real.exp (-c) * √a := by
-  rw [Real.sqrt_mul (Real.exp_pos _).le, ← Real.exp_half]
-  ring_nf
+  rw [Real.sqrt_mul (Real.exp_pos _).le, ← Real.exp_half, show -2 * c / 2 = -c by ring]
 
 /-- The metric `Ē(c)`: every form multiplied by `e^{-2c}`, so that every norm is multiplied by
 `e^{-c}`. -/
@@ -282,7 +296,7 @@ theorem rescale_zero : h.rescale 0 = h := by
 theorem rescale_rescale (c d : ℝ) : (h.rescale c).rescale d = h.rescale (c + d) := by
   ext σ u v
   simp only [rescale_form_apply, ← mul_assoc, ← Complex.ofReal_mul, ← Real.exp_add]
-  ring_nf
+  rw [show -2 * d + -2 * c = -2 * (c + d) by ring]
 
 /-! ### Isometries -/
 
@@ -312,6 +326,10 @@ instance : EquivLike (IsometryEquiv h h') E F where
     congr
     exact LinearEquiv.coe_injective he
 
+instance : LinearEquivClass (IsometryEquiv h h') (𝓞 K) E F where
+  map_add e := map_add e.toLinearEquiv
+  map_smulₛₗ e := map_smulₛₗ e.toLinearEquiv
+
 @[simp]
 theorem coe_toLinearEquiv (e : IsometryEquiv h h') : ⇑e.toLinearEquiv = e := rfl
 
@@ -334,10 +352,8 @@ theorem form_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u v : Codom
     induction v using TensorProduct.inductionOn with
     | add v₁ v₂ h₁ h₂ => simp only [map_add, h₁, h₂]
     | tmul d y =>
-      rw [LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, Codomain.tmul_eq_smul σ c,
-        Codomain.tmul_eq_smul σ d, Codomain.tmul_eq_smul σ c x, Codomain.tmul_eq_smul σ d y,
-        LinearMap.map_smulₛₗ₂, map_smul, LinearMap.map_smulₛₗ₂, map_smul]
-      exact congrArg _ (congrArg _ (e.form_tmul σ x y))
+      rw [LinearMap.baseChange_tmul, LinearMap.baseChange_tmul, h'.form_tmul_tmul,
+        h.form_tmul_tmul, LinearEquiv.coe_coe, e.form_tmul]
 
 theorem norm_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
     h'.norm σ (e.toLinearMap.baseChange (Codomain σ) u) = h.norm σ u := by
@@ -473,7 +489,7 @@ theorem rescale_ofIsBaseChange (c : ℝ) :
   ext σ u v
   simp only [rescale_form_apply, ofIsBaseChange_form_apply, ← mul_assoc, ← Complex.ofReal_mul,
     ← Real.exp_add, Pi.add_apply]
-  ring_nf
+  rw [show -2 * c + -2 * w (InfinitePlace.mk σ) = -2 * (w (InfinitePlace.mk σ) + c) by ring]
 
 variable {F : Type*} [AddCommGroup F] [Module (𝓞 K) F] {ι' : F →ₗ[𝓞 K] K}
   (hι' : IsBaseChange K ι')
@@ -551,30 +567,19 @@ theorem placeNorm_fractionalIdeal {I : FractionalIdeal (𝓞 K)⁰ K} (hI : I �
   simp [fractionalIdeal]
 
 variable (K) in
-/-- The identification `x ↦ x` of `O_K` with the unit fractional ideal `(1)`. -/
-private def equivFractionalIdealOne : 𝓞 K ≃ₗ[𝓞 K] (1 : FractionalIdeal (𝓞 K)⁰ K) :=
-  (LinearEquiv.ofInjective (Algebra.linearMap (𝓞 K) K)
-      fun _ _ hxy ↦ IsFractionRing.injective (𝓞 K) K hxy).trans
-    (LinearEquiv.ofEq _ _ (by rw [FractionalIdeal.coeToSubmodule_one, Submodule.one_eq_range]))
-
-private theorem coe_equivFractionalIdealOne_apply (x : 𝓞 K) :
-    (equivFractionalIdealOne K x : K) = x := by
-  rw [equivFractionalIdealOne, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-  exact LinearEquiv.ofInjective_apply _ x
-
-variable (K) in
 /-- The hermitian line of the unit ideal `(1)` with all weights zero is isometric to `Ō_K`, through
 the identification of `O_K` with `(1)`. -/
 def isometryEquivTrivialFractionalIdealOne :
     IsometryEquiv (trivial K) (fractionalIdeal (1 : FractionalIdeal (𝓞 K)⁰ K) one_ne_zero 0) :=
-  isometryEquivOfIsBaseChange _ 0 _ (equivFractionalIdealOne K) fun x ↦ by
-    rw [Submodule.subtype_apply, coe_equivFractionalIdealOne_apply, Algebra.linearMap_apply]
+  isometryEquivOfIsBaseChange _ 0 _ (FractionalIdeal.linearEquivOne (𝓞 K)⁰ K) fun x ↦ by
+    rw [Submodule.subtype_apply, FractionalIdeal.coe_linearEquivOne_apply,
+      Algebra.linearMap_apply]
 
 @[simp]
 theorem isometryEquivTrivialFractionalIdealOne_apply (x : 𝓞 K) :
     (isometryEquivTrivialFractionalIdealOne K x : K) = x :=
   (congrArg Subtype.val (isometryEquivOfIsBaseChange_apply _ _ _ _ _ x)).trans
-    (coe_equivFractionalIdealOne_apply x)
+    (FractionalIdeal.coe_linearEquivOne_apply x)
 
 end NumberField
 
