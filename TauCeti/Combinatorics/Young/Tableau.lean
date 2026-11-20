@@ -132,18 +132,19 @@ def colFiberEquiv (t : YoungTableau μ) (j : ℕ) :
 @[simp]
 theorem rowFiberEquiv_apply_coe (t : YoungTableau μ) (i : ℕ)
     (k : {k : Fin μ.card // rowIndex t k = i}) :
-    (rowFiberEquiv t i k : ℕ × ℕ) = (t.symm k.1 : ℕ × ℕ) := (rfl)
+    (rowFiberEquiv t i k : ℕ × ℕ) = (t.symm k.val : ℕ × ℕ) := (rfl)
 
 @[simp]
 theorem colFiberEquiv_apply_coe (t : YoungTableau μ) (j : ℕ)
     (k : {k : Fin μ.card // colIndex t k = j}) :
-    (colFiberEquiv t j k : ℕ × ℕ) = (t.symm k.1 : ℕ × ℕ) := (rfl)
+    (colFiberEquiv t j k : ℕ × ℕ) = (t.symm k.val : ℕ × ℕ) := (rfl)
 
 /-- The label attached to a cell of row `i` is the label of that cell in the tableau. -/
 @[simp]
 theorem rowFiberEquiv_symm_apply_coe (t : YoungTableau μ) (i : ℕ) (c : ↥(μ.row i)) :
     ((rowFiberEquiv t i).symm c : Fin μ.card) =
-      t ⟨(c : ℕ × ℕ), (YoungDiagram.mem_cells _).mpr (YoungDiagram.mem_row_iff.mp c.2).1⟩ := by
+      t ⟨(c : ℕ × ℕ), (YoungDiagram.mem_cells _).mpr (YoungDiagram.mem_row_iff.mp c.property).1⟩
+          := by
   apply t.symm.injective
   rw [Equiv.symm_apply_apply]
   refine Subtype.ext ?_
@@ -153,7 +154,8 @@ theorem rowFiberEquiv_symm_apply_coe (t : YoungTableau μ) (i : ℕ) (c : ↥(μ
 @[simp]
 theorem colFiberEquiv_symm_apply_coe (t : YoungTableau μ) (j : ℕ) (c : ↥(μ.col j)) :
     ((colFiberEquiv t j).symm c : Fin μ.card) =
-      t ⟨(c : ℕ × ℕ), (YoungDiagram.mem_cells _).mpr (YoungDiagram.mem_col_iff.mp c.2).1⟩ := by
+      t ⟨(c : ℕ × ℕ), (YoungDiagram.mem_cells _).mpr (YoungDiagram.mem_col_iff.mp c.property).1⟩
+          := by
   apply t.symm.injective
   rw [Equiv.symm_apply_apply]
   refine Subtype.ext ?_
@@ -208,7 +210,7 @@ theorem exists_ne_and_apply_eq_of_lt_colLen (t : YoungTableau μ) {α : Type*} [
   obtain ⟨a, b, hab, hpab⟩ :=
     Fintype.exists_ne_map_eq_of_card_lt (fun ℓ : {ℓ : Fin μ.card // colIndex t ℓ = j} => p ℓ)
       (by rw [hcard]; exact hn)
-  exact ⟨a, b, a.2, b.2, fun h => hab (Subtype.ext h), hpab⟩
+  exact ⟨a, b, a.property, b.property, fun h => hab (Subtype.ext h), hpab⟩
 
 /-- The labels of a tableau lying in one of its first `k` rows are as many as the cells of the
 shape in its first `k` rows. -/
@@ -219,7 +221,7 @@ theorem card_filter_rowIndex_lt (t : YoungTableau μ) (k : ℕ) :
   refine Finset.card_bij (fun x _ => ((t.symm x : ↥μ.cells) : ℕ × ℕ)) (fun x hx => ?_)
     (fun x _ y _ h => t.symm.injective (Subtype.ext h)) fun c hc => ?_
   · simp only [Finset.mem_filter, Finset.mem_univ, true_and, rowIndex_def] at hx
-    exact Finset.mem_filter.mpr ⟨(t.symm x).2, hx⟩
+    exact Finset.mem_filter.mpr ⟨(t.symm x).property, hx⟩
   · rw [Finset.mem_filter] at hc
     refine ⟨t ⟨c, hc.1⟩, ?_, ?_⟩
     · simpa only [Finset.mem_filter, Finset.mem_univ, true_and, rowIndex_apply] using hc.2
@@ -370,7 +372,7 @@ theorem card_filter_lt_le_card_filter_rowIndex_lt (t : YoungTableau μ) {p : Fin
       (Finset.univ.filter fun x => rowIndex t x < m).card := by
   rw [card_filter_rowIndex_lt]
   refine YoungDiagram.card_filter_le_sum_take_rowLens μ p
-    (fun x => ((t.symm x : ↥μ.cells) : ℕ × ℕ)) (fun x => (t.symm x).2)
+    (fun x => ((t.symm x : ↥μ.cells) : ℕ × ℕ)) (fun x => (t.symm x).property)
     (fun x y hxy => t.symm.injective (Subtype.ext hxy)) (fun x y hv hc => ?_) m
   exact hp (Prod.ext hv (by simpa only [colIndex_def] using hc))
 
@@ -497,7 +499,7 @@ theorem colIndex_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
 /-- Transposing a tableau twice gives back its labels: the cell `c` of `μᵗᵗ = μ` carries the
 label that `t` gives it. -/
 theorem transpose_transpose_apply_val (t : YoungTableau μ) (c : ↥μ.transpose.transpose.cells) :
-    (transpose (transpose t) c : ℕ) = t ⟨c, by simpa using c.2⟩ := by
+    (transpose (transpose t) c : ℕ) = t ⟨c, by simpa using c.property⟩ := by
   simp only [transpose_apply, YoungDiagram.transposeCellsEquiv_apply, Prod.swap_swap,
     Fin.val_cast]
 

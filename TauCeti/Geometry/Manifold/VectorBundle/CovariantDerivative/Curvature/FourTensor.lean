@@ -234,7 +234,7 @@ def IsMetricCompatible.algebraicCurvature
 theorem IsMetricCompatible.coe_algebraicCurvature
     (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
     (ht : cov.torsion = 0) (x : M) :
-    (hcov.algebraicCurvature cov ht x).1 = cov.curvatureFourTensor x := (rfl)
+    (hcov.algebraicCurvature cov ht x).val = cov.curvatureFourTensor x := (rfl)
 
 end MetricCompatible
 

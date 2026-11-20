@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Isotropic
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Sectional
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Dimension
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -23,7 +24,7 @@ For an algebraic curvature tensor `r : FourTensor V`, Berger's polarization esti
 `|r(f₀, f₁, f₂, f₃)| ≤ (2 / 3) (b - a)` whenever sectional curvatures in `span(f)` lie in `[a, b]`,
 yielding `min a ((4 a - b) / 3) * (1 + l²) * (1 + m²) ≤ pic2Expression r f l m`. Weak quarter
 pinching implies `IsPIC2FourFrame r`, strict quarter pinching places `r` in `interior {q |
-IsPIC2FourFrame q.1}`, and `fubiniStudy J` witnesses sharpness on the boundary.
+IsPIC2FourFrame q.val}`, and `fubiniStudy J` witnesses sharpness on the boundary.
 
 ## Main definitions & statements
 
@@ -159,17 +160,17 @@ theorem IsAlgebraicCurvature.pic2Expression_pos_of_strict_quarterPinching {r : F
     (hr.le_pic2Expression_of_sectional_mem_Icc hsec hf l m)
 
 /-- Strict quarter pinching with `0 < a` and `b < 4 * a` places `r` in
-`interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1}`. -/
+`interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val}`. -/
 theorem mem_interior_isPIC2FourFrame_of_sectional_mem_Icc (r : algebraicCurvatureSubmodule V)
     {a b : ℝ} (ha : 0 < a) (hab : b < 4 * a)
-    (hsec : ∀ u v : V, Orthonormal ℝ ![u, v] → a ≤ r.1 ![u, v, u, v] ∧ r.1 ![u, v, u, v] ≤ b) :
-    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} := by
+    (hsec : ∀ u v : V, Orthonormal ℝ ![u, v] → a ≤ r.val ![u, v, u, v] ∧ r.val ![u, v, u, v] ≤ b) :
+    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} := by
   have hmin : 0 < min a ((4 * a - b) / 3) := lt_min ha (by linarith)
   refine mem_interior_isPIC2FourFrame_of_exists_pos_le hmin fun f hf l _ m _ ↦
     (le_mul_of_one_le_right hmin.le
       (by nlinarith [sq_nonneg l, sq_nonneg m] : 1 ≤ (1 + l ^ 2) * (1 + m ^ 2))).trans ?_
-  simpa only [mul_assoc] using
-    (mem_algebraicCurvatureSubmodule.1 r.2).le_pic2Expression_of_sectional_mem_Icc hsec hf l m
+  simpa only [mul_assoc] using (mem_algebraicCurvatureSubmodule.1
+    r.property).le_pic2Expression_of_sectional_mem_Icc hsec hf l m
 
 /-- When `4 ≤ finrank ℝ V`, every four-tensor in `IsPIC2FourFrame` has `0 ≤ sectionalMin r`. -/
 theorem IsPIC2FourFrame.sectionalMin_nonneg {r : FourTensor V} (hpic : IsPIC2FourFrame r)
@@ -222,20 +223,21 @@ theorem sectionalMax_lt_four_mul_sectionalMin_of_quarterPinched
     Matrix.det_one, div_one, div_one, hmin, hmax] at hp
 
 /-- Unquantified pointwise strict quarter pinching places `r` in
-`interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1}`. -/
+`interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val}`. -/
 theorem mem_interior_isPIC2FourFrame_of_quarterPinched (r : algebraicCurvatureSubmodule V)
     (hpinch : ∀ u v u' v' : V, LinearIndependent ℝ ![u, v] → LinearIndependent ℝ ![u', v'] →
-      0 < r.1 ![u, v, u, v] / (Matrix.gram ℝ ![u, v]).det ∧
-        r.1 ![u, v, u, v] / (Matrix.gram ℝ ![u, v]).det <
-          4 * (r.1 ![u', v', u', v'] / (Matrix.gram ℝ ![u', v']).det)) :
-    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} := by
+      0 < r.val ![u, v, u, v] / (Matrix.gram ℝ ![u, v]).det ∧
+        r.val ![u, v, u, v] / (Matrix.gram ℝ ![u, v]).det <
+          4 * (r.val ![u', v', u', v'] / (Matrix.gram ℝ ![u', v']).det)) :
+    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} := by
   by_cases hn4 : 4 ≤ Module.finrank ℝ V
   · have hn2 : 2 ≤ Module.finrank ℝ V := by omega
     exact mem_interior_isPIC2FourFrame_of_sectional_mem_Icc r
-      (sectionalMin_pos_of_quarterPinched hn2 r.1 fun u v huv ↦ (hpinch u v u v huv huv).1)
-      (sectionalMax_lt_four_mul_sectionalMin_of_quarterPinched hn2 r.1 fun u v u' v' huv huv' ↦
+      (sectionalMin_pos_of_quarterPinched hn2 r.val fun u v huv ↦ (hpinch u v u v huv huv).1)
+      (sectionalMax_lt_four_mul_sectionalMin_of_quarterPinched hn2 r.val fun u v u' v' huv huv' ↦
         (hpinch u v u' v' huv huv').2)
-      fun _ _ huv ↦ ⟨sectionalMin_le_of_orthonormal r.1 huv, le_sectionalMax_of_orthonormal r.1 huv⟩
+      fun _ _ huv ↦ ⟨sectionalMin_le_of_orthonormal r.val huv,
+        le_sectionalMax_of_orthonormal r.val huv⟩
   · refine mem_interior_isPIC2FourFrame_iff_forall_pos.2 fun f hf ↦ ?_
     have := hf.linearIndependent.fintype_card_le_finrank; rw [Fintype.card_fin] at this; omega
 
@@ -330,12 +332,12 @@ theorem isPIC2FourFrame_fubiniStudy {J : AlmostComplexStructure V}
     zero_le_one (by norm_num) (fun _ _ huv ↦ fubiniStudy_sectional_mem_Icc hJ huv)
 
 /-- **Weak quarter pinching does not imply `PIC2` interior.** In dimension `≥ 4`, `fubiniStudy J`
-lies outside `interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1}`. -/
+lies outside `interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val}`. -/
 theorem notMem_interior_isPIC2FourFrame_fubiniStudy {J : AlmostComplexStructure V}
     (hJ : ∀ u v, ⟪J u, J v⟫_ℝ = ⟪u, v⟫_ℝ) (hn : 4 ≤ Module.finrank ℝ V) :
     (⟨fubiniStudy J, mem_algebraicCurvatureSubmodule.2 (isAlgebraicCurvature_fubiniStudy hJ)⟩ :
        algebraicCurvatureSubmodule V) ∉
-      interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} := by
+      interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} := by
   obtain ⟨k, hk⟩ := J.even_finrank_real
   obtain ⟨b, hb⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) k (by omega)
   let idx : Fin 4 ↪ Fin (2 * k) := Fin.castLEEmb (by omega)
@@ -350,10 +352,10 @@ theorem notMem_interior_isPIC2FourFrame_fubiniStudy {J : AlmostComplexStructure 
 with sectional curvatures in `[1, 4]` lying in `IsPIC2FourFrame` but not in its interior. -/
 theorem exists_isPIC2FourFrame_notMem_interior_fin_four :
     ∃ r : algebraicCurvatureSubmodule (EuclideanSpace ℝ (Fin 4)),
-      IsPIC2FourFrame r.1 ∧ (∀ u v, Orthonormal ℝ ![u, v] →
-          1 ≤ r.1 ![u, v, u, v] ∧ r.1 ![u, v, u, v] ≤ 4) ∧
+      IsPIC2FourFrame r.val ∧ (∀ u v, Orthonormal ℝ ![u, v] →
+          1 ≤ r.val ![u, v, u, v] ∧ r.val ![u, v, u, v] ≤ 4) ∧
         r ∉ interior
-          {q : algebraicCurvatureSubmodule (EuclideanSpace ℝ (Fin 4)) | IsPIC2FourFrame q.1} := by
+          {q : algebraicCurvatureSubmodule (EuclideanSpace ℝ (Fin 4)) | IsPIC2FourFrame q.val} := by
   obtain ⟨J, hJnorm⟩ := AlmostComplexStructure.exists_forall_norm_apply_eq
     (V := EuclideanSpace ℝ (Fin 4)) ⟨2, by simp⟩
   have hJ : ∀ u v : EuclideanSpace ℝ (Fin 4), ⟪J u, J v⟫_ℝ = ⟪u, v⟫_ℝ :=

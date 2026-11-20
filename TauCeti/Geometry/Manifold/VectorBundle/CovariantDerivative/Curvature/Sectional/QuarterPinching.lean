@@ -125,7 +125,7 @@ theorem IsQuarterPinchedAt.sectionalMax_lt_four_mul_sectionalMin {x : M}
 /-- Strict quarter pinching at `x` places `hcov.algebraicCurvature cov ht x` in `interior PIC2`. -/
 theorem IsQuarterPinchedAt.mem_interior_isPIC2FourFrame {x : M}
     (hp : cov.IsQuarterPinchedAt hcov x) (ht : cov.torsion = 0) :
-    hcov.algebraicCurvature cov ht x ∈ interior {q | IsPIC2FourFrame q.1} :=
+    hcov.algebraicCurvature cov ht x ∈ interior {q | IsPIC2FourFrame q.val} :=
   mem_interior_isPIC2FourFrame_of_quarterPinched (hcov.algebraicCurvature cov ht x)
     fun u v u' v' huv huv' ↦ by
       simpa only [IsMetricCompatible.coe_algebraicCurvature,
@@ -199,7 +199,7 @@ theorem IsPointwiseQuarterPinched.exists_pos_le_pic2Expression
 
 /-- On a compact pointwise strictly quarter-pinched manifold, all isometric pullbacks of curvature
 tensors to `EuclideanSpace ℝ (Fin n)` lie in a compact convex `O(n)`-invariant subset of
-`interior {q | IsPIC2FourFrame q.1}`. -/
+`interior {q | IsPIC2FourFrame q.val}`. -/
 theorem IsPointwiseQuarterPinched.exists_isCompact_convex_subset_interior
     (hp : cov.IsPointwiseQuarterPinched hcov) (ht : cov.torsion = 0) :
     let V₀ := EuclideanSpace ℝ (Fin (Module.finrank ℝ E))
@@ -207,7 +207,7 @@ theorem IsPointwiseQuarterPinched.exists_isCompact_convex_subset_interior
       IsCompact K ∧ Convex ℝ K ∧
       (∀ (e : V₀ ≃ₗᵢ[ℝ] V₀) (q : algebraicCurvatureSubmodule V₀),
         q ∈ K → algebraicCurvatureLinearIsometryEquiv e q ∈ K) ∧
-      K ⊆ interior {q | IsPIC2FourFrame q.1} ∧
+      K ⊆ interior {q | IsPIC2FourFrame q.val} ∧
       ∀ (x : M) (e : V₀ ≃ₗᵢ[ℝ] TangentSpace I x),
         algebraicCurvatureLinearIsometryEquiv e (hcov.algebraicCurvature cov ht x) ∈ K := by
   intro V₀
@@ -232,7 +232,7 @@ theorem IsPointwiseQuarterPinched.exists_isCompact_convex_subset_interior
     refine ⟨B ∩ P,
       (isClosed_algebraicCurvatureSubmodule.isClosedEmbedding_subtypeVal.isCompact_preimage
         (isCompact_closedBall (0 : FourTensor V₀) R)).inter_right
-        ((isClosed_setOf_le_pic2Expression ε).preimage continuous_subtype_val),
+        ((isClosed_setOf_le_pic2Expression ε).preimage continuous_subtypeVal),
       hB_conv.inter hP_conv,
       fun e q ⟨hqB, hqP⟩ ↦ ⟨by
           simpa [B, ContinuousMultilinearMap.norm_compContinuous_linearIsometryEquiv] using hqB,

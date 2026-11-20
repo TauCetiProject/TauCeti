@@ -345,7 +345,7 @@ theorem isClosed_setOf_le_pic2Expression (ε : ℝ) :
   convert isClosed_iInter fun f : {f : Fin 4 → V // Orthonormal ℝ f} ↦
     isClosed_iInter fun l : Icc (-1 : ℝ) 1 ↦ isClosed_iInter fun m : Icc (-1 : ℝ) 1 ↦
       isClosed_le (continuous_const (y := ε))
-        (continuous_pic2Expression.comp (Continuous.prodMk_left (f.1, l.1, m.1))) using 1
+        (continuous_pic2Expression.comp (Continuous.prodMk_left (f.val, l.val, m.val))) using 1
   ext r; simp only [mem_ofPred_eq, mem_iInter, Subtype.forall, Function.comp_apply]
 
 /-- The `PIC2` four-frame cone is closed in `FourTensor V`. -/
@@ -356,7 +356,7 @@ theorem isClosed_setOf_isPIC2FourFrame : IsClosed {r : FourTensor V | IsPIC2Four
 theorem isClosed_setOf_isPICFourFrame : IsClosed {r : FourTensor V | IsPICFourFrame r} := by
   convert isClosed_iInter fun f : {f : Fin 4 → V // Orthonormal ℝ f} ↦
     isClosed_le (continuous_const (y := (0 : ℝ)))
-      (continuous_pic2Expression.comp (Continuous.prodMk_left (f.1, 1, 1))) using 1
+      (continuous_pic2Expression.comp (Continuous.prodMk_left (f.val, 1, 1))) using 1
   ext r; simp [IsPICFourFrame, isotropicExpression_def]
 
 /-- Pulling back along a linear isometry preserves `IsPIC2FourFrame`. -/
@@ -389,11 +389,11 @@ theorem isPICFourFrame_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗ
 theorem algebraicCurvatureLinearIsometryEquiv_mem_interior_isPIC2FourFrame_iff (e : W ≃ₗᵢ[ℝ] V)
     {r : algebraicCurvatureSubmodule V} :
     algebraicCurvatureLinearIsometryEquiv e r ∈
-        interior {q : algebraicCurvatureSubmodule W | IsPIC2FourFrame q.1} ↔
-      r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} := by
+        interior {q : algebraicCurvatureSubmodule W | IsPIC2FourFrame q.val} ↔
+      r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} := by
   let φ := (algebraicCurvatureLinearIsometryEquiv e).toHomeomorph
-  have hpre : φ ⁻¹' {q : algebraicCurvatureSubmodule W | IsPIC2FourFrame q.1} =
-      {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} := by ext q; simp [φ]
+  have hpre : φ ⁻¹' {q : algebraicCurvatureSubmodule W | IsPIC2FourFrame q.val} =
+      {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} := by ext q; simp [φ]
   rw [← hpre, ← φ.preimage_interior]; rfl
 
 /-- Bound `|pic2Expression r f l m| ≤ 6 * ‖r‖` on orthonormal four-frames and `l, m ∈ [-1, 1]`. -/
@@ -476,17 +476,17 @@ theorem pic2Min_compContinuousLinearMap_linearIsometryEquiv (e : W ≃ₗᵢ[ℝ
     exact ⟨(e.symm ∘ f, l, m), ⟨e.symm.toLinearIsometry.orthonormal_comp_iff.2 hf, hl, hm⟩,
       by simp [Function.comp_def]⟩
 
-/-- A uniform margin `ε > 0` below `pic2Expression r.1` places `r` in `interior PIC2`. -/
+/-- A uniform margin `ε > 0` below `pic2Expression r.val` places `r` in `interior PIC2`. -/
 theorem mem_interior_isPIC2FourFrame_of_exists_pos_le {r : algebraicCurvatureSubmodule V}
     {ε : ℝ} (hε : 0 < ε)
     (hle : ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
-      ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r.1 f l m) :
-    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} := by
+      ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r.val f l m) :
+    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} := by
   rw [mem_interior_iff_mem_nhds, Metric.mem_nhds_iff]
   refine ⟨ε / 6, by positivity, fun {q} hq f hf l hl m hm ↦ ?_⟩
   rw [Metric.mem_ball, Subtype.dist_eq, dist_eq_norm] at hq
-  have hdiff := abs_le.1 <| (pic2Expression_sub q.1 r.1 f l m) ▸
-    abs_pic2Expression_le_six_mul_norm (q.1 - r.1) hf hl hm
+  have hdiff := abs_le.1 <| (pic2Expression_sub q.val r.val f l m) ▸
+    abs_pic2Expression_le_six_mul_norm (q.val - r.val) hf hl hm
   linarith [hle f hf l hl m hm]
 
 end InnerProductSpace
@@ -553,22 +553,22 @@ private theorem exists_pos_le_pic2Expression_of_forall_pos {r : FourTensor V}
   · refine ⟨1, zero_lt_one, fun f hf ↦ ?_⟩
     have := hf.linearIndependent.fintype_card_le_finrank; rw [Fintype.card_fin] at this; omega
 
-/-- In finite dimensions, `r ∈ interior PIC2` iff `0 < pic2Expression r.1 f l m` on all orthonormal
-four-frames and `l, m ∈ [-1, 1]`. -/
+/-- In finite dimensions, `r ∈ interior PIC2` iff `0 < pic2Expression r.val f l m` on all
+orthonormal four-frames and `l, m ∈ [-1, 1]`. -/
 theorem mem_interior_isPIC2FourFrame_iff_forall_pos {r : algebraicCurvatureSubmodule V} :
-    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} ↔
+    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} ↔
       ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
-        ∀ m ∈ Icc (-1 : ℝ) 1, 0 < pic2Expression r.1 f l m := by
+        ∀ m ∈ Icc (-1 : ℝ) 1, 0 < pic2Expression r.val f l m := by
   refine ⟨fun hint f hf l hl m hm ↦ ?_, fun hpos ↦ ?_⟩
   · obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 hint)
     let I₀ : algebraicCurvatureSubmodule V := ⟨constantCurvature V,
       mem_algebraicCurvatureSubmodule.2 isAlgebraicCurvature_constantCurvature⟩
-    set t : ℝ := δ / (2 * (‖I₀.1‖ + 1)); have ht : 0 < t := by positivity
+    set t : ℝ := δ / (2 * (‖I₀.val‖ + 1)); have ht : 0 < t := by positivity
     have hdist : dist (r - t • I₀) r < δ := by
       rw [Subtype.dist_eq, dist_eq_norm, Submodule.coe_sub, Submodule.coe_smul_of_tower,
         sub_sub_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg ht.le, div_mul_eq_mul_div,
         div_lt_iff₀ (by positivity)]
-      nlinarith [norm_nonneg I₀.1]
+      nlinarith [norm_nonneg I₀.val]
     have hval := hball hdist f hf l hl m hm
     simp only [Submodule.coe_sub, Submodule.coe_smul_of_tower, I₀, pic2Expression_sub,
       pic2Expression_smul, pic2Expression_constantCurvature hf] at hval
@@ -577,11 +577,11 @@ theorem mem_interior_isPIC2FourFrame_iff_forall_pos {r : algebraicCurvatureSubmo
     exact mem_interior_isPIC2FourFrame_of_exists_pos_le hε hle
 
 /-- In finite dimensions, `r ∈ interior PIC2` iff a uniform margin `ε > 0` bounds
-`pic2Expression r.1` below. -/
+`pic2Expression r.val` below. -/
 theorem mem_interior_isPIC2FourFrame_iff_exists_pos_le {r : algebraicCurvatureSubmodule V} :
-    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} ↔
+    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} ↔
       ∃ ε > 0, ∀ f : Fin 4 → V, Orthonormal ℝ f → ∀ l ∈ Icc (-1 : ℝ) 1,
-        ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r.1 f l m :=
+        ∀ m ∈ Icc (-1 : ℝ) 1, ε ≤ pic2Expression r.val f l m :=
   ⟨fun hint ↦ exists_pos_le_pic2Expression_of_forall_pos
     (mem_interior_isPIC2FourFrame_iff_forall_pos.1 hint),
     fun ⟨_, hε, hle⟩ ↦ mem_interior_isPIC2FourFrame_of_exists_pos_le hε hle⟩
@@ -590,18 +590,19 @@ theorem mem_interior_isPIC2FourFrame_iff_exists_pos_le {r : algebraicCurvatureSu
 theorem smul_constantCurvature_mem_interior_isPIC2FourFrame {κ : ℝ} (hκ : 0 < κ) :
     (⟨κ • constantCurvature V, Submodule.smul_mem _ κ (mem_algebraicCurvatureSubmodule.2
       isAlgebraicCurvature_constantCurvature)⟩ : algebraicCurvatureSubmodule V) ∈
-      interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} :=
+      interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} :=
   mem_interior_isPIC2FourFrame_iff_forall_pos.2 fun _ hf _ _ _ _ ↦ by
     rw [pic2Expression_smul, pic2Expression_constantCurvature hf]; positivity
 
-/-- In dimension `≥ 4`, `r ∈ interior {q | IsPIC2FourFrame q.1}` iff `0 < pic2Min r.1`. -/
+/-- In dimension `≥ 4`, `r ∈ interior {q | IsPIC2FourFrame q.val}` iff `0 < pic2Min r.val`. -/
 theorem mem_interior_isPIC2FourFrame_iff_pic2Min_pos (hn : 4 ≤ Module.finrank ℝ V)
     {r : algebraicCurvatureSubmodule V} :
-    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.1} ↔ 0 < pic2Min r.1 := by
+    r ∈ interior {q : algebraicCurvatureSubmodule V | IsPIC2FourFrame q.val} ↔
+      0 < pic2Min r.val := by
   rw [mem_interior_isPIC2FourFrame_iff_exists_pos_le]
   refine ⟨fun ⟨ε, hε, hle⟩ ↦ hε.trans_le (le_pic2Min_of_forall_le
     ((TauCeti.nonempty_setOfPred_orthonormal_iff (ι := Fin 4)).2 (by simpa using hn)) hle),
-    fun hpos ↦ ⟨pic2Min r.1, hpos, fun _ hf _ hl _ hm ↦ pic2Min_le_pic2Expression r.1 hf hl hm⟩⟩
+    fun hpos ↦ ⟨pic2Min r.val, hpos, fun _ hf _ hl _ hm ↦ pic2Min_le_pic2Expression r.val hf hl hm⟩⟩
 
 end FiniteDimensional
 

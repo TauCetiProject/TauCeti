@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
+import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Dimension
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Compact
 import TauCeti.Topology.MetricSpace.Lipschitz.Basic
