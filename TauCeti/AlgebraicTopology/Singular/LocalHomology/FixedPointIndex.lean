@@ -429,8 +429,9 @@ private theorem two_mul_fixedPointIndex_sub_affineInterp {a b da db : ℝ} (hab 
         linear_combination (da - db) * e1]
       exact mul_pos hba (by nlinarith [mul_self_pos.2 hdb])
     have hdet : (1 - (1 - s) • (1 : ℝ →L[ℝ] ℝ)).det = s := by simp [ContinuousLinearMap.det]
-    rw [fixedPointIndex_eq_sign_det_of_forall_eq (A := (1 - s) • (1 : ℝ →L[ℝ] ℝ))
-      (v := s * a - da) (x := x) (show x ∈ Ioo a b from ⟨by linarith, by linarith⟩)
+    rw [fixedPointIndex_eq_sign_det_of_forall_eq (U := ⟨Ioo a b, isOpen_Ioo⟩)
+      (A := (1 - s) • (1 : ℝ →L[ℝ] ℝ)) (v := s * a - da) (x := x)
+      (Opens.mem_mk.2 ⟨by linarith, by linarith⟩)
       (by simp only [_root_.smul_apply, one_apply_eq_self, smul_eq_mul]
           linear_combination -hx0)
       (fun z ↦ by
@@ -483,14 +484,20 @@ private theorem isCompact_setOf_eq_zero_Ioo {a b : ℝ} {Φ : unitInterval × �
       exact hb t hΦ0
     exact ⟨t, ⟨z, hz.1.lt_of_ne hza, hz.2.lt_of_ne hzb⟩, hΦ0, rfl, rfl⟩
 
+/-- If `[a, b] ⊆ U`, then the open interval `(a, b)` is contained in `U` as an open set. -/
+private theorem Ioo_le_of_Icc_subset {a b : ℝ} {U : Opens ℝ} (hU : Icc a b ⊆ U) :
+    (⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) ≤ U :=
+  SetLike.coe_subset_coe.1 <| by
+    rw [Opens.coe_mk]
+    exact Ioo_subset_Icc_self.trans hU
+
 /-- **Reduction to the model.** Let `f : U → ℝ` be continuous, with `[a, b] ⊆ U`, `a < b`, and no
 fixed point at `a` or `b`. Its restriction to `(a, b)` has the same fixed-point index as the model
 `z ↦ z - ℓ z`, where `ℓ` is the affine map agreeing with the displacement `z ↦ z - f z` at `a` and
 `b`: the straight-line homotopy between them has no fixed point near `a` or `b`. -/
 private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens ℝ} (f : C(U, ℝ))
     {a b : U} (hab : (a : ℝ) < b) (hU : Icc (a : ℝ) b ⊆ U) (ha : f a ≠ a) (hb : f b ≠ b) :
-    (f.comp (inclusion (show (⟨Ioo (a : ℝ) b, isOpen_Ioo⟩ : Opens ℝ) ≤ U from
-        Ioo_subset_Icc_self.trans hU))).fixedPointIndex =
+    (f.comp (inclusion (Ioo_le_of_Icc_subset hU))).fixedPointIndex =
       (⟨fun z : (⟨Ioo (a : ℝ) b, isOpen_Ioo⟩ : Opens ℝ) ↦ (z : ℝ) - ((a - f a) + ((z : ℝ) - a) *
         (((b - f b) - (a - f a)) / (b - a))), by fun_prop⟩ :
         C((⟨Ioo (a : ℝ) b, isOpen_Ioo⟩ : Opens ℝ), ℝ)).fixedPointIndex := by
@@ -506,7 +513,7 @@ private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens �
   have hF : Continuous F :=
     f.continuous.comp ((continuous_subtype_val.comp continuous_projIcc).subtype_mk _)
   have hFeq (z : U) (hz : (z : ℝ) ∈ Icc (a : ℝ) b) : F z = f z := by simp [F, projIcc_of_mem _ hz]
-  set g := f.comp (inclusion (show V ≤ U from Ioo_subset_Icc_self.trans hU))
+  set g := f.comp (inclusion (Ioo_le_of_Icc_subset hU))
   set g₁ : C(V, ℝ) := ⟨fun z ↦ (z : ℝ) - ℓ z, by fun_prop⟩
   let H : g.Homotopy g₁ :=
     { toFun := fun p ↦ (1 - p.1 : ℝ) * g p.2 + p.1 * g₁ p.2
@@ -553,9 +560,8 @@ theorem two_mul_fixedPointIndex_eq_sign_sub_sign {U : Opens ℝ} (f : C(U, ℝ))
     obtain rfl : a = b := Subtype.ext h
     rw [f.fixedPointIndex_eq_zero_of_forall_ne fun z hz ↦ (hfix z hz).1.not_gt (hfix z hz).2]
     simp
-  · rw [← f.fixedPointIndex_comp_inclusion (show (⟨Ioo (a : ℝ) b, isOpen_Ioo⟩ : Opens ℝ) ≤ U from
-      Ioo_subset_Icc_self.trans hU) hfix, fixedPointIndex_comp_inclusion_eq_sub_affineInterp f h hU
-      ha hb]
+  · rw [← f.fixedPointIndex_comp_inclusion (Ioo_le_of_Icc_subset hU) hfix,
+      fixedPointIndex_comp_inclusion_eq_sub_affineInterp f h hU ha hb]
     exact two_mul_fixedPointIndex_sub_affineInterp h (sub_ne_zero.2 (Ne.symm ha))
       (sub_ne_zero.2 (Ne.symm hb))
 
