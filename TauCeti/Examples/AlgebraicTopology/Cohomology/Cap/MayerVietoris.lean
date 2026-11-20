@@ -102,9 +102,9 @@ theorem circle_duality_unit :
     (X := TopCat.of (S¹)) ℤ (ρ_ ℤₘ).inv (ρ_ ℤₘ).hom
     (𝟙 ℤₘ) 1
   rw [hc]
-  simp
-  -- The remaining coefficient-functor identity evaluates to the identity on native homology.
-  rfl
+  simp only [MonoidalCategory.id_whiskerRight, Category.id_comp, Iso.inv_hom_id,
+    CategoryTheory.Functor.map_id, NatTrans.id_app, ModuleCat.hom_id]
+  exact LinearMap.id_apply (R := ℤ) _
 
 /-- The native two-arc connecting image of `D 1` cannot equal its negative. -/
 theorem two_smul_circleMV_duality_unit_ne_zero (p : S¹) :
@@ -123,10 +123,6 @@ theorem circle_signed_square (L : ModuleCat.{0} ℤ) (pole : S¹) :
     let V : Opens (TopCat.of (S¹)) := ⟨{-pole}ᶜ, isOpen_compl_singleton⟩
     let hUV : U ⊔ V = ⊤ :=
       SetLike.coe_injective (compl_singleton_union_compl_singleton_neg one_ne_zero pole)
-    letI : ChartedSpace (EuclideanSpace ℝ (Fin 1))
-        ((Opens.toTopCat (TopCat.of (S¹))).obj (U ⊓ V)) :=
-      inferInstanceAs (ChartedSpace (EuclideanSpace ℝ (Fin 1))
-        (⟨(U ⊓ V : Set (S¹)), (U ⊓ V).isOpen⟩ : Opens (S¹)))
     circleOrientation.dualityMap (by simp) L 0 1 rfl ≫
         TopCat.mayerVietorisδ L U.isOpen V.isOpen
           (congrArg (fun W : Opens (TopCat.of (S¹)) ↦
@@ -140,8 +136,7 @@ theorem circle_signed_square (L : ModuleCat.{0} ℤ) (pole : S¹) :
       (SetLike.coe_injective (compl_singleton_union_compl_singleton_neg one_ne_zero pole))
       0 0 rfl
   simp only [Nat.zero_add, pow_one, neg_one_zsmul] at h
-  -- Numeral indices occur inside opaque native homology objects.
-  convert h using 1; rfl
+  exact h
 
 -- The native integral, zero and characteristic-two coefficient endpoints use the global square.
 example (pole : S¹) := circle_signed_square ℤₘ pole
@@ -192,8 +187,9 @@ theorem finite_duality_unit (m : ℕ) :
   rw [finiteUnitClass,
     (finiteOrientation m).dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv]
   rw [singularCap_constSingularCocycle (X := TopCat.of (Fin m)) ℤ (ρ_ ℤₘ).inv (ρ_ ℤₘ).hom (𝟙 ℤₘ) 0]
-  simp
-  rfl
+  simp only [MonoidalCategory.id_whiskerRight, Category.id_comp, Iso.inv_hom_id,
+    CategoryTheory.Functor.map_id, NatTrans.id_app, ModuleCat.hom_id]
+  exact LinearMap.id_apply (R := ℤ) _
 
 -- Empty, one-point and disconnected two-point native degree-zero tests are nonnegative-degree D.
 example := finite_duality_unit 0

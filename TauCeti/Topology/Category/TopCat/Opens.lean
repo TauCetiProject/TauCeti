@@ -89,6 +89,22 @@ lemma exists_compacts_map_inclusion'_eq {U : Opens X} {K : Compacts X} (hK : (K 
 instance t2Space_toTopCat_obj [T2Space X] (V : Opens X) : T2Space ((toTopCat X).obj V) :=
   inferInstanceAs (T2Space V)
 
+/-- A compact subset contained in an open set has compact inverse image under its inclusion. -/
+lemma isCompact_preimage_inclusion' (W : Opens X) (K : Compacts X)
+    (hKW : (K : Set X) ⊆ W) :
+    IsCompact (Opens.inclusion' W ⁻¹' (K : Set X)) := by
+  obtain ⟨K', hK'⟩ := Opens.exists_compacts_map_inclusion'_eq hKW
+  have hp : Opens.inclusion' W ⁻¹' (K : Set X) = K' := by
+    rw [← hK']
+    exact W.isOpenEmbedding.injective.preimage_image K'
+  exact hp.symm ▸ K'.isCompact
+
+/-- Including the preimage of a subset contained in an open set recovers that subset. -/
+lemma image_preimage_inclusion' (W : Opens X) (K : Set X)
+    (hKW : K ⊆ W) :
+    Opens.inclusion' W '' (Opens.inclusion' W ⁻¹' (K : Set X)) = K := by
+  rw [Set.image_preimage_eq_inter_range, Opens.set_range_inclusion', Set.inter_eq_left.mpr hKW]
+
 end TopologicalSpace.Opens
 
 end

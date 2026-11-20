@@ -512,30 +512,6 @@ attribute [local instance] hasFiniteCoproducts_of_hasCoproducts
 attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts
 attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
-private lemma cochain_components
-    {A B C D : CochainComplex (ModuleCat.{0} ℤ) ℕ}
-    (r : A ⟶ C) (b : A ⟶ D) (t : C ⟶ B) (l : D ⟶ B)
-    (p : ℕ) (x : (C ⊞ D).X p) (z : A.X (p + 1)) (a : B.X p)
-    (hx : ((C ⊞ D).d p (p + 1)).hom x = ((biprod.lift r b).f (p + 1)).hom z)
-    (ha : ((biprod.desc t (-l)).f p).hom x = a) :
-    ∃ (u : C.X p) (v : D.X p),
-      (C.d p (p + 1)).hom u = (r.f (p + 1)).hom z ∧
-      (D.d p (p + 1)).hom v = (b.f (p + 1)).hom z ∧
-      (t.f p).hom u - (l.f p).hom v = a := by
-  refine ⟨((biprod.fst : C ⊞ D ⟶ C).f p).hom x,
-    ((biprod.snd : C ⊞ D ⟶ D).f p).hom x, ?_, ?_, ?_⟩
-  · have h := congrArg (((biprod.fst : C ⊞ D ⟶ C).f (p + 1)).hom) hx
-    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
-      ← HomologicalComplex.comp_f, biprod.lift_fst] using h
-  · have h := congrArg (((biprod.snd : C ⊞ D ⟶ D).f (p + 1)).hom) hx
-    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
-      ← HomologicalComplex.comp_f, biprod.lift_snd] using h
-  · have h : biprod.desc t (-l) = biprod.fst ≫ t - biprod.snd ≫ l := by
-      apply biprod.hom_ext' <;> simp
-    rw [h, HomologicalComplex.sub_f_apply, ModuleCat.hom_sub,
-      LinearMap.sub_apply] at ha
-    exact ha
-
 /-- A chosen cocycle for the native connecting class is the exact coboundary of a lift. -/
 private lemma exists_complMayerVietoris_cochains {X : TopCat.{0}} (L : ModuleCat.{0} ℤ)
     {K N : Set X} (hK : IsClosed K) (hN : IsClosed N) (p : ℕ)
@@ -566,8 +542,8 @@ private lemma exists_complMayerVietoris_cochains {X : TopCat.{0}} (L : ModuleCat
   have hc := ConcreteCategory.congr_hom
     (TopCat.singularCohomologyPairMayerVietorisδ_comp_homologyMap
       ℤₘ ℤ L (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ)
-      isOpen_univ isOpen_univ (hK.isOpen_compl.preimage continuous_subtype_val)
-      (hN.isOpen_compl.preimage continuous_subtype_val) p (p + 1) rfl)
+      isOpen_univ isOpen_univ (hK.isOpen_compl.preimage continuous_subtypeVal)
+      (hN.isOpen_compl.preimage continuous_subtypeVal) p (p + 1) rfl)
     (TopPair.singularCohomologyMap (TopCat.interComplPairIso K N).hom p a)
   rw [SSetPair.mayerVietorisCochainδ_def ℤₘ ℤ L
     (TopCat.isPushout_toSmallSingularPair_left (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
@@ -631,6 +607,7 @@ private lemma complement_inter_cochain_square {X : TopCat.{0}}
           (Set.inter_subset_inter (Set.subset_univ Kᶜ) (Set.subset_univ Nᶜ))
           (Set.subset_univ Sᶜ) (ContinuousMap.inclusion Set.inter_subset_left)
           (fun x hx ↦ by
+            -- Membership in a native subspace is membership of its ambient value.
             change (x : X) ∈ Sᶜ
             exact Set.compl_subset_compl.mpr hS (by simpa only [Set.compl_union] using hx))) ≫
       TopPair.singularCochainComplexMap (TopCat.interComplPairIso K N).inv =
@@ -645,6 +622,7 @@ private lemma complement_inter_cochain_square {X : TopCat.{0}}
     (fun x ↦ Set.mem_inter (Set.mem_univ x) (Set.mem_univ x)) Set.mem_univ
     (fun _ ↦ by rw [Set.compl_union]) (fun _ ↦ Iff.rfl) Set.inter_subset_left
     (fun x hx ↦ by
+            -- Membership in a native subspace is membership of its ambient value.
             change (x : X) ∈ Sᶜ
             exact Set.compl_subset_compl.mpr hS (by simpa only [Set.compl_union] using hx))
     (TopCat.mapsTo_id_compl hS)
@@ -676,7 +654,7 @@ lemma exists_singularCohomologyComplMayerVietorisδ_representatives
         ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex ℤₘ ℤ L).iCycles p α ∧
       ((TopPair.ofSubset (K ∪ N)ᶜ).singularCochainComplex ℤₘ ℤ L).homologyπ p α = a := by
   obtain ⟨x, α, hx, ha, hα⟩ := exists_complMayerVietoris_cochains L hK hN p a ζ hζ
-  obtain ⟨u, v, hu, hv, huv⟩ := cochain_components
+  obtain ⟨u, v, hu, hv, huv⟩ := HomologicalComplex.moduleCat_exists_components_of_biprod_lift
     (SSetPair.cochainComplexMap _) (SSetPair.cochainComplexMap _)
     (TopPair.singularCochainComplexMap _) (TopPair.singularCochainComplexMap _)
     p x _ _ hx ha
@@ -709,6 +687,7 @@ lemma exists_singularCohomologyComplMayerVietorisδ_representatives
     simp only [HomologicalComplex.comp_f, ConcreteCategory.comp_apply] at hk hn
     rw [hk, hn]
   · rw [← moduleCat_homologyMap_homologyπ, hα]
+    -- The native cochain functor reverses the same original pair isomorphism.
     change TopPair.singularCohomologyMap (TopCat.interComplPairIso K N).inv p
       (TopPair.singularCohomologyMap (TopCat.interComplPairIso K N).hom p a) = a
     rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
