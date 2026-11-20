@@ -37,6 +37,8 @@ used to identify weak derivatives on an interval with ordinary primitives.
 * `TauCeti.intervalIntegral.continuousOn_primitive_interval_of_integrableOn_Ioo`: if `f` is
   integrable on the open interval `(a, b)`, its primitive based at a point of `[a, b]` is
   continuous on the closed interval `[a, b]`.
+* `TauCeti.intervalIntegral.lipschitzWith_primitive`: the primitive of a locally integrable
+  function bounded almost everywhere by `K` is `K`-Lipschitz.
 * `TauCeti.intervalIntegral.integrableOn_primitive_of_integrableOn_Ioo` and
   `TauCeti.intervalIntegral.integral_norm_primitive_le`: such a primitive is integrable on
   `(a, b)`, with `L¹(a, b)` norm at most `(b - a) ‖f‖₁`.
@@ -99,6 +101,16 @@ theorem continuousOn_primitive_interval_of_integrableOn_Ioo {μ : Measure ℝ}
   have hab : a ≤ b := ht₀.1.trans ht₀.2
   simpa [uIcc_of_le hab] using _root_.intervalIntegral.continuousOn_primitive_interval'
     ((intervalIntegrable_iff_integrableOn_Ioo_of_le hab).2 hf) (uIcc_of_le hab ▸ ht₀)
+
+/-- The primitive `t ↦ ∫ s in t₀..t, f s` of a locally integrable function bounded almost
+everywhere by `K` is `K`-Lipschitz. -/
+theorem lipschitzWith_primitive {K : NNReal} (hf : LocallyIntegrable f) (hK : ∀ᵐ x, ‖f x‖ ≤ K)
+    (t₀ : ℝ) : LipschitzWith K fun t ↦ ∫ s in t₀..t, f s :=
+  LipschitzWith.of_dist_le_mul fun t s ↦ by
+    rw [dist_eq_norm, _root_.intervalIntegral.integral_interval_sub_left
+      (hf.integrableOn_isCompact isCompact_uIcc).intervalIntegrable
+      (hf.integrableOn_isCompact isCompact_uIcc).intervalIntegrable, Real.dist_eq]
+    exact _root_.intervalIntegral.norm_integral_le_of_norm_le_const_ae (hK.mono fun _ hx _ ↦ hx)
 
 /-- The primitive `t ↦ ∫ s in t₀..t, f s ∂μ` of a function integrable on the open interval
 `Ioo a b`, based at a point `t₀` of `Icc a b`, is integrable on `Ioo a b` for any measure that is
