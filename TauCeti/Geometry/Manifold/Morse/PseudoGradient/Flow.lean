@@ -252,6 +252,13 @@ theorem mem_unstableSet_inter_stableSet_self {x : M} (hx : mfderiv 𝓘(ℝ, E) 
   ⟨Flow.self_mem_unstableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx),
     Flow.self_mem_stableSet_iff.2 (hX.flow_apply_of_mfderiv_eq_zero hx)⟩
 
+/-- A nondegenerate critical point lies in its own unstable and stable sets. -/
+theorem mem_unstableSet_inter_stableSet_self_of_nondegenerate {x : M}
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) :
+    x ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x :=
+  hX.mem_unstableSet_inter_stableSet_self
+    (mem_criticalPoints_iff_mfderiv_eq_zero.1 hx.mem_criticalPoints)
+
 /-- **The stable sets of the critical points cover the manifold.** -/
 theorem iUnion_stableSet (hf : IsMorse 𝓘(ℝ, E) f) :
     ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x = univ := by
