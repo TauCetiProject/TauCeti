@@ -87,12 +87,6 @@ private theorem X_smul_comp_unblockedDifferential (k : Fin n) :
           (MvPolynomial.X k : MvPolynomial (Fin n) R) :=
   LinearMap.ext fun c => (LinearMap.map_smul (G.unblockedDifferential R) _ c).symm
 
-/-- `X_smul_gridChainMinus_injective` for multiplication by `V_k` as a linear map. -/
-private theorem X_smul_toLinearMap_injective (k : Fin n) :
-    Function.Injective (DistribSMul.toLinearMap R (GridChainMinus R n)
-      (MvPolynomial.X k : MvPolynomial (Fin n) R)) :=
-  X_smul_gridChainMinus_injective R k
-
 /-- `exact_X_smul_simplyBlockedSpecialization` for multiplication by `V_k` and specialization at
 `V_k = 0` as linear maps. -/
 private theorem exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap (k : Fin n) :
@@ -138,7 +132,7 @@ noncomputable def oneVariableSpecializationHomologyEquivOfHomotopy :
       (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero R i)
       (G.restrictScalars_simplyBlockedDifferential_comp_self_eq_zero R j)
       (G.X_smul_comp_unblockedDifferential R i) (G.X_smul_comp_unblockedDifferential R j)
-      (X_smul_toLinearMap_injective R i) (X_smul_toLinearMap_injective R j)
+      (X_smul_gridChainMinus_injective R i) (X_smul_gridChainMinus_injective R j)
       (G.restrictScalars_homotopy R hH)
       (simplyBlockedSpecializationLinearMap_surjective R i)
       (simplyBlockedSpecializationLinearMap_surjective R j)
@@ -159,7 +153,7 @@ theorem simplyBlockedDifferential_simplyBlockedSpecialization_add_eq_zero
     simplyBlockedSpecializationLinearMap_apply] using
     LinearMap.map_add_mem_ker_of_homotopy
       (G.restrictScalars_unblockedDifferential_comp_self_eq_zero R)
-      (G.X_smul_comp_unblockedDifferential R i) (X_smul_toLinearMap_injective R i)
+      (G.X_smul_comp_unblockedDifferential R i) (X_smul_gridChainMinus_injective R i)
       (G.restrictScalars_homotopy R hH)
       (exact_X_smul_toLinearMap_simplyBlockedSpecializationLinearMap R j)
       (G.simplyBlockedSpecializationLinearMap_comp_unblockedDifferential R j) hab
@@ -192,7 +186,9 @@ theorem oneVariableSpecializationHomologyEquivOfHomotopy_oneVariableSpecializati
   rw [show (⟨G.simplyBlockedChainEquiv R i z, _⟩ :
       LinearMap.ker ((G.simplyBlockedDifferential R i).restrictScalars R)) = ⟨_, hz⟩ from
         Subtype.ext hb.symm,
-    LinearMap.homologyEquivOfHomotopicInjective_mk _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ hab' hz,
+    LinearMap.homologyEquivOfHomotopicInjective_mk _ _ _ _ _ _
+      (X_smul_gridChainMinus_injective R i) (X_smul_gridChainMinus_injective R j) _ _ _ _ _ _ _
+      hab' hz,
     oneVariableSpecializationHomologyEquivLinearMapHomology_symm_mk]
   exact congrArg (G.oneVariableSpecializationHomologyClass R j)
     (Subtype.ext (congrArg (G.simplyBlockedChainEquiv R j).symm
