@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
+public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
@@ -46,11 +47,16 @@ If `X` is strict Segal, for instance the nerve of a category, then every simplex
 a single edge to `y`. Hence `Hom^R_X(x, y)` is the discrete simplicial set on the edges from `x`
 to `y`.
 
+An edge of `Hom^R_X(x, y)` from `s₀` to `s₁` is a `2`-simplex of `X` exhibiting `s₀` as a
+composite of the identity of `x` and `s₁`. When `X` is a quasicategory, such a `2`-simplex exists
+exactly when `s₀` and `s₁` have the same class in the homotopy category of `X`, so the connected
+components of `Hom^R_X(x, y)` are the morphisms from `x` to `y` in the homotopy category.
+
 A map of simplicial sets `f : X ⟶ Y` induces maps `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`, which are
 the maps on mapping spaces whose invertibility up to weak equivalence makes `f` fully faithful.
-The projections of a product identify the right mapping spaces of `X ⊗ Y` with the products of
-those of `X` and `Y`, and right mapping spaces commute with universe lifts
-(`SSet.rightMappingSpace.uliftIso`).
+On connected components they are the action of `f` on the homotopy categories. The projections
+of a product identify the right mapping spaces of `X ⊗ Y` with the products of those of `X` and
+`Y`, and right mapping spaces commute with universe lifts (`SSet.rightMappingSpace.uliftIso`).
 
 ## Main definitions
 
@@ -60,6 +66,10 @@ those of `X` and `Y`, and right mapping spaces commute with universe lifts
   the discrete simplicial set on the edges from `x` to `y`.
 * `SSet.rightMappingSpace.map x y f`: the map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)` induced by
   `f : X ⟶ Y`.
+* `SSet.rightMappingSpace.edgeEquiv`: the edges of `Hom^R_X(x, y)` from `s₀` to `s₁` are the
+  `2`-simplices of `X` exhibiting `s₀` as a composite of the identity of `x` and `s₁`.
+* `SSet.rightMappingSpace.π₀Equiv x y`: for a quasicategory `X`, the connected components of
+  `Hom^R_X(x, y)` are the morphisms from `x` to `y` in the homotopy category of `X`.
 * `SSet.rightMappingSpace.prodIso`: the isomorphism
   `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁)) ≅ Hom^R_X(x₀, x₁) ⊗ Hom^R_Y(y₀, y₁)`.
 * `SSet.rightMappingSpace.sliceFiberIso x y`: `Hom^R_X(x, y)` is the fibre over `x` of the
@@ -81,6 +91,9 @@ those of `X` and `Y`, and right mapping spaces commute with universe lifts
   an isomorphism of right mapping spaces exactly when it is bijective on edges.
 * `SSet.rightMappingSpace.isIso_map_ι`: a subcomplex containing all simplices of a right mapping
   space has the same right mapping space.
+* `SSet.rightMappingSpace.π₀Equiv_mapπ₀_map`: under `π₀Equiv`, the map induced by `f` on
+  connected components of right mapping spaces is the action of `mapHomotopyCategory f` on
+  morphisms.
 
 ## References
 
@@ -548,6 +561,93 @@ theorem isIso_map_ι {A : X.Subcomplex} (x y : (A : SSet.{u}) _⦋0⦌)
   exact Subtype.ext (map_app_coe A.ι _)
 
 end map
+
+/-! ### Edges and connected components -/
+
+section π₀
+
+/-- An edge of `Hom^R_X(x, y)` from `s₀` to `s₁`, a `2`-simplex of `X`, is the same as a
+`2`-simplex exhibiting the edge `s₀` as a composite of the identity of `x` and the edge `s₁`. -/
+def edgeEquiv (s₀ s₁ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    Edge s₀ s₁ ≃ Edge.CompStruct (Edge.id x) (obj₀Equiv s₁) (obj₀Equiv s₀) where
+  toFun e := Edge.CompStruct.mk (e.edge.val : X _⦋2⦌)
+    (by
+      -- The degeneracy `⦋1⦌ ⟶ ⦋0⦌` is the constant map.
+      rw [Edge.id_edge, SimplicialObject.σ,
+        Subsingleton.elim (SimplexCategory.σ 0) (SimplexCategory.const _ _ 0)]
+      exact ((mem_rightMappingSpace_iff (n := 1) _).1 e.edge.property).1)
+    ((coe_δ 0 e.edge).symm.trans (congrArg Subtype.val e.tgt_eq))
+    ((coe_δ 1 e.edge).symm.trans (congrArg Subtype.val e.src_eq))
+  invFun h := Edge.mk ⟨h.simplex, (mem_rightMappingSpace_iff (n := 1) _).2
+      ⟨by
+        rw [← Subsingleton.elim (SimplexCategory.σ 0) (SimplexCategory.const _ _ 0),
+          ← SimplicialObject.σ, ← Edge.id_edge]
+        exact h.d₂,
+        -- The last vertex of `h.simplex` is the last vertex of its face `s₁` opposite to `0`.
+        (map_const_map (SimplexCategory.δ 0).op h.simplex (Fin.last 1)).symm.trans (by
+          rw [← SimplicialObject.δ_def, h.d₀]
+          exact map_const_last s₁)⟩⟩
+    (Subtype.ext ((coe_δ 1 _).trans h.d₁)) (Subtype.ext ((coe_δ 0 _).trans h.d₀))
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The `2`-simplex attached to an edge of `Hom^R_X(x, y)` is that edge. -/
+@[simp]
+theorem edgeEquiv_apply_simplex {s₀ s₁ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌}
+    (e : Edge s₀ s₁) : dsimp% (edgeEquiv s₀ s₁ e).simplex = e.edge.val :=
+  (rfl)
+
+/-- The edge of `Hom^R_X(x, y)` attached to a `2`-simplex is that `2`-simplex. -/
+@[simp]
+theorem coe_edgeEquiv_symm_apply_edge {s₀ s₁ : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌}
+    (h : Edge.CompStruct (Edge.id x) (obj₀Equiv s₁) (obj₀Equiv s₀)) :
+    dsimp% ((edgeEquiv s₀ s₁).symm h).edge.val = h.simplex :=
+  (rfl)
+
+variable [X.Quasicategory]
+
+variable (x y) in
+/-- For a quasicategory `X`, the connected components of the right mapping space `Hom^R_X(x, y)`
+are the morphisms from `x` to `y` in the homotopy category of `X`: a vertex of `Hom^R_X(x, y)`,
+an edge from `x` to `y`, is sent to its class. -/
+noncomputable def π₀Equiv :
+    π₀ (X.rightMappingSpace x y : SSet.{u}) ≃ (HomotopyCategory.mk x ⟶ HomotopyCategory.mk y) :=
+  Equiv.ofBijective (π₀.lift (fun s ↦ HomotopyCategory.homMk (obj₀Equiv s))
+      fun s₀ s₁ e ↦ ((HomotopyCategory.homMk_eq_homMk_iff _ _).2 ⟨edgeEquiv s₀ s₁ e⟩).symm)
+    ⟨fun c₀ c₁ h ↦ by
+      induction c₀ with | mk s₀ => ?_
+      induction c₁ with | mk s₁ => ?_
+      obtain ⟨h⟩ := (HomotopyCategory.homMk_eq_homMk_iff _ _).1 h
+      exact (π₀.sound ((edgeEquiv s₁ s₀).symm h)).symm,
+    fun φ ↦ by
+      obtain ⟨e, rfl⟩ := HomotopyCategory.homMk_surjective φ
+      exact ⟨π₀.mk (obj₀Equiv.symm e), by simp⟩⟩
+
+/-- The connected component of a vertex of `Hom^R_X(x, y)` corresponds to the class of the edge
+it is. -/
+@[simp]
+theorem π₀Equiv_mk (s : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    π₀Equiv x y (π₀.mk s) = HomotopyCategory.homMk (obj₀Equiv s) :=
+  (rfl)
+
+/-- The class of an edge corresponds to the connected component of the corresponding vertex of
+`Hom^R_X(x, y)`. -/
+@[simp]
+theorem π₀Equiv_symm_homMk (e : Edge x y) :
+    (π₀Equiv x y).symm (HomotopyCategory.homMk e) = π₀.mk (obj₀Equiv.symm e) :=
+  (Equiv.symm_apply_eq _).2 (by simp)
+
+variable {Y : SSet.{u}} [Y.Quasicategory]
+
+/-- Under `π₀Equiv`, the map induced by `f : X ⟶ Y` on connected components of right mapping
+spaces is the action of the functor of homotopy categories induced by `f`. -/
+@[simp]
+theorem π₀Equiv_mapπ₀_map (f : X ⟶ Y) (c : π₀ (X.rightMappingSpace x y : SSet.{u})) :
+    π₀Equiv (f.app _ x) (f.app _ y) (mapπ₀ (map x y f) c) =
+      (mapHomotopyCategory f).map (π₀Equiv x y c) := by
+  induction c with | mk s => simp
+
+end π₀
 
 /-! ### Products -/
 
