@@ -48,16 +48,6 @@ namespace Symbol
 
 variable {n : ℕ} {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {m : ℝ}
 
-/-- A frequency-only symbol does not depend on the position. -/
-@[simp]
-theorem spatialDeriv_ofFrequency {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
-    {b : CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
-    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
-    (j : Fin n) : spatialDeriv j (ofFrequency b hb hbound) = 0 := by
-  ext1
-  funext ⟨x, ξ⟩
-  simp [coordinateDeriv_const _ (List.cons_ne_nil j [])]
-
 /-- The Bessel weight `(1 + ‖ξ / 2π‖²) ^ (s / 2)` satisfies the symbol estimates of order `s`. -/
 private theorem exists_norm_iteratedFDeriv_besselWeight_le (s : ℝ) (k : ℕ) :
     ∃ C, ∀ ξ : CoordinateSpace n,

@@ -991,6 +991,11 @@ variable (hb : ContDiff ℝ ∞ b)
 theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
     (ofFrequency b hb hbound).coefficient p = b p.2 := (rfl)
 
+/-- A frequency-only symbol does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_ofFrequency (j : Fin n) : spatialDeriv j (ofFrequency b hb hbound) = 0 :=
+  Symbol.ext <| funext fun ⟨_, _⟩ => by simp [coordinateDeriv_const _ (List.cons_ne_nil j [])]
+
 /-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
 theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
   isUniform_iff.2 fun α β =>
@@ -1465,14 +1470,11 @@ theorem exists_coefficient_eq_of_forall_le_norm
 /-- In positive dimension, a nonzero constant is a symbol of no negative order: along a ray of
 frequencies the weight `⟨ξ⟩ ^ m` tends to `0`, while the coefficient stays the fixed `T`. -/
 theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T ≠ 0) (hm : m < 0) :
-    ¬∃ a : Symbol n V W m, ∀ p, a.coefficient p = T := by
-  rintro ⟨a, ha⟩
+    ¬∃ a : Symbol n V W m, ∀ p, a.coefficient p = T := fun ⟨a, ha⟩ => by
   obtain ⟨C, -, hC⟩ := a.exists_bound {0} isCompact_singleton [] []
   have htend : Filter.Tendsto (fun t : ℝ ↦ C * (1 + t ^ 2) ^ (m / 2)) Filter.atTop (nhds 0) := by
-    have h := tendsto_rpow_neg_atTop (y := -(m / 2)) (by linarith)
-    rw [neg_neg] at h
-    simpa using tendsto_const_nhds.mul (h.comp (Filter.tendsto_atTop_add_const_left _ 1
-      (Filter.tendsto_pow_atTop two_ne_zero)))
+    simpa using tendsto_const_nhds.mul ((tendsto_rpow_neg_atTop (y := -(m / 2)) (by linarith)).comp
+      (Filter.tendsto_atTop_add_const_left _ 1 (Filter.tendsto_pow_atTop two_ne_zero)))
   obtain ⟨t, ht⟩ := (htend.eventually (gt_mem_nhds (norm_pos_iff.2 hT))).exists
   have h := hC 0 rfl (EuclideanSpace.single 0 t)
   simp only [mixedDeriv_nil_nil, ha, List.length_nil, CharP.cast_eq_zero, sub_zero,
@@ -1483,13 +1485,11 @@ theorem not_exists_coefficient_eq_const [NeZero n] {T : V →L[ℂ] W} (hT : T �
 `-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
 theorem isSmoothing_const_iff (hn : n ≠ 0) {T : V →L[ℂ] W} :
     (const T : Symbol n V W 0).IsSmoothing ↔ T = 0 := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
+  refine ⟨fun h => Classical.byContradiction fun hT => ?_, fun h => ?_⟩
   · obtain ⟨b, hb⟩ := h (-2)
-    by_contra hT
     have : NeZero n := ⟨hn⟩
     exact not_exists_coefficient_eq_const hT (by norm_num) ⟨b, fun _ => by simp [hb]⟩
-  · subst h
-    exact fun _ => ⟨0, by funext p; simp⟩
+  · exact h ▸ fun _ => ⟨0, by funext p; simp⟩
 
 end Smoothing
 
