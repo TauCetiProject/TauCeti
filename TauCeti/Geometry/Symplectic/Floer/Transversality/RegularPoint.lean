@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Calculus.ContDiff.LocalInjectivity
 public import TauCeti.Geometry.Symplectic.Floer.Translation.Kernel
+public import TauCeti.Topology.Instances.Real.SliceInjective
 
 /-!
 # Regular points of Floer trajectories
@@ -22,26 +23,27 @@ proved at the *regular points* of Floer, Hofer and Salamon: the points `(s, t)` 
 
 (`TauCeti.Floer.regularPoints`). The last condition says that `(s, t)` is the only preimage of
 `(u(s, t), t)` under the map `(s, t) ↦ (u(s, t), t)`: a variation of `J_t` supported near
-`u(s, t)` at time `t` is then felt by the trajectory only near `(s, t)`. At such points, variations
-of `J` detect cokernel elements of the linearized operator
-(`TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero`).
+`u(s, t)` at time `t` is then felt by the trajectory only near `(s, t)`. The detection of cokernel
+elements of the linearized operator by variations of a time-dependent `J_t` at these points is not
+yet proved; `TauCeti.SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero` is the
+corresponding statement for a time-independent `J` at points near which `u` itself is injective.
 
 This file proves two parts of the theorem of Floer, Hofer and Salamon that the regular points of
 a nonstationary trajectory form an open dense set.
 
 * **Openness.** If `u` is `C¹` and converges uniformly to continuous loops `xm` and `xp`, the
   regular points form an open set (`TauCeti.Floer.isOpen_regularPoints`). The topological core
-  (`TauCeti.Floer.eventually_forall_apply_eq_imp_eq`) needs only a continuous map into a Hausdorff
-  space with limits along the ends, and injectivity of `(s, t) ↦ (u(s, t), t)` near the point,
-  which `∂ₛu ≠ 0` provides (`TauCeti.Floer.exists_mem_nhds_injOn_of_fderiv_apply_ne_zero`). The
-  limits confine the competitors `s'` to a compact interval, and a compactness argument separates
-  `u(s', t)` from `u(s, t)` uniformly nearby.
+  (`TauCeti.eventually_forall_slice_eq_imp_eq_of_tendsto`) needs only a continuous map into a
+  Hausdorff space with limits along the ends, and injectivity of `(s, t) ↦ (u(s, t), t)` near the
+  point, which `∂ₛu ≠ 0` provides (`TauCeti.Floer.exists_mem_nhds_injOn_of_fderiv_apply_ne_zero`,
+  from the injectivity of its derivative). The limits confine the competitors `s'` to a compact
+  interval, and a compactness argument separates `u(s', t)` from `u(s, t)` uniformly nearby.
 * **Separation from the asymptotic orbits.** On an open set where `u(s, t) = x(t)`, `u` does not
   depend on `s`, so `∂ₛu` vanishes there
   (`TauCeti.Floer.interior_setOf_eq_subset_setOf_fderiv_apply_eq_zero`). As the zeros of `∂ₛu` are
   isolated unless `u` is stationary
   (`SymplecticForm.setOf_fderiv_apply_ne_zero_mem_codiscreteWithin_of_floerOperator_eq_zero`),
-  the points where `∂ₛu ≠ 0`, `u ≠ xm` and `u ≠ xp` form a dense open set for every nonstationary
+  the points where `∂ₛu ≠ 0`, `u ≠ xm` and `u ≠ xp` form a dense set for every nonstationary
   Floer trajectory
   (`TauCeti.Floer.dense_setOf_fderiv_apply_ne_zero_and_ne_and_ne_of_floerOperator_eq_zero`).
 
@@ -61,64 +63,6 @@ open Filter Function Metric Set Topology
 
 namespace TauCeti.Floer
 
-section Topological
-
-variable {X : Type*} [TopologicalSpace X] [T2Space X] {u : ℝ × ℝ → X} {xm xp : ℝ → X}
-
-/-- **Isolated points of the slices persist nearby.** Let `u : ℝ × ℝ → X` be continuous, with
-values in a Hausdorff space, and suppose that `u(s, t)` tends to `xm(t₀)` and `xp(t₀)` as
-`s → -∞` and `s → +∞` and `t → t₀`. Let `z₀ = (s₀, t₀)` be a point near which
-`(s, t) ↦ (u(s, t), t)` is injective, with `u(z₀) ≠ xm(t₀)`, `u(z₀) ≠ xp(t₀)` and
-`u(s, t₀) ≠ u(z₀)` for all `s ≠ s₀`. Then every point `(s, t)` near `z₀` has the last property:
-`u(s', t) ≠ u(s, t)` for all `s' ≠ s`. -/
-theorem eventually_forall_apply_eq_imp_eq {z₀ : ℝ × ℝ} (hu : Continuous u)
-    (hm : Tendsto u (atBot ×ˢ 𝓝 z₀.2) (𝓝 (xm z₀.2)))
-    (hp : Tendsto u (atTop ×ˢ 𝓝 z₀.2) (𝓝 (xp z₀.2)))
-    (hinj : ∃ U ∈ 𝓝 z₀, InjOn (fun z ↦ (u z, z.2)) U)
-    (hm₀ : u z₀ ≠ xm z₀.2) (hp₀ : u z₀ ≠ xp z₀.2) (h₀ : ∀ s, u (s, z₀.2) = u z₀ → s = z₀.1) :
-    ∀ᶠ z in 𝓝 z₀, ∀ s, u (s, z.2) = u z → s = z.1 := by
-  obtain ⟨s₀, t₀⟩ := z₀
-  obtain ⟨U, hU, hinj⟩ := hinj
-  obtain ⟨δ, hδ, hδU⟩ := Metric.mem_nhds_iff.1 hU
-  -- Along an end, `u` stays near the asymptotic value, away from a neighbourhood of `u z₀`.
-  have hend {l : Filter ℝ} {x : ℝ → X} (h : Tendsto u (l ×ˢ 𝓝 t₀) (𝓝 (x t₀)))
-      (hne : u (s₀, t₀) ≠ x t₀) :
-      ∃ p : ℝ → Prop, (∀ᶠ s in l, p s) ∧ ∀ᶠ z in 𝓝 (s₀, t₀), ∀ s, p s → u (s, z.2) ≠ u z := by
-    obtain ⟨A, B, hA, hB, hAx, hBx, hAB⟩ := t2_separation hne
-    obtain ⟨p, hp, q, hq, hpq⟩ := eventually_prod_iff.1 (h (hB.mem_nhds hBx))
-    refine ⟨p, hp, ?_⟩
-    filter_upwards [hu.continuousAt.preimage_mem_nhds (hA.mem_nhds hAx),
-      continuousAt_snd.preimage_mem_nhds hq] with z hzA hzq s hs heq
-    exact disjoint_left.1 hAB hzA (heq ▸ hpq hs hzq)
-  obtain ⟨pm, hpm, hevm⟩ := hend hm hm₀
-  obtain ⟨pp, hpp, hevp⟩ := hend hp hp₀
-  obtain ⟨Sm, hSm⟩ := eventually_atBot.1 hpm
-  obtain ⟨Sp, hSp⟩ := eventually_atTop.1 hpp
-  -- On the compact rest of the slice, `u` is separated from `u z₀` uniformly nearby.
-  have hmid : ∀ᶠ z in 𝓝 (s₀, t₀), ∀ s ∈ Icc Sm Sp \ ball s₀ δ, u (s, z.2) ≠ u z := by
-    refine (isCompact_Icc.diff isOpen_ball).eventually_forall_of_forall_eventually
-      (P := fun z s ↦ u (s, z.2) ≠ u z) fun s hs ↦ ?_
-    have hne : u (s, t₀) ≠ u (s₀, t₀) := fun h ↦
-      hs.2 (h₀ s h ▸ mem_ball_self hδ)
-    exact ((hu.comp (by fun_prop)).continuousAt.ne_iff_eventually_ne
-      (hu.comp continuous_fst).continuousAt).1 hne
-  filter_upwards [hevm, hevp, hmid, ball_mem_nhds _ hδ] with z h₁ h₂ h₃ hz s hs
-  by_cases hsδ : s ∈ ball s₀ δ
-  · -- Near `s₀` the slice is injective.
-    rw [← ball_prod_same] at hz
-    have hsz : (s, z.2) ∈ U := hδU (by rw [← ball_prod_same]; exact ⟨hsδ, hz.2⟩)
-    have hzU : z ∈ U := hδU (by rw [← ball_prod_same]; exact hz)
-    exact congrArg Prod.fst (hinj hsz hzU (Prod.ext hs rfl))
-  · -- Otherwise `s` lies far along an end or in the compact rest of the slice.
-    exfalso
-    rcases le_or_gt s Sm with hle | hlt
-    · exact h₁ s (hSm s hle) hs
-    rcases le_or_gt Sp s with hle' | hlt'
-    · exact h₂ s (hSp s hle') hs
-    · exact h₃ s ⟨⟨hlt.le, hlt'.le⟩, hsδ⟩ hs
-
-end Topological
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {u : ℝ × ℝ → V} {x xm xp : ℝ → V}
 
 /-- **A nonvanishing `∂ₛu` makes `(s, t) ↦ (u(s, t), t)` injective nearby.** If `u` is `C¹` at
@@ -127,36 +71,21 @@ different images under `u`. -/
 theorem exists_mem_nhds_injOn_of_fderiv_apply_ne_zero {z₀ : ℝ × ℝ} (hu : ContDiffAt ℝ 1 u z₀)
     (h : fderiv ℝ u z₀ stdComplexLineReal ≠ 0) :
     ∃ U ∈ 𝓝 z₀, InjOn (fun z ↦ (u z, z.2)) U := by
-  obtain ⟨a, b⟩ := z₀
-  -- A functional `φ` with `φ (∂ₛu) > 0` near `z₀` makes `φ ∘ u` increasing in `s`.
-  obtain ⟨φ, -, hφ⟩ := exists_dual_vector ℝ _ (norm_ne_zero_iff.2 h)
-  have hcont : ContinuousAt (fun z ↦ φ (fderiv ℝ u z stdComplexLineReal)) (a, b) :=
-    φ.continuous.continuousAt.comp
-      ((hu.continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const)
-  have hpos : ∀ᶠ z in 𝓝 (a, b), 0 < φ (fderiv ℝ u z stdComplexLineReal) :=
-    hcont.eventually (lt_mem_nhds (by simpa [hφ] using h))
-  have hdiff : ∀ᶠ z in 𝓝 (a, b), DifferentiableAt ℝ u z :=
-    (hu.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt one_ne_zero
-  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 (hpos.and hdiff)
-  refine ⟨ball (a, b) δ, ball_mem_nhds _ hδ, ?_⟩
-  rintro ⟨s, t⟩ hp ⟨s', t'⟩ hq heq
-  obtain ⟨hu', rfl⟩ := Prod.mk.inj heq
-  rw [← ball_prod_same] at hp hq
-  have hline {σ : ℝ} (hσ : σ ∈ ball a δ) : (σ, t) ∈ ball (a, b) δ := by
-    rw [← ball_prod_same]; exact ⟨hσ, hp.2⟩
-  have hderiv {σ : ℝ} (hσ : σ ∈ ball a δ) :
-      HasDerivAt (fun σ ↦ φ (u (σ, t))) (φ (fderiv ℝ u (σ, t) stdComplexLineReal)) σ := by
-    have hl : HasDerivAt (fun σ : ℝ ↦ (σ, t)) stdComplexLineReal σ :=
-      (hasDerivAt_id σ).prodMk (hasDerivAt_const σ t)
-    exact φ.hasFDerivAt.comp_hasDerivAt σ
-      ((hball (hline hσ)).2.hasFDerivAt.comp_hasDerivAt σ hl)
-  have hmono : StrictMonoOn (fun σ ↦ φ (u (σ, t))) (ball a δ) := by
-    refine strictMonoOn_of_deriv_pos (convex_ball a δ)
-      (fun σ hσ ↦ (hderiv hσ).continuousAt.continuousWithinAt) fun σ hσ ↦ ?_
-    rw [isOpen_ball.interior_eq] at hσ
-    rw [(hderiv hσ).deriv]
-    exact (hball (hline hσ)).1
-  exact Prod.ext (hmono.injOn hp.1 hq.1 (congrArg φ hu')) rfl
+  have hd : fderiv ℝ (fun z ↦ (u z, z.2)) z₀ =
+      (fderiv ℝ u z₀).prod (ContinuousLinearMap.snd ℝ ℝ ℝ) :=
+    ((hu.differentiableAt one_ne_zero).hasFDerivAt.prodMk (hasFDerivAt_snd (p := z₀))).fderiv
+  -- The derivative `v ↦ (du v, v.2)` is injective: `v.2 = 0` makes `v` a multiple of `∂ₛ`.
+  have hinj : Injective (fderiv ℝ (fun z ↦ (u z, z.2)) z₀) := by
+    rw [hd, injective_iff_map_eq_zero]
+    intro v hv
+    obtain ⟨h₁, h₂⟩ := Prod.mk.inj hv
+    have hv' : v = v.1 • stdComplexLineReal := by
+      ext <;> simp_all [stdComplexLineReal_eq]
+    rw [hv', map_smul, smul_eq_zero] at h₁
+    rw [hv', h₁.resolve_right h, zero_smul]
+  simpa only [nhdsWithin_univ] using
+    ((hu.prodMk contDiffAt_snd).contDiffWithinAt (s := univ)).exists_nhdsWithin_injOn
+      one_ne_zero convex_univ (mem_univ _) uniqueDiffWithinAt_univ (by rwa [fderivWithin_univ])
 
 /-- The regular points of Floer, Hofer and Salamon of a map `u : ℝ × ℝ → V` relative to loops
 `xm` and `xp`: the points `(s, t)` with `∂ₛu(s, t) ≠ 0`, `u(s, t) ≠ xm(t)`, `u(s, t) ≠ xp(t)`
@@ -192,7 +121,7 @@ theorem isOpen_regularPoints (hu : ContDiff ℝ 1 u) (hxm : Continuous xm) (hxp 
       |>.eventually_ne hd,
     (hcont.continuousAt.ne_iff_eventually_ne (hxm.comp continuous_snd).continuousAt).1 hmz,
     (hcont.continuousAt.ne_iff_eventually_ne (hxp.comp continuous_snd).continuousAt).1 hpz,
-    eventually_forall_apply_eq_imp_eq hcont (hlim hm hxm z.2) (hlim hp hxp z.2)
+    eventually_forall_slice_eq_imp_eq_of_tendsto hcont (hlim hm hxm z.2) (hlim hp hxp z.2)
       (exists_mem_nhds_injOn_of_fderiv_apply_ne_zero hu.contDiffAt hd) hmz hpz hinj]
     with w h₁ h₂ h₃ h₄
   exact ⟨h₁, h₂, h₃, h₄⟩
