@@ -51,6 +51,7 @@ topology.
 ## Main declarations
 
 * `TauCeti.CkHolderSpaceLoc k α Ω F`: the space `C^{k,α}_loc(Ω, F)` for `Ω : Opens E`.
+* `TauCeti.CkHolderSpaceLoc.IsLoc`: the defining property of an element of `C^{k,α}_loc(Ω, F)`.
 * `TauCeti.CkHolderSpaceLoc.mk`: the element defined by a function on `Ω` that lies in `C^{k,α}`
   on an open neighbourhood in `Ω` of every compact subset of `Ω`.
 * `TauCeti.CkHolderSpaceLoc.exists_ckHolderSpaceOn`: every compact subset of `Ω` has an open
@@ -97,6 +98,13 @@ universe u v
 variable (k : ℕ) (α : ℝ≥0) {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (Ω : Opens E) (F : Type v) [NormedAddCommGroup F] [NormedSpace ℝ F]
 
+variable {Ω F} in
+/-- The defining property of an element of `C^{k,α}_loc(Ω, F)`: every compact subset of `Ω` has an
+open neighbourhood `U ⊆ Ω` on which `f` agrees with an element of `C^{k,α}(U, F)`. -/
+@[expose] def CkHolderSpaceLoc.IsLoc (f : Ω → F) : Prop :=
+  ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
+    ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩
+
 /-- The space `C^{k,α}_loc(Ω, F)` of maps `f : Ω → F` such that every compact subset of `Ω` has an
 open neighbourhood `U ⊆ Ω` on which `f` lies in `C^{k,α}(U, F)`. Its topology is the coarsest one
 making the restrictions to the open sets with compact closure in `Ω` continuous into
@@ -107,8 +115,7 @@ finite-dimensional `E`. -/
 -- this submodule alias. The `irreducible` attribute after the basic API restores the abstraction
 -- boundary.
 @[expose] def CkHolderSpaceLoc : Type _ :=
-  ({ carrier := {f : Ω → F | ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
-        ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩}
+  ({ carrier := {f : Ω → F | CkHolderSpaceLoc.IsLoc k α f}
      zero_mem' := fun K hKΩ _ ↦ ⟨Ω, hKΩ, le_rfl, 0, fun x ↦ by simp⟩
      add_mem' := fun {f₁ f₂} h₁ h₂ K hKΩ hK ↦ by
        obtain ⟨U₁, hK₁, hU₁, g₁, hg₁⟩ := h₁ K hKΩ hK
@@ -125,13 +132,8 @@ namespace CkHolderSpaceLoc
 
 variable {k α Ω F}
 
-/-- The defining property of an element of `C^{k,α}_loc(Ω)`. -/
-private abbrev IsLoc (f : Ω → F) : Prop :=
-  ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
-    ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩
-
 /-- Elements are the functions with the defining property. This is the identity map. -/
-private def equivSubtype : CkHolderSpaceLoc k α Ω F ≃ {f : Ω → F // IsLoc (k := k) (α := α) f} :=
+private def equivSubtype : CkHolderSpaceLoc k α Ω F ≃ {f : Ω → F // IsLoc k α f} :=
   Equiv.refl _
 
 /-- `C^{k,α}_loc(Ω)` is an additive group under pointwise addition. -/
@@ -197,15 +199,12 @@ theorem exists_ckHolderSpaceOn (f : CkHolderSpaceLoc k α Ω F) {K : Set E}
 /-- The element of `C^{k,α}_loc(Ω)` defined by a function `f` on `Ω` such that every compact
 subset of `Ω` has an open neighbourhood `U ⊆ Ω` on which `f` agrees with an element of
 `C^{k,α}(U)`. -/
-def mk (f : Ω → F) (hf : ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
-    ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩) :
-    CkHolderSpaceLoc k α Ω F :=
+def mk (f : Ω → F) (hf : IsLoc k α f) : CkHolderSpaceLoc k α Ω F :=
   equivSubtype.symm ⟨f, hf⟩
 
 /-- The underlying function of `mk f hf` is `f`. -/
 @[simp]
-theorem mk_apply (f : Ω → F) (hf : ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
-    ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩) (x : Ω) :
+theorem mk_apply (f : Ω → F) (hf : IsLoc k α f) (x : Ω) :
     mk f hf x = f x :=
   (rfl)
 
@@ -262,6 +261,9 @@ private abbrev res (i : Idx Ω) : CkHolderSpaceLoc k α Ω F →ₗ[ℝ] CkHolde
 
 /-- The compact-exhaustion topology: the coarsest topology making every restriction to an open
 set with compact closure in `Ω` continuous into `C^{k,α}(U)`. -/
+-- The index type is spelled out here and in `instUniformSpace` rather than written as `Idx Ω`, and
+-- the maps as `restrictLM` rather than `res`, because a public instance body cannot mention the
+-- private abbreviations `Idx` and `res`.
 instance instTopologicalSpace : TopologicalSpace (CkHolderSpaceLoc k α Ω F) :=
   ⨅ i : {U : Opens E // IsCompact (closure (U : Set E)) ∧ closure (U : Set E) ⊆ Ω},
     induced (restrictLM i.1 i.2.1 i.2.2) inferInstance
@@ -314,9 +316,10 @@ theorem restrictL_apply (U : Opens E) (hU : IsCompact (closure (U : Set E)))
 /-- Restricting to `U` and then to a smaller `V` is restricting to `V`. -/
 @[simp]
 theorem restrictL_restrictL {U V : Opens E} (hU : IsCompact (closure (U : Set E)))
-    (hUΩ : closure (U : Set E) ⊆ Ω) (hV : IsCompact (closure (V : Set E)))
-    (hVΩ : closure (V : Set E) ⊆ Ω) (h : V ≤ U) (f : CkHolderSpaceLoc k α Ω F) :
-    CkHolderSpaceOn.restrictL h (restrictL U hU hUΩ f) = restrictL V hV hVΩ f := by
+    (hUΩ : closure (U : Set E) ⊆ Ω) (h : V ≤ U) (f : CkHolderSpaceLoc k α Ω F) :
+    CkHolderSpaceOn.restrictL h (restrictL U hU hUΩ f) =
+      restrictL V (hU.of_isClosed_subset isClosed_closure (closure_mono h))
+        ((closure_mono h).trans hUΩ) f := by
   ext x
   simp
 
@@ -422,7 +425,7 @@ instance instT2Space [LocallyCompactSpace E] : T2Space (CkHolderSpaceLoc k α Ω
 private theorem res_eq_comp {i j : Idx Ω} (h : i.1 ≤ j.1) :
     (res i : CkHolderSpaceLoc k α Ω F → CkHolderSpaceOn k α i.1 F) =
       CkHolderSpaceOn.restrictL h ∘ res j :=
-  funext fun f ↦ (restrictL_restrictL j.2.1 j.2.2 i.2.1 i.2.2 h f).symm
+  funext fun f ↦ (restrictL_restrictL j.2.1 j.2.2 h f).symm
 
 /-- The family of all restrictions is a uniform inducing map into the product of the spaces
 `C^{k,α}(U)`. -/
@@ -625,7 +628,7 @@ variable {k α Ω F}
 /-- An element of `C^{k,α}(Ω)` has the defining property of `C^{k,α}_loc(Ω)`, with `U = Ω` for
 every compact set. -/
 private theorem isLoc (f : CkHolderSpaceOn k α Ω F) :
-    CkHolderSpaceLoc.IsLoc (k := k) (α := α) (⇑f) :=
+    CkHolderSpaceLoc.IsLoc k α (⇑f) :=
   fun _ hKΩ _ ↦ ⟨Ω, hKΩ, le_rfl, f, fun _ ↦ rfl⟩
 
 /-- Restricting the element of `C^{k,α}_loc(Ω)` defined by `f ∈ C^{k,α}(Ω)` to `U` is restricting
