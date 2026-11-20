@@ -331,16 +331,16 @@ theorem wordMul_wordTensorConsEquiv_tmul (φ : ∀ i, A i →ₗ[R] R) {i : I} (
     -- `(w.cons hw).toList` is `i :: w.toList`, whose `List.getElem` at `0` and `k.succ` reduces
     -- definitionally to `i` and `w.toList[k]`, aligning the dependent fiber `WordTensorFactor` so
     -- `Fin.cons_zero` and `Fin.cons_succ` rewrite the head and tail factors.
-    change r • (ι R A i (Fin.cons (α := WordTensorFactor φ (w.cons hw)) x m 0).1 *
+    change r • (ι R A i (Fin.cons (α := WordTensorFactor φ (w.cons hw)) x m 0).val *
         (List.ofFn fun k : Fin w.toList.length ↦
           ι R A w.toList[k]
-            (Fin.cons (α := WordTensorFactor φ (w.cons hw)) x m k.succ).1).prod) =
+            (Fin.cons (α := WordTensorFactor φ (w.cons hw)) x m k.succ).val).prod) =
       r • (ι R A i x * (List.ofFn fun k ↦ ι R A w.toList[k] (m k)).prod)
     rw [Fin.cons_zero (α := WordTensorFactor φ (w.cons hw)) x m]
     have htail :
         (List.ofFn fun k : Fin w.toList.length ↦
           ι R A w.toList[k]
-            (Fin.cons (α := WordTensorFactor φ (w.cons hw)) x m k.succ).1) =
+            (Fin.cons (α := WordTensorFactor φ (w.cons hw)) x m k.succ).val) =
         List.ofFn fun k ↦ ι R A w.toList[k] (m k) :=
       congrArg List.ofFn (funext fun k ↦ by
         rw [Fin.cons_succ (α := WordTensorFactor φ (w.cons hw)) x m k])
@@ -444,18 +444,18 @@ section Decomposition
 variable [DecidableEq I]
 
 private noncomputable def complInclusion (φ : ∀ i, A i →ₗ[R] R) (i : I) :
-    (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1) →ₗ[R]
+    (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val) →ₗ[R]
       ⨁ w : ReducedWord I, WordTensor φ w :=
-  DirectSum.toModule R _ _ fun u ↦ DirectSum.lof R (ReducedWord I) (WordTensor φ) u.1
+  DirectSum.toModule R _ _ fun u ↦ DirectSum.lof R (ReducedWord I) (WordTensor φ) u.val
 
 private noncomputable def consFromKer (φ : ∀ i, A i →ₗ[R] R) (i : I) :
     LinearMap.ker (φ i) ⊗[R]
-        (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1) →ₗ[R]
+        (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val) →ₗ[R]
       ⨁ w : ReducedWord I, WordTensor φ w :=
   TensorProduct.lift
     { toFun x := DirectSum.toModule R _ _ fun u ↦
-        (DirectSum.lof R (ReducedWord I) (WordTensor φ) (u.1.cons u.2)).comp
-          ((wordTensorConsEquiv φ u.1 u.2).toLinearMap.comp
+        (DirectSum.lof R (ReducedWord I) (WordTensor φ) (u.val.cons u.property)).comp
+          ((wordTensorConsEquiv φ u.val u.property).toLinearMap.comp
             (TensorProduct.mk R _ _ x))
       map_add' x₁ x₂ := by
         apply DirectSum.linearMap_ext R
@@ -474,7 +474,7 @@ private noncomputable def consFromKer (φ : ∀ i, A i →ₗ[R] R) (i : I) :
 
 private noncomputable def factorTensorComplFwd (φ : ∀ i, A i →ₗ[R] R) {i : I}
     (hφi : φ i 1 = 1) :
-    A i ⊗[R] (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1) →ₗ[R]
+    A i ⊗[R] (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val) →ₗ[R]
       ⨁ w : ReducedWord I, WordTensor φ w :=
   (TensorProduct.lid R _).toLinearMap.comp (TensorProduct.map (φ i) (complInclusion φ i)) +
     (consFromKer φ i).comp (TensorProduct.map (centerLinearMap φ hφi) LinearMap.id)
@@ -482,23 +482,24 @@ private noncomputable def factorTensorComplFwd (φ : ∀ i, A i →ₗ[R] R) {i 
 private noncomputable def bwdConsAux (φ : ∀ k, A k →ₗ[R] R) (i j : I) (rest : List I)
     (hl : (j :: rest).IsChain (· ≠ ·)) (hji : j = i) :
     WordTensor φ ⟨j :: rest, hl⟩ →ₗ[R]
-      A i ⊗[R] ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1 := by
+      A i ⊗[R] ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val := by
   cases hji
   have hrest : (⟨rest, hl.tail⟩ : ReducedWord I).toList.head? ≠ some i := by
     intro h
     exact (List.isChain_cons.1 hl).1 i (Option.mem_def.2 h) rfl
   exact (TensorProduct.map (LinearMap.ker (φ i)).subtype
-    (DirectSum.lof R _ (fun u : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ u.1)
+    (DirectSum.lof R _ (fun u : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ
+        u.val)
       ⟨⟨rest, hl.tail⟩, hrest⟩)).comp (wordTensorConsEquiv φ ⟨rest, hl.tail⟩ hrest).symm.toLinearMap
 
 private noncomputable def bwdComponent (φ : ∀ k, A k →ₗ[R] R) (i : I) :
     ∀ w : ReducedWord I,
       WordTensor φ w →ₗ[R]
-        A i ⊗[R] ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1
+        A i ⊗[R] ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val
   | ⟨[], hl⟩ =>
     (TensorProduct.mk R (A i) _ 1).comp
       (DirectSum.lof R _
-        (fun u : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ u.1)
+        (fun u : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ u.val)
         ⟨⟨[], hl⟩, nofun⟩)
   | ⟨j :: rest, hl⟩ =>
     if hji : j = i then
@@ -506,19 +507,19 @@ private noncomputable def bwdComponent (φ : ∀ k, A k →ₗ[R] R) (i : I) :
     else
       (TensorProduct.mk R (A i) _ 1).comp
         (DirectSum.lof R _
-          (fun u : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ u.1)
+          (fun u : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ u.val)
           ⟨⟨j :: rest, hl⟩, by simp [hji]⟩)
 
 private noncomputable def factorTensorComplBwd (φ : ∀ k, A k →ₗ[R] R) (i : I) :
     (⨁ w : ReducedWord I, WordTensor φ w) →ₗ[R]
-      A i ⊗[R] ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1 :=
+      A i ⊗[R] ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val :=
   DirectSum.toModule R (ReducedWord I) _ (bwdComponent φ i)
 
 private theorem bwdComponent_of_head_ne (φ : ∀ k, A k →ₗ[R] R) (i : I)
     (w : ReducedWord I) (hw : w.toList.head? ≠ some i) (z : WordTensor φ w) :
     bwdComponent φ i w z =
       1 ⊗ₜ[R] DirectSum.lof R _
-        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.1)
+        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.val)
         ⟨w, hw⟩ z := by
   obtain ⟨_ | ⟨j, rest⟩, hl⟩ := w
   · simp [bwdComponent]
@@ -530,7 +531,7 @@ private theorem bwdComponent_cons (φ : ∀ k, A k →ₗ[R] R) (i : I)
     (z : WordTensor φ w) :
     bwdComponent φ i (w.cons hw) (wordTensorConsEquiv φ w hw (x ⊗ₜ[R] z)) =
       (x : A i) ⊗ₜ[R] DirectSum.lof R _
-        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.1)
+        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.val)
         ⟨w, hw⟩ z := by
   obtain ⟨rest, hl⟩ := w
   simp [bwdComponent, bwdConsAux]
@@ -539,7 +540,7 @@ private theorem factorTensorComplBwd_lof_of_head_ne (φ : ∀ k, A k →ₗ[R] R
     (w : ReducedWord I) (hw : w.toList.head? ≠ some i) (z : WordTensor φ w) :
     factorTensorComplBwd φ i (DirectSum.lof R (ReducedWord I) (WordTensor φ) w z) =
       1 ⊗ₜ[R] DirectSum.lof R _
-        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.1)
+        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.val)
         ⟨w, hw⟩ z :=
   (DirectSum.toModule_lof R w z).trans (bwdComponent_of_head_ne φ i w hw z)
 
@@ -551,7 +552,7 @@ private theorem factorTensorComplBwd_lof_cons (φ : ∀ k, A k →ₗ[R] R) (i :
         (DirectSum.lof R (ReducedWord I) (WordTensor φ) (w.cons hw)
           (wordTensorConsEquiv φ w hw (x ⊗ₜ[R] z))) =
       (x : A i) ⊗ₜ[R] DirectSum.lof R _
-        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.1)
+        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.val)
         ⟨w, hw⟩ z :=
   (DirectSum.toModule_lof R (w.cons hw) _).trans (bwdComponent_cons φ i w hw x z)
 
@@ -590,13 +591,13 @@ private theorem factorTensorComplBwd_comp_fwd (φ : ∀ k, A k →ₗ[R] R) {i :
   apply LinearMap.ext
   intro z
   simp [factorTensorComplFwd, complInclusion, consFromKer,
-    factorTensorComplBwd_lof_of_head_ne φ i u.1 u.2, ← TensorProduct.tmul_smul,
+    factorTensorComplBwd_lof_of_head_ne φ i u.val u.property, ← TensorProduct.tmul_smul,
     ← TensorProduct.smul_tmul, ← TensorProduct.add_tmul, ← Algebra.algebraMap_eq_smul_one]
 
 /-- Splitting `A i = R · 1 ⊕ ker (φ i)` identifies the tensor product of `A i` with reduced words
 not starting with `i` with the full direct sum of reduced-word tensors. -/
 noncomputable def factorTensorComplEquiv (φ : ∀ k, A k →ₗ[R] R) {i : I} (hφi : φ i 1 = 1) :
-    A i ⊗[R] (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1) ≃ₗ[R]
+    A i ⊗[R] (⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val) ≃ₗ[R]
       ⨁ w : ReducedWord I, WordTensor φ w :=
   LinearEquiv.ofLinearMap
     (factorTensorComplFwd φ hφi)
@@ -606,13 +607,13 @@ noncomputable def factorTensorComplEquiv (φ : ∀ k, A k →ₗ[R] R) {i : I} (
 
 @[simp]
 theorem factorTensorComplEquiv_tmul_lof (φ : ∀ k, A k →ₗ[R] R) {i : I} (hφi : φ i 1 = 1)
-    (a : A i) (u : { w : ReducedWord I // w.toList.head? ≠ some i }) (z : WordTensor φ u.1) :
+    (a : A i) (u : { w : ReducedWord I // w.toList.head? ≠ some i }) (z : WordTensor φ u.val) :
     factorTensorComplEquiv φ hφi
         (a ⊗ₜ[R] DirectSum.lof R _
-          (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.1) u z) =
-      φ i a • DirectSum.lof R (ReducedWord I) (WordTensor φ) u.1 z +
-        DirectSum.lof R (ReducedWord I) (WordTensor φ) (u.1.cons u.2)
-          (wordTensorConsEquiv φ u.1 u.2 (centerLinearMap φ hφi a ⊗ₜ[R] z)) := by
+          (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.val) u z) =
+      φ i a • DirectSum.lof R (ReducedWord I) (WordTensor φ) u.val z +
+        DirectSum.lof R (ReducedWord I) (WordTensor φ) (u.val.cons u.property)
+          (wordTensorConsEquiv φ u.val u.property (centerLinearMap φ hφi a ⊗ₜ[R] z)) := by
   simp [factorTensorComplEquiv, factorTensorComplFwd, complInclusion, consFromKer]
 
 /-- Evaluating `(factorTensorComplEquiv φ hφi).symm` on a reduced-word summand whose initial index
@@ -623,7 +624,7 @@ theorem factorTensorComplEquiv_symm_lof_of_head_ne (φ : ∀ k, A k →ₗ[R] R)
     (factorTensorComplEquiv φ hφi).symm
         (DirectSum.lof R (ReducedWord I) (WordTensor φ) w z) =
       1 ⊗ₜ[R] DirectSum.lof R _
-        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.1)
+        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.val)
         ⟨w, hw⟩ z :=
   factorTensorComplBwd_lof_of_head_ne φ i w hw z
 
@@ -637,13 +638,13 @@ theorem factorTensorComplEquiv_symm_lof_cons (φ : ∀ k, A k →ₗ[R] R) {i : 
         (DirectSum.lof R (ReducedWord I) (WordTensor φ) (w.cons hw)
           (wordTensorConsEquiv φ w hw (x ⊗ₜ[R] z))) =
       (x : A i) ⊗ₜ[R] DirectSum.lof R _
-        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.1)
+        (fun v : { w : ReducedWord I // w.toList.head? ≠ some i } ↦ WordTensor φ v.val)
         ⟨w, hw⟩ z :=
   factorTensorComplBwd_lof_cons φ i w hw x z
 
 private theorem reducedWordsToFreeProduct_factorTensorComplEquiv (φ : ∀ k, A k →ₗ[R] R) {i : I}
     (hφi : φ i 1 = 1) (a : A i)
-    (y : ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.1) :
+    (y : ⨁ u : { w : ReducedWord I // w.toList.head? ≠ some i }, WordTensor φ u.val) :
     reducedWordsToFreeProduct φ (factorTensorComplEquiv φ hφi (a ⊗ₜ[R] y)) =
       ι R A i a * reducedWordsToFreeProduct φ (complInclusion φ i y) := by
   induction y using DirectSum.induction_on with
@@ -799,7 +800,7 @@ theorem equivReducedWords_ι (φ : ∀ k, A k →ₗ[R] R) (hφ : ∀ i, φ i 1 
       algebraMap R (FreeProduct R A) (φ i a) + ι R A i (centerLinearMap φ (hφ i) a) := by
     rw [coe_centerLinearMap, map_sub, AlgHom.commutes, add_sub_cancel]
   rw [ha, map_add, equivReducedWords_algebraMap,
-    equivReducedWords_ι_of_mem_ker φ hφ (centerLinearMap φ (hφ i) a).2]
+    equivReducedWords_ι_of_mem_ker φ hφ (centerLinearMap φ (hφ i) a).property]
 
 /-- Each reduced-word multiplication map `wordMul φ w` is injective when the functionals `φ i` are
 normalized. -/

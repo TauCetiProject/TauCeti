@@ -284,9 +284,9 @@ group of the Bourbaki-numbered Cartan matrix. This is what converts a relation s
 permutation into the same relation for the coordinate permutation it induces; consumers use the
 order statements below rather than the homomorphism itself. -/
 private def geckDiagramIndexEquivHom : t.diagramSymmetry →* Equiv.Perm (t.GeckIndex ht) where
-  toFun g := t.geckDiagramIndexEquiv ht g.2
+  toFun g := t.geckDiagramIndexEquiv ht g.property
   map_one' := geckDiagramIndexEquiv_one ht
-  map_mul' g₁ g₂ := geckDiagramIndexEquiv_mul ht g₁.2 g₂.2
+  map_mul' g₁ g₂ := geckDiagramIndexEquiv_mul ht g₁.property g₂.property
 
 /-- **A node permutation of finite order induces a coordinate permutation of the pinned Geck
 module satisfying the same relation.** -/

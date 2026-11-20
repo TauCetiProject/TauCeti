@@ -45,6 +45,7 @@ original edges.
 * `Graph.isRegularOfDegree_iff_incidenceCount_eq`: with finite incidence sets, regularity is a
   condition on incidence counts.
 * `Graph.isRegularOfDegree_ofSimpleGraph_iff`: regularity agrees with Mathlib's for simple graphs.
+* `Graph.Iso.isRegularOfDegree_iff`: isomorphic multigraphs are regular of the same degree.
 * `Graph.IsBipartition.exists_isRegularCompletion`: a finite bipartite multigraph whose degrees are
   at most `k` has a `k`-regular bipartite completion.
 
@@ -59,7 +60,7 @@ public section
 open Finset
 open scoped Graph
 
-universe u v w
+universe u v w u' v'
 
 namespace Graph
 
@@ -99,6 +100,16 @@ theorem isRegularOfDegree_ofSimpleGraph_iff {H : SimpleGraph α} [H.LocallyFinit
   rw [vertexSet_ofSimpleGraph, incidenceSet_ofSimpleGraph,
     ← (Set.toFinite (H.incidenceSet x)).cast_ncard_eq, SimpleGraph.ncard_incidenceSet]
   simp
+
+/-- Isomorphic multigraphs are regular of the same degree. -/
+theorem Iso.isRegularOfDegree_iff {α' : Type u'} {β' : Type v'} {H : Graph α' β'} (f : Iso G H)
+    (k : ℕ) : H.IsRegularOfDegree k ↔ G.IsRegularOfDegree k := by
+  rw [isRegularOfDegree_def, isRegularOfDegree_def]
+  refine ⟨fun h x hx ↦ ?_, fun h y hy ↦ ?_⟩
+  · rw [← f.encard_incidenceSet_vertexEquiv ⟨x, hx⟩]
+    exact h _ (f.vertexEquiv _).property
+  · simpa using (f.encard_incidenceSet_vertexEquiv (f.vertexEquiv.symm ⟨y, hy⟩)).trans
+      (h _ (Subtype.prop _))
 
 /-! ### Regular bipartite completions -/
 
@@ -179,7 +190,7 @@ noncomputable def isoRestrict :
   map_isLink_iff e x y := by
     simp only [Equiv.trans_apply, Set.equivOfEq_apply, Equiv.Set.image_apply, induce_isLink,
       restrict_isLink, Set.mem_range, exists_apply_eq_apply, true_and, hC.isLink_inl_inl_iff]
-    exact and_iff_left ⟨Set.mem_image_of_mem _ x.2, Set.mem_image_of_mem _ y.2⟩
+    exact and_iff_left ⟨Set.mem_image_of_mem _ x.property, Set.mem_image_of_mem _ y.property⟩
 
 /-- The isomorphism `isoRestrict` sends a vertex `x` to `Sum.inl x`. -/
 @[simp]
@@ -205,7 +216,7 @@ noncomputable def restrictEdgeColoring {C : Type w} (c : G'.EdgeColoring C) : G.
 /-- The restricted edge-colouring gives an edge `e` of `G` the colour of `Sum.inl e`. -/
 @[simp]
 theorem restrictEdgeColoring_apply {C : Type w} (c : G'.EdgeColoring C) (e : E(G)) :
-    hC.restrictEdgeColoring c e = c ⟨.inl e, (hC.inl_mem_edgeSet_iff e).2 e.2⟩ := by
+    hC.restrictEdgeColoring c e = c ⟨.inl e, (hC.inl_mem_edgeSet_iff e).2 e.property⟩ := by
   simp [restrictEdgeColoring, Set.inclusion]
 
 end IsRegularCompletion
@@ -281,7 +292,7 @@ private theorem edgeSet_extend :
     refine ⟨fun ⟨_, _, hi, _⟩ ↦ ⟨⟨i, hi⟩, rfl⟩, ?_⟩
     rintro ⟨i, rfl⟩
     induction h : ends i using Sym2.ind with
-    | _ u w => exact ⟨u, w, i.2, h.symm⟩
+    | _ u w => exact ⟨u, w, i.isLt, h.symm⟩
 
 private theorem extend_inc_inr {i : ℕ} {z : α ⊕ ℕ} :
     (extend G X ends).Inc (.inr i) z ↔ ∃ h : i < n, z ∈ ends ⟨i, h⟩ := by
@@ -307,7 +318,8 @@ private theorem encard_incidenceSet_extend [DecidableEq α] (z : α ⊕ ℕ) :
       simp only [mem_incidenceSet, extend_inc_inr, Set.mem_union, Set.mem_image, reduceCtorEq,
         and_false, exists_false, coe_filter, mem_univ, true_and, Set.mem_ofPred_eq,
         Sum.inr.injEq, false_or]
-      exact ⟨fun ⟨hi, h⟩ ↦ ⟨⟨i, hi⟩, h, rfl⟩, fun ⟨i, h, hi⟩ ↦ ⟨hi ▸ i.2, by simpa [← hi] using h⟩⟩
+      exact ⟨fun ⟨hi, h⟩ ↦ ⟨⟨i, hi⟩, h, rfl⟩, fun ⟨i, h, hi⟩ ↦ ⟨hi ▸ i.isLt, by simpa
+          [← hi] using h⟩⟩
   rw [hset, Set.encard_union_eq, Sum.inl_injective.encard_image,
     Function.Injective.encard_image fun i j h ↦ Fin.ext (Sum.inr_injective h),
     Set.encard_coe_eq_coe_finsetCard]
@@ -321,11 +333,11 @@ private def padding (S T : Finset V(G)) : ℕ := max #S #T - #S
 /-- The vertices of one side of the completion: the vertices of `S`, followed by `pad` new
 vertices `Sum.inr (2 * i + p)`. -/
 private def sideVertex (S : Finset V(G)) (pad p : ℕ) : S ⊕ Fin pad → α ⊕ ℕ :=
-  Sum.elim (fun x ↦ .inl x.1.1) fun i ↦ .inr (2 * i + p)
+  Sum.elim (fun x ↦ .inl x.val.val) fun i ↦ .inr (2 * i + p)
 
 /-- The degree in `G` of a vertex of one side of the completion; new vertices have degree zero. -/
 private noncomputable def sideDegree (S : Finset V(G)) (pad : ℕ) : S ⊕ Fin pad → ℕ :=
-  Sum.elim (fun x ↦ G.incidenceCount x.1.1) 0
+  Sum.elim (fun x ↦ G.incidenceCount x.val.val) 0
 
 private theorem sideVertex_injective (S : Finset V(G)) (pad p : ℕ) :
     (sideVertex S pad p).Injective :=
@@ -349,8 +361,8 @@ private theorem sideVertex_ne (hLR : Disjoint L R) {pl pr : ℕ} (v : L ⊕ Fin 
     cases w with
     | inl y =>
       intro h
-      have hxy : x.1 = y.1 := Subtype.ext (Sum.inl_injective h)
-      exact disjoint_left.1 hLR x.2 (hxy ▸ y.2)
+      have hxy : x.val = y.val := Subtype.ext (Sum.inl_injective h)
+      exact disjoint_left.1 hLR x.property (hxy ▸ y.property)
     | inr j => exact Sum.inl_ne_inr
   | inr i =>
     cases w with
@@ -368,22 +380,22 @@ private theorem encard_inc_sideVertex [Finite E(G)] (S : Finset V(G)) (pad p : �
   cases v with
   | inl x =>
     simp only [sideVertex, Sum.elim_inl, Sum.inl.injEq, sideDegree, exists_eq_right']
-    have hincidenceSet : {e | G.Inc e x.1.1} = G.incidenceSet x.1.1 := rfl
+    have hincidenceSet : {e | G.Inc e x.val.val} = G.incidenceSet x.val.val := rfl
     rw [hincidenceSet, incidenceCount_def, (G.finite_incidenceSet _).cast_ncard_eq]
   | inr i => simp [sideVertex, sideDegree]
 
 /-- Together, the degree deficits of the vertices of a padded side and the degrees of its original
 vertices fill `k` slots at each vertex. -/
 private theorem sum_sub_sideDegree_add (S : Finset V(G)) (pad : ℕ)
-    (hk : ∀ x ∈ S, G.incidenceCount x.1 ≤ k) :
-    ∑ v, (k - sideDegree S pad v) + ∑ x ∈ S, G.incidenceCount x.1 = k * (#S + pad) := by
-  have hS : ∑ x ∈ S, (k - G.incidenceCount x.1) + ∑ x ∈ S, G.incidenceCount x.1 = #S * k := by
+    (hk : ∀ x ∈ S, G.incidenceCount x.val ≤ k) :
+    ∑ v, (k - sideDegree S pad v) + ∑ x ∈ S, G.incidenceCount x.val = k * (#S + pad) := by
+  have hS : ∑ x ∈ S, (k - G.incidenceCount x.val) + ∑ x ∈ S, G.incidenceCount x.val = #S * k := by
     rw [← sum_add_distrib, sum_congr rfl fun x hx ↦ tsub_add_cancel_of_le (hk x hx), sum_const,
       smul_eq_mul]
   rw [Fintype.sum_sum_type]
   simp only [sideDegree, Sum.elim_inl, Sum.elim_inr, Pi.zero_apply, tsub_zero, sum_const,
     card_univ, Fintype.card_fin, smul_eq_mul]
-  rw [sum_coe_sort S fun x ↦ k - G.incidenceCount x.1, add_right_comm, hS, ← add_mul, mul_comm]
+  rw [sum_coe_sort S fun x ↦ k - G.incidenceCount x.val, add_right_comm, hS, ← add_mul, mul_comm]
 
 variable {pl pr : ℕ} (fl : Fin n → L ⊕ Fin pl) (fr : Fin n → R ⊕ Fin pr)
 
@@ -397,14 +409,14 @@ private theorem sideVertex_left_mem (v : L ⊕ Fin pl) :
     sideVertex L pl 0 v ∈ V(stubGraph fl fr) := by
   rw [stubGraph, mem_vertexSet_extend]
   cases v with
-  | inl x => exact .inl ⟨x.1.1, x.1.2, rfl⟩
+  | inl x => exact .inl ⟨x.val.val, x.val.property, rfl⟩
   | inr i => exact .inr (.inl (.inl ⟨i, rfl⟩))
 
 private theorem sideVertex_right_mem (w : R ⊕ Fin pr) :
     sideVertex R pr 1 w ∈ V(stubGraph fl fr) := by
   rw [stubGraph, mem_vertexSet_extend]
   cases w with
-  | inl x => exact .inl ⟨x.1.1, x.1.2, rfl⟩
+  | inl x => exact .inl ⟨x.val.val, x.val.property, rfl⟩
   | inr i => exact .inr (.inl (.inr ⟨i, rfl⟩))
 
 private theorem mem_vertexSet_stubGraph (h : G.IsBipartition L R) {z : α ⊕ ℕ} :
@@ -469,7 +481,7 @@ private theorem isBipartition_stubGraph (h : G.IsBipartition L R) :
     exact sideVertex_ne h.disjoint v w (hv.trans hw.symm)
   mem_or_mem z := by
     rw [mem_stubLeft, mem_stubRight]
-    exact (mem_vertexSet_stubGraph fl fr h).1 z.2
+    exact (mem_vertexSet_stubGraph fl fr h).1 z.property
   isLink {e z z'} hzz' := by
     simp only [mem_stubLeft, mem_stubRight]
     cases e with
@@ -505,7 +517,7 @@ private theorem isRegularCompletion_stubGraph [Finite E(G)] [DecidableEq α]
   isRegularOfDegree z hz := by
     have hdeg {S : Finset V(G)} {pad : ℕ} (v : S ⊕ Fin pad) : sideDegree S pad v ≤ k := by
       cases v with
-      | inl x => exact hk _ x.1.2
+      | inl x => exact hk _ x.val.property
       | inr i => exact Nat.zero_le k
     rcases (mem_vertexSet_stubGraph fl fr h).1 hz with ⟨v, rfl⟩ | ⟨w, rfl⟩
     · rw [encard_incidenceSet_left fl fr h.disjoint, hfl, ← Nat.cast_add,
@@ -544,8 +556,8 @@ theorem IsBipartition.exists_isRegularCompletion [Finite E(G)] (h : G.IsBipartit
   have hpad : #L + padding L R = #R + padding R L := by
     simp only [padding]
     omega
-  have hsumL := sum_sub_sideDegree_add (k := k) L (padding L R) fun x _ ↦ hk _ x.2
-  have hsumR := sum_sub_sideDegree_add (k := k) R (padding R L) fun x _ ↦ hk _ x.2
+  have hsumL := sum_sub_sideDegree_add (k := k) L (padding L R) fun x _ ↦ hk _ x.property
+  have hsumR := sum_sub_sideDegree_add (k := k) R (padding R L) fun x _ ↦ hk _ x.property
   have hEL := h.sum_sum_incidentEdges_left fun _ ↦ (1 : ℕ)
   have hER := h.sum_sum_incidentEdges_right fun _ ↦ (1 : ℕ)
   simp only [sum_const, smul_eq_mul, mul_one, card_incidentEdges_singleton] at hEL hER

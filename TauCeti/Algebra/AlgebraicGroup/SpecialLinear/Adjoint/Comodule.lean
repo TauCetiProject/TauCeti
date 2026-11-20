@@ -73,7 +73,7 @@ theorem mem_adjointWeightSpace_root_iff
     x ∈ Derivation.adjointWeightSpace (diagonalTorusCoordinateMap r R).hom
         (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p)) ↔
       tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (B := R) x) ∈
-        R ∙ LieAlgebra.SpecialLinear.single p.1.1 p.1.2 p.2 (1 : R) := by
+        R ∙ LieAlgebra.SpecialLinear.single p.val.1 p.val.2 p.property (1 : R) := by
   -- The torus characters are stored as the indexed copy of the exponent lattice.
   erw [mem_adjointWeightSpace_iff,
     ← adDerivation_universalDiagonalTorus_eq_iff,
@@ -86,14 +86,14 @@ def rootVector (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
   (Derivation.cotangentLinearEquiv (R := R)
     (A := coordinateHopfAlgebra R (r + 1)) (B := R)).symm
       ((tangentLieEquivSl (R := R) (B := R) (r + 1)).symm
-        (LieAlgebra.SpecialLinear.single p.1.1 p.1.2 p.2 1))
+        (LieAlgebra.SpecialLinear.single p.val.1 p.val.2 p.property 1))
 
 /-- The matrix of a normalized cotangent-dual root vector is its normalized matrix unit. -/
 @[simp]
 theorem tangentMatrix_cotangentLinearEquiv_rootVector
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (B := R) (rootVector (R := R) p)) =
-      LieAlgebra.SpecialLinear.single p.1.1 p.1.2 p.2 (1 : R) := by
+      LieAlgebra.SpecialLinear.single p.val.1 p.val.2 p.property (1 : R) := by
   rw [rootVector, LinearEquiv.apply_symm_apply, ← tangentLieEquivSl_apply,
     LieEquiv.apply_symm_apply]
 
@@ -122,19 +122,28 @@ theorem adjointWeightSpace_root_eq_span
     -- The cotangent equivalence has the same quotient-indexed scalar structure.
     erw [map_smul, map_smul, tangentMatrix_cotangentLinearEquiv_rootVector]
 
+/-- The distinguished matrix entry of `c • rootVector p` is the scalar `c`. -/
+@[simp]
+theorem tangentMatrix_cotangentLinearEquiv_smul_rootVector_apply
+    (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) (c : R) :
+    (tangentMatrix (r + 1)
+      (Derivation.cotangentLinearEquiv (B := R) (c • rootVector (R := R) p)) :
+      Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.val.1 p.val.2 = c := by
+  -- Match the scalar structure on the quotient-indexed cotangent module.
+  erw [map_smul, map_smul, tangentMatrix_cotangentLinearEquiv_rootVector]
+  simp [LieAlgebra.SpecialLinear.val_single]
+
 /-- Multiplication by a normalized root vector is injective, including over rings with
 zero divisors. Its distinguished matrix entry recovers the scalar. -/
 theorem rootVector_smul_left_injective
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     Function.Injective (fun c : R => c • rootVector (R := R) p) := by
   intro a b h
-  have hm := congrArg (fun x =>
+  rw [← tangentMatrix_cotangentLinearEquiv_smul_rootVector_apply p a,
+    ← tangentMatrix_cotangentLinearEquiv_smul_rootVector_apply p b]
+  exact congrArg (fun x =>
     (tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (B := R) x) :
-      Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.1.1 p.1.2) h
-  -- Match the scalar structure on the quotient-indexed cotangent module.
-  erw [map_smul, map_smul, map_smul, map_smul,
-    tangentMatrix_cotangentLinearEquiv_rootVector] at hm
-  simpa [LieAlgebra.SpecialLinear.val_single, Matrix.single_apply] using hm
+      Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.val.1 p.val.2) h
 
 /-- Each integral adjoint root space is a free rank-one module, with scalar `1`
 corresponding to its normalized root vector. -/
@@ -176,14 +185,9 @@ theorem rootSpaceEquiv_symm_apply
       (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p))) :
     (rootSpaceEquiv (R := R) p).symm x =
       (tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (R := R) (B := R) x) :
-        Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.1.1 p.1.2 := by
-  have hm := congrArg (fun y =>
-    (tangentMatrix (r + 1) (Derivation.cotangentLinearEquiv (B := R) y) :
-      Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.1.1 p.1.2)
-    (rootSpaceEquiv_symm_apply_smul p x)
-  -- Match the scalar structure on the quotient-indexed cotangent module.
-  erw [map_smul, map_smul, tangentMatrix_cotangentLinearEquiv_rootVector] at hm
-  simpa [LieAlgebra.SpecialLinear.val_single, Matrix.single_apply] using hm
+        Matrix (Fin (r + 1)) (Fin (r + 1)) R) p.val.1 p.val.2 := by
+  conv_rhs => rw [← rootSpaceEquiv_symm_apply_smul p x]
+  exact (tangentMatrix_cotangentLinearEquiv_smul_rootVector_apply p _).symm
 
 /-- The normalized root vector is nonzero over every nontrivial commutative base ring. -/
 theorem rootVector_ne_zero [Nontrivial R]

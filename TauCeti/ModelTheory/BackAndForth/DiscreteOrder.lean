@@ -16,6 +16,8 @@ public import Mathlib.Order.Interval.Set.OrderIso
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Finset.Max
 
+import TauCeti.ModelTheory.BackAndForth.Countable
+
 /-!
 # Back-and-forth for discrete linear orders without endpoints
 

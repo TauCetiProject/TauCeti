@@ -83,7 +83,7 @@ private theorem mem_centralizer_of_commute_of_mul_prod (hG : IsCSA G)
     (fun l hl => by simp [hhead l hl]) ⟨⟨u, huu⟩, ?_⟩
   · rintro ⟨c, hcu⟩
     rw [centralizerExtMap_false] at hcu
-    exact hk (hG.mem_centralizer_of_conj_mem_centralizer (hcu ▸ c.2))
+    exact hk (hG.mem_centralizer_of_conj_mem_centralizer (hcu ▸ c.property))
   · rw [← Monoid.PushoutI.of_apply_eq_base _ false, ← of_def, centralizerExtMap_false]
     simpa [mul_assoc] using h.inv_mul_cancel.symm
 

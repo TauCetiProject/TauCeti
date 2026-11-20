@@ -230,7 +230,7 @@ theorem measure_setOf_valuation_eq_one (μ : Measure E) [μ.IsAddLeftInvariant]
       not_lt]
   have hsub : (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) ⊆ (𝒪[E] : Set E) := by
     rintro _ ⟨y, -, rfl⟩
-    exact y.2
+    exact y.property
   have hO : μ (𝒪[E] : Set E) ≠ ∞ := hO_comp.measure_lt_top.ne
   have hfin : μ (((↑) : 𝒪[E] → E) '' ↑(𝓂[E] ^ 1)) ≠ ∞ :=
     ((measure_mono hsub).trans_lt hO_comp.measure_lt_top).ne
@@ -342,8 +342,8 @@ theorem distribHaarChar_map_subtype_eq_one (u : 𝒪[E]ˣ) :
     ext x
     simp only [mem_smul_set, Units.smul_def, _root_.smul_eq_mul, SetLike.mem_coe, u',
       Units.coe_map, MonoidHom.coe_ofClass, Subring.subtype_apply]
-    refine ⟨fun ⟨y, hy, hxy⟩ ↦ hxy ▸ mul_mem u.val.2 hy, fun hx ↦ ?_⟩
-    refine ⟨(((u⁻¹ : 𝒪[E]ˣ) : 𝒪[E]) : E) * x, mul_mem (u⁻¹ : 𝒪[E]ˣ).val.2 hx, ?_⟩
+    refine ⟨fun ⟨y, hy, hxy⟩ ↦ hxy ▸ mul_mem u.val.property hy, fun hx ↦ ?_⟩
+    refine ⟨(((u⁻¹ : 𝒪[E]ˣ) : 𝒪[E]) : E) * x, mul_mem (u⁻¹ : 𝒪[E]ˣ).val.property hx, ?_⟩
     rw [← mul_assoc, ← Subring.coe_mul, Units.mul_inv, OneMemClass.coe_one, one_mul]
   refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := localAddHaar E) (s := (𝒪[E] : Set E))
     (by simp) (by simp) ?_

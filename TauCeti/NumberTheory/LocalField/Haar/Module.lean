@@ -38,10 +38,10 @@ from the Smith-normal-form integral-matrix scaling of
 
 Notice that this Jacobian is completely independent of any choice of basis or lattice and of the
 overall normalization of `μ`. When `V` is additionally equipped with a lattice
-`L : Submodule 𝒪[E] V` (`[L.IsLattice E]`) or a finite basis `b : Module.Basis ι E V`,
+`L : Submodule 𝒪[E] V` (`[L.IsFullLattice E]`) or a finite basis `b : Module.Basis ι E V`,
 compact-openness of `L` yields a canonical regular additive Haar measure
-`Submodule.IsLattice.localAddHaar L` (respectively `b.localAddHaar`) giving `L` (respectively the
-`𝒪[E]`-span of `b`) mass one. Changing basis from `b` to `b'` rescales the normalized measure by
+`Submodule.IsFullLattice.localAddHaar L` (respectively `b.localAddHaar`) giving `L`
+(respectively the `𝒪[E]`-span of `b`) mass one. Changing basis from `b` to `b'` rescales the
 `|b.det b'|_E⁻¹` (`Module.Basis.localAddHaar_eq_smul`), so `b'.localAddHaar = b.localAddHaar`
 whenever `b.det b'` has valuation one (`valuation E (b.det b') = 1`, equivalently
 `b.det b' ∈ 𝒪[E]ˣ`; in particular, for any integral change of basis in `GL_n(𝒪[E])`, and likewise
@@ -49,9 +49,9 @@ for any `T ∈ GL(L)`).
 
 ## Main definitions
 
-* `Submodule.IsLattice.positiveCompacts`: a full `𝒪[E]`-lattice `L` in `V` packaged as a
+* `Submodule.IsFullLattice.positiveCompacts`: a full `𝒪[E]`-lattice `L` in `V` packaged as a
   `TopologicalSpace.PositiveCompacts V`.
-* `Submodule.IsLattice.localAddHaar`: the regular additive Haar measure on `V` normalized by
+* `Submodule.IsFullLattice.localAddHaar`: the regular additive Haar measure on `V` normalized by
   `μ L = 1`.
 * `Module.Basis.localAddHaar`: the regular additive Haar measure on `V` normalized by giving
   `Submodule.span 𝒪[E] (Set.range b)` measure one.
@@ -73,7 +73,7 @@ for any `T ∈ GL(L)`).
 * `LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `LinearMap.GeneralLinearGroup.distribHaarChar_eq_normalizedAbsoluteValue_det`,
   `Units.distribHaarChar_eq_normalizedAbsoluteValue_det`: `distribHaarChar V T = |det T|_E`.
-* `Submodule.IsLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
+* `Submodule.IsFullLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
   `Module.Basis.map_localAddHaar`, `Module.Basis.localAddHaar_eq_smul`,
   `Module.Basis.localAddHaar_eq_of_valuation_det_eq_one`: invariance under `GL(L)`, transport along
   linear equivalences, and change-of-basis scaling.
@@ -579,30 +579,30 @@ end DistribHaarCharModule
 
 /-! ### Lattice-normalized and basis-normalized Haar measures -/
 
-namespace Submodule.IsLattice
+namespace Submodule.IsFullLattice
 
 open TauCeti
 
 variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [AddCommGroup V] [Module E V] [Module 𝒪[E] V]
   [IsScalarTower 𝒪[E] E V] [TopologicalSpace V] [IsModuleTopology E V]
-  (L : Submodule 𝒪[E] V) [L.IsLattice E]
+  (L : Submodule 𝒪[E] V) [L.IsFullLattice E]
 
 /-- A full `𝒪[E]`-lattice `L` in `V` packaged as a `PositiveCompacts V`: `L` is compact and open,
 and contains `0`. -/
 noncomputable def positiveCompacts : PositiveCompacts V where
   carrier := (L : Set V)
-  isCompact' := IsLattice.isCompact L
+  isCompact' := IsFullLattice.isCompact L
   interior_nonempty' := by
-    rw [(IsLattice.isOpen L).interior_eq]
+    rw [(IsFullLattice.isOpen L).interior_eq]
     exact ⟨0, L.zero_mem⟩
 
-/-- The underlying set of `Submodule.IsLattice.positiveCompacts L` is `(L : Set V)`. -/
+/-- The underlying set of `Submodule.IsFullLattice.positiveCompacts L` is `(L : Set V)`. -/
 @[simp, grind =]
 theorem coe_positiveCompacts : (positiveCompacts L : Set V) = (L : Set V) :=
   (rfl)
 
-/-- Membership in `Submodule.IsLattice.positiveCompacts L` is membership in `L`. -/
+/-- Membership in `Submodule.IsFullLattice.positiveCompacts L` is membership in `L`. -/
 @[simp, grind =]
 theorem mem_positiveCompacts (x : V) : x ∈ positiveCompacts L ↔ x ∈ L := by
   rw [← SetLike.mem_coe, coe_positiveCompacts, SetLike.mem_coe]
@@ -617,8 +617,8 @@ noncomputable def localAddHaar : Measure V :=
   let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
   addHaarMeasure (positiveCompacts L)
 
-/-- `Submodule.IsLattice.localAddHaar L` is `addHaarMeasure` at
-`Submodule.IsLattice.positiveCompacts L`. -/
+/-- `Submodule.IsFullLattice.localAddHaar L` is `addHaarMeasure` at
+`Submodule.IsFullLattice.positiveCompacts L`. -/
 theorem localAddHaar_def :
     let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
     localAddHaar L = addHaarMeasure (positiveCompacts L) :=
@@ -636,7 +636,7 @@ instance regular_localAddHaar : (localAddHaar L).Regular := by
 
 instance sigmaFinite_localAddHaar : SigmaFinite (localAddHaar L) := by
   let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
-  have : Module.Finite E V := Module.Finite.of_isLattice (A := E) L
+  have : Module.Finite E V := Module.Finite.of_isFullLattice (A := E) L
   have : SecondCountableTopology V :=
     TauCeti.ModuleTopology.secondCountableTopology (Module.finBasis E V)
   rw [localAddHaar_def]
@@ -650,12 +650,12 @@ theorem localAddHaar_self : localAddHaar L (L : Set V) = 1 := by
   exact addHaarMeasure_self
 
 /-- Every locally finite translation-invariant measure on `V` is its mass on `L` times
-`Submodule.IsLattice.localAddHaar L`. -/
+`Submodule.IsFullLattice.localAddHaar L`. -/
 theorem eq_smul_localAddHaar (μ : Measure V) [μ.IsAddLeftInvariant]
     [IsFiniteMeasureOnCompacts μ] :
     μ = μ (L : Set V) • localAddHaar L := by
   let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
-  have : Module.Finite E V := Module.Finite.of_isLattice (A := E) L
+  have : Module.Finite E V := Module.Finite.of_isFullLattice (A := E) L
   have : SecondCountableTopology V :=
     TauCeti.ModuleTopology.secondCountableTopology (Module.finBasis E V)
   have : LocallyCompactSpace V := (positiveCompacts L).locallyCompactSpace_of_addGroup
@@ -664,7 +664,7 @@ theorem eq_smul_localAddHaar (μ : Measure V) [μ.IsAddLeftInvariant]
   exact addHaarMeasure_unique μ (positiveCompacts L)
 
 /-- A locally finite translation-invariant measure on `V` equals
-`Submodule.IsLattice.localAddHaar L` if and only if it gives `L` mass one. -/
+`Submodule.IsFullLattice.localAddHaar L` if and only if it gives `L` mass one. -/
 theorem eq_localAddHaar_iff (μ : Measure V) [μ.IsAddLeftInvariant]
     [IsFiniteMeasureOnCompacts μ] :
     μ = localAddHaar L ↔ μ (L : Set V) = 1 := by
@@ -678,11 +678,11 @@ theorem map_linearEquiv_addHaar_of_mem_stabilizer [MeasurableSpace V] [BorelSpac
     (μ : Measure V) [μ.IsAddHaarMeasure] {T : V ≃ₗ[E] V}
     (hT : T ∈ MulAction.stabilizer (V ≃ₗ[E] V) (L : Set V)) :
     Measure.map T μ = μ := by
-  have : Module.Finite E V := Module.Finite.of_isLattice (A := E) L
+  have : Module.Finite E V := Module.Finite.of_isFullLattice (A := E) L
   rw [Measure.map_linearEquiv_addHaar μ T, normalizedAbsoluteValue_det_of_mem_stabilizer L hT]
   simp
 
-end Submodule.IsLattice
+end Submodule.IsFullLattice
 
 namespace Module.Basis
 
@@ -700,12 +700,12 @@ variable [MeasurableSpace V] [BorelSpace V]
 /-- The regular additive Haar measure on `V` attached to a finite `E`-basis `b`, normalized so that
 the `𝒪[E]`-lattice `Submodule.span 𝒪[E] (Set.range b)` has measure one. -/
 noncomputable def localAddHaar (b : Basis ι E V) : Measure V :=
-  Submodule.IsLattice.localAddHaar (Submodule.span 𝒪[E] (Set.range b))
+  Submodule.IsFullLattice.localAddHaar (Submodule.span 𝒪[E] (Set.range b))
 
-/-- `b.localAddHaar` is `Submodule.IsLattice.localAddHaar` of
+/-- `b.localAddHaar` is `Submodule.IsFullLattice.localAddHaar` of
 `Submodule.span 𝒪[E] (Set.range b)`. -/
 theorem localAddHaar_def (b : Basis ι E V) :
-    b.localAddHaar = Submodule.IsLattice.localAddHaar (Submodule.span 𝒪[E] (Set.range b)) :=
+    b.localAddHaar = Submodule.IsFullLattice.localAddHaar (Submodule.span 𝒪[E] (Set.range b)) :=
   (rfl)
 
 instance isAddHaarMeasure_localAddHaar (b : Basis ι E V) : b.localAddHaar.IsAddHaarMeasure := by
@@ -724,21 +724,21 @@ instance sigmaFinite_localAddHaar (b : Basis ι E V) : SigmaFinite b.localAddHaa
 @[simp, grind =]
 theorem localAddHaar_span_range (b : Basis ι E V) :
     b.localAddHaar (Submodule.span 𝒪[E] (Set.range b) : Set V) = 1 :=
-  Submodule.IsLattice.localAddHaar_self (Submodule.span 𝒪[E] (Set.range b))
+  Submodule.IsFullLattice.localAddHaar_self (Submodule.span 𝒪[E] (Set.range b))
 
 /-- Every locally finite translation-invariant measure on `V` is its mass on the `𝒪[E]`-span of
 `b` times `b.localAddHaar`. -/
 theorem eq_smul_localAddHaar (b : Basis ι E V) (μ : Measure V) [μ.IsAddLeftInvariant]
     [IsFiniteMeasureOnCompacts μ] :
     μ = μ (Submodule.span 𝒪[E] (Set.range b) : Set V) • b.localAddHaar :=
-  Submodule.IsLattice.eq_smul_localAddHaar (Submodule.span 𝒪[E] (Set.range b)) μ
+  Submodule.IsFullLattice.eq_smul_localAddHaar (Submodule.span 𝒪[E] (Set.range b)) μ
 
 /-- A locally finite translation-invariant measure on `V` equals `b.localAddHaar` if and only if
 it gives the `𝒪[E]`-span of `b` mass one. -/
 theorem eq_localAddHaar_iff (b : Basis ι E V) (μ : Measure V) [μ.IsAddLeftInvariant]
     [IsFiniteMeasureOnCompacts μ] :
     μ = b.localAddHaar ↔ μ (Submodule.span 𝒪[E] (Set.range b) : Set V) = 1 :=
-  Submodule.IsLattice.eq_localAddHaar_iff (Submodule.span 𝒪[E] (Set.range b)) μ
+  Submodule.IsFullLattice.eq_localAddHaar_iff (Submodule.span 𝒪[E] (Set.range b)) μ
 
 /-- Reindexing a finite basis does not change its normalized additive Haar measure. -/
 @[simp, grind =]
@@ -769,7 +769,7 @@ theorem map_localAddHaar {W : Type*} [AddCommGroup W] [Module E W] [Module 𝒪[
     simpa [Submodule.map_coe, hrange] using
       congrArg (fun M : Submodule 𝒪[E] V ↦ (M : Set V)) hspan
   rw [Measure.map_apply ee.continuous.measurable
-    (Submodule.IsLattice.isClosed (Submodule.span 𝒪[E] (Set.range (b.map e)))).measurableSet,
+    (Submodule.IsFullLattice.isClosed (Submodule.span 𝒪[E] (Set.range (b.map e)))).measurableSet,
     hpre, localAddHaar_span_range]
 
 /-- **Change-of-basis formula for normalized Haar measures.** For two finite `E`-bases `b` and `b'`
@@ -812,7 +812,7 @@ theorem localAddHaar_basisFun {E ι : Type*} [Field E] [ValuativeRel E] [Topolog
       integerBox E ι := by
     ext x
     simp only [SetLike.mem_coe, Basis.mem_span_iff_repr_mem, Pi.basisFun_repr, mem_integerBox]
-    exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun hx ↦ ⟨⟨x i, hx⟩, rfl⟩⟩
+    exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.property, fun hx ↦ ⟨⟨x i, hx⟩, rfl⟩⟩
   rw [hbox, integerBox_def, Measure.pi_pi]
   simp
 
