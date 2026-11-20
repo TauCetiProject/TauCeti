@@ -387,7 +387,7 @@ namespace TriEdge
 
 end TriEdge
 
-theorem vertexFaces_add (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
+@[simp] theorem vertexFaces_add (w v : ℤ × ℤ) : vertexFaces (w + v) = w +ᵥ vertexFaces v := by
   simp [vertexFaces, Finset.vadd_finset_insert, add_sub_assoc]
 
 /-- Exactly six faces contain a vertex. -/
@@ -549,30 +549,33 @@ theorem orderOf_rot : orderOf rot = 3 := by
   ext <;> simp [rot_apply] <;> split_ifs <;> simp <;> abel
 
 /-- `ρ` maps the vertices of a face onto the vertices of its image. -/
-theorem vertices_rot (f : TriFace) :
+@[simp] theorem vertices_rot (f : TriFace) :
     (rot f).vertices = f.vertices.map latticeRot.toEquiv.toEmbedding := by
   obtain ⟨⟨x, y⟩, c⟩ := f
   ext ⟨p, q⟩
   cases c <;> simp [rot_apply] <;> omega
 
 /-- `ρ` maps the edges of a face onto the edges of its image. -/
-theorem edges_rot (f : TriFace) : (rot f).edges = f.edges.map (TriEdge.rot).toEmbedding := by
+@[simp] theorem edges_rot (f : TriFace) :
+    (rot f).edges = f.edges.map (TriEdge.rot).toEmbedding := by
   obtain ⟨⟨x, y⟩, c⟩ := f
   ext ⟨⟨p, q⟩, j⟩
   cases c <;> fin_cases j <;> simp [rot_apply, TriEdge.rot_apply, TriEdge.ext_iff] <;> omega
 
-/-- `ρ` maps the edge of direction `k` of a face to the edge of direction `k + 1` of its image. -/
+/-- The edge of direction `k` of the image of a face under `ρ` is the image of the edge of
+direction `k - 1` of the face. -/
 @[simp] theorem edge_rot (f : TriFace) (k : Fin 3) :
-    (rot f).edge (k + 1) = TriEdge.rot (f.edge k) :=
-  mem_edges_iff_edge_eq.1 <| by
+    (rot f).edge k = TriEdge.rot (f.edge (k - 1)) := by
+  have h : TriEdge.rot (f.edge (k - 1)) ∈ (rot f).edges := by
     rw [edges_rot, Finset.mem_map_equiv, Equiv.symm_apply_apply]
-    exact f.edge_mem_edges k
+    exact f.edge_mem_edges _
+  rwa [mem_edges_iff_edge_eq, TriEdge.rot_k, edge_k, sub_add_cancel] at h
 
 end TriFace
 
 namespace TriEdge
 
-@[simp] theorem rot_mem_edges_rot {e : TriEdge} {f : TriFace} :
+theorem rot_mem_edges_rot {e : TriEdge} {f : TriFace} :
     rot e ∈ (TriFace.rot f).edges ↔ e ∈ f.edges := by
   rw [TriFace.edges_rot, Finset.mem_map_equiv, Equiv.symm_apply_apply]
 
