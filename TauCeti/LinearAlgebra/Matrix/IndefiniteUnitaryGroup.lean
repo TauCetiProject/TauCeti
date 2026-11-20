@@ -46,10 +46,10 @@ The basic structure of these groups is recorded here.
   line spanned by the first basis vector.
 * Over a field of characteristic zero, the centre of `U(p, q)` is the group of unit scalars
   `λ • 1` with `star λ * λ = 1`. The proof uses the reflections
-  `1 - (2 / ⟨v, v⟩) • vecMulVec v (star v ᵥ* J)` in the non-isotropic vectors `v`, which lie in
-  `U(p, q)` (`TauCeti.Matrix.indefiniteUnitaryGroup.reflection`): a central element commutes with
-  the rank-one matrices `vecMulVec v (star v ᵥ* J)`, and testing this on the vectors `eₖ` and
-  `eᵢ + 2 eₖ` forces it to be scalar.
+  `1 - (2 / ⟨v, v⟩) • vecMulVec v (star v ᵥ* A)` in the non-isotropic vectors `v`, which lie in
+  `unitaryGroupOf A` for every Hermitian invertible `A` (`Matrix.unitaryGroupOf.reflection`): a
+  central element commutes with the rank-one matrices `vecMulVec v (star v ᵥ* A)`, and for `A = J`
+  testing this on the vectors `eₖ` and `eᵢ + 2 eₖ` forces it to be scalar.
 
 ## Main definitions
 
@@ -58,11 +58,12 @@ The basic structure of these groups is recorded here.
 * `Matrix.unitaryGroupOf.ofMatrix`: the element of `unitaryGroupOf A` defined by a matrix
   preserving the form, for invertible `A`.
 * `Matrix.unitaryGroupOf.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
+* `Matrix.unitaryGroupOf.reflection`: the reflection in a non-isotropic vector, for a Hermitian
+  invertible Gram matrix `A`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup p q R`: the group `U(p, q)` of invertible matrices
   preserving the Hermitian form of Gram matrix `diag(1, …, 1, -1, …, -1)`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`: the block-diagonal embedding of
   `U(p) × U(q)`.
-* `TauCeti.Matrix.indefiniteUnitaryGroup.reflection`: the reflection in a non-isotropic vector.
 
 ## Main results
 
@@ -98,7 +99,11 @@ open LieAlgebra.Orthogonal Matrix
 
 namespace Matrix
 
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [StarRing R]
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+section CommRing
+
+variable {R : Type*} [CommRing R] [StarRing R]
 
 /-- The **unitary group of a sesquilinear form**: the invertible matrices `g` with
 `star g * A * g = A`, that is the invertible matrices preserving the form
@@ -222,6 +227,97 @@ theorem scalarHom_injective [Nonempty n] : Function.Injective (scalarHom A) := f
 
 end unitaryGroupOf
 
+end CommRing
+
+section Field
+
+variable {K : Type*} [Field K] [StarRing K] {A : Matrix n n K}
+
+/-- For Hermitian `A`, the reflection matrix `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* A)` preserves the
+form. -/
+private theorem star_reflectionMatrix_mul_mul (hA : A.IsHermitian) {v : n → K}
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
+    star (1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A)) * A *
+      (1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A)) = A := by
+  set c := star v ⬝ᵥ A *ᵥ v
+  set S := vecMulVec (A *ᵥ v) (star v ᵥ* A)
+  have hstar : star (vecMulVec v (star v ᵥ* A)) = vecMulVec (A *ᵥ v) (star v) := by
+    rw [star_eq_conjTranspose, conjTranspose_vecMulVec, star_vecMul, star_star, hA.eq]
+  have ha : star (2 / c) = 2 / c := by
+    rw [star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm]
+  have hNS : star (vecMulVec v (star v ᵥ* A)) * A = S := by
+    rw [hstar, vecMulVec_mul]
+  have hSN : A * vecMulVec v (star v ᵥ* A) = S := by
+    rw [mul_vecMulVec]
+  have hSNN : S * vecMulVec v (star v ᵥ* A) = c • S := by
+    rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
+  rw [star_sub, star_one, star_smul, ha]
+  simp only [sub_mul, mul_sub, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul,
+    hNS, hSN, hSNN, smul_smul]
+  have h2 : 2 / c * (2 / c * c) = 2 / c + 2 / c := by
+    field_simp
+    ring
+  rw [h2, add_smul]
+  abel
+
+namespace unitaryGroupOf
+
+/-- **The reflection in a non-isotropic vector**, for a Hermitian invertible Gram matrix `A`. For
+`v` with `⟨v, v⟩ ≠ 0`, the element `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* A)` of `unitaryGroupOf A`,
+which sends `v` to `-v` (`reflection_mulVec_self`) and fixes the vectors orthogonal to `v` for the
+form (`reflection_mulVec_of_dotProduct_eq_zero`). -/
+noncomputable def reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) : unitaryGroupOf A :=
+  ofMatrix hA' _ (star_reflectionMatrix_mul_mul hA hv)
+
+@[simp]
+theorem val_reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
+    ((reflection hA hA' v hv : GL n K) : Matrix n n K) =
+      1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) :=
+  (rfl)
+
+/-- The reflection in `v` sends `v` to `-v`. -/
+theorem reflection_mulVec_self (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
+    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ v = -v := by
+  rw [val_reflection, sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
+    op_smul_eq_smul, smul_smul, div_mul_cancel₀ _ hv, two_smul, sub_add_cancel_left]
+
+/-- The reflection in `v` fixes every vector `w` orthogonal to `v` for the form. -/
+theorem reflection_mulVec_of_dotProduct_eq_zero (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) {w : n → K} (hw : star v ⬝ᵥ A *ᵥ w = 0) :
+    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ w = w := by
+  rw [val_reflection, sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
+    hw, op_smul_eq_smul, zero_smul, smul_zero, sub_zero]
+
+/-- For a Hermitian invertible Gram matrix `A`, an element of the centre of `unitaryGroupOf A`
+commutes with the rank-one matrix `v (star v ᵥ* A)` of every non-isotropic vector `v`, since it
+commutes with the reflection in `v`. -/
+private theorem mul_vecMulVec_eq_of_mem_center [NeZero (2 : K)] (hA : A.IsHermitian)
+    (hA' : IsUnit A) {g : unitaryGroupOf A} (hg : g ∈ Subgroup.center (unitaryGroupOf A))
+    {v : n → K} (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
+    ((g : GL n K) : Matrix n n K) * vecMulVec v (star v ᵥ* A) =
+      vecMulVec v (star v ᵥ* A) * (g : GL n K) := by
+  have h := congrArg (fun x : unitaryGroupOf A => ((x : GL n K) : Matrix n n K))
+    (Subgroup.mem_center_iff.mp hg (reflection hA hA' v hv))
+  simp only [Subgroup.coe_mul, Units.val_mul, val_reflection, sub_mul, mul_sub, Matrix.one_mul,
+    Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul, sub_right_inj] at h
+  exact (smul_right_injective _ (div_ne_zero two_ne_zero hv) h).symm
+
+/-- The entry `(i, k)` of `g * v (star v ᵥ* A) = v (star v ᵥ* A) * g`. -/
+private theorem mulVec_apply_mul_eq_of_mem_center [NeZero (2 : K)] (hA : A.IsHermitian)
+    (hA' : IsUnit A) {g : unitaryGroupOf A} (hg : g ∈ Subgroup.center (unitaryGroupOf A))
+    {v : n → K} (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) (i k : n) :
+    (((g : GL n K) : Matrix n n K) *ᵥ v) i * (star v ᵥ* A) k =
+      v i * (star v ᵥ* A ᵥ* ((g : GL n K) : Matrix n n K)) k := by
+  simpa [mul_vecMulVec, vecMulVec_mul, vecMulVec_apply] using
+    congrFun (congrFun (mul_vecMulVec_eq_of_mem_center hA hA' hg hv) i) k
+
+end unitaryGroupOf
+
+end Field
+
 end Matrix
 
 namespace TauCeti
@@ -328,93 +424,7 @@ section Field
 
 variable {p q} {K : Type*} [Field K] [StarRing K]
 
-/-- The reflection matrix `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* J)` preserves the form. -/
-private theorem star_reflectionMatrix_mul_mul {v : p ⊕ q → K}
-    (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
-    star (1 - (2 / (star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v)) •
-        vecMulVec v (star v ᵥ* indefiniteDiagonal p q K)) * indefiniteDiagonal p q K *
-      (1 - (2 / (star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v)) •
-        vecMulVec v (star v ᵥ* indefiniteDiagonal p q K)) = indefiniteDiagonal p q K := by
-  set c := star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v
-  set S := vecMulVec (indefiniteDiagonal p q K *ᵥ v) (star v ᵥ* indefiniteDiagonal p q K)
-  have hstar : star (vecMulVec v (star v ᵥ* indefiniteDiagonal p q K)) =
-      vecMulVec (indefiniteDiagonal p q K *ᵥ v) (star v) := by
-    rw [star_eq_conjTranspose, conjTranspose_vecMulVec, star_vecMul, star_star,
-      isHermitian_indefiniteDiagonal.eq]
-  have ha : star (2 / c) = 2 / c := by
-    rw [star_div₀, star_ofNat, isHermitian_indefiniteDiagonal.star_dotProduct_mulVec_comm]
-  have hNS : star (vecMulVec v (star v ᵥ* indefiniteDiagonal p q K)) * indefiniteDiagonal p q K =
-      S := by
-    rw [hstar, vecMulVec_mul]
-  have hSN : indefiniteDiagonal p q K * vecMulVec v (star v ᵥ* indefiniteDiagonal p q K) = S := by
-    rw [mul_vecMulVec]
-  have hSNN : S * vecMulVec v (star v ᵥ* indefiniteDiagonal p q K) = c • S := by
-    rw [vecMulVec_mul_vecMulVec, ← dotProduct_mulVec, vecMulVec_smul]
-  rw [star_sub, star_one, star_smul, ha]
-  simp only [sub_mul, mul_sub, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul,
-    hNS, hSN, hSNN, smul_smul]
-  have h2 : 2 / c * (2 / c * c) = 2 / c + 2 / c := by
-    field_simp
-    ring
-  rw [h2, add_smul]
-  abel
-
 namespace indefiniteUnitaryGroup
-
-/-- **The reflection in a non-isotropic vector.** For `v` with `⟨v, v⟩ ≠ 0`, the element
-`1 - (2 / ⟨v, v⟩) • v (star v ᵥ* J)` of `U(p, q)`, which sends `v` to `-v`
-(`reflection_mulVec_self`) and fixes the vectors orthogonal to `v` for the form
-(`reflection_mulVec_of_dotProduct_eq_zero`). -/
-noncomputable def reflection (v : p ⊕ q → K) (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
-    indefiniteUnitaryGroup p q K :=
-  unitaryGroupOf.ofMatrix isUnit_indefiniteDiagonal _ (star_reflectionMatrix_mul_mul hv)
-
-@[simp]
-theorem val_reflection (v : p ⊕ q → K) (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
-    ((reflection v hv : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) =
-      1 - (2 / (star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v)) •
-        vecMulVec v (star v ᵥ* indefiniteDiagonal p q K) :=
-  (rfl)
-
-/-- The reflection in `v` sends `v` to `-v`. -/
-theorem reflection_mulVec_self (v : p ⊕ q → K)
-    (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
-    ((reflection v hv : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) *ᵥ v = -v := by
-  rw [val_reflection, sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
-    op_smul_eq_smul, smul_smul, div_mul_cancel₀ _ hv, two_smul, sub_add_cancel_left]
-
-/-- The reflection in `v` fixes every vector `w` orthogonal to `v` for the form. -/
-theorem reflection_mulVec_of_dotProduct_eq_zero (v : p ⊕ q → K)
-    (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) {w : p ⊕ q → K}
-    (hw : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ w = 0) :
-    ((reflection v hv : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) *ᵥ w = w := by
-  rw [val_reflection, sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec,
-    hw, op_smul_eq_smul, zero_smul, smul_zero, sub_zero]
-
-/-- An element of the centre of `U(p, q)` commutes with the rank-one matrix `v (star v ᵥ* J)` of
-every non-isotropic vector `v`, since it commutes with the reflection in `v`. -/
-private theorem mul_vecMulVec_eq_of_mem_center [NeZero (2 : K)] {g : indefiniteUnitaryGroup p q K}
-    (hg : g ∈ Subgroup.center (indefiniteUnitaryGroup p q K)) {v : p ⊕ q → K}
-    (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) :
-    ((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) *
-        vecMulVec v (star v ᵥ* indefiniteDiagonal p q K) =
-      vecMulVec v (star v ᵥ* indefiniteDiagonal p q K) * (g : GL (p ⊕ q) K) := by
-  have h := congrArg (fun x : indefiniteUnitaryGroup p q K => ((x : GL (p ⊕ q) K) :
-    Matrix (p ⊕ q) (p ⊕ q) K)) (Subgroup.mem_center_iff.mp hg (reflection v hv))
-  simp only [Subgroup.coe_mul, Units.val_mul, val_reflection, sub_mul, mul_sub, Matrix.one_mul,
-    Matrix.mul_one, Matrix.smul_mul, Matrix.mul_smul, sub_right_inj] at h
-  exact (smul_right_injective _ (div_ne_zero two_ne_zero hv) h).symm
-
-/-- The entry `(i, k)` of `g * v (star v ᵥ* J) = v (star v ᵥ* J) * g`. -/
-private theorem mulVec_apply_mul_eq_of_mem_center [NeZero (2 : K)]
-    {g : indefiniteUnitaryGroup p q K} (hg : g ∈ Subgroup.center (indefiniteUnitaryGroup p q K))
-    {v : p ⊕ q → K} (hv : star v ⬝ᵥ indefiniteDiagonal p q K *ᵥ v ≠ 0) (i k : p ⊕ q) :
-    (((g : GL (p ⊕ q) K) : Matrix (p ⊕ q) (p ⊕ q) K) *ᵥ v) i *
-        (star v ᵥ* indefiniteDiagonal p q K) k =
-      v i * (star v ᵥ* indefiniteDiagonal p q K ᵥ* ((g : GL (p ⊕ q) K) :
-        Matrix (p ⊕ q) (p ⊕ q) K)) k := by
-  simpa [mul_vecMulVec, vecMulVec_mul, vecMulVec_apply] using
-    congrFun (congrFun (mul_vecMulVec_eq_of_mem_center hg hv) i) k
 
 variable [CharZero K]
 
@@ -427,7 +437,8 @@ private theorem apply_eq_zero_of_mem_center {g : indefiniteUnitaryGroup p q K}
       star (Pi.single k 1 : p ⊕ q → K) ⬝ᵥ indefiniteDiagonal p q K *ᵥ Pi.single k 1 ≠ 0 := by
     simpa [Pi.single_star, mulVec_single_one, single_one_dotProduct] using
       indefiniteDiagonal_apply_self_ne_zero k
-  have h := mulVec_apply_mul_eq_of_mem_center hg hv i k
+  have h := unitaryGroupOf.mulVec_apply_mul_eq_of_mem_center isHermitian_indefiniteDiagonal
+    isUnit_indefiniteDiagonal hg hv i k
   simp only [mulVec_single, MulOpposite.op_one, Pi.smul_apply, col_apply, one_smul,
     Pi.star_single, star_one, single_vecMul, row_apply, smul_eq_mul, one_mul, ne_eq, hik,
     not_false_eq_true, Pi.single_eq_of_ne, zero_mul, mul_eq_zero] at h
@@ -468,7 +479,8 @@ private theorem apply_self_eq_of_mem_center {g : indefiniteUnitaryGroup p q K}
       with h1 | h1 <;>
     rcases indefiniteDiagonal_apply_self_eq_one_or_eq_neg_one (p := p) (q := q) (R := K) k
       with h2 | h2 <;> rw [h1, h2] <;> norm_num
-  have h := mulVec_apply_mul_eq_of_mem_center hg hv i k
+  have h := unitaryGroupOf.mulVec_apply_mul_eq_of_mem_center isHermitian_indefiniteDiagonal
+    isUnit_indefiniteDiagonal hg hv i k
   rw [eq_diagonal_of_mem_center hg, mulVec_diagonal, vecMul_diagonal, hsv,
     vecMul_indefiniteDiagonal_apply, hvi, hvk] at h
   apply mul_right_cancel₀ (mul_ne_zero two_ne_zero (indefiniteDiagonal_apply_self_ne_zero k))
