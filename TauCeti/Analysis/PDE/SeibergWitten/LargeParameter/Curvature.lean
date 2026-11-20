@@ -133,6 +133,13 @@ private theorem div_sqrt_two_le_of_le_mul_add {x r C w : ℝ} (hr : 0 < r)
     grind
   exact hexp ▸ h
 
+/-- A vector `ω` with `‖ω‖² = 2`, such as a Kähler two-vector, pairs with `η` to at most
+`√2 ‖η‖`: `|⟪ω, η⟫| ≤ √2 ‖η‖`. -/
+private theorem abs_inner_le_sqrt_two_mul_norm {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {ω : E} (hω₂ : ‖ω‖ ^ 2 = 2) (η : E) : |⟪ω, η⟫| ≤ √2 * ‖η‖ := by
+  rw [← hω₂, Real.sqrt_sq (norm_nonneg ω)]
+  exact abs_real_inner_le_norm ω η
+
 /-- The real inequality behind the self-dual curvature bound. With `s = |α|²`, `b = |β|²` and
 `u = 1 / r`, the bounds `b ≤ K u max (1 - s) 0 + K u²` and `s + b ≤ 1 + K u` give
 `(1 - s + b)² + 4 s b ≤ (max (1 - s) 0 + 2 (K + 1) u)²`. -/
@@ -269,9 +276,7 @@ theorem abs_inner_div_two_sub_le (hr : 1 ≤ r) {K : ℝ}
   have hr0 : 0 < r := by linarith
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
   rw [inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr0.le hF]
-  have hωη : |⟪ω, η⟫| ≤ √2 * ‖η‖ := by
-    have hω' : ‖ω‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg ω)]
-    simpa [hω'] using abs_real_inner_le_norm ω η
+  have hωη := abs_inner_le_sqrt_two_mul_norm hω₂ η
   -- The defect part `r (1 - ‖φ‖² + ‖β‖² - w₊) / 8` lies in `[-K / 4, K / 4]`.
   have hdef : |r / 8 * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - r / 8 * max (1 - ‖φ‖ ^ 2) 0| ≤ K / 4 := by
     have hKr : K / r ≤ K := div_le_self hK hr
@@ -311,9 +316,7 @@ theorem div_mul_abs_one_sub_sub_le_inner_add (hr : 0 < r) {K : ℝ} (hK : 0 ≤ 
       (r / 4) • ω - (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η) :
     r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| ≤ ⟪ω, F⟫ + K / 2 + √2 * ‖η‖ / 2 := by
   have h := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr.le hF
-  have hωη : ⟪ω, η⟫ ≤ √2 * ‖η‖ := by
-    have hω' : ‖ω‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg ω)]
-    simpa [hω'] using real_inner_le_norm ω η
+  have hωη : ⟪ω, η⟫ ≤ √2 * ‖η‖ := (le_abs_self _).trans (abs_inner_le_sqrt_two_mul_norm hω₂ η)
   have hb : 0 ≤ r * ‖β‖ ^ 2 := by positivity
   rcases le_total 0 (1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2) with h0 | h0
   · rw [abs_of_nonneg h0]
@@ -384,14 +387,10 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
   have hrb : r * ‖β‖ ^ 2 ≤ 2 * K :=
     mul_le_two_mul_of_le_div_mul_add_div (sq_nonneg _) (sq_nonneg _) hr hβK
   -- `-⟪ω, η⟫ ≤ ‖ω‖ ‖η‖ = √2 ‖η‖`.
-  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
-    have hω' : ‖J.kahlerForm‖ = √2 := by
-      rw [← Real.sqrt_sq (norm_nonneg _), AlmostComplexStructure.norm_kahlerForm_sq_eq_two
-        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)]
-    have := neg_le_abs ⟪J.kahlerForm, η⟫
-    have := abs_real_inner_le_norm J.kahlerForm η
-    rw [hω'] at this
-    linarith
+  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ :=
+    (neg_le_abs _).trans <| abs_inner_le_sqrt_two_mul_norm
+      (AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)) η
   have hA : r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) ≤ r / (4 * √2) * m + K / (2 * √2) := by
     have : r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) =
         r / (4 * √2) * (1 - ‖φ‖ ^ 2) + r * ‖β‖ ^ 2 / (4 * √2) := by ring
@@ -444,11 +443,8 @@ theorem hermitianForm_apply_self_le_of_add_hodgeStar_eq (hr : 1 ≤ r) {K : ℝ}
   have hFm' := div_sqrt_two_le_of_le_mul_add hr0 hFm
   have hrb : r * ‖β‖ ^ 2 ≤ 2 * K :=
     mul_le_two_mul_of_le_div_mul_add_div (sq_nonneg _) (sq_nonneg _) hr hβK
-  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
-    have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
-    have := abs_real_inner_le_norm J.kahlerForm η
-    rw [hω'] at this
-    linarith [neg_le_abs ⟪J.kahlerForm, η⟫]
+  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ :=
+    (neg_le_abs _).trans (abs_inner_le_sqrt_two_mul_norm hω₂ η)
   -- `1 - ‖φ‖² ≤ w₊` and `r w₊ / 4 ≤ δ + r ‖β‖² / 4`.
   have hm1 : r / 8 * (1 - ‖φ‖ ^ 2) ≤ r / 8 * max (1 - ‖φ‖ ^ 2) 0 := by
     gcongr
@@ -467,10 +463,8 @@ theorem hermitianForm_apply_self_le_of_add_hodgeStar_eq (hr : 1 ≤ r) {K : ℝ}
   have hCr1 : C / √r ≤ C := div_le_self hC (Real.one_le_sqrt.2 hr)
   have hCw : C * √r * max (1 - ‖φ‖ ^ 2) 0 / 8 ≤
       C / √r * (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2|) / 2 + C * K / 4 := by
-    rw [show C * √r * max (1 - ‖φ‖ ^ 2) 0 / 8 =
-        C / √r * (r / 4 * max (1 - ‖φ‖ ^ 2) 0) / 2 by
-      rw [show C / √r * (r / 4 * max (1 - ‖φ‖ ^ 2) 0) / 2 =
-        C * (r / √r) * max (1 - ‖φ‖ ^ 2) 0 / 8 by ring, Real.div_sqrt]]
+    have hsr : C * √r = C / √r * r := by rw [div_mul_eq_mul_div, mul_div_assoc, Real.div_sqrt]
+    rw [hsr]
     have h1 := mul_le_mul_of_nonneg_left hw hCr
     have h2 : C / √r * (r * ‖β‖ ^ 2 / 4) ≤ C * (2 * K / 4) :=
       mul_le_mul hCr1 (by linarith) (by positivity) hC
