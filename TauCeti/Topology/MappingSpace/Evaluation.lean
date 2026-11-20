@@ -26,7 +26,7 @@ either space. That the constant maps embed `X` in `Map(B, X)` for nonempty `B` i
 * `TauCeti.mappingSpaceEval`: evaluation `Map(B, X) → X` at a chosen point of `B`.
 * `TauCeti.mappingSpaceEval_comp_const'`: constant maps form a continuous section.
 * `TauCeti.isQuotientMap_mappingSpaceEval`: evaluation is a quotient map.
-* `TauCeti.evalHomotopy`: for maps with jointly continuous evaluation, evaluations at the two
+* `Path.evalHomotopy`: for maps with jointly continuous evaluation, evaluations at the two
   ends of a path are homotopic.
 * `TauCeti.mappingSpaceEval_comp_subtypeVal`: evaluation is constant on the based mapping space,
   the fibre over `x`; its universal lift is `TauCeti.BasedMap.lift`.
@@ -91,9 +91,12 @@ theorem mappingSpaceEval_comp_subtypeVal (b : B) (x : X) :
     ContinuousMap.const_apply]
   exact f.2
 
-section ContinuousEval
+end TauCeti
 
-variable {F : Type*} [TopologicalSpace F] [FunLike F B X] [ContinuousEval F B X]
+namespace Path
+
+variable {B : Type*} {X : Type*} [TopologicalSpace B] [TopologicalSpace X]
+  {F : Type*} [TopologicalSpace F] [FunLike F B X] [ContinuousEval F B X]
 
 /-- **Evaluations at the ends of a path are homotopic**, through evaluation along the path, on any
 type `F` of maps `B → X` with jointly continuous evaluation `F × B → X`: any continuous maps
@@ -107,13 +110,11 @@ def evalHomotopy {b₀ b₁ : B} (γ : Path b₀ b₁) {e₀ e₁ : C(F, X)} (h�
   map_zero_left f := by simp [h₀]
   map_one_left f := by simp [h₁]
 
-/-- At time `t`, the homotopy `evalHomotopy γ h₀ h₁` evaluates at `γ t`. -/
+/-- At time `t`, the homotopy `γ.evalHomotopy h₀ h₁` evaluates at `γ t`. -/
 @[simp]
 theorem evalHomotopy_apply {b₀ b₁ : B} (γ : Path b₀ b₁) {e₀ e₁ : C(F, X)}
     (h₀ : ∀ f, e₀ f = f b₀) (h₁ : ∀ f, e₁ f = f b₁) (t : unitInterval) (f : F) :
-    evalHomotopy γ h₀ h₁ (t, f) = f (γ t) :=
+    γ.evalHomotopy h₀ h₁ (t, f) = f (γ t) :=
   (rfl)
 
-end ContinuousEval
-
-end TauCeti
+end Path

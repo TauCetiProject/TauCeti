@@ -287,13 +287,6 @@ theorem basepointContractibleLoop_constContractibleLoop (q : Q) :
     basepointContractibleLoop (constContractibleLoop q) = q := by
   simp [basepointContractibleLoop_apply]
 
-/-- A constant contractible loop is the constant loop at its base point. -/
-theorem constContractibleLoop_basepointContractibleLoop {ℓ : contractibleLoops Q}
-    (hℓ : ℓ ∈ Set.range (constContractibleLoop (Q := Q))) :
-    constContractibleLoop (basepointContractibleLoop ℓ) = ℓ := by
-  obtain ⟨q, rfl⟩ := hℓ
-  rw [basepointContractibleLoop_constContractibleLoop]
-
 @[simp]
 theorem basepointContractibleLoop_comp_constContractibleLoop :
     (basepointContractibleLoop (Q := Q)).comp constContractibleLoop = ContinuousMap.id Q :=

@@ -135,8 +135,8 @@ theorem IsAbundantWithTwoSpheres.exists_homologyMap_mappingSpaceEval_eq_zero [T1
     have : PathConnectedSpace Sphere2 :=
       isPathConnected_iff_pathConnectedSpace.1 <| isPathConnected_sphere
         (by rw [← finrank_eq_rank, finrank_euclideanSpace_fin]; norm_num) 0 zero_le_one
-    rw [ContinuousMap.Homotopic.homologyMap_eq ⟨evalHomotopy
-      (PathConnectedSpace.somePath z Sphere2.north) (mappingSpaceEval_apply (X := Q) z)
+    rw [ContinuousMap.Homotopic.homologyMap_eq ⟨(PathConnectedSpace.somePath z
+      Sphere2.north).evalHomotopy (mappingSpaceEval_apply (X := Q) z)
       (mappingSpaceEval_apply Sphere2.north)⟩]
     exact homologyMap_sub_homologyMap_section _ _ ContinuousMap.const' hs α
 
@@ -187,7 +187,8 @@ theorem IsAbundantWithTwoSpheres.exists_livesOverFundamentalClass_homologyMap_eq
       simp only [ContinuousMap.comp_apply, MoorePath.coe_sourceFrom, mappingSpaceEval_apply,
         ContinuousMap.coe_mk, g, ρ]
       rw [coe_constContractibleMoorePathsInclusion, MoorePath.coe_pathsBetweenSymm,
-        MoorePath.source_symm, ← hend, constContractibleLoop_basepointContractibleLoop
+        MoorePath.source_symm, ← hend, Function.LeftInverse.rightInvOn_range
+          (basepointContractibleLoop_constContractibleLoop (Q := Q))
           (MoorePath.mem_pathsBetween.1 (e.invFun f).2).2]
     -- Truncating paths deforms the constant paths at the sources onto the inclusion.
     have H : ((MoorePath.constantBetween A (univ : Set (contractibleLoops Q))).comp

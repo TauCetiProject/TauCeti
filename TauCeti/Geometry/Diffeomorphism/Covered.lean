@@ -219,7 +219,7 @@ theorem isCoveredByDiffeomorphisms_iff_of_joined {x₀ x₁ : M} (hx : Joined x�
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o.IsCoveredByDiffeomorphisms hd n x₁ ℓ := by
   have H : (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀).Homotopy
       (Diffeomorph.evalAt x₁) :=
-    evalHomotopy hx.somePath (Diffeomorph.evalAt_apply x₀) (Diffeomorph.evalAt_apply x₁)
+    hx.somePath.evalHomotopy (Diffeomorph.evalAt_apply x₀) (Diffeomorph.evalAt_apply x₁)
   have heq : ((singularHomologyFunctor (ModuleCat.{0} ℤ) d).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).map
       (TopCat.ofHom (Diffeomorph.evalAt (I := 𝓘(ℝ, E)) (J := 𝓘(ℝ, E)) (n := n) (N := M) x₀)) =
