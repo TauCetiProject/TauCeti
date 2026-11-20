@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.RiemannSurface.FiberMultiset
 public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
 import TauCeti.Analysis.Analytic.Multiset
+import TauCeti.Analysis.Complex.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.Diffeomorph.ChartLinear
@@ -184,18 +185,11 @@ private theorem eventually_card_filter_fiberSym_eq {u : X → Z}
     (hy₀ : ∀ a ∈ f.fiberSym u y₀, ∃ i, a ∈ V i) (i : ι) :
     ∀ᶠ y in 𝓝 y₀, Multiset.card ((f.fiberSym u y : Multiset Z).filter (· ∈ V i)) =
       Multiset.card ((f.fiberSym u y₀ : Multiset Z).filter (· ∈ V i)) := by
-  have hnat {a b : ℕ} (h : dist (a : ℂ) b < 1) : a = b := by
-    by_contra hab
-    have h' : 1 ≤ dist a b := Nat.pairwise_one_le_dist hab
-    rw [← Nat.dist_cast_real, Real.dist_eq] at h'
-    rw [Complex.dist_eq, ← Complex.ofReal_natCast, ← Complex.ofReal_natCast b,
-      ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] at h
-    linarith
   have h := (analyticAt_sum_map_pow_filter_fiberSym f hu hVo hφ hVsub hVdisj hy₀ i 0
     ).continuousAt.eventually (Metric.ball_mem_nhds _ one_pos)
   filter_upwards [((chartAt ℂ y₀).continuousAt (mem_chart_source ℂ y₀)).eventually h,
     (chartAt ℂ y₀).open_source.mem_nhds (mem_chart_source ℂ y₀)] with y hy hy'
-  refine hnat ?_
+  refine Nat.cast_injective (R := ℤ) (eq_of_dist_intCast_lt_one ?_)
   simpa [(chartAt ℂ y₀).left_inv hy', (chartAt ℂ y₀).left_inv (mem_chart_source ℂ y₀)] using hy
 
 end Chart
