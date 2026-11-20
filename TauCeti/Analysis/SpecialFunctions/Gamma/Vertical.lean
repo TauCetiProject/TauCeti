@@ -149,7 +149,9 @@ theorem norm_Gamma_mul_pow_mul_factorial_mul_le {a : ℝ} (ha0 : 0 < a) (ha1 : a
   rw [hs, show a - N + ((N + 2 : ℕ) : ℝ) = a + 2 by push_cast; ring, Finset.prod_range_succ,
     Finset.prod_range_succ] at h
   have hsq (k : ℕ) : ‖s + k‖ ^ 2 = (a - N + k) ^ 2 + s.im ^ 2 := by
-    rw [← normSq_eq_norm_sq, normSq_apply, ← hs]; simp; ring
+    rw [← normSq_eq_norm_sq, normSq_apply, ← hs]
+    simp only [add_re, add_im, natCast_re, natCast_im, add_zero]
+    ring
   -- the last two factors give the decay `a (1 + (Im s)²)`
   have hlast : a * (1 + s.im ^ 2) ≤ ‖s + N‖ * ‖s + ((N + 1 : ℕ) : ℂ)‖ := by
     refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_

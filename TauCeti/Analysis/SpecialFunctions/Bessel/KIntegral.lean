@@ -11,8 +11,9 @@ import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.MellinInversion
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
@@ -197,7 +198,10 @@ private lemma norm_Gamma_mul_Gamma_add_le {p δ : ℝ} (hδ : 0 < δ) (hp : 0 < 
   have h1 := norm_Gamma_mul_pow_mul_factorial_mul_le hδ (by linarith) N
     (s := ((δ - N : ℝ) : ℂ) + t * I) (by simp)
   have h2 := norm_Gamma_mul_pow_mul_factorial_le (a := δ + p) (by linarith) hδp N
-    (s := ((δ - N : ℝ) : ℂ) + t * I + p) (by simp; ring)
+    (s := ((δ - N : ℝ) : ℂ) + t * I + p) (by
+      simp only [add_re, ofReal_re, mul_re, I_re, I_im, ofReal_im, mul_zero, mul_one, sub_zero,
+        add_zero]
+      ring)
   simp only [add_im, ofReal_im, mul_im, ofReal_re, I_im, mul_one, I_re, mul_zero, zero_add,
     add_zero] at h1
   have hD1 : 0 < (1 - δ) ^ N * (N ! : ℝ) * (δ * (1 + t ^ 2)) := by
@@ -220,15 +224,23 @@ private lemma norm_Gamma_mul_Gamma_add_le {p δ : ℝ} (hδ : 0 < δ) (hp : 0 < 
 
 /-! ### Residues of `x^{-t} Γ(t) Γ(t + p)` -/
 
-/-- A real number strictly between `0` and `1` is not an integer: `a - N ≠ -n`. -/
-private lemma sub_natCast_ne_neg_natCast {a : ℝ} (ha0 : 0 < a) (ha1 : a < 1) (N n : ℕ) :
-    a - N ≠ -n := by
-  intro h
-  rcases le_or_gt N n with hNn | hNn
-  · have : (N : ℝ) ≤ n := by exact_mod_cast hNn
-    linarith
-  · have : (n : ℝ) + 1 ≤ N := by exact_mod_cast hNn
-    linarith
+/-- The reflection formula at `c - k`: when `sin πc ≠ 0`,
+`(-1)^k / k! · Γ(c - k) = (π / sin πc) / (k! Γ(1 - c + k))`. -/
+private lemma neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
+    (hc : Real.sin (π * c) ≠ 0) (k : ℕ) :
+    (-1) ^ k / (k ! : ℝ) * Real.Gamma (c - k) =
+      π / Real.sin (π * c) / (k ! * Real.Gamma (1 - c + k)) := by
+  have hrefl := Real.Gamma_mul_Gamma_one_sub (c - k)
+  rw [show π * (c - k) = π * c - k * π by ring, Real.sin_sub_nat_mul_pi,
+    show 1 - (c - k) = 1 - c + k by ring] at hrefl
+  have hsgn : ((-1 : ℝ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
+  have hG : Real.Gamma (1 - c + k) ≠ 0 := fun h ↦ by
+    rw [h, mul_zero] at hrefl
+    exact div_ne_zero Real.pi_ne_zero (mul_ne_zero hsgn hc) hrefl.symm
+  rw [eq_div_iff (mul_ne_zero hsgn hc)] at hrefl
+  set S := Real.sin (π * c)
+  rw [← hrefl]
+  field_simp
 
 /-- The residue of `x^{-t} Γ(t) Γ(t + p)` at the pole `t = -k` of `Γ(t)`, written through the
 reflection formula as the `k`th term of `(π / sin pπ) 𝐅(1 - p, x)`. -/
@@ -241,7 +253,7 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (
     intro n h
     have h' := congrArg re h
     simp only [add_re, neg_re, natCast_re, ofReal_re] at h'
-    exact sub_natCast_ne_neg_natCast hp0 hp1 k n (by linarith)
+    exact Real.sub_natCast_ne_neg_natCast hp0 hp1 k n (by linarith)
   have hw : AnalyticAt ℂ (fun z ↦ (x : ℂ) ^ (-z) * Gamma (z + p)) (-(k : ℂ)) :=
     (analyticAt_const.cpow (by fun_prop) hslit).mul
       ((analyticAt_Gamma hΓp).comp (f := fun z : ℂ ↦ z + p) (x := -(k : ℂ)) (by fun_prop))
@@ -249,20 +261,12 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_natCast {p x : ℝ} (
       fun z ↦ Gamma z * ((x : ℂ) ^ (-z) * Gamma (z + p)) := funext fun z ↦ by ring
   rw [hfun, residue_Gamma_mul_neg_nat k hw, neg_neg, cpow_natCast,
     show -(k : ℂ) + p = ((p - k : ℝ) : ℂ) by push_cast; ring, Gamma_ofReal]
-  -- the reflection formula at `p - k`
-  have hrefl := Real.Gamma_mul_Gamma_one_sub (p - k)
-  rw [show π * (p - k) = π * p - k * π by ring, Real.sin_sub_nat_mul_pi,
-    show 1 - (p - k) = 1 - p + k by ring] at hrefl
   have hsin : Real.sin (π * p) ≠ 0 :=
     (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])).ne'
-  have hG : Real.Gamma (1 - p + k) ≠ 0 := (Real.Gamma_pos_of_pos (by positivity)).ne'
-  have hsgn : ((-1 : ℝ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
-  rw [eq_div_iff (mul_ne_zero hsgn hsin)] at hrefl
   have hreal : (-1) ^ k / (k ! : ℝ) * (x ^ k * Real.Gamma (p - k)) =
       π / Real.sin (π * p) * (x ^ k / (k ! * Real.Gamma (1 - p + k))) := by
-    set S := Real.sin (π * p)
-    rw [← hrefl]
-    field_simp
+    rw [mul_left_comm, neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin]
+    ring
   exact_mod_cast hreal
 
 /-- The residue of `x^{-t} Γ(t) Γ(t + p)` at the pole `t = -p - k` of `Γ(t + p)`, written through
@@ -273,45 +277,31 @@ private lemma residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_natCast {p x : �
       -(((π / Real.sin (π * p) : ℝ) : ℂ) * (x : ℂ) ^ (p : ℂ)) *
         ((x ^ k / (k ! * Real.Gamma (1 + p + k)) : ℝ) : ℂ) := by
   have hslit : (x : ℂ) ∈ slitPlane := ofReal_mem_slitPlane.mpr hx
-  have hΓ : ∀ n : ℕ, -(p : ℂ) - k ≠ -n := fun n h ↦
-    sub_natCast_ne_neg_natCast hp0 hp1 n k (by
+  have hΓ : ∀ n : ℕ, -(k : ℂ) - p ≠ -n := fun n h ↦
+    Real.sub_natCast_ne_neg_natCast hp0 hp1 n k (by
       have := congrArg re h
-      simp at this
+      simp only [sub_re, neg_re, natCast_re, ofReal_re] at this
       linarith)
-  have hw : AnalyticAt ℂ (fun z ↦ (x : ℂ) ^ (-z) * Gamma z) (-(p : ℂ) - k) :=
-    (analyticAt_const.cpow (by fun_prop) hslit).mul (analyticAt_Gamma hΓ)
-  have hmero : MeromorphicAt (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p)))
-      (-(p : ℂ) - k) :=
-    (analyticAt_const.cpow (by fun_prop) hslit).meromorphicAt.mul ((Meromorphic.Gamma _).mul
-      ((Meromorphic.Gamma _).comp_analyticAt (g := fun z : ℂ ↦ z + p) (by fun_prop)))
-  -- `t ↦ t + p` maps a punctured neighbourhood of `-p - k` to one of `-k`
-  have hshift : Tendsto (fun z : ℂ ↦ z + p) (𝓝[≠] (-(p : ℂ) - k)) (𝓝[≠] (-(k : ℂ))) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-    · exact ((continuous_id.add continuous_const).tendsto' _ _
-        (by simp only [Pi.add_apply, id]; ring)).mono_left nhdsWithin_le_nhds
-    · refine eventually_nhdsWithin_of_forall fun z (hz : z ≠ _) h ↦ hz ?_
-      rw [Set.mem_singleton_iff] at h
-      linear_combination h
-  have hlim := ((tendsto_add_natCast_mul_Gamma k).comp hshift).mul
-    (hw.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
-  rw [Contour.residue_eq_of_tendsto_sub_mul hmero (hlim.congr fun z ↦ by
-    simp only [Function.comp_apply]; ring)]
-  rw [show -(-(p : ℂ) - k) = p + k by ring, cpow_add _ _ (ofReal_ne_zero.mpr hx.ne'),
-    cpow_natCast, show -(p : ℂ) - k = ((-p - k : ℝ) : ℂ) by push_cast; ring, Gamma_ofReal]
-  -- the reflection formula at `-p - k`
-  have hrefl := Real.Gamma_mul_Gamma_one_sub (-p - k)
-  rw [show π * (-p - k) = -(π * p) - k * π by ring, Real.sin_sub_nat_mul_pi, Real.sin_neg,
-    show 1 - (-p - k) = 1 + p + k by ring] at hrefl
-  have hsin : Real.sin (π * p) ≠ 0 :=
-    (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])).ne'
-  have hsgn : ((-1 : ℝ) ^ k) ≠ 0 := pow_ne_zero _ (by norm_num)
-  rw [eq_div_iff (mul_ne_zero hsgn (neg_ne_zero.mpr hsin))] at hrefl
-  have hG : Real.Gamma (1 + p + k) ≠ 0 := (Real.Gamma_pos_of_pos (by positivity)).ne'
+  have hw : AnalyticAt ℂ (fun w : ℂ ↦ (x : ℂ) ^ (-(w - p)) * Gamma (w - p)) (-(k : ℂ)) :=
+    (analyticAt_const.cpow (by fun_prop) hslit).mul
+      ((analyticAt_Gamma hΓ).comp (f := fun w : ℂ ↦ w - p) (x := -(k : ℂ)) (by fun_prop))
+  -- translate by `p`, moving the pole `-p - k` of `Γ(t + p)` to the pole `-k` of `Γ`
+  have hfun : (fun z ↦ (x : ℂ) ^ (-z) * (Gamma z * Gamma (z + p))) =
+      fun z ↦ Gamma (z + p) * ((x : ℂ) ^ (-(z + p - p)) * Gamma (z + p - p)) :=
+    funext fun z ↦ by rw [add_sub_cancel_right]; ring
+  rw [hfun, Contour.residue_comp_add_const
+      (fun w : ℂ ↦ Gamma w * ((x : ℂ) ^ (-(w - p)) * Gamma (w - p))) (p : ℂ),
+    show -(p : ℂ) - k + p = -(k : ℂ) by ring, residue_Gamma_mul_neg_nat k hw,
+    show -(-(k : ℂ) - p) = p + k by ring, cpow_add _ _ (ofReal_ne_zero.mpr hx.ne'),
+    cpow_natCast, show -(k : ℂ) - p = ((-p - k : ℝ) : ℂ) by push_cast; ring, Gamma_ofReal]
+  have hsin : Real.sin (π * -p) ≠ 0 := by
+    rw [mul_neg, Real.sin_neg, neg_ne_zero]
+    exact (Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])).ne'
   have hreal : (-1) ^ k / (k ! : ℝ) * (x ^ k * Real.Gamma (-p - k)) =
       -(π / Real.sin (π * p)) * (x ^ k / (k ! * Real.Gamma (1 + p + k))) := by
-    set S := Real.sin (π * p)
-    rw [← hrefl]
-    field_simp
+    rw [mul_left_comm, neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin, mul_neg,
+      Real.sin_neg, sub_neg_eq_add]
+    ring
   have hc : ((-1 : ℂ) ^ k / (k ! : ℂ)) * ((x : ℂ) ^ k * ((Real.Gamma (-p - k) : ℝ) : ℂ)) =
       -((π / Real.sin (π * p) : ℝ) : ℂ) * ((x ^ k / (k ! * Real.Gamma (1 + p + k)) : ℝ) : ℂ) := by
     exact_mod_cast hreal
@@ -336,6 +326,13 @@ private lemma analyticAt_Gamma_mul_Gamma_add {p : ℝ} (hp0 : 0 < p) (hp1 : p < 
   exact (analyticAt_Gamma hΓ).mul ((analyticAt_Gamma hΓp).comp (f := fun w : ℂ ↦ w + p)
     (by fun_prop))
 
+/-- `Γ(t) Γ(t + p)` is integrable on the line `Re t = 1` for `0 ≤ p`. -/
+private lemma verticalIntegrable_Gamma_mul_Gamma_add_one {p : ℝ} (hp : 0 ≤ p) :
+    VerticalIntegrable (fun z ↦ Gamma z * Gamma (z + p)) 1 :=
+  verticalIntegrable_Gamma_mul_Gamma_add
+    (fun n h ↦ by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
+    (fun n h ↦ by rw [ofReal_re] at h; linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
+
 /-- Shifting the Mellin inversion integral of `Γ(t) Γ(t + p)` from `Re t = 1` to
 `Re t = (1 - p)/2 - N` crosses the poles `t = -k` and `t = -p - k` for `k < N`. -/
 private lemma mellinInv_Gamma_mul_Gamma_add_eq {p x : ℝ} (hp0 : 0 < p) (hp1 : p < 1)
@@ -357,7 +354,7 @@ private lemma mellinInv_Gamma_mul_Gamma_add_eq {p x : ℝ} (hp0 : 0 < p) (hp1 : 
     obtain ⟨j, -, hj⟩ := Finset.mem_image.mp hzB
     have h' := congrArg re hj
     simp only [sub_re, neg_re, ofReal_re, natCast_re] at h'
-    exact sub_natCast_ne_neg_natCast hp0 hp1 k j (by linarith)
+    exact Real.sub_natCast_ne_neg_natCast hp0 hp1 k j (by linarith)
   obtain ⟨C, -, hC⟩ := exists_norm_Gamma_mul_Gamma_add_le_div_pow_of_re_mem_Icc p (δ - N) 1 1
   have hshift := mellinInv_eq_mellinInv_add_sum_residue_of_norm_le (S := A ∪ B)
     (σ₀ := δ - N) (σ₁ := 1) (B := fun T ↦ C / T) (f := fun z ↦ Gamma z * Gamma (z + p))
@@ -369,13 +366,12 @@ private lemma mellinInv_Gamma_mul_Gamma_add_eq {p x : ℝ} (hp0 : 0 < p) (hp1 : 
         ⟨k, Finset.mem_range.mpr hk, h.symm⟩))))
     (fun z _ ↦ (Meromorphic.Gamma z).mul ((Meromorphic.Gamma _).comp_analyticAt
       (g := fun w : ℂ ↦ w + p) (by fun_prop))) ?_
-    (verticalIntegrable_Gamma_mul_Gamma_add (sub_natCast_ne_neg_natCast hδ0 (by linarith) N)
+    (verticalIntegrable_Gamma_mul_Gamma_add
+      (Real.sub_natCast_ne_neg_natCast hδ0 (by linarith) N)
       (fun n ↦ by
         rw [ofReal_re, sub_add_eq_add_sub]
-        exact sub_natCast_ne_neg_natCast (by linarith) hδp N n))
-    (verticalIntegrable_Gamma_mul_Gamma_add
-      (fun n h ↦ by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
-      (fun n h ↦ by rw [ofReal_re] at h; linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))
+        exact Real.sub_natCast_ne_neg_natCast (by linarith) hδp N n))
+    (verticalIntegrable_Gamma_mul_Gamma_add_one hp0.le)
     (tendsto_const_nhds.div_atTop tendsto_id)
     (by
       filter_upwards [eventually_ge_atTop 1] with T hT u hu
@@ -451,10 +447,7 @@ theorem integral_rpow_mul_exp_neg_sub_div_Ioi {p x : ℝ} (hp0 : 0 < p) (hp1 : p
   have hM (y : ℝ) : HasMellin G (((1 : ℝ) : ℂ) + y * I)
       (Gamma (((1 : ℝ) : ℂ) + y * I) * Gamma (((1 : ℝ) : ℂ) + y * I + p)) :=
     hasMellin_integral_rpow_mul_exp_neg_sub_div (by simp) (by simp; linarith)
-  have hF1 : VerticalIntegrable (fun z ↦ Gamma z * Gamma (z + p)) 1 :=
-    verticalIntegrable_Gamma_mul_Gamma_add
-      (fun n h ↦ by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
-      (fun n h ↦ by rw [ofReal_re] at h; linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
+  have hF1 := verticalIntegrable_Gamma_mul_Gamma_add_one hp0.le
   have hinv : G x = mellinInv 1 (fun z ↦ Gamma z * Gamma (z + p)) x := by
     have hcont : ContinuousAt G x := continuous_ofReal.continuousAt.comp
       ((continuousOn_integral_rpow_mul_exp_neg_sub_div p).continuousAt (Ioi_mem_nhds hx))
