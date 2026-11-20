@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Functoriality
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
-public import Mathlib.Data.ZMod.Basic
+public import TauCeti.Data.ZMod.PiReduction
+import TauCeti.Algebra.Group.PowMonoidHom
 
 /-!
 # Points of the formal diagonalizable group
@@ -22,8 +23,8 @@ group of points, and `formalPointsMulEquiv` identifies it with the characters `G
 For a local `𝒪`-algebra `A` and `I = 𝔪_A` this is the functor of points `A ↦ Hom(G, 1 + 𝔪_A)` of
 the *formal diagonalizable group* `D̂(G)`, the completion of `D(G)` at the identity of its special
 fibre (Khare–Wintenberger, *Serre's modularity conjecture (II)*, §2.5). Specialising to
-`G = Multiplicative ℤ` gives `D̂(ℤ)(A) ≃ 1 + 𝔪_A` (`formalPointsIntMulEquiv`), and the free group
-`Multiplicative (ι → ℤ)` gives the formal torus.
+`G = Multiplicative ℤ` gives `D̂(ℤ)(A) ≃ 1 + 𝔪_A` (`formalPointsIntMulEquiv`), and for finite `ι`
+the free abelian group `ℤ ^ ι`, written `Multiplicative (ι → ℤ)`, gives the formal torus.
 
 The second half of the file computes these points on truncated coefficients. If the integer `n`
 lies in `I` and `I ^ (m + 1) = 0`, then every element of `1 + I` has order dividing `n ^ m`
@@ -31,10 +32,10 @@ lies in `I` and `I ^ (m + 1) = 0`, then every element of `1 + I` has order divid
 `(1 + x) ^ (n ^ m) - 1 ∈ (n, x) ^ (m + 1)`). Consequently:
 
 * a homomorphism `π : G →* Q` that is surjective, with kernel contained in the `n ^ m`-th powers,
-  induces a bijection of formal points (`formalPointsMulEquivOfKerLe`). For the formal torus this
-  is the truncation isomorphism `T[n ^ m](A) ≃ T(A)` of Khare–Wintenberger, *loc. cit.*, §2.6,
-  proof of Proposition 2.8: on coefficients with `𝔪_A ^ (m + 1) = 0` and residue characteristic
-  `p`, the formal points of `(ℤ / p ^ m) ^ ι` and of `ℤ ^ ι` agree
+  induces a bijection of formal points (`formalPointsMulEquivOfKerLe`). For the formal torus
+  (`ι` finite) this is the truncation isomorphism `T[n ^ m](A) ≃ T(A)` of Khare–Wintenberger,
+  *loc. cit.*, §2.6, proof of Proposition 2.8: on coefficients with `𝔪_A ^ (m + 1) = 0` and
+  residue characteristic `p`, the formal points of `(ℤ / p ^ m) ^ ι` and of `ℤ ^ ι` agree
   (`formalPointsTorusTruncationMulEquiv`).
 * a group of exponent prime to `n` has no formal points other than the identity
   (`formalPoints_eq_bot_of_coprime`); this is why prime-to-`p` torsion of the character group
@@ -49,13 +50,16 @@ not part of this file.
   modulo `I`.
 * `TauCeti.DiagonalizableGroup.formalPointsMulEquiv I`: these points are the characters
   `G →* 1 + I`.
+* `TauCeti.DiagonalizableGroup.formalPointsMap φ`: the pullback of formal points along a group
+  homomorphism `φ : G →* Q`.
 * `TauCeti.DiagonalizableGroup.formalPointsIntMulEquiv I`: the formal points of `D(ℤ)` are the
   principal units `1 + I`.
 * `TauCeti.DiagonalizableGroup.formalPointsMulEquivOfKerLe`: on coefficients with
   `I ^ (m + 1) = 0` and `n ∈ I`, pulling back along a surjection whose kernel consists of
   `n ^ m`-th powers is a bijection of formal points.
 * `TauCeti.DiagonalizableGroup.formalPointsTorusTruncationMulEquiv`: the truncation isomorphism
-  from the formal points of `(ℤ / n ^ m) ^ ι` to those of the formal torus `ℤ ^ ι`.
+  from the formal points of `D((ℤ / n ^ m) ^ ι)` to those of `D(ℤ ^ ι)`, the formal torus when `ι`
+  is finite.
 
 ## Main results
 
@@ -105,6 +109,12 @@ def formalPoints (I : Ideal A) : Subgroup (WithConv (MonoidAlgebra R G →ₐ[R]
     rw [← pointsMulEquiv_apply, map_inv, MonoidHom.inv_apply]
     exact inv_mem (hf g)
 
+/-- A point reduces to the identity modulo `I` exactly when its character takes values in the
+principal unit group `1 + I`. -/
+theorem mem_formalPoints_iff_charOfPoint {I : Ideal A} {f : WithConv (MonoidAlgebra R G →ₐ[R] A)} :
+    f ∈ formalPoints R G I ↔ ∀ g, charOfPoint f.ofConv g ∈ I.principalUnitGroup :=
+  Iff.rfl
+
 /-- A point reduces to the identity modulo `I` exactly when it sends every group-like
 `single g 1` to an element congruent to `1` modulo `I`. -/
 theorem mem_formalPoints {I : Ideal A} {f : WithConv (MonoidAlgebra R G →ₐ[R] A)} :
@@ -117,19 +127,36 @@ modulo `J`. -/
 theorem mapValue_mem_formalPoints {B : Type*} [CommRing B] [Algebra R B] {I : Ideal A}
     {J : Ideal B} (φ : A →ₐ[R] B) (hφ : I ≤ J.comap φ) {f : WithConv (MonoidAlgebra R G →ₐ[R] A)}
     (hf : f ∈ formalPoints R G I) : AlgHom.mapValue φ f ∈ formalPoints R G J := by
+  rw [mem_formalPoints]
   intro g
   have h := hφ (mem_formalPoints.mp hf g)
   rw [Ideal.mem_comap, map_sub, map_one] at h
-  simpa [mem_formalPoints] using h
+  simpa using h
 
 /-- Formal points are contravariant in the group: precomposing with the map induced by a group
 homomorphism `φ : G →* Q` carries formal points of `D(Q)` to formal points of `D(G)`. -/
 theorem pointsMap_mem_formalPoints {I : Ideal A} (φ : G →* Q)
     {f : WithConv (MonoidAlgebra R Q →ₐ[R] A)} (hf : f ∈ formalPoints R Q I) :
     pointsMap φ f ∈ formalPoints R G I := by
-  intro g
+  refine mem_formalPoints_iff_charOfPoint.mpr fun g ↦ ?_
   rw [← pointsMulEquiv_apply, pointsMulEquiv_pointsMap, MonoidHom.comp_apply]
-  exact hf (φ g)
+  exact mem_formalPoints_iff_charOfPoint.mp hf (φ g)
+
+variable (R) in
+/-- The pullback of formal points along a group homomorphism `φ : G →* Q`: precomposition with
+the map of group algebras induced by `φ`, restricted to the points reducing to the identity
+modulo `I`. -/
+noncomputable def formalPointsMap (I : Ideal A) (φ : G →* Q) :
+    formalPoints R Q I →* formalPoints R G I :=
+  ((pointsMap φ).comp (formalPoints R Q I).subtype).codRestrict (formalPoints R G I)
+    fun f ↦ pointsMap_mem_formalPoints φ f.2
+
+/-- The pullback of a formal point along `φ` is precomposition with the map of group algebras
+induced by `φ`. -/
+@[simp]
+theorem coe_formalPointsMap_apply (I : Ideal A) (φ : G →* Q) (f : formalPoints R Q I) :
+    (formalPointsMap R I φ f : WithConv (MonoidAlgebra R G →ₐ[R] A)) = pointsMap φ f :=
+  (rfl)
 
 variable (R G) in
 /-- **The points of the formal diagonalizable group.** The points of `D(G)` reducing to the
@@ -137,10 +164,12 @@ identity modulo `I` are the characters of `G` with values in the principal unit 
 For a local `𝒪`-algebra `A` and `I = 𝔪_A` this is `D̂(G)(A) ≃ Hom(G, 1 + 𝔪_A)`. -/
 noncomputable def formalPointsMulEquiv (I : Ideal A) :
     formalPoints R G I ≃* (G →* I.principalUnitGroup) where
-  toFun f := (pointsMulEquiv f.1).codRestrict I.principalUnitGroup f.2
-  invFun χ := ⟨pointsMulEquiv.symm (I.principalUnitGroup.subtype.comp χ), fun g ↦ by
-    rw [← pointsMulEquiv_apply, MulEquiv.apply_symm_apply, MonoidHom.comp_apply]
-    exact (χ g).2⟩
+  toFun f := (pointsMulEquiv f.1).codRestrict I.principalUnitGroup
+    (mem_formalPoints_iff_charOfPoint.mp f.2)
+  invFun χ := ⟨pointsMulEquiv.symm (I.principalUnitGroup.subtype.comp χ),
+    mem_formalPoints_iff_charOfPoint.mpr fun g ↦ by
+      rw [← pointsMulEquiv_apply, MulEquiv.apply_symm_apply, MonoidHom.comp_apply]
+      exact (χ g).2⟩
   left_inv f := Subtype.ext ((MulEquiv.symm_apply_eq _).mpr rfl)
   right_inv χ := by
     ext g
@@ -164,15 +193,14 @@ theorem coe_formalPointsMulEquiv_symm_apply (I : Ideal A) (χ : G →* I.princip
       toConv (point (I.principalUnitGroup.subtype.comp χ)) :=
   (rfl)
 
-/-- Under `formalPointsMulEquiv`, precomposition of points with the map induced by `φ : G →* Q`
-is precomposition of characters with `φ`. -/
-theorem formalPointsMulEquiv_pointsMap (I : Ideal A) (φ : G →* Q) (f : formalPoints R Q I) :
-    formalPointsMulEquiv R G I ⟨pointsMap φ f, pointsMap_mem_formalPoints φ f.2⟩ =
+/-- Under `formalPointsMulEquiv`, the pullback of formal points along `φ : G →* Q` is
+precomposition of characters with `φ`. -/
+theorem formalPointsMulEquiv_formalPointsMap (I : Ideal A) (φ : G →* Q)
+    (f : formalPoints R Q I) :
+    formalPointsMulEquiv R G I (formalPointsMap R I φ f) =
       (formalPointsMulEquiv R Q I f).comp φ := by
   ext g
-  rw [coe_formalPointsMulEquiv_apply, MonoidHom.comp_apply, coe_formalPointsMulEquiv_apply,
-    ← charOfPoint_apply_coe, ← pointsMulEquiv_apply, pointsMulEquiv_pointsMap,
-    MonoidHom.comp_apply, pointsMulEquiv_apply, charOfPoint_apply_coe]
+  exact congr((($(pointsMulEquiv_pointsMap φ f.1) g : Aˣ) : A))
 
 variable (R) in
 /-- **The formal points of `D(ℤ)`.** The points of `D(Multiplicative ℤ)` reducing to the identity
@@ -190,21 +218,18 @@ theorem coe_formalPointsIntMulEquiv_apply (I : Ideal A) (f : formalPoints R (Mul
       f.1.ofConv (MonoidAlgebra.single (Multiplicative.ofAdd 1) 1) := by
   simp [formalPointsIntMulEquiv, zpowersMulHom, zpowersHom]
 
+/-- The formal point of `D(ℤ)` attached to a principal unit `u` sends the group-like element of
+`k : ℤ` to `u ^ k`. -/
+@[simp]
+theorem formalPointsIntMulEquiv_symm_apply_single (I : Ideal A) (u : I.principalUnitGroup)
+    (k : ℤ) :
+    ((formalPointsIntMulEquiv R I).symm u).1.ofConv
+        (MonoidAlgebra.single (Multiplicative.ofAdd k) 1) = ((u : Aˣ) ^ k : Aˣ) := by
+  simp [formalPointsIntMulEquiv, zpowersMulHom, zpowersHom]
+
 end FormalPoints
 
 section Truncation
-
-/-- Precomposition with a surjective homomorphism `π : G →* Q` whose kernel consists of `k`-th
-powers is a bijection onto the homomorphisms `G →* U`, when `U` has exponent dividing `k`. -/
-private theorem bijective_comp_of_ker_le {U : Type*} [Group U] {k : ℕ} (π : G →* Q)
-    (hπ : Function.Surjective π) (hker : π.ker ≤ (powMonoidHom k : G →* G).range)
-    (hU : ∀ u : U, u ^ k = 1) : Function.Bijective fun χ : Q →* U ↦ χ.comp π := by
-  refine ⟨fun χ χ' h ↦ (MonoidHom.cancel_right hπ).mp h, fun χ ↦ ?_⟩
-  have hle : π.ker ≤ χ.ker := by
-    intro x hx
-    obtain ⟨y, rfl⟩ := hker hx
-    rw [MonoidHom.mem_ker, powMonoidHom_apply, map_pow, hU]
-  exact ⟨π.liftOfSurjective hπ ⟨χ, hle⟩, π.liftOfRightInverse_comp _ _ ⟨χ, hle⟩⟩
 
 variable (R) in
 /-- **Formal points on truncated coefficients.** Suppose the integer `n` lies in `I` and
@@ -216,18 +241,13 @@ noncomputable def formalPointsMulEquivOfKerLe (I : Ideal A) {n m : ℕ} (hn : (n
     (hI : I ^ (m + 1) = ⊥) (π : G →* Q) (hπ : Function.Surjective π)
     (hker : π.ker ≤ (powMonoidHom (n ^ m) : G →* G).range) :
     formalPoints R Q I ≃* formalPoints R G I :=
-  MulEquiv.ofBijective
-    (((pointsMap π).comp (formalPoints R Q I).subtype).codRestrict (formalPoints R G I)
-      fun f ↦ pointsMap_mem_formalPoints π f.2) <| by
-    have hbij := bijective_comp_of_ker_le π hπ hker fun u : I.principalUnitGroup ↦
-      Subtype.ext (by
+  MulEquiv.ofBijective (formalPointsMap R I π) <| by
+    have hbij := MonoidHom.bijective_comp_of_ker_le_range_powMonoidHom π hπ hker
+      fun u : I.principalUnitGroup ↦ Subtype.ext (by
         simpa using Ideal.pow_pow_eq_one_of_mem_principalUnitGroup hn hI u.2)
-    have heq : ⇑(formalPointsMulEquiv R G I) ∘
-        (((pointsMap π).comp (formalPoints R Q I).subtype).codRestrict (formalPoints R G I)
-          fun f ↦ pointsMap_mem_formalPoints π f.2) =
-        (fun χ : Q →* I.principalUnitGroup ↦ χ.comp π) ∘ ⇑(formalPointsMulEquiv R Q I) := by
-      funext f
-      exact formalPointsMulEquiv_pointsMap I π f
+    have heq : ⇑(formalPointsMulEquiv R G I) ∘ formalPointsMap R I π =
+        (fun χ : Q →* I.principalUnitGroup ↦ χ.comp π) ∘ ⇑(formalPointsMulEquiv R Q I) :=
+      funext (formalPointsMulEquiv_formalPointsMap I π)
     rw [← (formalPointsMulEquiv R G I).bijective.of_comp_iff', heq]
     exact hbij.comp (formalPointsMulEquiv R Q I).bijective
 
@@ -240,53 +260,32 @@ theorem coe_formalPointsMulEquivOfKerLe_apply (I : Ideal A) {n m : ℕ} (hn : (n
       pointsMap π f :=
   (rfl)
 
-variable (ι : Type*) (k : ℕ)
-
-/-- The reduction `ℤ ^ ι → (ℤ / k) ^ ι`, written multiplicatively: the map of character groups
-dual to the inclusion of the `k`-torsion `T[k]` of the formal torus `T = D̂(ℤ ^ ι)`. -/
-noncomputable def torusReduction :
-    Multiplicative (ι → ℤ) →* Multiplicative (ι → ZMod k) :=
-  AddMonoidHom.toMultiplicative ((Int.castAddHom (ZMod k)).compLeft ι)
-
-/-- The reduction `ℤ ^ ι → (ℤ / k) ^ ι` reduces each coordinate modulo `k`. -/
-@[simp]
-theorem torusReduction_apply (x : Multiplicative (ι → ℤ)) (i : ι) :
-    (torusReduction ι k x).toAdd i = (x.toAdd i : ZMod k) :=
-  (rfl)
-
-/-- The reduction `ℤ ^ ι → (ℤ / k) ^ ι` is surjective. -/
-theorem torusReduction_surjective : Function.Surjective (torusReduction ι k) := by
-  intro y
-  refine ⟨Multiplicative.ofAdd fun i ↦ (y.toAdd i).cast, ?_⟩
-  apply Multiplicative.toAdd.injective
-  funext i
-  simp
-
-/-- The kernel of the reduction `ℤ ^ ι → (ℤ / k) ^ ι` consists of the `k`-th powers. -/
-theorem ker_torusReduction_le :
-    (torusReduction ι k).ker ≤ (powMonoidHom k : Multiplicative (ι → ℤ) →* _).range := by
-  intro x hx
-  have hdvd (i : ι) : (k : ℤ) ∣ x.toAdd i := by
-    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, ← torusReduction_apply]
-    exact congrFun (congrArg Multiplicative.toAdd hx) i
-  choose y hy using hdvd
-  refine ⟨Multiplicative.ofAdd y, ?_⟩
-  apply Multiplicative.toAdd.injective
-  funext i
-  simp [hy i]
+variable (ι : Type*)
 
 variable (R) in
 /-- **The truncation isomorphism for the formal torus.** If the integer `n` lies in `I` and
-`I ^ (m + 1) = 0`, the formal points of the `n ^ m`-torsion `T[n ^ m] = D̂((ℤ / n ^ m) ^ ι)` of the
-formal torus `T = D̂(ℤ ^ ι)` map bijectively to those of `T`. For a local ring `A` of residue
-characteristic `p` with `𝔪_A ^ (m + 1) = 0`, this is the isomorphism `T[p ^ m] → T` on coefficients
-truncated at level `m + 1` (Khare–Wintenberger, *loc. cit.*, proof of Proposition 2.8). -/
+`I ^ (m + 1) = 0`, pulling back along the reduction `ℤ ^ ι → (ℤ / n ^ m) ^ ι` maps the formal points
+of `D((ℤ / n ^ m) ^ ι)` bijectively to those of `D(ℤ ^ ι)`. For finite `ι` these are the
+`n ^ m`-torsion `T[n ^ m]` of the formal torus `T = D̂(ℤ ^ ι)` and `T` itself. For a local ring
+`A` of residue characteristic `p` with `𝔪_A ^ (m + 1) = 0`, this is the isomorphism `T[p ^ m] → T`
+on coefficients truncated at level `m + 1` (Khare–Wintenberger, *loc. cit.*, proof of
+Proposition 2.8). -/
 noncomputable def formalPointsTorusTruncationMulEquiv (I : Ideal A) {n m : ℕ} (hn : (n : A) ∈ I)
     (hI : I ^ (m + 1) = ⊥) :
     formalPoints R (Multiplicative (ι → ZMod (n ^ m))) I ≃*
       formalPoints R (Multiplicative (ι → ℤ)) I :=
-  formalPointsMulEquivOfKerLe R I hn hI (torusReduction ι (n ^ m))
-    (torusReduction_surjective ι _) (ker_torusReduction_le ι _)
+  formalPointsMulEquivOfKerLe R I hn hI (ZMod.piReduction ι (n ^ m))
+    (ZMod.piReduction_surjective ι _) (ZMod.ker_piReduction_le ι _)
+
+/-- The truncation isomorphism for the formal torus is precomposition with the map of group
+algebras induced by the reduction `ℤ ^ ι → (ℤ / n ^ m) ^ ι`. -/
+@[simp]
+theorem coe_formalPointsTorusTruncationMulEquiv_apply (I : Ideal A) {n m : ℕ} (hn : (n : A) ∈ I)
+    (hI : I ^ (m + 1) = ⊥) (f : formalPoints R (Multiplicative (ι → ZMod (n ^ m))) I) :
+    (formalPointsTorusTruncationMulEquiv R ι I hn hI f :
+        WithConv (MonoidAlgebra R (Multiplicative (ι → ℤ)) →ₐ[R] A)) =
+      pointsMap (ZMod.piReduction ι (n ^ m)) f :=
+  (rfl)
 
 /-- **Prime-to-`n` torsion has no formal points.** If the integer `n` lies in `I`,
 `I ^ (m + 1) = 0`, and every element of `G` has order dividing `k` with `k` coprime to `n`, then
