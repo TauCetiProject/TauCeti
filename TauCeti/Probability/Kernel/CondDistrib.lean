@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.CondDistrib
-import TauCeti.Probability.Kernel.Composition.CompProd
+import TauCeti.Probability.Kernel.Composition.KernelLemmas
 
 /-!
 # Conditioning on part of the conditioning variable
 
-Let `Z`, `X` and `Y` be random variables on a finite measure space. The conditional distribution
-of `Z` given `X` is obtained from the conditional distribution of `Z` given the pair `(X, Y)` by
-averaging over the conditional distribution of `Y` given `X`:
+Let `Z`, `X` and `Y` be almost everywhere measurable random variables on a finite measure space,
+where `Y` and `Z` take values in nonempty standard Borel spaces (no condition on the codomain of
+`X` beyond measurability). The conditional distribution of `Z` given `X` is obtained from the
+conditional distribution of `Z` given the pair `(X, Y)` by averaging over the conditional
+distribution of `Y` given `X`:
 `condDistrib Z X = condDistrib Z (X, Y) ∘ₖ (Kernel.id ×ₖ condDistrib Y X)`, almost everywhere
 for the law of `X`.
 
@@ -39,17 +41,32 @@ variable {Ω β γ δ : Type*} [MeasurableSpace Ω] [MeasurableSpace β] [Measur
 
 /-- The conditional distribution of `Z` given `X` is the conditional distribution of `Z` given
 `(X, Y)` averaged over the conditional distribution of `Y` given `X`, almost everywhere for the
-law of `X`. -/
+law of `X`. Here `μ` is a finite measure, `X`, `Y` and `Z` are almost everywhere measurable, and
+the codomains of `Y` and `Z` (but not necessarily that of `X`) are nonempty standard Borel spaces.
+
+The proof follows Mathlib: both sides disintegrate the joint law of `(X, Z)`, by
+`compProd_map_condDistrib` applied to `(X, Y)` and to `((X, Y), Z)`, and
+`condDistrib_ae_eq_of_measure_eq_compProd` gives uniqueness of the disintegration. -/
 theorem condDistrib_ae_eq_comp {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω → δ} {X : Ω → β}
     {Y : Ω → γ} (hZ : AEMeasurable Z μ) (hX : AEMeasurable X μ) (hY : AEMeasurable Y μ) :
     condDistrib Z X μ =ᵐ[μ.map X]
       condDistrib Z (fun ω ↦ (X ω, Y ω)) μ ∘ₖ (Kernel.id ×ₖ condDistrib Y X μ) := by
-  refine condDistrib_ae_eq_of_measure_eq_compProd hX hZ ?_
-  rw [← Kernel.snd_compProd_eq_comp_id_prod, Kernel.snd_eq, Measure.compProd_map measurable_snd,
-    ← Measure.compProd_assoc', compProd_map_condDistrib hX hY,
-    compProd_map_condDistrib (hX.prodMk hY) hZ, Measure.map_map (by fun_prop) (by fun_prop),
-    AEMeasurable.map_map_of_aemeasurable (by fun_prop) (by fun_prop)]
-  -- the composite map sends `ω` to `(X ω, Z ω)` by the definition of `prodAssoc`
-  rfl
+  -- the joint law of `(X, (Y, Z))`, from the two disintegrations
+  have hjoint : μ.map X ⊗ₘ (condDistrib Y X μ ⊗ₖ condDistrib Z (fun ω ↦ (X ω, Y ω)) μ) =
+      (μ.map fun ω ↦ ((X ω, Y ω), Z ω)).map MeasurableEquiv.prodAssoc := by
+    rw [← Measure.compProd_assoc', compProd_map_condDistrib hX hY,
+      compProd_map_condDistrib (hX.prodMk hY) hZ]
+  refine condDistrib_ae_eq_of_measure_eq_compProd hX hZ (Eq.symm ?_)
+  calc μ.map X ⊗ₘ (condDistrib Z (fun ω ↦ (X ω, Y ω)) μ ∘ₖ (Kernel.id ×ₖ condDistrib Y X μ))
+      = (μ.map X ⊗ₘ (condDistrib Y X μ ⊗ₖ condDistrib Z (fun ω ↦ (X ω, Y ω)) μ)).map
+          (Prod.map id Prod.snd) := by
+        rw [← Kernel.snd_compProd_eq_comp_id_prod, Kernel.snd_eq,
+          Measure.compProd_map measurable_snd]
+    _ = μ.map fun ω ↦ (X ω, Z ω) := by
+        rw [hjoint, Measure.map_map (by fun_prop) (by fun_prop),
+          AEMeasurable.map_map_of_aemeasurable (by fun_prop) (by fun_prop)]
+        -- `prodAssoc` sends `((x, y), z)` to `(x, (y, z))`, so the composite map is
+        -- `ω ↦ (X ω, Z ω)` by definition
+        rfl
 
 end ProbabilityTheory
