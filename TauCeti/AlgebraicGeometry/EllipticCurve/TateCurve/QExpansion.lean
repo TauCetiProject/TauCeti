@@ -245,7 +245,8 @@ theorem _root_.ModularForm.exists_isIntegralModularForm_specialize_tateCurve_eq 
   push Not at hzero
   -- Otherwise subtracting `a₀ g`, with `g = 1 + ⋯`, from `F` leaves a cusp form `F'`.
   obtain ⟨g, hgA, hg, hg₀⟩ :=
-    exists_isIntegralModularForm_constantCoeff_specialize_eq_one hzero.1 hzero.2
+    exists_isIntegralModularForm_constantCoeff_specialize_eq_one
+      (Nat.not_odd_iff_even.2 hzero.1) hzero.2
   obtain ⟨G, hG⟩ := hg.exists_qExpansion_eq_map_specialize_tateCurve
   set a₀ := constantCoeff P
   set F' := F - a₀ • G

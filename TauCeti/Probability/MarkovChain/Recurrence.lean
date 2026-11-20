@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.MarkovChain.Visits
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.Process.HittingTime.Orbit
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Recurrence and communicating classes
@@ -17,7 +18,9 @@ time almost surely, and transient otherwise. Recurrence is equivalent to diverge
 the diagonal Green function, and is constant on communicating classes. The mean return
 time is the extended nonnegative expectation of the first return time; it is at least one,
 equals the sum of the pre-return tail probabilities when singletons are measurable, and is
-infinite at a transient state.
+infinite at a transient state. A measurable state-space map intertwining two Markov kernels
+projects recurrence and bounds the target mean return time from above whenever target singletons
+are measurable.
 
 Every state reachable from a recurrent state is recurrent and hits the original state
 almost surely. Consequently a recurrent communicating class is closed. In an irreducible
@@ -145,6 +148,42 @@ theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanRetur
         exact (ENat.toENNReal_eq_top.mpr hωA).ge
       · rw [Set.indicator_of_notMem hω]
         exact zero_le
+
+/-- If a measurable map `f` intertwines `κ` with `η` via `(κ s).map f = η (f s)` for every state
+`s`, then recurrence of `x` under `κ` implies recurrence of `f x` under `η`. Only measurable
+singletons on the target space `γ` are needed. -/
+theorem IsRecurrent.of_map_eq {γ : Type*} [MeasurableSpace γ] [MeasurableSingletonClass γ]
+    {η : Kernel γ γ} [IsMarkovKernel η] (hx : κ.IsRecurrent x) {f : S → γ}
+    (hf : Measurable f) (h : ∀ s, (κ s).map f = η (f s)) :
+    η.IsRecurrent (f x) := by
+  have hE : MeasurableSet {u : ℕ → γ | hittingAfter (fun n u => u n) {f x} 1 u ≠ ⊤} :=
+    measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton (f x)) 1
+  rw [isRecurrent_iff, ← κ.markovChainLaw_dirac_map_comp η hf h x,
+    Measure.map_apply (by fun_prop) hE]
+  refine le_antisymm prob_le_one ?_
+  rw [← isRecurrent_iff.mp hx]
+  exact measure_mono fun w hw => ne_top_of_le_ne_top hw <|
+    (Set.mapsTo_singleton.mpr rfl : Set.MapsTo f {x} {f x}).hittingAfter_comp_le
+      (fun n w => w n) 1 w
+
+/-- If a measurable map `f` intertwines `κ` with `η` via `(κ s).map f = η (f s)` for every state
+`s`, then returning to `x` requires returning to `f x`, so
+`η.meanReturnTime (f x) ≤ κ.meanReturnTime x`. Only measurable singletons on the target space `γ`
+are needed. -/
+theorem meanReturnTime_le_of_map_eq {γ : Type*} [MeasurableSpace γ] [MeasurableSingletonClass γ]
+    {η : Kernel γ γ} [IsMarkovKernel η] {f : S → γ}
+    (hf : Measurable f) (h : ∀ s, (κ s).map f = η (f s)) (x : S) :
+    η.meanReturnTime (f x) ≤ κ.meanReturnTime x := by
+  have hτ : Measurable fun u : ℕ → γ =>
+      ENat.toENNReal (hittingAfter (fun n u => u n) {f x} 1 u) :=
+    Measurable.of_discrete.comp
+      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
+        (f := Filtration.piLE (X := fun _ : ℕ => γ)) (measurableSet_singleton (f x))).measurable'
+  rw [meanReturnTime_def, meanReturnTime_def, ← κ.markovChainLaw_dirac_map_comp η hf h x,
+    MeasureTheory.lintegral_map hτ (by fun_prop)]
+  exact lintegral_mono fun w => ENat.toENNReal_mono <|
+    (Set.mapsTo_singleton.mpr rfl : Set.MapsTo f {x} {f x}).hittingAfter_comp_le
+      (fun n w => w n) 1 w
 
 variable [MeasurableSingletonClass S]
 

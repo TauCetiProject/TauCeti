@@ -10,10 +10,9 @@ public import Mathlib.Logic.Function.Basic
 public import Mathlib.Logic.Pairwise
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Defs
-public import Mathlib.Order.SetNotation
 
 /-!
-# Changing a strictly monotone function at one point
+# Monotonicity on sets: point updates, grids and two-sided minima
 
 Redefining a function at a single point `a` keeps it strictly monotone on a set `s` as long as
 the new value lies strictly between the values at the points of `s` on either side of `a`
@@ -24,12 +23,20 @@ The consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid `f` monotone th
 point `f n` follow one another: of two distinct ones, one ends before the other starts
 (`MonotoneOn.pairwise_succ_le_or_succ_le`).
 
+A function on a linearly ordered domain that decreases on `s ∩ (-∞, a]` and increases
+on `s ∩ [a, ∞)` attains its global minimum on `s` at `a` (`TauCeti.le_of_antitoneOn_monotoneOn`),
+strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAntiOn_strictMonoOn`).
+
 ## Main results
 
 * `StrictMonoOn.update`: a function strictly monotone on `s \ {a}`, updated at `a` to a value
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
 * `MonotoneOn.pairwise_succ_le_or_succ_le`: distinct consecutive intervals of a monotone grid
   overlap at most at an endpoint.
+* `TauCeti.le_of_antitoneOn_monotoneOn`: if `f` is antitone on `s ∩ Iic a` and monotone on
+  `s ∩ Ici a` with `a ∈ s`, then `f a ≤ f x` for all `x ∈ s`.
+* `TauCeti.lt_of_strictAntiOn_strictMonoOn`: if `f` is strictly antitone on `s ∩ Iic a` and
+  strictly monotone on `s ∩ Ici a` with `a ∈ s`, then `f a < f x` for all `x ∈ s` with `x ≠ a`.
 -/
 
 public section
@@ -66,3 +73,25 @@ theorem MonotoneOn.pairwise_succ_le_or_succ_le {α : Type*} [Preorder α] {f : �
       (Nat.succ_le_of_lt h))
   · exact Or.inr (hf (mem_Iic.mpr (Nat.succ_le_of_lt hj)) (mem_Iic.mpr (le_of_lt hi))
       (Nat.succ_le_of_lt h))
+
+namespace TauCeti
+
+/-- If `f` is antitone on `s ∩ (-∞, a]` and monotone on `s ∩ [a, ∞)` with `a ∈ s`, then `f`
+attains its minimum on `s` at `a`. -/
+theorem le_of_antitoneOn_monotoneOn {α β : Type*} [LinearOrder α] [Preorder β] {f : α → β}
+    {s : Set α} {a x : α} (ha : a ∈ s) (hanti : AntitoneOn f (s ∩ Iic a))
+    (hmono : MonotoneOn f (s ∩ Ici a)) (hx : x ∈ s) :
+    f a ≤ f x :=
+  (le_total x a).elim (fun h ↦ hanti ⟨hx, h⟩ ⟨ha, le_rfl⟩ h)
+    (fun h ↦ hmono ⟨ha, le_rfl⟩ ⟨hx, h⟩ h)
+
+/-- If `f` is strictly antitone on `s ∩ (-∞, a]` and strictly monotone on `s ∩ [a, ∞)` with
+`a ∈ s`, then `f a < f x` for every `x ∈ s` distinct from `a`. -/
+theorem lt_of_strictAntiOn_strictMonoOn {α β : Type*} [LinearOrder α] [Preorder β] {f : α → β}
+    {s : Set α} {a x : α} (ha : a ∈ s) (hanti : StrictAntiOn f (s ∩ Iic a))
+    (hmono : StrictMonoOn f (s ∩ Ici a)) (hx : x ∈ s) (hne : x ≠ a) :
+    f a < f x :=
+  hne.lt_or_gt.elim (fun h ↦ hanti ⟨hx, h.le⟩ ⟨ha, le_rfl⟩ h)
+    (fun h ↦ hmono ⟨ha, le_rfl⟩ ⟨hx, h.le⟩ h)
+
+end TauCeti

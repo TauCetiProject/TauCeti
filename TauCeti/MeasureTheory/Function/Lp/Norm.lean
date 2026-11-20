@@ -94,6 +94,10 @@ bounds.
   bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
+* `MeasureTheory.memLp_top_inv_of_ae_le_norm` and
+  `MeasureTheory.memLp_top_inv_sub_of_ae_le_norm_sub`: an almost-everywhere strongly measurable
+  function into a normed division ring bounded away from zero (or from a scalar `z`) almost
+  everywhere has essentially bounded reciprocal (`MemLp · ∞ μ`).
 -/
 
 public section
@@ -645,6 +649,32 @@ theorem Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFini
       (Lp.stronglyMeasurable A)).measurable)
   obtain ⟨t, ht, hts, h1, h2⟩ := Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
   exact ⟨u B, t, ht, hts, h1, h2⟩
+
 end OperatorNorm
+section Inv
+
+variable {α 𝕜 : Type*} [MeasurableSpace α] [NormedDivisionRing 𝕜] {μ : Measure α}
+
+/-- If an almost-everywhere strongly measurable function `f : α → 𝕜` into a normed division ring
+satisfies `ε ≤ ‖f x‖` almost everywhere for some `ε > 0`, then its pointwise inverse `x ↦ (f x)⁻¹`
+is essentially bounded (`MemLp · ∞ μ`). -/
+theorem memLp_top_inv_of_ae_le_norm {f : α → 𝕜} (hf : AEStronglyMeasurable f μ) {ε : ℝ}
+    (hε : 0 < ε) (hbound : ∀ᵐ x ∂μ, ε ≤ ‖f x‖) :
+    MemLp (fun x ↦ (f x)⁻¹) ∞ μ := by
+  refine memLp_top_of_bound hf.inv₀ ε⁻¹ ?_
+  filter_upwards [hbound] with x hx
+  rw [norm_inv]
+  exact inv_anti₀ hε hx
+
+/-- If an almost-everywhere strongly measurable function `f : α → 𝕜` into a normed division ring
+satisfies `ε ≤ ‖f x - z‖` almost everywhere for some `ε > 0`, then `x ↦ (z - f x)⁻¹` is
+essentially bounded (`MemLp · ∞ μ`). -/
+theorem memLp_top_inv_sub_of_ae_le_norm_sub {f : α → 𝕜} (hf : AEStronglyMeasurable f μ) {z : 𝕜}
+    {ε : ℝ} (hε : 0 < ε) (hbound : ∀ᵐ x ∂μ, ε ≤ ‖f x - z‖) :
+    MemLp (fun x ↦ (z - f x)⁻¹) ∞ μ :=
+  memLp_top_inv_of_ae_le_norm (aestronglyMeasurable_const.sub hf) hε
+    (hbound.mono fun x hx ↦ norm_sub_rev (f x) z ▸ hx)
+
+end Inv
 
 end MeasureTheory
