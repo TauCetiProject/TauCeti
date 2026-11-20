@@ -43,8 +43,6 @@ their boundary words.
   trivial.
 * `TauCeti.SurfaceModel.instSubsingletonFacePresentationTriangulatedDisc`: the face group of the
   triangulated disc is trivial.
-* `TauCeti.SurfaceModel.spanningTree_darts_pants`: the arcs form the only spanning tree of the pair
-  of pants.
 * `TauCeti.SurfaceModel.pantsFacePresentationEquiv_boundaryWord`,
   `TauCeti.SurfaceModel.marksBoundary_pants`: the boundary words of the pair of pants are the
   peripheral elements of `S⁺(0, 3)` up to inversion, one for each hole.
@@ -160,39 +158,6 @@ theorem boundaryWord_triangulatedDisc (T : Set triangulatedDisc.graph.E)
   exact h
 
 /-! ### The pair of pants -/
-
-/-- The only spanning tree of the pair of pants consists of the darts of its three arcs `cᵢ`: a loop
-`hᵢ` is never a tree dart, and the hole vertex `i` is joined to the centre by the arc `cᵢ` only. -/
-theorem spanningTree_darts_pants (T : pants.graph.SpanningTree) :
-    T.darts = {e | e.1.isLeft} := by
-  -- A loop `hᵢ` is never a tree dart.
-  have hT (e : pants.graph.E) (he : e ∈ T.darts) : e.1.isLeft := by
-    obtain ⟨_ | i, b⟩ := e
-    · rfl
-    · exact absurd rfl (T.src_ne_tgt he)
-  -- The last dart of the tree path from the centre to the hole `i` is the arc `cᵢ`.
-  have harc (i : Fin 3) : ((.inl i, true) : pants.graph.E) ∈ T.darts := by
-    obtain ⟨p, -, hpT⟩ := T.exists_path (none : pants.graph.V) (some i)
-    cases p with
-    | cons q f =>
-      have hf := hpT f.val ((SerreGraph.Path.darts_cons pants.graph q f).symm ▸
-        List.mem_append_right _ (List.mem_singleton_self _))
-      have htgt : pants.graph.tgt f.val = some i := f.property.2
-      generalize f.val = e at hf htgt
-      obtain ⟨j | j, _ | _⟩ := e
-      · simp at htgt
-      · obtain rfl : j = i := Option.some_injective _ htgt
-        exact hf
-      · exact absurd (hT _ hf) Bool.false_ne_true
-      · exact absurd (hT _ hf) Bool.false_ne_true
-  ext e
-  refine ⟨hT e, fun he => ?_⟩
-  obtain ⟨i | i, _ | _⟩ := e
-  · exact T.rev_mem _ (harc i)
-  · exact harc i
-  · exact absurd he Bool.false_ne_true
-  · exact absurd he Bool.false_ne_true
-
 
 -- The images of the darts of the pair of pants in `S⁺(0, 3)`: the arcs are trivial and the loop
 -- `hᵢ` is the peripheral element `pᵢ`.
