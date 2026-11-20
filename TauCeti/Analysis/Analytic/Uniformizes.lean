@@ -234,7 +234,7 @@ variable [CommRing K] [Algebra K 𝕜] {f f₁ f₂ : PowerSeries K}
 /-- Uniformizations along a fixed `φ` are compatible with negation. -/
 theorem Uniformizes.neg (h : Uniformizes φ f g) : Uniformizes φ (-f) (-g) := by
   obtain ⟨F, hF, hFf, hg⟩ := h
-  exact ⟨-F, hF.neg, by rw [taylorSeries_neg hF, hFf, map_neg], hg.neg⟩
+  exact ⟨-F, hF.neg, by rw [taylorSeries_neg, hFf, map_neg], hg.neg⟩
 
 /-- Uniformizations along a fixed `φ` subtract. -/
 theorem Uniformizes.sub (h₁ : Uniformizes φ f₁ g₁) (h₂ : Uniformizes φ f₂ g₂) :

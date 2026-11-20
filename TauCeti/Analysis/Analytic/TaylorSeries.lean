@@ -211,18 +211,25 @@ theorem constantCoeff_taylorSeries : PowerSeries.constantCoeff (taylorSeries f a
 theorem taylorSeries_zero : taylorSeries (0 : 𝕜 → A) a = 0 := by
   rw [Pi.zero_def, taylorSeries_const, map_zero]
 
-/-- The Taylor series of the negative of a function analytic at `a` is the negative of its Taylor
-series. -/
+/-- The Taylor series of the negative of a function is the negative of its Taylor series. -/
 @[simp]
-theorem taylorSeries_neg (hf : AnalyticAt 𝕜 f a) : taylorSeries (-f) a = -taylorSeries f a := by
-  rw [eq_neg_iff_add_eq_zero, ← taylorSeries_add hf.neg hf, neg_add_cancel, taylorSeries_zero]
+theorem taylorSeries_neg : taylorSeries (-f) a = -taylorSeries f a := by
+  have key : ∀ n, (swap dslope a)^[n] (-f) = -(swap dslope a)^[n] f := fun n ↦ by
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      rw [iterate_succ_apply', iterate_succ_apply', ih]
+      -- `swap dslope a f` is `dslope f a` by the definition of `Function.swap`.
+      exact dslope_neg _ a
+  ext n
+  rw [coeff_taylorSeries, map_neg, coeff_taylorSeries, key, Pi.neg_apply]
 
 /-- The Taylor series of a difference of functions analytic at `a` is the difference of their
 Taylor series. -/
 @[simp]
 theorem taylorSeries_sub (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
     taylorSeries (f - g) a = taylorSeries f a - taylorSeries g a := by
-  rw [sub_eq_add_neg, taylorSeries_add hf hg.neg, taylorSeries_neg hg, sub_eq_add_neg]
+  rw [sub_eq_add_neg, taylorSeries_add hf hg.neg, taylorSeries_neg, sub_eq_add_neg]
 
 /-- The Taylor series of a finite sum of functions analytic at `a` is the sum of their Taylor
 series. -/
