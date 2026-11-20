@@ -1,0 +1,78 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+
+/-!
+# The likelihood of a location family
+
+For a density `f` on `ℝ`, the location family has the densities `f (· - θ)`, and a sample
+`x : ι → ℝ` indexed by a finite type has the likelihood `u ↦ ∏ i, f (x i - u)` at the location
+`u`. This file records the elementary facts about this likelihood used by location-equivariant
+estimation: it is jointly measurable in the sample and the location; shifting the sample by `a`
+shifts the likelihood by `a`, and its first moment correspondingly; it changes only on a
+Lebesgue-null set of locations when `f` is changed on a null set; and it is almost everywhere
+nonnegative when `f` is.
+
+## Main results
+
+* `TauCeti.measurable_prod_apply_sub`: `(x, u) ↦ ∏ i, f (x i - u)` is measurable.
+* `TauCeti.prod_apply_add_sub`, `TauCeti.mul_prod_apply_add_sub`: the likelihood and its first
+  moment at a shifted sample.
+* `TauCeti.prod_apply_sub_ae_eq`, `TauCeti.prod_apply_sub_ae_nonneg`: the likelihood of a.e.
+  equal, resp. a.e. nonnegative, densities.
+
+The joint measurability is adapted from the lean-CKSD project
+(<https://github.com/bjbraams/lean-CKSD>), file `CKSD/Inference/Families.lean`
+(`measurable_prod_sub`, for samples indexed by `Fin n`); the other proofs are new.
+-/
+
+public section
+
+open MeasureTheory
+
+namespace TauCeti
+
+variable {ι : Type*} [Fintype ι] {f : ℝ → ℝ}
+
+/-- The location likelihood `(x, u) ↦ ∏ i, f (x i - u)` of a measurable `f` is jointly
+measurable. -/
+@[fun_prop]
+theorem measurable_prod_apply_sub (hf : Measurable f) :
+    Measurable fun p : (ι → ℝ) × ℝ ↦ ∏ i, f (p.1 i - p.2) :=
+  Finset.measurable_prod _ fun i _ ↦
+    hf.comp (((measurable_pi_apply i).comp measurable_fst).sub measurable_snd)
+
+/-- The likelihood of the sample shifted by `a`, at the location `u`, is the likelihood of the
+sample at `u - a`. -/
+theorem prod_apply_add_sub (x : ι → ℝ) (a u : ℝ) :
+    ∏ i, f (x i + a - u) = ∏ i, f (x i - (u - a)) :=
+  Finset.prod_congr rfl fun i _ ↦ by rw [sub_sub_eq_add_sub]
+
+/-- The first moment of the likelihood of the sample shifted by `a`, at the location `u`: it is
+the first moment of the likelihood of the sample at `u - a` plus `a` times that likelihood. -/
+theorem mul_prod_apply_add_sub (x : ι → ℝ) (a u : ℝ) :
+    u * ∏ i, f (x i + a - u) =
+      (u - a) * ∏ i, f (x i - (u - a)) + a * ∏ i, f (x i - (u - a)) := by
+  rw [prod_apply_add_sub]
+  ring
+
+/-- Densities that agree Lebesgue-a.e. give likelihoods that agree at Lebesgue-a.e. location. -/
+theorem prod_apply_sub_ae_eq {g : ℝ → ℝ} (hfg : f =ᵐ[volume] g) (x : ι → ℝ) :
+    (fun u ↦ ∏ i, f (x i - u)) =ᵐ[volume] fun u ↦ ∏ i, g (x i - u) := by
+  filter_upwards [ae_all_iff.2 fun i ↦ (quasiMeasurePreserving_sub_left volume (x i)).ae hfg]
+    with u hu using Finset.prod_congr rfl fun i _ ↦ hu i
+
+/-- The likelihood of a Lebesgue-a.e. nonnegative density is nonnegative at Lebesgue-a.e.
+location. -/
+theorem prod_apply_sub_ae_nonneg (hf0 : 0 ≤ᵐ[volume] f) (x : ι → ℝ) :
+    0 ≤ᵐ[volume] fun u ↦ ∏ i, f (x i - u) := by
+  filter_upwards [ae_all_iff.2 fun i ↦ (quasiMeasurePreserving_sub_left volume (x i)).ae hf0]
+    with u hu using Finset.prod_nonneg fun i _ ↦ hu i
+
+end TauCeti

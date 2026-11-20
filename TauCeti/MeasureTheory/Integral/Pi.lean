@@ -55,8 +55,6 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.ae_slice_pi_eq_zero`: for a binary kernel whose second-variable slices are a.e.
   integrable with integral zero, fixing one coordinate and integrating another against
   `Measure.pi μ` yields an a.e. integrable function with integral zero.
-* `TauCeti.lintegral_eq_lintegral_indicator_mul_lintegral_sub_const`: Lebesgue measure on
-  `ι → ℝ` decomposed along the diagonal lines `u ↦ z - u·1`.
 -/
 
 public section
@@ -316,39 +314,5 @@ theorem ae_slice_pi_eq_zero {ι : Type*} [Fintype ι] {α : ι → Type*}
   have ha : AEMeasurable (Function.eval b) (Measure.pi μ) := (measurable_pi_apply b).aemeasurable
   exact ⟨(integrable_map_measure (heval ▸ hz_int.aestronglyMeasurable) ha).mp (heval.symm ▸ hz_int),
     (heval ▸ integral_map ha (heval ▸ hz_int.aestronglyMeasurable)).symm.trans hz_zero⟩
-
-/-- **Decomposition of Lebesgue measure along the diagonal lines.** The lower integral over
-`ι → ℝ` of a measurable `H` is the integral, against the indicator of `z i₀ ∈ [0, 1]`, of the
-integrals of `H` along the lines `u ↦ z - u·1`: the slab `{z | z i₀ ∈ [0, 1]}` meets each such
-line in a segment of length one. -/
-theorem lintegral_eq_lintegral_indicator_mul_lintegral_sub_const {ι : Type*} [Fintype ι]
-    (i₀ : ι) {H : (ι → ℝ) → ℝ≥0∞} (hH : Measurable H) :
-    ∫⁻ x, H x =
-      ∫⁻ z : ι → ℝ, (Set.Icc (0 : ℝ) 1).indicator 1 (z i₀) * ∫⁻ u : ℝ, H fun i ↦ z i - u := by
-  set k : ℝ → ℝ≥0∞ := (Set.Icc (0 : ℝ) 1).indicator 1 with hkdef
-  have hk : Measurable k := measurable_one.indicator measurableSet_Icc
-  have hsub : Measurable fun p : (ι → ℝ) × ℝ ↦ fun i ↦ p.1 i - p.2 :=
-    measurable_pi_iff.2 fun i ↦ ((measurable_pi_apply i).comp measurable_fst).sub measurable_snd
-  have hk1 : ∀ t : ℝ, ∫⁻ u, k (t + u) = 1 := fun t ↦ by
-    rw [lintegral_add_left_eq_self k t, hkdef, lintegral_indicator_one measurableSet_Icc,
-      Real.volume_Icc, sub_zero, ENNReal.ofReal_one]
-  calc ∫⁻ x, H x = ∫⁻ x, ∫⁻ u : ℝ, k (x i₀ + u) * H x := by
-        refine lintegral_congr fun x ↦ ?_
-        rw [lintegral_mul_const (f := fun u ↦ k (x i₀ + u)) _ (hk.comp (measurable_const_add _)),
-          hk1, one_mul]
-    _ = ∫⁻ u : ℝ, ∫⁻ x, k (x i₀ + u) * H x :=
-        lintegral_lintegral_swap ((hk.comp (((measurable_pi_apply i₀).comp measurable_fst).add
-          measurable_snd)).mul (hH.comp measurable_fst)).aemeasurable
-    _ = ∫⁻ u : ℝ, ∫⁻ z : ι → ℝ, k (z i₀) * H fun i ↦ z i - u := by
-        refine lintegral_congr fun u ↦ ?_
-        rw [← lintegral_sub_right_eq_self _ fun _ ↦ u]
-        simp only [Pi.sub_apply, sub_add_cancel]
-        rfl
-    _ = ∫⁻ z : ι → ℝ, ∫⁻ u : ℝ, k (z i₀) * H fun i ↦ z i - u :=
-        lintegral_lintegral_swap ((hk.comp ((measurable_pi_apply i₀).comp measurable_snd)).mul
-          (hH.comp (hsub.comp measurable_swap))).aemeasurable
-    _ = ∫⁻ z : ι → ℝ, k (z i₀) * ∫⁻ u : ℝ, H fun i ↦ z i - u :=
-        lintegral_congr fun z ↦ lintegral_const_mul _ (hH.comp (hsub.comp
-          (measurable_const.prodMk measurable_id)))
 
 end TauCeti

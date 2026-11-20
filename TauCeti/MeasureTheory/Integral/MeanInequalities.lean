@@ -55,8 +55,6 @@ expected products without any independence assumption.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
-* `TauCeti.lintegral_ofReal_sq_sub_mul_le`: the weighted mean minimizes the weighted mean square
-  deviation.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -209,44 +207,6 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
   rw [hgq, one_div, one_div]
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
     hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
-
-/-- **The weighted mean minimizes the weighted mean square deviation.** For an integrable
-nonnegative weight `w` on `ℝ` with integrable first moment, `∫ (c - u)² w(u) dμ(u)` is smallest
-at the weighted mean `c = ∫ u w / ∫ w`. -/
-theorem lintegral_ofReal_sq_sub_mul_le {μ : Measure ℝ} {w : ℝ → ℝ} (hw0 : 0 ≤ᵐ[μ] w)
-    (hwi : Integrable w μ) (hmi : Integrable (fun u ↦ u * w u) μ) (c : ℝ) :
-    ∫⁻ u, ENNReal.ofReal (((∫ u, u * w u ∂μ) / (∫ u, w u ∂μ) - u) ^ 2 * w u) ∂μ ≤
-      ∫⁻ u, ENNReal.ofReal ((c - u) ^ 2 * w u) ∂μ := by
-  set W := ∫ u, w u ∂μ
-  set m := (∫ u, u * w u ∂μ) / W
-  have hnn : ∀ d : ℝ, 0 ≤ᵐ[μ] fun u ↦ (d - u) ^ 2 * w u := fun d ↦
-    hw0.mono fun u hu ↦ mul_nonneg (sq_nonneg _) hu
-  by_cases hW : W = 0
-  · -- A weight of mass zero vanishes almost everywhere.
-    have hw : w =ᵐ[μ] 0 := (integral_eq_zero_iff_of_nonneg_ae hw0 hwi).1 hW
-    rw [lintegral_congr_ae (g := fun _ ↦ 0) (hw.mono fun u hu ↦ by simp [hu]), lintegral_zero]
-    exact zero_le
-  have hpos : 0 < W := (integral_nonneg_of_ae hw0).lt_of_ne (Ne.symm hW)
-  by_cases hfin : ∫⁻ u, ENNReal.ofReal ((c - u) ^ 2 * w u) ∂μ = ∞
-  · exact hfin ▸ le_top
-  have hc : Integrable (fun u ↦ (c - u) ^ 2 * w u) μ :=
-    ⟨(((continuous_const.sub continuous_id).pow 2).aestronglyMeasurable).mul
-      hwi.aestronglyMeasurable, (hasFiniteIntegral_iff_ofReal (hnn c)).2 (lt_top_iff_ne_top.2 hfin)⟩
-  -- `(m - u)² w = (c - u)² w - (c - m) ((c + m) w - 2 u w)`, and the last term integrates to
-  -- `(c - m)² W` because `∫ u w = m W`.
-  have hlin : Integrable (fun u ↦ (c - m) * ((c + m) * w u - 2 * (u * w u))) μ :=
-    ((hwi.const_mul _).sub (hmi.const_mul _)).const_mul _
-  have hm : Integrable (fun u ↦ (m - u) ^ 2 * w u) μ :=
-    (hc.sub hlin).congr (ae_of_all _ fun u ↦ by simp only [Pi.sub_apply]; ring)
-  have hint : ∫ u, (m - u) ^ 2 * w u ∂μ = (∫ u, (c - u) ^ 2 * w u ∂μ) - (c - m) ^ 2 * W := by
-    rw [integral_congr_ae (ae_of_all _ fun u ↦ show (m - u) ^ 2 * w u =
-        (c - u) ^ 2 * w u - (c - m) * ((c + m) * w u - 2 * (u * w u)) by ring),
-      integral_sub hc hlin, integral_const_mul, integral_sub (hwi.const_mul _) (hmi.const_mul _),
-      integral_const_mul, integral_const_mul, ← div_mul_cancel₀ (∫ u, u * w u ∂μ) hpos.ne']
-    ring
-  rw [← ofReal_integral_eq_lintegral_ofReal hm (hnn m),
-    ← ofReal_integral_eq_lintegral_ofReal hc (hnn c), hint]
-  exact ENNReal.ofReal_le_ofReal (sub_le_self _ (mul_nonneg (sq_nonneg _) hpos.le))
 
 end TauCeti
 

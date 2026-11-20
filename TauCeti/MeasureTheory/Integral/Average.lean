@@ -119,6 +119,8 @@ applied to an integrable function that is almost everywhere at least `a`.
   oscillation from `t` to `s ⊆ t` passes from a comparison function `H` to `f`.
 * `TauCeti.setIntegral_norm_sub_toLp_fst_setAverage_sq_le`: for a function with values in the
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
+* `TauCeti.lintegral_ofReal_sub_sq_mul_le`: for a nonnegative integrable weight `w` on `ℝ`, the
+  weighted mean `(∫ u w) / (∫ w)` minimizes the weighted squared deviation `∫⁻ (c - u)² w`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
 * `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
@@ -789,6 +791,68 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
   linarith
 
 end InnerProduct
+
+section WeightedMean
+
+variable {μ : Measure ℝ} {w : ℝ → ℝ}
+
+/-- **The weighted mean minimizes the weighted squared deviation.** For an integrable a.e.
+nonnegative weight `w` on `ℝ`, the weighted squared deviation
+`∫⁻ u, ofReal ((c - u)² w(u)) ∂μ`, which may be infinite, is smallest at the weighted mean
+`c = (∫ u w(u) ∂μ) / (∫ w ∂μ)`. When `w` has zero mass, it vanishes a.e. and every center `c`
+has zero deviation. No first moment is assumed: if the deviation about `c` is finite, the first
+moment is integrable.
+
+The proof is adapted from the lean-CKSD project (<https://github.com/bjbraams/lean-CKSD>), file
+`CKSD/Inference/Families.lean` (`lintegral_ofReal_sq_sub_mul_le`). -/
+theorem lintegral_ofReal_sub_sq_mul_le (hw0 : 0 ≤ᵐ[μ] w) (hwi : Integrable w μ) (c : ℝ) :
+    ∫⁻ u, ENNReal.ofReal (((∫ u, u * w u ∂μ) / (∫ u, w u ∂μ) - u) ^ 2 * w u) ∂μ ≤
+      ∫⁻ u, ENNReal.ofReal ((c - u) ^ 2 * w u) ∂μ := by
+  set W := ∫ u, w u ∂μ
+  set m := (∫ u, u * w u ∂μ) / W
+  have hnn : ∀ d : ℝ, 0 ≤ᵐ[μ] fun u ↦ (d - u) ^ 2 * w u := fun d ↦
+    hw0.mono fun u hu ↦ mul_nonneg (sq_nonneg _) hu
+  have hsm : ∀ d : ℝ, AEStronglyMeasurable (fun u ↦ (d - u) ^ 2 * w u) μ := fun d ↦
+    (((continuous_const.sub continuous_id).pow 2).aestronglyMeasurable).mul
+      hwi.aestronglyMeasurable
+  by_cases hW : W = 0
+  · -- A weight of mass zero vanishes almost everywhere.
+    have hw : w =ᵐ[μ] 0 := (integral_eq_zero_iff_of_nonneg_ae hw0 hwi).1 hW
+    rw [lintegral_congr_ae (g := fun _ ↦ 0) (hw.mono fun u hu ↦ by simp [hu]), lintegral_zero]
+    exact zero_le
+  have hpos : 0 < W := (integral_nonneg_of_ae hw0).lt_of_ne (Ne.symm hW)
+  by_cases hfin : ∫⁻ u, ENNReal.ofReal ((c - u) ^ 2 * w u) ∂μ = ∞
+  · exact hfin ▸ le_top
+  have hc : Integrable (fun u ↦ (c - u) ^ 2 * w u) μ :=
+    (lintegral_ofReal_ne_top_iff_integrable (hsm c) (hnn c)).1 hfin
+  -- The first moment is dominated by `(|c| + 1) w + (c - u)² w`.
+  have hmi : Integrable (fun u ↦ u * w u) μ := by
+    refine ((hwi.const_mul (|c| + 1)).add hc).mono'
+      (continuous_id.aestronglyMeasurable.mul hwi.aestronglyMeasurable) ?_
+    filter_upwards [hw0] with u hu
+    have h1 : |u| ≤ |c| + |c - u| := by linarith [abs_sub_abs_le_abs_sub u c, abs_sub_comm u c]
+    have h2 : |c - u| ≤ 1 + (c - u) ^ 2 := by nlinarith [sq_abs (c - u), abs_nonneg (c - u)]
+    rw [norm_mul, Real.norm_of_nonneg hu, Real.norm_eq_abs, Pi.add_apply]
+    nlinarith [mul_le_mul_of_nonneg_right (h1.trans (add_le_add_right h2 _)) hu]
+  -- `(m - u)² w = (c - u)² w - (c - m) ((c + m) w - 2 u w)`.
+  have hexp : ∀ u, (m - u) ^ 2 * w u =
+      (c - u) ^ 2 * w u - (c - m) * ((c + m) * w u - 2 * (u * w u)) := fun u ↦ by ring
+  have hlin : Integrable (fun u ↦ (c - m) * ((c + m) * w u - 2 * (u * w u))) μ :=
+    ((hwi.const_mul _).sub (hmi.const_mul _)).const_mul _
+  have hm : Integrable (fun u ↦ (m - u) ^ 2 * w u) μ :=
+    (hc.sub hlin).congr (ae_of_all _ fun u ↦ (hexp u).symm)
+  -- The correction term integrates to `(c - m)² W`, because `∫ u w = m W`.
+  have hcorr : ∫ u, (c - m) * ((c + m) * w u - 2 * (u * w u)) ∂μ = (c - m) ^ 2 * W := by
+    rw [integral_const_mul, integral_sub (hwi.const_mul _) (hmi.const_mul _), integral_const_mul,
+      integral_const_mul, ← div_mul_cancel₀ (∫ u, u * w u ∂μ) hpos.ne']
+    ring
+  have hint : ∫ u, (m - u) ^ 2 * w u ∂μ = (∫ u, (c - u) ^ 2 * w u ∂μ) - (c - m) ^ 2 * W := by
+    rw [integral_congr_ae (ae_of_all _ hexp), integral_sub hc hlin, hcorr]
+  rw [← ofReal_integral_eq_lintegral_ofReal hm (hnn m),
+    ← ofReal_integral_eq_lintegral_ofReal hc (hnn c), hint]
+  exact ENNReal.ofReal_le_ofReal (sub_le_self _ (mul_nonneg (sq_nonneg _) hpos.le))
+
+end WeightedMean
 
 section NormalConstant
 
