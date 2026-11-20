@@ -98,6 +98,11 @@ theorem eventually_norm_inv_phase_eq_one (m : ℕ) :
   filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
   simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
 
+/-- The modulus of the inverse degree-`m` winding phase tends to one at infinity. -/
+theorem tendsto_norm_inv_phase (m : ℕ) :
+    Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) :=
+  tendsto_const_nhds.congr' ((eventually_norm_inv_phase_eq_one m).mono fun _ h ↦ h.symm)
+
 /-- For a reconstructed monic polynomial section, unit modulus at infinity already fixes
 its degree-`m` end phase. The scalar ansatz has no independent phase ambiguity. -/
 theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_norm

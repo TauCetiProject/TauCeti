@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.LocallyConvex.HahnBanach
 public import Mathlib.Analysis.LocallyConvex.PointwiseConvergence
 public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 
 /-!
 # Continuous functionals for the topology of pointwise convergence
@@ -17,9 +18,9 @@ convergence (the strong operator topology) is a finite sum `T ↦ ∑ x ∈ s, g
 functionals of values (`PointwiseConvergenceCLM.exists_finset_sum_eq`). On a Hilbert space,
 writing each `g x` as an inner product gives the usual finite sums of matrix coefficients.
 
-The file also evaluates post-composition by a fixed continuous linear map at a vector
-(`PointwiseConvergenceCLM.postcomp_apply_apply`), and post-composition by the identity is the
-identity (`PointwiseConvergenceCLM.postcomp_id`).
+The file also makes the evaluation of post-composition by a fixed continuous linear map at a
+vector (`PointwiseConvergenceCLM.postcomp_apply_apply`) a pre-simp lemma, and shows that
+post-composition by the identity is the identity (`PointwiseConvergenceCLM.postcomp_id`).
 
 ## References
 
@@ -30,24 +31,19 @@ public section
 
 namespace PointwiseConvergenceCLM
 
+/- Mathlib's simps lemma `PointwiseConvergenceCLM.postcomp_apply` states
+`postcomp E L u = L.comp u`, which reads `u` as a plain continuous linear map, so
+`ContinuousLinearMap.comp_apply` cannot evaluate the result. The evaluation lemma
+`postcomp_apply_apply` is therefore a pre-simp lemma here, so that it fires before simp rewrites
+the inner `postcomp E L u`. -/
+attribute [simp↓] postcomp_apply_apply
+
 section Postcomp
 
-variable {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] [NormedField 𝕜₃]
-  {σ : 𝕜₁ →+* 𝕜₂} {τ : 𝕜₂ →+* 𝕜₃} {ρ : 𝕜₁ →+* 𝕜₃} [RingHomCompTriple σ τ ρ]
+variable {𝕜₁ 𝕜₂ E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
   [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E]
   [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜₂ F]
-  [ContinuousConstSMul 𝕜₂ F] [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
-  [Module 𝕜₃ G] [ContinuousConstSMul 𝕜₃ G]
-
-/-- Post-composition by `L` evaluates as `L` applied to the value. Mathlib's simps lemma
-`PointwiseConvergenceCLM.postcomp_apply` instead states `postcomp E L u = L.comp u`, which reads
-`u` as a plain continuous linear map, so `ContinuousLinearMap.comp_apply` cannot evaluate the
-result. This lemma is a pre-simp lemma so that it fires before simp rewrites the inner
-`postcomp E L u`. -/
-@[simp↓]
-theorem postcomp_apply_apply (L : F →SL[τ] G) (u : E →SLₚₜ[σ] F) (x : E) :
-    postcomp E L u x = L (u x) :=
-  rfl
+  [ContinuousConstSMul 𝕜₂ F]
 
 /-- Post-composition by the identity is the identity. -/
 @[simp]
