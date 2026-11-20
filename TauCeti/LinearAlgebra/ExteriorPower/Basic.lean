@@ -375,7 +375,7 @@ theorem ιMulti_eq_zero_of_finrank_lt {n : ℕ} {x : Fin n → V} (P : Submodule
     [FiniteDimensional K P] (s : Finset (Fin n)) (hs : Module.finrank K P < s.card)
     (hx : ∀ i ∈ s, x i ∈ P) : exteriorPower.ιMulti K n x = 0 := by
   refine (exteriorPower.ιMulti K n).map_linearDependent x fun hli ↦ hs.not_ge ?_
-  have hli' : LinearIndependent K (fun i : s ↦ (⟨x i, hx i i.2⟩ : P)) :=
+  have hli' : LinearIndependent K (fun i : s ↦ (⟨x i, hx i i.property⟩ : P)) :=
     LinearIndependent.of_comp P.subtype (hli.comp _ Subtype.val_injective)
   simpa using hli'.fintype_card_le_finrank
 
@@ -460,7 +460,7 @@ theorem exteriorPower_map_map (n : ℕ) (f : M →ₗ[R] N) :
 theorem _root_.LinearMap.exteriorAlgebra_map_mem_exteriorPower (f : M →ₗ[R] N) {n : ℕ}
     {x : _root_.ExteriorAlgebra R M} (hx : x ∈ ⋀[R]^n M) :
     _root_.ExteriorAlgebra.map f x ∈ ⋀[R]^n N := by
-  simpa only [exteriorPower.coe_map] using (exteriorPower.map n f ⟨x, hx⟩).2
+  simpa only [exteriorPower.coe_map] using (exteriorPower.map n f ⟨x, hx⟩).property
 
 /-- A vector lies in the first exterior power. -/
 theorem ι_mem_exteriorPower_one (m : M) : _root_.ExteriorAlgebra.ι R m ∈ ⋀[R]^1 M := by

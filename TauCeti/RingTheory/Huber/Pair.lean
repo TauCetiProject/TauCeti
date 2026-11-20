@@ -115,7 +115,7 @@ theorem mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn {Aplus : Subring
   have hpow : IsIntegral Aplus (a ^ n) :=
     isIntegral_algebraMap (R := Aplus) (x := (⟨a ^ n, hmem⟩ : Aplus))
   obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
-  exact hy ▸ y.2
+  exact hy ▸ y.property
 
 /-- `A°° ⊆ A⁺` for every ring of integral elements. -/
 theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [NonarchimedeanRing A]
@@ -381,7 +381,7 @@ noncomputable def Hom.quotientLift {S : Pair A} {T : Pair B} (J : Ideal A) (f : 
     let R : Subring (A ⧸ J) := S.plus.map (Ideal.Quotient.mk J)
     let φ : R →+* T.plus :=
       (ψ.comp R.subtype).codRestrict T.plus fun x ↦ by
-        obtain ⟨a, ha, hax⟩ := Subring.mem_map.mp x.2
+        obtain ⟨a, ha, hax⟩ := Subring.mem_map.mp x.property
         have hψx : ψ x = f.toRingHom a := by
           rw [← hax]
           exact Ideal.Quotient.lift_mk J f.toRingHom _

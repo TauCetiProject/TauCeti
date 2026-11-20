@@ -156,7 +156,7 @@ private theorem eq_algebraMap_of_all_contractLeft_eq_zero
   by_cases hs : s = ∅
   · subst s
     simp
-  · obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hs
+  · obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.1 hs
     have hproject : exteriorCoordProj b i x = 0 := by
       rw [exteriorCoordProj, LinearMap.comp_apply, hx, LinearMap.mulLeft_apply, mul_zero]
     have hcoord := exteriorCoordProj_repr_of_mem b i s hi x

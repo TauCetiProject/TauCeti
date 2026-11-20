@@ -60,10 +60,10 @@ lemma map_imageIdeal_basicOpen (U : X.affineOpens) (f : Γ(X, U)) :
   apply le_antisymm
   · exact Ideal.map_le_iff_le_comap.mpr fun s hs ↦ φ.map_mem_imageIdeal _ hs
   · rintro s ⟨t, ht⟩
-    obtain ⟨n, y, hy⟩ := M.exists_pow_smul_eq_map U.2 f rfl (X.basicOpen_le f) t
+    obtain ⟨n, y, hy⟩ := M.exists_pow_smul_eq_map U.property f rfl (X.basicOpen_le f) t
     apply (Ideal.unit_mul_mem_iff_mem _ ((X.toRingedSpace.isUnit_res_basicOpen f).pow n)).mp
     have h : X.presheaf.map (homOfLE (X.basicOpen_le f)).op f ^ n * s =
-        X.presheaf.map (homOfLE (X.basicOpen_le f)).op (φ.app U.1 y) := by
+        X.presheaf.map (homOfLE (X.basicOpen_le f)).op (φ.app U.val y) := by
       let ψ : Γ(M, X.basicOpen f) →ₗ[Γ(X, X.basicOpen f)] Γ(X, X.basicOpen f) :=
         (φ.val.app (op (X.basicOpen f))).hom
       calc
@@ -72,7 +72,7 @@ lemma map_imageIdeal_basicOpen (U : X.affineOpens) (f : Γ(X, U)) :
         _ = ψ (X.presheaf.map (homOfLE (X.basicOpen_le f)).op f ^ n • t) :=
           (ψ.map_smul _ t).symm
         _ = ψ (M.presheaf.map (homOfLE (X.basicOpen_le f)).op y) := congrArg ψ hy
-        _ = X.presheaf.map (homOfLE (X.basicOpen_le f)).op (φ.app U.1 y) := by
+        _ = X.presheaf.map (homOfLE (X.basicOpen_le f)).op (φ.app U.val y) := by
           exact φ.mapPresheaf.naturality_apply _ y
     exact h.symm ▸ Ideal.mem_map_of_mem _ ⟨y, rfl⟩
 

@@ -136,6 +136,7 @@ with `‖h‖ ≤ 2 ‖μ‖`, such that `ψ = z + T h`
 * is `C¹` on `ball c (r + 1)` and solves `\bar∂ψ = μ ∂ψ` there;
 * has real derivative within `C ‖μ‖` of the identity on the disc, `α`-Hölder with constant
   `C ‖μ‖` there;
+* has an invertible strict derivative at every point of the disc;
 * has a differential that is complex linear from `J` to `i` at every point of the disc;
 * has nonzero holomorphic derivative `∂ψ(c)`;
 
@@ -156,6 +157,8 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
         (∀ z ∈ closedBall c r,
           ‖fderiv ℝ (cauchySolution h) z - ContinuousLinearMap.id ℝ ℂ‖ ≤ C * ‖μ‖) ∧
         HolderOnWith (C * ‖μ‖₊) α (fderiv ℝ (cauchySolution h)) (closedBall c r) ∧
+        (∀ z ∈ closedBall c r,
+          ∃ L : ℂ ≃L[ℝ] ℂ, HasStrictFDerivAt (cauchySolution h) (L : ℂ →L[ℝ] ℂ) z) ∧
         (∀ z ∈ closedBall c r, IsComplexLinear (J z).toLinearMap
           (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
           (fderiv ℝ (cauchySolution h) z).toLinearMap) ∧
@@ -195,7 +198,8 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     exact one_ne_zero (L.injective (hzero.trans L.map_zero.symm))
   set a := wirtingerDeriv ψ c 1
   set φ := normalizedChart ψ c
-  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, ?_, normalizedChart_self ψ c, ?_, ?_, ?_⟩
+  refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hinv, hlin, ha, ?_, normalizedChart_self ψ c, ?_, ?_,
+    ?_⟩
   · exact (hC1.sub contDiffOn_const).const_smul a⁻¹
   · exact wirtingerDeriv_normalizedChart_self ha
   · intro z hz

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
@@ -137,7 +138,7 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
     ring
   calc c * exp (((π - arg c) / 2 : ℝ) * I) ^ 2
       = ‖c‖ * exp ((arg c : ℂ) * I + 2 * (((π - arg c) / 2 : ℝ) * I)) := by
-        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_nat_mul]
+        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_natCast_mul]
         norm_num
     _ = -‖c‖ := by
         rw [h, exp_pi_mul_I]
@@ -181,6 +182,12 @@ theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ 
   rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
   exact norm_mul_exp_arg_mul_I z
 
+/-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
+theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
+    t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
+  simpa [NormedSpace.normalize, real_smul, div_eq_inv_mul] using
+    NormedSpace.normalize_smul_of_pos ht z
+
 /-- The power `(z / |z|)^m` of the unit direction is smooth away from the origin. -/
 theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
     ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by
@@ -217,7 +224,7 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     {Q : ℂ} (hQ : Q ∈ slitPlane) (hc : ∀ᶠ x in l, 0 < c x)
     (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
-  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
+  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_ofReal_mul hx _)
 
 end Complex
 

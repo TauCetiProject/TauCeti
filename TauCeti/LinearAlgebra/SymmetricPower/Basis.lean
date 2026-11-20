@@ -37,6 +37,9 @@ orderings of an unordered tuple differ by a permutation.
 * `Module.Basis.map_symmetricPower_of_apply`: an endomorphism diagonal in a basis is
   diagonal in the induced basis of the symmetric power, with eigenvalue the product of the
   eigenvalues listed by the index.
+* `Module.Basis.map_symmetricPower_apply_eq_symmetricPower_map`: a linear map sending basis
+  vectors to basis vectors sends the induced basis vectors of the symmetric powers to induced basis
+  vectors, the index `s` going to its image `s.map π`.
 * `SymmetricPower.finrank_eq`: for free `M`, the rank of `Sym[R]^n M` is
   `Nat.multichoose (finrank R M) n`; for finite free `M` this counts the unordered `n`-tuples of
   basis indices.
@@ -182,6 +185,17 @@ theorem _root_.Module.Basis.map_symmetricPower_of_apply (f : M →ₗ[R] M) (a :
       ((s : Multiset κ).map a).prod • b.symmetricPower n s := by
   obtain ⟨p, rfl⟩ := Sym.ofFn_surjective s
   simp [hf, (tprod R).map_smul_univ, List.prod_ofFn]
+
+/-- **A linear map sending basis vectors to basis vectors does so on the symmetric power**: if
+`f (b i) = b' (π i)` for every `i`, then `f` sends the basis vector of `Sym[R]^n M` indexed by `s`
+to the basis vector of `Sym[R]^n N` indexed by the image `s.map π`. In particular an endomorphism
+permuting a basis permutes the induced basis of the symmetric power. -/
+theorem _root_.Module.Basis.map_symmetricPower_apply_eq_symmetricPower_map {N : Type*}
+    [AddCommMonoid N] [Module R N] {κ' : Type*} (b' : Basis κ' R N) (f : M →ₗ[R] N)
+    (π : κ → κ') (hf : ∀ i, f (b i) = b' (π i)) (s : Sym κ n) :
+    map (ι := Fin n) f (b.symmetricPower n s) = b'.symmetricPower n (s.map π) := by
+  obtain ⟨p, rfl⟩ := Sym.ofFn_surjective s
+  simp [hf, Sym.map_ofFn]
 
 /-! ### Freeness and rank -/
 

@@ -71,7 +71,7 @@ theorem ClosedComplemented.restrictScalars {p : Submodule A M} (hp : p.ClosedCom
   obtain ⟨P, hP⟩ := hp
   exact ⟨ContinuousLinearMap.codRestrict
     (ContinuousLinearMap.restrictScalars R (p.subtypeL.comp P)) (p.restrictScalars R)
-    fun x ↦ (P x).2, fun x ↦ Subtype.ext (congrArg Subtype.val (hP ⟨x, x.2⟩))⟩
+    fun x ↦ (P x).property, fun x ↦ Subtype.ext (congrArg Subtype.val (hP ⟨x, x.property⟩))⟩
 
 end RestrictScalars
 
