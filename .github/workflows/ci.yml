@@ -22,7 +22,7 @@ permissions:
 # pin, skipping coalesced commits without a completed build.
 concurrency:
   group: release-ci-cache-publisher-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.ref == 'refs/heads/release/v4.35.0-patch1' }}
 
 env:
   # Mathlib's release changes every TauCeti input hash; an ancestor cache cannot help.

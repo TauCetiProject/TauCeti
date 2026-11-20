@@ -62,7 +62,7 @@ theorem tateQuotientCoordinates_eq_normalized (q : Kˣ) (hq : ‖(q : K)‖ < 1)
 
 /-- Inversion on the quotient gives the negation formula of the Tate Weierstrass equation. -/
 @[simp]
-theorem tateQuotientCoordinates_inv [CompleteSpace K] [IsUltrametricDist K]
+theorem tateQuotientCoordinates_inv [CompleteSpace K]
     (q : Kˣ) (hq : ‖(q : K)‖ < 1) (x : Kˣ ⧸ Subgroup.zpowers q) :
     tateQuotientCoordinates q x⁻¹ =
       ((tateQuotientCoordinates q x).1,

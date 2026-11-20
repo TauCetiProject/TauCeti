@@ -140,9 +140,9 @@ theorem entropicGibbsFactor_add_const_sub_const (a : ℝ) :
     entropicGibbsFactor c ε (fun x ↦ φ x + a) (fun y ↦ ψ y - a) = entropicGibbsFactor c ε φ ψ := by
   simp only [entropicGibbsFactor_def, add_add_sub_cancel]
 
-/-- For an s-finite second marginal, replacing the potentials by `μ`- and `ν`-almost everywhere
-equal ones changes the Gibbs factor only on a `μ ⊗ ν`-null set. -/
-theorem entropicGibbsFactor_congr_ae [SFinite ν] (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
+/-- Replacing the potentials by `μ`- and `ν`-almost everywhere equal ones changes the Gibbs
+factor only on a `μ ⊗ ν`-null set. -/
+theorem entropicGibbsFactor_congr_ae (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
     entropicGibbsFactor c ε φ ψ =ᵐ[μ.prod ν] entropicGibbsFactor c ε φ' ψ' := by
   filter_upwards [Measure.quasiMeasurePreserving_fst.ae hφ,
     Measure.quasiMeasurePreserving_snd.ae hψ] with z h₁ h₂
@@ -190,9 +190,9 @@ theorem entropicDualValue_def :
       kantorovichDualValue μ ν φ ψ - ε * ∫ z, (entropicGibbsFactor c ε φ ψ z - 1) ∂μ.prod ν :=
   (rfl)
 
-/-- For an s-finite second marginal, the entropic dual value only depends on the `μ`- and
-`ν`-almost everywhere classes of the potentials. -/
-theorem entropicDualValue_congr_ae [SFinite ν] (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
+/-- The entropic dual value only depends on the `μ`- and `ν`-almost everywhere classes of
+the potentials. -/
+theorem entropicDualValue_congr_ae (hφ : φ =ᵐ[μ] φ') (hψ : ψ =ᵐ[ν] ψ') :
     entropicDualValue c ε μ ν φ ψ = entropicDualValue c ε μ ν φ' ψ' := by
   rw [entropicDualValue_def, entropicDualValue_def, kantorovichDualValue_def,
     kantorovichDualValue_def, integral_congr_ae hφ, integral_congr_ae hψ,
