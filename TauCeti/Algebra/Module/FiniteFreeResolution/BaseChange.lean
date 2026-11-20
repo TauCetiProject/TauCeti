@@ -52,11 +52,16 @@ theorem HasFiniteFreeResolutionLE.baseChange_of_flat {n : ℕ}
     obtain ⟨k, f, hf, hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
     -- Tensoring `0 → ker f → Rᵏ → M → 0` with the flat module `A` keeps it exact, so the kernel
     -- of `A ⊗ f` is `A ⊗ ker f`.
-    have hexact : Function.Exact ((ker f).subtype.baseChange A) (f.baseChange A) :=
-      lTensor_exact A f.exact_subtype_ker_map hf
-    have hinj : Function.Injective ((ker f).subtype.baseChange A) :=
-      Module.Flat.lTensor_preserves_injective_linearMap _ (ker f).injective_subtype
-    exact succ_of_surjective (f := f.baseChange A) (lTensor_surjective A hf) ((ih hK).of_equiv
+    have hexact : Function.Exact ((ker f).subtype.baseChange A) (f.baseChange A) := by
+      rw [baseChange_eq_lTensor, baseChange_eq_lTensor]
+      exact lTensor_exact A f.exact_subtype_ker_map hf
+    have hinj : Function.Injective ((ker f).subtype.baseChange A) := by
+      rw [baseChange_eq_lTensor]
+      exact Module.Flat.lTensor_preserves_injective_linearMap _ (ker f).injective_subtype
+    have hsurj : Function.Surjective (f.baseChange A) := by
+      rw [baseChange_eq_lTensor]
+      exact lTensor_surjective A hf
+    exact succ_of_surjective hsurj ((ih hK).of_equiv
       ((LinearEquiv.ofInjective _ hinj).trans (.ofEq _ _ hexact.linearMap_ker_eq.symm)))
 
 /-- **Flat base change.** If `A` is a flat `R`-algebra and `M` has a finite free resolution over

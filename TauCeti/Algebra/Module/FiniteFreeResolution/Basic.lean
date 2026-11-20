@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.Algebra.Module.Projective.Schanuel
 public import TauCeti.Algebra.Module.PseudoCoherent.FiniteProjectiveDimension
+import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Finite free resolutions
@@ -41,8 +42,10 @@ All modules live in the universe of `R`, as do the kernels of maps out of `Fin k
   finitely presented (`TauCeti.Module.HasFiniteFreeResolution.finitePresentation`).
 * `TauCeti.Module.HasFiniteFreeResolutionLE.extension`: an extension of two modules with finite
   free resolutions of length at most `n` has one (the horseshoe lemma).
-* `TauCeti.Module.HasFiniteFreeResolutionLE.ker`: Schanuel's lemma for finite free resolutions;
-  the kernel of every surjection onto `M` from a finite free module has a finite free resolution.
+* `TauCeti.Module.HasFiniteFreeResolutionLE.ker_of_surjective`: Schanuel's lemma for finite free
+  resolutions; if `M` has one of length at most `n + 1`, the kernel of every surjection onto `M`
+  from a finite free module has one of length at most `max n 1`
+  (`TauCeti.Module.HasFiniteFreeResolution.ker_of_surjective` without the bound).
 * `TauCeti.Module.HasFiniteFreeResolution.extension`, `.cokernel`, `.kernel`: two out of three for
   a short exact sequence `0 → M₁ → M → M₂ → 0`.
 * `TauCeti.Module.HasFiniteFreeResolution.isStablyFree`: a projective module with a finite free
@@ -197,35 +200,11 @@ theorem extension {M₁ M₂ : Type u} [AddCommGroup M₁] [Module R M₁] [AddC
   | succ n ih =>
     obtain ⟨a, f₁, hf₁, hK₁⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h₁
     obtain ⟨b, f₂, hf₂, hK₂⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h₂
-    -- Lift `f₂` through `g` and combine it with `f ∘ f₁` into a surjection `F : Rᵃ × Rᵇ → M`.
-    obtain ⟨l, hl⟩ := Module.projective_lifting_property g f₂ hg
-    have hl' (y : Fin b → R) : g (l y) = f₂ y := LinearMap.congr_fun hl y
-    let F := (f ∘ₗ f₁).coprod l
-    have hF : Function.Surjective F := by
-      intro m
-      obtain ⟨y, hy⟩ := hf₂ (g m)
-      obtain ⟨m₁, hm₁⟩ := (hfg (m - l y)).mp (by simp [hl', hy])
-      obtain ⟨x, rfl⟩ := hf₁ m₁
-      exact ⟨(x, y), by simp [F, hm₁]⟩
-    -- The kernels form a short exact sequence `0 → ker f₁ → ker F → ker f₂ → 0`.
-    have hi (x : ker f₁) : F (x.1, 0) = 0 := by simp [F, mem_ker.mp x.2]
-    have hF0 (z : ker F) : f (f₁ z.1.1) + l z.1.2 = 0 := mem_ker.mp z.2
-    have hp (z : ker F) : f₂ z.1.2 = 0 := by
-      rw [← hl', eq_neg_of_add_eq_zero_right (hF0 z), map_neg, hfg.apply_apply_eq_zero, neg_zero]
-    let i : ker f₁ →ₗ[R] ker F :=
-      (inl R _ _ ∘ₗ (ker f₁).subtype).codRestrict (ker F) hi
-    let p : ker F →ₗ[R] ker f₂ := (snd R _ _ ∘ₗ (ker F).subtype).codRestrict (ker f₂) hp
-    refine succ_of_surjective hF (ih (f := i) (g := p) (fun x y hxy ↦ ?_) (fun y ↦ ?_)
-      (fun z ↦ ⟨fun hz ↦ ?_, ?_⟩) hK₁ hK₂)
-    · exact Subtype.ext congr(($hxy).1.1)
-    · obtain ⟨m₁, hm₁⟩ := (hfg (l y)).mp (by simp [hl', mem_ker.mp y.2])
-      obtain ⟨x, rfl⟩ := hf₁ m₁
-      exact ⟨⟨(-x, y), by simp [F, hm₁]⟩, rfl⟩
-    · have hz2 : z.1.2 = 0 := congr(($hz).1)
-      have hz1 : f₁ z.1.1 = 0 := hf (by simpa [hz2] using hF0 z)
-      exact ⟨⟨z.1.1, hz1⟩, Subtype.ext (Prod.ext rfl hz2.symm)⟩
-    · rintro ⟨x, rfl⟩
-      rfl
+    -- The horseshoe step: a surjection `F : Rᵃ × Rᵇ → M` whose kernel is an extension of
+    -- `ker f₂` by `ker f₁`.
+    obtain ⟨F, hF, -, -, i, p, -, -, hi, hip, hp⟩ := TauCeti.exists_surjective_ker_exact hf hfg hg
+      hf₁ hf₂
+    exact succ_of_surjective hF (ih hi hp hip hK₁ hK₂)
 
 /-- Resolutions of `M` and `N` of length at most `n` give one of `M × N`. -/
 theorem prod (h : HasFiniteFreeResolutionLE R n M) (h' : HasFiniteFreeResolutionLE R n N) :
@@ -271,7 +250,7 @@ theorem ker_of_surjective {P : Type u} [AddCommGroup P] [Module R P] [Module.Fin
     [Module.Free R P] {f : P →ₗ[R] M} (hf : Function.Surjective f)
     (h : HasFiniteFreeResolutionLE R (n + 1) M) :
     HasFiniteFreeResolutionLE R (max n 1) (ker f) := by
-  obtain ⟨k, f', hf', hK⟩ := h
+  obtain ⟨k, f', hf', hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
   -- The fibre product `X = P ×_M Rᵏ` is an extension of `P` by `ker f'` and of `Rᵏ` by `ker f`.
   let X := ker (f ∘ₗ fst R P (Fin k → R) - f' ∘ₗ snd R P (Fin k → R))
   have hX (z : X) : f z.1.1 = f' z.1.2 := by
@@ -307,30 +286,6 @@ theorem ker_of_surjective {P : Type u} [AddCommGroup P] [Module R P] [Module.Fin
   exact of_prod (hXres.of_equiv (hι.splitSurjectiveEquiv
     (fun x y hxy ↦ Subtype.ext congr(($hxy).1.1)) ⟨s, hs⟩).1)
 
-/-- For a short exact sequence `0 → M₁ → M → M₂ → 0` and a surjection `F : P → M`, the inclusion
-`ker F → ker (g ∘ F)` has cokernel `M₁`: the map `ker (g ∘ F) → M₁` takes `z` to the preimage of
-`F z` under `f`. -/
-private theorem exists_exact_inclusion_ker_comp {M₁ M₂ P : Type u} [AddCommGroup M₁] [Module R M₁]
-    [AddCommGroup M₂] [Module R M₂] [AddCommGroup P] [Module R P] {f : M₁ →ₗ[R] M}
-    {g : M →ₗ[R] M₂} (hf : Function.Injective f) (hfg : Function.Exact f g) {F : P →ₗ[R] M}
-    (hF : Function.Surjective F) :
-    ∃ q : ker (g ∘ₗ F) →ₗ[R] M₁, Function.Surjective q ∧
-      Function.Exact (Submodule.inclusion (ker_le_ker_comp F g)) q := by
-  let e := LinearEquiv.ofInjective f hf
-  let q : ker (g ∘ₗ F) →ₗ[R] M₁ := e.symm.toLinearMap ∘ₗ
-    ((F ∘ₗ (ker (g ∘ₗ F)).subtype).codRestrict (range f) fun z ↦ by
-      rw [← hfg.linearMap_ker_eq]
-      exact z.2)
-  have hq (z : ker (g ∘ₗ F)) : f (q z) = F z := by
-    rw [← LinearEquiv.ofInjective_apply (h := hf)]
-    simp [q, e]
-  refine ⟨q, fun x ↦ ?_, fun z ↦ ⟨fun hz ↦ ?_, ?_⟩⟩
-  · obtain ⟨y, hy⟩ := hF (f x)
-    exact ⟨⟨y, by simp [hy, hfg.apply_apply_eq_zero]⟩, hf (by rw [hq, hy])⟩
-  · exact ⟨⟨z, by rw [mem_ker, ← hq, hz, map_zero]⟩, rfl⟩
-  · rintro ⟨x, rfl⟩
-    exact hf (by rw [hq, map_zero]; exact mem_ker.mp x.2)
-
 /-- **Cokernels.** In a short exact sequence `0 → M₁ → M → M₂ → 0`, if `M₁` has a finite free
 resolution of length at most `n` and `M` one of length at most `n + 1`, then `M₂` has one of length
 at most `n + 1`. -/
@@ -340,10 +295,11 @@ theorem cokernel {M₁ M₂ : Type u} [AddCommGroup M₁] [Module R M₁] [AddCo
     (h₁ : HasFiniteFreeResolutionLE R n M₁) (h : HasFiniteFreeResolutionLE R (n + 1) M) :
     HasFiniteFreeResolutionLE R (n + 1) M₂ := by
   obtain ⟨k, F, hF, hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
-  -- `0 → ker F → ker (g ∘ F) → M₁ → 0` is exact, so `ker (g ∘ F)` is an extension.
-  obtain ⟨q, hq, hqe⟩ := exists_exact_inclusion_ker_comp hf hfg hF
-  exact hasFiniteFreeResolutionLE_succ_iff.mpr
-    ⟨k, g ∘ₗ F, hg.comp hF, extension (Submodule.inclusion_injective _) hq hqe hK h₁⟩
+  -- `0 → ker F → ker (g ∘ F) → ker g → 0` is exact and `ker g ≃ M₁`, so `ker (g ∘ F)` is an
+  -- extension.
+  obtain ⟨hi, hip, hp⟩ := TauCeti.exact_ker_comp hF g
+  exact hasFiniteFreeResolutionLE_succ_iff.mpr ⟨k, g ∘ₗ F, hg.comp hF,
+    extension hi hp hip hK (h₁.of_equiv (hfg.linearEquivOfInjective hf))⟩
 
 /-- **Kernels.** In a short exact sequence `0 → M₁ → M → M₂ → 0`, if `M` has a finite free
 resolution of length at most `n + 1` and `M₂` one of length at most `n + 2`, then `M₁` has one of
@@ -354,11 +310,11 @@ theorem kernel {M₁ M₂ : Type u} [AddCommGroup M₁] [Module R M₁] [AddComm
     (h : HasFiniteFreeResolutionLE R (n + 1) M) (h₂ : HasFiniteFreeResolutionLE R (n + 2) M₂) :
     HasFiniteFreeResolutionLE R (n + 1) M₁ := by
   obtain ⟨k, F, hF, hK⟩ := hasFiniteFreeResolutionLE_succ_iff.mp h
-  -- `M₁` is the cokernel of the inclusion `ker F → ker (g ∘ F)`, and `ker (g ∘ F)` has a
+  -- `M₁ ≃ ker g` is the cokernel of the inclusion `ker F → ker (g ∘ F)`, and `ker (g ∘ F)` has a
   -- resolution by Schanuel's lemma.
-  obtain ⟨q, hq, hqe⟩ := exists_exact_inclusion_ker_comp hf hfg hF
-  exact cokernel (Submodule.inclusion_injective _) hq hqe hK
-    ((h₂.ker_of_surjective (f := g ∘ₗ F) (hg.comp hF)).mono (by omega))
+  obtain ⟨hi, hip, hp⟩ := TauCeti.exact_ker_comp hF g
+  exact (cokernel hi hp hip hK ((h₂.ker_of_surjective (f := g ∘ₗ F) (hg.comp hF)).mono
+    (by omega))).of_equiv (hfg.linearEquivOfInjective hf).symm
 
 /-- **A projective module with a finite free resolution is stably free** (Lang XXI.2.1). -/
 theorem isStablyFree [Module.Projective R M] (h : HasFiniteFreeResolutionLE R n M) :
