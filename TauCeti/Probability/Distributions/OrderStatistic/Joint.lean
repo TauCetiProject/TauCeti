@@ -126,7 +126,8 @@ theorem map_orderStatistics_pi_uniformMeasure (n : ℕ) :
     simp_rw [hunit]
     exact (Measure.restrict_pi_pi _ _).symm
   rw [map_orderStatistics_pi, hprod,
-    withDensity_indicator (measurableSet_strictMono_mem_Ioo n 0 1), withDensity_const]
+    withDensity_indicator (measurableSet_setOf_strictMono_and_forall_mem measurableSet_Ioo),
+    withDensity_const]
   have hsets : {y : Fin n → ℝ | StrictMono y} ∩
       (univ.pi fun _ : Fin n => Ioo (0 : ℝ) 1) =
         {y | StrictMono y ∧ ∀ i, y i ∈ Ioo (0 : ℝ) 1} := by
