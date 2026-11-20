@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Subring
 public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.Topology.Algebra.ConstMulAction
+public import TauCeti.Topology.Algebra.IsUniformGroup.Subring
 
 /-!
 # The invariant Huber pair of a finite group action
@@ -43,8 +44,8 @@ spectrum by `G`, and of finite quotients of affinoid perfectoid spaces.
 * `TauCeti.Huber.powerBoundedSubring_fixedPoints`: `(Aᴳ)° = A° ∩ Aᴳ`.
 * `TauCeti.Huber.integralClosure_map_invariantPair_plus`: if `G` preserves `A⁺`, then `A⁺` is the
   integral closure of `A^{+G}` in `A`.
-* The instances `IsUniformAddGroup` and `CompleteSpace` on `FixedPoints.subring A G`, the latter
-  for a complete Hausdorff ring.
+* The `CompleteSpace` instance on `FixedPoints.subring A G` for a complete Hausdorff ring; its
+  uniform additive group structure comes from the general `Subring.isUniformAddGroup`.
 
 ## References
 
@@ -62,10 +63,6 @@ namespace TauCeti.Huber
 variable {A : Type*} [CommRing A] (G : Type*) [Group G] [MulSemiringAction G A]
 
 section Uniform
-
-/-- The fixed subring of a uniform additive group is a uniform additive group. -/
-instance [UniformSpace A] [IsUniformAddGroup A] : IsUniformAddGroup (FixedPoints.subring A G) :=
-  (FixedPoints.subring A G).toAddSubgroup.isUniformAddGroup
 
 /-- The fixed subring of a continuous action on a complete Hausdorff ring is complete, being
 closed. -/
