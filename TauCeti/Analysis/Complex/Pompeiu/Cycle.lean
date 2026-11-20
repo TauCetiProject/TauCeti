@@ -238,11 +238,11 @@ theorem cauchyPompeiu_conjWirtingerDeriv {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (h�
 
 open scoped Classical in
 /-- **Full-boundary Cauchy–Pompeiu formula** for a bounded open region `Δ` with a native contour
-cycle `C` whose trace is `frontier Δ` and whose winding number off `C.trace` is `1` inside `Δ` and
-`0` outside `Δ`, written with the real directional derivatives `f_x + i f_y = 2 \bar∂ f`. -/
+cycle `C` whose trace lies in `frontier Δ` and whose winding number off `C.trace` is `1` inside `Δ`
+and `0` outside `Δ`, written with the real directional derivatives `f_x + i f_y = 2 \bar∂ f`. -/
 theorem cauchyPompeiu {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hΔ : IsOpen Δ)
     (hbounded : Bornology.IsBounded Δ) (hclosure : closure Δ ⊆ Ω)
-    (C : TauCeti.Contour.Cycle) (htrace : C.trace = frontier Δ)
+    (C : TauCeti.Contour.Cycle) (htrace : C.trace ⊆ frontier Δ)
     (hindex : ∀ z ∉ C.trace,
       TauCeti.Contour.Cycle.windingNumber z C = if z ∈ Δ then 1 else 0)
     (f : ℂ → ℂ) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ} (hξ : ξ ∈ Δ) :
@@ -250,7 +250,7 @@ theorem cauchyPompeiu {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hΔ : IsOpen Δ)
         TauCeti.Contour.Cycle.integral (fun z => f z / (z - ξ)) C -
       (2 * (Real.pi : ℂ))⁻¹ *
         ∫ z in Δ, (fderiv ℝ f z 1 + Complex.I * fderiv ℝ f z Complex.I) / (z - ξ) := by
-  rw [cauchyPompeiu_conjWirtingerDeriv hΩ hΔ hbounded hclosure C htrace.le hindex f hf hξ]
+  rw [cauchyPompeiu_conjWirtingerDeriv hΩ hΔ hbounded hclosure C htrace hindex f hf hξ]
   have hdbar : (fun z ↦ (fderiv ℝ f z 1 + I * fderiv ℝ f z I) / (z - ξ)) =
       fun z ↦ (2 : ℂ) * (conjWirtingerDeriv f z 1 / (z - ξ)) := funext fun z ↦ by
     have h2 := fderiv_apply_one_add_I_smul_fderiv_apply_I f z

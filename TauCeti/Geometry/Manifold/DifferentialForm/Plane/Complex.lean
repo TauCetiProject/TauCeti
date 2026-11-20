@@ -57,12 +57,12 @@ def complexDzBar : SmoothForm 𝓘(ℝ, ℂ) ℂ ℂ 1 :=
 
 @[simp]
 theorem complexDz_apply (z : ℂ) (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    complexDz.1 z v = NormedSpace.fromTangentSpace z (v 0) := by
+    complexDz.val z v = NormedSpace.fromTangentSpace z (v 0) := by
   simp [complexDz]
 
 @[simp]
 theorem complexDzBar_apply (z : ℂ) (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    complexDzBar.1 z v = conj (NormedSpace.fromTangentSpace z (v 0)) := by
+    complexDzBar.val z v = conj (NormedSpace.fromTangentSpace z (v 0)) := by
   simp [complexDzBar]
 
 /-- Conjugating the coefficients exchanges the two complex coordinate forms. -/
@@ -84,7 +84,7 @@ theorem mapCoeff_conj_complexDzBar :
 /-- A linear combination of `dz` and `dbar z` is a multiple of `dz` exactly when its
 `dbar z` coefficient vanishes and its `dz` coefficient is the prescribed multiple. -/
 theorem smul_complexDz_add_smul_complexDzBar_eq_smul_complexDz_iff (z a b c : ℂ) :
-    a • complexDz.1 z + b • complexDzBar.1 z = c • complexDz.1 z ↔
+    a • complexDz.val z + b • complexDzBar.val z = c • complexDz.val z ↔
       b = 0 ∧ a = c := by
   constructor
   · intro h
@@ -107,7 +107,7 @@ theorem smul_complexDz_add_smul_complexDzBar_eq_smul_complexDz_iff (z a b c : �
 /-- Evaluation of the complex-multiplied wedge `dz ∧ dbar z` on an ordered pair of tangent
 vectors. -/
 theorem wedgeWith_complexDz_complexDzBar_apply (z : ℂ) (v w : TangentSpace 𝓘(ℝ, ℂ) z) :
-    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDz complexDzBar).1 z ![v, w] =
+    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDz complexDzBar).val z ![v, w] =
       NormedSpace.fromTangentSpace z v * conj (NormedSpace.fromTangentSpace z w) -
         NormedSpace.fromTangentSpace z w * conj (NormedSpace.fromTangentSpace z v) := by
   simp [wedgeWith_apply_one_one]
@@ -115,7 +115,7 @@ theorem wedgeWith_complexDz_complexDzBar_apply (z : ℂ) (v w : TangentSpace �
 /-- On the positively oriented real frame `(1, I)`, the complex-multiplied wedge `dz ∧ dbar z`
 evaluates to `-2 * I`, recording the area-form identity `dz ∧ dbar z = -2 i dA`. -/
 theorem wedgeWith_complexDz_complexDzBar_apply_one_I (z : ℂ) :
-    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDz complexDzBar).1 z
+    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDz complexDzBar).val z
         ![(NormedSpace.fromTangentSpace z).symm 1,
           (NormedSpace.fromTangentSpace z).symm I] = -2 * I := by
   rw [wedgeWith_complexDz_complexDzBar_apply]
@@ -125,7 +125,7 @@ theorem wedgeWith_complexDz_complexDzBar_apply_one_I (z : ℂ) :
 /-- On the positively oriented real frame `(1, I)`, the complex-multiplied wedge `dbar z ∧ dz`
 evaluates to `2 * I`, recording `dbar z ∧ dz = 2 i dA`. -/
 theorem wedgeWith_complexDzBar_complexDz_apply_one_I (z : ℂ) :
-    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDzBar complexDz).1 z
+    (wedgeWith (ContinuousLinearMap.mul ℝ ℂ) complexDzBar complexDz).val z
         ![(NormedSpace.fromTangentSpace z).symm 1,
           (NormedSpace.fromTangentSpace z).symm I] = 2 * I := by
   rw [wedgeWith_apply_one_one]
@@ -138,9 +138,9 @@ end SmoothForm
 /-- The pullback of `dz` has the two Wirtinger coefficients. No regularity assumption is
 needed for this identity of totalized derivatives. -/
 theorem mpullback_complexDz (f : ℂ → ℂ) (z : ℂ) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z =
-      wirtingerDeriv f z 1 • SmoothForm.complexDz.1 z +
-        conjWirtingerDeriv f z 1 • SmoothForm.complexDzBar.1 z := by
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.val z =
+      wirtingerDeriv f z 1 • SmoothForm.complexDz.val z +
+        conjWirtingerDeriv f z 1 • SmoothForm.complexDzBar.val z := by
   ext v
   simp only [mpullback_apply, SmoothForm.complexDz_apply, mfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
@@ -153,7 +153,7 @@ theorem mpullback_complexDz (f : ℂ → ℂ) (z : ℂ) :
 /-- Evaluation of the Wirtinger pullback formula for `dz` on a tangent vector. -/
 theorem mpullback_complexDz_apply (f : ℂ → ℂ) (z : ℂ)
     (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z v =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.val z v =
       wirtingerDeriv f z 1 * NormedSpace.fromTangentSpace z (v 0) +
         conjWirtingerDeriv f z 1 * conj (NormedSpace.fromTangentSpace z (v 0)) := by
   simp only [mpullback_complexDz, ContinuousAlternatingMap.add_apply,
@@ -162,9 +162,9 @@ theorem mpullback_complexDz_apply (f : ℂ → ℂ) (z : ℂ)
 
 /-- Pullback of `dbar z` is the conjugate of the pullback of `dz`, including its coefficients. -/
 theorem mpullback_complexDzBar (f : ℂ → ℂ) (z : ℂ) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDzBar.1 z =
-      conj (conjWirtingerDeriv f z 1) • SmoothForm.complexDz.1 z +
-        conj (wirtingerDeriv f z 1) • SmoothForm.complexDzBar.1 z := by
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDzBar.val z =
+      conj (conjWirtingerDeriv f z 1) • SmoothForm.complexDz.val z +
+        conj (wirtingerDeriv f z 1) • SmoothForm.complexDzBar.val z := by
   conv_lhs =>
     rw [← SmoothForm.mapCoeff_conj_complexDz, SmoothForm.coe_mapCoeff, mpullback_mapCoeff]
   ext v
@@ -178,7 +178,7 @@ theorem mpullback_complexDzBar (f : ℂ → ℂ) (z : ℂ) :
 /-- Evaluation of the Wirtinger pullback formula for `dbar z` on a tangent vector. -/
 theorem mpullback_complexDzBar_apply (f : ℂ → ℂ) (z : ℂ)
     (v : Fin 1 → TangentSpace 𝓘(ℝ, ℂ) z) :
-    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDzBar.1 z v =
+    mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDzBar.val z v =
       conj (conjWirtingerDeriv f z 1) * NormedSpace.fromTangentSpace z (v 0) +
         conj (wirtingerDeriv f z 1) * conj (NormedSpace.fromTangentSpace z (v 0)) := by
   simp only [mpullback_complexDzBar, ContinuousAlternatingMap.add_apply,
@@ -188,8 +188,8 @@ theorem mpullback_complexDzBar_apply (f : ℂ → ℂ) (z : ℂ)
 /-- The pullback of `dz` is of type `(1,0)` at a point exactly when the conjugate Wirtinger
 coefficient vanishes there. Being of type `(1,0)` means being a multiple of `dz`. -/
 theorem exists_mpullback_complexDz_eq_smul_iff (f : ℂ → ℂ) (z : ℂ) :
-    (∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z =
-      a • SmoothForm.complexDz.1 z) ↔ conjWirtingerDeriv f z 1 = 0 := by
+    (∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.val z =
+      a • SmoothForm.complexDz.val z) ↔ conjWirtingerDeriv f z 1 = 0 := by
   constructor
   · rintro ⟨a, ha⟩
     rw [mpullback_complexDz,
@@ -203,8 +203,8 @@ of `dz` is a `(1,0)` covector there. -/
 theorem differentiableAt_iff_exists_mpullback_complexDz_eq_smul {f : ℂ → ℂ} {z : ℂ}
     (hf : DifferentiableAt ℝ f z) :
     DifferentiableAt ℂ f z ↔
-      ∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z =
-        a • SmoothForm.complexDz.1 z := by
+      ∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.val z =
+        a • SmoothForm.complexDz.val z := by
   rw [exists_mpullback_complexDz_eq_smul_iff,
     differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hf]
 
@@ -216,8 +216,8 @@ theorem differentiableAt_iff_forall_exists_mpullback_smul_complexDz_eq_smul
     (hf : DifferentiableAt ℝ f z) :
     DifferentiableAt ℂ f z ↔
       ∀ a : ℂ, ∃ b : ℂ,
-        mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f (a • SmoothForm.complexDz.1) z =
-          b • SmoothForm.complexDz.1 z := by
+        mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f (a • SmoothForm.complexDz.val) z =
+          b • SmoothForm.complexDz.val z := by
   rw [differentiableAt_iff_exists_mpullback_complexDz_eq_smul hf]
   constructor
   · rintro ⟨b, hb⟩ a
@@ -231,8 +231,8 @@ theorem differentiableOn_iff_forall_exists_mpullback_complexDz_eq_smul
     {f : ℂ → ℂ} {s : Set ℂ}
     (hs : IsOpen s) (hf : DifferentiableOn ℝ f s) :
     DifferentiableOn ℂ f s ↔
-      ∀ z ∈ s, ∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.1 z =
-        a • SmoothForm.complexDz.1 z := by
+      ∀ z ∈ s, ∃ a : ℂ, mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) f SmoothForm.complexDz.val z =
+        a • SmoothForm.complexDz.val z := by
   constructor
   · intro h z hz
     exact (differentiableAt_iff_exists_mpullback_complexDz_eq_smul

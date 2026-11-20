@@ -262,7 +262,7 @@ theorem subtypeChart_target
 @[simp]
 theorem subtypeChart_apply
     (h : IsSliceChart e ((univ : Set Y) ×ˢ ({0} : Set Y')) s) [Nonempty s] (x : s) :
-    h.subtypeChart x = (e x.1).1 := by
+    h.subtypeChart x = (e x.val).1 := by
   unfold subtypeChart
   apply OpenPartialHomeomorph.subtypeCoord_apply
 
@@ -365,12 +365,12 @@ theorem eventually_symm_add_mem {φ : OpenPartialHomeomorph M F} {A : Set M} {x 
     (hφ : IsSliceChart φ (L : Set F) A) (hxφ : x ∈ φ.source) (hxA : x ∈ A) :
     ∀ᶠ z : L in 𝓝 0, φ.symm (φ x + (z : F)) ∈ A := by
   have hxL : φ x ∈ L := (isSliceChart_iff.1 hφ x hxφ).1 hxA
-  have hcont : Continuous fun z : L ↦ φ x + (z : F) := continuous_const.add continuous_subtype_val
+  have hcont : Continuous fun z : L ↦ φ x + (z : F) := continuous_const.add continuous_subtypeVal
   have hxt : φ.target ∈ 𝓝 (φ x + ((0 : L) : F)) := by
     simpa using φ.open_target.mem_nhds (φ.map_source hxφ)
   filter_upwards [hcont.continuousAt.preimage_mem_nhds hxt] with z hz
   exact (isSliceChart_iff.1 hφ _ (φ.map_target hz)).2
-    (by rw [φ.right_inv hz]; exact L.add_mem hxL z.2)
+    (by rw [φ.right_inv hz]; exact L.add_mem hxL z.property)
 
 /-- The parametrization `z ↦ φ.symm (φ x + z)` of a set `A` flattened by the chart `φ` onto a
 linear subspace `L` reaches every point of `A` near `x` from arbitrarily small parameters. -/
@@ -528,7 +528,7 @@ theorem restrict (h : IsSliceEmbedding S f) {U : Set N} (hU : IsOpen U) :
   refine ⟨h.isEmbedding.comp IsEmbedding.subtypeVal, fun x => ?_⟩
   obtain ⟨φ, hφx, hφ⟩ := h.exists_isSliceChart x
   refine ⟨φ.restrOpen V hV, ?_, ?_⟩
-  · exact ⟨hφx, x.2⟩
+  · exact ⟨hφx, x.property⟩
   · rw [hrange]
     exact hφ.restrOpen hV
 
@@ -664,7 +664,7 @@ theorem isLocallyClosed_range (h : IsSliceEmbedding S f) (hS : IsLocallyClosed S
   refine ⟨W, hW.mem_nhds hxW, ?_⟩
   -- `U ↓∩ s` is notation for `Subtype.val ⁻¹' s`, so the goal is literally about that preimage.
   have hpre : ((Subtype.val : W → M) ⁻¹' range f) = (fun y : W => φ ↑y) ⁻¹' Z :=
-    Set.ext fun y => (hφ.mem_iff y.2.1).trans (and_iff_right y.2.2)
+    Set.ext fun y => (hφ.mem_iff y.property.1).trans (and_iff_right y.property.2)
   rw [hpre]
   exact hZ.preimage (φ.continuousOn.mono inter_subset_left).domRestrict
 
@@ -985,7 +985,7 @@ theorem _root_.ContinuousOn.isLocallyFlat_graph_of_isOpen
     {E F : Type*} [TopologicalSpace E]
     [AddGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
     {f : E → F} {s : Set E} (hf : ContinuousOn f s) (hs : IsOpen s) :
-    IsLocallyFlat s F (fun x : s => ((x.1, f x.1) : E × F)) := by
+    IsLocallyFlat s F (fun x : s => ((x.val, f x.val) : E × F)) := by
   have hcont : Continuous (s.domRestrict f) :=
     continuousOn_iff_continuous_domRestrict.mp hf
   have hgraph : IsLocallyFlat s F (fun x : s => (x, s.domRestrict f x)) := by
@@ -1076,7 +1076,7 @@ private theorem range_symm_zero_eq_inter {ψ : OpenPartialHomeomorph M (F × G)}
   constructor
   · rintro ⟨v, rfl⟩
     have hmem : ((v : F), (0 : G)) ∈ ψ.target := by
-      rw [hψt]; exact ⟨v.2, mem_ball_self hr⟩
+      rw [hψt]; exact ⟨v.property, mem_ball_self hr⟩
     exact ⟨ψ.map_target hmem, hψ.symm_mk_zero_mem hmem⟩
   · rintro ⟨hms, hmr⟩
     have h1 : (ψ m).1 ∈ u := by

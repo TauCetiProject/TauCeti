@@ -72,11 +72,11 @@ theorem circleCurve_apply {c : ℂ} {R t : ℝ} (ht : t ∈ uIcc 0 (2 * π)) :
 
 /-- The counterclockwise circle `circleMap c R` on `[0, 2π]` as a one-generator contour cycle. -/
 def circleCycle (c : ℂ) (R : ℝ) : Cycle :=
-  FreeAbelianGroup.of (circleCurve c R)
+  FreeAddCommGroup.of (circleCurve c R)
 
 /-- Defining formula for `TauCeti.Contour.circleCycle`. -/
 theorem circleCycle_def (c : ℂ) (R : ℝ) :
-    circleCycle c R = FreeAbelianGroup.of (circleCurve c R) :=
+    circleCycle c R = FreeAddCommGroup.of (circleCurve c R) :=
   (rfl)
 
 namespace Cycle

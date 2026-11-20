@@ -13,12 +13,12 @@ import Mathlib.Combinatorics.SimpleGraph.Ends.Defs
 /-!
 # Degrees of cut vertices in the block--cut forest
 
-For a cut vertex `v` of a finite simple graph, the blocks containing `v` are in bijection with
+For a cut vertex `v` of a simple graph, the blocks containing `v` are in bijection with
 the connected components of the original component of `v` after `v` is deleted.  Since those
 blocks are precisely the neighbours of `v` in the block--cut graph, this identifies the degree
 of `v` in the block--cut forest with the number of branches created inside its component.
 
-The resulting count is
+For a finite vertex type, the resulting count is
 
 `components(G - v) + 1 = components(G) + degree(blockCutGraph G, v)`.
 
@@ -49,17 +49,19 @@ abbrev DeletedComponent :=
 /-- A chosen neighbour of `c` in an incident block. -/
 private noncomputable def neighborInBlock
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) : V :=
-  (B.1.2.exists_adj_of_not_isIsolated_mem c.2.not_isIsolated B.2).choose
+  (B.val.property.exists_adj_of_not_isIsolated_mem c.property.not_isIsolated B.property).choose
 
 private theorem neighborInBlock_mem
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) :
-    c.neighborInBlock B ∈ (B.1 : Set V) :=
-  (B.1.2.exists_adj_of_not_isIsolated_mem c.2.not_isIsolated B.2).choose_spec.1
+    c.neighborInBlock B ∈ (B.val : Set V) :=
+  (B.val.property.exists_adj_of_not_isIsolated_mem c.property.not_isIsolated
+      B.property).choose_spec.1
 
 private theorem adj_neighborInBlock
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) :
     G.Adj c (c.neighborInBlock B) :=
-  (B.1.2.exists_adj_of_not_isIsolated_mem c.2.not_isIsolated B.2).choose_spec.2
+  (B.val.property.exists_adj_of_not_isIsolated_mem c.property.not_isIsolated
+      B.property).choose_spec.2
 
 private theorem neighborInBlock_ne
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) :
@@ -100,24 +102,22 @@ private theorem incidentBlockComponent_injective :
     rw [Walk.support_map] at hc
     obtain ⟨z, -, hz⟩ := List.mem_map.mp hc
     exact z.property (by simpa using hz)
-  have hne' : (B.1 : Set V) ≠ (D.1 : Set V) := fun h ↦ hne (Subtype.ext h)
-  exact hcq (B.1.2.mem_support_of_ne D.1.2 hne' B.2 D.2
+  have hne' : (B.val : Set V) ≠ (D.val : Set V) := fun h ↦ hne (Subtype.ext h)
+  exact hcq (B.val.property.mem_support_of_ne D.val.property hne' B.property D.property
     (c.neighborInBlock_mem B) (c.neighborInBlock_mem D) q)
-
-variable [Finite V]
 
 private theorem incidentBlockComponent_surjective :
     Function.Surjective c.incidentBlockComponent := by
   intro C
-  obtain ⟨x, hxC⟩ := C.1.exists_rep
+  obtain ⟨x, hxC⟩ := C.val.exists_rep
   have hxc : (x : V) ≠ c := Set.mem_compl_singleton_iff.mp x.property
   have hreach : G.Reachable x c := by
     apply ConnectedComponent.exact
     exact (ConnectedComponent.map_mk (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom x).symm.trans
       ((congrArg (ConnectedComponent.map
-        (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom) hxC).trans C.2)
+        (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom) hxC).trans C.property)
   obtain ⟨p⟩ := hreach
-  let S : Set V := ((C.1 : G.ComponentCompl {(c : V)}) : Set V)
+  let S : Set V := ((C.val : G.ComponentCompl {(c : V)}) : Set V)
   have hxS : (x : V) ∈ S := by
     refine ⟨?_, hxC⟩
     simpa only [Set.mem_singleton_iff] using hxc
@@ -132,8 +132,8 @@ private theorem incidentBlockComponent_surjective :
     exact ComponentCompl.mem_of_adj d.fst d.snd hdS (by simpa using hne) d.adj
   obtain ⟨hdfst, hzCeq⟩ := hdS
   let z : ↑({(c : V)}ᶜ : Set V) := ⟨d.fst, hdfst⟩
-  have hzC : z ∈ (C.1 : Set _) := by
-    apply (ConnectedComponent.mem_supp_iff C.1 z).2
+  have hzC : z ∈ (C.val : Set _) := by
+    apply (ConnectedComponent.mem_supp_iff C.val z).2
     exact hzCeq
   have hzd : (z : V) = d.fst := rfl
   have hadj : G.Adj c d.fst := by simpa [hdsnd] using d.adj.symm
@@ -154,7 +154,7 @@ private theorem incidentBlockComponent_surjective :
     rw [Walk.support_copy] at hw
     exact Set.mem_compl_singleton_iff.mpr (hq w hw).2
   simpa only [incidentBlockComponent] using (ConnectedComponent.sound hqReach).trans
-      ((ConnectedComponent.mem_supp_iff C.1 z).1 hzC)
+      ((ConnectedComponent.mem_supp_iff C.val z).1 hzC)
 
 /-- The blocks containing a cut vertex are in bijection with the components of its original
 connected component after deleting that vertex. -/
@@ -172,13 +172,13 @@ private theorem incidentBlockEquivDeletedComponent_apply
 block other than the deleted cut vertex. -/
 theorem mem_incidentBlockEquivDeletedComponent
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) {x : V}
-    (hxB : x ∈ (B.1 : Set V)) (hxc : x ≠ c) :
+    (hxB : x ∈ (B.val : Set V)) (hxc : x ≠ c) :
     (⟨x, Set.mem_compl_singleton_iff.mpr hxc⟩ : ↑({(c : V)}ᶜ : Set V)) ∈
-      ((c.incidentBlockEquivDeletedComponent B).1 : Set _) := by
+      ((c.incidentBlockEquivDeletedComponent B).val : Set _) := by
   let x' : ↑({(c : V)}ᶜ : Set V) :=
     ⟨x, Set.mem_compl_singleton_iff.mpr hxc⟩
-  obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne B.1.2.connected
-    B.1.2.not_isCutVertex hxB (c.neighborInBlock_mem B) hxc (c.neighborInBlock_ne B)
+  obtain ⟨p, hp⟩ := exists_walk_forall_mem_support_mem_and_ne B.val.property.connected
+    B.val.property.not_isCutVertex hxB (c.neighborInBlock_mem B) hxc (c.neighborInBlock_ne B)
   have hreach : (G.induce ({(c : V)}ᶜ : Set V)).Reachable
       x'
       ⟨c.neighborInBlock B,
@@ -186,13 +186,15 @@ theorem mem_incidentBlockEquivDeletedComponent
     apply reachable_induce_iff.mpr
     exact ⟨p, fun z hz ↦ Set.mem_compl_singleton_iff.mpr (hp z hz).2⟩
   have hcomponent : (G.induce ({(c : V)}ᶜ : Set V)).connectedComponentMk x' =
-      (c.incidentBlockEquivDeletedComponent B).1 := by
+      (c.incidentBlockEquivDeletedComponent B).val := by
     rw [incidentBlockEquivDeletedComponent_apply]
     simpa only [incidentBlockComponent] using ConnectedComponent.sound hreach
   exact (ConnectedComponent.mem_supp_iff _ _).mpr hcomponent
 
-/-- The neighbours of a cut vertex in the block--cut graph are counted by the components into
-which deleting it splits its original connected component. -/
+/-- The neighbours of a cut vertex in the block--cut graph are in bijection with the components
+into which deleting it splits its original connected component, so the two cardinalities agree.
+Both sides are `0` when these sets are infinite, by the convention of `Set.ncard` and
+`Nat.card`. -/
 theorem ncard_neighborSet_blockCutGraph_eq_natCard_deletedComponent :
     (G.blockCutGraph.neighborSet (.inr c)).ncard = Nat.card c.DeletedComponent := by
   rw [← Nat.card_coe_set_eq]
@@ -205,6 +207,8 @@ theorem degree_blockCutGraph_eq_natCard_deletedComponent
     [Fintype ↑(G.blockCutGraph.neighborSet (.inr c))] :
     G.blockCutGraph.degree (.inr c) = Nat.card c.DeletedComponent := by
   rw [← ncard_neighborSet, c.ncard_neighborSet_blockCutGraph_eq_natCard_deletedComponent]
+
+variable [Finite V]
 
 /-- **The block--cut degree formula.** Deleting a cut vertex adds its block--cut degree minus
 one to the number of connected components. -/

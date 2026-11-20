@@ -90,18 +90,18 @@ namespace Cycle
 
 /-- Reversing a generator does not change its cycle trace. -/
 theorem trace_of_symm (γ : PiecewiseC1ClosedCurve) :
-    trace (FreeAbelianGroup.of γ.symm) = trace (FreeAbelianGroup.of γ) := by
+    trace (FreeAddCommGroup.of γ.symm) = trace (FreeAddCommGroup.of γ) := by
   rw [trace_of, trace_of, PiecewiseC1ClosedCurve.image_symm]
 
 /-- Reversing a generator preserves containment in any target set. -/
 theorem isIn_of_symm_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
-    IsIn (FreeAbelianGroup.of γ.symm) Ω ↔ IsIn (FreeAbelianGroup.of γ) Ω := by
+    IsIn (FreeAddCommGroup.of γ.symm) Ω ↔ IsIn (FreeAddCommGroup.of γ) Ω := by
   rw [isIn_iff, isIn_iff, trace_of_symm]
 
 /-- Integrating over a reversed generator negates the contour integral. -/
 theorem integral_of_symm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (γ : PiecewiseC1ClosedCurve) (f : ℂ → E) :
-    integral f (FreeAbelianGroup.of γ.symm) = -integral f (FreeAbelianGroup.of γ) := by
+    integral f (FreeAddCommGroup.of γ.symm) = -integral f (FreeAddCommGroup.of γ) := by
   simp only [integral_of, PiecewiseC1ClosedCurve.coe_symm, PiecewiseC1ClosedCurve.symm_a,
     PiecewiseC1ClosedCurve.symm_b]
   rw [intervalIntegral.integral_symm]
@@ -109,8 +109,8 @@ theorem integral_of_symm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 /-- At any point outside the image of `γ`, reversing `γ` negates its cycle winding number. -/
 theorem windingNumber_of_symm (γ : PiecewiseC1ClosedCurve) {z : ℂ}
     (hz : z ∉ γ '' uIcc γ.a γ.b) :
-    windingNumber z (FreeAbelianGroup.of γ.symm) =
-      -windingNumber z (FreeAbelianGroup.of γ) := by
+    windingNumber z (FreeAddCommGroup.of γ.symm) =
+      -windingNumber z (FreeAddCommGroup.of γ) := by
   have hoff : ∀ t ∈ uIcc γ.a γ.b, γ t ≠ z := fun t ht htz ↦ hz ⟨t, ht, htz⟩
   simp only [windingNumber_of, PiecewiseC1ClosedCurve.coe_symm, PiecewiseC1ClosedCurve.symm_a,
     PiecewiseC1ClosedCurve.symm_b]
@@ -120,16 +120,16 @@ theorem windingNumber_of_symm (γ : PiecewiseC1ClosedCurve) {z : ℂ}
 /-- Vanishing of the cycle winding number of a generator is preserved under orientation reversal,
 even at points on the trace. -/
 theorem windingNumber_of_symm_eq_zero_iff (γ : PiecewiseC1ClosedCurve) (z : ℂ) :
-    windingNumber z (FreeAbelianGroup.of γ.symm) = 0 ↔
-      windingNumber z (FreeAbelianGroup.of γ) = 0 := by
+    windingNumber z (FreeAddCommGroup.of γ.symm) = 0 ↔
+      windingNumber z (FreeAddCommGroup.of γ) = 0 := by
   simp only [windingNumber_of, PiecewiseC1ClosedCurve.coe_symm, PiecewiseC1ClosedCurve.symm_a,
     PiecewiseC1ClosedCurve.symm_b]
   exact ⟨TauCeti.Contour.windingNumber_eq_zero_symm, TauCeti.Contour.windingNumber_eq_zero_symm⟩
 
 /-- Null-homology of a generator is preserved under orientation reversal. -/
 theorem isNullHomologous_of_symm_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
-    IsNullHomologous (FreeAbelianGroup.of γ.symm) Ω ↔
-      IsNullHomologous (FreeAbelianGroup.of γ) Ω := by
+    IsNullHomologous (FreeAddCommGroup.of γ.symm) Ω ↔
+      IsNullHomologous (FreeAddCommGroup.of γ) Ω := by
   simp only [isNullHomologous_iff, windingNumber_of_symm_eq_zero_iff]
 
 end Cycle

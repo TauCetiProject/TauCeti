@@ -92,7 +92,7 @@ coefficient-weighted sum of the real circulations of `(Re F, -Im F)` over the su
 generators. -/
 theorem re_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ} (hF : ContinuousOn F C.trace) :
     (C.integral F).re =
-      ∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
+      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t := by
   rw [integral_eq_sum_support, Complex.re_sum]
   refine Finset.sum_congr rfl fun γ hγ ↦ ?_
@@ -106,7 +106,7 @@ coefficient-weighted sum of the real circulations of `(Im F, Re F)` over the sup
 generators. -/
 theorem im_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ} (hF : ContinuousOn F C.trace) :
     (C.integral F).im =
-      ∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
+      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t := by
   rw [integral_eq_sum_support, Complex.im_sum]
   refine Finset.sum_congr rfl fun γ hγ ↦ ?_
@@ -278,9 +278,9 @@ circulations equals `(-2 * I) * ∫ z in U, C.windingWeight z * wirtingerDeriv F
 theorem circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv (C : Cycle)
     {U : Set ℂ} {F : ℂ → ℂ} (hU : IsOpen U) (htrace : C.IsIn U) (hnull : C.IsNullHomologous U)
     (hF : ContDiffOn ℝ 1 F U) :
-    ((∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
+    ((∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ (F z).im) γ t : ℝ) : ℂ) +
-      I * ((∑ γ ∈ FreeAbelianGroup.support C, (FreeAbelianGroup.coeff γ C : ℝ) *
+      I * ((∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
         ∫ t in γ.a..γ.b,
           Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ -(F z).re) γ t : ℝ) : ℂ) =
       (-2 * I) * ∫ z in U, (C.windingWeight z : ℂ) * wirtingerDeriv F z 1 := by
@@ -335,8 +335,8 @@ theorem circulation_dzBar_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtinger
   have hmain :=
     S.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv hU htr hnull hF
   rw [Contour.Cycle.windingWeight_circleCycle c hR] at hmain
-  simp only [S, Contour.circleCycle_def, FreeAbelianGroup.support_of, Finset.sum_singleton,
-    FreeAbelianGroup.coeff_of_self, Int.cast_one, one_mul,
+  simp only [S, Contour.circleCycle_def, FreeAddCommGroup.support_of, Finset.sum_singleton,
+    FreeAddCommGroup.coeff_of_self, Int.cast_one, one_mul,
     intervalIntegral_circulationFun_circleCurve] at hmain
   rw [hmain]
   refine congrArg _ ?_

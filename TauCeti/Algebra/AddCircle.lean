@@ -67,6 +67,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
+* `AddCircle.forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div`: an element at which a
+  character of a finite group of order at most `n` takes the value `p / n` generates the group.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
   class of `p / n` by a divisor `d` of `n` gives the class of `p / (n / d)`; when `n` is nonzero
   in `𝕜` these are the canonical generators of the `n`- and the `n / d`-torsion.
@@ -142,7 +144,7 @@ theorem intCast_floor_equivIco_add {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜
     [FloorRing 𝕜] (x y : AddCircle (1 : 𝕜)) :
     (⌊(equivIco 1 0 x : 𝕜) + equivIco 1 0 y⌋ : 𝕜) =
       equivIco 1 0 x + equivIco 1 0 y - equivIco 1 0 (x + y) := by
-  obtain ⟨hz₀, hz₁⟩ := (equivIco 1 0 (x + y)).2
+  obtain ⟨hz₀, hz₁⟩ := (equivIco 1 0 (x + y)).property
   -- The right-hand side maps to `0` in the circle, so it is an integer `k`, and the
   -- representative of `x + y` lying in `[0, 1)` forces `k` to be the floor.
   have hcoe :
@@ -151,8 +153,8 @@ theorem intCast_floor_equivIco_add {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜
     rw [coe_sub, coe_add, coe_equivIco, coe_equivIco, coe_equivIco, sub_self]
   obtain ⟨k, hk⟩ := (coe_eq_zero_iff (p := (1 : 𝕜))).1 hcoe
   rw [zsmul_one] at hk
-  have h0 := (equivIco 1 0 x).2
-  have h1 := (equivIco 1 0 y).2
+  have h0 := (equivIco 1 0 x).property
+  have h1 := (equivIco 1 0 y).property
   simp only [zero_add, Set.mem_Ico] at *
   rw [← hk, Int.floor_eq_iff.2 ⟨by linarith, by linarith⟩]
 
@@ -367,6 +369,19 @@ theorem torsionBy_le_torsionBy_iff :
 theorem torsionBy_inj : (AddCircle p)[(m : ℤ)] = (AddCircle p)[(n : ℤ)] ↔ m = n := by
   rw [le_antisymm_iff, torsionBy_le_torsionBy_iff, torsionBy_le_torsionBy_iff]
   exact ⟨fun h ↦ Nat.dvd_antisymm h.1 h.2, fun h ↦ h ▸ ⟨dvd_rfl, dvd_rfl⟩⟩
+
+/-- **An element of invariant `p / n` generates a group of order at most `n`.** If a character
+`f` of a finite group `G` with at most `n` elements takes the value `p / n` at `g`, then `g`
+generates `G`: the order of `g` is a multiple of the order `n` of `p / n`. -/
+theorem forall_mem_zpowers_of_apply_ofMul_eq_coe_period_div {G : Type*} [Group G] [Finite G]
+    {f : Additive G →+ AddCircle p} {g : G} (hn : Nat.card G ≤ n)
+    (hg : f (.ofMul g) = ((p / n : 𝕜) : AddCircle p)) : ∀ x, x ∈ Subgroup.zpowers g := by
+  have hdvd := addOrderOf_map_dvd f (.ofMul g)
+  rw [hg, addOrderOf_period_div_of_ne_zero p (Nat.card_pos.trans_le hn),
+    addOrderOf_ofMul_eq_orderOf] at hdvd
+  refine (Subgroup.eq_top_iff' _).mp (Subgroup.eq_top_of_le_card _ ?_)
+  rw [Nat.card_zpowers]
+  exact hn.trans (Nat.le_of_dvd (orderOf_pos g) hdvd)
 
 end ExactOrder
 

@@ -167,18 +167,18 @@ namespace Cycle
 
 /-- `positivelyOrient` preserves the cycle trace of a generator. -/
 theorem trace_of_positivelyOrient (γ : PiecewiseC1ClosedCurve) :
-    trace (FreeAbelianGroup.of γ.positivelyOrient) = trace (FreeAbelianGroup.of γ) := by
+    trace (FreeAddCommGroup.of γ.positivelyOrient) = trace (FreeAddCommGroup.of γ) := by
   simp
 
 /-- `positivelyOrient` preserves containment of a generator in any target set. -/
 theorem isIn_of_positivelyOrient_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
-    IsIn (FreeAbelianGroup.of γ.positivelyOrient) Ω ↔ IsIn (FreeAbelianGroup.of γ) Ω := by
+    IsIn (FreeAddCommGroup.of γ.positivelyOrient) Ω ↔ IsIn (FreeAddCommGroup.of γ) Ω := by
   rw [isIn_iff, isIn_iff, trace_of_positivelyOrient]
 
 /-- `positivelyOrient` preserves vanishing of a generator's cycle winding number. -/
 theorem windingNumber_of_positivelyOrient_eq_zero_iff (γ : PiecewiseC1ClosedCurve) (z : ℂ) :
-    windingNumber z (FreeAbelianGroup.of γ.positivelyOrient) = 0 ↔
-      windingNumber z (FreeAbelianGroup.of γ) = 0 := by
+    windingNumber z (FreeAddCommGroup.of γ.positivelyOrient) = 0 ↔
+      windingNumber z (FreeAddCommGroup.of γ) = 0 := by
   unfold PiecewiseC1ClosedCurve.positivelyOrient
   split_ifs
   · exact windingNumber_of_symm_eq_zero_iff γ z
@@ -186,15 +186,15 @@ theorem windingNumber_of_positivelyOrient_eq_zero_iff (γ : PiecewiseC1ClosedCur
 
 /-- `positivelyOrient` preserves null-homology of a generator. -/
 theorem isNullHomologous_of_positivelyOrient_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
-    IsNullHomologous (FreeAbelianGroup.of γ.positivelyOrient) Ω ↔
-      IsNullHomologous (FreeAbelianGroup.of γ) Ω := by
+    IsNullHomologous (FreeAddCommGroup.of γ.positivelyOrient) Ω ↔
+      IsNullHomologous (FreeAddCommGroup.of γ) Ω := by
   simp only [isNullHomologous_iff, windingNumber_of_positivelyOrient_eq_zero_iff]
 
 /-- Outside `filledHull (γ '' uIcc γ.a γ.b)`, the cycle winding number of `γ.positivelyOrient`
 vanishes. -/
 theorem windingNumber_of_positivelyOrient_eq_zero_of_notMem_filledHull
     (γ : PiecewiseC1ClosedCurve) {z : ℂ} (hz : z ∉ filledHull (γ '' uIcc γ.a γ.b)) :
-    windingNumber z (FreeAbelianGroup.of γ.positivelyOrient) = 0 := by
+    windingNumber z (FreeAddCommGroup.of γ.positivelyOrient) = 0 := by
   rw [windingNumber_of_positivelyOrient_eq_zero_iff, windingNumber_of]
   exact γ.isPiecewiseC1On.absolutelyContinuousOnInterval.windingNumber_eq_zero_of_notMem_filledHull
     γ.source_eq_target hz
@@ -203,8 +203,8 @@ theorem windingNumber_of_positivelyOrient_eq_zero_of_notMem_filledHull
 multiplies the integral over `γ` by `jordanSign γ γ.a γ.b ∈ {1, -1}`. -/
 theorem integral_of_positivelyOrient {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     {γ : PiecewiseC1ClosedCurve} (hab : γ.a < γ.b) (hinj : InjOn γ (Ico γ.a γ.b)) (f : ℂ → E) :
-    integral f (FreeAbelianGroup.of γ.positivelyOrient) =
-      jordanSign γ γ.a γ.b • integral f (FreeAbelianGroup.of γ) := by
+    integral f (FreeAddCommGroup.of γ.positivelyOrient) =
+      jordanSign γ γ.a γ.b • integral f (FreeAddCommGroup.of γ) := by
   rcases γ.jordanSign_eq_one_or_neg_one hab hinj with h | h
   · rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_one h, h, one_smul]
   · rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_neg_one h,
@@ -215,7 +215,7 @@ closed piecewise-`C¹` curve (`γ.a < γ.b`) has cycle winding number `1`. -/
 theorem windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff
     {γ : PiecewiseC1ClosedCurve} (hab : γ.a < γ.b) (hinj : InjOn γ (Ico γ.a γ.b)) {z : ℂ}
     (hz : z ∈ filledHull (γ '' uIcc γ.a γ.b) \ (γ '' uIcc γ.a γ.b)) :
-    windingNumber z (FreeAbelianGroup.of γ.positivelyOrient) = 1 := by
+    windingNumber z (FreeAddCommGroup.of γ.positivelyOrient) = 1 := by
   have hw := γ.isPiecewiseC1On.absolutelyContinuousOnInterval
     |>.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hab γ.source_eq_target hinj hz
   rcases γ.jordanSign_eq_one_or_neg_one hab hinj with h | h
@@ -238,21 +238,21 @@ positively oriented via `PiecewiseC1ClosedCurve.positivelyOrient` and assembled 
 `[γ₀⁺] - ∑ i ∈ s, [γᵢ⁺]` in `TauCeti.Contour.Cycle`. -/
 def jordanBoundaryCycle (γ₀ : PiecewiseC1ClosedCurve) (s : Finset ι)
     (γ : ι → PiecewiseC1ClosedCurve) : Cycle :=
-  FreeAbelianGroup.of γ₀.positivelyOrient - ∑ i ∈ s, FreeAbelianGroup.of (γ i).positivelyOrient
+  FreeAddCommGroup.of γ₀.positivelyOrient - ∑ i ∈ s, FreeAddCommGroup.of (γ i).positivelyOrient
 
 /-- Defining formula for `TauCeti.Contour.jordanBoundaryCycle`. -/
 theorem jordanBoundaryCycle_def (γ₀ : PiecewiseC1ClosedCurve) (s : Finset ι)
     (γ : ι → PiecewiseC1ClosedCurve) :
     jordanBoundaryCycle γ₀ s γ =
-      FreeAbelianGroup.of γ₀.positivelyOrient -
-        ∑ i ∈ s, FreeAbelianGroup.of (γ i).positivelyOrient :=
+      FreeAddCommGroup.of γ₀.positivelyOrient -
+        ∑ i ∈ s, FreeAddCommGroup.of (γ i).positivelyOrient :=
   (rfl)
 
 /-- With no holes (`s = ∅`), `jordanBoundaryCycle` is `[γ₀⁺]`. -/
 @[simp]
 theorem jordanBoundaryCycle_empty (γ₀ : PiecewiseC1ClosedCurve)
     (γ : ι → PiecewiseC1ClosedCurve) :
-    jordanBoundaryCycle γ₀ ∅ γ = FreeAbelianGroup.of γ₀.positivelyOrient := by
+    jordanBoundaryCycle γ₀ ∅ γ = FreeAddCommGroup.of γ₀.positivelyOrient := by
   simp [jordanBoundaryCycle]
 
 /-- Inserting a new hole subtracts its positively oriented generator from `jordanBoundaryCycle`. -/
@@ -260,7 +260,7 @@ theorem jordanBoundaryCycle_empty (γ₀ : PiecewiseC1ClosedCurve)
 theorem jordanBoundaryCycle_insert [DecidableEq ι] (γ₀ : PiecewiseC1ClosedCurve) {i : ι}
     {s : Finset ι} (hi : i ∉ s) (γ : ι → PiecewiseC1ClosedCurve) :
     jordanBoundaryCycle γ₀ (insert i s) γ =
-      jordanBoundaryCycle γ₀ s γ - FreeAbelianGroup.of (γ i).positivelyOrient := by
+      jordanBoundaryCycle γ₀ s γ - FreeAddCommGroup.of (γ i).positivelyOrient := by
   rw [jordanBoundaryCycle, jordanBoundaryCycle, Finset.sum_insert hi, sub_sub, add_comm]
 
 /-- When `γ₀` and every `γ i` (`i ∈ s`) already have `jordanSign = 1`, `jordanBoundaryCycle` is
@@ -269,7 +269,7 @@ theorem jordanBoundaryCycle_of_jordanSign_eq_one {γ₀ : PiecewiseC1ClosedCurve
     {γ : ι → PiecewiseC1ClosedCurve} (h₀ : jordanSign γ₀ γ₀.a γ₀.b = 1)
     (h : ∀ i ∈ s, jordanSign (γ i) (γ i).a (γ i).b = 1) :
     jordanBoundaryCycle γ₀ s γ =
-      FreeAbelianGroup.of γ₀ - ∑ i ∈ s, FreeAbelianGroup.of (γ i) := by
+      FreeAddCommGroup.of γ₀ - ∑ i ∈ s, FreeAddCommGroup.of (γ i) := by
   rw [jordanBoundaryCycle, PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_one h₀]
   exact congrArg _ (Finset.sum_congr rfl fun i hi ↦ by
     rw [PiecewiseC1ClosedCurve.positivelyOrient_of_jordanSign_eq_one (h i hi)])
@@ -284,8 +284,8 @@ theorem integral_jordanBoundaryCycle {E : Type*} [NormedAddCommGroup E] [NormedS
     (hab : ∀ i ∈ s, (γ i).a < (γ i).b)
     (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (γ i).a (γ i).b)) (f : ℂ → E) :
     integral f (jordanBoundaryCycle γ₀ s γ) =
-      jordanSign γ₀ γ₀.a γ₀.b • integral f (FreeAbelianGroup.of γ₀) -
-        ∑ i ∈ s, jordanSign (γ i) (γ i).a (γ i).b • integral f (FreeAbelianGroup.of (γ i)) := by
+      jordanSign γ₀ γ₀.a γ₀.b • integral f (FreeAddCommGroup.of γ₀) -
+        ∑ i ∈ s, jordanSign (γ i) (γ i).a (γ i).b • integral f (FreeAddCommGroup.of (γ i)) := by
   rw [jordanBoundaryCycle, map_sub, map_sum, integral_of_positivelyOrient hab₀ hinj₀]
   exact congrArg _ (Finset.sum_congr rfl fun i hi ↦
     integral_of_positivelyOrient (hab i hi) (hinj i hi) f)
@@ -328,19 +328,19 @@ theorem trace_jordanBoundaryCycle_eq_union
       rw [trace_of_positivelyOrient, trace_of])
   · rintro z (hz₀ | hzi)
     · refine mem_trace_iff.mpr ⟨γ₀.positivelyOrient, ?_, by rwa [γ₀.image_positivelyOrient]⟩
-      rw [FreeAbelianGroup.mem_support_iff, jordanBoundaryCycle, map_sub, map_sum,
-        FreeAbelianGroup.coeff_of_self, Finset.sum_eq_zero fun i hi ↦
-          FreeAbelianGroup.coeff_of_of_ne (ne_positivelyOrient_outer_of_hole hsub hi),
+      rw [FreeAddCommGroup.mem_support_iff, jordanBoundaryCycle, map_sub, map_sum,
+        FreeAddCommGroup.coeff_of_self, Finset.sum_eq_zero fun i hi ↦
+          FreeAddCommGroup.coeff_of_of_ne (ne_positivelyOrient_outer_of_hole hsub hi),
         sub_zero]
       exact one_ne_zero
     · obtain ⟨i, hi, hzi⟩ := mem_iUnion₂.mp hzi
       refine mem_trace_iff.mpr ⟨(γ i).positivelyOrient, ?_, by rwa [(γ i).image_positivelyOrient]⟩
-      rw [FreeAbelianGroup.mem_support_iff, jordanBoundaryCycle, map_sub, map_sum,
-        FreeAbelianGroup.coeff_of_of_ne (ne_positivelyOrient_outer_of_hole hsub hi).symm,
-        Finset.sum_eq_single i (fun j hj hji ↦ FreeAbelianGroup.coeff_of_of_ne
+      rw [FreeAddCommGroup.mem_support_iff, jordanBoundaryCycle, map_sub, map_sum,
+        FreeAddCommGroup.coeff_of_of_ne (ne_positivelyOrient_outer_of_hole hsub hi).symm,
+        Finset.sum_eq_single i (fun j hj hji ↦ FreeAddCommGroup.coeff_of_of_ne
             (ne_positivelyOrient_hole_of_ne hdisj hi hj hji.symm))
           (fun hnot ↦ (hnot hi).elim),
-        FreeAbelianGroup.coeff_of_self, zero_sub]
+        FreeAddCommGroup.coeff_of_self, zero_sub]
       exact neg_ne_zero.mpr one_ne_zero
 
 /-- **Trace identification for `jordanBoundaryCycle`.** The trace of the oriented boundary cycle of
