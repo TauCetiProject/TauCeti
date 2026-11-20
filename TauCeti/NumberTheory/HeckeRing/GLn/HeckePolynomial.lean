@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-import Mathlib.Data.Nat.Choose.Vandermonde
 import TauCeti.Data.Nat.Choose.Basic
 import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Tactic.LinearCombination
