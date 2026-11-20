@@ -48,6 +48,8 @@ are only real-linear.
   `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
   (`quadraticTwoForm_eq_zero_iff`).
 * `inner_quadraticTwoForm_eq_re_inner`: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4` for every two-form `ω`.
+* `abs_re_inner_cliffordRestriction_apply_self_le`: `|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²` for every
+  two-form `μ`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
@@ -235,6 +237,24 @@ theorem inner_quadraticTwoForm_eq_re_inner (ω : ⋀[ℝ]^2 V) (ψ : positiveHal
     (o.hodgeStar_coe_of_mem_eigenspace_one hkl (quadraticTwoForm o ρ hkl ψ)) ω
   have h := inner_quadraticTwoForm_eq_re_inner_of_hodgeStar_eq_self o ρ hQ hkl hplus ψ
   rw [hC, real_inner_smul_right, inner_add_right, hq] at h
+  linarith
+
+include hQ in
+variable {ρ} in
+/-- The pairing of a positive spinor with the Clifford action of a two-form on it is bounded:
+`|Re⟪ψ, C(iμ) ψ⟫| ≤ √2 ‖μ‖ ‖ψ‖²`. The pairing is `4 ⟪q(ψ), μ⟫`
+(`inner_quadraticTwoForm_eq_re_inner`) and `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`. -/
+theorem abs_re_inner_cliffordRestriction_apply_self_le
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (μ : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
+    |(⟪ψ, cliffordRestriction o ρ μ ψ⟫_ℂ).re| ≤ √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
+  have hkl : 2 + 2 = finrank ℝ V := (Fact.out : finrank ℝ V = 4).symm
+  have hcs := abs_real_inner_le_norm (quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V) μ
+  rw [inner_quadraticTwoForm_eq_re_inner o ρ hQ hkl μ ψ, Submodule.norm_coe,
+    norm_quadraticTwoForm o hQ hkl hρ h₂, abs_div, abs_of_pos (four_pos : (0 : ℝ) < 4)] at hcs
+  have key : 4 * (‖ψ‖ ^ 2 / (2 * √2) * ‖μ‖) = √2 * ‖μ‖ * ‖ψ‖ ^ 2 := by
+    field_simp
+    linear_combination -2 * ‖μ‖ * ‖ψ‖ ^ 2 * Real.mul_self_sqrt zero_le_two
   linarith
 
 /-! ### Polarization and derivative -/

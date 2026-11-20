@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+public import Mathlib.LinearAlgebra.RootSystem.Base
+import TauCeti.Algebra.Lie.Weights.Basic
 -- Proof-only: a Killing Lie algebra is finite over the base ring.
 import TauCeti.Algebra.Lie.Killing.Basic
 
@@ -21,6 +23,8 @@ splitting Cartan subalgebra.
   nonzero Killing pairing.
 * `TauCeti.root_add_zsmul_mem_range_iff`: `β + n • α` is a root of `rootSystem H` exactly when
   the weight space of `n • α + β` is non-trivial.
+* `RootPairing.Base.mem_rootSpace_iff_forall_lie_coroot`: membership in a root space can be
+  checked on the simple coroots of a base.
 * `TauCeti.rootSpace_neg_eq_bot_iff`: the roots are closed under negation, so a functional on the
   Cartan subalgebra is a root exactly when its negative is.
 -/
@@ -46,12 +50,12 @@ theorem root_add_zsmul_mem_range_iff {α β : H.root}
     simpa only [rootSystem_root_apply] using hlin
   constructor
   · rintro ⟨c, hc⟩
-    have hc' : (c.1 : H → K) = n • ((α : Weight K H L) : H → K) + (β : Weight K H L) := by
+    have hc' : (c.val : H → K) = n • ((α : Weight K H L) : H → K) + (β : Weight K H L) := by
       ext z
       simpa only [rootSystem_root_apply, Weight.toLinear_apply,
         LinearMap.add_apply, LinearMap.smul_apply, Pi.add_apply, Pi.smul_apply,
         smul_eq_mul, add_comm] using DFunLike.congr_fun hc z
-    simpa only [hc'] using c.1.genWeightSpace_ne_bot
+    simpa only [hc'] using c.val.genWeightSpace_ne_bot
   · intro h
     let c : Weight K H L :=
       ⟨n • ((α : Weight K H L) : H → K) + (β : Weight K H L), h⟩
@@ -92,3 +96,21 @@ theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
   exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩
 
 end TauCeti
+
+namespace RootPairing.Base
+
+open LieAlgebra LieModule LieAlgebra.IsKilling
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
+
+/-- **Membership in a root space can be checked on the simple coroots**, because they form a basis
+of the Cartan subalgebra. -/
+theorem mem_rootSpace_iff_forall_lie_coroot (b : (rootSystem H).Base) (χ : Module.Dual K H)
+    {x : L} : x ∈ rootSpace H (χ : H → K) ↔
+      ∀ k : b.support, ⁅(((rootSystem H).coroot k : H) : L), x⁆ = χ ((rootSystem H).coroot k) • x :=
+  ⟨fun hx _ ↦ lie_eq_smul_of_mem_rootSpace hx _, fun hx ↦ weightSpace_le_genWeightSpace L _
+    ((b.toCoweightBasis.mem_weightSpace_iff_forall_basis χ x).2 fun k ↦ by simpa using hx k)⟩
+
+end RootPairing.Base

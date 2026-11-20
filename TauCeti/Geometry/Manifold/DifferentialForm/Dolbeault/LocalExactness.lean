@@ -13,14 +13,10 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 /-!
 # Local exactness for smooth forms of type `(0,q)`
 
-On a complex vector space, the Dolbeault differential of a smooth `(0,1)`-form `η` on `v,w` is
-`∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)` (`SmoothForm.IsOfType.delBar_apply_pair`), so the
-conjugate coordinate derivatives of the coefficients of a closed `(0,1)`-form are symmetric.
-
 A smooth form of type `(0,q+1)` on `ι → ℂ` whose Dolbeault differential vanishes on a finite
 product of planar domains has a smooth primitive of type `(0,q)` near every compact subproduct.
 Both the input and the primitive are `SmoothForm`s. The coefficients of the input are closed for
-the coordinate operator `TauCeti.delBarCoeff` (`SmoothForm.IsOfType.conjCoeff_delBar`), the
+the coordinate operator `TauCeti.delBarCoeff` (`SmoothForm.conjCoeff_delBar`), the
 coordinate Dolbeault–Grothendieck lemma solves for the coefficients of a primitive near the compact
 product, and these are extended smoothly and assembled into a form
 (`SmoothForm.exists_isOfType_conjCoeff_eq`). Exactness is asserted near the compact product, and
@@ -29,8 +25,6 @@ domain.
 
 ## Main declarations
 
-* `TauCeti.SmoothForm.IsOfType.conjWirtingerDeriv_apply_single_eq`: the symmetry of conjugate
-  coordinate derivatives of a closed `(0,1)`-form.
 * `TauCeti.SmoothForm.IsOfType.exists_delBar_eventually_eq_of_pi`: local exactness of closed
   `(0,q+1)`-forms on products of planar domains.
 * `TauCeti.SmoothForm.IsOfType.exists_delBar_eq_of_polydisc`: exactness of closed
@@ -61,16 +55,6 @@ section Coordinates
 
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
 
-/-- A closed smooth `(0,1)`-form satisfies the symmetry of conjugate coordinate derivatives. -/
-theorem IsOfType.conjWirtingerDeriv_apply_single_eq {η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F 1}
-    (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 1) {z : ι → ℂ}
-    (hz : ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) (i j : ι) :
-    conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single j 1]) z (Pi.single i 1) =
-      conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single i 1]) z (Pi.single j 1) := by
-  apply sub_eq_zero.mp
-  rw [← hη.delBar_apply_pair, hz]
-  rfl
-
 variable [CompleteSpace F]
 
 omit [DecidableEq ι] in
@@ -85,10 +69,10 @@ theorem IsOfType.exists_delBar_eventually_eq_of_pi {q : ℕ}
     {U K : ι → Set ℂ} (hU : ∀ i, IsOpen (U i)) (hK : ∀ i, IsCompact (K i))
     (hKU : ∀ i, K i ⊆ U i)
     (hclosed : ∀ z ∈ univ.pi U,
-      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) :
+      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).val z = 0) :
     ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q,
       f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 q ∧ ∀ᶠ z in 𝓝ˢ (univ.pi K),
-        ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).1 z = η.1 z := by
+        ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
   classical
   -- Order the coordinates, to index the coefficients of forms by increasing families.
   let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
@@ -96,7 +80,7 @@ theorem IsOfType.exists_delBar_eventually_eq_of_pi {q : ℕ}
   obtain ⟨u, hu⟩ := exists_contDiffAt_delBarCoeff_eventually_eq_of_pi hU (f := η.conjCoeff)
     (fun I _ ↦ (contDiff_conjCoeff η I).contDiffOn)
     (fun z hz I hI ↦ by
-      rw [← hη.conjCoeff_delBar, conjCoeff_of_card_eq _ hI, hclosed z hz]
+      rw [← conjCoeff_delBar η, conjCoeff_of_card_eq _ hI, hclosed z hz]
       rfl) hK hKU
   obtain ⟨V, hV, hKV, hVu⟩ := eventually_nhdsSet_iff_exists.1 hu
   -- Extend them to smooth functions on `ι → ℂ`, and assemble these into a form of type `(0,q)`.
@@ -114,7 +98,7 @@ theorem IsOfType.exists_delBar_eventually_eq_of_pi {q : ℕ}
   filter_upwards [hV.mem_nhds (hKV hz), hgu'] with y hyV hy
   -- Both sides have type `(0,q+1)`, and their coefficients agree.
   refine hf.delBar.apply_eq_of_conjCoeff_eq hη fun I hI ↦ ?_
-  rw [hf.conjCoeff_delBar, ← (hVu y hyV).2 I hI]
+  rw [conjCoeff_delBar f, ← (hVu y hyV).2 I hI]
   refine delBarCoeff_congr fun j hj ↦ ?_
   rw [hfg _ (by rw [Finset.card_erase_of_mem hj, hI, Nat.add_sub_cancel])]
   exact hy _
@@ -130,11 +114,11 @@ theorem IsOfType.exists_delBar_eq_of_polydisc {q : ℕ}
     (hη : η.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 (q + 1)) {c : ι → ℂ} {r r' : ι → ℝ}
     (hr : ∀ i, r' i < r i)
     (hclosed : ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r i),
-      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) :
+      ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).val z = 0) :
     ∃ f : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F q,
       f.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 q ∧
         ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r' i),
-          ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).1 z = η.1 z := by
+          ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar f).val z = η.val z := by
   obtain ⟨f, hf, hfη⟩ := hη.exists_delBar_eventually_eq_of_pi (fun i ↦ Metric.isOpen_ball)
     (fun i ↦ isCompact_closedBall (c i) (r' i)) (fun i ↦ Metric.closedBall_subset_ball (hr i))
     hclosed

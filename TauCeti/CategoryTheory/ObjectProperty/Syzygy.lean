@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+public import Mathlib.CategoryTheory.Limits.Shapes.ZeroObjects
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
 
 /-!
@@ -28,6 +29,8 @@ of the form `Ωᵏ N`.
 
 * `CategoryTheory.ObjectProperty.isSyzygy_succ_iff`: the recursive description.
 * `CategoryTheory.ObjectProperty.IsSyzygy.of_succ`: a `(k + 1)`-st syzygy is a `k`-th syzygy.
+* `CategoryTheory.ObjectProperty.isSyzygy_of_prop`: objects of `P` are `k`-th syzygies for every `k`
+  when a zero object satisfies `P`.
 * `CategoryTheory.ObjectProperty.IsSyzygy.map`: functors preserving short exact sequences preserve
   syzygies.
 * The `k`-th syzygies are closed under isomorphisms.
@@ -104,5 +107,27 @@ theorem IsSyzygy.map {D : Type*} [Category* D] [HasZeroMorphisms D] {P' : Object
   | succ k ih =>
     obtain ⟨S, hS, ⟨e⟩, hQ, hX'⟩ := (P.isSyzygy_succ_iff k X).1 h
     exact (P'.isSyzygy_succ_iff k _).2 ⟨S.map F, hF S hS, ⟨F.mapIso e⟩, hP _ hQ, ih hX'⟩
+
+section HasZeroObject
+
+open ZeroObject
+
+variable [HasZeroObject C]
+
+/-- If `P` holds for a zero object, every object satisfying `P` is an `n`-th syzygy relative to `P`
+for every `n`, through the coresolution `0 → X → X → 0 → 0 → ⋯`. -/
+theorem isSyzygy_of_prop (h₀ : P 0) {X : C} (hX : P X) (n : ℕ) : P.IsSyzygy n X := by
+  induction n generalizing X with
+  | zero => exact isSyzygy_zero P X
+  | succ n ih =>
+    have : Epi (0 : X ⟶ 0) := ⟨fun _ _ _ ↦ (isZero_zero C).eq_of_src _ _⟩
+    -- The sequence `X ⟶ X ⟶ 0` is exact, with homology the cokernel `0` of `𝟙 X`.
+    let L := ShortComplex.mk (𝟙 X) (0 : X ⟶ 0) comp_zero
+    have hL : L.Exact := (ShortComplex.HomologyData.ofIsColimitCokernelCofork L rfl _
+      (CokernelCofork.IsColimit.ofEpiOfIsZero (CokernelCofork.ofπ (0 : X ⟶ 0) comp_zero)
+        inferInstance (isZero_zero C))).exact_iff.2 (isZero_zero C)
+    exact (P.isSyzygy_succ_iff n X).2 ⟨L, ⟨hL⟩, ⟨Iso.refl _⟩, hX, ih h₀⟩
+
+end HasZeroObject
 
 end CategoryTheory.ObjectProperty

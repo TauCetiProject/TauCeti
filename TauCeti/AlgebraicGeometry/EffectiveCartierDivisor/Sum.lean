@@ -65,13 +65,13 @@ theorem isRelativeEffectiveCartier_mul {I J : X.IdealSheafData} {f : X ⟶ S}
   obtain ⟨U, hUW, hxU, a, -, hIa⟩ :=
     hI.isEffectiveCartier.exists_eq_span_singleton_le (f ⁻¹ᵁ W) hxW
   obtain ⟨V, hVU, hxV, b, hb, hJb⟩ :=
-    hJ.isEffectiveCartier.exists_eq_span_singleton_le U.1 hxU
-  have hVW : V.1 ≤ f ⁻¹ᵁ W := hVU.trans hUW
+    hJ.isEffectiveCartier.exists_eq_span_singleton_le U.val hxU
+  have hVW : V.val ≤ f ⁻¹ᵁ W := hVU.trans hUW
   let a' := X.presheaf.map (homOfLE hVU).op a
   have hIa' : I.ideal V = Ideal.span {a'} := by
     rw [← I.map_ideal hVU, hIa, Ideal.map_span, Set.image_singleton]
     rfl
-  refine ⟨W, (I * J).subschemeι ⁻¹ᵁ V.1, hxV,
+  refine ⟨W, (I * J).subschemeι ⁻¹ᵁ V.val, hxV,
     (Scheme.Hom.preimage_mono _ hVW).trans_eq rfl, ?_⟩
   rw [flat_resLE_subschemeι_iff hW V hVW]
   let _ : Algebra Γ(S, W) Γ(X, V) := (f.appLE W V hVW).hom.toAlgebra
