@@ -21,6 +21,7 @@ import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Null
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -780,9 +781,9 @@ theorem eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq
         ∫ y, φ y * -laplaceBeltrami I u y ∂riemannianVolume I M :=
       integral_congr_ae ((toLp_ofSmooth_ae_eq φ).mono fun y hy ↦ congrArg (· * _) hy)
     have hint1 : Integrable (fun y ↦ φ y * -laplaceBeltrami I u y) (riemannianVolume I M) :=
-      integrable_riemannianVolume_of_continuous ((map_continuous φ).mul hΔ_cont)
+      ((map_continuous φ).mul hΔ_cont).integrable_of_compactSpace
     have hint2 : Integrable (fun y ↦ φ y * f y) (riemannianVolume I M) :=
-      integrable_riemannianVolume_of_continuous ((map_continuous φ).mul hf)
+      ((map_continuous φ).mul hf).integrable_of_compactSpace
     simp_rw [smul_eq_mul, mul_sub]
     rw [integral_sub hint1 hint2, ← h2, h1, sub_eq_zero]
     simp_rw [mul_comm]
@@ -1061,10 +1062,9 @@ theorem exists_eq_ofSmooth_and_neg_laplaceBeltrami_add_mul_eq_of_dirichletForm_a
         ∫ x, V x * u' x * φ x ∂riemannianVolume I M :=
       integral_congr_ae (hwu.mono fun x hx ↦ by simp only [u', ContMDiffMap.coeFn_mk, hx])
     have hfφ : Integrable (fun x ↦ f x * φ x) (riemannianVolume I M) :=
-      integrable_riemannianVolume_of_continuous (hf.continuous.mul (map_continuous φ))
+      (hf.continuous.mul (map_continuous φ)).integrable_of_compactSpace
     have hVuφ : Integrable (fun x ↦ V x * u' x * φ x) (riemannianVolume I M) :=
-      integrable_riemannianVolume_of_continuous
-        ((hV.continuous.mul (map_continuous u')).mul (map_continuous φ))
+      ((hV.continuous.mul (map_continuous u')).mul (map_continuous φ)).integrable_of_compactSpace
     rw [eq_sub_of_add_eq (hw φ), hVu, ← integral_sub hfφ hVuφ]
     simp_rw [sub_mul]
   obtain ⟨hwu', hΔ⟩ := eq_ofSmooth_and_neg_laplaceBeltrami_eq_of_dirichletForm_eq (u := u')
