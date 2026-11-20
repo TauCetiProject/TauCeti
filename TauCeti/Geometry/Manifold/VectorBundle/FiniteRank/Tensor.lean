@@ -19,9 +19,10 @@ In particular, over a complex manifold at regularity `∞`, this gives the holom
 product without changing the underlying continuous bundle.
 
 Tensor products of bundle maps also preserve regularity, both in chart operators and on total
-spaces. The chart-operator statement needs no completeness; the total-space statement uses the
-finite-dimensional criterion for recovering smooth chart operators from smooth bundle maps.
-Identity and composition laws are those of the existing `tensorHom` bifunctor.
+spaces, and `contMDiff_pureTensorSection` shows that the pure tensor of two `C^n` sections is a
+`C^n` section. The chart-operator and section statements need no completeness; the total-space
+morphism statement uses the finite-dimensional criterion for recovering smooth chart operators from
+smooth bundle maps. Identity and composition laws are those of the existing `tensorHom` bifunctor.
 
 ## References
 
@@ -31,7 +32,7 @@ Identity and composition laws are those of the existing `tensorHom` bifunctor.
 
 public section
 
-open Set VectorBundleCore CategoryTheory
+open Bundle Set VectorBundleCore CategoryTheory
 open scoped Manifold ContDiff
 
 namespace TauCeti.FiniteRankBundleCore
@@ -87,5 +88,41 @@ theorem contMDiff_totalSpaceMap_tensorHom [CompleteSpace 𝕜]
   (tensorHom f g).contMDiff_totalSpaceMap
     (contMDiffOn_inChartCoordinates_tensorHom f g
       (f.contMDiff_totalSpaceMap_iff.mp hf) (g.contMDiff_totalSpaceMap_iff.mp hg))
+
+/-- The pure tensor `pureTensorSection A D s₁ s₂` of two `C^n` sections of `A` and `D` is a `C^n`
+section of `tensor A D`, without completeness of `𝕜` or `IsContMDiff` hypotheses on the cores. -/
+theorem contMDiff_pureTensorSection (A D : FiniteRankBundleCore 𝕜 B)
+    {s₁ : ∀ x, A.core.Fiber x} {s₂ : ∀ x, D.core.Fiber x}
+    (hs₁ : ContMDiff I (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin A.rank → 𝕜) x (s₁ x))
+    (hs₂ : ContMDiff I (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin D.rank → 𝕜) x (s₂ x)) :
+    ContMDiff I (I.prod 𝓘(𝕜, Fin (tensor A D).rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin (tensor A D).rank → 𝕜) x (pureTensorSection A D s₁ s₂ x) := by
+  intro x₀
+  have hc₁ : ContMDiffAt I 𝓘(𝕜, Fin A.rank → 𝕜) n
+      (fun x ↦ (A.core.localTriv x₀ ⟨x, s₁ x⟩).2) x₀ := by
+    have h := (Bundle.contMDiffAt_totalSpace_iff.1 (hs₁ x₀)).2
+    rwa [show (TotalSpace.mk' (Fin A.rank → 𝕜) x₀ (s₁ x₀)).proj = x₀ from rfl,
+      A.trivializationAt_core x₀] at h
+  have hc₂ : ContMDiffAt I 𝓘(𝕜, Fin D.rank → 𝕜) n
+      (fun x ↦ (D.core.localTriv x₀ ⟨x, s₂ x⟩).2) x₀ := by
+    have h := (Bundle.contMDiffAt_totalSpace_iff.1 (hs₂ x₀)).2
+    rwa [show (TotalSpace.mk' (Fin D.rank → 𝕜) x₀ (s₂ x₀)).proj = x₀ from rfl,
+      D.trivializationAt_core x₀] at h
+  rw [Bundle.contMDiffAt_totalSpace_iff]
+  refine ⟨contMDiffAt_id, ?_⟩
+  rw [show (TotalSpace.mk' (Fin (tensor A D).rank → 𝕜) x₀
+    (pureTensorSection A D s₁ s₂ x₀)).proj = x₀ from rfl, (tensor A D).trivializationAt_core x₀]
+  have hmul : ContDiff 𝕜 n
+      (fun p : (Fin A.rank → 𝕜) × (Fin D.rank → 𝕜) ↦ fun k ↦
+        p.1 (finProdFinEquiv.symm k).1 * p.2 (finProdFinEquiv.symm k).2) :=
+    contDiff_pi.2 fun k ↦
+      ((contDiff_apply 𝕜 (fun _ : Fin A.rank ↦ 𝕜) (finProdFinEquiv.symm k).1).comp
+        contDiff_fst).mul
+        ((contDiff_apply 𝕜 (fun _ : Fin D.rank ↦ 𝕜) (finProdFinEquiv.symm k).2).comp
+          contDiff_snd)
+  exact (hmul.comp_contMDiffAt (hc₁.prodMk_space hc₂)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun x ↦ localTriv_pureTensorSection_snd A D s₁ s₂ x₀ x)
 
 end TauCeti.FiniteRankBundleCore

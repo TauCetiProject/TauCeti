@@ -24,7 +24,11 @@ regularity at every order `n`, including analytic regularity:
 
 In particular the determinant line `A.det = ⋀^r A` of a `C^n` core of rank `r` is a `C^n` line
 bundle (`TauCeti.FiniteRankBundleCore.isContMDiff_det`), whose transitions are the determinants
-of the transitions of `A` (`TauCeti.FiniteRankBundleCore.coordChange_det`). Over a complex
+of the transitions of `A` (`TauCeti.FiniteRankBundleCore.coordChange_det`), induced morphisms on
+determinant lines of equal-rank `C^n` cores preserve `C^n` regularity on total spaces
+(`TauCeti.FiniteRankBundleCore.contMDiff_totalSpaceMap_detMap`), and exterior and determinant wedges
+of `C^n` sections are `C^n` (`TauCeti.FiniteRankBundleCore.contMDiff_wedgeSection`,
+`TauCeti.FiniteRankBundleCore.contMDiff_detSection`). Over a complex
 manifold, with `𝕜 = ℂ` and `n = ∞`, these are the holomorphic exterior powers and the holomorphic
 determinant line bundle of a holomorphic vector bundle presented by holomorphic transition
 functions.
@@ -77,5 +81,59 @@ theorem contMDiff_totalSpaceMap_exteriorPower_map [CompleteSpace 𝕜] (j : ℕ)
     isContMDiff_exteriorPower_obj j D
   exact (CoordinateFunctor.exteriorPower 𝕜 j).contMDiff_totalSpaceMap_mapHom
     (ContinuousLinearMap.contDiff_exteriorPowerCoords j _ _) f hf
+
+/-- The induced morphism on determinant line bundles of a `C^n` bundle map between `C^n` cores of
+equal rank is `C^n` on total spaces. -/
+theorem contMDiff_totalSpaceMap_detMap [CompleteSpace 𝕜]
+    {A D : FiniteRankBundleCore 𝕜 B} [A.core.IsContMDiff I n] [D.core.IsContMDiff I n]
+    (f : A ⟶ D) (hr : A.rank = D.rank)
+    (hf : ContMDiff (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.rank → 𝕜)) n
+      f.totalSpaceMap) :
+    ContMDiff (I.prod 𝓘(𝕜, Fin A.det.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin D.det.rank → 𝕜)) n
+      (detMap f hr).totalSpaceMap := by
+  have heq : ∀ {C₁ C₂ : FiniteRankBundleCore 𝕜 B} (h : C₁ = C₂),
+      ContMDiff (I.prod 𝓘(𝕜, Fin C₁.rank → 𝕜)) (I.prod 𝓘(𝕜, Fin C₂.rank → 𝕜)) n
+        (eqToHom h).totalSpaceMap := by
+    rintro _ _ rfl
+    rw [eqToHom_refl]
+    exact contMDiff_id.congr fun p ↦ congrFun (VectorBundleCore.CoordinateHom.totalSpaceMap_id _) p
+  rw [totalSpaceMap_detMap]
+  exact (heq _).comp (contMDiff_totalSpaceMap_exteriorPower_map A.rank f hf)
+
+/-- The exterior product `wedgeSection j A s` of `j` `C^n` sections of `A` is a `C^n` section of
+`(exteriorPower 𝕜 B j).obj A`, without completeness of `𝕜` or `IsContMDiff` hypotheses on `A`. -/
+theorem contMDiff_wedgeSection (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
+    {s : Fin j → ∀ x, A.core.Fiber x}
+    (hs : ∀ k, ContMDiff I (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin A.rank → 𝕜) x (s k x)) :
+    ContMDiff I (I.prod 𝓘(𝕜, Fin ((exteriorPower 𝕜 B j).obj A).rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin ((exteriorPower 𝕜 B j).obj A).rank → 𝕜) x
+        (wedgeSection j A s x) := by
+  intro x₀
+  have hc (k : Fin j) :
+      ContMDiffAt I 𝓘(𝕜, Fin A.rank → 𝕜) n
+        (fun x ↦ (A.core.localTriv x₀ ⟨x, s k x⟩).2) x₀ := by
+    have h := (Bundle.contMDiffAt_totalSpace_iff.1 (hs k x₀)).2
+    rwa [show (TotalSpace.mk' (Fin A.rank → 𝕜) x₀ (s k x₀)).proj = x₀ from rfl,
+      A.trivializationAt_core x₀] at h
+  rw [Bundle.contMDiffAt_totalSpace_iff]
+  refine ⟨contMDiffAt_id, ?_⟩
+  rw [show (TotalSpace.mk' (Fin ((exteriorPower 𝕜 B j).obj A).rank → 𝕜) x₀
+    (wedgeSection j A s x₀)).proj = x₀ from rfl,
+    ((exteriorPower 𝕜 B j).obj A).trivializationAt_core x₀]
+  exact ((contDiff_piEquiv_ιMulti 𝕜 j A.rank).comp_contMDiffAt
+    (contMDiffAt_pi_module_iff.2 hc)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun x ↦ localTriv_wedgeSection_snd j A s x₀ x)
+
+/-- The determinant wedge `detSection A s` of `A.rank` `C^n` sections of `A` is a `C^n` section of
+`A.det`, without completeness of `𝕜` or `IsContMDiff` hypotheses on `A`. -/
+theorem contMDiff_detSection (A : FiniteRankBundleCore 𝕜 B)
+    {s : Fin A.rank → ∀ x, A.core.Fiber x}
+    (hs : ∀ k, ContMDiff I (I.prod 𝓘(𝕜, Fin A.rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin A.rank → 𝕜) x (s k x)) :
+    ContMDiff I (I.prod 𝓘(𝕜, Fin A.det.rank → 𝕜)) n
+      fun x ↦ TotalSpace.mk' (Fin A.det.rank → 𝕜) x (detSection A s x) := by
+  rw [detSection_def]
+  exact contMDiff_wedgeSection A.rank A hs
 
 end TauCeti.FiniteRankBundleCore

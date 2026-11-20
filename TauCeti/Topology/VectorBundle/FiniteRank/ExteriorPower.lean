@@ -33,9 +33,15 @@ In low degrees the exterior powers are identified explicitly:
   rank of `A`.
 
 In the top degree, the rank `r` of `A`, the exterior power is the determinant line
-`FiniteRankBundleCore.det A = ⋀^r A`. It has rank one (`FiniteRankBundleCore.rank_det`), and its
+`FiniteRankBundleCore.det A = ⋀^r A`. It has rank one (`FiniteRankBundleCore.rank_det`), its
 transitions are multiplication by the determinants of the transitions of `A`
-(`FiniteRankBundleCore.coordChange_det`).
+(`FiniteRankBundleCore.coordChange_det`), morphisms between cores of equal rank induce morphisms of
+their determinant lines functorially (`FiniteRankBundleCore.detMap`,
+`FiniteRankBundleCore.detIso`), `j`-tuples and `r`-tuples of sections assemble into exterior-power
+and determinant sections (`FiniteRankBundleCore.wedgeSection`, `FiniteRankBundleCore.detSection`),
+and objects, morphisms, and sections commute with pullback (`FiniteRankBundleCore.pullback_det`,
+`FiniteRankBundleCore.pullbackMap_detMap`, `FiniteRankBundleCore.pullback_wedgeSection`,
+`FiniteRankBundleCore.pullback_detSection`).
 
 These are the bundle operations whose classes form the coefficients of `λ_t(E) = Σ [⋀^j E] tʲ`
 in topological K-theory.
@@ -47,7 +53,7 @@ in topological K-theory.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits
+open Bundle CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti
 
@@ -237,8 +243,14 @@ noncomputable def exteriorPowerOneNatIso :
 
 /-! ### The top degree -/
 
+section TopDegree
+
+variable {B : Type*} [TopologicalSpace B]
+
 /-- The determinant line of a finite-rank core of rank `r`: its exterior power `⋀^r A` in the top
 degree, with fibres the top exterior powers of the fibres of `A`. -/
+-- Expose so the coordinate model and Hom types reduce to `(exteriorPower 𝕜 B A.rank).obj A`.
+@[expose]
 noncomputable def det (A : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore 𝕜 B :=
   (exteriorPower 𝕜 B A.rank).obj A
 
@@ -259,6 +271,270 @@ transitions of the core. -/
       (A.core.coordChange i i' x).det • ContinuousLinearMap.id 𝕜 (Fin A.det.rank → 𝕜) := by
   rw [det_def, coordChange_exteriorPower_obj]
   exact ContinuousLinearMap.exteriorPowerCoords_self _
+
+/-- Induced morphism between determinant line bundles of two finite-rank cores of equal rank:
+the top exterior power `(exteriorPower 𝕜 B A.rank).map a` followed by transport along `hr`. -/
+noncomputable def detMap {A D : FiniteRankBundleCore 𝕜 B} (a : A ⟶ D) (hr : A.rank = D.rank) :
+    A.det ⟶ D.det :=
+  (exteriorPower 𝕜 B A.rank).map a ≫ eqToHom (congrArg (fun r ↦ (exteriorPower 𝕜 B r).obj D) hr)
+
+/-- On an endomorphism `a : A ⟶ A`, `detMap a rfl` is `(exteriorPower 𝕜 B A.rank).map a`. -/
+@[simp] theorem detMap_self {A : FiniteRankBundleCore 𝕜 B} (a : A ⟶ A) :
+    detMap a rfl = (exteriorPower 𝕜 B A.rank).map a :=
+  Category.comp_id _
+
+/-- On every fibre, `detMap a rfl` acts on `A.det` as scalar multiplication by
+`(a.fiberMap x).det`. -/
+theorem fiberMap_detMap_self {A : FiniteRankBundleCore 𝕜 B} (a : A ⟶ A) (x : B) :
+    (detMap a rfl).fiberMap x =
+      (a.fiberMap x).det • ContinuousLinearMap.id 𝕜 (Fin A.det.rank → 𝕜) :=
+  (congrArg (fun m ↦ m.fiberMap x) (detMap_self a)).trans
+    ((fiberMap_exteriorPower_map A.rank a x).trans
+      (ContinuousLinearMap.exteriorPowerCoords_self (a.fiberMap x)))
+
+/-- `detMap` preserves identity bundle morphisms. -/
+theorem detMap_id (A : FiniteRankBundleCore 𝕜 B) :
+    detMap (𝟙 A) rfl = 𝟙 A.det :=
+  (detMap_self (𝟙 A)).trans ((exteriorPower 𝕜 B A.rank).map_id A)
+
+/-- `detMap` preserves composition of bundle morphisms between cores of equal rank. -/
+@[simp] theorem detMap_comp {A D C : FiniteRankBundleCore 𝕜 B}
+    (a : A ⟶ D) (b : D ⟶ C) (hr₁ : A.rank = D.rank) (hr₂ : D.rank = C.rank) :
+    detMap (a ≫ b) (hr₁.trans hr₂) = detMap a hr₁ ≫ detMap b hr₂ := by
+  have hnat : ∀ (r : ℕ) (h : r = D.rank),
+      (exteriorPower 𝕜 B r).map b ≫
+          eqToHom (congrArg (fun k ↦ (exteriorPower 𝕜 B k).obj C) (h.trans hr₂)) =
+        eqToHom (congrArg (fun k ↦ (exteriorPower 𝕜 B k).obj D) h) ≫
+          (exteriorPower 𝕜 B D.rank).map b ≫
+          eqToHom (congrArg (fun k ↦ (exteriorPower 𝕜 B k).obj C) hr₂) := by
+    rintro _ rfl
+    simp only [eqToHom_refl, Category.id_comp]
+  dsimp only [det, detMap]
+  rw [CategoryTheory.Functor.map_comp, Category.assoc, hnat A.rank hr₁, Category.assoc]
+
+/-- On total spaces, `detMap a hr` factors as `(exteriorPower 𝕜 B A.rank).map a` followed by
+`eqToHom` along `hr`. -/
+theorem totalSpaceMap_detMap {A D : FiniteRankBundleCore 𝕜 B}
+    (a : A ⟶ D) (hr : A.rank = D.rank) :
+    (detMap a hr).totalSpaceMap =
+      (eqToHom (congrArg (fun r ↦ (exteriorPower 𝕜 B r).obj D) hr)).totalSpaceMap ∘
+        ((exteriorPower 𝕜 B A.rank).map a).totalSpaceMap := by
+  dsimp +instances only [det, detMap]
+  exact VectorBundleCore.CoordinateHom.totalSpaceMap_comp _ _
+
+/-- If two bundle morphisms between cores of equal rank agree as coordinate operators on the fibres
+over `x` and `y` respectively, their induced determinant morphisms agree there as well. -/
+theorem fiberMap_detMap_eq_of_fiberMap_eq {A D : FiniteRankBundleCore 𝕜 B}
+    {a b : A ⟶ D} (hr : A.rank = D.rank) {x y : B}
+    (hxy : a.fiberMap x = b.fiberMap y) :
+    (detMap a hr).fiberMap x = (detMap b hr).fiberMap y := by
+  have heq : ∀ {C₁ C₂ : FiniteRankBundleCore 𝕜 B} (h : C₁ = C₂) (x y : B),
+      (eqToHom h).fiberMap x = (eqToHom h).fiberMap y := by
+    rintro _ _ rfl _ _
+    rw [eqToHom_refl, fiberMap_id, fiberMap_id]
+  dsimp +instances only [det, detMap]
+  rw [fiberMap_comp, fiberMap_comp, heq _ x y,
+    fiberMap_exteriorPower_map, fiberMap_exteriorPower_map, hxy]
+
+/-- An isomorphism between finite-rank cores of equal rank induces an isomorphism of their
+determinant line bundles. -/
+noncomputable def detIso {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D) (hr : A.rank = D.rank) :
+      A.det ≅ D.det where
+  hom := detMap e.hom hr
+  inv := detMap e.inv hr.symm
+  hom_inv_id := by rw [← detMap_comp, e.hom_inv_id, detMap_id]
+  inv_hom_id := by rw [← detMap_comp, e.inv_hom_id, detMap_id]
+
+@[simp] theorem detIso_hom {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D) (hr : A.rank = D.rank) :
+    (detIso e hr).hom = detMap e.hom hr := (rfl)
+
+@[simp] theorem detIso_inv {A D : FiniteRankBundleCore 𝕜 B} (e : A ≅ D) (hr : A.rank = D.rank) :
+    (detIso e hr).inv = detMap e.inv hr.symm := (rfl)
+
+end TopDegree
+
+section Pullback
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- Pulling back commutes strictly with taking the determinant line bundle. -/
+@[simp] theorem pullback_det (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
+    A.det.pullback f = (A.pullback f).det := (rfl)
+
+/-- Pulling back commutes with the induced morphism on determinant line bundles. -/
+@[simp] theorem pullbackMap_detMap {A D : FiniteRankBundleCore 𝕜 Y}
+    (a : A ⟶ D) (hr : A.rank = D.rank) (f : C(X, Y)) :
+    pullbackMap (detMap a hr) f = detMap (pullbackMap a f) hr := by
+  have hmap : pullbackMap ((exteriorPower 𝕜 Y A.rank).map a) f =
+      (exteriorPower 𝕜 X (A.pullback f).rank).map (pullbackMap a f) :=
+    ((CoordinateFunctor.exteriorPower 𝕜 A.rank).mapHom_pullbackMap a f).symm
+  have heq : pullbackMap
+      (eqToHom (congrArg (fun r ↦ (exteriorPower 𝕜 Y r).obj D) hr)) f =
+      eqToHom (congrArg (fun r ↦ (exteriorPower 𝕜 X r).obj (D.pullback f)) hr) :=
+    eqToHom_map (pullbackFunctor f) _
+  dsimp only [det, detMap]
+  rw [pullbackMap_comp, hmap, heq]
+  rfl
+
+end Pullback
+
+section Sections
+
+variable (𝕜) in
+private noncomputable def tupleToCLM (j m : ℕ) :
+    (Fin j → Fin m → 𝕜) →L[𝕜] ((Fin j → 𝕜) →L[𝕜] (Fin m → 𝕜)) :=
+  ∑ k : Fin j,
+    (ContinuousLinearMap.smulRightL 𝕜 (Fin j → 𝕜) (Fin m → 𝕜)
+      (ContinuousLinearMap.proj k)).comp
+      (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : Fin j ↦ Fin m → 𝕜) k)
+
+private theorem tupleToCLM_single (j m : ℕ) (u : Fin j → Fin m → 𝕜) (l : Fin j) :
+    tupleToCLM 𝕜 j m u (Pi.single l 1) = u l := by
+  simp [tupleToCLM, Pi.single_apply]
+
+private theorem exteriorPowerCoords_piEquiv_ιMulti (j : ℕ) {m n : ℕ}
+    (L : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) (u : Fin j → Fin m → 𝕜) :
+    L.exteriorPowerCoords j (exteriorPower.piEquiv 𝕜 m j (exteriorPower.ιMulti 𝕜 j u)) =
+      exteriorPower.piEquiv 𝕜 n j (exteriorPower.ιMulti 𝕜 j fun k ↦ L (u k)) := by
+  rw [ContinuousLinearMap.exteriorPowerCoords_apply, LinearMap.exteriorPowerCoords_piEquiv,
+    exteriorPower.map_apply_ιMulti]
+  rfl
+
+private theorem piEquiv_ιMulti_eq_exteriorPowerCoords (j m : ℕ) (u : Fin j → Fin m → 𝕜) :
+    exteriorPower.piEquiv 𝕜 m j (exteriorPower.ιMulti 𝕜 j u) =
+      (tupleToCLM 𝕜 j m u).exteriorPowerCoords j
+        (exteriorPower.piEquiv 𝕜 j j (exteriorPower.ιMulti 𝕜 j fun l ↦ Pi.single l 1)) := by
+  rw [exteriorPowerCoords_piEquiv_ιMulti]
+  congr 2
+  ext l : 1
+  exact (tupleToCLM_single j m u l).symm
+
+variable (𝕜) in
+/-- In standard exterior-power coordinates, the exterior product of `j` vectors depends `C^k`
+(including analytically) on the `j`-tuple of vectors. -/
+theorem contDiff_piEquiv_ιMulti (j m : ℕ) {k : WithTop ℕ∞} :
+    ContDiff 𝕜 k (fun u : Fin j → Fin m → 𝕜 ↦
+      exteriorPower.piEquiv 𝕜 m j (exteriorPower.ιMulti 𝕜 j u)) := by
+  rw [funext (piEquiv_ιMulti_eq_exteriorPowerCoords j m)]
+  exact ((ContinuousLinearMap.contDiff_exteriorPowerCoords j j m).comp
+    (tupleToCLM 𝕜 j m).contDiff).clm_apply contDiff_const
+
+variable {B : Type*} [TopologicalSpace B]
+
+/-- The exterior product `s 0 ∧ ⋯ ∧ s (j - 1)` of `j` sections of `A`, as a section of
+`(exteriorPower 𝕜 B j).obj A` in the standard coordinates `exteriorPower.piEquiv`. -/
+noncomputable def wedgeSection (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
+    (s : Fin j → ∀ x, A.core.Fiber x) (x : B) :
+    ((exteriorPower 𝕜 B j).obj A).core.Fiber x :=
+  exteriorPower.piEquiv 𝕜 A.rank j (exteriorPower.ιMulti 𝕜 j fun k ↦ s k x)
+
+/-- The determinant wedge `s 0 ∧ ⋯ ∧ s (A.rank - 1)` of `A.rank` sections of `A`, as a section of
+the determinant line bundle `A.det`. -/
+@[expose]
+noncomputable def detSection (A : FiniteRankBundleCore 𝕜 B)
+    (s : Fin A.rank → ∀ x, A.core.Fiber x) (x : B) : A.det.core.Fiber x :=
+  wedgeSection A.rank A s x
+
+theorem detSection_def (A : FiniteRankBundleCore 𝕜 B) (s : Fin A.rank → ∀ x, A.core.Fiber x) :
+    detSection A s = wedgeSection A.rank A s := (rfl)
+
+/-- `(exteriorPower 𝕜 B j).map f` acts on `wedgeSection` by applying `f.fiberMap` to each factor. -/
+theorem fiberMap_exteriorPower_map_wedgeSection (j : ℕ) {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (s : Fin j → ∀ x, A.core.Fiber x) (x : B) :
+    ((exteriorPower 𝕜 B j).map f).fiberMap x (wedgeSection j A s x) =
+      wedgeSection j D (fun k y ↦ f.fiberMap y (s k y)) x := by
+  rw [fiberMap_exteriorPower_map]
+  exact exteriorPowerCoords_piEquiv_ιMulti j (f.fiberMap x) (fun k ↦ s k x)
+
+/-- `detMap f hr` acts on `detSection` by applying `f.fiberMap` to each factor across `hr`. -/
+@[simp] theorem fiberMap_detMap_detSection {A D : FiniteRankBundleCore 𝕜 B}
+    (f : A ⟶ D) (hr : A.rank = D.rank) (s : Fin A.rank → ∀ x, A.core.Fiber x) (x : B) :
+    (detMap f hr).fiberMap x (detSection A s x) =
+      detSection D (fun k y ↦ f.fiberMap y (s (Fin.cast hr.symm k) y)) x := by
+  have key : ∀ (r : ℕ) (h : r = D.rank) (t : Fin r → ∀ y, D.core.Fiber y),
+      (eqToHom (congrArg (fun l ↦ (exteriorPower 𝕜 B l).obj D) h)).fiberMap x
+          (wedgeSection r D t x) =
+        wedgeSection D.rank D (fun k y ↦ t (Fin.cast h.symm k) y) x := by
+    rintro _ rfl t
+    rw [eqToHom_refl, fiberMap_id]
+    rfl
+  dsimp +instances only [det, detMap, detSection]
+  rw [fiberMap_comp]
+  change (eqToHom (congrArg (fun l ↦ (exteriorPower 𝕜 B l).obj D) hr)).fiberMap x
+      (((exteriorPower 𝕜 B A.rank).map f).fiberMap x (wedgeSection A.rank A s x)) = _
+  rw [fiberMap_exteriorPower_map_wedgeSection]
+  exact key A.rank hr (fun k y ↦ f.fiberMap y (s k y))
+
+/-- In chart `i` of `(exteriorPower 𝕜 B j).obj A`, the fibre coordinate of `wedgeSection` is the
+exterior product in coordinates of the chart coordinates of the factor sections. -/
+theorem localTriv_wedgeSection_snd (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
+    (s : Fin j → ∀ x, A.core.Fiber x) (i x : B) :
+    (((exteriorPower 𝕜 B j).obj A).core.localTriv i ⟨x, wedgeSection j A s x⟩).2 =
+      exteriorPower.piEquiv 𝕜 A.rank j
+        (exteriorPower.ιMulti 𝕜 j fun k ↦ (A.core.localTriv i ⟨x, s k x⟩).2) := by
+  simp only [VectorBundleCore.localTriv_apply, indexAt_eq, coordChange_exteriorPower_obj]
+  exact exteriorPowerCoords_piEquiv_ιMulti j (A.core.coordChange x i x) (fun k ↦ s k x)
+
+/-- The exterior product of `j` continuous sections of `A` is a continuous section of
+`(exteriorPower 𝕜 B j).obj A`. -/
+theorem continuous_wedgeSection (j : ℕ) (A : FiniteRankBundleCore 𝕜 B)
+    {s : Fin j → ∀ x, A.core.Fiber x}
+    (hs : ∀ k, Continuous fun x ↦ TotalSpace.mk' (Fin A.rank → 𝕜) x (s k x)) :
+    Continuous fun x ↦
+      TotalSpace.mk' (Fin ((exteriorPower 𝕜 B j).obj A).rank → 𝕜) x (wedgeSection j A s x) := by
+  refine continuous_iff_continuousAt.2 fun x₀ ↦ ?_
+  have hc (k : Fin j) :
+      ContinuousAt (fun x ↦ (A.core.localTriv x₀ ⟨x, s k x⟩).2) x₀ := by
+    have h := ((FiberBundle.continuousAt_totalSpace _ _).1 ((hs k).continuousAt (x := x₀))).2
+    rwa [show (TotalSpace.mk' (Fin A.rank → 𝕜) x₀ (s k x₀)).proj = x₀ from rfl,
+      A.trivializationAt_core x₀] at h
+  rw [FiberBundle.continuousAt_totalSpace]
+  refine ⟨continuousAt_id, ?_⟩
+  rw [show (TotalSpace.mk' (Fin ((exteriorPower 𝕜 B j).obj A).rank → 𝕜) x₀
+    (wedgeSection j A s x₀)).proj = x₀ from rfl,
+    ((exteriorPower 𝕜 B j).obj A).trivializationAt_core x₀]
+  exact (((contDiff_piEquiv_ιMulti 𝕜 j A.rank (k := 0)).continuous.continuousAt).comp
+    (continuousAt_pi.2 hc)).congr
+    (Filter.Eventually.of_forall fun x ↦ (localTriv_wedgeSection_snd j A s x₀ x).symm)
+
+/-- The determinant wedge of `A.rank` continuous sections of `A` is a continuous section of
+`A.det`. -/
+theorem continuous_detSection (A : FiniteRankBundleCore 𝕜 B)
+    {s : Fin A.rank → ∀ x, A.core.Fiber x}
+    (hs : ∀ k, Continuous fun x ↦ TotalSpace.mk' (Fin A.rank → 𝕜) x (s k x)) :
+    Continuous fun x ↦ TotalSpace.mk' (Fin A.det.rank → 𝕜) x (detSection A s x) :=
+  continuous_wedgeSection A.rank A hs
+
+/-- `wedgeSection j A s x` depends only on the values `s k x` of the factor sections over `x`. -/
+theorem wedgeSection_congr {j : ℕ} {A : FiniteRankBundleCore 𝕜 B}
+    {s₁ s₂ : Fin j → ∀ x, A.core.Fiber x} {x : B} (h : ∀ k, s₁ k x = s₂ k x) :
+    wedgeSection j A s₁ x = wedgeSection j A s₂ x := by
+  dsimp only [wedgeSection]
+  congr 2
+  exact funext h
+
+/-- Evaluating `wedgeSection` on `A.pullback f` at `x` depends only on the fibre vectors `s k x`,
+read in the fibre of `A` over `f x`. -/
+theorem wedgeSection_pullback_apply {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (j : ℕ) (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    (s : Fin j → ∀ x, (A.pullback f).core.Fiber x) (x : X) :
+    wedgeSection j (A.pullback f) s x = wedgeSection j A (fun k _ ↦ s k x) (f x) := (rfl)
+
+/-- Pulling back sections commutes strictly with forming `wedgeSection`. -/
+@[simp] theorem pullback_wedgeSection {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (j : ℕ) (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    (s : Fin j → ∀ y, A.core.Fiber y) :
+    wedgeSection j (A.pullback f) (fun k x ↦ s k (f x)) =
+      fun x ↦ wedgeSection j A s (f x) := (rfl)
+
+/-- Pulling back sections commutes strictly with forming `detSection`. -/
+@[simp] theorem pullback_detSection {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y))
+    (s : Fin A.rank → ∀ y, A.core.Fiber y) :
+    detSection (A.pullback f) (fun k x ↦ s k (f x)) =
+      fun x ↦ detSection A s (f x) := (rfl)
+
+end Sections
 
 end FiniteRankBundleCore
 end TauCeti

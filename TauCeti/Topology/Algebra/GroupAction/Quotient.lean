@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Bundle
 public import Mathlib.Topology.Algebra.Group.Quotient
+public import Mathlib.Topology.ContinuousMap.Basic
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.Topology.Compactness.LocallyCompact
 
@@ -27,11 +28,16 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 
 * `TauCeti.continuous_ofQuotientStabilizer` proves continuity of the orbit map descended to a
   stabilizer quotient when the corresponding orbit map is continuous.
+* `TauCeti.continuousQuotientMk` (`TauCeti.continuousAddQuotientMk`): the orbit projection as a
+  bundled `ContinuousMap`.
 * `TauCeti.continuous_orbitRelQuotientLift_iff`: the descent of a `G`-invariant map to the orbit
   space is continuous exactly when the map is.
 * `TauCeti.continuous_section_orbitRelQuotientRec_iff`: the descent of a `G`-invariant section of
   the pullback of a family `V` over the orbit space is continuous, as a map into the total space,
   exactly when the section upstairs is.
+* `MulActionHom.continuous_orbitRelQuotientMap`, `MulActionHom.orbitRelQuotientContinuousMap`: a
+  continuous equivariant map descends to a continuous map of orbit spaces, with no continuity
+  hypothesis on either group action.
 * `MulActionHom.isEmbedding_orbitRelQuotientMap`: an equivariant embedding descends to an
   embedding of orbit spaces when the acting-group map is surjective and the target action is by
   homeomorphisms.
@@ -55,6 +61,31 @@ open MulAction
 namespace TauCeti
 
 section Lift
+
+variable (G X : Type*) [Group G] [MulAction G X] [TopologicalSpace X] in
+/-- The orbit projection `X → X ⧸ G` as a bundled continuous map. -/
+@[expose, to_additive continuousAddQuotientMk
+  /-- The orbit projection of an additive action as a bundled continuous map. -/]
+def continuousQuotientMk : C(X, MulAction.orbitRel.Quotient G X) :=
+  ⟨Quotient.mk (MulAction.orbitRel G X), continuous_quotient_mk'⟩
+
+section ContinuousQuotientMk
+
+variable {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace X]
+
+/-- The underlying function of `TauCeti.continuousQuotientMk` is `Quotient.mk`. -/
+@[to_additive coe_continuousAddQuotientMk
+  /-- The underlying function of `TauCeti.continuousAddQuotientMk` is `Quotient.mk`. -/]
+theorem coe_continuousQuotientMk :
+    ⇑(continuousQuotientMk G X) = Quotient.mk (MulAction.orbitRel G X) :=
+  (rfl)
+
+@[to_additive (attr := simp) continuousAddQuotientMk_apply]
+theorem continuousQuotientMk_apply (x : X) :
+    continuousQuotientMk G X x = Quotient.mk (MulAction.orbitRel G X) x :=
+  (rfl)
+
+end ContinuousQuotientMk
 
 variable {G X Y : Type*} [Group G] [MulAction G X] [TopologicalSpace X] [TopologicalSpace Y]
   {f : X → Y} {hf : ∀ (g : G) (x : X), f (g • x) = f x}
@@ -106,6 +137,45 @@ theorem _root_.SubMulAction.isOpenEmbedding_orbitRelQuotientMap {H : Subgroup G}
     (hS_open.isOpenMap_subtypeVal _ (hU.preimage continuous_quot_mk))
 
 end Slice
+
+section EquivariantMap
+
+variable {G H X Y : Type*} [Group G] [Group H] [MulAction G X] [MulAction H Y]
+  [TopologicalSpace X] [TopologicalSpace Y] {σ : G → H}
+
+/-- A continuous `σ`-equivariant map induces a continuous map of orbit spaces, without any
+continuity hypothesis on either group action. -/
+theorem _root_.MulActionHom.continuous_orbitRelQuotientMap (φ : X →ₑ[σ] Y) (hφ : Continuous φ) :
+    Continuous φ.orbitRelQuotientMap := by
+  have hq : Topology.IsQuotientMap (Quotient.mk (MulAction.orbitRel G X)) := isQuotientMap_quot_mk
+  rw [hq.continuous_iff, φ.orbitRelQuotientMap_comp_mk]
+  exact continuous_quot_mk.comp hφ
+
+/-- The continuous map of orbit spaces induced by a continuous `σ`-equivariant map. -/
+def _root_.MulActionHom.orbitRelQuotientContinuousMap (φ : X →ₑ[σ] Y) (hφ : Continuous φ) :
+    C(MulAction.orbitRel.Quotient G X, MulAction.orbitRel.Quotient H Y) :=
+  ⟨φ.orbitRelQuotientMap, φ.continuous_orbitRelQuotientMap hφ⟩
+
+@[simp]
+theorem _root_.MulActionHom.coe_orbitRelQuotientContinuousMap (φ : X →ₑ[σ] Y) (hφ : Continuous φ) :
+    ⇑(φ.orbitRelQuotientContinuousMap hφ) = φ.orbitRelQuotientMap :=
+  (rfl)
+
+@[simp]
+theorem _root_.MulActionHom.orbitRelQuotientContinuousMap_mk (φ : X →ₑ[σ] Y) (hφ : Continuous φ)
+    (x : X) :
+    φ.orbitRelQuotientContinuousMap hφ (Quotient.mk (MulAction.orbitRel G X) x) =
+      Quotient.mk (MulAction.orbitRel H Y) (φ x) :=
+  φ.orbitRelQuotientMap_mk x
+
+@[simp]
+theorem _root_.MulActionHom.orbitRelQuotientContinuousMap_comp_continuousQuotientMk
+    (φ : X →ₑ[σ] Y) (hφ : Continuous φ) :
+    (φ.orbitRelQuotientContinuousMap hφ).comp (continuousQuotientMk G X) =
+      (continuousQuotientMk H Y).comp ⟨φ, hφ⟩ :=
+  ContinuousMap.ext fun x ↦ φ.orbitRelQuotientMap_mk x
+
+end EquivariantMap
 
 /-- An equivariant embedding descends to an embedding of orbit spaces when the map of acting
 groups is surjective and the target action is by homeomorphisms. -/
