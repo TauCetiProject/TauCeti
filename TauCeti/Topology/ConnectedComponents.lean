@@ -30,6 +30,8 @@ space by them.
 
 ## Main declarations
 
+* `TauCeti.preconnectedSpace_iff_subsingleton_connectedComponents`: a space is preconnected
+  exactly when it has at most one connected component.
 * `ConnectedComponents.carrierIn`: the ambient carrier of a connected component of a subtype,
   together with its characterization, connectedness, and partition properties.
 
@@ -396,6 +398,13 @@ theorem image_connectedComponent {Y : Type*} [TopologicalSpace Y]
 end Homeomorph
 
 namespace TauCeti
+
+/-- **A space is preconnected exactly when it has at most one connected component.** -/
+theorem preconnectedSpace_iff_subsingleton_connectedComponents :
+    PreconnectedSpace X ↔ Subsingleton (ConnectedComponents X) := by
+  refine ⟨fun _ ↦ inferInstance, fun _ ↦ preconnectedSpace_iff_connectedComponent.mpr
+    fun x ↦ eq_univ_of_forall fun y ↦ ?_⟩
+  exact ConnectedComponents.coe_eq_coe'.mp (Subsingleton.elim (y : ConnectedComponents X) x)
 
 /-- Restricting a connected component to a set covered by preconnected pieces selects exactly
 those pieces contained in the component. The pieces need not be disjoint. -/
