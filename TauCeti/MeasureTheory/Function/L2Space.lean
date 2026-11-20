@@ -26,7 +26,8 @@ this file gives the form for functions satisfying `MemLp f 2 μ`, which is how s
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function. Likewise the weighted
 squared norm `V² ‖g‖²` of a square-integrable `g` against an essentially bounded weight `V` is
-integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`).
+integrable (`MeasureTheory.MemLp.integrable_sq_mul_norm_sq`), and the squared norm `‖u‖²` of an
+element `u` of `L²` is integrable (`MeasureTheory.Lp.integrable_sq_norm`).
 For counting measure, singleton-supported vectors separate L² functions and determine
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
@@ -96,6 +97,11 @@ theorem MemLp.integrable_sq_mul_norm_sq {F : Type*} [NormedAddCommGroup F] {g : 
     Integrable (fun x ↦ V x ^ 2 * ‖g x‖ ^ 2) μ :=
   hg.norm.integrable_sq.bdd_mul (hV.pow 2)
     (hVC.mono fun _ hx ↦ (Real.norm_of_nonneg (sq_nonneg _)).trans_le hx)
+
+/-- The squared norm `‖u‖²` of an element of `L²` is integrable. -/
+theorem Lp.integrable_sq_norm {F : Type*} [NormedAddCommGroup F] (u : Lp F 2 μ) :
+    Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
+  (Lp.memLp u).norm.integrable_sq
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
