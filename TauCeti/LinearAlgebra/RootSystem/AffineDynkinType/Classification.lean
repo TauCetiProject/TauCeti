@@ -138,8 +138,8 @@ private theorem exists_eq_A_one (hsymm : ∀ i j, M i j = M j i) (hdiag : ∀ i,
       invFun := ![i, j]
       left_inv k := by rcases hcover k with rfl | rfl <;> simp [hij.symm]
       right_inv a := by fin_cases a <;> simp [hij.symm] }
-  have hei : e i = 0 := ite_eq_left_iff.2 fun h ↦ (h rfl).elim
-  have hej : e j = 1 := ite_eq_right_iff.2 fun h ↦ (hij h.symm).elim
+  have hei : e i = 0 := by simp [e]
+  have hej : e j = 1 := by simp [e, hij.symm]
   -- `Fin (A 1).nodes` is `Fin 2`; restate the entries there to compute with numerals.
   have hc (a b : Fin 2) :
       (TauCeti.AffineDynkinType.A 1).cartanMatrix a b = if a = b then 2 else -2 :=
@@ -174,19 +174,20 @@ private theorem exists_isGraphical [Nonempty ι] (hsymm : ∀ i j, M i j = M j i
   -- The null vector is a nonzero additive function on this graph.
   let a : ι → ℕ := fun i ↦ (m i).natAbs
   have hcast (i : ι) : (a i : ℤ) = m i := Int.natAbs_of_nonneg (hpos i).le
-  have hterm (i j : ι) :
-      M i j * m j = (if G.Adj i j then m j else 0) - if j = i then 2 * m i else 0 := by
-    rcases eq_or_ne j i with rfl | hji
+  -- Entry by entry, `M` is minus the matrix `2I - A` of this graph.
+  have hM : M = -G.graphCartanMatrix ℤ := by
+    ext i j
+    rw [Matrix.neg_apply, SimpleGraph.graphCartanMatrix_apply]
+    rcases eq_or_ne i j with rfl | hij
     · simp [hdiag]
-    · rcases h01 i j hji.symm with h | h <;> simp [hadj, h, hji, hji.symm]
+    · rcases h01 i j hij with h | h <;> simp [hadj, h, hij]
   have hsum (i : ι) : ∑ j ∈ G.neighborFinset i, a j = 2 * a i := by
     have h := congrFun hnull i
-    rw [mulVec, dotProduct, sum_congr rfl fun j _ ↦ hterm i j, sum_sub_distrib,
-      sum_ite_eq_of_mem' _ _ _ (mem_univ i), ← sum_filter, ← SimpleGraph.neighborFinset_eq_filter,
-      Pi.zero_apply, sub_eq_zero] at h
+    rw [hM, neg_mulVec, Pi.neg_apply, SimpleGraph.graphCartanMatrix_mulVec_apply,
+      Pi.zero_apply] at h
     have : ((∑ j ∈ G.neighborFinset i, a j : ℕ) : ℤ) = ((2 * a i : ℕ) : ℤ) := by
       push_cast [hcast]
-      exact h
+      linarith
     exact_mod_cast this
   have ha : a ≠ 0 := fun h ↦ by
     obtain ⟨i⟩ := ‹Nonempty ι›
@@ -196,11 +197,9 @@ private theorem exists_isGraphical [Nonempty ι] (hsymm : ∀ i j, M i j = M j i
   obtain ⟨t, ⟨ht, hg, ⟨e⟩⟩, -⟩ :=
     hG.exists_sum_eq_two_mul_iff_existsUnique_affineDynkinType_iso.1 ⟨a, ha, hsum⟩
   refine ⟨t, ht, e.toEquiv, fun i j ↦ ?_, fun i ↦ ?_⟩
-  · rw [TauCeti.AffineDynkinType.cartanMatrix_apply hg, RelIso.coe_fn_toEquiv]
-    simp only [e.injective.eq_iff, e.map_adj_iff, hadj]
-    rcases eq_or_ne i j with rfl | hij
-    · simp [hdiag]
-    · rcases h01 i j hij with h | h <;> simp [h, hij]
+  · rw [hM, Matrix.neg_apply, SimpleGraph.graphCartanMatrix_apply,
+      TauCeti.AffineDynkinType.cartanMatrix_apply hg, RelIso.coe_fn_toEquiv]
+    simp only [e.injective.eq_iff, e.map_adj_iff]
   · have h := congrFun (e.eq_gcd_smul_marks_comp ht hg hsum) i
     simp only [a, hprim, Nat.cast_one, one_smul] at h
     rw [← hcast, h, Function.comp_apply, RelIso.coe_fn_toEquiv]
