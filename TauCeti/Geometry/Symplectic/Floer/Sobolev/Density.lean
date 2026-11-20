@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.MeasureTheory.Integral.Prod
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # The `W^{1,2}` energy density of a section
@@ -16,7 +19,7 @@ For a map `ξ : ℝ × ℝ → V` into a normed space, the `W^{1,2}` energy dens
 `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` (`TauCeti.Floer.sobolevDensity`) is the integrand of the squared
 `W^{1,2}` norm of `ξ` in the coordinates `(s, t)`, the derivatives being taken along the coordinate
 vectors `TauCeti.stdComplexLineReal` and `TauCeti.stdComplexLineImag`. It is the energy that the
-semi-Fredholm estimates of the linearized Floer operator control.
+semi-Fredholm and other linear estimates of the linearized Floer operator control.
 
 ## Main results
 
@@ -24,10 +27,15 @@ semi-Fredholm estimates of the linearized Floer operator control.
 * `TauCeti.Floer.continuous_sobolevDensity`: the density of a `C¹` map is continuous.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
   germ of the map at `z`.
+* `TauCeti.Floer.sobolevDensity_add_le`: the density of `ξ₁ + ξ₂` is at most twice the sum of the
+  densities of `ξ₁` and `ξ₂`.
+* `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
+  its integral over a rectangle bounds the `L²` norm.
 -/
 
 public section
 
+open MeasureTheory Set ContinuousLinearMap
 open scoped Topology
 
 namespace TauCeti.Floer
@@ -66,5 +74,31 @@ theorem sobolevDensity_congr_of_eventuallyEq {ξ η : ℝ × ℝ → V} {z : ℝ
     (h : ξ =ᶠ[𝓝 z] η) :
     sobolevDensity ξ z = sobolevDensity η z := by
   rw [sobolevDensity_apply, sobolevDensity_apply, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The `W^{1,2}` energy density of a section splits over a sum: the density of `ξ₁ + ξ₂` is at
+most twice the sum of the densities of `ξ₁` and `ξ₂`. -/
+theorem sobolevDensity_add_le {ξ₁ ξ₂ : ℝ × ℝ → V} {z : ℝ × ℝ} (h₁ : DifferentiableAt ℝ ξ₁ z)
+    (h₂ : DifferentiableAt ℝ ξ₂ z) :
+    sobolevDensity (ξ₁ + ξ₂) z ≤ 2 * sobolevDensity ξ₁ z + 2 * sobolevDensity ξ₂ z := by
+  have hsq (x y : V) : ‖x + y‖ ^ 2 ≤ 2 * (‖x‖ ^ 2 + ‖y‖ ^ 2) :=
+    (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le x y) 2).trans add_sq_le
+  simp only [sobolevDensity_apply]
+  rw [fderiv_add h₁ h₂]
+  simp only [add_apply, Pi.add_apply]
+  linarith [hsq (fderiv ℝ ξ₁ z stdComplexLineReal) (fderiv ℝ ξ₂ z stdComplexLineReal),
+    hsq (fderiv ℝ ξ₁ z stdComplexLineImag) (fderiv ℝ ξ₂ z stdComplexLineImag), hsq (ξ₁ z) (ξ₂ z)]
+
+/-- The `L²` norm of a `C¹` map over a rectangle is at most its `W^{1,2}` energy. -/
+theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V}
+    (hξ : ContDiff ℝ 1 ξ) (a b : ℝ) :
+    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 ≤
+      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, sobolevDensity ξ z :=
+  setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by have := hξ.continuous; fun_prop))
+    (continuous_sobolevDensity hξ).integrableOn_Icc_prod_Icc
+    (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
+      rw [sobolevDensity_apply]
+      have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
+      have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
+      linarith
 
 end TauCeti.Floer
