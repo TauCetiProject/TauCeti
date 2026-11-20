@@ -362,10 +362,7 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
   refine h.value_le_const_of_forall_energyFormH1_posPartAbove_self_nonpos hcoeff hb_bound
     hc_nonneg hq hsob hk hboundary fun l hl hkl ↦ (energyFormH1_posPartAbove_self_le hcoeff hc_ae
       hl u).trans (hu ⟨_, W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl
-        hboundary⟩ ?_)
-  filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u] with x hx
-  rw [hx]
-  exact le_max_right _ _
+        hboundary⟩ (W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u))
 
 /-- **The weak maximum principle with bounded drift.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be open with finite
 measure, and let `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with
@@ -556,73 +553,6 @@ section DivergenceLowerOrder
 variable {e : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {sigma : ℝ}
 
 omit [DecidableEq ι] in
-/-- `u ⟪e, ∇w⟫` is integrable for `u, w ∈ H¹(Ω)` and bounded measurable `e`. -/
-private theorem integrable_value_mul_inner_gradient
-    (he : AEStronglyMeasurable e (mu.restrict Omega)) (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma)
-    (u w : W1p mu Omega 2) :
-    Integrable (fun x ↦ W1p.value u x * ⟪e x, W1p.gradient w x⟫_ℝ) (mu.restrict Omega) := by
-  refine Integrable.mono' (((Lp.memLp (W1p.gradient w)).norm.integrable_mul
-    (Lp.memLp (W1p.value u)).norm).const_mul sigma)
-    ((Lp.aestronglyMeasurable _).mul (he.inner (Lp.aestronglyMeasurable _))) ?_
-  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-  rw [Real.norm_eq_abs, abs_mul]
-  calc |W1p.value u x| * |⟪e x, W1p.gradient w x⟫_ℝ|
-      ≤ |W1p.value u x| * (sigma * ‖W1p.gradient w x‖) :=
-        mul_le_mul_of_nonneg_left ((abs_real_inner_le_norm _ _).trans
-          (mul_le_mul_of_nonneg_right (he_bound x hx) (norm_nonneg _))) (abs_nonneg _)
-    _ = sigma * (‖W1p.gradient w x‖ * ‖W1p.value u x‖) := by rw [Real.norm_eq_abs]; ring
-
-omit [DecidableEq ι] in
-/-- The truncated squares `v² / (1 + t v²)`, `0 < t ≤ 1`, of a nonnegative `v ∈ H¹₀(Ω)` lie in
-`H¹₀(Ω)`, with gradient `2 v ∇v / (1 + t v²)²`. -/
-private theorem exists_mem_w1p0Submodule_value_eq_sq_div {t : ℝ} (ht0 : 0 < t) (ht1 : t ≤ 1)
-    {v : W1p mu Omega 2} (hv : v ∈ w1p0Submodule mu Omega 2)
-    (hv0 : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) :
-    ∃ φ ∈ w1p0Submodule mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega,
-        W1p.value φ x = W1p.value v x ^ 2 / (1 + t * W1p.value v x ^ 2)) ∧
-      ∀ᵐ x ∂mu.restrict Omega, W1p.gradient φ x =
-        (2 * W1p.value v x / (1 + t * W1p.value v x ^ 2) ^ 2) • W1p.gradient v x := by
-  set F : ℝ → ℝ := fun s ↦ s ^ 2 / (1 + t * s ^ 2)
-  have hden : ∀ s, 1 ≤ 1 + t * s ^ 2 := fun s ↦
-    le_add_of_nonneg_right (mul_nonneg ht0.le (sq_nonneg s))
-  have hFc : ContDiff ℝ 1 F :=
-    (contDiff_id.pow 2).div (contDiff_const.add (contDiff_const.mul (contDiff_id.pow 2)))
-      fun s ↦ (zero_lt_one.trans_le (hden s)).ne'
-  have hderiv : ∀ s, deriv F s = 2 * s / (1 + t * s ^ 2) ^ 2 := fun s ↦ by
-    refine HasDerivAt.deriv ?_
-    convert (hasDerivAt_pow 2 s).div (((hasDerivAt_pow 2 s).const_mul t).const_add 1)
-      (zero_lt_one.trans_le (hden s)).ne' using 1
-    field_simp
-    ring
-  -- `|F'| ≤ 1 / t`, since `2 |s| t ≤ t (1 + s²) ≤ 1 + t s² ≤ (1 + t s²)²`.
-  have hM : ∀ s, ‖deriv F s‖₊ ≤ (1 / t).toNNReal := fun s ↦ by
-    have hpos : 0 < (1 + t * s ^ 2) ^ 2 := pow_pos (zero_lt_one.trans_le (hden s)) 2
-    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, hderiv,
-      Real.coe_toNNReal _ (one_div_nonneg.2 ht0.le), abs_div, abs_mul, abs_two,
-      abs_of_pos hpos, div_le_div_iff₀ hpos ht0, one_mul]
-    have hs : 2 * |s| ≤ 1 + s ^ 2 := by nlinarith [sq_nonneg (|s| - 1), sq_abs s]
-    nlinarith [mul_le_mul_of_nonneg_right hs ht0.le, hden s]
-  have hF0 : F 0 = 0 := by simp [F]
-  have hval := W1p.value_contDiffComp_ae (by norm_num) hFc hM hF0 v
-  refine ⟨W1p.contDiffComp (by norm_num) hFc hM hF0 v, ?_, hval, ?_⟩
-  · refine W1p.mem_w1p0Submodule_of_nonneg_of_le (by norm_num)
-      ((w1p0Submodule mu Omega 2).toSubmodule.smul_mem (1 / t) hv) ?_ ?_
-    · filter_upwards [hval] with x hx
-      rw [hx]
-      exact div_nonneg (sq_nonneg _) (zero_le_one.trans (hden _))
-    -- `s² / (1 + t s²) ≤ s / t` for `s ≥ 0`, since `s² ≤ s + s³ ≤ s / t + s³`.
-    filter_upwards [hval, W1p.value_smul_ae (1 / t) v, hv0] with x hx hsx hs
-    rw [hx, hsx, Pi.smul_apply, smul_eq_mul, div_le_iff₀ (zero_lt_one.trans_le (hden _))]
-    have heq : 1 / t * W1p.value v x * (1 + t * W1p.value v x ^ 2) =
-        W1p.value v x / t + W1p.value v x ^ 3 := by
-      field_simp
-    rw [heq]
-    nlinarith [le_div_self hs ht0 ht1, mul_nonneg hs (sq_nonneg (W1p.value v x - 1 / 2))]
-  · filter_upwards [W1p.gradient_contDiffComp_ae (by norm_num) hFc hM hF0 v] with x hx
-    rw [hx, hderiv]
-
-omit [DecidableEq ι] in
 /-- The integrands of the sign condition at the truncated squares `v² / (1 + t v²)`, `t ≥ 0`, are
 dominated by `γ v² + 2 σ |∇v| |v|`, uniformly in `t`. -/
 private theorem ae_norm_mul_sq_div_add_mul_inner_le {t : ℝ} (ht : 0 ≤ t)
@@ -640,9 +570,10 @@ private theorem ae_norm_mul_sq_div_add_mul_inner_le {t : ℝ} (ht : 0 ≤ t)
     rw [abs_of_nonneg (div_nonneg (sq_nonneg _) (zero_le_one.trans hden))]
     exact div_le_self (sq_nonneg _) hden
   have hdle : |2 * s / (1 + t * s ^ 2) ^ 2| ≤ 2 * ‖s‖ := by
-    rw [abs_div, abs_mul, abs_two, abs_of_pos (pow_pos (zero_lt_one.trans_le hden) 2),
-      Real.norm_eq_abs]
-    exact div_le_self (by positivity) (one_le_pow₀ hden)
+    have hpos : 0 < (1 + t * s ^ 2) ^ 2 := pow_pos (zero_lt_one.trans_le hden) 2
+    have hD := mul_nonneg (abs_nonneg s) (sub_nonneg.2 (one_le_pow₀ (n := 2) hden))
+    rw [Real.norm_eq_abs, abs_le, le_div_iff₀ hpos, div_le_iff₀ hpos]
+    constructor <;> nlinarith [neg_abs_le s, le_abs_self s]
   have hinner : |⟪e x, g⟫_ℝ| ≤ sigma * ‖g‖ := (abs_real_inner_le_norm _ _).trans
     (mul_le_mul_of_nonneg_right (he_bound x hx) (norm_nonneg _))
   have hc' : |c x| ≤ gamma := by simpa [Real.norm_eq_abs] using hc_bound x hx
@@ -687,7 +618,7 @@ private theorem integral_mul_sq_add_two_mul_inner_nonneg
     2 * f x / (1 + t n * f x ^ 2) ^ 2 * ⟪e x, g x⟫_ℝ
   have hI : ∀ n, AEStronglyMeasurable (I n) μ ∧ 0 ≤ ∫ x, I n x ∂μ := fun n ↦ by
     obtain ⟨φ, hφ, hval, hgrad⟩ :=
-      exists_mem_w1p0Submodule_value_eq_sq_div (ht0 n) (ht1 n) hv hv0
+      W1p.exists_mem_w1p0Submodule_value_eq_sq_div (by norm_num) (ht0 n) (ht1 n) hv hv0
     have heq : (fun x ↦ c x * W1p.value φ x + ⟪e x, W1p.gradient φ x⟫_ℝ) =ᵐ[μ] I n := by
       filter_upwards [hval, hgrad] with x hx hgx
       rw [hx, hgx, real_inner_smul_right]
@@ -779,10 +710,7 @@ private theorem energyFormH1_sub_zero_posPartAbove_self_le
   set μ := mu.restrict Omega
   have : IsFiniteMeasure μ := isFiniteMeasure_restrict.2 hOmega
   set v := W1p.posPartAbove (by norm_num) hl u
-  have hv0 : ∀ᵐ x ∂μ, 0 ≤ W1p.value v x := by
-    filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u] with x hx
-    rw [hx]
-    exact le_max_right _ _
+  have hv0 : ∀ᵐ x ∂μ, 0 ≤ W1p.value v x := W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u
   -- The two instances of the sign condition: at `v` and, through truncation, at `v²`.
   have hsq := integral_mul_sq_add_two_mul_inner_nonneg hc he hc_bound he_bound hsign hmem hv0
   have hlin : 0 ≤ ∫ x, c x * W1p.value v x + ⟪e x, W1p.gradient v x⟫_ℝ ∂μ :=
@@ -861,10 +789,7 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_integral_nonneg_of_measure_
     (fun _ _ ↦ le_rfl) hq hsob hk hboundary fun l hl hkl ↦ ?_
   have hmem := W1p.posPartAbove_mem_w1p0Submodule_of_le (by norm_num) hk hkl hboundary
   refine (energyFormH1_sub_zero_posPartAbove_self_le hcoeff hcoeff' hc he hc_bound he_bound hOmega
-    hsign hl hmem).trans (hu ⟨_, hmem⟩ ?_)
-  filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u] with x hx
-  rw [hx]
-  exact le_max_right _ _
+    hsign hl hmem).trans (hu ⟨_, hmem⟩ (W1p.value_posPartAbove_nonneg_ae (by norm_num) hl u))
 
 /-- **The comparison principle with lower-order terms in divergence form** (Gilbarg–Trudinger,
 Theorem 8.1). Under the hypotheses of

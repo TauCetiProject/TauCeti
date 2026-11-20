@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.LevelSet
 
 public import TauCeti.MeasureTheory.Function.UnifTight
+import Mathlib.Analysis.Calculus.Deriv.Inv
 
 /-!
 # Continuity of positive truncation
@@ -33,6 +34,8 @@ Dirichlet boundary data, as needed in weak comparison arguments.
   `W^{1,p}_0(Ω)` lies in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_le`: a boundary bound `u ≤ k` on `∂Ω`, expressed
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
+* `TauCeti.W1p.exists_mem_w1p0Submodule_value_eq_sq_div`: the truncated squares
+  `v² / (1 + t v²)` of a nonnegative `v ∈ W^{1,p}_0(Ω)` lie in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.norm_posPartAbove_le`: truncation does not increase the Sobolev norm.
 * `TauCeti.W1p0.posPart`: the positive part as a map of `W^{1,p}_0(Ω)` to itself, with its value
   `TauCeti.W1p0.valueL_posPart`, continuity `TauCeti.W1p0.continuous_posPart` and norm bound
@@ -296,6 +299,57 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
   have h := W1p.posPartAbove_mem_w1p0Submodule hp (sub_nonneg.2 hkl) hu
   rw [W1p.posPartAbove_posPartAbove] at h
   simpa only [add_sub_cancel] using h
+
+/-- **Truncated squares.** For `0 < t ≤ 1` and a nonnegative `v ∈ W^{1,p}_0(Ω)`, the truncated
+square `v² / (1 + t v²)` lies in `W^{1,p}_0(Ω)`, with gradient `2 v ∇v / (1 + t v²)²`. Unlike `v²`,
+it is a Lipschitz function of `v`, and it lies below `v / t`. -/
+theorem W1p.exists_mem_w1p0Submodule_value_eq_sq_div (hp : p ≠ ∞) {t : ℝ} (ht0 : 0 < t)
+    (ht1 : t ≤ 1) {v : W1p mu Omega p} (hv : v ∈ w1p0Submodule mu Omega p)
+    (hv0 : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) :
+    ∃ φ ∈ w1p0Submodule mu Omega p,
+      (∀ᵐ x ∂mu.restrict Omega,
+        W1p.value φ x = W1p.value v x ^ 2 / (1 + t * W1p.value v x ^ 2)) ∧
+      ∀ᵐ x ∂mu.restrict Omega, W1p.gradient φ x =
+        (2 * W1p.value v x / (1 + t * W1p.value v x ^ 2) ^ 2) • W1p.gradient v x := by
+  set F : ℝ → ℝ := fun s ↦ s ^ 2 / (1 + t * s ^ 2)
+  have hden : ∀ s, 1 ≤ 1 + t * s ^ 2 := fun s ↦
+    le_add_of_nonneg_right (mul_nonneg ht0.le (sq_nonneg s))
+  have hFc : ContDiff ℝ 1 F :=
+    (contDiff_id.pow 2).div (contDiff_const.add (contDiff_const.mul (contDiff_id.pow 2)))
+      fun s ↦ (zero_lt_one.trans_le (hden s)).ne'
+  have hderiv : ∀ s, deriv F s = 2 * s / (1 + t * s ^ 2) ^ 2 := fun s ↦ by
+    refine HasDerivAt.deriv ?_
+    convert (hasDerivAt_pow 2 s).div (((hasDerivAt_pow 2 s).const_mul t).const_add 1)
+      (zero_lt_one.trans_le (hden s)).ne' using 1
+    field_simp
+    ring
+  -- `|F'| ≤ 1 / t`, since `2 |s| t ≤ t (1 + s²) ≤ 1 + t s² ≤ (1 + t s²)²`.
+  have hM : ∀ s, ‖deriv F s‖₊ ≤ (1 / t).toNNReal := fun s ↦ by
+    have hs : 2 * |s| ≤ 1 + s ^ 2 := by nlinarith [sq_nonneg (|s| - 1), sq_abs s]
+    have hts : t * (2 * |s|) ≤ (1 + t * s ^ 2) ^ 2 := by
+      nlinarith [mul_le_mul_of_nonneg_left hs ht0.le, hden s]
+    rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (one_div_nonneg.2 ht0.le)]
+    simp only [coe_nnNorm, hderiv, Real.norm_eq_abs]
+    rw [abs_le]
+    constructor <;> field_simp <;> nlinarith [neg_abs_le s, le_abs_self s]
+  have hF0 : F 0 = 0 := by simp [F]
+  have hval := W1p.value_contDiffComp_ae hp hFc hM hF0 v
+  refine ⟨W1p.contDiffComp hp hFc hM hF0 v, ?_, hval, ?_⟩
+  · refine W1p.mem_w1p0Submodule_of_nonneg_of_le hp
+      ((w1p0Submodule mu Omega p).toSubmodule.smul_mem (1 / t) hv) ?_ ?_
+    · filter_upwards [hval] with x hx
+      rw [hx]
+      exact div_nonneg (sq_nonneg _) (zero_le_one.trans (hden _))
+    -- `s² / (1 + t s²) ≤ s / t` for `s ≥ 0`, since `s² ≤ s + s³ ≤ s / t + s³`.
+    filter_upwards [hval, W1p.value_smul_ae (1 / t) v, hv0] with x hx hsx hs
+    rw [hx, hsx, Pi.smul_apply, smul_eq_mul, div_le_iff₀ (zero_lt_one.trans_le (hden _))]
+    have heq : 1 / t * W1p.value v x * (1 + t * W1p.value v x ^ 2) =
+        W1p.value v x / t + W1p.value v x ^ 3 := by
+      field_simp
+    rw [heq]
+    nlinarith [le_div_self hs ht0 ht1, mul_nonneg hs (sq_nonneg (W1p.value v x - 1 / 2))]
+  · filter_upwards [W1p.gradient_contDiffComp_ae hp hFc hM hF0 v] with x hx
+    rw [hx, hderiv]
 
 /-! ### The positive part on `W^{1,p}_0(Ω)` -/
 

@@ -112,6 +112,8 @@ estimates do not see the boundary.
   `f - ⟪b, ∇u⟫ - c u`.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
+* `TauCeti.PDE.integrable_value_mul_inner_gradient`: the density `u ⟪e, ∇w⟫` of a bounded
+  lower-order term in divergence form is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
   density `⟨a ∇u, ∇w⟩` of two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormH1_le`: boundedness of the energy form, with
@@ -671,6 +673,24 @@ theorem integrable_energyIntegrand_jetField
     (Lp.memLp (jetLpL v))).congr ?_
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
+
+open scoped InnerProductSpace in
+/-- For a bounded measurable vector field `e`, the density `u ⟪e, ∇w⟫` of the lower-order
+divergence-form term `∫ u ⟪e, ∇w⟫` is integrable for `u, w ∈ H¹(Ω)`. -/
+theorem integrable_value_mul_inner_gradient {e : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {sigma : ℝ} (he : AEStronglyMeasurable e (mu.restrict Omega))
+    (he_bound : ∀ x ∈ Omega, ‖e x‖ ≤ sigma) (u w : W1p mu Omega 2) :
+    Integrable (fun x ↦ W1p.value u x * ⟪e x, W1p.gradient w x⟫_ℝ) (mu.restrict Omega) := by
+  refine Integrable.mono' (((Lp.memLp (W1p.gradient w)).norm.integrable_mul
+    (Lp.memLp (W1p.value u)).norm).const_mul sigma)
+    ((Lp.aestronglyMeasurable _).mul (he.inner (Lp.aestronglyMeasurable _))) ?_
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
+  rw [Real.norm_eq_abs, abs_mul]
+  calc |W1p.value u x| * |⟪e x, W1p.gradient w x⟫_ℝ|
+      ≤ |W1p.value u x| * (sigma * ‖W1p.gradient w x‖) :=
+        mul_le_mul_of_nonneg_left ((abs_real_inner_le_norm _ _).trans
+          (mul_le_mul_of_nonneg_right (he_bound x hx) (norm_nonneg _))) (abs_nonneg _)
+    _ = sigma * (‖W1p.gradient w x‖ * ‖W1p.value u x‖) := by rw [Real.norm_eq_abs]; ring
 
 open scoped InnerProductSpace in
 /-- Subtracting a constant from the mass coefficient subtracts the corresponding `L²` mass pairing
