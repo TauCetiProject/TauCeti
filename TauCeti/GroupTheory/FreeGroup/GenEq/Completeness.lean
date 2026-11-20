@@ -21,16 +21,18 @@ against a single other block of the same equation (`TauCeti.exists_cancellationP
 these pieces by new letters, equation by equation, writes the blocks as the words `V_{ij}` of a
 table of the assignment `W` (`TauCeti.GenEq.IsSolutionTable`).
 
-Hence the reduction of a system of equations to generalised equations is complete: every solution
-`W` is `P(U)`, graphically, for a solution `U` of the generalised equation `Ω_T` of a partition
-table `T` with its letters in `Fin |S|` (Kharlampovich–Myasnikov, Lemma 14(3)), and a system with
-an empty cancellation family has no solution in `F(A)` (Lemma 14(1)).
+Hence the reduction of a system of equations to generalised equations is complete: on the
+variables occurring in the system, every solution `W` is `P(U)`, graphically, for a solution `U`
+of the generalised equation `Ω_T` of a partition table `T` with its letters in `Fin |S|`
+(Kharlampovich–Myasnikov, Lemma 14(3)), and a system with an empty cancellation family has no
+solution in `F(A)` (Lemma 14(1)).
 
 ## Main results
 
 * `TauCeti.GenEq.exists_isSolutionTable`: every solution of a system of equations has a table.
-* `TauCeti.GenEq.exists_solution_wordMap_eq`: **Lemma 14(3)**, every solution `W` is `P(U)` for
-  a partition table `T` with letters in `Fin |S|` and a solution `U` of `Ω_T`.
+* `TauCeti.GenEq.exists_solution_wordMap_eq`: **Lemma 14(3)**, every solution `W` is `P(U)` on
+  the variables occurring in `r`, for a partition table `T` with letters in `Fin |S|` and a
+  solution `U` of `Ω_T`.
 * `TauCeti.GenEq.exists_eval_ne_one_of_cancellationFamily_eq_empty`: **Lemma 14(1)**, a system
   with an empty cancellation family has no solution.
 
