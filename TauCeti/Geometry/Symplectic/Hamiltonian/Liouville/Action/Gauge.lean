@@ -25,8 +25,9 @@ changes `(θ, I) ↦ (P⁻ᵀ θ, P I + b)`
 the choice of the section, which contributes the second ambiguity, the **angle gauge**
 `(θ, I) ↦ (θ + ∂S/∂I, I)` for a function `S` of the actions alone.
 
-A section through the same orbits as `s` can be written `h • s` for a map
-`h : (ι → ℝ) → (ι → ℝ)`, and moving `s` by `h` changes `s^* σ` by `∑ᵢ dhᵢ ∧ dcᵢ`
+This file takes a second section through the same orbits as `s` in the form `h • s` for a given
+differentiable map `h : (ι → ℝ) → (ι → ℝ)`; constructing such a lift `h` from an arbitrary second
+section is not done here. Moving `s` by `h` changes `s^* σ` by `∑ᵢ dhᵢ ∧ dcᵢ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`). So for an
 isotropic `s`, the moved section is isotropic exactly when the one-form `∑ᵢ hᵢ dcᵢ` is closed
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero_iff`). On
@@ -61,7 +62,7 @@ All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 * `eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero_iff`: an isotropic section moved by `h`
   stays isotropic exactly when the derivative of `h` is symmetric.
 * `exists_contDiffOn_hasFDerivAt_of_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero`: over a
-  star-convex set, two isotropic sections differ by the move along a gradient.
+  star-convex set, if `s` and `h • s` are both isotropic, then `∑ⱼ hⱼ dcⱼ = dS`.
 * `eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero_of_hasFDerivAt`: moving an isotropic
   section along a gradient keeps it isotropic.
 * `angleMap_hamiltonianFlowAction_section_of_fderiv`: the angle gauge `θ ↦ θ + g`.
@@ -120,7 +121,7 @@ theorem eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero_iff
   simp only [hσ.eval₂_mfderiv_hamiltonianFlowAction_section hF hcomm hc hs hFs hh, hL, zero_add,
     sub_eq_zero]
 
-/-- **Two isotropic sections differ by a gradient.** Let `s` be an isotropic differentiable
+/-- **A move between isotropic sections is a gradient.** Let `s` be an isotropic differentiable
 section of `F` over an open set `D`, star-convex with respect to `c₀`, and let `h` be a `Cʳ` map
 on `D`, `r ≥ 1`, such that the moved section `h • s` is isotropic on `D` as well. Then `h` is the
 gradient of a `Cʳ⁺¹` function `S` on `D`: `dS = ∑ⱼ hⱼ dcⱼ`. -/
