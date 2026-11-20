@@ -353,20 +353,6 @@ variable [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι] {P : ι → Typ
   (hK : ∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1)
   {n ε : ℤ} {CQ : ℝ}
 
-omit [Fintype ι] in
-/-- The map of the comparison of the identity matrix of class-indexed series is the identity:
-the stationary cylinders act as the identity on the completed capped module. -/
-theorem novikovMapOfMatrix_coefficientComparison_one_apply [Finite ι] (x : NovikovModule R F) :
-    letI := module (R := R) hF
-    novikovMapOfMatrix hF hF r r
-        (fun j l => coefficientComparison q hq ((1 : Matrix ι ι (NovikovSeries R G ωG)) j l)) x =
-      x := by
-  let := module (R := R) hF
-  have h1 : (fun j l => coefficientComparison q hq ((1 : Matrix ι ι (NovikovSeries R G ωG)) j l)) =
-      (1 : Matrix ι ι _) :=
-    Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _)
-  rw [h1, novikovMapOfMatrix_one, LinearMap.id_apply]
-
 include hμ hK
 
 /-- **The unit of class-indexed counts on cohomology, on the left.** Let the product of
