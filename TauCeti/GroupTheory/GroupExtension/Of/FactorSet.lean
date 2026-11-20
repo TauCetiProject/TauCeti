@@ -336,7 +336,7 @@ theorem inl_injective : Function.Injective (inl α) := fun _ _ h => congrArg Ext
 
 -- The proof is adapted from Mathlib's `SemidirectProduct.range_inl_eq_ker_rightHom`.
 theorem range_inl_eq_ker_rightHom : (inl α).range = (rightHom α).ker :=
-  le_antisymm (by rintro _ ⟨a, rfl⟩; simp [MonoidHom.mem_ker])
+  le_antisymm ((MonoidHom.range_le_ker_iff (inl α) (rightHom α)).2 (by ext a; simp))
     fun x hx => ⟨x.left, by ext <;> simp_all [MonoidHom.mem_ker]⟩
 
 theorem rightHom_surjective : Function.Surjective (rightHom α) := fun g => ⟨⟨1, g⟩, rfl⟩
