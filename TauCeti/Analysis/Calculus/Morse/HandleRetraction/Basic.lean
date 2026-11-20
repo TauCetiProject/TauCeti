@@ -223,13 +223,13 @@ theorem exists_inter_quadraticSublevelUnionCell_deformation {X : Set (Eᵤ × E�
       Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
         (ContinuousMap.id X) {x | (x : Eᵤ × Eₛ) ∈ quadraticSublevelUnionCell ε}) := by
   have hmem (x : X) : quadraticHandleRetraction ε x ∈ X := by
-    simpa using quadraticHandleDeformation_mem_of_starConvex hX ε 0 x.2
+    simpa using quadraticHandleDeformation_mem_of_starConvex hX ε 0 x.property
   refine ⟨⟨fun x ↦ ⟨quadraticHandleRetraction ε x, hmem x,
       quadraticHandleRetraction_mem ε (x : Eᵤ × Eₛ)⟩, by fun_prop⟩,
-    fun x ↦ Subtype.ext (quadraticHandleRetraction_eq_self_iff.2 x.2.2), ⟨?_⟩⟩
+    fun x ↦ Subtype.ext (quadraticHandleRetraction_eq_self_iff.2 x.property.2), ⟨?_⟩⟩
   exact
     { toFun p := ⟨quadraticHandleDeformation ε (p.1, p.2),
-        quadraticHandleDeformation_mem_of_starConvex hX ε p.1 p.2.2⟩
+        quadraticHandleDeformation_mem_of_starConvex hX ε p.1 p.2.property⟩
       continuous_toFun := by fun_prop
       map_zero_left x := Subtype.ext ((quadraticHandleDeformation ε).apply_zero (x : Eᵤ × Eₛ))
       map_one_left x := Subtype.ext ((quadraticHandleDeformation ε).apply_one (x : Eᵤ × Eₛ))

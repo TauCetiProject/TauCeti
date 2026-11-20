@@ -63,10 +63,10 @@ theorem not_isCompact_preimage_basicOpen_spvOfIdeal_top
   intro hc
   obtain ⟨F, hF⟩ := hc.elim_finite_subcover
     (fun d ↦ ((↑) : spvOfIdeal ⊤ hfg → Spv A) ⁻¹' basicOpen 1 (d * x))
-    (fun d ↦ (isOpen_basicOpen 1 (d * x)).preimage continuous_subtype_val)
+    (fun d ↦ (isOpen_basicOpen 1 (d * x)).preimage continuous_subtypeVal)
     (fun v hv ↦ by
       obtain ⟨d, hd⟩ := exists_vle_one_mul_of_characteristicSubgroup_eq_top
-        (mem_spvOfIdeal_top_iff.mp v.2) ((mem_basicOpen_iff _ _ _).mp hv).2
+        (mem_spvOfIdeal_top_iff.mp v.property) ((mem_basicOpen_iff _ _ _).mp hv).2
       exact Set.mem_iUnion.mpr ⟨d, (mem_basicOpen_iff _ _ _).mpr hd⟩)
   obtain ⟨v, hv, hx, hF'⟩ := h F
   obtain ⟨d, hd, hvd⟩ := Set.mem_iUnion₂.mp (hF (show ⟨v, hv⟩ ∈ _ from

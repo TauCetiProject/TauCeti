@@ -60,6 +60,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_of_subset`: the logarithm does not depend on
   the normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_self`: the logarithm vanishes at the base point.
+* `TauCeti.Manifold.IsNormalDomain.riemannianLog_eq_neg_mfderiv_riemannianExp_radial`: the
+  logarithm of `p` at `exp_p v` is the negated arrival velocity `-d(exp_p)_v v`.
 * `TauCeti.Manifold.IsNormalDomain.contMDiffOn_riemannianLog`: the logarithm is smooth on the
   normal neighbourhood.
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_comp_mfderiv_riemannianExp` and
@@ -68,6 +70,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.IsNormalDomain.mfderiv_riemannianLog_self_apply` and
   `TauCeti.Manifold.IsNormalDomain.mvfderiv_riemannianLog_self`: the differential of the logarithm
   at the base point is the identity.
+* `MDifferentiableAt.hasFDerivAt_riemannianLog_comp_riemannianExp_zero`: the Fréchet derivative at
+  `0` of `u ↦ log_{f p} (f (exp_p u))` is `mfderiv I J f p`.
 * `TauCeti.Manifold.IsNormalDomain.mem_geodesicInterval`: the geodesic towards a vector of a
   normal domain is defined at least up to time one.
 
@@ -130,7 +134,7 @@ theorem mono (h : IsNormalDomain I M p U) (hVU : V ⊆ U) (hV : IsOpen V)
   starConvex := hstar
   subset_expDomain := hVU.trans h.subset_expDomain
   injOn := h.injOn.mono hVU
-  isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.2⟩
+  isLocalDiffeomorphOn w := h.isLocalDiffeomorphOn ⟨w, hVU w.property⟩
 
 /-- A tangent ball contained in a normal domain is itself a normal domain. -/
 theorem ball (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 < r) :
@@ -216,7 +220,7 @@ theorem exists_isNormalDomain_ball (p : M) :
   exact ⟨r, hr, Metric.isOpen_ball, Metric.mem_ball_self hr,
     (convex_ball (0 : TangentSpace I p) r).starConvex (Metric.mem_ball_self hr),
     fun v hv => (hball hv).2.2, hinj.mono fun v hv => (hball hv).2.1,
-    fun v => (hball v.2).1⟩
+    fun v => (hball v.property).1⟩
 
 /-- **Radial geodesics in different directions separate.** If the tangent vectors `v` and
 `w` at `p` do not lie on a common ray, the radial geodesics from `p` with these initial
@@ -461,6 +465,18 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
   have h0 := h.riemannianLog_riemannianExp h.zero_mem
   rwa [riemannianExp_zero] at h0
 
+/-- **The logarithm of the base point along a radial geodesic.** If `v` lies in the domain of
+`exp_p` and `-d(exp_p)_v v` lies in a normal domain `V` at `exp_p v`, then `log_{exp_p v} p` is
+the negated arrival velocity `-d(exp_p)_v v`. -/
+theorem riemannianLog_eq_neg_mfderiv_riemannianExp_radial
+    {V : Set (TangentSpace I (riemannianExp I M p v))}
+    (hq : IsNormalDomain I M (riemannianExp I M p v) V) (hv : v ∈ expDomain I M p)
+    (hw : -mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v ∈ V) :
+    riemannianLog I M (riemannianExp I M p v) V p =
+      -mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
+  have hrev := riemannianExp_neg_mfderiv_riemannianExp_radial hv
+  simpa only [hrev] using hq.riemannianLog_riemannianExp hw
+
 /-- The differential of the logarithm at the base point is the identity. -/
 @[simp] theorem mfderiv_riemannianLog_self_apply (h : IsNormalDomain I M p U)
     (v : TangentSpace I p) :
@@ -484,5 +500,59 @@ theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
 end IsNormalDomain
 
 end TauCeti.Manifold
+
+namespace MDifferentiableAt
+
+open TauCeti.Manifold
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [T2Space N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
+/-- The Fréchet derivative at `0` of the normal-coordinate representative
+`u ↦ log_{f p} (f (exp_p u))` of a map `f : M → N` differentiable at `p` is `df_p`. -/
+theorem hasFDerivAt_riemannianLog_comp_riemannianExp_zero {f : M → N} {p : M}
+    (hf : MDifferentiableAt I J f p) {V : Set (TangentSpace J (f p))}
+    (hN : IsNormalDomain J N (f p) V) :
+    HasFDerivAt (fun u ↦ riemannianLog J N (f p) V (f (riemannianExp I M p u)))
+      (mfderiv I J f p) 0 := by
+  set L : N → TangentSpace J (f p) := riemannianLog J N (f p) V
+  set Ψ : TangentSpace I p → TangentSpace J (f p) := (L ∘ f) ∘ riemannianExp I M p
+  have hL : MDifferentiableAt J 𝓘(ℝ, TangentSpace J (f p)) L (f p) :=
+    hN.mdifferentiableAt_riemannianLog hN.self_mem_image
+  have hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 :=
+    (contMDiffAt_riemannianExp (zero_mem_expDomain p)).mdifferentiableAt (by simp)
+  have hLf : MDifferentiableAt I 𝓘(ℝ, TangentSpace J (f p)) (L ∘ f) p := hL.comp p hf
+  have hΨ_diff : DifferentiableAt ℝ Ψ 0 :=
+    mdifferentiableAt_iff_differentiableAt.1 (hLf.comp_of_eq 0 hexp (riemannianExp_zero p))
+  have hfderiv : fderiv ℝ Ψ 0 = mfderiv I J f p := by
+    ext v
+    let v₀ : TangentSpace 𝓘(ℝ, TangentSpace I p) (0 : TangentSpace I p) :=
+      (NormedSpace.fromTangentSpace (0 : TangentSpace I p)).symm v
+    calc fderiv ℝ Ψ 0 v
+        = mvfderiv 𝓘(ℝ, TangentSpace I p) Ψ 0 v₀ := by
+            rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
+              ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+      _ = mvfderiv I (L ∘ f) p (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0 v₀) :=
+            mvfderiv_comp_apply_of_eq 0 hLf hexp (riemannianExp_zero p) v₀
+      _ = mvfderiv I (L ∘ f) p v :=
+            congrArg (mvfderiv I (L ∘ f) p) <|
+              (congrArg (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) 0)
+                (NormedSpace.fromTangentSpace_symm_apply (𝕜 := ℝ) (0 : TangentSpace I p) v)).trans
+                (mfderiv_riemannianExp_apply_zero (I := I) p v)
+      _ = mfderiv I J f p v := by
+            rw [mvfderiv_comp_apply p hL hf v, hN.mvfderiv_riemannianLog_self,
+              ContinuousLinearMap.id_apply]
+  exact hfderiv ▸ hΨ_diff.hasFDerivAt
+
+end MDifferentiableAt
 
 end

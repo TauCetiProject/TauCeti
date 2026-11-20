@@ -38,6 +38,11 @@ its mean is the identity matrix.
 * `TauCeti.Probability.map_symmetricCongruenceLinearMap_permMatrix_lkjMeasure`: permutation
   invariance.
 * `TauCeti.Probability.map_symmetricCongruenceLinearMap_diagonal_lkjMeasure`: sign invariance.
+* `TauCeti.Probability.memLp_coe_apply_lkjMeasure`,
+  `TauCeti.Probability.integrable_coe_apply_lkjMeasure`, and
+  `TauCeti.Probability.integral_coe_apply_lkjMeasure` (with `HasLaw` companions): every entry
+  belongs to every `Lᵖ`, is integrable, and has mean `(1 : Matrix (Fin p) (Fin p) ℝ) i j` for
+  `0 < η`.
 * `TauCeti.Probability.integrable_id_lkjMeasure` and `TauCeti.Probability.integral_id_lkjMeasure`:
   the LKJ matrix is integrable with mean the identity.
 
@@ -142,23 +147,40 @@ private theorem hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure {s : Fin
 
 /-! ### The mean -/
 
-/-- Every entry of an LKJ matrix is integrable: it lies in `[-1, 1]` almost surely. -/
-private theorem integrable_coe_apply_lkjMeasure (i j : Fin p) :
-    Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (R : Matrix (Fin p) (Fin p) ℝ) i j) (lkjMeasure p η) := by
+variable (η) in
+/-- Every entry of an LKJ matrix belongs to every `Lᵖ`, including `L∞`: it lies in `[-1, 1]`
+almost surely. -/
+theorem memLp_coe_apply_lkjMeasure (i j : Fin p) (q : ℝ≥0∞) :
+    MemLp (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+      (R : Matrix (Fin p) (Fin p) ℝ) i j) q (lkjMeasure p η) := by
   by_cases hη : 0 < η
   · have := isProbabilityMeasure_lkjMeasure (p := p) hη
-    refine Integrable.of_bound (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable 1 ?_
+    refine MemLp.of_bound (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable 1 ?_
     filter_upwards [ae_posDef_lkjMeasure p η, ae_diag_eq_one_lkjMeasure p η] with R hR hdiag
-    have hsq : ((R : Matrix (Fin p) (Fin p) ℝ) i j) ^ 2 ≤ 1 := by
-      simpa [RCLike.normSq_apply, sq, hdiag] using hR.posSemidef.normSq_le i j
-    rw [Real.norm_eq_abs]
-    exact (sq_le_one_iff_abs_le_one _).1 hsq
+    exact hR.posSemidef.norm_le_one_of_apply_self_eq_one (hdiag i) (hdiag j)
   · simp [lkjMeasure_of_nonpos (not_lt.mp hη)]
 
+variable (η) in
+/-- Every entry of an LKJ matrix is integrable: it lies in `[-1, 1]` almost surely. -/
+theorem integrable_coe_apply_lkjMeasure (i j : Fin p) :
+    Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+      (R : Matrix (Fin p) (Fin p) ℝ) i j) (lkjMeasure p η) :=
+  memLp_one_iff_integrable.mp (memLp_coe_apply_lkjMeasure η i j 1)
+
+/-- Every diagonal entry of an LKJ matrix of positive shape has mean one. -/
+@[simp]
+theorem integral_coe_apply_self_lkjMeasure (hη : 0 < η) (i : Fin p) :
+    ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+        (R : Matrix (Fin p) (Fin p) ℝ) i i ∂lkjMeasure p η = 1 := by
+  have := isProbabilityMeasure_lkjMeasure (p := p) hη
+  rw [integral_congr_ae ((ae_diag_eq_one_lkjMeasure p η).mono fun R hR ↦ hR i),
+    integral_const, probReal_univ, one_smul]
+
+variable (η) in
 /-- An off-diagonal entry of an LKJ matrix has mean zero: flipping the sign of axis `i` preserves
 the law and negates the entry. -/
-private theorem integral_coe_apply_lkjMeasure_of_ne {i j : Fin p} (hij : i ≠ j) :
+@[simp]
+theorem integral_coe_apply_lkjMeasure_of_ne {i j : Fin p} (hij : i ≠ j) :
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         (R : Matrix (Fin p) (Fin p) ℝ) i j ∂lkjMeasure p η = 0 := by
   set s : Fin p → ℝ := fun k ↦ if k = i then -1 else 1
@@ -170,24 +192,23 @@ private theorem integral_coe_apply_lkjMeasure_of_ne {i j : Fin p} (hij : i ≠ j
     s, hij.symm, ↓reduceIte, neg_one_mul, mul_one, integral_neg] at h
   linarith
 
-/-- The entrywise mean of an LKJ matrix is the identity matrix. -/
-private theorem integral_coe_apply_lkjMeasure (hη : 0 < η) (i j : Fin p) :
+/-- The entrywise mean of an LKJ matrix of positive shape is the identity matrix. -/
+theorem integral_coe_apply_lkjMeasure (hη : 0 < η) (i j : Fin p) :
     ∫ R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
         (R : Matrix (Fin p) (Fin p) ℝ) i j ∂lkjMeasure p η =
       (1 : Matrix (Fin p) (Fin p) ℝ) i j := by
   rcases eq_or_ne i j with rfl | hij
-  · have := isProbabilityMeasure_lkjMeasure (p := p) hη
-    rw [Matrix.one_apply_eq, integral_congr_ae ((ae_diag_eq_one_lkjMeasure p η).mono
-      fun R hR ↦ hR i), integral_const, probReal_univ, one_smul]
+  · rw [Matrix.one_apply_eq]
+    exact integral_coe_apply_self_lkjMeasure hη i
   · rw [Matrix.one_apply_ne hij]
-    exact integral_coe_apply_lkjMeasure_of_ne hij
+    exact integral_coe_apply_lkjMeasure_of_ne η hij
 
 variable (p η) in
 /-- An LKJ matrix is integrable. -/
 theorem integrable_id_lkjMeasure :
     Integrable (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦ R)
       (lkjMeasure p η) :=
-  integrable_iff_integrable_coe_apply.2 integrable_coe_apply_lkjMeasure
+  integrable_iff_integrable_coe_apply.2 (integrable_coe_apply_lkjMeasure η)
 
 /-- **The mean of an LKJ law** of positive shape is the identity matrix. -/
 theorem integral_id_lkjMeasure (hη : 0 < η) :
@@ -200,7 +221,7 @@ theorem integral_id_lkjMeasure (hη : 0 < η) :
   funext ij
   rw [← (symmetricCoordinates p).integral_comp_comm, eval_integral fun ij ↦ hcoords.eval ij]
   simp only [symmetricCoordinates_apply]
-  exact integral_coe_apply_lkjMeasure hη ij.1.1 ij.1.2
+  exact integral_coe_apply_lkjMeasure hη ij.val.1 ij.val.2
 
 /-! ### Sign symmetry and moments of partial-correlation Gram laws -/
 
@@ -213,23 +234,23 @@ theorem map_signChange_map_partialCorrelationGram_pi
         (fun R : Matrix (Fin p) (Fin p) ℝ ↦ Matrix.of fun i j ↦ s i * R i j * s j) =
       (Measure.pi μ).map partialCorrelationGram := by
   have hmap (ij : strictLowerTriangle p) :
-      (μ ij).map (fun x ↦ s ij.1.1 * s ij.1.2 * x) = μ ij := by
-    have habs : |s ij.1.1 * s ij.1.2| = 1 := by simp [abs_mul, hs]
+      (μ ij).map (fun x ↦ s ij.val.1 * s ij.val.2 * x) = μ ij := by
+    have habs : |s ij.val.1 * s ij.val.2| = 1 := by simp [abs_mul, hs]
     rcases (abs_eq (by norm_num : (0 : ℝ) ≤ 1)).1 habs with h | h
     · simp [h]
     · simp [h]
   have (ij : strictLowerTriangle p) : SigmaFinite
-      ((μ ij).map (fun x ↦ s ij.1.1 * s ij.1.2 * x)) := by
+      ((μ ij).map (fun x ↦ s ij.val.1 * s ij.val.2 * x)) := by
     rw [hmap]
     infer_instance
   have hpi : (Measure.pi μ).map
-      (fun z ij ↦ s ij.1.1 * s ij.1.2 * z ij) = Measure.pi μ := by
+      (fun z ij ↦ s ij.val.1 * s ij.val.2 * z ij) = Measure.pi μ := by
     rw [Measure.pi_map_pi (fun _ ↦ by fun_prop)]
     simp_rw [hmap]
   have hcomp :
       (fun R : Matrix (Fin p) (Fin p) ℝ ↦ Matrix.of fun i j ↦ s i * R i j * s j) ∘
         partialCorrelationGram = partialCorrelationGram ∘
-          (fun z ij ↦ s ij.1.1 * s ij.1.2 * z ij) := by
+          (fun z ij ↦ s ij.val.1 * s ij.val.2 * z ij) := by
     funext z i j
     exact (partialCorrelationGram_signChange z hs i j).symm
   rw [Measure.map_map (by fun_prop) continuous_partialCorrelationGram.measurable, hcomp,
@@ -264,31 +285,31 @@ theorem covariance_apply_map_partialCorrelationGram_pi
     (μ : strictLowerTriangle p → Measure ℝ) [∀ ij, SigmaFinite (μ ij)]
     [∀ ij, (μ ij).IsNegInvariant]
     {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
-    cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.1.1 ij.1.2,
-        fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.1.1 kl.1.2;
+    cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.val.1 ij.val.2,
+        fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.val.1 kl.val.2;
       (Measure.pi μ).map partialCorrelationGram] = 0 := by
-  have hij := ij.2
-  have hkl := kl.2
+  have hij := ij.property
+  have hkl := kl.property
   obtain ⟨v, hv, hvk, hvl⟩ := strictLowerTriangle.exists_index_ne_ne_of_ne hne
   let s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
   have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
-  have hsign : s ij.1.1 * s ij.1.2 = -1 := by
+  have hsign : s ij.val.1 * s ij.val.2 = -1 := by
     rcases hv with rfl | rfl <;> simp [s, hij.ne, hij.ne']
   have h := congrArg (fun ν : Measure (Matrix (Fin p) (Fin p) ℝ) ↦
-      ∫ R, R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2 ∂ν)
+      ∫ R, R ij.val.1 ij.val.2 * R kl.val.1 kl.val.2 ∂ν)
     (map_signChange_map_partialCorrelationGram_pi μ hs)
   rw [integral_map (f := fun R : Matrix (Fin p) (Fin p) ℝ ↦
-      R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2)
+      R ij.val.1 ij.val.2 * R kl.val.1 kl.val.2)
     (by fun_prop : Measurable (fun R : Matrix (Fin p) (Fin p) ℝ ↦
       Matrix.of fun i j ↦ s i * R i j * s j)).aemeasurable
     (Matrix.measurable_apply.mul Matrix.measurable_apply).aestronglyMeasurable] at h
   simp only [Matrix.of_apply] at h
   have he : ∀ R : Matrix (Fin p) (Fin p) ℝ,
-      (s ij.1.1 * R ij.1.1 ij.1.2 * s ij.1.2) *
-        (s kl.1.1 * R kl.1.1 kl.1.2 * s kl.1.2) =
-          -(R ij.1.1 ij.1.2 * R kl.1.1 kl.1.2) := by
+      (s ij.val.1 * R ij.val.1 ij.val.2 * s ij.val.2) *
+        (s kl.val.1 * R kl.val.1 kl.val.2 * s kl.val.2) =
+          -(R ij.val.1 ij.val.2 * R kl.val.1 kl.val.2) := by
     intro R
-    rw [mul_right_comm (s ij.1.1), hsign]
+    rw [mul_right_comm (s ij.val.1), hsign]
     simp [s, Ne.symm hvk, Ne.symm hvl]
   simp_rw [he, integral_neg] at h
   simp only [covariance, integral_apply_map_partialCorrelationGram_pi_of_ne μ hij.ne',
@@ -337,3 +358,49 @@ theorem integral_apply_map_partialCorrelationGram_pi_betaMeasure
     exact integral_apply_map_partialCorrelationGram_pi_of_ne _ hij
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {p : ℕ} {η : ℝ}
+  {X : Ω → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)}
+
+/-- Every entry of a random matrix with LKJ law belongs to every `Lᵖ`, including `L∞`. -/
+theorem memLp_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (i j : Fin p) (q : ℝ≥0∞) :
+    MemLp (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ) i j) q P :=
+  hX.memLp_fun_comp (TauCeti.Probability.memLp_coe_apply_lkjMeasure η i j q)
+
+/-- Every entry of a random matrix with LKJ law is integrable. -/
+theorem integrable_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (i j : Fin p) :
+    Integrable (fun ω ↦ (X ω : Matrix (Fin p) (Fin p) ℝ) i j) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_coe_apply_lkjMeasure η i j)
+
+/-- Every diagonal entry of a random matrix with positive-shape LKJ law has mean one. -/
+theorem integral_coe_apply_self_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (hη : 0 < η) (i : Fin p) :
+    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ) i i ∂P = 1 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_coe_apply_lkjMeasure η i i).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_coe_apply_self_lkjMeasure hη i)
+
+/-- Every off-diagonal entry of a random matrix with LKJ law has mean zero. -/
+theorem integral_coe_apply_lkjMeasure_of_ne (hX : HasLaw X (lkjMeasure p η) P)
+    {i j : Fin p} (hij : i ≠ j) :
+    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ) i j ∂P = 0 :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_coe_apply_lkjMeasure η i j).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_coe_apply_lkjMeasure_of_ne η hij)
+
+/-- The entrywise mean of a random matrix with positive-shape LKJ law is the identity matrix. -/
+theorem integral_coe_apply_lkjMeasure (hX : HasLaw X (lkjMeasure p η) P)
+    (hη : 0 < η) (i j : Fin p) :
+    ∫ ω, (X ω : Matrix (Fin p) (Fin p) ℝ) i j ∂P =
+      (1 : Matrix (Fin p) (Fin p) ℝ) i j :=
+  (hX.integral_comp
+    (TauCeti.Probability.integrable_coe_apply_lkjMeasure η i j).aestronglyMeasurable).trans
+    (TauCeti.Probability.integral_coe_apply_lkjMeasure hη i j)
+
+end ProbabilityTheory.HasLaw

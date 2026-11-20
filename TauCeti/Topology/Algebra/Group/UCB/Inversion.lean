@@ -171,9 +171,9 @@ def invEquiv : ucbSubalgebra 𝕜 G ≃ₐ[𝕜] rightUcbSubalgebra 𝕜 G where
       have hinv : ((f : G →ᵇ 𝕜).compContinuous ⟨Inv.inv, continuous_inv⟩).compContinuous
           ⟨Inv.inv, continuous_inv⟩ = (f : G →ᵇ 𝕜) := by ext x; simp
       rw [hinv]
-      exact f.2)⟩
+      exact f.property)⟩
   invFun f := ⟨(f : G →ᵇ 𝕜).compContinuous ⟨Inv.inv, continuous_inv⟩,
-    mem_rightUcbSubalgebra_iff_comp_inv.1 f.2⟩
+    mem_rightUcbSubalgebra_iff_comp_inv.1 f.property⟩
   left_inv f := by ext x; simp
   right_inv f := by ext x; simp
   map_mul' _ _ := rfl

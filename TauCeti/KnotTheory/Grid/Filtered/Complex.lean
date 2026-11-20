@@ -119,14 +119,14 @@ variable [CommSemiring R]
 
 /-- Maslov degree `m` chains in Alexander filtration level `a`. -/
 noncomputable def alexanderFilteredChainPiece (a m : ℤ) : Submodule R (GridChainMinus R n) :=
-  G.1.maslovChainMinusPiece R m ⊓ (G.alexanderFiltration R a).restrictScalars R
+  G.val.maslovChainMinusPiece R m ⊓ (G.alexanderFiltration R a).restrictScalars R
 
 variable {G R} in
 /-- A filtered homogeneous chain is Maslov homogeneous and satisfies the Alexander bound. -/
 @[simp]
 theorem mem_alexanderFilteredChainPiece {a m : ℤ} {c : GridChainMinus R n} :
     c ∈ G.alexanderFilteredChainPiece R a m ↔
-      c ∈ G.1.maslovChainMinusPiece R m ∧ c ∈ G.alexanderFiltration R a := Iff.rfl
+      c ∈ G.val.maslovChainMinusPiece R m ∧ c ∈ G.alexanderFiltration R a := Iff.rfl
 
 /-- The filtered homogeneous chain pieces increase with the Alexander bound. -/
 theorem alexanderFilteredChainPiece_mono (m : ℤ) :
@@ -135,7 +135,7 @@ theorem alexanderFilteredChainPiece_mono (m : ℤ) :
 
 /-- Every Maslov-homogeneous chain lies in some Alexander filtration level. -/
 theorem iSup_alexanderFilteredChainPiece_eq (m : ℤ) :
-    ⨆ a, G.alexanderFilteredChainPiece R a m = G.1.maslovChainMinusPiece R m := by
+    ⨆ a, G.alexanderFilteredChainPiece R a m = G.val.maslovChainMinusPiece R m := by
   refine le_antisymm (iSup_le fun _ => inf_le_left) fun c hc => ?_
   have ht : c ∈ ⨆ a, G.alexanderFiltration R a := by
     rw [G.iSup_alexanderFiltration_eq_top R]
@@ -155,8 +155,8 @@ theorem iInf_alexanderFilteredChainPiece_eq_bot (m : ℤ) :
 /-- The filtered differential lowers Maslov degree and preserves the Alexander bound. -/
 noncomputable def alexanderFilteredDifferential (a m : ℤ) :
     G.alexanderFilteredChainPiece R a (m + 1) →ₗ[R] G.alexanderFilteredChainPiece R a m :=
-  ((G.1.filteredDifferential R).restrictScalars R).restrict fun c hc =>
-    ⟨by simpa using G.1.filteredDifferential_mem_maslovChainMinusPiece R hc.1,
+  ((G.val.filteredDifferential R).restrictScalars R).restrict fun c hc =>
+    ⟨by simpa using G.val.filteredDifferential_mem_maslovChainMinusPiece R hc.1,
       G.filteredDifferential_mem_alexanderFiltration R hc.2⟩
 
 /-- Inclusion identifies the filtered homogeneous differential with the total differential. -/
@@ -164,7 +164,7 @@ noncomputable def alexanderFilteredDifferential (a m : ℤ) :
 theorem coe_alexanderFilteredDifferential (a m : ℤ)
     (c : G.alexanderFilteredChainPiece R a (m + 1)) :
     (G.alexanderFilteredDifferential R a m c : GridChainMinus R n) =
-      G.1.filteredDifferential R c := (rfl)
+      G.val.filteredDifferential R c := (rfl)
 
 variable [CharP R 2]
 
@@ -176,7 +176,7 @@ theorem alexanderFilteredDifferential_comp_eq_zero (a m : ℤ) :
   apply Subtype.ext
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, coe_alexanderFilteredDifferential,
     ZeroMemClass.coe_zero]
-  exact LinearMap.congr_fun (G.1.filteredDifferential_comp_self_eq_zero R) c
+  exact LinearMap.congr_fun (G.val.filteredDifferential_comp_self_eq_zero R) c
 
 end CommSemiring
 
@@ -219,7 +219,7 @@ noncomputable def alexanderFiltrationComplexMap {a b : ℤ} (hab : a ≤ b) :
 
 /-- Inclusion in the total Maslov-graded filtered grid complex. -/
 noncomputable def alexanderFiltrationComplexι (a : ℤ) :
-    G.alexanderFiltrationComplex R a ⟶ G.1.gradedFilteredComplex R :=
+    G.alexanderFiltrationComplex R a ⟶ G.val.gradedFilteredComplex R :=
   ChainComplex.ofHom (fun _ => ModuleCat.ofHom
     (Submodule.inclusion fun _ hc => (mem_alexanderFilteredChainPiece.mp hc).1)) (fun m => by
     simp only [alexanderFiltrationComplex_d, GridDiagram.gradedFilteredComplex_d]
@@ -242,9 +242,9 @@ theorem alexanderFiltrationComplexι_f (a m : ℤ) :
     (G.alexanderFiltrationComplexι R a).f m =
       eqToHom (G.alexanderFiltrationComplex_X R a m) ≫
         ModuleCat.ofHom (Submodule.inclusion (p := G.alexanderFilteredChainPiece R a m)
-          (p' := G.1.maslovChainMinusPiece R m)
+          (p' := G.val.maslovChainMinusPiece R m)
           (fun _ hc => (mem_alexanderFilteredChainPiece.mp hc).1)) ≫
-          eqToHom (G.1.gradedFilteredComplex_X R m).symm := (rfl)
+          eqToHom (G.val.gradedFilteredComplex_X R m).symm := (rfl)
 
 /-- Filtration inclusion is injective in every Maslov degree. -/
 instance mono_alexanderFiltrationComplexMap_f {a b : ℤ} (hab : a ≤ b) (m : ℤ) :

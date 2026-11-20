@@ -6,9 +6,12 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
+public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.BaseChange
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+-- Private: `Module.Basis.exteriorAlgebra_eq_prod_map_sort` is used only inside a proof.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # Scalar extension of exterior algebras
@@ -16,9 +19,11 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 Mathlib's `ExteriorAlgebra.baseChangeEquiv` identifies `A ⊗[R] ⋀ M` with `⋀ (A ⊗[R] M)` over
 arbitrary commutative rings, including in characteristic two, and records its values on
 `a ⊗ ι m` and on `ι (a ⊗ m)`. This file extends that API: on the inverse comparison, its value on
-an arbitrary generator, on wedges of pure tensors, and its naturality in the module; and on the
-forward comparison, its value on pure scalar multiples of wedge-basis elements and its
-compatibility with `CliffordAlgebra.contractLeft`. No flatness or freeness assumption is needed.
+an arbitrary generator, on wedges of pure tensors, and its naturality in the module; on the
+forward comparison, its intertwining of scalar-extended interior contraction with contraction by
+the scalar-extended functional (`ExteriorAlgebra.baseChangeEquiv_baseChange_contractLeft`) and its
+action on exterior basis vectors (`ExteriorAlgebra.baseChangeEquiv_tmul_basis`).
+No flatness or freeness assumption is needed for the basis-free comparisons.
 -/
 
 public section
@@ -66,58 +71,63 @@ theorem baseChangeEquiv_symm_map {N : Type*} [AddCommGroup N] [Module R N]
     simp
   exact AlgHom.congr_fun h x
 
-/-- `ExteriorAlgebra.baseChangeEquiv` carries a scalar multiple of the `S`-th wedge-basis vector of
-`b` to the same scalar multiple of the `S`-th wedge-basis vector of `b.baseChange A`. -/
+/-- `ExteriorAlgebra.baseChangeEquiv` intertwines the scalar-extended interior contraction by `d`
+with interior contraction by `Module.Dual.baseChange A d`. -/
+@[simp]
+theorem baseChangeEquiv_baseChange_contractLeft (d : Module.Dual R M)
+    (x : A ⊗[R] ExteriorAlgebra R M) :
+    baseChangeEquiv R M A
+        ((CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm R M)) d).baseChange A x) =
+      CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm A (A ⊗[R] M))) (d.baseChange A)
+        (baseChangeEquiv R M A x) := by
+  let φ : ExteriorAlgebra R M →ₐ[R] ExteriorAlgebra A (A ⊗[R] M) :=
+    ((baseChangeEquiv R M A).toAlgHom.restrictScalars R).comp Algebra.TensorProduct.includeRight
+  have hφ (y : ExteriorAlgebra R M) : φ y = baseChangeEquiv R M A (1 ⊗ₜ[R] y) := rfl
+  let P (y : ExteriorAlgebra R M) : Prop :=
+    φ (CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm R M)) d y) =
+      CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm A (A ⊗[R] M))) (d.baseChange A) (φ y)
+  have h1 : P 1 := by
+    simp [P]
+  have hmul (a : ExteriorAlgebra R M) : ∀ u, P u → P (a * u) := by
+    induction a using ExteriorAlgebra.induction with
+    | algebraMap r =>
+      intro u hu
+      dsimp only [P]
+      rw [← Algebra.smul_def, map_smul, map_smul, map_smul, hu, ← algebraMap_smul A r (φ u),
+        map_smul, algebraMap_smul]
+    | ι m =>
+      intro u hu
+      have hφm : φ (ι R m) = ι A (1 ⊗ₜ[R] m) := baseChangeEquiv_apply R M A 1 m
+      dsimp only [P] at hu ⊢
+      rw [CliffordAlgebra.contractLeft_ι_mul, map_sub, map_smul, map_mul, hu, map_mul, hφm,
+        CliffordAlgebra.contractLeft_ι_mul, Module.Dual.baseChange_apply_tmul, smul_one_smul]
+    | mul a b ha hb =>
+      intro u hu
+      rw [mul_assoc]
+      exact ha (b * u) (hb u hu)
+    | add a b ha hb =>
+      intro u hu
+      dsimp only [P]
+      rw [add_mul, map_add, map_add, map_add, map_add, ha u hu, hb u hu]
+  induction x using TensorProduct.inductionOn with
+  | add x₁ x₂ hx₁ hx₂ => simp only [map_add, hx₁, hx₂]
+  | tmul a y =>
+    have hy : P y := by simpa only [mul_one] using hmul y 1 h1
+    rw [LinearMap.baseChange_tmul, TensorProduct.tmul_eq_smul_one_tmul a,
+      TensorProduct.tmul_eq_smul_one_tmul a y, map_smul, map_smul, map_smul, ← hφ, ← hφ]
+    exact congrArg (a • ·) hy
+
+/-- `ExteriorAlgebra.baseChangeEquiv` sends a scalar multiple of an exterior basis vector to the
+corresponding exterior basis vector of the base-changed basis. -/
 @[simp]
 theorem baseChangeEquiv_tmul_basis {I : Type*} [LinearOrder I] (b : Module.Basis I R M)
-    (a : A) (S : Finset I) :
-    baseChangeEquiv R M A (a ⊗ₜ[R] b.ExteriorAlgebra S) =
-      a • (b.baseChange A).ExteriorAlgebra S := by
-  have h1 : baseChangeEquiv R M A (1 ⊗ₜ[R] b.ExteriorAlgebra S) =
-      (b.baseChange A).ExteriorAlgebra S := by
-    apply (baseChangeEquiv R M A).symm.injective
-    rw [AlgEquiv.symm_apply_apply, basis_apply_ofCard (b.baseChange A) (rfl : S.card = S.card),
-      basis_apply_ofCard b (rfl : S.card = S.card)]
-    simp only [ιMulti_family, Function.comp_def, Module.Basis.baseChange_apply,
-      baseChangeEquiv_symm_ιMulti_tmul, Finset.prod_const_one]
-  have ha : a ⊗ₜ[R] b.ExteriorAlgebra S = a • (1 ⊗ₜ[R] b.ExteriorAlgebra S) := by
-    rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-  rw [ha, map_smul, h1]
-
-/-- If `d' : Module.Dual A (A ⊗[R] M)` extends `d : Module.Dual R M` on `1 ⊗ₜ m`, then
-`ExteriorAlgebra.baseChangeEquiv` intertwines the base-changed contraction by `d` with contraction
-by `d'`. -/
-theorem contractLeft_baseChangeEquiv {d : Module.Dual R M} {d' : Module.Dual A (A ⊗[R] M)}
-    (hd : ∀ m, d' (1 ⊗ₜ[R] m) = algebraMap R A (d m)) (t : A ⊗[R] ExteriorAlgebra R M) :
-    CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm A (A ⊗[R] M))) d'
-        (baseChangeEquiv R M A t) =
-      baseChangeEquiv R M A
-        ((CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm R M)) d).baseChange A t) := by
-  let φ : ExteriorAlgebra R M →ₐ[R] ExteriorAlgebra A (A ⊗[R] M) :=
-    ((baseChangeEquiv R M A).toAlgHom.restrictScalars R).comp
-      Algebra.TensorProduct.includeRight
-  have hφ_ι (m : M) : φ (CliffordAlgebra.ι 0 m) = ι A (1 ⊗ₜ[R] m) :=
-    baseChangeEquiv_apply R M A 1 m
-  have h1 (y : ExteriorAlgebra R M) :
-      CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm A (A ⊗[R] M))) d' (φ y) =
-        φ (CliffordAlgebra.contractLeft (Q := (0 : QuadraticForm R M)) d y) := by
-    induction y using CliffordAlgebra.left_induction with
-    | algebraMap r =>
-      rw [AlgHom.commutes, IsScalarTower.algebraMap_apply R A (ExteriorAlgebra A (A ⊗[R] M)),
-        CliffordAlgebra.contractLeft_algebraMap, CliffordAlgebra.contractLeft_algebraMap, map_zero]
-    | add y₁ y₂ hy₁ hy₂ => simp only [map_add, hy₁, hy₂]
-    | ι_mul y' m' hy' =>
-      rw [map_mul, hφ_ι, CliffordAlgebra.contractLeft_ι_mul, CliffordAlgebra.contractLeft_ι_mul,
-        hy', hd, IsScalarTower.algebraMap_smul, map_sub, map_smul, map_mul, hφ_ι]
-  induction t using TensorProduct.inductionOn with
-  | add t₁ t₂ ht₁ ht₂ => simp only [map_add, ht₁, ht₂]
-  | tmul a y =>
-    have hφ (z : ExteriorAlgebra R M) :
-        baseChangeEquiv R M A (a ⊗ₜ[R] z) = a • φ z := by
-      have ha : a ⊗ₜ[R] z = a • (1 ⊗ₜ[R] z) := by
-        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-      rw [ha, map_smul]
-      rfl
-    rw [LinearMap.baseChange_tmul, hφ, hφ, map_smul, h1]
+    (a : A) (s : Finset I) :
+    baseChangeEquiv R M A (a ⊗ₜ[R] b.ExteriorAlgebra s) =
+      a • (b.baseChange A).ExteriorAlgebra s := by
+  rw [TensorProduct.tmul_eq_smul_one_tmul, map_smul, b.exteriorAlgebra_eq_prod_map_sort,
+    (b.baseChange A).exteriorAlgebra_eq_prod_map_sort,
+    ← Algebra.TensorProduct.includeRight_apply (R := R) (A := A), map_list_prod, map_list_prod]
+  simp only [List.map_map, Function.comp_def, Algebra.TensorProduct.includeRight_apply,
+    baseChangeEquiv_apply, Module.Basis.baseChange_apply]
 
 end ExteriorAlgebra

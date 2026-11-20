@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Metric
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.LinearAlgebra.BilinearForm.Complexification
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 import TauCeti.Geometry.Symplectic.Finrank
@@ -23,7 +24,11 @@ linear maps and the unitary half-spin action.
 
 `fockInnerProductCore` chooses an orthonormal polarization basis to construct the form.
 `fockInnerProductCore_inner` identifies it with the wedge Gram form for every such basis;
-in particular the resulting metric is independent of that choice. Install the named
+in particular the resulting metric is independent of that choice. On decomposable wedges of
+any degree `p` (including degree zero and degrees above the rank) it evaluates as the Gram
+determinant `det (h_ℂ (xᵢ, yⱼ))` of the sesquilinear complexification `h_ℂ` of the Euclidean
+inner product restricted to `W` (`inner_fock_ιMulti_ιMulti`), while distinct exterior powers are
+orthogonal (`inner_fock_eq_zero_of_mem_exteriorPower`). Install the named
 `fockNormedAddCommGroup` and `fockInnerProductSpace` locally, in that order. No global
 norm or inner product instance on an exterior algebra is introduced.
 
@@ -41,7 +46,7 @@ either chirality eigenspace.
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
 * J. W. Morgan, *The Seiberg–Witten equations and applications to the topology of smooth
   four-manifolds*, Mathematical Notes 44, Princeton University Press, 1996, §3.1.
-* L. I. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed., World Scientific (2020),
+* L. Nicolaescu, *Lectures on the Geometry of Manifolds*, 3rd ed., World Scientific (2020),
   §2.2.4 and §12.1.
 -/
 
@@ -151,26 +156,27 @@ theorem norm_fock_one : letI := J.fockNormedAddCommGroup hQJ hQnd hQ
   rw [norm_eq_sqrt_re_inner (𝕜 := ℂ), J.inner_fock_one_one hQJ hQnd hQ,
     RCLike.one_re, Real.sqrt_one]
 
-/-- **Distinct exterior powers are orthogonal** in the native Hermitian Fock module. -/
-theorem inner_fock_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q)
-    {s t : S} (hs : s ∈ ⋀[ℂ]^p W) (ht : t ∈ ⋀[ℂ]^q W) :
+/-- Distinct exterior powers of the holomorphic polarization are orthogonal in the native Fock
+metric. -/
+theorem inner_fock_eq_zero_of_mem_exteriorPower {p q : ℕ} (hpq : p ≠ q) {s t : S}
+    (hs : s ∈ ⋀[ℂ]^p W) (ht : t ∈ ⋀[ℂ]^q W) :
     letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
     inner ℂ s t = 0 :=
   ExteriorAlgebra.toLinearMapₛₗ₂_eq_zero_of_mem_exteriorPower
     (J.fockMetricBasis hQJ hQnd hQ) hpq hs ht
 
-/-- **Gram-determinant formula for the native Fock inner product**: on decomposable `p`-vectors of
-`W`, the native inner product is `det (h_ℂ (xᵢ, yⱼ))` where
-`h_ℂ = LinearMap.BilinForm.sesqComplexification (innerₗ V)` is the sesquilinear complexification of
-the Euclidean inner product on `V`. This holds in every degree `p`, including degree zero and the
-top degree `finrank ℝ V / 2`, without any choice of basis. -/
+/-- **The Gram-determinant formula for the native Fock metric**: in every degree `p` (including
+degree zero, where the empty determinant is `1`, and degrees above the rank), the native Fock
+inner product of two decomposable wedges in `⋀ W` is the Gram determinant of the sesquilinear
+complexification of the Euclidean inner product restricted to `W`. -/
 theorem inner_fock_ιMulti_ιMulti (p : ℕ) (x y : Fin p → W) :
     letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
-    inner ℂ (_root_.ExteriorAlgebra.ιMulti ℂ p x) (_root_.ExteriorAlgebra.ιMulti ℂ p y) =
+    inner ℂ (ExteriorAlgebra.ιMulti ℂ p x) (ExteriorAlgebra.ιMulti ℂ p y) =
       (Matrix.of fun i j ↦
-        LinearMap.BilinForm.sesqComplexification (innerₗ V) (x i : ℂ ⊗[ℝ] V) (y j)).det := by
+        LinearMap.BilinForm.sesqComplexification (innerₗ V)
+          (x i : ℂ ⊗[ℝ] V) (y j : ℂ ⊗[ℝ] V)).det := by
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
   rw [J.inner_fock hQJ hQnd hQ (J.fockMetricBasis hQJ hQnd hQ)
@@ -186,7 +192,7 @@ theorem inner_fock_ιMulti_ιMulti (p : ℕ) (x y : Fin p → W) :
 theorem inner_fock_ι_ι (x y : W) :
     letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
-    inner ℂ (_root_.ExteriorAlgebra.ι ℂ x) (_root_.ExteriorAlgebra.ι ℂ y) =
+    inner ℂ (ExteriorAlgebra.ι ℂ x) (ExteriorAlgebra.ι ℂ y) =
       LinearMap.BilinForm.sesqComplexification (innerₗ V) (x : ℂ ⊗[ℝ] V) y := by
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
@@ -202,9 +208,10 @@ Gram determinant under `LinearMap.BilinForm.sesqComplexification (innerₗ V)`. 
 theorem norm_fock_ιMulti_sq (p : ℕ) (x : Fin p → W) :
     letI := J.fockNormedAddCommGroup hQJ hQnd hQ
     letI := J.fockInnerProductSpace hQJ hQnd hQ
-    (‖_root_.ExteriorAlgebra.ιMulti ℂ p x‖ : ℂ) ^ 2 =
+    (‖ExteriorAlgebra.ιMulti ℂ p x‖ : ℂ) ^ 2 =
       (Matrix.of fun i j ↦
-        LinearMap.BilinForm.sesqComplexification (innerₗ V) (x i : ℂ ⊗[ℝ] V) (x j)).det := by
+        LinearMap.BilinForm.sesqComplexification (innerₗ V)
+          (x i : ℂ ⊗[ℝ] V) (x j : ℂ ⊗[ℝ] V)).det := by
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
   exact (inner_self_eq_norm_sq_to_K (𝕜 := ℂ) _).symm.trans

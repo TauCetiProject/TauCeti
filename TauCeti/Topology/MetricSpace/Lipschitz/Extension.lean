@@ -33,6 +33,6 @@ theorem LipschitzOnWith.extend_real_mem_Icc {X : Type*} [PseudoMetricSpace X]
   obtain ⟨g, hg, heq⟩ := hf.extend_real
   refine ⟨fun x => (projIcc a b hab (g x) : ℝ), ?_, ?_, fun x => (projIcc _ _ _ _).property⟩
   · simpa only [one_mul, Function.comp_def] using
-      (LipschitzWith.subtype_val (Icc a b)).comp ((LipschitzWith.projIcc hab).comp hg)
+      (LipschitzWith.subtypeVal (Icc a b)).comp ((LipschitzWith.projIcc hab).comp hg)
   · intro x hx
     simp only [← heq hx, projIcc_of_mem hab (hmem x hx)]

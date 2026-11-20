@@ -126,7 +126,7 @@ private theorem norm_fst_le_norm_snd_sphereProdFstLeInv
     (p : closedBall (0 : F) 1 × sphere (0 : G) 1) :
     ‖(sphereProdFstLeInv p).fst‖ ≤ ‖(sphereProdFstLeInv p).snd‖ := by
   rw [norm_fst_sphereProdFstLeInv, norm_snd_sphereProdFstLeInv]
-  exact mul_le_of_le_one_right (normalizer_pos _).le (mem_closedBall_zero_iff.1 p.1.2)
+  exact mul_le_of_le_one_right (normalizer_pos _).le (mem_closedBall_zero_iff.1 p.1.property)
 
 variable (F G) in
 /-- The piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit sphere of `WithLp 2 (F × G)` is homeomorphic to the
@@ -138,11 +138,11 @@ def sphereProdFstLeHomeomorph :
       closedBall (0 : F) 1 × sphere (0 : G) 1 where
   toFun x :=
     (⟨‖(x : WithLp 2 (F × G)).snd‖⁻¹ • (x : WithLp 2 (F × G)).fst, by
-        have h := norm_snd_pos x.1.2 x.2
+        have h := norm_snd_pos x.val.property x.property
         rw [mem_closedBall_zero_iff, norm_smul, norm_inv, norm_norm, inv_mul_le_one₀ h]
-        exact x.2⟩,
+        exact x.property⟩,
       ⟨‖(x : WithLp 2 (F × G)).snd‖⁻¹ • (x : WithLp 2 (F × G)).snd, by
-        have h := norm_snd_pos x.1.2 x.2
+        have h := norm_snd_pos x.val.property x.property
         rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ h.ne']⟩)
   invFun p := ⟨⟨sphereProdFstLeInv p, sphereProdFstLeInv_mem_sphere p⟩,
     norm_fst_le_norm_snd_sphereProdFstLeInv p⟩
@@ -168,7 +168,7 @@ def sphereProdFstLeHomeomorph :
   continuous_toFun := by
     have hpos (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).fst‖ ≤
         ‖(x : WithLp 2 (F × G)).snd‖}) : ‖(x : WithLp 2 (F × G)).snd‖ ≠ 0 :=
-      (norm_snd_pos x.1.2 x.2).ne'
+      (norm_snd_pos x.val.property x.property).ne'
     have hc : Continuous fun x : {x : sphere (0 : WithLp 2 (F × G)) 1 |
         ‖(x : WithLp 2 (F × G)).fst‖ ≤ ‖(x : WithLp 2 (F × G)).snd‖} ↦
           ‖(x : WithLp 2 (F × G)).snd‖⁻¹ :=
@@ -180,8 +180,8 @@ def sphereProdFstLeHomeomorph :
       continuous_normalizer.comp (by fun_prop)
     refine .subtype_mk (.subtype_mk ?_ _) _
     exact (WithLp.prod_continuous_toLp 2 F G).comp
-      (.prodMk (hc.smul (continuous_subtype_val.comp continuous_fst))
-        (hc.smul (continuous_subtype_val.comp continuous_snd)))
+      (.prodMk (hc.smul (continuous_subtypeVal.comp continuous_fst))
+        (hc.smul (continuous_subtypeVal.comp continuous_snd)))
 
 @[simp]
 theorem coe_sphereProdFstLeHomeomorph_apply_fst
@@ -215,7 +215,7 @@ theorem norm_sphereProdFstLeHomeomorph_fst_eq_one_iff
     ‖((sphereProdFstLeHomeomorph F G x).1 : F)‖ = 1 ↔
       ‖(x : WithLp 2 (F × G)).fst‖ = ‖(x : WithLp 2 (F × G)).snd‖ := by
   rw [coe_sphereProdFstLeHomeomorph_apply_fst, norm_smul, norm_inv, norm_norm,
-    inv_mul_eq_one₀ (norm_snd_pos x.1.2 x.2).ne', eq_comm]
+    inv_mul_eq_one₀ (norm_snd_pos x.val.property x.property).ne', eq_comm]
 
 /-- The frontier of the piece `‖x.fst‖ ≤ ‖x.snd‖` of the unit sphere of `WithLp 2 (F × G)` is the
 set where `‖x.fst‖ = ‖x.snd‖`. -/
@@ -270,9 +270,9 @@ private theorem sphereProdSndLeHomeomorph_apply
     (x : {x : sphere (0 : WithLp 2 (F × G)) 1 | ‖(x : WithLp 2 (F × G)).snd‖ ≤
         ‖(x : WithLp 2 (F × G)).fst‖}) :
     sphereProdSndLeHomeomorph F G x =
-      (sphereProdFstLeHomeomorph G F ⟨sphereProdComm x.1, by
+      (sphereProdFstLeHomeomorph G F ⟨sphereProdComm x.val, by
         simp only [mem_ofPred_eq, coe_sphereProdComm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
-        exact x.2⟩).swap :=
+        exact x.property⟩).swap :=
   rfl
 
 /-- The inverse of `TauCeti.sphereProdSndLeHomeomorph` through the coordinate swap, for the same

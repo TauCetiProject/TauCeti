@@ -78,4 +78,9 @@ def conjJMulAut : MulAut (SL(2, R)) where
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 
+/-- Coordinate conjugation negates the modular inversion `ModularGroup.S`. -/
+@[simp] theorem conjJ_S : conjJ _root_.ModularGroup.S = -_root_.ModularGroup.S := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [_root_.ModularGroup.coe_S]
+
 end Matrix.SpecialLinearGroup

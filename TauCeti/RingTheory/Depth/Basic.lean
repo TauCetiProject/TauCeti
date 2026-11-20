@@ -672,7 +672,7 @@ theorem mem_range_algebraMap_of_two_le_depth {R : Type u} [CommRing R] [IsLocalR
       ∃ t ∉ p, algebraMap R K t * x ∈ (algebraMap R K).range) :
     x ∈ (algebraMap R K).range := by
   obtain ⟨⟨c, b⟩, hcb⟩ := IsLocalization.surj (nonZeroDivisors R) x
-  have hb : IsSMulRegular R (b : R) := (isRegular_iff_mem_nonZeroDivisors.2 b.2).left
+  have hb : IsSMulRegular R (b : R) := (isRegular_iff_mem_nonZeroDivisors.2 b.property).left
   -- The ideal `J` of `r` with `r c ∈ (b)` lies in no prime other than the maximal ideal.
   let J : Ideal R := Submodule.comap (LinearMap.mulRight R c) (Ideal.span {(b : R)})
   have hJ (r : R) : r ∈ J ↔ r * c ∈ Ideal.span {(b : R)} := Iff.rfl
