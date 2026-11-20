@@ -107,7 +107,7 @@ theorem IsNondegenerate.exists_mem_nhds_forall_mul_norm_mvfderiv_sq_le (hω : ω
   have hcoer := hφ.eventually (hD.eventually_forall_mul_norm_sq_le hbc
     (mem_extChartAt_target α) (half_lt_self hc₀) hc₀b)
   -- The differential of `e` is bounded by `B` times the chart coordinates over `L`.
-  obtain ⟨B, hB⟩ := exists_forall_norm_mvfderiv_le_mul_norm he.contMDiffOn hL hLt
+  obtain ⟨B, hB⟩ := he.contMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm hL hLt
   refine ⟨φ.source ∩ φ ⁻¹' ball y₀ (r₀ / 2) ∩ {x | ∀ z ∈ D, ∀ a,
       c₀ / 2 * ‖a‖ ^ 2 ≤ b (z, φ x) a a},
     inter_mem (inter_mem (extChartAt_source_mem_nhds α)

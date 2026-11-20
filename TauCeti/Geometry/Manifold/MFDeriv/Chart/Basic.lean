@@ -99,9 +99,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression in any chart of the `C¹` maximal atlas vanishes there.
 * `TauCeti.fderivWithin_comp_extChartAt_symm`: read a model-valued manifold
   derivative after an inverse chart, including derivatives within the model range.
-* `TauCeti.exists_forall_norm_mvfderiv_le_mul_norm`: the differential of a `C¹` map into a normed
-  space, on tangent vectors given by their coordinates in any chart, is bounded on a compact set
-  of coordinates.
+* `ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm`: the differential of a `C¹` map into a
+  normed space, on tangent vectors given by their coordinates in any chart, is bounded on a
+  compact set of coordinates.
 * `ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`: the same for a map between
   manifolds read in arbitrary preferred charts of the source and the target.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
@@ -765,7 +765,7 @@ theorem fderivWithin_comp_extChartAt_symm {f : M → F} {x : M} (α : M)
 normed space and a compact set `L` of coordinates in the target of the extended chart at `x`, there
 is a constant `B` with `‖d f_y v‖ ≤ B ‖a‖` for every point `y` of the chart source with coordinate
 in `L` and every tangent vector `v` at `y` with coordinates `a` in the chart at `x`. -/
-theorem exists_forall_norm_mvfderiv_le_mul_norm {f : M → F} {x : M}
+theorem _root_.ContMDiffOn.exists_forall_norm_mvfderiv_le_mul_norm {f : M → F} {x : M}
     (hf : ContMDiffOn I 𝓘(𝕜, F) 1 f (extChartAt I x).source) {L : Set E}
     (hL : IsCompact L) (hLt : L ⊆ (extChartAt I x).target) :
     ∃ B, ∀ y ∈ (extChartAt I x).source, extChartAt I x y ∈ L → ∀ v : TangentSpace I y,
