@@ -78,6 +78,14 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
   `TauCeti.NovikovSeries.isTopologicallyNilpotent_of_mem_periodFiltration`: a series supported in
   periods `≥ C` has its `n`-th power supported in periods `≥ n • C`, so it is topologically
   nilpotent when `C > 0`.
+* `TauCeti.NovikovSeries.ofFinsupp_trunc_mem_nonnegSubring`: truncations of series in the
+  nonnegative subring remain in the nonnegative subring.
+* `TauCeti.NovikovSeries.isOpen_posIdeal` and `TauCeti.NovikovSeries.isClosed_posIdeal`: the
+  strictly positive ideal is clopen in `nonnegSubring R N`.
+* `TauCeti.NovikovSeries.not_isUnit_of_mem_posIdeal` and
+  `TauCeti.NovikovSeries.not_isUnit_single_nonnegSubring_of_pos`: over a nontrivial ring, no
+  element of the positive ideal (in particular, no monomial of positive period) is a unit of the
+  nonnegative subring.
 * `TauCeti.NovikovSeries.isTopologicallyNilpotent_of_mem_posIdeal`: a series of the positive ideal
   is topologically nilpotent.
 * `TauCeti.NovikovSeries.tsum_pow_mem_nonnegSubring` and
@@ -277,6 +285,12 @@ theorem single_mem_nonnegSubring {g : H} (hg : 0 ≤ N g) (r : R) :
     single g r ∈ nonnegSubring R N :=
   antitone_periodFiltration hg (single_mem_periodFiltration g r)
 
+/-- Every truncation of a series in the nonnegative subring lies in the nonnegative subring. -/
+theorem ofFinsupp_trunc_mem_nonnegSubring (C : ℝ) (a : nonnegSubring R N) :
+    ofFinsupp (trunc C (a : NovikovSeries R H N)) ∈ nonnegSubring R N :=
+  mem_nonnegSubring.2 <| mem_periodFiltration.1 <|
+    ofFinsupp_trunc_mem_periodFiltration C (mem_periodFiltration.2 (mem_nonnegSubring.1 a.2))
+
 variable (R N) in
 /-- The ideal of the nonnegative subring formed by the series supported in strictly positive
 periods. Its elements are the series lying in `U_C` for some `C > 0`
@@ -301,6 +315,30 @@ instance : (posIdeal R N).IsTwoSided where
     obtain ⟨C, hC, haC⟩ := exists_pos_mem_periodFiltration_iff.2 ha
     exact exists_pos_mem_periodFiltration_iff.1
       ⟨C + 0, by rwa [add_zero], mul_mem_periodFiltration haC b.property⟩
+
+/-- The strictly positive ideal is open in the subspace topology on `nonnegSubring R N`. -/
+theorem isOpen_posIdeal : IsOpen (posIdeal R N : Set (nonnegSubring R N)) := by
+  refine AddSubgroup.isOpen_of_mem_nhds (posIdeal R N).toAddSubgroup (g := 0) ?_
+  refine Filter.mem_of_superset
+    (((isOpen_periodFiltration (R := R) (N := N) 1).preimage
+      continuous_subtype_val).mem_nhds (zero_mem (periodFiltration R N 1))) ?_
+  intro a ha
+  exact mem_posIdeal.2 fun h hh => mem_periodFiltration.1 ha h (hh.trans_lt zero_lt_one)
+
+/-- The strictly positive ideal is closed in the subspace topology on `nonnegSubring R N`. -/
+theorem isClosed_posIdeal : IsClosed (posIdeal R N : Set (nonnegSubring R N)) :=
+  AddSubgroup.isClosed_of_isOpen (posIdeal R N).toAddSubgroup isOpen_posIdeal
+
+/-- Over a nontrivial coefficient ring, no element of `posIdeal R N` is a unit of
+`nonnegSubring R N`. -/
+theorem not_isUnit_of_mem_posIdeal [Nontrivial R] {a : nonnegSubring R N}
+    (ha : a ∈ posIdeal R N) : ¬ IsUnit a := by
+  rintro ⟨u, rfl⟩
+  have h1 : (1 : nonnegSubring R N) ∈ posIdeal R N := by
+    simpa using (posIdeal R N).mul_mem_left (↑u⁻¹) ha
+  have h0 := mem_posIdeal.1 h1 0 (map_zero N).le
+  rw [OneMemClass.coe_one, one_def, coeff_single_same] at h0
+  exact one_ne_zero h0
 
 /-- A series of the positive ideal is topologically nilpotent. -/
 theorem isTopologicallyNilpotent_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
@@ -344,6 +382,12 @@ theorem isUnit_one_sub_of_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posId
 theorem single_mem_posIdeal {g : H} (hg : 0 < N g) (r : R) :
     (⟨single g r, single_mem_nonnegSubring hg.le r⟩ : nonnegSubring R N) ∈ posIdeal R N :=
   mem_posIdeal.2 fun h hh => coeff_single_of_ne (fun hgh => by subst hgh; linarith) r
+
+/-- Over a nontrivial coefficient ring, a monomial of strictly positive period is not a unit of
+`nonnegSubring R N`. -/
+theorem not_isUnit_single_nonnegSubring_of_pos [Nontrivial R] {h : H} (hh : 0 < N h) (r : R) :
+    ¬ IsUnit (⟨single h r, single_mem_nonnegSubring hh.le r⟩ : nonnegSubring R N) :=
+  not_isUnit_of_mem_posIdeal (single_mem_posIdeal hh r)
 
 /-- For `N g > 0`, the factor `1 - r e^g` as a unit of the nonnegative subring. Its inverse is the
 geometric series `∑ₖ rᵏ e^(k • g)` (`TauCeti.NovikovSeries.coe_inv_unitsOneSubSingle`). -/

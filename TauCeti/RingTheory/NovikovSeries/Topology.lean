@@ -64,6 +64,10 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
   there.
 * `TauCeti.NovikovSeries.isClosed_setOf_support_subset`: series supported in any fixed set form a
   closed set.
+* `TauCeti.NovikovSeries.summable_single_of_tendsto_period` and
+  `TauCeti.NovikovSeries.coeff_tsum_single_of_injective`: a family of monomials with periods
+  tending to `+∞` along `cofinite` is summable, and for injective exponents its coefficient at
+  `p k` is `c k`.
 * `TauCeti.NovikovSeries.summable_sigma_fin_iff` and `TauCeti.NovikovSeries.tsum_sigma_fin`:
   over coefficients without additive torsion, listing the `i`-th series of a family `c i` times
   has the summability and the sum of scaling it by `c i`.
@@ -351,6 +355,29 @@ instance : CompleteSpace (NovikovSeries R H N) := by
       exact hh.1⟩
   refine ⟨lim, (hasBasis_nhds lim).ge_iff.2 fun C _ => mem_of_superset (hSF C) fun a ha h hh => ?_⟩
   simp [lim, hcoeff C a ha h hh]
+
+/-- A family of monomials whose periods tend to `+∞` along `cofinite` is summable in the period
+topology. -/
+theorem summable_single_of_tendsto_period {ι : Type*} {p : ι → H} {c : ι → R}
+    (hp : Tendsto (N ∘ p) cofinite atTop) :
+    Summable fun i => (single (p i) (c i) : NovikovSeries R H N) := by
+  rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero,
+    hasBasis_nhds_zero.tendsto_right_iff]
+  intro C _
+  filter_upwards [hp.eventually (eventually_ge_atTop C)] with i hi
+  exact antitone_periodFiltration hi (single_mem_periodFiltration (p i) (c i))
+
+/-- For an injective family of exponents, the coefficient at `p k` of a summable sum of monomials
+`single (p i) (c i)` is `c k`. -/
+theorem coeff_tsum_single_of_injective {ι : Type*} {p : ι → H} (hp : Injective p) {c : ι → R}
+    (hsum : Summable fun i => (single (p i) (c i) : NovikovSeries R H N)) (k : ι) :
+    (∑' i, (single (p i) (c i) : NovikovSeries R H N)).coeff (p k) = c k := by
+  classical
+  rw [hsum.tsum_eq_add_tsum_ite k, coeff_add, coeff_single_same,
+    coeff_tsum_eq_zero fun i => ?_, add_zero]
+  rcases eq_or_ne i k with rfl | hik
+  · simp
+  · simp [hik, coeff_single_of_ne (hp.ne hik.symm)]
 
 /-- Over coefficients without additive torsion, the family in which the `i`-th series is listed
 `c i` times is summable exactly when the family of the `i`-th series scaled by `c i` is. -/
