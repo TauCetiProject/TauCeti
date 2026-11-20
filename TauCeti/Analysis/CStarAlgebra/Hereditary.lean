@@ -36,6 +36,8 @@ elements `e * (star y * y) * e` of `B`. The same estimate shows that `x ∈ B` a
   satisfies `B * A * B ⊆ B`.
 * `NonUnitalStarSubalgebra.isHereditary_iff_mul_mul_mem`: for closed `B`, heredity is equivalent to
   `B * A * B ⊆ B`.
+* `NonUnitalStarSubalgebra.isHereditary_of_star_mul_mul_mem`: a closed `B` containing every
+  `star b * x * b` with `b ∈ B` is hereditary.
 * `TwoSidedIdeal.isHereditary_toNonUnitalStarSubalgebra` and `TwoSidedIdeal.mem_of_nonneg_of_le`:
   closed two-sided ideals of a C⋆-algebra are hereditary.
 * `NonUnitalStarSubalgebra.IsHereditary.leftIdeal` and `Submodule.interStar`: the order-preserving
@@ -121,9 +123,10 @@ theorem IsHereditary.mul_mul_mem (hB : B.IsHereditary) {b c : A} (hb : b ∈ B) 
   · exact SMulMemClass.smul_mem _ <|
       hB.star_mul_mul_mem (sub_mem hc (SMulMemClass.smul_mem _ hu)) x
 
-/-- A closed star subalgebra `B` of a C⋆-algebra with `B * A * B ⊆ B` is hereditary. -/
-theorem isHereditary_of_mul_mul_mem (hBc : IsClosed (B : Set A))
-    (h : ∀ b ∈ B, ∀ x : A, ∀ c ∈ B, b * x * c ∈ B) : B.IsHereditary := by
+/-- A closed star subalgebra `B` of a C⋆-algebra containing `star b * x * b` for every `b ∈ B`
+and every `x` is hereditary. -/
+theorem isHereditary_of_star_mul_mul_mem (hBc : IsClosed (B : Set A))
+    (h : ∀ b ∈ B, ∀ x : A, star b * x * b ∈ B) : B.IsHereditary := by
   intro a b ha hab hb
   obtain ⟨y, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp ha
   obtain ⟨l, _, hlB, -, hsa, hnorm, hl⟩ := NonUnitalStarSubalgebra.exists_approximateUnit hBc
@@ -134,14 +137,18 @@ theorem isHereditary_of_mul_mul_mem (hBc : IsClosed (B : Set A))
         (hl b hb).1).const_mul (star y)
   have hl' : Tendsto (· * (star y * y)) l (𝓝 (star y * y)) := by
     simpa only [star_mul, star_star] using TauCeti.tendsto_mul_star_of_tendsto_mul hsa hr
-  exact hBc.mem_of_tendsto_mul (hlB.mono fun e he ↦ h e he _ e he)
+  -- The approximate unit is self-adjoint, so `e * (star y * y) * e = star e * (star y * y) * e`.
+  exact hBc.mem_of_tendsto_mul
+    ((hlB.and hsa).mono fun e he ↦ by
+      simpa only [he.2.star_eq, SetLike.mem_coe] using h e he.1 (star y * y))
     (isBoundedUnder_of_eventually_le hnorm) hr hl'
 
 /-- A closed star subalgebra `B` of a C⋆-algebra is hereditary if and only if
 `B * A * B ⊆ B`. -/
 theorem isHereditary_iff_mul_mul_mem (hBc : IsClosed (B : Set A)) :
     B.IsHereditary ↔ ∀ b ∈ B, ∀ x : A, ∀ c ∈ B, b * x * c ∈ B :=
-  ⟨fun hB _ hb x _ hc ↦ hB.mul_mul_mem hb x hc, isHereditary_of_mul_mul_mem hBc⟩
+  ⟨fun hB _ hb x _ hc ↦ hB.mul_mul_mem hb x hc,
+    fun h ↦ isHereditary_of_star_mul_mul_mem hBc fun _ hb x ↦ h _ (star_mem hb) x _ hb⟩
 
 /-- In a closed hereditary star subalgebra `B`, an element `x` with `star x * x ∈ B` and
 `x * star x ∈ B` lies in `B`. -/
@@ -218,10 +225,10 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 
 /-- For a closed left ideal `L`, the star subalgebra `L ∩ star L` is hereditary. -/
 theorem isHereditary_interStar (hLc : IsClosed (L : Set A)) : (L.interStar hL).IsHereditary := by
-  refine NonUnitalStarSubalgebra.isHereditary_of_mul_mul_mem (isClosed_interStar hLc)
-    fun b hb x c hc ↦ mem_interStar.mpr ⟨hL _ (mem_interStar.mp hc).1, ?_⟩
-  rw [star_mul, star_mul, ← mul_assoc]
-  exact hL _ (mem_interStar.mp hb).2
+  refine NonUnitalStarSubalgebra.isHereditary_of_star_mul_mul_mem (isClosed_interStar hLc)
+    fun b hb x ↦ mem_interStar.mpr ⟨hL _ (mem_interStar.mp hb).1, ?_⟩
+  rw [star_mul, star_mul, star_star, ← mul_assoc]
+  exact hL _ (mem_interStar.mp hb).1
 
 /-- A closed left ideal `L` is recovered from the hereditary star subalgebra `L ∩ star L` as
 `{x | star x * x ∈ L ∩ star L}`. -/
@@ -255,9 +262,9 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 
 /-- A closed two-sided ideal of a C⋆-algebra is a hereditary star subalgebra. -/
 theorem isHereditary_toNonUnitalStarSubalgebra : I.toNonUnitalStarSubalgebra.IsHereditary :=
-  NonUnitalStarSubalgebra.isHereditary_of_mul_mul_mem (I.isClosed_toNonUnitalStarSubalgebra)
-    fun _ hb _ _ _ ↦ I.mem_toNonUnitalStarSubalgebra.mpr <|
-      I.mul_mem_right _ _ (I.mul_mem_right _ _ (I.mem_toNonUnitalStarSubalgebra.mp hb))
+  NonUnitalStarSubalgebra.isHereditary_of_star_mul_mul_mem (I.isClosed_toNonUnitalStarSubalgebra)
+    fun _ hb _ ↦ I.mem_toNonUnitalStarSubalgebra.mpr <|
+      I.mul_mem_left _ _ (I.mem_toNonUnitalStarSubalgebra.mp hb)
 
 /-- A closed two-sided ideal of a C⋆-algebra is hereditary: if `0 ≤ a ≤ b` and `b ∈ I`, then
 `a ∈ I`. -/
@@ -316,11 +323,11 @@ variable [PartialOrder A] [StarOrderedRing A] {B : NonUnitalStarSubalgebra ℂ A
 
 /-- `closure (star a * A * a)` is hereditary. -/
 theorem isHereditary_hereditaryOf (a : A) : (hereditaryOf a).IsHereditary := by
-  refine isHereditary_of_mul_mul_mem (isClosed_hereditaryOf a) fun b hb x c hc ↦ ?_
-  rw [← SetLike.mem_coe, coe_hereditaryOf] at hb hc ⊢
-  refine map_mem_closure₂ (f := fun b c ↦ b * x * c) (by fun_prop) hb hc ?_
-  rintro _ ⟨y, rfl⟩ _ ⟨z, rfl⟩
-  exact ⟨y * a * x * star a * z, by noncomm_ring⟩
+  refine isHereditary_of_star_mul_mul_mem (isClosed_hereditaryOf a) fun b hb x ↦ ?_
+  rw [← SetLike.mem_coe, coe_hereditaryOf] at hb ⊢
+  refine map_mem_closure (f := fun b ↦ star b * x * b) (by fun_prop) hb ?_
+  rintro _ ⟨y, rfl⟩
+  exact ⟨star y * a * x * star a * y, by simp only [star_mul, star_star]; noncomm_ring⟩
 
 /-- A positive element lies in the closure of `a * A * a`. -/
 theorem mem_hereditaryOf_self {a : A} (ha : 0 ≤ a) : a ∈ hereditaryOf a := by
