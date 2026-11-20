@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Linearization
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IntervalIntegral.Slice
+import TauCeti.Analysis.Fourier.Wirtinger
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -233,6 +234,15 @@ private theorem continuous_floerLinearization_comp_fst (hH : ContDiff ℝ 2 H) (
   convert h using 1
   exact funext fun z ↦ floerLinearization_const_eq ω J H _ ξ z
 
+/-- Along a continuous curve `γ`, the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ` of a `C²` autonomous
+Hamiltonian maps `C¹` curves to continuous curves. -/
+private theorem continuous_deriv_sub_fderiv_hamiltonianVectorField (hH : ContDiff ℝ 2 H)
+    (hγ : Continuous γ) {ζ : ℝ → V} (hζ : ContDiff ℝ 1 ζ) :
+    Continuous fun s ↦ deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ζ s)) :=
+  (hζ.continuous_deriv le_rfl).sub (J.toLinearMap.toContinuousLinearMap.continuous.comp
+    ((((ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero).comp
+      hγ).clm_apply hζ.continuous))
+
 /-- The linearized operator along `(s, t) ↦ γ(s)` differs from `∂s ξ + J ∂t ξ` by
 `J dX_H(γ(s)) ξ`, of norm at most `a ‖ξ‖` where `‖dX_H(γ(s))‖ ≤ a`. -/
 private theorem norm_sub_floerLinearization_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a : ℝ}
@@ -301,17 +311,11 @@ private theorem floerLinearization_sub_intervalIntegral (hξ : ContDiff ℝ 1 ξ
           (fun _ ↦ H) (fun z ↦ γ z.1) ξ z -
         (deriv (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 -
           J (fderiv ℝ (ω.hamiltonianVectorField H) (γ z.1) (∫ t in (0 : ℝ)..1, ξ (z.1, t)))) := by
-  have hbar : ContDiff ℝ 1 fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t) :=
-    hξ.parametric_intervalIntegral (μ := volume)
-  have hd : HasFDerivAt (fun z : ℝ × ℝ ↦ ξ z - ∫ t in (0 : ℝ)..1, ξ (z.1, t))
-      (fderiv ℝ ξ z - (smulRight (1 : ℝ →L[ℝ] ℝ)
-        (deriv (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1)).comp (fst ℝ ℝ ℝ)) z :=
-    ((hξ.differentiable one_ne_zero) z).hasFDerivAt.sub
-      (((hbar.differentiable one_ne_zero) z.1).hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst)
-  rw [floerLinearization_const_eq, floerLinearization_const_eq, hd.fderiv]
-  simp only [sub_apply, coe_comp, Function.comp_apply, coe_fst', smulRight_apply,
-    one_apply_eq_self, one_smul, zero_smul, sub_zero, map_sub]
-  abel
+  have hbar : DifferentiableAt ℝ (fun s ↦ ∫ t in (0 : ℝ)..1, ξ (s, t)) z.1 :=
+    (hξ.parametric_intervalIntegral (μ := volume)).differentiable one_ne_zero z.1
+  rw [← floerLinearization_comp_fst_of_hasDerivAt γ hbar.hasDerivAt]
+  exact floerLinearization_sub ω _ _ _ _ ξ _ z (hξ.differentiable one_ne_zero z)
+    (hbar.comp z differentiableAt_fst)
 
 /-- **Splitting off the zero mode.** Let `H` be a `C²` autonomous Hamiltonian and `γ` a
 continuous curve, and let `ξ` be a `C¹` map of period one in `t`, with slice average
@@ -335,10 +339,7 @@ theorem setIntegral_norm_floerLinearization_sq_eq (hH : ContDiff ℝ 2 H) (hγ :
   set m : ℝ → V := fun s ↦
     deriv ξbar s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ξbar s))
   have hbar : ContDiff ℝ 1 ξbar := hξ.parametric_intervalIntegral (μ := volume)
-  have hm : Continuous m := (hbar.continuous_deriv le_rfl).sub
-    (J.toLinearMap.toContinuousLinearMap.continuous.comp
-      ((((ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero).comp
-        hγ).clm_apply hbar.continuous))
+  have hm : Continuous m := continuous_deriv_sub_fderiv_hamiltonianVectorField hH hγ hbar
   have hDξ : Continuous (D ξ) := continuous_floerLinearization_comp_fst hH hγ hξ
   have hsplit (z : ℝ × ℝ) : D ξ z = m z.1 + D (fun z ↦ ξ z - ξbar z.1) z :=
     eq_add_of_sub_eq' (floerLinearization_sub_intervalIntegral (ω := ω) (J := J) (H := H)
@@ -349,12 +350,9 @@ theorem setIntegral_norm_floerLinearization_sq_eq (hH : ContDiff ℝ 2 H) (hγ :
   have hw0 (s : ℝ) : ∫ t in Icc (0 : ℝ) 1, D (fun z ↦ ξ z - ξbar z.1) (s, t) = 0 := by
     have h0 : ∫ t in (0 : ℝ)..1, D ξ (s, t) = m s :=
       intervalIntegral_floerLinearization_comp_fst (ω := ω) (J := J) (H := H) γ hξ hper s
-    have hi : IntervalIntegrable (fun t ↦ D ξ (s, t)) volume 0 1 :=
-      (hDξ.comp (Continuous.prodMk_right s)).intervalIntegrable 0 1
-    simp_rw [hη]
-    rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
-      intervalIntegral.integral_sub hi intervalIntegrable_const, h0]
-    simp
+    simp_rw [hη, ← h0]
+    rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
+    exact intervalIntegral_sub_intervalIntegral_zero_one fun t ↦ D ξ (s, t)
   have hw : Continuous (D (fun z ↦ ξ z - ξbar z.1)) := by
     rw [funext hη]
     exact hDξ.sub (hm.comp continuous_fst)
@@ -387,12 +385,8 @@ theorem setIntegral_norm_sq_le_max_mul_setIntegral_norm_floerLinearization_sq
   have hη : ContDiff ℝ 2 η := hξ.sub (hbar.comp contDiff_fst)
   have hbar₀ : ξbar s₀ = 0 := by simp [ξbar, h₀]
   have hbar₁ : ξbar s₁ = 0 := by simp [ξbar, h₁]
-  have hηmean (s : ℝ) : ∫ t in (0 : ℝ)..1, η (s, t) = 0 := by
-    have hi : IntervalIntegrable (fun t ↦ ξ (s, t)) volume 0 1 :=
-      (hξ.continuous.comp (Continuous.prodMk_right s)).intervalIntegrable 0 1
-    simp only [η]
-    rw [intervalIntegral.integral_sub hi intervalIntegrable_const]
-    simp [ξbar]
+  have hηmean (s : ℝ) : ∫ t in (0 : ℝ)..1, η (s, t) = 0 :=
+    intervalIntegral_sub_intervalIntegral_zero_one fun t ↦ ξ (s, t)
   -- `∫ ‖ξ‖² = ∫ ‖ξbar‖² + ∫ ‖η‖²`, the zero mode and the mean-zero part.
   have hnorm : ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 =
       (∫ s in Icc s₀ s₁, ‖ξbar s‖ ^ 2) + ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖η z‖ ^ 2 := by
@@ -435,8 +429,7 @@ if the linearized Floer operator `D` along `(s, t) ↦ γ(s)` satisfies `∫ ‖
 and `s = s₁`, then the Morse operator `M ζ = ζ' - J dX_H(γ) ζ` satisfies `∫ ‖ζ‖² ≤ C ∫ ‖M ζ‖²` over
 `[s₀, s₁]` for every `C²` curve `ζ` vanishing at `s₀` and `s₁`: on maps that do not depend on `t`,
 `D` is `M`. -/
-theorem setIntegral_norm_sq_le_mul_setIntegral_norm_deriv_sub_sq (hγ : Continuous γ)
-    (hH : ContDiff ℝ 2 H) {C : ℝ}
+theorem setIntegral_norm_sq_le_mul_setIntegral_norm_deriv_sub_sq {C : ℝ}
     (hD : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ 2 ξ → (∀ s t, ξ (s, t + 1) = ξ (s, t)) →
       (∀ t, ξ (s₀, t) = 0) → (∀ t, ξ (s₁, t) = 0) →
       ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1, ‖ξ z‖ ^ 2 ≤ C * ∫ z in Icc s₀ s₁ ×ˢ Icc 0 1,
@@ -446,30 +439,17 @@ theorem setIntegral_norm_sq_le_mul_setIntegral_norm_deriv_sub_sq (hγ : Continuo
     ∫ s in Icc s₀ s₁, ‖ζ s‖ ^ 2 ≤ C * ∫ s in Icc s₀ s₁,
       ‖deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ζ s))‖ ^ 2 := by
   set m : ℝ → V := fun s ↦ deriv ζ s - J (fderiv ℝ (ω.hamiltonianVectorField H) (γ s) (ζ s))
-  have hm : Continuous m := (hζ.continuous_deriv one_le_two).sub
-    (J.toLinearMap.toContinuousLinearMap.continuous.comp
-      ((((ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero).comp
-        hγ).clm_apply hζ.continuous))
   -- On the map `(s, t) ↦ ζ(s)`, the linearized operator is the Morse operator.
   have hDζ (z : ℝ × ℝ) : ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
-      (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ζ z.1) z = m z.1 := by
-    have hd : HasFDerivAt (fun z : ℝ × ℝ ↦ ζ z.1)
-        ((smulRight (1 : ℝ →L[ℝ] ℝ) (deriv ζ z.1)).comp (fst ℝ ℝ ℝ)) z :=
-      ((hζ.differentiable two_ne_zero) z.1).hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst
-    rw [floerLinearization_const_eq, hd.fderiv]
-    simp only [m, coe_comp, Function.comp_apply, coe_fst', smulRight_apply, one_apply_eq_self,
-      one_smul, zero_smul, sub_eq_add_neg]
-    rw [zero_add, map_neg]
-  -- A function of `s` integrates over `[s₀, s₁] × [0, 1]` to its integral over `[s₀, s₁]`.
-  have hfst {f : ℝ → V} (hf : Continuous f) :
-      ∫ z in Icc s₀ s₁ ×ˢ Icc (0 : ℝ) 1, ‖f z.1‖ ^ 2 = ∫ s in Icc s₀ s₁, ‖f s‖ ^ 2 := by
-    simpa using setIntegral_norm_add_sq_eq (a₁ := s₀) (b₁ := s₁) zero_le_one hf (w := 0)
-      continuous_const
-      fun _ ↦ by simp
+      (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1) (fun z ↦ ζ z.1) z = m z.1 :=
+    floerLinearization_comp_fst_of_hasDerivAt γ ((hζ.differentiable two_ne_zero) z.1).hasDerivAt
   have h := hD (fun z ↦ ζ z.1) (hζ.comp contDiff_fst) (fun _ _ ↦ rfl) (fun _ ↦ hζ₀)
     fun _ ↦ hζ₁
   simp only [hDζ] at h
-  rwa [hfst hζ.continuous, hfst hm] at h
+  -- A function of `s` integrates over `[s₀, s₁] × [0, 1]` to its integral over `[s₀, s₁]`.
+  rwa [setIntegral_Icc_prod_comp_fst (fun s ↦ ‖ζ s‖ ^ 2) zero_le_one,
+    setIntegral_Icc_prod_comp_fst (fun s ↦ ‖m s‖ ^ 2) zero_le_one, sub_zero, one_smul,
+    one_smul] at h
 
 end TimeIndependent
 

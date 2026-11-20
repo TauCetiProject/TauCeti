@@ -8,14 +8,13 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
-import TauCeti.Analysis.Fourier.Wirtinger
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -23,7 +22,8 @@ import TauCeti.MeasureTheory.Integral.Rectangle
 
 For a map `ξ` of two variables `(s, t)`, these are calculus facts about the slices
 `t ↦ ξ(s, t)` and their interval integrals in `t`, used for maps on the cylinder that have
-period `T` in `t`.
+period `T` in `t`, together with the splitting of the integral of `‖ξ‖²` over a rectangle
+`[a₁, b₁] × [a, b]` off a function of `s` when every slice of the rest integrates to zero.
 
 ## Main declarations
 
@@ -36,6 +36,10 @@ period `T` in `t`.
 * `TauCeti.hasDerivAt_intervalIntegral_two_mul_inner_fderiv`: for a `C²` map, the derivative
   `∫ₐᵇ 2 (⟪ξ, ∂s² ξ⟫ + ‖∂s ξ‖²) dt` of `s ↦ ∫ₐᵇ 2 ⟪ξ, ∂s ξ⟫ dt`, the second derivative of the
   slice energy.
+* `TauCeti.intervalIntegral_sub_intervalIntegral_zero_one`: subtracting its integral over `[0, 1]`
+  leaves a function of integral zero over `[0, 1]`, so the slices of `ξ - ξbar` have mean zero.
+* `TauCeti.setIntegral_norm_add_sq_eq`: over a rectangle `[a₁, b₁] × [a, b]`,
+  `∫ ‖m(s) + w‖² = (b - a) ∫ₛ ‖m‖² + ∫ ‖w‖²` when every slice of `w` integrates to zero.
 -/
 
 public section
@@ -99,32 +103,14 @@ theorem hasDerivAt_intervalIntegral_two_mul_inner_fderiv {V : Type*} [NormedAddC
   simp only [real_inner_self_eq_norm_sq]
   ring
 
-/-- **Wirtinger's inequality on the slices of a rectangle.** If `ξ` is a `C¹` map into a
-finite-dimensional real inner product space whose slices `t ↦ ξ(s, t)` take equal values at
-`t = a` and `t = b` and have mean zero on `[a, b]`, then over the rectangle `[a₁, b₁] × [a, b]`,
-`(2π / (b - a))² ∫ ‖ξ‖² ≤ ∫ ‖∂t ξ‖²`. -/
-theorem mul_setIntegral_norm_sq_le_setIntegral_norm_fderiv_sq {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {ξ : ℝ × ℝ → V} {a₁ b₁ a b : ℝ} (hab : a < b)
-    (hξ : ContDiff ℝ 1 ξ) (hper : ∀ s, ξ (s, a) = ξ (s, b))
-    (hmean : ∀ s, ∫ t in a..b, ξ (s, t) = 0) :
-    (2 * Real.pi / (b - a)) ^ 2 * ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖ξ z‖ ^ 2 ≤
-      ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 := by
-  have hc : 0 < (2 * Real.pi / (b - a)) ^ 2 := by
-    have := Real.pi_pos
-    have := sub_pos.2 hab
-    positivity
-  have hslice (s : ℝ) (_ : s ∈ Icc a₁ b₁) : ∫ t in Icc a b, ‖ξ (s, t)‖ ^ 2 ≤
-      ((2 * Real.pi / (b - a)) ^ 2)⁻¹ * ∫ t in Icc a b, ‖fderiv ℝ ξ (s, t) (0, 1)‖ ^ 2 := by
-    have h := integral_norm_sq_le_of_integral_eq_zero hab
-      (fun t ↦ hasDerivAt_slice_right (hξ.differentiable one_ne_zero (s, t)))
-      (continuous_fderiv_apply_slice_right hξ s (0, 1)) (hper s) (hmean s)
-    simpa only [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab.le, div_pow,
-      inv_div] using h
-  have h := setIntegral_rect_le_mul_of_forall_setIntegral_le
-    (hξ.continuous.norm.pow 2).integrableOn_Icc_prod_Icc
-    (((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).norm.pow 2
-      |>.integrableOn_Icc_prod_Icc) hslice
-  rwa [← le_div_iff₀' hc, div_eq_inv_mul]
+/-- Subtracting its integral over `[0, 1]` from a function leaves a function of integral zero over
+`[0, 1]`. For the slices of a map `ξ` of two variables, this says that every slice of `ξ - ξbar`
+has mean zero, where `ξbar(s) = ∫₀¹ ξ(s, t) dt` is the slice average. -/
+theorem intervalIntegral_sub_intervalIntegral_zero_one {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] (f : ℝ → E) :
+    ∫ t in (0 : ℝ)..1, (f t - ∫ t in (0 : ℝ)..1, f t) = 0 := by
+  simpa [← intervalIntegral.integral_of_le zero_le_one, setAverage_eq] using
+    integral_sub_average (volume.restrict (Ioc (0 : ℝ) 1)) f
 
 /-- **Splitting off a function of the first variable.** If every slice `t ↦ w(s, t)` of the
 continuous map `w` into a real inner product space has integral zero over `[a, b]`, then for every
@@ -147,9 +133,8 @@ theorem setIntegral_norm_add_sq_eq {V : Type*} [NormedAddCommGroup V] [InnerProd
   simp_rw [norm_add_sq_real]
   rw [integral_add hMC hW, integral_add hM hC]
   -- The first term integrates over `[a, b]` in `t`, and the cross term vanishes.
-  have h₁ : ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖m z.1‖ ^ 2 = (b - a) * ∫ s in Icc a₁ b₁, ‖m s‖ ^ 2 := by
-    rw [Measure.volume_eq_prod, setIntegral_prod _ hM]
-    simp [hab, integral_const_mul]
+  have h₁ : ∫ z in Icc a₁ b₁ ×ˢ Icc a b, ‖m z.1‖ ^ 2 = (b - a) * ∫ s in Icc a₁ b₁, ‖m s‖ ^ 2 :=
+    setIntegral_Icc_prod_comp_fst (fun s ↦ ‖m s‖ ^ 2) hab
   have h₂ : ∫ z in Icc a₁ b₁ ×ˢ Icc a b, 2 * ⟪m z.1, w z⟫ = 0 := by
     rw [Measure.volume_eq_prod, setIntegral_prod _ hC]
     refine integral_eq_zero_of_ae (Filter.Eventually.of_forall fun s ↦ ?_)
