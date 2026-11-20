@@ -13,6 +13,7 @@ import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+import Mathlib.Analysis.InnerProductSpace.NormDet
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 
@@ -556,6 +557,44 @@ theorem conj {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {U' V'
       rfl
     rw [hd.fderiv, ContinuousLinearMap.det, hconj, LinearMap.det_conj]
     exact h.le_abs_det (e x) (hU hx)
+
+/-- Composing a change of variables `Φ` on the left with an affine isometry equivalence `e` gives a
+change of variables `e ∘ Φ` with the same constants: its iterated derivatives of positive order
+have the same norms, and its Jacobian determinant has the same absolute value. -/
+theorem affineIsometryEquiv_comp {V' : Opens E}
+    (h : IsChangeOfVariables k U V Φ L c) (e : E ≃ᵃⁱ[ℝ] E) (hV : MapsTo e V V') :
+    IsChangeOfVariables k U V' (e ∘ Φ) L c := by
+  set A := e.toAffineIsometry.toContinuousAffineMap
+  refine
+    { contDiffOn := A.contDiff.comp_contDiffOn h.contDiffOn
+      differentiableOn := A.differentiable.comp_differentiableOn h.differentiableOn
+      injOn := e.injective.comp_injOn h.injOn
+      mapsTo := hV.comp h.mapsTo
+      norm_iteratedFDeriv_le := fun i hi hik x hx ↦ ?_
+      pos := h.pos
+      le_abs_det := fun x hx ↦ ?_ }
+  · rw [AffineIsometryEquiv.norm_iteratedFDeriv_comp_left _ _ _ (by omega)]
+    exact h.norm_iteratedFDeriv_le i hi hik x hx
+  · -- The derivative is `De ∘ DΦ(x)`, and the linear part of `e` is a linear isometry, whose
+    -- determinant has absolute value one.
+    have hΦ : HasFDerivAt Φ (fderiv ℝ Φ x) x :=
+      (h.differentiableOn.differentiableAt (U.isOpen.mem_nhds hx)).hasFDerivAt
+    have hd : HasFDerivAt (e ∘ Φ) (A.contLinear.comp (fderiv ℝ Φ x)) x :=
+      A.hasFDerivAt.comp x hΦ
+    have hA : |LinearMap.det (A.contLinear : E →ₗ[ℝ] E)| = 1 := by
+      by_cases hE : FiniteDimensional ℝ E
+      · -- As in `conj`: the linear part of the underlying continuous affine map is the linear
+        -- isometry equivalence by construction.
+        have hAe : (A.contLinear : E →ₗ[ℝ] E) =
+            e.linearIsometryEquiv.toLinearIsometry.toLinearMap := by
+          ext y
+          rfl
+        rw [hAe, ← LinearMap.normDet_eq_abs_det, LinearIsometry.normDet_eq_one]
+      · -- In infinite dimension every determinant is one.
+        rw [LinearMap.det_eq_one_of_not_module_finite (by simpa [FiniteDimensional] using hE),
+          abs_one]
+    rw [hd.fderiv, ContinuousLinearMap.det_comp, abs_mul, ContinuousLinearMap.det, hA, one_mul]
+    exact h.le_abs_det x hx
 
 /-- **Changes of variables on relatively compact sets.** A map that is `Cⁿ` on an open set `Ω`,
 with `k ≤ n` and `1 ≤ n`, injective on `U` and mapping `U` into `V`, whose Jacobian determinant
