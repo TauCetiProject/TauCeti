@@ -38,10 +38,12 @@ be continuous.
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
-a scalar multiple `a • f` is Hölder with the constant multiplied by `‖a‖₊`, the reciprocal of a
-Hölder function bounded away from zero is Hölder, and a pointwise limit of Hölder functions with a
-common constant is Hölder with that constant.
+Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants;
+a scalar multiple `a • f` is Hölder with the constant multiplied by `‖a‖₊`; the reciprocal of a
+Hölder function bounded away from zero is Hölder; the second differences
+`f (x + h) + f (x - h) - 2 f x` of a Hölder function on a normed group are bounded by twice its
+constant times `‖h‖ ^ r`; and a pointwise limit of Hölder functions with a common constant is
+Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
@@ -99,6 +101,8 @@ positive exponent, is equicontinuous on that set
 * `HolderOnWith.congr`: Hölder continuity on a set transfers to a function agreeing there.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `HolderOnWith.smul`: scalar multiples of Hölder functions on a set.
+* `HolderWith.norm_add_add_sub_two_nsmul_le`: the second differences of an `r`-Hölder function
+  with constant `C` are at most `2 C ‖h‖ ^ r`.
 * `HolderOnWith.inv₀`: the reciprocal of a Hölder function bounded away from zero is Hölder.
 * `HolderOnWith.of_tendsto`, `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with
   a common constant is Hölder with that constant.
@@ -408,6 +412,21 @@ theorem HolderOnWith.smul {X Y 𝕜 : Type*} [PseudoMetricSpace X] [SeminormedAd
     [SeminormedAddCommGroup 𝕜] [SMulZeroClass 𝕜 Y] [IsBoundedSMul 𝕜 Y] {C r : ℝ≥0} {f : X → Y}
     {s : Set X} (a : 𝕜) (hf : HolderOnWith C r f s) : HolderOnWith (C * ‖a‖₊) r (a • f) s :=
   HolderWith.restrict_iff.1 (hf.holderWith.smul a)
+
+/-- The second differences of an `r`-Hölder function with constant `C` on a normed group are at
+most `2 C ‖h‖ ^ r`. -/
+theorem HolderWith.norm_add_add_sub_two_nsmul_le {X Y : Type*} [SeminormedAddCommGroup X]
+    [SeminormedAddCommGroup Y] {C r : ℝ≥0} {f : X → Y} (hf : HolderWith C r f) (x h : X) :
+    ‖f (x + h) + f (x - h) - 2 • f x‖ ≤ 2 * C * ‖h‖ ^ (r : ℝ) := by
+  have h₁ : ‖f (x + h) - f x‖ ≤ C * ‖h‖ ^ (r : ℝ) := by
+    simpa [dist_eq_norm] using hf.dist_le (x + h) x
+  have h₂ : ‖f (x - h) - f x‖ ≤ C * ‖h‖ ^ (r : ℝ) := by
+    simpa [dist_eq_norm] using hf.dist_le (x - h) x
+  have heq : f (x + h) + f (x - h) - 2 • f x = (f (x + h) - f x) + (f (x - h) - f x) := by
+    rw [two_nsmul]
+    abel
+  rw [heq]
+  linarith [norm_add_le (f (x + h) - f x) (f (x - h) - f x)]
 
 /-- The reciprocal of a function that is Hölder on `s` and bounded away from `0` there, by
 `‖f x‖ ≥ m > 0`, is Hölder on `s` with the same exponent and constant `C / m ^ 2`. -/
