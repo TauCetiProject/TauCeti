@@ -443,8 +443,8 @@ theorem _root_.Derivation.vectorField_restrictDerivation [BoundarylessManifold I
     rw [ContMDiffMap.coe_restrict]
     exact hg.symm.mvfderiv_eq
   rw [hd, ContMDiffMap.mvfderiv_restrict (by simp),
-    Opens.restrictDerivation_apply_of_eventuallyEq δ hg, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
-    Derivation.mvfderiv_vectorField]
+    Opens.restrictDerivation_apply_of_eventuallyEq δ hg]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply, Derivation.mvfderiv_vectorField]
 
 end TauCeti

@@ -183,9 +183,9 @@ theorem IsLaplaceType.restrictDifferentialOperators (hD : IsLaplaceType D c) (U 
       TangentSpace I (x : M) →L[ℝ] TangentSpace I x)).comp
       (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
     ext v
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      LinearIsometryEquiv.coe_coe'', ContinuousLinearEquiv.coe_coe,
-      ← coe_tangentSpaceOpenLinearIsometryEquiv, LinearIsometryEquiv.symm_apply_apply]
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_coe, ← coe_tangentSpaceOpenLinearIsometryEquiv,
+      LinearIsometryEquiv.symm_apply_apply]
   conv_lhs => rw [hξ]
   rw [smoothPrincipalSymbol_restrictDifferentialOperators hx', hD.smoothPrincipalSymbol_eq hx',
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
