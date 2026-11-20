@@ -58,6 +58,7 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
+* `ContDiffBump.inhomogeneousLittlewoodPaley_neg`: every piece `ψⱼ` is even.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_pos`: on a nontrivial space no piece `ψⱼ`
   is identically zero.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
@@ -616,6 +617,13 @@ theorem abs_inhomogeneousLittlewoodPaley_le_one (j : ℕ) (ξ : E) :
     exact φ.le_one
   · rw [inhomogeneousLittlewoodPaley_succ]
     exact φ.abs_littlewoodPaley_le_one _ ξ
+
+/-- Every piece of the inhomogeneous partition is even, since the bump function is. -/
+theorem inhomogeneousLittlewoodPaley_neg (j : ℕ) (ξ : E) :
+    φ.inhomogeneousLittlewoodPaley j (-ξ) = φ.inhomogeneousLittlewoodPaley j ξ := by
+  rcases j with _ | j
+  · simp [φ.neg]
+  · simp only [φ.inhomogeneousLittlewoodPaley_succ_apply, smul_neg, φ.neg]
 
 /-- **Bounded overlap.** There is `L`, depending only on `φ`, such that at every `ξ` at most `L`
 pieces of the partition are nonzero, over any finite set of indices. -/
