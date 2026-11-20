@@ -33,8 +33,9 @@ So local coordinates `κ` on `B` give the coordinates `(c, κ)` on `T*B` in whic
 
 The pullback of `ω` is computed by comparing Liouville forms with the action–angle covering map
 `TauCeti.CotangentBundle.actionAngleCover` of the cotangent bundle of a torus: `Ψ` pulls the
-Liouville form back to `∑ j, c_j dκ_j`, as does `(c, x) ↦ ∑ j, c_j dθ_j` at the angles `θ = κ x`,
-whose canonical form is known in these coordinates
+Liouville form back to `∑ j, c_j dκ_j`
+(`TauCeti.CotangentBundle.mpullback_liouvilleForm_coordinateCover_apply`), as does
+`(c, x) ↦ ∑ j, c_j dθ_j` at the angles `θ = κ x`, whose canonical form is known in these coordinates
 (`TauCeti.CotangentBundle.eval₂_symplecticForm_mfderiv_actionAngleCover`).
 
 ## References
@@ -115,6 +116,19 @@ theorem contMDiff_coordinateCover (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ �
       ((ContMDiff.contMDiff_totalSpaceMk_mvfderiv (n := ∞)
         ((contMDiff_pi_module_iff.1 hκ j).of_le (by simp))).comp contMDiff_snd)
 
+/-- **The cover pulls the Liouville form back to `∑ j, c_j dκ_j`**: on a tangent vector `v` at
+`(c, x)` the pullback takes the value `c ⬝ᵥ dκ v.2`. -/
+theorem mpullback_liouvilleForm_coordinateCover_apply (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ)
+    (q : (ι → ℝ) × B) (v : Fin 1 → TangentSpace (𝓘(ℝ, ι → ℝ).prod J) q) :
+    mpullback (𝓘(ℝ, ι → ℝ).prod J) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) (coordinateCover J κ)
+        (liouvilleForm J B).1 q v =
+      q.1 ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) κ q.2 (v 0).2 := by
+  rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := Prod.snd) (fun _ ↦ rfl)
+    ((contMDiff_coordinateCover hκ q).mdifferentiableAt (by simp)), mfderiv_snd]
+  -- `ContinuousLinearMap.snd` applied to the tangent vector `v 0` of the product model is
+  -- `(v 0).2`.
+  exact coordinateCover_snd_apply ((hκ q.2).mdifferentiableAt (by simp)) (v 0).2
+
 variable (κ) in
 /-- The angles and actions `(κ x, c)` of `(c, x)`. -/
 private def anglesActions (q : (ι → ℝ) × B) : (ι → ℝ) × (ι → ℝ) := (κ q.2, q.1)
@@ -157,17 +171,14 @@ theorem eval₂_symplecticForm_mfderiv_coordinateCover (hκ : ContMDiff J 𝓘(�
         (liouvilleForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle (1 : ℝ))) := by
     refine SmoothBundleForm.ext fun x w ↦ ?_
     obtain ⟨u, rfl⟩ : ∃ u, w = ![u] := ⟨w 0, by ext i; fin_cases i; rfl⟩
-    rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_apply_of_proj_comp_eq
-        (g := Prod.snd) (fun _ ↦ rfl) (((contMDiff_coordinateCover hκ) x).mdifferentiableAt
-          (by simp)),
-      Matrix.cons_val_zero, mfderiv_snd, ← SmoothForm.mpullback_mpullback _ _ hΞ hT,
-      SmoothForm.mpullback_apply_one, SmoothForm.coe_mpullback,
-      mpullback_liouvilleForm_actionAngleCover_apply, (hasMFDerivAt_anglesActions hκ x).mfderiv]
+    rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_coordinateCover_apply hκ,
+      ← SmoothForm.mpullback_mpullback _ _ hΞ hT, SmoothForm.mpullback_apply_one,
+      SmoothForm.coe_mpullback, mpullback_liouvilleForm_actionAngleCover_apply,
+      (hasMFDerivAt_anglesActions hκ x).mfderiv]
     -- Both sides are `∑ j, c_j (dκ u)_j`: the derivative `(w, u) ↦ (dκ u, w)` of `anglesActions`
     -- has second component `w`, and `(dκ u)_j` is its `j`-th first component, by definition of
     -- `ContinuousLinearMap.prod`, `fst` and `snd`.
-    exact (coordinateCover_snd_apply ((hκ x.2).mdifferentiableAt (by simp)) u.2).trans
-      (Finset.sum_congr rfl fun j _ ↦ rfl)
+    rfl
   -- `ω = -dλ`, and `d` commutes with both pullbacks.
   have hB := SmoothForm.mextDeriv_mpullback_apply_two (coordinateCover J κ)
     (contMDiff_coordinateCover hκ) (liouvilleForm J B) q v v'
@@ -212,14 +223,6 @@ private theorem eq_zero_of_forall_dotProduct_sub_eq_zero {V : Type*} [Zero V]
   obtain ⟨u', hu'⟩ := hD.2 (Pi.single i 1)
   simpa [hu, hu', hD₀] using H 0 u'
 
-omit [IsManifold J ∞ B] in
-/-- The dimension count `dim ℝ^ι + dim B = 2 dim B = dim T*B` when `ι` has `dim B` elements. -/
-private theorem finrank_prod_eq [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F) :
-    finrank ℝ ((ι → ℝ) × F) = finrank ℝ (F × (F →L[ℝ] ℝ)) := by
-  rw [Module.finrank_prod, Module.finrank_prod, Module.finrank_fintype_fun_eq_card, hι,
-    ← (LinearMap.toContinuousLinearMap : (F →ₗ[ℝ] ℝ) ≃ₗ[ℝ] F →L[ℝ] ℝ).finrank_eq,
-    Subspace.dual_finrank_eq]
-
 /-- **The cover is a local diffeomorphism** at every point `(c, x)` where `dκ_x` is bijective, when
 `ι` has `dim B` elements: its pullback of the canonical form is nondegenerate there. -/
 theorem isLocalDiffeomorphAt_coordinateCover [FiniteDimensional ℝ F] [BoundarylessManifold J B]
@@ -228,7 +231,8 @@ theorem isLocalDiffeomorphAt_coordinateCover [FiniteDimensional ℝ F] [Boundary
     IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod J) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞
       (coordinateCover J κ) q := by
   refine isLocalDiffeomorphAt_of_injective_mfderiv (contMDiff_coordinateCover hκ).contMDiffOn
-    isOpen_univ (mem_univ q) BoundarylessManifold.isInteriorPoint (by simp) ?_ (finrank_prod_eq hι)
+    isOpen_univ (mem_univ q) BoundarylessManifold.isInteriorPoint (by simp) ?_
+    (by simp [Module.finrank_prod, hι, ContinuousLinearMap.dual_finrank_eq])
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
   -- A vector killed by the derivative pairs to zero with everything under the pulled-back form.
   have H (w' : ι → ℝ) (u' : TangentSpace J q.2) :

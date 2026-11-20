@@ -145,23 +145,39 @@ def hamiltonianFlowActionComp (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (
     (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp))) v).toMul
 
 omit [FiniteDimensional ℝ F] [T2Space B] in
-/-- The Hamiltonian flow action of `κ ∘ π` is
-`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction` for the components of `κ ∘ π`. -/
-theorem hamiltonianFlowActionComp_def (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (v : ι → ℝ) (x : M) :
-    h.hamiltonianFlowActionComp hσc hκ v x =
-      ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction (hκ.comp h.contMDiff)
-        (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable (hκ.mdifferentiable (by simp)))
-        (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp)))
-        v).toMul x :=
-  (rfl)
-
-omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- The vector `v` acts by the time-one map of the Hamiltonian flow of `v ⬝ᵥ (κ ∘ π)`. -/
 theorem hamiltonianFlowActionComp_apply (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (v : ι → ℝ) (x : M) :
     h.hamiltonianFlowActionComp hσc hκ v x =
       flowOf (σ.hamiltonianVectorField fun y ↦ v ⬝ᵥ (κ ∘ π) y) 1 x := by
   rw [(⟨hσc, hσ⟩ : σ.IsSymplectic).flowOf_hamiltonianVectorField_dotProduct, one_smul,
     hamiltonianFlowActionComp]
+
+omit [FiniteDimensional ℝ F] [T2Space B] in
+/-- The Hamiltonian flow action of `κ ∘ π` is smooth jointly in the vector and the point. -/
+theorem contMDiff_hamiltonianFlowActionComp_uncurry (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) :
+    ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
+      fun p : (ι → ℝ) × M ↦ h.hamiltonianFlowActionComp hσc hκ p.1 p.2 :=
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_uncurry _ _ _
+
+omit [FiniteDimensional ℝ F] [T2Space B] in
+/-- **Moving a map by the Hamiltonian flow action of `κ ∘ π`.** For maps `f : N → ℝ^ι` and
+`g : N → M`, differentiable at `n`, the map `n ↦ f n • g n` pulls `σ` back to
+`g^* σ + ∑ᵢ dfᵢ ∧ d(κᵢ ∘ π ∘ g)` at `n`. This is
+`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp` for the components
+of `κ ∘ π`. -/
+theorem eval₂_mfderiv_hamiltonianFlowActionComp_comp {E'' H'' N : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {I' : ModelWithCorners ℝ E'' H''} [TopologicalSpace N] [ChartedSpace H'' N]
+    (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) {f : N → ι → ℝ} {g : N → M} {n : N}
+    (hf : MDifferentiableAt I' 𝓘(ℝ, ι → ℝ) f n) (hg : MDifferentiableAt I' I g n)
+    (ξ ξ' : TangentSpace I' n) :
+    SmoothBundleForm.eval₂ σ (h.hamiltonianFlowActionComp hσc hκ (f n) (g n))
+        (mfderiv I' I (fun n ↦ h.hamiltonianFlowActionComp hσc hκ (f n) (g n)) n ξ)
+        (mfderiv I' I (fun n ↦ h.hamiltonianFlowActionComp hσc hκ (f n) (g n)) n ξ') =
+      SmoothBundleForm.eval₂ σ (g n) (mfderiv I' I g n ξ) (mfderiv I' I g n ξ') +
+        (mfderiv I' 𝓘(ℝ, ι → ℝ) f n ξ ⬝ᵥ mfderiv I' 𝓘(ℝ, ι → ℝ) ((κ ∘ π) ∘ g) n ξ' -
+          mfderiv I' 𝓘(ℝ, ι → ℝ) f n ξ' ⬝ᵥ mfderiv I' 𝓘(ℝ, ι → ℝ) ((κ ∘ π) ∘ g) n ξ) :=
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).eval₂_mfderiv_hamiltonianFlowAction_comp _ _ _ hf hg ξ ξ'
 
 end FlowAction
 
@@ -222,17 +238,22 @@ private theorem contMDiff_coord_comp :
     ContMDiff I 𝓘(ℝ, Fin (finrank ℝ F) → ℝ) ∞ (h.coord b ∘ π) :=
   (h.coord_spec b).1.comp h.contMDiff
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-private theorem contMDiff_coord_apply (i : Fin (finrank ℝ F)) :
-    ContMDiff J 𝓘(ℝ) ∞ fun c ↦ h.coord b c i :=
-  contMDiff_pi_module_iff.1 (h.coord_spec b).1 i
+omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+private theorem poissonBracket_coord_comp (i j : Fin (finrank ℝ F)) (y : M) :
+    σ.poissonBracket ((h.coord b ∘ π) · i) ((h.coord b ∘ π) · j) y = 0 :=
+  h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
+    ((h.coord_spec b).1.mdifferentiable (by simp)) i j y
+
+omit [I.Boundaryless] in
+private theorem isCompleteVectorField_coord_comp (i : Fin (finrank ℝ F)) :
+    IsCompleteVectorField (σ.hamiltonianVectorField ((h.coord b ∘ π) · i)) :=
+  h.isCompleteVectorField_hamiltonianVectorField_comp_apply ((h.coord_spec b).1.of_le (by simp)) i
 
 /-- The stabilizer of `x` for the Hamiltonian flow action of the coordinates `coord ∘ π`. -/
 private abbrev coordStabilizer (x : M) : AddSubgroup (Fin (finrank ℝ F) → ℝ) :=
   (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowStabilizer (h.contMDiff_coord_comp b)
-    (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
-      ((h.coord_spec b).1.mdifferentiable (by simp)))
-    (h.isCompleteVectorField_hamiltonianVectorField_comp_apply ((h.coord_spec b).1.of_le (by simp)))
+    (h.poissonBracket_coord_comp b)
+    (h.isCompleteVectorField_coord_comp b)
     x
 
 /-- The coordinates of a covector at `b` in the basis dual to the coordinates `coord`. -/
@@ -316,9 +337,8 @@ theorem fiberAction_comm (α β : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
 theorem exists_fiberAction_eq (x y : π ⁻¹' {b}) : ∃ α, h.fiberAction hσc b α x = y := by
   obtain ⟨v, hv⟩ := (⟨hσc, hσ⟩ : σ.IsSymplectic).exists_hamiltonianFlowAction_apply_eq
     (h.contMDiff_coord_comp b)
-    (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
-      ((h.coord_spec b).1.mdifferentiable (by simp)))
-    (h.isCompleteVectorField_hamiltonianVectorField_comp_apply ((h.coord_spec b).1.of_le (by simp)))
+    (h.poissonBracket_coord_comp b)
+    (h.isCompleteVectorField_coord_comp b)
     (h.two_mul_card_eq x)
     (h.isRegularPoint_coord_comp_of_mem_connectedComponentIn b x)
     ((h.connectedComponentIn_coord_comp b x).symm.subset y.2)
@@ -420,9 +440,8 @@ private theorem discreteTopology_coordStabilizer (x : π ⁻¹' {b}) :
     DiscreteTopology (h.coordStabilizer hσc b x) :=
   (⟨hσc, hσ⟩ : σ.IsSymplectic).discreteTopology_hamiltonianFlowStabilizer
     (h.contMDiff_coord_comp b)
-    (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
-      ((h.coord_spec b).1.mdifferentiable (by simp)))
-    (h.isCompleteVectorField_hamiltonianVectorField_comp_apply ((h.coord_spec b).1.of_le (by simp)))
+    (h.poissonBracket_coord_comp b)
+    (h.isCompleteVectorField_coord_comp b)
     (h.isRegularPoint_coord_comp b x.2)
 
 /-- **The period lattice is discrete.** -/
@@ -446,10 +465,8 @@ instance isZLattice_periodLattice : IsZLattice ℝ (h.periodLattice hσc b).toIn
   have : IsZLattice ℝ (h.coordStabilizer hσc b x).toIntSubmodule :=
     (⟨hσc, hσ⟩ : σ.IsSymplectic).isZLattice_hamiltonianFlowStabilizer
       (h.contMDiff_coord_comp b)
-      (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
-        ((h.coord_spec b).1.mdifferentiable (by simp)))
-      (h.isCompleteVectorField_hamiltonianVectorField_comp_apply
-        ((h.coord_spec b).1.of_le (by simp)))
+      (h.poissonBracket_coord_comp b)
+      (h.isCompleteVectorField_coord_comp b)
       (h.two_mul_card_eq x)
       (h.isRegularPoint_coord_comp_of_mem_connectedComponentIn b x)
       (by rw [h.connectedComponentIn_coord_comp b x]; exact h.isCompact_preimage_singleton b)
@@ -479,10 +496,8 @@ def quotientPeriodLatticeHomeomorph (x : π ⁻¹' {b}) :
       (h.map_dualCoord_periodLattice hσc b x))).trans <|
     ((⟨hσc, hσ⟩ : σ.IsSymplectic).quotientHamiltonianFlowStabilizerHomeomorph
       (h.contMDiff_coord_comp b)
-      (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable
-        ((h.coord_spec b).1.mdifferentiable (by simp)))
-      (h.isCompleteVectorField_hamiltonianVectorField_comp_apply
-        ((h.coord_spec b).1.of_le (by simp)))
+      (h.poissonBracket_coord_comp b)
+      (h.isCompleteVectorField_coord_comp b)
       (h.two_mul_card_eq x)
       (h.isRegularPoint_coord_comp_of_mem_connectedComponentIn b x)).trans <|
     Homeomorph.setCongr (h.connectedComponentIn_coord_comp b x)

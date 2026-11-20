@@ -203,17 +203,6 @@ private def coverSection (q : (ι → ℝ) × B) : M :=
   h.hamiltonianFlowActionComp hσc hκ (-q.1) (s q.2)
 
 omit [FiniteDimensional ℝ F] [T2Space B] in
-/-- The map `(c, x) ↦ (-c) • s x` in terms of
-`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction`. -/
-private theorem coverSection_eq :
-    h.coverSection hσc s hκ = fun q ↦ ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction
-      (hκ.comp h.contMDiff)
-      (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable (hκ.mdifferentiable (by simp)))
-      (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp)))
-      (-q.1)).toMul (s q.2) :=
-  funext fun q ↦ h.hamiltonianFlowActionComp_def hσc hκ (-q.1) (s q.2)
-
-omit [FiniteDimensional ℝ F] [T2Space B] in
 include hs in
 /-- **The pullback along `(c, x) ↦ (-c) • s x`.** It pulls `σ` back to `s^* σ` plus the form
 `(w, u), (w', u') ↦ w' ⬝ᵥ dκ u - w ⬝ᵥ dκ u'`. -/
@@ -224,7 +213,6 @@ private theorem eval₂_mfderiv_coverSection (hsm : ContMDiff J I ∞ s) (q : (�
         (mfderiv (𝓘(ℝ, ι → ℝ).prod J) I (h.coverSection hσc s hκ) q v') =
       SmoothBundleForm.eval₂ σ (s q.2) (mfderiv J I s q.2 v.2) (mfderiv J I s q.2 v'.2) +
         (v'.1 ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) κ q.2 v.2 - v.1 ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) κ q.2 v'.2) := by
-  rw [coverSection_eq]
   -- The derivatives of `(c, x) ↦ -c`, `(c, x) ↦ s x` and `(c, x) ↦ κ (π (s x)) = κ x`.
   have hneg : HasMFDerivAt (𝓘(ℝ, ι → ℝ).prod J) 𝓘(ℝ, ι → ℝ) (fun q : (ι → ℝ) × B ↦ -q.1) q
       ((-ContinuousLinearMap.id ℝ (ι → ℝ)).comp (ContinuousLinearMap.fst ℝ (ι → ℝ) F)) :=
@@ -239,26 +227,21 @@ private theorem eval₂_mfderiv_coverSection (hsm : ContMDiff J I ∞ s) (q : (�
     rfl
   have hsd : MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod J) I (s ∘ Prod.snd) q :=
     ((hsm.comp contMDiff_snd) q).mdifferentiableAt (by simp)
+  -- In `hsnd` and `hκs`, `ContinuousLinearMap.snd` applied to the tangent vector `w` of the
+  -- product model is `w.2` by definition.
   have hsnd (w : TangentSpace (𝓘(ℝ, ι → ℝ).prod J) q) :
       mfderiv (𝓘(ℝ, ι → ℝ).prod J) I (s ∘ Prod.snd) q w = mfderiv J I s q.2 w.2 := by
-    rw [mfderiv_comp_apply q ((hsm q.2).mdifferentiableAt (by simp)) mdifferentiableAt_snd,
-      mfderiv_snd]
-    -- `ContinuousLinearMap.snd` applied to the tangent vector `w` of the product model is `w.2`.
+    rw [mfderiv_comp_snd]
     rfl
   have hκs (w : TangentSpace (𝓘(ℝ, ι → ℝ).prod J) q) :
       mfderiv (𝓘(ℝ, ι → ℝ).prod J) 𝓘(ℝ, ι → ℝ) ((κ ∘ π) ∘ (s ∘ Prod.snd)) q w =
         mfderiv J 𝓘(ℝ, ι → ℝ) κ q.2 w.2 := by
     have hcomp : (κ ∘ π) ∘ (s ∘ Prod.snd) = κ ∘ (Prod.snd : (ι → ℝ) × B → B) :=
       funext fun q ↦ by simp [hs]
-    rw [hcomp, mfderiv_comp_apply q ((hκ q.2).mdifferentiableAt (by simp)) mdifferentiableAt_snd,
-      mfderiv_snd]
-    -- `ContinuousLinearMap.snd` applied to the tangent vector `w` of the product model is `w.2`.
+    rw [hcomp, mfderiv_comp_snd]
     rfl
-  refine ((⟨hσc, hσ⟩ : σ.IsSymplectic).eval₂_mfderiv_hamiltonianFlowAction_comp
-    (hκ.comp h.contMDiff)
-    (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable (hκ.mdifferentiable (by simp)))
-    (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp)))
-    hneg.mdifferentiableAt hsd v v').trans ?_
+  refine (h.eval₂_mfderiv_hamiltonianFlowActionComp_comp hσc hκ hneg.mdifferentiableAt hsd v
+    v').trans ?_
   rw [hneg', hneg', hsnd, hsnd, hκs, hκs]
   -- `(-a) ⬝ᵥ b = -(a ⬝ᵥ b)`, where the negation is taken in the tangent space of `ι → ℝ`, a
   -- type synonym of `ι → ℝ`.
@@ -271,11 +254,8 @@ omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- The map `(c, x) ↦ (-c) • s x` is smooth. -/
 private theorem contMDiff_coverSection (hsm : ContMDiff J I ∞ s) :
     ContMDiff (𝓘(ℝ, ι → ℝ).prod J) I ∞ (h.coverSection hσc s hκ) :=
-  h.coverSection_eq hσc hκ ▸
-    ((⟨hσc, hσ⟩ : σ.IsSymplectic).contMDiff_hamiltonianFlowAction_uncurry (hκ.comp h.contMDiff)
-      (h.poissonBracket_comp_apply_eq_zero_of_mdifferentiable (hκ.mdifferentiable (by simp)))
-      (h.isCompleteVectorField_hamiltonianVectorField_comp_apply (hκ.of_le (by simp)))).comp
-      ((contDiff_neg.contMDiff.comp contMDiff_fst).prodMk (hsm.comp contMDiff_snd))
+  (h.contMDiff_hamiltonianFlowActionComp_uncurry hσc hκ).comp
+    ((contDiff_neg.contMDiff.comp contMDiff_fst).prodMk (hsm.comp contMDiff_snd))
 
 variable [BoundarylessManifold J B]
 
