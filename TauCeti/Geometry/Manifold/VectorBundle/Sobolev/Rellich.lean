@@ -22,8 +22,9 @@ Let `M` be a smooth Hausdorff manifold without boundary modelled on a finite-dim
 product space `E`, let `V → M` be a smooth real vector bundle with finite-dimensional model fibre
 `F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p ≤ ∞` and every order
 `k`, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` of `TauCeti.SectionChartData.lowerOrderL` is a
-compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`). Composing these, the
-inclusion `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact as well.
+compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`). The endpoint `p = ∞`
+is included: smooth sections are not dense in `W^{k+1,∞}(V)`, but neither ingredient below needs
+that density. Composing these, the inclusion `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact as well.
 
 Together with the injectivity of the chart data (`TauCeti.SectionChartData.chartValuesL`), which
 forget all derivatives, compactness gives **Ehrling's inequality**: the `W^{k,p}` norm of a section
@@ -32,10 +33,12 @@ norm (`TauCeti.SobolevSection.exists_norm_lowerOrdersL_le`). This is how the int
 a priori estimate on a compact base is replaced by the `Lᵖ` norm.
 
 The local input is Rellich compactness on relatively compact subdomains,
-`TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`. It does not apply directly to the chart
-images `A.image j`, whose closures need not lie inside an open set on which the chart data are
-controlled. Instead the chart data in chart `j` are transferred from the other charts with
-`TauCeti.FiniteBundleAtlas.transferL` (`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`).
+`TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`, which holds for every `1 ≤ p ≤ ∞`. It does
+not apply directly to the chart images `A.image j`, whose closures need not lie inside an open set
+on which the chart data are controlled. Instead the chart data in chart `j` are transferred from
+the other charts with `TauCeti.FiniteBundleAtlas.transferL`
+(`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`), a change of variables in `W^{k,p}` that is
+also available for every `1 ≤ p ≤ ∞` (`TauCeti.Wkp.compL`).
 
 Shrink the chart domains to open sets `D i` with `closure (D i) ⊆ A.dom i` that still cover `M`.
 The chart image `A.image j` is covered by the finitely many pieces `A.chart j '' (A.dom j ∩ D i)`
@@ -71,7 +74,7 @@ Each further order `r` first applies one Sobolev embedding and then the case `r 
 * `TauCeti.SobolevSection.exists_norm_lowerOrdersL_le`: **Ehrling's inequality**
   `‖w‖_{W^{k,p}} ≤ ε ‖w‖_{W^{k+d+1,p}} + C_ε ‖w‖_{Lᵖ}`.
 * `TauCeti.SobolevSection.exists_isCompactOperator_of_le`: `W^{k+1,p}(V) → W^{k,q}(V)` is compact
-  for `q ≤ p` and `q < ∞`, including `p = ∞`.
+  for `q ≤ p`, including `p = ∞`.
 * `TauCeti.SobolevSection.exists_isCompactOperator_of_inv_lt_inv_add`: **the Rellich–Kondrachov
   theorem** for Sobolev sections, `W^{k+r,p}(V) → W^{k,q}(V)` is compact for `1/p < 1/q + r/n`,
   `q < ∞`, in dimension `n ≥ 2`.
@@ -219,15 +222,15 @@ private theorem exists_isCompactOperator_of_ofExponentLE {p' : ℝ≥0∞} [Fact
   rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
 
 /-- **Rellich compactness at a lower exponent.** On a compact manifold without boundary, given by a
-finite bundle atlas of a Hausdorff manifold, let `1 ≤ q ≤ p ≤ ∞` with `q < ∞`. Then for every order
-`k` there is a compact operator `W^{k+1,p}(V) → W^{k,q}(V)` keeping the underlying section. The
-case `p = ∞` is included. -/
-theorem exists_isCompactOperator_of_le [T2Space M] (hq : q ≠ ⊤) (hqp : q ≤ p) :
+finite bundle atlas of a Hausdorff manifold, let `1 ≤ q ≤ p ≤ ∞`. Then for every order `k` there
+is a compact operator `W^{k+1,p}(V) → W^{k,q}(V)` keeping the underlying section. The cases
+`p = ∞` and `q = ∞` are included. -/
+theorem exists_isCompactOperator_of_le [T2Space M] (hqp : q ≤ p) :
     ∃ T : SobolevSection A μ p (k + 1) →L[ℝ] SobolevSection A μ q k, IsCompactOperator T ∧
       ∀ w i, A.sectionChartData.chartValueL μ q k i (T w) =ᵐ[μ.restrict (A.image i)]
         A.sectionChartData.chartValueL μ p (k + 1) i w :=
   exists_isCompactOperator_of_ofExponentLE A μ k hqp
-    ⟨A.sectionChartData.lowerOrderL μ q k, isCompactOperator_lowerOrderL A μ q k hq,
+    ⟨A.sectionChartData.lowerOrderL μ q k, isCompactOperator_lowerOrderL A μ q k,
       fun w i ↦ .of_eq (by rw [SectionChartData.chartValueL_coe_lowerOrderL])⟩
 
 /-- **Rellich–Kondrachov compactness by interpolation.** If `p < q` and `W^{k+1,p}(V)` embeds into
@@ -252,7 +255,7 @@ private theorem exists_isCompactOperator_of_inv_add_eq_of_lt [T2Space M] {s : �
       exact hS w i
   refine ⟨(A.sectionChartData.ofExponentLEL μ k hqs.le).comp S, ?_, fun w i ↦ ?_⟩
   · refine IsCompactOperator.of_norm_le_mul_rpow_mul_rpow
-      (isCompactOperator_lowerOrderL A μ p k (hpq.trans_le le_top).ne)
+      (isCompactOperator_lowerOrderL A μ p k)
       (T₀ := (A.sectionChartData.lowerOrderL μ p k).toLinearMap) S (C := 1) hθ.1.le hθ.2 fun w ↦ ?_
     rw [one_mul, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, ← hlow]
     exact SectionChartData.norm_ofExponentLEL_le_norm_rpow_mul_norm_rpow (hpq.trans hqs).le hqs.le
@@ -287,7 +290,7 @@ theorem exists_isCompactOperator_of_inv_lt_inv_add [T2Space M] (hn : 1 < finrank
     have : Fact (1 ≤ t⁻¹) := ⟨ENNReal.one_le_inv.2 ht₁⟩
     refine exists_isCompactOperator_of_ofExponentLE A μ k (ENNReal.inv_le_iff_inv_le.1 hpt) ?_
     rcases le_or_gt q t⁻¹ with hqt | htq'
-    · exact exists_isCompactOperator_of_le A μ k hq hqt
+    · exact exists_isCompactOperator_of_le A μ k hqt
     · refine exists_isCompactOperator_of_inv_add_eq_of_lt A μ k
         (ENNReal.inv_ne_top.2 (tsub_pos_of_lt hνt).ne') ?_ htq' (ENNReal.inv_lt_inv.1 ?_)
       · rw [inv_inv, inv_inv, tsub_add_cancel_of_le hνt.le]
