@@ -274,6 +274,20 @@ theorem covariantPhaseForm_sub_phaseForm_mul (hu : DifferentiableAt ℝ u x)
     Pi.sub_apply]
   abel
 
+/-- The derivative of a function `u` that is circle-valued near `x` is `du = u · i Im (u⁻¹ du)`:
+since `du` is orthogonal to `u`, `u⁻¹ du = conj u du` is imaginary. -/
+theorem fderiv_apply_eq_mul_I_mul_phaseForm (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1) (v : E) :
+    fderiv ℝ u x v = u x * (I * phaseForm u x (fun _ ↦ v)) := by
+  have hux : ‖u x‖ = 1 := hu.self_of_nhds
+  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
+    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
+    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
+      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
+  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
+  have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
+    Complex.ext (by simp [hre]) (by simp)
+  rw [phaseForm_apply, ← hw, mul_inv_cancel_left₀ hu0]
+
 /-- The covariant derivative is covariant under gauge transformations
 `(b, α) ↦ (b - Im (u⁻¹ du), u α)` by a `u` that is circle-valued near `x`:
 `∇_{b - Im (u⁻¹ du)} (u α) = u ∇_b α` at `x`.
@@ -282,22 +296,9 @@ theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1
     (hud : DifferentiableAt ℝ u x) (hα : DifferentiableAt ℝ α x) :
     covariantDeriv (b - phaseForm u) (u * α) x = u x • covariantDeriv b α x := by
   ext v
-  have hux : ‖u x‖ = 1 := hu.self_of_nhds
-  -- Since `|u| = 1` near `x`, `du` is orthogonal to `u`, so `u⁻¹ du = conj u du` is imaginary.
-  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
-    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
-    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
-      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
-  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
-  have hdu : fderiv ℝ u x v = u x * (I * ((u x)⁻¹ * fderiv ℝ u x v).im) := by
-    have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
-      Complex.ext (by simp [hre]) (by simp)
-    rw [← hw, mul_inv_cancel_left₀ hu0]
   simp only [covariantDeriv_apply, fderiv_mul hud hα, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply, phaseForm_apply, _root_.add_apply, _root_.smul_apply,
-    smul_eq_mul, Pi.mul_apply, ofReal_sub]
-  generalize ((u x)⁻¹ * fderiv ℝ u x v).im = c at hdu ⊢
-  rw [hdu]
+    ContinuousAlternatingMap.sub_apply, _root_.add_apply, _root_.smul_apply,
+    smul_eq_mul, Pi.mul_apply, ofReal_sub, fderiv_apply_eq_mul_I_mul_phaseForm hu v]
   ring
 
 /-! ### The cutoff phase form and the cutoff current -/
