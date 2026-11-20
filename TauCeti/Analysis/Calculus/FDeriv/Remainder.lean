@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Topology.MetricSpace.Thickening

@@ -87,8 +87,8 @@ private theorem adjointCoeff_eq (ω : SymplecticForm V) {J : ℝ → V → V →
   have hX0 : ω.hamiltonianVectorField (fun _ : V ↦ (0 : ℝ)) = fun _ ↦ 0 :=
     funext fun _ ↦ by simp [hamiltonianVectorField_def]
   have hd := (hJ (z.2, w z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hw.hasFDerivAt)
-  rw [show (fun p : ℝ × ℝ ↦ J p.2 (w p)) = uncurry J ∘ fun p ↦ (p.2, w p) from rfl, hd.fderiv,
-    adjointCoeff]
+  rw [show (fun p : ℝ × ℝ ↦ J p.2 (w p)) = uncurry J ∘ fun p ↦ (p.2, w p) from
+    funext fun p ↦ (uncurry_apply_pair J p.2 (w p)).symm, hd.fderiv, adjointCoeff]
   congr 1
   ext y
   simp [floerLinearizationCoeff_apply, hX0]
@@ -129,21 +129,17 @@ private theorem exists_pos_forall_norm_adjointCoeff_sub_le (ω : SymplecticForm 
   have hc : Continuous fun t ↦ (x t, ω.hamiltonianVectorField (H t) (x t)) :=
     hx.prodMk ((ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous.comp
       (continuous_id.prodMk hx))
-  have hΦJ : Continuous fun p : ℝ × V × V ↦ J p.1 p.2.1 :=
-    hJ.continuous.comp (continuous_fst.prodMk continuous_snd.fst)
-  obtain ⟨δ₁, hδ₁, h₁⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le
-    hc.continuousOn (fun _ _ ↦ hΦJ.continuousAt) (half_pos hε)
-  obtain ⟨δ₂, hδ₂, h₂⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le
-    hc.continuousOn (fun _ _ ↦ (continuous_adjointCoeff ω hJ hH).continuousAt) (half_pos hε)
-  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun t ht q q' hq hq' ↦ ⟨?_, ?_⟩⟩
-  · have ha := h₁ t ht q (hq.trans (min_le_left _ _))
-    have hb := h₁ t ht q' (hq'.trans (min_le_left _ _))
-    rw [norm_sub_rev] at hb
-    simpa using (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add ha hb)
-  · have ha := h₂ t ht q (hq.trans (min_le_right _ _))
-    have hb := h₂ t ht q' (hq'.trans (min_le_right _ _))
-    rw [norm_sub_rev] at hb
-    simpa using (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add ha hb)
+  -- Both values at once, as the pair `(J_t, adjointCoeff)` in the product space.
+  have hΦ : Continuous fun p : ℝ × V × V ↦ (J p.1 p.2.1, adjointCoeff ω J H p) :=
+    (hJ.continuous.comp (continuous_fst.prodMk continuous_snd.fst)).prodMk
+      (continuous_adjointCoeff ω hJ hH)
+  obtain ⟨δ, hδ, h⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_pos_forall_norm_sub_le
+    hc.continuousOn (fun _ _ ↦ hΦ.continuousAt) (half_pos hε)
+  refine ⟨δ, hδ, fun t ht q q' hq hq' ↦ ?_⟩
+  have hb := h t ht q' hq'
+  rw [norm_sub_rev] at hb
+  simpa using norm_prod_le_iff.1
+    ((norm_sub_le_norm_sub_add_norm_sub _ _ _).trans (add_le_add (h t ht q hq) hb))
 
 omit [FiniteDimensional ℝ V] in
 /-- A map within `θ` of `y` at `z`, whose derivative there is within `θ` of `(σ, τ) ↦ τ X`, has
