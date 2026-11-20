@@ -146,7 +146,7 @@ theorem transvection_kleinY : transvection kleinY = kleinX * kleinY := by decide
 @[simp]
 theorem transvection_kleinX_mul_kleinY : transvection (kleinX * kleinY) = kleinY := by decide
 
-/-- **The transvection swaps the two complements of `⟨x⟩`.** -/
+/-- **The transvection carries the complement `⟨y⟩` of `⟨x⟩` to `⟨x * y⟩`.** -/
 theorem map_transvection_zpowers_kleinY :
     (zpowers kleinY).map transvection.toMonoidHom = zpowers (kleinX * kleinY) := by
   rw [MonoidHom.map_zpowers, MulEquiv.coe_toMonoidHom, transvection_kleinY]
@@ -167,9 +167,9 @@ theorem isComplement'_zpowers_kleinX_iff {D : Subgroup (Multiplicative (ZMod 2 �
   constructor
   · intro hD
     rcases kleinY_mem_or_kleinX_mul_kleinY_mem hD with h | h
-    · exact .inl (isComplement'_zpowers_kleinX_zpowers_kleinY.eq_of_le hD
+    · exact .inl (isComplement'_zpowers_kleinX_zpowers_kleinY.eq_of_le hD.disjoint
         (zpowers_le.mpr h)).symm
-    · exact .inr (isComplement'_zpowers_kleinX_zpowers_kleinX_mul_kleinY.eq_of_le hD
+    · exact .inr (isComplement'_zpowers_kleinX_zpowers_kleinX_mul_kleinY.eq_of_le hD.disjoint
         (zpowers_le.mpr h)).symm
   · rintro (rfl | rfl)
     · exact isComplement'_zpowers_kleinX_zpowers_kleinY
