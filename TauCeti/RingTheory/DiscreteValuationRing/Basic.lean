@@ -28,6 +28,8 @@ it sends `x` to a nonzero nonunit.
 
 ## Main results
 
+* `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ`: if
+  `c * ϖ ^ n ∈ 𝔪 ^ (n + 1)` for a uniformizer `ϖ`, then `c ∈ 𝔪`.
 * `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal`: `x ∈ 𝔪 ^ n` is
   `n ≤ addVal x`.
 * `TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton`: for `x ≠ 0`,
@@ -175,10 +177,11 @@ theorem _root_.Irreducible.smodEq_maximalIdeal_pow_iff_dvd {ϖ : S} (hϖ : Irred
     x ≡ y [SMOD maximalIdeal S ^ n] ↔ ϖ ^ n ∣ x - y := by
   rw [SModEq.sub_mem, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton]
 
-/-- A discrete valuation ring is infinite: the powers of a uniformizer are pairwise distinct. -/
-instance infinite : Infinite S := by
-  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
-  exact .of_injective _ (pow_injective_of_not_isUnit hϖ.not_isUnit hϖ.ne_zero)
+/-- A discrete valuation ring is infinite: a finite domain is a field, and a discrete valuation
+ring is not. -/
+instance infinite : Infinite S :=
+  not_finite_iff_infinite.mp fun _ ↦
+    _root_.IsDiscreteValuationRing.not_isField S (Finite.isField_of_domain S)
 
 section Map
 

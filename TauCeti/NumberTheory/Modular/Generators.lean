@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Modular.Relations
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
+public import TauCeti.NumberTheory.Modular.Relations
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -81,6 +82,15 @@ theorem U_pow_three : U ^ 3 = 1 := by
 theorem S_mul_R_inv_mul_S_inv : S * R⁻¹ * S⁻¹ = -U := by
   decide
 
+/-- Coordinate reflection sends `R = S T` to `-U`. -/
+@[simp]
+theorem conjJ_R : SpecialLinearGroup.conjJ R = -U := by
+  ext i j; fin_cases i <;> fin_cases j <;> simp
+
+/-- Conjugating `R⁻¹` by `S⁻¹` on the left and `S` on the right yields `conjJ R`. -/
+theorem S_inv_mul_R_inv_mul_S : S⁻¹ * (R⁻¹ * S) = SpecialLinearGroup.conjJ R := by
+  rw [conjJ_R]; decide
+
 /-- Recovering the translation from `R`, with the inverse of `S`. -/
 theorem S_inv_mul_R : S⁻¹ * R = T := by
   simp [R]
@@ -125,6 +135,13 @@ theorem coe_S_mul_coe_R_inv_mul_coe_S_inv :
     ← QuotientGroup.mk_mul, S_mul_R_inv_mul_S_inv]
   apply QuotientGroup.eq.mpr
   simp [SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one]
+
+/-- Projectively, `R` is conjugate to the inverse of `U` by `S`. -/
+theorem coe_S_mul_coe_U_inv_mul_coe_S :
+    (S : PSL(2, ℤ)) * (U : PSL(2, ℤ))⁻¹ * S = R := by
+  rw [R_def, U_def, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
+    _root_.mul_inv_rev, inv_inv, coe_S_inv, ← mul_assoc (S : PSL(2, ℤ)) T S,
+    _root_.Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S]
 
 /-- The projective class of `R` has exact order three. -/
 @[simp]

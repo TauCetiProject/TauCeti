@@ -81,9 +81,9 @@ of order dividing two: `Diff(K(W) / K(x)) = O + T₀ + T₁ + T₋₁`. -/
 theorem different_eq :
     Divisor.different K (curve K).toAffine.FunctionField (IsFunctionField.ratFunc K) =
       WeilDivisor.ofPoint (Place.infinity (curve K).toAffine) +
-        WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).1 +
-        WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).1 +
-        WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).1 := by
+        WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).val +
+        WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).val +
+        WeilDivisor.ofPoint ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).val := by
   classical
   rw [Affine.different_eq_sum_of_card_eq_four neg_eq_self_of_mem card_twoTorsion,
     Finset.sum_insert (by simp [eq_comm (a := (0 : (curve K).toAffine.Point))]),
@@ -95,9 +95,9 @@ order dividing two: the place at infinity and the places of `(0, 0)`, `(1, 0)` a
 theorem one_lt_ramificationIdx_iff (P : Place K (curve K).toAffine.FunctionField) :
     1 < Place.ramificationIdx (RatFunc K) P ↔
       P = Place.infinity (curve K).toAffine ∨
-        P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).1 ∨
-        P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).1 ∨
-        P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).1 := by
+        P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).val ∨
+        P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).val ∨
+        P = ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).val := by
   classical
   rw [Affine.one_lt_ramificationIdx_iff_of_card_eq_four neg_eq_self_of_mem
     card_twoTorsion]
@@ -108,7 +108,7 @@ theorem one_lt_ramificationIdx_iff (P : Place K (curve K).toAffine.FunctionField
 /-- The place of a point of order dividing two has ramification index `2` over `K(x)`. -/
 private theorem ramificationIdx_place_of_mem [DecidableEq K] {T : (curve K).toAffine.Point}
     (hT : T ∈ ({0, pointZero K, pointOne K, pointNegOne K} : Finset (curve K).toAffine.Point)) :
-    Place.ramificationIdx (RatFunc K) ((curve K).toAffine.pointEquivDegreeOnePlace T).1 = 2 :=
+    Place.ramificationIdx (RatFunc K) ((curve K).toAffine.pointEquivDegreeOnePlace T).val = 2 :=
   Affine.ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four neg_eq_self_of_mem
     card_twoTorsion hT
 
@@ -116,7 +116,7 @@ private theorem ramificationIdx_place_of_mem [DecidableEq K] {T : (curve K).toAf
 @[simp]
 theorem ramificationIdx_pointZero :
     Place.ramificationIdx (RatFunc K)
-      ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).1 = 2 := by
+      ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).val = 2 := by
   classical
   exact ramificationIdx_place_of_mem (by simp)
 
@@ -124,7 +124,7 @@ theorem ramificationIdx_pointZero :
 @[simp]
 theorem ramificationIdx_pointOne :
     Place.ramificationIdx (RatFunc K)
-      ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).1 = 2 := by
+      ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).val = 2 := by
   classical
   exact ramificationIdx_place_of_mem (by simp)
 
@@ -132,7 +132,7 @@ theorem ramificationIdx_pointOne :
 @[simp]
 theorem ramificationIdx_pointNegOne :
     Place.ramificationIdx (RatFunc K)
-      ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).1 = 2 := by
+      ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).val = 2 := by
   classical
   exact ramificationIdx_place_of_mem (by simp)
 
@@ -150,11 +150,11 @@ theorem hurwitz_genus_formula :
           (2 * (genus K (RatFunc K) : ℤ) - 2) +
         ((Place.ramificationIdx (RatFunc K) (Place.infinity (curve K).toAffine) - 1 : ℤ) +
           (Place.ramificationIdx (RatFunc K)
-            ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).1 - 1) +
+            ((curve K).toAffine.pointEquivDegreeOnePlace (pointZero K)).val - 1) +
           (Place.ramificationIdx (RatFunc K)
-            ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).1 - 1) +
+            ((curve K).toAffine.pointEquivDegreeOnePlace (pointOne K)).val - 1) +
           (Place.ramificationIdx (RatFunc K)
-            ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).1 - 1)) := by
+            ((curve K).toAffine.pointEquivDegreeOnePlace (pointNegOne K)).val - 1)) := by
   rw [Affine.genus_functionField, Affine.finrank_functionField, genus_ratFunc,
     Place.ramificationIdx_infinity, ramificationIdx_pointZero, ramificationIdx_pointOne,
     ramificationIdx_pointNegOne]

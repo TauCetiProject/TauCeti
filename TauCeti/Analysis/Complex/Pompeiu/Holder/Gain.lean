@@ -62,7 +62,7 @@ private theorem exists_tendstoUniformlyOn_fderiv_holderOnWith
   have : CompactSpace K := isCompact_iff_compactSpace.mp (isCompact_closedBall c R)
   let V (n : ℕ) : K →ᵇ (ℂ →L[ℝ] ℂ) := BoundedContinuousFunction.mkOfCompact
     ⟨fun x ↦ fderiv ℝ (Tn n) x, ((hSmooth n).continuous_fderiv (by simp)).comp
-      continuous_subtype_val⟩
+      continuous_subtypeVal⟩
   have hEqui : Equicontinuous ((↑) : range V → K → (ℂ →L[ℝ] ℂ)) := by
     apply Metric.equicontinuous_of_continuity_modulus
       (fun t : ℝ ↦ B * t ^ (α : ℝ))

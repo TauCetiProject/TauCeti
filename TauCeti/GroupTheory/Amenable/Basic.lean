@@ -38,6 +38,7 @@ isomorphisms of topological groups.
   range preserves left invariance.
 * `TauCeti.Amenable.of_denseRange`: amenability passes to the target of a continuous homomorphism
   with dense range, in particular to images under surjective continuous homomorphisms.
+* `TauCeti.Amenable.of_le`: amenability passes from a finer to a coarser group topology.
 * `ContinuousMulEquiv.amenable_iff`: amenability is invariant under isomorphisms of topological
   groups.
 
@@ -50,8 +51,6 @@ isomorphisms of topological groups.
 public section
 
 noncomputable section
-
-open scoped BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -140,7 +139,7 @@ class Amenable : Prop where
 variable (G) in
 /-- A topological group is amenable exactly when `UCB G` carries a left-invariant mean. -/
 theorem amenable_iff : Amenable G ↔ ∃ m : Mean G, m.IsLeftInvariant :=
-  ⟨fun h => h.1, fun h => ⟨h⟩⟩
+  ⟨fun h => h.exists_isLeftInvariant, fun h => ⟨h⟩⟩
 
 /-- The target of a continuous homomorphism with dense range from an amenable topological group
 is amenable; in particular, so is the image under a surjective continuous homomorphism. -/

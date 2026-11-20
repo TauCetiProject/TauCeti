@@ -60,8 +60,8 @@ theorem exists_antilipschitzWith_of_locally
   -- separately can unfold NNReal to a subtype and invalidate the coercion's type.
   change dist (x : X) y ≤ (min c a)⁻¹ * dist (f x) (f y)
   rw [← div_eq_inv_mul, le_div_iff₀ hb, mul_comm]
-  have hx := x.2
-  have hy := y.2
+  have hx := x.property
+  have hy := y.property
   by_cases hxy : dist (x : X) y < δ
   · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) dist_nonneg).trans
       (hlocal x hx y hy hxy)

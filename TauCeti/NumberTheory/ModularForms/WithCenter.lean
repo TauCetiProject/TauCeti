@@ -32,9 +32,6 @@ disjoint. This needs no more about `Γ` than the membership description above, s
   element of `Γ`.
 * `Subgroup.inf_withCenter_eq_of_le`: for `Γ' ≤ Γ` with `-I ∈ Γ → -I ∈ Γ'`, the part of
   `Γ'·{±I}` inside `Γ` is `Γ'`.
-* `TauCeti.ModularForm.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
-  `TauCeti.ModularForm.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
-  `[SL₂(ℤ) : Γ] = 2 · [SL₂(ℤ) : ±Γ]`.
 * `ModularGroup.pairwise_disjoint_smul_fdo_out_withCenter`: the translates of `𝒟ᵒ` indexed by
   the cosets of `Γ·{±I}` are pairwise disjoint.
 -/
@@ -80,28 +77,6 @@ theorem _root_.Subgroup.inf_withCenter_eq_of_le {Γ' : Subgroup SL(2, ℤ)} (hle
   · exact hy
   · have h1 : (-1 : SL(2, ℤ)) ∈ Γ := by simpa using Γ.mul_mem hx (Γ.inv_mem (hle hy))
     simpa using Γ'.mul_mem (hneg h1) hy
-
-/-- **The `±Γ` factor of two, index form**: when `-I ∉ Γ`, the index of `Γ` in `SL(2, ℤ)` is
-twice the projective index `[SL₂(ℤ) : ±Γ]`.
-
-This is the conversion the general-level valence formula and the Sturm bound are stated
-against: both read `k · [SL₂(ℤ) : ±Γ] / 12`, while a full-coset norm product is computed over
-`Γ`-cosets, which is twice as many. -/
-theorem index_eq_two_mul_index_withCenter_of_neg_one_notMem (h : (-1 : SL(2, ℤ)) ∉ Γ) :
-    Γ.index = 2 * Γ.withCenter.index :=
-  Subgroup.index_eq_two_mul_index_withCenter
-    (Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mpr (Or.inr rfl)) h
-    fun _ hc ↦ Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc
-
-/-- **The `±Γ` factor of two, relative-index form**: `Γ` has index `2` inside `Γ·{±I}` when
-`-I ∉ Γ`. The geometric reading of
-`index_eq_two_mul_index_withCenter_of_neg_one_notMem`: adjoining `-I` exactly halves the
-number of cosets. -/
-theorem relIndex_withCenter_eq_two_of_neg_one_notMem (h : (-1 : SL(2, ℤ)) ∉ Γ) :
-    Γ.relIndex Γ.withCenter = 2 :=
-  Subgroup.relIndex_withCenter_eq_two
-    (Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mpr (Or.inr rfl)) h
-    fun _ hc ↦ Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc
 
 end TauCeti.ModularForm
 
