@@ -100,7 +100,7 @@ theorem cpow_apply_mul (ν : ℂ) (m n : ℕ) : cpow ν (m * n) = cpow ν m * cp
   · simp
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  simp [hm, hn, Complex.natCast_mul_natCast_cpow]
+  simp [hm, hn, Complex.natCast_mul_cpow]
 
 /-- The power function `n ↦ n ^ ν` is multiplicative. -/
 @[arith_mult]
