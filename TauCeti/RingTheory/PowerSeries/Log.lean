@@ -93,7 +93,7 @@ theorem coeff_logDeriv (f : A⟦X⟧) (n : ℕ) :
 `(log f)' * f = f'`. -/
 theorem logDeriv_mul (f : A⟦X⟧) (hf : constantCoeff f = 1) :
     logDeriv f * f = d⁄dX f := by
-  have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
+  have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
   have hlog := congrArg (subst (f - 1)) (derivative_log_mul_one_add_X (A := A))
   rw [subst_mul hsub, subst_add hsub, subst_X hsub, subst_one, add_sub_cancel] at hlog
   rw [logDeriv, logOf_eq, derivative_subst hsub, map_sub, derivative_one, sub_zero, mul_right_comm,
@@ -169,14 +169,14 @@ theorem logOf_eq_mk_iff {f : A⟦X⟧} (hf : constantCoeff f = 1) (s : ℕ → A
 @[simp]
 theorem constantCoeff_subst_exp {g : A⟦X⟧} (hg : constantCoeff g = 0) :
     constantCoeff ((exp A).subst g) = 1 := by
-  rw [constantCoeff_eq, constantCoeff_subst_of_constantCoeff_zero hg, constantCoeff_exp, map_one]
+  rw [constantCoeff_subst_of_constantCoeff_zero' hg, constantCoeff_exp, map_one]
 
 /-- The formal exponential undoes the formal logarithm: `exp (log f) = f` when `f` has constant
 coefficient one. -/
 @[simp]
 theorem subst_exp_logOf {f : A⟦X⟧} (hf : constantCoeff f = 1) :
     (exp A).subst (logOf f) = f := by
-  have hsub : HasSubst (f - 1) := HasSubst.of_constantCoeff_zero' (by simp [hf])
+  have hsub : HasSubst (f - 1) := HasSubst.sub_one hf
   rw [logOf_eq, ← subst_comp_subst_apply HasSubst.log hsub, subst_exp_log, subst_add hsub,
     subst_X hsub, subst_one, add_sub_cancel]
 
