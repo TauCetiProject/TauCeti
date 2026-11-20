@@ -260,7 +260,8 @@ private theorem holderWith_sum_leibnizJet {X : Type*} [PseudoMetricSpace X] {γ 
     push_cast
     exact B.norm_leibnizJet_le m
   have hsum := HolderWith.sum_nsmul (Finset.antidiagonal r) (fun ij ↦ r.choose ij.1) hK
-  rwa [Nat.sum_antidiagonal_choose, Nat.cast_pow, Nat.cast_ofNat] at hsum
+  rwa [← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_antidiagonal_choose, Nat.cast_pow,
+    Nat.cast_ofNat] at hsum
 
 /-- The Hölder constant of the product fields of top order. -/
 private theorem holderWith_productField (hα : α ≤ 1) (u : ParabolicCkHolderSpace k α E F hab)
