@@ -160,6 +160,31 @@ private theorem continuousOn_of_contDiffOn_apply
 
 variable {mu : Measure (EuclideanSpace ℝ ι)}
 
+omit [DecidableEq ι] in
+/-- A bounded matrix field with smooth entries, as a principal coefficient alone, has an essentially
+bounded field of pointwise energy forms on `Ω`. -/
+private theorem memLp_energyIntegrand_of_contDiffOn_apply
+    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω) {Λ : ℝ}
+    (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) :
+    MemLp (fun x ↦ energyIntegrand (K x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
+      ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Ω) :=
+  memLp_energyIntegrand_of_continuousOn_of_norm_le (b := 0) (c := 0)
+    (continuousOn_of_contDiffOn_apply hK) continuousOn_const continuousOn_const hKb
+    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
+
+/-- The bounded row divergence of a matrix field with smooth entries, as a drift alone, has an
+essentially bounded field of pointwise energy forms on `Ω`. -/
+private theorem memLp_energyIntegrand_drift_of_eq_sum_fderiv
+    (hK : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ K x i j) Ω)
+    (hg : ∀ x ∈ Ω, ∀ i, g x i = ∑ j, fderiv ℝ (fun y ↦ K y i j) x (EuclideanSpace.single j 1))
+    {β : ℝ} (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β) :
+    MemLp (fun x ↦ energyIntegrand ((0 : EuclideanSpace ℝ ι → Matrix ι ι ℝ) x) (g x)
+      ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤ (mu.restrict Ω) :=
+  memLp_energyIntegrand_of_continuousOn_of_norm_le (a := 0) (c := 0)
+    continuousOn_const (contDiffOn_of_eq_sum_fderiv hK hg).continuousOn continuousOn_const
+    (Lam := 0) (fun _ _ ↦ by simp [ContinuousLinearMap.opNorm_zero]) hgb
+    (gamma := 0) (fun _ _ ↦ by simp)
+
 variable [mu.IsAddHaarMeasure]
 
 /-- **The antisymmetric part of a principal coefficient is a drift.** Let `K` be a matrix field
@@ -198,8 +223,8 @@ theorem energyFormH1_ofTestFunctionₗ_eq_of_transpose_eq_neg
     rw [energyFormH1_def, ← hpair]
     refine integral_congr_ae ?_
     filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 ψ] with x hx
-    simp [Ψ, energyIntegrand_apply, driftForm_apply, massForm_apply, matrixBilinearForm_apply,
-      jetField_apply, hx, inner_smul_left, mul_comm]
+    simp [Ψ, energyIntegrand_apply, driftForm_apply, massForm_apply, jetField_apply, hx,
+      inner_smul_left, mul_comm]
   have hzero := (W1p.hasWeakFDerivOn u).integral_divergenceCLM_smul_eq_neg_integral (Φ - Ψ)
   simp only [hdiv, zero_smul, integral_zero, zero_eq_neg] at hzero
   rw [hΦ, hΨ, ← sub_eq_zero, ← integral_sub (TestFunction.integrable_inner hloc Φ)
@@ -217,14 +242,8 @@ theorem energyFormH1_eq_of_transpose_eq_neg
     {Λ β : ℝ} (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β)
     (u : W1p mu Ω 2) (v : W1p0 mu Ω 2) :
     energyFormH1 K 0 0 u v = energyFormH1 0 g 0 u v := by
-  have hcK := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (b := 0) (c := 0)
-    (continuousOn_of_contDiffOn_apply hK) continuousOn_const continuousOn_const hKb
-    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
-  have hcg := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (a := 0) (c := 0)
-    continuousOn_const (contDiffOn_of_eq_sum_fderiv hK hg).continuousOn continuousOn_const
-    (Lam := 0)
-    (fun _ _ ↦ by simp [← matrixBilinearFormLinear_apply, ContinuousLinearMap.opNorm_zero]) hgb
-    (gamma := 0) (fun _ _ ↦ by simp)
+  have hcK := memLp_energyIntegrand_of_contDiffOn_apply (mu := mu) hK hKb
+  have hcg := memLp_energyIntegrand_drift_of_eq_sum_fderiv (mu := mu) hK hg hgb
   have hclosed : IsClosed {w : W1p mu Ω 2 | energyFormH1L hcK u w = energyFormH1L hcg u w} :=
     isClosed_eq (energyFormH1L hcK u).continuous (energyFormH1L hcg u).continuous
   have hmem := w1p0Submodule_subset_of_isClosed hclosed (fun ψ ↦ by
@@ -244,14 +263,8 @@ theorem energyFormH1_add_eq_of_transpose_eq_neg {a : EuclideanSpace ℝ ι → M
     {Λ β : ℝ} (hKb : ∀ x ∈ Ω, ‖matrixBilinearForm (K x)‖ ≤ Λ) (hgb : ∀ x ∈ Ω, ‖g x‖ ≤ β)
     (u : W1p mu Ω 2) (v : W1p0 mu Ω 2) :
     energyFormH1 (a + K) b c u v = energyFormH1 a (b + g) c u v := by
-  have hcK := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (b := 0) (c := 0)
-    (continuousOn_of_contDiffOn_apply hK) continuousOn_const continuousOn_const hKb
-    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
-  have hcg := memLp_energyIntegrand_of_continuousOn_of_norm_le (mu := mu) (a := 0) (c := 0)
-    continuousOn_const (contDiffOn_of_eq_sum_fderiv hK hg).continuousOn continuousOn_const
-    (Lam := 0)
-    (fun _ _ ↦ by simp [← matrixBilinearFormLinear_apply, ContinuousLinearMap.opNorm_zero]) hgb
-    (gamma := 0) (fun _ _ ↦ by simp)
+  have hcK := memLp_energyIntegrand_of_contDiffOn_apply (mu := mu) hK hKb
+  have hcg := memLp_energyIntegrand_drift_of_eq_sum_fderiv (mu := mu) hK hg hgb
   calc energyFormH1 (a + K) b c u v = energyFormH1 (a + K) (b + 0) (c + 0) u v := by simp
     _ = energyFormH1 a b c u v + energyFormH1 K 0 0 u v := energyFormH1_add hcoeff hcK u v
     _ = energyFormH1 a b c u v + energyFormH1 0 g 0 u v := by

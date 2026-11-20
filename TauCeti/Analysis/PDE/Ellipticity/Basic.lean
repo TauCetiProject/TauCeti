@@ -242,6 +242,11 @@ lemma matrixBilinearForm_sub (A B : Matrix n n ℝ) :
     matrixBilinearForm (A - B) = matrixBilinearForm A - matrixBilinearForm B := by
   simp only [← matrixBilinearFormLinear_apply, map_sub]
 
+/-- The zero coefficient matrix has the zero bilinear form. -/
+@[simp]
+lemma matrixBilinearForm_zero : matrixBilinearForm (0 : Matrix n n ℝ) = 0 := by
+  simp only [← matrixBilinearFormLinear_apply, map_zero]
+
 /-- The principal coefficient-to-bilinear-form map is continuous. -/
 lemma continuous_matrixBilinearForm :
     Continuous (fun A : Matrix n n ℝ => matrixBilinearForm A) :=
