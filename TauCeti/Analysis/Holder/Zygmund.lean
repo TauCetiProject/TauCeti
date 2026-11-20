@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.ChangeOfVariables
@@ -121,36 +122,21 @@ section Kernel
 
 variable (φ : ContDiffBump (0 : E))
 
-/-- The low-pass symbol `ξ ↦ φ (2^{-N} ξ)`, equal to one on the ball of radius `2^N φ.rIn`, as a
-Schwartz function. -/
-private def lowPass (N : ℕ) : 𝓢(E, ℂ) :=
-  HasCompactSupport.toSchwartzMap (f := fun ξ ↦ ((φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℝ) : ℂ))
-    ((φ.hasCompactSupport.comp_smul (inv_ne_zero (pow_ne_zero _ two_ne_zero))).comp_left
-      Complex.ofReal_zero)
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.comp (contDiff_const_smul _)))
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_lowPass (N : ℕ) :
-    ⇑(lowPass φ N) = fun ξ ↦ ((φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℝ) : ℂ) :=
-  funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_lowPass_eq_comp (N : ℕ) :
-    ⇑(lowPass φ N) = fun ξ ↦ lowPass φ 0 (((2 : ℝ) ^ N)⁻¹ • ξ) := by
-  simp [coe_lowPass]
-
 /-- The kernel `𝓕⁻ (φ (2^{-N} ·))` is the `L¹`-normalised dilate `2^{Nn} K₀ (2^N ·)`. -/
 private theorem fourierInv_lowPass_apply (N : ℕ) (y : E) :
-    𝓕⁻ (⇑(lowPass φ N)) y =
-      (((2 : ℝ) ^ N) ^ finrank ℝ E) • 𝓕⁻ (⇑(lowPass φ 0)) (((2 : ℝ) ^ N) • y) := by
-  rw [coe_lowPass_eq_comp, fourierInv_comp_smul, inv_inv, inv_pow, abs_inv, inv_inv,
+    𝓕⁻ (⇑(φ.lowPassSchwartz (pow_ne_zero N two_ne_zero))) y =
+      (((2 : ℝ) ^ N) ^ finrank ℝ E) •
+        𝓕⁻ (⇑(φ.lowPassSchwartz (pow_ne_zero 0 two_ne_zero))) (((2 : ℝ) ^ N) • y) := by
+  rw [φ.coe_lowPassSchwartz_eq_comp, fourierInv_comp_smul, inv_inv, inv_pow, abs_inv, inv_inv,
     abs_of_pos (by positivity)]
+  simp only [pow_zero]
 
 /-- The Schwartz kernel `𝓕⁻ (φ (2^{-N} ·))` of the low-pass multiplier at scale `2^N`. -/
 private def kernel (N : ℕ) : 𝓢(E, ℂ) :=
-  𝓕⁻ (lowPass φ N)
+  𝓕⁻ (φ.lowPassSchwartz (pow_ne_zero N two_ne_zero))
 
-private theorem coe_kernel (N : ℕ) : ⇑(kernel φ N) = 𝓕⁻ (⇑(lowPass φ N)) :=
+private theorem coe_kernel (N : ℕ) :
+    ⇑(kernel φ N) = 𝓕⁻ (⇑(φ.lowPassSchwartz (pow_ne_zero N two_ne_zero))) :=
   SchwartzMap.fourierInv_coe _
 
 /-- The derivatives of the kernel at scale `2^N`:
@@ -183,10 +169,11 @@ omit [MeasurableSpace E] [BorelSpace E] in
 `φ.rOut ≤ 2^{n₀} φ.rIn`. -/
 private theorem inhomogeneousLittlewoodPaley_mul_lowPass {n₀ : ℕ}
     (hn₀ : φ.rOut ≤ 2 ^ n₀ * φ.rIn) (j : ℕ) :
-    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) * ⇑(lowPass φ (j + n₀)) =
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) *
+        ⇑(φ.lowPassSchwartz (pow_ne_zero (j + n₀) two_ne_zero)) =
       fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
   ext ξ
-  rw [Pi.mul_apply, coe_lowPass]
+  rw [Pi.mul_apply, ContDiffBump.coe_lowPassSchwartz]
   by_cases hξ : φ.inhomogeneousLittlewoodPaley j ξ = 0
   · simp [hξ]
   have hball : ‖ξ‖ ≤ 2 ^ j * φ.rOut := mem_closedBall_zero_iff.1 <|
@@ -257,11 +244,14 @@ own smoothing at scale `2^{j + n₀}`, once `φ.rOut ≤ 2^{n₀} φ.rIn`. -/
 private theorem ae_eq_smoothBlock {n₀ : ℕ} (hn₀ : φ.rOut ≤ 2 ^ n₀ * φ.rIn) {j : ℕ}
     {v : 𝓢'(E, F)} {g : Lp F ∞ (volume : Measure E)} (hg : littlewoodPaleyBlock F φ j v = g) :
     g =ᵐ[volume] smoothBlock φ n₀ j g := by
-  have hrep : fourierMultiplierCLM F (lowPass φ (j + n₀)) (g : 𝓢'(E, F)) = g := by
+  have hrep : fourierMultiplierCLM F (φ.lowPassSchwartz (pow_ne_zero (j + n₀) two_ne_zero))
+      (g : 𝓢'(E, F)) = g := by
     rw [← hg, littlewoodPaleyBlock_apply, fourierMultiplierCLM_fourierMultiplierCLM_apply
       (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)
-      (lowPass φ (j + n₀)).hasTemperateGrowth, inhomogeneousLittlewoodPaley_mul_lowPass φ hn₀]
-  have hconv : 𝓕⁻ (⇑(lowPass φ (j + n₀))) ⋆[lsmul ℂ ℂ] (g : E → F) = smoothBlock φ n₀ j g := by
+      (φ.lowPassSchwartz (pow_ne_zero (j + n₀) two_ne_zero)).hasTemperateGrowth,
+      inhomogeneousLittlewoodPaley_mul_lowPass φ hn₀]
+  have hconv : 𝓕⁻ (⇑(φ.lowPassSchwartz (pow_ne_zero (j + n₀) two_ne_zero))) ⋆[lsmul ℂ ℂ]
+      (g : E → F) = smoothBlock φ n₀ j g := by
     ext x
     simp only [smoothBlock, coe_kernel, convolution_def, lsmul_apply]
   exact hconv ▸ ae_eq_fourierInv_convolution_of_fourierMultiplierCLM_eq hrep
