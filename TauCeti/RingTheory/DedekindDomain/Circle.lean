@@ -153,14 +153,12 @@ noncomputable def lift (a b : S) (h : a ^ 2 + b ^ 2 = 1) : CircleRing k →ₐ[k
     simp [h]
 
 @[simp]
-theorem lift_x (a b : S) (h : a ^ 2 + b ^ 2 = 1) : lift a b h (x : CircleRing k) = a := by
-  rw [lift, x, ← Ideal.Quotient.mkₐ_eq_mk k, ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp]
-  simp
+theorem lift_x (a b : S) (h : a ^ 2 + b ^ 2 = 1) : lift a b h (x : CircleRing k) = a :=
+  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
 
 @[simp]
-theorem lift_y (a b : S) (h : a ^ 2 + b ^ 2 = 1) : lift a b h (y : CircleRing k) = b := by
-  rw [lift, y, ← Ideal.Quotient.mkₐ_eq_mk k, ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp]
-  simp
+theorem lift_y (a b : S) (h : a ^ 2 + b ^ 2 = 1) : lift a b h (y : CircleRing k) = b :=
+  (Ideal.Quotient.lift_mk _ _ _).trans (by simp)
 
 /-- Two `k`-algebra maps out of `CircleRing k` agree as soon as they agree on `x` and `y`. -/
 @[ext]
@@ -222,17 +220,43 @@ private theorem isUnit_two_mul {S : Type*} [CommRing S] [Algebra k S] (h2 : IsUn
     {a b : S} (h : a * b = 1) : IsUnit (2 * b) :=
   .mul (map_ofNat (algebraMap k S) 2 ▸ h2.map _) (.of_mul_eq_one_right _ h)
 
+/-! The identities behind the two charts, for elements `E`, `T`, `w` (on the `t` side) and
+`E`, `a`, `b`, `v`, `w` (on the `x, y` side) of a commutative ring. They are applied with `E` the
+image of `ε`, `T` the image of `t`, `a`, `b` the images of `x`, `y`, and `v`, `w` the inverses
+of `1 + εx` and `1 + t²`. -/
+
+/-- The point `(E (1 - T²) w, 2Tw)` lies on the circle when `E² = 1` and `w = (1 + T²)⁻¹`. -/
+private theorem chart_sq_add_sq {R : Type*} [CommRing R] {E T w : R} (hE : E ^ 2 = 1)
+    (hw : (1 + T ^ 2) * w = 1) : (E * (1 - T ^ 2) * w) ^ 2 + (2 * T * w) ^ 2 = 1 := by
+  linear_combination (w ^ 2 * (1 - T ^ 2) ^ 2) * hE + ((1 + T ^ 2) * w + 1) * hw
+
+/-- At the point `(E (1 - T²) w, 2Tw)`, the chart function `1 + Ex` takes the value `2w`. -/
+private theorem chart_one_add_mul {R : Type*} [CommRing R] {E T w : R} (hE : E ^ 2 = 1)
+    (hw : (1 + T ^ 2) * w = 1) : 1 + E * (E * (1 - T ^ 2) * w) = 2 * w := by
+  linear_combination (1 - T ^ 2) * w * hE - hw
+
+/-- On the circle `a² + b² = 1` with `v = (1 + Ea)⁻¹`, the coordinate `t = bv` satisfies
+`1 + t² = 2v`. -/
+private theorem chart_one_add_sq {R : Type*} [CommRing R] {E a b v : R} (hE : E ^ 2 = 1)
+    (hab : a ^ 2 + b ^ 2 = 1) (hv : (1 + E * a) * v = 1) : 1 + (b * v) ^ 2 = 2 * v := by
+  linear_combination v ^ 2 * a ^ 2 * hE + v ^ 2 * hab + (2 * v - (1 + E * a) * v - 1) * hv
+
+/-- On the circle `a² + b² = 1` with `v = (1 + Ea)⁻¹` and `w = (2v)⁻¹`, the coordinate `t = bv`
+recovers `a = E (1 - t²) / (1 + t²)`. -/
+private theorem chart_x_eq {R : Type*} [CommRing R] {E a b v w : R} (hE : E ^ 2 = 1)
+    (hab : a ^ 2 + b ^ 2 = 1) (hv : (1 + E * a) * v = 1) (hw : w * (2 * v) = 1) :
+    E * (1 - (b * v) ^ 2) * w = a := by
+  linear_combination w * v ^ 2 * (-E) * hab + w * v ^ 2 * (2 * a + E * a ^ 2) * hE +
+    w * (2 * a * v - E * ((1 + E * a) * v + 1)) * hv + a * hw
+
 /-- The point `(ε (1 - t²) / (1 + t²), 2t / (1 + t²))` of the circle over `k[t, (1 + t²)⁻¹]`. -/
 private noncomputable def toChartAux (hε : ε ^ 2 = 1) :
     CircleRing k →ₐ[k] Localization.Away (1 + X ^ 2 : k[X]) :=
   lift (algebraMap k _ ε * algebraMap k[X] _ (1 - X ^ 2) * invSelf (1 + X ^ 2 : k[X]))
     (algebraMap k[X] _ (2 * X) * invSelf (1 + X ^ 2 : k[X])) (by
       have hw := mul_invSelf (S := Localization.Away (1 + X ^ 2 : k[X])) (1 + X ^ 2 : k[X])
-      have hε' := algebraMap_sq_eq_one (S := Localization.Away (1 + X ^ 2 : k[X])) hε
       simp only [map_add, map_sub, map_mul, map_pow, map_one, map_ofNat] at hw ⊢
-      set T := algebraMap k[X] (Localization.Away (1 + X ^ 2 : k[X])) X
-      set w := invSelf (S := Localization.Away (1 + X ^ 2 : k[X])) (1 + X ^ 2 : k[X])
-      linear_combination (w ^ 2 * (1 - T ^ 2) ^ 2) * hε' + ((1 + T ^ 2) * w + 1) * hw)
+      exact chart_sq_add_sq (algebraMap_sq_eq_one hε) hw)
 
 private theorem toChartAux_x (hε : ε ^ 2 = 1) :
     toChartAux hε x =
@@ -247,12 +271,9 @@ private theorem toChartAux_y (hε : ε ^ 2 = 1) :
 private theorem toChartAux_one_add_smul_x (hε : ε ^ 2 = 1) :
     toChartAux hε (1 + ε • x) = 2 * invSelf (1 + X ^ 2 : k[X]) := by
   have hw := mul_invSelf (S := Localization.Away (1 + X ^ 2 : k[X])) (1 + X ^ 2 : k[X])
-  have hε' := algebraMap_sq_eq_one (S := Localization.Away (1 + X ^ 2 : k[X])) hε
   rw [map_add, map_one, map_smul, toChartAux_x, Algebra.smul_def]
   simp only [map_add, map_sub, map_pow, map_one] at hw ⊢
-  set T := algebraMap k[X] (Localization.Away (1 + X ^ 2 : k[X])) X
-  set w := invSelf (S := Localization.Away (1 + X ^ 2 : k[X])) (1 + X ^ 2 : k[X])
-  linear_combination (1 - T ^ 2) * w * hε' - hw
+  exact chart_one_add_mul (algebraMap_sq_eq_one hε) hw
 
 /-- The forward chart map `k[x, y, (1 + εx)⁻¹] → k[t, (1 + t²)⁻¹]`. -/
 private noncomputable def toChart (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
@@ -272,22 +293,14 @@ private theorem one_add_mul_mul_invSelf (ε : k) :
       algebraMap (CircleRing k) _ x) * invSelf (1 + ε • x : CircleRing k) = 1 := by
   have hv := mul_invSelf (S := Localization.Away (1 + ε • x : CircleRing k))
     (1 + ε • x : CircleRing k)
-  rwa [map_add, map_one, ← IsScalarTower.toAlgHom_apply k, map_smul,
-    IsScalarTower.toAlgHom_apply, Algebra.smul_def] at hv
+  rwa [map_add, map_one, algebraMap.smul, Algebra.smul_def] at hv
 
 /-- The function `1 + t²` becomes `2 / (1 + εx)`. -/
 private theorem fromChartAux_one_add_X_sq (hε : ε ^ 2 = 1) :
     fromChartAux ε (1 + X ^ 2) = 2 * invSelf (1 + ε • x : CircleRing k) := by
-  have hv := one_add_mul_mul_invSelf ε
-  have hε' := algebraMap_sq_eq_one (S := Localization.Away (1 + ε • x : CircleRing k)) hε
-  have hxy := map_x_sq_add_map_y_sq
-    (algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)))
-  simp only [fromChartAux, map_add, map_one, map_pow, aeval_X, mul_pow]
-  set X' := algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) x
-  set Y := algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y
-  set E := algebraMap k (Localization.Away (1 + ε • x : CircleRing k)) ε
-  set v := invSelf (S := Localization.Away (1 + ε • x : CircleRing k)) (1 + ε • x : CircleRing k)
-  linear_combination v ^ 2 * X' ^ 2 * hε' + v ^ 2 * hxy + (2 * v - (1 + E * X') * v - 1) * hv
+  simp only [fromChartAux, map_add, map_one, map_pow, aeval_X]
+  exact chart_one_add_sq (algebraMap_sq_eq_one hε) (map_x_sq_add_map_y_sq _)
+    (one_add_mul_mul_invSelf ε)
 
 /-- The inverse chart map `k[t, (1 + t²)⁻¹] → k[x, y, (1 + εx)⁻¹]`. -/
 private noncomputable def fromChart (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
@@ -334,17 +347,8 @@ private theorem fromChart_comp_toChart (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) 
       fromChart_algebraMap, fromChartAux, map_sub, map_one, map_pow, aeval_X, map_ofNat,
       AlgHom.id_apply]
   · -- `x ↦ ε (1 - t²) / (1 + t²) ↦ ε (1 - y² / (1 + εx)²) (1 + εx) / 2 = x`
-    have hv := one_add_mul_mul_invSelf ε
-    have hε' := algebraMap_sq_eq_one (S := Localization.Away (1 + ε • x : CircleRing k)) hε
-    have hxy := map_x_sq_add_map_y_sq
-      (algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)))
-    set X' := algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) x
-    set Y := algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y
-    set E := algebraMap k (Localization.Away (1 + ε • x : CircleRing k)) ε
-    set v := invSelf (S := Localization.Away (1 + ε • x : CircleRing k)) (1 + ε • x : CircleRing k)
-    set w := fromChart hε h2 (invSelf (1 + X ^ 2 : k[X]))
-    linear_combination w * v ^ 2 * (-E) * hxy + w * v ^ 2 * (2 * X' + E * X' ^ 2) * hε' +
-      w * (2 * X' * v - E * ((1 + E * X') * v + 1)) * hv + X' * hw
+    linear_combination chart_x_eq (algebraMap_sq_eq_one hε) (map_x_sq_add_map_y_sq _)
+      (one_add_mul_mul_invSelf ε) hw
   · -- `y ↦ 2t / (1 + t²) ↦ 2 (y / (1 + εx)) (1 + εx) / 2 = y`
     linear_combination
       algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y * hw
