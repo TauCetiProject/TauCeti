@@ -361,7 +361,7 @@ so `restrict_mk` is its defining equation. -/
 noncomputable def restrict (D : HeckeCoset Δ H₁ H₂) (hΔ : Δ ≤ H.toSubmonoid)
     (h₁ : H₁ ≤ H) (h₂ : H₂ ≤ H) :
     HeckeCoset (Δ.comap H.subtype) (H₁.subgroupOf H) (H₂.subgroupOf H) :=
-  Quotient.map (fun g : Δ ↦ (⟨⟨(g : G), hΔ g.2⟩, g.2⟩ : ↥(Δ.comap H.subtype)))
+  Quotient.map (fun g : Δ ↦ (⟨⟨(g : G), hΔ g.property⟩, g.property⟩ : ↥(Δ.comap H.subtype)))
     (fun a b hab ↦ by
       obtain ⟨γ₁, hγ₁, γ₂, hγ₂, hb⟩ := DoubleCoset.rel_iff.mp hab
       exact DoubleCoset.rel_iff.mpr
@@ -377,7 +377,7 @@ noncomputable def restrict (D : HeckeCoset Δ H₁ H₂) (hΔ : Δ ≤ H.toSubmo
 @[simp] theorem restrict_mk (g : Δ) (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H) (h₂ : H₂ ≤ H) :
     (mk H₁ H₂ g).restrict hΔ h₁ h₂ =
       mk (H₁.subgroupOf H) (H₂.subgroupOf H)
-        (⟨⟨(g : G), hΔ g.2⟩, g.2⟩ : ↥(Δ.comap H.subtype)) := (rfl)
+        (⟨⟨(g : G), hΔ g.property⟩, g.property⟩ : ↥(Δ.comap H.subtype)) := (rfl)
 
 /-- **Restriction is an equivalence.** With the whole triple inside `H`, the double cosets of
 `Δ` and those of `Δ.comap H.subtype` are the same objects described twice, so the two quotients
@@ -387,7 +387,7 @@ noncomputable def restrictEquiv (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H)
     HeckeCoset Δ H₁ H₂ ≃
       HeckeCoset (Δ.comap H.subtype) (H₁.subgroupOf H) (H₂.subgroupOf H) where
   toFun D := D.restrict hΔ h₁ h₂
-  invFun := Quotient.map (fun g : ↥(Δ.comap H.subtype) ↦ (⟨((g : ↥H) : G), g.2⟩ : Δ))
+  invFun := Quotient.map (fun g : ↥(Δ.comap H.subtype) ↦ (⟨((g : ↥H) : G), g.property⟩ : Δ))
     fun a b hab ↦ by
       obtain ⟨γ₁, hγ₁, γ₂, hγ₂, hb⟩ := DoubleCoset.rel_iff.mp hab
       exact DoubleCoset.rel_iff.mpr
@@ -404,7 +404,7 @@ representative lies in `H`. -/
 @[simp] lemma restrictEquiv_symm_mk (hΔ : Δ ≤ H.toSubmonoid) (h₁ : H₁ ≤ H) (h₂ : H₂ ≤ H)
     (g : ↥(Δ.comap H.subtype)) :
     (restrictEquiv hΔ h₁ h₂).symm (mk (H₁.subgroupOf H) (H₂.subgroupOf H) g) =
-      mk H₁ H₂ (⟨((g : ↥H) : G), g.2⟩ : Δ) := (rfl)
+      mk H₁ H₂ (⟨((g : ↥H) : G), g.property⟩ : Δ) := (rfl)
 
 /-- **The round trip through `restrictEquiv` is the identity**, in the direction that starts in
 the ambient group. -/
@@ -464,7 +464,7 @@ open scoped Pointwise in
 of `(ConjAct.toConjAct g • H₂).subgroupOf H₁` conjugates by `g` into `H₂`. -/
 lemma conj_mem_of_stabilizer {H₁ H₂ : Subgroup G} (g : G)
     (n : (ConjAct.toConjAct g • H₂).subgroupOf H₁) : g⁻¹ * (n : G) * g ∈ H₂ := by
-  have hn := n.2
+  have hn := n.property
   rw [Subgroup.mem_subgroupOf, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
     ConjAct.smul_def] at hn
   simpa [ConjAct.ofConjAct_toConjAct] using hn
@@ -488,7 +488,7 @@ lemma map_subgroupOf_smul {G' : Type*} [Group G'] (φ : G →* G') (hφ : Functi
     exact ⟨g⁻¹ * (y : G) * g, hy, by
       simp [Subgroup.coe_equivMapOfInjective_apply, mul_assoc]⟩
   · rintro ⟨z, hz, hzx⟩
-    obtain ⟨y, hy, hyx⟩ := x.2
+    obtain ⟨y, hy, hyx⟩ := x.property
     have hzy : z = g⁻¹ * y * g := hφ (by rw [hzx, ← hyx]; simp [mul_assoc])
     exact ⟨⟨y, hy⟩, hzy ▸ hz, Subtype.ext (by simpa [Subgroup.coe_equivMapOfInjective_apply])⟩
 
@@ -543,7 +543,7 @@ lemma map_subgroupOf_smul_of_ker_inf_le {G' : Type*} [Group G'] (φ : G →* G')
     refine ⟨g⁻¹ * (y : G) * g, hy, ?_⟩
     simp [map_mul, map_inv, mul_assoc]
   · rintro ⟨z, hz, hzx⟩
-    obtain ⟨y, hy, hyx⟩ := x.2
+    obtain ⟨y, hy, hyx⟩ := x.property
     refine ⟨⟨y, hy⟩, ?_, Subtype.ext hyx⟩
     have hφ : φ (g⁻¹ * y * g) = φ z := by rw [hzx, ← hyx]; simp [mul_assoc]
     have hmemker : z⁻¹ * (g⁻¹ * y * g) ∈ φ.ker := by simp [MonoidHom.mem_ker, hφ]
@@ -568,7 +568,7 @@ noncomputable def decompQuotientEquivMapOfKerInfLe {G' : Type*} [Group G'] (φ :
       refine (Subgroup.mem_subgroupOf).mpr ?_
       rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def,
         ConjAct.ofConjAct_inv, ConjAct.ofConjAct_toConjAct, inv_inv]
-      refine hker ⟨?_, hconj (y : G) y.2⟩
+      refine hker ⟨?_, hconj (y : G) y.property⟩
       simpa [mul_assoc] using (MonoidHom.normal_ker φ).conj_mem (y : G) hyker g⁻¹)
     (map_subgroupOf_smul_of_ker_inf_le φ Γ₁ Γ₂ H g h₂ hconj hker)
 
@@ -593,7 +593,7 @@ noncomputable def decompQuotientEquivOfInf {H H' P : Subgroup G} (hHP : H = H' �
       ((ConjAct.toConjAct g • H').subgroupOf H').comap
         (Subgroup.inclusion (hHP ▸ inf_le_left)) := by
     have hmem_iff (w : G) : w ∈ H ↔ w ∈ H' ∧ w ∈ P := by rw [hHP, Subgroup.mem_inf]
-    ext x; have hxP : (x : G) ∈ P := ((hmem_iff (x : G)).mp x.2).2
+    ext x; have hxP : (x : G) ∈ P := ((hmem_iff (x : G)).mp x.property).2
     simp only [Subgroup.mem_subgroupOf, Subgroup.mem_comap, Subgroup.coe_inclusion,
       Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, ConjAct.ofConjAct_inv,
       ConjAct.ofConjAct_toConjAct, inv_inv, hmem_iff]
@@ -602,7 +602,7 @@ noncomputable def decompQuotientEquivOfInf {H H' P : Subgroup G} (hHP : H = H' �
     (TauCeti.QuotientGroup.congrComapOfSurjectiveMk (Subgroup.inclusion (hHP ▸ inf_le_left))
       ((ConjAct.toConjAct g • H').subgroupOf H') fun q ↦
         QuotientGroup.induction_on q fun u ↦
-          let ⟨x, hxH, hxu⟩ := hstab (u : G) u.2
+          let ⟨x, hxH, hxu⟩ := hstab (u : G) u.property
           ⟨⟨x, hxH⟩, QuotientGroup.eq.mpr (by simpa [Subgroup.mem_subgroupOf] using hxu)⟩)
 
 open scoped Pointwise in
@@ -799,7 +799,7 @@ group. -/
 lemma rightCosetRep_mem {Γ₁ Γ₂ : Subgroup G} (D : HeckeCoset Δ Γ₁ Γ₂) {Δ' : Submonoid G}
     (hD : (D.out : G) ∈ Δ') (hΓ₂ : Γ₂.toSubmonoid ≤ Δ')
     (v : DecompQuotient Γ₂ Γ₁ (D.out : G)⁻¹) : rightCosetRep D v ∈ Δ' := by
-  have hv : ((v.out : Γ₂) : G)⁻¹ ∈ Γ₂ := inv_mem v.out.2
+  have hv : ((v.out : Γ₂) : G)⁻¹ ∈ Γ₂ := inv_mem v.out.property
   rw [rightCosetRep_def]
   exact mul_mem hD (hΓ₂ hv)
 

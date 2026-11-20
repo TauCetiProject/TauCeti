@@ -7,9 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
+public import Mathlib.Topology.Sequences
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.Pi
+import TauCeti.Topology.Sequences.Basic
 
 /-!
 # Convergence and neighborhoods in the weak topology
@@ -18,7 +20,9 @@ A family converges in `WeakSpace 𝕜 E` exactly when its values under every con
 functional converge (`TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto`). This lets
 weak convergence be used without unfolding the definition of `WeakSpace` as a `WeakBilin` space.
 No injectivity of the duality pairing is needed, since the weak topology is induced by the
-evaluations.
+evaluations. Sequential closedness of an image `toWeakSpace 𝕜 E '' s` likewise translates directly
+to closure of `s` under limits of weakly convergent sequences
+(`TauCeti.isSeqClosed_toWeakSpace_image_iff`).
 
 When the weak topology is Hausdorff, weak convergence implies convergence in the original topology
 for families that eventually stay in a compact set
@@ -29,7 +33,8 @@ family of continuous linear functionals on `E` contains a vector `v` with `J v �
 neighborhood of `x : E` contains an entire affine line `x + 𝕜 • v` along which `J v ≠ 0`
 (`LinearMap.exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace`). In particular, in an
 infinite-dimensional topological vector space every weak neighborhood contains a nontrivial affine
-line (`TauCeti.exists_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace`).
+line (`TauCeti.exists_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace`, and at `0`
+`TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero`).
 
 ## References
 
@@ -54,6 +59,14 @@ theorem tendsto_toWeakSpace_iff_forall_eval_tendsto {α : Type*} {l : Filter α}
     Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) l (𝓝 (toWeakSpace 𝕜 E x)) ↔
       ∀ f : StrongDual 𝕜 E, Tendsto (fun n ↦ f (u n)) l (𝓝 (f x)) :=
   (IsInducing.induced _).tendsto_nhds_iff.trans tendsto_pi_nhds
+
+/-- Sequential closedness of `toWeakSpace 𝕜 E '' s` in `WeakSpace 𝕜 E` is equivalent to closure of
+`s` under limits of weakly convergent sequences in `E`. -/
+theorem isSeqClosed_toWeakSpace_image_iff {s : Set E} :
+    IsSeqClosed (toWeakSpace 𝕜 E '' s) ↔
+      ∀ ⦃u : ℕ → E⦄ ⦃x : E⦄, (∀ n, u n ∈ s) →
+        Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) → x ∈ s :=
+  (toWeakSpace 𝕜 E).toEquiv.isSeqClosed_image_iff
 
 /-- If the weak topology is Hausdorff, a family that eventually stays in a compact set and
 converges weakly to `a` converges to `a` in the original topology. -/
@@ -92,7 +105,7 @@ theorem exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace (J : E →ₗ[
   obtain ⟨S, t, ht, hSt⟩ := Filter.mem_pi'.1 hW
   -- The evaluation map on the finite set `S` has finite-dimensional image, so its kernel cannot
   -- be contained in `ker J`.
-  let Φ : E →ₗ[𝕜] (S → 𝕜) := LinearMap.pi fun f : S ↦ f.1.toLinearMap
+  let Φ : E →ₗ[𝕜] (S → 𝕜) := LinearMap.pi fun f : S ↦ f.val.toLinearMap
   have hv : ∃ v : E, Φ v = 0 ∧ J v ≠ 0 := by
     by_contra h
     push Not at h
@@ -122,6 +135,14 @@ theorem exists_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace
     rw [LinearMap.range_id]
     exact fun _ ↦ hE (Submodule.topEquiv (R := 𝕜) (M := E)).finiteDimensional
   exact LinearMap.id.exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace hrange x hU
+
+/-- In an infinite-dimensional space, every weak neighbourhood of `0` contains the line through
+some nonzero vector. -/
+theorem exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero
+    (hE : ¬ FiniteDimensional 𝕜 E) {U : Set (WeakSpace 𝕜 E)} (hU : U ∈ 𝓝 0) :
+    ∃ x : E, x ≠ 0 ∧ ∀ c : 𝕜, toWeakSpace 𝕜 E (c • x) ∈ U := by
+  simpa only [zero_add] using
+    exists_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace hE 0 (by simpa only [map_zero] using hU)
 
 end TauCeti
 

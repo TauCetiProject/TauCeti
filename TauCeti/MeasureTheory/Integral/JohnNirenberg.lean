@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import Mathlib.Probability.Moments.IntegrableExpMul
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
@@ -124,12 +125,12 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
     (hMQ : ⨍⁻ x in dyadicCube q₀.1 q₀.2, ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ
       ∂volume ≤ M) (N : ℕ) :
     ∃ C : Set (ℤ × (ι → ℤ)), (∀ q ∈ C, dyadicCube q.1 q.2 ⊆ dyadicCube q₀.1 q₀.2) ∧
-      ∑' q : C, volume (dyadicCube q.1.1 q.1.2) ≤ 2⁻¹ * volume (dyadicCube q₀.1 q₀.2) ∧
+      ∑' q : C, volume (dyadicCube q.val.1 q.val.2) ≤ 2⁻¹ * volume (dyadicCube q₀.1 q₀.2) ∧
       volume {x ∈ dyadicCube q₀.1 q₀.2 | 2 ^ (Fintype.card ι + 1) * ↑(N + 1) * (M : ℝ≥0∞) <
           ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ} ≤
-        ∑' q : C, volume {x ∈ dyadicCube q.1.1 q.1.2 |
+        ∑' q : C, volume {x ∈ dyadicCube q.val.1 q.val.2 |
           2 ^ (Fintype.card ι + 1) * N * (M : ℝ≥0∞) <
-            ‖f x - ⨍ y in dyadicCube q.1.1 q.1.2, f y ∂volume‖ₑ} := by
+            ‖f x - ⨍ y in dyadicCube q.val.1 q.val.2, f y ∂volume‖ₑ} := by
   set Q := dyadicCube q₀.1 q₀.2
   set c := ⨍ y in Q, f y ∂volume
   set n := Fintype.card ι
@@ -192,8 +193,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
           refine ⟨q, hq, hxq, lt_of_not_ge fun hle => hxS.2.not_ge ?_⟩
           calc ‖f x - c‖ₑ
               ≤ ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ +
-                  ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume - c‖ₑ := by
-                simpa only [eDist_eq_eNorm_sub] using edist_triangle (f x) _ c
+                  ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume - c‖ₑ :=
+                eNorm_sub_le_eNorm_sub_add_eNorm_sub _ _ _
             _ ≤ 2 ^ (n + 1) * N * M + 2 ^ (n + 1) * M := add_le_add hle (havg q hq)
             _ = 2 ^ (n + 1) * ↑(N + 1) * M := by push_cast; ring
         · push Not at hmem
@@ -206,8 +207,8 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
               · exact one_le_two
               · omega
               · exact_mod_cast Nat.succ_pos N
-    _ ≤ ∑' q : C, volume {x ∈ dyadicCube q.1.1 q.1.2 | 2 ^ (n + 1) * N * (M : ℝ≥0∞) <
-          ‖f x - ⨍ y in dyadicCube q.1.1 q.1.2, f y ∂volume‖ₑ} :=
+    _ ≤ ∑' q : C, volume {x ∈ dyadicCube q.val.1 q.val.2 | 2 ^ (n + 1) * N * (M : ℝ≥0∞) <
+          ‖f x - ⨍ y in dyadicCube q.val.1 q.val.2, f y ∂volume‖ₑ} :=
         measure_biUnion_le _ C.to_countable _
 
 /-- **The John–Nirenberg inequality, dyadic form.** Let `f` be integrable on the dyadic cube
@@ -250,10 +251,10 @@ private theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
     obtain ⟨C, hsub, hC, hcover⟩ :=
       exists_volume_lt_enorm_sub_setAverage_le_tsum hM0 hf (hM q₀ le_rfl) N
     calc _ ≤ _ := hcover
-      _ ≤ ∑' q : C, 2⁻¹ ^ N * volume (dyadicCube q.1.1 q.1.2) :=
+      _ ≤ ∑' q : C, 2⁻¹ ^ N * volume (dyadicCube q.val.1 q.val.2) :=
         _root_.tsum_le_tsum fun q =>
-          ih (hf.mono_set (hsub q q.2)) fun q' hq' => hM q' (hq'.trans (hsub q q.2))
-      _ = 2⁻¹ ^ N * ∑' q : C, volume (dyadicCube q.1.1 q.1.2) := ENNReal.tsum_mul_left
+          ih (hf.mono_set (hsub q q.property)) fun q' hq' => hM q' (hq'.trans (hsub q q.property))
+      _ = 2⁻¹ ^ N * ∑' q : C, volume (dyadicCube q.val.1 q.val.2) := ENNReal.tsum_mul_left
       _ ≤ 2⁻¹ ^ N * (2⁻¹ * volume (dyadicCube q₀.1 q₀.2)) := by gcongr
       _ = 2⁻¹ ^ (N + 1) * volume (dyadicCube q₀.1 q₀.2) := by rw [pow_succ, mul_assoc]
 
@@ -311,7 +312,7 @@ private theorem volume_lt_norm_sub_setAverage_le [CompleteSpace E]
     ← ENNReal.ofReal_pow (by norm_num)]
   refine ENNReal.ofReal_le_ofReal ?_
   calc (2 : ℝ)⁻¹ ^ N = Real.exp (-(N * Real.log 2)) := by
-        rw [Real.exp_neg, Real.exp_nat_mul, Real.exp_log two_pos, inv_pow]
+        rw [Real.exp_neg, Real.exp_natCast_mul, Real.exp_log two_pos, inv_pow]
     _ ≤ Real.exp (Real.log 2 + -(Real.log 2 * s / a)) := by
         refine Real.exp_le_exp.2 ?_
         have := mul_lt_mul_of_pos_left hlt hlog
@@ -351,7 +352,7 @@ private theorem ofReal_exp_mul_norm_le_one_add_tsum (σ : ℝ) (n : ℕ) (M : �
     exact (lt_div_iff₀ ha).1 h'
   refine le_add_left (le_trans ?_ (_root_.le_tsum _ N))
   simp only [hN, ↓reduceIte]
-  rw [← ENNReal.ofReal_pow (Real.exp_pos _).le, ← Real.exp_nat_mul]
+  rw [← ENNReal.ofReal_pow (Real.exp_pos _).le, ← Real.exp_natCast_mul]
   refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
   rw [← mul_assoc, mul_comm _ σ, mul_assoc, hN1]
   exact mul_le_mul_of_nonneg_left ((div_le_iff₀ ha).1 (Nat.le_ceil _)) hσ.le |>.trans_eq

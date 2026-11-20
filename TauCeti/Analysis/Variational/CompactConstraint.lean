@@ -19,7 +19,7 @@ import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 
 In infinite dimensions, level constraints such as `{u | ‖J u‖ = 1}` under a compact operator
 `J : V →L[𝕜] F` are generally not weakly closed. However, because `J` is weak-to-norm continuous
-on every norm-bounded set (`IsCompactOperator.continuousOn_toWeakSpace_symm_of_isBounded`), the
+on every norm-bounded set (`IsCompactOperator.continuousOn_comp_toWeakSpace_symm_of_isBounded`), the
 intersection of `J ⁻¹' C` (for a closed `C ⊆ F`) with any bounded weakly closed set is weakly
 closed. Consequently, for an energy with bounded sublevels on `S₀ ∩ J ⁻¹' C` that is weakly lower
 semicontinuous on each bounded slice `closedBall 0 R ∩ (S₀ ∩ J ⁻¹' C)`, every bounded sublevel is
@@ -30,7 +30,8 @@ In particular:
 
 * Adding a compact perturbation `g ∘ J` (with `g` lower semicontinuous on `J '' B`) to a lower
   semicontinuous real-quasiconvex function preserves weak lower semicontinuity on every
-  norm-bounded set `B` (`TauCeti.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded`).
+  norm-bounded set `B`
+  (`QuasiconvexOn.lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded`).
 * In a reflexive seminormed space over `ℝ` or `ℂ`, bounded sublevels and bounded sets of minimizers
   on `S₀ ∩ J ⁻¹' C` are weakly compact
   (`TauCeti.isCompact_toWeakSpace_sublevel_of_compact_constraint`,
@@ -51,9 +52,7 @@ public section
 
 open Bornology Metric NormedSpace Set
 
-namespace TauCeti
-
-section AdditivePerturbation
+namespace QuasiconvexOn
 
 variable {𝕜 V F β : Type*} [RCLike 𝕜]
   [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] [Module ℝ V] [IsScalarTower ℝ 𝕜 V]
@@ -75,7 +74,9 @@ theorem lowerSemicontinuousOn_add_comp_toWeakSpace_symm_of_isBounded
   exact ((hf.lowerSemicontinuous_comp_toWeakSpace_symm (𝕜 := 𝕜) hlsc).lowerSemicontinuousOn _).add
     (hJ.lowerSemicontinuousOn_comp_toWeakSpace_symm_of_isBounded hB hg)
 
-end AdditivePerturbation
+end QuasiconvexOn
+
+namespace TauCeti
 
 section CompactConstraint
 
@@ -91,7 +92,7 @@ private theorem isClosed_toWeakSpace_slice
     (hS₀ : IsClosed (toWeakSpace 𝕜 V '' S₀)) (hC : IsClosed C) (R : ℝ) :
     IsClosed (toWeakSpace 𝕜 V '' (closedBall (0 : V) R ∩ (S₀ ∩ J ⁻¹' C))) := by
   rw [← inter_assoc]
-  refine hJ.isClosed_toWeakSpace_inter_preimage
+  refine hJ.isClosed_toWeakSpace_inter_preimage_of_isBounded
     (isBounded_closedBall.subset inter_subset_left) ?_ hC
   rw [image_inter (toWeakSpace 𝕜 V).injective]
   exact (isClosed_toWeakSpace_closedBall 𝕜 (0 : V) R).inter hS₀

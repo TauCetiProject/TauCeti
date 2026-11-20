@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import Mathlib.Topology.Sequences
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
+public import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
+public import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
+import Mathlib.Analysis.RCLike.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
-import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
-import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 
 /-!
 # Diagonal operators on `lp` in the weak topology
@@ -27,7 +28,10 @@ operator `lp.harmonicDiagonalCLM 𝕜 p` with coefficients `1 / (n + 1)` on `ℓ
   sphere `{u | ‖diagonalCLM d u‖ = r}` is `{u | ‖diagonalCLM d u‖ ≤ r}`
   (`lp.closure_toWeakSpace_setOf_norm_diagonalCLM_eq`), and for `r > 0` the sphere is weakly closed
   if and only if only finitely many coefficients are nonzero
-  (`lp.isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq_iff`).
+  (`lp.isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq_iff`, and for injective multipliers on
+  infinite index sets `lp.not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq`). When the
+  coefficients tend to zero along the cofinite filter, every level sphere is sequentially weakly
+  closed (`lp.isSeqClosed_toWeakSpace_setOf_norm_diagonalCLM_eq`).
 * When infinitely many coefficients are nonzero and `‖d i‖ → 0` along the cofinite filter, the
   positive-radius level spheres `{u | ‖diagonalCLM d u‖ = r}` are norm-unbounded
   (`lp.not_isBounded_setOf_norm_diagonalCLM_eq`), and on `ℓ^p(ℕ, 𝕜)` with everywhere-nonzero null
@@ -71,6 +75,27 @@ theorem continuous_diagonalCLM_comp_toWeakSpace_symm_iff [NontriviallyNormedFiel
     (finiteDimensional_range_diagonalCLM_iff d)
 
 variable [RCLike 𝕜]
+
+/-- For an infinite index type and nonvanishing coefficients, a sphere of positive radius of a
+diagonal operator is not weakly closed. -/
+theorem not_isClosed_toWeakSpace_setOf_norm_diagonalCLM_eq [Infinite ι] {d : ℓ^∞(ι, 𝕜)}
+    (hd : ∀ i, d i ≠ 0) {r : ℝ} (hr : 0 < r) :
+    ¬ IsClosed (toWeakSpace 𝕜 ℓ^p(ι, 𝕜) '' {u | ‖diagonalCLM d u‖ = r}) :=
+  TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq not_finite
+    ((injective_diagonalCLM_iff d).2 hd) hr
+
+/-- If the coefficients tend to zero, every sphere of a diagonal operator is weakly sequentially
+closed. -/
+theorem isSeqClosed_toWeakSpace_setOf_norm_diagonalCLM_eq {d : ℓ^∞(ι, 𝕜)}
+    (hd : Tendsto (fun i ↦ ‖d i‖) cofinite (𝓝 0)) (r : ℝ) :
+    IsSeqClosed (toWeakSpace 𝕜 ℓ^p(ι, 𝕜) '' {u | ‖diagonalCLM d u‖ = r}) := by
+  have heq : {u : ℓ^p(ι, 𝕜) | ‖diagonalCLM d u‖ = r} =
+      diagonalCLM d ⁻¹' Metric.sphere 0 r := by
+    ext u
+    simp
+  rw [heq]
+  exact (isCompactOperator_diagonalCLM d hd).isSeqClosed_toWeakSpace_preimage
+    Metric.isClosed_sphere
 
 /-- If infinitely many coefficients of `d` are nonzero, the weak closure of the level sphere
 `{u | ‖diagonalCLM d u‖ = r}` in `ℓ^p(ι, 𝕜)` is `{u | ‖diagonalCLM d u‖ ≤ r}`. -/
@@ -206,7 +231,7 @@ theorem isCompactOperator_harmonicDiagonalCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] 
 /-- The harmonic diagonal operator on `ℓ^p(ℕ, 𝕜)` is injective. -/
 theorem harmonicDiagonalCLM_injective (p : ℝ≥0∞) [Fact (1 ≤ p)] :
     Function.Injective (harmonicDiagonalCLM 𝕜 p) :=
-  (diagonalCLM_injective_iff (harmonicWeights 𝕜)).2 (harmonicWeights_ne_zero 𝕜)
+  (injective_diagonalCLM_iff (harmonicWeights 𝕜)).2 (harmonicWeights_ne_zero 𝕜)
 
 /-- For finite exponent `1 ≤ p < ∞`, the harmonic diagonal operator on `ℓ^p(ℕ, 𝕜)` has dense
 range. -/

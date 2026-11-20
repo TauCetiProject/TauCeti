@@ -6,20 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import TauCeti.Topology.Algebra.Module.WeakSpace
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.LocallyConvex.WeakSpace
-import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Weak-to-norm continuity and weak closures of spheres
 
 Using `LinearMap.exists_apply_ne_zero_add_smul_mem_of_mem_nhds_toWeakSpace` (every weak
 neighborhood contains an affine line on which an infinite-rank linear map `J : E →ₗ[𝕜] F` is
-nonzero), this file establishes two sharp characterizations in infinite dimensions:
+nonzero) and `TauCeti.exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero`, this file
+establishes sharp characterizations of weak-to-norm continuity and weak closures of spheres in
+infinite dimensions:
 
 * Over a nontrivially normed field, `w ↦ J ((toWeakSpace 𝕜 E).symm w)` is discontinuous at every
   point whenever `J` has infinite-dimensional range
@@ -41,11 +44,16 @@ nonzero), this file establishes two sharp characterizations in infinite dimensio
   (`ContinuousLinearMap.isClosed_toWeakSpace_preimage_sphere_iff`,
   `ContinuousLinearMap.isClosed_toWeakSpace_setOf_norm_apply_eq_iff`,
   `TauCeti.isClosed_toWeakSpace_sphere_iff`).
+* For any injective `LinearMapClass` map `j : G` from an infinite-dimensional topological vector
+  space into a normed space over `ℝ` or `ℂ`, `0` lies in the weak closure of `{u | ‖j u‖ = r}` for
+  `r ≥ 0` (`TauCeti.zero_mem_closure_toWeakSpace_setOf_norm_eq`), `{u | ‖j u‖ = r}` is not weakly
+  closed for `r > 0` (`TauCeti.not_isClosed_toWeakSpace_setOf_norm_eq`), and `j` is not
+  weak-to-norm continuous (`TauCeti.not_continuous_comp_toWeakSpace_symm`).
 
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Springer,
-  2011, §3.2, Proposition 3.5 and Example 1.
+  2011, §3.2, Proposition 3.5 and Example 1 (weak closure of the unit sphere).
 * R. E. Megginson, *An Introduction to Banach Space Theory*, §2.5.
 -/
 
@@ -194,9 +202,11 @@ theorem closure_toWeakSpace_preimage_sphere (J : E →L[𝕜] F)
           WeakSpace.map J ⁻¹' (toWeakSpace 𝕜 F '' closedBall y r) := by
         ext w
         obtain ⟨x, rfl⟩ := (toWeakSpace 𝕜 E).surjective w
-        rw [(toWeakSpace 𝕜 E).injective.mem_set_image, mem_preimage, mem_preimage,
-          show WeakSpace.map J (toWeakSpace 𝕜 E x) = toWeakSpace 𝕜 F (J x) from
-            WeakSpace.map_apply J x,
+        -- `WeakSpace.map_apply` relies on `WeakSpace 𝕜 E = E` definitionally; keep explicit
+        -- `toWeakSpace` casts so `rw` does not produce an ill-typed `J (toWeakSpace 𝕜 E x)`.
+        have hmap : WeakSpace.map J (toWeakSpace 𝕜 E x) = toWeakSpace 𝕜 F (J x) :=
+          WeakSpace.map_apply J x
+        rw [(toWeakSpace 𝕜 E).injective.mem_set_image, mem_preimage, mem_preimage, hmap,
           (toWeakSpace 𝕜 F).injective.mem_set_image]
       rw [heq]
       exact (TauCeti.isClosed_toWeakSpace_closedBall 𝕜 y r).preimage (WeakSpace.map J).continuous
@@ -267,6 +277,46 @@ theorem isClosed_toWeakSpace_sphere_iff (x : E) {r : ℝ} (hr : 0 < r) :
   simpa only [ContinuousLinearMap.coe_id', preimage_id, id_eq] using
     ((ContinuousLinearMap.id 𝕜 E).isClosed_toWeakSpace_preimage_sphere_iff x hr).trans
       finiteDimensional_range_id_iff
+
+section Sphere
+
+variable {𝕜 V F G : Type*} [RCLike 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FunLike G V F] [LinearMapClass G 𝕜 V F] {j : G}
+
+/-- In an infinite-dimensional space, `0` lies in the weak closure of every sphere
+`{u | ‖j u‖ = r}` of an injective linear map `j` into a normed space. -/
+theorem zero_mem_closure_toWeakSpace_setOf_norm_eq (hV : ¬ FiniteDimensional 𝕜 V)
+    (hj : Function.Injective j) {r : ℝ} (hr : 0 ≤ r) :
+    (0 : WeakSpace 𝕜 V) ∈ closure (toWeakSpace 𝕜 V '' {u | ‖j u‖ = r}) := by
+  refine mem_closure_iff_nhds.2 fun U hU ↦ ?_
+  obtain ⟨x, hx, hxU⟩ := exists_ne_zero_forall_toWeakSpace_smul_mem_of_mem_nhds_zero hV hU
+  have hjx : ‖j x‖ ≠ 0 := norm_ne_zero_iff.2 ((map_ne_zero_iff j hj).2 hx)
+  -- Rescale `x` so that its image has norm `r`.
+  refine ⟨_, hxU ((r / ‖j x‖ : ℝ) : 𝕜), mem_image_of_mem _ ?_⟩
+  simp [map_smul, norm_smul, abs_of_nonneg hr, hjx]
+
+/-- In an infinite-dimensional space, a sphere `{u | ‖j u‖ = r}` of positive radius of an
+injective linear map `j` into a normed space is not weakly closed. -/
+theorem not_isClosed_toWeakSpace_setOf_norm_eq (hV : ¬ FiniteDimensional 𝕜 V)
+    (hj : Function.Injective j) {r : ℝ} (hr : 0 < r) :
+    ¬ IsClosed (toWeakSpace 𝕜 V '' {u | ‖j u‖ = r}) := fun hclosed ↦ by
+  obtain ⟨u, hu, hu0⟩ :=
+    hclosed.closure_subset (zero_mem_closure_toWeakSpace_setOf_norm_eq hV hj hr.le)
+  rw [map_eq_zero_iff _ (toWeakSpace 𝕜 V).injective] at hu0
+  subst hu0
+  simp only [mem_ofPred_eq, map_zero, norm_zero] at hu
+  exact hr.ne hu
+
+/-- In an infinite-dimensional space, an injective linear map into a normed space is not
+continuous from the weak topology to the norm topology. -/
+theorem not_continuous_comp_toWeakSpace_symm (hV : ¬ FiniteDimensional 𝕜 V)
+    (hj : Function.Injective j) :
+    ¬ Continuous fun w : WeakSpace 𝕜 V ↦ j ((toWeakSpace 𝕜 V).symm w) := fun hcont ↦ by
+  refine not_isClosed_toWeakSpace_setOf_norm_eq hV hj one_pos ?_
+  rw [(toWeakSpace 𝕜 V).image_eq_preimage_symm]
+  exact isClosed_eq (continuous_norm.comp hcont) continuous_const
+
+end Sphere
 
 end TauCeti
 

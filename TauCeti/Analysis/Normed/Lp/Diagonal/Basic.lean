@@ -110,6 +110,17 @@ theorem diagonalCLM_mul (d e : ℓ^∞(ι, 𝕜)) :
   ext x i
   simp [mul_assoc]
 
+/-- A diagonal operator is injective exactly when none of its coefficients vanishes. -/
+theorem injective_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
+    Function.Injective (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by
+  classical
+  refine ⟨fun h i hi ↦ ?_, fun hd ↦ (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_⟩
+  · -- The coordinate vector at a vanishing coefficient is sent to `0`.
+    have h0 : lp.single p i (1 : 𝕜) = 0 := h (by simp [hi])
+    simpa using congr_arg (· i) h0
+  · ext i
+    simpa [hd i] using congr_arg (· i) hx
+
 variable [DecidableEq ι]
 
 /-- Retain the coefficients of a diagonal operator on a finite set of coordinates. -/
@@ -250,24 +261,6 @@ theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
   exact LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this)
 
 omit [DecidableEq ι] in
-/-- A bounded diagonal multiplier is injective if and only if every coefficient is nonzero. -/
-@[simp]
-theorem diagonalCLM_injective_iff (d : ℓ^∞(ι, 𝕜)) :
-    Function.Injective (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by
-  classical
-  refine ⟨fun hinj i hi ↦ ?_, fun hd x y hxy ↦ ?_⟩
-  · have h0 : diagonalCLM (p := p) d (lp.single p i 1) = diagonalCLM (p := p) d 0 := by
-      simp [hi]
-    have hsingle : lp.single p i (1 : 𝕜) = 0 := hinj h0
-    have h1 : (1 : 𝕜) = 0 := by
-      simpa [lp.single_apply] using congr_arg (fun z : ℓ^p(ι, 𝕜) ↦ z i) hsingle
-    exact one_ne_zero h1
-  · ext i
-    have hi : d i * x i = d i * y i := by
-      simpa only [diagonalCLM_apply] using congr_arg (fun z : ℓ^p(ι, 𝕜) ↦ z i) hxy
-    exact mul_left_cancel₀ (hd i) hi
-
-omit [DecidableEq ι] in
 /-- For finite exponent `1 ≤ p < ∞`, a bounded diagonal multiplier has dense range if and only if
 every coefficient is nonzero. -/
 theorem denseRange_diagonalCLM_iff (hp : p ≠ ∞) (d : ℓ^∞(ι, 𝕜)) :
@@ -297,9 +290,9 @@ theorem finiteDimensional_range_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
   classical
   refine ⟨fun hfin ↦ ?_, fun hfin ↦ ?_⟩
   · let v : {i : ι | d i ≠ 0} → (diagonalCLM (p := p) d).range :=
-      fun i ↦ ⟨diagonalCLM (p := p) d (lp.single p i.1 1), ⟨lp.single p i.1 1, rfl⟩⟩
+      fun i ↦ ⟨diagonalCLM (p := p) d (lp.single p i.val 1), ⟨lp.single p i.val 1, rfl⟩⟩
     have hv_coe : (diagonalCLM (p := p) d).range.subtype ∘ v =
-        fun i : {i : ι | d i ≠ 0} ↦ Units.mk0 (d i.1) i.2 • lp.single p i.1 (1 : 𝕜) := by
+        fun i : {i : ι | d i ≠ 0} ↦ Units.mk0 (d i.val) i.property • lp.single p i.val (1 : 𝕜) := by
       funext i
       simp [v, Units.smul_def, ← lp.single_smul]
     have hli : LinearIndependent 𝕜 v := by
