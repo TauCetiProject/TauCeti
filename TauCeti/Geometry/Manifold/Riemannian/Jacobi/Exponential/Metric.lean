@@ -199,7 +199,7 @@ theorem normDet_mfderiv_riemannianExp_of_hasSectionalCurvatureAt
     refine (L.toLinearMap ∘ₗ (ℝ ∙ v)ᗮ.subtype).normDet_eq_pow_finrank_of_norm_eq fun w ↦ ?_
     simp only [LinearMap.comp_apply, Submodule.coe_subtype, ContinuousLinearMap.coe_coe,
       ← Submodule.norm_coe]
-    exact norm_mfderiv_riemannianExp_of_inner_eq_zero_of_hasSectionalCurvatureAt hv hK w.1
-      (Submodule.mem_orthogonal_singleton_iff_inner_left.mp w.2)
+    exact norm_mfderiv_riemannianExp_of_inner_eq_zero_of_hasSectionalCurvatureAt hv hK w.val
+      (Submodule.mem_orthogonal_singleton_iff_inner_left.mp w.property)
 
 end TauCeti.Manifold

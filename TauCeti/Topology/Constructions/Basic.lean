@@ -73,12 +73,12 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     (hfix : ∀ ⦃x y⦄, x ∈ U → s x y → x = y) :
     IsOpenEmbedding (U.domRestrict (Quotient.mk s)) := by
   refine .of_continuous_injective_isOpenMap
-    (continuous_quotient_mk'.comp continuous_subtype_val) (fun x y hxy => ?_) fun W hW => ?_
-  · exact Subtype.ext (hfix x.2 (Quotient.exact hxy))
+    (continuous_quotient_mk'.comp continuous_subtypeVal) (fun x y hxy => ?_) fun W hW => ?_
+  · exact Subtype.ext (hfix x.property (Quotient.exact hxy))
   · rw [domRestrict_eq, image_comp]
-    refine isOpen_image_quotient_mk s (hU.isOpenMap_subtype_val W hW) ?_
+    refine isOpen_image_quotient_mk s (hU.isOpenMap_subtypeVal W hW) ?_
     rintro _ y ⟨x, hx, rfl⟩ hxy
-    exact hfix x.2 hxy ▸ mem_image_of_mem _ hx
+    exact hfix x.property hxy ▸ mem_image_of_mem _ hx
 
 end Setoid
 
@@ -89,12 +89,12 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Z] {f : X → Y}
 /-- The projection `X ×_Y Z → X` is continuous. -/
 @[fun_prop]
 theorem Function.Pullback.continuous_fst : Continuous (Pullback.fst : f.Pullback g → X) :=
-  _root_.continuous_fst.comp continuous_subtype_val
+  _root_.continuous_fst.comp continuous_subtypeVal
 
 /-- The projection `X ×_Y Z → Z` is continuous. -/
 @[fun_prop]
 theorem Function.Pullback.continuous_snd : Continuous (Pullback.snd : f.Pullback g → Z) :=
-  _root_.continuous_snd.comp continuous_subtype_val
+  _root_.continuous_snd.comp continuous_subtypeVal
 
 /-- **Open maps are stable under pullback.** Let `f : X → Y` be open onto its range and
 `g : Z → Y` continuous, and let `ι : P → X × Z` induce the topology of `P` and have image the
@@ -118,7 +118,7 @@ theorem Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp [TopologicalSp
   have hfU : f '' U = O ∩ range f := by
     simpa only [image_image, rangeFactorization_coe, image_preimage_eq_inter_range,
       Subtype.range_coe] using (congrArg (Subtype.val '' ·) hOU).symm
-  refine Filter.mem_of_superset ((hV.inter (hO.preimage hg)).preimage continuous_subtype_val
+  refine Filter.mem_of_superset ((hV.inter (hO.preimage hg)).preimage continuous_subtypeVal
     |>.mem_nhds ⟨hwV, ?_⟩) ?_
   · simpa [hfg w] using (hfU.subset (mem_image_of_mem f hwU)).1
   · rintro ⟨_, q, rfl⟩ ⟨hqV, hqO⟩
@@ -142,19 +142,19 @@ def ContinuousMap.pullbackSnd : C(f.Pullback g, Z) :=
 
 /-- Swapping the two factors of a fibre product is a homeomorphism `X ×_Y Z ≃ₜ Z ×_Y X`. -/
 def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
-  toFun x := ⟨x.1.swap, x.2.symm⟩
-  invFun y := ⟨y.1.swap, y.2.symm⟩
+  toFun x := ⟨x.val.swap, x.property.symm⟩
+  invFun y := ⟨y.val.swap, y.property.symm⟩
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun :=
-    ((_root_.continuous_snd.comp continuous_subtype_val).prodMk
-      (_root_.continuous_fst.comp continuous_subtype_val)).subtype_mk _
+    ((_root_.continuous_snd.comp continuous_subtypeVal).prodMk
+      (_root_.continuous_fst.comp continuous_subtypeVal)).subtype_mk _
   continuous_invFun :=
-    ((_root_.continuous_snd.comp continuous_subtype_val).prodMk
-      (_root_.continuous_fst.comp continuous_subtype_val)).subtype_mk _
+    ((_root_.continuous_snd.comp continuous_subtypeVal).prodMk
+      (_root_.continuous_fst.comp continuous_subtypeVal)).subtype_mk _
 
 @[simp] theorem Homeomorph.coe_pullbackComm_apply (x : f.Pullback g) :
-    (Homeomorph.pullbackComm f g x).1 = x.1.swap := (rfl)
+    (Homeomorph.pullbackComm f g x).val = x.val.swap := (rfl)
 
 @[simp] theorem Homeomorph.pullbackComm_symm :
     (Homeomorph.pullbackComm f g).symm = Homeomorph.pullbackComm g f := (rfl)
@@ -196,7 +196,8 @@ def ContinuousMap.mapPullback : C(f₁.Pullback g₁, f₂.Pullback g₂) :=
   ⟨Function.mapPullback mapX mapY mapZ commX commZ, mapX.continuous.mapPullback mapZ.continuous⟩
 
 @[simp] theorem ContinuousMap.coe_mapPullback_apply (x : f₁.Pullback g₁) :
-    (ContinuousMap.mapPullback mapX mapY mapZ commX commZ x).1 = (mapX x.1.1, mapZ x.1.2) := (rfl)
+    (ContinuousMap.mapPullback mapX mapY mapZ commX commZ x).val = (mapX x.val.1, mapZ x.val.2) :=
+        (rfl)
 
 @[simp] theorem ContinuousMap.pullbackFst_comp_mapPullback :
     (ContinuousMap.pullbackFst f₂ g₂).comp
@@ -224,7 +225,7 @@ def ContinuousMap.mapPullbackSnd : C(f.Pullback p, f.Pullback q) :=
   ContinuousMap.mapPullback (f₁ := f) (f₂ := f) (.id X) id g rfl hg
 
 @[simp] theorem ContinuousMap.coe_mapPullbackSnd_apply (x : f.Pullback p) :
-    (ContinuousMap.mapPullbackSnd f g hg x).1 = (x.1.1, g x.1.2) := (rfl)
+    (ContinuousMap.mapPullbackSnd f g hg x).val = (x.val.1, g x.val.2) := (rfl)
 
 @[simp] theorem ContinuousMap.pullbackFst_comp_mapPullbackSnd :
     (ContinuousMap.pullbackFst f q).comp (ContinuousMap.mapPullbackSnd f g hg) =

@@ -617,7 +617,7 @@ theorem isPreconnected_clusterSetOn (hK : IsCompact K) (hfK : MapsTo f U K)
   have hbasis : (𝓝 w).HasBasis (fun t => t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)) (fun t => t) :=
     ⟨fun s => ⟨hp s, fun ⟨t, ht, hts⟩ => mem_of_superset ht.1 hts⟩⟩
   have hEq : clusterSetOn f U w =
-      ⋂ t : {t : Set X // t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)}, closure (f '' (t.1 ∩ U)) := by
+      ⋂ t : {t : Set X // t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)}, closure (f '' (t.val ∩ U)) := by
     rw [clusterSetOn_eq_iInter, (nhdsWithin_hasBasis hbasis U).biInter_mem
       (fun _ _ hst => closure_mono (image_mono hst)), iInter_subtype]
   have : Nonempty {t : Set X // t ∈ 𝓝 w ∧ IsPreconnected (t ∩ U)} := by
@@ -625,13 +625,13 @@ theorem isPreconnected_clusterSetOn (hK : IsCompact K) (hfK : MapsTo f U K)
     exact ⟨⟨t, ht⟩⟩
   rw [hEq]
   refine isPreconnected_iInter_of_directed (fun t₁ t₂ => ?_) (fun t => ?_) (fun t => ?_)
-  · obtain ⟨t₃, ht₃, hsub⟩ := hp (t₁.1 ∩ t₂.1) (inter_mem t₁.2.1 t₂.2.1)
+  · obtain ⟨t₃, ht₃, hsub⟩ := hp (t₁.val ∩ t₂.val) (inter_mem t₁.property.1 t₂.property.1)
     exact ⟨⟨t₃, ht₃⟩,
       closure_mono (image_mono (inter_subset_inter_left U (hsub.trans inter_subset_left))),
       closure_mono (image_mono (inter_subset_inter_left U (hsub.trans inter_subset_right)))⟩
   · exact hK.of_isClosed_subset isClosed_closure
       (closure_minimal ((image_mono inter_subset_right).trans hfK.image_subset) hK.isClosed)
-  · exact (t.2.2.image f (hfc.mono inter_subset_right)).closure
+  · exact (t.property.2.image f (hfc.mono inter_subset_right)).closure
 
 /-- **The cluster set is a continuum**: nonempty, compact and connected. This is the classical
 statement of Collingwood–Lohwater, under the hypotheses of

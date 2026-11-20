@@ -460,7 +460,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent
       (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
         (cappedCylinderComponent Hb L Complex.I) u z =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, Hb zero t (u (b, t))) -
+      rectangleIntegral ω.val u (a, 0) (b, 1) + (∫ t in 0..1, Hb zero t (u (b, t))) -
         (∫ t in 0..1, Hb inf t (u (a, t))) -
         ∫ z in Icc a b ×ˢ Icc 0 1, ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
           (cappedCylinderComponent Hb L Complex.I) z (u z) := by
@@ -468,7 +468,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent
   have hL₂ : 2 ≤ L := by linarith
   have hR' : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
   have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   rw [hR'] at hE hR ⊢
   rw [hω.integral_floerEnergyDensity isOpen_univ hu.contMDiffOn
     (contMDiff_cappedCylinderComponent hHb hHbs hL 1).contMDiffOn
@@ -518,12 +518,12 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cappedCylinderComponent_eq_c
       (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
         (cappedCylinderComponent Hb L Complex.I) u z =
-      cappedLoopAction ω.1 (Hb zero) (fun t ↦ u (b, t))
+      cappedLoopAction ω.val (Hb zero) (fun t ↦ u (b, t))
           (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) -
-        cappedLoopAction ω.1 (Hb inf) (fun t ↦ u (a, t)) D -
+        cappedLoopAction ω.val (Hb inf) (fun t ↦ u (a, t)) D -
         ∫ z in Icc a b ×ˢ Icc 0 1, ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
           (cappedCylinderComponent Hb L Complex.I) z (u z) := by
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have hω₀ : IsSmoothForm I 0 ω.val := ω.isSmoothForm.of_le (by simp)
   have h := cappedLoopAction_rectangleTrans_sub_cappedLoopAction hω₀ (Hb zero) hD
     (isLoopCylinder_comp_prodMap hu hper a b)
   rw [hω.integral_floerEnergyDensity_cappedCylinderComponent hHb hHbs hL (hu.of_le one_le_two) ha
@@ -550,9 +550,9 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_cappedCylinderComponent_
       (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
     |(∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (cappedCylinderComponent Hb L 1)
         (cappedCylinderComponent Hb L Complex.I) u z) -
-      (cappedLoopAction ω.1 (Hb zero) (fun t ↦ u (b, t))
+      (cappedLoopAction ω.val (Hb zero) (fun t ↦ u (b, t))
           (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) -
-        cappedLoopAction ω.1 (Hb inf) (fun t ↦ u (a, t)) D)| ≤ Bb one + ∑ r, Bb r := by
+        cappedLoopAction ω.val (Hb inf) (fun t ↦ u (a, t)) D)| ≤ Bb one + ∑ r, Bb r := by
   have hsub (x y z : ℝ) : x - y - z - (x - y) = -z := by ring
   rw [hω.integral_floerEnergyDensity_cappedCylinderComponent_eq_cappedLoopAction_sub hHb hHbs hL
     hu hper ha hb hD hE hR, hsub, abs_neg]
@@ -584,8 +584,8 @@ theorem IsNondegenerate.cappedLoopAction_le_add_add_sum_of_cappedCylinderCompone
       (cappedCylinderComponent Hb L Complex.I) u) (Icc a b ×ˢ Icc 0 1))
     (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature (cappedCylinderComponent Hb L 1)
       (cappedCylinderComponent Hb L Complex.I) z (u z)) (Icc a b ×ˢ Icc 0 1)) :
-    cappedLoopAction ω.1 (Hb inf) (fun t ↦ u (a, t)) D ≤
-      cappedLoopAction ω.1 (Hb zero) (fun t ↦ u (b, t))
+    cappedLoopAction ω.val (Hb inf) (fun t ↦ u (a, t)) D ≤
+      cappedLoopAction ω.val (Hb zero) (fun t ↦ u (b, t))
           (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + (b - a) * σ) id)) +
         Bb one + ∑ r, Bb r := by
   have hE₀ := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)

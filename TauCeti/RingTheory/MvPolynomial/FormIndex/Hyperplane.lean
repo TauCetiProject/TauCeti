@@ -298,19 +298,19 @@ theorem exists_aeval_blockLinearForm_hasseDeriv_ne_zero_of_formIndex_ne_top [Fin
     rw [← Finset.add_sum_erase _ _ (mem_univ (i₀ h)),
       Finset.sum_eq_single j (fun i hi hij ↦ by simp [ne_of_mem_erase hi, hij]) (by simp [hj])]
     simp [hj, mul_div_cancel₀ _ (hi₀ h)]
-  choose c hc using fun h (j : {j : ι // j ≠ i₀ h}) ↦ hBspan h _ (hker h j.1 j.2)
+  choose c hc using fun h (j : {j : ι // j ≠ i₀ h}) ↦ hBspan h _ (hker h j.val j.property)
   set ψ : MvPolynomial (κ × τ) K →ₐ[K] MvPolynomial (κ × ι) K :=
-    aeval (Function.uncurry fun h a ↦ ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.1))
+    aeval (Function.uncurry fun h a ↦ ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.val))
   suffices ψ.comp (aeval (blockLinearForm B)) = aeval (kerForm M i₀) by
     rw [← this, AlgHom.comp_apply, h0, map_zero]
   ext ⟨h, i⟩ : 1
   simp only [AlgHom.comp_apply, aeval_X, blockLinearForm_apply, map_sum, map_mul, algHom_C,
     algebraMap_eq, ψ, Function.uncurry_apply_pair]
   have hstep :
-      (∑ a, C (B h i a) * ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.1)) =
+      (∑ a, C (B h i a) * ∑ j : {j : ι // j ≠ i₀ h}, C (c h j a) * X (h, j.val)) =
         ∑ j : {j : ι // j ≠ i₀ h},
-          C (if i = i₀ h then - (M h j.1 / M h (i₀ h)) else if i = j.1 then 1 else 0) *
-            X (h, j.1) := by
+          C (if i = i₀ h then - (M h j.val / M h (i₀ h)) else if i = j.val then 1 else 0) *
+            X (h, j.val) := by
     simp only [Finset.mul_sum, ← mul_assoc, ← C_mul]
     rw [Finset.sum_comm]
     exact Finset.sum_congr rfl fun j _ ↦ by rw [← Finset.sum_mul, ← map_sum, ← hc h j i]

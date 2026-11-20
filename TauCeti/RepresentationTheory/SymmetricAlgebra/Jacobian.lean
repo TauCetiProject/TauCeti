@@ -95,7 +95,7 @@ theorem jacobian_ne_zero_of_surjective_aeval [IsDomain R] [CharZero R] [Finite G
     jacobian b (fun i ↦ (f i : SymmetricAlgebra R M)) ≠ 0 := by
   have hA : Algebra.adjoin R (Set.range fun i ↦ (f i : SymmetricAlgebra R M)) =
       ρ.symmetricAlgebraInvariants := by
-    refine le_antisymm (Algebra.adjoin_le (Set.range_subset_iff.2 fun i ↦ (f i).2))
+    refine le_antisymm (Algebra.adjoin_le (Set.range_subset_iff.2 fun i ↦ (f i).property))
       fun x hx ↦ ?_
     obtain ⟨p, hp⟩ := hf ⟨x, hx⟩
     rw [Algebra.adjoin_range_eq_range_aeval]

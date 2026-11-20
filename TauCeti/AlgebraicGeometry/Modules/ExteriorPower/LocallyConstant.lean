@@ -113,7 +113,8 @@ theorem isIso_locallyConstantExteriorPowerπ_app_app (r : LocallyConstant X ℕ)
   -- The sections over `V` of the `m`-th factor are those of a module on `r⁻¹{m}` over the
   -- preimage of `V`, which is empty; they form a module over the zero ring `Γ(r⁻¹{m}, ∅)`.
   have h : (Scheme.Opens.ι (r.fiberClopens m).toOpens) ⁻¹ᵁ V = ⊥ :=
-    eq_bot_iff.2 fun x hx ↦ hm ((LocallyConstant.mem_fiberClopens.1 x.2).symm.trans (hV x.1 hx))
+    eq_bot_iff.2 fun x hx ↦ hm ((LocallyConstant.mem_fiberClopens.1 x.property).symm.trans
+        (hV x.val hx))
   -- The `m`-th factor is by definition the composite `⋀ᵐ ⋙ restrict ⋙ pushforward`. Neither
   -- `rw` nor `simp` can apply `Functor.comp_obj` to it: `SheafOfModules.exteriorPower X.sheaf m`
   -- only type-checks after unfolding the type of `X.sheaf`, beyond instance transparency. So the

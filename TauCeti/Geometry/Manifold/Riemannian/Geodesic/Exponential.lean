@@ -43,8 +43,11 @@ defined for all time.
   maximal geodesic interval is the whole real line.
 * `TauCeti.Manifold.mem_geodesicInterval_iff_smul_mem_expDomain`: the maximal interval of `v` is
   the set of times `t` with `t • v` in the domain.
-* `TauCeti.Manifold.riemannianExp_smul`: `exp_p (t • v)` is the maximal geodesic at time `t`,
-  on and off its natural interval (where both sides take the junk value).
+* `TauCeti.Manifold.riemannianExp_smul`,
+  `TauCeti.Manifold.isGeodesicCurveOnFrom_riemannianExp_smul`, and
+  `TauCeti.Manifold.isGeodesicCurveOn_riemannianExp_smul_Icc`: `exp_p (t • v)` is the maximal
+  geodesic at time `t`, on and off its natural interval (where both sides take the junk value), and
+  therefore satisfies the geodesic equation on `geodesicInterval` and its closed subintervals.
 * `TauCeti.Manifold.mem_expDomain_of_norm_le_dist`: a vector with `‖v‖ ≤ dist p (exp_p v)` lies
   in the domain, since off it `exp_p v` is the junk value `p`.
 * `TauCeti.Manifold.starConvex_expDomain`: the domain is star-shaped at `0`.
@@ -199,6 +202,23 @@ theorem riemannianExp_smul [T2Space M]
         (mt mem_geodesicInterval_iff_smul_mem_expDomain.mpr ht),
       maximalGeodesic_eq_of_not_mem ht]
 
+/-- The radial exponential curve `t ↦ exp_p (t • v)` is a geodesic from `p` with initial velocity
+`v` on its maximal geodesic interval. -/
+theorem isGeodesicCurveOnFrom_riemannianExp_smul [T2Space M] (p : M) (v : TangentSpace I p) :
+    IsGeodesicCurveOnFrom I (fun t : ℝ ↦ riemannianExp I M p (t • v))
+      (geodesicInterval I M p v) p v := by
+  simpa only [funext (riemannianExp_smul (I := I) (M := M) p v)] using
+    isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v
+
+/-- The radial exponential curve `t ↦ exp_p (t • v)` is a geodesic on every nondegenerate closed
+interval `[a, b]` whose endpoints lie in the maximal geodesic interval. -/
+theorem isGeodesicCurveOn_riemannianExp_smul_Icc [T2Space M]
+    {p : M} {v : TangentSpace I p} {a b : ℝ} (hab : a < b)
+    (ha : a ∈ geodesicInterval I M p v) (hb : b ∈ geodesicInterval I M p v) :
+    IsGeodesicCurveOn I (fun t : ℝ ↦ riemannianExp I M p (t • v)) (Icc a b) :=
+  (isGeodesicCurveOnFrom_riemannianExp_smul p v).isGeodesicCurveOn.mono (uniqueDiffOn_Icc hab)
+    (ordConnected_geodesicInterval.out ha hb)
+
 omit [I.Boundaryless] in
 /-- The domain of the exponential map is star-shaped at the zero vector. -/
 theorem starConvex_expDomain (p : M) : StarConvex ℝ (0 : TangentSpace I p) (expDomain I M p) := by
@@ -223,7 +243,7 @@ local instance tangentSpaceChartedSpace (p : M) :
 /-- **The domain of the exponential map in the tangent bundle is open**: the tangent vectors
 `z ∈ T_x M` lying in the natural domain of `exp_x` form an open subset of `TM`. -/
 theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
-    IsOpen {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := by
+    IsOpen {z : TangentBundle I M | z.snd ∈ expDomain I M z.proj} := by
   simp only [mem_expDomain_iff]
   exact isOpen_setOfPred_mem_geodesicInterval.preimage (continuous_id.prodMk continuous_const)
 
@@ -231,16 +251,16 @@ theorem isOpen_setOfPred_mem_expDomain [T2Space M] :
 tangent vector at `x`, is smooth on the open subset of `TM` where it is naturally defined: it is
 the geodesic flow at time `1` followed by the base projection. -/
 theorem contMDiffOn_riemannianExp_tangentBundle [T2Space M] :
-    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContMDiffOn I.tangent I ∞ (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   (contMDiffOn_maximalGeodesic.comp (contMDiff_id.prodMk contMDiff_const).contMDiffOn
-    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.2
+    fun _ hz ↦ mem_expDomain_iff.1 hz).congr fun z _ ↦ riemannianExp_def z.proj z.snd
 
 /-- The exponential map is continuous on the open subset of the tangent bundle where it is
 naturally defined. -/
 theorem continuousOn_riemannianExp_tangentBundle [T2Space M] :
-    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.2)
-      {z | z.2 ∈ expDomain I M z.proj} :=
+    ContinuousOn (fun z : TangentBundle I M ↦ riemannianExp I M z.proj z.snd)
+      {z | z.snd ∈ expDomain I M z.proj} :=
   contMDiffOn_riemannianExp_tangentBundle.continuousOn
 
 /-- The natural domain of the Riemannian exponential map is open. -/

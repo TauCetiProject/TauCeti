@@ -57,7 +57,7 @@ theorem map_injective_of_injective_of_le_nonZeroDivisors {R S : Type*} [CommRing
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
   obtain ⟨x, s, rfl⟩ := exists_mk'_eq M x
   obtain ⟨t, ht⟩ := (mk'_eq_zero_iff _ _).1 (by rwa [map_mk'] at hx)
-  rw [(injective_iff_map_eq_zero f).1 hf _ (mem_nonZeroDivisors_iff_left.1 (hT t.2) _ ht),
+  rw [(injective_iff_map_eq_zero f).1 hf _ (mem_nonZeroDivisors_iff_left.1 (hT t.property) _ ht),
     mk'_zero]
 
 end IsLocalization

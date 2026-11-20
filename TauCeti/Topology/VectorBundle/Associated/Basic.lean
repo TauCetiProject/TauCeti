@@ -56,6 +56,12 @@ instance instContinuousConstSMul (b : B) :
     ContinuousConstSMul 𝕜 (AssociatedBundle G P F b) :=
   inferInstanceAs (ContinuousConstSMul 𝕜 F)
 
+/-- Joint scalar multiplication is continuous for the associated fibre's native module and
+topology. -/
+instance instContinuousSMul (b : B) :
+    ContinuousSMul 𝕜 (AssociatedBundle G P F b) :=
+  inferInstanceAs (ContinuousSMul 𝕜 F)
+
 /-- Associated-bundle charts are linear when the structure-group action is linear. -/
 instance localTriv_isLinear (b : B) :
     ((associatedBundleCore G P F).localTriv b).IsLinear 𝕜 where
