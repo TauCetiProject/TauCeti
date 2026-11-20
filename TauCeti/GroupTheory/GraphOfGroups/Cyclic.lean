@@ -564,14 +564,9 @@ end π₁Tree
 
 namespace π₁
 
-/-- A spanning tree of the segment. -/
-private noncomputable def segmentTree : SerreGraph.segment.SpanningTree :=
-  (SerreGraph.segment.exists_spanningTree
-    (SerreGraph.IsTree.connected _ SerreGraph.segment_isTree)).some
-
-private theorem segmentTree_darts_nonempty : segmentTree.darts.Nonempty :=
-  have : Nontrivial SerreGraph.segment.V := nontrivial_of_ne false true Bool.false_ne_true
-  segmentTree.darts_nonempty
+private theorem segment_spanningTree_darts_nonempty :
+    SerreGraph.segment_isTree.spanningTree.darts.Nonempty :=
+  ⟨true, by rw [SerreGraph.IsTree.spanningTree_darts]; exact Set.mem_univ _⟩
 
 variable (v₀ : SerreGraph.segment.V)
 
@@ -582,21 +577,21 @@ boundary maps `(· ^ m)` and `(· ^ n)` is the amalgam `⟨x, y ∣ x ^ m = y ^ 
 `⟨x, y ∣ x² = y³⟩`. -/
 noncomputable def cyclicAmalgamEquiv :
     π₁ (cyclicAmalgam m n hm hn) v₀ ≃* PresentedGroup {cyclicAmalgamRelator m n} :=
-  (π₁Equiv _ v₀ segmentTree).trans
-    (π₁Tree.cyclicAmalgamEquiv m n hm hn segmentTree_darts_nonempty)
+  (π₁Equiv _ v₀ SerreGraph.segment_isTree.spanningTree).trans
+    (π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty)
 
 /-- The image of the class of `q c q⁻¹`, for an edge path `q` from `v₀` to `b`, is the image of
 `c` under `A_b → π₁(𝔸, T)`. -/
 private theorem cyclicAmalgamEquiv_vertexHom_mapPath {b : SerreGraph.segment.V}
     (q : SerreGraph.segment.Path v₀ b) (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
     cyclicAmalgamEquiv m n hm hn v₀ (vertexHom ((dartPrefunctor _).mapPath q) c) =
-      π₁Tree.cyclicAmalgamEquiv m n hm hn segmentTree_darts_nonempty
-        (π₁Tree.of segmentTree.darts b c) := by
-  -- Both darts of the segment are trivial in `π₁(𝔸, T)`, so the edge path `q` reads as `1`.
-  have hq : q.weight (fun {a b : SerreGraph.segment.V} (e : a ⟶ b) =>
-      π₁Tree.edge (𝔸 := cyclicAmalgam m n hm hn) segmentTree.darts e.1) = 1 :=
-    SerreGraph.Path.weight_eq_one _ q fun e _ =>
-      π₁Tree.edge_segment_eq_one segmentTree_darts_nonempty e
+      π₁Tree.cyclicAmalgamEquiv m n hm hn segment_spanningTree_darts_nonempty
+        (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c) := by
+  -- Every dart of the segment lies in its tree, so it reads as `1` in `π₁(𝔸, T)`, and so does
+  -- the edge path `q`.
+  have hq : q.weight (fun {a b : SerreGraph.segment.V} (_ : a ⟶ b) =>
+      (1 : π₁Tree (cyclicAmalgam m n hm hn) SerreGraph.segment_isTree.spanningTree.darts)) = 1 :=
+    SerreGraph.Path.weight_eq_one _ q (f := fun _ => 1) fun _ _ => rfl
   simp [cyclicAmalgamEquiv, π₁Equiv_apply, hq]
 
 @[simp] theorem cyclicAmalgamEquiv_vertexHom_false (q : SerreGraph.segment.Path v₀ false)
@@ -612,6 +607,31 @@ private theorem cyclicAmalgamEquiv_vertexHom_mapPath {b : SerreGraph.segment.V}
       PresentedGroup.of true ^ c.toAdd :=
   (cyclicAmalgamEquiv_vertexHom_mapPath m n hm hn v₀ q c).trans
     (π₁Tree.cyclicAmalgamEquiv_of_true ..)
+
+/-- The inverse sends `x` to the class of `q a q⁻¹`, for `a = ofAdd 1` the generator of the
+vertex group at `false` and `q` the reduced edge path from `v₀` to `false`: empty if `v₀ = false`
+and the edge otherwise. -/
+@[simp] theorem cyclicAmalgamEquiv_symm_of_false :
+    (cyclicAmalgamEquiv m n hm hn v₀).symm (PresentedGroup.of false) =
+      vertexHom
+        ((dartPrefunctor _).mapPath (SerreGraph.segment_isTree.spanningTree.path v₀ false))
+        -- Typed at `Multiplicative ℤ`, as in `cyclicAmalgamEquiv_vertexHom_false`, so that `simp`
+        -- can apply that lemma to the right-hand side.
+        (ofAdd 1 : Multiplicative ℤ) :=
+  (MulEquiv.symm_apply_eq _).mpr
+    ((cyclicAmalgamEquiv_vertexHom_false m n hm hn v₀ _ (ofAdd 1)).trans (zpow_one _)).symm
+
+/-- The inverse sends `y` to the class of `q a q⁻¹`, for `a = ofAdd 1` the generator of the
+vertex group at `true` and `q` the reduced edge path from `v₀` to `true`: empty if `v₀ = true`
+and the edge otherwise. -/
+@[simp] theorem cyclicAmalgamEquiv_symm_of_true :
+    (cyclicAmalgamEquiv m n hm hn v₀).symm (PresentedGroup.of true) =
+      vertexHom
+        ((dartPrefunctor _).mapPath (SerreGraph.segment_isTree.spanningTree.path v₀ true))
+        -- Typed at `Multiplicative ℤ` for `cyclicAmalgamEquiv_vertexHom_true`, as above.
+        (ofAdd 1 : Multiplicative ℤ) :=
+  (MulEquiv.symm_apply_eq _).mpr
+    ((cyclicAmalgamEquiv_vertexHom_true m n hm hn v₀ _ (ofAdd 1)).trans (zpow_one _)).symm
 
 /-- For coprime `m` and `n`, the fundamental group at any vertex of the segment of infinite cyclic
 groups with boundary maps `(· ^ m)` and `(· ^ n)` has infinite cyclic abelianization: for any
@@ -629,8 +649,9 @@ private theorem cyclicAmalgamAbelianizationEquiv_of_vertexHom (hmn : IsCoprime m
     {b : SerreGraph.segment.V} (p : (cyclicAmalgam m n hm hn).Path ⟨v₀⟩ ⟨b⟩)
     (c : (cyclicAmalgam m n hm hn).vertexGroup b) :
     cyclicAmalgamAbelianizationEquiv m n hm hn v₀ hmn (Group.Abelianization.of (vertexHom p c)) =
-      π₁Tree.cyclicAmalgamAbelianizationEquiv m n hm hn hmn segmentTree_darts_nonempty
-        (Group.Abelianization.of (π₁Tree.of segmentTree.darts b c)) := by
+      π₁Tree.cyclicAmalgamAbelianizationEquiv m n hm hn hmn segment_spanningTree_darts_nonempty
+        (Group.Abelianization.of
+          (π₁Tree.of SerreGraph.segment_isTree.spanningTree.darts b c)) := by
   simp [cyclicAmalgamAbelianizationEquiv, π₁Tree.cyclicAmalgamAbelianizationEquiv,
     cyclicAmalgamEquiv, π₁Equiv_apply]
 
