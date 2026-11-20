@@ -81,11 +81,11 @@ theorem exists_stronglyMeasurable_ae_eq_comp (hq : IsQuotientCoveringMap q G)
     ext x
     by_cases hx : x ∈ S
     · simp only [comp_apply, h, piecewise_eq_of_mem _ _ _ hx]
-      exact piecewise_eq_of_mem _ _ _ (show q x ∈ q '' Z from hx)
+      exact piecewise_eq_of_mem _ _ _ (mem_preimage.1 hx)
     · simp only [comp_apply, h, piecewise_eq_of_notMem _ _ _ hx]
-      rw [piecewise_eq_of_notMem _ _ _ (show q x ∉ q '' Z from hx)]
+      rw [piecewise_eq_of_notMem _ _ _ fun hy ↦ hx (mem_preimage.2 hy)]
       obtain ⟨g, hg⟩ := hq.apply_eq_iff_mem_orbit.1 (surjInv_eq hq.surjective (q x))
-      have hxZ : x ∉ Z := fun hxZ ↦ hx ⟨x, hxZ, rfl⟩
+      have hxZ : x ∉ Z := fun hxZ ↦ hx (mem_preimage.2 (mem_image_of_mem q hxZ))
       simp only [Z, mem_iUnion, mem_ofPred_eq, not_exists, not_not] at hxZ
       rw [← hg, hxZ g]
   refine ⟨h, (hq.isLocalHomeomorph.stronglyMeasurable_comp_iff hq.surjective).1 ?_, ?_⟩

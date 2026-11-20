@@ -170,8 +170,7 @@ theorem riemannianVolume_preimage (hq : IsQuotientCoveringMap q G)
 omit [Finite G] in
 /-- **The deck group preserves the volume.** If `q : M → N` is a quotient covering map for an
 action of a group `G` and a local isometry, then every `g • ·` preserves the Riemannian volume
-of `M`. No smoothness of the action is assumed: on a set where `q` is injective, a subset
-and its translate by `g` have the same image under `q`, hence the same volume. -/
+of `M`. No smoothness of the action is assumed. -/
 theorem measurePreserving_smul (hq : IsQuotientCoveringMap q G)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) (g : G) :

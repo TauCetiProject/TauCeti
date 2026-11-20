@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Basic
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 
 /-!
-# Strong measurability of continuous functions with compact range
+# Strong measurability: continuous maps with compact range and descent along local homeomorphisms
 
 A continuous function from a space with the Borel `σ`-algebra to a pseudo-metrizable space is
 strongly measurable as soon as its range lies in a compact set, since the range is then separable.
