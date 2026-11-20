@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.Circle.Laurent
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
 
 import TauCeti.Analysis.Fourier.AddCircle
@@ -16,8 +17,9 @@ A loop `u` of period `T` is antiperiodic of antiperiod `T / 2` when `u (x + T / 
 `fourier n (T / 2) = (-1) ^ n` (`TauCeti.fourier_coe_half_period`), the rotation by `T / 2`
 multiplies the `n`-th Fourier coefficient by `(-1) ^ n`, so the antiperiodic loops are exactly the
 loops whose even Fourier coefficients vanish. This file introduces the corresponding subspace
-`TauCeti.CircleSobolev.antiperiodic s E` of the Fourier-coefficient Sobolev space `H^s(E)`. It is
-defined by the vanishing of the even coefficients, so it does not depend on the period `T`; its
+`TauCeti.CircleSobolev.antiperiodic s E` of the Fourier-coefficient Sobolev space `H^s(E)`, the
+frequency-support subspace `TauCeti.CircleSobolev.supported s E {n | Odd n}`. It is defined by
+the vanishing of the even coefficients, so it does not depend on the period `T`; its
 description through the rotation by `T / 2` (`TauCeti.CircleSobolev.rotate_half_period_eq_neg_iff`)
 and, for `s > 1/2`, through the continuous representative
 (`TauCeti.CircleSobolev.mem_antiperiodic_iff_toContinuousMap`) holds for every period.
@@ -32,18 +34,19 @@ realized on its double cover as the `-1`-eigenspace of the deck rotation.
 ## Main definitions
 
 * `TauCeti.CircleSobolev.antiperiodic s E`: the subspace of `H^s(E)` of the loops whose even
-  Fourier coefficients vanish.
+  Fourier coefficients vanish, that is, `TauCeti.CircleSobolev.supported s E {n | Odd n}`.
 
 ## Main statements
 
-* `TauCeti.CircleSobolev.isClosed_antiperiodic`: the subspace is closed.
+* `TauCeti.CircleSobolev.isClosed_antiperiodic`: the subspace is closed
+  (`TauCeti.CircleSobolev.isClosed_supported`).
 * `TauCeti.CircleSobolev.rotate_half_period_eq_neg_iff`: an element of `H^s(E)` lies in
   `antiperiodic s E` exactly when the rotation by half the period negates it.
 * `TauCeti.CircleSobolev.mem_antiperiodic_iff_toContinuousMap`: for `s > 1/2`, exactly when its
   continuous representative satisfies `u (x + T / 2) = -u x`.
-* `TauCeti.CircleSobolev.inclusion_mem_antiperiodic`,
-  `TauCeti.CircleSobolev.loopOperator_mem_antiperiodic`: the inclusions `H^s ⊆ H^t` and, for a
-  loop `S` invariant under the rotation by `T / 2`, the operator `L_S` preserve antiperiodicity.
+* `TauCeti.CircleSobolev.loopOperator_mem_antiperiodic`: for a loop `S` invariant under the
+  rotation by `T / 2`, the operator `L_S` preserves antiperiodicity. The inclusions `H^s ⊆ H^t`
+  preserve it too (`TauCeti.CircleSobolev.inclusion_mem_supported_iff`).
 -/
 
 public section
@@ -57,28 +60,20 @@ namespace CircleSobolev
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 variable (s E) in
-/-- The loops in `H^s(E)` whose even Fourier coefficients vanish. For every period `T` these are
-the loops antiperiodic of antiperiod `T / 2` (`CircleSobolev.rotate_half_period_eq_neg_iff`,
+/-- The loops in `H^s(E)` whose even Fourier coefficients vanish, the frequency-support subspace
+`CircleSobolev.supported s E {n | Odd n}`. For every period `T` these are the loops antiperiodic
+of antiperiod `T / 2` (`CircleSobolev.rotate_half_period_eq_neg_iff`,
 `CircleSobolev.mem_antiperiodic_iff_toContinuousMap`). -/
-def antiperiodic : Submodule ℂ (CircleSobolev s E) where
-  carrier := {a | ∀ n : ℤ, Even n → a.coeff n = 0}
-  add_mem' ha hb n hn := by simp [ha n hn, hb n hn]
-  zero_mem' n _ := by simp
-  smul_mem' c a ha n hn := by simp [ha n hn]
+abbrev antiperiodic : Submodule ℂ (CircleSobolev s E) :=
+  supported s E {n | Odd n}
 
 theorem mem_antiperiodic_iff {a : CircleSobolev s E} :
-    a ∈ antiperiodic s E ↔ ∀ n : ℤ, Even n → a.coeff n = 0 :=
-  Iff.rfl
+    a ∈ antiperiodic s E ↔ ∀ n : ℤ, Even n → a.coeff n = 0 := by
+  simp [mem_supported']
 
 /-- The antiperiodic loops form a closed subspace of `H^s(E)`. -/
-theorem isClosed_antiperiodic : IsClosed (antiperiodic s E : Set (CircleSobolev s E)) := by
-  have : (antiperiodic s E : Set (CircleSobolev s E)) =
-      ⋂ n : ℤ, ⋂ _ : Even n, {a | coeffCLM n a = 0} := by
-    ext a
-    simp [mem_antiperiodic_iff]
-  rw [this]
-  exact isClosed_iInter fun n ↦ isClosed_iInter fun _ ↦
-    isClosed_eq (coeffCLM n).continuous continuous_const
+theorem isClosed_antiperiodic : IsClosed (antiperiodic s E : Set (CircleSobolev s E)) :=
+  isClosed_supported _
 
 /-- An element of `H^s(E)` is antiperiodic exactly when the rotation by half the period `T`
 negates it. -/
@@ -101,11 +96,6 @@ theorem mem_antiperiodic_iff_toContinuousMap {T : ℝ} [Fact (0 < T)] [CompleteS
   rw [← rotate_half_period_eq_neg_iff (Fact.out : 0 < T).ne',
     ← (toContinuousMap_injective T hs).eq_iff]
   simp [ContinuousMap.ext_iff]
-
-/-- The inclusion `H^s ⊆ H^t`, `t ≤ s`, preserves antiperiodicity. -/
-theorem inclusion_mem_antiperiodic (h : t ≤ s) {a : CircleSobolev s E}
-    (ha : a ∈ antiperiodic s E) : inclusion h a ∈ antiperiodic t E :=
-  fun n hn ↦ by simp [ha n hn]
 
 /-- For a loop `S` invariant under the rotation by half the period, the operator
 `L_S ζ = ζ' - S ζ` maps antiperiodic loops to antiperiodic loops. -/

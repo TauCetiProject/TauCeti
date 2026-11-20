@@ -41,7 +41,7 @@ rotation `R` of every mode, and the twisted maps are the solutions of `R x = -x`
 twisted, then `D (R x) = R (D x) = -D x = D (-x)`, so `R x = -x` by injectivity: the inverse of
 `D` maps twisted targets to twisted maps. Hence the restricted operator is invertible
 (`TauCeti.isInvertible_doublyAntiperiodicTorusOperator`, through
-`ContinuousLinearMap.IsInvertible.restrict`). For `S = 0` it is complex linear
+`ContinuousLinearMap.IsInvertible.restrictOfTower`). For `S = 0` it is complex linear
 (`TauCeti.doublyAntiperiodicTorusOperator_zero_apply_smul`). Since `τ • S` is again
 infinitesimally symplectic and invariant under the half rotation, every operator of the path
 `τ ↦ ∂s + J₀ (∂t - τ S)` is invertible. On the double cover this path depends continuously on
@@ -180,9 +180,9 @@ theorem antiperiodicTorusOperator_mem_doublyAntiperiodicL2 {ℓ : ℝ}
     antiperiodicTorusOperator T ℓ S x ∈ doublyAntiperiodicL2 F := fun k ↦ by
   rw [antiperiodicTorusOperator_apply_apply_eq]
   exact ⟨add_mem (Submodule.smul_mem _ I (loopOperator_mem_antiperiodic hS (hx k).1))
-      (Submodule.smul_of_tower_mem _ _ (inclusion_mem_antiperiodic _ (hx k).2)),
+      (Submodule.smul_of_tower_mem _ _ ((inclusion_mem_supported_iff _).2 (hx k).2)),
     sub_mem (Submodule.smul_mem _ I (loopOperator_mem_antiperiodic hS (hx k).2))
-      (Submodule.smul_of_tower_mem _ _ (inclusion_mem_antiperiodic _ (hx k).1))⟩
+      (Submodule.smul_of_tower_mem _ _ ((inclusion_mem_supported_iff _).2 (hx k).1))⟩
 
 /-- The orbit-torus operator `∂s + A`, `A ζ = J₀ (ζ' - S ζ)`, on maps antiperiodic of antiperiod
 `ℓ` in `s` and of antiperiod `T / 2` in `t`, for a loop `S` of period `T` invariant under the
@@ -190,16 +190,9 @@ rotation by `T / 2`: the restriction of `TauCeti.antiperiodicTorusOperator T ℓ
 `TauCeti.doublyAntiperiodicSobolev F ℓ`, with values in `TauCeti.doublyAntiperiodicL2 F`. -/
 def doublyAntiperiodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) :
-    doublyAntiperiodicSobolev F ℓ →L[ℝ] doublyAntiperiodicL2 F where
-  -- Built by hand rather than with `ContinuousLinearMap.restrict`, which would restrict to the
-  -- real subspaces `Submodule.restrictScalars ℝ` and forget their complex structure.
-  toFun x := ⟨antiperiodicTorusOperator T ℓ S x,
-    antiperiodicTorusOperator_mem_doublyAntiperiodicL2 T hS x.2⟩
-  map_add' x y :=
-    Subtype.ext ((antiperiodicTorusOperator T ℓ S).map_add (x : antiperiodicSobolev F ℓ) y)
-  map_smul' c x :=
-    Subtype.ext ((antiperiodicTorusOperator T ℓ S).map_smul c (x : antiperiodicSobolev F ℓ))
-  cont := ((antiperiodicTorusOperator T ℓ S).continuous.comp continuous_subtype_val).subtype_mk _
+    doublyAntiperiodicSobolev F ℓ →L[ℝ] doublyAntiperiodicL2 F :=
+  (antiperiodicTorusOperator T ℓ S).restrictOfTower fun _ ↦
+    antiperiodicTorusOperator_mem_doublyAntiperiodicL2 T hS
 
 @[simp]
 theorem coe_doublyAntiperiodicTorusOperator_apply (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
@@ -299,7 +292,7 @@ theorem isInvertible_doublyAntiperiodicTorusOperator {ℓ : ℝ} (hℓ : ℓ ≠
     (hS' : ∀ t, S (t + (T / 2 : ℝ)) = S t) :
     (doublyAntiperiodicTorusOperator T ℓ S hS').IsInvertible :=
   -- The inverse of `D` maps doubly antiperiodic targets to doubly antiperiodic maps.
-  (isInvertible_antiperiodicTorusOperator T hℓ S hS).restrict (fun _ ↦ rfl)
+  (isInvertible_antiperiodicTorusOperator T hℓ S hS).restrictOfTower _
     fun _ hx ↦ mem_doublyAntiperiodicSobolev_of_mem T hℓ hS hS' hx
 
 end Inner

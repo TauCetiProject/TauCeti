@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Tactic.Abel
 
@@ -43,7 +44,7 @@ Between uniformly topologized modules an invertible continuous linear map transf
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
 
 An invertible map restricts to an invertible map between submodules `p` and `q` as soon as its
-inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrict`).
+inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrictOfTower`).
 
 The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
 even for maps between different modules. It transports invertibility from an operator to its
@@ -92,20 +93,16 @@ variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
   [TopologicalSpace N] [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
 
 /-- Let `f` be invertible, mapping the submodule `p` into the submodule `q`, and suppose that `x`
-lies in `p` whenever `f x` lies in `q`. Then the restriction `g : p →L[R] q` of `f` is invertible:
+lies in `p` whenever `f x` lies in `q`. Then the restriction `p →L[R] q` of `f` is invertible:
 the inverse of `f` maps `q` into `p`. The submodules may be over a larger ring `S` of scalars, for
 example complex subspaces for a real-linear `f`. -/
-theorem IsInvertible.restrict {f : M →L[R] N} (hf : f.IsInvertible) {p : Submodule S M}
-    {q : Submodule S N} {g : p →L[R] q} (hg : ∀ x, (g x : N) = f x)
-    (hq : ∀ x, f x ∈ q → x ∈ p) : g.IsInvertible := by
-  let G : q →L[R] p :=
-    { toFun y := ⟨f.inverse y, hq _ (by rw [hf.self_apply_inverse]; exact y.2)⟩
-      map_add' y z := Subtype.ext (f.inverse.map_add (y : N) z)
-      map_smul' c y := Subtype.ext (f.inverse.map_smul c (y : N))
-      cont := (f.inverse.continuous.comp continuous_subtype_val).subtype_mk _ }
-  refine IsInvertible.of_inverse (g := G) ?_ ?_ <;> ext1 y <;> refine Subtype.ext ?_
-  · simpa [hg, G] using hf.self_apply_inverse (y : N)
-  · simpa [hg, G] using hf.inverse_apply_self (y : M)
+theorem IsInvertible.restrictOfTower {f : M →L[R] N} (hf : f.IsInvertible) {p : Submodule S M}
+    {q : Submodule S N} (h : ∀ x ∈ p, f x ∈ q) (hq : ∀ x, f x ∈ q → x ∈ p) :
+    (f.restrictOfTower h).IsInvertible := by
+  refine IsInvertible.of_inverse (g := f.inverse.restrictOfTower fun y hy ↦
+    hq _ (by rwa [hf.self_apply_inverse])) ?_ ?_ <;> ext1 y <;> refine Subtype.ext ?_
+  · simpa using hf.self_apply_inverse (y : N)
+  · simpa using hf.inverse_apply_self (y : M)
 
 end Restrict
 
