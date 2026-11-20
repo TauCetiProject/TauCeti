@@ -62,8 +62,9 @@ a topological `Flow ℝ M` in `IsContactForm.reebFlow` without rest points
   `IsContactForm.charpoly_mfderiv_flowOf_reebVectorField`,
   `IsContactForm.charpoly_normalReturnDerivative_eq`,
   `IsContactForm.hasEigenvalue_returnDerivative_iff`):
-  when `Φ_T(p) = p`, restricting `dΦ_T(p)` to `ξ_p` yields a linear symplectomorphism whose
-  iterates obey the power law, whose conjugacy class is invariant along the trajectory,
+  when the maximal flow is defined at `(T, p)` and `Φ_T(p) = p`, restricting `dΦ_T(p)` to
+  `ξ_p` yields a linear symplectomorphism whose iterates obey the power law, whose conjugacy
+  class is invariant along the trajectory,
   whose full monodromy characteristic polynomial splits as
   `(X - 1)` times its characteristic polynomial, and whose characteristic polynomial and eigenvalues
   agree with those of the normal derivative on a transverse section for the return branch at

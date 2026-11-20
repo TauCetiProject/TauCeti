@@ -62,7 +62,7 @@ basepoint are inherited directly from `TauCeti.Dynamics.Flow.ClosedOrbit`.
 * **Comparison with Poincaré sections**
   (`IsContactForm.kerSectionEquivKerDistribution_conj_normalReturnDerivative`): projection along
   `R_α` conjugates the normal return derivative of any transverse section to the linearized Reeb
-  return map.
+  return map for the branch at the specified return time `T`, including covered periods.
 
 ## Finiteness below an action bound and the circle model
 
@@ -327,10 +327,9 @@ theorem IsContactForm.finite_closedOrbit_inter_nonempty_and_period_le (hα : α.
         hzK⟩
     have hδ := hnd (Flow.ClosedOrbit.mk δ) hmeet
       (by simpa only [Flow.ClosedOrbit.period_mk, δ, hα.period_reebTrajectory] using htA)
-    rw [hα.isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative] at hδ
-    have hpoint : δ.point = z := hα.point_reebTrajectory _ _ _ _
-    have hperiod : δ.period = t := hα.period_reebTrajectory _ _ _ _
-    rwa [hpoint, hperiod] at hδ
+    have hsection :=
+      (hα.isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative hc δ).mp hδ
+    rwa [hα.point_reebTrajectory, hα.period_reebTrajectory] at hsection
   obtain ⟨F, -, hF⟩ := exists_finset_forall_fst_eq_and_exists_flowOf_eq_snd hv hS hSD hSnd
   refine Flow.ClosedOrbit.finite_of_exists_finset (F := F) ?_
   rintro γ ⟨⟨p, hpγ, hpK⟩, hγA⟩
@@ -603,7 +602,8 @@ variable {g : M → ℝ} {T : ℝ} {x : M}
 
 /-- **The linearized Reeb return map on `ξ` is conjugate to the normal return derivative.**
 For any local transverse section `{g = g x}`, the projection along `R_α(x)` conjugates
-`TauCeti.normalReturnDerivative` to `TauCeti.SmoothForm.IsContactForm.linearizedReebReturn`. -/
+`TauCeti.normalReturnDerivative` to `TauCeti.SmoothForm.IsContactForm.linearizedReebReturn`
+for the branch at the specified return time `T`, including covered periods. -/
 theorem kerSectionEquivKerDistribution_conj_normalReturnDerivative
     (hT : (T, x) ∈ flowDomain α.reebVectorField)
     (hfix : flowOf α.reebVectorField T x = x)

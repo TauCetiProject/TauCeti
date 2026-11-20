@@ -82,10 +82,10 @@ private theorem eventually_forall_isNondegenerateOrbit_period_le
       (by rwa [(hα a₀).reebFlow_apply])
     have hδ := hnd (Flow.ClosedOrbit.mk δ)
       (by simpa only [Flow.ClosedOrbit.period_mk, δ, (hα a₀).period_reebTrajectory] using htA)
-    rw [(hα a₀).isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative] at hδ
-    have hpoint : δ.point = x := (hα a₀).point_reebTrajectory _ _ _ _
-    have hperiod : δ.period = t := (hα a₀).period_reebTrajectory _ _ _ _
-    rwa [hpoint, hperiod] at hδ
+    have hsection :=
+      ((hα a₀).isNondegenerateOrbit_mk_iff_exists_not_hasEigenvalue_returnDerivative
+        (hc a₀) δ).mp hδ
+    rwa [(hα a₀).point_reebTrajectory, (hα a₀).period_reebTrajectory] at hsection
   have hpersist := eventually_subset_flowDomain_and_forall_not_hasEigenvalue_returnDerivative
     (v := fun a ↦ (α a).reebVectorField) hv
     (isCompact_Icc.prod isCompact_univ) (fun z _ ↦ (hc a₀).mem_flowDomain z.1 z.2) hsections
@@ -96,7 +96,8 @@ private theorem eventually_forall_isNondegenerateOrbit_period_le
   have hp : flowOf (α a).reebVectorField δ.period δ.point = δ.point := by
     rw [← (hα a).reebFlow_apply]; exact δ.apply_period
   exact hpa.2 (δ.period, δ.point)
-    ⟨⟨ha δ.point (mem_univ _) δ.period δ.period_pos ((hc a).mem_flowDomain _ _) hp, hγ⟩,
+    ⟨⟨(ha.self_of_nhdsSet δ.point (mem_univ _)) δ.period δ.period_pos
+        ((hc a).mem_flowDomain _ _) hp, hγ⟩,
       mem_univ _⟩ hp
 
 /-- For a family of contact forms on a compact boundaryless phase manifold, parametrized by a
