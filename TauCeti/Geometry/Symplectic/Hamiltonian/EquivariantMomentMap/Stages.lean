@@ -165,7 +165,7 @@ theorem residualMomentMapLift_subgroup_smul [SMul G M] [SMul N Z] [N.Normal]
   congr 2
   rw [hiN, hμ]
   exact coadjointRepresentation_apply_eq_self_of_mem_dualAnnihilator_groupLieSubalgebraOfSubgroup
-    hN n.2 (hi z)
+    hN n.property (hi z)
 
 section Regularity
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Derivation
 
 import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 import TauCeti.Geometry.Lie.Adjoint.Smooth
@@ -35,6 +36,9 @@ moment maps of Hamiltonian group actions are equivariant.
 
 * `TauCeti.Lie.coadjointRepresentation_eq_one`: the coadjoint action of a commutative Lie group is
   trivial.
+* `TauCeti.Lie.tangentToLeftInvariantDerivation_adjointRepresentation_apply`: the left-invariant
+  derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint action on
+  left-invariant derivations.
 * `TauCeti.Lie.coadjointRepresentation_apply_comp_tangentAd`: the translate `Ad*_g ν` pulls back
   along the adjoint automorphism `Ad_g` to `ν`.
 * `TauCeti.Lie.contMDiff_coadjointRepresentation_apply`: for a smooth real Lie group with
@@ -130,6 +134,18 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+
+/-- The left-invariant derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint
+action `Ad g` on left-invariant derivations. -/
+theorem tangentToLeftInvariantDerivation_adjointRepresentation_apply (g : G)
+    (ξ : GroupLieAlgebra I G) :
+    tangentToLeftInvariantDerivation (adjointRepresentation ℝ I G g ξ) =
+      Ad (I := I) g (tangentToLeftInvariantDerivation ξ) := by
+  rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
+    adjointRepresentation_apply, adjointContinuousLinearMap_apply,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
+    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
 
 /-- Each component `g ↦ (Ad*_g ν) ξ = ν (Ad_{g⁻¹} ξ)` of the coadjoint action of a smooth real Lie
 group with finite-dimensional model is smooth. -/

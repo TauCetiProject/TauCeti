@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
-import TauCeti.Geometry.Lie.Adjoint.Derivation
 import TauCeti.Geometry.Lie.Subgroup.Differential
 
 /-!
@@ -139,19 +138,6 @@ theorem mem_groupLieSubalgebraOfSubgroup {K : Subgroup G} (hK : IsClosed (K : Se
       ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) ∈ K := by
   rw [mem_groupLieSubalgebraOfSubgroup_iff, mem_lieSubalgebraOfSubgroup hK]
   simp only [← map_smul, lieExp_tangentToLeftInvariantDerivation]
-
-omit [T2Space G] in
-/-- The left-invariant derivation of a tangent vector intertwines `Ad_g` on `𝔤` with the adjoint
-action `Ad g` on derivations. -/
-private theorem tangentToLeftInvariantDerivation_adjointRepresentation_apply (g : G)
-    (ξ : GroupLieAlgebra I G) :
-    tangentToLeftInvariantDerivation (adjointRepresentation ℝ I G g ξ) =
-      Ad (I := I) g (tangentToLeftInvariantDerivation ξ) := by
-  rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)),
-    adjointRepresentation_apply, adjointContinuousLinearMap_apply,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_symm_apply]
 
 /-- **The Lie algebra of `K` is invariant under the adjoint action of the normalizer of `K`.** -/
 theorem adjointRepresentation_apply_mem_groupLieSubalgebraOfSubgroup {K : Subgroup G} {g : G}

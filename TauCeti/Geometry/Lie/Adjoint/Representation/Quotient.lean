@@ -80,7 +80,7 @@ theorem isTrivial_quotient_adjointRepresentation_comp_subtype {N : Subgroup G} [
     rw [MonoidHom.comp_apply]
     exact Representation.quotient_apply_eq_id (ρ := adjointRepresentation ℝ I G)
       groupLieSubalgebraOfSubgroup_le_comap_adjointRepresentation
-      (adjointRepresentation_apply_sub_mem_groupLieSubalgebraOfSubgroup hN n.2)⟩
+      (adjointRepresentation_apply_sub_mem_groupLieSubalgebraOfSubgroup hN n.property)⟩
 
 /-- **The adjoint representation of `G ⧸ N` on `𝔤 ⧸ 𝔫`** for a closed normal subgroup `N` with Lie
 algebra `𝔫`: the adjoint representation of `G` descends to `𝔤 ⧸ 𝔫` because `𝔫` is `Ad`-invariant,
