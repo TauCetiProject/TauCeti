@@ -85,6 +85,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered.Basic`.
   the section whose readings its chart data are.
 * `TauCeti.SectionChartData.chartValueL_ae_of_eq_fiberMap`: components related by a constant fibre
   map `L` have chart data related by `L`.
+* `TauCeti.SobolevSection.exists_section_ae_eq_coord`: every Sobolev section has an actual section
+  representative with the prescribed chart readings.
 * `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
   section whose coordinates its chart data are.
 * `TauCeti.FiniteBundleAtlas.isFiniteMeasure_restrict_image`: chart images have finite measure for
@@ -1092,6 +1094,15 @@ variable [FiniteDimensional ℝ F]
 the tuples of chartwise Sobolev components of sections, with the maximum of the component norms. -/
 abbrev SobolevSection : Type u :=
   A.sectionChartData.sobolevSections μ p k
+
+/-- An element of the finite-atlas Sobolev space has an actual section representative, whose
+readings in every chart agree almost everywhere with its chart data. -/
+theorem SobolevSection.exists_section_ae_eq_coord (w : SobolevSection A μ p k) :
+    ∃ s : ∀ x, V x, ∀ i, A.sectionChartData.chartValueL μ p k i w
+      =ᵐ[μ.restrict (A.image i)] A.coord i s := by
+  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section μ p k w
+  refine ⟨s, fun i ↦ ?_⟩
+  exact (hs i).trans (A.sectionChartData_coord_ae_eq μ i s)
 
 /-- **Completeness.** The Sobolev space of sections of a vector bundle is a Banach space. -/
 instance SobolevSection.instCompleteSpace [IsManifold 𝓘(ℝ, E) 1 M] :
