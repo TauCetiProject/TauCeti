@@ -410,7 +410,7 @@ omit [Fact (0 < p)] [FiniteDimensional ℝ E] [T2Space B] [BoundarylessManifold 
 include hα in
 /-- The developing map has injective differential: its differentials, scaled by `p`, span every
 cotangent space. -/
-private theorem injective_mfderiv
+theorem injective_mfderiv
     (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i)
     (x : B) : Injective (mfderiv I 𝓘(ℝ, ι → ℝ) a x) := by
   refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
