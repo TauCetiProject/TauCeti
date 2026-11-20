@@ -45,20 +45,6 @@ private theorem idUnit_diagonal_square (R : Type u) [CommRing R] :
         ((𝟙 (𝟙_ (ModuleCat.{u} R))) ⊗ₘ (𝟙 (𝟙_ (ModuleCat.{u} R)))) := by
   rw [Category.id_comp, id_tensorHom_id, Category.comp_id]
 
-private theorem singularHomology₀ε_section_apply (k : Type u) [Ring k]
-    (X : TopCat.{u}) (U : ModuleCat.{u} k) (x : X) (r : U) :
-    X.singularHomology₀ε U (singularHomology₀Section U x r) = r := by
-  simpa only [ConcreteCategory.comp_apply, ConcreteCategory.id_apply] using
-    ConcreteCategory.congr_hom (singularHomology₀Section_singularHomology₀ε U x) r
-
-private theorem singularHomology₀Section_apply_ne_zero (k : Type u) [Ring k]
-    (X : TopCat.{u}) (U : ModuleCat.{u} k) (x : X) (r : U) (hr : r ≠ 0) :
-    singularHomology₀Section U x r ≠ 0 := by
-  intro h
-  have hh := congrArg (X.singularHomology₀ε U) h
-  rw [singularHomology₀ε_section_apply, map_zero] at hh
-  exact hr hh
-
 end TauCeti
 
 namespace TauCeti.CapCoefficientClients
