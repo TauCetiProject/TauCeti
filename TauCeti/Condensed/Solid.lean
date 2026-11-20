@@ -26,9 +26,9 @@ formal consequences:
   factorization and uniqueness;
 * the solid condensed modules are closed under isomorphisms, under limits of every shape
   (in particular products and kernels), and contain the zero objects;
-* hence the full subcategory `TauCeti.SolidAb` of solid condensed abelian groups has all the
-  limits that condensed abelian groups have, created by its inclusion, together with kernels
-  and a zero object;
+* hence the full subcategory of solid condensed `R`-modules, and in particular the category
+  `TauCeti.SolidAb` of solid condensed abelian groups, has all the limits that condensed
+  modules have, created by its inclusion, together with kernels and a zero object;
 * for a finite profinite set `S`, the solidification map `R[S] ⟶ R[S]^solid` is an
   isomorphism, because `R[S]^solid` is a right Kan extension along the fully faithful
   functor `FintypeCat.toProfinite`.
@@ -87,6 +87,7 @@ theorem solidification_desc (f : (profiniteFree R).obj S ⟶ A) :
 
 /-- Two morphisms from `R[S]^solid` into a solid condensed module agree as soon as they agree
 after precomposition with the solidification map. -/
+@[ext]
 theorem hom_ext {g₁ g₂ : (profiniteSolid R).obj S ⟶ A}
     (h : (profiniteSolidification R).app S ≫ g₁ = (profiniteSolidification R).app S ≫ g₂) :
     g₁ = g₂ :=
@@ -95,6 +96,11 @@ theorem hom_ext {g₁ g₂ : (profiniteSolid R).obj S ⟶ A}
 @[simp]
 theorem desc_solidification_comp (g : (profiniteSolid R).obj S ⟶ A) :
     desc ((profiniteSolidification R).app S ≫ g) = g :=
+  hom_ext (by simp)
+
+@[reassoc (attr := simp)]
+theorem desc_comp {B : CondensedMod.{u} R} [B.IsSolid] (f : (profiniteFree R).obj S ⟶ A)
+    (g : A ⟶ B) : desc f ≫ g = desc (f ≫ g) :=
   hom_ext (by simp)
 
 end IsSolid
@@ -136,7 +142,27 @@ instance isSolid_kernel {A B : CondensedMod.{u} R} (f : A ⟶ B) [A.IsSolid] [B.
     (kernel f).IsSolid :=
   ObjectProperty.prop_kernel _ f ‹_› ‹_›
 
+/-- The full subcategory of solid condensed `R`-modules has every size of limit that condensed
+`R`-modules have; these limits are created by the inclusion into `CondensedMod R`. -/
+instance hasLimitsOfSize_fullSubcategory_isSolid
+    [HasLimitsOfSize.{v, w} (CondensedMod.{u} R)] :
+    HasLimitsOfSize.{v, w} (ObjectProperty.FullSubcategory (IsSolid R)) where
+  has_limits_of_shape _ _ := inferInstance
+
 end CondensedMod
+
+namespace Profinite
+
+/-- A profinite set `S` with a `Fintype` structure is isomorphic to its image under
+`FintypeCat.toProfinite`. Both sides have carrier `S` by definition, and the topology on the
+right is discrete, so the underlying map is the identity. -/
+noncomputable def isoToProfiniteOfFintype (S : Profinite.{u}) [Fintype S] :
+    S ≅ FintypeCat.toProfinite.obj (FintypeCat.of S) :=
+  haveI : DiscreteTopology (FintypeCat.toProfinite.obj (FintypeCat.of S)) := ⟨rfl⟩
+  (CompHausLike.isoOfBijective (X := FintypeCat.toProfinite.obj (FintypeCat.of S)) (Y := S)
+    (ConcreteCategory.ofHom ⟨id, continuous_of_discreteTopology⟩) Function.bijective_id).symm
+
+end Profinite
 
 namespace Condensed
 
@@ -166,10 +192,7 @@ isomorphism. -/
 instance isIso_profiniteSolidification_app (S : Profinite.{u}) [Finite S] :
     IsIso ((profiniteSolidification R).app S) := by
   have := Fintype.ofFinite S
-  let f : FintypeCat.toProfinite.obj (FintypeCat.of S) ⟶ S :=
-    ConcreteCategory.ofHom ⟨id, continuous_bot⟩
-  let e : S ≅ FintypeCat.toProfinite.obj (FintypeCat.of S) :=
-    (CompHausLike.isoOfBijective f Function.bijective_id).symm
+  let e := Profinite.isoToProfiniteOfFintype S
   have h : (profiniteSolidification R).app S = (profiniteFree R).map e.hom ≫
       (profiniteSolidification R).app _ ≫ (profiniteSolid R).map e.inv := by
     rw [NatTrans.naturality_assoc, ← Functor.map_comp, e.hom_inv_id]
@@ -185,11 +208,5 @@ namespace TauCeti
 the condensed abelian groups that are solid in the sense of `CondensedMod.IsSolid`. -/
 abbrev SolidAb : Type (u + 2) :=
   ObjectProperty.FullSubcategory (CondensedMod.IsSolid (ULift.{u + 1} ℤ))
-
-/-- The category of solid condensed abelian groups has every size of limit that condensed
-abelian groups have; these limits are created by the inclusion into `CondensedAb`. -/
-instance hasLimitsOfSize_solidAb [HasLimitsOfSize.{v, w} CondensedAb.{u}] :
-    HasLimitsOfSize.{v, w} SolidAb.{u} where
-  has_limits_of_shape _ _ := inferInstance
 
 end TauCeti
