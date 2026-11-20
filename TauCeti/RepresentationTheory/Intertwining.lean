@@ -42,6 +42,7 @@ taking invariants under it.
 * `DistribMulActionHom.toIntertwiningMap`: an equivariant additive map of `G`-modules, as an
   intertwining map of the attached representations over `ℤ`.
 * `Representation.Equiv.tprod`: the tensor product of two equivalences of representations.
+* `Representation.Equiv.prodCongr`: the product of two equivalences of representations.
 * `Representation.Equiv.dual`: the dual of an equivalence of representations.
 * `Representation.Equiv.intertwiningMapCongr`: transport of intertwining maps along equivalences
   of the source and of the target.
@@ -201,6 +202,44 @@ end Restriction
 end Representation.IntertwiningMap
 
 namespace Representation.Equiv
+
+section Product
+
+variable {A G V V' W W' : Type*} [Semiring A] [Monoid G]
+  [AddCommMonoid V] [Module A V] [AddCommMonoid V'] [Module A V']
+  [AddCommMonoid W] [Module A W] [AddCommMonoid W'] [Module A W']
+  {ρ : Representation A G V} {ρ' : Representation A G V'}
+  {σ : Representation A G W} {σ' : Representation A G W'}
+
+/-- The product of two equivalences of representations, acting componentwise. -/
+noncomputable def prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') : Equiv (ρ.prod σ) (ρ'.prod σ') :=
+  .mk (e.toLinearEquiv.prodCongr e'.toLinearEquiv) fun g ↦
+    LinearMap.ext fun v ↦ Prod.ext
+      (e.toIntertwiningMap.isIntertwining _ _ g v.1)
+      (e'.toIntertwiningMap.isIntertwining _ _ g v.2)
+
+/-- The linear equivalence underlying a product equivalence is the product of its factors. -/
+@[simp]
+theorem toLinearEquiv_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearEquiv = e.toLinearEquiv.prodCongr e'.toLinearEquiv := (rfl)
+
+/-- Forgetting equivariance of a product equivalence gives the product linear map. -/
+@[simp]
+theorem toLinearMap_prodCongr (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').toLinearMap = e.toLinearMap.prodMap e'.toLinearMap := (rfl)
+
+/-- A product equivalence acts on the two coordinates separately. -/
+@[simp]
+theorem prodCongr_apply (e : Equiv ρ ρ') (e' : Equiv σ σ') (v : V × W) :
+    e.prodCongr e' v = (e v.1, e' v.2) := (rfl)
+
+/-- Inverting a product equivalence inverts each factor. -/
+@[simp]
+theorem prodCongr_symm (e : Equiv ρ ρ') (e' : Equiv σ σ') :
+    (e.prodCongr e').symm = e.symm.prodCongr e'.symm := by
+  ext v <;> rfl
+
+end Product
 
 section Basis
 

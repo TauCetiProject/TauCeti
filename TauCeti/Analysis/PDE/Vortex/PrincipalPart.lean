@@ -187,6 +187,21 @@ theorem principalPart_eq_iteratedDeriv {n : ℂ → ℕ} (hα : IsZeroMultiplici
     hG'.continuousAt hG.continuousAt (hH'.analyticAt z) (hH.analyticAt z)
     (Eventually.of_forall fun w ↦ by rw [← hy' w, hy w]) hj
 
+/-- **The principal-part data scale with the section variation.** If `δα(y') = c δα(y)` for a
+complex constant `c` and `δα(y) = α G + e^ν H` with `G`, `ν` continuous and `H` entire, then below
+the zero multiplicity `n z` of `α` at `z` the principal-part data of `y'` at `z` are `c` times those
+of `y`. -/
+theorem principalPart_eq_mul_of_sectionValue_eq_mul {y' : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {n : ℂ → ℕ} (hα : IsZeroMultiplicity (sectionValue x) n) {ν G H : ℂ → ℂ} (hν : Continuous ν)
+    (hG : Continuous G) (hH : Differentiable ℂ H)
+    (hy : ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) (c : ℂ)
+    (hy' : ∀ w, sectionValue y' w = c * sectionValue y w) {z : ℂ} {j : ℕ} (hj : j < n z) :
+    principalPart x ν y' z j = c * principalPart x ν y z j := by
+  rw [principalPart_eq_iteratedDeriv hα hν (G := fun w ↦ c * G w) (H := fun w ↦ c * H w)
+      (continuous_const.mul hG) ((differentiable_const _).mul hH)
+      (fun w ↦ by rw [hy' w, hy w]; ring) hj,
+    principalPart_eq_iteratedDeriv hα hν hG hH hy hj, iteratedDeriv_const_mul_field]
+
 /-- **Divisibility of a holomorphic deformation by the section.** Let `x` have `Cᵏ` connection
 coefficients (`k ≥ 1`) and differentiable section, satisfy the holomorphicity rows, and have
 zero multiplicities `n`. For a decomposition
@@ -270,11 +285,9 @@ def principalPartMap {D : Multiset ℂ}
       iteratedDeriv_add hH.contDiff.contDiffAt hH'.contDiff.contDiffAt]
   map_smul' t y := funext fun i ↦ by
     obtain ⟨G, hG, H, hH, hy⟩ := hV y y.2
-    rw [Pi.smul_apply, RingHom.id_apply, principalPart_eq_iteratedDeriv hα hν hG hH hy i.2.2,
-      principalPart_eq_iteratedDeriv hα hν (G := fun w ↦ (t : ℂ) * G w)
-        (H := fun w ↦ (t : ℂ) * H w) (continuous_const.mul hG) ((differentiable_const _).mul hH)
-        (fun w ↦ by simp only [Submodule.coe_smul, sectionValue_smul, hy w]; ring) i.2.2,
-      iteratedDeriv_const_mul_field, Complex.real_smul]
+    rw [Pi.smul_apply, RingHom.id_apply, Complex.real_smul]
+    exact principalPart_eq_mul_of_sectionValue_eq_mul hα hν hG hH hy (t : ℂ)
+      (fun w ↦ by rw [Submodule.coe_smul, sectionValue_smul]) i.2.2
 
 /-- The principal-part map evaluated at the point `⟨a, j⟩` of `D` is `principalPart x ν y a j`. -/
 @[simp]
