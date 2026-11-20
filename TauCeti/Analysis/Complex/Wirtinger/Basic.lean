@@ -78,7 +78,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   pointwise difference and of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_comp`: the chain rule `\bar∂(φ ∘ g) = Dφ(g x) ∘ \bar∂g` after a
   holomorphic map `φ`.
-* `TauCeti.wirtingerDeriv_comp_mul_left`: in one variable, `∂(f(c ·))(z) = c ∂f(c z)`.
+* `TauCeti.wirtingerDeriv_comp_mul_left`, `TauCeti.conjWirtingerDeriv_comp_mul_left`: in one
+  variable, `∂(f(c ·))(z) = c ∂f(c z)` and `\bar∂(f(c ·))(z) = conj c \bar∂f(c z)`.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
 * `TauCeti.conjWirtingerDeriv_finsetProd`, `TauCeti.norm_conjWirtingerDeriv_finsetProd_le`: the
@@ -551,6 +552,19 @@ theorem wirtingerDeriv_comp_mul_left {f : ℂ → W} {c z : ℂ} (hf : Different
     ContinuousLinearMap.complexLinearPart_comp_restrictScalars, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.mul_apply']
   exact map_smul _ c v
+
+/-- **The conjugate Wirtinger derivative of a rotated or dilated function.** In one variable,
+`\bar∂(f(c ·))(z) = conj c \bar∂f(c z)`. -/
+theorem conjWirtingerDeriv_comp_mul_left {f : ℂ → W} {c z : ℂ}
+    (hf : DifferentiableAt ℝ f (c * z)) (v : ℂ) :
+    conjWirtingerDeriv (fun w ↦ f (c * w)) z v = conj c • conjWirtingerDeriv f (c * z) v := by
+  have hd : HasFDerivAt (fun w ↦ f (c * w))
+      ((fderiv ℝ f (c * z)).comp ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ)) z :=
+    hf.hasFDerivAt.comp z ((ContinuousLinearMap.mul ℂ ℂ c).restrictScalars ℝ).hasFDerivAt
+  simp only [conjWirtingerDeriv_eq_complexAntilinearPart, hd.fderiv,
+    ContinuousLinearMap.complexAntilinearPart_comp_restrictScalars,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply']
+  exact map_smulₛₗ _ c v
 
 /-! ### The twisted exponentials `exp (a z - conj a conj z)` -/
 

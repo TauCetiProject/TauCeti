@@ -19,7 +19,8 @@ the Cauchy integral `T f(w) = π⁻¹ ∫ (w - z)⁻¹ f(z) dz` gives
 
 (`TauCeti.cauchyTransform_comp_mul_left`). Equivalently, `T` intertwines the action
 `f ↦ c⁻¹ f(c ·)` of the circle group on sources with the action `g ↦ g(c ·)` on solutions of
-`\bar∂ g = f`, as it must, since `\bar∂ (g(c ·)) = conj c (\bar∂ g)(c ·)` and `conj c = c⁻¹`.
+`\bar∂ g = f`, as it must, since `\bar∂ (g(c ·)) = conj c (\bar∂ g)(c ·)`
+(`TauCeti.conjWirtingerDeriv_comp_mul_left`) and `conj c = c⁻¹`.
 This is the symmetry behind rotation-equivariant constructions with the Cauchy transform, such as
 pseudoholomorphic discs normalized by their first jet.
 -/
