@@ -93,6 +93,7 @@ theorem norm_fourierChar_smul_sub_fourierChar_smul_le {F : Type*} [NormedAddComm
 end Real
 
 /-- The Fourier character composed with a `C^n` real phase is `C^n`. -/
+@[fun_prop]
 theorem ContDiff.fourierChar {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {n : WithTop ℕ∞} {Φ : F → ℝ} (hΦ : ContDiff ℝ n Φ) : ContDiff ℝ n fun y ↦ (𝐞 (Φ y) : ℂ) := by
   simp_rw [Real.fourierChar_apply]
