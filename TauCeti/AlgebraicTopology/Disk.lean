@@ -14,6 +14,7 @@ public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.Homotopy.Extension.Ball
 
+import TauCeti.Analysis.Convex.Contractible
 import TauCeti.Topology.Homotopy.Contractible
 import TauCeti.Topology.UnitInterval.OpenSquare
 
@@ -82,8 +83,6 @@ instance contractibleSpace_disk (n : ℕ) :
     ContractibleSpace (TopCat.disk n) := by
   -- `TopCat.disk` stores its metric closed ball inside a `ULift`; the lift of the contractible
   -- closed ball is contractible by `ULift.contractibleSpace`.
-  have : ContractibleSpace (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) :=
-    Metric.contractibleSpace_closedBall (x := 0) (r := 1) (by norm_num)
   exact inferInstanceAs
     (ContractibleSpace (ULift (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
