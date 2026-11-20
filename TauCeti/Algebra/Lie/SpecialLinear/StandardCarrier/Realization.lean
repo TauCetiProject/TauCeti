@@ -46,6 +46,8 @@ with matching pinning, torus and Frobenius.
 * `TauCeti.SlStd.kostantToralDefiningIdeal_chevalleyDatum_eq_definingIdeal`,
   `TauCeti.SlStd.chevalleyDatum_groupScheme` and `TauCeti.SlStd.chevalleyDatum_points`: equality
   of the integral defining Hopf ideals, of the group schemes over `ℤ` and of the point subgroups.
+* `TauCeti.SlStd.chevalleyDatum_groupSchemeι`: the closed immersion of the datum into `GL_{r+1}`
+  is `TauCeti.SlStd.carrierι r`.
 * `TauCeti.SlStd.chevalleyDatumPointsEquiv_rootSubgroupPoints_simpleIndex`,
   `TauCeti.SlStd.chevalleyDatumPointsEquiv_rootSubgroupPoints_reflectionPerm_simpleIndex` and
   `TauCeti.SlStd.chevalleyDatumPointsEquiv_torusPoints`, with their inverse forms: the pinning
@@ -109,6 +111,18 @@ theorem chevalleyDatum_groupScheme : (chevalleyDatum r ht).groupScheme = groupSc
     kostantToralGroupScheme]
   dsimp only [chevalleyDatum] at h ⊢
   rw [h]
+
+/-- The closed immersion of the group scheme of the standard type-`A_r` datum into `GL_{r+1}`
+agrees with `carrierι r` across `chevalleyDatum_groupScheme`. -/
+theorem chevalleyDatum_groupSchemeι :
+    (chevalleyDatum r ht).groupSchemeι =
+      eqToHom (chevalleyDatum_groupScheme r ht) ≫ carrierι r := by
+  have h := (kostantToralDefiningIdeal_chevalleyDatum_eq_definingIdeal r ht).trans
+    (definingIdeal_def r)
+  rw [DynkinType.ChevalleyDatum.groupSchemeι_def, carrierι_def,
+    kostantToralGroupSchemeι_def, kostantToralGroupSchemeι_def, ← Category.assoc]
+  exact congrArg (· ≫ eqToHom (GeneralLinear.groupScheme_def ℤ (r + 1)).symm)
+    (CommHopfAlgCat.eqToHom_comp_quotientSpecι _ h).symm
 
 /-- **The point subgroup of the standard type-`A_r` datum over any commutative ring `A` is
 `points r A`.** -/

@@ -73,18 +73,6 @@ variable (r : ℕ) (ht : (DynkinType.A r).Valid)
 
 /-! ## The standard representation of the pinned algebra -/
 
-/-- The pinned equivalence sends each signed simple-root generator to the adjacent matrix unit
-with the same number. -/
-@[simp]
-theorem pinnedLieEquiv_lieBasis_rootGenerator
-    (k : Fin (DynkinType.A r).rank ⊕ Fin (DynkinType.A r).rank) :
-    pinnedLieEquiv r ht (((DynkinType.A r).lieBasis ht).rootGenerator k) = rootGenerator r k := by
-  cases k with
-  | inl i => exact (congrArg (pinnedLieEquiv r ht)
-      (LieAlgebra.Basis.rootGenerator_inl _ i)).trans (pinnedLieEquiv_lieBasis_e r ht i)
-  | inr i => exact (congrArg (pinnedLieEquiv r ht)
-      (LieAlgebra.Basis.rootGenerator_inr _ i)).trans (pinnedLieEquiv_lieBasis_f r ht i)
-
 /-- The standard representation of the pinned rational Lie algebra of type `A_r` on
 `Fin (r + 1) → ℚ`, extended to its universal enveloping algebra via
 `TauCeti.SlStd.pinnedLieEquiv`. -/
@@ -125,6 +113,26 @@ theorem pinnedRepresentation_ι_h (i : Fin (DynkinType.A r).rank) :
   (pinnedRepresentation_ι r ht _).trans
     (congrArg (fun x => rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
       (pinnedLieEquiv_lieBasis_h r ht i))
+
+/-- A pinned raising generator acts as the upper adjacent matrix unit with the same number. -/
+@[simp↓]
+theorem pinnedRepresentation_ι_e (i : Fin (DynkinType.A r).rank) :
+    pinnedRepresentation r ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.A r).lieBasis ht).e i)) =
+      rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r (.inl i))) :=
+  (pinnedRepresentation_ι r ht _).trans
+    (congrArg (fun x => rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
+      (pinnedLieEquiv_lieBasis_e r ht i))
+
+/-- A pinned lowering generator acts as the lower adjacent matrix unit with the same number. -/
+@[simp↓]
+theorem pinnedRepresentation_ι_f (i : Fin (DynkinType.A r).rank) :
+    pinnedRepresentation r ht
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.A r).lieBasis ht).f i)) =
+      rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGenerator r (.inr i))) :=
+  (pinnedRepresentation_ι r ht _).trans
+    (congrArg (fun x => rep r (_root_.UniversalEnvelopingAlgebra.ι ℚ x))
+      (pinnedLieEquiv_lieBasis_f r ht i))
 
 /-- A pinned signed simple-root generator acts as the adjacent matrix unit with the same
 number. -/
