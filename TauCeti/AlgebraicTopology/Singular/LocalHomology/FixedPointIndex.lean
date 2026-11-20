@@ -295,11 +295,14 @@ of `f`. If a map `h : E → E` with invertible strict derivative at `x` conjugat
 `x`, that is `g (h z) = h (f z)` for `z` near `x`, then the local fixed-point index of `g` at `h x`
 is that of `f` at `x`. This holds whether or not `h` preserves orientation.
 
-Reading the displacement of `g` through `h` gives `z ↦ h z - h (f z)`, which near `x` is close to
-`z ↦ A (z - f z)` for the derivative `A` of `h`. Both maps have the local index of the displacement
-of `f` times `sign det A`, by the chain rule for local indices, and `sign det A = ±1` cancels. In
-particular, the local fixed-point index of a self-map of a smooth manifold at an isolated fixed
-point does not depend on the chart in which it is computed. -/
+Reading the displacement of `g` through `h` gives `z ↦ h z - h (f z)`, whose local index at `x`
+is, by the chain rule for local indices, `sign det A` times the local fixed-point index of `g` at
+`h x`, for the derivative `A` of `h`. Likewise the chain rule gives `z ↦ A (z - f z)` the local
+index `sign det A` times the local fixed-point index of `f` at `x`. Near `x` the first map differs
+from the second by at most half the norm of the second, so Rouché's principle gives the two maps
+the same local index, and `sign det A = ±1` cancels. In particular, the local fixed-point index of
+a self-map of a smooth manifold at an isolated fixed point does not depend on the chart in which it
+is computed. -/
 theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)} {g : C(V, E)}
     {x : U} (hx : f x = x) {h : E → E} {A : E ≃L[ℝ] E}
     (hh : HasStrictFDerivAt h (A : E →L[ℝ] E) x) (hxV : h x ∈ V)
