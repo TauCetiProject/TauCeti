@@ -87,6 +87,8 @@ the difference of two weak solutions with the same initial value.
   `TauCeti.PDE.ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1`: uniqueness of weak
   solutions, for the continuous `L²(Ω)`-valued representative at every time and for the
   `H¹₀(Ω)`-valued solution almost everywhere.
+* `TauCeti.PDE.norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual`:
+  the energy identity `‖u(t)‖² + 2 ∫ₛᵗ a_r(u, u) = ‖u(s)‖² + 2 ∫ₛᵗ f(u)` for weak solutions.
 
 ## References
 
@@ -107,7 +109,7 @@ namespace TauCeti
 namespace PDE
 
 open MeasureTheory Set TopologicalSpace
-open scoped InnerProductSpace
+open scoped InnerProductSpace Interval
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)}
@@ -382,6 +384,57 @@ theorem ae_eq_of_hasWeakLineDerivOn_gelfandDual_energyFormH1
     hw₂ hae₂ h₀
 
 end StandingHypotheses
+
+/-- **The energy identity for the parabolic Dirichlet problem.** Let `u` be a weak solution of
+`∂ₜu + L(t) u = f` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, in the sense of
+`TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1`, with forcing
+`f ∈ L²(t₀, t₁; H⁻¹(Ω))`, and let `w` be its continuous `L²(Ω)`-valued representative. Then for all
+`s, t ∈ [t₀, t₁]`,
+
+`‖w t‖² + 2 ∫ₛᵗ a_r(u(r), u(r)) dr = ‖w s‖² + 2 ∫ₛᵗ f(r)(u(r)) dr`,
+
+where `a_r` is the energy form of `L(r)`. No hypothesis on the coefficients is needed beyond the
+equation itself. -/
+theorem norm_sq_add_two_mul_integral_energyFormH1_eq_of_hasWeakLineDerivOn_gelfandDual
+    {f : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {u : ℝ → W1p0 mu Omega 2}
+    {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)} {w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
+    (hd : HasWeakLineDerivOn volume ⟨Ioo t₀ t₁, isOpen_Ioo⟩
+      (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (W1p0.valueL (u t))) u' 1)
+    (hu : MemLp u 2 (volume.restrict (Ioo t₀ t₁)))
+    (hu' : MemLp u' 2 (volume.restrict (Ioo t₀ t₁)))
+    (hf : MemLp f 2 (volume.restrict (Ioo t₀ t₁)))
+    (heq : ∀ᵐ t ∂volume.restrict (Ioo t₀ t₁), ∀ v : W1p0 mu Omega 2,
+      u' t v + energyFormH1 (a t) (b t) (c t) (u t : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        f t v)
+    (hw : ContinuousOn w (Icc t₀ t₁))
+    (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Ioo t₀ t₁)] w)
+    {s t : ℝ} (hs : s ∈ Icc t₀ t₁) (ht : t ∈ Icc t₀ t₁) :
+    ‖w t‖ ^ 2 + 2 * ∫ r in s..t,
+        energyFormH1 (a r) (b r) (c r) (u r : W1p mu Omega 2) (u r : W1p mu Omega 2) =
+      ‖w s‖ ^ 2 + 2 * ∫ r in s..t, f r (u r) := by
+  have hid := hd.norm_sq_sub_norm_sq_eq_of_gelfandDual hu hu' hw hae hs ht
+  -- The pairings `u'(u)` and `f(u)` are integrable on `(t₀, t₁)`, hence on the interval between
+  -- `s` and `t`, which lies in `(t₀, t₁]`.
+  have hsub : Ι s t ⊆ Ioc t₀ t₁ := fun r hr =>
+    ⟨lt_of_le_of_lt (le_min hs.1 ht.1) hr.1, hr.2.trans (max_le hs.2 ht.2)⟩
+  have hp : IntegrableOn (fun r => u' r (u r)) (Ioc t₀ t₁) := by
+    rw [IntegrableOn, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
+    exact hu'.integrable_apply hu
+  have hfu : IntegrableOn (fun r => f r (u r)) (Ioc t₀ t₁) := by
+    rw [IntegrableOn, ← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
+    exact hf.integrable_apply hu
+  -- Testing the equation with `u(r)` itself gives `a_r(u(r), u(r)) = f(r)(u(r)) - u'(r)(u(r))`.
+  have hE : ∀ᵐ r ∂volume, r ∈ Ι s t →
+      energyFormH1 (a r) (b r) (c r) (u r : W1p mu Omega 2) (u r : W1p mu Omega 2) =
+        f r (u r) - u' r (u r) := by
+    rw [Measure.restrict_congr_set Ioo_ae_eq_Ioc, ae_restrict_iff' measurableSet_Ioc] at heq
+    filter_upwards [heq] with r hr hrst
+    rw [← hr (hsub hrst) (u r)]
+    ring
+  rw [intervalIntegral.integral_congr_ae hE, intervalIntegral.integral_sub
+    (intervalIntegrable_iff.2 (hfu.mono_set hsub)) (intervalIntegrable_iff.2 (hp.mono_set hsub))]
+  linarith
 
 end PDE
 
