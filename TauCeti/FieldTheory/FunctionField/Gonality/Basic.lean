@@ -45,10 +45,6 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
   `TauCeti.gonality_pos`: every transcendental element bounds the gonality, and for a function
   field some transcendental element attains it, which is then positive.
 * `AlgEquiv.gonality_eq`: isomorphic extensions have the same gonality.
-* `TauCeti.exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim`: over an exact constant
-  field, a divisor `D` with `ℓ(D) ≥ 2` gives a rational subfield of index at most `deg D`.
-* `TauCeti.exists_nonneg_and_degree_eq_finrank_and_two_le_dim`: the pole divisor of a
-  transcendental `x` is effective, of degree `[F : k(x)]`, with `ℓ ≥ 2`.
 * `TauCeti.gonality_eq_sInf_degree`: **the pencil description** of the gonality.
 * `TauCeti.Divisor.dim_sub_ofPoint_lt_of_degree_eq_gonality`: a divisor of least degree with
   `ℓ ≥ 2` is base-point-free.
@@ -134,36 +130,12 @@ theorem _root_.AlgEquiv.gonality_eq {F' : Type*} [Field F'] [Algebra k F'] (e : 
 
 /-! ### The pencil description -/
 
-/-- **A divisor with `ℓ(D) ≥ 2` gives a rational subfield of index at most `deg D`**, over an exact
-constant field: some transcendental `x` has `[F : k(x)] ≤ deg D`. -/
-theorem exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {D : Divisor k F} (hdim : 2 ≤ Divisor.dim D) :
-    ∃ x : F, Transcendental k x ∧ (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree D := by
-  -- Move `D` inside its class to an effective divisor `B`, which has the same degree and `ℓ`.
-  obtain ⟨B, hBeff, hDB⟩ := (riemannRochSpace_ne_bot_iff hF).mp
-    ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF D).mp (by omega))
-  have hBdeg := Divisor.degree_eq_of_linearlyEquivalent hF hDB
-  have hBdim : 2 ≤ Divisor.dim B := Divisor.dim_eq_of_linearlyEquivalent hF hDB ▸ hdim
-  -- `L(B)` holds a transcendental `x`, whose poles are bounded by `B`, so `[F : k(x)] ≤ deg B`.
-  obtain ⟨x, hxB, hx⟩ := Divisor.exists_mem_riemannRochSpace_transcendental hF hex hBdim
-  exact ⟨x, hx, hBdeg.symm ▸ Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hBeff hxB⟩
-
 /-- Over an exact constant field, **the gonality is at most the degree of every divisor with
 `ℓ(D) ≥ 2`**. -/
 theorem gonality_le_degree (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {D : Divisor k F} (hdim : 2 ≤ Divisor.dim D) : (gonality k F : ℤ) ≤ Divisor.degree D := by
   obtain ⟨x, hx, hle⟩ := exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim hF hex hdim
   exact (Int.ofNat_le.mpr (gonality_le_finrank_adjoin hx)).trans hle
-
-/-- **A transcendental `x` gives an effective divisor of degree `[F : k(x)]` with `ℓ ≥ 2`**: the
-pole divisor `(x)_∞`, whose Riemann–Roch space contains `1` and `x`. No exactness of the constant
-field is needed. -/
-theorem exists_nonneg_and_degree_eq_finrank_and_two_le_dim (hF : IsFunctionField k F) {x : F}
-    (hx : Transcendental k x) : ∃ D : Divisor k F,
-      0 ≤ D ∧ Divisor.degree D = Module.finrank k⟮x⟯ F ∧ 2 ≤ Divisor.dim D :=
-  ⟨Divisor.poles hF (Units.mk0 x hx.ne_zero), Divisor.poles_nonneg hF _,
-    Divisor.degree_poles hF _ hx, by
-      simpa using le_dim_zsmul_poles hF (Units.mk0 x hx.ne_zero) hx (n := 2) (m := 1) (by norm_num)⟩
 
 /-- **The gonality is the degree of an effective divisor with `ℓ ≥ 2`**: the pole divisor of an
 element attaining the gonality. No exactness of the constant field is needed. -/
