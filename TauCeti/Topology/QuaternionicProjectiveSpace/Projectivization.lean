@@ -235,7 +235,7 @@ theorem projectivizationHomeomorph_smul_symm_mk
   rw [projectivizationHomeomorph_symm_mk, smul_mk, projectivizationHomeomorph_mk]
   refine (Projectivization.mk_eq_mk_iff' _ _ _ _ _).2
     ⟨op ((‖(WithLp.toLp 2 v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ)‖⁻¹ : ℝ) : ℍ), funext fun i ↦ ?_⟩
-  simp only [LinearIsometryEquiv.coe_smul_unitSphere, quaternionUnitaryIsometry_apply,
+  simp only [coe_quaternionUnitary_smul_sphere, quaternionUnitaryIsometry_apply,
     NormedSpace.normalize, WithLp.ofLp_toLp, WithLp.ofLp_smul, Matrix.mulVec_smul, Pi.smul_apply,
     op_smul_eq_mul]
   exact Quaternion.mul_coe_eq_smul _ _

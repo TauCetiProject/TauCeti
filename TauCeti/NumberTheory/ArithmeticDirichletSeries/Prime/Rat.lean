@@ -21,6 +21,8 @@ classical sums over rational primes.
 
 ## Main results
 
+* `TauCeti.image_absNorm_primesLE_rat`: the image of `primesLE ℚ x` under absolute norm is
+  `Nat.primesLE ⌊x⌋₊`.
 * `TauCeti.primeSummatory_rat_eq_sum_primesLE`: for a weight `f : ℕ → M`,
   `∑_{N𝔭 ≤ x} f (N𝔭)` over the primes of `𝓞 ℚ` is `∑_{p ∈ Nat.primesLE ⌊x⌋₊} f p`.
 -/
@@ -48,5 +50,23 @@ theorem primeSummatory_rat_eq_sum_primesLE {M : Type*} [AddCommMonoid M] (f : �
     fun _ _ ↦ rfl
   obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq (Nat.prime_of_mem_primesLE hp)
   exact ⟨v, (hmem v).mpr (hv ▸ hp), hv⟩
+
+/-- The image of `primesLE ℚ x` under absolute norm is `Nat.primesLE ⌊x⌋₊`. -/
+theorem image_absNorm_primesLE_rat (x : ℝ) :
+    (primesLE ℚ x).image (fun v ↦ Ideal.absNorm v.asIdeal) = Nat.primesLE ⌊x⌋₊ := by
+  ext p
+  simp only [Finset.mem_image, mem_normLE, Nat.mem_primesLE]
+  constructor
+  · rintro ⟨v, hv, rfl⟩
+    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv ⊢
+    exact ⟨Nat.le_floor hv, Rat.HeightOneSpectrum.prime_natGenerator v⟩
+  · rintro ⟨hple, hp⟩
+    obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
+    have hx0 : 0 ≤ x := by
+      by_contra hlt
+      have hfl : ⌊x⌋₊ = 0 := Nat.floor_of_nonpos (le_of_not_ge hlt)
+      have hp2 := hp.two_le
+      omega
+    exact ⟨v, hv.symm ▸ (Nat.cast_le.mpr hple).trans (Nat.floor_le hx0), hv⟩
 
 end TauCeti

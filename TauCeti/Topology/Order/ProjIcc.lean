@@ -23,6 +23,7 @@ coordinate to `[a, b]` with `Set.projIcc`.
   agrees on `[a, b]` with a continuous function.
 * `ContinuousOn.exists_continuous_eqOn_univ_prod_Icc`: a function continuous on
   `univ ×ˢ [a, b]` agrees there with a continuous function.
+* `ContinuousOn.comp_projIcc`: that extension, written as `f ∘ projIcc a b`, is continuous.
 * `TauCeti.continuousWithinAt_IccExtend_Ici`: constant extension preserves right continuity
   within the interval and is right-continuous outside `[a, b)` without further assumptions.
 -/
@@ -54,6 +55,12 @@ theorem ContinuousOn.exists_continuous_eqOn_univ_prod_Icc {γ : Type*} [Topologi
     hf.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp
       (continuous_projIcc.comp continuous_snd))) fun _ ↦ ⟨mem_univ _, Subtype.coe_prop _⟩,
     fun _ hp ↦ by simp [projIcc_of_mem _ hp.2]⟩
+
+/-- A function continuous on a closed interval `[a, b]` with `a ≤ b`, composed with the
+projection `projIcc a b` onto it, is continuous on the whole space. -/
+theorem ContinuousOn.comp_projIcc (hf : ContinuousOn f (Icc a b)) (hab : a ≤ b) :
+    Continuous fun x => f (projIcc a b hab x) :=
+  hf.comp_continuous continuous_projIcc.subtype_val fun x => (projIcc a b hab x).2
 
 /-- Constant extension is right-continuous wherever the original function is right-continuous
 within the interval. Outside `[a,b)` no continuity assumption is needed. -/

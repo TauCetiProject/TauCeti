@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Relative
+public import TauCeti.AlgebraicGeometry.Curves.Node.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
 public import TauCeti.RingTheory.Node.LocalNormalForm
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Smooth
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
@@ -21,7 +23,8 @@ an étale extension `R → R'` of the base, `X` maps étale to the standard node
 `Spec R'[u, v] ⧸ (uv - h)`, sending a point above `x` into the closed subscheme `u = v = 0`. Both
 triangles over `Spec R' ⟶ Spec R` commute.
 
-Over a discrete valuation ring `R` with uniformizer `π`, at a point of the special fibre, the
+At a nonsmooth point of the special fibre over a discrete valuation ring `R` with
+uniformizer `π`, the
 extension `R'` is a discrete valuation ring, étale over `R` with local structure map, in which `π`
 remains a uniformizer, and the chart is `Spec R'[u, v] ⧸ (uv)` or `Spec R'[u, v] ⧸ (uv - πⁿ)` with
 `n > 0`.
@@ -32,13 +35,22 @@ neighbourhood of `x` on which `X` is standard syntomic of relative dimension one
 the singular locus is cut out by the first Fitting ideal of the differentials, it is unramified
 over `R` because `X` is nodal, and it contains the prime of `x` because `X` is not smooth at `x`.
 
+The theorem `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_zero_of_mem_smoothLocus`
+provides smooth points with parameter-zero charts over the original base. The all-point
+DVR theorem retains the closed-point condition over the extended base without requiring
+both node coordinates to vanish at the chosen point.
+
 ## Main results
 
-* `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra`: the étale local normal form `uv = h` at a
-  non-smooth point, over an arbitrary affine base.
-* `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_isDiscreteValuationRing`: the normal form
-  `uv = 0` or `uv = πⁿ` over an étale extension of discrete valuation rings, at a non-smooth point
-  of the special fibre.
+* `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_notMem_smoothLocus`: the étale local
+  normal form `uv = h` at a non-smooth point, with both coordinates vanishing.
+* `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra`: the normal form at every point over an
+  arbitrary affine base, with the second coordinate vanishing.
+* `Scheme.exists_etale_nodeAlgebra_of_notMem_smoothLocus_of_isDiscreteValuationRing`:
+  the normal form `uv = 0` or `uv = πⁿ` over an étale extension of discrete valuation rings,
+  at a non-smooth point of the special fibre.
+* `AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_isDiscreteValuationRing`: a chart at every
+  point of the special fibre, including smooth points.
 
 ## References
 
@@ -142,7 +154,8 @@ relative dimension one over `Spec R`, and let `x` be a point of `X` at which `X`
 `ψ : Spec T ⟶ Spec R'[u, v] ⧸ (uv - h)` such that `g` sends `y` to `x` and lies over the
 composite `Spec T ⟶ Spec R'[u, v] ⧸ (uv - h) ⟶ Spec R' ⟶ Spec R`, and `ψ` sends `y` into the
 closed subscheme `u = v = 0`. -/
-theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra (X : Scheme.{u})
+theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_notMem_smoothLocus
+    (X : Scheme.{u})
     [X.Over (Spec (.of R))] (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)))
     {x : X} (hx : letI := hnodal.syntomic; x ∉ (X ↘ Spec (.of R)).smoothLocus) :
     ∃ (R' : Type u) (_ : CommRing R') (_ : Algebra R R') (_ : Algebra.Etale R R')
@@ -161,6 +174,41 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra (X : Scheme.{u}
     exists_etale_spec_chart X V hV hxV ⟨Q, ‹_›⟩ hxQ φ hφ hφ₀ hφ₁
   exact ⟨R', ‹_›, ‹_›, ‹_›, T, ‹_›, h, g, ψ, ⟨Q, ‹_›⟩, hg, hψ, hgx, hgψ, hy₀, hy₁⟩
 
+/-- Every point of a nodal relative curve over `Spec R` has an affine étale neighbourhood
+mapping étale to `uv = h` over an étale `R`-algebra. The second node coordinate vanishes at
+the image of the chosen point, and the triangle to `Spec R` commutes. -/
+theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra (X : Scheme.{u})
+    [X.Over (Spec (.of R))] (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)))
+    (x : X) :
+    ∃ (R' : Type u) (_ : CommRing R') (_ : Algebra R R') (_ : Algebra.Etale R R')
+      (T : Type u) (_ : CommRing T) (h : R') (g : Spec (.of T) ⟶ X)
+      (ψ : Spec (.of T) ⟶ Spec (.of (NodeAlgebra R' h))) (y : Spec (.of T)),
+      Etale g ∧ Etale ψ ∧ g y = x ∧
+        g ≫ (X ↘ Spec (.of R)) = ψ ≫ Spec.algebraMap R' (NodeAlgebra R' h) ≫
+          Spec.algebraMap R R' ∧
+        NodeAlgebra.coord h 1 ∈ (ψ y).asIdeal := by
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
+  by_cases hx : x ∈ (X ↘ Spec (.of R)).smoothLocus
+  · obtain ⟨T, _, g, ψ, y, hg, hψ, hgy, hbase, -, hv⟩ :=
+      X.exists_etale_nodeAlgebra_zero_of_mem_smoothLocus hx
+    refine ⟨R, inferInstance, inferInstance, inferInstance, T, inferInstance, 0,
+      g, ψ, y, hg, hψ, hgy, ?_, hv⟩
+    simpa [Spec.algebraMap] using hbase
+  · obtain ⟨R', _, _, _, T, _, h, g, ψ, y, hg, hψ, hgy, hbase, -, hv⟩ :=
+      X.exists_etale_nodeAlgebra_of_notMem_smoothLocus hnodal hx
+    exact ⟨R', inferInstance, inferInstance, inferInstance, T, inferInstance, h,
+      g, ψ, y, hg, hψ, hgy, hbase, hv⟩
+
+end TauCeti.AlgebraicGeometry
+
+namespace AlgebraicGeometry.Scheme
+
+open TauCeti TauCeti.AlgebraicGeometry
+
+universe u
+
+variable {R : Type u} [CommRing R]
+
 open TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension in
 /-- **The étale local normal form of a nodal relative curve over a discrete valuation ring.** Let
 `R` be a discrete valuation ring with uniformizer `π`, let `X` be at worst nodal of relative
@@ -175,7 +223,7 @@ over `Spec R`. Then there are
 such that `g` sends `y` to `x` and lies over the composite
 `Spec T ⟶ Spec R'[u, v] ⧸ (uv - b) ⟶ Spec R' ⟶ Spec R`, and `ψ` sends `y` into the closed
 subscheme `u = v = 0` over the closed point of `Spec R'`. -/
-theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_isDiscreteValuationRing
+theorem exists_etale_nodeAlgebra_of_notMem_smoothLocus_of_isDiscreteValuationRing
     [IsDomain R] [IsDiscreteValuationRing R] {π : R} (hπ : Irreducible π) (X : Scheme.{u})
     [X.Over (Spec (.of R))] (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)))
     {x : X} (hx : letI := hnodal.syntomic; x ∉ (X ↘ Spec (.of R)).smoothLocus)
@@ -211,4 +259,34 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_etale_nodeAlgebra_of_isDiscreteVa
   exact ⟨R', ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, ‹_›, T, ‹_›, b, g, ψ, ⟨Q, ‹_›⟩, hπ', hb, hg, hψ, hgx, hgψ,
     PrimeSpectrum.ext (hψR'.trans hQR'), hy₀, hy₁⟩
 
-end TauCeti.AlgebraicGeometry
+/-- Every point of the special fibre of a nodal relative curve over a DVR has an affine
+étale neighbourhood mapping étale to `uv = 0` or `uv = πⁿ` over an étale extension of DVRs.
+The image of the chosen point lies over the closed point of the extended base. -/
+theorem exists_etale_nodeAlgebra_of_isDiscreteValuationRing
+    [IsDomain R] [IsDiscreteValuationRing R] {π : R} (hπ : Irreducible π) (X : Scheme.{u})
+    [X.Over (Spec (.of R))] (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)))
+    {x : X} (hxs : (X ↘ Spec (.of R)) x = IsLocalRing.closedPoint R) :
+    ∃ (R' : Type u) (_ : CommRing R') (_ : IsDomain R') (_ : IsDiscreteValuationRing R')
+      (_ : Algebra R R') (_ : Algebra.Etale R R') (_ : IsLocalHom (algebraMap R R'))
+      (T : Type u) (_ : CommRing T) (b : R') (g : Spec (.of T) ⟶ X)
+      (ψ : Spec (.of T) ⟶ Spec (.of (NodeAlgebra R' b))) (y : Spec (.of T)),
+      Irreducible (algebraMap R R' π) ∧ (b = 0 ∨ ∃ n : ℕ, 0 < n ∧ b = algebraMap R R' π ^ n) ∧
+        Etale g ∧ Etale ψ ∧ g y = x ∧
+        g ≫ (X ↘ Spec (.of R)) = ψ ≫ Spec.algebraMap R' (NodeAlgebra R' b) ≫
+          Spec.algebraMap R R' ∧
+        Spec.algebraMap R' (NodeAlgebra R' b) (ψ y) = IsLocalRing.closedPoint R' := by
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
+  by_cases hx : x ∈ (X ↘ Spec (.of R)).smoothLocus
+  · obtain ⟨T, _, g, ψ, y, hg, hψ, hgy, hbase, -, -⟩ :=
+      X.exists_etale_nodeAlgebra_zero_of_mem_smoothLocus hx
+    refine ⟨R, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+      inferInstance, T, inferInstance, 0, g, ψ, y, ?_, .inl rfl, hg, hψ, hgy, ?_, ?_⟩
+    · simpa using hπ
+    · simpa [Spec.algebraMap] using hbase
+    · rw [← Scheme.Hom.comp_apply, ← hbase, Scheme.Hom.comp_apply, hgy, hxs]
+  · obtain ⟨R', _, _, _, _, _, _, T, _, b, g, ψ, y, hπ', hb, hg, hψ, hgy, hbase, hy, -, -⟩ :=
+      X.exists_etale_nodeAlgebra_of_notMem_smoothLocus_of_isDiscreteValuationRing hπ hnodal hx hxs
+    exact ⟨R', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+      inferInstance, T, inferInstance, b, g, ψ, y, hπ', hb, hg, hψ, hgy, hbase, hy⟩
+
+end AlgebraicGeometry.Scheme
