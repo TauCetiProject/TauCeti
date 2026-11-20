@@ -26,12 +26,13 @@ fix such a structure, for instance to take traces, can use it directly.
 Every additive character of `F` with complex values is a shift of `ψ_F`: as `ψ_F` is
 primitive, `a ↦ ψ_F.mulShift a` is an isomorphism of `F` onto its character group
 (`AddChar.IsPrimitive.mulShiftAddEquiv` applied to `TauCeti.FiniteField.isPrimitive_stdAddChar`),
-and the nontrivial characters are the shifts by the nonzero elements. In particular Gauss sums
-against any nontrivial additive character reduce to Gauss sums against `ψ_F`
-(`gaussSum_mulShift_eq`). The general facts about complex characters of a finite group apply to
-`ψ_F` as they stand: its values have norm one (`AddChar.norm_apply`), its value at `-x` is the
-conjugate of its value at `x` (`AddChar.map_neg_eq_conj`), and its sums over the multiples `x a`
-are the orthogonality relations `AddChar.sum_mulShift`.
+and the nontrivial characters are the shifts by the nonzero elements
+(`AddChar.IsPrimitive.mulShift_eq_one_iff`). In particular Gauss sums against any nontrivial
+additive character reduce to Gauss sums against `ψ_F` (`gaussSum_mulShift_eq`). The general
+facts about complex characters of a finite group apply to `ψ_F` as they stand: its values have
+norm one (`AddChar.norm_apply`), its value at `-x` is the conjugate of its value at `x`
+(`AddChar.map_neg_eq_conj`), and its sums over the multiples `x a` are the orthogonality
+relations `AddChar.sum_mulShift`.
 
 ## Main definitions
 

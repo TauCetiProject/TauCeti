@@ -19,14 +19,18 @@ the shift by `1`. Over a field the converse is Mathlib's `AddChar.IsPrimitive.of
 it, a nontrivial additive character of a finite field has vanishing character sum, and this file
 records the punctured form of that sum, over the units of the field.
 
-A primitive character stays primitive under a shift by a unit, and on a finite ring these are
-the only primitive shifts: Mathlib's `AddChar.not_isPrimitive_mulShift` rules out the nonunits.
-This is what identifies the primitive characters among the shifts of one primitive character.
+The shift of a primitive character by `a` is trivial only for `a = 0`, by definition of
+primitivity. A primitive character stays primitive under a shift by a unit, and on a finite ring
+these are the only primitive shifts: Mathlib's `AddChar.not_isPrimitive_mulShift` rules out the
+nonunits. This is what identifies the primitive characters among the shifts of one primitive
+character.
 
 ## Main results
 
 * `AddChar.IsPrimitive.ne_one`: a primitive additive character on a nontrivial ring is
   nontrivial.
+* `AddChar.IsPrimitive.mulShift_eq_one_iff`: the shift of a primitive character by `a` is
+  trivial if and only if `a = 0`.
 * `AddChar.IsPrimitive.mulShift`: the shift of a primitive character by a unit is primitive.
 * `AddChar.IsPrimitive.isPrimitive_mulShift_iff`: on a finite ring, the shift of a primitive
   character by `a` is primitive if and only if `a` is a unit.
@@ -45,6 +49,12 @@ namespace AddChar
 section Shift
 
 variable {R R' : Type*} [CommRing R] [CommMonoid R'] {ψ : AddChar R R'}
+
+/-- The shift of a primitive additive character by `a` is trivial exactly when `a = 0`. -/
+@[simp]
+theorem IsPrimitive.mulShift_eq_one_iff (hψ : ψ.IsPrimitive) {a : R} :
+    ψ.mulShift a = 1 ↔ a = 0 :=
+  ⟨fun h ↦ by_contra fun ha ↦ hψ ha h, fun h ↦ h ▸ mulShift_zero ψ⟩
 
 /-- The shift of a primitive additive character by a unit is primitive. -/
 theorem IsPrimitive.mulShift (hψ : ψ.IsPrimitive) {a : R} (ha : IsUnit a) :
