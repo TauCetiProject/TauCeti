@@ -26,13 +26,16 @@ when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (
 `t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
-`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one. Since the forward differences
-of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
+`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one, and so does every natural
+number coprime to one of norm less than one. Since the forward differences of a monomial are
+divisible by `k!`, their norms carry the factor `‖k!‖`.
 
 ## Main results
 
 * `IsUltrametricDist.exists_lt_norm_natCast_eq_one`: arbitrarily large natural numbers have norm
   one in an ultrametric seminormed ring with `‖1‖ = 1`.
+* `IsUltrametricDist.norm_natCast_eq_one_of_coprime`: a natural number coprime to one of norm
+  less than one has norm one.
 * `IsUltrametricDist.nonarchimedeanRing`: an ultrametric seminormed ring is a nonarchimedean
   ring.
 * `IsUltrametricDist.summable_prod_of_tendsto_cofinite_zero`,
@@ -92,6 +95,23 @@ theorem IsUltrametricDist.exists_lt_norm_natCast_eq_one (R : Type*) [SeminormedR
     norm_num
   rw [norm_neg, hsum, norm_one] at h3
   exact (h3.trans_lt (max_lt h2 h1)).false
+
+/-- In an ultrametric seminormed ring with `‖1‖ = 1`, a natural number coprime to a natural
+number of norm less than one has norm one: in a Bézout relation `1 = a m + b n`, the two terms
+cannot both have norm less than one. In particular, at most one prime has norm less than one. -/
+theorem IsUltrametricDist.norm_natCast_eq_one_of_coprime {R : Type*} [SeminormedRing R]
+    [NormOneClass R] [IsUltrametricDist R] {m n : ℕ} (hmn : m.Coprime n) (hn : ‖(n : R)‖ < 1) :
+    ‖(m : R)‖ = 1 := by
+  refine (IsUltrametricDist.norm_natCast_le_one R m).antisymm (not_lt.mp fun hm ↦ ?_)
+  have hterm (k : ℕ) (z : ℤ) (hk : ‖(k : R)‖ < 1) : ‖((k * z : ℤ) : R)‖ < 1 := by
+    rw [Int.cast_mul, Int.cast_natCast]
+    exact (norm_mul_le _ _).trans_lt ((mul_le_of_le_one_right (norm_nonneg _)
+      (by simpa using IsUltrametricDist.norm_intCast_le_norm_one (R := R) z)).trans_lt hk)
+  have h := (IsUltrametricDist.norm_add_le_max _ _).trans_lt
+    (max_lt (hterm m (m.gcdA n) hm) (hterm n (m.gcdB n) hn))
+  rw [← Int.cast_add, ← Nat.gcd_eq_gcd_ab, hmn.gcd_eq_one, Nat.cast_one, Int.cast_one,
+    norm_one] at h
+  exact lt_irrefl _ h
 
 /-- **An ultrametric seminormed ring is a nonarchimedean ring.** This is the ring form of
 Mathlib's `IsUltrametricDist.nonarchimedeanAddGroup`: every neighbourhood of zero contains an open
