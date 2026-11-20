@@ -54,7 +54,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex ComplexConjugate Filter
-open scoped Topology ContDiff
+open scoped Topology ContDiff RealInnerProductSpace
 
 /-- Smooth circle-valued gauges tending to one at infinity, with no base-point condition. -/
 def framedGaugeGroup : Subgroup (ℂ → Circle) where
@@ -175,12 +175,29 @@ theorem norm_gaugeLinearAction (u : ℂ → Circle) (y : ℂ → EuclideanSpace 
     Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
   linear_combination (y z 2 ^ 2 + y z 3 ^ 2) * hn
 
+/-- The linear gauge action preserves the pointwise inner product of variations and of
+targets. -/
+@[simp]
+theorem inner_gaugeLinearAction (u : ℂ → Circle) (y w : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ⟪gaugeLinearAction u y z, gaugeLinearAction u w z⟫ = ⟪y z, w z⟫ := by
+  have hn := Circle.re_sq_add_im_sq (u z)
+  simp only [PiLp.inner_apply, Fin.sum_univ_four, gaugeLinearAction_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
+    Matrix.tail_cons, RCLike.inner_apply, conj_trivial]
+  linear_combination (y z 2 * w z 2 + y z 3 * w z 3) * hn
+
 /-- Pointwise vanishing is preserved in both directions. -/
 @[simp]
 theorem gaugeLinearAction_eq_zero_iff (u : ℂ → Circle)
     (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     gaugeLinearAction u y z = 0 ↔ y z = 0 := by
   rw [← norm_eq_zero, norm_gaugeLinearAction, norm_eq_zero]
+
+/-- The linear gauge action preserves compact support. -/
+theorem hasCompactSupport_gaugeLinearAction (u : ℂ → Circle)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeLinearAction u y) :=
+  hy.mono fun z hz hyz ↦ hz ((gaugeLinearAction_eq_zero_iff u y z).2 hyz)
 
 /-- Smooth gauges preserve the regularity of variations, without differentiating a
 connection increment. -/
