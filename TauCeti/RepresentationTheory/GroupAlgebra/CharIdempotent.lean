@@ -336,13 +336,10 @@ theorem isInternal_charEigenspace [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.c
   have : Fintype H := Fintype.ofFinite H
   have he := (completeOrthogonalIdempotents_charIdempotent hH).map ρ.asAlgebraHom.toRingHom
   have hrange (χ : H →* kˣ) :
-      (ρ.asAlgebraHom (charIdempotent χ)) • (⊤ : Submodule k V) = ρ.charEigenspace χ := by
-    rw [← ρ.range_asAlgebraHom_charIdempotent hH χ, Submodule.pointwise_smul_def,
-      Submodule.map_top]
-    exact congrArg LinearMap.range <| LinearMap.ext fun v ↦ by
-      rw [DistribSMul.toLinearMap_apply, Module.End.smul_def]
-  convert isInternal_smul_top (S := k) (M := V) he using 1
-  exact funext fun χ ↦ (hrange χ).symm
+      (ρ.asAlgebraHom (charIdempotent χ)) • (⊤ : Submodule k V) = ρ.charEigenspace χ :=
+    (Module.End.smul_top_eq_range _).trans (ρ.range_asAlgebraHom_charIdempotent hH χ)
+  simpa only [Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hrange] using
+    isInternal_smul_top (S := k) (M := V) he
 
 end CommGroup
 
