@@ -40,6 +40,9 @@ sheaves on `Spec R`.
 
 * `AlgebraicGeometry.Scheme.Modules.HasFiniteFreeResolution.of_quasiIso_map`: exact functors
   carry resolutions to finite free resolutions when they send the terms to finite free modules.
+* `AlgebraicGeometry.Scheme.Modules.HasFiniteFreeResolution.restrict_of_comp`: finite free
+  resolutions along an open immersion restrict along open immersions factoring through it; in
+  particular (`restrict_of_le`) finite free resolutions on an open restrict to smaller opens.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_iff_exists_isOpenImmersion`: the local
   resolutions may be taken on arbitrary open immersions into `X`.
 * `AlgebraicGeometry.Scheme.Modules.IsPseudoCoherent.restrict`: pseudo-coherence is preserved by
@@ -135,6 +138,21 @@ theorem restrict (h : F.HasFiniteFreeResolution) (f : Y ⟶ X) [IsOpenImmersion 
   obtain ⟨ι, hι, ⟨e⟩⟩ := hP n
   exact ⟨ι, hι, ⟨(restrictFunctor f).mapIso e ≪≫ restrictFreeIso f ι⟩⟩
 
+/-- A finite free resolution of the restriction of `F` along an open immersion `k` gives one of
+its restriction along every open immersion `k'` that factors as `f ≫ k` through an open
+immersion `f`. -/
+theorem restrict_of_comp {Z : Scheme.{u}} {k : Y ⟶ X} {k' : Z ⟶ X} [IsOpenImmersion k]
+    [IsOpenImmersion k'] (h : (F.restrict k).HasFiniteFreeResolution) (f : Z ⟶ Y)
+    [IsOpenImmersion f] (hfk : f ≫ k = k') : (F.restrict k').HasFiniteFreeResolution :=
+  (h.restrict f).of_iso
+    (((restrictFunctorComp f k).app F).symm ≪≫ (restrictFunctorCongr hfk).app F)
+
+/-- A finite free resolution on an open `V` restricts to a finite free resolution on every
+smaller open `W`. -/
+theorem restrict_of_le {V W : X.Opens} (h : (F.restrict V.ι).HasFiniteFreeResolution)
+    (hWV : W ≤ V) : (F.restrict W.ι).HasFiniteFreeResolution :=
+  h.restrict_of_comp (X.homOfLE hWV) (X.homOfLE_ι hWV)
+
 end HasFiniteFreeResolution
 
 /-- A free module of finite rank has a finite free resolution, concentrated in degree zero. -/
@@ -164,9 +182,7 @@ theorem isPseudoCoherent_iff_exists_isOpenImmersion :
     exact ⟨U, U.ι, inferInstance, by rwa [Scheme.Opens.opensRange_ι], hU⟩
   · obtain ⟨V, g, _, hx, hg⟩ := h x
     -- Transport the resolution along the isomorphism of `V` with the open image of `g`.
-    exact ⟨g.opensRange, hx, (hg.restrict g.isoOpensRange.inv).of_iso
-      (((restrictFunctorComp g.isoOpensRange.inv g).app F).symm ≪≫
-        (restrictFunctorCongr g.isoOpensRange_inv_comp).app F)⟩
+    exact ⟨g.opensRange, hx, hg.restrict_of_comp g.isoOpensRange.inv g.isoOpensRange_inv_comp⟩
 
 namespace IsPseudoCoherent
 
@@ -180,10 +196,8 @@ theorem restrict (h : F.IsPseudoCoherent) (f : Y ⟶ X) [IsOpenImmersion f] :
   intro y
   obtain ⟨U, hU, hres⟩ := h (f y)
   -- Both restrictions of `F` to `f ⁻¹ᵁ U` factor through `U`, along `f ∣_ U`.
-  exact ⟨f ⁻¹ᵁ U, hU, (hres.restrict (f ∣_ U)).of_iso
-    (((restrictFunctorComp (f ∣_ U) U.ι).app F).symm ≪≫
-      (restrictFunctorCongr (morphismRestrict_ι f U)).app F ≪≫
-      (restrictFunctorComp (f ⁻¹ᵁ U).ι f).app F)⟩
+  exact ⟨f ⁻¹ᵁ U, hU, (hres.restrict_of_comp (f ∣_ U) (morphismRestrict_ι f U)).of_iso
+    ((restrictFunctorComp (f ⁻¹ᵁ U).ι f).app F)⟩
 
 end IsPseudoCoherent
 

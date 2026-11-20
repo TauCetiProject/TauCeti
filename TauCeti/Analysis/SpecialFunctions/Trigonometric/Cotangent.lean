@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.Int.Sign
 import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
+import TauCeti.RingTheory.RootsOfUnity.Sawtooth
 import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Summable
 
@@ -444,23 +445,10 @@ theorem pi_mul_cot_pi_mul_val_div_eq_sum (M : ℕ) [NeZero M] {j : ZMod M} (hj :
       AddChar.map_zero_eq_one]
   have hterm (m : ZMod M) : (ZMod.stdAddChar (m * j) : ℂ) = ζ ^ m.val := by
     rw [hζdef, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_zmod_val]
-  have hgeom : ∑ i ∈ Finset.range M, ζ ^ i = 0 := by
-    have h := geom_sum_mul ζ M
-    rw [hζM, sub_self] at h
-    exact (mul_eq_zero.mp h).resolve_right hζ1
-  have hind (K : ℕ) : (ζ - 1) * ∑ i ∈ Finset.range K, (i : ℂ) * ζ ^ i =
-      K * ζ ^ K - ζ * ∑ i ∈ Finset.range K, ζ ^ i := by
-    induction K with
-    | zero => simp
-    | succ K ih =>
-      rw [Finset.sum_range_succ, Finset.sum_range_succ, mul_add, ih]
-      push_cast
-      ring
   have hS : ∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j) = M / (ζ - 1) := by
     simp_rw [hterm]
-    rw [ZMod.sum_val_eq_sum_range (fun i ↦ (i : ℂ) * ζ ^ i), eq_div_iff hζ1, mul_comm, hind,
-      hζM, hgeom]
-    ring
+    rw [ZMod.sum_val_eq_sum_range (fun i ↦ (i : ℂ) * ζ ^ i)]
+    exact sum_range_natCast_mul_pow_of_pow_eq_one hζM (sub_ne_zero.mp hζ1)
   rw [hS, cot_pi_eq_exp_ratio, ← hζ]
   have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
   have h1ζ : 1 - ζ ≠ 0 := by rwa [← neg_sub, neg_ne_zero]
