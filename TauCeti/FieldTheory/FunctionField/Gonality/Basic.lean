@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 public import TauCeti.FieldTheory.FunctionField.Consequences.WeierstrassGaps
 public import TauCeti.FieldTheory.FunctionField.Differential.CanonicalDivisor
-import Mathlib.FieldTheory.Relrank
+import TauCeti.FieldTheory.IntermediateField.Map
 import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
@@ -44,8 +44,7 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
 * `TauCeti.gonality_le_finrank_adjoin`, `TauCeti.exists_finrank_adjoin_eq_gonality`,
   `TauCeti.gonality_pos`: every transcendental element bounds the gonality, and for a function
   field some transcendental element attains it, which is then positive.
-* `AlgEquiv.finrank_adjoin_apply`, `AlgEquiv.gonality_eq`: an isomorphism preserves the index
-  of a simple subfield, so isomorphic extensions have the same gonality.
+* `AlgEquiv.gonality_eq`: isomorphic extensions have the same gonality.
 * `TauCeti.exists_transcendental_finrank_adjoin_le_degree_of_two_le_dim`: over an exact constant
   field, a divisor `D` with `ℓ(D) ≥ 2` gives a rational subfield of index at most `deg D`.
 * `TauCeti.exists_nonneg_and_degree_eq_finrank_and_two_le_dim`: the pole divisor of a
@@ -56,8 +55,6 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
 * `TauCeti.gonality_le_mul_degree_of_isPoleNumber`: a pole number `n ≠ 0` at a place `P`
   bounds the gonality by `n · deg P`.
 * `TauCeti.gonality_eq_one_iff`: gonality one means `F ≃ₐ[k] k(t)`.
-* `TauCeti.isEmpty_algEquiv_ratFunc_of_genus_ne_zero`: a field of positive genus is not
-  rational.
 * `TauCeti.gonality_eq_two_iff`: for a non-rational field, gonality two means a rational subfield
   of index two.
 * `TauCeti.gonality_le_genus_add_one`, `TauCeti.gonality_le_two_mul_genus_sub_two`,
@@ -119,15 +116,6 @@ theorem gonality_pos (hF : IsFunctionField k F) : 0 < gonality k F := by
   obtain ⟨x, hx, hrank⟩ := exists_finrank_adjoin_eq_gonality hF
   have := hF.finiteDimensional_adjoin hx
   exact hrank ▸ Module.finrank_pos
-
-/-- An isomorphism over `k` preserves the index of a simple subfield:
-`[F' : k(e x)] = [F : k(x)]`. -/
-theorem _root_.AlgEquiv.finrank_adjoin_apply {F' : Type*} [Field F'] [Algebra k F']
-    (e : F ≃ₐ[k] F') (x : F) : Module.finrank k⟮e x⟯ F' = Module.finrank k⟮x⟯ F := by
-  have h := IntermediateField.relfinrank_map_map k⟮x⟯ ⊤ e.toAlgHom
-  rwa [IntermediateField.adjoin_map, Set.image_singleton, ← AlgHom.fieldRange_eq_map,
-    AlgHom.fieldRange_eq_top.mpr e.surjective, IntermediateField.relfinrank_top_right,
-    IntermediateField.relfinrank_top_right] at h
 
 /-- An isomorphism over `k` carries rational subfields to rational subfields of the same index,
 so **isomorphic extensions have the same gonality**. -/
@@ -241,11 +229,6 @@ theorem gonality_eq_one_iff : gonality k F = 1 ↔ Nonempty (F ≃ₐ[k] RatFunc
   have htop : k⟮x⟯ = ⊤ := IntermediateField.finrank_eq_one_iff_eq_top.mp (hrank.trans h)
   have : Algebra.Transcendental k F := ⟨x, hx⟩
   exact ⟨(RatFunc.algEquivOfAdjoinEqTop htop).symm⟩
-
-/-- **A field of positive genus is not rational**: `k(t)` and its subfields have genus zero. -/
-theorem isEmpty_algEquiv_ratFunc_of_genus_ne_zero (hg : genus k F ≠ 0) :
-    IsEmpty (F ≃ₐ[k] RatFunc k) :=
-  ⟨fun e ↦ hg (genus_eq_zero_of_algHom_ratFunc e.toAlgHom)⟩
 
 /-- A function field of positive genus is not rational, so its gonality is at least two. -/
 theorem two_le_gonality_of_genus_ne_zero (hF : IsFunctionField k F) (hg : genus k F ≠ 0) :
