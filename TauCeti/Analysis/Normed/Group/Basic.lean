@@ -48,6 +48,9 @@ The points at which a map comes within `ε` of a set form the preimage of the un
 A point off a finite set stays farther than `ε` from all of its points for every small enough
 `ε > 0`.
 
+A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` has norm at most
+`R / (1 - γ)`.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
@@ -78,6 +81,8 @@ A point off a finite set stays farther than `ε` from all of its points for ever
   preimage under `f` of the union of the closed `ε`-balls about the points of `S`.
 * `TauCeti.eventually_not_exists_norm_sub_le` -- a point off a finite set `S` is, for every small
   enough `ε > 0`, farther than `ε` from each point of `S`.
+* `TauCeti.norm_le_div_of_isFixedPt` -- a fixed point `v` of `T` with `‖T v‖ ≤ R + γ ‖v‖` and
+  `γ < 1` satisfies `‖v‖ ≤ R / (1 - γ)`.
 -/
 
 public section
@@ -228,5 +233,14 @@ theorem eventually_not_exists_norm_sub_le {E : Type*} [NormedAddGroup E] {z : E}
       fun h : z = s => hz (h ▸ hs)).filter_mono nhdsWithin_le_nhds
   filter_upwards [hlt] with ε hε ⟨s, hs, hle⟩
   exact (hε s hs).not_ge hle
+
+/-- A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` for some `γ < 1` has norm at most
+`R / (1 - γ)`. -/
+theorem norm_le_div_of_isFixedPt {E : Type*} [Norm E] {T : E → E} {v : E} {R γ : ℝ}
+    (hγ : γ < 1) (hT : ‖T v‖ ≤ R + γ * ‖v‖) (hv : Function.IsFixedPt T v) :
+    ‖v‖ ≤ R / (1 - γ) := by
+  rw [hv.eq] at hT
+  rw [le_div_iff₀ (sub_pos.2 hγ)]
+  linarith
 
 end TauCeti
