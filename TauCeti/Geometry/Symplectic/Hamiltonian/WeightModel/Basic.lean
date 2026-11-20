@@ -62,11 +62,16 @@ linearly independent:
 
 * the moment map determines the moduli `|z_i|`, so every fibre of `μ` is a single orbit of `𝔱`;
 * the only fixed point is the origin, the only point mapped to the apex `0` of the moment cone;
-* the apex is an extreme point of the moment image.
+* the apex is an extreme point of the moment image, and, when there is at least one weight, it is
+  not an interior point of it.
 
 Some such hypothesis is needed for the apex to be a vertex: finitely many dependent weights can
 span a cone containing a line, so that `0` is not an extreme point of the image, or even all of
-`𝔱*`, so that `0` is an interior point.
+`𝔱*`, so that `0` is an interior point. This happens for the effective circle action on `ℂ²` with
+the weights `1` and `-1`, whose moment image is the whole line
+(`TauCeti.range_weightMomentMap_id_neg_id`). So the image of a fixed point of an effective torus
+action may be interior to the moment image when there are more weights than the dimension of the
+torus.
 
 ## Main definitions
 
@@ -121,6 +126,12 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
 * `TauCeti.forall_weightRotation_apply_eq_self_iff_weightMomentMap_eq_zero`,
   `TauCeti.zero_mem_extremePoints_range_weightMomentMap`: for linearly independent weights, the
   fixed points are the preimage of the apex, which is an extreme point of the image.
+* `TauCeti.zero_notMem_interior_range_weightMomentMap`: for a nonempty family of linearly
+  independent weights, the apex is not an interior point of the image.
+* `TauCeti.weightRotation_id_neg_id_eq_id_iff`, `TauCeti.range_weightMomentMap_id_neg_id`,
+  `TauCeti.zero_mem_interior_range_weightMomentMap_id_neg_id`: the effective circle action on
+  `ℂ²` with weights `1` and `-1` has the whole line as moment image, with the apex in its
+  interior.
 
 ## References
 
@@ -790,6 +801,76 @@ theorem zero_mem_extremePoints_range_weightMomentMap {α : ι → StrongDual ℝ
     exact (mul_eq_zero.1 (by linarith : s * (x.1 j ^ 2 + x.2 j ^ 2) = 0)).resolve_left hs.ne'
   rw [← weightMomentMap_zero α, weightMomentMap_eq_weightMomentMap_iff hα]
   simpa using hx
+
+/-- **The apex is not an interior point.** For a nonempty family of linearly independent weights,
+the apex `0` of the moment cone is not an interior point of the image of the moment map. So the
+image of the fixed point lies on the boundary of the moment image; this fails for dependent
+weights (`TauCeti.zero_mem_interior_range_weightMomentMap_id_neg_id`). -/
+theorem zero_notMem_interior_range_weightMomentMap [Nonempty ι] {α : ι → StrongDual ℝ 𝔱}
+    (hα : LinearIndependent ℝ α) :
+    (0 : StrongDual ℝ 𝔱) ∉ interior (Set.range (weightMomentMap α)) := by
+  classical
+  intro h0
+  obtain ⟨j₀⟩ := ‹Nonempty ι›
+  -- Small positive multiples `t α_{j₀}` of a weight would lie in the moment image.
+  have hlim : Filter.Tendsto (fun t : ℝ ↦ t • α j₀) (nhds 0) (nhds 0) := by
+    simpa using (Filter.tendsto_id (x := nhds (0 : ℝ))).smul_const (α j₀)
+  obtain ⟨t, ⟨x, hx⟩, ht⟩ := (((hlim.eventually (mem_interior_iff_mem_nhds.1 h0)).filter_mono
+    nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists (f := nhdsWithin 0 (Set.Ioi 0))
+  -- Then the coefficient of `α_{j₀}` in `μ(x) - t α_{j₀} = 0` would be negative.
+  have hsum : ∑ j, (-(1 / 2) * (x.1 j ^ 2 + x.2 j ^ 2) - (Pi.single j₀ t : ι → ℝ) j) • α j = 0 := by
+    rw [Finset.sum_congr rfl fun j _ ↦ sub_smul _ _ (α j), Finset.sum_sub_distrib,
+      ← weightMomentMap_def, hx, Fintype.sum_eq_single j₀ fun j hj ↦ by
+        rw [Pi.single_eq_of_ne hj, zero_smul], Pi.single_eq_same, sub_self]
+  have hc := Fintype.linearIndependent_iff.1 hα _ hsum j₀
+  rw [Pi.single_eq_same] at hc
+  nlinarith [sq_nonneg (x.1 j₀), sq_nonneg (x.2 j₀), Set.mem_Ioi.1 ht]
+
+/-! ### An apex in the interior of the moment image -/
+
+/-- The circle `ℝ / 2πℤ` acts on `ℂ²` with the weights `1` and `-1`, that is by
+`(z₁, z₂) ↦ (e^{iξ} z₁, e^{-iξ} z₂)`, and this action is effective: `ξ ∈ ℝ` acts trivially
+exactly when `ξ ∈ 2πℤ`. -/
+theorem weightRotation_id_neg_id_eq_id_iff (ξ : ℝ) :
+    weightRotation (fun j ↦ ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] j ξ) =
+      ContinuousLinearMap.id ℝ _ ↔ ∃ k : ℤ, k * (2 * π) = ξ := by
+  rw [weightRotation_eq_id_iff, Fin.forall_fin_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, ContinuousLinearMap.id_apply, neg_apply]
+  refine ⟨fun h ↦ h.1, fun ⟨k, hk⟩ ↦ ⟨⟨k, hk⟩, ⟨-k, by push_cast; linear_combination -hk⟩⟩⟩
+
+/-- **The apex can be interior beyond complexity zero.** For the effective circle action on `ℂ²`
+with the weights `1` and `-1` (`TauCeti.weightRotation_id_neg_id_eq_id_iff`), the image of the
+moment map is the whole dual line. -/
+theorem range_weightMomentMap_id_neg_id :
+    Set.range (weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ]) =
+      Set.univ := by
+  refine Set.eq_univ_of_forall fun ν ↦ ?_
+  -- A covector on `ℝ` is determined by its value `c` at `1`; realize `c` by one coordinate.
+  have hμ (x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
+      weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x 1 =
+        -(1 / 2) * ((x.1 0 ^ 2 + x.2 0 ^ 2) - (x.1 1 ^ 2 + x.2 1 ^ 2)) := by
+    simp [Fin.sum_univ_two]
+    ring
+  rcases le_total (ν 1) 0 with hν | hν
+  · obtain ⟨r, hr⟩ : ∃ r : ℝ, r ^ 2 = -2 * ν 1 := ⟨√(-2 * ν 1), Real.sq_sqrt (by linarith)⟩
+    refine ⟨(WithLp.toLp 2 ![r, 0], 0), ContinuousLinearMap.ext_ring ?_⟩
+    rw [hμ]
+    simp [hr]
+  · obtain ⟨r, hr⟩ : ∃ r : ℝ, r ^ 2 = 2 * ν 1 := ⟨√(2 * ν 1), Real.sq_sqrt (by linarith)⟩
+    refine ⟨(WithLp.toLp 2 ![0, r], 0), ContinuousLinearMap.ext_ring ?_⟩
+    rw [hμ]
+    simp [hr]
+
+/-- **The apex can be interior beyond complexity zero.** For the effective circle action on `ℂ²`
+with the weights `1` and `-1`, the image `0` of the fixed point `0` is an interior point of the
+moment image. So the linear independence of the weights in
+`TauCeti.zero_notMem_interior_range_weightMomentMap` cannot be replaced by effectiveness of the
+action. -/
+theorem zero_mem_interior_range_weightMomentMap_id_neg_id :
+    (0 : StrongDual ℝ ℝ) ∈ interior
+      (Set.range (weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ])) := by
+  rw [range_weightMomentMap_id_neg_id, interior_univ]
+  exact Set.mem_univ _
 
 /-! ### Rotations by multiples of `2π` -/
 
