@@ -23,8 +23,9 @@ Let `M` be a smooth Hausdorff manifold without boundary modelled on a finite-dim
 product space `E`, let `V → M` be a smooth real vector bundle with finite-dimensional model fibre
 `F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p ≤ ∞` and every order
 `k`, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` of `TauCeti.SectionChartData.lowerOrderL` is a
-compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`). Composing these, the
-inclusion `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact as well.
+compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`). The endpoint `p = ∞`
+is included: smooth sections are not dense in `W^{k+1,∞}(V)`, but neither ingredient below needs
+that density. Composing these, the inclusion `W^{k+d+1,p}(V) → W^{k,p}(V)` is compact as well.
 
 Together with the injectivity of the chart data (`TauCeti.SectionChartData.chartValuesL`), which
 forget all derivatives, compactness gives **Ehrling's inequality**: the `W^{k,p}` norm of a section
@@ -33,10 +34,12 @@ norm (`TauCeti.SobolevSection.exists_norm_lowerOrdersL_le`). This is how the int
 a priori estimate on a compact base is replaced by the `Lᵖ` norm.
 
 The local input is Rellich compactness on relatively compact subdomains,
-`TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`. It does not apply directly to the chart
-images `A.image j`, whose closures need not lie inside an open set on which the chart data are
-controlled. Instead the chart data in chart `j` are transferred from the other charts with
-`TauCeti.FiniteBundleAtlas.transferL` (`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`).
+`TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`, which holds for every `1 ≤ p ≤ ∞`. It does
+not apply directly to the chart images `A.image j`, whose closures need not lie inside an open set
+on which the chart data are controlled. Instead the chart data in chart `j` are transferred from
+the other charts with `TauCeti.FiniteBundleAtlas.transferL`
+(`TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`), a change of variables in `W^{k,p}` that is
+also available for every `1 ≤ p ≤ ∞` (`TauCeti.Wkp.compL`).
 
 Shrink the chart domains to open sets `D i` with `closure (D i) ⊆ A.dom i` that still cover `M`.
 The chart image `A.image j` is covered by the finitely many pieces `A.chart j '' (A.dom j ∩ D i)`
