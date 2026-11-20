@@ -75,7 +75,6 @@ private lemma not_integrable_exp_mul_stableMeasure_one_zero
   intro h
   obtain ⟨ρ, hρ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   let _ := isProbabilityMeasure_stableMeasure ⟨hα.1, hα.2.le⟩ hβ 1 0
   have hpos := mgf_pos' (X := id) (IsProbabilityMeasure.ne_zero _) h
   rw [← hρ, TauCeti.mgf_id_conv, Pi.mul_apply] at hpos
@@ -156,7 +155,7 @@ theorem integrable_exp_mul_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β| 
   have hsign : β * ((s : ℝ) * t) ≤ 0 ↔ β * t ≤ 0 := by
     rw [mul_left_comm]
     exact ⟨fun h ↦ nonpos_of_mul_nonpos_right h (NNReal.coe_pos.mpr hs),
-      mul_nonpos_of_nonneg_of_nonpos s.2⟩
+      mul_nonpos_of_nonneg_of_nonpos s.property⟩
   simp only [mul_eq_zero, NNReal.coe_eq_zero, hs.ne', false_or, hsign, hα2.ne]
 
 /-- The exponential-integrability domain of a valid stable law: all of `ℝ` for Gaussian

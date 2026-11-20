@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Normed.Operator.Banach
 
 /-!
 # Immersion normal forms from split differentials
@@ -40,7 +42,10 @@ example after exchanging the factors of a product.
 In particular, a `C^n` map with a left inverse near a point, differentiable at the image of that
 point, is an immersion there (`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`), and a `C^n`
 map with a global left inverse differentiable along its image is an immersion
-(`ContMDiff.isImmersion_of_leftInverse`). Pairing an immersion with any `C^n` map into a
+(`ContMDiff.isImmersion_of_leftInverse`). More generally, a `C^n` map into a manifold with
+finite-dimensional model is an immersion when its composite with a map differentiable along its
+image is one
+(`ContMDiff.isImmersion_of_isImmersion_comp`). Pairing an immersion with any `C^n` map into a
 finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
@@ -67,16 +72,8 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
     (hdf : (fderiv 𝕜 f x).HasLeftInverse) :
     IsImmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x := by
-  -- `E` is complete: the derivative is a uniform embedding onto a closed subset of `F`.
-  have : CompleteSpace E :=
-    (completeSpace_iff_isComplete_range
-      (IsUniformInducing.of_comp (fderiv 𝕜 f x).uniformContinuous
-        hdf.leftInverse.uniformContinuous
-        (by
-          rw [show hdf.leftInverse ∘ fderiv 𝕜 f x = id from
-            funext hdf.leftInverse_leftInverse]
-          exact IsUniformInducing.id))).2
-      hdf.isClosed_range.isComplete
+  -- `E` is complete, as a retract of `F` through the derivative and its left inverse.
+  have : CompleteSpace E := hdf.completeSpace
   -- Adjoin the closed complement so that the augmented derivative is invertible.
   let G := hdf.complement
   have : CompleteSpace G := hdf.isClosed_complement.completeSpace_coe
@@ -90,14 +87,10 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     (hf.comp contDiffOn_fst (fun _ hp => hp)).add
       (G.subtypeL.contDiff.comp contDiff_snd).contDiffOn
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  have hderiv : HasFDerivAt g (e : (E × G) →L[𝕜] F) (x, 0) := by
-    convert (((hf.contDiffAt (hs.mem_nhds hx)).differentiableAt hn0).hasFDerivAt.comp
-      (x, (0 : G)) (hasFDerivAt_fst)).add
-      (G.subtypeL.hasFDerivAt.comp (x, 0) (hasFDerivAt_snd)) using 1
-    · rfl
-    · apply ContinuousLinearMap.ext
-      intro p
-      rfl
+  have hderiv : HasFDerivAt g (e : (E × G) →L[𝕜] F) (x, 0) :=
+    (((hf.contDiffAt (hs.mem_nhds hx)).differentiableAt hn0).hasFDerivAt.comp_fst_add_comp_snd
+      G.subtypeL.hasFDerivAt).congr_fderiv
+      (ContinuousLinearMap.coe_coprodSubtypeLEquivOfIsCompl _ _ _).symm
   obtain ⟨Θ, hΘ, hxΘ, hsub, hinv⟩ :=
     TauCeti.ContDiffOn.exists_openPartialHomeomorph hg ht hx hn hderiv.fderiv.symm
   have hforward : ContDiffOn 𝕜 n Θ Θ.source := hΘ ▸ hg.mono hsub
@@ -311,6 +304,22 @@ theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] {g : N 
   TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun x ↦
     hf.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hn (hg x)
       (Filter.Eventually.of_forall hgf)
+
+omit [CompleteSpace E'] in
+/-- A `C^n` map between boundaryless manifolds, with finite-dimensional target model and `1 ≤ n`,
+is an immersion when its composite with some map differentiable along its image is an immersion:
+the differential of the composite factors through that of the map. -/
+theorem ContMDiff.isImmersion_of_isImmersion_comp [FiniteDimensional 𝕜 E'] {EP HP P : Type*}
+    [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P] {g : N → P}
+    (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hg : ∀ x, MDifferentiableAt J IP g (f x))
+    (hgf : IsImmersion I IP n (g ∘ f)) : IsImmersion I J n f := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  have : CompleteSpace E' := FiniteDimensional.completeSpace 𝕜 E'
+  exact TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun x ↦
+    hf.contMDiffOn.isImmersionAt_of_hasLeftInverse_mfderiv isOpen_univ (mem_univ x) hn
+      (isDiffImmersionAt_iff.mp ((hgf.isDiffImmersionAt hn0 x).of_comp
+        ((hf x).mdifferentiableAt hn0) (hg x)))
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
   [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]

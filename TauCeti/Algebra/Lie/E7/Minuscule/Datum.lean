@@ -118,7 +118,7 @@ theorem pinnedRep_ι_rootGenerator (k : Fin E7.rank ⊕ Fin E7.rank) :
   simpa only [rank, _root_.UniversalEnvelopingAlgebra.ι_apply] using pinnedRep_ι_rootGenerator k
 
 /-- The pinned Cartan generator acts diagonally with the numbered minuscule weights. -/
-theorem pinnedRep_h (i : Fin E7.rank) (v : Fin 56 → ℚ) (a : Fin 56) :
+theorem pinnedRep_ι_h_apply (i : Fin E7.rank) (v : Fin 56 → ℚ) (a : Fin 56) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ ((E7.lieBasis valid_E7).h i)) v a =
       (e7MinusculeWeight a i : ℚ) * v a := by
   rw [pinnedRep_ι_h, rep_def, weightTable.rep_ι_apply,
@@ -127,14 +127,14 @@ theorem pinnedRep_h (i : Fin E7.rank) (v : Fin 56 → ℚ) (a : Fin 56) :
   simp [Matrix.mulVec, dotProduct, MinusculeWeightTable.cartanGeneratorMatrixQ_apply]
 
 /-- Simplifier normal form of the pinned Cartan action. -/
-@[simp] theorem pinnedRep_h' (i : Fin E7.rank) (v : Fin 56 → ℚ) (a : Fin 56) :
+@[simp] theorem pinnedRep_ι_h_apply' (i : Fin E7.rank) (v : Fin 56 → ℚ) (a : Fin 56) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.mkAlgHom ℚ (E7.lieAlgebra valid_E7)
       (TensorAlgebra.ι ℚ ((E7.lieBasis valid_E7).h i))) v a =
       (e7MinusculeWeight a i : ℚ) * v a := by
-  rw [← _root_.UniversalEnvelopingAlgebra.ι_apply, pinnedRep_h]
+  rw [← _root_.UniversalEnvelopingAlgebra.ι_apply, pinnedRep_ι_h_apply]
 
 /-- The pinned positive simple-root generator acts by the integral raising matrix. -/
-theorem pinnedRep_e (i : Fin E7.rank) (v : Fin 56 → ℚ) :
+theorem pinnedRep_ι_e_apply (i : Fin E7.rank) (v : Fin 56 → ℚ) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ ((E7.lieBasis valid_E7).e i)) v =
       (raisingMatrix i).map (Int.castRingHom ℚ) *ᵥ v := by
   rw [pinnedRep, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι, toSerre_e,
@@ -145,14 +145,14 @@ theorem pinnedRep_e (i : Fin E7.rank) (v : Fin 56 → ℚ) :
   simp [Matrix.map_apply, raisingMatrix_apply]
 
 /-- Simplifier normal form of the pinned positive simple-root action. -/
-@[simp] theorem pinnedRep_e' (i : Fin E7.rank) (v : Fin 56 → ℚ) :
+@[simp] theorem pinnedRep_ι_e_apply' (i : Fin E7.rank) (v : Fin 56 → ℚ) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.mkAlgHom ℚ (E7.lieAlgebra valid_E7)
       (TensorAlgebra.ι ℚ ((E7.lieBasis valid_E7).e i))) v =
       (raisingMatrix i).map (Int.castRingHom ℚ) *ᵥ v := by
-  rw [← _root_.UniversalEnvelopingAlgebra.ι_apply, pinnedRep_e]
+  rw [← _root_.UniversalEnvelopingAlgebra.ι_apply, pinnedRep_ι_e_apply]
 
 /-- The pinned negative simple-root generator acts by the integral lowering matrix. -/
-theorem pinnedRep_f (i : Fin E7.rank) (v : Fin 56 → ℚ) :
+theorem pinnedRep_ι_f_apply (i : Fin E7.rank) (v : Fin 56 → ℚ) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ ((E7.lieBasis valid_E7).f i)) v =
       (loweringMatrix i).map (Int.castRingHom ℚ) *ᵥ v := by
   rw [pinnedRep, AlgHom.comp_apply, UniversalEnvelopingAlgebra.map_ι, toSerre_f,
@@ -163,14 +163,14 @@ theorem pinnedRep_f (i : Fin E7.rank) (v : Fin 56 → ℚ) :
   simp [Matrix.map_apply, loweringMatrix_apply]
 
 /-- Simplifier normal form of the pinned negative simple-root action. -/
-@[simp] theorem pinnedRep_f' (i : Fin E7.rank) (v : Fin 56 → ℚ) :
+@[simp] theorem pinnedRep_ι_f_apply' (i : Fin E7.rank) (v : Fin 56 → ℚ) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.mkAlgHom ℚ (E7.lieAlgebra valid_E7)
       (TensorAlgebra.ι ℚ ((E7.lieBasis valid_E7).f i))) v =
       (loweringMatrix i).map (Int.castRingHom ℚ) *ᵥ v := by
-  rw [← _root_.UniversalEnvelopingAlgebra.ι_apply, pinnedRep_f]
+  rw [← _root_.UniversalEnvelopingAlgebra.ι_apply, pinnedRep_ι_f_apply]
 
 /-- Every pinned simple-root generator acts by a square-zero endomorphism. -/
-theorem pinnedRep_rootGenerator_sq (k : Fin E7.rank ⊕ Fin E7.rank) :
+theorem pinnedRep_ι_rootGenerator_sq (k : Fin E7.rank ⊕ Fin E7.rank) :
     pinnedRep (_root_.UniversalEnvelopingAlgebra.ι ℚ
       ((E7.lieBasis valid_E7).rootGenerator k)) ^ 2 = 0 := by
   rw [pinnedRep_ι_rootGenerator, rep_def]
@@ -226,7 +226,7 @@ standard coordinate lattice and fundamental-weight coordinates. -/
   representation_mem_lattice := pinnedRep_kostantForm_mem_lattice
   span_lattice_eq_top := by
     rw [lattice_def]
-    exact Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
+    exact Submodule.IsFullLattice.span_eq_top (R := ℤ) (A := ℚ)
   dim := 56
   basis := latticeBasis
   weight := e7MinusculeWeight
@@ -272,13 +272,13 @@ standard coordinate lattice and fundamental-weight coordinates. -/
 /-- Fundamental-weight torus coordinates are the original minuscule weights. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
     chevalleyDatum.coordinateWeight = e7MinusculeWeight := by
-  exact chevalleyDatum.coordinateWeight_eq_weight_of_coe_weightLatticeBasis
+  exact chevalleyDatum.coordinateWeight_eq_of_coe_weightLatticeBasis
     coe_chevalleyDatum_weightLatticeBasis
 
 /-- Root coordinates in the datum are the native simply connected root coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin E7.numRoots) :
     chevalleyDatum.coordinateRoot γ = (E7.simplyConnectedRootDatum valid_E7).root γ := by
-  exact chevalleyDatum.coordinateRoot_eq_root_of_coe_weightLatticeBasis
+  exact chevalleyDatum.coordinateRoot_eq_of_coe_weightLatticeBasis
     coe_chevalleyDatum_weightLatticeBasis γ
 
 end

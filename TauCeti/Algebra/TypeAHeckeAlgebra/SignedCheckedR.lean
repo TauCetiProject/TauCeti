@@ -252,13 +252,13 @@ theorem signedCheckedR_apply (s : R) (j k : Fin n) (v : (Fin n → ι) →₀ R)
   induction v using Finsupp.induction_linear with
   | zero => simp
   | add v v' hv hv' =>
-    rw [map_add, add_apply, hv, hv', add_apply, add_apply]
+    rw [map_add, Finsupp.add_apply, hv, hv', Finsupp.add_apply, Finsupp.add_apply]
     split_ifs <;> ring
   | single w r =>
-    rw [← smul_single_one, map_smul, smul_apply, signedCheckedR_single_apply_comm,
+    rw [← smul_single_one, map_smul, Finsupp.smul_apply, signedCheckedR_single_apply_comm,
       signedCheckedR_single_one]
-    split_ifs <;> simp only [sub_apply, smul_apply, neg_apply, single_apply, smul_eq_mul,
-      eq_comm (a := w)] <;> split_ifs <;> ring
+    split_ifs <;> simp only [Finsupp.sub_apply, Finsupp.smul_apply, Finsupp.neg_apply, single_apply,
+      smul_eq_mul, eq_comm (a := w)] <;> split_ifs <;> ring
 
 /-- **Locality of the signed checked R-matrix.** Let `E` embed the words on `m` strands into the
 words on `n` strands along the strand map `f`, so that `E u` carries the letter `u i` at the

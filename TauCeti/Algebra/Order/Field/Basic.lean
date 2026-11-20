@@ -44,6 +44,10 @@ absorption bound `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)` from `K₀ + N = K + γ
 `H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, together with the bookkeeping bound
 `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and `P`.
 
+It records that `(b - a)⁻¹ ≤ 2 / b` for `0 < b` and `2 a < b`, and that
+`a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and `2 a < b`, the form in which a kernel estimate
+`a / ((b - a) b)` outside a disc of radius `a` becomes an inverse-square bound.
+
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
@@ -60,7 +64,10 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
-Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and for
+nonnegative elements in a linearly ordered semifield the bounded-metric gauge `t ↦ t / (1 + t)` is
+nonnegative, strictly below `1`, monotone, subadditive, subhomogeneous under factors `≥ 1`, and
+zero only at `0`.
 
 ## Main results
 
@@ -74,6 +81,7 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
   `2 / b`.
 * `TauCeti.le_of_sq_div_sub_sq_div_le`: an upper bound on `a` from `a ≤ R + b` and an upper bound
   on `b² / (2τ) - a² / (2τ₀)`, for `0 < τ < τ₀`.
+* `TauCeti.pos_of_mem_Ioo_neg_one_div`: if `t ∈ (-1 / s, 1 / s)` then `0 < s`.
 * `TauCeti.mul_div_lt_self`: `d * e / a < d` for `0 < d`, `0 < a` and `e < a`.
 * `TauCeti.mul_abs_mul_sub_eq_sq_mul_abs_sub_div`: `q |q x - m| = q² |x - m / q|` for `q > 0`.
 * `TauCeti.abs_div_sub_div_le`: `|x / a - y / b| ≤ 2 (e + y δ) / b` for a relative perturbation
@@ -83,8 +91,6 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.pow_five_lt_of_mul_div_le`: `ε ^ 5 < g` from `0 < ε`, `ε * n ^ 2 < M`,
   `0 < D ≤ n ^ 2` and `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`.
-* `TauCeti.mul_le_of_le_div_mul`: `x * (C₀ * (Lam / lam)) ≤ A` from
-  `x ≤ A / (C₀ + 1) * (lam / Lam)`, for `0 ≤ A`, `0 ≤ C₀`, `0 ≤ lam` and `0 ≤ Lam`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
@@ -93,11 +99,18 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.nonneg_of_le_div_pow`: `0 ≤ A` from `0 ≤ a` and `a ≤ A / t ^ k` with `0 < t`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
+* `TauCeti.inv_sub_le_two_div`: `(b - a)⁻¹ ≤ 2 / b` for `0 < b` and `2 a < b`.
+* `TauCeti.div_sub_mul_le_two_mul_div_sq`: `a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and
+  `2 a < b`.
 * `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
   (r / 2) ^ n)` for `0 < r`, `1 ≤ n` and `L / (2 r) < m + 1`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
+  `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
+  `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
+  scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 -/
 
 public section
@@ -294,23 +307,20 @@ theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
         mul_le_mul_of_nonneg_left (by linarith) (by positivity)
     _ = ε / 2 := by field_simp
 
-/-- If `x ≤ A / (C₀ + 1) * (lam / Lam)` for `A ≥ 0`, `C₀ ≥ 0`, `lam ≥ 0` and `Lam ≥ 0`, then
-`x * (C₀ * (Lam / lam)) ≤ A`. -/
-theorem mul_le_of_le_div_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    {A C₀ lam Lam x : α} (hA : 0 ≤ A) (hC₀ : 0 ≤ C₀) (hlam : 0 ≤ lam) (hLam : 0 ≤ Lam)
-    (hx : x ≤ A / (C₀ + 1) * (lam / Lam)) :
-    x * (C₀ * (Lam / lam)) ≤ A := by
-  have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
-    rw [div_mul_div_comm, mul_comm lam]
-    exact div_self_le_one _
-  calc x * (C₀ * (Lam / lam))
-      ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
-    _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
-    _ ≤ A * 1 * 1 :=
-        mul_le_mul (mul_le_mul_of_nonneg_left
-          (div_le_one_of_le₀ (by linarith) (by linarith)) hA) hratio (by positivity)
-          (by positivity)
-    _ = A := by rw [mul_one, mul_one]
+/-- Beyond twice `a`, where `b - a ≥ b / 2`, the inverse `(b - a)⁻¹` is at most `2 / b`. -/
+theorem inv_sub_le_two_div {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b : α} (hb : 0 < b) (h : 2 * a < b) : (b - a)⁻¹ ≤ 2 / b := by
+  rw [inv_le_iff_one_le_mul₀ (by linarith), div_mul_eq_mul_div, le_div_iff₀ hb]
+  linarith
+
+/-- Beyond twice `a ≥ 0`, where `b - a ≥ b / 2`, the quotient `a / ((b - a) b)` is at most
+`2 a / b²`. -/
+theorem div_sub_mul_le_two_mul_div_sq {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b : α} (ha : 0 ≤ a) (h : 2 * a < b) :
+    a / ((b - a) * b) ≤ 2 * a / b ^ 2 := by
+  have hb : 0 < b := by linarith
+  rw [div_le_div_iff₀ (mul_pos (by linarith) hb) (by positivity)]
+  nlinarith [mul_nonneg (mul_nonneg ha hb.le) (sub_nonneg.mpr h.le)]
 
 /-- The inequality behind the volume bound for a convex set containing a ball and a point: if
 `L / (2 r) < m + 1` then `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/
@@ -383,6 +393,64 @@ theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
 theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
     {a A t : α} {k : ℕ} (ht : 0 < t) (h : a ≤ A / t ^ k) (ha : 0 ≤ a) : 0 ≤ A := by
   simpa using (le_div_iff₀ (pow_pos ht k)).1 (ha.trans h)
+
+/-- The interval `(-1 / s, 1 / s)` is nonempty only for a positive scale `s`: it is empty for
+`s = 0` by the convention `1 / 0 = 0`, and for `s < 0` its endpoints are reversed. -/
+theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+    {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
+  one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is nonnegative. -/
+theorem div_one_add_nonneg {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : 0 ≤ t / (1 + t) :=
+  div_nonneg ht (add_nonneg zero_le_one ht)
+
+/-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is strictly less than `1`. -/
+theorem div_one_add_lt_one {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : t / (1 + t) < 1 := by
+  rw [div_lt_one (add_pos_of_pos_of_nonneg zero_lt_one ht)]
+  exact lt_add_of_pos_left t zero_lt_one
+
+/-- For `0 ≤ t`, the bounded-metric gauge `t / (1 + t)` is at most `1`. -/
+theorem div_one_add_le_one {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : t / (1 + t) ≤ 1 :=
+  (div_one_add_lt_one ht).le
+
+/-- The bounded-metric gauge `t ↦ t / (1 + t)` is monotone on `[0, ∞)`. -/
+theorem div_one_add_mono {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b : α} (ha : 0 ≤ a) (hab : a ≤ b) : a / (1 + a) ≤ b / (1 + b) := by
+  rw [div_le_div_iff₀ (add_pos_of_pos_of_nonneg zero_lt_one ha)
+    (add_pos_of_pos_of_nonneg zero_lt_one (ha.trans hab))]
+  rw [mul_add, mul_one, mul_add, mul_one, mul_comm b a]
+  gcongr
+
+/-- The bounded-metric gauge `t ↦ t / (1 + t)` is subadditive on `[0, ∞)`. -/
+theorem div_one_add_add_le {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b : α} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    (a + b) / (1 + (a + b)) ≤ a / (1 + a) + b / (1 + b) := by
+  have h1a : 0 < 1 + a := add_pos_of_pos_of_nonneg zero_lt_one ha
+  have h1b : 0 < 1 + b := add_pos_of_pos_of_nonneg zero_lt_one hb
+  calc (a + b) / (1 + (a + b))
+      = a / (1 + (a + b)) + b / (1 + (a + b)) := add_div a b _
+    _ ≤ a / (1 + a) + b / (1 + b) :=
+        add_le_add
+          (div_le_div_of_nonneg_left ha h1a (by rw [← add_assoc]; exact le_add_of_nonneg_right hb))
+          (div_le_div_of_nonneg_left hb h1b (by rw [add_left_comm]; exact le_add_of_nonneg_left ha))
+
+/-- For `1 ≤ c` and `0 ≤ t`, scaling the argument of the bounded-metric gauge by `c` satisfies
+`c * t / (1 + c * t) ≤ c * (t / (1 + t))`. -/
+theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {c t : α} (hc : 1 ≤ c) (ht : 0 ≤ t) :
+    c * t / (1 + c * t) ≤ c * (t / (1 + t)) := by
+  rw [← mul_div_assoc]
+  exact div_le_div_of_nonneg_left (mul_nonneg (zero_le_one.trans hc) ht)
+    (add_pos_of_pos_of_nonneg zero_lt_one ht)
+    (add_le_add le_rfl (le_mul_of_one_le_left ht hc))
+
+/-- For `0 ≤ t`, `t / (1 + t) = 0` if and only if `t = 0`. -/
+theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
+  div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
 
 end TauCeti
 

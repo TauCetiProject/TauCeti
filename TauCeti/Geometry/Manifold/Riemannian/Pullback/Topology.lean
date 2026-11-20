@@ -384,11 +384,11 @@ theorem chartCkTopology_eq_induced (k : ℕ∞) {S : Set M}
   refine le_antisymm (continuous_iff_le_induced.mp ?_) (le_of_nhds_le_nhds fun g₀ ↦ ?_)
   · let _ := chartCkTopology (I := I) (M := M) k
     exact continuous_pi fun x ↦ continuous_pi fun m ↦
-      continuous_chartMetricDerivative k (x : M) m.2
+      continuous_chartMetricDerivative k (x : M) m.property
   -- Cover `M` by compact neighbourhoods in the charts at the points of `S`.
   let κ := {p : S × Set E // IsCompact p.2 ∧ p.2 ⊆ (extChartAt I (p.1 : M)).target}
-  have hcover (y : M) : ∃ i : κ, y ∈ (extChartAt I (i.1.1 : M)).source ∧
-      i.1.2 ∈ 𝓝 (extChartAt I (i.1.1 : M) y) := by
+  have hcover (y : M) : ∃ i : κ, y ∈ (extChartAt I (i.val.1 : M)).source ∧
+      i.val.2 ∈ 𝓝 (extChartAt I (i.val.1 : M) y) := by
     obtain ⟨x, hx, hy⟩ := hS y
     rw [← extChartAt_source (I := I)] at hy
     obtain ⟨V, hV, hVt, hVc⟩ := local_compact_nhds
@@ -396,13 +396,13 @@ theorem chartCkTopology_eq_induced (k : ℕ∞) {S : Set M}
     exact ⟨⟨(⟨x, hx⟩, V), hVc, hVt⟩, hy, hV⟩
   let _ := chartCkTopology (I := I) (M := M) k
   rw [nhds_induced]
-  refine tendsto_id'.mp ((tendsto_chartCk_iff_of_forall_mem_nhds k (fun i : κ ↦ i.2.1)
-    (fun i ↦ i.2.2) hcover).mpr fun i m hm ↦
-      (tendsto_chartMetricDerivative_iff (i.1.1 : M) m).mp ?_ _ i.2.2 i.2.1)
+  refine tendsto_id'.mp ((tendsto_chartCk_iff_of_forall_mem_nhds k (fun i : κ ↦ i.property.1)
+    (fun i ↦ i.property.2) hcover).mpr fun i m hm ↦
+      (tendsto_chartMetricDerivative_iff (i.val.1 : M) m).mp ?_ _ i.property.2 i.property.1)
   set F := fun (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x : S)
     (m : {m : ℕ // (m : ℕ∞) ≤ k}) ↦ g.chartMetricDerivative x m
   have h : Tendsto F (comap F (𝓝 (F g₀))) (𝓝 (F g₀)) := tendsto_comap
-  exact tendsto_pi_nhds.mp (tendsto_pi_nhds.mp h i.1.1) ⟨m, hm⟩
+  exact tendsto_pi_nhds.mp (tendsto_pi_nhds.mp h i.val.1) ⟨m, hm⟩
 
 /-- **Finite-atlas description of the chart Cᵏ topology.** On a compact manifold there are
 finitely many points `x` and compact sets `K x` in their chart targets such that metrics converge
@@ -436,7 +436,7 @@ theorem exists_finset_tendsto_chartCk_iff [CompactSpace M] :
     obtain ⟨x, hx, hy⟩ := mem_iUnion₂.mp (hs (mem_univ y))
     exact ⟨⟨x, hx⟩, hy.1, mem_interior_iff_mem_nhds.mp hy.2⟩
   rw [tendsto_chartCk_iff_of_forall_mem_nhds k (fun i : s ↦ hKc i) (fun i ↦ hKt i) hcover]
-  exact ⟨fun h x hx ↦ h ⟨x, hx⟩, fun h i ↦ h i i.2⟩
+  exact ⟨fun h x hx ↦ h ⟨x, hx⟩, fun h i ↦ h i i.property⟩
 
 end Topology
 

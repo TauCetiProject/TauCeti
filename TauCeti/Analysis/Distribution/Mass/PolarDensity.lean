@@ -153,8 +153,8 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
     rw [Measure.setLIntegral_rnDeriv hlam, ← hrep, massMeasure_preimage_coe hT U.isOpen]
     exact enorm_le_localMass hφU hφ
   -- Normalize `g` by `k`.
-  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
-  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hgm hbound
+  refine ⟨σ, hσm, Filter.Eventually.of_forall hσ1, fun φ => ?_⟩
   rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
   refine integral_congr_ae ?_
   filter_upwards [hσg] with x hx
@@ -171,7 +171,7 @@ private theorem ae_norm_eq_one_of_le_one (hT : HasLocallyFiniteMass T) {τ : Ω 
   -- Testing the supremum defining `‖T‖(V)` gives `‖T‖(V) ≤ ∫_V ‖τ‖ d‖T‖` on open sets.
   have hopen (V : Set Ω) (hV : IsOpen V) : massMeasure T V ≤ ∫⁻ x in V, ‖τ x‖ₑ ∂massMeasure T := by
     set U : Set E := (↑) '' V
-    have hU : IsOpen U := Ω.isOpen.isOpenMap_subtype_val V hV
+    have hU : IsOpen U := Ω.isOpen.isOpenMap_subtypeVal V hV
     have hUV : ((↑) : Ω → E) ⁻¹' U = V := preimage_image_eq V Subtype.val_injective
     rw [← hUV, massMeasure_preimage_coe hT hU, localMass_le_iff]
     intro φ hφU hφ

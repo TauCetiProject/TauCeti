@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.DirectSum.DegreeTail
 public import TauCeti.Algebra.Lie.Free.Grading
 public import TauCeti.Algebra.Lie.LowerCentralSeries
 
@@ -16,11 +17,16 @@ free Lie algebra is precisely the span of bracketed words with at least `k + 1`
 leaves. This description holds over every commutative ring.
 
 This identifies lower central quotients with word-length truncations, so their
-elements can be studied through the homogeneous pieces of the free Lie algebra.
+elements can be studied through the homogeneous pieces of the free Lie algebra. In the language
+of degree tails, `TauCeti.FreeLieAlgebra.degreeTail_eq_lowerCentralSeries` states that the degree
+tail of word length at least `c + 1` is the `c`-th term of the lower central series.
 
 Adapted from `Mei/Algebra/Lie/Free/LowerCentral.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
-`68536122a97fed8e87bc6870b9427151971b9ab2` (Apache 2.0).
+`68536122a97fed8e87bc6870b9427151971b9ab2` (Apache 2.0). The degree-tail form
+`TauCeti.FreeLieAlgebra.degreeTail_eq_lowerCentralSeries` is adapted from
+`Mei/Algebra/Lie/Free/Enveloping.lean` in the same repository, commit
+`9cf969cdee9748087aae45dbf4888a130890655c` (Apache 2.0).
 
 ## References
 
@@ -105,5 +111,15 @@ theorem lowerCentralSeries_toSubmodule_eq_iSup (k : ℕ) :
     intro w hw
     simp only [Set.mem_ofPred_eq] at hw ⊢
     omega
+
+/-- The span of the homogeneous pieces of word length at least `c + 1` is the `c`-th term of the
+lower central series. -/
+theorem degreeTail_eq_lowerCentralSeries (c : ℕ) :
+    DirectSum.degreeTail (homogeneousSubmodule R S) (Nat.castAddMonoidHom ℤ) (c + 1) =
+      (LieModule.lowerCentralSeries R F F c).toSubmodule := by
+  rw [lowerCentralSeries_toSubmodule_eq_iSup, DirectSum.degreeTail_def]
+  refine iSup_congr fun n => iSup_congr_Prop ?_ fun _ => rfl
+  simp only [Nat.coe_castAddMonoidHom]
+  omega
 
 end TauCeti.FreeLieAlgebra

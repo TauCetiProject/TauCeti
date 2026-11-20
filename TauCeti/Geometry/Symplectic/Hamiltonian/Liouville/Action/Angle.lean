@@ -75,6 +75,8 @@ All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
   Hamiltonian flows act on the angles by translations.
 * `angleMap_eq_angleMap_iff_of_section`: for a section, the angle map is injective modulo
   `2π ℤ^ι` across levels.
+* `range_angleMap`: for a basis of periods, the angles sweep out the whole orbit of `s c` under
+  the Hamiltonian flow action.
 * `eval₂_mfderiv_angleMap`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`.
 * `eval₂_mfderiv_angleMap_of_eval₂_eq_zero`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` for an isotropic section.
 * `eval₂_mfderiv_angleMap_comp_prodMap`: in the parameters `(θ, I)`, with `c = g(I)` for a local
@@ -256,6 +258,21 @@ theorem angleMap_eq_angleMap_iff_of_section {c' : ι → ℝ} (hFc : F (s c) = c
     exact ⟨rfl, (hσ.angleMap_eq_angleMap_iff hF hcomm hc hli hcl).1 h⟩
   · rintro ⟨rfl, h⟩
     exact (hσ.angleMap_eq_angleMap_iff hF hcomm hc hli hcl).2 h
+
+/-- **The angle map sweeps out the orbit.** If the `λ⁽ⁱ⁾(c)` are linearly independent, so a basis
+of `ι → ℝ`, then the angles `θ ↦ Ψ(θ, c)` reach every point `v • s(c)` of the orbit of `s c` under
+the Hamiltonian flow action. -/
+theorem range_angleMap (hli : LinearIndependent ℝ fun i ↦ p i c) :
+    range (fun θ ↦ hσ.angleMap hF hcomm hc s p (θ, c)) =
+      range fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (s c) := by
+  refine subset_antisymm (range_subset_iff.2 fun θ ↦
+    ⟨∑ i, ((2 * π)⁻¹ * θ i) • p i c, (angleMap_apply hσ hF hcomm hc (θ, c)).symm⟩)
+    (range_subset_iff.2 fun v ↦ ?_)
+  obtain ⟨a, ha⟩ := (Submodule.mem_span_range_iff_exists_fun ℝ).1
+    ((hli.span_eq_top_of_card_eq_finrank' (by simp)).symm ▸ Submodule.mem_top (x := v))
+  refine ⟨fun i ↦ 2 * π * a i, ?_⟩
+  have h2π : (2 * π) ≠ 0 := by positivity
+  simp only [angleMap_apply, ← mul_assoc, inv_mul_cancel₀ h2π, one_mul, ha]
 
 /-- **The angle map is smooth.** If `s` and the `λ⁽ⁱ⁾` are smooth on `t`, the angle map is smooth
 on `(ι → ℝ) × t`. -/

@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Gauge
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import TauCeti.Analysis.Convex.Body
-public import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 public import TauCeti.MeasureTheory.Group.GeometryOfNumbers.SuccessiveMinima
 import TauCeti.Algebra.Module.ZLattice.AdaptedBasis
+import TauCeti.Algebra.Module.ZLattice.GaugeBasis
 import TauCeti.Algebra.Order.BigOperators.Factorial
-import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Gauge.Basic
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
@@ -279,7 +280,7 @@ theorem _root_.MeasureTheory.coe_successiveMin (L : Submodule ℤ E) (K : Convex
     NNReal.smul_def]
   constructor
   · rintro ⟨r, ⟨v, hv, hvs⟩, rfl⟩
-    exact ⟨r.2, v, hv, fun j ↦ (hvs j).symm⟩
+    exact ⟨r.property, v, hv, fun j ↦ (hvs j).symm⟩
   · rintro ⟨ht, v, hv, hvs⟩
     exact ⟨⟨t, ht⟩, ⟨v, hv, fun j ↦ (hvs j).symm⟩, rfl⟩
 
@@ -363,15 +364,14 @@ private theorem exists_linearIndependent_gauge_eq_successiveMin_aux (L : Submodu
     (hm : m ≤ finrank ℝ E) :
     ∃ a : Fin m → E, LinearIndependent ℝ a ∧
       (∀ j, a j ∈ L ∧ gauge (K : Set E) (a j) = successiveMin L K ⟨j, j.isLt.trans_le hm⟩) ∧
-      (∀ j k, j ≤ k → gauge (K : Set E) (a j) ≤ gauge (K : Set E) (a k)) ∧
       ∀ y ∈ L, y ∉ span ℝ (Set.range a) → ∀ j, gauge (K : Set E) (a j) ≤ gauge (K : Set E) y := by
   induction m with
   | zero =>
-    exact ⟨Fin.elim0, linearIndependent_empty_type, fun j ↦ j.elim0, fun j ↦ j.elim0, by simp⟩
+    exact ⟨Fin.elim0, linearIndependent_empty_type, fun j ↦ j.elim0, by simp⟩
   | succ m ih =>
     -- Append a lattice vector `w` of least gauge outside the span of `a`, show that its gauge is
     -- the next minimum, and check that the invariants persist.
-    obtain ⟨a, ha, haL, hmono, hamin⟩ := ih (by omega)
+    obtain ⟨a, ha, haL, hamin⟩ := ih (by omega)
     have hspan : span ℝ (Set.range a) ≠ ⊤ := by
       intro h
       have := finrank_range_le_card (R := ℝ) a
@@ -388,16 +388,10 @@ private theorem exists_linearIndependent_gauge_eq_successiveMin_aux (L : Submodu
       Fin.lastCases (by simp) (fun k ↦ by simpa using hamin w hwL hwV k) j
     have hweq : gauge (K : Set E) w = successiveMin L K ⟨m, by omega⟩ :=
       gauge_eq_successiveMin_of_forall_gauge_le hK _ a hw₀ hwmin hsnoc hsnocL hsnocK
-    refine ⟨Fin.snoc a w, hsnoc, fun j ↦ ⟨hsnocL j, ?_⟩, fun j k hjk ↦ ?_, fun y hyL hy ↦ ?_⟩
+    refine ⟨Fin.snoc a w, hsnoc, fun j ↦ ⟨hsnocL j, ?_⟩, fun y hyL hy ↦ ?_⟩
     · induction j using Fin.lastCases with
       | last => simpa using hweq
       | cast k => simpa using (haL k).2
-    · induction k using Fin.lastCases with
-      | last => simpa using hsnocK j
-      | cast k =>
-        induction j using Fin.lastCases with
-        | last => exact absurd hjk (Fin.castSucc_lt_last k).not_ge
-        | cast j => simpa using hmono j k (by simpa using hjk)
     · have hyS : y ∉ span ℝ (Set.range a) := fun h ↦ hy <| span_mono
         (by rintro _ ⟨k, rfl⟩; exact ⟨k.castSucc, by simp⟩) h
       intro j
@@ -414,7 +408,7 @@ theorem exists_linearIndependent_gauge_eq_successiveMin (L : Submodule ℤ E) [D
     ∃ a : Fin (finrank ℝ E) → E, LinearIndependent ℝ a ∧
       ∀ i, a i ∈ L ∧ gauge (K : Set E) (a i) = successiveMin L K i := by
   have := ConvexBody.finiteDimensional_of_zero_mem_interior hK
-  obtain ⟨a, ha, haL, -, -⟩ :=
+  obtain ⟨a, ha, haL, -⟩ :=
     exists_linearIndependent_gauge_eq_successiveMin_aux L hK (finrank ℝ E) le_rfl
   exact ⟨a, ha, haL⟩
 
@@ -423,10 +417,10 @@ omit [FiniteDimensional ℝ E] in
 theorem monotone_successiveMin (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
     (hK : 0 ∈ interior (K : Set E)) : Monotone (successiveMin L K) := by
   have := ConvexBody.finiteDimensional_of_zero_mem_interior hK
-  obtain ⟨a, -, haL, hmono, -⟩ :=
-    exists_linearIndependent_gauge_eq_successiveMin_aux L hK (finrank ℝ E) le_rfl
   intro i j hij
-  simpa [(haL i).2, (haL j).2] using hmono i j hij
+  rw [← MeasureTheory.coe_successiveMin, ← MeasureTheory.coe_successiveMin, NNReal.coe_le_coe]
+  exact MeasureTheory.successiveMin_mono (absorbent_nhds_zero (mem_interior_iff_mem_nhds.1 hK))
+    hij (j.isLt.trans_eq (ZLattice.rank ℝ L).symm)
 
 omit [FiniteDimensional ℝ E] in
 /-- The successive minima of a discrete lattice with respect to a bounded body are positive. -/
