@@ -69,6 +69,8 @@ isolated, fixed points is finite.
   return map.
 * `TauCeti.contractiblePeriodicSolutions X T`: the `T`-periodic solutions whose loop is
   null-homotopic.
+* `TauCeti.orbitLoop`: the based loop traced by a contractible `1`-periodic solution over one
+  period, null-homotopic relative to its base point (`TauCeti.orbitLoop_homotopic_refl`).
 
 ## Main results
 
@@ -139,6 +141,11 @@ theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ perio
     Continuous γ :=
   continuous_iff_continuousAt.2 fun t ↦ (hγ.1 t).continuousAt
 
+/-- A periodic solution is periodic. -/
+theorem periodic_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
+    Periodic γ T :=
+  (mem_periodicSolutions.1 hγ).2
+
 /-- **Reversing time.** If `γ` is a `T`-periodic solution of `X`, then `t ↦ γ (-t)` is a
 `T`-periodic solution of the reversed field `(t, x) ↦ -X (-t) x`. -/
 theorem comp_neg_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
@@ -205,6 +212,26 @@ theorem mem_contractiblePeriodicSolutions {γ : ℝ → M} :
 theorem contractiblePeriodicSolutions_subset :
     contractiblePeriodicSolutions X T ⊆ periodicSolutions X T :=
   fun _ hγ ↦ hγ.1
+
+/-- The **loop of a contractible `1`-periodic solution** `γ`: the loop `t ↦ γ t`, `t ∈ [0, 1]`,
+based at `γ 0`. -/
+def orbitLoop (γ : contractiblePeriodicSolutions X 1) : Path (γ.val 0) (γ.val 0) :=
+  (periodic_of_mem_periodicSolutions (contractiblePeriodicSolutions_subset γ.property)).loop
+    (continuous_of_mem_periodicSolutions (contractiblePeriodicSolutions_subset γ.property)) 0
+
+@[simp]
+theorem orbitLoop_apply (γ : contractiblePeriodicSolutions X 1) (t : unitInterval) :
+    orbitLoop γ t = γ.val t := by
+  simp [orbitLoop]
+
+/-- The loop of a contractible `1`-periodic solution is null-homotopic relative to its base
+point. -/
+theorem orbitLoop_homotopic_refl (γ : contractiblePeriodicSolutions X 1) :
+    (orbitLoop γ).Homotopic (Path.refl (γ.val 0)) := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  have hγ := contractiblePeriodicSolutions_subset γ.property
+  exact ((periodic_of_mem_periodicSolutions hγ).exists_nullhomotopic_iff_loop_homotopic_refl
+    (continuous_of_mem_periodicSolutions hγ) 0).1 (mem_contractiblePeriodicSolutions.1 γ.property).2
 
 section Flow
 
