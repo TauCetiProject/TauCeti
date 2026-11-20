@@ -142,8 +142,34 @@ theorem coefficient_ofInner (v : CoordinateSpace n) (p : CoordinateSpace n × Co
       ((⟪p.2, v⟫ : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V :=
   coefficient_ofFrequency _ _ p
 
+/-- The coefficient `⟪ξ, eⱼ⟫ • 1` of the frequency coordinate `ofInner eⱼ` is `ξⱼ • 1`. -/
+theorem coefficient_ofInner_single (j : Fin n) (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofInner (EuclideanSpace.single j 1) : Symbol n V V 1).coefficient p =
+      p.2 j • ContinuousLinearMap.id ℂ V := by
+  simp [EuclideanSpace.inner_single_right]
+
 theorem isUniform_ofInner (v : CoordinateSpace n) : (ofInner v : Symbol n V V 1).IsUniform :=
   isUniform_ofFrequency _ _
+
+/-- `⟪ξ, v⟫` does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_ofInner (v : CoordinateSpace n) (j : Fin n) :
+    spatialDeriv j (ofInner v : Symbol n V V 1) = 0 :=
+  spatialDeriv_ofFrequency _ _ j
+
+/-- The frequency derivative `∂_{ξⱼ} ⟪ξ, v⟫` is the constant `vⱼ`. -/
+theorem coefficient_frequencyDeriv_ofInner (v : CoordinateSpace n) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    (frequencyDeriv j (ofInner v : Symbol n V V 1)).coefficient (x, ξ) =
+      ((v j : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V := by
+  have h : (fun η : CoordinateSpace n ↦ (ofInner v : Symbol n V V 1).coefficient (x, η)) =
+      ⇑((innerSL ℝ v).smulRight (ContinuousLinearMap.id ℂ V)) := by
+    funext η
+    rw [coefficient_ofInner, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
+      real_inner_comm, Complex.coe_smul]
+  rw [coefficient_frequencyDeriv, h, ContinuousLinearMap.coordinateDeriv_singleton,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, EuclideanSpace.inner_single_right,
+    one_mul, conj_trivial, Complex.coe_smul]
 
 /-- `⟪ξ, v⟫` has no order below `1`: for `v ≠ 0`, a nonzero fibre and `m < 1`, no symbol of
 order `m` has this coefficient, since along the ray `ξ = t v` it grows like `t`, faster than
