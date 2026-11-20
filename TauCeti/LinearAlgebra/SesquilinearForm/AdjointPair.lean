@@ -79,8 +79,10 @@ open Module Polynomial
 
 namespace LinearMap
 
-variable {R M M₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
-  [Module R M₂] {B : M →ₗ[R] M →ₗ[R] M₂} {f g : Module.End R M}
+section CommSemiring
+
+variable {R M M₂ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M₂]
+  [Module R M₂] {B : M →ₗ[R] M →ₗ[R] M₂} {f : Module.End R M}
 
 /-- If every endomorphism in a set `S` has an adjoint for `B`, then so does every endomorphism in
 the subalgebra that `S` generates. -/
@@ -98,6 +100,11 @@ theorem exists_isAdjointPair_of_mem_adjoin {S : Set (Module.End R M)}
     obtain ⟨g, h⟩ := hf
     obtain ⟨g', h'⟩ := hf'
     exact ⟨g' * g, h.mul h'⟩
+
+end CommSemiring
+
+variable {R M M₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
+  [Module R M₂] {B : M →ₗ[R] M →ₗ[R] M₂} {f g : Module.End R M}
 
 namespace IsAdjointPair
 
