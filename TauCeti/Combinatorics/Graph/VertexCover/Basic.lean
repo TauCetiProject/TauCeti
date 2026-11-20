@@ -51,7 +51,7 @@ of its vertices. -/
 theorem isVertexCover_iff_forall_exists_inc {C : Set V(G)} :
     G.IsVertexCover C ↔ ∀ e : E(G), ∃ x ∈ C, G.Inc e x := by
   refine ⟨fun hC e ↦ ?_, fun hC e x y he ↦ ?_⟩
-  · obtain ⟨x, y, he⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  · obtain ⟨x, y, he⟩ := G.exists_isLink_of_mem_edgeSet e.property
     rcases hC (x := ⟨x, he.left_mem⟩) (y := ⟨y, he.right_mem⟩) he with hx | hy
     exacts [⟨_, hx, he.inc_left⟩, ⟨_, hy, he.inc_right⟩]
   · obtain ⟨z, hz, hze⟩ := hC ⟨e, he.edge_mem⟩

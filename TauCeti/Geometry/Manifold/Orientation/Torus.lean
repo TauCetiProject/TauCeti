@@ -67,7 +67,7 @@ nowhere-vanishing volume form `dt_0 ∧ ⋯ ∧ dt_(n-1)` is positive. -/
 def torusOrientation :
     Manifold.Orientation (ModelWithCorners.pi fun _ : Fin n ↦ 𝓘(ℝ)) (∀ i, AddCircle (p i))
       (Fin n) :=
-  ofTopForm (Module.finrank_fin_fun ℝ) (torusVolumeForm p).1
+  ofTopForm (Module.finrank_fin_fun ℝ) (torusVolumeForm p).val
     ((torusVolumeForm p).isSmoothForm.of_le zero_le) (torusVolumeForm_apply_ne_zero p)
 
 /-- A tangent basis `b` of the torus is positive exactly when the determinant of the matrix
@@ -97,8 +97,8 @@ theorem orientationSign_torusOrientation_reindex (σ : Equiv.Perm (Fin n))
     orientationSign (torusOrientation p) (torusOrientation fun j ↦ p (σ j))
       (fun (x : ∀ i, AddCircle (p i)) (j : Fin n) ↦ x (σ j)) x = Equiv.Perm.sign σ := by
   have hf : mpullback _ _ (fun (x : ∀ i, AddCircle (p i)) (j : Fin n) ↦ x (σ j))
-      (torusVolumeForm fun j ↦ p (σ j)).1 x =
-        (Equiv.Perm.sign σ : ℝ) • (torusVolumeForm p).1 x :=
+      (torusVolumeForm fun j ↦ p (σ j)).val x =
+        (Equiv.Perm.sign σ : ℝ) • (torusVolumeForm p).val x :=
     SmoothForm.mpullback_apply_eq_smul_of_mpullback_eq_smul
       (mpullback_reindex_torusVolumeForm p σ) x
   rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> rw [h] at hf ⊢

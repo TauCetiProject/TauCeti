@@ -24,8 +24,9 @@ the highest derivative of `∂_v u` with the outer contraction `(D^{j+2} u)⟨v�
 adjacent weak derivatives (`TauCeti.HasWeakLineDerivOn.comm`). Carrying this comparison through all
 orders gives the full algebra of bundled directional derivatives on `W^{k,p}(Ω)`:
 
-* **Outer contraction of iterated gradients** (`TauCeti.Wkp.iteratedGradient_lineDerivL`). For
-  `u ∈ W^{j+2,p}(Ω)` and `v : E`, the highest weak derivative of `lineDerivL v (j + 1) u` is
+* **Outer contraction of iterated gradients** (`TauCeti.Wkp.iteratedGradient_lineDerivL` and
+  `TauCeti.Wkp.iteratedGradient_lineDerivL_eq_contractL`). For `u ∈ W^{j+2,p}(Ω)` and `v : E`,
+  the highest weak derivative of `lineDerivL v (j + 1) u` is
   `(IteratedGradient.contractL j 1 v).compLp (iteratedGradient (j + 1) u)`.
 * **Operator-norm bounds**. Each derivative component satisfies the bound with constant `1`
   (`TauCeti.Wkp.norm_lineDerivL_zero_apply_le`, `TauCeti.Wkp.norm_iteratedGradient_lineDerivL_le`).
@@ -48,7 +49,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
 
 ## Main declarations
 
-* `TauCeti.Wkp.iteratedGradient_lineDerivL`: `D^{j+1}(∂_v u) = (D^{j+2} u)⟨v⟩¹` in `Lᵖ(Ω)`.
+* `TauCeti.Wkp.iteratedGradient_lineDerivL_eq_contractL`:
+  `D^{j+1}(∂_v u) = (D^{j+2} u)⟨v⟩¹` in `Lᵖ(Ω)`.
 * `TauCeti.Wkp.norm_lineDerivL_le` and `TauCeti.Wkp.norm_lineDerivL_le_of_exponent_two`: graph-norm
   bounds for `lineDerivL` (`√2 * ‖v‖` in general, `‖v‖` at `p = 2`).
 * `TauCeti.Wkp.iteratedLineDerivL` and `TauCeti.Wkp.iteratedLineDerivZeroL`: iterated bundled
@@ -113,59 +115,16 @@ theorem iteratedGradient_succ_swap_ae (j : ℕ) (u : Wkp mu Omega p (j + 3)) :
 /-- **Outer contraction of `iteratedGradient` under `lineDerivL`.** For `u ∈ W^{j+2,p}(Ω)` and
 `v : E`, the highest weak derivative of `lineDerivL v (j + 1) u` is obtained by contracting the
 outermost direction slot of `iteratedGradient (j + 1) u` at `v`. -/
-theorem iteratedGradient_lineDerivL (v : E) :
-    ∀ (j : ℕ) (u : Wkp mu Omega p (j + 2)),
-      iteratedGradient j (lineDerivL v (j + 1) u) =
-        (IteratedGradient.contractL j 1 v).compLp (iteratedGradient (j + 1) u)
-  | 0, u => by
-      let d := lineDerivL v 1 u
-      have hdval : value 1 d = (innerSL ℝ v).compLp (iteratedGradient 0 (lowerOrder 1 u)) := by
-        rw [value_succ 0 d, value_zero, lowerOrder_lineDerivL, lineDerivL_zero_apply]
-      have hfd : HasWeakFDerivOn mu Omega (value 1 d)
-          (fun x => (innerSL ℝ v).comp (iteratedGradient 1 u x)) := by
-        rw [hdval]
-        exact ((hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ v)).congr_ae
-          ((innerSL ℝ v).coeFn_compLp' (iteratedGradient 0 (lowerOrder 1 u))).symm
-      apply Lp.ext
-      filter_upwards [(hasWeakFDerivOn_value d).ae_eq hfd, adjoint_iteratedGradient_one_ae_eq u,
-        (IteratedGradient.contractL 0 1 v).coeFn_compLp (iteratedGradient 1 u)]
-        with x heq hadj hcomp
-      rw [hcomp, IteratedGradient.contractL_one_apply]
-      refine ext_inner_left ℝ fun w => ?_
-      have hw := congrArg (fun L : E →L[ℝ] ℝ => L w) heq
-      simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply] at hw
-      calc
-        ⟪w, iteratedGradient 0 d x⟫_ℝ = ⟪iteratedGradient 0 d x, w⟫_ℝ := real_inner_comm _ _
-        _ = ⟪v, iteratedGradient 1 u x w⟫_ℝ := hw
-        _ = ⟪(iteratedGradient 1 u x).adjoint v, w⟫_ℝ :=
-          (ContinuousLinearMap.adjoint_inner_left (iteratedGradient 1 u x) w v).symm
-        _ = ⟪w, iteratedGradient 1 u x v⟫_ℝ := by rw [hadj, real_inner_comm]
-  | j + 1, u => by
-      let d := lineDerivL v (j + 2) u
-      have hih : iteratedGradient j (lowerOrder (j + 1) d) =
-          (IteratedGradient.contractL j 1 v).compLp
-            (iteratedGradient (j + 1) (lowerOrder (j + 2) u)) := by
-        rw [lowerOrder_lineDerivL, iteratedGradient_lineDerivL v j (lowerOrder (j + 2) u)]
-      have hfd : HasWeakFDerivOn mu Omega (iteratedGradient j (lowerOrder (j + 1) d))
-          (fun x => (IteratedGradient.contractL j 1 v).comp (iteratedGradient (j + 2) u x)) := by
-        rw [hih]
-        exact ((hasWeakFDerivOn_iteratedGradient (j + 1) u).clm_comp
-          (IteratedGradient.contractL j 1 v)).congr_ae
-          ((IteratedGradient.contractL j 1 v).coeFn_compLp' _).symm
-      apply Lp.ext
-      filter_upwards [(hasWeakFDerivOn_iteratedGradient j d).ae_eq hfd,
-        iteratedGradient_succ_swap_ae j u,
-        (IteratedGradient.contractL (j + 1) 1 v).coeFn_compLp (iteratedGradient (j + 2) u)]
-        with x heq hswap hcomp
-      rw [heq, hcomp, IteratedGradient.contractL_one_apply]
-      ext w
-      rw [ContinuousLinearMap.comp_apply, IteratedGradient.contractL_one_apply, hswap w v]
+theorem iteratedGradient_lineDerivL_eq_contractL (v : E) (j : ℕ) (u : Wkp mu Omega p (j + 2)) :
+    iteratedGradient j (lineDerivL v (j + 1) u) =
+      (IteratedGradient.contractL j 1 v).compLp (iteratedGradient (j + 1) u) := by
+  rw [iteratedGradient_lineDerivL, IteratedGradient.contractL_one]
 
 /-- Almost-everywhere pointwise form of `TauCeti.Wkp.iteratedGradient_lineDerivL`. -/
 theorem iteratedGradient_lineDerivL_ae (v : E) (j : ℕ) (u : Wkp mu Omega p (j + 2)) :
     ∀ᵐ x ∂mu.restrict Omega,
       iteratedGradient j (lineDerivL v (j + 1) u) x = iteratedGradient (j + 1) u x v := by
-  rw [iteratedGradient_lineDerivL]
+  rw [iteratedGradient_lineDerivL_eq_contractL]
   filter_upwards [(IteratedGradient.contractL j 1 v).coeFn_compLp (iteratedGradient (j + 1) u)]
     with x hx
   rw [hx, IteratedGradient.contractL_one_apply]
@@ -204,7 +163,7 @@ theorem norm_value_lineDerivL_le (v : E) (k : ℕ) (u : Wkp mu Omega p (k + 1)) 
 /-- Componentwise `Lᵖ` bound on the highest weak derivative of `lineDerivL v (j + 1) u`. -/
 theorem norm_iteratedGradient_lineDerivL_le (v : E) (j : ℕ) (u : Wkp mu Omega p (j + 2)) :
     ‖iteratedGradient j (lineDerivL v (j + 1) u)‖ ≤ ‖v‖ * ‖iteratedGradient (j + 1) u‖ := by
-  rw [iteratedGradient_lineDerivL]
+  rw [iteratedGradient_lineDerivL_eq_contractL]
   have hv : ‖IteratedGradient.contractL (E := E) j 1 v‖ ≤ ‖v‖ :=
     (IteratedGradient.norm_contractL_le (E := E) j 1 v).trans_eq (pow_one ‖v‖)
   exact ((IteratedGradient.contractL j 1 v).norm_compLp_le _).trans
@@ -379,9 +338,10 @@ theorem iteratedLineDerivZeroL_comp_perm (j : ℕ) (m : Fin j → E) (σ : Equiv
     iteratedLineDerivZeroL (mu := mu) (Omega := Omega) (p := p) j (m ∘ σ) =
       iteratedLineDerivZeroL j m := by
   refine ContinuousLinearMap.ext fun u => ?_
-  obtain ⟨u', hu', -⟩ := exists_value_eq_of_le (Nat.zero_add j).le u
-  rw [← value_iteratedLineDerivL_eq_iteratedLineDerivZeroL 0 j (m ∘ σ) hu'.symm,
-    ← value_iteratedLineDerivL_eq_iteratedLineDerivZeroL 0 j m hu'.symm,
+  have hu : value (0 + j) (toOrderL (Nat.zero_add j).le u) = value j u :=
+    value_toOrderL (Nat.zero_add j).le u
+  rw [← value_iteratedLineDerivL_eq_iteratedLineDerivZeroL 0 j (m ∘ σ) hu,
+    ← value_iteratedLineDerivL_eq_iteratedLineDerivZeroL 0 j m hu,
     iteratedLineDerivL_comp_perm]
 
 /-- **Iterated directional derivatives evaluate `iteratedGradient`.** Differentiating
@@ -397,7 +357,7 @@ theorem iteratedLineDerivZeroL_succ_apply :
   | j + 1, m, u => by
       rw [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_apply,
         iteratedLineDerivZeroL_succ_apply j (Fin.tail m) (lineDerivL (m 0) (j + 1) u),
-        iteratedGradient_lineDerivL (m 0) j u, ContinuousLinearMap.compLp_comp,
+        iteratedGradient_lineDerivL_eq_contractL (m 0) j u, ContinuousLinearMap.compLp_comp,
         IteratedGradient.evalL_comp_contractL_one, Fin.cons_self_tail]
 
 /-- `Lᵖ` bound for `(j + 1)`-fold directional derivatives in terms of the top seminorm. -/
@@ -410,7 +370,7 @@ theorem norm_iteratedLineDerivZeroL_succ_apply_le (j : ℕ) (m : Fin (j + 1) →
 
 /-- **Multilinear evaluations of `D^{j+1} u` belong to `W^{k,p}(Ω)` when `u ∈ W^{k+j+1,p}(Ω)`.**
 If `u ∈ W^{k+j+1,p}(Ω)` and `u₀ ∈ W^{j+1,p}(Ω)` share the same `Lᵖ` value (for instance via
-`TauCeti.Wkp.exists_value_eq_of_le`), then `iteratedLineDerivL k (j + 1) m u ∈ W^{k,p}(Ω)` has
+`TauCeti.Wkp.toOrderL`), then `iteratedLineDerivL k (j + 1) m u ∈ W^{k,p}(Ω)` has
 `Lᵖ` value `(IteratedGradient.evalL j m).compLp (iteratedGradient j u₀)`. -/
 theorem value_iteratedLineDerivL_eq_evalL_compLp (k j : ℕ) (m : Fin (j + 1) → E)
     {u : Wkp mu Omega p (k + (j + 1))} {u₀ : Wkp mu Omega p (j + 1)}
@@ -446,7 +406,7 @@ theorem iteratedGradient_iteratedLineDerivL_const (k : ℕ) (h : E) :
       -- dependent `Wkp`/`IteratedGradient` indices across the rewrite chain.
       rw [iteratedLineDerivL_succ, ContinuousLinearMap.comp_apply, Fin.tail_def,
         iteratedGradient_iteratedLineDerivL_const k h i hd,
-        iteratedGradient_lineDerivL h (k + i) u', ContinuousLinearMap.compLp_comp,
+        iteratedGradient_lineDerivL_eq_contractL h (k + i) u', ContinuousLinearMap.compLp_comp,
         IteratedGradient.contractL_one, ← IteratedGradient.contractL_succ k i h]
       -- The remaining goal aligns the dependent index `(k + i) + 1` with `k + (i + 1)` via
       -- `Nat.add_succ`.
@@ -546,7 +506,9 @@ theorem value_iteratedLineDerivL_succ_ae_eq_of_contDiffOn (k j : ℕ)
     (hu : (value (k + (j + 1)) u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     (value k (iteratedLineDerivL k (j + 1) m u) : E → ℝ) =ᵐ[mu.restrict Omega]
       fun x => iteratedFDeriv ℝ (j + 1) f x m := by
-  obtain ⟨u₀, hu₀, -⟩ := exists_value_eq_of_le (Nat.le_add_left (j + 1) k) u
+  let u₀ := toOrderL (Nat.le_add_left (j + 1) k) u
+  have hu₀ : value (k + (j + 1)) u = value (j + 1) u₀ :=
+    (value_toOrderL (Nat.le_add_left (j + 1) k) u).symm
   rw [value_iteratedLineDerivL_eq_iteratedLineDerivZeroL k (j + 1) m hu₀]
   exact iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn j u₀ m hf (hu₀ ▸ hu)
 

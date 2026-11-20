@@ -227,7 +227,7 @@ theorem proj_apply (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) :
 /-- A Hodge projection lands in the corresponding Hodge component. -/
 theorem proj_mem (hs : HodgeStructureOn W ω n) (p : ℤ) (x : W) : hs.proj p x ∈ hs.piece p := by
   rw [proj_apply]
-  exact (hs.decomposition x p).2
+  exact (hs.decomposition x p).property
 
 /-- The Hodge projection of degree `p` fixes the Hodge component of degree `p`. -/
 @[simp]
@@ -547,9 +547,9 @@ by the components as `F^p = ⨆_{q ≥ p} H^q`, and the components are cut out o
 noncomputable def decompositionEquiv (ω : Conjugation W) (n : ℤ) :
     HodgeStructureOn W ω n ≃ {H : ℤ → Submodule ℂ W // IsHodgeDecomposition ω n H} where
   toFun hs := ⟨hs.piece, hs.isHodgeDecomposition_piece⟩
-  invFun H := ofDecomposition H.2
+  invFun H := ofDecomposition H.property
   left_inv hs := ofDecomposition_isHodgeDecomposition_piece hs
-  right_inv H := Subtype.ext (funext fun p ↦ ofDecomposition_piece H.2 p)
+  right_inv H := Subtype.ext (funext fun p ↦ ofDecomposition_piece H.property p)
 
 @[simp]
 theorem coe_decompositionEquiv_apply (hs : HodgeStructureOn W ω n) :
@@ -559,7 +559,7 @@ theorem coe_decompositionEquiv_apply (hs : HodgeStructureOn W ω n) :
 @[simp]
 theorem decompositionEquiv_symm_apply
     (H' : {H : ℤ → Submodule ℂ W // IsHodgeDecomposition ω n H}) :
-    (decompositionEquiv ω n).symm H' = ofDecomposition H'.2 :=
+    (decompositionEquiv ω n).symm H' = ofDecomposition H'.property :=
   (rfl)
 
 end HodgeStructureOn
