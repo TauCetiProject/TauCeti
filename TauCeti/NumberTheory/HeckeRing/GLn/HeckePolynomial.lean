@@ -223,11 +223,12 @@ theorem glnHeckePolynomial_pow_mul_esymm (s : A) (z : Fin n → A) :
   simp only [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
   rw [Finset.sum_range, glnHeckePolynomial_def]
   refine Fintype.sum_congr _ _ fun i => ?_
-  have hexp := Nat.two_mul_choose_two_add_mul_sub i.is_le
+  have hpow : (s ^ (n - 1)) ^ (i : ℕ) = (s ^ 2) ^ (i : ℕ).choose 2 * s ^ ((i : ℕ) * (n - i)) := by
+    rw [← pow_mul, ← pow_mul, ← pow_add, Nat.two_mul_choose_two_add_mul_sub i.is_le]
   rw [show (Finset.univ.val.map fun j => s ^ (n - 1) * z j) =
       (Finset.univ.val.map z).map (s ^ (n - 1) • ·) by
         simp only [Multiset.map_map, Function.comp_def, smul_eq_mul],
-    ← Multiset.pow_smul_esymm, smul_eq_mul, ← pow_mul s (n - 1) i, ← hexp, pow_add, pow_mul]
+    ← Multiset.pow_smul_esymm, smul_eq_mul, hpow]
   simp only [C_mul, C_pow, C_neg, C_1]
   ring
 
@@ -288,9 +289,13 @@ theorem C_mul_glnHeckePolynomial_rev_comp (q : A) (T : Fin (n + 1) → A) :
     ((natDegree_C_mul_le _ _).trans
       (natDegree_reflect_le.trans (max_le le_rfl (natDegree_glnHeckePolynomial_le q T))))
     fun i => ?_
-  rw [coeff_C_mul, comp_C_mul_X_coeff, coeff_C_mul, coeff_reflect, revAt_le i.is_le, ← mul_assoc,
-    coeff_glnHeckePolynomial_rev, mul_right_comm, ← pow_mul, ← pow_add, ← mul_add,
-    Nat.sub_add_cancel i.is_le, mul_comm (n - 1) n]
+  rw [coeff_C_mul, comp_C_mul_X_coeff, coeff_C_mul, coeff_reflect, revAt_le i.is_le]
+  have hexp : (n - 1) * i + (n - 1) * (n - i) = n * (n - 1) := by
+    rw [← mul_add, Nat.add_sub_cancel' i.is_le, mul_comm]
+  have hq : (q ^ (n - 1)) ^ (i : ℕ) * q ^ ((n - 1) * (n - i)) = q ^ (n * (n - 1)) := by
+    rw [← pow_mul, ← pow_add, hexp]
+  linear_combination (q ^ (n - 1)) ^ (i : ℕ) * coeff_glnHeckePolynomial_rev q T i +
+    (glnHeckePolynomial n q T).coeff (n - i) * hq
 
 /-- **Inverting the Hecke operators**, normalized: if `u` inverts `Tₙ`, the generator rule
 `Tᵢ ↦ T_{n-i} / Tₙ` (the effect of `g ↦ g⁻¹` on spherical double cosets) turns the Hecke
