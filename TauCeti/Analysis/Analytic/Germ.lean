@@ -5,9 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Eval
+public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Order.Filter.Germ.Basic
-public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.RingTheory.Algebraic.Defs
+public import TauCeti.Order.Filter.Germ.MvPolynomial
+import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Analytic.Polynomial
+import Mathlib.Analysis.Analytic.Uniqueness
 
 /-!
 # Rings of analytic function germs
@@ -21,6 +28,14 @@ ring equivalences (`TauCeti.analyticGerms.equivOfInverse`), without choosing rep
 The subring construction follows `TauCeti.meromorphicGerms`, using ordinary neighborhoods and
 `AnalyticAt` in place of punctured neighborhoods and `MeromorphicAt`. The local-inverse
 construction is analogous to `OpenPartialHomeomorph.meromorphicGermsEquiv`.
+
+Over any normed space over a nontrivially normed field, `TauCeti.analyticGerms 𝕜 a` is an integral
+domain (`IsDomain (analyticGerms 𝕜 a)`): restricting power series to lines reduces zero-divisor
+cancellation to the one-dimensional isolated-zeros principle. On finite coordinate spaces `σ → 𝕜`,
+coordinate polynomials act on analytic germs as polynomial functions
+(`TauCeti.analyticGerms.mvPolynomialAlgebra`), mirroring `Filter.Germ.mvPolynomialAlgebra` so that
+algebraicity of an analytic germ over `MvPolynomial σ 𝕜` characterizes local polynomial relations
+(`TauCeti.analyticGerms.isAlgebraic_ofAnalyticAt_iff`).
 -/
 
 public section
@@ -111,6 +126,13 @@ theorem ofAnalyticAt_eq_ofAnalyticAt_iff {f g : E → 𝕜}
     {hf : AnalyticAt 𝕜 f a} {hg : AnalyticAt 𝕜 g a} :
     ofAnalyticAt f hf = ofAnalyticAt g hg ↔ f =ᶠ[𝓝 a] g := by
   rw [Subtype.ext_iff, coe_ofAnalyticAt, coe_ofAnalyticAt, Germ.coe_eq]
+
+/-- An analytic representative defines the zero germ exactly when it vanishes near the base
+point. -/
+@[simp]
+theorem ofAnalyticAt_eq_zero_iff {f : E → 𝕜} {hf : AnalyticAt 𝕜 f a} :
+    ofAnalyticAt f hf = 0 ↔ f =ᶠ[𝓝 a] 0 := by
+  rw [Subtype.ext_iff, coe_ofAnalyticAt, Subring.coe_zero, ← Germ.coe_zero, Germ.coe_eq]
 
 /-- Eventually equal analytic functions represent the same analytic germ. -/
 theorem ofAnalyticAt_congr {f g : E → 𝕜} {hf : AnalyticAt 𝕜 f a}
@@ -224,6 +246,176 @@ theorem equivOfInverse_symm_apply (g : E → F) (h : F → E)
     (φ : analyticGerms 𝕜 a) :
     (equivOfInverse g h hg hh hga hleft hright).symm φ =
       pullback h hh (hga ▸ hleft.self_of_nhds) φ := (rfl)
+
+/-- The ring of scalar analytic germs is nontrivial because `0 ≠ 1` in the base field. -/
+instance : Nontrivial (analyticGerms 𝕜 a) :=
+  ⟨⟨ofAnalyticAt 0 analyticAt_const, ofAnalyticAt 1 analyticAt_const, fun h ↦
+    zero_ne_one (ofAnalyticAt_eq_ofAnalyticAt_iff.1 h).self_of_nhds⟩⟩
+
+/-- The ring of scalar analytic germs has no zero divisors: restricting power series to a line
+through `a` along which both series have nonzero terms reduces to the one-dimensional
+isolated-zeros principle. -/
+instance : NoZeroDivisors (analyticGerms 𝕜 a) where
+  eq_zero_or_eq_zero_of_mul_eq_zero {φ ψ} hmul := by
+    classical
+    obtain ⟨f, hf, rfl⟩ := exists_ofAnalyticAt φ
+    obtain ⟨g, hg, rfl⟩ := exists_ofAnalyticAt ψ
+    rw [← ofAnalyticAt_mul, ofAnalyticAt_eq_zero_iff] at hmul
+    rw [ofAnalyticAt_eq_zero_iff, ofAnalyticAt_eq_zero_iff]
+    by_contra h
+    push Not at h
+    obtain ⟨hf0, hg0⟩ := h
+    obtain ⟨p, rp, hp⟩ := hf
+    obtain ⟨q, rq, hq⟩ := hg
+    -- Step 1: Extract directions `u, v` where some terms of `p` and `q` do not vanish.
+    have hex_term {hfun : E → 𝕜} {s : FormalMultilinearSeries 𝕜 E 𝕜} {rs : ENNReal}
+        (hs : HasFPowerSeriesOnBall hfun s a rs) (h0 : ¬ hfun =ᶠ[𝓝 a] 0) :
+        ∃ (m : ℕ) (u : E), s m (fun _ ↦ u) ≠ 0 := by
+      by_contra hs0
+      push Not at hs0
+      refine h0 (eventually_of_mem (Metric.eball_mem_nhds a hs.r_pos) fun y hy ↦ ?_)
+      have hmem : y - a ∈ Metric.eball 0 rs := by
+        simpa [Metric.mem_eball, eDist_eq_eNorm_sub] using hy
+      have hsum := hs.hasSum hmem
+      simp only [add_sub_cancel, hs0] at hsum
+      exact hsum.unique hasSum_zero
+    obtain ⟨m, u, hu⟩ := hex_term hp hf0
+    obtain ⟨n, v, hv⟩ := hex_term hq hg0
+    -- Step 2: Expand `c ↦ L (u + c • v, …, u + c • v)` as a polynomial in `c` to choose a common
+    -- direction `w = u + c • v` where both `p m` and `q n` are nonzero.
+    have hex_poly {k : ℕ} (L : ContinuousMultilinearMap 𝕜 (fun _ : Fin k ↦ E) 𝕜) :
+        ∃ P : Polynomial 𝕜, (∀ c : 𝕜, P.eval c = L (fun _ ↦ u + c • v)) ∧
+          P.coeff k = L (fun _ ↦ v) := by
+      refine ⟨∑ s : Finset (Fin k),
+        Polynomial.C (L (s.piecewise (fun _ ↦ u) (fun _ ↦ v))) * Polynomial.X ^ sᶜ.card,
+        fun c ↦ ?_, ?_⟩
+      · have hsum_arg : (fun _ : Fin k ↦ u + c • v) = (fun _ ↦ u) + (fun _ ↦ c • v) := rfl
+        rw [hsum_arg, L.map_add_univ, ← Polynomial.coe_evalRingHom, map_sum]
+        refine Finset.sum_congr rfl fun s _ ↦ ?_
+        have hpiece : s.piecewise (fun _ ↦ u) (fun _ ↦ c • v) =
+            fun i ↦ (if i ∈ s then (1 : 𝕜) else c) • s.piecewise (fun _ ↦ u) (fun _ ↦ v) i := by
+          ext i; by_cases hi : i ∈ s <;> simp [hi]
+        rw [hpiece, L.map_smul_univ, Polynomial.coe_evalRingHom, Polynomial.eval_mul,
+          Polynomial.eval_C, Polynomial.eval_pow, Polynomial.eval_X, mul_comm]
+        congr 1
+        rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const]
+        congr 2
+        ext i
+        simp
+      · rw [← Polynomial.lcoeff_apply, map_sum, Finset.sum_eq_single ∅]
+        · simp
+        · intro s _ hs
+          rw [Polynomial.lcoeff_apply, Polynomial.coeff_C_mul_X_pow, ite_eq_right]
+          intro heq
+          have hlt : sᶜ.card < k := by
+            have := Finset.card_lt_card (s := sᶜ) (t := Finset.univ)
+              (by rw [Finset.ssubset_univ_iff]; simpa using hs)
+            simpa using this
+          exact absurd heq hlt.ne'
+        · intro hmem; exact absurd (Finset.mem_univ ∅) hmem
+    obtain ⟨P, hP_eval, -⟩ := hex_poly (p m)
+    obtain ⟨Q, hQ_eval, hQ_coeff⟩ := hex_poly (q n)
+    have hP0 : P ≠ 0 := fun h0 ↦ hu (by simpa [h0] using (hP_eval 0).symm)
+    have hQ0 : Q ≠ 0 := fun h0 ↦ hv (by simpa [h0] using hQ_coeff.symm)
+    have : Infinite 𝕜 := NontriviallyNormedField.infinite 𝕜
+    obtain ⟨c, hc⟩ := Infinite.exists_notMem_finset (P * Q).roots.toFinset
+    have hPQc : P.eval c * Q.eval c ≠ 0 := by
+      rw [← Polynomial.eval_mul]
+      intro h0
+      exact hc (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots (mul_ne_zero hP0 hQ0)).mpr h0))
+    set w : E := u + c • v
+    have hpw : p m (fun _ ↦ w) ≠ 0 := (hP_eval c) ▸ left_ne_zero_of_mul hPQc
+    have hqw : q n (fun _ ↦ w) ≠ 0 := (hQ_eval c) ▸ right_ne_zero_of_mul hPQc
+    -- Step 3: Restrict to `t ↦ a + t • w` and apply the 1D isolated-zeros dichotomy.
+    let L : 𝕜 →L[𝕜] E := ContinuousLinearMap.smulRight (ContinuousLinearMap.id 𝕜 𝕜) w
+    have shift_line {hfun : E → 𝕜} {s : FormalMultilinearSeries 𝕜 E 𝕜} {rs : ENNReal}
+        (hs : HasFPowerSeriesOnBall hfun s a rs) :
+        HasFPowerSeriesAt (fun t : 𝕜 ↦ hfun (a + t • w)) (s.compContinuousLinearMap L) 0 := by
+      have hshift : HasFPowerSeriesAt (fun y : E ↦ hfun (a + y)) s (L 0) := by
+        rw [map_zero]
+        exact ⟨rs, ⟨hs.r_le, hs.r_pos, fun hy ↦ by simpa only [zero_add] using hs.hasSum hy⟩⟩
+      exact hshift.compContinuousLinearMap
+    have hfp := shift_line hp
+    have hgq := shift_line hq
+    have hmul_line : (fun t : 𝕜 ↦ f (a + t • w)) * (fun t : 𝕜 ↦ g (a + t • w)) =ᶠ[𝓝 0] 0 := by
+      have htend : Tendsto (fun t : 𝕜 ↦ a + t • w) (𝓝 0) (𝓝 a) := by
+        simpa using (by fun_prop : Continuous fun t : 𝕜 ↦ a + t • w).tendsto 0
+      filter_upwards [htend.eventually hmul] with t ht
+      exact ht
+    rcases hfp.analyticAt.eventually_eq_zero_or_eventually_ne_zero with hfl | hfl
+    · have h0 := (hfp.congr hfl).apply_eq_zero m 1
+      simp only [FormalMultilinearSeries.compContinuousLinearMap_apply, Function.comp_def, L,
+        ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply, one_smul] at h0
+      exact hpw h0
+    · rcases hgq.analyticAt.eventually_eq_zero_or_eventually_ne_zero with hgl | hgl
+      · have h0 := (hgq.congr hgl).apply_eq_zero n 1
+        simp only [FormalMultilinearSeries.compContinuousLinearMap_apply, Function.comp_def, L,
+          ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.id_apply, one_smul] at h0
+        exact hqw h0
+      · have hne : ∀ᶠ t in 𝓝[≠] (0 : 𝕜), f (a + t • w) * g (a + t • w) ≠ 0 :=
+          (hfl.and hgl).mono fun t ⟨h1, h2⟩ ↦ mul_ne_zero h1 h2
+        have hzero : ∀ᶠ t in 𝓝[≠] (0 : 𝕜), f (a + t • w) * g (a + t • w) = 0 :=
+          nhdsWithin_le_nhds hmul_line
+        obtain ⟨t, ht1, ht2⟩ := (hne.and hzero).exists
+        exact ht1 ht2
+
+/-- The ring of scalar analytic germs is an integral domain. -/
+instance : IsDomain (analyticGerms 𝕜 a) :=
+  NoZeroDivisors.to_isDomain _
+
+section MvPolynomial
+
+variable {σ : Type*} [Fintype σ]
+
+/-- Coordinate polynomials act on analytic germs at `a : σ → 𝕜` as polynomial functions:
+`p` acts as the analytic germ of `y ↦ MvPolynomial.eval y p`. -/
+@[instance_reducible]
+noncomputable def mvPolynomialAlgebra (a : σ → 𝕜) :
+    Algebra (MvPolynomial σ 𝕜) (analyticGerms 𝕜 a) :=
+  RingHom.toAlgebra
+    { toFun p := ofAnalyticAt (fun y ↦ MvPolynomial.eval y p)
+        (AnalyticAt.aeval_mvPolynomial (f := id)
+          (fun i ↦ (ContinuousLinearMap.proj (R := 𝕜) (φ := fun _ : σ ↦ 𝕜) i).analyticAt a) p)
+      map_one' := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_one _))
+      map_mul' _ _ := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_mul _ _ _))
+      map_zero' := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_zero _))
+      map_add' _ _ := Subtype.ext (Germ.coe_eq.2 (.of_forall fun _ ↦ map_add _ _ _)) }
+
+attribute [local instance] mvPolynomialAlgebra Filter.Germ.mvPolynomialAlgebra
+
+/-- A coordinate polynomial acts on analytic germs as the germ of its polynomial function. -/
+theorem coe_mvPolynomialAlgebra_algebraMap (a : σ → 𝕜) (p : MvPolynomial σ 𝕜) :
+    ((algebraMap (MvPolynomial σ 𝕜) (analyticGerms 𝕜 a) p : analyticGerms 𝕜 a) : Germ (𝓝 a) 𝕜) =
+      ((fun y ↦ MvPolynomial.eval y p : (σ → 𝕜) → 𝕜) : Germ (𝓝 a) 𝕜) := by
+  rw [RingHom.algebraMap_toAlgebra]
+  rfl
+
+/-- Evaluating `P : (MvPolynomial σ 𝕜)[X]` at an analytic germ and coercing to `Germ (𝓝 a) 𝕜`
+agrees with evaluating `P` at the coerced germ. -/
+theorem coe_aeval {a : σ → 𝕜} (φ : analyticGerms 𝕜 a) (P : Polynomial (MvPolynomial σ 𝕜)) :
+    ((Polynomial.aeval φ P : analyticGerms 𝕜 a) : Germ (𝓝 a) 𝕜) =
+      Polynomial.aeval (φ : Germ (𝓝 a) 𝕜) P := by
+  rw [Polynomial.aeval_def, Polynomial.aeval_def, ← Subring.coe_subtype, Polynomial.hom_eval₂]
+  congr 1
+  refine RingHom.ext fun p ↦ ?_
+  rw [RingHom.comp_apply, Subring.coe_subtype, coe_mvPolynomialAlgebra_algebraMap,
+    Filter.Germ.mvPolynomialAlgebra_algebraMap_apply]
+
+/-- An analytic germ is algebraic over `MvPolynomial σ 𝕜` in `analyticGerms 𝕜 a` if and only if
+its underlying germ in `Germ (𝓝 a) 𝕜` is algebraic over `MvPolynomial σ 𝕜`. -/
+theorem isAlgebraic_iff_coe {a : σ → 𝕜} (φ : analyticGerms 𝕜 a) :
+    IsAlgebraic (MvPolynomial σ 𝕜) φ ↔ IsAlgebraic (MvPolynomial σ 𝕜) (φ : Germ (𝓝 a) 𝕜) := by
+  simp only [IsAlgebraic, ← Subtype.coe_inj, coe_aeval, Subring.coe_zero]
+
+/-- The analytic germ of `f` is algebraic over the coordinate polynomials exactly when `f`
+satisfies a nonzero polynomial relation `P (y, f y) = 0` near `a`. -/
+theorem isAlgebraic_ofAnalyticAt_iff {a : σ → 𝕜} {f : (σ → 𝕜) → 𝕜} {hf : AnalyticAt 𝕜 f a} :
+    IsAlgebraic (MvPolynomial σ 𝕜) (ofAnalyticAt f hf) ↔
+      ∃ P : Polynomial (MvPolynomial σ 𝕜), P ≠ 0 ∧
+        ∀ᶠ y in 𝓝 a, (P.map (MvPolynomial.eval y)).eval (f y) = 0 := by
+  rw [isAlgebraic_iff_coe, coe_ofAnalyticAt, Filter.Germ.isAlgebraic_coe_iff]
+
+end MvPolynomial
 
 end analyticGerms
 
