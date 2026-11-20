@@ -96,6 +96,14 @@ theorem addCorrection_comm (x y : A) : addCorrection p x y = addCorrection p y x
   rw [Nat.sub_sub_self hi.2.le, Nat.choose_symm hi.2.le]
   ring
 
+/-- If `x` lies in an ideal `I`, so does `addCorrection p x y`: each of its monomials
+`x ^ i * y ^ (p - i)` has `0 < i`. -/
+theorem addCorrection_mem_of_mem_left {I : Ideal A} {x : A} (y : A) (hx : x ∈ I) :
+    addCorrection p x y ∈ I := by
+  rw [addCorrection_def]
+  refine I.neg_mem (I.sum_mem fun i hi => ?_)
+  exact I.mul_mem_right _ (I.mul_mem_right _ (I.pow_mem_of_mem hx i (Finset.mem_Ioo.mp hi).1))
+
 end DeltaRing
 
 /-- A `δ`-structure on a commutative ring `A` for the prime `p` (Bhatt and Scholze, *Prisms and
