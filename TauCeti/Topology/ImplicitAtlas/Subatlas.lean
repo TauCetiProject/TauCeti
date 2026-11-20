@@ -96,6 +96,7 @@ theorem relabelKuranishi_apply {T : Finset A → Type*} {E : A → Type*}
 
 /-- The zero sets of the relabelled Kuranishi maps are those of the original ones:
 `Z_IJ = Z_(f I)(f J)`. -/
+@[simp]
 theorem kuranishiZeroSet_relabelKuranishi {T : Finset A → Type*} {E : A → Type*}
     [∀ α, Zero (E α)] (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A') :
     kuranishiZeroSet (T := fun J ↦ T (J.map f)) (E := fun α ↦ E (f α)) (relabelKuranishi f s) I J =

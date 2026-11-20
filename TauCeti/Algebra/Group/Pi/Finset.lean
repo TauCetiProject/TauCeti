@@ -187,8 +187,8 @@ theorem piFinsetMap_apply_mk [∀ i, Mul (π i)] (g : ∀ i : s, π (f i)) (i : 
 variable {s t}
 
 /-- Relabelling along an embedding commutes with restriction to a smaller finite set. -/
-@[to_additive /-- Relabelling along an embedding commutes with restriction to a smaller finite
-set. -/]
+@[to_additive (attr := simp) /-- Relabelling along an embedding commutes with restriction to a
+smaller finite set. -/]
 theorem restrict₂_piFinsetMap [∀ i, Mul (π i)] (h : s ⊆ t) (g : ∀ i : t, π (f i)) :
     restrict₂ (map_subset_map.2 h) (piFinsetMap π f t g) =
       piFinsetMap π f s (restrict₂ (π := fun i ↦ π (f i)) h g) := by
