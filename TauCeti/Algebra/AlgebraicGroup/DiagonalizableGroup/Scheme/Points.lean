@@ -395,6 +395,37 @@ theorem groupSchemePointsAlgΓMulEquiv_precomp (G : FGCommGrpCat.{u})
   -- the `yonedaMon` presentation of the hom-monoid and does not match here.
   exact h
 
+/-- The underlying map of a point on an arbitrary test scheme, transported to `Spec R[G]`, is
+the relative spectrum point of its algebra point under the relative `Γ-Spec` comparison. -/
+lemma groupSchemePointsAlgΓMulEquiv_apply_left_comp (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))} (p : T ⟶ (groupScheme R G).X) :
+    p.left ≫ eqToHom (groupScheme_X_left R G) =
+      ((CommHopfAlgCat.schemePointsAlgΓMulEquiv (MonoidAlgebra R G) T).symm
+        (groupSchemePointsAlgΓMulEquiv G T p)).left := by
+  have hp := ((CommHopfAlgCat.schemePointsAlgΓMulEquiv (MonoidAlgebra R G) T).symm_apply_apply
+    (p ≫ (groupSchemeIsoSpec (R := R) G).hom)).symm
+  have hleft := congrArg Over.Hom.left hp
+  rw [Over.comp_left, groupSchemeIsoSpec_hom_left] at hleft
+  exact hleft
+
+/-- The inverse comparison of points on arbitrary test schemes is the relative `Γ-Spec` unit
+followed by the spectrum morphism of the algebra point, transported to the named diagonalizable
+group scheme. -/
+lemma groupSchemePointsAlgΓMulEquiv_symm_apply_left (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))}
+    (f : WithConv (MonoidAlgebra R G →ₐ[R] ((algΓ (CommRingCat.of R)).obj T).unop)) :
+    ((groupSchemePointsAlgΓMulEquiv G T).symm f).left =
+      ((algΓAlgSpecAdjunction (CommRingCat.of R)).unit.app T).left ≫
+        Spec.map (CommRingCat.ofHom f.ofConv) ≫ eqToHom (groupScheme_X_left R G).symm := by
+  apply (cancel_mono (eqToHom (groupScheme_X_left R G))).1
+  rw [groupSchemePointsAlgΓMulEquiv_apply_left_comp, MulEquiv.apply_symm_apply,
+    CommHopfAlgCat.schemePointsAlgΓMulEquiv_symm_apply, Category.assoc, Category.assoc,
+    eqToHom_trans, eqToHom_refl, Category.comp_id]
+  -- The unit's target is the composite functor `algΓ ⋙ algSpec`, definitionally the relative
+  -- spectrum of the global sections, so `Over.comp_left` does not rewrite syntactically.
+  exact congrArg (((algΓAlgSpecAdjunction (CommRingCat.of R)).unit.app T).left ≫ ·)
+    (CommHopfAlgCat.mapMulEquiv_left f)
+
 /-- Scheme-valued points of `D(G)` on an arbitrary scheme `T` over `Spec R` are the characters
 `G →* Γ(T, 𝒪_T)ˣ`. -/
 noncomputable def schemePointsAlgΓMulEquiv (G : FGCommGrpCat.{u})
@@ -413,6 +444,28 @@ theorem schemePointsAlgΓMulEquiv_precomp (G : FGCommGrpCat.{u})
   -- cross the first identification inside the unit group, so the two steps are composed by `exact`.
   exact (congrArg pointsMulEquiv (groupSchemePointsAlgΓMulEquiv_precomp G φ p)).trans
     (pointsMulEquiv_mapValue _ _)
+
+/-- A point on an arbitrary test scheme, viewed as a character, evaluates a group element on the
+corresponding group-algebra basis monomial. -/
+@[simp]
+theorem schemePointsAlgΓMulEquiv_apply_coe (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))} (p : T ⟶ (groupScheme R G).X) (g : G) :
+    (schemePointsAlgΓMulEquiv G T p g : Γ(T.left, ⊤)) =
+      (groupSchemePointsAlgΓMulEquiv G T p).ofConv (MonoidAlgebra.single g 1) := by
+  -- `schemePointsAlgΓMulEquiv` reads `pointsMulEquiv` with values in the relative global
+  -- sections `((algΓ _).obj T).unop`, definitionally `Γ(T.left, ⊤)`; `rw` cannot cross this
+  -- identification, and `charOfPoint_apply_coe` holds by `rfl`.
+  rfl
+
+/-- The inverse character comparison on arbitrary test schemes is the scheme point associated to
+the algebra point extending a character. -/
+theorem schemePointsAlgΓMulEquiv_symm_apply (G : FGCommGrpCat.{u})
+    {T : Over (Spec (CommRingCat.of R))} (chi : G →* Γ(T.left, ⊤)ˣ) :
+    (schemePointsAlgΓMulEquiv G T).symm chi =
+      (groupSchemePointsAlgΓMulEquiv G T).symm (pointsMulEquiv.symm chi) := by
+  -- As above, `MulEquiv.symm_trans_apply` does not rewrite across the global-sections
+  -- identification, but holds by `rfl`.
+  rfl
 
 /-! ### The multiplicative group and scheme-level characters -/
 
