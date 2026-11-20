@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.Topology.Maps.Proper.Basic
 public import Mathlib.Topology.Sets.Compacts
 
@@ -17,11 +18,13 @@ The preimage of a compact set under a proper map is compact
 monotone and functorial in `f`. It is the operation through which the cohomology with compact
 supports of a space, a colimit over its compact subsets, is contravariant in proper maps. It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
-with compact supports covariant in open embeddings. Finally, a compact set lies in one member of a
+with compact supports covariant in open embeddings. A compact set lies in one member of a
 directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`). A compact set
 whose interior contains `K` is a compact neighbourhood of `K`
 (`TopologicalSpace.Compacts.compactNhdsOfSubsetInterior`), and open sets containing two compact sets
-together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). Inducing maps
+together contain their union (`TopologicalSpace.Compacts.coe_sup_subset_coe_sup`). In a
+Hausdorff space, viewing a compact set as a closed set is monotone, and so a functor
+(`TopologicalSpace.Compacts.toClosedsFunctor`). Inducing maps
 also pull back compact sets contained in their range (`IsInducing.preimageCompacts`).
 -/
 
@@ -87,6 +90,19 @@ lemma coe_sup_subset_coe_sup {K L : Compacts α} {U V : Opens α} (hK : (K : Set
     (hL : (L : Set α) ⊆ V) : ((K ⊔ L : Compacts α) : Set α) ⊆ (U ⊔ V : Opens α) := by
   rw [coe_sup, Opens.coe_sup]
   exact union_subset_union hK hL
+
+lemma toCloseds_mono [T2Space α] : Monotone (Compacts.toCloseds (α := α)) :=
+  fun _ _ h ↦ h
+
+@[simp]
+lemma toCloseds_top [T2Space α] [CompactSpace α] : (⊤ : Compacts α).toCloseds = ⊤ :=
+  Closeds.ext (by simp)
+
+open CategoryTheory in
+variable (α) in
+/-- A compact subset of a Hausdorff space as a closed subset, functorially for inclusions. -/
+abbrev toClosedsFunctor [T2Space α] : Compacts α ⥤ Closeds α :=
+  toCloseds_mono.functor
 
 end TopologicalSpace.Compacts
 

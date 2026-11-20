@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Complex.SlitPlane
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
-import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
 # Euler's integral for the Gauss hypergeometric function
