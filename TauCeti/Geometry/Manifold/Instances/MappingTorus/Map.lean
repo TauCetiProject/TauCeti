@@ -26,6 +26,9 @@ induces a diffeomorphism `Y_φ ≃ Y_ψ` (`TauCeti.SmoothMappingTorus.congr e h`
 by a diffeomorphism over the circle that intertwines the suspension flows and sends the fibre
 inclusion `x ↦ [t, x]` to `y ↦ [t, y]` after `e`.
 
+Likewise a function `f` on `M` invariant under `φ` induces the function `[t, x] ↦ f x` on `Y_φ`
+(`TauCeti.SmoothMappingTorus.lift φ f hf`), which is `C^m` when `f` is.
+
 The induced maps agree with those of Tau Ceti's topological mapping torus `TauCeti.MappingTorus`
 under the homeomorphisms `TauCeti.SmoothMappingTorus.homeomorphMappingTorus`.
 
@@ -35,6 +38,8 @@ under the homeomorphisms `TauCeti.SmoothMappingTorus.homeomorphMappingTorus`.
   a map `g` intertwining `φ` and `ψ`.
 * `TauCeti.SmoothMappingTorus.congr e h`: the diffeomorphism of mapping tori induced by a
   diffeomorphism `e` conjugating `φ` to `ψ`.
+* `TauCeti.SmoothMappingTorus.lift φ f hf`: the function `[t, x] ↦ f x` induced by a function `f`
+  invariant under `φ`.
 
 ## Main results
 
@@ -48,6 +53,9 @@ under the homeomorphisms `TauCeti.SmoothMappingTorus.homeomorphMappingTorus`.
 * `TauCeti.SmoothMappingTorus.congr_refl`, `TauCeti.SmoothMappingTorus.congr_symm`,
   `TauCeti.SmoothMappingTorus.congr_trans`: the induced diffeomorphisms respect identities,
   inverses and composition of conjugacies.
+* `TauCeti.SmoothMappingTorus.lift_mk`, `TauCeti.SmoothMappingTorus.contMDiffAt_lift_mk`,
+  `TauCeti.SmoothMappingTorus.contMDiff_lift`: the induced function takes the value `f x` at
+  `[t, x]`, and it is `C^m` wherever `f` is.
 
 ## References
 
@@ -219,6 +227,63 @@ theorem congr_trans [T2Space P] [LocallyCompactSpace P] [IsManifold K n P]
   Diffeomorph.ext fun z ↦ map_map φ ψ e h χ e' h' z
 
 end Congr
+
+/-! ### Functions invariant under the monodromy -/
+
+section Lift
+
+variable (φ : M ≃ₘ^n⟮I, I⟯ M) {β : Type*} {f : M → β}
+
+/-- A function invariant under `φ` is invariant under every integer power of `φ`. -/
+private theorem apply_zpow_apply (hf : ∀ x, f (φ x) = f x) (k : ℤ) (x : M) :
+    f ((φ ^ k) x) = f x := by
+  induction k using Int.induction_on generalizing x with
+  | zero => rfl
+  | succ k ih => rw [zpow_add_one, Diffeomorph.mul_apply, ih, hf]
+  | pred k ih =>
+    rw [zpow_sub_one, Diffeomorph.mul_apply, ih, Diffeomorph.inv_apply, ← hf,
+      Diffeomorph.apply_symm_apply]
+
+/-- The function `[t, x] ↦ f x` on the mapping torus induced by a function `f` invariant under `φ`.
+It is well defined because `f` is invariant under every integer power of `φ`. -/
+def lift (f : M → β) (hf : ∀ x, f (φ x) = f x) : SmoothMappingTorus φ → β :=
+  MulAction.orbitRelQuotientLift (fun z ↦ f ((ofProd φ).symm z).2) fun k z ↦ by
+    rw [ofProd_symm_smul, apply_zpow_apply φ hf]
+
+variable (hf : ∀ x, f (φ x) = f x)
+
+/-- The induced function takes the value `f x` at `[t, x]`. -/
+@[simp]
+theorem lift_mk (t : ℝ) (x : M) : lift φ f hf (mk φ t x) = f x := by
+  rw [lift, mk_def, MulAction.orbitRelQuotientLift_mk, Equiv.symm_apply_apply]
+
+/-- On the cover `ℝ × M`, the induced function is `f ∘ Prod.snd`. -/
+theorem lift_comp_uncurry_mk : lift φ f hf ∘ uncurry (mk φ) = f ∘ Prod.snd :=
+  funext fun p ↦ lift_mk φ hf p.1 p.2
+
+/-- The function induced by a continuous function is continuous. -/
+theorem continuous_lift [TopologicalSpace β] (hc : Continuous f) : Continuous (lift φ f hf) :=
+  continuous_orbitRelQuotientLift_iff.2 (hc.comp (continuous_ofProd_symm φ).snd)
+
+variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] {m : ℕ∞ω} (hm : m ≤ n)
+  {g : M → N} (hg : ∀ x, g (φ x) = g x)
+include hm
+
+/-- The function induced on the mapping torus is `C^m` at `[t, x]` when the invariant function
+is `C^m` at `x`, for `m ≤ n`. -/
+theorem contMDiffAt_lift_mk {t : ℝ} {x : M} (hs : ContMDiffAt I J m g x) :
+    ContMDiffAt (𝓘(ℝ).prod I) J m (lift φ g hg) (mk φ t x) := by
+  rw [← uncurry_apply_pair (mk φ) t x,
+    ← (isLocalDiffeomorph_uncurry_mk φ (t, x)).contMDiffAt_comp_iff hm, lift_comp_uncurry_mk]
+  exact hs.comp (t, x) contMDiffAt_snd
+
+/-- The function induced on the mapping torus by a `C^m` function, `m ≤ n`, is `C^m`. -/
+theorem contMDiff_lift (hs : ContMDiff I J m g) : ContMDiff (𝓘(ℝ).prod I) J m (lift φ g hg) := by
+  intro z
+  obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+  exact contMDiffAt_lift_mk φ hm hg (hs x)
+
+end Lift
 
 end SmoothMappingTorus
 
