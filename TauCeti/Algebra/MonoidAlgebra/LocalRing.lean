@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.FiniteType
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 import Mathlib.Algebra.CharP.Lemmas
+import TauCeti.Algebra.CharP.LocalRing
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.MonoidAlgebra.Exactness
 import Mathlib.RepresentationTheory.Invariants
@@ -222,7 +223,7 @@ theorem isLocalHom_augmentation_of_isPGroup (hp : ¬IsUnit (p : R)) (hG : IsPGro
   -- Right multiplication by `x` is onto modulo the maximal ideal, so it is bijective.
   let θ : (Unit → MonoidAlgebra R G) →ₗ[MonoidAlgebra R G] (Unit → MonoidAlgebra R G) :=
     LinearMap.pi fun i ↦ (LinearMap.toSpanSingleton _ _ x).comp (LinearMap.proj i)
-  have hθ (z : Unit → MonoidAlgebra R G) (i : Unit) : θ z i = z i * x := (rfl)
+  have hθ (z : Unit → MonoidAlgebra R G) (i : Unit) : θ z i = z i * x := by simp [θ]
   obtain ⟨hinj, hsurj⟩ := bijective_of_forall_exists_mapRingHom_residue_eq θ fun y ↦
     ⟨fun i ↦ y i * u, fun i ↦ by
       rw [hθ, map_mul, map_mul, mul_assoc, hū, mul_one]⟩
@@ -256,13 +257,14 @@ theorem isPGroup_of_isLocalRing (hp : ¬IsUnit (p : R)) [IsLocalRing (MonoidAlge
   -- Otherwise an element `h` of order `q` generates a subgroup whose average `e` is not a unit,
   -- being killed by `h - 1`, while `1 - e` is not a unit either, having augmentation zero.
   by_contra hqp
-  -- The prime `q` is a unit in `R`, since `p` and `q` are coprime and `p` is not a unit.
-  obtain ⟨a, b, hab⟩ := (Nat.Coprime.isCoprime
-    ((Nat.coprime_or_dvd_of_prime hqprime p).resolve_right hqp)).map (Int.castRingHom R)
-  simp only [eq_intCast, Int.cast_natCast] at hab
-  have hqR : IsUnit (q : R) := isUnit_of_mul_isUnit_right <|
-    (IsLocalRing.isUnit_or_isUnit_of_add_one hab).resolve_right fun h ↦
-      hp (isUnit_of_mul_isUnit_right h)
+  -- The prime `q` is a unit in `R`: the residue characteristic divides `p` but not `q`.
+  have hqR : IsUnit (q : R) := by
+    rw [IsLocalRing.isUnit_natCast_iff_not_dvd]
+    intro hq
+    rw [IsLocalRing.isUnit_natCast_iff_not_dvd, not_not] at hp
+    rcases (Nat.dvd_prime hqprime).mp hq with h1 | h1
+    · exact CharP.ringChar_ne_one h1
+    · exact hqp (h1 ▸ hp)
   -- An element `h` of order `q` and the average `e` of the subgroup it generates.
   obtain ⟨h, horder⟩ := exists_prime_orderOf_dvd_card' q hqdvd
   let H := Subgroup.zpowers h
@@ -277,9 +279,8 @@ theorem isPGroup_of_isLocalRing (hp : ¬IsUnit (p : R)) [IsLocalRing (MonoidAlge
       simp
     rw [mul_sub, mul_one, hh, ← map_mul, GroupAlgebra.mul_average_right, sub_self]
   have haug : augmentation R G e = 1 := by
-    rw [← RingHom.comp_apply, augmentation_comp_mapDomainRingHom, GroupAlgebra.average,
-      ← augmentationLinearMap_apply, map_smul, augmentationLinearMap_apply, map_sum]
-    simp [Finset.card_univ]
+    rw [← RingHom.comp_apply, augmentation_comp_mapDomainRingHom]
+    simp [GroupAlgebra.average, Algebra.smul_def, Finset.card_univ]
   rcases IsLocalRing.isUnit_or_isUnit_one_sub_self e with he' | he'
   · refine single_sub_one_ne_zero (R := R) (g := h) (fun h1 ↦ ?_) (he'.mul_right_eq_zero.mp he)
     rw [h1, orderOf_one] at horder

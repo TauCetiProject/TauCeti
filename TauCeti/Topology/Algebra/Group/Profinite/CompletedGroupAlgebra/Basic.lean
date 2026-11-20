@@ -311,9 +311,8 @@ onto any level. -/
 @[simp]
 theorem augmentation_proj (U : OpenNormalSubgroup Γ) (x : completedGroupAlgebra R Γ) :
     MonoidAlgebra.augmentation R (Γ ⧸ U.toSubgroup) (proj R Γ U x) = augmentation R Γ x := by
-  rw [augmentation, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    ← mapDomain_mapOfLE_proj (le_top : U ≤ ⊤) x, ← MonoidAlgebra.mapDomainRingHom_apply,
-    ← RingHom.comp_apply, MonoidAlgebra.augmentation_comp_mapDomainRingHom]
+  simp [augmentation, ← mapDomain_mapOfLE_proj (le_top : U ≤ ⊤) x,
+    ← MonoidAlgebra.mapDomainRingHom_apply, ← RingHom.comp_apply]
 
 variable {R} in
 /-- The augmentation sends every group element to `1`. -/
@@ -326,8 +325,7 @@ variable {Γ} in
 @[simp]
 theorem augmentation_algebraMap (r : R) :
     augmentation R Γ (algebraMap R (completedGroupAlgebra R Γ) r) = r := by
-  rw [← augmentation_proj ⊤, AlgHom.commutes, MonoidAlgebra.coe_algebraMap, Function.comp_apply,
-    MonoidAlgebra.augmentation_single, Algebra.algebraMap_self, RingHom.id_apply]
+  simp [← augmentation_proj ⊤]
 
 /-- Every element of the completed group algebra agrees at any given level `V` with a finite
 `R`-linear combination of group elements. -/
