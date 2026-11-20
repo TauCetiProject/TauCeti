@@ -67,14 +67,14 @@ def toMeromorphic (D : WeilDivisor X) :
 /-- The finite part of the meromorphic image agrees with the section on punctured
 neighbourhoods, including at points where a pole is allowed but removable. -/
 theorem finitePart_toMeromorphic_eventuallyEq (f : divisorSections D ⊤) (x : X) :
-    (toMeromorphic D f).finitePart =ᶠ[𝓝[≠] x] fun y ↦ f.1 ⟨y, trivial⟩ :=
+    (toMeromorphic D f).finitePart =ᶠ[𝓝[≠] x] fun y ↦ f.val ⟨y, trivial⟩ :=
   MeromorphicFunction.finitePart_ofMeromorphic_eventuallyEq
     (fun y ↦ (isDivisorSectionAt f y).meromorphicAt) x
 
 /-- Where the divisor allows no pole, the meromorphic image takes the section's actual value. -/
 @[simp]
 theorem toMeromorphic_apply_of_nonpos (f : divisorSections D ⊤) {x : X} (hx : D x ≤ 0) :
-    toMeromorphic D f x = (f.1 ⟨x, trivial⟩ : OnePoint ℂ) :=
+    toMeromorphic D f x = (f.val ⟨x, trivial⟩ : OnePoint ℂ) :=
   MeromorphicFunction.ofMeromorphic_apply_of_continuousAt
     (fun y ↦ (isDivisorSectionAt f y).meromorphicAt)
     ((isDivisorSectionAt f x).contMDiffAt hx).continuousAt
@@ -97,7 +97,7 @@ theorem toMeromorphic_injective (D : WeilDivisor X) :
 /-- The order of the meromorphic image is the order of the section's representative. -/
 theorem order_toMeromorphic (f : divisorSections D ⊤) (x : X) :
     MeromorphicFunction.order x (toMeromorphic D f) =
-      meromorphicOrderAt (fun y ↦ f.1 ⟨y, trivial⟩) x := by
+      meromorphicOrderAt (fun y ↦ f.val ⟨y, trivial⟩) x := by
   rw [MeromorphicFunction.order_apply,
     meromorphicOrderAt_congr (finitePart_toMeromorphic_eventuallyEq f x)]
 

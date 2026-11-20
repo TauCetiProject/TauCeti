@@ -185,19 +185,13 @@ private lemma toSSetPair_map_ofSubsetMap_right {A B : Set X} (h : A ⊆ B) :
     (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).right = 𝟙 (toSSet.obj X) :=
   (congrArg toSSet.map (TopPair.ofSubsetMap_fst (𝟙 X) h)).trans (toSSet.map_id X)
 
-private lemma mono_toSSetPair_map_ofSubsetMap_left {A B : Set X} (h : A ⊆ B) :
-    Mono (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).left := by
-  rw [toSSetPair_map_ofSubsetMap_left]
-  exact Functor.map_mono _ _
-
 private lemma mono_toSSetPair_map_ofSubsetMap_right {A B : Set X} (h : A ⊆ B) :
     Mono (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) h)).right := by
   refine ⟨fun g g' hgh ↦ ?_⟩
   rw [toSSetPair_map_ofSubsetMap_right] at hgh
   exact (Category.comp_id g).symm.trans (hgh.trans (Category.comp_id g'))
 
-attribute [local instance] mono_toSSetPair_map_ofSubsetMap_left
-  mono_toSSetPair_map_ofSubsetMap_right
+attribute [local instance] mono_toSSetPair_map_ofSubsetMap_right
 
 private lemma isPushout_left :
     IsPushout (TopPair.toSSetPair.map (TopPair.ofSubsetMap (𝟙 X) Set.inter_subset_left)).left
@@ -286,7 +280,7 @@ lemma exists_iso_comp_smallSingularSubcomplexToUnion :
         (CategoryTheory.mono_iff_injective (f.app n)).1 inferInstance
       refine (isIso_iff_bijective _).2 ⟨fun x y hxy ↦ Subtype.ext ?_, fun y ↦ ?_⟩
       · exact hinj (congrArg Subtype.val hxy)
-      · exact (D.mem_range_fromPreimage_app_iff f y).2 (smallSubcomplex_le_range U V n y.2)
+      · exact (D.mem_range_fromPreimage_app_iff f y).2 (smallSubcomplex_le_range U V n y.property)
     exact NatIso.isIso_of_isIso_app _
   rw [← preimage_smallSingularSubcomplex]
   refine ⟨asIso (D.fromPreimage f), ?_⟩
@@ -361,7 +355,7 @@ lemma quasiIso_chainComplexMap_smallSingularSubcomplexToUnion
     (fun i ↦ by fin_cases i; exacts [hU, hV])
     (by
       rw [← Set.preimage_iUnion, Set.iUnion_vecCons_pair]
-      exact Set.eq_univ_of_forall fun x ↦ x.2)
+      exact Set.eq_univ_of_forall fun x ↦ x.property)
   have hcomp : SSet.chainComplexMap (e.hom ≫ smallSingularSubcomplexToUnion U V) R =
       SSet.chainComplexMap e.hom R ≫ SSet.chainComplexMap (smallSingularSubcomplexToUnion U V) R :=
     Functor.map_comp _ _ _
@@ -372,7 +366,7 @@ private lemma isIso_homologyMap_smallPairToUnion (hU : IsOpen U) (hV : IsOpen V)
     IsIso (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n) := by
   have : QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).left R) :=
     quasiIso_chainComplexMap_smallSingularSubcomplexToUnion R U V
-      (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
+      (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal)
   have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) := by
     rw [chainComplexMap_smallSingularSubcomplexPairToUnion_right]
     exact IsIso.id _
@@ -702,8 +696,7 @@ lemma inr_pairMayerVietorisFromBiprod (n : ℕ) :
 
 /-! #### The square of singular pairs -/
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-- The pair formed by the singular simplices of `X` lying in `A` or in `B` and those lying in `C`
 or in `D`. For `A` and `B` open in `A ∪ B` and `C` and `D` open in `C ∪ D`, the small-chain theorem
@@ -948,8 +941,7 @@ include hA hB hC hD in
 two pairs is an epimorphism. -/
 lemma epi_pairMayerVietorisFromBiprod_zero : Epi (pairMayerVietorisFromBiprod R hCA hDB 0) := by
   have := isIso_homologyMap_smallSingularPairToUnion R hCA hDB hA hB hC hD 0
-  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_toSmallSingularPair_left hCA hDB)
-    (isPushout_toSmallSingularPair_right hCA hDB)
+  have := SSetPair.epi_mayerVietorisFromBiprod_zero R (isPushout_toSmallSingularPair_right hCA hDB)
   rw [← mayerVietorisFromBiprod_comp_homologyMap_smallSingularPairToUnion]
   exact epi_comp _ _
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
-public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 
 /-!
 # The Dedekind zeta function of `ℚ` is the Riemann zeta function
@@ -27,10 +27,10 @@ on arbitrary sets without excluding `1`.
 
 ## Main results
 
-* `TauCeti.dedekindZeta_rat_eq_riemannZeta`: `dedekindZeta ℚ s = riemannZeta s` for `1 < s.re`.
-* `TauCeti.LFunctions.dedekindZetaC_rat_eventuallyEq_riemannZeta` and
-  `TauCeti.LFunctions.dedekindZetaC_rat_eq_riemannZeta`: punctured-germ agreement everywhere and
-  pointwise equality for `s ≠ 1`.
+* `TauCeti.dedekindZeta_rat_eq_LSeries_zeta`: `dedekindZeta ℚ s` equals the `LSeries` of
+  `ArithmeticFunction.zeta`.
+* `TauCeti.LFunctions.dedekindZetaC_rat_eq_toMeromorphicNFOn`: `dedekindZetaC ℚ` is the
+  meromorphic normal form of `riemannZeta`.
 * `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_rat`,
   `TauCeti.LFunctions.divisor_dedekindZetaC_rat`,
   `TauCeti.LFunctions.divisorCount_dedekindZetaC_rat`, and
@@ -57,11 +57,6 @@ theorem dedekindZeta_rat_eq_LSeries_zeta (s : ℂ) :
   intro n hn
   simp [hn]
 
-/-- On `Re s > 1`, the Dedekind zeta function of `ℚ` equals the Riemann zeta function. -/
-theorem dedekindZeta_rat_eq_riemannZeta {s : ℂ} (hs : 1 < s.re) :
-    dedekindZeta ℚ s = riemannZeta s := by
-  rw [dedekindZeta_rat_eq_LSeries_zeta, ArithmeticFunction.LSeries_zeta_eq_riemannZeta hs]
-
 namespace LFunctions
 
 /-- **The continued Dedekind zeta function of `ℚ` is the meromorphic normal form of
@@ -72,19 +67,6 @@ theorem dedekindZetaC_rat_eq_toMeromorphicNFOn :
   exact meromorphicContinuation_eq_toMeromorphicNFOn meromorphic_riemannZeta
     (fun s hs ↦ analyticOn_riemannZeta s fun h1 ↦ by simp [mem_singleton_iff.mp h1] at hs)
     fun _ hs ↦ (dedekindZeta_rat_eq_riemannZeta hs).symm
-
-/-- **At every complex point, including the pole `s = 1`, `dedekindZetaC ℚ` has the punctured germ
-of `riemannZeta`.** -/
-theorem dedekindZetaC_rat_eventuallyEq_riemannZeta (s : ℂ) :
-    dedekindZetaC ℚ =ᶠ[𝓝[≠] s] riemannZeta := by
-  rw [dedekindZetaC_rat_eq_toMeromorphicNFOn]
-  exact meromorphic_riemannZeta.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
-
-/-- **Away from the pole at `1`, `dedekindZetaC ℚ` equals `riemannZeta`.** -/
-theorem dedekindZetaC_rat_eq_riemannZeta {s : ℂ} (hs : s ≠ 1) :
-    dedekindZetaC ℚ s = riemannZeta s := by
-  rw [dedekindZetaC_rat_eq_toMeromorphicNFOn,
-    toMeromorphicNFOn_apply_of_analyticAt meromorphic_riemannZeta (analyticOn_riemannZeta s hs)]
 
 @[simp]
 theorem meromorphicOrderAt_dedekindZetaC_rat (s : ℂ) :

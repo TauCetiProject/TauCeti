@@ -105,8 +105,8 @@ matrices of determinant one. This includes coefficients with nilpotents. -/
     · let _ : Nonempty n := Fintype.card_pos_iff.mp (by omega)
       exact TauCeti.sq_eq_one_of_smul_one_mem_orthogonalGroup (n := n) (by
         simpa only [← hc, scalar_apply, Matrix.smul_one_eq_diagonal] using
-          (mem_specialOrthogonalGroup_iff.mp g.2).1)
-    · have hdet := (mem_specialOrthogonalGroup_iff.mp g.2).2
+          (mem_specialOrthogonalGroup_iff.mp g.property).1)
+    · have hdet := (mem_specialOrthogonalGroup_iff.mp g.property).2
       simpa [← hc, scalar_apply, det_diagonal] using hdet
   · rintro ⟨c, hc, _, _⟩
     exact mem_center_of_coe_eq_scalar g c hc
@@ -126,7 +126,7 @@ theorem eq_one_of_mem_center_of_odd (h2 : IsRegular (2 : R))
     apply Subtype.ext
     ext i j
     obtain rfl : i = j := Subsingleton.elim i j
-    have hdet := (mem_specialOrthogonalGroup_iff.mp g.2).2
+    have hdet := (mem_specialOrthogonalGroup_iff.mp g.property).2
     rw [det_eq_elem_of_card_eq_one hcard i] at hdet
     simpa using hdet
   obtain ⟨c, hc, hc2, hcn⟩ := (mem_center_iff h2 g hn).mp hg
@@ -147,7 +147,7 @@ theorem mul_comm_of_le_two {m : ℕ} (hm : m ≤ 2) (x y : specialOrthogonalGrou
         (z : Matrix (Fin 2) (Fin 2) R) = !![(z : Matrix (Fin 2) (Fin 2) R) 0 0,
           (z : Matrix (Fin 2) (Fin 2) R) 0 1; -(z : Matrix (Fin 2) (Fin 2) R) 0 1,
           (z : Matrix (Fin 2) (Fin 2) R) 0 0] := by
-      obtain ⟨h₁, h₂, -⟩ := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp z.2
+      obtain ⟨h₁, h₂, -⟩ := Matrix.mem_specialOrthogonalGroup_fin_two_iff.mp z.property
       ext i j
       fin_cases i <;> fin_cases j <;> simp [h₁, h₂]
     refine Subtype.ext ?_

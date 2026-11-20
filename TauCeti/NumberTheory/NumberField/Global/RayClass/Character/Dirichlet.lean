@@ -305,7 +305,7 @@ theorem isPrimitive_ratModulus_iff :
   · refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
     · rw [h, ← ratModulus_finitePart n hn, absNorm_ratModulus_finitePart]
     · rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self η.conductor.finitePart, h]
-  · refine ⟨fun h h0 ↦ by simp [h0] at h, fun hne ↦ ?_⟩
+  · refine ⟨fun h h0 ↦ (Finset.singleton_nonempty _).ne_empty (h0 ▸ h).symm, fun hne ↦ ?_⟩
     simpa only [ratModulus_infinitePart] using
       congrArg Modulus.infinitePart (eq_ratModulus_of_infinitePart_ne_empty hne)
 
@@ -346,7 +346,7 @@ theorem toDirichletCharacter_absNorm (ψ : RayClassCharacter 𝔪) (I : integral
   have hI : (I : Ideal (𝓞 ℚ)) ∈
       integralIdealsPrimeTo (ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _)) := by
     rw [NumberFieldArithmetic.mem_integralIdealsAway_iff, ratModulus_absNorm_support]
-    exact NumberFieldArithmetic.mem_integralIdealsAway_iff.mp I.2
+    exact NumberFieldArithmetic.mem_integralIdealsAway_iff.mp I.property
   have hincl : integralIdealsPrimeToInclusion (dvd_ratModulus_absNorm 𝔪) ⟨I, hI⟩ = I :=
     Subtype.ext (coe_integralIdealsPrimeToInclusion _ _)
   rw [toDirichletCharacter_def,
@@ -442,11 +442,11 @@ theorem isPrimitive_iff_of_infinitePart_ne_empty (h : 𝔪.infinitePart ≠ ∅)
     rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self ψ.conductor.finitePart,
       ← Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart, hnorm]
   · refine ⟨fun hinf h0 ↦ h (hinf ▸ h0), fun hne ↦ ?_⟩
-    obtain ⟨w, hw⟩ := Finset.nonempty_iff_ne_empty.mpr hne
-    obtain ⟨v, hv⟩ := Finset.nonempty_iff_ne_empty.mpr h
+    obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp hne
+    obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.mp h
     ext u
-    exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim u.1 v.1) ▸ hv,
-      fun _ ↦ Subtype.ext (Subsingleton.elim u.1 w.1) ▸ hw⟩
+    exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim u.val v.val) ▸ hv,
+      fun _ ↦ Subtype.ext (Subsingleton.elim u.val w.val) ▸ hw⟩
 
 end ArbitraryModulus
 

@@ -52,9 +52,9 @@ variable {α β : Type*} [DecidableEq β] {σ : Finset α}
 identified. The resulting point lies in the simplex on the image vertex set. -/
 def map (x : StandardSimplex σ) (f : α → β) : StandardSimplex (σ.image f) :=
   -- Mathlib's `Finsupp.lmapDomain` and `LinearMap.image_convexHull` give the simplex image.
-  ⟨Finsupp.mapDomain f x.1, by
+  ⟨Finsupp.mapDomain f x.val, by
     classical
-    have h := mem_image_of_mem (Finsupp.lmapDomain ℝ ℝ f) x.2
+    have h := mem_image_of_mem (Finsupp.lmapDomain ℝ ℝ f) x.property
     rw [(Finsupp.lmapDomain ℝ ℝ f).image_convexHull] at h
     simpa only [Finset.coe_image, image_image, Function.comp_def,
       Finsupp.lmapDomain_apply, Finsupp.mapDomain_single] using h⟩
@@ -62,13 +62,13 @@ def map (x : StandardSimplex σ) (f : α → β) : StandardSimplex (σ.image f) 
 /-- The affine simplex map pushes forward its finitely supported coordinate vector. -/
 @[simp]
 theorem map_val (x : StandardSimplex σ) (f : α → β) :
-    (StandardSimplex.map x f : β →₀ ℝ) = Finsupp.mapDomain f x.1 := (rfl)
+    (StandardSimplex.map x f : β →₀ ℝ) = Finsupp.mapDomain f x.val := (rfl)
 
 /-- A target barycentric coordinate is the sum of the source coordinates mapping to it. -/
 theorem map_apply (x : StandardSimplex σ) (f : α → β) (b : β) :
-    (StandardSimplex.map x f : β →₀ ℝ) b = ∑ a ∈ σ, if f a = b then x.1 a else 0 := by
+    (StandardSimplex.map x f : β →₀ ℝ) b = ∑ a ∈ σ, if f a = b then x.val a else 0 := by
   classical
-  rw [map_val, Finsupp.mapDomain_apply, Finsupp.sum_of_support_subset x.1
+  rw [map_val, Finsupp.mapDomain_apply, Finsupp.sum_of_support_subset x.val
     (StandardSimplex.support_subset x)]
   all_goals simp [Finsupp.single_apply]
 
@@ -77,7 +77,7 @@ theorem continuous_map (f : α → β) :
     Continuous (fun x : StandardSimplex σ => StandardSimplex.map x f) := by
   classical
   -- The finite-face comparison transports Mathlib's `Convexity.StdSimplex.continuous_map`.
-  let g : σ → σ.image f := fun a => ⟨f a, Finset.mem_image_of_mem f a.2⟩
+  let g : σ → σ.image f := fun a => ⟨f a, Finset.mem_image_of_mem f a.property⟩
   have h : Continuous (fun x : StandardSimplex σ =>
       (Finset.standardSimplexHomeomorph (σ.image f)).symm
         ((Finset.standardSimplexHomeomorph σ x).map g)) :=
@@ -96,9 +96,9 @@ theorem continuous_map (f : α → β) :
 /-- Pull barycentric coordinates back along an injective vertex map. This is the inverse of
 its affine pushforward on the simplex spanned by its image. -/
 def comap {f : α ↪ β} (x : StandardSimplex (σ.image f)) : StandardSimplex σ :=
-  ⟨Finsupp.comapDomain f x.1 f.injective.injOn, by
+  ⟨Finsupp.comapDomain f x.val f.injective.injOn, by
     classical
-    have h := mem_image_of_mem (Finsupp.lcomapDomain (R := ℝ) (M := ℝ) f f.injective) x.2
+    have h := mem_image_of_mem (Finsupp.lcomapDomain (R := ℝ) (M := ℝ) f f.injective) x.property
     rw [(Finsupp.lcomapDomain f f.injective).image_convexHull] at h
     simpa only [Finset.coe_image, image_image, Function.comp_def,
       Finsupp.lcomapDomain_apply, Finsupp.comapDomain_single] using h⟩
@@ -106,7 +106,7 @@ def comap {f : α ↪ β} (x : StandardSimplex (σ.image f)) : StandardSimplex �
 /-- Pullback of a simplex point pulls back its finitely supported coordinate vector. -/
 @[simp]
 theorem comap_val {f : α ↪ β} (x : StandardSimplex (σ.image f)) :
-    (comap (f := f) x : α →₀ ℝ) = Finsupp.comapDomain f x.1 f.injective.injOn := (rfl)
+    (comap (f := f) x : α →₀ ℝ) = Finsupp.comapDomain f x.val f.injective.injOn := (rfl)
 
 /-- Pulling coordinates back after pushing them forward recovers a simplex point. -/
 @[simp]
@@ -120,7 +120,7 @@ theorem comap_map (x : StandardSimplex σ) (f : α ↪ β) : comap (map x f) = x
 theorem map_comap {f : α ↪ β} (x : StandardSimplex (σ.image f)) : map (comap (f := f) x) f = x := by
   apply Subtype.ext
   rw [map_val, comap_val]
-  exact Finsupp.mapDomain_comapDomain f f.injective x.1 fun b hb => by
+  exact Finsupp.mapDomain_comapDomain f f.injective x.val fun b hb => by
     obtain ⟨a, -, rfl⟩ := Finset.mem_image.mp (support_subset x hb)
     exact mem_range_self a
 
@@ -130,7 +130,7 @@ theorem continuous_comap (f : α ↪ β) :
   apply continuous_induced_rng.mpr
   apply continuous_pi
   intro a
-  have hc : Continuous (fun x : StandardSimplex (σ.image f) => (x.1 : β → ℝ)) :=
+  have hc : Continuous (fun x : StandardSimplex (σ.image f) => (x.val : β → ℝ)) :=
     continuous_induced_dom
   simpa only [Function.comp_def, comap_val, Finsupp.comapDomain_apply] using
     (continuous_apply (f a)).comp hc
@@ -150,15 +150,15 @@ def realizationMap
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex) :
     C(Realization K, Realization L) where
   toFun x :=
-    faceInclusion L ⟨(carrier K x).1.image f, f.map_face (carrier K x).2⟩
-      (StandardSimplex.map ⟨x.1, mem_convexHull_carrier K x⟩ f)
+    faceInclusion L ⟨(carrier K x).val.image f, f.map_face (carrier K x).property⟩
+      (StandardSimplex.map ⟨x.val, mem_convexHull_carrier K x⟩ f)
   continuous_toFun := by
     -- Follow `AbstractSimplicialComplex.continuous_barycentricSubdivisionRealizationMap`:
     -- test continuity face by face in the weak topology.
     apply continuous_iff_faceInclusion.2
     intro σ
-    convert (continuous_faceInclusion L ⟨σ.1.image f, f.map_face σ.2⟩).comp
-      (StandardSimplex.continuous_map f (σ := σ.1)) using 1
+    convert (continuous_faceInclusion L ⟨σ.val.image f, f.map_face σ.property⟩).comp
+      (StandardSimplex.continuous_map f (σ := σ.val)) using 1
     funext x
     apply Subtype.ext
     simp only [Function.comp_apply, faceInclusion_val, StandardSimplex.map_val]
@@ -169,7 +169,7 @@ fiber. -/
 theorem realizationMap_val
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
     (x : Realization K) :
-    (f.realizationMap x : β →₀ ℝ) = Finsupp.mapDomain f x.1 :=
+    (f.realizationMap x : β →₀ ℝ) = Finsupp.mapDomain f x.val :=
   by simp only [realizationMap, ContinuousMap.coe_mk, faceInclusion_val, StandardSimplex.map_val]
 
 /-- Restriction of the realization map to a face is its affine simplex map followed by the target
@@ -178,7 +178,7 @@ theorem realizationMap_comp_faceInclusion
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
     (σ : Face K) :
     f.realizationMap ∘ faceInclusion K σ =
-      faceInclusion L ⟨σ.1.image f, f.map_face σ.2⟩ ∘ fun x => StandardSimplex.map x f :=
+      faceInclusion L ⟨σ.val.image f, f.map_face σ.property⟩ ∘ fun x => StandardSimplex.map x f :=
   by
     funext x
     apply Subtype.ext
@@ -300,7 +300,7 @@ theorem support_realizationMap {α β : Type*} [DecidableEq β]
     (f : _root_.PreAbstractSimplicialComplex.SimplicialMap
       K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
     (x : Realization K) :
-    (f.realizationMap x).1.support = x.1.support.image f := by
+    (f.realizationMap x).val.support = x.val.support.image f := by
   rw [_root_.PreAbstractSimplicialComplex.SimplicialMap.realizationMap_val]
   exact Finsupp.support_mapDomain_of_nonneg (fun i ↦ Realization.nonneg K x i) f
 
@@ -313,8 +313,8 @@ theorem image_realizationMap_ofPred_support {α β : Type*} [DecidableEq β]
     (hf : Function.Surjective f.realizationMap)
     {P : Finset α → Prop} {Q : Finset β → Prop}
     (hPQ : ∀ s, P s ↔ Q (s.image f)) :
-    f.realizationMap '' {x | P x.1.support} = {y | Q y.1.support} := by
+    f.realizationMap '' {x | P x.val.support} = {y | Q y.val.support} := by
   simpa only [Set.preimage_ofPred_eq, support_realizationMap, ← hPQ] using
-    Set.image_preimage_eq {y : Realization L | Q y.1.support} hf
+    Set.image_preimage_eq {y : Realization L | Q y.val.support} hf
 
 end TauCeti.PreAbstractSimplicialComplex.SimplicialMap

@@ -216,10 +216,10 @@ private lemma
       { c : irreducibleComponents X.carrier // x ∈ (c : Set X.carrier) }) := by
   let i := X.affineCover.idx x
   let f := X.affineCover.f i
-  have hf : IsOpenEmbedding f.1.base := f.isOpenEmbedding
+  have hf : IsOpenEmbedding f.toLRSHom'.base := f.isOpenEmbedding
   have hCov := X.affineCover.covers x
   let y := Classical.choose hCov
-  have hy : f.1.base y = x := Classical.choose_spec hCov
+  have hy : f.toLRSHom'.base y = x := Classical.choose_spec hCov
   have eStalk := (asIso (f.stalkMap y)).commRingCatIsoToRingEquiv
   let U := X.affineCover.X i
   have eStalkX : X.presheaf.stalk x ≃+* U.presheaf.stalk y := by
@@ -229,7 +229,7 @@ private lemma
   let R := Γ(U, ⊤)
   let g := U.isoSpec
   let eHomeo := Scheme.homeoOfIso g
-  let y_spec : PrimeSpectrum R := g.hom.1.1.base y
+  let y_spec : PrimeSpectrum R := g.hom.toLRSHom'.toHom.base y
   have eStalkSpecG := (asIso (g.hom.stalkMap y)).commRingCatIsoToRingEquiv.symm
   let eStalk2 := (Spec.stalkIso R y_spec).commRingCatIsoToRingEquiv
   let eStalkSpec := eStalkSpecG.trans eStalk2
@@ -264,7 +264,7 @@ private lemma existsUnique_irreducibleComponent_of_unique_minimalPrime {X : Sche
     have hU : Unique { c : irreducibleComponents X.carrier //
         x ∈ (c : Set X.carrier) } :=
       Equiv.unique e.symm
-    exact ⟨hU.default.1, hU.default.2,
+    exact ⟨hU.default.val, hU.default.property,
       fun c hc ↦ congrArg Subtype.val (hU.uniq ⟨c, hc⟩)⟩
 
 /-- In a scheme whose stalks have unique minimal primes, the irreducible
@@ -339,20 +339,21 @@ private theorem isOpen_irreducibleComponents_of_unique_minimalPrime {Z : Scheme.
   intro j
   rw [inter_comm]
   let f := Z.affineCover.f j
-  have hf : IsOpenEmbedding f.1.base := f.isOpenEmbedding
+  have hf : IsOpenEmbedding f.toLRSHom'.base := f.isOpenEmbedding
   rw [← image_preimage_eq_inter_range]
   apply hf.isOpenMap
   let Y := Z.affineCover.X j
   have hStalksY : ∀ y : Y.carrier, Unique (minimalPrimes (Y.presheaf.stalk y)) := by
     intro y
-    haveI hU : Unique (minimalPrimes (Z.presheaf.stalk (f.1.base y))) := hStalks (f.1.base y)
+    haveI hU : Unique (minimalPrimes (Z.presheaf.stalk (f.toLRSHom'.base y))) := hStalks
+        (f.toLRSHom'.base y)
     exact Equiv.unique (minimalPrimes_equiv_of_ringEquiv
       (asIso <| f.stalkMap y).commRingCatIsoToRingEquiv.symm)
-  by_cases hEmpty : (f.1.base ⁻¹' (c : Set Z.carrier)).Nonempty
-  · have hNonempty : ((c : Set Z.carrier) ∩ Set.range f.1.base).Nonempty := by
+  by_cases hEmpty : (f.toLRSHom'.base ⁻¹' (c : Set Z.carrier)).Nonempty
+  · have hNonempty : ((c : Set Z.carrier) ∩ Set.range f.toLRSHom'.base).Nonempty := by
       obtain ⟨x, hx⟩ := hEmpty
-      exact ⟨f.1.base x, hx, ⟨x, rfl⟩⟩
-    have hComp : f.1.base ⁻¹' (c : Set Z.carrier) ∈ irreducibleComponents Y.carrier :=
+      exact ⟨f.toLRSHom'.base x, hx, ⟨x, rfl⟩⟩
+    have hComp : f.toLRSHom'.base ⁻¹' (c : Set Z.carrier) ∈ irreducibleComponents Y.carrier :=
       preimage_mem_irreducibleComponents c.property hf hNonempty
     have hOpen := isOpen_irreducibleComponents_of_affine_unique_minimalPrime hStalksY ⟨_, hComp⟩
     exact hOpen
@@ -374,12 +375,12 @@ private lemma irreducibleSpace_of_connected_of_open_components {α : Type*} [Top
     exact ⟨⟨c, hc_in⟩⟩
   obtain ⟨c⟩ := hNonempty
   have hcClopen : IsClopen (c : Set α) :=
-    ⟨isClosed_of_mem_irreducibleComponents (c : Set α) c.2, hOpen c⟩
-  have hcNonempty : (c : Set α).Nonempty := c.2.1.1
+    ⟨isClosed_of_mem_irreducibleComponents (c : Set α) c.property, hOpen c⟩
+  have hcNonempty : (c : Set α).Nonempty := c.property.1.1
   have hcEqUniv : (c : Set α) = univ := IsClopen.eq_univ hcClopen hcNonempty
   have hIrredUniv : IsIrreducible (univ : Set α) := by
     rw [← hcEqUniv]
-    exact c.2.1
+    exact c.property.1
   have : PreirreducibleSpace α := ⟨hIrredUniv.2⟩
   exact ⟨inferInstance⟩
 

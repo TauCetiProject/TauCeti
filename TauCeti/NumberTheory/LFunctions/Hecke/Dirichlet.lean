@@ -476,7 +476,7 @@ def ratEquiv :
   toFun ψ :=
     ⟨⟨Ideal.absNorm ψ.conductor.finitePart, Nat.pos_of_ne_zero (NeZero.ne _)⟩,
       ⟨ψ.toDirichletCharacter, ψ.isPrimitive_toDirichletCharacter⟩⟩
-  invFun p := ofDirichletCharacter p.2.1
+  invFun p := ofDirichletCharacter p.snd.val
   left_inv ψ := ofDirichletCharacter_primitive_toDirichletCharacter ψ
   right_inv := by
     rintro ⟨N, ⟨χ, hχ⟩⟩
@@ -498,19 +498,19 @@ theorem ratEquiv_apply (ψ : PrimitiveRayClassCharacter ℚ) :
 
 @[simp]
 theorem ratEquiv_fst_coe (ψ : PrimitiveRayClassCharacter ℚ) :
-    ((ratEquiv ψ).1 : ℕ) = Ideal.absNorm ψ.conductor.finitePart := (rfl)
+    ((ratEquiv ψ).fst : ℕ) = Ideal.absNorm ψ.conductor.finitePart := (rfl)
 
 @[simp]
 theorem ratEquiv_snd_intCast (ψ : PrimitiveRayClassCharacter ℚ) (m : ℤ) :
-    (ratEquiv ψ).2.1 m = ψ.toDirichletCharacter m := (rfl)
+    (ratEquiv ψ).snd.val m = ψ.toDirichletCharacter m := (rfl)
 
 @[simp]
 theorem ratEquiv_snd_natCast (ψ : PrimitiveRayClassCharacter ℚ) (m : ℕ) :
-    (ratEquiv ψ).2.1 m = ψ.toDirichletCharacter m := (rfl)
+    (ratEquiv ψ).snd.val m = ψ.toDirichletCharacter m := (rfl)
 
 @[simp]
 theorem ratEquiv_symm_apply (p : (N : ℕ+) × {χ : DirichletCharacter ℂ N // χ.IsPrimitive}) :
-    ratEquiv.symm p = ofDirichletCharacter p.2.1 := (rfl)
+    ratEquiv.symm p = ofDirichletCharacter p.snd.val := (rfl)
 
 @[simp]
 theorem ratEquiv_one : ratEquiv 1 = ⟨1, ⟨1, isPrimitive_one_level_one⟩⟩ := by
@@ -519,7 +519,7 @@ theorem ratEquiv_one : ratEquiv 1 = ⟨1, ⟨1, isPrimitive_one_level_one⟩⟩ 
 
 @[simp]
 theorem ratEquiv_inv (ψ : PrimitiveRayClassCharacter ℚ) :
-    ratEquiv ψ⁻¹ = ⟨(ratEquiv ψ).1, ⟨(ratEquiv ψ).2.1⁻¹, (ratEquiv ψ).2.2.inv⟩⟩ := by
+    ratEquiv ψ⁻¹ = ⟨(ratEquiv ψ).fst, ⟨(ratEquiv ψ).snd.val⁻¹, (ratEquiv ψ).snd.property.inv⟩⟩ := by
   apply ratEquiv.symm.injective
   rw [Equiv.symm_apply_apply, ratEquiv_symm_apply, ofDirichletCharacter_inv,
     ← ratEquiv_symm_apply, Equiv.symm_apply_apply]

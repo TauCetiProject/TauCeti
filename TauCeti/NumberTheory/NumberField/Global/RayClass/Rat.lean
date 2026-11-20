@@ -149,7 +149,7 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
   set a := Ideal.absNorm (I : Ideal (𝓞 ℚ)) with ha_def
   have ha : a ≠ 0 := by
     rw [ha_def, Ne, Ideal.absNorm_eq_zero_iff]
-    exact (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1
+    exact (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)).1
   -- The norm generates `I`, so the ray class of `I` is the principal ray class of the norm.
   obtain ⟨x, hxa, hIx⟩ := exists_idealClass_eq_principalRayClass
     (Rat.RingOfIntegers.ideal_span_absNorm_eq_self (I : Ideal (𝓞 ℚ))).symm
@@ -395,7 +395,7 @@ theorem ratFiniteModulusEquivZMod_idealClass (I : integralIdealsPrimeTo (ratFini
     ratFiniteModulusEquivZMod n hn (idealClass (ratFiniteModulus n hn) I) = u := by
   -- The two moduli have the same finite part, hence the same integral ideals prime to them.
   have hI : (I : Ideal (𝓞 ℚ)) ∈ integralIdealsPrimeTo (ratModulus n hn) := by
-    have := Modulus.mem_integralIdealsPrimeTo.mp I.2
+    have := Modulus.mem_integralIdealsPrimeTo.mp I.property
     rw [Modulus.isCoprimeTo_iff_sup_eq_top, ratFiniteModulus_finitePart] at this
     rwa [Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff_sup_eq_top,
       ratModulus_finitePart]
@@ -477,10 +477,10 @@ theorem eq_ratModulus_of_infinitePart_ne_empty {𝔪 : Modulus ℚ}
     (h : 𝔪.infinitePart ≠ ∅) :
     𝔪 = ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) := by
   refine Modulus.ext (Rat.RingOfIntegers.ideal_span_absNorm_eq_self 𝔪.finitePart).symm ?_
-  obtain ⟨w, hw⟩ := Finset.nonempty_iff_ne_empty.mpr h
+  obtain ⟨w, hw⟩ := Finset.ne_empty_iff_nonempty.mp h
   ext v
   simp only [ratModulus_infinitePart, Finset.mem_singleton]
   exact ⟨fun _ ↦ Subtype.ext (Subsingleton.elim _ _),
-    fun _ ↦ Subtype.ext (Subsingleton.elim v.1 w.1) ▸ hw⟩
+    fun _ ↦ Subtype.ext (Subsingleton.elim v.val w.val) ▸ hw⟩
 
 end TauCeti.GlobalNumberFields
