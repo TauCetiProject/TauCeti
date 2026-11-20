@@ -15,13 +15,15 @@ import TauCeti.MeasureTheory.Integral.Disc
 import TauCeti.Topology.MetricSpace.Annulus
 
 /-!
-# Exponential decay of energy along long annuli
+# Energy along long annuli: exponential decay and no loss in the necks
 
 In Gromov compactness, a bubble is attached to the rest of the limit through a *neck*: a long
 annulus `a ≤ |z - z₀| ≤ b`, conformally the cylinder `[log a, log b] × S¹` of length
 `log (b / a)`, which carries little energy. This file proves that the energy of a solution of
 `∂ₜu = J(u) ∂ₛu` decays exponentially towards the middle of such a cylinder, that its
-derivative decays there pointwise, and that the middle of the cylinder has small image.
+derivative decays there pointwise, and that the middle of the cylinder has small image. It then
+shows that the energy of a neck is controlled by the energy near its two boundary circles, so that
+no energy is lost in the necks of a sequence and the middles of the necks shrink to points.
 
 Let a constant symplectic form `ω` with compatible inner product tame `J` along `u` with constant
 `c > 0`, and let `‖J(u)‖ ≤ M`. Write `E(r₁, r₂)` for the real-direction energy `∫ ‖∂ₛu‖²` over the
@@ -42,6 +44,14 @@ annulus `r₁ ≤ |z - z₀| ≤ r₂`, and `κ = 2c / (1 + M)²`.
   subannulus, `E(r₁, r₂) ≤ max (a / r₁) (r₂ / b) ^ κ E(a, b)`
   (`TauCeti.SymplecticForm.integral_norm_fderiv_one_sq_annulus_le_rpow_mul`). Neither statement
   assumes small energy or compact image.
+* **The mean-value inequality on a collar.** If `J` is `C²` near a compact set `K`, there is a
+  threshold `δ > 0` such that a solution on the collar `r / 2 ≤ |w - z₀| ≤ 3r / 2` of a circle
+  `|z - z₀| = r`, with image in `K` and energy `E < δ` there, satisfies
+  `π r² ‖∂ₛu(z)‖² ≤ 32 E` on the circle
+  (`TauCeti.SymplecticForm.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_collar`): apply
+  the mean-value inequality on the disc of radius `r / 2` about `z`. Integrating over the circle,
+  its boundary density is at most `64 E`
+  (`TauCeti.SymplecticForm.exists_pos_forall_mul_mul_integral_norm_fderiv_one_sq_circleMap_le`).
 * **Pointwise decay.** If moreover `J` is `C²` near a compact set `K` containing the image, then
   there is a threshold `δ > 0` such that every such solution with `E(a, b) < δ` satisfies
   `π |z - z₀|² ‖∂ₛu(z)‖² ≤ 32 max (2a / |z - z₀|) (3 |z - z₀| / (2b)) ^ κ E(a, b)` for
@@ -55,12 +65,28 @@ annulus `r₁ ≤ |z - z₀| ≤ r₂`, and `κ = 2c / (1 + M)²`.
   `r₁ ≤ |w - z₀| ≤ r₂`, for `2a ≤ r₁` and `3 r₂ ≤ 2b`, has diameter at most
   `(1 + M) (2π + 1 / γ) √(32 E(a, b) / π) ((2a / r₁) ^ γ + (3 r₂ / (2b)) ^ γ)` with `γ = κ / 2`
   (`TauCeti.SymplecticForm.exists_pos_forall_norm_sub_le_annulus`). So the middle of a neck of small
-  energy is mapped into a small ball, which is how the two ends of a neck are shown to converge to
-  the same node point.
+  energy is mapped into a small ball; this is the step used to show that the two ends of a neck
+  converge to the same node point.
+* **Collar control of a neck.** Boundary control together with the bound on boundary densities
+  gives a threshold `δ > 0`, depending only on `J` and `K`, such that if the collars
+  `a / 2 ≤ |z - z₀| ≤ 3a / 2` and `b / 2 ≤ |z - z₀| ≤ 3b / 2` of the two boundary circles have
+  image in `K` and energies `E_a, E_b < δ`, then `c E(a, b) ≤ 32 (1 + M)² (E_a + E_b)`
+  (`TauCeti.SymplecticForm.exists_pos_forall_mul_integral_norm_fderiv_one_sq_annulus_le`), for a
+  neck of any length and with no smallness assumption on its own energy.
+* **No energy is lost in the necks.** Consequently, along a sequence (or any filter) of solutions
+  with common constants `c > 0` and `M`, if the energies of the collars of both boundary circles
+  tend to `0`, so do the energies of the necks
+  (`TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`), and, if
+  moreover the necks themselves have image in `K` and `0 < a`, the middles
+  `2a ≤ |w - z₀| ≤ 2b / 3` of the necks are mapped into sets of diameter tending to `0`
+  (`TauCeti.SymplecticForm.eventually_forall_norm_sub_lt_annulus_of_tendsto`). In the bubbling
+  analysis of Gromov compactness these are applied along a diagonal sequence whose collars shrink
+  to the bubbling point of the limit map and to the node of the rescaled bubble; there they say
+  that no energy remains in the necks between the two, and that the middles of the necks shrink to
+  points.
 
 The energy decay is the isoperimetric argument of McDuff and Salamon for long cylinders of small
-energy, and the statements are those of Ivashkovich and Shevchishin's long-cylinder lemma. The
-statement that no energy is lost in the necks of a convergent sequence is not treated here.
+energy, and the statements are those of Ivashkovich and Shevchishin's long-cylinder lemma.
 
 ## References
 
@@ -291,6 +317,100 @@ theorem integral_norm_fderiv_one_sq_annulus_le_rpow_mul
   rw [← hexp, ← Real.exp_mul, show -T * (2 * c / (1 + M) ^ 2) = -(2 * c / (1 + M) ^ 2 * T) by ring]
   exact hmono.trans hdecay
 
+omit [FiniteDimensional ℝ V] in
+/-- **The mean-value inequality on a collar.** Let `J` be `C²` on an open set `W` containing a
+compact set `K`, with `J(x)² = -1` on `K`. There is `δ > 0`, depending only on `J` and `K`, with
+the following property. Let `z` lie on the circle `|z - z₀| = r`, and let `u` be a `C³` solution
+of `∂ₜu = J(u) ∂ₛu` on the collar `r / 2 ≤ |w - z₀| ≤ 3r / 2` of that circle, with image in `K`
+and energy `E` less than `δ` there. Then `π r² ‖∂ₛu(z)‖² ≤ 32 E`. -/
+theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_collar {W K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ z : ℂ⦄ ⦃r : ℝ⦄, ‖z - z₀‖ = r →
+      (∀ w ∈ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, ContDiffAt ℝ 3 u w) →
+      (∀ w ∈ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2},
+        fderiv ℝ u w I = J (u w) (fderiv ℝ u w 1)) →
+      (∀ w ∈ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, u w ∈ K) →
+      (∫ w in {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, ‖fderiv ℝ u w 1‖ ^ 2) < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 ≤
+        32 * ∫ w in {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, ‖fderiv ℝ u w 1‖ ^ 2 := by
+  obtain ⟨δ, hδ, hmv⟩ :=
+    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
+      hW hJ hK hKW hJsq
+  refine ⟨δ, hδ, fun u z₀ z r hz hu hCR huK hE ↦ ?_⟩
+  have hI : 0 ≤ ∫ w in {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2},
+      ‖fderiv ℝ u w 1‖ ^ 2 := integral_nonneg fun _ ↦ sq_nonneg _
+  rcases (hz ▸ norm_nonneg (z - z₀) : 0 ≤ r).eq_or_lt with rfl | hr
+  · linarith [show π * (0 : ℝ) ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 = 0 by ring]
+  have hball : closedBall z (r / 2) ⊆ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2} :=
+    (closedBall_subset_setOf_le_norm_sub_le z₀ z (r / 2)).trans
+      (setOf_le_norm_sub_le_subset (by rw [hz]; linarith) (by rw [hz]; linarith))
+  have hEball := setIntegral_mono_set
+    (integrableOn_norm_fderiv_one_sq_annulus (fun w hw ↦ (hu w hw).of_le (by norm_num))
+      le_rfl le_rfl)
+    (ae_of_all _ fun w ↦ sq_nonneg _) (ball_subset_closedBall.trans hball).eventuallySubset
+  have hmean := hmv (u := u) (z₀ := z) (r := r / 2) (by positivity)
+    (fun w hw ↦ (hu w (hball (ball_subset_closedBall hw))).contDiffWithinAt)
+    (fun w hw ↦ ((((hu w (hball hw)).continuousAt_fderiv (by norm_num)).clm_apply
+      continuousAt_const)).continuousWithinAt)
+    (fun w hw ↦ hCR w (hball (ball_subset_closedBall hw)))
+    (fun w hw ↦ huK w (hball (ball_subset_closedBall hw)))
+    (hEball.trans_lt hE)
+  calc π * r ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 = 4 * (π * (r / 2) ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2) := by
+        ring
+    _ ≤ 4 * (8 * ∫ w in ball z (r / 2), ‖fderiv ℝ u w 1‖ ^ 2) := by gcongr
+    _ ≤ _ := by linarith
+
+omit [FiniteDimensional ℝ V] in
+/-- **The boundary density of a circle is controlled by the energy of its collar.** Let `J` be
+`C²` on an open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There is `δ > 0`,
+depending only on `J` and `K`, with the following property. Let `0 ≤ r`, and let `u` be a `C³`
+solution of `∂ₜu = J(u) ∂ₛu` on the collar `r / 2 ≤ |w - z₀| ≤ 3r / 2` of the circle
+`|z - z₀| = r`, with image in `K` and energy `E` less than `δ` there. Then the boundary density
+`r (r ∫ ‖∂ₛu(z₀ + r e^{iθ})‖² dθ)` of the circle, the quantity that controls the energy of an
+annulus in `TauCeti.SymplecticForm.two_mul_mul_integral_norm_fderiv_one_sq_annulus_le`, is at most
+`64 E`. -/
+theorem exists_pos_forall_mul_mul_integral_norm_fderiv_one_sq_circleMap_le {W K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hK : IsCompact K) (hKW : K ⊆ W)
+    (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃r : ℝ⦄, 0 ≤ r →
+      (∀ w ∈ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, ContDiffAt ℝ 3 u w) →
+      (∀ w ∈ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2},
+        fderiv ℝ u w I = J (u w) (fderiv ℝ u w 1)) →
+      (∀ w ∈ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, u w ∈ K) →
+      (∫ w in {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, ‖fderiv ℝ u w 1‖ ^ 2) < δ →
+      r * (r * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2) ≤
+        64 * ∫ w in {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2}, ‖fderiv ℝ u w 1‖ ^ 2 := by
+  obtain ⟨δ, hδ, hcol⟩ := exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_collar
+    hW hJ hK hKW hJsq
+  refine ⟨δ, hδ, fun u z₀ r hr hu hCR huK hE ↦ ?_⟩
+  have hcirc (θ : ℝ) :
+      circleMap z₀ r θ ∈ {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2} :=
+    circleMap_mem_setOf_le_norm_sub_le (by positivity) ⟨by linarith, by linarith⟩ θ
+  -- At every point of the circle, `r² ‖∂ₛu‖² ≤ 32 E / π` by the mean-value inequality.
+  have hpt (θ : ℝ) : r * (r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2) ≤
+      32 / π * ∫ w in {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2},
+        ‖fderiv ℝ u w 1‖ ^ 2 := by
+    have h := hcol (norm_circleMap_sub_center z₀ hr θ) hu hCR huK hE
+    rw [div_mul_eq_mul_div, le_div_iff₀ Real.pi_pos]
+    linarith [show r * (r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2) * π =
+      π * r ^ 2 * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2 by ring]
+  have hcont : Continuous fun θ ↦ r * (r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2) :=
+    continuous_const.mul (continuous_const.mul (continuous_iff_continuousAt.2 fun θ ↦
+      ((((hu _ (hcirc θ)).continuousAt_fderiv (by norm_num)).clm_apply
+        continuousAt_const).norm.pow 2).comp (continuous_circleMap z₀ r).continuousAt))
+  calc r * (r * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2)
+      = ∫ θ in -π..π, r * (r * ‖fderiv ℝ u (circleMap z₀ r θ) 1‖ ^ 2) := by
+        simp only [intervalIntegral.integral_const_mul]
+    _ ≤ ∫ _ in -π..π, 32 / π * ∫ w in {w : ℂ | r / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * r / 2},
+          ‖fderiv ℝ u w 1‖ ^ 2 :=
+        intervalIntegral.integral_mono_on (by linarith [Real.pi_pos])
+          (hcont.intervalIntegrable _ _) intervalIntegrable_const fun θ _ ↦ hpt θ
+    _ = _ := by
+        rw [intervalIntegral.integral_const, smul_eq_mul]
+        field_simp
+        ring
+
 /-- **Pointwise decay of the derivative in the middle of a neck.** Let `J` be `C²` on an open set
 `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There is `δ > 0`, depending only on
 `J` and `K`, with the following property. Let `u` be a `C³` solution of `∂ₜu = J(u) ∂ₛu` on the
@@ -315,51 +435,29 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_annulus
         π * ‖z - z₀‖ ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 ≤
           32 * (max (2 * a / ‖z - z₀‖) (3 * ‖z - z₀‖ / (2 * b)) ^ (2 * c / (1 + M) ^ 2) *
             ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2) := by
-  obtain ⟨δ, hδ, hmv⟩ :=
-    exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_eight_mul_setIntegral_ball
-      hW hJ hK hKW hJsq
+  obtain ⟨δ, hδ, hcol⟩ := exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_collar
+    hW hJ hK hKW hJsq
   refine ⟨δ, hδ, fun u z₀ a b c M ha hc hu hCR htame hJM huK hE z hz₁ hz₂ ↦ ?_⟩
-  set ρ := ‖z - z₀‖
-  have hρ : 0 < ρ := by linarith
-  -- The disc of radius `ρ / 2` about `z` lies in the annulus `ρ / 2 ≤ |w - z₀| ≤ 3ρ / 2`.
-  have hball : closedBall z (ρ / 2) ⊆ {w : ℂ | ρ / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * ρ / 2} := by
-    intro w hw
-    rw [mem_closedBall, dist_eq_norm] at hw
-    have h1 := norm_sub_le_norm_sub_add_norm_sub z w z₀
-    have h2 := norm_sub_le_norm_sub_add_norm_sub w z z₀
-    rw [norm_sub_rev z w] at h1
-    exact ⟨by linarith, by linarith⟩
+  set ρ := ‖z - z₀‖ with hρ
   have hsub : {w : ℂ | ρ / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * ρ / 2} ⊆
       {w : ℂ | a ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ b} :=
     setOf_le_norm_sub_le_subset (by linarith) (by linarith)
-  have hu1 (w : ℂ) (hw : w ∈ {w : ℂ | a ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ b}) : ContDiffAt ℝ 1 u w :=
-    (hu w hw).of_le (by norm_num)
-  have hEball := setIntegral_mono_set
-    (integrableOn_norm_fderiv_one_sq_annulus hu1 (a := a) (b := b) (r₁ := ρ / 2)
-      (r₂ := 3 * ρ / 2) (by linarith) (by linarith))
-    (ae_of_all _ fun w ↦ sq_nonneg _)
-    (ball_subset_closedBall.trans hball).eventuallySubset
   have hEann := setIntegral_mono_set
-    (integrableOn_norm_fderiv_one_sq_annulus hu1 (a := a) (b := b) le_rfl le_rfl)
+    (integrableOn_norm_fderiv_one_sq_annulus (fun w hw ↦ (hu w hw).of_le (by norm_num))
+      (a := a) (b := b) le_rfl le_rfl)
     (ae_of_all _ fun w ↦ sq_nonneg _) hsub.eventuallySubset
+  -- The mean-value inequality on the collar of the circle through `z`, then the decay of the
+  -- energy of that collar towards the middle of the annulus.
+  have hmean := hcol hρ.symm (fun w hw ↦ hu w (hsub hw)) (fun w hw ↦ hCR w (hsub hw))
+    (fun w hw ↦ huK w (hsub hw)) (hEann.trans_lt hE)
   have hdecay := integral_norm_fderiv_one_sq_annulus_le_rpow_mul hg hc ha
     (fun w hw ↦ (hu w hw).of_le (by norm_num)) hCR htame hJM (r₁ := ρ / 2) (r₂ := 3 * ρ / 2)
     (by linarith) (by linarith) (by linarith)
-  have hmean := hmv (u := u) (z₀ := z) (r := ρ / 2) (by positivity)
-    (fun w hw ↦ (hu w (hsub (hball (ball_subset_closedBall hw)))).contDiffWithinAt)
-    (fun w hw ↦ ((((hu w (hsub (hball hw))).continuousAt_fderiv (by norm_num)).clm_apply
-      continuousAt_const)).continuousWithinAt)
-    (fun w hw ↦ hCR w (hsub (hball (ball_subset_closedBall hw))))
-    (fun w hw ↦ huK w (hsub (hball (ball_subset_closedBall hw))))
-    ((hEball.trans hEann).trans_lt hE)
+  have hρ0 : 0 < ρ := by linarith
   have h2a : a / (ρ / 2) = 2 * a / ρ := by field_simp
   have h3b : 3 * ρ / 2 / b = 3 * ρ / (2 * b) := div_div _ _ _
   rw [h2a, h3b] at hdecay
-  calc π * ρ ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2 = 4 * (π * (ρ / 2) ^ 2 * ‖fderiv ℝ u z 1‖ ^ 2) := by ring
-    _ ≤ 4 * (8 * ∫ w in ball z (ρ / 2), ‖fderiv ℝ u w 1‖ ^ 2) := by gcongr
-    _ ≤ 32 * ∫ w in {w : ℂ | ρ / 2 ≤ ‖w - z₀‖ ∧ ‖w - z₀‖ ≤ 3 * ρ / 2},
-          ‖fderiv ℝ u w 1‖ ^ 2 := by linarith
-    _ ≤ _ := by gcongr
+  exact hmean.trans (by gcongr)
 
 omit [FiniteDimensional ℝ V] in
 /-- A path whose speed at `ρ` is at most `K ((x / ρ) ^ γ + (ρ y) ^ γ) / ρ`, the profile of the
@@ -568,6 +666,185 @@ theorem exists_pos_forall_norm_sub_le_annulus
   rw [one_div_div, show r₂ * (3 / (2 * b)) = 3 * r₂ / (2 * b) by ring] at h
   refine h.trans_eq ?_
   ring
+
+/-- **The energy of a neck is controlled by the energy of its two collars.** Let `J` be `C²` on an
+open set `W` containing a compact set `K`, with `J(x)² = -1` on `K`. There is `δ > 0`, depending
+only on `J` and `K`, with the following property. Let `u` be a `C³` solution of
+`∂ₜu = J(u) ∂ₛu` on the annulus `a / 2 ≤ |z - z₀| ≤ 3b / 2`, uniformly tamed by `ω` with
+constant `c` and with `‖J(u)‖ ≤ M` on the neck `a ≤ |z - z₀| ≤ b`. Suppose that on the collars
+`a / 2 ≤ |z - z₀| ≤ 3a / 2` and `b / 2 ≤ |z - z₀| ≤ 3b / 2` of the two boundary circles the image
+lies in `K` and the energies `E_a`, `E_b` are less than `δ`. Then the energy `E` of the neck
+satisfies `c E ≤ 32 (1 + M)² (E_a + E_b)`.
+
+No bound on the length `log (b / a)` of the neck or on its own energy is assumed: a neck of a
+solution in a symplectic vector space carries at most a fixed multiple of the energy near its
+boundary circles. -/
+theorem exists_pos_forall_mul_integral_norm_fderiv_one_sq_annulus_le
+    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
+    (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v) :
+    ∃ δ > 0, ∀ ⦃u : ℂ → V⦄ ⦃z₀ : ℂ⦄ ⦃a b c M : ℝ⦄,
+      (∀ z ∈ {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * b / 2}, ContDiffAt ℝ 3 u z) →
+      (∀ z ∈ {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * b / 2},
+        fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1)) →
+      (∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ∀ v : V,
+        c * ‖v‖ ^ 2 ≤ ω v (J (u z) v)) →
+      (∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖J (u z)‖ ≤ M) →
+      (∀ z ∈ {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * a / 2}, u z ∈ K) →
+      (∀ z ∈ {z : ℂ | b / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * b / 2}, u z ∈ K) →
+      (∫ z in {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * a / 2}, ‖fderiv ℝ u z 1‖ ^ 2) < δ →
+      (∫ z in {z : ℂ | b / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * b / 2}, ‖fderiv ℝ u z 1‖ ^ 2) < δ →
+      c * ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2 ≤
+        32 * (1 + M) ^ 2 *
+          ((∫ z in {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * a / 2}, ‖fderiv ℝ u z 1‖ ^ 2) +
+            ∫ z in {z : ℂ | b / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * b / 2}, ‖fderiv ℝ u z 1‖ ^ 2) := by
+  obtain ⟨δ, hδ, hcirc⟩ := exists_pos_forall_mul_mul_integral_norm_fderiv_one_sq_circleMap_le
+    hW hJ hK hKW hJsq
+  refine ⟨δ, hδ, fun u z₀ a b c M hu hCR htame hJM huKa huKb hEa hEb ↦ ?_⟩
+  have hEa0 : 0 ≤ ∫ z in {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * a / 2},
+      ‖fderiv ℝ u z 1‖ ^ 2 := integral_nonneg fun _ ↦ sq_nonneg _
+  have hEb0 : 0 ≤ ∫ z in {z : ℂ | b / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * b / 2},
+      ‖fderiv ℝ u z 1‖ ^ 2 := integral_nonneg fun _ ↦ sq_nonneg _
+  have hE0 : 0 ≤ ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2 :=
+    integral_nonneg fun _ ↦ sq_nonneg _
+  have hM : 0 ≤ (1 + M) ^ 2 := sq_nonneg _
+  -- A nonpositive taming constant makes the claim trivial.
+  rcases le_or_gt c 0 with hc | hc
+  · nlinarith
+  -- Only radii at least `a' = max a 0` occur in the neck.
+  set a' := max a 0 with ha'
+  have hset : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} = {z : ℂ | a' ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
+    ext z
+    simp only [mem_ofPred_eq, ha', max_le_iff, norm_nonneg, and_true]
+  rcases lt_or_ge b a' with hba | hab
+  · -- The neck is empty.
+    have hempty : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} = ∅ := by
+      rw [hset, eq_empty_iff_forall_notMem]
+      exact fun z hz ↦ (hz.1.trans hz.2).not_gt hba
+    rw [hempty, Measure.restrict_empty, integral_zero_measure, mul_zero]
+    positivity
+  have haa' : a ≤ a' := le_max_left a 0
+  have hb : 0 ≤ b := (le_max_right a 0).trans hab
+  have hsub : {z : ℂ | a' ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆
+      {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * b / 2} :=
+    setOf_le_norm_sub_le_subset
+      (le_max_iff.2 ((le_total 0 a).imp (fun _ ↦ by linarith) fun _ ↦ by linarith)) (by linarith)
+  -- Boundary control of the neck by the boundary densities of its two circles.
+  have hbd := ω.two_mul_mul_integral_norm_fderiv_one_sq_annulus_le hg hc (le_max_right a 0) hab
+    (fun z hz ↦ (hu z (hsub hz)).of_le (by norm_num)) (fun z hz ↦ hCR z (hsub hz))
+    (fun z hz ↦ htame z (by rwa [hset])) (fun z hz ↦ hJM z (by rwa [hset]))
+  rw [← hset] at hbd
+  -- Each boundary density is controlled by the energy of its collar.
+  have hA : a' * (a' * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ a' θ) 1‖ ^ 2) ≤
+      64 * ∫ z in {z : ℂ | a / 2 ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ 3 * a / 2}, ‖fderiv ℝ u z 1‖ ^ 2 := by
+    rcases le_or_gt a 0 with h | h
+    · rw [show a' = 0 from max_eq_right h, zero_mul]
+      positivity
+    · rw [show a' = a from max_eq_left h.le]
+      exact hcirc h.le
+        (fun z hz ↦ hu z (setOf_le_norm_sub_le_subset le_rfl (by linarith) hz))
+        (fun z hz ↦ hCR z (setOf_le_norm_sub_le_subset le_rfl (by linarith) hz)) huKa hEa
+  have hB := hcirc hb
+    (fun z hz ↦ hu z (setOf_le_norm_sub_le_subset (by linarith) le_rfl hz))
+    (fun z hz ↦ hCR z (setOf_le_norm_sub_le_subset (by linarith) le_rfl hz)) huKb hEb
+  nlinarith [mul_le_mul_of_nonneg_left (add_le_add hB hA) hM]
+
+/-- **No energy is lost in the necks.** Let `J` be `C²` on an open set `W` containing a compact
+set `K`, with `J(x)² = -1` on `K`, and let `u i` be `C³` solutions of `∂ₜu = J(u) ∂ₛu` on annuli
+`a i / 2 ≤ |z - z₀ i| ≤ 3 b i / 2`, for `i` eventually along a filter `l`, uniformly tamed by `ω`
+with a common constant `c > 0` and with `‖J(u i)‖ ≤ M` on the necks `a i ≤ |z - z₀ i| ≤ b i`.
+If on the collars of the two boundary circles of the necks the images lie in `K` and the energies
+tend to `0`, then the energies of the necks tend to `0` as well, whatever their lengths.
+
+In the bubbling analysis of Gromov compactness this is applied along a diagonal sequence whose
+collars shrink to the bubbling point of the limit map and to the node of the rescaled bubble, so
+that no energy remains in the long necks between the two. -/
+theorem tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto
+    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
+    (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
+    {ι : Type*} {l : Filter ι} {u : ι → ℂ → V} {z₀ : ι → ℂ} {a b : ι → ℝ} (hc : 0 < c)
+    (hu : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      ContDiffAt ℝ 3 (u i) z)
+    (hCR : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      fderiv ℝ (u i) z I = J (u i z) (fderiv ℝ (u i) z 1))
+    (htame : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i}, ∀ v : V,
+      c * ‖v‖ ^ 2 ≤ ω v (J (u i z) v))
+    (hJM : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i}, ‖J (u i z)‖ ≤ M)
+    (huKa : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * a i / 2},
+      u i z ∈ K)
+    (huKb : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | b i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      u i z ∈ K)
+    (hEa : Tendsto (fun i ↦ ∫ z in {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * a i / 2},
+      ‖fderiv ℝ (u i) z 1‖ ^ 2) l (𝓝 0))
+    (hEb : Tendsto (fun i ↦ ∫ z in {z : ℂ | b i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      ‖fderiv ℝ (u i) z 1‖ ^ 2) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫ z in {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i},
+      ‖fderiv ℝ (u i) z 1‖ ^ 2) l (𝓝 0) := by
+  obtain ⟨δ, hδ, hneck⟩ := exists_pos_forall_mul_integral_norm_fderiv_one_sq_annulus_le
+    hg hW hJ hK hKW hJsq
+  have hsum := (hEa.add hEb).const_mul (32 * (1 + M) ^ 2 / c)
+  rw [add_zero, mul_zero] at hsum
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hsum
+    (Eventually.of_forall fun i ↦ integral_nonneg fun _ ↦ sq_nonneg _) ?_
+  filter_upwards [hu, hCR, htame, hJM, huKa, huKb, hEa.eventually (gt_mem_nhds hδ),
+    hEb.eventually (gt_mem_nhds hδ)] with i hu hCR htame hJM huKa huKb hEa hEb
+  have h := hneck hu hCR htame hJM huKa huKb hEa hEb
+  rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+  linarith
+
+/-- **The middles of necks shrink to points.** Under the hypotheses of
+`TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`, with moreover
+`0 < a i` and the images of the necks `a i ≤ |z - z₀ i| ≤ b i` in `K`, the images of the middles
+`2 a i ≤ |w - z₀ i| ≤ 2 b i / 3` of the necks have diameters tending to `0`: for every `ε > 0`,
+eventually any two of their points have images at distance less than `ε`.
+
+Applied in the bubbling analysis of Gromov compactness as in
+`TauCeti.SymplecticForm.tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto`, this is the step
+used to show that the two ends of the necks converge to the same node point. -/
+theorem eventually_forall_norm_sub_lt_annulus_of_tendsto
+    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) {W K : Set V} (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W)
+    (hK : IsCompact K) (hKW : K ⊆ W) (hJsq : ∀ x ∈ K, ∀ v, J x (J x v) = -v)
+    {ι : Type*} {l : Filter ι} {u : ι → ℂ → V} {z₀ : ι → ℂ} {a b : ι → ℝ} (hc : 0 < c)
+    (ha : ∀ᶠ i in l, 0 < a i)
+    (hu : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      ContDiffAt ℝ 3 (u i) z)
+    (hCR : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      fderiv ℝ (u i) z I = J (u i z) (fderiv ℝ (u i) z 1))
+    (htame : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i}, ∀ v : V,
+      c * ‖v‖ ^ 2 ≤ ω v (J (u i z) v))
+    (hJM : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i}, ‖J (u i z)‖ ≤ M)
+    (huK : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i}, u i z ∈ K)
+    (huKa : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * a i / 2},
+      u i z ∈ K)
+    (huKb : ∀ᶠ i in l, ∀ z ∈ {z : ℂ | b i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      u i z ∈ K)
+    (hEa : Tendsto (fun i ↦ ∫ z in {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * a i / 2},
+      ‖fderiv ℝ (u i) z 1‖ ^ 2) l (𝓝 0))
+    (hEb : Tendsto (fun i ↦ ∫ z in {z : ℂ | b i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2},
+      ‖fderiv ℝ (u i) z 1‖ ^ 2) l (𝓝 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ i in l, ∀ w₁ ∈ {w : ℂ | 2 * a i ≤ ‖w - z₀ i‖ ∧ ‖w - z₀ i‖ ≤ 2 * b i / 3},
+      ∀ w₂ ∈ {w : ℂ | 2 * a i ≤ ‖w - z₀ i‖ ∧ ‖w - z₀ i‖ ≤ 2 * b i / 3},
+        ‖u i w₁ - u i w₂‖ < ε := by
+  obtain ⟨δ, hδ, hdiam⟩ := exists_pos_forall_norm_sub_le_annulus hg hW hJ hK hKW hJsq
+  have hE := tendsto_integral_norm_fderiv_one_sq_annulus_of_tendsto hg hW hJ hK hKW hJsq hc hu
+    hCR htame hJM huKa huKb hEa hEb
+  -- The diameter bound of the middle of the neck tends to `0` with the energy of the neck.
+  have hlim : Tendsto (fun i ↦ (1 + M) * (2 * π + (1 + M) ^ 2 / c) *
+      √(32 * (∫ z in {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i},
+        ‖fderiv ℝ (u i) z 1‖ ^ 2) / π) * 2) l (𝓝 0) := by
+    simpa using ((((hE.const_mul 32).div_const π).sqrt).const_mul
+      ((1 + M) * (2 * π + (1 + M) ^ 2 / c))).mul_const 2
+  filter_upwards [ha, hu, hCR, htame, hJM, huK, hE.eventually (gt_mem_nhds hδ),
+    hlim.eventually (gt_mem_nhds hε)] with i ha hu hCR htame hJM huK hEi hlt w₁ hw₁ w₂ hw₂
+  have hsub : {z : ℂ | a i ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ b i} ⊆
+      {z : ℂ | a i / 2 ≤ ‖z - z₀ i‖ ∧ ‖z - z₀ i‖ ≤ 3 * b i / 2} :=
+    fun z hz ↦ ⟨by linarith [hz.1], by linarith [hz.1, hz.2]⟩
+  have hb : 0 < b i := by linarith [hw₁.1, hw₁.2]
+  have hd := hdiam ha hc (fun z hz ↦ hu z (hsub hz)) (fun z hz ↦ hCR z (hsub hz)) htame hJM huK
+    hEi le_rfl (by linarith : 3 * (2 * b i / 3) ≤ 2 * b i) w₁ hw₁ w₂ hw₂
+  rw [div_self (by positivity : 2 * a i ≠ 0),
+    show 3 * (2 * b i / 3) / (2 * b i) = 1 by field_simp, Real.one_rpow] at hd
+  linarith
 
 end TauCeti.SymplecticForm
 
