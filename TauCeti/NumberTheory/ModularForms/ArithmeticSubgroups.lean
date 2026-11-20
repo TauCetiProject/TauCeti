@@ -24,7 +24,7 @@ with the index of `H` when `-1 ∈ H` and is half of it otherwise
 (`Subgroup.projectiveIndex_eq_index`, `Subgroup.two_mul_projectiveIndex`). It is invariant under
 conjugation (`Subgroup.projectiveIndex_pointwise_smul`) and under pulling back along a surjection
 that commutes with negation (`Subgroup.projectiveIndex_comap_of_surjective`), such as reduction
-from `GL₂(ℤ/m)` to `GL₂(ℤ/n)` for `n ∣ m`.
+from `GL₂(ℤ/m)` to `GL₂(ℤ/n)` for `n ∣ m` and `m ≠ 0`.
 
 ## Main definitions
 
