@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.SymplecticTransport
 public import TauCeti.Topology.Algebra.SymplecticGroup
 
 import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Zero
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Eigenspace.Matrix
 
@@ -28,10 +29,12 @@ Let `(V, ω)` be a finite-dimensional symplectic vector space. A *symplectic bas
 indexed by `ι ⊕ ι`, is one in which `ω` has the matrix `Matrix.J ι ℝ`. In such a basis the matrix
 of a linear map preserving `ω` is symplectic (`TauCeti.SymplecticForm.toMatrix_mem_symplecticGroup`,
 `TauCeti.SymplecticForm.toGLSymplectic`), and a path `Ψ` of linear maps preserving `ω` becomes a
-path of symplectic matrices (`TauCeti.SymplecticForm.matrixPath`).
+path of symplectic matrices (`TauCeti.SymplecticForm.matrixPath`), continuous by
+`TauCeti.SymplecticForm.continuous_toGLSymplectic`.
 
 * **Independence of the basis.** Two symplectic bases `b` and `b'` indexed by the same type differ
-  by the change of basis matrix `b'.toMatrix b`, which is itself symplectic, and the matrices of
+  by the change of basis matrix `b'.toMatrix b`, which is itself symplectic
+  (`LinearMap.BilinForm.basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J`), and the matrices of
   each `Ψ t` in the two bases are conjugate by it. By the naturality of the Conley–Zehnder index of
   matrices (`TauCeti.GLSymplectic.conleyZehnderIndex_map_conj`), the two paths of matrices have the
   same index (`TauCeti.SymplecticForm.conleyZehnderIndex_matrixPath_eq`).
@@ -41,11 +44,12 @@ path of symplectic matrices (`TauCeti.SymplecticForm.matrixPath`).
   `Ψ` in *every* such basis (`TauCeti.SymplecticForm.conleyZehnderIndex_eq`), since `2 m` is the
   dimension of `V`.
 * **Naturality.** A linear symplectomorphism `e : (V, ω) ≃ (W, ω')` carries a path `Ψ` to the path
-  `e ∘ Ψ ∘ e⁻¹` of the same index (`TauCeti.SymplecticForm.conleyZehnderIndex_conj`): it carries
-  symplectic bases to symplectic bases without changing matrices. This is the invariance under a
-  change of symplectic frame by a constant symplectomorphism; a frame change along a loop is the
-  loop axiom `TauCeti.GLSymplectic.conleyZehnderIndex_mul` of the matrix index.
-* **The axioms of the matrix index carry over:** the constant path has index zero
+  `e ∘ Ψ ∘ e⁻¹` of the same index (`TauCeti.SymplecticForm.conleyZehnderIndex_map_conj`): it
+  carries symplectic bases to symplectic bases without changing matrices. This is the invariance
+  under a change of symplectic frame by a constant symplectomorphism; a frame change along a loop
+  is the loop axiom `TauCeti.GLSymplectic.conleyZehnderIndex_mul` of the matrix index.
+* **The axioms of the matrix index carry over:** the index only depends on the path as a function
+  of time (`TauCeti.SymplecticForm.conleyZehnderIndex_congr`), the constant path has index zero
   (`TauCeti.SymplecticForm.conleyZehnderIndex_refl`), the index is additive under concatenation
   (`TauCeti.SymplecticForm.conleyZehnderIndex_trans`) and changes sign under reversal
   (`TauCeti.SymplecticForm.conleyZehnderIndex_symm`), it is invariant under homotopies relative
@@ -87,10 +91,8 @@ theorem toMatrix_mem_symplecticGroup {b : Basis (ι ⊕ ι) ℝ V}
     (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) {A : V →ₗ[ℝ] V}
     (hA : ∀ u v, ω (A u) (A v) = ω u v) :
     LinearMap.toMatrix b b A ∈ symplecticGroup ι ℝ := by
-  rw [SymplecticGroup.mem_iff', ← hb, ← LinearMap.BilinForm.toMatrix_comp]
-  congr 1
-  ext u v
-  exact hA u v
+  rw [SymplecticGroup.mem_iff', ← hb]
+  exact (TauCeti.BilinForm.isIsometry_iff_toMatrix b).1 (TauCeti.BilinForm.isIsometry_iff.2 hA)
 
 /-- The matrix of a linear map `A` preserving `ω` in a symplectic basis `b`, as an element of the
 symplectic group `TauCeti.GLSymplectic`. -/
@@ -124,6 +126,16 @@ end Matrix
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   (ω : SymplecticForm V) {ι : Type*} [Fintype ι] [DecidableEq ι]
 
+/-- The symplectic matrices, in a symplectic basis `b`, of a continuous family of linear maps
+preserving `ω` depend continuously on the parameter. -/
+theorem continuous_toGLSymplectic {X : Type*} [TopologicalSpace X] {b : Basis (ι ⊕ ι) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J ι ℝ) {f : X → V →L[ℝ] V}
+    (hf : Continuous f) (hf' : ∀ p u v, ω (f p u) (f p v) = ω u v) :
+    Continuous fun p ↦ ω.toGLSymplectic hb (f p) (hf' p) :=
+  (GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ).continuous.comp
+    (Continuous.subtype_mk ((LinearMap.continuous_of_finiteDimensional
+      ((LinearMap.toMatrix b b).toLinearMap ∘ₗ ContinuousLinearMap.coeLM ℝ)).comp hf) _)
+
 /-- The matrices, in a symplectic basis `b`, of a path `Ψ` of linear maps preserving `ω`, as a
 path of symplectic matrices. -/
 def matrixPath {b : Basis (ι ⊕ ι) ℝ V}
@@ -132,11 +144,7 @@ def matrixPath {b : Basis (ι ⊕ ι) ℝ V}
     Path (ω.toGLSymplectic hb A (by simpa using hΨ 0))
       (ω.toGLSymplectic hb B (by simpa using hΨ 1)) where
   toFun t := ω.toGLSymplectic hb (Ψ t) (hΨ t)
-  continuous_toFun := by
-    refine (GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ).continuous.comp
-      (Continuous.subtype_mk ?_ _)
-    exact (LinearMap.continuous_of_finiteDimensional
-      ((LinearMap.toMatrix b b).toLinearMap ∘ₗ ContinuousLinearMap.coeLM ℝ)).comp Ψ.continuous
+  continuous_toFun := ω.continuous_toGLSymplectic hb Ψ.continuous hΨ
   source' := ω.toGLSymplectic_congr hb (congrArg ContinuousLinearMap.toLinearMap Ψ.source) _ _
   target' := ω.toGLSymplectic_congr hb (congrArg ContinuousLinearMap.toLinearMap Ψ.target) _ _
 
@@ -158,11 +166,8 @@ theorem conleyZehnderIndex_matrixPath_eq {b b' : Basis (ι ⊕ ι) ℝ V}
     GLSymplectic.conleyZehnderIndex (ω.matrixPath hb' Ψ hΨ) =
       GLSymplectic.conleyZehnderIndex (ω.matrixPath hb Ψ hΨ) := by
   -- The change of basis matrix `P = b'.toMatrix b` is symplectic, with inverse `b.toMatrix b'`.
-  have hP : b'.toMatrix b ∈ symplecticGroup ι ℝ := by
-    rw [SymplecticGroup.mem_iff']
-    nth_rw 1 [← hb']
-    rw [LinearMap.BilinForm.toMatrix_mul_basis_toMatrix, hb]
-  let P : GLSymplectic ι ℝ := GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ ⟨_, hP⟩
+  let P : GLSymplectic ι ℝ := GLSymplectic.symplecticGroupContinuousMulEquiv ι ℝ
+    ⟨_, LinearMap.BilinForm.basis_toMatrix_mem_symplecticGroup_of_toMatrix_eq_J hb' hb⟩
   have hP_coe : ((P : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) = b'.toMatrix b := by
     simp [P, GLSymplectic.coe_ofSymplecticGroup]
   have hP_inv : (((P⁻¹ : GLSymplectic ι ℝ) : GL (ι ⊕ ι) ℝ) : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) =
@@ -172,9 +177,8 @@ theorem conleyZehnderIndex_matrixPath_eq {b b' : Basis (ι ⊕ ι) ℝ V}
   -- In the basis `b'` the matrices are the conjugates `P M P⁻¹` of those in `b`.
   rw [← GLSymplectic.conleyZehnderIndex_map_conj P (ω.matrixPath hb Ψ hΨ)]
   refine GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦ Subtype.ext (Units.ext ?_)
-  rw [Path.map_coe, Function.comp_apply, Subgroup.coe_mul, Subgroup.coe_mul, Units.val_mul,
-    Units.val_mul, hP_coe, hP_inv, matrixPath_apply, matrixPath_apply, coe_toGLSymplectic,
-    coe_toGLSymplectic]
+  simp only [Path.map_coe, Function.comp_apply, Subgroup.coe_mul, Units.val_mul, hP_coe, hP_inv,
+    matrixPath_apply, coe_toGLSymplectic]
   exact (basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b' b b' b _).symm
 
 /-! ### The Conley–Zehnder index -/
@@ -207,6 +211,16 @@ theorem conleyZehnderIndex_eq {m : ℕ} {b : Basis (Fin m ⊕ Fin m) ℝ V}
     obtain rfl : k = m := by omega
     exact ω.conleyZehnderIndex_matrixPath_eq hb hc Ψ hΨ
   exact key _ _ _
+
+/-- The Conley–Zehnder index of a path of linear symplectic maps only depends on the path as a
+function of time, not on the way its endpoints are written. -/
+theorem conleyZehnderIndex_congr {A B A' B' : V →L[ℝ] V} (Ψ : Path A B) (Ψ' : Path A' B')
+    (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v) (hΨ' : ∀ t u v, ω (Ψ' t u) (Ψ' t v) = ω u v)
+    (h : ∀ t, Ψ t = Ψ' t) : ω.conleyZehnderIndex Ψ hΨ = ω.conleyZehnderIndex Ψ' hΨ' := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  rw [ω.conleyZehnderIndex_eq hb, ω.conleyZehnderIndex_eq hb]
+  exact GLSymplectic.conleyZehnderIndex_congr _ _ fun t ↦
+    ω.toGLSymplectic_congr hb (congrArg ContinuousLinearMap.toLinearMap (h t)) (hΨ t) (hΨ' t)
 
 /-- The constant path has Conley–Zehnder index zero. -/
 @[simp]
@@ -270,12 +284,7 @@ theorem conleyZehnderIndex_eq_of_homotopy {A B : V →L[ℝ] V} {Ψ₀ Ψ₁ : P
   -- The matrices of `F` form a homotopy of paths of symplectic matrices.
   let G : Path.Homotopy (ω.matrixPath hb Ψ₀ h₀) (ω.matrixPath hb Ψ₁ h₁) :=
     { toFun := fun p ↦ ω.toGLSymplectic hb (F p) (hF p)
-      continuous_toFun := by
-        refine (GLSymplectic.symplecticGroupContinuousMulEquiv (Fin m) ℝ).continuous.comp
-          (Continuous.subtype_mk ?_ _)
-        exact (LinearMap.continuous_of_finiteDimensional
-          ((LinearMap.toMatrix b b).toLinearMap ∘ₗ ContinuousLinearMap.coeLM ℝ)).comp
-            F.continuous
+      continuous_toFun := ω.continuous_toGLSymplectic hb F.continuous hF
       map_zero_left := fun t ↦ ω.toGLSymplectic_congr hb
         (congrArg ContinuousLinearMap.toLinearMap (F.apply_zero t)) (hF (0, t)) (h₀ t)
       map_one_left := fun t ↦ ω.toGLSymplectic_congr hb
@@ -294,7 +303,7 @@ carries a path `Ψ` of linear symplectic maps of `V` to the path `e ∘ Ψ ∘ e
 maps of `W` with the same Conley–Zehnder index. In particular the index of the linearized flow
 along an orbit, read in a symplectic frame, does not change when the frame is composed with a
 constant linear symplectomorphism. -/
-theorem conleyZehnderIndex_conj (e : V ≃L[ℝ] W)
+theorem conleyZehnderIndex_map_conj (e : V ≃L[ℝ] W)
     (he : IsSymplectomorphism ω ω' e.toLinearEquiv) {A B : V →L[ℝ] V} (Ψ : Path A B)
     (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v)
     (h : ∀ t u v, ω' ((Ψ.map (f := fun C : V →L[ℝ] V ↦ (e : V →L[ℝ] W) ∘L C ∘L

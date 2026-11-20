@@ -32,12 +32,11 @@ tangent spaces along the whole orbit.
 The index is the Conley–Zehnder index of the matrices of `Ψ` in any symplectic basis
 (`TauCeti.SymplecticForm.conleyZehnderIndex_eq`); no basis is part of the definition. When
 `x` is a one-periodic orbit of a one-periodic Hamiltonian and `x(0)` is a nondegenerate fixed point
-of the time-one map, the endpoint `Ψ(1)` has no eigenvector for the eigenvalue `1`
+of the time-one map, the return map `Ψ(1)` has no eigenvector for the eigenvalue `1`
 (`TauCeti.SymplecticForm.eigenspace_linearizedFlowPath_one_eq_bot`), and so its matrix in any
-symplectic basis has no eigenvalue `1`
-(`TauCeti.SymplecticForm.finrank_eigenspace_toMatrix_linearizedFlowPath_one`). This is the
-nondegeneracy hypothesis of the axioms of the Conley–Zehnder index, for instance of the zero axiom
-`TauCeti.GLSymplectic.conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq`.
+basis has no eigenvalue `1`
+(`TauCeti.SymplecticForm.finrank_eigenspace_toLin'_toMatrix_linearizedFlowPath_one_eq_zero`). This
+is the endpoint condition that makes the orbit nondegenerate.
 
 ## Main definitions
 
@@ -87,7 +86,7 @@ theorem linearizedFlowPath_apply (hH : ContDiff ℝ 2 (uncurry H)) (hx : Continu
 
 /-- **The linearized Hamiltonian flow is symplectic.** Every map of the path
 `TauCeti.SymplecticForm.linearizedFlowPath` preserves `ω`. -/
-theorem linearizedFlowPath_apply_apply (hH : ContDiff ℝ 2 (uncurry H)) (hx : Continuous x)
+theorem apply_linearizedFlowPath_apply (hH : ContDiff ℝ 2 (uncurry H)) (hx : Continuous x)
     (t : I) (u v : V) :
     ω (ω.linearizedFlowPath hH hx t u) (ω.linearizedFlowPath hH hx t v) = ω u v := by
   simpa only [linearizedFlowPath_apply, zero_add] using
@@ -97,13 +96,13 @@ theorem linearizedFlowPath_apply_apply (hH : ContDiff ℝ 2 (uncurry H)) (hx : C
 finite-dimensional symplectic vector space and a continuous path `x`, the Conley–Zehnder index of
 the linearized Hamiltonian flow `t ↦ Ψ(t)` along `x` on `[0, 1]`, read in symplectic bases. -/
 def orbitConleyZehnderIndex (hH : ContDiff ℝ 2 (uncurry H)) (hx : Continuous x) : ℝ :=
-  ω.conleyZehnderIndex (ω.linearizedFlowPath hH hx) (ω.linearizedFlowPath_apply_apply hH hx)
+  ω.conleyZehnderIndex (ω.linearizedFlowPath hH hx) (ω.apply_linearizedFlowPath_apply hH hx)
 
 /-- The Conley–Zehnder index of a Hamiltonian orbit is that of its linearized flow; in a
 symplectic basis it is computed by `TauCeti.SymplecticForm.conleyZehnderIndex_eq`. -/
 theorem orbitConleyZehnderIndex_def (hH : ContDiff ℝ 2 (uncurry H)) (hx : Continuous x) :
     ω.orbitConleyZehnderIndex hH hx =
-      ω.conleyZehnderIndex (ω.linearizedFlowPath hH hx) (ω.linearizedFlowPath_apply_apply hH hx) :=
+      ω.conleyZehnderIndex (ω.linearizedFlowPath hH hx) (ω.apply_linearizedFlowPath_apply hH hx) :=
   (rfl)
 
 /-- **The return map of a nondegenerate orbit has no eigenvalue `1`.** For a one-periodic orbit
@@ -121,12 +120,12 @@ theorem eigenspace_linearizedFlowPath_one_eq_bot (hH : ContDiff ℝ 2 (uncurry H
   rw [End.mem_eigenspace_iff, one_smul] at hv
   simpa using hv
 
-/-- **The return matrix of a nondegenerate orbit has no eigenvalue `1`.** In every symplectic
-basis, the matrix of the endpoint `Ψ(1)` of the linearized flow along a nondegenerate one-periodic
-orbit has no eigenvector for the eigenvalue `1`. This is the nondegeneracy hypothesis of the axioms
-of the Conley–Zehnder index of symplectic matrices. -/
-theorem finrank_eigenspace_toMatrix_linearizedFlowPath_one (hH : ContDiff ℝ 2 (uncurry H))
-    {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+/-- **The return matrix of a nondegenerate orbit has no eigenvalue `1`.** In every basis, the
+matrix of the endpoint `Ψ(1)` of the linearized flow along a nondegenerate one-periodic orbit has
+no eigenvector for the eigenvalue `1`: the return map of the orbit is nondegenerate. -/
+theorem finrank_eigenspace_toLin'_toMatrix_linearizedFlowPath_one_eq_zero
+    (hH : ContDiff ℝ 2 (uncurry H)) {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℝ V) :
