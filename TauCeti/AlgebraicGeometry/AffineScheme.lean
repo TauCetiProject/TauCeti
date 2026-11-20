@@ -275,7 +275,7 @@ theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : Com
   simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, eqToIso.hom, Category.assoc,
     ← Functor.map_comp_assoc]
   rw [show (homOfLE hle).op ≫ (eqToHom rfl).op ≫ (eqToHom _).op =
-    (ι.opensFunctor.map (homOfLE le_top)).op from rfl]
+    (ι.opensFunctor.map (homOfLE le_top)).op from Subsingleton.elim _ _]
   -- Restricting along `ι` commutes with the inclusion of the image of `Spec A'` into `⊤`.
   have := Scheme.Hom.appIso_hom_naturality ι (homOfLE (le_top : Spec.map φ ''ᵁ ⊤ ≤ ⊤)).op
   rw [Quiver.Hom.unop_op] at this
@@ -283,7 +283,7 @@ theorem Scheme.ΓSpecIso_appIso_hom_map_eq_restrict {X : Scheme.{u}} {A A' : Com
   congr 1
   rw [Scheme.Hom.appIso_hom', ← Category.assoc, Scheme.Hom.map_appLE, Scheme.Hom.appTop,
     Scheme.Hom.app_eq_appLE]
-  rfl
+  simp only [Scheme.Hom.preimage_top]
 
 /-- On an affine open chart `ι : Spec A ⟶ X` lying over `Spec R` through `φ : R ⟶ A`, a function on
 `Spec R` pulled back along `f : X ⟶ Spec R` and read as an element of `A` is its image under

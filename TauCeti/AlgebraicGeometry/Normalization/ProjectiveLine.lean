@@ -464,10 +464,9 @@ theorem functionFieldEquiv_germToFunctionField_overlap
         (overlapChartSectionsEquiv R u).symm.toRingHom))
     (k := algebraMap (overlapChart R u) B) (RingHom.ext fun x ↦ by
       obtain ⟨a, rfl⟩ := (finiteChartSectionsEquiv R u).surjective x
-      change functionFieldEquiv R u ((projectiveLineNormalization R u).germToFunctionField _
-        ((overlapChartSectionsEquiv R u).symm
-          (finiteChartRestriction R u (finiteChartSectionsEquiv R u a)))) =
-        (finiteChartSectionsEquiv R u a : B)
+      simp only [RingHom.comp_apply, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+        AlgHom.coe_toRingHom, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+        AlgEquiv.coe_toRingEquiv, Subalgebra.algebraMap_apply, coe_finiteChartRestriction]
       rw [finiteChartRestriction_finiteChartSectionsEquiv, RingEquiv.symm_apply_apply,
         TopCat.Presheaf.germ_res_apply, functionFieldEquiv_germToFunctionField])
   simpa using congr($key (overlapChartSectionsEquiv R u a))
