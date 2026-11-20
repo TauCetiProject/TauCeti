@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Torsion
 public import TauCeti.Geometry.Lie.Subgroup.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
@@ -38,8 +39,6 @@ stabilizer is a circle.
 
 ## Main results
 
-* `TauCeti.Lie.finite_setOf_pow_eq_one`: a compact commutative Lie group has finitely many
-  elements `g` with `g ^ n = 1`, for `n ≠ 0`.
 * `TauCeti.Lie.exists_sq_eq_one_ne_one_smul_eq_of_isotropy_ne_bot`: for a smooth action of a
   compact Lie group, a point with nontrivial isotropy algebra is fixed by an element `g ≠ 1` with
   `g ^ 2 = 1`.
@@ -72,41 +71,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
   [FiniteDimensional ℝ E]
-
-section TwoTorsion
-
-variable [IsMulCommutative G]
-
-variable (I) in
-include I in
-/-- **A compact commutative Lie group has finitely many elements of order dividing `n`**, for
-`n ≠ 0`. They form a closed subgroup with trivial Lie algebra, since
-`exp (t ξ / n) ^ n = exp (t ξ)`, so it is discrete and compact, hence finite. -/
-theorem finite_setOf_pow_eq_one [CompactSpace G] {n : ℕ} (hn : n ≠ 0) :
-    {g : G | g ^ n = 1}.Finite := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  -- The elements of order dividing `n` form the kernel of the `n`-th power homomorphism.
-  let K : Subgroup G := open IsMulCommutative in (powMonoidHom n : G →* G).ker
-  have hK : IsClosed (K : Set G) := isClosed_eq (continuous_pow n) continuous_const
-  -- The Lie algebra of `K` is trivial: a one-parameter subgroup of exponent `n` is constant.
-  have hbot : lieSubalgebraOfSubgroup (I := I) K = ⊥ := by
-    refine (LieSubalgebra.eq_bot_iff _).2 fun X hX ↦ ?_
-    rw [mem_lieSubalgebraOfSubgroup hK] at hX
-    let e := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
-      BoundarylessManifold.isInteriorPoint
-    have hexp (t : ℝ) : mulInvariantExp (I := I) (t • e X) = 1 := by
-      -- Membership in the kernel of the power homomorphism is `g ^ n = 1` by definition.
-      have h : lieExp (I := I) (((n : ℝ)⁻¹ * t) • X) ^ n = 1 := hX ((n : ℝ)⁻¹ * t)
-      rw [mul_smul, lieExp_inv_natCast_smul_pow _ hn, lieExp_eq_mulInvariantExp, map_smul] at h
-      exact h
-    exact e.injective ((forall_mulInvariantExp_smul_eq_one_iff.1 hexp).trans (map_zero e).symm)
-  have : DiscreteTopology K := (discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot hK).2 hbot
-  -- As a set, `K` is `{g | g ^ n = 1}` by definition.
-  exact hK.isCompact.finite (isDiscrete_iff_discreteTopology.2 this)
-
-end TwoTorsion
 
 section Action
 
