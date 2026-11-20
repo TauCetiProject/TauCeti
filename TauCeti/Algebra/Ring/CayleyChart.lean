@@ -277,15 +277,11 @@ lemma one_add_mul_eq_mul_one_sub (hη' : η * j = -(j * η)) : (1 + η) * j = j 
 `1 - η` is. -/
 lemma isUnit_one_add_iff_isUnit_one_sub (hj : j * j = -1) (hη' : η * j = -(j * η)) :
     IsUnit (1 + η) ↔ IsUnit (1 - η) := by
-  have hu : j * -j = 1 := by rw [mul_neg, hj, neg_neg]
-  have hu' : -j * j = 1 := by rw [neg_mul, hj, neg_neg]
-  let u : Aˣ := ⟨j, -j, hu, hu'⟩
-  have h := one_add_mul_eq_mul_one_sub hη'
-  -- `1 - η = j⁻¹ (1 + η) j` and `j⁻¹ = -j`.
-  have h₁ : 1 - η = (u⁻¹ : Aˣ) * ((1 + η) * u) := by
-    change 1 - η = -j * ((1 + η) * j)
-    rw [h, ← mul_assoc, hu', one_mul]
-  rw [h₁, Units.isUnit_units_mul, Units.isUnit_mul_units]
+  have hju : IsUnit j := isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one)
+  -- `1 - η = -j (1 + η) j`, since `(1 + η) j = j (1 - η)` and `-j * j = 1`.
+  have h : 1 - η = -j * ((1 + η) * j) := by
+    rw [one_add_mul_eq_mul_one_sub hη', ← mul_assoc, neg_mul, hj, neg_neg, one_mul]
+  rw [h, hju.neg.mul_left_iff, hju.mul_right_iff]
 
 /-- **The Cayley parametrization is the inverse Cayley transform.** For a square root `j` of `-1`
 and `j`-antilinear `η`, `cayleyParam j η = j * (1 + η) * (1 - η)⁻¹`. Both sides vanish when
@@ -309,12 +305,10 @@ theorem cayleyParam_eq_mul_mul_inverse (hj : j * j = -1) (hη' : η * j = -(j * 
 `j * (j + J) = -(1 - j * J)`. -/
 theorem isUnit_add_iff_isUnit_one_sub_mul (hj : j * j = -1) :
     IsUnit (j + J) ↔ IsUnit (1 - j * J) := by
-  let u : Aˣ := ⟨j, -j, by rw [mul_neg, hj, neg_neg], by rw [neg_mul, hj, neg_neg]⟩
-  have h : 1 - j * J = -((u : A) * (j + J)) := by
-    change 1 - j * J = -(j * (j + J))
+  have h : 1 - j * J = -(j * (j + J)) := by
     rw [mul_add, hj]
     noncomm_ring
-  rw [h, IsUnit.neg_iff, Units.isUnit_units_mul]
+  rw [h, IsUnit.neg_iff, (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one)).mul_left_iff]
 
 /-- Ring isomorphisms commute with the Cayley parametrization. -/
 theorem map_cayleyParam {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass F A S]

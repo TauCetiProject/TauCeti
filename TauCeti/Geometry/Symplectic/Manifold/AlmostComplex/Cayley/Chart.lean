@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Algebra.CayleyChart
 public import TauCeti.Geometry.Symplectic.Cayley.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
@@ -79,6 +80,9 @@ sections and structures here, so continuity of the charts for a `Cⁿ` topology 
 
 ## Main results
 
+* `ContMDiffAt.comp₂_hom_bundle`: a binary operation on endomorphisms that commutes with
+  conjugation, applied fibrewise to two `Cⁿ` families of tangent endomorphisms, is `Cⁿ` where the
+  operation is.
 * `ContMDiffAt.cayleyParam_hom_bundle`, `ContMDiffAt.cayleyCoord_hom_bundle`: the fibrewise Cayley
   maps of two `Cⁿ` families of tangent endomorphisms are `Cⁿ` where they are defined.
 * `TauCeti.ContMDiffAlmostComplexStructure.cayleyCoord_cayleyParam`,
@@ -118,6 +122,50 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   {n : WithTop ℕ∞} {f : P → M}
   {A B : (q : P) → TangentSpace I (f q) →L[ℝ] TangentSpace I (f q)} {q₀ : P}
 
+omit [CompleteSpace E] in
+/-- **Regularity of fibrewise binary operations on tangent endomorphisms.** Let `g` be a binary
+operation on `E →L[ℝ] E`, applied in every tangent fibre, that commutes with conjugation by every
+identification `L` of a tangent space with `E`, as algebraic expressions in endomorphisms do. For
+two families `A` and `B` of tangent endomorphisms along a map `f`, both `Cⁿ` at `q₀` as sections of
+`End(TM)`, the family `g (A q, B q)` is `Cⁿ` at `q₀` when `g` is `Cⁿ` at every conjugate of
+`(A q₀, B q₀)` by such an `L`: reading a fibre endomorphism in a trivialization of the tangent
+bundle is such a conjugation. -/
+theorem ContMDiffAt.comp₂_hom_bundle {g : (E →L[ℝ] E) × (E →L[ℝ] E) → E →L[ℝ] E}
+    (hg : ∀ L : TangentSpace I (f q₀) ≃L[ℝ] E,
+      ContDiffAt ℝ n g (L.conjContinuousAlgEquiv (A q₀), L.conjContinuousAlgEquiv (B q₀)))
+    (hgL : ∀ (x : M) (L : TangentSpace I x ≃L[ℝ] E)
+      (a b : TangentSpace I x →L[ℝ] TangentSpace I x),
+      L.conjContinuousAlgEquiv (g (a, b)) =
+        g (L.conjContinuousAlgEquiv a, L.conjContinuousAlgEquiv b))
+    (hf : ContMDiffAt IP I n f q₀)
+    (hA : ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q) (A q)) q₀)
+    (hB : ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q) (B q)) q₀) :
+    ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q) (g (A q, B q))) q₀ := by
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨hf, ?_⟩
+  let e := trivializationAt E (TangentSpace I) (f q₀)
+  -- Reading a fibre endomorphism in the trivialization at `f q₀` is conjugation by an algebra
+  -- isomorphism.
+  have hconj {x : M} (hx : x ∈ e.baseSet) (C : TangentSpace I x →L[ℝ] TangentSpace I x) :
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (f q₀) x (f q₀) x C =
+        (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv C :=
+    ContinuousLinearMap.inCoordinates_eq_conjContinuousAlgEquiv hx C
+  have hx₀ : f q₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (f q₀)
+  have hinner :=
+    ((contMDiffAt_hom_bundle _).1 hA).2.prodMk_space ((contMDiffAt_hom_bundle _).1 hB).2
+  refine (ContDiffAt.comp_contMDiffAt (g := g) (x := q₀) ?_ hinner).congr_of_eventuallyEq ?_
+  · simp only [hconj hx₀]
+    exact hg (e.continuousLinearEquivAt ℝ (f q₀) hx₀)
+  filter_upwards [hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with q hq
+  simp only [Function.comp_apply, hconj hq]
+  exact (hconj hq (g (A q, B q))).trans (hgL _ (e.continuousLinearEquivAt ℝ (f q) hq) (A q) (B q))
+
 open TauCeti in
 /-- **Regularity of the fibrewise Cayley parametrization.** For two families `A` and `B` of tangent
 endomorphisms along a map `f`, both `Cⁿ` at `q₀` as sections of `End(TM)`, the family
@@ -134,29 +182,11 @@ theorem ContMDiffAt.cayleyParam_hom_bundle (hf : ContMDiffAt IP I n f q₀)
     ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q)
-        (cayleyParam (A q) (B q))) q₀ := by
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨hf, ?_⟩
-  let e := trivializationAt E (TangentSpace I) (f q₀)
-  -- Reading a fibre endomorphism in the trivialization at `f q₀` is conjugation by an algebra
-  -- isomorphism, which commutes with `cayleyParam`.
-  have hconj {x : M} (hx : x ∈ e.baseSet) (C : TangentSpace I x →L[ℝ] TangentSpace I x) :
-      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (f q₀) x (f q₀) x C =
-        (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv C :=
-    ContinuousLinearMap.inCoordinates_eq_conjContinuousAlgEquiv hx C
-  have hx₀ : f q₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (f q₀)
-  have hu' : IsUnit (1 + (e.continuousLinearEquivAt ℝ (f q₀) hx₀).conjContinuousAlgEquiv
-      (B q₀)) := by
-    simpa only [map_add, map_one] using
-      hu.map (e.continuousLinearEquivAt ℝ (f q₀) hx₀).conjContinuousAlgEquiv
-  rw [← hconj hx₀] at hu'
-  have hinner :=
-    ((contMDiffAt_hom_bundle _).1 hA).2.prodMk_space ((contMDiffAt_hom_bundle _).1 hB).2
-  refine (ContDiffAt.comp_contMDiffAt (g := Function.uncurry cayleyParam) (x := q₀) ?_
-    hinner).congr_of_eventuallyEq ?_
-  · exact (analyticAt_uncurry_cayleyParam (𝕜 := ℝ) hu').contDiffAt
-  filter_upwards [hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with q hq
-  simp only [Function.comp_apply, Function.uncurry_apply_pair, hconj hq, map_cayleyParam]
+        (cayleyParam (A q) (B q))) q₀ :=
+  ContMDiffAt.comp₂_hom_bundle (g := Function.uncurry cayleyParam)
+    (fun L ↦ (analyticAt_uncurry_cayleyParam (𝕜 := ℝ)
+      (by simpa only [map_add, map_one] using hu.map L.conjContinuousAlgEquiv)).contDiffAt)
+    (fun _ L a b ↦ map_cayleyParam L.conjContinuousAlgEquiv a b) hf hA hB
 
 open TauCeti in
 /-- **Regularity of the fibrewise Cayley coordinate.** For two families `A` and `B` of tangent
@@ -174,28 +204,11 @@ theorem ContMDiffAt.cayleyCoord_hom_bundle (hf : ContMDiffAt IP I n f q₀)
     ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q)
-        (cayleyCoord (A q) (B q))) q₀ := by
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨hf, ?_⟩
-  let e := trivializationAt E (TangentSpace I) (f q₀)
-  -- As for `cayleyParam`, reading in the trivialization commutes with `cayleyCoord`.
-  have hconj {x : M} (hx : x ∈ e.baseSet) (C : TangentSpace I x →L[ℝ] TangentSpace I x) :
-      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) (f q₀) x (f q₀) x C =
-        (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv C :=
-    ContinuousLinearMap.inCoordinates_eq_conjContinuousAlgEquiv hx C
-  have hx₀ : f q₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (f q₀)
-  have hu' : IsUnit ((e.continuousLinearEquivAt ℝ (f q₀) hx₀).conjContinuousAlgEquiv (A q₀) +
-      (e.continuousLinearEquivAt ℝ (f q₀) hx₀).conjContinuousAlgEquiv (B q₀)) := by
-    simpa only [map_add] using
-      hu.map (e.continuousLinearEquivAt ℝ (f q₀) hx₀).conjContinuousAlgEquiv
-  rw [← hconj hx₀, ← hconj hx₀] at hu'
-  have hinner :=
-    ((contMDiffAt_hom_bundle _).1 hA).2.prodMk_space ((contMDiffAt_hom_bundle _).1 hB).2
-  refine (ContDiffAt.comp_contMDiffAt (g := Function.uncurry cayleyCoord) (x := q₀) ?_
-    hinner).congr_of_eventuallyEq ?_
-  · exact (analyticAt_uncurry_cayleyCoord (𝕜 := ℝ) hu').contDiffAt
-  filter_upwards [hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with q hq
-  simp only [Function.comp_apply, Function.uncurry_apply_pair, hconj hq, map_cayleyCoord]
+        (cayleyCoord (A q) (B q))) q₀ :=
+  ContMDiffAt.comp₂_hom_bundle (g := Function.uncurry cayleyCoord)
+    (fun L ↦ (analyticAt_uncurry_cayleyCoord (𝕜 := ℝ)
+      (by simpa only [map_add] using hu.map L.conjContinuousAlgEquiv)).contDiffAt)
+    (fun _ L a b ↦ map_cayleyCoord L.conjContinuousAlgEquiv a b) hf hA hB
 
 end Regularity
 
@@ -212,13 +225,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   {η : ContMDiffSection I (E →L[ℝ] E) n fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x}
 
 /-! ### The Cayley chart -/
-
-omit [CompleteSpace E] [IsManifold I ∞ M] in
-/-- `2` is invertible among the endomorphisms of a tangent space. -/
-private theorem isUnit_two (x : M) : IsUnit (2 : TangentSpace I x →L[ℝ] TangentSpace I x) := by
-  have h := (IsUnit.mk0 (2 : ℝ) two_ne_zero).map
-    (algebraMap ℝ (TangentSpace I x →L[ℝ] TangentSpace I x))
-  rwa [map_ofNat] at h
 
 variable (J₀) in
 /-- **The Cayley parametrization of almost complex structures.** For a `Cⁿ` almost complex
@@ -289,14 +295,16 @@ theorem isUnit_add_cayleyParam
     (hη' : ∀ x, η x * J₀.toEndomorphism x = -(J₀.toEndomorphism x * η x))
     (hη : ∀ x, IsUnit (1 + η x)) (x : M) :
     IsUnit (J₀.toEndomorphism x + (J₀.cayleyParam η hη).toEndomorphism x) :=
-  TauCeti.isUnit_add_cayleyParam (isUnit_two x) (J₀.toEndomorphism_mul_self x) (hη' x) (hη x)
+  TauCeti.isUnit_add_cayleyParam (IsUnit.ofNat_of_algebra (K := ℝ) two_ne_zero.isUnit)
+    (J₀.toEndomorphism_mul_self x) (hη' x) (hη x)
 
 /-- The Cayley coordinate lies in the domain of the Cayley parametrization: `1 + J₀.cayleyCoord J`
 is invertible at every point. -/
 theorem isUnit_one_add_cayleyCoord
     (hJ : ∀ x, IsUnit (J₀.toEndomorphism x + J.toEndomorphism x)) (x : M) :
     IsUnit (1 + J₀.cayleyCoord J hJ x) :=
-  TauCeti.isUnit_one_add_cayleyCoord (isUnit_two x) (J₀.toEndomorphism_mul_self x) (hJ x)
+  TauCeti.isUnit_one_add_cayleyCoord (IsUnit.ofNat_of_algebra (K := ℝ) two_ne_zero.isUnit)
+    (J₀.toEndomorphism_mul_self x) (hJ x)
 
 /-- **The Cayley coordinate inverts the Cayley parametrization** on the `J₀`-antilinear sections. -/
 @[simp]
@@ -306,8 +314,8 @@ theorem cayleyCoord_cayleyParam
     J₀.cayleyCoord (J₀.cayleyParam η hη) (isUnit_add_cayleyParam hη' hη) = η := by
   refine ContMDiffSection.ext fun x ↦ ?_
   simp only [cayleyCoord_apply, cayleyParam_toEndomorphism_apply]
-  exact TauCeti.cayleyCoord_cayleyParam (isUnit_two x) (J₀.toEndomorphism_mul_self x) (hη' x)
-    (hη x)
+  exact TauCeti.cayleyCoord_cayleyParam (IsUnit.ofNat_of_algebra (K := ℝ) two_ne_zero.isUnit)
+    (J₀.toEndomorphism_mul_self x) (hη' x) (hη x)
 
 /-- **The Cayley parametrization inverts the Cayley coordinate.** -/
 @[simp]
@@ -316,8 +324,8 @@ theorem cayleyParam_cayleyCoord
     J₀.cayleyParam (J₀.cayleyCoord J hJ) (isUnit_one_add_cayleyCoord hJ) = J := by
   ext x v
   simp only [cayleyParam_toEndomorphism_apply, cayleyCoord_apply]
-  rw [TauCeti.cayleyParam_cayleyCoord (isUnit_two x) (J₀.toEndomorphism_mul_self x)
-    (J.toEndomorphism_mul_self x) (hJ x)]
+  rw [TauCeti.cayleyParam_cayleyCoord (IsUnit.ofNat_of_algebra (K := ℝ) two_ne_zero.isUnit)
+    (J₀.toEndomorphism_mul_self x) (J.toEndomorphism_mul_self x) (hJ x)]
 
 variable (J₀) in
 /-- **The Cayley chart of almost complex structures of finite regularity.** For a `Cⁿ` almost
@@ -367,12 +375,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {η : ContMDiffSection I (E →L[ℝ] E) n fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x}
   {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate)
 
-omit [FiniteDimensional ℝ E] in
-/-- The identity `J² = -1` for the linear maps underlying a structure. -/
-private theorem coe_toEndomorphism_mul_self (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
-    ((J.toEndomorphism x : TangentSpace I x →ₗ[ℝ] TangentSpace I x)) * J.toEndomorphism x = -1 := by
-  simpa using (J.almostComplexStructureAt x).toLinearMap_mul_self
-
 variable (J₀ J) in
 /-- **The Cayley coordinate is the linear Cayley transform.** At every point, the Cayley coordinate
 `(J₀ - J)(J₀ + J)⁻¹` of two almost complex structures is the Cayley transform
@@ -393,7 +395,8 @@ theorem cayley_almostComplexStructureAt_cayleyParam {x : M}
     (J₀.almostComplexStructureAt x).cayley ((J₀.cayleyParam η hη).almostComplexStructureAt x) =
       (η x).toLinearMap := by
   rw [cayley_almostComplexStructureAt, cayleyParam_toEndomorphism_apply,
-    TauCeti.cayleyCoord_cayleyParam (isUnit_two x) (J₀.toEndomorphism_mul_self x) hη' (hη x)]
+    TauCeti.cayleyCoord_cayleyParam (IsUnit.ofNat_of_algebra (K := ℝ) two_ne_zero.isUnit)
+      (J₀.toEndomorphism_mul_self x) hη' (hη x)]
 
 /-- At a point where `η` lies in the Cayley ball, the Cayley parametrization is the inverse linear
 Cayley transform of `η x`. -/

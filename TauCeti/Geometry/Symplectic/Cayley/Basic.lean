@@ -332,8 +332,7 @@ private lemma inverseCayley_mul_self [FiniteDimensional ℝ V] {C : Module.End �
   -- Anticommutation gives `(1 - C) J₀ = J₀ (1 + C)` and `(1 + C) J₀ = J₀ (1 - C)`.
   have hQj : (1 - C) * j = j * (1 + C) := by
     rw [sub_mul, mul_add, hC.1, one_mul, mul_one, sub_neg_eq_add]
-  have hRj : (1 + C) * j = j * (1 - C) := by
-    rw [add_mul, mul_sub, hC.1, one_mul, mul_one, sub_eq_add_neg]
+  have hRj : (1 + C) * j = j * (1 - C) := one_add_mul_eq_mul_one_sub hC.1
   have h₁ : Ring.inverse (1 - C) * j * (1 + C) = j := by
     rw [mul_assoc, ← hQj, ← mul_assoc, Ring.inverse_mul_cancel _ hQ, one_mul]
   calc j * (1 + C) * Ring.inverse (1 - C) * (j * (1 + C) * Ring.inverse (1 - C))

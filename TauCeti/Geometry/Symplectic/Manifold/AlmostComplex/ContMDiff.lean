@@ -86,6 +86,11 @@ theorem almostComplexStructureAt_toLinearMap (J : ContMDiffAlmostComplexStructur
     (x : M) :
     (J.almostComplexStructureAt x).toLinearMap = (J.toEndomorphism x).toLinearMap := (rfl)
 
+/-- The defining identity `J² = -1`, as a product of the underlying linear maps of a fibre. -/
+theorem coe_toEndomorphism_mul_self (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
+    ((J.toEndomorphism x : TangentSpace I x →ₗ[ℝ] TangentSpace I x)) * J.toEndomorphism x = -1 := by
+  simpa using (J.almostComplexStructureAt x).toLinearMap_mul_self
+
 /-- Evaluating the fibrewise structure agrees with evaluating the bundled section. -/
 theorem almostComplexStructureAt_apply (J : ContMDiffAlmostComplexStructure I n M) (x : M)
     (v : TangentSpace I x) : J.almostComplexStructureAt x v = J x v := (rfl)
