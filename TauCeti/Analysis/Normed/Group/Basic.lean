@@ -27,7 +27,8 @@ An unbounded set stays unbounded after removing a closed ball, since a closed ba
 A bound on the norms of a set with two distinct points is positive, since one of the points is
 nonzero.
 
-A continuous function on `ℝ` with limits at `±∞` is bounded.
+A continuous function on `ℝ` with limits at `±∞` is bounded, and a function continuous on
+`[a, ∞)` with a limit at `+∞` is bounded on `[a, ∞)`.
 
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
@@ -62,6 +63,8 @@ A point off a finite set stays farther than `ε` from all of its points for ever
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 * `TauCeti.exists_forall_norm_le_of_tendsto` -- a continuous function `ℝ → F` with limits at `±∞`
   is bounded.
+* `TauCeti.exists_forall_ge_norm_le_of_tendsto` -- a function `ℝ → F` continuous on `[a, ∞)` with
+  a limit at `+∞` is bounded on `[a, ∞)`.
 * `TauCeti.exists_enorm_sub_le_mul_of_reflTransGen` -- constants joined by a chain of related
   indices are uniformly close if constants at related indices are.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
@@ -163,6 +166,18 @@ theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] 
     (hA.isBounded_range_iff_isBigO_atTop_atBot.mpr
       ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩)
   exact ⟨M, fun s ↦ hM _ (Set.mem_range_self s)⟩
+
+/-- A function `ℝ → F` into a seminormed group, continuous on `[a, ∞)` and with a limit at `+∞`,
+is bounded on `[a, ∞)`. -/
+theorem exists_forall_ge_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
+    {a : ℝ} {L : F} (hA : ContinuousOn A (Set.Ici a)) (htop : Tendsto A atTop (𝓝 L)) :
+    ∃ M, ∀ s, a ≤ s → ‖A s‖ ≤ M := by
+  obtain ⟨T, hT⟩ := eventually_atTop.1 (htop.norm.eventually (gt_mem_nhds (lt_add_one ‖L‖)))
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn (hA.mono Set.Icc_subset_Ici_self)
+  refine ⟨max C (‖L‖ + 1), fun s hs ↦ ?_⟩
+  rcases le_total s T with hsT | hsT
+  · exact (hC s ⟨hs, hsT⟩).trans (le_max_left _ _)
+  · exact (hT s hsT).le.trans (le_max_right _ _)
 
 /-- Families of vectors joined by a chain of related indices are uniformly close, if the vectors at
 related indices are: if `‖a k j - a k i‖ ≤ D * G k` for related `i j` and all `k`, then the

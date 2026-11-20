@@ -12,10 +12,11 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 # Elementary bounds for the real exponential
 
 Every affine function `A x + B` is eventually smaller than `exp (a x)` when `0 < a`, and
-`(A x + B) exp (-(a x))` tends to `0`. For `0 < x` the function `x / (exp x - 1)`, the generating
-function of the Bernoulli numbers, lies between `exp (-x)` and `1`. With `q = exp (-x)` it is
-`x q / (1 - q)`, the rescaled mean of the geometric weights `(1 - q) q ^ k`, so these bounds control
-geometric averages as `q ↑ 1`.
+`(A x + B) exp (-(a x))` tends to `0`; for `0 < a`, `e^{t a} b` stays bounded as `t → +∞` only for
+`b = 0`. For `0 < x` the function `x / (exp x - 1)`, the generating function of the Bernoulli
+numbers, lies between `exp (-x)` and `1`. With `q = exp (-x)` it is `x q / (1 - q)`, the rescaled
+mean of the geometric weights `(1 - q) q ^ k`, so these bounds control geometric averages as
+`q ↑ 1`.
 
 Comparing a real power `y ^ ε` with an exponential level `exp (-t)` amounts to comparing `y`
 with the rescaled level `exp (-(t / ε))`. Similarly, a two-sided logarithmic approximation
@@ -30,6 +31,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.eventually_mul_add_lt_exp_mul`: `A x + B < exp (a x)` eventually, for `0 < a`.
 * `TauCeti.tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero`: `(A x + B) exp (-(a x)) → 0` as
   `x → ∞`, for `0 < a`.
+* `TauCeti.eq_zero_of_eventually_abs_exp_mul_le`: if `|e^{t a} b|` is eventually bounded as
+  `t → +∞` and `0 < a`, then `b = 0`.
 * `TauCeti.exists_pos_eventually_forall_le_mul_exp`: finitely many eventual exponential bounds
   `f i s t ≤ A_i exp (-κ_i s)` combine into one, with the slowest rate and the largest constant.
 * `TauCeti.not_exists_ofReal_mul_exp_le_mul_exp`: for `K > 0` and `k < μ`, `K exp (-k t)` is not
@@ -104,6 +107,17 @@ theorem tendsto_mul_add_mul_exp_neg_mul_atTop_nhds_zero {a : ℝ} (ha : 0 < a) (
   have h₁ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 1 a ha).const_mul A
   have h₀ := (tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero 0 a ha).const_mul B
   simpa [rpow_one, rpow_zero, add_mul, mul_assoc] using h₁.add h₀
+
+/-- A product `e^{t a} b` with `0 < a` that is eventually bounded in absolute value as `t → +∞`
+has `b = 0`, since otherwise it is unbounded. -/
+theorem eq_zero_of_eventually_abs_exp_mul_le {a b C : ℝ} (ha : 0 < a)
+    (h : ∀ᶠ t in atTop, |exp (t * a) * b| ≤ C) : b = 0 := by
+  by_contra hb
+  have hT : Tendsto (fun t ↦ |exp (t * a) * b|) atTop atTop := by
+    simp only [abs_mul, abs_exp]
+    exact (tendsto_exp_atTop.comp (tendsto_id.atTop_mul_const ha)).atTop_mul_const (abs_pos.2 hb)
+  obtain ⟨t, h1, h2⟩ := (h.and (hT.eventually_gt_atTop C)).exists
+  exact (h2.trans_le h1).false
 
 /-- Eventual exponential bounds `f i s t ≤ A_i exp (-κ_i s)` with rates `κ_i > 0`, for finitely
 many indices `i`, combine into one bound `f i s t ≤ A exp (-κ s)` for all `i`, with the slowest
