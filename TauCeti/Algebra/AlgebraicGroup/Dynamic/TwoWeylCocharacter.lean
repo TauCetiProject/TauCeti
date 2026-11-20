@@ -107,7 +107,8 @@ include hroots
 
 /-- **The cocharacter `2ρ^∨` grades the Lie algebra by twice the height**, when every nontrivial
 adjoint weight is a root: its weight space of weight `n` is the sum of the root spaces of the roots
-of height `n / 2`, together with the trivial weight space when `n = 0`. -/
+`i` with `2 * b.height i = n`, together with the trivial weight space when `n = 0`. In particular
+it vanishes for odd `n`. -/
 theorem adjointWeightSpace_cocharacter_twoWeylCocharacter (n : ℤ) :
     Derivation.adjointWeightSpace
         ((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp
