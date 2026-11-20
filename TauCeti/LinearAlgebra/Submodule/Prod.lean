@@ -23,7 +23,6 @@ coordinate and are complementary.
   when both families of factors are.
 * `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
   factors.
-* `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
 -/
 
 public section
@@ -44,12 +43,6 @@ coordinate vanishes. -/
 @[simp]
 theorem mem_snd_iff {x : M × N} : x ∈ Submodule.snd R M N ↔ x.1 = 0 :=
   mem_comap.trans (mem_bot R)
-
-variable (R M N)
-
-/-- The copies of the two factors of a product module are complementary submodules. -/
-theorem isCompl_fst_snd : IsCompl (Submodule.fst R M N) (Submodule.snd R M N) :=
-  .of_eq (fst_inf_snd R M N) (fst_sup_snd R M N)
 
 end Submodule
 
