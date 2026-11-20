@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RegularValue
 public import TauCeti.Topology.ContinuousMap.Algebra
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # The fixed-point index of a map of an open subset of a vector space
@@ -276,13 +277,11 @@ private theorem exists_opens_isOpenEmbedding_conj {V : Opens E} {f : C(U, E)} {g
   have hk_cont : Continuous fun z : W ↦ h z := by
     rw [← he]; exact e.continuousOn.comp_continuous continuous_subtype_val hWsrc
   let k : C(W, V) := ⟨fun z ↦ ⟨h z, hWV z⟩, hk_cont.subtype_mk _⟩
-  -- Read in `E`, `k` is `e` restricted to its source, composed with the inclusion of `W`.
+  -- Read in `E`, `k` is `e` composed with the inclusion of `W`, whose range lies in `e.source`.
   have hk : IsOpenEmbedding k := by
     refine (IsOpenEmbedding.of_comp_iff k V.isOpenEmbedding').1 ?_
-    convert e.isOpenEmbedding_restrict.comp (IsOpenEmbedding.inclusion (fun z hz ↦ hWsrc ⟨z, hz⟩)
-      (W.isOpen.preimage continuous_subtype_val)) using 1
-    funext z
-    simp [k, he]
+    simpa [k, he, Function.comp_def] using
+      e.isOpenEmbedding_comp W.isOpenEmbedding' (by rintro _ ⟨z, rfl⟩; exact hWsrc z)
   refine ⟨W, hWU, k, ⟨x, hxt, rfl⟩, hk, fun z ↦ ?_⟩
   obtain ⟨⟨-, hzconj⟩, hzest⟩ := ht _ (hWt z)
   exact ⟨rfl, hzconj _, hzest⟩
