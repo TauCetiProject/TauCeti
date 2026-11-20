@@ -25,9 +25,10 @@ Let `E` be a finite-dimensional real inner product space and `F` a complex Hilbe
 
 `J_ε u = 𝓕⁻ (θ(ε ·) 𝓕 u)`, `ε ∈ ℝ`,
 
-for a scalar Schwartz function `θ`. When `θ = 𝓕 ρ` for a Schwartz function `ρ` of integral one,
-`J_ε` is convolution with the rescaled kernel `ρ_ε = ε⁻ⁿ ρ(· / ε)`, the convolution regularizer
-of the theory of weak solutions. This file proves **Friedrichs' lemma** on the Bessel-potential
+for a scalar Schwartz function `θ`. When `θ = 𝓕 ρ` for a Schwartz function `ρ` of integral one
+and `ε ≠ 0`, `J_ε` is convolution with the rescaled kernel `ρ_ε = |ε|⁻ⁿ ρ(· / ε)`, the
+convolution regularizer of the theory of weak solutions; `J_0` is multiplication by the constant
+`θ 0`. This file proves **Friedrichs' lemma** on the Bessel-potential
 scale: for a scalar Schwartz function `φ`, the commutator `[M_φ, J_ε] = M_φ J_ε - J_ε M_φ` of
 `J_ε` with multiplication by `φ` gains one derivative, uniformly in `ε`. For every real `s`
 and `|ε| ≤ 1` it maps `H^s(E, F)` to `H^{s+1}(E, F)` with

@@ -285,11 +285,7 @@ namespace TemperedDistribution
 tempered distributions that maps each Schwartz function `f` to the Schwartz function `A₀ f`, and
 suppose that `‖J^t (A₀ f)‖_{L²} ≤ C ‖J^s f‖_{L²}` for all Schwartz `f`, where `J^r` is the
 Fourier multiplier with symbol `⟨ξ⟩ ^ r`. If the tempered distribution `u` lies in `H^s`, with
-`J^s u = v ∈ L²`, then `J^t (A u) = v'` for some `v' ∈ L²` with `‖v'‖ ≤ C ‖v‖`.
-
-The operator `w ↦ J^t (A (J^{-s} w))` on `L²`, with values in tempered distributions, is
-continuous and maps Schwartz functions into `L²` with this bound; since Schwartz functions are
-dense in `L²`, it maps all of `L²` into `L²` with the same bound. -/
+`J^s u = v ∈ L²`, then `J^t (A u) = v'` for some `v' ∈ L²` with `‖v'‖ ≤ C ‖v‖`. -/
 theorem exists_besselPotential_apply_eq_and_norm_le_of_norm_toLp_le {s t C : ℝ}
     (A : 𝓢'(E, F) →L[ℂ] 𝓢'(E, F)) (A₀ : 𝓢(E, F) →L[ℂ] 𝓢(E, F))
     (hA : ∀ f : 𝓢(E, F), A (f : 𝓢'(E, F)) = (A₀ f : 𝓢'(E, F)))
@@ -303,7 +299,8 @@ theorem exists_besselPotential_apply_eq_and_norm_le_of_norm_toLp_le {s t C : ℝ
   set Λ : ℝ → 𝓢(E, F) →L[ℂ] 𝓢(E, F) := fun r ↦
     SchwartzMap.fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ))
   -- The operator `w ↦ J^t (A (J^{-s} w))` on `L²`, with values in tempered distributions, is
-  -- given on Schwartz functions by `M`, which is bounded in `L²`.
+  -- given on Schwartz functions by `M`, which is bounded in `L²`. Since Schwartz functions are
+  -- dense in `L²`, it maps all of `L²` into `L²` with the same bound.
   set M : 𝓢(E, F) →L[ℂ] 𝓢(E, F) := Λ t ∘L A₀ ∘L Λ (-s)
   set T : Lp F 2 (volume : Measure E) →L[ℂ] 𝓢'(E, F) :=
     besselPotential E F t ∘L A ∘L besselPotential E F (-s) ∘L
