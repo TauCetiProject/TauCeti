@@ -142,6 +142,14 @@ private theorem ae_indicator_Ioo_eq_zero :
   filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
   exact indicator_of_notMem (fun h : t ∈ Ioo (0 : ℝ) (1 / 2) => lt_asymm h.2 ht.1) _
 
+omit [Fact (1 ≤ p)] in
+/-- The indicator of `(0, 1/2)` lies in `Lᵖ(0, 1)`. -/
+private theorem memLp_indicator_Ioo_one_half :
+    MemLp ((Ioo (0 : ℝ) (1 / 2)).indicator (1 : ℝ → ℝ)) p (volume.restrict (Ioo (0 : ℝ) 1)) :=
+  memLp_indicator_const (μ := volume.restrict (Ioo (0 : ℝ) 1)) p
+    (measurableSet_Ioo (a := (0 : ℝ)) (b := 1 / 2)).nullMeasurableSet (1 : ℝ)
+    (Or.inr (measure_ne_top _ _))
+
 /-- **The `Hᵏ` bootstrap stops at `H²` for a datum with a jump.** For `1 ≤ p < ∞`, the Dirichlet
 problem `-u'' = 1_{(0, 1/2)}` on `(0, 1)` with zero boundary values has a solution
 `u ∈ W^{2,p}(0, 1)`, and `u` does not lie in `W^{3,p}(0, 1)`: its second derivative jumps at
@@ -152,11 +160,7 @@ theorem exists_neg_iteratedGradient_eq_indicator_Ioo_and_not_exists_wkp_three (h
       (∀ᵐ t ∂volume.restrict (Ioo (0 : ℝ) 1),
         -Wkp.iteratedGradient 1 u t 1 = (Ioo (0 : ℝ) (1 / 2)).indicator 1 t) ∧
       ¬∃ v : Wkp volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ p 3, Wkp.lowerOrder 2 v = u := by
-  have hf : MemLp ((Ioo (0 : ℝ) (1 / 2)).indicator (1 : ℝ → ℝ)) p
-      (volume.restrict (Ioo (0 : ℝ) 1)) :=
-    memLp_indicator_const (μ := volume.restrict (Ioo (0 : ℝ) 1)) p
-      (measurableSet_Ioo (a := (0 : ℝ)) (b := 1 / 2)).nullMeasurableSet (1 : ℝ)
-      (Or.inr (measure_ne_top _ _))
+  have hf := memLp_indicator_Ioo_one_half (p := p)
   obtain ⟨u, ⟨hu0, hu⟩, -⟩ :=
     existsUnique_firstOrder_mem_w1p0Submodule_and_neg_mul_iteratedGradient_eq_of_Ioo hp
       zero_lt_one aestronglyMeasurable_const zero_lt_one (ae_of_all _ fun _ => le_rfl)
@@ -179,11 +183,7 @@ theorem exists_forall_integral_gradient_mul_deriv_eq_indicator_Ioo_and_not_exist
         ∫ t in Ioo (0 : ℝ) 1, W1p.gradient u t * deriv φ t =
           -∫ t in Ioo (0 : ℝ) 1, (Ioo (0 : ℝ) (1 / 2)).indicator 1 t * deriv φ t) ∧
       ¬∃ v : Wkp volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ p 2, Wkp.firstOrder 1 v = u := by
-  have hF : MemLp ((Ioo (0 : ℝ) (1 / 2)).indicator (1 : ℝ → ℝ)) p
-      (volume.restrict (Ioo (0 : ℝ) 1)) :=
-    memLp_indicator_const (μ := volume.restrict (Ioo (0 : ℝ) 1)) p
-      (measurableSet_Ioo (a := (0 : ℝ)) (b := 1 / 2)).nullMeasurableSet (1 : ℝ)
-      (Or.inr (measure_ne_top _ _))
+  have hF := memLp_indicator_Ioo_one_half (p := p)
   obtain ⟨u, hu0, hu⟩ := exists_intervalTraceL_eq_and_forall_integral_mul_gradient_eq
     zero_lt_one zero_lt_one (a := fun _ => 1) aestronglyMeasurable_const
     (ae_of_all _ fun _ => le_rfl) (f := 0) integrableOn_zero hF 0 0
