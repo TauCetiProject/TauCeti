@@ -46,6 +46,14 @@ states its own hypothesis on `C`.
   sits at a vertex of the interval base, where the constant linearized operator is invertible. So
   each kernel is one dimensional, the index. At the three vertices the linearized operators are
   bijective, by `TauCeti.IsNondegenerateCriticalPoint.bijective_trajectoryOperator_hessianOperator`.
+* **The normal ray of the kernel along the diagonal.** On the open square `(0, 1)²` the derivative
+  of the orbit parameter vanishes exactly on the velocity line of the flow. Along a source-to-sink
+  orbit it is conserved by the linearized equation, since each coordinate of a linearized solution
+  is a constant multiple of the field. So it is a linear functional on the kernel of the linearized
+  operator, vanishing on the translation direction, and it orients the normal line of the kernel:
+  its positive side is the side on which the orbit parameter increases. Along the diagonal, where
+  the parameter takes the endpoint value `0` of the interval `[0, ∞)`, this positive side consists
+  of the linearized solutions pointing strictly into the triangle, at every time.
 
 ## Main declarations
 
@@ -69,6 +77,12 @@ states its own hypothesis on `C`.
 * `TauCeti.tendsto_snd_nhds_zero_of_tendsto_triangleBaseOrbitParameter_atTop`,
   `TauCeti.tendsto_fst_nhds_one_of_tendsto_triangleBaseOrbitParameter_atTop`: convergence to the
   broken orbit.
+* `TauCeti.hasFDerivAt_triangleBaseOrbitParameter`,
+  `TauCeti.fderiv_triangleBaseOrbitParameter_apply`: the derivative of the orbit parameter.
+* `TauCeti.ker_fderiv_triangleBaseOrbitParameter`: its kernel is the velocity line.
+* `TauCeti.fderiv_triangleBaseOrbitParameter_apply_pos_iff`,
+  `TauCeti.fderiv_triangleBaseOrbitParameter_apply_eq_zero_iff`: on the diagonal it is positive
+  on the vectors pointing into the triangle and vanishes on the tangent line of the diagonal.
 * `TauCeti.hessianOperator_triangleBasePotential_apply`: the Hessian acts coordinatewise.
 * `TauCeti.isIntegralCurve_triangleBasePotential_iff` and
   `TauCeti.mem_squareIntegrableSolutions_triangleBasePotential`: the trajectories and their
@@ -82,6 +96,10 @@ states its own hypothesis on `C`.
   `TauCeti.surjective_trajectoryOperator_triangleBasePotential_toLp_zero_zero_toLp_one_zero` and
   `TauCeti.surjective_trajectoryOperator_triangleBasePotential_toLp_one_zero_toLp_one_one`: the
   linearized operators along these orbits are onto.
+* `IsIntegralCurve.fderiv_triangleBaseOrbitParameter_apply_eq`: the derivative of the orbit
+  parameter is conserved along linearized solutions.
+* `IsIntegralCurve.snd_lt_fst_iff_fderiv_triangleBaseOrbitParameter_pos`: along the diagonal, the
+  positive normal ray of the kernel consists of the solutions pointing into the triangle.
 
 ## References
 
@@ -453,6 +471,83 @@ theorem tendsto_fst_nhds_one_of_tendsto_triangleBaseOrbitParameter_atTop {α : T
   simp only [Function.comp_apply, triangleBaseOrbitParameter]
   ring
 
+/-! ### The derivative of the orbit parameter -/
+
+section Derivative
+
+variable {z : WithLp 2 (ℝ × ℝ)}
+
+/-- On the open square `(0, 1)²` the orbit parameter is differentiable: its derivative at `(u, v)`
+is `x ↦ x.fst / (u (1 - u²)) - x.snd / (v (1 - v²))`. -/
+theorem hasFDerivAt_triangleBaseOrbitParameter (hu : z.fst ∈ Ioo 0 1) (hv : z.snd ∈ Ioo 0 1) :
+    HasFDerivAt triangleBaseOrbitParameter
+      ((z.fst * (1 - z.fst ^ 2))⁻¹ • WithLp.fstL 2 ℝ ℝ ℝ -
+        (z.snd * (1 - z.snd ^ 2))⁻¹ • WithLp.sndL 2 ℝ ℝ ℝ) z :=
+  ((hasDerivAt_intervalBaseTimeCoordinate hu).comp_hasFDerivAt z
+    (WithLp.fstL 2 ℝ ℝ ℝ).hasFDerivAt).sub
+    ((hasDerivAt_intervalBaseTimeCoordinate hv).comp_hasFDerivAt z
+      (WithLp.sndL 2 ℝ ℝ ℝ).hasFDerivAt)
+
+/-- The derivative of the orbit parameter at a point `(u, v)` of the open square `(0, 1)²`, applied
+to `x`, is `x.fst / (u (1 - u²)) - x.snd / (v (1 - v²))`. -/
+theorem fderiv_triangleBaseOrbitParameter_apply (hu : z.fst ∈ Ioo 0 1) (hv : z.snd ∈ Ioo 0 1)
+    (x : WithLp 2 (ℝ × ℝ)) :
+    fderiv ℝ triangleBaseOrbitParameter z x =
+      (z.fst * (1 - z.fst ^ 2))⁻¹ * x.fst - (z.snd * (1 - z.snd ^ 2))⁻¹ * x.snd := by
+  rw [(hasFDerivAt_triangleBaseOrbitParameter hu hv).fderiv]
+  simp
+
+/-- **The derivative of the orbit parameter vanishes exactly along the flow.** For `C ≠ 0`, at a
+point of the open square `(0, 1)²` the kernel of the derivative of the orbit parameter is the line
+spanned by the field `-∇F`, the velocity of the orbit through the point. -/
+theorem ker_fderiv_triangleBaseOrbitParameter (hC : C ≠ 0) (hu : z.fst ∈ Ioo 0 1)
+    (hv : z.snd ∈ Ioo 0 1) :
+    (fderiv ℝ triangleBaseOrbitParameter z).ker = ℝ ∙ (-∇ (triangleBasePotential C) z) := by
+  have hwu : z.fst * (1 - z.fst ^ 2) ≠ 0 := (mul_pos hu.1 (by nlinarith [hu.1, hu.2])).ne'
+  have hwv : z.snd * (1 - z.snd ^ 2) ≠ 0 := (mul_pos hv.1 (by nlinarith [hv.1, hv.2])).ne'
+  -- The velocity is `C • (u (1 - u²), v (1 - v²))`.
+  have hgrad : -∇ (triangleBasePotential C) z =
+      C • WithLp.toLp 2 (z.fst * (1 - z.fst ^ 2), z.snd * (1 - z.snd ^ 2)) := by
+    rw [gradient_triangleBasePotential, ← WithLp.toLp_neg, ← WithLp.toLp_smul, Prod.neg_mk,
+      Prod.smul_mk, smul_eq_mul, smul_eq_mul]
+    congr 2 <;> ring
+  ext x
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, fderiv_triangleBaseOrbitParameter_apply hu hv,
+    Submodule.mem_span_singleton, hgrad, sub_eq_zero]
+  generalize z.fst * (1 - z.fst ^ 2) = w₁ at hwu ⊢
+  generalize z.snd * (1 - z.snd ^ 2) = w₂ at hwv ⊢
+  constructor
+  · intro h
+    refine ⟨C⁻¹ * (w₁⁻¹ * x.fst), WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)⟩ <;>
+      simp only [WithLp.ofLp_smul, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, WithLp.ofLp_fst,
+        WithLp.ofLp_snd]
+    · field_simp
+    · rw [h]
+      field_simp
+  · rintro ⟨a, rfl⟩
+    simp only [WithLp.smul_fst, WithLp.smul_snd, WithLp.toLp_fst, WithLp.toLp_snd, smul_eq_mul]
+    field_simp
+
+/-- **On the diagonal the derivative of the orbit parameter is positive exactly on the vectors
+pointing into the triangle.** At a point `(t, t)` with `t ∈ (0, 1)`, the derivative of the orbit
+parameter is positive at `x` exactly when `x.snd < x.fst`. -/
+theorem fderiv_triangleBaseOrbitParameter_apply_pos_iff (hz : z.fst = z.snd)
+    (hu : z.fst ∈ Ioo 0 1) {x : WithLp 2 (ℝ × ℝ)} :
+    0 < fderiv ℝ triangleBaseOrbitParameter z x ↔ x.snd < x.fst := by
+  rw [fderiv_triangleBaseOrbitParameter_apply hu (hz ▸ hu), ← hz, ← mul_sub,
+    mul_pos_iff_of_pos_left (inv_pos.2 (mul_pos hu.1 (by nlinarith [hu.1, hu.2]))), sub_pos]
+
+/-- **On the diagonal the derivative of the orbit parameter vanishes exactly on the tangent line of
+the diagonal.** At a point `(t, t)` with `t ∈ (0, 1)`, the derivative of the orbit parameter
+vanishes at `x` exactly when `x.fst = x.snd`. -/
+theorem fderiv_triangleBaseOrbitParameter_apply_eq_zero_iff (hz : z.fst = z.snd)
+    (hu : z.fst ∈ Ioo 0 1) {x : WithLp 2 (ℝ × ℝ)} :
+    fderiv ℝ triangleBaseOrbitParameter z x = 0 ↔ x.fst = x.snd := by
+  rw [fderiv_triangleBaseOrbitParameter_apply hu (hz ▸ hu), ← hz, ← mul_sub, mul_eq_zero,
+    or_iff_right (inv_ne_zero (mul_pos hu.1 (by nlinarith [hu.1, hu.2])).ne'), sub_eq_zero]
+
+end Derivative
+
 /-! ### Regularity of the linearized operators -/
 
 section Operator
@@ -636,6 +731,55 @@ theorem surjective_trajectoryOperator_triangleBasePotential_toLp_one_zero_toLp_o
     finrank_span_singleton (by simp), morseIndex_triangleBasePotential_toLp_one_zero hC,
     morseIndex_triangleBasePotential_toLp_one_one hC]
   norm_num
+
+/-- **The derivative of the orbit parameter is conserved along linearized solutions.** Along a
+trajectory `γ` of the triangle base in the open square `(0, 1)²`, the derivative of the orbit
+parameter at `γ s` in the direction `ξ s` of a solution `ξ` of the linearized equation
+`ξ' + Hess(γ) ξ = 0` does not depend on `s`. Each coordinate of `ξ` is a constant multiple of the
+field of the interval base along the corresponding coordinate of `γ`
+(`IsIntegralCurve.inv_mul_eq_inv_mul_of_intervalBasePotential`). -/
+theorem _root_.IsIntegralCurve.fderiv_triangleBaseOrbitParameter_apply_eq
+    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z))
+    (hu : ∀ s, (γ s).fst ∈ Ioo 0 1) (hv : ∀ s, (γ s).snd ∈ Ioo 0 1) {ξ : ℝ → WithLp 2 (ℝ × ℝ)}
+    (hξ : ∀ s, HasDerivAt ξ (-hessianOperator (triangleBasePotential C) (γ s) (ξ s)) s)
+    (s t : ℝ) :
+    fderiv ℝ triangleBaseOrbitParameter (γ s) (ξ s) =
+      fderiv ℝ triangleBaseOrbitParameter (γ t) (ξ t) := by
+  obtain ⟨hγu, hγv⟩ := isIntegralCurve_triangleBasePotential_iff.1 hγ
+  have hξu : ∀ s, HasDerivAt (fun s ↦ (ξ s).fst)
+      (-hessianOperator (intervalBasePotential C) (γ s).fst (ξ s).fst) s := fun s ↦
+    ((WithLp.fstL 2 ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt s (hξ s)).congr_deriv (by simp)
+  have hξv : ∀ s, HasDerivAt (fun s ↦ (ξ s).snd)
+      (-hessianOperator (intervalBasePotential C) (γ s).snd (ξ s).snd) s := fun s ↦
+    ((WithLp.sndL 2 ℝ ℝ ℝ).hasFDerivAt.comp_hasDerivAt s (hξ s)).congr_deriv (by simp)
+  rw [fderiv_triangleBaseOrbitParameter_apply (hu s) (hv s),
+    fderiv_triangleBaseOrbitParameter_apply (hu t) (hv t),
+    hγu.inv_mul_eq_inv_mul_of_intervalBasePotential hu hξu s t,
+    hγv.inv_mul_eq_inv_mul_of_intervalBasePotential hv hξv s t]
+
+/-- **The positive normal ray of the kernel along the diagonal.** Along a trajectory `γ` of the
+triangle base on the open diagonal `u = v ∈ (0, 1)`, which for `C > 0` runs from the source
+`(0, 0)` to the sink `(1, 1)`, a solution `ξ` of the linearized equation `ξ' + Hess(γ) ξ = 0`
+points strictly into the triangle `v ≤ u` at one time exactly when the derivative of the orbit
+parameter in its direction is positive, at any time. In particular, whether `ξ` points into the
+triangle does not depend on the time.
+
+Along such a trajectory every linearized solution is square integrable
+(`TauCeti.squareIntegrableSolutions_hessianOperator_triangleBasePotential_eq_top`), so these
+solutions make up the two-dimensional kernel of the linearized operator. The derivative of the
+orbit parameter vanishes on the velocity line (`TauCeti.ker_fderiv_triangleBaseOrbitParameter`),
+the translation direction of the kernel, and is positive on the side of the normal line on which
+the orbit parameter increases into the interval `[0, ∞)` of source-to-sink orbits, whose endpoint
+`0` is the diagonal. -/
+theorem _root_.IsIntegralCurve.snd_lt_fst_iff_fderiv_triangleBaseOrbitParameter_pos
+    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z))
+    (hdiag : ∀ s, (γ s).fst = (γ s).snd) (hγ₀₁ : ∀ s, (γ s).fst ∈ Ioo 0 1)
+    {ξ : ℝ → WithLp 2 (ℝ × ℝ)}
+    (hξ : ∀ s, HasDerivAt ξ (-hessianOperator (triangleBasePotential C) (γ s) (ξ s)) s)
+    (s t : ℝ) :
+    (ξ s).snd < (ξ s).fst ↔ 0 < fderiv ℝ triangleBaseOrbitParameter (γ t) (ξ t) := by
+  rw [← hγ.fderiv_triangleBaseOrbitParameter_apply_eq hγ₀₁ (fun s ↦ hdiag s ▸ hγ₀₁ s) hξ s t,
+    fderiv_triangleBaseOrbitParameter_apply_pos_iff (hdiag s) (hγ₀₁ s)]
 
 end Operator
 
