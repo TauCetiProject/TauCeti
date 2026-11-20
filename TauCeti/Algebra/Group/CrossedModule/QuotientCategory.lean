@@ -98,17 +98,20 @@ variable {M}
 coset of the range of the boundary. -/
 theorem orbitRel_of_iff {h h' : H} :
     orbitRel T M.TranslationSpace (of M h) (of M h') ↔ h⁻¹ * h' ∈ M.boundary.range := by
-  rw [orbitRel_apply, mem_orbit_iff, M.boundary_range_normal.mem_comm_iff, ← inv_mem_iff,
-    mul_inv_rev, inv_inv]
-  simp only [smul_of, (of M).injective.eq_iff, ← eq_mul_inv_iff_mul_eq, MonoidHom.mem_range]
+  simp only [orbitRel_apply, mem_orbit_iff, smul_of, (of M).injective.eq_iff,
+    MonoidHom.mem_range]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact ⟨M.act h'⁻¹ x⁻¹, by rw [M.boundary_act]; simp [mul_assoc]⟩
+  · rintro ⟨y, hy⟩
+    exact ⟨M.act h y⁻¹, by rw [M.boundary_act]; simp [hy, mul_assoc]⟩
 
 /-- An element of `T` fixes a point of the translation space exactly when it lies in the kernel
 of the boundary. -/
 theorem mem_stabilizer_iff {x : T} {h : M.TranslationSpace} :
     x ∈ stabilizer T h ↔ x ∈ M.boundary.ker := by
   obtain ⟨h, rfl⟩ := (of M).surjective h
-  rw [MulAction.mem_stabilizer_iff, smul_of, (of M).injective.eq_iff, mul_eq_right,
-    MonoidHom.mem_ker]
+  simp [MulAction.mem_stabilizer_iff, (of M).injective.eq_iff]
 
 /-- The stabilizer of every point of the translation space is the kernel of the boundary. -/
 theorem stabilizer_eq_ker (h : M.TranslationSpace) : stabilizer T h = M.boundary.ker :=
@@ -157,13 +160,26 @@ def label {X Y : M.QuotientCategory} (f : X ⟶ Y) : T :=
 /-- An arrow of the quotient groupoid translates its source to its target by the boundary of its
 label. -/
 theorem boundary_label_mul {X Y : M.QuotientCategory} (f : X ⟶ Y) :
-    M.boundary (label f) * (objEquiv M).symm X = (objEquiv M).symm Y :=
-  f.map_val
+    M.boundary (label f) * (objEquiv M).symm X = (objEquiv M).symm Y := by
+  obtain ⟨h, rfl⟩ := (objEquiv M).surjective X
+  obtain ⟨h', rfl⟩ := (objEquiv M).surjective Y
+  have hf := ActionCategory.hom_smul (x := TranslationSpace.of M h)
+    (y := TranslationSpace.of M h') f
+  rw [TranslationSpace.smul_of, (TranslationSpace.of M).injective.eq_iff] at hf
+  simpa [label] using hf
 
 /-- The arrow of the quotient groupoid with a given label. -/
 def homMk {X Y : M.QuotientCategory} (x : T)
     (hx : M.boundary x * (objEquiv M).symm X = (objEquiv M).symm Y) : X ⟶ Y :=
-  Functor.Elements.homMk x hx
+  -- `Functor.Elements.homMk` asks for `x • X.back = Y.back` in the action category, and
+  -- `objEquiv M` is `TranslationSpace.of M` followed by `ActionCategory.objEquiv`, so by
+  -- `TranslationSpace.smul_of` this is the condition `hx` after unfolding these equivalences.
+  Functor.Elements.homMk x <| by
+    obtain ⟨h, rfl⟩ := (objEquiv M).surjective X
+    obtain ⟨h', rfl⟩ := (objEquiv M).surjective Y
+    change x • TranslationSpace.of M h = TranslationSpace.of M h'
+    rw [TranslationSpace.smul_of]
+    exact congrArg (TranslationSpace.of M) (by simpa using hx)
 
 @[simp]
 theorem label_homMk {X Y : M.QuotientCategory} (x : T)

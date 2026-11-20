@@ -51,7 +51,7 @@ actions (`CrossedModule.Hom`). It induces homomorphisms of kernels and of cokern
   action is conjugation.
 * `TauCeti.CrossedModule.ker_le_center`: the kernel of `∂` is central.
 * `TauCeti.CrossedModule.act_mem_ker`: the kernel of `∂` is stable under `H`.
-* `TauCeti.CrossedModule.boundary_range_normal`: the range of `∂` is normal.
+* `TauCeti.CrossedModule.normal_range_boundary`: the range of `∂` is normal.
 
 ## References
 
@@ -113,7 +113,7 @@ theorem act_mem_ker {x : T} (hx : x ∈ M.boundary.ker) (h : H) : M.act h x ∈ 
 
 /-- The range of the boundary of a crossed module is a normal subgroup, so the cokernel
 `H ⧸ M.boundary.range` is a group. -/
-instance boundary_range_normal : M.boundary.range.Normal where
+instance normal_range_boundary : M.boundary.range.Normal where
   conj_mem := by
     rintro _ ⟨x, rfl⟩ h
     exact ⟨M.act h x, M.boundary_act h x⟩
