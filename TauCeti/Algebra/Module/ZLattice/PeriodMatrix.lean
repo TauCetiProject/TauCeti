@@ -10,9 +10,8 @@ public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Algebra.Module.ZLattice.Covolume
+import TauCeti.Algebra.Module.ZLattice.ChangeOfVariables
 import TauCeti.Analysis.Complex.Euclidean.Space
-import TauCeti.LinearAlgebra.Complex.Determinant
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -42,7 +41,7 @@ Lebesgue covolume of `Λ` in `ι → ℂ` (with the product of the Lebesgue meas
 
 For an abelian variety `A(ℂ) = ℂ^g / Λ` with linear coordinates `z₁, …, z_g`, the integral of
 `(i^(g²) / 2^g) dz₁ ∧ ⋯ ∧ dz_g ∧ conj (dz₁ ∧ ⋯ ∧ dz_g)` over `A(ℂ)` is the covolume of `Λ`, so
-these formulas compute the Faltings norm of `dz₁ ∧ ⋯ ∧ dz_g` in terms of the periods.
+these formulas compute the squared Faltings norm `‖dz₁ ∧ ⋯ ∧ dz_g‖²` in terms of the periods.
 
 ## References
 
@@ -56,32 +55,13 @@ public section
 
 open Module Submodule MeasureTheory Matrix
 
-namespace ZLattice
-
-section ComplexLinear
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  [MeasurableSpace E] [BorelSpace E]
-
-/-- **Complex change of variables for covolumes.** Pulling a full lattice back along a
-`ℂ`-linear automorphism `A` divides its covolume by `|det A|²`, for any Haar measure: as a real
-linear map, `A` has determinant `Complex.normSq (det A)`. Read through images,
-`covolume (A L) = |det A|² * covolume L`. -/
-theorem covolume_comap_restrictScalars (L : Submodule ℤ E) [DiscreteTopology L]
-    [IsZLattice ℝ L] (A : E ≃L[ℂ] E) (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
-    covolume (ZLattice.comap ℝ L (A.restrictScalars ℝ).toLinearMap) μ =
-      (Complex.normSq (LinearMap.det (A.toLinearMap : E →ₗ[ℂ] E)))⁻¹ * covolume L μ := by
-  rw [covolume_comap_continuousLinearEquiv L (A.restrictScalars ℝ) μ,
-    ← LinearMap.det_restrictScalars_eq_normSq]
-  simp [abs_of_nonneg (LinearMap.det_restrictScalars_nonneg _)]
-
-end ComplexLinear
+namespace Matrix
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- The real period matrix of `(1 | τ)` is block upper triangular, with diagonal blocks `1` and
 `Im τ`, so its determinant is `det (Im τ)`. -/
-private theorem det_fromRows_re_im_fromCols_one (τ : Matrix ι ι ℂ) :
+theorem det_fromRows_re_im_fromCols_one (τ : Matrix ι ι ℂ) :
     (fromRows ((fromCols (1 : Matrix ι ι ℂ) τ).map Complex.re)
       ((fromCols (1 : Matrix ι ι ℂ) τ).map Complex.im)).det = (τ.map Complex.im).det := by
   have h : fromRows ((fromCols (1 : Matrix ι ι ℂ) τ).map Complex.re)
@@ -89,6 +69,30 @@ private theorem det_fromRows_re_im_fromCols_one (τ : Matrix ι ι ℂ) :
       fromBlocks 1 (τ.map Complex.re) 0 (τ.map Complex.im) := by
     ext (i | i) (j | j) <;> by_cases hij : i = j <;> simp [hij]
   rw [h, det_fromBlocks_zero₂₁, det_one, one_mul]
+
+/-- For a complex square matrix `τ` whose imaginary part is invertible, the columns of the period
+matrix `(1 | τ)` form a real basis of `ι → ℂ`. Its `ℤ`-span is the lattice `ℤ^g + τ ℤ^g`, whose
+covolume is `ZLattice.covolume_span_normalizedPeriodBasis`. -/
+noncomputable def normalizedPeriodBasis (τ : Matrix ι ι ℂ) (hτ : (τ.map Complex.im).det ≠ 0) :
+    Basis (ι ⊕ ι) ℝ (ι → ℂ) :=
+  (Pi.basisFun ℝ (ι ⊕ ι)).map <|
+    (toLinearEquiv (Pi.basisFun ℝ (ι ⊕ ι))
+      (fromRows ((fromCols 1 τ).map Complex.re) ((fromCols 1 τ).map Complex.im))
+      (by rw [det_fromRows_re_im_fromCols_one]; exact isUnit_iff_ne_zero.2 hτ)).trans
+    (TauCeti.complexToRealPi ι).symm.toLinearEquiv
+
+/-- The `k`-th vector of `normalizedPeriodBasis τ` is the `k`-th column of `(1 | τ)`. -/
+@[simp]
+theorem normalizedPeriodBasis_apply (τ : Matrix ι ι ℂ) (hτ : (τ.map Complex.im).det ≠ 0) (k : ι ⊕ ι)
+    (i : ι) : normalizedPeriodBasis τ hτ k i = fromCols 1 τ i k := by
+  apply Complex.ext <;>
+    simp [normalizedPeriodBasis, toLinearEquiv_apply, toLin_eq_toLin']
+
+end Matrix
+
+namespace ZLattice
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The covolume of a lattice in `ℂ^g` from its period matrix.** If the `ℤ`-basis `b` of a full
 lattice `L` in `ι → ℂ` has period matrix `P`, that is `b k = (P i k)ᵢ`, then the covolume of `L`
@@ -117,7 +121,7 @@ half space this is `det (Im τ)`. -/
 theorem covolume_eq_abs_det_im (L : Submodule ℤ (ι → ℂ)) [DiscreteTopology L] [IsZLattice ℝ L]
     (τ : Matrix ι ι ℂ) (b : Basis (ι ⊕ ι) ℤ L) (hb : ∀ i k, (b k : ι → ℂ) i = fromCols 1 τ i k) :
     covolume L = |(τ.map Complex.im).det| := by
-  rw [covolume_eq_abs_det_fromRows_re_im L _ b hb, det_fromRows_re_im_fromCols_one]
+  rw [covolume_eq_abs_det_fromRows_re_im L _ b hb, Matrix.det_fromRows_re_im_fromCols_one]
 
 /-- **The covolume of a lattice with period matrix `(Ω₁ | Ω₂)`.** If the `ℤ`-basis `b` of a full
 lattice `L` in `ι → ℂ` has period matrix `(Ω₁ | Ω₂)` with `Ω₁` invertible, then the covolume of
@@ -131,8 +135,11 @@ theorem covolume_eq_normSq_det_mul_abs_det_im (L : Submodule ℤ (ι → ℂ)) [
     (Matrix.toLinearEquiv (Pi.basisFun ℂ ι) Ω₁ hΩ₁).toContinuousLinearEquiv
   have hA : LinearMap.det (A.toLinearMap : (ι → ℂ) →ₗ[ℂ] ι → ℂ) = Ω₁.det := by
     -- The linear map underlying `A` is `toLin` of `Ω₁` in the standard basis.
-    rw [← LinearMap.det_toLin (Pi.basisFun ℂ ι) Ω₁]
-    congr 1
+    have hlin : (A.toLinearMap : (ι → ℂ) →ₗ[ℂ] ι → ℂ) =
+        toLin (Pi.basisFun ℂ ι) (Pi.basisFun ℂ ι) Ω₁ := by
+      ext x
+      simp [A, toLinearEquiv_apply]
+    rw [hlin, LinearMap.det_toLin]
   let e := (A.restrictScalars ℝ).toLinearEquiv
   have hcols : ∀ i k, (b.ofZLatticeComap ℝ L e k : ι → ℂ) i = fromCols 1 (Ω₁⁻¹ * Ω₂) i k := by
     intro i k
@@ -141,42 +148,16 @@ theorem covolume_eq_normSq_det_mul_abs_det_im (L : Submodule ℤ (ι → ℂ)) [
       ext i
       rcases k with k | k <;> simp [hb, mulVec, dotProduct, ← Matrix.mul_apply,
         mul_nonsing_inv_cancel_left _ _ hΩ₁]
-    simp [e, A, hk, Matrix.toLinearEquiv, toLin_eq_toLin', mulVec_mulVec, nonsing_inv_mul _ hΩ₁]
+    -- `e` multiplies by `Ω₁`, so `e⁻¹` sends `b k` back to the column of `(1 | Ω₁⁻¹ Ω₂)`.
+    have hsymm : e.symm (b k) = fun i ↦ fromCols 1 (Ω₁⁻¹ * Ω₂) i k := by
+      rw [LinearEquiv.symm_apply_eq, hk]
+      simp [e, A, toLinearEquiv_apply, toLin_eq_toLin']
+    exact congr_fun hsymm i
   have h := (covolume_comap_restrictScalars L A).symm.trans
     (covolume_eq_abs_det_im _ _ (b.ofZLatticeComap ℝ L e) hcols)
   rw [hA] at h
   have hne : Complex.normSq Ω₁.det ≠ 0 := Complex.normSq_pos.2 hΩ₁.ne_zero |>.ne'
   rw [← h, mul_inv_cancel_left₀ hne]
-
-end ZLattice
-
-namespace Matrix
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- For a complex square matrix `τ` whose imaginary part is invertible, the columns of the period
-matrix `(1 | τ)` form a real basis of `ι → ℂ`. Its `ℤ`-span is the lattice `ℤ^g + τ ℤ^g`, whose
-covolume is `ZLattice.covolume_span_normalizedPeriodBasis`. -/
-noncomputable def normalizedPeriodBasis (τ : Matrix ι ι ℂ) (hτ : (τ.map Complex.im).det ≠ 0) :
-    Basis (ι ⊕ ι) ℝ (ι → ℂ) :=
-  (Pi.basisFun ℝ (ι ⊕ ι)).map <|
-    (toLinearEquiv (Pi.basisFun ℝ (ι ⊕ ι))
-      (fromRows ((fromCols 1 τ).map Complex.re) ((fromCols 1 τ).map Complex.im))
-      (by rw [ZLattice.det_fromRows_re_im_fromCols_one]; exact isUnit_iff_ne_zero.2 hτ)).trans
-    (TauCeti.complexToRealPi ι).symm.toLinearEquiv
-
-/-- The `k`-th vector of `normalizedPeriodBasis τ` is the `k`-th column of `(1 | τ)`. -/
-@[simp]
-theorem normalizedPeriodBasis_apply (τ : Matrix ι ι ℂ) (hτ : (τ.map Complex.im).det ≠ 0) (k : ι ⊕ ι)
-    (i : ι) : normalizedPeriodBasis τ hτ k i = fromCols 1 τ i k := by
-  apply Complex.ext <;>
-    simp [normalizedPeriodBasis, toLin_eq_toLin']
-
-end Matrix
-
-namespace ZLattice
-
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- **The covolume of `ℤ^g + τ ℤ^g`.** For a complex square matrix `τ` whose imaginary part is
 invertible, the `ℤ`-span of the columns of `(1 | τ)` is a full lattice in `ι → ℂ` of covolume

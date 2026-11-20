@@ -34,11 +34,16 @@ theorem map_im_I_smul_one {ι : Type*} [DecidableEq ι] :
     simp
   · simp [hij]
 
+/-- The imaginary part of `i · 1` is invertible. -/
+theorem det_map_im_I_smul_one_ne_zero {ι : Type*} [Fintype ι] [DecidableEq ι] :
+    ((Complex.I • (1 : Matrix ι ι ℂ)).map Complex.im).det ≠ 0 := by
+  rw [map_im_I_smul_one, det_one]
+  exact one_ne_zero
+
 /-- The Gaussian lattice `ℤ[i]^g = ℤ^g + i ℤ^g` has covolume `1`. -/
-theorem covolume_gaussian {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (h : ((Complex.I • (1 : Matrix ι ι ℂ)).map Complex.im).det ≠ 0) :
-    ZLattice.covolume
-      (span ℤ (Set.range ((Complex.I • (1 : Matrix ι ι ℂ)).normalizedPeriodBasis h))) = 1 := by
+theorem covolume_gaussian {ι : Type*} [Fintype ι] [DecidableEq ι] :
+    ZLattice.covolume (span ℤ (Set.range ((Complex.I • (1 : Matrix ι ι ℂ)).normalizedPeriodBasis
+      det_map_im_I_smul_one_ne_zero))) = 1 := by
   rw [ZLattice.covolume_span_normalizedPeriodBasis, map_im_I_smul_one, det_one, abs_one]
 
 /-- The imaginary part of `τ = 2i` is invertible. -/
