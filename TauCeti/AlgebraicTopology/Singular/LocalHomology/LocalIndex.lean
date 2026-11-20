@@ -404,12 +404,11 @@ theorem localIndex_comp {P G : Type} [TopologicalSpace P] [T2Space P] [NormedAdd
       hVo.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm ⟨f x, hxV⟩ _ hval]
     simp only [← hfφ]
     exact o.localHomologyMap_restrict_localOrientationEquiv_symm o' f rfl hUo hxU hfU
-  rw [o.localIndex_eq_iff o'' hG (g.comp f) rfl hUo hxU hgfU]
+  rw [o.localIndex_eq_iff o'' hG (g.comp f) (y := g (f x)) rfl hUo hxU hgfU]
   simp only [hgφ]
   rw [← localHomologyMap_comp _ φ (g.restrict V) hφ hgV, ConcreteCategory.comp_apply, hc,
     map_zsmul, o'.localHomologyMap_restrict_localOrientationEquiv_symm o'' g rfl hVo hxV hV,
     smul_smul, mul_comm]
-  rfl
 
 /-- **The chain rule for local indices along an open embedding.** If `f` is an open embedding, the
 local index of `g ∘ f` at `x` is the product of the local index of `g` at `f x` and that of `f`

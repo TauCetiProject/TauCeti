@@ -270,19 +270,23 @@ private theorem exists_opens_isOpenEmbedding_conj {V : Opens E} {f : C(U, E)} {g
   have hWt (z : W) : inclusion hWU z ∈ t := by
     obtain ⟨z', hz', hzz'⟩ := z.2
     exact (Subtype.ext hzz' : z' = inclusion hWU z) ▸ hz'
+  have hWsrc (z : W) : (z : E) ∈ e.source := (ht _ (hWt z)).1.1.1
+  have hWV (z : W) : h z ∈ V := (ht _ (hWt z)).1.1.2
   have hk_cont : Continuous fun z : W ↦ h z :=
-    e.continuousOn.comp_continuous continuous_subtype_val fun z ↦ (ht _ (hWt z)).1.1.1
+    e.continuousOn.comp_continuous continuous_subtype_val hWsrc
   -- `h` is injective and open on the source of `e`, which contains `W`.
-  let k : C(W, V) := ⟨fun z ↦ ⟨h z, (ht _ (hWt z)).1.1.2⟩, hk_cont.subtype_mk _⟩
+  let k : C(W, V) := ⟨fun z ↦ ⟨h z, hWV z⟩, hk_cont.subtype_mk _⟩
   have hk : IsOpenEmbedding k := by
     refine (IsOpenEmbedding.of_comp_iff k V.isOpenEmbedding').1
       (.of_continuous_injective_isOpenMap hk_cont (fun a b hab ↦ Subtype.ext
-        (e.injOn (ht _ (hWt a)).1.1.1 (ht _ (hWt b)).1.1.1 hab)) fun s hs ↦ ?_)
+        (e.injOn (hWsrc a) (hWsrc b) hab)) fun s hs ↦ ?_)
     -- `Subtype.val ∘ k` is `e ∘ Subtype.val` by construction of `k`.
     rw [show (Subtype.val ∘ k) '' s = e '' (Subtype.val '' s) by rw [image_image]; rfl]
     exact e.isOpen_image_of_subset_source (W.isOpenEmbedding'.isOpenMap s hs)
-      (by rintro _ ⟨z, -, rfl⟩; exact (ht _ (hWt z)).1.1.1)
-  exact ⟨W, hWU, k, ⟨x, hxt, rfl⟩, hk, fun z ↦ ⟨rfl, (ht _ (hWt z)).1.2 _, (ht _ (hWt z)).2⟩⟩
+      (by rintro _ ⟨z, -, rfl⟩; exact hWsrc z)
+  refine ⟨W, hWU, k, ⟨x, hxt, rfl⟩, hk, fun z ↦ ?_⟩
+  obtain ⟨⟨-, hzconj⟩, hzest⟩ := ht _ (hWt z)
+  exact ⟨rfl, hzconj _, hzest⟩
 
 /-- **The local fixed-point index is invariant under smooth changes of coordinates.** Let
 `f : U → E` and `g : V → E` be continuous maps of open subsets of `E`, and let `x` be a fixed point
@@ -306,6 +310,7 @@ theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)}
   let ι : C(W, U) := inclusion hWU
   set xW : W := ⟨x, hxW⟩
   -- `ι xW` is `x`, by definition of the inclusion.
+  have hιx : inclusion hWU xW = x := rfl
   have hfW : (f.comp ι) xW = xW := hx
   have hkx : k xW = ⟨h x, hxV⟩ := Subtype.ext (hkW xW).1
   -- Read on `W`, the displacement of `g` through `k` is `z ↦ h z - h (f z)`, within half its
@@ -326,23 +331,28 @@ theorem localFixedPointIndex_eq_of_hasStrictFDerivAt {V : Opens E} {f : C(U, E)}
     rw [hG, hAD, hAD xW, hfW, sub_self, map_zero, sub_zero, one_div_mul_eq_div]
     exact (hkW z).2.2
   -- By the chain rule, both sides are `sign det A` times a local fixed-point index.
-  rw [(o.comap W.isOpenEmbedding').localIndex_comp o o rfl
-      (eventually_nhdsWithin_of_forall fun z hz ↦ A.injective.ne hz),
-    (o.comap W.isOpenEmbedding').localIndex_comp_of_isOpenEmbedding (o.comap V.isOpenEmbedding') o
-      rfl hk xW,
-    o.localIndex_comap_eq_sign_det rfl W.isOpenEmbedding' V.isOpenEmbedding' (f := k) (φ := h)
-      (.of_forall fun z ↦ ((hkW z).1).symm) (HasStrictFDerivAt.hasFDerivAt hh) hdet,
-    displacement_apply, hfW, sub_self, o.localIndex_eq_sign_det rfl (f := Ac)
-      (A : E →L[ℝ] E).hasFDerivAt hdet,
-    ← (f.comp ι).localFixedPointIndex_eq_localIndex o rfl hfW,
-    ← g.localFixedPointIndex_eq_localIndex o rfl (x := k xW)
-      (by rw [(hkW xW).2.1, (hkW xW).1]; exact congrArg h hfW),
-    localFixedPointIndex_comp_inclusion, hkx] at hcomp
+  have hL : (o.comap W.isOpenEmbedding').localIndex o (Ac.comp (f.comp ι).displacement) xW =
+      SignType.sign (A : E →L[ℝ] E).det * f.localFixedPointIndex x := by
+    rw [(o.comap W.isOpenEmbedding').localIndex_comp o o rfl
+        (eventually_nhdsWithin_of_forall fun z hz ↦ A.injective.ne hz),
+      displacement_apply, hfW, sub_self,
+      o.localIndex_eq_sign_det rfl (f := Ac) (A : E →L[ℝ] E).hasFDerivAt hdet,
+      ← (f.comp ι).localFixedPointIndex_eq_localIndex o rfl hfW,
+      localFixedPointIndex_comp_inclusion, hιx]
+  have hR : (o.comap W.isOpenEmbedding').localIndex o (g.displacement.comp k) xW =
+      SignType.sign (A : E →L[ℝ] E).det * g.localFixedPointIndex ⟨h x, hxV⟩ := by
+    rw [(o.comap W.isOpenEmbedding').localIndex_comp_of_isOpenEmbedding
+        (o.comap V.isOpenEmbedding') o rfl hk xW,
+      o.localIndex_comap_eq_sign_det rfl W.isOpenEmbedding' V.isOpenEmbedding' (f := k) (φ := h)
+        (.of_forall fun z ↦ ((hkW z).1).symm) (HasStrictFDerivAt.hasFDerivAt hh) hdet,
+      ← g.localFixedPointIndex_eq_localIndex o rfl (x := k xW)
+        (by rw [(hkW xW).2.1, (hkW xW).1]; exact congrArg h hfW), hkx, mul_comm]
+  -- `sign det A ≠ 0` in `SignType`, and the cast `SignType → ℤ` is injective.
   have hs : (SignType.sign (A : E →L[ℝ] E).det : ℤ) ≠ 0 := by
-    rcases hdet.lt_or_gt with hd | hd
-    · simp [sign_neg hd]
-    · simp [sign_pos hd]
-  exact (mul_left_cancel₀ hs (hcomp.trans (mul_comm _ _))).symm
+    have hs := sign_ne_zero.2 hdet
+    generalize SignType.sign (A : E →L[ℝ] E).det = s at hs ⊢
+    decide +revert
+  exact (mul_left_cancel₀ hs (hL.symm.trans (hcomp.trans hR))).symm
 
 /-- The fixed-point index vanishes when the fixed set is not compact. -/
 theorem fixedPointIndex_of_not_isCompact (f : C(U, E)) (h : ¬IsCompact {z | f z = z}) :
