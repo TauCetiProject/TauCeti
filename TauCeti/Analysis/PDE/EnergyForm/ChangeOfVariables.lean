@@ -172,6 +172,13 @@ theorem pullbackDrift_apply (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ �
       toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ (b (Φ x)) :=
   (rfl)
 
+/-- The transformed drift of the zero vector field is zero. -/
+@[simp]
+theorem pullbackDrift_zero (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) :
+    pullbackDrift Φ 0 = 0 := by
+  ext
+  simp [pullbackDrift_apply]
+
 @[simp]
 theorem pullbackDensity_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Φ : E → E)
     (f : E → ℝ) (x : E) : pullbackDensity Φ f x = |(fderiv ℝ Φ x).det| * f (Φ x) :=
@@ -431,12 +438,13 @@ theorem exists_holderOnWith_matrixBilinearForm_pullbackPrincipal
     simpa only [mul_one, Function.comp_def] using ha.comp hΦ.holderOnWith hmaps
   have hh := hJ.prodMk (haΦ.prodMk ((ContinuousLinearMap.adjoint (𝕜 := ℝ)
     (E := EuclideanSpace ℝ ι) (F := EuclideanSpace ℝ ι)).isometry.comp_holderOnWith hTh))
-  obtain ⟨K, hK⟩ := hg.exists_holderOnWith_comp hh (R := max J (max M L)) fun x hx => by
-    simp only [Function.comp_apply, norm_prod_le_iff, Real.norm_eq_abs, abs_abs,
-      LinearIsometryEquiv.norm_map]
-    exact ⟨(hJb x hx).trans (le_max_left _ _),
-      (haM _ (hmaps hx)).trans ((le_max_left _ _).trans (le_max_right _ _)),
-      (hTL x hx).trans ((le_max_right _ _).trans (le_max_right _ _))⟩
+  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp hh (R := max J (max M L))
+    fun x hx => by
+      simp only [Function.comp_apply, norm_prod_le_iff, Real.norm_eq_abs, abs_abs,
+        LinearIsometryEquiv.norm_map]
+      exact ⟨(hJb x hx).trans (le_max_left _ _),
+        (haM _ (hmaps hx)).trans ((le_max_left _ _).trans (le_max_right _ _)),
+        (hTL x hx).trans ((le_max_right _ _).trans (le_max_right _ _))⟩
   refine ⟨K, hK.congr fun z hz => ?_⟩
   rw [Function.comp_apply, matrixBilinearForm_pullbackPrincipal_eq_bilinearComp a (hT z hz)]
   ext η ξ
@@ -464,7 +472,7 @@ theorem exists_holderOnWith_pullbackDrift {s t : Set (EuclideanSpace ℝ ι)}
     contDiff_fst.smul ((contDiff_snd.comp contDiff_snd).clm_apply (contDiff_fst.comp contDiff_snd))
   have hbΦ : HolderOnWith (Kb * KΦ ^ (r : ℝ)) r (fun x => b (Φ x)) s := by
     simpa only [mul_one, Function.comp_def] using hb.comp hΦ.holderOnWith hmaps
-  obtain ⟨K, hK⟩ := hg.exists_holderOnWith_comp (hJ.prodMk (hbΦ.prodMk hTh))
+  obtain ⟨K, hK⟩ := hg.contDiffOn.exists_holderOnWith_comp (hJ.prodMk (hbΦ.prodMk hTh))
     (R := max J (max M L)) fun x hx => by
       simp only [norm_prod_le_iff, Real.norm_eq_abs, abs_abs]
       exact ⟨(hJb x hx).trans (le_max_left _ _),
@@ -624,8 +632,10 @@ theorem energyFormH1_compL_eq_setIntegral (hΦ : DifferentiableOn ℝ Φ U) (hin
       ∫ x in U, pullbackDensity Φ f x * W1p.value (φ : W1p mu U 2) x ∂mu := by
   have h := energyFormH1_compL_eq_setIntegral_add_setIntegral_inner hΦ hinj hmaps hL hc₀ hdet hΨ
     hΨmaps hΨL hc₁ hΨdet hΨΦ hΦΨ (a := a) (b := b) (c := c) (f := f) (G := 0) (u := u)
-    (fun w => by rw [hu w]; simp) φ
-  simpa [pullbackDrift_apply] using h
+    (fun w => by
+      rw [hu w]
+      simp only [Pi.zero_apply, inner_zero_left, integral_zero, add_zero]) φ
+  simpa only [pullbackDrift_zero, Pi.zero_apply, inner_zero_left, integral_zero, add_zero] using h
 
 end WeakSolution
 

@@ -26,8 +26,8 @@ controls its oscillation between distant points (`HolderOnWith.of_le_of_dist_le`
 * `TauCeti.holderOnWith_thickening_of_norm_fderiv_le`: if the bounds hold on an open set containing
   the `2δ`-thickening of a set `K`, the function is Hölder on the `δ`-thickening of `K`.
 * `ContDiffOn.exists_holderOnWith`: a function `C¹` on a compact convex set is Hölder there.
-* `ContDiff.exists_holderOnWith_comp`: a `C¹` map after a bounded Hölder map is Hölder, with the
-  same exponent.
+* `ContDiffOn.exists_holderOnWith_comp`: a map `C¹` on a closed ball, after a Hölder map with
+  values in that ball, is Hölder with the same exponent.
 -/
 
 public section
@@ -97,13 +97,13 @@ theorem ContDiffOn.exists_holderOnWith {E F : Type*} [NormedAddCommGroup E] [Nor
 
 /-- A `C¹` map after a bounded `r`-Hölder map is `r`-Hölder: if `f` is `r`-Hölder on `s` with values
 in the closed ball of radius `R` of a finite-dimensional space, then `g ∘ f` is `r`-Hölder on `s`
-for every `C¹` map `g`, since `g` is Lipschitz on that ball. -/
-theorem ContDiff.exists_holderOnWith_comp {X E F : Type*} [PseudoEMetricSpace X]
+for every map `g` that is `C¹` on that ball, since `g` is Lipschitz there. -/
+theorem ContDiffOn.exists_holderOnWith_comp {X E F : Type*} [PseudoEMetricSpace X]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {g : E → F} (hg : ContDiff ℝ 1 g) {f : X → E} {s : Set X} {C r : ℝ≥0}
-    (hf : HolderOnWith C r f s) {R : ℝ} (hR : ∀ x ∈ s, ‖f x‖ ≤ R) :
+    [NormedSpace ℝ F] {g : E → F} {R : ℝ} (hg : ContDiffOn ℝ 1 g (Metric.closedBall 0 R))
+    {f : X → E} {s : Set X} {C r : ℝ≥0} (hf : HolderOnWith C r f s) (hR : ∀ x ∈ s, ‖f x‖ ≤ R) :
     ∃ K, HolderOnWith K r (g ∘ f) s := by
-  obtain ⟨Kg, hKg⟩ := hg.contDiffOn.exists_lipschitzOnWith one_ne_zero (convex_closedBall 0 R)
+  obtain ⟨Kg, hKg⟩ := hg.exists_lipschitzOnWith one_ne_zero (convex_closedBall 0 R)
     (isCompact_closedBall 0 R)
   have h := (holderOnWith_one.2 hKg).comp hf fun x hx => mem_closedBall_zero_iff.2 (hR x hx)
   rw [one_mul] at h
