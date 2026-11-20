@@ -14,6 +14,9 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 A sigma-compact open subset of a locally compact space has a monotone sequence of compact
 subsets that exhausts it in the sense that every compact subset lies in one of them
 (`IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset`).
+
+Conversely, compact subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover
+a subset `U` trace a compact exhaustion of the subspace `U` (`CompactExhaustion.subtype`).
 -/
 
 public section
@@ -37,3 +40,31 @@ theorem IsOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_s
       Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
     obtain ⟨m, hm⟩ := Kx.exists_superset_of_isCompact hK'
     exact ⟨m, fun x hx => ⟨⟨x, hKΩ hx⟩, hm hx, rfl⟩⟩
+
+namespace CompactExhaustion
+
+variable {X : Type*} [TopologicalSpace X] (U : Set X) (K : ℕ → Set X)
+  (hK : ∀ n, IsCompact (K n)) (hKU : ∀ n, K n ⊆ U) (hsub : ∀ n, K n ⊆ interior (K (n + 1)))
+  (hcover : U ⊆ ⋃ n, K n)
+
+/-- Compact subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover `U` trace
+the compact exhaustion `n ↦ U ∩ Kₙ` of the subspace `U`. -/
+-- The body is exposed so that its sets unfold to the preimages `Subtype.val ⁻¹' Kₙ`: pairs and
+-- chain complexes built from the exhaustion must agree with those built from these preimages up to
+-- definitional equality, as in the twisted relative chains of `U` and of `X`.
+@[expose]
+def subtype : CompactExhaustion U where
+  toFun n := Subtype.val ⁻¹' K n
+  isCompact' n := Subtype.isCompact_iff.2 <| by
+    rw [Subtype.image_preimage_coe, inter_eq_right.2 (hKU n)]
+    exact hK n
+  subset_interior_succ' n := (preimage_mono (hsub n)).trans
+    (preimage_interior_subset_interior_preimage continuous_subtype_val)
+  iUnion_eq' := eq_univ_of_forall fun x ↦ by simpa using hcover x.2
+
+@[simp]
+theorem subtype_apply (n : ℕ) :
+    CompactExhaustion.subtype U K hK hKU hsub hcover n = Subtype.val ⁻¹' K n :=
+  (rfl)
+
+end CompactExhaustion
