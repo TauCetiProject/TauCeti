@@ -147,8 +147,9 @@ skyscraper presheaf at `y`, naturally in the coefficient object. -/
 noncomputable def skyscraperPresheafFunctorCompWhiskeringLeftIso :
     skyscraperPresheafFunctor (C := C) (f y) ⋙ (Functor.whiskeringLeft _ _ C).obj hf.functor.op ≅
       skyscraperPresheafFunctor y :=
-  NatIso.ofComponents (fun M ↦ show hf.functor.op ⋙ skyscraperPresheaf (f y) M ≅ _ from
-    NatIso.ofComponents (G := skyscraperPresheaf y M)
+  NatIso.ofComponents (fun M ↦
+    NatIso.ofComponents (F := hf.functor.op ⋙ skyscraperPresheaf (f y) M)
+      (G := skyscraperPresheaf y M)
     (fun V ↦ eqToIso (by simp [hf.apply_mem_functor_obj_iff hf']))
     (fun {V W} i ↦ by
       by_cases hW : y ∈ W.unop
