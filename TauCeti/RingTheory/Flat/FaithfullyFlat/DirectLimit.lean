@@ -10,7 +10,8 @@ public import Mathlib.RingTheory.FinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 import Mathlib.RingTheory.Ideal.GoingDown
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
-import TauCeti.Algebra.Colimit.Ring
+import TauCeti.Algebra.Colimit.Ring.Basic
+import TauCeti.Algebra.Colimit.Ring.Ideal
 public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
 /-!
@@ -62,7 +63,7 @@ theorem exists_faithfullyFlat_baseChange
   -- Compare with the generic colimit of the algebra maps `f`, whose `A`-algebra structure gives
   -- `algebraMap A (DirectLimit B f)`.
   let e : Ring.DirectLimit B (g · · ·) ≃+* DirectLimit B f :=
-    TauCeti.Ring.DirectLimit.ringEquivAlgebra fun j k hjk x ↦ by
+    TauCeti.Ring.DirectLimit.ringEquivOfEq fun j k hjk x ↦ by
       simp only [g, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
   have he (j : ι) :
       ((J j).map (Ring.DirectLimit.of B (g · · ·) j)).map e.toRingHom =
@@ -70,7 +71,7 @@ theorem exists_faithfullyFlat_baseChange
     rw [Ideal.map_map, Ideal.map_map]
     congr 1
     ext a
-    simp [e]
+    simp [e, DirectLimit.algebraMap_def j]
   have hsup : (⨆ j, (J j).map (Ring.DirectLimit.of B (g · · ·) j)) = ⊤ := by
     apply (Ideal.map_eq_top_of_bijective e.toRingHom e.bijective).mp
     simp only [Ideal.map_iSup, he, iSup_const, htop]

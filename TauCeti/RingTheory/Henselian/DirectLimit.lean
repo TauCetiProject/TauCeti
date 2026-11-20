@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Henselian
-public import TauCeti.Algebra.Colimit.Ring
+public import TauCeti.Algebra.Colimit.Ring.Basic
+public import TauCeti.Algebra.Colimit.Ring.Ideal
 
 /-!
 # Henselian pairs under directed colimits
@@ -18,9 +19,9 @@ result, `Ring.DirectLimit.henselianRing`, is that if every `(G i, I i)` is Hense
 
 For a nonempty index type, a monic polynomial over the colimit with a simple root modulo the
 colimit ideal comes, together with its approximate root and the witnesses for both conditions,
-from a single stage (using the descent lemmas of `TauCeti.Algebra.Colimit.Ring`); the root found
-there maps to the required root in the colimit. For an empty index type the colimit ideal is `⊥`,
-and every ring is Henselian along `⊥`. This is the filtered-colimit case of the permanence
+from a single stage (using the descent lemmas of `TauCeti.Algebra.Colimit.Ring.Ideal`); the root
+found there maps to the required root in the colimit. For an empty index type the colimit ideal is
+`⊥`, and every ring is Henselian along `⊥`. This is the filtered-colimit case of the permanence
 properties of Henselian pairs. Directedness is essential: the coproduct of two copies of
 `(ℤ_[p], (p))`, which is not a directed colimit, is not Henselian along `p`.
 

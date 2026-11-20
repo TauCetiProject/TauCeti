@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FinitePresentation
-public import TauCeti.Algebra.Colimit.Ring
+public import TauCeti.Algebra.Colimit.Ring.Basic
 public import TauCeti.RingTheory.TensorProduct.DirectLimit
 import Mathlib.Data.Fintype.Order
 
@@ -244,7 +244,7 @@ commutes with directed colimits for a finitely presented ring `S`.
 It is `TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation` over the base ring `ℤ`,
 applied to `S` as a finitely presented `ℤ`-algebra, and transported from the generic `DirectLimit`
 of the `ℤ`-algebra maps `(f i j).toIntAlgHom` to `Ring.DirectLimit` along
-`TauCeti.Ring.DirectLimit.ringEquivAlgebra`. -/
+`TauCeti.Ring.DirectLimit.ringEquivOfEq`. -/
 theorem exists_of_comp_eq_of_finitePresentation {S : Type*} [CommRing S]
     [Algebra.FinitePresentation ℤ S] (g : S →+* Ring.DirectLimit G (f · · ·)) :
     ∃ i, ∃ g' : S →+* G i, (Ring.DirectLimit.of G (f · · ·) i).comp g' = g := by
@@ -254,15 +254,10 @@ theorem exists_of_comp_eq_of_finitePresentation {S : Type*} [CommRing S]
   have : DirectedSystem G (F · · ·) :=
     ⟨fun _ x ↦ by simpa only [hF] using DirectedSystem.map_self' f x,
       fun _ _ _ hij hjk x ↦ by simpa only [hF] using DirectedSystem.map_map' f hij hjk x⟩
-  set e := TauCeti.Ring.DirectLimit.ringEquivAlgebra hF with he
+  set e := TauCeti.Ring.DirectLimit.ringEquivOfEq hF with he
   obtain ⟨i, ψ, hψ⟩ := TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation
     (e.toRingHom.comp g).toIntAlgHom
   refine ⟨i, ψ, RingHom.ext fun a ↦ e.injective ?_⟩
-  -- Evaluated at `a`, `hψ` says that `e (g a) = DirectLimit.Algebra.of G F i (ψ a)`.
-  have ha := congr($hψ a)
-  rw [RingHom.toIntAlgHom_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.coe_toRingHom, AlgHom.comp_apply] at ha
-  rw [RingHom.comp_apply, AlgHom.coe_toRingHom, ha, he,
-    TauCeti.Ring.DirectLimit.ringEquivAlgebra_of]
+  simpa [he] using (congr($hψ a)).symm
 
 end RingHom
