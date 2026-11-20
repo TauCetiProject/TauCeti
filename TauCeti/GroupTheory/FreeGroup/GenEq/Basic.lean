@@ -235,6 +235,47 @@ theorem lift_mk_segment_eq_mul {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A 
         FreeGroup.lift f (FreeGroup.mk (Ω.segment j k true)) := by
   rw [← Ω.segment_append hij hjk, ← FreeGroup.mul_mk, map_mul]
 
+-- Not `@[simp]`: Mathlib's `FreeGroup.lift_mk` is `@[simp]` and simplifies `FreeGroup.lift f
+-- (FreeGroup.mk _)`, so these evaluation lemmas are used through `rw` like `lift_mk_segment`.
+
+/-- Under `FreeGroup.lift f`, the product of the values on adjacent segments `h[i, j]` and
+`h[j, k]` is the value on `h[i, k]`, for `i ≤ j ≤ k ≤ ρ`. -/
+theorem lift_mk_segment_mul {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H)
+    {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤ Ω.numItems) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)) *
+        FreeGroup.lift f (FreeGroup.mk (Ω.segment j k true)) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment i k true)) := by
+  rw [← map_mul, FreeGroup.mul_mk, Ω.segment_append hij hjk hk]
+
+/-- Two signed segments with equal signs have equal images under `FreeGroup.lift f` if and only if
+their positive versions have equal images. -/
+theorem lift_mk_segment_eq_iff_of_eq {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
+    {i₁ j₁ i₂ j₂ : ℕ} {s₁ s₂ : Bool} (hs : s₁ = s₂) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ s₁)) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ s₂)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ true)) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ true)) := by
+  subst hs
+  cases s₁
+  · rw [Ω.lift_mk_segment f i₁ j₁ false, Ω.lift_mk_segment f i₂ j₂ false]
+    exact inv_inj
+  · rfl
+
+/-- Two signed segments with opposite signs have equal images under `FreeGroup.lift f` if and only
+if the image of the first positive segment equals the inverse of the image of the second. -/
+theorem lift_mk_segment_eq_iff_of_ne {H : Type*} [Group H] {f : Fin Ω.numItems ⊕ A → H}
+    {i₁ j₁ i₂ j₂ : ℕ} {s₁ s₂ : Bool} (hs : s₁ ≠ s₂) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ s₁)) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ s₂)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment i₁ j₁ true)) =
+        (FreeGroup.lift f (FreeGroup.mk (Ω.segment i₂ j₂ true)))⁻¹ := by
+  cases s₁ <;> cases s₂ <;> simp only [ne_eq, not_true_eq_false] at hs
+  · rw [Ω.lift_mk_segment f i₁ j₁ false, Ω.lift_mk_segment f i₂ j₂ true]
+    dsimp only [cond]
+    rw [← inv_inj, inv_inv]
+  · rw [Ω.lift_mk_segment f i₁ j₁ true, Ω.lift_mk_segment f i₂ j₂ false]
+    rfl
+
 /-- The word `h[i, j]` is a prefix of `h[i, k]` for `j ≤ k`. -/
 theorem segment_prefix_segment {i j k : ℕ} (hjk : j ≤ k) :
     Ω.segment i j true <+: Ω.segment i k true := by
@@ -318,6 +359,45 @@ theorem isReduced_substituteVars_segment_iff (U : Fin Ω.numItems → List (A ×
   · rw [segment_false, substituteVars_invRev, FreeGroup.isReduced_invRev]
   · rfl
 
+/-- If two substituted segments `u[a, b] ^ ±1` and `u[c, d] ^ ±1` (with the same sign `s`) are
+reduced and `u[c, b] ^ ±1` is nonempty, then `u[a, d] ^ ±1` is reduced. -/
+theorem isReduced_substituteVars_segment_of_overlap {u : Fin Ω.numItems → List (A × Bool)}
+    {a b c d : ℕ} {s : Bool}
+    (h₁ : FreeGroup.IsReduced (substituteVars u (Ω.segment a b s)))
+    (h₂ : FreeGroup.IsReduced (substituteVars u (Ω.segment c d s)))
+    (hne : substituteVars u (Ω.segment c b s) ≠ []) :
+    FreeGroup.IsReduced (substituteVars u (Ω.segment a d s)) := by
+  rw [isReduced_substituteVars_segment_iff] at h₁ h₂ ⊢
+  have hne' : substituteVars u (Ω.segment c b true) ≠ [] := by
+    cases s
+    · rw [segment_false, substituteVars_invRev] at hne
+      exact fun h => hne (by rw [h, FreeGroup.invRev_empty])
+    · exact hne
+  rcases le_or_gt c a with hca | hac
+  · exact h₂.infix ((Ω.segment_suffix_segment hca).flatMap _).isInfix
+  rcases le_or_gt d b with hdb | hbd
+  · exact h₁.infix ((Ω.segment_prefix_segment hdb).flatMap _).isInfix
+  have hseg (x y : ℕ) : Ω.segment x y true = Ω.segment x (min y Ω.numItems) true := by
+    have hlen : (List.finRange Ω.numItems).take Ω.numItems = List.finRange Ω.numItems :=
+      List.take_of_length_le (by simp)
+    simp only [segment_true, ← List.take_take, hlen]
+  set b' := min b Ω.numItems
+  set d' := min d Ω.numItems
+  have hcb' : c < b' := by
+    by_contra h
+    apply hne'
+    have hnil : Ω.segment c b true = [] :=
+      List.eq_nil_of_length_eq_zero (by rw [length_segment]; omega)
+    rw [hnil, FreeGroup.substituteVars_nil]
+  have hb'd' : b' ≤ d' := min_le_min_right _ hbd.le
+  rw [hseg a b, ← Ω.segment_append hac.le hcb'.le (min_le_right _ _), substituteVars_append] at h₁
+  rw [hseg c d, ← Ω.segment_append hcb'.le hb'd' (min_le_right _ _), substituteVars_append] at h₂
+  rw [hseg c b] at hne'
+  rw [hseg a d, ← Ω.segment_append (hac.le.trans hcb'.le) hb'd' (min_le_right _ _),
+    ← Ω.segment_append hac.le hcb'.le (min_le_right _ _),
+    substituteVars_append, substituteVars_append]
+  exact h₁.append_overlap h₂ hne'
+
 /-- The basic equation `h[α(μ), β(μ)] ^ ε(μ) = h[α(Δμ), β(Δμ)] ^ ε(Δμ)` of a variable base. -/
 def basicEquation (μ : Fin Ω.numBases) :
     List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool) :=
@@ -393,6 +473,102 @@ theorem boundaryEquation_snd_of_sign_ne
     (h : Ω.sign c.2.1 ≠ Ω.sign (Ω.dual c.2.1)) :
     (Ω.boundaryEquation c).2 = Ω.segment c.2.2 (Ω.right (Ω.dual c.2.1)) false := by
   simp only [boundaryEquation, h, ite_false]
+
+/-- Under `FreeGroup.lift f`, the basic equation of a base `μ` with `ε(μ) = ε(Δμ)` reduces to
+equality of the positive segments `h[α(μ), β(μ)]` and `h[α(Δμ), β(Δμ)]`. -/
+theorem lift_mk_basicEquation_eq_iff_of_sign_eq {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} {μ : Fin Ω.numBases} (hs : Ω.sign μ = Ω.sign (Ω.dual μ)) :
+    (FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
+        FreeGroup.lift f
+          (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)) := by
+  rw [basicEquation_fst, basicEquation_snd, Ω.lift_mk_segment_eq_iff_of_eq hs]
+
+/-- Under `FreeGroup.lift f`, the basic equation of a base `μ` with `ε(μ) ≠ ε(Δμ)` reduces to
+`h[α(μ), β(μ)] = h[α(Δμ), β(Δμ)]⁻¹`. -/
+theorem lift_mk_basicEquation_eq_iff_of_sign_ne {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} {μ : Fin Ω.numBases} (hs : Ω.sign μ ≠ Ω.sign (Ω.dual μ)) :
+    (FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left μ) (Ω.right μ) true)) =
+        (FreeGroup.lift f
+          (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) (Ω.right (Ω.dual μ)) true)))⁻¹ := by
+  rw [basicEquation_fst, basicEquation_snd, Ω.lift_mk_segment_eq_iff_of_ne hs]
+
+/-- Under `FreeGroup.lift f`, the basic equation of `Δ(μ)` is equivalent to that of `μ`. -/
+theorem lift_mk_basicEquation_dual_eq_iff {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} (μ : Fin Ω.numBases) :
+    (FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation (Ω.dual μ)).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2) := by
+  simp only [basicEquation_fst, basicEquation_snd, Ω.dual_involutive μ, eq_comm]
+
+/-- Under `FreeGroup.lift f`, the boundary equation of `(p, μ, q)` with `ε(μ) = ε(Δμ)` reduces to
+`h[α(μ), p] = h[α(Δμ), q]`. -/
+theorem lift_mk_boundaryEquation_eq_iff_of_sign_eq {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H}
+    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)}
+    (hs : Ω.sign c.2.1 = Ω.sign (Ω.dual c.2.1)) :
+    (FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left c.2.1) c.1 true)) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual c.2.1)) c.2.2 true)) := by
+  rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_eq hs]
+
+/-- Under `FreeGroup.lift f`, the boundary equation of `(p, μ, q)` with `ε(μ) ≠ ε(Δμ)` reduces to
+`h[α(μ), p] = h[q, β(Δμ)]⁻¹`. -/
+theorem lift_mk_boundaryEquation_eq_iff_of_sign_ne {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H}
+    {c : Fin (Ω.numItems + 1) × Fin Ω.numBases × Fin (Ω.numItems + 1)}
+    (hs : Ω.sign c.2.1 ≠ Ω.sign (Ω.dual c.2.1)) :
+    (FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation c).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left c.2.1) c.1 true)) =
+        (FreeGroup.lift f
+          (FreeGroup.mk (Ω.segment c.2.2 (Ω.right (Ω.dual c.2.1)) true)))⁻¹ := by
+  rw [boundaryEquation_fst, Ω.boundaryEquation_snd_of_sign_ne hs,
+    Ω.lift_mk_segment f c.2.2 (Ω.right (Ω.dual c.2.1)) false]
+  rfl
+
+/-- Under `FreeGroup.lift f`, given the basic equation of `μ`, the boundary equation of the dual
+triple `(q, Δ(μ), p)` is equivalent to that of `(p, μ, q)` for any boundaries
+`p ∈ [α(μ), β(μ)]` and `q ∈ [α(Δμ), β(Δμ)]`. -/
+theorem lift_mk_boundaryEquation_dual_eq_iff {H : Type*} [Group H]
+    {f : Fin Ω.numItems ⊕ A → H} {p : Fin (Ω.numItems + 1)} {μ : Fin Ω.numBases}
+    {q : Fin (Ω.numItems + 1)} (hp₁ : Ω.left μ ≤ p) (hp₂ : p ≤ Ω.right μ)
+    (hq₁ : Ω.left (Ω.dual μ) ≤ q) (hq₂ : q ≤ Ω.right (Ω.dual μ))
+    (hbasic : FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).1) =
+      FreeGroup.lift f (FreeGroup.mk (Ω.basicEquation μ).2)) :
+    (FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (q, Ω.dual μ, p)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (q, Ω.dual μ, p)).2)) ↔
+      FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).1) =
+        FreeGroup.lift f (FreeGroup.mk (Ω.boundaryEquation (p, μ, q)).2) := by
+  by_cases hs : Ω.sign μ = Ω.sign (Ω.dual μ)
+  · have hs' : Ω.sign (Ω.dual μ) = Ω.sign (Ω.dual (Ω.dual μ)) := by
+      simpa [Ω.dual_involutive μ] using hs.symm
+    rw [Ω.lift_mk_boundaryEquation_eq_iff_of_sign_eq (c := (q, Ω.dual μ, p)) hs',
+      Ω.lift_mk_boundaryEquation_eq_iff_of_sign_eq (c := (p, μ, q)) hs, Ω.dual_involutive μ,
+      eq_comm]
+  · have hs' : Ω.sign (Ω.dual μ) ≠ Ω.sign (Ω.dual (Ω.dual μ)) := by
+      simpa [Ω.dual_involutive μ, ne_comm] using hs
+    rw [Ω.lift_mk_boundaryEquation_eq_iff_of_sign_ne (c := (q, Ω.dual μ, p)) hs',
+      Ω.lift_mk_boundaryEquation_eq_iff_of_sign_ne (c := (p, μ, q)) hs, Ω.dual_involutive μ]
+    have hbas := (Ω.lift_mk_basicEquation_eq_iff_of_sign_ne hs).1 hbasic
+    rw [← Ω.lift_mk_segment_mul f hp₁ hp₂ (Ω.right μ).is_le,
+      ← Ω.lift_mk_segment_mul f hq₁ hq₂ (Ω.right (Ω.dual μ)).is_le, mul_inv_rev] at hbas
+    constructor
+    · intro h
+      have h' : FreeGroup.lift f (FreeGroup.mk (Ω.segment p (Ω.right μ) true)) =
+          (FreeGroup.lift f (FreeGroup.mk (Ω.segment (Ω.left (Ω.dual μ)) q true)))⁻¹ := by
+        rw [← inv_inj, inv_inv, h]
+      rw [h'] at hbas
+      exact mul_right_cancel hbas
+    · intro h
+      rw [h] at hbas
+      have h' := mul_left_cancel hbas
+      rw [← inv_inj, inv_inv, h']
 
 /-- The equations of a generalised equation: its basic, coefficient and boundary equations, each
 recorded as the pair of its two sides. -/
