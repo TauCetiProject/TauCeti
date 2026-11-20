@@ -230,9 +230,8 @@ theorem exists_contDiffAt_pow_eq_and_exp_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠
     ((contDiffAt_log (by rw [div_self hz₀]; exact one_mem_slitPlane)).comp z₀
       (contDiffAt_id.div_const z₀)))
   refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), L, ?_, hL, by simp [div_self hz₀], fun z ↦ ?_, hexp⟩
-  · refine (contDiff_exp.contDiffAt.comp z₀ hL).congr_of_eventuallyEq ?_
-    filter_upwards [isOpen_ne.mem_nhds hz₀] with z hz
-    exact (hexp z hz).symm
+  · exact (analyticAt_const.mul ((analyticAt_id.div_const (c := z₀)).cpow analyticAt_const
+      (by simpa only [id_eq, div_self hz₀] using one_mem_slitPlane))).contDiffAt
   · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
