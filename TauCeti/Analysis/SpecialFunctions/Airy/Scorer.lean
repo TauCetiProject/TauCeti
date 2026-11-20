@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Integral.Gamma
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.Analysis.Calculus.Deriv.Second
+import TauCeti.MeasureTheory.Integral.Exp.Cubic
 
 /-!
 # The Scorer functions `Hi` and `Gi`
@@ -21,30 +19,39 @@ $$\operatorname{Hi}(z) = \frac{1}{\pi} \int_0^\infty \exp\!\left(-\frac{t^3}{3} 
 
 which converges absolutely for every complex `z`, and `Gi = Bi − Hi` (DLMF 9.12.11).
 
-Differentiating under the integral sign shows that `Hi` is entire, with the iterated derivatives
-given by the moments `π⁻¹ ∫₀^∞ tⁿ exp(−t³/3 + z t) dt`. Since
+The integrand is the cubic-decay kernel of `TauCeti.MeasureTheory.Integral.Exp.Cubic` with
+`b = 1/3`. Differentiating under the integral sign shows that `Hi` is entire, with the iterated
+derivatives given by the moments `π⁻¹ ∫₀^∞ tⁿ exp(−t³/3 + z t) dt`; at the origin these are Gamma
+values, `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`. Since
 `(t² − z) exp(−t³/3 + z t) = −∂ₜ exp(−t³/3 + z t)`, the second moment equals `z` times the zeroth
 moment plus `1`, which is the inhomogeneous Airy equation `Hi'' = z Hi + 1/π` (DLMF 9.12.1). For a
-cube root of unity `ν`, the rotated function `z ↦ ν Hi(ν z)` solves the same equation; with
-`ν = e^{∓2πi/3}` this is the `Hi` part of DLMF 9.12.3. The value at the origin is
-`Hi(0) = 3^{−2/3} Γ(1/3) / π`.
+cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every equation
+`w'' = z w + c`; with `ν = e^{∓2πi/3}` this gives the `Hi` part of DLMF 9.12.3. On the real line
+`Hi` is real.
 
 ## Main results
 
-* `TauCeti.scorerHi`, `TauCeti.scorerGi` — the Scorer functions; `TauCeti.Real.scorerHi`,
-  `TauCeti.Real.scorerGi` their real restrictions.
+* `TauCeti.scorerHi`, `TauCeti.scorerGi` — the Scorer functions; `Real.scorerHi`,
+  `Real.scorerGi` their real restrictions, and `TauCeti.scorerHi_ofReal` — `Hi(x)` is the cast
+  of `Real.scorerHi x`.
 * `TauCeti.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul` — integrability of the moment
   integrands on `(0, ∞)`.
 * `TauCeti.iterate_deriv_scorerHi` — the iterated derivatives of `Hi` as moment integrals.
-* `TauCeti.differentiable_scorerHi` — `Hi` is entire.
+* `TauCeti.differentiable_scorerHi`, `TauCeti.differentiable_scorerGi` — `Hi` and `Gi` are
+  entire.
 * `TauCeti.scorerHi_ode` — `Hi'' = z Hi + 1/π` (DLMF 9.12.1).
-* `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves the same equation when `ν³ = 1`
-  (DLMF 9.12.3).
-* `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
+* `TauCeti.iterate_deriv_two_const_mul_comp_mul_left` — `z ↦ ν f(ν z)` solves `w'' = z w + c`
+  when `f` does and `ν³ = 1`; `TauCeti.scorerHi_rotation_ode` is the case of `Hi` (DLMF 9.12.3).
+* `TauCeti.iterate_deriv_scorerHi_zero` — `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`, and
+  `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
 
-The proofs are new; the integral definition of `Hi` differs from the series definition of the
-lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), whose file
-`DLMF/Airy/Scorer/Representations.lean` supplied the rotation argument.
+The moment, differentiation and kernel-to-equation proofs are adapted from those of
+`TauCeti.Analysis.SpecialFunctions.Airy.ProductIntegral` for the integral of `Ai² + Bi²`
+(`TauCeti.hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow`,
+`TauCeti.iterate_deriv_airyAi_sq_add_airyBi_sq_eq_integral`), now shared through the cubic-decay
+kernel. The rotation argument is adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Airy/Scorer/Representations.lean`, whose
+`Hi` is defined by its Maclaurin series rather than by the integral used here.
 
 ## References
 
@@ -74,46 +81,47 @@ def scorerGi (z : ℂ) : ℂ := airyBi z - scorerHi z
 /-- The defining expression of `Gi`. -/
 theorem scorerGi_def (z : ℂ) : scorerGi z = airyBi z - scorerHi z := (rfl)
 
-namespace Real
-
 /-- The real restriction of `Hi`. -/
-def scorerHi (x : ℝ) : ℝ := (TauCeti.scorerHi x).re
+def _root_.Real.scorerHi (x : ℝ) : ℝ := (TauCeti.scorerHi x).re
 
 /-- The defining expression of the real restriction of `Hi`. -/
-theorem scorerHi_def (x : ℝ) : scorerHi x = (TauCeti.scorerHi x).re := (rfl)
+theorem _root_.Real.scorerHi_def (x : ℝ) : Real.scorerHi x = (TauCeti.scorerHi x).re := (rfl)
 
 /-- The real restriction of `Gi`. -/
-def scorerGi (x : ℝ) : ℝ := (TauCeti.scorerGi x).re
+def _root_.Real.scorerGi (x : ℝ) : ℝ := (TauCeti.scorerGi x).re
 
 /-- The defining expression of the real restriction of `Gi`. -/
-theorem scorerGi_def (x : ℝ) : scorerGi x = (TauCeti.scorerGi x).re := (rfl)
+theorem _root_.Real.scorerGi_def (x : ℝ) : Real.scorerGi x = (TauCeti.scorerGi x).re := (rfl)
 
-end Real
+/-- On the real line `Hi` is real: `Hi(x)` is the cast of its real restriction. -/
+@[simp]
+theorem scorerHi_ofReal (x : ℝ) : scorerHi x = Real.scorerHi x := by
+  -- `Hi(x)` is the cast of the real integral `π⁻¹ ∫₀^∞ exp(−t³/3 + x t) dt`.
+  have h : scorerHi x = ((π⁻¹ * ∫ t in Ioi (0 : ℝ), Real.exp (-t ^ 3 / 3 + x * t) : ℝ) : ℂ) := by
+    rw [scorerHi_def, ofReal_mul, ← integral_complex_ofReal, ofReal_inv]
+    congr 1
+    refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+    push_cast
+    ring_nf
+  rw [Real.scorerHi_def, h, ofReal_re]
 
 /-! ### Moment integrals -/
 
-private theorem norm_pow_mul_cexp_neg_cube_div_three_add_mul {t : ℝ} (ht : 0 < t) (n : ℕ)
-    (z : ℂ) :
-    ‖(t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)‖ =
-      t ^ (n : ℝ) * Real.exp (z.re * t - 1 / 3 * t ^ (3 : ℝ)) := by
-  have hre : (-(t : ℂ) ^ 3 / 3 + z * t).re = z.re * t - 1 / 3 * t ^ (3 : ℝ) := by
-    have ht3 : -(t : ℂ) ^ 3 / 3 = ((-t ^ 3 / 3 : ℝ) : ℂ) := by push_cast; ring
-    rw [add_re, ht3, ofReal_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero,
-      Real.rpow_ofNat]
-    ring
-  rw [norm_mul, norm_pow, Complex.norm_of_nonneg ht.le, Complex.norm_exp, hre,
-    Real.rpow_natCast]
+/-- The moment integrand of `Hi` is the cubic-decay kernel with `q = n` and `b = 1/3`. -/
+private theorem pow_mul_cexp_neg_cube_div_three_add_mul_eq (n : ℕ) (z : ℂ) (t : ℝ) :
+    (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t) =
+      (t : ℂ) ^ ((n : ℝ) : ℂ) * cexp (z * t - ((1 / 3 : ℝ) : ℂ) * (t : ℂ) ^ 3) := by
+  rw [ofReal_natCast, cpow_natCast]
+  push_cast
+  ring_nf
 
 /-- For every natural number `n` and complex `z`, the moment integrand
 `t ↦ tⁿ exp(−t³/3 + z t)` is Bochner integrable on `(0, ∞)`. -/
 theorem integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) := by
-  have hmajor := integrableOn_rpow_mul_exp_mul_sub_mul_rpow
-    (p := 3) (q := (n : ℝ)) (b := 1 / 3)
-    (by norm_num) (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z.re
-  refine hmajor.mono' (by fun_prop) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-  rw [norm_pow_mul_cexp_neg_cube_div_three_add_mul ht]
+  simpa only [pow_mul_cexp_neg_cube_div_three_add_mul_eq] using
+    integrableOn_cpow_mul_cexp_mul_sub_mul_cube (q := n) (b := 1 / 3)
+      (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z
 
 /-- The integrand `t ↦ exp(−t³/3 + z t)` of `Hi` is Bochner integrable on `(0, ∞)`. -/
 theorem integrableOn_cexp_neg_cube_div_three_add_mul (z : ℂ) :
@@ -126,35 +134,11 @@ theorem hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z
     HasDerivAt
       (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + w * t))
       (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) z := by
-  let bound : ℝ → ℝ := fun t =>
-    t ^ ((n + 1 : ℕ) : ℝ) * Real.exp ((‖z‖ + 1) * t - 1 / 3 * t ^ (3 : ℝ))
-  have hbound_int : Integrable bound (volume.restrict (Ioi 0)) :=
-    integrableOn_rpow_mul_exp_mul_sub_mul_rpow
-      (p := 3) (q := ((n + 1 : ℕ) : ℝ)) (b := 1 / 3)
-      (by norm_num) (by linarith [(n + 1).cast_nonneg (α := ℝ)]) (by norm_num) (‖z‖ + 1)
-  refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (bound := bound)
-    (F' := fun w (t : ℝ) => (t : ℂ) ^ (n + 1) * cexp (-(t : ℂ) ^ 3 / 3 + w * t))
-    (Metric.ball_mem_nhds z zero_lt_one)
-    (.of_forall fun w => (integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul n w).1)
-    (integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul n z)
-    (integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul (n + 1) z).1
-    ?_ hbound_int ?_).2
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t) w hw
-    have hw_re : w.re ≤ ‖z‖ + 1 := by
-      have hdist : ‖w - z‖ < 1 := by simpa [dist_eq_norm] using Metric.mem_ball.mp hw
-      have hnorm : ‖w‖ ≤ ‖z‖ + 1 := by
-        linarith [norm_sub_rev w z, norm_sub_norm_le w z]
-      exact (Complex.re_le_norm w).trans hnorm
-    rw [norm_pow_mul_cexp_neg_cube_div_three_add_mul ht (n + 1) w]
-    dsimp only [bound]
-    gcongr
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t _ w _
-    have hd := (((hasDerivAt_id w).mul_const (t : ℂ)).const_add
-      (-(t : ℂ) ^ 3 / 3)).cexp.const_mul ((t : ℂ) ^ n)
-    refine hd.congr_deriv ?_
-    rw [pow_succ]
-    simp only [id]
-    ring
+  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cube (q := n) (b := 1 / 3)
+    (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z
+  -- The exponent `n + 1` of the derivative kernel is the real number `n + 1`.
+  have hcast : ((n : ℝ) : ℂ) + 1 = ((n + 1 : ℕ) : ℝ) := by push_cast; ring
+  simpa only [hcast, pow_mul_cexp_neg_cube_div_three_add_mul_eq] using h
 
 /-! ### Derivatives of `Hi` -/
 
@@ -182,9 +166,15 @@ theorem hasDerivAt_scorerHi (z : ℂ) :
 theorem differentiable_scorerHi : Differentiable ℂ scorerHi :=
   fun z => (hasDerivAt_scorerHi z).differentiableAt
 
+/-- `Gi` is entire. -/
+@[fun_prop]
+theorem differentiable_scorerGi : Differentiable ℂ scorerGi := by
+  rw [funext scorerGi_def]
+  fun_prop
+
 /-- The kernel identity `∫₀^∞ (t² − z) exp(−t³/3 + z t) dt = 1`, from
 `(t² − z) exp(−t³/3 + z t) = −∂ₜ exp(−t³/3 + z t)`. -/
-theorem integral_sq_sub_mul_cexp_neg_cube_div_three_add_mul (z : ℂ) :
+private theorem integral_sq_sub_mul_cexp_neg_cube_div_three_add_mul (z : ℂ) :
     ∫ t in Ioi (0 : ℝ), ((t : ℂ) ^ 2 - z) * cexp (-(t : ℂ) ^ 3 / 3 + z * t) = 1 := by
   let g : ℝ → ℂ := fun t => -cexp (-(t : ℂ) ^ 3 / 3 + z * t)
   have hcont : Continuous g := by fun_prop
@@ -218,9 +208,12 @@ theorem integral_sq_sub_mul_cexp_neg_cube_div_three_add_mul (z : ℂ) :
       ring
     refine (Real.tendsto_exp_atBot.comp hpoly).congr' ?_
     filter_upwards [eventually_gt_atTop 0] with t ht
-    have h := norm_pow_mul_cexp_neg_cube_div_three_add_mul ht 0 z
-    simp only [pow_zero, one_mul, Nat.cast_zero, Real.rpow_zero] at h
-    simp only [Function.comp_apply, g, norm_neg, h]
+    have h := norm_cpow_mul_cexp_mul_sub_mul_cube ht 0 (1 / 3) z
+    simp only [ofReal_zero, cpow_zero, one_mul, Real.rpow_zero] at h
+    have harg : -(t : ℂ) ^ 3 / 3 + z * t = z * t - ((1 / 3 : ℝ) : ℂ) * (t : ℂ) ^ 3 := by
+      push_cast
+      ring
+    rw [Function.comp_apply, norm_neg, harg, h]
   have hibp := integral_Ioi_of_hasDerivAt_of_tendsto hcont.continuousWithinAt hderiv hint htend
   simpa [g] using hibp
 
@@ -240,48 +233,51 @@ theorem scorerHi_ode (z : ℂ) : deriv^[2] scorerHi z = z * scorerHi z + (π : �
   rw [hsplit] at hk
   linear_combination (π : ℂ)⁻¹ * hk
 
+/-- If `f'' = z f + c` and `ν³ = 1`, then the rotated function `z ↦ ν f(ν z)` satisfies the same
+equation. No differentiability of `f` is needed. -/
+theorem iterate_deriv_two_const_mul_comp_mul_left {f : ℂ → ℂ} {c ν : ℂ}
+    (hf : ∀ z, deriv^[2] f z = z * f z + c) (hν : ν ^ 3 = 1) (z : ℂ) :
+    deriv^[2] (fun w => ν * f (ν * w)) z = z * (ν * f (ν * z)) + c := by
+  simp only [← iteratedDeriv_eq_iterate, iteratedDeriv_const_mul_field,
+    iteratedDeriv_comp_mul_left, smul_eq_mul]
+  rw [iteratedDeriv_eq_iterate, hf]
+  linear_combination (ν * z * f (ν * z) + c) * hν
+
 /-- For a cube root of unity `ν`, the rotated function `z ↦ ν Hi(ν z)` solves the inhomogeneous
 Airy equation `w'' = z w + 1/π`; with `ν = e^{∓2πi/3}` this is DLMF 9.12.3 for `Hi`. -/
 theorem scorerHi_rotation_ode {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
-    deriv^[2] (fun w => ν * scorerHi (ν * w)) z = z * (ν * scorerHi (ν * z)) + (π : ℂ)⁻¹ := by
-  have hd (c : ℂ) (f : ℂ → ℂ) :
-      deriv (fun w => c * f (ν * w)) = fun w => c * ν * deriv f (ν * w) := by
-    rw [deriv_const_mul_field']
-    funext w
-    rw [deriv_comp_mul_left, smul_eq_mul, mul_assoc]
-  have hode := scorerHi_ode (ν * z)
-  rw [Function.iterate_succ_apply', Function.iterate_one] at hode ⊢
-  rw [hd ν scorerHi, hd (ν * ν) (deriv scorerHi)]
-  beta_reduce
-  rw [hode]
-  linear_combination (z * ν * scorerHi (ν * z) + (π : ℂ)⁻¹) * hν
+    deriv^[2] (fun w => ν * scorerHi (ν * w)) z = z * (ν * scorerHi (ν * z)) + (π : ℂ)⁻¹ :=
+  iterate_deriv_two_const_mul_comp_mul_left scorerHi_ode hν z
 
 /-! ### The value at the origin -/
 
-/-- The value `Hi(0) = 3^{−2/3} Γ(1/3) / π`. -/
-theorem scorerHi_zero : scorerHi 0 = (3 : ℂ) ^ (-2 / 3 : ℂ) * Gamma (1 / 3) / π := by
-  have hcongr : EqOn (fun t : ℝ => cexp (-(t : ℂ) ^ 3 / 3 + 0 * t))
-      (fun t : ℝ => ((t ^ (0 : ℝ) * Real.exp (-(1 / 3) * t ^ (3 : ℝ)) : ℝ) : ℂ)) (Ioi 0) := by
+/-- The iterated derivatives of `Hi` at the origin:
+`Hi⁽ⁿ⁾(0) = 3^{(n − 2)/3} Γ((n + 1)/3) / π`. -/
+theorem iterate_deriv_scorerHi_zero (n : ℕ) :
+    deriv^[n] scorerHi 0 = (3 : ℂ) ^ (((n : ℂ) - 2) / 3) * Gamma (((n : ℂ) + 1) / 3) / π := by
+  have hcongr : EqOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + 0 * t))
+      (fun t : ℝ => ((t ^ (n : ℝ) * Real.exp (-(1 / 3) * t ^ (3 : ℝ)) : ℝ) : ℂ)) (Ioi 0) := by
     intro t _
-    simp only [Real.rpow_zero, one_mul, Real.rpow_ofNat, zero_mul, add_zero, ofReal_exp]
+    simp only [Real.rpow_natCast, Real.rpow_ofNat, zero_mul, add_zero]
     push_cast
     ring_nf
   have hreal := _root_.integral_rpow_mul_exp_neg_mul_rpow
-    (p := 3) (q := 0) (b := 1 / 3) (by norm_num) (by norm_num) (by norm_num)
-  rw [scorerHi_def, setIntegral_congr_fun measurableSet_Ioi hcongr, integral_complex_ofReal,
-    hreal]
-  have h3 : (1 / 3 : ℝ) ^ (-((0 : ℝ) + 1) / 3) = (3 : ℝ) ^ (1 / 3 : ℝ) := by
-    rw [one_div, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num)]
-    norm_num
-  have hc : (3 : ℂ) ^ (1 / 3 : ℂ) = (3 : ℂ) ^ (-2 / 3 : ℂ) * 3 := by
-    calc (3 : ℂ) ^ (1 / 3 : ℂ) = (3 : ℂ) ^ ((-2 / 3 : ℂ) + 1) := by norm_num
-      _ = (3 : ℂ) ^ (-2 / 3 : ℂ) * 3 := by rw [cpow_add _ _ (by norm_num), cpow_one]
-  have hΓ : ((Real.Gamma ((0 + 1) / 3) : ℝ) : ℂ) = Gamma (1 / 3) := by
-    rw [← Gamma_ofReal]
-    norm_num
-  rw [h3, ofReal_mul, ofReal_mul, hΓ, ofReal_cpow (by norm_num)]
+    (p := 3) (q := n) (b := 1 / 3) (by norm_num) (by linarith [n.cast_nonneg (α := ℝ)])
+    (by norm_num)
+  -- `(1/3)^(-(n + 1)/3) * (1/3) = 3^((n - 2)/3)`, as real numbers.
+  have h3 : (1 / 3 : ℝ) ^ (-((n : ℝ) + 1) / 3) * (1 / 3) = (3 : ℝ) ^ (((n : ℝ) - 2) / 3) := by
+    rw [one_div, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num),
+      ← Real.rpow_neg_one 3, ← Real.rpow_add (by norm_num)]
+    ring_nf
+  rw [iterate_deriv_scorerHi, setIntegral_congr_fun measurableSet_Ioi hcongr,
+    integral_complex_ofReal, hreal, h3, ofReal_mul,
+    ofReal_cpow (by norm_num), ← Gamma_ofReal]
   push_cast
-  rw [hc]
   ring
+
+/-- The value `Hi(0) = 3^{−2/3} Γ(1/3) / π`. -/
+@[simp]
+theorem scorerHi_zero : scorerHi 0 = (3 : ℂ) ^ (-2 / 3 : ℂ) * Gamma (1 / 3) / π := by
+  simpa using iterate_deriv_scorerHi_zero 0
 
 end TauCeti
