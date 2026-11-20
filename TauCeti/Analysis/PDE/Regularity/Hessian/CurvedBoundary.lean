@@ -235,10 +235,7 @@ private theorem norm_gradient_compL_restrictL_le_and_norm_value_le (hL : 0 ≤ L
       ‖value 2 (compL hΦ hp (restrictL inf_le_left 2 u))‖ ≤
         c⁻¹ ^ (1 / p).toReal * ‖value 2 u‖ := by
   have hΩ'm : MeasurableSet (Ω' : Set F) := Ω'.isOpen.measurableSet
-  have hD : ((Omega ⊓ U : Opens F) : Set F) ⊆ Omega := fun x hx => hx.1
-  have hDΩ : mu.restrict ((Omega ⊓ U : Opens F) : Set F) ≤ mu.restrict (Omega : Set F) :=
-    Measure.restrict_mono hD le_rfl
-  have hκ : 0 ≤ c⁻¹ ^ (1 / p).toReal := Real.rpow_nonneg (inv_nonneg.2 hΦ.pos.le) _
+  have hmaps : MapsTo Φ Ω' Omega := fun x hx => (hΦ.mapsTo hx).1
   constructor
   · have hgr : ∀ᵐ x ∂mu.restrict Ω',
         ‖iteratedGradient 0 (lowerOrder 1 (compL hΦ hp (restrictL inf_le_left 2 u))) x‖ ≤
@@ -251,24 +248,17 @@ private theorem norm_gradient_compL_restrictL_le_and_norm_value_le (hL : 0 ≤ L
       rw [LinearIsometryEquiv.norm_map]
       gcongr
       exact hΦ.norm_fderiv_le x hx
-    have hg := (Lp.memLp (iteratedGradient 0 (lowerOrder 1 u))).mono_measure hDΩ
     rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
-    refine (lpNorm_le_mul_lpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _)
-      (hΦ.memLp_comp hΩ'm subset_rfl hΦ.mapsTo hg) hgr).trans
-      (mul_le_mul_of_nonneg_left ((hΦ.lpNorm_comp_le hΩ'm subset_rfl hΦ.mapsTo hg).trans
-        (mul_le_mul_of_nonneg_left (lpNorm_mono_measure (Lp.memLp _) hDΩ) hκ)) hL)
+    exact hΦ.lpNorm_le_of_ae_le_mul_comp hΩ'm subset_rfl hmaps hL (Lp.aestronglyMeasurable _)
+      (Lp.memLp _) hgr
   · have hval : ∀ᵐ x ∂mu.restrict Ω',
         ‖value 2 (compL hΦ hp (restrictL inf_le_left 2 u)) x‖ ≤ 1 * ‖value 2 u (Φ x)‖ := by
       filter_upwards [value_compL_ae hΦ hp (restrictL inf_le_left 2 u),
         hΦ.ae_comp (value_restrictL_ae inf_le_left 2 u)] with x h1 h2
       rw [h1, h2, one_mul]
-    have hg := (Lp.memLp (value 2 u)).mono_measure hDΩ
-    rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
-    refine (lpNorm_le_mul_lpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _)
-      (hΦ.memLp_comp hΩ'm subset_rfl hΦ.mapsTo hg) hval).trans ?_
-    rw [one_mul]
-    exact (hΦ.lpNorm_comp_le hΩ'm subset_rfl hΦ.mapsTo hg).trans
-      (mul_le_mul_of_nonneg_left (lpNorm_mono_measure (Lp.memLp _) hDΩ) hκ)
+    rw [Lp.norm_def, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm, ← one_mul (_ * _)]
+    exact hΦ.lpNorm_le_of_ae_le_mul_comp hΩ'm subset_rfl hmaps zero_le_one
+      (Lp.aestronglyMeasurable _) (Lp.memLp _) hval
 
 /-- **The Hessian back along a straightening chart.** Let `Ψ` be a change of variables of order two
 from `Ω ∩ U` into `Ω'` with constants `L' ≥ 0` and `c'`, and let `u` restrict on `Ω ∩ U` to
@@ -453,8 +443,11 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
   -- Composition with `Φ` preserves almost-everywhere properties and measurability.
   have hac : (volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))).map Φ ≪
       volume.restrict (Omega : Set (WithLp 2 (ℝ × E))) :=
-    (Measure.absolutelyContinuous_of_le_smul (hΦ.map_restrict_le_of_subset hΩ'm
-      hΩ'U' hΦmaps)).trans
+    (Measure.absolutelyContinuous_of_le_smul
+      ((map_restrict_le_smul_restrict_image_of_differentiableOn volume U'.isOpen
+        hΦ.differentiableOn (hΦ.injOn.mono hΩ'U') hΩ'U' hΩ'm hΦ.pos
+        fun x hx => hΦ.le_abs_det x (hΩ'U' hx)).trans
+        (by gcongr; exact hΦmaps.image_subset))).trans
       (Measure.restrict_mono inter_subset_left le_rfl).absolutelyContinuous
   have hΦm : AEMeasurable Φ (volume.restrict (Ω' : Set (WithLp 2 (ℝ × E)))) :=
     hΦ.aemeasurable.mono_measure (Measure.restrict_mono hΩ'U' le_rfl)
@@ -572,8 +565,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
     exact hx
   have hΦ' := hΦ.mono_set (inf_le_right : normalHalfSpace (E := E) a ⊓ U' ≤ U') hΦmaps
   have hΨ' := hΨ.mono_set (inf_le_right : Omega ⊓ U ≤ U) hΨmaps
-  have hD : ((Omega ⊓ U : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) ⊆ Omega :=
-    fun x hx => hx.1
+  have hΦΩ : MapsTo Φ (normalHalfSpace (E := E) a ⊓ U' : Opens (WithLp 2 (ℝ × E))) Omega :=
+    fun x hx => (hΦmaps hx).1
   have hκ : 0 ≤ c⁻¹ ^ (1 / p).toReal := Real.rpow_nonneg (inv_nonneg.2 hΦ.pos.le) _
   have hκ' : 0 ≤ c'⁻¹ ^ (1 / p).toReal := Real.rpow_nonneg (inv_nonneg.2 hΨ.pos.le) _
   refine ⟨(L' ^ 2 * c'⁻¹ ^ (1 / p).toReal * max C₀ 0 + L' * c'⁻¹ ^ (1 / p).toReal) *
@@ -581,8 +574,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
   -- The right-hand side `f ∘ Φ` on the flat side, and the estimate there.
   have hfΦ : MemLp (fun x => f (Φ x)) p (volume.restrict
       ((normalHalfSpace (E := E) a ⊓ U' : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E)))) :=
-    hΦ'.memLp_comp (normalHalfSpace (E := E) a ⊓ U').isOpen.measurableSet subset_rfl hΦ'.mapsTo
-      ((Lp.memLp f).mono_measure (Measure.restrict_mono hD le_rfl))
+    hΦ'.memLp_comp (normalHalfSpace (E := E) a ⊓ U').isOpen.measurableSet subset_rfl hΦΩ
+      (Lp.memLp f)
   have hest := hC₀ _ (hfΦ.toLp _)
     (exists_w1p0_value_ae_eq_mul_value_compL hΦ' hp_top hΦ.differentiableOn.continuousOn
       hΦ.mapsTo (hΨ.differentiableOn.continuousOn.mono fun y hy => hy.2) hΨmaps
@@ -596,11 +589,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_norm_le (hp : 1 < p) (hp_to
   -- The three terms on the right of the flat estimate, in terms of `u` and `f`.
   have hF : ‖hfΦ.toLp _‖ ≤ c⁻¹ ^ (1 / p).toReal * ‖f‖ := by
     rw [Lp.norm_toLp, toReal_eLpNorm, Lp.norm_def, toReal_eLpNorm]
-    exact (hΦ'.lpNorm_comp_le (normalHalfSpace (E := E) a ⊓ U').isOpen.measurableSet
-      subset_rfl hΦ'.mapsTo
-      ((Lp.memLp f).mono_measure (Measure.restrict_mono hD le_rfl))).trans
-      (mul_le_mul_of_nonneg_left (lpNorm_mono_measure (Lp.memLp f)
-        (Measure.restrict_mono hD le_rfl)) hκ)
+    exact hΦ'.lpNorm_comp_le (normalHalfSpace (E := E) a ⊓ U').isOpen.measurableSet subset_rfl
+      hΦΩ (Lp.memLp f)
   obtain ⟨hG, hV⟩ := norm_gradient_compL_restrictL_le_and_norm_value_le hL hΦ' hp_top u
   -- Back to `Ω`, along `Ψ`.
   have hlhs := lpNorm_iteratedGradient_inter_le hL' hΨ' hp_top hK hKU u _
@@ -671,12 +661,9 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_isChangeOfVar
   -- Restrict the chart to `U ∩ W`, with nonnegative constants.
   obtain ⟨U'₁, hΦ₁, hΨ₁, hΨΦ₁, hΦΨ₁, himage₁⟩ :=
     exists_isChangeOfVariables_inf hΦ hΨ hΨΦ hΦΨ himage W
-  have hnonneg {V V' : Opens (WithLp 2 (ℝ × E))} {χ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
-      {M d : ℝ} (h : IsChangeOfVariables 2 V V' χ M d) : IsChangeOfVariables 2 V V' χ (max M 0) d :=
-    { h with norm_iteratedFDeriv_le := fun i hi hik x hx =>
-        (h.norm_iteratedFDeriv_le i hi hik x hx).trans (le_max_left _ _) }
   obtain ⟨C, hC⟩ := exists_lpNorm_iteratedGradient_le_of_norm_le hp hp_top a (le_max_right L 0)
-    (le_max_right L' 0) (hnonneg hΦ₁) (hnonneg hΨ₁) hΨΦ₁ hΦΨ₁ himage₁ hK
+    (le_max_right L' 0) (hΦ₁.mono_const (le_max_left L 0) hΦ₁.pos le_rfl)
+    (hΨ₁.mono_const (le_max_left L' 0) hΨ₁.pos le_rfl) hΨΦ₁ hΦΨ₁ himage₁ hK
     (fun x hx => ⟨hKU hx, hKI hx⟩) hA hAW hcont hell hb hbβ hc hcγ
   exact ⟨C, fun u f hu0 heq => hC u f (fun ψ hψ hψc hψs => hu0 ψ hψ hψc fun x hx => (hψs hx).1)
     heq⟩
@@ -725,12 +712,14 @@ theorem exists_lpNorm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_grap
             (volume.restrict ((Omega : Set (WithLp 2 (ℝ × E))) ∩ V)) ≤
           C * (‖f‖ + ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖ + ‖Wkp.value 2 u‖) := by
   -- Flatten the boundary by the shear `(t, y) ↦ (t - φ y, y)`, in the identity coordinates.
-  have hsymm : (AffineIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E))).symm =
-      AffineIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E)) := rfl
+  -- The inverse of the identity isometry is the identity; Mathlib states this only for `refl`
+  -- itself (`AffineIsometryEquiv.coe_refl`), so it is checked pointwise by unfolding.
+  have hsymm (z : WithLp 2 (ℝ × E)) : (AffineIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E))).symm z = z :=
+    rfl
   obtain ⟨U', U, L, h0U, -, hΦ, hΨ, himage⟩ :=
     exists_isChangeOfVariables_of_contDiff (Omega := (Omega : Set (WithLp 2 (ℝ × E))))
       (e := AffineIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E))) (k := 2) one_le_two hh₀ hr₀ hφ0 hφ
-      (by simpa [hsymm, AffineIsometryEquiv.coe_refl] using hgraph)
+      (by simpa only [hsymm, SetLike.mem_coe] using hgraph)
   have hH : {x : WithLp 2 (ℝ × E) | 0 < (AffineIsometryEquiv.refl ℝ _ x).fst} =
       (normalHalfSpace (E := E) 0 : Set (WithLp 2 (ℝ × E))) := by
     ext x

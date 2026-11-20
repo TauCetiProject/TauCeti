@@ -14,6 +14,7 @@ import TauCeti.Analysis.Sobolev.Leibniz
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
@@ -100,7 +101,9 @@ derivatives gives the chain rule for the weak Hessian.
   `TauCeti.Wkp.norm_iteratedGradient_compL_le`.
 * `TauCeti.Wkp.IsChangeOfVariables.memLp_comp` and
   `TauCeti.Wkp.IsChangeOfVariables.lpNorm_comp_le`: precomposition with a change of variables is
-  bounded on `Lᵖ`, between measurable subsets of its domain and of its target.
+  bounded on `Lᵖ`, between measurable subsets of its domain and of its target, and
+  `TauCeti.Wkp.IsChangeOfVariables.lpNorm_le_of_ae_le_mul_comp` the resulting bound for a function
+  dominated pointwise by such a composition.
 
 ## References
 
@@ -417,6 +420,18 @@ theorem mono {j : ℕ} (h : IsChangeOfVariables k U V Φ L c) (hj : j ≤ k) :
   pos := h.pos
   le_abs_det := h.le_abs_det
 
+/-- A change of variables with constants `L` and `c` is one with any larger derivative bound
+`L' ≥ L` and any smaller positive Jacobian bound `c' ≤ c`. -/
+theorem mono_const {L' c' : ℝ} (h : IsChangeOfVariables k U V Φ L c) (hL : L ≤ L')
+    (hc : 0 < c') (hc' : c' ≤ c) : IsChangeOfVariables k U V Φ L' c' where
+  contDiffOn := h.contDiffOn
+  differentiableOn := h.differentiableOn
+  injOn := h.injOn
+  mapsTo := h.mapsTo
+  norm_iteratedFDeriv_le i hi hik x hx := (h.norm_iteratedFDeriv_le i hi hik x hx).trans hL
+  pos := hc
+  le_abs_det x hx := hc'.trans (h.le_abs_det x hx)
+
 /-- A change of variables from `U` into `V` restricts to one from any open `U₁ ⊆ U` into any open
 set `V₁` into which it maps `U₁`, with the same constants. -/
 theorem mono_set {U₁ V₁ : Opens E} (h : IsChangeOfVariables k U V Φ L c) (hU : U₁ ≤ U)
@@ -587,24 +602,14 @@ theorem ae_comp [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c) {P 
   ae_comp_of_map_absolutelyContinuous h.aemeasurable
     (Measure.absolutelyContinuous_of_le_smul (h.map_restrict_le mu)) hP
 
-/-- The pushforward bound `TauCeti.Wkp.IsChangeOfVariables.map_restrict_le` on a measurable
-subset `S ⊆ U` that `Φ` maps into `T`: `Φ` pushes `μ` restricted to `S` forward to at most `c⁻¹`
-times `μ` restricted to `T`. -/
-theorem map_restrict_le_of_subset [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c)
-    {S T : Set E} (hS : MeasurableSet S) (hSU : S ⊆ U) (hST : MapsTo Φ S T) :
-    (mu.restrict S).map Φ ≤ (ENNReal.ofReal c)⁻¹ • mu.restrict T :=
-  (map_restrict_le_smul_restrict_image_of_differentiableOn mu U.isOpen h.differentiableOn
-    (h.injOn.mono hSU) hSU hS h.pos fun x hx => h.le_abs_det x (hSU hx)).trans
-    (by gcongr; exact hST.image_subset)
-
 /-- Precomposition with a change of variables preserves `Lᵖ`: if `g ∈ Lᵖ(T)` and `Φ` maps a
 measurable `S ⊆ U` into `T`, then `g ∘ Φ ∈ Lᵖ(S)`. -/
 theorem memLp_comp [mu.IsAddHaarMeasure] {p : ℝ≥0∞} (h : IsChangeOfVariables k U V Φ L c)
     {S T : Set E} (hS : MeasurableSet S) (hSU : S ⊆ U) (hST : MapsTo Φ S T) {G : Type*}
     [NormedAddCommGroup G] {g : E → G} (hg : MemLp g p (mu.restrict T)) :
     MemLp (fun x => g (Φ x)) p (mu.restrict S) :=
-  (hg.of_measure_le_smul (by simp [h.pos]) (h.map_restrict_le_of_subset hS hSU hST)).comp_of_map
-    (h.aemeasurable.mono_measure (Measure.restrict_mono hSU le_rfl))
+  (hg.mono_measure (Measure.restrict_mono hST.image_subset le_rfl)).comp_restrict_of_le_abs_det
+    U.isOpen h.differentiableOn (h.injOn.mono hSU) hSU hS h.pos fun x hx => h.le_abs_det x (hSU hx)
 
 /-- Precomposition with a change of variables is bounded on `Lᵖ`: if `Φ` maps a measurable
 `S ⊆ U` into `T`, then `‖g ∘ Φ‖_{Lᵖ(S)} ≤ c^(-1/p) ‖g‖_{Lᵖ(T)}`. -/
@@ -613,13 +618,27 @@ theorem lpNorm_comp_le [mu.IsAddHaarMeasure] {p : ℝ≥0∞} (h : IsChangeOfVar
     [NormedAddCommGroup G] {g : E → G} (hg : MemLp g p (mu.restrict T)) :
     lpNorm (fun x => g (Φ x)) p (mu.restrict S) ≤
       c⁻¹ ^ (1 / p).toReal * lpNorm g p (mu.restrict T) := by
+  have hle : eLpNorm (fun x => g (Φ x)) p (mu.restrict S) ≤
+      (ENNReal.ofReal c)⁻¹ ^ (1 / p).toReal * eLpNorm g p (mu.restrict T) :=
+    (eLpNorm_comp_restrict_le U.isOpen h.differentiableOn (h.injOn.mono hSU) hSU hS h.pos
+      (fun x hx => h.le_abs_det x (hSU hx)) g).trans (by gcongr; exact hST.image_subset)
   rw [← toReal_eLpNorm, ← toReal_eLpNorm]
   refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    (by simp [h.pos])) hg.eLpNorm_ne_top) (eLpNorm_comp_le_of_map_le_smul
-      (h.aemeasurable.mono_measure (Measure.restrict_mono hSU le_rfl))
-      (h.map_restrict_le_of_subset hS hSU hST) p)).trans_eq ?_
+    (by simp [h.pos])) hg.eLpNorm_ne_top) hle).trans_eq ?_
   rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_inv,
     ENNReal.toReal_ofReal h.pos.le]
+
+/-- **`Lᵖ` bound from a pointwise bound by a composition.** If `Φ` maps a measurable `S ⊆ U`
+into `T`, `g ∈ Lᵖ(T)` and `‖F x‖ ≤ K ‖g (Φ x)‖` almost everywhere on `S` with `K ≥ 0`, then
+`‖F‖_{Lᵖ(S)} ≤ K c^(-1/p) ‖g‖_{Lᵖ(T)}`. -/
+theorem lpNorm_le_of_ae_le_mul_comp [mu.IsAddHaarMeasure] {p : ℝ≥0∞}
+    (h : IsChangeOfVariables k U V Φ L c) {S T : Set E} (hS : MeasurableSet S) (hSU : S ⊆ U)
+    (hST : MapsTo Φ S T) {G H : Type*} [NormedAddCommGroup G] [NormedAddCommGroup H]
+    {F : E → H} {g : E → G} {K : ℝ} (hK : 0 ≤ K) (hF : AEStronglyMeasurable F (mu.restrict S))
+    (hg : MemLp g p (mu.restrict T)) (hFg : ∀ᵐ x ∂mu.restrict S, ‖F x‖ ≤ K * ‖g (Φ x)‖) :
+    lpNorm F p (mu.restrict S) ≤ K * (c⁻¹ ^ (1 / p).toReal * lpNorm g p (mu.restrict T)) :=
+  (lpNorm_le_mul_lpNorm_of_ae_le_mul hF (h.memLp_comp hS hSU hST hg) hFg).trans
+    (mul_le_mul_of_nonneg_left (h.lpNorm_comp_le hS hSU hST hg) hK)
 
 end IsChangeOfVariables
 
