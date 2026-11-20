@@ -120,8 +120,8 @@ polynomial in the Morse inequalities.
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
-* `TauCeti.isMorse_of_subsingleton` and `TauCeti.isMorse_const_iff`: every function is Morse in
-  dimension zero and, on a nonempty manifold, a constant function only there.
+* `TauCeti.isMorse_const_iff`: on a nonempty manifold a constant function is Morse exactly in
+  dimension zero.
 * `TauCeti.IsMorse.criticalPointsIndexNegEquiv`: the critical points of `-f` of index `j` are those
   of `f` of index `dim M - j`.
 * `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
@@ -222,16 +222,6 @@ theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
 theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints I f = univ :=
   -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
   eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
-
-/-- **Every function is Morse in dimension zero.** A manifold modelled on a zero-dimensional space
-is discrete, so every function on it is smooth, and in each chart every point is a nondegenerate
-critical point of a function on the zero space. -/
-theorem isMorse_of_subsingleton [Subsingleton E] : IsMorse I f := by
-  have : Subsingleton H := I.injective.subsingleton
-  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
-  exact isMorse_iff.2 ⟨contMDiff_of_discreteTopology, fun _ _ ↦
-    (isManifoldNondegenerateCriticalPoint_iff I).2
-      (isNondegenerateCriticalPoint_of_subsingleton _ _)⟩
 
 /-- **A constant function is Morse only in dimension zero.** On a nonempty manifold every point is
 a critical point of a constant function, and its Hessian vanishes, which is invertible only on the

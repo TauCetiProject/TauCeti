@@ -55,7 +55,7 @@ Viewing `ℍ` as a real manifold, every `g ∈ GL(2, ℝ)` acts, antiholomorphic
   derivative `exp s`.
 * `Matrix.GeneralLinearGroup.tangentSpaceCastModel_mfderiv_smul`: in model coordinates, the
   differential of the action of `g ∈ GL(2, ℝ)` is `UpperHalfPlane.smulFDeriv`; its smoothness is
-  `UpperHalfPlane.instContMDiffConstSMulGL2Real`.
+  `TauCeti.UpperHalfPlane.instContMDiffConstSMulGLReal`.
 * `Matrix.GeneralLinearGroup.norm_smulFDeriv_apply` and
   `Matrix.GeneralLinearGroup.inner_smulFDeriv_apply`:
   `UpperHalfPlane.smulFDeriv g z` multiplies lengths by `Im(g • z)/Im z` and real inner products
@@ -241,7 +241,7 @@ theorem deriv_smul_mul_smulDeriv_of_eventuallyEq {W : ℂ → ℂ} (q : PSL(2, �
 /-- The derivative of the dilation `z ↦ exp s * z` is `exp s`. -/
 theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z = Real.exp s := by
   rw [smulDeriv_coe]
-  simp only [denom, mapGL_coe_matrix, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+  simp only [denom, mapGL_coe_matrix, map_apply_coe, Matrix.map_apply,
     Algebra.algebraMap_self_apply, coe_dilation, Matrix.of_apply, Matrix.cons_val',
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Complex.ofReal_zero,
     zero_mul, zero_add]

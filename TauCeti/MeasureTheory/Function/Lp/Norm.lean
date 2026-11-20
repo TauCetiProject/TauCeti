@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
@@ -58,6 +59,9 @@ bounds.
   everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
+* `MeasureTheory.Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top`: on a σ-finite
+  measure space, every nonnegative level strictly below the `L∞` norm of an operator-valued
+  function is witnessed at a single vector on a measurable set of positive finite measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
 * `MeasureTheory.MemLp.integral_norm_le_mul_eLpNorm`: the same bound for a function in `Lᵖ`.
@@ -87,6 +91,10 @@ bounds.
   bounded by `C` multiplies its norm by at most `C`.
 * `MeasureTheory.MemLp.eLpNorm_rpow_toReal_eq_enorm_integral`: for `0 < q < ∞`, the `q`-th power of
   the `L^q` norm of `f` is the norm of the integral of `‖f‖ ^ q`.
+* `MeasureTheory.memLp_top_inv_of_ae_le_norm` and
+  `MeasureTheory.memLp_top_inv_sub_of_ae_le_norm_sub`: an almost-everywhere strongly measurable
+  function into a normed division ring bounded away from zero (or from a scalar `z`) almost
+  everywhere has essentially bounded reciprocal (`MemLp · ∞ μ`).
 -/
 
 public section
@@ -593,5 +601,68 @@ theorem MemLp.eLpNorm_rpow_toReal_eq_enorm_integral {V : Type*} [NormedAddCommGr
     RCLike.norm_ofReal, abs_of_nonneg hI]
 
 end IntegralRpow
+
+section OperatorNorm
+variable {α 𝕜 E F : Type*} [MeasurableSpace α] {μ : Measure α} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a σ-finite measure space, every nonnegative `c < ‖A‖` is witnessed by a single vector
+`u : E` and a measurable set `t` with `0 < μ t < ∞` on which `c * ‖u‖ < ‖A x u‖`. -/
+theorem Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFinite μ]
+    (A : Lp (E →L[𝕜] F) ∞ μ) {c : ℝ} (hc_nonneg : 0 ≤ c) (hc_lt : c < ‖A‖) :
+    ∃ (u : E) (t : Set α), MeasurableSet t ∧ (∀ x ∈ t, c * ‖u‖ < ‖A x u‖) ∧ 0 < μ t ∧ μ t < ∞ := by
+  obtain ⟨C, hC_count, hC_sub⟩ := (Lp.stronglyMeasurable A).isSeparable_range
+  set δ := (‖A‖ - c) / 3 with hδ_def
+  have hδ : 0 < δ := by linarith [hδ_def]
+  set S : Set (E →L[𝕜] F) := {B ∈ C | c + δ < ‖B‖}
+  have : Countable S := (hC_count.mono (Set.sep_subset _ _)).to_subtype
+  choose u hu using fun B : S ↦ show ∃ u : E, (c + δ) * ‖u‖ < ‖(B : E →L[𝕜] F) u‖ by
+    by_contra! h; exact (not_le_of_gt B.2.2) ((B : E →L[𝕜] F).opNorm_le_bound (by linarith) h)
+  have hcover : {x | c + 2 * δ < ‖A x‖} ⊆ ⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖} := fun x hx ↦ by
+    obtain ⟨B, hBC, hdist⟩ := Metric.mem_closure_iff.mp (hC_sub ⟨x, rfl⟩) δ hδ
+    rw [dist_comm, _root_.dist_eq_norm] at hdist
+    have hBS : B ∈ S := ⟨hBC, by
+      have := norm_sub_le B (B - A x); rw [sub_sub_cancel] at this; linarith [Set.mem_ofPred.mp hx]⟩
+    set v := u ⟨B, hBS⟩
+    have htri : ‖B v‖ ≤ ‖(B - A x) v‖ + ‖A x v‖ := by
+      simpa only [sub_apply, sub_add_cancel] using norm_add_le ((B - A x) v) (A x v)
+    have hle := ((B - A x).le_opNorm v).trans (mul_le_mul_of_nonneg_right hdist.le (norm_nonneg _))
+    exact Set.mem_iUnion.mpr ⟨⟨B, hBS⟩, Set.mem_ofPred.mpr (by nlinarith [hu ⟨B, hBS⟩])⟩
+  have hμ_union : μ (⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖}) ≠ 0 :=
+    mt (measure_mono_null hcover) (Lp.measure_lt_norm_ne_zero (by linarith) (by linarith [hδ_def]))
+  obtain ⟨B, hμs⟩ : ∃ B : S, μ {x | c * ‖u B‖ < ‖A x (u B)‖} ≠ 0 := by
+    by_contra! hzero; exact hμ_union (measure_iUnion_null hzero)
+  have hs : MeasurableSet {x | c * ‖u B‖ < ‖A x (u B)‖} := measurableSet_lt measurable_const
+    (((ContinuousLinearMap.apply 𝕜 F (u B)).continuous.norm.comp_stronglyMeasurable
+      (Lp.stronglyMeasurable A)).measurable)
+  obtain ⟨t, ht, hts, h1, h2⟩ := Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
+  exact ⟨u B, t, ht, hts, h1, h2⟩
+
+end OperatorNorm
+section Inv
+
+variable {α 𝕜 : Type*} [MeasurableSpace α] [NormedDivisionRing 𝕜] {μ : Measure α}
+
+/-- If an almost-everywhere strongly measurable function `f : α → 𝕜` into a normed division ring
+satisfies `ε ≤ ‖f x‖` almost everywhere for some `ε > 0`, then its pointwise inverse `x ↦ (f x)⁻¹`
+is essentially bounded (`MemLp · ∞ μ`). -/
+theorem memLp_top_inv_of_ae_le_norm {f : α → 𝕜} (hf : AEStronglyMeasurable f μ) {ε : ℝ}
+    (hε : 0 < ε) (hbound : ∀ᵐ x ∂μ, ε ≤ ‖f x‖) :
+    MemLp (fun x ↦ (f x)⁻¹) ∞ μ := by
+  refine memLp_top_of_bound hf.inv₀ ε⁻¹ ?_
+  filter_upwards [hbound] with x hx
+  rw [norm_inv]
+  exact inv_anti₀ hε hx
+
+/-- If an almost-everywhere strongly measurable function `f : α → 𝕜` into a normed division ring
+satisfies `ε ≤ ‖f x - z‖` almost everywhere for some `ε > 0`, then `x ↦ (z - f x)⁻¹` is
+essentially bounded (`MemLp · ∞ μ`). -/
+theorem memLp_top_inv_sub_of_ae_le_norm_sub {f : α → 𝕜} (hf : AEStronglyMeasurable f μ) {z : 𝕜}
+    {ε : ℝ} (hε : 0 < ε) (hbound : ∀ᵐ x ∂μ, ε ≤ ‖f x - z‖) :
+    MemLp (fun x ↦ (z - f x)⁻¹) ∞ μ :=
+  memLp_top_inv_of_ae_le_norm (aestronglyMeasurable_const.sub hf) hε
+    (hbound.mono fun x hx ↦ norm_sub_rev (f x) z ▸ hx)
+
+end Inv
 
 end MeasureTheory
