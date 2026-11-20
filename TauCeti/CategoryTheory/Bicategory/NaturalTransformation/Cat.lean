@@ -26,7 +26,8 @@ modification with unitor components from a composite of two such transformations
 arbitrary `1`-morphisms, so that they apply by unification to goals whose `1`-morphisms are values
 of composite pseudofunctors, which `simp` and `rw` do not see through. The same reduction
 handles identity and composite transport cells. The file also evaluates the naturality cell
-of a composite strong transformation on objects, with the Cat endpoints made explicit.
+of a composite strong transformation on objects, with the Cat endpoints made explicit, and
+conjugates pullbacks of morphisms by the naturality isomorphisms of a strong transformation.
 
 A strong transformation into `Cat` is an equivalence whenever its component functors are
 equivalences, for an arbitrary source bicategory. Specializing `StrongTrans.equivalenceMk` to
@@ -148,6 +149,18 @@ lemma comp_naturality_hom_app {B : Type u₁} [Bicategory.{w₁, v₁} B]
     simp
   exact (congrArg (fun m => m.toNatTrans.app X)
     (categoryStruct_comp_naturality_hom η θ f)).trans h
+
+/-- Conjugating by the naturality isomorphism of a strong transformation `η` into `Cat` at `f`
+turns the image under `η.app b` of the pullback of a morphism `φ` into the pullback of the image
+of `φ` under `η.app a`. -/
+@[reassoc]
+lemma naturality_naturality_1 {B : Type u₁} [Bicategory.{w₁, v₁} B]
+    {F G : B ⥤ᵖ Cat.{v, w}} (η : F ⟶ G) {a b : B} (f : a ⟶ b) {X Y : F.obj a} (φ : X ⟶ Y) :
+    (η.naturality f).inv.toNatTrans.app X ≫
+        (η.app b).toFunctor.map ((F.map f).toFunctor.map φ) ≫
+          (η.naturality f).hom.toNatTrans.app Y =
+      (G.map f).toFunctor.map ((η.app a).toFunctor.map φ) :=
+  NatIso.naturality_1 (Cat.Hom.toNatIso (η.naturality f)) φ
 
 end Pseudofunctor.StrongTrans
 
