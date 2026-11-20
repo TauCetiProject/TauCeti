@@ -59,8 +59,11 @@ broken trajectory from `p` to `r` has at most `ind p - ind r` components
 This generalizes the compactified space of index-two trajectories of
 `TauCeti.Geometry.Manifold.Morse.Boundary.Compactification`, which records them on two levels in
 `M × M`, to any index difference and any family of levels, countable for the closure result. That
-every broken trajectory is a limit of unbroken ones, and the charts of the compactified space near
-broken trajectories, need gluing; beyond index two they are not proved here.
+every broken trajectory is a limit of unbroken ones needs gluing; it is
+`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.closure_morseTrajectoryRecords`. Charts of the
+compactified space near broken trajectories are only constructed for index two
+(`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet` in the namespace
+`TauCeti.IsAdaptedPseudoGradient`).
 
 ## Main declarations
 

@@ -46,6 +46,8 @@ manifold, the index vanishes without a nondegeneracy assumption.
   formula under nondegeneracy of the preferred-chart Hessian.
 * `IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`:
   the critical-point specialization.
+* `IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one`: critical
+  points of consecutive index for `f` have consecutive index for `-f`, in the opposite order.
 
 ## References
 
@@ -189,6 +191,17 @@ theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
   exact TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (((isManifoldNondegenerateCriticalPoint_iff I).mp h).hessianQuadraticForm_nondegenerate)
+
+/-- If the Morse index of `f` drops by one from a nondegenerate critical point `x` to another one
+`y`, then the Morse index of `-f` rises by one from `x` to `y`. -/
+theorem manifoldMorseIndex_neg_eq_add_one_of_eq_add_one {y : M}
+    (hx : IsManifoldNondegenerateCriticalPoint I f x)
+    (hy : IsManifoldNondegenerateCriticalPoint I f y)
+    (hxy : manifoldMorseIndex I f x = manifoldMorseIndex I f y + 1) :
+    manifoldMorseIndex I (-f) y = manifoldMorseIndex I (-f) x + 1 := by
+  have := hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  have := hy.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  omega
 
 end IsManifoldNondegenerateCriticalPoint
 

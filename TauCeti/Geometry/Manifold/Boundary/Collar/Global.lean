@@ -130,7 +130,7 @@ theorem scale (r : ℝ) (hr : r ∈ Ioc (0 : ℝ) 1) :
     exact and_iff_right y.2.1
   refine h.reparam_isOpenEmbedding ?_ (Subtype.ext (mul_zero r))
   convert hincl.comp (icoScale hr.1).isOpenEmbedding with t
-  exact Subtype.ext (coe_icoScale hr.1 t).symm
+  exact (coe_icoScale hr.1 t).symm
 
 /-- Reparametrizing the boundary of a collar by a homeomorphism preserves it. -/
 theorem comp_homeomorph (e : P ≃ₜ N) :

@@ -191,7 +191,7 @@ theorem rep_rootGenerator_exteriorBasis_rankTwo (k : Fin (1 + 1) ⊕ Fin (1 + 1)
 enumerated lattice basis `TauCeti.TypeBSpinCarrier.latticeBasis 1`. -/
 noncomputable def rankTwoRootIntMatrix (k : Fin (1 + 1) ⊕ Fin (1 + 1)) :
     Matrix (Fin (dimension 1)) (Fin (dimension 1)) ℤ :=
-  (rankTwoRootMatrix k).submatrix (Fintype.equivFin _).symm (Fintype.equivFin _).symm
+  (rankTwoRootMatrix k).submatrix (signSet 1) (signSet 1)
 
 /-- The general spin-generator matrix specializes to the explicit rank-two matrix. -/
 theorem rootIntMatrix_rankTwo (k : Fin (1 + 1) ⊕ Fin (1 + 1)) :
@@ -206,7 +206,7 @@ theorem rootIntMatrix_rankTwo (k : Fin (1 + 1) ⊕ Fin (1 + 1)) :
     apply Subtype.ext
     simp only [AddSubmonoidClass.coe_finsetSum, AddSubgroupClass.coe_zsmul]
     rw [coe_latticeBasis, rep_rootGenerator_exteriorBasis_rankTwo,
-      ← (Fintype.equivFin (Finset (Fin (1 + 1)))).symm.sum_comp]
+      ← (signSet 1).sum_comp]
     refine Finset.sum_congr rfl fun r _ => ?_
     rw [coe_latticeBasis, rankTwoRootIntMatrix, submatrix_apply, Int.cast_smul_eq_zsmul]
   have hcoords := congrArg (fun v ↦ (latticeBasis 1).repr v r) hvec
@@ -324,7 +324,7 @@ theorem dimension_one : dimension 1 = 1 + 1 + (1 + 1) :=
 /-- The symplectic lattice coordinates, read as subsets of `{0, 1}` through the enumeration of the
 spin lattice basis. -/
 private noncomputable def spinIndex : Fin (1 + 1 + (1 + 1)) ≃ Finset (Fin (1 + 1)) :=
-  (finCongr dimension_one).symm.trans (Fintype.equivFin _).symm
+  (finCongr dimension_one).symm.trans (signSet 1)
 
 /-- **The change of basis from the spin lattice basis to the symplectic lattice basis**, as an
 invertible integral matrix on the symplectic coordinates: the spin lattice basis is reindexed along

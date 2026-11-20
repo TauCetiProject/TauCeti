@@ -68,6 +68,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `C^(m + 1)` curve is `C^m` on a unique-differentiability domain, and
   `ContMDiffOn.continuousOn_curveVelocityLiftWithin` is its continuous case, with open-domain and
   unrestricted forms for `curveVelocityLift`.
+* `ContMDiffWithinAt.contMDiffWithinAt_curveVelocityLiftWithin` and
+  `ContMDiffAt.contMDiffAt_curveVelocityLift`: regularity of the velocity lift at a parameter.
 * `TauCeti.Manifold.contMDiffOn_succ_iff_contMDiffOn_curveVelocityLiftWithin`: conversely, a
   differentiable curve whose velocity lift is `C^n` is `C^(n + 1)`, so that a curve is `C^(n + 1)`
   exactly when it is differentiable with `C^n` velocity lift. This is the bootstrapping step for
@@ -120,6 +122,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Iic` and
   `TauCeti.Manifold.mfderiv_eq_zero_of_eqOn_Ici`: a real curve constant on a closed half-line has
   zero manifold derivative in the interior of that half-line.
+* `TauCeti.Manifold.hasMFDerivAt_if_le`: curves meeting at an endpoint glue differentiably when
+  their derivatives follow the same dependent family of continuous linear maps.
 * `TauCeti.Manifold.curveVelocityLift_eq_of_mdifferentiableAt_if_le`: two real curves meeting at
   `c`, whose concatenation at `c` is differentiable there, have the same velocity at `c`.
 * `TauCeti.Manifold.hasMFDerivWithinAt_extChartAt_symm_comp`: the chain rule for the inverse
@@ -735,26 +739,46 @@ theorem eq_curveVelocityLift_of_hasMFDerivAt {z : 𝕜 → TangentBundle I M} {t
   exact eq_curveVelocityLiftWithin_of_hasMFDerivWithinAt uniqueDiffWithinAt_univ
     hz.hasMFDerivWithinAt hw
 
+/-- The within-domain velocity lift of a curve that is `C^n` within a set with unique
+manifold derivatives is `C^m` there when `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffWithinAt.contMDiffWithinAt_curveVelocityLiftWithin
+    {m n : ℕ∞ω} {u : Set 𝕜}
+    (hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I n γ u t) (ht : t ∈ u) (hmn : m + 1 ≤ n)
+    (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
+    ContMDiffWithinAt 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLiftWithin I γ u) u t := by
+  let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun r ↦
+    TotalSpace.mk' 𝕜 r ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) r).symm 1)
+  have hι : ContMDiffAt 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι t := by
+    simp only [ι, NormedSpace.fromTangentSpace_symm_apply]
+    exact contMDiffAt_vectorSpace_iff_contDiffAt.2 contDiffAt_const
+  have hcomp := (hγ.contMDiffWithinAt_tangentMapWithin (x₀ := ι t) ht hmn hu).comp t
+    hι.contMDiffWithinAt (fun _ hr ↦ hr)
+  exact hcomp.congr (fun r _ ↦
+    (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) r).symm)
+    (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
+
 /-- The within-domain velocity lift of a `C^n` curve is `C^m` on a domain with unique manifold
 derivatives, when `m + 1 ≤ n`. -/
 theorem _root_.ContMDiffOn.contMDiffOn_curveVelocityLiftWithin {m n : ℕ∞ω} {u : Set 𝕜}
     (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I n γ u) (hmn : m + 1 ≤ n)
     (hu : UniqueMDiffOn 𝓘(𝕜, 𝕜) u) :
-    ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLiftWithin I γ u) u := by
-  let ι : 𝕜 → TangentBundle 𝓘(𝕜, 𝕜) 𝕜 := fun t ↦
-    TotalSpace.mk' 𝕜 t ((NormedSpace.fromTangentSpace (𝕜 := 𝕜) t).symm 1)
-  have hι : ContMDiff 𝓘(𝕜, 𝕜) 𝓘(𝕜, 𝕜).tangent m ι := by
-    intro t
-    rw [contMDiffAt_totalSpace_iff]
-    refine ⟨contMDiffAt_id, ?_⟩
-    refine (contMDiffAt_const (c := (1 : 𝕜))).congr_of_eventuallyEq ?_
-    filter_upwards with r
-    rw [trivializationAt_model_space_apply]
-    rfl
-  have htangent := hγ.contMDiffOn_tangentMapWithin hmn hu
-  have hcomp := htangent.comp hι.contMDiffOn (fun t ht ↦ by simpa [ι] using ht)
-  refine hcomp.congr fun t _ ↦ ?_
-  exact (tangentMapWithin_unit_eq_curveVelocityLiftWithin (I := I) (u := u) t).symm
+    ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLiftWithin I γ u) u :=
+  fun t ht ↦ (hγ t ht).contMDiffWithinAt_curveVelocityLiftWithin ht hmn hu
+
+/-- The velocity lift of a curve that is `C^n` at a parameter is `C^m` there when
+`m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocityLift {m n : ℕ∞ω}
+    (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I n γ t) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLift I γ) t := by
+  simpa only [contMDiffWithinAt_univ, curveVelocityLiftWithin_univ] using
+    hγ.contMDiffWithinAt.contMDiffWithinAt_curveVelocityLiftWithin (Set.mem_univ t) hmn
+      uniqueMDiffOn_univ
+
+/-- The velocity lift of a `C^n` curve is `C^m` when `m + 1 ≤ n`. -/
+theorem _root_.ContMDiff.contMDiff_curveVelocityLift {m n : ℕ∞ω}
+    (hγ : ContMDiff 𝓘(𝕜, 𝕜) I n γ) (hmn : m + 1 ≤ n) :
+    ContMDiff 𝓘(𝕜, 𝕜) I.tangent m (curveVelocityLift I γ) :=
+  fun _ ↦ hγ.contMDiffAt.contMDiffAt_curveVelocityLift hmn
 
 /-- The within-domain velocity lift of a `C¹` curve is continuous on a domain with unique
 manifold derivatives. -/
@@ -903,6 +927,44 @@ theorem mfderiv_eq_zero_of_eqOn_Ici (h : EqOn γ (fun _ => p) (Ici a)) (ht : a <
     mfderiv 𝓘(ℝ, ℝ) I γ t = 0 :=
   ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) p t).congr_of_eventuallyEq
     (by filter_upwards [Ioi_mem_nhds ht] with s hs using h (mem_Ici.2 hs.le))).mfderiv
+
+/-- Glue real curves meeting at `c` whose derivatives follow the same dependent family of
+continuous linear maps. No equation of motion or separation hypothesis is needed. -/
+theorem hasMFDerivAt_if_le {f g : ℝ → N} {c u : ℝ}
+    {L : (r : ℝ) → (y : N) → TangentSpace 𝓘(ℝ, ℝ) r →L[ℝ] TangentSpace I y}
+    (hfg : f c = g c)
+    (hf : u ≤ c → HasMFDerivAt 𝓘(ℝ, ℝ) I f u (L u (f u)))
+    (hg : c ≤ u → HasMFDerivAt 𝓘(ℝ, ℝ) I g u (L u (g u))) :
+    HasMFDerivAt 𝓘(ℝ, ℝ) I (fun r ↦ if r ≤ c then f r else g r) u
+      (L u (if u ≤ c then f u else g u)) := by
+  have hcast (r : ℝ) {p q : N} (hpq : p = q) :
+      (tangentSpaceCast I p q : TangentSpace I p →L[ℝ] TangentSpace I q) ∘L L r p =
+        L r q := by
+    subst q
+    rfl
+  rcases lt_trichotomy u c with h | h | h
+  · exact ((hf h.le).congr_of_eventuallyEq
+      ((eventually_lt_nhds h).mono fun r hr ↦ ite_eq_left hr.le)).congr_mfderiv
+        (hcast u (ite_eq_left h.le).symm)
+  · subst u
+    have h₁ := (hf le_rfl).hasMFDerivWithinAt (s := Iic c)
+    have h₂ := (hg le_rfl).hasMFDerivWithinAt (s := Ici c)
+    have h₁' := h₁.congr_mono (f₁ := fun r ↦ if r ≤ c then f r else g r) (t := Iic c)
+      (fun r hr ↦ ite_eq_left hr) (ite_eq_left le_rfl) Subset.rfl
+    have h₂' := h₂.congr_mono (f₁ := fun r ↦ if r ≤ c then f r else g r) (t := Ici c)
+      (fun r hr ↦ by
+        split_ifs with h
+        · exact (le_antisymm h hr) ▸ hfg
+        · rfl)
+      ((ite_eq_left le_rfl).trans hfg) Subset.rfl
+    have hleft := h₁'.congr_mfderiv (hcast c (ite_eq_left le_rfl).symm)
+    have hright := h₂'.congr_mfderiv
+      (hcast c ((ite_eq_left le_rfl).trans hfg).symm)
+    exact (hleft.union hright).hasMFDerivAt
+      (by rw [Iic_union_Ici]; exact Filter.univ_mem)
+  · exact ((hg h.le).congr_of_eventuallyEq
+      ((eventually_gt_nhds h).mono fun r hr ↦ ite_eq_right (not_le.mpr hr))).congr_mfderiv
+        (hcast u (ite_eq_right (not_le.mpr h)).symm)
 
 /-- **Velocities at a differentiable junction.** Let `δ` and `γ` be real curves which meet at the
 parameter `c` and are differentiable there. If the curve which follows `δ` up to `c` and `γ`

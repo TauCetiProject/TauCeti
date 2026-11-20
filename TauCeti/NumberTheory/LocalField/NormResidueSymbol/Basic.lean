@@ -138,6 +138,41 @@ theorem normResidueSymbol_spec (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
   rw [algebraMap_normResidueSymbol a b σ hσ hβ,
     div_mul_cancel₀ _ (ne_zero_of_pow_eq_algebraMap hβ)]
 
+/-- **The Artin characterization of the norm-residue symbol in a normal extension.** Every
+representative of `Art_K(a)` restricts along any `K`-embedding `ι : L →ₐ[K] SeparableClosure K` of
+a normal extension `L/K` to move every `n`-th root `y ∈ L` of `b` by `(a, b)`. -/
+theorem _root_.AlgHom.restrictNormalHom_apply_eq_algebraMap_normResidueSymbol_mul_of_pow_eq
+    {L : Type*} [Field L] [Algebra K L] [Normal K L] (ι : L →ₐ[K] SeparableClosure K) (a b : Kˣ)
+    (σ : Gal(AlgebraicClosure K/K))
+    (hσ : (σ : TopologicalAbelianization Gal(AlgebraicClosure K/K)) = artinMap K a) {y : L}
+    (hy : y ^ n = algebraMap K L b) :
+    ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) y =
+      algebraMap K L ((normResidueSymbol K n a b : Kˣ) : K) * y := by
+  let j : L →ₐ[K] AlgebraicClosure K := (separableClosure K (AlgebraicClosure K)).val.comp ι
+  have hj : Function.Injective j := j.toRingHom.injective
+  apply hj
+  have hjy : j y ^ n = algebraMap K (AlgebraicClosure K) b := by
+    rw [← map_pow, hy, AlgHom.commutes]
+  have hcomm : j (ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv K σ) y) = σ (j y) := by
+    simp only [j, AlgHom.comp_apply, IntermediateField.coe_val, ι.restrictNormalHom_commutes,
+      coe_absoluteGaloisGroupRestrictEquiv_apply]
+  rw [hcomm, normResidueSymbol_spec a b σ hσ hjy, map_mul, AlgHom.commutes]
+
+/-- **The Artin characterization of the norm-residue symbol in the separable closure.** Every
+representative `σ` of `Art_K(a)` acts on any `n`-th root `β ∈ SeparableClosure K` of `b` by
+multiplication by `(a, b)_{K, n}`. -/
+theorem normResidueSymbol_spec_separableClosure (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
+    (hσ : (σ : TopologicalAbelianization Gal(AlgebraicClosure K/K)) = artinMap K a)
+    {β : SeparableClosure K} (hβ : β ^ n = algebraMap K (SeparableClosure K) (b : K)) :
+    absoluteGaloisGroupRestrictEquiv K σ β =
+      algebraMap K (SeparableClosure K) ((normResidueSymbol K n a b : Kˣ) : K) * β := by
+  apply Subtype.ext
+  rw [coe_absoluteGaloisGroupRestrictEquiv_apply K σ β,
+    normResidueSymbol_spec a b σ hσ (by
+      rw [← IntermediateField.algebraMap_apply, ← map_pow, hβ,
+        ← IsScalarTower.algebraMap_apply]),
+    IntermediateField.coe_mul, IntermediateField.coe_algebraMap_apply]
+
 /-- The norm-residue symbol is multiplicative in the Artin argument. -/
 theorem normResidueSymbol_mul_left (a a' b : Kˣ) :
     normResidueSymbol K n (a * a') b =
@@ -201,6 +236,20 @@ theorem normResidueSymbol_pow_right_eq_one (a b : Kˣ) :
   rw [normResidueSymbol_pow_right]
   exact Subtype.ext (normResidueSymbol K n a b).property
 
+/-- An element of `(Kˣ)ⁿ` in the Artin argument pairs trivially with every unit. -/
+theorem normResidueSymbol_eq_one_of_mem_powerSubgroup_left {a : Kˣ}
+    (ha : a ∈ powerSubgroup Kˣ n) (b : Kˣ) :
+    normResidueSymbol K n a b = 1 := by
+  obtain ⟨c, rfl⟩ := (mem_powerSubgroup_iff n).1 ha
+  exact normResidueSymbol_pow_left_eq_one c b
+
+/-- An element of `(Kˣ)ⁿ` in the radical argument pairs trivially with every unit. -/
+theorem normResidueSymbol_eq_one_of_mem_powerSubgroup_right (a : Kˣ) {b : Kˣ}
+    (hb : b ∈ powerSubgroup Kˣ n) :
+    normResidueSymbol K n a b = 1 := by
+  obtain ⟨c, rfl⟩ := (mem_powerSubgroup_iff n).1 hb
+  exact normResidueSymbol_pow_right_eq_one a c
+
 /-- In degree one the norm-residue symbol is trivial. -/
 @[simp]
 theorem normResidueSymbol_degree_one (a b : Kˣ) : normResidueSymbol K 1 a b = 1 := by
@@ -217,32 +266,68 @@ private def symbolLeftQuotient :
           map_mul' := normResidueSymbol_mul_right a }
       map_one' := MonoidHom.ext (normResidueSymbol_one_left (K := K) (n := n))
       map_mul' a a' := MonoidHom.ext (normResidueSymbol_mul_left a a') }
-    (by
-      intro a ha
-      obtain ⟨c, rfl⟩ := (mem_powerSubgroup_iff n).1 ha
-      exact MonoidHom.ext (normResidueSymbol_pow_left_eq_one c))
+    (fun _ ha ↦ MonoidHom.mem_ker.2 <|
+      MonoidHom.ext (normResidueSymbol_eq_one_of_mem_powerSubgroup_left ha))
+
+private theorem symbolLeftQuotient_mk (a b : Kˣ) :
+    symbolLeftQuotient (K := K) (n := n) (QuotientGroup.mk a) b = normResidueSymbol K n a b := by
+  simp only [symbolLeftQuotient, QuotientGroup.lift_mk', MonoidHom.coe_mk, OneHom.coe_mk]
 
 /-- The **norm-residue pairing on power classes**. Its two arguments are classes in
 `Kˣ ⧸ (Kˣ)ⁿ`, and it is multiplicative in both arguments. No nondegeneracy assertion is
 needed to construct this pairing. -/
 def normResidueSymbolPairing :
     powerClassQuotient Kˣ n →* (powerClassQuotient Kˣ n →* rootsOfUnity n K) :=
-  (QuotientGroup.lift (powerSubgroup Kˣ n) (symbolLeftQuotient (K := K) (n := n)).flip (by
-    intro b hb
-    obtain ⟨c, rfl⟩ := (mem_powerSubgroup_iff n).1 hb
-    apply MonoidHom.ext
-    intro q
-    obtain ⟨a, rfl⟩ := powerClassHom_surjective Kˣ n q
-    simpa only [MonoidHom.flip_apply, powerClassHom_apply, symbolLeftQuotient,
-      QuotientGroup.lift_mk, MonoidHom.coe_mk, OneHom.coe_mk, MonoidHom.one_apply] using
-      normResidueSymbol_pow_right_eq_one (n := n) a c)).flip
+  (QuotientGroup.lift (powerSubgroup Kˣ n) (symbolLeftQuotient (K := K) (n := n)).flip
+    (fun b hb ↦ MonoidHom.mem_ker.2 <| MonoidHom.ext fun q ↦ by
+      obtain ⟨a, rfl⟩ := powerClassHom_surjective Kˣ n q
+      rw [MonoidHom.flip_apply, powerClassHom_apply, symbolLeftQuotient_mk, MonoidHom.one_apply]
+      exact normResidueSymbol_eq_one_of_mem_powerSubgroup_right a hb)).flip
 
 /-- On classes of units the descended pairing is the norm-residue symbol. -/
 @[simp]
 theorem normResidueSymbolPairing_mk (a b : Kˣ) :
     normResidueSymbolPairing (K := K) (n := n) (QuotientGroup.mk a) (QuotientGroup.mk b) =
       normResidueSymbol K n a b := by
-  simp only [normResidueSymbolPairing, MonoidHom.flip_apply, QuotientGroup.lift_mk,
-    symbolLeftQuotient, MonoidHom.coe_mk, OneHom.coe_mk]
+  rw [normResidueSymbolPairing, MonoidHom.flip_apply, QuotientGroup.lift_mk',
+    MonoidHom.flip_apply, symbolLeftQuotient_mk]
+
+/-- Inversion in the Artin argument inverts the norm-residue symbol. -/
+@[simp]
+theorem normResidueSymbol_inv_left (a b : Kˣ) :
+    normResidueSymbol K n a⁻¹ b = (normResidueSymbol K n a b)⁻¹ := by
+  rw [← normResidueSymbolPairing_mk, QuotientGroup.mk_inv, map_inv, MonoidHom.inv_apply,
+    normResidueSymbolPairing_mk]
+
+/-- Inversion in the radical argument inverts the norm-residue symbol. -/
+@[simp]
+theorem normResidueSymbol_inv_right (a b : Kˣ) :
+    normResidueSymbol K n a b⁻¹ = (normResidueSymbol K n a b)⁻¹ := by
+  rw [← normResidueSymbolPairing_mk, QuotientGroup.mk_inv (N := powerSubgroup Kˣ n) b, map_inv,
+    normResidueSymbolPairing_mk]
+
+/-- Division in the Artin argument divides the norm-residue symbols. -/
+theorem normResidueSymbol_div_left (a a' b : Kˣ) :
+    normResidueSymbol K n (a / a') b =
+      normResidueSymbol K n a b / normResidueSymbol K n a' b := by
+  rw [div_eq_mul_inv, normResidueSymbol_mul_left, normResidueSymbol_inv_left, div_eq_mul_inv]
+
+/-- Division in the radical argument divides the norm-residue symbols. -/
+theorem normResidueSymbol_div_right (a b b' : Kˣ) :
+    normResidueSymbol K n a (b / b') =
+      normResidueSymbol K n a b / normResidueSymbol K n a b' := by
+  rw [div_eq_mul_inv, normResidueSymbol_mul_right, normResidueSymbol_inv_right, div_eq_mul_inv]
+
+/-- Integer powers in the Artin argument become integer powers of the norm-residue symbol. -/
+theorem normResidueSymbol_zpow_left (a b : Kˣ) (k : ℤ) :
+    normResidueSymbol K n (a ^ k) b = normResidueSymbol K n a b ^ k := by
+  rw [← normResidueSymbolPairing_mk, QuotientGroup.mk_zpow, map_zpow, MonoidHom.zpow_apply,
+    normResidueSymbolPairing_mk]
+
+/-- Integer powers in the radical argument become integer powers of the norm-residue symbol. -/
+theorem normResidueSymbol_zpow_right (a b : Kˣ) (k : ℤ) :
+    normResidueSymbol K n a (b ^ k) = normResidueSymbol K n a b ^ k := by
+  rw [← normResidueSymbolPairing_mk, QuotientGroup.mk_zpow (N := powerSubgroup Kˣ n) b k, map_zpow,
+    normResidueSymbolPairing_mk]
 
 end TauCeti

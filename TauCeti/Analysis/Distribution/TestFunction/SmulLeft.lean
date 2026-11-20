@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
@@ -37,6 +38,8 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
   derivatives of `a` are only controlled on a set containing the support of `Ψ`.
 * `TestFunction.exists_mul_eq_of_forall_ne_zero`: a test function divided by a smooth function
   that does not vanish near its support is a test function, with derivative bounds.
+* `TestFunction.hasTemperateGrowth_mul`: the product `χ f` of a complex test function with a
+  smooth function has temperate growth.
 * `TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset`: the pairing `x ↦ A x (φ x)`
   of a test function on `Ω'` with a smooth operator field is a test function on any open `Ω`
   containing `tsupport A ∩ Ω'`.
@@ -107,6 +110,14 @@ theorem smulLeftCLM_monoCLM (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω', F)) :
     smulLeftCLM hf (monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = monoCLM ℝ (smulLeftCLM hf φ) := by
   ext x
   by_cases h : Ω' ≤ Ω <;> simp [monoCLM_apply, h]
+
+open scoped ContDiff in
+/-- The product of a complex test function with a smooth function has temperate growth: it is
+smooth with compact support. Such products are the multipliers that localize a differential
+operator near the support of the test function. -/
+theorem hasTemperateGrowth_mul (χ : 𝓓(Ω, ℂ)) {f : E → ℂ} (hf : ContDiff ℝ ∞ f) :
+    (fun x ↦ χ x * f x).HasTemperateGrowth :=
+  χ.hasCompactSupport.mul_right.hasTemperateGrowth (χ.contDiff.mul hf)
 
 end SmulLeft
 
