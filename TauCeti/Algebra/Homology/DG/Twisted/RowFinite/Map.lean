@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Equivalence
 public import TauCeti.Algebra.Homology.DG.Twisted.Map
-public import TauCeti.LinearAlgebra.Finsupp.MapRange
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # Row-finite twisting cocycles along a morphism of DG algebras
@@ -81,6 +81,17 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 
 section Rows
 
+/-- Two additive maps out of `P →₀ A` agree once they agree on `Finsupp.single x c` for every
+generator `x` and every homogeneous coefficient `c`. -/
+private theorem finsupp_addMonoidHom_ext_homogeneous {N : Type*} [AddZeroClass N]
+    {φ ψ : (P →₀ A) →+ N}
+    (h : ∀ x i (c : A), c ∈ 𝒜 i → φ (Finsupp.single x c) = ψ (Finsupp.single x c)) : φ = ψ :=
+  Finsupp.addHom_ext fun x c ↦ by
+    induction c using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | @homogeneous i c => exact h x i c c.2
+    | add c c' hc hc' => rw [Finsupp.single_add, map_add, map_add, hc, hc']
+
 /-- Applying a graded ring homomorphism coefficientwise commutes with the Koszul-signed extension
 of the images of the generators. -/
 theorem mapRange_rowFiniteSignedMap {F : Type*} [FunLike F A B] [GradedFunLike F 𝒜 ℬ]
@@ -88,23 +99,18 @@ theorem mapRange_rowFiniteSignedMap {F : Type*} [FunLike F A B] [GradedFunLike F
     Finsupp.mapRange f (map_zero f) (rowFiniteSignedMap (𝒜 := 𝒜) h g) =
       rowFiniteSignedMap (𝒜 := ℬ) (fun x ↦ Finsupp.mapRange f (map_zero f) (h x))
         (Finsupp.mapRange f (map_zero f) g) := by
+  refine DFunLike.congr_fun (finsupp_addMonoidHom_ext_homogeneous (𝒜 := 𝒜)
+    (φ := (Finsupp.mapRange.addMonoidHom (f : A →+ B)).comp
+      (rowFiniteSignedMap (𝒜 := 𝒜) h).toAddMonoidHom)
+    (ψ := (rowFiniteSignedMap (𝒜 := ℬ) _).toAddMonoidHom.comp
+      (Finsupp.mapRange.addMonoidHom (f : A →+ B))) fun x q c hc ↦ ?_) g
   classical
-  induction g using Finsupp.induction_linear with
-  | zero => simp
-  | add g g' hg hg' =>
-    rw [map_add, Finsupp.mapRange_add (map_add f), Finsupp.mapRange_add (map_add f), map_add, hg,
-      hg']
-  | single x c =>
-    induction c using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous q c =>
-      rw [rowFiniteSignedMap_single h x c.2, Finsupp.mapRange_single,
-        rowFiniteSignedMap_single _ x (Graded.map_mem f c.2)]
-      ext z
-      simp [Units.smul_def]
-    | add c c' hc hc' =>
-      rw [Finsupp.single_add, map_add, Finsupp.mapRange_add (map_add f), hc, hc',
-        ← map_add, ← Finsupp.mapRange_add (map_add f)]
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe,
+    Finsupp.mapRange.addMonoidHom_apply, AddMonoidHom.coe_ofClass]
+  rw [rowFiniteSignedMap_single h x hc, Finsupp.mapRange_single,
+    rowFiniteSignedMap_single _ x (Graded.map_mem f hc)]
+  ext z
+  simp [Units.smul_def]
 
 variable (f : DGAlgHom hA hB)
 
@@ -114,23 +120,18 @@ theorem mapRange_rowFiniteTwistedDifferential (m : P → P →₀ A) (g : P →�
     Finsupp.mapRange f (map_zero f) (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := dA) m g) =
       rowFiniteTwistedDifferential (𝒜 := ℬ) (d := dB)
         (fun x ↦ Finsupp.mapRange f (map_zero f) (m x)) (Finsupp.mapRange f (map_zero f) g) := by
+  refine DFunLike.congr_fun (finsupp_addMonoidHom_ext_homogeneous (𝒜 := 𝒜)
+    (φ := (Finsupp.mapRange.addMonoidHom (f : A →+ B)).comp
+      (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := dA) m).toAddMonoidHom)
+    (ψ := (rowFiniteTwistedDifferential (𝒜 := ℬ) (d := dB) _).toAddMonoidHom.comp
+      (Finsupp.mapRange.addMonoidHom (f : A →+ B))) fun x q c hc ↦ ?_) g
   classical
-  induction g using Finsupp.induction_linear with
-  | zero => simp
-  | add g g' hg hg' =>
-    rw [map_add, Finsupp.mapRange_add (map_add f), Finsupp.mapRange_add (map_add f), map_add, hg,
-      hg']
-  | single x c =>
-    induction c using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous q c =>
-      rw [rowFiniteTwistedDifferential_single m x c.2, Finsupp.mapRange_single,
-        rowFiniteTwistedDifferential_single _ x (Graded.map_mem f c.2)]
-      ext z
-      simp [Units.smul_def, Finsupp.single_apply, apply_ite f]
-    | add c c' hc hc' =>
-      rw [Finsupp.single_add, map_add, Finsupp.mapRange_add (map_add f), hc, hc',
-        ← map_add, ← Finsupp.mapRange_add (map_add f)]
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe,
+    Finsupp.mapRange.addMonoidHom_apply, AddMonoidHom.coe_ofClass]
+  rw [rowFiniteTwistedDifferential_single m x hc, Finsupp.mapRange_single,
+    rowFiniteTwistedDifferential_single _ x (Graded.map_mem f hc)]
+  ext z
+  simp [Units.smul_def, Finsupp.single_apply, apply_ite f]
 
 end Rows
 
@@ -153,6 +154,11 @@ def map (f : DGAlgHom hA hB) (m : RowFiniteTwistingCocycle 𝒜 dA P indP) :
       Finsupp.sum, Finsupp.sum, map_sum]
     refine Finset.sum_congr rfl fun y _ ↦ ?_
     simp [map_zsmul_unit]
+
+/-- The rows of the image cocycle are the coefficientwise images of the rows. -/
+theorem map_m (f : DGAlgHom hA hB) (m : RowFiniteTwistingCocycle 𝒜 dA P indP) (x : P) :
+    (m.map f).m x = Finsupp.mapRange f (map_zero f) (m.m x) :=
+  (rfl)
 
 @[simp]
 theorem map_m_apply (f : DGAlgHom hA hB) (m : RowFiniteTwistingCocycle 𝒜 dA P indP) (x y : P) :
@@ -256,6 +262,15 @@ theorem map_h_apply (f : DGAlgHom hA hB) (η : RowFiniteParametrizedCocycle ν�
     (y : Q) : (η.map f).h x y = f (η.h x y) :=
   (rfl)
 
+/-- The same homotopy rows, viewed as a parametrized cocycle between equal endpoint continuation
+cocycles. -/
+private def copyEndpoints {ν₀' ν₁' : RowFiniteContinuationCocycle mP mQ}
+    (η : RowFiniteParametrizedCocycle ν₀ ν₁) (h₀ : ν₀ = ν₀') (h₁ : ν₁ = ν₁') :
+    RowFiniteParametrizedCocycle ν₀' ν₁' where
+  h := η.h
+  mem_graded := η.mem_graded
+  parametrized x := h₀ ▸ h₁ ▸ η.parametrized x
+
 end RowFiniteParametrizedCocycle
 
 namespace RowFiniteHomologous
@@ -269,18 +284,10 @@ def map (f : DGAlgHom hA hB) (H : RowFiniteHomologous hA mP mQ) :
     RowFiniteHomologous hB (mP.map f) (mQ.map f) where
   ν := H.ν.map f
   ν' := H.ν'.map f
-  homP :=
-    { h := (H.homP.map f).h
-      mem_graded := (H.homP.map f).mem_graded
-      parametrized x := by
-        rw [← RowFiniteContinuationCocycle.map_refl, ← RowFiniteContinuationCocycle.map_comp]
-        exact (H.homP.map f).parametrized x }
-  homQ :=
-    { h := (H.homQ.map f).h
-      mem_graded := (H.homQ.map f).mem_graded
-      parametrized x := by
-        rw [← RowFiniteContinuationCocycle.map_refl, ← RowFiniteContinuationCocycle.map_comp]
-        exact (H.homQ.map f).parametrized x }
+  homP := (H.homP.map f).copyEndpoints (RowFiniteContinuationCocycle.map_refl f mP)
+    (RowFiniteContinuationCocycle.map_comp f H.ν H.ν')
+  homQ := (H.homQ.map f).copyEndpoints (RowFiniteContinuationCocycle.map_refl f mQ)
+    (RowFiniteContinuationCocycle.map_comp f H.ν' H.ν)
 
 @[simp]
 theorem map_ν (f : DGAlgHom hA hB) (H : RowFiniteHomologous hA mP mQ) :
@@ -354,11 +361,9 @@ theorem mapRange_linearEquiv_coefficientDifferential_restrictScalars
         have := (IsDGRightModule.mem_restrictScalarsGrading_iff (ℳ := ℳ) f).mp α.2
         rwa [DGRightModule.RestrictScalars.linearEquiv_apply] at this
       rw [m.coefficientDifferential_single (hM.restrictScalars f) x α.2,
-        he x (α : DGRightModule.RestrictScalars f M), map_add, he,
-        (m.map f).coefficientDifferential_single hM x hα, Units.smul_def, Units.smul_def,
-        map_zsmul, map_finsuppSum, IsDGRightModule.val_restrictScalarsDifferential,
-        RowFiniteTwistingCocycle.map, Finsupp.sum_mapRange_index (fun y ↦ by simp)]
-      simp only [he, DGRightModule.RestrictScalars.val_op_smul]
+        he x (α : DGRightModule.RestrictScalars f M),
+        (m.map f).coefficientDifferential_single hM x hα]
+      simp [he, map_finsuppSum, Units.smul_def, map_m, Finsupp.sum_mapRange_index]
     | add α β hα hβ => simp only [Finsupp.single_add, map_add, hα, hβ]
 
 /-- The degree-`n` part of the identification of the two twisted complexes: the coordinatewise
