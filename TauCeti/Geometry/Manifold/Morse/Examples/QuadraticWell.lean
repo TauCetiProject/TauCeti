@@ -106,6 +106,11 @@ theorem isMorse_sq_real : IsMorse 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) := by
   rw [hd]
   simp
 
+/-- The critical point `0` of `x ↦ x²` on `ℝ` is a minimum, of Morse index `0`. -/
+theorem manifoldMorseIndex_sq_real : manifoldMorseIndex 𝓘(ℝ, ℝ) (fun x : ℝ ↦ x ^ 2) 0 = 0 :=
+  manifoldMorseIndex_eq_zero_of_isLocalMin (contMDiffAt_iff_contDiffAt.2 (by fun_prop))
+    (Eventually.of_forall fun x ↦ by simpa using sq_nonneg x)
+
 /-! ### The trajectories -/
 
 /-- **The trajectories of the quadratic well.** For the standard metric, the trajectory of
