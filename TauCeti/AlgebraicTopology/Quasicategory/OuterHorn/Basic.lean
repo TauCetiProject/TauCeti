@@ -145,7 +145,7 @@ lemma exists_fill_of_ne_last [Quasicategory C] {d : ℕ} {i : Fin (d + 2)}
   by_cases hi0 : i = 0
   · subst hi0
     obtain _ | d := d
-    · exact exists_fill_horn_one 0 σ₀
+    · exact horn.exists_extension_one 0 σ₀
     · exact hornFilling_zero σ₀ (h0 rfl _)
   · exact hornFilling (Fin.pos_iff_ne_zero.2 hi0) (Fin.lt_last_iff_ne_last.2 hi) σ₀
 
