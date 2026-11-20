@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.House
+import Mathlib.LinearAlgebra.Matrix.Bilinear
 import TauCeti.RingTheory.Trace.EmbeddingsMatrix
 
 /-!
@@ -54,7 +55,8 @@ at most `[K : ℚ] * D * c`.
   a family are `ℂ`-linearly independent if and only if the family is `ℚ`-linearly independent.
 * `TauCeti.NumberField.conjugateConfiguration_injective_iff` and
   `TauCeti.NumberField.conjugateConfiguration_bijective`: the configuration map is injective
-  exactly for a `ℚ`-linearly independent family, and bijective for a `ℚ`-basis.
+  for a `ℚ`-linearly independent family, and for nonempty `σ` only then, and bijective for a
+  `ℚ`-basis.
 * `TauCeti.NumberField.house_parameterTuple_le_mul`: the bound `house κ_j ≤ |ι| * D * c`.
 * `TauCeti.NumberField.parameterTuple_comp_symm` and
   `TauCeti.NumberField.parameterTuple_sum_smul_inv`: reindexing and integral changes of the
@@ -153,15 +155,15 @@ omit [NumberField K] in
 the configuration whose point at the complex embedding `τ` is `(∑ᵢ v i j * τ (α i))_j`. Each
 column of `v` is transformed by the embedding matrix `(τ (α i))_{τ, i}`. -/
 noncomputable def conjugateConfiguration (α : ι → K) :
-    Matrix ι σ ℂ →ₗ[ℂ] (K →+* ℂ) → σ → ℂ where
-  toFun v τ j := ∑ i, v i j * τ (α i)
-  map_add' u v := by ext τ j; simp [add_mul, Finset.sum_add_distrib]
-  map_smul' c v := by ext τ j; simp [mul_assoc, Finset.mul_sum]
+    Matrix ι σ ℂ →ₗ[ℂ] (K →+* ℂ) → σ → ℂ :=
+  mulLeftLinearMap σ ℂ (Matrix.of fun (τ : K →+* ℂ) i ↦ τ (α i))
 
 omit [NumberField K] in
 @[simp]
 theorem conjugateConfiguration_apply (α : ι → K) (v : Matrix ι σ ℂ) (τ : K →+* ℂ) (j : σ) :
-    conjugateConfiguration α v τ j = ∑ i, v i j * τ (α i) := (rfl)
+    conjugateConfiguration α v τ j = ∑ i, v i j * τ (α i) :=
+  -- The configuration is the matrix product `(τ (α i))_{τ, i} * v`, read as a function.
+  Matrix.mul_apply.trans (Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _)
 
 omit [NumberField K] in
 /-- On integer parameters, the conjugate configuration map gives the conjugates of the parameter
