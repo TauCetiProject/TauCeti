@@ -18,7 +18,9 @@ $$
 \varphi_2(a) = \int_0^a \operatorname{Re} \psi\bigl(\tfrac12 + it\bigr)\, dt,
 $$
 
-and proves `Γ(½ + ia) = |Γ(½ + ia)| e^{iφ₂(a)}`.
+and proves `Γ(½ + ia) = |Γ(½ + ia)| e^{iφ₂(a)}`. Together with the modulus
+`Complex.norm_Gamma_sq_of_re_eq_one_half` (`|Γ(½ + ia)|² = π / cosh(πa)`), this gives the polar
+form of `Γ` on the line `Re s = ½`.
 
 ## Main declarations
 
@@ -52,6 +54,10 @@ open Complex TauCeti
 open scoped ComplexConjugate Real
 
 namespace Real
+
+/-- The line `Re s = ½` lies in the slit plane. -/
+private theorem one_half_add_mul_I_mem_slitPlane (a : ℝ) : (1 / 2 + a * I : ℂ) ∈ slitPlane :=
+  mem_slitPlane_iff.mpr (Or.inl (by simp))
 
 /-- `ψ` is continuous on the line `Re s = ½`. -/
 private theorem continuous_digamma_one_half_add_mul_I :
@@ -97,8 +103,11 @@ theorem deriv_gammaHalfPhase_zero :
     deriv gammaHalfPhase 0 = -eulerMascheroniConstant - 2 * log 2 := by
   rw [(hasDerivAt_gammaHalfPhase 0).deriv]
   simp only [ofReal_zero, zero_mul, add_zero]
-  rw [Complex.digamma_one_half]
-  simp [log_re]
+  -- Mathlib's value `ψ(½) = −2 log 2 − γ`, whose real part is computed by `log_re`.
+  have h : (Complex.digamma (1 / 2)).re = -2 * log 2 - eulerMascheroniConstant := by
+    rw [Complex.digamma_one_half]
+    norm_num [log_re]
+  rw [h]
   ring
 
 /-- `φ₂(a) = Im log Γ(½ + ia)`, for the normalized logarithm `TauCeti.logGamma` of `Γ`. -/
@@ -106,18 +115,15 @@ theorem gammaHalfPhase_eq_im_logGamma (a : ℝ) :
     gammaHalfPhase a = (logGamma (1 / 2 + a * I)).im := by
   have hd (t : ℝ) : HasDerivAt (fun t : ℝ => (logGamma (1 / 2 + t * I)).im)
       (Complex.digamma (1 / 2 + t * I)).re t := by
-    have hz : (1 / 2 + t * I : ℂ) ∈ slitPlane := mem_slitPlane_iff.mpr (Or.inl (by simp))
-    have hL : HasDerivAt logGamma (Complex.digamma (1 / 2 + t * I)) (1 / 2 + t * I) := by
-      rw [← deriv_logGamma hz]
-      exact (differentiableOn_logGamma.differentiableAt
-        (isOpen_slitPlane.mem_nhds hz)).hasDerivAt
+    have hL := hasDerivAt_logGamma (one_half_add_mul_I_mem_slitPlane t)
     have hl : HasDerivAt (fun t : ℝ => (1 / 2 : ℂ) + t * I) I t := by
       simpa using (((hasDerivAt_id (t : ℂ)).mul_const I).const_add (1 / 2 : ℂ)).comp_ofReal
     exact (imCLM.hasFDerivAt.comp_hasDerivAt t (hL.comp t hl)).congr_deriv (by simp)
   -- `log Γ(½)` is real, by `logGamma_ofReal`.
   have h0 : (logGamma (1 / 2)).im = 0 := by
     have h := logGamma_ofReal (x := 1 / 2) (by norm_num)
-    rw [show ((1 / 2 : ℝ) : ℂ) = 1 / 2 by norm_num] at h
+    -- Normalize the cast `((1 / 2 : ℝ) : ℂ)` to the complex literal `1 / 2` of the goal.
+    push_cast at h
     rw [h, ofReal_im]
   rw [gammaHalfPhase_def, intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => hd t)
     ((continuous_re.comp continuous_digamma_one_half_add_mul_I).intervalIntegrable 0 a)]
@@ -127,8 +133,8 @@ theorem gammaHalfPhase_eq_im_logGamma (a : ℝ) :
 theorem Gamma_one_half_add_mul_I (a : ℝ) :
     Complex.Gamma (1 / 2 + a * I) =
       ‖Complex.Gamma (1 / 2 + a * I)‖ * Complex.exp (gammaHalfPhase a * I) := by
-  have hz : (1 / 2 + a * I : ℂ) ∈ slitPlane := mem_slitPlane_iff.mpr (Or.inl (by simp))
-  rw [gammaHalfPhase_eq_im_logGamma, ← exp_logGamma hz, norm_exp]
+  rw [gammaHalfPhase_eq_im_logGamma, ← exp_logGamma (one_half_add_mul_I_mem_slitPlane a),
+    norm_exp]
   conv_lhs => rw [← re_add_im (logGamma _), Complex.exp_add, ← ofReal_exp]
 
 end Real

@@ -123,6 +123,12 @@ theorem deriv_logGamma {z : ℂ} (hz : z ∈ slitPlane) :
   exact deriv_eq_logDeriv_of_eqOn_exp_comp isOpen_slitPlane differentiableOn_logGamma
     (fun _ hw => exp_logGamma hw) hz
 
+/-- On the slit plane, the normalized branch has derivative the digamma function. -/
+theorem hasDerivAt_logGamma {z : ℂ} (hz : z ∈ slitPlane) :
+    HasDerivAt logGamma (Complex.digamma z) z := by
+  rw [← deriv_logGamma hz]
+  exact (differentiableOn_logGamma.differentiableAt (isOpen_slitPlane.mem_nhds hz)).hasDerivAt
+
 /-- Holomorphy on every sector avoiding the negative real axis. All these sectors use the same
 branch, so their restrictions agree on every overlap. -/
 theorem differentiableOn_logGamma_sector {δ : ℝ} (hδ : 0 < δ) :
