@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.FullCover
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OneOne
 import Mathlib.FieldTheory.IsRealClosed.Real
 import TauCeti.FieldTheory.SquareClassGroup.Real
+import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.FullCover.RankOne
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Real
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.SpinorNorm
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.LowRank
@@ -18,8 +19,9 @@ import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.LowRank
 
 For a nondegenerate real quadratic space, the normalized full Clifford cover
 `CliffordAlgebra.cliffordFullCover Q`, the Lipschitz elements of reverse norm `±1`, covers `O(Q)`
-with kernel `{±1}`, and its even part covers `SO(Q)`. This file compares it with the Pin group, of
-`star` norm `1`, and the Spin group, of even elements of reverse norm `1`.
+with kernel `{±1}` in positive dimension, trivial in dimension zero, and its even part covers
+`SO(Q)`. This file compares it with the Pin group, of `star` norm `1`, and the Spin group, of even
+elements of reverse norm `1`.
 
 For a definite form the Spin group is the whole even part of the full cover, while for an
 indefinite form it has index two there, its image being the kernel of the spinor norm on `SO(Q)`.
