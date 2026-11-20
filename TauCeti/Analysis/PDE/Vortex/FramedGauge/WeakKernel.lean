@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # Gauge covariance of the weak kernel and the weak right inverse of the vortex operator
@@ -42,10 +43,11 @@ line frame, so these are in particular the line-frame laws.
   (`TauCeti.Vortex.starProjection_weakGaugeFixedKernel_gaugeTransform_apply`).
 * **Weak solutions.** For a `C²` gauge, `y` is a weak solution of `L_x y = f` exactly when
   `u y` is a weak solution of `L_{u · x} (u y) = u f`
-  (`TauCeti.Vortex.integral_inner_gaugeFixedAdjoint_gaugeTransform_iff`), and `y` is orthogonal
-  to the weak kernel of `L_x` exactly when `u y` is orthogonal to the weak kernel of
-  `L_{u · x}` (`TauCeti.Vortex.integral_inner_gaugeLp_eq_zero_iff`). Here the weak notions are
-  those of `TauCeti.Analysis.PDE.Vortex.RightInverse`, with compactly supported `C²` test fields.
+  (`TauCeti.Vortex.forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_iff`), and `y` is
+  orthogonal to the weak kernel of `L_x` exactly when `u y` is orthogonal to the weak kernel of
+  `L_{u · x}` (`TauCeti.Vortex.forall_integral_inner_gaugeLp_eq_zero_iff_of_gaugeFixedAdjoint`).
+  Here the weak notions are those of `TauCeti.Analysis.PDE.Vortex.RightInverse`, with compactly
+  supported `C²` test fields.
 * **The weak right inverse.** A weak solution orthogonal to the weak kernel is unique
   (`TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`), so bounded weak right inverses
   with values orthogonal to the weak kernels at `x` and at `u · x`, which exist at a plane vortex
@@ -84,76 +86,74 @@ private def gaugeSymbol (u : C(ℂ, Circle)) :
 
 variable {μ : Measure ℂ} [μ.InnerRegularCompactLTTop]
 
-private theorem coeFn_mulLp_gaugeSymbol (u : C(ℂ, Circle))
-    (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
-    (gaugeSymbol u).mulLp μ 2 ENNReal.ofNat_ne_top f =ᵐ[μ] fun z ↦ gaugeFrame (u z) (f z) :=
-  (gaugeSymbol u).coeFn_mulLp _ f
+variable (μ) in
+/-- Multiplication by the gauge symbol, as a homomorphism into the unitary operators on `L²`. -/
+private def gaugeUnitary : C(ℂ, Circle) →*
+    unitary (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) where
+  toFun u := ⟨(gaugeSymbol u).mulLp μ 2 ENNReal.ofNat_ne_top,
+    BoundedContinuousFunction.mulLp_mem_unitary fun z ↦
+      (Unitary.linearIsometryEquiv.symm (gaugeFrame (u z))).prop⟩
+  map_one' := Subtype.ext <| by
+    rw [OneMemClass.coe_one, ← BoundedContinuousFunction.mulLp_one]
+    exact congr_arg _ <| BoundedContinuousFunction.ext fun z ↦ ContinuousLinearMap.ext fun v ↦ by
+      simp [gaugeSymbol]
+  map_mul' u v := Subtype.ext <| by
+    rw [MulMemClass.coe_mul, ← BoundedContinuousFunction.mulLp_mul]
+    exact congr_arg _ <| BoundedContinuousFunction.ext fun z ↦ ContinuousLinearMap.ext fun w ↦ by
+      simp [gaugeSymbol, gaugeFrame_mul]
 
 variable (μ) in
 /-- The **gauge action on `L²(ℂ; ℝ⁴)`** of a continuous gauge `u : ℂ → U(1)`: the linear isometry
 equivalence acting pointwise by the gauge frame of `u`, almost everywhere equal to the linear gauge
 action `gaugeLinearAction u` (`coeFn_gaugeLp`). It is multiplication by the bounded continuous
-symbol `z ↦ gaugeFrame (u z)` (`BoundedContinuousFunction.mulLp`). -/
+symbol `z ↦ gaugeFrame (u z)` (`BoundedContinuousFunction.mulLp`), a unitary operator
+(`BoundedContinuousFunction.mulLp_mem_unitary`). -/
 def gaugeLp (u : C(ℂ, Circle)) :
-    Lp (EuclideanSpace ℝ (Fin 4)) 2 μ ≃ₗᵢ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun := (gaugeSymbol u).mulLp μ 2 ENNReal.ofNat_ne_top
-  map_add' := map_add _
-  map_smul' := map_smul _
-  invFun := (gaugeSymbol u⁻¹).mulLp μ 2 ENNReal.ofNat_ne_top
-  left_inv f := Lp.ext <| by
-    filter_upwards [coeFn_mulLp_gaugeSymbol u⁻¹ ((gaugeSymbol u).mulLp μ 2 _ f),
-      coeFn_mulLp_gaugeSymbol u f] with z h₁ h₂
-    rw [h₁, h₂, ContinuousMap.inv_apply, ← gaugeFrame_symm,
-      LinearIsometryEquiv.symm_apply_apply]
-  right_inv f := Lp.ext <| by
-    filter_upwards [coeFn_mulLp_gaugeSymbol u ((gaugeSymbol u⁻¹).mulLp μ 2 _ f),
-      coeFn_mulLp_gaugeSymbol u⁻¹ f] with z h₁ h₂
-    rw [h₁, h₂, ContinuousMap.inv_apply, ← gaugeFrame_symm,
-      LinearIsometryEquiv.apply_symm_apply]
-  norm_map' f := by
-    have h : ∀ᵐ z ∂μ, ‖(gaugeSymbol u).mulLp μ 2 ENNReal.ofNat_ne_top f z‖ = ‖f z‖ :=
-      (coeFn_mulLp_gaugeSymbol u f).mono fun _ hz ↦ by rw [hz, LinearIsometryEquiv.norm_map]
-    exact le_antisymm (Lp.norm_le_norm_of_ae_le (h.mono fun _ ↦ le_of_eq))
-      (Lp.norm_le_norm_of_ae_le (h.mono fun _ ↦ ge_of_eq))
+    Lp (EuclideanSpace ℝ (Fin 4)) 2 μ ≃ₗᵢ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ :=
+  Unitary.linearIsometryEquiv (gaugeUnitary μ u)
 
 /-- The `L²` gauge action is the linear gauge action almost everywhere. -/
 theorem coeFn_gaugeLp (u : C(ℂ, Circle)) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
     gaugeLp μ u f =ᵐ[μ] gaugeLinearAction u f :=
-  (coeFn_mulLp_gaugeSymbol u f).mono fun _ hz ↦
+  ((gaugeSymbol u).coeFn_mulLp _ f).mono fun _ hz ↦
     hz.trans (gaugeLinearAction_apply_eq_gaugeFrame _ _ _).symm
 
 /-- An `L²` field is the gauge action of `u` on `f` exactly when it agrees almost everywhere with
 `gaugeLinearAction u f`. -/
 theorem gaugeLp_eq_iff {u : C(ℂ, Circle)} {f g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
     gaugeLp μ u f = g ↔ gaugeLinearAction u f =ᵐ[μ] g :=
-  ⟨fun h ↦ h ▸ (coeFn_gaugeLp u f).symm, fun h ↦ Lp.ext ((coeFn_gaugeLp u f).trans h)⟩
+  (gaugeSymbol u).mulLp_eq_iff.trans <| by
+    rw [show (fun z ↦ gaugeSymbol u z (f z)) = gaugeLinearAction u f from
+      funext fun z ↦ (gaugeLinearAction_apply_eq_gaugeFrame _ _ _).symm]
 
 /-- The trivial gauge acts trivially on `L²`. -/
 @[simp]
 theorem gaugeLp_one : gaugeLp μ 1 = LinearIsometryEquiv.refl ℝ _ := by
-  ext f : 1
-  rw [gaugeLp_eq_iff, ContinuousMap.coe_one, gaugeLinearAction_one, LinearIsometryEquiv.coe_refl,
-    id_eq]
+  rw [gaugeLp, map_one, map_one, LinearIsometryEquiv.one_def]
 
 /-- The `L²` gauge actions compose as the gauges multiply. -/
 theorem gaugeLp_mul (u v : C(ℂ, Circle)) :
     gaugeLp μ (u * v) = (gaugeLp μ v).trans (gaugeLp μ u) := by
-  ext f : 1
-  rw [LinearIsometryEquiv.trans_apply, gaugeLp_eq_iff]
-  filter_upwards [coeFn_gaugeLp u (gaugeLp μ v f), coeFn_gaugeLp v f] with z h₁ h₂
-  rw [h₁, gaugeLinearAction_apply_eq_gaugeFrame, gaugeLinearAction_apply_eq_gaugeFrame, h₂,
-    gaugeLinearAction_apply_eq_gaugeFrame, ContinuousMap.mul_apply, gaugeFrame_mul,
-    LinearIsometryEquiv.trans_apply]
+  rw [gaugeLp, map_mul]
+  exact map_mul Unitary.linearIsometryEquiv _ _
 
 /-- The inverse of the `L²` gauge action of `u` is the `L²` gauge action of `u⁻¹`. -/
 @[simp]
 theorem gaugeLp_symm (u : C(ℂ, Circle)) : (gaugeLp μ u).symm = gaugeLp μ u⁻¹ := by
-  ext f : 1
-  apply (gaugeLp μ u).injective
-  rw [LinearIsometryEquiv.apply_symm_apply, ← LinearIsometryEquiv.trans_apply, ← gaugeLp_mul,
-    mul_inv_cancel, gaugeLp_one, LinearIsometryEquiv.coe_refl, id_eq]
+  rw [gaugeLp, gaugeLp, map_inv, map_inv, LinearIsometryEquiv.inv_def]
 
 /-! ### The weak kernel -/
+
+/-- At a `C¹` gauge `u` and a `C¹` field `η`, the formal adjoint at `u · x` on `u η` is the linear
+gauge action of the formal adjoint at `x` on `η`. -/
+private theorem gaugeFixedAdjoint_gaugeTransform_of_contDiff {u : ℂ → Circle}
+    (hu : ContDiff ℝ 1 fun z ↦ (u z : ℂ)) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 1 η) (z : ℂ) :
+    gaugeFixedAdjoint (gaugeTransform u x) (gaugeLinearAction u η) z =
+      gaugeLinearAction u (gaugeFixedAdjoint x η) z :=
+  gaugeFixedAdjoint_gaugeTransform (hu.differentiable one_ne_zero z) x
+    (((contDiff_piLp _).1 hη 2).differentiable one_ne_zero z)
+    (((contDiff_piLp _).1 hη 3).differentiable one_ne_zero z)
 
 /-- At a `C¹` gauge `u`, the formal adjoint at `u · x` on a `C¹` field `η` is the linear gauge
 action of the formal adjoint at `x` on `u⁻¹ η`. -/
@@ -162,10 +162,8 @@ private theorem gaugeFixedAdjoint_gaugeTransform_eq {u : ℂ → Circle}
     {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 1 η) (z : ℂ) :
     gaugeFixedAdjoint (gaugeTransform u x) η z =
       gaugeLinearAction u (gaugeFixedAdjoint x (gaugeLinearAction u⁻¹ η)) z := by
-  have hη' := contDiff_gaugeLinearAction (contDiff_coe_inv hu) hη
-  have h := gaugeFixedAdjoint_gaugeTransform (hu.differentiable one_ne_zero z) x
-    (((contDiff_piLp _).1 hη' 2).differentiable one_ne_zero z)
-    (((contDiff_piLp _).1 hη' 3).differentiable one_ne_zero z)
+  have h := gaugeFixedAdjoint_gaugeTransform_of_contDiff hu x
+    (contDiff_gaugeLinearAction (Circle.contDiff_coe_inv hu) hη) z
   rwa [gaugeLinearAction_gaugeLinearAction_inv] at h
 
 /-- **The weak kernel is gauge covariant.** For a smooth gauge `u`, the weak `L²` kernel of the
@@ -187,7 +185,7 @@ theorem weakGaugeFixedKernel_gaugeTransform (u : C(ℂ, Circle))
   · -- A test field `η` at `u · x` comes from the test field `u⁻¹ η` at `x`.
     rintro ⟨η, hη, hηc, hg⟩
     refine ⟨(gaugeLp volume u).symm g, ⟨gaugeLinearAction (⇑u)⁻¹ η,
-      contDiff_gaugeLinearAction (contDiff_coe_inv hu) hη,
+      contDiff_gaugeLinearAction (Circle.contDiff_coe_inv hu) hη,
       hasCompactSupport_gaugeLinearAction _ hηc, ?_⟩, LinearIsometryEquiv.apply_symm_apply _ _⟩
     rw [gaugeLp_symm]
     filter_upwards [coeFn_gaugeLp u⁻¹ g, hg] with z h₁ h₂
@@ -201,9 +199,7 @@ theorem weakGaugeFixedKernel_gaugeTransform (u : C(ℂ, Circle))
       hasCompactSupport_gaugeLinearAction _ hηc, ?_⟩
     have hη₁ : ContDiff ℝ 1 η := hη.of_le (by simp)
     filter_upwards [coeFn_gaugeLp u g, hg] with z h₁ h₂
-    rw [h₁, gaugeFixedAdjoint_gaugeTransform ((hu.of_le (by simp)).differentiable one_ne_zero z) x
-      (((contDiff_piLp _).1 hη₁ 2).differentiable one_ne_zero z)
-      (((contDiff_piLp _).1 hη₁ 3).differentiable one_ne_zero z),
+    rw [h₁, gaugeFixedAdjoint_gaugeTransform_of_contDiff (hu.of_le (by simp)) x hη₁,
       gaugeLinearAction_apply_eq_gaugeFrame, gaugeLinearAction_apply_eq_gaugeFrame, h₂]
 
 /-- Gauge-equivalent fields have weak kernels of the same dimension. -/
@@ -242,9 +238,7 @@ private theorem integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform {u : C(�
       ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ := by
   refine integral_congr_ae ((coeFn_gaugeLp u y).mono fun z hz ↦ ?_)
   dsimp only
-  rw [hz, gaugeFixedAdjoint_gaugeTransform (hu.differentiable one_ne_zero z) x
-    (((contDiff_piLp _).1 hη 2).differentiable one_ne_zero z)
-    (((contDiff_piLp _).1 hη 3).differentiable one_ne_zero z), inner_gaugeLinearAction]
+  rw [hz, gaugeFixedAdjoint_gaugeTransform_of_contDiff hu x hη, inner_gaugeLinearAction]
 
 private theorem integral_inner_gaugeLp_gaugeLinearAction (u : C(ℂ, Circle))
     (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
@@ -257,7 +251,7 @@ private theorem integral_inner_gaugeLp_gaugeLinearAction (u : C(ℂ, Circle))
 a weak solution of `L_x y = f` exactly when its gauge transform `u y` is a weak solution of
 `L_{u · x} (u y) = u f`. Weak solutions are tested against compactly supported `C²` fields, as in
 `exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. -/
-theorem integral_inner_gaugeFixedAdjoint_gaugeTransform_iff {u : C(ℂ, Circle)}
+theorem forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_iff {u : C(ℂ, Circle)}
     (hu : ContDiff ℝ 2 fun z ↦ (u z : ℂ)) (x : ℂ → EuclideanSpace ℝ (Fin 4))
     (y f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
     (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
@@ -271,7 +265,7 @@ theorem integral_inner_gaugeFixedAdjoint_gaugeTransform_iff {u : C(ℂ, Circle)}
       (hasCompactSupport_gaugeLinearAction _ hηc)
     rwa [integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform hu₁ x y (hη.of_le (by norm_num)),
       integral_inner_gaugeLp_gaugeLinearAction] at this
-  · have hη' := contDiff_gaugeLinearAction (contDiff_coe_inv hu) hη
+  · have hη' := contDiff_gaugeLinearAction (Circle.contDiff_coe_inv hu) hη
     have := h _ hη' (hasCompactSupport_gaugeLinearAction _ hηc)
     rwa [← integral_inner_gaugeLp_gaugeFixedAdjoint_gaugeTransform hu₁ x y
       (hη'.of_le (by norm_num)), ← integral_inner_gaugeLp_gaugeLinearAction u f
@@ -294,12 +288,12 @@ theorem forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_zero_iff {u : 
       ∫ z, ⟪gaugeLp μ u y z, gaugeFixedAdjoint (gaugeTransform u x) η z⟫ ∂μ = 0) ↔
       ∀ η, ContDiff ℝ 2 η → HasCompactSupport η → ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
   simpa only [map_zero, integral_inner_zero_left] using
-    integral_inner_gaugeFixedAdjoint_gaugeTransform_iff hu x y 0
+    forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_iff hu x y 0
 
 /-- **Orthogonality to the weak kernel is gauge covariant.** For a `C²` gauge `u`, a
 square-integrable field `y` is orthogonal to every weak solution of `L_x w = 0` exactly when `u y`
 is orthogonal to every weak solution of `L_{u · x} w = 0`. -/
-theorem integral_inner_gaugeLp_eq_zero_iff {u : C(ℂ, Circle)}
+theorem forall_integral_inner_gaugeLp_eq_zero_iff_of_gaugeFixedAdjoint {u : C(ℂ, Circle)}
     (hu : ContDiff ℝ 2 fun z ↦ (u z : ℂ)) (x : ℂ → EuclideanSpace ℝ (Fin 4))
     (y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
     (∀ w : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
@@ -347,9 +341,9 @@ theorem eq_gaugeLp_comp_comp_symm [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSp
     LinearIsometryEquiv.coe_coe'', LinearIsometryEquiv.coe_coe'', ← (gaugeLp μ u).symm_apply_eq]
   -- Both sides are weak solutions of `L_x y = u⁻¹ f` orthogonal to the weak kernel of `L_x`.
   refine eq_of_integral_inner_gaugeFixedAdjoint_eq hx ?_ (hQ _) ?_ (hQK _)
-  · refine (integral_inner_gaugeFixedAdjoint_gaugeTransform_iff hu x _ _).1 ?_
+  · refine (forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_iff hu x _ _).1 ?_
     simpa only [LinearIsometryEquiv.apply_symm_apply] using hQ' f
-  · refine (integral_inner_gaugeLp_eq_zero_iff hu x _).1 ?_
+  · refine (forall_integral_inner_gaugeLp_eq_zero_iff_of_gaugeFixedAdjoint hu x _).1 ?_
     simpa only [LinearIsometryEquiv.apply_symm_apply] using hQ'K f
 
 end TauCeti.Vortex

@@ -59,12 +59,6 @@ namespace TauCeti.Vortex
 open Complex ComplexConjugate Filter
 open scoped Topology ContDiff RealInnerProductSpace
 
-/-- The inverse of a `Cⁿ` circle-valued gauge is `Cⁿ`. -/
-theorem contDiff_coe_inv {n : WithTop ℕ∞} {u : ℂ → Circle}
-    (hu : ContDiff ℝ n fun z ↦ (u z : ℂ)) : ContDiff ℝ n fun z ↦ ((u⁻¹ z : Circle) : ℂ) := by
-  simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
-    Complex.conjCLE_apply] using conjCLE.contDiff.comp hu
-
 /-- Smooth circle-valued gauges tending to one at infinity, with no base-point condition. -/
 def framedGaugeGroup : Subgroup (ℂ → Circle) where
   carrier := {u | ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1)}
@@ -74,7 +68,7 @@ def framedGaugeGroup : Subgroup (ℂ → Circle) where
     exact ⟨hu.mul hv, by simpa only [Pi.mul_def, one_mul] using htu.mul htv⟩
   inv_mem' := by
     rintro u ⟨hu, htu⟩
-    exact ⟨contDiff_coe_inv hu, by simpa only [Pi.inv_def, inv_one] using htu.inv⟩
+    exact ⟨Circle.contDiff_coe_inv hu, by simpa only [Pi.inv_def, inv_one] using htu.inv⟩
 
 /-- Membership in the smooth framed group is precisely smoothness and the end condition. -/
 @[simp]
