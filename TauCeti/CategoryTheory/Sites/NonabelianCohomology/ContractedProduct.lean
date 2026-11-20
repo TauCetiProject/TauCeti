@@ -548,8 +548,9 @@ private def toContracted : P.sheaf.obj ⟶ (contracted φ P).presheaf where
 agree. -/
 private lemma toContracted_smul {U : Cᵒᵖ} (g : G.obj.obj U) (p : P.sheaf.obj.obj U) :
     (toContracted φ P).app U (g • p) = φ.hom.app U g • (toContracted φ P).app U p :=
-  (Quot.sound ⟨g, Prod.ext rfl
-    (show (1 : G'.obj.obj U) = φ.hom.app U g * 1 * (φ.hom.app U g)⁻¹ by simp)⟩).symm
+  (Quot.sound ⟨g, Prod.ext rfl ((MulActionSheaf.mulRight_smul φ g _).trans
+    ((congrArg (· * _) (mul_one (M := G'.obj.obj U) _)).trans
+      (mul_inv_cancel (G := G'.obj.obj U) _))).symm⟩).symm
 
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
 
@@ -603,9 +604,11 @@ def mapLift {R : Torsor G'} (u : P.sheaf ⟶ R.sheaf)
     P.map φ ⟶ R :=
   (contracted φ P).sheafifyLift
     { app U := ↾Quot.lift (fun x : P.sheaf.obj.obj U × G'.obj.obj U ↦ x.2 • u.hom.app U x.1) (by
-        rintro ⟨p, (b : G'.obj.obj U)⟩ _ ⟨g, rfl⟩
-        change b • u.hom.app U p = (b * (φ.hom.app U g)⁻¹) • u.hom.app U (g • p)
-        rw [hu, mul_smul, inv_smul_smul])
+        rintro ⟨p, b⟩ _ ⟨g, rfl⟩
+        -- `mulRight_smul` turns the `G`-action on `b` into right multiplication in `G'`.
+        dsimp only
+        rw [MulActionSheaf.mulRight_smul, hu, smul_smul]
+        exact congrArg (· • _) (inv_mul_cancel_right (G := G'.obj.obj U) b _).symm)
       naturality U V f := by
         ext y
         induction y using Quot.ind with | mk x => ?_
