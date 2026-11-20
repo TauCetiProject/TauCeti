@@ -287,6 +287,9 @@ theorem _root_.IsLocalDiffeomorphAt.isRegularPoint {n : WithTop ℕ∞}
 /-- Every point of a product is a regular point of the second projection. -/
 theorem isRegularPoint_snd (p : M × N) : IsRegularPoint (I.prod J) J (Prod.snd : M × N → N) p := by
   rw [isRegularPoint_iff, mfderiv_snd]
+  -- The tangent space of `M × N` is the product of the tangent spaces of the factors by
+  -- definition, so the pair `(0, w)` is a tangent vector of the product, and
+  -- `ContinuousLinearMap.snd` sends it to `w` by definition.
   exact fun w ↦ ⟨(0, w), rfl⟩
 
 /-- Every point of an open subset is a regular point of its inclusion. -/

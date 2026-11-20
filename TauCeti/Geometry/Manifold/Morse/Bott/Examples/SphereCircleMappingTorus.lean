@@ -221,7 +221,9 @@ def torusHeight (huv : ⟪(u : E), v⟫ = 0) (ε : ℝ) :
     (fun z ↦ sphereCircleHeight u ε ((SmoothMappingTorus.Cover.ofProd _).symm z).2) fun k z ↦ by
       -- Invariance under `τ` is invariance under all of its integer powers.
       have h : Semiconj (sphereCircleHeight u ε) (sphereCircleReflection v)
-          (1 : ℝ ≃ₘ⟮𝓘(ℝ), 𝓘(ℝ)⟯ ℝ) := sphereCircleHeight_sphereCircleReflection huv ε
+          (1 : ℝ ≃ₘ⟮𝓘(ℝ), 𝓘(ℝ)⟯ ℝ) := fun q ↦ by
+        rw [Diffeomorph.coe_one, id_eq]
+        exact sphereCircleHeight_sphereCircleReflection huv ε q
       rw [SmoothMappingTorus.Cover.ofProd_symm_smul, h.diffeomorph_zpow_right, one_zpow,
         Diffeomorph.coe_one, id_eq]
 
