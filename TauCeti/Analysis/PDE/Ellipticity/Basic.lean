@@ -19,6 +19,7 @@ public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Topology.MetricSpace.Lipschitz
+import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.Normed.Field.Lipschitz
 
@@ -378,13 +379,11 @@ define on Euclidean space is. -/
 theorem aestronglyMeasurable_toEuclideanCLM_iff [DecidableEq n] {X : Type*} [MeasurableSpace X]
     {μ : MeasureTheory.Measure X} {a : X → Matrix n n ℝ} :
     MeasureTheory.AEStronglyMeasurable (fun x => toEuclideanCLM (n := n) (𝕜 := ℝ) (a x)) μ ↔
-      MeasureTheory.AEStronglyMeasurable a μ := by
-  set e := toEuclideanCLM (n := n) (𝕜 := ℝ)
-  have he : Continuous e := e.toAlgEquiv.toLinearEquiv.toLinearMap.continuous_of_finiteDimensional
-  have he' : Continuous e.symm :=
-    e.symm.toAlgEquiv.toLinearEquiv.toLinearMap.continuous_of_finiteDimensional
-  refine ⟨fun h => ?_, fun h => he.comp_aestronglyMeasurable h⟩
-  simpa only [e.symm_apply_apply] using he'.comp_aestronglyMeasurable h
+      MeasureTheory.AEStronglyMeasurable a μ :=
+  ⟨fun h => by
+    simpa only [StarAlgEquiv.symm_apply_apply] using
+      Matrix.continuous_toEuclideanCLM_symm.comp_aestronglyMeasurable h,
+    fun h => Matrix.continuous_toEuclideanCLM.comp_aestronglyMeasurable h⟩
 
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/

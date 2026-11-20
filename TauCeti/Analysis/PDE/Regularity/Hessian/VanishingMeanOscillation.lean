@@ -476,6 +476,8 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_vmoModulus_le (hp : 2 < p)
     (fun _ => lpNorm_nonneg)
     (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le) (fun σ hσ => hmono _ hσ.2.le)
     (fun {s t} hs hst htR => hKΛ ▸ hstep hloc hell hη hR u hf
+      -- `hx` applies the Hessian through the instances of `IteratedGradient`, which unfold to
+      -- those of `ContinuousLinearMap` used by `Matrix.contraction_apply`.
       (heq.mono fun x hx => by rw [Matrix.contraction_apply]; exact hx) hs hst htR)
     (fun {s t} hs hst htR {ε} hε => by
       simpa only [finrank_euclideanSpace_fin] using
