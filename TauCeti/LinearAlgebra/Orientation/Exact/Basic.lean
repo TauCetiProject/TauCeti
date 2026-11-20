@@ -443,7 +443,7 @@ theorem map_ofExact_of_pos {R A B B' C : Type*} [Field R] [LinearOrder R] [IsStr
       ofExact hf' hfg' hg' o p hm hn := by
   rw [map_ofExact hf hfg hg hf' hfg' hg' (LinearEquiv.smulOfNeZero R A a ha.ne') eB
       (LinearEquiv.smulOfNeZero R C b hb.ne') (fun x ↦ by simp [hfe]) (fun y ↦ by simp [hge]),
-    map_smulOfNeZero_of_pos o ha (by simp [hm]), map_smulOfNeZero_of_pos p hb (by simp [hn])]
+    map_smulOfNeZero_of_pos o ha, map_smulOfNeZero_of_pos p hb]
 
 end Positive
 

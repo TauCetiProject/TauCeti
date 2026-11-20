@@ -199,16 +199,20 @@ theorem Orientation.map_eq_iff_det_pos_of_card_eq_finrank (x : Orientation R M �
   rw [map_eq_det_inv_smul_of_card_eq_finrank x f h, units_inv_smul, units_smul_eq_self_iff,
     LinearEquiv.coe_det]
 
+omit [Fintype ι] in
 /-- Scaling by a positive scalar fixes every orientation. -/
-theorem Orientation.map_smulOfNeZero_of_pos (x : Orientation R M ι) {a : R} (ha : 0 < a)
-    (h : Fintype.card ι = finrank R M) :
-    Orientation.map ι (LinearEquiv.smulOfNeZero R M a ha.ne') x = x := by
-  rw [map_eq_iff_det_pos_of_card_eq_finrank x _ h]
-  have hf : (LinearEquiv.smulOfNeZero R M a ha.ne' : M →ₗ[R] M) = a • LinearMap.id := by
-    ext
-    simp
-  rw [hf, LinearMap.det_smul, LinearMap.det_id, mul_one]
-  positivity
+theorem Orientation.map_smulOfNeZero_of_pos [Finite ι] (x : Orientation R M ι) {a : R}
+    (ha : 0 < a) : Orientation.map ι (LinearEquiv.smulOfNeZero R M a ha.ne') x = x := by
+  have := Fintype.ofFinite ι
+  induction x using Module.Ray.ind with | h v hv =>
+  rw [Orientation.map_apply, ray_eq_iff]
+  -- Composing with `a⁻¹ • id` multiplies `v` by `a⁻¹ ^ card ι > 0`.
+  have hv' : v.compLinearMap (LinearEquiv.smulOfNeZero R M a ha.ne').symm.toLinearMap =
+      a⁻¹ ^ Fintype.card ι • v := by
+    ext m
+    simpa [Units.smul_def] using v.toMultilinearMap.map_smul_univ (fun _ ↦ a⁻¹) m
+  rw [hv']
+  exact SameRay.sameRay_pos_smul_left v (by positivity)
 
 /-- If the index type has cardinality equal to the dimension, any two orientations are equal or
 negations. Unlike `Orientation.eq_or_eq_neg`, this needs no `FiniteDimensional` hypothesis: a

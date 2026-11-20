@@ -230,38 +230,38 @@ theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p 
         oM.orientationAt y ↔
       Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp) op =
         oM.orientationAt p := by
-  -- An orientation of the model space for which the chart preserves orientations near `p`.
-  obtain ⟨oE, hU⟩ := Manifold.Orientation.exists_eventually_isOrientationPreservingAt
-    (contMDiffAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one φ.mem_source)
-    (isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source) oM
-  -- Flow `y` back close to `p`, to a time of linear backward flow.
-  have hlim : Tendsto (fun T ↦ hX.flow (-T) y) atTop (𝓝 p) :=
-    (Flow.mem_unstableSet.1 hy).comp tendsto_neg_atTop_atBot
-  obtain ⟨T, hT, hTU⟩ :=
-    ((hX.eventually_mem_linearBackwardTimes hφ hf hy).and (hlim.eventually hU)).exists
-  have hTp : T ∈ hX.linearBackwardTimes φ p := mem_linearBackwardTimes_self hp T
-  -- The map `φ ∘ Φ_{-T}` preserves orientations at `y` and at `p`.
-  have hg {z : M} (hz : oM.IsOrientationPreservingAt oE φ.toChart (hX.flow (-T) z)) :
-      oM.IsOrientationPreservingAt oE (φ.toChart ∘ hX.flow (-T)) z :=
-    hz.comp (hX.isOrientationPreservingAt_flow oM (-T) z)
-  have hpU : oM.IsOrientationPreservingAt oE φ.toChart (hX.flow (-T) p) := by
-    rw [hX.flow_apply_of_mfderiv_eq_zero hp]
-    exact hU.self_of_nhds
-  -- Through it, both frames become `e^{-T}` times the extension by zero.
-  obtain ⟨ey, hey, hy'⟩ := (hg hTU).exists_map_eq_orientationAt_iff
-    (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby) op
-  obtain ⟨ep, hep, hp'⟩ := (hg hpU).exists_map_eq_orientationAt_iff
-    (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp) op
-  have hL : ((LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby).trans
-        ey.toLinearEquiv : _ ≃ₗ[ℝ] E) =
-      (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp).trans ep.toLinearEquiv :=
-    LinearEquiv.ext fun c ↦ (congrArg (· (hX.unstableFrame φ y c)) hey).trans
-      ((mfderiv_unstableFrame hφ hT c).trans ((mfderiv_unstableFrame hφ hTp c).symm.trans
-        (congrArg (· (hX.unstableFrame φ p c)) hep).symm))
-  have key := congrArg (fun L : _ ≃ₗ[ℝ] E ↦ Orientation.map (Fin (finrank ℝ E)) L op) hL
-  rw [hy', hp', Manifold.Orientation.orientationAt_eq_orientationAt oE
-    ((φ.toChart ∘ hX.flow (-T)) y) ((φ.toChart ∘ hX.flow (-T)) p)]
-  exact ⟨fun h ↦ key.symm.trans h, fun h ↦ key.trans h⟩
+  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
+  have h0 : (0 : ℝ) ∈ hX.linearBackwardTimes φ p := mem_linearBackwardTimes_self hp 0
+  have hfl0 : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := funext fun z ↦ by simp
+  obtain ⟨eDy, heDy⟩ := isInvertible_mfderiv_toChart_comp_flow (hX := hX) (φ := φ)
+    ((hX.mem_linearBackwardTimes φ).1 hT).1
+  obtain ⟨eDp, heDp⟩ := isInvertible_mfderiv_chart
+    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.mem_source
+  let Ly : TangentSpace 𝓘(ℝ, E) y ≃ₗ[ℝ] E := eDy.toLinearEquiv
+  let Lp : TangentSpace 𝓘(ℝ, E) p ≃ₗ[ℝ] E := eDp.toLinearEquiv
+  -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`: there `oM`
+  -- gives the same orientation at `y` and at `p`.
+  refine Orientation.eq_iff_eq_of_map_eq Ly Lp ?_ (map_orientationAt_eq_of_tendsto oM
+    (γ := fun s ↦ hX.flow (-(T + s)) y) (hX.flow.continuous (by fun_prop) continuous_const)
+    (by simp)
+    (fun s hs ↦ ((hX.mem_linearBackwardTimes φ).1 (add_mem_linearBackwardTimes hφ hT hs).1).1)
+    ((Flow.mem_unstableSet.1 hy).comp
+      (tendsto_neg_atTop_atBot.comp (tendsto_atTop_add_const_left _ T tendsto_id)))
+    eDy heDy eDp heDp)
+  -- So do the frames, since there the frame at `y` is `e^{-T}` times the frame at `p`.
+  have hL : (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby).trans Ly =
+      ((LinearEquiv.smulOfNeZero ℝ _ (Real.exp (-T)) (Real.exp_pos _).ne').trans
+        (LinearEquiv.ofBijective (hX.unstableFrame φ p).toLinearMap hbp)).trans Lp := by
+    ext c
+    have hy' := mfderiv_unstableFrame hφ hT c
+    have hp' := mfderiv_unstableFrame hφ h0 c
+    rw [← heDy, ContinuousLinearEquiv.coe_coe] at hy'
+    rw [hfl0, ← heDp, ContinuousLinearEquiv.coe_coe, neg_zero, Real.exp_zero, one_smul] at hp'
+    rw [LinearEquiv.trans_apply, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+      LinearEquiv.smulOfNeZero_apply, map_smul, map_smul]
+    exact hy'.trans (congrArg (Real.exp (-T) • ·) hp').symm
+  rw [← Orientation.map_trans, hL, Orientation.map_trans, Orientation.map_trans,
+    Orientation.map_smulOfNeZero_of_pos _ (Real.exp_pos _)]
 
 /-! ### The two trajectories into a critical point of index `n - 1` -/
 

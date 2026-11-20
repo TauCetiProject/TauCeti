@@ -55,6 +55,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `unstableFrameOrientation`, `stableNormalOrientation`: the orientations of the tangent spaces
   along the unstable and the stable manifold induced by orientations of `V⁻` and `V⁺`.
 * `isOrientationPreservingAt_flow`: the time-`t` maps of the flow preserve every orientation.
+* `map_orientationAt_eq_of_tendsto`: read in the model space through the chart after flowing, an
+  orientation of `M` is the same at a point and at the centre of the chart.
 * `reindex_unstableFrameOrientation_eq_orientationAt_iff`: along the unstable manifold, the frame
   orientation agrees with `o` everywhere or nowhere.
 * `reindex_stableNormalOrientation_eq_orientationAt_iff`: the same along the stable manifold.
@@ -124,10 +126,11 @@ private theorem isOrientationPreservingAt_toChart_iff_of_tendsto
       (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) (hsub hz)) o O
     (mem_insert_of_mem _ (mem_image_of_mem γ self_mem_Ici)) (mem_insert x _)
 
-/-- Let `γ` be a curve that starts at `Φ_τ y`, stays in the source of the Morse chart `φ` and
-converges to its centre `x`. The derivatives of `φ ∘ Φ_τ` at `y` and of `φ` at `x` carry the
-orientations of `o` at `y` and at `x` to the same orientation of the model space. -/
-private theorem map_orientationAt_eq_of_tendsto (o : Manifold.Orientation 𝓘(ℝ, E) M ι) {y : M}
+/-- **Reading an orientation of `M` in a Morse chart along the flow.** Let `γ` be a curve that
+starts at `Φ_τ y`, stays in the source of the Morse chart `φ` and converges to its centre `x`. The
+derivatives of `φ ∘ Φ_τ` at `y` and of `φ` at `x` carry the orientations of `o` at `y` and at `x`
+to the same orientation of the model space. -/
+theorem map_orientationAt_eq_of_tendsto (o : Manifold.Orientation 𝓘(ℝ, E) M ι) {y : M}
     {τ : ℝ} {γ : ℝ → M} (hγ : Continuous γ) (hγ0 : γ 0 = hX.flow τ y)
     (hγs : ∀ s, 0 ≤ s → γ s ∈ φ.toChart.source) (hγx : Tendsto γ atTop (𝓝 x))
     (eDy : TangentSpace 𝓘(ℝ, E) y ≃L[ℝ] TangentSpace 𝓘(ℝ, E) ((φ.toChart ∘ hX.flow τ) y))
