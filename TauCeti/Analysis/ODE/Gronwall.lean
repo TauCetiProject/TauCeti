@@ -21,7 +21,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 Mathlib's Grönwall inequality (`le_gronwallBound_of_liminf_deriv_right_le`) bounds a function by
 a bound on its derivative. Energy estimates for evolution equations instead produce a bound on a
-function by an integral of itself: a continuous `φ` with `φ t ≤ c + K ∫ₐᵗ φ` on `[a, b]`, for
+function by an integral of itself: an integrable `φ` with `φ t ≤ c + K ∫ₐᵗ φ` on `[a, b]`, for
 some `K ≥ 0`. This file proves that such a `φ` satisfies `φ t ≤ c exp (K (t - a))`
 (`TauCeti.le_mul_exp_of_le_add_mul_integral`).
 
@@ -52,7 +52,7 @@ The general closed-interval bound is supplied by
 `TauCeti.norm_le_gronwallBound_of_norm_derivWithin_le`; its interior-derivative variant is
 `TauCeti.norm_le_gronwallBound_of_norm_deriv_le`. This is the uniqueness argument for linear
 differential equations by energy estimates.
-Averaging the reversed Grönwall bound over `[s, s + 1]` shows that such a function, if it is
+Averaging the two-sided Grönwall bound over `[s, s + 1]` shows that such a function, if it is
 square integrable on the line, is bounded by its `L²` norm: `‖f s‖² ≤ exp (2 K) ∫ ‖f‖²`
 (`TauCeti.norm_sq_le_exp_mul_integral_norm_sq`).
 
@@ -70,37 +70,51 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- **Grönwall's inequality, integral form.** If `φ` is continuous on `[a, b]`, `0 ≤ K` and
+/-- **Grönwall's inequality, integral form.** If `φ` is integrable on `[a, b]`, `0 ≤ K` and
 `φ t ≤ c + K ∫ₐᵗ φ` for every `t ∈ [a, b]`, then `φ t ≤ c exp (K (t - a))` on `[a, b]`. -/
 theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K : ℝ}
-    (hφ : ContinuousOn φ (Icc a b)) (hK : 0 ≤ K)
+    (hφ : IntegrableOn φ (Icc a b)) (hK : 0 ≤ K)
     (h : ∀ t ∈ Icc a b, φ t ≤ c + K * ∫ s in a..t, φ s) :
     ∀ t ∈ Icc a b, φ t ≤ c * exp (K * (t - a)) := by
-  -- Apply the differential form to the primitive `Ψ t = ∫ₐᵗ φ`, whose derivative `φ` is at most
-  -- `c + K Ψ`, then use `K ≥ 0` to pass from the bound on `Ψ` back to `φ`.
+  -- With `Ψ t = ∫ₐᵗ φ`, the bound `χ = c + K Ψ` of `φ` is continuous. Apply the differential form
+  -- to its primitive `Θ t = ∫ₐᵗ χ`, whose derivative `χ` is at most `c + K Θ` because `Ψ ≤ Θ` and
+  -- `K ≥ 0`, then pass from the bound on `Θ` back to `φ ≤ χ`.
   intro t ht
   have hab : a ≤ b := ht.1.trans ht.2
-  have hint : IntegrableOn φ (Icc a b) := hφ.integrableOn_Icc
-  -- The primitive `Ψ` satisfies `Ψ a = 0` and `Ψ' = φ ≤ c + K Ψ` from the right on `[a, b)`.
-  have hΨ : ContinuousOn (fun t ↦ ∫ s in a..t, φ s) (Icc a b) := by
-    have := intervalIntegral.continuousOn_primitive_interval (μ := volume)
-      (by rwa [uIcc_of_le hab] : IntegrableOn φ (uIcc a b))
-    rwa [uIcc_of_le hab] at this
+  have hint : IntervalIntegrable φ volume a b :=
+    (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 hφ
+  set χ : ℝ → ℝ := fun t ↦ c + K * ∫ s in a..t, φ s
+  have hχ : ContinuousOn χ (Icc a b) := by
+    have hΨ : ContinuousOn (fun t ↦ ∫ s in a..t, φ s) (Icc a b) := by
+      simpa only [uIcc_of_le hab] using
+        intervalIntegral.continuousOn_primitive_interval' hint left_mem_uIcc
+    exact continuousOn_const.add (continuousOn_const.mul hΨ)
+  have hχint : IntervalIntegrable χ volume a b := hχ.intervalIntegrable_of_Icc hab
+  -- The primitive `Θ` satisfies `Θ a = 0` and `Θ' = χ` from the right on `[a, b)`.
+  have hΘ : ContinuousOn (fun t ↦ ∫ s in a..t, χ s) (Icc a b) := by
+    simpa only [uIcc_of_le hab] using
+      intervalIntegral.continuousOn_primitive_interval' hχint left_mem_uIcc
   have hderiv (x : ℝ) (hx : x ∈ Ico a b) :
-      HasDerivWithinAt (fun t ↦ ∫ s in a..t, φ s) (φ x) (Ici x) x := by
+      HasDerivWithinAt (fun t ↦ ∫ s in a..t, χ s) (χ x) (Ici x) x := by
     have hmem : Icc a b ∈ 𝓝[>] x := Icc_mem_nhdsGT_of_mem hx
-    have hsub : uIcc a x ⊆ Icc a b := by
-      rw [uIcc_of_le hx.1]
-      exact Icc_subset_Icc_right hx.2.le
-    refine intervalIntegral.integral_hasDerivWithinAt_right (hint.mono_set hsub).intervalIntegrable
-      ?_ ((hφ x (Ico_subset_Icc_self hx)).mono_of_mem_nhdsWithin hmem)
-    exact (hφ.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Icc x).filter_mono
+    refine intervalIntegral.integral_hasDerivWithinAt_right
+      (hχint.mono_set (uIcc_subset_uIcc_left (Icc_subset_uIcc (Ico_subset_Icc_self hx))))
+      ?_ ((hχ x (Ico_subset_Icc_self hx)).mono_of_mem_nhdsWithin hmem)
+    exact (hχ.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Icc x).filter_mono
       (nhdsWithin_le_of_mem hmem)
-  have hgr := le_gronwallBound_of_liminf_deriv_right_le (δ := 0) (K := K) (ε := c) hΨ
+  -- `Ψ ≤ Θ` on `[a, b]`, because `φ ≤ χ` there.
+  have hΨΘ (x : ℝ) (hx : x ∈ Icc a b) : ∫ s in a..x, φ s ≤ ∫ s in a..x, χ s := by
+    have hsub : uIcc a x ⊆ uIcc a b := uIcc_subset_uIcc_left (Icc_subset_uIcc hx)
+    exact intervalIntegral.integral_mono_on hx.1 (hint.mono_set hsub) (hχint.mono_set hsub)
+      fun s hs ↦ h s ⟨hs.1, hs.2.trans hx.2⟩
+  have hgr := le_gronwallBound_of_liminf_deriv_right_le (δ := 0) (K := K) (ε := c) hΘ
     (fun x hx r hr ↦ (hderiv x hx).liminf_right_slope_le hr) (by simp)
-    (fun x hx ↦ by linarith [h x (Ico_subset_Icc_self hx)]) t ht
-  -- Hence `φ t ≤ c + K Ψ t ≤ c + K gronwallBound 0 K c (t - a) = c exp (K (t - a))`.
+    (fun x hx ↦ by
+      simp only [χ]
+      linarith [mul_le_mul_of_nonneg_left (hΨΘ x (Ico_subset_Icc_self hx)) hK]) t ht
+  -- Hence `φ t ≤ c + K Ψ t ≤ c + K Θ t ≤ c + K gronwallBound 0 K c (t - a) = c exp (K (t - a))`.
   calc φ t ≤ c + K * ∫ s in a..t, φ s := h t ht
+    _ ≤ c + K * ∫ s in a..t, χ s := by gcongr c + K * ?_; exact hΨΘ t ht
     _ ≤ c + K * gronwallBound 0 K c (t - a) := by gcongr
     _ = c * exp (K * (t - a)) := by
         rcases hK.eq_or_lt with rfl | hK
@@ -176,10 +190,8 @@ theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
 /-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
 theorem hasDerivAt_integral_exp_mul_sub (lam t : ℝ) :
     HasDerivAt (fun z ↦ ∫ r in 0..(z - t), exp (lam * r)) 1 t := by
-  have hsub : HasDerivAt (fun z : ℝ ↦ z - t) 1 t := (hasDerivAt_id t).sub_const t
-  simpa [Function.comp_def] using ((by fun_prop : Continuous fun r ↦
-    exp (lam * r)).integral_hasStrictDerivAt 0 (t - t)).hasDerivAt.comp (h := fun z ↦ z - t) t
-      hsub
+  simpa using ((by fun_prop : Continuous fun r ↦ exp (lam * r)).integral_hasStrictDerivAt
+    0 (t - t)).hasDerivAt.comp_sub_const t t
 
 /-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
 theorem integral_exp_mul_le (lam T : ℝ) :
@@ -195,9 +207,7 @@ theorem integral_exp_mul_le (lam T : ℝ) :
     have := intervalIntegral.integral_mono_on (f := fun _ ↦ exp (|lam| * T)) hT
       (intervalIntegrable_const (μ := volume)) (hc.intervalIntegrable _ _)
       fun r hr ↦ exp_le_exp.2 <| by
-        rcases le_total 0 lam with h | h
-        · rw [abs_of_nonneg h]; nlinarith [hr.1, hr.2]
-        · rw [abs_of_nonpos h]; nlinarith [hr.1, hr.2]
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
     simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
     linarith
 
@@ -251,19 +261,16 @@ theorem norm_sq_le_exp_mul_integral_norm_sq {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {u u' : ℝ → F} {K : ℝ} (hK : 0 ≤ K)
     (hu : ∀ s, HasDerivAt u (u' s) s) (hu' : ∀ s, ‖u' s‖ ≤ K * ‖u s‖) (hu2 : MemLp u 2)
     (s : ℝ) : ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 := by
-  -- Grönwall backwards in time: `‖u s‖ ≤ exp K ‖u t‖` for `t ∈ [s, s + 1]`.
+  -- Grönwall on `[s, s + 1]` from the point `t`: `‖u s‖ ≤ exp K ‖u t‖` for `t ∈ [s, s + 1]`.
   have hback (t : ℝ) (ht : t ∈ Icc s (s + 1)) :
       ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ‖u t‖ ^ 2 := by
-    have hrev (r : ℝ) : HasDerivAt (fun r ↦ u (-r)) (-u' (-r)) r := by
-      simpa [Function.comp_def] using (hu (-r)).scomp r (hasDerivAt_neg r)
-    have hg := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun r ↦ u (-r))
-      (f' := fun r ↦ -u' (-r)) (δ := ‖u t‖) (K := K) (ε := 0) (a := -t) (b := -s)
-      (fun r _ ↦ (hrev r).continuousAt.continuousWithinAt)
-      (fun r _ ↦ (hrev r).hasDerivWithinAt) (by simp)
-      (fun r _ ↦ by simpa using hu' (-r)) (-s) ⟨by linarith [ht.1], le_rfl⟩
-    rw [gronwallBound_ε0, neg_neg] at hg
-    have hexp : Real.exp (K * (-s - -t)) ≤ Real.exp K :=
-      Real.exp_le_exp.2 (by nlinarith [ht.1, ht.2])
+    have hg := norm_le_gronwallBound_of_norm_derivWithin_le ht
+      (fun r _ ↦ (hu r).hasDerivWithinAt) le_rfl (fun r _ ↦ (hu' r).trans_eq (add_zero _).symm)
+      s ⟨le_rfl, by linarith⟩
+    rw [gronwallBound_ε0] at hg
+    have hexp : Real.exp (K * |s - t|) ≤ Real.exp K :=
+      Real.exp_le_exp.2 (mul_le_of_le_one_right hK
+        (abs_sub_le_iff.2 ⟨by linarith [ht.1], by linarith [ht.2]⟩))
     have hle : ‖u s‖ ≤ ‖u t‖ * Real.exp K := hg.trans (by gcongr)
     calc ‖u s‖ ^ 2 ≤ (‖u t‖ * Real.exp K) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hle 2
       _ = Real.exp (2 * K) * ‖u t‖ ^ 2 := by rw [two_mul, Real.exp_add]; ring
