@@ -10,7 +10,8 @@ public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Distribution
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Differential
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Distribution.LineDeriv
-import TauCeti.Analysis.Distribution.TestFunction.IteratedLineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
 /-!
