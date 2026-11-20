@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 
 /-!
 # Orthogonal complements of bilinear forms
@@ -77,6 +78,11 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   self-pairing splits off.
 * `LinearMap.BilinForm.IsAlt.sup_span_singleton_le_orthogonal`: adjoining an orthogonal vector
   to an isotropic submodule preserves isotropy for an alternating form.
+* `LinearMap.BilinForm.IsAlt.linearIndependent_pair_of_mem_nonZeroDivisors`: two vectors whose
+  value under an alternating form is a non-zero-divisor are linearly independent.
+* `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal_of_dvd`: a pair `e, f` whose value
+  `B e f` is a non-zero-divisor dividing every `B e u` and `B f u` spans an orthogonal direct
+  summand.
 * `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal` and
   `LinearMap.BilinForm.IsAlt.finrank_orthogonal_span_pair_add_two`: a hyperbolic pair of an
   alternating form spans a complement of its orthogonal complement, which has codimension two.
@@ -605,7 +611,47 @@ section HyperbolicPair
 
 open Submodule
 
-variable {B : LinearMap.BilinForm R M} (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
+variable {B : LinearMap.BilinForm R M}
+
+/-- Two vectors whose value under an alternating form is a non-zero-divisor are linearly
+independent. -/
+theorem IsAlt.linearIndependent_pair_of_mem_nonZeroDivisors (hB : B.IsAlt) {e f : M}
+    (hd : B e f ∈ nonZeroDivisors R) : LinearIndependent R ![e, f] :=
+  -- The Gram matrix of `![e, f]` is `B e f • !![0, 1; -1, 0]`, of determinant `1`.
+  linearIndependent_of_isUnit_det (B := B) hd (G := !![0, 1; -1, 0])
+    (fun i j => by fin_cases i <;> fin_cases j <;> simp [hB.self_eq_zero, ← hB.neg_eq e f])
+    (by simp)
+
+/-- **A pair whose value divides its pairings splits off orthogonally.** If `B e f` is a
+non-zero-divisor dividing every `B e u` and every `B f u`, then the span of `e` and `f` and its
+orthogonal complement are complementary. The component of `u` in the orthogonal complement is
+`u + b • e - a • f`, where `B e u = B e f * a` and `B f u = B e f * b`. When `B e f = -1` (that
+is, `B f e = 1`) this is `LinearMap.BilinForm.IsAlt.isCompl_span_pair_orthogonal`. -/
+theorem IsAlt.isCompl_span_pair_orthogonal_of_dvd (hB : B.IsAlt) {e f : M}
+    (hd : B e f ∈ nonZeroDivisors R) (hdvd : ∀ u, B e f ∣ B e u ∧ B e f ∣ B f u) :
+    IsCompl (span R {e, f}) (B.orthogonal (span R {e, f})) := by
+  have hfe : B f e = -B e f := (hB.neg_eq e f).symm
+  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ => ?_,
+    codisjoint_iff.2 (eq_top_iff.2 fun u _ => ?_)⟩
+  · obtain ⟨a, b, rfl⟩ := mem_span_pair.1 hv
+    obtain ⟨he, hf⟩ : B e (a • e + b • f) = 0 ∧ B f (a • e + b • f) = 0 := by
+      simpa [orthogonal] using hv'
+    simp only [map_add, map_smul, smul_eq_mul, hB.self_eq_zero, hfe, mul_zero, zero_add,
+      add_zero, mul_neg, neg_eq_zero] at he hf
+    rw [mem_nonZeroDivisors_iff_right.1 hd a hf, mem_nonZeroDivisors_iff_right.1 hd b he,
+      zero_smul, zero_smul, add_zero]
+    exact zero_mem _
+  · obtain ⟨a, ha⟩ := (hdvd u).1
+    obtain ⟨b, hb⟩ := (hdvd u).2
+    refine mem_sup.2 ⟨a • f - b • e, sub_mem (smul_mem _ _ (subset_span (by simp)))
+      (smul_mem _ _ (subset_span (by simp))), u + b • e - a • f, ?_, by abel⟩
+    refine mem_orthogonal_iff.2 fun n hn => ?_
+    obtain ⟨s, t, rfl⟩ := mem_span_pair.1 hn
+    simp only [map_add, map_sub, map_smul, LinearMap.add_apply, LinearMap.smul_apply,
+      smul_eq_mul, hB.self_eq_zero, hfe, ha, hb]
+    ring
+
+variable (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
 include hB hfe
 
 /-- If `B f e = 1` for an alternating form, then `B e f = -1`. -/
@@ -620,14 +666,10 @@ theorem IsAlt.apply_smul_add_smul_snd (a b : R) : B f (a • e + b • f) = a :=
   simp [hfe, hB.self_eq_zero]
 
 /-- Two vectors pairing to `1` under an alternating form are linearly independent. -/
-theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] := by
-  rw [LinearIndependent.pair_iff]
-  intro s t hst
-  have h1 := congrArg (B f) hst
-  have h2 := congrArg (B e) hst
-  rw [hB.apply_smul_add_smul_snd hfe, map_zero] at h1
-  rw [hB.apply_smul_add_smul_fst hfe, map_zero, neg_eq_zero] at h2
-  exact ⟨h1, h2⟩
+theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] :=
+  hB.linearIndependent_pair_of_mem_nonZeroDivisors <| by
+    rw [hB.apply_eq_neg_one_of_apply_eq_one hfe]
+    exact isUnit_neg_one.mem_nonZeroDivisors
 
 /-- The projection `u ↦ u - B f u • e + B e u • f` lands in the orthogonal complement of the span
 of the hyperbolic pair `e, f`. -/
@@ -639,17 +681,10 @@ theorem IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair (u : M) :
 span carries a nondegenerate form, so no nondegeneracy of the ambient form is needed. -/
 theorem IsAlt.isCompl_span_pair_orthogonal :
     IsCompl (span R {e, f}) (B.orthogonal (span R {e, f})) := by
-  refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ => ?_,
-    codisjoint_iff.2 (eq_top_iff.2 fun u _ => ?_)⟩
-  · obtain ⟨a, b, rfl⟩ := mem_span_pair.1 hv
-    obtain ⟨he, hf⟩ : B e (a • e + b • f) = 0 ∧ B f (a • e + b • f) = 0 := by
-      simpa [orthogonal] using hv'
-    rw [hB.apply_smul_add_smul_fst hfe, neg_eq_zero] at he
-    rw [hB.apply_smul_add_smul_snd hfe] at hf
-    simp [he, hf]
-  · refine mem_sup.2 ⟨B f u • e - B e u • f, sub_mem (smul_mem _ _ (subset_span (by simp)))
-      (smul_mem _ _ (subset_span (by simp))), u - B f u • e + B e u • f,
-      hB.sub_smul_add_smul_mem_orthogonal_span_pair hfe u, by abel⟩
+  have hu : IsUnit (B e f) := by
+    rw [hB.apply_eq_neg_one_of_apply_eq_one hfe]
+    exact isUnit_neg_one
+  exact hB.isCompl_span_pair_orthogonal_of_dvd hu.mem_nonZeroDivisors fun _ => ⟨hu.dvd, hu.dvd⟩
 
 end HyperbolicPair
 
