@@ -21,6 +21,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Gluing
@@ -430,6 +431,26 @@ theorem compLBound_anti_left {p q : ℝ≥0∞} (hp0 : p ≠ 0) (hpq : p ≤ q) 
 theorem compLBound_le_compLBound_one {p : ℝ≥0∞} (hp : 1 ≤ p) (k : ℕ) (L : ℝ) {c : ℝ}
     (hc0 : 0 < c) (hc1 : c ≤ 1) : compLBound p k L c ≤ compLBound 1 k L c :=
   compLBound_anti_left one_ne_zero hp k L hc0 hc1
+
+/-- The constant `compLBound ∞ k L c` is at least one: the exponent of `c` vanishes, and the
+summand for `i = 0` is one. -/
+theorem one_le_compLBound_top (k : ℕ) (L c : ℝ) : 1 ≤ compLBound ⊤ k L c := by
+  rw [compLBound_def, ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero, one_mul]
+  calc (1 : ℝ) = max 1 L ^ 0 * (Fintype.card (OrderedFinpartition 0) : ℝ) := by simp
+    _ ≤ _ := Finset.single_le_sum (f := fun i => max 1 L ^ i *
+        (Fintype.card (OrderedFinpartition i) : ℝ)) (fun i _ => max_one_pow_mul_card_nonneg L i)
+        (Finset.mem_range.2 k.succ_pos)
+
+open scoped NNReal in
+/-- As the finite exponent `q` tends to `∞`, the constant `compLBound q k L c` tends to
+`compLBound ∞ k L c`. -/
+theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
+  simp only [compLBound_def]
+  rw [ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero]
+  refine (((Real.tendsto_const_rpow_inv_atTop (inv_ne_zero hc)).comp
+    (NNReal.tendsto_coe_atTop.2 tendsto_id)).congr fun q => ?_).mul_const _
+  rw [Function.comp_apply, id_eq, one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
 
 section Calculus
 
