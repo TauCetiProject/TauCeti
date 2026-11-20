@@ -54,6 +54,18 @@ def pushforwardCompToPresheafIso (f : X ⟶ Y) :
     (Functor.associator _ _ _).symm ≪≫
     Functor.isoWhiskerRight (SheafOfModules.toSheafCompSheafToPresheafIso X.ringCatSheaf) _
 
+/-- Forgetting direct image does not change a section of the coefficient module. -/
+@[simp]
+lemma pushforwardCompToPresheafIso_hom_app (f : X ⟶ Y) (M : X.Modules) :
+    (pushforwardCompToPresheafIso f).hom.app M = 𝟙 _ :=
+  (rfl)
+
+/-- The inverse comparison for forgetting direct image preserves each section. -/
+@[simp]
+lemma pushforwardCompToPresheafIso_inv_app (f : X ⟶ Y) (M : X.Modules) :
+    (pushforwardCompToPresheafIso f).inv.app M = 𝟙 _ :=
+  (rfl)
+
 /-- A function `r` on an open `U` of `Y` acts on sections of `f_* M` over `U` through `f.app U r`,
 as a section of `M` over `f ⁻¹ᵁ U`. -/
 lemma pushforward_obj_smul (f : X ⟶ Y) (M : X.Modules) {U : Y.Opens} (r : Γ(Y, U))

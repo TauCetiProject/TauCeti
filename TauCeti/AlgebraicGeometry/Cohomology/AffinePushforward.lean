@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.PushforwardAcyclic.Linear
+public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
-public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
-public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.LinearAlgebra.Submodule.Quotient
+import Mathlib.Algebra.Category.Grp.Zero
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 
 /-!
 # Cohomology comparison through an affine morphism
@@ -21,6 +23,16 @@ exactly when that of `M` is finite. If `f` is affine and `Y` has a cover by two 
 same holds in degree one for quasicoherent `M`. Both first cohomology groups are computed by the
 same sections on the overlap modulo differences of restrictions. These results allow
 cohomological finiteness on the projective line to be transported to finite covers.
+
+For every affine morphism and quasi-coherent module, vanishing of positive higher direct
+images gives an all-degree comparison, natural in coefficients and linear over any base ring.
+This comparison requires no finite open cover or separation hypothesis.
+
+On a quasi-compact scheme with affine diagonal, every quasi-coherent sheaf embeds into a
+quasi-coherent sheaf with vanishing positive cohomology
+(`AlgebraicGeometry.Scheme.Modules.exists_mono_isQuasicoherent_subsingleton_cohomology`).
+The containing sheaf is a finite direct sum of pushforwards from affine opens; the affine
+cohomology comparison gives the vanishing used in dimension shifting.
 
 ## References
 
@@ -218,3 +230,134 @@ theorem moduleFinite_cohomology_one_pushforward_iff_of_two_affine_opens [IsAffin
   Module.Finite.equiv_iff (f.cohomologyOnePushforwardBaseLinearEquiv (R := R) M U V hU hV hUV)
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) [IsAffineHom f]
+
+/-- An affine morphism preserves the cohomology of a quasi-coherent coefficient module. -/
+def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+    AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅
+      AddCommGrpCat.of (Cohomology M n) :=
+  f.cohomologyPushforwardIsoOfIsZeroHigherDirectImageSucc M
+    (f.isZero_higherDirectImage_succ_of_isAffineHom M) n
+
+/-- The affine cohomology comparison is natural in the quasi-coherent coefficient module. -/
+@[reassoc]
+theorem cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules} [M.IsQuasicoherent]
+    [N.IsQuasicoherent] (φ : M ⟶ N) (n : ℕ) :
+    (cohomologyFunctor Y n).map ((pushforward f).map φ) ≫
+        (cohomologyPushforwardIsoOfIsAffineHom f N n).hom =
+      (cohomologyPushforwardIsoOfIsAffineHom f M n).hom ≫
+        (cohomologyFunctor X n).map φ :=
+  f.cohomologyPushforwardIsoOfIsZeroHigherDirectImageSucc_naturality φ
+    (f.isZero_higherDirectImage_succ_of_isAffineHom M)
+    (f.isZero_higherDirectImage_succ_of_isAffineHom N) n
+
+/-- The affine cohomology comparison intertwines a global function with its pullback. -/
+lemma cohomologyPushforwardIsoOfIsAffineHom_hom_smul (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
+    (r : Γ(Y, ⊤)) (x : Cohomology ((pushforward f).obj M) n) :
+    (cohomologyPushforwardIsoOfIsAffineHom f M n).hom (r • x) =
+      f.appTop r • (cohomologyPushforwardIsoOfIsAffineHom f M n).hom x :=
+  f.cohomologyPushforwardIsoOfIsZeroHigherDirectImageSucc_hom_smul M
+    (f.isZero_higherDirectImage_succ_of_isAffineHom M) n r x
+
+variable (R : Type u) [CommRing R] [X.Over (Spec (.of R))] [Y.Over (Spec (.of R))]
+  [f.IsOver (Spec (.of R))]
+
+/-- An affine morphism over `R` preserves quasi-coherent cohomology as an `R`-module. -/
+def cohomologyPushforwardBaseLinearEquivOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) : Cohomology ((pushforward f).obj M) n ≃ₗ[R] Cohomology M n :=
+  f.cohomologyPushforwardBaseLinearEquivOfIsZeroHigherDirectImageSucc R M
+    (f.isZero_higherDirectImage_succ_of_isAffineHom M) n
+
+/-- The linear affine comparison has the forward map of the additive comparison. -/
+@[simp]
+lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_apply (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) (x : Cohomology ((pushforward f).obj M) n) :
+    cohomologyPushforwardBaseLinearEquivOfIsAffineHom f R M n x =
+      (cohomologyPushforwardIsoOfIsAffineHom f M n).hom x :=
+  f.cohomologyPushforwardBaseLinearEquivOfIsZeroHigherDirectImageSucc_apply R M
+    (f.isZero_higherDirectImage_succ_of_isAffineHom M) n x
+
+/-- The inverse linear affine comparison has the map of the inverse additive comparison. -/
+@[simp]
+lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_symm_apply (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) (x : Cohomology M n) :
+    (cohomologyPushforwardBaseLinearEquivOfIsAffineHom f R M n).symm x =
+      (cohomologyPushforwardIsoOfIsAffineHom f M n).inv x :=
+  f.cohomologyPushforwardBaseLinearEquivOfIsZeroHigherDirectImageSucc_symm_apply R M
+    (f.isZero_higherDirectImage_succ_of_isAffineHom M) n x
+
+/-- Finiteness of quasi-coherent cohomology transfers through any affine morphism over `R`. -/
+theorem moduleFinite_cohomology_pushforward_iff_of_isAffineHom (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) :
+    Module.Finite R (Cohomology ((pushforward f).obj M) n) ↔
+      Module.Finite R (Cohomology M n) :=
+  Module.Finite.equiv_iff (cohomologyPushforwardBaseLinearEquivOfIsAffineHom f R M n)
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open CategoryTheory Limits TopologicalSpace
+open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
+
+variable {X : Scheme.{u}}
+
+open TauCeti.AlgebraicGeometry in
+/-- Every quasi-coherent sheaf `M` on a quasi-compact scheme with affine diagonal embeds into a
+quasi-coherent sheaf with no cohomology in positive degrees, namely the direct sum of the
+pushforwards of the restrictions of `M` to the members of a finite affine open cover. -/
+lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent] :
+    ∃ (I : X.Modules) (i : M ⟶ I), I.IsQuasicoherent ∧ Mono i ∧
+      ∀ k, Subsingleton (Cohomology I (k + 1)) := by
+  let 𝒰 := X.affineCover.finiteSubcover
+  let U : 𝒰.I₀ → X.Opens := fun i ↦ (𝒰.f i).opensRange
+  have hU (i : 𝒰.I₀) : IsAffineOpen (U i) := isAffineOpen_opensRange (𝒰.f i)
+  have hcover : ⨆ i, U i = ⊤ := 𝒰.iSup_opensRange
+  -- An affine open of a scheme with affine diagonal is an affine morphism.
+  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := (hU i).isAffineHom_ι
+  have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
+  let F : 𝒰.I₀ → X.Modules := fun i ↦
+    (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)
+  have hF (i : 𝒰.I₀) : (F i).IsQuasicoherent := by
+    have := isQuasicoherent_restrictFunctor (U i).ι M
+    infer_instance
+  refine ⟨⨁ F, biproduct.lift fun i ↦ (restrictAdjunction (U i).ι).unit.app M,
+    isQuasicoherent_of_isColimit (K := Discrete.functor F) (fun j ↦ hF j.as)
+      (biproduct.isColimit F), ⟨fun {T} a b hab ↦ ?_⟩, fun k ↦ ?_⟩
+  · -- A section of `M` is determined by its restrictions to the members of the cover.
+    ext W t
+    refine TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+      (fun i ↦ (U i).ι ''ᵁ ((U i).ι ⁻¹ᵁ W)) W (fun i ↦ homOfLE ((U i).ι.image_preimage_le W))
+      ?_ _ _ fun i ↦ ?_
+    · intro x hx
+      have hx' : x ∈ ⨆ i, U i := hcover.symm ▸ trivial
+      obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx'
+      refine Opens.mem_iSup.mpr ⟨i, ?_⟩
+      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+      exact ⟨hi, hx⟩
+    · have := congrArg (fun φ ↦ (φ ≫ biproduct.π F i).app W t) hab
+      simp only [Category.assoc, biproduct.lift_π, Scheme.Modules.Hom.comp_app,
+        restrictAdjunction_unit_app_app] at this
+      exact this
+  · -- Each summand has no higher cohomology, being pushed forward from an affine scheme along an
+    -- affine morphism; so neither has their direct sum.
+    have hzero (i : 𝒰.I₀) : IsZero ((cohomologyFunctor X (k + 1)).obj (F i)) := by
+      have : IsAffine (U i).toScheme := hU i
+      have := isQuasicoherent_restrictFunctor (U i).ι M
+      have : Subsingleton (Cohomology (F i) (k + 1)) :=
+        ((U i).ι.cohomologyPushforwardIsoOfIsAffineHom _
+          (k + 1)).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr.mpr
+            (subsingleton_cohomology_succ_of_isAffine _ k)
+      exact @AddCommGrpCat.isZero_of_subsingleton _ this
+    refine AddCommGrpCat.subsingleton_of_isZero (G := (cohomologyFunctor X (k + 1)).obj (⨁ F)) ?_
+    rw [IsZero.iff_id_eq_zero, ← CategoryTheory.Functor.map_id, ← biproduct.total,
+      Functor.map_sum]
+    refine Finset.sum_eq_zero fun i _ ↦ ?_
+    rw [CategoryTheory.Functor.map_comp, (hzero i).eq_of_tgt ((cohomologyFunctor X (k + 1)).map
+      (biproduct.π F i)) 0, zero_comp]
+
+end AlgebraicGeometry.Scheme.Modules

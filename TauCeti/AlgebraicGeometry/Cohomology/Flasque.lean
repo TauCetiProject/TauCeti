@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Flasque
+public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 public import TauCeti.Topology.Sheaves.Flasque.Basic

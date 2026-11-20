@@ -149,6 +149,13 @@ lemma fromSingle₀Equiv_ι : fromSingle₀Equiv _ _ I.ι = ⟨I.ι₀, I.ι₀_
 -- of `I.ι.f 0` is `Z` by unfolding `single₀`, so Mathlib's instance for `I.ι.f 0` applies
 instance : Mono I.ι₀ := inferInstanceAs (Mono (I.ι.f 0))
 
+/-- Applying a functor `G` preserving zero morphisms to an injective resolution
+`Z ⟶ I⁰ ⟶ I¹` gives a complex. -/
+lemma map_ι₀_comp_d {D : Type u'} [Category.{v'} D] [HasZeroMorphisms D]
+    (G : C ⥤ D) [G.PreservesZeroMorphisms] :
+    G.map I.ι₀ ≫ ((G.mapHomologicalComplex _).obj I.cocomplex).d 0 1 = 0 := by
+  rw [Functor.mapHomologicalComplex_obj_d, ← G.map_comp, I.ι₀_comp_d, G.map_zero]
+
 end Augmentation
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
@@ -159,6 +166,13 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
 lemma exact_ι₀ {Z : C} (I : InjectiveResolution Z) :
     (ShortComplex.mk _ _ I.ι₀_comp_d).Exact :=
   I.exact₀
+
+/-- A lift between injective resolutions commutes with their augmentations. -/
+@[reassoc]
+lemma ι₀_comp_desc {Y Z : C} (I : InjectiveResolution Y) (P : InjectiveResolution Z)
+    (f : Z ⟶ Y) :
+    P.ι₀ ≫ (desc f I P).f 0 = f ≫ I.ι₀ :=
+  desc_commutes_zero f I P
 
 section ShortExact
 
@@ -309,18 +323,11 @@ section Map
 variable {D : Type u'} [Category.{v'} D] [Abelian D] {Z : C} (I : InjectiveResolution Z)
   (G : C ⥤ D) [G.PreservesZeroMorphisms] [G.PreservesHomology]
 
-omit [G.PreservesHomology] in
-/-- Applying a functor `G` preserving zero morphisms to an injective resolution
-`Z ⟶ I⁰ ⟶ I¹` gives a complex. -/
-lemma map_ι_f_zero_comp_d :
-    G.map (I.ι.f 0) ≫ ((G.mapHomologicalComplex _).obj I.cocomplex).d 0 1 = 0 := by
-  rw [Functor.mapHomologicalComplex_obj_d, ← G.map_comp, I.ι_f_zero_comp_complex_d, G.map_zero]
-
 /-- An exact functor `G` keeps `0 ⟶ G(Z) ⟶ G(I⁰) ⟶ G(I¹)` exact, for an injective resolution
 `I` of `Z`: the image of `I` under `G` is a resolution of `G(Z)`, whose terms need no longer be
 injective. -/
-lemma exact₀_map : (ShortComplex.mk _ _ (I.map_ι_f_zero_comp_d G)).Exact :=
-  I.exact₀.map G
+lemma exact₀_map : (ShortComplex.mk _ _ (I.map_ι₀_comp_d G)).Exact :=
+  I.exact_ι₀.map G
 
 /-- An exact functor `G` keeps the complex of an injective resolution exact in positive
 degrees. -/

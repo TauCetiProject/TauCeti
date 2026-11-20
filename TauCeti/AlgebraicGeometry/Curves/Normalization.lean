@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Conductor.Cohomology
 public import TauCeti.AlgebraicGeometry.Normalization.Modification
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import TauCeti.AlgebraicGeometry.Birational.KrullDimension
-import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
+import TauCeti.AlgebraicGeometry.Cohomology.AffinePushforward
 import TauCeti.AlgebraicGeometry.Cohomology.Spec
 import TauCeti.AlgebraicGeometry.Curves.Cohomology
 import TauCeti.AlgebraicGeometry.Morphisms.Modification.Finite
@@ -34,7 +34,7 @@ closed subscheme `V(f.conductor)`
 properties of `Q` and of this exact sequence for finite modifications in dimension at most one are
 proved in `TauCeti.AlgebraicGeometry.IdealSheaf.Conductor.Cohomology`.
 
-Combining those general results with Čech comparison along the affine morphism `f`, we deduce:
+Combining those general results with cohomology comparison along the affine morphism `f`, we deduce:
 
 * **Resolution of curves over any field**: birational equivalence preserves Krull dimension over a
   field (`AlgebraicGeometry.Scheme.Birational.topologicalKrullDim_eq_of_locallyOfFiniteType`), so
@@ -190,7 +190,7 @@ instance finiteDimensional_cohomology_trivial_of_isCurveOver [X.IsCurveOver k] (
   have hpush (m : ℕ) : FiniteDimensional k (Cohomology ((pushforward ν).obj OY) m) := by
     let _ : Module k (Cohomology OY m) := cohomologyBaseModule k Y OY m
     have := finiteDimensional_cohomology_of_isCurveOver k OY m
-    exact Module.Finite.equiv (ν.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY m).symm
+    exact Module.Finite.equiv (ν.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m).symm
   let φ : OX ⟶ (pushforward ν).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit ν.toRingCatSheafHom
   have : Mono φ := ν.mono_unitToPushforwardObjUnit
@@ -270,7 +270,7 @@ theorem eulerCharBelow_trivial_of_isModification [X.IsCurveOver k] [IsReduced Y]
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   have : Mono φ := f.mono_unitToPushforwardObjUnit
   have hS := TauCeti.cokernelSequence_shortExact φ
-  let eCech (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY m
+  let eCech (m : ℕ) := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY m
   have hY_eq : eulerCharBelow k Y (InvertibleSheaf.trivial Y).obj 2 =
       eulerCharBelow k X ((pushforward f).obj OY) 2 := by
     rw [eulerCharBelow_two, eulerCharBelow_two,
@@ -310,7 +310,7 @@ theorem genus_le_of_isModification [X.IsCurveOver k] [Y.IsCurveOver k]
   have : FiniteDimensional k (Cohomology OX 1) :=
     Module.Finite.equiv (trivialCohomologyBaseLinearEquiv k X 1)
   have : OY.IsQuasicoherent := AlgebraicGeometry.isQuasicoherent_structureSheaf Y
-  let eCech := f.cohomologyPushforwardBaseLinearEquivOfCompactSpace k OY 1
+  let eCech := f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom k OY 1
   let φ : OX ⟶ (pushforward f).obj OY :=
     SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom
   let ψ : Cohomology OX 1 →ₗ[k] Cohomology OY 1 :=
