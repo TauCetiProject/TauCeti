@@ -82,6 +82,8 @@ bounds.
 * `MeasureTheory.MemLp.norm_toLp_le_of_ae_bound`: on a finite measure space, a function in `Lᵖ`
   bounded almost everywhere in norm by `C ≥ 0` has `Lᵖ` norm at most
   `measureUnivNNReal μ ^ p.toReal⁻¹ * C`.
+* `MeasureTheory.MemLp.norm_toLp_le_of_eLpNorm_le`: an `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p` against
+  a representative `u` of `v ∈ Lᵖ` is the norm bound `‖g‖ ≤ B ‖v‖`.
 * `TauCeti.Lp.isBounded_range_of_ae_bound` and `TauCeti.isBounded_range_toLp_of_ae_bound`: on a
   finite measure space, a family in `Lᵖ` (`1 ≤ p`) with a uniform almost-everywhere pointwise norm
   bound has bounded range.
@@ -256,7 +258,7 @@ end TauCeti
 namespace MeasureTheory
 
 open Filter
-open scoped ENNReal Topology
+open scoped ENNReal NNReal Topology
 
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/
@@ -490,6 +492,17 @@ theorem memLp_of_eLpNorm_add_mul_ne_top {α E : Type*} [MeasurableSpace α] {μ 
   obtain ⟨hfin₀, hfin₁⟩ := ENNReal.add_ne_top.1 hfin
   refine ⟨memLp_iff.2 hfin₀.lt_top, memLp_iff.2 (lt_top_iff_ne_top.2 fun htop => hfin₁ ?_)⟩
   rw [htop, ENNReal.mul_top (by simpa using ht)]
+
+/-- An `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p`, with `u` a representative of `v ∈ Lᵖ`, is the norm
+bound `‖g‖ ≤ B ‖v‖` in `Lᵖ`. -/
+theorem MemLp.norm_toLp_le_of_eLpNorm_le {α E F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] [NormedAddCommGroup F] {μ : Measure α} {p : ℝ≥0∞} {g : α → F}
+    (hg : MemLp g p μ) {u : α → E} {v : Lp E p μ} (hv : u =ᵐ[μ] v) {B : ℝ≥0}
+    (h : eLpNorm g p μ ≤ B * eLpNorm u p μ) : ‖hg.toLp g‖ ≤ B * ‖v‖ := by
+  rw [Lp.norm_toLp, Lp.norm_def, ← eLpNorm_congr_ae hv, ← ENNReal.coe_toReal,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
+    ((eLpNorm_congr_ae hv).trans_ne (Lp.eLpNorm_ne_top v))) h
 
 section Restrict
 
