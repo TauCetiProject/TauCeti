@@ -11,6 +11,9 @@ import TauCeti.Analysis.Normed.Module.Normalize.Lipschitz
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
+import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
@@ -27,10 +30,11 @@ which is meaningful because `b ↦ ‖Φ b‖_{L^r(μ)}` is measurable
 `(q, q')` and `(r, r')`, Hölder's inequality in `x` and then in `b` bounds the pairings
 `∫ ⟪Φ b, G b⟫ dρ` by `‖Φ‖_{L^q L^r} ‖G‖_{L^{q'} L^{r'}}`. This file proves the converse bound:
 if `|∫ ⟪Φ b, G b⟫ dρ| ≤ M ‖G‖_{L^{q'} L^{r'}}` for every integrable `G : β → L²(X, μ)` for which
-the pairing is integrable, then `‖Φ‖_{L^q L^r} ≤ M`
-(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`), for
-`1 ≤ q < ∞`, `2 ≤ r < ∞` and a σ-finite measure `ρ`. Membership of `Φ` in `L^q L^r` is not assumed;
-it follows when `M < ∞`.
+the pairing is integrable, then `‖Φ‖_{L^q L^r} ≤ M`, for `1 ≤ q < ∞`, `2 ≤ r ≤ ∞` and σ-finite
+measures `ρ` and `μ`
+(`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`). For
+finite `r` the measure `μ` may be arbitrary (the variant `..._of_ne_top` of that theorem).
+Membership of `Φ` in `L^q L^r` is not assumed; it follows when `M < ∞`.
 
 This turns estimates proved in weak form, by testing against `L²`-valued functions, into mixed-norm
 estimates. The typical application is to Strichartz estimates, where the `TT*` argument bounds the
@@ -52,6 +56,12 @@ bounded above and below and `‖Φ b‖₂` is bounded. Then
 
 so `‖1_A ψ‖_{L^q} ≤ M`. Exhausting `β` by such sets `A` and letting `N → ∞`, by monotone
 convergence in `x` and in `b`, gives the bound for `Φ`.
+
+At `r = ∞` the test functions are measured in `L¹` and there is no extremal function to truncate.
+On a set `A` of finite measure, Hölder's inequality `‖1_A g‖₁ ≤ μ(A) ^ (1 / r) ‖g‖_{r'}` turns the
+hypothesis into the one at a finite `r` for `1_A Φ`, with `M μ(A) ^ (1 / r)` in place of `M`.
+Since `A` has finite measure, `‖u‖_{Lʳ(A)} → ‖u‖_{L^∞(A)}` as `r → ∞`, and Fatou's lemma in `b`
+gives the bound over `A`. Exhausting `X` by sets of finite measure gives the bound for `Φ`.
 
 ## References
 
@@ -414,8 +424,9 @@ measurable `Φ : β → L²(X, μ)` satisfies
 `|∫ ⟪Φ b, G b⟫ dρ(b)| ≤ M ‖G‖_{L^{q'}_b L^{r'}_x}`
 
 for every integrable `G : β → L²(X, μ)` for which `b ↦ ⟪Φ b, G b⟫` is integrable, then
-`‖Φ‖_{L^q_b L^r_x} ≤ M`. -/
-theorem AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le
+`‖Φ‖_{L^q_b L^r_x} ≤ M`. For `r = ∞` see
+`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le`. -/
+theorem AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top
     [SigmaFinite ρ] (hq : q ≠ ∞) (hr : r ≠ ∞) (hr2 : 2 ≤ r) {Φ : β → Lp E 2 μ}
     (hΦ : AEStronglyMeasurable Φ ρ) {M : ℝ≥0∞}
     (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
@@ -443,5 +454,142 @@ theorem AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_l
     (hmeas N).aestronglyMeasurable
     (ae_of_all _ fun b ↦ by rw [eNorm_eq_self, Real.eNorm_of_nonneg truncNorm_nonneg])]
   exact eLpNorm_truncNorm_le hq hr hr2 hΦ' hM' _
+
+/-! ### The endpoint `r = ∞` -/
+
+section Top
+
+variable {A : Set X}
+
+/-- Hölder's inequality on `A`: `‖1_A u‖₁ ≤ ‖u‖_{r'} μ(A) ^ (1 / r)` for the exponent `r = n` and
+its Hölder conjugate `r' = (1 - 1 / n)⁻¹`. -/
+private theorem eLpNorm_indicatorMultiplication_one_le (hA : MeasurableSet A) (u : Lp E 2 μ)
+    {n : ℕ} (hn : 2 ≤ n) :
+    eLpNorm (Lp.indicatorMultiplication 𝕜 2 hA u) 1 μ ≤
+      eLpNorm u (1 - (n : ℝ≥0∞)⁻¹)⁻¹ μ * μ A ^ (1 / (n : ℝ)) := by
+  have hinv : (n : ℝ≥0∞)⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (by exact_mod_cast one_le_two.trans hn)
+  have hexp : 1 / (1 : ℝ≥0∞).toReal - 1 / ((1 - (n : ℝ≥0∞)⁻¹)⁻¹).toReal = 1 / (n : ℝ) := by
+    rw [ENNReal.toReal_inv, ENNReal.toReal_sub_of_le hinv ENNReal.one_ne_top, ENNReal.toReal_inv,
+      ENNReal.toReal_natCast]
+    simp
+  rw [Lp.eLpNorm_indicatorMultiplication]
+  have h1 : (1 : ℝ≥0∞) ≤ (1 - (n : ℝ≥0∞)⁻¹)⁻¹ := ENNReal.one_le_inv.2 tsub_le_self
+  refine (eLpNorm_le_eLpNorm_mul_rpow_measure_univ h1
+    (Lp.aestronglyMeasurable u).restrict).trans ?_
+  rw [Measure.restrict_apply_univ, hexp]
+  gcongr
+  exact Measure.restrict_le_self
+
+/-- **The bound at a finite exponent on a set of finite measure.** Testing `1_A Φ` against `1_A G`,
+whose `L¹` norm is at most `μ(A) ^ (1 / n)` times its `L^{r'}` norm for `r' = (1 - 1 / n)⁻¹` by
+Hölder's inequality, bounds the `L^q_b L^n_x` norm of `Φ` over `A` by `M μ(A) ^ (1 / n)`. -/
+private theorem eLpNorm_eLpNorm_restrict_natCast_le [SigmaFinite ρ] (hq : q ≠ ∞)
+    {Φ : β → Lp E 2 μ} (hΦ : AEStronglyMeasurable Φ ρ) {M : ℝ≥0∞}
+    (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
+      ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) 1 μ) q' ρ)
+    (hA : MeasurableSet A) {n : ℕ} (hn : 2 ≤ n) :
+    eLpNorm (fun b ↦ eLpNorm (Φ b) n (μ.restrict A)) q ρ ≤ M * μ A ^ (1 / (n : ℝ)) := by
+  have hr2 : (2 : ℝ≥0∞) ≤ n := by exact_mod_cast hn
+  have := ENNReal.HolderConjugate.inv_one_sub_inv' (one_le_two.trans hr2)
+  have hΦA : AEStronglyMeasurable (fun b ↦ Lp.indicatorMultiplication 𝕜 2 hA (Φ b)) ρ :=
+    (Lp.indicatorMultiplication 𝕜 2 hA).continuous.comp_aestronglyMeasurable hΦ
+  have hbound : ∀ G : β → Lp E 2 μ, Integrable G ρ →
+      Integrable (fun b ↦ ⟪Lp.indicatorMultiplication 𝕜 2 hA (Φ b), G b⟫_𝕜) ρ →
+      ‖∫ b, ⟪Lp.indicatorMultiplication 𝕜 2 hA (Φ b), G b⟫_𝕜 ∂ρ‖ₑ ≤
+        M * μ A ^ (1 / (n : ℝ)) * eLpNorm (fun b ↦ eLpNorm (G b) (1 - (n : ℝ≥0∞)⁻¹)⁻¹ μ) q' ρ := by
+    intro G hG hpair
+    set GA : β → Lp E 2 μ := fun b ↦ Lp.indicatorMultiplication 𝕜 2 hA (G b)
+    have hGA : Integrable GA ρ := (Lp.indicatorMultiplication 𝕜 2 hA).integrable_comp hG
+    have heq : (fun b ↦ ⟪Lp.indicatorMultiplication 𝕜 2 hA (Φ b), G b⟫_𝕜) = fun b ↦ ⟪Φ b, GA b⟫_𝕜 :=
+      funext fun b ↦ Lp.inner_indicatorMultiplication_left hA (Φ b) (G b)
+    rw [heq] at hpair ⊢
+    have hle : eLpNorm (fun b ↦ eLpNorm (GA b) 1 μ) q' ρ ≤
+        μ A ^ (1 / (n : ℝ)) * eLpNorm (fun b ↦ eLpNorm (G b) (1 - (n : ℝ≥0∞)⁻¹)⁻¹ μ) q' ρ := by
+      rw [← eLpNorm_const_mul_ennreal
+        (hG.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl _).aestronglyMeasurable]
+      refine eLpNorm_mono_eNorm
+        (hGA.aestronglyMeasurable.aemeasurable_eLpNorm_Lp .rfl _).aestronglyMeasurable fun b ↦ ?_
+      rw [eNorm_eq_self, eNorm_eq_self, mul_comm]
+      exact eLpNorm_indicatorMultiplication_one_le hA (G b) hn
+    calc _ ≤ M * eLpNorm (fun b ↦ eLpNorm (GA b) 1 μ) q' ρ := hM GA hGA hpair
+      _ ≤ _ := by rw [mul_assoc]; gcongr
+  simpa only [Lp.eLpNorm_indicatorMultiplication] using
+    hΦA.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top (𝕜 := 𝕜) (q' := q') hq
+      (ENNReal.natCast_ne_top _) hr2 hbound
+
+/-- **The bound on a set of finite measure.** On a measurable set `A` of finite measure, the
+`L^q_b L^∞_x` norm over `A` is at most `M`: the `L^q_b L^n_x` norm over `A` is at most
+`M μ(A) ^ (1 / n)`, and the `Lⁿ` norms over `A` tend to the `L^∞` norm as `n → ∞` since `A` has
+finite measure. -/
+private theorem eLpNorm_eLpNorm_restrict_top_le [SigmaFinite ρ] (hq : q ≠ ∞) {Φ : β → Lp E 2 μ}
+    (hΦ : AEStronglyMeasurable Φ ρ) {M : ℝ≥0∞}
+    (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
+      ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) 1 μ) q' ρ)
+    (hA : MeasurableSet A) (hμA : μ A ≠ ∞) :
+    eLpNorm (fun b ↦ eLpNorm (Φ b) ∞ (μ.restrict A)) q ρ ≤ M := by
+  have : IsFiniteMeasure (μ.restrict A) := isFiniteMeasure_restrict.2 hμA
+  have hAc : μ.restrict A ≪ μ := Measure.absolutelyContinuous_of_le Measure.restrict_le_self
+  have hc : μ A + 1 ≠ ∞ := ENNReal.add_ne_top.2 ⟨hμA, ENNReal.one_ne_top⟩
+  have hk : Tendsto (fun n : ℕ ↦ ((n + 2 : ℕ) : ℝ)) atTop atTop :=
+    tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 2)
+  have hC : Tendsto (fun n : ℕ ↦ M * (μ A + 1) ^ (1 / ((n + 2 : ℕ) : ℝ))) atTop (𝓝 M) := by
+    simpa only [mul_one, Function.comp_def] using ENNReal.Tendsto.const_mul
+      ((ENNReal.tendsto_rpow_one_div_atTop (by simp) hc).comp hk) (.inl one_ne_zero)
+  refine (eLpNorm_le_liminf_eLpNorm_of_ae_tendsto
+    (fun n ↦ hΦ.aemeasurable_eLpNorm_Lp hAc ((n + 2 : ℕ) : ℝ≥0∞)) (ae_of_all _ fun b ↦ ?_)).trans ?_
+  · have hr : Tendsto (fun n : ℕ ↦ ((n + 2 : ℕ) : ℝ≥0)) atTop atTop :=
+      tendsto_natCast_atTop_atTop.comp (tendsto_add_atTop_nat 2)
+    simpa only [Function.comp_def, ENNReal.coe_natCast] using
+      (TauCeti.tendsto_eLpNorm_atTop (f := (Φ b : X → E)) (μ := μ.restrict A)).comp hr
+  · rw [← hC.liminf_eq]
+    refine liminf_le_liminf (.of_forall fun n ↦
+      (eLpNorm_eLpNorm_restrict_natCast_le hq hΦ hM hA le_add_self).trans ?_)
+    gcongr
+    exact le_self_add
+
+/-- **Norming mixed norms at `r = ∞`.** If `Φ` satisfies the weak bound against test functions in
+`L^{q'}_b L¹_x`, then `‖Φ‖_{L^q_b L^∞_x} ≤ M`: the bound holds on each set `S k` of an exhaustion of
+`X` by sets of finite measure, and `‖u‖_{L^∞(S k)}` increases to `‖u‖_∞`. -/
+private theorem eLpNorm_eLpNorm_top_le_of_forall_enorm_integral_inner_le
+    [SigmaFinite ρ] [SigmaFinite μ] (hq : q ≠ ∞) {Φ : β → Lp E 2 μ}
+    (hΦ : AEStronglyMeasurable Φ ρ) {M : ℝ≥0∞}
+    (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
+      ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) 1 μ) q' ρ) :
+    eLpNorm (fun b ↦ eLpNorm (Φ b) ∞ μ) q ρ ≤ M := by
+  set S := spanningSets μ
+  -- `‖u‖_∞` is the increasing limit of the `L^∞` norms over the sets `S k`, which exhaust `X`.
+  have hsup (u : Lp E 2 μ) : eLpNorm u ∞ μ = ⨆ k, eLpNorm u ∞ (μ.restrict (S k)) := by
+    rw [← eLpNorm_exponent_top_restrict_iUnion, iUnion_spanningSets, Measure.restrict_univ]
+  simp_rw [hsup]
+  rw [eLpNorm_iSup_eq_iSup_eLpNorm
+    (fun k ↦ hΦ.aemeasurable_eLpNorm_Lp
+      (Measure.absolutelyContinuous_of_le Measure.restrict_le_self) ∞)
+    (ae_of_all _ fun b k k' hkk' ↦ eLpNorm_mono_measure _
+      (Measure.restrict_mono (monotone_spanningSets μ hkk') le_rfl))]
+  exact iSup_le fun k ↦ eLpNorm_eLpNorm_restrict_top_le hq hΦ hM (measurableSet_spanningSets μ k)
+    (measure_spanningSets_lt_top μ k).ne
+
+/-- **Norming mixed norms by `L²`-valued test functions.** Let `1 ≤ q < ∞` and `2 ≤ r ≤ ∞`, with
+Hölder conjugates `q'` and `r'`, and let `ρ` and `μ` be σ-finite. If an almost everywhere strongly
+measurable `Φ : β → L²(X, μ)` satisfies
+
+`|∫ ⟪Φ b, G b⟫ dρ(b)| ≤ M ‖G‖_{L^{q'}_b L^{r'}_x}`
+
+for every integrable `G : β → L²(X, μ)` for which `b ↦ ⟪Φ b, G b⟫` is integrable, then
+`‖Φ‖_{L^q_b L^r_x} ≤ M`. The σ-finiteness of `μ` is used only at `r = ∞`; for finite `r` see
+`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top`,
+which does not need it. -/
+theorem AEStronglyMeasurable.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le
+    [SigmaFinite ρ] [SigmaFinite μ] (hq : q ≠ ∞) (hr2 : 2 ≤ r) {Φ : β → Lp E 2 μ}
+    (hΦ : AEStronglyMeasurable Φ ρ) {M : ℝ≥0∞}
+    (hM : ∀ G : β → Lp E 2 μ, Integrable G ρ → Integrable (fun b ↦ ⟪Φ b, G b⟫_𝕜) ρ →
+      ‖∫ b, ⟪Φ b, G b⟫_𝕜 ∂ρ‖ₑ ≤ M * eLpNorm (fun b ↦ eLpNorm (G b) r' μ) q' ρ) :
+    eLpNorm (fun b ↦ eLpNorm (Φ b) r μ) q ρ ≤ M := by
+  rcases eq_or_ne r ∞ with rfl | hr
+  · obtain rfl : r' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ r').1 rfl
+    exact eLpNorm_eLpNorm_top_le_of_forall_enorm_integral_inner_le hq hΦ hM
+  · exact hΦ.eLpNorm_eLpNorm_le_of_forall_enorm_integral_inner_le_of_ne_top hq hr hr2 hM
+
+end Top
 
 end MeasureTheory

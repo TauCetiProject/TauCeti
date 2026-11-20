@@ -29,9 +29,8 @@ forcing term `G` with values in `H^s` (`BesselPotentialSpace.schrodingerDuhamel`
 carries this solution to the solution on `L²` with data `J^s f` and forcing `J^s G`
 (`BesselPotentialSpace.toLp_schrodingerDuhamel`), so every estimate on `L²` holds at every
 regularity `s`, with the same constant. In particular the Strichartz estimates hold for the
-regularity-shifted solution `J^s u`: for a non-endpoint admissible pair `(q, r)` with finite `r`,
-that is `2 < q < ∞`, `2 / q + n / r = n / 2` and `r < ∞`, and `p`, `r'` the Hölder conjugates of
-`q`, `r`,
+regularity-shifted solution `J^s u`: for a non-endpoint admissible pair `(q, r)`, that is
+`2 < q < ∞` and `2 / q + n / r = n / 2`, and `p`, `r'` the Hölder conjugates of `q`, `r`,
 
 `‖J^s S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖_{H^s}` and
 `‖J^s u‖_{L^q([0, T]; L^r)} ≤ C (‖f‖_{H^s} + ‖J^s G‖_{L^p((0, T]; L^{r'})})`,
@@ -188,8 +187,8 @@ theorem norm_schrodingerDuhamel_le (f : H^{s}(E, F)) (G : ℝ → H^{s}(E, F)) (
 
 variable {p q : ℝ≥0} {r r' : ℝ≥0∞} [r'.HolderConjugate r]
 
-/-- **The Strichartz estimate in `H^s`**, at a non-endpoint admissible pair with finite `r`:
-`2 < q < ∞`, `2 / q + n / r = n / 2` and `0 < r < ∞`, with `p` the Hölder conjugate of `q`. There
+/-- **The Strichartz estimate in `H^s`**, at a non-endpoint admissible pair:
+`2 < q < ∞` and `2 / q + n / r = n / 2`, with `p` the Hölder conjugate of `q`. There
 is `C` such that for every order `s` and every `f ∈ H^s(E)`,
 
 `‖J^s S(t) f‖_{L^q_t L^r_x} ≤ C ‖f‖_{H^s}`.
@@ -197,17 +196,16 @@ is `C` such that for every order `s` and every `f ∈ H^s(E)`,
 The constant does not depend on `s`. -/
 theorem exists_eLpNorm_eLpNorm_toLp_schrodingerPropagator_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
-    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2)
-    (hr0 : r ≠ 0) (hr : r ≠ ∞) :
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ (s : ℝ) (f : H^{s}(E)),
       eLpNorm (fun t ↦ eLpNorm (schrodingerPropagator ℂ s t f).toLp r volume) q volume ≤
         C * ‖f‖ₑ := by
-  obtain ⟨C, hC⟩ := TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le hq hpq hqr hr0 hr
+  obtain ⟨C, hC⟩ := TauCeti.exists_eLpNorm_eLpNorm_schrodingerPropagator_le hq hpq hqr
   refine ⟨C, fun s f ↦ ?_⟩
   simpa only [toLp_schrodingerPropagator, enorm_toLp_eq] using hC f.toLp
 
 /-- **The Strichartz estimate for the inhomogeneous Schrödinger equation in `H^s`**, at a
-non-endpoint admissible pair with finite `r`: `2 < q < ∞`, `2 / q + n / r = n / 2` and `r < ∞`,
+non-endpoint admissible pair: `2 < q < ∞` and `2 / q + n / r = n / 2`,
 with `p` and `r'` the Hölder conjugates of `q` and `r`. There is `C` such that for every order `s`,
 every `T`, every initial value `f ∈ H^s(E)` and every forcing term `G : ℝ → H^s(E)` integrable on
 `(0, T]`, the solution `u = BesselPotentialSpace.schrodingerDuhamel f G` satisfies
@@ -217,15 +215,14 @@ every `T`, every initial value `f ∈ H^s(E)` and every forcing term `G : ℝ �
 The constant depends neither on `s` nor on `T`. -/
 theorem exists_eLpNorm_eLpNorm_toLp_schrodingerDuhamel_le (hq : 2 < q)
     (hpq : p.HolderConjugate q)
-    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2)
-    (hr : r ≠ ∞) :
+    (hqr : 2 / (q : ℝ) + Module.finrank ℝ E * (r⁻¹).toReal = Module.finrank ℝ E / 2) :
     ∃ C : ℝ≥0, ∀ (s : ℝ) (f : H^{s}(E)) (G : ℝ → H^{s}(E)) (T : ℝ), IntegrableOn G (Ioc 0 T) →
       eLpNorm (fun t ↦ eLpNorm (schrodingerDuhamel f G t).toLp r volume) q
           (volume.restrict (Icc 0 T)) ≤
         C * (‖f‖ₑ + eLpNorm (fun τ ↦ eLpNorm (G τ).toLp r' volume) p
           (volume.restrict (Ioc 0 T))) := by
   obtain ⟨C, hC⟩ :=
-    TauCeti.exists_eLpNorm_eLpNorm_schrodingerDuhamel_le (r' := r') hq hpq hqr hr
+    TauCeti.exists_eLpNorm_eLpNorm_schrodingerDuhamel_le (r₁' := r') hq hpq hqr hq hpq hqr
   refine ⟨C, fun s f G T hG ↦ ?_⟩
   have hG' : IntegrableOn (fun τ ↦ (G τ).toLp) (Ioc 0 T) := integrable_toLp_iff.2 hG
   simpa only [toLp_schrodingerDuhamel, enorm_toLp_eq] using hC f.toLp (fun τ ↦ (G τ).toLp) T hG'
