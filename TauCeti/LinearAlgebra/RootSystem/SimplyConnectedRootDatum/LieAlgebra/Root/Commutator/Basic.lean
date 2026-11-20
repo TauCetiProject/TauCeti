@@ -22,15 +22,18 @@ Kostant-stable lattice, over a commutative ring of values. For two linearly inde
 ```
 
 as a product over the roots `iα + jβ` with `i, j > 0`, in increasing `i + j`. This file proves
-the formula, with coefficients given by the native structure constants `N_{α,β}`, in the
-three cases in which at most two roots `iα + jβ` occur and both have `j = 1`:
+the formula, with coefficients given by the native structure constants `N_{α,β}`, in the four
+cases in which at most two roots `iα + jβ` occur:
 
 * `α + β` is neither a root nor zero: the root subgroups commute;
 * `α + β` is a root but `2α + β` and `α + 2β` are not:
   `⁅x_α(u), x_β(v)⁆ = x_{α+β}(N_{α,β} u v)`;
 * `α + β` and `2α + β` are roots but `3α + β` and `α + 2β` are not:
   `⁅x_α(u), x_β(v)⁆ = x_{α+β}(N_{α,β} u v) x_{2α+β}(M_{α,β,2} u² v)`, where
-  `M_{α,β,2} = N_{α,β} N_{α,α+β} / 2` is the integer with `(ad e_α)² e_β / 2 = M_{α,β,2} e_{2α+β}`.
+  `M_{α,β,2} = N_{α,β} N_{α,α+β} / 2` is the integer with `(ad e_α)² e_β / 2 = M_{α,β,2} e_{2α+β}`;
+* `α + β` and `α + 2β` are roots but `2α + β` and `α + 3β` are not:
+  `⁅x_α(u), x_β(v)⁆ = x_{α+β}(N_{α,β} u v) x_{α+2β}(-M_{β,α,2} u v²)`, where
+  `M_{β,α,2} = N_{β,α} N_{β,α+β} / 2`.
 
 The division by two is exact in `ℤ`: by Chevalley's theorem `N_{α,β} = ±(r + 1)` and
 `N_{α,α+β} = ±(r + 2)` for `r` the largest integer with `β - rα` a root. So the formulas hold
@@ -63,6 +66,7 @@ here the bracket hypotheses are derived from the root datum rather than assumed.
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Chapter VI, §1, no. 3.
 -/
 
 public section
@@ -141,12 +145,8 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add
     rw [hγ]; module
   refine commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
-    (lie_chevalleySystem_eq_zero (hαγ ▸ hα)
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 2) (b := 1) two_ne_zero
-        (by rw [hαγ, one_nsmul])))
-    (lie_chevalleySystem_eq_zero (hβγ ▸ hβ)
-      (ne_zero_of_eq_nsmul_root_add_nsmul_root hγ (a := 1) (b := 2) one_ne_zero
-        (by rw [hβγ, one_nsmul]))) A u v
+    (lie_chevalleySystem_eq_zero_of_add_eq hγ (hαγ ▸ hα))
+    (lie_chevalleySystem_eq_zero_of_add_eq (hγ.trans (add_comm _ _)) (hβγ ▸ hβ)) A u v
 
 /-- Reordering root-subgroup elements with sum roots `α + β` and `2α + β`, when the
 further sums `3α + β` and `α + 2β` are not roots, uses the integral Chevalley coefficients. -/
