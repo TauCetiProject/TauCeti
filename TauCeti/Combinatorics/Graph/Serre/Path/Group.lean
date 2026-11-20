@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Basic
 public import TauCeti.Combinatorics.Graph.Serre.Tree
 
 /-!
@@ -193,6 +194,40 @@ theorem lift_apply {G : Type*} [Group G] (wt : Γ.E → G)
     lift wt hwt (ofPath p) = p.weight (fun {a b : Γ.V} (e : a ⟶ b) => wt e.val) := by
   rw [lift_apply, toPath_ofPath]
   exact ((Path.homotopic_reduce Γ p).weight_eq Γ wt hwt).symm
+
+/-- **Changing the connecting path conjugates a based loop.** For a closed path `p` at `a` and two
+paths `γ` and `η` from `v` to `a`, the loop `η p η⁻¹` at `v` is the conjugate of the loop
+`γ p γ⁻¹` by the class of `η γ⁻¹`. -/
+theorem ofPath_comp_comp_reverse {a : Γ.V} (p : Γ.Path a a) (γ η : Γ.Path v a) :
+    ofPath ((η.comp p).comp η.reverse) =
+      ofPath (η.comp γ.reverse) * ofPath ((γ.comp p).comp γ.reverse) *
+        (ofPath (η.comp γ.reverse))⁻¹ := by
+  rw [← ofPath_reverse, ← ofPath_comp, ← ofPath_comp, ofPath_eq_iff_homotopic]
+  -- Cancelling `γ⁻¹ γ` twice reduces `η γ⁻¹ · γ p γ⁻¹ · γ η⁻¹` to `η p η⁻¹`.
+  have hc {c : Γ.V} (r : Γ.Path a c) : Path.Homotopic Γ (γ.reverse.comp (γ.comp r)) r := by
+    simpa only [Quiver.Path.comp_assoc, Quiver.Path.nil_comp] using
+      (Path.Homotopic.reverse_comp Γ γ).comp_right Γ r
+  simp only [Quiver.Path.reverse_comp, Quiver.Path.reverse_reverse, Quiver.Path.comp_assoc]
+  exact ((((((hc η.reverse).comp_left Γ p).comp_left Γ γ).comp_left Γ γ.reverse).comp_left Γ
+    η).trans ((hc _).comp_left Γ η)).symm
+
+/-- The normal closure of a family of closed paths `p i`, each based at `v` along a path to its
+start, does not depend on the choice of these connecting paths. -/
+theorem normalClosure_range_ofPath_comp_comp_reverse {ι : Sort*} {a : ι → Γ.V}
+    (p : ∀ i, Γ.Path (a i) (a i)) (γ η : ∀ i, Γ.Path v (a i)) :
+    Subgroup.normalClosure (Set.range fun i => ofPath (((γ i).comp (p i)).comp (γ i).reverse)) =
+      Subgroup.normalClosure
+        (Set.range fun i => ofPath (((η i).comp (p i)).comp (η i).reverse)) := by
+  -- Each loop of one family is a conjugate of the corresponding loop of the other family.
+  have key (γ η : ∀ i, Γ.Path v (a i)) :
+      Subgroup.normalClosure (Set.range fun i => ofPath (((γ i).comp (p i)).comp (γ i).reverse)) ≤
+        Subgroup.normalClosure
+          (Set.range fun i => ofPath (((η i).comp (p i)).comp (η i).reverse)) := by
+    refine Subgroup.normalClosure_le_normal (Set.range_subset_iff.2 fun i => ?_)
+    rw [ofPath_comp_comp_reverse _ (η i) (γ i)]
+    exact (Subgroup.normalClosure_normal).conj_mem _
+      (Subgroup.subset_normalClosure (Set.mem_range_self i)) _
+  exact le_antisymm (key γ η) (key η γ)
 
 end
 end PathGroup
