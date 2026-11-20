@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Dynamics.Billiard.NextCollision
 public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.Analysis.Calculus.DerivativeTest
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Dynamics.Billiard.Circle
+import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # Convex billiard tables of class `C^k`
@@ -47,6 +51,8 @@ in this sense are the tables on which the billiard ball map of a convex billiard
   `γ` descends to a homeomorphism of `AddCircle ℓ` onto its image, which is a Jordan curve.
 * `TauCeti.ConvexTable.deriv_deriv`: the unit tangent of a table satisfies `τ' = i κ τ`.
 * `TauCeti.ConvexTable.curvature_nonneg`: the curvature of a table is nonnegative.
+* `TauCeti.ConvexTable.curvature_shift`, `TauCeti.ConvexTable.curvature_rigidMotion`: the
+  curvature is unchanged by reparametrisation and by rotations and translations.
 * `TauCeti.ConvexTable.curvature_circle`: the circle of radius `R` has curvature `1 / R`.
 * `TauCeti.ConvexTable.coe_ne_comp_neg`: reversing the orientation of a table never gives a
   table.
@@ -170,7 +176,7 @@ theorem range_circleParam : range T.circleParam = range T := by
   rw [← QuotientAddGroup.mk_surjective.range_comp]
   exact congrArg range (funext T.circleParam_coe)
 
-theorem injective_circleParam : Injective T.circleParam := by
+theorem circleParam_injective : Injective T.circleParam := by
   intro x y hxy
   obtain ⟨s, rfl⟩ := QuotientAddGroup.mk_surjective x
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective y
@@ -182,15 +188,13 @@ theorem continuous_circleParam : Continuous T.circleParam :=
 
 /-- A table descends to a homeomorphism of the circle `AddCircle ℓ` onto its image. -/
 theorem isClosedEmbedding_circleParam : IsClosedEmbedding T.circleParam :=
-  T.continuous_circleParam.isClosedEmbedding T.injective_circleParam
+  T.continuous_circleParam.isClosedEmbedding T.circleParam_injective
 
 /-- **The boundary of a table is a Jordan curve.** -/
 theorem isJordanCurve_range : IsJordanCurve (range T) := by
-  have huniv : IsJordanCurve (univ : Set (AddCircle ℓ)) :=
-    isJordanCurve_iff.2
-      ⟨(Homeomorph.Set.univ (AddCircle ℓ)).trans
-        (AddCircle.homeomorphCircle (Fact.out : 0 < ℓ).ne')⟩
-  simpa using huniv.image T.continuous_circleParam.continuousOn T.injective_circleParam.injOn
+  rw [← T.periodic.image_Icc (Fact.out : 0 < ℓ) 0]
+  exact isJordanCurve_image_Icc (by simpa using (Fact.out : 0 < ℓ)) T.continuous.continuousOn
+    (T.periodic 0).symm (by simpa using T.injOn_Ico 0)
 
 /-! ### Curvature -/
 
@@ -232,22 +236,23 @@ theorem deriv_deriv (s : ℝ) : deriv (deriv T) s = I * T.curvature s * deriv T 
         rw [mul_conj', T.norm_deriv, ofReal_one, one_pow, one_mul]
     _ = I * T.curvature s * deriv T s := by rw [mul_assoc, hw, mul_comm]
 
-/-- **The curvature of a table is nonnegative.** The height `τ(s) × (γ t - γ s)` of the curve
-above the tangent line at `γ s` vanishes at `t = s` and is positive at every other nearby `t`, so
-`s` is a local minimum of it; its second derivative there is `κ(s)`. -/
+/-- **The curvature of a table is nonnegative.** -/
 theorem curvature_nonneg (s : ℝ) : 0 ≤ T.curvature s := by
+  -- The height `τ(s) × (γ t - γ s)` of the curve above the tangent line at `γ s` vanishes at
+  -- `t = s` and is positive at every other nearby `t`, so `s` is a local minimum of it; its second
+  -- derivative there is `κ(s)`.
   by_contra! hκ
   have hd : DifferentiableAt ℝ (deriv T) s := by
     by_contra hd
     simp [curvature_def, deriv_zero_of_not_differentiableAt hd] at hκ
   have hℓ : 0 < ℓ := Fact.out
   let φ : ℂ →L[ℝ] ℝ := imCLM.comp ((ContinuousLinearMap.mul ℝ ℂ) (conj (deriv T s)))
-  have hφ (z : ℂ) : φ z = (conj (deriv T s) * z).im := rfl
+  have hφ (z : ℂ) : φ z = (conj (deriv T s) * z).im := by simp [φ]
   -- The height `h t = φ (γ t - γ s)` has derivative `φ (τ t)`, whose derivative at `s` is `κ(s)`.
   have hh : deriv (fun t => φ (T t - T s)) = fun u => φ (deriv T u) := funext fun u =>
     (φ.hasFDerivAt.comp_hasDerivAt u ((T.hasDerivAt u).sub_const (T s))).deriv
   have hh' : deriv (fun u => φ (deriv T u)) s = T.curvature s :=
-    (φ.hasFDerivAt.comp_hasDerivAt s hd.hasDerivAt).deriv
+    (φ.hasFDerivAt.comp_hasDerivAt s hd.hasDerivAt).deriv.trans (by rw [hφ, curvature_def])
   have hh₀ : φ (deriv T s) = 0 := by rw [hφ, ← normSq_eq_conj_mul_self, ofReal_im]
   -- If `κ(s) < 0`, the second derivative test makes `s` a local maximum of the height.
   have hmax : IsLocalMax (fun t => φ (T t - T s)) s :=
@@ -256,10 +261,11 @@ theorem curvature_nonneg (s : ℝ) : 0 ≤ T.curvature s := by
   obtain ⟨t, hts, ht⟩ := (Filter.Eventually.and
     (hmax.filter_mono (nhdsWithin_le_nhds (s := Ioi s))) (Ioo_mem_nhdsGT (by linarith :
       s < s + ℓ))).exists
-  have hpos : 0 < φ (T t - T s) := T.im_conj_deriv_mul_sub_pos fun h =>
-    ht.1.ne ((AddCircle.coe_eq_coe_iff_of_mem_Ico ⟨le_rfl, by linarith⟩ ⟨ht.1.le, ht.2⟩).1 h)
-  have hts' : φ (T t - T s) ≤ φ (T s - T s) := hts
-  rw [sub_self, map_zero] at hts'
+  have hpos : 0 < φ (T t - T s) := by
+    rw [hφ]
+    exact T.im_conj_deriv_mul_sub_pos fun h =>
+      ht.1.ne ((AddCircle.coe_eq_coe_iff_of_mem_Ico ⟨le_rfl, by linarith⟩ ⟨ht.1.le, ht.2⟩).1 h)
+  simp only [sub_self, map_zero] at hts
   linarith
 
 /-! ### Operations on tables -/
@@ -278,6 +284,24 @@ def shift (c : ℝ) : ConvexTable k ℓ where
 @[simp]
 theorem shift_apply (c s : ℝ) : T.shift c s = T (s + c) := (rfl)
 
+/-- The unit tangent of the shifted table `γ (· + c)` at `s` is that of `γ` at `s + c`. -/
+@[simp]
+theorem deriv_shift (c s : ℝ) : deriv (T.shift c) s = deriv T (s + c) :=
+  deriv_comp_add_const _ c s
+
+/-- The curvature of the shifted table `γ (· + c)` at `s` is that of `γ` at `s + c`. -/
+@[simp]
+theorem curvature_shift (c s : ℝ) : (T.shift c).curvature s = T.curvature (s + c) := by
+  have h : deriv (T.shift c) = fun s => deriv T (s + c) := funext (T.deriv_shift c)
+  rw [curvature_def, curvature_def, h, deriv_comp_add_const]
+
+/-- Rotating both factors of the cross product `Im (conj z * w)` by a unit complex number does
+not change it. -/
+private theorem im_conj_mul_mul_mul (a : Circle) (z w : ℂ) :
+    (conj (a * z) * (a * w)).im = (conj z * w).im := by
+  rw [map_mul, mul_mul_mul_comm, ← normSq_eq_conj_mul_self, Circle.normSq_coe, ofReal_one,
+    one_mul]
+
 /-- The image `s ↦ a * γ s + b` of a table under the rotation by the unit complex number `a`
 followed by the translation by `b`. -/
 def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
@@ -290,12 +314,25 @@ def rigidMotion (a : Circle) (b : ℂ) : ConvexTable k ℓ where
       T.norm_deriv, one_mul]
   left_of_tangent' s t h := by
     rw [deriv_add_const, deriv_const_mul _ (T.differentiable s), add_sub_add_right_eq_sub,
-      ← mul_sub, map_mul, mul_mul_mul_comm, ← normSq_eq_conj_mul_self, Circle.normSq_coe,
-      ofReal_one, one_mul]
+      ← mul_sub, im_conj_mul_mul_mul]
     exact T.left_of_tangent' s t h
 
 @[simp]
 theorem rigidMotion_apply (a : Circle) (b : ℂ) (s : ℝ) : T.rigidMotion a b s = a * T s + b := (rfl)
+
+/-- The unit tangent of the table `a γ + b` is the unit tangent of `γ` rotated by `a`. -/
+@[simp]
+theorem deriv_rigidMotion (a : Circle) (b : ℂ) (s : ℝ) :
+    deriv (T.rigidMotion a b) s = a * deriv T s :=
+  (((T.hasDerivAt s).const_mul (a : ℂ)).add_const b).deriv
+
+/-- A rotation followed by a translation does not change the curvature of a table. -/
+@[simp]
+theorem curvature_rigidMotion (a : Circle) (b : ℂ) (s : ℝ) :
+    (T.rigidMotion a b).curvature s = T.curvature s := by
+  have h : deriv (T.rigidMotion a b) = fun s => (a : ℂ) * deriv T s :=
+    funext (T.deriv_rigidMotion a b)
+  rw [curvature_def, curvature_def, h, deriv_const_mul_field', im_conj_mul_mul_mul]
 
 /-- A table of class `C^k` regarded as a table of class `C^j` for `1 ≤ j ≤ k`. -/
 def ofLE (hj : 1 ≤ j) (hjk : j ≤ k) : ConvexTable j ℓ where
@@ -314,91 +351,79 @@ gives a table, of any regularity: the curve lies to the right of the reversed ta
 theorem coe_ne_comp_neg (T' : ConvexTable j ℓ) : ⇑T' ≠ T ∘ Neg.neg := by
   intro h
   have hℓ : 0 < ℓ := Fact.out
-  have hne : ((0 : ℝ) : AddCircle ℓ) ≠ ((-(ℓ / 2) : ℝ) : AddCircle ℓ) := fun h' => by
-    have := (AddCircle.coe_eq_coe_iff_of_mem_Ico (a := -(ℓ / 2)) (p := ℓ)
-      ⟨by linarith, by linarith⟩ ⟨le_rfl, by linarith⟩).1 h'
-    linarith
   have hne' : ((0 : ℝ) : AddCircle ℓ) ≠ ((ℓ / 2 : ℝ) : AddCircle ℓ) := fun h' => by
     have := (AddCircle.coe_eq_coe_iff_of_mem_Ico (a := 0) (p := ℓ)
       ⟨le_rfl, by linarith⟩ ⟨by linarith, by linarith⟩).1 h'
     linarith
+  have hne : ((0 : ℝ) : AddCircle ℓ) ≠ ((-(ℓ / 2) : ℝ) : AddCircle ℓ) := fun h' =>
+    hne' (by simpa using congrArg Neg.neg h')
   have h₁ := T.im_conj_deriv_mul_sub_pos hne
   have h₂ := T'.im_conj_deriv_mul_sub_pos hne'
   have hd : deriv T' 0 = -deriv T 0 := by
-    rw [h, show (T ∘ Neg.neg : ℝ → ℂ) = fun x => T (-x) from rfl, deriv_comp_neg, neg_zero]
+    rw [h, comp_def, deriv_comp_neg, neg_zero]
   rw [hd, h] at h₂
   simp only [comp_apply, neg_zero, map_neg, neg_mul, neg_im] at h₂
   linarith
 
 /-! ### The circle -/
 
-/-- The unit tangent `i exp(i s / R)` of the circle `s ↦ R exp(i s / R)`. -/
-private theorem deriv_circle_aux {R : ℝ} (hR : R ≠ 0) (s : ℝ) :
-    deriv (fun s : ℝ => (R : ℂ) * exp ((s / R : ℝ) * I)) s = I * exp ((s / R : ℝ) * I) := by
-  refine ((((hasDerivAt_id s).div_const R).ofReal_comp.mul_const I).cexp.const_mul
-    (R : ℂ)).deriv.trans ?_
-  simp only [id, ofReal_div, ofReal_one]
-  field_simp [ofReal_ne_zero.2 hR]
+attribute [local instance] Complex.finrank_real_complex_fact
 
-/-- The height of the point of parameter `t` of the circle `s ↦ R exp(i s / R)` above the tangent
-line at the point of parameter `s`. -/
-private theorem im_circle_aux (R s t : ℝ) :
-    (conj (I * exp ((s / R : ℝ) * I)) * (R * exp ((t / R : ℝ) * I) - R * exp ((s / R : ℝ) * I))).im
-      = R * (1 - Real.cos ((t - s) / R)) := by
-  rw [sub_div, Real.cos_sub]
-  generalize t / R = a
-  generalize s / R = b
-  simp [mul_im, mul_re, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im]
-  linear_combination R * Real.sin_sq_add_cos_sq b
+/-- The radius of a circle of positive perimeter `2πR` is positive. -/
+private theorem pos_of_fact {R : ℝ} [Fact (0 < 2 * Real.pi * R)] : 0 < R :=
+  pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
 
 /-- The counterclockwise **circle** `s ↦ R exp(i s / R)` of radius `R > 0` and perimeter `2πR`, a
-table of class `C^∞`: the defining quantity is `R (1 - cos ((t - s) / R))`. -/
-def circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] : ConvexTable ⊤ (2 * Real.pi * R) :=
-  have hR : 0 < R := pos_of_mul_pos_right (Fact.out : 0 < 2 * Real.pi * R) Real.two_pi_pos.le
-  { toFun s := R * exp ((s / R : ℝ) * I)
-    one_le := le_top
-    contDiff' := contDiff_const.mul <| contDiff_exp.comp <|
-      (ofRealCLM.contDiff.comp (contDiff_id.div_const R)).mul contDiff_const
-    periodic' s := by
-      simp only
-      rw [add_div, mul_div_cancel_right₀ _ hR.ne', ofReal_add, add_mul, exp_add,
-        ofReal_mul, ofReal_ofNat, exp_two_pi_mul_I, mul_one]
-    norm_deriv' s := by
-      rw [deriv_circle_aux hR.ne', norm_mul, norm_I, one_mul, norm_exp_ofReal_mul_I]
-    left_of_tangent' s t h := by
-      rw [deriv_circle_aux hR.ne', im_circle_aux]
-      refine mul_pos hR (sub_pos.2 (lt_of_le_of_ne (Real.cos_le_one _) fun hc => ?_))
-      obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 hc
-      refine h n ?_
-      rw [eq_div_iff hR.ne'] at hn
-      rw [← hn]
-      ring }
+table of class `C^∞`. It is the circle billiard table `TauCeti.StrictConvexBilliardTable.circle`. -/
+def circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] : ConvexTable ⊤ (2 * Real.pi * R) where
+  toFun := StrictConvexBilliardTable.circle (pos_of_fact (R := R))
+  one_le := le_top
+  contDiff' := by
+    rw [show ⇑(StrictConvexBilliardTable.circle (pos_of_fact (R := R))) =
+      fun s => circleMap 0 R (s / R) from funext StrictConvexBilliardTable.circle_apply]
+    exact (contDiff_circleMap 0 R).comp (contDiff_id.div_const R)
+  periodic' := by
+    simpa using (StrictConvexBilliardTable.circle (pos_of_fact (R := R))).periodic
+  norm_deriv' := (StrictConvexBilliardTable.circle (pos_of_fact (R := R))).norm_deriv
+  left_of_tangent' s t h := by
+    have hR : 0 < R := pos_of_fact
+    -- The height of `χ t` above the tangent line at `χ s` is `R (1 - cos ((t - s) / R))`.
+    have hd := StrictConvexBilliardTable.areaForm_deriv_circle_sub (hR := hR) s t s
+    rw [Complex.areaForm, sub_self, zero_div, Real.cos_zero] at hd
+    rw [hd]
+    refine mul_pos hR (sub_pos.2 (lt_of_le_of_ne (Real.cos_le_one _) fun hc => ?_))
+    obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 hc
+    refine h n ?_
+    rw [eq_div_iff hR.ne'] at hn
+    rw [← hn]
+    ring
 
 @[simp]
 theorem circle_apply (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
-    circle R s = R * exp ((s / R : ℝ) * I) := (rfl)
+    circle R s = circleMap 0 R (s / R) :=
+  StrictConvexBilliardTable.circle_apply s
+
+/-- The unit tangent of the circle `s ↦ R exp(i s / R)` is `i exp(i s / R)`. -/
+@[simp]
+theorem deriv_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
+    deriv (circle R) s = circleMap 0 1 (s / R) * I :=
+  StrictConvexBilliardTable.deriv_circle s
 
 /-- The circle of radius `R` has constant curvature `1 / R`. -/
 @[simp]
 theorem curvature_circle (R : ℝ) [Fact (0 < 2 * Real.pi * R)] (s : ℝ) :
     (circle R).curvature s = R⁻¹ := by
-  have hR : R ≠ 0 := by rintro rfl; simpa using (Fact.out : 0 < 2 * Real.pi * 0)
-  have hd : deriv (circle R) = fun s => I * exp ((s / R : ℝ) * I) := by
-    have hc : ⇑(circle R) = fun s : ℝ => (R : ℂ) * exp ((s / R : ℝ) * I) :=
-      funext (circle_apply R)
-    rw [hc]
-    exact funext (deriv_circle_aux hR)
-  have h := (((hasDerivAt_id s).div_const R).ofReal_comp.mul_const I).cexp.const_mul I
-  simp only [id] at h
+  have hd : deriv (circle R) = fun s => circleMap 0 1 (s / R) * I := funext (deriv_circle R)
+  have h := (((hasDerivAt_circleMap 0 1 (s / R)).scomp s
+    ((hasDerivAt_id s).div_const R)).mul_const I)
+  simp only [comp_def, id] at h
   rw [curvature_def, hd, h.deriv]
-  beta_reduce
+  simp only [circleMap_zero]
   generalize s / R = b
   simp [mul_im, mul_re, exp_ofReal_mul_I_re, exp_ofReal_mul_I_im]
   linear_combination R⁻¹ * Real.sin_sq_add_cos_sq b
 
 /-! ### Comparison with strictly convex billiard tables -/
-
-attribute [local instance] Complex.finrank_real_complex_fact
 
 /-- A convex table is a strictly convex billiard table, of period `ℓ`, for the standard orientation
 of `ℂ`, whose area form is the cross product `(a, b) ↦ Im (conj a * b)`. -/
