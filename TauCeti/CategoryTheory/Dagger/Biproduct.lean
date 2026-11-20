@@ -93,8 +93,8 @@ theorem isUnitary_conePointUniqueUpToIso_hom {d : Bicone F} (hc : c.IsOrthogonal
     IsUnitary (hc'.conePointUniqueUpToIso hd').hom := by
   rw [Iso.isUnitary_hom_iff]
   refine hc'.hom_ext fun ⟨j⟩ => ?_
-  rw [IsLimit.conePointUniqueUpToIso_inv_comp, Bicone.toCone_π_app_mk, Bicone.toCone_π_app_mk,
-    ← hc.dagger_ι, ← dagger_comp, ι_comp_conePointUniqueUpToIso_hom, hd.dagger_ι]
+  rw [IsLimit.conePointUniqueUpToIso_inv_comp]
+  simp [← hc.dagger_ι, ← dagger_comp, hd.dagger_ι]
 
 end IsOrthogonal
 

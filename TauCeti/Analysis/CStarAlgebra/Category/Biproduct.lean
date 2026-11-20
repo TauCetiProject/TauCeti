@@ -92,8 +92,8 @@ private theorem ι_comp_gram_asHom (c : Bicone F) (k : J) :
   rw [← dagger_dagger (c.ι k ≫ _), dagger_comp, ← End.star_asHom,
     (gram_nonneg c).isSelfAdjoint.star_eq, gram_asHom_comp_dagger_ι]
 
-/-- The positive square root of `∑ j, π_j† π_j`, the automorphism of the point of a finite
-bicone that makes it orthogonal. -/
+/-- The positive square root of `∑ j, π_j† π_j`, an automorphism of the point when `c` is a
+limit bicone, used to make `c` orthogonal. -/
 private def sqrtGram (c : Bicone F) : End c.pt :=
   CFC.sqrt (gram c)
 

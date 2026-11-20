@@ -623,7 +623,6 @@ carries the inclusions of the first bicone to those of the second. -/
 theorem ι_comp_conePointUniqueUpToIso_hom {c d : Bicone F} (hc : IsLimit c.toCone)
     (hd : IsLimit d.toCone) (j : J) : c.ι j ≫ (hc.conePointUniqueUpToIso hd).hom = d.ι j :=
   hd.hom_ext fun ⟨k⟩ => by
-    rw [Category.assoc, IsLimit.conePointUniqueUpToIso_hom_comp, Bicone.toCone_π_app_mk,
-      Bicone.toCone_π_app_mk, Bicone.ι_π, Bicone.ι_π]
+    simpa [Bicone.ι_π] using c.ι j ≫= hc.conePointUniqueUpToIso_hom_comp hd ⟨k⟩
 
 end CategoryTheory.Limits.Bicone
