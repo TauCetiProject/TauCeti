@@ -32,7 +32,7 @@ each of their edges at least twice remain in the expansion of `E tr Sᵏ`, and t
 Under a bound `B` on the `2k`th absolute moments of the entries, every word contributes at most `B`
 before normalization, and there are at most `|p|ᵃ aᵏ |n|ᵇ bᵏ` words using at most `a` rows and `b`
 columns. These estimates suppress the words with fewer than `k + 1` vertices as the dimensions
-grow.
+grow with `p / n` bounded.
 
 The entries may be real or complex and need not be identically distributed; the dimensions are
 arbitrary finite types.

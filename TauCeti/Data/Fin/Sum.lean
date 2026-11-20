@@ -42,8 +42,10 @@ two- or three-variable object can rewrite rather than unfold them.
   equivalence from the sum with a finite complement.
 * `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
   type equivalent to `Fin n`.
-* `TauCeti.finSumFinInterleaveEquiv`: the interleaving `Fin k ⊕ Fin k ≃ Fin (2 * k)`,
-  `inl t ↦ 2 * t`, `inr t ↦ 2 * t + 1`, with its rotation formulas
+* `TauCeti.interleaveIndex`: the embedding `Fin a ⊕ Fin b ↪ Fin (2 * max a b)` placing the left
+  summand in the even positions and the right summand in the odd positions.
+* `TauCeti.finSumFinInterleaveEquiv`: for `a = b = k` this embedding is the interleaving
+  `Fin k ⊕ Fin k ≃ Fin (2 * k)`, `inl t ↦ 2 * t`, `inr t ↦ 2 * t + 1`, with its rotation formulas
   `TauCeti.finRotate_finSumFinInterleaveEquiv_inl` and
   `TauCeti.finRotate_finSumFinInterleaveEquiv_inr`: one step of `finRotate (2 * k)` moves from
   `2 * t` to `2 * t + 1`, and from `2 * t + 1` to the even position of `finRotate k t`.
@@ -133,10 +135,28 @@ theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : �
     (hn : ∑ i, m i = n) : Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
   ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
 
+/-- The disjoint even/odd positions for two finite coordinate blocks. -/
+def interleaveIndex (a b : ℕ) : Fin a ⊕ Fin b ↪ Fin (2 * max a b) where
+  toFun := Sum.elim
+    (fun i ↦ ⟨2 * i.val, by have := i.isLt; have := Nat.le_max_left a b; omega⟩)
+    (fun i ↦ ⟨2 * i.val + 1, by have := i.isLt; have := Nat.le_max_right a b; omega⟩)
+  inj' := by
+    rintro (i | i) (j | j) h <;> simp only [Sum.elim_inl, Sum.elim_inr, Fin.mk.injEq] at h
+    · exact congrArg Sum.inl (Fin.ext (by omega))
+    · omega
+    · omega
+    · exact congrArg Sum.inr (Fin.ext (by omega))
+
+@[simp] theorem interleaveIndex_inl_val (a b : ℕ) (i : Fin a) :
+    (interleaveIndex a b (.inl i)).val = 2 * i.val := (rfl)
+
+@[simp] theorem interleaveIndex_inr_val (a b : ℕ) (i : Fin b) :
+    (interleaveIndex a b (.inr i)).val = 2 * i.val + 1 := (rfl)
+
 /-- The interleaving of two copies of `Fin k` into `Fin (2 * k)`: `inl t ↦ 2 * t` and
-`inr t ↦ 2 * t + 1`. -/
+`inr t ↦ 2 * t + 1`. It is the embedding `TauCeti.interleaveIndex k k`, which is onto. -/
 def finSumFinInterleaveEquiv (k : ℕ) : Fin k ⊕ Fin k ≃ Fin (2 * k) where
-  toFun := Sum.elim (fun t ↦ ⟨2 * t, by omega⟩) (fun t ↦ ⟨2 * t + 1, by omega⟩)
+  toFun t := Fin.cast (by rw [max_self]) (interleaveIndex k k t)
   invFun s := if s.val % 2 = 0 then .inl ⟨s / 2, by omega⟩ else .inr ⟨s / 2, by omega⟩
   left_inv := by
     rintro (t | t)
