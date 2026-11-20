@@ -68,10 +68,12 @@ The proof is the classical one (Evans, §6.3.2, Theorems 4 and 5).
   directions (`TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq` and
   `TauCeti.Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm`), and those with a tangential
   direction lie in `L²(Ω)` by the previous step. Splitting each direction along `ν` and the
-  hyperplane leaves `∂_ν ∂_ν ∂_ν u`. Differentiating the equation along `ν`, which needs no
-  boundary condition, shows that `∂_ν u ∈ H¹(Ω)` solves `-∂ᵢ(aⁱʲ ∂ⱼ(∂_ν u)) = F` in `Ω` against
-  test functions, with `F ∈ L²(Ω)` when `f ∈ H¹(Ω)`. The tangential derivatives of the gradient of
-  `∂_ν u` lie in `L²(Ω)`, so the normal step above, applied to `∂_ν u`, gives `∂_ν ∂_ν ∂_ν u`.
+  hyperplane leaves `∂_ν ∂_ν ∂_ν u`
+  (`TauCeti.Wkp.exists_hasWeakLineDerivOn_inner_iteratedGradient_one_of_normal_of_tangential`).
+  Differentiating the equation along `ν`, which needs no boundary condition, shows that
+  `∂_ν u ∈ H¹(Ω)` solves `-∂ᵢ(aⁱʲ ∂ⱼ(∂_ν u)) = F` in `Ω` against test functions, with
+  `F ∈ L²(Ω)` when `f ∈ H¹(Ω)`. The tangential derivatives of the gradient of `∂_ν u` lie in
+  `L²(Ω)`, so the normal step above, applied to `∂_ν u`, gives `∂_ν ∂_ν ∂_ν u`.
 
 ## Main declarations
 
@@ -318,34 +320,15 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
     ∃ G : Lp ℝ 2 (mu.restrict Omega),
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient (u : W1p mu Omega 2) x, y⟫_ℝ) G w := by
   set U : W1p mu Omega 2 := (u : W1p mu Omega 2)
-  set P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z => z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν
   -- `D y w`: the derivative `∂_y u` has a weak derivative in the direction `w` in `L²(Ω)`.
   let D : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → Prop := fun y w =>
     ∃ G : Lp ℝ 2 (mu.restrict Omega),
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G w
-  -- `D` is linear in each argument.
-  have hadd_dir : ∀ {y w₁ w₂}, D y w₁ → D y w₂ → D y (w₁ + w₂) := by
-    rintro y w₁ w₂ ⟨G₁, h₁⟩ ⟨G₂, h₂⟩
-    exact ⟨G₁ + G₂, (h₁.add_direction h₂).congr_ae_deriv (Lp.coeFn_add G₁ G₂).symm⟩
-  have hsmul_dir : ∀ {y w} (r : ℝ), D y w → D y (r • w) := by
-    rintro y w r ⟨G, h⟩
-    exact ⟨r • G, (h.smul_direction r).congr_ae_deriv (Lp.coeFn_smul r G).symm⟩
-  have hadd : ∀ {y₁ y₂ w}, D y₁ w → D y₂ w → D (y₁ + y₂) w := by
-    rintro y₁ y₂ w ⟨G₁, h₁⟩ ⟨G₂, h₂⟩
-    refine ⟨G₁ + G₂, ((h₁.add h₂).congr_ae (Eventually.of_forall fun x => ?_))
-      |>.congr_ae_deriv (Lp.coeFn_add G₁ G₂).symm⟩
-    simp [inner_add_right]
-  have hsmul : ∀ {y w} (r : ℝ), D y w → D (r • y) w := by
-    rintro y w r ⟨G, h⟩
-    refine ⟨r • G, ((h.const_smul r).congr_ae (Eventually.of_forall fun x => ?_))
-      |>.congr_ae_deriv (Lp.coeFn_smul r G).symm⟩
-    simp [real_inner_smul_right]
   -- The symmetry of `D` that comes from commuting weak derivatives.
   have hsymm : ∀ {y w}, D y w → D w y := by
     rintro y w ⟨G, hG⟩
     exact ⟨G, W1p.hasWeakLineDerivOn_inner_gradient_comm hG⟩
   -- Tangential directions: the difference-quotient estimate.
-  have hP : ∀ z, ⟪P z, ν⟫_ℝ = 0 := fun z => real_inner_sub_div_norm_sq_smul_self_eq_zero z ν
   have htan : ∀ y {τ}, ⟪τ, ν⟫_ℝ = 0 → D y τ := by
     intro y τ hτ
     obtain ⟨G, -, hG⟩ :=
@@ -354,12 +337,10 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
   -- The normal direction: the equation and ellipticity.
   have hνν : D ν ν := exists_hasWeakLineDerivOn_inner_gradient_normal hν ha hK
     hu.energyFormH1_ofTestFunctionₗ fun y _ hτ => htan y hτ
-  -- Every first derivative has a normal derivative, and then a derivative in every direction.
-  have hyν : ∀ y, D y ν := fun y => by
-    have h := hadd (hsmul (⟪y, ν⟫_ℝ / ‖ν‖ ^ 2) hνν) (hsymm (htan ν (hP y)))
-    simpa only [P, add_sub_cancel] using h
-  have h := hadd_dir (hsmul_dir (⟪w, ν⟫_ℝ / ‖ν‖ ^ 2) (hyν y)) (htan y (hP w))
-  simpa only [P, add_sub_cancel] using h
+  -- `∂_ν u` has a derivative in every direction, so every first derivative has a normal
+  -- derivative, and then a derivative in every direction.
+  have hνy : ∀ y, D ν y := exists_hasWeakLineDerivOn_of_normal_of_tangential hνν fun _ => htan ν
+  exact exists_hasWeakLineDerivOn_of_normal_of_tangential (hsymm (hνy y)) (fun _ => htan y) w
 
 /-- **`H²` regularity up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by every
 translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `a` be
@@ -601,61 +582,6 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_hasWeakLineDerivOn_gra
 
 /-! ### Third derivatives up to the boundary -/
 
-omit [DecidableEq ι] in
-/-- **Third derivatives from the tangential ones and the purely normal one.** Let
-`U ∈ W^{2,2}(Ω)` with weak Hessian `D²U` and let `ν ≠ 0`. Suppose that every entry `⟪D²U v, τ⟫`
-with `τ` orthogonal to `ν` has an `L²(Ω)` weak derivative in every direction, and that
-`⟪D²U ν, ν⟫` has one in the direction `ν`. Then every entry `⟪D²U w, v⟫` has an `L²(Ω)` weak
-derivative in every direction. -/
-private theorem exists_hasWeakLineDerivOn_inner_iteratedGradient_one (U : Wkp mu Omega 2 2)
-    (htan : ∀ τ v w, ⟪τ, ν⟫_ℝ = 0 → ∃ G : Lp ℝ 2 (mu.restrict Omega),
-      HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 U x v, τ⟫_ℝ) G w)
-    (hnor : ∃ G : Lp ℝ 2 (mu.restrict Omega),
-      HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 U x ν, ν⟫_ℝ) G ν)
-    (v w z : EuclideanSpace ℝ ι) : ∃ G : Lp ℝ 2 (mu.restrict Omega),
-      HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 U x w, v⟫_ℝ) G z := by
-  -- `T v w z`: the entry `⟪D²U w, v⟫` has an `L²(Ω)` weak derivative in the direction `z`.
-  let T : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → Prop := fun v w z =>
-    ∃ G : Lp ℝ 2 (mu.restrict Omega),
-      HasWeakLineDerivOn mu Omega (fun x => ⟪Wkp.iteratedGradient 1 U x w, v⟫_ℝ) G z
-  -- `T` is symmetric in `v, w`, since the weak Hessian is, and in `w, z`, since weak derivatives
-  -- commute.
-  have hvw : ∀ {v w z}, T v w z → T w v z := by
-    rintro v w z ⟨G, h⟩
-    exact ⟨G, h.congr_ae (Wkp.inner_iteratedGradient_one_apply_ae_eq U w v)⟩
-  have hwz : ∀ {v w z}, T v w z → T v z w := by
-    rintro v w z ⟨G, h⟩
-    exact ⟨G, Wkp.hasWeakLineDerivOn_inner_iteratedGradient_one_comm U h⟩
-  -- `T` is linear in `w` and in `z`.
-  have hadd : ∀ {v w₁ w₂ z}, T v w₁ z → T v w₂ z → T v (w₁ + w₂) z := by
-    rintro v w₁ w₂ z ⟨G₁, h₁⟩ ⟨G₂, h₂⟩
-    refine ⟨G₁ + G₂, ((h₁.add h₂).congr_ae (Eventually.of_forall fun x => ?_))
-      |>.congr_ae_deriv (Lp.coeFn_add G₁ G₂).symm⟩
-    simp [inner_add_left]
-  have hsmul : ∀ {v w z} (r : ℝ), T v w z → T v (r • w) z := by
-    rintro v w z r ⟨G, h⟩
-    refine ⟨r • G, ((h.const_smul r).congr_ae (Eventually.of_forall fun x => ?_))
-      |>.congr_ae_deriv (Lp.coeFn_smul r G).symm⟩
-    simp [real_inner_smul_left]
-  have hadd_dir : ∀ {v w z₁ z₂}, T v w z₁ → T v w z₂ → T v w (z₁ + z₂) := by
-    rintro v w z₁ z₂ ⟨G₁, h₁⟩ ⟨G₂, h₂⟩
-    exact ⟨G₁ + G₂, (h₁.add_direction h₂).congr_ae_deriv (Lp.coeFn_add G₁ G₂).symm⟩
-  have hsmul_dir : ∀ {v w z} (r : ℝ), T v w z → T v w (r • z) := by
-    rintro v w z r ⟨G, h⟩
-    exact ⟨r • G, (h.smul_direction r).congr_ae_deriv (Lp.coeFn_smul r G).symm⟩
-  -- Split every direction into its normal part and its part `P z` orthogonal to `ν`.
-  set P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z => z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν
-  have hP : ∀ z, ⟪P z, ν⟫_ℝ = 0 := fun z => real_inner_sub_div_norm_sq_smul_self_eq_zero z ν
-  have hνν : ∀ v, T v ν ν := fun v => by
-    have h := hadd (hsmul (⟪v, ν⟫_ℝ / ‖ν‖ ^ 2) hnor) (hvw (htan (P v) ν ν (hP v)))
-    simpa only [P, add_sub_cancel] using hvw h
-  have hwν : ∀ v w, T v w ν := fun v w => by
-    have h := hadd (hsmul (⟪w, ν⟫_ℝ / ‖ν‖ ^ 2) (hνν v)) (hvw (htan (P w) v ν (hP w)))
-    simpa only [P, add_sub_cancel] using h
-  have h := hadd_dir (hsmul_dir (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) (hwν v w))
-    (hwz (hvw (htan (P z) v w (hP z))))
-  simpa only [P, add_sub_cancel] using h
-
 /-- **The purely normal third derivative.** Let `ν ≠ 0`, let `a` be uniformly elliptic and
 bounded on `Ω`, with entries smooth on `Ω`, `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form and the
 first derivatives of its entries Lipschitz on `Ω`, and let `u ∈ H¹₀(Ω)` be a weak solution of
@@ -762,8 +688,8 @@ theorem UniformlyEllipticOn.exists_value_eq_value_of_mapsTo (hν : ν ≠ 0)
   refine Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn b _ 2 fun i => ?_
   obtain ⟨d, hd, hdg⟩ := Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq U (b i)
   obtain ⟨D, hD⟩ := W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn d b fun k j => by
-    obtain ⟨G, hG⟩ := exists_hasWeakLineDerivOn_inner_iteratedGradient_one U htan hnor
-      (b i) (b j) (b k)
+    obtain ⟨G, hG⟩ := U.exists_hasWeakLineDerivOn_inner_iteratedGradient_one_of_normal_of_tangential
+      hnor htan (b i) (b j) (b k)
     exact ⟨G, hG.congr_ae (hdg (b j)).symm⟩
   refine ⟨D, ?_⟩
   rw [Wkp.value_succ, hD, Wkp.value_one d, ← hval]
