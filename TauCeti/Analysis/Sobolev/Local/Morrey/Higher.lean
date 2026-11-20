@@ -47,6 +47,7 @@ maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFi
 
 * `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`: `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`, and
   `TauCeti.MemWkpLoc.contDiffOn_of_continuousOn`: every continuous representative is `Cᵏ`.
+* `TauCeti.MemWkpLoc.memLpLoc_top`: `W^{1,p}_loc ⊆ L^∞_loc` for `p > 2`.
 * `TauCeti.MemWkpLoc.exists_dist_iteratedFDeriv_le`: the local Morrey inequality for the top
   derivative.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`: Hölder continuity of the
@@ -102,13 +103,20 @@ theorem MemWkpLoc.contDiffOn_of_continuousOn (hp : 2 < p) (hu : MemWkpLoc p Ω (
   obtain ⟨g', hg', hug'⟩ := hu.exists_contDiffOn_ae_eq hp
   exact hg'.congr (Measure.eqOn_open_of_ae_eq (hug.symm.trans hug') Ω.isOpen hg hg'.continuousOn)
 
+/-- **`W^{1,p}_loc` is locally bounded for `p > 2`.** A map `u ∈ MemWkpLoc p Ω 1` agrees almost
+everywhere on `Ω` with a continuous map, by Morrey's embedding, so it is locally `L^∞` on `Ω`. -/
+theorem MemWkpLoc.memLpLoc_top (hp : 2 < p) (hu : MemWkpLoc p Ω 1 u) : MemLpLoc ⊤ Ω u := by
+  obtain ⟨g, hg, hug⟩ := (hu : MemWkpLoc p Ω (0 + 1) u).exists_contDiffOn_ae_eq hp
+  exact hg.continuousOn.memLpLoc.congr_ae hug.symm
+
 /-- The `k`-th derivative of a `Cᵏ` representative of `u ∈ MemWkpLoc p Ω (k + 1)` lies in
 `MemWkpLoc p Ω 1`, is continuous on `Ω`, and therefore equals its precise representative there. -/
 private theorem iteratedFDeriv_memWkpLoc_one_and_eqOn (hu : MemWkpLoc p Ω (k + 1) u)
     (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
     MemWkpLoc p Ω 1 (iteratedFDeriv ℝ k g) ∧
       EqOn (preciseRepresentative volume (iteratedFDeriv ℝ k g)) (iteratedFDeriv ℝ k g) Ω := by
-  have h1 := hu.iteratedFDeriv_of_contDiffOn hg hug
+  have h1 := hu.iteratedFDeriv_of_contDiffOn (by rw [Opens.interior_coe])
+    (by rwa [Opens.interior_coe]) hug
   have hcont : ContinuousOn (iteratedFDeriv ℝ k g) Ω :=
     ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen le_rfl
   exact ⟨h1, eqOn_preciseRepresentative_of_continuousOn Ω.isOpen

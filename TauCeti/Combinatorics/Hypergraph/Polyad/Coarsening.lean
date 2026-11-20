@@ -41,6 +41,11 @@ noncomputable def coarsen (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (
     Polyad3 S :=
   P.map (Finpartition.refinementParent hV) f
 
+/-- Coarsening a polyad is mapping along `Finpartition.refinementParent` and `f`. -/
+theorem coarsen_def (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ) :
+    P.coarsen hV f = P.map (Finpartition.refinementParent hV) f :=
+  (rfl)
+
 @[simp]
 theorem coarsen_c₀ (P : Polyad3 T) (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ) :
     (P.coarsen hV f).c₀ = (Finpartition.refinementParent hV ⟨P.c₀, P.hc₀⟩).val := by

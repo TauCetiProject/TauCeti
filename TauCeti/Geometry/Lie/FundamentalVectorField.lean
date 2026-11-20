@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.Diffeomorph.Tangent
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -49,8 +50,13 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.fundamentalVectorField_prod_of_smul_eq`: for an action on `M × N` through
   homomorphisms `φ`, `ψ` to groups acting on `M` and `N`, such as the factorwise action of a
   product group, `ξ_{M × N}` is the product of `(dφ ξ)_M` and `(dψ ξ)_N`.
+* `TauCeti.mfderiv_fundamentalVectorField_eq_zero_of_smul_invariant`,
+  `TauCeti.mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant`: the derivative of an
+  invariant map vanishes on fundamental vector fields.
 * `TauCeti.mfderiv_fundamentalVectorField_of_map_smul`: an equivariant map `f : M → N` sends
   `ξ_M` to `ξ_N`.
+* `TangentBundle.mfderiv_proj_fundamentalVectorField`: the fundamental vector field `ξ_{TM}` of the
+  tangent-lifted action covers `ξ_M`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
 * `TauCeti.mulInvariantExp_smul_smul_eq_iff`: `exp (t ξ) • x = x` for every `t` exactly when
@@ -73,6 +79,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
   exactly when every `exp (t ξ)` acts trivially.
 * `TauCeti.InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot`: for a faithful action,
   `ξ ↦ ξ_M` is injective.
+* `TauCeti.finiteDimensional_of_isotropy_fundamental_eq_bot`: a Lie group acting locally freely
+  at a point of a finite-dimensional manifold is finite-dimensional.
 
 ## References
 
@@ -182,6 +190,45 @@ theorem mfderiv_fundamentalVectorField_of_map_smul {E'' : Type*} [NormedAddCommG
   have hcomp : (f ∘ fun g : G => g • x) = fun g : G => g • f x := funext hfx
   rw [fundamentalVectorField_apply, fundamentalVectorField_apply, ← hcomp]
   exact (mfderiv_comp_apply_of_eq (1 : G) hf horbit (one_smul G x) ξ).symm
+
+/-- The fundamental vector field of the tangent-lifted action covers the fundamental vector field
+of the action on the base: `dπ(ξ_{TM}(v)) = ξ_M(π v)`. -/
+theorem _root_.TangentBundle.mfderiv_proj_fundamentalVectorField [IsManifold I ∞ G]
+    [IsManifold I' 1 M] [ContMDiffConstSMul I' ∞ G M] [ContMDiffSMul I I' ∞ G M]
+    (ξ : GroupLieAlgebra I G) (v : TangentBundle I' M) :
+    mfderiv I'.tangent I' (π E' (TangentSpace I')) v (fundamentalVectorField I'.tangent ξ v) =
+      fundamentalVectorField I' ξ v.proj :=
+  mfderiv_fundamentalVectorField_of_map_smul
+    ((contMDiff_proj (n := 1) _).mdifferentiableAt one_ne_zero)
+    ((ContMDiffSMul.contMDiff_smul_const (n := ∞) v).mdifferentiableAt (by simp))
+    (fun g ↦ TangentBundle.proj_smul g v) ξ
+
+/-- **Invariant maps are constant along fundamental vector fields.** If `f (g • x) = f x` for
+every `g`, and `f` and the orbit map of `x` are differentiable, then the derivative of `f` at `x`
+vanishes on `ξ_M(x)`. -/
+theorem mfderiv_fundamentalVectorField_eq_zero_of_smul_invariant {E'' : Type*}
+    [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {H'' : Type*} [TopologicalSpace H'']
+    {I'' : ModelWithCorners 𝕜 E'' H''} {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]
+    {f : M → N} {x : M} (hf : MDifferentiableAt I' I'' f x)
+    (horbit : MDifferentiableAt I I' (fun g : G => g • x) 1) (hfx : ∀ g : G, f (g • x) = f x)
+    (ξ : GroupLieAlgebra I G) :
+    mfderiv I' I'' f x (fundamentalVectorField I' ξ x) = 0 := by
+  have hcomp : (f ∘ fun g : G => g • x) = fun _ : G => f x := funext hfx
+  rw [fundamentalVectorField_apply, ← mfderiv_comp_apply_of_eq (1 : G) hf horbit (one_smul G x),
+    hcomp, mfderiv_const]
+  -- The zero continuous linear map evaluates to zero by definition.
+  rfl
+
+/-- **Invariant functions are constant along fundamental vector fields.** If a function `f` to a
+normed space satisfies `f (g • x) = f x` for every `g`, and `f` and the orbit map of `x` are
+differentiable, then `df_x(ξ_M(x)) = 0`. -/
+theorem mvfderiv_fundamentalVectorField_eq_zero_of_smul_invariant {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : M → F} {x : M} (hf : MDifferentiableAt I' 𝓘(𝕜, F) f x)
+    (horbit : MDifferentiableAt I I' (fun g : G => g • x) 1) (hfx : ∀ g : G, f (g • x) = f x)
+    (ξ : GroupLieAlgebra I G) :
+    mvfderiv I' f x (fundamentalVectorField I' ξ x) = 0 := by
+  rw [mvfderiv, ContinuousLinearMap.comp_apply,
+    mfderiv_fundamentalVectorField_eq_zero_of_smul_invariant hf horbit hfx ξ, map_zero]
 
 /-- For a `C^n` action, the fundamental vector field of `ξ` is a `C^m` vector field when
 `m + 1 ≤ n`. -/
@@ -408,7 +455,8 @@ theorem tangentRepresentation_fundamentalVectorField [LieGroup I 1 G] {x : M}
   -- `mfderiv_smul_fundamentalVectorField` lands in `T_{g • x} M`; both tangent spaces are the
   -- model space `E'`, so the value at `g • x` is transported to `x` along `g • x = x`.
   exact (mfderiv_smul_fundamentalVectorField (g : G) ξ x).trans (congrArg
-    (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap (g : G) ξ) y : E')) g.2)
+    (fun y ↦ (fundamentalVectorField I' (Lie.adjointContinuousLinearMap
+        (g : G) ξ) y : E')) g.property)
 
 /-- **The exponential flow.** For every `x`, the curve `t ↦ exp(t ξ) • x` is an integral curve of
 the fundamental vector field `ξ_M`. -/
@@ -679,5 +727,26 @@ theorem InfinitesimalAction.ker_toLinearMap_fundamental_eq_bot [FaithfulSMul G M
 end Kernel
 
 end InfinitesimalAction
+
+section FiniteDimensional
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+/-- **A Lie group acting locally freely at a point of a finite-dimensional manifold is
+finite-dimensional.** This is `InfinitesimalAction.finiteDimensional_of_isotropy_eq_bot` for the
+fundamental vector fields, read on the model space `E` of `G`. -/
+theorem finiteDimensional_of_isotropy_fundamental_eq_bot {x : M}
+    (hfree : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) :
+    FiniteDimensional ℝ E :=
+  have := (InfinitesimalAction.fundamental I G I' M).finiteDimensional_of_isotropy_eq_bot x hfree
+  (tangentSpaceCastModel I (1 : G)).toLinearEquiv.finiteDimensional
+
+end FiniteDimensional
 
 end TauCeti

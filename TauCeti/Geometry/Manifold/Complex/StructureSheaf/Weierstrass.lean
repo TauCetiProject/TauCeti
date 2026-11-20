@@ -191,7 +191,7 @@ theorem isDistinguishedAt_monicOfCoeff_iff {x₀ : E} {d : ℕ}
         (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ↔
       ∀ i, eval 𝓘(ℂ, E) E x₀ (c i) = 0 := by
   refine ⟨fun h i ↦ ?_, fun hc ↦ ⟨⟨fun {n} hn ↦ ?_⟩, TauCeti.Polynomial.monic_monicOfCoeff c⟩⟩
-  · have hmem := h.mem (n := (i : ℕ)) (by simp [i.2])
+  · have hmem := h.mem (n := (i : ℕ)) (by simp [i.isLt])
     rwa [TauCeti.Polynomial.coeff_monicOfCoeff, maximalIdeal_stalk, RingHom.mem_ker] at hmem
   · rw [TauCeti.Polynomial.natDegree_monicOfCoeff] at hn
     rw [maximalIdeal_stalk, RingHom.mem_ker, ← Fin.val_mk hn,

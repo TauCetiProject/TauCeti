@@ -32,14 +32,24 @@ and avoid exposing the definitional equality of the objects being transported.
   horizontal edges gives commutativity after moving the conjugations to the vertical edges.
 * `TauCeti.eqToHom_eq_iso_hom_map_eqToHom`: transport along an index equality is conjugate, through
   identifications `Y i ≅ F.obj (X i)`, to the image under a functor `F` of the transport.
+* `TauCeti.eqToIso_conjugate_trans`: conjugating an isomorphism in two stages by `eqToIso` agrees
+  with conjugating along the composite object equalities.
 * `CategoryTheory.Functor.map_heq`: a functor sends morphisms which agree up to equalities of their
   endpoints to morphisms which agree in the same way.
+* `CategoryTheory.Functor.eqToHom_conjugate_map_conjugate`: transporting a morphism along object
+  equalities, applying a functor, and transporting along equalities of the images agrees with
+  applying the functor and transporting directly along the composed equalities.
 * `CategoryTheory.Functor.map_comp_eqToHom_of_isThin`: on a thin category, the images under a
   functor of two morphisms between equal endpoints agree up to the transports along those
   equalities.
 * `CategoryTheory.Functor.map_homOfLE_eq` and `CategoryTheory.Functor.unop_map_homOfLE_eq`: a
   functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to the
   identifications of the endpoints.
+* `CategoryTheory.Functor.eqToHom_conjugate_map_eqToHom_conjugate`: transporting `F.map` of a
+  conjugated morphism back along the induced object equalities recovers the conjugate of `F.map`.
+* `CategoryTheory.Functor.map_comp_eq_of_eqToHom_conjugate`: a commuting triangle of conjugated
+  images under a functor `F` after an epimorphism yields equality of the corresponding images under
+  `F`.
 -/
 
 public section
@@ -135,6 +145,16 @@ theorem eqToHom_eq_iso_hom_map_eqToHom {ι C D : Type*} [Category* C] [Category*
   subst h
   simp
 
+/-- **Two-stage transport of an isomorphism**: conjugating `e : Y ≅ Z` by `eqToIso` along
+`X = Y` and `Z = V`, and then along `W = X` and `V = U`, agrees with conjugating along the
+composite equalities `W = Y` and `Z = U`. -/
+theorem eqToIso_conjugate_trans {C : Type*} [Category* C] {U V W X Y Z : C}
+    (h₁ : W = X) (h₂ : X = Y) (e : Y ≅ Z) (h₃ : Z = V) (h₄ : V = U) :
+    eqToIso (h₁.trans h₂) ≪≫ e ≪≫ eqToIso (h₃.trans h₄) =
+      eqToIso h₁ ≪≫ (eqToIso h₂ ≪≫ e ≪≫ eqToIso h₃) ≪≫ eqToIso h₄ := by
+  subst h₁ h₂ h₃ h₄
+  simp
+
 end TauCeti
 
 namespace CategoryTheory.Functor
@@ -146,6 +166,18 @@ theorem map_heq {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D) {X Y X' 
     F.map f ≍ F.map f' := by
   subst hX hY
   rw [eq_of_heq h]
+
+/-- Transporting a morphism along object equalities, applying a functor `F`, and transporting along
+equalities of the images agrees with applying `F` and transporting directly along the composed
+equalities. -/
+theorem eqToHom_conjugate_map_conjugate {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D)
+    {X X' Y Y' : C} {A B : D} (hX : X = X') (hY : Y = Y')
+    (hA : A = F.obj X) (hB : B = F.obj Y) (f : X' ⟶ Y') :
+    eqToHom hA ≫ F.map (eqToHom hX ≫ f ≫ eqToHom hY.symm) ≫ eqToHom hB.symm =
+      eqToHom (hA.trans (congrArg F.obj hX)) ≫ F.map f ≫
+        eqToHom (hB.trans (congrArg F.obj hY)).symm := by
+  subst hX hY hA hB
+  simp
 
 /-- On a thin category, such as a preorder, the images under a functor `F` of two morphisms
 `f : X ⟶ Y` and `g : X' ⟶ Y'` between equal endpoints agree up to the transports along those
@@ -176,5 +208,36 @@ theorem unop_map_homOfLE_eq {α D : Type*} [Preorder α] [Category* D] (G : α �
           eqToHom (congrArg (fun j ↦ Opposite.unop (G.obj j)) ha).symm := by
   subst ha hb
   simp
+
+/-- Transporting `F.map` of a conjugated morphism back along the induced object equalities
+recovers the conjugate of `F.map u`. -/
+theorem eqToHom_conjugate_map_eqToHom_conjugate {C D : Type*} [Category* C] [Category* D]
+    (F : C ⥤ D) {A₁ A₂ B₁ B₂ : C} {P Q : D}
+    (hA : A₁ = A₂) (hB : B₁ = B₂) (hP : P = F.obj A₁) (hQ : Q = F.obj B₁)
+    (hP' : P = F.obj A₂) (hQ' : Q = F.obj B₂) (u : A₁ ⟶ B₁) :
+    eqToHom hP' ≫ F.map (eqToHom hA.symm ≫ u ≫ eqToHom hB) ≫ eqToHom hQ'.symm =
+      eqToHom hP ≫ F.map u ≫ eqToHom hQ.symm := by
+  subst hA hB hP hQ
+  simp
+
+/-- Given an epimorphism `u : J ⟶ F.obj I` and morphisms whose images under `F` are conjugated
+by `eqToHom`s into a commuting triangle `ηB ≫ ψ = ηA`, the functor `F` identifies `eB ≫ f`
+with `eA`. -/
+theorem map_comp_eq_of_eqToHom_conjugate {C D : Type*} [Category* C] [Category* D]
+    (F : C ⥤ D) {I B A : C} {J B' A' : D}
+    {hB : B' = F.obj B} {hA : F.obj A = A'}
+    {u : J ⟶ F.obj I} [Epi u]
+    {eB : I ⟶ B} {eA : I ⟶ A} {f : B ⟶ A}
+    {ηB : J ⟶ B'} {ηA : J ⟶ A'} {ψ : B' ⟶ A'}
+    (hηB : ηB = u ≫ F.map eB ≫ eqToHom hB.symm)
+    (hηA : ηA = u ≫ F.map eA ≫ eqToHom hA)
+    (hψ : ψ = eqToHom hB ≫ F.map f ≫ eqToHom hA)
+    (h : ηB ≫ ψ = ηA) :
+    F.map (eB ≫ f) = F.map eA := by
+  subst hB hA
+  rw [hηB, hηA, hψ] at h
+  simp only [eqToHom_refl, Category.comp_id, Category.id_comp, Category.assoc,
+    ← Functor.map_comp] at h
+  exact (cancel_epi u).mp h
 
 end CategoryTheory.Functor
