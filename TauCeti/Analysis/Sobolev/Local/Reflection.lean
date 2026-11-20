@@ -798,12 +798,9 @@ theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn_inter_setOf_im_nonneg {p : ℝ≥0
     (hD : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) u D) :
     MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) D := by
   obtain ⟨-, D', hD', hD'p⟩ := memWkpLoc_succ_iff.1 hu
-  have hset : ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im} : Set ℂ) =ᵐ[volume]
-      (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) : Set ℂ) := by
-    rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
-    exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
   exact (memWkpLoc_zero_iff.1 hD'p).congr_ae
-    (by rw [Measure.restrict_congr_set hset]; exact hD'.ae_eq hD)
+    (by rw [Measure.restrict_congr_set (inter_setOf_im_nonneg_ae_eq_interior Ω)]
+        exact hD'.ae_eq hD)
 
 /-- Near a point `w` of the closed upper half-plane in an open set `V`, a member of the half-disc
 class on `V ∩ {0 ≤ im}` agrees on the closed upper half-plane with a member of the class on a

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Algebra.Order.Group
 import Mathlib.Topology.Homeomorph.Lemmas
@@ -15,6 +16,10 @@ import Mathlib.Topology.Order.ProjIcc
 # Intervals in order topologies
 
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
+The frontier of a closed or half-open interval avoids every set that misses both endpoints.
+In `ℝ`, an interval with endpoints near a point lies in the ball about that point, and the
+interval from a point of an order-connected set to a nearby point of that set stays in the ball
+about the first point.
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
@@ -29,12 +34,22 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing function on a compact interval has a continuous inverse on
 its range, extended to the whole codomain by clamping.
+A function continuous on every closed interval `[a, b]` with `b ≥ a` is continuous on `[a, ∞)`.
 A path that starts in an open set and leaves it has a first exit time.
+A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` is so on `[a, b]`.
 
 ## Main results
 
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
+* `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
+  `(a, b]` avoids a set containing neither `a` nor `b`.
+* `Real.Icc_subset_ball` — in `ℝ`, an interval whose endpoints lie within `ε` of `x` is
+  contained in `ball x ε`.
+* `Set.OrdConnected.uIcc_subset_ball_inter` — in `ℝ`, the interval between a point `x` of an
+  order-connected set `s` and a point of `ball x ε ∩ s` lies in `ball x ε ∩ s`.
+* `TauCeti.continuousOn_Ici_of_forall_Icc` — continuity on `Ici a` from continuity on `Icc a b`
+  for every `b ≥ a`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
@@ -48,6 +63,9 @@ A path that starts in an open set and leaves it has a first exit time.
   order-connected sets.
 * `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
   different values at `a` and `b`.
+* `ContinuousOn.strictMonoOn_Icc_of_strictMonoOn_Ioo`,
+  `ContinuousOn.strictAntiOn_Icc_of_strictAntiOn_Ioo` — a function continuous on `[a, b]` and
+  strictly monotone (antitone) on `(a, b)` is strictly monotone (antitone) on `[a, b]`.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly increasing map on
   `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
@@ -76,6 +94,61 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
   · rw [uIcc_of_ge hab] at ht ⊢
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
+
+/-- The frontier of `[a, b]` avoids a set containing neither `a` nor `b`. -/
+theorem disjoint_frontier_Icc {α : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {a b : α} {s : Set α} (ha : a ∉ s) (hb : b ∉ s) :
+    Disjoint (frontier (Icc a b)) s := by
+  refine disjoint_left.2 fun x hx hxs ↦ ?_
+  -- The frontier lies in `[a, b]`, but not in the interior, which contains `(a, b)`.
+  have hx' : x ∈ Icc a b \ Ioo a b := ⟨isClosed_Icc.frontier_subset hx, fun h ↦
+    disjoint_left.1 disjoint_interior_frontier (interior_maximal Ioo_subset_Icc_self isOpen_Ioo h)
+      hx⟩
+  rw [Icc_sdiff_Ioo_same (hx'.1.1.trans hx'.1.2)] at hx'
+  rcases hx' with rfl | rfl
+  exacts [ha hxs, hb hxs]
+
+/-- The frontier of `(a, b]` avoids a set containing neither `a` nor `b`. -/
+theorem disjoint_frontier_Ioc {α : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {a b : α} {s : Set α} (ha : a ∉ s) (hb : b ∉ s) :
+    Disjoint (frontier (Ioc a b)) s := by
+  refine disjoint_left.2 fun x hx hxs ↦ ?_
+  -- The frontier lies in the closure, inside `[a, b]`, but not in the interior, which contains
+  -- `(a, b)`.
+  have hx' : x ∈ Icc a b \ Ioo a b :=
+    ⟨closure_minimal Ioc_subset_Icc_self isClosed_Icc (frontier_subset_closure hx), fun h ↦
+      disjoint_left.1 disjoint_interior_frontier (interior_maximal Ioo_subset_Ioc_self isOpen_Ioo h)
+        hx⟩
+  rw [Icc_sdiff_Ioo_same (hx'.1.1.trans hx'.1.2)] at hx'
+  rcases hx' with rfl | rfl
+  exacts [ha hxs, hb hxs]
+
+/-- In `ℝ`, an interval whose endpoints lie within `ε` of `x` is contained in the ball of radius
+`ε` about `x`. -/
+theorem _root_.Real.Icc_subset_ball {x ε s t : ℝ} (hs : x - ε < s) (ht : t < x + ε) :
+    Icc s t ⊆ Metric.ball x ε := by
+  rw [Real.ball_eq_Ioo]
+  exact Icc_subset_Ioo hs ht
+
+/-- In `ℝ`, the interval between a point `x` of an order-connected set `s` and a point `y` of
+`ball x ε ∩ s` lies in `ball x ε ∩ s`. -/
+theorem _root_.Set.OrdConnected.uIcc_subset_ball_inter {s : Set ℝ} (hs : s.OrdConnected)
+    {x y ε : ℝ} (hx : x ∈ s) (hy : y ∈ Metric.ball x ε ∩ s) :
+    uIcc x y ⊆ Metric.ball x ε ∩ s := by
+  have hball : (Metric.ball x ε).OrdConnected := by
+    rw [Real.ball_eq_Ioo]
+    exact ordConnected_Ioo
+  exact (hball.inter hs).uIcc_subset ⟨Metric.mem_ball_self (Metric.pos_of_mem_ball hy.1), hx⟩ hy
+
+/-- A function into a topological space that is continuous on `[a, b]` for every `b ≥ a` is
+continuous on `[a, ∞)`. -/
+theorem continuousOn_Ici_of_forall_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [NoMaxOrder α] [TopologicalSpace X] {f : α → X} {a : α}
+    (h : ∀ b ≥ a, ContinuousOn f (Icc a b)) : ContinuousOn f (Ici a) :=
+  continuousOn_of_locally_continuousOn fun t ht ↦
+    let ⟨b, htb⟩ := exists_gt t
+    ⟨Iio b, isOpen_Iio, htb,
+      (h b (mem_Ici.1 ht |>.trans htb.le)).mono fun _ hr ↦ ⟨hr.1, hr.2.le⟩⟩
 
 /-- Around any point `t` of the open interval between `a` and `b` outside a closed set `s` there
 is a closed subinterval of `[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/
@@ -270,6 +343,42 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
     (hsv.trans htv.symm)
   have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
   exact hvm (hsv.symm.trans (congrArg f hsm))
+
+/-- A function continuous on `[a, b]` and strictly monotone on `(a, b)` is strictly monotone on
+`[a, b]`. -/
+theorem _root_.ContinuousOn.strictMonoOn_Icc_of_strictMonoOn_Ioo {α β : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [LinearOrder β]
+    [TopologicalSpace β] [OrderClosedTopology β] {f : α → β} {a b : α}
+    (hf : ContinuousOn f (Icc a b)) (h : StrictMonoOn f (Ioo a b)) :
+    StrictMonoOn f (Icc a b) := by
+  rcases le_or_gt b a with hba | hab
+  · exact (subsingleton_Icc_of_ge hba).strictMonoOn f
+  -- By continuity, `f` stays monotone when the two endpoints are added.
+  have hmono : MonotoneOn f (Icc a b) := by
+    have hIco : MonotoneOn f (Ico a b) := by
+      rw [← insert_left_Ioo hab]
+      exact h.monotoneOn.insert_of_continuousWithinAt (left_nhdsWithin_Ioo_neBot hab)
+        ((hf a (left_mem_Icc.2 hab.le)).mono Ioo_subset_Icc_self)
+    rw [← insert_right_Ico hab.le]
+    exact hIco.insert_of_continuousWithinAt (right_nhdsWithin_Ico_neBot hab)
+      ((hf b (right_mem_Icc.2 hab.le)).mono Ico_subset_Icc_self)
+  -- Between `x < y` lie two points of `(a, b)`, where `f` increases strictly.
+  intro x hx y hy hxy
+  obtain ⟨s, hxs, hsy⟩ := exists_between hxy
+  obtain ⟨t, hst, hty⟩ := exists_between hsy
+  have hs : s ∈ Ioo a b := ⟨hx.1.trans_lt hxs, (hst.trans hty).trans_le hy.2⟩
+  have ht : t ∈ Ioo a b := ⟨hs.1.trans hst, hty.trans_le hy.2⟩
+  exact (hmono hx (Ioo_subset_Icc_self hs) hxs.le).trans_lt
+    ((h hs ht hst).trans_le (hmono (Ioo_subset_Icc_self ht) hy hty.le))
+
+/-- A function continuous on `[a, b]` and strictly antitone on `(a, b)` is strictly antitone on
+`[a, b]`. -/
+theorem _root_.ContinuousOn.strictAntiOn_Icc_of_strictAntiOn_Ioo {α β : Type*} [LinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [LinearOrder β]
+    [TopologicalSpace β] [OrderClosedTopology β] {f : α → β} {a b : α}
+    (hf : ContinuousOn f (Icc a b)) (h : StrictAntiOn f (Ioo a b)) :
+    StrictAntiOn f (Icc a b) :=
+  ContinuousOn.strictMonoOn_Icc_of_strictMonoOn_Ioo (β := βᵒᵈ) hf h
 
 /-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
 has image `Ioi v`. -/

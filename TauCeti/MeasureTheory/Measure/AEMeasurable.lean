@@ -30,6 +30,8 @@ while preserving pointwise upper bounds.
   embedding `f`, with no measurability assumption on `g`.
 * `AEMeasurable.exists_measurable_ge_ae_eq`: a measurable majorant in the same
   a.e. equivalence class.
+* `AEMeasurable.eval_selector_of_countable`: evaluating a countable family along an a.e.
+  measurable selector is a.e. measurable when every nonnull fibre is a.e. measurable.
 -/
 
 public section
@@ -56,6 +58,48 @@ theorem exists_measurable_ge_ae_eq {α β : Type*} [MeasurableSpace α] [Measura
       simp [hx, heq]
   · filter_upwards [hf.ae_eq_mk, compl_mem_ae_iff.mpr hsμ] with x hx hxs
     simpa only [Set.piecewise_eq_of_notMem s _ _ hxs] using hx
+
+/-- Evaluating a countable family along an a.e. measurable selector is a.e. measurable when
+every component selected on a set of nonzero measure is a.e. measurable. -/
+theorem eval_selector_of_countable {Ω I B : Type*} [MeasurableSpace Ω] [Countable I]
+    [MeasurableSpace I] [MeasurableSingletonClass I] [MeasurableSpace B] {P : Measure Ω}
+    {Z : Ω → I} {Y : I → Ω → B} (hZ : AEMeasurable Z P)
+    (hY : ∀ i, P (Z ⁻¹' {i}) ≠ 0 → AEMeasurable (Y i) P) :
+    AEMeasurable (fun ω ↦ Y (Z ω) ω) P := by
+  by_cases hP : P = 0
+  · simp [hP]
+  obtain ⟨i₀, hi₀⟩ : ∃ i, P (Z ⁻¹' {i}) ≠ 0 := by
+    by_contra h
+    push Not at h
+    apply hP
+    rw [← Measure.measure_univ_eq_zero]
+    have huniv : (Set.univ : Set Ω) = ⋃ i, Z ⁻¹' {i} := by
+      ext ω
+      simp
+    rw [huniv]
+    exact measure_iUnion_null h
+  let g : I → Ω → B := fun i ↦ if hi : P (Z ⁻¹' {i}) ≠ 0 then
+    (hY i hi).mk (Y i) else (hY i₀ hi₀).mk (Y i₀)
+  have hg : Measurable fun z : I × Ω ↦ g z.1 z.2 :=
+    measurable_from_prod_countable_right fun i ↦ by
+      simp only [g]
+      split_ifs with hi
+      · exact (hY i hi).measurable_mk
+      · exact (hY i₀ hi₀).measurable_mk
+  have hactive : ∀ᵐ i ∂P.map Z, P (Z ⁻¹' {i}) ≠ 0 :=
+    ae_iff_of_countable.2 fun i hi hi' ↦ hi <| by
+      rw [Measure.map_apply_of_aemeasurable hZ (measurableSet_singleton i), hi']
+  have hpos : ∀ᵐ ω ∂P, P (Z ⁻¹' {Z ω}) ≠ 0 :=
+    (ae_map_iff hZ MeasurableSet.of_discrete).1 hactive
+  have hYg : ∀ᵐ ω ∂P, ∀ i, P (Z ⁻¹' {i}) ≠ 0 → Y i ω = g i ω :=
+    ae_all_iff.2 fun i ↦ by
+      by_cases hi : P (Z ⁻¹' {i}) ≠ 0
+      · filter_upwards [(hY i hi).ae_eq_mk] with ω hω
+        intro
+        simpa only [g, dite_eq_left hi] using hω
+      · exact ae_of_all _ fun _ hi' ↦ (hi hi').elim
+  exact (hg.comp_aemeasurable (hZ.prodMk aemeasurable_id)).congr <| by
+    filter_upwards [hpos, hYg] with ω hω hω' using (hω' (Z ω) hω).symm
 
 end AEMeasurable
 
