@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Index
 public import Mathlib.Topology.Algebra.OpenSubgroup
+import TauCeti.GroupTheory.Index.Coatom
 import Mathlib.Algebra.Group.Subgroup.Order
 import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 import Mathlib.Order.Atoms.Finite
@@ -33,9 +34,9 @@ The same bundling supplies the other instance an open subgroup of a compact grou
 is handed to an API stated for a compact group, such as the profinite theory of a closed subgroup:
 an open subgroup is closed, so it is compact.
 
-Every proper open subgroup of finite index, in particular every proper open subgroup of a compact
-group, lies in a maximal subgroup, which is then open. This follows by passing to the finite
-quotient by the normal core of the given subgroup.
+When multiplication is separately continuous, every proper open subgroup of finite index, in
+particular every proper open subgroup of a compact group, lies in a maximal subgroup, which is then
+open. The maximal subgroup comes from `Subgroup.exists_isCoatom_le_of_finiteIndex`.
 
 The normal core of an open subgroup of finite index is itself open, so such a subgroup contains an
 open normal subgroup of finite index. This needs no compactness.
@@ -51,8 +52,8 @@ open normal subgroup of finite index. This needs no compactness.
 * `OpenSubgroup.isOpen_normalCore`: the normal core of an open subgroup of finite index is open.
 * `OpenSubgroup.exists_openNormalSubgroup_le`: an open subgroup of finite index
   contains an open normal subgroup of finite index.
-* `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: a proper open subgroup of finite index lies in
-  a maximal subgroup, which is open.
+* `Subgroup.exists_isOpen_isCoatom_le_of_isOpen`: if multiplication is separately continuous, a
+  proper open subgroup of finite index lies in a maximal subgroup, which is open.
 -/
 
 public section
@@ -91,24 +92,18 @@ section MaximalOpenSubgroup
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
 
-/-- **A proper open subgroup of finite index lies in a maximal subgroup, which is open.** A maximal
-subgroup of the finite group `G ⧸ K.normalCore` above the image of `K` pulls back to a maximal
-subgroup of `G` containing `K`, which is open since `K` is. In a compact group every open subgroup
-has finite index (`OpenSubgroup.finiteIndex_toSubgroup`). -/
+/-- **A proper open subgroup of finite index lies in a maximal subgroup, which is open**, when
+multiplication is separately continuous. In a compact group every open subgroup has finite index
+(`OpenSubgroup.finiteIndex_toSubgroup`), so this applies to every proper open subgroup there. -/
+@[to_additive /-- **A proper open additive subgroup of finite index lies in a maximal additive
+subgroup, which is open**, when addition is separately continuous. In a compact additive group every
+open additive subgroup has finite index (`OpenAddSubgroup.finiteIndex_toAddSubgroup`), so this
+applies to every proper open additive subgroup there. -/]
 theorem Subgroup.exists_isOpen_isCoatom_le_of_isOpen {K : Subgroup G} [K.FiniteIndex]
     (hKo : IsOpen (K : Set G)) (hK : K ≠ ⊤) :
     ∃ M : Subgroup G, IsOpen (M : Set G) ∧ IsCoatom M ∧ K ≤ M := by
-  let q : G →* G ⧸ K.normalCore := QuotientGroup.mk' K.normalCore
-  have hqK : q.ker ≤ K := (QuotientGroup.ker_mk' _).trans_le K.normalCore_le
-  -- `G ⧸ K.normalCore` is finite, so its subgroup lattice is finite and hence coatomic.
-  have : Finite (Subgroup (G ⧸ K.normalCore)) :=
-    Finite.of_injective (fun L : Subgroup (G ⧸ K.normalCore) ↦ (L : Set (G ⧸ K.normalCore)))
-      SetLike.coe_injective
-  obtain ⟨L, hL, hKL⟩ := (eq_top_or_exists_le_coatom (K.map q)).resolve_left fun h ↦
-    hK (by rw [← Subgroup.comap_map_eq_self hqK, h, Subgroup.comap_top])
-  have hKM : K ≤ L.comap q := (K.le_comap_map q).trans (Subgroup.comap_mono hKL)
-  exact ⟨L.comap q, Subgroup.isOpen_mono hKM hKo,
-    Subgroup.isCoatom_comap_of_surjective (QuotientGroup.mk'_surjective _) hL, hKM⟩
+  obtain ⟨M, hM, hKM⟩ := exists_isCoatom_le_of_finiteIndex hK
+  exact ⟨M, isOpen_mono hKM hKo, hM, hKM⟩
 
 end MaximalOpenSubgroup
 
