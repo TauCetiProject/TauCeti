@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Data.Finset.NoncommProd
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
+public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
 import Mathlib.Algebra.Order.Pi
 import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Nat.Choose.Sum

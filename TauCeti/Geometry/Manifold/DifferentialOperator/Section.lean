@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.VanishingIdeal
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
+public import TauCeti.RingTheory.Derivation.DifferentialOperator.Basic
 
 /-!
 # Differential operators between sections of vector bundles
