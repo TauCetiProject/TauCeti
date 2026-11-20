@@ -125,11 +125,11 @@ def specialFiberNumericalType : NumericalType.{u} where
     exact ⟨⟨η, (Set.Finite.mem_toFinset _).mpr hη'⟩⟩
   multiplicity j := ⟨toBase.specialFiberMultiplicity π j,
     toBase.specialFiberMultiplicity_pos hη (hπ ▸ Ideal.mem_span_singleton_self π)
-      (toBase.ne_zero_of_base_ne_closedPoint hη hπ) j ((Set.Finite.mem_toFinset _).mp j.2)⟩
-  weight i := ⟨toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.2),
+      (toBase.ne_zero_of_base_ne_closedPoint hη hπ) j ((Set.Finite.mem_toFinset _).mp j.property)⟩
+  weight i := ⟨toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property),
     toBase.specialFiberWeight_pos _
       (toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
-        ((Set.Finite.mem_toFinset _).mp i.2))⟩
+        ((Set.Finite.mem_toFinset _).mp i.property))⟩
   intersection := toBase.specialFiberIntersectionMatrix hX hη
   intersection_isSymm := toBase.specialFiberIntersectionMatrix_isSymm hX hη
     (fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton)
@@ -168,7 +168,7 @@ theorem specialFiberNumericalType_weight
     (i : (toBase.finite_setOf_base_eq_closedPoint
       (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset) :
     ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℕ) =
-      toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.2) :=
+      toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property) :=
   (rfl)
 
 /-- The intersection matrix of the numerical type of a regular model is the intersection matrix of
@@ -214,7 +214,7 @@ theorem specialFiberNumericalType_weight_mul_genus
       (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset) :
     letI := subschemeOverResidueField
       (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
-        ((Set.Finite.mem_toFinset _).mp i.2))
+        ((Set.Finite.mem_toFinset _).mp i.property))
     ((toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).weight i : ℕ) *
         (toBase.specialFiberNumericalType hX hη hC hπ hreg hconn).genus i =
       Module.finrank (ResidueField R) (Cohomology (InvertibleSheaf.trivial (vanishingIdeal

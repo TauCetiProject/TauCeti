@@ -273,7 +273,7 @@ theorem toMatrix_collectedBasis {M o : Type*} [AddCommMonoid M] [Module R M] [Fi
   · subst hii
     simp [Matrix.blockDiagonal'_apply_eq, toMatrix_apply]
   · rw [Matrix.blockDiagonal'_apply_ne _ _ _ hii]
-    exact horth _ _ hii _ (d i a).2 _ (d i' a').2
+    exact horth _ _ hii _ (d i a).property _ (d i' a').property
 
 /-- If two forms are pairwise orthogonal across a family of submodules `P i` of which `M` is the
 internal direct sum, and their Gram matrices in bases `d i` of the `P i` multiply to `c • 1`, then
@@ -313,7 +313,7 @@ theorem exists_basis_toMatrix_mul_toMatrix_eq_smul_of_isInternal {M : Type*} {o 
       B.toMatrix b * D.toMatrix b = c • 1 := by
   have : Finite {i // N i ≠ ⊥} := hfin.to_subtype
   have : Fintype {i // N i ≠ ⊥} := Fintype.ofFinite _
-  choose α _ _ d hd using fun i : {i // N i ≠ ⊥} ↦ hd i i.2
+  choose α _ _ d hd using fun i : {i // N i ≠ ⊥} ↦ hd i i.property
   have hP : DirectSum.IsInternal fun i : {i // N i ≠ ⊥} ↦ N i :=
     DirectSum.isInternal_ne_bot_iff.mpr hN
   refine ⟨_, inferInstance, inferInstance, hP.collectedBasis d,
@@ -335,9 +335,9 @@ theorem exists_basis_restrict_biSup_toMatrix_mul_toMatrix_eq_smul {M : Type*} {o
         c • 1 := by
   classical
   have : Fintype s := hs.fintype
-  choose α _ _ d hd using fun i : s ↦ hd i i.2
+  choose α _ _ d hd using fun i : s ↦ hd i i.property
   set A := ⨆ i ∈ s, N i
-  have hle (i : s) : N i ≤ A := le_biSup N i.2
+  have hle (i : s) : N i ≤ A := le_biSup N i.property
   -- Transport the bases of the `N i` into `A`.
   let d' (i : s) : Basis (α i) R ((N i).comap A.subtype) :=
     (d i).map (Submodule.comapSubtypeEquivOfLe (hle i)).symm

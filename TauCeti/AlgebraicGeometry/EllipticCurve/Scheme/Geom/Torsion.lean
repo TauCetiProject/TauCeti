@@ -383,7 +383,7 @@ theorem existsUnique_comp_torsionPointHom {Z : Over S}
     (φ : Multiplicative (ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
     ∃! x : Z ⟶ (E.torsion N).X, ∀ a, x ≫ E.torsionPointHom N a = φ a := by
   let e := zmodMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
-  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).2⟩
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).val, by rw [zpow_natCast]; exact (e φ).property⟩
   refine ⟨P, fun a ↦ ?_, fun x hx ↦ torsion_hom_ext ?_⟩
   · -- write `a = a₁`, so that `φ a = φ 1 ^ a₁`
     obtain ⟨a₁, rfl⟩ : ∃ a₁ : ZMod N, Multiplicative.ofAdd a₁ = a := ⟨a.toAdd, rfl⟩
@@ -441,8 +441,8 @@ theorem existsUnique_comp_torsionPairHom {Z : Over S}
     (φ : Multiplicative (ZMod N × ZMod N) →* (Z ⟶ Over.mk E.structureMap)) :
     ∃! x : Z ⟶ (E.torsion N).X ⊗ (E.torsion N).X, ∀ a, x ≫ E.torsionPairHom N a = φ a := by
   let e := zmodProdMonoidHomEquiv N (Z ⟶ Over.mk E.structureMap)
-  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.2⟩
-  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.2⟩
+  let P := E.torsionPointsEquiv N Z ⟨(e φ).1, by rw [zpow_natCast]; exact (e φ).1.property⟩
+  let Q := E.torsionPointsEquiv N Z ⟨(e φ).2, by rw [zpow_natCast]; exact (e φ).2.property⟩
   refine ⟨lift P Q, fun a ↦ ?_, fun x hx ↦ ?_⟩
   · -- write `a = (a₁, a₂)`, so that `φ a = φ (1, 0) ^ a₁ * φ (0, 1) ^ a₂`
     obtain ⟨⟨a₁, a₂⟩, rfl⟩ : ∃ p : ZMod N × ZMod N, Multiplicative.ofAdd p = a := ⟨a.toAdd, rfl⟩

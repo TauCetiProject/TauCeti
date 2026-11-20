@@ -38,6 +38,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
+* `TauCeti.Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target`: conversely, a
+  derivative within the chart target of a map agreeing there with the coordinate expression of a
+  continuous map is its manifold derivative.
 * `ContDiffAt.contMDiffAt_extChartAt_symm_comp_extChartAt`: a map between model spaces that is
   `C^n` at the chart image of a point, read back through extended charts into a boundaryless
   target, is `C^n` on the manifolds.
@@ -103,6 +106,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   manifolds read in arbitrary preferred charts of the source and the target.
 * `ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm`: a `C^n` map between manifolds, read in
   arbitrary preferred charts, is `C^n` at interior points of the source chart target.
+* `TauCeti.contDiffAt_ext_coord_change`: on a boundaryless manifold, a change of extended charts
+  is `C^n` at every point of its domain.
 * `TauCeti.isOpen_mem_contDiffOn_mapsTo_writtenInExtChartAt`: for a `C^n` map out of a
   boundaryless manifold, the open coordinate domain on which it reads as a `C^n` map between the
   extended charts at a point and at its image.
@@ -223,6 +228,21 @@ theorem HasMFDerivAt.hasFDerivWithinAt_of_mem_source {f : M → M'} {x x' : M} {
     exact (mdifferentiableAt_extChartAt hy).hasMFDerivAt
   exact hasMFDerivWithinAt_iff_hasFDerivWithinAt.1
     ((hchart.comp _ hf').comp_hasMFDerivWithinAt _ hsymm)
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- **Manifold derivatives from derivatives on the chart target.** If the expression of `f` in the
+extended charts at `x` and `f x` agrees on the chart target with a map `φ` between the model
+spaces that has derivative `f'` within that target at the chart image `p` of `x`, and `f` is
+continuous at `x`, then `f'` is the manifold derivative of `f` at `x`. The chart target is a
+neighbourhood of `p` within the range of the model, so no boundaryless hypothesis is needed. -/
+theorem TauCeti.Manifold.hasMFDerivAt_of_hasFDerivWithinAt_extChartAt_target {f : M → M'} {x : M}
+    {φ : E → E'} {f' : E →L[𝕜] E'} {p : E} (hp : extChartAt I x x = p) (hf : ContinuousAt f x)
+    (hφ : HasFDerivWithinAt φ f' (extChartAt I x).target p)
+    (heq : EqOn (writtenInExtChartAt I I' x f) φ (extChartAt I x).target) :
+    HasMFDerivAt I I' f x f' := by
+  subst hp
+  exact ⟨hf, (hasFDerivWithinAt_inter' (extChartAt_target_mem_nhdsWithin x)).1
+    ((hφ.mono inter_subset_right).congr (fun _ hw ↦ heq hw.2) (heq (mem_extChartAt_target x)))⟩
 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- A map `g` between model spaces which is `C^n` at the chart image of `x` and sends it to the
@@ -876,6 +896,15 @@ theorem _root_.ContMDiffAt.contDiffAt_extChartAt_comp_extChartAt_symm {f : M →
   rw [(extChartAt I β).right_inv (interior_subset hy)] at h
   exact h.contDiffAt (Filter.mem_of_superset (isOpen_interior.mem_nhds hy)
     (interior_subset.trans (extChartAt_target_subset_range β)))
+
+/-- On a boundaryless manifold, the change of extended charts from `x'` to `x` is `C^n` at every
+point of its domain. This is Mathlib's `contDiffWithinAt_ext_coord_change` with the model range
+the whole space. -/
+theorem contDiffAt_ext_coord_change [I.Boundaryless] (x x' : M) {y : E}
+    (hy : y ∈ ((extChartAt I x').symm ≫ extChartAt I x).source) :
+    ContDiffAt 𝕜 n (extChartAt I x ∘ (extChartAt I x').symm) y := by
+  have h := contDiffWithinAt_ext_coord_change (n := n) x x' hy
+  rwa [I.range_eq_univ, contDiffWithinAt_univ] at h
 
 end InteriorCharts
 

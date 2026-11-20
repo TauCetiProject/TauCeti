@@ -147,6 +147,48 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
     (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζ Complex.I _)
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hfloer
 
+/-- **The energy of a part of an end of a Floer pair of pants.** Let `K` be equal to `H_q(t) dt`
+beyond `T₀` on each end `q`, for differentiable `H_q`, and let `u` be differentiable on `S`. The
+energy of `u ∘ φ'_q` for the end Hamiltonian `H'_q` over a measurable subset `s` of a band
+`(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width one is at most the energy of `u` over `S`. -/
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {u : ℝ × ℝ → M} (hu : MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I u thricePuncturedSphereReal)
+    (q : Puncture) {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) {t₀ : ℝ}
+    (hst : s ⊆ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
+    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≤
+      ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
+  -- On `s` the energy density is the Jacobian times the energy density of `u`.
+  have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
+      (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =
+        |(fderiv ℝ (positiveEndChart q) ζ).det| * e (positiveEndChart q ζ) := by
+    intro ζ hζ
+    have hζT : T₀ ≤ ζ.1 := (le_max_left _ _).trans (hst hζ).1.le
+    have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q)
+      ((le_max_right _ _).trans_lt (hst hζ).1)
+    rw [floerEnergyDensity_def, perturbedMFDeriv_comp_positiveEndChart_eq hKH hH hζT,
+      ← floerEnergyDensity_def, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
+    exact ω.floerEnergyDensity_perturbationPullback
+      (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
+      ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
+      ((hu _ hS).mdifferentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS))
+      (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
+      (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
+  rw [← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
+    ((injOn_positiveEndChart q t₀).mono (hst.trans (prod_mono (subset_univ _) subset_rfl)))
+    (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hdens]
+  refine lintegral_mono_set ?_
+  rintro _ ⟨ζ, hζ, rfl⟩
+  exact positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hst hζ).1)
+
 /-- **The energy of an end of a Floer pair of pants.** Let `K` be equal to `H_q(t) dt` beyond `T₀`
 on each end `q`, for differentiable `H_q`, and let `u` be differentiable on `S`. The energy of
 `u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
@@ -162,37 +204,14 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
-  set s : Set (ℝ × ℝ) := Ioi a ×ˢ Ioo 0 1
-  have hs : MeasurableSet s := measurableSet_Ioi.prod measurableSet_Ioo
   -- The closed band differs from the open one by a null set.
-  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] s := by
+  have hae : (Ioi a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi a ×ˢ Ioo 0 1 := by
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ioo_ae_eq_Icc.symm
-  -- On the open band the energy density is the Jacobian times the energy density of `u`.
-  have hdens : ∀ ζ ∈ s, ω.floerEnergyDensity (fun _ _ ↦ 0)
-      (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ =
-        |(fderiv ℝ (positiveEndChart q) ζ).det| * e (positiveEndChart q ζ) := by
-    intro ζ hζ
-    have hζT : T₀ ≤ ζ.1 := haT.trans hζ.1.le
-    have hS := positiveEndChart_mem_thricePuncturedSphereReal (q := q) (ha₀.trans_lt hζ.1)
-    rw [floerEnergyDensity_def, perturbedMFDeriv_comp_positiveEndChart_eq hKH hH hζT,
-      ← floerEnergyDensity_def, abs_of_pos (det_fderiv_positiveEndChart_pos q ζ)]
-    exact ω.floerEnergyDensity_perturbationPullback
-      (Ks := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (Kt := fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I)
-      ((contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ)
-      ((hu _ hS).mdifferentiableAt (isOpen_thricePuncturedSphereReal.mem_nhds hS))
-      (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT 1 _)
-      (mdifferentiableAt_perturbation_positiveEndChart hKH hHd hζT Complex.I _)
-  rw [setLIntegral_congr hae, ← lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul hs
-    ((injOn_positiveEndChart q).mono (prod_mono (subset_univ _) le_rfl))
-    (fun ζ _ ↦ (contDiff_positiveEndChart q 1).differentiable one_ne_zero ζ) hdens]
-  refine lintegral_mono_set ?_
-  rintro _ ⟨ζ, hζ, rfl⟩
-  exact positiveEndChart_mem_thricePuncturedSphereReal (ha₀.trans_lt hζ.1)
-
+  rw [setLIntegral_congr hae]
+  exact setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset hKH hH hHd hu q
+    (measurableSet_Ioi.prod measurableSet_Ioo)
+    (prod_mono (Ioi_subset_Ioi (max_le haT ha₀)) (by rw [zero_add]))
 
 end SmoothTwoForm
 

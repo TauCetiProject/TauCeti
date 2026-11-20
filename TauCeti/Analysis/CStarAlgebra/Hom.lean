@@ -15,7 +15,9 @@ A `⋆`-algebra homomorphism between complex C⋆-algebras is automatically cont
 two-sided ideal kernel is closed (`NonUnitalStarAlgHom.isClosed_ker`, stated for any morphism
 class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
 A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
-bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
+bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv` and as a linear
+isometric equivalence `StarAlgEquiv.toLinearIsometryEquiv`, whose restriction to self-adjoint
+elements is the real-linear isometric equivalence `StarAlgEquiv.selfAdjointLinearIsometryEquiv`.
 -/
 
 public section
@@ -49,13 +51,87 @@ def toContinuousLinearEquiv (e : A ≃⋆ₐ[ℂ] B) : A ≃L[ℂ] B where
   continuous_toFun := (StarAlgEquiv.isometry e).continuous
   continuous_invFun := (StarAlgEquiv.isometry e.symm).continuous
 
+/-- `StarAlgEquiv.toContinuousLinearEquiv` acts by the underlying star-algebra equivalence. -/
 @[simp]
 theorem coe_toContinuousLinearEquiv (e : A ≃⋆ₐ[ℂ] B) : ⇑e.toContinuousLinearEquiv = e :=
   (rfl)
 
+/-- Taking the inverse commutes with `StarAlgEquiv.toContinuousLinearEquiv`. -/
 @[simp]
 theorem toContinuousLinearEquiv_symm (e : A ≃⋆ₐ[ℂ] B) :
     e.toContinuousLinearEquiv.symm = e.symm.toContinuousLinearEquiv :=
   (rfl)
+
+/-- A star-algebra equivalence of complex C⋆-algebras as a `ℂ`-linear isometric equivalence. -/
+noncomputable def toLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) : A ≃ₗᵢ[ℂ] B where
+  toFun := e
+  invFun := e.symm
+  left_inv := e.symm_apply_apply
+  right_inv := e.apply_symm_apply
+  map_add' := map_add e
+  map_smul' := map_smul e
+  norm_map' := StarAlgEquiv.norm_map e
+
+/-- `StarAlgEquiv.toLinearIsometryEquiv` acts by the underlying star-algebra equivalence. -/
+@[simp]
+theorem coe_toLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) : ⇑e.toLinearIsometryEquiv = e :=
+  (rfl)
+
+/-- Evaluating `StarAlgEquiv.toLinearIsometryEquiv` applies the star-algebra equivalence. -/
+theorem toLinearIsometryEquiv_apply (e : A ≃⋆ₐ[ℂ] B) (a : A) :
+    e.toLinearIsometryEquiv a = e a :=
+  (rfl)
+
+/-- Taking the inverse commutes with `StarAlgEquiv.toLinearIsometryEquiv`. -/
+@[simp]
+theorem toLinearIsometryEquiv_symm (e : A ≃⋆ₐ[ℂ] B) :
+    e.toLinearIsometryEquiv.symm = e.symm.toLinearIsometryEquiv :=
+  (rfl)
+
+/-- Coercing `StarAlgEquiv.toLinearIsometryEquiv` to a continuous linear equivalence recovers
+`StarAlgEquiv.toContinuousLinearEquiv`. -/
+@[simp]
+theorem toContinuousLinearEquiv_toLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) :
+    e.toLinearIsometryEquiv.toContinuousLinearEquiv = e.toContinuousLinearEquiv :=
+  (rfl)
+
+/-- Restricting a star-algebra equivalence of complex C⋆-algebras to the self-adjoint elements gives
+an `ℝ`-linear isometric equivalence `selfAdjoint A ≃ₗᵢ[ℝ] selfAdjoint B`. -/
+noncomputable def selfAdjointLinearIsometryEquiv (e : A ≃⋆ₐ[ℂ] B) :
+    selfAdjoint A ≃ₗᵢ[ℝ] selfAdjoint B where
+  toFun a := ⟨e a.val, a.property.map e⟩
+  invFun b := ⟨e.symm b.val, b.property.map e.symm⟩
+  left_inv a := Subtype.ext (e.symm_apply_apply a.val)
+  right_inv b := Subtype.ext (e.apply_symm_apply b.val)
+  map_add' a₁ a₂ := Subtype.ext (map_add e a₁.val a₂.val)
+  map_smul' r a := Subtype.ext <| by
+    simp only [RingHom.id_apply, selfAdjoint.val_smul, ← Complex.coe_smul, map_smul]
+  norm_map' a := StarAlgEquiv.norm_map e a.val
+
+/-- The underlying element of `e.selfAdjointLinearIsometryEquiv a` is `e a`. -/
+@[simp]
+theorem coe_selfAdjointLinearIsometryEquiv_apply (e : A ≃⋆ₐ[ℂ] B) (a : selfAdjoint A) :
+    (e.selfAdjointLinearIsometryEquiv a : B) = e a.val :=
+  (rfl)
+
+/-- Taking the inverse commutes with `StarAlgEquiv.selfAdjointLinearIsometryEquiv`. -/
+@[simp]
+theorem selfAdjointLinearIsometryEquiv_symm (e : A ≃⋆ₐ[ℂ] B) :
+    e.selfAdjointLinearIsometryEquiv.symm = e.symm.selfAdjointLinearIsometryEquiv :=
+  (rfl)
+
+/-- On unital C⋆-algebras, `selfAdjointLinearIsometryEquiv` preserves `1`. -/
+@[simp]
+theorem selfAdjointLinearIsometryEquiv_one {A B : Type*} [CStarAlgebra A] [CStarAlgebra B]
+    (e : A ≃⋆ₐ[ℂ] B) : e.selfAdjointLinearIsometryEquiv 1 = 1 :=
+  Subtype.ext (map_one e)
+
+/-- On commutative C⋆-algebras, `selfAdjointLinearIsometryEquiv` preserves multiplication. -/
+@[simp]
+theorem selfAdjointLinearIsometryEquiv_mul {A B : Type*} [NonUnitalCommCStarAlgebra A]
+    [NonUnitalCommCStarAlgebra B] (e : A ≃⋆ₐ[ℂ] B) (a₁ a₂ : selfAdjoint A) :
+    e.selfAdjointLinearIsometryEquiv (a₁ * a₂) =
+      e.selfAdjointLinearIsometryEquiv a₁ * e.selfAdjointLinearIsometryEquiv a₂ :=
+  Subtype.ext (map_mul e a₁.val a₂.val)
 
 end StarAlgEquiv

@@ -276,7 +276,7 @@ theorem coe_traceCoeffBlock (model : IrrepModel 𝕜 G)
 theorem surjective_traceCoeffBlock (model : IrrepModel 𝕜 G) :
     Function.Surjective (traceCoeffBlock model) := by
   intro f
-  obtain ⟨T, hT⟩ := (range_traceCoeffLp model).ge f.2
+  obtain ⟨T, hT⟩ := (range_traceCoeffLp model).ge f.property
   exact ⟨T, Subtype.ext hT⟩
 
 /-- **The trace coefficient of an irreducible model is a bijection onto its block**, for an

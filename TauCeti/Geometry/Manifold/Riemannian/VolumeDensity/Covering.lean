@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
+public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 
 /-!
 # Riemannian volume under finite quotient coverings
@@ -39,6 +40,8 @@ isometries, or that `q` is differentiable, is needed.
 * `IsQuotientCoveringMap.lintegral_comp_riemannianVolume`,
   `IsQuotientCoveringMap.integral_comp_riemannianVolume`: `∫ f ∘ q = |G| ∫ f`.
 * `IsQuotientCoveringMap.eLpNorm_comp_riemannianVolume`: `‖f ∘ q‖_p = |G| ^ (1/p) ‖f‖_p`.
+* `IsQuotientCoveringMap.normalizedPullbackLp`: the normalized pullback `|G| ^ (-1/p) q^*` as a
+  linear isometry `Lᵖ(N) →ₗᵢ[𝕜] Lᵖ(M)`, with `IsQuotientCoveringMap.coeFn_normalizedPullbackLp`.
 
 ## References
 
@@ -188,5 +191,39 @@ theorem eLpNorm_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
   have h := hq.map_riemannianVolume hinner
   rw [← eLpNorm_map_measure (by rw [h]; exact hf.smul_measure _) hq.continuous.aemeasurable, h,
     eLpNorm_smul_measure_of_ne_zero (Nat.cast_ne_zero.2 Nat.card_pos.ne'), smul_eq_mul]
+
+/-! ### The normalized pullback on `Lᵖ` -/
+
+section Lp
+
+variable (𝕜 : Type*) [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] {F : Type*} [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+
+/-- The **normalized pullback** `|G| ^ (-1/p) q^*` along a finite quotient covering map which is a
+local isometry, as a linear isometry from `Lᵖ(N)` to `Lᵖ(M)`
+(`IsQuotientCoveringMap.coeFn_normalizedPullbackLp`). It is the normalized precomposition
+`MeasureTheory.Lp.normalizedCompOfMapEqSmul` for `q_* vol_M = |G| • vol_N`. For `p = 2` it is the
+normalized pullback used to transplant eigenfunctions of the Laplacian between quotients. -/
+def normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+    Lp F p (riemannianVolume I' N) →ₗᵢ[𝕜] Lp F p (riemannianVolume I M) :=
+  Lp.normalizedCompOfMapEqSmul 𝕜 hq.continuous.measurable (Nat.cast_ne_zero.2 Nat.card_pos.ne')
+    (ENNReal.natCast_ne_top _) (hq.map_riemannianVolume hinner)
+
+variable {𝕜 p}
+
+/-- The normalized pullback of `g ∈ Lᵖ(N)` is almost everywhere `|G| ^ (-1/p) • g ∘ q`. -/
+theorem coeFn_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (g : Lp F p (riemannianVolume I' N)) :
+    normalizedPullbackLp 𝕜 p hq hinner g =ᵐ[riemannianVolume I M]
+      fun x ↦ algebraMap ℝ 𝕜 ((Nat.card G : ℝ) ^ (-(1 / p).toReal)) • g (q x) := by
+  simpa only [normalizedPullbackLp, ENNReal.toReal_natCast] using Lp.coeFn_normalizedCompOfMapEqSmul
+    hq.continuous.measurable (Nat.cast_ne_zero.2 Nat.card_pos.ne') (ENNReal.natCast_ne_top _)
+    (hq.map_riemannianVolume hinner) g
+
+end Lp
 
 end IsQuotientCoveringMap

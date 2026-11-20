@@ -50,6 +50,8 @@ ambient group.
 * `TauCeti.CommHopfAlgCat.mapDomain_pointConjugation_mem_conjugate_iff`: the pointwise
   interpretation of the conjugated ideal, and `TauCeti.CommHopfAlgCat.mul_mul_inv_mem_conjugate_iff`
   its form on rational points.
+* `TauCeti.CommHopfAlgCat.extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate`:
+  the same interpretation, read in the opposite direction for a bundled algebra.
 * `TauCeti.HopfIdeal.conjugate_eq_self_of_mem_quotientPointsSubgroup`: a subgroup's own
   rational points fix its defining ideal, without reducedness assumptions.
 * `TauCeti.HopfIdeal.mem_normalizer_quotientPointsSubgroup_of_conjugate_eq_self`: fixing
@@ -416,6 +418,23 @@ theorem mul_mul_inv_mem_conjugate_iff (I : HopfIdeal R H) (g x : WithConv (H →
   rwa [BialgHom.mapDomain_apply, BialgEquiv.toBialgHom_eq_coe,
     HopfAlgebra.pointConjugationBialgEquiv_toAlgHom,
     HopfAlgebra.comp_pointConjugationAlgHom_self] at h
+
+/-- Conjugation by the inverse of a rational point `g`, extended to `A`-points, carries the points
+of the conjugated ideal `I.conjugate g` exactly onto the points of `I`. This is
+`pointConjugation_mem_conjugate_iff` read in the opposite direction, for a bundled algebra. -/
+theorem extendPoint_inv_mul_mul_mem_quotientPointsSubgroup_iff_mem_conjugate
+    {K : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R K) (g : WithConv (K →ₐ[R] R))
+    (A : CommAlgCat.{w} R) (x : HopfAlgebra.points (R := R) (H := K) A) :
+    (HopfAlgebra.extendPoint K A g)⁻¹ * x * HopfAlgebra.extendPoint K A g ∈
+        quotientPointsSubgroup K I A ↔
+      x ∈ quotientPointsSubgroup K (I.conjugate g) A := by
+  have hg : HopfAlgebra.extendPoint K A g = AlgHom.mapValue (Algebra.ofId R A) g := by
+    rw [HopfAlgebra.extendPoint_apply, AlgHom.mapValue_apply]
+  rw [hg]
+  -- Destruct the bundle so the type-level conjugation API uses the same bundled algebra.
+  cases K
+  rw [← pointConjugation_mem_conjugate_iff I g A]
+  simp only [mul_assoc, mul_inv_cancel_left, mul_inv_cancel, mul_one]
 
 /-- A Hopf ideal whose points are the `g`-conjugates of the points of `I` is the conjugate of
 `I` by `g`. -/

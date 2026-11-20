@@ -99,14 +99,15 @@ theorem exists_mem_oneAdd_forall_mul_eq_zero (hfg : I.FG)
     exact (IsLocalization.map_eq_zero_iff (oneAdd I) C t).mp
       (hzero t (hT ▸ Ideal.subset_span ht))
   choose m hm using hgen
-  refine ⟨n, ∏ t ∈ T.attach, (m t.1 t.2 : B), ?_, ?_⟩
-  · exact Submonoid.prod_mem _ fun t _ ↦ (m t.1 t.2).2
+  refine ⟨n, ∏ t ∈ T.attach, (m t.val t.property : B), ?_, ?_⟩
+  · exact Submonoid.prod_mem _ fun t _ ↦ (m t.val t.property).property
   · rw [← hT]
     intro x hx
     induction hx using Submodule.span_induction with
     | mem y hy =>
         obtain ⟨t, rfl⟩ : ∃ t : T, (t : B) = y := ⟨⟨y, hy⟩, rfl⟩
-        rw [← Finset.prod_erase_mul _ _ (Finset.mem_attach T t), mul_assoc, hm t.1 t.2, mul_zero]
+        rw [← Finset.prod_erase_mul _ _ (Finset.mem_attach T t), mul_assoc, hm t.val t.property,
+            mul_zero]
     | zero => simp
     | add y z _ _ hy hz => rw [mul_add, hy, hz, add_zero]
     | smul c y _ hy => rw [smul_eq_mul, mul_comm c y, ← mul_assoc, hy, zero_mul]
