@@ -406,6 +406,8 @@ theorem mfderiv_annihilatorInclusion_zeroSection (q : M)
     rw [show annihilatorInclusion I D F ∘ (zeroSection F fun x ↦ annihilatorSpace I D x) =
         zeroSection (E →L[𝕜] 𝕜) fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜 from
       funext fun x ↦ annihilatorInclusion_zeroSection I D F x, TauCeti.Bundle.mfderiv_zeroSection]
+    -- The target tangent space is only definitionally `E × (E →L[𝕜] 𝕜)`, so
+    -- `ContinuousLinearMap.inl_apply` does not rewrite here and is applied as a term.
     exact ContinuousLinearMap.inl_apply v
   -- The inclusion maps the line through `a` in the fibre to the line through `a` in `T*_q M`,
   -- whose velocity is `(0, a)`.
@@ -435,6 +437,10 @@ theorem mfderiv_annihilatorInclusion_zeroSection (q : M)
         (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
           (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q),
         continuousLinearMapAt_trivializationAt_self]
+    -- The velocity is `((1 : 𝕜 →L[𝕜] 𝕜).smulRight (0, 1 • ξ)) 1`, with `ξ` the fibre coordinate.
+    -- Applying `smulRight` is `ContinuousLinearMap.smulRight_apply`, which holds by `rfl`; it
+    -- cannot be rewritten because the tangent space is only definitionally a product, so the two
+    -- `one_smul` steps are applied to the unfolded application.
     exact (one_smul 𝕜 _).trans (Prod.ext rfl ((one_smul 𝕜 _).trans ha))
   refine (congrArg₂ (· + ·) h₁ h₂).trans ?_
   exact Prod.ext (add_zero v) (zero_add _)

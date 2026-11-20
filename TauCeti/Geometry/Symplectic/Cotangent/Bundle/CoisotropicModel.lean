@@ -138,6 +138,8 @@ theorem eval₂_coisotropicModelForm_zeroSection (q : Q)
         (zeroSection F (fun x ↦ annihilatorSpace I D x) q) w =
       (TauCeti.Bundle.zeroSectionTangentEquiv (I := I) q w).1 := by
     rw [Bundle.mfderiv_proj, TauCeti.Bundle.zeroSectionTangentEquiv_apply]
+    -- `TangentSpace` is only definitionally the model `E × F`, so `ContinuousLinearMap.coe_fst'`
+    -- does not rewrite here; the first projection is closed by unfolding instead.
     rfl
   rw [eval₂_coisotropicModelForm, eval₂_symplecticForm, hπ, hπ, add_sub_assoc]
   refine congrArg _ ((strongDualCotangentSymplecticForm_apply (V := E) _ _).trans ?_)
@@ -145,6 +147,8 @@ theorem eval₂_coisotropicModelForm_zeroSection (q : Q)
     (by simp)
   rw [mfderiv_annihilatorInclusion_zeroSection q hι0,
     mfderiv_annihilatorInclusion_zeroSection q hι0]
+  -- Both sides are the same pairings once the pair projections reduce; the cotangent tangent
+  -- space is only definitionally `E × (E →L[ℝ] ℝ)`, so this needs unfolding rather than `simp`.
   rfl
 
 /-- **The zero section pulls the coisotropic model form back to `σ`.** -/
@@ -297,6 +301,7 @@ theorem exists_opens_isSymplectic_mpullback_coisotropicModelForm [FiniteDimensio
     (hσ : σ.IsClosed)
     (hC : IsContMDiffDistribution I ∞ k D) (hk : k + r = finrank ℝ E)
     (hσC : ∀ q, IsCompl (D q) (LinearMap.ker (σ.bilinFormAt q))) :
+    -- `∞ + 1` is definitionally `∞` in `WithTop ℕ∞`, so the smooth structure is reused as is.
     haveI : IsManifold I (∞ + 1) Q := ‹IsManifold I ∞ Q›
     letI := hC.annihilatorFiberBundle hk
     letI := hC.annihilatorVectorBundle hk
@@ -305,6 +310,7 @@ theorem exists_opens_isSymplectic_mpullback_coisotropicModelForm [FiniteDimensio
       (∀ q, zeroSection (Fin r → ℝ) (fun x ↦ annihilatorSpace I D x) q ∈ U) ∧
       SmoothTwoForm.IsSymplectic (SmoothForm.mpullback (Subtype.val : U → _) contMDiff_subtype_val
         (coisotropicModelForm σ (hC.contMDiff_annihilatorInclusion hk))) := by
+  -- As in the statement, `∞ + 1` is definitionally `∞`.
   have : IsManifold I (∞ + 1) Q := ‹IsManifold I ∞ Q›
   let := hC.annihilatorFiberBundle hk
   let := hC.annihilatorVectorBundle hk
