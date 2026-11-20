@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.CompStruct
+public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
@@ -83,6 +84,8 @@ of a product identify the right mapping spaces of `X ⊗ Y` with the products of
   arbitrary object of the simplex category, `SSet.mem_rightMappingSpace_obj_iff`), and
   `SSet.rightMappingSpace.coe_δ`, `SSet.rightMappingSpace.coe_σ`: their faces and degeneracies
   are those in `X` avoiding, respectively fixing, the last vertex.
+* `SSet.rightMappingSpace.π₀_mk_eq_of_compStruct`: a `2`-simplex exhibiting `g` as `id x ≫ f`
+  joins the vertices `f` and `g` of `Hom^R_X(x, y)` by an edge.
 * `SSet.rightMappingSpace.hornFilling`: if `X` is a quasicategory, all horns `Λ[n + 1, i]` in
   `Hom^R_X(x, y)` have fillers.
 * `SSet.rightMappingSpace.kanComplex`: the right mapping spaces of a quasicategory are Kan
@@ -212,6 +215,30 @@ theorem map_const_castSucc {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _
 theorem map_const_last {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
     X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op (s.val : X _⦋n + 1⦌) = y :=
   ((mem_rightMappingSpace_iff _).1 s.property).2
+
+/-- A `2`-simplex `CompStruct (id x) f g` of `X` is an edge of `Hom^R_X(x, y)` from `g` to `f`,
+so that `f` and `g` lie in the same connected component of `Hom^R_X(x, y)`. -/
+theorem π₀_mk_eq_of_compStruct {f g : Edge x y} (h : Edge.CompStruct (.id x) f g) :
+    π₀.mk (obj₀Equiv.symm g) = π₀.mk (obj₀Equiv.symm f) := by
+  have hmem : h.simplex ∈ (X.rightMappingSpace x y).obj (op ⦋1⦌) := by
+    refine (mem_rightMappingSpace_iff _).2 ⟨?_, ?_⟩
+    · exact h.d₂.trans (by
+        rw [Edge.id_edge, SimplicialObject.σ,
+          SimplexCategory.eq_const_to_zero (SimplexCategory.σ 0)])
+    · -- The last vertex of the `2`-simplex is the target of its face `f` opposite to `0`.
+      have h' := map_const_map (X := X) (SimplexCategory.δ (0 : Fin 3)).op h.simplex 1
+      rw [← SimplexCategory.δ_zero_eq_const, ← SimplicialObject.δ_def, ← SimplicialObject.δ_def,
+        h.d₀, f.tgt_eq] at h'
+      exact h'.symm
+  let s : (X.rightMappingSpace x y : SSet.{u}) _⦋1⦌ := ⟨h.simplex, hmem⟩
+  have h₁ : obj₀Equiv.symm g = (X.rightMappingSpace x y : SSet.{u}).δ 1 s :=
+    obj₀Equiv.symm_apply_eq.2 (Edge.ext
+      (((obj₀Equiv_apply_edge _).trans ((coe_δ 1 s).trans h.d₁)).symm))
+  have h₀ : obj₀Equiv.symm f = (X.rightMappingSpace x y : SSet.{u}).δ 0 s :=
+    obj₀Equiv.symm_apply_eq.2 (Edge.ext
+      (((obj₀Equiv_apply_edge _).trans ((coe_δ 0 s).trans h.d₀)).symm))
+  rw [h₁, h₀]
+  exact π₀.sound (Edge.mk' s)
 
 /-! ### Horn filling -/
 
