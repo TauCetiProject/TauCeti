@@ -44,32 +44,19 @@ variable {S : Set ℂ} (m : S → ℕ) (hsum : Summable (fun ρ : S ↦ (m ρ : 
 
 include hsum
 
-private theorem summable_natCast_mul_norm_inv_sq :
-    Summable (fun ρ : S ↦ (m ρ : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
-  simpa only [norm_inv, inv_pow, div_eq_mul_inv] using hsum
-
-private theorem hasProdLocallyUniformlyOn_weierstrassFactor_one_inv_mul_pow :
-    HasProdLocallyUniformlyOn (fun (ρ : S) z ↦ weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ m ρ)
-      (fun z ↦ ∏' ρ : S, weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ m ρ) Set.univ :=
-  hasProdLocallyUniformlyOn_weierstrassFactor_one_pow _ m
-    (summable_natCast_mul_norm_inv_sq m hsum)
-
-private theorem differentiable_tprod_weierstrassFactor_one_inv_mul_pow :
-    Differentiable ℂ (fun z ↦ ∏' ρ : S, weierstrassFactor 1 ((ρ : ℂ)⁻¹ * z) ^ m ρ) :=
-  differentiable_tprod_weierstrassFactor_one_pow _ m (summable_natCast_mul_norm_inv_sq m hsum)
-
 open scoped Classical in
 /-- The analytic order of the genus-one product over a weighted point set avoiding `0` is the
 prescribed multiplicity on the set and zero off it. -/
 theorem analyticOrderAt_tprod_weierstrassFactor_one_inv_mul_pow (hzero : (0 : ℂ) ∉ S) (z : ℂ) :
     analyticOrderAt (fun w ↦ ∏' ρ : S, weierstrassFactor 1 ((ρ : ℂ)⁻¹ * w) ^ m ρ) z =
       if hz : z ∈ S then (m ⟨z, hz⟩ : ℕ∞) else 0 := by
-  have hsum' := summable_natCast_mul_norm_inv_sq m hsum
+  have hsum' : Summable (fun ρ : S ↦ (m ρ : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
+    simpa only [norm_inv, inv_pow, div_eq_mul_inv] using hsum
   split_ifs with hz
   · have hz0 : z ≠ 0 := fun h ↦ hzero (h ▸ hz)
     exact analyticOrderAt_tprod_weierstrassFactor_one_pow_of_injective _ m hsum'
       (i := ⟨z, hz⟩) (inv_injective.comp Subtype.val_injective) (inv_mul_cancel₀ hz0)
-  · rw [((differentiable_tprod_weierstrassFactor_one_inv_mul_pow m hsum).analyticAt
+  · rw [((differentiable_tprod_weierstrassFactor_one_pow _ m hsum').analyticAt
       z).analyticOrderAt_eq_zero, ne_eq, tprod_weierstrassFactor_one_pow_eq_zero_iff _ m hsum']
     rintro ⟨ρ, -, hρ⟩
     have hρ0 : (ρ : ℂ) ≠ 0 := by
@@ -83,7 +70,8 @@ prescribed multiplicity on the set and zero off it. -/
 theorem divisor_tprod_weierstrassFactor_one_inv_mul_pow (hzero : (0 : ℂ) ∉ S) (z : ℂ) :
     MeromorphicOn.divisor (fun w ↦ ∏' ρ : S, weierstrassFactor 1 ((ρ : ℂ)⁻¹ * w) ^ m ρ)
       Set.univ z = if hz : z ∈ S then (m ⟨z, hz⟩ : ℤ) else 0 := by
-  have hF := differentiable_tprod_weierstrassFactor_one_inv_mul_pow m hsum
+  have hF := differentiable_tprod_weierstrassFactor_one_pow (fun ρ : S ↦ (ρ : ℂ)⁻¹) m
+    (by simpa only [norm_inv, inv_pow, div_eq_mul_inv] using hsum)
   rw [MeromorphicOn.AnalyticOnNhd.divisor_apply (fun w _ ↦ hF.analyticAt w) (Set.mem_univ z),
     analyticOrderAt_tprod_weierstrassFactor_one_inv_mul_pow m hsum hzero z]
   split_ifs <;> simp
@@ -109,11 +97,12 @@ theorem exists_entire_genusOne_product (S : Set ℂ) (m : S → ℕ) (hzero : (0
         (fun (i : Σ ρ : S, Fin (m ρ)) z ↦ weierstrassFactor 1 ((i.1 : ℂ)⁻¹ * z)) F Set.univ ∧
       Differentiable ℂ F ∧ F 0 = 1 ∧
       ∀ z, analyticOrderAt F z = (if hz : z ∈ S then (m ⟨z, hz⟩ : ℕ∞) else 0) ∧
-        MeromorphicOn.divisor F Set.univ z = (if hz : z ∈ S then (m ⟨z, hz⟩ : ℤ) else 0) :=
-  ⟨_, hasProdLocallyUniformlyOn_weierstrassFactor_one_inv_mul_pow m hsum,
-    hasProdLocallyUniformlyOn_sigma_weierstrassFactor_one _ m
-      (summable_natCast_mul_norm_inv_sq m hsum),
-    differentiable_tprod_weierstrassFactor_one_inv_mul_pow m hsum, by simp,
+        MeromorphicOn.divisor F Set.univ z = (if hz : z ∈ S then (m ⟨z, hz⟩ : ℤ) else 0) := by
+  have hsum' : Summable (fun ρ : S ↦ (m ρ : ℝ) * ‖(ρ : ℂ)⁻¹‖ ^ 2) := by
+    simpa only [norm_inv, inv_pow, div_eq_mul_inv] using hsum
+  exact ⟨_, hasProdLocallyUniformlyOn_weierstrassFactor_one_pow _ m hsum',
+    hasProdLocallyUniformlyOn_sigma_weierstrassFactor_one _ m hsum',
+    differentiable_tprod_weierstrassFactor_one_pow _ m hsum', by simp,
     fun z ↦ ⟨analyticOrderAt_tprod_weierstrassFactor_one_inv_mul_pow m hsum hzero z,
       divisor_tprod_weierstrassFactor_one_inv_mul_pow m hsum hzero z⟩⟩
 
@@ -135,10 +124,10 @@ theorem exists_entire_genusOne_product_of_divisor
     congr 1
     exact_mod_cast (hcast ρ).symm
   have hzero : (0 : ℂ) ∉ D.support := by simpa using hDzero
-  refine ⟨_, hasProdLocallyUniformlyOn_weierstrassFactor_one_inv_mul_pow _ hsum',
-    differentiable_tprod_weierstrassFactor_one_inv_mul_pow _ hsum', by simp, ?_⟩
+  obtain ⟨F, hF, -, hdiff, hF0, hdiv⟩ := exists_entire_genusOne_product _ _ hzero hsum'
+  refine ⟨F, hF, hdiff, hF0, ?_⟩
   ext z
-  rw [divisor_tprod_weierstrassFactor_one_inv_mul_pow _ hsum' hzero z]
+  rw [(hdiv z).2]
   split_ifs with hz
   · exact hcast z
   · exact (by simpa using hz : D z = 0).symm
