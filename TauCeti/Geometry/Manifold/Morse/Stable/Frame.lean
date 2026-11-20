@@ -471,6 +471,18 @@ theorem neg_linearForwardTimes (hf : IsMorse 𝓘(ℝ, E) f)
   refine and_congr_right fun _ ↦ ⟨fun h t ht ↦ ?_, fun h t ht ↦ h _ (by linarith)⟩
   simpa using h (-t) (by linarith)
 
+omit hφ in
+/-- The times of linear backward flow of `-X` in the negated Morse chart are the times of linear
+forward flow of `X`. -/
+theorem neg_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f)
+    (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (y : M) :
+    (hX.neg hf).linearBackwardTimes (φ.neg h) y = hX.linearForwardTimes φ y := by
+  ext T
+  simp only [linearForwardTimes, linearBackwardTimes, mem_ofPred_eq, hX.neg_flow hf,
+    Flow.reverse_apply, neg_neg, MorseChart.neg_toChart, MorseChart.neg_coord, φ.neg_linearFlow h]
+  refine and_congr_right fun _ ↦ ⟨fun h t ht ↦ ?_, fun h t ht ↦ h _ (by linarith)⟩
+  simpa using h (-t) (by linarith)
+
 /-- The orbit of a point of `W^u(x)` eventually enters, backwards in time, the part of the Morse
 chart where the backward flow stays linear: all large times are times of linear backward flow. -/
 theorem eventually_mem_linearBackwardTimes (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
