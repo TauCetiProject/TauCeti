@@ -20,8 +20,8 @@ import TauCeti.Topology.MetricSpace.Holder
 
 Mathlib's `Real.sigmoid` maps `ℝ` increasingly onto `Set.Ioo 0 1`. Its inverse on that interval is
 the logit `u ↦ log (u / (1 - u))`. This file records the facts about the pair that are used to
-transport the uniform law on the unit interval along the logit: the logit is a right inverse of
-the sigmoid, and the logit of a level lies below a point exactly when the level lies below the
+transport the uniform law on the unit interval along the logit: the logit is a two-sided inverse
+of the sigmoid, and the logit of a level lies below a point exactly when the level lies below the
 sigmoid of that point. It also writes the derivative `σ (1 - σ)` of the sigmoid in terms of the
 exponential.
 
@@ -36,6 +36,7 @@ coefficients, as for option prices of linear growth in the spot `exp x`.
 ## Main results
 
 * `Real.sigmoid_log_div_one_sub` — `sigmoid (log (u / (1 - u))) = u` for `0 < u < 1`;
+* `Real.log_sigmoid_div_one_sub` — `log (sigmoid x / (1 - sigmoid x)) = x`;
 * `Real.log_div_one_sub_le_iff` — `log (u / (1 - u)) ≤ y ↔ u ≤ sigmoid y` for `0 < u < 1`;
 * `Real.measurable_logit_affine` — affine transformations of the logit are measurable;
 * `Real.sigmoid_mul_one_sub_sigmoid` — the derivative of the sigmoid is
@@ -57,17 +58,14 @@ interval. -/
 @[simp]
 theorem sigmoid_log_div_one_sub {u : ℝ} (h0 : 0 < u) (h1 : u < 1) :
     sigmoid (log (u / (1 - u))) = u := by
-  have h1' : 0 < 1 - u := sub_pos.mpr h1
-  rw [sigmoid_def, exp_neg, exp_log (div_pos h0 h1'), inv_div]
-  field_simp
-  ring
+  rw [sigmoid_def, exp_neg, exp_log (div_pos h0 (sub_pos.2 h1))]
+  field
 
 /-- The logit is a left inverse of the sigmoid. -/
 @[simp]
 theorem log_sigmoid_div_one_sub (x : ℝ) :
-    log (sigmoid x / (1 - sigmoid x)) = x := by
-  apply sigmoid_injective
-  exact sigmoid_log_div_one_sub (sigmoid_pos x) (sigmoid_lt_one x)
+    log (sigmoid x / (1 - sigmoid x)) = x :=
+  sigmoid_injective <| sigmoid_log_div_one_sub (sigmoid_pos x) (sigmoid_lt_one x)
 
 /-- On the open unit interval, the logit of `u` lies below `y` exactly when `u` lies below the
 sigmoid of `y`. -/
@@ -121,13 +119,10 @@ theorem memHolder_iteratedDeriv_sigmoid (n : ℕ) {α : NNReal} (hα : α ≤ 1)
       (contDiff_sigmoid.differentiable_iteratedDeriv n (WithTop.coe_lt_top _)) fun x => ?_
     rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs, ← iteratedDeriv_succ]
     exact (hC₁ x).trans (Real.le_coe_toNNReal C₁)
-  have hD (x : ℝ) (_ : x ∈ Set.univ) (y : ℝ) (_ : y ∈ Set.univ) :
-      dist (iteratedDeriv n sigmoid x) (iteratedDeriv n sigmoid y) ≤ (2 * C₀).toNNReal := by
-    rw [Real.dist_eq]
-    linarith [abs_sub (iteratedDeriv n sigmoid x) (iteratedDeriv n sigmoid y), hC₀ x, hC₀ y,
-      Real.le_coe_toNNReal (2 * C₀)]
-  exact ⟨_, holderOnWith_univ.1 (HolderOnWith.of_le_of_dist_le
-    (fun x _ y _ _ => (holderWith_one.2 hL).dist_le x y) hD hα one_pos)⟩
+  refine ⟨_, holderOnWith_univ.1 (hL.lipschitzOnWith.holderOnWith_of_norm_le
+    (M := C₀.toNNReal) (fun x _ => ?_) hα)⟩
+  rw [Real.norm_eq_abs]
+  exact (hC₀ x).trans (Real.le_coe_toNNReal C₀)
 
 /-- The sigmoid is the derivative of `x ↦ log (1 + exp x)`. -/
 theorem hasDerivAt_log_one_add_exp (x : ℝ) :
