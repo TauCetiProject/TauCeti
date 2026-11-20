@@ -449,8 +449,7 @@ private theorem oneVertexPlumbing_characteristicWeight_nonneg {p : ℤ}
   have h2 := (oneVertexPlumbing (-p)).two_mul_characteristicWeight k x
   rw [PlumbingGraph.characteristicWeightNumerator_def, PlumbingGraph.intersectionForm_apply,
     oneVertexPlumbing_intersectionMatrix] at h2
-  simp only [Fin.sum_univ_one, Fin.isValue, Matrix.of_apply, Matrix.cons_val',
-    Matrix.cons_val_fin_one, Matrix.empty_val'] at h2
+  simp only [Fin.sum_univ_one, Matrix.of_apply, Matrix.cons_val_fin_one] at h2
   -- `k x ≤ p |x| ≤ p x²`, since `|k| ≤ p` and `|x| ≤ x²` for an integer `x`.
   have hkx : k.val 0 * x 0 ≤ p * |x 0| := by
     calc k.val 0 * x 0 ≤ |k.val 0 * x 0| := le_abs_self _
@@ -495,11 +494,9 @@ theorem oneVertexPlumbing_neg_one_latticeCorrectionTerm
   have hk : (oneVertexPlumbing (-1)).IsSpinCEquivalent ⟨fun _ => 1, h1⟩ k := by
     refine ((oneVertexPlumbing (-1)).isSpinCEquivalent_iff _ _).2 ⟨fun _ => -m, ?_⟩
     funext v
-    fin_cases v
-    simp only [Int.reduceNeg, Fin.zero_eta, Fin.isValue, hm, Matrix.mulVec, dotProduct,
-      Finset.univ_unique, Fin.default_eq_zero, oneVertexPlumbing_intersectionMatrix,
-      Matrix.of_apply, Matrix.cons_val', Matrix.cons_val_fin_one, mul_neg, neg_mul, one_mul,
-      neg_neg, Finset.sum_const, Finset.card_singleton, Int.nsmul_eq_mul, Nat.cast_one]
+    obtain rfl := Subsingleton.elim v 0
+    simp only [hm, Matrix.mulVec, dotProduct, Fin.sum_univ_one,
+      oneVertexPlumbing_intersectionMatrix, Matrix.of_apply, Matrix.cons_val_fin_one]
     ring
   have h := isNegativeDefinite_oneVertexPlumbing (w := -1) (by norm_num)
   rw [h.latticeCorrectionTerm_eq_of_isSpinCEquivalent hk,

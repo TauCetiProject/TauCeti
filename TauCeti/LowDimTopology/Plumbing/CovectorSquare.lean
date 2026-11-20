@@ -66,7 +66,8 @@ identification belongs to Heegaard Floer theory and is not made here.
 ## Main results
 
 * `TauCeti.PlumbingGraph.covectorSquare_eq_div_det`: `k² = (k · adj Q k) / det Q`.
-* `TauCeti.PlumbingGraph.covectorSquare_add_two_mulVec`: `(k + 2 Q l)² = k² + 4 (⟨k, l⟩ + l · l)`.
+* `TauCeti.PlumbingGraph.covectorSquare_add_two_mulVec`:
+  `(k + 2 Q l)² = k² + 4 (⟨k, l⟩ + l · Q l)`.
 * `TauCeti.PlumbingGraph.covectorSquare_add_two_mulVec_eq_sub`: `(k + 2 Q l)² = k² - 8 χ_k(l)`.
 * `TauCeti.PlumbingGraph.IsNegativeDefinite.isGreatest_covectorSquare`: the largest square in
   the orbit of `k` is `k² - 8 m_k`.
@@ -147,8 +148,8 @@ theorem covectorSquare_eq_div_det (k : V → ℤ) :
       (fun v => (k v : ℚ)) ⬝ᵥ
         (P.intersectionMatrix.adjugate.map ((↑) : ℤ → ℚ) *ᵥ fun v => (k v : ℚ)) := by
     simp only [dotProduct, mulVec, map_apply, Int.cast_sum, Int.cast_mul]
-  rw [covectorSquare_def, inv_def, hadj, hdet, Ring.inverse_eq_inv', smul_mulVec,
-    dotProduct_smul, hcast, smul_eq_mul, div_eq_inv_mul]
+  rw [covectorSquare_def, inv_def, hadj, hdet, hcast]
+  simp [Ring.inverse_eq_inv', smul_mulVec, div_eq_inv_mul]
 
 /-! ### Translation by twice the image of the intersection matrix -/
 
@@ -160,7 +161,7 @@ private theorem cast_mulVec (l : V → ℤ) :
   ext v
   exact (Int.castRingHom ℚ).map_mulVec P.intersectionMatrix l v
 
-/-- The characteristic-weight numerator `⟨k, l⟩ + l · l`, cast to `ℚ`, in matrix form. -/
+/-- The characteristic-weight numerator `⟨k, l⟩ + l · Q l`, cast to `ℚ`, in matrix form. -/
 private theorem cast_characteristicWeightNumerator (k l : V → ℤ) :
     (P.characteristicWeightNumerator k l : ℚ) =
       (fun v => (k v : ℚ)) ⬝ᵥ (fun v => (l v : ℚ)) +
@@ -188,7 +189,7 @@ private theorem dotProduct_inv_mulVec_add_two_smul_mulVec {K : Type*} [Field K]
   ring
 
 /-- **Translating a covector by `2 Q l`.** If the intersection matrix `Q` is nonsingular, then
-`(k + 2 Q l)² = k² + 4 (⟨k, l⟩ + l · l)`, where the bracket is the characteristic-weight numerator
+`(k + 2 Q l)² = k² + 4 (⟨k, l⟩ + l · Q l)`, where the bracket is the characteristic-weight numerator
 `characteristicWeightNumerator k l`. -/
 theorem covectorSquare_add_two_mulVec (hQ : P.intersectionMatrix.det ≠ 0) (k l : V → ℤ) :
     P.covectorSquare (fun v => k v + 2 * (P.intersectionMatrix *ᵥ l) v) =
@@ -262,9 +263,11 @@ theorem IsNegativeDefinite.isGreatest_covectorSquare (h : P.IsNegativeDefinite)
 variable (P) in
 /-- The **lattice correction term** of a characteristic covector `k`:
 `(k² + |V|) / 4 - 2 m_k`, where `k²` is the rational square `covectorSquare` and
-`m_k = sInfCharacteristicWeight k` is the minimum of the characteristic weight function. On a
-negative-definite plumbing it is the maximum of `(k'² + |V|) / 4` over the spin^c orbit of `k`
-(`IsNegativeDefinite.isGreatest_latticeCorrectionTerm`). -/
+`m_k = sInfCharacteristicWeight k` is the infimum of the characteristic weight function. On a
+negative-definite plumbing `m_k` is a minimum, and the term is the maximum of `(k'² + |V|) / 4`
+over the spin^c orbit of `k` (`IsNegativeDefinite.isGreatest_latticeCorrectionTerm`). Off that
+domain the formula uses the junk values of `covectorSquare` (`0` when `Q` is singular) and of
+`sInfCharacteristicWeight` (`0` when the weight is unbounded below). -/
 noncomputable def latticeCorrectionTerm (k : P.characteristicVectors) : ℚ :=
   (P.covectorSquare k.val + Fintype.card V) / 4 - 2 * P.sInfCharacteristicWeight k
 
