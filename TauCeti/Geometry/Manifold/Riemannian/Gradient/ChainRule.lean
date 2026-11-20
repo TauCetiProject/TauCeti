@@ -169,4 +169,26 @@ theorem mgradient_log (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
     · simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg]
   · exact mgradient_comp_hasDerivAt (Real.hasDerivAt_log hx) hf
 
+/-- A gradient is orthogonal to the differential of a map whose potential is locally constant.
+No differentiability assumptions are needed: the native derivative is zero in the other cases. -/
+theorem inner_mgradient_mfderiv_eq_zero_of_eventuallyEq_const
+    {F K S : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace K]
+    {J : ModelWithCorners ℝ F K} [TopologicalSpace S] [ChartedSpace K S]
+    {ι : S → M} {c : ℝ} (z : S) (v : TangentSpace J z)
+    (hlevel : f ∘ ι =ᶠ[𝓝 z] fun _ ↦ c) :
+    inner ℝ (mgradient I f (ι z)) (mfderiv J I ι z v) = 0 := by
+  rw [inner_mgradient, mvfderiv_apply_eq_mfderiv_apply]
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f (ι z)
+  · by_cases hι : MDifferentiableAt J I ι z
+    · have h := congrArg (fun L ↦ L v) (mfderiv_comp z hf hι)
+      rw [hlevel.mfderiv_eq, mfderiv_const] at h
+      exact h.symm
+    · simp only [mfderiv_zero_of_not_mdifferentiableAt hι, zero_apply, map_zero]
+      -- `mvfderiv` identifies the scalar tangent space with ℝ.
+      rfl
+  · simp only [mfderiv_zero_of_not_mdifferentiableAt hf, zero_apply]
+    -- `mvfderiv` identifies the scalar tangent space with ℝ.
+    rfl
+
+
 end TauCeti.Manifold
