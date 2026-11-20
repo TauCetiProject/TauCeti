@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FixedPointIndex.B
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
-import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.Topology.Algebra.Module.Determinant
 
 /-!
 # Commutativity of the fixed-point index
@@ -28,9 +28,9 @@ compact exactly when the other is; when they are not compact both indices vanish
 
 This is the commutativity property of the classical fixed-point index, here for differentiable
 maps. Applied with `φ = h ∘ f` and `ψ = h⁻¹` for a diffeomorphism `h` of open sets and a map `f`
-differentiable on its domain, it gives `i(h ∘ f ∘ h⁻¹) = i(f)`. Its intended use is to show that
-an index of self-maps of a manifold, computed in charts, does not depend on the chart; no such
-manifold index is defined yet.
+differentiable on its domain that maps its domain into the domain of `h`, it gives
+`i(h ∘ f ∘ h⁻¹) = i(f)`. Its intended use is to show that an index of self-maps of a manifold,
+computed in charts, does not depend on the chart.
 
 The proof perturbs `ψ` to `ψ + v` for a small vector `v`. Let `C ⊆ V ∩ ψ⁻¹(U)` be a compact
 neighbourhood of the fixed points of `φ ∘ ψ`. For `v` small, the homotopies `ψ ∘ φ + t v` and
@@ -40,8 +40,8 @@ Sard's theorem (`TauCeti.dense_setOf_forall_surjective_fderiv`) `v` can be chose
 value of `z ↦ z - ψ (φ z)`; then every fixed point of `ψ ∘ φ + v` is nondegenerate. The fixed
 points of the two perturbed composites correspond under `φ` and `ψ + v`, and at corresponding
 points the derivatives are `B A` and `A B` for `A = dφ` and `B = dψ`, which have
-`det (1 - B A) = det (1 - A B)` (`LinearMap.det_one_sub_comp_comm`). Sard's theorem enters
-through `TauCeti.exists_norm_lt_forall_det_one_sub_ne_zero`. So both indices are the same
+`det (1 - B A) = det (1 - A B)` (`ContinuousLinearMap.det_one_sub_comp_comm`). Sard's theorem
+enters through `TauCeti.exists_norm_lt_forall_det_one_sub_ne_zero`. So both indices are the same
 sum of signs (`ContinuousMap.fixedPointIndex_eq_sum_sign_det`).
 
 ## Main results
@@ -72,6 +72,15 @@ variable {E₁ E₂ : Type} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [Fi
 /-! ### The fixed points of the two composites -/
 
 omit [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂] in
+/-- A fixed point `w` of `φ ∘ ψ` in `V ∩ ψ⁻¹(U)` gives the point `ψ w` of `U ∩ φ⁻¹(V)`. With the
+roles of `φ` and `ψ` exchanged, a fixed point `z` of `ψ ∘ φ` in `U ∩ φ⁻¹(V)` gives the point
+`φ z` of `V ∩ ψ⁻¹(U)`. -/
+private theorem apply_mem_of_apply_apply_eq (hU' : (U' : Set E₁) = (U : Set E₁) ∩ φ ⁻¹' V)
+    (hV' : (V' : Set E₂) = (V : Set E₂) ∩ ψ ⁻¹' U) {w : E₂} (hw : w ∈ V') (hfix : φ (ψ w) = w) :
+    ψ w ∈ U' :=
+  hU'.superset ⟨(hV'.subset hw).2, by rw [mem_preimage, hfix]; exact (hV'.subset hw).1⟩
+
+omit [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂] in
 /-- The fixed points of `φ ∘ ψ` on `V ∩ ψ⁻¹(U)` are the images under `φ` of the fixed points of
 `ψ ∘ φ` on `U ∩ φ⁻¹(V)`. -/
 private theorem image_val_setOf_apply_eq (hU' : (U' : Set E₁) = (U : Set E₁) ∩ φ ⁻¹' V)
@@ -82,15 +91,11 @@ private theorem image_val_setOf_apply_eq (hU' : (U' : Set E₁) = (U : Set E₁)
   constructor
   · rintro ⟨w, hw, rfl⟩
     rw [mem_ofPred_eq, hl] at hw
-    have hz : ψ w ∈ U' :=
-      hU'.superset ⟨(hV'.subset w.2).2, by rw [mem_preimage, hw]; exact (hV'.subset w.2).1⟩
-    refine ⟨ψ w, ⟨⟨ψ w, hz⟩, ?_, rfl⟩, hw⟩
+    refine ⟨ψ w, ⟨⟨ψ w, apply_mem_of_apply_apply_eq hU' hV' w.2 hw⟩, ?_, rfl⟩, hw⟩
     rw [mem_ofPred_eq, hk, hw]
   · rintro ⟨_, ⟨z, hz, rfl⟩, rfl⟩
     rw [mem_ofPred_eq, hk] at hz
-    have hw : φ z ∈ V' :=
-      hV'.superset ⟨(hU'.subset z.2).2, by rw [mem_preimage, hz]; exact (hU'.subset z.2).1⟩
-    refine ⟨⟨φ z, hw⟩, ?_, rfl⟩
+    refine ⟨⟨φ z, apply_mem_of_apply_apply_eq hV' hU' z.2 hz⟩, ?_, rfl⟩
     rw [mem_ofPred_eq, hl, hz]
 
 omit [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁] [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂] in
@@ -118,10 +123,6 @@ private theorem fixedPointIndex_comp_comm_of_det_ne_zero (hφ : DifferentiableOn
     k.fixedPointIndex = l.fixedPointIndex := by
   have hU'm (z : U') : (z : E₁) ∈ U ∧ φ z ∈ V := hU'.subset z.2
   have hV'm (w : V') : (w : E₂) ∈ V ∧ ψ w ∈ U := hV'.subset w.2
-  -- Sylvester's identity `det (1 - X Y) = det (1 - Y X)`, read for continuous linear maps.
-  have hsyl (X : E₂ →L[ℝ] E₁) (Y : E₁ →L[ℝ] E₂) : (1 - X.comp Y).det = (1 - Y.comp X).det := by
-    simpa [ContinuousLinearMap.det] using
-      LinearMap.det_one_sub_comp_comm (X : E₂ →ₗ[ℝ] E₁) (Y : E₁ →ₗ[ℝ] E₂)
   have hdk (z : U') : HasFDerivAt (fun x ↦ ψ (φ x)) ((fderiv ℝ ψ (φ z)).comp (fderiv ℝ φ z)) z :=
     (hψ.differentiableAt (V.isOpen.mem_nhds (hU'm z).2)).hasFDerivAt.comp (z : E₁)
       (hφ.differentiableAt (U.isOpen.mem_nhds (hU'm z).1)).hasFDerivAt
@@ -130,12 +131,12 @@ private theorem fixedPointIndex_comp_comm_of_det_ne_zero (hφ : DifferentiableOn
       (hψ.differentiableAt (V.isOpen.mem_nhds (hV'm w).1)).hasFDerivAt
   -- A fixed point `w` of `l` comes from the fixed point `ψ w` of `k`, where `φ (ψ w) = w`.
   have hψU' (w : V') (hw : l w = w) : ψ w ∈ U' :=
-    hU'.superset ⟨(hV'm w).2, by rw [mem_preimage, ← hl, hw]; exact (hV'm w).1⟩
+    apply_mem_of_apply_apply_eq hU' hV' w.2 (by rw [← hl, hw])
   have hdet' (w : V') (hw : l w = w) :
       (1 - (fderiv ℝ φ (ψ w)).comp (fderiv ℝ ψ w)).det ≠ 0 := by
     have h := hdet ⟨ψ w, hψU' w hw⟩ (by rw [hk, ← hl, hw])
     rw [show φ (ψ w) = w by rw [← hl, hw]] at h
-    rwa [hsyl] at h
+    rwa [ContinuousLinearMap.det_one_sub_comp_comm] at h
   have hK' := isCompact_setOf_apply_eq hφ.continuousOn hU' hV' hk hl hK
   have hfin := k.finite_setOf_apply_eq hK (fun z ↦ (hk z).symm)
     (f' := fun x ↦ (fderiv ℝ ψ (φ x)).comp (fderiv ℝ φ x)) (fun z _ ↦ hdk z) hdet
@@ -147,7 +148,7 @@ private theorem fixedPointIndex_comp_comm_of_det_ne_zero (hφ : DifferentiableOn
       (f' := fun y ↦ (fderiv ℝ φ (ψ y)).comp (fderiv ℝ ψ y)) (fun w _ ↦ hdl w) hdet']
   -- The fixed points of `k` and `l` correspond under `φ` and `ψ`.
   have hφV' (z : U') (hz : k z = z) : φ z ∈ V' :=
-    hV'.superset ⟨(hU'm z).2, by rw [mem_preimage, ← hk, hz]; exact (hU'm z).1⟩
+    apply_mem_of_apply_apply_eq hV' hU' z.2 (by rw [← hk, hz])
   refine Finset.sum_bij' (fun z hz ↦ ⟨φ z, hφV' z (hfin.mem_toFinset.1 hz)⟩)
     (fun w hw ↦ ⟨ψ w, hψU' w (hfin'.mem_toFinset.1 hw)⟩) (fun z hz ↦ ?_) (fun w hw ↦ ?_)
     (fun z hz ↦ ?_) (fun w hw ↦ ?_) (fun z hz ↦ ?_)
@@ -159,7 +160,7 @@ private theorem fixedPointIndex_comp_comm_of_det_ne_zero (hφ : DifferentiableOn
   · exact Subtype.ext ((hl w).symm.trans (hfin'.mem_toFinset.1 hw))
   · have hz' : ψ (φ z) = z := by rw [← hk, hfin.mem_toFinset.1 hz]
     dsimp only
-    rw [hz', hsyl]
+    rw [hz', ContinuousLinearMap.det_one_sub_comp_comm]
 
 /-! ### Perturbation -/
 
@@ -270,7 +271,7 @@ private theorem fixedPointIndex_eq_comp_add (hφ : ContinuousOn φ U) (hψ : Con
       refine ⟨(t, ⟨w, hw⟩), ?_, rfl⟩
       rw [mem_ofPred_eq, hHapp]
       exact hp
-  exact ⟨fixedPointIndex_eq_of_homotopy H hH, isCompact_setOf_apply_eq_of_homotopy H hH⟩
+  exact ⟨fixedPointIndex_eq_of_homotopy H hH, H.isCompact_setOf_apply_eq hH⟩
 
 omit [NormedSpace ℝ E₂] [FiniteDimensional ℝ E₂] in
 /-- The homotopy `ψ ∘ φ + t v`, `t ∈ [0, 1]`, on `W₁ = U ∩ φ⁻¹(W₂)`, where `W₂` is the interior
@@ -324,7 +325,7 @@ private theorem fixedPointIndex_eq_comp_add_const (hφ : ContinuousOn φ U)
         exact ⟨(hηC w hwC _ (norm_smul_lt hv t')).1, by rw [mem_preimage, hp]; exact hw⟩
       refine ⟨(t', ⟨_, hz⟩), ?_, rfl⟩
       rw [mem_ofPred_eq, hHapp, hp]
-  exact ⟨fixedPointIndex_eq_of_homotopy H hH, isCompact_setOf_apply_eq_of_homotopy H hH⟩
+  exact ⟨fixedPointIndex_eq_of_homotopy H hH, H.isCompact_setOf_apply_eq hH⟩
 
 /-- Commutativity of the fixed-point index, given a compact neighbourhood `C ⊆ V ∩ ψ⁻¹(U)` of the
 fixed points of `φ ∘ ψ` and a size `η` of perturbations of `ψ` as in
