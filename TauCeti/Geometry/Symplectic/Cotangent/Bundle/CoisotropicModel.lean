@@ -27,9 +27,10 @@ realization of the dual of the kernel bundle of `σ` inside `T*Q`. On its total 
 
 (`TauCeti.CotangentBundle.coisotropicModelForm`), where `π : D⁰ → Q` is the projection,
 `ι : D⁰ → T*Q` the inclusion and `ω = -dλ` the canonical symplectic form of `T*Q`. This file
-proves that `Ω` is a symplectic form near the zero section, that the zero section pulls it back to
-`σ`, and that the tangent spaces of the zero section are coisotropic for it: this is the model of
-Gotay's coisotropic embedding theorem.
+proves that, when `D` is complementary to `ker σ`, `Ω` is nondegenerate near the zero section, and
+symplectic there when `σ` is closed, that the zero section pulls `Ω` back to `σ`, and that the
+tangent spaces of the zero section are coisotropic for it: this is the model of Gotay's
+coisotropic embedding theorem.
 
 * Along the zero section, in the splitting `T_(0_q) D⁰ ≅ T_q Q × D⁰_q` of
   `TauCeti.Bundle.zeroSectionTangentEquiv`, the inclusion `ι` has differential `(v, a) ↦ (v, a)`
@@ -191,8 +192,7 @@ theorem exists_linearEquiv_coisotropicModel (q : Q)
     have h0 : (a : TangentSpace I q →L[ℝ] ℝ) ((D q).projection K hq v) = 0 :=
       mem_annihilatorSpace_iff.mp a.2 _ (Submodule.projection_apply_mem hq v)
     conv_rhs => rw [← Submodule.projection_add_projection_eq_self hq v]
-    rw [map_add, h0, zero_add]
-    rfl
+    rw [map_add, h0, zero_add, Submodule.projection_apply]
   -- Restriction to `K` identifies the annihilator of `D q` with `K*`.
   let ρ : annihilatorSpace I D q →ₗ[ℝ] Module.Dual ℝ K :=
     K.subtype.dualMap ∘ₗ ContinuousLinearMap.coeLM ℝ ∘ₗ (annihilatorSpace I D q).subtype
@@ -202,8 +202,7 @@ theorem exists_linearEquiv_coisotropicModel (q : Q)
     refine ⟨(injective_iff_map_eq_zero ρ).mpr fun a ha ↦ Subtype.ext <| ContinuousLinearMap.ext
       fun v ↦ ?_, fun f ↦ ⟨⟨LinearMap.toContinuousLinearMap (f ∘ₗ P),
         mem_annihilatorSpace_iff.mpr fun v hv ↦ ?_⟩, LinearMap.ext fun k ↦ ?_⟩⟩
-    · rw [← hP, ← hρ, ha]
-      rfl
+    · rw [← hP, ← hρ, ha, LinearMap.zero_apply, ZeroMemClass.coe_zero, zero_apply]
     · simp [P, (Submodule.projectionOnto_apply_eq_zero_iff hq.symm).mpr hv]
     · simp [hρ, P]
   let e := (Bundle.zeroSectionTangentEquiv (I := I) (F := F) (V := fun x ↦ annihilatorSpace I D x)

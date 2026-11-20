@@ -406,7 +406,7 @@ theorem mfderiv_annihilatorInclusion_zeroSection (q : M)
     rw [show annihilatorInclusion I D F ∘ (zeroSection F fun x ↦ annihilatorSpace I D x) =
         zeroSection (E →L[𝕜] 𝕜) fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜 from
       funext fun x ↦ annihilatorInclusion_zeroSection I D F x, TauCeti.Bundle.mfderiv_zeroSection]
-    rfl
+    exact ContinuousLinearMap.inl_apply v
   -- The inclusion maps the line through `a` in the fibre to the line through `a` in `T*_q M`,
   -- whose velocity is `(0, a)`.
   have h₂ : (mfderiv (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (annihilatorInclusion I D F)
@@ -425,11 +425,17 @@ theorem mfderiv_annihilatorInclusion_zeroSection (q : M)
           (fun t : 𝕜 ↦ (⟨q, t • a⟩ : TotalSpace F fun x ↦ annihilatorSpace I D x)) =
         fun t : 𝕜 ↦ (⟨q, t • (a : TangentSpace I q →L[𝕜] 𝕜)⟩ : CotangentBundle I M) from
       funext fun t ↦ annihilatorInclusion_mk' I D F q (t • a),
-      ← TauCeti.Bundle.zeroSectionTangentEquiv_symm_inr (I := I) (F := E →L[𝕜] 𝕜)
-        (V := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜),
-      TauCeti.Bundle.zeroSectionTangentEquiv_symm_apply,
-      continuousLinearMapAt_trivializationAt_self]
-    rfl
+      (Bundle.TotalSpace.hasMFDerivAt_smul_curve
+        (⟨q, (a : TangentSpace I q →L[𝕜] 𝕜)⟩ : CotangentBundle I M)
+        (hasDerivAt_id' (0 : 𝕜))).mfderiv]
+    -- The preferred trivialization of `T*M` at `q` gives `a` itself as its fibre coordinate.
+    have ha : (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q
+        ⟨q, (a : TangentSpace I q →L[𝕜] 𝕜)⟩).2 = (a : TangentSpace I q →L[𝕜] 𝕜) := by
+      rw [← Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _
+        (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
+          (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q),
+        continuousLinearMapAt_trivializationAt_self]
+    exact (one_smul 𝕜 _).trans (Prod.ext rfl ((one_smul 𝕜 _).trans ha))
   refine (congrArg₂ (· + ·) h₁ h₂).trans ?_
   exact Prod.ext (add_zero v) (zero_add _)
 
