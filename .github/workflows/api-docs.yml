@@ -47,7 +47,7 @@ jobs:
   build-docs:
     # The Fleet PR pool, as full-lint-label.yml and nightly-verify.yml use, so that the full
     # re-analysis after a pin bump (about 5 h on a 4-core hosted runner) does not hold a scarce
-    # GitHub-hosted runner. This job runs only on main. Set vars.PICKER_GITHUB_FALLBACK='true'
+    # GitHub-hosted runner. Set vars.PICKER_GITHUB_FALLBACK='true'
     # to return it to ubuntu-24.04 without a PR.
     runs-on: ${{ (vars.FLEET_CI_ENABLED == 'true' && vars.PICKER_GITHUB_FALLBACK != 'true') && fromJSON('{"group":"TauCetiFleet","labels":["self-hosted","linux","x64","tauceti-fleet-pr"]}') || 'ubuntu-24.04' }}
     # A full rebuild (after a pin bump) analyzes all of TauCeti; everything else is far quicker.
