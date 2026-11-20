@@ -37,8 +37,12 @@ theorem betaMeasure_natCast_add_one_eq_withDensity (k m : ℕ) :
   filter_upwards [ae_restrict_mem measurableSet_Ioo] with u hu
   have hbeta : beta ((k : ℝ) + 1) ((m : ℝ) + 1) =
       (k.factorial * m.factorial) / (k + m + 1).factorial := by
-    rw [beta, show (k : ℝ) + 1 + ((m : ℝ) + 1) = ((k + m + 1 : ℕ) : ℝ) + 1 by push_cast; ring,
-      Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial]
+    -- The sum of the shapes is `(k + m + 1) + 1`, the form `Real.Gamma_nat_eq_factorial` needs.
+    have hsum : (k : ℝ) + 1 + ((m : ℝ) + 1) = ((k + m + 1 : ℕ) : ℝ) + 1 := by
+      push_cast
+      ring
+    rw [beta, hsum, Real.Gamma_nat_eq_factorial, Real.Gamma_nat_eq_factorial,
+      Real.Gamma_nat_eq_factorial]
   simp only [betaPDF, betaPDFReal, hu.1, hu.2, and_self, ite_true, hbeta, one_div, inv_div,
     add_sub_cancel_right, Real.rpow_natCast]
 

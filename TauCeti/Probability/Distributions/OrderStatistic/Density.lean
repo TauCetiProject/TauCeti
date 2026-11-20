@@ -38,8 +38,6 @@ along `F`.
 
 ## Main results
 
-* `TauCeti.Probability.preimage_cdf_Iic_cdf_ae_eq_Iic` — almost everywhere, `F x ≤ F t` exactly
-  when `x ≤ t`;
 * `TauCeti.Probability.map_orderStatistics_pi_eq_withDensity` — the joint density;
 * `TauCeti.Probability.map_orderStatistic_pi_eq_withDensity` — the marginal density.
 
@@ -62,16 +60,6 @@ open scoped ENNReal
 namespace TauCeti.Probability
 
 variable {n : ℕ} {μ : Measure ℝ} [IsProbabilityMeasure μ] {g : ℝ → ℝ≥0∞}
-
-/-- For a law `μ` on `ℝ` with distribution function `F`, the set where `F` is at most `F t`
-agrees almost everywhere with `Iic t`: the plateau of `F` to the right of `t` is null. -/
-theorem preimage_cdf_Iic_cdf_ae_eq_Iic (t : ℝ) : cdf μ ⁻¹' Iic (cdf μ t) =ᵐ[μ] Iic t := by
-  refine ae_eq_set.2 ⟨measure_mono_null (fun x hx => ?_) (Measure.measure_plateau_eq_zero (y := t)),
-    measure_mono_null (fun x hx => ?_) measure_empty⟩
-  · simp only [mem_sdiff, mem_preimage, mem_Iic, not_le] at hx
-    exact ⟨hx.2, le_antisymm ((cdf μ).mono hx.2.le) hx.1⟩
-  · simp only [mem_sdiff, mem_preimage, mem_Iic] at hx
-    exact hx.2 ((cdf μ).mono hx.1)
 
 /-- **Joint density of the order statistics.** If `μ` has density `g` with respect to Lebesgue
 measure, the vector of order statistics of an iid sample of size `n` from `μ` has density
@@ -133,6 +121,6 @@ theorem map_orderStatistic_pi_eq_withDensity (j : Fin n) (hg : AEMeasurable g)
     ← cdf_betaMeasure_eq ha hb, ofReal_cdf, hbeta, ← Measure.cdf_map_eq_volume_restrict μ,
     withDensity_apply _ measurableSet_Iic, setLIntegral_map measurableSet_Iic (by fun_prop) hFm,
     withDensity_apply _ measurableSet_Iic]
-  exact setLIntegral_congr (preimage_cdf_Iic_cdf_ae_eq_Iic t)
+  exact setLIntegral_congr (Measure.preimage_cdf_Iic_cdf_ae_eq_Iic μ t)
 
 end TauCeti.Probability
