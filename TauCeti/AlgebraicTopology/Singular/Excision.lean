@@ -481,8 +481,9 @@ private theorem singularHomology_biInter_hom_ext {ι : Type*} {U : ι → Set X}
 /-- **Relative homology modulo a finite intersection is detected on the members.** Let `U j`, for
 `j` in a finite type, be subsets of a space `X` such that the interiors of any two of them cover
 `X`, and let `W = ⋂ j, U j`. Two morphisms into `Hₙ(X, W)` agree as soon as their images in every
-`Hₙ(X, U j)` agree. For two sets this is `TopPair.singularHomology_inter_hom_ext`. As there, the
-inclusions are arguments, so that the maps of pairs in the hypotheses match those of the caller. -/
+`Hₙ(X, U j)` agree. For two sets this is `TopPair.singularHomology_inter_hom_ext`. The
+intersection `W` is an argument with `hW : W = ⋂ j, U j`, and `h` quantifies over the inclusion
+proofs, so that the maps of pairs in the hypotheses match those of the caller. -/
 theorem singularHomology_iInter_hom_ext {ι : Type*} [Finite ι] {U : ι → Set X}
     (hU : Pairwise fun j k ↦ interior (U j) ∪ interior (U k) = Set.univ) {W : Set X}
     (hW : W = ⋂ j, U j) (n : ℕ) {M : A} {u v : M ⟶ (ofSubset W).singularHomology R n}

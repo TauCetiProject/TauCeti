@@ -113,9 +113,10 @@ private lemma isIso_singularHomologyMap_unionToCompl [Finite ι] (j : ι) (n : �
     by_cases hzj : (z : Y) ∈ D j
     · refine Or.inl (interior_maximal (fun x hx ↦ ?_) (((toFinite {k | k ≠ j}).isClosed_biUnion
         fun k _ ↦ hD k).isOpen_compl.preimage continuous_subtype_val) ?_)
-      · obtain hxL | ⟨_, ⟨k, rfl⟩, hxk⟩ := x.2
+      · obtain hxL | hxD := x.2
         · exact Or.inl hxL
-        · by_cases hkj : k = j
+        · obtain ⟨k, hxk⟩ := mem_iUnion.1 hxD
+          by_cases hkj : k = j
           · exact Or.inr (hkj ▸ hxk)
           · exact absurd (mem_biUnion hkj hxk) hx
       · simp only [mem_preimage, mem_compl_iff, mem_iUnion₂, not_exists]
