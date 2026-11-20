@@ -328,6 +328,11 @@ variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
 abbrev toOddComponentGridDiagram : OddComponentGridDiagram n :=
   ⟨G, by rw [G.isKnot_def.mp hG]; exact odd_one⟩
 
+/-- The underlying grid diagram of `hG.toOddComponentGridDiagram` is `G`. -/
+@[simp]
+theorem val_toOddComponentGridDiagram : hG.toOddComponentGridDiagram.1 = G :=
+  (rfl)
+
 end GridDiagram.IsKnot
 
 namespace OddComponentGridDiagram
@@ -421,6 +426,14 @@ theorem bidegree_fst (x : GridState n) : (G.bidegree x).1 = G.1.maslovOℤ x :=
 theorem bidegree_snd (x : GridState n) : (G.bidegree x).2 = G.alexanderℤ x :=
   by rw [bidegree]
 
+/-- Diagonal reflection preserves the `(O-Maslov, Alexander)` bidegree of a grid state. -/
+@[simp]
+theorem bidegree_transpose (x : GridState n) :
+    G.transpose.bidegree x.transpose = G.bidegree x := by
+  refine Prod.ext ?_ ?_
+  · rw [bidegree_fst, bidegree_fst, val_transpose, GridDiagram.maslovOℤ_transpose]
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_transpose]
+
 /-- The finite set of bidegrees occupied by grid states. -/
 noncomputable def bidegreeSupport : Finset (ℤ × ℤ) :=
   Finset.univ.image G.bidegree
@@ -463,5 +476,23 @@ theorem mem_maslovSupport_iff (a m : ℤ) :
     exact ⟨(m, a), ⟨⟨x, hx⟩, rfl⟩, rfl⟩
 
 end OddComponentGridDiagram
+
+namespace GridDiagram.IsKnot
+
+variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot)
+
+/-- Half-turning the odd-component diagram of a knot grid equals that of `G.rotate`. -/
+theorem rotate_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.rotate =
+      (G.isKnot_rotate.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_rotate, val_toOddComponentGridDiagram])
+
+/-- Reflecting the odd-component diagram of a knot grid equals that of `G.transpose`. -/
+theorem transpose_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.transpose =
+      (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_transpose, val_toOddComponentGridDiagram])
+
+end GridDiagram.IsKnot
 
 end TauCeti

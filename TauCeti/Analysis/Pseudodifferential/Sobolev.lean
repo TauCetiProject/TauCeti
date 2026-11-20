@@ -343,8 +343,7 @@ theorem HasCompactSpatialSupport.exists_norm_fourier_slice_le (ha : a.HasCompact
   refine ⟨C, hC0, fun η ξ ↦ ?_⟩
   -- `⟨η⟩ ^ r ≤ (1 + ‖η‖) ^ ⌈r⌉₊`
   have hw : (1 + ‖η‖ ^ 2) ^ (r / 2) ≤ (1 + ‖η‖) ^ ⌈r⌉₊ :=
-    (Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖η‖])
-      (by linarith [Nat.le_ceil r])).trans (one_add_norm_sq_rpow_le_one_add_norm_pow η ⌈r⌉₊)
+    one_add_norm_sq_rpow_le_one_add_norm_pow_of_le η (Nat.le_ceil r)
   have hpos : 0 < (1 + ‖η‖ ^ 2) ^ (r / 2) := by positivity
   rw [show -r / 2 = -(r / 2) by ring, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
     le_div_iff₀ hpos]
@@ -387,7 +386,8 @@ theorem HasCompactSpatialSupport.hasFDerivAt_fourier_slice (ha : a.HasCompactSpa
       (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ a.coefficient (y, ξ)) ξ₀) ξ₀ := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   simpa only [Real.fourier_eq, Circle.smul_def] using
-    hasFDerivAt_integral_fourierChar_smul (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ₀
+    hasFDerivAt_integral_fourierChar_smul (ξ₀ := ξ₀) (a.contDiff_coefficient.of_le (by simp)) hK
+      (.of_forall fun ξ y hy ↦ hKa y hy ξ) η
 
 /-- The coordinate derivative `∂_{ξ_j} â(η, ξ)` is the Fourier transform of the position slice of
 the frequency derivative `∂_{ξ_j} a`. -/
@@ -397,7 +397,8 @@ theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompac
       𝓕 (fun y ↦ (Symbol.frequencyDeriv j a).coefficient (y, ξ)) η := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   rw [coordinateDeriv_cons, coordinateDeriv_nil, (ha.hasFDerivAt_fourier_slice η ξ).fderiv,
-    integral_fourierChar_smul_fderiv_apply (a.contDiff_coefficient.of_le (by simp)) hK hKa η ξ,
+    integral_fourierChar_smul_fderiv_apply (ξ := ξ) (a.contDiff_coefficient.of_le (by simp)) hK
+      (.of_forall fun ξ y hy ↦ hKa y hy ξ) η,
     Real.fourier_eq]
   simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
     coordinateDeriv_nil]
