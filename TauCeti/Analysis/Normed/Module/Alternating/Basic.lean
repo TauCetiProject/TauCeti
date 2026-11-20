@@ -28,9 +28,9 @@ public section
 
 namespace ContinuousAlternatingMap
 
-variable {𝕜 E F F' G ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F']
-  [NormedSpace 𝕜 F'] [NormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι] [DecidableEq ι]
+variable {𝕜 E F F' G ι : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F']
+  [NormedSpace 𝕜 F'] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [Fintype ι] [DecidableEq ι]
 
 /-- The derivative of the pullback is natural under precomposition: at `A ∘ g`, in the direction
 `B ∘ g`, it is the pullback along `g` of the derivative at `A` in the direction `B`. -/
