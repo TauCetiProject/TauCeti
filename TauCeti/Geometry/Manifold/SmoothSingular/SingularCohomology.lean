@@ -25,7 +25,7 @@ inverse gives the **de Rham homomorphism**
 `TauCeti.deRhamHom I M k : H^k_dR(M) →ₗ[ℝ] Hᵏ(M; ℝ)`
 
 into ordinary singular cohomology with real coefficients. It is characterized by its restriction
-to smooth simplices, which is integration (`TauCeti.smoothSingularCohomologyIso_hom_deRhamHom`), and
+to smooth simplices, which is integration (`TauCeti.homologyMap_cochainComplexMap_deRhamHom`), and
 it is natural under pullback along smooth maps (`TauCeti.deRhamHom_map`).
 
 Its values pair with singular homology through the Kronecker map
@@ -42,7 +42,7 @@ singular homology classes, such as cross products and fundamental classes, are c
 
 ## Main results
 
-* `TauCeti.smoothSingularCohomologyIso_hom_deRhamHom`: restricted to smooth simplices, the de Rham
+* `TauCeti.homologyMap_cochainComplexMap_deRhamHom`: restricted to smooth simplices, the de Rham
   homomorphism is integration.
 * `TauCeti.deRhamHom_mk`: the image of the class of a closed form is the singular class
   corresponding to its integration cocycle.
@@ -85,15 +85,17 @@ theorem deRhamHom_apply (k : ℕ) (c : deRhamCohomology I M k) :
         (deRhamCohomology.integration I M k c) := (rfl)
 
 /-- Restricted to smooth singular simplices, the de Rham homomorphism is integration. This
-determines it, since the restriction `TauCeti.smoothSingularCohomologyIso` is an isomorphism. -/
-theorem smoothSingularCohomologyIso_hom_deRhamHom (k : ℕ) (c : deRhamCohomology I M k) :
-    (smoothSingularCohomologyIso I M (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) k).hom
-        (deRhamHom I M k c) =
+determines it, since this restriction is the isomorphism `TauCeti.smoothSingularCohomologyIso`. -/
+@[simp]
+theorem homologyMap_cochainComplexMap_deRhamHom (k : ℕ) (c : deRhamCohomology I M k) :
+    HomologicalComplex.homologyMap (SSet.cochainComplexMap (R := ModuleCat.of ℝ ℝ) (k := ℝ)
+        (M := ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M).ι) k (deRhamHom I M k c) =
       deRhamCohomology.integration I M k c := by
-  rw [deRhamHom_apply, Iso.inv_hom_id_apply]
+  rw [← smoothSingularCohomologyIso_hom, deRhamHom_apply, Iso.inv_hom_id_apply]
 
 /-- The de Rham homomorphism sends the class of a closed form to the singular class whose
 restriction to smooth simplices is the class of its integration cocycle. -/
+@[simp]
 theorem deRhamHom_mk (k : ℕ) (φ : closedForms I M k) :
     deRhamHom I M k (deRhamCohomology.mk I k φ) =
       (smoothSingularCohomologyIso I M (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) k).inv
@@ -141,8 +143,8 @@ theorem singularKronecker_deRhamHom_mk_apply (k : ℕ) (φ : closedForms I M k)
   -- coercions of a morphism of modules agree by definition.
   refine h.symm.trans ?_
   -- Restricted to smooth chains, the class is that of the integration cocycle.
-  have hc := smoothSingularCohomologyIso_hom_deRhamHom I M k (deRhamCohomology.mk I k φ)
-  rw [smoothSingularCohomologyIso_hom, deRhamCohomology.integration_mk] at hc
+  have hc := homologyMap_cochainComplexMap_deRhamHom I M k (deRhamCohomology.mk I k φ)
+  rw [deRhamCohomology.integration_mk] at hc
   rw [hc, ChainComplex.kronecker_homologyπ_homologyπ, iCycles_integrationCocycle]
 
 end TauCeti
