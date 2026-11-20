@@ -529,6 +529,11 @@ theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
 def fixInput (c : Code) (x : ℕ) : Code :=
   comp c (Nat.Partrec.Code.const x).toSingleOracleCode
 
+/-- Fixing an input composes the program with the ordinary constant program for that input. -/
+theorem fixInput_def (c : Code) (x : ℕ) :
+    c.fixInput x = comp c (Nat.Partrec.Code.const x).toSingleOracleCode :=
+  (rfl)
+
 /-- Fixing an input is primitive recursive in the program and the input. -/
 theorem primrec₂_fixInput : Primrec₂ fixInput :=
   primrec₂_comp.comp Primrec.fst <|
@@ -567,11 +572,6 @@ theorem haltingIndex_inj {c d : Code} {x y : ℕ} :
       (Nat.Partrec.Code.toSingleOracleCode_injective h.2)⟩
   · rintro ⟨rfl, rfl⟩
     rfl
-
-/-- The decoded halting index runs the program on its fixed input in every oracle. -/
-theorem eval_ofNat_haltingIndex (O : ℕ →. ℕ) (c : Code) (x y : ℕ) :
-    eval O (ofNat Code (c.haltingIndex x)) y = eval O c x := by
-  rw [ofNat_haltingIndex, eval_fixInput]
 
 /-- Every partial recursive function is computed by one program relative to every oracle: the
 query-free program of an ordinary code computing it. -/

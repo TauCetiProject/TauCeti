@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.SingleOracle.Evaln
 public import TauCeti.Computability.Primrec.FiniteSet
+import all TauCeti.Computability.SingleOracle.Evaln
 
 /-!
 # Bounded evaluation of oracle programs is primitive recursive
@@ -348,6 +349,18 @@ theorem primrec_evaln {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) :
     (encode_iff.2 ((fst.comp snd).pair (fst.comp (snd.comp snd))))) (snd.comp (snd.comp snd)))
     Primrec₂.right).of_eq fun p => ?_
   exact getElem?_evalnTable_bind (σ := σ p.1) _ _ _
+
+/-- Bounded query answers are primitive recursive in the oracle parameter, the two bounds,
+the program and the address, provided the parameter type is `Primcodable` and answer lookup
+is primitive recursive jointly in the parameter and address. -/
+theorem primrec_boundedAnswers
+    {answers : α → ℕ → Option ℕ} (hσ : Primrec₂ answers) :
+    Primrec fun p : (α × ℕ × Code × ℕ) × ℕ =>
+      p.1.2.2.1.boundedAnswers (answers p.1.1) p.1.2.1 p.2 p.1.2.2.2 := by
+  exact option_bind ((primrec_evaln hσ).comp fst) <| .mk <| option_guard
+    ((Primrec.nat_le.comp (Halt.primrec_use.comp (snd.comp fst))
+      (snd.comp (fst.comp fst))).primrecRel)
+    (Halt.primrec_output.comp snd)
 
 /-- The stage use is primitive recursive, uniformly in a parameter `a` on which the answers `σ a`
 depend primitive recursively, and in the fuel, the program and the argument. -/

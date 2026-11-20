@@ -16,6 +16,8 @@ a program computing the oracle of `A.jump` in the oracle of `B.jump`. It uses th
 diagonal index translation and makes one query at the translated index. Iteration gives
 a primitive-recursive family of reduction programs for all finite jump levels, and a
 primitive-recursive family of one-one maps on indices for the positive levels.
+The reduction programs are defined by iterating the noncomputable `Code.jumpProgram`,
+so Lean cannot execute this definition of the family.
 
 The only input to the transformation is the program, and its correctness holds for every pair
 of set oracles for which that program is a reduction. The underlying jump monotonicity is from

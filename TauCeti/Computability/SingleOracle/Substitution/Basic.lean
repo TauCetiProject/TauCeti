@@ -144,11 +144,6 @@ theorem jumpIndex_injective (d : Code) : Function.Injective d.jumpIndex :=
     simp only [jumpIndex, haltingIndex_inj] at h
     exact h.2
 
-/-- Diagonal index translation simulates the original run relative to the computed oracle. -/
-theorem eval_ofNat_jumpIndex (O : ℕ →. ℕ) (d : Code) (e x : ℕ) :
-    eval O (ofNat Code (d.jumpIndex e)) x = eval (eval O d) (ofNat Code e) e := by
-  rw [ofNat_jumpIndex, eval_fixInput, eval_subst]
-
 end TauCeti.Oracle.Single.Code
 
 namespace Nat.Partrec.Code

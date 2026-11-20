@@ -32,98 +32,11 @@ III.1.7–9.
 
 public section
 
-open Encodable Filter Primrec
+open Encodable Filter
 
 namespace TauCeti.Oracle.Single.Code
 
-/-- The answer computed by `d` at an address using fuel `k` and at most the first `u` base-oracle
-coordinates. A missing run or a run using a larger prefix supplies no answer. -/
-def boundedAnswers (d : Code) (σ : ℕ → Option ℕ) (k u : ℕ) (x : ℕ) : Option ℕ :=
-  (evaln σ k d x).bind fun h => Option.guard (fun _ => h.use ≤ u) h.output
-
 variable {σ : ℕ → Option ℕ} {c d : Code} {j k u x y : ℕ} {r : Halt}
-
-/-- A bounded answer is supplied precisely by a successful run within the use bound. -/
-@[simp]
-theorem boundedAnswers_eq_some_iff :
-    d.boundedAnswers σ j u x = some y ↔
-      ∃ h, evaln σ j d x = some h ∧ h.use ≤ u ∧ h.output = y := by
-  simp [boundedAnswers, Option.bind_eq_some_iff, and_comm]
-
-/-- A bounded answer is missing if evaluation fails or the successful run exceeds the use bound. -/
-@[simp]
-theorem boundedAnswers_eq_none_iff :
-    d.boundedAnswers σ j u x = none ↔
-      evaln σ j d x = none ∨ ∃ h, evaln σ j d x = some h ∧ u < h.use := by
-  cases h : evaln σ j d x <;> simp [boundedAnswers, h]
-
-/-- If the supplied answers represent `O`, the values computed by `d` are exactly the bounded
-answers supplied at some common fuel and use bound. -/
-theorem mem_eval_iff_exists_boundedAnswers {O : ℕ →. ℕ}
-    (hσ : ∀ z v, σ z = some v ↔ v ∈ O z) :
-    y ∈ eval O d x ↔ ∃ k, d.boundedAnswers σ k k x = some y := by
-  rw [mem_eval_iff_exists_evaln hσ]
-  constructor
-  · rintro ⟨k, h, hk, rfl⟩
-    exact ⟨k, boundedAnswers_eq_some_iff.2 ⟨h, hk, evaln_use_le hk, rfl⟩⟩
-  · rintro ⟨k, hk⟩
-    obtain ⟨h, hh, -, hy⟩ := boundedAnswers_eq_some_iff.1 hk
-    exact ⟨k, h, hh, hy⟩
-
-/-- Enlarging either bound retains any answer already supplied by a query program. -/
-theorem boundedAnswers_eq_some_of_le {j' u' : ℕ} (hj : j ≤ j') (hu : u ≤ u')
-    (h : d.boundedAnswers σ j u x = some y) : d.boundedAnswers σ j' u' x = some y := by
-  obtain ⟨r, hr, hru, rfl⟩ := boundedAnswers_eq_some_iff.1 h
-  exact boundedAnswers_eq_some_iff.2 ⟨r, evaln_mono hj hr, hru.trans hu, rfl⟩
-
-/-- With a fixed use bound `u`, the answers eventually supplied by `d` are exactly the
-values it computes relative to the base oracle restricted to addresses below `u`, provided
-the answer table agrees with the oracle at those addresses. -/
-theorem mem_eval_restrict_iff_exists_boundedAnswers {O : ℕ →. ℕ}
-    (hσ : ∀ z < u, ∀ v, σ z = some v ↔ v ∈ O z) :
-    y ∈ eval (O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right) d x ↔
-      ∃ j, d.boundedAnswers σ j u x = some y := by
-  let τ (z : ℕ) := if z < u then σ z else none
-  have hτ (z v : ℕ) :
-      τ z = some v ↔ v ∈ O.restrict (p := Set.Iio u ∩ O.Dom) Set.inter_subset_right z := by
-    by_cases hz : z < u
-    · simp only [τ, hz, ite_true, PFun.mem_restrict, Set.mem_inter_iff, Set.mem_Iio, true_and,
-        hσ z hz]
-      exact ⟨fun hv => ⟨(PFun.mem_dom O z).2 ⟨v, hv⟩, hv⟩, And.right⟩
-    · simp [τ, hz]
-  have hagree : Set.EqOn σ τ (Set.Iio u) := fun z hz => by simp [τ, Set.mem_Iio.1 hz]
-  rw [mem_eval_iff_exists_evaln hτ]
-  simp only [boundedAnswers_eq_some_iff]
-  constructor
-  · rintro ⟨j, r, hr, rfl⟩
-    have hu : r.use ≤ u :=
-      evaln_use_le_of_forall_eq_none (fun z hz => by simp [τ, not_lt.2 hz]) hr
-    exact ⟨j, r, evaln_eq_some_of_eqOn hr (hagree.symm.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
-  · rintro ⟨j, r, hr, hu, rfl⟩
-    exact ⟨j, r, evaln_eq_some_of_eqOn hr (hagree.mono (Set.Iio_subset_Iio hu)), rfl⟩
-
-/-- Query answers depend only on the allowed prefix of the base oracle, including when the
-answer is missing. -/
-theorem boundedAnswers_eq_of_eqOn {τ : ℕ → Option ℕ} (h : Set.EqOn σ τ (Set.Iio u)) :
-    d.boundedAnswers σ j u x = d.boundedAnswers τ j u x := by
-  apply Option.ext
-  intro v
-  simp only [boundedAnswers_eq_some_iff]
-  constructor <;> rintro ⟨r, hr, hu, rfl⟩
-  · exact ⟨r, evaln_eq_some_of_eqOn hr (h.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
-  · exact ⟨r, evaln_eq_some_of_eqOn hr (h.symm.mono (Set.Iio_subset_Iio hu)), hu, rfl⟩
-
-/-- Bounded query answers are primitive recursive in the oracle parameter, the two bounds,
-the program and the address, provided the parameter type is `Primcodable` and answer lookup
-is primitive recursive jointly in the parameter and address. -/
-theorem primrec_boundedAnswers {α : Type*} [Primcodable α]
-    {answers : α → ℕ → Option ℕ} (hσ : Primrec₂ answers) :
-    Primrec fun p : (α × ℕ × Code × ℕ) × ℕ =>
-      p.1.2.2.1.boundedAnswers (answers p.1.1) p.1.2.1 p.2 p.1.2.2.2 := by
-  exact option_bind ((primrec_evaln hσ).comp fst) <| .mk <| option_guard
-    ((Primrec.nat_le.comp (Halt.primrec_use.comp (snd.comp fst))
-      (snd.comp (fst.comp fst))).primrecRel)
-    (Halt.primrec_output.comp snd)
 
 private theorem evaln_succ_use_eq_zero_of_basic
     (hc : c = zero ∨ c = succ ∨ c = left ∨ c = right)
