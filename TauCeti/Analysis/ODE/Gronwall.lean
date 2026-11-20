@@ -255,12 +255,18 @@ theorem eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc {E : Type*} [NormedAdd
   simpa only [gronwallBound_ε0_δ0, norm_le_zero_iff] using h
 
 /-- **A square-integrable path with derivative controlled by its norm is bounded.** If
-`‖u'‖ ≤ K ‖u‖` with `K ≥ 0` and `u` is square integrable on the line, then
-`‖u s‖² ≤ exp (2 K) ∫ ‖u‖²` for every `s`. -/
+`‖u'‖ ≤ K ‖u‖` and `u` is square integrable on the line, then `‖u s‖² ≤ exp (2 K) ∫ ‖u‖²` for
+every `s`. (For `K < 0` the hypothesis forces `u = 0`.) -/
 theorem norm_sq_le_exp_mul_integral_norm_sq {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u u' : ℝ → F} {K : ℝ} (hK : 0 ≤ K)
+    [NormedSpace ℝ F] {u u' : ℝ → F} {K : ℝ}
     (hu : ∀ s, HasDerivAt u (u' s) s) (hu' : ∀ s, ‖u' s‖ ≤ K * ‖u s‖) (hu2 : MemLp u 2)
     (s : ℝ) : ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 := by
+  -- For `K < 0`, `0 ≤ ‖u' s‖ ≤ K ‖u s‖` forces `u s = 0`.
+  rcases lt_or_ge K 0 with hK | hK
+  · have hus : ‖u s‖ = 0 :=
+      (nonpos_of_mul_nonneg_right ((norm_nonneg _).trans (hu' s)) hK).antisymm (norm_nonneg _)
+    rw [hus, zero_pow two_ne_zero]
+    exact mul_nonneg (Real.exp_pos _).le (integral_nonneg fun _ ↦ by positivity)
   -- Grönwall on `[s, s + 1]` from the point `t`: `‖u s‖ ≤ exp K ‖u t‖` for `t ∈ [s, s + 1]`.
   have hback (t : ℝ) (ht : t ∈ Icc s (s + 1)) :
       ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ‖u t‖ ^ 2 := by
