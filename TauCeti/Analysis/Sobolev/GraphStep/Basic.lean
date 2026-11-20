@@ -254,7 +254,7 @@ theorem prev_zero (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
   simp only [← prevL_apply, map_zero]
 
 theorem prev_coe (base : X →L[ℝ] Lp F p (mu.restrict Omega))
-    (u : WeakDerivStep mu Omega p base) : prev base u = WithLp.fst u.1 := by
+    (u : WeakDerivStep mu Omega p base) : prev base u = WithLp.fst u.val := by
   simp [prev, prevL]
 
 /-- Restrict the field selected by `base` to an open subset of its domain. -/
@@ -298,7 +298,7 @@ theorem weakFDerivL_apply (base : X →L[ℝ] Lp F p (mu.restrict Omega))
   rw [weakFDeriv]
 
 theorem weakFDeriv_coe (base : X →L[ℝ] Lp F p (mu.restrict Omega))
-    (u : WeakDerivStep mu Omega p base) : weakFDeriv base u = WithLp.snd u.1 := by
+    (u : WeakDerivStep mu Omega p base) : weakFDeriv base u = WithLp.snd u.val := by
   simp [weakFDeriv, weakFDerivL]
 
 /-- Construct an element of a weak-derivative graph from its two components. -/
@@ -331,7 +331,7 @@ theorem hasWeakFDerivOn_base_prev [IsLocallyFiniteMeasure (mu.restrict Omega)]
     (u : WeakDerivStep mu Omega p base) :
     HasWeakFDerivOn mu Omega (base (prev base u)) (weakFDeriv base u) := by
   simpa only [prev_coe, weakFDeriv_coe] using
-    (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn base u.1).mp u.2
+    (mem_weakDerivStepSubmodule_iff_hasWeakFDerivOn base u.val).mp u.property
 
 /-- Two elements of a weak-derivative graph are equal when their preceding components and their
 adjoined weak derivatives are equal. -/
@@ -381,27 +381,27 @@ variable [SeminormedAddCommGroup X] [Module ℝ X]
 theorem norm_prev_le (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) : ‖prev base u‖ ≤ ‖u‖ := by
   rw [prev_coe]
-  exact WithLp.norm_fst_le X u.1
+  exact WithLp.norm_fst_le X u.val
 
 /-- The graph norm controls the adjoined weak derivative. -/
 theorem norm_weakFDeriv_le (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (u : WeakDerivStep mu Omega p base) : ‖weakFDeriv base u‖ ≤ ‖u‖ := by
   rw [weakFDeriv_coe]
-  exact WithLp.norm_snd_le X u.1
+  exact WithLp.norm_snd_le X u.val
 
 /-- The squared graph norm is the sum of the squared component norms. -/
 theorem norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
     (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (u : WeakDerivStep mu Omega p base) :
     ‖u‖ ^ 2 = ‖prev base u‖ ^ 2 + ‖weakFDeriv base u‖ ^ 2 := by
   rw [← Submodule.norm_coe, prev_coe, weakFDeriv_coe]
-  exact WithLp.prod_norm_sq_eq_of_L2 u.1
+  exact WithLp.prod_norm_sq_eq_of_L2 u.val
 
 /-- The graph norm is at most the sum of the component norms. -/
 theorem norm_le_norm_prev_add_norm_weakFDeriv
     (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (u : WeakDerivStep mu Omega p base) :
     ‖u‖ ≤ ‖prev base u‖ + ‖weakFDeriv base u‖ := by
   rw [← Submodule.norm_coe, prev_coe, weakFDeriv_coe]
-  exact WithLp.prod_norm_le_norm_fst_add_norm_snd u.1
+  exact WithLp.prod_norm_le_norm_fst_add_norm_snd u.val
 
 /-- The sum of the component norms is at most `√2` times the graph norm. -/
 theorem norm_prev_add_norm_weakFDeriv_le

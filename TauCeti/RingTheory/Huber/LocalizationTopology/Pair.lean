@@ -50,7 +50,8 @@ noncomputable def completedPlusPair :
   letI := isTopologicalRing_locUniformSpace P T s S hden
   letI := isHuberRing_completion_locTopology P T s S hden
   ⟨completedPlusSubring P Aplus T s S hden,
-    isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus T s S hden⟩
+    isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.property) hAplus T s S
+        hden⟩
 
 /-- The plus ring of `completedPlusPair` is `completedPlusSubring`. -/
 @[simp]

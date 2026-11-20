@@ -70,9 +70,9 @@ theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X
   let : QuasiSober s := hs.isClosedEmbedding_subtypeVal.quasiSober
   let C : irreducibleComponents s :=
     ⟨irreducibleComponent (⟨x, hx⟩ : s), irreducibleComponent_mem_irreducibleComponents _⟩
-  refine ⟨(genericPoints.ofComponent C).1, (genericPoints.ofComponent C).2, ?_⟩
+  refine ⟨(genericPoints.ofComponent C).val, (genericPoints.ofComponent C).property, ?_⟩
   exact ((genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent).map
-    continuous_subtype_val
+    continuous_subtypeVal
 
 section Maps
 

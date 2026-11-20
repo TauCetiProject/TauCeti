@@ -139,7 +139,7 @@ theorem seqLowerSemicontinuous_restrict_iff :
   · have hv : Tendsto (fun n ↦ (⟨u n, hu n⟩ : s)) atTop (𝓝 ⟨x, hx⟩) :=
       tendsto_subtype_rng.2 hlim
     exact h ⟨x, hx⟩ hv y hy
-  · exact h x hx (fun n ↦ (v n).2) ((continuous_subtype_val.tendsto _).comp hlim) y hy
+  · exact h x hx (fun n ↦ (v n).property) ((continuous_subtypeVal.tendsto _).comp hlim) y hy
 
 /-- Every function is sequentially lower semicontinuous on the empty set. -/
 @[simp]
@@ -375,7 +375,7 @@ theorem _root_.IsSeqClosed.seqLowerSemicontinuousOn_iff_isSeqClosed_sublevel (hs
     have hv : Tendsto (fun n ↦ (⟨u n, (hu n).1⟩ : s)) atTop (𝓝 ⟨z, hz⟩) :=
       tendsto_subtype_rng.2 hlim
     exact hb (fun n ↦ (hu n).2) hv
-  · exact (hb (fun n ↦ ⟨(v n).2, hv n⟩) ((continuous_subtype_val.tendsto _).comp hlim)).2
+  · exact (hb (fun n ↦ ⟨(v n).property, hv n⟩) ((continuous_subtypeVal.tendsto _).comp hlim)).2
 
 /-- On a sequentially closed set `s`, each relative sublevel `{x ∈ s | f x ≤ b}` of a sequentially
 lower semicontinuous function is sequentially closed. -/

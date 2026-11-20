@@ -77,7 +77,7 @@ theorem IsMaximalTorus.exists_mem_normalizer_conj {T : Subgroup G} (hT : IsMaxim
   refine ⟨c * g, hn, ?_⟩
   calc c * g * t * (c * g)⁻¹ = c * (g * t * g⁻¹) * c⁻¹ := by group
     _ = g * t * g⁻¹ := by
-      rw [Subgroup.mem_centralizer_singleton_iff.mp (connectedComponentIn_subset _ _ hc),
+      rw [(Subgroup.mem_centralizer_singleton_iff.mp (connectedComponentIn_subset _ _ hc)).eq,
         mul_inv_cancel_right]
 
 /-- For a compact connected Lie group, every conjugacy class meets a maximal torus in exactly one

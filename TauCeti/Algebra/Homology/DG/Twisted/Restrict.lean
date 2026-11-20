@@ -86,7 +86,7 @@ def restrict (S : Set P) [DecidablePred (· ∈ S)]
   twisting x y := by
     rw [m.twisting]
     refine Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ ?_
-    rw [hS x z y x.2 y.2 hz, smul_zero]
+    rw [hS x z y x.property y.property hz, smul_zero]
   one_sided x y := m.one_sided x y
 
 @[simp]
@@ -130,7 +130,8 @@ def ofRestrict (S : Set P) [DecidablePred (· ∈ S)] (hS : ∀ x y, x ∈ S →
     rw [continuation_kronecker (ind := ind) m.m hd x y]
     congr 1
     -- The entries of the restriction are those of `m` (`TauCeti.TwistingCocycle.restrict_m`).
-    exact Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ by rw [hS x z x.2 hz, zero_mul]
+    exact Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ by rw [hS x z x.property hz,
+        zero_mul]
 
 @[simp]
 theorem ofRestrict_ν (S : Set P) [DecidablePred (· ∈ S)]
@@ -151,7 +152,7 @@ def toRestrict (T : Set P) [DecidablePred (· ∈ T)] (hT : ∀ x y, x ∉ T →
     congr 1
     -- The entries of the restriction are those of `m` (`TauCeti.TwistingCocycle.restrict_m`).
     exact Finset.sum_congr_set T _ _ (fun _ _ ↦ rfl) fun z hz ↦ by
-      rw [hT z y hz y.2, mul_zero, smul_zero]
+      rw [hT z y hz y.property, mul_zero, smul_zero]
 
 @[simp]
 theorem toRestrict_ν (T : Set P) [DecidablePred (· ∈ T)]
@@ -179,9 +180,9 @@ def restrict (ν : ContinuationCocycle mP mQ) (S : Set P) [DecidablePred (· ∈
     rw [ν.continuation]
     -- The entries of the restrictions are those of `mP`, `mQ` and `ν`.
     congr 1
-    · exact Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ h₁ x z y x.2 hz y.2
+    · exact Finset.sum_congr_set S _ _ (fun _ _ ↦ rfl) fun z hz ↦ h₁ x z y x.property hz y.property
     · exact Finset.sum_congr_set S' _ _ (fun _ _ ↦ rfl) fun z hz ↦ by
-        rw [h₂ x z y x.2 hz y.2, smul_zero]
+        rw [h₂ x z y x.property hz y.property, smul_zero]
 
 omit [GradedAlgebra 𝒜] [DecidableEq P] in
 @[simp]
@@ -221,7 +222,8 @@ theorem continuationMap_ofRestrict_apply (S : Set P) [DecidablePred (· ∈ S)]
       rw [ofRestrict_ν, Matrix.one_apply_ne fun h ↦ hx (Subtype.ext h), op_zero, zero_smul]]
     simp
   · refine Finset.sum_eq_zero fun x _ ↦ ?_
-    rw [ofRestrict_ν, Matrix.one_apply_ne fun h ↦ hy (by rw [← h]; exact x.2), op_zero, zero_smul]
+    rw [ofRestrict_ν, Matrix.one_apply_ne fun h ↦ hy (by rw [← h]; exact x.property), op_zero,
+        zero_smul]
 
 /-- The continuation map of `TauCeti.ContinuationCocycle.toRestrict` is restriction of
 functions. -/
@@ -262,7 +264,7 @@ theorem surjective_toRestrict_continuationHom_f (T : Set P) [DecidablePred (· �
   intro g
   refine ⟨(twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).symm
     ⟨_, extendByZero_mem_twistedTotalGrading (twistedCochainComplexXEquiv
-      (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM n g).2⟩,
+      (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM n g).property⟩,
     (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _) hM
       n).injective (Subtype.ext (funext fun y ↦ ?_))⟩
   simp
@@ -282,7 +284,7 @@ theorem ofRestrict_continuationHom_comp_toRestrict_continuationHom :
   refine HomologicalComplex.hom_ext _ _ fun n ↦ termHom_ext fun f ↦ ?_
   rw [ContinuationCocycle.continuationHom_f_apply, ContinuationCocycle.continuationMap_comp]
   funext y
-  simp [(hST y).1 y.2]
+  simp [(hST y).1 y.property]
 
 /-- **The short complex of a subcomplex and its quotient.** For a set `S` of generators which
 the twisted differential never leaves, with complement `T`, the inclusion of the twisted complex
@@ -340,7 +342,7 @@ theorem injective_ofRestrict_continuationHom_f (n : ℤ) :
   simp only [ContinuationCocycle.continuationHom_f_apply] at hfg'
   refine (twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _)
     hM n).injective (Subtype.ext (funext fun x ↦ ?_))
-  simpa [x.2] using congrFun hfg' x
+  simpa [x.property] using congrFun hfg' x
 
 /-- In each degree, an element whose restriction to `T` vanishes is the extension by zero of its
 restriction to `S`. -/
@@ -355,7 +357,7 @@ theorem exists_ofRestrict_continuationHom_f_eq (n : ℤ)
   simp only [ContinuationCocycle.continuationHom_f_apply, map_zero, ZeroMemClass.coe_zero] at hg'
   refine ⟨(twistedCochainComplexXEquiv (TwistingCocycle.mem_graded _) (TwistingCocycle.twisting _)
     hM n).symm ⟨_, domRestrict_mem_twistedTotalGrading S
-      (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n g).2⟩,
+      (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n g).property⟩,
     (twistedCochainComplexXEquiv m.mem_graded m.twisting hM n).injective
       (Subtype.ext (funext fun y ↦ ?_))⟩
   rw [ContinuationCocycle.continuationHom_f_apply,
@@ -427,7 +429,7 @@ theorem ofRestrict_comp :
   -- Both sides are `ν x y`: on the right, the generators outside `S'` contribute nothing.
   rw [← Finset.sum_congr_set S' (fun z ↦ ν.ν x z * (1 : Matrix Q Q A) z y)
     (fun z ↦ ν.ν x z * (1 : Matrix Q Q A) z y) (fun _ _ ↦ rfl) fun z hz ↦ by
-      rw [hν x z x.2 hz, zero_mul]]
+      rw [hν x z x.property hz, zero_mul]]
   simp [Matrix.one_apply]
 
 variable {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ]

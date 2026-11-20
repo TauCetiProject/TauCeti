@@ -112,7 +112,7 @@ infinite additive group with `C^n` translations, such as a complex torus `E / L`
 dimension, carries a special point. -/
 theorem nonempty_specialPoints [Finite (ordered I n m)] (i : ι) (e : X i ≃ₘ^n⟮I, I'⟯ G) :
     (m.specialPoints i).Nonempty :=
-  nonempty_iff_ne_empty.mpr fun h ↦ not_finite_iff_infinite.mpr
+  Set.ne_empty_iff_nonempty.mp fun h ↦ not_finite_iff_infinite.mpr
     (infinite_ordered_of_specialPoints_eq_empty i e h) ‹_›
 
 end AuxiliaryAut

@@ -71,10 +71,10 @@ theorem IsInvertibleOn.isUnit [IsInvertibleOn n X] (U : X.Opens) :
 
 /-- It suffices to test invertibility on the rings of sections of affine opens. -/
 theorem isInvertibleOn_iff_forall_isUnit_affineOpens :
-    IsInvertibleOn n X ↔ ∀ U : X.affineOpens, IsUnit (n : Γ(X, U.1)) := by
+    IsInvertibleOn n X ↔ ∀ U : X.affineOpens, IsUnit (n : Γ(X, U.val)) := by
   constructor
   · intro h U
-    exact h.isUnit n X U.1
+    exact h.isUnit n X U.val
   · intro h
     constructor
     intro x

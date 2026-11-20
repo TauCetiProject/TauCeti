@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.PDE.Vortex.Coupling
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 
 /-!
@@ -15,7 +16,7 @@ import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 
 A smooth framed degree-`m` plane vortex is a smooth field `x` on `ℂ` solving the vortex
 equations whose section satisfies `α(z) (z / |z|)⁻ᵐ → 1` at infinity
-(`TauCeti.Vortex.framedVortexSubMulAction`). Its framed gauge orbits are classified by their
+(`TauCeti.Vortex.framedVortexSubMulAction 1 m`). Its framed gauge orbits are classified by their
 zero divisors (`TauCeti.Vortex.framedVortexModuliEquiv`). The Fredholm and slice theory of the
 vortex equations is set up on the affine Sobolev space `A_m^k = x_m + H^k`
 (`TauCeti.Vortex.framedFieldSpace`) with its gauge group `G_(k+1)`. This file compares the two
@@ -173,12 +174,13 @@ variable {k : ℕ} [Fact (1 < k)]
 repeated points included, is the divisor of a `C²` vortex of `A_m^k`. -/
 theorem sobolevVortexDivisor_surjective :
     Function.Surjective (sobolevVortexDivisor (f := f) (m := m) (k := k)) := fun D ↦ by
-  obtain ⟨x, hx⟩ := framedVortexDivisor_surjective m D
-  obtain ⟨hxc, hxsol, hxfr⟩ := mem_framedVortexSubMulAction.1 x.2
+  obtain ⟨x, hx⟩ := framedVortexDivisor_surjective one_pos m D
+  obtain ⟨hxc, hxsol, hxfr⟩ := mem_framedVortexSubMulAction.1 x.property
+  simp only [coupledEquation_one] at hxsol
   obtain ⟨u, hu, -⟩ := exists_framedGaugeGroup_smul_mem_framedFieldSpace f hxc hxsol hxfr
-  obtain ⟨hyc, hysol, -⟩ := mem_framedVortexSubMulAction.1 (u • x).2
+  obtain ⟨hyc, hysol, -⟩ := mem_framedVortexSubMulAction.1 (u • x).property
   refine ⟨⟨⟨u • (x : ℂ → EuclideanSpace ℝ (Fin 4)), hu k⟩,
-    mem_sobolevVortices.2 ⟨hyc.of_le (by simp), hysol⟩⟩, ?_⟩
+    mem_sobolevVortices.2 ⟨hyc.of_le (by simp), by simpa using hysol⟩⟩, ?_⟩
   rw [sobolevVortexDivisor_eq_framedVortexDivisor _ (u • x) (SubMulAction.val_smul u x).symm,
     framedVortexDivisor_smul, hx]
 
@@ -187,7 +189,7 @@ theorem sobolevVortexDivisor_surjective :
 theorem sobolevVortexModuliDivisor_surjective {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
     Function.Surjective (sobolevVortexModuliDivisor (f := f) (m := m) (hs := hs) hk) := fun D ↦
   (sobolevVortexDivisor_surjective D).elim fun x hx ↦
-    ⟨Quotient.mk'' ⟨x.1, mem_sobolevVortexSubMulAction.2 x.2⟩, by
+    ⟨Quotient.mk'' ⟨x.val, mem_sobolevVortexSubMulAction.2 x.property⟩, by
       rw [sobolevVortexModuliDivisor_mk]
       exact hx⟩
 
