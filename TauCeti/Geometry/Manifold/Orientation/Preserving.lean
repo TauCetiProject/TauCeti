@@ -43,8 +43,11 @@ real number by which the derivative multiplies. In particular, translations of `
 standard orientation (`isOrientationPreservingAt_add_const`).
 
 On the model space `E` itself, every orientation is constant once the tangent spaces are identified
-with `E` (`orientationAt_eq_orientationAt`), so a continuous linear automorphism of `E` preserves
-or reverses every orientation of `E` according to the sign of its determinant
+with `E` (`orientationAt_eq_orientationAt`). So the derivatives at two points of a map into `E`
+preserving orientations there identify the two tangent spaces, carrying the orientation of the
+source at one point to that at the other (`exists_linearEquiv_map_orientationAt`). Likewise a
+continuous linear automorphism of `E` preserves or reverses every orientation of `E` according to
+the sign of its determinant
 (`isOrientationPreservingAt_of_det_pos`, `isOrientationReversingAt_of_det_neg`). In particular
 precomposing with an automorphism of negative determinant exchanges preservation and reversal
 (`isOrientationPreservingAt_comp_of_det_neg`, `isOrientationReversingAt_comp_of_det_neg`).
@@ -619,6 +622,26 @@ theorem orientationAt_eq_orientationAt (o : Manifold.Orientation 𝓘(ℝ, E) E 
   -- of `E`, so the right side of `modelOrientationAt_eq` is also read through the former.
   (_root_.Orientation.map ι (NormedSpace.fromTangentSpace x).toLinearEquiv).injective
     (modelOrientationAt_eq o x y)
+
+/-- **Transporting the orientation of `M` through a map into the model space.** If a map `g` into
+the model space preserves the orientations `o` and `oE` at two points `y` and `z`, the derivatives
+of `g` there give a linear isomorphism of the tangent spaces at `y` and `z` which carries `o` at
+`y` to `o` at `z`. -/
+theorem exists_linearEquiv_map_orientationAt [IsManifold I 1 M] {o : Manifold.Orientation I M ι}
+    {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {g : M → E} {y z : M}
+    (hy : IsOrientationPreservingAt o oE g y) (hz : IsOrientationPreservingAt o oE g z) :
+    ∃ e : TangentSpace I y ≃ₗ[ℝ] TangentSpace I z,
+      (∀ v, mfderiv I 𝓘(ℝ, E) g z (e v) = mfderiv I 𝓘(ℝ, E) g y v) ∧
+      _root_.Orientation.map ι e (o.orientationAt y) = o.orientationAt z := by
+  obtain ⟨ey, hey, hy⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hy
+  obtain ⟨ez, hez, hz⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hz
+  refine ⟨ey.toLinearEquiv.trans ez.toLinearEquiv.symm, fun v ↦ ?_, ?_⟩
+  · rw [← hey, ← hez]
+    exact ez.apply_symm_apply (ey v)
+  · have h := _root_.Orientation.map_trans (ι := ι) ey.toLinearEquiv ez.toLinearEquiv.symm
+      (o.orientationAt y)
+    rw [h, hy, orientationAt_eq_orientationAt oE (g y) (g z), ← hz]
+    exact _root_.Orientation.map_symm_map _ _
 
 /-- The derivative of a continuous linear automorphism `L` of `E` at `x`, as an equivalence of
 tangent spaces: `L` itself, read through the identifications of the tangent spaces with `E`. -/
