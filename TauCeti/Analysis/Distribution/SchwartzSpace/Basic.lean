@@ -50,6 +50,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
+* `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
+  `A x = ∑ i ∈ s, c i x • L i` is `∑ i ∈ s, L i (c i f)`.
 * `SchwartzMap.conjCLM`: pointwise conjugation of scalar Schwartz functions, a continuous
   conjugate-linear map.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
@@ -334,6 +336,27 @@ theorem postcompCLM_re_add_I_smul_im (φ : 𝓢(E, ℂ)) :
   simpa [mul_comm] using Complex.re_add_im (φ x)
 
 end RealImag
+
+section BilinLeft
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- **The pointwise product with a decomposed function.** If `A x = ∑ i ∈ s, c i x • L i` for
+scalar functions `c i` of temperate growth and operators `L i`, then multiplying a Schwartz
+function by `A` is the sum over `i ∈ s` of multiplying it by `c i` and then applying `L i`. -/
+theorem bilinLeftCLM_apply_eq_sum {ι : Type*} (s : Finset ι) {c : ι → E → ℂ}
+    (hc : ∀ i ∈ s, (c i).HasTemperateGrowth) (L : ι → F →L[ℂ] G) {A : E → F →L[ℂ] G}
+    (hA : A.HasTemperateGrowth) (hAs : ∀ x, A x = ∑ i ∈ s, c i x • L i) :
+    bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA =
+      ∑ i ∈ s, postcompCLM (L i) ∘L smulLeftCLM F (c i) := by
+  ext u x
+  simp only [bilinLeftCLM_apply, ContinuousLinearMap.apply_apply, hAs x, sum_apply, smul_apply,
+    ContinuousLinearMap.comp_apply, postcompCLM_apply]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [smulLeftCLM_apply_apply (hc i hi), map_smul]
+
+end BilinLeft
 
 section Conj
 

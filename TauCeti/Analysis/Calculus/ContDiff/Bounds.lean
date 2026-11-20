@@ -86,6 +86,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.isBigO_iteratedFDeriv_smulRight`: the same for `y ↦ (f y).smulRight (g y)`.
 * `ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left`: along any filter, if the order-`n`
   derivative of `f` is `O(ρ)`, then so is that of `y ↦ L (f y)`.
+* `ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le`: bounded derivatives of `f`
+  up to order `N` give bounded derivatives of `L ∘ f`, with the bound multiplied by `‖L‖`.
 * `TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen`: the Leibniz bound for `z ↦ c z • f z` at a
   point of an open set on which both factors are smooth.
 -/
@@ -415,6 +417,18 @@ theorem ContinuousLinearMap.isBigO_iteratedFDeriv_comp_left {D : Type*} [NormedA
     iteratedFDeriv 𝕜 n (fun y ↦ L (f y)) =O[l] ρ :=
   (IsBigO.of_bound ‖L‖ (Filter.Eventually.of_forall fun _ ↦
     L.norm_iteratedFDeriv_comp_left hf.contDiffAt hn)).trans hfn
+
+/-- If the derivatives of `f` of order at most `N` are bounded by `M`, those of `L ∘ f` are
+bounded by `‖L‖ * M`, for a continuous linear map `L`. The map `L` may be linear over a normed
+`𝕜`-algebra `𝕜'`, such as `ℂ` over `ℝ`. -/
+theorem ContinuousLinearMap.norm_iteratedFDeriv_comp_left_le_of_forall_le
+    {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F]
+    [IsScalarTower 𝕜 𝕜' F] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G] (L : F →L[𝕜'] G)
+    {f : E → F} {N : ℕ} {M : ℝ} (hf : ContDiff 𝕜 N f)
+    (hbd : ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n f x‖ ≤ M) :
+    ∀ n ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 n (L ∘ f) x‖ ≤ ‖L‖ * M := fun n hn x ↦
+  ((L.restrictScalars 𝕜).norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hn)).trans
+    (mul_le_mul_of_nonneg_left (hbd n hn x) (norm_nonneg _))
 
 namespace TauCeti
 
