@@ -294,9 +294,11 @@ private theorem isLocalDiffeomorphAt_sectionMap_coordinateCover (hsm : ContMDiff
       have H := h.eval₂_mfderiv_coverSection hσc hs hκ hsm q v v'
       have hs₀ : SmoothBundleForm.eval₂ σ (s q.2) (mfderiv J I s q.2 v.2)
           (mfderiv J I s q.2 v'.2) = 0 := by
+        -- `hv₂` states `v.2 = 0` in the model space `F`; restate it in `TangentSpace J q.2`, where
+        -- `mfderiv J I s q.2` takes its argument, so that `map_zero` applies after rewriting.
         have hz : v.2 = (0 : TangentSpace J q.2) := hv₂
-        rw [hz, map_zero, ← SmoothForm.bilinFormAt_apply, map_zero, LinearMap.zero_apply]
-      rw [← SmoothForm.bilinFormAt_apply, hv, map_zero, LinearMap.zero_apply, hs₀, zero_add,
+        rw [hz, map_zero, SmoothBundleForm.eval₂_zero_left]
+      rw [hv, SmoothBundleForm.eval₂_zero_left, hs₀, zero_add,
         ← eval₂_symplecticForm_mfderiv_coordinateCover hκ] at H
       -- `dΨ` is `mfderiv (coordinateCover J κ) q` as a continuous linear equivalence.
       exact H.symm

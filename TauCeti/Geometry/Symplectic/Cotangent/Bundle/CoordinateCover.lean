@@ -73,6 +73,11 @@ theorem proj_coordinateCover (κ : B → ι → ℝ) (q : (ι → ℝ) × B) :
 
 variable {J} {κ : B → ι → ℝ}
 
+/-- The covector of the cover at `(c, x)` is `∑ j, c_j dκ_j` at `x`. -/
+theorem coordinateCover_snd (q : (ι → ℝ) × B) :
+    (coordinateCover J κ q).2 = ∑ j, q.1 j • mvfderiv J (κ · j) q.2 :=
+  (rfl)
+
 /-- The covector `∑ j, c_j dκ_j` evaluates a tangent vector `u` as `c ⬝ᵥ dκ u`. -/
 theorem coordinateCover_snd_apply {q : (ι → ℝ) × B}
     (hκ : MDifferentiableAt J 𝓘(ℝ, ι → ℝ) κ q.2) (u : TangentSpace J q.2) :
@@ -238,7 +243,7 @@ theorem isLocalDiffeomorphAt_coordinateCover [FiniteDimensional ℝ F] [Boundary
   have H (w' : ι → ℝ) (u' : TangentSpace J q.2) :
       w' ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) κ q.2 v.2 - v.1 ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) κ q.2 u' = 0 := by
     have := eval₂_symplecticForm_mfderiv_coordinateCover hκ q v (w', u')
-    rw [← SmoothForm.bilinFormAt_apply, hv, map_zero, LinearMap.zero_apply] at this
+    rw [hv, SmoothBundleForm.eval₂_zero_left] at this
     exact this.symm
   obtain ⟨h₁, h₂⟩ := eq_zero_of_forall_dotProduct_sub_eq_zero hq (map_zero _) H
   exact Prod.ext h₁ h₂

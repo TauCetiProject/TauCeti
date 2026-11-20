@@ -153,6 +153,29 @@ theorem hamiltonianFlowActionComp_apply (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ)
     hamiltonianFlowActionComp]
 
 omit [FiniteDimensional ℝ F] [T2Space B] in
+/-- The zero vector acts as the identity. -/
+@[simp]
+theorem hamiltonianFlowActionComp_zero (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (x : M) :
+    h.hamiltonianFlowActionComp hσc hκ 0 x = x :=
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_zero_apply _ _ _ x
+
+omit [FiniteDimensional ℝ F] [T2Space B] in
+/-- The action of `v + w` is the action of `v` after that of `w`. -/
+theorem hamiltonianFlowActionComp_add (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) (v w : ι → ℝ) (x : M) :
+    h.hamiltonianFlowActionComp hσc hκ (v + w) x =
+      h.hamiltonianFlowActionComp hσc hκ v (h.hamiltonianFlowActionComp hσc hκ w x) :=
+  (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_add_apply _ _ _ v w x
+
+omit [FiniteDimensional ℝ F] [T2Space B] in
+/-- Two vectors act alike on `x` exactly when their difference fixes `x`. -/
+theorem hamiltonianFlowActionComp_apply_eq_iff (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ)
+    {v w : ι → ℝ} {x : M} :
+    h.hamiltonianFlowActionComp hσc hκ v x = h.hamiltonianFlowActionComp hσc hκ w x ↔
+      h.hamiltonianFlowActionComp hσc hκ (-v + w) x = x :=
+  ((⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_apply_eq_iff _ _ _).trans
+    (IsSymplectic.mem_hamiltonianFlowStabilizer _ _ _ _)
+
+omit [FiniteDimensional ℝ F] [T2Space B] in
 /-- The Hamiltonian flow action of `κ ∘ π` is smooth jointly in the vector and the point. -/
 theorem contMDiff_hamiltonianFlowActionComp_uncurry (hκ : ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ κ) :
     ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
@@ -316,16 +339,13 @@ theorem coe_fiberAction_eq_flowOf {α : F →L[ℝ] ℝ} {g : B → ℝ}
 @[simp]
 theorem fiberAction_zero (x : π ⁻¹' {b}) : h.fiberAction hσc b 0 x = x :=
   Subtype.ext <| by
-    rw [coe_fiberAction, map_zero, hamiltonianFlowActionComp]
-    exact (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_zero_apply _ _ _ x
+    rw [coe_fiberAction, map_zero, hamiltonianFlowActionComp_zero]
 
 /-- **The action of `T*_b B` on the fibre is additive**: `α + β` acts as `α` after `β`. -/
 theorem fiberAction_add (α β : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
     h.fiberAction hσc b (α + β) x = h.fiberAction hσc b α (h.fiberAction hσc b β x) :=
   Subtype.ext <| by
-    rw [coe_fiberAction, coe_fiberAction, coe_fiberAction, map_add, hamiltonianFlowActionComp,
-      hamiltonianFlowActionComp]
-    exact (⟨hσc, hσ⟩ : σ.IsSymplectic).hamiltonianFlowAction_add_apply _ _ _ _ _ x
+    rw [coe_fiberAction, coe_fiberAction, coe_fiberAction, map_add, hamiltonianFlowActionComp_add]
 
 /-- The actions of two covectors on the fibre commute. -/
 theorem fiberAction_comm (α β : F →L[ℝ] ℝ) (x : π ⁻¹' {b}) :
@@ -421,10 +441,9 @@ private theorem mem_periodLattice_iff_mem_coordStabilizer {α : F →L[ℝ] ℝ}
 period lattice. -/
 theorem fiberAction_eq_fiberAction_iff {α β : F →L[ℝ] ℝ} (x : π ⁻¹' {b}) :
     h.fiberAction hσc b α x = h.fiberAction hσc b β x ↔ -α + β ∈ h.periodLattice hσc b := by
-  rw [Subtype.ext_iff, coe_fiberAction, coe_fiberAction, hamiltonianFlowActionComp,
-    hamiltonianFlowActionComp,
-    IsSymplectic.hamiltonianFlowAction_apply_eq_iff, ← map_neg, ← map_add,
-    h.mem_periodLattice_iff_mem_coordStabilizer hσc b x, coordStabilizer]
+  rw [Subtype.ext_iff, coe_fiberAction, coe_fiberAction, hamiltonianFlowActionComp_apply_eq_iff,
+    ← map_neg, ← map_add, ← coe_fiberAction, ← Subtype.ext_iff,
+    h.mem_periodLattice_iff_fiberAction_eq hσc b x]
 
 /-- The dual coordinates map the period lattice onto the stabilizer of a point of the fibre for the
 coordinate flow action. -/
