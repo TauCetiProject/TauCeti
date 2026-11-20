@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.ModuleCat.Finrank
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.Periodic.Compression.Acyclic
@@ -145,15 +146,6 @@ section Preadditive
 variable [Preadditive C] [CategoryWithHomology C] (n : ℕ) (K : CochainComplex C ℤ)
   [HasCompression n K] (a b : ℤ) [K.IsStrictlyGE a] [K.IsStrictlyLE b]
 
-include a b in
-/-- The homology of a complex supported in `[a, b]` vanishes outside `[a, b]`. -/
-private lemma isZero_homology_of_notMem_Icc {i : ℤ} (hi : i ∉ Finset.Icc a b) :
-    IsZero (K.homology i) := by
-  rw [Finset.mem_Icc, not_and_or, not_le, not_le] at hi
-  rcases hi with h | h
-  · exact K.isZero_of_isGE a i h
-  · exact K.isZero_of_isLE b i h
-
 /-- For a complex supported in `[a, b]`, the identity of the homology of the compression in
 residue `r` is the sum, over the degrees of `[a, b]` congruent to `r`, of the projections onto the
 homology of `K` followed by the inclusions. -/
@@ -181,7 +173,7 @@ lemma sum_πCompressionHomology_ιCompressionHomology (r : ZMod n) :
       rw [← Preadditive.sum_comp, hsum, Category.id_comp]
     simp only [πCompressionHomology, ιCompressionHomology, Category.assoc, Iso.inv_hom_id_assoc]
     rw [← Preadditive.comp_sum, hsum', Iso.hom_inv_id]
-  · rw [(isZero_homology_of_notMem_Icc K a b hi).eq_of_tgt (πCompressionHomology n K r i) 0,
+  · rw [(K.isZero_homology_of_notMem_Icc a b hi).eq_of_tgt (πCompressionHomology n K r i) 0,
       zero_comp]
 
 /-- For a complex supported in `[a, b]`, the homology of the compression in residue `r` is the
@@ -218,7 +210,7 @@ lemma πCompressionHomology_ιCompressionHomology_of_isZero (r : ZMod n) (p : �
   · intro hp
     by_cases hpr : (p : ZMod n) = r
     · have hp' : p ∉ Finset.Icc a b := fun h' ↦ hp (Finset.mem_filter.2 ⟨h', hpr⟩)
-      rw [(isZero_homology_of_notMem_Icc K a b hp').eq_of_tgt (πCompressionHomology n K r p) 0,
+      rw [(K.isZero_homology_of_notMem_Icc a b hp').eq_of_tgt (πCompressionHomology n K r p) 0,
         zero_comp]
     · rw [πCompressionHomology_eq_zero n K r p hpr, zero_comp]
 
