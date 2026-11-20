@@ -76,7 +76,7 @@ variable (C : Type*) [Category* C] [Preadditive C]
 
 /-- The functor sending a bicomplex in `C` to the bicomplex in `Cᵒᵖ` with the same terms and the
 opposite differentials. -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 noncomputable def opFunctor :
     (HomologicalComplex₂ C c₁ c₂)ᵒᵖ ⥤ HomologicalComplex₂ Cᵒᵖ c₁.symm c₂.symm :=
   HomologicalComplex.opFunctor (HomologicalComplex C c₂) c₁ ⋙
@@ -87,6 +87,18 @@ variable {C c₁ c₂}
 @[simp]
 lemma opFunctor_obj_X_X (K : HomologicalComplex₂ C c₁ c₂) (i₁ : I₁) (i₂ : I₂) :
     (((opFunctor C c₁ c₂).obj (op K)).X i₁).X i₂ = op ((K.X i₁).X i₂) := (rfl)
+
+@[simp]
+lemma opFunctor_obj_d_f (K : HomologicalComplex₂ C c₁ c₂) (i₁ i₁' : I₁) (i₂ : I₂) :
+    (((opFunctor C c₁ c₂).obj (op K)).d i₁ i₁').f i₂ = ((K.d i₁' i₁).f i₂).op := (rfl)
+
+@[simp]
+lemma opFunctor_obj_X_d (K : HomologicalComplex₂ C c₁ c₂) (i₁ : I₁) (i₂ i₂' : I₂) :
+    (((opFunctor C c₁ c₂).obj (op K)).X i₁).d i₂ i₂' = ((K.X i₁).d i₂' i₂).op := (rfl)
+
+@[simp]
+lemma opFunctor_map_f_f {K L : HomologicalComplex₂ C c₁ c₂} (φ : K ⟶ L) (i₁ : I₁) (i₂ : I₂) :
+    (((opFunctor C c₁ c₂).map φ.op).f i₁).f i₂ = ((φ.f i₁).f i₂).op := (rfl)
 
 variable (K L M : HomologicalComplex₂ C c₁ c₂) (φ : K ⟶ L) (ψ : L ⟶ M)
   (c₁₂ : ComplexShape I₁₂) [TotalComplexShape c₁.symm c₂.symm c₁₂.symm]
@@ -179,9 +191,9 @@ lemma totalProduct_d_πTotalProduct (i₁₂ i₁₂' : I₁₂) (i₁ : I₁) (
   apply Quiver.Hom.op_inj
   dsimp only [totalProduct, πTotalProduct, πTotalProductOrZero]
   simp only [op_add, op_comp, HomologicalComplex.unop_d, Quiver.Hom.op_unop, total_d,
-    Preadditive.comp_add, ι_D₁, ι_D₂, d₁, d₂]
-  -- the differentials of `(opFunctor C c₁ c₂).obj (op K)` are by definition the opposites of
-  -- those of `K`; the body of `opFunctor` is not exposed, so this cannot be a public simp lemma
+    Preadditive.comp_add, ι_D₁, ι_D₂, d₁, d₂, opFunctor_obj_d_f, opFunctor_obj_X_d]
+  -- `c.symm.next` is `c.prev`, and `ιMapObjOrZero` of the underlying graded object is
+  -- `ιTotalOrZero`, both by definition
   rfl
 
 
@@ -202,10 +214,7 @@ lemma map_f_πTotalProduct (i₁ : I₁) (i₂ : I₂) (i₁₂ : I₁₂)
   apply Quiver.Hom.op_inj
   dsimp only [map, πTotalProduct]
   simp only [op_comp, HomologicalComplex.unopFunctor_map_f, Quiver.Hom.op_unop, Quiver.Hom.unop_op,
-    ιTotal_map]
-  -- the components of `(opFunctor C c₁ c₂).map φ.op` are by definition the opposites of those
-  -- of `φ`; the body of `opFunctor` is not exposed, so this cannot be a public simp lemma
-  rfl
+    ιTotal_map, opFunctor_map_f_f]
 
 variable (K) in
 @[simp]
