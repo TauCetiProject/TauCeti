@@ -271,13 +271,6 @@ theorem forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_iff {u : C(ℂ
       (hη'.of_le (by norm_num)), ← integral_inner_gaugeLp_gaugeLinearAction u f
       (gaugeLinearAction (⇑u)⁻¹ η), gaugeLinearAction_gaugeLinearAction_inv] at this
 
-omit [μ.InnerRegularCompactLTTop] in
-private theorem integral_inner_zero_left (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) z, η z⟫ ∂μ = 0 := by
-  rw [integral_congr_ae ((Lp.coeFn_zero _ 2 μ).mono fun z hz ↦ by rw [hz]),
-    ← integral_zero ℂ ℝ (μ := μ)]
-  simp
-
 /-- **The weak kernel condition is gauge covariant.** For a `C²` gauge `u`, a square-integrable
 field `y` is a weak solution of `L_x y = 0` exactly when `u y` is a weak solution of
 `L_{u · x} (u y) = 0`. -/
@@ -287,7 +280,11 @@ theorem forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_zero_iff {u : 
     (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ z, ⟪gaugeLp μ u y z, gaugeFixedAdjoint (gaugeTransform u x) η z⟫ ∂μ = 0) ↔
       ∀ η, ContDiff ℝ 2 η → HasCompactSupport η → ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
-  simpa only [map_zero, integral_inner_zero_left] using
+  have h0 (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
+      ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) z, η z⟫ ∂μ = 0 :=
+    integral_eq_zero_of_ae ((Lp.coeFn_zero (EuclideanSpace ℝ (Fin 4)) 2 μ).mono fun z hz ↦ by
+      simp only [hz, Pi.zero_apply, inner_zero_left])
+  simpa only [map_zero, h0] using
     forall_integral_inner_gaugeFixedAdjoint_gaugeTransform_eq_iff hu x y 0
 
 /-- **Orthogonality to the weak kernel is gauge covariant.** For a `C²` gauge `u`, a

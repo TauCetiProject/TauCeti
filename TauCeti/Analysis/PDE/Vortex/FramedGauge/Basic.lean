@@ -117,20 +117,63 @@ theorem gaugeTransform_apply (u : ℂ → Circle) (x : ℂ → EuclideanSpace �
         (u z : ℂ).re * x z 2 - (u z : ℂ).im * x z 3,
         (u z : ℂ).im * x z 2 + (u z : ℂ).re * x z 3] := (rfl)
 
+/-- The **gauge frame** of a unit complex number `c`: the linear isometry of `ℝ⁴` that fixes the
+first two coordinates and multiplies the complex coordinate `v₂ + i v₃` by `c`. The linear gauge
+action of `u : ℂ → U(1)` is `gaugeFrame (u z)` at each point `z`
+(`gaugeLinearAction_apply_eq_gaugeFrame`). -/
+def gaugeFrame (c : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) :=
+  LinearIsometry.toLinearIsometryEquiv
+    { toFun v := !₂[v 0, v 1, (c : ℂ).re * v 2 - (c : ℂ).im * v 3,
+        (c : ℂ).im * v 2 + (c : ℂ).re * v 3]
+      map_add' v w := by ext i; fin_cases i <;> simp <;> ring
+      map_smul' t v := by ext i; fin_cases i <;> simp <;> ring
+      norm_map' v := by
+        have hc := Circle.re_sq_add_im_sq c
+        simp only [EuclideanSpace.norm_eq, Fin.sum_univ_four]
+        congr 1
+        simp
+        linear_combination (v 2 ^ 2 + v 3 ^ 2) * hc }
+    rfl
+
+/-- Coordinate formula for the gauge frame. -/
+theorem gaugeFrame_apply (c : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFrame c v = !₂[v 0, v 1, (c : ℂ).re * v 2 - (c : ℂ).im * v 3,
+      (c : ℂ).im * v 2 + (c : ℂ).re * v 3] :=
+  (rfl)
+
+/-- The trivial gauge frame is the identity. -/
+@[simp]
+theorem gaugeFrame_one : gaugeFrame 1 = LinearIsometryEquiv.refl ℝ _ := by
+  ext v i
+  fin_cases i <;> simp [gaugeFrame_apply]
+
+/-- The gauge frames compose as the gauges multiply. -/
+theorem gaugeFrame_mul (c d : Circle) :
+    gaugeFrame (c * d) = (gaugeFrame d).trans (gaugeFrame c) := by
+  ext v i
+  fin_cases i <;> simp [gaugeFrame_apply, mul_re, mul_im] <;> ring
+
+/-- The inverse of a gauge frame is the gauge frame of the inverse gauge. -/
+@[simp]
+theorem gaugeFrame_symm (c : Circle) : (gaugeFrame c).symm = gaugeFrame c⁻¹ := by
+  ext v : 1
+  apply (gaugeFrame c).injective
+  rw [LinearIsometryEquiv.apply_symm_apply, ← LinearIsometryEquiv.trans_apply, ← gaugeFrame_mul,
+    mul_inv_cancel, gaugeFrame_one, LinearIsometryEquiv.coe_refl, id_eq]
+
 /-- The linear part of a charge-one gauge transformation. On variations it fixes the
 connection and rotates the section; on the gauge-fixed target it fixes the two real rows
 and rotates the complex row. -/
 def gaugeLinearAction (u : ℂ → Circle) :
     Module.End ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
-  toFun y z := !₂[y z 0, y z 1,
-    (u z : ℂ).re * y z 2 - (u z : ℂ).im * y z 3,
-    (u z : ℂ).im * y z 2 + (u z : ℂ).re * y z 3]
-  map_add' y v := by
-    ext z i
-    fin_cases i <;> simp <;> ring
-  map_smul' c y := by
-    ext z i
-    fin_cases i <;> simp <;> ring
+  toFun y z := gaugeFrame (u z) (y z)
+  map_add' y v := funext fun z ↦ map_add (gaugeFrame (u z)) (y z) (v z)
+  map_smul' c y := funext fun z ↦ map_smul (gaugeFrame (u z)) c (y z)
+
+/-- The linear gauge action applies the gauge frame of `u z` to the value at `z`. -/
+theorem gaugeLinearAction_apply_eq_gaugeFrame (u : ℂ → Circle)
+    (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeLinearAction u y z = gaugeFrame (u z) (y z) := (rfl)
 
 /-- Coordinate formula for the linear gauge action. -/
 theorem gaugeLinearAction_apply (u : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -141,14 +184,14 @@ theorem gaugeLinearAction_apply (u : ℂ → Circle) (y : ℂ → EuclideanSpace
 @[simp]
 theorem gaugeLinearAction_one (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
     gaugeLinearAction 1 y = y := by
-  ext z i
-  fin_cases i <;> simp [gaugeLinearAction_apply]
+  ext z : 1
+  simp [gaugeLinearAction_apply_eq_gaugeFrame]
 
 /-- Successive linear gauge actions multiply their gauges. No regularity is needed. -/
 theorem gaugeLinearAction_mul (u v : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
     gaugeLinearAction (u * v) y = gaugeLinearAction u (gaugeLinearAction v y) := by
-  ext z i
-  fin_cases i <;> simp [gaugeLinearAction_apply, mul_re, mul_im] <;> ring
+  ext z : 1
+  simp [gaugeLinearAction_apply_eq_gaugeFrame, gaugeFrame_mul]
 
 /-- The inverse gauge undoes the linear action. -/
 @[simp]
@@ -169,12 +212,7 @@ the field variations and the gauge-fixed target. -/
 @[simp]
 theorem norm_gaugeLinearAction (u : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     ‖gaugeLinearAction u y z‖ = ‖y z‖ := by
-  apply (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
-  have hn := Circle.re_sq_add_im_sq (u z)
-  simp only [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, gaugeLinearAction_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
-  linear_combination (y z 2 ^ 2 + y z 3 ^ 2) * hn
+  rw [gaugeLinearAction_apply_eq_gaugeFrame, LinearIsometryEquiv.norm_map]
 
 /-- Pointwise vanishing is preserved in both directions. -/
 @[simp]
@@ -198,71 +236,6 @@ theorem contDiff_gaugeLinearAction {n : WithTop ℕ∞} {u : ℂ → Circle}
   · exact hc 1
   · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
   · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
-
-/-- The **gauge frame** of a unit complex number `c`: the linear isometry of `ℝ⁴` that fixes the
-first two coordinates and multiplies the complex coordinate `v₂ + i v₃` by `c`. The linear gauge
-action of `u : ℂ → U(1)` is `gaugeFrame (u z)` at each point `z`
-(`gaugeLinearAction_apply_eq_gaugeFrame`). -/
-def gaugeFrame (c : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) where
-  toFun v := !₂[v 0, v 1, (c : ℂ).re * v 2 - (c : ℂ).im * v 3,
-    (c : ℂ).im * v 2 + (c : ℂ).re * v 3]
-  invFun v := !₂[v 0, v 1, (c : ℂ).re * v 2 + (c : ℂ).im * v 3,
-    (c : ℂ).re * v 3 - (c : ℂ).im * v 2]
-  map_add' v w := by ext i; fin_cases i <;> simp <;> ring
-  map_smul' t v := by ext i; fin_cases i <;> simp <;> ring
-  left_inv v := by
-    have hc := Circle.re_sq_add_im_sq c
-    ext i
-    fin_cases i <;> simp
-    · linear_combination v 2 * hc
-    · linear_combination v 3 * hc
-  right_inv v := by
-    have hc := Circle.re_sq_add_im_sq c
-    ext i
-    fin_cases i <;> simp
-    · linear_combination v 2 * hc
-    · linear_combination v 3 * hc
-  norm_map' v := by
-    have hc := Circle.re_sq_add_im_sq c
-    simp only [EuclideanSpace.norm_eq, Fin.sum_univ_four]
-    congr 1
-    simp
-    linear_combination (v 2 ^ 2 + v 3 ^ 2) * hc
-
-/-- Coordinate formula for the gauge frame. -/
-theorem gaugeFrame_apply (c : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
-    gaugeFrame c v = !₂[v 0, v 1, (c : ℂ).re * v 2 - (c : ℂ).im * v 3,
-      (c : ℂ).im * v 2 + (c : ℂ).re * v 3] :=
-  (rfl)
-
-/-- The linear gauge action applies the gauge frame of `u z` to the value at `z`. -/
-theorem gaugeLinearAction_apply_eq_gaugeFrame (u : ℂ → Circle)
-    (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
-    gaugeLinearAction u y z = gaugeFrame (u z) (y z) := by
-  rw [gaugeLinearAction_apply, gaugeFrame_apply]
-
-/-- The trivial gauge frame is the identity. -/
-@[simp]
-theorem gaugeFrame_one : gaugeFrame 1 = LinearIsometryEquiv.refl ℝ _ := by
-  ext v i
-  fin_cases i <;> simp [gaugeFrame_apply]
-
-/-- The gauge frames compose as the gauges multiply. -/
-theorem gaugeFrame_mul (c d : Circle) :
-    gaugeFrame (c * d) = (gaugeFrame d).trans (gaugeFrame c) := by
-  ext v i
-  fin_cases i <;> simp [gaugeFrame_apply, mul_re, mul_im] <;> ring
-
-/-- The inverse of a gauge frame is the gauge frame of the inverse gauge. -/
-@[simp]
-theorem gaugeFrame_symm (c : Circle) : (gaugeFrame c).symm = gaugeFrame c⁻¹ := by
-  ext v : 1
-  apply (gaugeFrame c).injective
-  have hc := Circle.re_sq_add_im_sq c
-  ext i
-  fin_cases i <;> simp [gaugeFrame_apply, Circle.coe_inv_eq_conj, -Circle.coe_inv]
-  · linear_combination -v 2 * hc
-  · linear_combination -v 3 * hc
 
 /-- The linear gauge action preserves the pointwise inner product. -/
 @[simp]
