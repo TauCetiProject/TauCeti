@@ -110,24 +110,8 @@ isomorphic to a member of a fixed finite set of modules. -/
 theorem isRepresentationFinite_iff_exists_finite_forall_exists_iso :
     IsRepresentationFinite.{w} A ↔ ∃ S : Set (ModuleCat.{w} A), S.Finite ∧
       ∀ M : ModuleCat.{w} A, Module.Finite A M → Indecomposable M → ∃ Q ∈ S, Nonempty (M ≅ Q) := by
-  rw [isRepresentationFinite_iff]
-  let P : ObjectProperty (ModuleCat.{w} A) := fun M ↦ Module.Finite A M ∧ Indecomposable M
-  refine ⟨fun h ↦ ?_, fun ⟨S, hS, h⟩ ↦ ?_⟩
-  · -- One module from each isomorphism class.
-    refine ⟨Set.range fun x : Skeleton P.FullSubcategory ↦ ((fromSkeleton _).obj x).obj,
-      Set.finite_range _, fun M hf hi ↦ ?_⟩
-    let X : P.FullSubcategory := ⟨M, hf, hi⟩
-    exact ⟨_, ⟨toSkeleton X, rfl⟩, ⟨(P.ι.mapIso (fromSkeletonToSkeletonIso X)).symm⟩⟩
-  · -- Send each class to a member of `S` isomorphic to its modules: this map is injective.
-    have := hS.to_subtype
-    choose q hq he using fun x : Skeleton P.FullSubcategory ↦
-      h _ ((fromSkeleton _).obj x).property.1 ((fromSkeleton _).obj x).property.2
-    refine Finite.of_injective (fun x ↦ (⟨q x, hq x⟩ : S)) fun x y hxy ↦ ?_
-    obtain ⟨ex⟩ := he x
-    obtain ⟨ey⟩ := he y
-    rw [← toSkeleton_fromSkeleton_obj x, ← toSkeleton_fromSkeleton_obj y]
-    exact (P.toSkeleton_eq_toSkeleton_iff_nonempty_iso _ _).mpr
-      ⟨ex ≪≫ eqToIso (congrArg Subtype.val hxy) ≪≫ ey.symm⟩
+  simp only [isRepresentationFinite_iff,
+    ObjectProperty.finite_skeleton_iff_exists_finite_forall_exists_iso, and_imp]
 
 end Definition
 
