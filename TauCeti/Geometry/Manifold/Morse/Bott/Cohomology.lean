@@ -8,8 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
 public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
-public import TauCeti.Topology.VectorBundle.Thom.Bijective
-public import TauCeti.Topology.VectorBundle.Thom.RankZero
+public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
 
 /-!
 # Relative cohomology across the level of a Morse–Bott critical submanifold
@@ -34,7 +33,7 @@ of a critical submanifold of index `r`: the cohomology of the base, shifted up b
   `TauCeti.nonempty_singularHomology_sublevelPair_iso_thomPair`.
 * For a commutative ring `K`, a Thom class `u ∈ Hʳ(V, V₀; K)` and a `K`-module `N`, the Thom
   isomorphism `a ↦ π^*a ⌣ u` (`TauCeti.thomMap`) then gives
-  `Hᵖ⁺ʳ(M_{c+ε}, M_{c-ε}; N) ≅ Hᵖ(B; N)` in every degree `p`, provided `r ≠ 1`
+  `Hᵖ⁺ʳ(M_{c+ε}, M_{c-ε}; N) ≅ Hᵖ(B; N)` in every degree `p`
   (`TauCeti.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass`).
 * Such a Thom class exists with no orientation when `1` is the only unit of `K`, as for
   `K = ZMod 2`
@@ -51,9 +50,7 @@ twisted by the orientation of `V`, which this file does not treat.
 The base `B` is compact, since `g` embeds the disc bundle, which contains the zero section, as a
 closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
 (`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the Thom isomorphism is used over a
-compact base (`TauCeti.IsThomClass.bijective_thomMap`). That theorem needs rank at least `2`, and
-rank `0`, the case of a family of local minima, is
-`TauCeti.IsThomClass.bijective_thomMap_of_finrank_eq_zero`; this is why rank `1` is excluded.
+compact base (`TauCeti.bijective_thomMap_of_compactSpace`).
 
 ## References
 
@@ -154,13 +151,11 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair
     (asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
       (gaugeDiscSpherePairMap hρ) n)).symm⟩
 
-variable [FiniteDimensional ℝ F]
-
 /-- **Across a Morse–Bott level the relative cohomology is the shifted cohomology of the critical
 submanifold.** Under the hypotheses of
 `TauCeti.exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle`, where the
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
-bundle of a real vector bundle `V → B` of rank `r ≠ 1`, let `u` be a Thom class of `V` with
+bundle of a real vector bundle `V → B` of rank `r`, let `u` be a Thom class of `V` with
 coefficients in a commutative ring `K`. Then
 `Hᵖ⁺ʳ({f ≤ c + ε}, {f ≤ c - ε}; N) ≅ Hᵖ(B; N)` for every `K`-module `N` and every degree `p`. -/
 theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass
@@ -179,7 +174,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isTho
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
-    (hF : finrank ℝ F ≠ 1) {K : Type u} [CommRing K]
+    {K : Type u} [CommRing K]
     {u : (thomPair F V).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
     (hu : IsThomClass F V u) (N : ModuleCat.{u} K) (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularCohomology
@@ -188,18 +183,16 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isTho
   obtain ⟨e⟩ := nonempty_singularCohomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir
     φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) K N (p + finrank ℝ F)
   have := compactSpace_of_isClosedEmbedding_gaugeDiscBundle hε.le hK hρ hg hgD
-  -- The Thom map is bijective in rank `0` and in every rank at least `2`.
-  have hbij : Function.Bijective (thomMap F V N (finrank ℝ F) p _ rfl u) := by
-    rcases Nat.lt_or_ge (finrank ℝ F) 2 with hlt | hge
-    · exact hu.bijective_thomMap_of_finrank_eq_zero (by omega) N rfl
-    · exact hu.bijective_thomMap N hge rfl
-  exact ⟨e ≪≫ (LinearEquiv.ofBijective _ hbij).toModuleIso.symm⟩
+  exact ⟨e ≪≫ (LinearEquiv.ofBijective _
+    (bijective_thomMap_of_compactSpace N p _ rfl hu)).toModuleIso.symm⟩
+
+variable [FiniteDimensional ℝ F]
 
 /-- **Across a Morse–Bott level the relative cohomology mod `2` is the shifted cohomology of the
 critical submanifold, with no orientation.** Under the hypotheses of
 `TauCeti.exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle`, where the
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
-bundle of a real vector bundle `V → B` of rank `r ≠ 1`, let `K` be a commutative ring whose only
+bundle of a real vector bundle `V → B` of rank `r`, let `K` be a commutative ring whose only
 unit is `1`, such as `ZMod 2`. Then `Hᵖ⁺ʳ({f ≤ c + ε}, {f ≤ c - ε}; N) ≅ Hᵖ(B; N)` for every
 `K`-module `N` and every degree `p`. -/
 theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsingleton_units
@@ -218,20 +211,20 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_subsi
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
-    (hF : finrank ℝ F ≠ 1) (K : Type u) [CommRing K] [Subsingleton Kˣ] (N : ModuleCat.{u} K)
+    (K : Type u) [CommRing K] [Subsingleton Kˣ] (N : ModuleCat.{u} K)
     (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularCohomology
         (ModuleCat.of K K) K N (p + finrank ℝ F) ≅
       (TopCat.of B).singularCohomology (ModuleCat.of K K) K N p) :=
   let ⟨_, hu, _⟩ := existsUnique_isThomClass_of_subsingleton_units (F := F) (E := V) K
   nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass hfs hW hs ht hs₀
-    ht₀ hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hF hu N p
+    ht₀ hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hu N p
 
 /-- **Across a Morse–Bott level with oriented negative bundle the relative cohomology is the
 shifted cohomology of the critical submanifold.** Under the hypotheses of
 `TauCeti.exists_isIso_singularCohomologyMap_sublevelPair_of_negativeDiscBundle`, where the
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
-bundle of an oriented real vector bundle `V → B` of rank `r ≠ 1`, for every commutative ring `K`,
+bundle of an oriented real vector bundle `V → B` of rank `r`, for every commutative ring `K`,
 for instance `ℤ`, `Hᵖ⁺ʳ({f ≤ c + ε}, {f ≤ c - ε}; N) ≅ Hᵖ(B; N)` for every `K`-module `N` and every
 degree `p`. -/
 theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_vectorBundleOrientation
@@ -250,13 +243,13 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_vecto
     (hg : IsClosedEmbedding ((gaugeDiscBundle ρ).domRestrict g))
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
-    (hF : finrank ℝ F ≠ 1) {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
+    {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
     (o : VectorBundleOrientation F V ι) (K : Type u) [CommRing K] (N : ModuleCat.{u} K) (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularCohomology
         (ModuleCat.of K K) K N (p + finrank ℝ F) ≅
       (TopCat.of B).singularCohomology (ModuleCat.of K K) K N p) :=
   let ⟨_, hu⟩ := o.exists_isThomClass hι K
   nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass hfs hW hs ht hs₀
-    ht₀ hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hF hu N p
+    ht₀ hf hdir φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS hu N p
 
 end TauCeti
