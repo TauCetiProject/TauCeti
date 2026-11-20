@@ -105,8 +105,8 @@ instance isSplitEpi_chainComplexπ_f (R : C) (P : SSetPair.{w}) (n : ℕ) :
   have hdesc := CokernelCofork.IsColimit.desc' (P.isColimitCokernelCoforkChainComplexX R n)
     (𝟙 ((P.right.chainComplex R).X n) - retraction i ≫ i)
     (by simp [Preadditive.comp_sub, IsSplitMono.id_assoc, i])
-  let s : (P.chainComplex R).X n ⟶ (P.right.chainComplex R).X n := hdesc.1
-  have hs : (P.chainComplexπ R).f n ≫ s = 𝟙 _ - retraction i ≫ i := hdesc.2
+  let s : (P.chainComplex R).X n ⟶ (P.right.chainComplex R).X n := hdesc.val
+  have hs : (P.chainComplexπ R).f n ≫ s = 𝟙 _ - retraction i ≫ i := hdesc.property
   have hsg : s ≫ (P.chainComplexπ R).f n = 𝟙 ((P.chainComplex R).X n) := by
     rw [← cancel_epi ((P.chainComplexπ R).f n), ← Category.assoc, hs, Preadditive.sub_comp,
       Category.id_comp, Category.assoc, P.chainComplex_condition_f R n, comp_zero, sub_zero,

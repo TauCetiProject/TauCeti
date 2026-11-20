@@ -102,7 +102,7 @@ private lemma chainComplexMap_tensorHom_id_comp_shuffle_comp_chainComplexπ :
   simp only [CategoryTheory.Functor.map_id] at hnat
   have hf (z) : ((TopPair.ofSubset A).map ⊗ₘ 𝟙 Y) z ∈ ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 0 :=
     Set.mem_preimage.2 ((ConcreteCategory.congr_hom
-      (tensorHom_fst (TopPair.ofSubset A).map (𝟙 Y)) z).symm ▸ (fst (of ↥A) Y z).2)
+      (tensorHom_fst (TopPair.ofSubset A).map (𝟙 Y)) z).symm ▸ (fst (of ↥A) Y z).property)
   exact (Category.assoc _ _ _).symm.trans <| (eq_whisker hnat _).trans <|
     (Category.assoc _ _ _).trans <|
       (whisker_eq _ (TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero _ _
@@ -117,7 +117,7 @@ private def leftRelativeShuffle :
       ((TopPair.ofSubset A).shortExact_singularChainComplexShortComplex R)).gIsCokernel
     (shuffle X Y R S ≫
       ((X ⊗ Y).smallSingularSubcomplex ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ (R ⊗ S))
-    (chainComplexMap_tensorHom_id_comp_shuffle_comp_chainComplexπ X Y A B R S)).1
+    (chainComplexMap_tensorHom_id_comp_shuffle_comp_chainComplexπ X Y A B R S)).val
 
 @[reassoc]
 private lemma singularChainComplexπ_tensorHom_id_leftRelativeShuffle :
@@ -129,7 +129,7 @@ private lemma singularChainComplexπ_tensorHom_id_leftRelativeShuffle :
   (CokernelCofork.IsColimit.desc'
     (shortExact_tensorRightShortComplex ((toSSet.obj Y).chainComplex S) _
       ((TopPair.ofSubset A).shortExact_singularChainComplexShortComplex R)).gIsCokernel _
-    (chainComplexMap_tensorHom_id_comp_shuffle_comp_chainComplexπ X Y A B R S)).2
+    (chainComplexMap_tensorHom_id_comp_shuffle_comp_chainComplexπ X Y A B R S)).property
 
 private lemma id_tensorHom_chainComplexMap_comp_leftRelativeShuffle :
     (𝟙 ((TopPair.ofSubset A).singularChainComplex R) ⊗ₘ
@@ -149,7 +149,7 @@ private lemma id_tensorHom_chainComplexMap_comp_leftRelativeShuffle :
   simp only [CategoryTheory.Functor.map_id] at hnat
   have hf (z) : (𝟙 X ⊗ₘ (TopPair.ofSubset B).map) z ∈ ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 1 :=
     Set.mem_preimage.2 ((ConcreteCategory.congr_hom
-      (tensorHom_snd (𝟙 X) (TopPair.ofSubset B).map) z).symm ▸ (snd X (of ↥B) z).2)
+      (tensorHom_snd (𝟙 X) (TopPair.ofSubset B).map) z).symm ▸ (snd X (of ↥B) z).property)
   calc _ = (𝟙 ((toSSet.obj X).chainComplex R) ⊗ₘ
             SSet.chainComplexMap (toSSet.map (TopPair.ofSubset B).map) S) ≫
           ((TopPair.ofSubset A).singularChainComplexπ R ⊗ₘ 𝟙 ((toSSet.obj Y).chainComplex S)) ≫
@@ -178,7 +178,7 @@ def relativeShuffle :
     (shortExact_tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
       ((TopPair.ofSubset B).shortExact_singularChainComplexShortComplex S)).gIsCokernel
     (leftRelativeShuffle X Y A B R S)
-    (id_tensorHom_chainComplexMap_comp_leftRelativeShuffle X Y A B R S)).1
+    (id_tensorHom_chainComplexMap_comp_leftRelativeShuffle X Y A B R S)).val
 
 /-- `relativeShuffle` is characterized by precomposing with `π_A ⊗ π_B`. -/
 @[reassoc (attr := simp)]
@@ -195,7 +195,7 @@ lemma singularChainComplexπ_tensorHom_relativeShuffle :
     (CokernelCofork.IsColimit.desc'
       (shortExact_tensorLeftShortComplex ((TopPair.ofSubset A).singularChainComplex R)
         ((TopPair.ofSubset B).shortExact_singularChainComplexShortComplex S)).gIsCokernel _
-      (id_tensorHom_chainComplexMap_comp_leftRelativeShuffle X Y A B R S)).2
+      (id_tensorHom_chainComplexMap_comp_leftRelativeShuffle X Y A B R S)).property
   rw [← tensor_id_comp_id_tensor ((TopPair.ofSubset B).singularChainComplexπ S)
       ((TopPair.ofSubset A).singularChainComplexπ R),
     Category.assoc, hdesc]
