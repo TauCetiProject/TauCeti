@@ -147,13 +147,8 @@ theorem mem_parabolicDerivPairs {k : ℕ} {p : ℕ × ℕ} :
   omega
 
 /-- There are at most `(k + 1)²` pairs `(r, m)` with `2 r + m ≤ k`. -/
-theorem card_parabolicDerivPairs_le (k : ℕ) : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 := by
-  refine (Finset.card_le_card fun p hp ↦ ?_).trans_eq
-    (by rw [Finset.card_product, Finset.card_range, sq] :
-      (Finset.range (k + 1) ×ˢ Finset.range (k + 1)).card = (k + 1) ^ 2)
-  rw [mem_parabolicDerivPairs] at hp
-  simp only [Finset.mem_product, Finset.mem_range]
-  omega
+theorem card_parabolicDerivPairs_le (k : ℕ) : (parabolicDerivPairs k).card ≤ (k + 1) ^ 2 :=
+  (Finset.card_filter_le _ _).trans_eq (by rw [Finset.card_product, Finset.card_range, sq])
 
 variable (k α E F) in
 /-- Bounded parabolic Hölder maps of order `k` on a nondegenerate closed time slab
