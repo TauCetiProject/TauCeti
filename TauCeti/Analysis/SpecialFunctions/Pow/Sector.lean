@@ -21,6 +21,8 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
 
 * `TauCeti.arg_mem_Icc_iff_norm_mul_cos_le_re` characterizes a closed symmetric sector without
   referring to the discontinuous argument function on the target side.
+* `TauCeti.norm_mul_sin_le_re_of_abs_arg_le` bounds `z.re` below by `‖z‖ * sin δ` on the closed
+  sector `|arg z| ≤ π / 2 - δ`.
 * `TauCeti.cpow_inv_re_pos_of_arg_mem_sector` maps an open sector into the right half-plane.
 * `TauCeti.arg_mem_Icc_of_arg_mem_sector` passes the closed-sector condition on the open upper
   part of a set to its closed upper part by continuity.
@@ -47,6 +49,16 @@ theorem arg_mem_Icc_iff_norm_mul_cos_le_re {z : ℂ} {a : ℝ} (ha : a ∈ Icc (
   · simp [ha.1]
   rw [← norm_mul_cos_arg z, ← Real.cos_abs z.arg, mul_le_mul_iff_right₀ (norm_pos_iff.mpr hz),
     Real.strictAntiOn_cos.le_iff_ge ha ⟨abs_nonneg _, abs_arg_le_pi z⟩]
+
+/-- On a closed symmetric sector `|arg z| ≤ π / 2 - δ` with `-π / 2 ≤ δ`, the real part of `z`
+satisfies `‖z‖ * sin δ ≤ z.re`. -/
+theorem norm_mul_sin_le_re_of_abs_arg_le {z : ℂ} {δ : ℝ} (hδ : -(Real.pi / 2) ≤ δ)
+    (hz : |z.arg| ≤ Real.pi / 2 - δ) :
+    ‖z‖ * Real.sin δ ≤ z.re := by
+  have hmem : Real.pi / 2 - δ ∈ Icc (0 : ℝ) Real.pi :=
+    ⟨by linarith [abs_nonneg z.arg], by linarith⟩
+  have h := (arg_mem_Icc_iff_norm_mul_cos_le_re hmem).mp (abs_le.mp hz)
+  rwa [Real.cos_pi_div_two_sub] at h
 
 /-- The principal inverse power maps the sector of opening `βπ` into the open right
 half-plane. -/

@@ -42,6 +42,8 @@ Moving from `s` out along its ray to radius `n + 1` and then along the arc to th
 * `TauCeti.exists_norm_logGamma_sub_stirling_le`, `TauCeti.isBigO_logGamma_sub_stirling`:
   the `O(1 / ‖s‖)` forms.
 * `TauCeti.abs_log_norm_Gamma_sub_stirling_le`: the real-part form for `log ‖Γ s‖`.
+* `TauCeti.Gamma_isEquivalent_stirling_sector`: multiplicative Stirling asymptotic
+  `Γ(s) ~ √(2π) s ^ (s - 1/2) e ^ (-s)` on closed sectors `|arg s| ≤ π - δ`.
 -/
 
 public section
@@ -299,5 +301,42 @@ theorem abs_log_norm_Gamma_sub_stirling_le {s : ℂ} {δ : ℝ} (hδ : 0 < δ) (
   simp only [sub_re, add_re, mul_re, log_re, log_im, ofReal_re, sub_im, one_div, inv_re,
     normSq_ofNat, re_ofNat]
   norm_num
+
+/-- **Multiplicative Stirling's formula on a sector**: for every `δ > 0`,
+`Γ(s) ~ √(2π) s ^ (s - 1/2) e ^ (-s)` as `s → ∞` in the closed sector `|arg s| ≤ π - δ`. -/
+theorem Gamma_isEquivalent_stirling_sector {δ : ℝ} (hδ : 0 < δ) :
+    (fun s : ℂ ↦ Complex.Gamma s)
+      ~[cobounded ℂ ⊓ 𝓟 {s : ℂ | |s.arg| ≤ π - δ}]
+        fun s : ℂ ↦ (Real.sqrt (2 * π) : ℂ) * s ^ (s - 1 / 2) * Complex.exp (-s) := by
+  set δ' := min δ (π / 2)
+  have hδ' : 0 < δ' := lt_min hδ (by positivity)
+  have hδ'π : δ' < π := (min_le_right _ _).trans_lt (by linarith [pi_pos])
+  have hsub : {s : ℂ | |s.arg| ≤ π - δ} ⊆ {s : ℂ | |s.arg| ≤ π - δ'} :=
+    fun s hs ↦ le_trans (mem_ofPred.mp hs) (sub_le_sub_left (min_le_left _ _) π)
+  have hstir_big := (isBigO_logGamma_sub_stirling hδ' hδ'π).mono
+    (inf_le_inf_left (cobounded ℂ) (principal_mono.mpr hsub))
+  have hstir_lim : Tendsto
+      (fun s : ℂ ↦
+        logGamma s - ((s - 1 / 2) * Complex.log s - s + (Real.log (2 * π) / 2 : ℝ)))
+      (cobounded ℂ ⊓ 𝓟 {s : ℂ | |s.arg| ≤ π - δ}) (𝓝 0) :=
+    hstir_big.trans_tendsto
+      ((tendsto_inv_atTop_zero.comp tendsto_norm_cobounded_atTop).mono_left inf_le_left)
+  refine isEquivalent_of_tendsto_one ?_
+  have hexp := (Complex.continuous_exp.tendsto 0).comp hstir_lim
+  rw [Complex.exp_zero] at hexp
+  refine hexp.congr' ?_
+  rw [EventuallyEq, eventually_inf_principal]
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop 0] with s hs_norm hs_arg
+  have hs0 : s ≠ 0 := norm_pos_iff.mp hs_norm
+  have hslit : s ∈ slitPlane := mem_slitPlane_of_abs_arg_le hδ hs_arg hs0
+  have hsqrt : Complex.exp ((Real.log (2 * π) / 2 : ℝ)) = (Real.sqrt (2 * π) : ℂ) := by
+    rw [← ofReal_exp, Real.sqrt_eq_rpow, Real.rpow_def_of_pos (by positivity)]
+    ring_nf
+  dsimp [Function.comp_def, Pi.div_apply]
+  rw [Complex.exp_sub, exp_logGamma hslit, Complex.exp_add, Complex.exp_sub,
+    hsqrt, cpow_def_of_ne_zero hs0]
+  have hexps : Complex.exp s ≠ 0 := Complex.exp_ne_zero s
+  field_simp [hexps, Complex.exp_neg]
+  rw [mul_assoc, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, mul_one]
 
 end TauCeti

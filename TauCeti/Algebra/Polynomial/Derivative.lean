@@ -49,6 +49,9 @@ Over any semiring, the coefficient of `p q'` in degree `deg p + deg q - 1` is
 
 In positive characteristic `p`, every iterated derivative `derivative^[k] f` of order `k ≥ p`
 vanishes identically (`Polynomial.iterate_derivative_eq_zero_of_charP`), since `p` divides `k !`.
+
+Over any semiring, the `j`-th coefficient of `X * p'` is `p.coeff j * j`
+(`Polynomial.coeff_X_mul_derivative`).
 -/
 
 public section
@@ -267,5 +270,12 @@ theorem iterate_derivative_eq_zero_of_charP {R : Type*} [Semiring R] {p : ℕ} [
     derivative^[k] f = 0 := by
   rw [iterate_derivative_eq_factorial_smul_sum, ← Nat.cast_smul_eq_nsmul R,
     Nat.cast_factorial_eq_zero_of_le hp (CharP.cast_eq_zero R p) hk, zero_smul]
+
+/-- The `j`-th coefficient of `X * p'` is `j` times the `j`-th coefficient of `p`. -/
+theorem coeff_X_mul_derivative {R : Type*} [Semiring R] (p : R[X]) (j : ℕ) :
+    (X * p.derivative).coeff j = p.coeff j * j := by
+  cases j with
+  | zero => simp
+  | succ i => rw [coeff_X_mul, coeff_derivative, Nat.cast_add_one]
 
 end Polynomial
