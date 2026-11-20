@@ -89,8 +89,8 @@ section Opens
 variable [OpensMeasurableSpace B]
 
 omit [SecondCountableTopology B] in
-/-- The fibre norm of a compactly supported smooth section is `p`-integrable for a measure that
-is finite on compact sets. -/
+/-- The fibre norm of a compactly supported `C^n` section is `p`-integrable for a measure that is
+finite on compact sets. -/
 theorem _root_.ContMDiffSection.memLp_norm_of_mem_compactlySupported {n : ℕ∞ω}
     {s : Cₛ^n⟮I; F, E⟯}
     (hs : s ∈ ContMDiffSection.compactlySupported I F n E) :
@@ -130,10 +130,12 @@ theorem coeFn_ofCompactlySupported (s : ContMDiffSection.compactlySupported I F 
 theorem ofCompactlySupported_smul [∀ x, IsScalarTower ℝ 𝕜 (E x)] (c : ℝ)
     (s : ContMDiffSection.compactlySupported I F n E) :
     ofCompactlySupported 𝕜 I p μ (c • s) = (c : 𝕜) • ofCompactlySupported 𝕜 I p μ s := by
-  rw [ofCompactlySupported, AddMonoidHom.coe_mk, ZeroHom.coe_mk, mk_smul]
-  exact (mk_eq_mk_iff (F := F)).2 (.of_forall fun x ↦ by
-    rw [Submodule.coe_smul, ContMDiffSection.coe_smul, Pi.smul_apply,
-      RCLike.real_smul_eq_coe_smul (K := 𝕜)])
+  rw [ext_iff]
+  filter_upwards [coeFn_ofCompactlySupported (𝕜 := 𝕜) (p := p) (μ := μ) (c • s),
+    coeFn_smul (c := (c : 𝕜)) (f := ofCompactlySupported 𝕜 I p μ s),
+    coeFn_ofCompactlySupported (𝕜 := 𝕜) (p := p) (μ := μ) s] with x h1 h2 h3
+  rw [h1, h2, h3, Submodule.coe_smul, ContMDiffSection.coe_smul, Pi.smul_apply,
+    RCLike.real_smul_eq_coe_smul (K := 𝕜)]
 
 /-- The kernel of `ofCompactlySupported` consists of the sections vanishing almost everywhere. -/
 theorem ofCompactlySupported_eq_zero_iff {s : ContMDiffSection.compactlySupported I F n E} :
@@ -168,6 +170,18 @@ section Approximation
 
 variable [BorelSpace B] [FiniteDimensional ℝ EB] [IsManifold I ∞ B] [T2Space B]
   [ContMDiffVectorBundle ∞ F E I] [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)]
+
+omit [∀ x, Module ℝ (E x)] [VectorBundle ℝ F E] [IsFiniteMeasureOnCompacts μ]
+  [FiniteDimensional ℝ EB] [IsManifold I ∞ B] [T2Space B] [ContMDiffVectorBundle ∞ F E I]
+  [FiniteDimensional 𝕜 F] [Fact (1 ≤ p)] in
+/-- The fibre norm of the difference between the restriction to a measurable set `A` of a
+measurable section `s` and a smooth section `t` is a.e.-strongly measurable. -/
+private theorem aestronglyMeasurable_norm_piecewise_sub {s : ∀ x, E x}
+    (hs : AEStronglyMeasurableSection 𝕜 F μ s) {A : Set B} [DecidablePred (· ∈ A)]
+    (hA : MeasurableSet A) (t : Cₛ^∞⟮I; F, E⟯) :
+    AEStronglyMeasurable (fun x ↦ ‖A.piecewise s 0 x - t x‖) μ :=
+  ((hs.piecewise hA (.zero 𝕜 F E μ)).sub
+    t.contMDiff.continuous.aestronglyMeasurableSection).aestronglyMeasurable_norm
 
 /-- **Approximation in a chart.** Let `A` be a measurable subset of a compact set `L` inside the
 base set of an atlas chart `e`. The restriction to `A` of a measurable section `s` with
@@ -220,9 +234,8 @@ private theorem exists_eLpNorm_piecewise_sub_le (hp : p ≠ ⊤) (e : Trivializa
       have hg'x : g' x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hg'K h)
       simp [hgx, hg'x]
   calc eLpNorm (fun x ↦ ‖A.piecewise s 0 x - t x‖) p μ ≤ C • eLpNorm (g - ⇑g') p μ :=
-        eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul ((hs.piecewise hA (.zero 𝕜 F E μ)).sub
-          t.contMDiff.continuous.aestronglyMeasurableSection).aestronglyMeasurable_norm
-          (.of_forall fun x ↦ by
+        eLpNorm_le_nnreal_smul_eLpNorm_of_ae_le_mul
+          (aestronglyMeasurable_norm_piecewise_sub hs hA t) (.of_forall fun x ↦ by
             rw [← NNReal.coe_le_coe]
             simpa using hbound x) p
     _ ≤ C * η := by
@@ -258,14 +271,10 @@ private theorem exists_eLpNorm_piecewise_sub_le_of_subset_biUnion (hp : p ≠ �
       · exact absurd hxy hx.2
       · exact mem_iUnion₂.2 ⟨y, hy, hxy⟩) hε2
     refine ⟨t₁ + t₂, add_mem ht₁ ht₂, ?_⟩
-    have hm (A : Set B) [DecidablePred (· ∈ A)] (hA : MeasurableSet A) (t : Cₛ^∞⟮I; F, E⟯) :
-        AEStronglyMeasurable (fun x ↦ ‖A.piecewise s 0 x - t x‖) μ :=
-      ((hs.piecewise hA (.zero 𝕜 F E μ)).sub
-        t.contMDiff.continuous.aestronglyMeasurableSection).aestronglyMeasurable_norm
     calc eLpNorm (fun x ↦ ‖A.piecewise s 0 x - (t₁ + t₂) x‖) p μ
         ≤ eLpNorm ((fun x ↦ ‖(A ∩ L a).piecewise s 0 x - t₁ x‖) +
             fun x ↦ ‖(A \ L a).piecewise s 0 x - t₂ x‖) p μ := by
-          refine eLpNorm_mono (hm A hA _) fun x ↦ ?_
+          refine eLpNorm_mono (aestronglyMeasurable_norm_piecewise_sub hs hA _) fun x ↦ ?_
           have hsplit : A.piecewise s 0 x - (t₁ + t₂) x =
               ((A ∩ L a).piecewise s 0 x - t₁ x) + ((A \ L a).piecewise s 0 x - t₂ x) := by
             rw [ContMDiffSection.coe_add, Pi.add_apply]
