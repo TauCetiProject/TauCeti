@@ -35,6 +35,11 @@ from Mathlib's identifications `TensorProduct.directLimitLeft` and
 `TensorProduct.directLimitRight`; the two-factor statement applies them one factor at a time.
 These are the finiteness arguments needed to descend comodules over a directed colimit of
 coalgebras to a stage.
+
+The finitely presented module factorization follows the proof plan of
+`TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation` in
+`TauCeti/Algebra/Colimit/FinitePresentation.lean`: lift finitely many generators to a stage,
+then pass to a later stage where the finitely many relations vanish.
 -/
 
 public section
