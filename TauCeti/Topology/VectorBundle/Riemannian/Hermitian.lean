@@ -169,9 +169,13 @@ theorem exists_norm_symm_le_and_norm_le_of_isCompact (e : Trivialization F (π F
   set u : F := ((‖v‖⁻¹ : ℝ) : 𝕜) • v
   have hu : u ∈ Metric.sphere (0 : F) 1 := by simp [u, norm_smul, hv']
   have hnorm : ‖Φ v‖ = ‖v‖ * ‖Φ u‖ := by simp [u, norm_smul, hv']
-  rw [hnorm, Real.coe_toNNReal _ ((norm_nonneg _).trans (hup u hu)),
-    Real.coe_toNNReal _ (inv_nonneg.2 hm.le), inv_mul_eq_div, le_div_iff₀ hm]
-  exact ⟨by rw [mul_comm]; gcongr; exact hup u hu, by gcongr; exact hlow u hu⟩
+  -- Prove both bounds with real constants, then enlarge them to their `toNNReal`.
+  have h₁ : ‖Φ v‖ ≤ C * ‖v‖ := by rw [hnorm, mul_comm]; gcongr; exact hup u hu
+  have h₂ : ‖v‖ ≤ m⁻¹ * ‖Φ v‖ :=
+    calc ‖v‖ = m⁻¹ * (‖v‖ * m) := by field_simp
+      _ ≤ m⁻¹ * ‖Φ v‖ := by rw [hnorm]; gcongr; exact hlow u hu
+  exact ⟨h₁.trans (by gcongr; exact C.le_coe_toNNReal),
+    h₂.trans (by gcongr; exact m⁻¹.le_coe_toNNReal)⟩
 
 end Bundle.Trivialization
 

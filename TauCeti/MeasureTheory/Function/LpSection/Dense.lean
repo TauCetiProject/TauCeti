@@ -134,8 +134,7 @@ theorem ofCompactlySupported_smul [∀ x, IsScalarTower ℝ 𝕜 (E x)] (c : ℝ
   filter_upwards [coeFn_ofCompactlySupported (𝕜 := 𝕜) (p := p) (μ := μ) (c • s),
     coeFn_smul (c := (c : 𝕜)) (f := ofCompactlySupported 𝕜 I p μ s),
     coeFn_ofCompactlySupported (𝕜 := 𝕜) (p := p) (μ := μ) s] with x h1 h2 h3
-  rw [h1, h2, h3, Submodule.coe_smul, ContMDiffSection.coe_smul, Pi.smul_apply,
-    RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+  simp [h1, h2, h3, ← RCLike.real_smul_eq_coe_smul (K := 𝕜)]
 
 /-- The kernel of `ofCompactlySupported` consists of the sections vanishing almost everywhere. -/
 theorem ofCompactlySupported_eq_zero_iff {s : ContMDiffSection.compactlySupported I F n E} :
@@ -274,12 +273,12 @@ private theorem exists_eLpNorm_piecewise_sub_le_of_subset_biUnion (hp : p ≠ �
     calc eLpNorm (fun x ↦ ‖A.piecewise s 0 x - (t₁ + t₂) x‖) p μ
         ≤ eLpNorm ((fun x ↦ ‖(A ∩ L a).piecewise s 0 x - t₁ x‖) +
             fun x ↦ ‖(A \ L a).piecewise s 0 x - t₂ x‖) p μ := by
-          refine eLpNorm_mono (aestronglyMeasurable_norm_piecewise_sub hs hA _) fun x ↦ ?_
+          refine eLpNorm_mono_real (aestronglyMeasurable_norm_piecewise_sub hs hA _) fun x ↦ ?_
           have hsplit : A.piecewise s 0 x - (t₁ + t₂) x =
               ((A ∩ L a).piecewise s 0 x - t₁ x) + ((A \ L a).piecewise s 0 x - t₂ x) := by
             rw [ContMDiffSection.coe_add, Pi.add_apply]
             by_cases hxA : x ∈ A <;> by_cases hxL : x ∈ L a <;> simp [hxA, hxL] <;> abel
-          rw [hsplit, norm_norm, Pi.add_apply, Real.norm_of_nonneg (by positivity)]
+          rw [norm_norm, hsplit]
           exact norm_add_le _ _
       _ ≤ ε / 2 + ε / 2 := (eLpNorm_add_le Fact.out).trans (add_le_add h₁ h₂)
       _ = ε := ENNReal.add_halves ε
@@ -316,11 +315,9 @@ theorem denseRange_ofCompactlySupported (hp : p ≠ ⊤) :
   have hle : eLpNorm (fun x ↦ ‖f x - t x‖) p μ ≤ ENNReal.ofReal (r / 2) :=
     calc _ ≤ eLpNorm ((fun x ↦ ‖((fun y ↦ ‖f y‖) - h) x‖) +
             fun x ↦ ‖(tsupport h).piecewise f 0 x - t x‖) p μ :=
-          eLpNorm_mono ((f.aestronglyMeasurableSection.sub
+          eLpNorm_mono_real ((f.aestronglyMeasurableSection.sub
             t.contMDiff.continuous.aestronglyMeasurableSection).aestronglyMeasurable_norm)
-            fun x ↦ by
-              rw [norm_norm, Pi.add_apply, Real.norm_of_nonneg (by positivity)]
-              exact hbound x
+            fun x ↦ (norm_norm _).trans_le (hbound x)
       _ ≤ eLpNorm ((fun y ↦ ‖f y‖) - h) p μ +
             eLpNorm (fun x ↦ ‖(tsupport h).piecewise f 0 x - t x‖) p μ := by
           rw [← eLpNorm_norm ((fun y ↦ ‖f y‖) - h)
