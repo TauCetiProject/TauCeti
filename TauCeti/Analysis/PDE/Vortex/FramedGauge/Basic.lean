@@ -66,8 +66,7 @@ def framedGaugeGroup : Subgroup (ℂ → Circle) where
   inv_mem' := by
     rintro u ⟨hu, htu⟩
     refine ⟨?_, by simpa only [Pi.inv_def, inv_one] using htu.inv⟩
-    simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
-      Complex.conjCLE_apply] using conjCLE.contDiff.comp hu
+    exact Circle.contDiff_coe_inv hu
 
 /-- Membership in the smooth framed group is precisely smoothness and the end condition. -/
 @[simp]
@@ -514,6 +513,11 @@ theorem contDiff_gaugeTransform {n : WithTop ℕ∞} {u : ℂ → Circle}
   · exact (hc 1).sub (hg.clm_apply contDiff_const)
   · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
   · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
+/-- A `C¹` gauge transformation of a continuous field is continuous. -/
+theorem continuous_gaugeTransform {u : ℂ → Circle} (hu : ContDiff ℝ 1 (fun w ↦ (u w : ℂ)))
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) : Continuous (gaugeTransform u x) :=
+  (contDiff_gaugeTransform (n := 0) (by rwa [zero_add]) (contDiff_zero.2 hx)).continuous
 
 /-- The logarithmic derivative of a `C²` circle-valued gauge is closed. -/
 theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}

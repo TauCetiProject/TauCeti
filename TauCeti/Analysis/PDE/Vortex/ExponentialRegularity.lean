@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Function.L2Space
 
 At a plane vortex `x`, the gauge-fixed operator `L_x = d₀* ⊕ d₁` (`gaugeFixedOperator`) has a
 bounded weak right inverse `Q` on `L²(ℂ; ℝ⁴)`: `Q f` is the weak solution of `L_x y = f`
-orthogonal to the weak kernel (`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
+orthogonal to the weak kernel (`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`).
 With `ρ(z) = √(1 + |z|²)` and `|c| < 1/2`, it satisfies the weighted `L²` estimate
 `‖exp(c ρ) Q f‖₂ ≤ K ‖exp(c ρ) f‖₂`
 (`exists_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoint_eq`), and it gains one
@@ -216,7 +216,7 @@ solution of the plane vortex equation with `|α| → 1` at infinity whose coordi
 derivatives through order `k`, let `ρ(z) = √(1 + |z|²)` and `|c| < 1/2`. Let `y` be the
 square-integrable weak solution of `L_x y = f` orthogonal to the weak kernel of `L_x`, that is the
 value at `f` of the weak right inverse `Q` of
-`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`. If `exp(c ρ) f ∈ H^k`, then
+`exists_continuousLinearMap_isMinimalGaugeFixedWeakSolution`. If `exp(c ρ) f ∈ H^k`, then
 `exp(c ρ) y ∈ H^(k+1)`. -/
 theorem exp_mul_smul_mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq
     (k : ℕ) (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)

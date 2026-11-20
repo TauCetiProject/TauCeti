@@ -36,6 +36,14 @@ shows that the two kernels agree.
   bootstrap makes every weak solution of `L_x u = 0` almost everywhere equal to a smooth classical
   one (`TauCeti.Vortex.exists_contDiff_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`), so the map
   is onto (`TauCeti.Vortex.range_gaugeFixedKernelToLp`).
+* The weak kernel is tested against smooth fields, while the weak solutions
+  `TauCeti.Vortex.IsGaugeFixedWeakSolution` of the right inverse are tested against `C²` fields.
+  A `C²`-tested weak solution of `L_x w = 0` lies in the weak kernel at every continuous field
+  (`TauCeti.Vortex.IsGaugeFixedWeakSolution.mem_weakGaugeFixedKernel`), and at a smooth field
+  with bounded derivatives the two notions agree
+  (`TauCeti.Vortex.isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel`). There the
+  minimal weak solutions of `L_x y = f` are the weak solutions orthogonal to the weak kernel
+  (`TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff`).
 
 A continuous field lying in the affine field space `A_m^k` for every `k` is such a field, with the
 degree-`m` end framing. If its section also satisfies the holomorphicity rows `∂bar_a α = 0`, as
@@ -56,6 +64,8 @@ satisfying the full vortex equation, the cokernel of that operator also vanishes
   of the weak solutions of `L_x u = 0`.
 * `TauCeti.Vortex.range_gaugeFixedKernelToLp`: at a smooth field with bounded derivatives, the
   weak kernel is the space of `L²` classes of the classical kernel.
+* `TauCeti.Vortex.isMinimalGaugeFixedWeakSolution_iff`: at such a field, minimal weak solutions
+  are the weak solutions orthogonal to the weak kernel.
 * `TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul`: at a continuous field lying in every
   `A_m^k` and satisfying the holomorphicity rows, for instance a plane vortex, the weak kernel has
   real dimension `2m`.
@@ -118,6 +128,15 @@ theorem mem_weakGaugeFixedKernel_iff (hx : Continuous x)
     | add g g' _ _ hg hg' => rw [inner_add_left, hg, hg', add_zero]
     | smul c g _ hg => rw [real_inner_smul_left, hg, mul_zero]
 
+/-- **Weak solutions of `L_x w = 0` lie in the weak kernel.** At a continuous field, a weak
+solution of `L_x w = 0`, tested against compactly supported `C²` fields, lies in the weak kernel
+of `L_x`, which is tested only against smooth ones. -/
+theorem IsGaugeFixedWeakSolution.mem_weakGaugeFixedKernel (hx : Continuous x)
+    {w : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+    (h : IsGaugeFixedWeakSolution volume x 0 w) : w ∈ weakGaugeFixedKernel x :=
+  (mem_weakGaugeFixedKernel_iff hx).2 fun η hη hηc ↦
+    isGaugeFixedWeakSolution_zero_iff.1 h η (hη.of_le (by simp)) hηc
+
 /-- **Classical kernel elements are weak solutions.** At a continuous field, the `L²` class of a
 `C²` square-integrable solution of `L_x y = 0` lies in the weak kernel of `L_x`. -/
 theorem gaugeFixedKernelToLp_mem_weakGaugeFixedKernel (hx : Continuous x)
@@ -154,6 +173,38 @@ theorem finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel (hx : ContDiff 
     finrank ℝ (weakGaugeFixedKernel x) = finrank ℝ (gaugeFixedKernel x) := by
   rw [← range_gaugeFixedKernelToLp hx hbound,
     LinearMap.finrank_range_of_inj (gaugeFixedKernelToLp_injective x)]
+
+/-- **The weak kernel consists of the weak solutions of `L_x w = 0` tested against `C²` fields.**
+At a smooth field whose coordinates have bounded derivatives of every order, a square-integrable
+field lies in the weak kernel of `L_x` exactly when it is a weak solution of `L_x w = 0` in the
+sense of `TauCeti.Vortex.IsGaugeFixedWeakSolution`. -/
+theorem isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {w : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
+    IsGaugeFixedWeakSolution volume x 0 w ↔ w ∈ weakGaugeFixedKernel x := by
+  refine ⟨IsGaugeFixedWeakSolution.mem_weakGaugeFixedKernel hx.continuous, fun hw ↦ ?_⟩
+  -- `w` is the class of a classical solution, which integrates by parts against `C²` fields.
+  obtain ⟨y, rfl⟩ := (range_gaugeFixedKernelToLp hx hbound).ge hw
+  obtain ⟨hyc, -, hker⟩ := mem_gaugeFixedKernel.1 y.2
+  refine isGaugeFixedWeakSolution_zero_iff.2 fun η hη hηc ↦ ?_
+  rw [integral_congr_ae ((coeFn_gaugeFixedKernelToLp y).mono fun z hz ↦ by rw [hz]),
+    ← integral_inner_gaugeFixedOperator hx.continuous (hyc.of_le one_le_two)
+      (hη.of_le one_le_two) (.inr hηc)]
+  simp [hker]
+
+/-- **Minimal weak solutions are the weak solutions orthogonal to the weak kernel.** At a smooth
+field whose coordinates have bounded derivatives of every order, a minimal weak solution of
+`L_x y = f` is a weak solution lying in the orthogonal complement of `weakGaugeFixedKernel x`. -/
+theorem isMinimalGaugeFixedWeakSolution_iff (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} :
+    IsMinimalGaugeFixedWeakSolution volume x f y ↔
+      IsGaugeFixedWeakSolution volume x f y ∧ y ∈ (weakGaugeFixedKernel x)ᗮ := by
+  refine and_congr_right fun _ ↦ ?_
+  rw [Submodule.mem_orthogonal']
+  refine forall_congr' fun w ↦ ?_
+  rw [← isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx hbound,
+    isGaugeFixedWeakSolution_zero_iff, L2.inner_def]
 
 /-! ### The weak kernel at a plane vortex -/
 

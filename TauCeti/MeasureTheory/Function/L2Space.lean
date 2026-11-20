@@ -32,7 +32,9 @@ continuous linear maps out of L². On a compact space with a finite measure, the
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 More generally, the L² pairing of an L² function with the class of any square-integrable
-function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), and
+the zero class pairs to zero with every function
+(`MeasureTheory.Lp.integral_inner_coeFn_zero_left`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
 product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
@@ -211,6 +213,12 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hg.coeFn_toLp] with x hx
   rw [hx]
+
+/-- The pointwise inner product of the zero class of `Lᵖ` with any function integrates to zero. -/
+theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
+    ∫ x, ⟪(0 : Lp E p μ) x, g x⟫_𝕜 ∂μ = 0 := by
+  rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
+    rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
 
 open Filter in
 /-- **The squared `L²` norm of the positive part is differentiable**: on real `L²`, the map
