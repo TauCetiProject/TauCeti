@@ -461,12 +461,21 @@ def transposeTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
   cont := (TestFunction.postcompCLM _).continuous.comp
     ((adjointTestFunctionCLM ha).continuous.comp (TestFunction.postcompCLM _).continuous)
 
+/-- The transpose is `Op(a)ᵗ φ = conj (Op(a)* (conj φ))`, as test functions. -/
+theorem transposeTestFunctionCLM_def (ha : a.HasNearDiagonalKernel R)
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    transposeTestFunctionCLM ha φ = TestFunction.postcompCLM (𝕜 := ℝ)
+      Complex.conjCLE.toContinuousLinearMap (adjointTestFunctionCLM ha
+        (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ)) :=
+  (rfl)
+
 /-- The values `Op(a)ᵗ φ (x) = conj (Op(a)* (conj φ) (x))` of the transpose. -/
+@[simp]
 theorem transposeTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
     (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) (x : CoordinateSpace n) :
     transposeTestFunctionCLM ha φ x = conj (adjointTestFunctionCLM ha
       (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap φ) x) := by
-  simp [transposeTestFunctionCLM]
+  simp [transposeTestFunctionCLM_def]
 
 /-- The transpose `φ ↦ conj (Op(a)* φ)` of `Op(a)` for the bilinear pairing `∫ φ u`, on real test
 functions. -/
@@ -531,10 +540,7 @@ theorem complexPairing_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (ψ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     (quantizeDistribution ha T).complexPairing ψ =
       T.complexPairing (transposeTestFunctionCLM ha ψ) := by
-  -- Unfold the transpose to its definition.
-  change _ = T.complexPairing (TestFunction.postcompCLM (𝕜 := ℝ)
-    Complex.conjCLE.toContinuousLinearMap (adjointTestFunctionCLM ha
-      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap ψ)))
+  rw [transposeTestFunctionCLM_def]
   have hconj (φ φ' : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
       TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
           (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ +
@@ -555,6 +561,15 @@ theorem complexPairing_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
   rw [← TestFunction.postcompCLM_re_add_I_smul_im ψ, hconj, map_sub, map_smul, hconj']
   simp only [map_add, map_smul, Distribution.complexPairing_postcompCLM_ofRealCLM,
     quantizeDistribution_apply, smul_eq_mul]
+
+/-- `Op(a) T` pairs with a real test function `φ` as `T` with the transpose `Op(a)ᵗ φ`
+(`TauCeti.Symbol.transposeTestFunctionCLM`) of `φ` read as a complex test function. -/
+theorem quantizeDistribution_apply_eq_complexPairing (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
+    quantizeDistribution ha T φ =
+      T.complexPairing (transposeTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ)
+        Complex.ofRealCLM φ)) := by
+  rw [← Distribution.complexPairing_postcompCLM_ofRealCLM, complexPairing_quantizeDistribution]
 
 /-- **`Op(a)` on distributions extends `Op(a)` on test functions**: on the distribution of a test
 function `u`, it is the distribution of `Op(a) u`. -/
@@ -631,7 +646,7 @@ theorem HasNearDiagonalKernel.quantizeDistribution_eq_zero (ha : a.HasNearDiagon
           absurd hy (by simp [Metric.ball_eq_empty.2 hR])
       simp [hu]
   ext T φ
-  rw [← Distribution.complexPairing_postcompCLM_ofRealCLM, complexPairing_quantizeDistribution, h0]
+  rw [quantizeDistribution_apply_eq_complexPairing, h0]
   simp
 
 /-- **Composition on distributions.** If `Op(c) = Op(a) ∘ Op(b)` on test functions, then
@@ -650,9 +665,8 @@ theorem quantizeDistribution_comp {b : Symbol n ℂ ℂ m'} {c : Symbol n ℂ �
       (transposeTestFunctionCLM hb _).continuous fun u ↦ by
         rw [h, integral_mul_quantizeTestFunctionCLM, integral_mul_quantizeTestFunctionCLM]
   ext φ
-  rw [← Distribution.complexPairing_postcompCLM_ofRealCLM,
-    ← Distribution.complexPairing_postcompCLM_ofRealCLM, complexPairing_quantizeDistribution,
-    complexPairing_quantizeDistribution, complexPairing_quantizeDistribution, ht]
+  rw [quantizeDistribution_apply_eq_complexPairing, quantizeDistribution_apply_eq_complexPairing,
+    complexPairing_quantizeDistribution, ht]
 
 /-- **Proper support on distributions.** `Op(a) T` is supported in the closed `R`-neighbourhood of
 the support of `T`. -/

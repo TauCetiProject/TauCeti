@@ -143,9 +143,8 @@ theorem isVanishingOn_quantizeDistribution_toDistribution_sub (ha : a.HasNearDia
       exact congrArg (fun S ↦ φc x * quantizeSchwartzValue b.coefficient S x)
         (SchwartzMap.ext fun y ↦ by simp)
     · simp [hφc, image_eq_zero_of_notMem_tsupport fun h ↦ hx (hφ h)]
-  rw [sub_apply, sub_eq_zero, ← complexPairing_postcompCLM_ofRealCLM,
-    complexPairing_quantizeDistribution, complexPairing_toDistribution, toDistribution_apply,
-    quantizeTempered_apply_apply, ht]
+  rw [sub_apply, sub_eq_zero, quantizeDistribution_apply_eq_complexPairing,
+    complexPairing_toDistribution, toDistribution_apply, quantizeTempered_apply_apply, ht]
 
 /-- **The distribution and tempered extensions of `Op(a)` agree.** For a symbol `a` whose estimates
 are uniform in the position and whose quantization has kernel supported near the diagonal, `Op(a)`
