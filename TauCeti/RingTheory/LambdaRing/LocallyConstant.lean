@@ -23,8 +23,8 @@ structure is the only one for which every evaluation is a morphism.
 ## Main definitions
 
 * `TauCeti.PreLambdaStructure.locallyConstant`: the pointwise pre-λ structure.
-* `TauCeti.PreLambdaStructure.evalHom`: evaluation at a point, as a morphism.
-* `TauCeti.PreLambdaStructure.constHom`: the constant functions, as a morphism.
+* `TauCeti.PreLambdaStructure.locallyConstantEval`: evaluation at a point, as a morphism.
+* `TauCeti.PreLambdaStructure.locallyConstantConst`: the constant functions, as a morphism.
 -/
 
 public noncomputable section
@@ -59,21 +59,23 @@ theorem locallyConstant_lambda_apply (n : ℕ) (f : LocallyConstant X R) (x : X)
   (rfl)
 
 /-- Evaluation at a point, as a morphism of pre-λ structures. -/
-def evalHom (x : X) : PreLambdaHom (Λ.locallyConstant X) Λ where
+def locallyConstantEval (x : X) : PreLambdaHom (Λ.locallyConstant X) Λ where
   __ := LocallyConstant.evalRingHom x
   map_lambda' _ _ := (rfl)
 
 @[simp]
-theorem evalHom_apply (x : X) (f : LocallyConstant X R) : Λ.evalHom X x f = f x :=
+theorem locallyConstantEval_apply (x : X) (f : LocallyConstant X R) :
+    Λ.locallyConstantEval X x f = f x :=
   (rfl)
 
 /-- The inclusion of constant functions, as a morphism of pre-λ structures. -/
-def constHom : PreLambdaHom Λ (Λ.locallyConstant X) where
+def locallyConstantConst : PreLambdaHom Λ (Λ.locallyConstant X) where
   __ := LocallyConstant.constRingHom
   map_lambda' _ _ := (rfl)
 
 @[simp]
-theorem constHom_apply (r : R) : Λ.constHom X r = LocallyConstant.const X r :=
+theorem locallyConstantConst_apply (r : R) :
+    Λ.locallyConstantConst X r = LocallyConstant.const X r :=
   (rfl)
 
 /-- The pointwise structure is the only pre-λ structure on locally constant functions for which
