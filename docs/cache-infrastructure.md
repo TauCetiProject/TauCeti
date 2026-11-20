@@ -191,7 +191,7 @@ the publisher.
 Digests establish byte integrity; the existing exact-candidate builds and audits establish
 proof correctness and producer eligibility. If inherited bytes disappear after staging,
 publication fails closed. A new producer run with `LAKE_CACHE_FULL_PUBLICATION=1` transfers all
-built objects to repair the cache. See [incremental publication operations](../scripts/lake-cache-publication.md)
+built objects to repair the cache. See [incremental publication operations](https://github.com/TauCetiProject/TauCetiTools/blob/main/tauceti_tools/assets/scripts/lake-cache-publication.md)
 for the fallback bounds, retry behavior and byte/time fields to compare.
 
 ## Why a custom domain
@@ -302,3 +302,12 @@ Analytics says how much of the 27M is still reaching the bucket.
   has already recovered from.
 - https://github.com/leanprover/lean4/pull/14651, merged: `lake cache get` exit status was
   unreliable. Ships in v4.34.0, not backported to v4.33.0.
+- Bulk extraction: the sandboxed PR build runs TauCetiTools' `bulk-unpack-cache.py` before
+  `lake build`, unpacking every cached module archive with one `leantar` process, because stock Lake
+  starts one per module. It falls back to stock restoration when the cache does not have the layout
+  it supports. Main-push builds in `ci.yml` do not; they use stock restoration.
+  https://github.com/leanprover/lean4/pull/16418, merged in v4.37.0-rc1: process spawning through
+  libuv (`posix_spawn`) instead of a full `fork()` of Lake, the change expected to make bulk
+  extraction unnecessary once measured on the pinned toolchain.
+  https://github.com/leanprover/lean4/pull/15868, open: native bulk unpacking in Lake, which the
+  workaround originally waited for.

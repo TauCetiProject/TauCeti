@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.DerivedSet
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Separation.Hausdorff
@@ -34,6 +35,14 @@ for sets `s ∈ Filter.codiscreteWithin U` and their complement specializations
   `U`.
 * `IsCompact.finite_inter_of_compl_mem_codiscreteWithin`: any compact subset `K ⊆ U` meets `s` in a
   finite set whenever `sᶜ ∈ Filter.codiscreteWithin U`.
+* `TauCeti.compl_mem_codiscreteWithin_of_subset_compl_derivedSet`,
+  `TauCeti.subset_compl_derivedSet_of_compl_mem_codiscreteWithin`, and
+  `TauCeti.compl_mem_codiscreteWithin_iff_subset_compl_derivedSet`: for `E ⊆ U`,
+  `Eᶜ ∈ Filter.codiscreteWithin U` holds exactly when `U` avoids the derived set `derivedSet E`. In
+  a `T₁` space this thickens any such `U` to the open superset `(derivedSet E)ᶜ`, within which `Eᶜ`
+  remains codiscrete.
+* `Homeomorph.preimage_mem_codiscreteWithin`: a homeomorphism `e` carries codiscreteness within
+  `t` to codiscreteness of preimages within `e ⁻¹' t`, and back.
 -/
 
 public section
@@ -152,5 +161,33 @@ theorem IsCompact.finite_inter_of_compl_mem_codiscreteWithin (hK : IsCompact K) 
     (hs : sᶜ ∈ codiscreteWithin U) : (K ∩ s).Finite := by
   simpa only [sdiff_compl] using
     hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKU hs)
+
+/-- The complement of `E` is codiscrete within any set avoiding `derivedSet E`. -/
+theorem TauCeti.compl_mem_codiscreteWithin_of_subset_compl_derivedSet {E : Set X}
+    (hU : U ⊆ (derivedSet E)ᶜ) : Eᶜ ∈ codiscreteWithin U := by
+  rw [mem_codiscreteWithin_accPt]
+  exact fun x hx hacc =>
+    hU hx (hacc.mono (principal_mono.mpr fun y hy => by_contra fun hyE => hy.2 hyE))
+
+/-- If `E ⊆ U` and `Eᶜ ∈ Filter.codiscreteWithin U`, then `U` contains no accumulation point of
+`E`. -/
+theorem TauCeti.subset_compl_derivedSet_of_compl_mem_codiscreteWithin {E : Set X}
+    (hEU : E ⊆ U) (hE : Eᶜ ∈ codiscreteWithin U) : U ⊆ (derivedSet E)ᶜ := fun x hx hxacc =>
+  mem_codiscreteWithin_accPt.mp hE x hx
+    (hxacc.mono (principal_mono.mpr fun _ hy => ⟨hEU hy, not_not.mpr hy⟩))
+
+/-- For `E ⊆ U`, `Eᶜ ∈ Filter.codiscreteWithin U` holds if and only if `U` is disjoint from
+`derivedSet E`. -/
+theorem TauCeti.compl_mem_codiscreteWithin_iff_subset_compl_derivedSet {E : Set X}
+    (hEU : E ⊆ U) : Eᶜ ∈ codiscreteWithin U ↔ U ⊆ (derivedSet E)ᶜ :=
+  ⟨TauCeti.subset_compl_derivedSet_of_compl_mem_codiscreteWithin hEU,
+    TauCeti.compl_mem_codiscreteWithin_of_subset_compl_derivedSet⟩
+
+/-- Under a homeomorphism `e`, the preimage `e ⁻¹' s` is codiscrete within `e ⁻¹' t` exactly when
+`s` is codiscrete within `t`. -/
+theorem Homeomorph.preimage_mem_codiscreteWithin {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y)
+    {s t : Set Y} : e ⁻¹' s ∈ codiscreteWithin (e ⁻¹' t) ↔ s ∈ codiscreteWithin t := by
+  rw [← e.image_symm]
+  exact e.symm.isEmbedding.image_mem_codiscreteWithin
 
 end TopologicalSpace

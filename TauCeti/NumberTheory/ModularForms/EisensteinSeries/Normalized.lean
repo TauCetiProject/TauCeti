@@ -161,8 +161,9 @@ theorem normalizedCharEisensteinSeriesMFRaise_eq_smul (hk : 3 ≤ (k : ℤ))
   let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
   let _ : NeZero v := NeZero.of_dvd ((dvd_mul_left v u).trans
     ((dvd_mul_left (u * v) t).trans htuv))
-  rw [normalizedCharEisensteinSeriesMFRaise, normalizedCharEisensteinSeriesMF,
-    charEisensteinSeriesMFRaise_eq_levelRaise]
+  rw [normalizedCharEisensteinSeriesMFRaise]
+  dsimp only
+  rw [normalizedCharEisensteinSeriesMF, charEisensteinSeriesMFRaise_eq_levelRaise]
   simpa only [ModularForm.levelRaiseₗ_apply] using
     (ModularForm.levelRaiseₗ t (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)).map_smul
       (2 * (-2 * π * I) ^ k / ((k - 1).factorial * v ^ k) * gaussSum phi⁻¹ stdAddChar)⁻¹

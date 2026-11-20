@@ -134,7 +134,7 @@ theorem mem_bvSubmodule_iff (u : E →₁[μ.restrict Ω] ℝ) :
 namespace BV
 
 /-- The underlying `L¹` class of a BV function. -/
-def toL1 (u : BV μ Ω) : E →₁[μ.restrict Ω] ℝ := u.toSubmodule.1
+def toL1 (u : BV μ Ω) : E →₁[μ.restrict Ω] ℝ := u.toSubmodule.val
 
 instance : CoeFun (BV μ Ω) (fun _ => E → ℝ) := ⟨fun u => u.toL1⟩
 
@@ -155,7 +155,7 @@ theorem integrableOn (u : BV μ Ω) : IntegrableOn (u : E → ℝ) Ω μ :=
 
 /-- Every BV class has finite total variation. -/
 theorem totalVariationOn_lt_top (u : BV μ Ω) : totalVariationOn μ Ω u < ∞ :=
-  u.toSubmodule.2
+  u.toSubmodule.property
 
 /-- The selected representative of a BV class belongs to the unbundled BV predicate. -/
 theorem memBV (u : BV μ Ω) : MemBV μ Ω u :=
@@ -343,7 +343,7 @@ instance instCompleteSpace : CompleteSpace (BV μ Ω) :=
         simpa only [dist_eq_norm] using (hN₀ n hn N₀ le_rfl).le).trans_lt (by finiteness)
     have hvmem : v ∈ bvSubmodule μ Ω := by
       rw [← sub_add_cancel v (u N₀).toL1]
-      exact (bvSubmodule μ Ω).add_mem ((mem_bvSubmodule_iff _).2 hvar) (u N₀).toSubmodule.2
+      exact (bvSubmodule μ Ω).add_mem ((mem_bvSubmodule_iff _).2 hvar) (u N₀).toSubmodule.property
     let f : BV μ Ω := BV.mk ⟨v, hvmem⟩
     have hf : f.toL1 = v := rfl
     refine ⟨f, Metric.tendsto_atTop.mpr fun ε hε => ?_⟩

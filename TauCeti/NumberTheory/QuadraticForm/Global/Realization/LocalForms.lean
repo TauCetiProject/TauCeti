@@ -58,7 +58,7 @@ theorem exists_form_discr_eq_equivalent_at_all_places_iff (hn : 1 ≤ n)
     (∀ v, RegularFormClass.discr (formClass (U v) (hU v)) =
       (algebraMap K (v.adicCompletion K)).squareClassMap d) ∧
     (∀ w, RegularFormClass.discr (formClass (R w) (hR w)) =
-      (embedding_of_isReal w.2).squareClassMap d) ∧
+      (embedding_of_isReal w.property).squareClassMap d) ∧
     (Function.HasFiniteMulSupport fun v : HeightOneSpectrum (𝓞 K) =>
       letI : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
       RegularFormClass.localHasse (formClass (U v) (hU v))) ∧
@@ -77,25 +77,14 @@ theorem exists_form_discr_eq_equivalent_at_all_places_iff (hn : 1 ≤ n)
       rw [hd] at hv
       -- The two constructions of the inverse of two agree by subsingleton elimination.
       convert hv using 2 <;> congr 1 <;> exact Subsingleton.elim _ _
-    have hRd (w) : RegularFormClass.discr (formClass (R w) (hR w)) =
-        (embedding_of_isReal w.2).squareClassMap d := by
-      rw [← (formClass_eq_iff _ (_root_.QuadraticForm.Nondegenerate.atRealPlace hQ w)
-        _ (hR w)).mpr (hreal w), _root_.QuadraticForm.discr_atRealPlace Q hQ w, hd]
-    have hQI : Q.globalInvariants hQ = ofLocalForms d U hU R := by
-      refine GlobalFormInvariants.ext (by simp) (by simpa using hd)
-        (funext fun v => ?_) (funext fun w => ?_)
-      · rw [_root_.QuadraticForm.globalInvariants_finiteHasse,
-          _root_.QuadraticForm.finiteHasse_def, ofLocalForms_finiteHasse,
-          (formClass_eq_iff _ (_root_.QuadraticForm.Nondegenerate.atFinitePlace hQ v)
-            _ (hU v)).mpr (hfin v)]
-      · rw [_root_.QuadraticForm.globalInvariants_realPositiveIndex,
-          _root_.QuadraticForm.realPositiveIndex_eq_sigPos,
-          ofLocalForms_realPositiveIndex, (hreal w).sigPos_eq]
+    have hL := isLocalRealization_ofLocalForms hU hUd hR
+    have hQI := (hL.globalInvariants_eq_iff hQ).mpr ⟨hfin, hreal⟩
     have hI := hQI ▸ _root_.QuadraticForm.isAdmissible_globalInvariants Q hQ
       (by simpa using hn)
-    have hL := isLocalRealization_ofLocalForms hU hUd hR
-    exact ⟨hUd, hRd, hL.hasFiniteMulSupport_localHasse hI,
+    refine ⟨hUd, fun w ↦ ?_, hL.hasFiniteMulSupport_localHasse hI,
       hL.finprod_localHasse_mul_prod_eq_one hI⟩
+    rw [← (formClass_eq_iff _ (_root_.QuadraticForm.Nondegenerate.atRealPlace hQ w)
+      _ (hR w)).mpr (hreal w), _root_.QuadraticForm.discr_atRealPlace Q hQ w, hd]
   · rintro ⟨hUd, hRd, hs, hp⟩
     have hI := isAdmissible_ofLocalForms hU hn hUd hR hRd hs hp
     obtain ⟨Q, hQ, hQI, hfin, hreal⟩ :=
