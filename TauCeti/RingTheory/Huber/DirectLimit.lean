@@ -64,7 +64,7 @@ theorem exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition
   obtain ⟨c, rfl⟩ := ha
   -- `c ϖ` with `c` the image of `c' ∈ Qⱼ` is the image of the product of the power-bounded `c'`
   -- and the topologically nilpotent `ϖ` at a stage above `i₀` and `j`
-  obtain ⟨j, c', hc', hc'c⟩ := hP c c.2
+  obtain ⟨j, c', hc', hc'c⟩ := hP c c.property
   obtain ⟨k, hjk, hi₀k⟩ := directed_of (· ≤ ·) j i₀
   refine ⟨k, t j k hjk c' * t i₀ k hi₀k ϖ,
     (hQ k _ (htQ j k hjk c' hc')).isTopologicallyNilpotent_mul (hϖ.map (ht i₀ k hi₀k)), ?_⟩

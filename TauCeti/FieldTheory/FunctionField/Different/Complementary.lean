@@ -214,7 +214,7 @@ theorem valuation_trace_le_exp (hF' : IsFunctionField k' F') (P : Place k F) (n 
       rw [ha, Algebra.traceForm_apply, mul_one, ← Algebra.smul_def, LinearMap.map_smul,
         smul_eq_mul]
     rw [h1]
-    exact P.mem_integers_iff.mp a.2
+    exact P.mem_integers_iff.mp a.property
   rw [map_mul, P.valuation_eq_exp_neg_ord hs0, hords] at htr
   calc P.valuation (Algebra.trace F F' z)
       = WithZero.exp n * (WithZero.exp (-n) * P.valuation (Algebra.trace F F' z)) := by
@@ -294,7 +294,7 @@ theorem exists_forall_valuation_le_and_trace_eq (hF' : IsFunctionField k' F')
   have hb (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
       Q'.valuation (algebraMap (integralClosure P.integers F') F' b) ≤ 1 :=
     Q'.mem_integers_iff.mp
-      ((isIntegral_iff_forall_restrict_eq_mem_integers hF' P).mp b.2 Q' hQ')
+      ((isIntegral_iff_forall_restrict_eq_mem_integers hF' P).mp b.property Q' hQ')
   have hbound (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
       Q'.valuation (algebraMap F F' (x / y) * (z₀ * algebraMap _ F' b)) ≤
         WithZero.exp (ramificationIdx F Q' * n + differentExponent k F Q' +

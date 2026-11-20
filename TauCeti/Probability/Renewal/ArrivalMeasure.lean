@@ -99,6 +99,18 @@ theorem occurrenceTime_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
     occurrenceTime_occurrenceTimeMeasure (fun _ _ h => by
       exact_mod_cast monotone_arrival T ω (Nat.succ_le_succ h))]
 
+/-- Extracting interarrival gaps from the arrival measure recovers every renewal increment,
+including zero increments and explosive paths. -/
+@[simp]
+theorem occurrenceGap_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
+    (renewalArrivalMeasure T ω).occurrenceGap n = (T n ω : ℝ≥0∞) := by
+  cases n with
+  | zero => simp [arrival_succ]
+  | succ n =>
+    rw [Measure.occurrenceGap_succ_of_ne_top (by simp),
+      occurrenceTime_renewalArrivalMeasure, occurrenceTime_renewalArrivalMeasure,
+      arrival_succ, ENNReal.coe_add, ENNReal.add_sub_cancel_left ENNReal.coe_ne_top]
+
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
 @[simp]
 theorem lintegral_renewalArrivalMeasure (ω : Ω) (f : ℝ≥0 → ℝ≥0∞) :
@@ -241,13 +253,6 @@ theorem hasLaw_renewalArrivalMeasure_Ioc_poissonMeasure {r : ℝ≥0}
   simp [hω t]
 
 section OccurrenceGap
-
-/-- Extracting interarrival gaps from `renewalArrivalMeasure T ω` recovers every increment,
-including zero increments and explosive paths. -/
-@[simp]
-theorem occurrenceGap_renewalArrivalMeasure {Ω : Type*} (T : ℕ → Ω → ℝ≥0) (ω : Ω) (n : ℕ) :
-    (renewalArrivalMeasure T ω).occurrenceGap n = (T n ω : ℝ≥0∞) := by
-  simp [renewalArrivalMeasure_eq_occurrenceTimeMeasure, arrival_def]
 
 /-- When the `n`-th occurrence time of `μ` is finite, the `(n + 1)`-st renewal arrival time of
 its `ℝ≥0` interarrival-gap representatives on the canonical space `Measure ℝ≥0` equals that

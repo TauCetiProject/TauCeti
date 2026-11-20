@@ -99,7 +99,8 @@ private theorem iteratedFDeriv_memWkpLoc_one_and_eqOn (hu : MemWkpLoc p Ω (k + 
     (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
     MemWkpLoc p Ω 1 (iteratedFDeriv ℝ k g) ∧
       EqOn (preciseRepresentative volume (iteratedFDeriv ℝ k g)) (iteratedFDeriv ℝ k g) Ω := by
-  have h1 := hu.iteratedFDeriv_of_contDiffOn hg hug
+  have h1 := hu.iteratedFDeriv_of_contDiffOn (by rw [Opens.interior_coe])
+    (by rwa [Opens.interior_coe]) hug
   have hcont : ContinuousOn (iteratedFDeriv ℝ k g) Ω :=
     ContinuousOn.continuousOn_iteratedFDeriv hg Ω.isOpen le_rfl
   exact ⟨h1, eqOn_preciseRepresentative_of_continuousOn Ω.isOpen

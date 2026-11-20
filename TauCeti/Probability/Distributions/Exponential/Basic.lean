@@ -69,11 +69,13 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `hasLaw_min_expMeasure_of_indepFun` — minimum of independent exponentials;
 * `hasLaw_min_iid_expMeasure` — minimum of `d` i.i.d. exponentials of rate `r` is exponential of
   rate `d * r`.
-* `nnrealExpMeasure`, `ae_pos_nnrealExpMeasure`, `map_coe_nnrealExpMeasure`,
-  `measure_Ioc_nnrealExpMeasure`, `setLIntegral_Ioc_exp_mul_nnrealExpMeasure` — the exponential
-  measure transported to `ℝ≥0`, its almost-sure positivity, its pushforward under coercion back to
-  `ℝ`, its left-open, right-closed interval masses, and its exponential-weighted set Lebesgue
-  integral on `(u, v]`.
+* `nnrealExpMeasure`, `ae_pos_nnrealExpMeasure`, `nnrealExpMeasure_map_coe`,
+  `nnrealExpMeasure_map_coe_ennreal`, `expMeasure_map_ofReal_map_toReal`,
+  `hasLaw_nnrealExpMeasure_iff`, `measure_Ioc_nnrealExpMeasure`,
+  `setLIntegral_Ioc_exp_mul_nnrealExpMeasure` — the exponential measure transported to `ℝ≥0`,
+  its almost-sure positivity, its pushforward and law equivalences with `expMeasure`, its
+  left-open, right-closed interval masses, and its exponential-weighted set Lebesgue integral on
+  `(u, v]`.
 
 ## References
 
@@ -500,7 +502,7 @@ theorem hasLaw_min_iid_expMeasure {Ω ι : Type*} {mΩ : MeasurableSpace Ω} [Fi
   rw [cdf_min_iid hindep hlaw x, cdf_expMeasure_eq hr x,
     cdf_expMeasure_eq (mul_pos hd hr) x]
   by_cases hx : 0 ≤ x
-  · rw [ite_eq_left hx, ite_eq_left hx, sub_sub_cancel, ← Real.exp_nat_mul]
+  · rw [ite_eq_left hx, ite_eq_left hx, sub_sub_cancel, ← Real.exp_natCast_mul]
     congr 2
     ring
   · rw [ite_eq_right hx, ite_eq_right hx, sub_zero, one_pow, sub_self]
@@ -547,17 +549,50 @@ theorem ae_pos_nnrealExpMeasure (r : ℝ) : ∀ᵐ x ∂nnrealExpMeasure r, 0 < 
   filter_upwards [ae_pos_expMeasure r] with x hx
   exact Real.toNNReal_pos.mpr hx
 
-/-- Pushing `nnrealExpMeasure r` forward along the coercion `ℝ≥0 → ℝ` recovers `expMeasure r`. -/
+/-- Coercing `nnrealExpMeasure r` back to `ℝ` recovers `expMeasure r`, for every rate `r`
+(including nonpositive rates, where both measures are zero). -/
 @[simp]
-theorem map_coe_nnrealExpMeasure (r : ℝ) :
+theorem nnrealExpMeasure_map_coe (r : ℝ) :
     (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ) = expMeasure r := by
-  rw [nnrealExpMeasure_def, Measure.map_map (by fun_prop) (by fun_prop)]
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_real measurable_real_toNNReal]
   calc
     (expMeasure r).map (((↑) : ℝ≥0 → ℝ) ∘ Real.toNNReal) = (expMeasure r).map id := by
       apply Measure.map_congr
       filter_upwards [ae_pos_expMeasure r] with x hx
       exact Real.coe_toNNReal x hx.le
     _ = expMeasure r := Measure.map_id
+
+/-- Coercing `nnrealExpMeasure r` to `ℝ≥0∞` agrees with pushing `expMeasure r` forward by
+`ENNReal.ofReal`, for every rate `r`. -/
+@[simp]
+theorem nnrealExpMeasure_map_coe_ennreal (r : ℝ) :
+    (nnrealExpMeasure r).map ((↑) : ℝ≥0 → ℝ≥0∞) = (expMeasure r).map ENNReal.ofReal := by
+  rw [nnrealExpMeasure_def, Measure.map_map measurable_coe_nnreal_ennreal measurable_real_toNNReal]
+  have hcomp : (((↑) : ℝ≥0 → ℝ≥0∞) ∘ Real.toNNReal) = ENNReal.ofReal :=
+    funext fun x => by rw [Function.comp_apply, ENNReal.ofReal]
+  rw [hcomp]
+
+/-- Pushing `expMeasure r` forward to `ℝ≥0∞` via `ENNReal.ofReal` and back via `ENNReal.toReal`
+recovers `expMeasure r`, for every rate `r`. -/
+@[simp]
+theorem expMeasure_map_ofReal_map_toReal (r : ℝ) :
+    ((expMeasure r).map ENNReal.ofReal).map ENNReal.toReal = expMeasure r := by
+  rw [← nnrealExpMeasure_map_coe_ennreal,
+    Measure.map_map ENNReal.measurable_toReal measurable_coe_nnreal_ennreal]
+  simpa only [Function.comp_def, ENNReal.coe_toReal] using nnrealExpMeasure_map_coe r
+
+/-- A nonnegative random variable has law `nnrealExpMeasure r` exactly when its real coercion has
+law `expMeasure r`. This holds for every rate `r`, including nonpositive rates. -/
+theorem hasLaw_nnrealExpMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ≥0} {r : ℝ} :
+    HasLaw X (nnrealExpMeasure r) P ↔ HasLaw (fun ω => (X ω : ℝ)) (expMeasure r) P := by
+  constructor
+  · intro hX
+    have h := (hasLaw_map (P := nnrealExpMeasure r) measurable_coe_nnreal_real.aemeasurable).comp hX
+    simpa only [nnrealExpMeasure_map_coe, Function.comp_def] using h
+  · intro hX
+    have h := (hasLaw_map (P := expMeasure r) measurable_real_toNNReal.aemeasurable).comp hX
+    simpa only [← nnrealExpMeasure_def, Function.comp_def, Real.toNNReal_coe] using h
 
 /-- The mass assigned by `nnrealExpMeasure r` (`0 ≤ r`) to a left-open, right-closed interval
 `(u, v]` is `e^{-r u} - e^{-r v}` (truncated at `0` when `v < u`, and `0` at `r = 0`). -/

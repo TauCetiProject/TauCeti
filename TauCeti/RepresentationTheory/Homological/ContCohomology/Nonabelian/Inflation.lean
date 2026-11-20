@@ -116,7 +116,7 @@ variable (N)
 def descend (f : Cocycle G A) (hf : ∀ n ∈ N, f n = 1) :
     Cocycle (G ⧸ N) (FixedPoints.subgroup N A) where
   toFun q := Quotient.liftOn' q
-    (fun g ↦ (⟨f g, fun n ↦ smul_apply_of_mem hf g n.2⟩ : FixedPoints.subgroup N A))
+    (fun g ↦ (⟨f g, fun n ↦ smul_apply_of_mem hf g n.property⟩ : FixedPoints.subgroup N A))
     fun g g' hgg' ↦ Subtype.ext <| by
       rw [QuotientGroup.leftRel_apply] at hgg'
       simpa using (apply_mul_of_mem hf g hgg').symm
@@ -159,7 +159,7 @@ theorem infl_injective : Function.Injective (infl (A := A) N) := by
   have haN : a ∈ FixedPoints.subgroup N A := fun n ↦ by
     have hn := ha n
     simp only [Cocycle.map_apply, Subgroup.quotientMkContinuousMonoidHom_apply,
-      (QuotientGroup.eq_one_iff (n : G)).mpr n.2, Cocycle.apply_one,
+      (QuotientGroup.eq_one_iff (n : G)).mpr n.property, Cocycle.apply_one,
       ContinuousMonoidHom.subgroupSubtype_apply, OneMemClass.coe_one, mul_one] at hn
     rw [eq_comm, inv_mul_eq_one] at hn
     exact hn.symm
@@ -173,7 +173,7 @@ theorem res_infl (c : NonabelianH1 (G ⧸ N) (FixedPoints.subgroup N A)) : res N
   induction c using induction_on with | mk f =>
   rw [infl_mk, res_mk, mk_eq_one_iff]
   refine ⟨1, fun n ↦ ?_⟩
-  simp [(QuotientGroup.eq_one_iff (n : G)).mpr n.2]
+  simp [(QuotientGroup.eq_one_iff (n : G)).mpr n.property]
 
 /-- **Inflation–restriction**: a class restricts to the base point of `H¹(N, A)` exactly when it is
 inflated from `H¹(G ⧸ N, Aᴺ)`. -/

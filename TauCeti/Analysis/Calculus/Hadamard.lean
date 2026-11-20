@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.TaylorIntegral
-public import TauCeti.Analysis.Calculus.ParametricIntegral
+public import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.MeasureTheory.Constructions.UnitInterval
 
@@ -60,7 +60,7 @@ theorem ContDiff.contDiff_segmentAverage_param
   rw [← contDiffOn_univ]
   refine (TauCeti.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
     ((integrableOn_iff_comap_subtypeVal measurableSet_Icc).mp hwi)
-    continuous_subtype_val isOpen_univ
+    continuous_subtypeVal isOpen_univ
     ((hg.comp (by fun_prop :
       ContDiff ℝ n (fun p : (P × E) × ℝ ↦ (p.1.1, x + p.2 • p.1.2)))).contDiffOn)
     (fun _ _ _ ↦ Set.mem_univ _)).congr fun v _ ↦ ?_

@@ -58,43 +58,43 @@ private theorem isPiSystem_separatedBoxSystem (n : ℕ) :
   rw [hinter] at hne ⊢
   obtain ⟨x, hx⟩ := hne
   refine ⟨a, b, IsSeparatedBox.mk (fun i => ?_) (fun i j hij => ?_), rfl⟩
-  · have hxi : x.1 i ∈ Ioc (a i) (b i) := hx i (mem_univ i)
+  · have hxi : x.val i ∈ Ioc (a i) (b i) := hx i (mem_univ i)
     exact hxi.1.le.trans hxi.2
   · exact (min_le_left _ _).trans ((h₁.le_of_lt hij).trans (le_max_left _ _))
 
 private theorem exists_rat_separatedBox_mem {n : ℕ} (x : ↥(PosStrictMono n))
-    (L : Fin n → ℝ≥0) (hL : ∀ i, L i < x.1 i) :
+    (L : Fin n → ℝ≥0) (hL : ∀ i, L i < x.val i) :
     ∃ qa qb : Fin n → ℚ,
       IsSeparatedBox (fun i => Real.toNNReal (qa i)) (fun i => Real.toNNReal (qb i)) ∧
       (∀ i, L i ≤ Real.toNNReal (qa i)) ∧
       x ∈ ratSeparatedBox n (qa, qb) := by
-  have hxpos := x.2.1
-  have hxmono := x.2.2
+  have hxpos := x.property.1
+  have hxmono := x.property.2
   let low : Fin n → ℝ := fun i =>
     max (L i : ℝ)
-      (if h : 0 < (i : ℕ) then ((x.1 ⟨(i : ℕ) - 1, by omega⟩ : ℝ) + x.1 i) / 2 else 0)
+      (if h : 0 < (i : ℕ) then ((x.val ⟨(i : ℕ) - 1, by omega⟩ : ℝ) + x.val i) / 2 else 0)
   let high : Fin n → ℝ := fun i =>
-    if h : (i : ℕ) + 1 < n then ((x.1 i : ℝ) + x.1 ⟨(i : ℕ) + 1, h⟩) / 2 else (x.1 i : ℝ) + 1
+    if h : (i : ℕ) + 1 < n then ((x.val i : ℝ) + x.val ⟨(i : ℕ) + 1, h⟩) / 2 else (x.val i : ℝ) + 1
   have hlow_nonneg (i : Fin n) : 0 ≤ low i := (L i).coe_nonneg.trans (le_max_left _ _)
-  have hlow_lt (i : Fin n) : low i < x.1 i := by
+  have hlow_lt (i : Fin n) : low i < x.val i := by
     refine max_lt (by exact_mod_cast hL i) ?_
     split_ifs with h
     · have hidx : (⟨(i : ℕ) - 1, by omega⟩ : Fin n) < i := Fin.mk_lt_mk.mpr (by omega)
-      have hlt : (x.1 ⟨(i : ℕ) - 1, by omega⟩ : ℝ) < x.1 i := by exact_mod_cast hxmono hidx
+      have hlt : (x.val ⟨(i : ℕ) - 1, by omega⟩ : ℝ) < x.val i := by exact_mod_cast hxmono hidx
       linarith
     · exact_mod_cast hxpos i
-  have hhigh_gt (i : Fin n) : (x.1 i : ℝ) < high i := by
+  have hhigh_gt (i : Fin n) : (x.val i : ℝ) < high i := by
     dsimp only [high]
     split_ifs with h
     · have hidx : i < (⟨(i : ℕ) + 1, h⟩ : Fin n) := Fin.mk_lt_mk.mpr (by omega)
-      have hlt : (x.1 i : ℝ) < x.1 ⟨(i : ℕ) + 1, h⟩ := by exact_mod_cast hxmono hidx
+      have hlt : (x.val i : ℝ) < x.val ⟨(i : ℕ) + 1, h⟩ := by exact_mod_cast hxmono hidx
       linarith
     · linarith
   choose qa hqa_low hqa_lt using fun i => exists_rat_btwn (hlow_lt i)
   choose qb hqb_gt hqb_high using fun i => exists_rat_btwn (hhigh_gt i)
   have hqa_nonneg (i : Fin n) : 0 ≤ (qa i : ℝ) := (hlow_nonneg i).trans (hqa_low i).le
   have hqb_nonneg (i : Fin n) : 0 ≤ (qb i : ℝ) :=
-    (x.1 i).coe_nonneg.trans (hqb_gt i).le
+    (x.val i).coe_nonneg.trans (hqb_gt i).le
   refine ⟨qa, qb, IsSeparatedBox.mk (fun i => ?_) (fun i j hij => ?_),
     fun i => ?_, fun i _ => ⟨?_, ?_⟩⟩
   · exact Real.toNNReal_mono ((hqa_lt i).trans (hqb_gt i)).le
@@ -102,12 +102,12 @@ private theorem exists_rat_separatedBox_mem {n : ℕ} (x : ↥(PosStrictMono n))
     have hj : 0 < (j : ℕ) := by omega
     have hidx1 : i ≤ (⟨(j : ℕ) - 1, by omega⟩ : Fin n) := Fin.mk_le_mk.mpr (by omega)
     have hidx2 : (⟨(i : ℕ) + 1, hi⟩ : Fin n) ≤ j := Fin.mk_le_mk.mpr (by omega)
-    have h1 : (x.1 i : ℝ) ≤ x.1 ⟨(j : ℕ) - 1, by omega⟩ := by
+    have h1 : (x.val i : ℝ) ≤ x.val ⟨(j : ℕ) - 1, by omega⟩ := by
       exact_mod_cast hxmono.monotone hidx1
-    have h2 : (x.1 ⟨(i : ℕ) + 1, hi⟩ : ℝ) ≤ x.1 j := by
+    have h2 : (x.val ⟨(i : ℕ) + 1, hi⟩ : ℝ) ≤ x.val j := by
       exact_mod_cast hxmono.monotone hidx2
     have hmid : high i ≤ low j := by
-      have hmid' : high i ≤ ((x.1 ⟨(j : ℕ) - 1, by omega⟩ : ℝ) + x.1 j) / 2 := by
+      have hmid' : high i ≤ ((x.val ⟨(j : ℕ) - 1, by omega⟩ : ℝ) + x.val j) / 2 := by
         simp only [high, hi, ↓reduceDIte]
         linarith
       exact hmid'.trans (by simp only [low, hj, ↓reduceDIte]; exact le_max_right _ _)
@@ -128,33 +128,33 @@ private theorem generateFrom_separatedBoxSystem (n : ℕ) :
     rw [MeasurableSpace.comap_comp]
     let : MeasurableSpace ↥(PosStrictMono n) :=
       MeasurableSpace.generateFrom (separatedBoxSystem n)
-    apply Measurable.comap_le (f := fun x : ↥(PosStrictMono n) => x.1 i₀)
+    apply Measurable.comap_le (f := fun x : ↥(PosStrictMono n) => x.val i₀)
     refine measurable_of_Ioi fun t => ?_
     let P_rat : Set ((Fin n → ℚ) × (Fin n → ℚ)) :=
       {p | IsSeparatedBox (fun i => Real.toNNReal (p.1 i)) (fun i => Real.toNNReal (p.2 i)) ∧
         t ≤ Real.toNNReal (p.1 i₀)}
-    have heq : {x : ↥(PosStrictMono n) | t < x.1 i₀} =
-        ⋃ p : P_rat, ratSeparatedBox n p.1 := by
+    have heq : {x : ↥(PosStrictMono n) | t < x.val i₀} =
+        ⋃ p : P_rat, ratSeparatedBox n p.val := by
       ext x
       simp only [mem_ofPred_eq, mem_iUnion, Subtype.exists]
       constructor
       · intro htx
         classical
         let L : Fin n → ℝ≥0 := Function.update 0 i₀ t
-        have hL (i : Fin n) : L i < x.1 i := by
+        have hL (i : Fin n) : L i < x.val i := by
           by_cases hi : i = i₀
           · subst hi; simpa [L] using htx
-          · simpa [L, hi] using x.2.1 i
+          · simpa [L, hi] using x.property.1 i
         obtain ⟨qa, qb, hsep, hqa, hx⟩ := exists_rat_separatedBox_mem x L hL
         exact ⟨(qa, qb), ⟨hsep, by simpa [L] using hqa i₀⟩, hx⟩
       · rintro ⟨⟨qa, qb⟩, ⟨_, htqa⟩, hx⟩
         exact htqa.trans_lt (hx i₀ (mem_univ i₀)).1
     rw [Ioi, preimage_ofPred_eq, heq]
     exact MeasurableSet.iUnion fun p =>
-      MeasurableSpace.measurableSet_generateFrom ⟨_, _, p.2.1, rfl⟩
+      MeasurableSpace.measurableSet_generateFrom ⟨_, _, p.property.1, rfl⟩
   · apply MeasurableSpace.generateFrom_le
     rintro _ ⟨a, b, _, rfl⟩
-    exact measurable_subtype_coe (MeasurableSet.univ_pi fun _ => measurableSet_Ioc)
+    exact measurable_subtypeVal (MeasurableSet.univ_pi fun _ => measurableSet_Ioc)
 
 end TauCeti
 
@@ -175,7 +175,7 @@ theorem ext_of_Ioc_strictMono' {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)}
     μ = ν := by
   let coeΔ : ↥(PosStrictMono n) → Fin n → ℝ≥0 := Subtype.val
   have hΔ : MeasurableSet (PosStrictMono n) := measurableSet_setOf_pos_and_strictMono n
-  have he : MeasurableEmbedding coeΔ := MeasurableEmbedding.subtype_coe hΔ
+  have he : MeasurableEmbedding coeΔ := MeasurableEmbedding.subtypeVal hΔ
   have hμ_eq : (μ.comap coeΔ).map coeΔ = μ := by
     rw [he.map_comap, Subtype.range_coe, Measure.restrict_eq_self_of_ae_mem hμ]
   have hν_eq : (ν.comap coeΔ).map coeΔ = ν := by
@@ -192,7 +192,7 @@ theorem ext_of_Ioc_strictMono' {n : ℕ} {μ ν : Measure (Fin n → ℝ≥0)}
   · exact (to_countable Q).image _
   · rw [sUnion_eq_univ_iff]
     intro x
-    obtain ⟨qa, qb, hsep, _, hx⟩ := exists_rat_separatedBox_mem x 0 fun i => x.2.1 i
+    obtain ⟨qa, qb, hsep, _, hx⟩ := exists_rat_separatedBox_mem x 0 fun i => x.property.1 i
     exact ⟨ratSeparatedBox n (qa, qb), ⟨(qa, qb), hsep, rfl⟩, hx⟩
   · rintro A ⟨⟨qa, qb⟩, hp, rfl⟩
     rw [he.comap_apply]

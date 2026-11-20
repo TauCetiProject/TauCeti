@@ -130,7 +130,7 @@ almost surely. -/
 theorem IsPoissonRandomMeasure.ae_forall_occurrenceTime_eq_top_of_zero
     (h : IsPoissonRandomMeasure P N 0) :
     ∀ᵐ ω ∂P, ∀ n, (N ω).occurrenceTime n = ∞ := by
-  filter_upwards [h.ae_eq_zero_of_zero] with ω hω n
+  filter_upwards [h.ae_eq_zero_measure] with ω hω n
   simp [hω]
 
 /-- The real-valued version of occurrence `n` has Gamma shape `n + 1` and rate `r`.
