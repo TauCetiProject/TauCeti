@@ -113,7 +113,7 @@ variable {M' N' : CurvedDGRightModuleCat.{u, u, u} h}
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N')
   (k : dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N'.grading) (-1))
   (hsq : ∀ x : M, closedHom b (closedHom f x) - closedHom g (closedHom a x) =
-    N'.differential (k.1 x) + k.1 (M.differential x))
+    N'.differential (k.val x) + k.val (M.differential x))
 
 /-- A homotopy-commutative square gives a morphism of the canonical cone triangles. -/
 -- The generated public projections are reflexive equations; their export requires
@@ -163,7 +163,7 @@ theorem exists_coneTriangleMap
   rw [← Functor.map_comp, ← Functor.map_comp] at hsq
   obtain ⟨k, hk⟩ := (quotient_map_eq_iff_exists_homotopy _ _).mp hsq
   have hk' : ∀ x : M, closedHom b (closedHom f x) - closedHom g (closedHom a x) =
-      N'.differential (k.1 x) + k.1 (M.differential x) := by
+      N'.differential (k.val x) + k.val (M.differential x) := by
     simpa only [closedHom_comp, LinearMap.comp_apply] using hk
   exact ⟨coneTriangleMap f g a b k hk', rfl, rfl⟩
 

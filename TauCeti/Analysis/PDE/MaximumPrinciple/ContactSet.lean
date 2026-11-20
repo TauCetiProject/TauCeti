@@ -47,6 +47,9 @@ elliptic operator applied to it, in
   points with small slopes are contact points on `Ω`.
 * `TauCeti.PDE.norm_le_of_forall_le_add_inner`: supporting slopes of a bounded function at a
   point with a ball around it are bounded.
+* `TauCeti.PDE.norm_mul_le_sub_of_forall_le_add_inner`: a supporting slope small enough for the
+  affine function to stay above `m` on `Ω` is at most the height of `u` above `m` divided by the
+  distance to the complement of `Ω`.
 * `TauCeti.PDE.exists_mem_forall_le_add_inner_of_frequently`: supporting slopes in a closed set
   persist along pointwise convergent sequences of functions uniformly bounded on growing sets
   `Vₖ`, which is how the estimate passes from smooth approximations to their limit.
@@ -146,6 +149,46 @@ theorem norm_le_of_forall_le_add_inner {r M : ℝ} (hr : 0 < r) (hball : ball x 
   have h := hinner ▸ hp y hy
   have h1 := le_abs_self (u x) |>.trans (hM x (hball (mem_ball_self hr)))
   have h2 := neg_abs_le (u y) |>.trans' (neg_le_neg (hM y hy))
+  linarith
+
+/-- **Supporting slopes below the height of `u`.** Let `Ω` be bounded and let an affine function
+with slope `p` touch `u` from above on `Ω` at `y`. If `‖p‖ diam Ω ≤ u x₀ - m` for some `x₀ ∈ Ω`,
+then the affine function is at least `m` on `Ω`, so its slope is at most the height of `u y`
+above `m` divided by the distance to the complement: `‖p‖ r ≤ u y - m` whenever
+`ball y r ⊆ Ω`. -/
+theorem norm_mul_le_sub_of_forall_le_add_inner {r m : ℝ} {x₀ : E} (hΩb : Bornology.IsBounded Ω)
+    (hx₀ : x₀ ∈ Ω) (hp : ∀ x ∈ Ω, u x ≤ u y + ⟪p, x - y⟫) (hpd : ‖p‖ * diam Ω ≤ u x₀ - m)
+    (hr : 0 < r) (hball : ball y r ⊆ Ω) : ‖p‖ * r ≤ u y - m := by
+  -- The affine function through `(y, u y)` with slope `p` is at least `m` on `Ω`.
+  have hℓ (z : E) (hz : z ∈ Ω) : m ≤ u y + ⟪p, z - y⟫ := by
+    have hd : ‖z - x₀‖ ≤ diam Ω := by
+      rw [← dist_eq_norm]
+      exact dist_le_diam_of_mem hΩb hz hx₀
+    have hzx := neg_le_of_abs_le ((abs_real_inner_le_norm p (z - x₀)).trans
+      (mul_le_mul_of_nonneg_left hd (norm_nonneg p)))
+    have hsplit : ⟪p, z - y⟫ = ⟪p, x₀ - y⟫ + ⟪p, z - x₀⟫ := by
+      rw [← inner_add_right, sub_add_sub_cancel']
+    linarith [hp x₀ hx₀]
+  have hy := hℓ y (hball (mem_ball_self hr))
+  rw [sub_self, inner_zero_right, add_zero] at hy
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simpa using hy
+  have hnp : 0 < ‖p‖ := norm_pos_iff.2 hp0
+  -- Test the affine function at `y - t (p / ‖p‖)` for `t < r`.
+  rw [mul_comm, ← le_div_iff₀ hnp]
+  refine le_of_forall_lt_imp_le_of_dense fun t ht => ?_
+  rcases lt_or_ge t 0 with ht0 | ht0
+  · exact ht0.le.trans (div_nonneg (sub_nonneg.2 hy) hnp.le)
+  set z := y - (t / ‖p‖) • p
+  have hzy : z - y = -((t / ‖p‖) • p) := by simp [z]
+  have hz : z ∈ Ω := hball <| by
+    rw [mem_ball, dist_eq_norm, hzy, norm_neg, norm_smul, Real.norm_of_nonneg (by positivity),
+      div_mul_cancel₀ _ hnp.ne']
+    exact ht
+  have h := hℓ z hz
+  rw [hzy, inner_neg_right, real_inner_smul_right, real_inner_self_eq_norm_sq] at h
+  rw [le_div_iff₀ hnp]
+  have : t / ‖p‖ * ‖p‖ ^ 2 = t * ‖p‖ := by field_simp
   linarith
 
 /-- **Limits of supporting slopes.** Let `uₖ` converge pointwise to `u` on `Ω`, and let `Vₖ` be

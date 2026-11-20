@@ -569,7 +569,7 @@ def ramificationGroupSubgroupHom (H : Subgroup G) (i : ℤ) :
   toFun σ := ⟨((σ : H) : G), by
     have hσ : (σ : H) ∈ (ramificationGroup G S i).subgroupOf H := by
       rw [subgroupOf_ramificationGroup]
-      exact σ.2
+      exact σ.property
     exact hσ⟩
   map_one' := rfl
   map_mul' _ _ := rfl
