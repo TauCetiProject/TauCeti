@@ -29,10 +29,6 @@ argument stays inside the principal range `(-π, π]`, which is where `Complex.c
 applied.  For a positive real exponent `r` that range is reached exactly on the sector
 `-(r * π) < arg u ≤ r * π`.
 
-Rescaling the principal `k`-th root, `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`, gives a `k`-th root
-function that is complex differentiable at a nonzero `z₀` and takes there any prescribed `k`-th
-root `c` of `z₀`, since `z / z₀` stays in the slit plane near `z₀`.
-
 Products `∏ i, (1 - a i * w) ^ e i` are holomorphic near zero, with derivative
 `-∑ i, e i * a i` and second derivative
 `(∑ i, e i * a i) ^ 2 - ∑ i, e i * a i ^ 2` at zero. The quadratic difference
@@ -68,8 +64,6 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   exponential of `(c log n) s`.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.exists_contDiffAt_pow_eq_and_exp_eq` -- near a nonzero point, a prescribed `k`-th
-  root extends to a `k`-th root function holomorphic at that point, with a holomorphic logarithm.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
@@ -213,26 +207,6 @@ theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : 
     Set.InjOn (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) S := fun z hz w hw hzw => by
   have hp : f z ^ ((β⁻¹ : ℝ) : ℂ) = f w ^ ((β⁻¹ : ℝ) : ℂ) := mul_left_cancel₀ I_ne_zero hzw
   exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
-
-/-- **A local holomorphic branch of the `k`-th root and of its logarithm.** Near a nonzero `z₀`
-with a chosen `k`-th root `c`, there is a `k`-th root function `f` with `f z₀ = c`, namely
-`z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`, together with a logarithm `L` of `f` off `0`. Both are `C^n` at
-`z₀` for every `n`, so holomorphic there. -/
-theorem exists_contDiffAt_pow_eq_and_exp_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
-    (hc : c ^ k = z₀) {n : WithTop ℕ∞} :
-    ∃ f L : ℂ → ℂ, ContDiffAt ℂ n f z₀ ∧ ContDiffAt ℂ n L z₀ ∧ f z₀ = c ∧
-      (∀ z, f z ^ k = z) ∧ ∀ z, z ≠ 0 → exp (L z) = f z := by
-  have hc₀ : c ≠ 0 := by rintro rfl; exact hz₀ (by rw [← hc, zero_pow hk])
-  let L : ℂ → ℂ := fun z ↦ log c + (k : ℂ)⁻¹ * log (z / z₀)
-  have hexp (z : ℂ) (hz : z ≠ 0) : exp (L z) = c * (z / z₀) ^ (k⁻¹ : ℂ) := by
-    rw [exp_add, exp_log hc₀, cpow_def_of_ne_zero (div_ne_zero hz hz₀), mul_comm (log _)]
-  have hL : ContDiffAt ℂ n L z₀ := contDiffAt_const.add (contDiffAt_const.mul
-    ((contDiffAt_log (by rw [div_self hz₀]; exact one_mem_slitPlane)).comp z₀
-      (contDiffAt_id.div_const z₀)))
-  refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), L, ?_, hL, by simp [div_self hz₀], fun z ↦ ?_, hexp⟩
-  · exact (analyticAt_const.mul ((analyticAt_id.div_const (c := z₀)).cpow analyticAt_const
-      (by simpa only [id_eq, div_self hz₀] using one_mem_slitPlane))).contDiffAt
-  · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
 where every base equals one. -/

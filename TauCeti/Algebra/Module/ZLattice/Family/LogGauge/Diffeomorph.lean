@@ -73,25 +73,6 @@ variable [FiniteDimensional ℂ E]
     letI := logTranslationMulAction P l
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
 
-/-- The orbit map `X → Q` is a `C^n` local diffeomorphism for the quotient atlas. -/
-private theorem isLocalDiffeomorph_logTranslationQuotient_mk :
-    letI := periodAddAction (powPullbackPeriod m r P)
-    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
-      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-    letI := logTranslationMulAction P l
-    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
-    IsLocalDiffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
-      (Quotient.mk (orbitRel (rootsOfUnity m ℂ)
-        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) :=
-  isLocalDiffeomorph_torusFamilyAffineQuotient_mk (powPullbackPeriod m r P)
-    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-    (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (fun _ _ ↦ AddMonoidHom.id E)
-    (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
-    (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
-    (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
-    (fun _ ↦ contMDiff_snd) (contMDiff_logTranslationSection P hP hinj l) hfree
-
 /-! ### Regularity of the gauge and its inverse -/
 
 /-- A map out of the cyclic quotient which agrees with the logarithmic gauge on the punctured
@@ -124,7 +105,7 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv
   let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
     (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  rw [← (isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree x₀).contMDiffAt_comp_iff
+  rw [← (isLocalDiffeomorph_logTranslationQuotient_mk P hP hinj l hfree x₀).contMDiffAt_comp_iff
     le_rfl]
   refine (contMDiffAt_torusFamilyLogGauge P hP hinj l hx₀).congr_of_eventuallyEq ?_
   filter_upwards [(continuous_subtypeVal.comp
@@ -164,7 +145,7 @@ private theorem contMDiffAt_of_eq_torusFamilyLogGaugeEquiv_symm
   -- Near `t₀`, use a `C^n` local `m`-th root `w t` of `t` and a `C^n` logarithm `L t`.
   obtain ⟨w, L, hw, hL, hLw⟩ :=
     rootsOfUnityBall.exists_contMDiffAt_powMap_eq_and_exp_eq (n := n) hr ht₀
-  have hπ := (isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree).contMDiff.comp
+  have hπ := (isLocalDiffeomorph_logTranslationQuotient_mk P hP hinj l hfree).contMDiff.comp
     (isLocalDiffeomorph_torusFamily_mk (powPullbackPeriod m r P)
       (fun z ↦ powPullbackPeriod_injective P z (hinj _))
       (fun l ↦ contMDiff_powPullbackPeriod P (hP l))).contMDiff

@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.Analytic.Order
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.LocalRoot
 
 /-!
 # Descent of rotation-invariant functions through `u ↦ u ^ m`

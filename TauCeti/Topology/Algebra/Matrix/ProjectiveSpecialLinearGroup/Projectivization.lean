@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Projectivization
 public import TauCeti.Topology.Algebra.Projectivization
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.LocalRoot
 
 /-!
 # `PSL(n, ℂ)` as an open subset of the projective space of matrices

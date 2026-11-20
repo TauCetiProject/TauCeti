@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Module.ZLattice.Family.CyclicQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Gauge
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.Complex.RootsOfUnity.LocalRoot
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.LocalRoot
 
 /-!
 # The logarithmic gauge of a cyclic quotient of a family of tori
@@ -648,7 +648,7 @@ variable [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul ℂ E]
 
 include hcont in
 /-- The orbit map `D_z × E → Q` of the cyclic quotient is an open quotient map. -/
-private theorem isOpenQuotientMap_logTranslationQuotient_mk :
+theorem isOpenQuotientMap_logTranslationQuotient_mk :
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
     IsOpenQuotientMap (fun p : rootsOfUnityBall m r × E ↦
@@ -692,9 +692,7 @@ private theorem continuousAt_torusFamilyLogGauge_out
     simpa only [torusFamilyProjection_mk] using
       (mk_mem_logTranslationQuotientPuncturedSet P l _).1 hq₀
   -- Near `z₀`, use a continuous logarithm `L` of `z`, which exists even on the branch cut.
-  obtain ⟨f, L, -, hLc, -, hf, hfL⟩ :=
-    exists_contDiffAt_pow_eq_and_exp_eq (n := 0) one_ne_zero hz₀ (pow_one (z₀ : ℂ))
-  have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by rw [hfL z hz, ← pow_one (f z), hf]
+  obtain ⟨L, hLc, hL⟩ := exists_contDiffAt_exp_eq (n := 0) hz₀
   have hval : Continuous fun p : rootsOfUnityBall m r × E ↦ (p.1 : ℂ) :=
     continuous_subtypeVal.comp continuous_fst
   refine ContinuousAt.congr_of_eventuallyEq (f := fun p ↦ Quotient.mk _
@@ -709,7 +707,7 @@ private theorem continuousAt_torusFamilyLogGauge_out
   · filter_upwards [hval.continuousAt.eventually_ne hz₀] with p hp
     obtain ⟨z, e⟩ := p
     rw [Function.comp_apply, torusFamilyLogGauge_out (by rwa [torusFamilyProjection_mk]),
-      torusFamilyLogGauge_mk_of_exp_eq P l (hL hp)]
+      torusFamilyLogGauge_mk_of_exp_eq P l (hL _ hp)]
 
 include hcont in
 /-- The inverse of the logarithmic gauge is continuous on the punctured family. -/

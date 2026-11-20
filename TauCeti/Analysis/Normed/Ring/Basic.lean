@@ -24,6 +24,14 @@ public section
 
 namespace TauCeti
 
+/-- For `0 ≤ r`, `u ^ m` lies in the ball of radius `r ^ m` about `0` exactly when `u` lies in the
+ball of radius `r`. -/
+theorem pow_mem_ball_zero_pow_iff {m : ℕ} [NeZero m] {𝕜 : Type*} [SeminormedRing 𝕜] [NormOneClass 𝕜]
+    [NormMulClass 𝕜] {r : ℝ} (hr : 0 ≤ r) {u : 𝕜} :
+    u ^ m ∈ Metric.ball (0 : 𝕜) (r ^ m) ↔ u ∈ Metric.ball (0 : 𝕜) r := by
+  rw [mem_ball_zero_iff, mem_ball_zero_iff, norm_pow,
+    pow_lt_pow_iff_left₀ (norm_nonneg u) hr (NeZero.ne m)]
+
 /-- A product of two elements in the open unit ball again belongs to the open unit ball. -/
 theorem norm_mul_lt_one {K : Type*} [NonUnitalSeminormedRing K] (u v : K) (hu : ‖u‖ < 1)
     (hv : ‖v‖ < 1) : ‖u * v‖ < 1 := by

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.LocalRoot
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!

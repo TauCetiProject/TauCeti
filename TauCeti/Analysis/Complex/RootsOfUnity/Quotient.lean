@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.OpenMapping
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import TauCeti.Analysis.Normed.Ring.Basic
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import Mathlib.Topology.LocalAtTarget
 public import TauCeti.RingTheory.RootsOfUnity.PowFiber
@@ -170,14 +171,6 @@ instance rootsOfUnityBall.instLocallyCompactSpace {r : ℝ} :
 theorem coe_smul_rootsOfUnityBall_pow {r : ℝ} (ζ : rootsOfUnity m ℂ) (u : rootsOfUnityBall m r) :
     ((ζ • u : rootsOfUnityBall m r) : ℂ) ^ m = (u : ℂ) ^ m := by
   rw [SubMulAction.val_smul, rootsOfUnity.smul_pow]
-
-/-- For `0 ≤ r`, `u ^ m` lies in the ball of radius `r ^ m` about `0` exactly when `u` lies in the
-ball of radius `r`. -/
-theorem pow_mem_ball_zero_pow_iff {𝕜 : Type*} [SeminormedRing 𝕜] [NormOneClass 𝕜]
-    [NormMulClass 𝕜] {r : ℝ} (hr : 0 ≤ r) {u : 𝕜} :
-    u ^ m ∈ Metric.ball (0 : 𝕜) (r ^ m) ↔ u ∈ Metric.ball (0 : 𝕜) r := by
-  rw [mem_ball_zero_iff, mem_ball_zero_iff, norm_pow,
-    pow_lt_pow_iff_left₀ (norm_nonneg u) hr (NeZero.ne m)]
 
 /-- For `0 ≤ r`, the map `u ↦ u ^ m` sends the disc of radius `r` about `0` onto the disc of
 radius `r ^ m`. -/

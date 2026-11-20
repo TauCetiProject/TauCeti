@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Family.LogGauge.Basic
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 public import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.LocalRoot
 import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
@@ -111,13 +111,11 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (z₀, e₀)).contMDiffAt_comp_iff le_rfl]
   -- A logarithm `L` centred at `z₀` is holomorphic even if `z₀` lies on the principal branch cut.
-  obtain ⟨f, L, -, hL, -, hf, hfL⟩ :=
-    exists_contDiffAt_pow_eq_and_exp_eq (n := n) one_ne_zero hz₀ (pow_one (z₀ : ℂ))
+  obtain ⟨L, hL, hLex⟩ := exists_contDiffAt_exp_eq (n := n) hz₀
   have hLc : ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) 𝓘(ℂ) n
       (fun p : rootsOfUnityBall m r × E ↦ L p.1) (z₀, e₀) :=
     hL.contMDiffAt.comp_of_eq
       (rootsOfUnityBall.contMDiff_val.comp contMDiff_fst).contMDiffAt rfl
-  have hL {z : ℂ} (hz : z ≠ 0) : exp (L z) = z := by rw [hfL z hz, ← pow_one (f z), hf]
   have hpow : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (rootsOfUnityBall.powMap m r) :=
     rootsOfUnityBall.contMDiff_powMap
   have hq := (isLocalDiffeomorph_torusFamily_mk P hinj hP).contMDiff
@@ -129,7 +127,7 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
   filter_upwards [(continuous_subtypeVal.comp continuous_fst).continuousAt.eventually_ne hz₀]
     with p hp
   simpa [Function.comp_def, powPullbackPeriod_apply] using
-    (torusFamilyLogGauge_mk_of_exp_eq P l (hL hp) p.2)
+    (torusFamilyLogGauge_mk_of_exp_eq P l (hLex _ hp) p.2)
 
 /-! ### The atlas of the cyclic quotient -/
 
@@ -170,6 +168,25 @@ theorem isManifold_logTranslationQuotient :
     IsManifold (𝓘(ℂ).prod 𝓘(ℂ, E)) n (MulAction.orbitRel.Quotient (rootsOfUnity m ℂ)
       (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
   isManifold_torusFamilyAffineQuotient (powPullbackPeriod m r P)
+    (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (fun _ _ ↦ AddMonoidHom.id E)
+    (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+    (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+    (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
+    (fun _ ↦ contMDiff_snd) (contMDiff_logTranslationSection P hP hinj l) hfree
+
+/-- The orbit map `X → Q` is a `C^n` local diffeomorphism for the quotient atlas. -/
+theorem isLocalDiffeomorph_logTranslationQuotient_mk :
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    letI := logTranslationMulAction P l
+    letI := logTranslationQuotientChartedSpace P hinj l hfree (fun l ↦ (hP l).continuous)
+    IsLocalDiffeomorph (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
+      (Quotient.mk (MulAction.orbitRel (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) :=
+  isLocalDiffeomorph_torusFamilyAffineQuotient_mk (powPullbackPeriod m r P)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     (fun l ↦ contMDiff_powPullbackPeriod P (hP l)) (fun _ _ ↦ AddMonoidHom.id E)
     (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
