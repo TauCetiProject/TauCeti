@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Isometry
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Covering
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 
 /-!
@@ -32,6 +34,13 @@ the value in `L²(N)`, and it preserves the Dirichlet form: `q_M(J w, J v) = q_N
 `w, v ∈ H¹(N)`. Every element of its range is invariant under pullback along the Riemannian
 isometries `Φ` of `M` with `q ∘ Φ = q`, such as the deck transformations of the covering.
 
+When `G` acts by Riemannian isometries, the range is exactly the subspace of `G`-invariant elements
+of `H¹(M)`, so `J` is a unitary from `H¹(N)` onto that subspace. The averaging operator
+`|G|⁻¹ ∑ g, g^*` fixes the invariant elements, and it maps a smooth function `u` to an invariant
+smooth function, which is constant on the fibres of `q` and so is the pullback of a smooth function
+on `N` because `q` is a local diffeomorphism. Since smooth functions are dense in `H¹(M)` and the
+range of the isometry `J` is closed, the average of every element lies in the range.
+
 These are the `H¹` and energy-form parts of Bérard's transplantation of eigenfunctions of the
 Laplacian between the quotients of one manifold by almost-conjugate subgroups.
 
@@ -46,6 +55,8 @@ Laplacian between the quotients of one manifold by almost-conjugate subgroups.
 * `TauCeti.Manifold.SobolevH1.dirichletForm_normalizedPullback`: the energy-form identity.
 * `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_normalizedPullback`: the range consists of
   deck-invariant elements.
+* `TauCeti.Manifold.SobolevH1.mem_range_normalizedPullback_iff`: for an action by Riemannian
+  isometries, the range is exactly the subspace of `G`-invariant elements.
 
 ## References
 
@@ -193,5 +204,62 @@ theorem compRiemannianIsometry_normalizedPullback (hq : IsQuotientCoveringMap q 
   rw [normalizedPullback_ofSmooth, map_smul, compRiemannianIsometry_ofSmooth]
   congr 2
   exact ContMDiffMap.ext fun x ↦ congrArg u (hΦ x)
+
+/-! ### The range of the normalized pullback -/
+
+section Range
+
+variable [BoundarylessManifold I M] [IsManifold I ∞ M] [IsManifold I' ∞ N]
+
+/-- **The range of the normalized pullback.** Let a finite group `G` act on `M` by the Riemannian
+isometries `Φ g`, and let `q : M → N` be a quotient covering map for this action which is a local
+Riemannian isometry. Then the normalized pullback `J : H¹(N) → H¹(M)` maps onto the elements of
+`H¹(M)` invariant under pullback along every `Φ g`. -/
+theorem mem_range_normalizedPullback_iff (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) (Φ : G → RiemannianIsometry I I M M)
+    (hΦ : ∀ g x, Φ g x = g • x) {w : SobolevH1 I M} :
+    w ∈ Set.range (normalizedPullback hq hf) ↔ ∀ g, compRiemannianIsometry (Φ g) w = w := by
+  refine ⟨?_, fun hw ↦ ?_⟩
+  · rintro ⟨v, rfl⟩ g
+    exact compRiemannianIsometry_normalizedPullback hq hf (fun x ↦ (hΦ g x).symm ▸ hq.map_smul g) v
+  have := Fintype.ofFinite G
+  have hG : (0 : ℝ) < Fintype.card G := Nat.cast_pos.2 Fintype.card_pos
+  -- The average `A` over `G` of the pullbacks along the `Φ g` fixes `w`.
+  let A : SobolevH1 I M →L[ℝ] SobolevH1 I M := (Fintype.card G : ℝ)⁻¹ •
+    ∑ g, ((compRiemannianIsometry (Φ g)).toContinuousLinearEquiv : SobolevH1 I M →L[ℝ] _)
+  have hA (w : SobolevH1 I M) :
+      A w = (Fintype.card G : ℝ)⁻¹ • ∑ g, compRiemannianIsometry (Φ g) w := by
+    simp [A]
+  have hAw : A w = w := by
+    rw [hA]
+    simp only [hw, Finset.sum_const, Finset.card_univ, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul]
+    rw [inv_mul_cancel₀ hG.ne', one_smul]
+  rw [← hAw]
+  -- By density of smooth functions and closedness of the range, it suffices that `A` maps every
+  -- smooth `u` into the range.
+  refine induction_on (p := fun w ↦ A w ∈ Set.range (normalizedPullback hq hf)) w
+    ((normalizedPullback hq hf).isometry.isClosedEmbedding.isClosed_range.preimage A.continuous)
+    fun u ↦ ?_
+  -- The average `ū` of `u` is constant on the fibres of `q`, which are the `G`-orbits, so it is
+  -- the pullback `v ∘ q` of a smooth function `v` on `N`.
+  set ū : C^∞⟮I, M; ℝ⟯ := (Fintype.card G : ℝ)⁻¹ • ∑ g, u.comp (Φ g).toDiffeomorph.toContMDiffMap
+  have hū (x : M) : ū x = (Fintype.card G : ℝ)⁻¹ * ∑ g : G, u (g • x) := by
+    simp [ū, Finset.sum_apply, hΦ]
+  have hfib : Function.FactorsThrough ū q := fun x y hxy ↦ by
+    obtain ⟨h, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hxy
+    rw [hū, hū]
+    congr 1
+    exact Fintype.sum_equiv (Equiv.mulRight h) _ _ fun g ↦ by simp [mul_smul]
+  obtain ⟨v, ⟨hv, hvq⟩, -⟩ := (hf.isLocalDiffeomorph (n := ∞) (by simp) le_rfl
+    ).existsUnique_contMDiff_comp_eq hq.surjective le_rfl ū.contMDiff hfib
+  let v' : C^∞⟮I', N; ℝ⟯ := ⟨v, hv⟩
+  have hvū : v'.comp ⟨q, hf.contMDiff⟩ = ū := ContMDiffMap.ext fun x ↦ congrFun hvq x
+  -- Hence `A u = ū = |G| ^ (1/2) J v`.
+  refine ⟨(Fintype.card G : ℝ) ^ (1 / 2 : ℝ) • ofSmooth v', ?_⟩
+  rw [map_smul, normalizedPullback_ofSmooth, smul_smul, Nat.card_eq_fintype_card,
+    ← Real.rpow_add hG, hvū, hA]
+  norm_num [ū]
+
+end Range
 
 end TauCeti.Manifold.SobolevH1
