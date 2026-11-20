@@ -89,8 +89,6 @@ theorem natCard_SL_eq_natCard_ker_pow_mul {R S : Type*} [CommRing R] [CommRing S
   cases isEmpty_or_nonempty n with
   | inl _ =>
     -- Over the empty index type both special linear groups are trivial.
-    have : Subsingleton (SpecialLinearGroup n R) := ⟨fun _ _ ↦ Subtype.ext (Subsingleton.elim _ _)⟩
-    have : Subsingleton (SpecialLinearGroup n S) := ⟨fun _ _ ↦ Subtype.ext (Subsingleton.elim _ _)⟩
     simp [Nat.card_unique]
   | inr _ =>
     have := Finite.of_surjective f hf
@@ -154,14 +152,17 @@ end Matrix
 
 namespace TauCeti
 
-/-- **The order of `SL₂` over a finite field** `𝔽_q` is `q (q² - 1)`. -/
-theorem natCard_SL_fin_two (F : Type*) [Field F] [Finite F] :
+/-- **The order of `SL₂` over a field** `𝔽_q` is `q (q² - 1)`. For an infinite field both sides
+vanish. -/
+theorem natCard_SL_fin_two (F : Type*) [Field F] :
     Nat.card SL(2, F) = Nat.card F * (Nat.card F ^ 2 - 1) := by
-  have h := Matrix.card_SL_mul_card_units (n := Fin 2) (R := F)
-  rw [natCard_GL_fin_two_eq_sq_sub_one_mul, Nat.card_units] at h
-  refine Nat.eq_of_mul_eq_mul_right (Nat.sub_pos_of_lt (Finite.one_lt_card (α := F))) ?_
-  rw [h]
-  ring
+  rcases finite_or_infinite F with _ | _
+  · have h := Matrix.card_SL_mul_card_units (n := Fin 2) (R := F)
+    rw [natCard_GL_fin_two_eq_sq_sub_one_mul, Nat.card_units] at h
+    refine Nat.eq_of_mul_eq_mul_right (Nat.sub_pos_of_lt (Finite.one_lt_card (α := F))) ?_
+    rw [h]
+    ring
+  · simp [Nat.card_eq_zero_of_infinite]
 
 /-- **The order of `SL₂(𝔽_p)`** is `p (p² - 1)`. -/
 theorem natCard_SL_fin_two_zmod (p : ℕ) [Fact p.Prime] :
@@ -177,7 +178,8 @@ theorem natCard_SL_fin_two_zmod_mul_prod_primeFactors (N : ℕ) :
   · simp [Nat.card_eq_zero_of_infinite]
   rw [Matrix.natCard_SL_zmod_eq_prod_factorization hN, Finsupp.prod, Nat.support_factorization,
     ← Finset.prod_mul_distrib]
-  conv_rhs => arg 1; rw [← Nat.prod_factorization_pow_eq_self hN]
+  rw [show N ^ 3 = (N.factorization.prod (· ^ ·)) ^ 3 by
+    rw [Nat.prod_factorization_pow_eq_self hN]]
   rw [Finsupp.prod, Nat.support_factorization, ← Finset.prod_pow, ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun p hp ↦ ?_
   have : Fact p.Prime := ⟨Nat.prime_of_mem_primeFactors hp⟩
