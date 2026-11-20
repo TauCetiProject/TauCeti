@@ -366,15 +366,14 @@ theorem typeABoxDifferential_toUngradedAInfinityRightModule [CharP R 2] [Module 
     (hM : IsUngradedDGRightModule d dM) (N : TypeDStructure d ι X) :
     N.typeABoxDifferential hM.toUngradedAInfinityRightModule = N.boxDifferential dM := by
   refine LinearMap.ext fun φ => funext fun z => ?_
-  rw [typeABoxDifferential_apply_eq_sum_of_act_eq_zero (K := 2) _ _ fun n hn => ?_]
-  · simp only [sum_range_succ, range_zero, sum_empty, zero_add, boxDifferential_apply,
-      Pi.add_apply, IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_zero,
-      IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_one]
-    rw [← (Equiv.funUnique (Fin 1) X).symm.sum_comp, ← (piFinTwoEquiv fun _ => X).symm.sum_comp,
-      Fintype.sum_prod_type]
-    simp [continuationMap_apply (R := R) (M := M) N.coeff]
-  · obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-    exact hM.toUngradedAInfinityRightModule_act_add_two n
+  rw [typeABoxDifferential_apply_eq_sum_of_act_eq_zero (K := 2) _ _
+    fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le]
+  simp only [sum_range_succ, range_zero, sum_empty, zero_add, boxDifferential_apply,
+    Pi.add_apply, IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_zero,
+    IsUngradedDGRightModule.toUngradedAInfinityRightModule_act_one]
+  rw [← (Equiv.funUnique (Fin 1) X).symm.sum_comp, ← (piFinTwoEquiv fun _ => X).symm.sum_comp,
+    Fintype.sum_prod_type]
+  simp [continuationMap_apply (R := R) (M := M) N.coeff]
 
 /-! ### Maps induced by morphisms of type `D` structures -/
 
@@ -772,9 +771,7 @@ theorem typeABoxMap_toUngradedAInfinityRightModule [CharP R 2] [Module Aᵐᵒ�
     typeABoxMap N N' hM.toUngradedAInfinityRightModule F = continuationMap R M F := by
   refine LinearMap.ext fun φ => funext fun z => ?_
   have hB : Bound N N' hM.toUngradedAInfinityRightModule Set.univ 2 :=
-    bound_of_act_eq_zero fun n hn => by
-      obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-      exact hM.toUngradedAInfinityRightModule_act_add_two n
+    bound_of_act_eq_zero fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le
   rw [hB.typeABoxMap_apply_eq_sum 0]
   simp only [sum_range_succ, range_zero, sum_empty, zero_add, Finset.univ_eq_empty,
     Fin.sum_univ_one, Function.update_eq_const_of_subsingleton]

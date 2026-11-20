@@ -107,6 +107,7 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   differential of a Maurer–Cartan element squares to zero.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct_apply`: the components of the matrix operations
   are sums over paths.
+* `Matrix.update_apply_path`: updating one matrix of a tuple updates one entry along every path.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero` and
   `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_lt`: the matrix operations vanish
   when those of `M` do, and along matrices whose nonzero entries strictly increase a bounded
@@ -134,6 +135,19 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
 public section
 
 open Finset MulOpposite
+
+namespace Matrix
+
+/-- Updating one matrix of a tuple updates one entry along every path: reading the `t`-th matrix
+at the `t`-th step of a path `x`, after replacing the `l`-th matrix by `G`, replaces the `l`-th
+entry by `G (x l.castSucc) (x l.succ)`. -/
+theorem update_apply_path {X C : Type*} {k : ℕ} (F : Fin k → Matrix X X C)
+    (x : Fin (k + 1) → X) (l : Fin k) (G : Matrix X X C) :
+    (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
+      Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
+  funext (Function.apply_update (fun t (G : Matrix X X C) => G (x t.castSucc) (x t.succ)) F l G)
+
+end Matrix
 
 namespace TauCeti
 
@@ -192,6 +206,14 @@ theorem ungradedStasheffMul_zero (a : Fin 0 → A) : ungradedStasheffMul act 0 a
 theorem ungradedStasheffMul_succ (n : ℕ) (a : Fin (n + 1) → A) :
     ungradedStasheffMul act (n + 1) a = ∑ l : Fin n, act n (Fin.contractNth l.castSucc (· * ·) a) :=
   (rfl)
+
+/-- The product terms of two tuples of equal lengths with equal entries agree. -/
+theorem ungradedStasheffMul_congr {m n : ℕ} (h : m = n) {b : Fin m → A} {a : Fin n → A}
+    (hab : ∀ l, b l = a (Fin.cast h l)) :
+    ungradedStasheffMul act m b = ungradedStasheffMul act n a := by
+  subst h
+  congr 1
+  exact funext hab
 
 end StasheffTerms
 
@@ -626,13 +648,8 @@ private theorem stasheffDiff_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (�
       ∑ x : Fin (n + 1) → X, if x (Fin.last n) = z then
         ungradedStasheffDiff Mm.act d n (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))
       else 0 := by
-  -- Updating one matrix of a tuple updates one entry along every path.
-  have hupd (x : Fin (n + 1) → X) (l : Fin n) (G : Matrix X X A) :
-      (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (G : Matrix X X A) => G (x t.castSucc) (x t.succ)) F l G)
-  simp only [ungradedStasheffDiff_apply, Finset.sum_apply, matrixAct_apply, hupd,
-    LinearMap.mapMatrix_apply, Matrix.map_apply]
+  simp only [ungradedStasheffDiff_apply, Finset.sum_apply, matrixAct_apply,
+    Matrix.update_apply_path, LinearMap.mapMatrix_apply, Matrix.map_apply]
   rw [sum_comm]
   refine sum_congr rfl fun x _ => ?_
   split_ifs <;> simp
@@ -890,13 +907,7 @@ theorem sum_matrixAct_update_fromBlocks_apply_inr {n : ℕ} (δ : Matrix X X A) 
       Mm.matrixAct (X ⊕ Y) n (fun _ => Matrix.fromBlocks δ G 0 δ') (Sum.elim φ 0) (Sum.inr z) := by
   set C : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks δ F 0 δ'
   set E : Matrix (X ⊕ Y) (X ⊕ Y) A := Matrix.fromBlocks 0 G 0 0
-  -- Updating one matrix of a tuple updates one entry along every path.
-  have hupd (x : Fin (n + 1) → X ⊕ Y) (l : Fin n) :
-      (fun t => Function.update (fun _ => C) l E t (x t.castSucc) (x t.succ)) =
-        Function.update (fun t => C (x t.castSucc) (x t.succ)) l (E (x l.castSucc) (x l.succ)) :=
-    funext (Function.apply_update (fun t (P : Matrix (X ⊕ Y) (X ⊕ Y) A) =>
-      P (x t.castSucc) (x t.succ)) (fun _ => C) l E)
-  simp only [matrixAct_apply, hupd]
+  simp only [matrixAct_apply, Matrix.update_apply_path]
   rw [sum_comm]
   refine sum_congr rfl fun x _ => ?_
   split_ifs with hz
@@ -1043,14 +1054,21 @@ theorem toUngradedAInfinityRightModule_act_add_two [CharP R 2]
     hM.toUngradedAInfinityRightModule.act (n + 2) = 0 :=
   (rfl)
 
+/-- The operations `m_{k+1}` of a differential module viewed as an `A∞` module vanish from arity
+`k = 2` on. -/
+theorem toUngradedAInfinityRightModule_act_eq_zero_of_two_le [CharP R 2]
+    (hM : IsUngradedDGRightModule d dM) {k : ℕ} (hk : 2 ≤ k) :
+    hM.toUngradedAInfinityRightModule.act k = 0 := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  exact hM.toUngradedAInfinityRightModule_act_add_two n
+
 /-- A differential module viewed as an `A∞` module is strictly unital for every family of
 elements: its operations `m_{n+1}`, `n ≥ 2`, vanish. -/
 theorem isStrictlyUnital_toUngradedAInfinityRightModule [CharP R 2]
     (hM : IsUngradedDGRightModule d dM) {S : Type*} (ι : S → A) :
     hM.toUngradedAInfinityRightModule.IsStrictlyUnital ι := by
   refine (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun n hn a _ _ _ => ?_
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hn
-  rw [hM.toUngradedAInfinityRightModule_act_add_two n, zero_apply]
+  rw [hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le hn, zero_apply]
 
 end IsUngradedDGRightModule
 

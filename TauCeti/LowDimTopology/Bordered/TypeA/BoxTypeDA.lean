@@ -8,6 +8,7 @@ module
 public import TauCeti.LowDimTopology.Bordered.TypeDA
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Crossing
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # The box tensor product of a type `A` module with a type `DA` bimodule
@@ -457,34 +458,6 @@ private theorem ungradedStasheffDiff_block {n : ℕ} (a : Fin n → A) {x x' : F
     exact Fin.ext (by simp)
 
 omit [DecidableEq Y] in
-/-- Contracting a pair of inputs inside a block is contracting it in the whole tuple. -/
-private theorem contractNth_block {m c : ℕ} (a : Fin (m + 1) → A) {x : ℕ} (hxc : x + c ≤ m)
-    (j : Fin c) (l : Fin c) :
-    Fin.contractNth j.castSucc (· * ·)
-        (fun l : Fin (c + 1) => a ⟨x + l, by have := l.isLt; omega⟩) l =
-      Fin.contractNth (⟨x + j, by have := j.isLt; omega⟩ : Fin m).castSucc (· * ·) a
-        ⟨x + l, by have := l.isLt; omega⟩ := by
-  rcases lt_trichotomy (l : ℕ) j with hl | hl | hl
-  · rw [Fin.contractNth_apply_of_lt _ _ _ _ (by simpa using hl),
-      Fin.contractNth_apply_of_lt _ _ _ _ (by simp; omega)]
-    exact congrArg a (Fin.ext (by simp))
-  · rw [Fin.contractNth_apply_of_eq _ _ _ _ (by simpa using hl),
-      Fin.contractNth_apply_of_eq _ _ _ _ (by simp; omega)]
-    simp only [Fin.val_castSucc, Fin.val_succ]
-    exact congrArg₂ (· * ·) (congrArg a (Fin.ext rfl)) (congrArg a (Fin.ext (by simp; omega)))
-  · rw [Fin.contractNth_apply_of_gt _ _ _ _ (by simpa using hl),
-      Fin.contractNth_apply_of_gt _ _ _ _ (by simp; omega)]
-    exact congrArg a (Fin.ext (by simp; omega))
-
-omit [DecidableEq Y] in
-private theorem ungradedStasheffMul_congr {c c' : ℕ} (h : c = c') {b : Fin c → A}
-    {b' : Fin c' → A} (hbb' : ∀ l, b l = b' (Fin.cast h l)) :
-    (ungradedStasheffMul P.coeff c b : Matrix Y Y B) = ungradedStasheffMul P.coeff c' b' := by
-  subst h
-  congr 1
-  exact funext hbb'
-
-omit [DecidableEq Y] in
 /-- **The product terms of a block, indexed by the inputs.** The product term of the type `DA`
 relation on the block between `x` and `x'` is the sum, over the pairs `aᵢ, aᵢ₊₁` of consecutive
 inputs of the block, of the entries from `x` to `x' - 1` of the block matrix of the tuple with
@@ -497,12 +470,12 @@ private theorem ungradedStasheffMul_block {m : ℕ} (a : Fin (m + 1) → A) {x x
         P.blockMatrix (Fin.contractNth i.castSucc (· * ·) a) ⟨x, by omega⟩
           ⟨x' - 1, by have := x'.isLt; omega⟩ else 0 := by
   rcases Nat.eq_zero_or_pos ((x' : ℕ) - x) with hc | hc
-  · refine (ungradedStasheffMul_congr P hc (b' := fun l : Fin 0 => a ⟨x + l, by omega⟩)
+  · refine (ungradedStasheffMul_congr P.coeff hc (a := fun l : Fin 0 => a ⟨x + l, by omega⟩)
       fun l => congrArg a (Fin.ext rfl)).trans ?_
     rw [ungradedStasheffMul_zero]
     exact (Finset.sum_eq_zero fun i _ => dite_eq_right (by omega)).symm
   obtain ⟨c, hc'⟩ : ∃ c, (x' : ℕ) - x = c + 1 := ⟨(x' : ℕ) - x - 1, by omega⟩
-  refine (ungradedStasheffMul_congr P hc' (b' := fun l : Fin (c + 1) => a ⟨x + l, by omega⟩)
+  refine (ungradedStasheffMul_congr P.coeff hc' (a := fun l : Fin (c + 1) => a ⟨x + l, by omega⟩)
       fun l => congrArg a (Fin.ext rfl)).trans ?_
   rw [ungradedStasheffMul_succ]
   refine Fintype.sum_of_injective (fun j : Fin c => (⟨x + j, by omega⟩ : Fin m))
@@ -514,7 +487,7 @@ private theorem ungradedStasheffMul_block {m : ℕ} (a : Fin (m + 1) → A) {x x
   · rw [dite_eq_left ⟨by simp, by simp only; omega⟩,
       P.blockMatrix_apply_of_le _ (by simp only; omega)]
     exact P.coeff_congr (by simp only; omega) fun l => by
-      rw [contractNth_block a (by omega) j l]
+      rw [Fin.contractNth_castSucc_window_apply _ a (by omega) j l]
       exact congrArg _ (Fin.ext (by simp))
 
 /-- The entry from `x` to `x'` of the differential terms of the block matrix: on the diagonal and
@@ -566,13 +539,6 @@ private theorem diffMatrix_apply {n : ℕ} (a : Fin n → A) (x x' : Fin (n + 1)
   · rw [diffMatrix, dite_eq_right h]
     exact (Finset.sum_eq_zero fun i _ => ite_eq_right (by omega)).symm
 
-/-- Updating one matrix of a tuple updates one entry along every path. -/
-private theorem update_apply_path {X C : Type*} {k : ℕ} (F : Fin k → Matrix X X C)
-    (x : Fin (k + 1) → X) (l : Fin k) (G : Matrix X X C) :
-    (fun t => Function.update F l G t (x t.castSucc) (x t.succ)) =
-      Function.update (fun t => F t (x t.castSucc) (x t.succ)) l (G (x l.castSucc) (x l.succ)) :=
-  funext (Function.apply_update (fun t (G : Matrix X X C) => G (x t.castSucc) (x t.succ)) F l G)
-
 /-- **The differential terms along one path.** Along a path from `0` to `n`, replacing the entry
 of each step by the differential terms of its block and summing over the steps is summing over
 the inputs `aᵢ` the operations along the block matrix with `aᵢ` replaced by `dA aᵢ`. -/
@@ -603,7 +569,8 @@ private theorem sum_matrixAct_update_diffMatrix {n k : ℕ} (a : Fin n → A) (�
         (Fin.last n) =
       ∑ i : Fin n, P.blockAct Mm k n (Function.update a i (dA (a i))) ψ := by
   simp only [UngradedAInfinityRightModule.matrixAct_single_apply, blockAct_apply,
-    update_apply_path, P.diffMatrix_apply, MultilinearMap.map_update_sum, LinearMap.sum_apply]
+    Matrix.update_apply_path, P.diffMatrix_apply, MultilinearMap.map_update_sum,
+    LinearMap.sum_apply]
   rw [Finset.sum_comm]
   conv_rhs => rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun x _ => ?_
@@ -619,8 +586,8 @@ private theorem mulMatrix_eq_zero (a : Fin 0 → A) : P.mulMatrix a = 0 := by
   ext1 x x'
   rw [mulMatrix, Matrix.zero_apply]
   split_ifs with h
-  · refine (ungradedStasheffMul_congr P (c' := 0) (by omega)
-      (b' := fun l : Fin 0 => a ⟨x + l, by omega⟩) fun l => congrArg a (Fin.ext rfl)).trans ?_
+  · refine (ungradedStasheffMul_congr P.coeff (n := 0) (by omega)
+      (a := fun l : Fin 0 => a ⟨x + l, by omega⟩) fun l => congrArg a (Fin.ext rfl)).trans ?_
     exact ungradedStasheffMul_zero _ _
   · rfl
 
@@ -770,7 +737,8 @@ private theorem sum_matrixAct_update_mulMatrix {m k : ℕ} (a : Fin (m + 1) → 
         (Fin.last (m + 1)) =
       ∑ i : Fin m, P.blockAct Mm k m (Fin.contractNth i.castSucc (· * ·) a) ψ := by
   simp only [UngradedAInfinityRightModule.matrixAct_single_apply, blockAct_apply,
-    update_apply_path, P.mulMatrix_apply, MultilinearMap.map_update_sum, LinearMap.sum_apply]
+    Matrix.update_apply_path, P.mulMatrix_apply, MultilinearMap.map_update_sum,
+    LinearMap.sum_apply]
   -- Bring the sum over the contracted pairs `i` outside.
   simp only [← Finset.sum_filter]
   rw [Finset.sum_comm, Finset.sum_congr rfl fun x _ => Finset.sum_comm, Finset.sum_comm]
@@ -883,15 +851,14 @@ operations beyond `m₂`, so only the cuts of `a₁, …, aₙ` into at most one
 `m₁ ψ = dM ψ + ψ ⬝ δ₀` and `m_{n+1}(ψ, a) = ψ ⬝ δₙ(a)`. -/
 theorem typeABoxModule_toUngradedAInfinityRightModule [CharP R 2] [Module Bᵐᵒᵖ M]
     [SMulCommClass R Bᵐᵒᵖ M] [IsScalarTower R Bᵐᵒᵖ M] {dM : M →ₗ[R] M}
-    (hM : IsUngradedDGRightModule dB dM)
-    (h : ∃ K, ∀ k, K ≤ k → hM.toUngradedAInfinityRightModule.act k = 0) :
-    P.typeABoxModule hM.toUngradedAInfinityRightModule h = P.boxModule hM := by
-  have hK (k : ℕ) (hk : 2 ≤ k) : hM.toUngradedAInfinityRightModule.act k = 0 := by
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-    exact hM.toUngradedAInfinityRightModule_act_add_two j
+    (hM : IsUngradedDGRightModule dB dM) :
+    P.typeABoxModule hM.toUngradedAInfinityRightModule
+        ⟨2, fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le⟩ =
+      P.boxModule hM := by
   refine UngradedAInfinityRightModule.ext (funext fun n => MultilinearMap.ext fun a =>
     LinearMap.ext fun ψ => funext fun z => ?_)
-  rw [typeABoxModule_act, P.typeABoxAct_eq_sum _ hK, boxModule_act_apply]
+  rw [typeABoxModule_act, P.typeABoxAct_eq_sum _
+    fun _ => hM.toUngradedAInfinityRightModule_act_eq_zero_of_two_le, boxModule_act_apply]
   simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, _root_.add_apply,
     LinearMap.add_apply, Pi.add_apply, blockAct_apply]
   congr 1
