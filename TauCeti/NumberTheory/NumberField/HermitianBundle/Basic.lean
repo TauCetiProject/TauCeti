@@ -140,9 +140,17 @@ private abbrev normedAddCommGroup (σ : K →+* ℂ) : NormedAddCommGroup (Codom
   letI := h.toCore σ
   InnerProductSpace.Core.toNormedAddCommGroup (𝕜 := ℂ)
 
-theorem norm_nonneg (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) : 0 ≤ h.norm σ u :=
-  letI := h.normedAddCommGroup σ
-  (h.toCore σ).toNormedSpaceCore.norm_nonneg u
+/-- The norm at `σ` is the norm of `h.normedAddCommGroup σ`. This holds by definition: Mathlib
+builds `InnerProductSpace.Core.toNormedAddCommGroup` from the same square root `√(re ⟪u, u⟫)` that
+defines `InnerProductSpace.Core.toNorm`. The norm axioms below are read off through this bridge. -/
+private theorem norm_eq_normedAddCommGroup (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
+    h.norm σ u = (h.normedAddCommGroup σ).norm u :=
+  rfl
+
+theorem norm_nonneg (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) : 0 ≤ h.norm σ u := by
+  let := h.normedAddCommGroup σ
+  rw [norm_eq_normedAddCommGroup]
+  exact (h.toCore σ).toNormedSpaceCore.norm_nonneg u
 
 theorem form_self_eq_norm_sq (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
     h.form σ u u = ((h.norm σ u ^ 2 : ℝ) : ℂ) := by
@@ -155,9 +163,10 @@ theorem norm_sq (σ : K →+* ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
   rw [h.form_self_eq_norm_sq, Complex.ofReal_re]
 
 @[simp]
-theorem norm_eq_zero_iff {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} : h.norm σ u = 0 ↔ u = 0 :=
-  letI := h.normedAddCommGroup σ
-  (h.toCore σ).toNormedSpaceCore.norm_eq_zero_iff u
+theorem norm_eq_zero_iff {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} : h.norm σ u = 0 ↔ u = 0 := by
+  let := h.normedAddCommGroup σ
+  rw [norm_eq_normedAddCommGroup]
+  exact (h.toCore σ).toNormedSpaceCore.norm_eq_zero_iff u
 
 theorem norm_pos {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} (hu : u ≠ 0) : 0 < h.norm σ u :=
   (h.norm_nonneg σ u).lt_of_ne' (by simpa using hu)
@@ -166,15 +175,17 @@ theorem norm_pos {σ : K →+* ℂ} {u : Codomain σ ⊗[𝓞 K] E} (hu : u ≠ 
 theorem norm_zero (σ : K →+* ℂ) : h.norm σ 0 = 0 := by simp
 
 theorem norm_smul (σ : K →+* ℂ) (c : ℂ) (u : Codomain σ ⊗[𝓞 K] E) :
-    h.norm σ (c • u) = ‖c‖ * h.norm σ u :=
-  letI := h.normedAddCommGroup σ
-  (h.toCore σ).toNormedSpaceCore.norm_smul c u
+    h.norm σ (c • u) = ‖c‖ * h.norm σ u := by
+  let := h.normedAddCommGroup σ
+  rw [norm_eq_normedAddCommGroup, norm_eq_normedAddCommGroup]
+  exact (h.toCore σ).toNormedSpaceCore.norm_smul c u
 
 /-- The triangle inequality for the norm at `σ`. -/
 theorem norm_add_le (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
-    h.norm σ (u + v) ≤ h.norm σ u + h.norm σ v :=
-  letI := h.normedAddCommGroup σ
-  (h.toCore σ).toNormedSpaceCore.norm_triangle u v
+    h.norm σ (u + v) ≤ h.norm σ u + h.norm σ v := by
+  let := h.normedAddCommGroup σ
+  simp only [norm_eq_normedAddCommGroup]
+  exact (h.toCore σ).toNormedSpaceCore.norm_triangle u v
 
 /-- The Cauchy–Schwarz inequality for the form at `σ`. -/
 theorem norm_form_le (σ : K →+* ℂ) (u v : Codomain σ ⊗[𝓞 K] E) :
@@ -194,6 +205,8 @@ theorem conj_form_tmul_of_isReal {σ : K →+* ℂ} (hσ : IsReal σ) (x y : E) 
     conj (h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y)) = h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) := by
   rw [← h.form_conjugate_tmul]
   have hc : conjugate σ = σ := isReal_iff.mp hσ
+  -- The type of `h.form τ` depends on `τ`, so `rw [hc]` cannot rewrite `conjugate σ` to `σ`;
+  -- generalizing `conjugate σ` and substituting rewrites the form and its type together.
   generalize conjugate σ = τ at hc ⊢
   subst hc
   rfl
@@ -331,19 +344,19 @@ theorem norm_baseChange (e : IsometryEquiv h h') (σ : K →+* ℂ) (u : Codomai
   rw [norm_def, norm_def, e.form_baseChange]
 
 @[simp]
-theorem form_tmul_apply (e : IsometryEquiv h h') (σ : K →+* ℂ) (x y : E) :
+theorem form_tmul_map (e : IsometryEquiv h h') (σ : K →+* ℂ) (x y : E) :
     h'.form σ (1 ⊗ₜ e x) (1 ⊗ₜ e y) = h.form σ (1 ⊗ₜ x) (1 ⊗ₜ y) :=
   e.form_tmul σ x y
 
 @[simp]
-theorem norm_tmul_apply (e : IsometryEquiv h h') (σ : K →+* ℂ) (x : E) :
+theorem norm_tmul_map (e : IsometryEquiv h h') (σ : K →+* ℂ) (x : E) :
     h'.norm σ (1 ⊗ₜ e x) = h.norm σ (1 ⊗ₜ x) := by
-  rw [norm_def, norm_def, e.form_tmul_apply]
+  rw [norm_def, norm_def, e.form_tmul_map]
 
 @[simp]
-theorem placeNorm_apply (e : IsometryEquiv h h') (v : InfinitePlace K) (x : E) :
+theorem placeNorm_map (e : IsometryEquiv h h') (v : InfinitePlace K) (x : E) :
     h'.placeNorm v (e x) = h.placeNorm v x :=
-  e.norm_tmul_apply _ x
+  e.norm_tmul_map _ x
 
 variable (h) in
 /-- The identity isometry. -/
@@ -445,9 +458,9 @@ theorem ofIsBaseChange_form_tmul (σ : K →+* ℂ) (x y : E) :
 theorem norm_ofIsBaseChange_tmul (σ : K →+* ℂ) (x : E) :
     (ofIsBaseChange hι w).norm σ (1 ⊗ₜ x) =
       Real.exp (-w (InfinitePlace.mk σ)) * ‖σ (ι x)‖ := by
-  rw [norm_def, ofIsBaseChange_form_tmul, Complex.conj_mul', ← Complex.ofReal_pow,
-    Complex.re_ofReal_mul, Complex.ofReal_re, sqrt_exp_neg_two_mul_mul,
-    Real.sqrt_sq (_root_.norm_nonneg _)]
+  rw [norm_def, ofIsBaseChange_form_tmul]
+  simp only [Complex.conj_mul', ← Complex.ofReal_pow, ← Complex.ofReal_mul, Complex.ofReal_re,
+    sqrt_exp_neg_two_mul_mul, Real.sqrt_sq (_root_.norm_nonneg _)]
 
 @[simp]
 theorem placeNorm_ofIsBaseChange (v : InfinitePlace K) (x : E) :
@@ -538,22 +551,30 @@ theorem placeNorm_fractionalIdeal {I : FractionalIdeal (𝓞 K)⁰ K} (hI : I �
   simp [fractionalIdeal]
 
 variable (K) in
+/-- The identification `x ↦ x` of `O_K` with the unit fractional ideal `(1)`. -/
+private def equivFractionalIdealOne : 𝓞 K ≃ₗ[𝓞 K] (1 : FractionalIdeal (𝓞 K)⁰ K) :=
+  (LinearEquiv.ofInjective (Algebra.linearMap (𝓞 K) K)
+      fun _ _ hxy ↦ IsFractionRing.injective (𝓞 K) K hxy).trans
+    (LinearEquiv.ofEq _ _ (by rw [FractionalIdeal.coeToSubmodule_one, Submodule.one_eq_range]))
+
+private theorem coe_equivFractionalIdealOne_apply (x : 𝓞 K) :
+    (equivFractionalIdealOne K x : K) = x := by
+  rw [equivFractionalIdealOne, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  exact LinearEquiv.ofInjective_apply _ x
+
+variable (K) in
 /-- The hermitian line of the unit ideal `(1)` with all weights zero is isometric to `Ō_K`, through
 the identification of `O_K` with `(1)`. -/
 def isometryEquivTrivialFractionalIdealOne :
     IsometryEquiv (trivial K) (fractionalIdeal (1 : FractionalIdeal (𝓞 K)⁰ K) one_ne_zero 0) :=
-  isometryEquivOfIsBaseChange _ 0 _
-    ((LinearEquiv.ofInjective (Algebra.linearMap (𝓞 K) K)
-      fun _ _ hxy ↦ IsFractionRing.injective (𝓞 K) K hxy).trans
-      (LinearEquiv.ofEq _ _ (by rw [FractionalIdeal.coeToSubmodule_one, Submodule.one_eq_range])))
-    fun x ↦ by
-      rw [LinearEquiv.trans_apply, Submodule.subtype_apply, LinearEquiv.coe_ofEq_apply]
-      exact LinearEquiv.ofInjective_apply _ x
+  isometryEquivOfIsBaseChange _ 0 _ (equivFractionalIdealOne K) fun x ↦ by
+    rw [Submodule.subtype_apply, coe_equivFractionalIdealOne_apply, Algebra.linearMap_apply]
 
 @[simp]
 theorem isometryEquivTrivialFractionalIdealOne_apply (x : 𝓞 K) :
     (isometryEquivTrivialFractionalIdealOne K x : K) = x :=
-  (rfl)
+  (congrArg Subtype.val (isometryEquivOfIsBaseChange_apply _ _ _ _ _ x)).trans
+    (coe_equivFractionalIdealOne_apply x)
 
 end NumberField
 
