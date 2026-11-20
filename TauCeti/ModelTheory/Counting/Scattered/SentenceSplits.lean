@@ -60,6 +60,20 @@ theorem exists_bfClass_not_small_and_small_sdiff
     (fun c _ => ?_)
   simpa only [modelsOf_scottSentenceAtLevel c hα] using hsplit (c.scottSentenceAtLevel α)
 
+omit [Countable (Σ n, L.Relations n)] [Countable V] in
+/-- If a class meets uncountably many isomorphism classes and countably many classes at level
+`α`, one level-`α` class, centred at a member, meets it in uncountably many isomorphism
+classes. -/
+theorem exists_bfClass_uncountable_isoClasses
+    (hK : ¬ (Quotient.mk (isoSetoid L V) '' K).Countable) {α : Ordinal.{o}}
+    [Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _)))] :
+    ∃ c ∈ K,
+      ¬ (Quotient.mk (isoSetoid L V) '' (K ∩ {d | bfEquivSetoid L V α c d})).Countable := by
+  refine (bfEquivSetoid L V α).exists_class_not_small K
+    (fun A => (Quotient.mk (isoSetoid L V) '' A).Countable) (fun S hS hs => ?_) hK
+  rw [image_sUnion, sUnion_image]
+  exact hS.biUnion hs
+
 /-- If a class meets uncountably many isomorphism classes, has countably many classes at level
 `α`, and every sentence cut has a side meeting only countably many isomorphism classes, then
 one level-`α` class meets uncountably many, and its complement meets only countably many. -/
