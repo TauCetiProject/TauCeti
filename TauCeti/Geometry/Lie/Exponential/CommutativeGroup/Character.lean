@@ -339,10 +339,7 @@ theorem lieWeight_id_circle :
 
 /-- **The continuous endomorphisms of the circle are its integer powers**: a continuous
 endomorphism `f` of the circle is `z ↦ z ^ n` exactly when its weight at the generator of
-`Circle.exp` is `n`. Such an `n` exists by
-`ContinuousMonoidHom.exists_lieWeight_apply_eq_intCast_of_mem_periodLattice` and
-`TauCeti.circleExpGenerator_mem_periodLattice`, and is unique by
-`ContinuousMonoidHom.existsUnique_circle_eq_zpow`. -/
+`Circle.exp` is `n`. -/
 theorem lieWeight_circleExpGenerator_eq_intCast_iff (f : Circle →ₜ* Circle) (n : ℤ) :
     lieWeight (I := 𝓡 1) f circleExpGenerator = n ↔ ∀ z, f z = z ^ n := by
   constructor
@@ -356,13 +353,13 @@ theorem lieWeight_circleExpGenerator_eq_intCast_iff (f : Circle →ₜ* Circle) 
     rw [← lieExp_circle, apply_lieExp_eq_circleExp_lieWeight, hX, lieExp_circle,
       ← Circle.exp_zsmul, zsmul_eq_mul, mul_comm]
   · intro hf
-    have h := eq_lieWeight (I := 𝓡 1) (χ := f) (α := (n : ℝ) • circleLieAlgebraEquiv.toLinearMap)
-      fun X ↦ by
-        rw [hf, LinearMap.smul_apply, LinearEquiv.coe_coe, smul_eq_mul, ← zsmul_eq_mul,
-          Circle.exp_zsmul]
-        conv_lhs => rw [← circleLieAlgebraEquiv.symm_apply_apply X, lieExp_circle]
-    rw [← h, LinearMap.smul_apply, LinearEquiv.coe_coe, circleLieAlgebraEquiv_apply_generator,
-      smul_eq_mul, mul_one]
+    -- Evaluation at `z` is a monoid hom, so it commutes with integer powers.
+    have h : f = ContinuousMonoidHom.id Circle ^ n := ext fun z ↦ by
+      rw [hf]
+      exact (map_zpow (⟨⟨fun g : Circle →ₜ* Circle ↦ g z, rfl⟩, fun _ _ ↦ rfl⟩ :
+        (Circle →ₜ* Circle) →* Circle) (.id Circle) n).symm
+    rw [h, lieWeight_zpow, lieWeight_id_circle, LinearMap.smul_apply, LinearEquiv.coe_coe,
+      circleLieAlgebraEquiv_apply_generator, zsmul_one]
 
 /-! ### Integrality of weights -/
 

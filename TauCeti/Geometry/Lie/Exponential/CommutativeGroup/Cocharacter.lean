@@ -41,8 +41,14 @@ coweights lie in the period lattice `Λ_ℤ = (2π)⁻¹ ker(exp)` (`TauCeti.per
 `exp(2π X_ψ) = ψ(Circle.exp 2π) = 1`, and conversely every `X ∈ Λ_ℤ` is the coweight of the
 cocharacter `Circle.exp t ↦ exp(t X)`, which is well defined because `t ↦ exp(t X)` has period
 `2π`. This gives the equivalence `Λ_ℤ ≃ (Circle →ₜ* G)`
-(`TauCeti.periodLatticeEquivCocharacter`), under which addition in `Λ_ℤ` is the pointwise product
-of cocharacters (`TauCeti.periodLatticeEquivCocharacter_add_apply`). On a connected commutative
+(`TauCeti.periodLatticeEquivCocharacter`), under which zero, addition, negation and integer
+multiples in `Λ_ℤ` are the trivial cocharacter and the pointwise product, inverse and powers of
+cocharacters (`TauCeti.periodLatticeEquivCocharacter_add_apply` and its companions).
+Correspondingly, the coweight of the trivial cocharacter is zero, and the coweight of a pointwise
+product, inverse or power of cocharacters is the sum, negative or integer multiple of coweights
+(`ContinuousMonoidHom.lieCoweight_one`, `ContinuousMonoidHom.lieCoweight_eq_add_of_apply_eq_mul`,
+`ContinuousMonoidHom.lieCoweight_eq_neg_of_apply_eq_inv`,
+`ContinuousMonoidHom.lieCoweight_eq_zsmul_of_apply_eq_zpow`). On a connected commutative
 Lie group the weights of characters are exactly the functionals integral on `Λ_ℤ`
 (`ContinuousMonoidHom.range_lieWeight`), so under the pairing above the characters are identified
 with the integral functionals on the cocharacters.
@@ -58,6 +64,10 @@ with the integral functionals on the cocharacters.
 * `ContinuousMonoidHom.apply_circleExp`, `ContinuousMonoidHom.eq_lieCoweight`: the identity
   `ψ (Circle.exp t) = exp (t X_ψ)`, and uniqueness of a vector satisfying it.
 * `ContinuousMonoidHom.lieCoweight_comp`: naturality of coweights.
+* `ContinuousMonoidHom.lieCoweight_one`, `ContinuousMonoidHom.lieCoweight_eq_add_of_apply_eq_mul`,
+  `ContinuousMonoidHom.lieCoweight_eq_neg_of_apply_eq_inv`,
+  `ContinuousMonoidHom.lieCoweight_eq_zsmul_of_apply_eq_zpow`: coweights of the trivial cocharacter
+  and of pointwise products, inverses and powers of cocharacters.
 * `ContinuousMonoidHom.lieWeight_lieCoweight_eq_intCast_iff`,
   `ContinuousMonoidHom.exists_lieWeight_lieCoweight_eq_intCast`: the pairing of a character with a
   cocharacter is the integer degree of their composite.
@@ -65,6 +75,10 @@ with the integral functionals on the cocharacters.
   pushforward of cocharacters.
 * `ContinuousMonoidHom.lieCoweight_mem_periodLattice`, `ContinuousMonoidHom.range_lieCoweight`:
   for commutative `G`, the coweights are exactly the elements of the period lattice.
+* `TauCeti.periodLatticeEquivCocharacter_zero`, `TauCeti.periodLatticeEquivCocharacter_add_apply`,
+  `TauCeti.periodLatticeEquivCocharacter_neg_apply`,
+  `TauCeti.periodLatticeEquivCocharacter_zsmul_apply`: the group operations of the period lattice
+  are the pointwise operations on cocharacters.
 
 ## References
 
@@ -183,16 +197,43 @@ theorem lieCoweight_injective :
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z
   rw [apply_circleExp (I := I), apply_circleExp (I := I), h]
 
+/-- The trivial cocharacter has coweight zero. -/
+@[simp]
+theorem lieCoweight_one : lieCoweight (I := I) (1 : Circle →ₜ* G) = 0 :=
+  (eq_lieCoweight fun t ↦ by rw [smul_zero, lieExp_zero, one_toFun]).symm
+
+/-- The coweight of the pointwise inverse of a cocharacter is the negative of its coweight. -/
+theorem lieCoweight_eq_neg_of_apply_eq_inv {ψ φ : Circle →ₜ* G} (h : ∀ z, φ z = (ψ z)⁻¹) :
+    lieCoweight (I := I) φ = -lieCoweight ψ :=
+  (eq_lieCoweight fun t ↦ by rw [h, apply_circleExp (I := I), smul_neg, lieExp_neg]).symm
+
+/-- The coweight of the pointwise `n`-th power of a cocharacter is `n` times its coweight. -/
+theorem lieCoweight_eq_zsmul_of_apply_eq_zpow {ψ φ : Circle →ₜ* G} {n : ℤ}
+    (h : ∀ z, φ z = ψ z ^ n) :
+    lieCoweight (I := I) φ = n • lieCoweight ψ :=
+  (eq_lieCoweight fun t ↦ by
+    rw [h, ← map_zpow, ← Circle.exp_zsmul, apply_circleExp (I := I), smul_assoc,
+      smul_comm n t]).symm
+
 /-! ### Cocharacters of commutative Lie groups -/
 
 section Commutative
 
 variable [IsMulCommutative G]
 
-/-- **Coweights lie in the period lattice**: `exp(2π X_ψ) = ψ (Circle.exp 2π) = 1`. -/
+/-- **Coweights lie in the period lattice**: `exp(2π X_ψ) = ψ (Circle.exp 2π) = 1`. This is the
+preservation of period lattices by `ψ`, applied to the generator of `Circle.exp`. -/
 theorem lieCoweight_mem_periodLattice (ψ : Circle →ₜ* G) :
-    lieCoweight (I := I) ψ ∈ periodLattice I G := by
-  rw [mem_periodLattice, ← apply_circleExp, Circle.exp_two_pi, map_one]
+    lieCoweight (I := I) ψ ∈ periodLattice I G :=
+  lieMap_mem_periodLattice (I := 𝓡 1) (I' := I) ψ circleExpGenerator_mem_periodLattice
+
+/-- For commutative `G`, the coweight of a pointwise product of cocharacters is the sum of their
+coweights. -/
+theorem lieCoweight_eq_add_of_apply_eq_mul {ψ₁ ψ₂ ψ : Circle →ₜ* G}
+    (h : ∀ z, ψ z = ψ₁ z * ψ₂ z) :
+    lieCoweight (I := I) ψ = lieCoweight ψ₁ + lieCoweight ψ₂ :=
+  (eq_lieCoweight fun t ↦ by
+    rw [h, apply_circleExp (I := I), apply_circleExp (I := I), smul_add, lieExp_add]).symm
 
 end Commutative
 
@@ -286,6 +327,27 @@ theorem periodLatticeEquivCocharacter_add_apply (X Y : periodLattice I G) (z : C
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z
   rw [periodLatticeEquivCocharacter_apply_circleExp, periodLatticeEquivCocharacter_apply_circleExp,
     periodLatticeEquivCocharacter_apply_circleExp, AddSubgroup.coe_add, smul_add, lieExp_add]
+
+/-- The zero of the period lattice corresponds to the trivial cocharacter. -/
+@[simp]
+theorem periodLatticeEquivCocharacter_zero : periodLatticeEquivCocharacter I G 0 = 1 :=
+  lieCoweight_injective (I := I) (by
+    rw [lieCoweight_periodLatticeEquivCocharacter, lieCoweight_one, ZeroMemClass.coe_zero])
+
+/-- **Negation in the period lattice is the pointwise inverse of cocharacters.** -/
+theorem periodLatticeEquivCocharacter_neg_apply (X : periodLattice I G) (z : Circle) :
+    periodLatticeEquivCocharacter I G (-X) z = (periodLatticeEquivCocharacter I G X z)⁻¹ := by
+  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+  rw [periodLatticeEquivCocharacter_apply_circleExp, periodLatticeEquivCocharacter_apply_circleExp,
+    AddSubgroup.coe_neg, smul_neg, lieExp_neg]
+
+/-- **Integer multiples in the period lattice are pointwise powers of cocharacters.** -/
+theorem periodLatticeEquivCocharacter_zsmul_apply (n : ℤ) (X : periodLattice I G) (z : Circle) :
+    periodLatticeEquivCocharacter I G (n • X) z = periodLatticeEquivCocharacter I G X z ^ n := by
+  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
+  rw [← map_zpow, ← Circle.exp_zsmul, periodLatticeEquivCocharacter_apply_circleExp,
+    periodLatticeEquivCocharacter_apply_circleExp, AddSubgroup.coe_zsmul, smul_assoc,
+    smul_comm n t]
 
 end TauCeti
 
