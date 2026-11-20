@@ -32,6 +32,8 @@ the universal property `TauCeti.WedgeSum.lift`.
   `TauCeti.WedgeSum.base` and the inclusions `TauCeti.WedgeSum.incl` of the summands.
 * `TauCeti.WedgeSum.isOpen_iff`, `TauCeti.WedgeSum.isClosed_iff`: a set is open (closed)
   exactly when its preimage in every summand is.
+* `TauCeti.WedgeSum.isClosedEmbedding_incl`: when the base points are closed, every summand is a
+  closed subspace of the wedge sum.
 * `TauCeti.WedgeSum.lift`: the universal property, with `TauCeti.WedgeSum.hom_ext`, and
   `TauCeti.WedgeSum.liftProd`, its form for maps out of `Z × ⋁ᵢ Xᵢ`, which builds homotopies out
   of a wedge sum.
@@ -187,6 +189,28 @@ theorem isOpen_iff {S : Set (WedgeSum x)} : IsOpen S ↔ ∀ i, IsOpen (incl x i
 /-- A subset of the wedge sum is closed exactly when its preimage in every summand is closed. -/
 theorem isClosed_iff {S : Set (WedgeSum x)} : IsClosed S ↔ ∀ i, IsClosed (incl x i ⁻¹' S) := by
   simp only [← isOpen_compl_iff, isOpen_iff, preimage_compl]
+
+/-- **The summands are closed in the wedge sum.**  When every base point is closed, each inclusion
+of a summand is a closed embedding. -/
+theorem isClosedEmbedding_incl (hx : ∀ i, IsClosed {x i}) (i : ι) :
+    IsClosedEmbedding (incl x i) := by
+  refine .of_continuous_injective_isClosedMap (incl x i).continuous (incl_injective i)
+    fun F hF => isClosed_iff.2 fun j => ?_
+  by_cases hij : j = i
+  · subst hij
+    rwa [(incl_injective j).preimage_image]
+  · -- A point of another summand lies in the image of `F` only when both are base points.
+    have h : incl x j ⁻¹' (incl x i '' F) = {z | x i ∈ F ∧ z = x j} := by
+      ext z
+      simp only [mem_preimage, mem_image, mem_ofPred_eq, incl_eq_incl_iff, Sigma.mk.injEq]
+      constructor
+      · rintro ⟨y, hy, (⟨rfl, rfl⟩ | ⟨rfl, -⟩)⟩
+        exacts [⟨hy, rfl⟩, absurd rfl hij]
+      · rintro ⟨hF, rfl⟩
+        exact ⟨x i, hF, .inl ⟨rfl, rfl⟩⟩
+    by_cases hxF : x i ∈ F
+    · simpa [h, hxF] using hx j
+    · simp [h, hxF]
 
 section Lift
 
