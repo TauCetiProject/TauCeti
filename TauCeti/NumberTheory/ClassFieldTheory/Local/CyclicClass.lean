@@ -73,7 +73,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open ContCohomology IntermediateField Module
+open ContCohomology _root_.IntermediateField Module
 
 variable {K : Type} [Field K] {n : ℕ}
 

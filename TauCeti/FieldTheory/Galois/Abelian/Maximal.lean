@@ -65,7 +65,7 @@ noncomputable section
 
 namespace TauCeti
 
-open IntermediateField
+open _root_.IntermediateField
 
 variable (K Ω : Type*) [Field K] [Field Ω] [Algebra K Ω]
 

@@ -282,7 +282,7 @@ theorem mem_level_unitsFormation_iff {U : OpenSubgroup (AbsoluteGaloisGroup K)}
 
 section Level
 
-open IntermediateField
+open _root_.IntermediateField
 
 variable {E : Type*} [Field E] [Algebra K E]
 

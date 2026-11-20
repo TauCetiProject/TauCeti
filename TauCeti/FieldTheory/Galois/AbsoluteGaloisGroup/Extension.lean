@@ -63,7 +63,7 @@ noncomputable section
 
 namespace TauCeti
 
-open IntermediateField
+open _root_.IntermediateField
 
 variable (K : Type*) [Field K] (L : Type*) [Field L] [Algebra K L]
   (σ : L →ₐ[K] SeparableClosure K)

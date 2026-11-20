@@ -124,7 +124,7 @@ theorem ideleClassCoeffEquivGlobalFormation_smul (g : AbsoluteGaloisGroup K)
 
 section Level
 
-open IntermediateField NumberField
+open _root_.IntermediateField NumberField
 
 variable {K} {E : IntermediateField K (SeparableClosure K)} [NumberField E]
   {U : OpenSubgroup (AbsoluteGaloisGroup K)} (hU : fixedField U.toSubgroup = E)

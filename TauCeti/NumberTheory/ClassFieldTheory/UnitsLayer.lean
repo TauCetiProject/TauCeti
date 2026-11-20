@@ -85,7 +85,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IntermediateField
+open _root_.IntermediateField
 
 variable {K : Type} [Field K]
 

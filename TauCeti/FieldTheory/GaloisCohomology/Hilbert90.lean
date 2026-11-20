@@ -130,7 +130,7 @@ end FiniteLevel
 
 section FiniteGroup
 
-open Limits IntermediateField
+open Limits _root_.IntermediateField
 
 variable {K L : Type} [Field K] [Field L] [Algebra K L]
   {H : Type} [Group H] [Finite H] {f : H →* Gal(L/K)} (hf : Function.Injective f)

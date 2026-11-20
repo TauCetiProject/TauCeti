@@ -54,7 +54,7 @@ open groupCohomology
 
 namespace TauCeti
 
-open ContCohomology IntermediateField
+open ContCohomology _root_.IntermediateField
 
 universe u
 

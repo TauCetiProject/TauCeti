@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.IntermediateField.Algebraic
+public import Mathlib.FieldTheory.KrullTopology
 
 /-!
 # Finite intermediate fields under inverse images
@@ -13,9 +13,29 @@ public import Mathlib.FieldTheory.IntermediateField.Algebraic
 The inverse image of a finite intermediate field under an algebra map is finite-dimensional.
 This lets finite subextensions be transported between ambient extensions, for example when
 comparing their Krull topologies.
+
+Mathlib's `finiteExts` indexes finite subextensions. Each stage inherits finite dimensionality,
+and the index is nonempty and directed under inclusion.
 -/
 
 public section
+
+namespace TauCeti.IntermediateField
+
+variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+
+instance (E : ↥(finiteExts K L)) : FiniteDimensional K E.1 := E.2
+
+instance : Nonempty ↥(finiteExts K L) :=
+  ⟨⟨⊥, _root_.IntermediateField.instFiniteSubtypeMemBot K⟩⟩
+
+instance : IsDirected ↥(finiteExts K L) (· ≤ ·) :=
+  (directedOn_of_sup_mem (S := finiteExts K L) (fun {E F} hE hF ↦ by
+    have : FiniteDimensional K E := hE
+    have : FiniteDimensional K F := hF
+    exact E.finiteDimensional_sup F)).isDirectedOrder
+
+end TauCeti.IntermediateField
 
 namespace IntermediateField
 

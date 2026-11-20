@@ -55,7 +55,7 @@ noncomputable section
 
 namespace TauCeti
 
-open CategoryTheory Limits IntermediateField Module
+open CategoryTheory Limits _root_.IntermediateField Module
 
 variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
   {H : Type} [Group H] [Finite H] {f : H →* Gal(L/K)} (hf : Function.Injective f)

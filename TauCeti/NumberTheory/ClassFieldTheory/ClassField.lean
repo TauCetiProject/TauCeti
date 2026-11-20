@@ -72,7 +72,7 @@ public noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IntermediateField
+open _root_.IntermediateField
 
 section Basic
 
