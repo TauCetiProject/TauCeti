@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
+public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Ball
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
@@ -54,12 +56,25 @@ measure `δ dμ` this is the differential inequality hypothesis of the covering 
 arguments above with `C = 0` and `C r^(-1/2)` replaced by `κ`
 (`TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`).
 
+For a solution of the large-parameter curvature equation
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` with `|η| ≤ N` and Taubes's coarse bounds
+`|φ|² + |β|² ≤ 1 + C / r`, `|β|² ≤ (C / r) w₊ + C / r²` and
+`|F⁻| ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, `w₊ = max (1 - |φ|²) 0`, the two pointwise inequalities
+hold for the defect density `δ = (r / 4) |1 - |φ|² - |β|²|` with `κ = C / √r` and a constant `K`
+depending only on `C` and `N` (`TauCeti.SeibergWitten.mul_abs_one_sub_sub_le_inner_add`,
+`TauCeti.SeibergWitten.hermitianForm_apply_self_le`). This gives Taubes's inequality
+`E(σ) ≤ (σ / 2) (1 + C r^(-1/2)) E'(σ) + K σ⁴` for the defect energy of the solution, with `K`
+chosen before `r`, the ball and the solution
+(`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_mul_deriv_add`).
+
 ## Main results
 
 * `TauCeti.SeibergWitten.setIntegral_ball_le_mul_integral_toSphere_add`: the monotonicity
   inequality, with the sphere integral.
 * `TauCeti.SeibergWitten.measure_closedBall_le_mul_deriv_add`: the monotonicity inequality for the
   measure `δ dμ`, with the derivative of the radial function `σ ↦ ∫_{B_σ} δ`.
+* `TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_mul_deriv_add`: the monotonicity
+  inequality for the defect energy of a solution of the large-parameter curvature equation.
 
 ## References
 
@@ -357,5 +372,90 @@ theorem measure_closedBall_le_mul_deriv_add {J : AlmostComplexStructure E}
     (fun x hx ↦ hdF x (hsubo (ball_subset_closedBall hx))) (hδ.mono hsubo)
     (fun x hx ↦ hω x (hsubo (ball_subset_closedBall hx)))
     (fun x hx ↦ hB x (hsubo (sphere_subset_closedBall hx)))
+
+/-! ### The defect energy of a large-parameter solution -/
+
+section LargeParameter
+
+open CliffordAlgebra
+
+variable [Fact (finrank ℝ E = 4)] {Q : QuadraticForm ℝ E} {o : Orientation ℝ E (Fin 4)}
+  {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
+  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W} {J : AlmostComplexStructure E}
+
+/-- **Taubes's monotonicity inequality for the defect energy of a large-parameter solution**, in
+a flat chart. Work in an oriented four-dimensional inner product space with a unitary frame `e`,
+`J e₀ = e₁`, `J e₂ = e₃`, and Kähler two-vector `ω`. Fix constants `C, N ≥ 0`. There is `K ≥ 0`
+such that for every `r ≥ 1`, every ball `ball c R` and every solution on it of the large-parameter
+curvature equation `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η`, with `φ` in the canonical line and
+`β` in its complement, `|η| ≤ N` and the coarse bounds `|φ|² + |β|² ≤ 1 + C / r`,
+`|β|² ≤ (C / r) w₊ + C / r²` and `|F⁻| ≤ (r / (4 √2)) (1 + C / √r) w₊ + C`, where
+`w₊ = max (1 - |φ|²) 0`, the defect energy `E(σ) = ν(closedBall c σ)` of
+`ν = (r / 4) |1 - |φ|² - |β|²| dμ` satisfies
+
+`E(σ) ≤ (σ / 2) (1 + C / √r) E'(σ) + K σ⁴`
+
+for every `σ ∈ (0, R)`. Here `F` is the curvature `i F_a`, read as a two-vector, which is `C¹` and
+closed on `ball c R`, and `φ`, `β` are continuous on `ball c R`. -/
+theorem exists_forall_measure_closedBall_le_mul_deriv_add (h₀ : J (e 0) = e 1)
+    (h₂₃ : J (e 2) = e 3) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ E)
+    (he : e.toBasis.orientation = o) {C N : ℝ} (hC : 0 ≤ C) (hN : 0 ≤ N) :
+    ∃ K, 0 ≤ K ∧ ∀ ⦃r : ℝ⦄ ⦃F η : E → ⋀[ℝ]^2 E⦄ ⦃φ β : E → positiveHalfSpinors o ρ⦄ ⦃c : E⦄
+      ⦃R : ℝ⦄, 1 ≤ r → ContDiffOn ℝ 1 F (ball c R) →
+      (∀ y ∈ ball c R, extDeriv (fun z ↦ alternatingFormEquiv E 2 (F z)) y = 0) →
+      ContinuousOn φ (ball c R) → ContinuousOn β (ball c R) →
+      (∀ y ∈ ball c R, cliffordProjection o ρ J.kahlerForm (φ y) = φ y) →
+      (∀ y ∈ ball c R, cliffordProjection o ρ J.kahlerForm (β y) = 0) →
+      (∀ y ∈ ball c R, F y + o.hodgeStar hkl (F y) = (r / 4) • J.kahlerForm -
+        (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ y + β y)) : ⋀[ℝ]^2 E) - η y) →
+      (∀ y ∈ ball c R, ‖η y‖ ≤ N) →
+      (∀ y ∈ ball c R, ‖(2⁻¹ : ℝ) • (F y - o.hodgeStar hkl (F y))‖ ≤
+        r / (4 * √2) * (1 + C / √r) * max (1 - ‖φ y‖ ^ 2) 0 + C) →
+      (∀ y ∈ ball c R, ‖φ y‖ ^ 2 + ‖β y‖ ^ 2 ≤ 1 + C / r) →
+      (∀ y ∈ ball c R, ‖β y‖ ^ 2 ≤ C / r * max (1 - ‖φ y‖ ^ 2) 0 + C / r ^ 2) →
+      ∀ σ ∈ Ioo 0 R,
+        ((μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|))
+            (closedBall c σ)).toReal ≤
+          σ / 2 * (1 + C / √r) * deriv (fun s ↦ ((μ.withDensity fun y ↦
+            ENNReal.ofReal (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|)) (closedBall c s)).toReal) σ +
+            K * σ ^ 4 := by
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
+  -- The constant of both pointwise inequalities: `(√2 N + C) / 2` from the `ω`-component and the
+  -- constant of `hermitianForm_apply_self_le` for the Hermitian part.
+  set K₀ := (√2 * N + C) / 2 + ((1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2) with hK₀
+  refine ⟨K₀ * (μ.toSphere.real univ / 2 + μ.real (ball (0 : E) 1)), by positivity, ?_⟩
+  intro r F η φ β c R hr hF hdF hφc hβc hφ hβ hFeq hη hFm hφβ hβK σ hσ
+  have hr0 : 0 < r := by linarith
+  have hG : ∀ y ∈ ball c R, ContDiffAt ℝ 1 (fun z ↦ alternatingFormEquiv E 2 (F z)) y :=
+    fun y hy ↦ ((alternatingFormEquiv E 2).toContinuousLinearEquiv.contDiff.comp_contDiffOn
+      hF).contDiffAt (isOpen_ball.mem_nhds hy)
+  have hδ : ContinuousOn (fun y ↦ r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|) (ball c R) :=
+    continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
+  -- The defect density is bounded by the Kähler component of `F`.
+  have hkω (y : E) (hy : y ∈ ball c R) : r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2| ≤
+      alternatingFormEquiv E 2 (F y) ![e 0, e 1] + alternatingFormEquiv E 2 (F y) ![e 2, e 3] +
+        K₀ := by
+    rw [alternatingFormEquiv_apply, alternatingFormEquiv_apply, ← inner_add_right,
+      ← J.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂₃, real_inner_comm]
+    have h := mul_abs_one_sub_sub_le_inner_add hQ hkl hω hω₂ (hφ y hy) (hβ y hy) hr0 hC
+      (hFeq y hy) (hφβ y hy)
+    have hηN := mul_le_mul_of_nonneg_left (hη y hy) (Real.sqrt_nonneg 2)
+    have : 0 ≤ (1 + C) * C / 2 + C / 4 + √2 * N / 4 + C / √2 := by positivity
+    linarith [hK₀]
+  -- The Hermitian part of `F` is bounded by the defect density.
+  have hB (y : E) (hy : y ∈ ball c R) (v : E) : alternatingFormEquiv E 2 (F y) ![v, J v] ≤
+      ((1 + C / √r) * (r / 4 * |1 - ‖φ y‖ ^ 2 - ‖β y‖ ^ 2|) + K₀) * ‖v‖ ^ 2 := by
+    rw [alternatingFormEquiv_apply, ← AlmostComplexStructure.hermitianForm_apply_self]
+    refine (hermitianForm_apply_self_le h₀ h₂₃ hQ hkl he (hφ y hy) (hβ y hy) hr hC (hFeq y hy)
+      (hFm y hy) (hβK y hy) v).trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
+    have hηN := mul_le_mul_of_nonneg_left (hη y hy) (Real.sqrt_nonneg 2)
+    have : 0 ≤ (√2 * N + C) / 2 := by positivity
+    linarith [hK₀]
+  exact measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂₃ hG hdF hδ (fun y _ ↦ by positivity)
+    hkω hB hσ
+
+end LargeParameter
 
 end TauCeti.SeibergWitten
