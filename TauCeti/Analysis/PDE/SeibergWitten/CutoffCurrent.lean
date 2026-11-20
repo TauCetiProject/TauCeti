@@ -20,7 +20,6 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
-import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
@@ -273,20 +272,6 @@ theorem covariantPhaseForm_sub_phaseForm_mul (hu : DifferentiableAt ℝ u x)
   rw [covariantPhaseForm_apply, covariantPhaseForm_apply, phaseForm_mul hu hα hu₀ hα₀,
     Pi.sub_apply]
   abel
-
-/-- The derivative of a function `u` that is circle-valued near `x` is `du = u · i Im (u⁻¹ du)`:
-since `du` is orthogonal to `u`, `u⁻¹ du = conj u du` is imaginary. -/
-theorem fderiv_apply_eq_mul_I_mul_phaseForm (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1) (v : E) :
-    fderiv ℝ u x v = u x * (I * phaseForm u x (fun _ ↦ v)) := by
-  have hux : ‖u x‖ = 1 := hu.self_of_nhds
-  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
-    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
-    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
-      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
-  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
-  have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
-    Complex.ext (by simp [hre]) (by simp)
-  rw [phaseForm_apply, ← hw, mul_inv_cancel_left₀ hu0]
 
 /-- The covariant derivative is covariant under gauge transformations
 `(b, α) ↦ (b - Im (u⁻¹ du), u α)` by a `u` that is circle-valued near `x`:

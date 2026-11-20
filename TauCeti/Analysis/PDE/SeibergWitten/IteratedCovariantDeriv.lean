@@ -106,6 +106,7 @@ theorem iteratedCovariantDeriv_succ_apply {n : ℕ} (m : Fin (n + 1) → E) :
   ring
 
 /-- The first iterated covariant derivative is the covariant derivative. -/
+@[simp]
 theorem iteratedCovariantDeriv_one_apply (m : Fin 1 → E) :
     iteratedCovariantDeriv b α 1 x m = covariantDeriv b α x (m 0) := by
   rw [iteratedCovariantDeriv_succ_apply, covariantDeriv_apply, iteratedCovariantDeriv_zero,
@@ -170,8 +171,8 @@ private theorem iteratedCovariantDeriv_succ_eq (n : ℕ) :
         fun y ↦ connectionTerm E n (b y) (iteratedCovariantDeriv b α n y) := by
   funext y
   ext m
-  rw [iteratedCovariantDeriv_succ_apply, Pi.add_apply, _root_.add_apply, connectionTerm_apply]
-  rfl
+  rw [iteratedCovariantDeriv_succ_apply, Pi.add_apply, _root_.add_apply, connectionTerm_apply,
+    Function.comp_apply, continuousMultilinearCurryLeftEquiv_symm_apply]
 
 /-- The derivative of the `n`-th iterated covariant derivative is the `(n + 1)`-th one minus the
 connection term, curried in the first variable: `d ∇ⁿ α = ∇ⁿ⁺¹ α - i b ⊗ ∇ⁿ α`. -/
@@ -298,9 +299,7 @@ theorem exists_norm_iteratedFDeriv_le_of_norm_iteratedCovariantDeriv_le (C M : �
       ∀ x ∈ s, ‖iteratedFDeriv ℝ m α x‖ ≤ K := by
   obtain ⟨K, hK⟩ := exists_norm_iteratedFDeriv_iteratedCovariantDeriv_le (E := E) C M m 0
   refine ⟨K, fun {s b α} hα hb hcov hconn x hx ↦ ?_⟩
-  have h : iteratedCovariantDeriv b α 0 = (continuousMultilinearCurryFin0 ℝ E ℂ).symm ∘ α :=
-    (rfl)
   have := hK (s := s) (by simpa using hα) (by simpa using hb) (by simpa using hcov) hconn x hx
-  rwa [h, LinearIsometryEquiv.norm_iteratedFDeriv_comp_left] at this
+  rwa [iteratedCovariantDeriv_zero, LinearIsometryEquiv.norm_iteratedFDeriv_comp_left] at this
 
 end TauCeti.SeibergWitten
