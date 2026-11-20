@@ -168,15 +168,12 @@ theorem holderOnWith_of_norm_fderiv_le_mul_rpow (hv : ‖v‖ = 1) {α : ℝ≥0
 omit [NormedSpace ℝ G] in
 /-- The odd reflection of a function across the hyperplane `⟪x, v⟫ = 0`, in the case of points
 on opposite sides: passing through the point of the segment on the hyperplane. -/
-private theorem dist_ite_neg_comp_hyperplaneReflection_le {v : F} (hv : ‖v‖ = 1) {α : ℝ≥0}
+private theorem dist_ite_neg_comp_hyperplaneReflection_le {v : F} (hv : v ≠ 0) {α : ℝ≥0}
     {S : Set F} (hS : Convex ℝ S) {φ : F → G} {K : ℝ≥0}
     (hφ : HolderOnWith K α φ (S ∩ {x | 0 ≤ ⟪x, v⟫}))
     (hzero : ∀ x ∈ S, ⟪x, v⟫ = 0 → φ x = 0) (hρS : ∀ x ∈ S, hyperplaneReflection v 0 x ∈ S)
     {x y : F} (hx : x ∈ S) (hy : y ∈ S) (hx0 : 0 ≤ ⟪x, v⟫) (hy0 : ⟪y, v⟫ < 0) :
     dist (φ x) (-φ (hyperplaneReflection v 0 y)) ≤ 2 * K * dist x y ^ (α : ℝ) := by
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    simp at hv
   set a := ⟪x, v⟫
   set b := -⟪y, v⟫
   have hb : 0 < b := neg_pos.2 hy0
@@ -205,7 +202,7 @@ private theorem dist_ite_neg_comp_hyperplaneReflection_le {v : F} (hv : ‖v‖ 
       norm_sub_rev]
     exact mul_le_of_le_one_left (norm_nonneg _) (div_le_one_of_le₀ (by linarith) hab.le)
   have hρy : hyperplaneReflection v 0 y ∈ S ∩ {x | 0 ≤ ⟪x, v⟫} :=
-    ⟨hρS y hy, by rw [mem_ofPred_eq, inner_hyperplaneReflection hv0]; linarith⟩
+    ⟨hρS y hy, by rw [mem_ofPred_eq, inner_hyperplaneReflection hv]; linarith⟩
   have hρz : hyperplaneReflection v 0 z = z := hyperplaneReflection_eq_self_of_inner_eq hz0
   have hzS' : z ∈ S ∩ {x | 0 ≤ ⟪x, v⟫} := ⟨hzS, hz0.ge⟩
   have hφz : φ z = 0 := hzero z hzS hz0
@@ -226,20 +223,17 @@ private theorem dist_ite_neg_comp_hyperplaneReflection_le {v : F} (hv : ‖v‖ 
     _ = 2 * K * dist x y ^ (α : ℝ) := by ring
 
 omit [NormedSpace ℝ G] in
-/-- **Hölder continuity of an odd reflection.** Let `v` be a unit vector and `ρ` the reflection in
-the hyperplane `⟪x, v⟫ = 0`. Let `S` be convex with `ρ S ⊆ S`, and let `φ` be `α`-Hölder with
+/-- **Hölder continuity of an odd reflection.** Let `v` be a nonzero vector and `ρ` the reflection
+in the hyperplane `⟪x, v⟫ = 0`. Let `S` be convex with `ρ S ⊆ S`, and let `φ` be `α`-Hölder with
 constant `K` on the part of `S` in the closed half-space `0 ≤ ⟪x, v⟫` and vanish on the
 hyperplane. Then the odd reflection of `φ`, equal to `φ` on the closed half-space and to `-φ ∘ ρ`
 on the other side, is `α`-Hölder on `S` with constant `2 K`. -/
-theorem holderOnWith_ite_neg_comp_hyperplaneReflection (hv : ‖v‖ = 1) {α : ℝ≥0} {S : Set F}
+theorem holderOnWith_ite_neg_comp_hyperplaneReflection (hv : v ≠ 0) {α : ℝ≥0} {S : Set F}
     (hS : Convex ℝ S) (hρS : ∀ x ∈ S, hyperplaneReflection v 0 x ∈ S) {φ : F → G} {K : ℝ≥0}
     (hφ : HolderOnWith K α φ (S ∩ {x | 0 ≤ ⟪x, v⟫}))
     (hzero : ∀ x ∈ S, ⟪x, v⟫ = 0 → φ x = 0) :
     HolderOnWith (2 * K) α
       (fun x ↦ if 0 ≤ ⟪x, v⟫ then φ x else -φ (hyperplaneReflection v 0 x)) S := by
-  have hv0 : v ≠ 0 := by
-    rintro rfl
-    simp at hv
   refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
   have hK : (K : ℝ) * dist x y ^ (α : ℝ) ≤ 2 * K * dist x y ^ (α : ℝ) := by
     have : 0 ≤ (K : ℝ) * dist x y ^ (α : ℝ) := by positivity
@@ -251,7 +245,7 @@ theorem holderOnWith_ite_neg_comp_hyperplaneReflection (hv : ‖v‖ = 1) {α : 
   · rw [dist_comm, dist_comm x y]
     exact dist_ite_neg_comp_hyperplaneReflection_le hv hS hφ hzero hρS hy hx hy0 (not_le.1 hx0)
   · have hρ : ∀ w ∈ S, ⟪w, v⟫ < 0 → hyperplaneReflection v 0 w ∈ S ∩ {x | 0 ≤ ⟪x, v⟫} :=
-      fun w hw hw0 ↦ ⟨hρS w hw, by rw [mem_ofPred_eq, inner_hyperplaneReflection hv0]; linarith⟩
+      fun w hw hw0 ↦ ⟨hρS w hw, by rw [mem_ofPred_eq, inner_hyperplaneReflection hv]; linarith⟩
     rw [dist_neg_neg]
     refine (hφ.dist_le (hρ x hx (not_le.1 hx0)) (hρ y hy (not_le.1 hy0))).trans ?_
     rw [(hyperplaneReflection v 0).dist_map]
