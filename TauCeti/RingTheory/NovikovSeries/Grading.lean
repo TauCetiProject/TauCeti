@@ -39,7 +39,8 @@ theory on a spherically monotone symplectic manifold, graded by twice the first 
 * `TauCeti.NovikovSeries.gradeBy R N f i`: the Novikov series of degree `i` for the degree
   function `f`.
 * `TauCeti.NovikovSeries.homogeneousComponent R N f i`: the homogeneous component of degree `i`,
-  the restriction of the coefficients to the fibre over `i`.
+  the restriction of the coefficients to the fibre over `i`, the Novikov analogue of Mathlib's
+  `MvPowerSeries.homogeneousComponent` and `MvPolynomial.homogeneousComponent`.
 
 ## Main results
 
@@ -221,7 +222,9 @@ section Component
 
 variable (R N) in
 /-- The homogeneous component of degree `i` of a Novikov series for the degree function `f`: the
-series with the coefficients of `a` on the fibre `f ⁻¹' {i}` and zero elsewhere. -/
+series with the coefficients of `a` on the fibre `f ⁻¹' {i}` and zero elsewhere. This is the
+Novikov analogue of Mathlib's `MvPowerSeries.homogeneousComponent` and
+`MvPolynomial.homogeneousComponent`. -/
 def homogeneousComponent (f : H → ι) (i : ι) :
     NovikovSeries R H N →ₗ[R] NovikovSeries R H N where
   toFun a :=
