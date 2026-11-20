@@ -192,6 +192,16 @@ theorem IsJordanSplitting.pow_dvd_apply {π : R} {N : ℕ → Submodule R M}
   · rw [h.apply_eq_zero i k hik x hx y hy]
     exact dvd_zero _
 
+/-- The vectors of the constituents of index at least `j` of a Jordan splitting pair into
+`π ^ j R`. -/
+theorem IsJordanSplitting.pow_dvd_apply_of_mem_biSup {π : R} {N : ℕ → Submodule R M}
+    (h : B.IsJordanSplitting π N) {j : ℕ} {x : M} (hx : x ∈ ⨆ i ∈ Set.Ici j, N i) (y : M) :
+    π ^ j ∣ B x y := by
+  have hle : ⨆ i ∈ Set.Ici j, N i ≤ ⨅ y, Submodule.comap (B.flip y) (Ideal.span {π ^ j}) :=
+    iSup₂_le fun i hi x hx ↦ Submodule.mem_iInf _ |>.mpr fun y ↦ by
+      simpa [Ideal.mem_span_singleton] using (pow_dvd_pow π hi).trans (h.pow_dvd_apply hx y)
+  simpa [Ideal.mem_span_singleton] using Submodule.mem_iInf _ |>.mp (hle hx) y
+
 /-- Pairing a recomposed vector with the `i`-th constituent only sees its `i`-th component. -/
 theorem IsJordanSplitting.apply_dfinsuppSum {π : R} {N : ℕ → Submodule R M}
     [∀ i (x : N i), Decidable (x ≠ 0)]
@@ -200,7 +210,7 @@ theorem IsJordanSplitting.apply_dfinsuppSum {π : R} {N : ℕ → Submodule R M}
   classical
   rw [DFinsupp.sum, map_sum, LinearMap.sum_apply]
   refine Finset.sum_eq_single i
-    (fun k _ hki ↦ h.apply_eq_zero k i hki _ (f k).2 y y.2) ?_
+    (fun k _ hki ↦ h.apply_eq_zero k i hki _ (f k).property y y.property) ?_
   intro hi
   rw [DFinsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply]
 
@@ -365,15 +375,6 @@ section Uniqueness
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {B : BilinForm R M} {π : R}
   {N : ℕ → Submodule R M}
 
-/-- The vectors of the constituents of index at least `j` of a Jordan splitting pair into
-`π ^ j R`. -/
-theorem IsJordanSplitting.pow_dvd_apply_of_mem_biSup (h : B.IsJordanSplitting π N) {j : ℕ}
-    {x : M} (hx : x ∈ ⨆ i ∈ Set.Ici j, N i) (y : M) : π ^ j ∣ B x y := by
-  have hle : ⨆ i ∈ Set.Ici j, N i ≤ ⨅ y, Submodule.comap (B.flip y) (Ideal.span {π ^ j}) :=
-    iSup₂_le fun i hi x hx ↦ Submodule.mem_iInf _ |>.mpr fun y ↦ by
-      simpa [Ideal.mem_span_singleton] using (pow_dvd_pow π hi).trans (h.pow_dvd_apply hx y)
-  simpa [Ideal.mem_span_singleton] using Submodule.mem_iInf _ |>.mp (hle hx) y
-
 /-- **A vector pairing into `π ^ j R` lies in the constituents of index at least `j`, modulo `π`.**
 If `π` is a non-zero-divisor and every value `B x y` is divisible by `π ^ j`, then `x` is the sum
 of a vector of the constituents of index at least `j` of a Jordan splitting and a vector of `π M`.
@@ -387,7 +388,7 @@ theorem IsJordanSplitting.mem_biSup_sup_smul_top (h : B.IsJordanSplitting π N)
   refine Submodule.dfinsuppSum_mem _ _ _ fun i _ ↦ ?_
   by_cases hi : j ≤ i
   · exact Submodule.mem_sup_left
-      (le_iSup₂ (f := fun i (_ : i ∈ Set.Ici j) ↦ N i) i (Set.mem_Ici.mpr hi) (f i).2)
+      (le_iSup₂ (f := fun i (_ : i ∈ Set.Ici j) ↦ N i) i (Set.mem_Ici.mpr hi) (f i).property)
   refine Submodule.mem_sup_right ?_
   -- The components of index `i < j` are divisible by `π`: against `N i`, the vector pairs as its
   -- `i`-th component does, so these values are divisible by `π ^ (i + 1)`.
@@ -524,7 +525,7 @@ private theorem IsJordanSplitting.exists_eq_smul_of_forall_dvd
   obtain ⟨w, hw⟩ := (h.isModular m).exists_eq_smul_of_forall_dvd (pow_mem hπ m)
     (pow_mem hπ e) (x := ⟨u, hu⟩) fun z ↦ by
       rw [← pow_add, restrict_apply, domRestrict_apply]
-      exact hdvd z z.2
+      exact hdvd z z.property
   exact ⟨w, by simpa using congrArg Subtype.val hw⟩
 
 /-- Vectors of the constituents of index below `m` of a Jordan splitting which pair into `π ^ j R`
@@ -569,7 +570,7 @@ private theorem IsJordanSplitting.pow_dvd_apply_of_mem_biSup_Iio
       calc π ^ (2 * j + 1 - (m + 1)) ∣ π ^ (j - m + (j - m)) * π ^ m := by
             rw [← pow_add]
             exact pow_dvd_pow π (by omega)
-        _ ∣ π ^ (j - m + (j - m)) * B u v := mul_dvd_mul_left _ (h.pow_dvd_apply u.2 v)
+        _ ∣ π ^ (j - m + (j - m)) * B u v := mul_dvd_mul_left _ (h.pow_dvd_apply u.property v)
     · simpa [h₁ ha hz] using hxz z (Submodule.mem_sup_right hz)
     · simpa [h₁ hb hz] using hyz z (Submodule.mem_sup_right hz)
 
@@ -754,7 +755,7 @@ theorem IsJordanSplitting.equivalent_restrict_of_forall_unimodular [IsDomain R] 
   obtain ⟨f, -, hf, hf₂⟩ := h.exists_pow_succ_dvd_sub hπnz j
   have hdvd (x : N' j) (z : M) : π ^ j ∣ B (ε.symm x) z := by
     rw [← hε, ε.apply_symm_apply]
-    exact h'.pow_dvd_apply x.2 (ε z)
+    exact h'.pow_dvd_apply x.property (ε z)
   have hsub {x y : N' j} {k : ℕ} (hc : π ^ (j + k) ∣
       B (ε.symm x) (ε.symm y) - B (f (ε.symm x)) (f (ε.symm y))) :
       π ^ k ∣ C' x y - C (f (ε.symm x)) (f (ε.symm y)) := by
@@ -797,8 +798,8 @@ private theorem IsJordanSplitting.sub_apply_projectionOnto (h : B.IsJordanSplitt
   have hq (x : M) : x - p x ∈ ⨆ i ∈ Set.Ici (j + 1), N i := by
     simpa [p, Submodule.coe_projectionOnto_apply] using Submodule.sub_projection_mem hc x
   refine ⟨hq x, ?_⟩
-  have h₁ := B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (p x).2 (hq y)
-  have h₂ := B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm (hq x) (p y).2
+  have h₁ := B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj (p x).property (hq y)
+  have h₂ := B.apply_eq_zero_of_mem_biSup h.apply_eq_zero hdisj.symm (hq x) (p y).property
   simp only [map_sub, LinearMap.sub_apply] at h₁ h₂ ⊢
   linear_combination h₁ + h₂
 
@@ -863,13 +864,13 @@ theorem IsJordanSplitting.exists_basis_restrict_biSup_Iic [IsDomain R] [IsLocalR
   have : Finite (Set.Iic j) := (Set.finite_Iic j).to_subtype
   -- `A` is the orthogonal internal sum of the constituents of index at most `j`.
   have hmap (i : Set.Iic j) : ((N i).comap A.subtype).map A.subtype = N i := by
-    rw [Submodule.map_comap_subtype, inf_of_le_right (le_biSup N i.2)]
+    rw [Submodule.map_comap_subtype, inf_of_le_right (le_biSup N i.property)]
   obtain ⟨ι, _, _, b, H, hH, hHs, hHd⟩ := exists_basis_toMatrix_mul_eq_of_isInternal
     (hB.restrict A) hπ (DirectSum.isInternal_biSup_submodule_of_iSupIndep (Set.Iic j)
       (h.isInternal.submodule_iSupIndep.comp Subtype.val_injective))
     (fun i i' hii x hx y hy ↦ h.apply_eq_zero i i' (fun h ↦ hii (Subtype.ext h)) _ hx _ hy)
     (e := fun i ↦ i) (fun i ↦ isModular_restrict_map_subtype_iff.mp ((hmap i).symm ▸ h.isModular i))
-    (fun i ↦ i.2)
+    (fun i ↦ i.property)
   exact ⟨ι, _, _, b, H, hH, hHs, fun h2 heven ↦ hHd h2 fun i hi w hw ↦ heven _ (hi ▸ hw)⟩
 
 end Constituents

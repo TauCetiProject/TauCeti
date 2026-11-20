@@ -115,8 +115,8 @@ theorem continuous_of_contMDiffOn_orthonormalBasis {U : Set B}
     (hd : ∀ i, ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n
       (fun b ↦ TotalSpace.mk' F b (if hb : b ∈ U then d ⟨b, hb⟩ i else 0)) U) (i : ι) :
     Continuous fun b : U ↦ TotalSpace.mk' F (b : B) (d b i) :=
-  ((hd i).continuousOn.comp_continuous continuous_subtype_val fun b ↦ b.2).congr fun b ↦
-    congrArg (TotalSpace.mk' F (b : B)) (by simp [b.2])
+  ((hd i).continuousOn.comp_continuous continuous_subtypeVal fun b ↦ b.property).congr fun b ↦
+    congrArg (TotalSpace.mk' F (b : B)) (by simp [b.property])
 
 end RCLikeLocal
 
@@ -141,14 +141,14 @@ theorem contMDiff_orthonormalBasis_repr_totalSpace [IsContMDiffRiemannianBundle 
     (d : ∀ b : B, OrthonormalBasis ι ℝ (E b))
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i))) :
     ContMDiff (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ, EuclideanSpace ℝ ι) n
-      (fun p : TotalSpace F E ↦ (d p.proj).repr p.2) := by
+      (fun p : TotalSpace F E ↦ (d p.proj).repr p.snd) := by
   have hpi : ContMDiff (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ, ι → ℝ) n
-      (fun p : TotalSpace F E ↦ fun i ↦ ⟪d p.proj i, p.2⟫_ℝ) :=
+      (fun p : TotalSpace F E ↦ fun i ↦ ⟪d p.proj i, p.snd⟫_ℝ) :=
     contMDiff_pi_module_iff.mpr fun i ↦
       ((hd i).comp (Bundle.contMDiff_proj E)).inner_bundle contMDiff_id
   refine ((EuclideanSpace.equiv ι ℝ).symm.contDiff.comp_contMDiff hpi).congr fun p ↦ ?_
   ext i
-  exact (d p.proj).repr_apply_apply p.2 i
+  exact (d p.proj).repr_apply_apply p.snd i
 
 /-- Reconstructing fibre vectors from `EuclideanSpace ℝ ι` coordinates in a `C^n` global
 orthonormal basis defines a `C^n` map into `TotalSpace F E`. -/
@@ -177,7 +177,7 @@ def orthonormalBasisTotalSpaceEuclideanDiffeomorph
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i))) :
     TotalSpace F E ≃ₘ^n⟮IB.prod 𝓘(ℝ, F), IB.prod 𝓘(ℝ, EuclideanSpace ℝ ι)⟯
       B × EuclideanSpace ℝ ι where
-  toFun p := (p.proj, (d p.proj).repr p.2)
+  toFun p := (p.proj, (d p.proj).repr p.snd)
   invFun p := ⟨p.1, (d p.1).repr.symm p.2⟩
   left_inv p := by cases p; simp
   right_inv p := by cases p; simp
@@ -232,8 +232,8 @@ theorem norm_orthonormalBasisTotalSpaceEuclideanDiffeomorph_snd
     (d : ∀ b : B, OrthonormalBasis ι ℝ (E b))
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i)))
     (p : TotalSpace F E) :
-    ‖(orthonormalBasisTotalSpaceEuclideanDiffeomorph d hd p).2‖ = ‖p.2‖ :=
-  (d p.proj).repr.norm_map p.2
+    ‖(orthonormalBasisTotalSpaceEuclideanDiffeomorph d hd p).2‖ = ‖p.snd‖ :=
+  (d p.proj).repr.norm_map p.snd
 
 /-- `TauCeti.orthonormalBasisTotalSpaceEuclideanDiffeomorph` preserves the inner product on each
 fibre. -/
@@ -319,7 +319,7 @@ theorem norm_orthonormalFrameDiffeomorph_snd
     (hrank : Fintype.card ι = Module.finrank ℝ F)
     (hsmooth : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (v i b)))
     (p : TotalSpace F E) :
-    ‖(orthonormalFrameDiffeomorph hv hrank hsmooth p).2‖ = ‖p.2‖ :=
+    ‖(orthonormalFrameDiffeomorph hv hrank hsmooth p).2‖ = ‖p.snd‖ :=
   norm_orthonormalBasisTotalSpaceEuclideanDiffeomorph_snd _ _ p
 
 /-- `TauCeti.orthonormalFrameDiffeomorph` preserves the inner product on each fibre. -/
@@ -396,7 +396,7 @@ def totalSpaceDiffeomorph (c : OrthonormalBasis ι ℝ F)
     (d : ∀ b : B, OrthonormalBasis ι ℝ (E b))
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i))) :
     TotalSpace F E ≃ₘ^n⟮IB.prod 𝓘(ℝ, F), IB.prod 𝓘(ℝ, F)⟯ B × F where
-  toFun p := (p.proj, c.repr.symm ((d p.proj).repr p.2))
+  toFun p := (p.proj, c.repr.symm ((d p.proj).repr p.snd))
   invFun p := ⟨p.1, (d p.1).repr.symm (c.repr p.2)⟩
   left_inv p := by cases p; simp
   right_inv p := by cases p; simp
@@ -435,7 +435,7 @@ theorem norm_totalSpaceDiffeomorph_snd (c : OrthonormalBasis ι ℝ F)
     (d : ∀ b : B, OrthonormalBasis ι ℝ (E b))
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i)))
     (p : TotalSpace F E) :
-    ‖(c.totalSpaceDiffeomorph d hd p).2‖ = ‖p.2‖ := by
+    ‖(c.totalSpaceDiffeomorph d hd p).2‖ = ‖p.snd‖ := by
   cases p
   exact (c.repr.symm.norm_map _).trans ((d _).repr.norm_map _)
 
@@ -455,8 +455,8 @@ theorem bundleTrivialization_univ_apply [IsContinuousRiemannianBundle F E]
     (d : ∀ b : B, OrthonormalBasis ι ℝ (E b))
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i)))
     (p : TotalSpace F E) :
-    c.bundleTrivialization isOpen_univ (fun b ↦ d b.1)
-        (fun i ↦ (hd i).continuous.comp continuous_subtype_val) p =
+    c.bundleTrivialization isOpen_univ (fun b ↦ d b.val)
+        (fun i ↦ (hd i).continuous.comp continuous_subtypeVal) p =
       c.totalSpaceDiffeomorph d hd p := by
   cases p
   simp
@@ -498,11 +498,11 @@ theorem bundleTrivialization_univ_mem_maximalAtlas
     (c : OrthonormalBasis ι ℝ F)
     (d : ∀ b : B, OrthonormalBasis ι ℝ (E b))
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i))) :
-    (c.bundleTrivialization isOpen_univ (fun b ↦ d b.1)
-        (fun i ↦ (hd i).continuous.comp continuous_subtype_val)).toOpenPartialHomeomorph ∈
+    (c.bundleTrivialization isOpen_univ (fun b ↦ d b.val)
+        (fun i ↦ (hd i).continuous.comp continuous_subtypeVal)).toOpenPartialHomeomorph ∈
       (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E) := by
   classical
-  exact c.bundleTrivialization_mem_maximalAtlas isOpen_univ (fun b ↦ d b.1) fun i ↦
+  exact c.bundleTrivialization_mem_maximalAtlas isOpen_univ (fun b ↦ d b.val) fun i ↦
     (hd i).contMDiffOn.congr fun b hb ↦ by simp [hb]
 
 end MaximalAtlas

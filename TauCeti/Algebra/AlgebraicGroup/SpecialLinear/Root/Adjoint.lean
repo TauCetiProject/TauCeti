@@ -58,7 +58,7 @@ theorem cotangentLinearEquiv_symm_derivationComp_rootSubgroup
       (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) R)) :
     (Derivation.cotangentLinearEquiv (R := R)
       (A := coordinateHopfAlgebra R (r + 1)) (B := R)).symm
-        (derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.2).hom d) =
+        (derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.property).hom d) =
       AdditiveGroup.gaTangentLinearEquiv d • rootVector (R := R) p := by
   apply (Derivation.cotangentLinearEquiv (R := R)
     (A := coordinateHopfAlgebra R (r + 1)) (B := R)).injective
@@ -73,7 +73,7 @@ theorem cotangentLinearEquiv_symm_derivationComp_rootSubgroup
   rw [map_smul, tangentMatrix_cotangentLinearEquiv_rootVector,
     tangentMatrix_derivationComp_rootSubgroup]
   simpa only [smul_eq_mul, mul_one] using
-    ((LieAlgebra.SpecialLinear.single p.1.1 p.1.2 p.2).map_smul
+    ((LieAlgebra.SpecialLinear.single p.val.1 p.val.2 p.property).map_smul
       (AdditiveGroup.gaTangentLinearEquiv d) 1)
 
 /-- Cotangent duality sends the normalized adjoint root vector to the
@@ -82,7 +82,7 @@ Use this identity for explicit rewriting through the indexed coordinate presenta
 theorem cotangentLinearEquiv_rootVector
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     Derivation.cotangentLinearEquiv (B := R) (rootVector (R := R) p) =
-      derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.2).hom
+      derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.property).hom
         ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1) := by
   apply (Derivation.cotangentLinearEquiv (B := R)).symm.injective
   rw [LinearEquiv.symm_apply_apply, cotangentLinearEquiv_symm_derivationComp_rootSubgroup,
@@ -108,7 +108,7 @@ theorem rootDifferentialEquiv_apply_coe
       Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R (r + 1)))) =
       (Derivation.cotangentLinearEquiv (R := R)
         (A := coordinateHopfAlgebra R (r + 1)) (B := R)).symm
-          (derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.2).hom d) := by
+          (derivationComp (B := R) (rootSubgroupCoordinateMap (R := R) p.property).hom d) := by
   rw [rootDifferentialEquiv]
   -- The character lattice is represented by the indexed exponent module.
   erw [LinearEquiv.trans_apply, rootSpaceEquiv_apply_coe]
@@ -139,7 +139,7 @@ theorem tangentScalarExtensionEquiv_tmul_rootVector
     Derivation.tangentScalarExtensionEquiv
         (R := R) (A := coordinateHopfAlgebra R (r + 1)) (B := B)
         (c ⊗ₜ[R] rootVector (R := R) p) =
-      derivationComp (B := B) (rootSubgroupCoordinateMap (R := R) p.2).hom
+      derivationComp (B := B) (rootSubgroupCoordinateMap (R := R) p.property).hom
         ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := B)).symm c) := by
   apply (tangentLieEquivSl (R := R) (B := B) (r + 1)).injective
   simp only [LieEquiv.coe_toLieHom]
@@ -160,7 +160,7 @@ differential is exactly the scalar extension of its integral adjoint root space.
 theorem range_derivationCompLieHom_rootSubgroup_eq_adjointWeightSpace_baseChange
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
     (derivationCompLieHom (B := B)
-        (rootSubgroupCoordinateMap (R := R) p.2).hom).range.toSubmodule =
+        (rootSubgroupCoordinateMap (R := R) p.property).hom).range.toSubmodule =
       ((Derivation.adjointWeightSpace (diagonalTorusCoordinateMap r R).hom
           (Multiplicative.ofAdd ((diagonalRootDatum.{u} r).root p))).baseChange B).map
         (Derivation.tangentScalarExtensionEquiv

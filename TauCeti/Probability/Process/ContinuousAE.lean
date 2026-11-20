@@ -20,12 +20,12 @@ For continuous fields evaluated along a process with a deterministic starting po
 recovers equality of the fields at that point. This is useful when an identity first obtained
 almost everywhere along trajectories must be evaluated at the initial state.
 
-On a separable topological index space with Hausdorff target, two almost surely continuous
-processes that agree almost surely at every deterministic time are indistinguishable
-(`TauCeti.indist_of_ae_eq_of_ae_continuous`), without measurability or finiteness hypotheses.
+Over a separable time domain, processes with almost surely continuous paths which agree
+almost surely at each fixed time are indistinguishable. This identifies continuous versions,
+for instance of stochastic integrals determined separately at each time.
 
-The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod`,
-`Measure.eqOn_Ico_of_ae_eq`, and `DenseRange.equalizer` along a countable dense sequence.
+The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
+`Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
 -/
 
 public section
@@ -33,24 +33,6 @@ public section
 open MeasureTheory Set
 
 namespace TauCeti
-
-/-- Two almost surely continuous processes indexed by a separable topological space with Hausdorff
-target that agree almost surely at every deterministic time are indistinguishable. Neither
-measurability of paths nor finiteness of the measure is required. -/
-theorem indist_of_ae_eq_of_ae_continuous {ι Ω E : Type*} [TopologicalSpace ι]
-    [TopologicalSpace.SeparableSpace ι] [TopologicalSpace E] [T2Space E]
-    {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
-    (hXY : ∀ t, X t =ᵐ[P] Y t)
-    (hX : ∀ᵐ ω ∂P, Continuous (fun t ↦ X t ω))
-    (hY : ∀ᵐ ω ∂P, Continuous (fun t ↦ Y t ω)) :
-    X ≡ᵐ[P] Y := by
-  rcases isEmpty_or_nonempty ι with _ | _
-  · exact Filter.Eventually.of_forall fun _ t ↦ IsEmpty.elim ‹_› t
-  · have hd : ∀ᵐ ω ∂P, ∀ n : ℕ, X (TopologicalSpace.denseSeq ι n) ω =
-        Y (TopologicalSpace.denseSeq ι n) ω :=
-      ae_all_iff.2 fun n ↦ hXY _
-    filter_upwards [hX, hY, hd] with ω hXω hYω hdω
-    exact congrFun ((TopologicalSpace.denseRange_denseSeq ι).equalizer hXω hYω (funext hdω))
 
 variable {Ω E Y : Type*} [MeasurableSpace Ω] {P : Measure Ω} [SFinite P]
   [TopologicalSpace Y] [T2Space Y] {a b : ℝ}
@@ -88,5 +70,17 @@ theorem eq_of_ae_eq_along_process [TopologicalSpace E] [NeZero P]
     exact hG.comp (hS.prodMk continuousOn_id) hD
   obtain ⟨ω, heq, hstart⟩ := ((ae_eqOn_Ico_of_ae_eq_prod hf hg hfg).and hstart).exists
   simpa only [hstart] using heq (left_mem_Ico.mpr hab)
+
+omit [SFinite P] in
+/-- Processes with almost surely continuous paths over a separable time domain are
+indistinguishable once they agree almost surely at each fixed time. Only a countable dense
+set of times is used, so no measurability of the paths is required. -/
+theorem indist_of_forall_ae_eq {ι : Type*} [TopologicalSpace ι] [TopologicalSpace.SeparableSpace ι]
+    {X X' : ι → Ω → Y} (hX : ∀ᵐ ω ∂P, Continuous fun t ↦ X t ω)
+    (hX' : ∀ᵐ ω ∂P, Continuous fun t ↦ X' t ω) (h : ∀ t, X t =ᵐ[P] X' t) :
+    ProbabilityTheory.Indistinguishable P X X' := by
+  obtain ⟨D, hDc, hDd⟩ := TopologicalSpace.exists_countable_dense ι
+  filter_upwards [hX, hX', (ae_ball_iff hDc).2 fun t _ ↦ h t] with ω hω hω' hD
+  exact congr_fun (Continuous.ext_on hDd hω hω' fun t ht ↦ hD t ht)
 
 end TauCeti
