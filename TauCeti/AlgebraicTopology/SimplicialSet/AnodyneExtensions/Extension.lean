@@ -93,21 +93,22 @@ private lemma exists_ext_of_rankFunction (f : h.pairing.RankFunction ℕ) (a : (
     {g : (f.filtration j : SSet) ⟶ C // homOfLE (f.le_filtration j) ≫ g = a}
   -- An extension to a stage extends to the next one, by filling the horns of the cells attached
   -- at that stage and using the pushout square `f.isPushout`.
-  have step (j : ℕ) (g : E j) : ∃ g' : E (j + 1), homOfLE (hmono j.le_succ) ≫ g'.1 = g.1 := by
-    choose σ hσ using fun c : f.Cell j ↦ exists_fill_cell h a H f c g.1 g.2
-    let g' : (f.filtration (j + 1) : SSet) ⟶ C := (f.isPushout j).desc g.1 (Sigma.desc σ) (by
+  have step (j : ℕ) (g : E j) :
+      ∃ g' : E (j + 1), homOfLE (hmono j.le_succ) ≫ g'.val = g.val := by
+    choose σ hσ using fun c : f.Cell j ↦ exists_fill_cell h a H f c g.val g.property
+    let g' : (f.filtration (j + 1) : SSet) ⟶ C := (f.isPushout j).desc g.val (Sigma.desc σ) (by
       refine Sigma.hom_ext _ _ fun c ↦ ?_
       simp [hσ])
-    have hg' : homOfLE (hmono j.le_succ) ≫ g' = g.1 :=
+    have hg' : homOfLE (hmono j.le_succ) ≫ g' = g.val :=
       (f.isPushout j).inl_desc _ _ _
     refine ⟨⟨g', ?_⟩, hg'⟩
-    rw [← g.2, ← hg', Subcomplex.homOfLE_comp_assoc]
+    rw [← g.property, ← hg', Subcomplex.homOfLE_comp_assoc]
   choose next hnext using step
   let seq : (j : ℕ) → E j := fun j ↦ Nat.rec
     ⟨homOfLE f.filtration_bot.le ≫ a, by
       rw [Subcomplex.homOfLE_comp_assoc, Subcomplex.homOfLE_refl, Category.id_comp]⟩
     (fun j g ↦ next j g) j
-  have hseq {i j : ℕ} (hij : i ≤ j) : homOfLE (hmono hij) ≫ (seq j).1 = (seq i).1 := by
+  have hseq {i j : ℕ} (hij : i ≤ j) : homOfLE (hmono hij) ≫ (seq j).val = (seq i).val := by
     induction j, hij using Nat.le_induction with
     | base => rw [Subcomplex.homOfLE_refl, Category.id_comp]
     | succ j hij ih =>
@@ -115,15 +116,15 @@ private lemma exists_ext_of_rankFunction (f : h.pairing.RankFunction ℕ) (a : (
   -- The extensions are compatible, so they glue to `X`, the union of the filtration.
   let cocone : Cocone (f.filtration_monotone.functor ⋙ Subcomplex.toSSetFunctor) :=
     { pt := C
-      ι := { app j := (seq j).1
+      ι := { app j := (seq j).val
              naturality i j hij := (hseq (leOfHom hij)).trans (Category.comp_id _).symm } }
   refine ⟨f.relativeCellComplex.isColimit.desc cocone, ?_⟩
-  have h₀ : (f.filtration 0).ι ≫ f.relativeCellComplex.isColimit.desc cocone = (seq 0).1 :=
+  have h₀ : (f.filtration 0).ι ≫ f.relativeCellComplex.isColimit.desc cocone = (seq 0).val :=
     f.relativeCellComplex.isColimit.fac cocone 0
   calc A.ι ≫ f.relativeCellComplex.isColimit.desc cocone
       = homOfLE (f.le_filtration 0) ≫ (f.filtration 0).ι ≫
           f.relativeCellComplex.isColimit.desc cocone := rfl
-    _ = a := by rw [h₀]; exact (seq 0).2
+    _ = a := by rw [h₀]; exact (seq 0).property
 
 /-- **Extension along a regular pairing.** Let `h` be a regular pairing of the subcomplex `A` of
 `X`. A map `a : A ⟶ C` extends to `X` provided that, for every index `s` of `h`, every horn

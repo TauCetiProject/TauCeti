@@ -159,7 +159,7 @@ theorem exists_lift_pre_horn_zero [Quasicategory C] {Y Z : SSet.{u}} (i : Y ⟶ 
     obtain ⟨l, hl₁, hl₂⟩ := exists_lift_boundary (t ≫ (H.preimage ρ).ι) (b ≫ H.ι)
       (by rw [Category.assoc, ← Subcomplex.fromPreimage_ι, ← Category.assoc, sq.w,
         Category.assoc])
-      (fun z ↦ (mem_fullEnhancedSubcategory_obj_zero_iff _ _).1 (b.app _ z).2)
+      (fun z ↦ (mem_fullEnhancedSubcategory_obj_zero_iff _ _).1 (b.app _ z).property)
     have hl : Subcomplex.range l ≤ H.preimage ρ := hpre l (by
       rw [hl₂, Subcomplex.range_comp]
       exact (Subcomplex.image_le_range _ _).trans (by simp))
