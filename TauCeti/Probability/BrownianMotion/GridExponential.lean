@@ -148,7 +148,7 @@ theorem gridExponential_sq_le (hτ : Monotone τ) (n : ℕ) (ω : Ω)
   have heq : gridExponential τ θ W n ω ^ 2 =
       gridExponential τ (fun j ω ↦ 2 * θ j ω) W n ω *
         exp (∑ j ∈ range n, θ j ω ^ 2 * ((τ (j + 1) : ℝ) - τ j)) := by
-    rw [gridExponential_def, gridExponential_def, ← exp_nat_mul, ← exp_add]
+    rw [gridExponential_def, gridExponential_def, ← exp_natCast_mul, ← exp_add]
     congr 1
     simp only [Nat.cast_ofNat, mul_sum, ← sum_add_distrib]
     apply sum_congr rfl

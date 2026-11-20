@@ -110,7 +110,7 @@ private noncomputable def inducedTaylorComponent : (n : ℕ) →
 private noncomputable def inducedTaylor :
     ReducedTensorWords R (TotalHom R (InducedQuiver C F)) →ₗ[R]
       TotalHom R (InducedQuiver D (𝒢.obj ∘ F)) :=
-  DirectSum.toModule R _ _ fun n ↦ PiTensorProduct.lift (inducedTaylorComponent 𝒢 F n.1)
+  DirectSum.toModule R _ _ fun n ↦ PiTensorProduct.lift (inducedTaylorComponent 𝒢 F n.val)
 
 /-- On a composable string of morphisms, the Taylor map of the induced morphism is the component
 between the endpoints of the Taylor map of `𝒢`. -/

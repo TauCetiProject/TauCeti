@@ -104,7 +104,7 @@ theorem exists_purely_imaginary_chartTest :
     φ)).val ≠ ∅ := by
     intro h
     exact hi (Subtype.ext (ContMDiffSection.tsupport_eq_empty_iff.mp h))
-  simpa [ContMDiffSection.tsupport_def] using Set.empty_ssubset.mpr (Set.nonempty_iff_ne_empty.mpr
+  simpa [ContMDiffSection.tsupport_def] using Set.empty_ssubset.mpr (Set.ne_empty_iff_nonempty.mp
     hne)
 
 /-- Algebraic reconstruction gives the nonzero original-fibre value 2+3i. -/
@@ -413,4 +413,3 @@ def densityHomPair :=
 end DensityHom
 
 end TauCeti.Examples.CompactSupportComplexification
-

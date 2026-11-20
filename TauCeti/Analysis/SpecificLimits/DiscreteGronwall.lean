@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Algebra.Order.Floor.Semiring
+import TauCeti.Algebra.Order.Floor.Semifield
 
 /-!
 # Discrete Grönwall estimates for implicit time stepping
@@ -18,7 +19,10 @@ time step of length `τ` grows at most like `exp (a t)` up to time `t`. This fil
 growth factor estimate `(1 + aτ) ^ ⌈t / τ⌉₊ ≤ exp (a (t + τ))`, valid uniformly in the time
 step (`TauCeti.one_add_mul_pow_ceil_div_le_exp`), its sharp form as the time step tends to `0`,
 `(1 + aτ) ^ L → exp (a T)` and `τ ∑_{n < L} (1 + aτ) ^ n → ∫₀ᵀ exp (a r) dr` whenever `L τ → T`
-(`TauCeti.tendsto_one_add_mul_pow` and `TauCeti.tendsto_mul_sum_one_add_mul_pow`), and a
+(`TauCeti.tendsto_one_add_mul_pow` and `TauCeti.tendsto_mul_sum_one_add_mul_pow`), the
+ceiling-step limits `⌈r / τ j⌉₊ * τ j → r` (`TauCeti.tendsto_ceil_div_mul`),
+`⌈s / τ j⌉₊ < ⌈t / τ j⌉₊` eventually (`TauCeti.eventually_ceil_div_lt_ceil_div`), and
+`(⌈t / τ j⌉₊ - ⌈s / τ j⌉₊) * τ j → t - s` (`TauCeti.tendsto_ceil_div_sub_ceil_div_mul`), and a
 discrete Grönwall bound for sequences that move in steps paid for by an energy which is bounded
 below in terms of the distance travelled (`TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`).
 
@@ -28,10 +32,10 @@ interval of length `T` decays exponentially, at the rate `-log q / T`
 integrated without differentiating `E`: when `E (s) - E (s + T) = ∫ₛ^{s + T} g` with `E ≤ K g`,
 monotonicity gives `T E (s + T) ≤ K (E s - E (s + T))`, a drop by the factor `K / (K + T)`.
 
-The second estimate is the shape of the a priori bound for implicit Euler schemes of gradient
-flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` grows by steps
-`D (n + 1) ≤ D n + d n` whose squared lengths are bounded by the energy dissipated,
-`d n ² ≤ 2τ (e n - e (n + 1))`, and the energy obeys the coercivity bound
+The bound `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub` is the shape of the a priori bound
+for implicit Euler schemes of gradient flows whose energy is not bounded below. A sequence `D n ≥ 0`
+with `D 0 = 0` grows by steps `D (n + 1) ≤ D n + d n` whose squared lengths are bounded by the
+energy dissipated, `d n ² ≤ 2τ (e n - e (n + 1))`, and the energy obeys the coercivity bound
 `2τ' (A - e n) ≤ D n ²`. Then `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` whenever `4τ ≤ τ'`.
 
 ## Main declarations
@@ -40,6 +44,14 @@ flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` g
 * `TauCeti.tendsto_one_add_mul_pow` and `TauCeti.tendsto_mul_sum_one_add_mul_pow`: the growth
   factors `(1 + aτ) ^ L` and their sums `τ ∑_{n < L} (1 + aτ) ^ n` converge to `exp (a T)` and
   `∫₀ᵀ exp (a r) dr` as `τ → 0` with `L τ → T`.
+* `TauCeti.inv_one_add_mul_pow_ceil_div_le_exp`: `(1 + mτ)⁻¹ ^ ⌈t / τ⌉₊ ≤ exp (|m| / c * (t + τ))`
+  when `0 < c ≤ 1 + mτ`.
+* `TauCeti.tendsto_ceil_div_mul`: `⌈r / τ j⌉₊ * τ j → r` when `0 ≤ r`, `0 < τ j` eventually, and
+  `τ j → 0`.
+* `TauCeti.eventually_ceil_div_lt_ceil_div`: `⌈s / τ j⌉₊ < ⌈t / τ j⌉₊` eventually when `0 < t`,
+  `s < t`, `0 < τ j` eventually, and `τ j → 0`.
+* `TauCeti.tendsto_ceil_div_sub_ceil_div_mul`: `(⌈t / τ j⌉₊ - ⌈s / τ j⌉₊) * τ j → t - s` when
+  `0 ≤ s ≤ t`, `0 < τ j` eventually, and `τ j → 0`.
 * `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`: the discrete Grönwall bound
   `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` under coercivity.
 * `TauCeti.le_div_mul_exp_of_antitoneOn`: exponential decay of a nonincreasing function which
@@ -72,7 +84,7 @@ theorem one_add_mul_pow_ceil_div_le_exp {a τ t : ℝ} (ha : 0 ≤ a) (htτ : 0 
   calc (1 + a * τ) ^ ⌈t / τ⌉₊ ≤ Real.exp (a * τ) ^ ⌈t / τ⌉₊ := by
         gcongr
         linarith [Real.add_one_le_exp (a * τ)]
-    _ = Real.exp (a * (⌈t / τ⌉₊ * τ)) := by rw [← Real.exp_nat_mul]; ring_nf
+    _ = Real.exp (a * (⌈t / τ⌉₊ * τ)) := by rw [← Real.exp_natCast_mul]; ring_nf
     _ ≤ Real.exp (a * (t + τ)) := by gcongr
 
 /-- **Convergence of the discrete growth factors.** If `L i` time steps of length `τ i → 0` take
@@ -101,7 +113,7 @@ theorem tendsto_one_add_mul_pow {ι : Type*} {l : Filter ι} {τ : ι → ℝ} {
         _ = a * (L i * τ i) := by ring
   refine ((Real.continuous_exp.tendsto _).comp hlog).congr' ?_
   filter_upwards [hpos] with i hi
-  rw [Function.comp_apply, Real.exp_nat_mul, Real.exp_log hi]
+  rw [Function.comp_apply, Real.exp_natCast_mul, Real.exp_log hi]
 
 /-- **Convergence of the discrete exponential integrals.** If `L i` time steps of length `τ i → 0`
 take the total time `L i τ i → T`, then `τ i ∑_{n < L i} (1 + a τ i) ^ n`, the discrete
@@ -122,6 +134,29 @@ theorem tendsto_mul_sum_one_add_mul_pow {ι : Type*} {l : Filter ι} {τ : ι �
   rw [← geom_sum_mul]
   field_simp
   ring
+
+/-- After `⌈t / τ⌉₊` time steps of length `τ`, if the per-step factor satisfies `c ≤ 1 + m * τ`
+with `0 < c`, then its inverse accumulates to at most `exp (|m| / c * (t + τ))`. Only
+`0 ≤ t + τ` is needed: when `t ≤ 0` or `τ ≤ 0` no step is taken and the bound reads
+`1 ≤ exp (|m| / c * (t + τ))`. -/
+theorem inv_one_add_mul_pow_ceil_div_le_exp {m c τ t : ℝ} (hc : 0 < c) (hmτ : c ≤ 1 + m * τ)
+    (htτ : 0 ≤ t + τ) :
+    (1 + m * τ)⁻¹ ^ ⌈t / τ⌉₊ ≤ Real.exp (|m| / c * (t + τ)) := by
+  rcases le_or_gt (t / τ) 0 with h | h
+  · rw [Nat.ceil_eq_zero.2 h, pow_zero]
+    exact Real.one_le_exp (by positivity)
+  have hτ : 0 < τ := by rcases div_pos_iff.1 h with h | h <;> linarith [h.1, h.2]
+  have hr_inv_le : (1 + m * τ)⁻¹ ≤ 1 + |m| / c * τ := by
+    rw [inv_le_iff_one_le_mul₀ (hc.trans_le hmτ)]
+    have h1 : |m| * τ ≤ |m| / c * τ * (1 + m * τ) := by
+      calc |m| * τ = |m| / c * τ * c := by field_simp
+        _ ≤ |m| / c * τ * (1 + m * τ) := by gcongr
+    nlinarith [neg_abs_le m]
+  calc (1 + m * τ)⁻¹ ^ ⌈t / τ⌉₊
+      ≤ (1 + |m| / c * τ) ^ ⌈t / τ⌉₊ :=
+        pow_le_pow_left₀ (inv_nonneg.2 (hc.trans_le hmτ).le) hr_inv_le _
+    _ ≤ Real.exp (|m| / c * (t + τ)) :=
+        one_add_mul_pow_ceil_div_le_exp (by positivity) htτ
 
 /-- **Discrete Grönwall bound under coercivity.** Let `D n ≥ 0` with `D 0 = 0` grow by steps
 `D (n + 1) ≤ D n + d n` whose squared lengths are paid for by an energy `e`,
@@ -219,5 +254,45 @@ theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hq : 0 
     _ = E s₀ / q * q ^ (n + 1) := by field_simp; ring
     _ ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
         mul_le_mul_of_nonneg_left hexp (div_nonneg h0 hq.le)
+
+open Filter Topology in
+/-- Along any filter `l`, if `0 ≤ r`, `0 < τ j` eventually, and `τ j → 0`, then
+`⌈r / τ j⌉₊ * τ j → r`. -/
+theorem tendsto_ceil_div_mul {ι : Type*} {l : Filter ι} {r : ℝ} {τ : ι → ℝ} (hr : 0 ≤ r)
+    (hτ_pos : ∀ᶠ j in l, 0 < τ j) (hτ0 : Tendsto τ l (𝓝 0)) :
+    Tendsto (fun j ↦ (⌈r / τ j⌉₊ : ℝ) * τ j) l (𝓝 r) :=
+  tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa using tendsto_const_nhds.add hτ0)
+    (hτ_pos.mono fun _ hj ↦ le_ceil_div_mul hj)
+    (hτ_pos.mono fun _ hj ↦ (ceil_div_mul_lt_add hr hj).le)
+
+open Filter Topology in
+/-- Along any filter `l`, if `0 < t`, `s < t`, `0 < τ j` eventually, and `τ j → 0`, then
+`⌈s / τ j⌉₊ < ⌈t / τ j⌉₊` eventually. -/
+theorem eventually_ceil_div_lt_ceil_div {ι : Type*} {l : Filter ι} {s t : ℝ} {τ : ι → ℝ}
+    (ht : 0 < t) (hst : s < t) (hτ_pos : ∀ᶠ j in l, 0 < τ j) (hτ0 : Tendsto τ l (𝓝 0)) :
+    ∀ᶠ j in l, ⌈s / τ j⌉₊ < ⌈t / τ j⌉₊ := by
+  rcases lt_or_ge s 0 with hs | hs
+  · refine hτ_pos.mono fun j hj ↦ ?_
+    rw [Nat.ceil_eq_zero.2 (div_nonpos_of_nonpos_of_nonneg hs.le hj.le)]
+    exact Nat.ceil_pos.2 (div_pos ht hj)
+  · filter_upwards [hτ_pos, hτ0.eventually (gt_mem_nhds (sub_pos.2 hst))] with j hj hlt
+    exact Nat.cast_lt.1 <| lt_of_mul_lt_mul_right
+      ((ceil_div_mul_lt_add hs hj).trans_le
+        ((by linarith : s + τ j ≤ t).trans (le_ceil_div_mul hj)))
+      hj.le
+
+open Filter Topology in
+/-- Along any filter `l`, if `0 ≤ s ≤ t`, `0 < τ j` eventually, and `τ j → 0`, then
+`((⌈t / τ j⌉₊ - ⌈s / τ j⌉₊ : ℕ) : ℝ) * τ j → t - s`. -/
+theorem tendsto_ceil_div_sub_ceil_div_mul {ι : Type*} {l : Filter ι} {s t : ℝ} {τ : ι → ℝ}
+    (hs : 0 ≤ s) (hst : s ≤ t) (hτ_pos : ∀ᶠ j in l, 0 < τ j) (hτ0 : Tendsto τ l (𝓝 0)) :
+    Tendsto (fun j ↦ ((⌈t / τ j⌉₊ - ⌈s / τ j⌉₊ : ℕ) : ℝ) * τ j) l (𝓝 (t - s)) := by
+  refine ((tendsto_ceil_div_mul (hs.trans hst) hτ_pos hτ0).sub
+    (tendsto_ceil_div_mul hs hτ_pos hτ0)).congr' (hτ_pos.mono fun j hj ↦ ?_)
+  have hle : ⌈s / τ j⌉₊ ≤ ⌈t / τ j⌉₊ :=
+    Nat.ceil_mono (div_le_div_of_nonneg_right hst hj.le)
+  dsimp only
+  rw [← sub_mul, Nat.cast_sub hle]
 
 end TauCeti

@@ -102,14 +102,14 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Discrete X) where
   continuous_comp := by
     apply (arrowHomeomorph X).isInducing.continuous_iff.mpr
     simpa only [Function.comp_def, arrowHomeomorph_apply, Quiver.Total.comp_left] using
-      (arrowHomeomorph X).continuous.comp (continuous_fst.comp continuous_subtype_val)
+      (arrowHomeomorph X).continuous.comp (continuous_fst.comp continuous_subtypeVal)
 
 /-- Composable pairs in the unit groupoid are pairs of the same unit, with the topology
 of the object space, not a discrete topology. -/
 def composablePairsHomeomorph :
     {p : Quiver.Total (Discrete X) × Quiver.Total (Discrete X) //
       p.1.right = p.2.left} ≃ₜ X where
-  toFun p := p.1.1.left.as
+  toFun p := p.val.1.left.as
   invFun x := ⟨((arrowHomeomorph X).symm x, (arrowHomeomorph X).symm x), rfl⟩
   left_inv := by
     rintro ⟨⟨⟨⟨x⟩, ⟨y⟩, f⟩, ⟨⟨y'⟩, ⟨z⟩, g⟩⟩, h⟩
@@ -119,7 +119,7 @@ def composablePairsHomeomorph :
     rfl
   right_inv _ := rfl
   continuous_toFun := (arrowHomeomorph X).continuous.comp
-    (continuous_fst.comp continuous_subtype_val)
+    (continuous_fst.comp continuous_subtypeVal)
   continuous_invFun := ((arrowHomeomorph X).symm.continuous.prodMk
     (arrowHomeomorph X).symm.continuous).subtype_mk _
 
@@ -127,7 +127,7 @@ def composablePairsHomeomorph :
 theorem composablePairsHomeomorph_apply
     (p : {p : Quiver.Total (Discrete X) × Quiver.Total (Discrete X) //
       p.1.right = p.2.left}) :
-    composablePairsHomeomorph X p = p.1.1.left.as := (rfl)
+    composablePairsHomeomorph X p = p.val.1.left.as := (rfl)
 
 @[simp]
 theorem composablePairsHomeomorph_symm_apply (x : X) :
@@ -244,7 +244,7 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Codiscrete X) where
     have h : Continuous (fun p :
         {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
           p.1.right = p.2.left} ↦
-        ((arrowHomeomorph X p.1.2).1, (arrowHomeomorph X p.1.1).2)) := by fun_prop
+        ((arrowHomeomorph X p.val.2).1, (arrowHomeomorph X p.val.1).2)) := by fun_prop
     simpa only [Function.comp_def, arrowHomeomorph_apply,
       Quiver.Total.comp_left, Quiver.Total.comp_right] using h
 
@@ -253,8 +253,8 @@ from `x` to `y` and then from `y` to `z`. The topology is the inherited subspace
 def composablePairsHomeomorph :
     {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
       p.1.right = p.2.left} ≃ₜ X × X × X where
-  toFun p := ((arrowHomeomorph X p.1.2).1,
-    (arrowHomeomorph X p.1.1).1, (arrowHomeomorph X p.1.1).2)
+  toFun p := ((arrowHomeomorph X p.val.2).1,
+    (arrowHomeomorph X p.val.1).1, (arrowHomeomorph X p.val.1).2)
   invFun p := ⟨((arrowHomeomorph X).symm (p.2.1, p.2.2),
     (arrowHomeomorph X).symm (p.1, p.2.1)), rfl⟩
   left_inv := by
@@ -270,7 +270,7 @@ theorem composablePairsHomeomorph_apply
     (p : {p : Quiver.Total (Codiscrete X) × Quiver.Total (Codiscrete X) //
       p.1.right = p.2.left}) :
     composablePairsHomeomorph X p =
-      (p.1.2.right.as, p.1.1.right.as, p.1.1.left.as) := (rfl)
+      (p.val.2.right.as, p.val.1.right.as, p.val.1.left.as) := (rfl)
 
 @[simp]
 theorem composablePairsHomeomorph_symm_apply (p : X × X × X) :
@@ -313,7 +313,7 @@ categorical: the first label is traversed first. -/
 def composablePairsHomeomorph :
     {p : Quiver.Total (SingleObj G) × Quiver.Total (SingleObj G) //
       p.1.right = p.2.left} ≃ₜ G × G where
-  toFun p := (arrowHomeomorph G p.1.1, arrowHomeomorph G p.1.2)
+  toFun p := (arrowHomeomorph G p.val.1, arrowHomeomorph G p.val.2)
   invFun p := ⟨((arrowHomeomorph G).symm p.1, (arrowHomeomorph G).symm p.2), rfl⟩
   left_inv := by
     rintro ⟨⟨⟨x, y, h⟩, ⟨y', z, g⟩⟩, _⟩
@@ -321,8 +321,8 @@ def composablePairsHomeomorph :
     rfl
   right_inv _ := rfl
   continuous_toFun := ((arrowHomeomorph G).continuous.comp
-    (continuous_fst.comp continuous_subtype_val)).prodMk
-    ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtype_val))
+    (continuous_fst.comp continuous_subtypeVal)).prodMk
+    ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtypeVal))
   continuous_invFun := (((arrowHomeomorph G).symm.continuous.comp continuous_fst).prodMk
     ((arrowHomeomorph G).symm.continuous.comp continuous_snd)).subtype_mk _
 
@@ -330,7 +330,7 @@ def composablePairsHomeomorph :
 theorem composablePairsHomeomorph_apply
     (p : {p : Quiver.Total (SingleObj G) × Quiver.Total (SingleObj G) //
       p.1.right = p.2.left}) :
-    composablePairsHomeomorph G p = (p.1.1.hom, p.1.2.hom) := (rfl)
+    composablePairsHomeomorph G p = (p.val.1.hom, p.val.2.hom) := (rfl)
 
 @[simp]
 theorem composablePairsHomeomorph_symm_apply (p : G × G) :
@@ -403,10 +403,10 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (SingleObj G) where
   continuous_comp := by
     apply (arrowHomeomorph G).isInducing.continuous_iff.mpr
     convert
-      ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtype_val)).mul
-        ((arrowHomeomorph G).continuous.comp (continuous_fst.comp continuous_subtype_val)) using 1
+      ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtypeVal)).mul
+        ((arrowHomeomorph G).continuous.comp (continuous_fst.comp continuous_subtypeVal)) using 1
     funext p
-    exact arrowHomeomorph_comp G p.1.1 p.1.2 p.2
+    exact arrowHomeomorph_comp G p.val.1 p.val.2 p.property
 
 end OneObjectGroupoid
 end TauCeti

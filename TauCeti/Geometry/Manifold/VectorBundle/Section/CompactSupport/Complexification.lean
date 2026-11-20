@@ -413,7 +413,7 @@ def SupportedIn.realPointsConjCLE (K : Compacts M) :
       using (SupportedIn.coe_realPointsConjEquiv_apply (n := n) (I := I)
         (F := F) (V := V) (K : Set M) φ).symm
   · rw [LinearEquiv.invFun_eq_symm]
-    refine (continuous_fst.comp (L.continuous.comp continuous_subtype_val)).congr fun φ ↦ ?_
+    refine (continuous_fst.comp (L.continuous.comp continuous_subtypeVal)).congr fun φ ↦ ?_
     simpa only [Function.comp_apply, L, SupportedIn.complexificationCLEProd_apply] using
       (SupportedIn.realPointsConjEquiv_symm_apply (n := n) (I := I)
         (F := F) (V := V) (K : Set M) φ).symm
@@ -437,7 +437,7 @@ def CompactlySupported.realPointsConjCLE :
       fun φ ↦ (CompactlySupported.coe_realPointsConjEquiv_apply φ).symm
   · rw [LinearEquiv.invFun_eq_symm]
     exact ((CompactlySupported.continuous_realPart (n := n) (I := I) e U hU hcover).comp
-      (continuous_subtype_val : Continuous (Subtype.val :
+      (continuous_subtypeVal : Continuous (Subtype.val :
         CompactlySupported.realPointsConj (n := n) (I := I) (F := F) (V := V) → _))).congr
       fun φ ↦ (CompactlySupported.realPointsConjEquiv_symm_apply φ).symm
 

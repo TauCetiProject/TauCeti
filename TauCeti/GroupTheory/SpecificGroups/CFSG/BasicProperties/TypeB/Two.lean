@@ -72,13 +72,14 @@ variable (d : TypeB2LieIndex)
 /-- The composite identification of the spin carrier of `B₂(q)` with `Sp₄` over the closure
 carries the Steinberg map to the entrywise `q`-power Frobenius. -/
 private theorem comp_steinberg :
-    ((d.spinEquivCarrier.trans d.1.carrierEquivSymplectic :
-        d.toTypeBLieIndex.AmbientGroup ≃* d.1.StandardGroup) :
-        d.toTypeBLieIndex.AmbientGroup →* d.1.StandardGroup).comp d.toTypeBLieIndex.steinberg =
-      (GLSymplecticFin.map 2 d.1.1.Closure
-          (iterateFrobenius d.1.1.Closure d.1.1.characteristic d.1.1.fieldExponent)).comp
-        (d.spinEquivCarrier.trans d.1.carrierEquivSymplectic :
-          d.toTypeBLieIndex.AmbientGroup →* d.1.StandardGroup) :=
+    ((d.spinEquivCarrier.trans d.val.carrierEquivSymplectic :
+        d.toTypeBLieIndex.AmbientGroup ≃* d.val.StandardGroup) :
+        d.toTypeBLieIndex.AmbientGroup →* d.val.StandardGroup).comp d.toTypeBLieIndex.steinberg =
+      (GLSymplecticFin.map 2 d.val.val.Closure
+          (iterateFrobenius d.val.val.Closure d.val.val.characteristic
+              d.val.val.fieldExponent)).comp
+        (d.spinEquivCarrier.trans d.val.carrierEquivSymplectic :
+          d.toTypeBLieIndex.AmbientGroup →* d.val.StandardGroup) :=
   MonoidHom.ext fun g => by
     rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass, MulEquiv.trans_apply,
       TypeBLieIndex.steinberg_def, spinEquivCarrier_frobenius,
@@ -92,10 +93,10 @@ map with the entrywise `q`-power Frobenius, so the identification carries one fi
 the other; the fixed subgroup of that Frobenius is the finite symplectic group by the coefficient
 identification. -/
 def symplecticEquivFixedPoints :
-    GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent) ≃*
+    GLSymplecticFin 2 (GaloisField d.val.val.characteristic d.val.val.fieldExponent) ≃*
       d.toTypeBLieIndex.FixedPoints :=
-  (ValidLieTypeIndex.symplecticEquivFrobeniusFixedPoints d.1.1 2).trans
-    (fixedSubgroupCongr (d.spinEquivCarrier.trans d.1.carrierEquivSymplectic)
+  (ValidLieTypeIndex.symplecticEquivFrobeniusFixedPoints d.val.val 2).trans
+    (fixedSubgroupCongr (d.spinEquivCarrier.trans d.val.carrierEquivSymplectic)
       d.comp_steinberg).symm
 
 /-- **The fixed point of `B₂(q)` attached to a finite-field symplectic matrix is that matrix**,
@@ -103,9 +104,9 @@ once the spin carrier is read as `Sp₄` over the closure: its image under the c
 identifications is the matrix with its coefficients extended to the closure. -/
 @[simp]
 theorem carrierEquivSymplectic_spinEquivCarrier_symplecticEquivFixedPoints
-    (g : GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent)) :
-    d.1.carrierEquivSymplectic (d.spinEquivCarrier (d.symplecticEquivFixedPoints g)) =
-      GLSymplecticFin.map 2 _ d.1.1.galoisFieldEmbedding g := by
+    (g : GLSymplecticFin 2 (GaloisField d.val.val.characteristic d.val.val.fieldExponent)) :
+    d.val.carrierEquivSymplectic (d.spinEquivCarrier (d.symplecticEquivFixedPoints g)) =
+      GLSymplecticFin.map 2 _ d.val.val.galoisFieldEmbedding g := by
   rw [symplecticEquivFixedPoints, MulEquiv.trans_apply, coe_fixedSubgroupCongr_symm_apply,
     ← MulEquiv.trans_apply, MulEquiv.apply_symm_apply]
   exact Subtype.ext (Units.ext (by
@@ -114,10 +115,11 @@ theorem carrierEquivSymplectic_spinEquivCarrier_symplecticEquivFixedPoints
 /-- **The finite symplectic group of `B₂(q)` is perfect.** A valid `B₂(q)` has `q ≥ 4`, and
 `Sp₄(𝔽_q)` is perfect as soon as `𝔽_q` has an element other than `0` and `1`. -/
 theorem commutator_symplectic_eq_top :
-    commutator (GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent)) = ⊤ :=
+    commutator (GLSymplecticFin 2 (GaloisField d.val.val.characteristic d.val.val.fieldExponent)) =
+        ⊤ :=
   GLSymplecticFin.commutator_eq_top_of_two_le le_rfl <| .inr <| Cardinal.exists_ne_ne_of_three_le
     (by
-      rw [← Nat.cast_card, GaloisField.card _ _ d.1.1.fieldExponent_pos.ne',
+      rw [← Nat.cast_card, GaloisField.card _ _ d.val.val.fieldExponent_pos.ne',
         ← ValidLieTypeIndex.fieldOrder_eq_characteristic_pow]
       exact_mod_cast (by have := d.four_le_fieldOrder; omega)) 0 1
 
@@ -127,8 +129,9 @@ The fixed points are `Sp₄(𝔽_q)` by `TauCeti.TypeB2LieIndex.symplecticEquivF
 is perfect, so its derived subgroup is the whole group and the derived central quotient is its
 quotient by the centre. -/
 def projectiveSymplecticEquivGroup :
-    GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent) ⧸
-        Subgroup.center (GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent))
+    GLSymplecticFin 2 (GaloisField d.val.val.characteristic d.val.val.fieldExponent) ⧸
+        Subgroup.center (GLSymplecticFin 2 (GaloisField d.val.val.characteristic
+            d.val.val.fieldExponent))
       ≃* d.toTypeBLieIndex.Group :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect d.commutator_symplectic_eq_top
     d.symplecticEquivFixedPoints
@@ -137,9 +140,10 @@ def projectiveSymplecticEquivGroup :
 class of the corresponding fixed point. -/
 @[simp]
 theorem projectiveSymplecticEquivGroup_mk
-    (x : commutator (GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent))) :
+    (x : commutator (GLSymplecticFin 2 (GaloisField d.val.val.characteristic
+        d.val.val.fieldExponent))) :
     d.projectiveSymplecticEquivGroup (QuotientGroup.mk (s := Subgroup.center _)
-        (x : GLSymplecticFin 2 (GaloisField d.1.1.characteristic d.1.1.fieldExponent))) =
+        (x : GLSymplecticFin 2 (GaloisField d.val.val.characteristic d.val.val.fieldExponent))) =
       ((MulEquiv.commutatorCongr d.symplecticEquivFixedPoints x :
           commutator d.toTypeBLieIndex.FixedPoints) : d.toTypeBLieIndex.Group) :=
   DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x

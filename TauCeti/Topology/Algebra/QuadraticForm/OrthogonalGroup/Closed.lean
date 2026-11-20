@@ -164,7 +164,7 @@ theorem _root_.QuadraticMap.continuous_equivFun_orthogonalGroup_apply_basis
       LinearMap.toMatrix b b (g : V ≃ₗ[K] V).toLinearMap) :=
     (IsModuleTopology.continuous_of_linearMap
       (LinearMap.toMatrixAlgEquiv b).toLinearMap).comp
-      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
+      (continuous_linearEquiv_toLinearMap.comp continuous_subtypeVal)
   exact (continuous_pi fun k ↦ ((continuous_apply i).comp
     ((continuous_apply k).comp hM))).congr fun g ↦ by
       ext k

@@ -158,7 +158,7 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
     rw [timeExtension_def]
     exact (valueL f).norm_coe_le_norm _
   -- Interpolate in time with the step `ε²`.
-  have h := hH.norm_le_of_hasDerivWithinAt_Icc hderiv hM (by positivity) hεab t.2
+  have h := hH.norm_le_of_hasDerivWithinAt_Icc hderiv hM (by positivity) hεab t.property
   have hpow : (ε ^ 2) ^ ((α / 2 : ℝ≥0) : ℝ) = ε ^ (α : ℝ) := by
     rw [← Real.rpow_natCast, ← Real.rpow_mul hε.le]
     congr 1

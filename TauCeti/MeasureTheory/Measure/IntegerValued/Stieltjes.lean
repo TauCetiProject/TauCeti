@@ -71,7 +71,7 @@ theorem exists_measure_of_countingPath (N : ℝ≥0 → ℕ) (hN : Monotone N)
     f.isIntegerValued_measure (fun t => ⟨N t, by simp [hf, hzero]⟩), ?_, hcumulative, ?_⟩
   · have hIic : Iic (0 : ℝ≥0) = {0} := by
       ext t
-      simp only [mem_Iic, mem_singleton_iff, le_zero_iff]
+      simp only [mem_Iic, mem_singleton_iff, nonpos_iff_eq_zero]
     simpa only [hIic, hzero, Nat.cast_zero] using hcumulative 0
   · intro a b
     rw [f.measure_Ioc, hf, hf]

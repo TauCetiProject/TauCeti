@@ -216,4 +216,4 @@ theorem Subgroup.stabilizer_conjNormal_injective {G X : Type*} [Group G] [MulAct
     have hc := congrArg (fun f : MulAut N ↦ ((f n : N) : G)) hh
     simpa only [MulAut.conjNormal_apply, MulAut.one_apply, mul_inv_eq_iff_eq_mul] using hc
   rw [OneMemClass.coe_one, subgroup_smul_def, ← mul_smul, hcomm, mul_smul,
-    mem_stabilizer_iff.mp h.2, one_smul]
+    mem_stabilizer_iff.mp h.property, one_smul]

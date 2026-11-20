@@ -70,8 +70,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   read off the values of the Kronecker symbol at odd arguments.
 * `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
   intermediate level, read on unit homomorphisms.
-* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
-  changing the level preserves the value at `-1`, hence parity.
+* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`,
+  `DirichletCharacter.conductor_ite_changeLevel`: changing the level preserves the value at `-1`,
+  hence parity and the signed conductor.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
@@ -84,6 +85,8 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.sum_mul_eq_zero_of_forall_units`: coefficient extraction by orthogonality; a
   combination of symmetrised character sums that vanishes on every pair of units has vanishing
   coefficients against every pair of character multiplicities.
+* `DirichletCharacter.ne_one_of_mul_eq_one_right`: if `χ ≠ 1` and `χ.mul ψ = 1` for `ψ` of nonzero
+  level, then `ψ ≠ 1`.
 
 ## Provenance
 
@@ -335,16 +338,16 @@ theorem changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom {R : Type*}
 noncomputable def factorsThroughEquiv {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
     [NeZero N] (h : d ∣ N) :
     {χ : DirichletCharacter R N // χ.FactorsThrough d} ≃ DirichletCharacter R d where
-  toFun χ := χ.2.χ₀
+  toFun χ := χ.property.χ₀
   invFun ψ := ⟨changeLevel h ψ, changeLevel_factorsThrough ψ h⟩
-  left_inv χ := Subtype.ext χ.2.eq_changeLevel.symm
+  left_inv χ := Subtype.ext χ.property.eq_changeLevel.symm
   right_inv ψ := (changeLevel_injective h (changeLevel_factorsThrough ψ h).eq_changeLevel).symm
 
 /-- `factorsThroughEquiv` sends a character to the character modulo `d` it factors through. -/
 @[simp]
 theorem factorsThroughEquiv_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ} [NeZero N]
     (h : d ∣ N) (χ : {χ : DirichletCharacter R N // χ.FactorsThrough d}) :
-    factorsThroughEquiv h χ = χ.2.χ₀ :=
+    factorsThroughEquiv h χ = χ.property.χ₀ :=
   (rfl)
 
 /-- The inverse of `factorsThroughEquiv` raises a character modulo `d` to level `N`. -/
@@ -492,6 +495,19 @@ theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
   rw [Even, Even, changeLevel_apply_neg_one]
 
+/-- Lifting a Dirichlet character to a nonzero multiple of its level preserves the signed
+conductor `if χ (-1) = 1 then χ.conductor else -χ.conductor`. -/
+theorem conductor_ite_changeLevel {S : Type*} [CommMonoidWithZero S]
+    {N M : ℕ} [NeZero M] (hNM : N ∣ M) (χ : DirichletCharacter S N)
+    [Decidable (changeLevel hNM χ (-1) = 1)] [Decidable (χ (-1) = 1)] :
+    (if changeLevel hNM χ (-1) = 1 then ((changeLevel hNM χ).conductor : ℤ)
+      else -((changeLevel hNM χ).conductor : ℤ)) =
+      if χ (-1) = 1 then (χ.conductor : ℤ) else -(χ.conductor : ℤ) := by
+  have : NeZero N := ⟨fun hN ↦ NeZero.ne M (Nat.eq_zero_of_zero_dvd (hN ▸ hNM))⟩
+  rw [conductor_changeLevel]
+  exact ite_congr (congrArg (· = 1) (changeLevel_apply_neg_one hNM χ))
+    (fun _ ↦ rfl) (fun _ ↦ rfl)
+
 /-- If a combination of the symmetrised character sums `psi i x + phi i x` vanishes against every
 pair of units, then the coefficients of the combination vanish against every pair of
 multiplicities `(if psi i = χ then 1 else 0) + if phi i = χ then 1 else 0`. This extracts the
@@ -546,5 +562,19 @@ theorem sum_mul_eq_zero_of_forall_units {R : Type*} [CommRing R] [IsDomain R] [C
       ring
     exact (mul_eq_zero.mp key').resolve_left (pow_ne_zero 2 hc)
   exact hcoeff χ χ'
+
+/-- If `χ` is nonprincipal and `χ.mul ψ = 1` for `ψ` of nonzero level `N`, then `ψ` is
+nonprincipal. -/
+theorem ne_one_of_mul_eq_one_right {R : Type*} [CommMonoidWithZero R] {M N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R M} {ψ : DirichletCharacter R N}
+    (hχ : χ ≠ 1) (hχψ : χ.mul ψ = 1) : ψ ≠ 1 := by
+  rintro rfl
+  rcases eq_or_ne M 0 with rfl | hM
+  · have h := congrArg (changeLevel (dvd_zero _)) hχψ
+    simp only [DirichletCharacter.mul, map_one, mul_one, ← changeLevel_trans, changeLevel_self] at h
+    exact hχ h
+  · have : NeZero (M.lcm N) := ⟨Nat.lcm_ne_zero hM (NeZero.ne N)⟩
+    rw [DirichletCharacter.mul, map_one, mul_one, changeLevel_eq_one_iff] at hχψ
+    exact hχ hχψ
 
 end DirichletCharacter

@@ -18,6 +18,9 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
 public import TauCeti.Geometry.Sphere.LinearIsometry
+public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # The homology of spheres
@@ -91,6 +94,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   For the unit sphere `S³` of `ℝ⁴` in degrees `1` and `2` these are
   `TauCeti.isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four` and
   `TauCeti.isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four`.
+  For the unit circle `Circle` of `ℂ` the unreduced homology vanishes in degrees `k ≥ 2`
+  (`TauCeti.isZero_singularHomology_circle_of_two_le`).
 * `TauCeti.reducedSingularHomologySphereIso`: the isomorphism `H_redₙ(S) ≅ R` determined by an
   orthonormal basis of `E` indexed by `Fin (n + 1)`, with the recursion
   `TauCeti.reducedSingularHomologySphereIso_succ` and the degree-zero generator
@@ -127,6 +132,12 @@ Coefficients are an object `R` of an abelian category with coproducts.
   when `d = q = 0`), and vanishes otherwise.
   `ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ` gives the same ranks for the unit
   sphere of a real normed space of dimension `d + 1`.
+* `ContinuousMap.HomotopyEquiv.reducedSingularHomologySphereIso`,
+  `ContinuousMap.HomotopyEquiv.isZero_reducedSingularHomology_of_sphere_of_ne`,
+  `ContinuousMap.HomotopyEquiv.singularHomologySphereIso`, and
+  `ContinuousMap.HomotopyEquiv.isZero_singularHomology_of_sphere_of_ne`: reduced and ordinary
+  singular homology of a space homotopy equivalent to the unit sphere of a real normed space of
+  dimension `n + 1` (in any universe).
 
 ## References
 
@@ -230,16 +241,13 @@ variable {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (p : sphe
 
 -- `reducedSingularHomologySuccIso` targets `singularHomologyFunctor`, while the
 -- Mayer–Vietoris connecting morphism starts at `TopCat.toSSet` homology. Ordinary
--- singular homology is defined using `TopCat.toSSet`, so these objects are definitionally equal.
-private abbrev singularHomologyFunctor_obj_eq_toSSetHomology (n : ℕ) (X : TopCat.{w}) :
-    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj X =
-      (TopCat.toSSet.obj X).homology R n := rfl
-
-private lemma singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp
+-- singular homology is defined using `TopCat.toSSet`
+-- (`singularHomologyFunctor_obj_obj_eq_toSSet_homology`), so its `eqToIso` is the identity
+-- after reduction.
+private lemma eqToIso_singularHomologyFunctor_obj_obj_hom_comp
     (n : ℕ) (X : TopCat.{w}) {Y : C}
     (f : (TopCat.toSSet.obj X).homology R n ⟶ Y) :
-    (eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R n X)).hom ≫ f = f := by
-  -- The equality above is `rfl`, so its `eqToIso` is the identity after reduction.
+    (eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology R n X)).hom ≫ f = f := by
   change 𝟙 _ ≫ f = f
   exact Category.id_comp f
 
@@ -255,7 +263,7 @@ def reducedSingularHomologySphereSuccIso (k : ℕ) :
   -- `TauCeti.isIso_reducedMayerVietorisδ_sphere` is a theorem rather than an instance, so it is
   -- supplied to `asIso` explicitly.
   (reducedSingularHomologySuccIso R k).app _ ≪≫
-    eqToIso (singularHomologyFunctor_obj_eq_toSSetHomology R (k + 1) _) ≪≫
+    eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology R (k + 1) _) ≪≫
     @asIso _ _ _ _ (TopCat.reducedMayerVietorisδ R (X := TopCat.of (sphere (0 : E) 1))
       isOpen_compl_singleton isOpen_compl_singleton
       (compl_singleton_union_compl_singleton_neg one_ne_zero p) k)
@@ -276,7 +284,7 @@ lemma reducedSingularHomologySphereSuccIso_hom (k : ℕ) :
         (reducedSingularHomologyFunctor R k).map (TopCat.ofHom (equatorHomotopyEquiv p).toFun) := by
   simp only [reducedSingularHomologySphereSuccIso, Iso.trans_hom, Iso.app_hom,
     reducedSingularHomologySuccIso_hom, ContinuousMap.HomotopyEquiv.reducedSingularHomologyIso_hom]
-  simp only [singularHomologyFunctor_obj_eq_toSSetHomology_hom_comp, asIso_hom]
+  simp only [eqToIso_singularHomologyFunctor_obj_obj_hom_comp, asIso_hom]
   -- Both remaining compositions use the same `toSSet` homology object definitionally.
   rfl
 
@@ -945,6 +953,21 @@ theorem isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four
 
 end ThreeSphere
 
+section UnitCircle
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (R : C)
+
+/-- The unit circle `Circle` of `ℂ` has no singular homology in degrees `k ≥ 2`. -/
+theorem isZero_singularHomology_circle_of_two_le {k : ℕ} (hk : 2 ≤ k) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (TopCat.of Circle)) := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hk
+  have h := isZero_reducedSingularHomologyFunctor_sphere_of_ne R (E := ℂ) (n := 1) (k := k + 2)
+    Complex.finrank_real_complex (by lia)
+  exact (h.of_iso ((reducedSingularHomologySuccIso R (k + 1)).app _).symm).of_iso
+    (Circle.homeomorphSphere.toHomotopyEquiv.singularHomologyIso R (k + 2))
+
+end UnitCircle
+
 end TauCeti
 
 namespace ModuleCat
@@ -1021,16 +1044,99 @@ rank `rank M` in degree `d`, plus `rank M` in degree zero, as for `TopCat.sphere
 (`ModuleCat.finrank_singularHomology_sphere`). -/
 theorem finrank_singularHomology_sphere_of_finrank_eq_succ [StrongRankCondition k]
     [Module.Free k M] [Module.Finite k M] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] {d : ℕ} (hE : Module.finrank ℝ E = d + 1) (q : ℕ) :
+    {d : ℕ} (hE : Module.finrank ℝ E = d + 1) (q : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
       (TopCat.of (Metric.sphere (0 : E) 1))) =
       (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
   rw [← finrank_singularHomology_sphere M d q]
-  exact (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).mapIso (TopCat.isoOfHomeo
-    ((sphereHomeomorphOfFinrankEq
-        (hE.trans (finrank_euclideanSpace_ulift_fin.{w} (d + 1)).symm)).trans
-      (diskBoundaryHomeomorph (d + 1)).symm))).toLinearEquiv.finrank_eq
+  exact (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).mapIso
+    (TopCat.isoOfHomeo (TauCeti.sphereHomeomorphTopCatSphere.{w} hE))).toLinearEquiv.finrank_eq
 
 end Free
 
 end ModuleCat
+
+namespace ContinuousMap.HomotopyEquiv
+
+open scoped ContinuousMap
+
+variable {X : Type w} [TopologicalSpace X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
+
+/-- **Reduced top homology of a space homotopy equivalent to `Sⁿ`.** For any `n : ℕ` and any real
+normed space `F` of dimension `n + 1`, a homotopy equivalence `e : X ≃ₕ Metric.sphere (0 : F) 1`
+induces an isomorphism `H~ₙ(X; R) ≅ R`. -/
+def reducedSingularHomologySphereIso {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) :
+    (TauCeti.reducedSingularHomologyFunctor R n).obj (TopCat.of X) ≅ R :=
+  (e.topCatSphere hF).reducedSingularHomologyIso R n ≪≫
+    TauCeti.reducedSingularHomologyTopCatSphereIso R n
+
+@[simp]
+theorem reducedSingularHomologySphereIso_hom {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) :
+    (e.reducedSingularHomologySphereIso R hF).hom =
+      (TauCeti.reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom (e.topCatSphere hF).toFun) ≫
+        (TauCeti.reducedSingularHomologyTopCatSphereIso R n).hom :=
+  (Iso.trans_hom _ _).trans
+    ((reducedSingularHomologyIso_hom R (e.topCatSphere hF) n) =≫
+      (TauCeti.reducedSingularHomologyTopCatSphereIso R n).hom)
+
+@[simp]
+theorem reducedSingularHomologySphereIso_inv {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) :
+    (e.reducedSingularHomologySphereIso R hF).inv =
+      (TauCeti.reducedSingularHomologyTopCatSphereIso R n).inv ≫
+        (TauCeti.reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom (e.topCatSphere hF).invFun) :=
+  (Iso.trans_inv _ _).trans
+    (congrArg ((TauCeti.reducedSingularHomologyTopCatSphereIso R n).inv ≫ ·)
+      (reducedSingularHomologyIso_inv R (e.topCatSphere hF) n))
+
+/-- **Reduced homology of a space homotopy equivalent to `Sⁿ` vanishes outside degree `n`.** -/
+theorem isZero_reducedSingularHomology_of_sphere_of_ne {n k : ℕ}
+    (e : X ≃ₕ Metric.sphere (0 : F) 1) (hF : Module.finrank ℝ F = n + 1) (hk : k ≠ n) :
+    IsZero ((TauCeti.reducedSingularHomologyFunctor R k).obj (TopCat.of X)) :=
+  (TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne R hk).of_iso
+    ((e.topCatSphere hF).reducedSingularHomologyIso R k)
+
+/-- **Top singular homology of a space homotopy equivalent to `Sⁿ` (`1 ≤ n`).** For `1 ≤ n` and
+`Module.finrank ℝ F = n + 1`, a homotopy equivalence `e : X ≃ₕ Metric.sphere (0 : F) 1` induces an
+isomorphism `Hₙ(X; R) ≅ R`. -/
+def singularHomologySphereIso {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) (hn : 1 ≤ n) :
+    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).obj (TopCat.of X) ≅ R :=
+  match n, hn with
+  | m + 1, _ =>
+    ((TauCeti.reducedSingularHomologySuccIso R m).app (TopCat.of X)).symm ≪≫
+      e.reducedSingularHomologySphereIso R hF
+
+@[simp]
+theorem singularHomologySphereIso_succ_hom {m : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = m + 1 + 1) (hm : 1 ≤ m + 1) :
+    (e.singularHomologySphereIso R hF hm).hom =
+      ((TauCeti.reducedSingularHomologySuccIso R m).app (TopCat.of X)).inv ≫
+        (e.reducedSingularHomologySphereIso R hF).hom :=
+  Iso.trans_hom _ _
+
+@[simp]
+theorem singularHomologySphereIso_succ_inv {m : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = m + 1 + 1) (hm : 1 ≤ m + 1) :
+    (e.singularHomologySphereIso R hF hm).inv =
+      (e.reducedSingularHomologySphereIso R hF).inv ≫
+        ((TauCeti.reducedSingularHomologySuccIso R m).app (TopCat.of X)).hom :=
+  Iso.trans_inv _ _
+
+/-- **Singular homology of a space homotopy equivalent to `Sⁿ` vanishes in positive degrees other
+than `n`.** -/
+theorem isZero_singularHomology_of_sphere_of_ne {n k : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) (hk₀ : k ≠ 0) (hkn : k ≠ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor C k).obj R).obj (TopCat.of X)) :=
+  match k, hk₀ with
+  | q + 1, _ =>
+    (e.isZero_reducedSingularHomology_of_sphere_of_ne R hF hkn).of_iso
+      ((TauCeti.reducedSingularHomologySuccIso R q).app (TopCat.of X)).symm
+
+end ContinuousMap.HomotopyEquiv

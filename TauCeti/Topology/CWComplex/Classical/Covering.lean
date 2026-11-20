@@ -122,17 +122,17 @@ variable [TopologicalSpace E] (hp : IsCoveringMap p)
 /-- The lift of the characteristic map of `c.1` through `p` sending the centre to `c.2`. -/
 private def coverLift {n : ℕ} (c : CoverCell p C n) : C(closedBall (0 : Fin n → ℝ) 1, E) :=
   (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose
+      (cellBallMap c.1) (ballCentre n) c.2 c.2.property).exists.choose
 
 private theorem coverLift_ballCentre {n : ℕ} (c : CoverCell p C n) :
     coverLift hp c (ballCentre n) = c.2 :=
   (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.1
+      (cellBallMap c.1) (ballCentre n) c.2 c.2.property).exists.choose_spec.1
 
 private theorem comp_coverLift {n : ℕ} (c : CoverCell p C n) :
     p ∘ coverLift hp c = cellBallMap c.1 :=
   (hp.existsUnique_continuousMap_lifts_of_convex (convex_closedBall 0 1)
-      (cellBallMap c.1) (ballCentre n) c.2 c.2.2).exists.choose_spec.2
+      (cellBallMap c.1) (ballCentre n) c.2 c.2.property).exists.choose_spec.2
 
 private theorem coverLift_apply {n : ℕ} (c : CoverCell p C n) (x : closedBall (0 : Fin n → ℝ) 1) :
     p (coverLift hp c x) = map n c.1 x :=
@@ -213,7 +213,7 @@ private theorem continuousOn_coverCellMap {n : ℕ} (c : CoverCell p C n) :
   rw [continuousOn_iff_continuous_domRestrict]
   convert (coverLift hp c).continuous using 1
   funext x
-  exact coverLiftFun_of_mem hp c x.2
+  exact coverLiftFun_of_mem hp c x.property
 
 private theorem continuousOn_symm_coverCellMap {n : ℕ} (c : CoverCell p C n) :
     ContinuousOn (coverCellMap hp c).symm (coverCellMap hp c).target := by
@@ -255,7 +255,7 @@ private theorem range_coverLift {n : ℕ} (c : CoverCell p C n) :
   ext e
   constructor
   · rintro ⟨x, rfl⟩
-    exact ⟨x, x.2, by rw [coverCellMap_apply, coverLiftFun_of_mem hp c x.2]⟩
+    exact ⟨x, x.property, by rw [coverCellMap_apply, coverLiftFun_of_mem hp c x.property]⟩
   · rintro ⟨x, hx, rfl⟩
     exact ⟨⟨x, hx⟩, by rw [coverCellMap_apply, coverLiftFun_of_mem hp c hx]⟩
 
@@ -284,8 +284,8 @@ private theorem finite_setOf_coverLift_mem [T2Space B] {m : ℕ} (k : cell C m) 
   set S : Set (E × closedBall (0 : Fin m → ℝ) 1) := K ×ˢ univ ∩ {q | p q.1 = cellBallMap k q.2}
   have hS : IsCompact S := (hK.prod isCompact_univ).inter_right <|
     isClosed_eq (hp.continuous.comp continuous_fst) ((cellBallMap k).continuous.comp continuous_snd)
-  have hlift (q : S) : ∃ e₀ : p ⁻¹' {map m k 0}, coverLift hp ⟨k, e₀⟩ q.1.2 = q.1.1 :=
-    exists_coverLift_eq hp k q.1.2 q.2.2
+  have hlift (q : S) : ∃ e₀ : p ⁻¹' {map m k 0}, coverLift hp ⟨k, e₀⟩ q.val.2 = q.val.1 :=
+    exists_coverLift_eq hp k q.val.2 q.property.2
   choose e he using hlift
   obtain ⟨t, ht⟩ := hS.elim_nhds_subcover'
     (fun q hq ↦ {q' | p q'.1 = map m k q'.2 → coverLift hp ⟨k, e ⟨q, hq⟩⟩ q'.2 = q'.1})
@@ -539,7 +539,7 @@ variable [TopologicalSpace E] (C) {G : Type*} [Group G] [MulAction G E]
 invariant under the action. -/
 def preimageSMul (g : G) : TopCat.of (p ⁻¹' C) ⟶ TopCat.of (p ⁻¹' C) :=
   haveI := hG.toContinuousConstSMul
-  TopCat.ofHom ⟨fun x ↦ ⟨g • x.1, by simpa only [mem_preimage, hG.map_smul] using x.2⟩,
+  TopCat.ofHom ⟨fun x ↦ ⟨g • x.val, by simpa only [mem_preimage, hG.map_smul] using x.property⟩,
     by fun_prop⟩
 
 @[simp]
@@ -553,7 +553,7 @@ theorem preimageSMul_one : preimageSMul C hG (1 : G) = 𝟙 _ := by
   apply ConcreteCategory.hom_ext
   intro x
   apply Subtype.ext
-  exact (coe_preimageSMul_apply C hG 1 x).trans (one_smul G x.1)
+  exact (coe_preimageSMul_apply C hG 1 x).trans (one_smul G x.val)
 
 /-- Translation by a product is successive translation on the preimage subset. -/
 theorem preimageSMul_mul (g h : G) :
@@ -561,7 +561,7 @@ theorem preimageSMul_mul (g h : G) :
   apply ConcreteCategory.hom_ext
   intro x
   apply Subtype.ext
-  exact (coe_preimageSMul_apply C hG (g * h) x).trans ((mul_smul g h x.1).trans
+  exact (coe_preimageSMul_apply C hG (g * h) x).trans ((mul_smul g h x.val).trans
     ((coe_preimageSMul_apply C hG g (preimageSMul C hG h x)).trans
       (congrArg (g • ·) (coe_preimageSMul_apply C hG h x))).symm)
 
@@ -659,7 +659,7 @@ theorem exists_smul_eq_iff_cellPreimageEquiv_fst_eq
   obtain ⟨i, e⟩ := c
   obtain ⟨i', e'⟩ := c'
   obtain rfl : i = i' := h
-  obtain ⟨g, hg⟩ := hG.apply_eq_iff_mem_orbit.1 (e'.2.trans e.2.symm)
+  obtain ⟨g, hg⟩ := hG.apply_eq_iff_mem_orbit.1 (e'.property.trans e.property.symm)
   exact ⟨g, Sigma.ext rfl (heq_of_eq (Subtype.ext hg))⟩
 
 /-- **Translation by a group element is cellular** for the lifted CW structure. -/

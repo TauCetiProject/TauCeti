@@ -102,13 +102,13 @@ and the action is jointly continuous for the subspace topology on `Λ`. -/
 def toContinuousRep (Λ : IntegralModel O ρ) : ContinuousRep Γ O Λ.lattice where
   toRepresentation :=
     { toFun g :=
-        { toFun x := ⟨ρ g x, Λ.stable g x x.2⟩
+        { toFun x := ⟨ρ g x, Λ.stable g x x.property⟩
           map_add' x y := Subtype.ext (map_add (ρ g) (x : V) y)
           map_smul' a x := Subtype.ext ((ρ g).map_smul_of_tower a (x : V)) }
       map_one' := by ext; simp
       map_mul' g h := by ext; simp }
   continuous_action := (ρ.continuous_action.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
 
 /-- The inclusion of an integral model intertwines its action with the action on `V`. -/
 @[simp]

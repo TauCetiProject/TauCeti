@@ -128,7 +128,8 @@ theorem exists_sobolevEmbeddingL [T2Space M] {pstar : ℝ≥0∞} (hpstar : psta
     set u := (w : A.sectionChartData.SobolevData μ p (k + 1)) with hu
     -- Both sides are the coordinate change applied to the chart-`i` components at the image
     -- point, which agree almost everywhere.
-    have htr := A.restrictL_eq_transferL μ p (k + 1) hp w.2 (hP i j) (hPc i j) (hPD i j) (hQi i)
+    have htr := A.restrictL_eq_transferL μ p (k + 1) hp w.property (hP i j) (hPc i j) (hPD i j)
+        (hQi i)
       (hPQ i j) m
     have hl : ∀ᵐ y ∂μ.restrict (P i j), ∀ l,
         Wkp.value k (Emb i (u i l)) (((A.chart j).symm ≫ₕ A.chart i) y) =

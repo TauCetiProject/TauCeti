@@ -62,6 +62,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
   meeting the lower semicircle only at `±1` (`Circle.upperSemicircle_eq_inv_iff`).
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
+* `Circle.coe_mem_unitary` and `TauCeti.circleEquivUnitary`: inclusion of `Circle` into
+  `unitary ℂ` and the topological group isomorphism `Circle ≃ₜ* unitary ℂ`.
 * `TauCeti.hasDerivAt_coe_circleExp`: the velocity of `t ↦ exp (t i)` at `t` is `i exp (t i)`.
 -/
 
@@ -122,7 +124,7 @@ theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
     (Circle.exp (Real.pi / d) : ℂ) ^ d = -1 := by
-  rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+  rw [Circle.coe_exp, ← Complex.exp_natCast_mul]
   have hmul : (d : ℂ) * (↑(Real.pi / d) * Complex.I) = Real.pi * Complex.I := by
     push_cast
     field_simp
@@ -265,7 +267,8 @@ its inverse, the point `x - √(1 - x²) I` of the lower semicircle, it parametr
 its real part. -/
 def upperSemicircle (x : Set.Icc (-1 : ℝ) 1) : Circle :=
   ⟨(x : ℝ) + √(1 - (x : ℝ) ^ 2) * Complex.I, mem_sphere_zero_iff_norm.2 (by
-    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.2.1, x.2.2]), add_sub_cancel,
+    rw [Complex.norm_add_mul_I, Real.sq_sqrt (by nlinarith [x.property.1, x.property.2]),
+        add_sub_cancel,
       Real.sqrt_one])⟩
 
 theorem coe_upperSemicircle (x : Set.Icc (-1 : ℝ) 1) :
@@ -304,7 +307,7 @@ theorem upperSemicircle_eq_inv_iff {x y : Set.Icc (-1 : ℝ) 1} :
     obtain rfl : x = y := Subtype.ext hre
     refine ⟨rfl, ?_⟩
     have h0 : √(1 - (x : ℝ) ^ 2) = 0 := by linarith [Real.sqrt_nonneg (1 - (x : ℝ) ^ 2)]
-    nlinarith [Real.sqrt_eq_zero'.1 h0, x.2.1, x.2.2]
+    nlinarith [Real.sqrt_eq_zero'.1 h0, x.property.1, x.property.2]
   · rintro ⟨rfl, hx⟩
     exact (inv_upperSemicircle_of_sq_eq_one hx).symm
 
@@ -330,11 +333,34 @@ theorem exists_upperSemicircle_eq_or_inv_eq (v : Circle) :
     · simp
     · simp [hsqrt, abs_of_neg him]
 
+/-- Every point of `Circle` belongs to `unitary ℂ`. -/
+theorem coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ := by
+  simp [Unitary.mem_iff_self_mul_star, RCLike.star_def, RCLike.mul_conj]
+
 end Circle
 
 namespace TauCeti
 
 open Complex
+
+/-- The unit circle `Circle` in `ℂ` is topologically isomorphic as a group to `unitary ℂ`. -/
+def circleEquivUnitary : Circle ≃ₜ* unitary ℂ where
+  toFun z := ⟨(z : ℂ), z.coe_mem_unitary⟩
+  invFun u := ⟨(u : ℂ), mem_sphere_zero_iff_norm.2 <| CStarRing.norm_of_mem_unitary u.property⟩
+  left_inv _ := Circle.ext rfl
+  right_inv _ := Subtype.ext rfl
+  map_mul' _ _ := Subtype.ext rfl
+  continuous_toFun := Continuous.subtype_mk
+    (continuous_subtypeVal : Continuous ((↑) : Circle → ℂ)) Circle.coe_mem_unitary
+  continuous_invFun := Continuous.subtype_mk continuous_subtypeVal _
+
+@[simp]
+theorem coe_circleEquivUnitary (z : Circle) : (circleEquivUnitary z : ℂ) = z :=
+  (rfl)
+
+@[simp]
+theorem coe_circleEquivUnitary_symm (u : unitary ℂ) : (circleEquivUnitary.symm u : ℂ) = u :=
+  (rfl)
 
 /-- Read in `ℂ`, the circle exponential `t ↦ exp (t i)` has velocity `i exp (t i)`. -/
 theorem hasDerivAt_coe_circleExp (t : ℝ) :
