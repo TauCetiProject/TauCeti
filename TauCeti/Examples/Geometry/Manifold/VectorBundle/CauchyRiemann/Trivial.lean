@@ -64,17 +64,6 @@ private theorem torus_dzbar_zeroOne (x : UnitAddCircle × UnitAddCircle) :
     (addCircleProd 1 1).IsZeroOneForm (V := Trivial _ ℂ) (TauCeti.UnitAddTorus.dzbar x) := by
   simpa only [one_smul] using TauCeti.UnitAddTorus.isZeroOneForm_smul_dzbar x 1
 
-private theorem torus_dzbar_ne_zero (x : UnitAddCircle × UnitAddCircle) :
-    TauCeti.UnitAddTorus.dzbar x ≠ 0 := by
-  intro h
-  have h₁ := congrArg (fun L : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ ↦ L (1, 0)) h
-  have h₀ : (0 : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ) ((1, 0) : ℝ × ℝ) = 0 :=
-    zero_apply _
-  have h₁' : (1 : ℂ) = 0 := by
-    simpa only [TauCeti.UnitAddTorus.dzbar_apply, Complex.ofReal_one, Complex.ofReal_zero,
-      zero_mul, sub_zero] using h₁.trans h₀
-  exact one_ne_zero h₁'
-
 section Plane
 
 /-- The conjugate-coefficient operator on this native surface. -/
@@ -205,7 +194,7 @@ example : ¬IsComplexLinearOperator ℂ (V := Trivial (UnitAddCircle × UnitAddC
   intro hD
   have h := ((addCircleProd 1 1).isComplexLinearOperator_dbarFunction_add_conjSMulForm_iff
     (TauCeti.UnitAddTorus.dzbar)).1 hD
-  exact torus_dzbar_ne_zero (0, 0) (h _)
+  exact TauCeti.UnitAddTorus.dzbar_ne_zero (0, 0) (h _)
 
 end Torus
 

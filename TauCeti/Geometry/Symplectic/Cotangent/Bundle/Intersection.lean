@@ -101,9 +101,7 @@ theorem two_le_encard_range_section_mextDerivₗ_inter_range_zeroSection [I.Boun
         range (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ))).encard := by
   rw [encard_range_section_mextDerivₗ_inter_range_zeroSection]
   refine two_le_totalCriticalCount (ContMDiff.continuous (I := I) (I' := 𝓘(ℝ)) (n := ∞) ?_)
-  -- The function of a smooth `0`-form is smooth.
-  rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
-  exact f.isSmoothForm
+  exact f.contMDiff_apply_zero
 
 end CotangentBundle
 

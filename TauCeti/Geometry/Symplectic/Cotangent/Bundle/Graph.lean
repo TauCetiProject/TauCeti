@@ -168,8 +168,7 @@ theorem exists_isExactLagrangianMap_section_iff (α : SmoothForm I M ℝ 1) :
     (isSmoothForm_ofFunction_iff.mpr hh).mem_smoothBundleForms⟩, Subtype.ext ?_⟩,
     fun ⟨g, hg⟩ ↦ ⟨fun x ↦ g.val x 0, ?_, ?_⟩⟩
   · rw [mextDerivₗ_apply, hα]
-  · rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction, isSmoothForm_def]
-    exact g.contMDiff
+  · exact g.contMDiff_apply_zero
   · rw [← hg, mextDerivₗ_apply, ← RoughForm.eq_ofFunction]
 
 /-- **The zero section is exact Lagrangian.** On a finite-dimensional manifold, the zero section of

@@ -43,6 +43,7 @@ are identified with the smooth functions on `UnitAddTorus (Fin 2)` by
 
 ## Main results
 
+* `TauCeti.UnitAddTorus.dzbar_ne_zero`: the antiholomorphic covector is nonzero at every point.
 * `TauCeti.UnitAddTorus.isZeroOneForm_iff_eq_smul_dzbar`: a `(0,1)`-form is `η (∂_s) dzbar`.
 * `TauCeti.UnitAddTorus.dbarFunction_eq_smul_dzbar`: `∂bar σ` is the conjugate Wirtinger
   derivative of `σ` on `UnitAddTorus (Fin 2)` times `dzbar`.
@@ -84,6 +85,18 @@ def dzbar (x : UnitAddCircle × UnitAddCircle) : TangentSpace (𝓘(ℝ).prod �
 theorem dzbar_apply (x : UnitAddCircle × UnitAddCircle) (v : ℝ × ℝ) :
     dzbar x v = v.1 - v.2 * I :=
   conjCLE_comp_equivRealProdCLM_symm_apply v
+
+/-- The native antiholomorphic covector of the square torus is nonzero at every point. -/
+theorem dzbar_ne_zero (x : UnitAddCircle × UnitAddCircle) :
+    dzbar x ≠ 0 := by
+  intro h
+  have h₁ := congrArg (fun L : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ ↦ L (1, 0)) h
+  have h₀ : (0 : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) x →L[ℝ] ℂ) ((1, 0) : ℝ × ℝ) = 0 :=
+    zero_apply _
+  have h₁' : (1 : ℂ) = 0 := by
+    simpa only [dzbar_apply, Complex.ofReal_one, Complex.ofReal_zero,
+      zero_mul, sub_zero] using h₁.trans h₀
+  exact one_ne_zero h₁'
 
 /-- **The `(0,1)`-forms of the square torus.** A `ℂ`-valued real linear form `η` at `x` is a
 `(0,1)`-form exactly when it is `η (∂_s) dzbar`. So `η ↦ η (∂_s)` identifies the `(0,1)`-forms at
