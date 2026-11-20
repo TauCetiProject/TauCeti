@@ -276,10 +276,14 @@ at the vertex `1`, with an arbitrary step `s`, and the edge of `q` at the vertex
 theorem cyclicDiscreteEnergy_cons_self (τ : Fin (n + 1) → ℝ) (s : ℝ) (q : Fin (n + 1) → X) :
     cyclicDiscreteEnergy (Fin.cons (τ 0) (Fin.cons s (Fin.tail τ)) : Fin (n + 2) → ℝ)
       (Fin.cons (q 0) q) = cyclicDiscreteEnergy τ q := by
-  simp only [cyclicDiscreteEnergy_def, Fin.sum_univ_succ, Fin.zero_sub_one_eq_last,
-    Fin.succ_sub_one_eq_castSucc, ← Fin.succ_last, Fin.cons_zero, Fin.cons_succ, Fin.tail]
-  rw [Fin.castSucc_zero (n := n + 1), Fin.cons_zero, dist_self]
-  simp only [← Fin.succ_castSucc, Fin.cons_succ]
+  simp only [cyclicDiscreteEnergy_def, Fin.sum_univ_succ]
+  -- The closing edge `(q₀, qₙ)` keeps the step `τ 0`.
+  rw [dist_cons_self_zero_sub_one, Fin.cons_zero]
+  -- The new edge `(q₀, q₀)` has length zero.
+  rw [Fin.succ_zero_eq_one, dist_cons_self_one_sub_one]
+  -- The edge `(qₖ, qₖ₊₁)` keeps the step `τ (k + 1)`.
+  simp only [dist_cons_self_succ_succ_sub_one]
+  simp only [Fin.cons_succ, Fin.tail]
   ring
 
 /-- **The embedding `ιⁿ` of energy carriers**, `(q₀, …, qₙ) ↦ (q₀, q₀, q₁, …, qₙ)`, repeating the
@@ -294,8 +298,7 @@ def cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
     rw [cyclicDiscreteEnergy_cons_self]
     exact q.2⟩
   continuous_toFun :=
-    (((continuous_apply 0).comp continuous_subtype_val).finCons (A := fun _ ↦ X)
-      continuous_subtype_val).subtype_mk _
+    (isEmbedding_cons_apply_zero.continuous.comp continuous_subtype_val).subtype_mk _
 
 @[simp]
 theorem coe_cyclicDiscreteEnergyRepeatFirst_apply (τ : Fin (n + 1) → ℝ) (s c : ℝ)
@@ -306,14 +309,8 @@ theorem coe_cyclicDiscreteEnergyRepeatFirst_apply (τ : Fin (n + 1) → ℝ) (s 
 /-- Repeating the base vertex is an embedding of energy carriers: forgetting the first vertex is a
 continuous left inverse on tuples. -/
 theorem isEmbedding_cyclicDiscreteEnergyRepeatFirst (τ : Fin (n + 1) → ℝ) (s c : ℝ) :
-    Topology.IsEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) := by
-  refine Topology.IsEmbedding.of_comp (map_continuous _) continuous_subtype_val.finTail ?_
-  have hcomp : (fun p : cyclicDiscreteEnergyStrictSublevel (X := X)
-      (Fin.cons (τ 0) (Fin.cons s (Fin.tail τ)) : Fin (n + 2) → ℝ) c ↦ Fin.tail p.1) ∘
-      cyclicDiscreteEnergyRepeatFirst τ s c = Subtype.val := by
-    funext q
-    simp
-  exact hcomp ▸ Topology.IsEmbedding.subtypeVal
+    Topology.IsEmbedding (cyclicDiscreteEnergyRepeatFirst (X := X) τ s c) :=
+  isEmbedding_cons_apply_zero.restrict fun q hq ↦ (cyclicDiscreteEnergyRepeatFirst τ s c ⟨q, hq⟩).2
 
 /-! ### Forgetting and inserting vertices -/
 
