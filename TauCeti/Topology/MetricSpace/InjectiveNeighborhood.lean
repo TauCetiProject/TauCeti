@@ -130,7 +130,7 @@ theorem exists_isOpenEmbedding_near_section (hf : IsLocalHomeomorphOn f O)
         (fun p _ => p.property))
   have hindO : IsInducing ((O.domRestrict f) ∘ sO) := hind
   obtain ⟨W, hW, hsW, hinj⟩ := hindO.exists_injOn_neighborhood_section hloc.continuous hsO'
-    (π ∘ Subtype.val) (hπ.comp continuous_subtype_val) (fun b => hsect b)
+    (π ∘ Subtype.val) (hπ.comp continuous_subtypeVal) (fun b => hsect b)
     (fun b => by
       obtain ⟨V, hV, hemb⟩ := isLocalHomeomorph_iff_isOpenEmbedding_restrict.mp hloc (sO b)
       exact ⟨V, hV, Set.injOn_iff_injective.mpr hemb.injective⟩)

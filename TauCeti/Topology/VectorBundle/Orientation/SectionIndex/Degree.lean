@@ -81,15 +81,15 @@ variable {M E' : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E']
 /-- The fibre coordinate `x ↦ (e (s x)).2` of a section `s` in a trivialization `e`, on an open
 set `U` inside the base set of `e`. -/
 private def fiberCoord {U : Set M} (hUe : U ⊆ e.baseSet) : C(U, F) :=
-  ⟨fun x ↦ (e (TotalSpace.mk' F x.1 (s x.1))).2,
-    continuous_snd.comp ((e.continuousOn.comp_continuous (hs.comp continuous_subtype_val)
-      fun x ↦ e.mem_source.2 (hUe x.2)))⟩
+  ⟨fun x ↦ (e (TotalSpace.mk' F x.val (s x.val))).2,
+    continuous_snd.comp ((e.continuousOn.comp_continuous (hs.comp continuous_subtypeVal)
+      fun x ↦ e.mem_source.2 (hUe x.property)))⟩
 
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
 /-- The fibre coordinate vanishes exactly where the section does. -/
 private theorem fiberCoord_eq_zero_iff {U : Set M} (hUe : U ⊆ e.baseSet) (x : U) :
-    fiberCoord hs e hUe x = 0 ↔ s x.1 = 0 := by
-  have := e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x.1 (s x.1)) (hUe x.2)
+    fiberCoord hs e hUe x = 0 ↔ s x.val = 0 := by
+  have := e.snd_apply_ne_zero_iff ℝ (v := TotalSpace.mk' F x.val (s x.val)) (hUe x.property)
   exact not_iff_not.1 this
 
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
@@ -98,18 +98,18 @@ omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle
 private theorem fiberCoord_preimage_subset {z : M} {U : Set M} (hz : z ∈ U)
     (hUz : ∀ x ∈ U, s x = 0 → x = z) (hUe : U ⊆ e.baseSet) :
     fiberCoord hs e hUe ⁻¹' {0} ⊆ {⟨z, hz⟩} := fun x hx ↦
-  Subtype.ext (hUz x.1 x.2 ((fiberCoord_eq_zero_iff hs e hUe x).1 hx))
+  Subtype.ext (hUz x.val x.property ((fiberCoord_eq_zero_iff hs e hUe x).1 hx))
 
 /-- The section `s` on `U`, as a map of pairs `(U, U ∖ {z}) ⟶ (E|_U, E₀|_U)`. -/
 private def sectionThomPairOverMap {z : M} {U : Set M} (hz : z ∈ U)
     (hUz : ∀ x ∈ U, s x = 0 → x = z) :
     TopPair.ofSubset ({⟨z, hz⟩}ᶜ : Set (TopCat.of U)) ⟶ thomPairOver F E U :=
   TopPair.ofHom
-    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.1 (s x.1), x.2⟩,
-      (hs.comp continuous_subtype_val).subtype_mk _⟩)
-    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.1.1 (s x.1.1), x.1.2,
-      mem_zeroSectionCompl.2 fun h0 ↦ x.2 (Subtype.ext (hUz x.1.1 x.1.2 h0))⟩,
-      ((hs.comp (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _)⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.val (s x.val), x.property⟩,
+      (hs.comp continuous_subtypeVal).subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.val.val (s x.val.val), x.val.property,
+      mem_zeroSectionCompl.2 fun h0 ↦ x.property (Subtype.ext (hUz x.val.val x.val.property h0))⟩,
+      ((hs.comp (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _)⟩)
     (by ext; rfl)
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ x, Module ℝ (E x)] [∀ x, TopologicalSpace (E x)]
@@ -118,9 +118,9 @@ private theorem sectionThomPairOverMap_comp {z : M} {U : Set M} (hz : z ∈ U)
     (hUz : ∀ x ∈ U, s x = 0 → x = z) :
     sectionThomPairOverMap hs hz hUz ≫ thomPairOverMap F E (subset_univ U) ≫
         (thomPairOverUnivIso F E).hom =
-      thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.1 (s x.1),
-        hs.comp continuous_subtype_val⟩ (S := {⟨z, hz⟩})
-        fun x hx h0 ↦ hx (mem_singleton_iff.2 (Subtype.ext (hUz x.1 x.2 h0))) :=
+      thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.val (s x.val),
+        hs.comp continuous_subtypeVal⟩ (S := {⟨z, hz⟩})
+        fun x hx h0 ↦ hx (mem_singleton_iff.2 (Subtype.ext (hUz x.val x.property h0))) :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ by
     -- The carriers of the pairs agree with `U` and the subspaces of the total space only up to
     -- unfolding, so `rw [TopPair.Hom.fst_comp, ConcreteCategory.comp_apply]` leaves the
@@ -191,7 +191,7 @@ theorem localHomologyMap_eq_sectionIndex_smul {z : M} {U : Set M}
     (hU : IsOpen U) (hz : z ∈ U) (hUz : ∀ x ∈ U, s x = 0 → x = z) (hUe : U ⊆ e.baseSet)
     {ω : Orientation ℝ F (Fin (n + 1))}
     (ho : ∀ x (hx : x ∈ U), e.mapOrientation (Fin (n + 1)) (hUe hx) (o x) = ω) (σ : C(U, F))
-    (hσ : ∀ x : U, σ x = (e (TotalSpace.mk' F x.1 (s x.1))).2)
+    (hσ : ∀ x : U, σ x = (e (TotalSpace.mk' F x.val (s x.val))).2)
     (hσz : σ ⁻¹' ({0} : Set F) ⊆ {(⟨z, hz⟩ : U)}) :
     localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) σ (S := {⟨z, hz⟩}) (T := {0}) hσz (n + 1)
         ((hU.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hz⟩ (n + 1)).symm (oM z)).val =
@@ -221,7 +221,7 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
           C(φ.source, F)) (S := {⟨z, hUφ hz⟩}) (T := {0})
         (by
           rintro x hx
-          exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))) (n + 1)
+          exact Subtype.ext (φ.injOn x.property (hUφ hz) (sub_eq_zero.1 hx))) (n + 1)
         ((φ.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨z, hUφ hz⟩
           (n + 1)).symm (oM z)).val =
       (ω.localOrientation hF).val)
@@ -256,17 +256,17 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
     rw [hfφ x hx] at h0
     rw [hUz x hx ((fiberCoord_eq_zero_iff hs e hUe ⟨x, hx⟩).1 h0)]
   let g : C(V, F) := ⟨V.domRestrict f, hfV.domRestrict⟩
-  let φU : C(U, V) := ⟨fun x ↦ ⟨φ x, mem_image_of_mem φ x.2⟩,
+  let φU : C(U, V) := ⟨fun x ↦ ⟨φ x, mem_image_of_mem φ x.property⟩,
     ((φ.continuousOn.mono hUφ).domRestrict).subtype_mk _⟩
   have hφU : φU ⁻¹' {⟨φ z, hzV⟩} ⊆ {⟨z, hz⟩} := fun x hx ↦
-    Subtype.ext (φ.injOn (hUφ x.2) (hUφ hz) (congrArg Subtype.val hx :))
-  have hg : g ⁻¹' {0} ⊆ {⟨φ z, hzV⟩} := fun y hy ↦ Subtype.ext (hfx y y.2 hy)
+    Subtype.ext (φ.injOn (hUφ x.property) (hUφ hz) (congrArg Subtype.val hx :))
+  have hg : g ⁻¹' {0} ⊆ {⟨φ z, hzV⟩} := fun y hy ↦ Subtype.ext (hfx y y.property hy)
   -- The action of `f` on local homology at `φ z`, with target the value `c = f (φ z)`. That value
   -- enters the morphism types and the proofs of the preimage conditions, so neither `rw` nor
   -- `simp` can replace it by `0` after the fact; it is generalized and substituted instead.
   have key : ∀ {c : F} (hc : f (φ z) = c),
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) g (S := {⟨φ z, hzV⟩}) (T := {c})
-          (fun y hy ↦ Subtype.ext (hfx y y.2 ((hy : f y = c).trans (hc.symm.trans hf0))))
+          (fun y hy ↦ Subtype.ext (hfx y y.property ((hy : f y = c).trans (hc.symm.trans hf0))))
           (n + 1) =
         (SignType.sign A.det : ℤ) • localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ))
           (⟨fun y : V ↦ c + (y - φ z), by fun_prop⟩ : C(V, F)) (S := {⟨φ z, hzV⟩}) (T := {c})
@@ -281,7 +281,7 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
   let τ : C(φ.source, F) := ⟨fun x ↦ φ x - φ z, φ.continuousOn.domRestrict.sub continuous_const⟩
   have hτz : τ ⁻¹' {0} ⊆ {⟨z, hUφ hz⟩} := by
     rintro x hx
-    exact Subtype.ext (φ.injOn x.2 (hUφ hz) (sub_eq_zero.1 hx))
+    exact Subtype.ext (φ.injOn x.property (hUφ hz) (sub_eq_zero.1 hx))
   have hUz' : ContinuousMap.inclusion hUφ ⁻¹' {⟨z, hUφ hz⟩} ⊆ {⟨z, hz⟩} := by
     rintro x (hx : _ = _)
     exact Subtype.ext (congrArg Subtype.val hx :)
@@ -303,7 +303,7 @@ theorem sectionIndex_eq_sign_det_of_hasFDerivAt (φ : OpenPartialHomeomorph M F)
   have hsmul : ∀ (c : ℤ) {X Y : ModuleCat.{0} ℤ} (u : X ⟶ Y) (v : X), (c • u) v = c • u v :=
     fun _ _ _ _ _ ↦ rfl
   have hb := o.localHomologyMap_eq_sectionIndex_smul hF oM hs e hU hz
-    hUz hUe ho (g.comp φU) (fun x ↦ hfφ x.1 x.2) ((preimage_mono hg).trans hφU)
+    hUz hUe ho (g.comp φU) (fun x ↦ hfφ x.val x.property) ((preimage_mono hg).trans hφU)
   -- The inclusion of `U` into the source of `φ` carries the local orientation of `U` at `z` to
   -- that of the source, which `τ` carries to the local orientation selected by `ω`.
   rw [hmor, hsmul, ← localHomologyMap_comp _ _ τ hUz' hτz, ConcreteCategory.comp_apply,

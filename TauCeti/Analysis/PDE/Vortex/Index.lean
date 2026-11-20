@@ -156,9 +156,9 @@ square-integrable weak solutions of `L_x y = 0`. -/
 def sobolevGaugeFixedKernelEquiv (hx : Continuous x) (hax : a =ᵐ[μ⊤] x) :
     (sobolevGaugeFixedOperator a).ker ≃ₗ[ℝ] weakGaugeFixedKernel x :=
   LinearEquiv.ofBijective ((valuesLp.domRestrict _).codRestrict (weakGaugeFixedKernel x)
-      fun y ↦ valuesLp_mem_weakGaugeFixedKernel hx hax y.2)
+      fun y ↦ valuesLp_mem_weakGaugeFixedKernel hx hax y.property)
     ⟨fun _ _ h ↦ Subtype.ext (valuesLp_injective (congrArg Subtype.val h)), fun u ↦
-      let ⟨w, hw, hwu⟩ := exists_valuesLp_eq hx hax u.2
+      let ⟨w, hw, hwu⟩ := exists_valuesLp_eq hx hax u.property
       ⟨⟨w, hw⟩, Subtype.ext hwu⟩⟩
 
 /-- The isomorphism `sobolevGaugeFixedKernelEquiv` sends `y` to the `L²` class of its values
@@ -166,8 +166,8 @@ def sobolevGaugeFixedKernelEquiv (hx : Continuous x) (hax : a =ᵐ[μ⊤] x) :
 theorem coeFn_sobolevGaugeFixedKernelEquiv (hx : Continuous x) (hax : a =ᵐ[μ⊤] x)
     (y : (sobolevGaugeFixedOperator a).ker) :
     (sobolevGaugeFixedKernelEquiv hx hax y : Lp (EuclideanSpace ℝ (Fin 4)) 2 volume) =ᵐ[volume]
-      fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value (y.1 j) z : EuclideanSpace ℝ (Fin 4)) :=
-  coeFn_valuesLp y.1
+      fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value (y.val j) z : EuclideanSpace ℝ (Fin 4)) :=
+  coeFn_valuesLp y.val
 
 /-- At a continuous field with `L∞` class `a`, the kernel of the realization of `L_x` on `H¹` has
 the dimension of the weak `L²` kernel. -/

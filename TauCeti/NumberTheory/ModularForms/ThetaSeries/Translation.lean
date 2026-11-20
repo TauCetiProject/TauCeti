@@ -74,7 +74,7 @@ theorem thetaCoset_vadd_eq_mul (L : Submodule ℤ E) (γ : E) {t : ℝ}
     thetaCoset L γ (t +ᵥ τ) = cexp (π * I * (‖γ‖ ^ 2 : ℝ) * t) * thetaCoset L γ τ := by
   rw [thetaCoset_apply, thetaCoset_apply, ← tsum_mul_left]
   refine tsum_congr fun v ↦ ?_
-  obtain ⟨m, hm⟩ := h v v.2
+  obtain ⟨m, hm⟩ := h v v.property
   have ht : cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * t) = cexp (π * I * (‖γ‖ ^ 2 : ℝ) * t) := by
     simpa only [mul_assoc] using exp_pi_mul_I_mul_eq_of_sub_eq
       (a := ((‖γ + (v : E)‖ ^ 2 : ℝ) : ℂ) * t) (b := ((‖γ‖ ^ 2 : ℝ) : ℂ) * t)

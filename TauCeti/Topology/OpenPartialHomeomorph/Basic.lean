@@ -76,6 +76,6 @@ theorem isOpenEmbedding_sourceRestrict : Topology.IsOpenEmbedding e.sourceRestri
 /-- A point of the source is the only point of the source that `e` sends to its image. -/
 theorem sourceRestrict_preimage {a : X} (ha : a ∈ e.source) :
     e.sourceRestrict ⁻¹' {e a} ⊆ ContinuousMap.subtypeVal e.source ⁻¹' {a} :=
-  fun x hx ↦ e.injOn x.2 ha hx
+  fun x hx ↦ e.injOn x.property ha hx
 
 end OpenPartialHomeomorph

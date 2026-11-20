@@ -112,8 +112,8 @@ theorem ContMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val
     {U : TopologicalSpace.Opens M} {φ : U → F} {x : U} (hφ : ContMDiff I 𝓘(ℝ, F) n φ) :
     ∃ G : C^n⟮I, M; 𝓘(ℝ, F), F⟯, ((G : M → F) ∘ Subtype.val) =ᶠ[𝓝 x] φ := by
   obtain ⟨G, hG_eq⟩ := (ContMDiffMap.contMDiffOn_extend U ⟨φ, hφ⟩
-    0).exists_contMDiffMap_eventuallyEq (U.isOpen.mem_nhds x.2)
-  refine ⟨G, ((continuous_subtype_val.tendsto x).eventually hG_eq).mono fun y hy ↦ ?_⟩
+    0).exists_contMDiffMap_eventuallyEq (U.isOpen.mem_nhds x.property)
+  refine ⟨G, ((continuous_subtypeVal.tendsto x).eventually hG_eq).mono fun y hy ↦ ?_⟩
   simpa [Subtype.val_injective.extend_apply] using hy
 
 /-- **Positive smooth germ extension from an open submanifold.** A positive `C^n` function on an

@@ -146,7 +146,7 @@ theorem sectionIndex_toHomologicalOrientation_eq_one {z : M} (hz : s z = 0)
   have hφ := (chartAt X z).localHomologyMap_chart_localOrientationOfOrientedChart
     (mem_chart_source X z) Λ (oM.orientationAt z) hX hF (by
       rw [← hσ]
-      exact fun x hx ↦ Subtype.ext (φ.injOn x.2 hzφ (sub_eq_zero.1 hx)))
+      exact fun x hx ↦ Subtype.ext (φ.injOn x.property hzφ (sub_eq_zero.1 hx)))
   simp only [← hσ] at hφ
   rw [hmap, ← localOrientationOfManifoldOrientation_eq,
     ← Manifold.Orientation.toHomologicalOrientation_apply] at hφ
@@ -197,7 +197,7 @@ theorem sectionIndex_toHomologicalOrientation_eq_ite {z : M} (hz : s z = 0)
       (D : TangentSpace 𝓘(ℝ, X) z →L[ℝ] E z) = sectionLinearization (F := F) 𝓘(ℝ, X) id s z :=
     exists_continuousLinearEquiv_eq_sectionLinearization_of_surjective (hX.trans hF.symm) hreg
   rcases Orientation.eq_or_eq_neg ((oM.orientationAt z).map _ D.toLinearEquiv) (o z)
-    (by rw [Fintype.card_fin, VectorBundle.finrank_eq ℝ F E z, hF]) with ho | ho
+    (by rw [Nat.card_fin, VectorBundle.finrank_eq ℝ F E z, hF]) with ho | ho
   · exact absurd ⟨D, hD, ho⟩ h
   · exact sectionIndex_toHomologicalOrientation_eq_neg_one hX o hF oM hs hz hsd D hD ho
 

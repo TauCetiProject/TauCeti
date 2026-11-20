@@ -34,6 +34,7 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing function on a compact interval has a continuous inverse on
 its range, extended to the whole codomain by clamping.
+A function continuous on every closed interval `[a, b]` with `b ≥ a` is continuous on `[a, ∞)`.
 A path that starts in an open set and leaves it has a first exit time.
 A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` is so on `[a, b]`.
 
@@ -47,6 +48,8 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   contained in `ball x ε`.
 * `Set.OrdConnected.uIcc_subset_ball_inter` — in `ℝ`, the interval between a point `x` of an
   order-connected set `s` and a point of `ball x ε ∩ s` lies in `ball x ε ∩ s`.
+* `TauCeti.continuousOn_Ici_of_forall_Icc` — continuity on `Ici a` from continuity on `Icc a b`
+  for every `b ≥ a`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
@@ -136,6 +139,16 @@ theorem _root_.Set.OrdConnected.uIcc_subset_ball_inter {s : Set ℝ} (hs : s.Ord
     rw [Real.ball_eq_Ioo]
     exact ordConnected_Ioo
   exact (hball.inter hs).uIcc_subset ⟨Metric.mem_ball_self (Metric.pos_of_mem_ball hy.1), hx⟩ hy
+
+/-- A function into a topological space that is continuous on `[a, b]` for every `b ≥ a` is
+continuous on `[a, ∞)`. -/
+theorem continuousOn_Ici_of_forall_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [NoMaxOrder α] [TopologicalSpace X] {f : α → X} {a : α}
+    (h : ∀ b ≥ a, ContinuousOn f (Icc a b)) : ContinuousOn f (Ici a) :=
+  continuousOn_of_locally_continuousOn fun t ht ↦
+    let ⟨b, htb⟩ := exists_gt t
+    ⟨Iio b, isOpen_Iio, htb,
+      (h b (mem_Ici.1 ht |>.trans htb.le)).mono fun _ hr ↦ ⟨hr.1, hr.2.le⟩⟩
 
 /-- Around any point `t` of the open interval between `a` and `b` outside a closed set `s` there
 is a closed subinterval of `[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/
@@ -242,12 +255,13 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
   have hcd : c ≤ d := hc ▸ hd ▸ hm.monotoneOn ha hb hab
   subst hc hd
   let g : Icc a b → Icc (f a) (f b) := fun s ↦
-    ⟨f s, hm.monotoneOn ha s.2 s.2.1, hm.monotoneOn s.2 hb s.2.2⟩
+    ⟨f s, hm.monotoneOn ha s.property s.property.1, hm.monotoneOn s.property hb s.property.2⟩
   have hg_cont : Continuous g :=
     Continuous.subtype_mk (continuousOn_iff_continuous_domRestrict.1 hf) _
   have hg_bij : Function.Bijective g := by
-    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.2 s'.2 (congrArg Subtype.val h)), fun r ↦ ?_⟩
-    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.2
+    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.property s'.property (congrArg Subtype.val h)),
+        fun r ↦ ?_⟩
+    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.property
     exact ⟨⟨s, hs⟩, Subtype.ext hsr⟩
   -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective g`,
   -- and Mathlib states no lemma for its coercion.
@@ -255,11 +269,12 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
     hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
   have hF (s : Icc a b) : (F s : β) = f s := rfl
   refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
-    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
+    continuous_subtypeVal.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦
+        (F.symm _).property,
     fun r ↦ ?_, fun s hs ↦ ?_⟩
   · rw [← hF, Homeomorph.apply_symm_apply, coe_projIcc, min_comm]
   · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
-      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
+      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).property)
     simp only [this, Homeomorph.symm_apply_apply]
 
 /-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`

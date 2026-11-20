@@ -334,12 +334,12 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_sourceRestrict_localOrient
   -- Read through the excision of the source, `c` is the oriented-chart local orientation, which
   -- is defined by the chart isomorphism.
   have hid : ContinuousMap.id φ.source ⁻¹' (ContinuousMap.subtypeVal φ.source ⁻¹' {z}) ⊆
-      {⟨z, hz⟩} := fun x (hx : x.1 = z) ↦ Subtype.ext hx
+      {⟨z, hz⟩} := fun x (hx : x.val = z) ↦ Subtype.ext hx
   have hc : localHomologyMap Z (ContinuousMap.subtypeVal φ.source) (S := {⟨z, hz⟩}) (T := {z})
-      (fun x (hx : x.1 = z) ↦ Subtype.ext hx) (n + 1) c =
+      (fun x (hx : x.val = z) ↦ Subtype.ext hx) (n + 1) c =
         (φ.localOrientationOfOrientedChart hz ν hX).val :=
     φ.open_source.isOpenEmbedding_subtypeVal.localHomologyMap_localOrientationEquiv_symm ⟨z, hz⟩
-      (φ.localOrientationOfOrientedChart hz ν hX) (fun x (hx : x.1 = z) ↦ Subtype.ext hx)
+      (φ.localOrientationOfOrientedChart hz ν hX) (fun x (hx : x.val = z) ↦ Subtype.ext hx)
   have h₁ : localHomologyMap Z sR h (n + 1) c =
       (localHomologyMap Z (ContinuousMap.id φ.source) hid (n + 1) ≫
         localHomologyMap Z sR hsR' (n + 1)) c := by
@@ -348,7 +348,7 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_sourceRestrict_localOrient
       localHomologyMap Z sR hsR' (n + 1)) c =
       (singularHomologyComplSingletonIsoOfChart Z φ hz (n + 1)).hom
         (localHomologyMap Z (ContinuousMap.subtypeVal φ.source) (S := {⟨z, hz⟩}) (T := {z})
-          (fun x (hx : x.1 = z) ↦ Subtype.ext hx) (n + 1) c) := by
+          (fun x (hx : x.val = z) ↦ Subtype.ext hx) (n + 1) c) := by
     rw [← localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom Z φ hz
       hsR' (n + 1), ← Category.assoc, localHomologyMap_comp,
       localHomologyMap_congr Z (ContinuousMap.comp_id _), ConcreteCategory.comp_apply]

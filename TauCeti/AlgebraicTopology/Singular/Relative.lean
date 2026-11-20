@@ -92,9 +92,9 @@ exactly when its image lies in the subspace. -/
 lemma mem_range_restrict_hom_app_iff (P : TopPair.{w}) (S : (toSSetPair.obj P).right.Subcomplex)
     {n : SimplexCategoryᵒᵖ} (x : ((toSSetPair.obj P).restrict S).right.obj n) :
     x ∈ Set.range (((toSSetPair.obj P).restrict S).hom.app n) ↔
-      Set.range (P.fst.toSSetObjEquiv n x.1) ⊆ Set.range P.map :=
+      Set.range (P.fst.toSSetObjEquiv n x.val) ⊆ Set.range P.map :=
   (SSetPair.mem_range_restrict_hom_app_iff _ _ x).trans
-    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.1)
+    (P.isEmbedding_map.isInducing.mem_range_toSSet_map_app_iff n x.val)
 
 section ofInclusionMap
 
@@ -460,7 +460,9 @@ lemma singularHomologyFunctor_eq_chainComplexFunctor (n : ℕ) :
     apply eq_of_heq
     simp only [singularHomologyMap.eq_def, eqToHom_comp_heq_iff,
       comp_eqToHom_heq_iff, heq_eqToHom_comp_iff, heq_comp_eqToHom_iff]
-    exact (comp_eqToHom_heq _ _).symm
+    -- After unfolding `singularHomologyMap` and stripping the `eqToHom` casts, both sides are
+    -- the same homology map, so the `HEq` goal closes by `rfl`.
+    rfl
   · intro Q
     exact (singularHomologyFunctor_obj Q R n).trans <|
       (congrArg (fun K : ChainComplex C ℕ ↦ K.homology n)

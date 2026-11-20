@@ -190,7 +190,7 @@ variable [I.Boundaryless]
 theorem IsHamiltonianVectorField.mpullback_globalFlow (hX : σ.IsHamiltonianVectorField f X)
     (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f) (hc : IsCompleteVectorField X)
     (hv : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M))) (t : ℝ) :
-    TauCeti.mpullback I I (globalFlow X (hv.of_le one_le_two) hc t) σ.1 = σ.1 :=
+    TauCeti.mpullback I I (globalFlow X (hv.of_le one_le_two) hc t) σ.val = σ.val :=
   TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero hc hv hσ
     (by rw [isHamiltonianVectorField_iff_interior_eq.1 hX, mextDeriv_mextDeriv_ofFunction hf]) t
 
@@ -203,7 +203,7 @@ theorem IsHamiltonianVectorField.mpullback_flowOf_apply (hX : σ.IsHamiltonianVe
     (hσ : σ.IsClosed) (hf : ContMDiff I 𝓘(ℝ) 2 f)
     (hv : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (hx : (t, x) ∈ flowDomain X) :
-    TauCeti.mpullback I I (flowOf X t) σ.1 x = σ.1 x :=
+    TauCeti.mpullback I I (flowOf X t) σ.val x = σ.val x :=
   TauCeti.mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero hv hσ
     (by rw [isHamiltonianVectorField_iff_interior_eq.1 hX, mextDeriv_mextDeriv_ofFunction hf]) hx
 
@@ -219,7 +219,7 @@ theorem mpullback_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M
     (hc : IsCompleteVectorField (timeDependentSuspensionField X))
     (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) (s t : ℝ) :
-    TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.1 = σ.1 :=
+    TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.val = σ.val :=
   TauCeti.mpullback_timeDependentFlowOf_of_mextDeriv_interior_eq_zero hc hv σ.mdifferentiable
     ((SmoothForm.isClosed_def σ).1 hσ)
     (fun u ↦ by
