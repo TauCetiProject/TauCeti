@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.Tail
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.QuadraticForm
 import TauCeti.Probability.Moments.SubExponential
@@ -24,8 +25,10 @@ variance proxy equal to the sum of the coordinate proxies weighted by the square
 Applying this to coefficients of the form `u i * v j` gives the fixed-bilinear-form estimate
 used in the operator-norm tail bound for random matrices.
 
-We also develop squared-variable exponential moment bounds for
-`ProbabilityTheory.HasSubgaussianMGF` (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
+We also prove finiteness of the underlying measure and two-sided Chernoff tail bounds for
+`ProbabilityTheory.HasSubgaussianMGF` (`isFiniteMeasure`, `measureReal_le_abs_le`,
+`measureReal_lt_abs_le`, `measure_le_abs_le`, `measure_lt_abs_le`),
+squared-variable exponential moment bounds (`integrable_exp_mul_sq`, `integral_exp_mul_sq_le`,
 `mgf_sq_sub_integral_le`), complex directional sub-Gaussianity, dot-product sub-Gaussian bounds for
 independent real and complex vectors, and Gaussianization and decoupled bilinear MGF bounds for
 jointly sub-Gaussian vectors (`TauCeti.integral_exp_half_mul_sum_mulVec_sq_le`,
@@ -49,12 +52,43 @@ namespace HasSubgaussianMGF
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ} {c : ℝ≥0}
 
+/-- A measure admitting a sub-Gaussian random variable is finite. -/
+theorem isFiniteMeasure (h : HasSubgaussianMGF X c μ) : IsFiniteMeasure μ := by
+  simpa using (HasSubgaussianMGF_iff_kernel.1 h).isFiniteMeasure
+
+/-- Real-valued two-sided sub-Gaussian Chernoff bound for the closed tail `{ω | u ≤ |X ω|}`. -/
+theorem measureReal_le_abs_le (h : HasSubgaussianMGF X c μ) {u : ℝ} (hu : 0 ≤ u) :
+    μ.real {ω | u ≤ |X ω|} ≤ 2 * exp (-u ^ 2 / (2 * (c : ℝ))) :=
+  calc μ.real {ω | u ≤ |X ω|}
+      ≤ μ.real {ω | u ≤ X ω} + μ.real {ω | u ≤ -X ω} :=
+        TauCeti.measureReal_le_abs_le_add (f := X)
+    _ ≤ exp (-u ^ 2 / (2 * (c : ℝ))) + exp (-u ^ 2 / (2 * (c : ℝ))) :=
+        add_le_add (h.measure_ge_le hu) (h.neg.measure_ge_le hu)
+    _ = 2 * exp (-u ^ 2 / (2 * (c : ℝ))) := (two_mul _).symm
+
+/-- Real-valued two-sided sub-Gaussian Chernoff bound for the strict tail `{ω | u < |X ω|}`. -/
+theorem measureReal_lt_abs_le (h : HasSubgaussianMGF X c μ) {u : ℝ} (hu : 0 ≤ u) :
+    μ.real {ω | u < |X ω|} ≤ 2 * exp (-u ^ 2 / (2 * (c : ℝ))) := by
+  have := h.isFiniteMeasure
+  exact (h.measureReal_le_abs_le hu).trans' (measureReal_mono fun _ (hω : u < _) ↦ hω.le)
+
+/-- Two-sided sub-Gaussian Chernoff bound for the closed tail `{ω | u ≤ |X ω|}`. -/
+theorem measure_le_abs_le (h : HasSubgaussianMGF X c μ) {u : ℝ} (hu : 0 ≤ u) :
+    μ {ω | u ≤ |X ω|} ≤ ENNReal.ofReal (2 * exp (-u ^ 2 / (2 * (c : ℝ)))) := by
+  have := h.isFiniteMeasure
+  rw [← ofReal_measureReal]
+  exact ENNReal.ofReal_le_ofReal (h.measureReal_le_abs_le hu)
+
+/-- Two-sided sub-Gaussian Chernoff bound for the strict tail `{ω | u < |X ω|}`. -/
+theorem measure_lt_abs_le (h : HasSubgaussianMGF X c μ) {u : ℝ} (hu : 0 ≤ u) :
+    μ {ω | u < |X ω|} ≤ ENNReal.ofReal (2 * exp (-u ^ 2 / (2 * (c : ℝ)))) :=
+  (h.measure_le_abs_le hu).trans' (measure_mono fun _ (hω : u < _) ↦ hω.le)
+
 private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s : ℝ}
     (hs0 : 0 ≤ s) (hs : 2 * (c : ℝ) * s < 1) :
     ∫⁻ ω, ENNReal.ofReal (exp (s * X ω ^ 2)) ∂μ ≤
       ENNReal.ofReal ((1 - 2 * (c : ℝ) * s) ^ (-1 / 2 : ℝ)) := by
-  have : IsFiniteMeasure μ := TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet (X := X)
-    (by simpa [integrableExpSet] using h.integrable_exp_mul 0)
+  have := h.isFiniteMeasure
   let X₀ : Ω → ℝ := h.aemeasurable.mk X
   have hX₀_meas : Measurable X₀ := h.aemeasurable.measurable_mk
   have hX₀_eq : X =ᵐ[μ] X₀ := h.aemeasurable.ae_eq_mk; have h₀ := h.congr hX₀_eq
@@ -96,8 +130,7 @@ private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s
 /-- For `c`-sub-Gaussian `X`, `exp (s * X ^ 2)` is integrable whenever `2 * c * s < 1`. -/
 theorem integrable_exp_mul_sq (h : HasSubgaussianMGF X c μ) {s : ℝ} (hs : 2 * (c : ℝ) * s < 1) :
     Integrable (fun ω ↦ exp (s * X ω ^ 2)) μ := by
-  have : IsFiniteMeasure μ := TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet (X := X)
-    (by simpa [integrableExpSet] using h.integrable_exp_mul 0)
+  have := h.isFiniteMeasure
   have haesm : AEStronglyMeasurable (fun ω ↦ exp (s * X ω ^ 2)) μ :=
     (Real.measurable_exp.comp_aemeasurable
       ((h.aemeasurable.pow_const 2).const_mul s)).aestronglyMeasurable
@@ -264,45 +297,15 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
     μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
       2 * Real.exp
         (-t ^ 2 / (2 * ∑ i, (a i) ^ 2 * (c i : ℝ))) := by
-  let Y : ι → Ω → ℝ := fun i ω ↦ a i * X i ω
-  let a2 : ι → ℝ≥0 := fun i ↦ ⟨(a i) ^ 2, sq_nonneg (a i)⟩
-  let S : Ω → ℝ := fun ω ↦ ∑ i, Y i ω
-  have hY_indep : iIndepFun Y μ :=
-    h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
-  have hY : ∀ i, HasSubgaussianMGF (Y i) (a2 i * c i) μ := by
-    intro i
-    exact (hX i).const_mul (a i)
-  have hS : HasSubgaussianMGF S (∑ i, a2 i * c i) μ := by
-    exact HasSubgaussianMGF.sum_of_iIndepFun hY_indep
-      (c := fun i ↦ a2 i * c i) (s := Finset.univ) (by
-        intro i _
-        exact hY i)
-  have hset : {ω | t ≤ |S ω|} =
-      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
-    ext ω
-    simpa only [Set.mem_ofPred_eq, Set.mem_union] using (le_abs : t ≤ |S ω| ↔ _)
-  have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
-      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
-  have hbound : μ.real {ω | t ≤ |∑ i, a i * X i ω|} ≤
-      2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by
-    calc
-      μ.real {ω | t ≤ |∑ i, a i * X i ω|} =
-          μ.real ({ω | t ≤ S ω} ∪ {ω | t ≤ -S ω}) := by
-            rw [hset']
-      _ ≤ μ.real {ω | t ≤ S ω} + μ.real {ω | t ≤ -S ω} :=
-        measureReal_union_le _ _
-      _ ≤ Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) +
-          Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) :=
-        add_le_add (hS.measure_ge_le ht) (hS.neg.measure_ge_le ht)
-      _ = 2 * Real.exp (-t ^ 2 / (2 * ∑ i, a2 i * c i)) := by ring
-  have hproxy : ((∑ i, a2 i * c i : ℝ≥0) : ℝ) =
-      ∑ i, (a i) ^ 2 * (c i : ℝ) := by
-    rw [NNReal.coe_sum]
-    apply Finset.sum_congr rfl
-    intro i _
-    rw [NNReal.coe_mul]
-    rfl
-  simpa only [hproxy] using hbound
+  let a2 : ι → ℝ≥0 := fun i ↦ NNReal.mk ((a i) ^ 2) (sq_nonneg (a i))
+  have hS : HasSubgaussianMGF (fun ω ↦ ∑ i, a i * X i ω) (∑ i, a2 i * c i) μ :=
+    HasSubgaussianMGF.sum_of_iIndepFun (h_indep.comp (fun i x ↦ a i * x) fun _ ↦ by fun_prop)
+      fun i _ ↦ (hX i).const_mul (a i)
+  refine (hS.measureReal_le_abs_le ht).trans_eq ?_
+  have hproxy : ((∑ i, a2 i * c i : ℝ≥0) : ℝ) = ∑ i, (a i) ^ 2 * (c i : ℝ) := by
+    push_cast
+    simp only [a2, NNReal.coe_mk]
+  rw [hproxy]
 
 /-- The linear-form tail bound when all coordinates have the same variance proxy. -/
 theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun_const
