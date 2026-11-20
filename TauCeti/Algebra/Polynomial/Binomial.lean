@@ -31,6 +31,10 @@ theorem coeff_C_add_C_mul_X_pow {R : Type*} [CommSemiring R] (a b : R) (n k : �
   simp only [mul_pow, ← C_pow, coeff_mul_natCast, coeff_mul_C, coeff_C_mul, coeff_X_pow]
   simp +contextual [mul_comm, mul_assoc, Nat.choose_eq_zero_of_lt]
 
+end TauCeti
+
+namespace Polynomial
+
 /-- Substituting `a + b X` into a polynomial of degree below `N` re-expands its coefficients:
 the coefficient of `X^j` is `∑_{k < N} P_k (k choose j) a^(k - j) b^j`. -/
 theorem coeff_comp_C_add_C_mul_X {R : Type*} [CommSemiring R] (P : R[X]) {N : ℕ}
@@ -38,6 +42,6 @@ theorem coeff_comp_C_add_C_mul_X {R : Type*} [CommSemiring R] (P : R[X]) {N : �
     (P.comp (C a + C b * X)).coeff j =
       ∑ k ∈ Finset.range N, P.coeff k * ((k.choose j : R) * a ^ (k - j) * b ^ j) := by
   conv_lhs => rw [P.as_sum_range' N hP]
-  simp [sum_comp, coeff_C_add_C_mul_X_pow]
+  simp [sum_comp, TauCeti.coeff_C_add_C_mul_X_pow]
 
-end TauCeti
+end Polynomial
