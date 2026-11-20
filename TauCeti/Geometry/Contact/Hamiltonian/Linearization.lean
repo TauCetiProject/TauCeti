@@ -128,12 +128,12 @@ theorem mextDeriv_fderiv_mpullbackWithin_contactHamiltonianVectorField_left
   let Y : (y : M) → TangentSpace I y := FiberBundle.extend E u
   have hY : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) p :=
     FiberBundle.mdifferentiableAt_extend I E u
-  have hYp : Y p = u := FiberBundle.extend_apply_self E u
+  rw [← show Y p = u from FiberBundle.extend_apply_self E u]
   have h := mvfderiv_apply_vectorField_fin_two_of_eq_zero ((mextDerivₗ I 1 α).mdifferentiableAt p)
     (hα.mdifferentiable_contactHamiltonianVectorField hf p) hY
     (hα.contactHamiltonianVectorField_eq_zero_iff.2
       ⟨hf0, fun v _ ↦ by rw [hcrit, _root_.zero_apply]⟩) w
-  rw [mextDerivₗ_apply, hYp] at h
+  rw [mextDerivₗ_apply] at h
   refine h.symm.trans ?_
   -- By the contraction equation, `dα(X_f, Y) = (R_α f) α(Y) - df(Y)`.
   have hfun : (fun y ↦ mextDeriv α.1 y ![α.contactHamiltonianVectorField f y, Y y]) =
@@ -151,14 +151,12 @@ theorem mextDeriv_fderiv_mpullbackWithin_contactHamiltonianVectorField_left
   have hRfαY : MDifferentiableAt I 𝓘(ℝ)
       (fun y ↦ mvfderiv I f y (α.reebVectorField y) * α.1 y ![Y y]) p := hRf.mul hαY
   have hdfY := mdifferentiableAt_mvfderiv_apply (hf p) le_rfl hY
-  have hHY := criticalHessian_apply_eq_mvfderiv (hf p) hcrit hY w
-  rw [hYp] at hHY
   rw [hfun, mvfderiv_fun_sub hRfαY hdfY, mvfderiv_fun_mul hRf hαY,
-    criticalHessian_apply_eq_mvfderiv (hf p) hcrit hR w, hHY, hcrit, _root_.zero_apply,
+    criticalHessian_apply_eq_mvfderiv (hf p) hcrit hR w,
+    criticalHessian_apply_eq_mvfderiv (hf p) hcrit hY w, hcrit, _root_.zero_apply,
     zero_smul, zero_add]
-  have hlin : ∀ (c : ℝ) (A B : TangentSpace I p →L[ℝ] ℝ),
-      (c • A - B) w = A w * c - B w := fun c A B ↦ by simp [mul_comm]
-  exact (hlin _ _ _).trans (by rw [hYp])
+  simp only [_root_.sub_apply, _root_.smul_apply, smul_eq_mul]
+  ring
 
 /-- **The linearization of a contact Hamiltonian vector field on the contact hyperplane.** At a
 point `p` where the `C²` function `f` and its differential vanish, the linearization `L` of `X_f`

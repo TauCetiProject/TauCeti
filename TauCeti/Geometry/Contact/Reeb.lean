@@ -155,10 +155,9 @@ contact distribution. -/
 theorem IsContactForm.sub_smul_reebVectorField_mem_kerDistribution (hα : α.IsContactForm)
     {x : M} (v : TangentSpace I x) :
     v - α.1 x ![v] • α.reebVectorField x ∈ α.kerDistribution x := by
-  have h := (isContactForm_def.1 hα x).apply_sub_smul_reebVector v
-  simp only [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply_vec,
-    ← characteristicVectorField_def, characteristicVectorField_mextDerivₗ] at h
-  rwa [mem_kerDistribution]
+  rw [mem_kerDistribution, ← degreeOneEquiv_apply_apply_vec, map_sub, map_smul]
+  simp only [degreeOneEquiv_apply_apply_vec, hα.apply_reebVectorField, smul_eq_mul, mul_one,
+    sub_self]
 
 /-- **Rescaling law for the Reeb vector field.** Let `α` be a contact form and `β = f α` for a
 function `f`, `C¹` at `x`. Then `R_β(x) = R_α(x) / f(x) + y` exactly when `y` lies in
