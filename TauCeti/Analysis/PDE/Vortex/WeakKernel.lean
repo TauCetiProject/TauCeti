@@ -87,6 +87,20 @@ def weakGaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
   (Submodule.span ℝ {g | ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧
     HasCompactSupport η ∧ (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ
 
+/-- The defining formula of the weak kernel. -/
+theorem weakGaugeFixedKernel_def (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    weakGaugeFixedKernel x =
+      (Submodule.span ℝ {g : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) |
+        ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η ∧ HasCompactSupport η ∧
+          (g : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] gaugeFixedAdjoint x η})ᗮ :=
+  (rfl)
+
+/-- The weak kernel is an orthogonal complement in the Hilbert space `L²(ℂ; ℝ⁴)`, so it is closed
+and has an orthogonal projection. -/
+instance (x : ℂ → EuclideanSpace ℝ (Fin 4)) : (weakGaugeFixedKernel x).HasOrthogonalProjection := by
+  rw [weakGaugeFixedKernel_def]
+  infer_instance
+
 /-- **The weak kernel consists of the weak solutions of `L_x u = 0`.** At a continuous field `x`,
 a square-integrable field `u` lies in the weak kernel of `L_x` exactly when
 `∫ ⟪u, L_x* η⟫ = 0` for every smooth compactly supported test field `η`. -/

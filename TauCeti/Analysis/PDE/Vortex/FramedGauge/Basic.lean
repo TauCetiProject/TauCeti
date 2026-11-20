@@ -30,10 +30,13 @@ for `v = 1 + χ (conj g - 1)`, with `χ` a cutoff equal to one outside a large d
 of the phase is chosen.
 
 The linear part `gaugeLinearAction` fixes the connection variation and rotates its section
-variation. This file provides its composition, inverse, pointwise norm, vanishing and regularity
-laws, the affine increment and difference identities, and the derivative of the gauge action in
-field directions. The gauge's real and imaginary derivatives and the section-coordinate Leibniz
-rules are expressed through `gaugeForm`, for use by the deformation operators in
+variation. At each point it is the linear isometry `TauCeti.Vortex.gaugeFrame (u z)` of `ℝ⁴`,
+which depends continuously on the gauge in operator norm
+(`TauCeti.Vortex.continuous_gaugeFrame`). This file provides its composition, inverse, pointwise
+norm, inner product, support, vanishing and regularity laws, the affine increment and difference
+identities, and the derivative of the gauge action in field directions. The gauge's real and
+imaginary derivatives and the section-coordinate Leibniz rules are expressed through `gaugeForm`,
+for use by the deformation operators in
 `FramedGauge.Linearization`.
 
 A gauge carries `x` to `y` exactly when its logarithmic derivative is the difference of their
@@ -54,7 +57,13 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex ComplexConjugate Filter
-open scoped Topology ContDiff
+open scoped Topology ContDiff RealInnerProductSpace
+
+/-- The inverse of a `Cⁿ` circle-valued gauge is `Cⁿ`. -/
+theorem contDiff_coe_inv {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ n fun z ↦ (u z : ℂ)) : ContDiff ℝ n fun z ↦ ((u⁻¹ z : Circle) : ℂ) := by
+  simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
+    Complex.conjCLE_apply] using conjCLE.contDiff.comp hu
 
 /-- Smooth circle-valued gauges tending to one at infinity, with no base-point condition. -/
 def framedGaugeGroup : Subgroup (ℂ → Circle) where
@@ -65,9 +74,7 @@ def framedGaugeGroup : Subgroup (ℂ → Circle) where
     exact ⟨hu.mul hv, by simpa only [Pi.mul_def, one_mul] using htu.mul htv⟩
   inv_mem' := by
     rintro u ⟨hu, htu⟩
-    refine ⟨?_, by simpa only [Pi.inv_def, inv_one] using htu.inv⟩
-    simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def,
-      Complex.conjCLE_apply] using conjCLE.contDiff.comp hu
+    exact ⟨contDiff_coe_inv hu, by simpa only [Pi.inv_def, inv_one] using htu.inv⟩
 
 /-- Membership in the smooth framed group is precisely smoothness and the end condition. -/
 @[simp]
@@ -197,6 +204,90 @@ theorem contDiff_gaugeLinearAction {n : WithTop ℕ∞} {u : ℂ → Circle}
   · exact hc 1
   · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
   · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
+/-- The **gauge frame** of a unit complex number `c`: the linear isometry of `ℝ⁴` that fixes the
+first two coordinates and multiplies the complex coordinate `v₂ + i v₃` by `c`. The linear gauge
+action of `u : ℂ → U(1)` is `gaugeFrame (u z)` at each point `z`
+(`gaugeLinearAction_apply_eq_gaugeFrame`). -/
+def gaugeFrame (c : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) where
+  toFun v := !₂[v 0, v 1, (c : ℂ).re * v 2 - (c : ℂ).im * v 3,
+    (c : ℂ).im * v 2 + (c : ℂ).re * v 3]
+  invFun v := !₂[v 0, v 1, (c : ℂ).re * v 2 + (c : ℂ).im * v 3,
+    (c : ℂ).re * v 3 - (c : ℂ).im * v 2]
+  map_add' v w := by ext i; fin_cases i <;> simp <;> ring
+  map_smul' t v := by ext i; fin_cases i <;> simp <;> ring
+  left_inv v := by
+    have hc := Circle.re_sq_add_im_sq c
+    ext i
+    fin_cases i <;> simp
+    · linear_combination v 2 * hc
+    · linear_combination v 3 * hc
+  right_inv v := by
+    have hc := Circle.re_sq_add_im_sq c
+    ext i
+    fin_cases i <;> simp
+    · linear_combination v 2 * hc
+    · linear_combination v 3 * hc
+  norm_map' v := by
+    have hc := Circle.re_sq_add_im_sq c
+    simp only [EuclideanSpace.norm_eq, Fin.sum_univ_four]
+    congr 1
+    simp
+    linear_combination (v 2 ^ 2 + v 3 ^ 2) * hc
+
+/-- Coordinate formula for the gauge frame. -/
+theorem gaugeFrame_apply (c : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFrame c v = !₂[v 0, v 1, (c : ℂ).re * v 2 - (c : ℂ).im * v 3,
+      (c : ℂ).im * v 2 + (c : ℂ).re * v 3] :=
+  (rfl)
+
+/-- The linear gauge action applies the gauge frame of `u z` to the value at `z`. -/
+theorem gaugeLinearAction_apply_eq_gaugeFrame (u : ℂ → Circle)
+    (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeLinearAction u y z = gaugeFrame (u z) (y z) := by
+  rw [gaugeLinearAction_apply, gaugeFrame_apply]
+
+/-- The trivial gauge frame is the identity. -/
+@[simp]
+theorem gaugeFrame_one : gaugeFrame 1 = LinearIsometryEquiv.refl ℝ _ := by
+  ext v i
+  fin_cases i <;> simp [gaugeFrame_apply]
+
+/-- The gauge frames compose as the gauges multiply. -/
+theorem gaugeFrame_mul (c d : Circle) :
+    gaugeFrame (c * d) = (gaugeFrame d).trans (gaugeFrame c) := by
+  ext v i
+  fin_cases i <;> simp [gaugeFrame_apply, mul_re, mul_im] <;> ring
+
+/-- The inverse of a gauge frame is the gauge frame of the inverse gauge. -/
+@[simp]
+theorem gaugeFrame_symm (c : Circle) : (gaugeFrame c).symm = gaugeFrame c⁻¹ := by
+  ext v : 1
+  apply (gaugeFrame c).injective
+  have hc := Circle.re_sq_add_im_sq c
+  ext i
+  fin_cases i <;> simp [gaugeFrame_apply, Circle.coe_inv_eq_conj, -Circle.coe_inv]
+  · linear_combination -v 2 * hc
+  · linear_combination -v 3 * hc
+
+/-- The linear gauge action preserves the pointwise inner product. -/
+@[simp]
+theorem inner_gaugeLinearAction (u : ℂ → Circle) (y w : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ⟪gaugeLinearAction u y z, gaugeLinearAction u w z⟫ = ⟪y z, w z⟫ := by
+  simp only [gaugeLinearAction_apply_eq_gaugeFrame, LinearIsometryEquiv.inner_map_map]
+
+/-- The linear gauge action preserves compact support. -/
+theorem hasCompactSupport_gaugeLinearAction (u : ℂ → Circle) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : HasCompactSupport y) : HasCompactSupport (gaugeLinearAction u y) :=
+  hy.mono fun z hz ↦ by simpa [Function.mem_support] using hz
+
+/-- The gauge frame depends continuously on the gauge, in operator norm. -/
+theorem continuous_gaugeFrame :
+    Continuous fun c : Circle ↦
+      (gaugeFrame c : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) := by
+  refine continuous_clm_apply.2 fun v ↦ (PiLp.continuous_toLp 2 _).comp <|
+    continuous_pi fun i ↦ ?_
+  fin_cases i <;> fun_prop
 
 /-- The logarithmic derivative of a product is the sum of the logarithmic derivatives. -/
 theorem gaugeForm_mul {u v : ℂ → Circle} {z : ℂ}
