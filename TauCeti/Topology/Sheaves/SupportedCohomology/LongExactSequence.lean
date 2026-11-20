@@ -165,6 +165,17 @@ instance isIso_supportedModuleHPresheafδ_succ (hT : T.ShortExact)
     · exact Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
   exact NatIso.isIso_of_isIso_app _
 
+/-- A flasque first term makes the positive-degree map `H_Sⁿ⁺¹(-, F₂) ⟶ H_Sⁿ⁺¹(-, F₃)` induced
+by `F₂ ⟶ F₃` an isomorphism of supported cohomology presheaves. -/
+theorem isIso_supportedModuleHPresheafFunctor_map_g (hT : T.ShortExact)
+    [TopCat.Presheaf.IsFlasque T.X₁.obj] (n : ℕ) :
+    IsIso ((supportedModuleHPresheafFunctor S (n + 1)).map T.g) :=
+  isIso_supportedModuleHPresheafFunctor_map S (n + 1) T.g fun _ ↦
+    ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ by
+      obtain ⟨z, rfl⟩ := Ext.covariant_sequence_exact₂ _ hT x hx
+      rw [Subsingleton.elim z 0, Ext.zero_comp],
+    fun x ↦ Ext.covariant_sequence_exact₃ _ hT x rfl (Subsingleton.elim _ _)⟩
+
 /-- The degree-zero connecting morphism `Γ_S(-, F₃) ⟶ H_S¹(-, F₁)` of a short exact sequence
 `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, read through the identification of degree-zero supported cohomology
 with supported sections. -/
