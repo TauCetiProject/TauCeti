@@ -102,8 +102,8 @@ theorem IsIsolatingRank.measurableSet_setOf_comap_isoSetoid
     MeasurableSet {p : K × K | (isoSetoid L ℕ).comap Subtype.val p.1 p.2} := by
   rw [hρ.comap_isoSetoid_eq_bfEquivSetoid hK]
   exact (measurableSet_setOf_bfEquivSetoid hβ).preimage
-    ((measurable_subtype_coe.comp measurable_fst).prodMk
-      (measurable_subtype_coe.comp measurable_snd))
+    ((measurable_subtypeVal.comp measurable_fst).prodMk
+      (measurable_subtypeVal.comp measurable_snd))
 
 /-! ### Borel sets of bounded rank -/
 

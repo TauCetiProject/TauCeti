@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Dynamics.Flow
 public import TauCeti.Analysis.ODE.InitialCondition
+import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # The flow of a globally Lipschitz vector field
@@ -37,6 +38,10 @@ the initial condition, and the joint continuity required by `Flow` is
   vector field.
 * `TauCeti.flowOfLipschitz_eq_self_of_vectorField_flow_eq_zero`: an orbit that meets a rest point
   is constant.
+* `TauCeti.norm_flowOfLipschitz_sub_le`: a bound `M` on the vector field bounds the displacement
+  of the time-`t` map by `M |t|`.
+* `TauCeti.flowOfLipschitz_apply_eq_add_smul`: where the vector field is the constant `c` along the
+  segment from `x` to `x + t • c`, the time-`t` map translates `x` by `t • c`.
 * `TauCeti.lipschitzWith_flowOfLipschitz`, `TauCeti.norm_fderiv_flowOfLipschitz_le`: the time-`t`
   map is `exp (K |t|)`-Lipschitz, and its `fderiv` has norm at most `exp (K |t|)`.
 * `TauCeti.flowOfLipschitz_eq_add_integral`: orbits satisfy the integral equation.
@@ -182,6 +187,28 @@ theorem flowOfLipschitz_apply_eq_of_eqOn {w : E → E} {K' : ℝ≥0} (hv : Lips
   have := eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ le_rfl
   rw [Flow.map_zero_apply] at this
   exact this.symm
+
+/-- **Displacement bound.** If the vector field is bounded by `M`, the time-`t` map moves no point
+by more than `M |t|`. -/
+theorem norm_flowOfLipschitz_sub_le (hv : LipschitzWith K v) {M : ℝ} (hM : ∀ z, ‖v z‖ ≤ M)
+    (t : ℝ) (x : E) : ‖flowOfLipschitz v hv t x - x‖ ≤ M * |t| := by
+  have h := convex_univ.norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := fun s ↦ flowOfLipschitz v hv s x)
+    (fun s _ ↦ (hasDerivAt_flowOfLipschitz hv x s).hasDerivWithinAt) (fun s _ ↦ hM _)
+    (mem_univ 0) (mem_univ t)
+  simpa using h
+
+/-- **Flow along a constant field.** If the vector field equals `c` along the segment
+`{x + τ • c | τ ∈ [[0, t]]}`, then the time-`t` map sends `x` to `x + t • c`. -/
+theorem flowOfLipschitz_apply_eq_add_smul (hv : LipschitzWith K v) {x c : E} {t : ℝ}
+    (hc : ∀ τ ∈ uIcc 0 t, v (x + τ • c) = c) : flowOfLipschitz v hv t x = x + t • c := by
+  have hγ : IsIntegralCurveOn (fun τ : ℝ ↦ x + τ • c) (fun _ y ↦ v y) (uIcc 0 t) :=
+    fun τ hτ ↦ by
+      simp only [hc τ hτ]
+      exact (((hasDerivAt_id τ).smul_const c).const_add x).hasDerivWithinAt.congr_deriv (by simp)
+  have h := eq_flowOfLipschitz_of_isIntegralCurveOn hv hγ le_rfl
+  simp only [zero_smul, add_zero] at h
+  exact h.symm
 
 /-- **The time-`t` map of the flow of a `K`-Lipschitz vector field is `exp (K |t|)`-Lipschitz.** -/
 theorem lipschitzWith_flowOfLipschitz (hv : LipschitzWith K v) (t : ℝ) :

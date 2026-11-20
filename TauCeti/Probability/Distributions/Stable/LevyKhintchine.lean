@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Stable.CompensatedIntegral
 public import TauCeti.Probability.Distributions.Stable.Exponent
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 

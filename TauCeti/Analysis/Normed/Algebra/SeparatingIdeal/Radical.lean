@@ -68,7 +68,7 @@ private theorem false_of_forall_not_le (hJ : J.IsSeparatingIdeal) (P : ℕ → I
     let F : ℕ → Submodule ℂ K := fun k ↦
       ((P (n + k + 1)).restrictScalars ℂ).comap (LinearMap.mulLeft ℂ c ∘ₗ K.subtype)
     have hFc (k : ℕ) : IsClosed (F k : Set K) :=
-      (hP _).isClosed.preimage (continuous_const.mul continuous_subtype_val)
+      (hP _).isClosed.preimage (continuous_const.mul continuous_subtypeVal)
     -- `F k = ⊤` would force `P n ≤ P (n + k + 1)`, as `P (n + k + 1)` is prime.
     have hFt (k : ℕ) : F k ≠ ⊤ := by
       intro htop
@@ -77,17 +77,17 @@ private theorem false_of_forall_not_le (hJ : J.IsSeparatingIdeal) (P : ℕ → I
       have : (⟨r * x, (P n).mul_mem_left r hx⟩ : K) ∈ F k := htop ▸ Submodule.mem_top
       simpa [F, K, mul_assoc] using this
     obtain ⟨x, hx⟩ := Submodule.exists_forall_notMem_of_isClosed F hFc hFt
-    refine ⟨x, x.2, fun m hm ↦ ?_⟩
+    refine ⟨x, x.property, fun m hm ↦ ?_⟩
     obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hm
     simpa [F, K] using hx k
   choose g hgP hg using step
   -- The partial products `C n = b 0 ⋯ b (n - 1)` lie outside every `P m` with `m ≥ n`.
   let C : (n : ℕ) → {c : B // ∀ m, n ≤ m → c ∉ P m} := fun n ↦
     Nat.rec ⟨1, fun m _ h ↦ (hP m).ne_top ((P m).eq_top_of_isUnit_mem h isUnit_one)⟩
-      (fun n c ↦ ⟨c.1 * g n c.1 c.2, hg n c.1 c.2⟩) n
-  let b : ℕ → B := fun n ↦ g n (C n).1 (C n).2
+      (fun n c ↦ ⟨c.val * g n c.val c.property, hg n c.val c.property⟩) n
+  let b : ℕ → B := fun n ↦ g n (C n).val (C n).property
   have hprod (n : ℕ) (y : B) :
-      ((List.range n).map fun i ↦ LinearMap.mulLeft ℂ (b i)).prod y = (C n).1 * y := by
+      ((List.range n).map fun i ↦ LinearMap.mulLeft ℂ (b i)).prod y = (C n).val * y := by
     induction n generalizing y with
     | zero => simp [C]
     | succ n ih => simp [List.range_succ, ih, b, C, mul_assoc]
@@ -104,8 +104,8 @@ private theorem false_of_forall_not_le (hJ : J.IsSeparatingIdeal) (P : ℕ → I
   have hnle (n : ℕ) : ¬ W n ≤ (P n).restrictScalars ℂ := by
     obtain ⟨j, hj, hjP⟩ := IsConcreteLE.not_le_iff_exists.mp (hJP n)
     intro h
-    refine ((hP n).mem_or_mem_of_forall_mul_mul_mem (a := (C n).1) (b := j) fun r ↦ ?_).elim
-      ((C n).2 n le_rfl) hjP
+    refine ((hP n).mem_or_mem_of_forall_mul_mul_mem (a := (C n).val) (b := j) fun r ↦ ?_).elim
+      ((C n).property n le_rfl) hjP
     rw [mul_assoc, ← hprod]
     exact h (Submodule.le_topologicalClosure _ (Submodule.mem_map_of_mem (hJ.mul_mem_left r hj)))
   obtain ⟨N, hN⟩ := eventuallyConst_atTop_nat.1 (hJ.eventuallyConst_left b)
@@ -123,8 +123,8 @@ theorem finite_setOf_isPrimitive_and_not_le (hJ : J.IsSeparatingIdeal) :
   obtain ⟨g, hg⟩ := exists_increasing_or_nonincreasing_subseq (fun P Q : Ideal B ↦ P ≤ Q)
     fun n ↦ (e n : Ideal B)
   let P : ℕ → Ideal B := fun n ↦ e (g n)
-  have hP (n : ℕ) : (P n).IsPrimitive := (e (g n)).2.1
-  have hJP (n : ℕ) : ¬ J ≤ (P n).restrictScalars ℂ := (e (g n)).2.2
+  have hP (n : ℕ) : (P n).IsPrimitive := (e (g n)).property.1
+  have hJP (n : ℕ) : ¬ J ≤ (P n).restrictScalars ℂ := (e (g n)).property.2
   rcases hg with hg | hg
   · -- An increasing chain above `P 0` stabilizes, since `B ⧸ P 0` is finite-dimensional.
     have := finiteDimensional_quotient_of_isPrimitive hJ (hP 0) (hJP 0)
@@ -149,7 +149,7 @@ theorem finiteDimensional_quotient_comap_jacobson (hJ : J.IsSeparatingIdeal) :
   let S := {P : Ideal B | P.IsPrimitive ∧ ¬ J ≤ P.restrictScalars ℂ}
   have := hJ.finite_setOf_isPrimitive_and_not_le.to_subtype
   have (P : S) : FiniteDimensional ℂ (B ⧸ (P : Ideal B)) :=
-    finiteDimensional_quotient_of_isPrimitive hJ P.2.1 P.2.2
+    finiteDimensional_quotient_of_isPrimitive hJ P.property.1 P.property.2
   -- `J` maps to the finite product of the quotients `B ⧸ P` with kernel `J ∩ rad B`.
   let φ : J →ₗ[ℂ] (P : S) → B ⧸ (P : Ideal B) :=
     LinearMap.pi fun P ↦ ((P : Ideal B).mkQ.restrictScalars ℂ) ∘ₗ J.subtype
@@ -160,10 +160,10 @@ theorem finiteDimensional_quotient_comap_jacobson (hJ : J.IsSeparatingIdeal) :
     constructor
     · intro h P hP
       by_cases hJP : J ≤ P.restrictScalars ℂ
-      · exact hJP x.2
+      · exact hJP x.property
       · simpa [φ, Submodule.Quotient.mk_eq_zero] using h ⟨P, hP, hJP⟩
     · intro h P
-      simpa [φ, Submodule.Quotient.mk_eq_zero] using h P P.2.1
+      simpa [φ, Submodule.Quotient.mk_eq_zero] using h P P.property.1
   rw [← hker]
   exact Module.Finite.equiv φ.quotKerEquivRange.symm
 

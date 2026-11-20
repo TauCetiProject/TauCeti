@@ -279,6 +279,7 @@ theorem weightedEvalHomCompletionOfIsLinearTopology_weightedX (i : Fin k) :
 
 end RingHom
 
+
 /-- **The universal property of `A⟨X₁, …, Xₖ⟩` for linearly topologised targets.** A continuous
 ring homomorphism `φ : A → B` into a complete Hausdorff linearly topologised ring, such as an
 adic ring, extends to exactly one continuous ring homomorphism `A⟨X₁, …, Xₖ⟩ → B` sending each

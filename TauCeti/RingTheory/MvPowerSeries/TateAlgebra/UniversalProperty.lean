@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Huber.WeightedEval.UniversalProperty
 public import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
+import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 
 /-!
 # The universal property of Gauss-normed Tate algebras at power-bounded arguments
@@ -31,10 +32,19 @@ topologised ring or `R`-algebra, open ideals absorb multiplication by arbitrary 
 (`isBounded_of_isLinearTopology`), so every element is power-bounded and evaluation applies at
 arbitrary tuples `b : Fin k → S`.
 
+When `S` is a complete Hausdorff linearly topologized ring (`IsLinearTopology S S`), for example an
+adic ring or formal power series ring, every element of `S` is power-bounded, so
+`TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology`
+evaluates at arbitrary `b₁, …, bₖ ∈ S` with no boundedness hypothesis. Conversely, when `R` admits
+a pseudouniformiser — in particular when `R` is a nontrivially normed nonarchimedean field — every
+continuous ring homomorphism out of `R⟨X₁, …, Xₖ⟩` sends each `Xᵢ` to a power-bounded element, so
+power-boundedness of the `bᵢ` is both necessary and sufficient for a continuous extension to exist,
+and reduces to `‖bᵢ‖ ≤ 1` when the target is a complete nonarchimedean normed field.
+
 ## Main definitions
 
 * `TauCeti.MvPowerSeries.restrictedLift`: the continuous ring homomorphism
-  `R⟨X₁, …, Xₖ⟩ →+* S` extending `φ` and sending `Xᵢ` to `bᵢ`.
+  `R⟨X₁, …, Xₖ⟩ →+* S` extending `φ` and sending `Xᵢ` to power-bounded `bᵢ`.
 * `TauCeti.MvPowerSeries.restrictedLiftOfIsLinearTopology` and
   `TauCeti.MvPowerSeries.restrictedLiftAlgHomOfIsLinearTopology`: continuous evaluation into a
   complete Hausdorff linearly topologised ring or `R`-algebra at arbitrary points.
@@ -46,28 +56,36 @@ arbitrary tuples `b : Fin k → S`.
 * `TauCeti.MvPowerSeries.isPowerBounded_X`: each variable `Xᵢ` is power-bounded.
 * `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring
   homomorphisms out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
-* `TauCeti.MvPowerSeries.restrictedLift_unique`: `restrictedLift` is the only such continuous
-  extension.
-* `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal
-  property.
+* `TauCeti.MvPowerSeries.restrictedLift_unique` and
+  `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal
+  property at power-bounded arguments.
 * `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology`
   and
   `TauCeti.MvPowerSeries.existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology`:
-  the universal property into complete Hausdorff linearly topologised rings and `R`-algebras.
+  the universal property into complete Hausdorff linearly topologised rings and `R`-algebras at
+  arbitrary arguments.
+* `TauCeti.MvPowerSeries.isPowerBounded_apply_X_of_isPseudoUniformizer` and
+  `TauCeti.MvPowerSeries.exists_continuous_ringHom_isRestricted_subring_iff_forall_isPowerBounded`:
+  when `R` has a pseudouniformiser, power-boundedness of the images of `Xᵢ` is necessary and
+  sufficient for a continuous extension.
+* `TauCeti.MvPowerSeries.exists_continuous_ringHom_isRestricted_subring_iff_forall_norm_le_one`:
+  from a nontrivially normed nonarchimedean field into a complete nonarchimedean normed field, a
+  continuous extension exists if and only if `∀ i, ‖bᵢ‖ ≤ 1`.
 * `TauCeti.MvPowerSeries.restrictedRename_id`, `TauCeti.MvPowerSeries.restrictedRename_comp`:
   renaming along the identity is the identity, and successive renamings compose.
 
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Proposition 5.50.
-* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §1.4.
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §§7.5.2–7.5.3.
+* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §§1.4, 5.1.3, 6.1.1.
 -/
 
 public section
 
 namespace TauCeti.MvPowerSeries
 
-open _root_.MvPowerSeries TauCeti.Huber
+open _root_.MvPowerSeries TauCeti.Huber Topology
 
 variable {k : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
@@ -98,7 +116,7 @@ theorem isPowerBounded_X (i : Fin k) :
     continuous_restrictedMvPowerSeriesGaussEquiv continuous_restrictedMvPowerSeriesGaussEquiv_symm]
   exact isPowerBounded_weightedX_one_weight i
 
-section Lift
+section PowerBounded
 
 variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [NonarchimedeanRing S]
   [CompleteSpace S] [T3Space S] {φ : R →+* S} (hφ : Continuous φ) {b : Fin k → S}
@@ -113,14 +131,12 @@ noncomputable def restrictedLift : IsRestricted.subring (R := R) (fun _ : Fin k 
     ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb)).comp
     (restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)).symm.toRingHom
 
-/-- `restrictedLift` evaluates a restricted series by applying `weightedEvalHom` along
-`restrictedMvPowerSeriesGaussEquiv.symm`. -/
-theorem restrictedLift_apply (g : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
-    restrictedLift hφ hb g =
+/-- `restrictedLift` evaluates through `weightedEvalHom` along the inverse Gauss comparison. -/
+theorem restrictedLift_apply (f : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)) :
+    restrictedLift hφ hb f =
       weightedEvalHom isWeightFamily_one_weight hφ.continuousAt
         ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb)
-        (restrictedMvPowerSeriesGaussEquiv.symm g) := by
-  rfl
+        (restrictedMvPowerSeriesGaussEquiv.symm f) := (rfl)
 
 /-- `restrictedLift` is continuous. -/
 theorem continuous_restrictedLift : Continuous (restrictedLift hφ hb) :=
@@ -135,6 +151,16 @@ theorem restrictedLift_algebraMap (r : R) : restrictedLift hφ hb (algebraMap R 
 @[simp]
 theorem restrictedLift_X (i : Fin k) : restrictedLift hφ hb ⟨X i, isRestricted_X _ i⟩ = b i := by
   simp [restrictedLift, ← restrictedMvPowerSeriesGaussEquiv_weightedX]
+
+/-- On polynomials, `restrictedLift` agrees with `MvPolynomial.eval₂`. -/
+@[simp]
+theorem restrictedLift_polynomialToRestricted (p : MvPolynomial (Fin k) R) :
+    restrictedLift hφ hb (polynomialToRestricted (fun _ : Fin k ↦ 1) p) =
+      MvPolynomial.eval₂ φ b p := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp [← MvPolynomial.algebraMap_eq]
+  | add p q hp hq => simp [map_add, hp, hq]
+  | mul_X p i hp => simp [map_mul, hp]
 
 /-- `restrictedLift` is the only continuous ring homomorphism extending `φ` on constants and
 sending each `Xᵢ` to `bᵢ`. -/
@@ -157,62 +183,9 @@ theorem existsUnique_continuous_ringHom_isRestricted_subring :
   ⟨restrictedLift hφ hb, ⟨continuous_restrictedLift hφ hb, restrictedLift_algebraMap hφ hb,
     restrictedLift_X hφ hb⟩, fun _ ⟨hψ, hC, hX⟩ ↦ restrictedLift_unique hφ hb hψ hC hX⟩
 
-end Lift
+end PowerBounded
 
-section Rename
-
-variable [CompleteSpace R] {m : ℕ}
-
-/-- **Renaming the variables of restricted series.** For a complete ultrametric normed ring `R`
-and `f : Fin m → Fin k`, this is the `R`-algebra map `R⟨X₁, …, Xₘ⟩ → R⟨X₁, …, Xₖ⟩` sending each
-`Xᵢ` to `X_{f i}`, the extension `TauCeti.MvPowerSeries.restrictedLift` of the constant-series
-embedding. The map `f` need not be injective. -/
-noncomputable def restrictedRename (f : Fin m → Fin k) :
-    IsRestricted.subring (R := R) (fun _ : Fin m ↦ 1) →ₐ[R]
-      IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) :=
-  { restrictedLift (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
-      isometry_algebraMap_isRestrictedSubring.continuous
-      (fun i ↦ isPowerBounded_X (f i)) with
-    commutes' := restrictedLift_algebraMap _ _ }
-
-/-- `restrictedRename f` sends each variable `Xᵢ` to `X_{f i}`. -/
-@[simp]
-theorem restrictedRename_X (f : Fin m → Fin k) (i : Fin m) :
-    restrictedRename (R := R) f ⟨X i, isRestricted_X _ i⟩ = ⟨X (f i), isRestricted_X _ (f i)⟩ :=
-  restrictedLift_X (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
-    isometry_algebraMap_isRestrictedSubring.continuous (fun i ↦ isPowerBounded_X (f i)) i
-
-/-- `restrictedRename f` is continuous. -/
-theorem continuous_restrictedRename (f : Fin m → Fin k) :
-    Continuous (restrictedRename (R := R) f) :=
-  continuous_restrictedLift (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
-    isometry_algebraMap_isRestrictedSubring.continuous (fun i ↦ isPowerBounded_X (f i))
-
-/-- Renaming along the identity is the identity. -/
-@[simp]
-theorem restrictedRename_id :
-    restrictedRename (R := R) (id : Fin k → Fin k) = AlgHom.id R _ :=
-  AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
-    (continuous_restrictedRename id) continuous_id (fun r ↦ by simp)
-    (fun i ↦ restrictedRename_X id i)
-
-/-- Successive renamings compose: renaming along `f` and then `g` is renaming along `g ∘ f`. -/
-@[simp]
-theorem restrictedRename_comp {n : ℕ} (g : Fin k → Fin n) (f : Fin m → Fin k) :
-    (restrictedRename (R := R) g).comp (restrictedRename f) = restrictedRename (g ∘ f) :=
-  AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
-    ((continuous_restrictedRename g).comp (continuous_restrictedRename f))
-    (continuous_restrictedRename (g ∘ f)) (fun r ↦ by simp)
-    (fun i ↦ by simp)
-
-/-- Applying `restrictedRename f` and then `restrictedRename g` is renaming along `g ∘ f`. -/
-@[simp]
-theorem restrictedRename_restrictedRename {n : ℕ} (g : Fin k → Fin n) (f : Fin m → Fin k)
-    (x : IsRestricted.subring (R := R) (fun _ : Fin m ↦ 1)) :
-    restrictedRename g (restrictedRename f x) = restrictedRename (g ∘ f) x :=
-  congr($(restrictedRename_comp g f) x)
-
-end Rename
+local notation:max "Tate" k':max R':max => IsRestricted.subring (R := R') (fun _ : Fin k' ↦ 1)
 
 section LinearTopology
 
@@ -271,20 +244,20 @@ theorem restrictedLiftOfIsLinearTopology_X (i : Fin k) :
   have := IsLinearTopology.nonarchimedeanRing T
   exact restrictedLift_X hφ _ i
 
-include hφ in
-/-- **Universal property of `R⟨X₁, …, Xₖ⟩` into complete Hausdorff linearly topologised rings.**
-A continuous ring homomorphism `φ : R →+* T` extends uniquely to a continuous ring homomorphism
-`R⟨X₁, …, Xₖ⟩ →+* T` sending each `Xᵢ` to an arbitrary `bᵢ ∈ T`. -/
-theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology :
-    ∃! ψ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T,
-      Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
-        ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
+end RingHom
+
+/-- **Universal property of `R⟨X₁, …, Xₖ⟩` into linearly topologized rings.** A continuous ring
+homomorphism `φ : R →+* T` into a complete Hausdorff linearly topologized ring, such as an adic
+ring, extends to exactly one continuous ring homomorphism `R⟨X₁, …, Xₖ⟩ →+* T` sending each `Xᵢ`
+to a prescribed `bᵢ`, with no boundedness hypothesis on the `bᵢ`. -/
+theorem existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology
+    {φ : R →+* T} (hφ : Continuous φ) (b : Fin k → T) :
+    ∃! ψ : Tate k R →+* T, Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
+      ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i := by
   have := IsLinearTopology.isTopologicalRing (R := T)
   have := IsLinearTopology.nonarchimedeanRing T
-  exact existsUnique_continuous_ringHom_isRestricted_subring (b := b) hφ
-    fun _ ↦ isPowerBounded_of_isLinearTopology _
-
-end RingHom
+  exact existsUnique_continuous_ringHom_isRestricted_subring hφ fun _ ↦
+    isPowerBounded_iff.mpr (isBounded_of_isLinearTopology _)
 
 section AlgHom
 
@@ -332,5 +305,117 @@ theorem existsUnique_continuous_algHom_isRestricted_subring_of_isLinearTopology 
 end AlgHom
 
 end LinearTopology
+
+section Characterization
+
+/-- A pseudouniformiser of `R` remains a pseudouniformiser in `R{X/c}` at positive polyradii. -/
+theorem isPseudoUniformizer_algebraMap_isRestricted_subring {σ : Type*} {c : σ → ℝ}
+    [∀ i, Fact (0 < c i)] {ϖ : R} (hϖ : IsPseudoUniformizer ϖ) :
+    IsPseudoUniformizer (algebraMap R (IsRestricted.subring (R := R) c) ϖ) :=
+  hϖ.map isometry_algebraMap_isRestrictedSubring.continuous
+
+/-- When `R` has a pseudouniformiser, any morphism of monoids with zero out of `R⟨X₁, …, Xₖ⟩`
+continuous at `0` sends each `Xᵢ` to a power-bounded element. -/
+theorem isPowerBounded_apply_X_of_isPseudoUniformizer {T F : Type*} [MonoidWithZero T]
+    [TopologicalSpace T] [ContinuousMul T] [FunLike F (Tate k R) T]
+    [MonoidWithZeroHomClass F (Tate k R) T] {ϖ : R} (hϖ : IsPseudoUniformizer ϖ) {ψ : F}
+    (hψ : ContinuousAt ψ 0) (i : Fin k) : IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) :=
+  (isPowerBounded_X i).map_of_isPseudoUniformizer
+    (isPseudoUniformizer_algebraMap_isRestricted_subring hϖ) hψ
+
+/-- **Characterization of continuous extensions when `R` has a pseudouniformiser**: a continuous
+extension sending `Xᵢ` to `bᵢ` exists iff every `bᵢ` is power-bounded. -/
+theorem exists_continuous_ringHom_isRestricted_subring_iff_forall_isPowerBounded
+    {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [NonarchimedeanRing S]
+    [CompleteSpace S] [T3Space S] {ϖ : R} (hϖ : IsPseudoUniformizer ϖ)
+    {φ : R →+* S} (hφ : Continuous φ) (b : Fin k → S) :
+    (∃ ψ : Tate k R →+* S, Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
+      ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) ↔ ∀ i, IsPowerBounded (b i) :=
+  ⟨fun ⟨_, hψ, _, hX⟩ i ↦ hX i ▸ isPowerBounded_apply_X_of_isPseudoUniformizer hϖ hψ.continuousAt i,
+    fun hb ↦ ⟨restrictedLift hφ hb, continuous_restrictedLift hφ hb,
+      restrictedLift_algebraMap hφ hb, restrictedLift_X hφ hb⟩⟩
+
+section NormedField
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
+
+/-- Over a nontrivially normed nonarchimedean field `K`, any morphism of monoids with zero out of
+`K⟨X₁, …, Xₖ⟩` continuous at `0` sends each `Xᵢ` to a power-bounded element. -/
+theorem isPowerBounded_apply_X_of_continuousAt_zero {T F : Type*} [MonoidWithZero T]
+    [TopologicalSpace T] [ContinuousMul T] [FunLike F (Tate k K) T]
+    [MonoidWithZeroHomClass F (Tate k K) T] {ψ : F} (hψ : ContinuousAt ψ 0) (i : Fin k) :
+    IsPowerBounded (ψ ⟨X i, isRestricted_X _ i⟩) := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := K)
+  exact isPowerBounded_apply_X_of_isPseudoUniformizer hϖ hψ i
+
+/-- **Norm criterion over a nonarchimedean field**: a continuous extension `K⟨X₁, …, Xₖ⟩ →+* L`
+into a complete nonarchimedean normed field exists iff `‖bᵢ‖ ≤ 1` for all `i`. -/
+theorem exists_continuous_ringHom_isRestricted_subring_iff_forall_norm_le_one
+    {L : Type*} [NormedField L] [IsUltrametricDist L] [CompleteSpace L]
+    {φ : K →+* L} (hφ : Continuous φ) (b : Fin k → L) :
+    (∃ ψ : Tate k K →+* L, Continuous ψ ∧ (∀ c, ψ (algebraMap K _ c) = φ c) ∧
+      ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) ↔ ∀ i, ‖b i‖ ≤ 1 := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := K)
+  rw [exists_continuous_ringHom_isRestricted_subring_iff_forall_isPowerBounded hϖ hφ b]
+  exact forall_congr' fun _ ↦ isPowerBounded_iff_norm_le_one
+
+end NormedField
+
+end Characterization
+
+section Rename
+
+variable [CompleteSpace R] {m : ℕ}
+
+/-- **Renaming the variables of restricted series.** For a complete ultrametric normed ring `R`
+and `f : Fin m → Fin k`, this is the `R`-algebra map `R⟨X₁, …, Xₘ⟩ → R⟨X₁, …, Xₖ⟩` sending each
+`Xᵢ` to `X_{f i}`, the extension `TauCeti.MvPowerSeries.restrictedLift` of the constant-series
+embedding. The map `f` need not be injective. -/
+noncomputable def restrictedRename (f : Fin m → Fin k) :
+    IsRestricted.subring (R := R) (fun _ : Fin m ↦ 1) →ₐ[R]
+      IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) :=
+  { restrictedLift (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
+      isometry_algebraMap_isRestrictedSubring.continuous
+      (fun i ↦ isPowerBounded_X (f i)) with
+    commutes' := restrictedLift_algebraMap _ _ }
+
+/-- `restrictedRename f` sends each variable `Xᵢ` to `X_{f i}`. -/
+@[simp]
+theorem restrictedRename_X (f : Fin m → Fin k) (i : Fin m) :
+    restrictedRename (R := R) f ⟨X i, isRestricted_X _ i⟩ = ⟨X (f i), isRestricted_X _ (f i)⟩ :=
+  restrictedLift_X (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
+    isometry_algebraMap_isRestrictedSubring.continuous (fun i ↦ isPowerBounded_X (f i)) i
+
+/-- `restrictedRename f` is continuous. -/
+theorem continuous_restrictedRename (f : Fin m → Fin k) :
+    Continuous (restrictedRename (R := R) f) :=
+  continuous_restrictedLift (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
+    isometry_algebraMap_isRestrictedSubring.continuous (fun i ↦ isPowerBounded_X (f i))
+
+/-- Renaming along the identity is the identity. -/
+@[simp]
+theorem restrictedRename_id :
+    restrictedRename (R := R) (id : Fin k → Fin k) = AlgHom.id R _ :=
+  AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
+    (continuous_restrictedRename id) continuous_id (fun r ↦ by simp)
+    (fun i ↦ restrictedRename_X id i)
+
+/-- Successive renamings compose: renaming along `f` and then `g` is renaming along `g ∘ f`. -/
+@[simp]
+theorem restrictedRename_comp {n : ℕ} (g : Fin k → Fin n) (f : Fin m → Fin k) :
+    (restrictedRename (R := R) g).comp (restrictedRename f) = restrictedRename (g ∘ f) :=
+  AlgHom.toRingHom_injective <| isRestricted_subring_ringHom_ext_of_continuous
+    ((continuous_restrictedRename g).comp (continuous_restrictedRename f))
+    (continuous_restrictedRename (g ∘ f)) (fun r ↦ by simp)
+    (fun i ↦ by simp)
+
+/-- Applying `restrictedRename f` and then `restrictedRename g` is renaming along `g ∘ f`. -/
+@[simp]
+theorem restrictedRename_restrictedRename {n : ℕ} (g : Fin k → Fin n) (f : Fin m → Fin k)
+    (x : IsRestricted.subring (R := R) (fun _ : Fin m ↦ 1)) :
+    restrictedRename g (restrictedRename f x) = restrictedRename (g ∘ f) x :=
+  congr($(restrictedRename_comp g f) x)
+
+end Rename
 
 end TauCeti.MvPowerSeries

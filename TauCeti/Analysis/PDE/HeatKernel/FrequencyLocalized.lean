@@ -97,8 +97,7 @@ private theorem exists_norm_iteratedFDeriv_mul_exp_le (hχ : ContDiff ℝ ∞ χ
   -- `√τ ^ j exp(-π² r² τ)` is bounded, by `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le` at `√τ`.
   set B : ℕ → ℝ := fun j ↦ j.factorial / (π ^ 2 * r ^ 2 / 2) ^ j * rexp (π ^ 2 * r ^ 2)
   have hB (j : ℕ) (τ : ℝ) (hτ : 0 ≤ τ) : √τ ^ j * rexp (-(π ^ 2 * r ^ 2 * τ)) ≤ B j := by
-    have h := one_add_pow_mul_exp_neg_mul_sq_le (by positivity : 0 < π ^ 2 * r ^ 2) j
-      (sqrt_nonneg τ)
+    have h := one_add_pow_mul_exp_neg_mul_sq_le (by positivity : 0 < π ^ 2 * r ^ 2) j (r := √τ)
     rw [sq_sqrt hτ, neg_mul] at h
     exact (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (sqrt_nonneg τ)
       (le_add_of_nonneg_left zero_le_one) j) (exp_pos _).le).trans h
@@ -479,7 +478,7 @@ theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
     rw [← pow_mul, mul_comm, pow_mul]
     norm_num
   have h22 : (2 : ℝ) ^ 2 = 4 := by norm_num
-  refine (hσ ▸ hC _ hν t t.2).trans_eq ?_
+  refine (hσ ▸ hC _ hν t t.property).trans_eq ?_
   rw [h4, div_pow, h22]
   ring_nf
 

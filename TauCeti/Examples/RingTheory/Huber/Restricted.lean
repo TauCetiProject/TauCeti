@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Adic
 public import TauCeti.RingTheory.Huber.Padic.Basic
 public import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.Huber.Restricted.OneVariable
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
 import TauCeti.RingTheory.PowerSeries.Restricted
 import Mathlib.Algebra.Polynomial.Degree.Domain
 import Mathlib.RingTheory.AdicCompletion.Noetherian
@@ -83,7 +84,7 @@ noncomputable example (m : ℕ) :
       ((Ideal.span {(p : ℤ_[p])}).map
         (algebraMap ℤ_[p] (restrictedMvPowerSeriesCompletion k ℤ_[p]))) ^ m) ≃+*
       MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientRestrictedCompletionPowEquivMvPolynomialQuotient PadicInt.isAdic_span_p
+  (quotientPowRestrictedCompletionEquivMvPolynomialQuotient PadicInt.isAdic_span_p
     (Submodule.fg_span_singleton _) m).toRingEquiv.trans
       (MvPolynomial.mapEquiv (Fin k) ((Ideal.quotEquivOfEq (Ideal.span_singleton_pow _ m)).trans
         (_root_.PadicInt.quotientSpanPowEquivZMod m)))
@@ -94,7 +95,7 @@ noncomputable example (m : ℕ) :
       ((Ideal.span {(p : ℤ_[p])}).map (algebraMap ℤ_[p]
         (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1)))) ^ m) ≃+*
       MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientIsRestrictedSubringPowEquivMvPolynomialQuotient PadicInt.isAdic_span_p
+  (quotientPowIsRestrictedEquivMvPolynomialQuotient PadicInt.isAdic_span_p
     (Submodule.fg_span_singleton _) m).toRingEquiv.trans
       (MvPolynomial.mapEquiv (Fin k) ((Ideal.quotEquivOfEq (Ideal.span_singleton_pow _ m)).trans
         (_root_.PadicInt.quotientSpanPowEquivZMod m)))
@@ -116,9 +117,9 @@ open scoped NormedField Valued in
 /-- Over `𝒪[ℚ_[p]]`, maximal-ideal reduction agrees with unit-ball `restrictedReduction`. -/
 example (f : MvPowerSeries.IsRestricted.subring (R := 𝒪[ℚ_[p]]) (fun _ : Fin k ↦ 1)) :
     (IsLocalRing.maximalIdeal 𝒪[ℚ_[p]]).isRestrictedSubringReduction
-        Valued.integer.isOpen_maximalIdeal f =
+        TauCeti.isOpen_maximalIdeal_integer f =
       TauCeti.MvPowerSeries.restrictedReduction (restrictedIntegerEquiv f) :=
-  isRestrictedSubringReduction_maximalIdeal_eq_restrictedReduction _ f
+  (restrictedReduction_restrictedIntegerEquiv_eq_isRestrictedSubringReduction f).symm
 
 end PadicInt
 
@@ -216,8 +217,8 @@ example :
     have he1 : e (t + 1) = e 1 := by simpa [hc1] using hce.symm
     simpa using e.injective he1
   have hmk0 : Ideal.Quotient.mk (I ^ 2) Polynomial.X = 0 := by
-    have h := congrArg ((I ^ 2).restrictedReductionCompletion (k := 0) (hI.isOpen_pow 2)) ht0
-    simp only [t, S, map_zero, Ideal.restrictedReductionCompletion_algebraMap] at h
+    have h := congrArg (Ideal.restrictedCompletionReduction (k := 0) (I ^ 2) (hI.isOpen_pow 2)) ht0
+    simp only [t, S, map_zero, Ideal.restrictedCompletionReduction_algebraMap] at h
     exact MvPolynomial.C_injective (Fin 0) _ (by simpa using h)
   rw [Ideal.Quotient.eq_zero_iff_mem, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hmk0
   have hdeg := Polynomial.natDegree_le_of_dvd hmk0 Polynomial.X_ne_zero

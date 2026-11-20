@@ -19,15 +19,16 @@ This file bounds the quadratic remainder `-log (1 - x) - x`, then specializes th
 `x = y ^ (-s)`. The sharp factor `2` in the denominator comes from reading Mathlib's complex
 logarithm bound along the reals. It also records the coarser estimate
 `-log (1 - x) ≤ x + 2 x ^ 2` for `0 ≤ x ≤ 1/2`, and the real series `∑ xⁿ / n = -log (1 - x)`
-together with its exact domain of summability.
+together with its exact domain of summability and truncated power-series remainder bounds.
 
 ## Main results
 
-* `Real.neg_log_one_sub_sub_le`: for `0 ≤ x < 1`, the remainder is at most
-  `x² / (2 (1 - x))`.
+* `Real.neg_log_one_sub_sub_pos` and `Real.neg_log_one_sub_sub_le`: for nonzero `x < 1` the
+  remainder is strictly positive, and for `0 ≤ x < 1` it is at most `x² / (2 (1 - x))`.
 * `Real.neg_log_one_sub_rpow_sub_le_div`: for `2 ≤ y` and `0 < s`, it is at most
   `y ^ (-2s) / (2 (1 - 2 ^ (-s)))`.
-* `Real.neg_log_one_sub_rpow_sub_le`: for `2 ≤ y` and `1 ≤ s`, it is at most `y⁻²`.
+* `Real.neg_log_one_sub_rpow_sub_le` and `Real.neg_log_one_sub_inv_sub_inv_le`: for `2 ≤ y` and
+  `1 ≤ s`, it is at most `y⁻²` (in particular `-log (1 - x⁻¹) - x⁻¹ ≤ (x ^ 2)⁻¹` for `2 ≤ x`).
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
 * `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
@@ -35,6 +36,10 @@ together with its exact domain of summability.
 * `Real.neg_log_one_sub_le_iff`: for `x < 1`, `-log (1 - x) ≤ c ↔ x ≤ 1 - exp (-c)`.
 * `Real.hasSum_pow_div_natCast` and `Real.summable_pow_div_natCast_iff`: the series
   `∑ xⁿ / n` sums to `-log (1 - x)` for `|x| < 1` and is summable exactly there.
+* `Real.neg_log_one_sub_sub_sum_Icc_nonneg`, `Real.abs_neg_log_one_sub_sub_sum_Icc_le`,
+  `Real.neg_log_one_sub_inv_sub_sum_Icc_nonneg`, and `Real.neg_log_one_sub_inv_sub_sum_Icc_le`:
+  nonnegativity and geometric upper bounds for the truncated power-series remainder of
+  `-log (1 - x)` and `-log (1 - x⁻¹)`.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
   `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
@@ -55,6 +60,11 @@ namespace Real
 theorem neg_log_one_sub_sub_nonneg {x : ℝ} (hx1 : x < 1) :
     0 ≤ -log (1 - x) - x := by
   linarith [log_le_sub_one_of_pos (sub_pos.mpr hx1)]
+
+/-- The quadratic remainder of `-log (1 - x)` is strictly positive for nonzero `x < 1`. -/
+theorem neg_log_one_sub_sub_pos {x : ℝ} (hx0 : x ≠ 0) (hx1 : x < 1) :
+    0 < -log (1 - x) - x := by
+  linarith [log_lt_sub_one_of_pos (sub_pos.mpr hx1) (by simp [hx0])]
 
 /-- The quadratic remainder of `-log (1 - x)` is at most `x² / (2 (1 - x))` for
 `0 ≤ x < 1`. This is Mathlib's complex logarithm bound read along the reals. -/
@@ -117,6 +127,17 @@ theorem neg_log_one_sub_rpow_sub_le {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) :
     _ = y ^ (-(2 * s)) := by rw [pow_two, ← rpow_add hy0, ← two_mul, mul_neg]
     _ ≤ y ^ (-(2 : ℝ)) := rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
 
+/-- For `1 < x`, the quadratic remainder `-log (1 - x⁻¹) - x⁻¹` is strictly positive. -/
+theorem neg_log_one_sub_inv_sub_inv_pos {x : ℝ} (hx : 1 < x) :
+    0 < -log (1 - x⁻¹) - x⁻¹ :=
+  neg_log_one_sub_sub_pos (inv_ne_zero (zero_lt_one.trans hx).ne') (inv_lt_one_of_one_lt₀ hx)
+
+/-- For `2 ≤ x`, the quadratic remainder `-log (1 - x⁻¹) - x⁻¹` is at most `(x ^ 2)⁻¹`. -/
+theorem neg_log_one_sub_inv_sub_inv_le {x : ℝ} (hx : 2 ≤ x) :
+    -log (1 - x⁻¹) - x⁻¹ ≤ (x ^ 2)⁻¹ := by
+  have h := neg_log_one_sub_rpow_sub_le hx le_rfl
+  rwa [rpow_neg_one, rpow_neg (by linarith), rpow_two] at h
+
 /-- For `x ≤ 1/2`, `-log (1 - x) ≤ x + 2 x ^ 2`. -/
 theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx : x ≤ 1 / 2) :
     -log (1 - x) ≤ x + 2 * x ^ 2 := by
@@ -160,6 +181,67 @@ theorem summable_pow_div_natCast_iff {x : ℝ} :
     simpa [abs_div, abs_pow] using hs.abs
   refine not_summable_one_div_natCast (habs.of_nonneg_of_le (fun n => by positivity) fun n => ?_)
   exact div_le_div_of_nonneg_right (one_le_pow₀ (not_lt.mp hx)) n.cast_nonneg
+
+/-- For `0 ≤ x < 1`, the truncated power-series remainder
+`-log (1 - x) - ∑_{1 ≤ k ≤ n} x ^ k / k` is nonnegative. -/
+theorem neg_log_one_sub_sub_sum_Icc_nonneg {x : ℝ} (hx0 : 0 ≤ x) (hx1 : x < 1) (n : ℕ) :
+    0 ≤ -log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ) := by
+  have habs : |x| < 1 := by rwa [abs_of_nonneg hx0]
+  rw [← (hasSum_pow_div_natCast habs).tsum_eq, sub_nonneg]
+  exact (hasSum_pow_div_natCast habs).summable.sum_le_tsum _ fun _ _ ↦ by positivity
+
+/-- For `|x| ≤ 1 / 2`, the truncated power-series remainder of `-log (1 - x)` has absolute value at
+most `2 |x| ^ (n + 1)`. -/
+theorem abs_neg_log_one_sub_sub_sum_Icc_le {x : ℝ} (hx : |x| ≤ 1 / 2) (n : ℕ) :
+    |-log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ)| ≤ 2 * |x| ^ (n + 1) := by
+  have habs : |x| < 1 := hx.trans_lt (by norm_num)
+  have hsum : ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ) =
+      ∑ i ∈ Finset.range n, x ^ (i + 1) / ((i : ℝ) + 1) := by
+    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.sum_Ico_eq_sum_range, Nat.add_sub_cancel]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [add_comm 1 i, Nat.cast_add, Nat.cast_one]
+  have h1 : |-log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ)| =
+      |(∑ i ∈ Finset.range n, x ^ (i + 1) / ((i : ℝ) + 1)) + log (1 - x)| := by
+    rw [hsum, ← abs_neg]
+    exact congrArg abs (by ring)
+  have h2 : (1 - |x|)⁻¹ ≤ 2 := by
+    rw [inv_le_comm₀ (by linarith) two_pos]
+    linarith
+  calc |-log (1 - x) - ∑ k ∈ Finset.Icc 1 n, x ^ k / (k : ℝ)|
+      ≤ |x| ^ (n + 1) / (1 - |x|) := h1 ▸ abs_log_sub_add_sum_range_le habs n
+    _ = |x| ^ (n + 1) * (1 - |x|)⁻¹ := div_eq_mul_inv _ _
+    _ ≤ |x| ^ (n + 1) * 2 := by gcongr
+    _ = 2 * |x| ^ (n + 1) := mul_comm _ _
+
+/-- For `1 < x`, the truncated harmonic power-series remainder
+`-log (1 - x⁻¹) - ∑_{1 ≤ k ≤ n} 1 / (k x ^ k)` is nonnegative. -/
+theorem neg_log_one_sub_inv_sub_sum_Icc_nonneg {x : ℝ} (hx : 1 < x) (n : ℕ) :
+    0 ≤ -log (1 - x⁻¹) - ∑ k ∈ Finset.Icc 1 n, 1 / ((k : ℝ) * x ^ k) := by
+  have hsum : ∑ k ∈ Finset.Icc 1 n, 1 / ((k : ℝ) * x ^ k) =
+      ∑ k ∈ Finset.Icc 1 n, (x⁻¹) ^ k / (k : ℝ) :=
+    Finset.sum_congr rfl fun k _ ↦ by rw [inv_pow]; ring
+  rw [hsum]
+  exact neg_log_one_sub_sub_sum_Icc_nonneg (inv_nonneg.mpr (zero_lt_one.trans hx).le)
+    (inv_lt_one_of_one_lt₀ hx) n
+
+/-- For `2 ≤ x`, the truncated harmonic power-series remainder
+`-log (1 - x⁻¹) - ∑_{1 ≤ k ≤ n} 1 / (k x ^ k)` is at most `2 * (x ^ (n + 1))⁻¹`. -/
+theorem neg_log_one_sub_inv_sub_sum_Icc_le {x : ℝ} (hx : 2 ≤ x) (n : ℕ) :
+    -log (1 - x⁻¹) - ∑ k ∈ Finset.Icc 1 n, 1 / ((k : ℝ) * x ^ k) ≤
+      2 * (x ^ (n + 1))⁻¹ := by
+  have hx0 : 0 < x := by linarith
+  have hinv : |x⁻¹| ≤ 1 / 2 := by
+    rw [abs_of_pos (inv_pos.mpr hx0), one_div]
+    exact inv_anti₀ two_pos hx
+  have hsum : ∑ k ∈ Finset.Icc 1 n, 1 / ((k : ℝ) * x ^ k) =
+      ∑ k ∈ Finset.Icc 1 n, (x⁻¹) ^ k / (k : ℝ) :=
+    Finset.sum_congr rfl fun k _ ↦ by rw [inv_pow]; ring
+  calc -log (1 - x⁻¹) - ∑ k ∈ Finset.Icc 1 n, 1 / ((k : ℝ) * x ^ k)
+      ≤ |-log (1 - x⁻¹) - ∑ k ∈ Finset.Icc 1 n, (x⁻¹) ^ k / (k : ℝ)| :=
+        hsum ▸ le_abs_self _
+    _ ≤ 2 * |x⁻¹| ^ (n + 1) := abs_neg_log_one_sub_sub_sum_Icc_le hinv n
+    _ = 2 * (x ^ (n + 1))⁻¹ := by
+        rw [abs_of_pos (inv_pos.mpr hx0), inv_pow]
 
 end Real
 

@@ -142,7 +142,7 @@ theorem exists_basis_eq_ι_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (s : Set.powersetCard I 2) :
     ∃ k l, (∀ i, i ∈ s.val ↔ i = k ∨ i = l) ∧ basis Q b s = ι Q (b k) * ι Q (b l) := by
   obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
-    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.2] :
+    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.property] :
       ((s : Finset I).sort (· ≤ ·)).length = 2)
   refine ⟨k, l, fun i ↦ ?_, ?_⟩
   · rw [← Finset.mem_sort (· ≤ ·), hsort]
@@ -435,7 +435,7 @@ theorem basis_comm_ι_iff [Fintype I] [Nontrivial R]
     · exact Or.inl hempty
     · right
       have hsodd : Odd s.card := by
-        obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hempty
+        obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.mp hempty
         have h := hs i
         rw [basis_mul_ι_of_mem hb hi] at h
         have heven : Even (s.card - 1) :=

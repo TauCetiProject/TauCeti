@@ -30,6 +30,9 @@ of `p`. The subgraph spanned by `p` is therefore all of `G`, and Mathlib's
 
 ## Main results
 
+* `SimpleGraph.neighborFinset_pathGraph`, `SimpleGraph.prod_neighborFinset_pathGraph`,
+  `SimpleGraph.sum_neighborFinset_pathGraph`: the neighbour finset of a vertex of `pathGraph n` and
+  products or sums over it.
 * `SimpleGraph.IsTree.nonempty_iso_pathGraph_of_degree_le_two`: a finite tree of maximum degree two
   is isomorphic to the path graph on its vertices.
 * `SimpleGraph.Iso.adj_iff_of_pathGraph`: adjacency read through such a numbering is
@@ -65,6 +68,33 @@ def pathGraphRevIso (n : ℕ) : pathGraph n ≃g pathGraph n where
 end TauCeti
 
 namespace SimpleGraph
+
+/-! ## Neighbours in a path graph -/
+
+/-- **Neighbours of a vertex in a path graph**: `v` is joined to `v - 1` when `0 < v` and to
+`v + 1` when `v + 1 < n`. -/
+theorem neighborFinset_pathGraph {n : ℕ} (v : Fin n) [Fintype ((pathGraph n).neighborSet v)] :
+    (pathGraph n).neighborFinset v =
+      (if h : 0 < (v : ℕ) then {⟨(v : ℕ) - 1, by omega⟩} else ∅) ∪
+        (if h : (v : ℕ) + 1 < n then {⟨(v : ℕ) + 1, h⟩} else ∅) := by
+  ext u
+  simp only [mem_neighborFinset, pathGraph_adj, Finset.mem_union]
+  split_ifs <;> simp [Fin.ext_iff] <;> omega
+
+/-- **Product over the neighbours of a vertex in a path graph**: the product over the neighbours of
+`v` in `pathGraph n` splits into the predecessor factor (when `0 < v`) and the successor factor
+(when `v + 1 < n`). -/
+@[to_additive /-- **Sum over the neighbours of a vertex in a path graph**: the sum over the
+neighbours of `v` in `pathGraph n` splits into the predecessor term (when `0 < v`) and the
+successor term (when `v + 1 < n`). -/]
+theorem prod_neighborFinset_pathGraph {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M)
+    (v : Fin n) [Fintype ((pathGraph n).neighborSet v)] :
+    ∏ u ∈ (pathGraph n).neighborFinset v, f u =
+      (if h : 0 < (v : ℕ) then f ⟨(v : ℕ) - 1, by omega⟩ else 1) *
+        (if h : (v : ℕ) + 1 < n then f ⟨(v : ℕ) + 1, h⟩ else 1) := by
+  rw [neighborFinset_pathGraph, Finset.prod_union]
+  · congr 1 <;> split_ifs <;> simp
+  · split_ifs <;> simp [Fin.ext_iff]
 
 variable {V : Type*} {G : SimpleGraph V}
 
