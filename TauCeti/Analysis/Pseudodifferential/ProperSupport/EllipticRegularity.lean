@@ -29,10 +29,10 @@ whenever `a` has a formal left parametrix, `1 ∼ ∑ₖ sharpTerm b a k`
 radius has one (`TauCeti.Symbol.IsEllipticAbove.isLocallySobolevAt_of_quantizeDistribution`), and
 so does every elliptic classical symbol
 (`TauCeti.ClassicalSymbol.IsElliptic.isLocallySobolevAt_of_quantizeDistribution`). Consequently
-`Op(a)` can only lose regularity where `T` has it: the `H^(s + m)` singular support of `T` lies in
-the `H^s` singular support of `Op(a) T`, and the singular support of `T` lies in that of
-`Op(a) T`. In particular every distributional solution of `Op(a) T = 0`, or more generally of
-`Op(a) T = f` with `f` smooth, is a smooth function.
+`Op(a)` cannot remove singularities: `Op(a) T` is singular wherever `T` is. The `H^(s + m)`
+singular support of `T` lies in the `H^s` singular support of `Op(a) T`, and the singular support
+of `T` lies in that of `Op(a) T`. In particular every distributional solution of `Op(a) T = 0`, or
+more generally of `Op(a) T = f` with `f` smooth, is a smooth function.
 
 Conversely, `Op(a)` maps `H^(s + m)_loc` to `H^s_loc`: if `T` is `H^(s + m)` near every point of
 the closed `R`-neighbourhood of the support of a test function `ψ`, then `ψ Op(a) T ∈ H^s`
@@ -41,8 +41,9 @@ the closed `R`-neighbourhood of the support of a test function `ψ`, then `ψ Op
 ## The argument
 
 Both directions reduce to the Bessel-potential spaces through one identity. Let `ψ` be a test
-function, let `p(x, ξ) = ψ(x) a(x, ξ)`, a symbol with compact spatial support, and let `χ` be a test
-function equal to one on the closed `R`-neighbourhood of the support of `ψ`. Then
+function, let `p(x, ξ) = ψ(x) a(x, ξ)` (`TauCeti.Symbol.smulLeft`), a symbol with compact
+spatial support, and let `χ` be a test function equal to one on the closed `R`-neighbourhood of the
+support of `ψ`. Then
 
 `Op(p) (χ T) = ψ Op(a) T`
 
@@ -87,20 +88,6 @@ namespace TauCeti
 namespace Symbol
 
 variable {n : ℕ} {m R : ℝ} {a p : Symbol n ℂ ℂ m} {ψ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)}
-
-/-- For a test function `ψ`, the symbol `ψ(x) a(x, ξ)` of the operator `ψ Op(a)`, which has compact
-spatial support. -/
-private theorem exists_hasCompactSpatialSupport_coefficient_eq_smul (a : Symbol n ℂ ℂ m)
-    (ψ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
-    ∃ p : Symbol n ℂ ℂ m, p.HasCompactSpatialSupport ∧
-      ∀ x ξ, p.coefficient (x, ξ) = ψ x • a.coefficient (x, ξ) := by
-  set F := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ ℂ) (ψ.contDiff.smul contDiff_const)
-  have hF : F.HasCompactSpatialSupport :=
-    (hasCompactSpatialSupport_ofSpatial_iff _).2
-      (ψ.hasCompactSupport.mono fun x hx h ↦ hx (by simp [h]))
-  refine ⟨inclusion (zero_add m).le (F.comp a), (hF.comp_right a).inclusion _, fun x ξ ↦ ?_⟩
-  ext
-  simp [F]
 
 /-- **The transpose of `ψ Op(a)`.** If `p(x, ξ) = ψ(x) a(x, ξ)` for a properly supported `Op(a)`,
 the transpose of `Op(p)` on a Schwartz function `f` is the transpose
@@ -211,7 +198,8 @@ theorem memSobolev_cutoffTempered_quantizeDistribution (ha : a.HasNearDiagonalKe
   obtain ⟨χ, hχ1, hχU⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤) (Ω := ⊤)
     (ψ.hasCompactSupport.isCompact.cthickening (r := R)) (isOpen_setOf_isLocallySobolevAt _ T)
     h (by simp)
-  obtain ⟨p, hp, hpa⟩ := exists_hasCompactSpatialSupport_coefficient_eq_smul a ψ
+  have hp := hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a
+  have hpa (x ξ : CoordinateSpace n) := coefficient_smulLeft ψ.contDiff a (x, ξ)
   rw [← quantizeTempered_cutoffTempered ha hp.isUniform hpa
     (fun x hx ↦ hχ1.self_of_nhdsSet x hx) T]
   simpa using memSobolev_quantizeTempered hp
@@ -244,7 +232,10 @@ theorem IsLocallySobolevAt.of_quantizeDistribution (ha : a.HasNearDiagonalKernel
     subset_tsupport _ (by simp [hψ1.self_of_nhdsSet y hy])
   -- `u = χ T` lies in some `H^r`, and `Op(ψ a) u = ψ Op(a) T ∈ H^s`.
   obtain ⟨r, hr⟩ := T.exists_memSobolev_cutoffTempered χ
-  obtain ⟨p, hp, hpa⟩ := exists_hasCompactSpatialSupport_coefficient_eq_smul a ψ
+  set p := smulLeft ψ.contDiff a
+  have hp : p.HasCompactSpatialSupport :=
+    hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a
+  have hpa (x ξ : CoordinateSpace n) := coefficient_smulLeft ψ.contDiff a (x, ξ)
   have hu : MemSobolev s 2 (p.quantizeSobolev hp r hr.toBesselPotentialSpace).toDistr := by
     rw [toDistr_quantizeSobolev, hr.toBesselPotentialSpace_toDistr,
       quantizeTempered_cutoffTempered ha hp.isUniform hpa hχψ T]

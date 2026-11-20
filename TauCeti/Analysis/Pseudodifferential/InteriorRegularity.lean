@@ -93,29 +93,12 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
 
-/-! ### The localized parametrix symbol and the norm bound of the estimates -/
+/-! ### The norm bound of the estimates -/
 
 section Localize
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W]
-
-/-- The localized parametrix symbol `ψ(x) b(x, ξ)`. -/
-private def localize (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n W V (-m)) : Symbol n W V (-m) :=
-  inclusion (zero_add (-m)).le
-    ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) ((ψ.smooth ⊤).smul contDiff_const)).comp
-      b)
-
-private theorem coefficient_localize (ψ : 𝓢(CoordinateSpace n, ℂ)) (b : Symbol n W V (-m))
-    (x ξ : CoordinateSpace n) :
-    (localize ψ b).coefficient (x, ξ) = ψ x • b.coefficient (x, ξ) := by
-  simp [localize, coefficient_inclusion, ContinuousLinearMap.smul_comp]
-
-private theorem hasCompactSpatialSupport_localize {ψ : 𝓢(CoordinateSpace n, ℂ)}
-    (hψ : HasCompactSupport ψ) (b : Symbol n W V (-m)) :
-    (localize ψ b).HasCompactSpatialSupport :=
-  hasCompactSpatialSupport_iff.2 ⟨tsupport ψ, hψ, fun x hx ξ ↦ by
-    simp [coefficient_localize, image_eq_zero_of_notMem_tsupport hx]⟩
 
 /-- The norm bound behind both interior estimates: `‖Q x - T y‖ ≤ max ‖Q‖ ‖T‖ (‖x‖ + ‖y‖)`, with
 `Q x` and `T y` moved to a common Bessel-potential space `H^{s,p}`. -/
@@ -156,15 +139,17 @@ private theorem exists_toDistr_quantizeSobolev_localize
     ∃ (R : Symbol n V V μ) (hR : R.HasCompactSpatialSupport), ∀ (r : ℝ)
       (u : H^{r}(CoordinateSpace n, V)),
         smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr =
-          ((localize ψ b).quantizeSobolev (hasCompactSpatialSupport_localize hψ b) (r - m)
+          ((smulLeft (ψ.smooth ⊤) b).quantizeSobolev
+            (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b) (r - m)
             (p.quantizeSobolev hp r u)).toDistr - (R.quantizeSobolev hR r u).toDistr := by
   have hψ' : ContDiff ℝ ∞ (ψ : CoordinateSpace n → ℂ) := ψ.smooth ⊤
   set ψs := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ'.smul contDiff_const)
   have hψs : ψs.HasCompactSpatialSupport :=
     (hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right
-  have hq := hasCompactSpatialSupport_localize hψ b
+  have hq := hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b
   have hqp := hq.sharp hp
-  have hsmooth := isSmoothing_sharp_sub_ofSpatial hab hψ' (coefficient_localize ψ b) hp hpa
+  have hsmooth := isSmoothing_sharp_sub_ofSpatial hab hψ'
+    (fun x ξ ↦ coefficient_smulLeft hψ' b (x, ξ)) hp hpa
   obtain ⟨R, hR⟩ := isSmoothing_iff.1 hsmooth μ
   have hRc : R.HasCompactSpatialSupport :=
     (hqp.sub (hψs.inclusion _)).of_coefficient_eq hR
@@ -198,7 +183,8 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeSobolev
     MemSobolev (s + m) 2 (smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr) := by
   obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeSobolev_localize hab hψ hp hpa (r - (s + m))
   rw [hψu r u, toDistr_quantizeSobolev_congr rfl
-    (hasCompactSpatialSupport_localize hψ b) (hasCompactSpatialSupport_localize hψ b)
+    (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b)
+    (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b)
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
   exact (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring)).sub
     (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring))
@@ -221,7 +207,8 @@ theorem exists_norm_smulLeftCLM_le
       ‖BesselPotentialSpace.smulLeftCLM (s + m) ψ u‖ ≤
         C * (‖p.quantizeSobolev hp (s + m) u‖ + ‖BesselPotentialSpace.inclusion hr u‖) := by
   obtain ⟨R, hR, hψu⟩ := exists_toDistr_quantizeSobolev_localize hab hψ hp hpa (r - (s + m))
-  set Q := (localize ψ b).quantizeSobolev (hasCompactSpatialSupport_localize hψ b) (s + m - m)
+  set Q := (smulLeft (ψ.smooth ⊤) b).quantizeSobolev
+    (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b) (s + m - m)
   set T := R.quantizeSobolev hR r
   refine ⟨max ‖Q‖ ‖T‖, fun u ↦ ?_⟩
   -- `ψ u = Q (Op(p) u) - T u`, compared in `H^{s + m}`.
@@ -258,24 +245,26 @@ private theorem exists_toDistr_quantizeBesselPotentialSpace_localize
     ∃ (R : Symbol n V V μ) (hR : R.HasCompactSpatialSupport), ∀ (r : ℝ)
       (u : H^{r, p}(CoordinateSpace n, V)),
         smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr =
-          ((localize ψ b).quantizeBesselPotentialSpace (hasCompactSpatialSupport_localize hψ b)
-            (r - m) p (c.quantizeBesselPotentialSpace hc r p u)).toDistr -
+          ((smulLeft (ψ.smooth ⊤) b).quantizeBesselPotentialSpace
+            (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b) (r - m) p
+            (c.quantizeBesselPotentialSpace hc r p u)).toDistr -
           (R.quantizeBesselPotentialSpace hR r p u).toDistr := by
   have hψ' : ContDiff ℝ ∞ (ψ : CoordinateSpace n → ℂ) := ψ.smooth ⊤
   set ψs := ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ V) (hψ'.smul contDiff_const)
   have hψs : ψs.HasCompactSpatialSupport :=
     (hasCompactSpatialSupport_ofSpatial_iff _).2 hψ.smul_right
-  have hq := hasCompactSpatialSupport_localize hψ b
+  have hq := hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b
   have hqc := hq.sharp hc
   have hψs' := hψs.inclusion (neg_add_cancel m).ge
   -- `q # c - ψ` is smoothing, so it has a representative `R` of order `μ`.
   obtain ⟨R, hR⟩ := isSmoothing_iff.1
-    (isSmoothing_sharp_sub_ofSpatial hab hψ' (coefficient_localize ψ b) hc hca) μ
+    (isSmoothing_sharp_sub_ofSpatial hab hψ' (fun x ξ ↦ coefficient_smulLeft hψ' b (x, ξ))
+      hc hca) μ
   have hRc : R.HasCompactSpatialSupport := (hqc.sub hψs').of_coefficient_eq hR
   refine ⟨R, hRc, fun r u ↦ ?_⟩
   -- `Op(R) u = Op(q # c) u - ψ u = Op(q) (Op(c) u) - ψ u`.
   have hRu : (R.quantizeBesselPotentialSpace hRc r p u).toDistr =
-      ((localize ψ b).quantizeBesselPotentialSpace hq (r - m) p
+      ((smulLeft (ψ.smooth ⊤) b).quantizeBesselPotentialSpace hq (r - m) p
         (c.quantizeBesselPotentialSpace hc r p u)).toDistr -
         smulLeftCLM V (ψ : CoordinateSpace n → ℂ) u.toDistr := by
     rw [toDistr_quantizeBesselPotentialSpace_congr hR hRc (hqc.sub hψs') hp hp_top rfl,
@@ -303,7 +292,8 @@ theorem memSobolev_smulLeftCLM_of_memSobolev_quantizeBesselPotentialSpace
   obtain ⟨R, hR, hψu⟩ :=
     exists_toDistr_quantizeBesselPotentialSpace_localize hab hψ hc hca hp hp_top (r - (s + m))
   rw [hψu r u, toDistr_quantizeBesselPotentialSpace_congr rfl
-    (hasCompactSpatialSupport_localize hψ b) (hasCompactSpatialSupport_localize hψ b) hp hp_top
+    (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b)
+    (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b) hp hp_top
     (MemSobolev.toBesselPotentialSpace_toDistr hu).symm]
   exact (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring)).sub
     (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring))
@@ -346,8 +336,8 @@ theorem exists_norm_le_of_toDistr_eq_smulLeftCLM
           ‖BesselPotentialSpace.inclusion hr u‖) := by
   obtain ⟨R, hR, hψu⟩ :=
     exists_toDistr_quantizeBesselPotentialSpace_localize hab hψ hc hca hp hp_top (r - (s + m))
-  set Q := (localize ψ b).quantizeBesselPotentialSpace (hasCompactSpatialSupport_localize hψ b)
-    (s + m - m) p
+  set Q := (smulLeft (ψ.smooth ⊤) b).quantizeBesselPotentialSpace
+    (hasCompactSpatialSupport_smulLeft (ψ.smooth ⊤) hψ b) (s + m - m) p
   set T := R.quantizeBesselPotentialSpace hR r p
   refine ⟨max ‖Q‖ ‖T‖, fun u v hv ↦ ?_⟩
   -- `v = ψ u = Q (Op(c) u) - T u`, compared in `H^{s + m,p}`.
