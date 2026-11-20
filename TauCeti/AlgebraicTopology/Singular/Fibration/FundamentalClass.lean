@@ -25,9 +25,19 @@ of `TauCeti.IsFundamentalClass`: classes whose image in the local homology at ev
 generates it. For a fibre bundle of closed manifolds this is the identity `j_![E] = [F]` of
 Barraud, Damian, Humilière and Oancea up to a unit: a fundamental class is determined only up to
 the orientation conventions that `TauCeti.IsFundamentalClass` leaves free, and the oriented,
-sign-exact identity is not proved here. It is one input to their criterion (Corollary 2.13) for
-`σ_*[E]` to live over the fundamental class of the base when `σ_*[F]` is nonzero; the other input,
-the naturality of the shriek map under maps of fibrations, is not treated here.
+sign-exact identity is not proved here.
+
+Without local triviality, the file also shows that `j_! μ` generates `Hₙ(F; N)` for a fundamental
+class `μ` of `E` with coefficients in a module `N` over a commutative ring `k`, provided `Hₙ(F; N)`
+and the local homology `Hₙ₊ᵣ(E, E ∖ {y}; N)` at one point `y ∈ F` are both free of rank one
+(`TauCeti.IsFundamentalClass.span_singularHomologyComplFiberIso_hom_fiberLocalization_eq_top`).
+The localization of `μ` at `y` factors through its localization at the fibre, and a linear map
+between two copies of `k` reflects generators
+(`LinearMap.span_singleton_eq_top_of_span_singleton_apply_eq_top`). Combined with the naturality
+of the shriek map (`TauCeti.livesOverFundamentalClass_homologyMap_iff`), this gives their
+Corollary 2.13: for a map `f : E → E'` over `B` to a second Serre fibration, `f_* μ` lives over
+the fundamental class at `b` as soon as the restriction of `f` to the fibres does not kill a
+generator of `Hₙ(F; N)` (`TauCeti.IsFundamentalClass.livesOverFundamentalClass_homologyMap`).
 
 ## The argument
 
@@ -60,11 +70,18 @@ keeps the coordinate in `Y`. Its value `Hₙ(E, A)` is `Hₙ(F, F ∖ {y})`, sin
 * `TauCeti.IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization`: the shriek
   map of a point sends fundamental classes of the total space to fundamental classes of the
   fibre.
+* `TauCeti.IsFundamentalClass.span_fiberLocalization_eq_top`: the localization at the fibre of a
+  fundamental class generates the local homology along the fibre.
+* `TauCeti.IsFundamentalClass.span_singularHomologyComplFiberIso_hom_fiberLocalization_eq_top`:
+  the shriek of a fundamental class generates the top homology of the fibre.
+* `TauCeti.IsFundamentalClass.livesOverFundamentalClass_homologyMap`: the image of a fundamental
+  class under a map of fibrations that is nonzero on the fibres lives over the fundamental class.
 
 ## References
 
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, §2.4 (Remark 2.10 and Corollary 2.13).
+  Applications to cotangent bundles*, arXiv:2404.07953, §2.4 (Remark 2.10, Proposition 2.12
+  and Corollary 2.13) and §6.4.2 (Proposition 6.15).
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 3.3, local homology and fundamental classes.
 -/
@@ -531,5 +548,94 @@ theorem IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization {
   exact fun z ↦ ⟨Ψ.inv.hom z, by simp⟩
 
 end FundamentalClass
+
+/-! ### Fundamental classes whose shriek generates, without local triviality -/
+
+namespace IsFundamentalClass
+
+variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {E B : _root_.TopCat.{u}} [T1Space B] {p : E ⟶ B} {k : Type u} [CommRing k]
+  {N : ModuleCat.{u} k} (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
+  {n m : ℕ} (h : n + finrank ℝ V = m)
+  {μ : ((_root_.TopCat.toSSet.obj E).homology N m : ModuleCat.{u} k)} {y : E} (hy : p y = b)
+
+include hb h hy in
+/-- **The localization at the fibre of a fundamental class generates.** Let `p : E ⟶ B` be a Serre
+fibration over a `T₁` space, with a chart `e` of dimension `r` at `b`, and let `μ ∈ Hₙ₊ᵣ(E; N)` be a
+fundamental class. If the homology `Hₙ(p⁻¹(b); N)` of the fibre and the local homology
+`Hₙ₊ᵣ(E, E ∖ {y}; N)` at a point `y` of the fibre are both isomorphic to the commutative ring `k`,
+then the localization of `μ` at the fibre generates `Hₙ₊ᵣ(E, E ∖ p⁻¹(b); N)`. -/
+theorem span_fiberLocalization_eq_top
+    (φ : (localHomology N ({y} : Set E) m : ModuleCat.{u} k) ≃ₗ[k] k)
+    (ψ : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj N).obj
+      (_root_.TopCat.of (p ⁻¹' {b})) : ModuleCat.{u} k) ≃ₗ[k] k)
+    (hp : TopCat.serreFibrations p) (hμ : IsFundamentalClass μ) :
+    Submodule.span k {(fiberLocalization N p b m).hom μ} = ⊤ := by
+  obtain ⟨ε, hε₀, hε⟩ := Metric.isOpen_iff.1 e.open_target (e b) (e.map_source hb)
+  have hyF : ({y} : Set E) ⊆ p ⁻¹' {b} := singleton_subset_iff.2 hy
+  -- The localization along the fibre is a copy of `k`, through the homology of the fibre.
+  let eF : (localHomology N (p ⁻¹' {b}) m : ModuleCat.{u} k) ≃ₗ[k] k :=
+    (TopCat.singularHomologyComplFiberIso N e hb hε hε₀ hp n m h).toLinearEquiv.trans ψ
+  refine LinearMap.span_singleton_eq_top_of_span_singleton_apply_eq_top
+    (localHomologyRestriction N hyF m).hom eF φ ?_
+  -- Restricting the localization at the fibre to `y` gives the localization at `y`.
+  have hres : (localHomologyRestriction N hyF m).hom ((fiberLocalization N p b m).hom μ) =
+      singularHomologyToLocalHomology N y m μ := by
+    rw [singularHomologyToLocalHomology_eq_singularHomologyπ]
+    exact singularHomologyπ_localHomologyRestriction_apply N hyF m μ
+  rw [hres]
+  exact (isFundamentalClass_iff μ).1 hμ y
+
+include hy in
+/-- **The shriek of a fundamental class generates the homology of the fibre.** Let `p : E ⟶ B` be
+a Serre fibration over a `T₁` space, with a chart `e` of dimension `r` at `b`, and let
+`μ ∈ Hₙ₊ᵣ(E; N)` be a fundamental class. If the homology `Hₙ(p⁻¹(b); N)` of the fibre and the
+local homology `Hₙ₊ᵣ(E, E ∖ {y}; N)` at a point `y` of the fibre are both isomorphic to the
+commutative ring `k`, then the image `j_! μ` of `μ` under the shriek map
+`Hₙ₊ᵣ(E; N) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b); N) ≅ Hₙ(p⁻¹(b); N)` generates `Hₙ(p⁻¹(b); N)`. For closed
+oriented manifolds this is `j_! [E] = ±[p⁻¹(b)]`. -/
+theorem span_singularHomologyComplFiberIso_hom_fiberLocalization_eq_top {ε : ℝ}
+    (hε : Metric.ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε)
+    (φ : (localHomology N ({y} : Set E) m : ModuleCat.{u} k) ≃ₗ[k] k)
+    (ψ : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj N).obj
+      (_root_.TopCat.of (p ⁻¹' {b})) : ModuleCat.{u} k) ≃ₗ[k] k)
+    (hp : TopCat.serreFibrations p) (hμ : IsFundamentalClass μ) :
+    Submodule.span k
+        {(TopCat.singularHomologyComplFiberIso N e hb hε hε₀ hp n m h).hom.hom
+          ((fiberLocalization N p b m).hom μ)} = ⊤ := by
+  rw [← (TopCat.singularHomologyComplFiberIso N e hb hε hε₀ hp n m h).toLinearEquiv_apply,
+    LinearEquiv.span_singleton_apply_eq_top_iff]
+  exact span_fiberLocalization_eq_top e hb h hy φ ψ hp hμ
+
+include hb h hy in
+/-- **The image of a fundamental class under a map of fibrations** (Barraud–Damian–Humilière–Oancea,
+Corollary 2.13). Let `p : E ⟶ B` and `p' : E' ⟶ B` be Serre fibrations over a `T₁` space, with a
+chart `e` of dimension `r` at `b`, and let `f : E ⟶ E'` be a map over `B`. Let `μ ∈ Hₙ₊ᵣ(E; N)` be
+a fundamental class, and suppose that the homology `Hₙ(p⁻¹(b); N)` of the fibre and the local
+homology `Hₙ₊ᵣ(E, E ∖ {y}; N)` at a point `y` of the fibre are both isomorphic to the commutative
+ring `k`. If the restriction `p⁻¹(b) ⟶ p'⁻¹(b)` of `f` does not kill a generator `ν` of
+`Hₙ(p⁻¹(b); N)`, for instance a fundamental class of the fibre, then `f_* μ` lives over the
+fundamental class at `b`. -/
+theorem livesOverFundamentalClass_homologyMap {E' : _root_.TopCat.{u}} {p' : E' ⟶ B}
+    {f : E ⟶ E'} (hf : f ≫ p' = p)
+    (φ : (localHomology N ({y} : Set E) m : ModuleCat.{u} k) ≃ₗ[k] k)
+    (ψ : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj N).obj
+      (_root_.TopCat.of (p ⁻¹' {b})) : ModuleCat.{u} k) ≃ₗ[k] k)
+    (hp : TopCat.serreFibrations p) (hp' : TopCat.serreFibrations p') (hμ : IsFundamentalClass μ)
+    {ν : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj N).obj
+      (_root_.TopCat.of (p ⁻¹' {b})) : ModuleCat.{u} k)} (hν : Submodule.span k {ν} = ⊤)
+    (hfν : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj N).map
+      (f.preimageMap hf {b})).hom ν ≠ 0) :
+    LivesOverFundamentalClass N p' b
+      ((SSet.homologyMap (_root_.TopCat.toSSet.map f) N m).hom μ) := by
+  obtain ⟨ε, hε₀, hε⟩ := Metric.isOpen_iff.1 e.open_target (e b) (e.map_source hb)
+  rw [livesOverFundamentalClass_homologyMap_iff e hb hε hε₀ hp hp' hf h μ]
+  -- The shriek of `μ` is a unit multiple of `ν`.
+  obtain ⟨u, hu⟩ := ψ.exists_units_smul_eq_of_span_singleton_eq_top hν
+    (span_singularHomologyComplFiberIso_hom_fiberLocalization_eq_top e hb h hy hε hε₀ φ ψ hp hμ)
+  rw [← hu, map_smul]
+  exact fun h0 ↦ hfν (u.isUnit.smul_eq_zero.1 h0)
+
+end IsFundamentalClass
 
 end TauCeti
