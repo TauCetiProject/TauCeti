@@ -184,7 +184,7 @@ theorem natCast_sum_eq_of_eq_exp_mul_prod_pow (s : Finset ℂ) {L : ℂ → ℂ}
     exact hf.continuousAt.mul ((hu.zpow₀ m (Or.inl (div_ne_zero hw hw'))).inv₀
       (zpow_ne_zero _ (div_ne_zero hw hw')))
   obtain ⟨R₂, hR₂⟩ := exists_forall_hasContinuousLogOn_sphere (F := q)
-      (cobounded_eq_cocompact (α := ℂ) ▸ tendsto_prod_one_sub_mul_inv_pow s n) fun w hw ↦ by
+      (cobounded_eq_cocompact (α := ℂ) ▸ s.tendsto_prod_one_sub_mul_inv_pow n) fun w hw ↦ by
     rw [hqdef]
     fun_prop (disch := assumption)
   set ρ := max (max R₁ R₂) 1

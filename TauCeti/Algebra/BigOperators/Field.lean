@@ -25,7 +25,7 @@ values `∏ (1 - q^{-k})` of local densities.
 
 Likewise, for `w ≠ 0` a product of powers of `w - z` is `w` to the total exponent times the
 product of the corresponding powers of `1 - z * w⁻¹`; in a normed field the latter product tends to
-one as `w` tends to infinity (`TauCeti.tendsto_prod_one_sub_mul_inv_pow`).
+one as `w` tends to infinity (`Finset.tendsto_prod_one_sub_mul_inv_pow`).
 
 ## Main results
 

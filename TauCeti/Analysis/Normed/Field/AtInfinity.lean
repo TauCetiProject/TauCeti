@@ -28,7 +28,7 @@ of `w - z` behaves like `w` to the total exponent at infinity.
 * `TauCeti.tendsto_sub_div_of_tendsto_cobounded`: `(ζ - c) / b` tends to infinity with `ζ`.
 * `TauCeti.tendsto_cobounded_div_of_tendsto_nhdsNE_zero`: `(q + g⁻¹ - c) / b` tends to infinity
   as `g` tends to `0` without vanishing.
-* `TauCeti.tendsto_prod_one_sub_mul_inv_pow`: `∏ z ∈ s, (1 - z * w⁻¹) ^ n z → 1` at infinity.
+* `Finset.tendsto_prod_one_sub_mul_inv_pow`: `∏ z ∈ s, (1 - z * w⁻¹) ^ n z → 1` at infinity.
 -/
 
 public section
@@ -69,14 +69,18 @@ theorem tendsto_cobounded_div_of_tendsto_nhdsNE_zero {α : Type*} {l : Filter α
 
 end NormedDivisionRing
 
+end TauCeti
+
+namespace Finset
+
 /-- A product of powers of `1 - z * w⁻¹` tends to one as `w` tends to infinity. -/
 theorem tendsto_prod_one_sub_mul_inv_pow {𝕜 : Type*} [NormedField 𝕜] (s : Finset 𝕜)
     (n : 𝕜 → ℕ) :
     Tendsto (fun w ↦ ∏ z ∈ s, (1 - z * w⁻¹) ^ n z) (cobounded 𝕜) (𝓝 1) := by
   have := tendsto_finsetProd s fun z _ ↦
     (tendsto_const_nhds (x := (1 : 𝕜)).sub (tendsto_inv₀_cobounded.const_mul z)).pow (n z)
-  simpa only [mul_zero, sub_zero, one_pow, Finset.prod_const_one] using this
+  simpa only [mul_zero, sub_zero, one_pow, prod_const_one] using this
 
-end TauCeti
+end Finset
 
 end
