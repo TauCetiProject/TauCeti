@@ -32,9 +32,10 @@ this involution. This file proves the two polynomial facts on which that constru
   (`TauCeti.enriquesProjectiveInvolution_no_fixed_point`).
 
 Both follow from one observation: a common zero `v` with at most three nonzero coordinates is
-zero (`TauCeti.eq_zero_of_forall_eval_enriquesQuadric_eq_zero`). Indeed the squares `vᵢ²` of its
-coordinates on a set `s` of at most three indices satisfy `∑_{i ∈ s} tᵢ ^ j vᵢ² = 0` for
-`j < #s`, a Vandermonde system with distinct nodes `tᵢ` and hence only the trivial solution
+zero (`TauCeti.eq_zero_of_forall_eval_enriquesQuadric_eq_zero_of_card_le_three`). Indeed the
+squares `vᵢ²` of its coordinates on a set `s` of at most three indices satisfy
+`∑_{i ∈ s} tᵢ ^ j vᵢ² = 0` for `j < #s`, a Vandermonde system with distinct nodes `tᵢ` and hence
+only the trivial solution
 (`TauCeti.exists_lt_card_sum_mul_pow_ne_zero`). So a nonzero common zero has at least four nonzero
 coordinates. Three of them have distinct nodes, so the corresponding columns
 `2 vᵢ (1, tᵢ, tᵢ²)` of the Jacobian are independent and the Jacobian is onto. A line fixed by the
@@ -56,8 +57,8 @@ lie on `Y`; the Jacobian at `e₀` has rank one, so its surjectivity uses the eq
 
 * `TauCeti.mk_mem_enriquesZeroSet_iff`: a nonzero vector spans a line of `Y` exactly when it is a
   common zero of the three quadrics.
-* `TauCeti.eq_zero_of_forall_eval_enriquesQuadric_eq_zero`: a common zero supported on at most
-  three coordinates is zero.
+* `TauCeti.eq_zero_of_forall_eval_enriquesQuadric_eq_zero_of_card_le_three`: a common zero
+  supported on at most three coordinates is zero.
 * `TauCeti.mulVec_surjective_jacobiMatrixAt_enriquesQuadric` and
   `TauCeti.enriquesQuadricJacobian_surjective`: the cone Jacobian is onto away from the vertex of
   the cone.
@@ -143,16 +144,20 @@ theorem mem_enriquesZeroSet_iff_eval_rep (L : ℙ ℂ (Fin 6 → ℂ)) :
     L ∈ enriquesZeroSet ↔ ∀ j, eval L.rep (enriquesQuadric j) = 0 :=
   mem_complexProjectiveZeroLocus_iff_eval_rep isHomogeneous_enriquesQuadric L
 
+/-- The nodes `i ↦ i + 1` of the quadrics are distinct. -/
+private theorem enriquesNode_injective : Function.Injective fun i : Fin 6 ↦ (i.val + 1 : ℂ) :=
+  (add_left_injective 1).comp (Nat.cast_injective.comp Fin.val_injective)
+
 /-- **Common zeros with small support vanish.** A common zero of the three quadrics whose nonzero
 coordinates lie in a set `s` of at most three indices is zero: the squares of its coordinates
 solve the Vandermonde system `∑_{i ∈ s} (i + 1) ^ j vᵢ² = 0`, `j < #s`, with distinct nodes. -/
-theorem eq_zero_of_forall_eval_enriquesQuadric_eq_zero {v : Fin 6 → ℂ}
+theorem eq_zero_of_forall_eval_enriquesQuadric_eq_zero_of_card_le_three {v : Fin 6 → ℂ}
     (hv : ∀ j, eval v (enriquesQuadric j) = 0) {s : Finset (Fin 6)} (hs : #s ≤ 3)
     (hvs : ∀ i ∉ s, v i = 0) : v = 0 := by
   by_contra hne
   obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hne
   obtain ⟨k, hk, hne'⟩ := exists_lt_card_sum_mul_pow_ne_zero (w := fun i ↦ v i ^ 2)
-    ((add_left_injective 1).comp (Nat.cast_injective.comp Fin.val_injective)).injOn
+    enriquesNode_injective.injOn
     ⟨i₀, by_contra fun h ↦ hi₀ (hvs i₀ h), pow_ne_zero 2 hi₀⟩
   apply hne'
   have h := hv ⟨k, by omega⟩
@@ -164,7 +169,7 @@ theorem eq_zero_of_forall_eval_enriquesQuadric_eq_zero {v : Fin 6 → ℂ}
 theorem four_le_card_filter_ne_zero_of_forall_eval_enriquesQuadric_eq_zero {v : Fin 6 → ℂ}
     (hv0 : v ≠ 0) (hv : ∀ j, eval v (enriquesQuadric j) = 0) : 4 ≤ #{i | v i ≠ 0} := by
   by_contra! h
-  exact hv0 (eq_zero_of_forall_eval_enriquesQuadric_eq_zero hv (s := {i | v i ≠ 0})
+  exact hv0 (eq_zero_of_forall_eval_enriquesQuadric_eq_zero_of_card_le_three hv (s := {i | v i ≠ 0})
     (by omega) fun i hi ↦ by simpa using hi)
 
 /-! ### Regularity -/
@@ -185,8 +190,7 @@ theorem mulVec_surjective_jacobiMatrixAt_enriquesQuadric {v : Fin 6 → ℂ} (hv
   refine LinearIndependent.mulVec_surjective (Fintype.linearIndependent_iff.mpr fun c hc ↦ ?_)
   refine congrFun (Matrix.eq_zero_of_forall_index_sum_mul_pow_eq_zero
     (f := fun k ↦ ((e k : Fin 6).val + 1 : ℂ))
-    ((add_left_injective 1).comp (Nat.cast_injective.comp (Fin.val_injective.comp
-      (Subtype.val_injective.comp e.injective)))) fun k ↦ ?_)
+    (enriquesNode_injective.comp (Subtype.val_injective.comp e.injective)) fun k ↦ ?_)
   have h := congrFun hc (e k)
   simp only [Finset.sum_apply, Pi.smul_apply, Matrix.row_apply, jacobiMatrixAt_apply,
     eval_pderiv_enriquesQuadric, smul_eq_mul, Pi.zero_apply] at h
@@ -259,13 +263,19 @@ theorem enriquesProjectiveInvolution_mk (v : Fin 6 → ℂ) (hv : v ≠ 0) :
     enriquesProjectiveInvolution (Projectivization.mk ℂ v hv) =
       Projectivization.mk ℂ (enriquesInvolutionLinear v)
         ((map_ne_zero_iff _ enriquesInvolutionLinear.injective).mpr hv) :=
-  (rfl)
+  Projectivization.map_mk _ _ v hv
 
 /-- The Enriques involution squares to the identity. -/
 theorem enriquesProjectiveInvolution_involutive :
     Function.Involutive enriquesProjectiveInvolution := fun L ↦ by
   induction L using Projectivization.ind with
   | h v hv => simp
+
+/-- The Enriques involution squares to the identity, pointwise. -/
+@[simp]
+theorem enriquesProjectiveInvolution_enriquesProjectiveInvolution (p : ℙ ℂ (Fin 6 → ℂ)) :
+    enriquesProjectiveInvolution (enriquesProjectiveInvolution p) = p :=
+  enriquesProjectiveInvolution_involutive p
 
 /-- The Enriques involution maps the K3 cover to itself. -/
 theorem mapsTo_enriquesProjectiveInvolution :
@@ -292,14 +302,14 @@ theorem enriquesProjectiveInvolution_no_fixed_point
     simpa [Units.smul_def] using congrFun ha i
   by_cases ha1 : (a : ℂ) = 1
   · -- Eigenvalue `1`: the first three coordinates vanish.
-    refine hv (eq_zero_of_forall_eval_enriquesQuadric_eq_zero hz (s := {i | 3 ≤ i.val})
-      (by decide) fun i hi ↦ ?_)
+    refine hv (eq_zero_of_forall_eval_enriquesQuadric_eq_zero_of_card_le_three hz
+      (s := {i | 3 ≤ i.val}) (by decide) fun i hi ↦ ?_)
     have h := hcoord i
     simp only [ha1, one_mul, show i.val < 3 by simpa using hi, ite_true] at h
     exact CharZero.eq_neg_self_iff.mp h
   · -- Any other eigenvalue: the last three coordinates vanish.
-    refine hv (eq_zero_of_forall_eval_enriquesQuadric_eq_zero hz (s := {i | i.val < 3})
-      (by decide) fun i hi ↦ ?_)
+    refine hv (eq_zero_of_forall_eval_enriquesQuadric_eq_zero_of_card_le_three hz
+      (s := {i | i.val < 3}) (by decide) fun i hi ↦ ?_)
     have h := hcoord i
     simp only [show ¬ i.val < 3 by simpa using hi, ite_false] at h
     exact (mul_left_eq_self₀.mp h).resolve_left ha1
