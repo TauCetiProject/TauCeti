@@ -48,6 +48,6 @@ theorem isIndecomposableModule_iff_of_dual (e : Q ≃ₗ[k] Module.Dual k N)
     rw [e.toEquiv.nontrivial_congr, ← not_subsingleton_iff_nontrivial,
       ← not_subsingleton_iff_nontrivial, not_iff_not]
     exact ⟨fun _ ↦ (Module.evalEquiv k N).toEquiv.subsingleton, fun _ ↦ inferInstance⟩
-  exact isIndecomposableModule_iff_of_ringEquiv_op (e.dualEndRingEquiv he) hnon
+  exact (e.dualEndRingEquiv he).isIndecomposableModule_iff hnon
 
 end LinearEquiv

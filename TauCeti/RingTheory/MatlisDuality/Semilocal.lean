@@ -8,7 +8,8 @@ module
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Algebra.Module.Injective.Envelope.Existence
-public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
+public import TauCeti.Algebra.Module.Injective.SelfInjective
+import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 
 /-!
 # Matlis duality over a semilocal ring
@@ -42,7 +43,8 @@ at most one-dimensional over `R ⧸ 𝔪` because `J(R)` is a radical ideal.
 * `TauCeti.isInjectiveEnvelope_quotEquivOfEqBot_jacobson`: over a semisimple commutative ring,
   for instance a field, `R` itself is the injective hull of `R ⧸ J(R)`, so that `E = R` satisfies
   this hypothesis (`TauCeti.length_quotient_linearMap_self_eq_one`); such a ring is injective over
-  itself (`TauCeti.moduleInjective_self_of_isSemisimpleRing`).
+  itself (`TauCeti.moduleInjective_self_of_isSemisimpleRing`, in
+  `TauCeti/Algebra/Module/Injective/SelfInjective.lean`).
 * `TauCeti.isFiniteLength_of_forall_isMaximal` and `TauCeti.finite_of_forall_isMaximal`: over a
   commutative Artinian ring, an injective `E` with each `Hom_R(R ⧸ 𝔪, E)` of length one has finite
   length.
@@ -172,12 +174,6 @@ theorem isInjectiveEnvelope_quotEquivOfEqBot_jacobson :
   isEssential_range := by
     rw [LinearEquiv.range]
     exact isEssential_top
-
-/-- A semisimple ring, for instance a field, is injective over itself. With
-`TauCeti.length_quotient_linearMap_self_eq_one`, this makes `E = R` an admissible coefficient module
-for Matlis duality over such a ring. -/
-instance moduleInjective_self_of_isSemisimpleRing : Module.Injective R R :=
-  Module.injective_of_isSemisimpleRing R R
 
 /-- Over a semisimple commutative ring, for instance a field, `R` itself satisfies the hypothesis of
 Matlis duality: each `Hom_R(R ⧸ 𝔪, R)` has length one. -/

@@ -318,11 +318,9 @@ variable {R : Type u} [CommRing R] [IsNoetherianRing R] {E : Type v} [AddCommGro
   [Module R E] [Module.Finite R E] {N : Type w} [AddCommGroup N] [Module R N] [Module.Finite R N]
 
 /-- Over a Noetherian ring, the dual of a finitely generated module with values in a finitely
-generated module is finitely generated: it embeds into a finite power of `E`. -/
-instance : Module.Finite R (MatlisDual R E N) := by
-  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R N
-  exact Module.Finite.of_injective ((f.lcomp R E).comp (equivLinearMap R E N).toLinearMap)
-    ((LinearMap.lcomp_injective_of_surjective f hf).comp (equivLinearMap R E N).injective)
+generated module is finitely generated, as linear maps between such modules are. -/
+instance : Module.Finite R (MatlisDual R E N) :=
+  Module.Finite.equiv (equivLinearMap R E N).symm
 
 end Finite
 

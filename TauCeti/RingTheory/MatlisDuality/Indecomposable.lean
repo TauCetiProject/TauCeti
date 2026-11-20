@@ -58,7 +58,7 @@ theorem isIndecomposableModule_iff [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐ�
     (hN : IsFiniteLength R N) :
     IsIndecomposableModule A (MatlisDual R E N) ↔ IsIndecomposableModule Aᵐᵒᵖ N :=
   -- Dualizing endomorphisms is a bijective ring anti-homomorphism.
-  isIndecomposableModule_iff_of_ringEquiv_op (RingEquiv.ofBijective
+  RingEquiv.isIndecomposableModule_iff (RingEquiv.ofBijective
     ({ toFun f := mapOp f.unop
        map_one' := mapOp_id
        map_mul' _ _ := mapOp_comp _ _
@@ -74,7 +74,7 @@ theorem isIndecomposableModule_iff [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐ�
 theorem isIndecomposableModule_op_iff [Module A N] [IsScalarTower R A N]
     (hN : IsFiniteLength R N) :
     IsIndecomposableModule Aᵐᵒᵖ (MatlisDual R E N) ↔ IsIndecomposableModule A N :=
-  isIndecomposableModule_iff_of_ringEquiv_op (RingEquiv.ofBijective
+  RingEquiv.isIndecomposableModule_iff (RingEquiv.ofBijective
     ({ toFun f := map f.unop
        map_one' := map_id
        map_mul' _ _ := map_comp _ _

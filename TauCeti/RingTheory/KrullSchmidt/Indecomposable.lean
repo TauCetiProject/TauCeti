@@ -33,6 +33,8 @@ local-endomorphism-ring theorem. Both are supplied here.
 
 * `TauCeti.isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem`: indecomposability
   says exactly that `M` is nontrivial and `0` and `1` are the only idempotents of `Module.End A M`.
+* `RingEquiv.isIndecomposableModule_iff`: modules with anti-isomorphic endomorphism rings, nonzero
+  together, are indecomposable together.
 * `TauCeti.isIndecomposableModule_iff_isIndecomposableModule_of_algebraMap_surjective`:
   indecomposability is unchanged by restricting scalars along a surjective algebra map.
 * `TauCeti.IsIndecomposableModule.bijective_of_bijective_comp`: a split injection into an
@@ -197,7 +199,7 @@ theorem isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem :
 /-- Indecomposability is detected by the endomorphism ring with multiplication reversed: two
 modules that are nonzero together, with anti-isomorphic endomorphism rings, are indecomposable
 together. This is how a duality transfers indecomposability. -/
-theorem isIndecomposableModule_iff_of_ringEquiv_op {B : Type*} [Ring B] {N : Type*}
+theorem _root_.RingEquiv.isIndecomposableModule_iff {B : Type*} [Ring B] {N : Type*}
     [AddCommGroup N] [Module B N] (d : (Module.End B N)ᵐᵒᵖ ≃+* Module.End A M)
     (h : Nontrivial M ↔ Nontrivial N) :
     IsIndecomposableModule A M ↔ IsIndecomposableModule B N := by

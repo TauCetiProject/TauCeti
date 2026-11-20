@@ -47,7 +47,7 @@ variable {k : Type u} {A : Type v} [Field k] [Ring A] [Algebra k A]
   [AddCommGroup P₀] [Module A P₀] [Module.Finite A P₀] [Module.Projective A P₀]
   [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁] [Module.Projective A P₁]
 
-omit [Module.Finite A P₀] in
+omit [Module.Finite A P₀] [Module.Projective A P₁] in
 private theorem finite_ext_translate (f : P₁ →ₗ[A] P₀) :
     Module.Finite k (Ext (ModuleCat.of A (P₀ ⧸ range f))
       (ModuleCat.of A (AuslanderReitenTranslate k k f)) 1) := by

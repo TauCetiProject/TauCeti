@@ -114,6 +114,7 @@ variable {R E} [Module.Injective R E]
 
 /-- The translate vanishes precisely on the projective modules, for an injective `E` receiving a
 nonzero map from every simple `R`-module. -/
+@[simp]
 theorem isZero_arTranslate_iff (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Nontrivial (R ⧸ 𝔪 →ₗ[R] E))
     (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
     IsZero (arTranslate R E M) ↔ Projective M :=
@@ -126,6 +127,7 @@ include hE
 
 /-- The translate of a finitely generated indecomposable module is indecomposable exactly when
 the module is not projective. -/
+@[simp]
 theorem indecomposable_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Finite A M]
     (hiM : Indecomposable M) : Indecomposable (arTranslate R E M) ↔ ¬ Projective M := by
   refine ⟨fun h hp ↦ h.1 ((isZero_arTranslate_iff (nontrivial_linearMap_of_isMaximal hE) M).mpr hp),
@@ -143,6 +145,7 @@ theorem indecomposable_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Fin
 
 /-- The translate is injective exactly when the original module is projective. Consequently
 every nonzero translate is non-injective. -/
+@[simp]
 theorem injective_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Finite A M] :
     Injective (arTranslate R E M) ↔ Projective M :=
   (Module.injective_iff_injective_object A _).symm.trans
@@ -225,6 +228,7 @@ variable {R E} [Module.Injective R E]
 include hE
 
 /-- The inverse translate vanishes precisely on the injective modules. -/
+@[simp]
 theorem isZero_arInverseTranslate_iff (N : ModuleCat.{max u v w} A) [Module.Finite A N] :
     IsZero (arInverseTranslate R E N) ↔ Injective N :=
   isZero_iff_subsingleton.trans
@@ -234,6 +238,7 @@ theorem isZero_arInverseTranslate_iff (N : ModuleCat.{max u v w} A) [Module.Fini
           (Module.injective_iff_injective_object A N)))
 
 /-- The inverse translate is projective exactly when the original module is injective. -/
+@[simp]
 theorem projective_arInverseTranslate_iff (N : ModuleCat.{max u v w} A) [Module.Finite A N] :
     Projective (arInverseTranslate R E N) ↔ Injective N :=
   (IsProjective.iff_projective (R := A) (arInverseTranslate R E N)).symm.trans
@@ -244,6 +249,7 @@ theorem projective_arInverseTranslate_iff (N : ModuleCat.{max u v w} A) [Module.
 
 /-- The inverse translate of a finitely generated indecomposable module is indecomposable exactly
 when the module is not injective. -/
+@[simp]
 theorem indecomposable_arInverseTranslate_iff (N : ModuleCat.{max u v w} A) [Module.Finite A N]
     (hiN : Indecomposable N) : Indecomposable (arInverseTranslate R E N) ↔ ¬ Injective N := by
   have hN := isFiniteLength_of_finite_trans R A N
