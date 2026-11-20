@@ -257,24 +257,6 @@ private theorem isCompact_setOf_comp_add_smul_eq {C : Set E₂} (hφ : Continuou
   rw [heq]
   exact (isCompact_univ.prod hC).of_isClosed_subset hclosed inter_subset_left
 
-/-- A homotopy `H` of maps `W → X` of an open set `W` of `X` has a compact fixed set
-`{(t, z) | H (t, z) = z}` when its fixed points `(t, z)`, read in `[0, 1] × X`, form a compact
-set `F`. -/
-private theorem isCompact_setOf_homotopy_apply_eq {X : Type*} [TopologicalSpace X] {W : Opens X}
-    {f₀ f₁ : C(W, X)} (H : f₀.Homotopy f₁) {F : Set (unitInterval × X)} (hF : IsCompact F)
-    (hFW : ∀ p ∈ F, p.2 ∈ (W : Set X))
-    (hHF : ∀ (t : unitInterval) (z : W), H (t, z) = z ↔ (t, (z : X)) ∈ F) :
-    IsCompact {p : unitInterval × W | H p = p.2} := by
-  rw [(IsEmbedding.id.prodMap IsEmbedding.subtypeVal).isCompact_iff]
-  convert hF using 1
-  ext ⟨t, x⟩
-  constructor
-  · rintro ⟨⟨t', z⟩, hp, he⟩
-    obtain ⟨rfl, rfl⟩ := Prod.mk.inj he
-    exact (hHF t' z).1 hp
-  · intro hx
-    exact ⟨(t, ⟨x, hFW _ hx⟩), (hHF t ⟨x, hFW _ hx⟩).2 hx, rfl⟩
-
 omit [FiniteDimensional ℝ E₁] in
 /-- The homotopy `φ ∘ (ψ + t v)`, `t ∈ [0, 1]`, on the interior `W₂` of a compact set `C` as in
 `exists_pos_forall_norm_lt`, for `v` smaller than the `η` chosen there: `φ ∘ ψ` and
@@ -306,7 +288,7 @@ private theorem exists_fixedPointIndex_eq_comp_add (hφ : ContinuousOn φ U)
   -- The fixed set of `H`, read in `[0, 1] × E₂`, is the compact set of
   -- `isCompact_setOf_comp_add_smul_eq`.
   have hH : IsCompact {p : unitInterval × W₂ | H p = p.2} :=
-    isCompact_setOf_homotopy_apply_eq H hF (fun p hp ↦ hW₂ ▸ hFC p hp.1 hp.2)
+    H.isCompact_setOf_apply_eq_of_isCompact hF (fun p hp ↦ hW₂ ▸ hFC p hp.1 hp.2)
       fun t w ↦ by rw [hHp, mem_ofPred_eq, and_iff_right (hWC w)]
   exact ⟨lv, hlv, fixedPointIndex_eq_of_homotopy H hH, H.isCompact_setOf_apply_one_eq hH⟩
 
@@ -350,7 +332,7 @@ private theorem exists_fixedPointIndex_eq_comp_add_const (hφ : ContinuousOn φ 
       ((continuousOn_add_smul (hψ.mono fun w hw ↦ (hCV w hw).1) v).mono
         fun _ hp ↦ ⟨trivial, hp.1⟩))
   have hH : IsCompact {p : unitInterval × W₁ | H p = p.2} := by
-    refine isCompact_setOf_homotopy_apply_eq H hG ?_ fun t z ↦ ⟨fun hp ↦ ?_, ?_⟩
+    refine H.isCompact_setOf_apply_eq_of_isCompact hG ?_ fun t z ↦ ⟨fun hp ↦ ?_, ?_⟩
     · rintro _ ⟨⟨t, w⟩, ⟨hwC, hp⟩, rfl⟩
       have hw : φ (ψ w + (t : ℝ) • v) ∈ (W₂ : Set E₂) := by
         rw [hp, hW₂]
