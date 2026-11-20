@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Module
+public import Mathlib.Algebra.Star.Pi
 public import Mathlib.LinearAlgebra.Determinant
+public import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
@@ -29,7 +32,8 @@ homomorphism of fields.
 When `σ` is invertible, a `σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` carries a basis `b` of `M`
 to the basis `f ∘ b` of `M'` (`Module.Basis.mapₛₗ`), and so preserves `finrank`
 (`LinearEquiv.finrank_eqₛₗ`). For instance, a conjugate-linear equivalence of complex vector spaces
-carries complex bases to complex bases.
+carries complex bases to complex bases. Over any commutative star semiring, a finite basis `b`
+induces the conjugate-linear coordinate equivalence `Module.Basis.conjEquivFun`.
 
 ## Main declarations
 
@@ -43,6 +47,8 @@ carries complex bases to complex bases.
 * `Module.Basis.linearIndependent_semilinearMap_comp_iff`: along an injective homomorphism into a
   domain, a family is linearly independent exactly when its image is.
 * `Module.Basis.mapₛₗ`: the image of a basis under a semilinear equivalence.
+* `Module.Basis.conjEquivFun`: the conjugate-linear coordinate equivalence `M ≃ₛₗ[starRingEnd R]
+  (ι → R)` of a finite basis.
 * `LinearEquiv.finrank_eqₛₗ`: semilinear equivalences along ring isomorphisms preserve `finrank`.
 -/
 
@@ -165,6 +171,37 @@ theorem mapₛₗ_apply (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (i : ι) : b
   mk_apply _ _ _
 
 end Map
+
+section ConjEquivFun
+
+variable {ι R M : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid M] [Module R M]
+
+/-- The conjugate-linear equivalence `M ≃ₛₗ[starRingEnd R] (ι → R)` sending a vector to the
+entrywise conjugate of its coordinate tuple in the basis `b`, dual to `Module.Basis.equivFun`. -/
+def conjEquivFun [Finite ι] (b : Basis ι R M) : M ≃ₛₗ[starRingEnd R] (ι → R) :=
+  b.equivFun.trans (starLinearEquiv R)
+
+/-- Evaluating `b.conjEquivFun` at a vector returns its conjugated coordinate tuple. -/
+@[simp]
+theorem conjEquivFun_apply [Finite ι] (b : Basis ι R M) (m : M) (i : ι) :
+    b.conjEquivFun m i = star (b.repr m i) := by
+  simp [conjEquivFun]
+
+/-- Evaluating `b.conjEquivFun.symm` reconstructs a vector from conjugated coordinates. -/
+theorem conjEquivFun_symm_apply [Fintype ι] (b : Basis ι R M) (x : ι → R) :
+    b.conjEquivFun.symm x = ∑ i, star (x i) • b i := by
+  simp [conjEquivFun, equivFun_symm_apply]
+
+/-- `b.conjEquivFun` sends the `j`-th basis vector to the `j`-th standard basis vector. -/
+@[simp]
+theorem conjEquivFun_self [Finite ι] (b : Basis ι R M) (j : ι) :
+    b.conjEquivFun (b j) = Pi.basisFun R ι j := by
+  classical
+  ext i
+  simp [conjEquivFun, Pi.basisFun_apply, Pi.single_apply, Finsupp.single_apply,
+    apply_ite star, eq_comm]
+
+end ConjEquivFun
 
 end Module.Basis
 

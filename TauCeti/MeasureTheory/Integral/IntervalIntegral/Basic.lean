@@ -35,6 +35,8 @@ not belong to any particular application.
   as the sum of integrals over the `N + 1` uniform affine subintervals.
 * `TauCeti.intervalIntegral.norm_riemannSum_sub_integral_le`: quantitative error bound for
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
+* `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
+  everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -324,6 +326,21 @@ theorem tendsto_riemannSum_zero_one {E : Type*} [NormedAddCommGroup E] [NormedSp
       Filter.atTop (nhds (∫ t in (0 : ℝ)..1, f t)) := by
   have h := tendsto_riemannSum (a := 0) (b := 1) (by rwa [uIcc_of_le zero_le_one])
   simpa [one_div, AffineMap.lineMap_apply_module] using h
+
+open Filter Topology Interval in
+/-- If `‖F i x‖ ≤ B i` almost everywhere on `Ι a b` eventually along `l` and `B i → 0`, then for
+any locally finite measure `μ` the interval integrals `∫ x in a..b, F i x ∂μ` tend to `0` along
+`l`. -/
+theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {l : Filter ι} {F : ι → ℝ → E}
+    {B : ι → ℝ} {a b : ℝ} (hB : Tendsto B l (𝓝 0))
+    (hF : ∀ᶠ i in l, ∀ᵐ x ∂μ, x ∈ Ι a b → ‖F i x‖ ≤ B i) :
+    Tendsto (fun i ↦ ∫ x in a..b, F i x ∂μ) l (𝓝 0) := by
+  refine tendsto_zero_iff_norm_tendsto_zero.mpr
+    (squeeze_zero' (Eventually.of_forall fun _ ↦ norm_nonneg _)
+      (hF.mono fun i hi ↦ ?_) (by simpa using hB.mul_const (μ.real (Ι a b))))
+  rw [_root_.intervalIntegral.norm_integral_eq_norm_integral_uIoc]
+  exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
 
 end intervalIntegral
 
