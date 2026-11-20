@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Multigraph
-public import TauCeti.GroupTheory.GraphOfGroups.GraphPresentation
+public import TauCeti.GroupTheory.GraphOfGroups.PathGroup
 
 /-!
 # Finite subroses of a rose, and loops versus walks
