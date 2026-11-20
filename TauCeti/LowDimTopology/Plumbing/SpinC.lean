@@ -24,6 +24,7 @@ comparison between representatives of one class.
 
 ## Main definitions
 
+* `TauCeti.PlumbingGraph.addTwoMulVec`: the shifted characteristic covector `k + 2 * A x`.
 * `TauCeti.PlumbingGraph.IsSpinCEquivalent`: characteristic covectors differing by `2 * A x`.
 * `TauCeti.PlumbingGraph.characteristicOrbits`: characteristic covectors modulo this relation.
 * `TauCeti.PlumbingGraph.characteristicOrbit`: the orbit of a characteristic covector.
@@ -43,6 +44,31 @@ namespace TauCeti
 namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
+
+/-- The characteristic covector `k + 2 * A x`, the shift of `k` by twice the image of the lattice
+point `x` under the intersection matrix `A`. -/
+@[expose] def addTwoMulVec (k : P.characteristicVectors) (x : V → ℤ) : P.characteristicVectors :=
+  ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v, k.property.add_two_mul⟩
+
+/-- The value of the shifted covector `k + 2 * A x`. -/
+@[simp]
+theorem addTwoMulVec_val (k : P.characteristicVectors) (x : V → ℤ) :
+    (P.addTwoMulVec k x).val = fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v :=
+  rfl
+
+/-- Shifting by `2 * A 0` does nothing. -/
+@[simp]
+theorem addTwoMulVec_zero (k : P.characteristicVectors) : P.addTwoMulVec k 0 = k := by
+  ext v
+  simp
+
+/-- Shifts compose by addition: shifting `k + 2 * A x` by `2 * A m` gives `k + 2 * A (x + m)`. -/
+@[simp]
+theorem addTwoMulVec_addTwoMulVec (k : P.characteristicVectors) (x m : V → ℤ) :
+    P.addTwoMulVec (P.addTwoMulVec k x) m = P.addTwoMulVec k (x + m) := by
+  ext v
+  simp only [addTwoMulVec_val, Matrix.mulVec_add, Pi.add_apply]
+  ring
 
 /-- Two characteristic covectors lie in the same lattice orbit when their difference is twice
 an integral covector in the image of the plumbing intersection matrix. -/
@@ -113,9 +139,8 @@ theorem characteristicOrbit_eq_iff (k l : P.characteristicVectors) :
 
 /-- Adding twice an intersection-matrix vector does not change the lattice orbit. -/
 @[simp]
-theorem characteristicOrbit_add_two_mulVec (k : P.characteristicVectors) (x : V → ℤ) :
-    P.characteristicOrbit ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v,
-      k.property.add_two_mul⟩ = P.characteristicOrbit k :=
+theorem characteristicOrbit_addTwoMulVec (k : P.characteristicVectors) (x : V → ℤ) :
+    P.characteristicOrbit (P.addTwoMulVec k x) = P.characteristicOrbit k :=
   (P.characteristicOrbit_eq_iff _ _).2 (IsSpinCEquivalent.symm P ⟨x, rfl⟩)
 
 end PlumbingGraph

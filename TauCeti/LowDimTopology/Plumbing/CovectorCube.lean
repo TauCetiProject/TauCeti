@@ -11,8 +11,8 @@ public import TauCeti.LowDimTopology.Plumbing.SpinC
 import Mathlib.Algebra.CharP.Two
 import Mathlib.LinearAlgebra.Finsupp.Span
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
+import TauCeti.LowDimTopology.Plumbing.Cube.Face.Translation
 import TauCeti.LowDimTopology.Plumbing.OneVertex
-import TauCeti.LowDimTopology.Plumbing.Weight.Translation
 
 /-!
 # The lattice complex on characteristic covectors
@@ -45,8 +45,9 @@ construction, and at least one of them vanishes in each direction
 The two models are compared by translation. Shifting a characteristic covector by `2 A m`
 translates the weight function by `m` up to a constant,
 `χ_{k + 2 A m}(y) = χ_k(y + m) - χ_k(m)`, so the cube weights and their face exponents are
-translation invariant (`characteristicCubeWeight_add_two_mulVec_eq_sub`). Hence sending the cube
-`(x, E)` of the complex of `k` to the generator `[k + 2 A x, E]` is a chain map
+translation invariant (`TauCeti.PlumbingGraph.characteristicCubeWeight_addTwoMulVec_eq_sub`, for
+the shift `TauCeti.PlumbingGraph.addTwoMulVec`). Hence sending the cube `(x, E)` of the complex of
+`k` to the generator `[k + 2 A x, E]` is a chain map
 (`TauCeti.PlumbingGraph.covectorDifferential_comp_toCovectorChain`). Every generator `[K, E]` is
 the image of the cube `(0, E)` under the map for `K`, so the relation `∂ ∘ ∂ = 0` of Némethi's
 complex gives the same relation here (`TauCeti.PlumbingGraph.covectorDifferential_comp_self`).
@@ -74,10 +75,6 @@ vanishes, the two faces of `[0, {v}]` coincide and cancel, and `[0, {v}]` is a c
 
 ## Main results
 
-* `TauCeti.PlumbingGraph.characteristicCubeWeight_add_two_mulVec_eq_sub`: translation invariance
-  of the cube weights up to a constant, and the resulting invariance of the face exponents
-  `TauCeti.PlumbingGraph.characteristicLowerFaceExponent_add_two_mulVec` and
-  `TauCeti.PlumbingGraph.characteristicUpperFaceExponent_add_two_mulVec`.
 * `TauCeti.PlumbingGraph.covectorDifferential_comp_toCovectorChain`: the comparison map is a
   chain map.
 * `TauCeti.PlumbingGraph.covectorDifferential_comp_self`: `∂ ∘ ∂ = 0`.
@@ -107,53 +104,6 @@ namespace PlumbingGraph
 
 variable {V : Type*} [DecidableEq V] [Fintype V] (P : PlumbingGraph V)
 
-/-! ### Translation invariance of the cube weights -/
-
-/-- Shifting a characteristic covector by `2 A m` translates the cube weights by `m`, up to the
-constant `χ_k(m)`: the cube based at `x` for `k + 2 A m` has the weight of the cube based at
-`x + m` for `k`, minus `χ_k(m)`. -/
-theorem characteristicCubeWeight_add_two_mulVec_eq_sub (k : P.characteristicVectors)
-    (m x : V → ℤ) (S : Finset V) :
-    P.characteristicCubeWeight
-        ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ x S =
-      P.characteristicCubeWeight k (x + m) S - P.characteristicWeight k m := by
-  refine le_antisymm (P.characteristicCubeWeight_le _ fun y hy => ?_) ?_
-  · rw [characteristicWeight_add_two_mulVec_eq_sub, sub_le_sub_iff_right]
-    exact P.characteristicWeight_le_characteristicCubeWeight k
-      (add_mem_cubeVertices_add_iff.mpr hy)
-  · obtain ⟨y, hy, hmax⟩ := P.exists_characteristicWeight_eq_characteristicCubeWeight k (x + m) S
-    have hy' : y - m ∈ cubeVertices x S := by
-      rw [← add_mem_cubeVertices_add_iff (m := m), sub_add_cancel]
-      exact hy
-    have h := P.characteristicWeight_le_characteristicCubeWeight
-      ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩ hy'
-    rw [characteristicWeight_add_two_mulVec_eq_sub, sub_add_cancel] at h
-    linarith
-
-/-- The lower-face exponent is invariant under the translation of
-`characteristicCubeWeight_add_two_mulVec_eq_sub`. -/
-theorem characteristicLowerFaceExponent_add_two_mulVec (k : P.characteristicVectors)
-    (m x : V → ℤ) (S : Finset V) (v : V) :
-    P.characteristicLowerFaceExponent
-        ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩
-        x S v =
-      P.characteristicLowerFaceExponent k (x + m) S v := by
-  rw [← Nat.cast_inj (R := ℤ), characteristicLowerFaceExponent_natCast,
-    characteristicLowerFaceExponent_natCast, characteristicCubeWeight_add_two_mulVec_eq_sub,
-    characteristicCubeWeight_add_two_mulVec_eq_sub, sub_sub_sub_cancel_right]
-
-/-- The upper-face exponent is invariant under the translation of
-`characteristicCubeWeight_add_two_mulVec_eq_sub`. -/
-theorem characteristicUpperFaceExponent_add_two_mulVec (k : P.characteristicVectors)
-    (m x : V → ℤ) {S : Finset V} {v : V} (hv : v ∈ S) :
-    P.characteristicUpperFaceExponent
-        ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec m) v, k.property.add_two_mul⟩
-        x S hv =
-      P.characteristicUpperFaceExponent k (x + m) S hv := by
-  rw [← Nat.cast_inj (R := ℤ), characteristicUpperFaceExponent_natCast,
-    characteristicUpperFaceExponent_natCast, characteristicCubeWeight_add_two_mulVec_eq_sub,
-    characteristicCubeWeight_add_two_mulVec_eq_sub, sub_sub_sub_cancel_right, add_right_comm]
-
 /-! ### Generators and the differential -/
 
 omit [DecidableEq V] [Fintype V] in
@@ -179,8 +129,7 @@ noncomputable def covectorDifferentialOnGenerator (C : P.CovectorCube) : P.Covec
     Finsupp.single ⟨C.covector, C.directions.erase v⟩
         (Polynomial.X ^ P.characteristicLowerFaceExponent C.covector 0 C.directions v) +
       Finsupp.single
-        ⟨⟨fun w => C.covector.val w + 2 * (P.intersectionMatrix.mulVec (Pi.single v 1)) w,
-          C.covector.property.add_two_mul⟩, C.directions.erase v⟩
+        ⟨P.addTwoMulVec C.covector (Pi.single v 1), C.directions.erase v⟩
         (Polynomial.X ^ P.characteristicUpperFaceExponent C.covector 0 C.directions v.property)
 
 /-- The differential of a generator, written with its covector `K` and its directions `E`. -/
@@ -190,8 +139,7 @@ theorem covectorDifferentialOnGenerator_mk (K : P.characteristicVectors) (E : Fi
         Finsupp.single ⟨K, E.erase v⟩
             (Polynomial.X ^ P.characteristicLowerFaceExponent K 0 E v) +
           Finsupp.single
-            ⟨⟨fun w => K.val w + 2 * (P.intersectionMatrix.mulVec (Pi.single v 1)) w,
-              K.property.add_two_mul⟩, E.erase v⟩
+            ⟨P.addTwoMulVec K (Pi.single v 1), E.erase v⟩
             (Polynomial.X ^ P.characteristicUpperFaceExponent K 0 E v.property) :=
   (rfl)
 
@@ -210,14 +158,12 @@ theorem covectorDifferential_single (C : P.CovectorCube) (a : PlumbingCoefficien
 
 /-- The generator `[k + 2 A x, E]` attached to the cube `(x, E)` of Némethi's complex of `k`. -/
 def toCovectorCube (k : P.characteristicVectors) (C : PlumbingCube V) : P.CovectorCube :=
-  ⟨⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec C.base) v, k.property.add_two_mul⟩,
-    C.directions⟩
+  ⟨P.addTwoMulVec k C.base, C.directions⟩
 
 /-- The generator attached to the cube `(x, E)` is `[k + 2 A x, E]`. -/
 @[simp]
 theorem toCovectorCube_mk (k : P.characteristicVectors) (x : V → ℤ) (E : Finset V) :
-    P.toCovectorCube k ⟨x, E⟩ =
-      ⟨⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec x) v, k.property.add_two_mul⟩, E⟩ :=
+    P.toCovectorCube k ⟨x, E⟩ = ⟨P.addTwoMulVec k x, E⟩ :=
   (rfl)
 
 /-- The generator attached to the cube `(0, E)` is `[k, E]`. -/
@@ -238,18 +184,6 @@ theorem toCovectorChain_single (k : P.characteristicVectors) (C : PlumbingCube V
     P.toCovectorChain k (Finsupp.single C a) = Finsupp.single (P.toCovectorCube k C) a := by
   rw [toCovectorChain, Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
 
-/-- Shifting `k + 2 A x` by `2 A m` gives `k + 2 A (x + m)`. -/
-private theorem add_two_mulVec_add_two_mulVec (k : P.characteristicVectors) (x m : V → ℤ) :
-    (⟨fun v => (⟨fun w => k.val w + 2 * (P.intersectionMatrix.mulVec x) w,
-        k.property.add_two_mul⟩ : P.characteristicVectors).val v +
-          2 * (P.intersectionMatrix.mulVec m) v,
-        (show P.IsCharacteristicVector _ from k.property.add_two_mul).add_two_mul⟩ :
-        P.characteristicVectors) =
-      ⟨fun v => k.val v + 2 * (P.intersectionMatrix.mulVec (x + m)) v, k.property.add_two_mul⟩ := by
-  ext v
-  simp only [Matrix.mulVec_add, Pi.add_apply]
-  ring
-
 /-- The comparison map intertwines the two differentials on a single cube. -/
 theorem covectorDifferential_toCovectorChain_single (k : P.characteristicVectors)
     (C : PlumbingCube V) :
@@ -260,12 +194,7 @@ theorem covectorDifferential_toCovectorChain_single (k : P.characteristicVectors
     one_smul, toCovectorCube_mk, covectorDifferentialOnGenerator_mk,
     latticeDifferentialOnGenerator_def, map_sum]
   refine Finset.sum_congr rfl fun v _ => ?_
-  rw [map_add, toCovectorChain_single, toCovectorChain_single,
-    PlumbingCube.lowerFace_mk, PlumbingCube.upperFace_mk,
-    PlumbingCube.characteristicLowerFaceExponent_mk,
-    PlumbingCube.characteristicUpperFaceExponent_mk, toCovectorCube_mk, toCovectorCube_mk,
-    characteristicLowerFaceExponent_add_two_mulVec, characteristicUpperFaceExponent_add_two_mulVec,
-    zero_add, add_two_mulVec_add_two_mulVec]
+  simp [characteristicLowerFaceExponent_addTwoMulVec, characteristicUpperFaceExponent_addTwoMulVec]
 
 /-- **The comparison map is a chain map**: sending the cube `(x, E)` of Némethi's complex of `k`
 to the generator `[k + 2 A x, E]` intertwines Némethi's differential with the differential on
@@ -311,8 +240,7 @@ theorem covectorDifferential_single_mk_singleton (K : P.characteristicVectors) (
     P.covectorDifferential (Finsupp.single ⟨K, {v}⟩ 1) =
       Finsupp.single ⟨K, ∅⟩ (Polynomial.X ^ (-((K.val v + P.weight v) / 2)).toNat) +
         Finsupp.single
-          ⟨⟨fun w => K.val w + 2 * (P.intersectionMatrix.mulVec (Pi.single v 1)) w,
-            K.property.add_two_mul⟩, ∅⟩
+          ⟨P.addTwoMulVec K (Pi.single v 1), ∅⟩
           (Polynomial.X ^ ((K.val v + P.weight v) / 2).toNat) := by
   rw [covectorDifferential_single, one_smul, covectorDifferentialOnGenerator_mk,
     Finset.sum_eq_single_of_mem (⟨v, Finset.mem_singleton_self v⟩ : {w // w ∈ ({v} : Finset V)})
@@ -353,7 +281,7 @@ theorem range_toCovectorChain (k : P.characteristicVectors) :
     constructor
     · rintro ⟨⟨x, S⟩, h⟩
       rw [toCovectorCube_mk, CovectorCube.mk.injEq] at h
-      rw [← h.1, characteristicOrbit_add_two_mulVec]
+      rw [← h.1, characteristicOrbit_addTwoMulVec]
     · intro h
       obtain ⟨x, hx⟩ := (P.isSpinCEquivalent_iff k K).mp
         (IsSpinCEquivalent.symm P ((P.characteristicOrbit_eq_iff K k).mp h))
@@ -379,10 +307,10 @@ theorem toCovectorChain_injective (k : P.characteristicVectors)
   refine Finsupp.mapDomain_injective fun C D hCD => ?_
   obtain ⟨x, S⟩ := C
   obtain ⟨y, T⟩ := D
-  rw [toCovectorCube_mk, toCovectorCube_mk, CovectorCube.mk.injEq, Subtype.mk.injEq] at hCD
+  rw [toCovectorCube_mk, toCovectorCube_mk, CovectorCube.mk.injEq, Subtype.ext_iff] at hCD
   refine PlumbingCube.ext (Matrix.mulVec_injective_of_det_ne_zero h (funext fun v => ?_)) hCD.2
   have := congr_fun hCD.1 v
-  dsimp only at this ⊢
+  simp only [addTwoMulVec_val] at this ⊢
   omega
 
 /-- **Némethi's complex of `k` is the summand of the orbit of `k`** when `det A ≠ 0`: the
