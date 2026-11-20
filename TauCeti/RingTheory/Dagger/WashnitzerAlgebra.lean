@@ -49,7 +49,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 ## Main results
 
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_norm_coeff_le`: for finitely many variables,
-  `f ∈ W` iff `‖aᵥ‖ ≤ C ρ^{-|ν|}` for some `ρ > 1` and `C`.
+  `f ∈ W` iff `‖aᵥ‖ ≤ C ρ^{-|ν|}` for some `ρ > 1` and `C`; such bounds follow from the
+  geometric decay `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` with `0 < q < 1`
+  (`MvPowerSeries.exists_norm_coeff_le_mul_inv_pow_of_le_pow`).
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_pow_eq_norm`: over a nontrivially normed
   field the radii may be taken in the divisible hull `√|K^×|` of the value group.
 * `TauCeti.Dagger.washnitzerAlgebra.denseRange_toTate`: `W` is dense in the Tate algebra;

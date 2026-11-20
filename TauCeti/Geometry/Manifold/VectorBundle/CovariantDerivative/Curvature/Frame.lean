@@ -52,7 +52,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
   [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
@@ -67,7 +67,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 local notation "A" => fun j l Z y ↦
   hs.coeff l y (cov (s j) y (Z y))
 
-omit [FiniteDimensional 𝕜 F] in
 include hn hu in
 /-- The curvature matrix in a C² moving frame is `dA + A∧A`, evaluated on arbitrary C¹
 vector fields. The exterior derivative includes the noncoordinate term `-A([X,Y])`. -/
@@ -97,10 +96,7 @@ theorem coeff_curvatureOperator (hx : x ∈ u)
   simp only [sum_apply, add_apply,
     smul_apply, ContinuousLinearMap.smulRight_apply, map_sub, map_sum,
     map_add, map_smul, smul_eq_mul]
-  have hdual (k : ι) : hs.coeff l x (s k x) = if k = l then 1 else 0 := by
-    rw [IsLocalFrameOn.coeff, dite_eq_left hx, Module.Basis.coord_apply,
-      ← hs.toBasisAt_coe hx k, Module.Basis.repr_self_apply]
-  simp only [hdual]
+  simp only [hs.coeff_apply_self hx]
   simp only [mul_ite, mul_one, mul_zero, Finset.sum_add_distrib,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true]
   rw [Finset.sum_sub_distrib]
@@ -111,7 +107,7 @@ end Bundle
 section Tangent
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 3 M]
   {ι : Type*} [Fintype ι] {s : ι → Π x : M, TangentSpace I x} {u : Set M}
@@ -121,7 +117,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 local notation "Γ" => fun i j l y ↦ hs.coeff l y (cov (s j) y (s i y))
 
-omit [FiniteDimensional 𝕜 E] in
 include hu in
 /-- The curvature coefficients in a C² tangent frame, with the Lie bracket expanded in the
 same frame. Its structure coefficients supply the correction absent from a coordinate frame. -/

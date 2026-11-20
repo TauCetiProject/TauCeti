@@ -48,11 +48,8 @@ theorem exists_localWeightBasis_spanning_sublevels {L : ι → Dual K V}
       span K ((fun i ↦ (L i).comp U.subtype) '' {i | c i ≤ a j}) := by
   classical
   let f : ι → Dual K U := fun i ↦ (L i).comp U.subtype
-  have hf : span K (range f) = ⊤ := by
-    have heq : range f = U.subtype.dualMap '' range L := by
-      exact Set.range_comp U.subtype.dualMap L
-    rw [heq, ← LinearMap.map_span, hL, Submodule.map_top, LinearMap.range_eq_top]
-    exact LinearMap.dualMap_surjective_of_injective U.injective_subtype
+  have hf : span K (range f) = ⊤ :=
+    Module.Dual.span_range_comp_eq_top_of_injective hL U.injective_subtype
   obtain ⟨b, -, hbi, hbsp, hb⟩ := exists_linearIndepOn_inter_span_eq (K := K) f
     (fun j ↦ {i | c i ≤ a j}) (fun j k hjk i hi ↦ hi.trans (ha hjk))
     univ (fun _ ↦ subset_univ _)

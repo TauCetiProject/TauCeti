@@ -273,7 +273,7 @@ theorem eq_of_diagCoset_eq {a b : Fin n → ℕ} (ha : ∀ i, 0 < a i)
     have h := congr_arg (fun (g : GL (Fin n) ℚ) ↦ (↑g : Matrix _ _ ℚ) i j) hmat
     simp only [natDiagGL_coe n a ha, natDiagGL_coe n b hb, Matrix.diagonal_apply,
       Units.val_mul, Matrix.mul_apply, mapGL_coe_matrix, map_apply_coe,
-      RingHom.mapMatrix_apply, Matrix.map_apply, algebraMap_int_eq, eq_intCast] at h
+      Matrix.map_apply, algebraMap_int_eq, eq_intCast] at h
     simp only [Matrix.diagonal_apply, Matrix.mul_apply]
     exact_mod_cast h.symm
   have hcast : (fun i ↦ (a i : ℤ)) = (fun i ↦ (b i : ℤ)) :=
