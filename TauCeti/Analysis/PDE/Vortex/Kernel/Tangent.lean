@@ -324,7 +324,7 @@ private theorem exists_isDivisorVariation :
       smul_mem' := fun t _ ⟨hy, R, hR, h⟩ ↦
         ⟨Submodule.smul_mem _ t hy, t • R, Submodule.smul_of_tower_mem _ t hR, h.smul t⟩ }
   have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := MeasureTheory.volume)
-    (hx.of_le (by simp)) hhol hlim hD fun _ ↦ mem_gaugeFixedKernel.1
+    (hx.of_le (by simp)) hhol hlim fun _ ↦ mem_gaugeFixedKernel.1
   have : FiniteDimensional ℝ S := Submodule.finiteDimensional_of_le fun _ hy ↦ hy.1
   have hsurj := surjective_divisorVariationMap hD (V := S) (fun _ hy ↦ hy.2) fun R ↦ by
     obtain ⟨y, hy, hyR⟩ := exists_mem_gaugeFixedKernel_isDivisorVariation hx hhol hlim hD R
@@ -346,7 +346,7 @@ in the coordinates given by the coefficients of the monic polynomial `∏_{a ∈
 characterized by `TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_eq_iff`. -/
 def gaugeFixedKernelEquivDegreeLT : gaugeFixedKernel x ≃ₗ[ℝ] degreeLT ℂ m :=
   have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := MeasureTheory.volume)
-    (hx.of_le (by simp)) hhol hlim hD fun _ ↦ mem_gaugeFixedKernel.1
+    (hx.of_le (by simp)) hhol hlim fun _ ↦ mem_gaugeFixedKernel.1
   have : FiniteDimensional ℝ (degreeLT ℂ m) := .trans ℝ ℂ _
   have hsurj := surjective_divisorVariationMap hD (exists_isDivisorVariation hx hhol hlim hD)
     (exists_mem_gaugeFixedKernel_isDivisorVariation hx hhol hlim hD)
