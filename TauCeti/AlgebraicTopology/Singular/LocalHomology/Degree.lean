@@ -47,6 +47,9 @@ that are not surjective and is invariant under proper homotopies, that is homoto
 ## Main results
 
 * `TauCeti.HomologicalOrientation.localDegree_eq_iff`: the defining property of the local degree.
+* `TauCeti.HomologicalOrientation.singularHomologyToLocalHomology_mapFundamentalClass`: for compact
+  `M`, the image of `f_*[M]` in the local homology at `y` is the local degree at `y` times the
+  local orientation, with no connectedness of `N`.
 * `TauCeti.HomologicalOrientation.localDegree_comap_comp`: excision, the local degree at `y` is
   unchanged on restricting to an open subset containing the fibre over `y`.
 * `TauCeti.HomologicalOrientation.isLocallyConstant_localDegree`: the local degree of a proper
@@ -198,6 +201,19 @@ theorem localHomologyRestriction_localHomologyMap_fundamentalClassOn (f : C(M, N
       (preimage_mono (singleton_subset_iff.2 hy)),
     ← ModuleCat.comp_apply, ← ModuleCat.comp_apply, localHomologyMap_comp_localHomologyRestriction,
     localHomologyRestriction_comp_localHomologyMap]
+
+/-- **The local image of the image of the fundamental class.** For a compact oriented manifold `M`,
+the image of `f_*[M]` in the local homology `Hₙ(N, N ∖ {y}; ℤ)` is the local degree of `f` at `y`
+times the local orientation. No connectedness of `N` is needed. -/
+theorem singularHomologyToLocalHomology_mapFundamentalClass [CompactSpace M] (f : C(M, N))
+    (y : N) :
+    singularHomologyToLocalHomology (ModuleCat.of ℤ (ULift.{0} ℤ)) y n
+        (o.mapFundamentalClass hE f) =
+      o.localDegree o' hE f y • (o' y).val := by
+  refine (singularHomologyToLocalHomology_apply _ y (o.mapFundamentalClass hE f)).trans ?_
+  rw [o.singularHomologyπ_mapFundamentalClass]
+  exact localHomologyRestriction_localHomologyMap_fundamentalClassOn o o' hE f (K := univ)
+    (by simpa using isCompact_univ) (mem_univ y)
 
 /-- **The local degree of a proper map is locally constant.** -/
 theorem isLocallyConstant_localDegree (hF : finrank ℝ F = n) {f : C(M, N)} (hf : IsProperMap f) :
