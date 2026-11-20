@@ -336,6 +336,29 @@ private theorem thomPairSingularHomologyFinrankInv_restrict (hg : IsLocalFiberGe
     ← TopPair.singularHomologyMap_comp, fiberThomPairOverMap_comp_thomPairOverMap_assoc,
     fiberThomPairOverMap_comp_thomPairOverUnivIso_hom]
 
+variable (F E) in
+/-- The inclusions of the finite unions of the chosen trivializing open sets into the base, over
+the diagram of subspaces that `TauCeti.isIso_of_isColimit_biUnion_baseSet` takes (rather than
+`TauCeti.baseFiniteTrivializingUnionDiagram`, which is not reducibly the same functor). -/
+private def baseSubspaceFiniteTrivializingUnionCocone :
+    Cocone ((monotone_biUnion_baseSet_trivializationAt F E).functor ⋙
+      TopCat.subspaceDiagram (A := (id : Set B → Set B)) monotone_id) where
+  pt := TopCat.of B
+  ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+
+variable (K F E) in
+/-- The homology of the base is the filtered colimit of the homologies of the finite unions of the
+chosen trivializing sets. -/
+private def isColimitSingularHomologyBaseSubspaceFiniteTrivializingUnion :
+    IsColimit (((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).mapCocone
+      (baseSubspaceFiniteTrivializingUnionCocone (B := B) F E)) :=
+  isColimitMapCoconeSingularHomology (ModuleCat.of K K) 0
+    (baseSubspaceFiniteTrivializingUnionCocone F E) (fun _ ↦ IsEmbedding.subtypeVal) fun L hL ↦ by
+      obtain ⟨s, hs⟩ := hL.elim_finite_subcover _
+        (fun b ↦ (trivializationAt F E b).open_baseSet) fun b _ ↦
+          mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩
+      exact ⟨s, fun b hb ↦ ⟨⟨b, hs hb⟩, rfl⟩⟩
+
 /-- **The passage to the whole base**: the homologies of the base and of the Thom pair are the
 filtered colimits of their homologies over the finite unions of the chosen trivializing sets, and
 over these the map is an isomorphism by the Mayer–Vietoris argument. -/
@@ -349,7 +372,7 @@ private theorem isIso_thomPairSingularHomologyFinrankInv (hg : IsLocalFiberGener
     (fun _ _ ↦ epi_biprod_desc_singularHomologyMap_inclusion _ _ _)
     (isZero_singularHomologyFunctor_zero_of_isEmpty _ (TopCat.of (∅ : Set B)))
     (fun c _ hW ↦ isIso_thomPairOverSingularHomologyFinrankInv_of_subset hg c hW)
-    (isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion F E (ModuleCat.of K K) 0)
+    (isColimitSingularHomologyBaseSubspaceFiniteTrivializingUnion K F E)
     (thomPairSingularHomologyFinrankInv hg) (thomPairSingularHomologyFinrankInv_restrict hg)
 
 /-- The isomorphism `Hᵣ(E, E₀; K) ≅ H₀(B; K)` sending the fibre class of each `g b` to the class of
