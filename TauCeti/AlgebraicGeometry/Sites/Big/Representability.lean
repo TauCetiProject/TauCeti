@@ -102,7 +102,9 @@ private theorem map_univ_injective {i : 𝒰.I₀} {T : Over S}
       (hm : m.left ≫ (Y i).hom = a.left ≫ (Y i).hom) : F.map m.op (univ e i) =
         F.map ι.inv.op ((e i).homEquiv (Over.homMk m.left hm : Over.mk _ ⟶ Y i)) := by
     rw [← map_map_univ, ← F.map_comp_apply, ← op_comp]
-    congr 3
+    congr 4
+    ext
+    simp [ι]
   rw [key a rfl, key b hb] at h
   have h' := congrArg (fun x ↦ F.map ι.hom.op x) h
   simp only [← F.map_comp_apply, ← op_comp, ι.hom_inv_id, op_id, F.map_id_apply] at h'
