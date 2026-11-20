@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Complex.ImDilation
-public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
 import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 import TauCeti.LinearAlgebra.Complex.Module

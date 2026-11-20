@@ -89,10 +89,9 @@ private theorem exists_wkp_planarReflection_norm_le_of_wkp {V W : Opens ℂ} {u 
   set T : Set ℂ := (V : Set ℂ) ∩ {z | 0 ≤ z.im}
   obtain ⟨G, h0, hG, -, hGn, -⟩ := Wkp.exists_iteratedGradient_chain k v
   -- Up to the real axis, which is null, `V ∩ {0 ≤ im}` is the upper half of `V`.
-  have hVae : T =ᵐ[volume] (V.upperHalf : Set ℂ) := by
-    rw [Opens.coe_upperHalf]
-    exact ae_eq_set_inter .rfl (Complex.setOf_le_im_ae_eq 0)
   have hint := Opens.interior_inter_setOf_im_nonneg_eq_upperHalf V
+  have hVae := inter_setOf_im_nonneg_ae_eq_interior V
+  rw [hint] at hVae
   have hT : MemWkpLoc p T (k + 1) u := by
     refine (Wkp.memWkpLoc_value_of_ae_le hint hVae.subset v).congr_ae ?_
     rw [Measure.restrict_congr_set hVae]
