@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
@@ -25,7 +26,7 @@ The approximation is a mollification: on the thickening `W` of `K` by a radius `
 outer radius `r < δ`. At points of `K` the bump ball stays in `W`, so the derivative of the
 mollification is the mollification of the zero extension of `Du`
 (`TauCeti.HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed`). Uniform continuity of `u`
-on `cthickening δ K` gives the uniform estimate, and the local `Lᵖ` approximate identity
+at the points of `K` gives the uniform estimate, and the local `Lᵖ` approximate identity
 (`TauCeti.tendsto_eLpNorm_normed_convolution_sub_restrict`) gives the estimate of the derivative.
 
 This is the first-order, vector-valued counterpart of
@@ -60,8 +61,9 @@ theorem exists_contDiff_dist_le_and_eLpNorm_fderiv_sub_le (hp : 1 ≤ p) (hp_top
     ∃ v : ℂ → F, ContDiff ℝ ∞ v ∧ (∀ z ∈ K, dist (v z) (u z) ≤ η) ∧
       eLpNorm (fun z => fderiv ℝ v z - Du z) p (volume.restrict K) ≤ ENNReal.ofReal η := by
   obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  obtain ⟨ρ, hρ, hucont⟩ := Metric.uniformContinuousOn_iff.1
-    ((hK.cthickening (r := δ)).uniformContinuousOn_of_continuous (hu.mono hδΩ)) η hη
+  -- At points of `K`, `u` moves by less than `η` over distances less than `ρ`.
+  obtain ⟨ρ, hρ, hucont⟩ := Metric.mem_uniformity_dist.1 (hK.uniformContinuousAt_of_continuousAt u
+    (fun z hz => hu.continuousAt (Ω.isOpen.mem_nhds (hKΩ hz))) (Metric.dist_mem_uniformity hη))
   -- The mollification only sees `u` on the thickening `W` of `K`.
   let W : Opens ℂ := ⟨thickening δ K, isOpen_thickening⟩
   have hWΩ : W ≤ Ω := fun z hz => hδΩ (thickening_subset_cthickening δ K hz)
@@ -73,22 +75,18 @@ theorem exists_contDiff_dist_le_and_eLpNorm_fderiv_sub_le (hp : 1 ≤ p) (hp_top
   have hDuW : MemLp Du p (volume.restrict W) :=
     hDuLp.memLp_of_closure_subset hWc (hclW.trans hδΩ)
   have hW : MeasurableSet (W : Set ℂ) := W.isOpen.measurableSet
-  -- Mollifiers of radius `min δ ρ / (j + 2) < min δ ρ`.
-  set r : ℕ → ℝ := fun j => min δ ρ / ((j : ℝ) + 2)
-  have hr (j : ℕ) : 0 < r j := by have := lt_min hδ hρ; positivity
-  have hrlt (j : ℕ) : r j < min δ ρ :=
-    div_lt_self (lt_min hδ hρ) (by linarith [Nat.cast_nonneg (α := ℝ) j])
-  let phi : ℕ → ContDiffBump (0 : ℂ) := fun j => ⟨r j / 2, r j, half_pos (hr j),
-    half_lt_self (hr j)⟩
-  have hphi : Tendsto (fun j => (phi j).rOut) atTop (𝓝 0) :=
-    (tendsto_const_nhds (x := min δ ρ)).div_atTop
-      (tendsto_atTop_add_const_right _ 2 tendsto_natCast_atTop_atTop)
+  -- Mollifiers of radius at most `min δ ρ / 2 < min δ ρ`.
+  have hR : 0 < min δ ρ / 2 := half_pos (lt_min hδ hρ)
+  let phi : ℕ → ContDiffBump (0 : ℂ) := ContDiffBump.shrinking hR
+  have hrlt (j : ℕ) : (phi j).rOut < min δ ρ :=
+    (ContDiffBump.rOut_shrinking_le hR j).trans_lt (half_lt_self (lt_min hδ hρ))
   -- At points of `K` the bump balls stay in `W`.
-  have hball (j : ℕ) {z : ℂ} (hz : z ∈ K) : closedBall z (phi j).rOut ⊆ W := by
-    refine (closedBall_subset_ball ((hrlt j).trans_le (min_le_left _ _))).trans ?_
-    exact ball_subset_thickening hz δ
+  have hball (j : ℕ) {z : ℂ} (hz : z ∈ K) : closedBall z (phi j).rOut ⊆ W :=
+    (closedBall_subset_ball ((hrlt j).trans_le (min_le_left _ _))).trans
+      (ball_subset_thickening hz δ)
   have : Fact (1 ≤ p) := ⟨hp⟩
-  obtain ⟨j, hj⟩ := ((tendsto_eLpNorm_normed_convolution_sub_restrict hp_top hphi (s := K) hδ
+  obtain ⟨j, hj⟩ := ((tendsto_eLpNorm_normed_convolution_sub_restrict hp_top
+    (ContDiffBump.tendsto_rOut_shrinking hR) (s := K) hδ
     (((memLp_indicator_iff_restrict hW.nullMeasurableSet).2 hDuW).restrict
       (thickening δ K))).eventually (ge_mem_nhds (ENNReal.ofReal_pos.2 hη))).exists
   refine ⟨(W : Set ℂ).indicator u ⋆[(lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip, volume]
@@ -97,19 +95,13 @@ theorem exists_contDiff_dist_le_and_eLpNorm_fderiv_sub_le (hp : 1 ≤ p) (hp_top
       (((memLp_indicator_iff_restrict hW.nullMeasurableSet).2 huW).locallyIntegrable hp)
       (phi j).contDiff_normed
   · -- The mollification at `z` averages `u` over a ball of radius less than `ρ`.
-    rw [convolution_flip]
     have hzW : z ∈ (W : Set ℂ) := hball j hz (mem_closedBall_self (phi j).rOut_pos.le)
-    have h := (phi j).dist_normed_convolution_le (μ := volume) (x₀ := z) (ε := η)
-      (g := (W : Set ℂ).indicator u)
+    rw [convolution_flip, ← indicator_of_mem hzW u]
+    refine (phi j).dist_normed_convolution_le
       ((memLp_indicator_iff_restrict hW.nullMeasurableSet).2 huW).aestronglyMeasurable
-      fun x hx => by
-        have hxW : x ∈ (W : Set ℂ) := hball j hz (ball_subset_closedBall hx)
-        rw [indicator_of_mem hxW, indicator_of_mem hzW]
-        refine (hucont x ?_ z (self_subset_cthickening K hz) ?_).le
-        · exact mem_cthickening_of_dist_le x z δ K hz
-            ((mem_ball.1 hx).le.trans ((hrlt j).le.trans (min_le_left _ _)))
-        · exact (mem_ball.1 hx).trans ((hrlt j).trans_le (min_le_right _ _))
-    rwa [indicator_of_mem hzW] at h
+      fun x hx => ?_
+    rw [indicator_of_mem (hball j hz (ball_subset_closedBall hx)), indicator_of_mem hzW, dist_comm]
+    exact (hucont ((mem_ball'.1 hx).trans ((hrlt j).trans_le (min_le_right _ _))) hz).le
   · -- On `K` the derivative of the mollification is the mollified weak derivative.
     refine le_trans (le_of_eq (eLpNorm_congr_ae ?_)) hj
     filter_upwards [ae_restrict_mem hK.measurableSet] with z hz
