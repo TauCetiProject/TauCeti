@@ -45,35 +45,30 @@ theorem coe_support_prod {X : Scheme} {ι : Type*} [Fintype ι] (I : ι → X.Id
     ((∏ i, I i).support : Set X) = ⋃ i, (I i).support := by
   simp
 
-/-- Ideal sheaves with disjoint supports generate the unit ideal sheaf together. -/
-theorem sup_eq_top_of_disjoint_support
-    {X : Scheme} {I J : X.IdealSheafData} (h : Disjoint I.support J.support) :
-    I ⊔ J = ⊤ := by
-  rw [← Scheme.IdealSheafData.support_eq_bot_iff, Scheme.IdealSheafData.support_sup]
-  exact h.eq_bot
+/-- Two ideal sheaves generate the unit ideal sheaf together if and only if their supports are
+disjoint. -/
+theorem sup_eq_top_iff_disjoint_support {X : Scheme} {I J : X.IdealSheafData} :
+    I ⊔ J = ⊤ ↔ Disjoint I.support J.support := by
+  rw [← support_eq_bot_iff, support_sup, disjoint_iff]
 
 /-- A finite product of ideal sheaves with pairwise disjoint supports equals their intersection. -/
 theorem prod_eq_iInf_of_pairwise_disjoint_support
     {X : Scheme} {ι : Type*} [Fintype ι] (I : ι → X.IdealSheafData)
     (h : Pairwise fun i j ↦ Disjoint (I i).support (I j).support) :
     ∏ i, I i = ⨅ i, I i := by
-  classical
   ext U : 2
-  have hcop : Pairwise fun i j ↦ IsCoprime ((I i).ideal U) ((I j).ideal U) := by
-    intro i j hij
-    have hs := Scheme.IdealSheafData.sup_eq_top_of_disjoint_support (h hij)
-    have he := congrArg (fun J : X.IdealSheafData ↦ J.ideal U) hs
-    exact Ideal.isCoprime_iff_sup_eq.mpr he
+  -- Evaluating ideal sheaves on `U` is multiplicative, and turns disjoint supports into coprime
+  -- ideals of `Γ(X, U)`.
   let e : X.IdealSheafData →* Ideal Γ(X, U) :=
-    { toFun := fun J ↦ J.ideal U
-      map_one' := by simp [Scheme.IdealSheafData.one_eq_top]
-      map_mul' := fun _ _ ↦ rfl }
+    { toFun J := J.ideal U
+      map_one' := by simp
+      map_mul' _ _ := rfl }
   have he (J : X.IdealSheafData) : e J = J.ideal U := rfl
-  refine (map_prod e I Finset.univ).trans ?_
-  simpa [he, Scheme.IdealSheafData.ideal_iInf] using
-    (Ideal.prod_eq_iInf_of_pairwise_isCoprime
-      (s := Finset.univ) (J := fun i ↦ (I i).ideal U)
-      (fun i _ j _ hij ↦ hcop hij))
+  have hcop (i j : ι) (hij : i ≠ j) : IsCoprime ((I i).ideal U) ((I j).ideal U) := by
+    simpa [Ideal.isCoprime_iff_sup_eq] using
+      congr(($(sup_eq_top_iff_disjoint_support.mpr (h hij))).ideal U)
+  simpa [he] using (map_prod e I .univ).trans
+    (Ideal.prod_eq_iInf_of_pairwise_isCoprime fun i _ j _ hij ↦ hcop i j hij)
 
 universe u
 
