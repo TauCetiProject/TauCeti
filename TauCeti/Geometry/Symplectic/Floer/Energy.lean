@@ -102,8 +102,9 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`,
-  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`); hence translations preserve the
-  energy
+  `SymplecticForm.floerEnergyDensity_cylindrical_comp_add_right`, and its consequence
+  `SymplecticForm.floerEnergyDensity_add_one_of_periodic` for data of period one in `t`); hence
+  translations preserve the energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 * `SymplecticForm.tendsto_floerEnergyDensity`,
   `SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`: the energy density depends
@@ -447,6 +448,17 @@ theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ �
     ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
       ω.floerEnergyDensity Ks Kt u (z + v) := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
+
+/-- **The Floer energy density of a cylinder has period one in `t`.** If the perturbation
+`K = K_s ds + K_t dt` and the map `u` have period one in `t`, so does the energy density. -/
+theorem floerEnergyDensity_add_one_of_periodic (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} (hKs : ∀ s t, Ks (s, t + 1) = Ks (s, t))
+    (hKt : ∀ s t, Kt (s, t + 1) = Kt (s, t)) (hu : ∀ s t, u (s, t + 1) = u (s, t)) (s t : ℝ) :
+    ω.floerEnergyDensity Ks Kt u (s, t + 1) = ω.floerEnergyDensity Ks Kt u (s, t) := by
+  have h := ω.floerEnergyDensity_comp_add_right Ks Kt u ((0 : ℝ), (1 : ℝ)) (s, t)
+  simp only [Prod.mk_add_mk, add_zero] at h
+  rw [← h]
+  congr 1 <;> ext ⟨s', t'⟩ <;> simp [hKs, hKt, hu]
 
 /-- For the cylindrical perturbation `K = H_t dt`, the energy density of the translate
 `(s, t) ↦ u(s + c, t)` at `z` is the energy density of `u` at `z + (c, 0)`. -/
