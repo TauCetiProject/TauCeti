@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, Arend Mellendijk, OpenAI Codex
 -/
 module
 
@@ -49,6 +49,9 @@ direction one uses in practice to read off a residue.
   elementary simple-pole residues, read off from the converse rule.
 * `TauCeti.Contour.analyticAt_const_mul_sub_inv` — the principal part `A · (z − s)⁻¹` is analytic
   at every point where it is not a genuine pole: whenever `A = 0` or `z ≠ s`.
+* `MeromorphicAt.isBigO_sub_inv_smul_residue` — for a function into a complex Banach space,
+  subtracting the residue term leaves a bounded remainder whenever the meromorphic pole order is
+  at most one, including removable points.
 
 ## Provenance
 
@@ -56,6 +59,11 @@ Adapted from the AINTLIB `LeanModularForms` project (the residue material of
 `ForMathlib/GeneralizedResidueTheory/Residue.lean`), and built on Mathlib's trailing-coefficient
 limit API (`MeromorphicAt.tendsto_nhds_meromorphicTrailingCoeffAt`) and the order/convergence
 dictionary in `Mathlib/Analysis/Meromorphic/Order.lean`.
+
+The bounded-remainder argument adapts `simplePole_sub_residue_isBigO_one` from
+[Arend Mellendijk, PrimeNumberTheoremAnd, ResidueCalcOnRectangles.lean]
+(https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/b97f1b43583156849d48c5615fa39a7090bf9133/PrimeNumberTheoremAnd/ResidueCalcOnRectangles.lean),
+using the native residue and allowing a zero analytic numerator.
 
 ## References
 
@@ -67,7 +75,7 @@ public section
 
 noncomputable section
 
-open Filter Topology
+open Asymptotics Filter Topology
 
 namespace TauCeti.Contour
 
@@ -215,5 +223,24 @@ theorem analyticAt_const_mul_sub_inv {A s z : ℂ} (h : A = 0 ∨ z ≠ s) :
   · fun_prop (disch := exact sub_ne_zero.2 h)
 
 end TauCeti.Contour
+
+open TauCeti.Contour in
+/-- Subtracting the simple residue term from a meromorphic function into a complex Banach space
+with pole order at most one leaves a bounded remainder on a punctured neighbourhood. This includes
+zero residue and removable points, and imposes no condition on the function's value at the centre.
+Completeness is needed because `TauCeti.Contour.residue` is defined to be zero for incomplete
+codomains, even at a nonzero simple pole. -/
+theorem MeromorphicAt.isBigO_sub_inv_smul_residue {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} {z₀ : ℂ} (hf : MeromorphicAt f z₀)
+    (horder : ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f z₀) :
+    (f - fun z ↦ (z - z₀)⁻¹ • residue f z₀) =O[𝓝[≠] z₀] (1 : ℂ → ℂ) := by
+  obtain ⟨g, hg, hfg⟩ := exists_analyticAt_eventuallyEq_zpow_smul hf horder
+  have hres : residue f z₀ = g z₀ := by
+    simpa using residue_eq_of_eventuallyEq_zpow_smul (n := -1) (by decide) hg hfg
+  have hbound := hg.differentiableAt.hasDerivAt.tendsto_slope.isBigO_one ℂ
+  refine hbound.congr' ?_ .rfl
+  filter_upwards [hfg] with z hz
+  simp only [Pi.sub_apply, slope_def_module, zpow_neg_one] at hz ⊢
+  rw [hz, hres, smul_sub]
 
 end
