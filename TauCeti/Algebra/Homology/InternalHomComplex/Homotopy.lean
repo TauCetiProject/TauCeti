@@ -173,8 +173,8 @@ def internalHomComplexHomotopyFunctor :
       map f := .op <| CategoryTheory.Quotient.natTransLift _
         (Functor.whiskerRight ((internalHomComplexFunctor C).map f.op)
           (HomotopyCategory.quotient _ _))
-      -- After `simp`, both sides agree up to `Quotient.lift_obj_functor_obj`, which is `rfl`.
       map_id K := by
+        -- After `simp`, both sides agree up to `Quotient.lift_obj_functor_obj`, which is `rfl`.
         apply Quiver.Hom.unop_inj
         apply CategoryTheory.Quotient.natTrans_ext
         ext L
@@ -182,9 +182,8 @@ def internalHomComplexHomotopyFunctor :
         rfl
       map_comp f f' := by
         apply Quiver.Hom.unop_inj
-        apply CategoryTheory.Quotient.natTrans_ext
-        ext L
-        simp
+        refine Eq.trans ?_ (CategoryTheory.Quotient.comp_natTransLift _ _ _).symm
+        rw [op_comp, Functor.map_comp, Functor.whiskerRight_comp]
         rfl }
     (fun _ _ _ _ ⟨h⟩ ↦ by
       apply Quiver.Hom.unop_inj
