@@ -175,6 +175,31 @@ theorem puncturedSpherePerturbation_def (c a : ι → ℂ) (H : ι → ℝ → M
       ∑ i, inputEndPerturbation (c i) (a i) (H i) w x + negativePlanePerturbation Hout w x :=
   (rfl)
 
+/-- **Normalizing the Hamiltonians.** Adding functions `k i` and `kout` of time to the input and
+output Hamiltonians adds the datum of the target-independent Hamiltonians `k i` and `kout`. -/
+theorem puncturedSpherePerturbation_add_const (c a : ι → ℂ) (H : ι → ℝ → M → ℝ)
+    (Hout : ℝ → M → ℝ) (k : ι → ℝ → ℝ) (kout : ℝ → ℝ) (w : ℂ) (x : M) :
+    puncturedSpherePerturbation c a (fun i t y ↦ H i t y + k i t) (fun t y ↦ Hout t y + kout t)
+        w x =
+      puncturedSpherePerturbation c a H Hout w x +
+        puncturedSpherePerturbation c a (fun i t (_ : M) ↦ k i t) (fun t (_ : M) ↦ kout t) w x := by
+  ext v
+  simp only [puncturedSpherePerturbation_def, add_apply,
+    sum_apply, inputEndPerturbation_apply, positivePlanePerturbation_def,
+    negativePlanePerturbation_def, smul_apply, smul_eq_mul, mul_add, add_mul,
+    Finset.sum_add_distrib]
+  ring
+
+/-- The datum of target-independent Hamiltonians does not depend on the target point. -/
+theorem puncturedSpherePerturbation_const_target (c a : ι → ℂ) (k : ι → ℝ → ℝ) (kout : ℝ → ℝ)
+    (w : ℂ) (x y : M) :
+    puncturedSpherePerturbation c a (fun i t (_ : M) ↦ k i t) (fun t (_ : M) ↦ kout t) w x =
+      puncturedSpherePerturbation c a (fun i t (_ : M) ↦ k i t) (fun t (_ : M) ↦ kout t) w y := by
+  ext v
+  simp only [puncturedSpherePerturbation_def, add_apply,
+    sum_apply, inputEndPerturbation_apply, positivePlanePerturbation_def,
+    negativePlanePerturbation_def]
+
 /-- **The pair of pants has two input ends.** The pair-of-pants datum is the datum of the input
 ends with centers `0` and `1` and scales `1` and `-1`, and of its output Hamiltonian. -/
 theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture → ℝ → M → ℝ) :
