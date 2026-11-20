@@ -24,7 +24,7 @@ be unique, so the solutions are described as a set. This file shows that this se
 `H¹(Ω)` and depends upper semicontinuously on the data. No regularity of `∂Ω` is assumed.
 
 * **Stability**. Let `Aₖ → A` locally uniformly in the second variable for almost every `x ∈ Ω`,
-  with common constants `λ, Λ`, let `gₖ → g` in `H¹(Ω)` and `ℓₖ → ℓ` in the norm of `H⁻¹(Ω)`. Then
+  with common constants `λ, Λ`, let `gₖ → g` in `H¹(Ω)` and `ℓₖ → ℓ` in `H⁻¹(Ω)`. Then
   every sequence of solutions `uₖ` of the problems with data `(Aₖ, gₖ, ℓₖ)` has a subsequence
   converging in `H¹(Ω)` to a solution of the limit problem. This is
   `TauCeti.PDE.exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_tendsto_subseq`
@@ -75,41 +75,6 @@ variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {An : ℕ → EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {lam Lam : ℝ}
 
-/-- A bounded sequence in `H¹₀(Ω)`, shifted by a convergent sequence in `H¹(Ω)`, has a
-subsequence whose values converge in `L²(Ω)` and almost everywhere on `Ω`. -/
-private theorem exists_tendsto_value_subseq
-    (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    {g : W1p volume Omega 2} {gn un : ℕ → W1p volume Omega 2} (hg : Tendsto gn atTop (𝓝 g))
-    (hmem : ∀ k, un k - gn k ∈ w1p0Submodule volume Omega 2)
-    (hbdd : BddAbove (range fun k => ‖un k - gn k‖)) :
-    ∃ v : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))),
-      ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (fun j => W1p.value (un (ψ j))) atTop (𝓝 v) ∧
-        ∀ᵐ x ∂volume.restrict Omega, Tendsto (fun j => W1p.value (un (ψ j)) x) atTop (𝓝 (v x)) := by
-  obtain ⟨B, hB⟩ := bddAbove_def.1 hbdd
-  replace hB (k : ℕ) : ‖un k - gn k‖ ≤ B := hB _ (mem_range_self k)
-  let w : ℕ → W1p0 volume Omega 2 :=
-    fun k => ⟨un k - gn k, (ClosedSubmodule.mem_toSubmodule_iff _ _).2 (hmem k)⟩
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
-  -- Rellich: the values of the ball of radius `B + 1` of `H¹₀(Ω)` form a relatively compact set.
-  have hcpt := (isCompactOperator_iff_isCompact_closure_image_ball
-    (W1p0.valueL (mu := volume) (Omega := Omega) (p := 2)).toLinearMap
-      (r := B + 1) (by linarith)).1 (W1p0.isCompactOperator_valueL ENNReal.ofNat_ne_top hΩ)
-  have hw (k : ℕ) : w k ∈ ball (0 : W1p0 volume Omega 2) (B + 1) := by
-    rw [mem_ball_zero_iff, ← Submodule.norm_coe (w k)]
-    exact (hB k).trans_lt (lt_add_one B)
-  obtain ⟨z, -, ψ, hψ, hz⟩ := hcpt.tendsto_subseq fun k => subset_closure ⟨w k, hw k, rfl⟩
-  have hgv : Tendsto (fun j => W1p.value (gn (ψ j))) atTop (𝓝 (W1p.value g)) := by
-    simpa only [Function.comp_def, W1p.valueL_apply] using
-      (W1p.valueL.continuous.tendsto g).comp (hg.comp hψ.tendsto_atTop)
-  have hv : Tendsto (fun j => W1p.value (un (ψ j))) atTop (𝓝 (W1p.value g + z)) := by
-    refine (hgv.add hz).congr fun j => ?_
-    rw [Function.comp_apply, ContinuousLinearMap.coe_coe, W1p0.valueL_apply, Submodule.coe_mk,
-      W1p.value_sub]
-    exact add_sub_cancel (W1p.value (gn (ψ j))) (W1p.value (un (ψ j)))
-  -- A further subsequence converges almost everywhere.
-  obtain ⟨ψ', hψ', hae⟩ := (tendstoInMeasure_of_tendsto_Lp hv).exists_seq_tendsto_ae
-  exact ⟨W1p.value g + z, ψ ∘ ψ', hψ.comp hψ', hv.comp hψ'.tendsto_atTop, hae⟩
-
 /-- The solutions `uₖ` of problems whose boundary values `gₖ` and forcings `ℓₖ` converge have
 `uₖ - gₖ` bounded in `H¹(Ω)`, by the energy bound. -/
 private theorem bddAbove_range_norm_sub
@@ -120,16 +85,15 @@ private theorem bddAbove_range_norm_sub
     (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     {g : W1p volume Omega 2} {gn : ℕ → W1p volume Omega 2} (hg : Tendsto gn atTop (𝓝 g))
     {ℓ : StrongDual ℝ (W1p0 volume Omega 2)} {ℓn : ℕ → StrongDual ℝ (W1p0 volume Omega 2)}
-    (hℓ : Tendsto (fun k => ‖ℓn k - ℓ‖) atTop (𝓝 0)) {un : ℕ → W1p volume Omega 2}
+    (hℓ : Tendsto ℓn atTop (𝓝 ℓ)) {un : ℕ → W1p volume Omega 2}
     (hun : ∀ k, un k - gn k ∈ w1p0Submodule volume Omega 2 ∧
       ∀ φ : W1p0 volume Omega 2,
         energyFormH1 (fun x => An k x (W1p.value (un k) x)) 0 0 (un k) φ = ℓn k φ) :
     BddAbove (range fun k => ‖un k - gn k‖) := by
   have hR := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
   obtain ⟨R, hball⟩ := hR
-  have hℓn : Tendsto (fun k => ‖ℓn k‖) atTop (𝓝 ‖ℓ‖) :=
-    tendsto_iff_dist_tendsto_zero.2 (squeeze_zero (fun _ => dist_nonneg)
-      (fun k => (Real.dist_eq _ _).trans_le (abs_norm_sub_norm_le (ℓn k) ℓ)) hℓ)
+  -- The type is given explicitly so that the dual's norm topology is found.
+  have hℓn := Tendsto.norm (E := StrongDual ℝ (W1p0 volume Omega 2)) hℓ
   have hK : Tendsto (fun k => 2 * ((2 * R) ^ 2 + 1) * (‖ℓn k‖ + Lam * ‖gn k‖) / lam) atTop
       (𝓝 (2 * ((2 * R) ^ 2 + 1) * (‖ℓ‖ + Lam * ‖g‖) / lam)) :=
     ((hℓn.add (hg.norm.const_mul Lam)).const_mul _).div_const _
@@ -141,7 +105,7 @@ private theorem bddAbove_range_norm_sub
 `Ω ⊆ ℝⁿ⁺¹` be a bounded open set. Let `Aₖ` be Carathéodory coefficients on `Ω`, uniformly elliptic
 and bounded with common constants `λ, Λ`, converging for almost every `x ∈ Ω` locally uniformly in
 the second variable to a coefficient `A` with the same bounds. Let the boundary values converge,
-`gₖ → g` in `H¹(Ω)`, and the forcings converge, `ℓₖ → ℓ` in the norm of `H⁻¹(Ω)`. If each
+`gₖ → g` in `H¹(Ω)`, and the forcings converge, `ℓₖ → ℓ` in `H⁻¹(Ω)`. If each
 `uₖ ∈ H¹(Ω)` solves the problem with data `(Aₖ, gₖ, ℓₖ)`,
 
 `-div (Aₖ(x, uₖ) ∇uₖ) = ℓₖ` in `Ω`, `uₖ - gₖ ∈ H¹₀(Ω)`,
@@ -163,7 +127,7 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_tend
     (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     {g : W1p volume Omega 2} {gn : ℕ → W1p volume Omega 2} (hg : Tendsto gn atTop (𝓝 g))
     {ℓ : StrongDual ℝ (W1p0 volume Omega 2)} {ℓn : ℕ → StrongDual ℝ (W1p0 volume Omega 2)}
-    (hℓ : Tendsto (fun k => ‖ℓn k - ℓ‖) atTop (𝓝 0)) {un : ℕ → W1p volume Omega 2}
+    (hℓ : Tendsto ℓn atTop (𝓝 ℓ)) {un : ℕ → W1p volume Omega 2}
     (hun : ∀ k, un k - gn k ∈ w1p0Submodule volume Omega 2 ∧
       ∀ φ : W1p0 volume Omega 2,
         energyFormH1 (fun x => An k x (W1p.value (un k) x)) 0 0 (un k) φ = ℓn k φ) :
@@ -183,7 +147,8 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq_and_tend
         (mem_univ s))
   -- By the energy bound and Rellich, a subsequence of the values converges in `L²(Ω)` and almost
   -- everywhere.
-  have hsub := exists_tendsto_value_subseq hΩ hg (fun k => (hun k).1)
+  have hsub := W1p.exists_tendsto_value_subseq_of_sub_mem_w1p0Submodule ENNReal.ofNat_ne_top hΩ hg
+    (fun k => (hun k).1)
     (bddAbove_range_norm_sub hAn hAnm hAnc hΩ hg hℓ hun)
   obtain ⟨v, ψ, hψ, hv, hae⟩ := hsub
   -- Along the subsequence the frozen coefficients converge almost everywhere.
@@ -236,7 +201,7 @@ theorem isCompact_setOf_forall_energyFormH1_quasilinear_eq
     (An := fun _ => A) (gn := fun _ => g) (ℓn := fun _ => ℓ) hA (fun _ => hA) (fun _ => hAm)
     (fun _ => hAc)
     (ae_of_all _ fun x => tendstoLocallyUniformly_const (A x)) hΩ tendsto_const_nhds
-    (by rw [sub_self ℓ, ContinuousLinearMap.opNorm_zero]; exact tendsto_const_nhds) hun
+    tendsto_const_nhds hun
   obtain ⟨u, hu, ψ, hψ, hlim⟩ := hsub
   exact ⟨u, hu, ψ, hψ, hlim⟩
 
@@ -256,7 +221,7 @@ theorem eventually_setOf_forall_energyFormH1_quasilinear_eq_subset
     (hΩ : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     {g : W1p volume Omega 2} {gn : ℕ → W1p volume Omega 2} (hg : Tendsto gn atTop (𝓝 g))
     {ℓ : StrongDual ℝ (W1p0 volume Omega 2)} {ℓn : ℕ → StrongDual ℝ (W1p0 volume Omega 2)}
-    (hℓ : Tendsto (fun k => ‖ℓn k - ℓ‖) atTop (𝓝 0)) {U : Set (W1p volume Omega 2)}
+    (hℓ : Tendsto ℓn atTop (𝓝 ℓ)) {U : Set (W1p volume Omega 2)}
     (hU : IsOpen U)
     (hSU : {u : W1p volume Omega 2 | u - g ∈ w1p0Submodule volume Omega 2 ∧
       ∀ φ : W1p0 volume Omega 2,

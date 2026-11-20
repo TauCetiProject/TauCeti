@@ -276,15 +276,6 @@ theorem norm_frozenSolution_sub_le
   have hspec := frozenSolution_spec hA hAm hAc (isBounded_ball.subset hball) g ℓ hv
   norm_sub_le_of_forall_energyFormH1_comp_eq hA hAm hAc hball hv hspec.1 hspec.2
 
-/-- Two coefficient matrices whose bilinear forms are bounded by `Λ` differ by at most `2Λ`. -/
-private theorem abs_dotProduct_sub_mulVec_le {M M' : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (hM : ∀ η ξ : EuclideanSpace ℝ (Fin (n + 1)), |η ⬝ᵥ (M *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (hM' : ∀ η ξ : EuclideanSpace ℝ (Fin (n + 1)), |η ⬝ᵥ (M' *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (η ξ : EuclideanSpace ℝ (Fin (n + 1))) :
-    |η ⬝ᵥ ((M - M') *ᵥ ξ)| ≤ 2 * Lam * ‖η‖ * ‖ξ‖ := by
-  rw [Matrix.sub_mulVec, dotProduct_sub]
-  linarith [abs_sub (η ⬝ᵥ (M *ᵥ ξ)) (η ⬝ᵥ (M' *ᵥ ξ)), hM η ξ, hM' η ξ]
-
 /-- For one frozen coefficient the solution depends Lipschitz continuously on the data: with
 `C = λ / (2 ((2R)² + 1))`, `‖S' - S‖ ≤ ‖g' - g‖ + (‖ℓ' - ℓ‖ + Λ ‖g' - g‖) / C` for the frozen
 solutions `S'` and `S` with data `(g', ℓ')` and `(g, ℓ)`. -/
@@ -328,8 +319,8 @@ Let `Ω ⊆ ℝⁿ⁺¹` be bounded and let `Aᵢ` and `A` be Carathéodory coef
 hypotheses of `TauCeti.PDE.exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq` with
 common constants `λ, Λ`. Let `vᵢ` and `v` be measurable on `Ω`, and suppose that the frozen
 coefficients converge almost everywhere on `Ω`, `Aᵢ(x, vᵢ(x)) → A(x, v(x))`, along a countably
-generated filter. If the boundary values `gᵢ → g` in `H¹(Ω)` and the forcings `ℓᵢ → ℓ` in the
-norm of `H⁻¹(Ω)`, then the frozen solutions converge in `H¹(Ω)`:
+generated filter. If the boundary values `gᵢ → g` in `H¹(Ω)` and the forcings `ℓᵢ → ℓ` in
+`H⁻¹(Ω)`, then the frozen solutions converge in `H¹(Ω)`:
 `frozenSolution Aᵢ gᵢ ℓᵢ vᵢ → frozenSolution A g ℓ v`.
 
 For instance, the almost everywhere convergence holds when `vᵢ → v` almost everywhere and, for
@@ -351,7 +342,7 @@ theorem tendsto_frozenSolution {α : Type*} {l : Filter α} [l.IsCountablyGenera
     (hlim : ∀ᵐ x ∂volume.restrict Omega, Tendsto (fun i => A' i x (v' i x)) l (𝓝 (A x (v x))))
     {g : W1p volume Omega 2} {g' : α → W1p volume Omega 2} (hg : Tendsto g' l (𝓝 g))
     {ℓ : StrongDual ℝ (W1p0 volume Omega 2)} {ℓ' : α → StrongDual ℝ (W1p0 volume Omega 2)}
-    (hℓ : Tendsto (fun i => ‖ℓ' i - ℓ‖) l (𝓝 0)) :
+    (hℓ : Tendsto ℓ' l (𝓝 ℓ)) :
     Tendsto (fun i => frozenSolution (A' i) (g' i) (ℓ' i) (v' i)) l
       (𝓝 (frozenSolution A g ℓ v)) := by
   obtain ⟨R, hball⟩ := hΩ.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
@@ -361,7 +352,7 @@ theorem tendsto_frozenSolution {α : Type*} {l : Filter α} [l.IsCountablyGenera
   -- the frozen coefficients converge almost everywhere and differ by at most `2Λ`.
   have h₁ : Tendsto (fun i => frozenSolution (A' i) g ℓ (v' i)) l
       (𝓝 (frozenSolution A g ℓ v)) := by
-    refine tendsto_of_forall_energyFormH1_eq_of_tendsto_ae (Lam := 2 * Lam)
+    refine tendsto_of_forall_energyFormH1_eq_of_tendsto_ae (Lam := Lam + Lam)
       (a' := fun i x => A' i x (v' i x)) (memLp_energyIntegrand_comp hA hAm hAc hv)
       (fun i => memLp_energyIntegrand_comp (hA' i) (hAm' i) (hAc' i) (hv' i))
       (by have := (hA 0).pos; positivity)
@@ -378,11 +369,14 @@ theorem tendsto_frozenSolution {α : Type*} {l : Filter α} [l.IsCountablyGenera
   have h₂ : Tendsto (fun i => frozenSolution (A' i) (g' i) (ℓ' i) (v' i) -
       frozenSolution (A' i) g ℓ (v' i)) l (𝓝 0) := by
     have hg0 := tendsto_iff_norm_sub_tendsto_zero.1 hg
+    -- The type is given explicitly so that the dual's norm topology is found.
+    have hℓ0 := (tendsto_iff_norm_sub_tendsto_zero
+      (E := StrongDual ℝ (W1p0 volume Omega 2))).1 hℓ
     rw [tendsto_zero_iff_norm_tendsto_zero]
     refine squeeze_zero (fun _ => norm_nonneg _) (fun i =>
       norm_frozenSolution_sub_frozenSolution_le (hA' i) (hAm' i) (hAc' i) hball g (g' i) ℓ (ℓ' i)
         (hv' i)) ?_
-    simpa using hg0.add ((hℓ.add (hg0.const_mul Lam)).div_const _)
+    simpa using hg0.add ((hℓ0.add (hg0.const_mul Lam)).div_const _)
   simpa using h₂.add h₁
 
 /-- The map `T : v ↦ S v`, the value of the frozen solution, is continuous on `L²(Ω)`. -/
@@ -405,7 +399,7 @@ theorem continuous_value_frozenSolution
   refine (W1p.valueL.continuous.tendsto _).comp (tendsto_frozenSolution (A' := fun _ => A)
     (g' := fun _ => g) (ℓ' := fun _ => ℓ) hA hAm hAc (fun _ => hA) (fun _ => hAm) (fun _ => hAc)
     hΩ (Lp.aestronglyMeasurable v) (fun _ => Lp.aestronglyMeasurable _) ?_ tendsto_const_nhds
-    (by rw [sub_self ℓ, ContinuousLinearMap.opNorm_zero]; exact tendsto_const_nhds))
+    tendsto_const_nhds)
   filter_upwards [hms, hAc] with x hx hcx
   exact (hcx.tendsto _).comp hx
 
