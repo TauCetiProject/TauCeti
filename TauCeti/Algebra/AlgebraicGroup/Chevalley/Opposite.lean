@@ -14,9 +14,11 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 # Opposite root subgroups of a Chevalley datum
 
 On the base-changed admissible lattice of a Chevalley datum, let `U⁺` and `U⁻` be generated
-by all positive and all negative root subgroups, respectively. Over every commutative ring,
-`U⁺ ∩ (U⁻ ⊔ T) = 1`, where `T` is the actual weight-lattice torus, not merely the image of
-the full-weight parametrization. This is the opposite-intersection input to uniqueness of
+by all positive and all negative root subgroups, respectively, with point-level counterparts
+`positivePoints` and `negativePoints` inside `D.points A`. Over every commutative ring,
+`U⁺ ∩ (U⁻ ⊔ T) = 1` and `U⁻ ∩ (U⁺ ⊔ T) = 1` both on the base-changed lattice and inside
+`D.points A`, where `T` is the actual weight-lattice torus, not merely the image of the
+full-weight parametrization. These are the opposite-intersection inputs to uniqueness of
 Bruhat and big-cell factorizations. No existence of those factorizations or generation of
 all scheme points is asserted.
 
@@ -26,6 +28,23 @@ The intersection specializes the generic opposite-intersection theorem in
 height orders the weight basis, positive roots act upper unitriangularly, negative roots act
 lower unitriangularly, and the actual torus acts diagonally. Its coordinate characters need
 not be the Cartan weights.
+
+## Main definitions
+
+* `ChevalleyDatum.negativeSubgroup` and `ChevalleyDatum.negativePoints`: the negative unipotent
+  subgroup on the base-changed lattice and inside `D.points A`.
+
+## Main results
+
+* `ChevalleyDatum.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot` and
+  `ChevalleyDatum.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot`:
+  lattice-level opposite intersections `U⁺ ∩ (U⁻ ⊔ T) = 1` and `U⁻ ∩ (U⁺ ⊔ T) = 1`.
+* `ChevalleyDatum.positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot`,
+  `ChevalleyDatum.negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot`, and
+  `ChevalleyDatum.positivePoints_inf_negativePoints_eq_bot`: the corresponding intersections inside
+  `D.points A`.
+* `ChevalleyDatum.isNilpotent_negativeSubgroup` and `ChevalleyDatum.isNilpotent_negativePoints`:
+  nilpotency of the negative unipotent subgroup over every commutative ring.
 
 ## References
 
@@ -39,7 +58,7 @@ open TensorProduct TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType.ChevalleyDatum
 
-universe v
+universe v v'
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
@@ -121,6 +140,45 @@ theorem map_negativeSubgroup_le {A B : CommAlgCat.{v} ℤ} (f : A ⟶ B) :
   unfold negativeSubgroup
   exact map_kostantSubsystemSubgroup_le _ _ _ _ _ _ _ f
 
+private theorem closure_inf_closure_sup_range_kostantTorusPoints_eq_bot
+    (degree : (Fin t.rank → ℤ) →+ ℚ) {S S' : Set (Fin t.numRoots)}
+    (hS : ∀ γ ∈ S, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
+    (hS' : ∀ γ ∈ S', degree ((t.simplyConnectedRootDatum ht).root γ) < 0)
+    (A : Type v) [CommRing A] :
+    Subgroup.closure {g | ∃ γ ∈ S, ∃ u,
+        chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u = g} ⊓
+      (Subgroup.closure {g | ∃ γ ∈ S', ∃ u,
+        chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) u = g} ⊔
+        (kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range) =
+      ⊥ := by
+  -- Order the existing basis without changing the actual torus or its coordinate characters.
+  let e := orderedWeightIndexEquiv degree D.weight
+  have hpos : ∀ γ ∈ S, ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
+      D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ → e r < e s := by
+    intro γ hγ r s m hm hrs
+    exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul degree D.weight (hS γ hγ) hm hrs
+  have hneg : ∀ γ ∈ S', ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
+      D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ → e s < e r := by
+    intro γ hγ r s m hm hrs
+    exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul_of_neg degree D.weight (hS' γ hγ) hm hrs
+  let : LinearOrder (Fin D.dim) := LinearOrder.lift' e e.injective
+  have hinter :=
+    kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_sup_range_kostantTorusPoints_eq_bot
+    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
+    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
+    (isNilpotent_apply_ι_chevalleySystem D.representation
+      D.isNilpotent_representation_rootGenerator)
+    D.basis D.weight (t.simplyConnectedRootDatum ht).root D.coordinateWeight
+    D.isCartanWeightVector_basis S S'
+    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
+    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i) hpos hneg A
+  simpa only [kostantSubsystemSubgroup_eq_closure,
+    kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator] using hinter
+
 /-- The subgroup generated by all positive roots meets the subgroup generated by the negative
 roots and the actual weight-lattice torus trivially. This holds over arbitrary commutative
 rings, including nonreduced rings and fields of bad characteristic. -/
@@ -131,39 +189,160 @@ theorem positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bo
         (D.negativeSubgroup (CommAlgCat.of ℤ A) ⊔
           (kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range) =
       ⊥ := by
-  -- Order the existing basis rather than reindexing it: this keeps the actual torus and its
-  -- coordinate characters unchanged, including when the weight lattice is proper.
-  let e := orderedWeightIndexEquiv (t.weightDegree ht) D.weight
-  have hpos : ∀ γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-      ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
-        D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ → e r < e s := by
-    intro γ hγ r s m hm hrs
-    exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul (t.weightDegree ht) D.weight
-      (t.weightDegree_root_pos ht hγ) hm hrs
-  have hneg : ∀ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
-      ∀ {r s : Fin D.dim} {m : ℕ}, 0 < m →
-        D.weight r = D.weight s + m • (t.simplyConnectedRootDatum ht).root γ → e s < e r := by
-    intro γ hγ r s m hm hrs
-    exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul_of_neg (t.weightDegree ht) D.weight
-      (t.weightDegree_root_neg ht hγ) hm hrs
-  let : LinearOrder (Fin D.dim) := LinearOrder.lift' e e.injective
-  have hinter :=
-    kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_sup_range_kostantTorusPoints_eq_bot
+  rw [D.positiveSubgroup_eq_closure, D.negativeSubgroup_eq_closure]
+  exact D.closure_inf_closure_sup_range_kostantTorusPoints_eq_bot (t.weightDegree ht)
+    (fun _ hγ => t.weightDegree_root_pos ht hγ)
+    (fun _ hγ => t.weightDegree_root_neg ht hγ) A
+
+/-- The negative subgroup meets the subgroup generated by the positive roots and the actual
+weight-lattice torus trivially, over every commutative value ring. -/
+@[simp]
+theorem negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot
+    (A : Type v) [CommRing A] :
+    D.negativeSubgroup (CommAlgCat.of ℤ A) ⊓
+        (D.positiveSubgroup (CommAlgCat.of ℤ A) ⊔
+          (kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range) =
+      ⊥ := by
+  rw [D.negativeSubgroup_eq_closure, D.positiveSubgroup_eq_closure]
+  exact D.closure_inf_closure_sup_range_kostantTorusPoints_eq_bot (-t.weightDegree ht)
+    (fun _ hγ => neg_pos.mpr (t.weightDegree_root_neg ht hγ))
+    (fun _ hγ => neg_neg_of_pos (t.weightDegree_root_pos ht hγ)) A
+
+/-- The subgroup generated by all negative roots of a Chevalley datum is nilpotent over every
+commutative ring. -/
+theorem isNilpotent_negativeSubgroup (A : Type v) [CommRing A] :
+    Group.IsNilpotent (D.negativeSubgroup (CommAlgCat.of ℤ A)) := by
+  exact isNilpotent_kostantSubsystemSubgroup_of_isPositive
     (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
     (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
     (isNilpotent_apply_ι_chevalleySystem D.representation
       D.isNilpotent_representation_rootGenerator)
-    D.basis D.weight (t.simplyConnectedRootDatum ht).root D.coordinateWeight
-    D.isCartanWeightVector_basis
-    (posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (orderedWeightBasis (-t.weightDegree ht) D.weight D.basis)
+    (orderedWeight (-t.weightDegree ht) D.weight) (t.simplyConnectedRootDatum ht).root
     (negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (isCartanWeightVector_coe_orderedWeightBasis (t.lieBasis ht).h D.representation
+      D.lattice D.basis D.weight (-t.weightDegree ht) D.isCartanWeightVector_basis)
     (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
-    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
-    hpos hneg A
-  simpa only [positiveSubgroup_eq_closure, negativeSubgroup_eq_closure,
-    kostantSubsystemSubgroup_eq_closure,
-    kostantRootSubgroupParam_chevalleySystem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator] using hinter
+    (fun γ hγ {_ _ _} hn heq =>
+      orderedWeight_lt_of_eq_add_nsmul _ _ (neg_pos.mpr (t.weightDegree_root_neg ht hγ)) hn heq) A
+
+/-- The negative subgroup inside the group of datum points, obtained by writing its lattice
+operators in the datum's weight basis. -/
+noncomputable def negativePoints (A : Type v) [CommRing A] : Subgroup (D.points A) :=
+  ((D.negativeSubgroup (CommAlgCat.of ℤ A)).map
+    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv)).subgroupOf
+      (D.points A)
+
+/-- A datum point is negative exactly when its underlying matrix lies in the image of the
+negative lattice subgroup. -/
+theorem mem_negativePoints_iff {A : Type v} [CommRing A] {g : D.points A} :
+    g ∈ D.negativePoints A ↔
+      g.val ∈ (D.negativeSubgroup (CommAlgCat.of ℤ A)).map
+        (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv) :=
+  Iff.rfl
+
+/-- Forgetting that negative elements are datum points gives their matrix image. -/
+theorem map_negativePoints_subtype (A : Type v) [CommRing A] :
+    (D.negativePoints A).map (D.points A).subtype =
+      (D.negativeSubgroup (CommAlgCat.of ℤ A)).map
+        (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv) :=
+  Subgroup.map_subgroupOf_eq_of_le (D.map_negativeSubgroup_le_points A)
+
+/-- The negative point subgroup is generated by all negative root maps. -/
+theorem negativePoints_eq_closure (A : Type v) [CommRing A] :
+    D.negativePoints A = Subgroup.closure
+      {g | ∃ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht),
+        ∃ u, D.rootSubgroupPoints γ A u = g} := by
+  apply Subgroup.map_injective (D.points A).subtype_injective
+  rw [D.map_negativePoints_subtype, D.negativeSubgroup_eq_closure,
+    MonoidHom.map_closure, MonoidHom.map_closure]
+  congr 1
+  ext g
+  refine ⟨?_, ?_⟩
+  · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
+    exact ⟨_, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroupPoints γ A u).trans h⟩
+  · rintro ⟨_, ⟨γ, hγ, u, rfl⟩, h⟩
+    exact ⟨_, ⟨γ, hγ, u, rfl⟩, (D.coe_rootSubgroupPoints γ A u).symm.trans h⟩
+
+/-- Containment of the negative point subgroup can be checked on all negative root parameters. -/
+theorem negativePoints_le_iff {A : Type v} [CommRing A] {P : Subgroup (D.points A)} :
+    D.negativePoints A ≤ P ↔
+      ∀ γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht), ∀ u,
+        D.rootSubgroupPoints γ A u ∈ P := by
+  rw [D.negativePoints_eq_closure, Subgroup.closure_le]
+  exact ⟨fun h γ hγ u => h ⟨γ, hγ, u, rfl⟩, fun h _ ⟨γ, hγ, u, hu⟩ => hu ▸ h γ hγ u⟩
+
+/-- Each negative root element belongs to the negative point subgroup. -/
+@[simp]
+theorem rootSubgroupPoints_mem_negativePoints (A : Type v) [CommRing A] {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    (u : Multiplicative A) : D.rootSubgroupPoints γ A u ∈ D.negativePoints A :=
+  (D.negativePoints_le_iff.mp le_rfl) γ hγ u
+
+/-- The negative point subgroup is nilpotent over every commutative ring. -/
+theorem isNilpotent_negativePoints (A : Type v) [CommRing A] :
+    Group.IsNilpotent (D.negativePoints A) := by
+  let := D.isNilpotent_negativeSubgroup A
+  let e := (D.negativeSubgroup (CommAlgCat.of ℤ A)).equivMapOfInjective
+    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom)
+    (Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective)
+  exact Group.nilpotent_of_mulEquiv
+    (e.trans (Subgroup.subgroupOfEquivOfLe (D.map_negativeSubgroup_le_points A)).symm)
+
+/-- A ring map carries every negative point into the negative subgroup over the target ring. -/
+theorem map_negativePoints_le {A : Type v} {B : Type v'} [CommRing A] [CommRing B]
+    (f : A →+* B) :
+    (D.negativePoints A).map ((D.pointsPresentation A).map (D.pointsPresentation B) f) ≤
+      D.negativePoints B := by
+  rw [Subgroup.map_le_iff_le_comap, D.negativePoints_le_iff]
+  intro γ hγ u
+  simpa only [Subgroup.mem_comap, D.map_rootSubgroupPoints] using
+    D.rootSubgroupPoints_mem_negativePoints B hγ (Multiplicative.ofAdd (f u.toAdd))
+
+private theorem map_range_torusPoints_subtype (A : Type v) [CommRing A] :
+    ((D.torusPoints A).range).map (D.points A).subtype =
+      ((kostantTorusPoints D.lattice D.basis D.coordinateWeight (CommAlgCat.of ℤ A)).range).map
+        (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv) := by
+  ext g
+  simp only [Subgroup.mem_map, MonoidHom.mem_range, exists_exists_eq_and, Subgroup.coe_subtype,
+    D.coe_torusPoints, basisMatrix_kostantTorusPoints]
+
+private theorem units_map_toMatrix_injective (A : Type v) [CommRing A] :
+    Function.Injective (Units.map
+      ((LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv :
+        (A ⊗[ℤ] D.lattice →ₗ[A] A ⊗[ℤ] D.lattice) →* Matrix (Fin D.dim) (Fin D.dim) A)) := by
+  simpa using Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
+
+/-- Inside the datum points, the positive subgroup meets the join of the negative subgroup and the
+actual torus trivially over every commutative ring. -/
+@[simp]
+theorem positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot
+    (A : Type v) [CommRing A] :
+    D.positivePoints A ⊓ (D.negativePoints A ⊔ (D.torusPoints A).range) = ⊥ := by
+  apply Subgroup.map_injective (D.points A).subtype_injective
+  rw [Subgroup.map_bot, Subgroup.map_inf_eq _ _ _ (D.points A).subtype_injective, Subgroup.map_sup,
+    D.map_positivePoints_subtype, D.map_negativePoints_subtype, D.map_range_torusPoints_subtype,
+    ← Subgroup.map_sup, ← Subgroup.map_inf_eq _ _ _ (D.units_map_toMatrix_injective A),
+    D.positiveSubgroup_inf_negativeSubgroup_sup_range_kostantTorusPoints_eq_bot A, Subgroup.map_bot]
+
+/-- Inside the datum points, the negative subgroup meets the join of the positive subgroup and the
+actual torus trivially over every commutative ring. -/
+@[simp]
+theorem negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot
+    (A : Type v) [CommRing A] :
+    D.negativePoints A ⊓ (D.positivePoints A ⊔ (D.torusPoints A).range) = ⊥ := by
+  apply Subgroup.map_injective (D.points A).subtype_injective
+  rw [Subgroup.map_bot, Subgroup.map_inf_eq _ _ _ (D.points A).subtype_injective, Subgroup.map_sup,
+    D.map_negativePoints_subtype, D.map_positivePoints_subtype, D.map_range_torusPoints_subtype,
+    ← Subgroup.map_sup, ← Subgroup.map_inf_eq _ _ _ (D.units_map_toMatrix_injective A),
+    D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A, Subgroup.map_bot]
+
+/-- The positive and negative point subgroups intersect trivially over every commutative ring. -/
+@[simp]
+theorem positivePoints_inf_negativePoints_eq_bot (A : Type v) [CommRing A] :
+    D.positivePoints A ⊓ D.negativePoints A = ⊥ :=
+  eq_bot_iff.mpr <| (inf_le_inf_left _ le_sup_left).trans
+    (D.positivePoints_inf_negativePoints_sup_range_torusPoints_eq_bot A).le
 
 end TauCeti.DynkinType.ChevalleyDatum

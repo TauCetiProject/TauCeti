@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Scalar curvature of a smooth connection
@@ -34,6 +35,8 @@ For the convention
 real dimension `n`. Consequently, in dimension at least two, a function `κ` for which the curvature
 has this form near a point is differentiable there
 (`CovariantDerivative.mdifferentiableAt_of_eventually_curvatureTensor_eq_smul_inner_sub`).
+Likewise, a function `a` with `Ric = a g` near a point is smooth there, in every dimension
+(`CovariantDerivative.contMDiffAt_of_eventually_ricciTensor_eq_smul_inner`).
 
 The definition and convention follow J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7.
@@ -83,18 +86,8 @@ of the chart source; the frame need not be orthonormal. -/
 theorem scalarCurvature_eq_sum_chartInvGramMatrix (a : M) {x : M}
     (hx : x ∈ (chartAt H a).source) :
     cov.scalarCurvature x = ∑ i, ∑ j, chartInvGramMatrix (I := I) a x i j *
-      cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x) := by
-  have hx' : x ∈ (trivializationAt E (TangentSpace I) a).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  let b := (trivializationAt E (TangentSpace I) a).basisAt (Module.finBasis ℝ E) hx'
-  have hb : ⇑b = fun i ↦ chartLocalFrame (I := I) a i x :=
-    funext fun i ↦ (chartLocalFrame_apply_of_mem_chart_source (I := I) a hx i).symm
-  have hgram : Matrix.gram ℝ b = chartGramMatrix (I := I) a x := by
-    ext i j
-    rw [Matrix.gram_apply, chartGramMatrix_apply, hb]
-  have hinv : (Matrix.gram ℝ b)⁻¹ = chartInvGramMatrix (I := I) a x :=
-    Matrix.inv_eq_left_inv (hgram ▸ chartInvGramMatrix_mul_chartGramMatrix (I := I) a hx)
-  rw [scalarCurvature_apply, TauCeti.bilinFormTrace_eq_sum_inv_gram _ b, hinv, hb]
+      cov.ricciTensor x (chartLocalFrame (I := I) a i x) (chartLocalFrame (I := I) a j x) :=
+  bilinFormTrace_eq_sum_chartInvGramMatrix a hx _
 
 open Riemannian.Tensor in
 /-- The scalar curvature of a smooth connection on the tangent bundle is smooth when the metric is
@@ -156,6 +149,25 @@ theorem scalarCurvature_eq_of_ricciTensor_eq_smul_inner (x : M) (c : ℝ)
   rw [scalarCurvature_apply, h, map_smul, TauCeti.bilinFormTrace_inner]
   simp only [smul_eq_mul]
   ring
+
+/-- **`Ric = a g` forces `a` to be smooth.** If the Ricci tensor is `a g` near `x`, then `a` is
+smooth at `x`, in every dimension: it is the scalar curvature divided by the dimension `n` when
+`n ≠ 0`, and any function on a zero-dimensional, hence discrete, manifold is smooth. -/
+theorem contMDiffAt_of_eventually_ricciTensor_eq_smul_inner
+    [IsContMDiffRiemannianBundle I ∞ E (TangentSpace I : M → Type _)] {a : M → ℝ} {x : M}
+    (ha : ∀ᶠ y in 𝓝 x, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) :
+    ContMDiffAt I 𝓘(ℝ) ∞ a x := by
+  by_cases hpos : Module.finrank ℝ E = 0
+  · have : Subsingleton E := Module.finrank_zero_iff.mp hpos
+    have : Subsingleton H := I.injective.subsingleton
+    have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+    exact contMDiff_of_discreteTopology.contMDiffAt
+  have hn : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast hpos
+  refine (cov.contMDiff_scalarCurvature.div_const
+    (Module.finrank ℝ E : ℝ)).contMDiffAt.congr_of_eventuallyEq ?_
+  filter_upwards [ha] with y hy
+  rw [cov.scalarCurvature_eq_of_ricciTensor_eq_smul_inner y (a y) hy,
+    TauCeti.finrank_tangentSpace, mul_div_cancel_left₀ _ hn]
 
 /-- Contracting curvature of the form `R(w,u)v = B(u,v)w - B(w,v)u` gives scalar curvature
 `(dim - 1) trace(B)`. -/

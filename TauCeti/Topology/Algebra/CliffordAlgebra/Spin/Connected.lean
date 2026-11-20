@@ -82,29 +82,22 @@ theorem pathConnectedSpace_spinGroup_of_isPathConnected (hQ : Q.Nondegenerate)
       simp [ι_sq_scalar, hu]
     · intro v w _ _
       -- Rescale `v` and `w` to unit vectors; this does not change their reflections.
-      have hunit (x : V) [Invertible (Q x)] : ∃ a : K, ∃ _ : Invertible a, Q (a • x) = 1 := by
+      have hunit (x : V) [Invertible (Q x)] : ∃ a : K, Q (a • x) = 1 := by
         obtain ⟨b, hb⟩ := hsq x (isUnit_of_invertible (Q x)).ne_zero
         have hb0 : b ≠ 0 := by
           rintro rfl
           exact (isUnit_of_invertible (Q x)).ne_zero (by rw [hb, mul_zero])
-        refine ⟨b⁻¹, invertibleOfNonzero (inv_ne_zero hb0), ?_⟩
+        refine ⟨b⁻¹, ?_⟩
         rw [QuadraticMap.map_smul, smul_eq_mul, hb]
         field_simp
-      have hrefl (x : V) [Invertible (Q x)] (a : K) [Invertible a] [Invertible (Q (a • x))] :
-          QuadraticMap.reflection Q (a • x) = QuadraticMap.reflection Q x := by
-        -- `reflection_smul_eq` builds its own instance for `Q (a • x)`; the two instances are
-        -- propositionally equal, so align them through the subsingleton instance proof.
-        convert QuadraticMap.reflection_smul_eq Q x a using 1
-        congr 1
-        exact Subsingleton.elim _ _
-      obtain ⟨a, _, hv⟩ := hunit v
-      obtain ⟨b, _, hw⟩ := hunit w
+      obtain ⟨a, hv⟩ := hunit v
+      obtain ⟨b, hw⟩ := hunit w
       let _ : Invertible (Q (a • v)) := hv.symm ▸ invertibleOne
       let _ : Invertible (Q (b • w)) := hw.symm ▸ invertibleOne
       refine ⟨spinReflectionPair Q (a • v) (b • w) hv hw, hpair _ _ hv hw, ?_⟩
       rw [coe_spinToSpecialOrthogonal_spinReflectionPair]
       simp only [Subgroup.coe_mul, QuadraticMap.coe_reflectionOrthogonal]
-      rw [hrefl v a, hrefl w b]
+      rw [QuadraticMap.reflection_smul_eq Q v a, QuadraticMap.reflection_smul_eq Q w b]
   apply pathConnectedSpace_iff_eq.mpr
   refine ⟨1, ?_⟩
   simpa only [H, Subgroup.coe_pathComponentOne] using Subgroup.coe_eq_univ.mpr hH
@@ -148,8 +141,8 @@ theorem not_pathConnectedSpace_spinGroup_of_finrank_eq_one {K V : Type*} [Field 
   have : Finite (spinGroup Q) := .of_equiv _ e.toEquiv
   have : DiscreteTopology (spinGroup Q) := Finite.instDiscreteTopology
   -- A connected discrete space has at most one point, but `e` is injective on two points.
-  have h := PreconnectedSpace.constant inferInstance (continuous_id (X := spinGroup Q))
-    (x := e 1) (y := e (Multiplicative.ofAdd 1))
+  have h := (continuous_id (X := spinGroup Q)).isConst_of_preconnectedSpace (e 1)
+    (e (Multiplicative.ofAdd 1))
   exact absurd (e.injective h) (by decide)
 
 /-- **Path-connectedness of complex Spin groups**: the Spin group of a nondegenerate quadratic

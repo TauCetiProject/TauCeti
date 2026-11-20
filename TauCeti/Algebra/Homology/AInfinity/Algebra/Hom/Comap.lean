@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Map
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Iso
 
 /-!
 # Strict inclusions of pulled-back A-infinity algebras
@@ -14,7 +14,8 @@ public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Strict
 The injective linear map defining `AInfinityAlgebra.comap` intertwines all operations,
 so it defines a strict `A∞` morphism from the pullback to the original algebra.
 Its underlying linear map is the given map. This construction supplies the inclusion
-of the total algebra of a full `A∞` subcategory.
+of the total algebra of a full `A∞` subcategory; when the map is bijective, the strict
+morphism is an `A∞` isomorphism.
 -/
 
 public section
@@ -25,7 +26,7 @@ namespace TauCeti.AInfinityAlgebra
 
 variable {R : Type uR} {A : Type uA} {B : Type uB} [CommRing R]
   [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
-  (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A) (f : A →ₗ[R] B)
+  (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A ℤ) (f : A →ₗ[R] B)
   (hf : Function.Injective f) (hG : ∀ (p : ℤ) (a : A), f a ∈ ℬ.grading.piece p ↔ a ∈ G.piece p)
   (hm : ∀ n, 0 < n → ∀ x : Fin n → A, ℬ.m n (fun i ↦ f (x i)) ∈ LinearMap.range f)
 
@@ -47,5 +48,11 @@ pulled back. -/
 theorem coe_comapStrictHom : ⇑(ℬ.comapStrictHom G f hf hG hm) = f :=
   congrArg (fun g : A →ₗ[R] B ↦ ⇑g) (comapStrictHom_toLinearMap ℬ G f hf hG hm)
 
+/-- When the pullback map is bijective, `comapStrictHom` is an `A∞` isomorphism. -/
+theorem isIso_toAInfinityHom_comapStrictHom (hbij : Function.Bijective f) :
+    (ℬ.comapStrictHom G f hf hG hm).toAInfinityHom.IsIso := by
+  rw [AInfinityHom.isIso_iff_linearPart_bijective, AInfinityStrictHom.linearPart_toAInfinityHom,
+    comapStrictHom_toLinearMap]
+  exact hbij
 
 end TauCeti.AInfinityAlgebra

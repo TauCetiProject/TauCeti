@@ -91,9 +91,8 @@ def normalizedCubicalChainComplexGeneratedByIso :
 theorem normalizedCubicalChainComplexGeneratedByIso_hom_app (X : TopCat.{u}) :
     (normalizedCubicalChainComplexGeneratedByIso G R).hom.app X =
       (normalizedCubicalChainComplex R).map
-        ((GeneratedByTopCat.adjCounit (X := G)).app X) := by
-  unfold normalizedCubicalChainComplexGeneratedByIso generatedByFunctorIso
-  rfl
+        ((GeneratedByTopCat.adjCounit (X := G)).app X) :=
+  generatedByFunctorIso_hom_app G (normalizedCubicalChainComplex R) X
 
 /-- On generators, the inverse comparison lifts the same cube to the generated topology. -/
 theorem normalizedCubicalChainComplexGeneratedByIso_inv_app_f_ofCube (X : TopCat.{u})

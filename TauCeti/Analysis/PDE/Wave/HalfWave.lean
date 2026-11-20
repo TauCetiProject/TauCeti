@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Fourier.LaplacianSymbol
 public import TauCeti.Analysis.Fourier.PhaseGroup
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # The half-wave propagators on `L²`
@@ -34,6 +36,11 @@ annuli `‖ξ‖ ≈ 2^j` (Tao, Section 2.2).
 * `TauCeti.halfWavePropagator`: the propagator `W₊(t) = exp(itD)` on `L²(E, F)`.
 * `TauCeti.coeFn_fourier_halfWavePropagator`: `𝓕 (W₊(t) f) = exp(2πi t ‖·‖) • 𝓕 f`.
 * `TauCeti.halfWavePropagator_neg`: `W₊(-t) = W₋(t)`, the multiplier with phase `-2π ‖·‖`.
+* `TauCeti.halfWavePropagator_add_apply`, `TauCeti.adjoint_halfWavePropagator` and
+  `TauCeti.halfWavePropagator_comp_fourierMultiplierCLM`: the group law, the adjoint
+  `W₊(t)* = W₊(-t)` and commutation with Fourier multipliers.
+* `TauCeti.contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol`: the symbol `exp(2πi t ‖ξ‖)` is smooth
+  away from the origin.
 
 ## References
 
@@ -45,7 +52,7 @@ public section
 
 noncomputable section
 
-open scoped FourierTransform
+open scoped ENNReal FourierTransform ContDiff
 open MeasureTheory Complex Real
 
 namespace TauCeti
@@ -65,6 +72,26 @@ theorem halfWavePropagator_def (t : ℝ) :
     halfWavePropagator F t = phasePropagator (E := E) F sqrtNegLaplacianSymbol t :=
   (rfl)
 
+/-- **The group law** `W₊(s + t) = W₊(s) W₊(t)`. -/
+theorem halfWavePropagator_add_apply (s t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    halfWavePropagator F (s + t) f = halfWavePropagator F s (halfWavePropagator F t f) :=
+  phasePropagator_add_apply _ s t f
+
+/-- The adjoint of `W₊(t)` is `W₊(-t)`. -/
+theorem adjoint_halfWavePropagator (t : ℝ) :
+    ContinuousLinearMap.adjoint (halfWavePropagator (E := E) F t) = halfWavePropagator F (-t) :=
+  adjoint_phasePropagator _ t
+
+/-- `W₊(t)` is a contraction on `L²`. -/
+theorem norm_halfWavePropagator_le (t : ℝ) : ‖halfWavePropagator (E := E) F t‖ ≤ 1 :=
+  norm_phasePropagator_le _ t
+
+/-- `W₊(t)` commutes with every `L²` Fourier multiplier. -/
+theorem halfWavePropagator_comp_fourierMultiplierCLM (t : ℝ) (m : Lp ℂ ∞ (volume : Measure E)) :
+    halfWavePropagator F t ∘L Lp.fourierMultiplierCLM F m =
+      Lp.fourierMultiplierCLM F m ∘L halfWavePropagator F t :=
+  phasePropagator_comp_fourierMultiplierCLM _ t m
+
 /-- On the Fourier side, `W₊(t)` is pointwise multiplication by `exp(2πi t ‖ξ‖)`, almost
 everywhere. -/
 theorem coeFn_fourier_halfWavePropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
@@ -74,6 +101,18 @@ theorem coeFn_fourier_halfWavePropagator (t : ℝ) (f : Lp F 2 (volume : Measure
   rw [halfWavePropagator_def, h, phaseSymbol_apply, sqrtNegLaplacianSymbol_apply]
   congr 4
   ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The half-wave symbol `exp(2πi t ‖ξ‖)` is smooth away from the origin, where the norm is. -/
+theorem contDiffOn_phaseSymbol_sqrtNegLaplacianSymbol {n : WithTop ℕ∞} (t : ℝ) :
+    ContDiffOn ℝ n (phaseSymbol (sqrtNegLaplacianSymbol (E := E)) t) {0}ᶜ := fun ξ hξ ↦ by
+  have h : phaseSymbol (sqrtNegLaplacianSymbol (E := E)) t =
+      fun η ↦ cexp (((t * (2 * π * ‖η‖) : ℝ) : ℂ) * I) :=
+    funext fun η ↦ by rw [phaseSymbol_apply, sqrtNegLaplacianSymbol_apply]
+  rw [h]
+  exact ((ofRealCLM.contDiff.contDiffAt.comp ξ (contDiffAt_const.mul (contDiffAt_const.mul
+    (contDiffAt_norm ℝ (Set.mem_compl_singleton_iff.1 hξ))))).mul
+      contDiffAt_const).cexp.contDiffWithinAt
 
 /-- The backward half-wave propagator `W₊(-t)` is `W₋(t) = exp(-itD)`, the Fourier multiplier with
 the phase `-2π ‖·‖`. -/

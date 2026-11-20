@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
-public import Mathlib.Topology.Bases
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # Maps and homeomorphisms between standard simplices
@@ -27,14 +28,22 @@ barycentric subdivision, available as continuous maps between topological standa
 The prefix sums `TauCeti.prefixSum N x.weights` of the weights depend continuously on a point `x`
 of `StdSimplex R (Fin n)` (`Convexity.StdSimplex.continuous_prefixSum_weights`).
 
+The unconditional series sum of the weights of a point of `StdSimplex R α` equals `1`
+(`Convexity.StdSimplex.tsum_weights`).
+
 A standard simplex over a Hausdorff ring is Hausdorff (`Convexity.StdSimplex.t2Space`), so
-continuous surjections onto it from compact spaces are quotient maps. A finite standard simplex
-over a first-countable ring is first-countable (`Convexity.StdSimplex.firstCountableTopology`).
+continuous surjections onto it from compact spaces are quotient maps.
 -/
 
 public section
 
 namespace Convexity.StdSimplex
+
+/-- The weights of a point of a standard simplex have series sum `1`. -/
+@[simp]
+theorem tsum_weights {R α : Type*} [LE R] [AddCommMonoid R] [One R] [TopologicalSpace R]
+    (s : StdSimplex R α) : ∑' a, s.weights a = 1 :=
+  (tsum_eq_sum fun _ ha ↦ Finsupp.notMem_support_iff.mp ha).trans s.total
 
 variable {R : Type*} [PartialOrder R] {M N : Type*}
 
@@ -119,11 +128,6 @@ lemma continuous_prefixSum_weights {n : ℕ} {Z : Type*} [TopologicalSpace Z]
     Continuous fun z ↦ TauCeti.prefixSum N (f z).weights := by
   simp only [TauCeti.prefixSum_def]
   exact continuous_finsetSum _ fun j _ ↦ (continuous_weights_apply R j).comp hf
-
-/-- A finite standard simplex over a first-countable ring is first-countable. -/
-instance firstCountableTopology [FirstCountableTopology R] [Finite N] :
-    FirstCountableTopology (StdSimplex R N) :=
-  (isEmbedding_toFun_comp_weights R N).firstCountableTopology
 
 /-- A standard simplex over a Hausdorff ring is Hausdorff. -/
 instance t2Space [T2Space R] : T2Space (StdSimplex R N) :=

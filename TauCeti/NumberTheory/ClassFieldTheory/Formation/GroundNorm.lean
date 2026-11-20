@@ -128,7 +128,7 @@ theorem levelNorm_top_apply_coe (h : W' ≤ ⊤) (x : F.level W') :
         Subgroup.topEquiv_apply]
     refine ⟨⟨_, QuotientGroup.eq.1 (he.symm.trans (e q).out_eq.symm)⟩, ?_⟩
     rw [mul_inv_cancel_left]
-  rw [hw, map_mul, mul_apply_eq_comp, F.mem_level.1 x.2 w w.2]
+  rw [hw, map_mul, mul_apply_eq_comp, F.mem_level.1 x.property w w.property]
 
 /-- The norm from a level to itself is the identity. -/
 @[simp]
@@ -136,7 +136,7 @@ theorem levelNorm_self (h : W ≤ W) : F.levelNorm h = AddMonoidHom.id (F.level 
   ext x
   rw [levelNorm_apply_coe, AddMonoidHom.id_apply]
   -- Every coset representative lies in `W`, so it fixes an element of the level `A^W`.
-  simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, ← Nat.card_eq_fintype_card]
+  simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.property, ← Nat.card_eq_fintype_card]
 
 /-- **The norm of an element of the larger level `A^W` is its multiple by the index `[W : W']`.** -/
 @[simp]
@@ -146,7 +146,8 @@ theorem levelNorm_inclusion (h : W' ≤ W) (x : F.level W) :
   ext
   rw [levelNorm_apply_coe]
   -- Every coset representative lies in `W`, so it fixes an element of the level `A^W`.
-  simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.2, Subgroup.relIndex, Subgroup.index_eq_card]
+  simp [finsum_eq_sum_of_fintype, F.mem_level.1 x.property, Subgroup.relIndex,
+      Subgroup.index_eq_card]
 
 /-- Norms between levels compose along a tower `W'' ≤ W' ≤ W` of open subgroups. -/
 theorem levelNorm_trans {W'' : OpenSubgroup G} (h : W' ≤ W) (h' : W'' ≤ W') :

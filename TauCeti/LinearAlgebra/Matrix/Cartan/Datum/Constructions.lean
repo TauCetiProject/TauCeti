@@ -201,28 +201,27 @@ example :
     let D := simplyConnected !![2, -2; -1, 2] ![1, 2] (by simp [Fin.forall_fin_two])
       (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
       (by simp [Matrix.det_fin_two_of])
-    D.simpleTorus 1 = 2 • D.coroot 1 ∧ D.braidLength 0 1 = 4 ∧
+    D.simpleTorus 1 = 2 • D.coroot 1 ∧ coxeterMatrixOfGeneralizedCartanMatrix D.cartan 0 1 = 4 ∧
       ¬ ∀ i j, ((![1, 1] : Fin 2 → ℕ) i : ℤ) * !![2, -2; -1, 2] i j =
         (![1, 1] : Fin 2 → ℕ) j * !![2, -2; -1, 2] j i := by
-  refine ⟨by simp [simpleTorus_def], ?_, fun h ↦ by simpa using h 0 1⟩
-  rw [braidLength_of_ne_of_le _ (by decide) (by simp)]
-  simp
+  refine ⟨by simp [simpleTorus_def], by simp, fun h ↦ by simpa using h 0 1⟩
 
 /-- The braid lengths of `A₁ × A₁`, `A₂` and `G₂` (with `a₁₂ = −3`, `a₂₁ = −1` and symmetrizer
 `(1, 3)`) are `2`, `3` and `6`. -/
 example :
-    (simplyConnected !![2, 0; 0, 2] ![1, 1] (by simp [Fin.forall_fin_two])
-      (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
-      (by simp [Matrix.det_fin_two_of])).braidLength 0 1 = 2 ∧
-    (simplyConnected !![2, -1; -1, 2] ![1, 1] (by simp [Fin.forall_fin_two])
-      (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
-      (by simp [Matrix.det_fin_two_of])).braidLength 0 1 = 3 ∧
-    (simplyConnected !![2, -3; -1, 2] ![1, 3] (by simp [Fin.forall_fin_two])
-      (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
-      (by simp [Matrix.det_fin_two_of])).braidLength 0 1 = 6 := by
-  refine ⟨?_, ?_, ?_⟩ <;>
-  · rw [braidLength_of_ne_of_le _ (by decide) (by simp)]
-    simp
+    coxeterMatrixOfGeneralizedCartanMatrix
+      (simplyConnected !![2, 0; 0, 2] ![1, 1] (by simp [Fin.forall_fin_two])
+        (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
+        (by simp [Matrix.det_fin_two_of])).cartan 0 1 = 2 ∧
+    coxeterMatrixOfGeneralizedCartanMatrix
+      (simplyConnected !![2, -1; -1, 2] ![1, 1] (by simp [Fin.forall_fin_two])
+        (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
+        (by simp [Matrix.det_fin_two_of])).cartan 0 1 = 3 ∧
+    coxeterMatrixOfGeneralizedCartanMatrix
+      (simplyConnected !![2, -3; -1, 2] ![1, 3] (by simp [Fin.forall_fin_two])
+        (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two]) (by simp [Fin.forall_fin_two])
+        (by simp [Matrix.det_fin_two_of])).cartan 0 1 = 6 := by
+  simp
 
 end Checks
 

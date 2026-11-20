@@ -71,11 +71,12 @@ namespace TauCeti
 
 open CategoryTheory
 
+variable {ι : Type*} (G : ι → Type*) [∀ i, TopologicalSpace (G i)]
+  {D : Type*} [Category* D] (F : TopCat ⥤ D)
+  [∀ X, IsIso (F.map ((GeneratedByTopCat.adjCounit (X := G)).app X))]
+
 /-- A functor inverting generated-topology counits is naturally unchanged by refinement. -/
-@[expose]
-noncomputable def generatedByFunctorIso {ι : Type*} (G : ι → Type*)
-    [∀ i, TopologicalSpace (G i)] {D : Type*} [Category* D] (F : TopCat ⥤ D)
-    [∀ X, IsIso (F.map ((GeneratedByTopCat.adjCounit (X := G)).app X))] :
+noncomputable def generatedByFunctorIso :
     (TopCat.toGeneratedByTopCat (X := G) ⋙ GeneratedByTopCat.toTopCat) ⋙ F ≅ F := by
   have (X : TopCat) :
       IsIso ((Functor.whiskerRight (GeneratedByTopCat.adjCounit (X := G)) F).app X) :=
@@ -83,6 +84,19 @@ noncomputable def generatedByFunctorIso {ι : Type*} (G : ι → Type*)
   have := NatIso.isIso_of_isIso_app
     (Functor.whiskerRight (GeneratedByTopCat.adjCounit (X := G)) F)
   exact asIso (Functor.whiskerRight (GeneratedByTopCat.adjCounit (X := G)) F)
+
+/-- The forward comparison is the image of the refinement counit. -/
+@[simp]
+theorem generatedByFunctorIso_hom_app (X : TopCat) :
+    (generatedByFunctorIso G F).hom.app X = F.map ((GeneratedByTopCat.adjCounit (X := G)).app X) :=
+  (rfl)
+
+/-- The inverse comparison is the inverse of the image of the refinement counit. -/
+theorem generatedByFunctorIso_inv_app (X : TopCat) :
+    (generatedByFunctorIso G F).inv.app X =
+      inv (F.map ((GeneratedByTopCat.adjCounit (X := G)).app X)) := by
+  simpa only [IsIso.Iso.inv_hom, generatedByFunctorIso_hom_app] using
+    NatIso.isIso_inv_app (generatedByFunctorIso G F).hom X
 
 end TauCeti
 

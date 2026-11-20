@@ -64,6 +64,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
   complex base.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
+* `TauCeti.natCast_cpow_ofReal_mul` -- the power `n ^ (c s)` of a positive integer is the
+  exponential of `(c log n) s`.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
 * `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
@@ -90,6 +92,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
+  `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 -/
 
 public section
@@ -176,6 +180,14 @@ logarithm of `Real.exp t` is `t`. -/
 theorem ofReal_exp_cpow (t : ℝ) (s : ℂ) : ((Real.exp t : ℝ) : ℂ) ^ s = exp (t * s) := by
   rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 (Real.exp_pos t).ne'),
     ← ofReal_log (Real.exp_pos t).le, Real.log_exp]
+
+/-- For a positive integer `n` and real `c`, the power `n ^ (c s)` is the exponential of the
+real multiple `(c log n) s`. -/
+theorem natCast_cpow_ofReal_mul {n : ℕ} (hn : n ≠ 0) (c : ℝ) (s : ℂ) :
+    (n : ℂ) ^ ((c : ℂ) * s) = exp (((c * Real.log n : ℝ) : ℂ) * s) := by
+  rw [cpow_def_of_ne_zero (Nat.cast_ne_zero.mpr hn), ← natCast_log]
+  push_cast
+  ring_nf
 
 /-- The principal power `u ^ (r⁻¹ : ℝ)` raised to the real power `r` is again `u`, for a
 positive `r` and a base whose argument lies in the sector `(-(r * π), r * π]`.  The intermediate
@@ -615,6 +627,36 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
   exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
+
+/-- On the closed unit disk `‖z‖ ≤ 1` and for `0 ≤ t < 1`, the principal power `(1 - z * t) ^ s`
+has norm at most `exp (π * |s.im|) * (2 ^ s.re + (1 - t) ^ s.re)` for any complex exponent `s`. -/
+theorem norm_one_sub_mul_ofReal_cpow_le (s : ℂ) {z : ℂ} (hz : ‖z‖ ≤ 1) {t : ℝ}
+    (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
+    ‖(1 - z * (t : ℂ)) ^ s‖ ≤
+      Real.exp (Real.pi * |s.im|) * (2 ^ s.re + (1 - t) ^ s.re) := by
+  have h1t_pos : 0 < 1 - t := sub_pos.mpr ht₁
+  have hzt_le : ‖z * (t : ℂ)‖ ≤ t := by
+    rw [norm_mul, Complex.norm_of_nonneg ht₀]
+    exact mul_le_of_le_one_left ht₀ hz
+  have h_low : 1 - t ≤ ‖(1 : ℂ) - z * (t : ℂ)‖ := by
+    linarith [norm_sub_norm_le (1 : ℂ) (z * (t : ℂ)), norm_one (α := ℂ)]
+  have h_high : ‖(1 : ℂ) - z * (t : ℂ)‖ ≤ 2 :=
+    (norm_sub_le 1 (z * (t : ℂ))).trans (by rw [norm_one]; linarith)
+  have hexp := inv_exp_arg_mul_le_exp_pi_mul_abs (1 - z * (t : ℂ)) s.im
+  have hrpow : ‖(1 : ℂ) - z * (t : ℂ)‖ ^ s.re ≤ 2 ^ s.re + (1 - t) ^ s.re := by
+    rcases le_total 0 s.re with hre | hre
+    · exact (Real.rpow_le_rpow (norm_nonneg _) h_high hre).trans
+        (le_add_of_nonneg_right (Real.rpow_nonneg h1t_pos.le _))
+    · exact (Real.rpow_le_rpow_of_nonpos h1t_pos h_low hre).trans
+        (le_add_of_nonneg_left (Real.rpow_nonneg zero_le_two _))
+  calc ‖(1 - z * (t : ℂ)) ^ s‖
+      ≤ ‖(1 : ℂ) - z * (t : ℂ)‖ ^ s.re *
+          (Real.exp (arg (1 - z * (t : ℂ)) * s.im))⁻¹ := by
+        rw [← div_eq_mul_inv]; exact norm_cpow_le _ _
+    _ ≤ (2 ^ s.re + (1 - t) ^ s.re) * Real.exp (Real.pi * |s.im|) :=
+        mul_le_mul hrpow hexp (inv_nonneg.mpr (Real.exp_pos _).le)
+          (add_nonneg (Real.rpow_nonneg zero_le_two _) (Real.rpow_nonneg h1t_pos.le _))
+    _ = Real.exp (Real.pi * |s.im|) * (2 ^ s.re + (1 - t) ^ s.re) := mul_comm _ _
 
 end Complex
 

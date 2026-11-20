@@ -67,7 +67,7 @@ variable {M : Type*} [TopologicalSpace M] {n : ℕ}
 private theorem symm_mem_of_halfSpace (he : ∀ w ∈ e.source, w ∈ s ↔ 0 ≤ e w 0)
     {z : EuclideanHalfSpace (n + 1)} (hz : (𝓡∂ (n + 1)) z ∈ e.target) :
     e.symm ((𝓡∂ (n + 1)) z) ∈ s :=
-  (he _ (e.map_target hz)).2 (by rw [e.right_inv hz]; exact z.2)
+  (he _ (e.map_target hz)).2 (by rw [e.right_inv hz]; exact z.property)
 
 /-- Points of `s` are read by `e` in the half-space. -/
 private theorem apply_symm_apply_halfSpace (he : ∀ w ∈ e.source, w ∈ s ↔ 0 ≤ e w 0) {w : M}
@@ -108,14 +108,14 @@ theorem halfSpaceChart_target (x : s) :
 
 /-- On its source, the half-space chart reads a point through `e`. -/
 theorem coe_halfSpaceChart_apply (x : s) {w : s} (hw : (w : M) ∈ e.source) :
-    (e.halfSpaceChart he x w).1 = e w := by
+    (e.halfSpaceChart he x w).val = e w := by
   unfold halfSpaceChart
   rw [OpenPartialHomeomorph.subtypeCoord_apply]
-  exact apply_symm_apply_halfSpace he hw w.2
+  exact apply_symm_apply_halfSpace he hw w.property
 
 /-- On its target, the inverse half-space chart is the inverse of `e`. -/
 theorem coe_halfSpaceChart_symm_apply (x : s) {z : EuclideanHalfSpace (n + 1)}
-    (hz : z.1 ∈ e.target) : ((e.halfSpaceChart he x).symm z : M) = e.symm z.1 := by
+    (hz : z.val ∈ e.target) : ((e.halfSpaceChart he x).symm z : M) = e.symm z.val := by
   unfold halfSpaceChart
   exact OpenPartialHomeomorph.coe_subtypeCoord_symm_apply _ _ _ _ _ (symm_mem_of_halfSpace he)
     (apply_symm_apply_halfSpace he) _ _ _ hz
@@ -136,7 +136,7 @@ theorem contDiffOn_halfSpaceChart_symm_trans {m : ℕ∞ω}
       v ∈ (e₁.symm ≫ₕ e₂).source ∧ ((𝓡∂ (n + 1)) ∘ (e₁.halfSpaceChart he₁ x₁).symm ≫ₕ
         e₂.halfSpaceChart he₂ x₂ ∘ (𝓡∂ (n + 1)).symm) v = (e₂ ∘ e₁.symm) v := by
     rintro v ⟨⟨hv₁, hv₂⟩, hv⟩
-    have hv' : ((𝓡∂ (n + 1)).symm v).1 = v := (𝓡∂ (n + 1)).right_inv hv
+    have hv' : ((𝓡∂ (n + 1)).symm v).val = v := (𝓡∂ (n + 1)).right_inv hv
     simp only [OpenPartialHomeomorph.symm_symm] at hv₁ hv₂
     rw [halfSpaceChart_target, mem_preimage, modelWithCornersEuclideanHalfSpace_toFun, hv'] at hv₁
     rw [mem_preimage, halfSpaceChart_source, mem_preimage,
@@ -218,7 +218,7 @@ theorem contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart
   -- Near `x`, the inclusion is the inverse of `e` after the extended chart.
   have hval : (Subtype.val : s → M) =ᶠ[nhds x]
       (c.extendTrans I Ψ).symm ∘ extChartAt (𝓡∂ (n + 1)) x := by
-    filter_upwards [heq, (continuous_subtype_val.continuousAt (x := x)).preimage_mem_nhds
+    filter_upwards [heq, (continuous_subtypeVal.continuousAt (x := x)).preimage_mem_nhds
       ((c.extendTrans I Ψ).open_source.mem_nhds hx)] with w hw hws
     rw [Function.comp_apply, ← hw, Function.comp_apply, (c.extendTrans I Ψ).left_inv hws]
   exact ((((contMDiffOn_extendTrans_symm c hc hΨ).contMDiffAt

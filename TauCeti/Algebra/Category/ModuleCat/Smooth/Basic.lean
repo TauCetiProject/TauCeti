@@ -103,6 +103,11 @@ theorem smoothModules_iff {M : ModuleCat.{v} A} :
     smoothModules J M ↔ ∀ m : M, ∃ i, ∀ a ∈ J i, a • m = 0 :=
   Iff.rfl
 
+/-- The index type of a family of ideals with a smooth module is nonempty, since the zero vector
+is annihilated by some ideal of the family. -/
+theorem nonempty_of_smoothModules {M : ModuleCat.{v} A} (hM : smoothModules J M) : Nonempty ι :=
+  (smoothModules_iff.1 hM 0).nonempty
+
 /-- Smoothness for `J` implies smoothness for `J'` when every `J i` contains some `J' i'`. -/
 theorem smoothModules_le_of_forall_exists_le {ι' : Type*} {J' : ι' → Submodule A A}
     (h : ∀ i, ∃ i', J' i' ≤ J i) : smoothModules.{v} J ≤ smoothModules J' := fun _ hM m => by

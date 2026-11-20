@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 public import TauCeti.Topology.ConnectedComponents
 import TauCeti.Geometry.Manifold.Morse.Bott.Lemma
+import TauCeti.Geometry.Manifold.Morse.Prod
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Topology.Connected.Basic
 
@@ -42,9 +43,13 @@ each critical point lies on exactly one of them
 (by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
 many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.isClosed_range`). The function takes a single value on each piece
-(`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so on a compact manifold it has finitely
-many critical values (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`). The same family
-exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`).
+(`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so a critical point on a level lies on a
+piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_apply_eq`), and on a compact
+manifold `f` has finitely many critical values
+(`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`). The same family
+exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`). The conditions only
+involve the underlying maps of the embeddings, so a family with the same maps and possibly another
+order of smoothness is again Morse–Bott (`TauCeti.IsMorseBottFamily.congr`).
 
 Conversely, the last two conditions follow from the first three once the pieces are known to
 partition the critical set. A Morse–Bott critical submanifold is isolated in the critical set, so
@@ -67,6 +72,13 @@ connected manifold without boundary, a constant function is Morse–Bott with on
 submanifold for each connected component, embedded as an open subset
 (`TauCeti.isMorseBottFamily_ofOpens_const`). Each of these pieces has full dimension, so its
 normal spaces are zero (`TauCeti.SmoothEmbedding.subsingleton_normalSpace_ofOpens`).
+
+On a product `M × V`, with `M` nonempty, preconnected and boundaryless, a function `(x, v) ↦ q v`
+whose fibre function `q` has `0` as its only critical point, a nondegenerate one, is Morse–Bott with
+the slice `M × {0}` as its only critical submanifold (`TauCeti.isMorseBottFamily_comp_snd`). If
+instead `q` has an isolated degenerate critical point, no family exhibits `(x, v) ↦ q v` as a
+Morse–Bott function (`TauCeti.not_isMorseBottFamily_comp_snd`): the critical set alone does not
+decide the Morse–Bott property, which is a condition on the Hessian along it.
 
 ## References
 
@@ -186,6 +198,15 @@ theorem subsingleton_image_range [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0
   rintro _ ⟨_, ⟨s, rfl⟩, rfl⟩ _ ⟨_, ⟨s', rfl⟩, rfl⟩
   exact hloc.apply_eq_of_preconnectedSpace s s'
 
+/-- A critical point on the level `f = c` lies on a piece on that level, since a Morse–Bott
+function takes a single value on each piece. -/
+theorem mem_iUnion_range_of_apply_eq [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0)
+    (hx : x ∈ criticalPoints I f) {c : ℝ} (hfx : f x = c) :
+    x ∈ ⋃ a : {a // ∀ s, f (i a s) = c}, range (i a) := by
+  obtain ⟨a, s, rfl⟩ := mem_iUnion.1 (h.criticalPoints_subset_iUnion_range hx)
+  exact mem_iUnion.2 ⟨⟨a, fun s' ↦ (h.subsingleton_image_range hn a (mem_image_of_mem f
+    (mem_range_self s')) (mem_image_of_mem f (mem_range_self s))).trans hfx⟩, s, rfl⟩
+
 /-- **A Morse–Bott function on a compact manifold has finitely many critical values**: it has
 finitely many pieces and takes a single value on each. -/
 theorem finite_image_criticalPoints [CompactSpace M] [∀ a, IsManifold (J a) 1 (S a)]
@@ -208,6 +229,22 @@ theorem neg : IsMorseBottFamily i (-f) where
     rw [criticalPoints_neg]
     exact h.criticalPoints_subset_iUnion_range
   locallyFinite_range := h.locallyFinite_range
+
+/-- A Morse–Bott family depends on the embeddings only through their underlying maps, so it passes
+to a family of embeddings with the same maps and possibly another order of smoothness. -/
+theorem congr {n' : ℕ∞ω} {i' : ∀ a, SmoothEmbedding (J a) I n' (S a) M}
+    (hi : ∀ a, ⇑(i' a) = ⇑(i a)) : IsMorseBottFamily i' f where
+  contMDiff := h.contMDiff
+  isNondegenerateCriticalSubmanifold a := (h.isNondegenerateCriticalSubmanifold a).congr (hi a)
+  nonempty := h.nonempty
+  boundarylessManifold := h.boundarylessManifold
+  range_eq_connectedComponentIn a s := by
+    rw [hi]
+    exact h.range_eq_connectedComponentIn a s
+  range_injective := by simpa only [hi] using h.range_injective
+  criticalPoints_subset_iUnion_range := by
+    simpa only [hi] using h.criticalPoints_subset_iUnion_range
+  locallyFinite_range := by simpa only [hi] using h.locallyFinite_range
 
 omit h in
 /-- A family exhibits `-f` as a Morse–Bott function exactly when it exhibits `f` as one. -/
@@ -326,9 +363,9 @@ theorem IsMorse.exists_isMorseBottFamily [I.Boundaryless] [FiniteDimensional ℝ
   refine ⟨i, hi, ⟨hf.contMDiff, fun a ↦ ?_, fun _ ↦ ⟨0⟩, fun _ ↦ inferInstance, fun a z ↦ ?_,
     fun a b hab ↦ ?_, ?_, ?_⟩⟩
   · exact SmoothEmbedding.isNondegenerateCriticalSubmanifold_iff_of_subsingleton.2 fun z ↦
-      hi a z ▸ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints a.2
+      hi a z ▸ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints a.property
   · rw [hrange, hi]
-    exact (connectedComponentIn_eq_singleton a.2
+    exact (connectedComponentIn_eq_singleton a.property
       (hf.eventually_eq_of_mem_criticalPoints a)).symm
   · simpa [hrange, Subtype.ext_iff] using hab
   · intro x hx
@@ -340,7 +377,7 @@ theorem IsMorse.exists_isMorseBottFamily [I.Boundaryless] [FiniteDimensional ℝ
     obtain ⟨z, hzb, hzt⟩ := hb
     simp only [hrange, mem_singleton_iff] at hya hzb
     subst hya hzb
-    exact Subtype.ext ((hxt _ hyt a.2).trans (hxt _ hzt b.2).symm)
+    exact Subtype.ext ((hxt _ hyt a.property).trans (hxt _ hzt b.property).symm)
 
 /-- **A constant function is Morse–Bott.** On a nonempty connected manifold without boundary, the
 identity embedding exhibits a constant function as a Morse–Bott function, with the whole manifold
@@ -383,7 +420,7 @@ theorem isMorseBottFamily_ofOpens_const [IsManifold I n M] [BoundarylessManifold
     fun C ↦ ?_, fun _ ↦ inferInstance, fun C x ↦ ?_, fun C D h ↦ ?_, ?_, fun x ↦ ?_⟩
   · obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
     exact ⟨⟨x, hmem x⟩⟩
-  · have hx : ConnectedComponents.mk (x : M) = C := ConnectedComponents.mem_opens.1 x.2
+  · have hx : ConnectedComponents.mk (x : M) = C := ConnectedComponents.mem_opens.1 x.property
     rw [hrange, hcrit, connectedComponentIn_univ, SmoothEmbedding.ofOpens_apply,
       ← ConnectedComponents.coe_opens_mk, hx]
   · -- A component is recovered from any of its points.
@@ -399,5 +436,69 @@ theorem isMorseBottFamily_ofOpens_const [IsManifold I n M] [BoundarylessManifold
       (finite_singleton (ConnectedComponents.mk x)).subset fun C ⟨y, hyC, hyx⟩ ↦ ?_⟩
     simp only [hrange, SetLike.mem_coe, ConnectedComponents.mem_opens] at hyC hyx
     exact hyC.symm.trans hyx
+
+section Prod
+
+open Filter Topology
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {q : V → ℝ}
+
+/-- **The model Morse–Bott function on a product.** Let `M` be a nonempty preconnected manifold
+without boundary and let `q` be a smooth function on a finite-dimensional space `V` whose only
+critical point is `0`, where it is nondegenerate. Then the slice `M × {0}` alone exhibits
+`(x, v) ↦ q v` as a Morse–Bott function on `M × V`. -/
+theorem isMorseBottFamily_comp_snd [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I n M]
+    [Nonempty M] [PreconnectedSpace M] (hn : 2 ≤ n) (hq : ContDiff ℝ ∞ q)
+    (hcrit : criticalPoints 𝓘(ℝ, V) q = {0}) (h0 : IsNondegenerateCriticalPoint q 0) :
+    IsMorseBottFamily (fun _ : Unit ↦ SmoothEmbedding.ofIsSmoothEmbedding _
+      (isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero (I := I) (I' := 𝓘(ℝ, V)) (n := n)
+        (M := M) (c := (0 : V)) (by simp))) (q ∘ Prod.snd) := by
+  have : IsManifold I 2 M := .of_le hn
+  refine .of_pairwise_disjoint hn (hq.contMDiff.comp contMDiff_snd)
+    (fun _ ↦ SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd h0 _)
+    (Subsingleton.pairwise) ?_
+  rw [criticalPoints_comp_snd, hcrit]
+  rintro ⟨x, v⟩ ⟨-, rfl : v = 0⟩
+  exact mem_iUnion.2 ⟨(), x, SmoothEmbedding.ofIsSmoothEmbedding_apply _ _ x⟩
+
+/-- **An isolated degenerate critical point of the fibre function obstructs Morse–Bott.** Let `q`
+be a function on a finite-dimensional space `V` with an isolated critical point `y` at which it is
+degenerate, that is, at which `q` is not a nondegenerate critical point. Then for nonempty `M` no
+family of smooth embeddings exhibits `(x, v) ↦ q v` as a Morse–Bott function on `M × V`: along
+the critical slice `M × {y}` the kernel of the critical Hessian is larger than the tangent space of
+any piece through it. -/
+theorem not_isMorseBottFamily_comp_snd [Nonempty M] {y : V}
+    (hy : y ∈ criticalPoints 𝓘(ℝ, V) q)
+    (hiso : ∀ᶠ z in 𝓝 y, z ∈ criticalPoints 𝓘(ℝ, V) q → z = y)
+    (hdeg : ¬IsNondegenerateCriticalPoint q y)
+    (i : ∀ a, SmoothEmbedding (J a) (I.prod 𝓘(ℝ, V)) n (S a) (M × V)) :
+    ¬IsMorseBottFamily i (q ∘ Prod.snd) := by
+  intro h
+  obtain ⟨x⟩ := ‹Nonempty M›
+  have hxy : (x, y) ∈ criticalPoints (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) := by
+    rw [criticalPoints_comp_snd]
+    exact ⟨mem_univ x, hy⟩
+  obtain ⟨a, s, hs⟩ := h.mem_criticalPoints_iff.1 hxy
+  -- The piece through `(x, y)` lies in the slice `M × {y}`: its image under `Prod.snd` is a
+  -- preconnected set of critical points of `q` through the isolated critical point `y`.
+  have hslice (t : S a) : (i a t).2 = y := by
+    have hsub : Prod.snd '' connectedComponentIn (criticalPoints (I.prod 𝓘(ℝ, V))
+        (q ∘ Prod.snd)) (x, y) ⊆ connectedComponentIn (criticalPoints 𝓘(ℝ, V) q) y := by
+      refine (isPreconnected_connectedComponentIn.image _ continuous_snd.continuousOn)
+        |>.subset_connectedComponentIn ⟨(x, y), mem_connectedComponentIn hxy, rfl⟩ ?_
+      rintro _ ⟨p, hp, rfl⟩
+      have hp' := connectedComponentIn_subset _ _ hp
+      rw [criticalPoints_comp_snd] at hp'
+      exact hp'.2
+    rw [connectedComponentIn_eq_singleton hy hiso] at hsub
+    refine hsub ⟨i a t, ?_, rfl⟩
+    rw [← hs, ← h.range_eq_connectedComponentIn a s]
+    exact mem_range_self t
+  -- A Morse–Bott piece inside the slice `M × {y}` forces `q` to be nondegenerate at `y`.
+  have : Nonempty (S a) := ⟨s⟩
+  exact hdeg <|
+    (h.isNondegenerateCriticalSubmanifold a).isNondegenerateCriticalPoint_of_snd_eq hslice
+
+end Prod
 
 end TauCeti

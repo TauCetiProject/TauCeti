@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 public import Mathlib.NumberTheory.Harmonic.Bounds
 public import Mathlib.NumberTheory.PrimeCounting
 public import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
+import TauCeti.NumberTheory.Chebyshev.Mertens
 
 /-!
 # Weighted prime sums and their Mellin smoothing
@@ -28,7 +29,10 @@ recovers the prime series with the exponent shifted by `η`:
 
 The proof is partial summation at a finite cutoff `N`, followed by the limit `N → ∞`: the
 boundary term `N^(-η) • weightedPrimeSum a N` tends to zero and the truncated integrals converge,
-both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`.
+both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`. Mertens' first theorem
+sharpens the growth bound on `weightedPrimeSum a t` to `log t + (log 4 + 4)` for `t ≥ 1`, and
+integrating this bound against the Mellin weight (and applying the Mellin identity) bounds the
+smoothed integral and shifted prime series by `η⁻¹ + (log 4 + 4)` for `η > 0`.
 
 ## Main results
 
@@ -37,14 +41,20 @@ both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`.
 * `TauCeti.weightedPrimeSum_congr`: it depends on `a` only through its values at primes;
 * `TauCeti.weightedPrimeSum_add`, `TauCeti.weightedPrimeSum_smul`, `TauCeti.weightedPrimeSum_neg`,
   `TauCeti.weightedPrimeSum_sub`: linearity in the weights;
-* `TauCeti.norm_weightedPrimeSum_le`: `‖weightedPrimeSum a t‖ ≤ (1 + log t)²` when `‖a p‖ ≤ 1`;
+* `TauCeti.norm_weightedPrimeSum_le_sum_primesLE`, `TauCeti.norm_weightedPrimeSum_le`,
+  `TauCeti.norm_weightedPrimeSum_le_log_add`: comparison with `Σ_{p ≤ t} log p / p`, the
+  elementary `(1 + log t)²` bound, and the linear Mertens bound `log t + (log 4 + 4)`;
 * `TauCeti.smul_intervalIntegral_rpow_smul_weightedPrimeSum`: the finite-cutoff partial summation
   formula;
 * `TauCeti.integrableOn_rpow_smul_weightedPrimeSum`: Bochner integrability of `t^(-1-η) • A(t)`
   on `(1, ∞)`;
-* `TauCeti.summable_weightedPrimeSeries`, `TauCeti.hasSum_weightedPrimeSeries`,
-  `TauCeti.tsum_weightedPrimeSeries`: summability of `Σ_p (log p / p^(1+η)) • a p` over
-  `Nat.Primes` and the Mellin identity.
+* `TauCeti.summable_weightedPrimeSeries`, `TauCeti.summable_primes_log_div_rpow`,
+  `TauCeti.hasSum_weightedPrimeSeries`, `TauCeti.tsum_weightedPrimeSeries`: summability of
+  `Σ_p (log p / p^(1+η)) • a p` and `Σ_p log p / p^(1+η)` over `Nat.Primes` and the Mellin
+  identity;
+* `TauCeti.norm_mellinWeightIntegral_weightedPrimeSum_le`,
+  `TauCeti.tsum_primes_log_div_rpow_le`, `TauCeti.norm_tsum_weightedPrimeSeries_le`: the linear
+  Mertens bound `η⁻¹ + (log 4 + 4)` on the Mellin-smoothed prime sum and shifted prime series.
 -/
 
 public section
@@ -125,6 +135,18 @@ theorem weightedPrimeSum_sub (a b : ℕ → E) :
     weightedPrimeSum (a - b) = weightedPrimeSum a - weightedPrimeSum b := by
   rw [sub_eq_add_neg, weightedPrimeSum_add, weightedPrimeSum_neg, sub_eq_add_neg]
 
+/-- Triangle-inequality bound comparing `weightedPrimeSum a t` to the unweighted logarithmic prime
+sum `Σ_{p ≤ t} log p / p` when `‖a p‖ ≤ 1` on primes. -/
+theorem norm_weightedPrimeSum_le_sum_primesLE {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1)
+    (t : ℝ) :
+    ‖weightedPrimeSum a t‖ ≤ ∑ p ∈ Nat.primesLE ⌊t⌋₊, log p / p := by
+  rw [weightedPrimeSum_def]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun p hp ↦ ?_)
+  have hp1 : (1 : ℝ) ≤ p := by exact_mod_cast (Nat.one_lt_of_mem_primesLE hp).le
+  have hlp : 0 ≤ log p / p := div_nonneg (log_nonneg hp1) (by linarith)
+  rw [norm_smul, norm_of_nonneg hlp]
+  exact mul_le_of_le_one_right hlp (ha p (Nat.prime_of_mem_primesLE hp))
+
 /-- The elementary bound `‖Σ_{p ≤ t} (log p / p) • a p‖ ≤ (1 + log t)²` for weights bounded by `1`
 on primes, from `log p ≤ log t` and the harmonic bound `Σ_{k ≤ t} 1/k ≤ 1 + log t`. -/
 theorem norm_weightedPrimeSum_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) (t : ℝ) :
@@ -138,13 +160,8 @@ theorem norm_weightedPrimeSum_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p
   have hn0 : (0 : ℝ) < n := by exact_mod_cast hn1
   have hlogn : 0 ≤ log n := log_nonneg (by exact_mod_cast hn1)
   have hlog : log n ≤ log t := log_le_log hn0 hnt
-  calc ‖weightedPrimeSum a t‖ ≤ ∑ p ∈ Nat.primesLE n, log p / p := by
-        rw [weightedPrimeSum_def]
-        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun p hp ↦ ?_)
-        have hp1 : (1 : ℝ) ≤ p := by exact_mod_cast (Nat.one_lt_of_mem_primesLE hp).le
-        have hlp : 0 ≤ log p / p := div_nonneg (log_nonneg hp1) (by linarith)
-        rw [norm_smul, norm_of_nonneg hlp]
-        exact mul_le_of_le_one_right hlp (ha p (Nat.prime_of_mem_primesLE hp))
+  calc ‖weightedPrimeSum a t‖
+      ≤ ∑ p ∈ Nat.primesLE n, log p / p := norm_weightedPrimeSum_le_sum_primesLE ha t
     _ ≤ ∑ k ∈ Finset.Icc 1 n, log n * (k : ℝ)⁻¹ := by
         calc ∑ p ∈ Nat.primesLE n, log p / p ≤ ∑ p ∈ Nat.primesLE n, log n * (p : ℝ)⁻¹ := by
               refine Finset.sum_le_sum fun p hp ↦ ?_
@@ -162,6 +179,13 @@ theorem norm_weightedPrimeSum_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p
         simp_rw [harmonic_eq_sum_Icc, Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
     _ ≤ log n * (1 + log n) := mul_le_mul_of_nonneg_left (harmonic_le_one_add_log n) hlogn
     _ ≤ (1 + log t) ^ 2 := by nlinarith
+
+/-- Linear Mertens bound for weighted prime sums: for weights bounded by `1` on primes and `t ≥ 1`,
+`‖Σ_{p ≤ t} (log p / p) • a p‖ ≤ log t + (log 4 + 4)`. -/
+theorem norm_weightedPrimeSum_le_log_add {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1)
+    {t : ℝ} (ht : 1 ≤ t) :
+    ‖weightedPrimeSum a t‖ ≤ log t + (log 4 + 4) :=
+  (norm_weightedPrimeSum_le_sum_primesLE ha t).trans (Chebyshev.sum_primesLE_log_div_le ht)
 
 /-! ### Partial summation at a finite cutoff -/
 
@@ -354,11 +378,65 @@ theorem summable_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
     Summable (fun p : Nat.Primes ↦ (log p / (p : ℝ) ^ (1 + η)) • a p) :=
   summable_subtype_iff_indicator.2 (summable_indicator_weightedPrimeSeries ha hη)
 
+/-- For `η > 0`, the shifted logarithmic prime series `Σ_p log p / p ^ (1 + η)` over `Nat.Primes`
+is summable. -/
+theorem summable_primes_log_div_rpow {η : ℝ} (hη : 0 < η) :
+    Summable fun p : Nat.Primes ↦ log p / (p : ℝ) ^ (1 + η) := by
+  simpa using summable_weightedPrimeSeries (a := fun _ ↦ (1 : ℝ)) (fun _ _ ↦ by norm_num) hη
+
 /-- The Mellin identity in `tsum` form. -/
 theorem tsum_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
     (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ} (hη : 0 < η) :
     ∑' p : Nat.Primes, (log p / (p : ℝ) ^ (1 + η)) • a p =
       mellinWeightIntegral η (weightedPrimeSum a) :=
   (hasSum_weightedPrimeSeries ha hη).tsum_eq
+
+/-! ### Smoothed linear Mertens bounds -/
+
+/-- Smoothed Mertens bound: for weights bounded by `1` on primes and `η > 0`,
+`‖η ∫_{t > 1} t^(-1-η) • weightedPrimeSum a t dt‖ ≤ η⁻¹ + (log 4 + 4)`. -/
+theorem norm_mellinWeightIntegral_weightedPrimeSum_le {a : ℕ → E}
+    (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ} (hη : 0 < η) :
+    ‖mellinWeightIntegral η (weightedPrimeSum a)‖ ≤ η⁻¹ + (log 4 + 4) := by
+  have hlog : IntegrableOn (fun t ↦ t ^ (-1 - η) • log t) (Ioi 1) :=
+    integrableOn_rpow_mul_log hη
+  have hconst : IntegrableOn (fun t : ℝ ↦ t ^ (-1 - η) • (log 4 + 4)) (Ioi 1) :=
+    (integrableOn_rpow_neg_one_sub hη).mul_const (log 4 + 4)
+  calc ‖mellinWeightIntegral η (weightedPrimeSum a)‖
+      ≤ mellinWeightIntegral η (log + fun _ ↦ log 4 + 4) := by
+        refine norm_mellinWeightIntegral_le hη.le ?_ fun t ht ↦
+          norm_weightedPrimeSum_le_log_add ha (le_of_lt ht)
+        exact (hlog.add hconst).congr_fun (fun t _ ↦ by simp [smul_eq_mul, mul_add])
+          measurableSet_Ioi
+    _ = η⁻¹ + (log 4 + 4) := by
+        rw [mellinWeightIntegral_add hlog hconst, mellinWeightIntegral_log hη,
+          mellinWeightIntegral_const hη]
+
+/-- Explicit upper bound on the shifted logarithmic prime series for `η > 0`:
+`∑' p : Nat.Primes, log p / p ^ (1 + η) ≤ η⁻¹ + (log 4 + 4)`. -/
+theorem tsum_primes_log_div_rpow_le {η : ℝ} (hη : 0 < η) :
+    (∑' p : Nat.Primes, log p / (p : ℝ) ^ (1 + η)) ≤ η⁻¹ + (log 4 + 4) := by
+  have h1 : ∀ p : ℕ, p.Prime → ‖(1 : ℝ)‖ ≤ 1 := fun _ _ ↦ by norm_num
+  have heq : (∑' p : Nat.Primes, log p / (p : ℝ) ^ (1 + η)) =
+      mellinWeightIntegral η (weightedPrimeSum fun _ ↦ (1 : ℝ)) := by
+    simpa using tsum_weightedPrimeSeries (a := fun _ ↦ (1 : ℝ)) h1 hη
+  rw [heq]
+  exact (le_abs_self _).trans
+    (by simpa using norm_mellinWeightIntegral_weightedPrimeSum_le (a := fun _ ↦ (1 : ℝ)) h1 hη)
+
+/-- Norm bound on the shifted weighted prime series: for weights bounded by `1` on primes and
+`η > 0`, `‖∑' p : Nat.Primes, (log p / p ^ (1 + η)) • a p‖ ≤ η⁻¹ + (log 4 + 4)`. -/
+theorem norm_tsum_weightedPrimeSeries_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1)
+    {η : ℝ} (hη : 0 < η) :
+    ‖∑' p : Nat.Primes, (log p / (p : ℝ) ^ (1 + η)) • a p‖ ≤ η⁻¹ + (log 4 + 4) := by
+  have hle (p : Nat.Primes) :
+      ‖(log p / (p : ℝ) ^ (1 + η)) • a p‖ ≤ log p / (p : ℝ) ^ (1 + η) := by
+    have hp0 : (0 : ℝ) < p := mod_cast p.prop.pos
+    have hlp : 0 ≤ log p / (p : ℝ) ^ (1 + η) :=
+      div_nonneg (log_nonneg (mod_cast p.prop.one_lt.le)) (rpow_nonneg hp0.le _)
+    rw [norm_smul, norm_of_nonneg hlp]
+    exact mul_le_of_le_one_right hlp (ha p p.prop)
+  exact (tsum_of_norm_bounded (summable_primes_log_div_rpow hη).hasSum hle).trans
+    (tsum_primes_log_div_rpow_le hη)
 
 end TauCeti

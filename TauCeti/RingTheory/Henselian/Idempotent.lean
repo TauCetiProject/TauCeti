@@ -25,7 +25,7 @@ ring whose quotient by an ideal in its Jacobson radical is local is itself local
 Lifts of idempotents are unique modulo any ideal in the Jacobson radical
 (`IsIdempotentElem.eq_of_sub_mem_of_le_jacobson_bot`), and along an integral ring map the
 extension of an ideal in the Jacobson radical stays in the Jacobson radical
-(`Ideal.map_le_jacobson_bot_of_isIntegral`). Since a Henselian ideal lies in the Jacobson radical,
+(`Ideal.map_le_jacobson_of_isIntegral`). Since a Henselian ideal lies in the Jacobson radical,
 lifts are unique over a Henselian pair and in every integral, in particular every finite, algebra
 over it.
 
@@ -200,7 +200,7 @@ is an integral `S`-algebra, for instance a finite one, then idempotents of `T` c
 theorem injOn_quotient_mk_map_isIdempotentElem {T : Type*} [CommRing T] [Algebra S T]
     [Algebra.IsIntegral S T] (J : Ideal S) [HenselianRing S J] :
     Set.InjOn (Ideal.Quotient.mk (J.map (algebraMap S T))) {e | IsIdempotentElem e} :=
-  Ideal.injOn_quotient_mk_isIdempotentElem (Ideal.map_le_jacobson_bot_of_isIntegral
+  Ideal.injOn_quotient_mk_isIdempotentElem (Ideal.map_le_jacobson_of_isIntegral bot_le
     (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))))
 
 /-- If `γ` is idempotent modulo `JT` and `γ T ⊆ S γ + JT`, with `J` in the Jacobson radical,
