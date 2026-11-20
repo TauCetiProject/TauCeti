@@ -88,6 +88,14 @@ def roughLaplacian (σ : Π y : M, V y) (x : M) : V x :=
     (cov.secondCovariantDerivative covT σ x)
     (InnerProductSpace.canonicalCovariantTensor (TangentSpace I x))
 
+/-- The rough Laplacian only depends on the values of the connection on smooth sections. -/
+theorem roughLaplacian_congr (cov' : _root_.CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov' ∞]
+    (h : ∀ τ : Π y : M, V y, CMDiff ∞ (T% τ) → cov τ = cov' τ) :
+    cov.roughLaplacian covT σ = cov'.roughLaplacian covT σ := by
+  funext x
+  rw [roughLaplacian, roughLaplacian, secondCovariantDerivative_congr cov covT cov' h]
+
 /-- The rough Laplacian in an orthonormal basis: `∇*∇ σ = -∑ᵢ ∇²σ(eᵢ, eᵢ)`. -/
 theorem roughLaplacian_eq_sum (σ : Π y : M, V y) (x : M) {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
