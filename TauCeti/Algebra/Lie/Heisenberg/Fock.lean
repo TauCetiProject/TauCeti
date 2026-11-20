@@ -134,14 +134,21 @@ def modeOperator : ℤ → H →ₗ[R] Module.End R (HeisenbergFockSpace R H)
   | .negSucc j =>
     LinearMap.mul R (HeisenbergFockSpace R H) ∘ₗ ι R (ℕ →₀ H) ∘ₗ Finsupp.lsingle j
 
+/-- The negative mode `h(-(j+1))`, indexed by the constructor `Int.negSucc j`, is left
+multiplication by the generator `ι (single j h)`. -/
+theorem modeOperator_negSucc (j : ℕ) (h : H) :
+    modeOperator B (Int.negSucc j) h =
+      LinearMap.mulLeft R (ι R (ℕ →₀ H) (Finsupp.single j h)) := by
+  rw [modeOperator]
+  ext p
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.mul_apply',
+    LinearMap.mulLeft_apply]
+
 /-- The negative mode `h(-(j+1))` is left multiplication by the generator `ι (single j h)`. -/
 theorem modeOperator_neg_natCast_sub_one (j : ℕ) (h : H) :
     modeOperator B (-(j : ℤ) - 1) h =
       LinearMap.mulLeft R (ι R (ℕ →₀ H) (Finsupp.single j h)) := by
-  rw [show -(j : ℤ) - 1 = Int.negSucc j by omega, modeOperator]
-  ext p
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, Finsupp.lsingle_apply, LinearMap.mul_apply',
-    LinearMap.mulLeft_apply]
+  rw [show -(j : ℤ) - 1 = Int.negSucc j by omega, modeOperator_negSucc]
 
 /-- The negative mode `h(-(j+1))` multiplies by the generator `ι (single j h)`. -/
 @[simp]
@@ -154,12 +161,19 @@ theorem modeOperator_neg_natCast_sub_one_apply (j : ℕ) (h : H) (p : Heisenberg
 theorem modeOperator_zero : modeOperator B 0 = 0 :=
   (rfl)
 
+/-- The positive mode `h(j+1)`, indexed by the constructor `Int.ofNat (j + 1)`, acts by the
+derivation `TauCeti.HeisenbergFockSpace.annihilation B j h`. -/
+theorem modeOperator_ofNat_succ (j : ℕ) (h : H) :
+    modeOperator B (Int.ofNat (j + 1)) h =
+      (annihilation B j h : Module.End R (HeisenbergFockSpace R H)) := by
+  rw [modeOperator, LinearMap.coe_mk, AddHom.coe_mk]
+
 /-- The positive mode `h(j+1)` acts by the derivation
 `TauCeti.HeisenbergFockSpace.annihilation B j h`. -/
 theorem modeOperator_natCast_add_one (j : ℕ) (h : H) :
     modeOperator B ((j : ℤ) + 1) h =
       (annihilation B j h : Module.End R (HeisenbergFockSpace R H)) := by
-  rw [← Nat.cast_succ, ← Int.ofNat_eq_natCast, modeOperator, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [← Nat.cast_succ, ← Int.ofNat_eq_natCast, modeOperator_ofNat_succ]
 
 /-- The positive mode `h(j+1)` acts by the derivation
 `TauCeti.HeisenbergFockSpace.annihilation B j h`. -/
@@ -235,14 +249,13 @@ theorem modeOperator_commutator (hB : B.IsSymm) (m n : ℤ) (h k : H) :
   · simp [modeOperator_zero]
   · simp [modeOperator_zero]
     omega
-  · rw [Int.ofNat_eq_natCast, Int.ofNat_eq_natCast, Nat.cast_succ, Nat.cast_succ,
-      modeOperator_natCast_add_one, modeOperator_natCast_add_one, annihilation_commute]
+  · rw [modeOperator_ofNat_succ, modeOperator_ofNat_succ, annihilation_commute,
+      Int.ofNat_eq_natCast, Int.ofNat_eq_natCast]
     split_ifs with hc
     · omega
     · rw [zero_smul]
-  · rw [Int.ofNat_eq_natCast, Nat.cast_succ, modeOperator_natCast_add_one,
-      show Int.negSucc i = -(i : ℤ) - 1 by omega, modeOperator_neg_natCast_sub_one,
-      annihilation_commutator_mulLeft]
+  · rw [modeOperator_ofNat_succ, modeOperator_negSucc, annihilation_commutator_mulLeft,
+      Int.ofNat_eq_natCast]
     split_ifs with hij hij' hij'
     · subst hij
       congr 1
@@ -252,9 +265,8 @@ theorem modeOperator_commutator (hB : B.IsSymm) (m n : ℤ) (h k : H) :
     · omega
     · rw [zero_smul]
   · simp [modeOperator_zero]
-  · rw [Int.ofNat_eq_natCast, Nat.cast_succ, modeOperator_natCast_add_one,
-      show Int.negSucc j = -(j : ℤ) - 1 by omega, modeOperator_neg_natCast_sub_one, ← neg_sub,
-      annihilation_commutator_mulLeft]
+  · rw [modeOperator_ofNat_succ, modeOperator_negSucc, ← neg_sub, annihilation_commutator_mulLeft,
+      Int.ofNat_eq_natCast]
     split_ifs with hij hij' hij'
     · subst hij
       rw [← neg_smul, hB.eq k h]
@@ -264,8 +276,7 @@ theorem modeOperator_commutator (hB : B.IsSymm) (m n : ℤ) (h k : H) :
     · omega
     · omega
     · rw [zero_smul, neg_zero]
-  · rw [show Int.negSucc j = -(j : ℤ) - 1 by omega, show Int.negSucc i = -(i : ℤ) - 1 by omega,
-      modeOperator_neg_natCast_sub_one, modeOperator_neg_natCast_sub_one]
+  · rw [modeOperator_negSucc, modeOperator_negSucc]
     split_ifs with hc
     · omega
     ext p
@@ -342,7 +353,7 @@ theorem translation_commutator (n : ℤ) (h : H) :
       -(n : R) • modeOperator B (n - 1) h := by
   rcases n with (_ | j) | j
   · simp
-  · rw [Int.ofNat_eq_natCast, Nat.cast_succ, modeOperator_natCast_add_one, add_sub_cancel_right,
+  · rw [modeOperator_ofNat_succ, Int.ofNat_eq_natCast, Nat.cast_succ, add_sub_cancel_right,
       ← LieRing.of_associative_ring_bracket, ← Derivation.commutator_coe_linear_map]
     -- Both sides are derivations, so it suffices to compare them on the generators.
     rcases j with _ | i
@@ -365,12 +376,10 @@ theorem translation_commutator (n : ℤ) (h : H) :
       congr 1
       push_cast
       ring
-  · rw [show Int.negSucc j - 1 = -((j + 1 : ℕ) : ℤ) - 1 by omega,
-      show Int.negSucc j = -(j : ℤ) - 1 by omega, modeOperator_neg_natCast_sub_one,
+  · rw [Int.negSucc_sub_one, modeOperator_negSucc, modeOperator_negSucc,
       ← LieRing.of_associative_ring_bracket, Derivation.lie_mulLeft, translation_ι_single]
     ext p
-    rw [LinearMap.smul_apply, modeOperator_neg_natCast_sub_one_apply]
-    simp [Algebra.smul_def, add_comm]
+    simp [Algebra.smul_def, add_mul, mul_assoc, add_comm]
 
 end HeisenbergFockSpace
 
