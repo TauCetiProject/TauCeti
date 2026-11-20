@@ -700,6 +700,14 @@ theorem cubicalChainModuleLinearMap_comp (f : C(Y, Y')) (g : C(Y', Y'')) :
     rw [cubicalChainModuleEquiv_linearMap, LinearMap.comp_apply, cubicalChainModuleEquiv_linearMap,
       cubicalChainModuleEquiv_linearMap, cubicalChainSumMap_comp, LinearMap.comp_apply]
 
+/-- The composite of two induced maps is the map induced by the composite, whatever the phantom
+monoid of the middle module. -/
+theorem cubicalChainModuleLinearMap_linearMap (f : C(Y, Y')) (g : C(Y', Y''))
+    (x : cubicalChainModule Y G R) :
+    cubicalChainModuleLinearMap (G := G') (G' := G'') R g (cubicalChainModuleLinearMap R f x) =
+      cubicalChainModuleLinearMap R (g.comp f) x :=
+  (LinearMap.congr_fun (cubicalChainModuleLinearMap_comp f g) x).symm
+
 /-- The induced map of a map `f` that intertwines the actions through a map `g` of the acting
 monoids is semilinear for the action, through the push-forward along `g`. -/
 theorem cubicalChainModuleLinearMap_op_smul_map [Monoid G] [TopologicalSpace G]
