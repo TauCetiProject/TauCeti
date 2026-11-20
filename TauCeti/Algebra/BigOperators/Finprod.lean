@@ -76,6 +76,8 @@ element commutes with `finsum` even when the support is infinite.
   fixed by left, respectively right, multiplication by `c` is fixed by it, whatever the support.
 * `IsLeftRegular.mul_finsum`: left multiplication by a left-regular element commutes with
   `finsum`, whatever the support.
+* `Multiset.finsum_count_nsmul_eq_sum_map`: summing against the multiplicities of a multiset is
+  summing over the multiset.
 * `Multiset.finsum_count_eq_card`: the multiplicities of a multiset add up to its cardinality.
 * `Set.Finite.finprod_mem_comp_eq_multiset_prod_map` and
   `Set.Finite.finsum_mem_comp_eq_multiset_sum_map`: a product or sum of `g (f x)` over a finite
@@ -406,16 +408,24 @@ theorem IsLeftRegular.mul_finsum {ι R : Type*} [NonUnitalNonAssocSemiring R] {r
     (hr : IsLeftRegular r) (f : ι → R) : r * ∑ᶠ i, f i = ∑ᶠ i, r * f i :=
   (AddMonoidHom.mulLeft r).map_finsum_of_injective hr f
 
+/-- Summing `f` against the multiplicities of the elements of a multiset, with `finsum` over the
+whole type, gives the sum of `f` over the multiset. This is the `finsum` form of
+`Finset.sum_multiset_map_count`. -/
+theorem Multiset.finsum_count_nsmul_eq_sum_map {α M : Type*} [DecidableEq α] [AddCommMonoid M]
+    (s : Multiset α) (f : α → M) : ∑ᶠ a, s.count a • f a = (s.map f).sum := by
+  rw [finsum_eq_sum_of_support_subset _ (s := s.toFinset) fun a ha ↦ ?_,
+    Finset.sum_multiset_map_count]
+  rw [Function.mem_support] at ha
+  exact Finset.mem_coe.2 <| Multiset.mem_toFinset.2 <|
+    Multiset.count_ne_zero.1 fun h ↦ ha (by simp [h])
+
 /-- The multiplicities of the elements of a multiset, summed with `finsum` over the whole type,
 add up to its cardinality. This is the `finsum` form of `Multiset.toFinset_sum_count_eq`. -/
 @[simp]
 theorem Multiset.finsum_count_eq_card {α R : Type*} [DecidableEq α] [AddCommMonoidWithOne R]
     (s : Multiset α) : ∑ᶠ a, (s.count a : R) = Multiset.card s := by
-  rw [finsum_eq_sum_of_support_subset _ (s := s.toFinset) fun a ha ↦ ?_, ← Nat.cast_sum,
-    Multiset.toFinset_sum_count_eq]
-  rw [Function.mem_support] at ha
-  exact Finset.mem_coe.2 <| Multiset.mem_toFinset.2 <|
-    Multiset.count_ne_zero.1 fun h ↦ ha (by simp [h])
+  simp_rw [← nsmul_one, Multiset.finsum_count_nsmul_eq_sum_map, Multiset.map_const',
+    Multiset.sum_replicate]
 
 namespace Set.Finite
 
