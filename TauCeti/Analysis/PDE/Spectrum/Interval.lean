@@ -149,7 +149,8 @@ private theorem sineMode_right (hab : a < b) (k : ℕ) : sineMode a b k b = 0 :=
 
 /-- An integral over the interval domain `(a, b)` of a function of the coordinate is the interval
 integral over `[a, b]`. -/
-theorem setIntegral_intervalDomain (hab : a ≤ b) (g : ℝ → ℝ) :
+theorem setIntegral_intervalDomain {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (hab : a ≤ b) (g : ℝ → E) :
     ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), g (x 0) = ∫ t in a..b, g t := by
   rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
     ← preimage_lineEquiv_intervalDomain, ← measurePreserving_lineEquiv.setIntegral_preimage_emb

@@ -69,19 +69,11 @@ attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpac
 
 variable {a b : ℝ}
 
-/-- The coefficients of `-u'' + c u` with a constant `c` are essentially bounded on `(a, b)`. -/
-private theorem memLp_energyIntegrand_one_zero_const (c : ℝ) :
-    MemLp (fun x ↦ energyIntegrand ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x)
-      ((0 : EuclideanSpace ℝ (Fin 1) → EuclideanSpace ℝ (Fin 1)) x)
-      ((fun _ ↦ c : EuclideanSpace ℝ (Fin 1) → ℝ) x)) ⊤
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))) :=
-  memLp_energyIntegrand_of_bounds (beta := 0) (gamma := ‖c‖)
-    (uniformlyEllipticOn_const_one_one (n := Fin 1)
-      (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))).upper_nonneg
-    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi ↦ (uniformlyEllipticOn_const_one_one (n := Fin 1)
-      (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))).upper_bound hx eta xi)
-    (fun _ _ ↦ by simp) (fun _ _ ↦ le_rfl)
+/-- The principal coefficient `1` of `-u''` is symmetric. -/
+private theorem ae_isSymm_one :
+    ∀ᵐ x ∂volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))),
+      ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x).IsSymm :=
+  ae_of_all _ fun _ ↦ Matrix.isSymm_one
 
 /-- The energy form of `-u'' - κ u` is the energy form of `-u''` minus `κ` times the `L²` inner
 product. -/
@@ -89,7 +81,8 @@ private theorem energyFormH1_one_zero_neg (κ : ℝ) (u v : W1p volume (interval
     energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) u v =
       energyFormH1 (fun _ ↦ 1) 0 0 u v - κ * ⟪W1p.value u, W1p.value v⟫_ℝ := by
   simpa only [Pi.zero_apply, zero_sub] using
-    energyFormH1_mass_sub_const (c := 0) (memLp_energyIntegrand_one_zero_const 0) κ u v
+    energyFormH1_mass_sub_const (c := 0)
+      (memLp_energyIntegrand_const_zero_zero (1 : Matrix (Fin 1) (Fin 1) ℝ)) κ u v
 
 /-- The sine modes are weak Dirichlet eigenfunctions
 (`TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`). Restating this here fixes the
@@ -118,11 +111,6 @@ private theorem isWeakSolutionDirichlet_one_zero_const_iff (c : ℝ)
             (v : W1p volume (intervalDomain a b) 2) =
           ⟪f, W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ :=
   isWeakSolutionDirichlet_iff_inner f u
-
-/-- The `L²` pairing of values is homogeneous in the left argument. -/
-private theorem inner_value_smul_left (t : ℝ) (u v : W1p volume (intervalDomain a b) 2) :
-    ⟪W1p.value (t • u), W1p.value v⟫_ℝ = t * ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  rw [W1p.value_smul, real_inner_smul_left]
 
 /-- Distinct sine modes of `(a, b)` have distinct Dirichlet eigenvalues. -/
 private theorem sq_natCast_mul_pi_div_ne (hab : a < b) {j k : ℕ} (h : j ≠ k) :
@@ -178,12 +166,10 @@ private theorem value_eq_smul_of_inner_eq (hab : a < b) {k : ℕ}
     rw [show W1p.value (sj : W1p volume (intervalDomain a b) 2) =
       W1p.value (s : W1p volume (intervalDomain a b) 2) from Lp.ext (hsj.trans hs.symm), ht,
       sub_self]
-  · have hsymm : ∀ᵐ x ∂volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))),
-        ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x).IsSymm :=
-      ae_of_all _ fun _ ↦ Matrix.isSymm_one
-    have hne := (sq_natCast_mul_pi_div_ne hab hjk).symm
-    rw [inner_value_eq_zero_of_energyFormH1_eq_of_ne hsymm hne hu hsjeq,
-      inner_value_eq_zero_of_energyFormH1_eq_of_ne hsymm hne hseq hsjeq, mul_zero, sub_zero]
+  · have hne := (sq_natCast_mul_pi_div_ne hab hjk).symm
+    rw [inner_value_eq_zero_of_energyFormH1_eq_of_ne ae_isSymm_one hne hu hsjeq,
+      inner_value_eq_zero_of_energyFormH1_eq_of_ne ae_isSymm_one hne hseq hsjeq, mul_zero,
+      sub_zero]
 
 /-- A multiple `t s_k` of the `k`-th sine mode solves the homogeneous eigenvalue equation. -/
 private theorem energyFormH1_eq_of_value_ae_eq_mul_sin {k : ℕ}
@@ -265,7 +251,7 @@ private theorem exists_isWeakSolutionDirichlet_one_zero_const_iff (c : ℝ)
       aestronglyMeasurable_const (beta := 0) (fun _ _ ↦ by simp) (gamma := ‖c‖)
       (fun _ _ ↦ le_rfl) isBounded_intervalDomain (dirichletForcing f)
   simp only [dirichletForcing_apply_eq_setIntegral,
-    energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _
+    energyFormH1_comm_of_isSymm_ae ae_isSymm_one _
       (_ : W1p volume (intervalDomain a b) 2)] at h
   simpa only [isWeakSolutionDirichlet_iff] using h
 
@@ -434,316 +420,65 @@ private theorem inner_eq_inner_value_of_ae_eq
   filter_upwards [hf, hs] with x h1 h2
   rw [h1, h2]
 
-/-- Testing a weak solution of `-u'' - κ_k u = s_m` against the `j`-th sine mode `s_j`, whose
-eigenvalue is `κ_j`: `(κ_j - κ_k) ⟪u, s_j⟫ = ⟪s_m, s_j⟫`. -/
-private theorem mul_inner_value_eq_of_isWeakSolutionDirichlet {k j : ℕ}
-    {u sm sj : W1p0 volume (intervalDomain a b) 2}
-    (hu : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
-          (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
-        ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsj : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sj : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (j * π / (b - a)) ^ 2 * ⟪W1p.value (sj : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ) :
-    ((j * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2) *
-        ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-          W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-      ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-        W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ := by
-  have h := hu sj
-  rw [energyFormH1_one_zero_neg,
-    energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one), hsj u,
-    real_inner_comm (W1p.value (u : W1p volume (intervalDomain a b) 2))] at h
-  linarith
+/-- If `u₀` solves `-u'' - κ u = ℓ`, then `u` solves it exactly when `u - u₀` solves the
+homogeneous problem. -/
+private theorem forall_energyFormH1_eq_iff_forall_sub_eq_zero (κ : ℝ)
+    {ℓ : W1p0 volume (intervalDomain a b) 2 → ℝ} {u₀ : W1p0 volume (intervalDomain a b) 2}
+    (hu₀ : ∀ v : W1p0 volume (intervalDomain a b) 2,
+      energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) (u₀ : W1p volume (intervalDomain a b) 2)
+        (v : W1p volume (intervalDomain a b) 2) = ℓ v)
+    (u : W1p0 volume (intervalDomain a b) 2) :
+    (∀ v : W1p0 volume (intervalDomain a b) 2,
+      energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) (u : W1p volume (intervalDomain a b) 2)
+        (v : W1p volume (intervalDomain a b) 2) = ℓ v) ↔
+      ∀ v : W1p0 volume (intervalDomain a b) 2,
+        energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -κ) ((u - u₀ : W1p0 volume (intervalDomain a b) 2) :
+          W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) = 0 := by
+  have hsub : ((u - u₀ : W1p0 volume (intervalDomain a b) 2) :
+      W1p volume (intervalDomain a b) 2) = (u : W1p volume (intervalDomain a b) 2) - u₀ := rfl
+  refine forall_congr' fun v ↦ ?_
+  rw [← hu₀ v, hsub]
+  simp only [energyFormH1_one_zero_neg, energyFormH1_sub_left
+    (memLp_energyIntegrand_const_zero_zero (1 : Matrix (Fin 1) (Fin 1) ℝ)), W1p.value_sub,
+    inner_sub_left]
+  constructor <;> intro h <;> linarith
 
-/-- The pairing of `u - s_m / (κ_m - κ_k) - t s_k` with `s_k` vanishes when
-`⟪u, s_k⟫ = t ⟪s_k, s_k⟫`, since `s_m ⊥ s_k`. -/
-private theorem inner_value_sub_eq_zero_left (hab : a < b) {k m : ℕ} (hmk : m ≠ k)
-    {u sk sm : W1p0 volume (intervalDomain a b) 2}
-    (hskeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sk : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsmeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sm : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (m * π / (b - a)) ^ 2 * ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    {t : ℝ} (ht : ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-      t * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-        W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ) :
-    ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ -
-      (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ *
-          ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-            W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ +
-        t * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ) = 0 := by
-  have hsymm : ∀ᵐ x ∂volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))),
-      ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x).IsSymm :=
-    ae_of_all _ fun _ ↦ Matrix.isSymm_one
-  rw [ht, inner_value_eq_zero_of_energyFormH1_eq_of_ne hsymm (sq_natCast_mul_pi_div_ne hab hmk)
-    hsmeq hskeq]
-  ring
-
-/-- The pairing of `u - s_m / (κ_m - κ_k) - t s_k` with `s_m` vanishes, for a weak solution `u`
-of `-u'' - κ_k u = s_m`, since `s_k ⊥ s_m`. -/
-private theorem inner_value_sub_eq_zero_right (hab : a < b) {k m : ℕ} (hmk : m ≠ k)
-    {u sk sm : W1p0 volume (intervalDomain a b) 2}
-    (hskeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sk : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsmeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sm : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (m * π / (b - a)) ^ 2 * ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hu : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
-          (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
-        ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (t : ℝ) :
-    ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (sm : W1p volume (intervalDomain a b) 2)⟫_ℝ -
-      (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ *
-          ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-            W1p.value (sm : W1p volume (intervalDomain a b) 2)⟫_ℝ +
-        t * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (sm : W1p volume (intervalDomain a b) 2)⟫_ℝ) = 0 := by
-  have hsymm : ∀ᵐ x ∂volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))),
-      ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x).IsSymm :=
-    ae_of_all _ fun _ ↦ Matrix.isSymm_one
-  have hne := sub_ne_zero.2 (sq_natCast_mul_pi_div_ne hab hmk)
-  rw [inner_value_eq_zero_of_energyFormH1_eq_of_ne hsymm (sq_natCast_mul_pi_div_ne hab hmk).symm
-    hskeq hsmeq, ← mul_inner_value_eq_of_isWeakSolutionDirichlet hu hsmeq,
-    inv_mul_cancel_left₀ hne]
-  ring
-
-/-- The pairing of `u - s_m / (κ_m - κ_k) - t s_k` with `s_j`, `j ∉ {k, m}`, vanishes for a weak
-solution `u` of `-u'' - κ_k u = s_m`: all three terms are orthogonal to `s_j`. -/
-private theorem inner_value_sub_eq_zero_of_ne (hab : a < b) {k m j : ℕ} (hjk : j ≠ k)
-    (hjm : j ≠ m) {u sk sm sj : W1p0 volume (intervalDomain a b) 2}
-    (hskeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sk : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsmeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sm : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (m * π / (b - a)) ^ 2 * ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsjeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sj : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (j * π / (b - a)) ^ 2 * ⟪W1p.value (sj : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hu : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
-          (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
-        ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (t : ℝ) :
-    ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ -
-      (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ *
-          ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-            W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ +
-        t * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ) = 0 := by
-  have hsymm : ∀ᵐ x ∂volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))),
-      ((fun _ ↦ (1 : Matrix (Fin 1) (Fin 1) ℝ)) x).IsSymm :=
-    ae_of_all _ fun _ ↦ Matrix.isSymm_one
-  have key := mul_inner_value_eq_of_isWeakSolutionDirichlet hu hsjeq
-  rw [inner_value_eq_zero_of_energyFormH1_eq_of_ne hsymm (sq_natCast_mul_pi_div_ne hab hjm).symm
-    hsmeq hsjeq] at key ⊢
-  rw [inner_value_eq_zero_of_energyFormH1_eq_of_ne hsymm (sq_natCast_mul_pi_div_ne hab hjk).symm
-      hskeq hsjeq,
-    (mul_eq_zero.1 key).resolve_left (sub_ne_zero.2 (sq_natCast_mul_pi_div_ne hab hjk))]
-  ring
-
-/-- The pairing of `u - s_m / (κ_m - κ_k) - t s_k` with every sine mode `s_j` vanishes, for a weak
-solution `u` of `-u'' - κ_k u = s_m`, `m ≠ k`, with `⟪u, s_k⟫ = t ⟪s_k, s_k⟫`. -/
-private theorem inner_value_sub_eq_zero (hab : a < b) {k m j : ℕ} (hmk : m ≠ k)
-    {u sk sm sj : W1p0 volume (intervalDomain a b) 2}
-    (hsk : W1p.value (sk : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (k * π * (x 0 - a) / (b - a)))
-    (hskeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sk : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsm : W1p.value (sm : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (m * π * (x 0 - a) / (b - a)))
-    (hsmeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sm : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (m * π / (b - a)) ^ 2 * ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hu : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
-          (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
-        ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    {t : ℝ} (ht : ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-      t * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-        W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsj : W1p.value (sj : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (j * π * (x 0 - a) / (b - a)))
-    (hsjeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sj : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (j * π / (b - a)) ^ 2 * ⟪W1p.value (sj : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ) :
-    ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ -
-      (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ *
-          ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-            W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ +
-        t * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (sj : W1p volume (intervalDomain a b) 2)⟫_ℝ) = 0 := by
-  by_cases hjk : j = k
-  · subst hjk
-    rw [show W1p.value (sj : W1p volume (intervalDomain a b) 2) =
-      W1p.value (sk : W1p volume (intervalDomain a b) 2) from Lp.ext (hsj.trans hsk.symm)]
-    exact inner_value_sub_eq_zero_left hab hmk hskeq hsmeq ht
-  by_cases hjm : j = m
-  · subst hjm
-    rw [show W1p.value (sj : W1p volume (intervalDomain a b) 2) =
-      W1p.value (sm : W1p volume (intervalDomain a b) 2) from Lp.ext (hsj.trans hsm.symm)]
-    exact inner_value_sub_eq_zero_right hab hmk hskeq hsmeq hu t
-  · exact inner_value_sub_eq_zero_of_ne hab hjk hjm hskeq hsmeq hsjeq hu t
-
-/-- A weak solution `u` of `-u'' - κ_k u = s_m`, `m ≠ k`, with `⟪u, s_k⟫ = t ⟪s_k, s_k⟫` is
-`s_m / (κ_m - κ_k) + t s_k`: their difference is orthogonal to every sine mode. -/
-private theorem value_eq_of_isWeakSolutionDirichlet (hab : a < b) {k m : ℕ} (hmk : m ≠ k)
-    {u sk sm : W1p0 volume (intervalDomain a b) 2}
-    (hsk : W1p.value (sk : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (k * π * (x 0 - a) / (b - a)))
-    (hskeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sk : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hsm : W1p.value (sm : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (m * π * (x 0 - a) / (b - a)))
-    (hsmeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sm : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (m * π / (b - a)) ^ 2 * ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hu : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
-          (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
-        ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    {t : ℝ} (ht : ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-      t * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-        W1p.value (sk : W1p volume (intervalDomain a b) 2)⟫_ℝ) :
-    W1p.value (u : W1p volume (intervalDomain a b) 2) =
-      ((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ •
-          W1p.value (sm : W1p volume (intervalDomain a b) 2) +
-        t • W1p.value (sk : W1p volume (intervalDomain a b) 2) := by
-  rw [← sub_eq_zero]
-  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun j _ ↦ ?_
-  obtain ⟨sj, hsj, hsjeq⟩ := exists_value_ae_eq_sin hab j
-  rw [setIntegral_mul_sin_eq_inner _ hsj, inner_sub_left, inner_add_left, real_inner_smul_left,
-    real_inner_smul_left]
-  exact inner_value_sub_eq_zero hab hmk hsk hskeq hsm hsmeq hu ht hsj hsjeq
-
-/-- A function whose value is `c s_m + t s_k` is `c s_m + t s_k` in `H¹(a, b)`. -/
-private theorem coe_eq_smul_add_smul_of_value_ae_eq {k m : ℕ} (c t : ℝ)
-    {u sk sm : W1p0 volume (intervalDomain a b) 2}
-    (hsk : W1p.value (sk : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (k * π * (x 0 - a) / (b - a)))
-    (hsm : W1p.value (sm : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (m * π * (x 0 - a) / (b - a)))
-    (hu : W1p.value (u : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ c * Real.sin (m * π * (x 0 - a) / (b - a)) +
-          t * Real.sin (k * π * (x 0 - a) / (b - a))) :
-    (u : W1p volume (intervalDomain a b) 2) =
-      c • (sm : W1p volume (intervalDomain a b) 2) +
-        t • (sk : W1p volume (intervalDomain a b) 2) :=
-  W1p.ext_value <| Lp.ext <| by
-    filter_upwards [hu, W1p.value_add_ae (c • (sm : W1p volume (intervalDomain a b) 2))
-      (t • (sk : W1p volume (intervalDomain a b) 2)),
-      W1p.value_smul_ae c (sm : W1p volume (intervalDomain a b) 2),
-      W1p.value_smul_ae t (sk : W1p volume (intervalDomain a b) 2), hsm, hsk]
-      with x h1 h2 h3 h4 h5 h6
-    rw [h1, h2, Pi.add_apply, h3, h4, Pi.smul_apply, Pi.smul_apply, h5, h6, smul_eq_mul,
-      smul_eq_mul]
-
-/-- The energy form of `-u''` is linear in its left argument. -/
-private theorem energyFormH1_add_smul_smul_left (c t : ℝ)
-    (u w v : W1p volume (intervalDomain a b) 2) :
-    energyFormH1 (fun _ ↦ 1) 0 0 (c • u + t • w) v =
-      c * energyFormH1 (fun _ ↦ 1) 0 0 u v + t * energyFormH1 (fun _ ↦ 1) 0 0 w v := by
-  rw [energyFormH1_add_left (c := 0) (memLp_energyIntegrand_one_zero_const 0),
-    energyFormH1_smul_left, energyFormH1_smul_left]
-
-/-- The `L²` pairing of values is linear in its left argument. -/
-private theorem inner_value_add_smul_smul_left (c t : ℝ)
-    (u w v : W1p volume (intervalDomain a b) 2) :
-    ⟪W1p.value (c • u + t • w), W1p.value v⟫_ℝ =
-      c * ⟪W1p.value u, W1p.value v⟫_ℝ + t * ⟪W1p.value w, W1p.value v⟫_ℝ := by
-  rw [W1p.value_add, inner_add_left, inner_value_smul_left, inner_value_smul_left]
-
-/-- Conversely, `s_m / (κ_m - κ_k) + t s_k` is a weak solution of `-u'' - κ_k u = s_m`. -/
+/-- `s_m / (κ_m - κ_k)` is a weak solution of `-u'' - κ_k u = s_m`. -/
 private theorem isWeakSolutionDirichlet_of_coe_eq (hab : a < b) {k m : ℕ} (hmk : m ≠ k)
-    {u : W1p0 volume (intervalDomain a b) 2} {sk sm : W1p0 volume (intervalDomain a b) 2}
-    (hskeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
-      energyFormH1 (fun _ ↦ 1) 0 0 (sk : W1p volume (intervalDomain a b) 2)
-          (v : W1p volume (intervalDomain a b) 2) =
-        (k * π / (b - a)) ^ 2 * ⟪W1p.value (sk : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
+    {u sm : W1p0 volume (intervalDomain a b) 2}
     (hsmeq : ∀ v : W1p0 volume (intervalDomain a b) 2,
       energyFormH1 (fun _ ↦ 1) 0 0 (sm : W1p volume (intervalDomain a b) 2)
           (v : W1p volume (intervalDomain a b) 2) =
         (m * π / (b - a)) ^ 2 * ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
           W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    {t : ℝ} (hus : (u : W1p volume (intervalDomain a b) 2) =
-      ((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ •
-          (sm : W1p volume (intervalDomain a b) 2) +
-        t • (sk : W1p volume (intervalDomain a b) 2))
+    (hus : (u : W1p volume (intervalDomain a b) 2) =
+      ((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ • (sm : W1p volume (intervalDomain a b) 2))
     (v : W1p0 volume (intervalDomain a b) 2) :
     energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -(k * π / (b - a)) ^ 2)
         (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2) =
       ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
         W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ := by
-  have hc : ((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ *
-      ((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2) = 1 :=
+  simp only [hus, energyFormH1_smul_left, energyFormH1_one_zero_neg, hsmeq v]
+  linear_combination ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
+      W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ *
     inv_mul_cancel₀ (sub_ne_zero.2 (sq_natCast_mul_pi_div_ne hab hmk))
-  have e1 := energyFormH1_one_zero_neg ((k * π / (b - a)) ^ 2)
-    (u : W1p volume (intervalDomain a b) 2) (v : W1p volume (intervalDomain a b) 2)
-  have e2 := energyFormH1_add_smul_smul_left (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹)
-    t (sm : W1p volume (intervalDomain a b) 2) (sk : W1p volume (intervalDomain a b) 2)
-    (v : W1p volume (intervalDomain a b) 2)
-  have e3 := inner_value_add_smul_smul_left (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹)
-    t (sm : W1p volume (intervalDomain a b) 2) (sk : W1p volume (intervalDomain a b) 2)
-    (v : W1p volume (intervalDomain a b) 2)
-  rw [← hus] at e2 e3
-  linear_combination e1 + e2 - (k * π / (b - a)) ^ 2 * e3 +
-    ((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ * hsmeq v + t * hskeq v +
-    ⟪W1p.value (sm : W1p volume (intervalDomain a b) 2),
-      W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ * hc
+
+/-- The value of `u - c s` is a.e. the value of `u` minus `c` times a representative of `s`. -/
+private theorem value_sub_smul_ae_eq (u s : W1p0 volume (intervalDomain a b) 2) (c : ℝ)
+    {g : EuclideanSpace ℝ (Fin 1) → ℝ}
+    (hs : W1p.value (s : W1p volume (intervalDomain a b) 2)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))] g) :
+    W1p.value ((u - c • s : W1p0 volume (intervalDomain a b) 2) :
+        W1p volume (intervalDomain a b) 2)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x ↦ W1p.value (u : W1p volume (intervalDomain a b) 2) x - c * g x := by
+  have hcoe : ((u - c • s : W1p0 volume (intervalDomain a b) 2) :
+      W1p volume (intervalDomain a b) 2) = (u : W1p volume (intervalDomain a b) 2) - c • s := rfl
+  rw [hcoe]
+  filter_upwards [W1p.value_sub_ae (u : W1p volume (intervalDomain a b) 2)
+      (c • (s : W1p volume (intervalDomain a b) 2)),
+    W1p.value_smul_ae c (s : W1p volume (intervalDomain a b) 2), hs] with x h1 h2 h3
+  rw [h1, Pi.sub_apply, h2, Pi.smul_apply, h3, smul_eq_mul]
 
 /-- **The resonant problem with forcing by another sine mode.** At the Dirichlet eigenvalue
 `κ_k = (k π / (b - a))²` of `(a, b)`, let `f` be the sine mode
@@ -763,27 +498,19 @@ theorem isWeakSolutionDirichlet_iff_exists_value_ae_eq_of_ae_eq_sin (hab : a < b
           fun x ↦ Real.sin (m * π * (x 0 - a) / (b - a)) /
               ((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2) +
             t * Real.sin (k * π * (x 0 - a) / (b - a)) := by
-  obtain ⟨sk, hsk, hskeq⟩ := exists_value_ae_eq_sin hab k
   obtain ⟨sm, hsm, hsmeq⟩ := exists_value_ae_eq_sin hab m
   rw [isWeakSolutionDirichlet_one_zero_const_iff]
   simp only [inner_eq_inner_value_of_ae_eq f hf hsm]
-  refine ⟨fun hu ↦ ?_, fun ⟨t, ht⟩ ↦ isWeakSolutionDirichlet_of_coe_eq hab hmk hskeq hsmeq
-    (coe_eq_smul_add_smul_of_value_ae_eq _ t hsk hsm (ht.trans (ae_of_all _ fun x ↦ by
-      simp only [div_eq_inv_mul]))) ⟩
-  obtain ⟨t, ht⟩ := exists_inner_eq_mul_inner_self
-    (W1p.value (u : W1p volume (intervalDomain a b) 2))
-    (W1p.value (sk : W1p volume (intervalDomain a b) 2))
-  refine ⟨t, ?_⟩
-  rw [value_eq_of_isWeakSolutionDirichlet hab hmk hsk hskeq hsm hsmeq hu ht]
-  filter_upwards [Lp.coeFn_add (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹ •
-      W1p.value (sm : W1p volume (intervalDomain a b) 2))
-      (t • W1p.value (sk : W1p volume (intervalDomain a b) 2)),
-    Lp.coeFn_smul (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹)
-      (W1p.value (sm : W1p volume (intervalDomain a b) 2)),
-    Lp.coeFn_smul t (W1p.value (sk : W1p volume (intervalDomain a b) 2)), hsm, hsk]
-    with x h1 h2 h3 h4 h5
-  rw [h1, Pi.add_apply, h2, h3, Pi.smul_apply, Pi.smul_apply, h4, h5, smul_eq_mul, smul_eq_mul]
-  ring
+  rw [forall_energyFormH1_eq_iff_forall_sub_eq_zero _
+      (isWeakSolutionDirichlet_of_coe_eq hab hmk hsmeq (u := ((m * π / (b - a)) ^ 2 -
+        (k * π / (b - a)) ^ 2)⁻¹ • sm) rfl),
+    forall_energyFormH1_eq_zero_iff_exists_value_ae_eq hab k]
+  have h0 := value_sub_smul_ae_eq u sm (((m * π / (b - a)) ^ 2 - (k * π / (b - a)) ^ 2)⁻¹) hsm
+  refine exists_congr fun t ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · filter_upwards [h, h0] with x h1 h2
+    linear_combination h1 - h2
+  · filter_upwards [h, h0] with x h1 h2
+    linear_combination h1 + h2
 
 /-- At the Dirichlet eigenvalue `κ_k`, the problem `-u'' - κ_k u = s_m` with a sine mode `s_m`,
 `m ≠ k`, has a weak solution, since `s_m` is orthogonal to the kernel `span s_k`. -/
@@ -798,7 +525,7 @@ theorem exists_isWeakSolutionDirichlet_of_ae_eq_sin (hab : a < b) {k m : ℕ} (h
   rw [exists_isWeakSolutionDirichlet_iff_setIntegral_mul_sin_eq_zero hab,
     setIntegral_mul_sin_eq_inner _ hsk, show f = W1p.value (sm : W1p volume (intervalDomain a b) 2)
       from Lp.ext (hf.trans hsm.symm)]
-  exact inner_value_eq_zero_of_energyFormH1_eq_of_ne (ae_of_all _ fun _ ↦ Matrix.isSymm_one)
+  exact inner_value_eq_zero_of_energyFormH1_eq_of_ne ae_isSymm_one
     (sq_natCast_mul_pi_div_ne hab hmk) hsmeq hskeq
 
 /-! ### The examples on `(0, π)` -/
@@ -806,11 +533,16 @@ theorem exists_isWeakSolutionDirichlet_of_ae_eq_sin (hab : a < b) {k m : ℕ} (h
 /-- The first sine mode of `(0, π)` is `sin x`. -/
 private theorem sin_one_mul_pi_div (x : ℝ) :
     Real.sin (((1 : ℕ) : ℝ) * π * (x - 0) / (π - 0)) = Real.sin x := by
-  rw [Nat.cast_one, one_mul, sub_zero, sub_zero, mul_div_cancel_left₀ _ Real.pi_ne_zero]
+  congr 1
+  push_cast
+  field_simp
+  ring
 
 /-- The first Dirichlet eigenvalue of `(0, π)` is `1`. -/
 private theorem sq_one_mul_pi_div : (((1 : ℕ) : ℝ) * π / (π - 0)) ^ 2 = 1 := by
-  rw [Nat.cast_one, one_mul, sub_zero, div_self Real.pi_ne_zero, one_pow]
+  push_cast
+  field_simp
+  ring
 
 /-- **`-u'' - u = 1` has no weak solution on `(0, π)`.** The constant forcing `1` is not
 orthogonal to the kernel `span (sin x)`, since `∫_0^π sin x dx = 2`. -/
@@ -831,13 +563,16 @@ theorem not_exists_isWeakSolutionDirichlet_neg_one_of_ae_eq_one
 /-- The second sine mode of `(0, π)` is `sin 2x`. -/
 private theorem sin_two_mul_pi_div (x : ℝ) :
     Real.sin (((2 : ℕ) : ℝ) * π * (x - 0) / (π - 0)) = Real.sin (2 * x) := by
-  rw [Nat.cast_ofNat, sub_zero, sub_zero, mul_assoc, mul_comm π, ← mul_assoc,
-    mul_div_cancel_right₀ _ Real.pi_ne_zero]
+  congr 1
+  push_cast
+  field_simp
+  ring
 
 /-- The second Dirichlet eigenvalue of `(0, π)` is `4`. -/
 private theorem sq_two_mul_pi_div : (((2 : ℕ) : ℝ) * π / (π - 0)) ^ 2 = 4 := by
-  rw [Nat.cast_ofNat, sub_zero, mul_div_cancel_right₀ _ Real.pi_ne_zero]
-  norm_num
+  push_cast
+  field_simp
+  ring
 
 /-- **The resonant problem `-u'' - u = sin 2x` on `(0, π)`.** The forcing `sin 2x` is orthogonal
 to the kernel `span (sin x)`, so the problem is solvable
