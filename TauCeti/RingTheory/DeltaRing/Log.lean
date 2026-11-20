@@ -132,12 +132,15 @@ theorem exists_frobenius_iterate_eq (D : DeltaLogStructure p α) (m : M) (n : �
   | zero => exact ⟨0, by simp⟩
   | succ n ih =>
     obtain ⟨a, ha⟩ := ih
+    -- `φ^[n + 1] (α m) = α m ^ p ^ (n + 1) * (c (m ^ p ^ n) * φ (1 + p * a))`, and the
+    -- product of two elements of `1 + p * A` lies in `1 + p * A`.
+    have h : (frobenius p A)^[n + 1] (α m) =
+        α m ^ p ^ (n + 1) * (D.correction (m ^ p ^ n) * frobenius p A (1 + p * a)) := by
+      simp only [Function.iterate_succ_apply', ha, map_mul, map_pow, D.frobenius_apply]
+      ring
     refine ⟨D.deltaLog (m ^ p ^ n) + frobenius p A a +
-      p * D.deltaLog (m ^ p ^ n) * frobenius p A a, ?_⟩
-    have hc : D.correction m ^ p ^ n = 1 + p * D.deltaLog (m ^ p ^ n) := by
-      rw [← map_pow, correction_apply]
-    rw [Function.iterate_succ_apply', ha, map_mul, map_pow, D.frobenius_apply, mul_pow, hc,
-      map_add, map_one, map_mul, map_natCast, pow_succ', pow_mul]
+      p * D.deltaLog (m ^ p ^ n) * frobenius p A a, h.trans ?_⟩
+    simp only [correction_apply, map_add, map_one, map_mul, map_natCast]
     ring
 
 end Frobenius
@@ -146,7 +149,7 @@ section Uniqueness
 
 /-- If `α` takes values in the nonzerodivisors of `A`, two `δ_log`-structures on `α`
 coincide. -/
-theorem ext_of_mem_nonZeroDivisors (hα : ∀ m, α m ∈ nonZeroDivisors A)
+theorem eq_of_mem_nonZeroDivisors (hα : ∀ m, α m ∈ nonZeroDivisors A)
     (D D' : DeltaLogStructure p α) : D = D' := by
   ext m
   rw [← mul_cancel_left_mem_nonZeroDivisors (pow_mem (hα m) p), D.pow_mul_deltaLog,
@@ -156,7 +159,7 @@ theorem ext_of_mem_nonZeroDivisors (hα : ∀ m, α m ∈ nonZeroDivisors A)
 on `α`. -/
 theorem subsingleton_of_mem_nonZeroDivisors (hα : ∀ m, α m ∈ nonZeroDivisors A) :
     Subsingleton (DeltaLogStructure p α) :=
-  ⟨ext_of_mem_nonZeroDivisors hα⟩
+  ⟨eq_of_mem_nonZeroDivisors hα⟩
 
 end Uniqueness
 
@@ -187,12 +190,6 @@ noncomputable def ofPowDvd (hα : ∀ m, α m ∈ nonZeroDivisors A)
     rw [map_mul, delta_mul, hm, hm', mul_pow] at h
     refine (mul_cancel_left_mem_nonZeroDivisors hreg).mp ?_
     linear_combination -h
-
-/-- Under `ofPowDvd hα hdvd`, `δ_log m` is characterised by `δ (α m) = α m ^ p * δ_log m`. -/
-theorem delta_eq_pow_mul_deltaLog_ofPowDvd (hα : ∀ m, α m ∈ nonZeroDivisors A)
-    (hdvd : ∀ m, α m ^ p ∣ delta p (α m)) (m : M) :
-    delta p (α m) = α m ^ p * (ofPowDvd hα hdvd).deltaLog m :=
-  (hdvd m).choose_spec
 
 /-- For a prelog structure by nonzerodivisors, a `δ_log`-structure exists if and only if
 `α m ^ p` divides `δ (α m)` for every `m`. -/
@@ -277,7 +274,7 @@ theorem deltaLog_units (u : Aˣ) :
 /-- The units of a `δ`-ring carry exactly one `δ_log`-structure. -/
 instance instUniqueUnits : Unique (DeltaLogStructure p (Units.coeHom A)) where
   default := units p A
-  uniq D := ext_of_mem_nonZeroDivisors (fun u => u.isUnit.mem_nonZeroDivisors) D _
+  uniq D := eq_of_mem_nonZeroDivisors (fun u => u.isUnit.mem_nonZeroDivisors) D _
 
 end Units
 
@@ -325,6 +322,8 @@ structure Hom (D : DeltaLogStructure p α) (E : DeltaLogStructure p β) where
   deltaLog_monoidHom (m : M) : E.deltaLog (monoidHom m) = ringHom (D.deltaLog m)
 
 namespace Hom
+
+attribute [simp] map_delta apply_monoidHom deltaLog_monoidHom
 
 /-- The identity morphism of a `δ_log`-ring. -/
 def id (D : DeltaLogStructure p α) : Hom D D where
@@ -379,9 +378,8 @@ theorem comp_assoc {K R : Type*} [CommRing R] [DeltaRing p R] [Monoid K] {ρ : K
 
 /-- A morphism of `δ_log`-rings commutes with the Frobenius lifts. -/
 theorem map_frobenius [Fact p.Prime] (f : Hom D E) (x : A) :
-    f.ringHom (frobenius p A x) = frobenius p B (f.ringHom x) := by
-  rw [DeltaRing.frobenius_apply, DeltaRing.frobenius_apply, map_add, map_mul, map_pow,
-    map_natCast, f.map_delta]
+    f.ringHom (frobenius p A x) = frobenius p B (f.ringHom x) :=
+  DeltaRing.map_frobenius f.ringHom f.map_delta x
 
 /-- A morphism of `δ_log`-rings intertwines the correction factors. -/
 theorem correction_monoidHom (f : Hom D E) (m : M) :
@@ -400,7 +398,7 @@ def toMap (D : DeltaLogStructure p α) (f : A →+* B)
   ringHom := f
   monoidHom := MonoidHom.id M
   map_delta := hf
-  apply_monoidHom _ := rfl
+  apply_monoidHom m := by rw [MonoidHom.id_apply, MonoidHom.comp_apply, MonoidHom.coe_ofClass]
   deltaLog_monoidHom _ := rfl
 
 @[simp]
