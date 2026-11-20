@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.RingTheory.NovikovModule.Topology
+public import TauCeti.RingTheory.NovikovSeries.Convolution
+public import TauCeti.RingTheory.NovikovSeries.Grading
 public import TauCeti.RingTheory.NovikovSeries.Map
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.ToLin
@@ -18,8 +20,11 @@ public import Mathlib.LinearAlgebra.TensorProduct.Basis
 Let `H` be an additive group with a period homomorphism `N : H →+ ℝ`, and let `V` be a module
 over a ring `R`. A Novikov series with coefficients in `V`, an element of
 `TauCeti.NovikovSeries V H N`, is a function `v : H → V`, `A ↦ v_A`, with finitely many nonzero
-values on `{A | N A < C}` for every real `C`. These form the completed module `V ⊗̂ Λ` over the
-Novikov ring `Λ = NovikovSeries R H N`. For `H = H₂(X; ℤ)` and the symplectic area `N = ω`, and
+values on `{A | N A < C}` for every real `C`. They form an `R`-module, which models the completed
+module `V ⊗̂ Λ` over the Novikov ring `Λ = NovikovSeries R H N`; no `Λ`-action is defined on it
+here. Its `Λ`-module structure is the one moved over by the coordinate map `κ_b` below from
+`TauCeti.NovikovModule.module`, and by `TauCeti.NovikovSeries.changeOfBasis` it does not depend
+on the basis `b`. For `H = H₂(X; ℤ)` and the symplectic area `N = ω`, and
 `V = H^*(X; ℚ)`, it is the state space on which quantum products and Gromov–Witten operations of
 a closed symplectic manifold `X` take values, and its Cauchy product
 `(v ⋆ w)_C = ∑_(A + A' = C) v_A ⊗ w_(A')` is the shape of every such product.
@@ -45,9 +50,15 @@ combination with coefficient `b^*_i (v_A)` at `⟨i, A⟩`. It is an `R`-linear 
   tensor product `V → W → V ⊗ W`, into the kernel product
   `TauCeti.NovikovModule.kernelProduct` of the kernel `TauCeti.NovikovSeries.cauchyKernel`, in
   the tensor basis `b ⊗ b'` (`TauCeti.NovikovSeries.toNovikovModule_convolution_mk`). The kernel
-  has potential bound `0` and is invariant under translating an input and the output together, so
-  the bilinear theory of `TauCeti.RingTheory.NovikovModule.Bilinear` (Novikov-bilinearity,
-  continuity, gradings) applies to it;
+  has potential bound `0` (`TauCeti.NovikovSeries.sigmaPotential_le_of_cauchyKernel_ne_zero`),
+  a single output for each pair of inputs (`TauCeti.NovikovSeries.cauchyKernel_mem`), and is
+  invariant under translating an input and the output together
+  (`TauCeti.NovikovSeries.cauchyKernel_vadd_left`,
+  `TauCeti.NovikovSeries.cauchyKernel_vadd_right`). These are the hypotheses of
+  `TauCeti.NovikovModule.novikovKernelProduct`, which makes the kernel product Novikov-bilinear,
+  and the first two are those of `TauCeti.NovikovModule.continuous_kernelProduct`, its joint
+  continuity. The degree hypothesis of `TauCeti.NovikovModule.kernelProduct_mem_gradeBy` is not
+  proved here for the Cauchy kernel;
 * for two bases `b` and `b₁`, the composite `κ_(b₁) ∘ κ_b⁻¹` is linear over the Novikov ring for
   the module structures `TauCeti.NovikovModule.module` of both sides
   (`TauCeti.NovikovSeries.changeOfBasis`), and its matrix in the Novikov bases of the lifts
@@ -60,12 +71,9 @@ For `V = R` with the basis `1`, the coordinate of `κ_1 v` at the lift `⟨i, 0�
 
 ## Main definitions
 
-* `TauCeti.NovikovSeries.congrLinearEquiv`, `TauCeti.NovikovSeries.piLinearEquiv`,
-  `TauCeti.NovikovSeries.basisCoords`: coefficientwise linear equivalences, and the coordinates of
-  a Novikov series with coefficients in `V` as a family of scalar Novikov series.
-* `TauCeti.NovikovSeries.toNovikovModule`: the coordinate map `κ_b`.
-* `TauCeti.NovikovSeries.gradeByCoeff`: the series of a given degree.
-* `TauCeti.NovikovSeries.convolution`: the convolution of Novikov series along a bilinear map.
+* `TauCeti.NovikovSeries.sigmaPotential`: the potential `⟨i, A⟩ ↦ -N A` of the generators.
+* `TauCeti.NovikovSeries.toNovikovModule`: the coordinate map `κ_b`, built from the coordinates
+  `TauCeti.NovikovSeries.basisCoords` of `TauCeti.RingTheory.NovikovSeries.Map`.
 * `TauCeti.NovikovSeries.cauchyKernel`: the kernel of the Cauchy product in basis coordinates.
 * `TauCeti.NovikovSeries.changeOfBasis`: `κ_(b₁) ∘ κ_b⁻¹` as a Novikov-linear equivalence.
 
@@ -89,91 +97,6 @@ namespace TauCeti
 namespace NovikovSeries
 
 variable {R : Type*}
-
-section Equiv
-
-variable {H : Type*} [AddZeroClass H] {N : H →+ ℝ} [Semiring R] {V W : Type*} [AddCommMonoid V]
-  [Module R V] [AddCommMonoid W] [Module R W]
-
-/-- A linear equivalence of coefficients, applied coefficientwise to Novikov series: the
-pushforward `TauCeti.NovikovSeries.map` along `e` and the identity of exponents, which is linear
-for the ground-ring actions. -/
-def congrLinearEquiv (e : V ≃ₗ[R] W) : NovikovSeries V H N ≃ₗ[R] NovikovSeries W H N where
-  toFun := NovikovSeries.map e.toAddEquiv.toAddMonoidHom (AddMonoidHom.id H)
-    exists_period_rescale_id
-  invFun := NovikovSeries.map e.symm.toAddEquiv.toAddMonoidHom (AddMonoidHom.id H)
-    exists_period_rescale_id
-  left_inv v := by ext h; simp
-  right_inv w := by ext h; simp
-  map_add' := map_add _
-  map_smul' c v := by ext h; simp
-
-/-- The coefficients of `congrLinearEquiv e v` are the images under `e` of those of `v`. -/
-@[simp]
-theorem coeff_congrLinearEquiv (e : V ≃ₗ[R] W) (v : NovikovSeries V H N) (h : H) :
-    (congrLinearEquiv e v).coeff h = e (v.coeff h) := by
-  simp [congrLinearEquiv]
-
-/-- The coefficients of `(congrLinearEquiv e).symm w` are the images under `e.symm` of those of
-`w`. -/
-@[simp]
-theorem coeff_congrLinearEquiv_symm (e : V ≃ₗ[R] W) (w : NovikovSeries W H N) (h : H) :
-    ((congrLinearEquiv e).symm w).coeff h = e.symm (w.coeff h) := by
-  simp [congrLinearEquiv]
-
-variable {ι : Type*} [Finite ι] {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
-
-variable (R) in
-/-- Novikov series with coefficients in a finite product are families of Novikov series. -/
-def piLinearEquiv : NovikovSeries (∀ i, M i) H N ≃ₗ[R] (∀ i, NovikovSeries (M i) H N) where
-  toFun v i :=
-    { coeff h := v.coeff h i
-      finite_lt C := (v.finite_lt C).subset fun h hh =>
-        ⟨fun hv => hh.1 (by rw [hv, Pi.zero_apply]), hh.2⟩ }
-  invFun v :=
-    { coeff h i := (v i).coeff h
-      finite_lt C := (Set.finite_iUnion fun i => (v i).finite_lt C).subset fun h hh => by
-        obtain ⟨i, hi⟩ := Function.ne_iff.1 hh.1
-        exact Set.mem_iUnion.2 ⟨i, hi, hh.2⟩ }
-  left_inv v := by ext h i; rfl
-  right_inv v := by ext i h; rfl
-  map_add' v w := by ext i h; rfl
-  map_smul' c v := by ext i h; rfl
-
-/-- The `i`-th series of `piLinearEquiv R v` has the `i`-th components of the coefficients of
-`v`. -/
-@[simp]
-theorem coeff_piLinearEquiv_apply (v : NovikovSeries (∀ i, M i) H N) (i : ι) (h : H) :
-    (piLinearEquiv R v i).coeff h = v.coeff h i :=
-  (rfl)
-
-/-- The coefficients of `(piLinearEquiv R).symm v` collect the coefficients of the series
-`v i`. -/
-@[simp]
-theorem coeff_piLinearEquiv_symm_apply (v : ∀ i, NovikovSeries (M i) H N) (h : H) (i : ι) :
-    ((piLinearEquiv R).symm v).coeff h i = (v i).coeff h :=
-  (rfl)
-
-/-- The coordinates of a Novikov series with coefficients in a module with a finite basis: one
-Novikov series with scalar coefficients for each basis vector. -/
-def basisCoords (b : Module.Basis ι R V) :
-    NovikovSeries V H N ≃ₗ[R] (ι → NovikovSeries R H N) :=
-  (congrLinearEquiv b.equivFun).trans (piLinearEquiv R)
-
-/-- The `i`-th coordinate series has the `i`-th basis coordinates of the coefficients. -/
-@[simp]
-theorem coeff_basisCoords (b : Module.Basis ι R V) (v : NovikovSeries V H N) (i : ι) (h : H) :
-    (basisCoords b v i).coeff h = b.repr (v.coeff h) i := by
-  simp [basisCoords]
-
-/-- A family of scalar series is the coordinates of the series with coefficients
-`∑ i, (v i)_h • b i`. -/
-theorem coeff_basisCoords_symm [Fintype ι] (b : Module.Basis ι R V)
-    (v : ι → NovikovSeries R H N) (h : H) :
-    ((basisCoords b).symm v).coeff h = ∑ i, (v i).coeff h • b i := by
-  simp [basisCoords, Module.Basis.equivFun_symm_apply]
-
-end Equiv
 
 section Coordinates
 
@@ -216,10 +139,11 @@ theorem toNovikovModule_apply_val (b : Module.Basis ι R V) (v : NovikovSeries V
 
 /-- The inverse of the coordinate map reassembles the coefficient at `A` from the coefficients
 at the generators `⟨i, A⟩`. -/
+@[simp]
 theorem coeff_toNovikovModule_symm [Fintype ι] (b : Module.Basis ι R V)
     (a : NovikovModule R (sigmaPotential N ι)) (A : H) :
     ((toNovikovModule b).symm a).coeff A = ∑ i, a.val ⟨i, A⟩ • b i := by
-  simp [toNovikovModule, coeff_basisCoords_symm]
+  simp [toNovikovModule]
 
 /-- In the coordinates of the lifts `⟨i, 0⟩` of `TauCeti.NovikovModule.coordinates`, the
 coordinate map of `b` is the family of scalar Novikov series `A ↦ b^*_i (v_A)`. -/
@@ -275,44 +199,6 @@ section Grading
 
 variable {Γ : Type*} [AddCommGroup Γ]
 
-section Def
-
-variable {H : Type*} [AddZeroClass H] {N : H →+ ℝ} [Semiring R] {V : Type*} [AddCommMonoid V]
-  [Module R V]
-
-variable (N) in
-/-- The Novikov series of degree `D` with coefficients in a graded module: for a grading `𝒱` of
-`V` and a degree `δ A` of the exponents, those `v` with `v_A ∈ 𝒱 (D - δ A)` for every `A`. For
-`V = R` concentrated in degree `0` these are the series supported on `δ⁻¹ {D}`
-(`TauCeti.NovikovSeries.gradeByCoeff_ite_eq_gradeBy`). -/
-def gradeByCoeff (𝒱 : Γ → Submodule R V) (δ : H → Γ) (D : Γ) :
-    Submodule R (NovikovSeries V H N) where
-  carrier := {v | ∀ A, v.coeff A ∈ 𝒱 (D - δ A)}
-  zero_mem' A := by simp
-  add_mem' hv hw A := by simpa using add_mem (hv A) (hw A)
-  smul_mem' c v hv A := by simpa using Submodule.smul_mem _ c (hv A)
-
-/-- A series has degree `D` exactly when each coefficient `v_A` has degree `D - δ A`. -/
-@[simp]
-theorem mem_gradeByCoeff {𝒱 : Γ → Submodule R V} {δ : H → Γ} {D : Γ}
-    {v : NovikovSeries V H N} : v ∈ gradeByCoeff N 𝒱 δ D ↔ ∀ A, v.coeff A ∈ 𝒱 (D - δ A) :=
-  Iff.rfl
-
-/-- For `R` itself concentrated in degree `0`, the series of degree `D` are those supported on
-the exponents of degree `D`, the pieces `TauCeti.NovikovSeries.gradeBy` of the Novikov ring. -/
-theorem gradeByCoeff_ite_eq_gradeBy [DecidableEq Γ] (δ : H → Γ) (D : Γ) :
-    gradeByCoeff N (fun k => if k = 0 then ⊤ else ⊥ : Γ → Submodule R R) δ D =
-      gradeBy R N δ D := by
-  ext v
-  simp only [mem_gradeByCoeff, mem_gradeBy_iff, Set.subset_def, mem_support, Set.mem_preimage,
-    Set.mem_singleton_iff, sub_eq_zero]
-  refine forall_congr' fun A => ?_
-  by_cases hA : D = δ A
-  · simp [hA]
-  · simp [hA, Ne.symm hA]
-
-end Def
-
 variable {H : Type*} [AddGroup H] {N : H →+ ℝ} {ι : Type*} [Finite ι] [Semiring R] {V : Type*}
   [AddCommMonoid V] [Module R V]
 
@@ -333,162 +219,6 @@ theorem toNovikovModule_mem_gradeBy_iff (b : Module.Basis ι R V) {𝒱 : Γ →
   · simpa [eq_sub_iff_add_eq] using hv A (by simpa using hi)
 
 end Grading
-
-section Convolution
-
-variable {H : Type*} [AddZeroClass H] {N : H →+ ℝ} [CommSemiring R] {V W U : Type*}
-  [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W] [AddCommMonoid U] [Module R U]
-  (β : V →ₗ[R] W →ₗ[R] U)
-
-/-- The convolution of two Novikov series with coefficients in `V` and `W` along a bilinear map
-`β`, before bundling: the coefficient at `h` is the finite sum of `β (v_u) (w_u')` over the pairs
-of support exponents with `u + u' = h`. -/
-private def convolve (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
-    NovikovSeries U H N where
-  coeff h := ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, β (v.coeff p.1) (w.coeff p.2)
-  finite_lt C := ((finite_setOf_period_add_lt v w C).image fun p => p.1 + p.2).subset <| by
-    rintro h ⟨hh, hC⟩
-    obtain ⟨p, hp, -⟩ := exists_ne_zero_of_sum_ne_zero hh
-    rw [Set.Finite.mem_toFinset] at hp
-    exact ⟨p, ⟨by rw [hp.1]; exact hC, hp.2⟩, hp.1⟩
-
-/-- A coefficient of the convolution is the sum over any finite set of pairs adding up to the
-exponent that contains every pair of support exponents. -/
-private theorem coeff_convolve_eq_sum {v : NovikovSeries V H N} {w : NovikovSeries W H N} {h : H}
-    {s : Finset (H × H)} (hs : ∀ p ∈ s, p.1 + p.2 = h)
-    (hvw : ∀ u u', u + u' = h → v.coeff u ≠ 0 → w.coeff u' ≠ 0 → (u, u') ∈ s) :
-    (convolve β v w).coeff h = ∑ p ∈ s, β (v.coeff p.1) (w.coeff p.2) := by
-  refine sum_subset (fun p hp => ?_) fun p hps hp => ?_
-  · rw [Set.Finite.mem_toFinset] at hp
-    exact hvw p.1 p.2 hp.1 hp.2.1 hp.2.2
-  · rw [Set.Finite.mem_toFinset] at hp
-    by_cases hv : v.coeff p.1 = 0
-    · rw [hv, map_zero, LinearMap.zero_apply]
-    by_cases hw : w.coeff p.2 = 0
-    · rw [hw, map_zero]
-    exact absurd ⟨hs p hps, hv, hw⟩ hp
-
-/-- The pairs of support exponents of `v` and `w` adding up to `h`, as a finite set. -/
-private abbrev supportPairs (v : NovikovSeries V H N) (w : NovikovSeries W H N) (h : H) :
-    Finset (H × H) :=
-  (finite_setOf_add_eq v w h).toFinset
-
-private theorem mem_supportPairs {v : NovikovSeries V H N} {w : NovikovSeries W H N} {h : H}
-    {u u' : H} : (u, u') ∈ supportPairs v w h ↔ u + u' = h ∧ v.coeff u ≠ 0 ∧ w.coeff u' ≠ 0 :=
-  Set.Finite.mem_toFinset _
-
-private theorem add_eq_of_mem_supportPairs {v : NovikovSeries V H N} {w : NovikovSeries W H N}
-    {h : H} {p : H × H} (hp : p ∈ supportPairs v w h) : p.1 + p.2 = h :=
-  ((Set.Finite.mem_toFinset _).1 hp).1
-
-private theorem convolve_add_left (v v' : NovikovSeries V H N) (w : NovikovSeries W H N) :
-    convolve β (v + v') w = convolve β v w + convolve β v' w := by
-  classical
-  ext h
-  have hs : ∀ p ∈ supportPairs v w h ∪ supportPairs v' w h, p.1 + p.2 = h := fun p hp => by
-    rcases Finset.mem_union.1 hp with hp | hp <;> exact add_eq_of_mem_supportPairs hp
-  have h₁ := coeff_convolve_eq_sum β (v := v) (w := w) hs fun u u' huu' hv hw =>
-    Finset.mem_union_left _ (mem_supportPairs.2 ⟨huu', hv, hw⟩)
-  have h₂ := coeff_convolve_eq_sum β (v := v') (w := w) hs fun u u' huu' hv hw =>
-    Finset.mem_union_right _ (mem_supportPairs.2 ⟨huu', hv, hw⟩)
-  have h₀ := coeff_convolve_eq_sum β (v := v + v') (w := w) hs fun u u' huu' hv hw => by
-    rw [coeff_add] at hv
-    by_cases hv' : v.coeff u = 0
-    · exact Finset.mem_union_right _ (mem_supportPairs.2 ⟨huu', by simpa [hv'] using hv, hw⟩)
-    · exact Finset.mem_union_left _ (mem_supportPairs.2 ⟨huu', hv', hw⟩)
-  rw [coeff_add, h₀, h₁, h₂, ← sum_add_distrib]
-  simp only [coeff_add, map_add, LinearMap.add_apply]
-
-private theorem convolve_add_right (v : NovikovSeries V H N) (w w' : NovikovSeries W H N) :
-    convolve β v (w + w') = convolve β v w + convolve β v w' := by
-  classical
-  ext h
-  have hs : ∀ p ∈ supportPairs v w h ∪ supportPairs v w' h, p.1 + p.2 = h := fun p hp => by
-    rcases Finset.mem_union.1 hp with hp | hp <;> exact add_eq_of_mem_supportPairs hp
-  have h₁ := coeff_convolve_eq_sum β (v := v) (w := w) hs fun u u' huu' hv hw =>
-    Finset.mem_union_left _ (mem_supportPairs.2 ⟨huu', hv, hw⟩)
-  have h₂ := coeff_convolve_eq_sum β (v := v) (w := w') hs fun u u' huu' hv hw =>
-    Finset.mem_union_right _ (mem_supportPairs.2 ⟨huu', hv, hw⟩)
-  have h₀ := coeff_convolve_eq_sum β (v := v) (w := w + w') hs fun u u' huu' hv hw => by
-    rw [coeff_add] at hw
-    by_cases hw' : w.coeff u' = 0
-    · exact Finset.mem_union_right _ (mem_supportPairs.2 ⟨huu', hv, by simpa [hw'] using hw⟩)
-    · exact Finset.mem_union_left _ (mem_supportPairs.2 ⟨huu', hv, hw'⟩)
-  rw [coeff_add, h₀, h₁, h₂, ← sum_add_distrib]
-  simp only [coeff_add, map_add]
-
-private theorem convolve_smul_left (c : R) (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
-    convolve β (c • v) w = c • convolve β v w := by
-  ext h
-  have hs : ∀ p ∈ supportPairs v w h, p.1 + p.2 = h := fun p hp => add_eq_of_mem_supportPairs hp
-  have h₁ := coeff_convolve_eq_sum β (v := v) (w := w) hs fun u u' huu' hv hw =>
-    mem_supportPairs.2 ⟨huu', hv, hw⟩
-  have h₀ := coeff_convolve_eq_sum β (v := c • v) (w := w) hs fun u u' huu' hv hw =>
-    mem_supportPairs.2 ⟨huu', fun h0 => hv (by rw [coeff_smul, h0, smul_zero]), hw⟩
-  rw [coeff_smul, h₀, h₁, smul_sum]
-  simp only [coeff_smul, map_smul, LinearMap.smul_apply]
-
-private theorem convolve_smul_right (c : R) (v : NovikovSeries V H N) (w : NovikovSeries W H N) :
-    convolve β v (c • w) = c • convolve β v w := by
-  ext h
-  have hs : ∀ p ∈ supportPairs v w h, p.1 + p.2 = h := fun p hp => add_eq_of_mem_supportPairs hp
-  have h₁ := coeff_convolve_eq_sum β (v := v) (w := w) hs fun u u' huu' hv hw =>
-    mem_supportPairs.2 ⟨huu', hv, hw⟩
-  have h₀ := coeff_convolve_eq_sum β (v := v) (w := c • w) hs fun u u' huu' hv hw =>
-    mem_supportPairs.2 ⟨huu', hv, fun h0 => hw (by rw [coeff_smul, h0, smul_zero])⟩
-  rw [coeff_smul, h₀, h₁, smul_sum]
-  simp only [coeff_smul, map_smul]
-
-/-- **The convolution of Novikov series along a bilinear map.** For an `R`-bilinear map
-`β : V → W → U`, the coefficient of `convolution β v w` at `h` is `∑_(u + u' = h) β (v_u) (w_u')`,
-a finite sum. For `β` the multiplication of `R` this is the product of Novikov series, and for
-the tensor product `V → W → V ⊗ W` it is the Cauchy product of Novikov series with coefficients in
-`V` and `W`. -/
-def convolution :
-    NovikovSeries V H N →ₗ[R] NovikovSeries W H N →ₗ[R] NovikovSeries U H N :=
-  LinearMap.mk₂ R (convolve β) (convolve_add_left β) (convolve_smul_left β)
-    (convolve_add_right β) (convolve_smul_right β)
-
-/-- A coefficient of the convolution is the sum of `β (v_u) (w_u')` over the finite set of pairs
-of support exponents with `u + u' = h`. -/
-theorem coeff_convolution (v : NovikovSeries V H N) (w : NovikovSeries W H N) (h : H) :
-    (convolution β v w).coeff h =
-      ∑ p ∈ (finite_setOf_add_eq v w h).toFinset, β (v.coeff p.1) (w.coeff p.2) :=
-  (rfl)
-
-/-- A coefficient of the convolution may be computed over any finite set of pairs adding up to
-the exponent that contains every pair of support exponents. -/
-theorem coeff_convolution_eq_sum {v : NovikovSeries V H N} {w : NovikovSeries W H N} {h : H}
-    {s : Finset (H × H)} (hs : ∀ p ∈ s, p.1 + p.2 = h)
-    (hvw : ∀ u u', u + u' = h → v.coeff u ≠ 0 → w.coeff u' ≠ 0 → (u, u') ∈ s) :
-    (convolution β v w).coeff h = ∑ p ∈ s, β (v.coeff p.1) (w.coeff p.2) :=
-  coeff_convolve_eq_sum β hs hvw
-
-/-- Convolving monomials adds their exponents. -/
-@[simp]
-theorem convolution_single_single (g g' : H) (x : V) (y : W) :
-    convolution β (single g x : NovikovSeries V H N) (single g' y) = single (g + g') (β x y) := by
-  classical
-  ext h
-  by_cases hh : g + g' = h
-  · rw [coeff_convolution_eq_sum β (s := {(g, g')}) (by simpa using hh) fun u u' _ hu hu' => ?_,
-      sum_singleton, coeff_single_same, coeff_single_same, ← hh, coeff_single_same]
-    rw [Finset.mem_singleton, Prod.mk.injEq]
-    exact ⟨by_contra fun hug => hu (coeff_single_of_ne hug x),
-      by_contra fun hug => hu' (coeff_single_of_ne hug y)⟩
-  · rw [coeff_convolution_eq_sum β (s := ∅) (by simp) fun u u' huu' hu hu' => ?_, sum_empty,
-      coeff_single_of_ne (Ne.symm hh)]
-    have hu : u = g := by_contra fun hug => hu (coeff_single_of_ne hug x)
-    have hu' : u' = g' := by_contra fun hug => hu' (coeff_single_of_ne hug y)
-    exact absurd (hu ▸ hu' ▸ huu') hh
-
-/-- Convolution along the multiplication of `R` is the product of Novikov series. -/
-theorem convolution_mul (a b : NovikovSeries R H N) :
-    convolution (LinearMap.mul R R) a b = a * b := by
-  ext h
-  simp [coeff_convolution, coeff_mul]
-
-end Convolution
 
 section CauchyProduct
 
@@ -659,8 +389,7 @@ theorem toMatrix_changeOfBasis [DecidableEq ι] (b : Module.Basis ι R V)
   refine Matrix.ext fun j i => ?_
   rw [LinearMap.toMatrix_apply, NovikovModule.basis_repr_apply, LinearEquiv.coe_coe,
     changeOfBasis_apply, coordinates_toNovikovModule_toNovikovModule_symm,
-    NovikovModule.coordinates_basis, Matrix.mulVec_single_one]
-  rfl
+    NovikovModule.coordinates_basis, Matrix.mulVec_single_one, Matrix.col_apply]
 
 end ChangeOfBasis
 
