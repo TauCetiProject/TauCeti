@@ -24,10 +24,11 @@ which is the cellular differential. So the first page is the cellular chain comp
 placed on that line (`TauCeti.skeletalSpectralSequencePageTwoIso`).
 
 Consequently the next page is cellular homology, which is singular homology: on the line it is
-`Hₙ(B)` (`TauCeti.skeletalSpectralSequencePageThreeXIso`) and off it zero
-(`TauCeti.isZero_skeletalSpectralSequence_page_three_X`). The relative groups of the first page
-are in general not yet these groups, because the first differential need not vanish: for `RP²`
-it is multiplication by `2` from the cell of dimension `2` to the cell of dimension `1`.
+`Hₙ(B)`, provided the comparison map of the `(n + 1)`-skeleton with `B` is an isomorphism on
+`Hₙ` (as for finite-dimensional complexes) (`TauCeti.skeletalSpectralSequencePageThreeXIso`), and
+off it zero (`TauCeti.isZero_skeletalSpectralSequence_page_three_X`). The relative groups of the
+first page are in general not yet these groups, because the first differential need not vanish:
+for `RP²` it is multiplication by `2` from the cell of dimension `2` to the cell of dimension `1`.
 
 ## Main results
 
@@ -40,7 +41,8 @@ it is multiplication by `2` from the cell of dimension `2` to the cell of dimens
   extended along `TauCeti.skeletalLineEmbedding`.
 * `TauCeti.skeletalSpectralSequencePageThreeXIso` and
   `TauCeti.isZero_skeletalSpectralSequence_page_three_X`: the second page is the singular homology
-  of `B` on the line and zero off it.
+  of `B` on the line, when the skeleton comparison map is an isomorphism on homology, and zero off
+  it.
 
 ## References
 
@@ -218,14 +220,7 @@ private def pageTwoIsoAux
       skeletalLineEmbedding := ⟨fun pq h ↦ isZero_page_two_X_aux R hX hXs pq h⟩
   asIso (HomologicalComplex.πStupidTrunc ((filteredSpaceSpectralSequence R hX).page 2 le_rfl)
       skeletalLineEmbedding) ≪≫
-    { hom := HomologicalComplex.extendMap (restrictionIsoAux R hX hXs).hom skeletalLineEmbedding
-      inv := HomologicalComplex.extendMap (restrictionIsoAux R hX hXs).inv skeletalLineEmbedding
-      hom_inv_id := by
-        rw [← HomologicalComplex.extendMap_comp, Iso.hom_inv_id, HomologicalComplex.extendMap_id]
-        -- `stupidTrunc` is by definition the extension of the restriction.
-        rfl
-      inv_hom_id := by
-        rw [← HomologicalComplex.extendMap_comp, Iso.inv_hom_id, HomologicalComplex.extendMap_id] }
+    (skeletalLineEmbedding.extendFunctor A).mapIso (restrictionIsoAux R hX hXs)
 
 include hXs in
 /-- On the line, `pageTwoIsoAux` is the identification of the first page with cellular chains. -/
@@ -236,8 +231,12 @@ private lemma pageTwoIsoAux_hom_f
         eqToHom (cellularChainComplex_X _ R n).symm ≫
           ((cellularChainComplex (Set.univ : Set B) R).extendXIso
             skeletalLineEmbedding rfl).inv := by
-  rw [pageTwoIsoAux, Iso.trans_hom, HomologicalComplex.comp_f, asIso_hom,
-    HomologicalComplex.πStupidTrunc_f, HomologicalComplex.πStupidTruncf_eq,
+  -- `stupidTrunc` is by definition the extension of the restriction, so the composite in
+  -- `pageTwoIsoAux` is split by unification rather than by rewriting.
+  rw [pageTwoIsoAux]
+  refine (HomologicalComplex.comp_f _ _ _).trans ?_
+  rw [asIso_hom, HomologicalComplex.πStupidTrunc_f, HomologicalComplex.πStupidTruncf_eq,
+    Functor.mapIso_hom, ComplexShape.Embedding.extendFunctor_map,
     HomologicalComplex.extendMap_f _ _ rfl]
   simp [restrictionIsoAux, HomologicalComplex.restrictionXIso]
 
@@ -270,6 +269,20 @@ def skeletalSpectralSequenceFirstPageXIso (n : ℕ) :
       (cellularChainComplex (Set.univ : Set B) R).X n :=
   firstPageXIsoAux R _ skeletalFiltration_eq _ n (by simp; lia) (by simp) ≪≫
     eqToIso (cellularChainComplex_X _ R n).symm
+
+/-- `TauCeti.skeletalSpectralSequenceFirstPageXIso` is the identification
+`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso` of the first page with relative homology,
+followed by the transport along the equality of the pair of the filtration with the pair of
+consecutive skeleta. -/
+lemma skeletalSpectralSequenceFirstPageXIso_hom (n : ℕ) :
+    (skeletalSpectralSequenceFirstPageXIso R n).hom =
+      (filteredSpaceSpectralSequenceFirstPageXIso R
+          (monotone_preimageSkeleton (C := (Set.univ : Set B)) (id : TopCat.of B → B))
+          (skeletalLineEmbedding.f n) _ _ rfl rfl _ rfl n (by simp; lia)).hom ≫
+        eqToHom ((congrArg (TopPair.singularHomology · R n) (TopPair.ofInclusion_congr _ _
+          (by simp [preimageSkeleton_def]) (by simp [preimageSkeleton_def]))).trans
+          (cellularChainComplex_X _ R n).symm) := by
+  simp [skeletalSpectralSequenceFirstPageXIso, firstPageXIsoAux]
 
 /-- **The first differential of the skeletal filtration is the cellular differential.** Under the
 identifications `TauCeti.skeletalSpectralSequenceFirstPageXIso` of the first page with cellular
@@ -313,8 +326,10 @@ lemma skeletalSpectralSequencePageTwoIso_hom_f (n : ℕ) :
 
 /-- **The second page of the skeletal filtration is singular homology.** The object at
 `(1 - 2n, n - 1)` on the page after the first (numbered `3`) of the spectral sequence of the
-skeletal filtration of a CW complex `B` is the singular homology `Hₙ(B)`: it is the cellular
-homology of `B`, which is singular homology by `TauCeti.cellularSingularHomologyIsoUniv`. -/
+skeletal filtration of a CW complex `B` is the singular homology `Hₙ(B)`, provided the comparison
+map `Hₙ(Bⁿ⁺¹) ⟶ Hₙ(B)` of the `(n + 1)`-skeleton with `B` is an isomorphism (as for
+finite-dimensional complexes): it is the cellular homology of `B`, which is singular homology by
+`TauCeti.cellularSingularHomologyIsoUniv`. -/
 def skeletalSpectralSequencePageThreeXIso (n : ℕ)
     [IsIso ((skeletonBasePair (Set.univ : Set B) (n + 1)).singularHomologyMap
       (skeletonBasePairToComplex (Set.univ : Set B) (n + 1)) R n)] :

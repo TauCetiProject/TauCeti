@@ -24,13 +24,17 @@ pages off for real projective space `RPᴺ` with its CW structure of one cell in
   nonzero (`TauCeti.RealProjectiveSpace.not_isZero_skeletalSpectralSequence_page_two_X`).
 * The first differential from the `(k + 1)`-cell to the `k`-cell vanishes for even `k`
   (`TauCeti.RealProjectiveSpace.skeletalSpectralSequence_page_two_d_eq_zero_of_even`), and for odd
-  `k` it is multiplication by `2` in suitable coordinates over a commutative ring
+  `k` it is multiplication by `2` in suitable coordinates
   (`TauCeti.RealProjectiveSpace.exists_linearEquiv_skeletalSpectralSequence_page_two_d_eq_two_mul`).
 * The second page is `R` in degree `0`
-  (`TauCeti.RealProjectiveSpace.skeletalSpectralSequencePageThreeXZeroLinearEquiv`), `ℤ/2` in odd
-  degrees `k < N` with integral coefficients
-  (`TauCeti.RealProjectiveSpace.skeletalSpectralSequencePageThreeXLinearEquivOfOdd`), and zero in
-  positive even degrees when `2` is not a zero divisor
+  (`TauCeti.RealProjectiveSpace.skeletalSpectralSequencePageThreeXZeroLinearEquiv`), `R / 2R` in
+  odd degrees `k < N`
+  (`TauCeti.RealProjectiveSpace.skeletalSpectralSequencePageThreeXLinearEquivOfOdd`), so
+  `ℤ/2` with integral coefficients
+  (`TauCeti.RealProjectiveSpace.skeletalSpectralSequencePageThreeXIntLinearEquivOfOdd`), and the
+  `2`-torsion of `R` in even degrees `0 < k ≤ N`
+  (`TauCeti.RealProjectiveSpace.skeletalSpectralSequencePageThreeXLinearEquivOfEven`), so zero when
+  `2` is not a zero divisor
   (`TauCeti.RealProjectiveSpace.isZero_skeletalSpectralSequence_page_three_X_of_even`).
 
 For the real projective plane `RP²` with integral coefficients, the first page is `ℤ` at the
@@ -65,17 +69,17 @@ def skeletalSpectralSequenceFirstPageLinearEquiv (hk : k ≤ N) :
     ((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of R R)).page 2).X
       (skeletalLineEmbedding.f k) ≃ₗ[R] R :=
   (skeletalSpectralSequenceFirstPageXIso (ModuleCat.of R R) k).toLinearEquiv ≪≫ₗ
-    cellularChainCoord _ R (Classical.choice (nonempty_cell_cwComplex hk))
+    cellularChainCoord _ R (cwComplexCell hk)
 
 /-- The coordinate `TauCeti.RealProjectiveSpace.skeletalSpectralSequenceFirstPageLinearEquiv`
 sends an element of the first page to the coordinate of the corresponding cellular chain. -/
-private lemma skeletalSpectralSequenceFirstPageLinearEquiv_apply (hk : k ≤ N)
+lemma skeletalSpectralSequenceFirstPageLinearEquiv_apply (hk : k ≤ N)
     (x : ((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of R R)).page 2).X
       (skeletalLineEmbedding.f k)) :
     skeletalSpectralSequenceFirstPageLinearEquiv R hk x =
-      cellularChainCoord _ R (Classical.choice (nonempty_cell_cwComplex hk))
+      cellularChainCoord _ R (cwComplexCell hk)
         ((skeletalSpectralSequenceFirstPageXIso (ModuleCat.of R R) k).hom x) :=
-  rfl
+  (rfl)
 
 /-- **The first differential of `RPᴺ` vanishes out of odd cells.** For even `k`, the differential
 of the first page of the skeletal spectral sequence of `RPᴺ` from `(-1 - 2k, k)` to
@@ -83,9 +87,7 @@ of the first page of the skeletal spectral sequence of `RPᴺ` from `(-1 - 2k, k
 theorem skeletalSpectralSequence_page_two_d_eq_zero_of_even (hk : Even k) :
     ((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of R R)).page 2).d
       (skeletalLineEmbedding.f (k + 1)) (skeletalLineEmbedding.f k) = 0 := by
-  rw [skeletalSpectralSequence_page_two_d_eq, cellularChainComplex_d,
-    (cellularDifferential_eq_zero_iff _ R k).2 fun c c' ↦
-      cellularIncidence_cwComplex_eq_zero_of_even R hk c c']
+  rw [skeletalSpectralSequence_page_two_d_eq, cellularChainComplex_d_eq_zero_of_even R hk]
   simp
 
 /-- **The first differential of `RPᴺ` out of even cells is twice a unit.** For odd `k` with
@@ -99,14 +101,11 @@ theorem exists_skeletalSpectralSequenceFirstPageLinearEquiv_page_two_d (hk : Odd
       (((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of R R)).page 2).d
         (skeletalLineEmbedding.f (k + 1)) (skeletalLineEmbedding.f k) x) =
       skeletalSpectralSequenceFirstPageLinearEquiv R hkN x * (2 * u) := by
-  obtain ⟨u, hu⟩ := exists_cellularIncidence_cwComplex_eq_two_mul_of_odd R hk
-    (Classical.choice (nonempty_cell_cwComplex (by lia : k ≤ N)))
-    (Classical.choice (nonempty_cell_cwComplex hkN))
+  obtain ⟨u, hu⟩ := exists_cellularChainCoord_d_eq_two_mul_of_odd R hk
+    (cwComplexCell (by lia : k ≤ N)) (cwComplexCell hkN)
   refine ⟨u, fun x ↦ ?_⟩
-  rw [skeletalSpectralSequence_page_two_d_eq, skeletalSpectralSequenceFirstPageLinearEquiv_apply,
-    skeletalSpectralSequenceFirstPageLinearEquiv_apply, ConcreteCategory.comp_apply,
-    ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply _ (Iso.hom _), Iso.inv_hom_id,
-    ConcreteCategory.id_apply, cellularChainCoord_d, hu]
+  simpa [skeletalSpectralSequence_page_two_d_eq, skeletalSpectralSequenceFirstPageLinearEquiv_apply]
+    using hu ((skeletalSpectralSequenceFirstPageXIso (ModuleCat.of R R) (k + 1)).hom x)
 
 /-- The first page of the skeletal spectral sequence of `RPᴺ` is nonzero at every cell: for
 `k ≤ N` and `R` nontrivial, the object at `(1 - 2k, k - 1)` is `R`. -/
@@ -127,8 +126,29 @@ def skeletalSpectralSequencePageThreeXZeroLinearEquiv :
 
 /-- **The second page of the skeletal spectral sequence of `RPᴺ` in odd degrees.** For odd
 `k < N`, the object at `(1 - 2k, k - 1)` on the page after the first is
-`Hₖ(RPᴺ; ℤ) ≅ ℤ/2`, although on the first page it is `ℤ`. -/
+`Hₖ(RPᴺ; R) ≅ R / 2R`, although on the first page it is `R`. -/
 def skeletalSpectralSequencePageThreeXLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
+    ((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of R R)).page 3).X
+      (skeletalLineEmbedding.f k) ≃ₗ[R] R ⧸ R ∙ (2 : R) :=
+  have := finite_cwComplex (n := N)
+  (skeletalSpectralSequencePageThreeXIso (ModuleCat.of R R) k).toLinearEquiv ≪≫ₗ
+    singularHomologyLinearEquivOfOdd R hk hkN
+
+/-- **The second page of the skeletal spectral sequence of `RPᴺ` in even degrees.** For even `k`
+with `0 < k ≤ N`, the object at `(1 - 2k, k - 1)` on the page after the first is the `2`-torsion
+`{r : R | r * 2 = 0}` of `R`, although on the first page it is `R`. -/
+def skeletalSpectralSequencePageThreeXLinearEquivOfEven (hk : Even k) (hk0 : k ≠ 0)
+    (hkN : k ≤ N) :
+    ((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of R R)).page 3).X
+      (skeletalLineEmbedding.f k) ≃ₗ[R] LinearMap.ker (LinearMap.toSpanSingleton R R 2) :=
+  have := finite_cwComplex (n := N)
+  (skeletalSpectralSequencePageThreeXIso (ModuleCat.of R R) k).toLinearEquiv ≪≫ₗ
+    singularHomologyLinearEquivOfEven R hk hk0 hkN
+
+/-- **The second page of the integral skeletal spectral sequence of `RPᴺ` in odd degrees.** For
+odd `k < N`, the object at `(1 - 2k, k - 1)` on the page after the first is
+`Hₖ(RPᴺ; ℤ) ≅ ℤ/2`, although on the first page it is `ℤ`. -/
+def skeletalSpectralSequencePageThreeXIntLinearEquivOfOdd (hk : Odd k) (hkN : k < N) :
     ((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of ℤ ℤ)).page 3).X
       (skeletalLineEmbedding.f k) ≃ₗ[ℤ] ZMod 2 :=
   have := finite_cwComplex (n := N)
@@ -146,15 +166,11 @@ theorem isZero_skeletalSpectralSequence_page_three_X_of_even (h2 : IsRightRegula
   (isZero_singularHomology_of_even R h2 hk hk0).of_iso
     (skeletalSpectralSequencePageThreeXIso (ModuleCat.of R R) k)
 
-section CommRing
-
-variable (R : Type) [CommRing R]
-
-/-- **The first differential of `RPᴺ` out of even cells is `2`.** Over a commutative ring `R`, for
-odd `k` with `k + 1 ≤ N`, the objects of the first page of the skeletal spectral sequence of `RPᴺ`
-at the `(k + 1)`-cell and at the `k`-cell are both `R`, in coordinates in which the differential
-between them is multiplication by `2`. For `RP²` and `k = 1` this is the differential `2` from the
-cell of dimension `2` to the cell of dimension `1`. -/
+/-- **The first differential of `RPᴺ` out of even cells is `2`.** For odd `k` with `k + 1 ≤ N`,
+the objects of the first page of the skeletal spectral sequence of `RPᴺ` at the `(k + 1)`-cell
+and at the `k`-cell are both `R`, in coordinates in which the differential between them is
+multiplication by `2`. For `RP²` and `k = 1` this is the differential `2` from the cell of
+dimension `2` to the cell of dimension `1`. -/
 theorem exists_linearEquiv_skeletalSpectralSequence_page_two_d_eq_two_mul (hk : Odd k)
     (hkN : k + 1 ≤ N) :
     ∃ (φ : ((skeletalSpectralSequence (RealProjectiveSpace N) (ModuleCat.of R R)).page 2).X
@@ -165,12 +181,9 @@ theorem exists_linearEquiv_skeletalSpectralSequence_page_two_d_eq_two_mul (hk : 
         (skeletalLineEmbedding.f (k + 1)) (skeletalLineEmbedding.f k) x) = 2 * φ x := by
   obtain ⟨u, hu⟩ := exists_skeletalSpectralSequenceFirstPageLinearEquiv_page_two_d R hk hkN
   refine ⟨skeletalSpectralSequenceFirstPageLinearEquiv R hkN ≪≫ₗ
-      DistribMulAction.toLinearEquiv R R u,
+      DistribMulAction.toLinearEquiv R R (Units.opEquiv.symm (MulOpposite.op u)),
     skeletalSpectralSequenceFirstPageLinearEquiv R (by lia), fun x ↦ ?_⟩
-  rw [hu, LinearEquiv.trans_apply, DistribMulAction.toLinearEquiv_apply, Units.smul_def,
-    smul_eq_mul]
-  ring
-
-end CommRing
+  change _ = 2 * (skeletalSpectralSequenceFirstPageLinearEquiv R hkN x * u)
+  rw [hu, ← mul_assoc, ← mul_assoc, (Commute.ofNat_right _ 2).eq]
 
 end TauCeti.RealProjectiveSpace
