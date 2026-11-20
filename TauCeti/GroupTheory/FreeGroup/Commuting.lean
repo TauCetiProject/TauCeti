@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
-public import Mathlib.GroupTheory.FreeGroup.Reduce
-public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+public import Mathlib.GroupTheory.FreeGroup.Center
+import Mathlib.Algebra.Ring.Int.Parity
 
 /-!
 # Commuting elements of a free group
 
-An abelian subgroup of a free group is cyclic. This gives an intrinsic characterization of
-commuting pairs: they are integer powers of a common element. The argument uses the
-Nielsen–Schreier theorem and the fact that a free group on two distinct generators is not
-abelian. It applies without choosing reduced-word representatives or a finite basis.
+Two elements of a free group commute exactly when they are integer powers of a common element
+(Mathlib's `IsFreeGroup.commute_iff_exists_zpow`). Consequently, for commuting elements `x` and
+`y`, one of `x`, `y` and `x * y` is a square (`IsFreeGroup.exists_eq_sq_of_commute`). A free group
+on at least two generators is not commutative (`FreeGroup.not_isMulCommutative`).
 -/
 
 public section
@@ -24,61 +23,11 @@ namespace IsFreeGroup
 
 variable {G : Type*} [Group G] [IsFreeGroup G]
 
-/-- A commutative free group is cyclic. -/
-theorem isCyclic_of_isMulCommutative [IsMulCommutative G] : IsCyclic G := by
-  classical
-  let b := IsFreeGroup.basis G
-  have h : IsMulCommutative (FreeGroup (IsFreeGroup.Generators G)) :=
-    b.repr.surjective.isMulCommutative
-  have : Subsingleton (IsFreeGroup.Generators G) :=
-    FreeGroup.isMulCommutative_iff_subsingleton.mp h
-  have : IsCyclic (FreeGroup (IsFreeGroup.Generators G)) :=
-    FreeGroup.isCyclic_iff_subsingleton.mpr inferInstance
-  exact isCyclic_of_surjective b.repr.symm.toMonoidHom b.repr.symm.surjective
-
-end IsFreeGroup
-
-namespace Subgroup
-
-variable {G : Type*} [Group G] [IsFreeGroup G]
-
-/-- Every abelian subgroup of a free group is cyclic, including the trivial subgroup. -/
-theorem isCyclic_of_isMulCommutative
-    (H : Subgroup G) [IsMulCommutative H] : IsCyclic H := by
-  have : IsFreeGroup H := H.isFreeGroupOfIsFreeGroup
-  exact IsFreeGroup.isCyclic_of_isMulCommutative
-
-end Subgroup
-
-namespace IsFreeGroup
-
-variable {G : Type*} [Group G] [IsFreeGroup G]
-
-/-- Two elements of a free group commute exactly when they are integer powers of one element. -/
-theorem commute_iff_exists_common_zpow (x y : G) :
-    Commute x y ↔ ∃ r : G, ∃ m n : ℤ, x = r ^ m ∧ y = r ^ n := by
-  classical
-  constructor
-  · intro hxy
-    let H : Subgroup G := Subgroup.closure ({x, y} : Set G)
-    have hp : ({x, y} : Set G).Pairwise Commute :=
-      Set.pairwise_pair_of_symm_of_refl.mpr hxy
-    have : IsMulCommutative H := Subgroup.isMulCommutative_closure hp
-    have hcyc : IsCyclic H := H.isCyclic_of_isMulCommutative
-    obtain ⟨r, hr⟩ := (H.isCyclic_iff_exists_zpowers_eq).mp hcyc
-    have hx : x ∈ Subgroup.zpowers r := hr.symm ▸ Subgroup.subset_closure (by simp)
-    have hy : y ∈ Subgroup.zpowers r := hr.symm ▸ Subgroup.subset_closure (by simp)
-    obtain ⟨m, hm⟩ := Subgroup.mem_zpowers_iff.mp hx
-    obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp hy
-    exact ⟨r, m, n, hm.symm, hn.symm⟩
-  · rintro ⟨r, m, n, rfl, rfl⟩
-    exact (Commute.refl r).zpow_zpow m n
-
 /-- For commuting elements `x` and `y` of a free group, one of `x`, `y` and `x * y` is a
 square. -/
 theorem exists_eq_sq_of_commute {x y : G} (h : Commute x y) :
     ∃ z : G, x = z ^ 2 ∨ y = z ^ 2 ∨ x * y = z ^ 2 := by
-  obtain ⟨r, m, n, rfl, rfl⟩ := (commute_iff_exists_common_zpow x y).1 h
+  obtain ⟨r, m, n, rfl, rfl⟩ := commute_iff_exists_zpow.1 h
   obtain ⟨k, rfl⟩ | ⟨k, rfl⟩ := Int.even_or_odd m
   · exact ⟨r ^ k, .inl (by rw [pow_two, ← zpow_add])⟩
   obtain ⟨l, rfl⟩ | ⟨l, rfl⟩ := Int.even_or_odd n

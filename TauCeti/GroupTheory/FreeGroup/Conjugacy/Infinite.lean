@@ -9,6 +9,7 @@ public import Mathlib.Data.Set.Finite.Basic
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 public import Mathlib.Algebra.Group.Conj
 import TauCeti.GroupTheory.FreeGroup.CSA
+import TauCeti.GroupTheory.FreeGroup.Commuting
 
 /-!
 # Infinite conjugacy classes in nonabelian free groups

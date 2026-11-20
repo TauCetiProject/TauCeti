@@ -21,7 +21,7 @@ import TauCeti.GroupTheory.FreeGroup.Rank
 Let `a` and `b` be elements of a free group `F`. If they do not commute, the homomorphism
 `FreeGroup (Fin 2) →* F` sending the two generators to `a` and `b` is injective, so `a` and `b`
 freely generate the subgroup they generate. Together with the description of commuting pairs as
-powers of a common element (`IsFreeGroup.commute_iff_exists_common_zpow`), this shows that a
+powers of a common element (`IsFreeGroup.commute_iff_exists_zpow`), this shows that a
 two-generated subgroup of a free group is trivial, infinite cyclic, or free of rank two.
 
 The proof is the classical one. The subgroup `H = ⟨a, b⟩` is free by the Nielsen–Schreier theorem,

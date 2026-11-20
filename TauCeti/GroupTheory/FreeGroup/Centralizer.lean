@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.FreeGroup.Commuting
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
 public import Mathlib.GroupTheory.FreeGroup.Center
 public import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
@@ -69,7 +68,7 @@ variable {α : Type*}
 /-- An element of a free group commuting with a generator `of a` is a power of `of a`. -/
 theorem mem_zpowers_of_of_commute {a : α} {z : FreeGroup α} (h : Commute z (of a)) :
     z ∈ Subgroup.zpowers (of a) := by
-  obtain ⟨r, m, n, rfl, hr⟩ := (IsFreeGroup.commute_iff_exists_common_zpow z (of a)).1 h
+  obtain ⟨r, m, n, rfl, hr⟩ := IsFreeGroup.commute_iff_exists_zpow.1 h
   have hn : n * n = 1 := by
     obtain hn | hn := Int.natAbs_eq_iff.1 (natAbs_eq_one_of_of_eq_zpow hr) <;> simp [hn]
   have hra : r = of a ^ n := by rw [hr, ← zpow_mul, hn, zpow_one]
