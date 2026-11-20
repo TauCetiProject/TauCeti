@@ -51,6 +51,8 @@ is a cycle.
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
 * `rowFiniteTwistedDifferential_mapDomain`: relabelling generators compatibly with the rows
   commutes with the differentials.
+* `rowFiniteTwistedDifferential_mem_supported`: the generators whose rows stay in a set of
+  generators span a differential submodule.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
@@ -532,6 +534,19 @@ theorem rowFiniteTwistedDifferential_mapDomain {P' : Type uP'} (e : P → P') (m
   | single x c =>
     simp only [Finsupp.mapDomain_single, rowFiniteTwistedDifferential_single_koszulTwist, hm,
       Finsupp.mapDomain_add, Finsupp.mapDomain_smul]
+
+/-- **Generators whose rows stay in `s` span a differential submodule.** If the row of every
+generator of `s` only involves generators of `s`, then the twisted differential maps the vectors
+supported in `s` to vectors supported in `s`. -/
+theorem rowFiniteTwistedDifferential_mem_supported {m : P → P →₀ A} {s : Set P}
+    (hm : ∀ x ∈ s, m x ∈ Finsupp.supported A A s) {f : P →₀ A}
+    (hf : f ∈ Finsupp.supported A A s) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f ∈ Finsupp.supported A A s := by
+  rw [rowFiniteTwistedDifferential_apply]
+  refine Submodule.add_mem _ ?_
+    (Submodule.sum_mem _ fun x hx ↦ Submodule.smul_mem _ _ (hm x (hf hx)))
+  rw [Finsupp.mapRange.linearMap_apply, Finsupp.mem_supported]
+  exact (Finset.coe_subset.2 Finsupp.support_mapRange).trans ((Finsupp.mem_supported A f).1 hf)
 
 /-- The finite-support total grading is compatible with the pointwise left algebra action. -/
 instance instGradedSMulRowFiniteTotalGrading :
