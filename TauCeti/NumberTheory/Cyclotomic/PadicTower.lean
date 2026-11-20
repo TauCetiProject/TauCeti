@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.Adjoin.PowerBasis
 public import TauCeti.RingTheory.RootsOfUnity.CompatibleRoots
 import Mathlib.RingTheory.Norm.Basic
+import TauCeti.FieldTheory.Minpoly
 import TauCeti.NumberTheory.LocalField.RootsOfUnity.Cyclotomic
 import TauCeti.RingTheory.PowerBasis
 
@@ -189,14 +190,10 @@ theorem relativePowerBasis_dim (n : ℕ) : (relativePowerBasis p Ω n).dim = p :
 
 /-- The minimal polynomial of `ζ (n + 1)` over `ℚ_p(ρ n)` is `X ^ p - ζ n`. -/
 theorem minpoly_root_succ (n : ℕ) :
-    minpoly (padicCyclotomicField p Ω n) (root p Ω (n + 1)) = X ^ p - C (root p Ω n) := by
-  have hint := Algebra.IsIntegral.isIntegral (R := padicCyclotomicField p Ω n) (root p Ω (n + 1))
-  have hmonic := monic_X_pow_sub_C (root p Ω n) (Fact.out : p.Prime).ne_zero
-  refine (eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) hmonic
-    (minpoly.dvd _ _ ?_) ?_).symm
-  · simp
-  · rw [natDegree_X_pow_sub_C, ← relativePowerBasis_gen, PowerBasis.natDegree_minpoly,
-      relativePowerBasis_dim]
+    minpoly (padicCyclotomicField p Ω n) (root p Ω (n + 1)) = X ^ p - C (root p Ω n) :=
+  TauCeti.Algebra.minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq (Fact.out : p.Prime).ne_zero
+    (algebraMap_root p Ω n).symm
+    (by rw [← relativePowerBasis_gen, PowerBasis.natDegree_minpoly, relativePowerBasis_dim])
 
 /-- The relative norm `N(ζ (n + 1)) = (-1) ^ (p + 1) * ζ n`. For odd `p` this is `ζ n`. -/
 theorem norm_root_succ (n : ℕ) :
