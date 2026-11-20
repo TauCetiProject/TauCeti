@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basic
 public import Mathlib.RingTheory.Ideal.Maps
+public import TauCeti.LinearAlgebra.Dual.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -123,10 +124,7 @@ polynomial function at `f m`. -/
 theorem lift_eval_map_dualMap (f : M →ₗ[R] N) (m : M)
     (p : SymmetricAlgebra R (Module.Dual R N)) :
     lift (Module.Dual.eval R M m) (map R f.dualMap p) = lift (Module.Dual.eval R N (f m)) p := by
-  have h : (Module.Dual.eval R M m).comp f.dualMap = Module.Dual.eval R N (f m) := by
-    ext φ
-    simp
-  rw [lift_map_apply, h]
+  simp
 
 /-- A left inverse of linear maps induces a left inverse of the corresponding symmetric-algebra
 maps. -/
