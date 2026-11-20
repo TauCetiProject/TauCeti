@@ -65,7 +65,7 @@ those components.
 * `Representation.charSum_apply_mem`, `Representation.charSum_apply_of_mem`,
   `Representation.charSum_comp_charSum`: `S_χ` lands in `V^χ`, is `#G` on `V^χ`, and squares to
   `#G • S_χ`.
-* `Representation.charSum_apply_apply`, `Representation.charSum_sub_apply_inv`: the translation
+* `Representation.charSum_self_apply`, `Representation.charSum_sub_self_inv_apply`: the translation
   law and the Euler-factor identity.
 * `Representation.IntertwiningMap.map_charSum`: intertwining maps commute with character sums.
 * `Representation.range_charSum`: when `#G` is a unit, the range of `S_χ` is `V^χ`.
@@ -242,7 +242,7 @@ theorem charSum_comp_charSum : ρ.charSum χ ∘ₗ ρ.charSum χ = Nat.card G �
 
 /-- **The translation law**: `S_χ(ρ(g) v) = χ(g) S_χ(v)`. -/
 @[simp]
-theorem charSum_apply_apply (g : G) (v : V) :
+theorem charSum_self_apply (g : G) (v : V) :
     ρ.charSum χ (ρ g v) = (χ g : k) • ρ.charSum χ v := by
   have h := norm_self_apply (charTwist χ⁻¹ ρ) g v
   rw [charTwist_apply_apply, map_smul, MonoidHom.inv_apply] at h
@@ -250,28 +250,27 @@ theorem charSum_apply_apply (g : G) (v : V) :
 
 /-- The translation law as an identity of operators: `S_χ ∘ ρ(g) = χ(g) S_χ`. -/
 @[simp]
-theorem charSum_comp_apply (g : G) : ρ.charSum χ ∘ₗ ρ g = (χ g : k) • ρ.charSum χ :=
-  LinearMap.ext fun v => ρ.charSum_apply_apply χ g v
+theorem charSum_comp_self (g : G) : ρ.charSum χ ∘ₗ ρ g = (χ g : k) • ρ.charSum χ :=
+  LinearMap.ext fun v => ρ.charSum_self_apply χ g v
 
 /-- **The Euler-factor identity**: `S_χ(u - ρ(φ⁻¹) u) = (1 - χ(φ)⁻¹) S_χ(u)`. For `φ` a Frobenius,
 this turns the Euler factor `1 - Fr⁻¹` into the scalar `1 - χ(Fr)⁻¹`. -/
-theorem charSum_sub_apply_inv (φ : G) (u : V) :
+theorem charSum_sub_self_inv_apply (φ : G) (u : V) :
     ρ.charSum χ (u - ρ φ⁻¹ u) = (1 - (((χ φ)⁻¹ : kˣ) : k)) • ρ.charSum χ u := by
-  rw [map_sub, charSum_apply_apply, map_inv, sub_smul, one_smul]
+  rw [map_sub, charSum_self_apply, map_inv, sub_smul, one_smul]
 
 /-- **Intertwining maps commute with character sums**: `f(S_χ v) = S_χ(f v)`. -/
 theorem IntertwiningMap.map_charSum (f : IntertwiningMap ρ σ) (v : V) :
     f (ρ.charSum χ v) = σ.charSum χ (f v) := by
   simp only [charSum_apply, map_sum, map_smul, f.isIntertwining]
 
-/-- **The character sum maps onto the eigensubmodule** when the order of the group is a unit:
-`v ∈ V^χ` is `S_χ(#G⁻¹ v)`. -/
+/-- **The character sum maps onto the eigensubmodule** when the order of the group is a unit: this
+is `Representation.range_norm_eq_invariants` for the twist of `ρ` by `χ⁻¹`. -/
 theorem range_charSum (hG : IsUnit (Nat.card G : k)) :
     LinearMap.range (ρ.charSum χ) = ρ.charEigenspace χ := by
-  refine le_antisymm (LinearMap.range_le_iff_comap.2 <| Submodule.eq_top_iff'.2 fun v =>
-    ρ.charSum_apply_mem χ v) fun v hv => ⟨((hG.unit⁻¹ : kˣ) : k) • v, ?_⟩
-  rw [map_smul, charSum_apply_of_mem _ _ hv, ← Nat.cast_smul_eq_nsmul k, smul_smul,
-    IsUnit.val_inv_mul, one_smul]
+  rw [Nat.card_eq_fintype_card] at hG
+  let := hG.invertible
+  rw [charSum, range_norm_eq_invariants, charEigenspace_eq_invariants_charTwist]
 
 end Finite
 

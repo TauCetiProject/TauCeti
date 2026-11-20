@@ -339,7 +339,8 @@ theorem isInternal_charEigenspace [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.c
       (ρ.asAlgebraHom (charIdempotent χ)) • (⊤ : Submodule k V) = ρ.charEigenspace χ := by
     rw [← ρ.range_asAlgebraHom_charIdempotent hH χ, Submodule.pointwise_smul_def,
       Submodule.map_top]
-    rfl
+    exact congrArg LinearMap.range <| LinearMap.ext fun v ↦ by
+      rw [DistribSMul.toLinearMap_apply, Module.End.smul_def]
   convert isInternal_smul_top (S := k) (M := V) he using 1
   exact funext fun χ ↦ (hrange χ).symm
 

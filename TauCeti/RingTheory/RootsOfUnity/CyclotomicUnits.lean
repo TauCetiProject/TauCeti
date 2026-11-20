@@ -35,8 +35,8 @@ Invertibility of `n` is needed: `1 - (-1) = 2` is not a unit of `ℤ_[2]`.
 * `IsPrimitiveRoot.associated_sub_one_pow_prime`: `(ζ - 1) ^ (p - 1)` is associated to `p`.
 * `IsPrimitiveRoot.valuation_natCast_eq_valuation_sub_one_pow`: a valuation `v ≤ 1` on `A`
   satisfies `v(p) = v(ζ - 1) ^ (p - 1)`.
-* `isUnit_sub_one_of_pow_eq_one`, `isUnit_one_sub_of_pow_eq_one`: `ζ - 1` and `1 - ζ` are units
-  for a root of unity `ζ ≠ 1` of invertible order.
+* `TauCeti.isUnit_sub_one_of_pow_eq_one`, `TauCeti.isUnit_one_sub_of_pow_eq_one`: `ζ - 1` and
+  `1 - ζ` are units for a root of unity `ζ ≠ 1` of invertible order.
 -/
 
 public section
@@ -69,6 +69,8 @@ theorem IsPrimitiveRoot.valuation_natCast_eq_valuation_sub_one_pow {A : Type*} [
       _ ≤ v (u : A) := mul_le_of_le_one_right' (hv _)
   rw [← hu, map_mul, hu1, mul_one, map_pow]
 
+namespace TauCeti
+
 /-- **`ζ - 1` is a unit for a root of unity `ζ ≠ 1` of invertible order**: in a domain `A`, if
 `ζ ^ n = 1`, `ζ ≠ 1` and `n` is a unit of `A`, then `ζ - 1` is a unit, since it divides `n`. -/
 theorem isUnit_sub_one_of_pow_eq_one {A : Type*} [CommRing A] [IsDomain A] {ζ : A} {n : ℕ}
@@ -80,3 +82,5 @@ theorem isUnit_sub_one_of_pow_eq_one {A : Type*} [CommRing A] [IsDomain A] {ζ :
 theorem isUnit_one_sub_of_pow_eq_one {A : Type*} [CommRing A] [IsDomain A] {ζ : A} {n : ℕ}
     (hζ : ζ ^ n = 1) (hζ1 : ζ ≠ 1) (hn : IsUnit (n : A)) : IsUnit (1 - ζ) := by
   simpa using (isUnit_sub_one_of_pow_eq_one hζ hζ1 hn).neg
+
+end TauCeti
