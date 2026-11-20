@@ -172,7 +172,7 @@ theorem DualFeasible.kantorovichDualValue_le_relaxedTransportCost [IsFiniteMeasu
     (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (hmass : μ univ = ν univ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ (relaxedTransportCost c μ ν : ℝ≥0∞) :=
-  EReal.coe_le_coe_ennreal_of_ofReal_le <|
+  EReal.coe_le_coe_ennreal_iff.2 <|
     hfeas.ofReal_kantorovichDualValue_le_relaxedTransportCost hmass hφ hψ
 
 section Polish
