@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
@@ -44,6 +45,20 @@ variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 variable {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- The norm of the determinant is the product of the singular values of the associated
+Euclidean linear map. The statement is independent of the scalar field representation. -/
+theorem norm_det_eq_prod_singularValues (A : Matrix ι ι 𝕜) :
+    ‖A.det‖ = ∏ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i := by
+  have hdet : (toEuclideanLin A).det = A.det := by
+    exact LinearMap.det_toLpLin 2 A
+  have hnorm : (toEuclideanLin A).normDet = ‖A.det‖ := by
+    rw [LinearMap.normDet_eq_norm_det, hdet]
+  have hprod : (toEuclideanLin A).normDet =
+      ∏ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i := by
+    simpa only [finrank_euclideanSpace, Fin.prod_univ_eq_prod_range] using
+      (LinearMap.normDet_eq_prod_singularValues (toEuclideanLin A))
+  exact hnorm.symm.trans hprod
 
 /-- Left multiplication by a unitary matrix preserves every singular value. -/
 theorem singularValues_toEuclideanLin_unitary_mul
