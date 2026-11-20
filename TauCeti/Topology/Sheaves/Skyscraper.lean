@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Sheaves.SheafCondition.Sites
 public import Mathlib.Topology.Sheaves.Skyscraper
 
 /-!
@@ -28,6 +29,12 @@ the skyscraper sheaf at `x` sends a section over an open containing `x` to its g
 `p₀`, `skyscraperSheafFunctor p₀` acts on a morphism by conjugating it with the canonical
 identifications of the section objects
 (`TauCeti.Topology.skyscraperSheafFunctor_map_hom_app_of_mem`).
+
+The restriction to an open subset `U` of the skyscraper sheaf at a point `x` of `U` is the
+skyscraper sheaf at `x` on `U`, naturally in its coefficient object
+(`TopologicalSpace.Opens.skyscraperSheafFunctorCompSheafRestrictIso`). Together with the
+adjunction between stalks and skyscraper sheaves, this computes the stalks of a left adjoint of
+restriction, such as extension by zero.
 -/
 
 public section
@@ -118,3 +125,73 @@ theorem stalkSkyscraperSheafAdjunction_unit_app_hom_app {C : Type*}
   exact dite_eq_left hx
 
 end TauCeti.Topology
+
+namespace TopologicalSpace.Opens
+
+variable {X : TopCat.{u}} (U : Opens X) {C : Type*} [Category.{u} C] [HasTerminal C]
+
+/- The inclusion of `U` is written with source the space `U` itself, so that skyscraper presheaves
+on `U` and the image functor along the inclusion are indexed by the same type. -/
+private lemma isOpenMap_ofHom_val :
+    IsOpenMap (TopCat.ofHom (X := U) (Y := X) ⟨Subtype.val, continuous_subtype_val⟩) :=
+  U.isOpenEmbedding'.isOpenMap
+
+private lemma val_mem_functor_obj_iff (x : U) (V : Opens U) :
+    (x : X) ∈ U.isOpenMap_ofHom_val.functor.obj V ↔ x ∈ V :=
+  Subtype.val_injective.mem_set_image
+
+/-- The restriction to `U` of the skyscraper presheaf at a point `x` of `U` is the skyscraper
+presheaf at `x` on `U`. -/
+private noncomputable def skyscraperPresheafRestrictIso (x : U)
+    [∀ V : Opens X, Decidable ((x : X) ∈ V)] [∀ V : Opens U, Decidable (x ∈ V)] (M : C) :
+    U.isOpenMap_ofHom_val.functor.op ⋙ skyscraperPresheaf (x : X) M ≅
+      skyscraperPresheaf (X := TopCat.of U) x M :=
+  NatIso.ofComponents (fun V ↦ eqToIso
+      (if_congr (U.val_mem_functor_obj_iff x V.unop) rfl rfl)) (fun {V W} f ↦ by
+    by_cases hW : x ∈ W.unop
+    · simp only [Functor.comp_map, Functor.op_obj, unop_op, skyscraperPresheaf_map]
+      rw [dite_eq_left hW, dite_eq_left ((U.val_mem_functor_obj_iff x _).2 hW)]
+      dsimp only [eqToIso]
+      exact (eqToHom_trans _ _).trans (eqToHom_trans _ _).symm
+    · exact ((ite_eq_right hW).symm.ndrec terminalIsTerminal).hom_ext _ _)
+
+private lemma skyscraperPresheafRestrictIso_naturality (x : U)
+    [∀ V : Opens X, Decidable ((x : X) ∈ V)] [∀ V : Opens U, Decidable (x ∈ V)] {M N : C}
+    (f : M ⟶ N) :
+    Functor.whiskerLeft U.isOpenMap_ofHom_val.functor.op
+          (SkyscraperPresheafFunctor.map' (x : X) f) ≫
+        (U.skyscraperPresheafRestrictIso x N).hom =
+      (U.skyscraperPresheafRestrictIso x M).hom ≫
+        SkyscraperPresheafFunctor.map' (X := TopCat.of U) x f := by
+  ext V
+  by_cases hV : x ∈ V.unop
+  · rw [NatTrans.comp_app, NatTrans.comp_app, Functor.whiskerLeft_app,
+      (SkyscraperPresheafFunctor.map'_app (x : X) f
+        (U.isOpenMap_ofHom_val.functor.op.obj V)).trans
+        (dite_eq_left ((U.val_mem_functor_obj_iff x _).2 hV)),
+      (SkyscraperPresheafFunctor.map'_app (X := TopCat.of U) x f V).trans (dite_eq_left hV)]
+    -- Both sides are `f` conjugated by canonical identifications of objects. These objects are the
+    -- section objects only up to unfolding, so the identifications are composed in general.
+    have key {P Q R S : C} (a : P = M) (b : N = Q) (c : Q = R) (d : P = S) (e : S = M)
+        (g : N = R) : (eqToHom a ≫ f ≫ eqToHom b) ≫ eqToHom c =
+          eqToHom d ≫ eqToHom e ≫ f ≫ eqToHom g := by
+      subst a b c e
+      simp
+    exact key _ _ (if_congr (U.val_mem_functor_obj_iff x V.unop) rfl rfl)
+      (if_congr (U.val_mem_functor_obj_iff x V.unop) rfl rfl) _ _
+  · exact ((ite_eq_right hV).symm.ndrec terminalIsTerminal).hom_ext _ _
+
+variable (C) in
+/-- The restriction to an open subset `U` of the skyscraper sheaf at a point `x` of `U` is the
+skyscraper sheaf at `x` on `U`, naturally in the coefficient object. -/
+noncomputable def skyscraperSheafFunctorCompSheafRestrictIso (x : U)
+    [∀ V : Opens X, Decidable ((x : X) ∈ V)] [∀ V : Opens U, Decidable (x ∈ V)] :
+    skyscraperSheafFunctor (C := C) (x : X) ⋙ U.sheafRestrict ≅
+      skyscraperSheafFunctor (X := TopCat.of U) x :=
+  NatIso.ofComponents
+    (fun M ↦ ObjectProperty.isoMk _ (U.skyscraperPresheafRestrictIso x M))
+    (fun f ↦ by
+      ext1
+      exact U.skyscraperPresheafRestrictIso_naturality x f)
+
+end TopologicalSpace.Opens
