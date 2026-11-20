@@ -453,7 +453,9 @@ the reverse times a power of `X`. -/
 theorem Splits.reflect {K : Type*} [Field K] {p : K[X]} (hp : p.Splits) {N : ℕ}
     (hN : p.natDegree ≤ N) : (p.reflect N).Splits := by
   have h := reflect_mul p 1 le_rfl (natDegree_one.trans_le (Nat.zero_le (N - p.natDegree)))
-  rw [mul_one, Nat.add_sub_cancel' hN, reflect_one] at h
-  exact h ▸ hp.reverse.mul (.X_pow _)
+  -- `reverse p` is by definition `reflect p.natDegree p`.
+  rw [mul_one, Nat.add_sub_cancel' hN, reflect_one, ← Polynomial.reverse] at h
+  rw [h]
+  exact hp.reverse.mul (.X_pow _)
 
 end Polynomial
