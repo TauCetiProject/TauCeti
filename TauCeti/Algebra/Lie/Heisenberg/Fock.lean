@@ -245,8 +245,9 @@ theorem modeOperator_commutator (hB : B.IsSymm) (m n : ℤ) (h k : H) :
       annihilation_commutator_mulLeft]
     split_ifs with hij hij' hij'
     · subst hij
+      congr 1
       push_cast
-      rfl
+      ring
     · omega
     · omega
     · rw [zero_smul]
@@ -257,8 +258,9 @@ theorem modeOperator_commutator (hB : B.IsSymm) (m n : ℤ) (h k : H) :
     split_ifs with hij hij' hij'
     · subst hij
       rw [← neg_smul, hB.eq k h]
+      congr 1
       push_cast
-      ring_nf
+      ring
     · omega
     · omega
     · rw [zero_smul, neg_zero]
@@ -360,8 +362,9 @@ theorem translation_commutator (n : ℤ) (h : H) :
           ring
         · simp [hl]
       rw [key, Derivation.coe_smul_linearMap, Nat.cast_succ, modeOperator_natCast_add_one]
+      congr 1
       push_cast
-      ring_nf
+      ring
   · rw [show Int.negSucc j - 1 = -((j + 1 : ℕ) : ℤ) - 1 by omega,
       show Int.negSucc j = -(j : ℤ) - 1 by omega, modeOperator_neg_natCast_sub_one,
       ← LieRing.of_associative_ring_bracket, Derivation.lie_mulLeft, translation_ι_single]

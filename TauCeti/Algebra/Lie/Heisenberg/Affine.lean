@@ -132,10 +132,8 @@ theorem linearMap_ext {M : Type*} [AddCommGroup M] [Module R M]
   congr 1
   obtain ⟨v, rfl⟩ := (toFinsupp R ℤ H).symm.surjective u
   induction v using Finsupp.induction_linear with
-  | zero => rw [map_zero, Prod.mk_zero_zero, of_zero, map_zero, map_zero]
-  | add v w hv hw =>
-    rw [map_add, ← add_zero (0 : TrivialLieModule R (loopAlgebra R ℤ H) R), ← Prod.mk_add_mk,
-      of_add, map_add, map_add, hv, hw]
+  | zero => simp [Prod.mk_zero_zero]
+  | add v w hv hw => simpa [← map_add, ← of_add] using congr($hv + $hw)
   | single n h => simpa [mode_apply, toFinsupp_symm_single] using hmode n h
 
 /-- **The Heisenberg bracket.** `[h(m), k(n)] = m B(h, k) δ_{m+n,0} K`. -/
