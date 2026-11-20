@@ -81,15 +81,15 @@ theorem exists_inertiaDeg_eq_iff_of_mem_frobeniusPrimeSet
     have hpσ : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) :=
       (ConjClasses.mem_carrier_iff_mk_eq.mp hσC).symm ▸ h𝔭
     obtain ⟨Q, hσ⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk hpσ
-    have : Algebra.IsUnramifiedAt (𝓞 K) Q.1 :=
-      isUnramifiedAt_of_mem_frobeniusPrimeSet h𝔭 Q.1
+    have : Algebra.IsUnramifiedAt (𝓞 K) Q.val :=
+      isUnramifiedAt_of_mem_frobeniusPrimeSet h𝔭 Q.val
     let Q' : HeightOneSpectrum (𝓞 L) := HeightOneSpectrum.ofPrime
       (Ideal.prime_of_isPrime hσ.ne_bot inferInstance)
     refine ⟨Q'.under (𝓞 ↥(fixedField H)), ?_, ?_⟩
     · rw [HeightOneSpectrum.under_under]
-      exact HeightOneSpectrum.under_eq_iff_liesOver.mpr Q.2.2
+      exact HeightOneSpectrum.under_eq_iff_liesOver.mpr Q.property.2
     · rw [HeightOneSpectrum.under_asIdeal]
-      exact (Ideal.inertiaDeg_under_fixedField_eq_relIndex Q.1 H hσ).trans hn
+      exact (Ideal.inertiaDeg_under_fixedField_eq_relIndex Q.val H hσ).trans hn
 
 variable (K L) in
 open scoped Classical in

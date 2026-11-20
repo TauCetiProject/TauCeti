@@ -251,7 +251,8 @@ theorem completeSpace_weightedRestrictedSubring [CompleteSpace A] {T : Fin k →
     intro U
     obtain ⟨M, hMF, hM⟩ := exists_mem_forall_coeff_sub_mem_weightMul hF ha U
     obtain ⟨f₀, hf₀⟩ := hF.1.nonempty_of_mem hMF
-    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.2) U] with ν hν
+    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.property) U]
+        with ν hν
     simpa [hg] using sub_mem hν (hM f₀ hf₀ ν)
   refine ⟨⟨g, mem_weightedRestrictedSubring.mpr hres⟩, ?_⟩
   rw [← tendsto_id', ← tendsto_sub_nhds_zero_iff,

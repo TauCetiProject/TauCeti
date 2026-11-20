@@ -362,8 +362,8 @@ theorem prod_dvd_prod_mul_prod_sub {R : Type*} [CommRing R] (m : ℕ) (u w d : �
     (∏ k ∈ Finset.range m, d k)
       ∣ ∏ k ∈ Finset.range m, w k * ∏ l ∈ Finset.Ico (k + 1) m, (u k - u l) := by
   have h := prod_dvd_prod_mul_det_vandermonde (fun i : Fin m => u i) (fun i => w i)
-    (fun j => d j) (fun j => p j) (fun j => hdeg j j.2) (fun j => hmonic j j.2)
-    fun i j => hdvd i i.2 j j.2
+    (fun j => d j) (fun j => p j) (fun j => hdeg j j.isLt) (fun j => hmonic j j.isLt)
+    fun i j => hdvd i i.isLt j j.isLt
   rw [det_vandermonde_eq_prod_range m u, mul_left_comm] at h
   have hunit := (isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)
   simpa only [Fin.prod_univ_eq_prod_range, Finset.prod_mul_distrib] using hunit.dvd_mul_left.mp h
@@ -489,7 +489,8 @@ theorem exists_lt_card_sum_mul_pow_ne_zero {ι R : Type*} [CommRing R] [IsDomain
   let e := s.equivFin
   have hv := eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j ↦ θ (e.symm j))
     (v := fun j ↦ w (e.symm j))
-    (fun j j' hj ↦ e.symm.injective (Subtype.ext (hθ (e.symm j).2 (e.symm j').2 hj))) fun k ↦ by
+    (fun j j' hj ↦ e.symm.injective (Subtype.ext (hθ (e.symm j).property
+        (e.symm j').property hj))) fun k ↦ by
       rw [← h k k.isLt, ← s.sum_coe_sort]
       exact e.symm.sum_comp fun i : s ↦ w i * θ i ^ (k : ℕ)
   exact hw₀ (by simpa using congrFun hv (e ⟨i₀, hi₀⟩))

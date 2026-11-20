@@ -56,7 +56,7 @@ abbrev subspaceComplPair (W : Submodule ℝ F) : TopPair.{w} :=
   TopPair.ofSubset (q ⁻¹' (W : Set F)ᶜ)
 
 instance : IsEmpty (subspaceComplPair q (⊤ : Submodule ℝ F)).snd :=
-  ⟨fun x ↦ x.2 Submodule.mem_top⟩
+  ⟨fun x ↦ x.property Submodule.mem_top⟩
 
 variable {q} {X' X'' : TopCat.{w}} {q' : C(X', F)} {q'' : C(X'', F)}
 
@@ -92,7 +92,7 @@ lemma subspaceComplPairMap_fst (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x) (W : 
 @[simp]
 lemma subspaceComplPairMap_snd_apply (f : X ⟶ X') (hf : ∀ x, q' (f x) = q x)
     (W : Submodule ℝ F) (x : (subspaceComplPair q W).snd) :
-    (TopPair.Hom.snd (subspaceComplPairMap f hf W) x).1 = f x.1 :=
+    (TopPair.Hom.snd (subspaceComplPairMap f hf W) x).val = f x.val :=
   TopPair.ofSubsetMap_snd_apply _ _ x
 
 /-- The map of pairs induced by the identity is the identity. -/
@@ -167,8 +167,8 @@ include hq
 private lemma isZero_biprod (s : W.LineExtension) (n : ℕ) :
     IsZero ((TopPair.ofSubset (half q s.W' (extension s))).singularHomology R n ⊞
       (TopPair.ofSubset (half q s.W' (-extension s))).singularHomology R n) :=
-  biprod_isZero_iff _ _ |>.2 ⟨hq _ _ _ s.v.2 (extension_apply_v s) n,
-    hq _ _ _ (neg_mem s.v.2) (by simp [extension_apply_v]) n⟩
+  biprod_isZero_iff _ _ |>.2 ⟨hq _ _ _ s.v.property (extension_apply_v s) n,
+    hq _ _ _ (neg_mem s.v.property) (by simp [extension_apply_v]) n⟩
 
 variable [FiniteDimensional ℝ F]
 

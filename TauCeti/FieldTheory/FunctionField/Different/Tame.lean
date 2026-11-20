@@ -29,7 +29,7 @@ Everything is read on the local model `𝒪_P ⊆ 𝒪'_P` of
 `TauCeti/FieldTheory/FunctionField/Different/Basic.lean`, where the different exponent lives, so
 the two conditions are stated for the centre `𝔓` of `P'` on `𝒪'_P` over the maximal ideal of the
 discrete valuation ring `𝒪_P`, whose residue ring is the residue field of `P`
-(`TauCeti.Place.center_restrict_asIdeal_eq_maximalIdeal`).  This is the same ideal-theoretic
+(`TauCeti.Place.center_integers_asIdeal`).  This is the same ideal-theoretic
 reading of the residue extension that `TauCeti.Place.differentExponent_eq_zero_iff` uses for
 unramifiedness.  The theorem behind it is
 `TauCeti.ramificationIdx_le_multiplicity_differentIdeal_iff`.
@@ -96,7 +96,7 @@ field of `P = P'.restrict k F`.
 
 The residue extension is read on the local model, between the residue ring of the maximal ideal of
 the discrete valuation ring `𝒪_P` — which is the residue field of `P`, by
-`TauCeti.Place.center_restrict_asIdeal_eq_maximalIdeal` — and the residue ring of the centre of
+`TauCeti.Place.center_integers_asIdeal` — and the residue ring of the centre of
 `P'` on `𝒪'_P`.  Stichtenoth assumes a perfect constant field, where the separability condition is
 automatic; unlike Stichtenoth's *tamely ramified*, an unramified place with separable residue
 extension also counts as tame here. -/

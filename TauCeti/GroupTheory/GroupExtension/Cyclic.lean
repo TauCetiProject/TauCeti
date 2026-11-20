@@ -314,7 +314,7 @@ theorem groupCohomologyEvenEquivTorsionBy_cohomologyClass_factorSet [Fintype G]
     Rep.toAdditive (M := G) (G := M)
         ((groupCohomologyEvenEquivTorsionBy (Rep.ofMulDistribMulAction G M) g hg hord
           (ofMulDistribMulAction_ρ_eq_neg_of_smul_eq_inv hinv) 2 even_two
-          (factorSet σ hσ hact).cohomologyClass).1) =
+          (factorSet σ hσ hact).cohomologyClass).val) =
       Additive.ofMul a := by
   rw [cohomologyClass_factorSet_eq_groupCohomologyπEven σ hσ hact hg he ha,
     groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven]

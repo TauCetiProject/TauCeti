@@ -51,7 +51,7 @@ inside the single cohomology group `H²(C₂, C_{2n}^{inv}) ≅ ℤ/2`.
   of `C₂` by `C₄` with `|C₄| = 4` and `[E : C₄] = 2` not coprime
   (`not_coprime_card_index_dihedralFour`, `not_coprime_card_index_quaternionTwo`), and every
   involution of `QuaternionGroup n` (`n ≠ 0`) lies inside the rotation subgroup
-  (`TauCeti.sq_eq_one_iff_quaternionGroup`). By contrast, for any Klein four-group `V` and every
+  (`TauCeti.sq_eq_one_quaternionGroup_iff`). By contrast, for any Klein four-group `V` and every
   action of `C₃` on `V`, coprimality `gcd(3, 4) = 1` forces `H^{k+1}(C₃, V) = 0`
   (`subsingleton_groupCohomology_zmodThree_kleinFour`).
 
@@ -114,16 +114,16 @@ private def repInvTorsionByTwoEquiv (n : ℕ) :
   let e :=
     (Rep.toAdditive (M := Multiplicative (ZMod 2)) (G := Multiplicative (ZMod (2 * n)))).trans
       (AddEquiv.additiveMultiplicative (ZMod (2 * n)))
-  { toFun := fun x ↦ ⟨e x.1, (Submodule.mem_torsionBy_iff _ _).2 <| by
-      have hx : x.1 + x.1 = 0 := by
-        simpa only [two_smul] using (Submodule.mem_torsionBy_iff (2 : ℤ) x.1).1 x.2
+  { toFun := fun x ↦ ⟨e x.val, (Submodule.mem_torsionBy_iff _ _).2 <| by
+      have hx : x.val + x.val = 0 := by
+        simpa only [two_smul] using (Submodule.mem_torsionBy_iff (2 : ℤ) x.val).1 x.property
       rw [two_zsmul, ← map_add, hx, map_zero]⟩
-    invFun := fun y ↦ ⟨e.symm y.1, (Submodule.mem_torsionBy_iff _ _).2 <| by
-      have hy : y.1 + y.1 = 0 := by
-        simpa only [two_zsmul] using (Submodule.mem_torsionBy_iff (2 : ℤ) y.1).1 y.2
+    invFun := fun y ↦ ⟨e.symm y.val, (Submodule.mem_torsionBy_iff _ _).2 <| by
+      have hy : y.val + y.val = 0 := by
+        simpa only [two_zsmul] using (Submodule.mem_torsionBy_iff (2 : ℤ) y.val).1 y.property
       rw [two_smul, ← map_add, hy, map_zero]⟩
-    left_inv := fun x ↦ Subtype.ext (e.symm_apply_apply x.1)
-    right_inv := fun y ↦ Subtype.ext (e.apply_symm_apply y.1)
+    left_inv := fun x ↦ Subtype.ext (e.symm_apply_apply x.val)
+    right_inv := fun y ↦ Subtype.ext (e.apply_symm_apply y.val)
     map_add' := fun _ _ ↦ Subtype.ext (map_add e _ _) }
 
 private theorem repInvTorsionByTwoEquiv_apply_coe (n : ℕ)
@@ -132,7 +132,8 @@ private theorem repInvTorsionByTwoEquiv_apply_coe (n : ℕ)
       (2 : ℤ)) :
     (repInvTorsionByTwoEquiv n x : ZMod (2 * n)) =
       AddEquiv.additiveMultiplicative (ZMod (2 * n))
-        (Rep.toAdditive (M := Multiplicative (ZMod 2)) (G := Multiplicative (ZMod (2 * n))) x.1) :=
+        (Rep.toAdditive (M := Multiplicative (ZMod 2)) (G := Multiplicative (ZMod (2 * n)))
+          x.val) :=
   (rfl)
 
 /-- **Second cohomology of the inversion action on `C_{2n}`.** For every nonzero `n`,
@@ -469,7 +470,7 @@ theorem not_coprime_card_index_dihedralFour :
 not coprime. -/
 theorem not_coprime_card_index_quaternionTwo :
     ¬ Nat.Coprime (Nat.card (quaternionRotations 2)) (quaternionRotations 2).index := by
-  rw [card_quaternionRotations, index_quaternionRotations]
+  rw [natCard_quaternionRotations, index_quaternionRotations]
   decide
 
 /-- The orders `|C₃| = 3` and `|V₄| = 4` are coprime for every Klein four-group `V`. -/

@@ -47,6 +47,8 @@ represented value carries the whole content of the first theorem: every quadrati
 * `TauCeti.apply_mul_eq_of_equivalent_binary`: a pairing constant on isometric binary forms
   agrees on their discriminants in its first argument.
 * `TauCeti.equivalent_binary_iff`: the binary equivalence criterion, Lam I.5.1.
+* `TauCeti.represents_binary_one_neg_iff` and `TauCeti.anisotropic_binary_one_neg_iff`: coordinate
+  representation and square-radicand anisotropy criteria for the norm form `⟨1, -d⟩`.
 
 ## References
 
@@ -243,36 +245,44 @@ theorem apply_mul_eq_of_equivalent_binary [Invertible (2 : R)] {M : Type*}
   simpa only [weightedSumSquares_units, hcoe] using
     equivalent_weightedSumSquares_of_isSquare_div (R := R) hsq
 
+/-- The binary form `⟨1, -d⟩` represents `a` if and only if `a = x² - d y²` is solvable. -/
+theorem represents_binary_one_neg_iff (d a : R) :
+    Represents (weightedSumSquares R ![1, -d]) a ↔ ∃ x y : R, a = x ^ 2 - d * y ^ 2 := by
+  rw [represents_iff, Set.mem_range]
+  constructor
+  · rintro ⟨v, rfl⟩
+    exact ⟨v 0, v 1, by simp [weightedSumSquares_apply, Fin.sum_univ_two, pow_two]; ring⟩
+  · rintro ⟨x, y, rfl⟩
+    exact ⟨![x, y], by simp [weightedSumSquares_apply, Fin.sum_univ_two, pow_two]; ring⟩
+
 end CommRing
+
+/-- The binary form `⟨1, -d⟩` over a field is anisotropic if and only if `d` is not a square. -/
+theorem anisotropic_binary_one_neg_iff {F : Type*} [Field F] (d : F) :
+    (weightedSumSquares F ![(1 : F), -d]).Anisotropic ↔ ¬ IsSquare d := by
+  constructor
+  · intro hQ ⟨z, hz⟩
+    have hzero : weightedSumSquares F ![(1 : F), -d] ![z, 1] = 0 := by
+      simp [weightedSumSquares_apply, Fin.sum_univ_two, hz]
+    have hh := congrArg (fun f : Fin 2 → F => f 1) (hQ ![z, 1] hzero)
+    simp at hh
+  · intro hsq x hx
+    have hxy : x 0 ^ 2 - d * x 1 ^ 2 = 0 := by
+      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two, sub_eq_add_neg] using hx
+    have hy : x 1 = 0 := by
+      by_contra hy
+      refine hsq ⟨x 0 / x 1, ?_⟩
+      rw [← _root_.sq, div_pow]
+      field_simp
+      linear_combination -hxy
+    have hx0 : x 0 = 0 := sq_eq_zero_iff.mp (by simpa [hy] using hxy)
+    funext i
+    fin_cases i <;> simp [hx0, hy]
 
 /-- The binary form `⟨1, 1⟩` is anisotropic exactly when `-1` is not a square. -/
 theorem anisotropic_binary_one_one_iff {F : Type*} [Field F] :
     (weightedSumSquares F ![(1 : F), 1]).Anisotropic ↔ ¬ IsSquare (-1 : F) := by
-  constructor
-  · intro hQ ⟨z, hz⟩
-    have hzero : weightedSumSquares F ![(1 : F), 1] ![z, 1] = 0 := by
-      simp only [weightedSumSquares_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
-        Matrix.cons_val_one, one_mul]
-      rw [← hz]
-      simp
-    have hh := hQ ![z, 1] hzero
-    have : (1 : F) = 0 := by simpa using congrArg (fun f : Fin 2 → F => f 1) hh
-    exact one_ne_zero this
-  · intro hsq x hx
-    have hxy : x 0 ^ 2 + x 1 ^ 2 = 0 := by
-      simpa [weightedSumSquares_apply, Fin.sum_univ_two, pow_two] using hx
-    have hy : x 1 = 0 := by
-      by_contra hy
-      apply hsq
-      refine ⟨x 0 / x 1, ?_⟩
-      rw [← _root_.sq, div_pow]
-      field_simp
-      linear_combination -hxy
-    have hx0 : x 0 = 0 := by
-      have hx0sq : x 0 ^ 2 = 0 := by simpa [hy] using hxy
-      exact (sq_eq_zero_iff).mp hx0sq
-    funext i
-    fin_cases i <;> simp [hx0, hy]
+  simpa using anisotropic_binary_one_neg_iff (-1 : F)
 
 /-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨2, 2⟩` are isometric: their
 discriminants `1` and `4` agree modulo squares, and both represent `2`, once as `1² + 1²` and once
