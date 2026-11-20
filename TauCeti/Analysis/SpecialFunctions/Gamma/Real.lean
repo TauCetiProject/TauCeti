@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.Complex.ExponentialBounds
+public import Mathlib.Analysis.Calculus.Deriv.Star
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -22,6 +23,8 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.digamma`: the logarithmic derivative of `Real.Gamma`, with the total value `0` at the
   poles `0, -1, -2, ...`.
 * `Complex.digamma_ofReal`: at every real point, complex digamma is the coercion of real digamma.
+* `Complex.digamma_conj`: complex digamma commutes with conjugation, `ψ(conj s) = conj ψ(s)`.
+* `Complex.continuousOn_digamma_re_pos`: complex digamma is continuous on the right half-plane.
 * `Real.hasDerivAt_log_Gamma`, `Real.digamma_eq_deriv_log_Gamma`: at every regular real point,
   real digamma is the derivative of `log ∘ Gamma`.
 * `Real.digamma_one`, `Real.digamma_apply_add_one`, `Real.digamma_apply_add_nat`: the value
@@ -49,6 +52,8 @@ The positive-axis bounds come from the log-convexity of Gamma (Bohr–Mollerup):
 public section
 
 open Complex Filter Set Topology
+
+open scoped ComplexConjugate
 
 namespace Real
 
@@ -96,6 +101,24 @@ theorem digamma_ofReal {x : ℝ} :
   · push Not at hx
     obtain ⟨m, rfl⟩ := hx
     simp [digamma_def, logDeriv_apply, Gamma_neg_nat_eq_zero, Real.Gamma_neg_nat_eq_zero]
+
+/-- The digamma function commutes with complex conjugation: `ψ(conj s) = conj ψ(s)`. -/
+theorem digamma_conj (s : ℂ) : digamma (conj s) = conj (digamma s) := by
+  have hG : Gamma = conj ∘ Gamma ∘ conj := funext fun s => by simp [Gamma_conj]
+  have hd : deriv Gamma (conj s) = conj (deriv Gamma s) := by
+    conv_lhs => rw [hG]
+    rw [deriv_conj_conj]
+    simp
+  rw [digamma_def, logDeriv_apply, logDeriv_apply, hd, Gamma_conj, map_div₀]
+
+/-- The digamma function is continuous on the right half-plane `0 < Re s`. -/
+theorem continuousOn_digamma_re_pos : ContinuousOn digamma {s : ℂ | 0 < s.re} := by
+  have hU : IsOpen {s : ℂ | 0 < s.re} := isOpen_lt continuous_const continuous_re
+  have hG : DifferentiableOn ℂ Gamma {s : ℂ | 0 < s.re} := fun s hs =>
+    (hasDerivAt_Gamma_of_re_pos hs).differentiableAt.differentiableWithinAt
+  have hψ : ContinuousOn (fun s => deriv Gamma s / Gamma s) {s : ℂ | 0 < s.re} :=
+    (hG.deriv hU).continuousOn.div hG.continuousOn fun s hs => Gamma_ne_zero_of_re_pos hs
+  exact hψ.congr fun s _ => by rw [digamma_def, logDeriv_apply]
 
 end Complex
 
