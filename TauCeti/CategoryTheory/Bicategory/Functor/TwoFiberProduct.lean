@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Categorical.Basic
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Cat
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Equivalence
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Groupoid
 
@@ -163,16 +164,6 @@ def mapCompIso {b₀ b₁ b₂ : B} (φ : b₀ ⟶ b₁) (ψ : b₁ ⟶ b₂) :
       ext
       · exact (F.mapComp φ ψ).hom.toNatTrans.naturality u.fst
       · exact (G.mapComp φ ψ).hom.toNatTrans.naturality u.snd)
-
-/-- Extensionality for `2`-morphisms of `Cat` with values in the fibre
-`f.app b ⊡ g.app b` of the 2-fibre product: they are determined by their components in the two
-factors. -/
-@[ext]
-lemma hom₂_ext {C : Cat.{v, max u v}} {b : B}
-    {T U : C ⟶ ⟨(f.app b).toFunctor ⊡ (g.app b).toFunctor, inferInstance⟩} {α β : T ⟶ U}
-    (h₁ : ∀ x, (α.toNatTrans.app x).fst = (β.toNatTrans.app x).fst)
-    (h₂ : ∀ x, (α.toNatTrans.app x).snd = (β.toNatTrans.app x).snd) : α = β :=
-  Cat.Hom₂.ext (NatTrans.ext (funext fun x ↦ CategoricalPullback.hom_ext (h₁ x) (h₂ x)))
 
 end twoFiberProduct
 
