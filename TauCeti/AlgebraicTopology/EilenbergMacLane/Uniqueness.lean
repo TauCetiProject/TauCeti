@@ -90,10 +90,10 @@ theorem exists_singularHomologyMap_cellAttachmentIncl_comp_eq
   -- Every relation sphere becomes null-homologous in `Z`, hence null-homotopic, so `g` extends
   -- over the relation cells.
   choose F hF using fun r : Relation A n ψ ↦
-    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq (r.1 ≫ g)).1 <|
-      (TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero hZ (r.1 ≫ g)).2 <| by
+    (TopCat.Hom.nullhomotopic_iff_exists_diskBoundaryInclusion_comp_eq (r.val ≫ g)).1 <|
+      (TopCat.Hom.nullhomotopic_iff_singularHomologyMap_eq_zero hZ (r.val ≫ g)).2 <| by
         rw [Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply, hgθ,
-          LinearMap.comp_apply, r.2, map_zero]
+          LinearMap.comp_apply, r.property, map_zero]
   refine ⟨cellAttachmentLift _ g F fun r ↦ (hF r).symm, ?_, ?_⟩
   · rw [presentationBase, ← ConcreteCategory.comp_apply, cellAttachmentIncl_lift, hg]
   · rw [cellAttachmentIncl_lift, hgθ]

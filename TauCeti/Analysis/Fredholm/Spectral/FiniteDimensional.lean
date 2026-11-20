@@ -97,8 +97,7 @@ theorem isSpectralCutOn_of_forall_norm_lt (hc : 0 < c) (h : ∀ u ∈ s, ‖A u�
     IsSpectralCutOn A c s := by
   refine isSpectralCutOn_iff_of_finiteDimensional.2 ⟨hc, fun u hu ↦ ?_⟩
   have hspec {r : ℝ} (hr : r ∈ spectrum ℝ (A u)) : |r| < c := by
-    have h₁ := spectrum.norm_le_norm_mul_of_mem hr
-    have h₂ : ‖(1 : H →L[𝕜] H)‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+    have h₁ := spectrum.norm_le_norm_of_mem hr
     rw [Real.norm_eq_abs] at h₁
     nlinarith [norm_nonneg (A u), h u hu]
   exact ⟨fun hr ↦ by simpa [abs_of_pos hc] using hspec hr,

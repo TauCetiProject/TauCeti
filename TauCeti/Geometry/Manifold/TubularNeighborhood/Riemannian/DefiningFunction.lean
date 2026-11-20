@@ -71,19 +71,19 @@ theorem exists_regular_definingFunction_normalExp
     letI : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
     ∃ (r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (g : C^∞⟮J, N; 𝓘(ℝ), ℝ⟯),
       (∀ x, 0 < r x) ∧ (∀ x, r x < ε x) ∧ IsRegularValue J 𝓘(ℝ) g 0 ∧
-      {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ f.normalExpDomain hn ∧
-      f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ O ∧
-      IsOpenEmbedding ({p : TotalSpace P ν | ‖p.2‖ < r p.proj}.domRestrict
+      {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ f.normalExpDomain hn ∧
+      f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ O ∧
+      IsOpenEmbedding ({p : TotalSpace P ν | ‖p.snd‖ < r p.proj}.domRestrict
         (f.normalExp hn)) ∧
-      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}.domRestrict
+      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj}.domRestrict
         (f.normalExp hn)) ∧
-      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.2‖ = r p.proj}.domRestrict
+      IsClosedEmbedding ({p : TotalSpace P ν | ‖p.snd‖ = r p.proj}.domRestrict
         (f.normalExp hn)) ∧
-      (∀ p : TotalSpace P ν, ‖p.2‖ ≤ r p.proj →
+      (∀ p : TotalSpace P ν, ‖p.snd‖ ≤ r p.proj →
         (g ∘ f.normalExp hn) =ᶠ[𝓝 p] TauCeti.sphereBundleEquation r) ∧
-      {y | g y ≤ 0} = f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ∧
-      {y | g y < 0} = f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ < r p.proj} ∧
-      {y | g y = 0} = f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ = r p.proj} := by
+      {y | g y ≤ 0} = f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ∧
+      {y | g y < 0} = f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ < r p.proj} ∧
+      {y | g y = 0} = f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ = r p.proj} := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
@@ -115,7 +115,7 @@ theorem exists_regular_definingFunction_normalExp
     let := f.isContMDiffRiemannianBundle_normalRiemannianMetric (m := ∞) hn (by simp) hdim
     obtain ⟨Φ, r, hΦ, hr, hrε, hdisc, hdomain, htarget, hopen, hd, hs⟩ :=
       f.exists_partialDiffeomorph_normalExp_norm_le_subset hclosed hdim hO hfO hε hεpos
-    have hclosedDisc : IsClosed (Φ '' {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}) := by
+    have hclosedDisc : IsClosed (Φ '' {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj}) := by
       simpa only [range_domRestrict, PartialDiffeomorph.toFun'_toOpenPartialHomeomorph]
         using hd.isClosed_range
     -- Globalize the regular sphere equation without changing any of its sign loci.

@@ -138,7 +138,7 @@ By `TauCeti.LieTypeIndex.exists_eq_of_hasUnimodularDiagram_of_not_usesHalfFroben
 exactly the three untwisted families `E₈(q)`, `F₄(q)` and `G₂(q)`; the condition removes the Ree
 families `²G₂(3^(2m+1))` and `²F₄(2^(2m+1))` and the Tits index, which share their diagrams. -/
 abbrev UnimodularExceptionalIndex : Type :=
-  {d : UnimodularLieIndex // ¬d.1.1.UsesHalfFrobenius}
+  {d : UnimodularLieIndex // ¬d.val.val.UsesHalfFrobenius}
 
 namespace UnimodularExceptionalIndex
 
@@ -163,20 +163,20 @@ carrier of the underlying valid index over the algebraic closure of its prime fi
 `E₈`, `F₄` and `G₂` the adjoint module spans the full character lattice, which is what lets the
 Geck carrier serve as the carrier of these branches. It is not identified with the pinned simply
 connected group scheme of the diagram. -/
-abbrev AmbientGroup : Type := ValidLieTypeIndex.GeckGroup d.1.1
+abbrev AmbientGroup : Type := ValidLieTypeIndex.GeckGroup d.val.val
 
 /-- The positive simple-root subgroup at the Bourbaki-numbered node `i` of the diagram: the Geck
 carrier's numbered root subgroup at the positive copy of `i`, as a homomorphism from the additive
 group of the algebraic closure. -/
-abbrev simpleRootSubgroup (i : Fin d.1.1.dynkinType.rank) :
-    Multiplicative d.1.1.Closure →* d.AmbientGroup :=
-  d.1.1.geckRootSubgroup (.inl i)
+abbrev simpleRootSubgroup (i : Fin d.val.val.dynkinType.rank) :
+    Multiplicative d.val.val.Closure →* d.AmbientGroup :=
+  d.val.val.geckRootSubgroup (.inl i)
 
 /-- **The Steinberg endomorphism of an untwisted unimodular exceptional index**: the `q`-power
 Frobenius of the Geck point group, where `q` is the field order recorded by the index. The three
 families this covers are untwisted, so no diagram automorphism and no half-Frobenius enters. -/
 def steinberg : d.AmbientGroup →* d.AmbientGroup :=
-  d.1.1.geckFrobenius
+  d.val.val.geckFrobenius
 
 /-- The Steinberg map of an untwisted unimodular exceptional index is the Frobenius of its Geck
 point group. This is its unfolding lemma; the definition itself stays sealed.
@@ -184,98 +184,101 @@ point group. This is its unfolding lemma; the definition itself stays sealed.
 It is deliberately not a `simp` lemma: `steinberg_geckRootSubgroup` and `coe_steinberg_apply` are
 the normal forms the pinned equations of this file are stated against, and unfolding to
 `TauCeti.ValidLieTypeIndex.geckFrobenius` would keep them from firing. -/
-theorem steinberg_eq_geckFrobenius : d.steinberg = d.1.1.geckFrobenius := by
+theorem steinberg_eq_geckFrobenius : d.steinberg = d.val.val.geckFrobenius := by
   rw [steinberg]
 
 /-- The Steinberg map acts on the Geck point group by raising every matrix entry to the `q`-th
 power. -/
 @[simp]
 theorem coe_steinberg_apply (g : d.AmbientGroup)
-    (r c : Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) :
+    (r c : Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) :
     ((d.steinberg g : Matrix.GeneralLinearGroup
-          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
-        Matrix _ _ d.1.1.Closure) r c =
+          (Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) d.val.val.Closure) :
+        Matrix _ _ d.val.val.Closure) r c =
       ((g : Matrix.GeneralLinearGroup
-          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
-        Matrix _ _ d.1.1.Closure) r c ^ d.1.1.fieldOrder := by
+          (Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) d.val.val.Closure) :
+        Matrix _ _ d.val.val.Closure) r c ^ d.val.val.fieldOrder := by
   rw [steinberg_eq_geckFrobenius]
-  exact d.1.1.coe_geckFrobenius_apply g r c
+  exact d.val.val.coe_geckFrobenius_apply g r c
 
 /-- **The Steinberg map raises the parameter of every numbered root subgroup to the `q`-th
 power.** On a simple root subgroup this is the equation `Frob_q (x_α(t)) = x_α(t ^ q)` of the
 Steinberg map of the untwisted families, proved here on the Geck carrier. -/
 @[simp]
-theorem steinberg_geckRootSubgroup (i : Fin d.1.1.dynkinType.rank ⊕ Fin d.1.1.dynkinType.rank)
-    (u : Multiplicative d.1.1.Closure) :
-    d.steinberg (d.1.1.geckRootSubgroup i u) =
-      d.1.1.geckRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.1.fieldOrder)) := by
+theorem steinberg_geckRootSubgroup (i : Fin d.val.val.dynkinType.rank ⊕ Fin
+    d.val.val.dynkinType.rank)
+    (u : Multiplicative d.val.val.Closure) :
+    d.steinberg (d.val.val.geckRootSubgroup i u) =
+      d.val.val.geckRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.val.fieldOrder)) := by
   rw [steinberg_eq_geckFrobenius]
-  exact d.1.1.geckFrobenius_geckRootSubgroup i u
+  exact d.val.val.geckFrobenius_geckRootSubgroup i u
 
 /-- **The prime-field Frobenius of the Geck point group**, the `p`-power map for `p` the defining
 characteristic. The Steinberg endomorphism of the family, which is its `q`-power Frobenius, is the
 `e`-th power of this map, for `e` the field exponent the index records, by
 `steinberg_eq_primeFrobenius_pow`. -/
 def primeFrobenius : d.AmbientGroup →* d.AmbientGroup :=
-  d.1.1.geckPrimeFrobenius
+  d.val.val.geckPrimeFrobenius
 
 /-- The prime-field Frobenius of an untwisted unimodular exceptional index is the prime-field
 Frobenius of its Geck point group. -/
 -- Not a `simp` lemma, for the reason `steinberg_eq_geckFrobenius` is not.
-theorem primeFrobenius_eq_geckPrimeFrobenius : d.primeFrobenius = d.1.1.geckPrimeFrobenius := by
+theorem primeFrobenius_eq_geckPrimeFrobenius : d.primeFrobenius = d.val.val.geckPrimeFrobenius := by
   rw [primeFrobenius]
 
 /-- The prime-field Frobenius acts on the Geck point group by raising every matrix entry to the
 `p`-th power. -/
 @[simp]
 theorem coe_primeFrobenius_apply (g : d.AmbientGroup)
-    (r c : Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) :
+    (r c : Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) :
     ((d.primeFrobenius g : Matrix.GeneralLinearGroup
-          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
-        Matrix _ _ d.1.1.Closure) r c =
+          (Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) d.val.val.Closure) :
+        Matrix _ _ d.val.val.Closure) r c =
       ((g : Matrix.GeneralLinearGroup
-          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
-        Matrix _ _ d.1.1.Closure) r c ^ d.1.1.characteristic := by
+          (Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) d.val.val.Closure) :
+        Matrix _ _ d.val.val.Closure) r c ^ d.val.val.characteristic := by
   rw [primeFrobenius_eq_geckPrimeFrobenius]
-  exact d.1.1.coe_geckPrimeFrobenius_apply g r c
+  exact d.val.val.coe_geckPrimeFrobenius_apply g r c
 
 /-- **The prime-field Frobenius raises the parameter of every numbered root subgroup to the `p`-th
 power.** On a simple root subgroup this is `Frob_p (x_α(t)) = x_α(t ^ p)`. -/
 @[simp]
-theorem primeFrobenius_geckRootSubgroup (i : Fin d.1.1.dynkinType.rank ⊕ Fin d.1.1.dynkinType.rank)
-    (u : Multiplicative d.1.1.Closure) :
-    d.primeFrobenius (d.1.1.geckRootSubgroup i u) =
-      d.1.1.geckRootSubgroup i
-        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.1.characteristic)) := by
+theorem primeFrobenius_geckRootSubgroup (i : Fin d.val.val.dynkinType.rank ⊕ Fin
+    d.val.val.dynkinType.rank)
+    (u : Multiplicative d.val.val.Closure) :
+    d.primeFrobenius (d.val.val.geckRootSubgroup i u) =
+      d.val.val.geckRootSubgroup i
+        (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.val.val.characteristic)) := by
   rw [primeFrobenius_eq_geckPrimeFrobenius]
-  exact d.1.1.geckPrimeFrobenius_geckRootSubgroup i u
+  exact d.val.val.geckPrimeFrobenius_geckRootSubgroup i u
 
 /-- **The Steinberg endomorphism is the `e`-th power of the prime-field Frobenius**, for `e` the
 field exponent the index records. -/
 theorem steinberg_eq_primeFrobenius_pow :
-    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.1.1.fieldExponent := by
+    d.steinberg = (show Monoid.End _ from d.primeFrobenius) ^ d.val.val.fieldExponent := by
   rw [primeFrobenius_eq_geckPrimeFrobenius, steinberg_eq_geckFrobenius]
-  exact d.1.1.geckFrobenius_eq_geckPrimeFrobenius_pow
+  exact d.val.val.geckFrobenius_eq_geckPrimeFrobenius_pow
 
 /-- **The prime-field Frobenius raises every coordinate of a weight-torus point to the `p`-th
 power.** -/
 @[simp]
-theorem primeFrobenius_geckWeightTorus (s : Fin d.1.1.dynkinType.rank → d.1.1.Closureˣ) :
-    d.primeFrobenius (d.1.1.geckWeightTorus s) =
-      d.1.1.geckWeightTorus (s ^ d.1.1.characteristic) := by
+theorem primeFrobenius_geckWeightTorus (s : Fin d.val.val.dynkinType.rank → d.val.val.Closureˣ) :
+    d.primeFrobenius (d.val.val.geckWeightTorus s) =
+      d.val.val.geckWeightTorus (s ^ d.val.val.characteristic) := by
   rw [primeFrobenius_eq_geckPrimeFrobenius]
-  exact d.1.1.geckPrimeFrobenius_geckWeightTorus s
+  exact d.val.val.geckPrimeFrobenius_geckWeightTorus s
 
 /-- **The Steinberg map raises every coordinate of a weight-torus point to the `q`-th power.** It
 is the untwisted case of the equation a Steinberg endomorphism satisfies on the second half of the
 pinned data, the first half being `TauCeti.UnimodularExceptionalIndex.steinberg_geckRootSubgroup`
 on the root subgroups. -/
 @[simp]
-theorem steinberg_geckWeightTorus (s : Fin d.1.1.dynkinType.rank → d.1.1.Closureˣ) :
-    d.steinberg (d.1.1.geckWeightTorus s) = d.1.1.geckWeightTorus (s ^ d.1.1.fieldOrder) := by
+theorem steinberg_geckWeightTorus (s : Fin d.val.val.dynkinType.rank → d.val.val.Closureˣ) :
+    d.steinberg (d.val.val.geckWeightTorus s) = d.val.val.geckWeightTorus (s ^ d.val.val.fieldOrder)
+        := by
   rw [steinberg_eq_geckFrobenius]
-  exact d.1.1.geckFrobenius_geckWeightTorus s
+  exact d.val.val.geckFrobenius_geckWeightTorus s
 
 /-- **A point of the Geck point group is fixed by the Steinberg map exactly when all of its matrix
 entries lie in the field of definition.** Writing `𝔽_q` for
@@ -289,12 +292,12 @@ the annotation. -/
 theorem mem_fixedSubgroup_steinberg_iff (g : d.AmbientGroup) :
     g ∈ fixedSubgroup d.steinberg ↔
       ∀ r c, ((g : Matrix.GeneralLinearGroup
-          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) :
-        Matrix (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid))
-          (Fin (d.1.1.dynkinType.geckDim d.1.1.dynkinType_valid)) d.1.1.Closure) r c ∈
-        d.1.1.fixedField := by
+          (Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) d.val.val.Closure) :
+        Matrix (Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid))
+          (Fin (d.val.val.dynkinType.geckDim d.val.val.dynkinType_valid)) d.val.val.Closure) r c ∈
+        d.val.val.fixedField := by
   rw [steinberg_eq_geckFrobenius]
-  exact d.1.1.mem_fixedSubgroup_geckFrobenius_iff g
+  exact d.val.val.mem_fixedSubgroup_geckFrobenius_iff g
 
 /-! ## The finite-group candidate -/
 

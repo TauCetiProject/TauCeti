@@ -363,9 +363,9 @@ theorem IsMorse.exists_isMorseBottFamily [I.Boundaryless] [FiniteDimensional ℝ
   refine ⟨i, hi, ⟨hf.contMDiff, fun a ↦ ?_, fun _ ↦ ⟨0⟩, fun _ ↦ inferInstance, fun a z ↦ ?_,
     fun a b hab ↦ ?_, ?_, ?_⟩⟩
   · exact SmoothEmbedding.isNondegenerateCriticalSubmanifold_iff_of_subsingleton.2 fun z ↦
-      hi a z ▸ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints a.2
+      hi a z ▸ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints a.property
   · rw [hrange, hi]
-    exact (connectedComponentIn_eq_singleton a.2
+    exact (connectedComponentIn_eq_singleton a.property
       (hf.eventually_eq_of_mem_criticalPoints a)).symm
   · simpa [hrange, Subtype.ext_iff] using hab
   · intro x hx
@@ -377,7 +377,7 @@ theorem IsMorse.exists_isMorseBottFamily [I.Boundaryless] [FiniteDimensional ℝ
     obtain ⟨z, hzb, hzt⟩ := hb
     simp only [hrange, mem_singleton_iff] at hya hzb
     subst hya hzb
-    exact Subtype.ext ((hxt _ hyt a.2).trans (hxt _ hzt b.2).symm)
+    exact Subtype.ext ((hxt _ hyt a.property).trans (hxt _ hzt b.property).symm)
 
 /-- **A constant function is Morse–Bott.** On a nonempty connected manifold without boundary, the
 identity embedding exhibits a constant function as a Morse–Bott function, with the whole manifold
@@ -420,7 +420,7 @@ theorem isMorseBottFamily_ofOpens_const [IsManifold I n M] [BoundarylessManifold
     fun C ↦ ?_, fun _ ↦ inferInstance, fun C x ↦ ?_, fun C D h ↦ ?_, ?_, fun x ↦ ?_⟩
   · obtain ⟨x, rfl⟩ := ConnectedComponents.surjective_coe C
     exact ⟨⟨x, hmem x⟩⟩
-  · have hx : ConnectedComponents.mk (x : M) = C := ConnectedComponents.mem_opens.1 x.2
+  · have hx : ConnectedComponents.mk (x : M) = C := ConnectedComponents.mem_opens.1 x.property
     rw [hrange, hcrit, connectedComponentIn_univ, SmoothEmbedding.ofOpens_apply,
       ← ConnectedComponents.coe_opens_mk, hx]
   · -- A component is recovered from any of its points.

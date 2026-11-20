@@ -91,7 +91,7 @@ theorem norm_eq_gaussNorm (f : PowerSeries.IsRestricted.subring (R := R) c) :
 /-- Each weighted coefficient norm `‖aₙ‖ cⁿ` of a restricted series is bounded by its norm. -/
 theorem norm_coeff_mul_pow_le (f : PowerSeries.IsRestricted.subring (R := R) c) (n : ℕ) :
     ‖(f : PowerSeries R).coeff n‖ * c ^ n ≤ ‖f‖ :=
-  PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.2) n
+  PowerSeries.le_gaussNorm norm c _ (hasGaussNorm_of_isRestricted f.property) n
 
 /-- The norm of a restricted series is bounded by `r` exactly when every weighted coefficient norm
 `‖aₙ‖ cⁿ` is. -/
@@ -140,7 +140,7 @@ theorem tendsto_trunc_atTop (f : PowerSeries.IsRestricted.subring (R := R) c) :
       isRestricted_polynomial _⟩ : PowerSeries.IsRestricted.subring (R := R) c)) atTop (𝓝 f) := by
   refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
   obtain ⟨N, hN⟩ := eventually_atTop.mp
-    (((PowerSeries.isRestricted_iff' c _).mp f.2).eventually
+    (((PowerSeries.isRestricted_iff' c _).mp f.property).eventually
       (gt_mem_nhds (half_pos hε)))
   refine ⟨N, fun n hn ↦ ?_⟩
   rw [dist_eq_norm]

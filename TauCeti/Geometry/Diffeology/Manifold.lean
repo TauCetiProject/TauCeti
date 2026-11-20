@@ -35,7 +35,8 @@ a smooth Cartesian parametrization into a plot, and `hp.contMDiff` turns a plot 
 manifold map. The equivalence is also available as `isPlot_iff_contMDiff`, and on open subsets of
 Cartesian spaces as `isPlotOn_iff_contMDiffOn`.
 Likewise, `hf.dSmooth` and `hf.contMDiff` convert between manifold and diffeological
-smoothness, with the equivalence available as `dSmooth_iff_contMDiff`.
+smoothness, with the equivalence available as `dSmooth_iff_contMDiff`, and on open subsets as
+`dSmooth_domRestrict_iff_contMDiffOn`.
 
 The plot axioms and compatibility interface follow Mathlib's
 `DiffeologicalSpace.ofCorePlotsOn` and `Diffeology.IsContDiffCompatible`.
@@ -181,7 +182,7 @@ protected theorem _root_.ContMDiffOn.dSmooth_domRestrict
     [DiffeologicalSpace N] [IsContMDiffCompatible F N] {f : M → N} {s : Set M}
     (hf : ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f s) : DSmooth (s.domRestrict f) :=
   fun _ p hp => isPlot_iff_contMDiff.mpr (hf.comp_contMDiff
-    (isPlot_iff_contMDiff.mp (TauCeti.Diffeology.isPlot_subtype_iff.mp hp)) fun z => (p z).2)
+    (isPlot_iff_contMDiff.mp (TauCeti.Diffeology.isPlot_subtype_iff.mp hp)) fun z => (p z).property)
 
 /-- A Cartesian parametrization into a product of compatible charted spaces is a plot of the
 product diffeology if and only if it is smooth for the product model `𝓘(ℝ, E).prod 𝓘(ℝ, F)`. -/
@@ -290,6 +291,17 @@ charted space is smooth as a manifold map. -/
 protected theorem _root_.Diffeology.DSmooth.contMDiff {f : M → N} (hf : DSmooth f) :
     ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f :=
   dSmooth_iff_contMDiff.mp hf
+
+/-- On an open subset of a finite-dimensional smooth manifold, restricting a map to the subspace
+diffeology is diffeologically smooth if and only if the map is smooth on that open subset as a
+manifold map. -/
+theorem dSmooth_domRestrict_iff_contMDiffOn {u : Set M} (hu : IsOpen u) {f : M → N} :
+    DSmooth (u.domRestrict f) ↔ ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ f u := by
+  refine ⟨fun hf x hx ↦ ?_, ContMDiffOn.dSmooth_domRestrict⟩
+  let U : TopologicalSpace.Opens M := ⟨u, hu⟩
+  have hU : DSmooth (fun y : U ↦ f y) := hf
+  exact ((contMDiffAt_subtype_iff (U := U) (x := ⟨x, hx⟩)).mp
+    (hU.contMDiff ⟨x, hx⟩)).contMDiffWithinAt
 
 /-- A map from a finite-dimensional smooth manifold into a product of compatible charted spaces is
 diffeologically smooth if and only if it is smooth for the product model `𝓘(ℝ, F).prod 𝓘(ℝ, G)`. -/

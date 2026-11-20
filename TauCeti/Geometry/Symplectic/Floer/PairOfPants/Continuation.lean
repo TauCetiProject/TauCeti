@@ -253,7 +253,7 @@ theorem contMDiffAt_pairOfPantsContinuationPerturbation {n : ℕ∞}
       (L, (w : ℂ), x) := by
   simp only [pairOfPantsContinuationPerturbation, continuationHomotopy_def]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.property q
   have hf : ContMDiffAt (𝓘(ℝ, Puncture → ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
       (fun p : (Puncture → ℝ) × ℂ × M => p.2.1) (L, (w : ℂ), x) :=
     contMDiffAt_fst.comp (L, (w : ℂ), x) contMDiffAt_snd

@@ -119,7 +119,7 @@ theorem sigNeg_eq_sigPos_of_isCompl (Q : _root_.QuadraticForm R M) {A B : Submod
   simp only [e, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
     LinearEquiv.neg_apply, Submodule.coe_prodEquivOfIsCompl', Submodule.coe_neg]
   rw [QuadraticMap.map_add Q, QuadraticMap.map_add Q, QuadraticMap.map_neg, polar_neg_right]
-  simp [hA.apply_eq_zero a.2, hB.apply_eq_zero b.2]
+  simp [hA.apply_eq_zero a.property, hB.apply_eq_zero b.property]
 
 /-- **A positive-definite subspace of dimension the positive index of inertia exists.** This is
 Mathlib's `exists_finrank_eq_sigPos_and_posDef` without the finite-dimensionality assumption. -/

@@ -477,12 +477,12 @@ def lyapunovPerronMap (ξ : X) (γ : ℝ≥0 →ᵇ X) : ℝ≥0 →ᵇ X :=
     (K * ‖ξ‖ + 2 * K * (‖N 0‖ + ε * ‖γ‖) / α)
     fun t ↦ by
       refine (norm_add_le _ _).trans (add_le_add ?_
-        (norm_lyapunovPerronIntegral_le hs hu hα hgM t.2))
-      calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.2 ξ
+        (norm_lyapunovPerronIntegral_le hs hu hα hgM t.property))
+      calc ‖exp ((t : ℝ) • A) (P ξ)‖ ≤ K * Real.exp (-α * t) * ‖ξ‖ := hs t t.property ξ
         _ ≤ K * 1 * ‖ξ‖ := by
           gcongr
           exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg
-            (neg_nonpos.2 α.coe_nonneg) t.2)
+            (neg_nonpos.2 α.coe_nonneg) t.property)
         _ = K * ‖ξ‖ := by ring
 
 variable {A P N}
@@ -511,7 +511,7 @@ theorem dist_lyapunovPerronMap_le (ξ : X) (γ η : ℝ≥0 →ᵇ X) :
   rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, dist_eq_norm, add_sub_add_left_eq_sub,
     lyapunovPerronIntegral_sub hu hα (hcontinuous γ) (hbound γ)
       (hcontinuous η) (hbound η)]
-  calc _ ≤ 2 * K * (ε * dist γ η) / α := norm_lyapunovPerronIntegral_le hs hu hα hdiff t.2
+  calc _ ≤ 2 * K * (ε * dist γ η) / α := norm_lyapunovPerronIntegral_le hs hu hα hdiff t.property
     _ = 2 * K * ε / α * dist γ η := by ring
 
 /-- When `2 K ε < α`, the Lyapunov--Perron operator is a contraction. -/
@@ -527,11 +527,11 @@ theorem dist_lyapunovPerronMap_lyapunovPerronMap_le (ξ ζ : X) (γ : ℝ≥0 �
   refine (BoundedContinuousFunction.dist_le (by positivity)).2 fun t ↦ ?_
   rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, dist_eq_norm, add_sub_add_right_eq_sub,
     ← map_sub, ← map_sub, dist_eq_norm]
-  calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.2 _
+  calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.property _
     _ ≤ K * 1 * ‖ξ - ζ‖ := by
       gcongr
       exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg
-        (neg_nonpos.2 α.coe_nonneg) t.2)
+        (neg_nonpos.2 α.coe_nonneg) t.property)
     _ = K * ‖ξ - ζ‖ := by ring
 
 variable (A P N)
@@ -663,7 +663,7 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
   have hy_cont : ContinuousOn y (Ici 0) := hy.continuousOn
   -- The restriction of `y` to `[0, ∞)`, as a bounded continuous function.
   let γ : ℝ≥0 →ᵇ X := BoundedContinuousFunction.ofNormedAddCommGroup (fun t : ℝ≥0 ↦ y t)
-    (hy_cont.comp_continuous NNReal.continuous_coe fun t ↦ t.2) B fun t ↦ hB t t.2
+    (hy_cont.comp_continuous NNReal.continuous_coe fun t ↦ t.property) B fun t ↦ hB t t.property
   have hγ (t : ℝ) (ht : 0 ≤ t) : γ t.toNNReal = y t := by
     simp [γ, Real.coe_toNNReal t ht]
   set g : ℝ → X := fun s ↦ N (γ s.toNNReal)
@@ -707,9 +707,9 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
         _ = K * ‖y 0‖ := by ring
   have hsol : γ = lyapunovPerronSolution A P N hs hu hα hN hsmall (y 0) := by
     refine eq_lyapunovPerronSolution hs hu hα hN hsmall fun t ↦ ?_
-    have h := hz_exp t t.2
+    have h := hz_exp t t.property
     rw [hz0, map_zero] at h
-    have hγt : γ t = y t := by simpa using hγ t t.2
+    have hγt : γ t = y t := by simpa using hγ t t.property
     exact hγt.trans (sub_eq_zero.1 h)
   intro t ht
   rw [← hsol]
@@ -769,14 +769,14 @@ theorem norm_lyapunovPerronMap_sub_le_mul_exp {β : ℝ} (hβ : 0 ≤ β) (hβα
     rw [dist_eq_norm]
     simpa [Real.coe_toNNReal s hs0] using hγη s.toNNReal
   have hlin : ‖exp ((t : ℝ) • A) (P (ξ - ζ))‖ ≤ K * ‖ξ - ζ‖ * Real.exp (-β * t) := by
-    calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.2 _
+    calc _ ≤ K * Real.exp (-α * t) * ‖ξ - ζ‖ := hs t t.property _
       _ ≤ K * Real.exp (-β * t) * ‖ξ - ζ‖ := by gcongr
       _ = K * ‖ξ - ζ‖ * Real.exp (-β * t) := by ring
   rw [lyapunovPerronMap_apply, lyapunovPerronMap_apply, add_sub_add_comm, ← map_sub, ← map_sub,
     lyapunovPerronIntegral_sub hu hα (hcont γ) (hbound γ) (hcont η) (hbound η)]
   calc _ ≤ K * ‖ξ - ζ‖ * Real.exp (-β * t) + 2 * K * (ε * R) / (α - β) * Real.exp (-β * t) :=
         (norm_add_le _ _).trans
-          (add_le_add hlin (norm_lyapunovPerronIntegral_le_mul_exp hs hu hβ hβα hdiff t.2))
+          (add_le_add hlin (norm_lyapunovPerronIntegral_le_mul_exp hs hu hβ hβα hdiff t.property))
     _ = _ := by ring
 
 /-- **Weighted bound for the difference of Lyapunov--Perron solutions.** For `β ≥ 0` with

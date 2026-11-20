@@ -28,7 +28,9 @@ In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
 (`TauCeti.one_le_ofScalars_choose_radius`) and represents `(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit
 ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
-`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`).
+`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Every one-variable scalar-valued formal
+multilinear series is `ofScalars` of its `coeff` sequence
+(`FormalMultilinearSeries.ofScalars_coeff`).
 -/
 
 public section
@@ -36,6 +38,14 @@ public section
 open scoped BigOperators ENNReal
 
 namespace FormalMultilinearSeries
+
+/-- Every one-variable scalar-valued formal multilinear series equals `ofScalars` applied to its
+scalar coefficient sequence. -/
+@[simp]
+theorem ofScalars_coeff {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    (p : FormalMultilinearSeries 𝕜 𝕜 𝕜) : ofScalars 𝕜 p.coeff = p := by
+  ext n
+  simp [ofScalars, mul_comm]
 
 variable {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E] [TopologicalSpace E] [IsTopologicalRing E]
 
@@ -197,9 +207,10 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 A : Type*} [Nontri
       have hk := hC k
       rw [ofScalars_norm] at hk
       rw [Nat.mul_div_cancel_left _ hm]
-      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.2 hρ1 (Nat.le_mul_of_pos_left k hm))
+      exact (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one ρ.property hρ1
+          (Nat.le_mul_of_pos_left k hm))
         (norm_nonneg _)).trans hk
-    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.2 0)).trans (hC 0)
+    · simpa using (mul_nonneg (norm_nonneg _) (pow_nonneg ρ.property 0)).trans (hC 0)
   · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
     have hym : y ^ m ∈ Metric.eball (0 : A) r := by

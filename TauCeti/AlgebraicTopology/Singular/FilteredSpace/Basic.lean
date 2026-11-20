@@ -248,7 +248,9 @@ lemma chainFiltrationι_comp_extendMap (q : ℤ) :
 variable [∀ P : TopPair.{w}, Mono (F.map P.map)] [∀ P : TopPair.{w}, Mono (G.map P.map)]
 
 include hg in
-private lemma factors_chainFiltration (q : ℤ) :
+/-- A natural transformation `α : F ⟶ G` and a map `g` carrying each `X q` into `X' q` carry each
+stage of the filtration of `F Y` into the same stage of the filtration of `G Y'`. -/
+lemma factors_chainFiltration (q : ℤ) :
     (chainFiltration G X' q).Factors
       ((chainFiltration F X q).arrow ≫
         extendMap (F.map g ≫ α.app Y') ComplexShape.embeddingDownNat) :=
@@ -271,6 +273,13 @@ def chainFiltrationMap :
     CochainComplex.filtrationFunctor _ (monotone_chainFiltration F hX) ⟶
       CochainComplex.filtrationFunctor _ (monotone_chainFiltration G hX') :=
   CochainComplex.filtrationFunctorMap _ _ _ (factors_chainFiltration α g hg)
+
+/-- `TauCeti.chainFiltrationMap` is the morphism of filtration functors given by the chain map
+`F Y ⟶ G Y'` induced by `g` and `α`. -/
+lemma chainFiltrationMap_def :
+    chainFiltrationMap α hX hX' g hg =
+      CochainComplex.filtrationFunctorMap _ _ _ (factors_chainFiltration α g hg) :=
+  (rfl)
 
 /-- The components of `TauCeti.chainFiltrationMap` are the restrictions of the chain map
 `F Y ⟶ G Y'` induced by `g` and `α`. -/
@@ -298,9 +307,11 @@ lemma chainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom (q : ℤ) :
     ← chainFiltrationι_comp_extendMap, CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp_assoc]
   exact (chainFiltrationMap_app_comp α hX hX' g hg q).trans (Category.assoc _ _ _)
 
-/-- If `α` is a quasi-isomorphism on every space, then on every stage of the filtrations of a
-filtered space the morphism of filtrations induced by `α` is a quasi-isomorphism. -/
-instance quasiIso_chainFiltrationMap_app [∀ Z, QuasiIso (α.app Z)] (q : ℤ) :
+/-- If `α` is a quasi-isomorphism on every subset `X q`, for instance on every space, then on every
+stage of the filtrations of a filtered space the morphism of filtrations induced by `α` is a
+quasi-isomorphism. -/
+instance quasiIso_chainFiltrationMap_app [∀ q, QuasiIso (α.app (TopPair.ofSubset (X q)).snd)]
+    (q : ℤ) :
     QuasiIso ((chainFiltrationMap α hX hX (𝟙 Y) fun _ _ hx ↦ hx).app q) := by
   -- On the stages at `q`, identified with the chains of `X q`, the morphism is `α` at `X q`.
   have := chainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom α hX hX (𝟙 Y)
@@ -427,6 +438,15 @@ private lemma π_cokernelFiltrationFunctorMapIso_hom {a b : ℤ} (f : (a : EInt)
     (Category.assoc _ _ _).trans <|
       congrArg (_ ≫ _ ≫ ·) (π_singularChainFiltrationCokernelIso_hom R _)
 
+/-- **The spectral object of a filtered space.** For an increasing family `X : ℤ → Set Y` of
+subsets of a space `Y`, this is the spectral object of the filtration of the singular chains of
+`Y` by the singular chains of the `X q`. Its spectral sequence is
+`TauCeti.filteredSpaceSpectralSequence`. -/
+abbrev filteredSpaceSpectralObject :=
+  CochainComplex.spectralObject
+    (CochainComplex.filtrationFunctor _
+      (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hX))
+
 /-- **The spectral sequence of a filtered space.** For an increasing family `X : ℤ → Set Y` of
 subsets of a space `Y`, this is the spectral sequence of the filtration of the singular chains of
 `Y` by the singular chains of the `X q`, in the cohomological indexing of
@@ -482,9 +502,7 @@ def filteredSpaceSpectralSequencePageXIsoGradedOfFinite {a b : ℤ} (ha : X a = 
     (hb : X b = Set.univ) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a)
     (hrb : b ≤ pq.2 + r - 1) :
     ((filteredSpaceSpectralSequence R hX).page r).X pq ≅
-      cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-        (monotone_chainFiltration ((singularChainComplexFunctor A).obj R)
-          hX))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
+      cokernel ((filteredSpaceSpectralObject R hX).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfFinite _ _
     (singularChainFiltration_eq_bot R ha) (chainFiltration_eq_top _ hb) r hr pq hra hrb
 
@@ -707,7 +725,7 @@ def filteredSpaceStepMap {a b : ℤ} (hab : a ≤ b) :
 @[simp]
 lemma filteredSpaceStepMap_fst_apply {a b : ℤ} (hab : a ≤ b)
     (x : (TopPair.ofInclusion (hX hab)).fst) :
-    (TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+    (TopPair.Hom.fst (filteredSpaceStepMap hX hX' g hg hab) x).val = g x.val :=
   congrArg Subtype.val (TopPair.ofInclusionMap_fst_apply _ _ x)
 
 /-- The subspace component of the map of pairs `(X b, X a) ⟶ (X' b, X' a)` induced by `g` sends
@@ -715,7 +733,7 @@ lemma filteredSpaceStepMap_fst_apply {a b : ℤ} (hab : a ≤ b)
 @[simp]
 lemma filteredSpaceStepMap_snd_apply {a b : ℤ} (hab : a ≤ b)
     (x : (TopPair.ofInclusion (hX hab)).snd) :
-    (TopPair.Hom.snd (filteredSpaceStepMap hX hX' g hg hab) x).1 = g x.1 :=
+    (TopPair.Hom.snd (filteredSpaceStepMap hX hX' g hg hab) x).val = g x.val :=
   TopPair.ofInclusionMap_snd_apply _ _ x
 
 /-- The identity of a filtered space induces the identity of each pair `(X b, X a)`. -/
@@ -779,7 +797,7 @@ private lemma chainFiltrationMap_app_comp_singularChainFiltrationIso_hom (b : �
 filtrations induced by `g` is the chain map induced by `g` on the pairs `(X b, X a)`. -/
 private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom {a b : ℤ}
     (f : (a : EInt) ⟶ b) :
-    cokernel.map _ _ _ _ ((chainFiltrationMap (𝟙 _) hX hX' g hg).naturality f) ≫
+    cokernel.map _ _ _ _ ((chainFiltrationMap (𝟙 _) hX hX' g hg).naturality f).symm ≫
         (cokernelFiltrationFunctorMapIso R hX' f).hom =
       (cokernelFiltrationFunctorMapIso R hX f).hom ≫
         extendMap (TopPair.singularChainComplexMap
@@ -987,7 +1005,7 @@ filtrations induced by `φ` is the chain map induced by `φ` on the relative sin
 pair `(X b, X a)`. -/
 private lemma cokernelMap_comp_cokernelFiltrationFunctorMapIso_hom_coefficient {a b : ℤ}
     (f : (a : EInt) ⟶ b) :
-    cokernel.map _ _ _ _ ((filteredSpaceCoefficientFiltrationMap hX φ).naturality f) ≫
+    cokernel.map _ _ _ _ ((filteredSpaceCoefficientFiltrationMap hX φ).naturality f).symm ≫
         (cokernelFiltrationFunctorMapIso R' hX f).hom =
       (cokernelFiltrationFunctorMapIso R hX f).hom ≫
         extendMap (((SSetPair.chainComplexFunctor A).map φ).app (TopPair.toSSetPair.obj

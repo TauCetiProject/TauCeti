@@ -96,7 +96,7 @@ instance {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Amen
 /-- `Multiplicative A` is amenable if and only if `A` is additively amenable. -/
 @[simp]
 theorem amenable_multiplicative_iff : Amenable (Multiplicative A) ↔ AddAmenable A :=
-  ⟨fun h => ⟨h⟩, fun h => h.1⟩
+  ⟨fun h => ⟨h⟩, fun h => h.amenable_multiplicative⟩
 
 /-- `Additive G` is additively amenable if and only if `G` is amenable. -/
 @[simp]
@@ -404,15 +404,21 @@ theorem AddAmenable.of_tendsto_card_vadd_symmDiff_div_card [DecidableEq A] {ι :
 attribute [to_additive existing AddAmenable.of_tendsto_card_vadd_symmDiff_div_card]
   Amenable.of_tendsto_card_smul_symmDiff_div_card
 
+end Foelner
+
+section DiscreteFoelner
+
+variable {A : Type*} [AddGroup A] [TopologicalSpace A] [DiscreteTopology A]
+
 /-- An amenable discrete additive group has additive Følner sets. -/
-theorem AddAmenable.hasAddFoelnerSets [DiscreteTopology A] [AddAmenable A] :
+theorem AddAmenable.hasAddFoelnerSets [AddAmenable A] :
     HasAddFoelnerSets A :=
   hasFoelnerSets_multiplicative_iff.1 Amenable.hasFoelnerSets
 
 attribute [to_additive existing AddAmenable.hasAddFoelnerSets] Amenable.hasFoelnerSets
 
 /-- A discrete additive group is amenable exactly when it has additive Følner sets. -/
-theorem addAmenable_iff_hasAddFoelnerSets [DiscreteTopology A] :
+theorem addAmenable_iff_hasAddFoelnerSets :
     AddAmenable A ↔ HasAddFoelnerSets A :=
   ⟨fun _ => AddAmenable.hasAddFoelnerSets, .of_hasAddFoelnerSets⟩
 
@@ -421,8 +427,7 @@ attribute [to_additive existing addAmenable_iff_hasAddFoelnerSets] amenable_iff_
 /-- For any measurable space on `A` with measurable singletons, a discrete additive group `A` is
 amenable exactly when Mathlib's maximal counting-measure additive Følner filter
 `maxAddFoelner A Measure.count` is nontrivial. -/
-theorem addAmenable_iff_maxAddFoelner_neBot [DiscreteTopology A] [MeasurableSpace A]
-    [MeasurableSingletonClass A] :
+theorem addAmenable_iff_maxAddFoelner_neBot [MeasurableSpace A] [MeasurableSingletonClass A] :
     AddAmenable A ↔
       NeBot (maxAddFoelner A (MeasureTheory.Measure.count : MeasureTheory.Measure A)) :=
   addAmenable_iff_hasAddFoelnerSets.trans hasAddFoelnerSets_iff_maxAddFoelner_neBot
@@ -431,7 +436,7 @@ attribute [to_additive existing addAmenable_iff_maxAddFoelner_neBot] amenable_if
 
 /-- A discrete additive group is amenable exactly when for every finite `K ⊆ A` and every `ε > 0`
 there is a finite nonempty `F ⊆ A` with `|(a +ᵥ F) △ F| < ε · |F|` for all `a ∈ K`. -/
-theorem addAmenable_iff_exists_finset [DiscreteTopology A] [DecidableEq A] :
+theorem addAmenable_iff_exists_finset [DecidableEq A] :
     AddAmenable A ↔ ∀ K : Finset A, ∀ ε : ℝ, 0 < ε →
       ∃ F : Finset A, F.Nonempty ∧ ∀ a ∈ K, (#((a +ᵥ F) ∆ F) : ℝ) < ε * #F :=
   addAmenable_iff_hasAddFoelnerSets.trans hasAddFoelnerSets_iff
@@ -440,13 +445,13 @@ attribute [to_additive existing addAmenable_iff_exists_finset] amenable_iff_exis
 
 /-- A countable discrete additive group is amenable exactly when there is a sequence of finite
 nonempty sets whose relative translation boundaries tend to zero for every element. -/
-theorem addAmenable_iff_exists_seq [DiscreteTopology A] [Countable A] [DecidableEq A] :
+theorem addAmenable_iff_exists_seq [Countable A] [DecidableEq A] :
     AddAmenable A ↔ ∃ F : ℕ → Finset A, (∀ n, (F n).Nonempty) ∧
       ∀ a : A, Tendsto (fun n => (#((a +ᵥ F n) ∆ F n) : ℝ) / #(F n)) atTop (𝓝 0) :=
   addAmenable_iff_hasAddFoelnerSets.trans hasAddFoelnerSets_iff_exists_seq
 
 attribute [to_additive existing addAmenable_iff_exists_seq] amenable_iff_exists_seq
 
-end Foelner
+end DiscreteFoelner
 
 end TauCeti

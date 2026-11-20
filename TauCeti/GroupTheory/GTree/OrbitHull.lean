@@ -89,7 +89,7 @@ variable (T H x)
 
 theorem orbit_subset_orbitHull : orbit H x ⊆ T.orbitHull H x := by
   rintro _ ⟨h, rfl⟩
-  exact smul_mem_orbitHull h.2
+  exact smul_mem_orbitHull h.property
 
 theorem orbitHull_eq_iUnion : T.orbitHull H x = ⋃ h : H, T.convexHull {x, (h : G) • x} := by
   ext v

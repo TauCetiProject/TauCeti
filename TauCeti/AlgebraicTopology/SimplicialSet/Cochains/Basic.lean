@@ -167,6 +167,27 @@ lemma cochainValuesEquiv_linearYonedaObj_d (n : ℕ)
   rw [ChainComplex.linearYonedaObj_d_apply]
   exact cochainValuesEquiv_d k M K n φ σ
 
+/-- The values of the coboundary of a `0`-cochain in `Hom(C(K; k), M)` on a `1`-simplex `σ`: the
+value at its endpoint `δ₀ σ` minus the value at its starting point `δ₁ σ`. -/
+lemma cochainValuesEquiv_linearYonedaObj_d_zero_one
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).X 0) (σ : K _⦋1⦌) :
+    cochainValuesEquiv k M K 1
+        (((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).d 0 1 φ) σ =
+      cochainValuesEquiv k M K 0 φ (K.δ 0 σ) - cochainValuesEquiv k M K 0 φ (K.δ 1 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d k M K 0 φ σ).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg]
+
+/-- The values of the coboundary of a `1`-cochain in `Hom(C(K; k), M)` on a `2`-simplex `σ`: the
+alternating sum of its values on the edges `δ₀ σ`, `δ₁ σ` and `δ₂ σ`. -/
+lemma cochainValuesEquiv_linearYonedaObj_d_one_two
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).X 1) (σ : K _⦋2⦌) :
+    cochainValuesEquiv k M K 2
+        (((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).d 1 2 φ) σ =
+      cochainValuesEquiv k M K 1 φ (K.δ 0 σ) - cochainValuesEquiv k M K 1 φ (K.δ 1 σ) +
+        cochainValuesEquiv k M K 1 φ (K.δ 2 σ) := by
+  refine (cochainValuesEquiv_linearYonedaObj_d k M K 1 φ σ).trans ?_
+  simp [Fin.sum_univ_three, sub_eq_add_neg]
+
 end CommRing
 
 end TauCeti

@@ -116,9 +116,10 @@ theorem integral_map_eq_degreeAtRegularValue_mul [SigmaCompactSpace M]
     injective_integral o' (by simp [hθ])
   have hb : Module.Basis (Fin k) ℝ E :=
     Module.finBasisOfFinrankEq ℝ E (by simpa using o'.card_eq.symm)
-  have hθi : IntegrableTopForm θ.1.1 :=
-    θ.1.isSmoothForm.integrableTopForm
-      ((mem_compactlySupportedForms J).mp ((mem_compactlySupportedClosedForms J).mp θ.2).1) hb
+  have hθi : IntegrableTopForm θ.val.val :=
+    θ.val.isSmoothForm.integrableTopForm
+      ((mem_compactlySupportedForms J).mp ((mem_compactlySupportedClosedForms J).mp θ.property).1)
+          hb
   conv_lhs => rw [hc]
   rw [map_smul, map_smul, map_mk, integral_mk, compactlySupportedClosedForms.coe_coe_mpullback,
     hloc _ hθi hθV, hθ, smul_eq_mul]
