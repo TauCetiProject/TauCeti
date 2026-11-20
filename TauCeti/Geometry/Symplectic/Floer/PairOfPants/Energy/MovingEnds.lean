@@ -13,6 +13,7 @@ import TauCeti.Geometry.Symplectic.Floer.Manifold.Rectangle
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.Topology.Separation.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -274,7 +275,7 @@ namespace TauCeti.SmoothTwoForm
 
 open Floer
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart contDiff_realChart
-  det_fderiv_realChart_nonneg isOpen_setOf_forall_equivRealProdCLM_symm_ne)
+  det_fderiv_realChart_nonneg)
 
 variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
@@ -702,7 +703,8 @@ theorem
         v) ((V ∩ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) ×ˢ univ) :=
     fun p hp ↦ (contMDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha hp.1.2
       p.2 v).contMDiffWithinAt
-  exact hω.integrableOn_floerEnergyDensity (hVo.inter isOpen_setOf_forall_equivRealProdCLM_symm_ne)
+  exact hω.integrableOn_floerEnergyDensity
+    (hVo.inter (isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous))
     (hu.mono inter_subset_left) (hKP 1) (hKP Complex.I)
     (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       (isCompact_puncturedSphereTruncation c a R))
@@ -1035,7 +1037,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_puncturedSpherePerturbation
       hsep hout hB hBout hu.continuousOn)))
   filter_upwards [eventually_ge_atTop 1] with R hR
   exact hω.integral_floerEnergyDensity_puncturedSpherePerturbation_truncation hH hHs hHout hHouts ha
-    hsep hout isOpen_setOf_forall_equivRealProdCLM_symm_ne (hTsub R) hu hR
+    hsep hout (isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous) (hTsub R) hu hR
 
 /-- **The energy bound on the whole sphere with moving input ends, for a manifold target.** Under
 the hypotheses of
@@ -1126,7 +1128,7 @@ theorem IsNondegenerate.neg_sum_add_le_integral_add_of_puncturedSpherePerturbati
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         ((∑ i, ∫ t in (0 : ℝ)..1, H i t (x i t)) - ∫ t in (0 : ℝ)..1, Hout t (xout t)) := by
   have hE₀ := setIntegral_nonneg (μ := volume)
-    isOpen_setOf_forall_equivRealProdCLM_symm_ne.measurableSet fun z hz ↦
+    (isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦
     floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
   have h := (abs_le.1
     (hω.abs_integral_floerEnergyDensity_puncturedSpherePerturbation_sub_le hH hHs hHout hHouts ha

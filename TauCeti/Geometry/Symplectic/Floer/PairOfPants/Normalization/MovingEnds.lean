@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.MovingEnds
 import TauCeti.Geometry.Symplectic.Complex.Line
+import TauCeti.Topology.Separation.Basic
 import TauCeti.Topology.Instances.Real.Periodic
 
 /-!
@@ -60,7 +61,8 @@ This file adapts the normalization bookkeeping of the pair of pants,
 `TauCeti/Geometry/Symplectic/Floer/PairOfPants/Normalization/Basic.lean`, with the same structure
 and proof method, to the `ι`-indexed datum `TauCeti.Floer.puncturedSpherePerturbation`; the pair
 of pants is its case of two input ends
-(`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`).
+(`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`), and the integrated
+curvature statements of that file are derived from the ones here.
 
 ## References
 
@@ -315,7 +317,7 @@ theorem setIntegral_hamiltonianCurvature_puncturedSpherePerturbation_add_const
   choose B hB using fun i ↦ (hk i).exists_bound_of_continuous one_ne_zero (hks i).continuous
   obtain ⟨Bout, hBout⟩ := hkout.exists_bound_of_continuous one_ne_zero hkouts.continuous
   have hS : IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
-    TauCeti.Complex.isOpen_setOf_forall_equivRealProdCLM_symm_ne
+    isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous
   -- The curvature of the normalization does not depend on the target point, so it is integrable
   -- along `u` because it is along a constant map.
   have hκ := (ω.integrableOn_hamiltonianCurvature_puncturedSpherePerturbation

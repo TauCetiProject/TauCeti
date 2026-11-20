@@ -26,9 +26,7 @@ that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Compl
 The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and so is
 the real chart of a map injective on a set, on the corresponding set
 (`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
-of its image (`TauCeti.Complex.image_realChart_preimage`). The real coordinates of the plane minus
-finitely many points form an open set
-(`TauCeti.Complex.isOpen_setOf_forall_equivRealProdCLM_symm_ne`).
+of its image (`TauCeti.Complex.image_realChart_preimage`).
 -/
 
 public section
@@ -114,11 +112,5 @@ theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
   rw [realChart, Set.image_comp, Set.image_comp,
     Set.image_preimage_eq _ Complex.equivRealProdCLM.symm.surjective,
     Complex.equivRealProdCLM.image_eq_preimage_symm]
-
-/-- The real coordinates of the plane minus finitely many points `c i` form an open set. -/
-theorem isOpen_setOf_forall_equivRealProdCLM_symm_ne {ι : Type*} [Finite ι] {c : ι → ℂ} :
-    IsOpen {z : ℝ × ℝ | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} := by
-  simp only [Set.ofPred_forall]
-  exact isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const
 
 end TauCeti.Complex
