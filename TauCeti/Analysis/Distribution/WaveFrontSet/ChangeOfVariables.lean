@@ -198,7 +198,8 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
     (closedBall_subset_closedBall (by gcongr; exact min_le_left _ _)).trans (hΓ' η hη)
   -- A box `K ⊆ W ∩ Ω` around `e x`, a lattice, and a cutoff `χ` equal to one on `K₁ ∋ e x`.
   obtain ⟨K, K₁, hKW, hK₁, hK₁K, ⟨χ, hχ⟩, L, _, _, hL⟩ :=
-    exists_compacts_cutoff_lattice (hUΩ hx) hW
+    ContDiffMapSupportedIn.exists_compacts_cutoff_lattice
+      (inter_mem hW (Ω.isOpen.mem_nhds (hUΩ hx)))
   have hKΩ : (K : Set E) ⊆ Ω := hKW.trans inter_subset_right
   -- A smooth `σ` equal to `e⁻¹` near `e x`; near `e x`, `Dσ` stays within `c' / (2 a)` of `B`.
   obtain ⟨σ, hσ, -, hσe⟩ :=
