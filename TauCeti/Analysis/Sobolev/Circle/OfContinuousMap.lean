@@ -167,6 +167,7 @@ theorem coeff_ofContinuousMap (f : C(AddCircle T, E)) (n : ℤ) :
 
 /-- The rotation by `θ` of the class in `H⁰(E)` of a continuous loop `f` is the class of the
 translated loop `x ↦ f (x + θ)`. -/
+@[simp]
 theorem rotate_ofContinuousMap (θ : AddCircle T) (f : C(AddCircle T, E)) :
     rotate θ (ofContinuousMap T f) = ofContinuousMap T (f.comp (ContinuousMap.addRight θ)) :=
   CircleSobolev.ext (funext fun n ↦ by

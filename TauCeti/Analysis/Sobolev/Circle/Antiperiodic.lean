@@ -24,10 +24,10 @@ and, for `s > 1/2`, through the continuous representative
 
 A loop of period `T / 2`, read as a loop of period `T`, is invariant under the rotation by `T / 2`.
 For such a loop `S` of real-linear maps the first-order operator `L_S ζ = ζ' - S ζ` commutes with
-that rotation (`TauCeti.CircleSobolev.loopOperator_rotate`), so it maps antiperiodic loops to
-antiperiodic loops (`TauCeti.CircleSobolev.loopOperator_mem_antiperiodic`). These are the loops
-twisted by the nontrivial real sign character of the circle of period `T / 2`, realized on its
-double cover as the `-1`-eigenspace of the deck rotation.
+that rotation (`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`), so it maps
+antiperiodic loops to antiperiodic loops (`TauCeti.CircleSobolev.loopOperator_mem_antiperiodic`).
+These are the loops twisted by the nontrivial real sign character of the circle of period `T / 2`,
+realized on its double cover as the `-1`-eigenspace of the deck rotation.
 
 ## Main definitions
 
@@ -114,10 +114,7 @@ theorem loopOperator_mem_antiperiodic {T : ℝ} [Fact (0 < T)] [FiniteDimensiona
     {a : CircleSobolev 1 E} (ha : a ∈ antiperiodic 1 E) :
     loopOperator T S a ∈ antiperiodic 0 E := by
   have hT : T ≠ 0 := (Fact.out : 0 < T).ne'
-  have hS' : S.comp (ContinuousMap.addRight ((T / 2 : ℝ) : AddCircle T)) = S := by
-    ext1 x
-    simp [hS]
-  rw [← rotate_half_period_eq_neg_iff hT, ← loopOperator_rotate, hS',
+  rw [← rotate_half_period_eq_neg_iff hT, ← loopOperator_rotate_of_invariant T hS,
     (rotate_half_period_eq_neg_iff hT).2 ha, map_neg]
 
 end CircleSobolev

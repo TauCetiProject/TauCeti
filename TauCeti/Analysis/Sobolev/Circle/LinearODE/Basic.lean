@@ -59,7 +59,8 @@ comparing weak and classical derivatives
   is multiplication by that scalar.
 * `TauCeti.CircleSobolev.mulLoop_rotate`, `TauCeti.CircleSobolev.loopOperator_rotate`: the
   rotation of the circle by `θ` intertwines `L_S` with `L` of the translated loop
-  `x ↦ S (x + θ)`.
+  `x ↦ S (x + θ)`, so `L_S` commutes with the rotation when `S (x + θ) = S x`
+  (`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`).
 * `TauCeti.CircleSobolev.isCompactOperator_mulLoop`: the zero-order term is compact.
 * `TauCeti.CircleSobolev.norm_mulLoop_le`: for a loop with `‖S t‖ ≤ M`, the zero-order term has
   norm at most `M` for the `H⁰` norms, and `TauCeti.CircleSobolev.norm_sq_le_of_loopOperator`
@@ -153,6 +154,7 @@ theorem mulLoop_const_smul_id (hs : 1 / 2 < s) (z : ℂ) (a : CircleSobolev s E)
 
 /-- **Rotation equivariance of the zero-order term.** Multiplication by `S` intertwines the
 rotation by `θ` with multiplication by the translated loop `x ↦ S (x + θ)`. -/
+@[simp]
 theorem mulLoop_rotate (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) (θ : AddCircle T)
     (a : CircleSobolev s E) :
     mulLoop T hs (S.comp (ContinuousMap.addRight θ)) (rotate θ a) =
@@ -201,12 +203,24 @@ theorem loopOperator_sub (S₁ S₂ : C(AddCircle T, E →L[ℝ] E)) :
 
 /-- **Rotation equivariance.** If `ζ' - S ζ = η`, then the rotated loop `x ↦ ζ (x + θ)` solves
 the equation of the translated loop `x ↦ S (x + θ)` with right side `x ↦ η (x + θ)`. In particular
-`L_S` commutes with the rotation by `θ` when `S (x + θ) = S x`. -/
+`L_S` commutes with the rotation by `θ` when `S (x + θ) = S x`
+(`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`). -/
+@[simp]
 theorem loopOperator_rotate (S : C(AddCircle T, E →L[ℝ] E)) (θ : AddCircle T)
     (a : CircleSobolev 1 E) :
     loopOperator T (S.comp (ContinuousMap.addRight θ)) (rotate θ a) =
       rotate θ (loopOperator T S a) := by
   rw [loopOperator_apply, loopOperator_apply, mulLoop_rotate, derivative_rotate, map_sub]
+
+/-- If the loop `S` is invariant under the rotation by `θ`, `S (x + θ) = S x`, then `L_S` commutes
+with that rotation. -/
+theorem loopOperator_rotate_of_invariant {S : C(AddCircle T, E →L[ℝ] E)} {θ : AddCircle T}
+    (hS : ∀ x, S (x + θ) = S x) (a : CircleSobolev 1 E) :
+    loopOperator T S (rotate θ a) = rotate θ (loopOperator T S a) := by
+  have hS' : S.comp (ContinuousMap.addRight θ) = S := by
+    ext1 x
+    simp [hS]
+  rw [← loopOperator_rotate, hS']
 
 /-- The periodic first-order operator depends continuously in operator norm on its
 coefficient loop, with the uniform norm on coefficients. -/

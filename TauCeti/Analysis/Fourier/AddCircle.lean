@@ -316,8 +316,9 @@ theorem fourierCoeff_comp_add_right {E : Type*} [NormedAddCommGroup E] [NormedSp
     ← integral_add_right_eq_self (fun x ↦ fourier n θ • fourier (-n) x • f x) θ]
   congr 1
   funext x
-  rw [fourier_apply_add, smul_smul, mul_left_comm, mul_comm, mul_comm (fourier n θ),
-    fourier_neg_mul_fourier, one_mul]
+  rw [fourier_apply_add, smul_smul]
+  congr 1
+  linear_combination -fourier (-n) x * fourier_neg_mul_fourier n θ
 
 /-- The Fourier coefficients of a difference of integrable functions. -/
 theorem fourierCoeff_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]

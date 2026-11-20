@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Circle.Antiperiodic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.AntiperiodicSobolev
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The orbit-torus operator twisted along both circle factors
@@ -30,16 +31,17 @@ sequences in `H⁰(F)²` form the subspace `TauCeti.doublyAntiperiodicL2 F` of t
 
 **The operator.** The loop `S` of the orbit has period `T / 2`; read on the double cover it is a
 loop of period `T` with `S (t + T / 2) = S t`. The rotation by `T / 2` then commutes with `A`
-(`TauCeti.CircleSobolev.loopOperator_rotate`), so `D` maps the twisted maps to twisted maps, and
-restricts to the operator `TauCeti.doublyAntiperiodicTorusOperator T ℓ S` between the two
-subspaces.
+(`TauCeti.CircleSobolev.loopOperator_rotate_of_invariant`), so `D` maps the twisted maps to
+twisted maps, and restricts to the operator `TauCeti.doublyAntiperiodicTorusOperator T ℓ S`
+between the two subspaces.
 
 **Invertibility.** On the double cover the operator `D` is invertible, for every infinitesimally
 symplectic loop `S` (`TauCeti.isInvertible_antiperiodicTorusOperator`). It commutes with the half
 rotation `R` of every mode, and the twisted maps are the solutions of `R x = -x`. If `D x` is
 twisted, then `D (R x) = R (D x) = -D x = D (-x)`, so `R x = -x` by injectivity: the inverse of
 `D` maps twisted targets to twisted maps. Hence the restricted operator is invertible
-(`TauCeti.isInvertible_doublyAntiperiodicTorusOperator`). For `S = 0` it is complex linear
+(`TauCeti.isInvertible_doublyAntiperiodicTorusOperator`, through
+`ContinuousLinearMap.IsInvertible.restrict`). For `S = 0` it is complex linear
 (`TauCeti.doublyAntiperiodicTorusOperator_zero_apply_smul`). Since `τ • S` is again
 infinitesimally symplectic and invariant under the half rotation, every operator of the path
 `τ ↦ ∂s + J₀ (∂t - τ S)` is invertible; this is the invertible homotopy to a complex-linear
@@ -254,12 +256,9 @@ private theorem antiperiodicTorusOperator_halfRotate {ℓ : ℝ} {S : C(AddCircl
     (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) (x : antiperiodicSobolev F ℓ) (k : ℕ) :
     antiperiodicTorusOperator T ℓ S (halfRotate T x) k =
       halfRotatePair T 0 (antiperiodicTorusOperator T ℓ S x k) := by
-  have hS' : S.comp (ContinuousMap.addRight ((T / 2 : ℝ) : AddCircle T)) = S := by
-    ext1 t
-    simp [hS]
   rw [antiperiodicTorusOperator_apply_apply_eq, antiperiodicTorusOperator_apply_apply_eq]
   refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [halfRotate, ← Complex.coe_smul, ← loopOperator_rotate, hS']
+    simp [halfRotate, ← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
 
 end Operator
 
@@ -305,20 +304,10 @@ theorem isInvertible_doublyAntiperiodicTorusOperator {ℓ : ℝ} (hℓ : ℓ ≠
     (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hS' : ∀ t, S (t + (T / 2 : ℝ)) = S t) :
-    (doublyAntiperiodicTorusOperator T ℓ S hS').IsInvertible := by
-  have hD := isInvertible_antiperiodicTorusOperator T hℓ S hS
-  set D := antiperiodicTorusOperator T ℓ S
+    (doublyAntiperiodicTorusOperator T ℓ S hS').IsInvertible :=
   -- The inverse of `D` maps doubly antiperiodic targets to doubly antiperiodic maps.
-  let G : doublyAntiperiodicL2 F →L[ℝ] doublyAntiperiodicSobolev F ℓ :=
-    { toFun y := ⟨D.inverse y, mem_doublyAntiperiodicSobolev_of_mem T hℓ hS hS'
-          (by rw [hD.self_apply_inverse]; exact y.2)⟩
-      map_add' y z := Subtype.ext (D.inverse.map_add (y : 𝕐[F]) z)
-      map_smul' c y := Subtype.ext (D.inverse.map_smul c (y : 𝕐[F]))
-      cont := (D.inverse.continuous.comp continuous_subtype_val).subtype_mk _ }
-  refine ContinuousLinearMap.IsInvertible.of_inverse (g := G) ?_ ?_ <;> ext1 y <;>
-    refine Subtype.ext ?_
-  · exact hD.self_apply_inverse (y : 𝕐[F])
-  · exact hD.inverse_apply_self (y : antiperiodicSobolev F ℓ)
+  (isInvertible_antiperiodicTorusOperator T hℓ S hS).restrict (fun _ ↦ rfl)
+    fun _ hx ↦ mem_doublyAntiperiodicSobolev_of_mem T hℓ hS hS' hx
 
 end Inner
 

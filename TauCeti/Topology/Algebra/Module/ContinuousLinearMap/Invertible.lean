@@ -42,6 +42,9 @@ bundles over the same base, read in bundle charts.
 Between uniformly topologized modules an invertible continuous linear map transfers
 completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
 
+An invertible map restricts to an invertible map between submodules `p` and `q` as soon as its
+inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrict`).
+
 The rectangular Jacobson identity says that `1 - u ∘ v` and `1 - v ∘ u` are invertible together,
 even for maps between different modules. It transports invertibility from an operator to its
 extension through a continuous linear retract, without any choice of complementary submodule.
@@ -81,6 +84,30 @@ theorem IsInvertible.inverse_sub_inverse {f g : E →L[R] F}
   simp [hf.inverse_apply_self, hg.self_apply_inverse]
 
 end Sub
+
+section Restrict
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [SMul R S]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+  [TopologicalSpace N] [AddCommMonoid N] [Module R N] [Module S N] [IsScalarTower R S N]
+
+/-- Let `f` be invertible, mapping the submodule `p` into the submodule `q`, and suppose that `x`
+lies in `p` whenever `f x` lies in `q`. Then the restriction `g : p →L[R] q` of `f` is invertible:
+the inverse of `f` maps `q` into `p`. The submodules may be over a larger ring `S` of scalars, for
+example complex subspaces for a real-linear `f`. -/
+theorem IsInvertible.restrict {f : M →L[R] N} (hf : f.IsInvertible) {p : Submodule S M}
+    {q : Submodule S N} {g : p →L[R] q} (hg : ∀ x, (g x : N) = f x)
+    (hq : ∀ x, f x ∈ q → x ∈ p) : g.IsInvertible := by
+  let G : q →L[R] p :=
+    { toFun y := ⟨f.inverse y, hq _ (by rw [hf.self_apply_inverse]; exact y.2)⟩
+      map_add' y z := Subtype.ext (f.inverse.map_add (y : N) z)
+      map_smul' c y := Subtype.ext (f.inverse.map_smul c (y : N))
+      cont := (f.inverse.continuous.comp continuous_subtype_val).subtype_mk _ }
+  refine IsInvertible.of_inverse (g := G) ?_ ?_ <;> ext1 y <;> refine Subtype.ext ?_
+  · simpa [hg, G] using hf.self_apply_inverse (y : N)
+  · simpa [hg, G] using hf.inverse_apply_self (y : M)
+
+end Restrict
 
 section CompleteSpace
 
@@ -284,7 +311,10 @@ private theorem isUnit_one_sub_comp_of (u : N →L[R] M) (v : M →L[R] N)
       map_sub] at this ⊢
     exact sub_eq_zero.mp (.trans (by abel) this)
 
-/-- The rectangular Jacobson identity: for maps between two topological modules,
+/-- An invertible map restricts to an invertible map between submodules `p` and `q` as soon as its
+inverse maps `q` into `p` (`ContinuousLinearMap.IsInvertible.restrict`).
+
+The rectangular Jacobson identity: for maps between two topological modules,
 `1 - u ∘ v` is invertible exactly when `1 - v ∘ u` is invertible. -/
 theorem isUnit_one_sub_comp_comm (u : N →L[R] M) (v : M →L[R] N) :
     IsUnit (1 - u.comp v) ↔ IsUnit (1 - v.comp u) :=
