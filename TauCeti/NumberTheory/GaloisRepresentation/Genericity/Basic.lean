@@ -73,8 +73,8 @@ This file sets up these conditions at three levels.
 * P. B. Allen, F. Calegari, A. Caraiani, T. Gee, D. Helm, B. V. Le Hung, J. Newton, P. Scholze,
   R. Taylor and J. A. Thorne, *Potential automorphy over CM fields*, Ann. of Math. 197 (2023),
   Definition 4.3.1.
-* A. Caraiani and P. Scholze, *On the generic part of the cohomology of local and global Shimura
-  varieties*, Ann. of Math. 199 (2024), Definition 1.9.
+* A. Caraiani and P. Scholze, *On the generic part of the cohomology of compact unitary Shimura
+  varieties*, Ann. of Math. 186 (2017), Definition 1.9.
 -/
 
 public section
