@@ -9,14 +9,15 @@ public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
-# Isolated points of the horizontal slices of a map on `ℝ × ℝ`
+# Points with unique values on the horizontal slices of a map on `ℝ × ℝ`
 
-Let `u : ℝ × ℝ → X` be a continuous map into a Hausdorff space with limits as `s → -∞` and
-`s → +∞` along the slices `t = const`. If `z₀ = (s₀, t₀)` is the only point of its slice with
-value `u(z₀)`, away from the limits, and `(s, t) ↦ (u(s, t), t)` is injective near `z₀`, then
-every nearby point is the only point of its slice with its value
-(`TauCeti.eventually_forall_slice_eq_imp_eq_of_tendsto`). The limits confine the competitors to a
-compact interval, and a compactness argument separates them uniformly nearby.
+Let `u : ℝ × ℝ → X` be a continuous map into a Hausdorff space such that `u(s, t)` tends to
+`xm(t₀)` as `s → -∞` and `t → t₀` together, and to `xp(t₀)` as `s → +∞` and `t → t₀` together.
+If `z₀ = (s₀, t₀)` is the only point of its slice with value `u(z₀)`, away from the limits, and
+`(s, t) ↦ (u(s, t), t)` is injective near `z₀`, then every nearby point is the only point of its
+slice with its value (`TauCeti.eventually_forall_slice_eq_imp_eq_of_tendsto`). The limits confine
+the competitors to a compact interval, and a compactness argument separates them uniformly
+nearby.
 
 This is the topological part of the openness of the regular points of Floer trajectories.
 -/
@@ -29,9 +30,9 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] {u : ℝ × ℝ → X} {xm xp : ℝ → X}
 
-/-- **Isolated points of the slices persist nearby.** Let `u : ℝ × ℝ → X` be continuous, with
-values in a Hausdorff space, and suppose that `u(s, t)` tends to `xm(t₀)` and `xp(t₀)` as
-`s → -∞` and `s → +∞` and `t → t₀`. Let `z₀ = (s₀, t₀)` be a point near which
+/-- **Points with a unique value on their slice persist nearby.** Let `u : ℝ × ℝ → X` be
+continuous, with values in a Hausdorff space, and suppose that `u(s, t)` tends to `xm(t₀)` and
+`xp(t₀)` as `s → -∞` and `s → +∞` and `t → t₀`. Let `z₀ = (s₀, t₀)` be a point near which
 `(s, t) ↦ (u(s, t), t)` is injective, with `u(z₀) ≠ xm(t₀)`, `u(z₀) ≠ xp(t₀)` and
 `u(s, t₀) ≠ u(z₀)` for all `s ≠ s₀`. Then every point `(s, t)` near `z₀` has the last property:
 `u(s', t) ≠ u(s, t)` for all `s' ≠ s`. -/
