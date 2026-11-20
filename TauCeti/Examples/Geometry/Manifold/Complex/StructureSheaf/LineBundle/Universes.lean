@@ -208,7 +208,8 @@ def typeZeroBundleOne :
   holomorphicSectionSheaf.ofContMDiff (fun _ ↦ (1 : ℂ))
     (Trivial.contMDiff_mk_iff.mpr ⟨contMDiff_subtypeVal, contMDiff_const⟩)
 
-/-- The original Type-0 ring/module and trivial-bundle readings still compose. -/
+/-- On a universe-zero base, scalar trivialization followed by `sectionsLinearEquiv`
+sends the constant bundle section to the constant function `1`. -/
 theorem typeZero_ring_reading (x : OnePoint ℂ) :
     holomorphicStructureSheafModules.sectionsLinearEquiv 𝓘(ℂ) (OnePoint ℂ) (op ⊤)
       ((holomorphicSectionSheaf.trivialIso 𝓘(ℂ) (OnePoint ℂ)).hom.hom.app (op ⊤)
@@ -217,7 +218,7 @@ theorem typeZero_ring_reading (x : OnePoint ℂ) :
     holomorphicSectionSheaf.trivialIso_hom_app_apply, typeZeroBundleOne,
     holomorphicSectionSheaf.ofContMDiff_apply]
 
-/-- Zero-rank bundles retain their actual zero native section modules over every open set. -/
+/-- The module of holomorphic sections of a rank-zero trivial bundle is zero over every open. -/
 theorem isZero_rankZero_sections (U : Opens SphereBase.{u}) :
     IsZero ((holomorphicSectionSheaf 𝓘(ℂ) (Fin 0 → ℂ)
       (Trivial SphereBase.{u} (Fin 0 → ℂ))).obj.obj (op U)) := by

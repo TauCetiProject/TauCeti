@@ -28,7 +28,6 @@ import Mathlib.Algebra.Category.Ring.FilteredColimits
 The holomorphic structure sheaf of a complex manifold assigns to an open set `U` the ring
 of complex analytic maps `U → ℂ`. Its sections are Mathlib's `ContMDiffMap` at regularity
 `ω`, so their pointwise ring and complex vector space structures are reused directly.
-The same restriction maps give a sheaf of complex vector spaces, suitable for cohomology.
 On a complex curve, these sections are precisely the manifold-differentiable functions.
 
 On a compact connected complex manifold, the constant-section map is an algebra
@@ -465,7 +464,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℂ E H)
   (X : Type u) [TopologicalSpace X] [ChartedSpace H X]
 
-/-- The holomorphic structure sheaf viewed as a sheaf of complex vector spaces. -/
+/-- The sheaf of complex analytic functions `U → ℂ`, bundled as `C^ω` maps.
+For a manifold in universe zero, its underlying presheaf agrees with the ring sheaf
+`holomorphicStructureSheaf` (`holomorphicStructureSheafModules.forget_eq`). -/
 def holomorphicStructureSheafModules : TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X) where
   obj :=
     { obj := fun U ↦ ModuleCat.of ℂ C^ω⟮I, (unop U : Opens X); ℂ⟯
@@ -495,6 +496,8 @@ variable {I X}
 /-- A section of the module sheaf is complex analytic on its domain. -/
 theorem contMDiff {U : (Opens (TopCat.of X))ᵒᵖ}
     (f : (holomorphicStructureSheafModules I X).obj.obj U) : ContMDiff I 𝓘(ℂ) ω f :=
+  -- The module object is defined with carrier `C^ω⟮I, U; ℂ⟯`. Select that bundled-map type
+  -- to apply its regularity field before elaborating the module-section function coercion.
   (show C^ω⟮I, (unop U : Opens X); ℂ⟯ from f).contMDiff
 
 /-- A section of the module sheaf is holomorphic on its domain. -/
