@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
 # Torsion and reduction of abelian groups
@@ -23,6 +24,8 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 * `TauCeti.subsingleton_torsionBy_int`: the `n`-torsion of a torsion-free abelian group is zero for
   `n ≠ 0`.
 * `TauCeti.finite_quotSMulTop_int`: `M ⧸ nM` is finite for `n ≠ 0` and `M` finitely generated.
+* `AddEquiv.isTorsion'_iff`: for a submonoid `S` of `ℤ`, being `S`-torsion is invariant under
+  additive equivalences.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 -/
@@ -91,5 +94,12 @@ theorem span_range_mk_ofMul_eq_top_iff {G ι : Type*} [CommGroup G] (ε : ι →
     _ ↔ e (Subgroup.closure (Set.range ε) ⊔ CommGroup.torsion G) = e ⊤ := by
         rw [map_sup, hclosure, htors, map_top]
     _ ↔ _ := e.injective.eq_iff
+
+/-- For a submonoid `S` of `ℤ`, being `S`-torsion, every element killed by an element of `S`, is
+invariant under additive equivalences of abelian groups, for the canonical action of `ℤ`. This is
+`LinearEquiv.isTorsion'_iff` for the induced `ℤ`-linear equivalence. -/
+theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGroup H]
+    (e : G ≃+ H) {S : Submonoid ℤ} : Module.IsTorsion' G S ↔ Module.IsTorsion' H S :=
+  e.toIntLinearEquiv.isTorsion'_iff
 
 end TauCeti

@@ -100,6 +100,14 @@ def cochainPeriodicity (n : ℕ) :
     (-1 : ℤ) ^ ((j : ℕ) - r) •
       (hochschildCoface R A M j.succ.castSucc ∘ₗ hochschildCoface R A M r.castSucc)
 
+/-- Defining formula for `cochainPeriodicity` in terms of `hochschildCoface`. -/
+theorem cochainPeriodicity_def (n : ℕ) :
+    cochainPeriodicity R A M n =
+      ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j,
+        (-1 : ℤ) ^ ((j : ℕ) - r) •
+          (hochschildCoface R A M j.succ.castSucc ∘ₗ hochschildCoface R A M r.castSucc) :=
+  (rfl)
+
 variable {R A M} {n : ℕ}
 
 /-- Pointwise formula for `cochainPeriodicity`. -/

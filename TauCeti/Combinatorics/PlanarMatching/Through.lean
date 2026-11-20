@@ -268,16 +268,50 @@ theorem topHalf_id_val (n : ℕ) : (id n).topHalf.val = 1 := by
   rw [topHalf_val, congrArg (fun E : TLDiagram n n => E.bottomHalf.val) (verticalReflect_id n),
     bottomHalf_id_val]
 
+/-- Two diagrams with the same underlying bottom half-diagram permutation have the same number of
+through strands. -/
+theorem through_eq_of_bottomHalf_val_eq {p : ℕ} {D : TLDiagram n m} {E : TLDiagram n p}
+    (h : D.bottomHalf.val = E.bottomHalf.val) : D.through = E.through := by
+  have hD := D.bottomHalf.property.2
+  rw [h, E.bottomHalf.property.2] at hD
+  exact hD.symm
+
+/-- Two diagrams with the same underlying top half-diagram permutation have the same number of
+through strands. -/
+theorem through_eq_of_topHalf_val_eq {p : ℕ} {D : TLDiagram n m} {E : TLDiagram p m}
+    (h : D.topHalf.val = E.topHalf.val) : D.through = E.through := by
+  have hD := D.topHalf.property.2
+  rw [h, E.topHalf.property.2] at hD
+  exact hD.symm
+
+/-- Diagrams with the same boundary matching have the same underlying bottom half-diagram
+permutation, independently of stored circles. -/
+theorem bottomHalf_val_eq_of_matching_eq {D E : TLDiagram n m} (h : D.matching = E.matching) :
+    D.bottomHalf.val = E.bottomHalf.val := by
+  apply Equiv.ext
+  intro i
+  simp only [bottomHalf_apply, h]
+
+/-- Diagrams with the same boundary matching have the same underlying top half-diagram
+permutation, independently of stored circles. -/
+theorem topHalf_val_eq_of_matching_eq {D E : TLDiagram n m} (h : D.matching = E.matching) :
+    D.topHalf.val = E.topHalf.val := by
+  rw [topHalf_val, topHalf_val]
+  exact bottomHalf_val_eq_of_matching_eq (by simp [matching_verticalReflect, h])
+
+/-- Diagrams with the same boundary matching have the same number of through strands,
+independently of stored circles. -/
+theorem through_eq_of_matching_eq {D E : TLDiagram n m} (h : D.matching = E.matching) :
+    D.through = E.through :=
+  through_eq_of_bottomHalf_val_eq (bottomHalf_val_eq_of_matching_eq h)
+
 /-- Stored circles do not affect the through strands or either cut half. -/
 example (x : PlanarMatching (n + m)) (c d : ℕ) :
     (TLDiagram.mk x c).through = (TLDiagram.mk x d).through ∧
       (TLDiagram.mk x c).bottomHalf.val = (TLDiagram.mk x d).bottomHalf.val ∧
-      (TLDiagram.mk x c).topHalf.val = (TLDiagram.mk x d).topHalf.val := by
-  refine ⟨rfl, rfl, ?_⟩
-  rw [topHalf_val, topHalf_val]
-  apply Equiv.ext
-  intro i
-  simp only [bottomHalf_apply, matching_verticalReflect]
+      (TLDiagram.mk x c).topHalf.val = (TLDiagram.mk x d).topHalf.val :=
+  ⟨through_eq_of_matching_eq rfl, bottomHalf_val_eq_of_matching_eq rfl,
+    topHalf_val_eq_of_matching_eq rfl⟩
 
 /-- The cup and cap have no through strands, even though each has a boundary arc. -/
 example : cup.through = 0 ∧ cap.through = 0 := by simp

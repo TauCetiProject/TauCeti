@@ -47,9 +47,19 @@ without a nonunit hypothesis.
   `(N(a + b i) - 1) / 4 ≡ (a - 1) / 2 (mod 2)`;
   `TauCeti.IsPrimaryGaussian.norm_sub_one_div_four_modEq_four` refines this to
   `(N(a + b i) - 1) / 4 ≡ -((a - 1) / 2) (mod 4)`.
+* `TauCeti.IsPrimaryGaussian.add_modEq_one`, `TauCeti.IsPrimaryGaussian.sub_modEq_one`,
+  `TauCeti.IsPrimaryGaussian.four_dvd_sub_sub_sq_sub_one`,
+  `TauCeti.IsPrimaryGaussian.sub_sub_sq_sub_one_div_four_modEq_add`: for primary `a + b i`,
+  `a + b ≡ 1 (mod 4)`, `a - b ≡ 1 (mod 4)`, `4 ∣ a - b - b² - 1`, and the exponent
+  `(a - b - b² - 1) / 4` is additive modulo `4` under multiplication of primary elements.
 * `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_coprime_four`: a primary element generates
   an ideal of norm prime to `4`, and `TauCeti.IsPrimaryGaussian.natCast_absNorm_sub_one_div_four`
   identifies `(N(λ 𝓞 K) - 1) / 4` with the integer `(N(λ) - 1) / 4`.
+* `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_modEq_one_or_five`,
+  `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_one_iff`,
+  `TauCeti.IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_five_iff`: a primary element
+  generates an ideal of norm `1` or `5` modulo `8`, distinguished for `a + b i` by `a ≡ 1` versus
+  `a ≡ 3` modulo `4`.
 * `TauCeti.IsPrimaryGaussian.exists_multiset_prod_eq`,
   `TauCeti.IsPrimaryGaussian.induction_on_prime`: a primary element is a product of primary
   primes, giving an induction principle on primary prime factorisations.
@@ -203,6 +213,70 @@ theorem IsPrimaryGaussian.norm_sub_one_div_four_modEq_four {ζ : K} {hζ : IsPri
     ring_nf
     omega
 
+/-- For primary `a + b i`, the sum of coordinates satisfies `a + b ≡ 1 (mod 4)`. -/
+theorem IsPrimaryGaussian.add_modEq_one {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    a + b ≡ 1 [ZMOD 4] := by
+  rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
+  simp only [Int.ModEq] at hx ⊢
+  omega
+
+/-- For primary `a + b i`, the difference of coordinates satisfies `a - b ≡ 1 (mod 4)`. -/
+theorem IsPrimaryGaussian.sub_modEq_one {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    a - b ≡ 1 [ZMOD 4] := by
+  rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
+  simp only [Int.ModEq] at hx ⊢
+  omega
+
+/-- **Integrality of the `1 + i` supplement exponent.** For primary `a + b i`, the integer
+`a - b - b ^ 2 - 1` is divisible by `4`. -/
+theorem IsPrimaryGaussian.four_dvd_sub_sub_sq_sub_one {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
+    {a b : ℤ} (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    4 ∣ a - b - b ^ 2 - 1 := by
+  have hsub := hx.sub_modEq_one
+  rw [hζ.isPrimaryGaussian_add_mul_iff] at hx
+  obtain ⟨m, rfl⟩ : ∃ m, b = 2 * m := ⟨b / 2, by simp only [Int.ModEq] at hx; omega⟩
+  obtain ⟨k, hk⟩ := hsub.symm.dvd
+  exact ⟨k - m ^ 2, by linear_combination hk⟩
+
+/-- **Additivity modulo `4` of the `1 + i` supplement exponent.** For primary elements
+`a₁ + b₁ i` and `a₂ + b₂ i`, the exponent `(a - b - b ^ 2 - 1) / 4` of their product
+`(a₁ a₂ - b₁ b₂) + (a₁ b₂ + b₁ a₂) i` is congruent modulo `4` to the sum of their exponents. -/
+theorem IsPrimaryGaussian.sub_sub_sq_sub_one_div_four_modEq_add {ζ : K}
+    {hζ : IsPrimitiveRoot ζ 4} {a₁ b₁ a₂ b₂ : ℤ}
+    (hx : IsPrimaryGaussian ((a₁ : 𝓞 K) + (b₁ : 𝓞 K) * hζ.toInteger))
+    (hy : IsPrimaryGaussian ((a₂ : 𝓞 K) + (b₂ : 𝓞 K) * hζ.toInteger)) :
+    ((a₁ * a₂ - b₁ * b₂) - (a₁ * b₂ + b₁ * a₂) - (a₁ * b₂ + b₁ * a₂) ^ 2 - 1) / 4 ≡
+      (a₁ - b₁ - b₁ ^ 2 - 1) / 4 + (a₂ - b₂ - b₂ ^ 2 - 1) / 4 [ZMOD 4] := by
+  rw [hζ.isPrimaryGaussian_add_mul_iff] at hx hy
+  simp only [Int.ModEq] at hx hy
+  obtain ⟨u₁, rfl⟩ : ∃ u₁, a₁ = 2 * u₁ + 1 := ⟨(a₁ - 1) / 2, by omega⟩
+  obtain ⟨v₁, rfl⟩ : ∃ v₁, b₁ = 2 * v₁ := ⟨b₁ / 2, by omega⟩
+  obtain ⟨r₁, rfl⟩ : ∃ r₁, v₁ = u₁ + 2 * r₁ := ⟨(v₁ - u₁) / 2, by omega⟩
+  obtain ⟨u₂, rfl⟩ : ∃ u₂, a₂ = 2 * u₂ + 1 := ⟨(a₂ - 1) / 2, by omega⟩
+  obtain ⟨v₂, rfl⟩ : ∃ v₂, b₂ = 2 * v₂ := ⟨b₂ / 2, by omega⟩
+  obtain ⟨r₂, rfl⟩ : ∃ r₂, v₂ = u₂ + 2 * r₂ := ⟨(v₂ - u₂) / 2, by omega⟩
+  have hsingle (u r : ℤ) :
+      ((2 * u + 1) - 2 * (u + 2 * r) - (2 * (u + 2 * r)) ^ 2 - 1) / 4 =
+        -r - (u + 2 * r) ^ 2 := by
+    have h4 : (2 * u + 1) - 2 * (u + 2 * r) - (2 * (u + 2 * r)) ^ 2 - 1 =
+        4 * (-r - (u + 2 * r) ^ 2) := by ring
+    rw [h4, Int.mul_ediv_cancel_left _ (by decide)]
+  set t : ℤ := 2 * u₁ * u₂ + r₁ + r₂ + 2 * u₁ * r₂ + 2 * u₂ * r₁
+  have hprod :
+      (((2 * u₁ + 1) * (2 * u₂ + 1) - 2 * (u₁ + 2 * r₁) * (2 * (u₂ + 2 * r₂))) -
+        ((2 * u₁ + 1) * (2 * (u₂ + 2 * r₂)) + 2 * (u₁ + 2 * r₁) * (2 * u₂ + 1)) -
+        ((2 * u₁ + 1) * (2 * (u₂ + 2 * r₂)) + 2 * (u₁ + 2 * r₁) * (2 * u₂ + 1)) ^ 2 - 1) =
+      4 * (-2 * u₁ * u₂ - r₁ - r₂ - 4 * u₁ * r₂ - 4 * u₂ * r₁ - 4 * r₁ * r₂ -
+        (u₁ + u₂ + 2 * t) ^ 2) := by
+    simp only [t]
+    ring
+  rw [hprod, Int.mul_ediv_cancel_left _ (by decide), hsingle, hsingle]
+  exact Int.modEq_iff_dvd.mpr
+    ⟨u₁ * u₂ - u₁ * r₁ - r₁ ^ 2 - u₂ * r₂ - r₂ ^ 2 + u₁ * r₂ + u₂ * r₁ + r₁ * r₂ +
+      (u₁ + u₂) * t + t ^ 2, by ring⟩
+
 /-- A primary element of `𝓞 K = ℤ[i]` generates an ideal whose norm is odd, hence prime to `4`. -/
 theorem IsPrimaryGaussian.absNorm_span_singleton_coprime_four (hx : IsPrimaryGaussian x) :
     (Ideal.absNorm (Ideal.span {x})).Coprime 4 := by
@@ -224,6 +298,42 @@ theorem IsPrimaryGaussian.natCast_absNorm_sub_one_div_four (hx : IsPrimaryGaussi
     intro h
     rw [h, Nat.coprime_zero_left] at hcop
     exact absurd hcop (by norm_num)
+  omega
+
+/-- Every primary element of `𝓞 K = ℤ[i]` generates an ideal of norm congruent to `1` or `5`
+modulo `8`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_modEq_one_or_five (hx : IsPrimaryGaussian x) :
+    Ideal.absNorm (Ideal.span {x}) ≡ 1 [MOD 8] ∨
+      Ideal.absNorm (Ideal.span {x}) ≡ 5 [MOD 8] := by
+  have h := absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  simp only [Nat.ModEq] at h ⊢
+  omega
+
+/-- A primary Gaussian integer `a + b i` generates an ideal of norm congruent to `1` modulo `8`
+if and only if `a ≡ 1 (mod 4)`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_one_iff
+    {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≡ 1 [MOD 8] ↔
+      a ≡ 1 [ZMOD 4] := by
+  have h4 := absNorm_modEq_one hx.absNorm_span_singleton_coprime_four
+  have hdiv := hx.norm_sub_one_div_four
+  rw [← hx.natCast_absNorm_sub_one_div_four] at hdiv
+  have hprim := hζ.isPrimaryGaussian_add_mul_iff.mp hx
+  simp only [Nat.ModEq, Int.ModEq] at h4 hdiv hprim ⊢
+  omega
+
+/-- A primary Gaussian integer `a + b i` generates an ideal of norm congruent to `5` modulo `8`
+if and only if `a ≡ 3 (mod 4)`. -/
+theorem IsPrimaryGaussian.absNorm_span_singleton_add_mul_modEq_five_iff
+    {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {a b : ℤ}
+    (hx : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger)) :
+    Ideal.absNorm (Ideal.span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) ≡ 5 [MOD 8] ↔
+      a ≡ 3 [ZMOD 4] := by
+  have h8 := hx.absNorm_span_singleton_modEq_one_or_five
+  have h1 := hx.absNorm_span_singleton_add_mul_modEq_one_iff
+  have hprim := hζ.isPrimaryGaussian_add_mul_iff.mp hx
+  simp only [Nat.ModEq, Int.ModEq] at h8 h1 hprim ⊢
   omega
 
 /-- A rational integer is primary exactly when it is congruent to `1` modulo `4`. -/
