@@ -16,7 +16,7 @@ Let `p : E ⟶ B` and `p' : E' ⟶ B'` be maps to spaces carrying relative CW co
 `C' ⊆ B'`, and let `f : E ⟶ E'` lie over a map `g : B ⟶ B'`, that is `f ≫ p' = p ≫ g`. If `g` is
 cellular, carrying each skeleton of `C` into the skeleton of `C'` of the same dimension, then `f`
 carries the preimages of the skeleta of `C` into those of `C'`
-(`TauCeti.TopCat.mapsTo_preimageSkeleton`), and so induces a morphism of Serre spectral sequences
+(`TauCeti.mapsTo_preimageSkeleton`), and so induces a morphism of Serre spectral sequences
 (`TauCeti.TopCat.serreSpectralSequenceMap`). It is by definition the morphism of spectral
 sequences of filtered spaces `TauCeti.filteredSpaceSpectralSequenceMap`, so it is functorial
 (`TauCeti.filteredSpaceSpectralSequenceMap_id`, `TauCeti.filteredSpaceSpectralSequenceMap_comp`)
@@ -85,17 +85,6 @@ variable {E B E' B' : _root_.TopCat.{u}} [T2Space B] [T2Space B'] {C D : Set B}
   [RelCWComplex C D] {C' D' : Set B'} [RelCWComplex C' D'] {p : E ⟶ B} {p' : E' ⟶ B'}
   {f : E ⟶ E'} {g : B ⟶ B'}
 
-/-- **A map over a cellular map preserves the skeletal filtrations.** If `f ≫ p' = p ≫ g` and `g`
-carries each skeleton of `C` into the skeleton of `C'` of the same dimension, then `f` carries the
-preimage under `p` of the `q`-skeleton of `C` into the preimage under `p'` of the `q`-skeleton of
-`C'`. -/
-lemma mapsTo_preimageSkeleton (hfg : f ≫ p' = p ≫ g)
-    (hg : ∀ n : ℕ, MapsTo g (skeletonLT C n) (skeletonLT C' n)) (q : ℤ) :
-    MapsTo f (preimageSkeleton C p q) (preimageSkeleton C' p' q) := fun x hx ↦ by
-  rw [mem_preimageSkeleton_iff] at hx ⊢
-  rw [← ConcreteCategory.comp_apply, hfg, ConcreteCategory.comp_apply]
-  exact hg _ hx
-
 variable (C C') in
 /-- **The morphism of Serre spectral sequences induced by a map of fibrations.** A map `f : E ⟶ E'`
 over a map `g : B ⟶ B'` that carries each skeleton of `C` into the skeleton of `C'` of the same
@@ -107,7 +96,8 @@ abbrev serreSpectralSequenceMap (R : Type u) [Ring R] (hfg : f ≫ p' = p ≫ g)
     (hg : ∀ n : ℕ, MapsTo g (skeletonLT C n) (skeletonLT C' n)) :
     serreSpectralSequence C p R ⟶ serreSpectralSequence C' p' R :=
   filteredSpaceSpectralSequenceMap (ModuleCat.of R R) (monotone_preimageSkeleton p)
-    (monotone_preimageSkeleton p') f (mapsTo_preimageSkeleton hfg hg)
+    (monotone_preimageSkeleton p') f
+    (mapsTo_preimageSkeleton (congrArg (fun h : E ⟶ B' ↦ ⇑h) hfg) hg)
 
 end Map
 
@@ -115,12 +105,6 @@ section MapOver
 
 variable {E B E' : _root_.TopCat.{u}} [T2Space B] {C D : Set B} [RelCWComplex C D] {p : E ⟶ B}
   {p' : E' ⟶ B} {f : E ⟶ E'}
-
-/-- **A map over `B` preserves the skeletal filtrations.** If `f ≫ p' = p`, then `f` carries the
-preimage under `p` of the `q`-skeleton of `C` into the preimage under `p'` of the `q`-skeleton. -/
-lemma mapsTo_preimageSkeleton_of_comp_eq (hf : f ≫ p' = p) (q : ℤ) :
-    MapsTo f (preimageSkeleton C p q) (preimageSkeleton C p' q) :=
-  mapsTo_preimageSkeleton (hf.trans (Category.comp_id p).symm) (fun _ _ hx ↦ hx) q
 
 variable (C) in
 /-- **The morphism of Serre spectral sequences induced by a map over `B`.** A map `f : E ⟶ E'`
@@ -136,8 +120,7 @@ abbrev serreSpectralSequenceMapOver (R : Type u) [Ring R] (hf : f ≫ p' = p) :
 consecutive skeleta, through the identifications of the two pairs. -/
 @[reassoc]
 private lemma singularHomologyMap_preimagePairMap_comp_eqToHom (hf : f ≫ p' = p)
-    (hmaps : ∀ q, MapsTo f (preimageSkeleton C p q) (preimageSkeleton C p' q))
-    (R : Type u) [Ring R] (k : ℕ) (b : ℤ) (hb : b = k - 1) (hbb : b ≤ b + 1) (n : ℕ) :
+    (R : Type u) [Ring R] (k : ℕ) (b : ℤ) (hb : b = k - 1) (n : ℕ) :
     TopPair.singularHomologyMap
         (TopCat.Hom.preimagePairMap f hf (skeletonLT_subset_skeletonLT_succ C k))
         (ModuleCat.of R R) n ≫
@@ -146,16 +129,18 @@ private lemma singularHomologyMap_preimagePairMap_comp_eqToHom (hf : f ≫ p' = 
       eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) n)
           (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (p := p) k b hb)).symm ≫
         TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton (C := C) p)
-          (monotone_preimageSkeleton (C := C) p') f hmaps hbb) (ModuleCat.of R R) n :=
+          (monotone_preimageSkeleton (C := C) p') f
+          (mapsTo_preimageSkeleton_of_comp_eq (congrArg (fun h : E ⟶ B ↦ ⇑h) hf))
+          (Int.le_add_one le_rfl)) (ModuleCat.of R R) n :=
   TopPair.singularHomologyMap_comp_eqToHom_of_eq _
-    (preimageSkeleton_eq_preimage_skeletonLT k b hb).symm
-    (preimageSkeleton_add_one_eq_preimage_skeletonLT k b hb).symm
-    (preimageSkeleton_eq_preimage_skeletonLT k b hb).symm
-    (preimageSkeleton_add_one_eq_preimage_skeletonLT k b hb).symm _ _
+    (preimageSkeleton_eq_preimage_skeletonLT p k b hb).symm
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT p k b hb).symm
+    (preimageSkeleton_eq_preimage_skeletonLT p' k b hb).symm
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT p' k b hb).symm _ _
     (fun x ↦ by
       rw [TopCat.Hom.preimagePairMap_fst]
       exact (TopCat.Hom.coe_preimageMap_apply f hf _ x).trans
-        (filteredSpaceStepMap_fst_apply _ _ f hmaps hbb ⟨x.1, _⟩).symm) n
+        (filteredSpaceStepMap_fst_apply _ _ f _ _ ⟨x.1, _⟩).symm) n
 
 end MapOver
 
@@ -186,8 +171,9 @@ theorem serreSpectralSequenceFirstPageXIsoSigma_hom_naturality (hf : f ≫ p' = 
         (q + k) ha).inv ≫
         ((serreSpectralSequenceMapOver C R hf).hom 2 le_rfl).f pq =
       TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton (C := C) p)
-          (monotone_preimageSkeleton (C := C) p') f (mapsTo_preimageSkeleton_of_comp_eq hf)
-          (by lia : pq.2 ≤ pq.2 + 1))
+          (monotone_preimageSkeleton (C := C) p') f
+          (mapsTo_preimageSkeleton_of_comp_eq (congrArg (fun h : E ⟶ B ↦ ⇑h) hf))
+          (Int.le_add_one le_rfl))
           (ModuleCat.of R R) (q + k) ≫
         (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
           (monotone_preimageSkeleton (C := C) p') pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl
@@ -207,11 +193,17 @@ theorem serreSpectralSequenceFirstPageXIsoSigma_hom_naturality (hf : f ≫ p' = 
   rw [← cancel_epi (serreSpectralSequenceFirstPageXIsoSigma C hp R k q pq hb ha).inv,
     Iso.inv_hom_id_assoc]
   refine Sigma.hom_ext _ _ fun j ↦ ?_
-  rw [ι_serreSpectralSequenceFirstPageXIsoSigma_inv_assoc, Sigma.ι_map, reassoc_of% nat,
-    ← singularHomologyMap_preimagePairMap_comp_eqToHom_assoc hf _ R k pq.2 hb,
-    ← TopPair.singularHomologyMap_comp_assoc, cellDiskPullbackPairMap_comp_preimagePairMap,
-    TopPair.singularHomologyMap_comp_assoc, reassoc_of% (cell j),
-    ← ι_serreSpectralSequenceFirstPageXIsoSigma_inv_assoc hp' R k q pq hb ha j,
+  -- Expand the inclusion of the summand of the cell `j` into the first page of `p`.
+  rw [ι_serreSpectralSequenceFirstPageXIsoSigma_inv_assoc, Sigma.ι_map]
+  -- Move the morphism past the first-page identification of the filtered spaces (`nat`), and
+  -- read the map of the step `pq.2 ≤ pq.2 + 1` as the map of the pairs of preimages of skeleta.
+  rw [reassoc_of% nat, ← singularHomologyMap_preimagePairMap_comp_eqToHom_assoc hf R k pq.2 hb]
+  -- Commute the map of pairs past the inclusion of the pair over the cell `j`, then past the
+  -- identification of the homology of that pair with the homology of the fibre (`cell j`).
+  rw [← TopPair.singularHomologyMap_comp_assoc, cellDiskPullbackPairMap_comp_preimagePairMap,
+    TopPair.singularHomologyMap_comp_assoc, reassoc_of% (cell j)]
+  -- What remains is the inclusion of the summand of the cell `j` into the first page of `p'`.
+  rw [← ι_serreSpectralSequenceFirstPageXIsoSigma_inv_assoc hp' R k q pq hb ha j,
     Iso.inv_hom_id, Category.comp_id]
 
 include hp hp' in
@@ -258,8 +250,7 @@ theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
         asIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
           (ModuleCat.of R R)).map (f.preimageMap hf {map k j 0}))).isIso_hom
     infer_instance
-  have e := singularHomologyMap_preimagePairMap_comp_eqToHom hf
-    (mapsTo_preimageSkeleton_of_comp_eq (C := C) hf) R k _ rfl (Int.le_add_one le_rfl) (q + k)
+  have e := singularHomologyMap_preimagePairMap_comp_eqToHom (C := C) hf R k _ rfl (q + k)
   rw [(IsIso.eq_inv_comp _).2 e.symm]
   infer_instance
 
