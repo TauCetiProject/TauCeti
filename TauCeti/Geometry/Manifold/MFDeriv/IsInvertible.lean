@@ -15,7 +15,8 @@ If `f` has invertible manifold derivative at `x` and `g` has invertible manifold
 `f x`, then `g ∘ f` has invertible manifold derivative at `x`. No differentiability hypothesis is
 needed, since an invertible derivative forces differentiability
 (`mdifferentiableAt_of_isInvertible_mfderiv`), and no finite-dimensionality or smoothness of the
-manifolds is assumed.
+manifolds is assumed. An invertible manifold derivative also forces the source and target models
+to have the same dimension (`finrank_eq_of_isInvertible_mfderiv`).
 
 Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
 field, an injective manifold derivative is invertible (`isInvertible_mfderiv_of_injective`).
@@ -55,6 +56,14 @@ theorem isInvertible_mfderiv_comp {f : M → M'} {g : M' → M''} {x : M}
   rw [mfderiv_comp x (mdifferentiableAt_of_isInvertible_mfderiv hdg)
     (mdifferentiableAt_of_isInvertible_mfderiv hdf)]
   exact hdg.comp hdf
+
+/-- If `f` has invertible manifold derivative at `x`, the model spaces of the source and the
+target have the same dimension. -/
+theorem finrank_eq_of_isInvertible_mfderiv {f : M → M'} {x : M}
+    (h : (mfderiv I I' f x).IsInvertible) : Module.finrank 𝕜 E = Module.finrank 𝕜 E' :=
+  let ⟨e, _⟩ := h
+  -- The tangent spaces at `x` and `f x` are by definition the model spaces `E` and `E'`.
+  (e.toLinearEquiv : E ≃ₗ[𝕜] E').finrank_eq
 
 /-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
 field, an injective manifold derivative is invertible. -/
