@@ -313,6 +313,15 @@ def detLineLoopOperatorEquiv :
       (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLine :=
   LinearMap.detLineCongrKerCoker (kerLoopOperatorEquiv T S) (quotientRangeLoopOperatorEquiv T S)
 
+/-- `TauCeti.CircleSobolev.detLineLoopOperatorEquiv` is the isomorphism of determinant lines
+induced by `TauCeti.CircleSobolev.kerLoopOperatorEquiv` on kernels and
+`TauCeti.CircleSobolev.quotientRangeLoopOperatorEquiv` on cokernels. -/
+theorem detLineLoopOperatorEquiv_def :
+    detLineLoopOperatorEquiv T S =
+      LinearMap.detLineCongrKerCoker (kerLoopOperatorEquiv T S)
+        (quotientRangeLoopOperatorEquiv T S) :=
+  (rfl)
+
 open TensorProduct in
 /-- On pure tensors, `TauCeti.CircleSobolev.detLineLoopOperatorEquiv` transports the kernel factor
 along evaluation at `0` and the cokernel functional along the inverse of the endpoint map. -/
@@ -452,7 +461,12 @@ private theorem evalZeroProd_ker (y : CircleSobolev 1 E × E)
     (hy : (loopOperator T S).coprod (loopStab T r) y = 0) :
     (returnEnd T S).coprod (endpointStab T S r) (evalZeroProd T y) = 0 := by
   obtain ⟨a, l⟩ := y
-  rw [returnEnd_eq]
+  simp only [ContinuousLinearMap.coprod_apply, loopStab, LinearMap.coe_toContinuousLinearMap',
+    LinearMap.comp_apply] at hy
+  have h1 := fst_evalZeroProd T (a, l)
+  rw [ContinuousLinearMap.coe_fst', evalZero_apply] at h1
+  rw [ContinuousLinearMap.coprod_apply, h1, evalZeroProd_snd, returnEnd_eq, endpointStab,
+    LinearMap.coe_toContinuousLinearMap', LinearMap.comp_apply]
   exact one_sub_apply_add_twistedEndpoint_eq_zero T S hy
 
 private theorem evalZeroProd_inl
@@ -496,8 +510,14 @@ private theorem exists_detLineChartEquiv_detLineLoopOperatorEquiv_symm
   have hid : ∀ z, TensorProduct.congr (LinearEquiv.refl ℝ E).detLineCongr
       (LinearEquiv.refl ℝ E).detLineCongr.symm.dualMap z = z := fun z ↦ by
     simp [LinearEquiv.detLineCongr_refl]
-  exact ((hid _).symm.trans this.symm).trans
-    (congrArg _ ((detLineLoopOperatorEquiv T S).apply_symm_apply _))
+  have hx : LinearMap.detLineCongrKerCoker (kerLoopOperatorEquiv T S)
+      (quotientRangeLoopOperatorEquiv T S) ((detLineLoopOperatorEquiv T S).symm
+        (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator) =
+      (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : E →ₗ[ℝ] E)).detLineEndGenerator := by
+    rw [← detLineLoopOperatorEquiv_def, LinearEquiv.apply_symm_apply]
+  -- `hx` is stated for `1 - Ψ(T)`, and `this` for `returnEnd T S`, whose underlying linear map is
+  -- that endomorphism by construction (see `TauCeti.CircleSobolev.returnEnd`).
+  exact ((hid _).symm.trans this.symm).trans (congrArg _ hx)
 
 variable {X : Type*} [TopologicalSpace X] {M : X → C(AddCircle T, E →L[ℝ] E)}
 
