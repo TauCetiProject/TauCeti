@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import Mathlib.CategoryTheory.ObjectProperty.Local
 public import Mathlib.Condensed.Solid
+public import TauCeti.Topology.Category.Profinite.Basic
 
 /-!
 # Solid condensed modules are closed under limits
@@ -150,19 +151,6 @@ instance hasLimitsOfSize_fullSubcategory_isSolid
   has_limits_of_shape _ _ := inferInstance
 
 end CondensedMod
-
-namespace Profinite
-
-/-- A profinite set `S` with a `Fintype` structure is isomorphic to its image under
-`FintypeCat.toProfinite`. Both sides have carrier `S` by definition, and the topology on the
-right is discrete, so the underlying map is the identity. -/
-noncomputable def isoToProfiniteOfFintype (S : Profinite.{u}) [Fintype S] :
-    S ≅ FintypeCat.toProfinite.obj (FintypeCat.of S) :=
-  haveI : DiscreteTopology (FintypeCat.toProfinite.obj (FintypeCat.of S)) := ⟨rfl⟩
-  (CompHausLike.isoOfBijective (X := FintypeCat.toProfinite.obj (FintypeCat.of S)) (Y := S)
-    (ConcreteCategory.ofHom ⟨id, continuous_of_discreteTopology⟩) Function.bijective_id).symm
-
-end Profinite
 
 namespace Condensed
 
