@@ -37,8 +37,9 @@ introduced here.
 
 With the normalization at one, the coprime law also holds when a factor is zero
 (`ArithmeticFunction.IsAdditive.map_mul_of_coprime`), so additive functions turn pairwise coprime
-finite products into sums (`ArithmeticFunction.IsAdditive.map_prod`). Splitting a positive integer
-into its prime powers then gives the prime-power representation
+finite products into sums (`ArithmeticFunction.IsAdditive.map_prod`). Mathlib's
+`Nat.multiplicative_factorization'`, applied through `Multiplicative A`, gives the prime-power
+representation
 `f n = ∑ p ∈ n.primeFactors, f (p ^ n.factorization p)`
 (`ArithmeticFunction.IsAdditive.apply_eq_sum_primeFactors_pow`), which holds at zero as an empty
 sum.
@@ -157,12 +158,10 @@ theorem IsAdditive.map_prod {ι : Type*} (g : ι → ℕ) (hf : IsAdditive f) (s
 powers exactly dividing the input. At `n = 0` and `n = 1` both sides vanish. -/
 theorem IsAdditive.apply_eq_sum_primeFactors_pow (hf : IsAdditive f) (n : ℕ) :
     f n = ∑ p ∈ n.primeFactors, f (p ^ n.factorization p) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  refine (congrArg f (Nat.prod_primeFactors_pow_factorization hn)).trans
-    (hf.map_prod _ _ fun p hp q hq hpq => ?_)
-  exact ((Nat.coprime_primes (Nat.prime_of_mem_primeFactors hp)
-    (Nat.prime_of_mem_primeFactors hq)).2 hpq).pow _ _
+  have := Nat.multiplicative_factorization' (n := n) (β := Multiplicative A)
+    (fun n => Multiplicative.ofAdd (f n)) (fun x y h => by simp [hf.map_mul_of_coprime h])
+    (by simp) (by simp [hf.map_one])
+  simpa [Finsupp.prod, Nat.support_factorization] using congrArg Multiplicative.toAdd this
 
 end AddCommMonoid
 
