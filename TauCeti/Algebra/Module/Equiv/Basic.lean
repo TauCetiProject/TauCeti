@@ -26,8 +26,9 @@ scalars, even when the ring defining the linear maps is noncommutative.
 For coordinate transport, forgetting linearity gives the corresponding additive word
 equivalence, with the same direction on coordinates. A commutative square of linear maps with
 isomorphisms on its vertical sides transports the ranges of precomposition on hom spaces.
-Conjugating an endomorphism by a semilinear equivalence commutes with powers and moves its kernel
-by the equivalence.
+Conjugating an endomorphism by a semilinear equivalence commutes with powers, moves its kernel
+by the equivalence, and preserves the square-zero property, the conjugate being characterized by
+the equivalence intertwining the two endomorphisms.
 
 ## Main results
 
@@ -40,6 +41,9 @@ by the equivalence.
   kernels and ranges across an intertwining semilinear equivalence.
 * `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
   commutes with powers and transports kernels.
+* `LinearEquiv.eq_conjRingEquiv_apply_iff`: the conjugate `f ∘ d ∘ f⁻¹` of an endomorphism
+  by a semilinear equivalence is the unique endomorphism `e` with `e ∘ f = f ∘ d`; it squares
+  to zero when `d` does (`LinearEquiv.conjRingEquiv_apply_comp_self`).
 * `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
   automorphism moves the set underlying a submodule to the set underlying its image.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
@@ -163,6 +167,32 @@ theorem map_range_of_intertwine
     exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
 
 end Intertwining
+
+section ConjRingEquiv
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module S N] {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ']
+  [RingHomInvPair σ' σ]
+
+/-- A semilinear equivalence `f` is a chain map from an endomorphism `d` to its conjugate
+`f ∘ d ∘ f⁻¹`. -/
+theorem conjRingEquiv_apply_comp (f : M ≃ₛₗ[σ] N) (d : M →ₗ[R] M) :
+    f.conjRingEquiv d ∘ₛₗ f.toLinearMap = f.toLinearMap ∘ₛₗ d := by
+  ext x
+  simp
+
+/-- The conjugate `f ∘ d ∘ f⁻¹` is the unique endomorphism `e` for which the semilinear
+equivalence `f` is a chain map from `d` to `e`. -/
+theorem eq_conjRingEquiv_apply_iff (f : M ≃ₛₗ[σ] N) (d : M →ₗ[R] M) {e : N →ₗ[S] N} :
+    e = f.conjRingEquiv d ↔ e ∘ₛₗ f.toLinearMap = f.toLinearMap ∘ₛₗ d :=
+  f.eq_comp_toLinearMap_symm e (f.toLinearMap ∘ₛₗ d)
+
+/-- The conjugate of a square-zero endomorphism by a semilinear equivalence squares to zero. -/
+theorem conjRingEquiv_apply_comp_self (f : M ≃ₛₗ[σ] N) {d : M →ₗ[R] M} (hd : d ∘ₗ d = 0) :
+    f.conjRingEquiv d ∘ₗ f.conjRingEquiv d = 0 := by
+  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp, hd, map_zero]
+
+end ConjRingEquiv
 
 section Conj
 
