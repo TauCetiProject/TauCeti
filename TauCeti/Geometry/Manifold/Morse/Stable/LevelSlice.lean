@@ -474,8 +474,8 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (hab : a ≠ b)
       Submodule.span ℝ
           (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
-  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hf hy htr
-  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
+  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hX hf hy htr
+  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr] at hs
   -- The level `{f = c}` is a regular level set near `y`, since `df_y (X y) < 0`.
   have hlevel : {x | f x = c} = f ⁻¹' {c} := by
     ext
@@ -514,7 +514,7 @@ theorem exists_unstableSet_inter_stableSet_level_chart (hf : IsMorse 𝓘(ℝ, E
           (mvfderiv 𝓘(ℝ, E) f y).ker : Submodule ℝ E) : Set E)
         (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) := by
   obtain ⟨⟨q, hyq, hq, hs⟩, -⟩ := hX.level_slice hf hab hy htr hyc
-  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
+  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr] at hs
   exact ⟨q, hyq, hq, hs⟩
 
 /-- **The tangent space of a transverse level slice.** If the unstable manifold of a critical point
@@ -532,7 +532,7 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
   rw [(hX.level_slice hf hab hy htr hyc).2,
-    hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
+    hX.span_mtangentConeAt_unstableSet_inter_stableSet hX hf hy htr]
 
 /-- **The level slice has dimension the index difference minus one.** If the unstable manifold of a
 critical point `a` and the stable manifold of a different critical point `b` meet transversally at
@@ -562,7 +562,7 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifo
       (hX.surjective_fderiv_comp_chartAt_symm hab hy), finrank_top,
     Module.finrank_self] at hker
   have hW :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf hy htr
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX hf hy htr
   omega
 
 /-- **Index-difference-one level slices are discrete.** If the Morse indices of critical points `a`
