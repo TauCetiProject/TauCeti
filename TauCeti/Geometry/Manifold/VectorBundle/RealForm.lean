@@ -331,8 +331,9 @@ variable {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G'] [NormedSpace 
 local instance realFormAmbientVectorBundleReal' : VectorBundle ℝ G' V' :=
   VectorBundle.restrictScalars ℝ ℂ G' V'
 
-/-- A complex-linear map carrying one real inclusion to another intertwines the actual smooth
-conjugations, even for different source and ambient bundles. -/
+/-- A fiberwise complex-linear map carrying the range of one real inclusion into the range of
+another intertwines the actual smooth conjugations, even for different source and ambient bundles.
+No map between the real carriers is needed. -/
 theorem maximalRealFormConjugationDiffeomorph_natural
     (j : ∀ x, W' x →L[ℝ] V' x)
     (hj : ContMDiff (IB.prod 𝓘(ℝ, F')) (IB.prod 𝓘(ℝ, G')) n
@@ -340,8 +341,9 @@ theorem maximalRealFormConjugationDiffeomorph_natural
     (hjinj : ∀ x, Injective (j x))
     (hjmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V' x) Complex.I).restrictScalars ℝ) (j x).toLinearMap.range)
-    (A : ∀ x, V x →ₗ[ℂ] V' x) (b : ∀ x, W x →ₗ[ℝ] W' x)
-    (hreal : ∀ x w, A x (i x w) = j x (b x w)) (p : TotalSpace G V) :
+    (A : ∀ x, V x →ₗ[ℂ] V' x)
+    (hA : ∀ x, Set.MapsTo (A x) ((i x).toLinearMap.range : Set (V x))
+      ((j x).toLinearMap.range : Set (V' x))) (p : TotalSpace G V) :
     maximalRealFormConjugationDiffeomorph j hj hjinj hjmax ⟨p.proj, A p.proj p.snd⟩ =
       (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.snd⟩ : TotalSpace G' V'))
         (maximalRealFormConjugationDiffeomorph i hi hinj hmax p) := by
@@ -351,8 +353,7 @@ theorem maximalRealFormConjugationDiffeomorph_natural
       rw [maximalRealFormConjugationDiffeomorph_apply,
         (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_natural
           (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
-          (A p.proj) fun _ ⟨w, hw⟩ ↦ ⟨b p.proj w, by
-            simpa only [← hw, ContinuousLinearMap.coe_coe] using (hreal p.proj w).symm⟩]
+          (A p.proj) (hA p.proj)]
     _ = _ := (congrArg
       (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.snd⟩ : TotalSpace G' V'))
       (maximalRealFormConjugationDiffeomorph_apply i hi hinj hmax p)).symm
