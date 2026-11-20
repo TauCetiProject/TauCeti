@@ -100,7 +100,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 theorem IsContactForm.pathIntegral_periodicTrajectory (hα : α.IsContactForm)
     (hc : IsCompleteVectorField α.reebVectorField)
     (γ : Flow.PeriodicTrajectory (hα.reebFlow hc)) :
-    pathIntegral α.1 (fun t ↦ hα.reebFlow hc t γ.point) 0 γ.period = γ.period :=
+    pathIntegral α.val (fun t ↦ hα.reebFlow hc t γ.point) 0 γ.period = γ.period :=
   hα.pathIntegral_zero_of_isMIntegralCurve (hα.isMIntegralCurve_reebFlow hc γ.point) γ.period
 
 /-- The linearized Reeb return map of a parametrized periodic Reeb trajectory `γ`, acting on the
@@ -349,7 +349,7 @@ theorem reebVectorField_timeForm : (timeForm p).reebVectorField = timeVectorFiel
     have hm : w ∈ (timeForm p).kerDistribution x := mem_kerDistribution.2 hw
     rwa [kerDistribution_timeForm, Submodule.mem_bot] at hm
   rw [hw0]
-  exact ((mextDeriv (timeForm p).1) x).map_coord_zero 1 rfl
+  exact ((mextDeriv (timeForm p).val) x).map_coord_zero 1 rfl
 
 /-- The global Reeb flow of `AddCircle.timeForm p` is the translation flow of `AddCircle p`. -/
 @[simp]
@@ -370,8 +370,8 @@ theorem isNondegenerateOrbit_timeForm (hc : IsCompleteVectorField (timeForm p).r
     (isContactForm_timeForm p).IsNondegenerateOrbit hc γ := by
   rintro δ rfl h1
   obtain ⟨v, hv⟩ := h1.exists_hasEigenvector
-  have hv0 : v.1 ∈ (⊥ : Submodule ℝ (TangentSpace 𝓘(ℝ) δ.point)) :=
-    kerDistribution_timeForm p δ.point ▸ v.2
+  have hv0 : v.val ∈ (⊥ : Submodule ℝ (TangentSpace 𝓘(ℝ) δ.point)) :=
+    kerDistribution_timeForm p δ.point ▸ v.property
   exact hv.2 (Subtype.ext ((Submodule.mem_bot ℝ).1 hv0))
 
 /-- The canonical primitive periodic trajectory of `AddCircle.translationFlow p` starting at `0`

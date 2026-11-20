@@ -190,7 +190,7 @@ theorem exists_cthickenings_pairwiseDisjoint [EMetricSpace X] {K : ι → Set X}
   -- Separate each member from the closed union of all the others.
   have hsep (i : ι) : ∃ δ, 0 < δ ∧
       Disjoint (cthickening δ (K i)) (cthickening δ (⋃ j : {j // j ≠ i}, K j)) :=
-    (disjoint_iUnion_right.2 fun j ↦ hdisj j.2.symm).exists_cthickenings (hK i)
+    (disjoint_iUnion_right.2 fun j ↦ hdisj j.property.symm).exists_cthickenings (hK i)
       ((hlf.comp_injective Subtype.val_injective).isClosed_iUnion fun j ↦ (hK j).isClosed)
   choose δ hδ hsep using hsep
   -- The member with the larger radius is separated from the thickening of the other one.

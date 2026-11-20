@@ -276,7 +276,7 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
   obtain ⟨ψA, hψA⟩ : ∃ ψA, map A.subtype ψA = ψ := ⟨_, map_toSubring ψ A hψ⟩
   set σA := σ.restrict A A fun _ h ↦ hσ h
   have hσA (a : A) : (p : A) ∣ σA a - a ^ p := by
-    obtain ⟨b, hb, hb'⟩ := hσp a a.2
+    obtain ⟨b, hb, hb'⟩ := hσp a a.property
     exact ⟨⟨b, hb⟩, Subtype.ext (by simpa [σA] using hb')⟩
   set U := ψA ^ p ^ i
   set W := expand (p ^ i) (NeZero.ne _) (map (σA ^ i) ψA)

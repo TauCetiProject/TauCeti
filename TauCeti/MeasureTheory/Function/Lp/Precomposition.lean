@@ -74,7 +74,7 @@ variable (𝕜 : Type*) [NormedField 𝕜] [NormedSpace 𝕜 E]
 most `C • ν` with `C` finite. -/
 private def compOfMapLeSmulₗ (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν) :
     Lp E p ν →ₗ[𝕜] Lp E p μ where
-  toFun g := ⟨_, AEEqFun.compQuasiMeasurePreserving_mem_Lp g.2
+  toFun g := ⟨_, AEEqFun.compQuasiMeasurePreserving_mem_Lp g.property
     (QuasiMeasurePreserving.of_map_le_smul hf hmap) hC hmap⟩
   map_add' g h := by
     have hqmp := QuasiMeasurePreserving.of_map_le_smul hf hmap
@@ -124,8 +124,8 @@ variable {𝕜}
 @[simp]
 theorem compOfMapLeSmul_val (hf : Measurable f) (hC : C ≠ ∞) (hmap : μ.map f ≤ C • ν)
     (g : Lp E p ν) :
-    (compOfMapLeSmul 𝕜 hf hC hmap g).1 =
-      g.1.compQuasiMeasurePreserving f (.of_map_le_smul hf hmap) :=
+    (compOfMapLeSmul 𝕜 hf hC hmap g).val =
+      g.val.compQuasiMeasurePreserving f (.of_map_le_smul hf hmap) :=
   (rfl)
 
 /-- Precomposition with `f` is `g ↦ g ∘ f` almost everywhere. -/
@@ -209,14 +209,14 @@ def compEquivOfMapLeSmul {g : β → α} {D : ℝ≥0∞} (hf : Measurable f) (h
     (hmap : μ.map f ≤ C • ν) (hg : Measurable g) (hD : D ≠ ∞) (hmapg : ν.map g ≤ D • μ)
     (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) :
     Lp E p ν ≃L[𝕜] Lp E p μ :=
-  ContinuousLinearEquiv.equivOfInverse (compOfMapLeSmul 𝕜 hf hC hmap)
+  ContinuousLinearEquiv.ofContinuousLinearMap (compOfMapLeSmul 𝕜 hf hC hmap)
     (compOfMapLeSmul 𝕜 hg hD hmapg)
-    (fun h ↦ Subtype.ext <| by
-      simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hf hmap)
-        (.of_map_le_smul hg hmapg), hfg.comp_eq_id])
-    (fun h ↦ Subtype.ext <| by
+    (ContinuousLinearMap.ext fun h ↦ Subtype.ext <| by
       simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hg hmapg)
         (.of_map_le_smul hf hmap), hgf.comp_eq_id])
+    (ContinuousLinearMap.ext fun h ↦ Subtype.ext <| by
+      simp [← AEEqFun.compQuasiMeasurePreserving_comp _ (.of_map_le_smul hf hmap)
+        (.of_map_le_smul hg hmapg), hfg.comp_eq_id])
 
 section Equiv
 

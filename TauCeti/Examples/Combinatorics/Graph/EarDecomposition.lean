@@ -83,19 +83,19 @@ example :
   let v0 : V(G) := ⟨0, by simp [G]⟩
   let v1 : V(G) := ⟨1, by simp [G]⟩
   let o : G.Orientation :=
-    { tail e := if e.1 = 0 then v0 else v1
-      head e := if e.1 = 0 then v1 else v0
+    { tail e := if e.val = 0 then v0 else v1
+      head e := if e.val = 0 then v1 else v0
       isLink e := by
-        have he : e.1 = 0 ∨ e.1 = 1 := by simpa [G] using e.2
+        have he : e.val = 0 ∨ e.val = 1 := by simpa [G] using e.property
         rcases he with h | h <;> simp [h, v0, v1, G] }
   refine ⟨o, (@Quiver.isStronglyConnected_iff V(G) ⟨o.Hom⟩).mpr fun x y ↦ ?_⟩
   rw [o.nonempty_arrowWalk_iff]
   have hx : x = v0 ∨ x = v1 := by
-    rcases (by simpa [G] using x.2 : x.1 = 0 ∨ x.1 = 1) with h | h
+    rcases (by simpa [G] using x.property : x.val = 0 ∨ x.val = 1) with h | h
     · exact Or.inl (Subtype.ext h)
     · exact Or.inr (Subtype.ext h)
   have hy : y = v0 ∨ y = v1 := by
-    rcases (by simpa [G] using y.2 : y.1 = 0 ∨ y.1 = 1) with h | h
+    rcases (by simpa [G] using y.property : y.val = 0 ∨ y.val = 1) with h | h
     · exact Or.inl (Subtype.ext h)
     · exact Or.inr (Subtype.ext h)
   have h01 : G.IsLink 0 0 1 := by simp [G]
@@ -118,7 +118,7 @@ example :
   intro G H v0 v1
   have hv01 : v0 ≠ v1 := fun h ↦ by simpa [v0, v1] using congrArg Subtype.val h
   have hV : ∀ u : V(G), u = v0 ∨ u = v1 := fun u ↦ by
-    rcases (by simpa [G] using u.2 : u.1 = 0 ∨ u.1 = 1) with h | h
+    rcases (by simpa [G] using u.property : u.val = 0 ∨ u.val = 1) with h | h
     · exact Or.inl (Subtype.ext h)
     · exact Or.inr (Subtype.ext h)
   have hadj01 : H.Adj v0 v1 := by

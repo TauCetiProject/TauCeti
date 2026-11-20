@@ -84,7 +84,7 @@ of `Γ₀(N)`, its lower-right entry modulo `N`, is then `1` or `-1`, so the ele
 lies in `Γ₁(N)`, and the two have the same image. -/
 theorem Gamma1_map_eq_Gamma0_map (hN : ∀ u : (ZMod N)ˣ, u = 1 ∨ u = -1) :
     (Gamma1 N).map sl2zToPSL2R = (Gamma0 N).map sl2zToPSL2R := by
-  refine le_antisymm (Subgroup.map_mono (Gamma1_in_Gamma0 N)) ?_
+  refine le_antisymm (Subgroup.map_mono (Gamma1_le_Gamma0 N)) ?_
   rintro _ ⟨γ, hγ, rfl⟩
   rcases hN ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩) with h | h
   · exact ⟨γ, (mem_Gamma1_iff_toHomUnits_eq_one ⟨γ, hγ⟩).mpr h, rfl⟩

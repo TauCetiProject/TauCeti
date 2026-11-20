@@ -83,7 +83,7 @@ theorem sum_relativeDensity_ofTriple_mul {S : PairSkeleton3 κ₂ V} (c : κ)
     (φ : {x : Fin 3 → V // Function.Injective x} → ℝ)
     (hφ : ∀ x y, Polyad3.ofTriple S x = Polyad3.ofTriple S y → φ x = φ y) :
     ∑ x, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) * φ x =
-      ∑ x with H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c, φ x := by
+      ∑ x with H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.val, x.property⟩) = c, φ x := by
   -- The triples sharing the polyad of `y` contribute `φ y` in total.
   have key : ∀ y, ∑ x ∈ (Polyad3.ofTriple S y).support,
       φ x / #(Polyad3.ofTriple S x).support = φ y := by
@@ -97,7 +97,7 @@ theorem sum_relativeDensity_ofTriple_mul {S : PairSkeleton3 κ₂ V} (c : κ)
     rw [sum_congr rfl heq, sum_const, nsmul_eq_mul, mul_div_cancel₀ _ hpos]
   -- Expand each density as a count over the support, then exchange the two sums.
   calc ∑ x, (H.relativeDensity c (Polyad3.ofTriple S x) : ℝ) * φ x
-      = ∑ x, ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.1, y.2⟩) = c,
+      = ∑ x, ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.val, y.property⟩) = c,
           if y ∈ (Polyad3.ofTriple S x).support then
             φ x / #(Polyad3.ofTriple S x).support else 0 := by
         refine sum_congr rfl fun x _ ↦ ?_
@@ -105,7 +105,7 @@ theorem sum_relativeDensity_ofTriple_mul {S : PairSkeleton3 κ₂ V} (c : κ)
           relDensityOn_def]
         push_cast
         ring
-    _ = ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.1, y.2⟩) = c,
+    _ = ∑ y with H.color (Set.powersetCard.ofFinEmb 3 V ⟨y.val, y.property⟩) = c,
           ∑ x ∈ (Polyad3.ofTriple S y).support, φ x / #(Polyad3.ofTriple S x).support := by
         rw [sum_comm]
         refine sum_congr rfl fun y _ ↦ ?_

@@ -338,16 +338,16 @@ theorem changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom {R : Type*}
 noncomputable def factorsThroughEquiv {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
     [NeZero N] (h : d ∣ N) :
     {χ : DirichletCharacter R N // χ.FactorsThrough d} ≃ DirichletCharacter R d where
-  toFun χ := χ.2.χ₀
+  toFun χ := χ.property.χ₀
   invFun ψ := ⟨changeLevel h ψ, changeLevel_factorsThrough ψ h⟩
-  left_inv χ := Subtype.ext χ.2.eq_changeLevel.symm
+  left_inv χ := Subtype.ext χ.property.eq_changeLevel.symm
   right_inv ψ := (changeLevel_injective h (changeLevel_factorsThrough ψ h).eq_changeLevel).symm
 
 /-- `factorsThroughEquiv` sends a character to the character modulo `d` it factors through. -/
 @[simp]
 theorem factorsThroughEquiv_apply {R : Type*} [CommMonoidWithZero R] {N d : ℕ} [NeZero N]
     (h : d ∣ N) (χ : {χ : DirichletCharacter R N // χ.FactorsThrough d}) :
-    factorsThroughEquiv h χ = χ.2.χ₀ :=
+    factorsThroughEquiv h χ = χ.property.χ₀ :=
   (rfl)
 
 /-- The inverse of `factorsThroughEquiv` raises a character modulo `d` to level `N`. -/

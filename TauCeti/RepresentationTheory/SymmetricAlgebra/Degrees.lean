@@ -177,7 +177,7 @@ theorem two_le_of_injective_aeval_symmetricAlgebraInvariants
     have hm : homogeneousSubmoduleOneEquiv R M ⟨f i, hi1 ▸ hf i⟩ ∈ ρ.invariants := by
       rw [mem_invariants, ← ι_mem_symmetricAlgebraInvariants_iff,
         ι_homogeneousSubmoduleOneEquiv_apply]
-      exact (f i).2
+      exact (f i).property
     rw [hinv, Submodule.mem_bot] at hm
     have hfi0 : f i = 0 := Subtype.ext <| by
       simpa [hm] using (ι_homogeneousSubmoduleOneEquiv_apply R M ⟨f i, hi1 ▸ hf i⟩).symm
@@ -200,7 +200,7 @@ theorem natCard_subtype_eq_one_eq_finrank_invariants_of_bijective_aeval_symmetri
       (fun i ↦ (Subalgebra.mem_grading_iff _ _).2 (hf i)) hbij 1]
   refine Nat.card_congr (Equiv.ofBijective
     (fun i : {i : ι // d i = 1} ↦
-      ⟨Finsupp.single i.1 1, by simp [Finsupp.weight_single, i.2]⟩) ⟨?_, ?_⟩)
+      ⟨Finsupp.single i.val 1, by simp [Finsupp.weight_single, i.property]⟩) ⟨?_, ?_⟩)
   · exact fun i j hij ↦
       Subtype.ext (Finsupp.single_left_injective one_ne_zero (congrArg Subtype.val hij))
   · rintro ⟨e, he⟩
@@ -252,7 +252,7 @@ theorem card_filter_le_le_card_filter_le_of_comp_subtype {H : Subgroup G}
   have hfi : (f i : SymmetricAlgebra R M) ∈ symmetricAlgebraInvariants (ρ.comp H.subtype) :=
     (mem_symmetricAlgebraInvariants (ρ.comp H.subtype) _).2 fun h ↦ by
       rw [symmetricAlgebra_comp_apply]
-      exact (ρ.mem_symmetricAlgebraInvariants _).1 (f i).2 h
+      exact (ρ.mem_symmetricAlgebraInvariants _).1 (f i).property h
   obtain ⟨p, hp⟩ := hsurj ⟨_, hfi⟩
   have hp' := congrArg Subtype.val hp
   rw [← Subalgebra.coe_val, comp_aeval_apply, Subalgebra.coe_val] at hp'
