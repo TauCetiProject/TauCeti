@@ -30,8 +30,6 @@ notion is not the one defined here.
 ## Main results
 
 * `TauCeti.LimitGroup.NTQ.System.IsRegular.isNondegenerate`: a regular system is nondegenerate.
-* `TauCeti.LimitGroup.NTQ.System.IsRegular.V_eq_univ`: over a commutative group, every point solves
-  a regular system.
 * `TauCeti.LimitGroup.NTQ.System.isRegular_cons_genusTwo`: a genus-two level
   `[x₁, y₁][x₂, y₂] = 1` in all its variables keeps a system regular.
 * `TauCeti.LimitGroup.NTQ.isRegular_two_genusTwo_levels`: two disjoint genus-two levels form a
@@ -129,36 +127,6 @@ theorem isRegular_cons_genusTwo {x y : Fin 2 → X} (inj : (Sum.elim x y).Inject
   isRegular_cons_quadratic.trans <| and_iff_left
     ⟨(Quadratic.Standard.vars_orientable _ inj).trans (Set.range_eq_univ.2 hxy),
       Quadratic.Standard.isRegular_genusTwo _ inj⟩
-
-/-- Over a commutative group every quadratic level of a regular system is the genus-two
-equation, which every point of a commutative group solves, so every point is a solution of a
-regular system. -/
-theorem IsRegular.V_eq_univ [IsMulCommutative G] {U : System G Y} (h : U.IsRegular) :
-    V (MonoidHom.id G) U.equations = Set.univ := by
-  induction U with
-  | nil => simp
-  | cons S X L ih =>
-    have hS := ih h.of_cons
-    refine Set.eq_univ_of_forall fun v => mem_V_cons.2 ⟨hS ▸ Set.mem_univ _, ?_⟩
-    cases L with
-    | quadratic Q =>
-      -- the coordinate group of `S` is commutative: commutators vanish at every point of `G`
-      have : IsMulCommutative S.CoordGroup := ⟨⟨fun p q => by
-        induction p using QuotientGroup.induction_on with | H a =>
-        induction q using QuotientGroup.induction_on with | H b =>
-        rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul, QuotientGroup.eq, mem_Rad]
-        intro w _
-        simp only [map_mul, map_inv, mul_inv_rev]
-        rw [mul_comm' (eval (MonoidHom.id G) w b)]
-        group⟩⟩
-      -- evaluation at `v ∘ Sum.inr` carries the solution `x ↦ v x` of `Q` in `S.CoordGroup`
-      have hS' : v ∘ Sum.inr ∈ V (.id G) S.equations := hS ▸ Set.mem_univ _
-      have hv := GHom.comp_mem_V (κ := eval (.id G) (v ∘ Sum.inr))
-        ⟨(CoordGroup.evalGHom _ hS').toMonoidHom, CoordGroup.evalGHom_mk hS'⟩
-        (h.2.2.V_eq_univ ▸ Set.mem_univ fun x => QuotientGroup.mk' _ (inl (v (.inl x))))
-      simpa [Function.comp_def] using hv
-    | empty => simp
-    | centralizer | abelian => exact h.elim
 
 end System
 

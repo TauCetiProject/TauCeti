@@ -43,8 +43,6 @@ would `z₁⁻¹ c₁ z₁ z₂⁻¹ c₂ z₂ z₃⁻¹ c₃ z₃ d = 1` with `
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_orientableCoeff_one_zero_iff`: `[x, y] d = 1`
   is regular exactly when `d` stays nontrivial in `H` and the equation has a solution.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isRegular_genusTwo`: `[x₁, y₁][x₂, y₂] = 1` is regular.
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.IsRegular.V_eq_univ`: over a commutative group, every
-  point solves a regular equation.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.not_isRegular_commutator`: `[x, y] = 1` is not regular.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.IsRegular.four_le_kappa_of_not_isOrientable`: a regular
   non-orientable equation has `κ(S) ≥ 4`; so `x₁² ⋯ xₙ² = 1` with `n ≤ 3`, for instance
@@ -185,29 +183,6 @@ theorem not_isRegular_nonorientable_of_le_three (ι : G →* H) {n : ℕ} {x : F
 theorem IsRegular.three_le_kappa {ι : G →* H} {S : Standard G X} (h : S.IsRegular ι) :
     3 ≤ S.kappa := by
   obtain ⟨-, -, ⟨hκ, -⟩ | ⟨ho, h1, h2, h3⟩ | ⟨ho, h2, h3⟩⟩ := h <;> cases S <;> simp_all <;> lia
-
-/-- Over a commutative group every point solves a regular equation: of the clauses of regularity
-only the genus-two equation `[x₁, y₁][x₂, y₂] = 1` can hold there, and every point of a commutative
-group solves it. -/
-theorem IsRegular.V_eq_univ [IsMulCommutative H] {ι : G →* H} {S : Standard G X}
-    (h : S.IsRegular ι) : V ι {S.toWord} = Set.univ := by
-  have hcomm (p q : H) : Commute p q := mul_comm' p q
-  obtain ⟨hc, ⟨v, hv⟩, ⟨-, w, -, hw⟩ | ⟨ho, h1, h2, h3⟩ | ⟨ho, h2, h3⟩⟩ := h
-  · exact absurd ((isCommutative_iff ..).2 (List.pairwise_of_forall hcomm).isChain) hw
-  · -- `[x, y] d = 1` takes the value `ι d ≠ 1` at every point
-    cases S with
-    | orientableCoeff n m _ x y z _ c _ d hd =>
-      obtain ⟨rfl, rfl⟩ : n = 1 ∧ m = 0 := by simp at h1 h2; lia
-      simp only [mem_V, Set.mem_singleton_iff, forall_eq, toWord_def, atoms_orientableCoeff,
-        List.ofFn_succ, List.ofFn_zero, List.append_nil, List.prod_singleton, map_mul,
-        map_commutatorElement, constant_orientableCoeff] at hv
-      rw [commutatorElement_eq_one_iff_commute.2 (hcomm _ _), one_mul, eval_inl] at hv
-      exact absurd hv (hc d (by simp))
-    | _ => simp_all
-  · cases S with
-    | orientable n _ x y inj =>
-      exact Set.eq_univ_of_forall fun v => mem_V_orientable_of_commute ι _ inj fun _ => hcomm ..
-    | _ => simp_all
 
 /-- A regular equation of genus zero has at least three coefficient atoms. -/
 theorem IsRegular.three_le_atomicRank_of_genus_eq_zero {ι : G →* H} {S : Standard G X}
