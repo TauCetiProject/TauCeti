@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
+import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # Comparing normed and topological interior products
@@ -17,7 +18,11 @@ The normed `ContinuousAlternatingMap.curryLeft` agrees pointwise with the norm-f
 the topological interior-product API without importing wedge constructions. Currying commutes
 with subtraction (`ContinuousAlternatingMap.curryLeft_sub`), and the difference of two curried maps
 `f(u, ·)` and `g(v, ·)` is bounded by `‖f - g‖ ‖u‖ + ‖g‖ ‖u - v‖`
-(`ContinuousAlternatingMap.norm_curryLeft_sub_curryLeft_le`).
+(`ContinuousAlternatingMap.norm_curryLeft_sub_curryLeft_le`). Iterating `curryLeft` inserts a
+family `u` of `N` vectors in the first `N` slots (`ContinuousAlternatingMap.curryLeftVec`), which
+evaluates as the map on `u` followed by the arguments
+(`ContinuousAlternatingMap.curryLeftVec_apply`) and depends continuously on the map and on `u`
+(`Continuous.curryLeftVec`).
 
 A continuous alternating map of one vector is read as a continuous linear functional by
 `ContinuousAlternatingMap.toDual`. Currying a continuous alternating map of two vectors in its
@@ -68,6 +73,59 @@ theorem norm_curryLeft_sub_curryLeft_le {n : ℕ} (f g : E [⋀^Fin (n + 1)]→L
     rw [norm_curryLeft]
 
 end Lipschitz
+
+section curryLeftVec
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {m : ℕ}
+
+/-- The iterated interior product of a continuous alternating map with the vectors
+`u 0, …, u (N - 1)`, inserted in its first `N` slots by `N` successive applications of
+`ContinuousAlternatingMap.curryLeft`. -/
+noncomputable def curryLeftVec :
+    {N : ℕ} → (E [⋀^Fin (m + N)]→L[𝕜] F) → (Fin N → E) → E [⋀^Fin m]→L[𝕜] F
+  | 0, f, _ => f
+  | N + 1, f, u => curryLeftVec (curryLeft (n := m + N) f (u 0)) (Fin.tail u)
+
+/-- The iterated interior product evaluates the map on the vectors `u` followed by the
+arguments. -/
+@[simp]
+theorem curryLeftVec_apply :
+    ∀ {N : ℕ} (f : E [⋀^Fin (m + N)]→L[𝕜] F) (u : Fin N → E) (t : Fin m → E),
+      curryLeftVec f u t = f (Matrix.vecAppend (Nat.add_comm m N) u t)
+  | 0, f, u, t => by
+    rw [curryLeftVec]
+    congr 1
+    funext i
+    simp [Matrix.vecAppend_eq_ite]
+  | N + 1, f, u, t => by
+    rw [curryLeftVec, curryLeftVec_apply, curryLeft_apply_apply]
+    congr 1
+    funext i
+    refine Fin.cases ?_ (fun i ↦ ?_) i
+    · simp [Matrix.vecAppend_eq_ite]
+    · simp only [Matrix.vecAppend_eq_ite, Matrix.cons_val_succ, Fin.val_succ, Fin.tail]
+      split_ifs with h₁ h₂ h₂
+      · rfl
+      · omega
+      · omega
+      · congr 1
+        ext
+        simp
+
+/-- The iterated interior product of a continuous family of continuous alternating maps with a
+continuous family of vectors is continuous. -/
+theorem _root_.Continuous.curryLeftVec {X : Type*} [TopologicalSpace X] :
+    ∀ {N : ℕ} {f : X → E [⋀^Fin (m + N)]→L[𝕜] F} {u : X → Fin N → E}, Continuous f →
+      Continuous u → Continuous fun x ↦ curryLeftVec (f x) (u x)
+  | 0, _, _, hf, _ => hf
+  | N + 1, f, u, hf, hu =>
+    Continuous.curryLeftVec (f := fun x ↦ curryLeft (n := m + N) (f x) (u x 0))
+      (u := fun x ↦ Fin.tail (u x))
+      (((curryLeftLI (n := m + N)).continuous.comp hf).clm_apply ((continuous_apply 0).comp hu))
+      (continuous_pi fun i ↦ (continuous_apply i.succ).comp hu)
+
+end curryLeftVec
 
 section toDual
 

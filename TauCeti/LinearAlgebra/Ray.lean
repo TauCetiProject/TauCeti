@@ -29,6 +29,9 @@ equivalence (`Module.Ray.map_units_smul`). The sign comparing two signed copies 
 `(-1) ^ n • x` of a ray is `(-1) ^ m * (-1) ^ n` (`Module.Ray.ite_neg_one_pow_smul_eq`,
 `Module.Ray.ite_neg_one_pow_smul_eq_self`). Over a linearly ordered ring, any map of rays
 commuting with negation also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
+Over a linearly ordered field, the chosen vector of a ray is a positive multiple of any nonzero
+vector representing it (`Module.Ray.exists_pos_someVector_eq_smul`), and that of `-x` a positive
+multiple of minus that of `x` (`Module.Ray.exists_pos_someVector_neg_eq_smul`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
@@ -163,6 +166,28 @@ theorem Module.Ray.units_smul_of_map_neg {F : Module.Ray R M → Module.Ray R N}
   · rw [units_smul_of_pos u hu, units_smul_of_pos u hu]
 
 end LinearOrder
+
+section SomeVector
+
+variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
+  [Module R M]
+
+/-- The chosen vector of a ray is a positive multiple of any nonzero vector representing it. -/
+theorem Module.Ray.exists_pos_someVector_eq_smul {x : Module.Ray R M} {v : M} (hv : v ≠ 0)
+    (h : rayOfNeZero R v hv = x) : ∃ r : R, 0 < r ∧ x.someVector = r • v := by
+  have h' : SameRay R v x.someVector := by
+    rwa [← ray_eq_iff hv x.someVector_ne_zero, someVector_ray]
+  obtain ⟨r, hr, h'⟩ := h'.exists_pos_left hv x.someVector_ne_zero
+  exact ⟨r, hr, h'.symm⟩
+
+/-- The chosen vector of the negation of a ray is a positive multiple of the negation of the
+chosen vector of the ray. -/
+theorem Module.Ray.exists_pos_someVector_neg_eq_smul (x : Module.Ray R M) :
+    ∃ r : R, 0 < r ∧ (-x).someVector = r • -x.someVector :=
+  exists_pos_someVector_eq_smul (neg_ne_zero.2 x.someVector_ne_zero) <| by
+    rw [← neg_rayOfNeZero R _ x.someVector_ne_zero, someVector_ray]
+
+end SomeVector
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [IsTorsionFree R M] {x y z : M}
