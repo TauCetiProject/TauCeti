@@ -11,13 +11,11 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
-import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
 # Friedrichs' commutator estimate on the Bessel-potential spaces `H^s(ℝⁿ)`
@@ -40,13 +38,16 @@ where `C = 2 ^ (|s| / 2) √2 (p₀₁(θ) + p₁₁(θ)) ∫ ⟨ζ⟩ ^ (|s| + 
 `ε`; here `p_{k,1}(θ) = sup ‖x‖ ^ k ‖Dθ(x)‖` are Schwartz seminorms and
 `⟨ζ⟩ = (1 + ‖ζ‖ ^ 2) ^ (1 / 2)` is the Japanese bracket
 (`TemperedDistribution.exists_besselPotential_smulLeftCLM_fourierMultiplierCLM_sub_eq_and_norm_le`).
-Each of `φ J_ε u` and `J_ε (φ u)` separately is only in `H^s`. When `θ 0 = 1` the mollifiers
-themselves are bounded on every `H^s` by `sup ‖θ‖`, uniformly in `ε`, and `J_ε u → u` in `H^s` as
-`ε → 0` (`TemperedDistribution.exists_besselPotential_fourierMultiplierCLM_eq_and_tendsto`).
+Each of `φ J_ε u` and `J_ε (φ u)` separately is bounded in `H^s` uniformly in `|ε| ≤ 1`, but not
+uniformly in `H^{s+1}`; only the commutator gains the derivative uniformly. When `θ 0 = 1` the
+mollifiers themselves are bounded on every `H^s` by `sup ‖θ‖`, uniformly in `ε`, and `J_ε u → u`
+in `H^s` as `ε → 0`
+(`TemperedDistribution.exists_besselPotential_fourierMultiplierCLM_eq_and_norm_le_and_tendsto`).
 
 Since `J_ε` commutes with derivatives, the same holds for the commutator with a differential
 operator `φ ∂^m` of order `k`, which maps `H^s` to `H^{s - k + 1}` uniformly in `ε`
-(`TemperedDistribution.exists_besselPotential_commutator_iteratedLineDerivOp_eq_and_norm_le`).
+(`exists_besselPotential_smulLeftCLM_iteratedLineDerivOp_fourierMultiplierCLM_sub_eq_and_norm_le`
+in the namespace `TemperedDistribution`).
 This uniform gain of one derivative is what lets mollification prove regularity of weak solutions
 of elliptic equations: for an operator `P = ∑ φ_m ∂^m` of order two with Schwartz coefficients,
 `P J_ε u - J_ε P u` stays bounded in `H^{s-1}` for `u ∈ H^s` as `ε → 0`.
@@ -65,12 +66,15 @@ The difference of the symbols is small exactly where the convolution kernel is l
 (`SchwartzMap.one_add_norm_sq_rpow_mul_norm_comp_smul_sub_le`). Indeed by the mean value theorem
 the difference is at most `‖ξ - η‖` times `|ε| ‖Dθ(ε w)‖` at some `w` between `η` and `ξ`, and
 `⟨w⟩ |ε| ‖Dθ(ε w)‖ ≤ p₀₁(θ) + p₁₁(θ)`, while Peetre's inequality gives
-`⟨ξ⟩ ≤ √2 ⟨w⟩ ⟨ξ - w⟩ ≤ √2 ⟨w⟩ ⟨ξ - η⟩`. The extra factor `⟨ξ⟩` is the gained derivative. With
-Peetre's inequality for `⟨ξ⟩ ^ s` this bounds `⟨ξ⟩ ^ (s + 1)` times the integrand by a convolution
-of the integrable kernel `⟨·⟩ ^ (|s| + 2) ‖𝓕 φ‖` with `⟨·⟩ ^ s ‖𝓕 u‖`, and Schur's test bounds
-its `L²` norm (`SchwartzMap.eLpNorm_rpow_smul_fourier_smulLeftCLM_fourierMultiplierCLM_sub_le`).
-The estimate passes from Schwartz functions to `H^s` by density, as for multiplication by `φ` in
-`TauCeti.Analysis.Sobolev.BesselPotential.Multiplication`.
+`⟨ξ⟩ ≤ √2 ⟨w⟩ ⟨ξ - w⟩ ≤ √2 ⟨w⟩ ⟨ξ - η⟩` (`TauCeti.one_add_norm_sq_rpow_le_of_mem_segment`). The
+extra factor `⟨ξ⟩` is the gained derivative. With Peetre's inequality for `⟨ξ⟩ ^ s` this bounds
+`⟨ξ⟩ ^ (s + 1)` times the integrand by a convolution of the integrable kernel
+`⟨·⟩ ^ (|s| + 2) ‖𝓕 φ‖` with `⟨·⟩ ^ s ‖𝓕 u‖`, and Schur's test
+(`SchwartzMap.eLpNorm_rpow_smul_fourier_le_of_eq_integral`) bounds its `L²` norm
+(`SchwartzMap.eLpNorm_rpow_smul_fourier_smulLeftCLM_fourierMultiplierCLM_sub_le`). The estimate
+passes from Schwartz functions to `H^s` by density, as for multiplication by `φ` in
+`TauCeti.Analysis.Sobolev.BesselPotential.Multiplication`
+(`TemperedDistribution.exists_besselPotential_apply_eq_and_norm_le_of_norm_toLp_le`).
 
 ## Main declarations
 
@@ -82,10 +86,10 @@ The estimate passes from Schwartz functions to `H^s` by density, as for multipli
   Friedrichs' estimate `H^s → H^{s+1}` on tempered distributions, and
   `TemperedDistribution.MemSobolev.smulLeftCLM_fourierMultiplierCLM_sub`: the commutator maps
   `H^s` into `H^{s+1}`.
-* `TemperedDistribution.exists_besselPotential_commutator_iteratedLineDerivOp_eq_and_norm_le`:
-  the commutator with `φ ∂^m`.
-* `TemperedDistribution.exists_besselPotential_fourierMultiplierCLM_eq_and_tendsto`: the
-  mollifiers are uniformly bounded on `H^s` and converge strongly to the identity.
+* `exists_besselPotential_smulLeftCLM_iteratedLineDerivOp_fourierMultiplierCLM_sub_eq_and_norm_le`
+  (in the namespace `TemperedDistribution`): the commutator with `φ ∂^m`.
+* `TemperedDistribution.exists_besselPotential_fourierMultiplierCLM_eq_and_norm_le_and_tendsto`:
+  the mollifiers are uniformly bounded on `H^s` and converge strongly to the identity.
 
 ## References
 
@@ -125,21 +129,6 @@ private theorem one_add_norm_mul_abs_mul_norm_fderiv_comp_smul_le (θ : 𝓢(E, 
     _ ≤ _ := by linarith
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Peetre's inequality along a segment: for `w` between `ξ` and `η`,
-`⟨ξ⟩ ≤ √2 (1 + ‖w‖) ⟨ξ - η⟩`. -/
-private theorem one_add_norm_sq_rpow_le_of_mem_segment {ξ η w : E} (hw : w ∈ segment ℝ ξ η) :
-    (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) ≤ √2 * (1 + ‖w‖) * (1 + ‖ξ - η‖ ^ 2) ^ (1 / 2 : ℝ) := by
-  have hP := TauCeti.one_add_norm_add_sq_rpow_le_mul 1 w (ξ - w)
-  rw [add_sub_cancel, abs_one, ← Real.sqrt_eq_rpow 2] at hP
-  have hw' : (1 + ‖w‖ ^ 2) ^ (1 / 2 : ℝ) ≤ 1 + ‖w‖ := by
-    rw [← Real.sqrt_eq_rpow, Real.sqrt_le_left (by positivity)]
-    nlinarith [norm_nonneg w]
-  have hseg : ‖ξ - w‖ ≤ ‖ξ - η‖ := by
-    simpa only [norm_sub_rev w ξ, norm_sub_rev η ξ] using norm_sub_le_of_mem_segment hw
-  refine hP.trans ?_
-  gcongr
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- **The symbol difference estimate behind Friedrichs' lemma.** For a scalar Schwartz function
 `θ` and `|ε| ≤ 1`, the difference `θ(ε η) - θ(ε ξ)` is small compared with `⟨ξ⟩⁻¹` when `η` is
 close to `ξ`:
@@ -172,7 +161,7 @@ theorem one_add_norm_sq_rpow_mul_norm_comp_smul_sub_le (θ : 𝓢(E, ℂ)) {ε :
     rw [le_div_iff₀ (hjb_pos ξ)]
     calc ‖f' w‖ * jb ξ ≤ ‖f' w‖ * (√2 * (1 + ‖w‖) * jb (ξ - η)) := by
           gcongr
-          exact one_add_norm_sq_rpow_le_of_mem_segment hw
+          exact TauCeti.one_add_norm_sq_rpow_le_of_mem_segment hw
       _ = √2 * jb (ξ - η) * ((1 + ‖w‖) * ‖f' w‖) := by ring
       _ ≤ √2 * jb (ξ - η) * D := by gcongr; exact hf'_le w
       _ = √2 * D * jb (ξ - η) := by ring
@@ -225,60 +214,6 @@ private theorem fourier_smulLeftCLM_fourierMultiplierCLM_sub_apply (φ θ : 𝓢
   simp only [hJ]
   module
 
-/-- The pointwise bound behind Friedrichs' estimate: `⟨ξ⟩ ^ (s + 1)` times the Fourier transform
-of the commutator is bounded by the convolution of the kernel
-`2 ^ (|s| / 2) √2 (p₀₁(θ) + p₁₁(θ)) ⟨·⟩ ^ (|s| + 2) ‖𝓕 φ‖` with `⟨·⟩ ^ s ‖𝓕 f‖`. -/
-private theorem ofReal_rpow_mul_norm_fourier_smulLeftCLM_fourierMultiplierCLM_sub_le (s : ℝ)
-    (φ θ : 𝓢(E, ℂ)) {ε : ℝ} (hε : |ε| ≤ 1) (f : 𝓢(E, F)) (ξ : E) :
-    ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ ((s + 1) / 2) *
-        ‖𝓕 (smulLeftCLM F (φ : E → ℂ) (fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) f) -
-          fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) (smulLeftCLM F (φ : E → ℂ) f)) ξ‖) ≤
-      ∫⁻ y, ENNReal.ofReal (2 ^ (|s| / 2) *
-          (√2 * (SchwartzMap.seminorm ℝ 0 1 θ + SchwartzMap.seminorm ℝ 1 1 θ)) *
-            ((1 + ‖ξ - y‖ ^ 2) ^ ((|s| + 2) / 2) * ‖𝓕 φ (ξ - y)‖)) *
-        ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f y‖ₑ := by
-  set K := √2 * (SchwartzMap.seminorm ℝ 0 1 θ + SchwartzMap.seminorm ℝ 1 1 θ)
-  rw [fourier_smulLeftCLM_fourierMultiplierCLM_sub_apply, ENNReal.ofReal_mul (by positivity),
-    ofReal_norm]
-  calc ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ ((s + 1) / 2)) *
-        ‖∫ y, 𝓕 φ (ξ - y) • ((θ (ε • y) - θ (ε • ξ)) • 𝓕 f y)‖ₑ
-      ≤ ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ ((s + 1) / 2)) *
-          ∫⁻ y, ‖𝓕 φ (ξ - y) • ((θ (ε • y) - θ (ε • ξ)) • 𝓕 f y)‖ₑ := by
-        gcongr
-        exact eNorm_integral_le_lintegral_eNorm _
-    _ = ∫⁻ y, ENNReal.ofReal ((1 + ‖ξ‖ ^ 2) ^ ((s + 1) / 2) *
-          (‖𝓕 φ (ξ - y)‖ * (‖θ (ε • y) - θ (ε • ξ)‖ * ‖𝓕 f y‖))) := by
-        rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-        refine lintegral_congr fun y ↦ ?_
-        rw [← ofReal_norm, norm_smul, norm_smul, ← ENNReal.ofReal_mul (by positivity)]
-    _ ≤ _ := by
-      refine lintegral_mono fun y ↦ ?_
-      rw [← ofReal_norm, norm_smul, Complex.norm_real, Real.norm_of_nonneg (by positivity),
-        ← ENNReal.ofReal_mul (by positivity)]
-      refine ENNReal.ofReal_le_ofReal ?_
-      -- Peetre's inequality for `⟨ξ⟩ ^ s` and the symbol difference estimate for `⟨ξ⟩`.
-      have hP := TauCeti.one_add_norm_add_sq_rpow_le_mul s y (ξ - y)
-      rw [add_sub_cancel] at hP
-      have hθ := one_add_norm_sq_rpow_mul_norm_comp_smul_sub_le θ hε ξ y
-      have hsplit : (1 + ‖ξ‖ ^ 2) ^ ((s + 1) / 2) =
-          (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) := by
-        rw [← Real.rpow_add (by positivity)]
-        ring_nf
-      have hsplit' : (1 + ‖ξ - y‖ ^ 2) ^ ((|s| + 2) / 2) =
-          (1 + ‖ξ - y‖ ^ 2) ^ (|s| / 2) * (1 + ‖ξ - y‖ ^ 2) := by
-        rw [← Real.rpow_add_one (by positivity)]
-        ring_nf
-      rw [hsplit, hsplit']
-      calc (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) *
-            (‖𝓕 φ (ξ - y)‖ * (‖θ (ε • y) - θ (ε • ξ)‖ * ‖𝓕 f y‖))
-          = (1 + ‖ξ‖ ^ 2) ^ (s / 2) *
-              ((1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) * ‖θ (ε • y) - θ (ε • ξ)‖) *
-                (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖) := by ring
-        _ ≤ (2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (s / 2) * (1 + ‖ξ - y‖ ^ 2) ^ (|s| / 2)) *
-              (K * (1 + ‖ξ - y‖ ^ 2)) * (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖) := by
-          gcongr
-        _ = _ := by ring
-
 end CompleteSpace
 
 /-- **Friedrichs' estimate on the Fourier side**, for Schwartz functions. For `|ε| ≤ 1`,
@@ -299,48 +234,35 @@ theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_fourierMultiplierCLM_sub_le (s : �
         eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f ξ) 2 volume := by
   by_cases hF : CompleteSpace F
   swap
-  · have h0 : ∀ g : 𝓢(E, F), 𝓕 g = 0 := fun g ↦ by
-      ext ξ
-      rw [SchwartzMap.fourier_coe, Real.fourier_eq]
-      exact integral_of_not_completeSpace hF
-    simp [h0]
+  · simp [fourier_eq_zero_of_not_completeSpace hF]
   set K := √2 * (SchwartzMap.seminorm ℝ 0 1 θ + SchwartzMap.seminorm ℝ 1 1 θ)
-  set k : E → ℝ≥0∞ := fun ζ ↦
-    ENNReal.ofReal (2 ^ (|s| / 2) * K * ((1 + ‖ζ‖ ^ 2) ^ ((|s| + 2) / 2) * ‖𝓕 φ ζ‖))
-  set g : E → F := fun y ↦ (((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f y
-  have hk : Measurable k := by fun_prop
-  have hw (t : ℝ) : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
-    fun_prop
-  have hg : Continuous g := (hw s).1.continuous.smul (𝓕 f).continuous
-  have hint := ((𝓕 φ).integrable_one_add_norm_sq_rpow_mul_norm (ν := volume)
-    ((|s| + 2) / 2)).const_mul (2 ^ (|s| / 2) * K)
-  have hk_int : ∫⁻ ζ, k ζ = ENNReal.ofReal
-      (2 ^ (|s| / 2) * K * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ ((|s| + 2) / 2) * ‖𝓕 φ ζ‖) := by
-    rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal hint
-      (.of_forall fun ζ ↦ by positivity)]
-  -- Schur's test for the kernel `k (x - y)`, whose row and column integrals are `∫⁻ k`.
-  have hschur := TauCeti.eLpNorm_lintegral_mul_le (μ := volume) (ν := volume)
-    (k := fun x y ↦ k (x - y)) (hk.comp (measurable_fst.sub measurable_snd)).aemeasurable
-    (g := fun y ↦ ‖g y‖ₑ) hg.eNorm.measurable.aemeasurable (p := 2) one_le_two
-    (A := ∫⁻ ζ, k ζ) (B := ∫⁻ ζ, k ζ)
-    (.of_forall fun x ↦ (lintegral_sub_left_eq_self k x).le)
-    (.of_forall fun y ↦ (lintegral_sub_right_eq_self k y).le)
-  rw [← hk_int]
-  calc _ ≤ eLpNorm (fun ξ ↦ ∫⁻ y, k (ξ - y) * ‖g y‖ₑ) 2 volume := by
-        refine eLpNorm_mono_eNorm (((hw (s + 1)).1.continuous.smul
-          (𝓕 (smulLeftCLM F (φ : E → ℂ) (fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) f) -
-            fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) (smulLeftCLM F (φ : E → ℂ) f))).continuous
-          ).aestronglyMeasurable) fun ξ ↦ ?_
-        rw [eNorm_eq_self, ← ofReal_norm, norm_smul, Complex.norm_real,
-          Real.norm_of_nonneg (by positivity)]
-        exact ofReal_rpow_mul_norm_fourier_smulLeftCLM_fourierMultiplierCLM_sub_le s φ θ hε f ξ
-    _ ≤ (∫⁻ ζ, k ζ) ^ (1 - (2 : ℝ≥0∞).toReal⁻¹) * (∫⁻ ζ, k ζ) ^ (2 : ℝ≥0∞).toReal⁻¹ *
-          eLpNorm (fun y ↦ ‖g y‖ₑ) 2 volume := hschur
-    _ = (∫⁻ ζ, k ζ) * eLpNorm g 2 volume := by
-        have h2 : (1 : ℝ) - (2 : ℝ≥0∞).toReal⁻¹ = 2⁻¹ := by norm_num
-        rw [eLpNorm_eNorm g hg.aestronglyMeasurable, h2, ENNReal.toReal_ofNat,
-          ← ENNReal.rpow_add_of_nonneg _ _ (by norm_num) (by norm_num)]
-        norm_num
+  rw [← integral_const_mul]
+  refine eLpNorm_rpow_smul_fourier_le_of_eq_integral
+    (((𝓕 φ).integrable_one_add_norm_sq_rpow_mul_norm ((|s| + 2) / 2)).const_mul _) (by fun_prop)
+    (fun ζ ↦ by positivity) (fourier_smulLeftCLM_fourierMultiplierCLM_sub_apply φ θ ε f)
+    fun ξ y ↦ ?_
+  -- Peetre's inequality for `⟨ξ⟩ ^ s` and the symbol difference estimate for `⟨ξ⟩`.
+  have hP := TauCeti.one_add_norm_add_sq_rpow_le_mul s y (ξ - y)
+  rw [add_sub_cancel] at hP
+  have hθ := one_add_norm_sq_rpow_mul_norm_comp_smul_sub_le θ hε ξ y
+  have hsplit : (1 + ‖ξ‖ ^ 2) ^ ((s + 1) / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) := by
+    rw [← Real.rpow_add (by positivity)]
+    ring_nf
+  have hsplit' : (1 + ‖ξ - y‖ ^ 2) ^ ((|s| + 2) / 2) =
+      (1 + ‖ξ - y‖ ^ 2) ^ (|s| / 2) * (1 + ‖ξ - y‖ ^ 2) := by
+    rw [← Real.rpow_add_one (by positivity)]
+    ring_nf
+  rw [norm_smul, norm_smul, hsplit, hsplit']
+  calc (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) *
+        (‖𝓕 φ (ξ - y)‖ * (‖θ (ε • y) - θ (ε • ξ)‖ * ‖𝓕 f y‖))
+      = (1 + ‖ξ‖ ^ 2) ^ (s / 2) *
+          ((1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) * ‖θ (ε • y) - θ (ε • ξ)‖) *
+            (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖) := by ring
+    _ ≤ (2 ^ (|s| / 2) * (1 + ‖y‖ ^ 2) ^ (s / 2) * (1 + ‖ξ - y‖ ^ 2) ^ (|s| / 2)) *
+          (K * (1 + ‖ξ - y‖ ^ 2)) * (‖𝓕 φ (ξ - y)‖ * ‖𝓕 f y‖) := by
+      gcongr
+    _ = _ := by ring
 
 end NormedSpace
 
@@ -366,22 +288,9 @@ theorem norm_toLp_fourierMultiplierCLM_smulLeftCLM_fourierMultiplierCLM_sub_le (
           fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) (smulLeftCLM F (φ : E → ℂ) f))).toLp 2‖ ≤
       (2 ^ (|s| / 2) * (√2 * (SchwartzMap.seminorm ℝ 0 1 θ + SchwartzMap.seminorm ℝ 1 1 θ)) *
           ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ ((|s| + 2) / 2) * ‖𝓕 φ ζ‖) *
-        ‖(fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f).toLp 2‖ := by
-  have hw (t : ℝ) : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
-    fun_prop
-  have hwf : (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 f ξ) =
-      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 f) := by
-    ext ξ
-    rw [smulLeftCLM_apply_apply (hw s)]
-  rw [norm_toLp_fourierMultiplierCLM_eq (hw _), norm_toLp_fourierMultiplierCLM_eq (hw s),
-    ← ENNReal.toReal_ofReal (by positivity : 0 ≤ 2 ^ (|s| / 2) *
-      (√2 * (SchwartzMap.seminorm ℝ 0 1 θ + SchwartzMap.seminorm ℝ 1 1 θ)) *
-        ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ ((|s| + 2) / 2) * ‖𝓕 φ ζ‖), ← ENNReal.toReal_mul]
-  refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top ?_)
+        ‖(fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) f).toLp 2‖ :=
+  norm_toLp_fourierMultiplierCLM_le_of_eLpNorm_le (by positivity)
     (eLpNorm_rpow_smul_fourier_smulLeftCLM_fourierMultiplierCLM_sub_le s φ θ hε f)
-  -- The remaining side goal is finiteness of the `L²` norm of a Schwartz function.
-  rw [hwf]
-  exact ((smulLeftCLM F _ (𝓕 f)).memLp 2 volume).eLpNorm_ne_top
 
 end SchwartzMap
 
@@ -405,42 +314,20 @@ theorem exists_besselPotential_smulLeftCLM_fourierMultiplierCLM_sub_eq_and_norm_
         ‖v'‖ ≤ (2 ^ (|s| / 2) *
             (√2 * (SchwartzMap.seminorm ℝ 0 1 θ + SchwartzMap.seminorm ℝ 1 1 θ)) *
               ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ ((|s| + 2) / 2) * ‖𝓕 φ ζ‖) * ‖v‖ := by
-  set C := 2 ^ (|s| / 2) * (√2 * (SchwartzMap.seminorm ℝ 0 1 θ + SchwartzMap.seminorm ℝ 1 1 θ)) *
-    ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ ((|s| + 2) / 2) * ‖𝓕 φ ζ‖
   have hg : (fun ζ : E ↦ θ (ε • ζ)).HasTemperateGrowth := by fun_prop
-  set Λ : ℝ → 𝓢(E, F) →L[ℂ] 𝓢(E, F) := fun t ↦
-    SchwartzMap.fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ))
-  set J : 𝓢(E, F) →L[ℂ] 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ))
-  set Mφ : 𝓢(E, F) →L[ℂ] 𝓢(E, F) := SchwartzMap.smulLeftCLM F (φ : E → ℂ)
-  -- The operator `w ↦ J^{s+1} [φ, J_ε] J^{-s} w` on `L²`, with values in tempered distributions,
-  -- is given on Schwartz functions by `M`, which is bounded in `L²`.
-  set M : 𝓢(E, F) →L[ℂ] 𝓢(E, F) := Λ (s + 1) ∘L (Mφ ∘L J - J ∘L Mφ) ∘L Λ (-s)
-  set T : Lp F 2 (volume : Measure E) →L[ℂ] 𝓢'(E, F) :=
-    besselPotential E F (s + 1) ∘L
-      (smulLeftCLM F (φ : E → ℂ) ∘L fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) -
-        fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) ∘L smulLeftCLM F (φ : E → ℂ)) ∘L
-      besselPotential E F (-s) ∘L Lp.toTemperedDistributionCLM F volume 2
-  have hM (ψ : 𝓢(E, F)) : ‖(M ψ).toLp 2 volume‖ ≤ C * ‖ψ.toLp 2 volume‖ := by
-    have h := SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_fourierMultiplierCLM_sub_le
-      s φ θ hε (Λ (-s) ψ)
-    simp only [Λ, SchwartzMap.fourierMultiplierCLM_one_add_norm_sq_rpow_fourierMultiplierCLM_neg]
-      at h
-    simpa only [M, Λ, J, Mφ, ContinuousLinearMap.comp_apply, _root_.sub_apply]
-      using h
-  have hT (ψ : 𝓢(E, F)) : T (ψ.toLp 2 volume) = ((M ψ).toLp 2 volume : 𝓢'(E, F)) := by
-    simp only [T, M, Λ, J, Mφ, ContinuousLinearMap.comp_apply, _root_.sub_apply,
-      Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistribution_toLp_eq,
-      besselPotential_toTemperedDistributionCLM_eq, smulLeftCLM_toTemperedDistributionCLM_eq,
-      fourierMultiplierCLM_toTemperedDistributionCLM_eq hg, map_sub]
-  have hu : u = besselPotential E F (-s) v := by
-    rw [← hv, besselPotential_besselPotential_apply]
-    simp
-  obtain ⟨v', hv', hnorm⟩ := T.exists_apply_eq_toTemperedDistribution_and_norm_le
-    ENNReal.ofNat_ne_top M hT hM v
-  refine ⟨v', ?_, hnorm⟩
-  rw [← hv', hu]
-  simp only [T, ContinuousLinearMap.comp_apply, _root_.sub_apply,
-    Lp.toTemperedDistributionCLM_apply]
+  exact exists_besselPotential_apply_eq_and_norm_le_of_norm_toLp_le
+    (smulLeftCLM F (φ : E → ℂ) ∘L fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) -
+      fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) ∘L smulLeftCLM F (φ : E → ℂ))
+    (SchwartzMap.smulLeftCLM F (φ : E → ℂ) ∘L
+        SchwartzMap.fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) -
+      SchwartzMap.fourierMultiplierCLM F (fun ζ ↦ θ (ε • ζ)) ∘L
+        SchwartzMap.smulLeftCLM F (φ : E → ℂ))
+    (fun f ↦ by
+      simp only [_root_.sub_apply, ContinuousLinearMap.comp_apply, map_sub,
+        smulLeftCLM_toTemperedDistributionCLM_eq,
+        fourierMultiplierCLM_toTemperedDistributionCLM_eq hg])
+    (SchwartzMap.norm_toLp_fourierMultiplierCLM_smulLeftCLM_fourierMultiplierCLM_sub_le s φ θ hε)
+    hv
 
 /-- **Friedrichs' lemma**, membership form: for every real `s` and every `ε`, the commutator
 `φ J_ε u - J_ε (φ u)` of the Friedrichs mollifier `J_ε` with symbol `θ(ε ·)` and multiplication by
@@ -478,8 +365,9 @@ function and `∂^m` the iterated directional derivative along `m : Fin k → E`
 the constant of
 `TemperedDistribution.exists_besselPotential_smulLeftCLM_fourierMultiplierCLM_sub_eq_and_norm_le`
 at the order `s - k`. -/
-theorem exists_besselPotential_commutator_iteratedLineDerivOp_eq_and_norm_le (s : ℝ)
-    (φ θ : 𝓢(E, ℂ)) {ε : ℝ} (hε : |ε| ≤ 1) {k : ℕ} (m : Fin k → E) {u : 𝓢'(E, F)}
+theorem
+    exists_besselPotential_smulLeftCLM_iteratedLineDerivOp_fourierMultiplierCLM_sub_eq_and_norm_le
+    (s : ℝ) (φ θ : 𝓢(E, ℂ)) {ε : ℝ} (hε : |ε| ≤ 1) {k : ℕ} (m : Fin k → E) {u : 𝓢'(E, F)}
     {v : Lp F 2 (volume : Measure E)} (hv : besselPotential E F (s - k) (∂^{m} u) = v) :
     ∃ v' : Lp F 2 (volume : Measure E),
       besselPotential E F (s - k + 1)
@@ -498,7 +386,7 @@ theorem exists_besselPotential_commutator_iteratedLineDerivOp_eq_and_norm_le (s 
 `θ 0 = 1`. If the tempered distribution `u` lies in `H^s`, with `J^s u = v ∈ L²`, then
 `J^s (J_ε u) = w ε` for elements `w ε ∈ L²` with `‖w ε‖ ≤ sup ‖θ‖ ‖v‖`, and `w ε → v` in `L²` as
 `ε → 0`; that is, `J_ε u → u` in `H^s`. -/
-theorem exists_besselPotential_fourierMultiplierCLM_eq_and_tendsto (s : ℝ) (θ : 𝓢(E, ℂ))
+theorem exists_besselPotential_fourierMultiplierCLM_eq_and_norm_le_and_tendsto (s : ℝ) (θ : 𝓢(E, ℂ))
     (hθ : θ 0 = 1) {u : 𝓢'(E, F)} {v : Lp F 2 (volume : Measure E)}
     (hv : besselPotential E F s u = v) :
     ∃ w : ℝ → Lp F 2 (volume : Measure E),
