@@ -27,7 +27,8 @@ pulls back along any equivariant topological embedding. It even pulls back to a 
 a subspace, as long as every element of the group carrying a point of the subspace into the
 subspace lies in the subgroup. This is the topological half of restricting a free proper action
 to a level of an equivariant map, acted on by the stabilizer of the value, before taking its
-quotient.
+quotient. Properness also pulls back along continuous equivariant maps out of Hausdorff spaces,
+such as the projection of a cotangent bundle carrying the cotangent-lifted action.
 
 ## Main results
 
@@ -41,6 +42,8 @@ quotient.
 * `Topology.IsEmbedding.properSMul_of_isEmbedding`: the same along a topological embedding of
   the acting groups, provided the elements of the larger group carrying a point of the image into
   the image come from the smaller group.
+* `Continuous.properSMul`: a continuous action on a Hausdorff space which a continuous map
+  intertwines with a proper action is proper.
 -/
 
 public section
@@ -141,3 +144,23 @@ theorem Topology.IsEmbedding.properSMul {G X Y : Type*} [Group G] [TopologicalSp
     {f : Y → X} (hf : IsEmbedding f) (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) :
     ProperSMul G Y :=
   hf.properSMul_of_isEmbedding IsEmbedding.id hsmul fun g _ _ _ ↦ ⟨g, rfl⟩
+
+open Filter in
+/-- **Proper actions pull back along continuous equivariant maps.** If a continuous map
+`f : Y → X` into a space with a proper action of `G` intertwines it with a continuous action of `G`
+on a Hausdorff space `Y`, then the action on `Y` is proper. For instance the cotangent lift of a
+proper action is proper, through the bundle projection. -/
+theorem Continuous.properSMul {G X Y : Type*} [Group G] [TopologicalSpace G] [MulAction G X]
+    [TopologicalSpace X] [ProperSMul G X] [MulAction G Y] [TopologicalSpace Y] [T2Space Y]
+    [ContinuousSMul G Y] {f : Y → X} (hf : Continuous f)
+    (hsmul : ∀ (g : G) (y : Y), f (g • y) = g • f y) : ProperSMul G Y := by
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto_t2.2 ⟨inferInstance, fun 𝒰 y₁ y₂ h ↦ ?_⟩
+  -- Push the ultrafilter forward along `id × f`, where the action on `X` is proper.
+  have hX : Tendsto (fun gx : G × X ↦ (gx.1 • gx.2, gx.2)) (𝒰.map (Prod.map id f))
+      (nhds (f y₁, f y₂)) := by
+    rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    refine (((hf.prodMap hf).tendsto (y₁, y₂)).comp h).congr fun gy ↦ ?_
+    simp [hsmul]
+  obtain ⟨g, -, hg⟩ := (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹_›).2 _ _ _ hX
+  rw [Ultrafilter.coe_map, tendsto_map'_iff] at hg
+  exact ⟨g, hg⟩
