@@ -16,10 +16,10 @@ public import TauCeti.Topology.MetricSpace.Holder
 
 On a metric space `X`, the Lipschitz seminorm of a function `f` is Mathlib's Hölder seminorm
 `eHolderNorm 1 f` in `ℝ≥0∞`: it is the least Lipschitz constant of `f`
-(`eHolderNorm_one_le_coe_iff`), the supremum of the difference quotients `d(f x, f y) / d(x, y)`
-(`eHolderNorm_eq_iSup`), and `∞` exactly when `f` is not Lipschitz. By Kantorovich–Rubinstein
-duality, the distance it induces between probability measures on a compact metric space is the
-`1`-Wasserstein distance.
+(`TauCeti.eHolderNorm_one_le_coe_iff`), the supremum of the difference quotients
+`d(f x, f y) / d(x, y)` (`eHolderNorm_eq_iSup`), and `∞` exactly when `f` is not Lipschitz. By
+Kantorovich–Rubinstein duality, the distance it induces between probability measures on a compact
+metric space is the `1`-Wasserstein distance.
 
 This file proves the properties of this seminorm that concern the metric of `X` and the space of
 continuous functions on it.
@@ -32,8 +32,9 @@ continuous functions on it.
   `C(X, 𝕜)` for `RCLike 𝕜`. It separates points, so it is dense by the Stone–Weierstrass theorem.
 
 The algebraic laws of the seminorm are Mathlib's `eHolderNorm_add_le`, `eHolderNorm_smul` and
-`eHolderNorm_eq_zero`, together with the star invariance `eHolderNorm_star` and the Leibniz
-estimate `eHolderNorm_mul_le`; its lower semicontinuity is `lowerSemicontinuous_eHolderNorm`.
+`eHolderNorm_eq_zero`, together with the star invariance `TauCeti.eHolderNorm_star` and the
+Leibniz estimate `TauCeti.eHolderNorm_mul_le`; its lower semicontinuity is
+`TauCeti.lowerSemicontinuous_eHolderNorm`.
 
 ## Main declarations
 
@@ -81,8 +82,7 @@ theorem edist_eq_iSup_eHolderNorm_one_le_one [MetricSpace X] (x y : X) :
   · obtain ⟨f, hf, hfx, hfy⟩ := exists_boundedContinuousFunction_lipschitzWith_one_eq_dist x y
     refine le_iSup₂_of_le (f := fun (f : X →ᵇ ℝ) (_ : eHolderNorm 1 ⇑f ≤ 1) ↦
       edist (f x) (f y)) f (by simpa using eHolderNorm_one_le_coe_iff.2 hf) (le_of_eq ?_)
-    rw [edist_dist, edist_dist, hfx, hfy, Real.dist_eq, zero_sub, abs_neg,
-      abs_of_nonneg dist_nonneg]
+    simp [edist_dist, hfx, hfy, Real.dist_eq]
   · have hf' : LipschitzWith 1 f := eHolderNorm_one_le_coe_iff.1 (by simpa using hf)
     simpa using hf'.edist_le_mul x y
 
@@ -93,43 +93,36 @@ section LipschitzStarSubalgebra
 variable (𝕜 X)
 variable [RCLike 𝕜] [MetricSpace X] [CompactSpace X]
 
-/-- The Lipschitz functions in `C(X, 𝕜)` on a compact metric space, as a star subalgebra. It is
-the finite domain of the Lipschitz seminorm `eHolderNorm 1`
-(`mem_lipschitzStarSubalgebra_iff_eHolderNorm_ne_top`). Compactness makes the functions bounded,
-so that products of Lipschitz functions are Lipschitz. -/
+/-- The Lipschitz functions in `C(X, 𝕜)` on a compact metric space, as a star subalgebra: the
+finite domain of the Lipschitz seminorm `eHolderNorm 1`, whose members are exactly the Lipschitz
+functions (`mem_lipschitzStarSubalgebra`). Compactness makes the functions bounded, so that the
+Leibniz estimate `eHolderNorm_mul_le` keeps products of Lipschitz functions Lipschitz. -/
 def lipschitzStarSubalgebra : StarSubalgebra 𝕜 C(X, 𝕜) where
-  carrier := {f | ∃ K, LipschitzWith K f}
-  mul_mem' := by
-    rintro f g ⟨K, hK⟩ ⟨L, hL⟩
-    -- The Leibniz bound for the multiplication map, with the uniform norms as bounds.
-    have h := (ContinuousLinearMap.mul 𝕜 𝕜).holderWith_comp₂ (holderWith_one.2 hK)
-      (holderWith_one.2 hL) (Mf := ‖f‖₊) (Mg := ‖g‖₊) (fun x ↦ by simpa using f.norm_coe_le_norm x)
-      (fun x ↦ by simpa using g.norm_coe_le_norm x)
-    have hfg : (fun x ↦ ContinuousLinearMap.mul 𝕜 𝕜 (f x) (g x)) = ⇑(f * g) := by
-      ext x
-      simp
-    rw [hfg] at h
-    exact ⟨_, holderWith_one.1 h⟩
-  add_mem' := by
-    rintro f g ⟨K, hK⟩ ⟨L, hL⟩
-    exact ⟨K + L, by simpa [Pi.add_def] using hK.add hL⟩
-  algebraMap_mem' c := ⟨0, by simp⟩
-  star_mem' := by
-    rintro f ⟨K, hK⟩
-    exact ⟨K, by simpa [Pi.star_def, Function.comp_def] using star_isometry.lipschitzWith.comp hK⟩
+  carrier := {f | eHolderNorm 1 ⇑f ≠ ∞}
+  mul_mem' {f g} hf hg := by
+    refine ne_top_of_le_ne_top ?_ (eHolderNorm_mul_le (A := ‖f‖₊) (B := ‖g‖₊)
+      (fun x ↦ NNReal.coe_le_coe.1 (f.norm_coe_le_norm x))
+      fun x ↦ NNReal.coe_le_coe.1 (g.norm_coe_le_norm x))
+    exact ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top ENNReal.coe_ne_top hg,
+      ENNReal.mul_ne_top ENNReal.coe_ne_top hf⟩
+  add_mem' {f g} hf hg :=
+    ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hf, hg⟩) eHolderNorm_add_le
+  algebraMap_mem' c := eHolderNorm_ne_top.2 memHolder_const
+  star_mem' {f} hf := by
+    simpa only [Set.mem_ofPred_eq, ContinuousMap.coe_star, eHolderNorm_star] using hf
 
 variable {𝕜 X}
+
+/-- The Lipschitz star subalgebra is the finite domain of the Lipschitz seminorm. -/
+theorem mem_lipschitzStarSubalgebra_iff_eHolderNorm_ne_top {f : C(X, 𝕜)} :
+    f ∈ lipschitzStarSubalgebra 𝕜 X ↔ eHolderNorm 1 ⇑f ≠ ∞ :=
+  Iff.rfl
 
 /-- A continuous function belongs to the Lipschitz star subalgebra exactly when it is Lipschitz. -/
 @[simp]
 theorem mem_lipschitzStarSubalgebra {f : C(X, 𝕜)} :
-    f ∈ lipschitzStarSubalgebra 𝕜 X ↔ ∃ K, LipschitzWith K f :=
-  Iff.rfl
-
-/-- The Lipschitz star subalgebra is the finite domain of the Lipschitz seminorm. -/
-theorem mem_lipschitzStarSubalgebra_iff_eHolderNorm_ne_top {f : C(X, 𝕜)} :
-    f ∈ lipschitzStarSubalgebra 𝕜 X ↔ eHolderNorm 1 ⇑f ≠ ∞ := by
-  simp [MemHolder, holderWith_one]
+    f ∈ lipschitzStarSubalgebra 𝕜 X ↔ ∃ K, LipschitzWith K f := by
+  simp [mem_lipschitzStarSubalgebra_iff_eHolderNorm_ne_top, MemHolder, holderWith_one]
 
 variable (𝕜 X)
 
@@ -138,7 +131,8 @@ at `x` and nowhere else. -/
 theorem lipschitzStarSubalgebra_separatesPoints :
     (lipschitzStarSubalgebra 𝕜 X).SeparatesPoints := by
   intro x y hxy
-  refine ⟨_, ⟨⟨fun z ↦ (dist z x : 𝕜), by fun_prop⟩, ⟨1, ?_⟩, rfl⟩, ?_⟩
+  refine ⟨_, ⟨⟨fun z ↦ (dist z x : 𝕜), by fun_prop⟩, mem_lipschitzStarSubalgebra.2 ⟨1, ?_⟩, rfl⟩,
+    ?_⟩
   · simpa [Function.comp_def] using RCLike.lipschitzWith_ofReal.comp (LipschitzWith.dist_left x)
   · simpa [eq_comm (a := (0 : 𝕜)), dist_eq_zero] using hxy.symm
 
