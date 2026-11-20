@@ -62,8 +62,8 @@ noncomputable def descendCuspForm (hp : p.Prime) (hpN : p ∣ N) {χ : (ZMod N)�
     slash_action_eq' := fun γ hγ ↦ by
       obtain ⟨δ, hδ, rfl⟩ := Subgroup.mem_map.mp hγ
       rw [descendSlash_slash_mapGL_of_nebentypus_of_prime k hp hpN hcomp
-        ⟨δ, Gamma1_in_Gamma0 (N / p) hδ⟩ ((mem_cuspFormCharSpace_iff_nebentypus k χ f).mp hf)]
-      have h1 : (Gamma0Map (N / p)).toHomUnits ⟨δ, Gamma1_in_Gamma0 (N / p) hδ⟩ = 1 :=
+        ⟨δ, Gamma1_le_Gamma0 (N / p) hδ⟩ ((mem_cuspFormCharSpace_iff_nebentypus k χ f).mp hf)]
+      have h1 : (Gamma0Map (N / p)).toHomUnits ⟨δ, Gamma1_le_Gamma0 (N / p) hδ⟩ = 1 :=
         Units.ext (by
           rw [MonoidHom.coe_toHomUnits, Gamma0Map_apply]
           exact (mem_Gamma1_iff.mp hδ).2)

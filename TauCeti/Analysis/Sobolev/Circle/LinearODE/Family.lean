@@ -61,7 +61,7 @@ theorem exists_pos_isInvertible_loopOperator_sub_smul_norm_inverse_le
         intro p _
         dsimp only [L]
         rw [zero_smul ℝ (J p), sub_zero]
-        exact hinv p p.2)
+        exact hinv p p.property)
   obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
   refine ⟨r / 2, by positivity, C, hC, fun p hp δ hδ ↦ hbound ⟨p, hp⟩ (mem_univ _) δ (hrV ?_)⟩
   simpa only [Metric.mem_ball, Real.dist_eq, sub_zero] using

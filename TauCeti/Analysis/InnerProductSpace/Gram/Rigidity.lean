@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.InnerProductSpace.LinearCombination
+import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
 # Gram rigidity
@@ -18,12 +19,18 @@ ranges of two linear maps. Applied to the finitely supported linear-combination 
 families, this gives an isometry between their spans sending corresponding vectors to each
 other. No independence, finiteness of the index type, or completeness is needed.
 
+When the first family has dense linear span and the target space is complete, the span isometry
+extends uniquely by continuity to a linear isometry `E →ₗᵢ[𝕜] F` (`linearIsometryOfInnerEq`),
+via Mathlib's `LinearMap.extendOfIsometry`. No completeness of the source or countability of the
+index type is needed.
+
 For families in a common finite-dimensional inner-product space, the span isometry extends
 to an ambient isometry. Thus equality of Gram matrices characterizes equivalence under an
 ambient linear isometric equivalence, including dependent families and zero vectors.
 
-The range construction uses Mathlib's `LinearMap.quotKerEquivRange`; the ambient extension
-uses `LinearIsometry.extend`. The mathematical result is the usual Gram characterization of
+The range construction uses Mathlib's `LinearMap.quotKerEquivRange`; the finite-dimensional
+ambient extension uses `LinearIsometry.extend`, and the infinite-dimensional dense-span extension
+uses `LinearMap.extendOfIsometry`. The mathematical result is the usual Gram characterization of
 unitary equivalence, as in T.-Y. Chien and S. Waldron, *A characterization of projective unitary
 equivalence of finite frames and applications*, SIAM J. Discrete Math. 30 (2016).
 -/
@@ -115,6 +122,43 @@ theorem eq_spanEquivOfInnerEq {v : ι → E} {w : ι → F}
   refine LinearIsometryEquiv.toLinearEquiv_injective <| LinearEquiv.toLinearMap_injective <|
     LinearMap.ext_on_range hv fun i => Subtype.ext ?_
   simpa using he i
+
+/-- Equal pairwise inner products along a family with dense linear span determine a unique linear
+isometry into any complete inner product space, sending each vector of the first family to its
+partner in the second. No completeness of the source or countability of the index type is needed. -/
+def linearIsometryOfInnerEq [CompleteSpace F] {v : ι → E} {w : ι → F}
+    (hv : (Submodule.span 𝕜 (Set.range v)).topologicalClosure = ⊤)
+    (h : ∀ i j, ⟪v i, v j⟫_𝕜 = ⟪w i, w j⟫_𝕜) : E →ₗᵢ[𝕜] F :=
+  (Finsupp.linearCombination 𝕜 w).extendOfIsometry
+    (e := Finsupp.linearCombination 𝕜 v)
+    (by
+      rw [DenseRange, ← LinearMap.coe_range, Finsupp.range_linearCombination]
+      exact Submodule.dense_iff_topologicalClosure_eq_top.2 hv)
+    (fun f => (Finsupp.norm_linearCombination_eq_of_inner_eq f h).symm)
+
+/-- The dense-span linear isometry sends each vector of the first family to its partner in the
+second. -/
+@[simp]
+theorem linearIsometryOfInnerEq_apply [CompleteSpace F] {v : ι → E} {w : ι → F}
+    (hv : (Submodule.span 𝕜 (Set.range v)).topologicalClosure = ⊤)
+    (h : ∀ i j, ⟪v i, v j⟫_𝕜 = ⟪w i, w j⟫_𝕜) (i : ι) :
+    linearIsometryOfInnerEq hv h (v i) = w i := by
+  simpa only [linearIsometryOfInnerEq, Finsupp.linearCombination_single, one_smul] using
+    LinearMap.extendOfIsometry_eq (Finsupp.linearCombination 𝕜 w)
+      (e := Finsupp.linearCombination 𝕜 v) _ _ (Finsupp.single i 1)
+
+/-- The dense-span linear isometry is the unique linear isometry sending the first family to the
+second. -/
+theorem eq_linearIsometryOfInnerEq [CompleteSpace F] {v : ι → E} {w : ι → F}
+    (hv : (Submodule.span 𝕜 (Set.range v)).topologicalClosure = ⊤)
+    (h : ∀ i j, ⟪v i, v j⟫_𝕜 = ⟪w i, w j⟫_𝕜) {L : E →ₗᵢ[𝕜] F}
+    (hL : ∀ i, L (v i) = w i) :
+    L = linearIsometryOfInnerEq hv h := by
+  symm
+  refine LinearMap.extendOfIsometry_unique (Finsupp.linearCombination 𝕜 w)
+    (e := Finsupp.linearCombination 𝕜 v) _ _ L ?_
+  ext i
+  simpa using hL i
 
 /-- Equal Gram data for two families in a finite-dimensional space can be realized by an
 ambient linear isometric equivalence. The indexing type need not be finite. -/

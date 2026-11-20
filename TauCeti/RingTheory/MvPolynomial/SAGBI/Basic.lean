@@ -325,7 +325,7 @@ theorem range_mapDomainAlgHom_leadingExponents :
     | single a c =>
       rw [AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidAlgebra.mapDomain_single,
         single_eq_monomial]
-      exact monomial_mem_initialAlgebra_iff.2 (.inl a.2)
+      exact monomial_mem_initialAlgebra_iff.2 (.inl a.property)
   refine le_antisymm ?_ (Algebra.adjoin_le ?_)
   · rintro _ ⟨x, rfl⟩
     exact h x

@@ -242,7 +242,7 @@ theorem translationFixingSubgroup_translationFixedField [Finite Φ] :
 private noncomputable def toFixingSubgroup (L : IntermediateField F W.FunctionField)
     (P : translationFixingSubgroup W L) : L.fixingSubgroup :=
   ⟨translation W (P : (W⁄F).toAffine.Point), (IntermediateField.mem_fixingSubgroup_iff L _).mpr
-    ((mem_translationFixingSubgroup_iff W).mp P.2)⟩
+    ((mem_translationFixingSubgroup_iff W).mp P.property)⟩
 
 private theorem toFixingSubgroup_injective (L : IntermediateField F W.FunctionField) :
     Function.Injective (toFixingSubgroup W L) := fun _ _ h ↦
@@ -322,9 +322,9 @@ theorem card_translationFixingSubgroup_eq_finrank_of_forall_exists_translation
     (h : ∀ σ ∈ L.fixingSubgroup, ∃ P : (W⁄F).toAffine.Point, translation W P = σ) :
     Nat.card (translationFixingSubgroup W L) = Module.finrank L W.FunctionField := by
   have hsurj : Function.Surjective (toFixingSubgroup W L) := fun σ ↦ by
-    obtain ⟨P, hP⟩ := h σ σ.2
+    obtain ⟨P, hP⟩ := h σ σ.property
     exact ⟨⟨P, (mem_translationFixingSubgroup_iff W).2 fun z hz ↦ by
-      rw [hP]; exact (IntermediateField.mem_fixingSubgroup_iff L _).1 σ.2 z hz⟩,
+      rw [hP]; exact (IntermediateField.mem_fixingSubgroup_iff L _).1 σ.property z hz⟩,
       Subtype.ext hP⟩
   -- `IsGalois.card_fixingSubgroup_eq_finrank` counts a fixing subgroup inside a Galois extension
   -- of the *base*; here `K(W)` is transcendental over `F` and only `K(W)/L` is Galois, so the count

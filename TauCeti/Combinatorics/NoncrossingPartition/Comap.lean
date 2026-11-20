@@ -102,7 +102,7 @@ variable {α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : 
 image `f '' s` into the noncrossing partitions of `s`, as the partitions coarser than the
 partition of `s` into the fibres of `f` (`TauCeti.NoncrossingPartition.exists_comap_eq_iff`). -/
 def comap (hf : MonotoneOn f s) : NoncrossingPartition (s.image f) ↪o NoncrossingPartition s :=
-  OrderEmbedding.ofMapLEIff (fun ρ => ⟨ρ.1.comap f, ρ.2.comap hf⟩) fun _ _ =>
+  OrderEmbedding.ofMapLEIff (fun ρ => ⟨ρ.val.comap f, ρ.property.comap hf⟩) fun _ _ =>
     Finpartition.comap_le_comap_iff
 
 @[simp, norm_cast]
@@ -123,7 +123,7 @@ theorem exists_comap_eq_iff {hf : MonotoneOn f s} {π : NoncrossingPartition s} 
   have h' : (comap hf ⊥ : Finpartition s) ≤ π := Subtype.coe_le_coe.2 h
   rw [coe_comap, coe_bot] at h'
   obtain ⟨P, hP⟩ := Finpartition.exists_comap_eq_iff.2 h'
-  exact ⟨⟨P, (Finpartition.isNoncrossing_comap_iff hf).1 (hP ▸ π.2)⟩, Subtype.ext hP⟩
+  exact ⟨⟨P, (Finpartition.isNoncrossing_comap_iff hf).1 (hP ▸ π.property)⟩, Subtype.ext hP⟩
 
 /-- Let `f` be monotone on `s` and identify no two positions other than `i ≤ j`, which are adjacent
 in `s`. If the join in `NC(s)` of `π` with the partition `σ_f` into the fibres of `f` is `1`, then
@@ -134,7 +134,7 @@ theorem mem_part_union_part_of_sup_comap_bot_eq_top (hf : MonotoneOn f s) {i j :
     (hfeq : ∀ {u v}, u ∈ s → v ∈ s → f u = f v → u ≠ v → (u = i ∨ u = j) ∧ (v = i ∨ v = j))
     {π : NoncrossingPartition s} (hπ : π ⊔ comap hf ⊥ = ⊤) {z : α}
     (hz : z ∈ s) :
-    z ∈ π.1.part i ∪ π.1.part j := by
+    z ∈ π.val.part i ∪ π.val.part j := by
   have hpair : {i, j} ⊆ s := fun u hu => by
     rcases mem_insert.1 hu with rfl | hu
     exacts [hi, (mem_singleton.1 hu) ▸ hj]

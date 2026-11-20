@@ -64,25 +64,25 @@ namespace TauCeti
 vanishes is the exterior derivative of a compactly supported function. -/
 theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
     (hφ : φ ∈ compactlySupportedForms 𝓘(ℝ, ℝ) ℝ 1)
-    (h : ∫ t, φ.1 t (fun _ ↦ 1) = 0) :
+    (h : ∫ t, φ.val t (fun _ ↦ 1) = 0) :
     φ ∈ exactCompactlySupportedForms 𝓘(ℝ, ℝ) ℝ 1 := by
   have hc := (mem_compactlySupportedForms _).mp hφ
   have hcl := mem_closedForms_of_finrank_le 𝓘(ℝ, ℝ) (by simp) φ
   -- A primitive `g` of `φ`, by the Poincaré lemma on `ℝ`.
   rw [← exactForms_succ_eq_closedForms_normedSpace, exactForms_succ] at hcl
   obtain ⟨g, hg⟩ := hcl
-  have hdg : mextDeriv g.1 = φ.1 := by rw [← mextDerivₗ_apply, hg]
+  have hdg : mextDeriv g.val = φ.val := by rw [← mextDerivₗ_apply, hg]
   -- The support of `φ` lies in `[-r, r]`.
   obtain ⟨r, hr⟩ := hc.isBounded.subset_closedBall 0
-  have hφ0 (t : ℝ) (ht : r < |t|) : φ.1 t = 0 :=
+  have hφ0 (t : ℝ) (ht : r < |t|) : φ.val t = 0 :=
     image_eq_zero_of_notMem_tsupport fun h ↦ by
       have := hr h
       rw [Metric.mem_closedBall, Real.dist_eq, sub_zero] at this
       linarith
   -- The fundamental theorem of calculus for the function `F` of `g`.
-  set F : ℝ → ℝ := fun x ↦ g.1 x 0
-  have hF (a b : ℝ) : ∫ t in a..b, φ.1 t (fun _ ↦ 1) = F b - F a := by
-    rw [← mpullback_id φ.1, ← pathIntegral_eq_integral_mpullback, ← hdg]
+  set F : ℝ → ℝ := fun x ↦ g.val x 0
+  have hF (a b : ℝ) : ∫ t in a..b, φ.val t (fun _ ↦ 1) = F b - F a := by
+    rw [← mpullback_id φ.val, ← pathIntegral_eq_integral_mpullback, ← hdg]
     exact pathIntegral_mextDeriv (g.isSmoothForm.of_le (by simp)) contMDiff_id a b
   -- `F` is constant, equal to `F R`, outside `[-r, r]`, because `φ` has integral zero.
   set R := |r| + 1
@@ -92,17 +92,17 @@ theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ
   -- Subtracting the constant `F R` from `g` gives a compactly supported primitive.
   let κ := (closedFormsZeroEquiv 𝓘(ℝ, ℝ) ℝ).symm (LocallyConstant.const ℝ (F R))
   rw [exactCompactlySupportedForms_succ]
-  refine Submodule.mem_map.mpr ⟨g - κ.1, ?_, ?_⟩
+  refine Submodule.mem_map.mpr ⟨g - κ.val, ?_, ?_⟩
   · rw [mem_compactlySupportedForms]
     refine (isCompact_closedBall 0 r).of_isClosed_subset (isClosed_tsupport _)
       (closure_minimal (fun x hx ↦ ?_) Metric.isClosed_closedBall)
     rw [Metric.mem_closedBall, Real.dist_eq, sub_zero]
     by_contra hxr
-    have hβ : (g - κ.1).1 x 0 = F x - F R := by simp [κ, F]
+    have hβ : (g - κ.val).val x 0 = F x - F R := by simp [κ, F]
     refine RoughForm.mem_support_iff.mp hx (ContinuousAlternatingMap.ext fun v ↦ ?_)
     rw [Subsingleton.elim v 0, hβ, hFc x (not_le.mp hxr), sub_self,
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-  · rw [map_sub, hg, (mem_closedForms_iff_mextDerivₗ_eq_zero _ _).mp κ.2, sub_zero]
+  · rw [map_sub, hg, (mem_closedForms_iff_mextDerivₗ_eq_zero _ _).mp κ.property, sub_zero]
 
 /-- Integration `H¹_c(ℝ) → ℝ` against the standard orientation is bijective. -/
 private theorem bijective_integral_standard :
@@ -110,9 +110,9 @@ private theorem bijective_integral_standard :
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
     compactlySupportedDeRhamCohomology.surjective_integral Manifold.Orientation.real⟩
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ 1 x
-  have hφ := (mem_compactlySupportedClosedForms _).mp φ.2
+  have hφ := (mem_compactlySupportedClosedForms _).mp φ.property
   rw [compactlySupportedDeRhamCohomology.integral_mk,
-    integralTopForm_real_eq_integral (φ.1.isSmoothForm.of_le (by simp))
+    integralTopForm_real_eq_integral (φ.val.isSmoothForm.of_le (by simp))
       ((mem_compactlySupportedForms _).mp hφ.1)] at hx
   exact (compactlySupportedDeRhamCohomology.mk_eq_zero_iff _ 1 φ).mpr
     (mem_exactCompactlySupportedForms_one_real hφ.1 hx)

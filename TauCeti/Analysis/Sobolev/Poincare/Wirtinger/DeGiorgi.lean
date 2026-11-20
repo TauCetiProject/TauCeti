@@ -75,8 +75,9 @@ private theorem exists_w1p_one_truncation [IsFiniteMeasure (mu.restrict (Omega :
           (fun x ↦ ‖W1p.gradient u x‖ₑ) x := by
   set nu := mu.restrict (Omega : Set E)
   set v : W1p mu Omega 1 := W1p.ofExponentLE Fact.out u
-  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := W1p.value_ofExponentLE_ae _ u
-  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u := W1p.gradient_ofExponentLE_ae _ u
+  have hv : ⇑(W1p.value v) =ᵐ[nu] W1p.value u := (W1p.coeFn_value_ofExponentLE _ u).eventuallyEq
+  have hgv : ⇑(W1p.gradient v) =ᵐ[nu] W1p.gradient u :=
+    (W1p.coeFn_gradient_ofExponentLE _ u).eventuallyEq
   have hmem : ∀ j : ℝ, MemLp (fun x ↦ max (W1p.value v x - j) 0) 1 nu := fun j ↦
     ((Lp.memLp (W1p.value v)).sub (memLp_const j)).pos_part
   set wk : W1p mu Omega 1 := W1p.posPartAboveOfMemLp ENNReal.one_ne_top k v (hmem k)
@@ -88,10 +89,7 @@ private theorem exists_w1p_one_truncation [IsFiniteMeasure (mu.restrict (Omega :
       W1p.value_posPartAboveOfMemLp_ae ENNReal.one_ne_top k v (hmem k),
       W1p.value_posPartAboveOfMemLp_ae ENNReal.one_ne_top l v (hmem l)] with x h1 h2 h3 h4
     rw [h1, Pi.sub_apply, h3, h4, h2]
-  · have hsub : ⇑(W1p.gradient (wk - wl)) =ᵐ[nu]
-        ⇑(W1p.gradient wk) - ⇑(W1p.gradient wl) := by
-      simpa only [← W1p.gradientL_apply, map_sub] using Lp.coeFn_sub _ _
-    filter_upwards [hsub, hv, hgv,
+  · filter_upwards [W1p.gradient_sub_ae wk wl, hv, hgv,
       W1p.gradient_posPartAboveOfMemLp_ae ENNReal.one_ne_top k v (hmem k),
       W1p.gradient_posPartAboveOfMemLp_ae ENNReal.one_ne_top l v (hmem l),
       W1p.gradient_ae_eq_zero_on_level_set ENNReal.one_ne_top v l] with x h1 h2 h3 h4 h5 h6

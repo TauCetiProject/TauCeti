@@ -169,7 +169,7 @@ theorem isSeparatedBy_quotientCoeff_iff (N : Subgroup (GX G X)) [N.Normal] :
   · -- A separating homomorphism restricts to a solution of `N` at which `w` survives.
     by_contra hwN
     obtain ⟨φ, hφ⟩ := h (w : GX G X ⧸ N) ((QuotientGroup.eq_one_iff w).not.2 hwN)
-    have he := mem_Rad.1 hw _ (quotientHomEquiv ι N φ).2
+    have he := mem_Rad.1 hw _ (quotientHomEquiv ι N φ).property
     rw [eval_quotientHomEquiv] at he
     exact hφ he
   · -- Conversely an element outside `N` lies outside the radical, so some solution sees it.
@@ -494,8 +494,8 @@ theorem not_isSeparatedBy_closure_freeGroup_of_pow_of_ne (hab : a ≠ b) (hn : n
       simp [Subgroup.closure_le]
     obtain ⟨φ, hφ⟩ := (isSeparatedBy_def _ _).1 h ⁅FreeGroup.of a, FreeGroup.of b⁆ fun h1 =>
       hab (FreeGroup.eq_of_commute_of_of (commutatorElement_eq_one_iff_commute.1 h1))
-    obtain ⟨i, hi⟩ := mem_zpowers_iff.1 (hle (φ (FreeGroup.of a)).2)
-    obtain ⟨j, hj⟩ := mem_zpowers_iff.1 (hle (φ (FreeGroup.of b)).2)
+    obtain ⟨i, hi⟩ := mem_zpowers_iff.1 (hle (φ (FreeGroup.of a)).property)
+    obtain ⟨j, hj⟩ := mem_zpowers_iff.1 (hle (φ (FreeGroup.of b)).property)
     have hc : Commute (φ (FreeGroup.of a)) (φ (FreeGroup.of b)) := by
       refine (commute_iff_eq _ _).2 (Subtype.ext ?_)
       rw [Subgroup.coe_mul, Subgroup.coe_mul, ← hi, ← hj]

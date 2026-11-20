@@ -38,9 +38,9 @@ def partialCorrelationCholeskyPolynomial (p : ℕ) :
     Matrix (Fin p) (Fin p) (MvPolynomial (strictLowerTriangle p ⊕ strictLowerTriangle p) ℝ) :=
   fun i j ↦ if h : j < i then
     MvPolynomial.X (Sum.inl ⟨(i, j), h⟩) *
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < j, MvPolynomial.X (Sum.inr ij)
+      ∏ ij : strictLowerTriangle p with ij.val.1 = i ∧ ij.val.2 < j, MvPolynomial.X (Sum.inr ij)
     else if i = j then
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i, MvPolynomial.X (Sum.inr ij)
+      ∏ ij : strictLowerTriangle p with ij.val.1 = i, MvPolynomial.X (Sum.inr ij)
     else 0
 
 /-- The formal Cholesky entry is a coordinate times preceding residual variables below the
@@ -49,10 +49,10 @@ theorem partialCorrelationCholeskyPolynomial_apply (p : ℕ) (i j : Fin p) :
     partialCorrelationCholeskyPolynomial p i j =
       if h : j < i then
         MvPolynomial.X (Sum.inl ⟨(i, j), h⟩) *
-          ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < j,
+          ∏ ij : strictLowerTriangle p with ij.val.1 = i ∧ ij.val.2 < j,
             MvPolynomial.X (Sum.inr ij)
       else if i = j then
-        ∏ ij : strictLowerTriangle p with ij.1.1 = i, MvPolynomial.X (Sum.inr ij)
+        ∏ ij : strictLowerTriangle p with ij.val.1 = i, MvPolynomial.X (Sum.inr ij)
       else 0 := (rfl)
 
 /-- A formal Cholesky entry below the diagonal is a coordinate times preceding residuals. -/
@@ -60,7 +60,7 @@ theorem partialCorrelationCholeskyPolynomial_apply (p : ℕ) (i j : Fin p) :
 theorem partialCorrelationCholeskyPolynomial_apply_of_gt {i j : Fin p} (h : j < i) :
     partialCorrelationCholeskyPolynomial p i j =
       MvPolynomial.X (Sum.inl ⟨(i, j), h⟩) *
-        ∏ ij : strictLowerTriangle p with ij.1.1 = i ∧ ij.1.2 < j,
+        ∏ ij : strictLowerTriangle p with ij.val.1 = i ∧ ij.val.2 < j,
           MvPolynomial.X (Sum.inr ij) := by
   simp [partialCorrelationCholeskyPolynomial_apply, h]
 
@@ -68,7 +68,7 @@ theorem partialCorrelationCholeskyPolynomial_apply_of_gt {i j : Fin p} (h : j < 
 @[simp]
 theorem partialCorrelationCholeskyPolynomial_apply_self (i : Fin p) :
     partialCorrelationCholeskyPolynomial p i i =
-      ∏ ij : strictLowerTriangle p with ij.1.1 = i, MvPolynomial.X (Sum.inr ij) := by
+      ∏ ij : strictLowerTriangle p with ij.val.1 = i, MvPolynomial.X (Sum.inr ij) := by
   simp [partialCorrelationCholeskyPolynomial_apply]
 
 /-- A formal Cholesky entry above the diagonal is zero. -/
