@@ -33,7 +33,9 @@ A Lipschitz bound `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on a ball give
 (`TauCeti.SymplecticForm.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le`).
 A compactly supported `C²` Hamiltonian has a globally Lipschitz Hamiltonian vector field
 (`TauCeti.SymplecticForm.exists_lipschitzWith_hamiltonianVectorField`), so its flow is defined
-for all times.
+for all times. For a compactly supported `C³` Hamiltonian the first two derivatives of the
+Hamiltonian vector field are bounded
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_hamiltonianVectorField_le`).
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
@@ -111,6 +113,12 @@ theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : 
   rw [hamiltonianVectorField, hamiltonianVectorField, h, fderiv_const_smul_field, Pi.smul_apply,
     map_smul]
 
+/-- The Hamiltonian vector field is homogeneous, as an equation of vector fields:
+`X_{c H} = c X_H`. -/
+theorem hamiltonianVectorField_const_mul' (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ c * H y) = c • ω.hamiltonianVectorField H :=
+  funext (ω.hamiltonianVectorField_const_mul c H)
+
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
 theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
@@ -146,18 +154,35 @@ theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
   ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.comp
     (hH.fderiv_right le_rfl)
 
+/-- A Hamiltonian with compact support has a Hamiltonian vector field with compact support. -/
+theorem hasCompactSupport_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    (hc : HasCompactSupport H) : HasCompactSupport (ω.hamiltonianVectorField H) := by
+  have h : ω.hamiltonianVectorField H =
+      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
+    funext (ω.hamiltonianVectorField_def H)
+  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
+
 /-- A `C²` Hamiltonian with compact support has a globally Lipschitz Hamiltonian vector field, so
 its flow `TauCeti.SymplecticForm.hamiltonianFlow` is defined for all times. -/
 theorem exists_lipschitzWith_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
     (hH : ContDiff ℝ 2 H) (hc : HasCompactSupport H) :
     ∃ K, LipschitzWith K (ω.hamiltonianVectorField H) := by
-  refine (ω.contDiff_hamiltonianVectorField (n := 1)
-    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport ?_
-    one_ne_zero
-  have h : ω.hamiltonianVectorField H =
-      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
-    funext (ω.hamiltonianVectorField_def H)
-  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
+  exact (ω.contDiff_hamiltonianVectorField (n := 1)
+    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport
+    (ω.hasCompactSupport_hamiltonianVectorField hc) one_ne_zero
+
+/-- A `C³` Hamiltonian with compact support has a Hamiltonian vector field whose first and second
+derivatives are bounded on all of `V`. -/
+theorem exists_forall_norm_fderiv_hamiltonianVectorField_le (ω : SymplecticForm V) {H : V → ℝ}
+    (hH : ContDiff ℝ 3 H) (hc : HasCompactSupport H) :
+    ∃ a c, ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a ∧
+      ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c := by
+  have hXc := ω.hasCompactSupport_hamiltonianVectorField hc
+  have hdX := (ω.contDiff_hamiltonianVectorField (n := 2) hH).fderiv_right (m := 1) (by norm_num)
+  obtain ⟨a, ha⟩ := hdX.continuous.bounded_above_of_compact_support (hXc.fderiv ℝ)
+  obtain ⟨c, hc⟩ := (hdX.continuous_fderiv one_ne_zero).bounded_above_of_compact_support
+    ((hXc.fderiv ℝ).fderiv ℝ)
+  exact ⟨a, c, fun x ↦ ⟨ha x, hc x⟩⟩
 
 /-- Contracting the linearization of the Hamiltonian vector field gives the Hessian. -/
 theorem apply_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}

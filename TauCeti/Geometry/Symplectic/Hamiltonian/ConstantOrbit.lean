@@ -103,11 +103,10 @@ theorem fderiv_timeDependentHamiltonianFlow_const_mul (hF : ContDiff ℝ 2 F)
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension fun _ y ↦ ε * F y)) (s t : ℝ) :
     fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX s t) p =
       exp (((t - s) * ε) • fderiv ℝ (ω.hamiltonianVectorField F) p) := by
-  have hεX : ω.hamiltonianVectorField (fun y ↦ ε * F y) = ε • ω.hamiltonianVectorField F :=
-    funext fun y ↦ ω.hamiltonianVectorField_const_mul ε F y
   rw [ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX
     (contDiff_const.mul (hF.comp contDiff_snd))
-    (ω.hasDerivAt_const_hamiltonianVectorField_const_mul hp ε), hεX, fderiv_const_smul_field,
+    (ω.hasDerivAt_const_hamiltonianVectorField_const_mul hp ε),
+    ω.hamiltonianVectorField_const_mul' ε F, fderiv_const_smul_field,
     dysonSeriesLeft_const, Pi.smul_apply, smul_smul]
 
 /-- The constant orbit at a critical point of `F` is fixed by every time map of the evolution of
