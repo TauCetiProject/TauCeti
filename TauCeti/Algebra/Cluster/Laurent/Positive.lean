@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Laurent.Basic
-public import TauCeti.Algebra.MonoidAlgebra.MapDomain
+public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+import TauCeti.Algebra.MonoidAlgebra.Basic
 
 /-!
 # Positive Laurent polynomials with integral monoid-algebra coefficients
