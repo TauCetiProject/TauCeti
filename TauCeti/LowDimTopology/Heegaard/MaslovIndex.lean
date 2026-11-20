@@ -327,6 +327,12 @@ theorem maslovIndex_one (χ : Region → ℤ) (x y : H.Generator) :
   rw [maslovIndex_apply, eulerMeasure_one, generatorPointMeasure_one, generatorPointMeasure_one]
   ring
 
+/-- The Maslov index does not involve the basepoints. -/
+@[simp]
+theorem maslovIndex_withBasepoints {B : Type*} (b : B → Region) (χ : Region → ℤ)
+    (x y : H.Generator) : (H.withBasepoints b).maslovIndex χ x y = H.maslovIndex χ x y :=
+  (rfl)
+
 /-- Reversing a domain negates its Maslov index. -/
 theorem maslovIndex_neg (χ : Region → ℤ) (x y : H.Generator) (D : Region → ℤ) :
     H.maslovIndex χ y x (-D) = -H.maslovIndex χ x y D := by
