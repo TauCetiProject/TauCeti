@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ConnectedSum.Congr
-public import TauCeti.Geometry.Manifold.ConnectedSum.Sphere
+public import TauCeti.Geometry.Manifold.ConnectedSum.Sphere.Basic
 
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 
