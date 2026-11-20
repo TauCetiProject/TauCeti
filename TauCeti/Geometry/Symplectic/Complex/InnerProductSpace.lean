@@ -18,7 +18,9 @@ structure rather than a global instance, since it depends on `J`.
 
 `TauCeti.AlmostComplexStructure.norm_apply` supplies norm preservation from preservation of the
 real inner product, and `TauCeti.AlmostComplexStructure.inner_apply_self` the orthogonality
-`⟪J v, v⟫ = 0`.
+`⟪J v, v⟫ = 0`. Hence `p` and `J p` are orthogonal of equal norm, and Cauchy–Schwarz for the
+complex inner product bounds the components of any vector along them
+(`TauCeti.AlmostComplexStructure.inner_sq_add_inner_sq_le`).
 
 This is the usual Hermitian metric associated with an orthogonal complex structure; see
 H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -128,5 +130,18 @@ lemma complexInnerProductSpace_inner (J : AlmostComplexStructure V)
     inner ℂ v w = (inner ℝ v w : ℂ) + Complex.I * (inner ℝ (J v) w : ℂ) := by
   let := J.complexInnerProductSpace hJ
   apply Complex.ext <;> simp <;> rfl
+
+/-- Cauchy–Schwarz for the Hermitian metric of an orthogonal complex structure, in real terms: the
+components of `d` along the orthogonal pair `p`, `J p` of equal norms satisfy
+`⟪d, J p⟫² + ⟪d, p⟫² ≤ ‖d‖² ‖p‖²`. -/
+theorem inner_sq_add_inner_sq_le {J : AlmostComplexStructure V}
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (d p : V) :
+    ⟪d, J p⟫ ^ 2 + ⟪d, p⟫ ^ 2 ≤ ‖d‖ ^ 2 * ‖p‖ ^ 2 := by
+  let := J.complexInnerProductSpace (norm_apply hJ)
+  have h := pow_le_pow_left₀ (norm_nonneg _) (norm_inner_le_norm (𝕜 := ℂ) p d) 2
+  simp only [complexInnerProductSpace_inner, Complex.sq_norm, mul_comm Complex.I,
+    Complex.normSq_add_mul_I, mul_pow] at h
+  rw [real_inner_comm p d, real_inner_comm (J p) d]
+  linarith
 
 end TauCeti.AlmostComplexStructure
