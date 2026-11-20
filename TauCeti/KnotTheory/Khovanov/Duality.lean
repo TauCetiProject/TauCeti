@@ -44,9 +44,11 @@ states (`TauCeti.OrientedPDCode.khovanovHomologyMirrorKronecker`).
   characterized by `TauCeti.OrientedPDCode.homologyπ_khovanovHomologyMirrorKronecker`.
 * `TauCeti.OrientedPDCode.khovanovHomologyMirrorKronecker_bijective` and
   `TauCeti.OrientedPDCode.khovanovHomologyMirrorEquivDual`: duality over a self-injective ring.
-* `TauCeti.OrientedPDCode.khovanovHomologyMirrorExt`,
-  `TauCeti.OrientedPDCode.khovanovHomologyMirrorExt_injective`,
-  `TauCeti.OrientedPDCode.exact_khovanovHomologyMirrorExt_khovanovHomologyMirrorKronecker` and
+* `TauCeti.OrientedPDCode.khovanovHomologyMirrorExtToHomology`, characterized by
+  `TauCeti.OrientedPDCode.khovanovHomologyMirrorExtToHomology_extClass_comp_mk₀`,
+  `TauCeti.OrientedPDCode.khovanovHomologyMirrorExtToHomology_injective`,
+  `TauCeti.OrientedPDCode.exact_khovanovHomologyMirrorExtToHomology_khovanovHomologyMirrorKronecker`
+  and
   `TauCeti.OrientedPDCode.khovanovHomologyMirrorKronecker_surjective`: the short exact sequence over
   a hereditary ring.
 
@@ -104,21 +106,10 @@ lemma homologyπ_khovanovHomologyMirrorKronecker (i j : ℤ)
         HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
           ((D.khovanovComplexMirrorIso hD R j hD').hom.f i
             ((D.mirror.khovanovComplex hD' R j).iCycles i z)) := by
-  have h₁ : homologyMap (D.khovanovComplexMirrorIso hD R j hD').hom i
-      ((D.mirror.khovanovComplex hD' R j).homologyπ i z) =
-        (linearHomComplex R (D.khovanovComplex hD R (-j))
-          ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).homologyπ i
-          (cyclesMap (D.khovanovComplexMirrorIso hD R j hD').hom i z) := by
-    rw [← ConcreteCategory.comp_apply, homologyπ_naturality, ConcreteCategory.comp_apply]
-  have h₂ : (linearHomComplex R (D.khovanovComplex hD R (-j))
-      ((singleFunctor (ModuleCat.{u} R) 0).obj (ModuleCat.of R R))).iCycles i
-        (cyclesMap (D.khovanovComplexMirrorIso hD R j hD').hom i z) =
-          (D.khovanovComplexMirrorIso hD R j hD').hom.f i
-            ((D.mirror.khovanovComplex hD' R j).iCycles i z) := by
-    rw [← ConcreteCategory.comp_apply, cyclesMap_i, ConcreteCategory.comp_apply]
   rw [khovanovHomologyMirrorKronecker, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    mirrorHomologyEquiv, Iso.toLinearEquiv_apply, Functor.mapIso_hom, homologyFunctor_map, h₁,
-    homologyπ_linearHomComplexSingleKronecker, h₂]
+    mirrorHomologyEquiv, Iso.toLinearEquiv_apply, Functor.mapIso_hom, homologyFunctor_map,
+    moduleCat_homologyMap_homologyπ, homologyπ_linearHomComplexSingleKronecker,
+    moduleCat_iCycles_cyclesMap_apply]
 
 section Injective
 
@@ -161,26 +152,48 @@ instance `ℤ` or any principal ideal domain: the `R`-linear map
 `Ext¹(Kh^{1-i,-j}(D; R), R) →ₗ[R] Khⁱʲ(D.mirror; R)`. It is the `Ext¹` term of the universal
 coefficient sequence of the dual complex (`CochainComplex.linearHomComplexSingleExtToHomology`)
 transported along the mirror isomorphism `TauCeti.OrientedPDCode.khovanovComplexMirrorIso`. -/
-def khovanovHomologyMirrorExt (i j : ℤ) :
+def khovanovHomologyMirrorExtToHomology (i j : ℤ) :
     Ext.{u} (D.khovanovHomology hD R (1 - i) (-j)) (ModuleCat.of R R) 1 →ₗ[R]
       D.mirror.khovanovHomology hD' R i j :=
   (mirrorHomologyEquiv D hD hD' R i j).symm.toLinearMap ∘ₗ
     linearHomComplexSingleExtToHomology R _ _ i
 
+/-- **The characterization of `TauCeti.OrientedPDCode.khovanovHomologyMirrorExtToHomology`**: the
+class in `Ext¹(Kh^{1-i,-j}(D; R), R)` of a linear form `β` on the coboundaries of `C(D)_{-j}` in
+cochain degree `1 - i` goes to the class of a cocycle `z` of the mirror complex whose linear form
+on `C(D)^{-i}_{-j}`, under the mirror isomorphism
+`TauCeti.OrientedPDCode.khovanovComplexMirrorIso`, is the differential followed by `β`. -/
+lemma khovanovHomologyMirrorExtToHomology_extClass_comp_mk₀ (i j : ℤ)
+    (β : kernel ((D.khovanovComplex hD R (-j)).homologyπ (1 - i)) ⟶ ModuleCat.of R R)
+    (z : (D.mirror.khovanovComplex hD' R j).cycles i)
+    (hz : HomComplex.Cochain.toSingleEquiv (neg_add_cancel i)
+        ((D.khovanovComplexMirrorIso hD R j hD').hom.f i
+          ((D.mirror.khovanovComplex hD' R j).iCycles i z)) =
+      (D.khovanovComplex hD R (-j)).toBoundaries (-i) (1 - i) ≫ β) :
+    D.khovanovHomologyMirrorExtToHomology hD hD' R i j
+        ((TauCeti.kernelSequence_shortExact
+          ((D.khovanovComplex hD R (-j)).homologyπ (1 - i))).extClass.comp (Ext.mk₀ β)
+          (add_zero 1)) =
+      (D.mirror.khovanovComplex hD' R j).homologyπ i z := by
+  refine (LinearEquiv.symm_apply_eq (mirrorHomologyEquiv D hD hD' R i j)).2
+    ((linearHomComplexSingleExtToHomology_extClass_comp_mk₀ _ _ i β _ ?_).trans
+      (moduleCat_homologyMap_homologyπ _ i z).symm)
+  rw [moduleCat_iCycles_cyclesMap_apply, hz]
+
 /-- **Injectivity in the mirror duality sequence**: over a hereditary coefficient ring the map
 `Ext¹(Kh^{1-i,-j}(D; R), R) →ₗ[R] Khⁱʲ(D.mirror; R)` is injective. -/
-theorem khovanovHomologyMirrorExt_injective (i j : ℤ) :
-    Function.Injective (D.khovanovHomologyMirrorExt hD hD' R i j) := by
-  rw [khovanovHomologyMirrorExt, LinearMap.coe_comp]
+theorem khovanovHomologyMirrorExtToHomology_injective (i j : ℤ) :
+    Function.Injective (D.khovanovHomologyMirrorExtToHomology hD hD' R i j) := by
+  rw [khovanovHomologyMirrorExtToHomology, LinearMap.coe_comp]
   exact (LinearEquiv.injective _).comp (linearHomComplexSingleExtToHomology_injective _ _ i)
 
 /-- **Exactness in the middle of the mirror duality sequence**: over a hereditary coefficient
 ring, a class in `Khⁱʲ(D.mirror; R)` evaluates to zero on `Kh^{-i,-j}(D; R)` exactly when it comes
 from `Ext¹(Kh^{1-i,-j}(D; R), R)`. -/
-theorem exact_khovanovHomologyMirrorExt_khovanovHomologyMirrorKronecker (i j : ℤ) :
-    Function.Exact (D.khovanovHomologyMirrorExt hD hD' R i j)
+theorem exact_khovanovHomologyMirrorExtToHomology_khovanovHomologyMirrorKronecker (i j : ℤ) :
+    Function.Exact (D.khovanovHomologyMirrorExtToHomology hD hD' R i j)
       (D.khovanovHomologyMirrorKronecker hD hD' R i j) := by
-  rw [khovanovHomologyMirrorExt, khovanovHomologyMirrorKronecker,
+  rw [khovanovHomologyMirrorExtToHomology, khovanovHomologyMirrorKronecker,
     LinearEquiv.conj_symm_exact_iff_exact]
   exact exact_linearHomComplexSingleExtToHomology_linearHomComplexSingleKronecker _ _ i
 
