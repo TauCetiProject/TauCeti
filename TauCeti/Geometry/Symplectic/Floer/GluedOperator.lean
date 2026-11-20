@@ -93,12 +93,13 @@ private theorem adjointCoeffs_eq (hJ : Differentiable ℝ (uncurry J)) {m : ℝ 
     {z : ℝ × ℝ} (hm : DifferentiableAt ℝ m z) :
     adjointCoeffs ω J H m z = adjointJet ω J H (z.2, m z, fderiv ℝ m z stdComplexLineImag) := by
   have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ J w.2 (m w)) _ z :=
-    ((hJ (z.2, m z)).hasFDerivAt.comp z (hasFDerivAt_snd.prodMk hm.hasFDerivAt) :)
+    ((hJ (z.2, m z)).hasFDerivAt.comp z
+      (hasFDerivAt_snd.prodMk hm.hasFDerivAt)).congr_of_eventuallyEq (.of_forall fun _ ↦ rfl)
   rw [adjointCoeffs, adjointJet, hc.fderiv]
   ext1
   · rfl
   · ext y
-    simp [floerLinearizationCoeff_apply, stdComplexLineImag]
+    simp [floerLinearizationCoeff_apply, stdComplexLineImag_snd]
 
 /-- Germs of maps that agree at `z` have the same adjoint coefficients there. -/
 private theorem adjointCoeffs_congr {m₁ m₂ : ℝ × ℝ → V} {z : ℝ × ℝ} (h : m₁ =ᶠ[𝓝 z] m₂) :
@@ -238,14 +239,11 @@ private theorem eventually_forall_norm_preglue_sub_lt {x x' : ℝ → V} {u v : 
   have hzv : z - (R, 0) = (z.1 - R, z.2) := by ext <;> simp
   obtain ⟨hu₀, hu₁⟩ := hs₁ (z.1 + R) (by linarith)
   obtain ⟨hv₀, hv₁⟩ := hs₂ (z.1 - R) (by linarith)
-  have hu₀' : ‖u (z + (R, 0)) - x z.2‖ < δ / 2 := by
-    rw [hzu, ← dist_eq_norm, dist_comm]; exact hu₀ z.2
-  have hu₁' : ‖fderiv ℝ u (z + (R, 0)) stdComplexLineImag - x' z.2‖ < δ / 2 := by
-    rw [hzu, ← dist_eq_norm, dist_comm]; exact hu₁ z.2
-  have hv₀' : ‖v (z - (R, 0)) - x z.2‖ < δ / 2 := by
-    rw [hzv, ← dist_eq_norm, dist_comm]; exact hv₀ z.2
-  have hv₁' : ‖fderiv ℝ v (z - (R, 0)) stdComplexLineImag - x' z.2‖ < δ / 2 := by
-    rw [hzv, ← dist_eq_norm, dist_comm]; exact hv₁ z.2
+  have hn {a b : V} (h : dist b a < δ / 2) : ‖a - b‖ < δ / 2 := by rwa [← dist_eq_norm, dist_comm]
+  have hu₀' : ‖u (z + (R, 0)) - x z.2‖ < δ / 2 := hzu ▸ hn (hu₀ z.2)
+  have hu₁' : ‖fderiv ℝ u (z + (R, 0)) stdComplexLineImag - x' z.2‖ < δ / 2 := hzu ▸ hn (hu₁ z.2)
+  have hv₀' : ‖v (z - (R, 0)) - x z.2‖ < δ / 2 := hzv ▸ hn (hv₀ z.2)
+  have hv₁' : ‖fderiv ℝ v (z - (R, 0)) stdComplexLineImag - x' z.2‖ < δ / 2 := hzv ▸ hn (hv₁ z.2)
   refine ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩, ?_, ?_⟩
   · linarith [norm_preglue_sub_le (x := x) (u := u) (v := v) (R := R) (z := z)]
   · linarith [norm_fderiv_preglue_apply_sub_le (hx z.2) (hu (z + (R, 0))) (hv (z - (R, 0)))]
@@ -257,7 +255,7 @@ along `u(· + R, ·)` on `s ≤ T`, and of those along `v(· - R, ·)` on `s ≥
 private theorem eventually_dist_adjointCoeffs_preglue_lt (hJ : ContDiff ℝ 1 (uncurry J))
     (hJp : Periodic J 1) (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
-    {u v : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hv : ContDiff ℝ 1 v)
+    (hxd : ContDiff ℝ 1 x) {u v : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u) (hv : ContDiff ℝ 1 v)
     (hux : TendstoUniformly (fun s t ↦ u (s, t)) x atTop)
     (hdux : TendstoUniformly (fun s t ↦ fderiv ℝ u (s, t) stdComplexLineImag)
       (fun t ↦ ω.hamiltonianVectorField (H t) (x t)) atTop)
@@ -270,15 +268,11 @@ private theorem eventually_dist_adjointCoeffs_preglue_lt (hJ : ContDiff ℝ 1 (u
         (adjointCoeffs ω J H (fun p ↦ u (p + (R, 0))) z) < ε) ∧
       (∀ z : ℝ × ℝ, -T ≤ z.1 → dist (adjointCoeffs ω J H (preglue x u v R) z)
         (adjointCoeffs ω J H (fun p ↦ v (p - (R, 0))) z) < ε) := by
-  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
-  obtain ⟨δ, hδ, hjet⟩ := exists_pos_forall_dist_adjointJet_lt (ω := ω) hJ hJp hH hHp hxc hxp
-    (half_pos hε)
+  obtain ⟨δ, hδ, hjet⟩ := exists_pos_forall_dist_adjointJet_lt (ω := ω) hJ hJp hH hHp
+    hxd.continuous hxp (half_pos hε)
   have hJd : Differentiable ℝ (uncurry J) := hJ.differentiable one_ne_zero
   have hud := hu.differentiable one_ne_zero
   have hvd := hv.differentiable one_ne_zero
-  have hxd : ContDiff ℝ 1 x := contDiff_one_of_hasDerivAt
-    (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
   filter_upwards [eventually_forall_norm_preglue_sub_lt hx hud hvd hux hdux hvx hdvx hδ T]
     with R hR
   have hwd : Differentiable ℝ (preglue x u v R) :=
@@ -357,8 +351,8 @@ theorem eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearizationAdjo
   have hxd : ContDiff ℝ 1 x := contDiff_one_of_hasDerivAt
     (X := fun t ↦ ω.hamiltonianVectorField (H t))
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
-  filter_upwards [eventually_dist_adjointCoeffs_preglue_lt hJ hJp hH hHp hx hxp hu hv hux hdux
-    hvx hdvx hT hε] with R hR η hη hper a b hab hη₀
+  filter_upwards [eventually_dist_adjointCoeffs_preglue_lt hJ hJp hH hHp hx hxp hxd hu hv hux
+    hdux hvx hdvx hT hε] with R hR η hη hper a b hab hη₀
   obtain ⟨hR₁, hR₂⟩ := hR
   have hv₁ : (fun w : ℝ × ℝ ↦ v (w + (-R, 0))) = fun w ↦ v (w - (R, 0)) :=
     funext fun w ↦ by congr 1; ext <;> simp [sub_eq_add_neg]
