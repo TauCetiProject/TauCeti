@@ -50,6 +50,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
 
 * `QuotSMulTop.mk_smul_mk`: `[r] • [m] = [r • m]` in `M ⧸ x M`.
 * `QuotSMulTop.subsingleton_of_isUnit`: `M ⧸ x M` is trivial for a unit `x`.
+* `QuotSMulTop.subsingleton_iff_smul_right_surjective`: `M ⧸ x M` is trivial exactly when
+  multiplication by `x` on `M` is surjective.
 * `Ideal.mapQSMulTop_id` and `Ideal.mapQSMulTop_comp`: reduction modulo `I` is functorial.
 * `Ideal.mapQSMulTop_surjective` and `Ideal.mapQSMulTop_exact`: reduction modulo `I` preserves
   surjectivity and exactness at the middle of `M → N → P → 0`.
@@ -180,6 +182,14 @@ theorem neg_eq_self (x : QuotSMulTop (2 : R) M) : -x = x := by
 /-- Modulo a unit, every module is trivial: `x • ⊤ = ⊤` for a unit `x`. -/
 theorem subsingleton_of_isUnit {x : R} (hx : IsUnit x) : Subsingleton (QuotSMulTop x M) :=
   Submodule.Quotient.subsingleton_iff.2 (Submodule.smul_eq_self_of_isUnit hx)
+
+/-- `M ⧸ x M` is trivial exactly when multiplication by `x` on `M` is surjective. -/
+theorem subsingleton_iff_smul_right_surjective {x : R} :
+    Subsingleton (QuotSMulTop x M) ↔ Surjective (x • · : M → M) := by
+  -- `x • ⊤` is the image of `⊤` under `DistribSMul.toLinearMap R M x`, i.e. the range of `x • ·`.
+  rw [Submodule.Quotient.subsingleton_iff, Submodule.pointwise_smul_def, ← LinearMap.range_eq_map,
+    LinearMap.range_eq_top]
+  rfl
 
 /-- `Ideal.mapQSMulTop (x) f` is Mathlib's `QuotSMulTop.map x f`, up to the identification of
 `(x) • ⊤` with `x • ⊤`. -/
