@@ -39,6 +39,13 @@ theorem mapsTo_add_smul_of_halfSpace {E : Type*} [SeminormedAddCommGroup E]
   have hx' := (hΩ x).1 hx
   exact (hΩ _).2 (by simpa [inner_add_left, real_inner_smul_left, hτ] using hx')
 
+/-- The half-space `{x | c < ⟪x, ν⟫}` is convex. -/
+theorem convex_of_halfSpace {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {s : Set E} {ν : E} {c : ℝ} (hΩ : ∀ x, x ∈ s ↔ c < ⟪x, ν⟫_ℝ) : Convex ℝ s := by
+  have h : s = {x | c < innerSL ℝ ν x} := Set.ext fun x => by simp [hΩ x, real_inner_comm]
+  rw [h]
+  exact convex_halfSpace_gt (innerSL ℝ ν).toLinearMap.isLinear c
+
 /-- The inner product of a unit vector `x` with `z` is at least `1 - ‖z - x‖`. -/
 theorem one_sub_norm_sub_le_inner {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
     {x : E} (hx : ‖x‖ = 1) (z : E) : 1 - ‖z - x‖ ≤ ⟪x, z⟫_ℝ := by
