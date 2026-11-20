@@ -69,8 +69,6 @@ conjugation with the pullback of functions, pulls its principal symbol back by t
   `df_x ↦ (δ f)(x)`.
 * `TauCeti.smoothPrincipalSymbol_vectorFieldDerivation`, `TauCeti.smoothPrincipalSymbol_derivation`:
   differentiation along a vector field `X` has principal symbol `ξ ↦ ξ(X_x)`.
-* `Derivation.pow_succ_mem_differentialOperators_iff`: the `(n + 1)`-st power of a derivation has
-  order at most `n` only if the derivation is zero.
 * `TauCeti.smoothCommutatorSymbol_eq_zero_of_mem_differentialOperators`,
   `TauCeti.smoothPrincipalSymbol_eq_zero_of_mem_differentialOperators`: an operator of order at
   most `m`, viewed as one of order at most `m + 1`, has vanishing commutator and principal symbols.
@@ -417,26 +415,5 @@ theorem smoothPrincipalSymbol_derivation [BoundarylessManifold I M]
   obtain ⟨f, rfl⟩ : ∃ f : C^∞⟮I, M; ℝ⟯, mvfderiv I f x = ξ :=
     ⟨_, mvfderiv_covectorLift BoundarylessManifold.isInteriorPoint ξ⟩
   rw [smoothPrincipalSymbol_derivation_mvfderiv, Derivation.mvfderiv_vectorField]
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
-/-- The `(n + 1)`-st power of a derivation `δ` of the smooth functions has order at most `n` only
-when `δ = 0`. So the `n`-th power of a nonzero derivation has order exactly `n`. -/
-theorem _root_.Derivation.pow_succ_mem_differentialOperators_iff
-    (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) (n : ℕ) :
-    (δ : Module.End ℝ C^∞⟮I, M; ℝ⟯) ^ (n + 1) ∈
-        differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ n ↔ δ = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  by_contra hδ
-  obtain ⟨f, hf⟩ : ∃ f, δ f ≠ 0 := by
-    by_contra! H
-    exact hδ (Derivation.ext H)
-  obtain ⟨x, hx⟩ : ∃ x, δ f x ≠ 0 := by
-    by_contra! H
-    exact hf (ContMDiffMap.ext H)
-  refine δ.pow_succ_notMem_differentialOperators (a := f) (fun h₀ ↦ hx ?_) h
-  have h₁ := congr(ContMDiffMap.evalAlgHom (𝕜 := ℝ) x $h₀)
-  rw [map_nsmul, map_pow, map_zero, ContMDiffMap.evalAlgHom_apply] at h₁
-  exact pow_eq_zero_iff n.succ_ne_zero |>.1 <|
-    (smul_eq_zero.1 h₁).resolve_left (Nat.factorial_ne_zero _)
 
 end TauCeti
