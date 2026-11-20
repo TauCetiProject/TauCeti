@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Real inner products with a unit complex number
@@ -19,7 +20,6 @@ real inner product is a rotation by a unit complex number.
 
 ## Main declarations
 
-* `Complex.mul_conj_eq_one_of_norm_eq_one` -- a unit complex number times its conjugate is `1`.
 * `Complex.inner_mul_left_of_norm_eq_one` -- `⟪ζ, ζ * w⟫_ℝ = w.re` for a unit `ζ`.
 * `Complex.inner_mul_mul_of_norm_eq_one` -- `⟪ζ * a, ζ * b⟫_ℝ = ⟪a, b⟫_ℝ` for a unit `ζ`.
 * `Complex.real_inner_I_right` -- `⟪z, i⟫_ℝ = z.im`: the height of `z` in the direction of `i`.
@@ -41,20 +41,15 @@ namespace Complex
 
 variable {ζ : ℂ}
 
-/-- A complex number of norm `1` times its conjugate is `1`. -/
-theorem mul_conj_eq_one_of_norm_eq_one (hζ : ‖ζ‖ = 1) : ζ * (starRingEnd ℂ) ζ = 1 := by
-  rw [mul_conj', hζ]
-  norm_num
-
 /-- The real inner product of a unit complex number `ζ` with `ζ * w` is the real part of `w`. -/
 theorem inner_mul_left_of_norm_eq_one (hζ : ‖ζ‖ = 1) (w : ℂ) : inner ℝ ζ (ζ * w) = w.re := by
-  rw [Complex.inner, mul_comm ζ w, mul_assoc, mul_conj_eq_one_of_norm_eq_one hζ, mul_one]
+  rw [Complex.inner, mul_comm ζ w, mul_assoc, RCLike.mul_conj_eq_one_iff.2 hζ, mul_one]
 
 /-- Multiplication by a unit complex number `ζ` preserves the real inner product. -/
 theorem inner_mul_mul_of_norm_eq_one (hζ : ‖ζ‖ = 1) (a b : ℂ) :
     inner ℝ (ζ * a) (ζ * b) = inner ℝ a b := by
   rw [Complex.inner, Complex.inner, map_mul, mul_mul_mul_comm, mul_comm ζ,
-    mul_comm (starRingEnd ℂ ζ), mul_conj_eq_one_of_norm_eq_one hζ, one_mul]
+    mul_comm (starRingEnd ℂ ζ), RCLike.mul_conj_eq_one_iff.2 hζ, one_mul]
 
 /-- The real inner product of `z` with `i` is the imaginary part of `z`. -/
 theorem real_inner_I_right (z : ℂ) : inner ℝ z I = z.im := by
@@ -89,7 +84,7 @@ theorem exists_apply_eq_mul_exp {C : ℂ →ₗ[ℝ] ℂ} (hCI : ∀ z, C (I * z
   have hnorm : ‖C 1‖ = 1 := by
     rw [hC I, real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, norm_mul, norm_I,
       one_mul] at hCω
-    nlinarith [norm_nonneg (C 1)]
+    exact (pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero).1 hCω
   refine ⟨arg (C 1), fun z => ?_⟩
   rw [hC z]
   congr 1
@@ -98,7 +93,7 @@ theorem exists_apply_eq_mul_exp {C : ℂ →ₗ[ℝ] ℂ} (hCI : ∀ z, C (I * z
 end Complex
 
 /-- A linear isometry from the plane maps `i` to a unit vector. -/
-theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+theorem LinearIsometry.norm_map_I {E : Type*} [SeminormedAddCommGroup E] [Module ℝ E]
     (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 :=
   (ι.norm_map _).trans Complex.norm_I
 

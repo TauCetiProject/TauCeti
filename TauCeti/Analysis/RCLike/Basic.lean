@@ -13,6 +13,7 @@ public import Mathlib.Analysis.RCLike.Basic
 ## Main results
 
 * `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
+* `RCLike.mul_conj_eq_one_iff`: a scalar times its conjugate is `1` exactly when it has norm `1`.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
 * `RCLike.continuousSMul_of_continuousConstSMul`: on an `RCLike`-module with continuous addition
@@ -23,6 +24,8 @@ public import Mathlib.Analysis.RCLike.Basic
 public section
 
 namespace RCLike
+
+open ComplexConjugate
 
 variable {K : Type*} [RCLike K]
 
@@ -37,6 +40,12 @@ theorem norm_le_abs_re_add_abs_im (z : K) : ‖z‖ ≤ |re z| + |im z| := by
 /-- A scalar with zero imaginary part is the image of its real part. -/
 theorem re_eq_self_of_im_eq_zero {z : K} (h : im z = 0) : (re z : K) = z :=
   conj_eq_iff_re.mp (conj_eq_iff_im.mpr h)
+
+/-- A scalar times its conjugate is `1` exactly when the scalar has norm `1`. -/
+theorem mul_conj_eq_one_iff {z : K} : z * conj z = 1 ↔ ‖z‖ = 1 := by
+  rw [mul_conj]
+  norm_cast
+  exact pow_eq_one_iff_of_nonneg (norm_nonneg z) two_ne_zero
 
 /-- On an `RCLike`-module whose addition and real scalar multiplication are jointly continuous,
 continuous multiplication by constant `K`-scalars upgrades to joint continuity of `K`-scalar
