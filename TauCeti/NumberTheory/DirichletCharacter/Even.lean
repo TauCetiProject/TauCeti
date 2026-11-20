@@ -210,7 +210,8 @@ variable [NeZero n]
 
 open scoped Classical in
 /-- **Orthogonality for even characters.** Twice the sum of `χ a` over the even characters
-of level `n` is `φ(n)` for each of `a = 1` and `a = -1`, and vanishes when `a ≠ ±1`. -/
+of level `n` is `φ(n) [a = 1] + φ(n) [a = -1]`: it is `φ(n)` at `a = ±1` when `1 ≠ -1`, it is
+`2 φ(n)` at `a = 1` when `1 = -1` (levels one and two), and it vanishes when `a ≠ ±1`. -/
 theorem two_mul_sum_even_apply (a : ZMod n) :
     2 * ∑ χ : DirichletCharacter R n with χ.Even, χ a =
       (if a = 1 then (n.totient : R) else 0) + if a = -1 then (n.totient : R) else 0 := by
