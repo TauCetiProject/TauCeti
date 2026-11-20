@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.OrdinaryHypergeometric
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.RingTheory.Polynomial.Chebyshev
 public import Mathlib.RingTheory.Polynomial.ShiftedLegendre
-import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Algebra.Polynomial.HasseDeriv
 import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
 import TauCeti.RingTheory.Polynomial.Pochhammer
 

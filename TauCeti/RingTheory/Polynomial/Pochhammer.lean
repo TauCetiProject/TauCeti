@@ -396,14 +396,16 @@ theorem ascPochhammer_eval_neg_mul_ascPochhammer_eval_add_two [CommRing R] (a : 
     linear_combination ((-a + k) * (a + 2 + k)) * ih
 
 /-- `2ᵏ (b/2)ₖ = ∏_{l<k} (2l + b)`. -/
-theorem two_pow_mul_ascPochhammer_eval_div_two {K : Type*} [Field K] [CharZero K] (b : K)
+theorem two_pow_mul_ascPochhammer_eval_div_two {K : Type*} [Field K] [NeZero (2 : K)] (b : K)
     (k : ℕ) :
     2 ^ k * (ascPochhammer K k).eval (b / 2) = ∏ l ∈ Finset.range k, (2 * (l : K) + b) := by
   induction k with
   | zero => simp
   | succ k ih =>
     rw [ascPochhammer_succ_eval, Finset.prod_range_succ, pow_succ, ← ih]
-    ring
+    -- Only `b / 2 * 2 = b` is needed, which uses `2 ≠ 0`.
+    have h2 : b / 2 * 2 = b := div_mul_cancel₀ b two_ne_zero
+    linear_combination (2 ^ k * (ascPochhammer K k).eval (b / 2)) * h2
 
 end Ascending
 
