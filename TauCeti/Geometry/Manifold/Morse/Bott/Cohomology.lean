@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Bott.Homology
+public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
+public import TauCeti.Geometry.Manifold.Morse.Bott.GaugeDiscBundle
+public import TauCeti.Topology.VectorBundle.Attachment
 public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
@@ -50,7 +52,7 @@ twisted by the orientation of `V`, which this file does not treat.
 The base `B` is compact, since `g` embeds the disc bundle, which contains the zero section, as a
 closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
 (`TauCeti.compactSpace_of_isClosedEmbedding_gaugeDiscBundle`); the Thom isomorphism is used over a
-compact base (`TauCeti.bijective_thomMap_of_compactSpace`).
+compact base (`TauCeti.thomEquivOfCompactSpace`).
 
 ## References
 
@@ -183,8 +185,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isTho
   obtain ⟨e⟩ := nonempty_singularCohomology_sublevelPair_iso_thomPair hfs hW hs ht hs₀ ht₀ hf hdir
     φ hφs hφt hφ₁ hφ₀ hε hK hcompact hcrit hρ hg hgD hgS (ModuleCat.of K K) K N (p + finrank ℝ F)
   have := compactSpace_of_isClosedEmbedding_gaugeDiscBundle hε.le hK hρ hg hgD
-  exact ⟨e ≪≫ (LinearEquiv.ofBijective _
-    (bijective_thomMap_of_compactSpace N p _ rfl hu)).toModuleIso.symm⟩
+  exact ⟨e ≪≫ (thomEquivOfCompactSpace F V N p _ rfl u hu).toModuleIso.symm⟩
 
 variable [FiniteDimensional ℝ F]
 
