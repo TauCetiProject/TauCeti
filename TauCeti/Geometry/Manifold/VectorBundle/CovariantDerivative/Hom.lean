@@ -17,7 +17,8 @@ Connections on `V` and `W` induce a connection on the native bundle `Hom(V, W)`.
 Its evaluation rule is `((∇ A)(X)) s = ∇_X (A s) - A (∇_X s)`.
 This rule uniquely determines the induced connection on differentiable sections,
 and makes the identity endomorphism parallel. Iterating this construction supplies
-the connections on covariant tensors needed to differentiate curvature.
+the connections on covariant tensors needed to differentiate curvature, with
+bilinear evaluation rule `CovariantDerivative.hom_hom_apply`.
 
 The source bundle has finite rank; the target bundle need not. The construction
 uses Mathlib's tensoriality criterion, rather than a choice of bundle frame.

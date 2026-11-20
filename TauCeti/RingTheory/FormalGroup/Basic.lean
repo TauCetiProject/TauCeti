@@ -28,6 +28,8 @@ least `n ≥ 1` adds `e` to `F(x, y)`, up to terms of degree greater than `n`.
 * `FormalGroup.le_order_subst_add_left_sub`, `FormalGroup.le_order_subst_add_right_sub`:
   `F(x + e, y) ≡ F(x, y) + e` and `F(x, y + e) ≡ F(x, y) + e` modulo terms of degree greater than
   `n`, for `e` of order at least `n ≥ 1`.
+* `FormalGroup.le_order_subst_pair_sub`: if `F, G` and `(a₁, a₂), (b₁, b₂)` agree below degree `M`,
+  then `F(a₁, a₂)` and `G(b₁, b₂)` agree below degree `M`.
 -/
 
 public section
@@ -97,5 +99,38 @@ theorem le_order_subst_add_right_sub (hx : constantCoeff x = 0) (hy : constantCo
   fin_cases j <;> simp
 
 end Perturbation
+
+/-- If two formal group laws `F` and `G` agree below degree `M`, and pairs of series `(a₁, a₂)` and
+`(b₁, b₂)` with zero constant coefficient agree below degree `M`, then `F(a₁, a₂)` and `G(b₁, b₂)`
+agree below degree `M`. -/
+theorem le_order_subst_pair_sub {F G : FormalGroup A} {M : ℕ}
+    (hFG : (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order)
+    {σ : Type*} {a₁ a₂ b₁ b₂ : MvPowerSeries σ A}
+    (ha₁ : constantCoeff a₁ = 0) (ha₂ : constantCoeff a₂ = 0)
+    (hb₁ : constantCoeff b₁ = 0) (hb₂ : constantCoeff b₂ = 0)
+    (h₁ : (M : ℕ∞) ≤ (a₁ - b₁).order) (h₂ : (M : ℕ∞) ≤ (a₂ - b₂).order) :
+    (M : ℕ∞) ≤ (F.toPowerSeries.subst ![a₁, a₂] - G.toPowerSeries.subst ![b₁, b₂]).order := by
+  have ha' : ∀ i : Fin 2, constantCoeff (![a₁, a₂] i) = 0 := Fin.forall_fin_two.mpr ⟨ha₁, ha₂⟩
+  have hb' : ∀ i : Fin 2, constantCoeff (![b₁, b₂] i) = 0 := Fin.forall_fin_two.mpr ⟨hb₁, hb₂⟩
+  have ha : HasSubst ![a₁, a₂] := hasSubst_of_constantCoeff_zero ha'
+  have hb : HasSubst ![b₁, b₂] := hasSubst_of_constantCoeff_zero hb'
+  have hsplit : F.toPowerSeries.subst ![a₁, a₂] - G.toPowerSeries.subst ![b₁, b₂] =
+      (F.toPowerSeries - G.toPowerSeries).subst ![a₁, a₂] +
+        (G.toPowerSeries.subst ![a₁, a₂] - G.toPowerSeries.subst ![b₁, b₂]) := by
+    rw [subst_sub ha]
+    ring
+  rw [hsplit]
+  refine le_order_add ?_ ?_
+  · have h1 : (1 : ℕ∞) ≤ ⨅ i : Fin 2, (![a₁, a₂] i).order :=
+      le_iInf fun i ↦ one_le_order_iff_constCoeff_eq_zero.mpr (ha' i)
+    calc (M : ℕ∞) ≤ (F.toPowerSeries - G.toPowerSeries).order := hFG
+      _ = 1 * (F.toPowerSeries - G.toPowerSeries).order := (one_mul _).symm
+      _ ≤ (⨅ i : Fin 2, (![a₁, a₂] i).order) * (F.toPowerSeries - G.toPowerSeries).order :=
+        mul_le_mul_left h1 _
+      _ ≤ ((F.toPowerSeries - G.toPowerSeries).subst ![a₁, a₂]).order :=
+        le_order_subst ha _
+  · simpa only [Nat.add_sub_cancel] using MvPowerSeries.le_order_subst_sub_subst
+      (H := G.toPowerSeries) (k := 1) (one_le_order_iff_constCoeff_eq_zero.mpr G.zero_constantCoeff)
+      ha hb ha' hb' (Fin.forall_fin_two.mpr ⟨h₁, h₂⟩)
 
 end FormalGroup
