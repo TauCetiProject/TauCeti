@@ -19,10 +19,17 @@ the shift by `1`. Over a field the converse is Mathlib's `AddChar.IsPrimitive.of
 it, a nontrivial additive character of a finite field has vanishing character sum, and this file
 records the punctured form of that sum, over the units of the field.
 
+A primitive character stays primitive under a shift by a unit, and on a finite ring these are
+the only primitive shifts: Mathlib's `AddChar.not_isPrimitive_mulShift` rules out the nonunits.
+This is what identifies the primitive characters among the shifts of one primitive character.
+
 ## Main results
 
 * `AddChar.IsPrimitive.ne_one`: a primitive additive character on a nontrivial ring is
   nontrivial.
+* `AddChar.IsPrimitive.mulShift`: the shift of a primitive character by a unit is primitive.
+* `AddChar.IsPrimitive.isPrimitive_mulShift_iff`: on a finite ring, the shift of a primitive
+  character by `a` is primitive if and only if `a` is a unit.
 * `AddChar.IsPrimitive.natCast_ne_zero`: the level of a primitive additive character of `ZMod n`
   with values in a domain is nonzero in that domain.
 * `AddChar.sum_units_mul_eq_neg_one`: a nontrivial additive character of a finite field sums to
@@ -34,6 +41,24 @@ records the punctured form of that sum, over the units of the field.
 public section
 
 namespace AddChar
+
+section Shift
+
+variable {R R' : Type*} [CommRing R] [CommMonoid R'] {ψ : AddChar R R'}
+
+/-- The shift of a primitive additive character by a unit is primitive. -/
+theorem IsPrimitive.mulShift (hψ : ψ.IsPrimitive) {a : R} (ha : IsUnit a) :
+    (ψ.mulShift a).IsPrimitive := fun b hb ↦ by
+  rw [mulShift_mulShift]
+  exact hψ (ha.mul_right_eq_zero.not.mpr hb)
+
+/-- On a finite ring, the shift of a primitive additive character by `a` is primitive if and only
+if `a` is a unit. -/
+theorem IsPrimitive.isPrimitive_mulShift_iff [Finite R] (hψ : ψ.IsPrimitive) {a : R} :
+    (ψ.mulShift a).IsPrimitive ↔ IsUnit a :=
+  ⟨fun h ↦ by_contra fun ha ↦ not_isPrimitive_mulShift ψ ha h, hψ.mulShift⟩
+
+end Shift
 
 variable {R R' : Type*} [CommRing R] [Nontrivial R] [CommMonoid R']
 
