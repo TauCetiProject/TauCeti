@@ -288,9 +288,11 @@ theorem hasCore_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
     T.hermitianDilation.HasCore
       ((S.prod S').comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap) := by
   set C := (S.prod S').comap (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap
+  have hC (u : WithLp 2 (E × F)) : u ∈ C ↔ u.fst ∈ S ∧ u.snd ∈ S' := by
+    simp [C, Submodule.mem_comap, Submodule.mem_prod]
   have hDc : T.hermitianDilation.IsClosed := (isSelfAdjoint_hermitianDilation hT hd).isClosed
   refine (hDc.hasCore_iff_graph_subset_closure (S := C) fun u hu ↦
-    mem_hermitianDilation_domain.mpr ⟨hS.1 hu.1, hS'.1 hu.2⟩).mpr ?_
+    mem_hermitianDilation_domain.mpr ⟨hS.1 ((hC u).mp hu).1, hS'.1 ((hC u).mp hu).2⟩).mpr ?_
   -- The graphs of `T` and `T†` lie in the closures of the graphs of their restrictions to the
   -- cores.
   have hgT := (hT.hasCore_iff_graph_subset_closure hS.1).mp hS
@@ -307,7 +309,7 @@ theorem hasCore_hermitianDilation (hT : T.IsClosed) (hd : Dense (T.domain : Set 
     obtain ⟨x, rfl⟩ := (mem_graph_iff' _).mp hxa
     obtain ⟨y, rfl⟩ := (mem_graph_iff' _).mp hyb
     have hu : WithLp.toLp 2 ((x : E), (y : F)) ∈ (T.hermitianDilation.domRestrict C).domain :=
-      ⟨⟨x.2.1, y.2.1⟩, mem_hermitianDilation_domain.mpr ⟨x.2.2, y.2.2⟩⟩
+      ⟨(hC _).mpr ⟨x.2.1, y.2.1⟩, mem_hermitianDilation_domain.mpr ⟨x.2.2, y.2.2⟩⟩
     -- All three restrictions evaluate by their unrestricted formulas, `(x, y) ↦ (T† y, T x)`.
     have hDu : T.hermitianDilation.domRestrict C ⟨_, hu⟩ = T.hermitianDilation ⟨_, hu.2⟩ :=
       domRestrict_apply rfl
