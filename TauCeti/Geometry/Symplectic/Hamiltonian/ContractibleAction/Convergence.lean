@@ -104,8 +104,8 @@ omit [I.Boundaryless] [IsManifold I 2 M] in
 private theorem chartCapCoord_mem_ball {x : M} {γ : ℝ → M} {r δ : ℝ}
     (hδ : ∀ t, ‖extChartAt I x (γ t) - extChartAt I x x‖ ≤ δ) (hδr : δ < r) (z : ℝ × ℝ) :
     chartCapCoord I x γ z ∈ ball (extChartAt I x x) r := by
-  rw [mem_ball, dist_eq_norm, chartCapCoord, add_sub_cancel_left, norm_smul, Real.norm_eq_abs,
-    abs_of_nonneg (capProfile_mem_Icc _).1]
+  simp only [mem_ball, dist_eq_norm, chartCapCoord, add_sub_cancel_left, norm_smul,
+    Real.norm_eq_abs, abs_of_nonneg (capProfile_mem_Icc _).1]
   calc _ ≤ 1 * δ := mul_le_mul (capProfile_mem_Icc _).2 (hδ _) (norm_nonneg _) zero_le_one
     _ < r := by rwa [one_mul]
 
@@ -201,15 +201,12 @@ private theorem norm_integral_chartCap_le {x : M} {γ : ℝ → M} {r B δ K : �
   refine (ContinuousAlternatingMap.le_opNorm_mul_prod_of_le _
     (b := ![π / 2 * δ, K]) fun i ↦ ?_).trans ?_
   · fin_cases i
-    · rw [Fin.zero_eta, Matrix.cons_val_zero, Matrix.cons_val_zero, hd₁, norm_smul,
-        Real.norm_eq_abs]
-      exact mul_le_mul (abs_deriv_capProfile_le s) (hδ t) (norm_nonneg _) (by positivity)
-    · rw [Fin.mk_one, Matrix.cons_val_one, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-        Matrix.cons_val_fin_one, hd₂, norm_smul, Real.norm_eq_abs,
-        abs_of_nonneg (capProfile_mem_Icc s).1]
-      exact (mul_le_mul (capProfile_mem_Icc s).2 hKt (norm_nonneg _) zero_le_one).trans_eq
-        (one_mul K)
-  · rw [Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    · simpa only [Fin.zero_eta, Matrix.cons_val, c, hd₁, norm_smul, Real.norm_eq_abs] using
+        mul_le_mul (abs_deriv_capProfile_le s) (hδ t) (norm_nonneg _) (by positivity)
+    · simpa only [Fin.mk_one, Matrix.cons_val, c, hd₂, norm_smul, Real.norm_eq_abs,
+        abs_of_nonneg (capProfile_mem_Icc s).1, one_mul] using
+        mul_le_mul (capProfile_mem_Icc s).2 hKt (norm_nonneg _) zero_le_one
+  · simp only [Fin.prod_univ_two, Matrix.cons_val]
     exact mul_le_mul_of_nonneg_right (hB _ hcball)
       (mul_nonneg (mul_nonneg (by positivity) hδ0) ((norm_nonneg _).trans hKt))
 
