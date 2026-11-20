@@ -41,7 +41,9 @@ On real Hilbert spaces the Riesz isomorphisms carry the adjoint to the transpose
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
-with the adjoint of the inverse as inverse.
+with the adjoint of the inverse as inverse. For a family of equivalences continuous in the
+operator norm, the adjoints are again continuous
+(`ContinuousLinearEquiv.continuous_coe_adjointEquiv`).
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
@@ -396,6 +398,14 @@ theorem adjointEquiv_symm_apply [CompleteSpace E] [CompleteSpace F]
 theorem coe_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
     (A.adjointEquiv : F →L[𝕜] E) = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) :=
   ContinuousLinearMap.ext A.adjointEquiv_apply
+
+/-- The adjoints of a family of continuous linear equivalences depend continuously on the
+parameter in the operator norm whenever the equivalences do. -/
+theorem continuous_coe_adjointEquiv [CompleteSpace E] [CompleteSpace F] {X : Type*}
+    [TopologicalSpace X] {f : X → E ≃L[𝕜] F} (hf : Continuous fun x ↦ (f x : E →L[𝕜] F)) :
+    Continuous fun x ↦ ((f x).adjointEquiv : F →L[𝕜] E) := by
+  simp_rw [coe_adjointEquiv]
+  exact ContinuousLinearMap.adjoint.continuous.comp hf
 
 /-- The adjoint equivalence has the same operator norm as the equivalence. -/
 @[simp]
