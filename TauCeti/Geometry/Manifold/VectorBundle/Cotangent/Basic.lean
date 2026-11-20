@@ -54,7 +54,9 @@ covector `p ∘ df_x` at `x`. For a family of covectors over a parameter manifol
 the differential does. It gives the smoothness of the cotangent lift of a diffeomorphism
 (`Diffeomorph.cotangent`). The map may also vary smoothly with the parameter
 (`TauCeti.CotangentBundle.contMDiffAt_mk_comp_mfderiv_uncurry`), as the slice inclusions of a
-product manifold do.
+product manifold do. Over an arbitrary topological parameter space, pairing a continuous family of
+covectors at `f x` with the images under `df_x` of a continuous family of tangent vectors at `x` is
+continuous when `f` is `C¹` (`TauCeti.CotangentBundle.continuousAt_snd_apply_mfderiv`).
 
 Pairing a covector field along a map `u` with the image of a tangent field under a section `B` of
 `End(TM)` is continuous wherever both fields are continuous into their bundles
@@ -367,6 +369,27 @@ theorem contMDiffAt_mk_comp_mfderiv_uncurry [IsManifold IX 1 X] {Ψ : X → Cota
   contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates hΨg hΨ hg
     (hf.continuousAt.comp (f := fun z ↦ (z, g z)) (continuousAt_id.prodMk hg.continuousAt))
     (hf.mfderiv f g hg hmn)
+
+/-- **Pairing covectors with pushed-forward tangent vectors is continuous.** Let `v s` be a
+tangent vector of `M` and `Ψ s` a covector at `f (v s).proj`, depending on a parameter `s` in a
+topological space. If `Ψ` and `v` are continuous at `s₀` and `f` is `C¹` at `(v s₀).proj`, then
+`s ↦ Ψ s (df (v s))` is continuous at `s₀`. -/
+theorem continuousAt_snd_apply_mfderiv {S : Type*} [TopologicalSpace S]
+    {Ψ : S → CotangentBundle J N} {v : S → TangentBundle I M} {f : M → N} {s₀ : S}
+    (hΨv : ∀ s, (Ψ s).proj = f (v s).proj) (hΨ : ContinuousAt Ψ s₀) (hv : ContinuousAt v s₀)
+    (hf : ContMDiffAt I J 1 f (v s₀).proj) :
+    ContinuousAt (fun s ↦ (Ψ s).snd (mfderiv I J f (v s).proj (v s).snd)) s₀ := by
+  -- Read `Ψ s` over the base point `f (v s).proj` of `tangentMap f (v s)`.
+  have hΨ' : ContinuousAt (fun s ↦ TotalSpace.mk' (E' →L[𝕜] 𝕜)
+      (E := fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) (f (v s).proj) (Ψ s).snd) s₀ := by
+    have : (fun s ↦ TotalSpace.mk' (E' →L[𝕜] 𝕜) (E := fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜)
+        (f (v s).proj) (Ψ s).snd) = Ψ :=
+      funext fun s ↦ CotangentBundle.ext (hΨv s).symm fun _ ↦ rfl
+    rwa [this]
+  exact continuous_snd.continuousAt.comp
+    ((Bundle.Trivial.homeomorphProd N 𝕜).continuous.continuousAt.comp
+      (ContinuousAt.clm_bundle_apply (E₂ := Bundle.Trivial N 𝕜) hΨ'
+        ((hf.continuousAt_tangentMap le_rfl).comp hv)))
 
 end Pullback
 
