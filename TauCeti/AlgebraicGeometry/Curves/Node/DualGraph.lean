@@ -103,7 +103,8 @@ an open subscheme: the blowup is regular, so its irreducible components are disj
 is an integral scheme, proper over `K`, of dimension at most one. -/
 def blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
     (X.singularLocus K).blowup.Opens :=
-  ⟨v, isOpen_of_mem_irreducibleComponents_of_isDomain_stalk (fun _ ↦ inferInstance) v.2⟩
+  ⟨v, isOpen_of_mem_irreducibleComponents_of_unique_minimalPrime_stalk (fun _ ↦ inferInstance)
+    v.2⟩
 
 @[simp]
 theorem coe_blowupComponent (v : irreducibleComponents (X.singularLocus K).blowup) :
