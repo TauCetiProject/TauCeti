@@ -79,6 +79,8 @@ specialisations are discharged with.
   `TauCeti.Huber.completeSpace_weightedRestrictedSubring_one_weight` : those four at the
   trivial weight family. The `T0Space` and `CompleteSpace` ones are the registered instances;
   the two coefficient-map results are theorems. This is the case the comparison needs.
+* `TauCeti.Huber.isClosed_weightedNhd_one_weight` : at the trivial weight family, `U⟨X⟩` is closed
+  in `A⟨X⟩` whenever `U` is closed in `A`.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` : the comparison — `A⟨X₁,…,Xₖ⟩` is
   the plain restricted-series ring, whenever that ring is complete and Hausdorff.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` : the same comparison as an
@@ -161,6 +163,17 @@ theorem continuous_coeff_one_weight (ν : Fin k →₀ ℕ) :
       isWeightFamily_one_weight ↦ MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) A) :=
   isWeightFamily_one_weight.continuous_coeff (isBounded_weightPow_one_weight ν)
 
+/-- At the trivial weight family `U⟨X⟩` is closed in `A⟨X⟩` when `U` is closed in `A`: it is the
+set of series all of whose coefficients lie in `U`, an intersection of preimages of `U` under the
+continuous coefficient maps. -/
+theorem isClosed_weightedNhd_one_weight {U : AddSubgroup A} (hU : IsClosed (U : Set A)) :
+    IsClosed (weightedNhd (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight U :
+      Set (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
+        isWeightFamily_one_weight)) := by
+  convert isClosed_iInter fun ν ↦ hU.preimage (continuous_coeff_one_weight ν) using 1
+  ext f
+  simp [weightMul_one_weight]
+
 /-- **Restricted series over a Hausdorff base are Hausdorff** (Wedhorn 5.49(2) at the trivial
 weight family), the case registered as an instance. -/
 instance t0Space_weightedRestrictedSubring_one_weight [T0Space A] :
@@ -238,7 +251,8 @@ theorem completeSpace_weightedRestrictedSubring [CompleteSpace A] {T : Fin k →
     intro U
     obtain ⟨M, hMF, hM⟩ := exists_mem_forall_coeff_sub_mem_weightMul hF ha U
     obtain ⟨f₀, hf₀⟩ := hF.1.nonempty_of_mem hMF
-    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.2) U] with ν hν
+    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.property) U]
+        with ν hν
     simpa [hg] using sub_mem hν (hM f₀ hf₀ ν)
   refine ⟨⟨g, mem_weightedRestrictedSubring.mpr hres⟩, ?_⟩
   rw [← tendsto_id', ← tendsto_sub_nhds_zero_iff,

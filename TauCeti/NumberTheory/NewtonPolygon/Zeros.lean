@@ -105,7 +105,7 @@ theorem IsEntire.exists_norm_eq_and_evalAt_eq_zero [IsAlgClosed K] (hf : f.IsEnt
   obtain ⟨hxroot, hx0⟩ := Multiset.mem_filter.mp hx
   have hxnorm : ‖x‖ = b ^ σ := by rw [hv x hx0, hxσ]
   refine ⟨x, hxnorm, ?_⟩
-  rw [← heω, IsRestricted.evalAt_mul e.2 (TauCeti.PowerSeries.isRestricted_polynomial _)
+  rw [← heω, IsRestricted.evalAt_mul e.property (TauCeti.PowerSeries.isRestricted_polynomial _)
     hxnorm.le, evalAt_coe, Polynomial.coe_aeval_eq_eval,
     ((Polynomial.mem_roots hω.monic.ne_zero).mp hxroot).eq_zero, mul_zero]
 

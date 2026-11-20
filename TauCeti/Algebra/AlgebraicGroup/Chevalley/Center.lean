@@ -89,7 +89,7 @@ theorem conj_eq_self_of_forall_conj_simpleRootSubgroup_and_torus (c : D.points �
           exact (D.mem_equalizer_conj_iff c B _).mpr (hneg B m u))
       (fun B _ s => by
         rw [← D.coe_torusPoints B s]; exact (D.mem_equalizer_conj_iff c B _).mpr (htorus B s))
-      A (D.points_eq_kostantToralPointsSubgroup A ▸ g.2))
+      A (D.points_eq_kostantToralPointsSubgroup A ▸ g.property))
 
 /-- **Integral torus points annihilating all simple coordinate roots are central in `D.points A`
 over every commutative ring `A`.** -/

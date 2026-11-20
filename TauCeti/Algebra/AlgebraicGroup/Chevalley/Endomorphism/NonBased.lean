@@ -54,7 +54,8 @@ variable (i : Fin t.rank) (A : Type v) [CommRing A]
 @[simp] theorem not_isBased_conj_weylElement [Nontrivial A] : ¬ D.IsBased
     (MulAut.conj (D.weylElement (t.simpleIndex ht i) A 1) : D.points A →* D.points A) :=
   fun hBased => let ⟨b, hb⟩ := D.exists_weylElement_conj_notMem_borelSubgroup A i
-    hb (hBased.map_borelSubgroup_le ⟨b.1, b.2, by rw [MonoidHom.coe_ofClass, MulAut.conj_apply]⟩)
+    hb (hBased.map_borelSubgroup_le
+      ⟨b.val, b.property, by rw [MonoidHom.coe_ofClass, MulAut.conj_apply]⟩)
 
 end WeylConj
 

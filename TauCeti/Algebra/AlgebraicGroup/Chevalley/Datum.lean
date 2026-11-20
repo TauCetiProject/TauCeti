@@ -184,6 +184,16 @@ theorem coordinateWeight_def (j : Fin D.dim) :
     D.coordinateWeight j = D.weightLatticeBasis.repr ⟨D.weight j, D.weight_mem_weightLattice j⟩ :=
   (rfl)
 
+/-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
+coordinate weights agree with the weights themselves. -/
+theorem coordinateWeight_eq_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1) :
+    D.coordinateWeight = D.weight := by
+  funext j i
+  have h := congrFun (D.sum_coordinateWeight_smul j) i
+  simpa only [Finset.sum_apply, Pi.smul_apply, hb, Pi.single_apply, smul_eq_mul, mul_ite,
+    mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] using h
+
 /-- **The coordinate weights span the character lattice.** The weights span `Λ(D)` by definition,
 and reading `Λ(D)` in the chosen basis is a linear isomorphism onto `Fin t.rank → ℤ`. -/
 theorem span_range_coordinateWeight_eq_top :
@@ -301,6 +311,17 @@ theorem eq_of_nsmul_coordinateRoot_eq {α β : Fin t.numRoots} {m d : ℕ}
   · rw [D.coordinateRoot_reflectionPerm_self, smul_neg] at h
     exact (D.coordinateRoot_ne_zero β ((smul_eq_zero.mp (by rw [add_smul, ← h, add_neg_cancel] :
       (m + d) • D.coordinateRoot β = 0)).resolve_left (Nat.add_pos_left hm d).ne')).elim
+
+/-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
+coordinate roots agree with the roots of the pinned root datum. -/
+theorem coordinateRoot_eq_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1)
+    (γ : Fin t.numRoots) :
+    D.coordinateRoot γ = (t.simplyConnectedRootDatum ht).root γ := by
+  ext i
+  have h := congrFun (D.sum_coordinateRoot_smul γ) i
+  simpa only [Finset.sum_apply, Pi.smul_apply, hb, Pi.single_apply, smul_eq_mul, mul_ite,
+    mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] using h
 
 /-! ## Nilpotence of the root generators -/
 
@@ -475,6 +496,15 @@ theorem coe_torusPoints (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     (D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       UniversalEnvelopingAlgebra.kostantTorusMatrix D.lattice D.basis D.coordinateWeight s :=
   (rfl)
+
+/-- Actual torus points are block upper triangular for every block indexing, since they
+are diagonal in the datum's original weight basis. -/
+theorem blockTriangular_torusPoints (A : Type v) [CommRing A] {α : Type*} [Preorder α]
+    (b : Fin D.dim → α) (s : Fin t.rank → Aˣ) :
+    ((D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+      Matrix (Fin D.dim) (Fin D.dim) A).BlockTriangular b := by
+  rw [D.coe_torusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
+  exact Matrix.blockTriangular_diagonal _
 
 /-- Maps of value rings carry actual torus parameters coordinatewise to their images. -/
 @[simp]

@@ -62,8 +62,8 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fint
     add_mem' := fun h₁ h₂ y => by rw [add_mul, map_add, h₁, h₂, map_add, add_mul]
     neg_mem' := fun hx y => by rw [neg_mul, map_neg, hx, map_neg, neg_mul] }
   let g : E →+* K := {
-    toFun := fun x => h x.1, map_one' := hh1, map_mul' := fun x y => x.2 y.1
-    map_zero' := h.map_zero, map_add' := fun x y => h.map_add x.1 y.1 }
+    toFun := fun x => h x.val, map_one' := hh1, map_mul' := fun x y => x.property y.val
+    map_zero' := h.map_zero, map_add' := fun x y => h.map_add x.val y.val }
   let sOf (u : Kˣ) : κ → Kˣ := Pi.mulSingle i₀ (if 0 ≤ ξ i₀ then u else u⁻¹)
   have hsOf (u : Kˣ) : torusCharacter (sOf u) ξ = u ^ a := by
     rw [torusCharacter_mulSingle]; split_ifs with h0

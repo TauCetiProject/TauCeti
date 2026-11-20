@@ -30,6 +30,8 @@ coordinate equivalence over a nontrivial target module.
 Every `R`-linear automorphism of a rank-one free `R`-module `ι → R` over a commutative semiring `R`
 is scalar multiplication by a unit (`LinearEquiv.exists_eq_smulOfUnit_of_unique`), specializing over
 `ℤ` to `LinearMap.id` or `-LinearMap.id` (`LinearEquiv.toLinearMap_eq_id_or_neg_of_unique`).
+Following the identification of equal submodules by an inclusion is the other inclusion,
+`Submodule.subtype_comp_ofEq`.
 -/
 
 public section
@@ -132,6 +134,18 @@ theorem toLinearMap_eq_id_or_neg_of_unique {ι : Type*} [Unique ι] (e : (ι →
     [left; right] <;> exact LinearMap.ext fun x => by simp [smulOfUnit]
 
 end LinearEquiv
+
+namespace Submodule
+
+/-- Following the identification `p ≃ q` of equal submodules by the inclusion of `q` is the
+inclusion of `p`. -/
+@[simp]
+theorem subtype_comp_ofEq {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {p q : Submodule R M} (h : p = q) :
+    q.subtype ∘ₗ (LinearEquiv.ofEq p q h).toLinearMap = p.subtype :=
+  LinearMap.ext fun x ↦ LinearEquiv.coe_ofEq_apply h x
+
+end Submodule
 
 namespace LinearMap
 

@@ -26,6 +26,7 @@ is a countable union of images under open embeddings of chart domains.
 
 ## Main results
 
+* `ContinuousOn.measurableSet_preimage_inter`
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
 * `IsLocalHomeomorph.measurableSet_image`
@@ -35,6 +36,17 @@ is a countable union of images under open embeddings of chart domains.
 public section
 
 open MeasureTheory Topology
+
+/-- The preimage of a measurable set under a map continuous on a measurable carrier is
+measurable after intersecting with that carrier. -/
+theorem ContinuousOn.measurableSet_preimage_inter {X Y : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [TopologicalSpace Y] [MeasurableSpace Y]
+    [BorelSpace Y] {f : X → Y} {s : Set X} {A : Set Y} (hc : ContinuousOn f s)
+    (hs : MeasurableSet s) (hA : MeasurableSet A) : MeasurableSet (f ⁻¹' A ∩ s) := by
+  rw [Set.inter_comm, ← Subtype.image_preimage_coe]
+  apply (MeasurableEmbedding.subtypeVal hs).measurableSet_image.mpr
+  rw [← Set.preimage_comp, ← Set.domRestrict_eq]
+  exact hc.domRestrict.measurable hA
 
 /-- The Borel σ-algebra of the domain of an inducing map is the pullback of the Borel σ-algebra
 of its codomain. -/
@@ -64,7 +76,7 @@ theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace 
   -- On the source of `e x`, the map `f` is the open embedding `(e x).source.domRestrict (e x)`.
   rw [hfe x, ← Set.image_domRestrict]
   exact (e x).isOpenEmbedding_restrict.measurableEmbedding.measurableSet_image'
-    (measurable_subtype_coe hs)
+    (measurable_subtypeVal hs)
 
 namespace MeasureTheory.Measure
 

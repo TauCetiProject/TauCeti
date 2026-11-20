@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
+public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
+public import TauCeti.RingTheory.PowerSeries.TateAlgebra
+import TauCeti.Analysis.Normed.Ring.Ultra
+import TauCeti.Topology.Algebra.Nonarchimedean.Lattice
+import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
 # The Gauss topology of a family of radii
@@ -20,9 +24,9 @@ norms at all the radii `ρ i` once, so that each of these algebras is a speciali
 The subring is described by a membership condition `hT`, and its uniformity by the hypothesis
 that restriction to the closed discs of all radii is uniformly inducing. Under these hypotheses,
 convergence is convergence in each Gauss norm, and it may be tested at any family of radii that
-dominates `ρ`. The resulting uniform ring is a topological ring in which polynomial truncations
-converge. When `ι` is nonempty, restriction is a uniform embedding whose image consists of the
-families with the same formal coefficients at every radius. That image is closed, so the
+dominates `ρ`. The resulting uniform ring is a nonarchimedean topological ring in which polynomial
+truncations converge. When `ι` is nonempty, restriction is a uniform embedding whose image consists
+of the families with the same formal coefficients at every radius. That image is closed, so the
 algebra is Hausdorff and is complete when `R` is complete.
 
 ## Main definitions
@@ -37,9 +41,15 @@ algebra is Hausdorff and is complete when `R` is complete.
   any dominating family of radii.
 * `TauCeti.PowerSeries.GaussFamily.denseRange_polynomialHom`: polynomials are dense.
 * `TauCeti.PowerSeries.GaussFamily.range_restrictFamily`: the image of the restriction embedding.
-* `TauCeti.PowerSeries.GaussFamily.isTopologicalRing`, `TauCeti.PowerSeries.GaussFamily.t2Space`
-  and `TauCeti.PowerSeries.GaussFamily.completeSpace`: the ring structure, separation and
-  completeness of the Gauss topology.
+* `TauCeti.PowerSeries.GaussFamily.isTopologicalRing`,
+  `TauCeti.PowerSeries.GaussFamily.nonarchimedeanRing`, `TauCeti.PowerSeries.GaussFamily.t2Space`
+  and `TauCeti.PowerSeries.GaussFamily.completeSpace`: the nonarchimedean ring structure,
+  separation and completeness of the Gauss topology.
+* `TauCeti.PowerSeries.GaussFamily.hasProd_iff`,
+  `TauCeti.PowerSeries.GaussFamily.multipliable_iff`,
+  `TauCeti.PowerSeries.GaussFamily.restrict_tprod` and
+  `TauCeti.PowerSeries.GaussFamily.constantCoeff_tprod`: convergence and evaluation at `0` of
+  unconditional infinite products over commutative coefficients.
 -/
 
 public section
@@ -95,7 +105,7 @@ theorem range_restrictFamily :
     have heq (i) : (g i : R⟦X⟧) = (g i₀ : R⟦X⟧) := PowerSeries.ext (hg i i₀)
     refine ⟨⟨(g i₀ : R⟦X⟧), (hT _).mpr fun i ↦ ?_⟩, ?_⟩
     · rw [← heq i]
-      exact (g i).2
+      exact (g i).property
     · funext i
       exact Subtype.ext (heq i).symm
 
@@ -174,6 +184,14 @@ theorem isTopologicalRing : IsTopologicalRing T :=
   have := isUniformAddGroup hu
   { continuous_mul := (hu.isInducing.continuousMul (restrictFamily hT)).continuous_mul }
 
+/-- The Gauss topology makes `T` a nonarchimedean ring, since open additive subgroups of the
+product of closed-disc algebras pull back to open additive subgroups of `T`. -/
+theorem nonarchimedeanRing : NonarchimedeanRing T :=
+  have := isTopologicalRing hu
+  have h : NonarchimedeanAddGroup T :=
+    hu.isInducing.eq_induced.symm ▸ TauCeti.nonarchimedeanAddGroup_induced (restrictFamily hT)
+  { is_nonarchimedean := h.is_nonarchimedean }
+
 /-- Polynomial truncations converge in the Gauss norms at all the radii simultaneously, for any
 inclusion `φ` of the polynomials into `T`. -/
 theorem tendsto_polynomialHom_trunc (φ : Polynomial R →+* T) (hφ : ∀ p, (φ p : R⟦X⟧) = p)
@@ -209,5 +227,62 @@ omit [Nonempty ι] in
 /-- The Gauss topology is complete over complete coefficients. -/
 theorem completeSpace [CompleteSpace R] : CompleteSpace T :=
   hu.completeSpace (isClosed_range_restrictFamily hT).isComplete
+
+end TauCeti.PowerSeries.GaussFamily
+
+namespace TauCeti.PowerSeries.GaussFamily
+
+section NormedCommRing
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {ι : Type*} {ρ : ι → ℝ}
+  [∀ i, Fact (0 < ρ i)] {T : Subring R⟦X⟧}
+  {hT : ∀ f : R⟦X⟧, f ∈ T ↔ ∀ i, f.IsRestricted (ρ i)}
+  [UniformSpace T] (hu : IsUniformInducing (restrictFamily hT))
+include hu
+
+/-- An unconditional product converges in `T` exactly when its restriction to the closed disc of
+every radius `ρ i` converges. -/
+theorem hasProd_iff {κ : Type*} {f : κ → T} {g : T} :
+    HasProd f g ↔ ∀ i, HasProd (fun j ↦ restrict hT i (f j)) (restrict hT i g) := by
+  simp only [HasProd, SummationFilter.unconditional_filter, tendsto_iff hu, map_prod]
+
+/-- A family in `T` is unconditionally multipliable exactly when its restriction to the closed disc
+of every radius `ρ i` is multipliable. -/
+theorem multipliable_iff {κ : Type*} {f : κ → T} :
+    Multipliable f ↔ ∀ i, Multipliable fun j ↦ restrict hT i (f j) := by
+  refine ⟨fun ⟨g, hg⟩ ↦ fun i ↦ ⟨_, (hasProd_iff hu).mp hg i⟩, fun h ↦ ?_⟩
+  rcases isEmpty_or_nonempty ι with hι | _
+  · exact ⟨1, (hasProd_iff hu).mpr fun i ↦ (hι.false i).elim⟩
+  choose g hg using h
+  have hmem : g ∈ Set.range (restrictFamily hT) := by
+    rw [range_restrictFamily]
+    intro i₁ i₂ n
+    have hc (i : ι) : Tendsto (fun s : Finset κ ↦ coeff n ((∏ j ∈ s, f j : T) : R⟦X⟧))
+        atTop (𝓝 (coeff n (g i : R⟦X⟧))) := by
+      have hni := (TauCeti.PowerSeries.uniformContinuous_coeff (R := R) (c := ρ i) n).continuous
+      have hgi := hg i
+      rw [HasProd, SummationFilter.unconditional_filter] at hgi
+      simpa only [Function.comp_def, ← map_prod, coe_restrict] using
+        (hni.tendsto (g i)).comp hgi
+    exact tendsto_nhds_unique (hc i₁) (hc i₂)
+  obtain ⟨f₀, hf₀⟩ := hmem
+  exact ⟨f₀, (hasProd_iff hu).mpr fun i ↦ by rw [← restrictFamily_apply, hf₀]; exact hg i⟩
+
+/-- Restriction to the closed disc of a radius `ρ i` commutes with convergent infinite products. -/
+theorem restrict_tprod {κ : Type*} {f : κ → T} (hf : Multipliable f) (i : ι) :
+    restrict hT i (∏' j, f j) = ∏' j, restrict hT i (f j) :=
+  (((hasProd_iff hu).mp hf.hasProd i).tprod_eq).symm
+
+/-- For a nonempty family of radii, the constant coefficient of a convergent infinite product in
+`T` is the infinite product of the constant coefficients. -/
+theorem constantCoeff_tprod [Nonempty ι] {κ : Type*} {f : κ → T} (hf : Multipliable f) :
+    constantCoeff ((∏' j, f j : T) : R⟦X⟧) = ∏' j, constantCoeff (f j : R⟦X⟧) := by
+  have := t2Space hu
+  have hcont : Continuous (constantCoeff.comp T.subtype) := by
+    simpa only [RingHom.coe_comp, Function.comp_def, Subring.coe_subtype,
+      coeff_zero_eq_constantCoeff] using (uniformContinuous_coeff hu 0).continuous
+  exact (hf.hasProd.map (constantCoeff.comp T.subtype) hcont).tprod_eq.symm
+
+end NormedCommRing
 
 end TauCeti.PowerSeries.GaussFamily

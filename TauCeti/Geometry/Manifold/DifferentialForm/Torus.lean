@@ -116,7 +116,7 @@ its `i`-th coordinate. -/
 @[simp]
 theorem torusTimeForm_apply (i : ι) (x : ∀ i, AddCircle (p i))
     (v : Fin 1 → TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
-    (torusTimeForm p i).1 x v = v 0 i := by
+    (torusTimeForm p i).val x v = v 0 i := by
   rw [torusTimeForm_def, SmoothForm.mpullback_apply, mfderiv_apply, AddCircle.timeForm_apply]
   -- `ContinuousLinearMap.proj i` evaluates the tangent vector `v 0 : ι → ℝ` at `i`.
   rfl
@@ -125,7 +125,7 @@ theorem torusTimeForm_apply (i : ι) (x : ∀ i, AddCircle (p i))
 tangent vector `v : ι → ℝ` of the torus to `∑ j, c j * v j`. -/
 theorem sum_smul_torusTimeForm_apply (c : ι → ℝ) (x : ∀ i, AddCircle (p i))
     (v : Fin 1 → TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
-    (∑ j, c j • torusTimeForm p j).1 x v = ∑ j, c j * v 0 j := by
+    (∑ j, c j • torusTimeForm p j).val x v = ∑ j, c j * v 0 j := by
   simp [Finset.sum_apply]
 
 /-- The coordinate time forms of the torus are closed. -/
@@ -250,16 +250,16 @@ theorem mpullback_update_torusTimeForm_of_ne (x : ∀ i, AddCircle (p i)) {i j :
   rw [torusTimeForm, ← LinearMap.comp_apply, ← SmoothForm.mpullback_comp]
   refine Subtype.ext <| funext fun y ↦ ContinuousAlternatingMap.ext fun v ↦ ?_
   rw [SmoothForm.coe_mpullback, mpullback_apply, hconst, mfderiv_const]
-  exact (AddCircle.timeForm (p j)).1 _ |>.map_coord_zero 0 rfl
+  exact (AddCircle.timeForm (p j)).val _ |>.map_coord_zero 0 rfl
 
 /-- The integral of the coordinate time form `dt_i` along the `i`-th coordinate circle through `x`,
 `t ↦ update x i t`, from `a` to `b` is `b - a`. In particular one circuit `0 ≤ t ≤ p i` has
 integral the period `p i`. -/
 @[simp]
 theorem pathIntegral_torusTimeForm_update_self (x : ∀ i, AddCircle (p i)) (i : ι) (a b : ℝ) :
-    pathIntegral (torusTimeForm p i).1 (fun t : ℝ ↦ update x i (t : AddCircle (p i))) a b =
+    pathIntegral (torusTimeForm p i).val (fun t : ℝ ↦ update x i (t : AddCircle (p i))) a b =
       b - a := by
-  have h := pathIntegral_mpullback (torusTimeForm p i).1 (a := a) (b := b)
+  have h := pathIntegral_mpullback (torusTimeForm p i).val (a := a) (b := b)
     (fun _ _ ↦ (hasMFDerivAt_update x i _).mdifferentiableAt)
     (fun t _ ↦ (AddCircle.hasMFDerivAt_coe (p i) t).mdifferentiableAt)
   rw [← SmoothForm.coe_mpullback _ (contMDiff_update (I := fun _ : ι ↦ 𝓘(ℝ)) x i),
@@ -273,8 +273,9 @@ vanishes when `j ≠ i`. -/
 @[simp]
 theorem pathIntegral_torusTimeForm_update_of_ne (x : ∀ i, AddCircle (p i)) {i j : ι} (h : j ≠ i)
     (a b : ℝ) :
-    pathIntegral (torusTimeForm p j).1 (fun t : ℝ ↦ update x i (t : AddCircle (p i))) a b = 0 := by
-  have hγ := pathIntegral_mpullback (torusTimeForm p j).1 (a := a) (b := b)
+    pathIntegral (torusTimeForm p j).val (fun t : ℝ ↦ update x i (t : AddCircle (p i))) a b = 0
+        := by
+  have hγ := pathIntegral_mpullback (torusTimeForm p j).val (a := a) (b := b)
     (fun _ _ ↦ (hasMFDerivAt_update x i _).mdifferentiableAt)
     (fun t _ ↦ (AddCircle.hasMFDerivAt_coe (p i) t).mdifferentiableAt)
   rw [← SmoothForm.coe_mpullback _ (contMDiff_update (I := fun _ : ι ↦ 𝓘(ℝ)) x i),
@@ -298,9 +299,9 @@ forms along the `i`-th coordinate circle through `x`, `t ↦ update x i t`, from
 `c i * (b - a)`. In particular its integral over one circuit `0 ≤ t ≤ p i` is `c i * p i`. -/
 theorem pathIntegral_sum_smul_torusTimeForm_update (c : ι → ℝ) (x : ∀ i, AddCircle (p i)) (i : ι)
     (a b : ℝ) :
-    pathIntegral (∑ j, c j • torusTimeForm p j).1
+    pathIntegral (∑ j, c j • torusTimeForm p j).val
         (fun t : ℝ ↦ update x i (t : AddCircle (p i))) a b = c i * (b - a) := by
-  have h := pathIntegral_mpullback (∑ j, c j • torusTimeForm p j).1 (a := a) (b := b)
+  have h := pathIntegral_mpullback (∑ j, c j • torusTimeForm p j).val (a := a) (b := b)
     (fun _ _ ↦ (hasMFDerivAt_update x i _).mdifferentiableAt)
     (fun t _ ↦ (AddCircle.hasMFDerivAt_coe (p i) t).mdifferentiableAt)
   rw [← SmoothForm.coe_mpullback _ (contMDiff_update (I := fun _ : ι ↦ 𝓘(ℝ)) x i),
@@ -330,14 +331,14 @@ theorem torusVolumeForm_def : torusVolumeForm p = SmoothForm.wedgeFamily (torusT
 @[simp]
 theorem torusVolumeForm_apply (x : ∀ i, AddCircle (p i))
     (v : Fin n → TangentSpace (ModelWithCorners.pi fun _ : Fin n ↦ 𝓘(ℝ)) x) :
-    (torusVolumeForm p).1 x v = (Matrix.of fun i j ↦ v j i).det := by
+    (torusVolumeForm p).val x v = (Matrix.of fun i j ↦ v j i).det := by
   rw [torusVolumeForm, SmoothForm.wedgeFamily_apply]
   simp only [torusTimeForm_apply, Matrix.cons_val_fin_one]
 
 /-- The volume form of the torus has constant coefficients in the product charts: at every point
 it is the same alternating map of `Fin n → ℝ` as at `0`. -/
 theorem torusVolumeForm_apply_eq_apply_zero (x : ∀ i, AddCircle (p i)) :
-    ((torusVolumeForm p).1 x : (Fin n → ℝ) [⋀^Fin n]→L[ℝ] ℝ) = (torusVolumeForm p).1 0 := by
+    ((torusVolumeForm p).val x : (Fin n → ℝ) [⋀^Fin n]→L[ℝ] ℝ) = (torusVolumeForm p).val 0 := by
   ext w
   -- Both sides are the determinant of `w`, read at the points `x` and `0`.
   exact (torusVolumeForm_apply p x w).trans (torusVolumeForm_apply p 0 w).symm
@@ -345,14 +346,14 @@ theorem torusVolumeForm_apply_eq_apply_zero (x : ∀ i, AddCircle (p i)) :
 /-- The volume form of the torus takes the value `1` on the coordinate basis of a tangent
 space. -/
 theorem torusVolumeForm_apply_basisFun (x : ∀ i, AddCircle (p i)) :
-    (torusVolumeForm p).1 x (Pi.basisFun ℝ (Fin n)) = 1 := by
+    (torusVolumeForm p).val x (Pi.basisFun ℝ (Fin n)) = 1 := by
   refine (torusVolumeForm_apply p x _).trans ?_
   convert Matrix.det_one (n := Fin n) (R := ℝ)
   ext i j
   simp [Matrix.one_apply, Pi.single_apply]
 
 /-- The volume form of the torus vanishes nowhere. -/
-theorem torusVolumeForm_apply_ne_zero (x : ∀ i, AddCircle (p i)) : (torusVolumeForm p).1 x ≠ 0 :=
+theorem torusVolumeForm_apply_ne_zero (x : ∀ i, AddCircle (p i)) : (torusVolumeForm p).val x ≠ 0 :=
   fun h ↦ one_ne_zero <| (torusVolumeForm_apply_basisFun p x).symm.trans
     (DFunLike.congr_fun h _)
 
