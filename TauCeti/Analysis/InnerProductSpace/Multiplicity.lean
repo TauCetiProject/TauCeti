@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.RingTheory.Morita.ModuleEnd
-import TauCeti.Analysis.InnerProductSpace.TensorProduct
+import TauCeti.Analysis.InnerProductSpace.TensorProduct.Basic
 
 /-!
 # Sesquilinear forms across Morita evaluation

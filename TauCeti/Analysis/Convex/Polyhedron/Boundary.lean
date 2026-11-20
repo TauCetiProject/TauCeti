@@ -62,7 +62,7 @@ theorem mem_intrinsicInterior_iff_forall_lt [Finite ι] (g : ι → (V →ᴬ[�
     refine lt_of_le_of_ne (hle x (intrinsicInterior_subset hx)) fun hx0 => ?_
     have := eq_zero_of_nonneg_of_mem_intrinsicInterior (g := -(g j).toAffineMap)
       (fun y hy => by simpa using hle y hy) hx (by simp [hx0]) hp
-    simp only [AffineMap.coe_neg, Pi.neg_apply, neg_eq_zero] at this
+    simp only [FunLike.coe_neg, Pi.neg_apply, neg_eq_zero] at this
     exact hgp.ne this
   · rintro ⟨hxP, hxstrict⟩
     let A := affineSpan ℝ P
@@ -73,7 +73,7 @@ theorem mem_intrinsicInterior_iff_forall_lt [Finite ι] (g : ι → (V →ᴬ[�
       have heq : U = ⋂ j : J, {y : A | g j.val (y : V) < 0} := by ext y; simp [U]
       rw [heq]
       exact isOpen_iInter_of_finite fun j =>
-        isOpen_lt ((g j.val).continuous.comp continuous_subtype_val) continuous_const
+        isOpen_lt ((g j.val).continuous.comp continuous_subtypeVal) continuous_const
     have hxU : xA ∈ U := fun j => hxstrict j.val j.property
     have hUP : U ⊆ ((↑) ⁻¹' P : Set A) := by
       intro y hy
@@ -105,7 +105,7 @@ theorem intrinsicFrontier_eq_iUnion_active [Finite ι] (g : ι → (V →ᴬ[ℝ
     exact (isConvexPolyhedron_setOf_forall g).isClosed
   have hrel : intrinsicClosure ℝ P = P :=
     IsClosed.intrinsicClosure (hclosed.preimage
-      (continuous_subtype_val : Continuous ((↑) : affineSpan ℝ P → V)))
+      (continuous_subtypeVal : Continuous ((↑) : affineSpan ℝ P → V)))
   rw [← intrinsicClosure_sdiff_intrinsicInterior, hrel]
   ext x
   rw [Set.mem_sdiff, mem_intrinsicInterior_iff_forall_lt g hP]

@@ -318,23 +318,23 @@ theorem singularCohomologyMap_localCohomologyClass (f : F ≃L[ℝ] G)
 real topological vector space `V`, not necessarily normed. Pulling back, along a continuous linear
 equivalence `f : V ≃L[ℝ] F` onto a normed space of dimension `n + 1`, the generator of
 `Hⁿ⁺¹(F, F ∖ {0}; ℤ)` selected by the transported orientation `ω.map f` gives a class of
-`Hⁿ⁺¹(V, V ∖ {0}; ℤ)` that does not depend on `f`. This is how an orientation of a fibre of a
-vector bundle selects a generator through any trivialization. -/
+`Hⁿ⁺¹(V, V ∖ {0}; ℤ)` that does not depend on `f`, nor on the target `F`. This is how an
+orientation of a fibre of a vector bundle selects a generator through any trivialization. -/
 theorem singularCohomologyMap_localCohomologyClass_map_eq {V : Type w} [TopologicalSpace V]
-    [AddCommMonoid V] [Module ℝ V] (ω : Orientation ℝ V (Fin (n + 1))) (f f' : V ≃L[ℝ] F)
-    (hF : finrank ℝ F = n + 1) :
+    [AddCommMonoid V] [Module ℝ V] (ω : Orientation ℝ V (Fin (n + 1))) (f : V ≃L[ℝ] F)
+    (f' : V ≃L[ℝ] G) (hF : finrank ℝ F = n + 1) (hG : finrank ℝ G = n + 1) :
     TopPair.singularCohomologyMap f.complZeroPairIso.hom (n + 1)
         ((ω.map _ f.toLinearEquiv).localCohomologyClass hF) =
       TopPair.singularCohomologyMap f'.complZeroPairIso.hom (n + 1)
-        ((ω.map _ f'.toLinearEquiv).localCohomologyClass hF) := by
-  -- `f'` is `f` followed by the automorphism `h = f⁻¹ ≫ f'` of `F`, which carries the generator
+        ((ω.map _ f'.toLinearEquiv).localCohomologyClass hG) := by
+  -- `f'` is `f` followed by the isomorphism `h = f⁻¹ ≫ f' : F ≃ G`, which carries the generator
   -- selected by `ω.map f'` back to the one selected by `ω.map f`.
-  obtain ⟨h, rfl⟩ : ∃ h : F ≃L[ℝ] F, f' = f.trans h := ⟨f.symm.trans f', by ext; simp⟩
+  obtain ⟨h, rfl⟩ : ∃ h : F ≃L[ℝ] G, f' = f.trans h := ⟨f.symm.trans f', by ext; simp⟩
   have hmap : ω.map _ (f.trans h).toLinearEquiv =
       (ω.map _ f.toLinearEquiv).map _ h.toLinearEquiv :=
     Orientation.map_trans f.toLinearEquiv h.toLinearEquiv ω
   rw [hmap, ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom,
     TopPair.singularCohomologyMap_comp_apply,
-    singularCohomologyMap_localCohomologyClass h _ hF hF]
+    singularCohomologyMap_localCohomologyClass h _ hF hG]
 
 end Orientation

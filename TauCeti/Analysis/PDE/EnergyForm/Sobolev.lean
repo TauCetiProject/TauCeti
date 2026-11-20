@@ -102,13 +102,18 @@ estimates do not see the boundary.
   almost everywhere symmetric principal coefficient.
 * `TauCeti.PDE.energyFormH1L` and `TauCeti.PDE.energyFormH1L0`: the energy form bundled as a
   continuous bilinear map on `H¹(Ω)` and on `H¹₀(Ω)`, built from
-  `TauCeti.PDE.energyFormLpVariable`.
+  `TauCeti.PDE.energyFormLpVariable`, and
+  `TauCeti.PDE.abs_energyFormH1_le_norm_energyFormH1L_mul`: `|B(u, v)| ≤ ‖B‖ ‖u‖ ‖v‖`.
 * `TauCeti.PDE.energyFormH1L0_comm`: symmetry of the bundled `H¹₀` energy form, from symmetry of
   the energy form at the functions of `H¹₀(Ω)`.
-* `TauCeti.PDE.exists_forcing_energyFormH1_principal_eq`: a weak equation with bounded
-  lower-order coefficients gives a weak equation for its principal part with an `L²` forcing.
+* `TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub` and
+  `TauCeti.PDE.exists_forcing_energyFormH1_principal_eq`: a weak equation with bounded
+  lower-order coefficients gives a weak equation for its principal part with the `L²` forcing
+  `f - ⟪b, ∇u⟫ - c u`.
 * `TauCeti.PDE.UniformlyEllipticOn.integrable_energyIntegrand_jetField`: the energy density of
   two Sobolev functions is integrable.
+* `TauCeti.PDE.UniformlyEllipticOn.integrable_matrixBilinearForm_gradient`: the principal
+  density `⟨a ∇u, ∇w⟩` of two Sobolev functions is integrable.
 * `TauCeti.PDE.UniformlyEllipticOn.norm_energyFormH1_le`: boundedness of the energy form, with
   explicit constant `Λ + β + γ`.
 * `TauCeti.PDE.UniformlyEllipticOn.garding_energyFormH1_self`: Gårding's inequality on `H¹(Ω)`.
@@ -130,6 +135,8 @@ estimates do not see the boundary.
   lower bound `λ‖∇u‖²_{L²} ≤ a(u, u)` when the drift vanishes, and
   `TauCeti.PDE.UniformlyEllipticOn.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift`: the
   corresponding `H¹`-norm lower bound for any function satisfying a Poincaré inequality.
+* `TauCeti.PDE.abs_energyFormH1_sub_energyFormH1_le`: `|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖`
+  when the coefficient differences are bounded by `Λ, β, γ`.
 * `TauCeti.PDE.norm_energyFormH1L_le_of_bounds`: the bundled form's operator-norm bound, stated
   from almost-everywhere upper coefficient bounds without requiring lower ellipticity.
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_slab` and
@@ -180,6 +187,15 @@ theorem jetField_apply (u : W1p mu Omega p) (x : E) :
     unfold jetField
     rfl
 
+open scoped Gradient in
+/-- The jet of a test function, as an element of `W^{1,p}(Ω)`, is its value and gradient. -/
+theorem jetField_ofTestFunctionₗ_ae [FiniteDimensional ℝ E] (φ : 𝓓(Omega, ℝ)) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      jetField (W1p.ofTestFunctionₗ mu Omega p φ) x = (φ x, ∇ (φ : E → ℝ) x) := by
+  filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ,
+    gradientTestFunctionLp_apply_ae (mu := mu) p φ] with x h1 h2
+  rw [jetField_apply, h1, W1p.gradient_ofTestFunctionₗ, h2]
+
 private theorem jetField_zero_ae :
     jetField (0 : W1p mu Omega p) =ᵐ[mu.restrict Omega] 0 := by
   have hval : W1p.value (0 : W1p mu Omega p) = 0 := by
@@ -195,23 +211,14 @@ private theorem jetField_zero_ae :
 
 private theorem jetField_add_ae (u v : W1p mu Omega p) :
     jetField (u + v) =ᵐ[mu.restrict Omega] fun x => jetField u x + jetField v x := by
-  have hval : W1p.value (u + v) = W1p.value u + W1p.value v := by
-    simp only [← W1p.valueL_apply, map_add]
-  have hgrad : W1p.gradient (u + v) = W1p.gradient u + W1p.gradient v := by
-    simp only [← W1p.gradientL_apply, map_add]
-  filter_upwards [Lp.coeFn_add (W1p.value u) (W1p.value v),
-    Lp.coeFn_add (W1p.gradient u) (W1p.gradient v)] with x hx hy
-  simp only [jetField_apply, hval, hgrad]
+  filter_upwards [W1p.value_add_ae u v, W1p.gradient_add_ae u v] with x hx hy
+  simp only [jetField_apply]
   exact Prod.ext hx hy
 
 private theorem jetField_smul_ae (r : ℝ) (u : W1p mu Omega p) :
     jetField (r • u) =ᵐ[mu.restrict Omega] fun x => r • jetField u x := by
-  have hval : W1p.value (r • u) = r • W1p.value u := by
-    simp only [← W1p.valueL_apply, map_smul]
-  have hgrad : W1p.gradient (r • u) = r • W1p.gradient u := by
-    simp only [← W1p.gradientL_apply, map_smul]
-  filter_upwards [Lp.coeFn_smul r (W1p.value u), Lp.coeFn_smul r (W1p.gradient u)] with x hx hy
-  simp only [jetField_apply, hval, hgrad]
+  filter_upwards [W1p.value_smul_ae r u, W1p.gradient_smul_ae r u] with x hx hy
+  simp only [jetField_apply]
   exact Prod.ext hx hy
 
 /-- The jet field of a Sobolev function belongs to `Lᵖ(Ω)`: both of its components do, by the
@@ -249,6 +256,14 @@ theorem memLp_energyIntegrand_of_bounds
     (aestronglyMeasurable_energyIntegrand ha hb hc) (Lam + beta + gamma) ?_
   exact (ae_mem_restrict (mu := mu) (Omega := Omega)).mono fun x hx =>
     opNorm_energyIntegrand_le_of_bounds hLam (ha_bound x hx) (hb_bound x hx) (hc_bound x hx)
+
+/-- Constant principal coefficients without drift or mass define an essentially bounded field of
+pointwise energy forms. -/
+theorem memLp_energyIntegrand_const_zero_zero (A : Matrix ι ι ℝ) :
+    MemLp (fun x => energyIntegrand ((fun _ => A) x)
+      ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x) ((0 : EuclideanSpace ℝ ι → ℝ) x)) ⊤
+      (mu.restrict Omega) := by
+  simpa using memLp_top_const (μ := mu.restrict Omega) (energyIntegrand A 0 0)
 
 /-- Subtracting a constant from the mass coefficient preserves essential boundedness of the
 pointwise energy forms. -/
@@ -332,7 +347,7 @@ theorem jetLpL_apply_ae (u : W1p mu Omega 2) :
 /-- The squared gradient component of the Sobolev jet field is integrable. -/
 theorem integrable_norm_jetField_snd_sq (u : W1p mu Omega 2) :
     Integrable (fun x => ‖(jetField u x).2‖ ^ 2) (mu.restrict Omega) := by
-  simpa only [jetField_apply] using W1p.integrable_norm_gradient_sq u
+  simpa only [jetField_apply] using (Lp.memLp (W1p.gradient u)).norm.integrable_sq
 
 /-- The squared value component of the Sobolev jet field is integrable. -/
 theorem integrable_jetField_fst_sq (u : W1p mu Omega 2) :
@@ -695,6 +710,15 @@ theorem energyFormH1L_apply
   filter_upwards [jetLpL_apply_ae u, jetLpL_apply_ae v] with x hu hv
   rw [hu, hv]
 
+/-- The Sobolev energy form is bounded by the norm of its bundled continuous bilinear form:
+`|B(u, v)| ≤ ‖B‖ ‖u‖ ‖v‖` on `H¹(Ω)`. -/
+theorem abs_energyFormH1_le_norm_energyFormH1L_mul
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    |energyFormH1 a b c u v| ≤ ‖energyFormH1L hcoeff‖ * ‖u‖ * ‖v‖ := by
+  rw [← energyFormH1L_apply hcoeff, ← Real.norm_eq_abs]
+  exact (energyFormH1L hcoeff).le_opNorm₂ u v
+
 /-- Additivity of the Sobolev energy form in its left argument. -/
 theorem energyFormH1_add_left
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -776,6 +800,24 @@ theorem norm_energyFormH1_le_of_bounds
   rw [integral_const_mul]
   exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
 
+/-- **The difference of two energy forms.** If both coefficient fields are essentially bounded
+and almost everywhere on `Ω` we have `|ηᵀ (a - a') ξ| ≤ Λ ‖η‖ ‖ξ‖`, `‖b - b'‖ ≤ β` and
+`|c - c'| ≤ γ`, then the energy forms `B` of `(a, b, c)` and `B'` of `(a', b', c')` satisfy
+`|B(u, v) - B'(u, v)| ≤ (Λ + β + γ) ‖u‖ ‖v‖` on `H¹(Ω)`: their difference is the energy form of
+the difference of the coefficients. -/
+theorem abs_energyFormH1_sub_energyFormH1_le {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c' : EuclideanSpace ℝ ι → ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff' : MemLp (fun x => energyIntegrand (a' x) (b' x) (c' x)) ⊤ (mu.restrict Omega))
+    (hLam : 0 ≤ Lam)
+    (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ η ξ : EuclideanSpace ℝ ι,
+      |η ⬝ᵥ ((a x - a' x) *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (hb : ∀ᵐ x ∂mu.restrict Omega, ‖b x - b' x‖ ≤ beta)
+    (hc : ∀ᵐ x ∂mu.restrict Omega, ‖c x - c' x‖ ≤ gamma) (u v : W1p mu Omega 2) :
+    |energyFormH1 a b c u v - energyFormH1 a' b' c' u v| ≤ (Lam + beta + gamma) * ‖u‖ * ‖v‖ := by
+  rw [← energyFormH1_sub hcoeff hcoeff', ← Real.norm_eq_abs, mul_assoc]
+  exact norm_energyFormH1_le_of_bounds (a := a - a') (b := b - b') (c := c - c') hLam ha hb hc u v
+
 /-- The operator norm of the bundled Sobolev energy form is controlled by almost-everywhere
 coefficient upper bounds on `Ω`. -/
 theorem norm_energyFormH1L_le_of_bounds
@@ -828,28 +870,47 @@ theorem energyFormH1L0_comm
   exact hsymm u v
 
 open scoped InnerProductSpace in
-/-- A weak equation with an essentially bounded principal energy density and bounded
-lower-order coefficients admits an `L²` forcing for its principal part alone. Neither
-ellipticity nor a boundary condition on the solution is required. -/
-theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+/-- A bounded drift paired with the gradient of an `H¹` function is square integrable. -/
+private theorem memLp_inner_gradient {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
+  MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
+    (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
+
+open scoped InnerProductSpace in
+/-- With bounded lower-order coefficients, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal
+equation is square integrable. -/
+private theorem memLp_forcing_principal {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    MemLp (fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) 2
+      (mu.restrict Omega) :=
+  ((Lp.memLp f).sub (memLp_inner_gradient hb u)).sub (hc.fun_mul (Lp.memLp _))
+
+open scoped InnerProductSpace in
+/-- **Moving the lower-order terms to the right-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`, with an essentially bounded principal energy density,
+bounded lower-order coefficients and `f ∈ L²(Ω)`, then `u` is a weak solution of the principal
+equation `-∂ᵢ(aⁱʲ ∂ⱼu) = f - ⟪b, ∇u⟫ - c u`: for every `v ∈ H¹₀(Ω)`,
+
+`∫_Ω ⟨∇v, a ∇u⟩ = ∫_Ω (f - ⟪b, ∇u⟫ - c u) v`.
+
+Neither ellipticity nor a boundary condition on the solution is required. -/
+theorem energyFormH1_principal_eq_setIntegral_sub {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
     (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
     (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2,
       energyFormH1 a b c u (v : W1p mu Omega 2) =
-        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
-    ∃ g : Lp ℝ 2 (mu.restrict Omega), ∀ v : W1p0 mu Omega 2,
-      energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
-        ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hB : MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
-    MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
-      (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    (v : W1p0 mu Omega 2) :
+    energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+      ∫ x in Omega, (f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) *
+        W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  have hB := memLp_inner_gradient hb u
   have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
     hc.fun_mul (Lp.memLp _)
-  let G := fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x
-  have hG : MemLp G 2 (mu.restrict Omega) := ((Lp.memLp f).sub hB).sub hC
-  refine ⟨hG.toLp G, fun v => ?_⟩
   have hv := Lp.memLp (W1p.value (v : W1p mu Omega 2))
   have hF : Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x)
       (mu.restrict Omega) := (Lp.memLp f).integrable_mul hv
@@ -887,13 +948,32 @@ theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → 
           W1p.value (v : W1p mu Omega 2) x ∂mu -
         ∫ x in Omega, (c x * W1p.value u x) *
           W1p.value (v : W1p mu Omega 2) x ∂mu := by linarith
-    _ = ∫ x in Omega, G x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-      simp only [G, sub_mul]
+    _ = _ := by
+      simp only [sub_mul]
       rw [integral_sub (hF.sub' hBv) hCv, integral_sub hF hBv]
-    _ = ∫ x in Omega, (hG.toLp G) x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-      apply integral_congr_ae
-      filter_upwards [hG.coeFn_toLp] with x hx
-      rw [hx]
+
+open scoped InnerProductSpace in
+/-- A weak equation with an essentially bounded principal energy density and bounded
+lower-order coefficients admits an `L²` forcing for its principal part alone. Neither
+ellipticity nor a boundary condition on the solution is required. The forcing is
+`f - ⟪b, ∇u⟫ - c u` (`TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub`). -/
+theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (ha : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega))
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
+    ∃ g : Lp ℝ 2 (mu.restrict Omega), ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
+        ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  have hG := memLp_forcing_principal hb hc f u
+  refine ⟨hG.toLp _, fun v => ?_⟩
+  rw [energyFormH1_principal_eq_setIntegral_sub ha hb hc hu v]
+  refine integral_congr_ae ?_
+  filter_upwards [hG.coeFn_toLp] with x hx
+  rw [hx]
 
 namespace UniformlyEllipticOn
 
@@ -924,6 +1004,17 @@ theorem integrable_energyIntegrand_jetField
   PDE.integrable_energyIntegrand_jetField
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound) u v
+
+/-- The density `⟨a ∇u, ∇w⟩` of the principal energy form is integrable on `Ω` for a measurable
+uniformly elliptic `a` and `u, w ∈ H¹(Ω)`. -/
+theorem integrable_matrixBilinearForm_gradient
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega)) (u w : W1p mu Omega 2) :
+    Integrable (fun x => matrixBilinearForm (a x) (W1p.gradient w x) (W1p.gradient u x))
+      (mu.restrict Omega) := by
+  simpa using h.integrable_energyIntegrand_jetField ha (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
+    (fun _ _ => by simp) u w
 
 /-- **Boundedness of the energy form on `H¹(Ω)`.** For a uniformly elliptic principal
 coefficient with upper constant `Λ`, a drift bounded by `β` and a mass coefficient bounded by

@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Instances.AddCircle.Cover
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 
 /-!
 # Covering maps of circles and cylinders

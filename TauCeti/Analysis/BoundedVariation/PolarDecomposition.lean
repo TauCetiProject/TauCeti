@@ -146,8 +146,8 @@ private theorem exists_le_one :
     rw [Measure.setLIntegral_rnDeriv hlam, ← eNorm_neg, ← hrep]
     exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin φ hφU hφ
   -- Normalize `g` by `k`.
-  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
-  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hgm hbound
+  refine ⟨σ, hσm, Filter.Eventually.of_forall hσ1, fun φ => ?_⟩
   rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
   congr 1
   refine integral_congr_ae ?_
@@ -165,7 +165,7 @@ private theorem ae_norm_eq_one_of_le_one {σ : Ω → E}
   set lam := variationMeasure μ Ω u
   -- Testing the supremum defining `|Du|(V)` gives `|Du|(V) ≤ ∫_V ‖σ‖ d|Du|` on open sets.
   have hopen (V : Set Ω) (hV : IsOpen V) : lam V ≤ ∫⁻ x in V, ‖σ x‖ₑ ∂lam := by
-    set U : Opens E := ⟨(↑) '' V, Ω.isOpen.isOpenMap_subtype_val V hV⟩
+    set U : Opens E := ⟨(↑) '' V, Ω.isOpen.isOpenMap_subtypeVal V hV⟩
     have hU : U ≤ Ω := Subtype.coe_image_subset _ _
     have hUV : ((↑) : Ω → E) ⁻¹' (U : Set E) = V := preimage_image_eq V Subtype.val_injective
     rw [← hUV, variationMeasure_preimage_coe hu hfin hU, totalVariationOn_le_iff]
@@ -367,7 +367,7 @@ theorem integrable_inner_polarDensity
     by_contra hxK
     exact hx (by simp [image_eq_zero_of_notMem_tsupport hxK])
   · refine Measure.integrableOn_of_bounded hK.measure_lt_top.ne
-      ((hf.comp continuous_subtype_val).aestronglyMeasurable.inner
+      ((hf.comp continuous_subtypeVal).aestronglyMeasurable.inner
         measurable_polarDensity.aestronglyMeasurable) (M := C) ?_
     filter_upwards [ae_restrict_mem hK.measurableSet,
       ae_restrict_of_ae (ae_norm_polarDensity_eq_one hu hfin)] with x hx hσ

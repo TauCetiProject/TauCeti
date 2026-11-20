@@ -134,7 +134,7 @@ Chevalley datum with its integral coordinate lattice and basis. -/
   injective_representation_ι := T.pinnedRepresentation_ι_injective_of_span_int ht hCM hspan
   lattice := (coordinateLattice (Fin d)).toAddSubgroup
   representation_mem_lattice := T.pinnedRepresentation_kostantForm_mem_coordinateLattice ht hCM
-  span_lattice_eq_top := Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
+  span_lattice_eq_top := Submodule.IsFullLattice.span_eq_top (R := ℤ) (A := ℚ)
   dim := d
   basis := coordinateLatticeBasis (Fin d)
   weight := T.weight
@@ -174,14 +174,14 @@ Chevalley datum with its integral coordinate lattice and basis. -/
 /-- The coordinate weights are the table's fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
     (T.chevalleyDatum ht hCM hspan).coordinateWeight = T.weight :=
-  (T.chevalleyDatum ht hCM hspan).coordinateWeight_eq_weight
+  (T.chevalleyDatum ht hCM hspan).coordinateWeight_eq_of_coe_weightLatticeBasis
     (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan)
 
 /-- The coordinate roots are the pinned fundamental-weight coordinates of the roots. -/
 @[simp] theorem chevalleyDatum_coordinateRoot :
     (T.chevalleyDatum ht hCM hspan).coordinateRoot = (t.simplyConnectedRootDatum ht).root :=
-  (T.chevalleyDatum ht hCM hspan).coordinateRoot_eq_root
-    (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan)
+  funext ((T.chevalleyDatum ht hCM hspan).coordinateRoot_eq_of_coe_weightLatticeBasis
+    (T.coe_chevalleyDatum_weightLatticeBasis ht hCM hspan))
 
 end
 

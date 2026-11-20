@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
 
 /-!
 # Transport of A-infinity algebras along linear maps
@@ -36,8 +36,10 @@ subcategory of an `A∞` category form a sub-`A∞` algebra of the total algebra
 
 * `TauCeti.AInfinityAlgebra.map_grading` and `TauCeti.AInfinityAlgebra.map_m_apply`: the grading
   and the operations of the transported algebra.
-* `TauCeti.AInfinityAlgebra.comap_grading` and `TauCeti.AInfinityAlgebra.map_m_comap`: the
-  grading of the pulled-back algebra, and the injective map intertwines the operations.
+* `TauCeti.AInfinityAlgebra.comap_grading`, `TauCeti.AInfinityAlgebra.map_m_comap`, and
+  `TauCeti.AInfinityAlgebra.StrictUnit.comap`: the grading of the pulled-back algebra, the
+  injective map intertwines the operations, and any preimage of a strict unit is a strict unit
+  of the pullback.
 
 ## References
 
@@ -91,7 +93,7 @@ end Map
 
 section Comap
 
-variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A) (f : A →ₗ[R] B)
+variable (ℬ : AInfinityAlgebra R B) (G : InternalGrading R A ℤ) (f : A →ₗ[R] B)
   (hf : Function.Injective f) (hG : ∀ (p : ℤ) (a : A), f a ∈ ℬ.grading.piece p ↔ a ∈ G.piece p)
   (hm : ∀ n, 0 < n → ∀ x : Fin n → A, ℬ.m n (fun i ↦ f (x i)) ∈ LinearMap.range f)
 
@@ -154,6 +156,24 @@ theorem eq_comap {ℬ' : AInfinityAlgebra R A} (hG' : ℬ'.grading = G)
   · rw [ℬ'.m_zero, AInfinityAlgebra.m_zero]
   · exact MultilinearMap.ext fun x ↦ hf (by rw [hm' n hn, map_m_comap])
 
+/-- A preimage of a strict unit along the injective pullback map is a strict unit of the
+pulled-back `A∞` algebra. -/
+theorem StrictUnit.comap {e : A} (hℬ : ℬ.StrictUnit (f e)) :
+    (ℬ.comap G f hf hG hm).StrictUnit e where
+  degree_zero := by
+    rw [comap_grading]
+    exact (hG 0 e).1 hℬ.degree_zero
+  binary_left x := hf <| by
+    have hfun : (fun i : Fin 2 ↦ f (![e, x] i)) = ![f e, f x] :=
+      funext fun i ↦ by fin_cases i <;> rfl
+    rw [map_m_comap, hfun, hℬ.binary_left]
+  binary_right x := hf <| by
+    have hfun : (fun i : Fin 2 ↦ f (![x, e] i)) = ![f x, f e] :=
+      funext fun i ↦ by fin_cases i <;> rfl
+    rw [map_m_comap, hfun, hℬ.binary_right]
+  higher n hn x := by
+    rintro ⟨i, rfl⟩
+    exact hf (by rw [map_m_comap, hℬ.m_eq_zero_of_eq_unit hn _ rfl, map_zero])
 
 end Comap
 

@@ -164,9 +164,10 @@ theorem ideleHilbertCharacter_ofCompletion (b : Kˣ) (w : InfinitePlace K) (u : 
 Hilbert symbol of the coordinate at `w`, read in `ℝ`, and the image of `b` under the real
 embedding at `w`. -/
 theorem ideleHilbertCharacter_ofCompletion_of_isReal (b : Kˣ)
-    (w : {w : InfinitePlace K // w.IsReal}) (u : w.1.Completionˣ) :
-    ideleHilbertCharacter b (IdeleGroup.ofCompletion (𝓞 K) K w.1 u) =
-      hilbertSymbol (Units.map (Completion.ringEquivRealOfIsReal w.2 : w.1.Completion →* ℝ) u)
+    (w : {w : InfinitePlace K // w.IsReal}) (u : w.val.Completionˣ) :
+    ideleHilbertCharacter b (IdeleGroup.ofCompletion (𝓞 K) K w.val u) =
+      hilbertSymbol (Units.map (Completion.ringEquivRealOfIsReal w.property : w.val.Completion →* ℝ)
+          u)
         (unitAtRealPlace w b) := by
   rw [ideleHilbertCharacter_ofCompletion, ← units_map_ringEquivRealOfIsReal_algebraMap,
     hilbertSymbol_units_map_ringEquiv]
@@ -190,7 +191,8 @@ theorem ideleHilbertCharacter_unitEmbedding (a b : Kˣ) :
   -- The complex places contribute `1`, and the real ones are the real symbols.
   rw [← Fintype.prod_subtype_mul_prod_subtype (fun w : InfinitePlace K ↦ w.IsReal),
     Fintype.prod_eq_one (fun w : {w : InfinitePlace K // ¬w.IsReal} ↦ _) fun w ↦
-      hilbertSymbol_completion_eq_one_of_isComplex (not_isReal_iff_isComplex.mp w.2) _ _, mul_one]
+      hilbertSymbol_completion_eq_one_of_isComplex (not_isReal_iff_isComplex.mp w.property) _ _,
+          mul_one]
   exact Fintype.prod_congr _ _ fun w ↦ hilbertSymbol_completion_eq_unitAtRealPlace w a b
 
 /-! ### Triviality and surjectivity -/
@@ -200,7 +202,7 @@ in the completion at every finite place and positive at every real place. -/
 theorem ideleHilbertCharacter_eq_one_iff (b : Kˣ) :
     ideleHilbertCharacter b = 1 ↔
       (∀ v : HeightOneSpectrum (𝓞 K), IsSquare (v.unitAtFinitePlace b)) ∧
-        ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.2 (b : K) := by
+        ∀ w : {w : InfinitePlace K // w.IsReal}, 0 < embedding_of_isReal w.property (b : K) := by
   constructor
   · intro h
     refine ⟨fun v ↦ ?_, fun w ↦ ?_⟩
@@ -213,8 +215,9 @@ theorem ideleHilbertCharacter_eq_one_iff (b : Kˣ) :
         hilbertSymbol_comm, hu] at h1
       exact absurd h1 (by decide)
     · -- An element negative at `w` has symbol `-1` with `-1` there.
-      have h1 := DFunLike.congr_fun h (IdeleGroup.ofCompletion (𝓞 K) K w.1 (-1))
-      have hneg : Units.map (Completion.ringEquivRealOfIsReal w.2 : w.1.Completion →* ℝ) (-1) =
+      have h1 := DFunLike.congr_fun h (IdeleGroup.ofCompletion (𝓞 K) K w.val (-1))
+      have hneg : Units.map (Completion.ringEquivRealOfIsReal w.property : w.val.Completion →* ℝ)
+          (-1) =
           -1 :=
         Units.ext (by simp)
       rw [ideleHilbertCharacter_ofCompletion_of_isReal, MonoidHom.one_apply, hneg,
@@ -238,7 +241,7 @@ nonsquare in the completion at some finite place or negative at some real place.
 theorem ideleHilbertCharacter_surjective_iff (b : Kˣ) :
     Function.Surjective (ideleHilbertCharacter b) ↔
       (∃ v : HeightOneSpectrum (𝓞 K), ¬IsSquare (v.unitAtFinitePlace b)) ∨
-        ∃ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.2 (b : K) < 0 := by
+        ∃ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.property (b : K) < 0 := by
   -- A homomorphism to the two-element group `ℤˣ` is onto exactly when it is nontrivial.
   have hsurj : Function.Surjective (ideleHilbertCharacter b) ↔ ideleHilbertCharacter b ≠ 1 := by
     have : Fact (Nat.card ℤˣ).Prime :=
@@ -254,7 +257,7 @@ theorem ideleHilbertCharacter_surjective_iff (b : Kˣ) :
 completion at some finite place or negative at some real place. -/
 theorem index_ker_ideleHilbertCharacter {b : Kˣ}
     (hb : (∃ v : HeightOneSpectrum (𝓞 K), ¬IsSquare (v.unitAtFinitePlace b)) ∨
-      ∃ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.2 (b : K) < 0) :
+      ∃ w : {w : InfinitePlace K // w.IsReal}, embedding_of_isReal w.property (b : K) < 0) :
     (ideleHilbertCharacter b).ker.index = 2 := by
   rw [Subgroup.index_ker, MonoidHom.range_eq_top.mpr
     ((ideleHilbertCharacter_surjective_iff b).mpr hb), Subgroup.card_top, Nat.card_eq_fintype_card,
@@ -266,7 +269,8 @@ section IdeleNorm
 
 variable {L : Type*} [Field L] [NumberField L] [Algebra K L] {b : Kˣ}
 
-open scoped AdicCompletionExtension NumberField.LiesOver in
+open scoped AdicCompletionExtension in
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver in
 /-- **The finite coordinates of an idele norm are local norms.** If `b ∈ Kˣ` is a square in a
 number field `L` over `K`, then at every finite place `v` of `K` the coordinate of an idele norm
 from `L` has Hilbert symbol `1` with `b`. It is a product of norms from completions `L_w` in which
@@ -280,14 +284,14 @@ from `L` has Hilbert symbol `1` with `b`. It is a product of norms from completi
     (fun a a' ha ha' ↦ by rw [hilbertSymbol_mul_left_adicCompletion, ha, ha', mul_one])
     fun w ↦ ?_
   -- `L_w` is a `K_v`-algebra through `w ∣ v`, and `b` is a square in it because it is in `L`.
-  have := w.2
+  have := w.property
   rw [hilbertSymbol_comm]
   refine hilbertSymbol_normUnits_eq_one ?_ _
   rw [unitAtFinitePlace_apply, ← IsScalarTower.algebraMap_apply,
     IsScalarTower.algebraMap_apply K L]
   exact hb.map _
 
-open scoped NumberField.LiesOver in
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver in
 /-- **The infinite coordinates of an idele norm are local norms.** If `b ∈ Kˣ` is a square in a
 number field `L` over `K`, then at every infinite place `v` of `K` the coordinate of an idele norm
 from `L` has Hilbert symbol `1` with `b`. -/
@@ -300,7 +304,7 @@ from `L` has Hilbert symbol `1` with `b`. -/
     (hilbertSymbol_completion_one_left v _)
     (fun a a' ha ha' ↦ by rw [hilbertSymbol_completion_mul_left, ha, ha', mul_one]) fun w ↦ ?_
   -- As at the finite places, `b` is a square in `L_w ⊇ K_v`.
-  have := w.2
+  have := w.property
   have : CharZero v.Completion := charZero_of_injective_algebraMap (algebraMap K _).injective
   let : Invertible (2 : v.Completion) := invertibleOfNonzero two_ne_zero
   rw [hilbertSymbol_comm]
@@ -367,13 +371,13 @@ other finite and real place; its image under `φ_b` is `(-1)^(#S + #T)`. -/
 theorem exists_idele_hilbertSymbol_eq_ite (b : Kˣ) (S : Finset (HeightOneSpectrum (𝓞 K)))
     (T : Finset {w : InfinitePlace K // w.IsReal})
     (hS : ∀ v ∈ S, ¬IsSquare (v.unitAtFinitePlace b))
-    (hT : ∀ w ∈ T, embedding_of_isReal w.2 (b : K) < 0) :
+    (hT : ∀ w ∈ T, embedding_of_isReal w.property (b : K) < 0) :
     ∃ x : IdeleGroup (𝓞 K) K,
       (∀ v : HeightOneSpectrum (𝓞 K),
         hilbertSymbol (v.ideleFiniteCoord x) (v.unitAtFinitePlace b) = if v ∈ S then -1 else 1) ∧
       (∀ w : {w : InfinitePlace K // w.IsReal},
-        hilbertSymbol (w.1.ideleInfiniteCoord x)
-          (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = if w ∈ T then -1 else 1) ∧
+        hilbertSymbol (w.val.ideleInfiniteCoord x)
+          (Units.map (algebraMap K w.val.Completion).toMonoidHom b) = if w ∈ T then -1 else 1) ∧
       ideleHilbertCharacter b x = (-1) ^ (S.card + T.card) := by
   -- A local non-norm at each place of `S`.
   have hu : ∀ v ∈ S, ∃ u : (v.adicCompletion K)ˣ, hilbertSymbol u (v.unitAtFinitePlace b) = -1 := by
@@ -384,13 +388,13 @@ theorem exists_idele_hilbertSymbol_eq_ite (b : Kˣ) (S : Finset (HeightOneSpectr
   choose! u hu using hu
   -- At a real place `-1` is a local non-norm where `b` is negative.
   have hneg (w : {w : InfinitePlace K // w.IsReal}) (hw : w ∈ T) :
-      hilbertSymbol (Units.map (algebraMap K w.1.Completion).toMonoidHom (-1))
-        (Units.map (algebraMap K w.1.Completion).toMonoidHom b) = -1 := by
+      hilbertSymbol (Units.map (algebraMap K w.val.Completion).toMonoidHom (-1))
+        (Units.map (algebraMap K w.val.Completion).toMonoidHom b) = -1 := by
     rw [hilbertSymbol_completion_eq_unitAtRealPlace, hilbertSymbol_unitAtRealPlace_eq_neg_one_iff]
     exact ⟨by simp, hT w hw⟩
   let xf : IdeleGroup (𝓞 K) K := ∏ v ∈ S, IdeleGroup.ofAdicCompletion (𝓞 K) K v (u v)
-  let xr : IdeleGroup (𝓞 K) K := ∏ w ∈ T, IdeleGroup.ofCompletion (𝓞 K) K w.1
-    (Units.map (algebraMap K w.1.Completion).toMonoidHom (-1))
+  let xr : IdeleGroup (𝓞 K) K := ∏ w ∈ T, IdeleGroup.ofCompletion (𝓞 K) K w.val
+    (Units.map (algebraMap K w.val.Completion).toMonoidHom (-1))
   have hxf (w : InfinitePlace K) : w.ideleInfiniteCoord xf = 1 := by simp [xf]
   have hxr (v : HeightOneSpectrum (𝓞 K)) : v.ideleFiniteCoord xr = 1 := by
     simp [xr, HeightOneSpectrum.ideleFiniteCoord_ofCompletion]
@@ -410,7 +414,7 @@ theorem exists_idele_hilbertSymbol_eq_ite (b : Kˣ) (S : Finset (HeightOneSpectr
   · rw [map_mul, map_prod, map_prod, pow_add,
       Finset.prod_congr rfl fun v hv ↦ (ideleHilbertCharacter_ofAdicCompletion b v (u v)).trans
         (hu v hv),
-      Finset.prod_congr rfl fun w hw ↦ (ideleHilbertCharacter_ofCompletion b w.1 _).trans
+      Finset.prod_congr rfl fun w hw ↦ (ideleHilbertCharacter_ofCompletion b w.val _).trans
         (hneg w hw), Finset.prod_const, Finset.prod_const]
 
 end TauCeti.NumberField.QuadraticForm

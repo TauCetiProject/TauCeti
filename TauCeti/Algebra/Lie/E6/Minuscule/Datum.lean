@@ -180,8 +180,8 @@ theorem chevalleyDatum_coordinateWeight_apply (a : Fin 27) (i : Fin E6.rank) :
 /-- The root-torus coordinates are the native fundamental-weight coordinates of the roots. -/
 @[simp]
 theorem chevalleyDatum_coordinateRoot : chevalleyDatum.coordinateRoot = e6Root := by
-  rw [chevalleyDatum.coordinateRoot_eq_root coe_chevalleyDatum_weightLatticeBasis,
-    simplyConnectedRootDatum_E6, e6SimplyConnectedRootDatum_root]
+  refine Eq.trans (weightTable.chevalleyDatum_coordinateRoot (t := E6) valid_E6 _ _) ?_
+  rw [simplyConnectedRootDatum_E6, e6SimplyConnectedRootDatum_root]
   rfl
 
 /-- Evaluating a coordinate root uses the table's seventy-two-root and rank-six indices. -/

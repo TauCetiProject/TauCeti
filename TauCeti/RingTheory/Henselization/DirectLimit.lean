@@ -86,7 +86,7 @@ private theorem map_iSup_map_colimitUnit :
   ext r
   simp [colimitUnit]
 
-variable [Nonempty ι] [IsDirectedOrder ι] [DirectedSystem R (f · · ·)]
+variable [IsDirectedOrder ι] [DirectedSystem R (f · · ·)]
 
 private noncomputable def fromHenselization :
     algebra (⨆ i, (I i).map (of R (f · · ·) i)) →+*

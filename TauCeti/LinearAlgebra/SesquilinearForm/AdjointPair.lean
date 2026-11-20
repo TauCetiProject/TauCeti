@@ -17,7 +17,11 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Neg
 Let `B` be a bilinear map on a module `M` over a commutative ring, and let `f`, `g` be an adjoint
 pair of endomorphisms, `B (f x) y = B x (g y)` (`LinearMap.IsAdjointPair B B f g`). Then
 `p(f)` and `p(g)` are adjoint for every polynomial `p`, so `B` pairs the kernel of `p(f)` to zero
-against the range of `p(g)`. This file develops the consequences for generalized eigenspaces:
+against the range of `p(g)`. When `B` is right-separating, `g` is determined by `f`
+(`LinearMap.IsAdjointPair.right_unique`), so every polynomial killing `f` kills `g`
+(`LinearMap.IsAdjointPair.aeval_eq_zero`) and `p(g)` is nilpotent whenever `p(f)` is
+(`LinearMap.IsAdjointPair.isNilpotent_aeval`). This file develops the consequences for generalized
+eigenspaces:
 
 * `B` pairs the generalized `μ`-eigenspace of `f` to zero against the generalized `ν`-eigenspace
   of `g` whenever `μ - ν` is a unit (`LinearMap.IsAdjointPair.apply_eq_zero_of_mem_genEigenspace`),
@@ -92,6 +96,24 @@ theorem aeval (h : IsAdjointPair B B f g) (p : R[X]) :
   | monomial n a =>
     simpa [aeval_monomial, ← Algebra.smul_def] using (h.pow n).smul a
 
+/-- **Adjoints are unique** for a right-separating bilinear map. -/
+theorem right_unique (hB : B.SeparatingRight) {g' : Module.End R M}
+    (h : IsAdjointPair B B f g) (h' : IsAdjointPair B B f g') : g = g' :=
+  LinearMap.ext fun w ↦ sub_eq_zero.1 <| hB _ fun v ↦ by
+    rw [map_sub, ← h v w, ← h' v w, sub_self]
+
+/-- For a right-separating bilinear map, a polynomial killing `f` kills its adjoint `g`. -/
+theorem aeval_eq_zero (hB : B.SeparatingRight) (h : IsAdjointPair B B f g) {p : R[X]}
+    (hp : Polynomial.aeval f p = 0) : Polynomial.aeval g p = 0 :=
+  right_unique hB (hp ▸ h.aeval p) fun _ _ ↦ by simp
+
+/-- For a right-separating bilinear map, if `p(f)` is nilpotent then so is `p(g)` for the adjoint
+`g` of `f`. -/
+theorem isNilpotent_aeval (hB : B.SeparatingRight) (h : IsAdjointPair B B f g) {p : R[X]}
+    (hp : IsNilpotent (Polynomial.aeval f p)) : IsNilpotent (Polynomial.aeval g p) := by
+  obtain ⟨k, hk⟩ := hp
+  exact ⟨k, by rw [← map_pow]; exact h.aeval_eq_zero hB (by rwa [map_pow])⟩
+
 /-- An adjoint pair with the arguments of the form exchanged. -/
 theorem flip (h : IsAdjointPair B B f g) : IsAdjointPair B.flip B.flip g f :=
   fun x y ↦ (h y x).symm
@@ -156,8 +178,9 @@ theorem nondegenerate_domRestrict₁₂_maxGenEigenspace (hB : B.Nondegenerate)
     (h : IsAdjointPair B B f g) (μ : R) :
     (B.domRestrict₁₂ (f.maxGenEigenspace μ) (g.maxGenEigenspace μ)).Nondegenerate := by
   refine ⟨fun v hv ↦ ?_, fun w hw ↦ ?_⟩
-  · exact Subtype.ext <| h.eq_zero_of_mem_maxGenEigenspace hB.1 v.2 fun w hw ↦ hv ⟨w, hw⟩
-  · exact Subtype.ext <| h.flip.eq_zero_of_mem_maxGenEigenspace (flip_separatingLeft.2 hB.2) w.2
+  · exact Subtype.ext <| h.eq_zero_of_mem_maxGenEigenspace hB.1 v.property fun w hw ↦ hv ⟨w, hw⟩
+  · exact Subtype.ext <| h.flip.eq_zero_of_mem_maxGenEigenspace
+      (flip_separatingLeft.2 hB.2) w.property
       fun v hv ↦ hw ⟨v, hv⟩
 
 end Fitting

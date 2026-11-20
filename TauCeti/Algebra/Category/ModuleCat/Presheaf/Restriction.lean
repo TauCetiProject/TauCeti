@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Presheaf
+public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
 
 /-!
 # Restriction of linear combinations in presheaves of modules
@@ -17,6 +17,8 @@ gives the corresponding combination with the composite restriction maps.
 ## Main declarations
 
 * `PresheafOfModules.map_sum_smul_map`: restriction of a linear combination of restricted sections.
+* `PresheafOfModulesOfCommRing.map_map_smul`: restriction of a scalar multiple with a restricted
+  coefficient.
 -/
 
 public section
@@ -45,3 +47,18 @@ theorem map_sum_smul_map {U V₀ V : C} (f₀ : V₀ ⟶ U) (h₀ : V ⟶ V₀)
   exact congrArg _ (PresheafOfModules.map_comp_apply N (g₀ k).op h₀.op (n k)).symm
 
 end PresheafOfModules
+
+namespace PresheafOfModulesOfCommRing
+
+variable {C : Type u₁} [Category.{v₁} C] {R : Cᵒᵖ ⥤ CommRingCat.{u}}
+  (N : PresheafOfModulesOfCommRing.{v} R)
+
+/-- Restriction of a scalar multiple with a restricted coefficient uses the composite
+restriction on the coefficient. -/
+lemma map_map_smul {X Y Z : Cᵒᵖ} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (r : R.obj X) (w : N.obj Y) :
+    N.map g (R.map f r • w) = R.map (f ≫ g) r • N.map g w := by
+  rw [PresheafOfModules.map_smul, Functor.map_comp]
+  rfl
+
+end PresheafOfModulesOfCommRing

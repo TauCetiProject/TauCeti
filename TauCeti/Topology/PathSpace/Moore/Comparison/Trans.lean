@@ -34,6 +34,7 @@ equivalence, so is `MooreLoopSpace.toPath` in the other direction
   `p.toMoorePath.trans q.toMoorePath`, continuous in `(p, q)`, through paths from `x` to `z`
   (`transMoorePathHomotopy_source`, `transMoorePathHomotopy_target`).
 * `Path.transMooreLoopHomotopy`: `Path.toMooreLoop` is multiplicative up to homotopy.
+* `Path.homotopic_mooreLoopTrans_comp_prodMap`: the same for families of loops.
 * `TauCeti.MooreLoopSpace.mulToPathHomotopy`: `MooreLoopSpace.toPath` is multiplicative up to
   homotopy.
 
@@ -196,6 +197,13 @@ def transMooreLoopHomotopy (x : X) :
 theorem toMoorePath_transMooreLoopHomotopy (s : I) (pq : Path x x × Path x x) :
     (transMooreLoopHomotopy x (s, pq)).toMoorePath = transMoorePathHomotopy x x x (s, pq) :=
   (rfl)
+
+/-- For families of loops `f` and `g`, the Moore loops `(a, b) ↦ (f a).trans (g b)` are homotopic
+to the products `(a, b) ↦ f a * g b` of Moore loops. -/
+theorem homotopic_mooreLoopTrans_comp_prodMap {A B : Type*} [TopologicalSpace A]
+    [TopologicalSpace B] (f : C(A, Path x x)) (g : C(B, Path x x)) :
+    ((mooreLoopTrans x).comp (f.prodMap g)).Homotopic ((mulMooreLoop x).comp (f.prodMap g)) :=
+  ⟨(transMooreLoopHomotopy x).compContinuousMap (f.prodMap g)⟩
 
 end Path
 

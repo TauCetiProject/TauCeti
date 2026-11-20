@@ -203,12 +203,14 @@ theorem ext {S T : 𝒜.MasseyDefiningSystem x}
   subst he
   rfl
 
-/-- The suspended Taylor map vanishes on the block word of every proper block, including the
-blocks of length one. -/
-theorem taylor_blockWord_eq_zero {a b : ℕ} (hb : 0 < b) (hbn : b ≤ n + 1) (hab : a + b ≤ n + 2) :
+/-- The suspended Taylor map vanishes on the block word of every proper block (every block other
+than the whole interval), including the blocks of length one and the empty block. -/
+theorem taylor_blockWord_eq_zero {a b : ℕ} (hbn : b ≤ n + 1) (hab : a + b ≤ n + 2) :
     𝒜.taylor (blockWord R S.entry a b) = 0 := by
   rcases Nat.lt_or_ge b 2 with h | h
-  · obtain rfl : b = 1 := by omega
+  · rcases Nat.eq_zero_or_pos b with rfl | hb
+    · rw [blockWord_zero, map_zero]
+    obtain rfl : b = 1 := by omega
     rw [blockWord_one, taylor_ofLetter, ← mem_cycles]
     exact S.entry_mem_cycles ⟨a, by omega⟩
   · exact S.taylor_blockWord a b h hbn hab
@@ -234,12 +236,12 @@ the Massey cycle. -/
 theorem barDifferential_blockWord :
     𝒜.barDifferential (blockWord R S.entry 0 (n + 2)) = ofLetter R A S.cycle :=
   barDifferential_eq_ofLetter_of_isBlockFamily (isBlockFamily_blockWord S.entry)
-    fun _ _ hk _ _ h₂ ↦ S.taylor_blockWord_eq_zero hk (by omega) (by omega)
+    fun _ _ _ _ _ h₂ ↦ S.taylor_blockWord_eq_zero (by omega) (by omega)
 
 /-- **The Massey cycle of a defining system is a cycle.** -/
 theorem cycle_mem_cycles : S.cycle ∈ 𝒜.cycles :=
   taylor_mem_cycles_of_isBlockFamily (isBlockFamily_blockWord S.entry)
-    fun _ _ hk _ _ h₂ ↦ S.taylor_blockWord_eq_zero hk (by omega) (by omega)
+    fun _ _ _ _ _ h₂ ↦ S.taylor_blockWord_eq_zero (by omega) (by omega)
 
 /-- The class of the Massey cycle of a defining system: an element of the Massey product. -/
 noncomputable def value : 𝒜.Cohomology :=

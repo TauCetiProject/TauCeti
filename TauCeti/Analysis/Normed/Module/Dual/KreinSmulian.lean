@@ -67,7 +67,7 @@ theorem exists_finset_forall_one_lt_re_apply {S : Set (WeakDual 𝕜 E)} (hS : I
       exact this
   refine ⟨u.map (.subtype _), fun x hx ↦ ?_, fun f hf ↦ ?_⟩
   · obtain ⟨x, -, rfl⟩ := Finset.mem_map.1 hx
-    exact mem_closedBall_zero_iff.1 x.2
+    exact mem_closedBall_zero_iff.1 x.property
   · have := Set.disjoint_left.1 hu hf
     simp only [mem_iInter, mem_ofPred_eq, not_forall, not_le] at this
     obtain ⟨x, hxu, hx⟩ := this
@@ -191,11 +191,7 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
   have hTC : Convex ℝ (T '' C) := by
     rintro _ ⟨f, hf, rfl⟩ _ ⟨g, hg, rfl⟩ a b ha hb hab
     refine ⟨a • f + b • g, hC hf hg ha hb hab, ZeroAtInftyContinuousMap.ext fun i ↦ ?_⟩
-    simp only [hT, _root_.add_apply, _root_.smul_apply, smul_eq_mul]
-    -- Mathlib has no apply lemma for sums in `WeakDual 𝕜 E`, so evaluate through `toStrongDual`;
-    -- `simp` then splits the sum and applies `WeakDual.real_smul_apply`.
-    rw [← toStrongDual_apply]
-    simp [WeakDual.real_smul_apply]
+    simp only [hT, _root_.add_apply, _root_.smul_apply, smul_eq_mul, map_add, smul_re]
   -- `T` maps `C` into the complement of the open unit ball of `c₀`.
   have hdisj : Disjoint (ball (0 : C₀(ι, ℝ)) 1) (T '' C) := by
     refine Set.disjoint_right.2 ?_
@@ -227,7 +223,7 @@ theorem exists_forall_one_le_re_apply [CompleteSpace E] {C : Set (WeakDual 𝕜 
   obtain ⟨D, hD, hDC⟩ := exists_seq_finset_forall_one_lt_re_apply hCR hr hCr
   -- Enumerate the points of all the `D n` as a family over a discrete index type.
   let v (i : Σ n, Fin (D n).card) : E := (D i.1).equivFin.symm i.2
-  have hvD (i : Σ n, Fin (D n).card) : v i ∈ D i.1 := ((D i.1).equivFin.symm i.2).2
+  have hvD (i : Σ n, Fin (D n).card) : v i ∈ D i.1 := ((D i.1).equivFin.symm i.2).property
   refine hC.exists_forall_one_le_re_apply_of_tendsto (v := v) ?_ fun f hfC ↦ ?_
   · -- Only the finitely many points of `D 0, …, D (N - 1)` can have norm at least `ε`.
     refine Metric.tendsto_nhds.2 fun ε hε ↦ eventually_cofinite.2 ?_

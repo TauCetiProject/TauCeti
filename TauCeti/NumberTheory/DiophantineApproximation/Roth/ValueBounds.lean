@@ -137,7 +137,7 @@ theorem prod_abs_sub_pow_le_exp {r : σ → ℕ} {a : σ → ℝ} {β : σ → �
         prod_le_prod₀ (fun i _ ↦ by positivity) fun i _ ↦
           pow_le_pow_left₀ (abs_nonneg _) (hpow i ▸ hβ i) _
     _ = Real.exp (-(κ * ∑ i, (d i : ℝ) * logHeight₁ (β i))) := by
-        simp only [← Real.exp_nat_mul, ← Real.exp_sum, mul_sum]
+        simp only [← Real.exp_natCast_mul, ← Real.exp_sum, mul_sum]
         congr 1
         rw [← sum_neg_distrib]
         exact sum_congr rfl fun i _ ↦ by ring

@@ -70,16 +70,19 @@ noncomputable def homologyShiftIso [CategoryWithHomology C] (k : ℤ) (i : ZMod 
     (homologyFunctorIso' C (ComplexShape.up (ZMod n))
       (i - 1 + k) (i + k) (i + 1 + k) (by simp; abel) (by simp; abel)).symm
 
-variable [CategoryWithHomology C]
+/-- Signed cyclic shifts shift degreewise exactness. -/
+@[simp]
+theorem shift_exactAt_iff (K : CochainComplex C (ZMod n)) (k : ℤ) (i : ZMod n) :
+    (K⟦k⟧).ExactAt i ↔ K.ExactAt (i + k) := by
+  rw [exactAt_iff' _ (i - 1) i (i + 1) (by simp) (by simp),
+    exactAt_iff' K (i - 1 + k) (i + k) (i + 1 + k) (by simp; abel) (by simp; abel)]
+  exact ShortComplex.exact_iff_of_iso ((shiftShortComplexIso C n k i).app K)
 
 /-- Signed cyclic shifts preserve and reflect acyclicity. -/
 @[simp]
 theorem shift_acyclic_iff (K : CochainComplex C (ZMod n)) (k : ℤ) :
     (K⟦k⟧).Acyclic ↔ K.Acyclic := by
-  simp only [acyclic_iff, exactAt_iff_isZero_homology]
-  have hi (i : ZMod n) := ((homologyShiftIso C n k i).app K).isZero_iff
-  simp only [Functor.comp_obj, HomologicalComplex.homologyFunctor_obj] at hi
-  simp only [hi]
+  simp only [acyclic_iff, shift_exactAt_iff]
   constructor
   · intro h i
     simpa using h (i - (k : ZMod n))
