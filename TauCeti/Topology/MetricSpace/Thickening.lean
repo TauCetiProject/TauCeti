@@ -33,7 +33,10 @@ thickenings as sublevel sets of the distance function, and their complements as 
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
 the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
 (`IsCompact.disjoint_cthickening_left`). In a proper space, the closed `δ`-thickening of a compact
-set is compact (`TopologicalSpace.Compacts.cthickening`).
+set is compact (`TopologicalSpace.Compacts.cthickening`). If balls of radius `η` cover a
+set `T`, the closed balls of radius `η` meeting `T` among them lie in the closed `2 η`-thickening
+of `T`, so their union contains `T` and has extended diameter at most `ediam T + 4 η`
+(`TauCeti.exists_subset_biUnion_closedBall_and_ediam_le`).
 
 A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
 inside any set whose interior contains it, namely the intersections of that interior with
@@ -106,6 +109,27 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
     (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) : (cthickening δ s)ᶜ = {x | δ < infDist x s} := by
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
+
+/-- If the open balls `ball p η`, `p ∈ J`, cover a set `T`, then `T` lies in the union of the closed
+balls `closedBall p η` about the centres `p ∈ J` whose balls meet `T`, and this union has extended
+diameter at most `ediam T + 4 η`: it lies in the closed `2 η`-thickening of `T`. -/
+theorem exists_subset_biUnion_closedBall_and_ediam_le {X : Type*} [PseudoMetricSpace X]
+    {J : Set X} {η : ℝ} (hη : 0 ≤ η) {T : Set X} (hT : T ⊆ ⋃ p ∈ J, ball p η) :
+    ∃ I ⊆ J, T ⊆ ⋃ p ∈ I, closedBall p η ∧
+      ediam (⋃ p ∈ I, closedBall p η) ≤ ediam T + ENNReal.ofReal (4 * η) := by
+  refine ⟨{p ∈ J | (closedBall p η ∩ T).Nonempty}, sep_subset _ _, fun y hy => ?_, ?_⟩
+  · obtain ⟨p, hpJ, hyp⟩ := mem_iUnion₂.1 (hT hy)
+    exact mem_iUnion₂.2 ⟨p, ⟨hpJ, y, ball_subset_closedBall hyp, hy⟩, ball_subset_closedBall hyp⟩
+  have hsub : ⋃ p ∈ {p ∈ J | (closedBall p η ∩ T).Nonempty}, closedBall p η ⊆
+      cthickening (2 * η) T := iUnion₂_subset fun p ⟨_, t, htp, htT⟩ z hz =>
+    mem_cthickening_of_dist_le z t _ T htT <| (dist_triangle z p t).trans <| by
+      rw [dist_comm p t]
+      linarith [mem_closedBall.1 hz, mem_closedBall.1 htp]
+  rw [← Real.coe_toNNReal _ (by positivity : 0 ≤ 2 * η)] at hsub
+  refine (ediam_mono hsub).trans <| (ediam_cthickening_le _).trans_eq ?_
+  rw [← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (by positivity), ← ENNReal.ofReal_ofNat 2,
+    ← ENNReal.ofReal_mul zero_le_two]
+  ring_nf
 
 /-- If a compact set `s` does not meet the closed `δ`-thickening of `t`, then the closed
 `δ`-thickening of `s` does not meet `t`: a point of `t` within `δ` of `s` is within `δ` of a
