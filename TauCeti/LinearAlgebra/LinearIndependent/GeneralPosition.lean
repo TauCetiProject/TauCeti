@@ -77,6 +77,7 @@ theorem inGeneralPosition_iff_linearIndependent [Fintype ι] (hcard : Fintype.ca
     (hL _ (Equiv.injective _)), fun hL e he ↦ hL.comp e he⟩
 
 /-- Rescaling each vector by a nonzero scalar does not change general position. -/
+@[simp]
 theorem inGeneralPosition_smul_iff {c : ι → K} (hc : ∀ i, c i ≠ 0) :
     InGeneralPosition (fun i ↦ c i • L i) ↔ InGeneralPosition L := by
   refine forall₂_congr fun e _ ↦ ?_
@@ -87,6 +88,7 @@ theorem inGeneralPosition_smul_iff {c : ι → K} (hc : ∀ i, c i ≠ 0) :
   rw [hu, LinearIndependent.units_smul_iff]
 
 /-- Applying a field homomorphism coefficientwise does not change general position. -/
+@[simp]
 theorem inGeneralPosition_map_iff [Field K'] (σ : K →+* K') :
     InGeneralPosition (fun i j ↦ σ (L i j)) ↔ InGeneralPosition L := by
   rw [inGeneralPosition_iff_det_ne_zero, inGeneralPosition_iff_det_ne_zero]
@@ -99,6 +101,7 @@ theorem inGeneralPosition_map_iff [Field K'] (σ : K →+* K') :
 
 /-- An invertible linear change of coordinates does not change general position: the row vectors
 `L i` are multiplied on the right by a matrix `A` of nonzero determinant. -/
+@[simp]
 theorem inGeneralPosition_vecMul_iff {A : Matrix (Fin n) (Fin n) K} (hA : A.det ≠ 0) :
     InGeneralPosition (fun i ↦ L i ᵥ* A) ↔ InGeneralPosition L := by
   rw [inGeneralPosition_iff_det_ne_zero, inGeneralPosition_iff_det_ne_zero]
