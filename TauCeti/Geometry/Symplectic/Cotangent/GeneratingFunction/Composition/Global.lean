@@ -124,6 +124,29 @@ theorem mdifferentiableAt_generatingComposition {x : M₁ × M₃}
     MDifferentiableAt (I₁.prod I₃) 𝓘(ℝ) (generatingComposition S T b) x :=
   (hS.comp x (mdifferentiableAt_fst.prodMk hb)).add (hT.comp x (hb.prodMk mdifferentiableAt_snd))
 
+/-- **The cancellation behind the composite generating function.** Along maps `f`, `γ`, `g` into
+`M₁`, `M₂`, `M₃`, if the covectors `-d₂U` and `d₁V` agree at the intermediate point `γ x`, the
+derivative of `y ↦ U(f y, γ y) + V(γ y, g y)` at `x` sends `v` to `d₁U(df v) + d₂V(dg v)`: the
+terms in the derivative of `γ` cancel. -/
+private theorem mvfderiv_add_comp_prodMk_apply_of_neg_eq {E₀ H₀ X : Type*}
+    [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [TopologicalSpace H₀]
+    {J : ModelWithCorners ℝ E₀ H₀} [TopologicalSpace X] [ChartedSpace H₀ X]
+    {U : M₁ × M₂ → ℝ} {V : M₂ × M₃ → ℝ} {f : X → M₁} {γ : X → M₂} {g : X → M₃} {x : X}
+    (hU : MDifferentiableAt (I₁.prod I₂) 𝓘(ℝ) U (f x, γ x))
+    (hV : MDifferentiableAt (I₂.prod I₃) 𝓘(ℝ) V (γ x, g x))
+    (hf : MDifferentiableAt J I₁ f x) (hγ : MDifferentiableAt J I₂ γ x)
+    (hg : MDifferentiableAt J I₃ g x)
+    (h : generatingTarget I₂ U (f x, γ x) = generatingSource I₂ V (γ x, g x))
+    (v : TangentSpace J x) :
+    mvfderiv J (fun y ↦ U (f y, γ y) + V (γ y, g y)) x v =
+      mvfderiv I₁ (fun y ↦ U (y, γ x)) (f x) (mfderiv J I₁ f x v) +
+        mvfderiv I₃ (fun y ↦ V (γ x, y)) (g x) (mfderiv J I₃ g x v) := by
+  have hneg := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h
+  rw [mvfderiv_fun_add (g := fun y ↦ U (f y, γ y)) (g' := fun y ↦ V (γ y, g y))
+      (hU.comp x (hf.prodMk hγ)) (hV.comp x (hγ.prodMk hg)), add_apply,
+    mvfderiv_comp_prodMk_apply hU hf hγ, mvfderiv_comp_prodMk_apply hV hγ hg, ← hneg, neg_apply]
+  ring
+
 /-- **The source covector of the composite generating function.** If the intermediate cotangent
 points match at `(q, b(q, Q))`, that is `-d_a S(q, b) = d_a T(b, Q)`, and `S`, `T` and `b` are
 differentiable, then `d_q R(q, Q) = d_q S(q, b(q, Q))`: the terms in the derivative of `b`
@@ -135,34 +158,20 @@ theorem generatingSource_generatingComposition {q : M₁} {Q : M₃}
     (h : generatingTarget I₂ S (q, b (q, Q)) = generatingSource I₂ T (b (q, Q), Q)) :
     generatingSource I₁ (generatingComposition S T b) (q, Q) =
       generatingSource I₁ S (q, b (q, Q)) := by
-  have hneg := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h
   have hβ : MDifferentiableAt I₁ I₂ (fun y ↦ b (y, Q)) q :=
     hb.comp (f := fun y ↦ (y, Q)) q (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
-  have hid : MDifferentiableAt I₁ I₁ (@id M₁) q := mdifferentiableAt_id
-  have hQ : MDifferentiableAt I₁ I₃ (fun _ : M₁ ↦ Q) q := mdifferentiableAt_const
-  -- Compare the covectors at `q`.
-  refine CotangentBundle.ext (by simp) fun v ↦ ?_
-  simp only [generatingSource_snd, generatingComposition_apply]
-  refine DFunLike.congr_fun (ContinuousLinearMap.ext fun v : TangentSpace I₁ q ↦ ?_) v
-  set w := mfderiv I₁ I₂ (fun y ↦ b (y, Q)) q v
-  -- Along `y ↦ (y, b(y, Q))` and `y ↦ (b(y, Q), Q)` the derivative of `R(·, Q)` is
-  -- `d_q S v + (d_a S + d_a T) w` with `w = db v`, and the matching equation kills `w`.
-  have h₁ : mvfderiv I₁ (fun y ↦ S (y, b (y, Q))) q v =
-      mvfderiv I₁ (fun y ↦ S (y, b (q, Q))) q v + mvfderiv I₂ (fun y ↦ S (q, y)) (b (q, Q)) w := by
-    have h := mvfderiv_comp_prodMk_apply (f := id) (g := fun y ↦ b (y, Q)) hS hid hβ v
-    rw [mfderiv_id] at h
-    -- `id` and `ContinuousLinearMap.id` are the identity on points and tangent vectors.
-    exact h
-  have h₂ : mvfderiv I₁ (fun y ↦ T (b (y, Q), Q)) q v =
-      mvfderiv I₂ (fun y ↦ T (y, Q)) (b (q, Q)) w :=
-    mvfderiv_comp_apply (g := fun a ↦ T (a, Q)) (f := fun y ↦ b (y, Q)) q
-      (MDifferentiableAt.curry_left (f := fun a Q' ↦ T (a, Q')) hT) hβ v
-  have hsum : mvfderiv I₁ (fun y ↦ S (y, b (y, Q)) + T (b (y, Q), Q)) q =
-      mvfderiv I₁ (fun y ↦ S (y, b (y, Q))) q + mvfderiv I₁ (fun y ↦ T (b (y, Q), Q)) q :=
-    mvfderiv_fun_add (hS.comp (f := fun y ↦ (y, b (y, Q))) q (hid.prodMk hβ))
-      (hT.comp (f := fun y ↦ (b (y, Q), Q)) q (hβ.prodMk hQ))
-  rw [hsum, add_apply, h₁, h₂, ← hneg, neg_apply]
-  ring
+  -- Along `y ↦ (y, b(y, Q), Q)` the terms in the derivative of `b` cancel, and `Q` is constant.
+  have hmv : mvfderiv I₁ (fun y ↦ generatingComposition S T b (y, Q)) q =
+      mvfderiv I₁ (fun y ↦ S (y, b (q, Q))) q := by
+    ext v
+    have h' := mvfderiv_add_comp_prodMk_apply_of_neg_eq (f := @id M₁)
+      (γ := fun y ↦ b (y, Q)) (g := fun _ ↦ Q) (x := q) hS hT
+      mdifferentiableAt_id hβ mdifferentiableAt_const h v
+    simpa only [generatingComposition_apply, id_eq, mfderiv_id, ContinuousLinearMap.id_apply,
+      mfderiv_const, zero_apply, map_zero, add_zero] using h'
+  exact CotangentBundle.ext (by simp) fun v ↦ by
+    simp only [generatingSource_snd]
+    exact congr($hmv v)
 
 /-- **The target covector of the composite generating function.** If the intermediate cotangent
 points match at `(b(q, Q), Q)`, that is `-d_a S(q, b) = d_a T(b, Q)`, and `S`, `T` and `b` are
@@ -175,35 +184,20 @@ theorem generatingTarget_generatingComposition {q : M₁} {Q : M₃}
     (h : generatingTarget I₂ S (q, b (q, Q)) = generatingSource I₂ T (b (q, Q), Q)) :
     generatingTarget I₃ (generatingComposition S T b) (q, Q) =
       generatingTarget I₃ T (b (q, Q), Q) := by
-  have hneg := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h
   have hγ : MDifferentiableAt I₃ I₂ (fun y ↦ b (q, y)) Q :=
     hb.comp (f := fun y ↦ (q, y)) Q (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
-  have hid : MDifferentiableAt I₃ I₃ (@id M₃) Q := mdifferentiableAt_id
-  have hq : MDifferentiableAt I₃ I₁ (fun _ : M₃ ↦ q) Q := mdifferentiableAt_const
-  -- Compare the covectors at `Q`.
-  refine CotangentBundle.ext (by simp) fun v ↦ ?_
-  simp only [generatingTarget_snd, generatingComposition_apply]
-  refine DFunLike.congr_fun
-    (congrArg Neg.neg (ContinuousLinearMap.ext fun v : TangentSpace I₃ Q ↦ ?_)) v
-  set w := mfderiv I₃ I₂ (fun y ↦ b (q, y)) Q v
-  -- Along `y ↦ (q, b(q, y))` and `y ↦ (b(q, y), y)` the derivative of `R(q, ·)` is
-  -- `(d_a S + d_a T) w + d_Q T v` with `w = db v`, and the matching equation kills `w`.
-  have h₁ : mvfderiv I₃ (fun y ↦ S (q, b (q, y))) Q v =
-      mvfderiv I₂ (fun y ↦ S (q, y)) (b (q, Q)) w :=
-    mvfderiv_comp_apply (g := fun a ↦ S (q, a)) (f := fun y ↦ b (q, y)) Q
-      (MDifferentiableAt.curry_right (f := fun q' a ↦ S (q', a)) hS) hγ v
-  have h₂ : mvfderiv I₃ (fun y ↦ T (b (q, y), y)) Q v =
-      mvfderiv I₂ (fun y ↦ T (y, Q)) (b (q, Q)) w + mvfderiv I₃ (fun y ↦ T (b (q, Q), y)) Q v := by
-    have h := mvfderiv_comp_prodMk_apply (f := fun y ↦ b (q, y)) (g := id) hT hγ hid v
-    rw [mfderiv_id] at h
-    -- `id` and `ContinuousLinearMap.id` are the identity on points and tangent vectors.
-    exact h
-  have hsum : mvfderiv I₃ (fun y ↦ S (q, b (q, y)) + T (b (q, y), y)) Q =
-      mvfderiv I₃ (fun y ↦ S (q, b (q, y))) Q + mvfderiv I₃ (fun y ↦ T (b (q, y), y)) Q :=
-    mvfderiv_fun_add (hS.comp (f := fun y ↦ (q, b (q, y))) Q (hq.prodMk hγ))
-      (hT.comp (f := fun y ↦ (b (q, y), y)) Q (hγ.prodMk hid))
-  rw [hsum, add_apply, h₁, h₂, ← hneg, neg_apply]
-  ring
+  -- Along `y ↦ (q, b(q, y), y)` the terms in the derivative of `b` cancel, and `q` is constant.
+  have hmv : mvfderiv I₃ (fun y ↦ generatingComposition S T b (q, y)) Q =
+      mvfderiv I₃ (fun y ↦ T (b (q, Q), y)) Q := by
+    ext v
+    have h' := mvfderiv_add_comp_prodMk_apply_of_neg_eq (f := fun _ ↦ q)
+      (γ := fun y ↦ b (q, y)) (g := @id M₃) (x := Q) hS hT
+      mdifferentiableAt_const hγ mdifferentiableAt_id h v
+    simpa only [generatingComposition_apply, id_eq, mfderiv_id, ContinuousLinearMap.id_apply,
+      mfderiv_const, zero_apply, map_zero, zero_add] using h'
+  exact CotangentBundle.ext (by simp) fun v ↦ by
+    simp only [generatingTarget_snd]
+    exact congr((-$hmv) v)
 
 /-- **The relation generated by the composite generating function.** At a matched configuration,
 with `S`, `T` and `b` differentiable, the relation generated by
@@ -363,6 +357,56 @@ theorem mdifferentiableAt_generatingComposition₃ {x : M₁ × M₄}
     (hS₂.comp x hc)).add
       (hS₃.comp x ((mdifferentiableAt_snd.comp x hc).prodMk mdifferentiableAt_snd))
 
+omit [TopologicalSpace M₁] [TopologicalSpace M₂] [TopologicalSpace M₃] [TopologicalSpace M₄] in
+/-- The composite of three generating functions is the composite of two through the intermediate
+manifold `M₂ × M₃`: of `S₁(q, a₁) + S₂(a₁, a₂)` on `M₁ × (M₂ × M₃)` and `S₃(a₂, Q)` on
+`(M₂ × M₃) × M₄`. -/
+private theorem generatingComposition₃_eq_generatingComposition :
+    generatingComposition₃ S₁ S₂ S₃ c =
+      generatingComposition (fun p : M₁ × (M₂ × M₃) ↦ S₁ (p.1, p.2.1) + S₂ p.2)
+        (fun p : (M₂ × M₃) × M₄ ↦ S₃ (p.1.2, p.2)) c :=
+  (rfl)
+
+/-- At an internal configuration `a = (a₁, a₂)` matched at both internal vertices, the two
+generating functions `S₁(q, a₁) + S₂(a₁, a₂)` and `S₃(a₂, Q)` of
+`TauCeti.CotangentBundle.generatingComposition₃_eq_generatingComposition` are differentiable and
+their cotangent points match at `a ∈ M₂ × M₃`. -/
+private theorem generatingComposition₃_prod_hypotheses {q : M₁} {a : M₂ × M₃} {Q : M₄}
+    (hS₁ : MDifferentiableAt (I₁.prod I₂) 𝓘(ℝ) S₁ (q, a.1))
+    (hS₂ : MDifferentiableAt (I₂.prod I₃) 𝓘(ℝ) S₂ a)
+    (hS₃ : MDifferentiableAt (I₃.prod I₄) 𝓘(ℝ) S₃ (a.2, Q))
+    (h₁₂ : generatingTarget I₂ S₁ (q, a.1) = generatingSource I₂ S₂ a)
+    (h₂₃ : generatingTarget I₃ S₂ a = generatingSource I₃ S₃ (a.2, Q)) :
+    MDifferentiableAt (I₁.prod (I₂.prod I₃)) 𝓘(ℝ)
+        (fun p : M₁ × (M₂ × M₃) ↦ S₁ (p.1, p.2.1) + S₂ p.2) (q, a) ∧
+      MDifferentiableAt ((I₂.prod I₃).prod I₄) 𝓘(ℝ)
+        (fun p : (M₂ × M₃) × M₄ ↦ S₃ (p.1.2, p.2)) (a, Q) ∧
+      generatingTarget (I₂.prod I₃) (fun p : M₁ × (M₂ × M₃) ↦ S₁ (p.1, p.2.1) + S₂ p.2) (q, a) =
+        generatingSource (I₂.prod I₃) (fun p : (M₂ × M₃) × M₄ ↦ S₃ (p.1.2, p.2)) (a, Q) := by
+  refine ⟨(hS₁.comp (q, a) (mdifferentiableAt_fst.prodMk
+      (mdifferentiableAt_fst.comp (q, a) mdifferentiableAt_snd))).add
+        (hS₂.comp (q, a) mdifferentiableAt_snd),
+    hS₃.comp (a, Q) ((mdifferentiableAt_snd.comp (a, Q) mdifferentiableAt_fst).prodMk
+      mdifferentiableAt_snd), ?_⟩
+  have hneg₁₂ := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h₁₂
+  have hneg₂₃ := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h₂₃
+  refine generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.2 ?_
+  ext u
+  -- On `u = (u₁, u₂)`, the left side is `-(d₂S₁ u₁ + d₁S₂ u₁ + d₂S₂ u₂)` and the right side is
+  -- `d₁S₃ u₂`; the matching equations `-d₂S₁ = d₁S₂` and `-d₂S₂ = d₁S₃` make them equal.
+  have e₁ : mvfderiv (I₂.prod I₃) (fun p : M₂ × M₃ ↦ S₁ (q, p.1)) a u =
+      mvfderiv I₂ (fun y ↦ S₁ (q, y)) a.1 u.1 :=
+    mvfderiv_comp_fst_apply (fun y ↦ S₁ (q, y)) a u
+  have e₃ : mvfderiv (I₂.prod I₃) (fun p : M₂ × M₃ ↦ S₃ (p.2, Q)) a u =
+      mvfderiv I₃ (fun y ↦ S₃ (y, Q)) a.2 u.2 :=
+    mvfderiv_comp_snd_apply (fun y ↦ S₃ (y, Q)) a u
+  have hd₁ : MDifferentiableAt (I₂.prod I₃) 𝓘(ℝ) (fun p : M₂ × M₃ ↦ S₁ (q, p.1)) a :=
+    (hS₁.curry_right (f := fun q' a₁ ↦ S₁ (q', a₁))).comp a mdifferentiableAt_fst
+  rw [neg_apply, mvfderiv_fun_add (g := fun p : M₂ × M₃ ↦ S₁ (q, p.1)) (g' := S₂) hd₁ hS₂,
+    add_apply, e₁, hS₂.mvfderiv_prod_eq_add_apply, e₃, ← hneg₁₂, ← hneg₂₃]
+  linear_combination -(neg_apply (mvfderiv I₂ (fun y ↦ S₁ (q, y)) a.1) u.1) -
+    neg_apply (mvfderiv I₃ (fun y ↦ S₂ (a.1, y)) a.2) u.2
+
 /-- **The source covector of the composite of three generating functions.** If the intermediate
 cotangent points match at both internal vertices of `(q, c(q, Q), Q)`, and `S₁`, `S₂`, `S₃` and `c`
 are differentiable, then `d_q R(q, Q) = d_q S₁(q, a₁)`, where `(a₁, a₂) = c(q, Q)`. -/
@@ -375,55 +419,14 @@ theorem generatingSource_generatingComposition₃ {q : M₁} {Q : M₄}
     (h₂₃ : generatingTarget I₃ S₂ (c (q, Q)) = generatingSource I₃ S₃ ((c (q, Q)).2, Q)) :
     generatingSource I₁ (generatingComposition₃ S₁ S₂ S₃ c) (q, Q) =
       generatingSource I₁ S₁ (q, (c (q, Q)).1) := by
-  have hneg₁₂ := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h₁₂
-  have hneg₂₃ := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h₂₃
-  have hγ : MDifferentiableAt I₁ (I₂.prod I₃) (fun y ↦ c (y, Q)) q :=
-    hc.comp (f := fun y ↦ (y, Q)) q (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
-  have hγ₁ : MDifferentiableAt I₁ I₂ (fun y ↦ (c (y, Q)).1) q := mdifferentiableAt_fst.comp q hγ
-  have hγ₂ : MDifferentiableAt I₁ I₃ (fun y ↦ (c (y, Q)).2) q := mdifferentiableAt_snd.comp q hγ
-  have hid : MDifferentiableAt I₁ I₁ (@id M₁) q := mdifferentiableAt_id
-  have hQ : MDifferentiableAt I₁ I₄ (fun _ : M₁ ↦ Q) q := mdifferentiableAt_const
-  -- Compare the covectors at `q`.
-  refine CotangentBundle.ext (by simp) fun v ↦ ?_
-  simp only [generatingSource_snd, generatingComposition₃_apply]
-  refine DFunLike.congr_fun (ContinuousLinearMap.ext fun v : TangentSpace I₁ q ↦ ?_) v
-  set w₁ := mfderiv I₁ I₂ (fun y ↦ (c (y, Q)).1) q v
-  set w₂ := mfderiv I₁ I₃ (fun y ↦ (c (y, Q)).2) q v
-  -- The derivative of `R(·, Q)` is `d_q S₁ v + (d₂S₁ + d₁S₂) w₁ + (d₂S₂ + d₁S₃) w₂` with
-  -- `wᵢ = d aᵢ v`, and the two matching equations kill `w₁` and `w₂`.
-  have h₁ : mvfderiv I₁ (fun y ↦ S₁ (y, (c (y, Q)).1)) q v =
-      mvfderiv I₁ (fun y ↦ S₁ (y, (c (q, Q)).1)) q v +
-        mvfderiv I₂ (fun y ↦ S₁ (q, y)) (c (q, Q)).1 w₁ := by
-    have h := mvfderiv_comp_prodMk_apply (f := id) (g := fun y ↦ (c (y, Q)).1) hS₁ hid hγ₁ v
-    rw [mfderiv_id] at h
-    -- `id` and `ContinuousLinearMap.id` are the identity on points and tangent vectors.
-    exact h
-  have h₂ : mvfderiv I₁ (fun y ↦ S₂ ((c (y, Q)).1, (c (y, Q)).2)) q v =
-      mvfderiv I₂ (fun y ↦ S₂ (y, (c (q, Q)).2)) (c (q, Q)).1 w₁ +
-        mvfderiv I₃ (fun y ↦ S₂ ((c (q, Q)).1, y)) (c (q, Q)).2 w₂ :=
-    mvfderiv_comp_prodMk_apply (f := fun y ↦ (c (y, Q)).1) (g := fun y ↦ (c (y, Q)).2) hS₂ hγ₁ hγ₂ v
-  have h₃ : mvfderiv I₁ (fun y ↦ S₃ ((c (y, Q)).2, Q)) q v =
-      mvfderiv I₃ (fun y ↦ S₃ (y, Q)) (c (q, Q)).2 w₂ :=
-    mvfderiv_comp_apply (g := fun a ↦ S₃ (a, Q)) (f := fun y ↦ (c (y, Q)).2) q
-      (MDifferentiableAt.curry_left (f := fun a Q' ↦ S₃ (a, Q')) hS₃) hγ₂ v
-  have hd₁ := hS₁.comp (f := fun y ↦ (y, (c (y, Q)).1)) q (hid.prodMk hγ₁)
-  have hd₂ := hS₂.comp (f := fun y ↦ ((c (y, Q)).1, (c (y, Q)).2)) q (hγ₁.prodMk hγ₂)
-  have hd₃ := hS₃.comp (f := fun y ↦ ((c (y, Q)).2, Q)) q (hγ₂.prodMk hQ)
-  have hsum : mvfderiv I₁ (fun y ↦ S₁ (y, (c (y, Q)).1) + S₂ (c (y, Q)) + S₃ ((c (y, Q)).2, Q)) q =
-      mvfderiv I₁ (fun y ↦ S₁ (y, (c (y, Q)).1)) q +
-        mvfderiv I₁ (fun y ↦ S₂ ((c (y, Q)).1, (c (y, Q)).2)) q +
-        mvfderiv I₁ (fun y ↦ S₃ ((c (y, Q)).2, Q)) q := by
-    have e₁ : mvfderiv I₁ (fun y ↦ S₁ (y, (c (y, Q)).1) + S₂ (c (y, Q)) + S₃ ((c (y, Q)).2, Q)) q =
-        mvfderiv I₁ (fun y ↦ S₁ (y, (c (y, Q)).1) + S₂ (c (y, Q))) q +
-          mvfderiv I₁ (fun y ↦ S₃ ((c (y, Q)).2, Q)) q :=
-      mvfderiv_fun_add (hd₁.add hd₂) hd₃
-    have e₂ : mvfderiv I₁ (fun y ↦ S₁ (y, (c (y, Q)).1) + S₂ (c (y, Q))) q =
-        mvfderiv I₁ (fun y ↦ S₁ (y, (c (y, Q)).1)) q +
-          mvfderiv I₁ (fun y ↦ S₂ ((c (y, Q)).1, (c (y, Q)).2)) q :=
-      mvfderiv_fun_add hd₁ hd₂
-    rw [e₁, e₂]
-  rw [hsum, add_apply, add_apply, h₁, h₂, h₃, ← hneg₁₂, ← hneg₂₃, neg_apply, neg_apply]
-  ring
+  obtain ⟨hS, hT, h⟩ := generatingComposition₃_prod_hypotheses hS₁ hS₂ hS₃ h₁₂ h₂₃
+  rw [generatingComposition₃_eq_generatingComposition,
+    generatingSource_generatingComposition hS hT hc h]
+  -- Adding `S₂(a₁, a₂)`, which is constant in `q`, does not change `d_q`.
+  exact CotangentBundle.ext (by simp) fun v ↦ by
+    simp only [generatingSource_snd, mvfderiv_add_const]
+    -- Both sides are the same covector applied to `v`, a tangent vector at `q`.
+    rfl
 
 /-- **The target covector of the composite of three generating functions.** If the intermediate
 cotangent points match at both internal vertices of `(q, c(q, Q), Q)`, and `S₁`, `S₂`, `S₃` and `c`
@@ -437,56 +440,14 @@ theorem generatingTarget_generatingComposition₃ {q : M₁} {Q : M₄}
     (h₂₃ : generatingTarget I₃ S₂ (c (q, Q)) = generatingSource I₃ S₃ ((c (q, Q)).2, Q)) :
     generatingTarget I₄ (generatingComposition₃ S₁ S₂ S₃ c) (q, Q) =
       generatingTarget I₄ S₃ ((c (q, Q)).2, Q) := by
-  have hneg₁₂ := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h₁₂
-  have hneg₂₃ := generatingTarget_eq_generatingSource_iff_neg_mvfderiv_eq.1 h₂₃
-  have hγ : MDifferentiableAt I₄ (I₂.prod I₃) (fun y ↦ c (q, y)) Q :=
-    hc.comp (f := fun y ↦ (q, y)) Q (mdifferentiableAt_const.prodMk mdifferentiableAt_id)
-  have hγ₁ : MDifferentiableAt I₄ I₂ (fun y ↦ (c (q, y)).1) Q := mdifferentiableAt_fst.comp Q hγ
-  have hγ₂ : MDifferentiableAt I₄ I₃ (fun y ↦ (c (q, y)).2) Q := mdifferentiableAt_snd.comp Q hγ
-  have hid : MDifferentiableAt I₄ I₄ (@id M₄) Q := mdifferentiableAt_id
-  have hq : MDifferentiableAt I₄ I₁ (fun _ : M₄ ↦ q) Q := mdifferentiableAt_const
-  -- Compare the covectors at `Q`.
-  refine CotangentBundle.ext (by simp) fun v ↦ ?_
-  simp only [generatingTarget_snd, generatingComposition₃_apply]
-  refine DFunLike.congr_fun
-    (congrArg Neg.neg (ContinuousLinearMap.ext fun v : TangentSpace I₄ Q ↦ ?_)) v
-  set w₁ := mfderiv I₄ I₂ (fun y ↦ (c (q, y)).1) Q v
-  set w₂ := mfderiv I₄ I₃ (fun y ↦ (c (q, y)).2) Q v
-  -- The derivative of `R(q, ·)` is `(d₂S₁ + d₁S₂) w₁ + (d₂S₂ + d₁S₃) w₂ + d_Q S₃ v` with
-  -- `wᵢ = d aᵢ v`, and the two matching equations kill `w₁` and `w₂`.
-  have h₁ : mvfderiv I₄ (fun y ↦ S₁ (q, (c (q, y)).1)) Q v =
-      mvfderiv I₂ (fun y ↦ S₁ (q, y)) (c (q, Q)).1 w₁ :=
-    mvfderiv_comp_apply (g := fun a ↦ S₁ (q, a)) (f := fun y ↦ (c (q, y)).1) Q
-      (MDifferentiableAt.curry_right (f := fun q' a ↦ S₁ (q', a)) hS₁) hγ₁ v
-  have h₂ : mvfderiv I₄ (fun y ↦ S₂ ((c (q, y)).1, (c (q, y)).2)) Q v =
-      mvfderiv I₂ (fun y ↦ S₂ (y, (c (q, Q)).2)) (c (q, Q)).1 w₁ +
-        mvfderiv I₃ (fun y ↦ S₂ ((c (q, Q)).1, y)) (c (q, Q)).2 w₂ :=
-    mvfderiv_comp_prodMk_apply (f := fun y ↦ (c (q, y)).1) (g := fun y ↦ (c (q, y)).2) hS₂ hγ₁ hγ₂ v
-  have h₃ : mvfderiv I₄ (fun y ↦ S₃ ((c (q, y)).2, y)) Q v =
-      mvfderiv I₃ (fun y ↦ S₃ (y, Q)) (c (q, Q)).2 w₂ +
-        mvfderiv I₄ (fun y ↦ S₃ ((c (q, Q)).2, y)) Q v := by
-    have h := mvfderiv_comp_prodMk_apply (f := fun y ↦ (c (q, y)).2) (g := id) hS₃ hγ₂ hid v
-    rw [mfderiv_id] at h
-    -- `id` and `ContinuousLinearMap.id` are the identity on points and tangent vectors.
-    exact h
-  have hd₁ := hS₁.comp (f := fun y ↦ (q, (c (q, y)).1)) Q (hq.prodMk hγ₁)
-  have hd₂ := hS₂.comp (f := fun y ↦ ((c (q, y)).1, (c (q, y)).2)) Q (hγ₁.prodMk hγ₂)
-  have hd₃ := hS₃.comp (f := fun y ↦ ((c (q, y)).2, y)) Q (hγ₂.prodMk hid)
-  have hsum : mvfderiv I₄ (fun y ↦ S₁ (q, (c (q, y)).1) + S₂ (c (q, y)) + S₃ ((c (q, y)).2, y)) Q =
-      mvfderiv I₄ (fun y ↦ S₁ (q, (c (q, y)).1)) Q +
-        mvfderiv I₄ (fun y ↦ S₂ ((c (q, y)).1, (c (q, y)).2)) Q +
-        mvfderiv I₄ (fun y ↦ S₃ ((c (q, y)).2, y)) Q := by
-    have e₁ : mvfderiv I₄ (fun y ↦ S₁ (q, (c (q, y)).1) + S₂ (c (q, y)) + S₃ ((c (q, y)).2, y)) Q =
-        mvfderiv I₄ (fun y ↦ S₁ (q, (c (q, y)).1) + S₂ (c (q, y))) Q +
-          mvfderiv I₄ (fun y ↦ S₃ ((c (q, y)).2, y)) Q :=
-      mvfderiv_fun_add (hd₁.add hd₂) hd₃
-    have e₂ : mvfderiv I₄ (fun y ↦ S₁ (q, (c (q, y)).1) + S₂ (c (q, y))) Q =
-        mvfderiv I₄ (fun y ↦ S₁ (q, (c (q, y)).1)) Q +
-          mvfderiv I₄ (fun y ↦ S₂ ((c (q, y)).1, (c (q, y)).2)) Q :=
-      mvfderiv_fun_add hd₁ hd₂
-    rw [e₁, e₂]
-  rw [hsum, add_apply, add_apply, h₁, h₂, h₃, ← hneg₁₂, ← hneg₂₃, neg_apply, neg_apply]
-  ring
+  obtain ⟨hS, hT, h⟩ := generatingComposition₃_prod_hypotheses hS₁ hS₂ hS₃ h₁₂ h₂₃
+  rw [generatingComposition₃_eq_generatingComposition,
+    generatingTarget_generatingComposition hS hT hc h]
+  -- The slice of `S₃(a₂, ·)` through `(a, Q)` is the slice of `S₃` through `(a₂, Q)`.
+  exact CotangentBundle.ext (by simp) fun v ↦ by
+    simp only [generatingTarget_snd]
+    -- Both sides are the same covector applied to `v`, a tangent vector at `Q`.
+    rfl
 
 /-- **The global composite of three generating functions** (Cannas da Silva, the exercise after
 Proposition 5.2). Suppose that over sets `W₁`, `W₂` and `W₃` the relations generated by `S₁`, `S₂`
