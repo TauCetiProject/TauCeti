@@ -41,9 +41,9 @@ groups of multiplicative type:
 * it moves with `μ` under the Galois action, `E(T, σ • μ) = σ (E(T, μ))`;
 * a homomorphism `T → S` (contravariantly, a map of coordinate algebras) can only shrink it, so for
   `μ = f ∘ μ₀` the field `E(S, μ)` is contained in `E(T, μ₀)`;
-* `E(T, -μ) = E(T, μ)`, `E(T, n • μ) = E(T, μ)` for `n ≠ 0`, and
-  `E(T, μ + ν) ⊆ E(T, μ) E(T, ν)`;
-* it is `k` exactly when the Galois group fixes `μ`.
+* `E(T, -μ) = E(T, μ)` and `E(T, n • μ) = E(T, μ)` for `n ≠ 0`;
+* over a perfect field, `E(T, μ + ν) ⊆ E(T, μ) E(T, ν)`, and `E(T, μ)` is `k` exactly when the
+  Galois group fixes `μ`.
 
 ## Main declarations
 
@@ -132,9 +132,7 @@ lattice is torsion-free. -/
 theorem cocharacterStabilizer_zsmul {n : ℤ} (hn : n ≠ 0) (μ : cocharacterLattice T) :
     cocharacterStabilizer T (n • μ) = cocharacterStabilizer T μ := by
   ext σ
-  rw [mem_cocharacterStabilizer_iff, mem_cocharacterStabilizer_iff, map_zsmul,
-    ← (cocharacterLatticeLinearEquivDual T).injective.eq_iff, map_zsmul, map_zsmul,
-    smul_right_inj hn, (cocharacterLatticeLinearEquivDual T).injective.eq_iff]
+  simp only [mem_cocharacterStabilizer_iff, map_zsmul, smul_right_inj hn]
 
 /-- The stabilizer of a sum of cocharacters contains the common stabilizer of the summands. -/
 theorem cocharacterStabilizer_inf_le_add (μ ν : cocharacterLattice T) :

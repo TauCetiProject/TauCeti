@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.GroupAction.Transitive
 public import TauCeti.Topology.Algebra.GroupAction.Discrete
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 import TauCeti.Logic.Equiv.Basic
 import TauCeti.Logic.Equiv.Option
@@ -153,8 +154,7 @@ theorem finiteDimensional_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n)
     FiniteDimensional K (IntermediateField.fixedField
       (MulAction.stabilizer (SeparableClosure K ≃ₐ[K] SeparableClosure K) i)) := by
   let := ρ.mulAction
-  rw [← InfiniteGalois.isOpen_iff_finite, ρ.fixingSubgroup_fixedField_stabilizer]
-  exact ρ.isOpen_stabilizer i
+  exact IntermediateField.finiteDimensional_fixedField_of_isOpen (ρ.isOpen_stabilizer i)
 
 /-- The degree of the fixed field of a point stabilizer is the size of its orbit. -/
 theorem finrank_fixedField_stabilizer (ρ : GaloisSet K n) (i : Fin n) :
