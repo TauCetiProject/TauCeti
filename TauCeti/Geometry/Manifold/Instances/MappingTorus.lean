@@ -468,6 +468,18 @@ theorem proj_flow (s : ℝ) (z : SmoothMappingTorus φ) : proj φ (flow φ s z) 
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
 
+/-- No point of the mapping torus is a rest point of the suspension flow: the time-`1 / 2` map
+moves the projection to the base circle by `1 / 2`. -/
+theorem exists_flow_ne {φ : M ≃ₘ^n⟮I, I⟯ M} (z : SmoothMappingTorus φ) : ∃ s, flow φ s z ≠ z := by
+  refine ⟨1 / 2, fun h ↦ ?_⟩
+  have hproj := congrArg (proj φ) h
+  rw [proj_flow, add_eq_left, AddCircle.coe_eq_zero_iff] at hproj
+  obtain ⟨k, hk⟩ := hproj
+  rw [zsmul_eq_mul, mul_one] at hk
+  have h2 : ((2 * k : ℤ) : ℝ) = 1 := by push_cast; rw [hk]; norm_num
+  have h2' : 2 * k = 1 := by exact_mod_cast h2
+  omega
+
 /-- The time-`k` map of the suspension flow, for an integer `k`, returns each fibre to itself
 by `φ ^ k`. -/
 theorem flow_intCast_mk (k : ℤ) (t : ℝ) (x : M) : flow φ k (mk φ t x) = mk φ t ((φ ^ k) x) := by
