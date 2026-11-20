@@ -21,7 +21,8 @@ is `(p, -q)`, the Hamiltonian vector field of the oscillator energy.
 More generally, `TauCeti.oscillatorHamiltonian m ν` is the energy `p² / (2m) + m ν² q² / 2` of a
 harmonic oscillator of mass `m` and angular frequency `ν`, and
 `TauCeti.stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian` states its Hamilton's
-equations `q' = p / m`, `p' = -m ν² q`.
+equations `q' = p / m`, `p' = -m ν² q`. For nonzero mass and frequency the energy vanishes only
+at the equilibrium `0` (`TauCeti.oscillatorHamiltonian_eq_zero_iff`).
 
 ## References
 
@@ -117,6 +118,24 @@ def oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) : ℝ :=
 theorem oscillatorHamiltonian_apply (m ν : ℝ) (x : ℝ × ℝ) :
     oscillatorHamiltonian m ν x = x.2 ^ 2 / (2 * m) + m * ν ^ 2 * x.1 ^ 2 / 2 :=
   (rfl)
+
+@[simp]
+theorem oscillatorHamiltonian_zero (m ν : ℝ) : oscillatorHamiltonian m ν 0 = 0 := by
+  simp [oscillatorHamiltonian_apply]
+
+/-- For nonzero mass and frequency, the equilibrium `0` is the only state of zero energy. -/
+theorem oscillatorHamiltonian_eq_zero_iff {m ν : ℝ} (hm : m ≠ 0) (hν : ν ≠ 0) {x : ℝ × ℝ} :
+    oscillatorHamiltonian m ν x = 0 ↔ x = 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ oscillatorHamiltonian_zero m ν⟩
+  -- `2 m H = p² + (m ν q)²` is a sum of squares.
+  have hsum : x.2 ^ 2 + (m * ν * x.1) ^ 2 = 0 := by
+    have h : x.2 ^ 2 + (m * ν * x.1) ^ 2 = 2 * m * oscillatorHamiltonian m ν x := by
+      rw [oscillatorHamiltonian_apply]
+      field_simp
+    rw [h, hx, mul_zero]
+  obtain ⟨hp, hq⟩ := (add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)).1 hsum
+  simp only [pow_eq_zero_iff two_ne_zero, mul_eq_zero, hm, hν, false_or] at hp hq
+  exact Prod.ext hq hp
 
 /-- **Hamilton's equations** of the harmonic oscillator: `q' = p / m`, `p' = -m ν² q`. -/
 theorem stdSymplecticForm_hamiltonianVectorField_oscillatorHamiltonian (m ν : ℝ) (x : ℝ × ℝ) :
