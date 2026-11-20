@@ -195,7 +195,7 @@ theorem dualRestrict_augmentationSubrepresentation_sumCoords :
       (MonoidAlgebra.basis X k).sumCoords = 0 :=
   LinearMap.ext fun v ↦ by
     rw [Submodule.dualRestrict_apply, LinearMap.zero_apply]
-    exact mem_augmentationSubrepresentation_iff.1 v.2
+    exact mem_augmentationSubrepresentation_iff.1 v.property
 
 /-- A linear form on `k[X]` vanishes on the augmentation subrepresentation exactly when it is a
 multiple of the coefficient sum. No hypothesis on `k` or `X` is needed. -/
@@ -232,7 +232,7 @@ noncomputable def permutationAugmentationSequence : ShortComplex (Rep k G) :=
     (permutationAugmentation k G X) (by
       ext v
       simpa [permutationAugmentation_apply k G X] using
-        (mem_augmentationSubrepresentation_iff (k := k) (G := G)).mp v.2)
+        (mem_augmentationSubrepresentation_iff (k := k) (G := G)).mp v.property)
 
 /-- The permutation augmentation sequence consists of the inclusion and coefficient sum. -/
 theorem permutationAugmentationSequence_def :
@@ -241,7 +241,7 @@ theorem permutationAugmentationSequence_def :
         (permutationAugmentation k G X) (by
           ext v
           simpa [permutationAugmentation_apply k G X] using
-            (mem_augmentationSubrepresentation_iff (k := k) (G := G)).mp v.2) :=
+            (mem_augmentationSubrepresentation_iff (k := k) (G := G)).mp v.property) :=
   (rfl)
 
 /-- The first term of the permutation augmentation sequence is the augmentation
@@ -363,7 +363,7 @@ theorem toRepresentation_invariantLine :
     (invariantLine k G X).toRepresentation = Representation.trivial k G _ := by
   refine DFunLike.ext _ _ fun g => LinearMap.ext fun w => Subtype.ext ?_
   have hw : (w : MonoidAlgebra k X) ∈ Submodule.span k {permutationSum k X} := by
-    rw [← toSubmodule_invariantLine k G X]; exact w.2
+    rw [← toSubmodule_invariantLine k G X]; exact w.property
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp hw
   -- both sides act on the underlying element of `k[X]`: `Subrepresentation.toRepresentation` is
   -- the restriction of the ambient action, and the trivial representation is the identity
@@ -397,7 +397,7 @@ noncomputable def invariantLineEquivTrivial :
     { toFun := fun v => (v : MonoidAlgebra k X).coeff (Classical.arbitrary X)
       invFun := fun c => ⟨c • permutationSum k X, mem_invariantLine_iff.mpr ⟨c, rfl⟩⟩
       left_inv := fun v => by
-        obtain ⟨c, hc⟩ := mem_invariantLine_iff.mp v.2
+        obtain ⟨c, hc⟩ := mem_invariantLine_iff.mp v.property
         apply Subtype.ext
         simp [← hc]
       right_inv := fun c => by simp
@@ -457,13 +457,13 @@ theorem finrank_augmentationSubrepresentation :
     rw [hbot, finrank_bot, Fintype.card_eq_zero]
   let x₀ := Classical.arbitrary X
   let d (x : {x : X // x ≠ x₀}) : MonoidAlgebra k X :=
-    MonoidAlgebra.single x.1 1 - MonoidAlgebra.single x₀ 1
+    MonoidAlgebra.single x.val 1 - MonoidAlgebra.single x₀ 1
   have hcoord (i j : {x : X // x ≠ x₀}) :
-      (d j).coeff i.1 = if j = i then 1 else 0 := by
+      (d j).coeff i.val = if j = i then 1 else 0 := by
     simp [d, Finsupp.single_apply, Ne.symm i.property, Subtype.val_inj]
   have hind : LinearIndependent k d := by
     refine linearIndependent_iff'.mpr fun s c hc i hi => ?_
-    have := congrArg (fun v : MonoidAlgebra k X => v.coeff i.1) hc
+    have := congrArg (fun v : MonoidAlgebra k X => v.coeff i.val) hc
     simpa [MonoidAlgebra.coeff_smul_apply, hcoord, hi] using this
   have hspan : LinearMap.ker (MonoidAlgebra.basis X k).sumCoords =
       Submodule.span k (Set.range d) := by
@@ -476,7 +476,7 @@ theorem finrank_augmentationSubrepresentation :
       · exact Submodule.subset_span ⟨⟨x, hx⟩, rfl⟩
     · apply Submodule.span_mono
       rintro _ ⟨x, rfl⟩
-      exact ⟨x.1, rfl⟩
+      exact ⟨x.val, rfl⟩
   rw [toSubmodule_augmentationSubrepresentation, hspan, finrank_span_eq_card hind]
   simp
 
@@ -615,7 +615,8 @@ theorem ofMulActionEquivProdAugmentation_apply_fst (h : IsUnit (Fintype.card X :
       (ofMulActionEquivProdAugmentation k G X h).symm_apply_apply]
   have haug := congrArg (MonoidAlgebra.basis X k).sumCoords hrec
   rw [map_add, map_smul, sumCoords_basis_permutationSum, smul_eq_mul,
-    mem_augmentationSubrepresentation_iff.mp (ofMulActionEquivProdAugmentation k G X h v).2.2,
+    mem_augmentationSubrepresentation_iff.mp (ofMulActionEquivProdAugmentation k G X h
+        v).2.property,
     add_zero] at haug
   rw [← haug, Ring.mul_inverse_cancel_right _ _ h]
 
@@ -660,7 +661,8 @@ theorem augmentationProjectionOfIsUnit_coe (h : IsUnit (Fintype.card X : k))
     (v : (augmentationSubrepresentation k G X).toSubmodule) :
     augmentationProjectionOfIsUnit k G X h v = v :=
   Subtype.ext <| by
-    rw [coe_augmentationProjectionOfIsUnit_apply, mem_augmentationSubrepresentation_iff.1 v.2,
+    rw [coe_augmentationProjectionOfIsUnit_apply, mem_augmentationSubrepresentation_iff.1
+        v.property,
       zero_mul, zero_smul, sub_zero]
 
 /-- The projection onto the augmentation subrepresentation is equivariant. -/
@@ -724,7 +726,7 @@ theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) 
       = (augmentationSubrepresentation k G X).toRepresentation g := by
     refine LinearMap.ext fun v => Subtype.ext ?_
     have hv : σ (v : MonoidAlgebra k X) = 0 := by
-      rw [hσ_apply, mem_augmentationSubrepresentation_iff.mp v.2, zero_smul]
+      rw [hσ_apply, mem_augmentationSubrepresentation_iff.mp v.property, zero_smul]
     simp [Subrepresentation.toRepresentation_apply, hv]
   have key : LinearMap.trace k _ ((Representation.ofMulAction k G X g - σ).restrict
       (fun v _ => hmem v))

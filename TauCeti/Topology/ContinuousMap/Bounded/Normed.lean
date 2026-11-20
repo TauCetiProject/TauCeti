@@ -211,8 +211,8 @@ preserved by both `a` and `b`. -/
 def compContinuousₗᵢ (s : S) (a b : C(α, α)) (hab : ∀ x, a (b x) = x) (hba : ∀ x, b (a x) = x)
     (ha : ∀ f ∈ s, f.compContinuous a ∈ s) (hb : ∀ f ∈ s, f.compContinuous b ∈ s) :
     s ≃ₗᵢ[𝕜] s where
-  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.2⟩
-  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.2⟩
+  toFun f := ⟨(f : α →ᵇ β).compContinuous a, ha _ f.property⟩
+  invFun f := ⟨(f : α →ᵇ β).compContinuous b, hb _ f.property⟩
   map_add' _ _ := Subtype.ext <| ext fun _ => by simp
   map_smul' _ _ := Subtype.ext <| ext fun _ => by simp
   left_inv f := Subtype.ext <| ext fun x => congrArg (f : α →ᵇ β) (hab x)
@@ -412,19 +412,22 @@ variable {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedS
 /-- The bounded continuous difference-quotient `(t, s) ↦ (t - s)⁻¹ • (g t - g s)` on
 `offDiag (univ : Set 𝕜)` associated with a `K`-Lipschitz map `g : 𝕜 → E`. -/
 noncomputable def offDiagSlope (hg : LipschitzWith K g) : offDiag (univ : Set 𝕜) →ᵇ E :=
-  BoundedContinuousFunction.ofNormedAddCommGroup (fun p ↦ (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2))
+  BoundedContinuousFunction.ofNormedAddCommGroup
+    (fun p ↦ (p.val.1 - p.val.2)⁻¹ • (g p.val.1 - g p.val.2))
     (by
       have hc := hg.continuous
-      exact (((continuous_fst.comp continuous_subtype_val).sub
-        (continuous_snd.comp continuous_subtype_val)).inv₀ fun p ↦ sub_ne_zero.2 p.2.2.2).smul
-        ((hc.comp (continuous_fst.comp continuous_subtype_val)).sub
-          (hc.comp (continuous_snd.comp continuous_subtype_val))))
+      exact (((continuous_fst.comp continuous_subtypeVal).sub
+        (continuous_snd.comp continuous_subtypeVal)).inv₀ fun p ↦ sub_ne_zero.2
+            p.property.2.2).smul
+        ((hc.comp (continuous_fst.comp continuous_subtypeVal)).sub
+          (hc.comp (continuous_snd.comp continuous_subtypeVal))))
     K fun p ↦ by
-      rw [norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 p.2.2.2)), mul_comm]
-      simpa [dist_eq_norm] using hg.dist_le_mul p.1.1 p.1.2
+      rw [norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 (sub_ne_zero.2 p.property.2.2)),
+          mul_comm]
+      simpa [dist_eq_norm] using hg.dist_le_mul p.val.1 p.val.2
 
 @[simp] theorem offDiagSlope_apply (hg : LipschitzWith K g) (p : offDiag (univ : Set 𝕜)) :
-    hg.offDiagSlope p = (p.1.1 - p.1.2)⁻¹ • (g p.1.1 - g p.1.2) := (rfl)
+    hg.offDiagSlope p = (p.val.1 - p.val.2)⁻¹ • (g p.val.1 - g p.val.2) := (rfl)
 
 theorem norm_offDiagSlope_le (hg : LipschitzWith K g) : ‖hg.offDiagSlope‖ ≤ K :=
   BoundedContinuousFunction.norm_ofNormedAddCommGroup_le _ K.coe_nonneg _

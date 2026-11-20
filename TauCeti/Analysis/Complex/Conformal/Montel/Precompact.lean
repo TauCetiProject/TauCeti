@@ -74,7 +74,7 @@ theorem isCompact_closure_range_of_isLocallyBoundedOn [ProperSpace E] (hΩ : IsO
   -- Arzelà–Ascoli in the compact-open topology: equicontinuity comes from Cauchy's estimate and
   -- pointwise relative compactness from local boundedness.
   refine ArzelaAscoli.isCompact_closure_range_of_equicontinuous heq fun x => ?_
-  obtain ⟨C, hC⟩ := hb.exists_forall_norm_le x.2
+  obtain ⟨C, hC⟩ := hb.exists_forall_norm_le x.property
   refine ⟨closedBall 0 C, isCompact_closedBall _ _, fun i => ?_⟩
   simpa [hf i, mem_closedBall, dist_zero_right] using hC i
 

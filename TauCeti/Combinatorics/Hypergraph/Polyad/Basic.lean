@@ -67,20 +67,20 @@ noncomputable def polyadSupport (C : PairColorSystem κ V) (c₀ c₁ c₂ : Fin
     (k₀₁ k₀₂ k₁₂ : κ) : Finset {x : Fin 3 → V // Function.Injective x} := by
   classical
   exact univ.filter fun x ↦
-    x.1 0 ∈ c₀ ∧ x.1 1 ∈ c₁ ∧ x.1 2 ∈ c₂ ∧
-      C.colorOfPair (x.1 0) (x.1 1) = some k₀₁ ∧
-      C.colorOfPair (x.1 0) (x.1 2) = some k₀₂ ∧
-      C.colorOfPair (x.1 1) (x.1 2) = some k₁₂
+    x.val 0 ∈ c₀ ∧ x.val 1 ∈ c₁ ∧ x.val 2 ∈ c₂ ∧
+      C.colorOfPair (x.val 0) (x.val 1) = some k₀₁ ∧
+      C.colorOfPair (x.val 0) (x.val 2) = some k₀₂ ∧
+      C.colorOfPair (x.val 1) (x.val 2) = some k₁₂
 
 /-- Membership in a computed polyad support. -/
 @[simp]
 theorem mem_polyadSupport {C : PairColorSystem κ V} {c₀ c₁ c₂ : Finset V}
     {k₀₁ k₀₂ k₁₂ : κ} {x : {x : Fin 3 → V // Function.Injective x}} :
     x ∈ polyadSupport C c₀ c₁ c₂ k₀₁ k₀₂ k₁₂ ↔
-      x.1 0 ∈ c₀ ∧ x.1 1 ∈ c₁ ∧ x.1 2 ∈ c₂ ∧
-        C.colorOfPair (x.1 0) (x.1 1) = some k₀₁ ∧
-        C.colorOfPair (x.1 0) (x.1 2) = some k₀₂ ∧
-        C.colorOfPair (x.1 1) (x.1 2) = some k₁₂ := by
+      x.val 0 ∈ c₀ ∧ x.val 1 ∈ c₁ ∧ x.val 2 ∈ c₂ ∧
+        C.colorOfPair (x.val 0) (x.val 1) = some k₀₁ ∧
+        C.colorOfPair (x.val 0) (x.val 2) = some k₀₂ ∧
+        C.colorOfPair (x.val 1) (x.val 2) = some k₁₂ := by
   simp [polyadSupport]
 
 namespace Polyad3
@@ -96,16 +96,16 @@ noncomputable def support (P : Polyad3 S) :
 @[simp]
 theorem mem_support (P : Polyad3 S) (x : {x : Fin 3 → V // Function.Injective x}) :
     x ∈ P.support ↔
-      x.1 0 ∈ P.c₀ ∧ x.1 1 ∈ P.c₁ ∧ x.1 2 ∈ P.c₂ ∧
-        S.pairColors.colorOfPair (x.1 0) (x.1 1) = some P.color₀₁ ∧
-        S.pairColors.colorOfPair (x.1 0) (x.1 2) = some P.color₀₂ ∧
-        S.pairColors.colorOfPair (x.1 1) (x.1 2) = some P.color₁₂ :=
+      x.val 0 ∈ P.c₀ ∧ x.val 1 ∈ P.c₁ ∧ x.val 2 ∈ P.c₂ ∧
+        S.pairColors.colorOfPair (x.val 0) (x.val 1) = some P.color₀₁ ∧
+        S.pairColors.colorOfPair (x.val 0) (x.val 2) = some P.color₀₂ ∧
+        S.pairColors.colorOfPair (x.val 1) (x.val 2) = some P.color₁₂ :=
   mem_polyadSupport
 
 /-- The support of a polyad has at most as many triples as the product of its three cells. -/
 theorem card_support_le (P : Polyad3 S) : #P.support ≤ #P.c₀ * #P.c₁ * #P.c₂ := by
   rw [mul_assoc, ← card_product, ← card_product]
-  refine card_le_card_of_injOn (fun x ↦ (x.1 0, x.1 1, x.1 2)) (fun x hx ↦ ?_)
+  refine card_le_card_of_injOn (fun x ↦ (x.val 0, x.val 1, x.val 2)) (fun x hx ↦ ?_)
     (Fin.injective_apply_zero_one_two.comp Subtype.val_injective).injOn
   obtain ⟨h₀, h₁, h₂, -⟩ := (P.mem_support x).1 hx
   simp [h₀, h₁, h₂]
@@ -201,28 +201,28 @@ noncomputable def pairSupport₀₁ (P : Polyad3 S) :
     Finset {p : V × V // p.1 ≠ p.2} := by
   classical
   exact univ.filter fun p ↦
-    p.1.1 ∈ P.c₀ ∧ p.1.2 ∈ P.c₁ ∧ S.pairColors.color p = P.color₀₁
+    p.val.1 ∈ P.c₀ ∧ p.val.2 ∈ P.c₁ ∧ S.pairColors.color p = P.color₀₁
 
 /-- The pair graph of a polyad on roles zero and two. -/
 noncomputable def pairSupport₀₂ (P : Polyad3 S) :
     Finset {p : V × V // p.1 ≠ p.2} := by
   classical
   exact univ.filter fun p ↦
-    p.1.1 ∈ P.c₀ ∧ p.1.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₀₂
+    p.val.1 ∈ P.c₀ ∧ p.val.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₀₂
 
 /-- The pair graph of a polyad on roles one and two. -/
 noncomputable def pairSupport₁₂ (P : Polyad3 S) :
     Finset {p : V × V // p.1 ≠ p.2} := by
   classical
   exact univ.filter fun p ↦
-    p.1.1 ∈ P.c₁ ∧ p.1.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₁₂
+    p.val.1 ∈ P.c₁ ∧ p.val.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₁₂
 
 /-- Membership in the pair support on roles zero and one: the pair has its endpoints in the
 corresponding cells and carries the corresponding color. -/
 @[simp]
 theorem mem_pairSupport₀₁ (P : Polyad3 S) (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ P.pairSupport₀₁ ↔
-      p.1.1 ∈ P.c₀ ∧ p.1.2 ∈ P.c₁ ∧ S.pairColors.color p = P.color₀₁ := by
+      p.val.1 ∈ P.c₀ ∧ p.val.2 ∈ P.c₁ ∧ S.pairColors.color p = P.color₀₁ := by
   simp [pairSupport₀₁]
 
 /-- Membership in the pair support on roles zero and two: the pair has its endpoints in the
@@ -230,7 +230,7 @@ corresponding cells and carries the corresponding color. -/
 @[simp]
 theorem mem_pairSupport₀₂ (P : Polyad3 S) (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ P.pairSupport₀₂ ↔
-      p.1.1 ∈ P.c₀ ∧ p.1.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₀₂ := by
+      p.val.1 ∈ P.c₀ ∧ p.val.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₀₂ := by
   simp [pairSupport₀₂]
 
 /-- Membership in the pair support on roles one and two: the pair has its endpoints in the
@@ -238,7 +238,7 @@ corresponding cells and carries the corresponding color. -/
 @[simp]
 theorem mem_pairSupport₁₂ (P : Polyad3 S) (p : {p : V × V // p.1 ≠ p.2}) :
     p ∈ P.pairSupport₁₂ ↔
-      p.1.1 ∈ P.c₁ ∧ p.1.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₁₂ := by
+      p.val.1 ∈ P.c₁ ∧ p.val.2 ∈ P.c₂ ∧ S.pairColors.color p = P.color₁₂ := by
   simp [pairSupport₁₂]
 
 end Polyad3
@@ -316,7 +316,7 @@ variable (S : PairSkeleton3 κ V)
 /-- The polyad of an injective triple: the vertex cells containing its three coordinates and the
 colors of its three canonically oriented coordinate pairs. -/
 noncomputable def ofTriple (x : {x : Fin 3 → V // Function.Injective x}) : Polyad3 S :=
-  ofData (S.vertexPart.part (x.1 0)) (S.vertexPart.part (x.1 1)) (S.vertexPart.part (x.1 2))
+  ofData (S.vertexPart.part (x.val 0)) (S.vertexPart.part (x.val 1)) (S.vertexPart.part (x.val 2))
     (S.vertexPart.part_mem.2 (mem_univ _)) (S.vertexPart.part_mem.2 (mem_univ _))
     (S.vertexPart.part_mem.2 (mem_univ _)) (S.pairColors.color (coordPair x 0 1 (by decide)))
     (S.pairColors.color (coordPair x 0 2 (by decide)))
@@ -327,17 +327,17 @@ variable {S}
 /-- The role-zero cell of `ofTriple` is the cell containing the zeroth coordinate. -/
 @[simp]
 theorem ofTriple_c₀ (x : {x : Fin 3 → V // Function.Injective x}) :
-    (ofTriple S x).c₀ = S.vertexPart.part (x.1 0) := (rfl)
+    (ofTriple S x).c₀ = S.vertexPart.part (x.val 0) := (rfl)
 
 /-- The role-one cell of `ofTriple` is the cell containing the first coordinate. -/
 @[simp]
 theorem ofTriple_c₁ (x : {x : Fin 3 → V // Function.Injective x}) :
-    (ofTriple S x).c₁ = S.vertexPart.part (x.1 1) := (rfl)
+    (ofTriple S x).c₁ = S.vertexPart.part (x.val 1) := (rfl)
 
 /-- The role-two cell of `ofTriple` is the cell containing the second coordinate. -/
 @[simp]
 theorem ofTriple_c₂ (x : {x : Fin 3 → V // Function.Injective x}) :
-    (ofTriple S x).c₂ = S.vertexPart.part (x.1 2) := (rfl)
+    (ofTriple S x).c₂ = S.vertexPart.part (x.val 2) := (rfl)
 
 /-- The color on roles zero and one of `ofTriple` is the color of the coordinate pair `(0, 1)`. -/
 @[simp]

@@ -205,7 +205,8 @@ variable [(W.baseChange ℚ).IsElliptic]
 bounded integer-coordinate search. -/
 def boundedIntegralPoints (B : ℕ) : Finset (W.baseChange ℚ).toAffine.Point :=
   (W.boundedIntegralSolutions B).attach.image fun p =>
-    W.pointOfIntegralSolution p.1.1 p.1.2 ((W.mem_boundedIntegralSolutions_iff B p.1).mp p.2).1
+    W.pointOfIntegralSolution p.val.1 p.val.2 ((W.mem_boundedIntegralSolutions_iff B p.val).mp
+        p.property).1
 
 /-- Membership in the finite search result is exactly integrality and the abscissa bound. -/
 @[simp]

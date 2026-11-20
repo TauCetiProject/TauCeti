@@ -197,7 +197,7 @@ theorem exists_contDiff_equation_eq_zero_isZeroMultiplicity {m : ℕ} (D : Sym �
   have hPf : P.eval = f := funext fun w ↦ by simp [hP, hf, eval_multiset_prod, Multiset.map_map]
   have hdeg : P.natDegree = m := by
     rw [hP, natDegree_multiset_prod_X_sub_C_eq_card]
-    exact D.2
+    exact D.property
   have hfc : ContDiff ℝ ∞ f := hPf ▸ (P.differentiable.contDiff).restrict_scalars ℝ
   rcases Nat.eq_zero_or_pos m with rfl | hm
   · -- The vacuum: amplitude zero and section `1`.
@@ -236,7 +236,7 @@ def framedVortexSubMulAction (c : ℝ) (m : ℕ) :
     Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)}
   smul_mem' u x := by
     rintro ⟨hx, hsol, hfr⟩
-    obtain ⟨hu, hu1⟩ := (mem_framedGaugeGroup _).1 u.2
+    obtain ⟨hu, hu1⟩ := (mem_framedGaugeGroup _).1 u.property
     simp only [Set.mem_ofPred_eq, framedGaugeGroup_smul]
     refine ⟨contDiff_gaugeTransform (by simpa using hu) hx, fun z ↦ ?_,
       tendsto_sectionValue_gaugeTransform hu1 hfr⟩
@@ -271,13 +271,13 @@ private theorem exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction
 `Sym ℂ m` listing the zeros of its section with multiplicity. It is characterized by
 `framedVortexDivisor_eq_iff`. -/
 def framedVortexDivisor (x : framedVortexSubMulAction c m) : Sym ℂ m :=
-  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.2).choose
+  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.property).choose
 
 /-- The section of a smooth framed vortex vanishes at the points of its divisor, to the order of
 their multiplicities. -/
 theorem isZeroMultiplicity_sectionValue_framedVortexDivisor (x : framedVortexSubMulAction c m) :
     IsZeroMultiplicity (sectionValue x) fun z ↦ (framedVortexDivisor x : Multiset ℂ).count z :=
-  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.2).choose_spec
+  (exists_sym_isZeroMultiplicity_of_mem_framedVortexSubMulAction x.property).choose_spec
 
 /-- **Characterization of the divisor.** The divisor of a smooth framed vortex is the unique
 `D ∈ Sym ℂ m` whose counts are the zero multiplicities of its section. -/

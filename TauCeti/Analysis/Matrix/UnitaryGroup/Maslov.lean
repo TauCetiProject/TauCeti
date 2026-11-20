@@ -249,7 +249,7 @@ theorem coe_souriau (U : unitaryGroup n α) :
 /-- The Souriau map is continuous. -/
 theorem continuous_souriau [TopologicalSpace α] [IsTopologicalRing α] :
     Continuous (souriau : unitaryGroup n α → unitaryGroup n α) :=
-  Continuous.subtype_mk (continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose)
+  Continuous.subtype_mk (continuous_subtypeVal.matrix_mul continuous_subtypeVal.matrix_transpose)
     _
 
 /-- Changing the frame `U` by a matrix `O` with `O Oᵀ = 1`, for instance a real orthogonal
@@ -265,7 +265,7 @@ subspace `U ℝⁿ = V ℝⁿ` differ by a real orthogonal matrix, so they have 
 theorem souriau_eq_of_realImage_eq {U V : unitaryGroup n ℂ}
     (h : (U : Matrix n n ℂ).realImage = (V : Matrix n n ℂ).realImage) : souriau U = souriau V := by
   have hgram (W : unitaryGroup n ℂ) : ((W : Matrix n n ℂ)ᴴ * W).map Complex.re = 1 := by
-    rw [← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.2,
+    rw [← star_eq_conjTranspose, Unitary.star_mul_self_of_mem W.property,
       Matrix.map_one _ Complex.zero_re Complex.one_re]
   obtain ⟨O, hO, hVO⟩ := exists_mem_orthogonalGroup_eq_mul_map_ofReal
     (M := Unitary.toUnits U) (M' := Unitary.toUnits V) h (hgram U) (hgram V)
@@ -451,10 +451,10 @@ theorem maslovIndex_eq_zero_of_rootMultiplicity_eq {U V : unitaryGroup n ℂ} (�
     (h : ∀ t, (souriau (γ t) : Matrix n n ℂ).charpoly.rootMultiplicity 1 = k) :
     maslovIndex γ = 0 := by
   have hW : Continuous fun t => (souriau (γ t) : Matrix n n ℂ) :=
-    continuous_subtype_val.comp (continuous_souriau.comp γ.continuous)
+    continuous_subtypeVal.comp (continuous_souriau.comp γ.continuous)
   have hs : Continuous fun t => spectralAngleSum (souriau (γ t) : Matrix n n ℂ) :=
     continuous_iff_continuousAt.2 fun t => continuousAt_spectralAngleSum hW.continuousAt
-      (souriau (γ t)).2 (Eventually.of_forall fun t' => (h t').trans (h t).symm)
+      (souriau (γ t)).property (Eventually.of_forall fun t' => (h t').trans (h t).symm)
   -- A continuous angle `θ` of the determinants `det (W t)` of the Souriau maps and the angle
   -- `2π s(W t) + (n - k) π` are continuous lifts of the same path in the circle, so they differ
   -- by a constant and the change of `θ / (2π)` cancels the change of `s`.
@@ -465,11 +465,11 @@ theorem maslovIndex_eq_zero_of_rootMultiplicity_eq {U V : unitaryGroup n ℂ} (�
       ((continuous_const.mul hs).add continuous_const) fun t => by
     refine Circle.ext ?_
     rw [hθ, detSouriauPath_apply, coe_detCircle,
-      det_eq_neg_one_pow_mul_exp_spectralAngleSum (souriau (γ t)).2, h t, Circle.coe_exp]
+      det_eq_neg_one_pow_mul_exp_spectralAngleSum (souriau (γ t)).property, h t, Circle.coe_exp]
     push_cast
     have hsign : exp (((Fintype.card n - k : ℕ) : ℂ) * Real.pi * Complex.I) =
         (-1) ^ (Fintype.card n - k) := by
-      rw [mul_assoc, exp_nat_mul, exp_pi_mul_I]
+      rw [mul_assoc, exp_natCast_mul, exp_pi_mul_I]
     rw [add_mul, exp_add, hsign, mul_comm]
   rw [maslovIndex, Circle.angleChange_eq_sub _ θ.continuous hθ, hm 1, hm 0, γ.source, γ.target]
   field_simp
@@ -534,7 +534,7 @@ theorem maslovIndex_eq_sum_of_diagonal {U V : unitaryGroup n ℂ} (γ : Path U V
     rw [coe_souriau_of_coe_eq_diagonal (hγ t)]
     congr 1
     funext j
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     push_cast
     ring_nf
   -- `t ↦ 2 ∑ j, φ_j t` is a continuous angle of `det (γ t γ tᵀ)`.
@@ -571,7 +571,7 @@ theorem maslovIndex_eq_card_of_halfTurn {U V : unitaryGroup n ℂ} (γ : Path U 
     (hγ : ∀ t, (γ t : Matrix n n ℂ) = Complex.exp (↑(Real.pi * t) * Complex.I) • 1) :
     maslovIndex γ = Fintype.card n := by
   rw [maslovIndex_eq_sum_of_diagonal γ (φ := fun _ t => Real.pi * t)
-    (fun _ => continuous_const.mul continuous_subtype_val) fun t => by
+    (fun _ => continuous_const.mul continuous_subtypeVal) fun t => by
       rw [hγ t, smul_one_eq_diagonal]]
   have hπ : Real.pi ≠ 0 := Real.pi_ne_zero
   simp [hπ]

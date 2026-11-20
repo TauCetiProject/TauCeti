@@ -104,9 +104,9 @@ theorem range_mfderiv_fst_transverseFiberProduct :
     letI := transverseFiberProductChartedSpace hn hf hg htrans
     ∀ p : {p : X × Y // f p.1 = g p.2},
       (mfderiv 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IX
-        (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.1.1) p).range =
-      ((((tangentSpaceCast IN (g p.1.2) (f p.1.1)).toContinuousLinearMap).comp
-        (mfderiv IY IN g p.1.2)).range).comap (mfderiv IX IN f p.1.1).toLinearMap := by
+        (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.1) p).range =
+      ((((tangentSpaceCast IN (g p.val.2) (f p.val.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.val.2)).range).comap (mfderiv IX IN f p.val.1).toLinearMap := by
   let := transverseFiberProductChartedSpace hn hf hg htrans
   have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
   have : IsManifold IX 1 X := .of_le hn
@@ -136,10 +136,10 @@ theorem range_mfderiv_snd_transverseFiberProduct :
     letI := transverseFiberProductChartedSpace hn hf hg htrans
     ∀ p : {p : X × Y // f p.1 = g p.2},
       (mfderiv 𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IY
-        (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.1.2) p).range =
-      (mfderiv IX IN f p.1.1).range.comap
-        (((tangentSpaceCast IN (g p.1.2) (f p.1.1)).toContinuousLinearMap).comp
-          (mfderiv IY IN g p.1.2)).toLinearMap := by
+        (fun q : {p : X × Y // f p.1 = g p.2} ↦ q.val.2) p).range =
+      (mfderiv IX IN f p.val.1).range.comap
+        (((tangentSpaceCast IN (g p.val.2) (f p.val.1)).toContinuousLinearMap).comp
+          (mfderiv IY IN g p.val.2)).toLinearMap := by
   let := transverseFiberProductChartedSpace hn hf hg htrans
   have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
   have : IsManifold IX 1 X := .of_le hn
@@ -169,7 +169,7 @@ theorem isSubmersion_fst_transverseFiberProduct (hgs : Manifold.IsSubmersion IY 
     letI := transverseFiberProductChartedSpace hn hf hg htrans
     Manifold.IsSubmersion
       𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IX n
-      (fun p : {p : X × Y // f p.1 = g p.2} ↦ p.1.1) := by
+      (fun p : {p : X × Y // f p.1 = g p.2} ↦ p.val.1) := by
   let := transverseFiberProductChartedSpace hn hf hg htrans
   have := isManifold_transverseFiberProduct hn hf hg htrans
   have hp := (isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans).contMDiff.fst
@@ -177,10 +177,10 @@ theorem isSubmersion_fst_transverseFiberProduct (hgs : Manifold.IsSubmersion IY 
   intro p
   apply LinearMap.range_eq_top.mp
   rw [range_mfderiv_fst_transverseFiberProduct hn hf hg htrans]
-  have hs := (tangentSpaceCast IN (g p.1.2) (f p.1.1)).surjective.comp
-    (hgs.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.1.2)
-  have hr : (((tangentSpaceCast IN (g p.1.2) (f p.1.1)).toContinuousLinearMap).comp
-      (mfderiv IY IN g p.1.2)).range = ⊤ := LinearMap.range_eq_top.2 hs
+  have hs := (tangentSpaceCast IN (g p.val.2) (f p.val.1)).surjective.comp
+    (hgs.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.val.2)
+  have hr : (((tangentSpaceCast IN (g p.val.2) (f p.val.1)).toContinuousLinearMap).comp
+      (mfderiv IY IN g p.val.2)).range = ⊤ := LinearMap.range_eq_top.2 hs
   rw [hr, Submodule.comap_top]
 
 /-- Base change preserves submersions: the second projection of the transverse fibre product
@@ -189,7 +189,7 @@ theorem isSubmersion_snd_transverseFiberProduct (hfs : Manifold.IsSubmersion IX 
     letI := transverseFiberProductChartedSpace hn hf hg htrans
     Manifold.IsSubmersion
       𝓘(ℝ, Fin (finrank ℝ EX + finrank ℝ EY - finrank ℝ EN) → ℝ) IY n
-      (fun p : {p : X × Y // f p.1 = g p.2} ↦ p.1.2) := by
+      (fun p : {p : X × Y // f p.1 = g p.2} ↦ p.val.2) := by
   let := transverseFiberProductChartedSpace hn hf hg htrans
   have := isManifold_transverseFiberProduct hn hf hg htrans
   have hp := (isSmoothEmbedding_coe_transverseFiberProduct hn hf hg htrans).contMDiff.snd
@@ -198,7 +198,7 @@ theorem isSubmersion_snd_transverseFiberProduct (hfs : Manifold.IsSubmersion IX 
   apply LinearMap.range_eq_top.mp
   rw [range_mfderiv_snd_transverseFiberProduct hn hf hg htrans,
     LinearMap.range_eq_top.2
-      (hfs.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.1.1), Submodule.comap_top]
+      (hfs.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.val.1), Submodule.comap_top]
 
 end BaseChange
 

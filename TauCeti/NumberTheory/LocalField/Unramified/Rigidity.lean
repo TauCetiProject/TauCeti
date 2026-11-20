@@ -118,7 +118,7 @@ theorem IsUnramified.residueFieldHom_bijective :
   -- So `ζ ↦ ξ` defines a `K`-embedding, whose residue map agrees with `φ` on the residue of `ζ`.
   have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 := by
     have hgξ := aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
-      ((mem_rootsOfUnity' N _).1 u.2) hgφ
+      ((mem_rootsOfUnity' N _).1 u.property) hgφ
     rw [hpbgen, minpoly.isIntegrallyClosed_eq_field_fractions' K hζO,
       aeval_map_algebraMap, ← Algebra.algebraMap_ofSubsemiring_apply, aeval_algebraMap_apply,
       hgξ, map_zero]

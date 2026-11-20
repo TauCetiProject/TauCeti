@@ -51,17 +51,17 @@ point subgroup. This is a map of sets, not an assertion that coordinates add und
 -/
 noncomputable def positiveRootProduct (l : List PositiveRoot) (A : Type v) [CommRing A]
     (u : PositiveRoot → A) : D.positivePoints A :=
-  ⟨(l.map fun γ => D.rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod,
+  ⟨(l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod,
     Subgroup.list_prod_mem _ fun _ hg => by
       obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hg
-      exact D.rootSubgroupPoints_mem_positivePoints A γ.2 _⟩
+      exact D.rootSubgroupPoints_mem_positivePoints A γ.property _⟩
 
 /-- The positive-root product has the stated ordered factors in the datum point group. -/
 @[simp]
 theorem coe_positiveRootProduct (l : List PositiveRoot) (A : Type v) [CommRing A]
     (u : PositiveRoot → A) :
     (D.positiveRootProduct l A u : D.points A) =
-      (l.map fun γ => D.rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod :=
+      (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod :=
   (rfl)
 
 /-- Changing the value ring applies the ring map to each root coordinate. -/
@@ -82,7 +82,7 @@ theorem positiveRootProduct_surjective (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
     Function.Surjective (D.positiveRootProduct l A) := by
   intro g
-  have hg := (D.mem_positivePoints_iff).mp g.2
+  have hg := (D.mem_positivePoints_iff).mp g.property
   obtain ⟨q, hq, hmatrix⟩ := hg
   have hroots : ∀ γ, γ ∈ l.map Subtype.val ↔
       γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
@@ -90,12 +90,12 @@ theorem positiveRootProduct_surjective (l : List PositiveRoot)
     constructor
     · rintro hγ
       obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hγ
-      exact γ.2
+      exact γ.property
     · intro hγ
       exact List.mem_map.mpr ⟨⟨γ, hγ⟩, hcover _, rfl⟩
   obtain ⟨u, hu⟩ := (D.mem_positiveSubgroup_iff_exists_prod
     (l.map Subtype.val) (hl.map Subtype.val_injective) hroots (CommAlgCat.of ℤ A) q).mp hq
-  refine ⟨fun γ => u γ.1, ?_⟩
+  refine ⟨fun γ => u γ.val, ?_⟩
   apply Subtype.ext
   apply Subtype.ext
   have h := congrArg
@@ -112,7 +112,7 @@ theorem mem_positivePoints_iff_exists_prod
     (hl : l.Nodup) (hall : ∀ γ, γ ∈ l) (g : D.points A) :
     g ∈ D.positivePoints A ↔
       ∃ u : PositiveRoot → A,
-        (l.map fun γ => D.rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod = g := by
+        (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod = g := by
   constructor
   · intro hg
     obtain ⟨u, hu⟩ := D.positiveRootProduct_surjective l hl hall A ⟨g, hg⟩
@@ -149,14 +149,14 @@ theorem scChevalleyDatum_positiveRootProduct_injective (l : List PositiveRoot) (
     congr 1
     apply List.map_congr_left
     intro γ _
-    simp only [extend, dite_eq_left γ.2]
+    simp only [extend, dite_eq_left γ.property]
   have hparams := (t.list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj ht A
     (hl.map Subtype.val_injective)
-    (by rintro γ hγ; obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hγ; exact γ.2)).mp
+    (by rintro γ hγ; obtain ⟨γ, _, rfl⟩ := List.mem_map.mp hγ; exact γ.property)).mp
       ((hprod u).trans (heq.trans (hprod v).symm))
   funext γ
-  simpa only [extend, dite_eq_left γ.2] using
-    hparams γ.1 (List.mem_map.mpr ⟨γ, hcover γ, rfl⟩)
+  simpa only [extend, dite_eq_left γ.property] using
+    hparams γ.val (List.mem_map.mpr ⟨γ, hcover γ, rfl⟩)
 
 /-- In the full-weight simply connected datum, every positive point has exactly one
 positive-root parameter tuple in any prescribed duplicate-free order. No characteristic or
@@ -166,9 +166,9 @@ theorem mem_scChevalleyDatum_positivePoints_iff_existsUnique_prod
     {l : List PositiveRoot} (hl : l.Nodup) (hall : ∀ γ, γ ∈ l) (g : (D).points A) :
     g ∈ (D).positivePoints A ↔
       ∃! u : PositiveRoot → A,
-        (l.map fun γ => (D).rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod = g := by
+        (l.map fun γ => (D).rootSubgroupPoints γ.val A (ofAdd (u γ))).prod = g := by
   have hinj : Function.Injective (fun u : PositiveRoot → A =>
-      (l.map fun γ => (D).rootSubgroupPoints γ.1 A (ofAdd (u γ))).prod) := by
+      (l.map fun γ => (D).rootSubgroupPoints γ.val A (ofAdd (u γ))).prod) := by
     intro u v huv
     exact t.scChevalleyDatum_positiveRootProduct_injective ht l hl hall A
       (Subtype.ext huv)
@@ -217,7 +217,7 @@ theorem scPositiveRootEquiv_symm_map (l : List PositiveRoot)
     (g : (D).positivePoints A) :
     (t.scPositiveRootEquiv ht l hl hcover B).symm
         ⟨((D).pointsPresentation A).map ((D).pointsPresentation B) f (g : (D).points A),
-          (D).map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.2, rfl⟩)⟩ =
+          (D).map_positivePoints_le f (Subgroup.mem_map.mpr ⟨g, g.property, rfl⟩)⟩ =
       fun γ => f ((t.scPositiveRootEquiv ht l hl hcover A).symm g γ) := by
   apply (t.scPositiveRootEquiv ht l hl hcover B).injective
   simp only [Equiv.apply_symm_apply, scPositiveRootEquiv_apply]

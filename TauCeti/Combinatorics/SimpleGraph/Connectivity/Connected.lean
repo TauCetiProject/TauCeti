@@ -71,16 +71,16 @@ theorem ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one
   constructor
   · constructor
     intro D E
-    obtain ⟨x, hxD⟩ := D.1.exists_rep
-    obtain ⟨y, hyE⟩ := E.1.exists_rep
+    obtain ⟨x, hxD⟩ := D.val.exists_rep
+    obtain ⟨y, hyE⟩ := E.val.exists_rep
     have hxC : G.connectedComponentMk (x : V) = C :=
       (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom x).symm.trans
         ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({v}ᶜ : Set V)).toHom) hxD).trans D.2)
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hxD).trans D.property)
     have hyC : G.connectedComponentMk (y : V) = C :=
       (ConnectedComponent.map_mk (Embedding.induce ({v}ᶜ : Set V)).toHom y).symm.trans
         ((congrArg (ConnectedComponent.map
-          (Embedding.induce ({v}ᶜ : Set V)).toHom) hyE).trans E.2)
+          (Embedding.induce ({v}ᶜ : Set V)).toHom) hyE).trans E.property)
     obtain ⟨p⟩ := ConnectedComponent.exact (hxC.trans hyC.symm)
     have hvp : v ∉ p.support := by
       intro hv
@@ -136,7 +136,7 @@ theorem Preconnected.finite_of_finite_edgeSet {V : Type*} {G : SimpleGraph V} [F
   · rw [not_subsingleton_iff_nontrivial] at hsub
     have hf : (⋃ e : G.edgeSet, {x : V | x ∈ (e : Sym2 V)}).Finite :=
       Set.finite_iUnion fun e ↦ Sym2.ind
-        (fun u v ↦ ((Set.finite_singleton v).insert u).subset fun _ ↦ Sym2.mem_iff.mp) e.1
+        (fun u v ↦ ((Set.finite_singleton v).insert u).subset fun _ ↦ Sym2.mem_iff.mp) e.val
     refine Set.finite_univ_iff.mp (hf.subset fun x _ ↦ ?_)
     obtain ⟨y, hyx⟩ := exists_ne x
     obtain ⟨p⟩ := hG x y

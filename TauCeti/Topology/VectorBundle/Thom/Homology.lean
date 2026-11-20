@@ -229,7 +229,7 @@ private theorem homologyThomMapOver_comp_map_subtypeVal {K : Type w} [CommRing K
     (A : ModuleCat.{w} K) (W : Set B) {n p m : ℕ} (h : n + p = m)
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
     homologyThomMapOver A W n p m h u ≫ ((singularHomologyFunctor (ModuleCat.{w} K) p).obj A).map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) =
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩) =
       TopPair.singularHomologyMap
         (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom) A m ≫
         homologyThomMap F E A n p m h u := by
@@ -240,7 +240,7 @@ private theorem homologyThomMapOver_comp_map_subtypeVal {K : Type w} [CommRing K
   dsimp only [homologyThomMapOver]
   rw [← hι, homologyThomMap_def]
   exact TopPair.pushforwardCap_naturality _ (thomPairProj F E) (thomPairOverProj F E W)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (by rw [hι, restrictPreimagePairMap_fst_comp_thomPairProj]) A h u
 
 omit [NormedSpace ℝ F] [∀ b, Module ℝ (E b)] [VectorBundle ℝ F E] in
