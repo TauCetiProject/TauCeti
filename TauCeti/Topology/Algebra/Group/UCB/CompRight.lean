@@ -74,7 +74,7 @@ namespace UCB
 /-- The pullback `f ↦ f ∘ φ` along a continuous homomorphism `φ : G →ₜ* H`, as a unital algebra
 homomorphism from `UCB H` to `UCB G`. -/
 def compRightAlgHom (φ : G →ₜ* H) : UCB H →ₐ[ℝ] UCB G where
-  toFun f := ⟨(f : H →ᵇ ℝ).compContinuous (φ : C(G, H)), compContinuous_mem_ucb f.2 φ⟩
+  toFun f := ⟨(f : H →ᵇ ℝ).compContinuous (φ : C(G, H)), compContinuous_mem_ucb f.property φ⟩
   map_one' := rfl
   map_mul' _ _ := rfl
   map_zero' := rfl

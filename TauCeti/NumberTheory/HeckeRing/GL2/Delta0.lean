@@ -130,19 +130,19 @@ must choose. The choice is harmless: `delta0Witness_eq` shows the witness is uni
 `Delta0UpperUnit_apply_val` states the resulting API against an arbitrary witness, so this
 definition never escapes into a consumer's proof obligation. -/
 private noncomputable def delta0Witness (g : Delta0 N) : Matrix (Fin 2) (Fin 2) ℤ :=
-  Classical.choose ((mem_Delta0_iff N).mp g.2)
+  Classical.choose ((mem_Delta0_iff N).mp g.property)
 
 private lemma delta0Witness_spec (g : Delta0 N) :
     ((g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
       (delta0Witness N g).map (Int.cast : ℤ → ℚ) :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).1
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).1
 
 private lemma delta0Witness_lowerLeft (g : Delta0 N) : (N : ℤ) ∣ delta0Witness N g 1 0 :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).2.2.1
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).2.2.1
 
 private lemma isUnit_delta0Witness_upperLeft (g : Delta0 N) :
     IsUnit ((delta0Witness N g 0 0 : ℤ) : ZMod N) :=
-  (Classical.choose_spec ((mem_Delta0_iff N).mp g.2)).2.2.2
+  (Classical.choose_spec ((mem_Delta0_iff N).mp g.property)).2.2.2
 
 /-- The integral witness of an element of `Δ₀(N)` is unique: the entrywise cast `ℤ → ℚ` is
 injective, so two witnesses for the same matrix agree. This is the same observation that lets

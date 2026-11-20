@@ -341,7 +341,7 @@ theorem signedPointTwistCore_trivializationAt_apply (x : X) (s : Bool) (z₀ : X
     (p : TotalSpace F (signedPointTwistCore F E x s).Fiber) :
     (trivializationAt F (signedPointTwistCore F E x s).Fiber z₀ p).2 =
       (signedPointTwistCore F E x s).coordChange ((signedPointTwistCore F E x s).indexAt p.proj)
-        ((signedPointTwistCore F E x s).indexAt z₀) p.proj p.2 :=
+        ((signedPointTwistCore F E x s).indexAt z₀) p.proj p.snd :=
   (rfl)
 
 theorem mem_signedPointTwistCore_trivializationAt_baseSet {x : X} {s : Bool} {z₀ z : X} :

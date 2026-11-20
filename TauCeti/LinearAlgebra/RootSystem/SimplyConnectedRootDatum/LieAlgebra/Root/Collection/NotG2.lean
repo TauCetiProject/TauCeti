@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.DoublyLaced
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NotG2
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 public import TauCeti.Algebra.Group.Subgroup.OrderedProduct
-import TauCeti.LinearAlgebra.RootSystem.Finite.PositiveCombinations
 
 /-!
 # Ordered positive-root products outside G₂
@@ -68,6 +67,7 @@ private theorem commutator_mem_higher_roots
           (t.rationalBase ht).height γ},
         (chevalleyRootSubgroup ρ M hM hnil γ A).range := by
   classical
+  have hne : t ≠ .G2 := isNotG2_rationalRootSystem_iff.mp inferInstance
   let P := t.rationalRootSystem ht
   let b := t.rationalBase ht
   let H := ⨆ γ ∈ {γ ∈ posRootsFinset P b |
@@ -94,8 +94,6 @@ private theorem commutator_mem_higher_roots
   · obtain ⟨γ, hγ⟩ := hsum
     have hγZ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mp (by simpa using hγ)
     simp only [one_nsmul] at hγZ
-    have hlin := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
-    have hexclude := P.not_double_root_add_and_root_add_double_mem hlin
     have hdouble {a c d : Fin t.numRoots}
         (ha : a ∈ posRoots P b) (hc : c ∈ posRoots P b)
         (horder : max (b.height a) (b.height c) = max (b.height α) (b.height β))
@@ -114,15 +112,8 @@ private theorem commutator_mem_higher_roots
         (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root
     · obtain ⟨δ, hδ⟩ := ha
       have hδQ := (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β δ 2).mpr hδ
-      have hb : (t.simplyConnectedRootDatum ht).root α +
-          2 • (t.simplyConnectedRootDatum ht).root β ∉
-            Set.range (t.simplyConnectedRootDatum ht).root := by
-        rintro ⟨d, hd⟩
-        exact hexclude ⟨⟨δ, hδQ⟩, ⟨d, by
-          simpa only [add_comm] using
-            (t.root_rationalRootSystem_eq_nsmul_add_iff ht β α d 2).mpr (hd.trans (add_comm _ _))⟩⟩
-      rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
-        ρ M hM hnil hγZ hδ (three_nsmul_add_notMem_range_root α β) hb]
+      rw [commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add
+        ρ M hM hnil hne hγZ (by rw [hδ, hγZ]; module)]
       exact H.mul_mem (hmem hα hβ rfl hγ _) (hdouble hα hβ rfl hγ hδQ _)
     · by_cases hb : 2 • (t.simplyConnectedRootDatum ht).root β +
           (t.simplyConnectedRootDatum ht).root α ∈ Set.range (t.simplyConnectedRootDatum ht).root
@@ -131,10 +122,8 @@ private theorem commutator_mem_higher_roots
         -- Reverse the commutator instead of introducing another coefficient/sign convention.
         rw [← commutatorElement_inv]
         apply H.inv_mem
-        rw [commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
-          ρ M hM hnil (hγZ.trans (add_comm _ _)) hδ
-          (three_nsmul_add_notMem_range_root β α)
-          (by simpa only [add_comm] using ha)]
+        rw [commutatorElement_chevalleyRootSubgroup_of_ne_G2_of_root_eq_add_of_root_eq_add
+          ρ M hM hnil hne (hγZ.trans (add_comm _ _)) (by rw [hδ, hγZ]; module)]
         exact H.mul_mem (hmem hβ hα (max_comm _ _) hγ' _)
           (hdouble hβ hα (max_comm _ _) hγ'
             ((t.root_rationalRootSystem_eq_nsmul_add_iff ht β α δ 2).mpr hδ) _)

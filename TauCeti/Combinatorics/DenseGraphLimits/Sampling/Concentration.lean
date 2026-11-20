@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Exposure
 import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Expectation
 import TauCeti.Probability.Concentration.SubgaussianTail
-import TauCeti.Probability.McDiarmid
+import TauCeti.Probability.McDiarmid.Basic
 
 /-!
 # Concentration of sampled homomorphism densities
@@ -109,7 +109,7 @@ private theorem sampleGraph_homDensityFin_concentration_of_card_pos {V : Type*} 
       (fun x => f x - ∫ y, f y ∂Measure.pi fun _ : Fin n => ν)
       ((n : ℝ≥0) * (Real.toNNReal ((Fintype.card V : ℝ) / (n : ℝ)) / 2) ^ 2)
       (Measure.pi fun _ : Fin n => ν) :=
-    Probability.hasSubgaussianMGF_of_bounded_differences_fin ν f hf
+    Probability.hasSubgaussianMGF_of_bounded_differences_fin (fun _ => ν) f hf
       ((Fintype.card V : ℝ) / n) fun x i y => by
         simpa [f] using abs_homDensityFin_exposedSample_update_le F W x i y
   have hν : Measure.pi (fun _ : Fin n => ν) = exposureMeasure μ n := by

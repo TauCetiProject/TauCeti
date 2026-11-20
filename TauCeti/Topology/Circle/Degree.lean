@@ -450,9 +450,9 @@ theorem degree_eq_of_forall_eq_pow {x : Circle} (γ : Path x x) {a b : ℝ} (hab
   have hb : 0 < b := (pos_iff_pos_of_mul_pos hab).1 ha
   -- Deform `a` and `b` linearly to `1`, through the positive numbers `(1 - s) c + s`.
   have hc {c : ℝ} (hc : 0 < c) (s : I) : 0 < (1 - (s : ℝ)) * c + s := by
-    rcases s.2.1.eq_or_lt with h | h
+    rcases s.property.1.eq_or_lt with h | h
     · simpa [← h] using hc
-    · nlinarith [mul_nonneg (sub_nonneg.2 s.2.2) hc.le]
+    · nlinarith [mul_nonneg (sub_nonneg.2 s.property.2) hc.le]
   let z : I × I → ℂ := fun p ↦ (((1 - (p.1 : ℝ)) * a + p.1) * cos (2 * π * p.2) : ℝ) +
     (((1 - (p.1 : ℝ)) * b + p.1) * sin (2 * π * p.2) : ℝ) * Complex.I
   have hz (p : I × I) : 0 < ‖z p‖ := by

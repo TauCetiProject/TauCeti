@@ -125,7 +125,7 @@ theorem genWeightSpace_weylGroup_smul_ne_bot [LieModule.IsIrreducible K L M]
   | cons i l ih =>
     rw [wordProd_cons, mul_smul, RootPairing.weylGroup.ofIdx_smul,
       RootPairing.Equiv.reflection_smul]
-    exact genWeightSpace_rootSystem_reflection_ne_bot hv hlam i.2 ih
+    exact genWeightSpace_rootSystem_reflection_ne_bot hv hlam i.property ih
 
 -- Not `@[simp]`: `b`, `lam`, and `v` cannot be inferred from the rewrite target, so `simpNF`
 -- rejects the rule as one that will never apply.

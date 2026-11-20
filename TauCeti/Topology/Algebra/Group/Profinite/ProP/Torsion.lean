@@ -182,7 +182,8 @@ theorem finite_torsion_module (hA : IsProP p A) (hfg : IsTopologicallyFinitelyGe
     Finite (Submodule.torsion ℤ_[p] (Additive A)) := by
   let _ := hA.module
   have := hA.finite_torsion hfg
-  exact Finite.of_injective (fun x ↦ (⟨x.1.toMul, (hA.mem_torsion_module_iff x).1 x.2⟩ : torsion A))
+  exact Finite.of_injective (fun x ↦ (⟨x.val.toMul, (hA.mem_torsion_module_iff x).1 x.property⟩ :
+      torsion A))
     fun _ _ h ↦ Subtype.ext (Additive.toMul.injective (congrArg (Subtype.val : torsion A → A) h))
 
 /-- **Structure theorem for topologically finitely generated abelian pro-`p` groups, as
@@ -224,7 +225,7 @@ theorem exists_continuousLinearEquiv_pi_padicInt_prod_torsion (hA : IsProP p A)
   -- linear equivalence.
   have hex : Function.Exact T.subtype g := fun x ↦ by simp [hker]
   let e : ((Fin r → ℤ_[p]) × T) ≃ₗ[ℤ_[p]] Additive A := (LinearEquiv.prodComm ℤ_[p] _ _).trans
-    (hex.splitSurjectiveEquiv T.injective_subtype ⟨s, hs⟩).1.symm
+    (hex.splitSurjectiveEquiv T.injective_subtype ⟨s, hs⟩).val.symm
   have he : ⇑e = fun y ↦ y.2 + s y.1 := by
     -- Mathlib has no application lemma for `splitSurjectiveEquiv`, so unfold it to the
     -- `LinearEquiv.ofBijective` it is built from and use that constructor's `apply` lemma.
@@ -232,7 +233,7 @@ theorem exists_continuousLinearEquiv_pi_padicInt_prod_torsion (hA : IsProP p A)
     simp only [e, Function.Exact.splitSurjectiveEquiv, Equiv.coe_fn_mk, LinearEquiv.trans_apply,
       LinearEquiv.symm_symm, LinearEquiv.prodComm_apply]
     exact (LinearEquiv.ofBijective_apply _ _).trans (by simp)
-  have hcont : Continuous e := he ▸ (continuous_subtype_val.comp continuous_snd).add
+  have hcont : Continuous e := he ▸ (continuous_subtypeVal.comp continuous_snd).add
     ((LinearMap.continuous_on_pi s).comp continuous_fst)
   have : Finite T := hA.finite_torsion_module hfg
   exact ⟨r, ⟨({ e with

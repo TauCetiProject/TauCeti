@@ -109,10 +109,10 @@ def gradedStrictCoeffsEquiv (w : ℕ) :
     (∀ i : ℕ+, 𝒜 (w * i)) ≃
       ↥(gradedSubgroup 𝒜 w ⊓ (linearCoeff (R := A)).ker) where
   toFun b := ⟨ofStrictCoeffs (fun i : ℕ+ ↦ b i),
-    (ofStrictCoeffs_mem_gradedSubgroup 𝒜 w _).2 (fun i ↦ (b i).2),
+    (ofStrictCoeffs_mem_gradedSubgroup 𝒜 w _).2 (fun i ↦ (b i).property),
     ofStrictCoeffs_mem_ker_linearCoeff _⟩
-  invFun φ i := ⟨coeff (i + 1) φ.1.toPowerSeries, by
-    simpa using (mem_gradedSubgroup 𝒜 w φ.1).1 φ.2.1 (i + 1)⟩
+  invFun φ i := ⟨coeff (i + 1) φ.val.toPowerSeries, by
+    simpa using (mem_gradedSubgroup 𝒜 w φ.val).1 φ.property.1 (i + 1)⟩
   left_inv b := by
     funext i
     exact Subtype.ext (coeff_succ_ofStrictCoeffs _ _)
@@ -120,8 +120,8 @@ def gradedStrictCoeffsEquiv (w : ℕ) :
     -- Rewrite the coefficient function back to the inverse equivalence: its definition is
     -- unexposed, so the inverse law needs this identification through the public API.
     simpa only [coe_strictCoeffsEquiv_apply,
-      ← strictCoeffsEquiv_symm_apply ⟨φ.1, φ.2.2⟩] using
-      congrArg Subtype.val (strictCoeffsEquiv.apply_symm_apply ⟨φ.1, φ.2.2⟩))
+      ← strictCoeffsEquiv_symm_apply ⟨φ.val, φ.property.2⟩] using
+      congrArg Subtype.val (strictCoeffsEquiv.apply_symm_apply ⟨φ.val, φ.property.2⟩))
 
 /-- The coordinate attached to a family of homogeneous coefficients is `X + ∑ bᵢ X^(i+1)`. -/
 @[simp]
@@ -133,7 +133,7 @@ theorem coe_gradedStrictCoeffsEquiv_apply (w : ℕ) (b : ∀ i : ℕ+, 𝒜 (w *
 @[simp]
 theorem gradedStrictCoeffsEquiv_symm_apply (w : ℕ)
     (φ : ↥(gradedSubgroup 𝒜 w ⊓ (linearCoeff (R := A)).ker)) (i : ℕ+) :
-    ((gradedStrictCoeffsEquiv 𝒜 w).symm φ i : A) = coeff (i + 1) φ.1.toPowerSeries :=
+    ((gradedStrictCoeffsEquiv 𝒜 w).symm φ i : A) = coeff (i + 1) φ.val.toPowerSeries :=
   (rfl)
 
 end TauCeti.FormalCoordinate

@@ -481,7 +481,7 @@ theorem W1p.integrableOn_exp_mul_abs_value (hp : p = finrank ℝ E) (hn : 2 ≤ 
   obtain ⟨U, hU, hKU, T, hT⟩ := W1p.exists_zeroBoundaryLocalization (μ := mu) hp' (V := K)
     (by rwa [hK.isClosed.closure_eq]) (by rwa [hK.isClosed.closure_eq])
   set v : W1p mu U p := (T u : W1p mu U p)
-  have hv0 : v ∈ w1p0Submodule mu U p := (T u).2
+  have hv0 : v ∈ w1p0Submodule mu U p := (T u).property
   have hKU' : mu.restrict K ≤ mu.restrict U := Measure.restrict_mono hKU le_rfl
   have hum : AEStronglyMeasurable (W1p.value u : E → ℝ) (mu.restrict K) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hKO le_rfl)
