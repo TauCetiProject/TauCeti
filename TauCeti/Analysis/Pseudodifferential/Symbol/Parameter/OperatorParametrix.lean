@@ -30,14 +30,15 @@ smooth cutoffs in the position, with `ψ₁` compactly supported and equal to `1
 `ψ · Op(a(z)) (ψ₁ · Op(Bₙ(z)) u) = ψ · u + Op(ψ rₙ(z)) u`
 
 (`TauCeti.ParameterSymbol.smul_quantizeSchwartzValue_rightParametrix_eq_add`), with an explicit
-remainder symbol `rₙ` of order `-N` (`TauCeti.ParameterSymbol.rightParametrixRemainder`). Since
-`z` counts as two frequency orders, the remainder operators have norms
+remainder symbol `rₙ` of order `-N` (`TauCeti.ParameterSymbol.rightParametrixRemainder`). If
+moreover `ψ` has compact support then, since `z` counts as two frequency orders, the remainder
+operators have norms
 
 `‖Op(ψ rₙ(z))‖_{H^s → H^s} ≤ C (1 + ‖z‖ ^ (1 / 2)) ^ (-N)`
 
 uniformly in `z ∈ Λ`
-(`TauCeti.ParameterSymbol.exists_norm_quantizeSobolev_rightParametrixRemainder_le`). So the
-localized parametrix inverts `A - z` near the support of `ψ` up to an error of size
+(`TauCeti.ParameterSymbol.exists_norm_quantizeSobolev_rightParametrixRemainder_le`). So for such
+`ψ` the localized parametrix inverts `A - z` near the support of `ψ` up to an error of size
 `‖z‖ ^ (-N / 2)`.
 
 Two facts make the identity exact. Since `a` is polynomial in the frequency, the composition
@@ -77,39 +78,6 @@ open scoped ContDiff Topology SchwartzMap
 
 namespace TauCeti
 
-namespace Symbol
-
-variable {n : ℕ} {m m' m'' : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-  [CompleteSpace V] [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
-
-/-- If at the position `x` the composition `a # Q` with a compactly supported `Q` is the identity
-plus `R` after multiplication by `ψ(x)`, then `ψ · Op(a) (Op(Q) u) = ψ · u + Op(ψ R) u` at `x`. -/
-private theorem smul_quantizeSchwartzValue_sharp_eq_add {a : Symbol n V W m} {Q : Symbol n W V m'}
-    (hQ : Q.HasCompactSpatialSupport) (R : Symbol n W W m'') {ψ : CoordinateSpace n → ℝ}
-    (hψ : ContDiff ℝ ∞ ψ) (u : 𝓢(CoordinateSpace n, W)) (x : CoordinateSpace n)
-    (h : ∀ ξ, (ψ x : ℂ) • (a.sharp Q hQ).coefficient (x, ξ) =
-      (ψ x : ℂ) • (ContinuousLinearMap.id ℂ W + R.coefficient (x, ξ))) :
-    (ψ x : ℂ) • quantizeSchwartzValue a.coefficient
-        ((hQ.hasCompactSupport_quantizeSchwartzValue u).toSchwartzMap
-          (Q.contDiff_quantizeSchwartzValue u)) x =
-      (ψ x : ℂ) • u x + quantizeSchwartzValue ((ofSpatial
-        (fun x => ψ x • ContinuousLinearMap.id ℂ W) (hψ.smul contDiff_const)).comp R).coefficient
-          u x := by
-  -- The identity as the coefficient of a symbol, so that the quantization is additive in it.
-  have hId : (ofSpatial (n := n) (fun _ => ContinuousLinearMap.id ℂ W)
-      contDiff_const).coefficient = fun _ => ContinuousLinearMap.id ℂ W :=
-    funext fun p => coefficient_ofSpatial _ _ p
-  calc _ = quantizeSchwartzValue ((ψ x : ℂ) • (a.sharp Q hQ).coefficient) u x := by
-        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
-    _ = quantizeSchwartzValue ((ψ x : ℂ) • ((ofSpatial (fun _ => ContinuousLinearMap.id ℂ W)
-          contDiff_const).coefficient + R.coefficient)) u x :=
-        quantizeSchwartzValue_congr_left (fun ξ => by simpa [hId] using h ξ) u
-    _ = _ := by
-        rw [quantizeSchwartzValue_smul_left, quantizeSchwartzValue_coefficient_add, hId,
-          quantizeSchwartzValue_id, smul_add, quantizeSchwartzValue_ofSpatial_smul_id_comp]
-
-end Symbol
-
 namespace ParameterSymbol
 
 variable {n : ℕ} {Λ : Opens ℂ} {m m' : ℝ}
@@ -121,6 +89,7 @@ variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCo
 
 /-- At a spectral parameter in `Λ`, the composition terms of parameter-dependent symbols are the
 composition terms `TauCeti.Symbol.sharpTerm` of their symbols at that parameter. -/
+@[simp]
 theorem toSymbol_sharpTerm (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
     (k : ℕ) {z : ℂ} (hz : z ∈ Λ) :
     (b.sharpTerm a k).toSymbol z = (b.toSymbol z).sharpTerm (a.toSymbol z) k :=
@@ -228,7 +197,8 @@ support of `ψ`. Then for every spectral parameter `z ∈ Λ` and every Schwartz
 
 `ψ · Op(a(z)) w = ψ · u + Op(ψ rₙ(z)) u`,
 
-with the remainder symbol `rₙ` of order `-N`. Its operators decay like `‖z‖ ^ (-N / 2)`
+with the remainder symbol `rₙ` of order `-N`. If moreover `ψ` has compact support, the remainder
+operators have norms decaying like `‖z‖ ^ (-N / 2)`
 (`TauCeti.ParameterSymbol.exists_norm_quantizeSobolev_rightParametrixRemainder_le`). -/
 theorem smul_quantizeSchwartzValue_rightParametrix_eq_add [CompleteSpace W] (ha : a.IsElliptic)
     {d N : ℕ} (hN : N ≠ 0) (hd : ∀ x, ∀ z ∈ Λ, ∀ w : List (Fin n), w.length = d →
