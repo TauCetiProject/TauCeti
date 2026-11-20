@@ -340,12 +340,8 @@ lemma rowFiltrationSpectralSequence_page_two_d_totalRow_extendHomologyIso (p : �
   rw [reassoc_of% (K.rowFiltrationSpectralSequence_page_two_d_totalRow p s)]
   -- The objects of the extended sequence are only definitionally the extended complexes, so the
   -- steps are given as terms: `hδ` for the connecting maps, then `hι` for the homology maps.
-  calc _ = HomologicalComplex.homologyMap
-          (HomologicalComplex.extendMap (K.totalRowι (s + 1)) embeddingDownNat) _ ≫ _ ≫
-          (K.totalRowShortComplex_shortExact s).δ (k + (s + 1)) (k + s) _ :=
-        (Category.assoc _ _ _).trans (congrArg _ hδ)
-    _ = _ := (Category.assoc _ _ _).symm.trans
-        ((congrArg (· ≫ _) hι).trans (Category.assoc _ _ _))
+  exact (congrArg (_ ≫ ·) hδ).trans
+    ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) hι).trans (Category.assoc _ _ _)))
 
 /-! ### The first differentials -/
 
