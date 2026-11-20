@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.RingTheory.Ideal.Order
 import Mathlib.RingTheory.Localization.Algebra
 import Mathlib.AlgebraicGeometry.Morphisms.Affine
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalProperties.Semilocal
