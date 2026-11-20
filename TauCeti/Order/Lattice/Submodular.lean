@@ -36,7 +36,7 @@ public section
 
 namespace TauCeti
 
-variable {K L M : Type*}
+variable {K L M F : Type*}
 
 /-- A function on a lattice is submodular if its values at a join and a meet sum to at most the
 sum of its values at the original pair. -/
@@ -58,16 +58,14 @@ theorem isSubmodular_def [Add K] [LE K] [Lattice L] (f : L → K) :
 
 /-- A constant function on a lattice is submodular. -/
 theorem isSubmodular_const [Add K] [Preorder K] [Lattice L] (c : K) :
-    IsSubmodular (fun _ : L ↦ c) := by
-  intro a b
-  exact le_rfl
+    IsSubmodular (fun _ : L ↦ c) :=
+  fun _ _ ↦ le_rfl
 
 /-- The sum of fixed weights over a finite set is submodular. In fact, its submodular inequality
 is always an equality. -/
 theorem isSubmodular_finsetSum {V : Type*} [DecidableEq V] [AddCommMonoid K] [Preorder K]
-    (f : V → K) : IsSubmodular (fun S : Finset V ↦ ∑ v ∈ S, f v) := by
-  intro S T
-  exact le_of_eq Finset.sum_union_inter
+    (f : V → K) : IsSubmodular (fun S : Finset V ↦ ∑ v ∈ S, f v) :=
+  fun _ _ ↦ Finset.sum_union_inter.le
 
 namespace IsSubmodular
 
@@ -77,28 +75,28 @@ protected theorem apply [Add K] [LE K] [Lattice L] {f : L → K} (hf : IsSubmodu
   (isSubmodular_def f).mp hf a b
 
 /-- The pointwise sum of two submodular functions is submodular. -/
-theorem add [AddCommMonoid K] [Preorder K] [IsOrderedAddMonoid K] [Lattice L]
+theorem add [AddCommSemigroup K] [Preorder K] [AddLeftMono K] [Lattice L]
     {f g : L → K} (hf : IsSubmodular f) (hg : IsSubmodular g) :
-    IsSubmodular (fun a ↦ f a + g a) := by
-  intro a b
+    IsSubmodular (fun a ↦ f a + g a) := fun a b ↦
   calc
     (f (a ⊔ b) + g (a ⊔ b)) + (f (a ⊓ b) + g (a ⊓ b)) =
-        (f (a ⊔ b) + f (a ⊓ b)) + (g (a ⊔ b) + g (a ⊓ b)) := by
-          ac_rfl
+        (f (a ⊔ b) + f (a ⊓ b)) + (g (a ⊔ b) + g (a ⊓ b)) := add_add_add_comm ..
     _ ≤ (f a + f b) + (g a + g b) := add_le_add (hf a b) (hg a b)
-    _ = (f a + g a) + (f b + g b) := by ac_rfl
+    _ = (f a + g a) + (f b + g b) := add_add_add_comm ..
 
-/-- Precomposition with a lattice homomorphism preserves submodularity. -/
-theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] {f : L → K}
-    (hf : IsSubmodular f) (g : LatticeHom M L) : IsSubmodular (f ∘ g) := by
+/-- Precomposition with a lattice homomorphism (any map in a `LatticeHomClass`, such as an order
+isomorphism) preserves submodularity. -/
+theorem comp_latticeHom [Add K] [LE K] [Lattice L] [Lattice M] [FunLike F M L]
+    [LatticeHomClass F M L] {f : L → K} (hf : IsSubmodular f) (g : F) :
+    IsSubmodular (f ∘ g) := by
   intro a b
   simpa only [Function.comp_apply, map_sup, map_inf] using hf (g a) (g b)
 
 /-- Let `a` minimize a submodular function over `s` and `b` minimize it over `t`. If the meet
 lies in `s` and the join lies in `t`, then the join minimizes over `t` and the meet minimizes
 over `s`. -/
-theorem isMinOn_sup_inf [AddCommMonoid K] [Preorder K] [IsOrderedCancelAddMonoid K]
-    [Lattice L] {f : L → K} (hf : IsSubmodular f) {s t : Set L} {a b : L}
+theorem isMinOn_sup_inf [AddCommSemigroup K] [Preorder K] [AddLeftMono K]
+    [AddLeftReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f) {s t : Set L} {a b : L}
     (hamin : IsMinOn f s a) (hbmin : IsMinOn f t b) (hsup : a ⊔ b ∈ t) (hinf : a ⊓ b ∈ s) :
     IsMinOn f t (a ⊔ b) ∧ IsMinOn f s (a ⊓ b) := by
   rw [isMinOn_iff] at hamin hbmin ⊢
@@ -115,8 +113,8 @@ theorem isMinOn_sup_inf [AddCommMonoid K] [Preorder K] [IsOrderedCancelAddMonoid
 
 /-- The minimizers of a submodular function over a sublattice form a sublattice. Membership in
 this set records both membership in the original domain and minimality there. -/
-theorem isSublattice_minimizers [AddCommMonoid K] [Preorder K]
-    [IsOrderedCancelAddMonoid K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
+theorem isSublattice_minimizers [AddCommSemigroup K] [Preorder K] [AddLeftMono K]
+    [AddLeftReflectLE K] [Lattice L] {f : L → K} (hf : IsSubmodular f)
     {s : Set L} (hs : IsSublattice s) :
     IsSublattice {a | a ∈ s ∧ IsMinOn f s a} := by
   constructor
