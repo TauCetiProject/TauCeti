@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
 public import TauCeti.Geometry.Manifold.Morse.GradientFlow
--- Private: the normed-space Łojasiewicz inequality, Grönwall's inequality, the continuity of a
+-- Private: the Riemannian Łojasiewicz inequality, Grönwall's inequality, the continuity of a
 -- `C¹` metric and the comparison of length with energy are used only inside proofs; no
 -- declaration below exposes their APIs.
-import TauCeti.Analysis.Calculus.Morse.Basic
 import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Geometry.Manifold.Morse.Lojasiewicz
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -24,13 +24,9 @@ inequality** holds with the optimal exponent `1/2`:
 
 `lam * |f y - f p| ≤ ‖grad f y‖ ^ 2`
 
-(`TauCeti.IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradient_sq`). It is
-transported from the normed-space inequality
-`TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq` for the coordinate
-expression of `f` in the preferred chart at `p`: near `p` the differential of that expression is
-bounded by a multiple of the Riemannian length of the gradient
-(`TauCeti.Manifold.eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient`). The metric
-need not be adapted to the chart, nor smooth.
+(`TauCeti.IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradient_sq`, proved
+in `TauCeti.Geometry.Manifold.Morse.Lojasiewicz`). The metric need not be adapted to any chart,
+nor smooth.
 
 Now let `γ` be the maximal integral curve of `-grad f` through `x`, defined for all positive time
 and converging to `p`. The energy `f (γ t) - f p` is nonnegative
@@ -67,9 +63,6 @@ bounded below converges exponentially fast to a critical point
 
 ## Main results
 
-* `TauCeti.IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradient_sq`: the
-  Łojasiewicz inequality with exponent `1/2` near a nondegenerate critical point, for the
-  Riemannian gradient.
 * `TauCeti.le_comp_maximalIntegralCurve_neg_mgradient`: the energy along a forward negative
   gradient trajectory is bounded below by its value at the limit point.
 * `TauCeti.exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient`: along a forward negative
@@ -101,38 +94,6 @@ open Bundle Filter MeasureTheory Set Topology TauCeti.Manifold
 open scoped ContDiff ENNReal Manifold
 
 namespace TauCeti
-
-section Lojasiewicz
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-  {f : M → ℝ} {p : M}
-
-/-- **The Morse form of Łojasiewicz's gradient inequality on a Riemannian manifold.** Near a
-nondegenerate critical point `p` of `f`, the absolute energy difference `|f y - f p|` is bounded by
-a multiple of the squared Riemannian length of the gradient of `f` at `y`, for any continuous
-Riemannian metric. -/
-theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradient_sq
-    (hp : IsManifoldNondegenerateCriticalPoint I f p) :
-    ∃ lam > 0, ∀ᶠ y in 𝓝 p, lam * |f y - f p| ≤ ‖mgradient I f y‖ ^ 2 := by
-  obtain ⟨lam, hlam, hloj⟩ :=
-    ((isManifoldNondegenerateCriticalPoint_iff I).1 hp).exists_mul_abs_sub_le_norm_fderiv_sq
-  obtain ⟨C, hC, hbd⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) p
-  refine ⟨lam / C ^ 2, by positivity, ?_⟩
-  filter_upwards [(continuousAt_extChartAt (I := I) p).eventually hloj, hbd,
-    extChartAt_source_mem_nhds (I := I) p] with y hy hyb hys
-  simp only [Function.comp_apply, (extChartAt I p).left_inv hys,
-    (extChartAt I p).left_inv (mem_extChartAt_source p)] at hy
-  calc lam / C ^ 2 * |f y - f p| = lam * |f y - f p| / C ^ 2 := by ring
-    _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ^ 2 / C ^ 2 := by gcongr
-    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr; exact hyb f
-    _ = ‖mgradient I f y‖ ^ 2 := by field_simp
-
-end Lojasiewicz
 
 section Decay
 

@@ -32,6 +32,16 @@ The same kernel condition makes the zero section isolated among the critical poi
 (`TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`), since the derivative of `Df` at `(a, 0)`
 is injective on the fibre directions.
 
+The same estimate gives **Łojasiewicz's gradient inequality with exponent `1 / 2`** at a
+Morse–Bott point (`TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`): near `(a, 0)`,
+`lam * |f z - f (a, 0)| ≤ ‖Df z‖ ^ 2` for some `lam > 0`. Both sides are comparable to `‖z.2‖ ^ 2`:
+the differential grows at least linearly with the distance `‖z.2‖` to the zero section, since its
+derivative is injective on the fibre directions, and at most linearly, since it is Lipschitz and
+vanishes on the zero section; integrating the upper bound along the fibre segments bounds
+`|f z - f (a, 0)|` by a multiple of `‖z.2‖ ^ 2` (`TauCeti.exists_abs_sub_le_mul_norm_snd_sq`).
+This is the estimate that controls the length of negative gradient trajectories approaching a
+Morse–Bott critical submanifold.
+
 With the parametric Morse lemma this gives the **Morse–Bott lemma** in product coordinates
 (`TauCeti.exists_morseBott_chart_of_contDiffOn`): if `f` is `C^{n+2}` near `(a, 0)`, with
 `1 ≤ n ≤ ∞`, there is a `C^n` change of fibre coordinates `ψ` preserving the base parameter and
@@ -59,6 +69,10 @@ orthogonal to the fibre.
   Morse–Bott point of the zero section is invertible.
 * `TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`: near a Morse–Bott point of the zero
   section, the critical points are exactly the points of the zero section.
+* `TauCeti.exists_abs_sub_le_mul_norm_snd_sq`: near a critical zero section the energy difference
+  is at most quadratic in the fibre coordinate.
+* `TauCeti.exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le`: the Łojasiewicz inequality with
+  exponent `1 / 2` at a Morse–Bott point of the zero section.
 * `TauCeti.exists_morseBott_chart_of_contDiffOn`: the Morse–Bott lemma in product coordinates.
 * `TauCeti.exists_congruence_fderiv_fderiv_slice_right`: nearby vertical Hessians are congruent
   by a `C^n` family of invertible operators.
@@ -124,6 +138,81 @@ theorem eventually_fderiv_eq_zero_iff_snd_eq_zero [FiniteDimensional ℝ F]
   -- A fibre vector `(0, v)` in the kernel of the Hessian is a base direction, so `v = 0`.
   obtain ⟨u, hu⟩ := hker (LinearMap.mem_ker.2 hv)
   simpa using (congrArg Prod.snd hu).symm
+
+/-- **Near a critical zero section the energy difference is quadratic in the fibre coordinate.**
+If `f` is `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then near
+`(a, 0)` the energy difference `|f z - f (a, 0)|` is at most a fixed multiple of `‖z.2‖ ^ 2`. -/
+theorem exists_abs_sub_le_mul_norm_snd_sq (hf : ContDiffAt ℝ 2 f (a, 0))
+    (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0) :
+    ∃ C > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), |f z - f (a, 0)| ≤ C * ‖z.2‖ ^ 2 := by
+  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
+  -- The differential is at most `K * ‖z.2‖`, being Lipschitz and zero on the zero section.
+  obtain ⟨K, s, hs, hK⟩ :=
+    (hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
+      ).exists_lipschitzOnWith
+  have hπ : Tendsto (fun z : P × F ↦ (z.1, (0 : F))) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
+    (continuous_fst.prodMk continuous_const).tendsto' _ _ rfl
+  -- A point differs from its projection to the zero section by its fibre coordinate.
+  have hsub (z : P × F) : z - (z.1, 0) = (0, z.2) := by ext <;> simp
+  have hup : ∀ᶠ z in 𝓝 (a, (0 : F)), ‖fderiv ℝ f z‖ ≤ K * ‖z.2‖ := by
+    filter_upwards [hs, hπ.eventually hs, (continuous_fst.tendsto' _ _ rfl).eventually hcrit]
+      with z hzs hzs' hz0
+    have h := hK.norm_sub_le hzs hzs'
+    rwa [hz0, sub_zero, hsub, Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _)] at h
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1 ((hf.eventually (by simp)).and hup)
+  refine ⟨K + 1, by positivity, eventually_of_mem (ball_mem_nhds _ hr) fun z hz ↦ ?_⟩
+  -- Along a segment in the ball on which `‖w.2‖ ≤ ρ`, the differential is at most `K * ρ`.
+  have hvar {x y : P × F} {ρ : ℝ} (hx : x ∈ ball (a, (0 : F)) r) (hy : y ∈ ball (a, (0 : F)) r)
+      (hρ : ∀ w ∈ segment ℝ x y, ‖w.2‖ ≤ ρ) : ‖f y - f x‖ ≤ K * ρ * ‖y - x‖ :=
+    (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le
+      (fun w hw ↦ ((hball w ((convex_ball _ _).segment_subset hx hy hw)).1).differentiableAt
+        (by simp))
+      (fun w hw ↦ ((hball w ((convex_ball _ _).segment_subset hx hy hw)).2).trans
+        (by gcongr; exact hρ w hw)) (left_mem_segment ℝ x y) (right_mem_segment ℝ x y)
+  have hz' : (z.1, (0 : F)) ∈ ball (a, (0 : F)) r := by
+    rw [mem_ball] at hz ⊢
+    refine lt_of_le_of_lt ?_ hz
+    rw [Prod.dist_eq, Prod.dist_eq, dist_self]
+    exact max_le_max le_rfl dist_nonneg
+  -- `f` is constant along the zero section, and varies by at most `K * ‖z.2‖ ^ 2` along the
+  -- fibre segment from `(z.1, 0)` to `z`.
+  have hconst : f (z.1, 0) = f (a, 0) := by
+    have h := hvar (mem_ball_self hr) hz' (ρ := 0) fun w ⟨α, β, _, _, _, hw⟩ ↦ by simp [← hw]
+    rwa [mul_zero, zero_mul, norm_le_zero_iff, sub_eq_zero] at h
+  have h := hvar hz' hz (ρ := ‖z.2‖) fun w ⟨α, β, hα, hβ, hαβ, hw⟩ ↦ by
+    rw [← hw, Prod.snd_add, Prod.smul_snd, Prod.smul_snd, smul_zero, zero_add, norm_smul,
+      Real.norm_of_nonneg hβ]
+    exact mul_le_of_le_one_left (norm_nonneg _) (by linarith)
+  rw [hsub, Prod.norm_mk, norm_zero, max_eq_right (norm_nonneg _), mul_assoc, ← sq, hconst,
+    Real.norm_eq_abs] at h
+  exact h.trans (by gcongr; linarith)
+
+/-- **Łojasiewicz's gradient inequality at a Morse–Bott point.** If `f` is `C²` at `(a, 0)`,
+every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
+consists of base directions, then near `(a, 0)` the energy difference `|f z - f (a, 0)|` is
+bounded by a multiple of `‖Df z‖ ^ 2`. This is the Łojasiewicz inequality with exponent `1 / 2`,
+holding on a whole neighbourhood of a piece of the critical zero section, along which `f` is
+constant. -/
+theorem exists_mul_abs_sub_le_norm_fderiv_sq_of_ker_le [FiniteDimensional ℝ F]
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    ∃ lam > 0, ∀ᶠ z in 𝓝 (a, (0 : F)), lam * |f z - f (a, 0)| ≤ ‖fderiv ℝ f z‖ ^ 2 := by
+  have hDf : ContDiffAt ℝ 1 (fderiv ℝ f) (a, 0) := hf.fderiv_right le_rfl
+  -- The differential grows at least linearly with `‖z.2‖`: its derivative at `(a, 0)` is
+  -- injective on the fibre directions, since a fibre vector in the kernel is a base direction.
+  obtain ⟨c, hc, hlow⟩ :=
+    (hDf.hasStrictFDerivAt (hDf.differentiableAt one_ne_zero).hasFDerivAt one_ne_zero
+      ).exists_mul_norm_snd_le_norm_apply hcrit <|
+    (injective_iff_map_eq_zero _).2 fun v hv ↦ by
+      obtain ⟨u, hu⟩ := hker (LinearMap.mem_ker.2 hv)
+      simpa using (congrArg Prod.snd hu).symm
+  -- The energy difference is at most quadratic in `‖z.2‖`.
+  obtain ⟨C, hC, hup⟩ := exists_abs_sub_le_mul_norm_snd_sq hf hcrit
+  refine ⟨c ^ 2 / C, by positivity, ?_⟩
+  filter_upwards [hlow, hup] with z hz₁ hz₂
+  calc c ^ 2 / C * |f z - f (a, 0)| ≤ c ^ 2 / C * (C * ‖z.2‖ ^ 2) := by gcongr
+    _ = (c * ‖z.2‖) ^ 2 := by field_simp
+    _ ≤ ‖fderiv ℝ f z‖ ^ 2 := by gcongr
 
 variable [FiniteDimensional ℝ P] [FiniteDimensional ℝ F] {W : Set (P × F)} {n : ℕ∞}
 
