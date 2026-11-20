@@ -210,7 +210,7 @@ noncomputable def centralizerHopfIdeal : HopfIdeal R H :=
           MonoidAlgebra R X →ₐ[R] A ⊗[R] MonoidAlgebra R X))}).comap
       (AlgHom.mapValue (H := H) (Algebra.TensorProduct.includeLeft (R := R) (S := R))))
     fun A g ↦ by
-      rw [Subgroup.mem_comap, Subgroup.mem_centralizer_singleton_iff, ← commute_iff_eq,
+      rw [Subgroup.mem_comap, Subgroup.mem_centralizer_singleton_iff,
         centralizerIdeal_le_ker_iff_commute_of_injective π g (AlgHom.id R _)
           Function.injective_id]
       simp only [AlgHom.id_comp]
