@@ -64,8 +64,8 @@ product targets such as `X × M`, on which graphs of solutions live.
   `TauCeti.isWeakPseudoholomorphic_id`).
 * `TauCeti.isWeakPseudoholomorphicOn_const`, `TauCeti.isWeakPseudoholomorphic_const`: constant
   maps solve the homogeneous equation for every `J`.
-* `TauCeti.isWeakPseudoholomorphicOn_comp_biholomorph_iff`,
-  `TauCeti.isWeakPseudoholomorphic_comp_biholomorph_iff`: **Invariance under biholomorphisms.**
+* `Diffeomorph.isWeakPseudoholomorphicOn_comp_biholomorph_iff`,
+  `Diffeomorph.isWeakPseudoholomorphic_comp_biholomorph_iff`: **Invariance under biholomorphisms.**
   For a biholomorphism `Φ : X' → X`, the map `u ∘ Φ` solves the equation for `J` read at `Φ x`
   and `ν` composed with `dΦ` exactly when `u` solves it for `(J, ν)`.
 * Check on `X = M = ℂ`: conjugation does not solve the equation for the structure `i`
@@ -659,18 +659,6 @@ section Biholomorphism
 
 variable {X' : Type*} [TopologicalSpace X'] [ChartedSpace ℂ X'] [IsManifold 𝓘(ℂ) ∞ X']
 
-omit [IsManifold 𝓘(ℂ) ∞ X] in
-/-- A holomorphic chart of `X`, precomposed with a biholomorphism `Φ : X' → X`, is a holomorphic
-chart of `X'`: `Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas` for `Φ` regarded as a
-diffeomorphism of class `C¹`. -/
-private theorem transOpenPartialHomeomorph_mem_maximalAtlas_one (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
-    {χ : OpenPartialHomeomorph X ℂ} (hχ : χ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) :
-    Φ.toHomeomorph.transOpenPartialHomeomorph χ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X' :=
-  Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas (n := 1)
-    { toEquiv := Φ.toEquiv
-      contMDiff_toFun := Φ.contMDiff.of_le (by simp)
-      contMDiff_invFun := Φ.symm.contMDiff.of_le (by simp) } hχ
-
 variable {J' : ContMDiffAlmostComplexStructureFamily I M 𝓘(ℝ, ℂ) X' ℓ}
   {ν' : InhomogeneousTerm ((SmoothAlmostComplexStructure.ofComplexManifold ℂ X').toContMDiff ℓ) J'}
 
@@ -743,7 +731,7 @@ Riemann surfaces, `J'` the domain-dependent structure `J` read at the image doma
 exactly when `u` is weakly pseudoholomorphic on `s` for `(J, ν)`. The family `J.comp g`, for the
 real smooth map `g` underlying `Φ`, is such a `J'`
 (`TauCeti.ContMDiffAlmostComplexStructureFamily.freeze_comp`). -/
-theorem isWeakPseudoholomorphicOn_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
+theorem _root_.Diffeomorph.isWeakPseudoholomorphicOn_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
     (hJ : ∀ x : X', J'.freeze x = J.freeze (Φ x))
     (hν : ∀ (x : X') (y : M) (v : TangentSpace 𝓘(ℝ, ℂ) x), ν'.val.tangentHom (x, y) v =
       ν.val.tangentHom (Φ x, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Φ x v)) :
@@ -756,12 +744,12 @@ theorem isWeakPseudoholomorphicOn_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(�
       fun x hx ↦ show Φ (Φ.symm x) ∈ s by rwa [Φ.apply_symm_apply]
     exact h'.congr fun x _ ↦ by simp
   · -- Transport the chart `χ` of `X` to the chart `χ ∘ Φ` of `X'`.
-    have hφ' := transOpenPartialHomeomorph_mem_maximalAtlas_one Φ hχ
+    have hφ' := Φ.transOpenPartialHomeomorph_mem_maximalAtlas_of_le (by simp) hχ
     refine (isWeakCauchyRiemannOn_comp_biholomorph_iff Φ hJ hν hφ' rfl (fun z _ ↦ ?_) ψ).1
       (h _ hφ' ψ hψ)
     simp
   · -- Transport the chart `φ'` of `X'` to the chart `φ' ∘ Φ⁻¹` of `X`.
-    have hχ := transOpenPartialHomeomorph_mem_maximalAtlas_one Φ.symm hφ'
+    have hχ := Φ.symm.transOpenPartialHomeomorph_mem_maximalAtlas_of_le (by simp) hφ'
     refine (isWeakCauchyRiemannOn_comp_biholomorph_iff Φ hJ hν hφ' rfl (fun z _ ↦ ?_) ψ).2
       (h _ hχ ψ hψ)
     simp
@@ -770,13 +758,13 @@ theorem isWeakPseudoholomorphicOn_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(�
 biholomorphism `Φ : X' → X`, with `J'(x, y) = J(Φ x, y)` and `ν'(x, y) = ν(Φ x, y) ∘ dΦₓ`, the map
 `u ∘ Φ` is weakly pseudoholomorphic for `(J', ν')` exactly when `u` is weakly pseudoholomorphic for
 `(J, ν)`. -/
-theorem isWeakPseudoholomorphic_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
+theorem _root_.Diffeomorph.isWeakPseudoholomorphic_comp_biholomorph_iff (Φ : X' ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ X)
     (hJ : ∀ x : X', J'.freeze x = J.freeze (Φ x))
     (hν : ∀ (x : X') (y : M) (v : TangentSpace 𝓘(ℝ, ℂ) x), ν'.val.tangentHom (x, y) v =
       ν.val.tangentHom (Φ x, y) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Φ x v)) :
     IsWeakPseudoholomorphic J' ν' p (u ∘ Φ) ↔ IsWeakPseudoholomorphic J ν p u := by
   rw [← isWeakPseudoholomorphicOn_univ, ← isWeakPseudoholomorphicOn_univ, ← preimage_univ]
-  exact isWeakPseudoholomorphicOn_comp_biholomorph_iff Φ hJ hν
+  exact Φ.isWeakPseudoholomorphicOn_comp_biholomorph_iff hJ hν
 
 end Biholomorphism
 

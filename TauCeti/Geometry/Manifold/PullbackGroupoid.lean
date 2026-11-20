@@ -55,7 +55,9 @@ charts belong to the maximal atlas of `N`, so the two structures are compatible.
   `Homeomorph.pullbackChartedSpace_symm_pullbackChartedSpace`: the identity, composition and
   inverse laws of the transport.
 * `Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas`: a `C^n` diffeomorphism pulls a chart
-  of the maximal atlas of its target back to a chart of the maximal atlas of its source.
+  of the maximal atlas of its target back to a chart of the maximal atlas of its source;
+  `Diffeomorph.transOpenPartialHomeomorph_mem_maximalAtlas_of_le` does the same for the maximal
+  atlas of any lower order.
 * `Diffeomorph.atlas_pullbackChartedSpace_subset_maximalAtlas`: the charts pulled back along a
   `C^n` diffeomorphism belong to the maximal atlas of its source.
 
@@ -252,6 +254,18 @@ theorem transOpenPartialHomeomorph_mem_maximalAtlas (h : N ≃ₘ^n⟮I, I⟯ M)
   rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
   exact ⟨(contMDiffOn_of_mem_maximalAtlas hφ).comp h.contMDiff.contMDiffOn fun _ hx ↦ hx,
     h.symm.contMDiff.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas hφ)⟩
+
+omit [IsManifold I n N] in
+/-- A `C^n` diffeomorphism `h : N ≃ₘ^n⟮I, I⟯ M` pulls a chart `φ` of the maximal `C^m` atlas of
+`M`, for `m ≤ n`, back to the chart `φ ∘ h` of the maximal `C^m` atlas of `N`. -/
+theorem transOpenPartialHomeomorph_mem_maximalAtlas_of_le {m : ℕ∞ω} [IsManifold I m N]
+    (h : N ≃ₘ^n⟮I, I⟯ M) (hmn : m ≤ n) {φ : OpenPartialHomeomorph M H}
+    (hφ : φ ∈ IsManifold.maximalAtlas I m M) :
+    h.toHomeomorph.transOpenPartialHomeomorph φ ∈ IsManifold.maximalAtlas I m N := by
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+  exact ⟨(contMDiffOn_of_mem_maximalAtlas hφ).comp (h.contMDiff.of_le hmn).contMDiffOn
+      fun _ hx ↦ hx,
+    (h.symm.contMDiff.of_le hmn).comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas hφ)⟩
 
 /-- The charts pulled back along a `C^n` diffeomorphism `h : N ≃ₘ^n⟮I, I⟯ M` belong to the maximal
 `C^n` atlas of `N`. So the pulled-back structure is compatible with the structure that `N` already
