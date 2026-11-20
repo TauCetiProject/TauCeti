@@ -55,6 +55,8 @@ For an ideal, adjoint nilpotence also passes back to the ambient Lie algebra
   central, so adding a central element does not change the adjoint action
   (`TauCeti.LieAlgebra.ad_add_of_mem_center_left`) or ad-nilpotence
   (`TauCeti.LieAlgebra.isNilpotent_ad_add_iff_of_mem_center_left`).
+* `TauCeti.LieAlgebra.commute_ad_of_lie_eq_zero`: elements with vanishing bracket have commuting
+  adjoint actions.
 
 ## References
 
@@ -195,16 +197,19 @@ end Center
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
+/-- Elements whose bracket vanishes have commuting adjoint actions. -/
+theorem commute_ad_of_lie_eq_zero {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {x y : L} (h : ⁅x, y⁆ = 0) : Commute (ad R L x) (ad R L y) := by
+  rw [commute_iff_lie_eq, ← LieHom.map_lie, h, map_zero]
+
 /-- In a center-free Lie algebra, an element whose adjoint is polynomial in `ad x` commutes
 with every element commuting with `x`. -/
 theorem lie_eq_zero_of_ad_mem_adjoin {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
     [LieModule.IsFaithful R L L] {x y z : L}
     (hz : ad R L z ∈ Algebra.adjoin R {ad R L x}) (hxy : ⁅x, y⁆ = 0) :
     ⁅z, y⁆ = 0 := by
-  have hcomm : Commute (ad R L x) (ad R L y) := by
-    ext w
-    simp [leibniz_lie x y w, hxy]
-  have hzy := Algebra.commute_of_mem_adjoin_singleton_of_commute hz hcomm.symm
+  have hzy := Algebra.commute_of_mem_adjoin_singleton_of_commute hz
+    (commute_ad_of_lie_eq_zero hxy).symm
   apply (LieModule.toEnd_eq_iff R L L).mp
   rw [map_zero, LieHom.map_lie]
   -- The bracket on endomorphisms is the commutator.
