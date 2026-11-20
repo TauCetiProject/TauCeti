@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
 public import Mathlib.GroupTheory.SemidirectProduct
-public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
+public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Basic
 
 /-!
 # The Heisenberg subgroup of Weierstrass coordinate changes

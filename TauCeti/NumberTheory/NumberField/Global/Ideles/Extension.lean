@@ -22,6 +22,11 @@ The norm formula combines the local degree formulas for finite and infinite comp
 regrouping the local factors by the place below. In particular, a complex place above a real
 place contributes degree two. No Galois hypothesis is used.
 
+An idele or idele class concentrated at a single finite or infinite place extends to the product
+over the places above it of the single-place elements carrying the images of the local component
+(`ideleExtension_ofAdicCompletion`, `ideleClassExtension_ofAdicCompletion`,
+`ideleExtension_ofCompletion`, `ideleClassExtension_ofCompletion`).
+
 ## References
 
 * [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter VI, §1.
@@ -31,7 +36,8 @@ public section
 noncomputable section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace
-open scoped NumberField.LiesOver AdicCompletionExtension
+open scoped AdicCompletionExtension
+attribute [local instance] AbsoluteValue.Completion.algebraOfLiesOver
 
 namespace TauCeti.GlobalNumberFields
 
@@ -87,7 +93,7 @@ place below under the completion map. -/
 @[simp]
 theorem ideleInfiniteCoord_ideleExtension (w : InfinitePlace L) (x : IdeleGroup (𝓞 K) K) :
     w.ideleInfiniteCoord (ideleExtension K L x) =
-      Units.map (LiesOver.completionMap (w.comap (algebraMap K L)) w).toMonoidHom
+      Units.map (AbsoluteValue.Completion.map (w.comap (algebraMap K L)).val w.val).toMonoidHom
         ((w.comap (algebraMap K L)).ideleInfiniteCoord x) := by
   apply Units.ext
   simp only [InfinitePlace.coe_ideleInfiniteCoord, coe_ideleExtension,
@@ -127,8 +133,8 @@ private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) 
   rw [← Fintype.prod_fiberwise (fun w : InfinitePlace L ↦ w.comap (algebraMap K L))]
   have h (v : InfinitePlace K) :
       (∏ w : {w : InfinitePlace L // w.comap (algebraMap K L) = v},
-        completionNormalizedAbsValue w.1
-          (w.1.ideleInfiniteCoord (ideleExtension K L x))) =
+        completionNormalizedAbsValue w.val
+          (w.val.ideleInfiniteCoord (ideleExtension K L x))) =
         completionNormalizedAbsValue v (v.ideleInfiniteCoord x) ^
           Module.finrank K L := by
     let e : {w : InfinitePlace L // w.comap (algebraMap K L) = v} ≃
@@ -157,7 +163,7 @@ private theorem prod_finiteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
     (hasFiniteMulSupport_norm_ideleFiniteCoord (ideleExtension K L x))]
   have h (v : HeightOneSpectrum (𝓞 K)) :
       (∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.under (𝓞 K) = v},
-        ‖(w.1.ideleFiniteCoord (ideleExtension K L x) : w.1.adicCompletion L)‖) =
+        ‖(w.val.ideleFiniteCoord (ideleExtension K L x) : w.val.adicCompletion L)‖) =
         ‖(v.ideleFiniteCoord x : v.adicCompletion K)‖ ^ Module.finrank K L := by
     let e : {w : HeightOneSpectrum (𝓞 L) // w.under (𝓞 K) = v} ≃
         {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
@@ -239,5 +245,99 @@ theorem ideleClassNorm_ideleClassExtension (x : IdeleClassGroup (𝓞 K) K) :
     ideleClassNorm (ideleClassExtension K L x) = ideleClassNorm x ^ Module.finrank K L := by
   induction x using Quotient.inductionOn with
   | h x => simp
+
+/-! ### Extension of ideles and idele classes concentrated at a single place -/
+
+variable (K L)
+
+/-- **Extension of an idele concentrated at a finite place.** Extending `ofAdicCompletion v u` from
+`K` to `L` decomposes it as the product over the finite places `w` of `L` above `v` of
+`ofAdicCompletion w` applied to the image of `u` in `L_wˣ`. -/
+theorem ideleExtension_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (u : (v.adicCompletion K)ˣ) :
+    ideleExtension K L (IdeleGroup.ofAdicCompletion (𝓞 K) K v u) =
+      ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+        IdeleGroup.ofAdicCompletion (𝓞 L) L w.val
+          (Units.map (HeightOneSpectrum.adicCompletionExtension K L v w.val).toMonoidHom u) := by
+  classical
+  let _ : Fintype {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
+    Fintype.ofFinite _
+  rw [finprod_eq_prod_of_fintype]
+  refine IdeleGroup.ext (fun w ↦ ?_) (fun w ↦ ?_)
+  · simp [ideleInfiniteCoord_ideleExtension, map_prod]
+  · rw [ideleFiniteCoord_ideleExtension, map_prod]
+    by_cases hw : w.asIdeal.LiesOver v.asIdeal
+    · have hv : w.under (𝓞 K) = v := HeightOneSpectrum.asIdeal_injective hw.over.symm
+      rw [Finset.prod_eq_single ⟨w, hw⟩
+        (fun w' _ hw' ↦ w.ideleFiniteCoord_ofAdicCompletion_of_ne (fun h ↦ hw' (Subtype.ext h.symm))
+          _)
+        (fun h ↦ (h (Finset.mem_univ _)).elim),
+        w.ideleFiniteCoord_ofAdicCompletion_self]
+      subst hv
+      simp only [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_self]
+    · have hne : w.under (𝓞 K) ≠ v := fun h ↦ hw (h ▸ inferInstance)
+      rw [HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_ne _ hne, map_one,
+        Finset.prod_eq_one fun w' _ ↦
+          w.ideleFiniteCoord_ofAdicCompletion_of_ne (fun h ↦ hw (h ▸ w'.property)) _]
+
+/-- **Extension of an idele class concentrated at a finite place.** Extending
+`IdeleClassGroup.ofAdicCompletion v u` from `K` to `L` decomposes it into the product over the
+finite places `w` of `L` above `v`. -/
+theorem ideleClassExtension_ofAdicCompletion (v : HeightOneSpectrum (𝓞 K))
+    (u : (v.adicCompletion K)ˣ) :
+    ideleClassExtension K L (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v u) =
+      ∏ᶠ w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal},
+        IdeleClassGroup.ofAdicCompletion (𝓞 L) L w.val
+          (Units.map (HeightOneSpectrum.adicCompletionExtension K L v w.val).toMonoidHom u) := by
+  classical
+  let _ : Fintype {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal} :=
+    Fintype.ofFinite _
+  rw [IdeleClassGroup.ofAdicCompletion_apply, ideleClassExtension_mk,
+    ideleExtension_ofAdicCompletion, finprod_eq_prod_of_fintype, finprod_eq_prod_of_fintype,
+    ← QuotientGroup.mk'_apply, map_prod]
+  simp only [QuotientGroup.mk'_apply, IdeleClassGroup.ofAdicCompletion_apply]
+
+/-- **Extension of an idele concentrated at an infinite place.** Extending `ofCompletion v u` from
+`K` to `L` decomposes it as the product over the infinite places `w` of `L` above `v` of
+`ofCompletion w` applied to the image of `u` in `L_wˣ`. -/
+theorem ideleExtension_ofCompletion (v : InfinitePlace K) (u : v.Completionˣ) :
+    ideleExtension K L (IdeleGroup.ofCompletion (𝓞 K) K v u) =
+      ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
+        IdeleGroup.ofCompletion (𝓞 L) L w.val
+          (Units.map (AbsoluteValue.Completion.map v.val w.val.val).toMonoidHom u) := by
+  classical
+  let _ : Fintype {w : InfinitePlace L // w.LiesOver v} := Fintype.ofFinite _
+  rw [finprod_eq_prod_of_fintype]
+  refine IdeleGroup.ext (fun w ↦ ?_) (fun w ↦ ?_)
+  · rw [ideleInfiniteCoord_ideleExtension, map_prod]
+    by_cases hw : w.LiesOver v
+    · have hv : w.comap (algebraMap K L) = v := InfinitePlace.LiesOver.comap_eq w v
+      rw [Finset.prod_eq_single ⟨w, hw⟩
+        (fun w' _ hw' ↦ w.ideleInfiniteCoord_ofCompletion_of_ne (fun h ↦ hw' (Subtype.ext h.symm))
+          _)
+        (fun h ↦ (h (Finset.mem_univ _)).elim),
+        w.ideleInfiniteCoord_ofCompletion_self]
+      subst hv
+      simp only [InfinitePlace.ideleInfiniteCoord_ofCompletion_self]
+    · have hne : w.comap (algebraMap K L) ≠ v := fun h ↦ hw (h ▸ inferInstance)
+      rw [InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ hne, map_one,
+        Finset.prod_eq_one fun w' _ ↦
+          w.ideleInfiniteCoord_ofCompletion_of_ne (fun h ↦ hw (h ▸ w'.property)) _]
+  · simp [ideleFiniteCoord_ideleExtension, map_prod]
+
+/-- **Extension of an idele class concentrated at an infinite place.** Extending
+`IdeleClassGroup.ofCompletion v u` from `K` to `L` decomposes it into the product over the infinite
+places `w` of `L` above `v`. -/
+theorem ideleClassExtension_ofCompletion (v : InfinitePlace K) (u : v.Completionˣ) :
+    ideleClassExtension K L (IdeleClassGroup.ofCompletion (𝓞 K) K v u) =
+      ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v},
+        IdeleClassGroup.ofCompletion (𝓞 L) L w.val
+          (Units.map (AbsoluteValue.Completion.map v.val w.val.val).toMonoidHom u) := by
+  classical
+  let _ : Fintype {w : InfinitePlace L // w.LiesOver v} := Fintype.ofFinite _
+  rw [IdeleClassGroup.ofCompletion_apply, ideleClassExtension_mk,
+    ideleExtension_ofCompletion, finprod_eq_prod_of_fintype, finprod_eq_prod_of_fintype,
+    ← QuotientGroup.mk'_apply, map_prod]
+  simp only [QuotientGroup.mk'_apply, IdeleClassGroup.ofCompletion_apply]
 
 end TauCeti.GlobalNumberFields

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.ComplexManifold
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.Topology
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.LieGroup
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Lattice
 public import TauCeti.Geometry.Manifold.Algebra.Quotient
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.Complex.Chart
@@ -28,12 +28,19 @@ projection from `ℂ` is a local biholomorphism, so this isomorphism is holomorp
 the inverse of a holomorphic homeomorphism of Riemann surfaces, is holomorphic as well. Hence the
 complex uniformization `ℂ / Λ ≃ E_Λ(ℂ)` is a biholomorphic group isomorphism.
 
+Every elliptic curve `E` over `ℂ` is the image of the curve `E_Λ` of its period lattice
+`Λ = E.periodLattice` under a change of variables, and changes of variables are biholomorphic
+(`WeierstrassCurve.Projective.Point.diffeomorphVariableChange`). Hence `E(ℂ)` is isomorphic to
+`ℂ / E.periodLattice` by a biholomorphic group isomorphism.
+
 ## Main results
 
 * `PeriodPair.contMDiff_weierstrassPoint_toProjective`: the Weierstrass point map `ℂ → E_Λ(ℂ)` is
   holomorphic.
 * `PeriodPair.weierstrassPointDiffeomorph`: the biholomorphism `ℂ / Λ ≃ E_Λ(ℂ)`, whose underlying
   map is the group isomorphism `PeriodPair.weierstrassPointContinuousAddEquiv`.
+* `WeierstrassCurve.exists_continuousAddEquiv_periodLattice_contMDiff`: every complex elliptic
+  curve `E` has a biholomorphic group isomorphism `ℂ / E.periodLattice ≃ E(ℂ)`.
 
 ## References
 
@@ -99,3 +106,36 @@ theorem coe_weierstrassPointDiffeomorph_symm (r : ℕ∞ω) :
   (rfl)
 
 end PeriodPair
+
+namespace WeierstrassCurve
+
+/-- **Holomorphic uniformization of a complex elliptic curve by its period lattice.** The points of
+an elliptic curve `E` over `ℂ` are isomorphic to `ℂ / E.periodLattice` by a group isomorphism which
+is biholomorphic, in both directions. -/
+theorem exists_continuousAddEquiv_periodLattice_contMDiff (E : WeierstrassCurve ℂ) [E.IsElliptic] :
+    ∃ e : ℂ ⧸ E.periodLattice.toAddSubgroup ≃ₜ+ E.toProjective.Point,
+      ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω e ∧ ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω e.symm := by
+  obtain ⟨L, C, hu, rfl⟩ := E.exists_periodPair_variableChange_smul_eq
+  -- The period lattice is `L.lattice`. Rewriting it in the goal would also have to rewrite its
+  -- discreteness instance, so the equality is substituted for a variable lattice instead.
+  suffices ∀ (Λ : Submodule ℤ ℂ) [DiscreteTopology Λ], Λ = L.lattice →
+      ∃ e : ℂ ⧸ Λ.toAddSubgroup ≃ₜ+ (C • L.weierstrassCurve).toProjective.Point,
+        ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω e ∧ ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω e.symm from
+    this _ (periodLattice_eq_iff.mpr ⟨C, hu, rfl⟩)
+  rintro _ _ rfl
+  refine ⟨L.weierstrassPointContinuousAddEquiv.trans
+    (Projective.Point.continuousAddEquivVariableChange _ C).symm, ?_, ?_⟩
+  · simpa only [ContinuousAddEquiv.coe_trans,
+      Projective.Point.coe_continuousAddEquivVariableChange_symm,
+      Projective.Point.coe_diffeomorphVariableChange_symm,
+      PeriodPair.coe_weierstrassPointDiffeomorph] using
+      (Projective.Point.diffeomorphVariableChange _ C ω).symm.contMDiff.comp
+        (L.weierstrassPointDiffeomorph ω).contMDiff
+  · exact ((L.weierstrassPointDiffeomorph ω).symm.contMDiff.comp
+      (Projective.Point.diffeomorphVariableChange _ C ω).contMDiff).congr fun P ↦ by
+        simp only [ContinuousAddEquiv.symm_trans_apply, ContinuousAddEquiv.symm_symm,
+          Projective.Point.coe_continuousAddEquivVariableChange,
+          PeriodPair.coe_weierstrassPointDiffeomorph_symm,
+          Projective.Point.coe_diffeomorphVariableChange, Function.comp_apply]
+
+end WeierstrassCurve

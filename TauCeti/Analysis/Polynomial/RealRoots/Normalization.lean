@@ -63,7 +63,7 @@ theorem exists_analyticOnNhd_ordered_roots_of_integralNormalization
   have hlc0 := leadingCoeff_ne_zero.2 hF
   have hf (i : ι) : AnalyticAt ℝ (f i) x₀ := (hr i).div hlc hlc0
   have hfi : Injective (fun i ↦ f i x₀) := fun i j hij ↦
-    hinj ((div_left_inj' hlc0).mp hij)
+    hinj ((div_left_inj₀ hlc0).mp hij)
   obtain ⟨k, e, V, hV, hxV, ha, horder⟩ :=
     exists_analyticOnNhd_strictMono_range_eq hf
       (fun i j hij ↦ by obtain rfl := hfi hij; exact .rfl)

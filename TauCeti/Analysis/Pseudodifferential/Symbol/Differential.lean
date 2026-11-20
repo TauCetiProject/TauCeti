@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.DifferentialSymbol
+public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
 # Differential operators as classical pseudodifferential operators
@@ -34,13 +37,22 @@ For the differential symbol of order `m`:
   `m - j` is the part of the symbol made of the summands of order `m - j`; in particular the
   principal symbol (`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialSymbol`) is the
   sum of the top-order summands, in the angular-frequency convention `σ(∂_v) = i ⟪ξ, v⟫`;
+* `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_iff`: the operator is elliptic exactly
+  when the symbol of its top-order summands is invertible at every nonzero frequency; for scalar
+  coefficients, `TauCeti.isInvertible_differentialSymbol_filter_smul_id` reduces this to the
+  nonvanishing of the geometric top-order symbol `∑ bᵢ ∏ⱼ ⟪ξ, vᵢⱼ⟫`;
 * `TauCeti.ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol`: compactly
   supported coefficients give a symbol with compact spatial support;
+* `TauCeti.ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol`: for scalar coefficients
+  of temperate growth whose symbol has compact spatial support, the extension of the quantization
+  to the Bessel-potential space `H^r` is the differential operator acting on tempered
+  distributions;
 * `TauCeti.ClassicalSymbol.negLaplacian`: the classical symbol of the negative Laplacian
   `-∑ⱼ ∂ⱼ²`, with full symbol `‖ξ‖²` (`TauCeti.ClassicalSymbol.coefficient_toSymbol_negLaplacian`)
   and principal symbol `HomogeneousSymbol.normRpow _ _ V 2`
   (`TauCeti.ClassicalSymbol.principal_negLaplacian`); it is elliptic
-  (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`).
+  (`TauCeti.ClassicalSymbol.isElliptic_negLaplacian`), and its quantization is Mathlib's `-Δ` on
+  Schwartz input (`TauCeti.ClassicalSymbol.quantizeSchwartzValue_negLaplacian`).
 
 ## References
 
@@ -64,6 +76,29 @@ open HomogeneousSymbol
 
 /-! ### Differential operators -/
 
+/-- The differential symbol of the summands of order exactly `m` of an operator with scalar
+coefficients `bᵢ` is invertible wherever their geometric symbol `∑ bᵢ ∏ⱼ ⟪ξ, vᵢⱼ⟫` is nonzero: the
+two differ by the factor `i ^ m`. With `TauCeti.ClassicalSymbol.isElliptic_ofDifferentialSymbol_iff`
+this reduces the ellipticity of a scalar differential operator to the nonvanishing of its geometric
+top-order symbol. -/
+theorem isInvertible_differentialSymbol_filter_smul_id {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {ι : Type*} {k : ι → ℕ} (s : Finset ι) (v : ∀ i, Fin (k i) → E)
+    (b : ι → E → ℂ) (m : ℕ) {x ξ : E}
+    (h : ∑ i ∈ s with k i = m, b i x * ∏ j, (⟪ξ, v i j⟫ : ℂ) ≠ 0) :
+    (differentialSymbol {i ∈ s | k i = m} v (fun i x ↦ b i x • ContinuousLinearMap.id ℂ V)
+      (x, ξ)).IsInvertible := by
+  have hsum : ∑ i ∈ s with k i = m, Complex.I ^ k i * (∏ j, (⟪ξ, v i j⟫ : ℂ)) * b i x =
+      Complex.I ^ m * ∑ i ∈ s with k i = m, b i x * ∏ j, (⟪ξ, v i j⟫ : ℂ) := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [show Complex.I ^ k i = Complex.I ^ m by rw [(Finset.mem_filter.1 hi).2]]
+    ring
+  rw [differentialSymbol_eq_sum_pow_mul]
+  simp_rw [smul_smul]
+  rw [← Finset.sum_smul, hsum, ContinuousLinearMap.isInvertible_smul_iff
+    (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)]
+  simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)
+
 namespace ClassicalSymbol
 
 variable {ι : Type*} {k : ι → ℕ}
@@ -77,9 +112,9 @@ degree `m - j` collects the summands of order `m - j`
 def ofDifferentialSymbol (m : ℕ) (s : Finset ι) (v : ∀ i, Fin (k i) → CoordinateSpace n)
     (b : ι → CoordinateSpace n → V →L[ℂ] W) (hb : ∀ i ∈ s, ContDiff ℝ ∞ (b i))
     (hk : ∀ i ∈ s, k i ≤ m) : ClassicalSymbol n V W m :=
-  ∑ i ∈ s.attach, inclusion (m - k i) (by rw [Nat.cast_sub (hk i i.2)]; ring)
-    (ofContDiffHomogeneous (m := k i) (differentialSymbol {i.1} v b)
-      (contDiff_differentialSymbol _ v fun j hj ↦ Finset.mem_singleton.1 hj ▸ hb i i.2)
+  ∑ i ∈ s.attach, inclusion (m - k i) (by rw [Nat.cast_sub (hk i i.property)]; ring)
+    (ofContDiffHomogeneous (m := k i) (differentialSymbol {i.val} v b)
+      (contDiff_differentialSymbol _ v fun j hj ↦ Finset.mem_singleton.1 hj ▸ hb i i.property)
       fun x ξ _ t _ ↦ by
         rw [Real.rpow_natCast]
         exact differentialSymbol_smul_snd _ v b (fun j hj ↦ by rw [Finset.mem_singleton.1 hj])
@@ -119,7 +154,7 @@ theorem coefficient_term_ofDifferentialSymbol (j : ℕ) {x ξ : CoordinateSpace 
   simp only [ofDifferentialSymbol, term_sum, coefficient_sum, Finset.sum_apply]
   rw [differentialSymbol_def, Finset.sum_filter, ← Finset.sum_attach s]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  have hki := hk i i.2
+  have hki := hk i i.property
   rw [term_inclusion]
   split_ifs with hj hkj hkj
   · -- The summand `i` has order `m - j`: its term of degree `m - j` is its principal symbol.
@@ -142,6 +177,16 @@ theorem coefficient_principal_ofDifferentialSymbol {x ξ : CoordinateSpace n} (h
   rw [coefficient_principal, coefficient_term_ofDifferentialSymbol m s v b hb hk 0 hξ]
   simp
 
+/-- **Ellipticity of a differential operator.** The classical symbol of a differential operator
+of order `m` is elliptic exactly when the differential symbol of its summands of order exactly
+`m` is invertible at every position and every nonzero frequency. -/
+theorem isElliptic_ofDifferentialSymbol_iff :
+    (ofDifferentialSymbol m s v b hb hk).IsElliptic ↔
+      ∀ x ξ, ξ ≠ 0 → (differentialSymbol {i ∈ s | k i = m} v b (x, ξ)).IsInvertible := by
+  rw [isElliptic_iff]
+  refine forall_congr' fun x ↦ forall_congr' fun ξ ↦ forall_congr' fun hξ ↦ ?_
+  rw [coefficient_principal_ofDifferentialSymbol m s v b hb hk hξ]
+
 /-- Compactly supported coefficients give a classical symbol with compact spatial support. -/
 theorem hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol
     (hbc : ∀ i ∈ s, HasCompactSupport (b i)) :
@@ -151,6 +196,51 @@ theorem hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol
   rw [coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def]
   refine Finset.sum_eq_zero fun i hi ↦ ?_
   rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (Set.mem_biUnion hi h), smul_zero]
+
+section Sobolev
+
+open MeasureTheory
+open scoped BesselPotentialSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+
+/-- **Differential operators on Bessel-potential spaces.** For scalar coefficients `hᵢ` of
+temperate growth whose symbol has compact spatial support (for example compactly supported smooth
+`hᵢ`), the extension `H^r → H^{r - m}` of the quantization of the classical symbol of
+`u ↦ ∑ i ∈ s, hᵢ ∂^{vᵢ} u` is this differential operator acting on tempered distributions: for
+every `u ∈ H^r` it is `∑ i ∈ s, hᵢ ∂^{vᵢ} u`, with the distributional derivatives of `u`. -/
+theorem toDistr_quantizeSobolev_ofDifferentialSymbol {h : ι → CoordinateSpace n → ℂ}
+    (hh : ∀ i ∈ s, (h i).HasTemperateGrowth)
+    (hc : (ofDifferentialSymbol m s v (fun i x ↦ h i x • ContinuousLinearMap.id ℂ F)
+      (fun i hi ↦ (hh i hi).1.smul contDiff_const) hk).toSymbol.HasCompactSpatialSupport)
+    (r : ℝ) (u : H^{r}(CoordinateSpace n, F)) :
+    ((ofDifferentialSymbol m s v _ _ hk).toSymbol.quantizeSobolev hc r u).toDistr =
+      ∑ i ∈ s, TemperedDistribution.smulLeftCLM F (h i) (∂^{v i} u.toDistr) := by
+  -- Both sides are continuous in `u ∈ H^r`, and they agree on the dense Schwartz functions.
+  refine congrFun ((SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) r
+    ENNReal.ofNat_ne_top).equalizer
+    (BesselPotentialSpace.continuous_toDistr.comp (ContinuousLinearMap.continuous _))
+    (continuous_finsetSum _ fun i _ ↦ (ContinuousLinearMap.continuous _).comp
+      ((LineDeriv.continuous_iteratedLineDerivOp _).comp BesselPotentialSpace.continuous_toDistr))
+    (funext fun u ↦ ?_)) u
+  ext φ
+  simp only [Function.comp_apply, Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
+    quantizeSchwartzValue_ofDifferentialSymbol, SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
+  rw [sum_apply]
+  simp only [TemperedDistribution.iteratedLineDerivOp_toTemperedDistributionCLM_eq,
+    TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq,
+    SchwartzMap.toTemperedDistributionCLM_apply_apply]
+  have hint (i : ι) (_ : i ∈ s) :
+      Integrable fun x ↦ φ x • SchwartzMap.smulLeftCLM F (h i) (∂^{v i} u) x :=
+    (SchwartzMap.integrable _).smul_of_top_right (φ.memLp ⊤)
+  rw [← integral_finsetSum s hint]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  simp only [Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [SchwartzMap.smulLeftCLM_apply_apply (hh i hi),
+    _root_.smul_apply, ContinuousLinearMap.id_apply]
+
+end Sobolev
 
 /-! ### The Laplacian -/
 
@@ -181,13 +271,14 @@ theorem coefficient_toSymbol_negLaplacian (p : CoordinateSpace n × CoordinateSp
     (negLaplacian n V).toSymbol.coefficient p = ‖p.2‖ ^ 2 • ContinuousLinearMap.id ℂ V := by
   rw [negLaplacian, coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_negLaplacian]
 
-/-- The negative Laplacian is the sum of the negative second derivatives on Schwartz input. -/
+open Laplacian in
+/-- The quantization of `negLaplacian` is the negative Laplacian `-Δ` on Schwartz input. -/
 theorem quantizeSchwartzValue_negLaplacian [CompleteSpace V] (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) :
-    quantizeSchwartzValue (negLaplacian n V).toSymbol.coefficient u x =
-      -∑ j : Fin n, ∂^{fun _ : Fin 2 ↦ EuclideanSpace.single j (1 : ℝ)} u x := by
-  rw [negLaplacian, quantizeSchwartzValue_ofDifferentialSymbol]
-  simp
+    quantizeSchwartzValue (negLaplacian n V).toSymbol.coefficient u x = -Δ u x := by
+  rw [negLaplacian, quantizeSchwartzValue_ofDifferentialSymbol,
+    SchwartzMap.laplacian_eq_sum (EuclideanSpace.basisFun (Fin n) ℝ)]
+  simp [LineDeriv.iteratedLineDerivOp_succ_left, EuclideanSpace.basisFun_apply, Fin.tail]
 
 /-- The principal symbol of the negative Laplacian is `‖ξ‖²`. -/
 @[simp]

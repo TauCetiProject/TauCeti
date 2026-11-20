@@ -17,7 +17,11 @@ couple, `TauCeti.CompatibleCouple.lebesgue`, inside the common ambient space `L�
 `Lᵖ` and Lorentz spaces (Bergh–Löfström, Chapter 5). Its intersection is `L^{p₀} ∩ L^{p₁}`, the
 pairs of functions agreeing almost everywhere (`TauCeti.CompatibleCouple.mem_lebesgue_inter_iff`),
 and its sum is `L^{p₀} + L^{p₁}`, in which two decompositions agree exactly when their sums agree
-almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`).
+almost everywhere (`TauCeti.CompatibleCouple.lebesgue_fstToSum_add_sndToSum_eq_iff`). At the
+exponents `1` and `∞` the couple has the same decompositions as `TauCeti.CompatibleCouple.l1Linfty`,
+so the embedding of its sum space into `L¹ + L^∞` is a surjective isometry
+(`TauCeti.CompatibleCouple.lebesgue_one_top_sumSpaceEmbed_surjective`,
+`TauCeti.CompatibleCouple.norm_lebesgue_one_top_sumSpaceEmbed`).
 
 For `p₀ ≤ p ≤ p₁` the space `Lᵖ` is an intermediate space of the couple: there are continuous
 injections
@@ -84,6 +88,34 @@ theorem lebesgue_fstToSum_add_sndToSum_eq_iff {f₀ g₀ : Lp E p₀ μ} {f₁ g
     sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
   exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_add_iff 𝕜
 
+/-- The Lebesgue couple `(L¹, L^∞)` and `l1Linfty` have the same decompositions: the embedding of
+the sum space of the former into `L¹ + L^∞` sends `g + h` to `g + h`. -/
+theorem lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum (g : Lp E 1 μ) (h : Lp E ∞ μ) :
+    (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed
+        ((lebesgue 𝕜 E μ 1 ∞).fstToSum g + (lebesgue 𝕜 E μ 1 ∞).sndToSum h) =
+      (l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h := by
+  rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
+    lebesgue_embed₁, L1AddLinfty.ofLp_eq_fstToSum, L1AddLinfty.ofLp_eq_sndToSum]
+
+/-- The embedding of the sum space of the Lebesgue couple `(L¹, L^∞)` into `L¹ + L^∞` is
+surjective. -/
+theorem lebesgue_one_top_sumSpaceEmbed_surjective :
+    Function.Surjective (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed := fun u => by
+  obtain ⟨g, h, hgh⟩ := (l1Linfty 𝕜 E μ).exists_fstToSum_add_sndToSum_eq u
+  exact ⟨_, (lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum g h).trans hgh⟩
+
+/-- The embedding of the sum space of the Lebesgue couple `(L¹, L^∞)` into `L¹ + L^∞` is
+norm-preserving. -/
+theorem norm_lebesgue_one_top_sumSpaceEmbed (v : (lebesgue 𝕜 E μ 1 ∞).SumSpace) :
+    ‖(lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v‖ = ‖v‖ := by
+  refine le_antisymm ((lebesgue 𝕜 E μ 1 ∞).le_norm_sumSpace_iff.2 fun g h hgh => ?_)
+    ((l1Linfty 𝕜 E μ).le_norm_sumSpace_iff.2 fun g h hgh => ?_)
+  · rw [← hgh, lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum]
+    exact norm_fstToSum_add_sndToSum_le _ g h
+  · rw [← (lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed_injective
+      ((lebesgue_one_top_sumSpaceEmbed_fstToSum_add_sndToSum g h).trans hgh)]
+    exact norm_fstToSum_add_sndToSum_le _ g h
+
 section Intermediate
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -120,7 +152,7 @@ omit [Fact (1 ≤ p)] in
 private theorem memLp_inter_fst (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
     MemLp (x : Lp E p₀ μ × Lp E p₁ μ).1 p μ :=
   (Lp.memLp _).of_le_of_le ((Lp.memLp (x : Lp E p₀ μ × Lp E p₁ μ).2).ae_eq
-      (mem_lebesgue_inter_iff.1 x.2).symm)
+      (mem_lebesgue_inter_iff.1 x.property).symm)
     (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' h₀ h₁
 
 omit [Fact (1 ≤ p)] in
@@ -129,7 +161,7 @@ private theorem norm_toLp_inter_fst_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁)
   rw [Lp.norm_toLp, norm_inter]
   have h := eLpNorm_le_max_of_le_of_le (f := (x : Lp E p₀ μ × Lp E p₁ μ).1) (μ := μ)
     (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' h₀ h₁
-  rw [eLpNorm_congr_ae (p := p₁) (mem_lebesgue_inter_iff.1 x.2)] at h
+  rw [eLpNorm_congr_ae (p := p₁) (mem_lebesgue_inter_iff.1 x.property)] at h
   calc (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p μ).toReal
       ≤ (max (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p₀ μ)
           (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).2 p₁ μ)).toReal :=
@@ -167,7 +199,8 @@ theorem lebesgueInterToLp_injective (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
     (coeFn_lebesgueInterToLp h₀ h₁ x).symm.trans
       (hxy ▸ coeFn_lebesgueInterToLp h₀ h₁ y)
   refine Subtype.ext (Prod.ext (Lp.ext h₀') (Lp.ext ?_))
-  exact (mem_lebesgue_inter_iff.1 x.2).symm.trans (h₀'.trans (mem_lebesgue_inter_iff.1 y.2))
+  exact (mem_lebesgue_inter_iff.1 x.property).symm.trans (h₀'.trans
+      (mem_lebesgue_inter_iff.1 y.property))
 
 /-- The inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` is compatible with the embeddings into `L¹ + L^∞`. -/
 @[simp]
@@ -186,7 +219,7 @@ theorem lebesgueInterToLp_eq_interFst (h₁ : p₀ ≤ p₁) (x : (lebesgue 𝕜
 theorem lebesgueInterToLp_eq_interSnd (h₀ : p₀ ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :
     lebesgueInterToLp h₀ le_rfl x = (lebesgue 𝕜 E μ p₀ p₁).interSnd x := by
   rw [interSnd_apply]
-  exact Lp.ext ((coeFn_lebesgueInterToLp h₀ le_rfl x).trans (mem_lebesgue_inter_iff.1 x.2))
+  exact Lp.ext ((coeFn_lebesgueInterToLp h₀ le_rfl x).trans (mem_lebesgue_inter_iff.1 x.property))
 
 /-- At the endpoint `p = p₀`, the inclusion `Lᵖ → L^{p₀} + L^{p₁}` is the canonical one. -/
 theorem lpToLebesgueSum_eq_fstToSum (h₁ : p₀ ≤ p₁) (f : Lp E p₀ μ) :

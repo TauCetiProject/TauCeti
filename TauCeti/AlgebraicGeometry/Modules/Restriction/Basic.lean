@@ -38,15 +38,49 @@ to the slice site over an open preserves epimorphisms.
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
+Restriction is the pushforward along the isomorphism of structure sheaves
+`AlgebraicGeometry.Scheme.Modules.restrictRingCatSheafHom`, given on sections by the inverses of
+`Scheme.Hom.appIso`.
 -/
 
 public section
 
 open CategoryTheory
 
-namespace TauCeti
-
 universe u
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+section RingCatSheafHom
+
+variable {U Y : Scheme.{u}} (j : U ⟶ Y) [IsOpenImmersion j]
+
+/-- The morphism of sheaves of rings along `j.opensFunctor`, given on sections by the inverses of
+the isomorphisms `Scheme.Hom.appIso`, along which `Scheme.Modules.restrictFunctor j` is the
+pushforward of sheaves of modules. -/
+-- Exposed because exported statements, such as the instance `restrictFunctorLaxMonoidal` and the
+-- section lemmas of `Scheme.PresheafOfModules.restrictFunctor`, are checked by unfolding
+-- restriction to the pushforward along this morphism.
+@[expose]
+noncomputable def restrictRingCatSheafHom :
+    U.ringCatSheaf ⟶ (j.opensFunctor.sheafPushforwardContinuous _ _ _).obj Y.ringCatSheaf :=
+  letI α : U.presheaf ⟶ j.opensFunctor.op ⋙ Y.presheaf := { app W := (j.appIso W.unop).inv }
+  ⟨Functor.whiskerRight α (forget₂ CommRingCat RingCat)⟩
+
+/-- The coefficient map for restriction along an open immersion is an isomorphism: on
+each open it is the inverse of the structure-sheaf isomorphism. -/
+instance isIso_restrictRingCatSheafHom : IsIso (restrictRingCatSheafHom j) := by
+  have : IsIso ((TopCat.Sheaf.forget RingCat U).map (restrictRingCatSheafHom j)) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro W
+    exact inferInstanceAs (IsIso ((forget₂ CommRingCat RingCat).map (j.appIso W.unop).inv))
+  exact isIso_of_reflects_iso (restrictRingCatSheafHom j) (TopCat.Sheaf.forget RingCat U)
+
+end RingCatSheafHom
+
+end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti
 
 /-- Restriction of module sheaves along an open immersion is a right adjoint, so it preserves
 limits. Its left adjoint is the sheafified presheaf pullback along the open-image functor. -/
@@ -54,15 +88,13 @@ noncomputable instance _root_.AlgebraicGeometry.Scheme.Modules.restrictFunctorIs
     {X Y : AlgebraicGeometry.Scheme.{u}} (f : X ⟶ Y)
     [AlgebraicGeometry.IsOpenImmersion f] :
     (AlgebraicGeometry.Scheme.Modules.restrictFunctor f).IsRightAdjoint := by
-  let α : X.presheaf ⟶ f.opensFunctor.op ⋙ Y.presheaf :=
-    { app U := (f.appIso U.unop).inv }
-  let φ : X.ringCatSheaf ⟶
-      (f.opensFunctor.sheafPushforwardContinuous RingCat _ _).obj Y.ringCatSheaf :=
-    ⟨Functor.whiskerRight α (forget₂ CommRingCat RingCat)⟩
   -- The sheaf-pushforward projection hides its site functor from instance search.
   -- Instantiate the existing presheaf right adjoint with that functor explicitly.
-  have := PresheafOfModules.instIsRightAdjointPushforward (F := f.opensFunctor) φ.hom
-  exact inferInstanceAs (SheafOfModules.pushforward φ).IsRightAdjoint
+  have := PresheafOfModules.instIsRightAdjointPushforward (F := f.opensFunctor)
+    (AlgebraicGeometry.Scheme.Modules.restrictRingCatSheafHom f).hom
+  exact inferInstanceAs
+    (SheafOfModules.pushforward
+      (AlgebraicGeometry.Scheme.Modules.restrictRingCatSheafHom f)).IsRightAdjoint
 
 /-- Restriction along an open immersion is additive. In particular it preserves the zero
 morphisms used in kernel diagrams. -/

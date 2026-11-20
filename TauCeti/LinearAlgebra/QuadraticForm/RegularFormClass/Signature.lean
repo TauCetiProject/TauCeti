@@ -19,6 +19,10 @@ isometry classes over any ordered field, is additive under orthogonal sum, and i
 under tensor product. It therefore defines a semiring homomorphism to `ℤ` and vanishes on the
 hyperbolic plane.
 
+Signature separates `⟨1, 1⟩` from `⟨-1, -1⟩` over every ordered field, although the two forms
+have the same rank and the same discriminant. Rank and discriminant therefore do not classify
+regular forms, even in rank two.
+
 Over an ordered real closed field, every positive coefficient is a square. Positive lines are
 therefore isometric to `⟨1⟩`, and negative lines to `⟨-1⟩`. These reductions are used to identify
 the Witt ring with `ℤ` by signature.
@@ -27,6 +31,10 @@ the Witt ring with `ℤ` by signature.
 
 * `TauCeti.RegularFormClass.signatureHom`: the integer signature as a semiring homomorphism.
 * `TauCeti.signature_formClass`: computes signature from the inertia indices of a regular form.
+* `TauCeti.RegularFormClass.signature_mk_binary`: the signature of `⟨a, b⟩` is the sum of the
+  signs of `a` and `b`.
+* `TauCeti.RegularFormClass.mk_one_one_ne_mk_neg_one_neg_one`: the classes of `⟨1, 1⟩` and
+  `⟨-1, -1⟩` are distinct.
 * `TauCeti.RegularFormClass.mk_rankOne_eq_one_of_pos`: positive lines over real closed fields
   are isometric to the unit line.
 * `TauCeti.RegularFormClass.mk_rankOne_eq_mk_neg_one_of_neg`: negative lines over real closed
@@ -104,6 +112,25 @@ theorem signature_one : signature (1 : RegularFormClass K) = 1 := by
   rw [← mk_rankOne_one, signature_mk_rankOne]
   norm_num
 
+/-- The signature of a binary form `⟨a, b⟩` is the sum of the signs of `a` and `b`. This takes
+priority over `signature_mk`, whose inertia indices the simplifier does not evaluate. -/
+@[simp 1100]
+theorem signature_mk_binary (a b : Kˣ) :
+    signature (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) =
+      (if 0 < (a : K) then 1 else -1) + if 0 < (b : K) then 1 else -1 := by
+  rw [mk_succ_eq_mk_rankOne_add, signature_add]
+  simp
+
+/-- Over an ordered field the binary classes `⟨1, 1⟩` and `⟨-1, -1⟩` are distinct, since their
+signatures are `2` and `-2`. Both have rank two, and both have trivial discriminant because
+`(-1) · (-1) = 1`, so rank and discriminant together do not determine a regular form. -/
+theorem mk_one_one_ne_mk_neg_one_neg_one :
+    Quotient.mk (regularFormSetoid K) ⟨2, ![1, 1]⟩ ≠
+      Quotient.mk (regularFormSetoid K) ⟨2, ![-1, -1]⟩ := by
+  intro h
+  have hs := congrArg signature h
+  norm_num at hs
+
 variable [Invertible (2 : K)]
 
 /-- The hyperbolic plane has signature zero. -/
@@ -174,5 +201,15 @@ theorem mk_rankOne_eq_mk_neg_one_of_neg {a : Kˣ} (ha : (a : K) < 0) :
   simpa only [mk_rankOne_mul_mk_rankOne, neg_mul, one_mul, neg_neg, mul_one] using hm
 
 end RegularFormClass
+
+/-- **Worked example.** Over `ℚ` the binary forms `⟨1, 1⟩` and `⟨-1, -1⟩` have the same rank and
+the same discriminant, the square class of `(-1) · (-1) = 1`, but they are not isometric: the
+first is positive definite and the second negative definite. -/
+example :
+    RegularFormClass.discr (Quotient.mk (regularFormSetoid ℚ) ⟨2, ![-1, -1]⟩) =
+        RegularFormClass.discr (Quotient.mk (regularFormSetoid ℚ) ⟨2, ![1, 1]⟩) ∧
+      ¬(presentedForm ⟨2, ![(1 : ℚˣ), 1]⟩).Equivalent (presentedForm ⟨2, ![-1, -1]⟩) := by
+  refine ⟨by simp [RegularFormClass.discr_mk], fun h => ?_⟩
+  exact RegularFormClass.mk_one_one_ne_mk_neg_one_neg_one (RegularFormClass.mk_eq_mk_iff.mpr h)
 
 end TauCeti

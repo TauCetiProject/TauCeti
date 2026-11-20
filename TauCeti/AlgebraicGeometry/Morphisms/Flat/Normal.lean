@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.RingTheory.RegularLocalRing.MiracleFlatness
+import TauCeti.RingTheory.CohenMacaulay.Normal
 import TauCeti.RingTheory.RegularLocalRing.DimensionTwo
 
 /-!

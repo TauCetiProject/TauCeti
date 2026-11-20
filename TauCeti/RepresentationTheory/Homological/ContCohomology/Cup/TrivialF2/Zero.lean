@@ -41,7 +41,7 @@ noncomputable def cohomF2ZeroLinearEquiv : cohomF2 G 0 ≃ₗ[ZMod 2] ZMod 2 :=
 /-- The identification reads the value of the invariant representing the degree-zero class. -/
 theorem cohomF2ZeroLinearEquiv_apply (x : cohomF2 G 0) :
     cohomF2ZeroLinearEquiv G x = trivialF2Equiv G
-      ((_root_.ContinuousCohomology.zeroIso (trivialF2 G)).hom x).1 :=
+      ((_root_.ContinuousCohomology.zeroIso (trivialF2 G)).hom x).val :=
   (rfl)
 
 /-- The cup-product unit has coefficient value one. -/

@@ -207,7 +207,7 @@ theorem isComplement'_weylGroup_basedAut (b : P.Base) :
   · -- The Weyl-group element `w` carrying `b` to `b.map g` leaves the based factor `w⁻¹ g`.
     refine Set.eq_univ_of_forall fun g ↦ ?_
     obtain ⟨w, hw, -⟩ := b.existsUnique_map_eq (b.map g)
-    refine Set.mem_mul.mpr ⟨w, w.2, (w : P.Aut)⁻¹ * g, ?_, mul_inv_cancel_left _ _⟩
+    refine Set.mem_mul.mpr ⟨w, w.property, (w : P.Aut)⁻¹ * g, ?_, mul_inv_cancel_left _ _⟩
     rw [SetLike.mem_coe, mem_basedAut_iff_map_eq, Base.map_mul, ← hw, ← Base.map_mul,
       inv_mul_cancel, Base.map_one]
 
@@ -281,7 +281,7 @@ theorem coroot'_indexEquiv_semidirectProductMulEquiv (b : P.Base) (x) (i : ι) (
 `b`. -/
 theorem map_semidirectProductMulEquiv (b : P.Base) (x) :
     b.map (b.semidirectProductMulEquiv x) = b.map (x.left : P.Aut) := by
-  rw [semidirectProductMulEquiv_apply, Base.map_mul, map_eq_of_mem_basedAut x.right.2]
+  rw [semidirectProductMulEquiv_apply, Base.map_mul, map_eq_of_mem_basedAut x.right.property]
 
 /-- **The Weyl factor of an automorphism `g` carries `b` to `b.map g`**; by simple transitivity
 it is the unique Weyl-group element doing so. -/
