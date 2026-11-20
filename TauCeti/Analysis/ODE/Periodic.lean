@@ -640,19 +640,6 @@ theorem ker_twistedLinearOperator_eq_bot_iff_det_ne_zero (hM : Continuous M)
       LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) ≠ 0 := by
   rw [ker_twistedLinearOperator_eq_bot_iff, Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not]
 
-/-- In finite dimension, if `det (1 - Ψ(d)) ≠ 0` for the return map `Ψ(d)`, every solution of
-`w' = M w` with `w d = w 0` is zero. No periodicity of `M` is needed. -/
-theorem eq_zero_of_hasDerivAt_of_det_ne_zero (hM : Continuous M)
-    (hdet : LinearMap.det ((1 - dysonSeriesLeft M d : X →L[ℝ] X) : X →ₗ[ℝ] X) ≠ 0) {w : ℝ → X}
-    (hw : ∀ t, HasDerivAt w (M t (w t)) t) (hwd : w d = w 0) : w = 0 := by
-  have hw₀ : w 0 = 0 := by
-    by_contra hne
-    refine hdet (LinearMap.det_eq_zero_iff_ker_ne_bot.2
-      ((Submodule.ne_bot_iff _).2 ⟨w 0, ?_, hne⟩))
-    simpa [sub_eq_zero] using hwd.symm.trans (eq_dysonSeriesLeft_apply hM hw d)
-  funext t
-  rw [eq_dysonSeriesLeft_apply hM hw t, hw₀, map_zero, Pi.zero_apply]
-
 /-- **Fredholm alternative.** In finite dimension, for `d > 0` and `ε ≠ 0`, the twisted problem
 `w' = M w + f` is solvable for every continuous twisted `f` exactly when `det (ε - Ψ(d)) ≠ 0`,
 that is, exactly when the twisted problem `w' = M w` has only the zero solution. -/
