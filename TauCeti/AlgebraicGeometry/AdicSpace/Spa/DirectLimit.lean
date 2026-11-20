@@ -305,7 +305,7 @@ theorem spaTateDirectLimitHomeomorph_apply_coe (v : spa Lplus) (i : ι) :
       htplus Lplus hφplus hLplus v : ∀ i, spa (Aplus i)) i =
       spaComap (φ i) (continuous_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h i) (Aplus i) Lplus
         (hφplus i) v :=
-  (rfl)
+  spaDirectLimitHomeomorph_apply_coe ..
 
 /-- The point of `Spa(L, L⁺)` glued by `spaTateDirectLimitHomeomorph` from a compatible family
 pulls back to the `i`-th member of the family along `φᵢ`. -/

@@ -163,24 +163,6 @@ theorem continuous_of_hasBasis [IsTopologicalAddGroup L] (i : ι) : Continuous (
     ← map_mul, Units.mul_inv_cancel_left, hφt]
 
 include hφt ht hA₀ hφA₀ hϖ hϖ' h in
-/-- The image of a power-bounded element of a stage above `i₀` is power-bounded: some power of
-`ϖ'` carries all its powers into the bounded subring `L₀`. -/
-private theorem isPowerBounded_map [IsTopologicalRing L] {j : ι} (hi₀j : i₀ ≤ j) {a : A j}
-    (ha : IsPowerBounded a) : IsPowerBounded (φ j a) := by
-  have hU : φ j ⁻¹' L₀ ∈ 𝓝 (0 : A j) :=
-    (continuous_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h j).continuousAt.preimage_mem_nhds
-      (by simpa using (isOpen_subring_of_hasBasis h).mem_nhds L₀.zero_mem)
-  obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp (isPowerBounded_iff.mp ha) _ hU
-  obtain ⟨k, hk⟩ := ((hϖ.isTopologicallyNilpotent.map (ht i₀ j hi₀j)).eventually_mem hV).exists
-  obtain ⟨u, hu⟩ := (hϖ.isUnit.map (φ i₀)).pow k
-  have hmem (n : ℕ) : (u : L) * φ j a ^ n ∈ L₀ := by
-    simpa [hu, hφt] using hVU (Set.mul_mem_mul hk ⟨n, rfl⟩)
-  refine isPowerBounded_iff.mpr
-    (((isBounded_singleton (↑u⁻¹ : L)).mul (isBounded_subring_of_hasBasis h)).subset ?_)
-  rintro _ ⟨n, rfl⟩
-  exact Set.mem_mul.mpr ⟨_, Set.mem_singleton _, _, hmem n, by simp⟩
-
-include hφt ht hA₀ hφA₀ hϖ hϖ' h in
 /-- **The colimit of plus rings is a ring of integral elements.** Let `Aᵢ⁺ ⊆ Aᵢ` be subrings
 integrally closed in `Aᵢ`, consisting of power-bounded elements, containing `A₀ᵢ` and preserved by
 the transition maps, and let `L⁺ ⊆ L` be the union of their images. If `L` is the colimit of the
@@ -208,8 +190,9 @@ theorem isRingOfIntegralElements_of_hasBasis [NonarchimedeanRing L]
     obtain ⟨i, a, ha, rfl⟩ := hLplus x hx
     obtain ⟨j, hij, hi₀j⟩ := directed_of (· ≤ ·) i i₀
     rw [← hφt i j hij]
-    exact mem_powerBoundedSubring.mpr (isPowerBounded_map hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h hi₀j
-      (hAplus j _ (htplus i j hij a ha)))
+    exact mem_powerBoundedSubring.mpr
+      ((hAplus j _ (htplus i j hij a ha)).map_of_isPseudoUniformizer (hϖ.map (ht i₀ j hi₀j))
+        (continuous_of_hasBasis hφt ht A₀ hA₀ hφA₀ hϖ hϖ' h j).continuousAt)
 
 include hφt ht hA₀ hφA₀ hϖ hϖ' h in
 /-- The colimit is a Tate ring for the topology with basis `ϖ'ⁿ L₀`. This supplies the
