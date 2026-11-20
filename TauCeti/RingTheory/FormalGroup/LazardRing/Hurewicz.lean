@@ -260,10 +260,11 @@ theorem coeff_single_hurewicz (n : ℕ+) {y : LazardRing} (hy : y ∈ augmentati
       lazardGcd (n + 1) * cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩) n := by
   -- Modulo `I²`, `y` is the combination `∑ cₘ xₘ` of the generators.
   have hcoeff := coeff_single_hurewicz_eq_zero_of_mem_sq n (sub_sum_generator_mem_sq hy)
-  rw [map_sub, MvPolynomial.coeff_sub, sub_eq_zero] at hcoeff
+  rw [map_sub, AddMonoidAlgebra.coeff_sub_apply, sub_eq_zero] at hcoeff
   rw [hcoeff]
   simp only [Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul_of_tower, map_sum, map_zsmul,
-    MvPolynomial.coeff_sum, MvPolynomial.coeff_smul, coeff_single_hurewicz_generator, smul_eq_mul,
+    MvPolynomial.coeff_sum, AddMonoidAlgebra.coeff_smul_apply,
+    coeff_single_hurewicz_generator, smul_eq_mul,
     mul_ite, mul_zero, Finset.sum_ite_eq, Finsupp.mem_support_iff]
   split_ifs with h
   · ring
@@ -275,7 +276,7 @@ theorem lazardGcd_dvd_coeff_single_hurewicz (n : ℕ+) (y : LazardRing) :
     (lazardGcd (n + 1) : ℤ) ∣ (hurewicz y).coeff (single n 1) := by
   have hy : y - augmentation y ∈ augmentationIdeal := by simp
   have h := coeff_single_hurewicz n hy
-  simp only [map_sub, MvPolynomial.coeff_sub, map_intCast, ← eq_intCast MvPolynomial.C,
+  simp only [map_sub, AddMonoidAlgebra.coeff_sub_apply, map_intCast, ← eq_intCast MvPolynomial.C,
     MvPolynomial.coeff_C, ite_eq_right (single_ne_zero.2 one_ne_zero).symm, sub_zero] at h
   exact h ▸ dvd_mul_right _ _
 

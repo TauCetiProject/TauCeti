@@ -12,6 +12,7 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.Morse.QuadraticHandle
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
@@ -156,7 +157,8 @@ variable (hψ : Pairwise (Disjoint on fun i ↦ (ψ i).source))
   (hf : ∀ i, ∀ y ∈ (ψ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * ψ i y j ^ 2)
 include hψ hf
 
-/-- Milnor's function at a chart point `x`, in the coordinates `(u, v) = e (ψ x)`. -/
+/-- `f` and Milnor's function at a chart point `x`, in the coordinates `(u, v)` given by
+`EuclideanSpace.sumComplEquivProd` applied to `ψ i x`. -/
 private theorem milnorFunction_of_mem_source (hx : x ∈ (ψ i).source) :
     f x = c + (-‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i x)).1‖ ^ 2 +
           ‖(EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k i) (ψ i x)).2‖ ^ 2) ∧
@@ -189,14 +191,9 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
   rw [← show γ 1 = x from (congrArg φ.symm hL1).trans (φ.left_inv hx)] at hF h0
-  have hd : HasFDerivAt (milnorFunction ψ f c μ ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
-    -- The inverse of `φ` is the inverse function `(ψ i).invFun` of the partial diffeomorphism.
-    have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 := (((ψ i).contMDiffOn_invFun.contMDiffAt
-      ((ψ i).open_target.mem_nhds hLt)).mdifferentiableAt (by simp)).comp 1
-      (mdifferentiableAt_iff_differentiableAt.2 (e.symm.differentiableAt.comp _
-        ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))))
-    have h := hF.hasMFDerivAt.comp 1 hγ.hasMFDerivAt
-    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
+  have hd := (ψ i).hasDerivAt_comp_symm_of_mfderiv_eq_zero (by simp) (L := L)
+    (e.symm.differentiableAt.comp _
+      ((differentiableAt_const _).prodMk (differentiableAt_id.smul_const _))) hLt hF h0
   -- Explicitly, `F (γ t) = c - a + t² b - μ (a + 2 t² b)` near `t = 1`.
   have heq : milnorFunction ψ f c μ ∘ γ =ᶠ[𝓝 1]
       fun t ↦ c + (-a + t ^ 2 * b) - μ (a + 2 * (t ^ 2 * b)) := by
@@ -206,7 +203,7 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
   have hg := ((hq.const_add (-a)).const_add c).sub
     (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
-  have hval := (hg.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
+  have hval := (hg.congr_of_eventuallyEq heq).unique hd
   have h : b * (2 - 4 * deriv μ (a + 2 * (1 ^ 2 * b))) = 0 := by linear_combination hval
   have := hμa.deriv_nonpos (x := a + 2 * (1 ^ 2 * b))
   simpa [b] using (mul_eq_zero.1 h).resolve_right (by linarith)
@@ -480,6 +477,40 @@ private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc
 
 end MilnorFunction
 
+/-- In a normal-form chart `φ` of `f`, every critical point lies on the level `c`: along the
+curve `t ↦ φ⁻¹(t • φ x)` the function is `c + t² (f x - c)`, with derivative `2 (f x - c)` at
+`t = 1`. -/
+theorem _root_.PartialDiffeomorph.mfderiv_ne_zero_of_mem_source_of_ne_level {m : WithTop ℕ∞}
+    (φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) m)
+    (hm : m ≠ 0) {k : ℕ}
+    (hfφ : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
+    {x : M} (hfx : MDifferentiableAt I 𝓘(ℝ) f x) (hx : x ∈ φ.source) (hxc : f x ≠ c) :
+    mfderiv I 𝓘(ℝ) f x ≠ 0 := by
+  intro h0
+  set y := φ x
+  have hy : y ∈ φ.target := φ.map_source hx
+  set γ : ℝ → M := fun t ↦ φ.symm (t • y)
+  have hγ1 : γ 1 = x := by simp only [γ, one_smul]; exact φ.left_inv hx
+  rw [← hγ1] at h0 hfx
+  have hd := φ.hasDerivAt_comp_symm_of_mfderiv_eq_zero hm
+    (differentiableAt_id.smul_const y) (by simpa using hy) hfx h0
+  have hsum (t : ℝ) : ∑ j, (if j.val < k then -1 else 1) * (t • y) j ^ 2 =
+      t ^ 2 * ∑ j, (if j.val < k then (-1 : ℝ) else 1) * y j ^ 2 := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    simp only [PiLp.smul_apply, smul_eq_mul]
+    ring
+  have heq : f ∘ γ =ᶠ[𝓝 1] fun t ↦ c + t ^ 2 * (f x - c) := by
+    filter_upwards [((continuous_id.smul continuous_const).continuousAt (x := (1 : ℝ))
+      (f := fun t : ℝ ↦ t • y)).preimage_mem_nhds
+        (φ.open_target.mem_nhds (by simpa using hy))] with t (ht : t • y ∈ φ.target)
+    refine (hfφ _ (φ.map_target ht)).trans ?_
+    rw [φ.right_inv ht, hsum, hfφ x hx]
+    ring
+  have hq := ((hasDerivAt_pow 2 (1 : ℝ)).mul_const (f x - c)).const_add c
+  have hval := (hq.congr_of_eventuallyEq heq).unique hd
+  exact hxc (by linear_combination hval / 2)
+
 /-- **The handle of a chart is a product of discs.** In the coordinates of the chart `ψ i`, split
 into the first `k i` and the remaining coordinates, the handle `milnorHandle ψ k ε μ i` is Milnor's
 handle `TauCeti.quadraticHandle ε μ`, which the rescaling `TauCeti.quadraticHandleMap` identifies
@@ -522,8 +553,8 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Spac
 `M` with pairwise disjoint sources, each containing the closed ball of radius `√(2ε)` about `0`
 in its target, in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. Suppose the band
 `f⁻¹[c - ε, c + ε]` is compact and its critical points lie in the chart sources. The cell of the
-chart `ψ i` is the disc `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of the first `k i` coordinates, read in
-`M`.
+chart `ψ i` is the disc `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of the first `min (k i) n` coordinates,
+read in `M`.
 
 Then the intersection with `{f ≤ c + ε}` of the lower sublevel `{f ≤ c - ε}` with these cells
 attached is a strong deformation retract of `{f ≤ c + ε}`: there is a retraction of
@@ -550,8 +581,8 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
         ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} :=
       -- `x.2 : (x : M) ∈ {x | f x ≤ c + ε}` is the inequality `f x ≤ c + ε` by the definition of
       -- membership in a set-builder set.
-      fun x ↦ Or.inl (le_trans (b := c + ε) x.2 (by linarith))
-    exact ⟨⟨fun x ↦ ⟨x.1, x.2, hsub x⟩, continuous_subtype_val.subtype_mk _⟩, fun x ↦ rfl,
+      fun x ↦ Or.inl (le_trans (b := c + ε) x.property (by linarith))
+    exact ⟨⟨fun x ↦ ⟨x.val, x.property, hsub x⟩, continuous_subtypeVal.subtype_mk _⟩, fun x ↦ rfl,
       ⟨ContinuousMap.HomotopyRel.refl _ _⟩⟩
   have := Fintype.ofFinite ι
   -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`.
@@ -639,15 +670,15 @@ theorem exists_diffeomorph_sublevel_eq_union_handles [Finite ι] (hfs : ContMDif
   refine ⟨milnorHandle ψ k ε μ, e, Φ, fun i ↦ inter_subset_left, fun i x ↦ ?_, fun i x ↦ ?_,
     fun i x ↦ ?_, fun x ↦ ?_, fun x ↦ ?_⟩
   · -- The handle lies on or above the level `c - ε` of `f`.
-    rw [(milnorFunction_of_mem_source hψ hf (μ := μ) x.2.1).1]
-    linarith [(mem_quadraticHandle.1 x.2.2).1]
+    rw [(milnorFunction_of_mem_source hψ hf (μ := μ) x.property.1).1]
+    linarith [(mem_quadraticHandle.1 x.property.2).1]
   · -- The handle meets the lower sublevel in its attaching region.
-    have hfx := (milnorFunction_of_mem_source hψ hf (μ := μ) x.2.1).1
+    have hfx := (milnorFunction_of_mem_source hψ hf (μ := μ) x.property.1).1
     rw [(he i x).1, norm_fst_quadraticHandleMap_eq_one_iff hε, hfx]
-    have := (mem_quadraticHandle.1 x.2.2).1
+    have := (mem_quadraticHandle.1 x.property.2).1
     constructor <;> intro h <;> linarith
   · -- The core of the handle is the set where the coordinates beyond the first `k i` vanish.
-    rw [(he i x).2, quadraticHandleMap_snd_eq_zero_iff hμa hμε x.2.2,
+    rw [(he i x).2, quadraticHandleMap_snd_eq_zero_iff hμa hμε x.property.2,
       EuclideanSpace.snd_sumComplEquivProd_eq_zero_iff]
     simp only [not_lt]
   · rw [← setOf_milnorFunction_le_sub hψ hf hμ₀ hμ_nonneg, mem_ofPred_eq, (hΦ x).1,

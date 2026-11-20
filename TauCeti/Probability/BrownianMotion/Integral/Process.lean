@@ -55,11 +55,7 @@ theorem condExp_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
   -- Restriction and conditional expectation are continuous linear maps on L² classes.
   let R : Lp ℝ 2 (ℱ.predictableMeasure P T) →L[ℝ]
       Lp ℝ 2 (ℱ.predictableMeasure P S) :=
-    Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp)
-      (by simpa using ℱ.predictableMeasure_mono P hST)
-  have hR (u : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
-      R u =ᵐ[ℱ.predictableMeasure P S] u :=
-    Lp.coeFn_LpToLpOfMeasureLeSMul _ _ u
+    ℱ.predictableMeasureRestrictLp P ℝ hST
   let C : Lp ℝ 2 P →L[ℝ] Lp ℝ 2 P :=
     (lpMeas ℝ ℝ (ℱ S) 2 P).subtypeL.comp (condExpL2 ℝ ℝ (ℱ.le S))
   have hC (u : Lp ℝ 2 P) : C u =ᵐ[P] P[u | ℱ S] := by
@@ -74,9 +70,7 @@ theorem condExp_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
       (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) (1 : ℝ)
     have hRu : R u = indicatorConstLp (μ := ℱ.predictableMeasure P S) 2
         (measurableSet_predictable_Ioc_prod s t hA) (measure_ne_top _ _) 1 := by
-      apply Lp.ext
-      exact (hR u).trans ((indicatorConstLp_coeFn.filter_mono
-        (ae_mono (ℱ.predictableMeasure_mono P hST))).trans indicatorConstLp_coeFn.symm)
+      exact ℱ.predictableMeasureRestrictLp_indicatorConstLp P (𝕜 := ℝ) hST _ 1
     dsimp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap]
     rw [hRu]
     apply Lp.ext
@@ -86,7 +80,8 @@ theorem condExp_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
     simp only [← Pi.sub_apply, ← Set.indicator_mul_left, one_mul] at hterminal hshort
     exact (condExp_congr_ae hterminal).trans
       ((hW.martingale.condExp_indicator_sub hst.le hA S).trans hshort.symm)
-  have hg : R f = g := Lp.ext ((hR f).trans hfg.symm)
+  have hg : R f = g :=
+    Lp.ext ((ℱ.coeFn_predictableMeasureRestrictLp P (𝕜 := ℝ) hST f).trans hfg.symm)
   exact (hC (hW.l2Integral T f)).symm.trans
     (by simpa only [ContinuousLinearMap.comp_apply,
       LinearIsometry.coe_toContinuousLinearMap, hg] using
