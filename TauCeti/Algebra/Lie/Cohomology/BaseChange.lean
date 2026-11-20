@@ -136,28 +136,31 @@ open scoped ChangeOfRings in
 @[simp]
 theorem cochainsBaseChangeIso_hom_tmul (n : ℕ) (a : A) (ω : L [⋀^Fin n]→ₗ[R] M) :
     (cochainsBaseChangeIso R A L M n).hom (a ⊗ₜ[R, algebraMap R A] ω) = a • ω.baseChange A := by
+  -- The source `a ⊗ₜ ω` is typed only up to unfolding `restrictScalars`, so `simp` and forward
+  -- rewrites cannot match it; rewrite the type-correct right-hand side instead.
   rw [← AlternatingMap.baseChangeEquiv_tmul, ← ModuleCat.extendScalarsAlgebraMapIso_hom_tmul
-    (S := A) (ModuleCat.of R (L [⋀^Fin n]→ₗ[R] M)) a ω]
-  -- Evaluating a composite in `ModuleCat` evaluates the two maps in turn.
-  rfl
+    (S := A) (ModuleCat.of R (L [⋀^Fin n]→ₗ[R] M)) a ω, cochainsBaseChangeIso, Iso.trans_hom]
+  exact ModuleCat.comp_apply _ _ _
 
 end Cochains
 
 variable [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M] [LieRingModule L M]
   [LieModule R L M] [Module.Free R L] [Module.Finite R L]
 
+open scoped ChangeOfRings in
 /-- The degreewise comparisons `cochainsBaseChangeIso` commute with the differentials. -/
 @[reassoc]
 theorem extendScalars_map_d_comp_cochainsBaseChangeIso_hom (n : ℕ) :
     (ModuleCat.extendScalars (algebraMap R A)).map (ModuleCat.ofHom (d R L M n)) ≫
         (cochainsBaseChangeIso R A L M (n + 1)).hom =
       (cochainsBaseChangeIso R A L M n).hom ≫ ModuleCat.ofHom (d A (A ⊗[R] L) (A ⊗[R] M) n) := by
-  have hnat := ModuleCat.extendScalarsAlgebraMapIso_inv_naturality (S := A)
-    (ModuleCat.ofHom (d R L M n))
-  rw [cochainsBaseChangeIso, cochainsBaseChangeIso, Iso.trans_hom, Iso.trans_hom,
-    (Iso.inv_comp_eq _).1 hnat.symm]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc, cancel_epi]
-  exact ModuleCat.hom_ext (LinearMap.ext fun c ↦ by simpa using baseChangeEquiv_baseChange_d n c)
+  refine ModuleCat.ExtendScalars.hom_ext fun ω ↦ ?_
+  -- Evaluate both composites at `1 ⊗ ω`, using `ExtendScalars.map_tmul` (true by definition).
+  change (cochainsBaseChangeIso R A L M (n + 1)).hom ((1 : A) ⊗ₜ[R, algebraMap R A] d R L M n ω) =
+    d A (A ⊗[R] L) (A ⊗[R] M) n
+      ((cochainsBaseChangeIso R A L M n).hom ((1 : A) ⊗ₜ[R, algebraMap R A] ω))
+  rw [cochainsBaseChangeIso_hom_tmul, cochainsBaseChangeIso_hom_tmul]
+  simp
 
 /-- **Extension of scalars of the Chevalley–Eilenberg complex.** For a Lie algebra `L` that is
 finite free over `R`, the extension of scalars of the Chevalley–Eilenberg complex of `L` with
