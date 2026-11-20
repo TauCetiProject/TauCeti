@@ -55,6 +55,13 @@ theorem HasIndepIncrements.shift {T Ω E : Type*} [Preorder T] [Add T] [AddLeftM
   refine h.congr fun i ↦ ae_of_all _ fun ω ↦ ?_
   exact (sub_sub_sub_cancel_right _ _ _).symm
 
+/-- Adding any time-constant random variable on the left preserves independent increments. -/
+theorem HasIndepIncrements.add_left {T Ω E : Type*} [Preorder T] [MeasurableSpace Ω]
+    [MeasurableSpace E] [AddCommGroup E] {P : Measure Ω} {X : T → Ω → E}
+    (hX : HasIndepIncrements X P) (ξ : Ω → E) :
+    HasIndepIncrements (fun t ω ↦ ξ ω + X t ω) P := fun n t ht ↦ by
+  simpa only [add_sub_add_left_eq_sub] using hX n t ht
+
 attribute [local instance] TauCeti.measurableAdd₂_of_measurableSub₂
 
 variable {T Ω E : Type*} [LinearOrder T] [OrderBot T] [MeasurableSpace Ω]

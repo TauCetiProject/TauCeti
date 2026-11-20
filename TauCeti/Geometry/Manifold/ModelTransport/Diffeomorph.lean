@@ -17,7 +17,9 @@ Let `Φ : H ≃ₘ^n⟮I, I'⟯ H'` be a `C^n` diffeomorphism between two model 
 (`Diffeomorph.symm_trans_trans_mem_contDiffGroupoid`). Consequently, a `C^n` manifold modelled
 on `I` is a `C^n` manifold modelled on `I'` for the charts `Φ.toHomeomorph.chartedSpaceComp M`
 (`Diffeomorph.isManifold_chartedSpaceComp`). For any charted space `M` on `H`, the identity of `M`
-is a `C^n` diffeomorphism between the two atlases (`Diffeomorph.chartedSpaceCompDiffeomorph`).
+is a `C^n` diffeomorphism between the two atlases (`Diffeomorph.chartedSpaceCompDiffeomorph`), so
+`C^n` smoothness of maps into `M` is unchanged (`Diffeomorph.contMDiffAt_chartedSpaceComp_iff`,
+`Diffeomorph.contMDiff_chartedSpaceComp_iff`).
 
 For instance, a model with corners described as a subset of `ℂ` can be compared with Mathlib's
 native half-spaces in this way.
@@ -126,5 +128,28 @@ theorem coe_chartedSpaceCompDiffeomorph_symm (Φ : H ≃ₘ^n⟮I, I'⟯ H') (M 
     letI := Φ.toHomeomorph.chartedSpaceComp M
     ⇑(Φ.chartedSpaceCompDiffeomorph M).symm = id :=
   (rfl)
+
+/-- Changing the model space of `M` along a `C^n` diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'`
+leaves `C^n` smoothness at `x` of any map `f : X → M` unchanged. -/
+theorem contMDiffAt_chartedSpaceComp_iff (Φ : H ≃ₘ^n⟮I, I'⟯ H')
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {X : Type*} [TopologicalSpace X] [ChartedSpace H'' X]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {f : X → M} {x : X} :
+    (letI := Φ.toHomeomorph.chartedSpaceComp M
+     ContMDiffAt I'' I' n f x) ↔ ContMDiffAt I'' I n f x :=
+  letI := Φ.toHomeomorph.chartedSpaceComp M
+  ((Φ.chartedSpaceCompDiffeomorph M).contMDiffAt_diffeomorph_comp_iff le_rfl).symm
+
+/-- Changing the model space of `M` along a `C^n` diffeomorphism of models `Φ : H ≃ₘ^n⟮I, I'⟯ H'`
+leaves `C^n` smoothness of any map `f : X → M` unchanged. -/
+theorem contMDiff_chartedSpaceComp_iff (Φ : H ≃ₘ^n⟮I, I'⟯ H')
+    {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+    {H'' : Type*} [TopologicalSpace H''] {I'' : ModelWithCorners 𝕜 E'' H''}
+    {X : Type*} [TopologicalSpace X] [ChartedSpace H'' X]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {f : X → M} :
+    (letI := Φ.toHomeomorph.chartedSpaceComp M
+     ContMDiff I'' I' n f) ↔ ContMDiff I'' I n f :=
+  forall_congr' fun _ ↦ Φ.contMDiffAt_chartedSpaceComp_iff
 
 end Diffeomorph

@@ -26,6 +26,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Regularization of distributions
@@ -215,8 +216,9 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
   let φ₀ : 𝓓(Ω, ℝ) := translateOfMapsTo ρ hx
   have hφ₀ : ∀ y, φ₀ y = ρ (y - x) := translateOfMapsTo_apply ρ hx
   obtain ⟨δ, hδ, hδΩ, hδx⟩ := exists_cthickening_tsupport_translateOfMapsTo_subset ρ hx
-  let K : Compacts E := ⟨cthickening δ (tsupport φ₀), φ₀.hasCompactSupport.isCompact.cthickening⟩
-  obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := K) hδΩ
+  let K : Compacts E := (⟨tsupport φ₀, φ₀.hasCompactSupport.isCompact⟩ : Compacts E).cthickening δ
+  have hK : (K : Set E) = cthickening δ (tsupport φ₀) := Compacts.coe_cthickening _ _
+  obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := K) (hK.trans_subset hδΩ)
   -- For `‖h‖ ≤ δ`, the Taylor remainder of the translates of `ρ`, as a test function on `Ω`.
   let R (h : E) : 𝓓(Ω, ℝ) :=
     if hh : ‖h‖ ≤ δ then translateOfMapsTo ρ (hδx h hh) - φ₀ + ∂_{h} φ₀ else 0
@@ -231,7 +233,7 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
   refine (isLittleO_apply_of_norm_iteratedFDeriv_le (R := R) hC hT ?_ fun i _ ε hε => ?_).congr' ?_
     EventuallyEq.rfl
   · filter_upwards [hδ'] with h hh
-    rw [hR h hh]
+    rw [hR h hh, hK]
     exact TauCeti.tsupport_sub_sub_add_fderiv_subset _ hh
   · obtain ⟨r, hr, hrem⟩ := φ₀.hasCompactSupport.exists_norm_iteratedFDeriv_sub_sub_add_fderiv_le
       φ₀.contDiff (n := ∞) (i := i) (by exact_mod_cast le_top) hε
