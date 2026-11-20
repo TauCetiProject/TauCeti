@@ -1,0 +1,198 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Side.Presentation
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Ideal
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Orbit
+public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
+import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
+import TauCeti.Combinatorics.ChordDiagram
+import TauCeti.GroupTheory.Perm.Basic
+
+/-!
+# The cell count of a side-paired polygon
+
+Let `σ` pair the sides of a convex hyperbolic `n`-gon `P`, with vertices in `ℍ ∪ ∂ℍ`. Gluing `P`
+along `σ`, and filling in a point at each ideal vertex cycle, gives a closed surface with a cell
+decomposition read off the polygon:
+
+* one `0`-cell for each finite vertex cycle, one for each ideal vertex cycle, and one at the
+  midpoint of each of the `k` self-paired sides;
+* one `1`-cell for each pair of sides, `σ.SideRepresentative`, a self-paired side being folded
+  onto its half;
+* one `2`-cell, the interior of `P`.
+
+Its alternating cell count is `SidePairing.cellEulerChar`, the integer
+`V + c + k - E + 1` for `V` finite vertex cycles, `c` ideal vertex cycles and `E` pairs of sides.
+For a fundamental polygon of a Fuchsian group `Γ` this is the Euler characteristic of the
+compactified quotient `X(Γ)`; for a compact polygon this identification is
+`SidePairing.eulerChar_orbitRel_quotient`.
+
+This file shows, from the combinatorics of the gluing alone, that the cell count has the two
+properties of the Euler characteristic of a closed connected orientable surface: it is at most
+`2` and it is even. The vertex cycles are the cycles of the successor permutation
+`σ.next = finRotate n * σ.pair` (`next_eq_finRotate_mul`), and the pairs of sides are the orbits
+of the involution `σ.pair` (`orbitCount_pair`). The bound is then the boundary-count bound for a
+one-vertex chord diagram, `Equiv.Perm.orbitCount_finRotate_mul_add_orbitCount_le`: each pair of
+sides glued adds at most one vertex cycle. The parity is the multiplicativity of the sign of a
+permutation.
+
+## Main definitions
+
+* `TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing.cellEulerChar`: the alternating cell count
+  `V + c + k - E + 1` of the gluing of `P` along `σ`.
+
+## Main results
+
+* `TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing.orbitCount_next`: the cycles of `σ.next` are
+  the finite and the ideal vertex cycles.
+* `TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing.orbitCount_pair`: the orbits of `σ.pair` are
+  the pairs of sides.
+* `TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing.cellEulerChar_le_two`: the cell count is at
+  most `2`.
+* `TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing.even_cellEulerChar`: the cell count is even.
+
+## References
+
+* Alan Beardon, *The Geometry of Discrete Groups*, Graduate Texts in Mathematics 91, Springer,
+  1983, §§9.2–9.3 and 10.4 (the quotient of a fundamental polygon and its genus).
+* S. K. Lando, A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
+  Mathematical Sciences 141, Springer 2004, Proposition 1.5.3 (the Euler characteristic of a
+  surface glued from permutations is at most two and even).
+-/
+
+public section
+
+open Equiv Equiv.Perm
+
+namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
+
+variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
+
+/-! ### Vertex cycles and pairs of sides as permutation orbits -/
+
+/-- The side-pairing successor `j ↦ σ.pair j + 1` is the involution `σ.pair` followed by the
+rotation of the vertex indices. -/
+theorem next_eq_finRotate_mul : σ.next = finRotate n * σ.pair := by
+  ext j
+  rw [next_apply, Perm.mul_apply, finRotate_apply]
+
+/-- The orbits of the involution `σ.pair` are the pairs of sides: one for each representative
+`i ≤ σ.pair i`. -/
+theorem orbitCount_pair : orbitCount σ.pair = Nat.card σ.SideRepresentative := by
+  -- each orbit `{i, σ.pair i}` is sent to its least element
+  let r : Fin n → σ.SideRepresentative := fun i ↦ ⟨min i (σ.pair i), by
+    rcases le_total i (σ.pair i) with h | h
+    · rwa [min_eq_left h]
+    · rw [min_eq_right h, pair_pair]
+      exact h⟩
+  have hr : Function.Surjective r := fun i ↦ ⟨i, Subtype.ext (min_eq_left i.2)⟩
+  have hker (i j : Fin n) : σ.pair.SameCycle i j ↔ r i = r j := by
+    rw [σ.pair_involutive.sameCycle_iff, Subtype.ext_iff]
+    constructor
+    · rintro (rfl | rfl)
+      · rfl
+      · simp only [r, pair_pair, min_comm]
+    · intro h
+      simp only [r] at h
+      rcases min_choice i (σ.pair i) with hi | hi <;>
+        rcases min_choice j (σ.pair j) with hj | hj <;> rw [hi, hj] at h
+      · exact Or.inl h
+      · exact Or.inr h
+      · exact Or.inr (by rw [← h, pair_pair])
+      · exact Or.inl (σ.pair.injective h)
+  rw [orbitCount_def]
+  exact Nat.card_congr ((Quotient.congrRight (r := SameCycle.setoid σ.pair) (r' := Setoid.ker r)
+    hker).trans (Setoid.quotientKerEquivOfSurjective r hr))
+
+/-- The number of vertex cycles of `σ` with vertices satisfying a property `p` constant along
+cycles, counted vertex by vertex. -/
+private theorem natCard_cycle_eq_sum {p : Fin n → Prop} [DecidablePred p]
+    (hp : ∀ {j i}, i ∈ σ.cycle j → (p i ↔ p j)) :
+    (Nat.card (Quotient (Setoid.comap Subtype.val (SameCycle.setoid σ.next) :
+        Setoid {i : Fin n // p i})) : ℚ) =
+      ∑ i, if p i then (1 : ℚ) / σ.cycleLength i else 0 := by
+  classical
+  rw [← σ.finsum_eq_sum_ite_div_cycleLength hp (fun _ ↦ 1) _ fun _ ↦ rfl,
+    finsum_eq_sum_of_fintype, Finset.sum_const, Finset.card_univ, nsmul_one,
+    Nat.card_eq_fintype_card]
+
+/-- The cycles of the successor permutation `σ.next` are the vertex cycles of `σ`: the finite
+vertex cycles together with the ideal ones. -/
+theorem orbitCount_next :
+    orbitCount σ.next = Nat.card σ.FiniteVertexCycle + Nat.card σ.IdealVertexCycle := by
+  classical
+  -- the cycles through all vertices, as a quotient of the subtype of all indices
+  have hall : orbitCount σ.next = Nat.card (Quotient (Setoid.comap Subtype.val
+      (SameCycle.setoid σ.next) : Setoid (Subtype fun _ : Fin n ↦ True))) := by
+    rw [orbitCount_def]
+    exact Nat.card_congr (Quotient.congr (ra := SameCycle.setoid σ.next)
+      (rb := Setoid.comap Subtype.val (SameCycle.setoid σ.next))
+      (Equiv.subtypeUnivEquiv fun _ ↦ trivial).symm fun _ _ ↦ Iff.rfl)
+  have h : (orbitCount σ.next : ℚ) =
+      Nat.card σ.FiniteVertexCycle + Nat.card σ.IdealVertexCycle := by
+    rw [hall, σ.natCard_cycle_eq_sum (p := fun _ ↦ True) (by simp),
+      σ.natCard_cycle_eq_sum (p := fun i ↦ (P.vertex i).isLeft)
+        fun hi ↦ by rw [σ.isLeft_vertex_eq_of_mem_cycle hi],
+      σ.natCard_cycle_eq_sum (p := fun i ↦ (P.vertex i).isRight)
+        fun hi ↦ by rw [σ.isRight_vertex_of_mem_cycle hi],
+      ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    cases P.vertex i <;> simp
+  exact_mod_cast h
+
+/-! ### The cell count -/
+
+/-- The **cell count** of the gluing of `P` along `σ`: the number `V + c + k - E + 1` of `0`-cells
+minus `1`-cells plus `2`-cells of the cell decomposition with the `V` finite vertex cycles, the
+`c` ideal vertex cycles and the midpoints of the `k` self-paired sides as vertices, the `E` pairs
+of sides as edges, and the interior of `P` as its one face. -/
+noncomputable def cellEulerChar : ℤ :=
+  Nat.card σ.FiniteVertexCycle + Nat.card σ.IdealVertexCycle +
+    Nat.card {i : Fin n // σ.pair i = i} - Nat.card σ.SideRepresentative + 1
+
+/-- The defining formula for the cell count. -/
+theorem cellEulerChar_def :
+    σ.cellEulerChar = Nat.card σ.FiniteVertexCycle + Nat.card σ.IdealVertexCycle +
+      Nat.card {i : Fin n // σ.pair i = i} - Nat.card σ.SideRepresentative + 1 :=
+  (rfl)
+
+/-- The cell count through the permutations `σ.next` and `σ.pair`: it is
+`orbitCount σ.next + orbitCount σ.pair - n + 1`, the Euler characteristic of the one-vertex chord
+diagram of `σ.pair` with its boundary cycles capped. -/
+theorem cellEulerChar_eq_orbitCount :
+    σ.cellEulerChar = orbitCount σ.next + orbitCount σ.pair - n + 1 := by
+  have h := σ.two_mul_natCard_sideRepresentative
+  rw [cellEulerChar_def, orbitCount_next, orbitCount_pair]
+  omega
+
+/-- **The cell count is at most two.** Gluing the sides of a polygon in pairs leaves at most one
+more vertex cycle than there are pairs of sides. -/
+theorem cellEulerChar_le_two : σ.cellEulerChar ≤ 2 := by
+  have h := σ.pair.orbitCount_finRotate_mul_add_orbitCount_le
+  rw [← next_eq_finRotate_mul] at h
+  rw [cellEulerChar_eq_orbitCount]
+  omega
+
+/-- **The cell count is even**, as the Euler characteristic of a closed orientable surface is:
+the sign of `σ.next` is the product of the signs of the rotation and of `σ.pair`. -/
+theorem even_cellEulerChar : Even σ.cellEulerChar := by
+  have hsign : sign σ.next * sign (finRotate n) * sign σ.pair = 1 := by
+    rw [mul_assoc, ← Perm.sign_mul, ← next_eq_finRotate_mul, Int.units_mul_self]
+  have hrot : orbitCount (finRotate n) = 1 := by simp [orbitCount_finRotate, NeZero.ne n]
+  rw [sign_eq_neg_one_pow_card_sub_orbitCount, sign_eq_neg_one_pow_card_sub_orbitCount,
+    sign_eq_neg_one_pow_card_sub_orbitCount, Fintype.card_fin, hrot, ← pow_add,
+    ← pow_add] at hsign
+  obtain ⟨k, hk⟩ := (neg_one_pow_eq_one_iff_even (R := ℤˣ) (by decide)).mp hsign
+  have hnext : orbitCount σ.next ≤ n := by simpa using σ.next.orbitCount_le_card
+  have hpair : orbitCount σ.pair ≤ n := by simpa using σ.pair.orbitCount_le_card
+  have hn : n ≠ 0 := NeZero.ne n
+  refine ⟨(n : ℤ) - k, ?_⟩
+  rw [cellEulerChar_eq_orbitCount]
+  omega
+
+end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
