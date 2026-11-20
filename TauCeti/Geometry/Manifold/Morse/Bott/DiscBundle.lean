@@ -89,6 +89,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle` and
   `IsNondegenerateCriticalSubmanifold.isCompact_negativeSphereBundle`: over a compact Morse–Bott
   submanifold the negative disc and sphere bundles of every size are compact.
+* `IsNondegenerateCriticalSubmanifold.exists_pos_negativeDiscBundle_subset`: small negative disc
+  bundles lie in any open neighbourhood of the zero section.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
@@ -709,6 +711,50 @@ theorem isCompact_negativeSphereBundle [T2Space S] [CompactSpace S]
   rw [← h.setOf_posSq_eq_zero_and_negSq_eq hn g.toRiemannianMetric ε]
   exact (isClosed_eq ht.continuous continuous_const).inter
     (isClosed_eq hs.continuous continuous_const)
+
+/-- **Small negative disc bundles lie in any neighbourhood of the zero section.** Under the
+hypotheses of `IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`, every open subset
+of the total space of the normal bundle containing the zero section contains the negative disc
+bundle `D_δ` for some `δ > 0`, hence every `D_ε` with `ε ≤ δ`. -/
+theorem exists_pos_negativeDiscBundle_subset [T2Space S] [CompactSpace S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn)
+    {V : Set (TotalSpace P fun s ↦ i.NormalSpace s hn)} (hV : IsOpen V)
+    (hzV : ∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ V) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ∃ δ > 0, h.negativeDiscBundle hn P g.toRiemannianMetric δ ⊆ V := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  have : Nonempty (Ioo (0 : ℝ) 1) := ⟨⟨2⁻¹, by norm_num, by norm_num⟩⟩
+  -- A vector in all the disc bundles of sizes in `(0, 1)` is zero, since the normal Hessian is
+  -- negative definite on the negative normal spaces.
+  have hZ : ⋂ δ : Ioo (0 : ℝ) 1, h.negativeDiscBundle hn P g.toRiemannianMetric δ ⊆ V := by
+    rintro ⟨b, v⟩ hx
+    have hx' (δ : ℝ) (hδ : δ ∈ Ioo (0 : ℝ) 1) :=
+      (IsCriticalSubmanifold.mem_negativeDiscBundle hn).1 (mem_iInter.1 hx ⟨δ, hδ⟩)
+    obtain rfl : v = 0 := by
+      by_contra hv
+      have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn _
+        (hx' 2⁻¹ ⟨by norm_num, by norm_num⟩).1 hv
+      set q := -(2⁻¹ * h.normalHessian hn b v v)
+      have hq : 0 < q := by simp only [q]; linarith
+      have := (hx' (min (q / 2) 2⁻¹) ⟨lt_min (half_pos hq) (by norm_num),
+        (min_le_right _ _).trans_lt (by norm_num)⟩).2
+      linarith [min_le_left (q / 2) 2⁻¹]
+    exact hzV b
+  -- These disc bundles are compact and decrease with the size.
+  obtain ⟨⟨δ, hδ⟩, hδV⟩ := exists_subset_nhds_of_isCompact (ι := Ioo (0 : ℝ) 1)
+    (V := fun δ ↦ h.negativeDiscBundle hn P g.toRiemannianMetric δ)
+    (fun δ δ' ↦ ⟨⟨min δ δ', lt_min δ.property.1 δ'.property.1,
+        (min_le_left _ _).trans_lt δ.property.2⟩,
+      h.negativeDiscBundle_mono hn P _ (min_le_left _ _),
+      h.negativeDiscBundle_mono hn P _ (min_le_right _ _)⟩)
+    (fun δ ↦ h.isCompact_negativeDiscBundle hn hfs hdim g δ) (hV.mem_nhdsSet.2 hZ)
+  exact ⟨δ, hδ.1, hδV⟩
 
 end IsNondegenerateCriticalSubmanifold
 
