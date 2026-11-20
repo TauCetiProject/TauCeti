@@ -336,11 +336,7 @@ private theorem apply_self_eq_of_forall_commute {d : p ⊕ q → R}
   set e : p ⊕ q → R := Sum.elim (fun _ => 1) fun _ => -1
   set v : p ⊕ q → R := Pi.single i 1 + Pi.single j 2
   have hs : star v ⬝ᵥ (indefiniteDiagonal p q R *ᵥ v) = e i + 4 * e j := by
-    simp only [indefiniteDiagonal, v, star_add, Pi.star_single, star_one, star_ofNat, mulVec_add,
-      mulVec_single, MulOpposite.op_one, MulOpposite.op_ofNat, col_diagonal, one_smul,
-      dotProduct_add, dotProduct_single, dotProduct_smul, MulOpposite.smul_eq_mul_unop,
-      MulOpposite.unop_ofNat, Pi.add_apply, Pi.single_eq_same, Pi.single_eq_of_ne hij,
-      Pi.single_eq_of_ne hij.symm]
+    simp [indefiniteDiagonal, v, mulVec_add, dotProduct_add, hij, hij.symm, e]
     ring
   have he (k : p ⊕ q) : e k = 1 ∨ e k = -1 := by rcases k with k | k <;> simp [e]
   have hs0 : e i + 4 * e j ≠ 0 := by
