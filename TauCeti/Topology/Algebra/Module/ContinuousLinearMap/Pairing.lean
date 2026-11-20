@@ -11,28 +11,29 @@ public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 # Flips of continuous pairings
 
 This file defines the continuous pairing obtained by exchanging the arguments of a jointly
-continuous continuous linear pairing, together with its evaluation and joint-continuity lemmas.
-Scalar multiplication is only assumed continuous for each fixed scalar.
+continuous continuous linear pairing over a nontrivially normed field, together with its
+evaluation and joint-continuity lemmas. Scalar multiplication is only assumed continuous for each
+fixed scalar.
 -/
 
 public section
 
 namespace ContinuousLinearMap
 
-variable {G₁ G₂ G₃ : Type*}
-  [AddCommGroup G₁] [Module ℝ G₁] [TopologicalSpace G₁]
-  [AddCommGroup G₂] [Module ℝ G₂] [TopologicalSpace G₂]
-  [IsTopologicalAddGroup G₂] [ContinuousConstSMul ℝ G₂]
-  [AddCommGroup G₃] [Module ℝ G₃] [TopologicalSpace G₃]
-  [IsTopologicalAddGroup G₃] [ContinuousConstSMul ℝ G₃]
+variable {𝕜 G₁ G₂ G₃ : Type*} [NontriviallyNormedField 𝕜]
+  [AddCommGroup G₁] [Module 𝕜 G₁] [TopologicalSpace G₁]
+  [AddCommGroup G₂] [Module 𝕜 G₂] [TopologicalSpace G₂]
+  [IsTopologicalAddGroup G₂] [ContinuousConstSMul 𝕜 G₂]
+  [AddCommGroup G₃] [Module 𝕜 G₃] [TopologicalSpace G₃]
+  [IsTopologicalAddGroup G₃] [ContinuousConstSMul 𝕜 G₃]
 
 /-- The flipped continuous pairing obtained from a jointly continuous pairing.
 
 The continuity hypothesis is needed because, outside the normed setting, joint continuity gives
 the required continuity of the curried map through the topology of bounded convergence. -/
-noncomputable def pairingFlip (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
-    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) : G₂ →L[ℝ] G₁ →L[ℝ] G₃ :=
-  let μ' : G₂ →ₗ[ℝ] G₁ →L[ℝ] G₃ :=
+noncomputable def pairingFlip (μ : G₁ →L[𝕜] G₂ →L[𝕜] G₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) : G₂ →L[𝕜] G₁ →L[𝕜] G₃ :=
+  let μ' : G₂ →ₗ[𝕜] G₁ →L[𝕜] G₃ :=
     { toFun := fun y =>
         ContinuousLinearMap.mk
           { toFun := fun x => μ x y
@@ -49,12 +50,12 @@ noncomputable def pairingFlip (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
     (ContinuousLinearMap.continuous_of_continuous_uncurry μ' (hμ.comp continuous_swap))
 
 @[simp]
-theorem pairingFlip_apply (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
+theorem pairingFlip_apply (μ : G₁ →L[𝕜] G₂ →L[𝕜] G₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (x : G₂) (y : G₁) :
     pairingFlip μ hμ x y = μ y x := (rfl)
 
 /-- The flipped pairing is jointly continuous after exchanging the two arguments. -/
-theorem pairingFlip_continuous (μ : G₁ →L[ℝ] G₂ →L[ℝ] G₃)
+theorem pairingFlip_continuous (μ : G₁ →L[𝕜] G₂ →L[𝕜] G₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) :
     Continuous (Function.uncurry fun x y ↦ pairingFlip μ hμ x y) := by
   simpa only [Function.uncurry_def, Function.comp_def, Prod.swap, pairingFlip_apply]
