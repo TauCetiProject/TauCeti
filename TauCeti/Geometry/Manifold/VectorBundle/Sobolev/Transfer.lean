@@ -38,6 +38,9 @@ transfer of its chart-`i` data restricted to `Q`
 
 ## Main results
 
+* `TauCeti.FiniteBundleAtlas.value_transferL_ae_of_coord`: transfer preserves the readings of
+  an actual section, without requiring global Sobolev membership.
+
 * `TauCeti.FiniteBundleAtlas.exists_isChangeOfVariables_chart_symm_trans`: chart coordinate
   changes are changes of variables of every order on relatively compact subsets of the transfer
   domain.
@@ -147,6 +150,32 @@ theorem value_transferL_ae (i j : Fin A.n) {P Q : Opens E}
     ae_all_iff.2 fun l ↦ Wkp.value_compL_ae h (u l)] with y hy hl
   rw [transferL, ContinuousLinearMap.comp_apply, hy]
   simp only [ContinuousLinearMap.coe_piMap', Pi.map_apply, hl, ContinuousLinearEquiv.coe_coe]
+
+/-- Transferring components that represent a section in one chart represents that same section
+in the other chart. No global Sobolev membership of the section is assumed. -/
+theorem value_transferL_ae_of_coord {i j : Fin A.n} {P Q : Opens E}
+    (hP : (P : Set E) ⊆ A.overlap i j) (hPc : IsCompact (closure (P : Set E)))
+    (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
+    (hPQ : MapsTo ((A.chart j).symm ≫ₕ A.chart i) P Q)
+    (s : ∀ x, V x) (u : Fin (finrank ℝ F) → Wkp μ Q p k)
+    (hu : ∀ l, (Wkp.value k (u l) : E → ℝ) =ᵐ[μ.restrict Q]
+      fun y ↦ (finBasis ℝ F).repr (A.coord i s y) l) (m : Fin (finrank ℝ F)) :
+    (Wkp.value k (A.transferL μ p k i j hPc hPD hPQ u m) : E → ℝ)
+      =ᵐ[μ.restrict P] fun y ↦ (finBasis ℝ F).repr (A.coord j s y) m := by
+  have hc := (A.exists_isChangeOfVariables_chart_symm_trans k hPc hPD hPQ).choose_spec.choose_spec
+  filter_upwards [A.value_transferL_ae μ p k i j hPc hPD hPQ u m,
+    hc.ae_comp (ae_all_iff.2 hu), ae_restrict_mem P.isOpen.measurableSet] with y hy hu hyP
+  rw [hy]
+  have hsum : ∑ l, Wkp.value k (u l) (((A.chart j).symm ≫ₕ A.chart i) y) •
+      finBasis ℝ F l = A.coord i s (((A.chart j).symm ≫ₕ A.chart i) y) := by
+    simp_rw [hu]
+    exact (finBasis ℝ F).sum_repr _
+  rw [hsum]
+  have htr : A.transition i j y = ((A.chart j).symm ≫ₕ A.chart i) y := by
+    obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 (hP hyP)
+    rw [A.transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
+      (A.chart j).left_inv (A.dom_subset_chart_source j hx.2)]
+  rw [A.coord_eq_coordChange s (hP hyP), htr]
 
 /-- A transfer is characterized by its components: `v` is the transfer of `u` exactly when the
 components of `v` are, almost everywhere on `P`, those described in
