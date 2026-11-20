@@ -86,6 +86,7 @@ noncomputable def curryLeftVec :
 
 /-- The iterated interior product evaluates the map on the vectors `u` followed by the
 arguments. -/
+@[simp]
 theorem curryLeftVec_apply :
     ∀ {N : ℕ} (f : E [⋀^Fin (m + N)]→L[𝕜] F) (u : Fin N → E) (t : Fin m → E),
       curryLeftVec f u t = f (Matrix.vecAppend (Nat.add_comm m N) u t)
