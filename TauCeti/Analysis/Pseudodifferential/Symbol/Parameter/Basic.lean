@@ -489,6 +489,34 @@ private theorem bounds_const (c : A) :
   · simp
   · simp [iteratedFDeriv_const_of_ne]
 
+/-- A smooth function of the position alone has order `0`: the dilations do not scale the position
+directions, so its dilated derivatives are its ordinary derivatives in the position. -/
+private theorem bounds_comp_fst_fst {g : CoordinateSpace n → A} (hg : ContDiff ℝ ∞ g) :
+    Bounds Λ 0 (fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ => g p.1.1) :=
+  fun K hK k => by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn
+    (hg.continuous_iteratedFDeriv (m := k) (by exact_mod_cast le_top)).continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ z _ => ?_⟩
+  set L : (CoordinateSpace n × CoordinateSpace n) × ℂ →L[ℝ] CoordinateSpace n :=
+    (ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)
+  have hL : ‖L‖ ≤ 1 := L.opNorm_le_bound zero_le_one fun v => by
+    simpa [L] using (norm_fst_le v.1).trans (norm_fst_le v)
+  have hfun : (fun v => g (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v).1.1) =
+      (fun y => g (x + y)) ∘ L := by
+    funext v
+    simp [L]
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp, Real.rpow_zero, mul_one, hfun,
+    L.iteratedFDeriv_comp_right (f := fun y => g (x + y))
+      (hg.comp (contDiff_const.add contDiff_id)) 0 (by exact_mod_cast le_top), map_zero,
+    iteratedFDeriv_comp_add_left, add_zero]
+  refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  calc ‖iteratedFDeriv ℝ k g x‖ * ∏ _ : Fin k, ‖L‖ ≤ ‖iteratedFDeriv ℝ k g x‖ * 1 :=
+        mul_le_mul_of_nonneg_left
+          (Finset.prod_le_one₀ (fun _ _ => norm_nonneg _) fun _ _ => hL) (norm_nonneg _)
+    _ ≤ max C 0 := by
+        rw [mul_one]
+        exact (hC x hx).trans (le_max_left _ _)
+
 /-- A continuous linear map `L` has order `m` if both `L` and `L` composed with the dilations are
 bounded by multiples of the weight to the power `m`. -/
 private theorem bounds_continuousLinearMap
@@ -783,6 +811,28 @@ def comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) :
 theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
     (b.comp a).coefficient p = (b.coefficient p).comp (a.coefficient p) := (rfl)
+
+open scoped Classical in
+/-- A smooth function `f` of the position alone, as a parameter-dependent symbol of order `0`: its
+coefficient is `f(x)` at every frequency and every spectral parameter in `Λ`. Composing a symbol
+with it multiplies the symbol by `f`; it is the counterpart of `TauCeti.Symbol.ofSpatial`. -/
+def ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) :
+    ParameterSymbol n Λ V W 0 where
+  coefficient p := if p.2 ∈ Λ then f p.1.1 else 0
+  contDiffOn_coefficient :=
+    (hf.comp (contDiff_fst.comp contDiff_fst)).contDiffOn.congr fun p hp => by
+      simp [SetLike.mem_coe.1 hp.2]
+  coefficient_of_notMem p hp := by simp [hp]
+  exists_bound := (bounds_comp_fst_fst hf).congr fun p hp => by
+    filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hp] with q hq
+    have hq' : q.2 ∈ Λ := hq
+    simp [hq']
+
+@[simp]
+theorem coefficient_ofSpatial (f : CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f)
+    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (ofSpatial f hf : ParameterSymbol n Λ V W 0).coefficient ((x, ξ), z) = f x := by
+  simp [ofSpatial, hz]
 
 /-! ### Derivatives in the position and frequency directions -/
 
