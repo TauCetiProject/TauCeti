@@ -115,7 +115,7 @@ variable {ι : Type u} {M : Type w} {N : Type x} [AddCommGroup M] [AddCommGroup 
 noncomputable def bondGcd (lam : M)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) : ℕ :=
   Finset.univ.gcd fun i : Fin C.length ↦
-    (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs
+    (P.reflectionBond b ((C i.castSucc).val • lam) ((C i.succ).val • lam)).natAbs
 
 /-- A saturated chain `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of the parabolic quotient `W / W_λ` is an
 **`a`-chain**, for a rational number `a`, when `a` times the bond `b_λ(x_{h-1}, x_h)` of each of its
@@ -125,7 +125,7 @@ Littelmann's condition that `a ⟨x_{h-1} λ, β_h^∨⟩` is an integer
 def IsAChain (a : ℚ) (lam : M)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) : Prop :=
   ∀ i : Fin C.length,
-    ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam) = z
+    ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).val • lam) ((C i.succ).val • lam) = z
 
 variable {a : ℚ} {lam : M}
 
@@ -133,7 +133,7 @@ variable {a : ℚ} {lam : M}
 theorem isAChain_iff_forall_reflectionBond
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     IsAChain a lam C ↔ ∀ i : Fin C.length,
-      ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam) = z :=
+      ∃ z : ℤ, a * P.reflectionBond b ((C i.castSucc).val • lam) ((C i.succ).val • lam) = z :=
   Iff.rfl
 
 /-- A natural number divides the bond gcd `d(C)` of a saturated chain exactly when it divides the
@@ -141,13 +141,13 @@ bond of every cover of the chain. -/
 theorem dvd_bondGcd_iff {n : ℕ}
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     n ∣ bondGcd lam C ↔ ∀ i : Fin C.length,
-      n ∣ (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs := by
+      n ∣ (P.reflectionBond b ((C i.castSucc).val • lam) ((C i.succ).val • lam)).natAbs := by
   simp only [bondGcd, Finset.dvd_gcd_iff, Finset.mem_univ, true_imp_iff]
 
 /-- The bond gcd `d(C)` of a saturated chain divides the bond of each cover of the chain. -/
 theorem bondGcd_dvd
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (i : Fin C.length) :
-    bondGcd lam C ∣ (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs :=
+    bondGcd lam C ∣ (P.reflectionBond b ((C i.castSucc).val • lam) ((C i.succ).val • lam)).natAbs :=
   Finset.gcd_dvd (Finset.mem_univ i)
 
 /-- **A saturated chain is an `a`-chain exactly when the denominator of `a` divides its bond
@@ -173,14 +173,14 @@ theorem bondGcd_smash
     (h : C.last = D.head) : bondGcd lam (C.smash D h) = (bondGcd lam C).gcd (bondGcd lam D) := by
   -- The covers of the concatenation are those of `C`, followed by those of `D`.
   have hC (i : Fin C.length) :
-      (P.reflectionBond b (((C.smash D h) (i.castAdd D.length).castSucc).1 • lam)
-        (((C.smash D h) (i.castAdd D.length).succ).1 • lam)).natAbs =
-      (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs := by
+      (P.reflectionBond b (((C.smash D h) (i.castAdd D.length).castSucc).val • lam)
+        (((C.smash D h) (i.castAdd D.length).succ).val • lam)).natAbs =
+      (P.reflectionBond b ((C i.castSucc).val • lam) ((C i.succ).val • lam)).natAbs := by
     rw [RelSeries.smash_castAdd, RelSeries.smash_succ_castAdd]
   have hD (i : Fin D.length) :
-      (P.reflectionBond b (((C.smash D h) (i.natAdd C.length).castSucc).1 • lam)
-        (((C.smash D h) (i.natAdd C.length).succ).1 • lam)).natAbs =
-      (P.reflectionBond b ((D i.castSucc).1 • lam) ((D i.succ).1 • lam)).natAbs := by
+      (P.reflectionBond b (((C.smash D h) (i.natAdd C.length).castSucc).val • lam)
+        (((C.smash D h) (i.natAdd C.length).succ).val • lam)).natAbs =
+      (P.reflectionBond b ((D i.castSucc).val • lam) ((D i.succ).val • lam)).natAbs := by
     rw [RelSeries.smash_natAdd, RelSeries.smash_succ_natAdd]
   refine Nat.dvd_antisymm (Nat.dvd_gcd (Finset.dvd_gcd fun i _ ↦ ?_)
     (Finset.dvd_gcd fun i _ ↦ ?_)) (Finset.dvd_gcd fun i _ ↦ ?_)
@@ -201,26 +201,26 @@ theorem bondGcd_snoc {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIn
     {y : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y C.last) :
     bondGcd lam (C.snoc y h) =
-      (bondGcd lam C).gcd (P.reflectionBond b (C.last.1 • lam) (y.1 • lam)).natAbs := by
+      (bondGcd lam C).gcd (P.reflectionBond b (C.last.val • lam) (y.val • lam)).natAbs := by
   -- The covers of the extended chain are those of `C`, followed by `y ⋖ x_l`. The index types
   -- `Fin (C.length + 1 + 1)` and `Fin ((C.snoc y h).length + 1)` agree only up to unfolding
   -- `RelSeries.snoc`, so `rw` cannot use `RelSeries.snoc_castSucc` here; `congrArg₂` can.
   have hC (i : Fin C.length) :
-      (P.reflectionBond b ((C.snoc y h (i.castSucc.castSucc : Fin (C.length + 1 + 1))).1 • lam)
-        ((C.snoc y h (i.castSucc.succ : Fin (C.length + 1 + 1))).1 • lam)).natAbs =
-      (P.reflectionBond b ((C i.castSucc).1 • lam) ((C i.succ).1 • lam)).natAbs :=
-    congrArg₂ (fun x z ↦ (P.reflectionBond b (x.1 • lam) (z.1 • lam)).natAbs)
+      (P.reflectionBond b ((C.snoc y h (i.castSucc.castSucc : Fin (C.length + 1 + 1))).val • lam)
+        ((C.snoc y h (i.castSucc.succ : Fin (C.length + 1 + 1))).val • lam)).natAbs =
+      (P.reflectionBond b ((C i.castSucc).val • lam) ((C i.succ).val • lam)).natAbs :=
+    congrArg₂ (fun x z ↦ (P.reflectionBond b (x.val • lam) (z.val • lam)).natAbs)
       (RelSeries.snoc_castSucc C y h i.castSucc) (RelSeries.snoc_castSucc C y h i.succ)
   have hy : (P.reflectionBond b
-      ((C.snoc y h ((Fin.last C.length).castSucc : Fin (C.length + 1 + 1))).1 • lam)
-        ((C.snoc y h (Fin.last (C.length + 1))).1 • lam)).natAbs =
-      (P.reflectionBond b (C.last.1 • lam) (y.1 • lam)).natAbs :=
-    congrArg₂ (fun x z ↦ (P.reflectionBond b (x.1 • lam) (z.1 • lam)).natAbs)
+      ((C.snoc y h ((Fin.last C.length).castSucc : Fin (C.length + 1 + 1))).val • lam)
+        ((C.snoc y h (Fin.last (C.length + 1))).val • lam)).natAbs =
+      (P.reflectionBond b (C.last.val • lam) (y.val • lam)).natAbs :=
+    congrArg₂ (fun x z ↦ (P.reflectionBond b (x.val • lam) (z.val • lam)).natAbs)
       (RelSeries.snoc_castSucc C y h (Fin.last C.length)) (RelSeries.last_snoc' C y h)
   have key (j : Fin (C.length + 1)) :
-      (bondGcd lam C).gcd (P.reflectionBond b (C.last.1 • lam) (y.1 • lam)).natAbs ∣
-        (P.reflectionBond b ((C.snoc y h (j.castSucc : Fin (C.length + 1 + 1))).1 • lam)
-          ((C.snoc y h (j.succ : Fin (C.length + 1 + 1))).1 • lam)).natAbs := by
+      (bondGcd lam C).gcd (P.reflectionBond b (C.last.val • lam) (y.val • lam)).natAbs ∣
+        (P.reflectionBond b ((C.snoc y h (j.castSucc : Fin (C.length + 1 + 1))).val • lam)
+          ((C.snoc y h (j.succ : Fin (C.length + 1 + 1))).val • lam)).natAbs := by
     induction j using Fin.lastCases with
     | last => exact (Nat.gcd_dvd_right _ _).trans hy.symm.dvd
     | cast i =>
@@ -238,7 +238,7 @@ theorem bondGcd_cons {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIn
     {x : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) C.head x) :
     bondGcd lam (C.cons x h) =
-      (P.reflectionBond b (x.1 • lam) (C.head.1 • lam)).natAbs.gcd (bondGcd lam C) := by
+      (P.reflectionBond b (x.val • lam) (C.head.val • lam)).natAbs.gcd (bondGcd lam C) := by
   -- The entries of the extended chain are `x`, followed by those of `C`.
   have hlen : (C.cons x h).length = C.length + 1 := RelSeries.cons_length C x h
   have h₀ (hk : 0 < (C.cons x h).length + 1) : C.cons x h ⟨0, hk⟩ = x :=
@@ -265,7 +265,7 @@ theorem bondGcd_cons {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIn
 bond `b_λ(x₀, x₁)` of its first cover and the bond gcd of its tail `x₁ ⋗ ⋯ ⋗ x_l`. -/
 theorem bondGcd_eq_gcd_bondGcd_tail
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)) (h : C.length ≠ 0) :
-    bondGcd lam C = (P.reflectionBond b (C.head.1 • lam) ((C.tail h).head.1 • lam)).natAbs.gcd
+    bondGcd lam C = (P.reflectionBond b (C.head.val • lam) ((C.tail h).head.val • lam)).natAbs.gcd
       (bondGcd lam (C.tail h)) := by
   have hcov : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam)
       (C.tail h).head C.head := C.step ⟨0, Nat.pos_of_ne_zero h⟩
@@ -295,7 +295,7 @@ theorem isAChain_snoc_iff
     {y : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}}
     (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y C.last) :
     IsAChain a lam (C.snoc y h) ↔ IsAChain a lam C ∧
-      ∃ z : ℤ, a * P.reflectionBond b (C.last.1 • lam) (y.1 • lam) = z := by
+      ∃ z : ℤ, a * P.reflectionBond b (C.last.val • lam) (y.val • lam) = z := by
   simp only [isAChain_iff_den_dvd_bondGcd, bondGcd_snoc, Nat.dvd_gcd_iff, ← Int.natCast_dvd,
     Rat.den_dvd_iff_exists_mul_intCast_eq]
 
@@ -303,14 +303,14 @@ theorem isAChain_snoc_iff
 theorem IsAChain.take
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) (k : Fin (C.length + 1)) : IsAChain a lam (C.take k) :=
-  fun j ↦ hC ⟨j, Nat.lt_of_lt_of_le j.2 (Nat.lt_succ_iff.mp k.2)⟩
+  fun j ↦ hC ⟨j, Nat.lt_of_lt_of_le j.isLt (Nat.lt_succ_iff.mp k.isLt)⟩
 
 /-- A final segment `x_k ⋗ ⋯ ⋗ x_l` of an `a`-chain is an `a`-chain. -/
 theorem IsAChain.drop
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) (k : Fin (C.length + 1)) : IsAChain a lam (C.drop k) := fun j ↦ by
   have hj : (j : ℕ) + k < C.length := by
-    have : (j : ℕ) < C.length - k := j.2
+    have : (j : ℕ) < C.length - k := j.isLt
     omega
   obtain ⟨z, hz⟩ := hC ⟨j + k, hj⟩
   refine ⟨z, ?_⟩
@@ -337,8 +337,6 @@ theorem bondGcd_snoc_singleton_simple_one {i : b.support} (hi : P.coroot' i lam 
   rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
     reflectionBond_simple_smul_one_smul i]
 
-variable [P.flip.IsReduced]
-
 /-- **The `a`-chain condition in Littelmann's form.** A saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` is an `a`-chain exactly when `a ⟨x_{h-1} λ, β^∨⟩` is an integer for every cover
 `x_h ⋖ x_{h-1}` and every positive root `β` with `x_h λ = s_β (x_{h-1} λ)`. Such a root exists and
@@ -347,8 +345,8 @@ is unique (`TauCeti.existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovB
 theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} :
     IsAChain a lam C ↔ ∀ i : Fin C.length, ∀ β, b.IsPos β →
-      P.reflection β ((C i.castSucc).1 • lam) = (C i.succ).1 • lam →
-        ∃ z : ℤ, a * P.coroot' β ((C i.castSucc).1 • lam) = z := by
+      P.reflection β ((C i.castSucc).val • lam) = (C i.succ).val • lam →
+        ∃ z : ℤ, a * P.coroot' β ((C i.castSucc).val • lam) = z := by
   refine ⟨fun hC i β hβ hβx ↦ ?_, fun hC i ↦ ?_⟩
   · obtain ⟨z, hz⟩ := hC i
     refine ⟨-z, ?_⟩
@@ -365,7 +363,6 @@ theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     push_cast at hz ⊢
     linarith
 
-omit [P.flip.IsReduced] in
 /-- A saturated chain of `W / W_λ` of length `0` has bond gcd `0`, the gcd of no bonds. -/
 theorem bondGcd_eq_zero_of_length_eq_zero
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (h : C.length = 0) :
@@ -385,20 +382,18 @@ theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
   have := h ⟨0, Nat.pos_of_ne_zero hC⟩ (Finset.mem_univ _)
   omega
 
-omit [P.flip.IsReduced] in
 /-- **The bond gcd divides the change of every integral linear form along the chain.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is a saturated chain of `W / W_λ`, then `d(C)` divides
 `f (x₀ λ) - f (x_l λ)` for every integral linear form `f` on the weight lattice: each cover changes
 the weight by its bond times a root. -/
 theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
     (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
-    (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.1 • lam) - f (C.last.1 • lam) := by
-  have := P.flip_isReduced
+    (f : Module.Dual ℤ M) : (bondGcd lam C : ℤ) ∣ f (C.head.val • lam) - f (C.last.val • lam) := by
   induction C using RelSeries.inductionOn with
   | singleton y => simp
   | cons C x hx ih =>
     rw [bondGcd_cons, RelSeries.head_cons, RelSeries.last_cons,
-      ← sub_add_sub_cancel _ (f (C.head.1 • lam))]
+      ← sub_add_sub_cancel _ (f (C.head.val • lam))]
     obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
       existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hx
     exact dvd_add ((Int.natCast_dvd_natCast.mpr (Nat.gcd_dvd_left _ _)).trans
@@ -407,7 +402,6 @@ theorem bondGcd_dvd_sub (hlam : lam ∈ dominantChamber P b)
 
 /-! ### Integrality along `a`-chains -/
 
-omit [P.flip.IsReduced] in
 /-- **Integral linear forms on the two ends of an `a`-chain differ by an `a`-integral amount.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is an `a`-chain of `W / W_λ`, then `a (f (x₀ λ) - f (x_l λ))` is an
 integer for every integral linear form `f` on the weight lattice, for instance for the pairing
@@ -415,12 +409,11 @@ integer for every integral linear form `f` on the weight lattice, for instance f
 theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) (f : Module.Dual ℤ M) :
-    ∃ z : ℤ, a * (f (C.head.1 • lam) - f (C.last.1 • lam) : ℤ) = z :=
+    ∃ z : ℤ, a * (f (C.head.val • lam) - f (C.last.val • lam) : ℤ) = z :=
   (Rat.den_dvd_iff_exists_mul_intCast_eq a _).mp
     ((Int.natCast_dvd_natCast.mpr (isAChain_iff_den_dvd_bondGcd.mp hC)).trans
       (bondGcd_dvd_sub hlam C f))
 
-omit [P.flip.IsReduced] in
 /-- Along an `a`-chain, the scaled difference of its endpoint weights is an actual root-lattice
 vector, in every characteristic-zero linear realization. This retains the lattice information,
 not only its values under integral linear forms. -/
@@ -429,8 +422,7 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
     (hC : IsAChain a lam C) {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
     [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
-    ∃ m ∈ P.rootSpan ℤ, (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) = f m := by
-  have := P.flip_isReduced
+    ∃ m ∈ P.rootSpan ℤ, (a : 𝕜) • (f (C.head.val • lam) - f (C.last.val • lam)) = f m := by
   induction C using RelSeries.inductionOn' with
   | singleton y => exact ⟨0, Submodule.zero_mem _, by simp⟩
   | snoc C y hy ih =>
@@ -440,15 +432,15 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
       existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hy
     have hb := reflectionBond_eq_neg_coroot' hβ hβx
       (smul_ne_smul_of_minimalCosetRepCovBy hlam hy)
-    have hz' : (a : 𝕜) * (P.coroot' β (C.last.1 • lam) : 𝕜) = (-z : ℤ) := by
+    have hz' : (a : 𝕜) * (P.coroot' β (C.last.val • lam) : 𝕜) = (-z : ℤ) := by
       rw [hb] at hz
       exact_mod_cast (by push_cast at hz ⊢; linarith :
-        a * (P.coroot' β (C.last.1 • lam) : ℚ) = (-z : ℤ))
-    have hdiff : C.last.1 • lam - y.1 • lam =
-        P.coroot' β (C.last.1 • lam) • P.root β := by
+        a * (P.coroot' β (C.last.val • lam) : ℚ) = (-z : ℤ))
+    have hdiff : C.last.val • lam - y.val • lam =
+        P.coroot' β (C.last.val • lam) • P.root β := by
       rw [← hβx, RootPairing.reflection_apply]
       abel
-    have hedge : (a : 𝕜) • (f (C.last.1 • lam) - f (y.1 • lam)) =
+    have hedge : (a : 𝕜) • (f (C.last.val • lam) - f (y.val • lam)) =
         f ((-z) • P.root β) := by
       rw [← map_sub, hdiff, map_zsmul]
       simpa only [map_zsmul, ← Int.cast_smul_eq_zsmul 𝕜, smul_smul] using
@@ -457,9 +449,9 @@ theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
       (Submodule.smul_mem _ _ (Submodule.subset_span ⟨β, rfl⟩)), ?_⟩
     simp only [RelSeries.head_snoc, RelSeries.last_snoc]
     calc
-      (a : 𝕜) • (f (C.head.1 • lam) - f (y.1 • lam)) =
-          (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) +
-          (a : 𝕜) • (f (C.last.1 • lam) - f (y.1 • lam)) := by
+      (a : 𝕜) • (f (C.head.val • lam) - f (y.val • lam)) =
+          (a : 𝕜) • (f (C.head.val • lam) - f (C.last.val • lam)) +
+          (a : 𝕜) • (f (C.last.val • lam) - f (y.val • lam)) := by
             rw [← smul_add, sub_add_sub_cancel]
       _ = f m + f ((-z) • P.root β) := by rw [heq, hedge]
       _ = f (m + (-z) • P.root β) := (map_add f _ _).symm
@@ -471,26 +463,27 @@ is an integer. At the first cover `x_h ⋖ x_{h-1}` crossing the wall, the root 
 is an integer, and the part of `C` before it changes the pairing by an `a`-integral amount. -/
 theorem IsAChain.exists_mul_coroot'_eq_intCast (hlam : lam ∈ dominantChamber P b)
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
-    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
-    (hlast : 0 ≤ P.coroot' i (C.last.1 • lam)) :
-    ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+    (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.val • lam) < 0)
+    (hlast : 0 ≤ P.coroot' i (C.last.val • lam)) :
+    ∃ z : ℤ, a * P.coroot' i (C.head.val • lam) = z := by
+  have := P.flip_isReduced
   -- The first index `h` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
-      0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩
+      0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).val • lam) := ⟨C.length, le_rfl, hlast⟩
   classical
   obtain ⟨hle, hnonneg⟩ := Nat.find_spec hex
   obtain ⟨k, hk⟩ : ∃ k, Nat.find hex = k + 1 := Nat.exists_eq_succ_of_ne_zero fun h0 ↦ by
     simp only [h0] at hnonneg
     exact (hhead.trans_le hnonneg).false
   simp only [hk] at hle hnonneg
-  have hneg : P.coroot' i ((C ⟨k, by omega⟩).1 • lam) < 0 :=
+  have hneg : P.coroot' i ((C ⟨k, by omega⟩).val • lam) < 0 :=
     lt_of_not_ge fun hk' ↦ Nat.find_min hex (hk ▸ Nat.lt_succ_self k) ⟨by omega, hk'⟩
   -- The cover `x_{k+1} ⋖ x_k` is the simple reflection, so its bond is `-⟨x_k λ, αᵢ^∨⟩`.
   have hcov := C.minimalCosetRepCovBy ⟨k, hle⟩
   have hrefl := reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg hlam hcov i hneg
     hnonneg
   obtain ⟨z₁, hz₁⟩ := hC ⟨k, hle⟩
-  rw [reflectionBond_eq_neg_coroot' (b.isPos_of_mem_support i.2) hrefl
+  rw [reflectionBond_eq_neg_coroot' (b.isPos_of_mem_support i.property) hrefl
     (smul_ne_smul_of_minimalCosetRepCovBy hlam hcov)] at hz₁
   -- The initial segment `x₀ ⋗ ⋯ ⋗ x_k` of `C` is again an `a`-chain.
   obtain ⟨z₂, hz₂⟩ := (hC.take ⟨k, by omega⟩).exists_mul_sub_eq_intCast hlam (P.coroot' i)
@@ -509,7 +502,6 @@ the `j`-th break, paired with an integral linear form `f`, is the vertex height
 `∑_{k < j} (t_{k+1} - t_k) f (τ_k λ)`. The results below need only the chains, not the order of
 the cosets or of the times, except where stated. -/
 
-omit [P.flip.IsReduced] in
 /-- **Heights at breaks, up to integers.** If consecutive orbit weights `τ_k λ` and `τ_{k+1} λ` are
 joined by `t_{k+1}`-chains for `k + 1 < s` and `t_0 = 0`, then for `j < s` the height
 `∑_{k ≤ j} (t_{k+1} - t_k) f (τ_k λ)` at the break `t_{j+1}` differs from `t_{j+1} f (τ_j λ)` by
@@ -517,7 +509,7 @@ an integer, for every integral linear form `f`. -/
 theorem exists_sum_sub_mul_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (f : Module.Dual ℤ M) {j : ℕ} (hj : j < s) :
     ∃ z : ℤ, ∑ k ∈ Finset.range (j + 1), (t (k + 1) - t k) * f (τ k • lam) -
       t (j + 1) * f (τ j • lam) = z := by
@@ -541,7 +533,7 @@ integer. -/
 theorem exists_sum_coroot'_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (i : b.support) {j : ℕ} (hj : j + 1 < s) (hneg : P.coroot' i (τ j • lam) < 0)
     (hnonneg : 0 ≤ P.coroot' i (τ (j + 1) • lam)) :
     ∃ z : ℤ, ∑ k ∈ Finset.range (j + 1), (t (k + 1) - t k) * P.coroot' i (τ k • lam) = z := by
@@ -552,7 +544,6 @@ theorem exists_sum_coroot'_eq_intCast_of_isAChain (hlam : lam ∈ dominantChambe
   rw [hhead] at hz₂
   exact ⟨z₁ + z₂, by push_cast; linear_combination hz₁ + hz₂⟩
 
-omit [P.flip.IsReduced] in
 /-- **The endpoint of a Lakshmibai–Seshadri path is integral.** With the chains of
 `TauCeti.exists_sum_sub_mul_eq_intCast_of_isAChain`, if the final time `t_s` is an integer (for a
 Lakshmibai–Seshadri path, `t_s = 1`), then the final height `∑_{k < s} (t_{k+1} - t_k) f (τ_k λ)`
@@ -560,7 +551,7 @@ is an integer for every integral linear form `f`. -/
 theorem exists_sum_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (hs : ∃ z : ℤ, t s = z) (f : Module.Dual ℤ M) :
     ∃ z : ℤ, ∑ k ∈ Finset.range s, (t (k + 1) - t k) * f (τ k • lam) = z := by
   obtain ⟨n, rfl | rfl⟩ : ∃ n, s = 0 ∨ s = n + 1 := ⟨s - 1, by omega⟩
@@ -579,7 +570,7 @@ stops decreasing or at the endpoint. -/
 theorem exists_isLeast_sum_coroot'_Icc_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (hmono : ∀ k < s, t k < t (k + 1)) (hs : ∃ z : ℤ, t s = z) (i : b.support) {m : ℕ}
     (hm : m ≤ s) :
     ∃ z : ℚ, IsLeast ((fun j ↦ ∑ k ∈ Finset.range j, (t (k + 1) - t k) *
@@ -640,7 +631,7 @@ the whole path. -/
 theorem exists_isLeast_sum_coroot'_eq_intCast_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (hmono : ∀ k < s, t k < t (k + 1)) (hs : ∃ z : ℤ, t s = z) (i : b.support) :
     ∃ z : ℤ, IsLeast ((fun j ↦ ∑ k ∈ Finset.range j, (t (k + 1) - t k) *
       (P.coroot' i (τ k • lam) : ℚ)) '' Set.Iic s) z := by
@@ -670,7 +661,7 @@ local minimum strictly between the integers `H k₀` and `H k₀ + 1`. -/
 theorem sum_coroot'_lt_sum_coroot'_succ_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (hmono : ∀ k < s, t k < t (k + 1)) (hs : ∃ z : ℤ, t s = z) (i : b.support) {k₀ j : ℕ}
     (hk₀ : ∃ z : ℤ,
       ∑ k ∈ Finset.range k₀, (t (k + 1) - t k) * (P.coroot' i (τ k • lam) : ℚ) = z)
@@ -729,7 +720,7 @@ integral final time, write `H j = ∑_{k < j} (t_{k+1} - t_k) ⟨τ_k λ, αᵢ^
 theorem add_one_le_sum_coroot'_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (hmono : ∀ k < s, t k < t (k + 1)) (hs : ∃ z : ℤ, t s = z) (i : b.support) {k₀ k₁ j : ℕ}
     (hk₀ : ∃ z : ℤ,
       ∑ k ∈ Finset.range k₀, (t (k + 1) - t k) * (P.coroot' i (τ k • lam) : ℚ) = z)
@@ -770,7 +761,7 @@ for `k₀` the last vertex of minimal height and for `k₁` the first later vert
 theorem exists_strictly_rising_of_isAChain (hlam : lam ∈ dominantChamber P b)
     {s : ℕ} {τ : ℕ → P.weylGroup} {t : ℕ → ℚ} (ht : t 0 = 0)
     (hchain : ∀ k, k + 1 < s → ∃ C : (weylCoxeterSystem P b).MinimalCosetRepChain
-      (P.wallIndices b lam), C.head.1 = τ k ∧ C.last.1 = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
+      (P.wallIndices b lam), C.head.val = τ k ∧ C.last.val = τ (k + 1) ∧ IsAChain (t (k + 1)) lam C)
     (hmono : ∀ k < s, t k < t (k + 1)) (hs : ∃ z : ℤ, t s = z) (i : b.support)
     (hgap : ∃ j ≤ s,
       ∑ k ∈ Finset.range j, (t (k + 1) - t k) * (P.coroot' i (τ k • lam) : ℚ) + 1 ≤

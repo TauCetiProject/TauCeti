@@ -632,9 +632,9 @@ private lemma fromStrictMonoCechX_comp_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n 
   -- `toStrictMonoCechComplex_app_f_π` through the local abbreviations `toStrictMonoCechX` and
   -- `cechX` of the goal, which `rw` does not unfold
   rw [Category.assoc, show toStrictMonoCechX U P n ≫ _ =
-      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.1 from
+      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a.val from
       toStrictMonoCechComplex_app_f_π U P n a,
-    dualMap_π, alt_single_of_strictMono a.2, evalChain_single U P subset_rfl, one_smul,
+    dualMap_π, alt_single_of_strictMono a.property, evalChain_single U P subset_rfl, one_smul,
     Subsingleton.elim (tupleRestrict U _) (𝟙 _), op_id, P.map_id, Category.comp_id]
 
 /-- The alternating extension `Čₒ(U, P) ⟶ Č(U, P)` of ordered Čech cochains, natural in the

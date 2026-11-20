@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.GroupTheory.Index
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 import TauCeti.FieldTheory.Finite.PowNeOne
 
@@ -16,7 +17,9 @@ on any finite coordinate type is perfect. Conjugation by the determinant-one dia
 with entries `a` and `a⁻¹` rescales a transvection by `a²`. Every transvection is consequently
 a commutator, and transvections generate the special linear group. The hypothesis holds over
 every infinite field and every finite field with at least four elements; it excludes the
-small-field exceptions in rank two.
+small-field exceptions in rank two. Even at `𝔽₃`, where `SL₂(𝔽₃)` is solvable rather than
+perfect, `2 ≠ 0` makes every transvection a square, so `SL(ι, F)` has no subgroup of index `2`
+over any field of characteristic other than `2`.
 
 On three or more coordinates no hypothesis on the field is needed: for distinct `i`, `k`, `j` the
 type-`A` commutator relation `⁅xᵢₖ(c), xₖⱼ(1)⁆ = xᵢⱼ(c)` exhibits every transvection as a
@@ -35,6 +38,8 @@ coordinate types. Generation is reused from
   at least four elements.
 * `Matrix.SpecialLinearGroup.commutator_eq_top_of_three_le_card`: perfectness on at least three
   coordinates over every field.
+* `Subgroup.index_specialLinearGroup_ne_two`: absence of index-two subgroups over a field of
+  characteristic other than `2`.
 
 ## References
 
@@ -125,3 +130,26 @@ theorem commutator_eq_top_of_three_le_card (h : 3 ≤ Fintype.card ι) :
   exact transvection_mem_commutator_of_ne hij hki.symm hkj c
 
 end Matrix.SpecialLinearGroup
+
+namespace Subgroup
+
+open Matrix Matrix.SpecialLinearGroup in
+/-- Over a field of characteristic other than `2`, `SL(ι, F)` has no subgroup of index `2` (in
+every finite rank, including `SL₂(𝔽₃)` where the group is solvable rather than perfect). -/
+theorem index_specialLinearGroup_ne_two {F ι : Type*} [Field F] [Fintype ι] [DecidableEq ι]
+    [NeZero (2 : F)] (H : Subgroup (Matrix.SpecialLinearGroup ι F)) :
+    H.index ≠ 2 := by
+  -- Every transvection is the square of the half-parameter transvection, hence lies in `H`.
+  intro hH
+  have htop : H = ⊤ := by
+    rw [eq_top_iff, ← closure_range_toSpecialLinearGroup_eq_top_of_field (ι := ι) (K := F),
+      Subgroup.closure_le]
+    rintro _ ⟨⟨i, j, hij, c⟩, rfl⟩
+    rw [TransvectionStruct.toSpecialLinearGroup_mk]
+    have hsq := H.sq_mem_of_index_two hH (transvection hij (c / 2))
+    have h2 : (2 : ℕ) • (c / 2) = c := by rw [two_nsmul, add_halves]
+    rwa [transvection_pow, h2] at hsq
+  rw [htop, Subgroup.index_top] at hH
+  omega
+
+end Subgroup

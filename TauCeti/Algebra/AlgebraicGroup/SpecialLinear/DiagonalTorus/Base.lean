@@ -37,16 +37,16 @@ def diagonalSimpleRootIndex (r : ℕ) (i : Fin r) :
   ⟨(i.castSucc, i.succ), Fin.castSucc_lt_succ.ne⟩
 
 @[simp] theorem diagonalSimpleRootIndex_fst (r : ℕ) (i : Fin r) :
-    (diagonalSimpleRootIndex r i).1.1 = i.castSucc := (rfl)
+    (diagonalSimpleRootIndex r i).val.1 = i.castSucc := (rfl)
 
 @[simp] theorem diagonalSimpleRootIndex_snd (r : ℕ) (i : Fin r) :
-    (diagonalSimpleRootIndex r i).1.2 = i.succ := (rfl)
+    (diagonalSimpleRootIndex r i).val.2 = i.succ := (rfl)
 
 /-- The consecutive-root indexing is injective. -/
 theorem diagonalSimpleRootIndex_injective (r : ℕ) :
     Function.Injective (diagonalSimpleRootIndex r) := by
   intro i j h
-  exact Fin.castSucc_injective r (congrArg (fun p => p.1.1) h)
+  exact Fin.castSucc_injective r (congrArg (fun p => p.val.1) h)
 
 /-- The Bourbaki base of the diagonal root datum of `SL_{r+1}`. -/
 noncomputable def diagonalRootBase (r : ℕ) : (diagonalRootDatum.{u} r).Base :=
@@ -110,10 +110,10 @@ private theorem diagonalRootBase_coroot_nonneg {r : ℕ}
 
 private theorem lt_of_diagonalRootBase_isPos {r : ℕ}
     {p : SplitTorus.CoordinateRootIndex (Fin (r + 1))}
-    (hp : (diagonalRootBase.{u} r).IsPos p) : p.1.1 < p.1.2 := by
+    (hp : (diagonalRootBase.{u} r).IsPos p) : p.val.1 < p.val.2 := by
   by_contra hlt
-  have hrev : p.1.2 < p.1.1 := lt_of_le_of_ne (not_lt.mp hlt) p.2.symm
-  let i : Fin r := ⟨p.1.2, by have := p.1.1.isLt; simp only [Fin.lt_def] at hrev; omega⟩
+  have hrev : p.val.2 < p.val.1 := lt_of_le_of_ne (not_lt.mp hlt) p.property.symm
+  let i : Fin r := ⟨p.val.2, by have := p.val.1.isLt; simp only [Fin.lt_def] at hrev; omega⟩
   have h := diagonalRootBase_coroot_nonneg hp (ULift.up i)
   simp only [diagonalRootDatum_coroot_apply, Fin.le_def, Fin.val_castSucc,
     i, le_refl, ite_true] at h
@@ -124,7 +124,7 @@ private theorem lt_of_diagonalRootBase_isPos {r : ℕ}
 smaller than its column index. -/
 @[simp] theorem diagonalRootBase_isPos_iff (r : ℕ)
     (p : SplitTorus.CoordinateRootIndex (Fin (r + 1))) :
-    (diagonalRootBase.{u} r).IsPos p ↔ p.1.1 < p.1.2 := by
+    (diagonalRootBase.{u} r).IsPos p ↔ p.val.1 < p.val.2 := by
   refine ⟨lt_of_diagonalRootBase_isPos, fun hp => ?_⟩
   by_contra hpos
   have hneg : (diagonalRootBase.{u} r).IsPos ((diagonalRootDatum r).reflectionPerm p p) :=

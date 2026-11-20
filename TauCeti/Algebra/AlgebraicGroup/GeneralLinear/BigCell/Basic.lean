@@ -53,6 +53,23 @@ repeat factors, which does not change the principal open. -/
 noncomputable def blockBigCellDenominator : MvPolynomial (n × n) R :=
   ∏ i, ((Matrix.mvPolynomialX n n R).toSquareBlockProp fun j => b j ≤ b i).det
 
+/-- The defining product of leading block minors for the block big-cell denominator. -/
+theorem blockBigCellDenominator_def :
+    blockBigCellDenominator R b =
+      ∏ i, ((Matrix.mvPolynomialX n n R).toSquareBlockProp fun j => b j ≤ b i).det := (rfl)
+
+/-- Changing polynomial coefficients preserves the block big-cell denominator. -/
+@[simp]
+theorem map_blockBigCellDenominator {S : Type*} [CommRing S] (f : R →+* S) :
+    MvPolynomial.map f (blockBigCellDenominator R b) = blockBigCellDenominator S b := by
+  classical
+  simp only [blockBigCellDenominator_def, map_prod, RingHom.map_det]
+  congr 1
+  funext i
+  congr 1
+  ext j k
+  simp [Matrix.mvPolynomialX, Matrix.toSquareBlockProp_def]
+
 /-- The coordinate algebra of the block big cell, localized at the product of its leading
 block minors. -/
 abbrev BlockBigCellCoordinateAlgebra :=
@@ -236,7 +253,9 @@ theorem blockBigCellMatrix_eq_blockBigCellLower_mul_blockBigCellDiag_mul_blockBi
 
 variable {R b}
 
-private theorem map_blockBigCell_factors (M : Matrix n n S)
+/-- Evaluating the regular factors recovers all three factors of any block `LDU`
+factorization of the represented point. -/
+theorem map_blockBigCell_factors (M : Matrix n n S)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
     {L D U : Matrix n n S} (hL : L.BlockUnitriangular (toDual ∘ b))
     (hD : D.BlockTriangular b) (hD₁ : D.BlockTriangular (toDual ∘ b))

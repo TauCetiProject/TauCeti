@@ -113,19 +113,19 @@ end IsIdempotentElem
 
 namespace TauCeti
 
+private theorem mul_self_of_mutual_absorption {S : Type*} [Semigroup S] {e p : S}
+    (hep : e * p = p) (hpe : p * e = e) : e * e = e := by
+  calc
+    e * e = e * (p * e) := by rw [hpe]
+    _ = e := by rw [← mul_assoc, hep, hpe]
+
 variable {R : Type*} [Ring R]
 
 /-- The unit `1 + e - p`, with inverse `1 - e + p`, conjugating `e` to `p` when
 `e * p = p` and `p * e = e`. These identities already imply idempotence. -/
 def idempotentConjUnit (e p : R) (hep : e * p = p) (hpe : p * e = e) : Rˣ := by
-  have hee : e * e = e := by
-    calc
-      e * e = e * (p * e) := by rw [hpe]
-      _ = e := by rw [← mul_assoc, hep, hpe]
-  have hpp : p * p = p := by
-    calc
-      p * p = p * (e * p) := by rw [hep]
-      _ = p := by rw [← mul_assoc, hpe, hep]
+  have hee := mul_self_of_mutual_absorption hep hpe
+  have hpp := mul_self_of_mutual_absorption hpe hep
   exact
     { val := 1 + e - p
       inv := 1 - e + p
@@ -145,11 +145,7 @@ theorem coe_inv_idempotentConjUnit (e p : R) (hep : e * p = p) (hpe : p * e = e)
 /-- The canonical similarity unit conjugates `e` to `p`. -/
 theorem idempotentConjUnit_mul_mul_inv (e p : R) (hep : e * p = p) (hpe : p * e = e) :
     (idempotentConjUnit e p hep hpe : R) * e * ↑(idempotentConjUnit e p hep hpe)⁻¹ = p := by
-  have hee : e * e = e := by
-    calc
-      e * e = e * (p * e) := by rw [hpe]
-      _ = e := by rw [← mul_assoc, hep, hpe]
   rw [coe_idempotentConjUnit, coe_inv_idempotentConjUnit]
-  noncomm_ring [hee, hep, hpe]
+  noncomm_ring [mul_self_of_mutual_absorption hep hpe, hep, hpe]
 
 end TauCeti

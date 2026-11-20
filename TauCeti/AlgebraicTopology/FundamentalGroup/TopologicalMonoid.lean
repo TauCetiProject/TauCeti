@@ -27,20 +27,38 @@ pointwise product. So pointwise multiplication of loop classes is a binary opera
 constant loop is a two-sided unit for it. Eckmann–Hilton then says that the two operations agree
 and are commutative.
 
+A continuous map `f : M → N` between two such spaces with `f 1 = 1`, for instance a continuous
+homomorphism of topological groups, induces a group homomorphism `π₁(M, 1) → π₁(N, 1)`
+(`FundamentalGroup.mapOfEq`), and this homomorphism sends the class of a pointwise product of
+loops to the pointwise product of the images of the two classes
+(`FundamentalGroup.mapOfEq_cast_map_prod`). Since pointwise products of loops compute the group
+laws on both sides, `f` need not be multiplicative.
+
+The group law of `π₁(M, 1)` is concatenation of loops: by `FundamentalGroup.mul_def`, the product
+`a * b` is the class of a loop representing `b` followed by one representing `a`. At the level of
+paths, the pointwise product of two loops at `1` is homotopic to their concatenation in either
+order (`Path.Homotopic.cast_mul_trans_swap` and `Path.Homotopic.cast_mul_trans`, in
+`TauCeti.Topology.Homotopy.Product`), so both orders of concatenation agree with the pointwise
+product, as `FundamentalGroup.cast_map_prod_mul` and `FundamentalGroup.instCommGroup` say on
+classes.
+
 For a topological group `G` the pointwise product is the group law of the universal cover based
-at `1`, and the first fact identifies the kernel of the covering homomorphism with `π₁(G, 1)`
-(`TauCeti.UniversalCover.kerProjHomEquivFundamentalGroup`).
+at `1`, and `FundamentalGroup.cast_map_prod_mul` identifies the kernel of the covering
+homomorphism with `π₁(G, 1)` (`TauCeti.UniversalCover.kerProjHomEquivFundamentalGroup`).
 
 ## Main results
 
 * `FundamentalGroup.cast_map_prod_mul`: the class of the pointwise product of two loops
   at `1` is their product in the fundamental group.
 * `FundamentalGroup.instCommGroup`: the fundamental group at `1` is commutative.
+* `FundamentalGroup.mapOfEq_cast_map_prod`: a continuous map preserving `1` sends the class of a
+  pointwise product of loops to the pointwise product of the image classes.
 
 ## References
 
 * B. Eckmann and P. J. Hilton, *Group-like structures in general categories I. Multiplications
   and comultiplications*, Math. Ann. **145** (1962), 227–255.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 3.C, Exercise 5.
 -/
 
 public section
@@ -123,6 +141,22 @@ instance instCommGroup : CommGroup (FundamentalGroup M 1) :=
     mul_comm := by
       exact (EckmannHilton.mul_comm isUnital_mulHom
         EckmannHilton.MulOneClass.isUnital mulHom_mul_mul).comm }
+
+variable {N : Type*} [TopologicalSpace N] [MulOneClass N] [ContinuousMul N]
+
+/-- **Naturality of the pointwise product of loops.** A continuous map `f : M → N` with
+`f 1 = 1`, for instance a continuous monoid homomorphism, induces a homomorphism
+`π₁(M, 1) → π₁(N, 1)` that sends the class of the pointwise product of two loops at `1` to the
+class of the pointwise product of loops representing the images of their classes. The map `f`
+need not be multiplicative, since on both sides the pointwise product of loops is the group law
+(`FundamentalGroup.cast_map_prod_mul`). -/
+theorem mapOfEq_cast_map_prod (f : C(M, N)) (hf : f 1 = 1) (a b : FundamentalGroup M 1) :
+    mapOfEq f hf
+        (.of (((prod a.asHom b.asHom).map ⟨fun x : M × M ↦ x.1 * x.2, continuous_mul⟩).cast
+          (mul_one 1).symm (mul_one 1).symm)) =
+      .of (((prod (mapOfEq f hf a).asHom (mapOfEq f hf b).asHom).map
+          ⟨fun x : N × N ↦ x.1 * x.2, continuous_mul⟩).cast (mul_one 1).symm (mul_one 1).symm) := by
+  rw [cast_map_prod_mul, cast_map_prod_mul, map_mul]
 
 end
 

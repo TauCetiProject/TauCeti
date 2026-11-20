@@ -11,9 +11,12 @@ public import Mathlib.RingTheory.Noetherian.Basic
 /-!
 # Transport principles for integral closures and their finiteness
 
-Two general facts that the finiteness of integral closures is assembled from, each stated in the
-abstract typeclass form `IsIntegralClosure`, and independent of each other.
+General facts for transporting `IsIntegralClosure` and descending finiteness:
 
+* Transporting across ring isomorphisms: if `eA : A ≃+* A'`, `eR : R ≃+* R'`, and `eB : B ≃+* B'`
+  intertwine the algebra maps, `IsIntegralClosure A R B` transfers to `IsIntegralClosure A' R' B'`
+  (`IsIntegralClosure.of_ringEquiv`). Compare Mathlib's `IsIntegralClosure.of_algEquiv`, which
+  only varies the ambient ring.
 * Descending the base: an integral closure of `A` in `B` is also the integral closure of `R` in
   `B` when `A` is integral over `R`. This is the converse of Mathlib's
   `IsIntegralClosure.tower_top`.
@@ -24,6 +27,8 @@ abstract typeclass form `IsIntegralClosure`, and independent of each other.
 
 ## Main results
 
+* `IsIntegralClosure.of_ringEquiv`: transport of `IsIntegralClosure` along compatible ring
+  equivalences of all three rings.
 * `TauCeti.IsIntegralClosure.tower_bot`: the integral closure of `A` in `B` is the integral
   closure of `R` in `B` when `A` is integral over `R`.
 * `TauCeti.IsIntegralClosure.finite_of_injective`: an integral `A`-algebra with an injective
@@ -37,6 +42,35 @@ abstract typeclass form `IsIntegralClosure`, and independent of each other.
 -/
 
 public section
+
+/-- **Integral closures transfer along compatible ring isomorphisms**: if `eA : A ≃+* A'`,
+`eR : R ≃+* R'`, and `eB : B ≃+* B'` intertwine the algebra maps into `B` and `B'`, and `A` is
+the integral closure of `R` in `B`, then `A'` is the integral closure of `R'` in `B'`. Compare
+Mathlib's `IsIntegralClosure.of_algEquiv`, which fixes `A` and `R` and varies `B` by an
+`R`-algebra equivalence. -/
+theorem IsIntegralClosure.of_ringEquiv {A R B A' R' B' : Type*} [CommRing R] [CommSemiring A]
+    [CommRing B] [Algebra R B] [Algebra A B] [CommRing R'] [CommSemiring A'] [CommRing B']
+    [Algebra R' B'] [Algebra A' B'] (h : IsIntegralClosure A R B) (eA : A ≃+* A') (eR : R ≃+* R')
+    (eB : B ≃+* B') (heR : ∀ r, eB (algebraMap R B r) = algebraMap R' B' (eR r))
+    (heA : ∀ a, eB (algebraMap A B a) = algebraMap A' B' (eA a)) :
+    IsIntegralClosure A' R' B' := by
+  have hsymmR (r' : R') : eB.symm (algebraMap R' B' r') = algebraMap R B (eR.symm r') :=
+    eB.symm_apply_eq.mpr (by rw [heR, eR.apply_symm_apply])
+  have hsymmA (a' : A') : eB.symm (algebraMap A' B' a') = algebraMap A B (eA.symm a') :=
+    eB.symm_apply_eq.mpr (by rw [heA, eA.apply_symm_apply])
+  refine ⟨fun a₁ a₂ ha => eA.symm.injective (h.algebraMap_injective ?_),
+    fun {x'} => ⟨fun hx' => ?_, ?_⟩⟩
+  · rw [← hsymmA, ← hsymmA, ha]
+  · obtain ⟨a, ha⟩ := h.isIntegral_iff.mp
+      (hx'.map_of_comp_eq (eR.symm : R' →+* R) (eB.symm : B' →+* B)
+        (RingHom.ext fun r' => (hsymmR r').symm))
+    exact ⟨eA a, by simp [← heA, ha]⟩
+  · rintro ⟨a', rfl⟩
+    have ha : IsIntegral R (algebraMap A B (eA.symm a')) :=
+      h.isIntegral_iff.mpr ⟨eA.symm a', rfl⟩
+    have hmap := ha.map_of_comp_eq (eR : R →+* R') (eB : B →+* B')
+      (RingHom.ext fun r => (heR r).symm)
+    simpa [heA] using hmap
 
 namespace TauCeti
 

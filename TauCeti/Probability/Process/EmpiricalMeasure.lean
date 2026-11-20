@@ -344,7 +344,7 @@ theorem continuous_empiricalMeasureOfFintype [TopologicalSpace α] [OpensMeasura
 /-- Finite empirical distributions depend measurably on the population. -/
 theorem measurable_empiricalMeasureOfFintype :
     Measurable (empiricalMeasureOfFintype : (κ → α) → ProbabilityMeasure α) :=
-  (measurable_subtype_coe.comp measurable_empiricalFiniteMeasure).subtype_mk
+  (measurable_subtypeVal.comp measurable_empiricalFiniteMeasure).subtype_mk
 
 /-- A finite empirical population is concentrated on the finite set of its values. -/
 theorem exists_finset_ae_mem_empiricalMeasureOfFintype [MeasurableSingletonClass α]

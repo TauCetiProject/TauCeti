@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import TauCeti.Algebra.Star.SelfAdjoint
+import Mathlib.Algebra.Star.Module
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -103,18 +104,16 @@ variable {A : Type*} [Ring A] [StarRing A] {e : A}
 
 /-- Multiplying the denominator on the left by its idempotent. -/
 theorem mul_idempotentProjectionDenom (he : IsIdempotentElem e) :
-    e * idempotentProjectionDenom e = e * star e * e := by
-  have hes : star e * star e = star e := by simpa only [star_mul] using congrArg star he.eq
+    e * idempotentProjectionDenom e = e * Star.star e * e := by
   simp only [idempotentProjectionDenom, pow_two, mul_sub, sub_mul, mul_one,
-    ← mul_assoc, he.eq, hes]
+    ← mul_assoc, he.eq, (IsIdempotentElem.star he).eq]
   noncomm_ring
 
 /-- Multiplying the denominator on the right by its idempotent. -/
 theorem idempotentProjectionDenom_mul (he : IsIdempotentElem e) :
-    idempotentProjectionDenom e * e = e * star e * e := by
-  have hes : star e * star e = star e := by simpa only [star_mul] using congrArg star he.eq
+    idempotentProjectionDenom e * e = e * Star.star e * e := by
   dsimp [idempotentProjectionDenom]
-  noncomm_ring [he.eq, hes]
+  noncomm_ring [he.eq, (IsIdempotentElem.star he).eq]
 
 /-- An idempotent commutes with the denominator of its range projection. -/
 theorem commute_idempotentProjectionDenom (he : IsIdempotentElem e) :
@@ -139,7 +138,7 @@ theorem idempotentRangeProjection_mul_of_isUnit (he : IsIdempotentElem e)
     (hu : IsUnit (idempotentProjectionDenom e)) : idempotentRangeProjection e * e = e := by
   calc
     idempotentRangeProjection e * e =
-        (e * star e * e) * Ring.inverse (idempotentProjectionDenom e) := by
+        (e * Star.star e * e) * Ring.inverse (idempotentProjectionDenom e) := by
       simp only [idempotentRangeProjection_def, mul_assoc, (he.commute_inverse_denom hu).eq]
     _ = e * (idempotentProjectionDenom e *
         Ring.inverse (idempotentProjectionDenom e)) := by
@@ -151,9 +150,9 @@ theorem isStarProjection_idempotentRangeProjection_of_isUnit (he : IsIdempotentE
     (hu : IsUnit (idempotentProjectionDenom e)) :
     IsStarProjection (idempotentRangeProjection e) := by
   have hb := (isSelfAdjoint_idempotentProjectionDenom e).ringInverse
-  have hbe : Commute (Ring.inverse (idempotentProjectionDenom e)) (star e) := by
+  have hbe : Commute (Ring.inverse (idempotentProjectionDenom e)) (Star.star e) := by
     simpa only [Commute, SemiconjBy, star_mul, hb.star_eq] using
-      congrArg star (he.commute_inverse_denom hu).eq
+      congrArg Star.star (he.commute_inverse_denom hu).eq
   have hp : IsSelfAdjoint (idempotentRangeProjection e) := by
     rw [idempotentRangeProjection_def]
     exact (IsSelfAdjoint.commute_iff (IsSelfAdjoint.mul_star_self e) hb).mp
