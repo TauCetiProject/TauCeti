@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Opposite
 public import Mathlib.LinearAlgebra.Basis.MulOpposite
 public import Mathlib.Order.Fin.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
-public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic
 
 /-!
 # Orientation reversal of the strands algebra
@@ -31,8 +31,8 @@ resolving the other (`TauCeti.StrandDiagram.reverse_resolve`). The corresponding
 algebra `A(Z)` of a pointed matched circle are in
 `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Opposite`.
 
-Both maps respect the grading of `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading`, through
-maps of grading groups. Relabelling transports the boundary of a class and keeps the Maslov
+Both maps respect the grading of `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading.Basic`,
+through maps of grading groups. Relabelling transports the boundary of a class and keeps the Maslov
 component. Rotation keeps the Maslov component and negates the boundary, since the strands of the
 rotated diagram run from the old end points to the old starting points; the multiplicities of a
 class are unchanged, because the total sum of its boundary vanishes. As the rotation reverses

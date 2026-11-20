@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.LpSpace
-import Mathlib.Analysis.PSeries
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
@@ -18,7 +17,6 @@ import TauCeti.Analysis.InnerProductSpace.CotlarStein
 import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
-import TauCeti.Topology.Algebra.InfiniteSum.PiProd
 
 /-!
 # The Calderón–Vaillancourt theorem
@@ -85,25 +83,6 @@ namespace TauCeti
 
 /-! ### The lattice weights -/
 
-/-- The weight `∏ᵢ (1 + |dᵢ|)⁻²` on `ℤⁿ`, which is summable. -/
-private def latticeWeight {n : ℕ} (d : Fin n → ℤ) : ℝ :=
-  ∏ i, ((1 + |(d i : ℝ)|) ^ 2)⁻¹
-
-private theorem latticeWeight_nonneg {n : ℕ} (d : Fin n → ℤ) : 0 ≤ latticeWeight d :=
-  prod_nonneg fun _ _ ↦ by positivity
-
-private theorem summable_latticeWeight {n : ℕ} : Summable (latticeWeight (n := n)) := by
-  refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun _ (m : ℤ) ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹)
-    (fun _ ↦ ?_) fun _ m ↦ by positivity
-  rw [summable_int_iff_summable_nat_and_neg]
-  have h : Summable fun m : ℕ ↦ (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ :=
-    (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
-  have e : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((m : ℤ) : ℝ)|) ^ 2)⁻¹ := fun m ↦ by
-    rw [Int.cast_natCast, abs_of_nonneg (Nat.cast_nonneg m), Nat.cast_succ, add_comm]
-  have e' : ∀ m : ℕ, (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ = ((1 + |((-(m : ℤ) : ℤ) : ℝ)|) ^ 2)⁻¹ :=
-    fun m ↦ by rw [Int.cast_neg, abs_neg, ← e]
-  exact ⟨h.congr e, h.congr e'⟩
-
 /-- A displacement `d` with `|dᵢ| ≤ 1` for every `i` has `latticeWeight d ^ 2 ≥ 16⁻ⁿ`. -/
 private theorem one_le_latticeWeight_sq {n : ℕ} {d : Fin n → ℤ} (hd : ∀ i, |d i| ≤ 1) :
     1 ≤ 16 ^ n * latticeWeight d ^ 2 := by
@@ -113,7 +92,7 @@ private theorem one_le_latticeWeight_sq {n : ℕ} {d : Fin n → ℤ} (hd : ∀ 
     calc (16 : ℝ)⁻¹ = (2 ^ (2 * 2))⁻¹ := by norm_num
       _ ≤ ((1 + |(d i : ℝ)|) ^ (2 * 2))⁻¹ := by gcongr; linarith
   have : (16 : ℝ)⁻¹ ^ n ≤ latticeWeight d ^ 2 := by
-    rw [latticeWeight, ← prod_pow, ← Fin.prod_const]
+    rw [latticeWeight_def, ← prod_pow, ← Fin.prod_const]
     exact prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ h i
   rw [inv_pow] at this
   have h16 : (0 : ℝ) < 16 ^ n := by positivity
@@ -141,7 +120,7 @@ private theorem inv_one_add_norm_pow_le {n : ℕ} {x y : EuclideanSpace ℝ (Fin
     rw [pow_mul, ← Fin.prod_const]
     exact prod_le_prod₀ (fun _ _ ↦ by positivity) fun i _ ↦ by gcongr; simpa using hcoord i
   have hw : latticeWeight d ^ 2 = (∏ i, (1 + |(d i : ℝ)|) ^ 4)⁻¹ := by
-    rw [latticeWeight, ← prod_pow, ← prod_inv_distrib]
+    rw [latticeWeight_def, ← prod_pow, ← prod_inv_distrib]
     refine prod_congr rfl fun i _ ↦ ?_
     rw [inv_pow, ← pow_mul]
   rw [hw]
@@ -229,6 +208,26 @@ private theorem pieceConst_nonneg (n : ℕ) (Cχ C : ℝ) : 0 ≤ pieceConst n C
   have := mul_self_nonneg C
   positivity
 
+private theorem norm_iteratedFDeriv_latticeBump_mul_le {n : ℕ} {Cχ : ℝ}
+    (hχ : ∀ q ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ q (latticeBump n) x‖ ≤ Cχ)
+    (j j' : Fin n → ℤ) {p : ℕ} (hp : p ≤ 4 * n) (x : EuclideanSpace ℝ (Fin n)) :
+    ‖iteratedFDeriv ℝ p
+      (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
+        2 ^ (4 * n) * (Cχ * Cχ) := by
+  set N := 4 * n
+  have hχ' : ∀ c : EuclideanSpace ℝ (Fin n), ∀ p ≤ N, ∀ x,
+      ‖iteratedFDeriv ℝ p (fun y ↦ latticeBump n (y - c)) x‖ ≤ Cχ := fun c p hp x ↦ by
+    rw [iteratedFDeriv_comp_sub]; exact hχ p hp _
+  have hφ : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p
+      (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
+        2 ^ p * (Cχ * Cχ) := fun p hp x ↦ by
+    have := (mul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear (opNorm_mul_le ℝ ℝ)
+      (contDiff_latticeBump_sub j) (contDiff_latticeBump_sub j')
+      (hχ' (latticePoint j)) (hχ' (latticePoint j')) hp x
+    simpa only [mul_apply', Function.comp_def, id] using this
+  exact (hφ p hp x).trans
+    (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hp) (mul_self_nonneg Cχ))
+
 /-- **Fourier decay of a cut-off product.** If `f` and `g` have derivatives of order at most
 `N = 4n` bounded by `C`, then the Fourier transform of
 `x ↦ χ(x - j) χ(x - j') • B (f x) (g x)` decays like `(1 + ‖w‖)^(-N)`, with a constant
@@ -247,25 +246,13 @@ private theorem norm_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*} [Norme
       2 ^ (4 * n) * (4 ^ (4 * n) * (2 ^ (4 * n) * (Cχ * Cχ) * (C * C)) * cellVolume n) *
         ((1 + ‖w‖) ^ (4 * n))⁻¹ := by
   set N := 4 * n
-  have hχ' : ∀ c : EuclideanSpace ℝ (Fin n), ∀ p ≤ N, ∀ x,
-      ‖iteratedFDeriv ℝ p (fun y ↦ latticeBump n (y - c)) x‖ ≤ Cχ := fun c p hp x ↦ by
-    rw [iteratedFDeriv_comp_sub]; exact hχ p hp _
-  have hφ : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p
-      (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
-        2 ^ p * (Cχ * Cχ) := fun p hp x ↦ by
-    have := (mul ℝ ℝ).norm_iteratedFDeriv_le_two_pow_mul_of_bilinear (opNorm_mul_le ℝ ℝ)
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
-      (hχ' (latticePoint j)) (hχ' (latticePoint j')) hp x
-    simpa only [mul_apply', Function.comp_def, id] using this
   have hφ' : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv ℝ p
       (fun y ↦ latticeBump n (y - latticePoint j) * latticeBump n (y - latticePoint j')) x‖ ≤
-        2 ^ N * (Cχ * Cχ) := fun p hp x ↦ (hφ p hp x).trans
-          (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hp) (mul_self_nonneg Cχ))
+        2 ^ N * (Cχ * Cχ) := fun p hp x ↦
+    norm_iteratedFDeriv_latticeBump_mul_le hχ j j' hp x
   have hcont : ContDiff ℝ N (fun y ↦ latticeBump n (y - latticePoint j) *
       latticeBump n (y - latticePoint j')) :=
-    (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const)).mul
-      (contDiff_latticeBump.comp (contDiff_id.sub contDiff_const))
+    (contDiff_latticeBump_sub j).mul (contDiff_latticeBump_sub j')
   have hsupp : tsupport (fun x ↦ (latticeBump n (x - latticePoint j) *
       latticeBump n (x - latticePoint j')) • B (f x) (g x)) ⊆ closedBall (latticePoint j) √n :=
     closure_minimal (fun x hx ↦ mem_closedBall_of_latticeBump_sub_ne_zero
@@ -289,7 +276,7 @@ private theorem norm_fourier_cutoff_bilinear_le {n : ℕ} {F G U : Type*} [Norme
       _ = 4 ^ N * (2 ^ N * (Cχ * Cχ) * (C * C)) := by
           rw [show (4 : ℝ) = 2 * 2 by norm_num, mul_pow]; ring
   have h := one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset
-    (hcont.smul ((B.contDiff.comp hf).clm_apply hg)) measurableSet_closedBall
+    (hcont.smul ((B.contDiff.comp hf).clm_apply hg))
     measure_closedBall_lt_top.ne hsupp hsmul w
   rw [Measure.real, volume_closedBall_eq_cellVolume, ENNReal.coe_toReal] at h
   have hpos : 0 < (1 + ‖w‖) ^ N := by positivity

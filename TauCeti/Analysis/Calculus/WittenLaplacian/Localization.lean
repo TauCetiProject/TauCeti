@@ -277,22 +277,10 @@ theorem sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLapla
           |t| * ∑ i, ∑ j, |fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)|) *
             ∑ s, φ x s ^ 2 ≤
       ∑ s, euclideanWittenLaplacian f t φ x s * φ x s := by
+  rw [sum_euclideanWittenLaplacian_apply_mul hf hφ]
   set HT := ∑ s, (∑ i, ∑ j, fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1) •
     ⁅(Pi.basisFun ℝ ι).exteriorCreation i, (Pi.basisFun ℝ ι).exteriorContraction j⁆ (φ x)) s *
       φ x s
-  have hdecomp : ∑ s, euclideanWittenLaplacian f t φ x s * φ x s =
-      ∑ i, ∑ s, -fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single i 1) s * φ x s +
-        (t ^ 2 * ∑ i, fderiv ℝ f x (Pi.single i 1) ^ 2) * ∑ s, φ x s ^ 2 + t * HT := by
-    rw [euclideanWittenLaplacian_apply hf hφ]
-    simp only [HT, Pi.add_apply, Pi.smul_apply, Finset.sum_apply, Pi.neg_apply,
-      smul_eq_mul, add_mul, Finset.sum_add_distrib, Finset.sum_mul, Finset.mul_sum, neg_mul]
-    rw [Finset.sum_comm (s := (Finset.univ : Finset (Finset ι)))
-      (t := (Finset.univ : Finset ι))]
-    congr 1
-    · congr 1
-      exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun s _ ↦ by ring
-    · exact Finset.sum_congr rfl fun s _ ↦ Finset.sum_congr rfl fun i _ ↦
-        Finset.sum_congr rfl fun j _ ↦ by ring
   have hHT :=
     (Pi.basisFun ℝ ι).abs_sum_sum_sum_smul_lie_exteriorCreation_exteriorContraction_apply_mul_le
       (fun i j ↦ fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)) (φ x)
@@ -301,7 +289,6 @@ theorem sum_sum_neg_fderiv_fderiv_mul_add_mul_sum_sq_le_sum_euclideanWittenLapla
     calc -(t * HT) ≤ |t * HT| := neg_le_abs _
       _ = |t| * |HT| := abs_mul t HT
       _ ≤ _ := mul_le_mul_of_nonneg_left hHT (abs_nonneg t)
-  rw [hdecomp]
   linarith
 
 /-- **A lower bound for the quadratic form of the Witten Laplacian.** For a compactly supported

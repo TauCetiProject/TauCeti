@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Triangulated.Subcategory
 public import TauCeti.CategoryTheory.Localization.Triangulated
+public import TauCeti.CategoryTheory.ObjectProperty.FactorsThrough
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
 
 /-!
@@ -32,7 +33,8 @@ consequences for Verdier quotients:
 * Together with the localization universal property, the first statement says that the Verdier
   quotient by `P` is the universal triangulated category in which the objects of `P` vanish.
 * An object becomes zero in the Verdier quotient by a thick triangulated subcategory `P` exactly
-  when it belongs to `P`.
+  when it belongs to `P`. A morphism becomes zero in the Verdier quotient by `P` exactly when it
+  factors through an object of `P`.
 * If moreover `Q` is triangulated, then for `P ≤ Q` the localizer morphism induces a comparison
   triangle functor between the Verdier quotients by `P` and by `Q`
   (`CategoryTheory.LocalizerMorphism.isTriangulated_localizedFunctor`), compatible with the two
@@ -54,9 +56,14 @@ consequences for Verdier quotients:
   only if it kills `P`.
 * `CategoryTheory.ObjectProperty.TrWLocalization.isZero_obj_iff`: the kernel of the Verdier
   localization at a thick triangulated subcategory `P` is `P`.
+* `CategoryTheory.ObjectProperty.TrWLocalization.map_eq_zero_iff_factorsThrough`: a morphism
+  vanishes in the Verdier localization at a triangulated subcategory `P` if and only if it factors
+  through an object of `P`.
 * `CategoryTheory.ObjectProperty.TrWLocalization.exists_map_comp_eq_map` and
   `CategoryTheory.ObjectProperty.TrWLocalization.exists_comp_eq_zero_of_map_eq_zero`: morphisms
   out of an object approximated by morphisms `δᵢ` as above, and their kernel.
+* `CategoryTheory.ObjectProperty.isLocalizedEquivalence_trWLocalizerMorphismOfLE`: when `P ≤ Q`
+  and `Q ≤ P`, `trWLocalizerMorphismOfLE` is a localized equivalence.
 * `CategoryTheory.ObjectProperty.isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff`:
   for thick triangulated `P ≤ Q`, the comparison functor between Verdier localizations is an
   equivalence if and only if `P = Q`.
@@ -132,6 +139,21 @@ theorem isZero_obj_iff [IsTriangulated C] [P.IsTriangulated] [P.IsStableUnderRet
       retract := by simp } hW
   exact (P.prop_shift_iff_of_isStableUnderShift X (1 : ℤ)).1 hX₁
 
+/-- **Morphisms killed by the Verdier localization.** If `P` is a triangulated subcategory of a
+triangulated category, a morphism vanishes in the Verdier localization at `P` if and only if it
+factors through an object of `P`. -/
+theorem map_eq_zero_iff_factorsThrough [IsTriangulated C] [P.IsTriangulated] {X Y : C}
+    (f : X ⟶ Y) : L.map f = 0 ↔ P.FactorsThrough f := by
+  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
+  · -- Some `s` in `P.trW` kills `f`, so `f` factors through the cone of `s`, an object of `P`.
+    obtain ⟨Z, s, ⟨K, a, b, hT, hK⟩, hs⟩ :=
+      (MorphismProperty.map_eq_iff_precomp L P.trW f 0).1 (by rw [hf, L.map_zero])
+    rw [comp_zero] at hs
+    obtain ⟨g, rfl⟩ := Triangle.yoneda_exact₂ _ hT f hs
+    exact P.factorsThrough_comp hK _ _
+  · obtain ⟨K, hK, a, b, rfl⟩ := (P.factorsThrough_iff f).1 hf
+    rw [L.map_comp, (isZero_obj P L hK).eq_of_src (L.map b) 0, comp_zero]
+
 section Approximation
 
 variable [IsTriangulated C] [P.IsTriangulated] {ι : Type*} {X : ι → C} {X₀ : C}
@@ -159,13 +181,10 @@ morphism from `X₀` to an object of `P` is killed by some `δᵢ`. A morphism `
 vanishes in the Verdier localization is killed by some `δᵢ`. -/
 theorem exists_comp_eq_zero_of_map_eq_zero {Y : C} (f : X₀ ⟶ Y) (hf : L.map f = 0) :
     ∃ i, δ i ≫ f = 0 := by
-  -- Some `s` in `P.trW` kills `f`, so `f` factors through the cone of `s`, an object of `P`.
-  obtain ⟨Z, s, ⟨K, a, b, hT, hK⟩, hs⟩ :=
-    (MorphismProperty.map_eq_iff_precomp L P.trW f 0).1 (by rw [hf, L.map_zero])
-  rw [comp_zero] at hs
-  obtain ⟨g, rfl⟩ := Triangle.yoneda_exact₂ _ hT f hs
+  obtain ⟨K, hK, a, b, rfl⟩ := (P.factorsThrough_iff f).1
+    ((map_eq_zero_iff_factorsThrough P L f).1 hf)
   obtain ⟨i, hi⟩ := H K hK a
-  exact ⟨i, by rw [Triangle.mk_mor₂, reassoc_of% hi, zero_comp]⟩
+  exact ⟨i, by rw [reassoc_of% hi, zero_comp]⟩
 
 end Approximation
 
@@ -195,12 +214,13 @@ instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.CommShift ℤ :=
 instance (h : P ≤ Q) : (trWLocalizerMorphismOfLE h).functor.IsTriangulated :=
   inferInstanceAs (𝟭 C).IsTriangulated
 
-/-- When `P = Q`, `trWLocalizerMorphismOfLE h` induces an equivalence between localizations at
-`P.trW` and `Q.trW`. -/
-theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE (h : P ≤ Q) (hEq : P = Q) :
+/-- If `P ≤ Q` and `Q ≤ P`, the localizer morphism `trWLocalizerMorphismOfLE` is a localized
+equivalence, so the induced comparison functor between any localizations at `P.trW` and `Q.trW`
+is an equivalence of categories. -/
+theorem isLocalizedEquivalence_trWLocalizerMorphismOfLE {h : P ≤ Q} (h' : Q ≤ P) :
     (trWLocalizerMorphismOfLE h).IsLocalizedEquivalence := by
-  subst hEq
-  exact LocalizerMorphism.IsLocalizedEquivalence.id (W₁ := P.trW)
+  obtain rfl := le_antisymm h h'
+  exact inferInstanceAs (LocalizerMorphism.id P.trW).IsLocalizedEquivalence
 
 /-- When `P` is a thick triangulated subcategory of a triangulated category and `P ≤ Q`, the
 comparison functor induced by `trWLocalizerMorphismOfLE h` between Verdier localizations at `P` and
@@ -220,7 +240,7 @@ theorem isEquivalence_localizedFunctor_trWLocalizerMorphismOfLE_iff
     exact (TrWLocalization.isZero_obj_iff P L₁ X).1
       (IsZero.of_full_of_faithful_of_isZero F (L₁.obj X)
         ((TrWLocalization.isZero_obj Q L₂ hX).of_iso (e.app X)))
-  · have := isLocalizedEquivalence_trWLocalizerMorphismOfLE h hEq
+  · have := isLocalizedEquivalence_trWLocalizerMorphismOfLE (h := h) hEq.ge
     infer_instance
 
 end ObjectProperty

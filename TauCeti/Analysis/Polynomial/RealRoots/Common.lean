@@ -86,7 +86,7 @@ theorem exists_roots_of_locally [PreconnectedSpace X] {Z : X → Set ℝ}
   rcases isEmpty_or_nonempty X with hX | hX
   · exact ⟨0, fun x => isEmptyElim x, fun _ x => isEmptyElim x, fun _ _ => 0,
       fun _ => continuous_of_const fun x => isEmptyElim x, fun x => isEmptyElim x,
-      fun x => isEmptyElim x, fun _ _ x => isEmptyElim x, fun _ y => isEmptyElim y.1⟩
+      fun x => isEmptyElim x, fun _ _ x => isEmptyElim x, fun _ y => isEmptyElim y.val⟩
   let a₀ : X := Classical.arbitrary X
   have hcard (a : X) (y : U a) : Nat.card (Z y) = c a := by
     rw [← hθrange a y, Nat.card_range_of_injective (hθmono a y).injective]
