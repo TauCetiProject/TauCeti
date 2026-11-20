@@ -41,17 +41,20 @@ and in Gillet–Soulé's language their classes form `\widehat{CH}¹(Spec 𝓞 K
 * `TauCeti.ArakelovDivisor.degree`: the Arakelov degree `log N(𝔞) + Σ_v λ_v`.
 * `TauCeti.ArakelovDivisor.principal`: the principal divisor of an element of `Kˣ`.
 * `TauCeti.ArakelovDivisor.ofInfinitePart`: the divisor `(𝓞 K, λ)` supported at infinity.
+* `TauCeti.ArakelovDivisor.ofFinitePart`: the divisor `(𝔞, 0)` with no archimedean part.
 * `TauCeti.ArakelovPicardGroup K`: Arakelov divisors modulo principal divisors.
 * `TauCeti.ArakelovPicardGroup.degree`, `TauCeti.ArakelovPicardGroup.toClassGroup`: the degree
   and the ideal class of a class of Arakelov divisors.
+* `TauCeti.ArakelovPicardGroup.ofInfinitePartQuotient`: the map
+  `ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ| → Pic^(𝓞 K)`.
 
 ## Main results
 
 * `TauCeti.ArakelovDivisor.degree_principal`: principal divisors have degree zero (the product
   formula).
-* `TauCeti.ArakelovPicardGroup.toClassGroup_surjective`,
-  `TauCeti.ArakelovPicardGroup.exact_ofInfinitePart_toClassGroup` and
-  `TauCeti.ArakelovPicardGroup.ofInfinitePart_eq_zero_iff`: the exact sequence
+* `TauCeti.ArakelovPicardGroup.ofInfinitePartQuotient_injective`,
+  `TauCeti.ArakelovPicardGroup.exact_ofInfinitePartQuotient_toClassGroup` and
+  `TauCeti.ArakelovPicardGroup.toClassGroup_surjective`: the exact sequence
   `0 → ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ| → Pic^(𝓞 K) → Cl(K) → 0`.
 
 ## References
@@ -160,13 +163,30 @@ variable {K}
 @[simp] theorem infinitePart_ofInfinitePart (l : InfinitePlace K → ℝ) :
     (ofInfinitePart K l).infinitePart = l := (rfl)
 
+variable (K) in
+/-- The Arakelov divisor `(𝔞, 0) = Σ_𝔭 n_𝔭 [𝔭]` with finite part `𝔞` and no archimedean part. -/
+def ofFinitePart : Additive (FractionalIdeal (𝓞 K)⁰ K)ˣ →+ ArakelovDivisor K where
+  toFun 𝔞 := ⟨𝔞.toMul, 0⟩
+  map_zero' := rfl
+  map_add' _ _ := ArakelovDivisor.ext rfl (add_zero 0).symm
+
+@[simp] theorem finitePart_ofFinitePart (𝔞 : Additive (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    (ofFinitePart K 𝔞).finitePart = 𝔞.toMul := (rfl)
+
+@[simp] theorem infinitePart_ofFinitePart (𝔞 : Additive (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    (ofFinitePart K 𝔞).infinitePart = 0 := (rfl)
+
+/-- Every Arakelov divisor is the sum of its finite part and its part at the infinite places. -/
+theorem ofFinitePart_add_ofInfinitePart (D : ArakelovDivisor K) :
+    ofFinitePart K (Additive.ofMul D.finitePart) + ofInfinitePart K D.infinitePart = D :=
+  ArakelovDivisor.ext (mul_one _) (zero_add _)
+
 variable [NumberField K]
 
 variable (K)
 
 /-- The **Arakelov degree** `deg^(𝔞, λ) = log N(𝔞) + Σ_v λ_v` of an Arakelov divisor, where
-`N(𝔞)` is the absolute norm of the finite part. For `𝔞 = ∏ 𝔭 ^ n_𝔭` the first term is
-`Σ_𝔭 n_𝔭 log N𝔭`. -/
+`N(𝔞)` is the absolute norm of the finite part. -/
 def degree : ArakelovDivisor K →+ ℝ :=
   AddMonoidHom.mk'
     (fun D ↦ Real.log (absNorm (D.finitePart : FractionalIdeal (𝓞 K)⁰ K) : ℝ) +
@@ -189,6 +209,11 @@ theorem degree_apply (D : ArakelovDivisor K) :
 
 @[simp] theorem degree_ofInfinitePart (l : InfinitePlace K → ℝ) :
     degree K (ofInfinitePart K l) = ∑ v, l v := by
+  simp [degree_apply]
+
+@[simp] theorem degree_ofFinitePart (𝔞 : Additive (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    degree K (ofFinitePart K 𝔞) =
+      Real.log (absNorm (𝔞.toMul : FractionalIdeal (𝓞 K)⁰ K) : ℝ) := by
   simp [degree_apply]
 
 variable (K)
@@ -237,10 +262,8 @@ theorem principal_unit (u : (𝓞 K)ˣ) :
     principal K (Additive.ofMul (Units.map (algebraMap (𝓞 K) K) u)) =
       -ofInfinitePart K (unitLogEmbedding K (Additive.ofMul u) : InfinitePlace K → ℝ) := by
   ext1
-  · rw [finitePart_principal, finitePart_neg, finitePart_ofInfinitePart, inv_one,
-      toPrincipalIdeal_eq_iff, Units.val_one, ← map_one (spanSingleton (𝓞 K)⁰ (P := K)),
-      spanSingleton_eq_spanSingleton]
-    exact ⟨u⁻¹, by simp [Units.smul_def, Algebra.smul_def]⟩
+  · rw [finitePart_principal, finitePart_neg, finitePart_ofInfinitePart, inv_one]
+    exact (toPrincipalIdeal_eq_one_iff _).mpr ⟨u, rfl⟩
   · ext v
     simp
 
@@ -310,10 +333,16 @@ variable {K}
 @[simp] theorem toClassGroup_mk (D : ArakelovDivisor K) :
     toClassGroup K (mk K D) = Additive.ofMul (ClassGroup.mk K D.finitePart) := (rfl)
 
+/-- The ideal class of the divisor `(𝔞, 0)` is the class of `𝔞`. -/
+theorem toClassGroup_mk_ofFinitePart (𝔞 : Additive (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    toClassGroup K (mk K (ArakelovDivisor.ofFinitePart K 𝔞)) =
+      Additive.ofMul (ClassGroup.mk K 𝔞.toMul) := (rfl)
+
 /-- Every ideal class is the class of the finite part of an Arakelov divisor. -/
 theorem toClassGroup_surjective : Function.Surjective (toClassGroup K) := fun c ↦
   ClassGroup.induction K (P := fun c ↦ ∃ P, toClassGroup K P = Additive.ofMul c)
-    (fun I ↦ ⟨mk K ⟨I, 0⟩, rfl⟩) c.toMul
+    (fun I ↦ ⟨mk K (ArakelovDivisor.ofFinitePart K (Additive.ofMul I)),
+      toClassGroup_mk_ofFinitePart _⟩) c.toMul
 
 variable (K)
 
@@ -329,6 +358,10 @@ variable {K}
 @[simp] theorem degree_ofInfinitePart (l : InfinitePlace K → ℝ) :
     degree K (ofInfinitePart K l) = ∑ v, l v := by
   rw [← mk_ofInfinitePart, degree_mk, ArakelovDivisor.degree_ofInfinitePart]
+
+@[simp] theorem toClassGroup_ofInfinitePart (l : InfinitePlace K → ℝ) :
+    toClassGroup K (ofInfinitePart K l) = 0 := by
+  rw [← mk_ofInfinitePart, toClassGroup_mk, finitePart_ofInfinitePart, map_one, ofMul_one]
 
 /-- **Exactness in the middle.** A class of Arakelov divisors has trivial ideal class exactly
 when it is the class of a divisor supported at the infinite places. -/
@@ -348,7 +381,7 @@ theorem exact_ofInfinitePart_toClassGroup :
       · rfl
     rw [← mk_ofInfinitePart, ← hD, map_sub, mk_principal, sub_zero]
   · rintro ⟨l, rfl⟩
-    rw [← mk_ofInfinitePart, toClassGroup_mk, finitePart_ofInfinitePart, map_one, ofMul_one]
+    exact toClassGroup_ofInfinitePart l
 
 /-- **The kernel on the archimedean side is the unit lattice.** The class of a divisor
 `(𝓞 K, λ)` supported at infinity is trivial exactly when `λ` is the weighted logarithm
@@ -360,20 +393,51 @@ theorem ofInfinitePart_eq_zero_iff {l : InfinitePlace K → ℝ} :
   constructor
   · rintro ⟨f, hf⟩
     have hfin := congrArg ArakelovDivisor.finitePart hf
-    rw [finitePart_principal, finitePart_ofInfinitePart, toPrincipalIdeal_eq_iff, Units.val_one,
-      ← map_one (spanSingleton (𝓞 K)⁰ (P := K)), spanSingleton_eq_spanSingleton] at hfin
-    obtain ⟨z, hz⟩ := hfin
-    have hfz : f.toMul = (Units.map (algebraMap (𝓞 K) K) z)⁻¹ :=
-      eq_inv_of_mul_eq_one_right (Units.ext (by simpa [Units.smul_def, Algebra.smul_def] using hz))
-    have hf' : f = -Additive.ofMul (Units.map (algebraMap (𝓞 K) K) z) := by
-      rw [← ofMul_inv, ← hfz, ofMul_toMul]
+    rw [finitePart_principal, finitePart_ofInfinitePart] at hfin
+    obtain ⟨z, hz⟩ := (toPrincipalIdeal_eq_one_iff _).mp hfin
     have hinf := congrArg ArakelovDivisor.infinitePart hf
-    rw [hf', map_neg, principal_unit, neg_neg, infinitePart_ofInfinitePart,
-      infinitePart_ofInfinitePart] at hinf
-    exact ⟨z, hinf⟩
+    rw [← ofMul_toMul f, ← hz, principal_unit, infinitePart_neg, infinitePart_ofInfinitePart,
+      infinitePart_ofInfinitePart, neg_eq_iff_eq_neg] at hinf
+    exact ⟨z⁻¹, by rw [ofMul_inv, map_neg, NegMemClass.coe_neg, hinf, neg_neg]⟩
   · rintro ⟨u, rfl⟩
     refine ⟨-Additive.ofMul (Units.map (algebraMap (𝓞 K) K) u), ?_⟩
     rw [map_neg, principal_unit, neg_neg]
+
+variable (K)
+
+/-- The injection `ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ| → Pic^(𝓞 K)`: the descent of
+`TauCeti.ArakelovPicardGroup.ofInfinitePart` to the quotient by the weighted logarithms
+`(mult(v) log |u|_v)_v` of the units `u` of `𝓞 K`. -/
+def ofInfinitePartQuotient :
+    (InfinitePlace K → ℝ) ⧸ ((singleParityCheckCode ℝ (InfinitePlace K)).subtype.toAddMonoidHom.comp
+      (unitLogEmbedding K)).range →+ ArakelovPicardGroup K :=
+  QuotientAddGroup.lift _ (ofInfinitePart K) <| by
+    rintro _ ⟨u, rfl⟩
+    exact ofInfinitePart_eq_zero_iff.mpr ⟨u.toMul, rfl⟩
+
+variable {K}
+
+@[simp] theorem ofInfinitePartQuotient_mk (l : InfinitePlace K → ℝ) :
+    ofInfinitePartQuotient K (QuotientAddGroup.mk l) = ofInfinitePart K l := (rfl)
+
+/-- **Exactness on the left.** The map `ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ| → Pic^(𝓞 K)` is
+injective. -/
+theorem ofInfinitePartQuotient_injective : Function.Injective (ofInfinitePartQuotient K) := by
+  refine (injective_iff_map_eq_zero _).mpr fun q hq ↦ ?_
+  induction q using QuotientAddGroup.induction_on with | H l => ?_
+  obtain ⟨u, hu⟩ := ofInfinitePart_eq_zero_iff.mp hq
+  exact (QuotientAddGroup.eq_zero_iff l).mpr ⟨Additive.ofMul u, hu⟩
+
+/-- **Exactness in the middle**, for the map out of `ℝ^{InfinitePlace K} / log |(𝓞 K)ˣ|`. -/
+theorem exact_ofInfinitePartQuotient_toClassGroup :
+    Function.Exact (ofInfinitePartQuotient K) (toClassGroup K) := by
+  intro P
+  rw [exact_ofInfinitePart_toClassGroup P]
+  constructor
+  · rintro ⟨l, rfl⟩
+    exact ⟨QuotientAddGroup.mk l, rfl⟩
+  · rintro ⟨q, rfl⟩
+    induction q using QuotientAddGroup.induction_on with | H l => exact ⟨l, rfl⟩
 
 end ArakelovPicardGroup
 
