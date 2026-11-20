@@ -245,8 +245,8 @@ variable {d : A →+ B}
 the range of `d`. -/
 theorem isIsomorphic_objEquiv_iff {x y : B} :
     IsIsomorphic (objEquiv d x) (objEquiv d y) ↔ y - x ∈ d.range := by
-  rw [objEquiv, Equiv.trans_apply, Equiv.trans_apply, ActionCategory.isIsomorphic_iff_orbitRel,
-    TranslationSpace.orbitRel_of_iff, sub_mem_comm_iff]
+  simp [objEquiv, ActionCategory.isIsomorphic_iff_orbitRel, TranslationSpace.orbitRel_of_iff,
+    sub_mem_comm_iff]
 
 variable (d) in
 /-- The isomorphism classes of the quotient groupoid of `d : A →+ B` are the cokernel
@@ -260,8 +260,8 @@ def isomorphismClassesEquiv :
 @[simp]
 theorem isomorphismClassesEquiv_mk (x : B) :
     isomorphismClassesEquiv d (_root_.Quotient.mk _ (objEquiv d x)) = (x : B ⧸ d.range) := by
-  rw [isomorphismClassesEquiv, Equiv.symm_apply_eq, Equiv.trans_apply, Quotient.congr_mk,
-    ActionCategory.orbitQuotientEquivIsomorphismClasses_mk, objEquiv, Equiv.trans_apply]
+  rw [isomorphismClassesEquiv, Equiv.symm_apply_eq, Equiv.trans_apply, Quotient.congr_mk]
+  simp [objEquiv]
 
 variable (d) in
 /-- The automorphisms of any object of the quotient groupoid of `d : A →+ B` are the kernel
@@ -316,9 +316,8 @@ private def translationSpaceMap (f₀ : A →+ A') (f₁ : B →+ B') (h : f₁.
   toFun x := TranslationSpace.of d' (f₁ ((TranslationSpace.of d).symm x))
   map_smul' a x := by
     obtain ⟨y, rfl⟩ := (TranslationSpace.of d).surjective x
-    rw [← ofAdd_toAdd a, TranslationSpace.ofAdd_smul_of, toMultiplicative_apply_apply, toAdd_ofAdd,
-      TranslationSpace.ofAdd_smul_of, Equiv.symm_apply_apply, Equiv.symm_apply_apply, map_add,
-      ← comp_apply f₁, h, comp_apply]
+    obtain ⟨a, rfl⟩ := Multiplicative.ofAdd.surjective a
+    simpa [TranslationSpace.ofAdd_smul_of] using DFunLike.congr_fun h a
 
 @[simp]
 private theorem translationSpaceMap_of (f₀ : A →+ A') (f₁ : B →+ B') (h : f₁.comp d = d'.comp f₀)
@@ -444,17 +443,19 @@ theorem full_map_iff :
     toMultiplicative_apply_apply, toAdd_ofAdd, Multiplicative.ofAdd.injective.eq_iff]
   constructor
   · intro hlift
-    refine ⟨fun a' (ha' : d' a' = 0) => ?_, fun x ⟨a', ha'⟩ => ?_⟩
-    · obtain ⟨a, rfl, ha⟩ := hlift 0 0 a' (by rw [ha', map_zero, add_zero])
+    refine ⟨fun a' ha' => ?_, fun x hx => ?_⟩
+    · obtain ⟨a, rfl, ha⟩ := hlift 0 0 a' (by rw [mem_ker.mp ha', map_zero, add_zero])
       exact ⟨a, mem_ker.mpr (by rwa [add_zero] at ha), rfl⟩
-    · obtain ⟨a, -, ha⟩ := hlift 0 x a' (by rw [ha', map_zero, add_zero])
-      exact ⟨a, by rwa [add_zero] at ha⟩
+    · obtain ⟨a', ha'⟩ := mem_range.mp (AddSubgroup.mem_comap.mp hx)
+      obtain ⟨a, -, ha⟩ := hlift 0 x a' (by rw [ha', map_zero, add_zero])
+      exact mem_range.mpr ⟨a, by rwa [add_zero] at ha⟩
   · rintro ⟨hker, hcoker⟩ x x' a' hx
-    obtain ⟨a₀, ha₀⟩ := hcoker (x := x' - x) ⟨a', by rw [map_sub, ← hx, add_sub_cancel_right]⟩
-    obtain ⟨k, hk, hfk⟩ := hker (show d' (a' - f₀ a₀) = 0 by
-      rw [map_sub, ← h', ha₀, map_sub, ← hx, add_sub_cancel_right, sub_self])
+    obtain ⟨a₀, ha₀⟩ := mem_range.mp (hcoker (x := x' - x) (AddSubgroup.mem_comap.mpr
+      (mem_range.mpr ⟨a', by rw [map_sub, ← hx, add_sub_cancel_right]⟩)))
+    obtain ⟨k, hk, hfk⟩ := @hker (a' - f₀ a₀) (mem_ker.mpr (by
+      rw [map_sub, ← h', ha₀, map_sub, ← hx, add_sub_cancel_right, sub_self]))
     refine ⟨a₀ + k, by rw [map_add, hfk, add_sub_cancel], ?_⟩
-    rw [map_add, (mem_ker).mp hk, add_zero, ha₀, sub_add_cancel]
+    rw [map_add, mem_ker.mp hk, add_zero, ha₀, sub_add_cancel]
 
 /-- The functor induced by a chain map is essentially surjective exactly when the chain map is
 surjective on `H¹ = B ⧸ range d`. -/
@@ -480,8 +481,8 @@ theorem isEquivalence_map_iff :
   constructor
   · intro hF
     have hfull := (full_map_iff f₀ f₁ h).mp hF.full
-    refine ⟨⟨fun a (ha : d a = 0) => ?_, hF.faithful, hfull.1⟩, hfull.2, hF.essSurj⟩
-    rw [SetLike.mem_coe, mem_ker, ← comp_apply d', ← h, comp_apply, ha, map_zero]
+    refine ⟨⟨fun a ha => ?_, hF.faithful, hfull.1⟩, hfull.2, hF.essSurj⟩
+    rw [SetLike.mem_coe, mem_ker, ← comp_apply d', ← h, comp_apply, mem_ker.mp ha, map_zero]
   · rintro ⟨⟨-, hfaith, hsurj⟩, hcoker, hess⟩
     have := (full_map_iff f₀ f₁ h).mpr ⟨hsurj, hcoker⟩
     exact { faithful := hfaith, full := this, essSurj := hess }
