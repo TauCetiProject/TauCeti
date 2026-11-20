@@ -115,7 +115,7 @@ noncomputable def conjugateNegativeIotaEven (e : M) (he : Q e = -1) :
     rw [← Subalgebra.mem_toSubmodule, even_toSubmodule]
     have hleft : -ι Q e ∈ evenOdd Q 1 :=
       Submodule.neg_mem _ (ι_mem_evenOdd_one _ _)
-    have h := SetLike.mul_mem_graded (SetLike.mul_mem_graded hleft x.2)
+    have h := SetLike.mul_mem_graded (SetLike.mul_mem_graded hleft x.property)
       (ι_mem_evenOdd_one Q e)
     exact (show (1 + 1 : ZMod 2) = 0 by decide) ▸ (by simpa only [add_zero] using h)⟩
   map_one' := Subtype.ext (map_one (conjugateNegativeIota Q e he))

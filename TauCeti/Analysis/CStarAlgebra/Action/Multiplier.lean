@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
-public import TauCeti.Analysis.CStarAlgebra.Multiplier
+public import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 
 /-!
 # The induced action on the multiplier algebra
@@ -58,6 +58,11 @@ theorem multiplier_apply_fst (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (
 theorem multiplier_apply_snd (α : CStarAction G A) (g : G) (m : 𝓜(ℂ, A)) (a : A) :
     (α.multiplier g m).snd a = α g (m.snd (α g⁻¹ a)) := by
   simp [multiplier_apply]
+
+/-- Successive applications of the induced action compose by group multiplication. -/
+theorem multiplier_apply_multiplier_apply (α : CStarAction G A) (g h : G) (m : 𝓜(ℂ, A)) :
+    α.multiplier g (α.multiplier h m) = α.multiplier (g * h) m := by
+  rw [map_mul, StarAlgEquiv.mul_apply]
 
 /-- The inverse of an automorphism of the induced action is the action of the inverse element. -/
 @[simp]

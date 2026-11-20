@@ -124,7 +124,7 @@ theorem solvableRadicalDefiningIdeal_quotient_eq_augmentation_of_moduleFinite
   let _ : Algebra.Smooth k (quotient H P) := hP.smooth
   let _ : IsReduced (quotient H P) := isReduced_of_smooth k _
   let _ : ConnectedSpace (PrimeSpectrum (quotient H P)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _ hP.geometricallyConnected
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace hP.geometricallyConnected
   -- A finite connected reduced group is trivial, so `P` is the augmentation ideal.
   have hbot := HopfIdeal.augmentation_eq_bot_of_moduleFinite (k := k) (H := quotient H P)
   have hPaug : P = HopfIdeal.augmentation k H := by

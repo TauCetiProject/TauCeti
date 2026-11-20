@@ -143,7 +143,8 @@ private theorem descendSlash_smul_slash_scaleGL_eq_coe_levelRaise (hp : p.Prime)
   have : NeZero q := ⟨hq.ne_zero⟩
   have hqMl : q ∣ M * l ^ 2 := dvd_mul_of_dvd_right (hql.trans (dvd_pow_self l two_ne_zero)) M
   have : NeZero (M * l ^ 2) := ⟨fun h ↦ NeZero.ne (M * l ^ 2 / q) (by rw [h, Nat.zero_div])⟩
-  have hcomp' := eq_comp_unitsMap_of_comp_unitsMap_eq hpM hMN' (Nat.div_dvd_of_dvd hqMl) hcomp hχ'
+  have hcomp' := ZMod.eq_comp_unitsMap_of_comp_unitsMap_eq hpM hMN' (Nat.div_dvd_of_dvd hqMl) hcomp
+    hχ'
   refine ⟨hcomp', ?_⟩
   have h := descendSlash_coe_levelRaise_mul_left_of_comp_of_mem_cuspFormCharSpace k hp hpN'
     (hpl.coprime_dvd_right hql) hcomp' hF
@@ -167,31 +168,31 @@ private theorem exists_descendSlash_coe_levelRaise_eq_coe_and_coeff_eq_zero [NeZ
         χ.comp (ZMod.unitsMap (Nat.dvd_mul_right M (l ^ 2))))
     {m : ℕ} (hm : Nat.Coprime m l) (q : {x // x ∈ l.primeFactors}) :
     haveI : NeZero p := ⟨hp.ne_zero⟩
-    haveI : NeZero q.1 := ⟨(Nat.prime_of_mem_primeFactors q.2).ne_zero⟩
+    haveI : NeZero q.val := ⟨(Nat.prime_of_mem_primeFactors q.property).ne_zero⟩
     ∃ W : CuspForm ((Gamma1 (M * l ^ 2 / p)).map (mapGL ℝ)) k,
-      descendSlash k p (M * l ^ 2) ⇑(CuspForm.levelRaise q.1
+      descendSlash k p (M * l ^ 2) ⇑(CuspForm.levelRaise q.val
         (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq (Nat.mul_div_cancel'
           (dvd_mul_of_dvd_right
-            ((Nat.dvd_of_mem_primeFactors q.2).trans (dvd_pow_self l two_ne_zero)) M))))
-        (F q.1 q.2)) = ⇑W ∧ (qExpansion 1 W).coeff m = 0 := by
+            ((Nat.dvd_of_mem_primeFactors q.property).trans (dvd_pow_self l two_ne_zero)) M))))
+        (F q.val q.property)) = ⇑W ∧ (qExpansion 1 W).coeff m = 0 := by
   have : NeZero p := ⟨hp.ne_zero⟩
-  have hq : q.1.Prime := Nat.prime_of_mem_primeFactors q.2
-  have : NeZero q.1 := ⟨hq.ne_zero⟩
-  have hql : q.1 ∣ l := Nat.dvd_of_mem_primeFactors q.2
-  have hq2 : q.1 ∣ l ^ 2 := hql.trans (dvd_pow_self l two_ne_zero)
-  have hqMl : q.1 ∣ M * l ^ 2 := dvd_mul_of_dvd_right hq2 M
-  have hMN' : M ∣ M * l ^ 2 / q.1 := Dvd.intro _ (Nat.mul_div_assoc M hq2).symm
-  have hpN' : p ∣ M * l ^ 2 / q.1 := hpM.trans hMN'
-  have : NeZero (M * l ^ 2 / q.1) :=
+  have hq : q.val.Prime := Nat.prime_of_mem_primeFactors q.property
+  have : NeZero q.val := ⟨hq.ne_zero⟩
+  have hql : q.val ∣ l := Nat.dvd_of_mem_primeFactors q.property
+  have hq2 : q.val ∣ l ^ 2 := hql.trans (dvd_pow_self l two_ne_zero)
+  have hqMl : q.val ∣ M * l ^ 2 := dvd_mul_of_dvd_right hq2 M
+  have hMN' : M ∣ M * l ^ 2 / q.val := Dvd.intro _ (Nat.mul_div_assoc M hq2).symm
+  have hpN' : p ∣ M * l ^ 2 / q.val := hpM.trans hMN'
+  have : NeZero (M * l ^ 2 / q.val) :=
     ⟨(Nat.div_pos (Nat.le_of_dvd (Nat.pos_of_ne_zero
       (Nat.mul_ne_zero (NeZero.ne M) (pow_ne_zero 2 hl))) hqMl) hq.pos).ne'⟩
-  have hle : q.1 * (M * l ^ 2 / q.1 / p) ∣ M * l ^ 2 / p :=
-    dvd_of_eq (by rw [← Nat.mul_div_assoc q.1 hpN', Nat.mul_div_cancel' hqMl])
+  have hle : q.val * (M * l ^ 2 / q.val / p) ∣ M * l ^ 2 / p :=
+    dvd_of_eq (by rw [← Nat.mul_div_assoc q.val hpN', Nat.mul_div_cancel' hqMl])
   obtain ⟨hcomp', hW⟩ := descendSlash_smul_slash_scaleGL_eq_coe_levelRaise hp hpM hq hql hpl
-    hpN' hMN' hle hcomp (hχ' q.1 q.2) (hF q.1 q.2)
+    hpN' hMN' hle hcomp (hχ' q.val q.property) (hF q.val q.property)
   refine ⟨_, by rw [CuspForm.coe_levelRaise]; exact hW, ?_⟩
   rw [CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)]
-  have hqm : ¬ q.1 ∣ m := fun h ↦
+  have hqm : ¬ q.val ∣ m := fun h ↦
     hq.one_lt.ne' (Nat.Coprime.eq_one_of_dvd (hm.coprime_dvd_right hql).symm h)
   simp only [hqm, ↓reduceIte]
 
@@ -269,7 +270,7 @@ theorem qExpansion_coeff_descendSlash_eq_of_coprime [NeZero N] (hp : p.Prime) (h
     rw [hVg, CuspForm.coe_levelRaise, descendSlash_smul_slash_scaleGL k hp hpM g,
       descendMatrixCount_mul_left_of_coprime hpL N]
   -- the difference descends to a form vanishing at `m`
-  have hχM := comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left hpN (L := L) hcomp
+  have hχM := ZMod.comp_unitsMap_eq_comp_unitsMap_of_comp_mul_left hpN (L := L) hcomp
   have hΔχ : Δ ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap (dvd_mul_left N L))) :=
     restrict_sub_levelRaise_mem_cuspFormCharSpace hp hpN hcomp hf hg
   have hD0 : (qExpansion 1 (descendSlash k p (L * N) ⇑Δ)).coeff m = 0 :=

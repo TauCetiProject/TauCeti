@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
-public import TauCeti.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Bayes' formula for integrable random variables
