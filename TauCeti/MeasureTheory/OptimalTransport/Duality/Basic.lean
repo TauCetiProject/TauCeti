@@ -234,7 +234,8 @@ theorem DualFeasible.kantorovichDualValue_le_lintegral
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hπ : IsCoupling π μ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ ((∫⁻ z, c z ∂π) : ℝ≥0∞) := by
-  exact EReal.toENNReal_le_iff.1 <|
+  apply EReal.toENNReal_le_iff.1
+  simpa only [EReal.real_coe_toENNReal] using
     h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
 
 /-- **Kantorovich weak duality, in extended-nonnegative form.** The positive part of every
@@ -260,7 +261,8 @@ theorem DualFeasible.kantorovichDualValue_le_transportCost
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ (transportCost c μ ν : ℝ≥0∞) := by
-  exact EReal.toENNReal_le_iff.1 <|
+  apply EReal.toENNReal_le_iff.1
+  simpa only [EReal.real_coe_toENNReal] using
     h.ofReal_kantorovichDualValue_le_transportCost hφ hψ
 
 end WeakDuality

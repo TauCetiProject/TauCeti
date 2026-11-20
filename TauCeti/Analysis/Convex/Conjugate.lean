@@ -249,7 +249,7 @@ theorem coe_add_le_fenchelConjugate_flip_fenchelConjugate {c : ℝ}
 theorem fenchelConjugate_add_const (f : E → EReal) (r : ℝ) (y : F) :
     fenchelConjugate B (fun x => f x + (r : EReal)) y = fenchelConjugate B f y - (r : EReal) := by
   simp only [fenchelConjugate_apply]
-  rw [← EReal.iSup_sub_coe]
+  rw [← EReal.iSup_sub]
   exact iSup_congr fun x => EReal.coe_sub_add_coe (f x) (B x y) r
 
 /-! ### Convexity and lower semicontinuity -/
