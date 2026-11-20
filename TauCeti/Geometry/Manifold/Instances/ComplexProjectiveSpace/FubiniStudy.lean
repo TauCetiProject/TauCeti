@@ -69,13 +69,6 @@ theorem fderiv_affineVector (k : Fin (n + 1)) (w : Fin n → ℂ) :
     fderiv ℂ (affineVector k) w = insertZeroL k :=
   (hasFDerivAt_affineVector k w).fderiv
 
-/-- The derivative of the homogeneous coordinate vector of the chart `X_k ≠ 0` inserts a zero in
-position `k`: it lifts a tangent vector of the chart to a homogeneous representative with
-coordinate `k` equal to zero. -/
-theorem fderiv_affineVector_apply (k : Fin (n + 1)) (w v : Fin n → ℂ) :
-    fderiv ℂ (affineVector k) w v = insertZeroL k v := by
-  rw [fderiv_affineVector]
-
 /-- **The Fubini–Study form in an affine chart.** For the point with affine coordinates `w` in the
 chart `X_k ≠ 0`, with `r = 1 + ∑ |w_l|²`, the homogeneous Fubini–Study form evaluated on the lifts
 `insertZeroL k a`, `insertZeroL k b` of tangent vectors `a`, `b` (see `fderiv_affineVector`) is
