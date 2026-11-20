@@ -202,17 +202,17 @@ ordered full cycle data. -/
 theorem hasLabel_iff_of_hasPassport {t : ConnectedTriple n} {P : PassportSpec n}
     (htP : HasPassport t P) (L : PassportLabel n) :
     P.HasLabel L ↔
-      TransitiveGroupLabel L.group t.1.monodromyGroup ∧
-        t.1.cycleData.1 = L.lam0 ∧
-        t.1.cycleData.2.1 = L.lam1 ∧ t.1.cycleData.2.2 = L.laminf := by
+      TransitiveGroupLabel L.group t.val.monodromyGroup ∧
+        t.val.cycleData.1 = L.lam0 ∧
+        t.val.cycleData.2.1 = L.lam1 ∧ t.val.cycleData.2.2 = L.laminf := by
   rw [hasPassport_iff] at htP
   rcases htP with ⟨⟨τ, hG⟩, h0, h1, hinf⟩
   have hlabel :
       TransitiveGroupLabel L.group
-          (t.1.monodromyGroup.map (MulAut.conj τ).toMonoidHom) ↔
-        TransitiveGroupLabel L.group t.1.monodromyGroup := by
+          (t.val.monodromyGroup.map (MulAut.conj τ).toMonoidHom) ↔
+        TransitiveGroupLabel L.group t.val.monodromyGroup := by
     simpa only [MulEquiv.toMonoidHom_eq_coe] using
-      transitiveGroupLabel_map_conj_iff t.1.monodromyGroup τ (j := L.group)
+      transitiveGroupLabel_map_conj_iff t.val.monodromyGroup τ (j := L.group)
   rw [hasLabel_iff, ← hG, hlabel, ← h0, ← h1, ← hinf]
 
 end PassportSpec
@@ -226,9 +226,9 @@ group and ordered full cycle data. -/
 @[simp]
 theorem passportOf_hasLabel_iff (t : ConnectedTriple n) (L : PassportLabel n) :
     t.passportOf.HasLabel L ↔
-      TransitiveGroupLabel L.group t.1.monodromyGroup ∧
-        t.1.cycleData.1 = L.lam0 ∧
-        t.1.cycleData.2.1 = L.lam1 ∧ t.1.cycleData.2.2 = L.laminf :=
+      TransitiveGroupLabel L.group t.val.monodromyGroup ∧
+        t.val.cycleData.1 = L.lam0 ∧
+        t.val.cycleData.2.1 = L.lam1 ∧ t.val.cycleData.2.2 = L.laminf :=
   PassportSpec.hasLabel_iff_of_hasPassport t.hasPassport_passportOf L
 
 end ConnectedTriple

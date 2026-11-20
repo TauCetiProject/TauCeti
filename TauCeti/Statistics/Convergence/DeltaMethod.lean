@@ -59,7 +59,7 @@ theorem tendstoInMeasure_const_of_isBoundedInProbability_smul_sub
     (hbd : IsBoundedInProbability μ (fun n ω ↦ a n • (T n ω - θ))) :
     TendstoInMeasure μ T atTop (fun _ ↦ θ) := by
   have hinv : TendstoInMeasure μ (fun n _ ↦ (a n)⁻¹) atTop (fun _ ↦ (0 : ℝ)) :=
-    tendstoInMeasure_const_of_tendsto (tendsto_inv_atTop_zero.comp ha)
+    (tendsto_inv_atTop_zero.comp ha).tendstoInMeasure_const
   have hprod := tendstoInMeasure_smul_zero_of_tendstoInMeasure_zero hinv hbd
   rw [tendstoInMeasure_iff_norm] at hprod ⊢
   intro ε hε

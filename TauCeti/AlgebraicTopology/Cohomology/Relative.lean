@@ -136,7 +136,7 @@ every degree induces an isomorphism of relative cochain complexes. -/
 theorem isIso_cochainComplexMap_of_relativeSimplex_equiv {P P' : SSetPair.{w}} (f : P ⟶ P')
     (e : ∀ n, P.RelativeSimplex n ≃ P'.RelativeSimplex n)
     (he : ∀ n (x : P.RelativeSimplex n),
-      (e n x).1 = f.right.app (Opposite.op (SimplexCategory.mk n)) x.1) :
+      (e n x).val = f.right.app (Opposite.op (SimplexCategory.mk n)) x.val) :
     IsIso (cochainComplexMap (R := R) (k := k) (M := M) f) := by
   have := isIso_chainComplexMap_of_relativeSimplex_equiv f R e he
   exact (linearYonedaFunctor k M).map_isIso (chainComplexMap f R).op
