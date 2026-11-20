@@ -24,10 +24,10 @@ the Hermitian matrix of the Fubini–Study metric in the chart. With `r = 1 + �
 
 `h(e_i, e_j) = (δ_ij / r - w_i conj (w_j) / r²) / π`
 
-(`TauCeti.ComplexProjectiveSpace.fubiniStudyHermitian_affineVector_fderiv_single`), the coefficient
-order being the one fixed by Mathlib's inner product, conjugate-linear in its first argument. The
-general formula for arbitrary tangent vectors is
-`TauCeti.ComplexProjectiveSpace.fubiniStudyHermitian_affineVector_fderiv`.
+(`TauCeti.ComplexProjectiveSpace.fubiniStudyHermitian_affineVector_insertZeroL_single`), the
+coefficient order being the one fixed by Mathlib's inner product, conjugate-linear in its first
+argument. The general formula for arbitrary tangent vectors is
+`TauCeti.ComplexProjectiveSpace.fubiniStudyHermitian_affineVector_insertZeroL`.
 
 ## References
 
@@ -78,28 +78,28 @@ theorem fderiv_affineVector_apply (k : Fin (n + 1)) (w v : Fin n → ℂ) :
 
 /-- **The Fubini–Study form in an affine chart.** For the point with affine coordinates `w` in the
 chart `X_k ≠ 0`, with `r = 1 + ∑ |w_l|²`, the homogeneous Fubini–Study form evaluated on the lifts
-of tangent vectors `a`, `b` is `(r ⟪a, b⟫ - ⟪a, w⟫ ⟪w, b⟫) / (π r²)`, the inner products being the
-standard Hermitian ones of `ℂⁿ`. -/
-theorem fubiniStudyHermitian_affineVector_fderiv (k : Fin (n + 1)) (w a b : Fin n → ℂ) :
-    fubiniStudyHermitian ℂ (affineVector k w) (fderiv ℂ (affineVector k) w a)
-        (fderiv ℂ (affineVector k) w b) =
+`insertZeroL k a`, `insertZeroL k b` of tangent vectors `a`, `b` (see `fderiv_affineVector`) is
+`(r ⟪a, b⟫ - ⟪a, w⟫ ⟪w, b⟫) / (π r²)`, the inner products being the standard Hermitian ones of
+`ℂⁿ`. -/
+theorem fubiniStudyHermitian_affineVector_insertZeroL (k : Fin (n + 1)) (w a b : Fin n → ℂ) :
+    fubiniStudyHermitian ℂ (affineVector k w) (insertZeroL k a) (insertZeroL k b) =
       (((1 + ∑ l, ‖w l‖ ^ 2 : ℝ) : ℂ) * ∑ l, conj (a l) * b l -
           (∑ l, conj (a l) * w l) * ∑ l, conj (w l) * b l) /
         ((π * (1 + ∑ l, ‖w l‖ ^ 2) ^ 2 : ℝ) : ℂ) := by
   have hinner : ∀ x y : EuclideanSpace ℂ (Fin (n + 1)), ⟪x, y⟫_ℂ = ∑ i, conj (x i) * y i :=
     fun x y ↦ by simp [PiLp.inner_apply, mul_comm]
   have h4 : ‖affineVector k w‖ ^ 4 = (‖affineVector k w‖ ^ 2) ^ 2 := by ring
-  rw [fubiniStudyHermitian_apply, fderiv_affineVector_apply, fderiv_affineVector_apply, h4,
-    norm_affineVector_sq]
+  rw [fubiniStudyHermitian_apply, h4, norm_affineVector_sq]
   simp [hinner, Fin.sum_univ_succAbove _ k]
 
 /-- **The Fubini–Study Hermitian matrix in an affine chart.** For the point with affine coordinates
 `w` in the chart `X_k ≠ 0`, with `r = 1 + ∑ |w_l|²`, the homogeneous Fubini–Study form evaluated
-on the lifts of the coordinate vectors `e_i`, `e_j` is `(δ_ij / r - w_i conj (w_j) / r²) / π`. -/
-theorem fubiniStudyHermitian_affineVector_fderiv_single (k : Fin (n + 1)) (w : Fin n → ℂ)
+on the lifts `insertZeroL k e_i`, `insertZeroL k e_j` of the coordinate vectors is
+`(δ_ij / r - w_i conj (w_j) / r²) / π`. -/
+theorem fubiniStudyHermitian_affineVector_insertZeroL_single (k : Fin (n + 1)) (w : Fin n → ℂ)
     (i j : Fin n) :
-    fubiniStudyHermitian ℂ (affineVector k w) (fderiv ℂ (affineVector k) w (Pi.single i 1))
-        (fderiv ℂ (affineVector k) w (Pi.single j 1)) =
+    fubiniStudyHermitian ℂ (affineVector k w) (insertZeroL k (Pi.single i 1))
+        (insertZeroL k (Pi.single j 1)) =
       ((if i = j then 1 else 0) / ((1 + ∑ l, ‖w l‖ ^ 2 : ℝ) : ℂ) -
           w i * conj (w j) / ((1 + ∑ l, ‖w l‖ ^ 2 : ℝ) : ℂ) ^ 2) / π := by
   have hr : ((1 + ∑ l, ‖w l‖ ^ 2 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2
@@ -107,7 +107,7 @@ theorem fubiniStudyHermitian_affineVector_fderiv_single (k : Fin (n + 1)) (w : F
   have hπ : ((π : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 pi_ne_zero
   have hden : ((π * (1 + ∑ l, ‖w l‖ ^ 2) ^ 2 : ℝ) : ℂ) =
       (π : ℂ) * ((1 + ∑ l, ‖w l‖ ^ 2 : ℝ) : ℂ) ^ 2 := by push_cast; ring
-  rw [fubiniStudyHermitian_affineVector_fderiv, hden]
+  rw [fubiniStudyHermitian_affineVector_insertZeroL, hden]
   simp only [Pi.single_apply, apply_ite, map_one, map_zero, ite_mul, one_mul, zero_mul,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true, mul_one, mul_zero]
   generalize ((1 + ∑ l, ‖w l‖ ^ 2 : ℝ) : ℂ) = r at hr ⊢

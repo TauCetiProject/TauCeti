@@ -41,7 +41,7 @@ theorem fubiniStudyHermitian_affineVector_zero :
     fubiniStudyHermitian ℂ (affineVector (0 : Fin 2) 0)
         (fderiv ℂ (affineVector 0) 0 (Pi.single 0 1))
         (fderiv ℂ (affineVector 0) 0 (Pi.single 0 1)) = 1 / π := by
-  rw [fubiniStudyHermitian_affineVector_fderiv_single]
+  rw [fderiv_affineVector, fubiniStudyHermitian_affineVector_insertZeroL_single]
   simp
 
 /-- At `w = (1, i) / √2` in the chart `X_0 ≠ 0` of `CP²`, the mixed Fubini–Study coefficient
@@ -59,7 +59,7 @@ theorem fubiniStudyHermitian_affineVector_mixed :
     norm_num
   have hπ : ((π : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 pi_ne_zero
   have hs0 : ((√2 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.2 (by positivity)
-  rw [fubiniStudyHermitian_affineVector_fderiv_single, hsum]
+  rw [fderiv_affineVector, fubiniStudyHermitian_affineVector_insertZeroL_single, hsum]
   simp only [Fin.isValue, zero_ne_one, ite_false, Matrix.cons_val_zero, Matrix.cons_val_one,
     map_div₀, Complex.conj_I, Complex.conj_ofReal]
   push_cast
