@@ -182,7 +182,7 @@ variable {n : ℕ}
 theorem formPerm_kreweras (π : NoncrossingPartition (univ : Finset (Fin n))) :
     (kreweras π : Finpartition (univ : Finset (Fin n))).formPerm =
       (π : Finpartition (univ : Finset (Fin n))).formPerm⁻¹ * finRotate n := by
-  rw [coe_kreweras, π.2.formPerm_kreweras, Finpartition.formPerm_top_eq_finRotate]
+  rw [coe_kreweras, π.property.formPerm_kreweras, Finpartition.formPerm_top_eq_finRotate]
 
 /-- **The geodesic condition for noncrossing partitions.** For a noncrossing partition `π` of
 `Fin n` with `n ≠ 0`, the permutations `p_π` and `p_π⁻¹ * finRotate n` have `n + 1` cycles in

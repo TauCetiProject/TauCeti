@@ -94,12 +94,11 @@ end MaximalMinor
 section SplitSemiring
 
 variable {R : Type*} [Semiring R] {a b c ρ₁ ρ₂ : Type*} [Fintype a] [Fintype b] [Fintype c]
-  [Fintype ρ₁] [Fintype ρ₂] [DecidableEq b] [DecidableEq ρ₁] [DecidableEq ρ₂]
+  [Fintype ρ₁] [Fintype ρ₂] [DecidableEq ρ₁] [DecidableEq ρ₂]
   {A₁ : Matrix b a R} {A₂ : Matrix c b R}
   {L₁ : Matrix b ρ₁ R} {M₁ : Matrix ρ₁ a R} {L₁' : Matrix ρ₁ b R} {M₁' : Matrix a ρ₁ R}
   {L₂ : Matrix c ρ₂ R} {M₂ : Matrix ρ₂ b R} {L₂' : Matrix ρ₂ c R} {M₂' : Matrix b ρ₂ R}
 
-omit [DecidableEq b] in
 /-- With split factorisations `A₁ = L₁ M₁` and `A₂ = L₂ M₂` of two composable matrices with
 `A₂ A₁ = 0`, also `M₂ L₁ = 0`. -/
 lemma mul_eq_zero_of_isSplitFactorization (h : A₂ * A₁ = 0)
@@ -117,21 +116,106 @@ end SplitSemiring
 
 section SplitComplex
 
-variable {R : Type*} [Ring R] {a b c ρ₁ ρ₂ : Type*} [Fintype a] [Fintype b] [Fintype c]
-  [Fintype ρ₁] [Fintype ρ₂] [DecidableEq b] [DecidableEq ρ₁] [DecidableEq ρ₂]
-  {A₁ : Matrix b a R} {A₂ : Matrix c b R}
-  {L₁ : Matrix b ρ₁ R} {M₁ : Matrix ρ₁ a R} {L₁' : Matrix ρ₁ b R} {M₁' : Matrix a ρ₁ R}
-  {L₂ : Matrix c ρ₂ R} {M₂ : Matrix ρ₂ b R} {L₂' : Matrix ρ₂ c R} {M₂' : Matrix b ρ₂ R}
+variable {R : Type*} [Ring R] {a b c ρ₁ ρ₂ : Type*}
 
-variable (L₁ L₁' M₂ M₂') in
+section Projector
+
+variable [Fintype b] [Fintype ρ₁] [Fintype ρ₂] [DecidableEq b]
+  (L₁ : Matrix b ρ₁ R) (L₁' : Matrix ρ₁ b R) (M₂ : Matrix ρ₂ b R) (M₂' : Matrix b ρ₂ R)
+
 /-- The idempotent `(1 - L₁ L₁') (1 - M₂' M₂)` cutting out the cohomology of a complex of free
 modules in the middle degree, given split factorisations of the two differentials. -/
 def splitIdempotent : Matrix b b R := (1 - L₁ * L₁') * (1 - M₂' * M₂)
 
-omit [DecidableEq ρ₁] [DecidableEq ρ₂] in
+variable {L₁ L₁' M₂ M₂'}
+
 /-- The defining formula of the homology projector. -/
 lemma splitIdempotent_def : splitIdempotent L₁ L₁' M₂ M₂' =
     (1 - L₁ * L₁') * (1 - M₂' * M₂) := (rfl)
+
+/-- The two split summands and the middle projector decompose the identity. -/
+lemma add_splitIdempotent_add :
+    L₁ * L₁' + splitIdempotent L₁ L₁' M₂ M₂' + (1 - L₁ * L₁') * (M₂' * M₂) = 1 := by
+  rw [splitIdempotent_def]
+  rw [add_assoc, ← Matrix.mul_add, sub_add_cancel, Matrix.mul_one, add_sub_cancel]
+
+/-- Applying a ring homomorphism to the projector agrees with forming the mapped projector. -/
+@[simp]
+lemma splitIdempotent_map {S : Type*} [Ring S] (f : R →+* S) :
+    (splitIdempotent L₁ L₁' M₂ M₂').map f =
+      splitIdempotent (L₁.map f) (L₁'.map f) (M₂.map f) (M₂'.map f) := by
+  simp [splitIdempotent_def, Matrix.map_mul, Matrix.map_sub, Matrix.map_one]
+
+end Projector
+
+section Left
+
+variable [Fintype b] [Fintype ρ₁] [Fintype ρ₂] [DecidableEq b] [DecidableEq ρ₁]
+  {A₁ : Matrix b a R}
+  {L₁ : Matrix b ρ₁ R} {M₁ : Matrix ρ₁ a R} {L₁' : Matrix ρ₁ b R}
+  {M₂ : Matrix ρ₂ b R} {M₂' : Matrix b ρ₂ R}
+
+/-- The projector kills the incoming differential under the left splitting and zero-product
+conditions. -/
+lemma splitIdempotent_mul (hA₁ : A₁ = L₁ * M₁) (hL₁ : L₁' * L₁ = 1) (hML : M₂ * L₁ = 0) :
+    splitIdempotent L₁ L₁' M₂ M₂' * A₁ = 0 := by
+  have h₁ (Z : Matrix ρ₁ a R) : L₁' * (L₁ * Z) = Z := by
+    rw [← Matrix.mul_assoc, hL₁, Matrix.one_mul]
+  have h₃ (Z : Matrix ρ₁ a R) : M₂ * (L₁ * Z) = 0 := by
+    rw [← Matrix.mul_assoc, hML, Matrix.zero_mul]
+  rw [splitIdempotent_def]
+  simp only [hA₁, Matrix.sub_mul, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one,
+    Matrix.mul_assoc, h₁, h₃, Matrix.mul_zero, sub_self]
+
+/-- A split retraction of the homology projector kills the first differential. -/
+lemma mul_eq_zero_of_splitIdempotent_eq_mul' {k : Type*} [Fintype k] [DecidableEq k]
+    (hA₁ : A₁ = L₁ * M₁) (hL₁ : L₁' * L₁ = 1) (hML : M₂ * L₁ = 0)
+    {L₃ : Matrix b k R} {M₃ : Matrix k b R}
+    (hε : splitIdempotent L₁ L₁' M₂ M₂' = L₃ * M₃) (h₃ : M₃ * L₃ = 1) :
+    M₃ * A₁ = 0 := by
+  calc M₃ * A₁ = M₃ * (L₃ * M₃) * A₁ := by
+          rw [← Matrix.mul_assoc, h₃, Matrix.one_mul]
+    _ = 0 := by
+        rw [← hε, Matrix.mul_assoc, splitIdempotent_mul hA₁ hL₁ hML, Matrix.mul_zero]
+
+end Left
+
+section Right
+
+variable [Fintype b] [Fintype ρ₁] [Fintype ρ₂] [DecidableEq b] [DecidableEq ρ₂]
+  {A₂ : Matrix c b R}
+  {L₁ : Matrix b ρ₁ R} {L₁' : Matrix ρ₁ b R}
+  {L₂ : Matrix c ρ₂ R} {M₂ : Matrix ρ₂ b R} {M₂' : Matrix b ρ₂ R}
+
+/-- The projector lands in the outgoing kernel under the right splitting and zero-product
+conditions. -/
+lemma mul_splitIdempotent (hA₂ : A₂ = L₂ * M₂) (hM₂ : M₂ * M₂' = 1) (hML : M₂ * L₁ = 0) :
+    A₂ * splitIdempotent L₁ L₁' M₂ M₂' = 0 := by
+  have h₂ (Z : Matrix ρ₂ b R) : M₂ * (M₂' * Z) = Z := by
+    rw [← Matrix.mul_assoc, hM₂, Matrix.one_mul]
+  have h₃ (Z : Matrix ρ₁ b R) : M₂ * (L₁ * Z) = 0 := by
+    rw [← Matrix.mul_assoc, hML, Matrix.zero_mul]
+  rw [splitIdempotent_def]
+  simp only [hA₂, Matrix.sub_mul, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one,
+    Matrix.mul_assoc, h₂, h₃, Matrix.mul_zero, sub_zero, sub_self]
+
+/-- A split factor of the homology projector lands in the kernel of the second differential. -/
+lemma mul_eq_zero_of_splitIdempotent_eq_mul {k : Type*} [Fintype k] [DecidableEq k]
+    (hA₂ : A₂ = L₂ * M₂) (hM₂ : M₂ * M₂' = 1) (hML : M₂ * L₁ = 0)
+    {L₃ : Matrix b k R} {M₃ : Matrix k b R}
+    (hε : splitIdempotent L₁ L₁' M₂ M₂' = L₃ * M₃) (h₃ : M₃ * L₃ = 1) :
+    A₂ * L₃ = 0 := by
+  calc A₂ * L₃ = A₂ * (L₃ * M₃) * L₃ := by
+          rw [Matrix.mul_assoc, Matrix.mul_assoc, h₃, Matrix.mul_one]
+    _ = 0 := by rw [← hε, mul_splitIdempotent hA₂ hM₂ hML, Matrix.zero_mul]
+
+end Right
+
+variable [Fintype a] [Fintype b] [Fintype c] [Fintype ρ₁] [Fintype ρ₂]
+  [DecidableEq b] [DecidableEq ρ₁] [DecidableEq ρ₂]
+  {A₁ : Matrix b a R} {A₂ : Matrix c b R}
+  {L₁ : Matrix b ρ₁ R} {M₁ : Matrix ρ₁ a R} {L₁' : Matrix ρ₁ b R} {M₁' : Matrix a ρ₁ R}
+  {L₂ : Matrix c ρ₂ R} {M₂ : Matrix ρ₂ b R} {L₂' : Matrix ρ₂ c R} {M₂' : Matrix b ρ₂ R}
 
 /-- The projector is idempotent when the factorizations split and their middle product
 vanishes. -/
@@ -150,62 +234,6 @@ lemma splitIdempotent_mul_self (hL₁ : L₁' * L₁ = 1) (hM₂ : M₂ * M₂' 
     h₁, h₂, h₃, Matrix.mul_zero, sub_zero]
   abel
 
-omit [Fintype a] [DecidableEq ρ₂] in
-/-- The projector kills the incoming differential under the left splitting and zero-product
-conditions. -/
-lemma splitIdempotent_mul (hA₁ : A₁ = L₁ * M₁) (hL₁ : L₁' * L₁ = 1) (hML : M₂ * L₁ = 0) :
-    splitIdempotent L₁ L₁' M₂ M₂' * A₁ = 0 := by
-  have h₁ (Z : Matrix ρ₁ a R) : L₁' * (L₁ * Z) = Z := by
-    rw [← Matrix.mul_assoc, hL₁, Matrix.one_mul]
-  have h₃ (Z : Matrix ρ₁ a R) : M₂ * (L₁ * Z) = 0 := by
-    rw [← Matrix.mul_assoc, hML, Matrix.zero_mul]
-  rw [splitIdempotent_def]
-  simp only [hA₁, Matrix.sub_mul, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one,
-    Matrix.mul_assoc, h₁, h₃, Matrix.mul_zero, sub_self]
-
-omit [Fintype c] [DecidableEq ρ₁] in
-/-- The projector lands in the outgoing kernel under the right splitting and zero-product
-conditions. -/
-lemma mul_splitIdempotent (hA₂ : A₂ = L₂ * M₂) (hM₂ : M₂ * M₂' = 1) (hML : M₂ * L₁ = 0) :
-    A₂ * splitIdempotent L₁ L₁' M₂ M₂' = 0 := by
-  have h₂ (Z : Matrix ρ₂ b R) : M₂ * (M₂' * Z) = Z := by
-    rw [← Matrix.mul_assoc, hM₂, Matrix.one_mul]
-  have h₃ (Z : Matrix ρ₁ b R) : M₂ * (L₁ * Z) = 0 := by
-    rw [← Matrix.mul_assoc, hML, Matrix.zero_mul]
-  rw [splitIdempotent_def]
-  simp only [hA₂, Matrix.sub_mul, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one,
-    Matrix.mul_assoc, h₂, h₃, Matrix.mul_zero, sub_zero, sub_self]
-
-omit [DecidableEq ρ₁] [DecidableEq ρ₂] in
-/-- The two split summands and the middle projector decompose the identity. -/
-lemma add_splitIdempotent_add :
-    L₁ * L₁' + splitIdempotent L₁ L₁' M₂ M₂' + (1 - L₁ * L₁') * (M₂' * M₂) = 1 := by
-  rw [splitIdempotent_def]
-  rw [add_assoc, ← Matrix.mul_add, sub_add_cancel, Matrix.mul_one, add_sub_cancel]
-
-omit [Fintype a] [Fintype c] [DecidableEq ρ₁] in
-/-- A split factor of the homology projector lands in the kernel of the second differential. -/
-lemma mul_eq_zero_of_splitIdempotent_eq_mul {k : Type*} [Fintype k] [DecidableEq k]
-    (hA₂ : A₂ = L₂ * M₂) (hM₂ : M₂ * M₂' = 1) (hML : M₂ * L₁ = 0)
-    {L₃ : Matrix b k R} {M₃ : Matrix k b R}
-    (hε : splitIdempotent L₁ L₁' M₂ M₂' = L₃ * M₃) (h₃ : M₃ * L₃ = 1) :
-    A₂ * L₃ = 0 := by
-  calc A₂ * L₃ = A₂ * (L₃ * M₃) * L₃ := by
-          rw [Matrix.mul_assoc, Matrix.mul_assoc, h₃, Matrix.mul_one]
-    _ = 0 := by rw [← hε, mul_splitIdempotent hA₂ hM₂ hML, Matrix.zero_mul]
-
-omit [Fintype a] [Fintype c] [DecidableEq ρ₂] in
-/-- A split retraction of the homology projector kills the first differential. -/
-lemma mul_eq_zero_of_splitIdempotent_eq_mul' {k : Type*} [Fintype k] [DecidableEq k]
-    (hA₁ : A₁ = L₁ * M₁) (hL₁ : L₁' * L₁ = 1) (hML : M₂ * L₁ = 0)
-    {L₃ : Matrix b k R} {M₃ : Matrix k b R}
-    (hε : splitIdempotent L₁ L₁' M₂ M₂' = L₃ * M₃) (h₃ : M₃ * L₃ = 1) :
-    M₃ * A₁ = 0 := by
-  calc M₃ * A₁ = M₃ * (L₃ * M₃) * A₁ := by
-          rw [← Matrix.mul_assoc, h₃, Matrix.one_mul]
-    _ = 0 := by
-        rw [← hε, Matrix.mul_assoc, splitIdempotent_mul hA₁ hL₁ hML, Matrix.mul_zero]
-
 /-- The homology projector and two null-homotopy terms sum to the identity. -/
 lemma splitIdempotent_add_add_eq_one (hA₁ : A₁ = L₁ * M₁) (hM₁ : M₁ * M₁' = 1)
     (hA₂ : A₂ = L₂ * M₂) (hL₂ : L₂' * L₂ = 1) :
@@ -217,14 +245,6 @@ lemma splitIdempotent_add_add_eq_one (hA₁ : A₁ = L₁ * M₁) (hM₁ : M₁ 
     rw [hA₂, Matrix.mul_assoc, Matrix.mul_assoc, ← Matrix.mul_assoc L₂', hL₂, Matrix.one_mul]
   rw [e₁, e₂, add_comm _ (L₁ * L₁')]
   exact add_splitIdempotent_add
-
-omit [Fintype a] [Fintype c] [DecidableEq ρ₁] [DecidableEq ρ₂] in
-/-- Applying a ring homomorphism to the projector agrees with forming the mapped projector. -/
-@[simp]
-lemma splitIdempotent_map {S : Type*} [Ring S] (f : R →+* S) :
-    (splitIdempotent L₁ L₁' M₂ M₂').map f =
-      splitIdempotent (L₁.map f) (L₁'.map f) (M₂.map f) (M₂'.map f) := by
-  simp [splitIdempotent_def, Matrix.map_mul, Matrix.map_sub, Matrix.map_one]
 
 end SplitComplex
 

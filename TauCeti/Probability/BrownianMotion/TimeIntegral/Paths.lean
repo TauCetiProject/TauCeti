@@ -74,29 +74,29 @@ theorem coeFn_sum_leftRiemannError (hB : IsPreBrownianReal B P)
   rw [hB.sum_leftRiemannError_eq]
   have hsum : ⇑(∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) • hB.toL2 (t i)) =ᵐ[P]
       fun ω ↦ ∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) * B (t i) ω := by
-    have hterm (i : ℕ) : ⇑(((t (i + 1) : ℝ) - t i) • hB.toL2 (t i)) =ᵐ[P]
-        fun ω ↦ ((t (i + 1) : ℝ) - t i) * B (t i) ω :=
-      (Lp.coeFn_smul _ _).trans ((hB.coeFn_toL2 (t i)).mono fun ω hω ↦ by
-        simp only [Pi.smul_apply, smul_eq_mul, hω])
-    filter_upwards [(Lp.coeFn_finsetSum (Finset.range n)
-      (fun i ↦ ((t (i + 1) : ℝ) - t i) • hB.toL2 (t i))).trans
-      (eventuallyEq_sum fun i _ ↦ hterm i)] with ω hω
-    simpa only [Finset.sum_apply] using hω
+    have hrect : MemLp (fun ω ↦ ∑ i ∈ Finset.range n,
+        ((t (i + 1) : ℝ) - t i) * B (t i) ω) 2 P :=
+      memLp_finsetSum _ fun i _ ↦
+        ((hB.hasLaw_eval (t i)).memLp (memLp_id_gaussianReal 2)).const_mul _
+    rw [← hB.toLp_sum_mul_eval (Finset.range n) t
+      (fun i ↦ (t (i + 1) : ℝ) - t i) hrect]
+    exact hrect.coeFn_toLp
   exact (Lp.coeFn_sub _ _).trans
     (hsum.sub (hB.coeFn_integral_toL2 hspan hm))
 
 /-- The exact second moment of ordinary Brownian left-rectangle quadrature error is
 one third of the sum of cubed cell lengths. Empty grids and repeated dates are allowed. -/
 theorem integral_sq_sum_mul_sub_integral (hB : IsPreBrownianReal B P)
-    (t : ℕ → ℝ≥0) (ht : Monotone t) (n : ℕ)
+    {t : ℕ → ℝ≥0} {n : ℕ} (ht : MonotoneOn t (Set.Iic n))
     (hm : AEStronglyMeasurable (fun p : ℝ × Ω ↦ B p.1.toNNReal p.2)
       ((volume.restrict (Ioc (t 0 : ℝ) (t n))).prod P)) :
     (∫ ω, ((∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) * B (t i) ω) -
       ∫ u in (t 0 : ℝ)..t n, B u.toNNReal ω) ^ 2 ∂P) =
         (∑ i ∈ Finset.range n, ((t (i + 1) : ℝ) - t i) ^ 3) / 3 := by
-  rw [← hB.norm_sum_leftRiemannError_sq t ht n, ← Lp.integral_norm_sq_eq_norm_sq]
+  rw [← hB.norm_sum_leftRiemannError_sq ht, ← Lp.integral_norm_sq_eq_norm_sq]
   apply integral_congr_ae
-  filter_upwards [hB.coeFn_sum_leftRiemannError t n (ht (Nat.zero_le n)) hm] with ω hω
+  filter_upwards [hB.coeFn_sum_leftRiemannError t n
+    (ht (Nat.zero_le n) self_mem_Iic (Nat.zero_le n)) hm] with ω hω
   rw [hω, Real.norm_eq_abs, sq_abs]
 
 /-- Actual Brownian quadrature errors are square integrable, not merely random
@@ -113,7 +113,7 @@ theorem memLp_sum_mul_sub_integral (hB : IsPreBrownianReal B P)
 along any vanishing-mesh family, with no nesting requirement. -/
 theorem tendstoInMeasure_sum_mul_sub_integral_zero (hB : IsPreBrownianReal B P)
     {ι : Type*} {l : Filter ι} {t : ι → ℕ → ℝ≥0} {n : ι → ℕ} {δ : ι → ℝ}
-    (ht : ∀ k, Monotone (t k)) {T : ℝ≥0} (hT : ∀ k, t k (n k) ≤ T)
+    (ht : ∀ k, MonotoneOn (t k) (Set.Iic (n k))) {T : ℝ≥0} (hT : ∀ k, t k (n k) ≤ T)
     (hδ : ∀ k i, i < n k → (t k (i + 1) : ℝ) - t k i ≤ δ k)
     (hlim : Tendsto δ l (𝓝 0))
     (hm : ∀ k, AEStronglyMeasurable (fun p : ℝ × Ω ↦ B p.1.toNNReal p.2)
@@ -123,7 +123,8 @@ theorem tendstoInMeasure_sum_mul_sub_integral_zero (hB : IsPreBrownianReal B P)
         ∫ u in (t k 0 : ℝ)..t k (n k), B u.toNNReal ω) l (fun _ ↦ 0) := by
   have hLp := hB.tendsto_sum_leftRiemannError_zero ht hT hδ hlim
   exact TendstoInMeasure.congr
-    (fun k ↦ hB.coeFn_sum_leftRiemannError (t k) (n k) (ht k (Nat.zero_le _)) (hm k))
+    (fun k ↦ hB.coeFn_sum_leftRiemannError (t k) (n k)
+      (ht k (Nat.zero_le _) self_mem_Iic (Nat.zero_le _)) (hm k))
     (Lp.coeFn_zero _ _ _) (tendstoInMeasure_of_tendsto_Lp hLp)
 
 end ProbabilityTheory.IsPreBrownianReal

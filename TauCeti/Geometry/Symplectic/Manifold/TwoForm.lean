@@ -127,7 +127,7 @@ lemma isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot :
 /-- On a manifold of positive dimension, a fiberwise nondegenerate smooth two-form vanishes
 nowhere. -/
 theorem IsNondegenerate.apply_ne_zero [Nontrivial E] (h : form.IsNondegenerate) (x : M) :
-    form.1 x ≠ 0 := by
+    form.val x ≠ 0 := by
   -- `TangentSpace I x` is the model space `E` by definition
   have : Nontrivial (TangentSpace I x) := ‹Nontrivial E›
   rw [ne_eq, ← SmoothForm.bilinFormAt_eq_zero_iff]
@@ -170,7 +170,7 @@ lemma IsNondegenerate.nondegenerate_bilinFormAt (h : form.IsNondegenerate) (x : 
 chart at `x`, at the chart point of `x`. -/
 theorem inChartAt_extChartAt_self_nondegenerate (form : SmoothTwoForm I M) {x : M}
     (hnd : (form.bilinFormAt x).Nondegenerate) :
-    ∀ v, (∀ w, RoughForm.inChartAt form.1 x (extChartAt I x x) ![v, w] = 0) → v = 0 :=
+    ∀ v, (∀ w, RoughForm.inChartAt form.val x (extChartAt I x x) ![v, w] = 0) → v = 0 :=
   fun v hv ↦ hnd.1 v fun w ↦ by
     have h := hv w
     rw [RoughForm.inChartAt_extChartAt_self] at h
@@ -540,27 +540,28 @@ agrees pointwise on `chart.source` with `form₀` pulled back by `mvfderiv I cha
 theorem mpullback_constSmooth_eq_mpullback_subtype_val_iff (form : SmoothTwoForm I M)
     (form₀ : SymplecticForm F) (chart : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞) :
     SmoothForm.mpullback
-        (fun x : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) ↦ chart x.1)
-        (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2)
+        (fun x : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) ↦ chart x.val)
+        (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property)
         form₀.constSmooth =
       SmoothForm.mpullback
         (Subtype.val : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) → M)
-        contMDiff_subtype_val form ↔
+        contMDiff_subtypeVal form ↔
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   let U : TopologicalSpace.Opens M := ⟨chart.source, chart.open_source⟩
   have hpoint (x : U) (v w : TangentSpace I x) :
-      (SmoothForm.mpullback (fun y : U ↦ chart y.1)
-          (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun y ↦ y.2)
+      (SmoothForm.mpullback (fun y : U ↦ chart y.val)
+          (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtypeVal fun y ↦ y.property)
           form₀.constSmooth).eval₂ x v w =
-        form₀ (mvfderiv I chart x.1 (Manifold.tangentSpaceOpenEquiv (I := I) x v))
-          (mvfderiv I chart x.1 (Manifold.tangentSpaceOpenEquiv (I := I) x w)) := by
-    have hmd : MDifferentiableAt I 𝓘(ℝ, F) chart x.1 :=
-      (chart.contMDiffOn_toFun.contMDiffAt (chart.open_source.mem_nhds x.2)).mdifferentiableAt
+        form₀ (mvfderiv I chart x.val (Manifold.tangentSpaceOpenEquiv (I := I) x v))
+          (mvfderiv I chart x.val (Manifold.tangentSpaceOpenEquiv (I := I) x w)) := by
+    have hmd : MDifferentiableAt I 𝓘(ℝ, F) chart x.val :=
+      (chart.contMDiffOn_toFun.contMDiffAt
+          (chart.open_source.mem_nhds x.property)).mdifferentiableAt
         (by simp)
     have hsub : MDifferentiableAt I I (Subtype.val : U → M) x :=
-      (contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)
+      (contMDiff_subtypeVal (n := ∞)).mdifferentiableAt (by simp)
     rw [SmoothForm.eval₂_mpullback]
     refine (form₀.eval₂_constSmooth_mfderiv_eq (chart ∘ Subtype.val) x v w).trans ?_
     rw [mvfderiv_comp_apply x hmd hsub, mvfderiv_comp_apply x hmd hsub,
@@ -578,7 +579,7 @@ theorem mpullback_constSmooth_eq_mpullback_subtype_val_iff (form : SmoothTwoForm
     exact hvw.symm
   · intro h x v w
     rw [hpoint, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val]
-    exact (h x.1 x.2 _ _).symm
+    exact (h x.val x.property _ _).symm
 
 end SmoothTwoForm
 
