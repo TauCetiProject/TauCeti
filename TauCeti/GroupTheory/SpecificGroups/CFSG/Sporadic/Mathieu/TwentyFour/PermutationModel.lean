@@ -27,7 +27,9 @@ So `a` is a fixed-point-free involution and `b` has order `3` with six fixed poi
 `2`, `3` and `23` of `a`, `b` and `a * b` are recorded as a check on the transcription. Reading the
 files as preimages instead of images would replace `b` by `b⁻¹`, which sends `0` to `5` rather
 than `3`. The bodies of the two generators are exposed, so that importing modules can evaluate
-them in the kernel; the model itself is characterized by `TauCeti.Sporadic.M24_def`.
+them in the kernel; the model itself is characterized by `TauCeti.Sporadic.M24_def`. The element
+`a * b` fixes the point `0` and permutes the other `23` points in one cycle, and `a` moves `0`,
+so the model is transitive on the `24` points.
 
 It then shows that the ATLAS presentation `M24G1-P1` carried by `TauCeti.SporadicName.presentation`
 holds in the model. That presentation is on the standard generators of `M₂₄` and its words are
@@ -46,6 +48,9 @@ the model is not computed here.
 ## Main declarations
 
 * `TauCeti.Sporadic.M24`: the permutation model of `M₂₄` on `24` points.
+* `TauCeti.Sporadic.M24.closure_pair_eq_top`: the two generators generate the model, as a
+  statement in its carrier.
+* `TauCeti.Sporadic.M24.isPretransitive`: the model acts transitively on the `24` points.
 * `TauCeti.Sporadic.M24.presentationImage`: the images `a` and `b⁻¹` of the presentation
   generators.
 * `TauCeti.Sporadic.M24.lift_presentationImage_toFreeGroup_eq_one`: every transcribed relator of the
@@ -96,6 +101,17 @@ theorem a_mem : a ∈ M24 := M24_def ▸ Subgroup.subset_closure (by simp)
 
 theorem b_mem : b ∈ M24 := M24_def ▸ Subgroup.subset_closure (by simp)
 
+/-- The copies of the two ATLAS generators in the carrier of the model generate it. -/
+theorem closure_pair_eq_top :
+    Subgroup.closure ({⟨a, a_mem⟩, ⟨b, b_mem⟩} : Set M24) = ⊤ := by
+  have h : Subgroup.closure (M24.subtype ⁻¹' {a, b}) = ⊤ := by
+    rw [M24_def]
+    exact Subgroup.closure_preimage_eq_top _
+  rw [eq_top_iff, ← h]
+  refine Subgroup.closure_mono fun x hx ↦ ?_
+  simpa only [Set.mem_preimage, Subgroup.coe_subtype, Set.mem_insert_iff, Set.mem_singleton_iff,
+    Subtype.ext_iff] using hx
+
 /-! ### Generator orders -/
 
 /- The equations between explicit permutations of `Fin 24` in this file are closed by
@@ -112,6 +128,18 @@ theorem orderOf_b : orderOf b = 3 :=
 theorem orderOf_a_mul_b : orderOf (a * b) = 23 :=
   have : Fact (Nat.Prime 23) := ⟨by decide⟩
   orderOf_eq_prime (by decide +kernel) (by decide +kernel)
+
+/-! ### Transitivity -/
+
+/-- The model acts transitively on the `24` points. -/
+instance isPretransitive : MulAction.IsPretransitive M24 (Fin 24) := by
+  -- The powers of `a * b` carry the point `1` to every point except `0`, which `a` exchanges
+  -- with `3`.
+  have h : ∀ x : Fin 24, ∃ k < 23, ∃ e < 2, (a ^ e * (a * b) ^ k) 1 = x := by decide +kernel
+  refine MulAction.IsPretransitive.of_orbit (x₀ := 1) fun x ↦ ?_
+  obtain ⟨k, -, e, -, hx⟩ := h x
+  exact ⟨⟨a ^ e * (a * b) ^ k, mul_mem (pow_mem a_mem e) (pow_mem (mul_mem a_mem b_mem) k)⟩,
+    by simpa only [Subgroup.mk_smul, Equiv.Perm.smul_def] using hx⟩
 
 /-! ### The presentation of `M₂₄` holds in the model -/
 

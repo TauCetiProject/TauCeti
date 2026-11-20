@@ -404,10 +404,10 @@ theorem nonempty_delineation [Finite ι] [PreconnectedSpace X]
   -- the common ordered real roots of the members that are nowhere zero
   obtain ⟨n, r, hrc, hrm, hroot, hmult⟩ :=
     exists_continuous_ordered_common_roots_of_preconnectedSpace
-      (ι := {k // ∀ x, P k x ≠ 0}) (F := fun k ↦ P k.1) (d := fun k ↦ (P k.1 x₀).natDegree)
-      (fun k i _ ↦ hcoeff k.1 i)
-      (fun k x ↦ by rw [degree_eq_natDegree (k.2 x), hdeg k.1 x x₀])
-      (fun k x₀ ↦ .of_forall fun x ↦ (hcard k.1 x x₀).le)
+      (ι := {k // ∀ x, P k x ≠ 0}) (F := fun k ↦ P k.val) (d := fun k ↦ (P k.val x₀).natDegree)
+      (fun k i _ ↦ hcoeff k.val i)
+      (fun k x ↦ by rw [degree_eq_natDegree (k.property x), hdeg k.val x x₀])
+      (fun k x₀ ↦ .of_forall fun x ↦ (hcard k.val x x₀).le)
       (fun k l hkl x₀ ↦ .of_forall fun x ↦ hgcd (Subtype.coe_ne_coe.2 hkl) x x₀)
   -- a member which is zero somewhere is zero everywhere
   have hzero {k : ι} (h : ¬∀ x, P k x ≠ 0) (x : X) : P k x = 0 :=
@@ -480,11 +480,11 @@ theorem exists_delineation_ball_of_isRoot_iff {B : Type*} [NormedAddCommGroup B]
     isPreconnected_iff_preconnectedSpace.1 (convex_ball b₀ ε).isPreconnected
   obtain ⟨D, hD⟩ := exists_delineation_of_isRoot_iff (θ := fun i (b : ball b₀ ε) ↦ s i b)
     (fun j ↦ continuous_iff_continuousAt.2 fun b ↦
-      ((hball b.2).2.1 j).comp continuous_subtype_val.continuousAt)
-    (fun b c ↦ (hball b.2).2.2.2.trans (hball c.2).2.2.2.symm)
-    (fun i ↦ ((hs i).mono hVU).domRestrict) (fun b ↦ hmono b (hVU b.2))
-    (fun b ↦ hroots b (hVU b.2))
-    fun i b c ↦ (hmult b (hVU b.2) i).trans (hmult c (hVU c.2) i).symm
+      ((hball b.property).2.1 j).comp continuous_subtypeVal.continuousAt)
+    (fun b c ↦ (hball b.property).2.2.2.trans (hball c.property).2.2.2.symm)
+    (fun i ↦ ((hs i).mono hVU).domRestrict) (fun b ↦ hmono b (hVU b.property))
+    (fun b ↦ hroots b (hVU b.property))
+    fun i b c ↦ (hmult b (hVU b.property) i).trans (hmult c (hVU c.property) i).symm
   exact ⟨ε, hε, hVU, D, fun i ↦ (hD i).imp fun _ hj b ↦ congrFun hj b⟩
 
 /-! ### Families closed under differentiation up to zero -/
@@ -561,12 +561,12 @@ variable {A : Type*} [CommRing A] {n : ℕ} {φ : A →+* ℝ}
 `f` in `n + 1` variables, evaluated along `φ`, is sign-invariant on every cell of the stack in
 `ℝ^(n + 1)`. -/
 theorem Delineation.signInvariant_eval₂_of_mem_stackCells
-    (D : Delineation fun (p : F) (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom φ x.1))
+    (D : Delineation fun (p : F) (x : S) ↦ p.val.map (MvPolynomial.eval₂Hom φ x.val))
     {f : MvPolynomial (Fin (n + 1)) A} (hf : MvPolynomial.finSuccEquiv A n f ∈ F)
     {E : Set (Fin (n + 1) → ℝ)} (hE : E ∈ stackCells S D.root) :
     SignInvariant (fun y ↦ MvPolynomial.eval₂ φ y f) E := by
   have key : (fun y ↦ MvPolynomial.eval₂ φ y f) ∘ cylinder S =
-      fun z ↦ ((MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ z.1.1)).eval z.2 :=
+      fun z ↦ ((MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ z.1.val)).eval z.2 :=
     funext fun z ↦ by
       rw [Function.comp_apply, cylinder_def, MvPolynomial.polynomial_eval_map_finSuccEquiv]
   rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩ <;> rw [signInvariant_image, key]

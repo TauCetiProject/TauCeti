@@ -70,12 +70,12 @@ private theorem isZero_tateCohomology_zero_unitFiltration_zero_of_isUnramified :
   -- `ρ σ` acts on `Additive (unitFiltration L 0)` through `σ`, by `rfl`
   -- (`Rep.ofMulDistribMulAction_ρ_apply_apply`, `TauCeti.val_coe_smul_unitFiltration`)
   obtain ⟨a, ha⟩ := exists_unitsMap_eq_of_forall_apply_eq (F := K) (x := (u : Lˣ)) fun σ ↦
-    congr(((((Rep.toAdditive $(y.2 σ)).toMul : unitFiltration L 0) : Lˣ) : L))
+    congr(((((Rep.toAdditive $(y.property σ)).toMul : unitFiltration L 0) : Lˣ) : L))
   have haK : a ∈ unitFiltration K 0 := by
     rw [← ker_normalizedValuation, MonoidHom.mem_ker,
       ← normalizedValuation_algebraMap_eq_one_iff (L := L), ← MonoidHom.mem_ker,
       ker_normalizedValuation, ha]
-    exact u.2
+    exact u.property
   -- and `a` is the norm of a unit `w` of `𝒪[L]`, whose representation norm is then `u`
   obtain ⟨w, hw, hwa⟩ := (map_normUnits_unitFiltration K L 0).ge haK
   refine ⟨Rep.toAdditive.symm (Additive.ofMul ⟨w, hw⟩), ?_⟩

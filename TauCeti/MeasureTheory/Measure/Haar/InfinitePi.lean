@@ -9,101 +9,88 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.Probability.ProductMeasure
 
 /-!
-# Invariance and Haar measure instances for infinite product measures
+# Haar measure instances for infinite product probability measures
 
-For an arbitrary family of probability measures `μ i` on measurable spaces `G i`, Mathlib's
-`MeasureTheory.Measure.infinitePi μ` is the unique product probability measure on `∀ i, G i`.
-This file supplies the group-invariance, open-positivity, and Haar measure instances parallel to
-Mathlib's `MeasureTheory.Measure.pi.*` instances for finite products:
+Given a family of probability measures `μ : ∀ i, Measure (G i)` on measurable spaces or topological
+groups `G i`, Kolmogorov's infinite product `MeasureTheory.Measure.infinitePi μ` on `Π i, G i`
+inherits left, right, and inversion invariance, positivity on nonempty open sets, and
+`IsHaarMeasure`, generalizing `MeasureTheory.Measure.pi.isHaarMeasure` beyond `[Fintype ι]`.
+
+## Main declarations
 
 * `MeasureTheory.Measure.infinitePi.isMulLeftInvariant`,
-  `MeasureTheory.Measure.infinitePi.isAddLeftInvariant`: left translation invariance on an arbitrary
-  product of probability spaces with measurable multiplication (or addition).
-* `MeasureTheory.Measure.infinitePi.isMulRightInvariant`,
-  `MeasureTheory.Measure.infinitePi.isAddRightInvariant`: right translation invariance.
-* `MeasureTheory.Measure.infinitePi.isInvInvariant`,
-  `MeasureTheory.Measure.infinitePi.isNegInvariant`: inversion (or negation) invariance.
-* `MeasureTheory.Measure.infinitePi.isOpenPosMeasure`: strict positivity on nonempty open sets in
-  the product topology, using no countability hypothesis on the index type.
+  `MeasureTheory.Measure.infinitePi.isMulRightInvariant`,
+  `MeasureTheory.Measure.infinitePi.isInvInvariant` (and additive counterparts): invariance of
+  `Measure.infinitePi μ`.
+* `MeasureTheory.Measure.infinitePi.isOpenPosMeasure`: positivity on nonempty open subsets of
+  `Π i, G i`.
 * `MeasureTheory.Measure.infinitePi.isHaarMeasure`,
-  `MeasureTheory.Measure.infinitePi.isAddHaarMeasure`: an infinite product of left-invariant
-  open-positive probability measures (in particular, Haar probability measures) is a Haar measure.
+  `MeasureTheory.Measure.infinitePi.isAddHaarMeasure`: Haar measure instances on `Π i, G i`.
 
 ## References
 
-* N. Bourbaki, *Integration*, Chapter VII.
-* J. Tate, *Fourier analysis in number fields, and Hecke's zeta-functions*, in *Algebraic Number
-  Theory* (Cassels–Fröhlich), §3.3.
+* P. R. Halmos, *Measure Theory*, Van Nostrand (1950), §38 and §60.
+* A. Weil, *Basic Number Theory*, 3rd ed., Springer (1974), Chapter IV, §1.
 -/
 
 public section
 
+open Set
+
 namespace MeasureTheory.Measure
 
-universe u v
-
-variable {ι : Type u}
+variable {ι : Type*} {G : ι → Type*} [∀ i, MeasurableSpace (G i)]
+variable (μ : ∀ i, Measure (G i)) [∀ i, IsProbabilityMeasure (μ i)]
 
 /-- An infinite product of left-invariant probability measures is left-invariant. -/
-@[to_additive /-- An infinite product of left-invariant probability measures is left-invariant. -/]
-instance infinitePi.isMulLeftInvariant {G : ι → Type v} [∀ i, Mul (G i)]
-    [∀ i, MeasurableSpace (G i)] [∀ i, MeasurableMul (G i)]
-    (μ : ∀ i, Measure (G i)) [∀ i, IsProbabilityMeasure (μ i)]
-    [∀ i, (μ i).IsMulLeftInvariant] :
-    (Measure.infinitePi μ).IsMulLeftInvariant where
+@[to_additive /-- An infinite product of left-translation-invariant probability measures is
+left-translation-invariant. -/]
+instance infinitePi.isMulLeftInvariant [∀ i, Mul (G i)] [∀ i, MeasurableMul (G i)]
+    [∀ i, IsMulLeftInvariant (μ i)] :
+    IsMulLeftInvariant (infinitePi μ) where
   map_mul_left_eq_self g := by
-    have hmul : (fun x : ∀ i, G i ↦ g * x) = fun x i ↦ g i * x i := rfl
-    rw [hmul, infinitePi_map_pi μ fun i ↦ measurable_const_mul (g i)]
+    simp_rw [Pi.mul_def]
+    rw [infinitePi_map_pi μ fun i ↦ measurable_const_mul (g i)]
     simp_rw [map_mul_left_eq_self]
 
 /-- An infinite product of right-invariant probability measures is right-invariant. -/
-@[to_additive
-  /-- An infinite product of right-invariant probability measures is right-invariant. -/]
-instance infinitePi.isMulRightInvariant {G : ι → Type v} [∀ i, Mul (G i)]
-    [∀ i, MeasurableSpace (G i)] [∀ i, MeasurableMul (G i)]
-    (μ : ∀ i, Measure (G i)) [∀ i, IsProbabilityMeasure (μ i)]
-    [∀ i, (μ i).IsMulRightInvariant] :
-    (Measure.infinitePi μ).IsMulRightInvariant where
+@[to_additive /-- An infinite product of right-translation-invariant probability measures is
+right-translation-invariant. -/]
+instance infinitePi.isMulRightInvariant [∀ i, Mul (G i)] [∀ i, MeasurableMul (G i)]
+    [∀ i, IsMulRightInvariant (μ i)] :
+    IsMulRightInvariant (infinitePi μ) where
   map_mul_right_eq_self g := by
-    have hmul : (fun x : ∀ i, G i ↦ x * g) = fun x i ↦ x i * g i := rfl
-    rw [hmul, infinitePi_map_pi μ fun i ↦ measurable_mul_const (g i)]
+    simp_rw [Pi.mul_def]
+    rw [infinitePi_map_pi μ fun i ↦ measurable_mul_const (g i)]
     simp_rw [map_mul_right_eq_self]
 
 /-- An infinite product of inversion-invariant probability measures is inversion-invariant. -/
 @[to_additive /-- An infinite product of negation-invariant probability measures is
 negation-invariant. -/]
-instance infinitePi.isInvInvariant {G : ι → Type v} [∀ i, Inv (G i)]
-    [∀ i, MeasurableSpace (G i)] [∀ i, MeasurableInv (G i)]
-    (μ : ∀ i, Measure (G i)) [∀ i, IsProbabilityMeasure (μ i)]
-    [∀ i, (μ i).IsInvInvariant] :
-    (Measure.infinitePi μ).IsInvInvariant where
+instance infinitePi.isInvInvariant [∀ i, Inv (G i)] [∀ i, MeasurableInv (G i)]
+    [∀ i, IsInvInvariant (μ i)] :
+    IsInvInvariant (infinitePi μ) where
   inv_eq_self := by
-    have hinv : (Inv.inv : (∀ i, G i) → ∀ i, G i) = fun x i ↦ (x i)⁻¹ := rfl
-    rw [inv_def, hinv, infinitePi_map_pi μ fun _ ↦ measurable_inv]
-    simp_rw [← inv_def, inv_eq_self]
+    rw [Measure.inv_def, funext Pi.inv_def, infinitePi_map_pi μ fun _ ↦ measurable_inv]
+    simp_rw [map_inv_eq_self]
 
-/-- An infinite product of open-positive probability measures is positive on every nonempty open set
-in the product topology. -/
-instance infinitePi.isOpenPosMeasure {X : ι → Type v} [∀ i, TopologicalSpace (X i)]
-    [∀ i, MeasurableSpace (X i)] [∀ i, OpensMeasurableSpace (X i)]
-    (μ : ∀ i, Measure (X i)) [∀ i, IsProbabilityMeasure (μ i)]
-    [∀ i, (μ i).IsOpenPosMeasure] :
-    (Measure.infinitePi μ).IsOpenPosMeasure where
-  open_pos U hU := by
-    rintro ⟨a, ha⟩
-    obtain ⟨I, u, hu, hIu⟩ := isOpen_pi_iff.mp hU a ha
-    refine ne_of_gt (lt_of_lt_of_le ?_ (measure_mono hIu))
-    rw [infinitePi_pi μ fun i hi ↦ (hu i hi).1.measurableSet, CanonicallyOrderedAdd.prod_pos]
-    exact fun i hi ↦ (hu i hi).1.measure_pos (μ i) ⟨a i, (hu i hi).2⟩
+/-- An infinite product of probability measures that are positive on nonempty open sets is positive
+on nonempty open sets of the product topology. -/
+instance infinitePi.isOpenPosMeasure [∀ i, TopologicalSpace (G i)]
+    [∀ i, OpensMeasurableSpace (G i)] [∀ i, IsOpenPosMeasure (μ i)] :
+    IsOpenPosMeasure (infinitePi μ) where
+  open_pos := by
+    rintro U hU ⟨a, ha⟩
+    obtain ⟨s, t, ht, hstU⟩ := isOpen_pi_iff.mp hU a ha
+    refine ne_of_gt (lt_of_lt_of_le ?_ (measure_mono hstU))
+    rw [infinitePi_pi _ fun i hi ↦ (ht i hi).1.measurableSet, CanonicallyOrderedAdd.prod_pos]
+    exact fun i hi ↦ (ht i hi).1.measure_pos (μ i) ⟨a i, (ht i hi).2⟩
 
-/-- An infinite product of left-invariant, open-positive probability measures (in particular, Haar
-probability measures) is a Haar measure. -/
-@[to_additive /-- An infinite product of left-invariant, open-positive probability measures (in
-particular, additive Haar probability measures) is an additive Haar measure. -/]
-instance infinitePi.isHaarMeasure {G : ι → Type v} [∀ i, Group (G i)]
-    [∀ i, TopologicalSpace (G i)] [∀ i, MeasurableSpace (G i)] [∀ i, OpensMeasurableSpace (G i)]
-    [∀ i, MeasurableMul (G i)] (μ : ∀ i, Measure (G i)) [∀ i, IsProbabilityMeasure (μ i)]
-    [∀ i, (μ i).IsMulLeftInvariant] [∀ i, (μ i).IsOpenPosMeasure] :
-    (Measure.infinitePi μ).IsHaarMeasure where
+/-- An infinite product of probability Haar measures is a Haar measure on the product group. -/
+@[to_additive /-- An infinite product of probability additive Haar measures is an additive Haar
+measure on the product additive group. -/]
+instance infinitePi.isHaarMeasure [∀ i, Group (G i)] [∀ i, TopologicalSpace (G i)]
+    [∀ i, OpensMeasurableSpace (G i)] [∀ i, MeasurableMul (G i)] [∀ i, IsHaarMeasure (μ i)] :
+    IsHaarMeasure (infinitePi μ) where
 
 end MeasureTheory.Measure

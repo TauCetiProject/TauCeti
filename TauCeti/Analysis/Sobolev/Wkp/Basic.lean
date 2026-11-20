@@ -64,6 +64,7 @@ The projections below are sealed instead, and are used through their characteris
 
 * `TauCeti.Wkp`: `W^{k,p}(Ω)`, with `Wkp 0 = Lᵖ(Ω)` and `Wkp 1 = W1p`.
 * `TauCeti.Wkp.lowerOrder`: the continuous projection `W^{k+1,p} → W^{k,p}`.
+* `TauCeti.Wkp.toOrderL`: continuous linear truncation `W^{k,p}(Ω) →L[ℝ] W^{j,p}(Ω)` for `j ≤ k`.
 * `TauCeti.Wkp.iteratedGradient`: the highest weak derivative of a positive-order Sobolev function.
 * `TauCeti.Wkp.hasWeakFDerivOn_iteratedGradient`: adjacent recorded derivatives satisfy the weak
   derivative identity.
@@ -647,6 +648,182 @@ theorem tendsto_of_tendsto_iteratedGradient {U : Opens E} {I : Type*} {l : Filte
       intro u hu
       refine (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨?_, hgrad k u hu⟩
       simpa only [hv, hw] using ih _ (hP k u hu)
+
+/-! ### Order truncation -/
+
+/-- Forget weak derivatives above order `j`, as a continuous linear map
+`W^{k,p}(Ω) →L[ℝ] W^{j,p}(Ω)` for `j ≤ k`. At `j = k` this is the identity, and each step in `k`
+precomposes with `TauCeti.Wkp.lowerOrderL`. -/
+def toOrderL {j k : ℕ} (h : j ≤ k) : Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j :=
+  Nat.leRec (motive := fun k _ => Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j)
+    (ContinuousLinearMap.id ℝ _) (fun k _ ih => ih.comp (lowerOrderL k)) h
+
+/-- Truncating a Sobolev space to its own order is the identity operator. -/
+@[simp]
+theorem toOrderL_self {k : ℕ} (h : k ≤ k) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = ContinuousLinearMap.id ℝ _ := by
+  obtain rfl : h = le_rfl := Subsingleton.elim _ _
+  exact Nat.leRec_self _ _
+
+/-- Truncation from order `k + 1` to order `j ≤ k` factors through forgetting the top derivative at
+order `k + 1` followed by truncation from `k` to `j`. -/
+theorem toOrderL_succ {j k : ℕ} (h₁ : j ≤ k) (h₂ : j ≤ k + 1) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h₂ = (toOrderL h₁).comp (lowerOrderL k) := by
+  obtain rfl : h₂ = Nat.le_succ_of_le h₁ := Subsingleton.elim _ _
+  exact Nat.leRec_succ _ _ _
+
+/-- One-step truncation from `k + 1` to `k` is `TauCeti.Wkp.lowerOrderL`. -/
+theorem toOrderL_le_succ (k : ℕ) (h : k ≤ k + 1) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = lowerOrderL k := by
+  rw [toOrderL_succ le_rfl h, toOrderL_self, ContinuousLinearMap.id_comp]
+
+/-- Order truncations compose transitively as continuous linear maps. -/
+@[simp]
+theorem toOrderL_comp_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) :
+    (toOrderL (mu := mu) (Omega := Omega) (p := p) hij).comp (toOrderL hjk) =
+      toOrderL (hij.trans hjk) := by
+  induction hjk with
+  | refl => simp
+  | @step m hm ih =>
+      rw [toOrderL_succ hm (Nat.le_succ_of_le hm), ← ContinuousLinearMap.comp_assoc, ih,
+        ← toOrderL_succ (hij.trans hm) (hij.trans (Nat.le_succ_of_le hm))]
+
+/-- Applying two successive order truncations equals truncating directly to the lowest order. -/
+@[simp]
+theorem toOrderL_toOrderL {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (u : Wkp mu Omega p k) :
+    toOrderL hij (toOrderL hjk u) = toOrderL (hij.trans hjk) u := by
+  rw [← ContinuousLinearMap.comp_apply, toOrderL_comp_toOrderL]
+
+/-- Order truncation does not increase the norm. -/
+theorem norm_toOrderL_apply_le {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    ‖toOrderL h u‖ ≤ ‖u‖ := by
+  induction k, h using Nat.le_induction with
+  | base => rw [toOrderL_self, ContinuousLinearMap.id_apply]
+  | succ k h ih =>
+    rw [toOrderL_succ h (Nat.le_succ_of_le h), ContinuousLinearMap.comp_apply]
+    exact (ih _).trans (norm_lowerOrder_le k u)
+
+/-- The truncation operator has norm at most one. -/
+theorem opNorm_toOrderL_le {j k : ℕ} (h : j ≤ k) :
+    ‖(toOrderL h : Wkp mu Omega p k →L[ℝ] Wkp mu Omega p j)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    simpa only [one_mul] using norm_toOrderL_apply_le h u
+
+/-- Precomposing truncation with `lowerOrderL` increases the source order by one. -/
+theorem toOrderL_comp_lowerOrderL {j k : ℕ} (h : j ≤ k) :
+    (toOrderL (mu := mu) (Omega := Omega) (p := p) h).comp (lowerOrderL k) =
+      toOrderL (Nat.le_succ_of_le h) :=
+  (toOrderL_succ h (Nat.le_succ_of_le h)).symm
+
+/-- Truncating after `lowerOrder` equals truncating directly from order `k + 1`. -/
+@[simp]
+theorem toOrderL_lowerOrder {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p (k + 1)) :
+    toOrderL h (lowerOrder k u) = toOrderL (Nat.le_succ_of_le h) u := by
+  rw [← lowerOrderL_apply, ← ContinuousLinearMap.comp_apply, toOrderL_comp_lowerOrderL]
+
+/-- Postcomposing truncation to order `j + 1` with `lowerOrderL j` truncates to order `j`. -/
+theorem lowerOrderL_comp_toOrderL {j k : ℕ} (h : j + 1 ≤ k) :
+    (lowerOrderL (mu := mu) (Omega := Omega) (p := p) j).comp (toOrderL h) =
+      toOrderL (Nat.le_of_succ_le h) := by
+  rw [← toOrderL_le_succ j (Nat.le_succ j), toOrderL_comp_toOrderL]
+
+/-- Forgetting one further derivative after truncating to `j + 1` truncates to `j`. -/
+theorem lowerOrder_toOrderL {j k : ℕ} (h : j + 1 ≤ k) (u : Wkp mu Omega p k) :
+    lowerOrder j (toOrderL h u) = toOrderL (Nat.le_of_succ_le h) u := by
+  rw [← lowerOrderL_apply, ← ContinuousLinearMap.comp_apply, lowerOrderL_comp_toOrderL]
+
+/-- Evaluating truncation to order zero yields the `Lᵖ` value component. -/
+theorem toOrderL_zero_left_apply (k : ℕ) (h : 0 ≤ k) (u : Wkp mu Omega p k) :
+    toOrderL h u = value k u := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+      rw [toOrderL_succ (Nat.zero_le k) h, ContinuousLinearMap.comp_apply, lowerOrderL_apply,
+        ih (Nat.zero_le k), ← value_succ]
+
+/-- Truncating to order zero is the continuous `Lᵖ` value projection `valueL`. -/
+theorem toOrderL_zero_left (k : ℕ) (h : 0 ≤ k) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = valueL k :=
+  ContinuousLinearMap.ext fun u => (toOrderL_zero_left_apply k h u).trans (valueL_apply k u).symm
+
+/-- Evaluating truncation to order one on `W^{k+1,p}` agrees with `firstOrder`. -/
+theorem toOrderL_one_left_apply (k : ℕ) (h : 1 ≤ k + 1) (u : Wkp mu Omega p (k + 1)) :
+    toOrderL h u = firstOrder k u := by
+  induction k with
+  | zero =>
+      rw [toOrderL_self, ContinuousLinearMap.id_apply]
+      exact (firstOrder_zero u).symm
+  | succ k ih =>
+      rw [toOrderL_succ (Nat.succ_le_succ (Nat.zero_le k)) h, ContinuousLinearMap.comp_apply,
+        lowerOrderL_apply, ih (Nat.succ_le_succ (Nat.zero_le k)) (lowerOrder (k + 1) u),
+        ← firstOrder_succ]
+
+/-- Truncating a positive-order Sobolev space to order one is `firstOrderL`. -/
+theorem toOrderL_one_left (k : ℕ) (h : 1 ≤ k + 1) :
+    toOrderL (mu := mu) (Omega := Omega) (p := p) h = firstOrderL k :=
+  ContinuousLinearMap.ext fun u =>
+    (toOrderL_one_left_apply k h u).trans (firstOrderL_apply k u).symm
+
+/-- The `Lᵖ` value projection commutes with order truncation at the operator level. -/
+@[simp]
+theorem valueL_comp_toOrderL {j k : ℕ} (h : j ≤ k) :
+    (valueL (mu := mu) (Omega := Omega) (p := p) j).comp (toOrderL h) = valueL k := by
+  rw [← toOrderL_zero_left j (Nat.zero_le j), toOrderL_comp_toOrderL, toOrderL_zero_left]
+
+/-- Order truncation preserves the `Lᵖ` value component. -/
+@[simp]
+theorem value_toOrderL {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    value j (toOrderL h u) = value k u := by
+  rw [← valueL_apply, ← ContinuousLinearMap.comp_apply, valueL_comp_toOrderL, valueL_apply]
+
+/-- Truncating `mk k u D hw` to any order `j ≤ k + 1` forgets the adjoined derivative `D` and
+truncates `u`. -/
+theorem toOrderL_mk {j k : ℕ} (h₁ : j ≤ k + 1) (h₂ : j ≤ k + 2) (u : Wkp mu Omega p (k + 1))
+    (D : Lp (IteratedGradient E (k + 1)) p (mu.restrict Omega))
+    (hw : HasWeakFDerivOn mu Omega (iteratedGradient k u) D) :
+    toOrderL h₂ (mk k u D hw) = toOrderL h₁ u := by
+  rw [toOrderL_succ h₁ h₂, ContinuousLinearMap.comp_apply, lowerOrderL_apply, lowerOrder_mk]
+
+/-- Order truncation is injective because weak derivatives are determined uniquely by the `Lᵖ`
+value component. -/
+theorem toOrderL_injective {j k : ℕ} (h : j ≤ k) :
+    Function.Injective (toOrderL (mu := mu) (Omega := Omega) (p := p) h) := by
+  intro u v huv
+  apply ext k
+  rw [← value_toOrderL h u, ← value_toOrderL h v, huv]
+
+/-- Order truncation is norm-nonincreasing. -/
+theorem norm_toOrderL_le {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p k) :
+    ‖toOrderL h u‖ ≤ ‖u‖ := by
+  induction h with
+  | refl => simp
+  | @step m hm ih =>
+      rw [toOrderL_succ hm (Nat.le_succ_of_le hm), ContinuousLinearMap.comp_apply,
+        lowerOrderL_apply]
+      exact (ih (lowerOrder m u)).trans (norm_lowerOrder_le m u)
+
+/-- The operator norm of `toOrderL` is at most one. -/
+theorem norm_toOrderL_le_one {j k : ℕ} (h : j ≤ k) :
+    ‖toOrderL (mu := mu) (Omega := Omega) (p := p) h‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by
+    simpa only [one_mul] using norm_toOrderL_le h u
+
+/-- For `1 ≤ k`, the `Lᵖ` value of `u ∈ W^{k,p}(Ω)` has weak Fréchet derivative given by pairing
+with the first weak gradient `iteratedGradient 0 (toOrderL h u)`. -/
+theorem hasWeakFDerivOn_value_toOrderL {k : ℕ} (h : 1 ≤ k) (u : Wkp mu Omega p k) :
+    HasWeakFDerivOn mu Omega (value k u)
+      (fun x => innerSL ℝ (iteratedGradient 0 (toOrderL h u) x)) := by
+  simpa only [value_toOrderL h u] using hasWeakFDerivOn_value (toOrderL h u)
+
+/-- Adjacent intermediate weak derivatives extracted via `toOrderL` satisfy the weak Fréchet
+derivative relation on `Ω`. -/
+theorem hasWeakFDerivOn_iteratedGradient_toOrderL {j k : ℕ} (h : j + 2 ≤ k)
+    (u : Wkp mu Omega p k) :
+    HasWeakFDerivOn mu Omega
+      (iteratedGradient j (toOrderL (Nat.le_of_succ_le h) u))
+      (iteratedGradient (j + 1) (toOrderL h u)) := by
+  rw [← lowerOrder_toOrderL h u]
+  exact hasWeakFDerivOn_iteratedGradient j (toOrderL h u)
 
 end Wkp
 

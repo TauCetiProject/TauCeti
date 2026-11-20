@@ -26,8 +26,10 @@ of `μ.comap (↑)`:
   or injectivity assumption on `f` (`MeasureTheory.Measure.comap_preimage_le`).
 * For `s ⊆ t` with `t` measurable, pulling back from `α` to `t` and then along
   `Set.inclusion hst` to `s` recovers the direct pullback to `s`.
-* Pulling a measure back to a null-measurable subset `s` of measure `1` yields a probability
-  measure on `s` (`MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`).
+* Pulling `μ` back to a measurable subtype of `μ`-mass `1` yields a probability measure
+  (`MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`), and more generally pulling `μ`
+  back to a null-measurable subset `s` of measure `1` yields a probability measure on `s`
+  (`MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`).
 * Local finiteness and finiteness on compact sets pass from `μ` to `μ.comap (Subtype.val)` for
   every subtype `Subtype p`, with no measurability or separation assumptions; in particular, if `s`
   is σ-compact and `μ` is finite on compacts, `μ.comap ((↑) : s → α)` is σ-finite
@@ -42,8 +44,9 @@ of `μ.comap (↑)`:
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
-* `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`: pulling `μ` back to a
-  null-measurable subset `s` with `μ s = 1` gives a probability measure.
+* `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype`,
+  `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`: pulling `μ` back to a measurable
+  subtype or null-measurable subset of `μ`-mass `1` yields a probability measure.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.
@@ -84,7 +87,15 @@ theorem comap_preimage_le {f : α → β} (hf : Measurable f) (μ : Measure β) 
 theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) (hst : s ⊆ t)
     (μ : Measure α) :
     (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
-  (MeasurableEmbedding.subtype_coe ht).comap_comap (Set.inclusion hst) μ
+  (MeasurableEmbedding.subtypeVal ht).comap_comap (Set.inclusion hst) μ
+
+/-- Pulling a measure `μ` back to a measurable subtype `{x // p x}` of mass `1` yields a
+probability measure. -/
+theorem isProbabilityMeasure_comap_subtype {p : α → Prop} (hp : MeasurableSet {x | p x})
+    (μ : Measure α) (hμ : μ {x | p x} = 1) :
+    IsProbabilityMeasure (μ.comap (Subtype.val : Subtype p → α)) :=
+  ⟨((MeasurableEmbedding.subtypeVal hp).comap_apply μ univ).trans
+    (by rw [Subtype.coe_image_univ, hμ])⟩
 
 /-- Pulling a measure `μ` back to a null-measurable subset `s` of measure `1` yields a probability
 measure on `s`. -/
@@ -92,7 +103,7 @@ theorem isProbabilityMeasure_comap_subtype_coe (μ : Measure α) {s : Set α}
     (hs : NullMeasurableSet s μ) (hμ : μ s = 1) :
     IsProbabilityMeasure (μ.comap ((↑) : s → α)) :=
   ⟨(comap_apply₀ ((↑) : s → α) μ Subtype.coe_injective
-      (fun _ ↦ MeasurableSet.nullMeasurableSet_subtype_coe hs)
+      (fun _ ↦ MeasurableSet.nullMeasurableSet_subtypeVal hs)
       MeasurableSet.univ.nullMeasurableSet).trans <| by
     rw [image_univ, Subtype.range_coe, hμ]⟩
 
@@ -107,8 +118,8 @@ instance instIsLocallyFiniteMeasureComapSubtype (μ : Measure α) [IsLocallyFini
     (p : α → Prop) : IsLocallyFiniteMeasure (μ.comap (Subtype.val : Subtype p → α)) where
   finiteAtNhds x := by
     obtain ⟨v, hv, hμv⟩ := μ.finiteAt_nhds (x : α)
-    exact ⟨Subtype.val ⁻¹' v, continuous_subtype_val.continuousAt hv,
-      (comap_preimage_le measurable_subtype_coe μ v).trans_lt hμv⟩
+    exact ⟨Subtype.val ⁻¹' v, continuous_subtypeVal.continuousAt hv,
+      (comap_preimage_le measurable_subtypeVal μ v).trans_lt hμv⟩
 
 /-- Pulling a measure that is finite on compact sets back to any subtype yields a measure that is
 finite on compact sets. -/
@@ -116,8 +127,8 @@ instance instIsFiniteMeasureOnCompactsComapSubtype (μ : Measure α) [IsFiniteMe
     (p : α → Prop) : IsFiniteMeasureOnCompacts (μ.comap (Subtype.val : Subtype p → α)) where
   lt_top_of_isCompact K hK :=
     ((measure_mono (subset_preimage_image Subtype.val K)).trans
-      (comap_preimage_le measurable_subtype_coe μ _)).trans_lt
-      (hK.image continuous_subtype_val).measure_lt_top
+      (comap_preimage_le measurable_subtypeVal μ _)).trans_lt
+      (hK.image continuous_subtypeVal).measure_lt_top
 
 /-- A measure that is finite on compact sets pulls back to a σ-finite measure on every σ-compact
 set, with no separation or measurability assumptions on the ambient space. -/
@@ -130,10 +141,10 @@ theorem _root_.IsSigmaCompact.sigmaFinite_comap [IsFiniteMeasureOnCompacts μ] {
 `InnerRegularCompactLTTop`. -/
 theorem InnerRegularCompactLTTop.comap_subtype_coe [μ.InnerRegularCompactLTTop] {s : Set α}
     (hs : MeasurableSet s) : (μ.comap ((↑) : s → α)).InnerRegularCompactLTTop := by
-  refine ⟨InnerRegularCompactLTTop.innerRegular.comap (MeasurableEmbedding.subtype_coe hs)
-    (fun U hU ↦ ⟨(MeasurableEmbedding.subtype_coe hs).measurableSet_image' hU.1, ?_⟩)
+  refine ⟨InnerRegularCompactLTTop.innerRegular.comap (MeasurableEmbedding.subtypeVal hs)
+    (fun U hU ↦ ⟨(MeasurableEmbedding.subtypeVal hs).measurableSet_image' hU.1, ?_⟩)
     (fun K hKrange hK ↦ IsInducing.subtypeVal.isCompact_preimage' hK hKrange)⟩
-  rw [← comap_subtype_coe_apply hs]
+  rw [← comap_subtypeVal_apply hs]
   exact hU.2
 
 end Topological

@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
 public import Mathlib.Topology.Algebra.OpenSubgroup
--- Proof-only: box openness in the restricted-product topology.
-import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
+public import TauCeti.Topology.Algebra.RestrictedProduct.Box
 
 /-!
 # Integral subgroups of restricted products
@@ -142,6 +141,25 @@ theorem integralSubgroupOf_le_integralSubgroup_iff (U V : ∀ i, Subgroup (G i))
     integralSubgroupOf U V ≤ integralSubgroup U ↔ ∀ i, V i ≤ U i :=
   integralSubgroupOf_le_integralSubgroupOf_iff U V U
 
+/-- As a subset of `Πʳ i, [G i, U i]`, `integralSubgroupOf U V` is the coordinate box of `V`. -/
+@[to_additive
+  /-- As a subset of `Πʳ i, [G i, U i]`, `integralAddSubgroupOf U V` is the coordinate box of
+  `V`. -/]
+theorem coe_integralSubgroupOf_eq_box (U V : ∀ i, Subgroup (G i)) :
+    (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) =
+      RestrictedProduct.box (fun i ↦ (V i : Set (G i))) := by
+  ext x
+  simp
+
+/-- As a subset of `Πʳ i, [G i, U i]`, `integralSubgroup U` is the coordinate box of `U`. -/
+@[to_additive
+  /-- As a subset of `Πʳ i, [G i, U i]`, `integralAddSubgroup U` is the coordinate box of
+  `U`. -/]
+theorem coe_integralSubgroup_eq_box (U : ∀ i, Subgroup (G i)) :
+    (integralSubgroup U : Set (Πʳ i, [G i, (U i : Set (G i))])) =
+      RestrictedProduct.box (fun i ↦ (U i : Set (G i))) :=
+  coe_integralSubgroupOf_eq_box U U
+
 variable [∀ i, TopologicalSpace (G i)]
 
 /-- Openness when every `V i` is open and the reference subgroup `U i` lies in `V i` at all but
@@ -150,9 +168,8 @@ finitely many indices. -/
 theorem isOpen_integralSubgroupOf_of_eventually_le (U V : ∀ i, Subgroup (G i))
     (hV : ∀ i, IsOpen (V i : Set (G i))) (hUV : ∀ᶠ i in cofinite, U i ≤ V i) :
     IsOpen (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  convert isOpen_restrictedProduct_box hV hUV using 1
-  ext x
-  simp
+  rw [coe_integralSubgroupOf_eq_box]
+  exact RestrictedProduct.isOpen_box hV hUV
 
 /-- Compactness when every `V i` is compact and lies in the reference subgroup `U i` at all but
 finitely many indices. -/
@@ -160,22 +177,8 @@ finitely many indices. -/
 theorem isCompact_integralSubgroupOf_of_eventually_le (U V : ∀ i, Subgroup (G i))
     (hV : ∀ i, IsCompact (V i : Set (G i))) (hVU : ∀ᶠ i in cofinite, V i ≤ U i) :
     IsCompact (integralSubgroupOf U V : Set (Πʳ i, [G i, (U i : Set (G i))])) := by
-  -- Realize the subgroup as the image of a compact set in the restricted product relative to
-  -- `𝓟 S`, where `S` is the cofinite set of indices with `V i ≤ U i`.
-  let S : Set ι := {i | V i ≤ U i}
-  have hS : cofinite ≤ 𝓟 S := le_principal_iff.mpr hVU
-  let Q : Set (∀ i, G i) := Set.univ.pi fun i ↦ (V i : Set (G i))
-  have hK : IsCompact (((↑) : Πʳ i, [G i, (U i : Set (G i))]_[𝓟 S] → ∀ i, G i) ⁻¹' Q) := by
-    refine RestrictedProduct.isEmbedding_coe_of_principal.isCompact_preimage'
-      (isCompact_univ_pi hV) ?_
-    rw [RestrictedProduct.range_coe_principal]
-    exact fun x hx i hi ↦ hi (hx i trivial)
-  convert hK.image (RestrictedProduct.continuous_inclusion hS) using 1
-  ext x
-  simp only [SetLike.mem_coe, mem_integralSubgroupOf]
-  refine ⟨fun hx ↦ ⟨⟨x, fun i hi ↦ hi (hx i)⟩, fun i _ ↦ hx i, rfl⟩, ?_⟩
-  rintro ⟨y, hy, rfl⟩
-  exact fun i ↦ hy i trivial
+  rw [coe_integralSubgroupOf_eq_box]
+  exact RestrictedProduct.isCompact_box hV hVU
 
 /-- Openness of the everywhere-integral subgroup from coordinatewise openness. -/
 @[to_additive]

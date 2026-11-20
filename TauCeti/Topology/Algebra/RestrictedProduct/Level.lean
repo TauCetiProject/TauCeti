@@ -68,10 +68,11 @@ def levelOpenSubgroup (B : ∀ i, H i) (S : Finset ι)
     OpenSubgroup (Πʳ i, [G i, B i]) :=
   let U : ∀ i, Subgroup (G i) := fun i ↦ Subgroup.ofClass (B i)
   { toSubgroup :=
-      (integralSubgroup fun j : {i // i ∉ (S : Set ι)} ↦ U j.1).comap (restrictAway (S : Set ι) U)
+      (integralSubgroup fun j : {i // i ∉ (S : Set ι)} ↦ U j.val).comap
+        (restrictAway (S : Set ι) U)
     isOpen' :=
-      (isOpen_integralSubgroup (fun j : {i // i ∉ (S : Set ι)} ↦ U j.1)
-        fun j ↦ hB j.1 j.2).preimage (continuous_restrictAway (S : Set ι) U) }
+      (isOpen_integralSubgroup (fun j : {i // i ∉ (S : Set ι)} ↦ U j.val)
+        fun j ↦ hB j.val j.property).preimage (continuous_restrictAway (S : Set ι) U) }
 
 /-- Membership in `levelOpenSubgroup B S hB` means integrality at every index outside `S`. -/
 @[to_additive (attr := simp) /-- Membership in `levelOpenAddSubgroup B S hB` means integrality at
@@ -81,11 +82,13 @@ theorem mem_levelOpenSubgroup (B : ∀ i, H i) (S : Finset ι)
     x ∈ levelOpenSubgroup B S hB ↔ ∀ i ∉ S, x i ∈ B i := by
   let U : ∀ i, Subgroup (G i) := fun i ↦ Subgroup.ofClass (B i)
   let x' : RestrictedProductGroup U := x
-  change restrictAway (S : Set ι) U x' ∈
-      integralSubgroup (fun j : {i // i ∉ (S : Set ι)} ↦ U j.1) ↔ _
-  rw [mem_integralSubgroup]
+  have h1 : x ∈ levelOpenSubgroup B S hB ↔
+      restrictAway (S : Set ι) U x' ∈
+        integralSubgroup fun j : {i // i ∉ (S : Set ι)} ↦ U j.val :=
+    Iff.rfl
+  rw [h1, mem_integralSubgroup]
   simp only [restrictAway_apply, Subtype.forall, Finset.mem_coe]
-  rfl
+  exact Iff.rfl
 
 /-- The underlying set of `levelOpenSubgroup B S hB` is `{x | ∀ i ∉ S, x i ∈ B i}`. -/
 @[to_additive (attr := simp) /-- The underlying set of `levelOpenAddSubgroup B S hB` is
@@ -114,33 +117,32 @@ theorem coe_levelOpenSubgroup_empty (B : ∀ i, H i)
   simp
 
 /-- The topological group isomorphism identifying the product
-`(∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.1)` with the level open subgroup
+`(∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.val)` with the level open subgroup
 `levelOpenSubgroup B S hB`. -/
 @[to_additive /-- The topological additive group isomorphism identifying the product
-`(∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.1)` with the level open additive subgroup
+`(∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.val)` with the level open additive subgroup
 `levelOpenAddSubgroup B S hB`. -/]
 noncomputable def levelOpenSubgroupEquiv (B : ∀ i, H i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) :
-    ((∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.1)) ≃ₜ* levelOpenSubgroup B S hB :=
+    ((∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.val)) ≃ₜ* levelOpenSubgroup B S hB :=
   let U : ∀ i, Subgroup (G i) := fun i ↦ Subgroup.ofClass (B i)
   let d := awayDecomposition (S : Set ι) S.finite_toSet U
-  let ι_tail : (∀ j : {i // i ∉ S}, B j.1) → RestrictedProductGroupAway (S : Set ι) U :=
-    RestrictedProduct.structureMap (fun j : {i // i ∉ (S : Set ι)} ↦ G j.1)
-      (fun j ↦ (U j.1 : Set (G j.1))) cofinite
-  { toFun p := ⟨d.symm (p.1, ι_tail p.2), (mem_levelOpenSubgroup B S hB _).mpr fun i hi ↦ by
+  let ι_tail : (∀ j : {i // i ∉ S}, B j.val) → RestrictedProductGroupAway (S : Set ι) U :=
+    RestrictedProduct.structureMap (fun j : {i // i ∉ (S : Set ι)} ↦ G j.val)
+      (fun j ↦ (U j.val : Set (G j.val))) cofinite
+  { toFun p := ⟨d.symm (p.fst, ι_tail p.snd), (mem_levelOpenSubgroup B S hB _).mpr fun i hi ↦ by
       have h := awayDecomposition_symm_apply_of_notMem (S : Set ι) S.finite_toSet U
-        (p.1, ι_tail p.2) i hi
-      exact h.symm ▸ (p.2 ⟨i, hi⟩).2⟩
-    invFun u := ((d u.1).1, fun j ↦
-      ⟨(d u.1).2 j, by
-        have h := awayDecomposition_snd (S : Set ι) S.finite_toSet U u.1 j
-        exact h.symm ▸ (mem_levelOpenSubgroup B S hB u.1).mp u.2 j.1 j.2⟩)
+        (p.fst, ι_tail p.snd) i hi
+      exact h.symm ▸ (p.snd ⟨i, hi⟩).property⟩
+    invFun u := ((d u.val).fst, fun j ↦
+      ⟨(d u.val).snd j, by
+        have h := awayDecomposition_snd (S : Set ι) S.finite_toSet U u.val j
+        exact h.symm ▸ (mem_levelOpenSubgroup B S hB u.val).mp u.property j.val j.property⟩)
     left_inv p := by
       ext i
-      · exact congrFun (congrArg Prod.fst (d.apply_symm_apply (p.1, ι_tail p.2))) i
-      · change ((d (d.symm (p.1, ι_tail p.2))).2 i : G i.1) = (p.2 i : G i.1)
-        rw [MulEquiv.apply_symm_apply]
-        rfl
+      · exact congrFun (congrArg Prod.fst (d.apply_symm_apply (p.fst, ι_tail p.snd))) i
+      · exact congrFun
+          (congrArg (⇑) (congrArg Prod.snd (d.apply_symm_apply (p.fst, ι_tail p.snd)))) i
     right_inv u := by
       apply Subtype.ext
       apply d.injective
@@ -148,19 +150,19 @@ noncomputable def levelOpenSubgroupEquiv (B : ∀ i, H i) (S : Finset ι)
       ext i <;> rfl
     map_mul' p q := by
       apply Subtype.ext
-      have htail : ι_tail (p.2 * q.2) = ι_tail p.2 * ι_tail q.2 := by
+      have htail : ι_tail (p.snd * q.snd) = ι_tail p.snd * ι_tail q.snd := by
         ext j
         rfl
       exact (congrArg d.symm (Prod.ext rfl htail)).trans
-        (map_mul d.symm (p.1, ι_tail p.2) (q.1, ι_tail q.2))
+        (map_mul d.symm (p.fst, ι_tail p.snd) (q.fst, ι_tail q.snd))
     continuous_toFun :=
       Continuous.subtype_mk
         ((continuous_awayDecomposition_symm (S : Set ι) S.finite_toSet U hB).comp
           (continuous_fst.prodMk
             (RestrictedProduct.isEmbedding_structureMap.continuous.comp continuous_snd))) _
     continuous_invFun := by
-      have hc : Continuous fun u : levelOpenSubgroup B S hB ↦ d u.1 :=
-        (continuous_awayDecomposition (S : Set ι) S.finite_toSet U).comp continuous_subtype_val
+      have hc : Continuous fun u : levelOpenSubgroup B S hB ↦ d u.val :=
+        (continuous_awayDecomposition (S : Set ι) S.finite_toSet U).comp continuous_subtypeVal
       refine (continuous_fst.comp hc).prodMk ?_
       refine (RestrictedProduct.isEmbedding_structureMap (𝓕 := cofinite)).continuous_iff.mpr ?_
       exact (continuous_snd.comp hc).congr fun u ↦ by
@@ -172,8 +174,8 @@ noncomputable def levelOpenSubgroupEquiv (B : ∀ i, H i) (S : Finset ι)
 first factor. -/]
 theorem levelOpenSubgroupEquiv_apply_of_mem (B : ∀ i, H i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i)))
-    (p : (∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.1)) {i : ι} (hi : i ∈ S) :
-    (levelOpenSubgroupEquiv B S hB p : Πʳ j, [G j, B j]) i = p.1 ⟨i, hi⟩ :=
+    (p : (∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.val)) {i : ι} (hi : i ∈ S) :
+    (levelOpenSubgroupEquiv B S hB p : Πʳ j, [G j, B j]) i = p.fst ⟨i, hi⟩ :=
   awayDecomposition_symm_apply_of_mem (S : Set ι) S.finite_toSet
     (fun j ↦ Subgroup.ofClass (B j)) _ i hi
 
@@ -182,8 +184,8 @@ theorem levelOpenSubgroupEquiv_apply_of_mem (B : ∀ i, H i) (S : Finset ι)
 second factor. -/]
 theorem levelOpenSubgroupEquiv_apply_of_notMem (B : ∀ i, H i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i)))
-    (p : (∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.1)) {i : ι} (hi : i ∉ S) :
-    (levelOpenSubgroupEquiv B S hB p : Πʳ j, [G j, B j]) i = (p.2 ⟨i, hi⟩ : G i) :=
+    (p : (∀ i : S, G i) × (∀ j : {i // i ∉ S}, B j.val)) {i : ι} (hi : i ∉ S) :
+    (levelOpenSubgroupEquiv B S hB p : Πʳ j, [G j, B j]) i = (p.snd ⟨i, hi⟩ : G i) :=
   awayDecomposition_symm_apply_of_notMem (S : Set ι) S.finite_toSet
     (fun j ↦ Subgroup.ofClass (B j)) _ i hi
 
@@ -192,16 +194,18 @@ theorem levelOpenSubgroupEquiv_apply_of_notMem (B : ∀ i, H i) (S : Finset ι)
 evaluates on `S`. -/]
 theorem levelOpenSubgroupEquiv_symm_fst (B : ∀ i, H i) (S : Finset ι)
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB) (i : S) :
-    ((levelOpenSubgroupEquiv B S hB).symm u).1 i = (u : Πʳ j, [G j, B j]) i.1 :=
-  awayDecomposition_fst (S : Set ι) S.finite_toSet (fun j ↦ Subgroup.ofClass (B j)) u.1 i
+    ((levelOpenSubgroupEquiv B S hB).symm u).fst i = (u : Πʳ j, [G j, B j]) i.val :=
+  awayDecomposition_fst (S : Set ι) S.finite_toSet (fun j ↦ Subgroup.ofClass (B j)) u.val i
 
 /-- The second coordinate of `(levelOpenSubgroupEquiv B S hB).symm` evaluates outside `S`. -/
 @[to_additive (attr := simp) /-- The second coordinate of `(levelOpenAddSubgroupEquiv B S hB).symm`
 evaluates outside `S`. -/]
 theorem levelOpenSubgroupEquiv_symm_snd (B : ∀ i, H i) (S : Finset ι)
-    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB) (j : {i // i ∉ S}) :
-    (((levelOpenSubgroupEquiv B S hB).symm u).2 j : G j.1) = (u : Πʳ k, [G k, B k]) j.1 :=
-  awayDecomposition_snd (S : Set ι) S.finite_toSet (fun k ↦ Subgroup.ofClass (B k)) u.1 j
+    (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (u : levelOpenSubgroup B S hB)
+    (j : {i // i ∉ S}) :
+    (((levelOpenSubgroupEquiv B S hB).symm u).snd j : G j.val) =
+      (u : Πʳ k, [G k, B k]) j.val :=
+  awayDecomposition_snd (S : Set ι) S.finite_toSet (fun k ↦ Subgroup.ofClass (B k)) u.val j
 
 /-- The preimage of a coordinate box `{x | ∀ i, x i ∈ C i}` under the inclusion of a level open
 subgroup composed with `levelOpenSubgroupEquiv` is the product of the finite box over `S` and the
@@ -213,16 +217,16 @@ theorem preimage_coe_comp_levelOpenSubgroupEquiv_box (B : ∀ i, H i) (S : Finse
     (hB : ∀ i ∉ S, IsOpen (B i : Set (G i))) (C : ∀ i, Set (G i)) :
     (((↑) : levelOpenSubgroup B S hB → Πʳ i, [G i, B i]) ∘ levelOpenSubgroupEquiv B S hB) ⁻¹'
       {x | ∀ i, x i ∈ C i} =
-      (Set.univ.pi fun i : S ↦ C i.1) ×ˢ
-        (Set.univ.pi fun j : {i // i ∉ S} ↦ ((↑) : B j.1 → G j.1) ⁻¹' C j.1) := by
+      (Set.univ.pi fun i : S ↦ C i.val) ×ˢ
+        (Set.univ.pi fun j : {i // i ∉ S} ↦ ((↑) : B j.val → G j.val) ⁻¹' C j.val) := by
   ext ⟨x, y⟩
   simp only [Set.mem_preimage, Function.comp_apply, Set.mem_ofPred_eq, Set.mem_prod, Set.mem_pi,
     Set.mem_univ, forall_const]
   constructor
   · intro h
     refine ⟨fun i ↦ ?_, fun j ↦ ?_⟩
-    · simpa only [levelOpenSubgroupEquiv_apply_of_mem B S hB (x, y) i.2] using h i.1
-    · simpa only [levelOpenSubgroupEquiv_apply_of_notMem B S hB (x, y) j.2] using h j.1
+    · simpa only [levelOpenSubgroupEquiv_apply_of_mem B S hB (x, y) i.property] using h i.val
+    · simpa only [levelOpenSubgroupEquiv_apply_of_notMem B S hB (x, y) j.property] using h j.val
   · rintro ⟨hx, hy⟩ i
     by_cases hi : i ∈ S
     · simpa only [levelOpenSubgroupEquiv_apply_of_mem B S hB (x, y) hi] using hx ⟨i, hi⟩

@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+-- Proof-only: box openness from `RestrictedProduct.isOpen_box`.
+import TauCeti.Topology.Algebra.RestrictedProduct.Box
 
 /-!
 # The topology of a restricted product
@@ -20,13 +22,8 @@ On a subspace lying in the reference sets at every index of some `T` with `𝓕 
 cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
 product topology.
 
-Over the cofinite filter, boxes `{x | ∀ i, x i ∈ C i}` with open factors containing `A i` at all
-but finitely many indices are open (`isOpen_restrictedProduct_box`, and in finset form
-`isOpen_restrictedProduct_finset_box`). When every reference set `A i` is open, boxes built from
-topological bases of the factors (`isTopologicalBasis_restrictedProduct_boxes`) or open factors
-eventually equal to `A i` (`isTopologicalBasis_restrictedProduct_open_boxes`) form a topological
-basis; in particular, a restricted product of countably many second-countable spaces relative to
-open reference sets is second countable (`secondCountableTopology_restrictedProduct`).
+When every reference set `A i` is open, boxes built from topological bases of the factors form a
+topological basis of `Πʳ i, [R i, A i]` (`isTopologicalBasis_restrictedProduct_boxes`).
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -73,7 +70,7 @@ theorem isOpenMap_restrictedProduct_eval (i : ι) :
   -- reference sets, with `i` removed.
   set T : Set ι := {j | x j ∈ A j} \ {i}
   have hT : (cofinite : Filter ι) ≤ 𝓟 T :=
-    le_principal_iff.2 (sdiff_mem x.2 (Set.finite_singleton i).compl_mem_cofinite)
+    le_principal_iff.2 (sdiff_mem x.property (Set.finite_singleton i).compl_mem_cofinite)
   let g : R i → Πʳ j, [R j, A j]_[𝓟 T] := fun y ↦
     ⟨Function.update x i y, eventually_principal.2 fun j hj ↦ by
       rw [Function.update_of_ne hj.2]
@@ -158,7 +155,8 @@ theorem discreteTopology_restrictedProduct_principal {S : Set ι} (hS : Sᶜ.Fin
   · intro h
     ext i
     by_cases hi : i ∈ S
-    · exact hA i hi (eventually_principal.1 y.2 i hi) (eventually_principal.1 x.2 i hi)
+    · exact hA i hi (eventually_principal.1 y.property i hi) (eventually_principal.1 x.property i
+        hi)
     · exact h i hi
   · rintro rfl i _
     rfl
@@ -217,43 +215,21 @@ end Discrete
 
 section Bases
 
-/-- A box `{x | ∀ i, x i ∈ C i}` in a restricted product over the cofinite filter is open whenever
-every factor `C i` is open and `A i ⊆ C i` for all but finitely many `i` (in particular, whenever
-`C i = A i` for all but finitely many `i`). -/
-theorem isOpen_restrictedProduct_box {C : ∀ i, Set (R i)} (hC : ∀ i, IsOpen (C i))
-    (hAC : ∀ᶠ i in cofinite, A i ⊆ C i) :
-    IsOpen {x : Πʳ i, [R i, A i] | ∀ i, x i ∈ C i} := by
-  refine isOpen_restrictedProduct_iff.2 fun T hT ↦ ?_
-  have hfin : ({i | A i ⊆ C i} ∩ T)ᶜ.Finite :=
-    mem_cofinite.mp (hAC.and (le_principal_iff.mp hT))
-  convert (isOpen_set_pi hfin fun i _ ↦ hC i).preimage RestrictedProduct.continuous_coe using 1
-  ext y
-  simp only [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_pi, Set.mem_compl_iff]
-  refine ⟨fun h i _ ↦ h i, fun h i ↦ ?_⟩
-  by_cases hi : i ∈ {i | A i ⊆ C i} ∩ T
-  · exact hi.1 (y.2 hi.2)
-  · exact h i hi
-
-omit [∀ i, TopologicalSpace (R i)] in
-private theorem restrictedProduct_finset_box_eq [DecidableEq ι] (S : Finset ι)
-    (U : ∀ i : S, Set (R i)) :
-    {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} =
-      {x : Πʳ i, [R i, A i] | ∀ i, x i ∈ if hi : i ∈ S then U ⟨i, hi⟩ else A i} := by
-  ext x
-  simp only [Set.mem_ofPred_eq]
-  exact ⟨fun h i ↦ by split_ifs with hi; exacts [h.1 ⟨i, hi⟩, h.2 i hi],
-    fun h ↦ ⟨fun i ↦ by simpa [i.2] using h i.1, fun i hi ↦ by simpa [hi] using h i⟩⟩
-
-/-- A box restricting finitely many coordinates `i ∈ S` to open sets `U i` and the remaining
-coordinates to open reference sets `A i` is open in `Πʳ i, [R i, A i]`. -/
-theorem isOpen_restrictedProduct_finset_box (S : Finset ι) (hA : ∀ i ∉ S, IsOpen (A i))
+private theorem isOpen_restrictedProduct_finset_box (hA : ∀ i, IsOpen (A i)) (S : Finset ι)
     {U : ∀ i : S, Set (R i)} (hU : ∀ i, IsOpen (U i)) :
     IsOpen {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} := by
   classical
-  rw [restrictedProduct_finset_box_eq]
-  refine isOpen_restrictedProduct_box (fun i ↦ ?_) ?_
+  have heq : {x : Πʳ i, [R i, A i] | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i} =
+      RestrictedProduct.box fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i := by
+    ext x
+    simp only [Set.mem_ofPred_eq, RestrictedProduct.mem_box]
+    exact ⟨fun h i ↦ by split_ifs with hi; exacts [h.left ⟨i, hi⟩, h.right i hi],
+      fun h ↦ ⟨fun i ↦ by simpa [i.property] using h i.val,
+        fun i hi ↦ by simpa [hi] using h i⟩⟩
+  rw [heq]
+  refine RestrictedProduct.isOpen_box (fun i ↦ ?_) ?_
   · split_ifs with hi
-    exacts [hU ⟨i, hi⟩, hA i hi]
+    exacts [hU ⟨i, hi⟩, hA i]
   · filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
     have hi' : i ∉ S := hi
     simp [hi']
@@ -266,16 +242,16 @@ theorem isTopologicalBasis_restrictedProduct_boxes (hA : ∀ i, IsOpen (A i))
     TopologicalSpace.IsTopologicalBasis
       {s : Set (Πʳ i, [R i, A i]) |
         ∃ (S : Finset ι) (U : ∀ i : S, Set (R i)),
-          (∀ i : S, U i ∈ b i.1) ∧
+          (∀ i : S, U i ∈ b i.val) ∧
           s = {x | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i}} := by
   classical
   refine TopologicalSpace.isTopologicalBasis_of_isOpen_of_nhds ?_ ?_
   · rintro _ ⟨S, U, hU, rfl⟩
-    exact isOpen_restrictedProduct_finset_box S (fun i _ ↦ hA i) fun i ↦ (hb i.1).isOpen (hU i)
+    exact isOpen_restrictedProduct_finset_box hA S fun i ↦ (hb i.val).isOpen (hU i)
   · intro x V hxV hV
     -- Work inside the principal stage determined by the indices where `x i ∈ A i`.
     set T₀ : Set ι := {i | x i ∈ A i}
-    have hT₀ : (cofinite : Filter ι) ≤ 𝓟 T₀ := le_principal_iff.mpr x.2
+    have hT₀ : (cofinite : Filter ι) ≤ 𝓟 T₀ := le_principal_iff.mpr x.property
     let x₀ : Πʳ i, [R i, A i]_[𝓟 T₀] := ⟨x, eventually_principal.mpr fun _ hi ↦ hi⟩
     obtain ⟨W, hW, hW_eq⟩ := RestrictedProduct.isEmbedding_coe_of_principal.isOpen_iff.mp
       (hV.preimage (RestrictedProduct.continuous_inclusion hT₀))
@@ -283,97 +259,36 @@ theorem isTopologicalBasis_restrictedProduct_boxes (hA : ∀ i, IsOpen (A i))
       have hx₀ : x₀ ∈ RestrictedProduct.inclusion R A hT₀ ⁻¹' V := hxV
       rwa [← hW_eq] at hx₀
     obtain ⟨I, u, hu, hIu⟩ := isOpen_pi_iff.mp hW x hxW
-    let S : Finset ι := I ∪ (mem_cofinite.mp x.2).toFinset
+    let S : Finset ι := I ∪ (mem_cofinite.mp x.property).toFinset
     -- On `i ∈ S`, intersect with `u i` (when `i ∈ I`) and `A i` (when `x i ∈ A i`) so that points
     -- of the box remain in the principal stage `𝓟 T₀` and land in `W`.
-    have hU_ex : ∀ i : S, ∃ U ∈ b i.1, x i.1 ∈ U ∧
-        (i.1 ∈ I → U ⊆ u i.1) ∧ (i.1 ∈ T₀ → U ⊆ A i.1) := fun i ↦ by
-      let Wᵢ : Set (R i.1) :=
-        (if i.1 ∈ I then u i.1 else Set.univ) ∩ (if i.1 ∈ T₀ then A i.1 else Set.univ)
+    have hU_ex : ∀ i : S, ∃ U ∈ b i.val, x i.val ∈ U ∧
+        (i.val ∈ I → U ⊆ u i.val) ∧ (i.val ∈ T₀ → U ⊆ A i.val) := fun i ↦ by
+      let Wᵢ : Set (R i.val) :=
+        (if i.val ∈ I then u i.val else Set.univ) ∩ (if i.val ∈ T₀ then A i.val else Set.univ)
       have hWᵢ : IsOpen Wᵢ :=
-        ((by split_ifs with hi; exacts [(hu i.1 hi).1, isOpen_univ] : IsOpen _).inter
-          (by split_ifs with hi; exacts [hA i.1, isOpen_univ]))
-      have hxWᵢ : x i.1 ∈ Wᵢ :=
-        ⟨by split_ifs with hi; exacts [(hu i.1 hi).2, trivial],
+        ((by split_ifs with hi; exacts [(hu i.val hi).left, isOpen_univ] : IsOpen _).inter
+          (by split_ifs with hi; exacts [hA i.val, isOpen_univ]))
+      have hxWᵢ : x i.val ∈ Wᵢ :=
+        ⟨by split_ifs with hi; exacts [(hu i.val hi).right, trivial],
           by split_ifs with hi; exacts [hi, trivial]⟩
-      obtain ⟨U, hUb, hxU, hUWᵢ⟩ := (hb i.1).exists_subset_of_mem_open hxWᵢ hWᵢ
-      exact ⟨U, hUb, hxU, fun hi y hy ↦ by simpa [Wᵢ, hi] using (hUWᵢ hy).1,
-        fun hi y hy ↦ by simpa [Wᵢ, hi] using (hUWᵢ hy).2⟩
+      obtain ⟨U, hUb, hxU, hUWᵢ⟩ := (hb i.val).exists_subset_of_mem_open hxWᵢ hWᵢ
+      exact ⟨U, hUb, hxU, fun hi y hy ↦ by simpa [Wᵢ, hi] using (hUWᵢ hy).left,
+        fun hi y hy ↦ by simpa [Wᵢ, hi] using (hUWᵢ hy).right⟩
     choose U hUb hxU hUu hUA using hU_ex
     refine ⟨{y | (∀ i : S, y i ∈ U i) ∧ ∀ i ∉ S, y i ∈ A i}, ⟨S, U, hUb, rfl⟩,
       ⟨hxU, fun i hi ↦ by_contra fun hxA ↦
         hi (Finset.mem_union_right I ((Set.Finite.mem_toFinset _).mpr hxA))⟩, fun y hy ↦ ?_⟩
     have hyT₀ : ∀ i ∈ T₀, y i ∈ A i := fun i hi ↦ by
       by_cases hiS : i ∈ S
-      · exact hUA ⟨i, hiS⟩ hi (hy.1 ⟨i, hiS⟩)
-      · exact hy.2 i hiS
+      · exact hUA ⟨i, hiS⟩ hi (hy.left ⟨i, hiS⟩)
+      · exact hy.right i hiS
     let y₀ : Πʳ i, [R i, A i]_[𝓟 T₀] := ⟨y, eventually_principal.mpr hyT₀⟩
     have hyW : y₀ ∈ ((↑) : Πʳ i, [R i, A i]_[𝓟 T₀] → ∀ i, R i) ⁻¹' W :=
-      hIu fun i hi ↦ hUu ⟨i, Finset.mem_union_left _ hi⟩ hi (hy.1 ⟨i, Finset.mem_union_left _ hi⟩)
+      hIu fun i hi ↦ hUu ⟨i, Finset.mem_union_left _ hi⟩ hi
+        (hy.left ⟨i, Finset.mem_union_left _ hi⟩)
     rw [hW_eq] at hyW
     exact hyW
-
-/-- When the reference sets `A i` are open, the boxes `{x | ∀ i, x i ∈ C i}` with open factors
-`C i` eventually equal to `A i` form a topological basis of `Πʳ i, [R i, A i]`. -/
-theorem isTopologicalBasis_restrictedProduct_open_boxes (hA : ∀ i, IsOpen (A i)) :
-    TopologicalSpace.IsTopologicalBasis
-      {s : Set (Πʳ i, [R i, A i]) |
-        ∃ C : ∀ i, Set (R i), (∀ i, IsOpen (C i)) ∧
-          (∀ᶠ i in cofinite, C i = A i) ∧ s = {x | ∀ i, x i ∈ C i}} := by
-  classical
-  convert isTopologicalBasis_restrictedProduct_boxes hA
-    (fun i ↦ TopologicalSpace.isTopologicalBasis_opens (α := R i)) using 1
-  ext s
-  constructor
-  · rintro ⟨C, hC, hCA, rfl⟩
-    refine ⟨(mem_cofinite.mp hCA).toFinset, fun i ↦ C i.1, fun i ↦ hC i.1, ?_⟩
-    ext x
-    simp only [Set.mem_ofPred_eq, Set.Finite.mem_toFinset, Set.mem_compl_iff, not_not]
-    refine ⟨fun h ↦ ⟨fun i ↦ h i.1, fun i hi ↦ hi ▸ h i⟩, fun h i ↦ ?_⟩
-    by_cases hi : C i = A i
-    · exact hi ▸ h.2 i hi
-    · exact h.1 ⟨i, (Set.Finite.mem_toFinset _).mpr hi⟩
-  · rintro ⟨S, U, hU, rfl⟩
-    refine ⟨fun i ↦ if hi : i ∈ S then U ⟨i, hi⟩ else A i, fun i ↦ ?_, ?_,
-      restrictedProduct_finset_box_eq S U⟩
-    · dsimp only
-      split_ifs with hi
-      exacts [hU ⟨i, hi⟩, hA i]
-    · filter_upwards [S.finite_toSet.compl_mem_cofinite] with i hi
-      have hi' : i ∉ S := hi
-      simp [hi']
-
-/-- A restricted product of countably many second-countable spaces relative to open reference sets
-is second countable. -/
-theorem secondCountableTopology_restrictedProduct [Countable ι]
-    [∀ i, SecondCountableTopology (R i)] (hA : ∀ i, IsOpen (A i)) :
-    SecondCountableTopology (Πʳ i, [R i, A i]) := by
-  choose b hb_count _ hb using fun i ↦ TopologicalSpace.exists_countable_basis (R i)
-  have (i : ι) : Countable (b i) := (hb_count i).to_subtype
-  let f : (Σ S : Finset ι, ∀ i : S, b i.1) → Set (Πʳ i, [R i, A i]) :=
-    fun p ↦ {x | (∀ i : p.1, x i ∈ (p.2 i : Set (R i.1))) ∧ ∀ i ∉ p.1, x i ∈ A i}
-  have hrange : Set.range f =
-      {s : Set (Πʳ i, [R i, A i]) |
-        ∃ (S : Finset ι) (U : ∀ i : S, Set (R i)),
-          (∀ i : S, U i ∈ b i.1) ∧
-          s = {x | (∀ i : S, x i ∈ U i) ∧ ∀ i ∉ S, x i ∈ A i}} := by
-    ext s
-    constructor
-    · rintro ⟨⟨S, U⟩, rfl⟩
-      exact ⟨S, fun i ↦ (U i : Set (R i.1)), fun i ↦ (U i).2, rfl⟩
-    · rintro ⟨S, U, hU, rfl⟩
-      exact ⟨⟨S, fun i ↦ ⟨U i, hU i⟩⟩, rfl⟩
-  have hbasis : TopologicalSpace.IsTopologicalBasis (Set.range f) := by
-    rw [hrange]
-    exact isTopologicalBasis_restrictedProduct_boxes hA hb
-  exact ⟨⟨Set.range f, Set.countable_range f, hbasis.eq_generateFrom⟩⟩
-
-/-- A restricted product of countably many second-countable spaces relative to open reference sets
-is second countable. -/
-instance instSecondCountableTopologyRestrictedProduct [Countable ι]
-    [∀ i, SecondCountableTopology (R i)] [hA : Fact (∀ i, IsOpen (A i))] :
-    SecondCountableTopology (Πʳ i, [R i, A i]) :=
-  secondCountableTopology_restrictedProduct hA.out
 
 end Bases
 
