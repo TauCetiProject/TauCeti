@@ -33,7 +33,7 @@ Combined with translation invariance, the perimeter in `ball 0 R` of the blow-up
 For a nonzero ratio `r` and `V = (r • ·) ⁻¹' Ω`, a function belongs to BV on `Ω` exactly when
 its pullback `x ↦ u (r • x)` belongs to BV on `V` (`TauCeti.memBV_comp_smul_iff`). On classes this
 gives the continuous linear equivalence `TauCeti.BV.compSmul : BV μ Ω ≃L[ℝ] BV μ V`, which
-multiplies the `L¹` norm by `|r| ^ (-n)` and the variation by `|r| ^ (1 - n)`
+multiplies the `L¹` norm by `(|r| ^ n)⁻¹` and the variation by `|r| / |r| ^ n`
 (`TauCeti.BV.norm_compSmul`). In general it is not an isometry, since the two parts of the BV
 norm scale by different powers of `|r|`.
 
@@ -373,6 +373,7 @@ theorem coeFn_compSmul (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω)
   exact coeFn_compSmulAux hr hVO u
 
 /-- The dilation of the class of a BV function is the class of its dilation. -/
+@[simp]
 theorem compSmul_ofFunction (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) (hu : MemBV μ Ω u) :
     compSmul hr hVO (ofFunction u hu) = ofFunction (fun x => u (r • x))
       (hu.comp_smul hr (mapsTo_iff_subset_preimage.mpr hVO.subset)) :=
@@ -386,6 +387,7 @@ theorem compSmul_ofFunction (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹
     rw [h₁, h₂, h₃]
 
 /-- The inverse of the dilation by `r` is the dilation by `r⁻¹`. -/
+@[simp]
 theorem compSmul_symm (hr : r ≠ 0) (hVO : (V : Set E) = (r • ·) ⁻¹' Ω) :
     (compSmul hr hVO).symm = compSmul (μ := μ) (inv_ne_zero hr)
       (by rw [hVO, preimage_smul_inv₀ hr, preimage_smul₀ hr, smul_inv_smul₀ hr]) := by
