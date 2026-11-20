@@ -316,6 +316,20 @@ theorem sphereHeight_eq_neg_one_iff {v x : sphere (0 : E) 1} :
     sphereHeight v x = -1 ↔ x = -v := by
   rw [← neg_eq_iff_eq_neg, ← Pi.neg_apply, ← sphereHeight_neg, sphereHeight_eq_one_iff]
 
+omit [Fact (finrank ℝ E = n + 1)] in
+/-- A point of the sphere whose components along the orthonormal vectors `u` and `v` have squares
+summing to `1` lies in the plane spanned by `u` and `v`. -/
+theorem coe_eq_sphereHeight_smul_add_sphereHeight_smul {u v : sphere (0 : E) 1}
+    (huv : ⟪(u : E), (v : E)⟫ = 0) {x : sphere (0 : E) 1}
+    (hx : sphereHeight u x ^ 2 + sphereHeight v x ^ 2 = 1) :
+    (x : E) = sphereHeight u x • (u : E) + sphereHeight v x • (v : E) := by
+  have hx1 : ‖(x : E)‖ = 1 := norm_eq_of_mem_sphere x
+  rw [← sub_eq_zero, ← norm_eq_zero, ← sq_eq_zero_iff, norm_sub_sq_real, hx1]
+  simp only [sphereHeight_apply] at hx ⊢
+  simp only [inner_add_right, inner_smul_right, norm_add_sq_real, norm_smul, inner_smul_left,
+    Real.norm_eq_abs, mul_pow, sq_abs, norm_eq_of_mem_sphere, huv, RCLike.conj_to_real]
+  linear_combination -hx
+
 /-- In the chart centred at the north pole `v`, the height function in the direction `v` is
 `stereographicHeight`. -/
 theorem sphereHeight_comp_chartAt_symm (v : sphere (0 : E) 1) :
