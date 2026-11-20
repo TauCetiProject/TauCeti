@@ -86,15 +86,9 @@ theorem exists_hasSum_toDistr_and_norm_le_of_ball (hs : 0 < s) (R : ℝ) :
   refine ⟨K * 2 ^ (|s| * N) * (2 * N) + K * (1 - ρ)⁻¹, by have := sub_pos.2 hρ1; positivity,
     fun {p q} _ _ f a h1 ha ↦ ?_⟩
   -- Since `s > 0`, the pieces decay geometrically in `Lᵖ`: `‖fⱼ‖ ≤ ρ ^ j ‖a‖`.
-  have hfn (j : ℕ) : ‖f j‖ ≤ ‖a‖ * ρ ^ j := by
-    have hρj : ρ ^ j * 2 ^ (s * j) = 1 := by
-      simpa using Real.rpow_neg_pow_mul_rpow_mul_natCast_add two_pos s j 0
-    calc ‖f j‖ = ρ ^ j * (2 ^ (s * j) * ‖f j‖) := by rw [← mul_assoc, hρj, one_mul]
-      _ ≤ ρ ^ j * ‖a‖ := by
-          gcongr
-          exact (ha j).trans <| (Real.le_norm_self _).trans <|
-            lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' a j
-      _ = _ := mul_comm _ _
+  have hfn (j : ℕ) : ‖f j‖ ≤ ‖a‖ * ρ ^ j :=
+    Real.le_mul_rpow_neg_pow_of_rpow_mul_le two_pos <| (ha j).trans <|
+      (Real.le_norm_self _).trans <| lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' a j
   have hgeom := (summable_geometric_of_lt_one hρ0 hρ1).mul_left ‖a‖
   have hW := ((Summable.of_norm_bounded hgeom hfn).hasSum).map
     (Lp.toTemperedDistributionCLM F volume p) (ContinuousLinearMap.continuous _)

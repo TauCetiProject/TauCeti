@@ -237,7 +237,7 @@ private theorem one_add_op_S_apply_periodDefect {ξ y : k[ℳ n]}
       (1 - ρL T) (-ρL S ((1 + ρL (T * S) + ρL (T * S) ^ 2 : Module.End k k[ℳ n]) y)) := by
   -- `U S = T` on `k[ℳₙ]`, as `S² = -1` acts trivially
   have hUS : ρL (T * S) * ρL S = ρL T := by
-    rw [← map_mul, mul_assoc, show S * S = -1 from Subtype.ext S_mul_S_eq, mul_neg_one,
+    rw [← map_mul, mul_assoc, S_mul_S_eq, mul_neg_one,
       ofMulAction_neg]
   -- right multiplication by `1 + S` commutes with left multiplication by `1 - S`
   have h₁ : (1 + ρR (.op ↑S)) ((1 - ρL S) ξ) = (1 - ρL S) ((1 + ρR (.op ↑S)) ξ) := by

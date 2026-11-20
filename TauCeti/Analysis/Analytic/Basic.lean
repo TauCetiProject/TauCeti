@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Analysis.Analytic.IteratedFDeriv
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import TauCeti.Analysis.Analytic.ConvergenceRadius
 import TauCeti.Analysis.Calculus.FormalMultilinearSeries
 

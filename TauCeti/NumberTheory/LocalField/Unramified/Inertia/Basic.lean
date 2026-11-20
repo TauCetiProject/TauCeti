@@ -217,6 +217,11 @@ abbrev unramifiedQuotient := Field.absoluteGaloisGroup K ⧸ inertiaSubgroup K
 def unramifiedDegree : Field.absoluteGaloisGroup K →* unramifiedQuotient K :=
   QuotientGroup.mk' (inertiaSubgroup K)
 
+/-- The unramified degree map sends `σ` to its coset in `G_K ⧸ I_K`. -/
+theorem unramifiedDegree_apply (σ : Field.absoluteGaloisGroup K) :
+    unramifiedDegree K σ = (σ : unramifiedQuotient K) :=
+  (rfl)
+
 /-- The unramified degree map `G_K → G_K ⧸ I_K` is surjective. -/
 theorem unramifiedDegree_surjective : Function.Surjective (unramifiedDegree K) :=
   QuotientGroup.mk'_surjective _

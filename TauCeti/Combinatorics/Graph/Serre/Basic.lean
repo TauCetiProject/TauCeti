@@ -513,7 +513,7 @@ def Hom.id : Γ.Hom Γ where
   simp only [Hom.id]
 
 /-- Compose Serre-graph morphisms. -/
-def Hom.comp {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
+@[expose] def Hom.comp {Γ : SerreGraph.{u, v}} {Δ : SerreGraph.{w, x}} {Θ : SerreGraph.{y, z}}
     (g : Δ.Hom Θ) (f : Γ.Hom Δ) : Γ.Hom Θ where
   mapV := g.mapV ∘ f.mapV
   mapE := g.mapE ∘ f.mapE
@@ -858,6 +858,11 @@ instance : Unique segment.GeomEdge where
     cases b
     · exact .inr rfl
     · exact .inl rfl
+
+/-- Every vertex of the segment has a unique outgoing dart: the dart with the same Boolean label. -/
+instance (v : segment.V) : Unique {e : segment.E // segment.src e = v} where
+  default := ⟨v, segment_src v⟩
+  uniq e := Subtype.ext ((segment_src e.1).symm.trans e.2)
 
 end SerreGraph
 

@@ -20,6 +20,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
@@ -112,6 +113,9 @@ is that of `(1 - χ(s)) i F_a` up to the mixed products of `∂_a α` with `∂b
 Taubes's analysis these bound the negative mass of the slices of the cutoff current on the normal
 discs of a pseudoholomorphic curve, and the distance of the cutoff current to the cone of positive
 `(1,1)`-forms.
+
+A circle-valued gauge `u` acts by `(b, α) ↦ (b - Im (u⁻¹ du), u α)`, and the covariant derivative
+is covariant, `∇_{b - Im (u⁻¹ du)} (u α) = u ∇_b α` (`covariantDeriv_sub_phaseForm_mul`).
 
 The cutoff phase form, the cutoff current, their regularity, support and gauge invariance are
 stated on an arbitrary real normed space, which plays the role of a coordinate chart; the gauge
@@ -269,6 +273,32 @@ theorem covariantPhaseForm_sub_phaseForm_mul (hu : DifferentiableAt ℝ u x)
   rw [covariantPhaseForm_apply, covariantPhaseForm_apply, phaseForm_mul hu hα hu₀ hα₀,
     Pi.sub_apply]
   abel
+
+/-- The covariant derivative is covariant under gauge transformations
+`(b, α) ↦ (b - Im (u⁻¹ du), u α)` by a `u` that is circle-valued near `x`:
+`∇_{b - Im (u⁻¹ du)} (u α) = u ∇_b α` at `x`.
+Unlike `covariantPhaseForm_sub_phaseForm_mul`, no condition on the zeros of `α` is needed. -/
+theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1)
+    (hud : DifferentiableAt ℝ u x) (hα : DifferentiableAt ℝ α x) :
+    covariantDeriv (b - phaseForm u) (u * α) x = u x • covariantDeriv b α x := by
+  ext v
+  have hux : ‖u x‖ = 1 := hu.self_of_nhds
+  -- Since `|u| = 1` near `x`, `du` is orthogonal to `u`, so `u⁻¹ du = conj u du` is imaginary.
+  have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
+    rw [inv_eq_conj hux, mul_comm, ← Complex.inner]
+    exact IsLocalExtr.inner_fderiv_eq_zero (IsMinFilter.isExtrFilter <|
+      (show ∀ᶠ y in 𝓝 x, ‖u y‖ = ‖u x‖ by rwa [hux]).mono fun _ hy ↦ hy.ge) v
+  have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hux]
+  have hdu : fderiv ℝ u x v = u x * (I * ((u x)⁻¹ * fderiv ℝ u x v).im) := by
+    have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
+      Complex.ext (by simp [hre]) (by simp)
+    rw [← hw, mul_inv_cancel_left₀ hu0]
+  simp only [covariantDeriv_apply, fderiv_mul hud hα, Pi.sub_apply,
+    ContinuousAlternatingMap.sub_apply, phaseForm_apply, _root_.add_apply, _root_.smul_apply,
+    smul_eq_mul, Pi.mul_apply, ofReal_sub]
+  generalize ((u x)⁻¹ * fderiv ℝ u x v).im = c at hdu ⊢
+  rw [hdu]
+  ring
 
 /-! ### The cutoff phase form and the cutoff current -/
 
