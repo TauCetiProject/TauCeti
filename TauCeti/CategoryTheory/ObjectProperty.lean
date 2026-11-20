@@ -18,15 +18,17 @@ public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 
 This file contains general lemmas about object properties: transporting them along an
 equivalence, comparing Mathlib's closure type classes with one another in the presence of a
-zero object and of binary biproducts, smallness of full subcategories, and additivity of the
+terminal object and of binary biproducts, smallness of full subcategories, and additivity of the
 standard functors between full subcategories.
 
 ## Main declarations
 
 * `CategoryTheory.ObjectProperty.inverseImage_functor_inverseImage_inverse`: pulling an
   isomorphism-invariant property backward along both functors of an equivalence recovers it.
-* `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`: a property holding
-  for a zero object and closed under binary products is closed under isomorphisms.
+* `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerminal` and
+  `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_containsZero`: a property holding
+  for a terminal (for instance, a zero) object and closed under binary products is closed under
+  isomorphisms.
 * `CategoryTheory.ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod`: for a replete
   property in a category with binary biproducts, closure under binary products only has to be
   checked on biproducts.
@@ -35,6 +37,8 @@ standard functors between full subcategories.
   conclusion.
 * `CategoryTheory.ObjectProperty.homMk_eta` and `CategoryTheory.ObjectProperty.homMk_comp`:
   `homMk` of the underlying morphism is the morphism itself, and `homMk` preserves composites.
+* `CategoryTheory.ObjectProperty.lift_comp_ι`: a lift through a full subcategory, followed by the
+  inclusion, is the original functor.
 * `CategoryTheory.ObjectProperty.lift_map_hom_of_eq`: a functor defined as a lift through a full
   subcategory acts on morphisms as the lifted functor, up to the identifications of objects.
 * `CategoryTheory.ObjectProperty.essSurj_lift_iff`: a lift through a full subcategory is
@@ -74,23 +78,30 @@ theorem inverseImage_functor_inverseImage_inverse
   ext X
   exact (P.prop_iff_of_iso (e.unitIso.app X)).symm
 
-/-- **A property holding for a zero object and closed under binary products is closed under
-isomorphisms.** An isomorphism `e : X ≅ Y` exhibits `Y` as a product of a zero object with `X`,
-the two projections being the zero morphism and `e.inv`.
+/-- **A property holding for a terminal object and closed under binary products is closed under
+isomorphisms.** An isomorphism `e : X ≅ Y` exhibits `Y` as a product of the terminal object with
+`X`, the second projection being `e.inv`.
 
 Mathlib's `CategoryTheory.ObjectProperty.IsClosedUnderBinaryProducts.closedUnderIsomorphisms` is
-the same argument run on a terminal object, but it assumes closure under the empty limit, which
-`CategoryTheory.ObjectProperty.ContainsZero` — the property for *one* zero object — does not
-supply before repleteness is known. -/
+the same argument, but it assumes `HasTerminal C` and closure under the empty limit, which a
+property known to hold for *one* terminal object does not supply before repleteness is known. -/
+theorem isClosedUnderIsomorphisms_of_isTerminal {C : Type u₁} [Category.{v₁} C]
+    (P : ObjectProperty C) [P.IsClosedUnderBinaryProducts] {T : C} (hT : IsTerminal T)
+    (hTP : P T) : P.IsClosedUnderIsomorphisms where
+  of_iso {_ Y} e hX := by
+    obtain ⟨hB⟩ := (BinaryFan.isLimit_iff_isIso_snd hT (BinaryFan.mk (hT.from Y) e.inv)).2
+      (by dsimp; infer_instance)
+    exact P.prop_of_isLimit_binaryFan hB hTP hX
+
+/-- **A property holding for a zero object and closed under binary products is closed under
+isomorphisms.** This is `CategoryTheory.ObjectProperty.isClosedUnderIsomorphisms_of_isTerminal`
+for the zero object supplied by `CategoryTheory.ObjectProperty.ContainsZero`, so that it applies
+by type class inference alone. -/
 theorem isClosedUnderIsomorphisms_of_containsZero {C : Type u₁} [Category.{v₁} C]
     (P : ObjectProperty C) [P.ContainsZero] [P.IsClosedUnderBinaryProducts] :
-    P.IsClosedUnderIsomorphisms where
-  of_iso {X Y} e hX := by
-    obtain ⟨Z, hZ, hZP⟩ := P.exists_prop_of_containsZero
-    let hB : IsLimit (BinaryFan.mk (hZ.from_ Y) e.inv) :=
-      BinaryFan.IsLimit.mk _ (fun _ g ↦ g ≫ e.hom) (fun _ _ ↦ hZ.eq_of_tgt _ _) (by simp)
-        (by cat_disch)
-    exact P.prop_of_isLimit_binaryFan hB hZP hX
+    P.IsClosedUnderIsomorphisms := by
+  obtain ⟨Z, hZ, hZP⟩ := P.exists_prop_of_containsZero
+  exact P.isClosedUnderIsomorphisms_of_isTerminal hZ.isTerminal hZP
 
 /-- **For a replete property, closure under binary products only has to be checked on
 biproducts**, since in a category with binary biproducts every binary product is one. -/
@@ -140,6 +151,12 @@ theorem homMk_comp {C : Type u₁} [Category.{v₁} C] {P : ObjectProperty C}
     homMk (f ≫ g) = homMk f ≫ homMk g :=
   rfl
 
+/-- The lift of a functor through a full subcategory, followed by the inclusion, is the original
+functor. Mathlib records this as the isomorphism `CategoryTheory.ObjectProperty.liftCompιIso`. -/
+theorem lift_comp_ι {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    (P : ObjectProperty D) (F : C ⥤ D) (hF : ∀ A, P (F.obj A)) : P.lift F hF ⋙ P.ι = F :=
+  Functor.ext (P.ι_obj_lift_obj F hF) fun _ _ _ ↦ by simp
+
 /-- A functor `G` given by the lift of `F` through a full subcategory acts on morphisms as `F`,
 up to the identifications of the underlying objects. Stated for any `G` equal to the lift, so that
 it applies to a functor defined as a lift (via its equation lemma) without unfolding it. -/
@@ -173,7 +190,7 @@ theorem congrFullSubcategory_functor_comp_ι
     (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).functor ⋙ Q.ι = P.ι ⋙ e.functor := by
   rw [congrFullSubcategory_functor]
-  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by simp
+  exact ObjectProperty.lift_comp_ι ..
 
 /-- The inverse functor on corresponding full subcategories, followed by the inclusion, is the
 inclusion followed by the original inverse. -/
@@ -183,7 +200,7 @@ theorem congrFullSubcategory_inverse_comp_ι
     (e : C ≌ D) (h : Q.inverseImage e.functor = P) :
     (e.congrFullSubcategory h).inverse ⋙ P.ι = Q.ι ⋙ e.inverse := by
   rw [congrFullSubcategory_inverse]
-  exact Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ by simp
+  exact ObjectProperty.lift_comp_ι ..
 
 section Evaluation
 
