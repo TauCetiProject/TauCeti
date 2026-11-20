@@ -31,6 +31,51 @@ open Equiv Convexity Equiv.Perm
 namespace TauCeti
 open SingularCube
 
+/-- The horizontal staircase vertices are the vertices after the native degeneracy. -/
+private lemma staircaseVertex_prismPermutation_castSucc {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n))
+    (k : Fin (n + 2)) (j : Fin n) :
+    staircaseVertex ((snocFin r π.symm).symm) k j.castSucc = staircaseVertex π (r.predAbove k) j
+      := by
+  simp only [staircaseVertex_apply, Equiv.symm_symm, snocFin_castSucc]
+  simp only [Fin.succAbove, Fin.predAbove, Fin.lt_def, Fin.val_castSucc,
+    apply_dite Fin.val, Fin.val_pred, Fin.coe_castPred, dite_eq_ite,
+    apply_ite Fin.val, Fin.val_succ]
+  split_ifs <;> first | rfl | omega
+
+/-- The vertical staircase switches after step `r`. -/
+private lemma staircaseVertex_prismPermutation_last {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n))
+    (k : Fin (n + 2)) :
+    staircaseVertex ((snocFin r π.symm).symm) k (Fin.last n) = if (r : ℕ) < (k : ℕ) then 1 else 0
+      := by
+  simp [staircaseVertex_apply]
+
+/-- Horizontal coordinates of the actual staircase are the native degenerate simplex. -/
+private lemma staircaseSimplex_prism_castSucc {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n))
+    (w : StdSimplex ℝ (Fin (n + 2))) (j : Fin n) :
+    staircaseSimplex ((snocFin r π.symm).symm) w j.castSucc = staircaseSimplex π (w.map
+      r.predAbove) j := by
+  let a : ConvexSpace.AffineMap ℝ (StdSimplex ℝ (Fin (n + 2))) ℝ :=
+    ⟨fun w ↦ affineStaircaseSimplex ((snocFin r π.symm).symm) w j.castSucc,
+      (affineStaircaseSimplex ((snocFin r π.symm).symm)).isAffineMap.eval _⟩
+  let b : ConvexSpace.AffineMap ℝ (StdSimplex ℝ (Fin (n + 2))) ℝ :=
+    ⟨fun w ↦ affineStaircaseSimplex π (w.map r.predAbove) j, by
+      simpa only [ConvexSpace.AffineMap.comp_apply, StdSimplex.coe_affineMap,
+        Function.comp_def] using
+        ((affineStaircaseSimplex π).comp
+          (StdSimplex.affineMap r.predAbove)).isAffineMap.eval j⟩
+  have ha (w) : a w = affineStaircaseSimplex ((snocFin r π.symm).symm) w j.castSucc := by
+    rfl
+  have hb (w) : b w = affineStaircaseSimplex π (w.map r.predAbove) j := by
+    rfl
+  have h : a = b := by
+    apply StdSimplex.affineMap_ext
+    intro k
+    rw [ha, hb, StdSimplex.map_single, affineStaircaseSimplex_single,
+      affineStaircaseSimplex_single]
+    exact staircaseVertex_prismPermutation_castSucc r π k j
+  apply Subtype.ext
+  simp only [staircaseSimplex_coe_apply]
+  simpa only [ha, hb] using DFunLike.congr_fun h w
 /-- The vertical coordinate is the native affine simplex classified by the prism step. -/
 private lemma staircaseSimplex_prism_last {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n))
     (w : StdSimplex ℝ (Fin (n + 2))) :
@@ -52,9 +97,11 @@ private lemma staircaseSimplex_prism_last {n : ℕ} (r : Fin (n + 1)) (π : Perm
     simp only [a, b, ConvexSpace.AffineMap.coe_mk,
       affineStaircaseSimplex_single, staircaseVertex_prismPermutation_last, StdSimplex.map_single,
       StdSimplex.weights_single, Finsupp.single_apply]
+    -- The two local affine coordinates have reduced to weights of their vertex values;
+    -- the remaining reduction identifies the real `0` and `1` literals in those weights.
     change (if (r : ℕ) < (k : ℕ) then (1 : ℝ) else 0) = if f k = 1 then 1 else 0
     have hf : f k = if (r : ℕ) < (k : ℕ) then 1 else 0 := by
-      change (SSet.stdSimplex.objEquiv (SSet.stdSimplex.objMk₁.{0} r.succ.castSucc)) k = _
+      dsimp only [f]
       refine (SSet.stdSimplex.objMk₁_apply.{0} _ _).trans ?_
       simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ]
       split_ifs <;> first | rfl | omega
@@ -70,14 +117,6 @@ private def prismIndexEquiv (n : ℕ) :
   (Equiv.prodCongr (Equiv.refl _) (Equiv.inv _)).trans
     ((snocFinEquiv n).trans (Equiv.inv _))
 
-private lemma prismIndexEquiv_apply {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n)) :
-    prismIndexEquiv n (r, π) = (snocFin r π.symm).symm := by
-  simp [prismIndexEquiv, Perm.inv_def]
-
-private lemma sign_prismIndex {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n)) :
-    Perm.sign (snocFin r π.symm).symm = (-1) ^ (n + (r : ℕ)) * π.sign := by
-  simp [sign_snocFin, add_comm]
-
 /-- Summing the prism insertion signs is exactly the signed sum over all larger orderings. -/
 private lemma sum_prismPermutation {A : Type*} [AddCommGroup A] (n : ℕ)
     (F : Perm (Fin (n + 1)) → A) :
@@ -86,12 +125,11 @@ private lemma sum_prismPermutation {A : Type*} [AddCommGroup A] (n : ℕ)
         ∑ ρ : Perm (Fin (n + 1)), (ρ.sign : ℤ) • F ρ := by
   have hc (r : Fin (n + 1)) (π : Perm (Fin n)) :
       (π.sign : ℤ) * (-1 : ℤ) ^ (n + (r : ℕ)) = Perm.sign (snocFin r π.symm).symm := by
-    have h := congrArg (fun u : ℤˣ ↦ (u : ℤ)) (sign_prismIndex r π)
-    simpa [mul_comm] using h.symm
+    simp [sign_snocFin, add_comm, mul_comm]
   simp only [Finset.smul_sum, smul_smul, hc]
   rw [Finset.sum_comm]
   conv_rhs => rw [← Equiv.sum_comp (prismIndexEquiv n)]
-  simp only [Fintype.sum_prod_type, prismIndexEquiv_apply]
+  simp [Fintype.sum_prod_type, prismIndexEquiv, Perm.inv_def]
 
 /-- Append the interval factor as the last coordinate of the original coordinate cube. -/
 def snocMap (n : ℕ) :
@@ -112,38 +150,24 @@ lemma snocMap_apply (n : ℕ) (z : (Fin n → unitInterval) × unitInterval) :
   unfold snocMap
   rfl
 
-private lemma singularProduct_apply {X Y : TopCat.{0}} {n : ℕ}
-    (x : (TopCat.toSSet.obj X) _⦋n⦌) (y : (TopCat.toSSet.obj Y) _⦋n⦌)
-    (w : StdSimplex ℝ (Fin (n + 1))) :
-    (X ⊗ Y).toSSetObjEquiv _
-      ((Functor.LaxMonoidal.μ TopCat.toSSet X Y).app _ (x, y)) w =
-        (X.toSSetObjEquiv _ x w, Y.toSSetObjEquiv _ y w) := by
-  refine Prod.ext ?_ ?_
-  · exact congrArg (fun f ↦ X.toSSetObjEquiv _ (f.app _ (x, y)) w)
-      (Functor.Monoidal.μ_fst TopCat.toSSet X Y)
-  · exact congrArg (fun f ↦ Y.toSSetObjEquiv _ (f.app _ (x, y)) w)
-      (Functor.Monoidal.μ_snd TopCat.toSSet X Y)
-
-private lemma classified_apply {X : TopCat.{0}} {p n : ℕ}
-    (x : (TopCat.toSSet.obj X) _⦋p⦌) (f : (Δ[p] : SSet.{0}) _⦋n⦌)
-    (w : StdSimplex ℝ (Fin (n + 1))) :
-    X.toSSetObjEquiv _ ((SSet.yonedaEquiv.symm x).app _ f) w =
-      X.toSSetObjEquiv _ x (w.map (SSet.stdSimplex.objEquiv f)) := by
-  exact (congrArg (fun z : (TopCat.toSSet.obj X) _⦋n⦌ ↦ X.toSSetObjEquiv _ z w)
-    (SSet.yonedaEquiv_symm_app x f)).trans
-      (TopCat.toSSetObjEquiv_naturality_apply (SSet.stdSimplex.objEquiv f) x w)
-
 /-- Each native prism simplex becomes the stated staircase simplex in the cube. -/
-lemma classified_prism {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n)) :
+private lemma classified_prism {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n)) :
     ((SSet.yonedaEquiv.symm
         (((TopCat.of (Fin n → unitInterval)).toSSetObjEquiv _).symm (staircaseSimplex π)) ⊗ₘ
       SSet.yonedaEquiv.symm (TauCeti.TopCat.simplex₁ (X := TopCat.of unitInterval)
           (ContinuousMap.id unitInterval))) ≫
       Functor.LaxMonoidal.μ TopCat.toSSet _ _ ≫ TopCat.toSSet.map (snocMap n)).app _
-      ((SSet.stdSimplex.objEquiv.symm (SimplexCategory.σ r),
-        SSet.stdSimplex.objMk₁ r.succ.castSucc) : ((Δ[n] : SSet.{0}) ⊗ Δ[1]) _⦋n + 1⦌) =
+      (SSet.prodStdSimplex₁.nonDegenerateEquiv r).val =
         ((TopCat.of (Fin (n + 1) → unitInterval)).toSSetObjEquiv _).symm
           (staircaseSimplex ((snocFin r π.symm).symm)) := by
+  -- The native enumeration has precisely the degeneracy and interval projections.
+  have he : (SSet.prodStdSimplex₁.nonDegenerateEquiv r).val =
+      ((SSet.stdSimplex.objEquiv.symm (SimplexCategory.σ r),
+        SSet.stdSimplex.objMk₁ r.succ.castSucc) : ((Δ[n] : SSet.{0}) ⊗ Δ[1]) _⦋n + 1⦌) := by
+    apply Prod.ext
+    · exact SSet.prodStdSimplex₁.nonDegenerateEquiv_fst r
+    · exact SSet.prodStdSimplex₁.nonDegenerateEquiv_snd r
+  rw [he]
   apply ((TopCat.of (Fin (n + 1) → unitInterval)).toSSetObjEquiv _).injective
   apply ContinuousMap.ext
   intro w
@@ -156,12 +180,14 @@ lemma classified_prism {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n)) :
        (SSet.yonedaEquiv.symm (TauCeti.TopCat.simplex₁ (X := TopCat.of unitInterval)
           (ContinuousMap.id unitInterval))).app _
           (SSet.stdSimplex.objMk₁ r.succ.castSucc))) w) = _
-  rw [singularProduct_apply]
-  rw [classified_apply, classified_apply, Equiv.apply_symm_apply,
+  simp only [Monoidal.tensorObj_obj]
+  rw [TopCat.toSSetObjEquiv_μ_apply]
+  rw [TopCat.toSSetObjEquiv_yonedaEquiv_symm_app, TopCat.toSSetObjEquiv_yonedaEquiv_symm_app,
+    Equiv.apply_symm_apply,
     TauCeti.TopCat.toSSetObjEquiv_simplex₁]
   simp only [ContinuousMap.comp_apply, ContinuousMap.id_apply, Equiv.apply_symm_apply]
   -- The native degeneracy has staircaseVertex map `r.predAbove`, and `snocMap` concatenates
-    -- coordinates.
+  -- coordinates.
   change Fin.snoc (staircaseSimplex π (w.map r.predAbove))
     (StdSimplex.homeomorphI (w.map (SSet.stdSimplex.objEquiv
       (SSet.stdSimplex.objMk₁ r.succ.castSucc)))) = staircaseSimplex ((snocFin r π.symm).symm) w
@@ -200,7 +226,7 @@ def integralShuffleStep (n : ℕ) :
     simp only [TensorProduct.add_tmul, map_add]
 
 /-- The native binary shuffle formula, with its actual prism simplices. -/
-lemma shuffle_prism (n : ℕ) (π : Perm (Fin n)) :
+private lemma shuffle_prism (n : ℕ) (π : Perm (Fin n)) :
     ((TopCat.toSSet.obj (TopCat.of (Fin n → unitInterval))).ιChainComplex
       (((TopCat.of (Fin n → unitInterval)).toSSetObjEquiv _).symm (staircaseSimplex π)) ⊗ₘ
       (TopCat.toSSet.obj (TopCat.of unitInterval)).ιChainComplex
@@ -216,8 +242,7 @@ lemma shuffle_prism (n : ℕ) (π : Perm (Fin n)) :
           SSet.yonedaEquiv.symm (TauCeti.TopCat.simplex₁ (X := TopCat.of unitInterval)
           (ContinuousMap.id unitInterval))) ≫
           Functor.LaxMonoidal.μ TopCat.toSSet _ _).app _
-          ((SSet.stdSimplex.objEquiv.symm (SimplexCategory.σ r),
-        SSet.stdSimplex.objMk₁ r.succ.castSucc) : ((Δ[n] : SSet.{0}) ⊗ Δ[1]) _⦋n + 1⦌)) := by
+          (SSet.prodStdSimplex₁.nonDegenerateEquiv r).val) := by
   rw [TopCat.ιChainComplex_tensorHom_ιChainComplex_shuffle_f,
     SSet.shuffleChain_right_interval]
   simp only [Preadditive.sum_comp, Preadditive.zsmul_comp]
@@ -225,12 +250,9 @@ lemma shuffle_prism (n : ℕ) (π : Perm (Fin n)) :
   exact congrArg (fun f ↦ ((-1 : ℤ) ^ (n + (r : ℕ))) • f)
     (SSet.ι_chainComplexMap_f _ _ _ _ _)
 
-private lemma eval_zsmul {M N : ModuleCat.{0} ℤ} (g : M ⟶ N) (a : M) (k : ℤ) :
-    (k • g).hom a = k • g.hom a := by
-  rw [ModuleCat.hom_zsmul]
-  exact map_zsmul (LinearMap.evalAddMonoidHom a) k g.hom
-
-private lemma integralShuffleStep_apply_ι (n : ℕ)
+/-- Evaluate one literal integral shuffle step on a native singular generator, including the
+coefficient unitor and coordinate concatenation. -/
+lemma integralShuffleStep_apply_ι (n : ℕ)
   (x : (TopCat.toSSet.obj (TopCat.of (Fin n → unitInterval))) _⦋n⦌) : integralShuffleStep n
     (((TopCat.toSSet.obj (TopCat.of (Fin n → unitInterval))).ιChainComplex
       (R := ModuleCat.of ℤ ℤ)
@@ -253,7 +275,7 @@ private lemma integralShuffleStep_apply_ι (n : ℕ)
   rfl
 
 /-- One integral shuffle inserts the interval at each possible ordered step. -/
-lemma integralShuffleStep_simplex (n : ℕ) (π : Perm (Fin n)) :
+private lemma integralShuffleStep_simplex (n : ℕ) (π : Perm (Fin n)) :
     integralShuffleStep n
       (((TopCat.toSSet.obj (TopCat.of (Fin n → unitInterval))).ιChainComplex
         (R := ModuleCat.of ℤ ℤ)
@@ -273,8 +295,7 @@ lemma integralShuffleStep_simplex (n : ℕ) (π : Perm (Fin n)) :
           (ContinuousMap.id unitInterval))) ≫
     Functor.LaxMonoidal.μ TopCat.toSSet _ _
   let z (r : Fin (n + 1)) : ((Δ[n] : SSet.{0}) ⊗ Δ[1]) _⦋n + 1⦌ :=
-    (SSet.stdSimplex.objEquiv.symm (SimplexCategory.σ r),
-      SSet.stdSimplex.objMk₁ r.succ.castSucc)
+    (SSet.prodStdSimplex₁.nonDegenerateEquiv r).val
   have hz (r : Fin (n + 1)) : (TopCat.toSSet.map (snocMap n)).app _ (f.app _ (z r)) =
       ((TopCat.of (Fin (n + 1) → unitInterval)).toSSetObjEquiv _).symm
         (staircaseSimplex ((snocFin r π.symm).symm)) := classified_prism r π
@@ -300,22 +321,8 @@ lemma integralShuffleStep_simplex (n : ℕ) (π : Perm (Fin n)) :
     Iso.inv_hom_id, Category.id_comp] at hunit
   have he := congrArg (fun g ↦ g.hom (1 : ℤ)) hunit
   rw [integralShuffleStep_apply_ι]
-  simpa only [ModuleCat.hom_sum, LinearMap.sum_apply, eval_zsmul,
-    Category.assoc] using he
-
-/-- Evaluate the literal cube sum in integral coefficients on the universal coordinate cube. -/
-lemma integralCubeChain_eq_sum (n : ℕ) :
-    (orderedChain (X := TopCat.of (Fin n → unitInterval)) (ContinuousMap.id (Fin n →
-      unitInterval)) (ModuleCat.of ℤ ℤ)).hom 1 =
-      ∑ π : Perm (Fin n), (π.sign : ℤ) •
-        ((TopCat.toSSet.obj (TopCat.of (Fin n → unitInterval))).ιChainComplex
-          (R := ModuleCat.of ℤ ℤ)
-          (((TopCat.of (Fin n → unitInterval)).toSSetObjEquiv _).symm (staircaseSimplex π))).hom 1
-            := by
-  simp only [orderedChain_eq_sum, ContinuousMap.id_comp, Units.smul_def,
-    ModuleCat.hom_sum, LinearMap.sum_apply]
-  refine Finset.sum_congr rfl fun π _ ↦ ?_
-  exact eval_zsmul _ 1 π.sign
+  simpa only [ModuleCat.hom_sum, ModuleCat.hom_zsmul,
+    ← LinearMap.evalAddMonoidHom_apply, map_sum, map_zsmul, Category.assoc] using he
 
 /-- A shuffle step takes the actual integral ordered `n`-cube to the ordered `(n+1)`-cube. -/
 lemma integralShuffleStep_orderedChain (n : ℕ) :
@@ -324,8 +331,9 @@ lemma integralShuffleStep_orderedChain (n : ℕ) :
         unitInterval)) (ModuleCat.of ℤ ℤ)).hom 1) =
       (orderedChain (X := TopCat.of (Fin (n + 1) → unitInterval)) (ContinuousMap.id (Fin (n + 1) →
         unitInterval)) (ModuleCat.of ℤ ℤ)).hom 1 := by
-  rw [integralCubeChain_eq_sum, integralCubeChain_eq_sum]
-  simp only [map_sum, map_zsmul]
+  simp only [orderedChain_eq_sum, ContinuousMap.id_comp, Units.smul_def,
+    ModuleCat.hom_sum, ModuleCat.hom_zsmul,
+    ← LinearMap.evalAddMonoidHom_apply, map_sum, map_zsmul]
   calc
     _ = ∑ π : Perm (Fin n), (π.sign : ℤ) •
         ∑ r : Fin (n + 1), ((-1 : ℤ) ^ (n + (r : ℕ))) •
@@ -352,6 +360,20 @@ def iteratedIntegralShuffle : (n : ℕ) →
       (R := ModuleCat.of ℤ ℤ) (TopCat.toSSetObj₀Equiv.symm 0)).hom 1)
     (fun n c ↦ integralShuffleStep n c)
 
+/-- The degree-zero integral iteration is the original point with coefficient one. -/
+@[simp]
+lemma iteratedIntegralShuffle_zero :
+    iteratedIntegralShuffle 0 =
+      ((TopCat.toSSet.obj (TopCat.of (Fin 0 → unitInterval))).ιChainComplex
+        (R := ModuleCat.of ℤ ℤ) (TopCat.toSSetObj₀Equiv.symm 0)).hom 1 := by
+  rfl
+
+/-- Appending an interval gives the next literal integral shuffle step. -/
+@[simp]
+lemma iteratedIntegralShuffle_succ (n : ℕ) :
+    iteratedIntegralShuffle (n + 1) = integralShuffleStep n (iteratedIntegralShuffle n) := by
+  rfl
+
 /-- In every degree the literal integral iterated shuffle is exactly the positive ordered sum. -/
 lemma iteratedIntegralShuffle_eq_orderedChain (n : ℕ) :
     iteratedIntegralShuffle n =
@@ -359,13 +381,12 @@ lemma iteratedIntegralShuffle_eq_orderedChain (n : ℕ) :
         unitInterval)) (ModuleCat.of ℤ ℤ)).hom 1 := by
   induction n with
   | zero =>
-    rw [orderedChain_zero]
+    rw [iteratedIntegralShuffle_zero, orderedChain_zero]
     have hz : (0 : Fin 0 → unitInterval) = (fun i ↦ i.elim0) := funext fun i ↦ i.elim0
     exact congrArg (fun x : Fin 0 → unitInterval ↦
       ((TopCat.toSSet.obj (TopCat.of (Fin 0 → unitInterval))).ιChainComplex
         (R := ModuleCat.of ℤ ℤ) (TopCat.toSSetObj₀Equiv.symm x)).hom 1) hz
   | succ n ih =>
-    change integralShuffleStep n (iteratedIntegralShuffle n) = _
-    rw [ih, integralShuffleStep_orderedChain]
+    rw [iteratedIntegralShuffle_succ, ih, integralShuffleStep_orderedChain]
 
 end TauCeti

@@ -534,6 +534,9 @@ private lemma prodCone_horizontal_prism {p : ℕ} (r : Fin (p + 1)) :
     cases k using Fin.cases with
     | zero => rfl
     | succ k =>
+      -- At a successor vertex the cone drops its leading zero (`cone_apply_succ`),
+      -- right whiskering applies the vertex map `Fin.succ` of `δ 0`, and the first prism
+      -- coordinate is `σ r`, whose vertex map is `r.predAbove`.
       change (r.predAbove k).succ = r.succ.predAbove k.succ
       exact (Fin.succ_predAbove_succ r k).symm
   · apply stdSimplex.ext
@@ -541,6 +544,8 @@ private lemma prodCone_horizontal_prism {p : ℕ} (r : Fin (p + 1)) :
     cases k using Fin.cases with
     | zero => rfl
     | succ k =>
+      -- The second coordinate is `nonDegenerateEquiv_snd = objMk₁ r.succ.castSucc`.
+      -- Its vertex evaluation after the cone is the following comparison in `Fin 2`.
       change (if k.castSucc < r.succ.castSucc then (0 : Fin 2) else 1) =
         if k.succ.castSucc < r.succ.succ.castSucc then 0 else 1
       apply if_congr
@@ -559,6 +564,8 @@ private lemma prodCone_vertical_top (p : ℕ) (f : (Δ[p] : SSet.{w}) ⟶ Δ[0])
     cases k using Fin.cases with
     | zero => rfl
     | succ i =>
+      -- The horizontal component of the lift is the identity; the cone's successor
+      -- value is `i`. The first coordinate of the zeroth prism is `σ 0`.
       change i = (0 : Fin (p + 1)).predAbove i.succ
       simp [Fin.predAbove]
   · apply stdSimplex.ext
@@ -566,6 +573,8 @@ private lemma prodCone_vertical_top (p : ℕ) (f : (Δ[p] : SSet.{w}) ⟶ Δ[0])
     cases k using Fin.cases with
     | zero => rfl
     | succ i =>
+      -- Left whiskering applies `δ 0` to the vertex of the constant simplex `f`;
+      -- `nonDegenerateEquiv_snd` gives the right side's `objMk₁` comparison.
       change (SimplexCategory.δ (0 : Fin 2)) ((yonedaEquiv f) i) =
         if i.succ.castSucc < (0 : Fin (p + 1)).succ.castSucc then 0 else 1
       have hi : (yonedaEquiv f) i = 0 := Fin.eq_zero _
@@ -626,8 +635,10 @@ private lemma prism_horizontal_ι {p : ℕ} (r : Fin (p + 1)) :
   rw [ι_chainComplexMap_f_assoc, stdSimplex.ιChainComplex_prodConeChain,
     prodCone_horizontal_prism]
 
-/-- The native shuffle with an interval is its literal signed sum of prism simplices. -/
-private lemma shuffleChain_right_interval_native (p : ℕ) (h : p + 1 = p + 1) :
+/-- The shuffle with an interval is its signed sum over Mathlib's actual nondegenerate
+prism simplices, in every degree. The two coordinate maps are given by
+`prodStdSimplex₁.nonDegenerateEquiv_fst` and `prodStdSimplex₁.nonDegenerateEquiv_snd`. -/
+lemma shuffleChain_right_interval (p : ℕ) (h : p + 1 = p + 1) :
     shuffleChain T p 1 (p + 1) h =
       ∑ r : Fin (p + 1), ((-1 : ℤ) ^ (p + (r : ℕ))) •
         ((Δ[p] : SSet.{w}) ⊗ Δ[1]).ιChainComplex
@@ -664,18 +675,6 @@ private lemma shuffleChain_right_interval_native (p : ℕ) (h : p + 1 = p + 1) :
       exact congrArg (fun e ↦ ((-1 : ℤ) ^ (p + (r : ℕ))) • e) (prism_horizontal_ι T r)
 
 
-
-/-- The shuffle with an interval is the signed sum of its literal prism vertex maps. -/
-lemma shuffleChain_right_interval (p : ℕ) (h : p + 1 = p + 1) :
-    shuffleChain T p 1 (p + 1) h =
-      ∑ r : Fin (p + 1), ((-1 : ℤ) ^ (p + (r : ℕ))) •
-        ((Δ[p] : SSet.{w}) ⊗ Δ[1]).ιChainComplex
-          ((stdSimplex.objEquiv.symm (SimplexCategory.σ r),
-            stdSimplex.objMk₁ r.succ.castSucc) : ((Δ[p] : SSet.{w}) ⊗ Δ[1]) _⦋p + 1⦌) := by
-  rw [shuffleChain_right_interval_native]
-  refine Finset.sum_congr rfl fun r _ ↦ ?_
-  -- Mathlib's enumeration is defined by precisely these two vertex maps.
-  congr 2
 
 private lemma shuffleChain_d_zero_one (h : 0 + 1 = 0 + 1) :
     shuffleChain T 0 1 1 h ≫ (((Δ[0] : SSet.{w}) ⊗ Δ[1]).chainComplex T).d 1 0 =

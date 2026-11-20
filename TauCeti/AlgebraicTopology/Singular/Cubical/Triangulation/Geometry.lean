@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.Fin
+public import TauCeti.Geometry.Convex.ConvexSpace.AffineMap
 public import Mathlib.Geometry.Convex.ConvexSpace.ModuleTopology
 public import Mathlib.Geometry.Convex.ConvexSpace.PathConnectedSpaceStdSimplex
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Basic
@@ -41,11 +42,11 @@ namespace Equiv.Perm
 def staircaseVertex {n : ℕ} (π : Perm (Fin n)) (k : Fin (n + 1)) (j : Fin n) : ℝ :=
   if (π.symm j : ℕ) < (k : ℕ) then 1 else 0
 
-/-- Evaluation on the coordinate changed at the specified step. -/
+/-- A staircase coordinate is one exactly after its step in the ordering. -/
 @[simp]
-lemma staircaseVertex_apply_perm {n : ℕ} (π : Perm (Fin n)) (k : Fin (n + 1)) (j : Fin n) :
-    staircaseVertex π k (π j) = if (j : ℕ) < (k : ℕ) then 1 else 0 := by
-  simp [staircaseVertex]
+lemma staircaseVertex_apply {n : ℕ} (π : Perm (Fin n)) (k : Fin (n + 1)) (j : Fin n) :
+    staircaseVertex π k j = if (π.symm j : ℕ) < (k : ℕ) then 1 else 0 := by
+  rfl
 
 /-- The initial staircase vertex is zero. -/
 @[simp]
@@ -121,16 +122,11 @@ def staircaseSimplex {n : ℕ} (π : Perm (Fin n)) :
       (StdSimplex.continuous_of_affineMap (affineStaircaseSimplex π))).subtype_mk _
 
 /-- The real coordinate of the cube-valued simplex is its affine coordinate. -/
+@[simp]
 lemma staircaseSimplex_coe_apply {n : ℕ} (π : Perm (Fin n))
     (w : StdSimplex ℝ (Fin (n + 1))) (j : Fin n) :
     (staircaseSimplex π w j : ℝ) = affineStaircaseSimplex π w j := by
   rfl
-
-/-- The ordered simplex evaluates to its stated staircase vertex. -/
-@[simp]
-lemma staircaseSimplex_single {n : ℕ} (π : Perm (Fin n)) (k : Fin (n + 1)) (j : Fin n) :
-    (staircaseSimplex π (.single k) j : ℝ) = staircaseVertex π k j := by
-  simp [staircaseSimplex, affineStaircaseSimplex]
 
 /-- Composing an affine simplex with a simplex vertex map changes its vertex
   tuple. -/
@@ -151,7 +147,7 @@ lemma staircaseSimplex_map_eq {n m : ℕ} (π ρ : Perm (Fin n))
     staircaseSimplex π (w.map f) = staircaseSimplex ρ (w.map f) := by
   funext j
   apply Subtype.ext
-  change affineStaircaseSimplex π (w.map f) j = affineStaircaseSimplex ρ (w.map f) j
+  simp only [staircaseSimplex_coe_apply]
   rw [affineStaircaseSimplex_map, affineStaircaseSimplex_map, h]
 
 /-- The internal face shared by two consecutive coordinate orderings is literally equal. -/
@@ -166,19 +162,6 @@ lemma staircaseSimplex_mul_swap_face {n : ℕ} (π : Perm (Fin (n + 1))) (k : Fi
     intro e
     apply h
     exact Fin.ext e)
-
-/-- Coordinate insertion, as a native affine map on the ambient real coordinate models. -/
-private def insertAffine {n : ℕ} (j : Fin (n + 1)) (a : ℝ) :
-    ConvexSpace.AffineMap ℝ (Fin n → ℝ) (Fin (n + 1) → ℝ) where
-  toFun := fun x : Fin n → ℝ ↦ j.insertNth a x
-  isAffineMap_toFun := by
-    rw [isAffineMap_pi_iff]
-    intro k
-    refine Fin.succAboveCases j ?_ ?_ k
-    · simpa using (IsAffineMap.const (R := ℝ) (X := Fin n → ℝ) a)
-    · intro i
-      simpa using (Pi.isAffineMap_eval (R := ℝ) (i := i) :
-        IsAffineMap ℝ (fun x : Fin n → ℝ ↦ x i))
 
 /-- After the first step, deleting its coordinate gives the smaller ordered simplex. -/
 lemma staircaseVertex_decompose_succ {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n))
@@ -197,24 +180,24 @@ lemma staircaseSimplex_decompose_upper {n : ℕ} (j : Fin (n + 1)) (π : Perm (F
     staircaseSimplex (consFin j π) (w.map Fin.succ) =
       j.insertNth 1 (staircaseSimplex π w) := by
   have h : StdSimplex.affineMapMk (staircaseVertex (consFin j π) ∘ Fin.succ) =
-      (insertAffine j 1).comp (affineStaircaseSimplex π) := by
+      (ConvexSpace.AffineMap.finInsertNth j 1).comp (affineStaircaseSimplex π) := by
     apply StdSimplex.affineMap_ext
     intro k
-    simp [affineStaircaseSimplex, insertAffine, staircaseVertex_decompose_succ]
+    simp [affineStaircaseSimplex, ConvexSpace.AffineMap.finInsertNth_apply,
+      staircaseVertex_decompose_succ]
   funext i
   refine Fin.succAboveCases j ?_ ?_ i
   · apply Subtype.ext
     simp only [Fin.insertNth_apply_same]
-    change affineStaircaseSimplex (consFin j π) (w.map Fin.succ) j = 1
+    rw [staircaseSimplex_coe_apply]
     rw [affineStaircaseSimplex_map, h]
-    simp [insertAffine]
+    simp [ConvexSpace.AffineMap.finInsertNth_apply]
   · intro k
     apply Subtype.ext
     simp only [Fin.insertNth_apply_succAbove]
-    change affineStaircaseSimplex (consFin j π) (w.map Fin.succ) (j.succAbove k) =
-      affineStaircaseSimplex π w k
+    simp only [staircaseSimplex_coe_apply]
     rw [affineStaircaseSimplex_map, h]
-    simp [insertAffine]
+    simp [ConvexSpace.AffineMap.finInsertNth_apply]
 
 /-- Before the last step the distinguished coordinate remains zero. -/
 lemma staircaseVertex_snocFin_castSucc {n : ℕ} (j : Fin (n + 1))
@@ -235,29 +218,24 @@ lemma staircaseSimplex_snocFin_lower {n : ℕ} (j : Fin (n + 1))
     staircaseSimplex (snocFin j π) (w.map Fin.castSucc) =
       j.insertNth 0 (staircaseSimplex π w) := by
   have h : StdSimplex.affineMapMk (staircaseVertex (snocFin j π) ∘ Fin.castSucc) =
-      (insertAffine j 0).comp (affineStaircaseSimplex π) := by
+      (ConvexSpace.AffineMap.finInsertNth j 0).comp (affineStaircaseSimplex π) := by
     apply StdSimplex.affineMap_ext
     intro k
-    simp [affineStaircaseSimplex, insertAffine, staircaseVertex_snocFin_castSucc]
+    simp [affineStaircaseSimplex, ConvexSpace.AffineMap.finInsertNth_apply,
+      staircaseVertex_snocFin_castSucc]
   funext i
   refine Fin.succAboveCases j ?_ ?_ i
   · apply Subtype.ext
     simp only [Fin.insertNth_apply_same]
-    change affineStaircaseSimplex (snocFin j π) (w.map Fin.castSucc) j = 0
+    rw [staircaseSimplex_coe_apply]
     rw [affineStaircaseSimplex_map, h]
-    simp [insertAffine]
+    simp [ConvexSpace.AffineMap.finInsertNth_apply]
   · intro k
     apply Subtype.ext
     simp only [Fin.insertNth_apply_succAbove]
-    change affineStaircaseSimplex (snocFin j π) (w.map Fin.castSucc) (j.succAbove k) =
-      affineStaircaseSimplex π w k
+    simp only [staircaseSimplex_coe_apply]
     rw [affineStaircaseSimplex_map, h]
-    simp [insertAffine]
-
-/-- Coordinate reindexing on the ambient real coordinate model is affine. -/
-private def coordinateAffine {n : ℕ} (τ : Perm (Fin n)) :
-    ConvexSpace.AffineMap ℝ (Fin n → ℝ) (Fin n → ℝ) where
-  toFun x := x ∘ τ
+    simp [ConvexSpace.AffineMap.finInsertNth_apply]
 
 /-- A coordinate permutation reindexes the staircase order by inverse left multiplication. -/
 lemma staircaseVertex_coordinatePermutation {n : ℕ} (π τ : Perm (Fin n)) (k : Fin (n + 1)) :
@@ -272,15 +250,20 @@ lemma staircaseVertex_coordinatePermutation {n : ℕ} (π τ : Perm (Fin n)) (k 
 lemma staircaseSimplex_coordinatePermutation {n : ℕ} (π τ : Perm (Fin n))
     (w : StdSimplex ℝ (Fin (n + 1))) :
     staircaseSimplex (τ.symm * π) w = staircaseSimplex π w ∘ τ := by
-  have h : affineStaircaseSimplex (τ.symm * π) = (coordinateAffine τ).comp (affineStaircaseSimplex
+  have h : affineStaircaseSimplex (τ.symm * π) = (ConvexSpace.AffineMap.piPrecomp τ).comp
+    (affineStaircaseSimplex
     π) := by
     apply StdSimplex.affineMap_ext
     intro k
-    simp [affineStaircaseSimplex, coordinateAffine, staircaseVertex_coordinatePermutation]
+    simpa only [ConvexSpace.AffineMap.coe_comp, Function.comp_apply,
+      affineStaircaseSimplex_single, ConvexSpace.AffineMap.piPrecomp_apply,
+      Function.comp_def] using staircaseVertex_coordinatePermutation π τ k
   funext j
   apply Subtype.ext
-  change affineStaircaseSimplex (τ.symm * π) w j = affineStaircaseSimplex π w (τ j)
-  exact congrArg (fun z : Fin n → ℝ ↦ z j) (DFunLike.congr_fun h w)
+  simp only [Function.comp_apply, staircaseSimplex_coe_apply]
+  simpa only [ConvexSpace.AffineMap.coe_comp, Function.comp_apply,
+    ConvexSpace.AffineMap.piPrecomp_apply] using
+      congrArg (fun z : Fin n → ℝ ↦ z j) (DFunLike.congr_fun h w)
 
 /-- Coordinate permutation followed by an ordered simplex changes its permutation index. -/
 lemma precomp_comp_staircaseSimplex {n : ℕ} (π τ : Perm (Fin n)) :
@@ -296,43 +279,9 @@ lemma staircaseSimplex_one (w : StdSimplex ℝ (Fin 2)) :
   funext j
   obtain rfl : j = 0 := Fin.eq_zero _
   apply Subtype.ext
-  simp [staircaseSimplex, affineStaircaseSimplex, StdSimplex.affineMapMk_apply_eq_sum_of_fintype,
+  rw [staircaseSimplex_coe_apply]
+  simp [affineStaircaseSimplex, StdSimplex.affineMapMk_apply_eq_sum_of_fintype,
     Fin.sum_univ_two, staircaseVertex, StdSimplex.homeomorphI_apply_coe]
 
-/-- The horizontal staircase vertices are the vertices after the native degeneracy. -/
-lemma staircaseVertex_prismPermutation_castSucc {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n))
-    (k : Fin (n + 2)) (j : Fin n) :
-    staircaseVertex ((snocFin r π.symm).symm) k j.castSucc = staircaseVertex π (r.predAbove k) j
-      := by
-  simp only [staircaseVertex, Equiv.symm_symm, snocFin_castSucc]
-  simp only [Fin.succAbove, Fin.predAbove, Fin.lt_def, Fin.val_castSucc,
-    apply_dite Fin.val, Fin.val_pred, Fin.coe_castPred, dite_eq_ite,
-    apply_ite Fin.val, Fin.val_succ]
-  split_ifs <;> first | rfl | omega
-
-/-- The vertical staircase switches after step `r`. -/
-lemma staircaseVertex_prismPermutation_last {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n))
-    (k : Fin (n + 2)) :
-    staircaseVertex ((snocFin r π.symm).symm) k (Fin.last n) = if (r : ℕ) < (k : ℕ) then 1 else 0
-      := by
-  simp [staircaseVertex]
-
-/-- Horizontal coordinates of the actual staircase are the native degenerate simplex. -/
-lemma staircaseSimplex_prism_castSucc {n : ℕ} (r : Fin (n + 1)) (π : Perm (Fin n))
-    (w : StdSimplex ℝ (Fin (n + 2))) (j : Fin n) :
-    staircaseSimplex ((snocFin r π.symm).symm) w j.castSucc = staircaseSimplex π (w.map
-      r.predAbove) j := by
-  let a : ConvexSpace.AffineMap ℝ (StdSimplex ℝ (Fin (n + 2))) ℝ :=
-    ⟨fun w ↦ affineStaircaseSimplex ((snocFin r π.symm).symm) w j.castSucc,
-      (affineStaircaseSimplex ((snocFin r π.symm).symm)).isAffineMap.eval _⟩
-  let b : ConvexSpace.AffineMap ℝ (StdSimplex ℝ (Fin (n + 2))) ℝ :=
-    ⟨fun w ↦ affineStaircaseSimplex π (w.map r.predAbove) j,
-      ((affineStaircaseSimplex π).comp (StdSimplex.affineMap r.predAbove)).isAffineMap.eval _⟩
-  have h : a = b := by
-    apply StdSimplex.affineMap_ext
-    intro k
-    simpa [a, b, affineStaircaseSimplex] using staircaseVertex_prismPermutation_castSucc r π k j
-  apply Subtype.ext
-  exact DFunLike.congr_fun h w
 
 end Equiv.Perm

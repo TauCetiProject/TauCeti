@@ -44,47 +44,32 @@ universe r w v u
 namespace TauCeti
 
 
-/-- Restrict a continuous simplex to one of its faces. -/
-private def simplexFace {Y : Type*} [TopologicalSpace Y] {n : ℕ}
-    (s : C(StdSimplex ℝ (Fin (n + 2)), Y)) (j : Fin (n + 2)) :
-    C(StdSimplex ℝ (Fin (n + 1)), Y) :=
-  s.comp ⟨StdSimplex.map j.succAbove, by fun_prop⟩
-
-/-- Evaluation of a restricted simplex. -/
-@[simp]
-private lemma simplexFace_apply {Y : Type*} [TopologicalSpace Y] {n : ℕ}
-    (s : C(StdSimplex ℝ (Fin (n + 2)), Y)) (j : Fin (n + 2))
-    (w : StdSimplex ℝ (Fin (n + 1))) :
-    simplexFace s j w = s (w.map j.succAbove) := by
-  unfold simplexFace
-  rfl
-
 /-- Adjacent orderings have the identical internal simplex face. -/
 private lemma simplexFace_mul_swap {n : ℕ} (π : Perm (Fin (n + 1))) (k : Fin n) :
-    simplexFace (staircaseSimplex (π * swap k.castSucc k.succ)) k.succ.castSucc =
-      simplexFace (staircaseSimplex π) k.succ.castSucc := by
+    ContinuousMap.simplexFace (staircaseSimplex (π * swap k.castSucc k.succ)) k.succ.castSucc =
+      ContinuousMap.simplexFace (staircaseSimplex π) k.succ.castSucc := by
   apply ContinuousMap.ext
   intro w
-  exact staircaseSimplex_mul_swap_face π k w
+  simpa only [ContinuousMap.simplexFace_apply] using staircaseSimplex_mul_swap_face π k w
 
 /-- The first simplex face is the ordered simplex in the upper cubical face. -/
 private lemma simplexFace_decompose_upper {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
-    simplexFace (staircaseSimplex (consFin j π)) 0 =
+    ContinuousMap.simplexFace (staircaseSimplex (consFin j π)) 0 =
       ((SingularCube.face j 1 (ContinuousMap.id _))).comp (staircaseSimplex π) := by
   apply ContinuousMap.ext
   intro w
-  simpa only [simplexFace, SingularCube.face_apply, ContinuousMap.comp_apply,
+  simpa only [ContinuousMap.simplexFace_apply, SingularCube.face_apply, ContinuousMap.comp_apply,
     ContinuousMap.id_apply, ContinuousMap.coe_mk, Fin.succAbove_zero] using
     staircaseSimplex_decompose_upper j π w
 
 /-- The last simplex face is the ordered simplex in the lower cubical face. -/
 private lemma simplexFace_snocFin_lower {n : ℕ} (j : Fin (n + 1))
     (π : Perm (Fin n)) :
-    simplexFace (staircaseSimplex (snocFin j π)) (Fin.last (n + 1)) =
+    ContinuousMap.simplexFace (staircaseSimplex (snocFin j π)) (Fin.last (n + 1)) =
       ((SingularCube.face j 0 (ContinuousMap.id _))).comp (staircaseSimplex π) := by
   apply ContinuousMap.ext
   intro w
-  simpa only [simplexFace, SingularCube.face_apply, ContinuousMap.comp_apply,
+  simpa only [ContinuousMap.simplexFace_apply, SingularCube.face_apply, ContinuousMap.comp_apply,
     ContinuousMap.id_apply, ContinuousMap.coe_mk, Fin.succAbove_last] using
     staircaseSimplex_snocFin_lower j π w
 
@@ -94,29 +79,20 @@ variable {A : Type*} [AddCommGroup A]
 private lemma sum_sign_internal_face {n : ℕ}
     (F : C(StdSimplex ℝ (Fin (n + 1)), Fin (n + 1) → unitInterval) → A)
     (k : Fin n) :
-    ∑ π : Perm (Fin (n + 1)), π.sign • F (simplexFace (staircaseSimplex π) k.succ.castSucc) = 0 :=
-      by
-  refine Finset.sum_involution (fun π _ ↦ π * swap k.castSucc k.succ) (fun π _ ↦ ?_)
-    (fun π _ _ ↦ ?_) (fun _ _ ↦ Finset.mem_univ _) (fun π _ ↦ by simp [mul_assoc])
-  · rw [simplexFace_mul_swap, Perm.sign_mul, Perm.sign_swap k.castSucc_lt_succ.ne]
-    simp
-  · rw [Ne, mul_eq_left, swap_eq_one_iff]
-    exact k.castSucc_lt_succ.ne
+    ∑ π : Perm (Fin (n + 1)), π.sign •
+      F (ContinuousMap.simplexFace (staircaseSimplex π) k.succ.castSucc) = 0 := by
+  exact TauCeti.sum_sign_smul_eq_zero_of_mul_swap _ k.castSucc k.succ
+    k.castSucc_lt_succ.ne (fun π ↦ congrArg F (simplexFace_mul_swap π k))
 
 /-- The upper exterior faces have the alternating cubical upper-face signs. -/
 private lemma sum_sign_upper_face {n : ℕ}
     (F : C(StdSimplex ℝ (Fin (n + 1)), Fin (n + 1) → unitInterval) → A) :
-    ∑ π : Perm (Fin (n + 1)), π.sign • F (simplexFace (staircaseSimplex π) 0) =
+    ∑ π : Perm (Fin (n + 1)), π.sign • F (ContinuousMap.simplexFace (staircaseSimplex π) 0) =
       ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
         ∑ π : Perm (Fin n), π.sign • F (((SingularCube.face j 1 (ContinuousMap.id _))).comp
           (staircaseSimplex π)) := by
-  rw [← (consFinEquiv n).sum_comp, Fintype.sum_prod_type]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Finset.smul_sum]
-  refine Finset.sum_congr rfl fun π _ ↦ ?_
-  rw [consFinEquiv_apply, simplexFace_decompose_upper, sign_consFin,
-    mul_smul]
-  simp [Units.smul_def]
+  rw [TauCeti.sum_sign_smul_eq_sum_consFin n]
+  simp only [simplexFace_decompose_upper]
 
 /-- The sign on a last simplex face becomes the negative lower cubical face sign. -/
 private lemma last_face_sign {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) (a : A) :
@@ -138,14 +114,14 @@ private lemma sum_sign_lower_face {n : ℕ}
     (F : C(StdSimplex ℝ (Fin (n + 1)), Fin (n + 1) → unitInterval) → A) :
     ((-1 : ℤ) ^ (n + 1)) •
         ∑ π : Perm (Fin (n + 1)), π.sign •
-          F (simplexFace (staircaseSimplex π) (Fin.last (n + 1))) =
+          F (ContinuousMap.simplexFace (staircaseSimplex π) (Fin.last (n + 1))) =
       -(∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
         ∑ π : Perm (Fin n), π.sign • F (((SingularCube.face j 0 (ContinuousMap.id _))).comp
           (staircaseSimplex π))) := by
   calc
     _ = ∑ j : Fin (n + 1), ∑ π : Perm (Fin n),
         ((-1 : ℤ) ^ (n + 1)) • ((snocFin j π).sign •
-          F (simplexFace (staircaseSimplex (snocFin j π)) (Fin.last (n + 1)))) := by
+          F (ContinuousMap.simplexFace (staircaseSimplex (snocFin j π)) (Fin.last (n + 1)))) := by
       rw [← (snocFinEquiv n).sum_comp, Fintype.sum_prod_type]
       simp only [Finset.smul_sum, snocFinEquiv_apply]
     _ = _ := by
@@ -156,7 +132,8 @@ private lemma sum_sign_lower_face {n : ℕ}
 private lemma sum_sign_boundary {n : ℕ}
     (F : C(StdSimplex ℝ (Fin (n + 1)), Fin (n + 1) → unitInterval) → A) :
     ∑ π : Perm (Fin (n + 1)), π.sign •
-        ∑ k : Fin (n + 2), ((-1 : ℤ) ^ (k : ℕ)) • F (simplexFace (staircaseSimplex π) k) =
+        ∑ k : Fin (n + 2), ((-1 : ℤ) ^ (k : ℕ)) •
+          F (ContinuousMap.simplexFace (staircaseSimplex π) k) =
       ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
         (∑ π : Perm (Fin n), π.sign • F (((SingularCube.face j 1 (ContinuousMap.id _))).comp
           (staircaseSimplex π)) -
@@ -167,7 +144,7 @@ private lemma sum_sign_boundary {n : ℕ}
   have hi (k : Fin n) :
       ∑ π : Perm (Fin (n + 1)), π.sign •
         ((-1 : ℤ) ^ (k.castSucc.succ : ℕ)) •
-          F (simplexFace (staircaseSimplex π) k.castSucc.succ) = 0 := by
+          F (ContinuousMap.simplexFace (staircaseSimplex π) k.castSucc.succ) = 0 := by
     simp_rw [smul_comm (Perm.sign _)]
     rw [← Finset.smul_sum]
     have h := sum_sign_internal_face F k
@@ -199,23 +176,13 @@ lemma orderedChain_eq_sum {n : ℕ} (c : SingularCube X n) (M : C) :
   unfold orderedChain
   rfl
 
-/-- The simplex face in the triangulation is its actual restriction to a simplex facet. -/
-private lemma delta_staircaseSimplex {n : ℕ} (c : SingularCube X (n + 1))
-    (π : Perm (Fin (n + 1))) (j : Fin (n + 2)) :
-    (TopCat.toSSet.obj X).δ j ((X.toSSetObjEquiv _).symm (c.comp (staircaseSimplex π))) =
-      (X.toSSetObjEquiv _).symm (c.comp (simplexFace (staircaseSimplex π) j)) := by
-  -- The native face notation is the simplicial map of the standard face morphism.
-  change (TopCat.toSSet.obj X).map (SimplexCategory.δ j).op _ = _
-  rw [TopCat.toSSetObjEquiv_symm_naturality]
-  congr 1
-
 /-- The literal positive sum has the positive cubical boundary, opposite to the native one. -/
 lemma orderedChain_boundary {n : ℕ} (c : SingularCube X (n + 1)) (M : C) :
     orderedChain c M ≫ ((TopCat.toSSet.obj X).chainComplex M).d (n + 1) n =
       ∑ j : Fin (n + 1), ((-1 : ℤ) ^ (j : ℕ)) •
         (orderedChain (SingularCube.face j 1 c) M - orderedChain (SingularCube.face j 0 c) M) := by
   simp only [orderedChain, Preadditive.sum_comp, Units.smul_def, Preadditive.zsmul_comp,
-    SSet.ιChainComplex_d, delta_staircaseSimplex]
+    SSet.ιChainComplex_d, TopCat.toSSetObjEquiv_symm_δ, ContinuousMap.simplexFace_comp]
   simp only [← Units.smul_def]
   have h := sum_sign_boundary (fun s ↦ (TopCat.toSSet.obj X).ιChainComplex
     (R := M) ((X.toSSetObjEquiv _).symm (c.comp s)))
@@ -379,11 +346,11 @@ lemma nativeOrderedTriangulation_single_zero (M : ModuleCat.{max u w} R) (c : Si
 /-- The positive permutation sum reverses the raw module boundary. -/
 lemma orderedTriangulation_boundary (M : ModuleCat.{max u w} R) (n : ℕ) :
     (((TopCat.toSSet.obj X).chainComplex M).d (n + 1) n).hom ∘ₗ orderedTriangulation X M (n + 1) =
-      -(orderedTriangulation X M n ∘ₗ CubicalChain.boundaryWithCoefficients X R M n) := by
+      -(orderedTriangulation X M n ∘ₗ CubicalChain.boundary X R M n) := by
   apply Finsupp.lhom_ext
   intro c a
   simp only [LinearMap.comp_apply, LinearMap.neg_apply]
-  rw [orderedTriangulation_boundary_single, CubicalChain.boundaryWithCoefficients_single]
+  rw [orderedTriangulation_boundary_single, CubicalChain.boundary_single]
   simp only [map_sum, map_zsmul, map_sub]
   rw [← Finset.sum_neg_distrib]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
@@ -393,7 +360,7 @@ lemma orderedTriangulation_boundary (M : ModuleCat.{max u w} R) (n : ℕ) :
 lemma nativeOrderedTriangulation_boundary (M : ModuleCat.{max u w} R) (n : ℕ) :
     (((TopCat.toSSet.obj X).chainComplex M).d (n + 1) n).hom ∘ₗ
         nativeOrderedTriangulation X M (n + 1) = nativeOrderedTriangulation X M n ∘ₗ
-          CubicalChain.boundaryWithCoefficients X R M n := by
+          CubicalChain.boundary X R M n := by
   apply LinearMap.ext
   intro c
   have h := LinearMap.congr_fun (orderedTriangulation_boundary (X := X) M n) c
@@ -408,11 +375,17 @@ def orderedTriangulationChainMap (X : TopCat.{w}) (M : ModuleCat.{max u w} R) :
   f n := ModuleCat.ofHom (nativeOrderedTriangulation X M n)
   comm' := by
     rintro _ n rfl
-    -- This package is the native `ChainComplex.of` on the original Finsupp modules.
-    simp only [rawCubicalChainComplexObj, ChainComplex.of_d]
     apply ModuleCat.hom_ext
-    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom]
-    exact nativeOrderedTriangulation_boundary (X := X) M n
+    apply LinearMap.ext
+    intro c
+    -- The raw term is definitionally the original Finsupp module; naming that carrier
+    -- keeps ModuleCat composition rewrites from selecting an opaque source object.
+    change SingularCube X (n + 1) →₀ M at c
+    change ((TopCat.toSSet.obj X).chainComplex M).d (n + 1) n
+      (nativeOrderedTriangulation X M (n + 1) c) =
+      nativeOrderedTriangulation X M n (((rawCubicalChainComplexObj X M).d (n + 1) n).hom c)
+    rw [rawCubicalChainComplexObj_d_apply]
+    exact LinearMap.congr_fun (nativeOrderedTriangulation_boundary (X := X) M n) c
 
 
 /-- The component of the native chain map is the literal degree-corrected permutation sum. -/

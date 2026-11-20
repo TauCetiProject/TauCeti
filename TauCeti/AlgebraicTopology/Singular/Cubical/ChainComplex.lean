@@ -40,9 +40,11 @@ noncomputable section
 
 open CategoryTheory
 
-universe u
+universe u r w
 
 namespace TauCeti
+
+section Normalized
 
 variable (R : Type u) [Ring R]
 
@@ -163,19 +165,34 @@ theorem NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology {X : TopCat
   obtain ⟨c', hc'⟩ := hex c ((normalizedCubicalChainComplex_obj_d_apply X n c).trans hc)
   exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
 
-end TauCeti
+end Normalized
 
-universe r w
-namespace TauCeti
 
 /-- The native chain-complex object on original raw cubes with arbitrary module coefficients.
 The coefficient ring universe is independent of the space and coefficient-module universes. -/
-noncomputable abbrev rawCubicalChainComplexObj {R : Type r} [Ring R]
+noncomputable def rawCubicalChainComplexObj {R : Type r} [Ring R]
     (X : TopCat.{w}) (M : ModuleCat.{max u w} R) : ChainComplex (ModuleCat.{max u w} R) ℕ :=
   ChainComplex.of (fun n ↦ ModuleCat.of R (SingularCube X n →₀ M))
-    (fun n ↦ ModuleCat.ofHom (CubicalChain.boundaryWithCoefficients X R M n)) fun n ↦ by
+    (fun n ↦ ModuleCat.ofHom (CubicalChain.boundary X R M n)) fun n ↦ by
       rw [← ModuleCat.ofHom_comp,
-        CubicalChain.boundaryWithCoefficients_comp_boundaryWithCoefficients]
+        CubicalChain.boundary_boundary]
       rfl
+
+
+/-- A raw complex term is the original finitely supported coefficient module. -/
+@[simp]
+lemma rawCubicalChainComplexObj_X {R : Type r} [Ring R] (X : TopCat.{w})
+    (M : ModuleCat.{max u w} R) (n : ℕ) :
+    (rawCubicalChainComplexObj X M).X n = ModuleCat.of R (SingularCube X n →₀ M) := by
+  rfl
+
+/-- The native raw differential acts by the unique module-valued cubical boundary. -/
+@[simp]
+lemma rawCubicalChainComplexObj_d_apply {R : Type r} [Ring R] (X : TopCat.{w})
+    (M : ModuleCat.{max u w} R) (n : ℕ) (c : SingularCube X (n + 1) →₀ M) :
+    ((rawCubicalChainComplexObj X M).d (n + 1) n).hom c =
+      CubicalChain.boundary X R M n c := by
+  simp only [rawCubicalChainComplexObj, ChainComplex.of_d]
+  rfl
 
 end TauCeti

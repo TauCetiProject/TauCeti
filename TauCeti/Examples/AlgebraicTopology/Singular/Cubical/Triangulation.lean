@@ -111,14 +111,15 @@ lemma square_two_triangles :
         (R := ModuleCat.of ℤ ℤ)
         (((TopCat.of (Fin 2 → unitInterval)).toSSetObjEquiv _).symm
           (staircaseSimplex (swap 0 1)))).hom 1 := by
-  rw [integralCubeChain_eq_sum]
+  simp only [orderedChain_eq_sum, ContinuousMap.id_comp, Units.smul_def,
+    ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_zsmul]
   have hu : (Finset.univ : Finset (Perm (Fin 2))) = {1, swap 0 1} := by
     ext π
     simpa using perm_two_cases π
   rw [hu, Finset.sum_pair (by decide)]
   simp only [Perm.sign_one, Units.val_one, one_zsmul,
     Perm.sign_swap (show (0 : Fin 2) ≠ 1 by decide), Units.val_neg,
-    neg_one_zsmul, sub_eq_add_neg]
+    neg_one_zsmul, sub_eq_add_neg, LinearMap.neg_apply]
 
 /-- The two actual triangles have exactly the same geometric diagonal face. -/
 lemma square_diagonal :
