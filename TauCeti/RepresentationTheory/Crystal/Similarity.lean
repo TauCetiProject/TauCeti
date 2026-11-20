@@ -326,7 +326,7 @@ def componentHom (ψ : SimilarityHom n c d) (C : c.graph.ConnectedComponent) :
   wt_toFun y := by simp
   ε_toFun j y := by simp
   eIter_toFun j y := Option.unattach_inj.mp <| by
-    rw [Option.unattach_map, ← Option.map_unattach (g := ψ)]
+    rw [Option.unattach_map, Option.map_subtype (g := ψ) (fun _ _ => rfl)]
     simp
 
 @[simp]
