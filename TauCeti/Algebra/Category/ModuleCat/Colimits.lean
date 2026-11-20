@@ -125,8 +125,8 @@ theorem isIso_of_isIso_app_self {F G : ModuleCat.{u} R ⥤ D}
     have hgf : g.hom ∘ₗ f.hom = 0 := linearMap_ext R fun k ↦ LinearMap.ext_ring (by
       rw [LinearMap.comp_apply, LinearMap.comp_apply, hf]
       exact k.2)
-    have hfg : Function.Exact f.hom g.hom := LinearMap.exact_iff.2 <|
-      le_antisymm (fun y hy ↦ ⟨_, hf ⟨y, hy⟩⟩) (LinearMap.range_le_ker_iff.2 hgf)
+    have hfg : Function.Exact f.hom g.hom :=
+      LinearMap.exact_of_comp_eq_zero_of_ker_le_range hgf fun y hy ↦ ⟨_, hf ⟨y, hy⟩⟩
     have hc := isColimitCokernelCofork f g hfg fun m ↦ ⟨_, hg m⟩
     have (j : WalkingParallelPair) :
         IsIso ((Functor.whiskerLeft (parallelPair f 0) α).app j) := by
