@@ -66,16 +66,22 @@ noncomputable section
 
 namespace IsQuotientCoveringMap
 
-/-- If `U` is disjoint from its nontrivial translates, then `q` is injective on every translate
-of `U`. -/
-private theorem injOn_smul_of_disjoint {M N G : Type*} [TopologicalSpace M] [TopologicalSpace N]
+/-- If `U` is disjoint from its nontrivial translates, then `q` is injective on `U`. -/
+private theorem injOn_of_disjoint {M N G : Type*} [TopologicalSpace M] [TopologicalSpace N]
     [Group G] [MulAction G M] {q : M → N} (hq : IsQuotientCoveringMap q G) {U : Set M}
-    (hU : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) (h : G) : InjOn q (h • U) := by
-  rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
-  simp only [hq.map_smul] at hab
+    (hU : ∀ g : G, ((g • ·) '' U ∩ U).Nonempty → g = 1) : InjOn q U := by
+  intro a ha b hb hab
   obtain ⟨k, rfl⟩ := hq.apply_eq_iff_mem_orbit.1 hab
   obtain rfl := hU k ⟨_, ⟨b, hb, rfl⟩, ha⟩
   simp
+
+/-- If `q` is injective on `S`, then it is injective on every translate of `S`, since
+`q (g • x) = q x`. -/
+private theorem injOn_smul {M N G : Type*} [TopologicalSpace M] [TopologicalSpace N]
+    [Group G] [MulAction G M] {q : M → N} (hq : IsQuotientCoveringMap q G) {S : Set M}
+    (hS : InjOn q S) (g : G) : InjOn q (g • S) := by
+  rw [← image_smul]
+  exact InjOn.image_of_comp (by simpa [comp_def, hq.map_smul] using hS)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -127,10 +133,8 @@ private theorem riemannianVolume_preimage_of_subset_image (hq : IsQuotientCoveri
       simp only [hq.map_smul]
       rw [image_inter_preimage, inter_eq_right.2 hDV]
     conv_rhs => rw [← himage]
-    refine (riemannianVolume_image_of_inner_mfderiv (hsmul g) ?_ fun x _ ↦ hinner x).symm
-    rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
-    simp only [hq.map_smul] at hab
-    rw [hV ha.1 hb.1 hab]
+    exact (riemannianVolume_image_of_inner_mfderiv (hsmul g)
+      (hq.injOn_smul (hV.mono inter_subset_left) g) fun x _ ↦ hinner x).symm
   rw [hunion, measure_iUnion hdisj hsmul, tsum_congr hpiece, ENNReal.tsum_const,
     ENat.card_eq_coe_natCard, ENat.toENNReal_coe]
 
@@ -144,8 +148,7 @@ theorem map_riemannianVolume (hq : IsQuotientCoveringMap q G)
   -- `q` is injective on a neighbourhood `U x` of each point disjoint from its translates, and the
   -- open sets `q '' interior (U x)` cover `N`; compare the two measures on each of them.
   choose U hU hUdisj using hq.disjoint
-  have hinj (x : M) : InjOn q (U x) := by
-    simpa using hq.injOn_smul_of_disjoint (hUdisj x) 1
+  have hinj (x : M) : InjOn q (U x) := hq.injOn_of_disjoint (hUdisj x)
   obtain ⟨T, hTc, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x ↦ interior (U x))
     fun x ↦ interior_mem_nhds.2 (hU x)
   have hopen := hq.isOpenQuotientMap.isOpenMap
@@ -215,9 +218,9 @@ theorem measurePreserving_smul_riemannianVolume (hq : IsQuotientCoveringMap q G)
     MeasurePreserving (g • ·) (riemannianVolume I M) (riemannianVolume I M) := by
   have hmeas : Measurable (g • · : M → M) := (hq.continuous_const_smul g).measurable
   refine ⟨hmeas, ?_⟩
-  -- `q` is injective on every translate of a neighbourhood `U x` disjoint from its translates.
+  -- `q` is injective on a neighbourhood `U x` of each point disjoint from its translates.
   choose U hU hUdisj using hq.disjoint
-  have hinj (x : M) (h : G) : InjOn q (h • U x) := hq.injOn_smul_of_disjoint (hUdisj x) h
+  have hinj (x : M) : InjOn q (U x) := hq.injOn_of_disjoint (hUdisj x)
   -- On a measurable set where `q` is injective, its volume is that of its image under `q`.
   have hvol {S : Set M} (hS : MeasurableSet S) (hSinj : InjOn q S) :
       riemannianVolume I M S = riemannianVolume I' N (q '' S) :=
@@ -232,8 +235,8 @@ theorem measurePreserving_smul_riemannianVolume (hq : IsQuotientCoveringMap q G)
     exact hmeas hA
   have hsub : D ∩ interior (U x) ⊆ U x := inter_subset_right.trans interior_subset
   rw [Measure.restrict_apply hD, Measure.restrict_apply hD, Measure.map_apply hmeas hA,
-    preimage_smul, hvol hA' ((hinj x g⁻¹).mono (smul_set_mono hsub)),
-    hvol hA ((hinj x 1).mono (by rwa [one_smul])), ← image_smul, image_image]
+    preimage_smul, hvol hA' ((hq.injOn_smul (hinj x) g⁻¹).mono (smul_set_mono hsub)),
+    hvol hA ((hinj x).mono hsub), ← image_smul, image_image]
   simp only [hq.map_smul]
 
 /-! ### The normalized pullback on `Lᵖ` -/
