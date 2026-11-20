@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.L2Multiplier
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Algebra.BigOperators.Finset.BoundedOverlap
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.Normed.Lp.Basic
@@ -107,8 +108,8 @@ The last section bounds a single homogeneous block `Pⱼ` on every `Lᵖ`, `1 �
 the scale: `‖Pⱼ f‖_p ≤ ‖𝓕⁻ ψ₀‖₁ ‖f‖_p` for `f ∈ L²`
 (`ContDiffBump.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le`), and `‖Pⱼ‖ ≤ 1` on `L²`
 (`ContDiffBump.norm_fourierMultiplierCLM_littlewoodPaley_le`). In dimension `0` every block
-vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero`, stated just before the
-homogeneous square function inequalities, which use it).
+vanishes (`ContDiffBump.fourierMultiplierCLM_littlewoodPaley_eq_zero`), which gives the
+dimension-`0` case of the forward homogeneous square function inequality.
 
 ## References
 
@@ -799,15 +800,10 @@ theorem tendsto_sum_fourierMultiplierCLM_littlewoodPaley [Nontrivial V]
       omega
     rw [hIcc, φ.sum_littlewoodPaley_Ioc (by omega)]
     exact abs_sub_le_of_nonneg_of_le φ.nonneg φ.le_one φ.nonneg φ.le_one
-  · have hmono : Monotone fun N : ℕ ↦ Finset.Icc (-(N : ℤ)) N := fun a b hab j hj ↦ by
-      simp only [Finset.mem_Icc] at hj ⊢
-      omega
-    have hcov : ∀ j : ℤ, ∃ N : ℕ, j ∈ Finset.Icc (-(N : ℤ)) N := fun j ↦
-      ⟨j.natAbs, by simp only [Finset.mem_Icc]; omega⟩
-    filter_upwards [Measure.ae_ne volume 0] with ξ hξ
+  · filter_upwards [Measure.ae_ne volume 0] with ξ hξ
     simpa only [Function.comp_def, Complex.ofReal_sum, Complex.ofReal_one] using
       (Complex.continuous_ofReal.tendsto _).comp
-        ((φ.hasSum_littlewoodPaley hξ).comp (tendsto_atTop_finset_of_monotone hmono hcov))
+        ((φ.hasSum_littlewoodPaley hξ).comp (Finset.tendsto_Icc_neg (R := ℤ)))
 
 end MeasureTheory.Lp
 
