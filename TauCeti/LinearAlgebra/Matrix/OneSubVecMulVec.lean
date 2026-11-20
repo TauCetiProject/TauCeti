@@ -21,7 +21,8 @@ The products, the commutation and braid relations, the two-sided inverse and the
 group element hold over an arbitrary ring, where the scalar of a product sits between the two
 vectors: `vecMulVec u (c • v)` has entries `u i * c * v j`. The quadratic relation, the
 determinant, the matrix inverse `⁻¹` and the induced linear automorphisms are stated over a
-commutative ring.
+commutative ring. The action of a scaled perturbation `1 - c • vecMulVec v w` on a column vector
+is computed for vectors in any algebra over a commutative ring.
 
 ## Main definitions
 
@@ -37,6 +38,8 @@ commutative ring.
   inverse.
 * `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply` and its inverse counterpart compute the
   induced linear automorphism on column vectors.
+* `Matrix.one_sub_smul_vecMulVec_mulVec`: the matrix `1 - c v wᵀ`, such as a Householder
+  reflection, sends `x` to `x - c v (w ⬝ᵥ x)`.
 -/
 
 public section
@@ -163,3 +166,15 @@ theorem oneSubVecMulVecGL_toLinearEquiv_symm_apply (t : Rˣ) (u v x : α → R)
   module
 
 end TauCeti
+
+namespace Matrix
+
+variable {n R α : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Ring α] [Algebra R α]
+
+/-- The matrix `1 - c v wᵀ` sends `x` to `x - c v (w ⬝ᵥ x)`, with the scalar `w ⬝ᵥ x` acting on
+the right of `v`. -/
+theorem one_sub_smul_vecMulVec_mulVec (c : R) (v w x : n → α) :
+    (1 - c • vecMulVec v w) *ᵥ x = x - c • MulOpposite.op (w ⬝ᵥ x) • v := by
+  rw [sub_mulVec, one_mulVec, smul_mulVec, vecMulVec_mulVec]
+
+end Matrix

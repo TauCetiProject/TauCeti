@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
-public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 import Mathlib.Analysis.InnerProductSpace.Dual
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
 # Nondegeneracy of the real inner product
@@ -17,16 +17,11 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 The real inner product `innerₗ E` is a nondegenerate bilinear form on `E`
 (`TauCeti.nondegenerate_inner`): a vector orthogonal to every vector is orthogonal to itself, hence
 zero. This is the hypothesis under which Mathlib's bilinear-form constructions, such as the dual
-basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. For any endomorphism `A`,
-the bilinear form `innerₗ E ∘ₗ A` is symmetric iff `A` is symmetric
-(`TauCeti.isSymm_innerₗ_comp_iff`). In finite dimension `innerₗ E` is moreover a perfect pairing
-(`TauCeti.bijective_innerₗ`), as Mathlib's `exteriorPower.hodgeStar` requires of its bilinear form,
-and yields the Riesz linear equivalence `TauCeti.bilinFormEquivEnd` identifying bilinear forms on
-`E` with endomorphisms of `E` via `⟪bilinFormEquivEnd E B u, v⟫ = B u v` and carrying symmetric
-forms to symmetric endomorphisms (`TauCeti.isSymmetric_bilinFormEquivEnd_iff`). Its pullback along
-an injective linear map, such as the metric induced by an immersion, is again nondegenerate
-(`TauCeti.nondegenerate_inner_comp`), so a vector is determined by its pairings with it
-(`TauCeti.eq_of_forall_inner_comp`).
+basis `LinearMap.BilinForm.dualBasis`, apply to the inner product. In finite dimension it is
+moreover a perfect pairing (`TauCeti.bijective_innerₗ`), as Mathlib's `exteriorPower.hodgeStar`
+requires of its bilinear form. Its pullback along an injective linear map, such as the metric
+induced by an immersion, is again nondegenerate (`TauCeti.nondegenerate_inner_comp`), so a vector
+is determined by its pairings with it (`TauCeti.eq_of_forall_inner_comp`).
 
 The dual basis of a basis `b` for the inner product pairs with a vector to give its coordinates
 in `b` (`Module.Basis.inner_dualBasis_left`), and it is obtained from `b` by the inverse of the Gram
@@ -46,12 +41,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 theorem nondegenerate_inner : (innerₗ E).Nondegenerate :=
   ⟨fun x hx ↦ inner_self_eq_zero.mp (hx x), fun y hy ↦ inner_self_eq_zero.mp (hy y)⟩
 
-/-- The bilinear form `innerₗ E ∘ₗ A` is symmetric iff the endomorphism `A` is symmetric. -/
-@[simp]
-theorem isSymm_innerₗ_comp_iff {A : Module.End ℝ E} :
-    LinearMap.BilinForm.IsSymm (innerₗ E ∘ₗ A) ↔ A.IsSymmetric :=
-  ⟨fun h u v ↦ by simpa [real_inner_comm] using h.eq u v,
-    fun h ↦ ⟨fun u v ↦ by simp [h u v, real_inner_comm]⟩⟩
+/-- A nonzero scalar multiple of the real inner product is nondegenerate. -/
+theorem nondegenerate_toBilinForm_smul_innerSL {c : ℝ} (hc : c ≠ 0) :
+    (c • innerSL ℝ (E := E)).toBilinForm.Nondegenerate := by
+  have hform : (c • innerSL ℝ (E := E)).toBilinForm = c • innerₗ E := by
+    ext u v
+    simp [innerSL_apply_apply ℝ]
+  rw [hform]
+  exact (BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)).2 nondegenerate_inner
 
 /-- In finite dimension the real inner product is a perfect pairing: `v ↦ ⟪v, ·⟫` is a bijection
 onto the dual. -/
@@ -59,63 +56,6 @@ theorem bijective_innerₗ [FiniteDimensional ℝ E] : Function.Bijective (inner
   convert (LinearMap.BilinForm.toDual (innerₗ E) nondegenerate_inner).bijective using 1
   ext v w
   exact (LinearMap.BilinForm.toDual_def nondegenerate_inner).symm
-
-variable (E) in
-/-- **Riesz equivalence between bilinear forms and endomorphisms** on a finite-dimensional real
-inner product space: `bilinFormEquivEnd E B` is the unique endomorphism `A` of `E` satisfying
-`⟪A u, v⟫ = B u v`, and its inverse sends `A` to `innerₗ E ∘ₗ A`. -/
-noncomputable def bilinFormEquivEnd [FiniteDimensional ℝ E] :
-    LinearMap.BilinForm ℝ E ≃ₗ[ℝ] Module.End ℝ E :=
-  (LinearEquiv.refl ℝ E).arrowCongr
-    (LinearMap.BilinForm.toDual (innerₗ E) nondegenerate_inner).symm
-
-/-- The inverse of `bilinFormEquivEnd E` sends an endomorphism `A` to `innerₗ E ∘ₗ A`. -/
-@[simp]
-theorem bilinFormEquivEnd_symm_apply [FiniteDimensional ℝ E] (A : Module.End ℝ E) :
-    (bilinFormEquivEnd E).symm A = innerₗ E ∘ₗ A := by
-  ext u v
-  exact LinearMap.BilinForm.toDual_def (B := innerₗ E) nondegenerate_inner
-
-/-- Pairing `bilinFormEquivEnd E B u` with `v` recovers `B u v`. -/
-@[simp]
-theorem inner_bilinFormEquivEnd_left [FiniteDimensional ℝ E]
-    (B : LinearMap.BilinForm ℝ E) (u v : E) :
-    ⟪bilinFormEquivEnd E B u, v⟫ = B u v := by
-  rw [← innerₗ_apply_apply]
-  exact LinearMap.BilinForm.apply_toDual_symm_apply (hB := nondegenerate_inner) (B u) v
-
-/-- Composing `innerₗ E` with `bilinFormEquivEnd E B` recovers `B`. -/
-@[simp]
-theorem innerₗ_comp_bilinFormEquivEnd [FiniteDimensional ℝ E]
-    (B : LinearMap.BilinForm ℝ E) :
-    innerₗ E ∘ₗ bilinFormEquivEnd E B = B := by
-  rw [← bilinFormEquivEnd_symm_apply, LinearEquiv.symm_apply_apply]
-
-/-- `bilinFormEquivEnd E` sends `innerₗ E ∘ₗ A` back to `A`. -/
-@[simp]
-theorem bilinFormEquivEnd_innerₗ_comp [FiniteDimensional ℝ E] (A : Module.End ℝ E) :
-    bilinFormEquivEnd E (innerₗ E ∘ₗ A) = A := by
-  rw [← bilinFormEquivEnd_symm_apply, LinearEquiv.apply_symm_apply]
-
-/-- The Riesz endomorphism of the inner product itself is the identity. -/
-@[simp]
-theorem bilinFormEquivEnd_innerₗ [FiniteDimensional ℝ E] :
-    bilinFormEquivEnd E (innerₗ E) = LinearMap.id := by
-  simpa using bilinFormEquivEnd_innerₗ_comp (LinearMap.id : Module.End ℝ E)
-
-/-- `bilinFormEquivEnd E B` is uniquely characterized by `⟪A u, v⟫ = B u v`. -/
-theorem bilinFormEquivEnd_eq_iff [FiniteDimensional ℝ E]
-    (B : LinearMap.BilinForm ℝ E) (A : Module.End ℝ E) :
-    bilinFormEquivEnd E B = A ↔ ∀ u v, ⟪A u, v⟫ = B u v :=
-  ⟨fun h ↦ h ▸ inner_bilinFormEquivEnd_left B, fun h ↦
-    LinearMap.ext fun u ↦ ext_inner_right ℝ fun v ↦ by rw [inner_bilinFormEquivEnd_left, h]⟩
-
-/-- `bilinFormEquivEnd E B` is symmetric iff the bilinear form `B` is symmetric. -/
-@[simp]
-theorem isSymmetric_bilinFormEquivEnd_iff [FiniteDimensional ℝ E]
-    {B : LinearMap.BilinForm ℝ E} :
-    (bilinFormEquivEnd E B).IsSymmetric ↔ B.IsSymm := by
-  rw [← isSymm_innerₗ_comp_iff, innerₗ_comp_bilinFormEquivEnd]
 
 /-- The real inner product pulled back along an injective linear map is nondegenerate: a vector
 `v` with `⟪L v, L w⟫ = 0` for every `w` has `⟪L v, L v⟫ = 0`, so `L v = 0`. -/

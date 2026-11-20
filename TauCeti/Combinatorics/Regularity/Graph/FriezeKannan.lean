@@ -79,24 +79,24 @@ theorem abs_steppedCount_sub_steppedCount_le {P Q : Finpartition (univ : Finset 
   rw [G.steppedCount_eq_sum_subtype Q, G.steppedCount_eq_sum_refinementParent P h]
   simp only [← sum_sub_distrib]
   calc _ ≤ ∑ C : Q.parts, ∑ D : Q.parts,
-        |(G.edgeDensity C.1 D.1 : ℝ) * #(A ∩ C.1) * #(B ∩ D.1) -
-          (G.edgeDensity (refinementParent h C).1 (refinementParent h D).1 : ℝ) *
-            #(A ∩ C.1) * #(B ∩ D.1)| :=
+        |(G.edgeDensity C.val D.val : ℝ) * #(A ∩ C.val) * #(B ∩ D.val) -
+          (G.edgeDensity (refinementParent h C).val (refinementParent h D).val : ℝ) *
+            #(A ∩ C.val) * #(B ∩ D.val)| :=
         (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun _ _ ↦ abs_sum_le_sum_abs _ _)
-    _ ≤ ∑ C : Q.parts, ∑ D : Q.parts, n ^ 2 * ((#C.1 * #D.1 / n ^ 2) *
-        |(G.edgeDensity C.1 D.1 : ℝ) -
-          G.edgeDensity (refinementParent h C).1 (refinementParent h D).1|) := by
+    _ ≤ ∑ C : Q.parts, ∑ D : Q.parts, n ^ 2 * ((#C.val * #D.val / n ^ 2) *
+        |(G.edgeDensity C.val D.val : ℝ) -
+          G.edgeDensity (refinementParent h C).val (refinementParent h D).val|) := by
         gcongr with C _ D _
         -- Parts are nonempty, so the host is nonempty and `n ≠ 0`.
-        obtain ⟨x, -⟩ := Q.nonempty_of_mem_parts C.2
+        obtain ⟨x, -⟩ := Q.nonempty_of_mem_parts C.property
         have : Nonempty V := ⟨x⟩
         have hn : n ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
         rw [← sub_mul, ← sub_mul, abs_mul, abs_mul, Nat.abs_cast, Nat.abs_cast]
         field_simp
         gcongr <;> exact inter_subset_right
-    _ = n ^ 2 * ∑ C : Q.parts, ∑ D : Q.parts, (#C.1 * #D.1 / n ^ 2) *
-        |(G.edgeDensity C.1 D.1 : ℝ) -
-          G.edgeDensity (refinementParent h C).1 (refinementParent h D).1| := by
+    _ = n ^ 2 * ∑ C : Q.parts, ∑ D : Q.parts, (#C.val * #D.val / n ^ 2) *
+        |(G.edgeDensity C.val D.val : ℝ) -
+          G.edgeDensity (refinementParent h C).val (refinementParent h D).val| := by
         simp only [mul_sum]
     _ ≤ n ^ 2 * √ε := by grw [G.weightedDensityDeviation_abs_le h hgap]
     _ = √ε * n ^ 2 := mul_comm _ _

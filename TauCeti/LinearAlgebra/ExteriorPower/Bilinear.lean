@@ -14,28 +14,10 @@ public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 A quadrilinear map alternating in each consecutive pair descends uniquely to a bilinear
 map on the second exterior power. Pair interchange becomes symmetry of the descended map.
 This supplies the algebraic passage from a metric-lowered curvature tensor to a form on
-bivectors, without choosing a basis. Two bilinear maps out of exterior squares agree as soon as
-they agree on all pairs of pure wedges (`exteriorPower.bilinMap_ext_ιMulti_two`).
+bivectors, without choosing a basis.
 -/
 
 public section
-
-namespace exteriorPower
-
-/-- Two bilinear maps `⋀[R]^2 M₁ →ₗ[R] ⋀[R]^2 M₂ →ₗ[R] N` agree if they agree on all pairs of pure
-wedges `(u ∧ v, z ∧ w)`. -/
-theorem bilinMap_ext_ιMulti_two {R M₁ M₂ N : Type*} [CommRing R]
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
-    [AddCommGroup N] [Module R N]
-    {B₁ B₂ : (⋀[R]^2 M₁) →ₗ[R] (⋀[R]^2 M₂) →ₗ[R] N}
-    (h : ∀ u v z w, B₁ (ιMulti R 2 ![u, v]) (ιMulti R 2 ![z, w]) =
-      B₂ (ιMulti R 2 ![u, v]) (ιMulti R 2 ![z, w])) : B₁ = B₂ :=
-  linearMap_ext <| AlternatingMap.ext fun u ↦
-    linearMap_ext <| AlternatingMap.ext fun v ↦ by
-      rw [← FinVec.etaExpand_eq u, ← FinVec.etaExpand_eq v]
-      exact h (u 0) (u 1) (v 0) (v 1)
-
-end exteriorPower
 
 namespace LinearMap
 

@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.OrderOfElement
-public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.Dimension.Finrank
-public import Mathlib.Tactic.LinearCombination
+public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
-import Mathlib.Data.Sym.NatCard
-import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.LinearAlgebra.Determinant.Prod
 
@@ -37,19 +34,8 @@ For a left-separating alternating bilinear map on a module with a two-element ba
 on that basis has trivial scalar annihilator. This holds over any commutative semiring and for
 maps valued in an arbitrary module.
 
-The symmetric bilinear forms on a module `M` form a submodule `TauCeti.BilinForm.symmSubmodule R M`
-(the fixed points of `LinearMap.BilinForm.flipHom`), which for a free module over a commutative
-semiring with strong rank condition has rank `Nat.multichoose (Module.finrank R M) 2`
-(`TauCeti.BilinForm.finrank_symmSubmodule`).
-
-## Main definitions
-
-* `TauCeti.BilinForm.symmSubmodule`: the submodule of symmetric bilinear forms on a module.
-
 ## Main results
 
-* `TauCeti.BilinForm.mem_symmSubmodule` and `TauCeti.BilinForm.finrank_symmSubmodule`: membership
-  and rank formula `Nat.multichoose (Module.finrank R M) 2` for `symmSubmodule R M`.
 * `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a ring in which
   `2` is regular is zero.
 * `TauCeti.BilinForm.nondegenerate_smul_iff`: scalar multiplication by a regular element
@@ -63,6 +49,8 @@ semiring with strong rank condition has rank `Nat.multichoose (Module.finrank R 
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
+  has no nonzero zeros meets every subspace of isotropic vectors trivially.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
@@ -178,6 +166,14 @@ theorem exists_smul_eq_of_forall_dvd {R M : Type*} [CommSemiring R] [AddCommMono
     exact LinearMap.mem_range.mpr ⟨c, by simp [hc]⟩
   · simpa using B.codRestrict₂_apply _ hi _ x y
 
+/-- A subspace on whose nonzero vectors the diagonal of a bilinear form does not vanish meets every
+subspace of isotropic vectors (those `x` with `B x x = 0`) trivially. -/
+theorem inf_eq_bot_of_forall_apply_self_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {N W : Submodule R M}
+    (hN : ∀ x ∈ N, x ≠ 0 → B x x ≠ 0) (hW : ∀ x ∈ W, B x x = 0) : N ⊓ W = ⊥ :=
+  (Submodule.eq_bot_iff _).2 fun x hx ↦ by_contra fun hx0 ↦
+    hN x (Submodule.mem_inf.1 hx).1 hx0 (hW x (Submodule.mem_inf.1 hx).2)
+
 end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm.IsRefl
@@ -278,7 +274,8 @@ end LinearMap
 
 namespace LinearMap.BilinForm
 
-variable {H : Type*} [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t x : H} {a c : ℤ}
+variable {H : Type*} [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H} {v t x : H}
+  {a c : ℤ}
 
 /-- A class `x = a v + c t` modulo torsion, for a hyperbolic pair `v, t` of a `ℤ`-valued form,
 has square `2ac`. -/
@@ -349,52 +346,6 @@ theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommMonoid M]
     (-B).Nondegenerate ↔ B.Nondegenerate := by
   rw [← neg_one_smul R B]
   exact nondegenerate_smul_iff (isUnit_neg_one : IsUnit (-1 : R)).isRegular
-
-/-- **The submodule of symmetric bilinear forms** on `M`: the forms `B` satisfying `B.IsSymm`,
-equivalently the fixed points of `LinearMap.BilinForm.flipHom`. -/
-def symmSubmodule (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M] :
-    Submodule R (BilinForm R M) :=
-  LinearMap.eqLocus (LinearMap.BilinForm.flipHom : BilinForm R M ≃ₗ[R] BilinForm R M).toLinearMap
-    LinearMap.id
-
-/-- Membership in `symmSubmodule R M` is symmetry of the bilinear form. -/
-@[simp]
-theorem mem_symmSubmodule {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-    {B : BilinForm R M} :
-    B ∈ symmSubmodule R M ↔ B.IsSymm := by
-  rw [symmSubmodule, LinearMap.mem_eqLocus]
-  exact LinearMap.BilinForm.isSymm_iff_flip.symm
-
-/-- For a free module `M` over a commutative semiring with strong rank condition,
-`symmSubmodule R M` has rank `Nat.multichoose (Module.finrank R M) 2` (both sides being `0` when
-`M` is not finitely generated). -/
-theorem finrank_symmSubmodule {R M : Type*} [CommSemiring R] [StrongRankCondition R]
-    [AddCommMonoid M] [Module R M] [Module.Free R M] :
-    Module.finrank R (symmSubmodule R M) = Nat.multichoose (Module.finrank R M) 2 := by
-  classical
-  let b := Module.Free.chooseBasis R M
-  let ι := Module.Free.ChooseBasisIndex R M
-  let e : symmSubmodule R M ≃ₗ[R] (Sym2 ι → R) :=
-    { toFun B :=
-        Sym2.lift ⟨fun i j ↦ B.1 (b i) (b j), fun i j ↦ (mem_symmSubmodule.mp B.2).eq (b i) (b j)⟩
-      map_add' _ _ := funext fun s ↦ by induction s using Sym2.ind; simp
-      map_smul' _ _ := funext fun s ↦ by induction s using Sym2.ind; simp
-      invFun f :=
-        ⟨b.constr R fun i ↦ b.constr R fun j ↦ f s(i, j), mem_symmSubmodule.mpr <|
-          LinearMap.BilinForm.isSymm_iff_flip.mpr <| LinearMap.BilinForm.ext_basis b fun i j ↦ by
-            simp [Module.Basis.constr_basis, Sym2.eq_swap]⟩
-      left_inv B := Subtype.ext <| LinearMap.BilinForm.ext_basis b fun i j ↦ by
-        simp [Module.Basis.constr_basis]
-      right_inv f := funext fun s ↦ by
-        induction s using Sym2.ind; simp [Module.Basis.constr_basis] }
-  rw [e.finrank_eq, Module.finrank_eq_nat_card_basis b]
-  cases finite_or_infinite ι
-  · have := Fintype.ofFinite ι
-    rw [Module.finrank_pi, ← Nat.card_eq_fintype_card, Sym2.natCard, Nat.multichoose_eq]
-    simp [ι]
-  · rw [(Pi.linearIndependent_single_one (Sym2 ι) R).finrank_eq_zero_of_infinite,
-      Nat.card_eq_zero_of_infinite]
-    simp
 
 end BilinForm
 

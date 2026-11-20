@@ -56,7 +56,7 @@ def rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ) :
 original list. -/
 theorem getElem_rotateIndexEquiv {α : Type*} (l : List α) (k : ℕ)
     (j : Fin (l.rotate k).length) :
-    (l.rotate k)[j.1] = l[(l.rotateIndexEquiv k j).1] := by
+    (l.rotate k)[j.val] = l[(l.rotateIndexEquiv k j).val] := by
   rw [getElem_rotate]
   congr 1
   simp [rotateIndexEquiv, Fin.coe_finRotate_pow]

@@ -8,9 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
-import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 
 /-!
 # Metric trace of a bilinear form
@@ -30,8 +28,6 @@ independent of any choice of basis.
 * `TauCeti.bilinFormTrace_eq_sum_inv_gram`: in an arbitrary basis, the metric trace contracts the
   form against the inverse Gram matrix of the basis.
 * `TauCeti.bilinFormTrace_inner`: the metric trace of the inner product is the real dimension.
-* `TauCeti.bilinFormTrace_innerₗ_comp` and `TauCeti.trace_bilinFormEquivEnd`: compatibility of the
-  metric trace with `LinearMap.trace` under the Riesz equivalence `TauCeti.bilinFormEquivEnd`.
 -/
 
 public section
@@ -90,19 +86,5 @@ theorem bilinFormTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι
 theorem bilinFormTrace_inner : bilinFormTrace (innerₗ W) = Module.finrank ℝ W := by
   rw [bilinFormTrace_eq_sum (innerₗ W) (stdOrthonormalBasis ℝ W)]
   simp
-
-/-- The metric trace of `innerₗ W ∘ₗ A` equals the operator trace of `A`. -/
-@[simp]
-theorem bilinFormTrace_innerₗ_comp (A : Module.End ℝ W) :
-    bilinFormTrace (innerₗ W ∘ₗ A) = LinearMap.trace ℝ W A := by
-  let b := stdOrthonormalBasis ℝ W
-  rw [bilinFormTrace_eq_sum _ b, LinearMap.trace_eq_sum_inner A b]
-  exact Finset.sum_congr rfl fun i _ ↦ by simp [real_inner_comm]
-
-/-- The operator trace of `bilinFormEquivEnd W B` equals the metric trace of `B`. -/
-@[simp]
-theorem trace_bilinFormEquivEnd (B : BilinForm ℝ W) :
-    LinearMap.trace ℝ W (bilinFormEquivEnd W B) = bilinFormTrace B := by
-  rw [← bilinFormTrace_innerₗ_comp, innerₗ_comp_bilinFormEquivEnd]
 
 end TauCeti

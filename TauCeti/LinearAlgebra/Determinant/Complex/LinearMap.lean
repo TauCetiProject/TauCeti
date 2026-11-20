@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
 public import TauCeti.LinearAlgebra.Determinant.Complex.Orientation
+public import TauCeti.LinearAlgebra.Determinant.Endomorphism
+import TauCeti.LinearAlgebra.Complex.Finrank
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -47,6 +49,9 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
 
 ## Main results
 
+* `LinearMap.detLineRestrictScalarsEquiv_eq_congr`,
+  `LinearMap.detLineRestrictScalarsEquiv_symm_eq_congr`: the identification is the transport along
+  the identifications of the real and complex kernels and cokernels.
 * `LinearMap.detLineRestrictScalarsEquiv_detLineCongr`: transport along a commuting square is
   transport along the induced isomorphisms of complex kernels and cokernels.
 * `LinearMap.IsComplexPositiveDetLine.exists_pos_smul_eq`,
@@ -57,6 +62,9 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
   complex orientation of the determinant line of a complex-linear map.
 * `LinearMap.IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr`: conjugate-linear transport
   multiplies it by `(-1) ^ (k + c)`.
+* `LinearMap.isComplexPositiveDetLine_detLineEndGenerator`: the normalized generator of the
+  determinant line of a complex-linear endomorphism (`LinearMap.detLineEndGenerator`) is complex
+  positive.
 
 ## References
 
@@ -90,6 +98,12 @@ def detLineRestrictScalarsEquiv :
   TensorProduct.congr (LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm)
     (LinearEquiv.detLineCongr (f.cokerRestrictScalarsEquiv ℝ).symm).dualMap
 
+theorem detLineRestrictScalarsEquiv_def :
+    f.detLineRestrictScalarsEquiv =
+      TensorProduct.congr (LinearEquiv.detLineCongr (f.kerRestrictScalarsEquiv ℝ).symm)
+        (LinearEquiv.detLineCongr (f.cokerRestrictScalarsEquiv ℝ).symm).dualMap :=
+  (rfl)
+
 @[simp]
 theorem detLineRestrictScalarsEquiv_tmul (x : TauCeti.detLine ℝ (ker (f.restrictScalars ℝ)))
     (φ : Dual ℝ (TauCeti.detLine ℝ (N ⧸ range (f.restrictScalars ℝ)))) :
@@ -107,6 +121,23 @@ theorem detLineRestrictScalarsEquiv_symm_tmul (x : TauCeti.detLine ℝ (ker f))
   rw [LinearEquiv.symm_apply_eq, detLineRestrictScalarsEquiv_tmul,
     ← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply]
   simp [comp_assoc, ← LinearEquiv.detLineCongr_symm]
+
+/-- `LinearMap.detLineRestrictScalarsEquiv` is the transport along the identifications of the
+real kernel and cokernel with the complex ones. -/
+theorem detLineRestrictScalarsEquiv_eq_congr :
+    f.detLineRestrictScalarsEquiv = TensorProduct.congr
+      (f.kerRestrictScalarsEquiv ℝ).symm.detLineCongr
+      (f.cokerRestrictScalarsEquiv ℝ).symm.detLineCongr.dualMap :=
+  (rfl)
+
+/-- The inverse of `LinearMap.detLineRestrictScalarsEquiv` is the transport along the
+identifications of the complex kernel and cokernel with the real ones. -/
+theorem detLineRestrictScalarsEquiv_symm_eq_congr :
+    f.detLineRestrictScalarsEquiv.symm = TensorProduct.congr
+      (f.kerRestrictScalarsEquiv ℝ).detLineCongr
+      (f.cokerRestrictScalarsEquiv ℝ).symm.detLineCongr.symm.dualMap := by
+  rw [detLineRestrictScalarsEquiv_eq_congr, TensorProduct.congr_symm,
+    LinearEquiv.detLineCongr_symm, LinearEquiv.symm_symm, LinearEquiv.dualMap_symm]
 
 /-- An element of the real determinant line of a complex-linear map `f` is **complex positive** if
 it corresponds to a complex positive element of `det (ker f) ⊗ (det (coker f))^*`, that is, to
@@ -263,5 +294,53 @@ theorem IsComplexPositiveDetLine.neg_one_pow_smul_detLineCongr [FiniteDimensiona
     (fun y ↦ by rw [cokerCongrOfComp_smul f e₁ e₂ h he₂' y, neg_smul])
 
 end Transport
+
+section Endomorphism
+
+/-! ### The normalized generator of a complex-linear endomorphism -/
+
+variable {V : Type*} [AddCommGroup V] [Module ℂ V] [Module ℝ V] [IsScalarTower ℝ ℂ V]
+  [FiniteDimensional ℝ V]
+
+/-- **The normalized generator of a complex-linear endomorphism is complex positive.** For a
+complex-linear endomorphism `f` of a finite-dimensional complex vector space, the normalized
+generator `LinearMap.detLineEndGenerator` of the determinant line of the underlying real
+endomorphism lies in its complex orientation. The sign normalizing the generator is `1` here,
+because the kernel has even real dimension. -/
+theorem isComplexPositiveDetLine_detLineEndGenerator (f : V →ₗ[ℂ] V) :
+    f.IsComplexPositiveDetLine (f.restrictScalars ℝ).detLineEndGenerator := by
+  have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
+  have : FiniteDimensional ℝ (ker f) := Module.Finite.equiv (f.kerRestrictScalarsEquiv ℝ).symm
+  -- The kernel has even real dimension, so the normalized generator is the canonical element.
+  have hk : Even (finrank ℝ (ker (f.restrictScalars ℝ)) * (finrank ℝ V + 1)) := by
+    rw [← (f.kerRestrictScalarsEquiv ℝ).finrank_eq,
+      TauCeti.finrank_real_eq_two_mul_finrank_complex (V := ker f)]
+    exact (even_two_mul _).mul_right _
+  -- The canonical element comes from `β ⊗ φ` with `β` complex positive and `φ β = 1`, and the
+  -- four-term exact sequence of `f` respects complex orientations.
+  obtain ⟨β, hβ⟩ := TauCeti.exists_isComplexPositive (E := V)
+  obtain ⟨φ, hφ⟩ := Module.Projective.exists_dual_eq_one ℝ hβ.ne_zero
+  have hgen : (f.restrictScalars ℝ).detLineEndGenerator =
+      TauCeti.detLineFourTermEquiv (ker (f.restrictScalars ℝ)).injective_subtype
+        (f.restrictScalars ℝ).exact_subtype_ker_map (f.restrictScalars ℝ).exact_map_mkQ_range
+        (range (f.restrictScalars ℝ)).mkQ_surjective (β ⊗ₜ φ) := by
+    rw [detLineEndGenerator_def, hk.neg_one_pow, one_smul, LinearEquiv.symm_apply_eq,
+      detLineEndEquiv_detLineFourTermEquiv, hφ]
+  -- The real four-term sequence of `f` is the complex one with real scalars.
+  have key := TauCeti.isComplexPositiveTMulDual_detLineFourTermEquiv_of_congr
+    (f := (ker f).subtype) (g := f) (h := (range f).mkQ)
+    (ker f).injective_subtype f.exact_subtype_ker_map f.exact_map_mkQ_range
+    (range f).mkQ_surjective (ker (f.restrictScalars ℝ)).injective_subtype
+    (f.restrictScalars ℝ).exact_subtype_ker_map (f.restrictScalars ℝ).exact_map_mkQ_range
+    (range (f.restrictScalars ℝ)).mkQ_surjective (f.kerRestrictScalarsEquiv ℝ)
+    (LinearEquiv.refl ℝ V) (f.cokerRestrictScalarsEquiv ℝ).symm
+    (LinearMap.ext fun x ↦ f.coe_kerRestrictScalarsEquiv_apply ℝ x) rfl
+    (LinearMap.ext fun y ↦ (f.cokerRestrictScalarsEquiv_symm_mk ℝ y).symm)
+    (hβ.isComplexPositiveTMulDual_tmul (hβ.isComplexPositiveDual_of_apply_eq_one hφ))
+  simp only [LinearEquiv.detLineCongr_refl, LinearEquiv.rTensor_tmul, LinearEquiv.refl_apply]
+    at key
+  rwa [isComplexPositiveDetLine_iff, detLineRestrictScalarsEquiv_def, hgen]
+
+end Endomorphism
 
 end LinearMap

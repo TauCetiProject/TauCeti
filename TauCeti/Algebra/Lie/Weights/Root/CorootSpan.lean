@@ -173,7 +173,7 @@ omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- **Two coroots commute**, being elements of the abelian Cartan subalgebra. -/
 theorem lie_coroot_coroot_eq_zero (α β : Weight K H L) :
     ⁅(coroot α : L), (coroot β : L)⁆ = 0 :=
-  LieSubalgebra.lie_eq_zero_of_mem (coroot α).2 (coroot β).2
+  LieSubalgebra.lie_eq_zero_of_mem (coroot α).property (coroot β).property
 
 namespace IsSl2System
 
