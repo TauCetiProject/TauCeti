@@ -115,17 +115,13 @@ theorem normalCone_mono
 `x`, then `⟨x, w⟩ ≤ ⟨z, w⟩` for every point `z` of the polyhedron. -/
 theorem apply_le_apply_of_mem_normalCone (hz : z ∈ facetPolyhedron i u c)
     (hw : w ∈ normalCone i u c x) : x w ≤ z w := by
-  rw [← sub_nonneg, ← sub_apply]
-  induction hw using Submodule.span_induction with
-  | mem w hw =>
-    obtain ⟨j, hj, rfl⟩ := hw
+  have h : ((z - x : StrongDual ℝ V) : V →ₗ[ℝ] ℝ) ∈
+      PointedCone.dual (Module.Dual.eval ℝ V) (normalCone i u c x) := by
+    rw [normalCone_def, PointedCone.dual_hull]
+    rintro _ ⟨j, hj, rfl⟩
     rw [mem_activeSet, facetPairing_apply] at hj
-    rw [sub_apply, hj, sub_nonneg]
-    exact mem_facetPolyhedron.1 hz j
-  | zero => simp
-  | add w w' _ _ hw hw' => simpa only [map_add] using add_nonneg hw hw'
-  | smul a w _ hw =>
-    simpa only [← Nonneg.coe_smul, map_smul, smul_eq_mul] using mul_nonneg a.2 hw
+    simpa [hj] using mem_facetPolyhedron.1 hz j
+  simpa using h hw
 
 /-- For `y` in the polyhedron, the pairing with `y - x` is nonnegative on the normal cone at `x`,
 and the face of that cone on which it vanishes is spanned by the normals of the facets through
@@ -330,14 +326,8 @@ theorem mem_normalFan_cones_iff (hi : IsIntegralLattice i) {σ : PointedCone ℝ
     -- point of the polytope lies on exactly those facets.
     set s := {j | j ∈ activeSet (facetPairing i u) c v ∧ i (u j) ∈ σ}
     have hσs : σ = PointedCone.hull ℝ ((fun j ↦ i (u j)) '' s) := by
-      rw [hσ.eq_hull_inter_of_eq_hull normalCone_def]
-      congr 1
-      ext w
-      constructor
-      · rintro ⟨⟨j, hj, rfl⟩, hjσ⟩
-        exact ⟨j, ⟨hj, hjσ⟩, rfl⟩
-      · rintro ⟨j, ⟨hj, hjσ⟩, rfl⟩
-        exact ⟨⟨j, hj, rfl⟩, hjσ⟩
+      rw [hσ.eq_hull_inter_of_eq_hull normalCone_def, ← image_inter_preimage]
+      rfl
     have hs : (facetFace i u c s).Nonempty :=
       ⟨v, mem_facetFace.2 ⟨extremePoints_subset hv, fun j hj ↦ by
         simpa [mem_activeSet] using hj.1⟩⟩
