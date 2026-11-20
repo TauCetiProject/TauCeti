@@ -54,8 +54,11 @@ run the same stopping time on functions in `Lᵖ`.
   `TauCeti.dyadicCube_subset_of_mem_calderonZygmundCubes_of_le`,
   `TauCeti.exists_mem_calderonZygmundCubes_of_lt_setLAverage`,
   `TauCeti.biUnion_calderonZygmundCubes_subset`,
-  `TauCeti.ae_le_of_forall_notMem_calderonZygmundCubes` and
-  `TauCeti.mul_volume_biUnion_calderonZygmundCubes_le`.
+  `TauCeti.ae_le_of_forall_notMem_calderonZygmundCubes`,
+  `TauCeti.mul_volume_biUnion_calderonZygmundCubes_le` and
+  `TauCeti.mul_volume_biUnion_closedBall_calderonZygmundCubes_le` (the same estimate for the
+  union of the closed balls around the cubes dilated by a factor `c`, at the cost of a factor
+  `cⁿ`).
 * `TauCeti.calderonZygmundBad`, `TauCeti.calderonZygmundGood`: the bad parts and the good part,
   with `TauCeti.calderonZygmundGood_add_tsum_calderonZygmundBad` (the decomposition),
   `TauCeti.integral_calderonZygmundBad`, `TauCeti.lintegral_enorm_calderonZygmundBad_le`,
@@ -299,6 +302,29 @@ theorem mul_volume_biUnion_calderonZygmundCubes_le :
     ← ENNReal.tsum_mul_left]
   exact tsum_le_tsum fun q =>
     (mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes q.2).le
+
+/-- The closed balls around the centres of the Calderón–Zygmund cubes `Q` of `g` at height `t`,
+of radius `c` times half the side of `Q`, have a union whose measure times `t` is at most
+`ENNReal.ofReal c ^ n` times the integral of `g`. -/
+theorem mul_volume_biUnion_closedBall_calderonZygmundCubes_le (c : ℝ) (g : (ι → ℝ) → ℝ≥0∞)
+    (t : ℝ≥0∞) :
+    t * volume (⋃ q ∈ calderonZygmundCubes g t,
+        Metric.closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (c * (2 ^ q.1 / 2))) ≤
+      ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x := by
+  calc _ ≤ t * ∑' q : calderonZygmundCubes g t, volume
+        (Metric.closedBall (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (c * (2 ^ q.1.1 / 2))) :=
+        mul_le_mul_right (measure_biUnion_le _ (to_countable _) _) _
+    _ ≤ t * ∑' q : calderonZygmundCubes g t,
+          ENNReal.ofReal c ^ Fintype.card ι * volume (dyadicCube q.1.1 q.1.2) :=
+        mul_le_mul_right (tsum_le_tsum fun q => volume_closedBall_dyadicCube_le c _ _) _
+    _ = ENNReal.ofReal c ^ Fintype.card ι *
+          (t * volume (⋃ q ∈ calderonZygmundCubes g t, dyadicCube q.1 q.2)) := by
+        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable _)
+          pairwiseDisjoint_calderonZygmundCubes fun q _ => measurableSet_dyadicCube q.1 q.2]
+        ring
+    _ ≤ ENNReal.ofReal c ^ Fintype.card ι * ∫⁻ x, g x :=
+        mul_le_mul_right (mul_volume_biUnion_calderonZygmundCubes_le.trans
+          (setLIntegral_le_lintegral _ _)) _
 
 end Cubes
 
