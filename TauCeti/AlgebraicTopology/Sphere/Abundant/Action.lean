@@ -136,7 +136,7 @@ mapping space `Map_*(B, M)` under the action map `Φ : G × Map_*(B, M) → Map(
 (`TauCeti.BasedMap.actionMap`), with the coefficients `ℤ ⊗ ℤ` of the cross product identified
 with `ℤ`. For a group acting on itself, `x₀ = 1` and `A = [G]` it is the class of Example 6.30 of
 Barraud–Damian–Humilière–Oancea. -/
-@[expose] def actionClass
+def actionClass
     (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
       ModuleCat.{0} ℤ)) {k : ℕ}
     (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
@@ -151,6 +151,24 @@ Barraud–Damian–Humilière–Oancea. -/
       ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of (BasedMap B M b₀ x₀))
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
           (A ⊗ₜ α)))
+
+/-- Unfold `TauCeti.BasedMap.actionClass`: the action map applied to the cross product `A × α`,
+with the coefficients `ℤ ⊗ ℤ` identified with `ℤ`. -/
+theorem actionClass_def
+    (A : ((TopCat.toSSet.obj (TopCat.of G)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) d :
+      ModuleCat.{0} ℤ)) {k : ℕ}
+    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap B M b₀ x₀))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    actionClass G b₀ x₀ A α =
+      (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom (actionMap (G := G) b₀ x₀)))
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) (d + k)).hom
+        ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+          (ModuleCat.uliftTensorSelfIso ℤ).hom).app
+            (TopCat.toSSet.obj (TopCat.of (G × BasedMap B M b₀ x₀)))) (d + k)).hom
+          ((TopCat.singularHomologyCross (TopCat.of G) (TopCat.of (BasedMap B M b₀ x₀))
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d k (d + k) rfl).hom
+              (A ⊗ₜ α))) :=
+  (rfl)
 
 /-- `Φ_*(A × α)` is additive in `α`. -/
 theorem actionClass_sub

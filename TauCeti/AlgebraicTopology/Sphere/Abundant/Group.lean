@@ -127,6 +127,7 @@ private theorem livesOverFundamentalClass_actionClass_iff (b : G) {k : ℕ}
     simp [Ψ]
   -- Carry the class back along the homeomorphism over `G`, identify the coefficients `ℤ ⊗ ℤ`
   -- with `ℤ`, and use that the cross product with `[G]` is injective.
+  rw [BasedMap.actionClass_def]
   refine (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id (ModuleCat.of ℤ (ULift.{0} ℤ))
     Φ (Ψ.symm : C(C(Sphere2, G), G × BasedMap Sphere2 G Sphere2.north 1)) hτ h h'
       (b := b)).trans ?_
