@@ -70,8 +70,9 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_le_four (Q : QuadraticForm
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_
   rw [involute_eq_of_mem_even (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)]
   exact mem_range_ι_of_mem_evenOdd_one_of_reverse_eq_of_finrank_le_four Q hV
-    (evenUnitaryGroup.mul_ι_mul_inv_mem_evenOdd_one Q hx m)
-    (evenUnitaryGroup.reverse_mul_ι_mul_inv Q ⟨x, hx⟩ m)
+    (mul_mul_inv_mem_evenOdd (evenUnitaryGroup.coe_mem_evenOdd_zero Q hx)
+      (ι_mem_evenOdd_one Q m))
+    (reverse_mul_mul_inv_eq_self (evenUnitaryGroup.reverse_mul_self Q ⟨x, hx⟩) (reverse_ι m))
 
 /-- For a nondegenerate quadratic space of positive dimension at most four, the Spin group fills
 the even unitary carrier inside Clifford units. -/
