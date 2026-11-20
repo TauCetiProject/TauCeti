@@ -36,8 +36,9 @@ right inverse `ξ ↦ β ξ` given by bump functions (`ContMDiffMap.mvfderivCLM_
 so `ker L ≃ T_x M × ker (h ↦ dh_x)`
 (`ContinuousLinearMap.kerCoprodEquivOfRightInverse`) and
 `C^k(M, ℝ) ≃ T*_x M × ker (h ↦ dh_x)` (`ContinuousLinearEquiv.equivOfRightInverse`), while `T_x M`
-and `T*_x M` have the same finite dimension. The atlas of regular zeros of sections with
-complemented kernels,
+and `T*_x M` have the same finite dimension
+(`TauCeti.nonempty_continuousLinearEquiv_ker_criticalHessian_coprod_mvfderivCLM`). The atlas of
+regular zeros of sections with complemented kernels,
 `TauCeti.exists_isManifold_sectionZero_of_contMDiff_of_closedComplemented`, applied with the model
 `C^k(M, ℝ)`, then makes `Z` a `C^(k - 1)` manifold modelled on `C^k(M, ℝ)`, embedded in
 `M × C^k(M, ℝ)` by a `C^(k - 1)` immersion whose tangent image at `(x, f)` is `ker L`
@@ -61,6 +62,8 @@ exactly the `C^k` functions all of whose critical points are nondegenerate, the 
 
 ## Main results
 
+* `TauCeti.nonempty_continuousLinearEquiv_ker_criticalHessian_coprod_mvfderivCLM`: every kernel of
+  the universal linearization is isomorphic to `C^k(M, ℝ)`.
 * `TauCeti.exists_isManifold_sectionZero_universalDifferential`: the universal zero set is a
   `C^(k - 1)` manifold modelled on `C^k(M, ℝ)`, immersed in `M × C^k(M, ℝ)` with tangent image the
   kernel of the universal linearization, and its projection to `C^k(M, ℝ)` is `C^(k - 1)`.
@@ -123,6 +126,31 @@ private theorem sectionLinearization_universalDifferential_eq_coprod (hk : 2 ≤
 variable [T2Space M]
 
 include hK in
+/-- **The kernels of the universal linearization all model `C^k(M, ℝ)`.** For `k ≥ 1`, every
+`x : M` and every `C^k` function `f`, the kernel of `(v, h) ↦ Hess_x f (v) + dh_x` is
+isomorphic to `C^k(M, ℝ)`. Bump functions give a continuous linear right inverse of
+`h ↦ dh_x`, so the kernel is `T_x M × ker (h ↦ dh_x)` and `C^k(M, ℝ)` is
+`T*_x M × ker (h ↦ dh_x)`, while `T_x M` and `T*_x M` have the same finite dimension. -/
+theorem nonempty_continuousLinearEquiv_ker_criticalHessian_coprod_mvfderivCLM (hk : 1 ≤ k)
+    (x : M) (f : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) :
+    letI := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
+    letI := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
+    Nonempty (((criticalHessian 𝓘(ℝ, E) f x).coprod
+        (ContMDiffMap.mvfderivCLM (F := ℝ) (n := k) (by exact_mod_cast hk) x)).ker ≃L[ℝ]
+      C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) := by
+  let := ContMDiffMap.finiteAtlasNormedAddCommGroup (F := ℝ) k hK
+  let := ContMDiffMap.finiteAtlasNormedSpace (F := ℝ) k hK
+  have hσ := ContMDiffMap.mvfderivCLM_comp_bumpCovectorCLM (F := ℝ) (n := k)
+    (by exact_mod_cast hk) (Classical.arbitrary (SmoothBumpFunction 𝓘(ℝ, E) x))
+  have hdual : Module.finrank ℝ E = Module.finrank ℝ (E →L[ℝ] ℝ) :=
+    (ContinuousLinearMap.dual_finrank_eq (𝕜 := ℝ) (E := E)).symm
+  exact ⟨(ContinuousLinearMap.kerCoprodEquivOfRightInverse _ _
+    (fun ξ ↦ congrArg (· ξ) hσ)).trans
+    (((ContinuousLinearEquiv.ofFinrankEq hdual).prodCongr
+      (ContinuousLinearEquiv.refl ℝ _)).trans
+      (ContinuousLinearEquiv.equivOfRightInverse _ _ (fun ξ ↦ congrArg (· ξ) hσ)).symm)⟩
+
+include hK in
 /-- **The universal zero manifold.** For `k ≥ 2`, the zero set `{(x, f) | df_x = 0}` of the
 universal differential on `M × C^k(M, ℝ)` is a `C^(k - 1)` manifold modelled on the Banach space
 `C^k(M, ℝ)` of `C^k` functions with a finite-atlas norm. Its inclusion into `M × C^k(M, ℝ)`, with
@@ -167,20 +195,9 @@ theorem exists_isManifold_sectionZero_universalDifferential (hk : 2 ≤ k) :
       (Y := C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) hm (fun z _ ↦ hcont z)
       (fun z _ ↦ hL z ▸ surjective_criticalHessian_coprod_mvfderivCLM _ _ _)
       (fun z _ ↦ ContinuousLinearMap.ker_closedComplemented_of_finiteDimensional_range _)
-      (fun z _ ↦ by
-        -- Bump functions give a right inverse `σ` of `h ↦ dh_x`. Then the kernel is
-        -- `T_x M × ker (h ↦ dh_x)`, and `C^k(M, ℝ)` is `T*_x M × ker (h ↦ dh_x)`.
-        rw [hL]
-        have hσ := ContMDiffMap.mvfderivCLM_comp_bumpCovectorCLM (F := ℝ) (n := k)
-          (by exact_mod_cast one_le_two.trans hk)
-          (Classical.arbitrary (SmoothBumpFunction 𝓘(ℝ, E) z.1))
-        have hdual : Module.finrank ℝ E = Module.finrank ℝ (E →L[ℝ] ℝ) :=
-          (ContinuousLinearMap.dual_finrank_eq (𝕜 := ℝ) (E := E)).symm
-        exact ⟨(ContinuousLinearMap.kerCoprodEquivOfRightInverse _ _
-          (fun ξ ↦ congrArg (· ξ) hσ)).trans
-          (((ContinuousLinearEquiv.ofFinrankEq hdual).prodCongr
-            (ContinuousLinearEquiv.refl ℝ _)).trans
-            (ContinuousLinearEquiv.equivOfRightInverse _ _ (fun ξ ↦ congrArg (· ξ) hσ)).symm)⟩)
+      (fun z _ ↦ hL z ▸
+        nonempty_continuousLinearEquiv_ker_criticalHessian_coprod_mvfderivCLM k hK
+          (one_le_two.trans hk) z.1 z.2)
   let := cs
   -- The projection is the second factor of the inclusion.
   have hsnd : ContMDiff 𝓘(ℝ, E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) 𝓘(ℝ, C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)
@@ -254,12 +271,17 @@ theorem exists_mfderiv_snd_eq_parameterProj_comp_universalDifferential (hk : 1 �
     exact mfderiv_snd
   refine (mfderiv_comp (I' := 𝓘(ℝ, E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯)) z hsd hd).trans ?_
   rw [hsnd]
-  -- Both sides send `v` to the second component of `D v`. They act on the tangent spaces of the
-  -- models, which are the models only after unfolding `TangentSpace`, so `simp` cannot rewrite
-  -- them; `parameterProj_apply` closes the goal up to unfolding `comp`, `trans`, `ofEq` and
-  -- `equivRange`.
+  -- Both sides send `v` to the second component of `D v`.
+  have hT (v : C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) : (T v : E × C^k⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) = D v := by
+    rw [ContinuousLinearEquiv.trans_apply]
+    -- `ContinuousLinearEquiv.ofEq` is `LinearEquiv.ofEq` with continuity proofs attached.
+    exact (LinearEquiv.coe_ofEq_apply hR _).trans
+      ((congrArg Subtype.val (congrFun (D.coe_equivRange hinj hclo) v)).trans
+        (D.coe_codRestrict_apply _ _ v))
+  -- The tangent spaces of the models are the models, and `comp` applies definitionally.
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  exact (ContinuousLinearMap.parameterProj_apply _ _ (T v)).symm
+  exact ((ContinuousLinearMap.parameterProj_apply _ _ (T v)).trans
+    (congrArg Prod.snd (hT v))).symm
 
 omit [T2Space M] in
 include hK in
