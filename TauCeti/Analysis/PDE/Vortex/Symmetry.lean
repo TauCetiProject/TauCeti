@@ -9,8 +9,8 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 import Mathlib.Topology.Algebra.Field
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
-import TauCeti.Analysis.Complex.AtInfinity
 import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.RCLike.AtInfinity
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -232,8 +232,8 @@ theorem tendsto_sectionValue_translateField {x : ℂ → EuclideanSpace ℝ (Fin
       (cocompact ℂ) (𝓝 c) := by
   have hshift : Tendsto (fun z : ℂ ↦ z + a) (cocompact ℂ) (cocompact ℂ) :=
     (Homeomorph.addRight a).map_cocompact.le
-  have hphase := Metric.cobounded_eq_cocompact (α := ℂ) ▸
-    tendsto_add_div_norm_add_div_div_norm a
+  have hphase := Metric.cobounded_eq_cocompact (α := ℂ) ▸ RCLike.ofReal_eq_complex_ofReal ▸
+    RCLike.tendsto_add_div_norm_add_div_div_norm a
   have h := (hx.comp hshift).mul (hphase.pow m)
   simp only [mul_one, one_pow, Function.comp_def] at h
   refine h.congr' ?_
