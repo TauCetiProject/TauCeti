@@ -223,7 +223,8 @@ private lemma homologyMap_subtypeVal_comp_singularHomologyπ_eq_zero {K : Set M}
       (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ (C := ModuleCat.{w} Λ) N k =
         0 := by
   let P := TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))
-  let j : TopCat.of K ⟶ P.snd := TopCat.ofHom ⟨fun y ↦ ⟨y.1, fun h ↦ hx (h ▸ y.2)⟩, by fun_prop⟩
+  let j : TopCat.of K ⟶ P.snd := TopCat.ofHom ⟨fun y ↦ ⟨y.val, fun h ↦ hx (h ▸ y.property)⟩,
+      by fun_prop⟩
   have hj : (TopCat.ofHom (ContinuousMap.subtypeVal K) : TopCat.of K ⟶ P.fst) = j ≫ P.map := by
     ext; rfl
   -- `P.fst` is definitionally `TopCat.of M`.
@@ -494,8 +495,8 @@ private lemma Patch.iso_inv (P : Patch M E) {x : M} (hx : x ∈ P.domain) (k : �
 /-- The functor on the fundamental groupoid of the domain of a patch: a path is sent to the
 comparison of the local homology groups at its endpoints through `Hₖ(M, M ∖ P.closedImage)`. -/
 private def Patch.functor (P : Patch M E) (k : ℕ) : FundamentalGroupoid P.domain ⥤ A where
-  obj a := localHomology R {a.as.1} k
-  map {a b} _ := (P.iso R a.as.2 k).inv ≫ (P.iso R b.as.2 k).hom
+  obj a := localHomology R {a.as.val} k
+  map {a b} _ := (P.iso R a.as.property k).inv ≫ (P.iso R b.as.property k).hom
   map_id _ := Iso.inv_hom_id _
   map_comp _ _ := by simp
 
@@ -525,17 +526,17 @@ private lemma Patch.map_inclusion_comp_functor (P Q : Patch M E) (k : ℕ) :
   -- Near each point of the overlap, a small patch of the chart of `P` has closed image inside
   -- the overlap, and both local functors agree with its comparison maps.
   let W : {S : Patch M E // S.closedImage ⊆ P.domain ∩ Q.domain} → Set ↥(P.domain ∩ Q.domain) :=
-    fun S ↦ Subtype.val ⁻¹' S.1.domain
+    fun S ↦ Subtype.val ⁻¹' S.val.domain
   refine FundamentalGroupoid.functor_ext (U := W) (fun z ↦ ?_) fun S ↦ ?_
-  · obtain ⟨S, hzS, hS⟩ := P.exists_closedImage_subset z.2.1
-      (P.isOpen_domain.inter Q.isOpen_domain) z.2
-    exact ⟨⟨S, hS⟩, continuous_subtype_val.continuousAt.preimage_mem_nhds
+  · obtain ⟨S, hzS, hS⟩ := P.exists_closedImage_subset z.property.1
+      (P.isOpen_domain.inter Q.isOpen_domain) z.property
+    exact ⟨⟨S, hS⟩, continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (S.isOpen_domain.mem_nhds hzS)⟩
   refine CategoryTheory.Functor.hext (fun _ ↦ rfl) fun a b _ ↦ heq_of_eq ?_
-  exact (P.iso_inv_comp_iso_hom R S.1 _ _ a.as.2 b.as.2
-    (S.2.trans (inter_subset_left.trans P.domain_subset_closedImage)) k).trans
-    (Q.iso_inv_comp_iso_hom R S.1 _ _ a.as.2 b.as.2
-      (S.2.trans (inter_subset_right.trans Q.domain_subset_closedImage)) k).symm
+  exact (P.iso_inv_comp_iso_hom R S.val _ _ a.as.property b.as.property
+    (S.property.trans (inter_subset_left.trans P.domain_subset_closedImage)) k).trans
+    (Q.iso_inv_comp_iso_hom R S.val _ _ a.as.property b.as.property
+      (S.property.trans (inter_subset_right.trans Q.domain_subset_closedImage)) k).symm
 
 variable (M E) [ChartedSpace E M]
 
@@ -687,8 +688,8 @@ theorem eq_localHomologyTransport (k : ℕ)
       fun P ↦ CategoryTheory.Functor.hext (fun _ ↦ rfl) fun a b g ↦ heq_of_eq ?_
     induction g using Path.Homotopic.Quotient.ind with | mk γ =>
     -- The image of `γ` in `M` is `γ.map continuous_subtype_val`, a path in the domain of `P`.
-    exact (hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2).trans
-      (P.localHomologyTransport_mk R (γ.map continuous_subtype_val) (fun s ↦ (γ s).2) k).symm
+    exact (hpatch P (γ.map continuous_subtypeVal) fun s ↦ (γ s).property).trans
+      (P.localHomologyTransport_mk R (γ.map continuous_subtypeVal) (fun s ↦ (γ s).property) k).symm
   exact eq_of_heq (Functor.hcongr_hom hG f)
 
 /-- **Restrictions of a global class are parallel.** The restrictions
@@ -727,7 +728,7 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
     rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
     rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
     induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2
+    exact hpatch P (γ.map continuous_subtypeVal) fun s ↦ (γ s).property
   have hf : f ∈ S.arrows x y := hS ▸ trivial
   exact hf
 

@@ -315,25 +315,25 @@ private def symbolEquiv (S : Finset ℕ) (m : ℕ → ℕ) :
         ∀ e ∈ S, (σ.map fun x => if x.2 = e then x.1 else 0).sum = m e} ≃
       ((e : S) → (m e).Partition) where
   toFun σ e :=
-    { parts := (σ.1.filter (·.2 = (e : ℕ))).map Prod.fst
+    { parts := (σ.val.filter (·.2 = (e : ℕ))).map Prod.fst
       parts_pos := fun {a} ha => by
         obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.1 ha
-        exact (σ.2.1 x (Multiset.mem_of_mem_filter hx)).1
-      parts_sum := by rw [Multiset.sum_map_filter]; exact σ.2.2 e e.2 }
+        exact (σ.property.1 x (Multiset.mem_of_mem_filter hx)).1
+      parts_sum := by rw [Multiset.sum_map_filter]; exact σ.property.2 e e.property }
   invFun μ := ⟨∑ e : S, (μ e).parts.map fun a => (a, (e : ℕ)), by
     refine ⟨fun x hx => ?_, fun e he => ?_⟩
     · obtain ⟨e, _, hx⟩ := Multiset.mem_sum.1 hx
       obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hx
-      exact ⟨(μ e).parts_pos ha, e.2⟩
+      exact ⟨(μ e).parts_pos ha, e.property⟩
     · rw [← Multiset.sum_map_filter,
         Multiset.map_fst_filter_sum_map_prodMk (fun e => (μ e).parts) Subtype.val_injective ⟨e, he⟩]
       exact (μ ⟨e, he⟩).parts_sum⟩
   left_inv σ := Subtype.ext <| Multiset.ext.2 fun ⟨f, e⟩ => by
     by_cases he : e ∈ S
     · exact (Multiset.count_sum_map_prodMk_of_injective _ Subtype.val_injective f ⟨e, he⟩).trans
-        (Multiset.count_map_fst_filter_snd_eq σ.1 f e)
+        (Multiset.count_map_fst_filter_snd_eq σ.val f e)
     · rw [Multiset.count_sum_map_prodMk_of_notMem_range _ f (by simpa using he),
-        Multiset.count_eq_zero_of_notMem fun hx => he (σ.2.1 _ hx).2]
+        Multiset.count_eq_zero_of_notMem fun hx => he (σ.property.1 _ hx).2]
   right_inv μ := funext fun e => Nat.Partition.ext
     (Multiset.map_fst_filter_sum_map_prodMk (fun e => (μ e).parts) Subtype.val_injective e)
 
@@ -361,7 +361,7 @@ private theorem splittingSymbolAut_sum_map_prodMk {m : ℕ → ℕ} (μ : (e : S
   · intro x hx
     obtain ⟨e, _, hx⟩ := Multiset.mem_sum.1 (Multiset.mem_toFinset.1 hx)
     obtain ⟨a, ha, rfl⟩ := Multiset.mem_map.1 hx
-    exact Finset.mem_product.2 ⟨hA e (Multiset.mem_toFinset.2 ha), e.2⟩
+    exact Finset.mem_product.2 ⟨hA e (Multiset.mem_toFinset.2 ha), e.property⟩
 
 end Grouping
 
@@ -480,7 +480,7 @@ theorem tsum_one_div_splittingSymbolAut_ramificationPartition (n k : ℕ) (π : 
     fun σ => ⟨fun ⟨hpos, hdeg, hram⟩ => forall_sum_eq_residueDegreeTotal hpos hdeg hram,
       fun ⟨hpos, hsum⟩ => ⟨fun x hx => ⟨(hpos x hx).1, (Finset.mem_Icc.1 (hpos x hx).2).1⟩,
         ramificationPartition_eq_and_sum_eq hπ hpos hsum⟩⟩
-  have h := (Equiv.subtypeEquivRight key).tsum_eq fun σ => 1 / (splittingSymbolAut σ.1 : ℝ≥0∞)
+  have h := (Equiv.subtypeEquivRight key).tsum_eq fun σ => 1 / (splittingSymbolAut σ.val : ℝ≥0∞)
   rw [tsum_one_div_splittingSymbolAut_eq_one] at h
   exact h
 

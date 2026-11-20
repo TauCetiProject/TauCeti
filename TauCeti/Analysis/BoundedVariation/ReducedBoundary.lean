@@ -305,7 +305,7 @@ of `Ω` lies in `∂*s`. -/
 theorem ae_mem_reducedBoundary :
     ∀ᵐ y : Ω ∂variationMeasure μ Ω (s.indicator 1), ↑y ∈ reducedBoundary μ Ω s := by
   filter_upwards [ae_tendsto_setAverage_polarDensity] with y ⟨h1, hy⟩
-  exact ⟨y.2, _, h1, hy⟩
+  exact ⟨y.property, _, h1, hy⟩
 
 /-- The outer normal is minus the polar density of `Dχ_s` at `|Dχ_s|`-almost every point. -/
 theorem ae_outerNormal_eq :
@@ -508,7 +508,7 @@ private theorem stronglyMeasurable_setAverage_polarDensity (r : ℝ) :
   set σ := polarDensity μ Ω (s.indicator 1)
   let D : Set (E × Ω) := {p | dist (p.2 : E) p.1 ≤ r}
   have hD : MeasurableSet D :=
-    (isClosed_le ((continuous_subtype_val.comp continuous_snd).dist continuous_fst)
+    (isClosed_le ((continuous_subtypeVal.comp continuous_snd).dist continuous_fst)
       continuous_const).measurableSet
   have hslice (x : E) : Prod.mk x ⁻¹' D = ((↑) : Ω → E) ⁻¹' closedBall x r := rfl
   have hm : Measurable fun x : E => (lam.real (((↑) : Ω → E) ⁻¹' closedBall x r))⁻¹ := by
@@ -540,7 +540,7 @@ private theorem continuousWithinAt_setAverage_polarDensity_of_ne_top_ne_zero
   set σ := polarDensity μ Ω (s.indicator 1)
   let S (t : ℝ) : Set Ω := ((↑) : Ω → E) ⁻¹' closedBall x t
   have hSm (t : ℝ) : MeasurableSet (S t) :=
-    (isClosed_closedBall.preimage continuous_subtype_val).measurableSet
+    (isClosed_closedBall.preimage continuous_subtypeVal).measurableSet
   have hInter : ⋂ t > r, S t = S r := by
     ext y; simp only [S, mem_iInter, mem_preimage, mem_closedBall, forall_gt_imp_ge_iff_le_of_dense]
   have hSr_fin : lam (S r) ≠ ∞ :=

@@ -112,8 +112,8 @@ theorem contMDiffOn_totalSpaceMk_riemannianLog (hWo : IsOpen W)
     ContMDiffOn (I.prod I) I.tangent ∞
       (fun x : M × M ↦ (⟨x.1, riemannianLog I M x.1 (Metric.ball 0 r) x.2⟩ : TangentBundle I M))
       {x : M × M | x.1 ∈ W ∧ x.2 ∈ riemannianExp I M x.1 '' Metric.ball 0 r} := by
-  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)
-  set S := {z : TangentBundle I M | z.proj ∈ W ∧ ‖z.2‖ < r}
+  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)
+  set S := {z : TangentBundle I M | z.proj ∈ W ∧ ‖z.snd‖ < r}
   set L := fun x : M × M ↦
     (⟨x.1, riemannianLog I M x.1 (Metric.ball 0 r) x.2⟩ : TangentBundle I M)
   intro x hx
@@ -160,7 +160,7 @@ theorem contMDiffAt_riemannianExp_smul_riemannianLog (hWo : IsOpen W)
       ((x, y), t) :=
     contMDiffAt_snd.smul_totalSpace (hL.comp ((x, y), t) contMDiffAt_fst)
   have hz : (⟨x, t • riemannianLog I M x (Metric.ball 0 r) y⟩ : TangentBundle I M) ∈
-      {z : TangentBundle I M | z.2 ∈ expDomain I M z.proj} := ht
+      {z : TangentBundle I M | z.snd ∈ expDomain I M z.proj} := ht
   exact (contMDiffOn_riemannianExp_tangentBundle.contMDiffAt
     (isOpen_setOfPred_mem_expDomain.mem_nhds hz)).comp ((x, y), t) hG
 

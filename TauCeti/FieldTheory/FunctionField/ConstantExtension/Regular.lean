@@ -124,7 +124,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     simpa [IntermediateField.adjoin_map] using IntermediateField.mem_adjoin_simple_self k' y
   let ι : k⟮x⟯ →ₐ[k] k'⟮y⟯ :=
     ((IsScalarTower.toAlgHom k F F').comp k⟮x⟯.val).codRestrict
-      ((k'⟮y⟯).restrictScalars k).toSubalgebra fun z ↦ hle ⟨z, z.2, rfl⟩
+      ((k'⟮y⟯).restrictScalars k).toSubalgebra fun z ↦ hle ⟨z, z.property, rfl⟩
   let _ : Algebra k⟮x⟯ k'⟮y⟯ := ι.toRingHom.toAlgebra
   have : IsScalarTower k k⟮x⟯ k'⟮y⟯ := .of_algebraMap_eq fun c ↦ (ι.commutes c).symm
   have : IsScalarTower k⟮x⟯ k'⟮y⟯ F' := .of_algebraMap_eq' rfl
@@ -137,7 +137,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
       IntermediateField.adjoin_simple_le_iff.mpr
         ((constantCompositum k⟮x⟯ k' k'⟮y⟯).algebraMap_mem x₀)
     obtain ⟨w, hw, hwz⟩ : (z : F') ∈ (k'⟮y₀⟯).map (k'⟮y⟯).val := by
-      rw [IntermediateField.adjoin_map, Set.image_singleton]; exact z.2
+      rw [IntermediateField.adjoin_map, Set.image_singleton]; exact z.property
     exact hE (Subtype.ext hwz.symm ▸ hw)
   have HC : (IsScalarTower.toAlgHom k k' k'⟮y⟯).fieldRange.LinearDisjoint k⟮x⟯ := by
     have hle₀ : k⟮x⟯ ≤ (k⟮y₀⟯.map ((k'⟮y⟯).val.restrictScalars k)).comap
@@ -147,7 +147,7 @@ theorem linearDisjoint_of_transcendental_of_isDomain {x : F}
     rw [IntermediateField.linearDisjoint_iff]
     refine Subalgebra.LinearDisjoint.of_le_right_of_flat
       (IntermediateField.linearDisjoint_adjoin_simple_of_transcendental hy₀) ?_
-    rintro _ ⟨z, rfl⟩; obtain ⟨w, hw, hwz⟩ := hle₀ z.2; exact ⟨⟨w, hw⟩, Subtype.ext hwz⟩
+    rintro _ ⟨z, rfl⟩; obtain ⟨w, hw, hwz⟩ := hle₀ z.property; exact ⟨⟨w, hw⟩, Subtype.ext hwz⟩
   let π₀ := Algebra.TensorProduct.productMap
     (IsScalarTower.toAlgHom k k⟮x⟯ k'⟮y⟯) (IsScalarTower.toAlgHom k k' k'⟮y⟯)
   let _ : Algebra (k⟮x⟯ ⊗[k] k') k'⟮y⟯ := π₀.toRingHom.toAlgebra

@@ -58,18 +58,18 @@ variable (I B F n)
 upgrading `Bundle.Trivial.homeomorphProd`. -/
 def diffeomorphProd :
     TotalSpace F (Trivial B F) ≃ₘ^n⟮I.prod 𝓘(𝕜, F), I.prod 𝓘(𝕜, F)⟯ B × F where
-  toFun p := (p.proj, p.2)
+  toFun p := (p.proj, p.snd)
   invFun q := ⟨q.1, q.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
   contMDiff_toFun := (Bundle.contMDiff_proj (Trivial B F)).prodMk
-    ((contMDiff_mk_iff (f := fun p : TotalSpace F (Trivial B F) ↦ p.2)).mp contMDiff_id).2
+    ((contMDiff_mk_iff (f := fun p : TotalSpace F (Trivial B F) ↦ p.snd)).mp contMDiff_id).2
   contMDiff_invFun := contMDiff_mk_iff.mpr ⟨contMDiff_fst, contMDiff_snd⟩
 
 /-- Forward formula for `Bundle.Trivial.diffeomorphProd`. -/
 @[simp]
 theorem diffeomorphProd_apply (p : TotalSpace F (Trivial B F)) :
-    diffeomorphProd I B F n p = (p.proj, p.2) :=
+    diffeomorphProd I B F n p = (p.proj, p.snd) :=
   (rfl)
 
 /-- Inverse formula for `Bundle.Trivial.diffeomorphProd`. -/

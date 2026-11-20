@@ -124,7 +124,7 @@ theorem basisRestrictTotalDegree_repr_apply (m : ℕ) (p : restrictTotalDegree �
 /-- A monomial basis vector of the bounded-degree polynomials is the corresponding monomial. -/
 @[simp]
 theorem coe_basisRestrictTotalDegree (m : ℕ) (s : {s : σ →₀ ℕ // s.degree ≤ m}) :
-    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.1 1 := by
+    (basisRestrictTotalDegree σ R m s : MvPolynomial σ R) = monomial s.val 1 := by
   rw [basisRestrictTotalDegree, Module.Basis.map_apply, LinearEquiv.coe_ofEq_apply]
   -- As in `basisRestrictTotalDegree`, the index `s` is read as an element of the set
   -- `{t | t.degree ≤ m}` that indexes `basisRestrictSupport`; the two subtypes agree by definition.
@@ -210,7 +210,7 @@ theorem boundedCoefficientEquiv_inclusion_comp_eq_extendByZero [Finite σ]
     simp
   · rw [Function.extend_apply' _ _ _ ?_, Pi.zero_apply, boundedCoefficientEquiv_apply,
       Function.comp_apply, Submodule.coe_inclusion]
-    · exact h0 _ (v j).2 s hs
+    · exact h0 _ (v j).property s hs
     · rintro ⟨⟨j', s', hs''⟩, he⟩
       exact hs (by cases he; exact hs'')
 
@@ -271,7 +271,6 @@ theorem aeval_mem_restrictTotalDegree {τ : Type*} {f : σ → MvPolynomial τ R
     (hf : ∀ i, (f i).totalDegree ≤ 1) {m : ℕ} {p : MvPolynomial σ R}
     (hp : p ∈ restrictTotalDegree σ R m) : aeval f p ∈ restrictTotalDegree τ R m := by
   rw [mem_restrictTotalDegree] at hp ⊢
-  rw [aeval_eq_bind₁]
   exact (totalDegree_bind₁_le hf p).trans ((mul_one _).trans_le hp)
 
 open Polynomial in

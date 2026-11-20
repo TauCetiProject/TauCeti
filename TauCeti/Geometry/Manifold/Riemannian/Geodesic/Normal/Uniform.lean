@@ -60,10 +60,10 @@ variable
 /-- A tangent ball at `q` is a normal domain as soon as all its vectors lie in a set of tangent
 vectors on which `(x, v) ↦ (x, exp_x v)` is injective, a local diffeomorphism and defined. -/
 private theorem isNormalDomain_ball_of_injOn {O : Set (TangentBundle I M)}
-    (hinj : InjOn (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) O)
+    (hinj : InjOn (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) O)
     (hO : ∀ z ∈ O, IsLocalDiffeomorphAt I.tangent (I.prod I) ∞
-      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)) z ∧
-        z.2 ∈ expDomain I M z.proj)
+      (fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)) z ∧
+        z.snd ∈ expDomain I M z.proj)
     {q : M} {r : ℝ} (hr : 0 < r)
     (hball : ∀ v : TangentSpace I q, ‖v‖ < r → TotalSpace.mk' E q v ∈ O) :
     IsNormalDomain I M q (Metric.ball 0 r) := by
@@ -73,7 +73,8 @@ private theorem isNormalDomain_ball_of_injOn {O : Set (TangentBundle I M)}
     (convex_ball 0 r).starConvex (Metric.mem_ball_self hr), fun v hv ↦ (hmem v hv).2,
     fun v hv w hw hvw ↦ TotalSpace.mk_inj.1 (hinj (hball v (mem_ball_zero_iff.1 hv))
       (hball w (mem_ball_zero_iff.1 hw)) (by simp only [hvw])),
-    fun v ↦ isLocalDiffeomorphAt_riemannianExp_of_prodMk (hmem v v.2).2 (hmem v v.2).1⟩
+    fun v ↦ isLocalDiffeomorphAt_riemannianExp_of_prodMk (hmem v v.property).2
+        (hmem v v.property).1⟩
 
 /-- **Uniformly normal neighbourhoods.** Every point `p` has a neighbourhood `W` with a radius
 `r > 0` such that, for every `q ∈ W`, the tangent ball of radius `r` at `q` is a normal domain whose
@@ -82,7 +83,7 @@ points. -/
 theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     ∃ r : ℝ, 0 < r ∧ ∃ W ∈ 𝓝 p, ∀ q ∈ W, IsNormalDomain I M q (Metric.ball 0 r) ∧
       W ⊆ riemannianExp I M q '' Metric.ball 0 r := by
-  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.2)
+  set F := fun z : TangentBundle I M ↦ (z.proj, riemannianExp I M z.proj z.snd)
   have hloc := isLocalDiffeomorphAt_prodMk_proj_riemannianExp_zeroSection (I := I) (M := M) p
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
@@ -90,7 +91,7 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
   -- `hloc.localInverse`), and the exponential map is defined.
   set O : Set (TangentBundle I M) := hloc.localInverse.target ∩
     ({z | IsLocalDiffeomorphAt I.tangent (I.prod I) ∞ F z} ∩
-      {z | z.2 ∈ expDomain I M z.proj})
+      {z | z.snd ∈ expDomain I M z.proj})
   have hOopen : IsOpen O := hloc.localInverse.open_target.inter
     ((isOpen_iff_mem_nhds.2 fun _ (hz : IsLocalDiffeomorphAt I.tangent (I.prod I) ∞ F _) ↦
       hz.eventually).inter isOpen_setOfPred_mem_expDomain)
@@ -98,10 +99,10 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     ⟨hloc.localInverse_mem_target, hloc, zero_mem_expDomain p⟩
   obtain ⟨r, hr, hball⟩ := hOopen.exists_pos_forall_norm_le_subset_bundle hpO
   obtain ⟨A, hAball, hAopen, hpA⟩ := eventually_nhds_iff.1 hball
-  have hnorm : Continuous fun z : TangentBundle I M ↦ ‖z.2‖ :=
+  have hnorm : Continuous fun z : TangentBundle I M ↦ ‖z.snd‖ :=
     TauCeti.continuous_norm_bundle E (TangentSpace I)
   set S : Set (TangentBundle I M) :=
-    O ∩ (TotalSpace.proj ⁻¹' A ∩ {z | ‖z.2‖ < r})
+    O ∩ (TotalSpace.proj ⁻¹' A ∩ {z | ‖z.snd‖ < r})
   have hSopen : IsOpen S := hOopen.inter
     ((hAopen.preimage (FiberBundle.continuous_proj E _)).inter
       (isOpen_lt hnorm continuous_const))
@@ -111,7 +112,7 @@ theorem exists_mem_nhds_forall_isNormalDomain_ball (p : M) :
     ⟨hpO, hpA, by rw [mem_ofPred_eq]; convert hr using 1; exact norm_zero (E := TangentSpace I p)⟩
   -- The image of `S` is a neighbourhood of `F (0_p) = (p, p)`.
   have hFS : F '' S ∈ 𝓝 (p, p) := by
-    have hlocS : IsLocalDiffeomorphOn I.tangent (I.prod I) ∞ F S := fun z ↦ z.2.1.2.1
+    have hlocS : IsLocalDiffeomorphOn I.tangent (I.prod I) ∞ F S := fun z ↦ z.property.1.2.1
     have hFp : F (zeroSection E (TangentSpace I) p) = (p, p) := by simp [F, zeroSection]
     exact (hlocS.isLocalHomeomorphOn.isOpen_image hSopen).mem_nhds ⟨_, hpS, hFp⟩
   obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := mem_nhds_prod_iff.1 hFS

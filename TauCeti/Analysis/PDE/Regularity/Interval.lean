@@ -200,13 +200,13 @@ theorem exists_contDiff_eq_intervalRepresentativeL_and_deriv_eq (hx : x₀ < x�
       have hk' := (ae_restrict_iff' measurableSet_Ioo).1 hk
       rw [ae_restrict_iff' measurableSet_Ioo]
       filter_upwards [hk'] with s hs hst
-      have hs' : s ∈ Ioo x₀ x₁ := ⟨hst.1, hst.2.trans_le t.2.2⟩
+      have hs' : s ∈ Ioo x₀ x₁ := ⟨hst.1, hst.2.trans_le t.property.2⟩
       have has := ha0 s (Ioo_subset_Icc_self hs')
       simp only [ĝ, g, projIcc_of_mem hx.le (Ioo_subset_Icc_self hs')]
       rw [eq_div_iff has, ← hs hs']
       ring
     have hĝint : ∫ s in x₀..t, W1p.gradient u s = ∫ s in x₀..t, ĝ s := by
-      simp only [intervalIntegral.integral_of_le t.2.1, integral_Ioc_eq_integral_Ioo]
+      simp only [intervalIntegral.integral_of_le t.property.1, integral_Ioc_eq_integral_Ioo]
       exact integral_congr_ae hgrad
     have hint := W1p.integral_gradient_eq_intervalRepresentativeL_sub hx u x₀' t
     rw [hĝint] at hint
@@ -384,7 +384,7 @@ theorem abs_intervalRepresentativeL_sub_le_of_forall_integral_eq (hx : x₀ < x�
     Real.isFiniteMeasure_restrict_Ioo x₀ x₁
   have : IsFiniteMeasure (volume.restrict (Ioo (y : ℝ) z)) := Real.isFiniteMeasure_restrict_Ioo _ _
   have : Fact (1 ≤ s) := ⟨hs⟩
-  have hsub : Ioo (y : ℝ) z ⊆ Ioo x₀ x₁ := Ioo_subset_Ioo y.2.1 z.2.2
+  have hsub : Ioo (y : ℝ) z ⊆ Ioo x₀ x₁ := Ioo_subset_Ioo y.property.1 z.property.2
   have hFi : IntegrableOn F (Ioo x₀ x₁) := hF.integrable hs
   set K := (M / (x₁ - x₀) * (|(W1p.intervalTraceL hx u).2 - (W1p.intervalTraceL hx u).1| +
       ((x₁ - x₀) * (∫ t in Ioo x₀ x₁, |f t|) + ∫ t in Ioo x₀ x₁, |F t|) / lam) +
@@ -479,7 +479,8 @@ private theorem abs_intervalRepresentativeL_sub_le_mul_rpow (hx : x₀ < x₁) {
       |(z : ℝ) - y| ≤ (x₁ - x₀) ^ (1 / s.toReal) * |(z : ℝ) - y| ^ (1 - 1 / s.toReal) := by
     calc |(z : ℝ) - y| = |(z : ℝ) - y| ^ (1 / s.toReal) * |(z : ℝ) - y| ^ (1 - 1 / s.toReal) := by
           rw [← Real.rpow_add' (abs_nonneg _) (by norm_num), add_sub_cancel, Real.rpow_one]
-      _ ≤ _ := by gcongr; exact abs_sub_le_of_le_of_le z.2.1 z.2.2 y.2.1 y.2.2
+      _ ≤ _ := by
+          gcongr; exact abs_sub_le_of_le_of_le z.property.1 z.property.2 y.property.1 y.property.2
   refine (abs_intervalRepresentativeL_sub_le_of_forall_integral_eq hx hlam ha haM hf hs hF hu
     y z).trans ?_
   have hFB : (eLpNorm F s (volume.restrict (Ioo x₀ x₁))).toReal ≤
@@ -546,7 +547,8 @@ theorem exists_norm_intervalRepresentativeL_le_and_holderWith (hx : x₀ < x₁)
   · -- The supremum bound, from the value at `x₀` and the Hölder bound.
     have h0 := hinc ⟨x₀, left_mem_Icc.2 hx.le⟩ t
     have hpow : |(t : ℝ) - x₀| ^ (1 - 1 / s.toReal) ≤ (x₁ - x₀) ^ (1 - 1 / s.toReal) :=
-      Real.rpow_le_rpow (abs_nonneg _) (abs_sub_le_of_le_of_le t.2.1 t.2.2 le_rfl hx.le) hβ0
+      Real.rpow_le_rpow (abs_nonneg _) (abs_sub_le_of_le_of_le t.property.1 t.property.2 le_rfl
+          hx.le) hβ0
     have h1 : |ū ⟨x₀, left_mem_Icc.2 hx.le⟩| ≤ B := by
       simp only [hB, W1p.intervalTraceL_apply]
       have : 0 ≤ ∫ t in Ioo x₀ x₁, |f t| := integral_nonneg fun t => abs_nonneg (f t)

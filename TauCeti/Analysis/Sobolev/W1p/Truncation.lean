@@ -303,7 +303,7 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_le (hp : p ≠ ∞) {k l : ℝ} (h
 zero-boundary Sobolev function again has zero boundary values
 (`TauCeti.W1p.posPart_mem_w1p0Submodule`). -/
 def W1p0.posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) : W1p0 mu Omega p :=
-  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.2⟩
+  ⟨W1p.posPart hp u, W1p.posPart_mem_w1p0Submodule hp u.property⟩
 
 @[simp]
 theorem W1p0.coe_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
@@ -318,7 +318,7 @@ theorem W1p0.valueL_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
 /-- Taking the positive part is continuous on `W^{1,p}_0(Ω)` for finite exponents. -/
 theorem W1p0.continuous_posPart (hp : p ≠ ∞) :
     Continuous (W1p0.posPart (mu := mu) (Omega := Omega) hp) :=
-  ((W1p.continuous_posPart hp).comp continuous_subtype_val).subtype_mk _
+  ((W1p.continuous_posPart hp).comp continuous_subtypeVal).subtype_mk _
 
 /-- Taking the positive part does not increase the norm of `W^{1,p}_0(Ω)`. -/
 theorem W1p0.norm_posPart_le (hp : p ≠ ∞) (u : W1p0 mu Omega p) :

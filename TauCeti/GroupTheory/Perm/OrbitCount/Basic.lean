@@ -315,7 +315,7 @@ theorem orbitCount_le_card_orbitRelQuotient [Finite α] {π : Equiv.Perm α}
       apply Quotient.sound
       rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hab
       obtain ⟨g, rfl⟩ := hab
-      exact (hH g g.2 b).symm
+      exact (hH g g.property b).symm
   have hf : Function.Surjective f := by
     intro q
     induction q using Quotient.inductionOn'

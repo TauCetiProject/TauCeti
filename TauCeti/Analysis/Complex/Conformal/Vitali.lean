@@ -172,7 +172,7 @@ theorem tendstoLocallyUniformlyOn_of_isLocallyBoundedOn_of_forall_tendsto (hΩ :
   rw [tendstoUniformlyOn_iff_restrict]
   exact UniformFun.tendsto_iff_tendstoUniformly.1
     ((heq.tendsto_uniformFun_iff_pi l (K.domRestrict g)).2
-      (tendsto_pi_nhds.2 fun z => hpoint z (hKΩ z.2)))
+      (tendsto_pi_nhds.2 fun z => hpoint z (hKΩ z.property)))
 
 /-- **The pointwise limit need not be named.** A locally bounded family of holomorphic maps on an
 open `Ω` into a complete complex normed space, which converges along a nontrivial filter `l` at
