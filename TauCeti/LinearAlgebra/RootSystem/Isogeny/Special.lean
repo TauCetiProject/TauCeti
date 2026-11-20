@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Isogeny.Power
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.SpecialMap
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.F4.SpecialMap
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.SpecialMap
@@ -90,6 +91,15 @@ in each case, and the relations that are statements about it.
   `TauCeti.DynkinType.g2SpecialIsogeny_exponent_castLE_eq_one_iff` and its `F₄` counterpart:
   on the simple roots the exponent is `1` exactly at a short node, read off as
   `TauCeti.DynkinType.IsLongSimpleRoot`.
+* `TauCeti.DynkinType.b2SpecialIsogeny_exponent_eq_one_or_eq_two`,
+  `TauCeti.DynkinType.g2SpecialIsogeny_exponent_eq_one_or_eq_three` and
+  `TauCeti.DynkinType.f4SpecialIsogeny_exponent_eq_one_or_eq_two`: every exponent equals `1` or
+  the defining characteristic.
+* `TauCeti.DynkinType.b2SpecialIsogeny_indexEquiv_simpleIndex`,
+  `TauCeti.DynkinType.g2SpecialIsogeny_indexEquiv_simpleIndex` and
+  `TauCeti.DynkinType.f4SpecialIsogeny_indexEquiv_simpleIndex`: on the assembled simple-root
+  indices of `TauCeti.DynkinType.simpleIndex`, each special isogeny acts by its pinned length
+  permutation.
 
 ## References
 
@@ -220,6 +230,21 @@ theorem b2SpecialIsogeny_exponent_typeBSimpleIndex_eq_one_iff (i : Fin 2) :
   rw [b2SpecialIsogeny_exponent]
   exact b2SpecialIsogenyExponent_typeBSimpleIndex_eq_one_iff i
 
+/-- Every exponent of `b2SpecialIsogeny` is either `1` or `2`. -/
+theorem b2SpecialIsogeny_exponent_eq_one_or_eq_two (i : Fin (2 * 2 ^ 2)) :
+    b2SpecialIsogeny.exponent i = 1 ∨ b2SpecialIsogeny.exponent i = 2 := by
+  rw [b2SpecialIsogeny_exponent]
+  exact b2SpecialIsogenyExponent_eq_one_or_eq_two i
+
+/-- The `B₂` special isogeny permutes the assembled simple-root indices by `lengthPermRankTwo`. -/
+theorem b2SpecialIsogeny_indexEquiv_simpleIndex (ht : (B 2).Valid) (i : Fin (B 2).rank) :
+    b2SpecialIsogeny.indexEquiv ((B 2).simpleIndex ht i) =
+      (B 2).simpleIndex ht (lengthPermRankTwo i) :=
+  (congrArg (⇑b2SpecialIsogeny.indexEquiv) (simpleIndex_B 2 ht i)).trans
+    (((b2SpecialIsogeny_indexEquiv_apply _).trans
+      (b2SpecialIsogenyIndexEquiv_typeBSimpleIndex i)).trans
+      (simpleIndex_B 2 ht (lengthPermRankTwo i)).symm)
+
 /-! ## `G₂` in characteristic three -/
 
 /-- The square of the transposed character-lattice special matrix of `G₂` is three times the
@@ -335,6 +360,21 @@ theorem g2SpecialIsogeny_exponent_castLE_eq_one_iff (i : Fin 2) :
   rw [g2SpecialIsogeny_exponent]
   exact g2Length_castLE_eq_one_iff i
 
+/-- Every exponent of `g2SpecialIsogeny` is either `1` or `3`. -/
+theorem g2SpecialIsogeny_exponent_eq_one_or_eq_three (i : Fin 12) :
+    g2SpecialIsogeny.exponent i = 1 ∨ g2SpecialIsogeny.exponent i = 3 := by
+  rw [g2SpecialIsogeny_exponent]
+  exact g2Length_eq_one_or_eq_three i
+
+/-- The `G₂` special isogeny permutes the assembled simple-root indices by `lengthPermRankTwo`. -/
+theorem g2SpecialIsogeny_indexEquiv_simpleIndex (ht : G2.Valid) (i : Fin G2.rank) :
+    g2SpecialIsogeny.indexEquiv (G2.simpleIndex ht i) =
+      G2.simpleIndex ht (lengthPermRankTwo i) :=
+  let hcast (j : Fin 2) : (Fin.castAdd 10 j : Fin 12) = Fin.castLE (by omega) j := rfl
+  (congrArg (⇑g2SpecialIsogeny.indexEquiv) ((simpleIndex_G2 ht i).trans (hcast i))).trans
+    (((g2SpecialIsogeny_indexEquiv_apply _).trans (g2SpecialIsogenyIndex_castLE i)).trans
+      ((hcast (lengthPermRankTwo i)).symm.trans (simpleIndex_G2 ht (lengthPermRankTwo i)).symm))
+
 /-! ## `F₄` in characteristic two -/
 
 /-- **The special isogeny of the pinned `F₄` root datum**, belonging to characteristic two. Its
@@ -429,5 +469,18 @@ theorem f4SpecialIsogeny_exponent_castAdd_eq_one_iff (i : Fin 4) :
     f4SpecialIsogeny.exponent (Fin.castAdd 44 i) = 1 ↔ ¬ F4.IsLongSimpleRoot i := by
   rw [f4SpecialIsogeny_exponent]
   exact f4Length_castAdd_eq_one_iff i
+
+/-- Every exponent of `f4SpecialIsogeny` is either `1` or `2`. -/
+theorem f4SpecialIsogeny_exponent_eq_one_or_eq_two (i : Fin 48) :
+    f4SpecialIsogeny.exponent i = 1 ∨ f4SpecialIsogeny.exponent i = 2 := by
+  rw [f4SpecialIsogeny_exponent]
+  exact f4Length_eq_one_or_eq_two i
+
+/-- The `F₄` special isogeny permutes the assembled simple-root indices by `lengthPermF4`. -/
+theorem f4SpecialIsogeny_indexEquiv_simpleIndex (ht : F4.Valid) (i : Fin F4.rank) :
+    f4SpecialIsogeny.indexEquiv (F4.simpleIndex ht i) = F4.simpleIndex ht (lengthPermF4 i) :=
+  (congrArg (⇑f4SpecialIsogeny.indexEquiv) (simpleIndex_F4 ht i)).trans
+    (((f4SpecialIsogeny_indexEquiv_apply _).trans (f4SpecialIsogenyIndex_castAdd i)).trans
+      (simpleIndex_F4 ht (lengthPermF4 i)).symm)
 
 end TauCeti.DynkinType
