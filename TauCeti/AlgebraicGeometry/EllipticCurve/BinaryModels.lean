@@ -78,11 +78,11 @@ order four, with `2 • (1, 0) = (0, 0)`.
 * `WeierstrassCurve.j_of_zmod_two`: the `j`-invariant of an elliptic equation over `ZMod 2` is
   `a₁`.
 * `TauCeti.pointCount_F2Model`: the `i`-th model has `i + 1` points.
-* `TauCeti.exists_variableChange_smul_eq_F2Model`: every elliptic equation over `ZMod 2` is carried
-  onto some model by a change of variables.
+* `WeierstrassCurve.exists_variableChange_smul_eq_F2Model`: every elliptic equation over `ZMod 2`
+  is carried onto some model by a change of variables.
 * `TauCeti.exists_variableChange_smul_F2Model_eq_iff`: the models lie in distinct orbits.
-* `TauCeti.existsUnique_variableChange_smul_eq_F2Model`: every elliptic equation over `ZMod 2`
-  lies in the orbit of exactly one model, the one with the same number of points.
+* `WeierstrassCurve.existsUnique_variableChange_smul_eq_F2Model`: every elliptic equation over
+  `ZMod 2` lies in the orbit of exactly one model, the one with the same number of points.
 * `WeierstrassCurve.exists_variableChange_smul_eq_iff_pointCount_eq`: two elliptic equations
   over `ZMod 2` are related by a change of variables exactly when they have the same number of
   points.
@@ -227,6 +227,20 @@ theorem F2Model_injective : Function.Injective F2Model := fun _ _ h ↦
 
 /-! ### Classification up to change of variables -/
 
+/-- **The models lie in distinct orbits**: a change of variables carries the `i`-th model onto
+the `j`-th only when `i = j`, since it preserves the point count. A model can have nontrivial
+automorphisms, so the change itself need not be the identity. -/
+theorem exists_variableChange_smul_F2Model_eq_iff (i j : Fin 5) :
+    (∃ C : VariableChange (ZMod 2), C • F2Model i = F2Model j) ↔ i = j := by
+  refine ⟨fun ⟨C, h⟩ ↦ pointCount_F2Model_inj.1 ?_, fun h ↦ ⟨1, by rw [one_smul, h]⟩⟩
+  rw [← h, variableChange_pointCount]
+
+end TauCeti
+
+namespace WeierstrassCurve
+
+open TauCeti
+
 /-- **Every elliptic equation over `𝔽₂` is carried onto a model by a change of variables.** The
 witnesses are listed in the module docstring. -/
 theorem exists_variableChange_smul_eq_F2Model (W : WeierstrassCurve (ZMod 2)) [W.IsElliptic] :
@@ -241,14 +255,6 @@ theorem exists_variableChange_smul_eq_F2Model (W : WeierstrassCurve (ZMod 2)) [W
   revert a₁ a₂ a₃ a₄ a₆
   decide
 
-/-- **The models lie in distinct orbits**: a change of variables carries the `i`-th model onto
-the `j`-th only when `i = j`, since it preserves the point count. A model can have nontrivial
-automorphisms, so the change itself need not be the identity. -/
-theorem exists_variableChange_smul_F2Model_eq_iff (i j : Fin 5) :
-    (∃ C : VariableChange (ZMod 2), C • F2Model i = F2Model j) ↔ i = j := by
-  refine ⟨fun ⟨C, h⟩ ↦ pointCount_F2Model_inj.1 ?_, fun h ↦ ⟨1, by rw [one_smul, h]⟩⟩
-  rw [← h, variableChange_pointCount]
-
 /-- An elliptic equation over `𝔽₂` is carried onto the `i`-th model exactly when it has `i + 1`
 points. -/
 theorem exists_variableChange_smul_eq_F2Model_iff (W : WeierstrassCurve (ZMod 2)) [W.IsElliptic]
@@ -260,20 +266,14 @@ theorem exists_variableChange_smul_eq_F2Model_iff (W : WeierstrassCurve (ZMod 2)
   exact ⟨C, by rw [hC, h]⟩
 
 /-- **Every elliptic equation over `𝔽₂` lies in the orbit of exactly one model.** By
-`TauCeti.exists_variableChange_smul_eq_F2Model_iff`, that model is the one with the same number of
-points, so an elliptic equation over `𝔽₂` has between one and five points. -/
+`WeierstrassCurve.exists_variableChange_smul_eq_F2Model_iff`, that model is the one with the same
+number of points, so an elliptic equation over `𝔽₂` has between one and five points. -/
 theorem existsUnique_variableChange_smul_eq_F2Model (W : WeierstrassCurve (ZMod 2))
     [W.IsElliptic] : ∃! i, ∃ C : VariableChange (ZMod 2), C • W = F2Model i := by
   obtain ⟨i, C, hC⟩ := exists_variableChange_smul_eq_F2Model W
   refine ⟨i, ⟨C, hC⟩, fun j ⟨D, hD⟩ ↦ ?_⟩
   refine (exists_variableChange_smul_F2Model_eq_iff i j).1 ⟨D * C⁻¹, ?_⟩ |>.symm
   rw [mul_smul, ← hC, inv_smul_smul, hD]
-
-end TauCeti
-
-namespace WeierstrassCurve
-
-open TauCeti
 
 /-- **The point count classifies elliptic equations over `𝔽₂`**: two of them are related by a
 change of variables exactly when they have the same number of points. Ellipticity is needed: the
