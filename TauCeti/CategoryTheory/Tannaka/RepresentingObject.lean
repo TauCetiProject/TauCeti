@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.CategoryTheory.Subobject.Lattice
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.Algebra.Category.ModuleCat.Biproducts
+public import TauCeti.Algebra.Category.ModuleCat.Kernels
 
 /-!
 # The representing object of a fibre functor on the hull of an object
 
 Let `ω : C ⥤ ModuleCat K` be an exact faithful functor from an abelian category to vector spaces
-over a field `K`. For an object `T` with finite-dimensional fibre and an element `t : ω T`,
+over a field `K`; for the representability statements below, `C` and `ω` are also `K`-linear.
+For an object `T` with finite-dimensional fibre and an element `t : ω T`,
 `CategoryTheory.Functor.fiberSpan ω t` is the smallest subobject of `T` whose fibre contains `t`
 (`CategoryTheory.Functor.fiberSpan_le_iff`). Write `P` for it and `p : ω P` for the element
 mapping to `t`. Evaluation at `p`, `f ↦ ω f p`, is injective on `P ⟶ Y` for every `Y`, and the
@@ -128,14 +130,6 @@ section Exact
 variable [Abelian C] [ω.Faithful] [PreservesFiniteLimits ω] [FiniteDimensional K (ω.obj T)]
   {t : ω.obj T}
 
-omit [ω.Faithful] in
-/-- An element killed by `ω f` comes from the fibre of the kernel of `f`. -/
-private lemma exists_map_kernel_ι_eq {P Y : C} (f : P ⟶ Y) (x : ω.obj P)
-    (hx : (ω.map f).hom x = 0) : ∃ y, (ω.map (kernel.ι f)).hom y = x :=
-  (ShortComplex.moduleCat_exact_iff _).1
-    ((ShortComplex.exact_of_f_is_kernel (ShortComplex.mk (kernel.ι f) f (kernel.condition f))
-      (kernelIsKernel f)).map_of_mono_of_preservesKernel ω inferInstance inferInstance) x hx
-
 /-- A morphism out of `fiberSpan t` vanishes as soon as its value at `fiberSpanPoint t` does. -/
 theorem map_fiberSpanPoint_eq_zero_iff {Y : C} (f : (ω.fiberSpan t : C) ⟶ Y) :
     (ω.map f).hom (ω.fiberSpanPoint t) = 0 ↔ f = 0 := by
@@ -229,26 +223,6 @@ end FiberSpan
 section Biproduct
 
 variable [Preadditive C] (ω : C ⥤ ModuleCat.{w} K) [ω.Additive]
-
-/-- An element of the fibre of a finite biproduct is the sum of its components. -/
-private lemma sum_map_ι_map_π_apply {ι : Type*} [Fintype ι] (F : ι → C) [HasBiproduct F]
-    (v : ω.obj (⨁ F)) :
-    ∑ j, (ω.map (biproduct.ι F j)).hom ((ω.map (biproduct.π F j)).hom v) = v := by
-  have := congrArg (fun φ ↦ (ω.map φ).hom v) (biproduct.total (f := F))
-  simp only [ω.map_sum, ω.map_comp, ω.map_id, ModuleCat.hom_sum, ModuleCat.hom_comp,
-    ModuleCat.hom_id, LinearMap.sum_apply, LinearMap.comp_apply,
-    LinearMap.id_apply] at this
-  exact this
-
-/-- An additive functor to vector spaces has finite-dimensional value on a finite biproduct of
-objects with finite-dimensional values. -/
-instance finiteDimensional_obj_biproduct {ι : Type*} [Finite ι] (F : ι → C) [HasBiproduct F]
-    [∀ j, FiniteDimensional K (ω.obj (F j))] : FiniteDimensional K (ω.obj (⨁ F)) := by
-  have := Fintype.ofFinite ι
-  refine Module.Finite.of_injective (LinearMap.pi fun j ↦ (ω.map (biproduct.π F j)).hom)
-    fun v v' h ↦ ?_
-  rw [← sum_map_ι_map_π_apply ω F v, ← sum_map_ι_map_π_apply ω F v']
-  exact Finset.sum_congr rfl fun j _ ↦ congrArg _ (congrFun h j)
 
 /-- If evaluation at `fiberSpanPoint t` is surjective onto the fibre of each member of a finite
 family, it is surjective onto the fibre of its biproduct. -/
@@ -349,8 +323,11 @@ theorem map_π_hullBasisPoint [ω.Additive] (i : Fin (Module.finrank K (ω.obj X
     simp
   · simp
 
-/-- The representing object `P_X` of `ω` on the subquotients of finite direct sums of `X`: the
-smallest subobject of `X ^ n`, for `n = dim ω X`, whose fibre contains `hullBasisPoint`. -/
+/-- The subobject `fiberSpan (hullBasisPoint X)` of `X ^ n`, for `n = dim ω X`. When `C` is
+abelian and `ω` is faithful and exact, it is the smallest subobject of `X ^ n` whose fibre contains
+`hullBasisPoint` (`CategoryTheory.Functor.fiberSpan_le_iff`); if moreover `C` and `ω` are
+`K`-linear, it is the representing object `P_X` of `ω` on the subquotients of finite direct sums
+of `X` (`CategoryTheory.Functor.bijective_fiberSpanEval_hullBasisPoint`). -/
 noncomputable abbrev hullRepresenting :
     Subobject (⨁ fun _ : Fin (Module.finrank K (ω.obj X)) ↦ X) :=
   ω.fiberSpan (ω.hullBasisPoint X)
