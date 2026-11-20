@@ -171,9 +171,9 @@ theorem norm_fst_sub_add_norm_snd_sub_le_of_fastSlow (hKF : 0 ≤ KF) (hKCF : 0 
   have hy0 := norm_snd_sub_eq_zero_of_fastSlow hfast hy hyF
   -- The fast distance splits along the graph: from `f_x` to `g σ_x`, to `g σ_y`, to `f_y`.
   have hf : ‖x.2 - y.2‖ ≤ KF * KPF * ε + Kgraph * ‖x.1 - y.1‖ := by
-    calc ‖x.2 - y.2‖ ≤ ‖x.2 - g x.1‖ + ‖g x.1 - g y.1‖ + ‖g y.1 - y.2‖ :=
-          (norm_sub_le_norm_sub_add_norm_sub _ (g y.1) _).trans
-            (add_le_add_left (norm_sub_le_norm_sub_add_norm_sub _ _ _) _)
+    calc ‖x.2 - y.2‖ ≤ ‖x.2 - g x.1‖ + ‖g x.1 - g y.1‖ + ‖g y.1 - y.2‖ := by
+          linarith [norm_sub_le_norm_sub_add_norm_sub x.2 (g y.1) y.2,
+            norm_sub_le_norm_sub_add_norm_sub x.2 (g x.1) (g y.1)]
       _ ≤ KF * (KPF * ε) + Kgraph * ‖x.1 - y.1‖ + 0 := by
           gcongr
           · exact (hfast x hx).trans (by gcongr)
