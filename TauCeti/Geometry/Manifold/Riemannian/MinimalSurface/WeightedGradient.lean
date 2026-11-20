@@ -20,6 +20,10 @@ The square identity allows either scalar weight to vanish. When both weights and
 coefficient are positive, discarding the square gives the corresponding sharp lower bound.
 Separate bounds at vanishing weights extend it to nonnegative weights with positive combination.
 The coefficient one third in the reaction polynomial gives the constant six fifths.
+
+This is the algebraic part of the Bochner–Simons argument for positive Jacobi fields on minimal
+surfaces in S. Lynch, *The Cheng–Yau gradient estimate for Jacobi fields*, Proposition 4.1 and
+the subsequent one-third specialization in §4, [arXiv:2611.12758v1](https://arxiv.org/abs/2611.12758v1).
 -/
 
 public section
@@ -69,8 +73,9 @@ theorem weighted_gradient_combination_le (c q s a b : ℝ) (u v w : V)
   rw [← le_sub_iff_add_le, div_le_iff₀ hQ]
   nlinarith only [hgap]
 
+omit [InnerProductSpace ℝ V] in
 /-- When the left weight vanishes, a lower bound for its scalar term controls the combination. -/
-theorem weighted_gradient_combination_le_zero_left (c s a b : ℝ) (w : V)
+theorem weighted_gradient_combination_le_zero_left [NormedSpace ℝ V] (c s a b : ℝ) (w : V)
     (hc : 0 < c) (hs : 0 < s) (ha : s ^ 2 ≤ a)
     (hS : s * b = ‖w‖ ^ 2 - 2 * s ^ 3) :
     ‖c • w‖ ^ 2 / (c * s) + (1 - 2 * c) * s ^ 2 ≤ a + c * b := by
@@ -100,10 +105,11 @@ theorem weighted_gradient_combination_le_of_nonneg (c q s a b : ℝ) (u v w : V)
     (hB : q * a = ‖v‖ ^ 2 + 2 * s * inner ℝ u v - 2 * q * inner ℝ u w +
       q * (2 * q ^ 2 + 3 * q * s + 2 * s ^ 2))
     (hS : s * b = ‖w‖ ^ 2 - 2 * s ^ 3)
-    (hc : 0 < c) (hq : 0 ≤ q) (hs : 0 ≤ s) (hQ : 0 < q + c * s)
+    (hc : 0 < c) (hs : 0 ≤ s) (hQ : 0 < q + c * s)
     (hqzero : q = 0 → v = 0 ∧ s ^ 2 ≤ a) (hszero : s = 0 → w = 0 ∧ 0 ≤ b) :
     ‖v + c • w‖ ^ 2 / (q + c * s) +
       (2 * q ^ 2 + (3 - 1 / c) * q * s + (1 - 2 * c) * s ^ 2) ≤ a + c * b := by
+  have hq : 0 ≤ q := hu ▸ sq_nonneg ‖u‖
   by_cases hq0 : q = 0
   · obtain ⟨hv, ha⟩ := hqzero hq0
     have hspos : 0 < s := by
