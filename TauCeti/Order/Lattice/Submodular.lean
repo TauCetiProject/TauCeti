@@ -136,11 +136,11 @@ namespace IsSymmSubmodular
 
 /-- The posimodular inequality: a symmetric submodular function also satisfies the submodular
 inequality with the two differences in place of the join and meet. -/
-theorem sdiff_add_sdiff_le [AddCommMagma K] [LE K] [BooleanAlgebra L] {f : L → K}
+theorem sdiff_add_sdiff_le [Add K] [LE K] [BooleanAlgebra L] {f : L → K}
     (hf : IsSymmSubmodular f) (a b : L) : f (a \ b) + f (b \ a) ≤ f a + f b := by
-  have h := hf.submodular.apply a bᶜ
-  rw [← hf.symm (a ⊔ bᶜ), hf.symm b] at h
-  simpa only [sdiff_eq, compl_sup, compl_compl, inf_comm, add_comm] using h
+  have h := hf.submodular.apply aᶜ b
+  rw [← hf.symm (aᶜ ⊔ b), hf.symm a] at h
+  simpa only [sdiff_eq, compl_sup, compl_compl, inf_comm] using h
 
 end IsSymmSubmodular
 
