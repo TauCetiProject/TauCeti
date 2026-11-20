@@ -33,7 +33,7 @@ opposite signs at the two endpoints.
 * `Complex.existsUnique_tricomiIncompleteGamma_eq_zero_of_neg`: for `x < 0` and `k : ℕ`,
   `γ*(·, x)` has exactly one zero `a` with `−(k + 1) < a < −k`.
 * `Complex.tricomiIncompleteGamma_param_zeros_of_neg`: for `x < 0` and `n ≥ 1`, the zeros of
-  `γ*(·, x)` in `−2n < a < 2 − 2n` are exactly two points `a₁ < a₂`.
+  `γ*(·, x)` in `−2n < a < 2 − 2n` are exactly two points `a₁ < 1 − 2n < a₂`.
 
 ## References
 
@@ -66,24 +66,6 @@ private theorem ne_neg_natCast_of_mem_Ioo {k : ℕ} {a : ℝ} (ha : a ∈ Ioo (-
   have h₂ : (k : ℝ) < n := by linarith [ha.2]
   norm_cast at h₁ h₂
   omega
-
-/-- For real `a ∉ −ℕ` and real `x`, the series DLMF 8.7.1 in powers of `−x` has real terms, and
-`γ*(a, x)` is `Γ(a)⁻¹` times its real sum. -/
-private theorem exists_hasSum_tricomiIncompleteGamma_ofReal {a : ℝ} (ha : ∀ n : ℕ, a ≠ -n)
-    (x : ℝ) : ∃ s : ℝ, HasSum (fun k : ℕ => (-x) ^ k / (k ! * (a + k))) s ∧
-      tricomiIncompleteGamma a x = ((Real.Gamma a)⁻¹ * s : ℝ) := by
-  have ha' : ∀ n : ℕ, (a : ℂ) ≠ -n := fun n h => ha n (by exact_mod_cast h)
-  have hΓ : Gamma a ≠ 0 := Gamma_ne_zero ha'
-  have h : HasSum (fun k : ℕ => (((-x) ^ k / (k ! * (a + k)) : ℝ) : ℂ))
-      (Gamma a * tricomiIncompleteGamma a x) := by
-    convert (hasSum_tricomiIncompleteGamma_of_ne_neg_natCast ha' x).mul_left (Gamma a) using 1
-    ext k
-    push_cast
-    rw [← mul_assoc, mul_inv_cancel₀ hΓ, one_mul]
-  have hs := (summable_ofReal.mp h.summable).hasSum
-  refine ⟨_, hs, ?_⟩
-  rw [ofReal_mul, ofReal_inv, ← Gamma_ofReal, (hasSum_ofReal.mpr hs).unique h,
-    inv_mul_cancel_left₀ hΓ]
 
 /-- For `x < 0`, the real sum `∑ (−x)ᵏ / (k! (a + k))` is strictly decreasing in `a` on each
 interval `−(k + 1) < a < −k`: every term is a positive multiple of `1 / (a + j)`, and `a + j` keeps
@@ -135,24 +117,20 @@ private theorem exists_mem_Ioo_tricomiIncompleteGamma_eq_zero {x : ℝ} (hx : x 
       exact pow_ne_zero _ hx0 hfc
     · rintro rfl
       exact pow_ne_zero _ hx0 ((hval k).symm.trans hfc)
-  -- off `−ℕ`, `γ*(c, x)` is real, so the vanishing of its real part is enough
-  obtain ⟨s, -, heq⟩ := exists_hasSum_tricomiIncompleteGamma_ofReal
-    (ne_neg_natCast_of_mem_Ioo hcIoo) x
-  simp only [hf_def, heq, ofReal_re] at hfc
-  exact ⟨c, hcIoo, by rw [heq, hfc, ofReal_zero]⟩
+  -- `γ*(c, x)` is real, so the vanishing of its real part is enough
+  have hre : (tricomiIncompleteGamma c x).re = 0 := hfc
+  exact ⟨c, hcIoo, by rw [← ofReal_tricomiIncompleteGamma_ofReal_re, hre, ofReal_zero]⟩
 
 /-- Uniqueness of the zero of `γ*(·, x)` in `−(k + 1) < a < −k` for `x < 0`: there
-`γ*(a, x) = Γ(a)⁻¹ ∑ (−x)ʲ / (j! (a + j))`, with `Γ(a) ≠ 0` and the sum strictly decreasing. -/
+`∑ (−x)ʲ / (j! (a + j)) = Γ(a) γ*(a, x)`, and the sum is strictly decreasing. -/
 private theorem eq_of_tricomiIncompleteGamma_eq_zero_of_mem_Ioo {x : ℝ} (hx : x < 0) {k : ℕ}
     {a b : ℝ} (ha : a ∈ Ioo (-(k + 1 : ℝ)) (-k)) (hb : b ∈ Ioo (-(k + 1 : ℝ)) (-k))
     (ha0 : tricomiIncompleteGamma a x = 0) (hb0 : tricomiIncompleteGamma b x = 0) : a = b := by
   have hsum : ∀ c ∈ Ioo (-(k + 1 : ℝ)) (-k), tricomiIncompleteGamma c x = 0 →
       HasSum (fun j : ℕ => (-x) ^ j / (j ! * (c + j))) 0 := fun c hc hc0 => by
-    obtain ⟨s, hs, heq⟩ := exists_hasSum_tricomiIncompleteGamma_ofReal
-      (ne_neg_natCast_of_mem_Ioo hc) x
-    rw [heq, ofReal_eq_zero, mul_eq_zero, inv_eq_zero,
-      or_iff_right (Real.Gamma_ne_zero (ne_neg_natCast_of_mem_Ioo hc))] at hc0
-    rwa [← hc0]
+    have h :=
+      hasSum_Gamma_mul_re_tricomiIncompleteGamma_ofReal (ne_neg_natCast_of_mem_Ioo hc) x
+    rwa [hc0, zero_re, mul_zero] at h
   rcases lt_trichotomy a b with h | h | h
   · exact absurd (hasSum_lt_of_mem_Ioo hx ha hb h (hsum a ha ha0) (hsum b hb hb0)) (lt_irrefl 0)
   · exact h
@@ -169,7 +147,7 @@ theorem existsUnique_tricomiIncompleteGamma_eq_zero_of_neg {x : ℝ} (hx : x < 0
 /-- DLMF §8.13(iii)(a): for `x < 0` and `n ≥ 1`, Tricomi's function `γ*(·, x)` has exactly two
 zeros in the interval `−2n < a < 2 − 2n`, one on each side of `a = 1 − 2n`. -/
 theorem tricomiIncompleteGamma_param_zeros_of_neg {x : ℝ} (hx : x < 0) {n : ℕ} (hn : 1 ≤ n) :
-    ∃ a₁ a₂ : ℝ, a₁ < a₂ ∧
+    ∃ a₁ a₂ : ℝ, a₁ < 1 - 2 * n ∧ 1 - 2 * n < a₂ ∧
       {a : ℝ | a ∈ Ioo (-2 * (n : ℝ)) (2 - 2 * n) ∧ tricomiIncompleteGamma a x = 0} =
         {a₁, a₂} := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
@@ -178,7 +156,8 @@ theorem tricomiIncompleteGamma_param_zeros_of_neg {x : ℝ} (hx : x < 0) {n : �
   obtain ⟨a₂, ⟨ha₂, ha₂0⟩, hu₂⟩ :=
     existsUnique_tricomiIncompleteGamma_eq_zero_of_neg hx (2 * m)
   push_cast at ha₁ ha₂ hu₁ hu₂
-  refine ⟨a₁, a₂, by linarith [ha₁.2, ha₂.1], Set.ext fun a => ⟨?_, ?_⟩⟩
+  refine ⟨a₁, a₂, by push_cast; linarith [ha₁.2], by push_cast; linarith [ha₂.1],
+    Set.ext fun a => ⟨?_, ?_⟩⟩
   · rintro ⟨⟨h₁, h₂⟩, ha0⟩
     push_cast at h₁ h₂
     rcases lt_trichotomy a (-(2 * m + 1)) with h | h | h
