@@ -851,6 +851,20 @@ open Floer MeasureTheory Set
 
 variable {φ : ℝ × ℝ → ℝ × ℝ} {s : Set (ℝ × ℝ)}
 
+/-- **Translations preserve the energy.** Translating the map and the perturbation data by `v`
+preserves the energy: the energy of the translate over `(· + v) ⁻¹' S` is the energy of the
+original over `S`. -/
+theorem lintegral_floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) (S : Set (ℝ × ℝ)) :
+    ∫⁻ z in (· + v) ⁻¹' S, ENNReal.ofReal
+        (ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z) =
+      ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
+  have hv : MeasurePreserving (· + v) volume volume :=
+    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
+  simp only [floerEnergyDensity_comp_add_right]
+  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
+    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
+
 /-- **Invariance of the energy under changes of coordinates.** For a change of coordinates `φ`
 that is injective and orientation preserving on a measurable set `s`, the energy of `u` for `K`
 over `φ '' s` is the energy of `u ∘ φ` for `φ^*K` over `s`. -/
