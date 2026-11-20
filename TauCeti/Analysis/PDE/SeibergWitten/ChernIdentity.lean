@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 public import TauCeti.Geometry.Manifold.Riemannian.SelfDual.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Integral
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Measure
+import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.Riemannian.FormMetric
 
