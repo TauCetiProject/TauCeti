@@ -22,8 +22,9 @@ Hence, over coefficients without zero divisors, the leading exponents of the inv
 `TauCeti.MvPolynomial.permInvariants R G` are exactly the exponents that are largest in their orbits
 (`MonomialOrder.mem_leadingExponents_permInvariants_iff`), and the orbit sums form a SAGBI basis of
 the invariant subalgebra for every monomial order (`MonomialOrder.isSAGBIBasis_range_orbitSum`).
-This orbit-sum SAGBI basis is infinite. Over a field, the invariant subalgebra has a finite SAGBI
-basis exactly when the monoid of orbit-maximal exponents is finitely generated
+When `σ` is nonempty and `R` is nontrivial, this orbit-sum SAGBI basis is infinite. Over a field,
+the invariant subalgebra has a finite SAGBI basis exactly when the monoid of orbit-maximal exponents
+is finitely generated
 (`MonomialOrder.exists_finite_isSAGBIBasis_iff_fg`); this is the monoid through which finite SAGBI
 bases of permutation invariants are classified.
 
