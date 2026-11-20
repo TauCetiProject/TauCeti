@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UnitDisc.Cylinder
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.CompactCore
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
 # Cylindrical ends of the thrice-punctured sphere
@@ -177,6 +178,22 @@ theorem deriv_cylindricalEndLift_ne_zero (q : Puncture) (z : ℂ) :
   rw [(q.hasDerivAt_cylindricalEndLift z).deriv]
   have hp : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
   cases q <;> simp [hp, Complex.exp_ne_zero]
+
+/-- The holomorphic lifts are open maps: each is an affine function of `z ↦ exp (-2πz)`. -/
+theorem isOpenMap_cylindricalEndLift (q : Puncture) : IsOpenMap (cylindricalEndLift q) := by
+  have hexp : IsOpenMap fun z : ℂ ↦ Complex.exp (-(2 * (Real.pi : ℂ)) * z) :=
+    Complex.isOpenMap_exp.comp (Homeomorph.mulLeft₀ _ (by simp [Real.pi_ne_zero])).isOpenMap
+  cases q
+  · convert (Homeomorph.mulLeft₀ (2⁻¹ : ℂ) (by norm_num)).isOpenMap.comp hexp using 1
+    funext z
+    simp [div_eq_inv_mul]
+  · convert ((Homeomorph.addLeft (1 : ℂ)).isOpenMap.comp
+      (Homeomorph.mulLeft₀ (-2⁻¹ : ℂ) (by norm_num)).isOpenMap).comp hexp using 1
+    funext z
+    simp [div_eq_inv_mul, sub_eq_add_neg]
+  · convert (Homeomorph.mulLeft₀ (2 : ℂ) (by norm_num)).isOpenMap.comp hexp using 1
+    funext z
+    simp
 
 /-- Each parameterization fills precisely its standard puncture neighborhood. -/
 theorem range_cylindricalEnd (q : Puncture) :
