@@ -646,6 +646,8 @@ theorem finrank_quotientModelSpace_cotangentReducedSpace
   rw [(lieAnnihilator_eq_top_iff ℝ _).2 fun ξ ↦ lie_zero ξ,
     LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq, finrank_prod,
     ContinuousLinearMap.dual_finrank_eq] at hdim
+  -- The Lie algebra `GroupLieAlgebra IG G` is the tangent space `TangentSpace IG 1`, which is
+  -- definitionally the model space `EG`, so their dimensions agree by `rfl`.
   have : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := (rfl)
   omega
 
