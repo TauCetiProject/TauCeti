@@ -85,7 +85,8 @@ variable (p : ℕ) (O : Type*) [CommRing O]
 /-- The *growth transition* `ν_{n, n₀} = ξ_{n₀} ξ_{n₀+1} ⋯ ξ_n`, where `ξ_j = Φ_{p ^ j}(1 + T)`.
 Since `ω_n = (1 + T) ^ pⁿ - 1 = ξ_0 ξ_1 ⋯ ξ_n`, it is the quotient `ω_n / ω_{n₀ - 1}`, with
 `ω_{-1} = 1`: `ν_{n, 0} = ω_n` (`growthTransition_zero_left`) and `ω_c ν_{n, c + 1} = ω_n` for
-`c ≤ n` (`one_add_X_pow_sub_one_mul_growthTransition`). For `n < n₀` it is the empty product `1`.
+`c ≤ n` (`one_add_X_pow_sub_one_mul_growthTransition`). For `n < n₀` it is the empty product `1`
+(`growthTransition_of_lt`).
 -/
 noncomputable def growthTransition (n₀ n : ℕ) : O[X] :=
   ∏ j ∈ Finset.Ico n₀ (n + 1), (cyclotomic (p ^ j) O).comp (X + 1)
@@ -95,6 +96,23 @@ variable {p O}
 theorem growthTransition_def (n₀ n : ℕ) :
     growthTransition p O n₀ n = ∏ j ∈ Finset.Ico n₀ (n + 1), (cyclotomic (p ^ j) O).comp (X + 1) :=
   (rfl)
+
+/-- `ν_{n, n₀} = 1` for `n < n₀`: it is the empty product. -/
+@[simp]
+theorem growthTransition_of_lt {n₀ n : ℕ} (h : n < n₀) : growthTransition p O n₀ n = 1 := by
+  rw [growthTransition_def, Finset.Ico_eq_empty (by omega), Finset.prod_empty]
+
+/-- `ν_{n, n} = ξ_n = Φ_{p ^ n}(1 + T)`. -/
+@[simp]
+theorem growthTransition_self (n : ℕ) :
+    growthTransition p O n n = (cyclotomic (p ^ n) O).comp (X + 1) := by
+  rw [growthTransition_def, Nat.Ico_succ_singleton, Finset.prod_singleton]
+
+/-- `ν_{n + 1, n₀} = ν_{n, n₀} ξ_{n + 1}` for `n₀ ≤ n + 1`. -/
+theorem growthTransition_succ {n₀ n : ℕ} (h : n₀ ≤ n + 1) :
+    growthTransition p O n₀ (n + 1) =
+      growthTransition p O n₀ n * (cyclotomic (p ^ (n + 1)) O).comp (X + 1) := by
+  rw [growthTransition_def, growthTransition_def, Finset.prod_Ico_succ_top h]
 
 /-- The growth transition is monic. -/
 theorem monic_growthTransition (n₀ n : ℕ) : (growthTransition p O n₀ n).Monic :=
