@@ -96,8 +96,7 @@ theorem bernoulliKernel_pos (t : ℝ) : 0 < bernoulliKernel t :=
 theorem exp_sub_one_mul_bernoulliKernel (t : ℝ) : (Real.exp t - 1) * bernoulliKernel t = t := by
   rcases eq_or_ne t 0 with rfl | ht
   · simp
-  · rw [bernoulliKernel_of_ne_zero ht,
-      mul_div_cancel₀ _ (sub_ne_zero.2 ((Real.exp_eq_one_iff t).not.2 ht))]
+  · rw [bernoulliKernel_of_ne_zero ht, mul_div_cancel₀ _ (Real.exp_sub_one_ne_zero ht)]
 
 /-- The Bernoulli kernel is real analytic on `ℝ`, including at its removable point `0`. -/
 theorem analyticOnNhd_bernoulliKernel : AnalyticOnNhd ℝ bernoulliKernel Set.univ := fun t _ ↦
@@ -127,6 +126,7 @@ theorem eq_bernoulliKernel_of_continuousAt {g : ℝ → ℝ} (hg : ContinuousAt 
 
 /-- The derivatives of the Bernoulli kernel at `0` are the Bernoulli numbers (with
 `B₁ = -1/2`): `t / (exp t - 1)` is their exponential generating function. -/
+@[simp]
 theorem iteratedDeriv_bernoulliKernel_zero (n : ℕ) :
     iteratedDeriv n bernoulliKernel 0 = bernoulli n := by
   -- Differentiating `β(t) exp t = t + β(t)` `m + 1` times at `0` gives the recursion
@@ -242,14 +242,17 @@ theorem mellin_bernoulliKernel {s : ℂ} (hs : 0 < s.re) :
       mellin (fun t : ℝ ↦ (t : ℂ) ^ (1 : ℂ) • (((Real.exp t - 1)⁻¹ : ℝ) : ℂ)) s :=
     MeasureTheory.setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by
       simp [bernoulliKernel_of_ne_zero (ne_of_gt ht), div_eq_mul_inv]
+  -- The `p`-series `∑_k (k + 1) ^ -Re (s + 1)` converges since `Re (s + 1) > 1`.
+  have hsum : Summable fun k : ℕ ↦ ‖(1 : ℂ)‖ / ((k : ℝ) + 1) ^ (s + 1).re := by
+    have h1 : 1 < (s + 1).re := by simpa using hs
+    refine ((summable_nat_add_iff 1).2 (Real.summable_nat_rpow_inv.2 h1)).congr fun k ↦ ?_
+    rw [norm_one, one_div, Nat.cast_succ]
   have h := hasSum_mellin (a := fun _ : ℕ ↦ (1 : ℂ)) (p := fun k : ℕ ↦ (k : ℝ) + 1)
     (F := fun t : ℝ ↦ (((Real.exp t - 1)⁻¹ : ℝ) : ℂ)) (fun k ↦ Or.inr (by positivity)) hs1
     (fun t ht ↦ by
       simpa only [Complex.ofRealCLM_apply, one_mul, neg_mul] using
         Complex.ofRealCLM.hasSum (Real.hasSum_exp_neg_nat_succ_mul ht))
-    (by
-      simpa [Real.inv_rpow, Nat.cast_add, Nat.cast_one, div_eq_mul_inv, add_comm] using
-        (summable_nat_add_iff 1).2 (Real.summable_nat_rpow_inv.2 (by simpa using hs)))
+    hsum
   rw [hcongr, mellin_cpow_smul, ← h.tsum_eq,
     zeta_eq_tsum_one_div_nat_add_one_cpow (by simp; linarith), ← tsum_mul_left]
   refine tsum_congr fun k ↦ ?_

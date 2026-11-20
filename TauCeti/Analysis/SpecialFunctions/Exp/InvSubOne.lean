@@ -24,6 +24,7 @@ decays like `exp (-t)` at `+∞`, and for `t > 0` it is the geometric series
 
 ## Main results
 
+* `Real.exp_sub_one_ne_zero`: `exp t - 1 ≠ 0` for `t ≠ 0`, so `g` is defined away from `0`.
 * `Real.hasDerivAt_inv_exp_sub_one`: `g' = -(g + g²)` away from `0`.
 * `Real.isBigO_inv_exp_sub_one`: `g(t) = O(exp (-t))` as `t → ∞`.
 * `Real.hasSum_exp_neg_nat_succ_mul`: `g(t) = ∑_{k ≥ 0} exp (-((k + 1) t))` for `t > 0`.
@@ -35,11 +36,14 @@ open Filter Asymptotics
 
 namespace Real
 
+/-- `exp t - 1` vanishes only at `t = 0`. -/
+theorem exp_sub_one_ne_zero {t : ℝ} (ht : t ≠ 0) : exp t - 1 ≠ 0 :=
+  sub_ne_zero.2 ((exp_eq_one_iff t).not.2 ht)
+
 /-- The derivative of `g = (exp t - 1)⁻¹` is `-(g + g²)`. -/
 theorem hasDerivAt_inv_exp_sub_one {t : ℝ} (ht : t ≠ 0) :
     HasDerivAt (fun s ↦ (exp s - 1)⁻¹) (-((exp t - 1)⁻¹ + (exp t - 1)⁻¹ ^ 2)) t := by
-  have hne : exp t - 1 ≠ 0 := sub_ne_zero.2 ((exp_eq_one_iff t).not.2 ht)
-  convert ((hasDerivAt_exp t).sub_const 1).inv hne using 1
+  convert ((hasDerivAt_exp t).sub_const 1).inv (exp_sub_one_ne_zero ht) using 1
   field_simp
   ring
 
