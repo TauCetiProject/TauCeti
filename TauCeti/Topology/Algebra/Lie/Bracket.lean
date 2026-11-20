@@ -19,7 +19,7 @@ of `L`. Through `ContinuousLinearMap.isBoundedBilinearMap`, this makes the brack
 finite-dimensional normed Lie algebra smooth.
 -/
 
-@[expose] public section
+public section
 
 noncomputable section
 
@@ -41,6 +41,6 @@ variable {𝕜 L M}
 
 @[simp]
 theorem lieL_apply (x : L) (m : M) : lieL 𝕜 L M x m = ⁅x, m⁆ :=
-  rfl
+  (rfl)
 
 end TauCeti

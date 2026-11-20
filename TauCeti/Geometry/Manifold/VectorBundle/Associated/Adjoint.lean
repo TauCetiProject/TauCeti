@@ -179,7 +179,7 @@ theorem _root_.ContMDiffWithinAt.lie_adjointBundle
   -- Near `x`, the coordinate of the bracket is the bracket of the coordinates.
   exact AssociatedBundle.contMDiffWithinAt_of_trivializationAt
     (lieL ℝ (AdjointModule I G) (AdjointModule I G)).isBoundedBilinearMap.contDiff hv hw
-    fun y hy ↦ AdjointBundle.trivializationAt_lie_snd hy (v y) (w y)
+    fun y hy ↦ by rw [lieL_apply]; exact AdjointBundle.trivializationAt_lie_snd hy (v y) (w y)
 
 /-- The bracket of maps into the adjoint bundle smooth at a point is smooth there. -/
 theorem _root_.ContMDiffAt.lie_adjointBundle

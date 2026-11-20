@@ -164,6 +164,7 @@ instance instContinuousSMul : ContinuousSMul G (AdjointModule I G) where
     (I' := 𝓘(ℝ, AdjointModule I G)) (n := ∞)).continuous
 
 /-- **The adjoint action is an action by Lie algebra automorphisms.** -/
+@[simp]
 theorem smul_lie [CompleteSpace E] (g : G) (X Y : AdjointModule I G) :
     g • ⁅X, Y⁆ = ⁅g • X, g • Y⁆ := by
   obtain ⟨X, rfl⟩ := of.surjective X
