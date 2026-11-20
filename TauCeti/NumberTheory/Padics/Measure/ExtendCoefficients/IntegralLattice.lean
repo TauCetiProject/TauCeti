@@ -13,9 +13,11 @@ import Mathlib.Analysis.Normed.Operator.Completeness
 /-!
 # Integral lattices of measures
 
-Extending coefficients from the closed unit ball of a field gives a weakly closed set of measures.
-For `ℚ_p`-valued measures on a profinite space, a single power of `p` carries any measure into
-this integral lattice.
+Let `X` be a profinite space and let `j : O →+* K` be a topological embedding onto the closed
+unit ball of a complete ultrametric normed field. Extending coefficients along `j` gives a weakly
+closed set of `K`-valued measures. For `ℚ_p`-valued measures, a single power of `p` carries the
+whole measure into this integral lattice. After scaling, its values on all continuous
+`ℤ_p`-valued test functions are integral.
 
 ## References
 
@@ -32,7 +34,8 @@ namespace AbstractMeasure
 
 variable {X : Type*} [TopologicalSpace X] [CompactSpace X]
 
-/-- Extension from coefficients in the closed unit ball of a field has weakly closed range. -/
+/-- On a profinite space, extension along a topological embedding onto the closed unit ball of a
+complete ultrametric normed field has weakly closed range. -/
 theorem isClosed_range_extendCoefficients_weak [T2Space X] [TotallyDisconnectedSpace X]
     {O K : Type*} [CommRing O] [TopologicalSpace O] [IsTopologicalRing O]
     [NormedField K] [CompleteSpace K] [IsUltrametricDist K]
@@ -41,36 +44,9 @@ theorem isClosed_range_extendCoefficients_weak [T2Space X] [TotallyDisconnectedS
     @IsClosed D(X, K) WeakTopology (extendCoefficients (X := X) j hj).range := by
   rcases NormedField.discreteTopology_or_nontriviallyNormedField K with hK | ⟨_, rfl⟩
   · let := hK
-    classical
     have hsurj : Function.Surjective j := fun k ↦ hjr (by simp)
-    let e := RingEquiv.ofBijective j ⟨hje.injective, hsurj⟩
-    have he (k : K) : j (e.symm k) = k := e.apply_symm_apply k
-    let J := j.compLeftContinuous X hje.continuous
-    have hJf (f : C(X, O)) : J f = (⟨j, hje.continuous⟩ : C(O, K)).comp f := by
-      ext; simp [J]
-    have hfull : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) = Set.univ := by
-      apply Set.eq_univ_of_forall
-      intro ν
-      let L : C(X, O) →ₗ[O] O :=
-        { toFun f := e.symm (ν (J f))
-          map_add' f g := by simp
-          map_smul' a f := by
-            have hJ : J (a • f) = j a • J f := by ext; simp [J]
-            apply e.injective
-            simp only [hJ, map_smul, smul_eq_mul, map_mul, e.apply_symm_apply]
-            rfl }
-      have hL : Continuous L := hje.continuous_iff.mpr <| by
-        simpa only [Function.comp_def, L, LinearMap.coe_mk, AddHom.coe_mk,
-          AddMonoidHom.coe_mk, he, hJf] using
-          (map_continuous ν).comp
-            (ContinuousMap.continuous_postcomp (⟨j, hje.continuous⟩ : C(O, K)))
-      refine ⟨toCLMEquiv.symm ⟨L, hL⟩, ?_⟩
-      symm
-      apply eq_extendCoefficients_of_apply_comp j _ hj hje.continuous
-      intro f
-      rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk']
-      simp only [L, LinearMap.coe_mk, AddHom.coe_mk, he, hJf]
-    rw [hfull]
+    rw [AddMonoidHom.coe_range,
+      Set.range_eq_univ.mpr (extendCoefficients_surjective j hj hje hsurj)]
     exact @isClosed_univ _ WeakTopology
   · have hball : ((extendCoefficients (X := X) j hj).range : Set D(X, K)) =
         toCLMEquiv ⁻¹' Metric.closedBall 0 1 :=
@@ -89,19 +65,20 @@ theorem isClosed_range_extendCoefficients_weak [T2Space X] [TotallyDisconnectedS
 
 variable {p : ℕ} [Fact p.Prime] [T2Space X] [TotallyDisconnectedSpace X]
 
-/-- Every bounded rational p-adic measure is an integral measure divided by a single power of
-`p`. This power works simultaneously on all continuous test functions. -/
+/-- A single power of `p` puts the whole bounded rational p-adic measure in the image of
+extension of coefficients from `ℤ_p`. After scaling, its values on all continuous `ℤ_p`-valued
+test functions are integral. -/
 theorem exists_inv_pow_smul_extendCoefficients_eq (ν : D(X, ℚ_[p])) :
     ∃ (n : ℕ) (μ : D(X, ℤ_[p])),
       ((p : ℚ_[p]) ^ n)⁻¹ •
         extendCoefficients PadicInt.Coe.ringHom PadicInt.norm_coe_ringHom_le_one μ = ν := by
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr
-    (show 0 < 1 + ‖toCLMEquiv ν‖ by positivity)) (Padic.norm_p_lt_one (p := p))
+  have hpos : 0 < 1 + ‖toCLMEquiv ν‖ := by positivity
+  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (inv_pos.mpr hpos) (Padic.norm_p_lt_one (p := p))
   have hnν : ‖(p : ℚ_[p])‖ ^ n * ‖toCLMEquiv ν‖ ≤ 1 := by
     calc
       _ ≤ (1 + ‖toCLMEquiv ν‖)⁻¹ * (1 + ‖toCLMEquiv ν‖) :=
         mul_le_mul hn.le (le_add_of_nonneg_left zero_le_one) (norm_nonneg _) (by positivity)
-      _ = 1 := inv_mul_cancel₀ (by positivity)
+      _ = 1 := inv_mul_cancel₀ hpos.ne'
   have hν : ‖toCLMEquiv ((p : ℚ_[p]) ^ n • ν)‖ ≤ 1 := by
     simpa only [map_smul, norm_smul, norm_pow] using hnν
   obtain ⟨μ, hμ⟩ := (mem_range_extendCoefficients_iff PadicInt.norm_coe_ringHom_le_one
