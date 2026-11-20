@@ -327,6 +327,20 @@ theorem forall_halfRemove_eq_zero_iff (x : Half χ hχ) :
   rw [forall_freeRemove_mem_halfRadical_iff hχ, ← halfMk_eq_zero_iff χ hχ,
     map_sub, AlgHom.commutes, sub_eq_zero]
 
+/-- The common kernel of the right skew derivatives consists exactly of scalars. -/
+theorem forall_halfRemoveRight_eq_zero_iff (x : Half χ hχ) :
+    (∀ i, halfRemoveRight χ hχ i x = 0) ↔
+      x = algebraMap R (Half χ hχ) (halfAugmentation χ hχ x) := by
+  obtain ⟨x, rfl⟩ := halfMk_surjective χ hχ x
+  simp only [halfRemoveRight_halfMk, halfMk_eq_zero_iff, halfAugmentation_halfMk]
+  have haug : algebraMapInv (star x) = algebraMapInv x := by
+    simpa only [star_one, freePairing_one_left] using freePairing_star_star χ hχ 1 x
+  have hkernel := forall_freeRemove_mem_halfRadical_iff hχ (x := star x)
+  rw [haug, ← star_algebraMap (algebraMapInv x), ← star_sub,
+    star_mem_halfRadical_iff hχ] at hkernel
+  simp only [freeRemove_star, star_mem_halfRadical_iff hχ] at hkernel
+  rw [hkernel, ← halfMk_eq_zero_iff χ hχ, map_sub, AlgHom.commutes, sub_eq_zero]
+
 /-- The right skew Leibniz rule on the half algebra. -/
 theorem halfRemoveRight_mul (i : I) (x y : Half χ hχ) :
     halfRemoveRight χ hχ i (x * y) =
