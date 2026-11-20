@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -1169,6 +1170,53 @@ theorem norm_mixedDeriv_comp_snd_smul_le (hψ : ContDiff ℝ ∞ ψ) (ha : ContD
   refine (norm_coordinateDeriv_smul_le β (hψ.of_le (by exact_mod_cast le_top))
     (hg.of_le (by exact_mod_cast le_top)) ξ).trans_eq ?_
   simp only [mixedDeriv_eq_coordinateDeriv_snd ha]
+
+/-- **Symbol estimates for a product with a frequency cutoff.** Let `B i` bound
+`‖D^i ψ ξ‖ ⟨ξ⟩ ^ i`. If the mixed derivatives `∂ₓ^α ∂_ξ^w a` at `(x, ξ)` are bounded by
+`D w ⟨ξ⟩ ^ (m - |w|)`, then by the Leibniz rule `∂ₓ^α ∂_ξ^β (ψ(ξ) a(x, ξ))` is bounded by
+`C ⟨ξ⟩ ^ (m - |β|)`, where `C = ∑ᵢ (|β| choose i) B i ∑_{|w| = |β| - i} D w`. -/
+theorem norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight (hψ : ContDiff ℝ ∞ ψ)
+    (ha : ContDiff ℝ ∞ a) {α : List (Fin n)} {x ξ : CoordinateSpace n}
+    {m : ℝ} {B : ℕ → ℝ}
+    (hB : ∀ i, ‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i)
+    {D : List (Fin n) → ℝ}
+    (hD : ∀ w, ‖mixedDeriv α w a x ξ‖ ≤ D w * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2))
+    (β : List (Fin n)) :
+    ‖mixedDeriv α β (fun p => ψ p.2 • a p) x ξ‖ ≤
+      (∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * B i *
+        ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+        (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  refine (norm_mixedDeriv_comp_snd_smul_le hψ ha α β x ξ).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi => ?_
+  have hi' : i ≤ β.length := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  -- `⟨ξ⟩ ^ (m - (|β| - i)) = ⟨ξ⟩ ^ i * ⟨ξ⟩ ^ (m - |β|)`
+  have hw (w : Fin (β.length - i) → Fin n) :
+      (1 + ‖ξ‖ ^ 2) ^ ((m - (List.ofFn w).length) / 2) =
+        (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+    rw [← one_add_norm_sq_rpow_add, List.length_ofFn, Nat.cast_sub hi']
+    ring_nf
+  have hsum : ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ ≤
+      (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+        ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by
+    rw [Finset.sum_mul]
+    exact Finset.sum_le_sum fun w _ => (hD _).trans_eq (by rw [hw])
+  have hS : 0 ≤ ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w) :=
+    Finset.sum_nonneg fun w _ => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hD _))
+      (Real.rpow_pos_of_pos (by positivity) _)
+  calc (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
+        ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖
+      ≤ (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
+        ((∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+          ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))) := by
+        gcongr
+    _ = (β.length.choose i : ℝ) * (‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)) *
+          (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by ring
+    _ ≤ (β.length.choose i : ℝ) * B i * (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
+          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+        gcongr
+        exact hB i
 
 /-- Away from the support of a smooth frequency cutoff `ψ`, every mixed derivative of
 `ψ(ξ) a(x, ξ)` vanishes. -/

@@ -131,54 +131,6 @@ theorem rpow_weight_le_rpow_mul_rpow_weight {t s s' : ℝ} {ξ : CoordinateSpace
     (by linarith)) (by positivity)
   nlinarith [norm_nonneg ξ]
 
-/-- **Symbol estimates for a product with a frequency cutoff.** Let `B i` bound
-`‖D^i ψ ξ‖ ⟨ξ⟩ ^ i`. If the mixed derivatives `∂ₓ^α ∂_ξ^w a` at `(x, ξ)` are bounded by
-`D w ⟨ξ⟩ ^ (m - |w|)`, then by the Leibniz rule `∂ₓ^α ∂_ξ^β (ψ(ξ) a(x, ξ))` is bounded by
-`C ⟨ξ⟩ ^ (m - |β|)`, where `C = ∑ᵢ (|β| choose i) B i ∑_{|w| = |β| - i} D w`. -/
-theorem norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight {A : Type*} [NormedAddCommGroup A]
-    [NormedSpace ℝ A] {ψ : CoordinateSpace n → ℝ} {a : CoordinateSpace n × CoordinateSpace n → A}
-    (hψ : ContDiff ℝ ∞ ψ) (ha : ContDiff ℝ ∞ a) {α : List (Fin n)} {x ξ : CoordinateSpace n}
-    {m : ℝ} {B : ℕ → ℝ}
-    (hB : ∀ i, ‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i)
-    {D : List (Fin n) → ℝ}
-    (hD : ∀ w, ‖mixedDeriv α w a x ξ‖ ≤ D w * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2))
-    (β : List (Fin n)) :
-    ‖mixedDeriv α β (fun p => ψ p.2 • a p) x ξ‖ ≤
-      (∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * B i *
-        ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-        (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  refine (norm_mixedDeriv_comp_snd_smul_le hψ ha α β x ξ).trans ?_
-  rw [Finset.sum_mul]
-  refine Finset.sum_le_sum fun i hi => ?_
-  have hi' : i ≤ β.length := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  -- `⟨ξ⟩ ^ (m - (|β| - i)) = ⟨ξ⟩ ^ i * ⟨ξ⟩ ^ (m - |β|)`
-  have hw (w : Fin (β.length - i) → Fin n) :
-      (1 + ‖ξ‖ ^ 2) ^ ((m - (List.ofFn w).length) / 2) =
-        (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-    rw [← one_add_norm_sq_rpow_add, List.length_ofFn, Nat.cast_sub hi']
-    ring_nf
-  have hsum : ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ ≤
-      (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-        ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by
-    rw [Finset.sum_mul]
-    exact Finset.sum_le_sum fun w _ => (hD _).trans_eq (by rw [hw])
-  have hS : 0 ≤ ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w) :=
-    Finset.sum_nonneg fun w _ => nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hD _))
-      (rpow_weight_pos ξ _)
-  calc (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
-        ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖
-      ≤ (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
-        ((∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))) := by
-        gcongr
-    _ = (β.length.choose i : ℝ) * (‖iteratedFDeriv ℝ i ψ ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)) *
-          (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by ring
-    _ ≤ (β.length.choose i : ℝ) * B i * (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-        gcongr
-        exact hB i
-
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
 maps `a` such that on every compact set `K` of positions and for all words `α`, `β` of coordinate
@@ -1345,6 +1297,17 @@ theorem IsSmoothing.sub {a b : Symbol n V W m} (ha : a.IsSmoothing) (hb : b.IsSm
 theorem IsSmoothing.inclusion {a : Symbol n V W m} (ha : a.IsSmoothing) (h : m ≤ m') :
     (inclusion h a).IsSmoothing :=
   fun m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion]
+
+/-- A symbol is smoothing exactly when its negative is. -/
+@[simp]
+theorem isSmoothing_neg_iff {a : Symbol n V W m} : (-a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha => neg_neg a ▸ ha.neg, IsSmoothing.neg⟩
+
+/-- Including a symbol into a higher order does not change whether it is smoothing. -/
+@[simp]
+theorem isSmoothing_inclusion_iff {a : Symbol n V W m} {h : m ≤ m'} :
+    (inclusion h a).IsSmoothing ↔ a.IsSmoothing :=
+  ⟨fun ha m'' => (ha m'').imp fun _ hb => by rw [hb, coefficient_inclusion], (·.inclusion h)⟩
 
 theorem IsSmoothing.frequencyDeriv {a : Symbol n V W m} (ha : a.IsSmoothing) (j : Fin n) :
     (frequencyDeriv j a).IsSmoothing := fun m' => by
