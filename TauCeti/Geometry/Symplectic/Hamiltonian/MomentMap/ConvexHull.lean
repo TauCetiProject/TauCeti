@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.DualHull
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
--- Proof-only: closedness of fixed-point sets, and coordinate expressions at interior points.
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+-- Proof-only: closedness of fixed-point sets.
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -90,25 +89,18 @@ boundaryless manifold `M` with a nondegenerate two-form, `μ(M) ⊆ conv μ(M^G)
 theorem range_subset_convexHull_image_fixedPoints
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate) :
     range μ ⊆ convexHull ℝ (μ '' MulAction.fixedPoints G M) := by
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
   have : ContinuousSMul G M := ContMDiffSMul.continuousSMul (I := I) (I' := I') ∞
   rintro _ ⟨x, rfl⟩
   refine isClosed_fixedPoints_of_continuousConstSMul.isCompact.mem_convexHull_image_of_dense
     (fun ξ ↦ (h.contMDiff ξ).continuous.continuousOn)
     (dense_setOf_criticalPoints_eq_fixedPoints G h hσ) fun ξ hξ ↦ ?_
   -- For generic `ξ`, the maximum of `μ^ξ` on the compact manifold is a critical point of `μ^ξ`,
-  -- by Fermat's theorem in the chart at this interior point, hence a fixed point.
+  -- by Fermat's theorem, hence a fixed point.
   obtain ⟨y, -, hy⟩ := isCompact_univ.exists_isMaxOn ⟨x, mem_univ x⟩
     (h.contMDiff ξ).continuous.continuousOn
   refine ⟨y, ?_, hy (mem_univ x)⟩
-  have hg := ((h.contMDiff ξ).contMDiffAt (x := y)
-    |>.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint
-      (BoundarylessManifold.isInteriorPoint (I := I'))).differentiableAt (by simp)
-  rw [← mem_ofPred_eq.mp hξ,
-    mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt hg]
-  refine IsLocalMax.fderiv_eq_zero (IsLocalMax.comp_continuous ?_ (continuousAt_extChartAt_symm y))
-  rw [extChartAt_to_inv]
-  exact hy.isLocalMax Filter.univ_mem
+  rw [← mem_ofPred_eq.mp hξ]
+  exact hy.mem_criticalPoints
 
 /-- **The convex hull of a torus moment image is spanned by the fixed points.** For a moment map
 `μ` of a smooth action of a compact connected commutative Lie group `G` on a compact boundaryless
