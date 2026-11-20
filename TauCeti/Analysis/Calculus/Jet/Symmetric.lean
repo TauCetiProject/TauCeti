@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Submodule
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import TauCeti.Analysis.Calculus.Jet.HigherOrder
 public import TauCeti.Analysis.Calculus.Jet.LinearCoordChange
 public import TauCeti.Topology.Algebra.Module.Multilinear.Symmetrize
 
@@ -330,33 +331,34 @@ namespace SymmetricJet
 
 variable (𝕜 E F) in
 /-- The **truncation** of symmetric `r`-jets to order `r' ≤ r`, forgetting the components of
-order greater than `r'`. -/
+order greater than `r'`: the truncation `TauCeti.jetTruncate` of their components
+(`TauCeti.SymmetricJet.coeFn_truncate`). -/
 def truncate {r' r : ℕ} (hr : r' ≤ r) : SymmetricJet 𝕜 E F r →L[𝕜] SymmetricJet 𝕜 E F r' :=
   (ContinuousLinearMap.pi fun i : Fin (r' + 1) ↦
     (ContinuousLinearMap.proj (R := 𝕜) (φ := fun i : Fin (r + 1) ↦ E [×i]→L[𝕜] F)
-      (Fin.castLE (by omega) i)).comp (subtypeL 𝕜 E F r)).codRestrict
-    (symmetricJets 𝕜 E F r') fun A i v σ ↦ A.apply_comp_perm (Fin.castLE (by omega) i) v σ
+      (i.castLE (Nat.add_le_add_right hr 1))).comp (subtypeL 𝕜 E F r)).codRestrict
+    (symmetricJets 𝕜 E F r') fun A i v σ ↦
+      A.apply_comp_perm (i.castLE (Nat.add_le_add_right hr 1)) v σ
 
-/-- The components of a truncated jet are the components of the jet of the same order. -/
+/-- The components of a truncated jet are the truncation of its components. -/
 @[simp]
-theorem truncate_apply {r' r : ℕ} (hr : r' ≤ r) (A : SymmetricJet 𝕜 E F r) (i : Fin (r' + 1)) :
-    truncate 𝕜 E F hr A i = A (Fin.castLE (by omega) i) :=
-  (rfl)
+theorem coeFn_truncate {r' r : ℕ} (hr : r' ≤ r) (A : SymmetricJet 𝕜 E F r) :
+    ⇑(truncate 𝕜 E F hr A) = jetTruncate hr ⇑A :=
+  funext fun i ↦ (jetTruncate_apply hr ⇑A i).symm
 
 /-- Truncating to the same order is the identity. -/
 @[simp]
 theorem truncate_rfl (r : ℕ) : truncate 𝕜 E F (le_refl r) = ContinuousLinearMap.id 𝕜 _ := by
   ext1 A
-  ext1 i
-  rfl
+  exact coeFn_injective ((coeFn_truncate _ A).trans (jetTruncate_refl r ⇑A))
 
 /-- Truncations compose. -/
 @[simp]
 theorem truncate_comp_truncate {r'' r' r : ℕ} (hr' : r'' ≤ r') (hr : r' ≤ r) :
     truncate 𝕜 E F hr' ∘L truncate 𝕜 E F hr = truncate 𝕜 E F (hr'.trans hr) := by
   ext1 A
-  ext1 i
-  rfl
+  refine coeFn_injective ?_
+  simp only [ContinuousLinearMap.comp_apply, coeFn_truncate, jetTruncate_trans]
 
 end SymmetricJet
 
@@ -364,8 +366,12 @@ end SymmetricJet
 theorem SymmetricJet.truncate_jetSymmetrize {r' r : ℕ} (hr : r' ≤ r)
     (A : (i : Fin (r + 1)) → E [×i]→L[𝕜] F) :
     SymmetricJet.truncate 𝕜 E F hr (jetSymmetrize 𝕜 E F r A) =
-      jetSymmetrize 𝕜 E F r' fun i ↦ A (Fin.castLE (by omega) i) := by
+      jetSymmetrize 𝕜 E F r' (jetTruncate hr A) := by
   ext1 i
+  rw [SymmetricJet.coeFn_truncate, jetTruncate_apply, jetSymmetrize_apply,
+    jetSymmetrize_apply, jetTruncate_apply]
+  -- The symmetrizations are over `Fin (Fin.castLE _ i).val` and `Fin i.val`, which agree by
+  -- definition; a rewrite cannot change this type argument without changing the map's type.
   rfl
 
 /-- **Truncation commutes with coordinate changes** of symmetric jets, where the coordinate maps
@@ -376,10 +382,10 @@ theorem SymmetricJet.truncate_symmetricJetCoordChange {r' r : ℕ} (hr : r' ≤ 
     SymmetricJet.truncate 𝕜 E' G hr (symmetricJetCoordChange r h g x A) =
       symmetricJetCoordChange r' h g x (SymmetricJet.truncate 𝕜 E F hr A) := by
   rw [symmetricJetCoordChange_apply, SymmetricJet.truncate_jetSymmetrize,
-    linearJetCoordChange_truncate hr hh hg, symmetricJetCoordChange_apply]
-  -- The components `fun i ↦ A (Fin.castLE _ i)` of the truncation are `⇑(truncate 𝕜 E F hr A)`
-  -- by definition (`SymmetricJet.truncate_apply` is `rfl`), so both sides agree definitionally.
-  rfl
+    symmetricJetCoordChange_apply, SymmetricJet.coeFn_truncate,
+    funext (jetTruncate_apply hr (linearJetCoordChange r h g x ⇑A)),
+    funext (jetTruncate_apply hr ⇑A)]
+  exact congrArg _ (linearJetCoordChange_truncate hr hh hg ⇑A)
 
 end TauCeti
 

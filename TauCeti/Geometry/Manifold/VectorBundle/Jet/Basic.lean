@@ -180,23 +180,23 @@ theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ baseSet (H := H) F V i)
   have hcomp := symmetricJetCoordChange_comp (r := r) (n := r) hh₁ hg₁ hn hh₂ hg₂
   rw [coordChange_apply, coordChange_apply, hpt, ← ContinuousLinearMap.comp_apply, hcomp,
     coordChange_apply]
-  rw [mem_baseSet_iff] at hi hj hk
+  -- The chart at `k` is defined at `y`.
+  have hyk := ((mem_baseSet_iff F V).1 hk).2
   -- The composite coordinate maps agree with those from `i` to `k` near the image of `y`.
   congr 1
   refine symmetricJetCoordChange_congr ?_ ?_
-  · filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hj) hk.2]
-      with z hz
+  · filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hj hyk] with z hz
     simp only [Function.comp_apply,
       (extChartAt I j).left_inv (mem_extChartAt_source_of_mem_baseSet I hz)]
-  · filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hi) hk.2,
-      eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hj) hk.2,
-      eventually_extChartAt_symm_mem_baseSet_nhds I ((mem_baseSet_iff F V).2 hk) hk.2]
-      with z hzi hzj hzk
+  · filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hi hyk,
+      eventually_extChartAt_symm_mem_baseSet_nhds I hj hyk,
+      eventually_extChartAt_symm_mem_baseSet_nhds I hk hyk] with z hzi hzj hzk
     ext w
     simp only [fiberCoordChange_apply, Function.comp_apply, ContinuousLinearMap.coe_comp,
       (extChartAt I j).left_inv (mem_extChartAt_source_of_mem_baseSet I hzj)]
-    rw [mem_baseSet_iff] at hzi hzj hzk
-    exact (trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _ hzi.1 hzj.1 hzk.1 w
+    exact (trivializationAt F V i).coordChangeL_coordChangeL_apply 𝕜 _ _
+      ((mem_baseSet_iff F V).1 hzi).1 ((mem_baseSet_iff F V).1 hzj).1
+      ((mem_baseSet_iff F V).1 hzk).1 w
 
 end JetBundle
 
@@ -264,6 +264,11 @@ theorem coeFn_injective : Function.Injective fun j : JetBundle I F V r x ↦ ⇑
 @[ext]
 theorem ext {j₁ j₂ : JetBundle I F V r x} (h : ∀ k, j₁ k = j₂ k) : j₁ = j₂ :=
   coeFn_injective (funext h)
+
+/-- Each component of an `r`-jet is invariant under permutations of its arguments. -/
+theorem apply_comp_perm (j : JetBundle I F V r x) (k : Fin (r + 1)) (v : Fin k → E)
+    (σ : Equiv.Perm (Fin k)) : j k (v ∘ σ) = j k v :=
+  SymmetricJet.apply_comp_perm j k v σ
 
 /-- The components of a sum of `r`-jets are the sums of the components. -/
 @[simp]
@@ -441,10 +446,10 @@ theorem exists_contMDiffAt_jet_eq {n : ℕ∞ω} (x : M) (j : JetBundle I F V r 
       filter_upwards [eventually_extChartAt_symm_mem_baseSet_nhds I hx hx'.2,
         extChartAt_target_mem_nhds x] with z hz hzt
       rw [localRep_apply, hsg _ ((mem_baseSet_iff F V).1 hz).1, (extChartAt I x).right_inv hzt]
-    refine SymmetricJet.ext fun k ↦ ?_
-    rw [jet, jetSymmetrize_apply, (hrep.iteratedFDeriv 𝕜 k).eq_of_nhds,
-      iteratedFDeriv_finiteJetPolynomial_self r A _ k (SymmetricJet.apply_comp_perm _ k)]
-    exact ContinuousMultilinearMap.symmetrize_eq_self (SymmetricJet.apply_comp_perm _ k)
+    ext1 k
+    rw [jet_apply, (hrep.iteratedFDeriv 𝕜 k).eq_of_nhds,
+      iteratedFDeriv_finiteJetPolynomial_self r A _ k (j.apply_comp_perm k)]
+    exact ContinuousMultilinearMap.symmetrize_eq_self (j.apply_comp_perm k)
 
 end Jet
 
@@ -532,17 +537,33 @@ order greater than `r'`. -/
 def truncate (hr : r' ≤ r) (x : M) : JetBundle I F V r x →L[𝕜] JetBundle I F V r' x :=
   SymmetricJet.truncate 𝕜 E F hr
 
-/-- The components of a truncated jet are those of the jet of the same order. -/
+/-- The components of a truncated jet are the truncation `TauCeti.jetTruncate` of its
+components. -/
 @[simp]
-theorem truncate_apply (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) (k : Fin (r' + 1)) :
-    truncate hr x j k = j (Fin.castLE (by omega) k) :=
-  SymmetricJet.truncate_apply hr j k
+theorem coeFn_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
+    ⇑(truncate hr x j) = jetTruncate hr ⇑j :=
+  SymmetricJet.coeFn_truncate hr j
+
+/-- Truncating to the same order is the identity. -/
+@[simp]
+theorem truncate_rfl (x : M) :
+    truncate (I := I) (F := F) (V := V) (le_refl r) x =
+      ContinuousLinearMap.id 𝕜 (JetBundle I F V r x) :=
+  SymmetricJet.truncate_rfl r
+
+/-- Truncations compose. -/
+@[simp]
+theorem truncate_comp_truncate {r'' : ℕ} [IsManifold I r'' M] [ContMDiffVectorBundle r'' F V I]
+    (hr' : r'' ≤ r') (hr : r' ≤ r) (x : M) :
+    truncate (I := I) (F := F) (V := V) hr' x ∘L truncate hr x = truncate (hr'.trans hr) x :=
+  SymmetricJet.truncate_comp_truncate hr' hr
 
 /-- The truncation of the `r`-jet of a section is its `r'`-jet. -/
 @[simp]
 theorem truncate_jet (hr : r' ≤ r) (s : ∀ x, V x) (x : M) :
     truncate hr x (jet I F r s x) = jet I F r' s x :=
-  SymmetricJet.truncate_jetSymmetrize hr _
+  -- Truncating the derivatives up to order `r` leaves the derivatives up to order `r'`.
+  (SymmetricJet.truncate_jetSymmetrize hr _).trans (congrArg _ (funext (jetTruncate_apply hr _)))
 
 /-- **The truncation is intrinsic**: in the chart and trivialization at `i`, it reads as the
 truncation of symmetric jets. -/
@@ -558,10 +579,7 @@ theorem coordChange_truncate (hr : r' ≤ r) {y i : M} (hi : y ∈ baseSet (H :=
 theorem value_truncate (hr : r' ≤ r) (x : M) (j : JetBundle I F V r x) :
     value x (truncate hr x j) = value x j := by
   have h : truncate hr x j 0 0 = j 0 0 := by
-    rw [truncate_apply]
-    -- `Fin.castLE _ 0` reduces to `0`, so both sides are the same term; a rewrite would have to
-    -- change the number of arguments `(Fin.castLE _ 0).val` in the dependent type of `j _`.
-    rfl
+    rw [coeFn_truncate, jetTruncate_zero_apply]
   rw [value_apply, value_apply, h]
 
 end Truncate
