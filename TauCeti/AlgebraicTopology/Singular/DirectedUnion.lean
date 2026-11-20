@@ -168,8 +168,7 @@ section Opens
 open TopologicalSpace
 
 variable {A : Type w} [Ring A] (M : ModuleCat.{w} A) (n : ℕ) {X : TopCat.{w}} {J : Type}
-  [Preorder J] [IsDirected J (· ≤ ·)] [Nonempty J] {U : J → Opens X} (hU : Monotone U)
-  (hcover : ⨆ j, U j = ⊤)
+  [Preorder J] {U : J → Opens X} (hU : Monotone U) (hcover : ⨆ j, U j = ⊤)
 
 /-- The inclusions of the members of a monotone family of open sets of `X`, as a cocone with apex
 `X`. -/
@@ -183,7 +182,7 @@ include hcover in
 /-- **Singular homology of a directed union of open sets.** Singular homology of a space covered by
 a directed family of open sets is the colimit of the singular homology of its members, along the
 inclusions. -/
-def isColimitMapCoconeOpensInclusionCocone :
+def isColimitMapCoconeOpensInclusionCocone [IsDirected J (· ≤ ·)] [Nonempty J] :
     IsColimit (((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).mapCocone
       (opensInclusionCocone hU)) :=
   isColimitMapCoconeSingularHomology M n _ (fun j ↦ (U j).isOpenEmbedding.isEmbedding)
@@ -196,8 +195,8 @@ include hU hcover in
 /-- **Every homology class comes from a member of a directed open cover.** With coefficients in a
 module, every singular homology class of a space covered by a directed family of open sets is the
 image of a class of one of its members. -/
-theorem exists_singularHomologyMap_inclusion'_eq_of_iSup_eq_top
-    (x : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj X) :
+theorem exists_singularHomologyMap_inclusion'_eq_of_iSup_eq_top [IsDirected J (· ≤ ·)]
+    [Nonempty J] (x : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj X) :
     ∃ j y, ((singularHomologyFunctor _ n).obj M).map (Opens.inclusion' (U j)) y = x := by
   have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} A)) :=
     preservesSmallestFilteredColimits_of_preservesFilteredColimits _
@@ -207,12 +206,14 @@ include hcover in
 /-- **Vanishing of a homology class is detected in a member of a directed open cover.** With
 coefficients in a module, a singular homology class of one member `U i` of a directed open cover of
 a space that vanishes in the space already vanishes in some larger member `U j`. -/
-theorem exists_singularHomologyMap_toTopCat_map_eq_zero_of_iSup_eq_top {i : J}
+theorem exists_singularHomologyMap_toTopCat_map_eq_zero_of_iSup_eq_top [IsDirected J (· ≤ ·)]
+    {i : J}
     (y : ((singularHomologyFunctor (ModuleCat.{w} A) n).obj M).obj ((Opens.toTopCat X).obj (U i)))
     (hy : ((singularHomologyFunctor _ n).obj M).map (Opens.inclusion' (U i)) y = 0) :
     ∃ j, ∃ hij : i ≤ j,
       ((singularHomologyFunctor _ n).obj M).map ((Opens.toTopCat X).map (homOfLE (hU hij))) y =
         0 := by
+  have : Nonempty J := ⟨i⟩
   have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} A)) :=
     preservesSmallestFilteredColimits_of_preservesFilteredColimits _
   obtain ⟨j, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq (j := i) _
