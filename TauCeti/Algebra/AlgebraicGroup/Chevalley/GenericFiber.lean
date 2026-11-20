@@ -59,6 +59,7 @@ fibre inside the integral general linear group. -/
 theorem comap_map_definingIdeal_rat :
     ((I).toIdeal.map (Algebra.TensorProduct.includeRight : H →ₐ[ℤ] ℚ ⊗[ℤ] H)).comap
       (Algebra.TensorProduct.includeRight : H →ₐ[ℤ] ℚ ⊗[ℤ] H) = (I).toIdeal := by
-  exact (I).toIdeal.comap_map_includeRight_of_flat_quotient (R := ℤ) Int.cast_injective
+  exact (I).toIdeal.comap_map_includeRight_of_flat_quotient_of_injective (R := ℤ)
+    Int.cast_injective
 
 end TauCeti.DynkinType.ChevalleyDatum

@@ -20,9 +20,9 @@ import TauCeti.RingTheory.Ideal.Operations
 The scalar multiplication equivalence `S ⊗[R] R ≃ₗ[S] S` identifies the base change of
 an ideal with its extension along `algebraMap R S`. This permits kernel computations
 on tensor products to be read as membership statements in extended ideals.
-An ideal with flat quotient is recovered by contracting its scalar extension along an injective
-scalar map (`Ideal.comap_map_includeRight_of_flat_quotient`). In particular, a flat closed
-subscheme over a domain is the schematic closure of its generic fibre.
+A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
+injective scalar map (`Ideal.comap_map_includeRight_of_flat_quotient_of_injective`). In particular,
+a flat closed subscheme over a domain is the schematic closure of its generic fibre.
 The extension of a module annihilator is contained in its annihilator after arbitrary
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
 commutative; extended ideals are left ideals.
@@ -69,11 +69,11 @@ theorem map_eq_baseChange_map_rid (I : Ideal R) :
     AlgebraTensorModule.rid_tmul, Algebra.smul_def, mul_one]
   rfl
 
-/-- An ideal with flat quotient is recovered by contracting its scalar extension along an
+/-- A two-sided ideal with flat quotient is recovered by contracting its scalar extension along an
 injective scalar map. The scalar extension need not be faithfully flat. -/
-theorem comap_map_includeRight_of_flat_quotient {R A B : Type*} [CommRing R] [Ring A]
-    [CommRing B] [Algebra R A] [Algebra R B] (I : Ideal B) [Module.Flat R (B ⧸ I)]
-    (h : Function.Injective (algebraMap R A)) :
+theorem comap_map_includeRight_of_flat_quotient_of_injective {R A B : Type*} [CommRing R]
+    [Ring A] [Ring B] [Algebra R A] [Algebra R B] (I : Ideal B) [I.IsTwoSided]
+    [Module.Flat R (B ⧸ I)] (h : Function.Injective (algebraMap R A)) :
     (I.map (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B)).comap
       (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) = I := by
   have hker := Algebra.TensorProduct.lTensor_ker (A := A) (Ideal.Quotient.mkₐ R I)
