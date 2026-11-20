@@ -242,8 +242,8 @@ theorem representedSerreShortRootIdeal_le_iff (I : LieIdeal (ZMod 2) (represente
   · rintro ⟨hE, hF⟩
     rw [representedSerreShortRootIdeal, LieSubmodule.lieSpan_le]
     rintro _ (⟨i, rfl⟩ | ⟨i, rfl⟩)
-    · exact hE i.1 i.2
-    · exact hF i.1 i.2
+    · exact hE i.val i.property
+    · exact hF i.val i.property
 
 /-- A represented raising matrix at a short simple root belongs to the short-root ideal. -/
 theorem representedE_mem_representedSerreShortRootIdeal (i : Fin 4) (hi : ¬ F4.IsLongSimpleRoot i) :

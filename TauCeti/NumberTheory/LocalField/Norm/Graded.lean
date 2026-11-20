@@ -115,7 +115,7 @@ def normGradedMap (v : ℕ) :
   QuotientGroup.map _ _
     (((Algebra.normUnits K).comp (unitFiltration L (psiNat K L v)).subtype).codRestrict
       (unitFiltration K v) fun x ↦
-        map_normUnits_unitFiltration_psiNat_le K L v (Subgroup.mem_map_of_mem _ x.2))
+        map_normUnits_unitFiltration_psiNat_le K L v (Subgroup.mem_map_of_mem _ x.property))
     fun x hx ↦ by
       rw [Subgroup.mem_subgroupOf] at hx
       rw [Subgroup.mem_comap, Subgroup.mem_subgroupOf]
@@ -126,7 +126,7 @@ def normGradedMap (v : ℕ) :
 theorem normGradedMap_mk {v : ℕ} (x : unitFiltration L (psiNat K L v)) :
     normGradedMap K L v (QuotientGroup.mk x) =
       QuotientGroup.mk ⟨Algebra.normUnits K (x : Lˣ),
-        map_normUnits_unitFiltration_psiNat_le K L v (Subgroup.mem_map_of_mem _ x.2)⟩ := by
+        map_normUnits_unitFiltration_psiNat_le K L v (Subgroup.mem_map_of_mem _ x.property)⟩ := by
   rw [normGradedMap, QuotientGroup.map_mk, MonoidHom.codRestrict_apply]
   simp only [MonoidHom.comp_apply, Subgroup.coe_subtype]
 
@@ -158,7 +158,7 @@ private def unitFiltrationGradedCongr {i j : ℕ} (h : i = j) :
   exact MulEquiv.refl _
 
 private theorem unitFiltrationGradedCongr_mk {i j : ℕ} (h : i = j) (x : unitFiltration L i) :
-    unitFiltrationGradedCongr h (QuotientGroup.mk x) = QuotientGroup.mk ⟨x, h ▸ x.2⟩ := by
+    unitFiltrationGradedCongr h (QuotientGroup.mk x) = QuotientGroup.mk ⟨x, h ▸ x.property⟩ := by
   subst h
   rfl
 
@@ -344,7 +344,7 @@ theorem normGradedMap_bijective_of_lowerRamificationGroup_eq_top
     rw [MonoidHom.mem_ker, normGradedMap_mk, QuotientGroup.eq_one_iff,
       Subgroup.mem_subgroupOf] at hc
     rw [Subgroup.mem_bot, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf]
-    have hx : (x : Lˣ) ∈ unitFiltration L (v + 1) := (congrArg (unitFiltration L) hψ).le x.2
+    have hx : (x : Lˣ) ∈ unitFiltration L (v + 1) := (congrArg (unitFiltration L) hψ).le x.property
     obtain ⟨u, hu, hux⟩ := mem_unitFiltration_iff_exists.1 hx
     obtain ⟨u', hu', hux'⟩ := mem_unitFiltration_iff_exists.1 hc
     have hu'N : (u' : 𝒪[K]) = Algebra.norm 𝒪[K] (u : 𝒪[L]) := by
@@ -534,12 +534,12 @@ theorem exists_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGraded
           (Additive.ofMul (normGradedMap K L (t + 1) (QuotientGroup.mk x))) =
         residue 𝒪[K] b := by
   set y : unitFiltration K (t + 1) := ⟨Algebra.normUnits K (x : Lˣ),
-    map_normUnits_unitFiltration_psiNat_le K L (t + 1) (Subgroup.mem_map_of_mem _ x.2)⟩
+    map_normUnits_unitFiltration_psiNat_le K L (t + 1) (Subgroup.mem_map_of_mem _ x.property)⟩
   obtain ⟨b, hb⟩ : ∃ b : 𝒪[K], b * Algebra.norm 𝒪[K] π ^ (t + 1) =
       (unitFiltrationDifference t y : 𝒪[K]) := by
     have hspan : 𝓂[K] ^ (t + 1) = Ideal.span {Algebra.norm 𝒪[K] π ^ (t + 1)} := by
       rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπK, Ideal.span_singleton_pow]
-    exact Ideal.mem_span_singleton'.1 (hspan ▸ (unitFiltrationDifference t y).2)
+    exact Ideal.mem_span_singleton'.1 (hspan ▸ (unitFiltrationDifference t y).property)
   refine ⟨b, ?_, ?_⟩
   · apply Subtype.ext
     have hb' := congrArg (fun z : 𝒪[K] ↦ (z : K)) hb
@@ -616,7 +616,7 @@ private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {
   induction g using QuotientGroup.induction_on with | H x => ?_
   -- Write `x = 1 + a π ^ (t + 1)`; its coordinate is the residue of `a`.
   obtain ⟨u, hu, hux⟩ :=
-    mem_unitFiltration_iff_exists.1 ((congrArg (unitFiltration L) hψ).le x.2)
+    mem_unitFiltration_iff_exists.1 ((congrArg (unitFiltration L) hψ).le x.property)
   rw [(IsDiscreteValuationRing.irreducible_iff_uniformizer _).1 hπ, Ideal.span_singleton_pow,
     Ideal.mem_span_singleton'] at hu
   obtain ⟨a, ha⟩ := hu

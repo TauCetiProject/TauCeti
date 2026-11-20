@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.MeasureTheory.Measure.Real
 public import TauCeti.MeasureTheory.Measure.Interval
 public import TauCeti.MeasureTheory.Measure.Measurability
+import TauCeti.MeasureTheory.Integral.Bochner.Cumulative
 
 /-!
 # Stieltjes measures, cumulative functions and measurable families
@@ -20,7 +21,8 @@ In particular this applies to locally finite measures supported on the nonnegati
 without normalizing them to probability measures.
 
 On the nonnegative half-line, the cumulative mass of a Stieltjes measure is the increment
-of its Stieltjes function from zero.
+of its Stieltjes function from zero. For continuous Stieltjes functions, pathwise locally
+integrable functions have continuous accumulated integrals.
 
 Since the outer measure of a Stieltjes function is the largest outer measure with its interval
 values, an outer measure on `ℝ` bounded on every interval `Ioc a b` by a measure with finite left
@@ -122,6 +124,37 @@ namespace StieltjesFunction
 variable {Ω R : Type*} {mΩ : MeasurableSpace Ω}
   [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [CompactIccSpace R]
   [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] [DenselyOrdered R]
+
+/-- A Stieltjes measure restricted to a set of continuity points vanishes on singletons. -/
+theorem nullSingletonClass_restrict_measure (f : StieltjesFunction R) {s : Set R}
+    (hf : ∀ t ∈ s, ContinuousAt f t) : NullSingletonClass (f.measure.restrict s) :=
+  ⟨fun t ↦ by
+    rw [Measure.restrict_apply (measurableSet_singleton t)]
+    by_cases ht : t ∈ s
+    · rw [singleton_inter_of_mem ht, f.measure_singleton,
+        (hf t ht).continuousWithinAt.leftLim_eq, sub_self, ENNReal.ofReal_zero]
+    · rw [singleton_inter_of_notMem ht, measure_empty]⟩
+
+/-- The Stieltjes measure of a continuous Stieltjes function vanishes on singletons. -/
+theorem nullSingletonClass_measure_of_continuous (f : StieltjesFunction R)
+    (hf : Continuous f) : NullSingletonClass f.measure := by
+  simpa only [Measure.restrict_univ] using
+    f.nullSingletonClass_restrict_measure (s := univ) (fun _ _ ↦ hf.continuousAt)
+
+/-- Integration of a locally integrable Banach-valued function against a Stieltjes function
+continuous on `(a,∞)` has a continuous accumulated integral. Jumps at or before `a` are allowed;
+no bound on the total mass or integrability beyond each finite horizon is required. -/
+theorem continuous_setIntegral_Ioc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : StieltjesFunction R) (a : R) (hf : ContinuousOn f (Ioi a)) {H : R → E}
+    (hH : ∀ T, IntegrableOn H (Ioc a T) f.measure) :
+    Continuous (fun t ↦ ∫ u in Ioc a t, H u ∂f.measure) := by
+  have : NullSingletonClass (f.measure.restrict (Ioi a)) :=
+    f.nullSingletonClass_restrict_measure (fun _ ht ↦ isOpen_Ioi.continuousOn_iff.mp hf ht)
+  have hi : ∀ T, IntegrableOn H (Ioc a T) (f.measure.restrict (Ioi a)) := by
+    intro T
+    simpa only [IntegrableOn, Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self] using hH T
+  simpa only [Measure.restrict_restrict_of_subset Ioc_subset_Ioi_self] using
+    MeasureTheory.continuous_integral_Ioc hi
 
 /-- The Stieltjes measure restricted to `(a,b]` is a measurable family if evaluations inside
 `[a,b]` are measurable. No uniform bound on the random interval mass is required. -/

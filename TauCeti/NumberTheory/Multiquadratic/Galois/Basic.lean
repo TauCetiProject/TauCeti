@@ -105,7 +105,7 @@ theorem adjoin_gen_eq_top :
       (adjoin K (Set.range root)).val = adjoin K (Set.range root) := by
     ext x
     simp only [IntermediateField.mem_map, IntermediateField.mem_top, true_and]
-    exact ⟨fun ⟨y, hy⟩ => hy ▸ y.2, fun hx => ⟨⟨x, hx⟩, rfl⟩⟩
+    exact ⟨fun ⟨y, hy⟩ => hy ▸ y.property, fun hx => ⟨⟨x, hx⟩, rfl⟩⟩
   rw [IntermediateField.adjoin_map, hmaptop]
   congr 1
   rw [← Set.range_comp]

@@ -85,16 +85,19 @@ variable {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 m
   {W : ℝ≥0 → Ω → ℝ} {τ : ℕ → ℝ≥0} {θ : ℕ → Ω → ℝ} {K : ℝ}
 
 /-- Each grid likelihood is known at the last date used in it. -/
-theorem _root_.MeasureTheory.Adapted.measurable_gridExponential (hW : Adapted ℱ W) (hτ : Monotone τ)
-    (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j)) (n : ℕ) :
+theorem _root_.MeasureTheory.Adapted.measurable_gridExponential (hW : Adapted ℱ W) {n : ℕ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (hθ : ∀ j < n, Measurable[ℱ (τ j)] (θ j)) :
     Measurable[ℱ (τ n)] (gridExponential τ θ W n) := by
   apply Measurable.exp
   apply Finset.measurable_sum
   intro j hj
-  have hjn : j + 1 ≤ n := mem_range.mp hj
-  have hθj := (hθ j).mono (ℱ.mono (hτ (by omega : j ≤ n))) le_rfl
-  have h₁ := (hW (τ (j + 1))).mono (ℱ.mono (hτ hjn)) le_rfl
-  have h₀ := (hW (τ j)).mono (ℱ.mono (hτ (by omega : j ≤ n))) le_rfl
+  have hjn : j < n := mem_range.mp hj
+  have hn : n ∈ Set.Iic n := Set.mem_Iic.mpr le_rfl
+  have h₀n := ℱ.mono (hτ hjn.le hn hjn.le)
+  have h₁n := ℱ.mono (hτ hjn hn hjn)
+  have hθj := (hθ j hjn).mono h₀n le_rfl
+  have h₁ := (hW (τ (j + 1))).mono h₁n le_rfl
+  have h₀ := (hW (τ j)).mono h₀n le_rfl
   exact (hθj.mul (h₁.sub h₀)).sub ((hθj.pow_const 2).mul_const _ |>.div_const 2)
 
 private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
@@ -107,7 +110,7 @@ private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
   have hd : 0 ≤ d := sub_nonneg.mpr (NNReal.coe_le_coe.mpr (hτ (Nat.le_succ n)))
   let X := fun ω ↦ gridExponential τ θ W n ω * exp (-(θ n ω ^ 2 * d / 2))
   have hXm : Measurable[ℱ (τ n)] X :=
-    (hW.adapted.measurable_gridExponential hτ hθ n).mul
+    (hW.adapted.measurable_gridExponential (hτ.monotoneOn _) (fun j _ ↦ hθ j)).mul
       (((hθ n).pow_const 2 |>.mul_const d |>.div_const 2).neg.exp)
   have hθa : Measurable (θ n) := (hθ n).mono (ℱ.le _) le_rfl
   have hXi : Integrable X P := hi.mul_bdd (by fun_prop) (c := 1) (by
@@ -148,7 +151,7 @@ theorem gridExponential_sq_le (hτ : Monotone τ) (n : ℕ) (ω : Ω)
   have heq : gridExponential τ θ W n ω ^ 2 =
       gridExponential τ (fun j ω ↦ 2 * θ j ω) W n ω *
         exp (∑ j ∈ range n, θ j ω ^ 2 * ((τ (j + 1) : ℝ) - τ j)) := by
-    rw [gridExponential_def, gridExponential_def, ← exp_nat_mul, ← exp_add]
+    rw [gridExponential_def, gridExponential_def, ← exp_natCast_mul, ← exp_add]
     congr 1
     simp only [Nat.cast_ofNat, mul_sum, ← sum_add_distrib]
     apply sum_congr rfl
@@ -189,7 +192,7 @@ theorem martingale_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
   refine martingale_nat (fun n ↦ ?_)
     (hW.integrable_gridExponential hτ hθ hK) fun n ↦ ?_
   · simpa only [Filtration.stronglyMeasurable_comp_iff] using
-      (hW.adapted.measurable_gridExponential hτ hθ n).stronglyMeasurable
+      (hW.adapted.measurable_gridExponential (hτ.monotoneOn _) (fun j _ ↦ hθ j)).stronglyMeasurable
   · simpa only [Filtration.comp_apply] using
       (gridExponential_step hW hτ hθ hK n (hW.integrable_gridExponential hτ hθ hK n)).2.symm
 
@@ -220,7 +223,8 @@ private theorem gridExponential_square_bound (hW : IsFilteredPreBrownianReal ℱ
       gridExponential τ (fun j ω ↦ 2 * θ j ω) W n ω * exp (K ^ 2 * ((τ n : ℝ) - τ 0)) := by
     filter_upwards [ae_all_iff.mpr hK] with ω hω
     exact gridExponential_sq_le hτ n ω fun j _ ↦ hω j
-  have hm := (hW.adapted.measurable_gridExponential hτ hθ n).mono (ℱ.le _) le_rfl
+  have hm := (hW.adapted.measurable_gridExponential (n := n) (hτ.monotoneOn _)
+    (fun j _ ↦ hθ j)).mono (ℱ.le _) le_rfl
   have hs : Integrable (fun ω ↦ gridExponential τ θ W n ω ^ 2) P :=
     hi.mono' (hm.pow_const 2).aestronglyMeasurable (by simpa only [norm_pow,
       Real.norm_eq_abs, sq_abs] using hb)
@@ -240,7 +244,8 @@ theorem memLp_two_gridExponential (hW : IsFilteredPreBrownianReal ℱ W P)
     (hτ : Monotone τ) (hθ : ∀ j, Measurable[ℱ (τ j)] (θ j))
     (hK : ∀ j, ∀ᵐ ω ∂P, |θ j ω| ≤ K) (n : ℕ) :
     MemLp (gridExponential τ θ W n) 2 P := by
-  have hm := (hW.adapted.measurable_gridExponential hτ hθ n).mono (ℱ.le _) le_rfl
+  have hm := (hW.adapted.measurable_gridExponential (n := n) (hτ.monotoneOn _)
+    (fun j _ ↦ hθ j)).mono (ℱ.le _) le_rfl
   exact (memLp_two_iff_integrable_sq hm.aestronglyMeasurable).mpr
     (gridExponential_square_bound hW hτ hθ hK n).1
 

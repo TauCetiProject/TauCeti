@@ -192,7 +192,7 @@ theorem indep_sub_mul_withDensity_exp_of_indep_gaussian (hm : m ≤ mΩ)
 /-- A past-measurable nonnegative weight can be included in a one-step Gaussian
 change of law. The weight need not be normalized, finite or integrable. The corrected
 increment still factors from every past event with its original centered Gaussian law. -/
-theorem withDensity_mul_exp_inter_preimage_of_indep_gaussian (hm : m ≤ mΩ)
+theorem withDensity_exp_mul_inter_preimage_of_indep_gaussian (hm : m ≤ mΩ)
     (ha : Measurable[m] a) {w : Ω → ℝ≥0∞} (hw : Measurable[m] w)
     (hind : Indep (.comap Y inferInstance) m P)
     (hlaw : HasLaw Y (gaussianReal 0 v) P)
