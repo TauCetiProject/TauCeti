@@ -21,7 +21,8 @@ power: the pairing `(φ₁ ∧ ⋯ ∧ φₙ, v₁ ∧ ⋯ ∧ vₙ) ↦ det (φ
 In coordinates, for a basis `b` of `V`, the determinant of a family of functionals `φ` in the
 dual basis of `b` times the determinant of a family of vectors `v` in `b` is `det (φᵢ vⱼ)`
 (`Module.Basis.dualBasis_det_mul_det`); in particular the determinant of the dual basis of a basis
-`u`, in the dual basis of `b`, is the inverse of the determinant of `u` in `b`.
+`u`, in the dual basis of `b`, is the inverse of the determinant of `u` in `b`
+(`Module.Basis.dualBasis_det_dualBasis_mul_det`).
 
 For a linear map `f : M → N` of vector spaces, the dual map `f^* : N^* → M^*` exchanges kernel and
 cokernel up to duality: `ker f^* ≃ (coker f)^*` (`LinearMap.kerDualMapEquiv`) and
@@ -58,6 +59,7 @@ point: its kernel is the orthogonal complement of the range, a copy of the coker
 ## Main declarations
 
 * `Module.Basis.dualBasis_det_mul_det`: `det_{b^*} φ · det_b v = det (φᵢ vⱼ)`.
+* `Module.Basis.dualBasis_det_dualBasis_mul_det`: `det_{b^*} u^* · det_b u = 1`.
 * `TauCeti.detLineDualEquiv`: the isomorphism `det (V^*) ≃ (det V)^*`, with value
   `TauCeti.detLineDualEquiv_ιMulti_ιMulti`.
 * `LinearMap.detLineDualMapEquiv`: the isomorphism `det f^* ≃ det f`, with value
@@ -122,6 +124,15 @@ theorem dualBasis_det_mul_det (b : Basis ι R M) (v : ι → Dual R M) (u : ι �
   ext i j
   conv_rhs => rw [Matrix.of_apply, ← b.sum_repr (u j), map_sum]
   simp [Matrix.mul_apply, toMatrix_apply, mul_comm]
+
+/-- The determinant of the dual basis of `u` in the dual basis of `b` is the inverse of the
+determinant of `u` in `b`: their product is `1`. -/
+theorem dualBasis_det_dualBasis_mul_det (b u : Basis ι R M) :
+    b.dualBasis.det u.dualBasis * b.det u = 1 := by
+  rw [dualBasis_det_mul_det]
+  convert Matrix.det_one (R := R) (n := ι)
+  ext i j
+  simp [Matrix.one_apply, Finsupp.single_apply, eq_comm]
 
 end Module.Basis
 

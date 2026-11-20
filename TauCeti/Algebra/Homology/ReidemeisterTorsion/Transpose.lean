@@ -168,10 +168,10 @@ private theorem det_append_dualBasis {N : ℕ} (c : Basis (Fin N) F V) (e : Basi
     simp only [hY, Function.comp_apply, Basis.map_apply, LinearEquiv.symm_symm,
       LinearEquiv.apply_symm_apply]
   have hdet : c.dualBasis.det (U.dualBasis ∘ φ) * c.det (U ∘ φ) = 1 := by
-    rw [Basis.dualBasis_det_mul_det]
-    convert Matrix.det_one (R := F) (n := Fin N)
-    ext i j
-    simp [Matrix.one_apply, Finsupp.single_apply, eq_comm]
+    have hU : ⇑(U.reindex φ.symm).dualBasis = U.dualBasis ∘ φ := by
+      ext k v
+      simp
+    simpa [hU] using c.dualBasis_det_dualBasis_mul_det (U.reindex φ.symm)
   rw [hswap, hYφ, eq_inv_of_mul_eq_one_left hdet]
   simp [φ, Function.comp_def]
 
