@@ -52,6 +52,9 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
   cover the manifold, and so do their unstable sets. Together with
   `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`, these are the
   partitions `M = ⊔ₓ W^s(x) = ⊔ₓ W^u(x)` over the critical points.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_stableSet` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet`: every point lies on the stable set of a
+  critical point, and on the unstable set of one.
 * `TauCeti.IsAdaptedPseudoGradient.stableSet_eq_singleton_of_lt` and
   `TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_lt`: the stable set of a strict
   maximum, and the unstable set of a strict minimum, is a point.
@@ -296,6 +299,18 @@ theorem iUnion_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) :
   obtain ⟨x, hx, htend⟩ := hX.exists_tendsto_atBot hf y
   exact mem_iUnion₂.2 ⟨x, hx, Flow.mem_unstableSet.2 htend⟩
 
+/-- **Every point lies on the stable set of a critical point.** -/
+theorem exists_mem_stableSet (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
+    ∃ c, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 ∧ y ∈ hX.flow.stableSet c := by
+  obtain ⟨c, hc, htend⟩ := hX.exists_tendsto_atTop hf y
+  exact ⟨c, hc, Flow.mem_stableSet.2 htend⟩
+
+/-- **Every point lies on the unstable set of a critical point.** -/
+theorem exists_mem_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
+    ∃ c, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 ∧ y ∈ hX.flow.unstableSet c := by
+  obtain ⟨c, hc, htend⟩ := hX.exists_tendsto_atBot hf y
+  exact ⟨c, hc, Flow.mem_unstableSet.2 htend⟩
+
 /-- **The stable set of a strict maximum is a point.** If `f` has a strict global maximum at `a`,
 then no other orbit of the flow converges to `a` in forward time. -/
 theorem stableSet_eq_singleton_of_lt {a : M}
@@ -321,8 +336,7 @@ theorem stableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) {a
   · rw [mem_singleton_iff] at hpa
     subst hpa
     exact disjoint_left.1 (Flow.disjoint_stableSet hab) (ha ▸ rfl) hp
-  · obtain ⟨c, hc, hpc⟩ := mem_iUnion₂.1 ((hX.iUnion_stableSet hf).symm ▸ mem_univ p :
-      p ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.stableSet x)
+  · obtain ⟨c, hc, hpc⟩ := hX.exists_mem_stableSet hf p
     rcases hcrit c hc with rfl | rfl
     · exact absurd (ha ▸ hpc) hpa
     · exact hpc
@@ -338,8 +352,7 @@ theorem unstableSet_eq_compl_of_critical_eq_or_eq (hf : IsMorse 𝓘(ℝ, E) f) 
   · rw [mem_singleton_iff] at hpb
     subst hpb
     exact disjoint_left.1 (Flow.disjoint_unstableSet hab) hp (hb ▸ rfl)
-  · obtain ⟨c, hc, hpc⟩ := mem_iUnion₂.1 ((hX.iUnion_unstableSet hf).symm ▸ mem_univ p :
-      p ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.unstableSet x)
+  · obtain ⟨c, hc, hpc⟩ := hX.exists_mem_unstableSet hf p
     rcases hcrit c hc with rfl | rfl
     · exact hpc
     · exact absurd (hb ▸ hpc) hpb
