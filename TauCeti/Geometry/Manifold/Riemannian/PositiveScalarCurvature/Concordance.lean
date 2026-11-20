@@ -126,6 +126,11 @@ def cylinder : ContMDiffRiemannianMetric (I.prod 𝓘(ℝ)) ∞ (E × ℝ)
     (fun p : M × ℝ ↦ TangentSpace (I.prod 𝓘(ℝ)) p) :=
   g.prodTangentSpace ((riemannianMetricVectorSpace ℝ).ofLE le_top)
 
+/-- The cylinder metric `g + dt²` is the product of `g` with the standard metric of `ℝ`. -/
+theorem cylinder_def :
+    g.cylinder = g.prodTangentSpace ((riemannianMetricVectorSpace ℝ).ofLE le_top) :=
+  (rfl)
+
 /-- The cylinder metric `g + dt²` pairs the `M`-components with `g` and multiplies the
 `ℝ`-components. -/
 @[simp]

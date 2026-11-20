@@ -34,6 +34,8 @@ multiplies its sectional curvature by `c⁻¹`, so `Sⁿ(r)` has constant sectio
 * `TauCeti.isConstantCurvatureTensor_sphereRoundMetricOfRadius` and
   `TauCeti.hasConstantSectionalCurvature_sphereRoundMetricOfRadius`: the round sphere of radius
   `r` has constant sectional curvature `1 / r²`.
+* `TauCeti.ricciTensor_sphereRoundMetricOfRadius`: the round `n`-sphere of radius `r` has Ricci
+  tensor `(n - 1) / r²` times its metric.
 * `TauCeti.scalarCurvature_sphereRoundMetricOfRadius`: the round `n`-sphere of radius `r` has
   scalar curvature `n (n - 1) / r²`.
 * `TauCeti.hasPositiveScalarCurvature_sphereRoundMetricOfRadius_iff`: the round `n`-sphere of
@@ -112,6 +114,16 @@ theorem hasConstantSectionalCurvature_sphereRoundMetricOfRadius (hr : 0 < r) :
   CovariantDerivative.hasConstantSectionalCurvature_of_curvatureTensor_eq_smul_inner_sub _ _ _
     (ContMDiffRiemannianMetric.IsConstantCurvatureTensor.curvatureTensor_eq _ _
       (isConstantCurvatureTensor_sphereRoundMetricOfRadius hr))
+
+/-- **Ricci tensor of the round sphere.** The round `n`-sphere of radius `r` is Einstein: its Ricci
+tensor is `(n - 1) / r²` times its metric. -/
+theorem ricciTensor_sphereRoundMetricOfRadius (hr : 0 < r) (p : sphere (0 : E) 1) :
+    letI : RiemannianBundle (fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) :=
+      ⟨(sphereRoundMetricOfRadius r hr).toRiemannianMetric⟩
+    (CovariantDerivative.leviCivitaConnection (𝓡 n) (sphere (0 : E) 1)).ricciTensor p =
+      (((n : ℝ) - 1) / r ^ 2) • innerₗ (TangentSpace (𝓡 n) p) :=
+  ContMDiffRiemannianMetric.ricciTensor_leviCivitaConnection_eq_smul_inner_of_inner_eq_smul
+    (fun _ ↦ by ext; simp [sphereRoundMetricOfRadius]) (ricciTensor_sphereRoundMetric_ofLE p)
 
 /-- **Scalar curvature of the round sphere.** The round `n`-sphere of radius `r` has scalar
 curvature `n (n - 1) / r²`. -/
