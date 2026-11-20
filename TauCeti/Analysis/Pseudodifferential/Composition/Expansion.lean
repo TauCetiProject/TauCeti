@@ -332,6 +332,16 @@ theorem const_sharpTerm_succ (T : W →L[ℂ] U) (b : Symbol n V W m) (k : ℕ) 
   simp only [h, ContinuousLinearMap.zero_comp, Finset.sum_const_zero, smul_zero, coefficient_zero,
     Pi.zero_apply]
 
+/-- The composition expansion of two constant symbols is their composition: its leading term is
+`T ∘L S` and every later term vanishes. -/
+theorem sum_coefficient_const_sharpTerm_const (T : W →L[ℂ] U) (S : V →L[ℂ] W) (N : ℕ)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    ∑ i ∈ Finset.range (N + 1),
+      ((const T).sharpTerm (const S : Symbol n V W 0) i).coefficient p = T ∘L S := by
+  rw [Finset.sum_range_succ']
+  simp only [const_sharpTerm_succ, coefficient_zero, Pi.zero_apply, Finset.sum_const_zero,
+    zero_add, coefficient_sharpTerm_zero, coefficient_const]
+
 /-- Only the pointwise composition survives in the composition expansion of a symbol on the right
 that does not depend on the position: its later terms vanish. -/
 theorem sharpTerm_succ_eq_zero_of_spatialDeriv_eq_zero {b : Symbol n V W m}
