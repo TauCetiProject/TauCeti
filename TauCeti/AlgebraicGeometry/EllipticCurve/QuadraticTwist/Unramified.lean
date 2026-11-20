@@ -7,7 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.SplitMultiplicative
 public import TauCeti.NumberTheory.LocalField.Unramified.Quadratic
-import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
+import Mathlib.FieldTheory.Finite.GaloisField
+import TauCeti.NumberTheory.LocalField.Unramified.Rigidity
 
 /-!
 # The unramified quadratic twist at multiplicative reduction
@@ -15,8 +16,8 @@ import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 A nonsplit multiplicative elliptic curve over a nonarchimedean local field becomes split after
 an unramified quadratic twist, including in residue characteristic two. The extension is generated
 by a root of the monic node quadratic. Its discriminant is a unit, so the extension is unramified.
-This identifies the splitting character needed to compare inertia representations of split and
-nonsplit multiplicative curves.
+In fact, twisting by any unramified quadratic extension gives split multiplicative reduction.
+This supplies a split twist over the original base field for comparing inertia representations.
 
 The result concerns the minimal equation of the twist: the original equation is minimal by the
 multiplicative-reduction hypothesis, but a chosen equation of its twist need not be minimal.
@@ -30,7 +31,7 @@ multiplicative-reduction hypothesis, but a chosen equation of its twist need not
 
 public section
 
-open Polynomial ValuativeRel IsLocalRing TauCeti
+open ValuativeRel IsLocalRing TauCeti
 
 namespace WeierstrassCurve
 
@@ -51,31 +52,45 @@ theorem isUnramified_of_root_nodeQuadratic
     (hroot : θ ^ 2 + algebraMap K L E.a₁ * θ +
       algebraMap K L (E.nodePolynomial.coeff 0 / E.c₄) = 0) :
     IsUnramified K L := by
-  obtain ⟨-, n, -, hD, hn⟩ := exists_integral_nodeQuadratic 𝒪[K] (E := E)
-  let I := E.integralModel 𝒪[K]
-  have hroot' : θ ^ 2 + algebraMap K L (I.a₁ : K) * θ +
-      algebraMap K L (n : K) = 0 := by
-    rw [← integralModel_a₁_eq 𝒪[K] E, ← hn] at hroot
-    exact hroot
-  have hint : _root_.IsIntegral 𝒪[K] θ := by
-    refine ⟨X ^ 2 + C I.a₁ * X + C n, by monicity!, ?_⟩
-    simpa only [eval₂_add, eval₂_mul, eval₂_X_pow, eval₂_C, eval₂_X,
-      IsScalarTower.algebraMap_apply 𝒪[K] K L,
-      Algebra.algebraMap_ofSubsemiring_apply] using hroot'
-  let ω : 𝒪[L] := ⟨θ, (Valuation.Integers.isIntegral_iff_valuation_le_one
-    (Valuation.integer.integers (valuation K)) _).mp hint⟩
-  have htr : Algebra.trace 𝒪[K] 𝒪[L] ω = -I.a₁ := by
-    apply Subtype.ext
-    rw [coe_trace_integerRing]
-    exact _root_.Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero hθ hroot'
-  have hnorm : Algebra.norm 𝒪[K] ω = n := by
-    apply Subtype.ext
-    rw [coe_norm_integerRing]
-    apply TauCeti.Algebra.norm_eq_of_mul_self_eq hθ (t := -(I.a₁ : K))
-    rw [map_neg]
-    linear_combination hroot'
-  apply TauCeti.isUnramified_of_isUnit_discrim (ω := ω)
-  simpa only [htr, hnorm, neg_sq] using hD
+  obtain ⟨n, -, hD, hn⟩ := E.exists_algebraMap_eq_nodePolynomial_coeff_zero_div 𝒪[K]
+  rw [← integralModel_a₁_eq 𝒪[K] E, ← hn] at hroot
+  exact TauCeti.isUnramified_of_sq_add_mul_add_eq_zero hD hθ hroot
+
+/-- At nonsplit multiplicative reduction the monic node quadratic has a generating root in any
+unramified quadratic extension of the base field. -/
+theorem exists_root_nodeQuadratic_of_isUnramified
+    (h : ¬ E.HasSplitMultiplicativeReduction 𝒪[K])
+    (L : Type*) [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    [Algebra.IsQuadraticExtension K L] [IsUnramified K L] :
+    ∃ θ : L, θ ∉ Set.range (algebraMap K L) ∧
+      θ ^ 2 + algebraMap K L E.a₁ * θ +
+        algebraMap K L (E.nodePolynomial.coeff 0 / E.c₄) = 0 := by
+  obtain ⟨M, _, _, _, _, θ, hθ, hroot⟩ := exists_quadraticExtension_root_nodeQuadratic h
+  let := algebraicExtensionValuativeRel K M
+  let := algebraicExtensionNormedFieldTopology K M
+  have := finiteExtension_isNonarchimedeanLocalField K M
+  have := algebraicExtension_valuativeExtension K M
+  have := isUnramified_of_root_nodeQuadratic hθ hroot
+  -- Both residue extensions have degree two; lift a residue field embedding to local fields.
+  obtain ⟨φ⟩ : Nonempty (𝓀[M] →ₐ[𝓀[K]] 𝓀[L]) :=
+    FiniteField.nonempty_algHom_of_finrank_dvd (by
+      simp only [← inertiaDegree_def, IsUnramified.inertiaDegree_eq_finrank,
+        Algebra.IsQuadraticExtension.finrank_eq_two, dvd_refl])
+  obtain ⟨f, -⟩ := (IsUnramified.residueFieldHom_bijective (L := M) (M := L)).surjective φ
+  refine ⟨f θ, fun ⟨a, ha⟩ ↦ hθ ⟨a, f.injective ((f.commutes a).trans ha)⟩, ?_⟩
+  simpa only [map_add, map_mul, map_pow, map_zero, AlgHom.commutes] using congrArg f hroot
+
+/-- Twisting a nonsplit multiplicative elliptic curve by any unramified separable quadratic
+extension gives split multiplicative reduction on the chosen minimal equation. -/
+theorem hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_isUnramified [E.IsElliptic]
+    (h : ¬ E.HasSplitMultiplicativeReduction 𝒪[K])
+    (L : Type*) [Field L] [ValuativeRel L] [TopologicalSpace L]
+    [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
+    [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L] [IsUnramified K L] :
+    ((E.quadraticTwist L).minimal 𝒪[K]).HasSplitMultiplicativeReduction 𝒪[K] := by
+  obtain ⟨θ, hθ, hroot⟩ := exists_root_nodeQuadratic_of_isUnramified h L
+  exact hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_root_nodeQuadratic 𝒪[K] hθ hroot
 
 /-- A nonsplit multiplicative elliptic curve over a nonarchimedean local field admits an
 unramified separable quadratic twist with split multiplicative reduction. The extension has its
@@ -96,6 +111,6 @@ theorem exists_unramified_quadraticTwist_hasSplitMultiplicativeReduction [E.IsEl
   have := isUnramified_of_root_nodeQuadratic hθ hroot
   exact ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance,
-    hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_root hθ hroot⟩
+    hasSplitMultiplicativeReduction_minimal_quadraticTwist_of_root_nodeQuadratic 𝒪[K] hθ hroot⟩
 
 end WeierstrassCurve
