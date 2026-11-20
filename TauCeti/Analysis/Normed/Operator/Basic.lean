@@ -46,7 +46,9 @@ compositions obeys the three-term estimate
 (`ContinuousLinearMap.enorm_comp_sub_comp_le`). The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`,
 with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at most a combination of
 `‖K - K'‖` and `‖M - M'‖` (`ContinuousLinearMap.norm_comp_comp_sub_comp_comp_le`), using the
-triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`.
+triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`. Precomposition by an
+operator `T`, as a map between spaces of operators, has norm at most `‖T‖`
+(`ContinuousLinearMap.norm_precomp_le`).
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), so a lower bound `α ‖x‖ ≤ ‖f x‖` with
@@ -295,6 +297,12 @@ theorem opNorm_comp_comp_le {Z U : Type*} [SeminormedAddCommGroup Z] [NormedSpac
     rw [mul_assoc]
     gcongr
     exact opNorm_comp_le _ _
+
+/-- Precomposition by `T` has operator norm at most `‖T‖`. -/
+theorem norm_precomp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (T : X →L[𝕜] Y) : ‖(precomp Z T : (Y →L[𝕜] Z) →L[𝕜] X →L[𝕜] Z)‖ ≤ ‖T‖ :=
+  opNorm_le_bound _ (norm_nonneg T) fun f ↦ by
+    simpa only [precomp_apply, mul_comm] using opNorm_comp_le f T
 
 /-- The conjugates `G ∘ K ∘ M` and `G' ∘ K' ∘ M'`, with `G` a left inverse of `M` and `G'` a
 right inverse of `M'`, differ by at most the differences of `K, K'` and of `M, M'`. -/
