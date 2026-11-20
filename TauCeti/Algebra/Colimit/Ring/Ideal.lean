@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Colimit.Ring
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.Algebra.Colimit.Ring.Basic
 
 /-!
 # Ideals over directed colimits of rings
@@ -20,7 +20,7 @@ some stage `j ≥ i`.
 
 ## Main results
 
-* `Ring.DirectLimit.mem_iSup_map_of_iff`: membership in the colimit ideal.
+* `TauCeti.Ring.DirectLimit.mem_iSup_map_of_iff`: membership in the colimit ideal.
 * `TauCeti.Ring.DirectLimit.of_mem_iSup_map_of_iff`,
   `TauCeti.Ring.DirectLimit.isUnit_quotientMk_of_iff`: the image of an element of a stage `i`
   lies in the colimit ideal, or is a unit modulo it, if and only if this holds for the ideal at
@@ -29,7 +29,9 @@ some stage `j ≥ i`.
 
 public section
 
-namespace Ring.DirectLimit
+namespace TauCeti.Ring.DirectLimit
+
+open _root_.Ring.DirectLimit
 
 variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
   {f : ∀ i j, i ≤ j → G i →+* G j} {I : ∀ i, Ideal (G i)}
@@ -38,12 +40,13 @@ variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
 ideals consists of the images of their elements. -/
 @[simp]
 theorem mem_iSup_map_of_iff [Nonempty ι] [IsDirectedOrder ι]
-    (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) {z : DirectLimit G (f · · ·)} :
+    (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij))
+    {z : _root_.Ring.DirectLimit G (f · · ·)} :
     z ∈ ⨆ i, (I i).map (of G (f · · ·) i) ↔ ∃ i, ∃ x ∈ I i, of G (f · · ·) i x = z := by
   refine ⟨fun hz ↦ ?_, fun ⟨i, x, hx, hxz⟩ ↦
     hxz ▸ Ideal.mem_iSup_of_mem i (Ideal.mem_map_of_mem _ hx)⟩
   -- The images of the elements of the `I i` already form an ideal of the colimit.
-  let J : Ideal (DirectLimit G (f · · ·)) :=
+  let J : Ideal (_root_.Ring.DirectLimit G (f · · ·)) :=
     { carrier := {z | ∃ i, ∃ x ∈ I i, of G (f · · ·) i x = z}
       zero_mem' := ⟨Classical.arbitrary ι, 0, zero_mem _, map_zero _⟩
       add_mem' := by
@@ -53,22 +56,13 @@ theorem mem_iSup_map_of_iff [Nonempty ι] [IsDirectedOrder ι]
           by simp⟩
       smul_mem' := by
         rintro c _ ⟨i, x, hx, rfl⟩
-        induction c using DirectLimit.induction_on with
+        induction c using _root_.Ring.DirectLimit.induction_on with
         | ih j y =>
           obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
           exact ⟨k, f j k hjk y * f i k hik x, Ideal.mul_mem_left _ _ (hI i k hik hx),
             by simp⟩ }
   exact (iSup_le fun i ↦ Ideal.map_le_iff_le_comap.2 fun x hx ↦ ⟨i, x, hx, rfl⟩ :
     ⨆ i, (I i).map (of G (f · · ·) i) ≤ J) hz
-
-end Ring.DirectLimit
-
-namespace TauCeti.Ring.DirectLimit
-
-open _root_.Ring.DirectLimit
-
-variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
-  {f : ∀ i j, i ≤ j → G i →+* G j} {I : ∀ i, Ideal (G i)}
 
 /-- The image of an element of a stage lies in the colimit of a compatible family of ideals if and
 only if the element is carried into the ideal at some later stage. -/
@@ -80,9 +74,8 @@ theorem of_mem_iSup_map_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · �
     of_f hij x ▸ Ideal.mem_iSup_of_mem j (Ideal.mem_map_of_mem _ hj)⟩
   have : Nonempty ι := ⟨i⟩
   obtain ⟨m, y, hy, hyx⟩ := (mem_iSup_map_of_iff hI).1 hx
-  -- `x` and `y` have the same image in the colimit, so they agree at a common later stage.
-  obtain ⟨j, hij, hmj, hj⟩ := Quotient.eq.mp <| by
-    simpa only [ringEquiv_of] using congr(ringEquiv G f $hyx.symm)
+  -- `y` and `x` have the same image in the colimit, so they agree at a common later stage.
+  obtain ⟨j, hmj, hij, hj⟩ := of_eq_of_iff.1 hyx
   exact ⟨j, hij, hj ▸ hI m j hmj hy⟩
 
 /-- An element of a stage is a unit modulo the colimit of a compatible family of ideals if and only

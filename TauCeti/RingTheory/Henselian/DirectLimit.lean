@@ -55,7 +55,7 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
     (hI : ∀ i j (hij : i ≤ j), I i ≤ (I j).comap (f i j hij)) :
     HenselianRing (DirectLimit G (f · · ·)) (⨆ i, (I i).map (of G (f · · ·) i)) where
   jac z hz := by
-    obtain ⟨i, x, hx, rfl⟩ := (mem_iSup_map_of_iff hI).1 hz
+    obtain ⟨i, x, hx, rfl⟩ := (TauCeti.Ring.DirectLimit.mem_iSup_map_of_iff hI).1 hz
     refine Ring.mem_jacobson_iff.2 fun c ↦ ?_
     induction c using DirectLimit.induction_on with
     | ih j y =>
@@ -65,11 +65,11 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
       simpa using hu.map (of G (f · · ·) k)
   is_henselian P hP a₀ h₁ h₂ := by
     -- Lift `P` to a monic polynomial `q` and `a₀` to an element `b`, at a common stage `k`.
-    obtain ⟨i, q, hqm, -, rfl⟩ := Polynomial.exists_monic_of hP
+    obtain ⟨i, q, hqm, -, rfl⟩ := TauCeti.Ring.DirectLimit.Polynomial.exists_monic_of hP
     obtain ⟨j, b, rfl⟩ := exists_of a₀
     obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
     have hqm := hqm.map (f i k hik)
-    rw [← of_f hjk, ← of_comp_f hik, ← Polynomial.map_map] at h₁ h₂ ⊢
+    rw [← of_f hjk, ← TauCeti.Ring.DirectLimit.of_comp_f hik, ← Polynomial.map_map] at h₁ h₂ ⊢
     generalize q.map (f i k hik) = q at hqm h₁ h₂ ⊢
     generalize f j k hjk b = b at h₁ h₂ ⊢
     simp only [derivative_map, eval_map_apply] at h₁ h₂
@@ -83,7 +83,7 @@ private theorem henselianRing_of_nonempty [Nonempty ι] [IsDirectedOrder ι]
       (by simpa [DirectedSystem.map_map' f] using hI l₁ l hl₁l h₁)
       (by simpa [DirectedSystem.map_map' f] using h₂)
     refine ⟨of G (f · · ·) l a, by simpa [Polynomial.map_map] using ha.map (of G (f · · ·) l), ?_⟩
-    simpa using (mem_iSup_map_of_iff hI).2 ⟨l, _, hab, rfl⟩
+    simpa using (TauCeti.Ring.DirectLimit.mem_iSup_map_of_iff hI).2 ⟨l, _, hab, rfl⟩
 
 /-- **Henselian pairs are stable under directed colimits.** If every `(G i, I i)` is a
 Henselian pair and the transition maps carry `I i` into `I j`, then the directed colimit

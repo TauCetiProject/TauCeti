@@ -12,25 +12,33 @@ public import Mathlib.Algebra.Colimit.Ring
 
 Basic API for Mathlib's directed colimit `Ring.DirectLimit G f` of commutative rings `G i`.
 
-The canonical maps into the colimit are compatible with the transition maps as ring homomorphisms.
-When the transition maps `f i j` agree pointwise with maps `F i j` of some class of ring
-homomorphisms (for instance `A`-algebra maps), `Ring.DirectLimit G f` is isomorphic as a ring to
-Mathlib's generic directed colimit `DirectLimit G F`, compatibly with the canonical maps from the
-stages. For ring homomorphisms `F = f` this is Mathlib's `Ring.DirectLimit.ringEquiv`; for
-`A`-algebra maps `F` it identifies `Ring.DirectLimit G f` with a colimit that carries the
-`A`-algebra structure.
+The canonical maps into the colimit are compatible with the transition maps as ring homomorphisms,
+and two elements of stages have the same image in the colimit if and only if they agree at a
+common later stage. When the transition maps `f i j` agree pointwise with maps `F i j` of some
+class of ring homomorphisms (for instance `A`-algebra maps), `Ring.DirectLimit G f` is isomorphic
+as a ring to Mathlib's generic directed colimit `DirectLimit G F`, compatibly with the canonical
+maps from the stages. For ring homomorphisms `F = f` this is Mathlib's
+`Ring.DirectLimit.ringEquiv`; for `A`-algebra maps `F` it identifies `Ring.DirectLimit G f` with a
+colimit that carries the `A`-algebra structure.
 
 ## Main results
 
-* `Ring.DirectLimit.of_comp_f`: the canonical maps into the colimit are compatible with the
-  transition maps.
+* `TauCeti.Ring.DirectLimit.of_comp_f`: the canonical maps into the colimit are compatible with
+  the transition maps.
+* `TauCeti.Ring.DirectLimit.of_eq_of_iff`: two elements of stages have the same image in the
+  colimit if and only if they agree at a common later stage.
 * `TauCeti.Ring.DirectLimit.ringEquivOfEq`: the ring isomorphism between `Ring.DirectLimit G f`
-  and the generic colimit `DirectLimit G F` when `F i j` agrees pointwise with `f i j`.
+  and the generic colimit `DirectLimit G F` when `F i j` agrees pointwise with `f i j`, with its
+  values on stage elements in both directions (`ringEquivOfEq_of`, `ringEquivOfEq_symm_mk`).
 -/
 
 public section
 
-namespace Ring.DirectLimit
+namespace TauCeti.Ring.DirectLimit
+
+open _root_.Ring.DirectLimit
+
+section Ring
 
 variable {ι : Type*} [Preorder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
   {f : ∀ i j, i ≤ j → G i →+* G j}
@@ -41,11 +49,22 @@ theorem of_comp_f {i j : ι} (hij : i ≤ j) :
     (of G (f · · ·) j).comp (f i j hij) = of G (f · · ·) i :=
   RingHom.ext fun _ ↦ of_f _ _
 
-end Ring.DirectLimit
+/-- Two elements of stages of a directed system of commutative rings have the same image in the
+direct limit if and only if they agree at a common later stage. -/
+theorem of_eq_of_iff [IsDirectedOrder ι] [DirectedSystem G (f · · ·)] {i j : ι} {x : G i}
+    {y : G j} :
+    of G (f · · ·) i x = of G (f · · ·) j y ↔
+      ∃ k, ∃ hik : i ≤ k, ∃ hjk : j ≤ k, f i k hik x = f j k hjk y := by
+  have : Nonempty ι := ⟨i⟩
+  -- Pass to the generic colimit, a quotient by `DirectLimit.setoid`, whose relation says that
+  -- two elements of stages agree at a common later stage.
+  rw [← (ringEquiv G f).injective.eq_iff, ringEquiv_of, ringEquiv_of, Quotient.eq]
+  unfold _root_.DirectLimit.setoid
+  rfl
 
-namespace TauCeti.Ring.DirectLimit
+end Ring
 
-open _root_.Ring.DirectLimit
+section RingHomClass
 
 variable {ι : Type*} [Preorder ι] [Nonempty ι] [IsDirectedOrder ι] {G : ι → Type*}
   [∀ i, CommRing (G i)] {f : ∀ i j, i ≤ j → G i → G j} {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*}
@@ -73,5 +92,12 @@ noncomputable def ringEquivOfEq : _root_.Ring.DirectLimit G f ≃+* _root_.Direc
 theorem ringEquivOfEq_of {i : ι} (x : G i) :
     ringEquivOfEq hF (of G f i x) = _root_.DirectLimit.Ring.of G F i x := by
   simp [ringEquivOfEq]
+
+@[simp]
+theorem ringEquivOfEq_symm_mk (x : Σ i, G i) :
+    (ringEquivOfEq hF).symm ⟦x⟧ = of G f x.1 x.2 :=
+  (ringEquivOfEq hF).symm_apply_eq.2 (ringEquivOfEq_of hF x.2).symm
+
+end RingHomClass
 
 end TauCeti.Ring.DirectLimit
