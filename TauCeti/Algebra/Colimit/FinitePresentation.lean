@@ -251,9 +251,8 @@ theorem exists_of_comp_eq_of_finitePresentation {S : Type*} [CommRing S]
   -- View `G` as a directed system of `ℤ`-algebras, and identify the two colimits.
   let F i j (hij : i ≤ j) : G i →ₐ[ℤ] G j := (f i j hij).toIntAlgHom
   have hF i j hij x : F i j hij x = f i j hij x := (f i j hij).toIntAlgHom_apply x
-  have : DirectedSystem G (F · · ·) :=
-    ⟨fun _ x ↦ by simpa only [hF] using DirectedSystem.map_self' f x,
-      fun _ _ _ hij hjk x ↦ by simpa only [hF] using DirectedSystem.map_map' f hij hjk x⟩
+  have : DirectedSystem G (F · · ·) := by
+    simpa only [F, RingHom.toIntAlgHom_coe] using (inferInstance : DirectedSystem G (f · · ·))
   set e := TauCeti.Ring.DirectLimit.ringEquivOfEq hF with he
   obtain ⟨i, ψ, hψ⟩ := TauCeti.DirectLimit.Algebra.exists_eq_comp_of_finitePresentation
     (e.toRingHom.comp g).toIntAlgHom

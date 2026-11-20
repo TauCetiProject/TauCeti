@@ -95,8 +95,8 @@ theorem ringEquivOfEq_of {i : ι} (x : G i) :
 
 @[simp]
 theorem ringEquivOfEq_symm_mk (x : Σ i, G i) :
-    (ringEquivOfEq hF).symm ⟦x⟧ = of G f x.1 x.2 :=
-  (ringEquivOfEq hF).symm_apply_eq.2 (ringEquivOfEq_of hF x.2).symm
+    (ringEquivOfEq hF).symm ⟦x⟧ = of G f x.1 x.2 := by
+  rw [RingEquiv.symm_apply_eq, ringEquivOfEq_of, _root_.DirectLimit.Ring.of_apply]
 
 end RingHomClass
 
