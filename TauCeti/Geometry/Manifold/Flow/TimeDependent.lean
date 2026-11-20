@@ -77,6 +77,9 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.hasMFDerivAt_timeDependentFlowOf`: the curves of the flow solve `γ' u = X u (γ u)`.
 * `TauCeti.timeDependentFlowOf_eq_of_hasMFDerivAt`: every solution on an open interval is a curve
   of the flow.
+* `TauCeti.contMDiffOn_of_contMDiff_of_hasMFDerivAt_timeDependent` and
+  `TauCeti.contMDiff_of_contMDiff_of_forall_hasMFDerivAt_timeDependent`: solutions of the
+  equation for a `C^n` field are `C^n`.
 * `TauCeti.mem_timeDependentFlowDomain_of_forall_mem_uIcc_eq_zero` and
   `TauCeti.timeDependentFlowOf_eq_self_of_forall_mem_uIcc_eq_zero`: a point where the field vanishes
   between two times stays in the domain and is fixed by the time map between them.
@@ -476,6 +479,40 @@ theorem contMDiffAt_uncurry_timeDependentFlowOf [FiniteDimensional ℝ E] [T2Spa
     ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
   exact ContMDiffAt.comp (g := fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2)
     (t, x) hflow hg
+
+/-- **Solutions of a `C^n` time-dependent equation are `C^n`.** On a complete normed model space, a
+curve `γ` with `γ' u = X u (γ u)` on an open interval is `C^n` there when the time-dependent field
+`X` is jointly `C^n`, `1 ≤ n`: on the interval it is the curve of the time-dependent flow through
+any of its points. -/
+theorem contMDiffOn_of_contMDiff_of_hasMFDerivAt_timeDependent [CompleteSpace E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {γ : ℝ → M} {a b : ℝ}
+    (hγ : ∀ u ∈ Ioo a b, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u)))) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I n γ (Ioo a b) := by
+  have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
+  intro t ht
+  have hflow : ContMDiffOn 𝓘(ℝ, ℝ) I n (fun u ↦ timeDependentFlowOf X t u (γ t)) (Ioo a b) :=
+    (contMDiffOn_timeDependentFlowOf hn hX).comp
+      ((contMDiff_const.prodMk contMDiff_id).prodMk contMDiff_const).contMDiffOn
+      fun u hu ↦ mem_timeDependentFlowDomain_of_hasMFDerivAt hγ ht hu
+  exact (hflow.congr fun u hu ↦ (timeDependentFlowOf_eq_of_hasMFDerivAt hX₁ hγ ht hu).symm) t ht
+
+/-- **Global solutions of a `C^n` time-dependent equation are `C^n`.** On a complete normed model
+space, a curve `γ` with `γ' u = X u (γ u)` at all times is `C^n` when the time-dependent field `X`
+is jointly `C^n`, `1 ≤ n`. This applies in particular to the periodic solutions of `X`
+(`TauCeti.periodicSolutions`). -/
+theorem contMDiff_of_contMDiff_of_forall_hasMFDerivAt_timeDependent [CompleteSpace E] [T2Space M]
+    [BoundarylessManifold I M] [IsManifold I 1 M] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    {γ : ℝ → M}
+    (hγ : ∀ u, HasMFDerivAt 𝓘(ℝ, ℝ) I γ u ((1 : ℝ →L[ℝ] ℝ).smulRight (X u (γ u)))) :
+    ContMDiff 𝓘(ℝ, ℝ) I n γ := fun t ↦
+  (contMDiffOn_of_contMDiff_of_hasMFDerivAt_timeDependent hn hX (a := t - 1) (b := t + 1)
+    fun u _ ↦ hγ u).contMDiffAt
+    (Ioo_mem_nhds (by linarith) (by linarith))
 
 /-- In finite dimensions, for a jointly `C¹` time-dependent field, a compact set `T` of times and
 an open set `U ⊆ ℝ × M`, the points `x` whose trajectory from time `s` is defined at every time
