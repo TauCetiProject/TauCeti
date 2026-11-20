@@ -235,8 +235,8 @@ theorem submatrix_coe_mul_of_covBy (u v : blockUpperUnitriangularGroup n ι R) {
         ((v : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, j) := by
   ext a b
   rw [submatrix_apply, Subgroup.coe_mul, Units.val_mul,
-    (blockUnitriangular u).mul_apply_of_covBy (blockUnitriangular v) hij]
-  rfl
+    (blockUnitriangular u).mul_apply_of_covBy (blockUnitriangular v) hij, Matrix.add_apply,
+    submatrix_apply, submatrix_apply]
 
 /-- The adjacent block trace is additive on block upper-unitriangular matrices. -/
 theorem adjacentBlockTrace_coe_mul (u v : blockUpperUnitriangularGroup n ι R) :
@@ -394,6 +394,16 @@ private theorem sum_trace_mul_submatrix_transvection {i j : ι} (hij : i ⋖ j) 
     · rfl
   · simp
 
+/-- The blocks one step above the diagonal of the transvection with entry `t` at
+`((b, i), (a, j))`, where `i ⋖ j`, have total trace `tr (single b a t)`: the case of
+`sum_trace_mul_submatrix_transvection` with all coefficient matrices equal to `1`. -/
+private theorem sum_trace_submatrix_transvection {i j : ι} (hij : i ⋖ j) (a b : n) (t : R) :
+    (∑ i', ∑ j', if i' ⋖ j' then
+        ((transvection (b, i) (a, j) t : Matrix (n × ι) (n × ι) R).submatrix (·, i') (·, j')).trace
+      else 0) =
+      (single b a t : Matrix n n R).trace := by
+  simpa using sum_trace_mul_submatrix_transvection hij a b t fun _ _ => 1
+
 /-- If a Levi tuple fixes the character attached to a primitive additive character, its blocks
 agree along every cover `i ⋖ j`. -/
 private theorem eq_of_covBy_of_adjacentTraceChar_comp_eq {ψ : AddChar R M} (hψ : ψ.IsPrimitive)
@@ -411,12 +421,8 @@ private theorem eq_of_covBy_of_adjacentTraceChar_comp_eq {ψ : AddChar R M} (hψ
   rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, adjacentTraceChar_apply,
     adjacentTraceChar_apply, adjacentBlockTrace_blockDiagonalConj, adjacentBlockTrace_def] at hchar
   simp only [GeneralLinearGroup.val_transvection] at hchar
-  rw [sum_trace_mul_submatrix_transvection hij,
-    show (∑ i', ∑ j', if i' ⋖ j' then ((transvection (b, i) (a, j) t :
-        Matrix (n × ι) (n × ι) R).submatrix (·, i') (·, j')).trace else 0) =
-        ((1 : Matrix n n R) * single b a t).trace by
-      simpa using sum_trace_mul_submatrix_transvection hij a b t fun _ _ => 1,
-    Matrix.one_mul, trace_mul_single, op_smul_eq_mul] at hchar
+  rw [sum_trace_mul_submatrix_transvection hij, sum_trace_submatrix_transvection hij,
+    trace_mul_single, op_smul_eq_mul] at hchar
   rw [AddChar.mulShift_apply, AddChar.mulShift_apply, hchar]
   by_cases hab : b = a
   · subst hab
