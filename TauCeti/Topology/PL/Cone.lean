@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Cone
 public import TauCeti.Topology.PL.Compact
-import Mathlib.Basic.Finite.Sum
+import TauCeti.Analysis.Convex.Polyhedron.Homogenization
 
 /-!
 # Coning piecewise-affine maps
@@ -52,56 +52,7 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
 so that it has the same codomain as `coneMap`. -/
 private def coneAffinePiece (A : E →ᴬ[ℝ] F) :
     (E × ℝ) →ᴬ[ℝ] (F × ℝ) :=
-  ((A.contLinear.comp (ContinuousLinearMap.fst ℝ _ _) +
-      (ContinuousLinearMap.snd ℝ E ℝ).smulRight (A 0)).prod
-    (ContinuousLinearMap.snd ℝ E ℝ)).toContinuousAffineMap
-
-private theorem coneAffinePiece_apply (A : E →ᴬ[ℝ] F) (p : E × ℝ) :
-    coneAffinePiece A p = (A.contLinear p.1 + p.2 • A 0, p.2) := (rfl)
-
-private theorem coneAffinePiece_ray (A : E →ᴬ[ℝ] F) (x : E) (t : ℝ) :
-    coneAffinePiece A (t • x, t) = (t • A x, t) := by
-  rw [coneAffinePiece_apply, map_smul, ← smul_add]
-  congr 2
-  exact (congrFun A.decomp x).symm
-
-/-- A cell defined by homogenized base inequalities and nonnegative height. -/
-private def coneCell {n : ℕ} (a : Fin n → E →ᴬ[ℝ] ℝ) :
-    Set (E × ℝ) :=
-  {p | 0 ≤ p.2 ∧ ∀ j, (a j).contLinear p.1 + p.2 * a j 0 ≤ 0}
-
-private theorem isConvexPolyhedron_coneCell {n : ℕ}
-    (a : Fin n → E →ᴬ[ℝ] ℝ) : IsConvexPolyhedron (coneCell a) := by
-  let height := (ContinuousLinearMap.snd ℝ E ℝ).toContinuousAffineMap
-  let inequalities : Unit ⊕ Fin n → (E × ℝ) →ᴬ[ℝ] ℝ :=
-    Sum.elim (fun _ => -height)
-      (fun j => ((a j).contLinear.comp (ContinuousLinearMap.fst ℝ _ _) +
-        (ContinuousLinearMap.snd ℝ E ℝ).smulRight (a j 0)).toContinuousAffineMap)
-  convert isConvexPolyhedron_setOf_forall inequalities using 1
-  ext p
-  simp [coneCell, inequalities, height, Sum.forall]
-
-private theorem coneCell_zero {n : ℕ} (a : Fin n → E →ᴬ[ℝ] ℝ) :
-    (0 : E × ℝ) ∈ coneCell a := by simp [coneCell]
-
-private theorem coneCell_ray {n : ℕ} {a : Fin n → E →ᴬ[ℝ] ℝ}
-    {x : E} {t : ℝ} (ht : 0 ≤ t) (hx : ∀ j, a j x ≤ 0) :
-    (t • x, t) ∈ coneCell a := by
-  refine ⟨ht, fun j => ?_⟩
-  have heq := congrArg Prod.fst (coneAffinePiece_ray (a j) x t)
-  simp only [coneAffinePiece_apply, smul_eq_mul] at heq
-  rw [heq]
-  exact mul_nonpos_of_nonneg_of_nonpos ht (hx j)
-
-private theorem coneCell_normalize {n : ℕ} {a : Fin n → E →ᴬ[ℝ] ℝ}
-    {p : E × ℝ} (hp : p ∈ coneCell a) (ht : 0 < p.2) :
-    ∀ j, a j (p.2⁻¹ • p.1) ≤ 0 := by
-  intro j
-  have heq := congrArg Prod.fst (coneAffinePiece_ray (a j) (p.2⁻¹ • p.1) p.2)
-  simp only [smul_inv_smul₀ ht.ne'] at heq
-  simp only [coneAffinePiece_apply, smul_eq_mul] at heq
-  have hmul : p.2 * a j (p.2⁻¹ • p.1) ≤ 0 := heq ▸ hp.2 j
-  nlinarith
+  (A.homogenize.prod (ContinuousLinearMap.snd ℝ E ℝ)).toContinuousAffineMap
 
 /-- A finite piecewise-affine map extends piecewise affinely over the whole geometric cone,
 including the apex. No boundedness, closedness or polyhedral assumption on the base is needed. -/
@@ -114,36 +65,45 @@ theorem IsPiecewiseAffineOn.coneMap (hf : IsPiecewiseAffineOn f s) :
   -- Keep an apex cell even when the base decomposition has no pieces.
   let cells : Option (Fin n) → Set (E × ℝ) :=
     fun i => match i with
-      | none => coneCell (fun _ : Fin 1 => ContinuousAffineMap.const ℝ E 1)
-      | some i => coneCell (a i)
+      | none =>
+        (homogeneousInequalityCone (fun _ : Fin 1 => ContinuousAffineMap.const ℝ E 1) : Set (E × ℝ))
+      | some i => (homogeneousInequalityCone (a i) : Set (E × ℝ))
   let pieces : Option (Fin n) → (E × ℝ) →ᴬ[ℝ] (F × ℝ) :=
     fun i => match i with
       | none => ContinuousAffineMap.const ℝ _ 0
       | some i => coneAffinePiece (A i)
   refine isPiecewiseAffineOn_of_finite (C := cells) (A := pieces) ?_ ?_ ?_
-  · rintro (_ | i) <;> exact isConvexPolyhedron_coneCell _
+  · rintro (_ | i) <;> exact isConvexPolyhedron_homogeneousInequalityCone _
   · intro p hp
     rcases mem_cone.mp hp with rfl | ⟨ht, hx⟩
-    · exact mem_iUnion.mpr ⟨none, coneCell_zero _⟩
+    · exact mem_iUnion.mpr ⟨none, (homogeneousInequalityCone _).zero_mem⟩
     · obtain ⟨i, hi⟩ := mem_iUnion.mp (hcover hx)
-      have hcell := coneCell_ray ht.le (by rwa [ha i] at hi)
-      simp only [smul_inv_smul₀ ht.ne'] at hcell
+      have hbase : (p.2⁻¹ • p.1, (1 : ℝ)) ∈ homogeneousInequalityCone (a i) := by
+        simpa [ha i] using hi
+      have hcell := (homogeneousInequalityCone (a i)).smul_mem ht.le hbase
+      simp only [Prod.smul_mk, smul_inv_smul₀ ht.ne', smul_eq_mul, mul_one] at hcell
       exact mem_iUnion.mpr ⟨some i, hcell⟩
   · rintro (_ | i) p ⟨hp, hc⟩
-    · have ht : p.2 = 0 := le_antisymm
-        (by simpa [cells] using hc.2 0) hc.1
+    · have hc' := mem_homogeneousInequalityCone.mp hc
+      have ht : p.2 = 0 := le_antisymm
+        (by simpa [ContinuousAffineMap.homogenize_apply, smul_eq_mul] using hc'.2 0) hc'.1
       have hp0 : p = 0 := (mem_cone.mp hp).resolve_right (by simp [ht])
       rw [hp0, coneMap_zero]
       rfl
     · rcases mem_cone.mp hp with rfl | ⟨ht, hx⟩
-      · simp [pieces, coneAffinePiece_apply]
-        rfl
+      · simp [pieces, coneAffinePiece]
       · have hbase : p.2⁻¹ • p.1 ∈ C i := by
           rw [ha i]
-          exact coneCell_normalize hc ht
-        have hvalue := heq i ⟨hx, hbase⟩
-        have hpiece := coneAffinePiece_ray (A i) (p.2⁻¹ • p.1) p.2
-        simpa [smul_inv_smul₀ ht.ne', Prod.ext_iff, pieces, hvalue] using hpiece.symm
+          intro j
+          have hrow := (mem_homogeneousInequalityCone.mp hc).2 j
+          rw [(a i j).homogenize_apply_of_ne_zero p.1 ht.ne'] at hrow
+          exact nonpos_of_mul_nonpos_right (by simpa using hrow) ht
+        ext
+        · simp only [coneMap_fst, pieces, coneAffinePiece,
+            ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.prod_apply,
+            heq i ⟨hx, hbase⟩]
+          exact ((A i).homogenize_apply_of_ne_zero p.1 ht.ne').symm
+        · simp [pieces, coneAffinePiece]
 
 end PiecewiseAffine
 

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Representative
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Topology.VectorBundle.Riemannian
-import TauCeti.Topology.Algebra.Module.BilinearForm
+public import TauCeti.Geometry.Manifold.Riemannian.Immersion.NormalBundle
 
 /-!
 # Orthogonal representatives of normal classes
@@ -18,6 +19,11 @@ intrinsic normal class has a unique representative orthogonal to the tangent spa
 embedded submanifold. This identifies the intrinsic normal space with the orthogonal complement
 of the embedded tangent space, as the complement representatives
 (`TauCeti.SmoothEmbedding.complementRepresentative`) of the orthogonal complement.
+
+The metric also induces a quotient norm on each normal space
+(`TauCeti.SmoothEmbedding.normalSpaceNormedAddCommGroup`), whose topology is the quotient topology.
+It is not an instance, since it depends on the metric; it serves to differentiate functions on a
+normal space.
 
 ## References
 
@@ -145,41 +151,47 @@ theorem inner_normalRepresentative_mfderiv
     ((f.mem_tangentRange_iff x hn _).2 ⟨w, rfl⟩)
     (f.normalRepresentative_mem_orthogonal x hn v)
 
-/-- The orthogonal representative is obtained by subtracting the tangential component.
-The inverse of the induced metric recovers that component from the ambient metric covector.
-This pointwise identity needs no regularity assumption on the ambient metric. -/
-theorem normalRepresentative_normalClass_eq_sub_mfderiv_inverse
-    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0)
-    (v : TangentSpace J (f x)) :
-    let d := mfderiv I J f x
-    let φ := (RiemannianBundle.g.inner (f x) v).comp d
-    let a := (ContinuousLinearMap.precomp ℝ d).comp
-      ((RiemannianBundle.g.inner (f x)).comp d)
-    f.normalRepresentative x hn (f.normalClass x hn v) = v - d (a.inverse φ) := by
-  dsimp only
-  -- the differential of an immersion embeds `E` in the finite-dimensional space `V`
-  have : FiniteDimensional ℝ E :=
-    Module.Finite.of_injective (mfderiv I J f x : E →L[ℝ] V).toLinearMap
-      (f.isImmersion.mfderiv_injective hn x)
-  let d := mfderiv I J f x
-  let a := (ContinuousLinearMap.precomp ℝ d).comp
-    ((RiemannianBundle.g.inner (f x)).comp d)
-  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
-  have ha : a.IsInvertible := ContinuousLinearMap.isInvertible_of_pos (E := E) fun w hw0 ↦
-    RiemannianBundle.g.pos (f x) (d w)
-      ((map_ne_zero_iff d (f.isImmersion.mfderiv_injective hn x)).mpr hw0)
-  apply (f.normalRepresentative_eq_iff x hn _ _).mpr
-  constructor
-  · apply (Submodule.mem_orthogonal' _ _).mpr
-    intro w hw
-    obtain ⟨z, rfl⟩ := (f.mem_tangentRange_iff x hn w).mp hw
-    have hpair := DFunLike.congr_fun
-      (ha.self_apply_inverse ((RiemannianBundle.g.inner (f x) v).comp d)) z
-    simp only [a, ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply] at hpair
-    -- The RiemannianBundle inner-product instance is defined by its stored metric pairing.
-    have hpair' : inner ℝ (d (a.inverse ((RiemannianBundle.g.inner (f x) v).comp d))) (d z) =
-        inner ℝ v (d z) := hpair
-    simpa only [inner_sub_left, sub_eq_zero] using hpair'.symm
-  · simp only [map_sub, normalClass_mfderiv, sub_zero]
+omit [FiniteDimensional ℝ V] in
+/-- The orthogonal complement of the tangent range of an embedding is its normal space
+`TauCeti.orthogonalNormalSpace` as an immersion. -/
+theorem orthogonal_tangentRange_eq_orthogonalNormalSpace (f : SmoothEmbedding I J n M N) (x : M)
+    (hn : n ≠ 0) : (f.tangentRange x hn)ᗮ = orthogonalNormalSpace I J f x := by
+  rw [orthogonalNormalSpace_def]
+  refine congrArg _ (Submodule.ext fun v ↦ ?_)
+  simp only [mem_tangentRange_iff, LinearMap.mem_range, ContinuousLinearMap.coe_coe]
+
+/-- The orthogonal representative of the normal class of an ambient vector is its orthogonal
+projection onto the normal space `TauCeti.orthogonalNormalSpace`. -/
+theorem normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace
+    (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) (v : TangentSpace J (f x)) :
+    f.normalRepresentative x hn (f.normalClass x hn v) =
+      (orthogonalNormalSpace I J f x).starProjection v := by
+  simp only [normalRepresentative_normalClass, orthogonal_tangentRange_eq_orthogonalNormalSpace]
+
+omit [FiniteDimensional ℝ V] in
+/-- The quotient norm on the normal space at `x`, induced by the Riemannian norm of the ambient
+tangent space. Its topology is by definition the quotient topology of the normal space, and its
+group structure that of the normal space. It is not an instance, since it depends on the
+metric. -/
+abbrev normalSpaceNormedAddCommGroup (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    NormedAddCommGroup (f.NormalSpace x hn) :=
+  haveI : IsClosed (f.tangentRange x hn : Set (TangentSpace J (f x))) :=
+    f.isClosed_tangentRange x hn
+  let Q := Submodule.Quotient.normedAddCommGroup (f.tangentRange x hn)
+  -- Restate the group and the uniform structure with the quotient group and the quotient topology
+  -- of the normal space as literal fields, so that instances built on them are found for the
+  -- normed structure.
+  { Q with
+    toAddCommGroup := inferInstance
+    toUniformSpace := { Q.toUniformSpace with toTopologicalSpace := inferInstance } }
+
+omit [FiniteDimensional ℝ V] in
+/-- The normed space structure of the quotient norm `normalSpaceNormedAddCommGroup` on the normal
+space at `x`. -/
+abbrev normalSpaceNormedSpace (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
+    letI := f.normalSpaceNormedAddCommGroup x hn
+    NormedSpace ℝ (f.NormalSpace x hn) :=
+  letI := f.normalSpaceNormedAddCommGroup x hn
+  { Submodule.Quotient.normedSpace (f.tangentRange x hn) ℝ with toModule := inferInstance }
 
 end TauCeti.SmoothEmbedding

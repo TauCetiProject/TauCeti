@@ -158,7 +158,7 @@ private theorem cwModelExtends_of_forall_notMem (hf : IsMorse I f) {s t : ℝ} (
     fun x hsx hxt hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hsx, hxt⟩
   have (m : ℕ) : IsEmpty
       ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc s t | manifoldMorseIndex I f x = m} :=
-    ⟨fun x ↦ hcrit x x.2.1.1 (Ioc_subset_Icc_self x.2.1.2)⟩
+    ⟨fun x ↦ hcrit x x.property.1.1 (Ioc_subset_Icc_self x.property.1.2)⟩
   refine ⟨W, _, ‹_›, .id W, D, ‹_›, h.trans e', (image_id D).symm, .id, ?_,
     fun w ↦ he' (h w), fun m ↦ (Equiv.sumEmpty _ _).symm, fun m j x ↦ rfl⟩
   rw [ContinuousMap.coe_id, range_id]
@@ -304,13 +304,7 @@ theorem IsMorse.exists_finite_cwComplex_extension_homotopyEquiv_sublevel (hf : I
     (hf.finite_criticalPoints_inter hcompact).subset
       (inter_subset_inter_right _ (preimage_mono Ioc_subset_Icc_self))
   have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
-  have := hS.to_subtype
-  have : Finite (Σ m, ↥{x ∈ criticalPoints I f ∩ f ⁻¹' Ioc a b | manifoldMorseIndex I f x = m}) :=
-    .of_injective (fun x ↦ (⟨x.2, x.2.2.1⟩ : ↥(criticalPoints I f ∩ f ⁻¹' Ioc a b)))
-      fun ⟨_, _, hx⟩ ⟨_, _, hy⟩ hxy ↦ by
-        cases Subtype.ext_iff.1 hxy
-        cases hx.2.symm.trans hy.2
-        rfl
+  have := finite_sigma_criticalPoints_inter hS
   exact ⟨W', _, ‹_›, ‹_›, ι, h', RelCWComplex.finite_of_finite_cells
     (.of_equiv _ ((Equiv.sigmaSumDistrib _ _).symm.trans (Equiv.sigmaCongrRight e).symm)),
     hι, hA, hh, e, he⟩
@@ -369,7 +363,7 @@ theorem IsMorse.exists_finite_cwComplex_homotopyEquiv [CompactSpace M] (hf : IsM
   obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
     exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
   -- Below the minimum of `f` the sublevel is empty, the empty CW complex.
-  have : IsEmpty {x | f x ≤ a} := ⟨fun x ↦ (not_le.2 (hf' x).1) x.2⟩
+  have : IsEmpty {x | f x ≤ a} := ⟨fun x ↦ (not_le.2 (hf' x).1) x.property⟩
   obtain ⟨W, _, _, _, -, e, -, -, -, c, -⟩ := hf.exists_cwComplex_extension_homotopyEquiv_sublevel
     hab hcompact ha hb PEmpty.{u + 1} Homeomorph.empty.toHomotopyEquiv
   -- The `m`-cells of `W` are the critical points of index `m`, since all values lie in `(a, b]`.
