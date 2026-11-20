@@ -134,8 +134,7 @@ the elliptic orbits with stabilizer orders `mₑ`. With `χ = 2 - 2g` this is
 theorem eulerChar_compactifiedQuotient_lt_finsum_mem_ellipticOrbits :
     (eulerChar Γ.CompactifiedQuotient : ℝ) <
       ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹) := by
-  have hpos : 0 < covolume Γ ℍ := covolume_pos <|
-    Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)
+  have hpos := Γ.covolume_pos
   rw [covolume_eq_two_pi_mul_neg_eulerChar_add, ENNReal.ofReal_pos] at hpos
   nlinarith [Real.pi_pos]
 
@@ -144,15 +143,9 @@ cocompact `Γ`, `χ(X(Γ)) = 2 - 2g` for the topological genus `g` of `X(Γ)`. -
 theorem eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus :
     eulerChar Γ.CompactifiedQuotient = 2 - 2 * RiemannSurface.genus Γ.CompactifiedQuotient := by
   obtain ⟨n, _, P, σ, hmap, hlf, hdisj⟩ := exists_compactConvexPolygon_sidePairing (Γ := Γ)
-  -- a compact polygon has no ideal vertices, so its cell count is `χ(Γ \ ℍ)`
-  have : IsEmpty {i : Fin n // (P.toConvexPolygon.vertex i).isRight} :=
-    ⟨fun i ↦ by simpa [P.vertex_toConvexPolygon] using i.2⟩
   have hχ : eulerChar Γ.CompactifiedQuotient = σ.cellEulerChar := by
     rw [eulerChar_compactifiedQuotient_eq_eulerChar_orbitRel_quotient,
-      σ.eulerChar_orbitRel_quotient hmap hlf hdisj, σ.cellEulerChar_def,
-      Nat.card_of_isEmpty (α := σ.IdealVertexCycle)]
-    push_cast
-    ring
+      σ.eulerChar_orbitRel_quotient_eq_cellEulerChar hmap hlf hdisj]
   rw [RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff, hχ]
   exact ⟨σ.cellEulerChar_le_two, σ.even_cellEulerChar⟩
 
@@ -164,8 +157,9 @@ theorem covolume_eq_two_pi_mul_two_mul_genus_sub_two_add :
       2 + ∑ᶠ e ∈ Γ.ellipticOrbits, (1 - (cardStabilizerOnOrbit e : ℝ)⁻¹))) := by
   rw [covolume_eq_two_pi_mul_neg_eulerChar_add,
     eulerChar_compactifiedQuotient_eq_two_sub_two_mul_genus]
+  congr 1
   push_cast
-  ring_nf
+  ring
 
 /-- **Multiplicativity of the orbifold Euler characteristic for cocompact groups.** Let `Γ` be a
 cocompact Fuchsian group and `Δ ≤ Γ` a subgroup of finite index, so that `Δ` is cocompact as

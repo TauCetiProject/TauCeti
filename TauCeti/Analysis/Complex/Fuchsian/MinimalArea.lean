@@ -42,8 +42,9 @@ cusps with `χ(X(Γ))`, and is not proved here.
 ## Main results
 
 * `Subgroup.pi_div_twentyOne_le_covolume`: Siegel's bound `π / 21 ≤ covolume Γ`.
-* `Subgroup.IsCofinite.covolume_eq_pi_div_twentyOne_iff`: equality holds exactly for signature
-  `(0; 2, 3, 7)`: genus zero, no cusp, and one elliptic orbit of each order `2`, `3` and `7`.
+* `Subgroup.IsCofinite.covolume_eq_pi_div_twentyOne_iff`: for a cofinite group whose compactified
+  quotient has finite CW type, equality holds exactly for signature `(0; 2, 3, 7)`: topological
+  genus zero, no cusp, and one elliptic orbit of each order `2`, `3` and `7`.
 * `Subgroup.pi_div_three_le_covolume`: a discrete group with a cusp has covolume at least
   `π / 3`.
 
@@ -86,8 +87,7 @@ private theorem IsCofinite.exists_le_two_covolume_eq (hΓ : Γ.IsCofinite) :
 `δ > 0`. -/
 private theorem pos_of_covolume_eq [DiscreteTopology Γ] {δ : ℝ}
     (h : covolume Γ ℍ = ENNReal.ofReal (2 * π * δ)) : 0 < δ := by
-  have hpos : 0 < covolume Γ ℍ := covolume_pos <|
-    Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)
+  have hpos := Γ.covolume_pos
   rw [h, ENNReal.ofReal_pos] at hpos
   exact pos_of_mul_pos_right hpos (by positivity)
 
@@ -125,9 +125,10 @@ theorem pi_div_three_le_covolume [DiscreteTopology Γ] [Nonempty Γ.CuspOrbit] :
   · rw [isCofinite_iff_covolume_ne_top, not_not] at hΓ
     exact hΓ ▸ le_top
 
-/-- **The equality case of Siegel's bound.** A cofinite Fuchsian group has covolume `π / 21`
-exactly when its signature is `(0; 2, 3, 7)`: the compactified quotient has genus zero, there is
-no cusp, and there is one elliptic orbit of each order `2`, `3` and `7`. -/
+/-- **The equality case of Siegel's bound.** A cofinite Fuchsian group whose compactified quotient
+has finite CW type has covolume `π / 21` exactly when its signature is `(0; 2, 3, 7)`: the
+compactified quotient has topological genus zero, there is no cusp, and there is one elliptic
+orbit of each order `2`, `3` and `7`. -/
 theorem IsCofinite.covolume_eq_pi_div_twentyOne_iff [DiscreteTopology Γ] (hΓ : Γ.IsCofinite)
     [FiniteCWType Γ.CompactifiedQuotient] :
     covolume Γ ℍ = ENNReal.ofReal (π / 21) ↔

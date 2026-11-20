@@ -49,6 +49,8 @@ group.
 * `ConvexPolygon.SidePairing.finiteCWType_orbitRel_quotient`: `Γ \ ℍ` has finite CW type.
 * `ConvexPolygon.SidePairing.eulerChar_orbitRel_quotient`: `χ(Γ \ ℍ)` is the number of vertex
   cycles plus the number of self-paired sides, minus the number of side pairs, plus one.
+* `ConvexPolygon.SidePairing.eulerChar_orbitRel_quotient_eq_cellEulerChar`: `χ(Γ \ ℍ)` is the
+  cell count `ConvexPolygon.SidePairing.cellEulerChar` of the polygon.
 * `ConvexPolygon.SidePairing.covolume_eq_two_pi_mul_neg_eulerChar_add`: the area formula
   `covolume Γ = 2π (-χ(Γ \ ℍ) + ∑ₑ (1 - 1 / mₑ))`.
 
@@ -770,6 +772,19 @@ theorem eulerChar_orbitRel_quotient :
   have := σ.finite_cwComplex hmap hlf hdisj
   rw [eulerChar_eq_cwEulerChar (Homeomorph.Set.univ _).symm.toHomotopyEquiv,
     σ.cwEulerChar_cwComplex hmap hlf hdisj]
+
+/-- **The Euler characteristic of the quotient by a compact fundamental polygon is its cell
+count.** Under the hypotheses of `finiteCWType_orbitRel_quotient`, `χ(Γ \ ℍ) = σ.cellEulerChar`:
+a compact polygon has no ideal vertex cycles. -/
+theorem eulerChar_orbitRel_quotient_eq_cellEulerChar :
+    haveI := σ.finiteCWType_orbitRel_quotient hmap hlf hdisj
+    eulerChar (orbitRel.Quotient Γ ℍ) = σ.cellEulerChar := by
+  have : IsEmpty {i : Fin n // (P.toConvexPolygon.vertex i).isRight} :=
+    ⟨fun i ↦ by simpa [P.vertex_toConvexPolygon] using i.2⟩
+  rw [σ.eulerChar_orbitRel_quotient hmap hlf hdisj, cellEulerChar_def,
+    Nat.card_of_isEmpty (α := σ.IdealVertexCycle)]
+  push_cast
+  ring
 
 /-- **The area of a cocompact Fuchsian group through the Euler characteristic.** Under the
 hypotheses of `finiteCWType_orbitRel_quotient`, the covolume of `Γ` is

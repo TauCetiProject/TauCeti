@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Ideal
 import TauCeti.Combinatorics.ChordDiagram
-import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 
 /-!
 # The cell count of a side-paired polygon
@@ -30,7 +30,7 @@ Its alternating cell count is `SidePairing.cellEulerChar`, the integer
 `V + c + k - E + 1` for `V` finite vertex cycles, `c` ideal vertex cycles and `E` pairs of sides.
 For a fundamental polygon of a Fuchsian group `Γ` this is the Euler characteristic of the
 compactified quotient `X(Γ)`; for a compact polygon this identification is
-`SidePairing.eulerChar_orbitRel_quotient`.
+`SidePairing.eulerChar_orbitRel_quotient_eq_cellEulerChar`.
 
 This file shows, from the combinatorics of the gluing alone, that the cell count has the two
 properties of the Euler characteristic of a closed connected orientable surface: it is at most
@@ -39,7 +39,9 @@ properties of the Euler characteristic of a closed connected orientable surface:
 of the involution `σ.pair` (`orbitCount_pair`). The bound is then the boundary-count bound for a
 one-vertex chord diagram, `Equiv.Perm.orbitCount_finRotate_mul_add_orbitCount_le`: each pair of
 sides glued adds at most one vertex cycle. The parity is the multiplicativity of the sign of a
-permutation.
+permutation: the cell count is the Euler characteristic of the permutation triple
+`PermutationTriple.ofTwo σ.pair (finRotate n)`, which is even
+(`TauCeti.PermutationTriple.even_eulerChar`).
 
 ## Main definitions
 
@@ -179,20 +181,16 @@ theorem cellEulerChar_le_two : σ.cellEulerChar ≤ 2 := by
   omega
 
 /-- **The cell count is even**, as the Euler characteristic of a closed orientable surface is:
-the sign of `σ.next` is the product of the signs of the rotation and of `σ.pair`. -/
+it is the Euler characteristic of the permutation triple with components `σ.pair` and the
+rotation of the vertex indices, whose third component is `σ.next⁻¹`. -/
 theorem even_cellEulerChar : Even σ.cellEulerChar := by
-  have hsign : sign σ.next * sign (finRotate n) * sign σ.pair = 1 := by
-    rw [mul_assoc, ← Perm.sign_mul, ← next_eq_finRotate_mul, Int.units_mul_self]
   have hrot : orbitCount (finRotate n) = 1 := by simp [orbitCount_finRotate, NeZero.ne n]
-  rw [sign_eq_neg_one_pow_card_sub_orbitCount, sign_eq_neg_one_pow_card_sub_orbitCount,
-    sign_eq_neg_one_pow_card_sub_orbitCount, Fintype.card_fin, hrot, ← pow_add,
-    ← pow_add] at hsign
-  obtain ⟨k, hk⟩ := (neg_one_pow_eq_one_iff_even (R := ℤˣ) (by decide)).mp hsign
-  have hnext : orbitCount σ.next ≤ n := by simpa using σ.next.orbitCount_le_card
-  have hpair : orbitCount σ.pair ≤ n := by simpa using σ.pair.orbitCount_le_card
-  have hn : n ≠ 0 := NeZero.ne n
-  refine ⟨(n : ℤ) - k, ?_⟩
-  rw [cellEulerChar_eq_orbitCount]
-  omega
+  have h : σ.cellEulerChar = (PermutationTriple.ofTwo σ.pair (finRotate n)).eulerChar := by
+    rw [cellEulerChar_eq_orbitCount, PermutationTriple.eulerChar_def,
+      PermutationTriple.ofTwo_σ0, PermutationTriple.ofTwo_σ1, PermutationTriple.ofTwo_σinf,
+      ← next_eq_finRotate_mul, orbitCount_inv, hrot]
+    push_cast
+    ring
+  exact h ▸ (PermutationTriple.ofTwo _ _).even_eulerChar
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
