@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
-public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
-public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.DenseRange
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.SpectralGap
 import Mathlib.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.ODE.Regularity
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
+import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.DenseRange
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
