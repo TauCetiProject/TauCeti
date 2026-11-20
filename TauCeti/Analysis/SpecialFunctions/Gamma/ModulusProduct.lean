@@ -19,13 +19,15 @@ monotonicity of `|Γ(x + iy)| / Γ(x)` in `x > 0`, and the values of `|Γ|²` on
 
 ## Main results
 
-* `Complex.hasProd_Gamma_norm_quotient`: for real `x ∉ {0, −1, −2, …}` and real `y`,
+* `TauCeti.norm_GammaSeq_div_GammaSeq_add_mul_I_sq`: the partial products of DLMF 5.8.3 as
+  `|GammaSeq x n / GammaSeq (x + iy) n|²`.
+* `TauCeti.hasProd_Gamma_norm_quotient`: for real `x ∉ {0, −1, −2, …}` and real `y`,
   `∏_{k ≥ 0} (1 + y²/(x + k)²) = Γ(x)² / |Γ(x + iy)|²` (DLMF 5.8.3).
-* `Complex.norm_Gamma_add_mul_I_le`: `|Γ(x + iy)| ≤ Γ(x)/Γ(x′) · |Γ(x′ + iy)|` for
+* `TauCeti.norm_Gamma_add_mul_I_le`: `|Γ(x + iy)| ≤ Γ(x)/Γ(x′) · |Γ(x′ + iy)|` for
   `0 < x ≤ x′`.
-* `Complex.norm_Gamma_mul_I_sq`: `|Γ(iy)|² = π / (y sinh(πy))` for `y ≠ 0` (DLMF 5.4.3).
-* `Complex.norm_Gamma_one_add_mul_I_sq`: `|Γ(1 + iy)|² = πy / sinh(πy)` for `y ≠ 0`.
-* `Complex.hasProd_one_add_sq_div_succ_sq`: `∏_{k ≥ 1} (1 + y²/k²) = sinh(πy)/(πy)` for
+* `TauCeti.norm_Gamma_mul_I_sq`: `|Γ(iy)|² = π / (y sinh(πy))` (DLMF 5.4.3).
+* `TauCeti.norm_Gamma_one_add_mul_I_sq`: `|Γ(1 + iy)|² = πy / sinh(πy)` for `y ≠ 0`.
+* `TauCeti.hasProd_one_add_sq_div_succ_sq`: `∏_{k ≥ 1} (1 + y²/k²) = sinh(πy)/(πy)` for
   `y ≠ 0`.
 
 ## Implementation notes
@@ -40,7 +42,7 @@ The proofs of DLMF 5.8.3 and 5.4.3 are adapted from the lean-DLMF project
 `DLMF/Gamma/SpecialValues.lean`.
 -/
 
-@[expose] public section
+public section
 
 open Filter Finset
 
@@ -48,99 +50,77 @@ open scoped Topology Real ComplexConjugate
 
 noncomputable section
 
-namespace Complex
+namespace TauCeti
 
-/-- `∑ₖ y²/(x + k)²` converges. -/
-private theorem summable_sq_div_add_sq (x y : ℝ) :
-    Summable fun k : ℕ => y ^ 2 / (x + k) ^ 2 := by
-  have hg : Summable fun k : ℕ => 4 * y ^ 2 * (1 / (k : ℝ) ^ 2) :=
-    (Real.summable_one_div_nat_pow.mpr one_lt_two).mul_left _
-  refine Summable.of_norm_bounded_eventually_nat hg ?_
-  filter_upwards [eventually_ge_atTop (⌈2 * |x|⌉₊ + 1)] with k hk
-  have hk' : 2 * |x| + 1 ≤ k := by
-    have := Nat.le_ceil (2 * |x|)
-    have : ((⌈2 * |x|⌉₊ + 1 : ℕ) : ℝ) ≤ k := by exact_mod_cast hk
-    push_cast at this
-    linarith
-  have hk0 : (0 : ℝ) < k := by linarith [abs_nonneg x]
-  have hxk2 : k / 2 ≤ x + k := by linarith [neg_abs_le x]
-  have hxk0 : (0 : ℝ) < x + k := by linarith
-  rw [Real.norm_of_nonneg (by positivity), div_le_iff₀ (by positivity : (0 : ℝ) < (x + k) ^ 2)]
-  have : (k : ℝ) ^ 2 / 4 ≤ (x + k) ^ 2 := by nlinarith
-  field_simp
-  nlinarith [sq_nonneg y, mul_le_mul_of_nonneg_left this (sq_nonneg y)]
+open Complex
 
-/-- `∏ₖ (1 + y²/(x + k)²)` converges. -/
-private theorem multipliable_one_add_sq_div_add_sq (x y : ℝ) :
-    Multipliable fun k : ℕ => 1 + y ^ 2 / (x + k) ^ 2 :=
-  Real.multipliable_one_add_of_summable (summable_sq_div_add_sq x y)
+/-- For real `x` that is not a nonpositive integer, `x + iy` is not a nonpositive integer. -/
+theorem ofReal_add_mul_I_ne_neg_natCast {x : ℝ} (hx : ∀ n : ℕ, x ≠ -(n : ℝ)) (y : ℝ) (k : ℕ) :
+    (x : ℂ) + y * I ≠ -k := by
+  intro h
+  have hre := congrArg Complex.re h
+  simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
+    add_zero, neg_re, natCast_re] at hre
+  exact hx k hre
 
-/-- The `tprod` form of DLMF 5.8.3: both sides are limits of the same Gauss sequences. -/
-private theorem norm_Gamma_div_Gamma_add_mul_I_sq {x y : ℝ} (hx : ∀ k : ℕ, (x : ℂ) ≠ -k) :
-    ‖(Real.Gamma x : ℂ) / Gamma (x + y * I)‖ ^ 2 =
-      ∏' k : ℕ, (1 + y ^ 2 / (x + k) ^ 2) := by
-  have hxk : ∀ k : ℕ, (x : ℂ) + k ≠ 0 := fun k h => hx k (eq_neg_of_add_eq_zero_left h)
-  have hxk' : ∀ k : ℕ, (x + k : ℝ) ≠ 0 := fun k h => hxk k (by exact_mod_cast h)
-  have hz : ∀ k : ℕ, (x : ℂ) + y * I ≠ -k := by
-    intro k h
-    have hre := congrArg Complex.re h
-    simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
-      add_zero, neg_re, natCast_re] at hre
-    exact hx k (by exact_mod_cast hre)
-  have hmul := multipliable_one_add_sq_div_add_sq x y
-  have hP : Tendsto (fun n : ℕ => ∏ k ∈ range (n + 1), (1 + y ^ 2 / (x + k) ^ 2)) atTop
-      (𝓝 (∏' k : ℕ, (1 + y ^ 2 / (x + k) ^ 2))) :=
-    hmul.hasProd.tendsto_prod_nat.comp (tendsto_add_atTop_nat 1)
-  have hseq : ∀ n : ℕ, 0 < n →
-      ‖GammaSeq x n / GammaSeq (x + y * I) n‖ ^ 2 =
-        ∏ k ∈ range (n + 1), (1 + y ^ 2 / (x + k) ^ 2) := by
-    intro n hn
-    have hn' : (n : ℂ) ≠ 0 := by exact_mod_cast hn.ne'
-    have hf : (n.factorial : ℂ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
-    have hP1 : ∏ j ∈ range (n + 1), ((x : ℂ) + j) ≠ 0 :=
-      prod_ne_zero_iff.mpr fun j _ => hxk j
-    have hP2 : ∏ j ∈ range (n + 1), ((x : ℂ) + y * I + j) ≠ 0 :=
-      prod_ne_zero_iff.mpr fun j _ => fun h => hz j (eq_neg_of_add_eq_zero_left h)
-    have hc1 : (n : ℂ) ^ (x : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hn')
-    have hc2 : (n : ℂ) ^ ((x : ℂ) + y * I) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hn')
-    have hsplit : GammaSeq x n / GammaSeq (x + y * I) n =
-        ((n : ℂ) ^ (x : ℂ) / (n : ℂ) ^ ((x : ℂ) + y * I)) *
-          (∏ j ∈ range (n + 1), ((x : ℂ) + y * I + j)) / ∏ j ∈ range (n + 1), ((x : ℂ) + j) := by
-      simp only [GammaSeq]
-      field_simp
-    rw [hsplit, norm_div, norm_mul, norm_div, norm_natCast_cpow_of_pos hn,
-      norm_natCast_cpow_of_pos hn]
-    have hre : ((x : ℂ) + y * I).re = x := by simp
-    rw [hre, ofReal_re, div_self (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) x).ne', one_mul,
-      norm_prod, norm_prod, div_pow, ← prod_pow, ← prod_pow, ← prod_div_distrib]
-    refine prod_congr rfl fun j _ => ?_
-    have h1 : ‖(x : ℂ) + y * I + j‖ ^ 2 = (x + j) ^ 2 + y ^ 2 := by
-      rw [← normSq_eq_norm_sq, normSq_apply]; simp; ring
-    have h2 : ‖(x : ℂ) + j‖ ^ 2 = (x + j) ^ 2 := by
-      rw [show (x : ℂ) + j = ((x + j : ℝ) : ℂ) by push_cast; ring, norm_real,
-        Real.norm_eq_abs, sq_abs]
-    rw [h1, h2]
-    have := hxk' j
+/-- The partial products of DLMF 5.8.3 are the squared moduli of quotients of Gauss sequences:
+`|GammaSeq x n / GammaSeq (x + iy) n|² = ∏_{k ≤ n} (1 + y²/(x + k)²)` for `n > 0`. -/
+theorem norm_GammaSeq_div_GammaSeq_add_mul_I_sq {x : ℝ} (hx : ∀ n : ℕ, x ≠ -(n : ℝ)) (y : ℝ)
+    {n : ℕ} (hn : 0 < n) :
+    ‖GammaSeq x n / GammaSeq (x + y * I) n‖ ^ 2 =
+      ∏ k ∈ range (n + 1), (1 + y ^ 2 / (x + k) ^ 2) := by
+  have hxk' : ∀ k : ℕ, (x + k : ℝ) ≠ 0 := fun k h => hx k (eq_neg_of_add_eq_zero_left h)
+  have hxk : ∀ k : ℕ, (x : ℂ) + k ≠ 0 := fun k h => hxk' k (by exact_mod_cast h)
+  have hn' : (n : ℂ) ≠ 0 := by exact_mod_cast hn.ne'
+  have hf : (n.factorial : ℂ) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
+  have hP1 : ∏ j ∈ range (n + 1), ((x : ℂ) + j) ≠ 0 :=
+    prod_ne_zero_iff.mpr fun j _ => hxk j
+  have hP2 : ∏ j ∈ range (n + 1), ((x : ℂ) + y * I + j) ≠ 0 :=
+    prod_ne_zero_iff.mpr fun j _ h =>
+      ofReal_add_mul_I_ne_neg_natCast hx y j (eq_neg_of_add_eq_zero_left h)
+  have hc1 : (n : ℂ) ^ (x : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hn')
+  have hc2 : (n : ℂ) ^ ((x : ℂ) + y * I) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hn')
+  have hsplit : GammaSeq x n / GammaSeq (x + y * I) n =
+      ((n : ℂ) ^ (x : ℂ) / (n : ℂ) ^ ((x : ℂ) + y * I)) *
+        (∏ j ∈ range (n + 1), ((x : ℂ) + y * I + j)) / ∏ j ∈ range (n + 1), ((x : ℂ) + j) := by
+    simp only [GammaSeq]
     field_simp
-  have hlim : Tendsto (fun n : ℕ => ‖GammaSeq x n / GammaSeq (x + y * I) n‖ ^ 2)
-      atTop (𝓝 (‖Gamma x / Gamma (x + y * I)‖ ^ 2)) :=
-    (((GammaSeq_tendsto_Gamma _).div (GammaSeq_tendsto_Gamma _)
-      (Gamma_ne_zero hz)).norm).pow 2
-  rw [← Gamma_ofReal]
-  refine tendsto_nhds_unique hlim (hP.congr' ?_)
-  filter_upwards [eventually_gt_atTop 0] with n hn
-  exact (hseq n hn).symm
+  rw [hsplit, norm_div, norm_mul, norm_div, norm_natCast_cpow_of_pos hn,
+    norm_natCast_cpow_of_pos hn]
+  have hre : ((x : ℂ) + y * I).re = x := by simp
+  rw [hre, ofReal_re, div_self (Real.rpow_pos_of_pos (Nat.cast_pos.mpr hn) x).ne', one_mul,
+    norm_prod, norm_prod, div_pow, ← prod_pow, ← prod_pow, ← prod_div_distrib]
+  refine prod_congr rfl fun j _ => ?_
+  have h1 : ‖(x : ℂ) + y * I + j‖ ^ 2 = (x + j) ^ 2 + y ^ 2 := by
+    rw [← normSq_eq_norm_sq, normSq_apply]; simp; ring
+  have h2 : ‖(x : ℂ) + j‖ ^ 2 = (x + j) ^ 2 := by
+    rw [← ofReal_natCast, ← ofReal_add, norm_real, Real.norm_eq_abs, sq_abs]
+  rw [h1, h2]
+  have := hxk' j
+  field_simp
 
 /-- **DLMF 5.8.3.** For real `x` that is not a nonpositive integer and real `y`, the product
 `∏_{k ≥ 0} (1 + y²/(x + k)²)` converges to `Γ(x)² / |Γ(x + iy)|²`. -/
 theorem hasProd_Gamma_norm_quotient {x : ℝ} (hx : ∀ n : ℕ, x ≠ -(n : ℝ)) (y : ℝ) :
     HasProd (fun k : ℕ => 1 + y ^ 2 / (x + k) ^ 2)
       (Real.Gamma x ^ 2 / ‖Gamma ((x : ℂ) + y * I)‖ ^ 2) := by
-  have hx' : ∀ k : ℕ, (x : ℂ) ≠ -k := fun k h => hx k (by exact_mod_cast h)
-  have h := norm_Gamma_div_Gamma_add_mul_I_sq (y := y) hx'
-  rw [norm_div, norm_real, Real.norm_eq_abs, div_pow, sq_abs] at h
+  -- `∑ y²/(x + k)²` converges by the shifted `p`-series test with `p = 2`.
+  have hsum : Summable fun k : ℕ => y ^ 2 / (x + k) ^ 2 :=
+    (((Real.summable_one_div_nat_add_rpow x 2).2 one_lt_two).mul_left (y ^ 2)).congr fun k => by
+      rw [Real.rpow_two, sq_abs, add_comm, mul_one_div]
+  have hmul := Real.multipliable_one_add_of_summable hsum
+  -- Both sides are limits of the same Gauss sequences.
+  have hlim : Tendsto (fun n : ℕ => ‖GammaSeq x n / GammaSeq (x + y * I) n‖ ^ 2)
+      atTop (𝓝 (‖Gamma x / Gamma (x + y * I)‖ ^ 2)) :=
+    (((GammaSeq_tendsto_Gamma _).div (GammaSeq_tendsto_Gamma _)
+      (Gamma_ne_zero (ofReal_add_mul_I_ne_neg_natCast hx y))).norm).pow 2
+  have hP := (hmul.hasProd.tendsto_prod_nat.comp (tendsto_add_atTop_nat 1)).congr'
+    ((eventually_gt_atTop 0).mono fun n hn =>
+      (norm_GammaSeq_div_GammaSeq_add_mul_I_sq hx y hn).symm)
+  have h := tendsto_nhds_unique hlim hP
+  rw [Gamma_ofReal, norm_div, norm_real, Real.norm_eq_abs, div_pow, sq_abs] at h
   rw [h]
-  exact (multipliable_one_add_sq_div_add_sq x y).hasProd
+  exact hmul.hasProd
 
 /-- The modulus of `Γ` on a horizontal line, compared at two real parts: for `0 < x ≤ x′`,
 `|Γ(x + iy)| ≤ Γ(x)/Γ(x′) · |Γ(x′ + iy)|`. This is the termwise comparison of the products in
@@ -151,12 +131,8 @@ theorem norm_Gamma_add_mul_I_le {x x' : ℝ} (hx : 0 < x) (hxx' : x ≤ x') (y :
   have hnot : ∀ {u : ℝ}, 0 < u → ∀ n : ℕ, u ≠ -(n : ℝ) := fun hu n h => by
     have : (0 : ℝ) ≤ n := Nat.cast_nonneg n
     linarith
-  have hne : ∀ {u : ℝ}, 0 < u → Gamma ((u : ℂ) + y * I) ≠ 0 := fun hu => by
-    refine Gamma_ne_zero fun n h => ?_
-    have hre := congrArg Complex.re h
-    simp only [add_re, ofReal_re, mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self,
-      add_zero, neg_re, natCast_re] at hre
-    exact hnot hu n hre
+  have hne : ∀ {u : ℝ}, 0 < u → Gamma ((u : ℂ) + y * I) ≠ 0 := fun hu =>
+    Gamma_ne_zero (ofReal_add_mul_I_ne_neg_natCast (hnot hu) y)
   have hG' := Real.Gamma_pos_of_pos hx'
   have hN := norm_pos_iff.mpr (hne hx)
   have hN' := norm_pos_iff.mpr (hne hx')
@@ -176,9 +152,12 @@ theorem norm_Gamma_add_mul_I_le {x x' : ℝ} (hx : 0 < x) (hxx' : x ≤ x') (y :
   rw [div_mul_eq_mul_div, le_div_iff₀ hG']
   exact this
 
-/-- **DLMF 5.4.3.** `|Γ(iy)|² = π / (y sinh(πy))` for real `y ≠ 0`. -/
-theorem norm_Gamma_mul_I_sq {y : ℝ} (hy : y ≠ 0) :
+/-- **DLMF 5.4.3.** `|Γ(iy)|² = π / (y sinh(πy))` for real `y`. At `y = 0` both sides are `0`,
+since `Γ(0) = 0` and division by zero is `0`. -/
+theorem norm_Gamma_mul_I_sq (y : ℝ) :
     ‖Gamma (y * I)‖ ^ 2 = π / (y * Real.sinh (π * y)) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
   have hy' : (y : ℂ) ≠ 0 := by exact_mod_cast hy
   have hz : (y : ℂ) * I ≠ 0 := mul_ne_zero hy' I_ne_zero
   have hnorm : Gamma (y * I) * Gamma (-(y * I)) = (‖Gamma (y * I)‖ : ℂ) ^ 2 := by
@@ -208,7 +187,7 @@ theorem norm_Gamma_one_add_mul_I_sq {y : ℝ} (hy : y ≠ 0) :
     ‖Gamma (1 + y * I)‖ ^ 2 = π * y / Real.sinh (π * y) := by
   have hy' : (y : ℂ) ≠ 0 := by exact_mod_cast hy
   rw [add_comm, Gamma_add_one _ (mul_ne_zero hy' I_ne_zero), norm_mul, mul_pow,
-    norm_Gamma_mul_I_sq hy, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, sq_abs]
+    norm_Gamma_mul_I_sq y, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, sq_abs]
   field_simp
 
 /-- The case `x = 1` of DLMF 5.8.3: `∏_{k ≥ 1} (1 + y²/k²) = sinh(πy)/(πy)` for real `y ≠ 0`,
@@ -222,4 +201,4 @@ theorem hasProd_one_add_sq_div_succ_sq {y : ℝ} (hy : y ≠ 0) :
   rw [ofReal_one, norm_Gamma_one_add_mul_I_sq hy, Real.Gamma_one, one_pow, one_div_div] at h
   exact h
 
-end Complex
+end TauCeti
