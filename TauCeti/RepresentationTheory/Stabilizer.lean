@@ -16,10 +16,11 @@ import TauCeti.RepresentationTheory.Quotient
 /-!
 # Stabilizers of vectors and subsets in a representation
 
-This file complements Mathlib's `Representation.stabilizer` API: injective intertwining maps and
-the inclusion of a subrepresentation preserve stabilizers, a vector is invariant under the
-restriction to a subgroup exactly when that subgroup lies in its stabilizer, and the stabilizer of
-a basis vector of a permutation representation is the stabilizer of the point.
+This file complements Mathlib's `Representation.stabilizer` API: injective intertwining maps (in
+particular equivalences) and the inclusion of a subrepresentation preserve stabilizers, a vector
+is invariant under the restriction to a subgroup exactly when that subgroup lies in its
+stabilizer, and the stabilizer of a basis vector of a permutation representation is the
+stabilizer of the point.
 
 Let a group `G` act linearly on an `R`-module `M` through `ρ`. Every element fixing a set `s`
 pointwise fixes `Submodule.span R s` (`Representation.biInf_stabilizer_span`), and pulling `ρ` back
@@ -34,6 +35,7 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 ## Main results
 
 * `Representation.IntertwiningMap.stabilizer_apply_of_injective`
+* `Representation.Equiv.stabilizer_apply`
 * `Subrepresentation.stabilizer_toRepresentation`
 * `Representation.mem_invariants_comp_subtype_iff`
 * `Representation.stabilizer_ofMulAction_single`
@@ -66,6 +68,11 @@ theorem IntertwiningMap.stabilizer_apply_of_injective (f : ρ.IntertwiningMap σ
     (hf : Function.Injective f) (v : V) : σ.stabilizer (f v) = ρ.stabilizer v := by
   ext g
   rw [mem_stabilizer, mem_stabilizer, ← f.isIntertwining, hf.eq_iff]
+
+/-- An equivalence of representations preserves the stabilizer of every vector. -/
+@[simp]
+theorem Equiv.stabilizer_apply (e : Equiv ρ σ) (v : V) : σ.stabilizer (e v) = ρ.stabilizer v :=
+  e.toIntertwiningMap.stabilizer_apply_of_injective (EquivLike.injective e) v
 
 /-- The stabilizer of a vector of a subrepresentation is its stabilizer in the ambient
 representation. -/

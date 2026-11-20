@@ -40,6 +40,8 @@ This is the shape in which the exponent vector of a relator of a free pro-`p` gr
   series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`) and the powers `‖p‖ ^ n`
   tend to zero along the cofinite filter (`PadicInt.tendsto_norm_p_pow_cofinite`,
   `PadicInt.tendsto_norm_p_pow_mul_cofinite`).
+* `PadicInt.not_isOpen_singleton_zero`, `PadicInt.not_isOpen_singleton_one_multiplicative`: `ℤ_p`
+  is not discrete, as a ring or as the group `Multiplicative ℤ_[p]`.
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
@@ -118,6 +120,20 @@ theorem tendsto_norm_p_pow_cofinite :
     Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) Filter.cofinite (nhds 0) := by
   rw [Nat.cofinite_eq_atTop]
   exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) norm_p_lt_one
+
+/-- The singleton `{0}` is not open in `ℤ_p`: the powers of `p` are nonzero and tend to `0`. -/
+theorem not_isOpen_singleton_zero : ¬IsOpen ({0} : Set ℤ_[p]) := fun h ↦ by
+  obtain ⟨n, hn⟩ := ((tendsto_pow_atTop_nhds_zero_of_norm_lt_one norm_p_lt_one).eventually
+    (h.mem_nhds rfl)).exists
+  exact pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero) hn
+
+/-- The identity is not an isolated point of the additive group of `ℤ_p`, written multiplicatively
+as `Multiplicative ℤ_[p]`. -/
+theorem not_isOpen_singleton_one_multiplicative : ¬IsOpen ({1} : Set (Multiplicative ℤ_[p])) :=
+  fun h ↦ not_isOpen_singleton_zero <| by
+    convert h.preimage continuous_ofAdd
+    ext x
+    simp
 
 /-- On `ι × ℕ` with `ι` finite, the weights `‖p‖ ^ j * C` tend to zero along the cofinite
 filter. -/
