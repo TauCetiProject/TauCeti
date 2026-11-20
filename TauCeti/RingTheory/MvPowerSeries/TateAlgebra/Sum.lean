@@ -194,8 +194,7 @@ theorem restrictedSumEquiv_algebraMap {S : Type*} [CommSemiring S] [Algebra S R]
     restrictedSumEquiv (algebraMap S Flat s) = algebraMap S Iter s := by
   rw [restrictedSumEquiv, RingEquiv.symm_apply_eq, RingEquiv.ofBijective_apply]
   refine Subtype.ext ((sumAlgEquiv R R σ τ).injective ?_)
-  simpa [sumFlatten, coe_algebraMap_isRestrictedSubring_apply, algebraMap_apply,
-    -AlgEquiv.commutes] using (sumAlgEquiv R R σ τ).commutes (algebraMap S R s)
+  simp [sumFlatten, coe_algebraMap_isRestrictedSubring_apply]
 
 /-- **Iteration of restricted series as an algebra isomorphism**: over every algebra `S` of
 coefficients, `restrictedSumEquiv` is an `S`-algebra isomorphism `R{X/c, Y/d} ≃ₐ[S] R{Y/d}{X/c}`.
