@@ -23,11 +23,15 @@ denominator dividing `c ^ T`.
 Over a commutative ring, evaluation also respects congruences: if `d ∣ xᵢ - tᵢ` for every `i`, then
 `d ∣ p(x) - p(t)`.
 
+Evaluation at a family `x` is surjective exactly when `x` generates the algebra.
+
 ## Main results
 
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
+  the `x i` generate the algebra.
 -/
 
 public section
@@ -65,5 +69,11 @@ theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : 
       using 1
     simp only [map_mul, eval_X]
     ring
+
+/-- Evaluation at a family `x` is surjective exactly when the `x i` generate the algebra. -/
+theorem aeval_surjective_iff_adjoin_range_eq_top {R A : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] {x : σ → A} :
+    Function.Surjective (aeval (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
+  rw [← AlgHom.range_eq_top, Algebra.adjoin_range_eq_range_aeval]
 
 end MvPolynomial

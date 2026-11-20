@@ -11,9 +11,9 @@ public import TauCeti.RingTheory.LaurentSeries.Lattice
 /-!
 # Pole-bounded formal loops
 
-Let `H` be a Hopf algebra over a commutative ring `k`, so that for every commutative `k`-algebra
-`R` the convolution group `G(R⸨X⸩) = WithConv (H →ₐ[k] R⸨X⸩)` is the group of formal loops of
-`G = Spec H` with coefficients in `R`. Here `R⸨X⸩` carries the coefficientwise `k`-algebra
+Let `H` be a Hopf algebra over a commutative semiring `k`, so that for every commutative
+`k`-algebra `R` the convolution group `G(R⸨X⸩) = WithConv (H →ₐ[k] R⸨X⸩)` is the group of formal
+loops of `G = Spec H` with coefficients in `R`. Here `R⸨X⸩` carries the coefficientwise `k`-algebra
 structure `HahnSeries.instAlgebra`, under which `algebraMap k R⸨X⸩` is
 `HahnSeries.C ∘ algebraMap k R`; instance search would otherwise find the structure routed
 through `R⟦X⟧`, which agrees with it only propositionally. Files using these declarations
@@ -47,8 +47,6 @@ This file proves the properties of the pieces that do not depend on a representi
   values of `g` at the antipodes `S (x i)`.
 * `TauCeti.HopfAlgebra.poleBoundedLoops_mono`, `inv_mem_poleBoundedLoops_iff`.
 * `TauCeti.HopfAlgebra.mem_poleBoundedLoops_of_map`: stability under coefficient maps.
-* `TauCeti.HopfAlgebra.exists_forall_apply_mem_lattice`: bounds on generators give bounds on
-  every element, uniformly in the coefficient algebra.
 * `TauCeti.HopfAlgebra.poleBoundedLoops_zero`: `LG_(≤0)(R)` is the image of `G(R⟦X⟧)`.
 * `TauCeti.HopfAlgebra.iUnion_poleBoundedLoops`: for a finite family, `LG(R)` is the union of
   the `LG_(≤N)(R)`.
@@ -76,50 +74,11 @@ attribute [local instance 1100] HahnSeries.instAlgebra
 universe u v w
 
 variable {k : Type u} {H : Type v} [Semiring H] {ι : Type*} (x : ι → H)
-
-section Bounds
-
-variable [CommSemiring k] [Algebra k H]
-
-/-- Pole bounds on a generating family propagate to every element, uniformly in the
-coefficient algebra: for each `h : H` there is `d` such that every `k`-algebra map
-`g : H → R⸨X⸩` sending all `x i` into `X^(-N) R⟦X⟧` sends `h` into `X^(-N d) R⟦X⟧`. For `N = 0`
-this says that `g` then takes values in `R⟦X⟧`. -/
-theorem exists_forall_apply_mem_lattice (hx : Algebra.adjoin k (Set.range x) = ⊤) (N : ℕ)
-    (h : H) : ∃ d : ℕ, ∀ (R : Type w) [Semiring R] [Algebra k R] (g : H →ₐ[k] R⸨X⸩),
-      (∀ i, g (x i) ∈ lattice R R (-N)) → g h ∈ lattice R R (-(N * d : ℕ)) := by
-  have hh : h ∈ Algebra.adjoin k (Set.range x) := hx ▸ Algebra.mem_top
-  induction hh using Algebra.adjoin_induction with
-  | mem h hh =>
-    obtain ⟨i, rfl⟩ := hh
-    exact ⟨1, fun R _ _ g hg ↦ by simpa using hg i⟩
-  | algebraMap c =>
-    refine ⟨0, fun R _ _ g _ ↦ ?_⟩
-    rw [AlgHom.commutes, HahnSeries.algebraMap_apply, mul_zero, Nat.cast_zero, neg_zero]
-    exact single_mem_lattice le_rfl _
-  | add a b _ _ ha hb =>
-    obtain ⟨d, hd⟩ := ha
-    obtain ⟨e, he⟩ := hb
-    refine ⟨max d e, fun R _ _ g hg ↦ ?_⟩
-    have hd' : N * d ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_left _ _)
-    have he' : N * e ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_right _ _)
-    rw [map_add]
-    exact add_mem (lattice_antitone (by omega) (hd R g hg))
-      (lattice_antitone (by omega) (he R g hg))
-  | mul a b _ _ ha hb =>
-    obtain ⟨d, hd⟩ := ha
-    obtain ⟨e, he⟩ := hb
-    refine ⟨d + e, fun R _ _ g hg ↦ ?_⟩
-    rw [map_mul, Nat.mul_add, Nat.cast_add, neg_add]
-    exact mul_mem_lattice (hd R g hg) (he R g hg)
-
-end Bounds
-
-variable [CommRing k] [_root_.HopfAlgebra k H]
+variable [CommSemiring k] [_root_.HopfAlgebra k H]
 
 section Pieces
 
-variable (k) (R : Type w) [CommRing R] [Algebra k R]
+variable (k) (R : Type w) [CommSemiring R] [Algebra k R]
 
 /-- The pole-bounded loops of level `N` for a family `x : ι → H`: the points
 `g : H →ₐ[k] R⸨X⸩` such that `g` and its convolution inverse `g⁻¹` send every `x i` into the
@@ -160,7 +119,7 @@ theorem poleBoundedLoops_mono : Monotone (poleBoundedLoops k x R) := by
 /-- The pieces are stable under coefficient maps: if `g'` is obtained from `g` by applying a
 `k`-algebra map `φ : R → S` to every coefficient, and `g` is pole-bounded of level `N`, so is
 `g'`. -/
-theorem mem_poleBoundedLoops_of_map {S : Type*} [CommRing S] [Algebra k S] (φ : R →ₐ[k] S)
+theorem mem_poleBoundedLoops_of_map {S : Type*} [CommSemiring S] [Algebra k S] (φ : R →ₐ[k] S)
     {N : ℕ} {g : WithConv (H →ₐ[k] R⸨X⸩)} {g' : WithConv (H →ₐ[k] S⸨X⸩)}
     (hg' : ∀ h, g'.ofConv h = (g.ofConv h).map φ) (hg : g ∈ poleBoundedLoops k x R N) :
     g' ∈ poleBoundedLoops k x S N := by
@@ -173,7 +132,7 @@ end Pieces
 
 section Generated
 
-variable (R : Type w) [CommRing R] [Algebra k R]
+variable (R : Type w) [CommSemiring R] [Algebra k R]
 
 /-- For a generating family, the pole-bounded loops of level `0` are the positive loops: the
 image of `G(R⟦X⟧)` in `G(R⸨X⸩)`. -/
@@ -215,7 +174,7 @@ Applied in both directions, the pieces of two finite generating families are cof
 other. -/
 theorem exists_poleBoundedLoops_subset (hx : Algebra.adjoin k (Set.range x) = ⊤) {κ : Type*}
     [Finite κ] (y : κ → H) (N : ℕ) :
-    ∃ M : ℕ, ∀ (R : Type w) [CommRing R] [Algebra k R],
+    ∃ M : ℕ, ∀ (R : Type w) [CommSemiring R] [Algebra k R],
       poleBoundedLoops k x R N ⊆ poleBoundedLoops k y R M := by
   choose d hd using exists_forall_apply_mem_lattice.{u, v, w} x hx N
   obtain ⟨D, hD⟩ := (Set.finite_range fun j ↦ max (d (y j)) (d (antipode k (y j)))).bddAbove

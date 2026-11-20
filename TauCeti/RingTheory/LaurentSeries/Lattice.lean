@@ -68,6 +68,9 @@ preserving every lattice; these maps respect identities, composition, and monomi
   `TauCeti.LaurentSeries.coeff_mul_of_mem_lattice`: the coefficient of `Xᵃ⁺ᵇ` of such a product.
 * `TauCeti.LaurentSeries.mul_mem_lattice_add_one_iff`: such a product lies in `U_{a + b + 1}`
   exactly when the product of the coefficients of `Xᵃ` and `Xᵇ` vanishes.
+* `TauCeti.LaurentSeries.exists_forall_apply_mem_lattice`: for `k`-algebra maps to `R⸨X⸩`,
+  lattice bounds on a family of algebra generators give lattice bounds on every element,
+  uniformly in the coefficient algebra `R`.
 * `TauCeti.LaurentSeries.mem_lattice_iff_valuation_le`: over a field, `U_a` is a closed
   valuation ball.
 * `TauCeti.LaurentSeries.hasBasis_nhds_zero_lattice`: the lattices form a neighbourhood basis
@@ -228,6 +231,49 @@ theorem mem_lattice_iff_valuation_le {K : Type*} [Field K] {a : ℤ} {f : K⸨X�
   (_root_.LaurentSeries.valuation_le_iff_coeff_lt_eq_zero K).symm
 
 end Ring
+
+section Algebra
+
+attribute [local instance 1100] HahnSeries.instAlgebra
+
+universe u v w
+
+variable {k : Type u} {H : Type v} [CommSemiring k] [Semiring H] [Algebra k H] {ι : Type*}
+  (x : ι → H)
+
+/-- Lattice bounds on a generating family propagate to every element, uniformly in the
+coefficient algebra: for each `h : H` there is `d` such that every `k`-algebra map
+`g : H → R⸨X⸩` sending all `x i` into `X^(-N) R⟦X⟧` sends `h` into `X^(-N d) R⟦X⟧`. For `N = 0`
+this says that `g` then takes values in `R⟦X⟧`. -/
+theorem exists_forall_apply_mem_lattice (hx : Algebra.adjoin k (Set.range x) = ⊤) (N : ℕ)
+    (h : H) : ∃ d : ℕ, ∀ (R : Type w) [Semiring R] [Algebra k R] (g : H →ₐ[k] R⸨X⸩),
+      (∀ i, g (x i) ∈ lattice R R (-N)) → g h ∈ lattice R R (-(N * d : ℕ)) := by
+  have hh : h ∈ Algebra.adjoin k (Set.range x) := hx ▸ Algebra.mem_top
+  induction hh using Algebra.adjoin_induction with
+  | mem h hh =>
+    obtain ⟨i, rfl⟩ := hh
+    exact ⟨1, fun R _ _ g hg ↦ by simpa using hg i⟩
+  | algebraMap c =>
+    refine ⟨0, fun R _ _ g _ ↦ ?_⟩
+    rw [AlgHom.commutes, HahnSeries.algebraMap_apply, mul_zero, Nat.cast_zero, neg_zero]
+    exact single_mem_lattice le_rfl _
+  | add a b _ _ ha hb =>
+    obtain ⟨d, hd⟩ := ha
+    obtain ⟨e, he⟩ := hb
+    refine ⟨max d e, fun R _ _ g hg ↦ ?_⟩
+    have hd' : N * d ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_left _ _)
+    have he' : N * e ≤ N * max d e := Nat.mul_le_mul_left _ (le_max_right _ _)
+    rw [map_add]
+    exact add_mem (lattice_antitone (by omega) (hd R g hg))
+      (lattice_antitone (by omega) (he R g hg))
+  | mul a b _ _ ha hb =>
+    obtain ⟨d, hd⟩ := ha
+    obtain ⟨e, he⟩ := hb
+    refine ⟨d + e, fun R _ _ g hg ↦ ?_⟩
+    rw [map_mul, Nat.mul_add, Nat.cast_add, neg_add]
+    exact mul_mem_lattice (hd R g hg) (he R g hg)
+
+end Algebra
 
 /-- The lattices `U_a` form a neighbourhood basis of zero for the Laurent valuation topology. -/
 theorem hasBasis_nhds_zero_lattice {K : Type*} [Field K] :

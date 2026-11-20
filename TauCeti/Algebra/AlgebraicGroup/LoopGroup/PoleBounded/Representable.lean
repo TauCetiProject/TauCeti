@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.AlgebraicGroup.LoopGroup.PoleBounded.Basic
 public import TauCeti.RingTheory.HahnSeries.Map
 
+import TauCeti.Algebra.MvPolynomial.Eval
+
 /-!
 # The pieces of the loop group are affine
 
@@ -161,17 +163,13 @@ theorem poleBoundedIdeal_le_ker_iff {R : Type*} [CommRing R] [Algebra k R] {N : 
 
 variable (x) (hx : Algebra.adjoin k (Set.range x) = ⊤)
 
-include hx in
-private theorem aeval_surjective : Function.Surjective (aeval (R := k) x) := by
-  rw [← AlgHom.range_eq_top, ← Algebra.adjoin_range_eq_range_aeval, hx]
-
 variable {R : Type w} [CommRing R] [Algebra k R]
 
 /-- The loop attached to a map `ψ : k[a_(i,m)] → R` killing `J_N`: the unique `k`-algebra map
 `H → R⸨X⸩` sending `x i` to `Σ_m ψ(a_(i,m)) X^(m - N)`. -/
 private noncomputable def loopOfHom {N : ℕ} (ψ : MvPolynomial (ι × ℕ) k →ₐ[k] R)
     (hψ : poleBoundedIdeal k x N ≤ RingHom.ker ψ) : H →ₐ[k] R⸨X⸩ :=
-  AlgHom.liftOfSurjective (aeval x) (aeval_surjective x hx)
+  AlgHom.liftOfSurjective (aeval x) (aeval_surjective_iff_adjoin_range_eq_top.2 hx)
     (aeval fun i ↦ (poleBoundedSeries ι k N i).map ψ)
     fun f hf ↦ ((poleBoundedIdeal_le_ker_iff ψ).1 hψ).1 f hf
 
@@ -191,7 +189,7 @@ private theorem loopOfHom_mem {N : ℕ} (ψ : MvPolynomial (ι × ℕ) k →ₐ[
   refine mem_poleBoundedLoops_iff_antipode.2 fun i ↦ ⟨?_, ?_⟩
   · rw [ofConv_toConv, ← aeval_X (R := k) x i, loopOfHom_aeval, aeval_X]
     exact map_poleBoundedSeries_mem_lattice ψ N i
-  · obtain ⟨f, hf⟩ := aeval_surjective x hx (antipode k (x i))
+  · obtain ⟨f, hf⟩ := aeval_surjective_iff_adjoin_range_eq_top.2 hx (antipode k (x i))
     rw [ofConv_toConv, ← hf, loopOfHom_aeval]
     exact ((poleBoundedIdeal_le_ker_iff ψ).1 hψ).2 f i hf
 
@@ -273,7 +271,7 @@ theorem poleBoundedEquiv_comp_apply {S : Type*} [CommRing S] [Algebra k S] {N : 
     (ψ : R →ₐ[k] S) (φ : poleBoundedAlgebra k x N →ₐ[k] R) (h : H) :
     (poleBoundedEquiv x hx S N (ψ.comp φ)).1.ofConv h =
       ((poleBoundedEquiv x hx R N φ).1.ofConv h).map ψ := by
-  obtain ⟨f, rfl⟩ := aeval_surjective x hx h
+  obtain ⟨f, rfl⟩ := aeval_surjective_iff_adjoin_range_eq_top.2 hx h
   simp only [poleBoundedEquiv, Equiv.coe_fn_mk, ofConv_toConv, loopOfHom_aeval,
     HahnSeries.map_aeval]
   refine congrArg (fun s ↦ aeval s f) (funext fun i ↦ HahnSeries.ext (funext fun n ↦ ?_))
