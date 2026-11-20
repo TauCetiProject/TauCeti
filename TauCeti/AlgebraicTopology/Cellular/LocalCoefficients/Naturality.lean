@@ -113,10 +113,8 @@ lemma twistedCellularDifferential_naturality_coefficient (η : L ⟶ K) (n : ℕ
       twistedCellularChainGroupCoefficientMap C η (n + 1) ≫ twistedCellularDifferential C K n := by
   have hδ := (skeletonTriple C n).twistedHomologyδ_naturality_coefficient
     (skeletonSystem C L (n + 1 + 1)) (skeletonSystemMap C η (n + 1 + 1)) (n + 1) n rfl
-  have hiso := ((skeletonPair C n).twistedHomologyCoefficientMap_comp _ _ _ n).symm.trans
-    ((congrArg (fun φ ↦ (skeletonPair C n).twistedHomologyCoefficientMap φ n)
-      (skeletonPairSubspaceSystemIso_hom_naturality C η (n + 1))).trans
-      ((skeletonPair C n).twistedHomologyCoefficientMap_comp _ _ _ n))
+  have hiso := (skeletonPair C n).twistedHomologyCoefficientMap_comp_eq_of_comp_eq
+    (skeletonPairSubspaceSystemIso_hom_naturality C η (n + 1)) n
   rw [twistedCellularDifferential_def, twistedCellularDifferential_def,
     twistedCellularChainGroupCoefficientMap_def, twistedCellularChainGroupCoefficientMap_def]
   -- The pairs of the triple `skeletonTriple C n` are the skeletal pairs only up to unfolding the
@@ -164,7 +162,7 @@ lemma twistedCellularChainGroupCoefficientMap_id (n : ℕ) :
 
 /-- The maps of cellular chain groups respect composition of morphisms of local coefficient
 systems. -/
-@[reassoc]
+@[simp, reassoc]
 lemma twistedCellularChainGroupCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) (n : ℕ) :
     twistedCellularChainGroupCoefficientMap C (η ≫ θ) n =
       twistedCellularChainGroupCoefficientMap C η n ≫
@@ -184,13 +182,13 @@ lemma twistedCellularChainComplexCoefficientMap_id :
 
 /-- The maps of cellular chain complexes respect composition of morphisms of local coefficient
 systems. -/
-@[reassoc]
+@[simp, reassoc]
 lemma twistedCellularChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J) :
     twistedCellularChainComplexCoefficientMap C (η ≫ θ) =
       twistedCellularChainComplexCoefficientMap C η ≫
         twistedCellularChainComplexCoefficientMap C θ := by
   ext n : 1
-  simp [twistedCellularChainGroupCoefficientMap_comp]
+  simp
 
 /-- The map `Hₙ(Xⁿ, X⁻¹; L) ⟶ Hₙ(Xⁿ, Xⁿ⁻¹; L)` is natural in the local coefficient system. -/
 @[reassoc]
@@ -257,10 +255,8 @@ lemma twistedHomologySkeletonBasePairToComplex_naturality_coefficient (η : L �
       twistedHomologySkeletonBasePairToComplex C L m k ≫
         (complexBasePair C).twistedHomologyCoefficientMap η k := by
   have hmap := TopPair.twistedHomologyMap_naturality (skeletonBasePairToComplex C m) L η k
-  have hcoef := ((skeletonBasePair C m).twistedHomologyCoefficientMap_comp _ _ _ k).symm.trans
-    ((congrArg (fun φ ↦ (skeletonBasePair C m).twistedHomologyCoefficientMap φ k)
-      (skeletonSystemMap_comp_eqToHom C η m)).trans
-      ((skeletonBasePair C m).twistedHomologyCoefficientMap_comp _ _ _ k))
+  have hcoef := (skeletonBasePair C m).twistedHomologyCoefficientMap_comp_eq_of_comp_eq
+    (skeletonSystemMap_comp_eqToHom C η m) k
   rw [twistedHomologySkeletonBasePairToComplex_def, twistedHomologySkeletonBasePairToComplex_def]
   -- The coefficient maps live on `skeletonBasePair C m`, whose ambient space is the `m`-skeleton
   -- only up to unfolding the pair constructor, so the composites are matched by terms.
