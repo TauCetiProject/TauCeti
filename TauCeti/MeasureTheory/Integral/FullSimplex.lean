@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Convex.FullSimplex
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.Jacobian
@@ -42,8 +41,6 @@ These are the scalar computations behind Stokes' theorem on the standard simplex
   the face `xⱼ = 0`, both read through the coordinates other than the `j`-th one.
 * `TauCeti.setIntegral_toLp_insertNth_eq`: the two readings of the face `∑ xᵢ = 1` give the same
   integral.
-* `TauCeti.tendsto_setIntegral_fullSimplex`: the integral of a function along the shrinking affine
-  simplices `y ↦ c + t • L y` tends to `vol Δᵖ • Φ c` as `t → 0`, for `Φ` continuous near `c`.
 -/
 
 public section
@@ -172,43 +169,5 @@ theorem setIntegral_toLp_insertNth_eq {p : ℕ} (j : Fin (p + 1))
     (isCompact_fullSimplex p).measure_lt_top.ne (image_simplexMapAmbient_perm _)
     fun z ↦ G (simplexMapAmbient (Fin.succAbove 0) z)
 
-section Affine
-
-open Filter Topology
-
-variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
-  [NormedSpace ℝ G] [CompleteSpace G] {p : ℕ}
-
-/-- **Integrals over shrinking affine simplices.** If `Φ` is continuous at the points of an open
-set `T ∋ c`, the integral over `Δᵖ` of `Φ` along the affine simplex `y ↦ c + t • L y` tends to
-`vol Δᵖ • Φ c` as `t → 0`. -/
-theorem tendsto_setIntegral_fullSimplex (L : EuclideanSpace ℝ (Fin p) →L[ℝ] E) {Φ : E → G}
-    {T : Set E} {c : E} (hT : IsOpen T) (hc : c ∈ T) (hΦ : ∀ z ∈ T, ContinuousAt Φ z) :
-    Tendsto (fun t : ℝ ↦ ∫ y in fullSimplex p, Φ (c + t • L y)) (𝓝 0)
-      (𝓝 (volume.real (fullSimplex p) • Φ c)) := by
-  -- For `t` near `0`, the affine simplex lies in `T`, where `Φ` is bounded by `‖Φ c‖ + 1`.
-  have hev : ∀ᶠ t in 𝓝 (0 : ℝ), ∀ y ∈ fullSimplex p,
-      c + t • L y ∈ {z | z ∈ T ∧ ‖Φ z‖ < ‖Φ c‖ + 1} :=
-    eventually_forall_fullSimplex_mem L (Filter.Eventually.and (hT.mem_nhds hc)
-      ((hΦ c hc).norm.eventually (gt_mem_nhds (lt_add_one _))))
-  -- Dominated convergence, with a constant bound on the compact simplex.
-  have hG : ContinuousAt (fun t : ℝ ↦ ∫ y in fullSimplex p, Φ (c + t • L y)) 0 := by
-    refine continuousAt_of_dominated (bound := fun _ ↦ ‖Φ c‖ + 1) ?_ ?_
-      (integrableOn_const (isCompact_fullSimplex p).measure_lt_top.ne) ?_
-    · filter_upwards [hev] with t ht
-      refine ContinuousOn.aestronglyMeasurable (fun y hy ↦ ?_)
-        (isClosed_fullSimplex p).measurableSet
-      exact ((hΦ _ (ht y hy).1).comp (f := fun y ↦ c + t • L y)
-        (by fun_prop : Continuous fun y ↦ c + t • L y).continuousAt).continuousWithinAt
-    · filter_upwards [hev] with t ht
-      exact ae_restrict_of_forall_mem (isClosed_fullSimplex p).measurableSet
-        fun y hy ↦ (ht y hy).2.le
-    · refine ae_of_all _ fun y ↦ ?_
-      have h0 : ContinuousAt Φ (c + (0 : ℝ) • L y) := by simpa using hΦ c hc
-      exact h0.comp (f := fun t : ℝ ↦ c + t • L y)
-        (by fun_prop : Continuous fun t : ℝ ↦ c + t • L y).continuousAt
-  simpa using hG.tendsto
-
-end Affine
 
 end TauCeti

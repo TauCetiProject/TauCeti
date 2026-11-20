@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothSingular.Chains
 public import Mathlib.Topology.Instances.AddCircle.Real
-import TauCeti.MeasureTheory.Integral.FullSimplex
+import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.MeasureTheory.Integral.ShrinkingAffineImage
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # Forms with integer integrals over all smooth simplices
@@ -26,14 +29,16 @@ The comparison modulo `ℤ` uses that a real number vanishes in `ℝ/ℤ` exactl
 
 ## Implementation notes
 
-The proof is local. Read `φ` in the extended chart at `x`, where it is a continuous form `Φ` on the
-model space, and take the affine simplices `y ↦ c + t • L y` in that chart, centred at the chart
-image `c` of `x`, for a linear map `L : ℝᵖ → E` and a small real `t`. The integral of `φ` over such
-a simplex is `tᵖ` times the integral of `Φ (c + t • L y)` on the vectors `L eᵢ` over `Δᵖ`, and the
-latter tends to `vol Δᵖ · Φ c (L e)` as `t → 0`. An integer of absolute value less than `1` is `0`,
-so if `Φ c (L e)` were nonzero, then for small nonzero `t` the integral would be an integer that is
-neither `0` nor of absolute value at least `1`. Hence `Φ c` vanishes on every tuple of vectors, and
-`Φ c = φ x` because the derivative of the inverse chart at `c` is the identity.
+The proof is local. Read `φ` in the extended chart at `x`, where it is the continuous coordinate
+expression `Φ = φ.inChartAt x` on the model space, and take the affine simplices
+`y ↦ c + t • L y` in that chart, centred at the chart image `c` of `x`, for a linear map
+`L : ℝᵖ → E` and a small real `t`. The integral of `φ` over such a simplex is `tᵖ` times
+the integral of `Φ (c + t • L y)` on the vectors `L eᵢ` over `Δᵖ`, and the latter tends to
+`vol Δᵖ · Φ c (L e)` as `t → 0` (`IsCompact.tendsto_setIntegral_add_smul`). An integer of
+absolute value less than `1` is `0`, so if `Φ c (L e)` were nonzero, then for small nonzero `t`
+the integral would be an integer that is neither `0` nor of absolute value at least `1`. Hence
+`Φ c` vanishes on every tuple of vectors, and `Φ c = φ x`
+(`TauCeti.RoughForm.inChartAt_extChartAt_self`).
 
 ## References
 
@@ -56,35 +61,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   [IsManifold I ∞ M] {p : ℕ}
 
 namespace RoughForm
-
-/-- A continuous form read in the extended chart at `x` is continuous at every point near which the
-chart target is a neighbourhood. -/
-private theorem continuousAt_mpullback_extChartAt_symm {φ : RoughForm I M ℝ p}
-    (hφ : IsSmoothForm I 0 φ) (x : M) {z : E} (hz : (extChartAt I x).target ∈ 𝓝 z) :
-    ContinuousAt (Y := E [⋀^Fin p]→L[ℝ] ℝ) (mpullback 𝓘(ℝ, E) I (extChartAt I x).symm φ) z := by
-  have hs : ContMDiffAt 𝓘(ℝ, E) I ∞ (extChartAt I x).symm z :=
-    (contMDiffOn_extChartAt_symm x).contMDiffAt hz
-  have h := (hφ.contMDiff ((extChartAt I x).symm z)).mpullback_form hs (by simp)
-  exact continuousWithinAt_univ _ _ |>.mp
-    (RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
-      h.contMDiffWithinAt).continuousWithinAt
-
-/-- At the chart image of an interior point `x`, the form read in the extended chart at `x` is the
-form at `x`: the derivative of the inverse chart there is the identity. -/
-private theorem mpullback_extChartAt_symm_apply_self {φ : RoughForm I M ℝ p} {x : M}
-    (hx : I.IsInteriorPoint x) (v : Fin p → E) :
-    mpullback 𝓘(ℝ, E) I (extChartAt I x).symm φ (extChartAt I x x) v = φ x v := by
-  have hd : mfderiv 𝓘(ℝ, E) I (extChartAt I x).symm (extChartAt I x x) =
-      ContinuousLinearMap.id ℝ E := by
-    rw [← mfderivWithin_of_mem_nhds (range_mem_nhds_isInteriorPoint hx)]
-    exact mfderivWithin_range_extChartAt_symm
-  refine (mpullback_apply _ φ _ v).trans ?_
-  rw [hd]
-  -- The base point `(extChartAt I x).symm (extChartAt I x x)` is `x`.
-  have hinv := extChartAt_to_inv (I := I) x
-  generalize (extChartAt I x).symm (extChartAt I x x) = y at hinv ⊢
-  subst hinv
-  rfl
 
 section Affine
 
@@ -114,9 +90,8 @@ form read in the chart, along the affine map, on the vectors `L eᵢ`. -/
 private theorem integral_affineChartSimplex (φ : RoughForm I M ℝ p)
     (hΔ : ∀ y ∈ fullSimplex p, extChartAt I x x + t • L y ∈ interior (extChartAt I x).target) :
     (affineChartSimplex x L t hΔ).integral φ =
-      t ^ p * ∫ y in fullSimplex p, (mpullback 𝓘(ℝ, E) I (extChartAt I x).symm φ
-        (extChartAt I x x + t • L y) : E [⋀^Fin p]→L[ℝ] ℝ)
-          fun i ↦ L (EuclideanSpace.single i 1) := by
+      t ^ p * ∫ y in fullSimplex p,
+        φ.inChartAt x (extChartAt I x x + t • L y) fun i ↦ L (EuclideanSpace.single i 1) := by
   rw [affineChartSimplex, SmoothSimplex.integral_ofContMDiffOn, ← integral_const_mul]
   refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun y hy ↦ ?_
   have hA : HasFDerivAt (fun y ↦ extChartAt I x x + t • L y) (t • L) y :=
@@ -124,10 +99,11 @@ private theorem integral_affineChartSimplex (φ : RoughForm I M ℝ p)
   have hu : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I x).symm (extChartAt I x x + t • L y) :=
     ((contMDiffOn_extChartAt_symm (n := ∞) x).contMDiffAt
       (mem_interior_iff_mem_nhds.mp (hΔ y hy))).mdifferentiableAt (by simp)
-  rw [mpullback_comp_apply_of_hasFDerivAt hA hu]
+  rw [mpullback_comp_apply_of_hasFDerivAt hA hu,
+    mpullback_extChartAt_symm_eq_inChartAt φ x (hΔ y hy)]
   refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
-  refine ((mpullback 𝓘(ℝ, E) I (extChartAt I x).symm φ (extChartAt I x x + t • L y) :
-    E [⋀^Fin p]→L[ℝ] ℝ).map_smul_univ (fun _ ↦ t) fun i ↦ L (EuclideanSpace.single i 1)).trans ?_
+  refine ((φ.inChartAt x (extChartAt I x x + t • L y)).map_smul_univ (fun _ ↦ t)
+    fun i ↦ L (EuclideanSpace.single i 1)).trans ?_
   simp [Finset.prod_const]
 
 end Affine
@@ -135,23 +111,23 @@ end Affine
 /-- The key local step: the form read in the chart at an interior point `x` vanishes at the chart
 image of `x` on every tuple `L eᵢ`, if the integral of the form over every smooth simplex is an
 integer. -/
-private theorem mpullback_extChartAt_symm_apply_eq_zero (hp : p ≠ 0) {φ : RoughForm I M ℝ p}
+private theorem inChartAt_extChartAt_self_apply_eq_zero (hp : p ≠ 0) {φ : RoughForm I M ℝ p}
     (hφ : IsSmoothForm I 0 φ) (h : ∀ σ : SmoothSimplex I M p, ∃ n : ℤ, σ.integral φ = n) {x : M}
     (hx : I.IsInteriorPoint x) (L : EuclideanSpace ℝ (Fin p) →L[ℝ] E) :
-    (mpullback 𝓘(ℝ, E) I (extChartAt I x).symm φ (extChartAt I x x) : E [⋀^Fin p]→L[ℝ] ℝ)
-      (fun i ↦ L (EuclideanSpace.single i 1)) = 0 := by
+    φ.inChartAt x (extChartAt I x x) (fun i ↦ L (EuclideanSpace.single i 1)) = 0 := by
   set c := extChartAt I x x
   set T := interior (extChartAt I x).target
-  set Φ : E → E [⋀^Fin p]→L[ℝ] ℝ := mpullback 𝓘(ℝ, E) I (extChartAt I x).symm φ
+  set Φ : E → E [⋀^Fin p]→L[ℝ] ℝ := φ.inChartAt x
   set w : Fin p → E := fun i ↦ L (EuclideanSpace.single i 1)
   set G : ℝ → ℝ := fun t ↦ ∫ y in fullSimplex p, Φ (c + t • L y) w
   have hcT : c ∈ T := I.isInteriorPoint_iff.mp hx
   have hw : Continuous fun A : E [⋀^Fin p]→L[ℝ] ℝ ↦ A w :=
     (ContinuousAlternatingMap.apply ℝ E ℝ w).continuous
   have hlim : Tendsto G (𝓝 0) (𝓝 (volume.real (fullSimplex p) * Φ c w)) := by
-    simpa only [smul_eq_mul] using tendsto_setIntegral_fullSimplex L isOpen_interior hcT
-      (Φ := fun z ↦ Φ z w) fun z hz ↦ hw.continuousAt.comp
-        (continuousAt_mpullback_extChartAt_symm hφ x (mem_interior_iff_mem_nhds.mp hz))
+    simpa only [smul_eq_mul] using (isCompact_fullSimplex p).tendsto_setIntegral_add_smul
+      (isClosed_fullSimplex p).measurableSet L.continuous (Φ := fun z ↦ Φ z w)
+      (Filter.mem_of_superset (isOpen_interior.mem_nhds hcT) fun z hz ↦ hw.continuousAt.comp
+        ((hφ.continuousOn_inChartAt x).continuousAt (mem_interior_iff_mem_nhds.mp hz)))
   have hvol : 0 < volume.real (fullSimplex p) :=
     ENNReal.toReal_pos
       (Measure.measure_pos_of_nonempty_interior _ (nonempty_interior_fullSimplex p)).ne'
@@ -164,7 +140,8 @@ private theorem mpullback_extChartAt_symm_apply_eq_zero (hp : p ≠ 0) {φ : Rou
       (continuous_abs.tendsto _).comp (((continuous_pow p).tendsto 0).mul hlim)
   obtain ⟨t, ht0, hΔ, hGt, hlt⟩ :=
     ((eventually_mem_nhdsWithin (s := {(0 : ℝ)}ᶜ)).and
-      (((eventually_forall_fullSimplex_mem L (isOpen_interior.mem_nhds hcT)).and
+      ((((isCompact_fullSimplex p).eventually_forall_add_smul_mem L.continuous
+        (isOpen_interior.mem_nhds hcT)).and
         ((hlim.eventually_ne (mul_ne_zero hvol.ne' hne)).and
           (hsmall.eventually (gt_mem_nhds one_pos)))).filter_mono nhdsWithin_le_nhds)).exists
   obtain ⟨n, hn⟩ := h (affineChartSimplex x L t hΔ)
@@ -190,16 +167,10 @@ theorem eq_zero_of_forall_integral_eq_intCast [BoundarylessManifold I M] (hp : p
     funext i
     have h := (EuclideanSpace.basisFun (Fin p) ℝ).toBasis.constr_basis ℝ v i
     rwa [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply] at h
-  rw [← mpullback_extChartAt_symm_apply_self hx v, ← hL]
-  exact mpullback_extChartAt_symm_apply_eq_zero hp hφ h hx L
+  rw [← inChartAt_extChartAt_self φ x, ← hL]
+  exact inChartAt_extChartAt_self_apply_eq_zero hp hφ h hx L
 
 end RoughForm
-
-/-- A real number is zero in `ℝ/ℤ` exactly when it is an integer. -/
-theorem _root_.UnitAddCircle.coe_eq_zero_iff {a : ℝ} :
-    (a : UnitAddCircle) = 0 ↔ ∃ n : ℤ, a = n := by
-  rw [AddCircle.coe_eq_zero_iff]
-  simp only [zsmul_one, eq_comm]
 
 section Uniqueness
 

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.Cycles
 public import TauCeti.Geometry.Manifold.SmoothSingular.IntegerIntegrals
 public import TauCeti.Geometry.Manifold.SmoothSingular.Stokes
 public import TauCeti.Geometry.Manifold.DeRham.Basic
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # Differential characters
@@ -40,7 +41,8 @@ the characters of curvature zero are those vanishing on boundaries
 precomposition with the induced map on cycles, functorially, and curvatures by pullback of forms
 (`TauCeti.differentialCharacters.pullback`, `TauCeti.differentialCharacters.pullback_id`,
 `TauCeti.differentialCharacters.pullback_comp`,
-`TauCeti.differentialCharacters.curvature_pullback`).
+`TauCeti.differentialCharacters.curvature_pullback`); the character of a form pulls back to the
+character of the pulled-back form (`TauCeti.differentialCharacters.pullback_ofForm`).
 
 Cycles and chains are the integral chains of the smooth singular simplicial set
 `TauCeti.smoothSingularSubcomplex` (`TauCeti.smoothIntCycles`, `TauCeti.smoothIntBoundary`), with
@@ -79,13 +81,11 @@ def differentialCharacters (k : ℕ) : AddSubgroup (smoothIntCycles I M k →+ U
   add_mem' := by
     rintro χ ψ ⟨φ, hφ⟩ ⟨θ, hθ⟩
     refine ⟨φ + θ, fun c ↦ ?_⟩
-    rw [AddMonoidHom.add_apply, hφ, hθ, SmoothForm.integrationCochain_add, ModuleCat.hom_add,
-      LinearMap.add_apply, AddCircle.coe_add]
+    rw [SmoothForm.integrationCochain_add]
+    simp [hφ, hθ]
   neg_mem' := by
     rintro χ ⟨φ, hφ⟩
-    refine ⟨-φ, fun c ↦ ?_⟩
-    rw [AddMonoidHom.neg_apply, hφ, Submodule.coe_neg, integrationCochain_neg,
-      ModuleCat.hom_neg, LinearMap.neg_apply, AddCircle.coe_neg]
+    exact ⟨-φ, fun c ↦ by simp [hφ]⟩
 
 variable {I M} in
 theorem mem_differentialCharacters_iff {k : ℕ} {χ : smoothIntCycles I M k →+ UnitAddCircle} :
@@ -116,8 +116,8 @@ def curvature : differentialCharacters I M k →+ SmoothForm I M ℝ (k + 1) whe
     have hψ := (mem_differentialCharacters_iff.mp ψ.2).choose_spec
     have hχψ := (mem_differentialCharacters_iff.mp (χ + ψ).2).choose_spec
     refine SmoothForm.eq_of_forall_coe_integrationCochain_eq k.succ_ne_zero fun c ↦ ?_
-    rw [← hχψ c, SmoothForm.integrationCochain_add, ModuleCat.hom_add, LinearMap.add_apply,
-      AddCircle.coe_add, ← hχ c, ← hψ c, AddSubgroup.coe_add, AddMonoidHom.add_apply]
+    rw [← hχψ c, SmoothForm.integrationCochain_add]
+    simp [hχ c, hψ c]
 
 /-- The defining property of the curvature: on the boundary of a smooth singular integral
 `(k + 1)`-chain `c`, a differential character is the integral of its curvature over `c` modulo
@@ -162,8 +162,8 @@ theorem curvature_mem_closedForms (χ : differentialCharacters I M k) :
   -- integer by integral periods.
   let c := ((smoothSingularSubcomplex I M : SSet).ιChainComplex (R := ModuleCat.of ℤ ℤ) σ).hom 1
   have h := exists_integrationCochain_curvature_eq_intCast χ (smoothIntBoundary I M (k + 1) c).2
-  rwa [coe_smoothIntBoundary, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-    d_comp_integrationCochain ((curvature χ).isSmoothForm.of_le (by simp)),
+  rwa [coe_smoothIntBoundary,
+    integrationCochain_d_apply ((curvature χ).isSmoothForm.of_le (by simp)),
     integrationCochain_ιChainComplex, one_smul] at h
 
 /-- **Flat characters.** A differential character has curvature zero exactly when it vanishes on
@@ -190,8 +190,7 @@ def ofForm : SmoothForm I M ℝ k →+ differentialCharacters I M k where
       simp only [AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe,
         AddSubgroup.coe_subtype, coe_smoothIntBoundary, mextDerivₗ_apply,
         QuotientAddGroup.mk'_apply]
-      rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-        d_comp_integrationCochain (η.isSmoothForm.of_le (by simp))]⟩
+      rw [integrationCochain_d_apply (η.isSmoothForm.of_le (by simp))]⟩
   map_zero' := by
     ext z
     simp
@@ -212,8 +211,8 @@ theorem ofForm_apply (η : SmoothForm I M ℝ k) (z : smoothIntCycles I M k) :
 theorem curvature_ofForm [IsManifold I ∞ M] [BoundarylessManifold I M]
     (η : SmoothForm I M ℝ k) : curvature (ofForm η) = mextDerivₗ I k η :=
   curvature_eq_of_forall fun c ↦ by
-    rw [ofForm_apply, coe_smoothIntBoundary, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      d_comp_integrationCochain (η.isSmoothForm.of_le (by simp)), mextDerivₗ_apply]
+    rw [ofForm_apply, coe_smoothIntBoundary,
+      integrationCochain_d_apply (η.isSmoothForm.of_le (by simp)), mextDerivₗ_apply]
 
 end OfForm
 
@@ -262,6 +261,14 @@ theorem pullback_comp {E'' H'' : Type*} [NormedAddCommGroup E''] [NormedSpace �
   refine AddMonoidHom.ext fun χ ↦ Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
   rw [pullback_apply, smoothIntCyclesMap_comp hg hf, AddMonoidHom.comp_apply,
     AddMonoidHom.comp_apply, pullback_apply, pullback_apply]
+
+/-- The pullback of the character of a form is the character of the pulled-back form. -/
+@[simp]
+theorem pullback_ofForm [IsManifold I 2 M] [IsManifold J 2 N] (hf : ContMDiff I J ∞ f)
+    (η : SmoothForm J N ℝ k) : pullback hf (ofForm η) = ofForm (SmoothForm.mpullback f hf η) := by
+  refine Subtype.ext (AddMonoidHom.ext fun z ↦ ?_)
+  rw [pullback_apply, ofForm_apply, ofForm_apply, coe_smoothIntCyclesMap, SmoothForm.coe_mpullback,
+    integrationCochain_chainComplexMap_apply hf]
 
 /-- The curvature of the pullback of a character is the pullback of its curvature. -/
 @[simp]

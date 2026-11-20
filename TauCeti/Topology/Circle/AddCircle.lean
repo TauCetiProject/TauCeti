@@ -19,6 +19,7 @@ carries `1` back to `0`; more generally it carries `exp (2πix / T)` back to the
 In the other direction, `AddCircle.toCircle` sends the class of `t` to
 `cos (2πt / T) + i sin (2πt / T)`, and the only points it sends to the real points `±1` of `Circle`
 are `0` and the half period `T / 2`.
+A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an integer.
 Applied to both factors, it identifies the torus `S¹ × S¹` with the standard torus
 `UnitAddTorus (Fin 2) = ℝ² / ℤ²`. Applied coordinatewise, it identifies the standard torus
 `UnitAddTorus ι` with the product of circles `ι → Circle` as topological groups.
@@ -50,6 +51,8 @@ at some small time, every point forward by a small continuous amount, and the sh
   small nonzero time.
 * `Function.Injective.secant_ne_zero` — a short forward secant of an injective circle map is nonzero
   when its defining function has no zeros off the diagonal.
+* `UnitAddCircle.coe_eq_zero_iff` — a real number vanishes in `ℝ/ℤ` exactly when it is an
+  integer.
 * `ContinuousMap.exists_pos_forall_secant_mem` — the short secants `(q τ, q (τ + w))` of a loop
   `q` lie in any given open neighborhood of the diagonal.
 * `TauCeti.circleProdHomeomorphUnitAddTorus_apply`,
@@ -181,6 +184,12 @@ theorem exists_forall_eq_add_pos (ψ : ℝ × AddCircle T → AddCircle T)
 end Displacement
 
 end AddCircle
+
+/-- A real number is zero in `ℝ/ℤ` exactly when it is an integer. -/
+theorem UnitAddCircle.coe_eq_zero_iff {a : ℝ} :
+    (a : UnitAddCircle) = 0 ↔ ∃ n : ℤ, a = n := by
+  rw [AddCircle.coe_eq_zero_iff]
+  simp only [zsmul_one, eq_comm]
 
 namespace ContinuousMap
 

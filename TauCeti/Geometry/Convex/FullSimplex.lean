@@ -38,8 +38,7 @@ map does. The simplex is a compact convex set with nonempty interior, so derivat
 unique at every point (`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for
 derivatives and integrals of forms. The face maps are injective, hence closed embeddings of the
 ambient Euclidean spaces (`TauCeti.isClosedEmbedding_simplexMapAmbient_succAbove`), so pulling back
-along them preserves compact supports. Small affine images `y ↦ c + t • L y` of the simplex lie in
-any given neighbourhood of `c` (`TauCeti.eventually_forall_fullSimplex_mem`).
+along them preserves compact supports.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -444,25 +443,5 @@ theorem isCompact_inter_preimage_simplexMapAmbient_succAbove (i : Fin (p + 2))
   simpa using (isClosedEmbedding_simplexMapAmbient_succAbove i).isCompact_preimage hK
 
 end Faces
-
-section Affine
-
-open Filter Topology
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℕ}
-
-/-- For `t` near `0`, the affine map `y ↦ c + t • L y` sends `Δᵖ` into a given neighbourhood
-of `c`. -/
-theorem eventually_forall_fullSimplex_mem (L : EuclideanSpace ℝ (Fin p) →L[ℝ] E) {c : E}
-    {U : Set E} (hU : U ∈ 𝓝 c) :
-    ∀ᶠ t in 𝓝 (0 : ℝ), ∀ y ∈ fullSimplex p, c + t • L y ∈ U := by
-  refine (isCompact_fullSimplex p).eventually_forall_of_forall_eventually fun y _ ↦ ?_
-  have hcont : Continuous fun q : ℝ × EuclideanSpace ℝ (Fin p) ↦ c + q.1 • L q.2 := by fun_prop
-  have hlim : Tendsto (fun q : ℝ × EuclideanSpace ℝ (Fin p) ↦ c + q.1 • L q.2) (𝓝 (0, y))
-      (𝓝 c) := by
-    simpa using hcont.tendsto (0, y)
-  exact hlim.eventually hU
-
-end Affine
 
 end TauCeti
