@@ -141,8 +141,7 @@ theorem bassSerreTree_isHyperbolic_vertexHom_mul_vertexHom_iff {b c : Γ.V} (p :
   rw [GTree.isHyperbolic_mul_iff_of_smul_src_eq_of_smul_tgt_eq (d := bassSerreDart p e)
     (by rw [src_bassSerreDart, ← mem_stabilizer_iff, stabilizer_bassSerreVertex]; exact ⟨g, rfl⟩)
     (by rw [tgt_bassSerreDart, ← mem_stabilizer_iff, stabilizer_bassSerreVertex]; exact ⟨h, rfl⟩),
-    Ne, Ne, ← mem_stabilizer_iff, ← mem_stabilizer_iff, vertexHom_mem_stabilizer_bassSerreDart_iff,
-    vertexHom_cons_mem_stabilizer_bassSerreDart_iff]
+    Ne, Ne, vertexHom_smul_bassSerreDart_eq_self_iff, vertexHom_cons_smul_bassSerreDart_eq_self_iff]
 
 /-! ### Amalgamated products -/
 

@@ -63,8 +63,8 @@ connected, the quotient graph is `Γ`.
 * `TauCeti.GraphOfGroups.stabilizer_bassSerreVertex`,
   `TauCeti.GraphOfGroups.stabilizer_bassSerreDart`: the vertex and dart stabilizers are the
   conjugates of the vertex groups and of the edge group images.
-* `TauCeti.GraphOfGroups.vertexHom_mem_stabilizer_bassSerreDart_iff`,
-  `TauCeti.GraphOfGroups.vertexHom_cons_mem_stabilizer_bassSerreDart_iff`: which elements of the
+* `TauCeti.GraphOfGroups.vertexHom_smul_bassSerreDart_eq_self_iff`,
+  `TauCeti.GraphOfGroups.vertexHom_cons_smul_bassSerreDart_eq_self_iff`: which elements of the
   stabilizers of the endpoints of a dart fix the dart.
 * `TauCeti.GraphOfGroups.instUniqueVBassSerreTreeOfIsEmptyE`: over a graph without edges, the
   Bass–Serre tree has exactly one vertex.
@@ -601,20 +601,23 @@ theorem stabilizer_bassSerreDart {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e
 
 /-- The element `p g p⁻¹` with `g ∈ A_b` fixes the dart `p α_e(A_e)` exactly when
 `g ∈ α_e(A_e)`. -/
-theorem vertexHom_mem_stabilizer_bassSerreDart_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
-    (g : 𝔸.vertexGroup b) : π₁.vertexHom p g ∈ stabilizer (π₁ 𝔸 a) (bassSerreDart p e) ↔
-      g ∈ (𝔸.αArrow e).range := by
-  rw [stabilizer_bassSerreDart, Subgroup.mem_map_iff_mem (π₁.vertexHom_injective p)]
+@[simp]
+theorem vertexHom_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩) (e : b ⟶ c)
+    (g : 𝔸.vertexGroup b) :
+    π₁.vertexHom p g • bassSerreDart p e = bassSerreDart p e ↔ g ∈ (𝔸.αArrow e).range := by
+  rw [← mem_stabilizer_iff, stabilizer_bassSerreDart,
+    Subgroup.mem_map_iff_mem (π₁.vertexHom_injective p)]
 
 /-- The element `(p e) h (p e)⁻¹` with `h ∈ A_c` fixes the dart `p α_e(A_e)` exactly when
 `h ∈ ω_e(A_e)`: it fixes the reverse dart `(p e) α_{rev e}(A_e)`, and
 `α_{rev e}(A_e) = ω_e(A_e)`. -/
-theorem vertexHom_cons_mem_stabilizer_bassSerreDart_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
+@[simp]
+theorem vertexHom_cons_smul_bassSerreDart_eq_self_iff {b c : Γ.V} (p : 𝔸.Path ⟨a⟩ ⟨b⟩)
     (e : b ⟶ c) (h : 𝔸.vertexGroup c) :
-    π₁.vertexHom (p.cons (.dart e)) h ∈ stabilizer (π₁ 𝔸 a) (bassSerreDart p e) ↔
+    π₁.vertexHom (p.cons (.dart e)) h • bassSerreDart p e = bassSerreDart p e ↔
       h ∈ (𝔸.ωArrow e).range := by
-  rw [← GTree.stabilizer_rev, rev_bassSerreDart, stabilizer_bassSerreDart, range_αArrow_reverse,
-    Subgroup.mem_map_iff_mem (π₁.vertexHom_injective _)]
+  rw [← mem_stabilizer_iff, ← GTree.stabilizer_rev, rev_bassSerreDart, stabilizer_bassSerreDart,
+    range_αArrow_reverse, Subgroup.mem_map_iff_mem (π₁.vertexHom_injective _)]
 
 /-- `π₁(𝔸, a)` acts transitively on the vertices `p A_b` over a vertex `b` of `Γ`: the class of
 `q p⁻¹` carries `p A_b` to `q A_b`. -/
