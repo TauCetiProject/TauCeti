@@ -250,15 +250,10 @@ private def adjointSlice (a : Symbol n V W m) (v : 𝓢(CoordinateSpace n, W))
 /-- The fixed-frequency adjoint slice is continuous. -/
 private theorem continuous_adjointSlice (a : Symbol n V W m) (v : 𝓢(CoordinateSpace n, W))
     (ζ : CoordinateSpace n) : Continuous (adjointSlice a v ζ) := by
-  have hc : Continuous fun y ↦ a.coefficient (y, (2 * π) • ζ) :=
-    a.contDiff_coefficient.continuous.comp (continuous_id.prodMk continuous_const)
-  have h := (ContinuousLinearMap.adjointRealCLM.continuous.comp hc).clm_apply v.continuous
-  have he : (fun x ↦ (ContinuousLinearMap.adjointRealCLM (a.coefficient (x, (2 * π) • ζ)))
-      (v x)) = adjointSlice a v ζ := by
-    funext x
-    exact congrArg (fun T : W →L[ℂ] V ↦ T (v x))
-      (ContinuousLinearMap.adjointRealCLM_apply (a.coefficient (x, (2 * π) • ζ)))
-  exact he ▸ h
+  have hc : ContDiff ℝ ∞ (fun y ↦ a.coefficient (y, (2 * π) • ζ)) :=
+    a.contDiff_coefficient.comp (contDiff_id.prodMk contDiff_const)
+  unfold adjointSlice
+  exact hc.clm_adjoint.continuous.clm_apply v.continuous
 
 /-- Compact output tests make the fixed-frequency adjoint slice compactly supported. -/
 private theorem compact_adjointSlice (a : Symbol n V W m) (v : 𝓢(CoordinateSpace n, W))

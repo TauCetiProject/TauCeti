@@ -129,10 +129,10 @@ Lagrangian is hyperregular. -/
 @[simp]
 theorem isHyperregularLagrangian_sub_comp_proj_iff {V : M → 𝕜} :
     IsHyperregularLagrangian (fun v ↦ L v - V v.proj) ↔ IsHyperregularLagrangian L := by
-  refine ⟨fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.1 h.1, ?_⟩,
-    fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.2 h.1, ?_⟩⟩
-  · simpa only [legendreMap_sub_comp_proj] using h.2
-  · simpa only [legendreMap_sub_comp_proj] using h.2
+  refine ⟨fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.1 h.isRegularLagrangian, ?_⟩,
+    fun h ↦ ⟨isRegularLagrangian_sub_comp_proj_iff.2 h.isRegularLagrangian, ?_⟩⟩
+  · simpa only [legendreMap_sub_comp_proj] using h.bijective_legendreMap
+  · simpa only [legendreMap_sub_comp_proj] using h.bijective_legendreMap
 
 /-- Subtracting a potential `V` from a hyperregular Lagrangian adds `V` to its Hamiltonian. -/
 theorem IsHyperregularLagrangian.hamiltonian_sub_comp_proj (h : IsHyperregularLagrangian L)
@@ -360,13 +360,13 @@ momenta: for symmetric `g` and a covector `p` at `x`, `H(p) = ½ p(g_x⁻¹ p) +
 theorem IsHyperregularLagrangian.hamiltonian_mechanicalLagrangian
     (hg : ∀ x v w, g x v w = g x w v) {V : M → ℝ}
     (h : IsHyperregularLagrangian (mechanicalLagrangian g V)) (p : CotangentBundle I M) :
-    h.hamiltonian p = 2⁻¹ * p.2 ((g p.proj).inverse p.2) + V p.proj := by
+    h.hamiltonian p = 2⁻¹ * p.snd ((g p.proj).inverse p.snd) + V p.proj := by
   have hinv := (isHyperregularLagrangian_mechanicalLagrangian_iff hg V).1 h p.proj
   -- The covector `p` is the Legendre transform of the velocity `g_x⁻¹ p` at `x`.
   have hp : legendreMap (mechanicalLagrangian g V)
-      (TotalSpace.mk' E p.proj ((g p.proj).inverse p.2)) = p :=
+      (TotalSpace.mk' E p.proj ((g p.proj).inverse p.snd)) = p :=
     (legendreMap_mechanicalLagrangian hg V _).trans
-      (TotalSpace.ext rfl (heq_of_eq (hinv.self_apply_inverse p.2)))
+      (TotalSpace.ext rfl (heq_of_eq (hinv.self_apply_inverse p.snd)))
   conv_lhs => rw [← hp, h.hamiltonian_legendreMap, lagrangianEnergy_mechanicalLagrangian]
   dsimp only
   rw [hinv.self_apply_inverse]

@@ -486,7 +486,7 @@ private theorem integrable_cutoffQuantizeIntegrand (b : Symbol n V W m)
     χ'.integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) |m|
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (𝐞 ⟪q.2, x⟫ : ℂ) •
       𝓕 χ (q.2 - q.1) • b.coefficient (x, (2 * π) • q.1) (𝓕 u q.2) := by
-    refine (continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop))).smul
+    refine (continuous_subtypeVal.comp (Real.continuous_fourierChar.comp (by fun_prop))).smul
       (((𝓕 χ).continuous.comp (by fun_prop)).smul
         ((b.contDiff_coefficient.continuous.comp (by fun_prop)).clm_apply
           ((𝓕 u).continuous.comp continuous_snd)))
@@ -513,7 +513,7 @@ private theorem integrable_cutoffConvolutionIntegrand (u : 𝓢(CoordinateSpace 
     Integrable fun η : CoordinateSpace n ↦ ((𝐞 (-⟪x, ζ - η⟫) : ℂ) * 𝓕 χ (η - ζ)) • 𝓕 u η := by
   refine (((𝓕 u).integrable (μ := volume)).norm.const_mul
     (SchwartzMap.seminorm ℂ 0 0 (𝓕 χ))).mono' ?_ (.of_forall fun η ↦ ?_)
-  · exact (((continuous_subtype_val.comp (Real.continuous_fourierChar.comp
+  · exact (((continuous_subtypeVal.comp (Real.continuous_fourierChar.comp
       (by fun_prop))).mul ((𝓕 χ).continuous.comp (by fun_prop))).smul
         (𝓕 u).continuous).aestronglyMeasurable
   · rw [norm_smul, norm_mul, Circle.norm_coe, one_mul]

@@ -71,10 +71,10 @@ private theorem inChartAt_volumeForm_prod_apply (hn : finrank ℝ E = 2 * n)
     (hm : finrank ℝ F = 2 * m) (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N) {p : M × N}
     {z : E × F} (hz : z ∈ (extChartAt (I.prod J) p).target) (b₁ : Basis (Fin (2 * n)) ℝ E)
     (b₂ : Basis (Fin (2 * m)) ℝ F) :
-    RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).1 p z
+    RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).val p z
         ((b₁.prod b₂).reindex (finSumFinEquiv.trans (finCongr (Nat.mul_add 2 n m).symm))) =
-      RoughForm.inChartAt (σ.volumeForm n).1 p.1 z.1 b₁ *
-        RoughForm.inChartAt (τ.volumeForm m).1 p.2 z.2 b₂ := by
+      RoughForm.inChartAt (σ.volumeForm n).val p.1 z.1 b₁ *
+        RoughForm.inChartAt (τ.volumeForm m).val p.2 z.2 b₂ := by
   -- The inverse product chart differentiates componentwise.
   have hfam : (fun r ↦ mfderivWithin 𝓘(ℝ, E × F) (I.prod J) (extChartAt (I.prod J) p).symm
       (range (I.prod J)) z (Fin.append (α := E × F) (fun i ↦ (b₁ i, 0)) (fun j ↦ (0, b₂ j))
@@ -120,14 +120,14 @@ private theorem setLIntegral_inChartAt_volumeForm_prod [mEF : MeasurableSpace (E
     {S₁ : Set E} {S₂ : Set F} (hS₁ : MeasurableSet S₁) (hS₂ : MeasurableSet S₂)
     (hS₁x : S₁ ⊆ (extChartAt I x).target) (hS₂y : S₂ ⊆ (extChartAt J y).target) :
     ∫⁻ z in S₁ ×ˢ S₂,
-        ENNReal.ofReal |RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).1 (x, y) z
+        ENNReal.ofReal |RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).val (x, y) z
           (finBasisOfFinrankEq ℝ (E × F) (Fact.out : finrank ℝ (E × F) = 2 * (n + m)))|
         ∂(finBasisOfFinrankEq ℝ (E × F) (Fact.out : finrank ℝ (E × F) = 2 * (n + m))).addHaar =
       (∫⁻ z in S₁, ENNReal.ofReal
-          |RoughForm.inChartAt (σ.volumeForm n).1 x z (finBasisOfFinrankEq ℝ E hn.out)|
+          |RoughForm.inChartAt (σ.volumeForm n).val x z (finBasisOfFinrankEq ℝ E hn.out)|
           ∂(finBasisOfFinrankEq ℝ E hn.out).addHaar) *
         ∫⁻ z in S₂, ENNReal.ofReal
-          |RoughForm.inChartAt (τ.volumeForm m).1 y z (finBasisOfFinrankEq ℝ F hm.out)|
+          |RoughForm.inChartAt (τ.volumeForm m).val y z (finBasisOfFinrankEq ℝ F hm.out)|
           ∂(finBasisOfFinrankEq ℝ F hm.out).addHaar := by
   obtain rfl : mEF = Prod.instMeasurableSpace :=
     (BorelSpace.measurable_eq (α := E × F)).trans (Prod.borelSpace.measurable_eq (α := E × F)).symm
@@ -137,19 +137,19 @@ private theorem setLIntegral_inChartAt_volumeForm_prod [mEF : MeasurableSpace (E
   -- The coefficients of the factors are continuous on the chart targets.
   have hσ := ((σ.volumeForm n).isSmoothForm.of_le bot_le).continuousOn_inChartAt x
   have hτ := ((τ.volumeForm m).isSmoothForm.of_le bot_le).continuousOn_inChartAt y
-  have hf : AEMeasurable (fun z ↦ ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).1 x z b₁|)
+  have hf : AEMeasurable (fun z ↦ ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).val x z b₁|)
       (b₁.addHaar.restrict S₁) :=
     ((ENNReal.continuous_ofReal.comp continuous_abs).comp_continuousOn
       ((continuous_eval_const _).comp_continuousOn (hσ.mono hS₁x))).aemeasurable hS₁
-  have hg : AEMeasurable (fun z ↦ ENNReal.ofReal |RoughForm.inChartAt (τ.volumeForm m).1 y z b₂|)
+  have hg : AEMeasurable (fun z ↦ ENNReal.ofReal |RoughForm.inChartAt (τ.volumeForm m).val y z b₂|)
       (b₂.addHaar.restrict S₂) :=
     ((ENNReal.continuous_ofReal.comp continuous_abs).comp_continuousOn
       ((continuous_eval_const _).comp_continuousOn (hτ.mono hS₂y))).aemeasurable hS₂
   -- On the rectangle, the coefficient in the concatenated basis is a product.
   have hcoeff : ∀ z ∈ S₁ ×ˢ S₂,
-      ENNReal.ofReal |RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).1 (x, y) z b| =
-        ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).1 x z.1 b₁| *
-          ENNReal.ofReal |RoughForm.inChartAt (τ.volumeForm m).1 y z.2 b₂| := by
+      ENNReal.ofReal |RoughForm.inChartAt ((prod σ τ).volumeForm (n + m)).val (x, y) z b| =
+        ENNReal.ofReal |RoughForm.inChartAt (σ.volumeForm n).val x z.1 b₁| *
+          ENNReal.ofReal |RoughForm.inChartAt (τ.volumeForm m).val y z.2 b₂| := by
     intro z hz
     have hz' : z ∈ (extChartAt (I.prod J) (x, y)).target := by
       rw [extChartAt_prod_target]

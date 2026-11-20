@@ -109,7 +109,7 @@ theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_iUnion_negativeDis
       (∀ (j : {j // ∀ s, f (i j s) = c}) s,
         Θ j (zeroSection (P j) (fun s ↦ (i j).NormalSpace s hn) s) = i j s) ∧
       (∀ j : {j // ∀ s, f (i j s) = c}, ∀ x ∈ (Θ j).source, f (Θ j x) =
-        c + 2⁻¹ * (h.isNondegenerateCriticalSubmanifold j).normalHessian hn x.proj x.2 x.2) ∧
+        c + 2⁻¹ * (h.isNondegenerateCriticalSubmanifold j).normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀,
         (∀ j : {j // ∀ s, f (i j s) = c},
           (h.isNondegenerateCriticalSubmanifold j).negativeDiscBundle hn (P j)

@@ -130,7 +130,8 @@ noncomputable def compressionHomologyBicone (a b : ℤ) (r : ZMod n) :
   ι_π i j := by
     split_ifs with h
     · subst h
-      simpa using ιCompressionHomology_πCompressionHomology n K r i (Finset.mem_filter.1 i.2).2
+      simpa using ιCompressionHomology_πCompressionHomology n K r i
+          (Finset.mem_filter.1 i.property).2
     · exact ιCompressionHomology_πCompressionHomology_of_ne n K r fun h' ↦ h (Subtype.ext h')
 
 end HasZeroMorphisms

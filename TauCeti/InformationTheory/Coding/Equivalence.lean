@@ -476,7 +476,7 @@ theorem apply_mem_of_mem_monomialAut {f : (ι → R) ≃ₗ[R] (ι → R)} (hf :
 
 /-- A monomial automorphism of a code permutes its codewords. -/
 instance instSMulMonomialAut : SMul (monomialAut C) C where
-  smul f c := ⟨(f : (ι → R) ≃ₗ[R] (ι → R)) c, apply_mem_of_mem_monomialAut f.2 c.2⟩
+  smul f c := ⟨(f : (ι → R) ≃ₗ[R] (ι → R)) c, apply_mem_of_mem_monomialAut f.property c.property⟩
 
 @[simp]
 theorem coe_smul_monomialAut (f : monomialAut C) (c : C) :
@@ -504,7 +504,7 @@ instance instSMulCommClassMonomialAut' : SMulCommClass (monomialAut C) R C :=
 theorem hammingNorm_monomialAut_apply [Fintype ι] [DecidableEq R]
     (f : monomialAut C) (x : ι → R) :
     hammingNorm ((f : (ι → R) ≃ₗ[R] (ι → R)) x) = hammingNorm x :=
-  hammingNorm_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.2) x
+  hammingNorm_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.property) x
 
 /-- A monomial automorphism of a code preserves Hamming distance. -/
 @[simp]
@@ -512,7 +512,7 @@ theorem hammingDist_monomialAut_apply [Fintype ι] [DecidableEq R]
     (f : monomialAut C) (x y : ι → R) :
     hammingDist ((f : (ι → R) ≃ₗ[R] (ι → R)) x) ((f : (ι → R) ≃ₗ[R] (ι → R)) y) =
       hammingDist x y :=
-  hammingDist_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.2) x y
+  hammingDist_apply_of_mem_monomialGroup (monomialAut_le_monomialGroup f.property) x y
 
 end Group
 
@@ -570,7 +570,7 @@ theorem apply_mem_of_mem_permutationAut {f : (ι → R) ≃ₗ[R] (ι → R)}
 
 /-- A permutation automorphism of a code permutes its codewords. -/
 instance instSMulPermutationAut : SMul (permutationAut C) C where
-  smul f c := ⟨(f : (ι → R) ≃ₗ[R] (ι → R)) c, apply_mem_of_mem_permutationAut f.2 c.2⟩
+  smul f c := ⟨(f : (ι → R) ≃ₗ[R] (ι → R)) c, apply_mem_of_mem_permutationAut f.property c.property⟩
 
 @[simp]
 theorem coe_smul_permutationAut (f : permutationAut C) (c : C) :
@@ -598,7 +598,7 @@ instance instSMulCommClassPermutationAut' : SMulCommClass (permutationAut C) R C
 theorem hammingNorm_permutationAut_apply [Fintype ι] [DecidableEq R]
     (f : permutationAut C) (x : ι → R) :
     hammingNorm ((f : (ι → R) ≃ₗ[R] (ι → R)) x) = hammingNorm x :=
-  hammingNorm_apply_of_mem_permutationGroup (permutationAut_le_permutationGroup f.2) x
+  hammingNorm_apply_of_mem_permutationGroup (permutationAut_le_permutationGroup f.property) x
 
 /-- A permutation automorphism of a code preserves Hamming distance. -/
 @[simp]
@@ -606,7 +606,7 @@ theorem hammingDist_permutationAut_apply [Fintype ι] [DecidableEq R]
     (f : permutationAut C) (x y : ι → R) :
     hammingDist ((f : (ι → R) ≃ₗ[R] (ι → R)) x) ((f : (ι → R) ≃ₗ[R] (ι → R)) y) =
       hammingDist x y :=
-  hammingDist_apply_of_mem_permutationGroup (permutationAut_le_permutationGroup f.2) x y
+  hammingDist_apply_of_mem_permutationGroup (permutationAut_le_permutationGroup f.property) x y
 
 end PermutationGroup
 
