@@ -682,6 +682,18 @@ theorem take_npow_of_le {m n : ℕ} (hmn : m ≤ n) (hβ : β ≤ m • u.length
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hmn
   rw [npow_add, take_append_of_le_length _ (by simpa using hβ)]
 
+/-- A power of `u` has period `|u|`: its initial segment of length `|u| + β` is `u` followed by
+its initial segment of length `β`. -/
+theorem take_npow_length_add {n : ℕ} (hβ : 0 ≤ β) (hn : u.length + β ≤ n • u.length) :
+    (u.npow n).take (u.length + β) = u ++ (u.npow n).take β := by
+  cases n with
+  | zero =>
+    have : u = empty Λ X := length_eq_zero_iff.1 (by simp at hn; grind [u.length_nonneg])
+    simp [this]
+  | succ n =>
+    rw [npow_succ', take_append_length_add _ _ hβ, ← npow_succ',
+      take_npow_of_le n.le_succ (by rw [succ_nsmul] at hn; grind)]
+
 end Group
 
 section Discrete

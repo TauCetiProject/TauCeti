@@ -37,19 +37,7 @@ namespace TauCeti
 namespace InfWord
 
 variable {Λ X : Type*} [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ]
-  {f h u : InfWord Λ X} {m n : ℕ} {β : Λ}
-
-/-- A power of `u` has period `|u|`: its initial segment of length `|u| + γ` is `u` followed by
-its initial segment of length `γ`. -/
-private theorem take_npow_length_add {γ : Λ} (hγ : 0 ≤ γ) (hk : u.length + γ ≤ n • u.length) :
-    (u.npow n).take (u.length + γ) = u ++ (u.npow n).take γ := by
-  cases n with
-  | zero =>
-    have : u = empty Λ X := length_eq_zero_iff.1 (by simp at hk; grind [u.length_nonneg])
-    simp [this]
-  | succ n =>
-    rw [npow_succ', take_append_length_add _ _ hγ, ← npow_succ',
-      take_npow_of_le n.le_succ (by rw [succ_nsmul] at hk; grind)]
+  {f h : InfWord Λ X} {m n : ℕ} {β : Λ}
 
 /-- If powers `fᵐ` and `hⁿ` of two words agree on an initial segment of length at least
 `|f| + |h|`, then `f` and `h` commute. -/
