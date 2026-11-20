@@ -120,7 +120,7 @@ lemma cellPullback_mem_preimage_skeletonLT {n : ℕ} (x : cellPullback p C n) :
 lemma cellPullback_mem_preimage_skeletonLT_of_norm_eq_one {n : ℕ} {x : cellPullback p C n}
     (hx : ‖(x.val.1.2 : Fin n → ℝ)‖ = 1) : x.val.2 ∈ p ⁻¹' (skeletonLT C n : Set B) := by
   rw [mem_preimage, ← x.property, sigmaCellMap_apply]
-  exact cellFrontier_subset_skeletonLT n _ ⟨_, mem_sphere_zero_iff_norm.2 hx, rfl⟩
+  exact map_mem_skeletonLT_of_norm_eq_one _ hx
 
 variable (p C) in
 /-- **The projection to `E`** `(q, e) ↦ e` from the pullback `P` of `p` to the disks of the
