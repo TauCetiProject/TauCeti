@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
+public import TauCeti.Algebra.HopfAlgebra.Integral
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -21,7 +22,12 @@ The defining equations use contraction of the coproduct, not a chosen representa
 We also give their Sweedler-sum forms for any `Coalgebra.Repr`. On a projective module,
 the equations are equivalent to the right and left integral equations for convolution.
 For finite projective bialgebras the scalar in these equations is precisely the counit
-of `TauCeti.ConvolutionDual`.
+of `TauCeti.ConvolutionDual`, so the cointegrals of `H` are the integrals of its dual bialgebra
+(`TauCeti.map_rightCointegrals_eq_rightIntegral` and its left counterpart).
+
+On a bialgebra, `TauCeti.IsRightCointegral` and `LinearMap.IsRightInvariantIntegral` state the
+same equation; `TauCeti.isRightCointegral_iff_isRightInvariantIntegral` and its left counterpart
+record this, so that results about either apply to both.
 
 ## References
 
@@ -178,5 +184,47 @@ theorem isLeftCointegral_iff_convMul [Module.Projective k H] (φ : Module.Dual k
   have heq := congrArg (fun f : ConvolutionDual k H => f h) (hφ (WithConv.toConv ψ))
   rw [ConvolutionDual.mul_apply_eq_lTensor] at heq
   simpa [mul_comm] using heq
+
+section Bialgebra
+
+variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- Right cointegrals are the right invariant integrals of `LinearMap.IsRightInvariantIntegral`:
+both say `(φ ⊗ id) Δ(h) = φ(h) 1`. -/
+theorem isRightCointegral_iff_isRightInvariantIntegral (φ : Module.Dual R H) :
+    IsRightCointegral φ ↔ φ.IsRightInvariantIntegral := by
+  rw [isRightCointegral_def, LinearMap.isRightInvariantIntegral_iff]
+
+/-- Left cointegrals are the left invariant integrals of `LinearMap.IsLeftInvariantIntegral`:
+both say `(id ⊗ φ) Δ(h) = φ(h) 1`. -/
+theorem isLeftCointegral_iff_isLeftInvariantIntegral (φ : Module.Dual R H) :
+    IsLeftCointegral φ ↔ φ.IsLeftInvariantIntegral := by
+  rw [isLeftCointegral_def, LinearMap.isLeftInvariantIntegral_iff]
+
+variable [Module.Finite R H] [Module.Projective R H]
+
+/-- The right cointegrals of a finite projective bialgebra are the right integrals of its dual
+bialgebra `ConvolutionDual R H`. -/
+theorem map_rightCointegrals_eq_rightIntegral :
+    (rightCointegrals R H).map
+      ((WithConv.linearEquiv R (Module.Dual R H)).symm : Module.Dual R H →ₗ[R] _) =
+      rightIntegral R (ConvolutionDual R H) := by
+  ext ψ
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_symm, mem_rightCointegrals,
+    isRightCointegral_iff_convMul, mem_rightIntegral_iff]
+  simp [ConvolutionDual.counit_apply]
+
+/-- The left cointegrals of a finite projective bialgebra are the left integrals of its dual
+bialgebra `ConvolutionDual R H`. -/
+theorem map_leftCointegrals_eq_leftIntegral :
+    (leftCointegrals R H).map
+      ((WithConv.linearEquiv R (Module.Dual R H)).symm : Module.Dual R H →ₗ[R] _) =
+      leftIntegral R (ConvolutionDual R H) := by
+  ext ψ
+  rw [Submodule.mem_map_equiv, LinearEquiv.symm_symm, mem_leftCointegrals,
+    isLeftCointegral_iff_convMul, mem_leftIntegral_iff]
+  simp [ConvolutionDual.counit_apply]
+
+end Bialgebra
 
 end TauCeti
