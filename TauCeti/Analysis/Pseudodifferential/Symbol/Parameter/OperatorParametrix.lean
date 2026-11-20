@@ -87,14 +87,19 @@ section Parametrix
 variable {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
 
-/-- At a spectral parameter in `Λ`, the composition terms of parameter-dependent symbols are the
-composition terms `TauCeti.Symbol.sharpTerm` of their symbols at that parameter. -/
+/-- The composition terms of parameter-dependent symbols are, at each spectral parameter, the
+composition terms `TauCeti.Symbol.sharpTerm` of their symbols at that parameter. Outside `Λ` both
+sides vanish. -/
 @[simp]
 theorem toSymbol_sharpTerm (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
-    (k : ℕ) {z : ℂ} (hz : z ∈ Λ) :
-    (b.sharpTerm a k).toSymbol z = (b.toSymbol z).sharpTerm (a.toSymbol z) k :=
-  Symbol.ext <| funext fun ⟨x, ξ⟩ => by
-    simp [coefficient_sharpTerm b a k x ξ hz, Symbol.coefficient_sharpTerm, mixedDeriv_def]
+    (k : ℕ) (z : ℂ) :
+    (b.sharpTerm a k).toSymbol z = (b.toSymbol z).sharpTerm (a.toSymbol z) k := by
+  ext1
+  funext ⟨x, ξ⟩
+  by_cases hz : z ∈ Λ
+  · rw [coefficient_toSymbol, coefficient_sharpTerm b a k x ξ hz, Symbol.coefficient_sharpTerm]
+    simp [mixedDeriv_def]
+  · simp [Symbol.coefficient_sharpTerm, toSymbol_of_notMem _ hz, mixedDeriv_def, ← Pi.zero_def]
 
 /-! ### The truncated right parametrix and its remainder -/
 
@@ -143,7 +148,7 @@ theorem coefficient_rightParametrixRemainder (ha : a.IsElliptic) (d N : ℕ) :
 /-- The composition terms of `a` with the truncated parametrix are the sums of those with its
 terms. -/
 private theorem coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) (N k : ℕ)
-    (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
+    (x ξ : CoordinateSpace n) (z : ℂ) :
     (a.sharpTerm (a.rightParametrix ha N) k).coefficient ((x, ξ), z) =
       ∑ j ∈ range N, (a.sharpTerm (a.rightInverseTerms ha j) k).coefficient ((x, ξ), z) := by
   have h := Symbol.coefficient_sharpTerm_eq_sum_right (range N) (fun _ => 1)
@@ -151,11 +156,11 @@ private theorem coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) (N k :
     (funext fun q => by simp [coefficient_rightParametrix]) (a.toSymbol z) k
   calc (a.sharpTerm (a.rightParametrix ha N) k).coefficient ((x, ξ), z)
       = ((a.toSymbol z).sharpTerm ((a.rightParametrix ha N).toSymbol z) k).coefficient (x, ξ) := by
-        rw [← toSymbol_sharpTerm _ _ _ hz, coefficient_toSymbol]
+        rw [← toSymbol_sharpTerm _ _ _ z, coefficient_toSymbol]
     _ = _ := by
         rw [h, Finset.sum_apply]
         refine Finset.sum_congr rfl fun j _ => ?_
-        rw [Pi.smul_apply, one_smul, ← toSymbol_sharpTerm _ _ _ hz, coefficient_toSymbol]
+        rw [Pi.smul_apply, one_smul, ← toSymbol_sharpTerm _ _ _ z, coefficient_toSymbol]
 
 /-- **The truncated right parametrix.** Let `a` be elliptic with parameter and polynomial of
 degree less than `d` in the frequency, and `N ≥ 1`. Then the composition terms of `a` with the sum
@@ -181,7 +186,7 @@ theorem sum_coefficient_sharpTerm_rightParametrix (ha : a.IsElliptic) {d N : ℕ
     rw [← Finset.sum_range_diag_flip]
     simp_rw [hT, sum_coefficient_sharpTerm_rightInverseTerms ha _ x ξ hz]
     simp [Nat.pos_of_ne_zero hN]
-  simp_rw [coefficient_sharpTerm_rightParametrix ha N _ x ξ hz]
+  simp_rw [coefficient_sharpTerm_rightParametrix ha N _ x ξ z]
   rw [Finset.sum_comm, coefficient_rightParametrixRemainder]
   simp only [Finset.sum_apply]
   rw [Finset.sum_congr rfl fun j _ => hsplit j, Finset.sum_add_distrib, hdiag]
@@ -238,7 +243,7 @@ theorem smul_quantizeSchwartzValue_rightParametrix_eq_add [CompleteSpace W] (ha 
     rw [← Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hΨA
         (.of_forall fun _ _ => rfl) k x ξ,
       Symbol.coefficient_sharpTerm_of_eq_smul_of_eventuallyEq hΨA hQB k x ξ,
-      ← toSymbol_sharpTerm _ _ _ hz, coefficient_toSymbol]
+      ← toSymbol_sharpTerm _ _ _ z, coefficient_toSymbol]
   -- Since `a(z)` is polynomial in the frequency, `a(z) # Q` is the sum of `d` composition terms.
   have hsharp (ξ : CoordinateSpace n) :
       (ψ x : ℂ) • ((a.toSymbol z).sharp Q hQ).coefficient (x, ξ) =

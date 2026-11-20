@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Coordinates
 import TauCeti.Algebra.Order.Antidiag.Pi
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Polynomial
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
@@ -37,6 +38,10 @@ For the differential symbol of order `m`:
   (`TauCeti.ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol`);
 * `TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofDifferentialSymbol`: its quantization is the
   differential operator itself on Schwartz input, with no smoothing remainder;
+* `TauCeti.ClassicalSymbol.mixedDeriv_nil_coefficient_toSymbol_ofDifferentialSymbol_eq_zero`:
+  its full symbol is a polynomial of degree at most `m` in the frequency, whose frequency
+  derivatives of every order above `m` vanish (`TauCeti.mixedDeriv_nil_differentialSymbol_eq_zero`),
+  so that its composition expansion terminates;
 * `TauCeti.ClassicalSymbol.coefficient_term_ofDifferentialSymbol`: its homogeneous term of degree
   `m - j` is the part of the symbol made of the summands of order `m - j`; in particular the
   principal symbol (`TauCeti.ClassicalSymbol.coefficient_principal_ofDifferentialSymbol`) is the
@@ -120,6 +125,30 @@ theorem isInvertible_differentialSymbol_filter_smul_id {E : Type*} [NormedAddCom
     (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)]
   simpa using ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)
 
+/-- **Differential symbols are polynomial in the frequency.** The frequency derivatives of the
+symbol of a differential operator along a word longer than the order of each of its summands
+vanish. -/
+theorem mixedDeriv_nil_differentialSymbol_eq_zero {ι : Type*} {k : ι → ℕ} {s : Finset ι}
+    (v : ∀ i, Fin (k i) → CoordinateSpace n) (b : ι → CoordinateSpace n → V →L[ℂ] W)
+    {β : List (Fin n)} (hβ : ∀ i ∈ s, k i < β.length) (x ξ : CoordinateSpace n) :
+    mixedDeriv [] β (differentialSymbol s v b) x ξ = 0 := by
+  -- The summand `i` is `η ↦ (∏ⱼ ℓᵢⱼ η) • bᵢ(x)`, for the real-linear maps `ℓᵢⱼ η = i ⟪η, vᵢⱼ⟫`.
+  let ℓ (i : ι) (j : Fin (k i)) : CoordinateSpace n →L[ℝ] ℂ :=
+    Complex.I • Complex.ofRealCLM.comp (innerSL ℝ (v i j))
+  let L (i : ι) : ℂ →L[ℝ] V →L[ℂ] W := (ContinuousLinearMap.id ℝ ℂ).smulRight (b i x)
+  have hslice : (fun η ↦ differentialSymbol s v b (x, η)) =
+      ∑ i ∈ s, L i ∘ fun η ↦ ∏ j, ℓ i j η := by
+    funext η
+    simp [differentialSymbol_def, L, ℓ, real_inner_comm]
+  have hprod (i : ι) : ContDiff ℝ β.length fun η ↦ ∏ j, ℓ i j η :=
+    contDiff_prod fun j _ ↦ (ℓ i j).contDiff
+  rw [mixedDeriv_def, coordinateDeriv_nil, hslice,
+    coordinateDeriv_sum β fun i _ ↦ (L i).contDiff.comp (hprod i), Finset.sum_apply]
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  rw [(L i).coordinateDeriv_comp_left β (hprod i), coordinateDeriv_eq_iteratedFDeriv β (hprod i),
+    iteratedFDeriv_prod_eq_zero (ℓ i) (hβ i hi)]
+  simp
+
 namespace ClassicalSymbol
 
 variable {ι : Type*} {k : ι → ℕ}
@@ -157,6 +186,14 @@ theorem coefficient_toSymbol_ofDifferentialSymbol :
     Symbol.coefficient_ofContDiffHomogeneous]
   rw [Finset.sum_attach s fun i ↦ differentialSymbol {i} v b p, differentialSymbol_def]
   exact Finset.sum_congr rfl fun i _ ↦ differentialSymbol_singleton i v b p
+
+/-- The full symbol of a differential operator of order `m` is a polynomial of degree at most `m`
+in the frequency: its frequency derivatives of every order above `m` vanish. -/
+theorem mixedDeriv_nil_coefficient_toSymbol_ofDifferentialSymbol_eq_zero {β : List (Fin n)}
+    (hβ : m < β.length) (x ξ : CoordinateSpace n) :
+    mixedDeriv [] β (ofDifferentialSymbol m s v b hb hk).toSymbol.coefficient x ξ = 0 := by
+  rw [coefficient_toSymbol_ofDifferentialSymbol]
+  exact mixedDeriv_nil_differentialSymbol_eq_zero v b (fun i hi ↦ (hk i hi).trans_lt hβ) x ξ
 
 /-- **Differential operators are pseudodifferential operators.** On Schwartz input, the
 quantization of the classical symbol of a differential operator is the differential operator,
