@@ -7,7 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
 public import TauCeti.LinearAlgebra.QuadraticForm.Real
