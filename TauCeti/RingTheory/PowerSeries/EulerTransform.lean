@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
 import TauCeti.RingTheory.PowerSeries.Derivative
 import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Integral Euler products `∏ (1 - X ^ r) ^ (-e r)`
@@ -80,19 +81,6 @@ namespace PowerSeries
 section CommRing
 
 variable {R : Type*} [CommRing R]
-
-/-- Two power series that agree modulo every power of `X` are equal. -/
-theorem eq_of_forall_X_pow_dvd_sub {a b : R⟦X⟧} (h : ∀ n : ℕ, X ^ (n + 1) ∣ a - b) : a = b := by
-  ext n
-  rw [← sub_eq_zero, ← map_sub]
-  exact X_pow_dvd_iff.1 (h n) n (Nat.lt_succ_self n)
-
-/-- The constant coefficient of an integer power of a unit `u` of `R⟦X⟧` is the same power of
-the constant coefficient of `u`, as a unit of `R`. -/
-theorem constantCoeff_val_zpow (u : R⟦X⟧ˣ) (k : ℤ) :
-    constantCoeff (↑(u ^ k) : R⟦X⟧) =
-      (↑(Units.map ((constantCoeff : R⟦X⟧ →+* R) : R⟦X⟧ →* R) u ^ k) : R) := by
-  rw [← map_zpow, Units.coe_map, MonoidHom.coe_ofClass]
 
 /-- The integer powers of `(1 - X)⁻¹` have constant coefficient `1`. -/
 @[simp]
