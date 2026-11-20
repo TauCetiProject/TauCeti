@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproxProd
 public import TauCeti.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Mult
-public import TauCeti.NumberTheory.NumberField.PlacesOver.Galois
 public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 
 /-!
@@ -32,18 +31,11 @@ equivalent to the same inequality over `E`
 (`NumberField.approxProd_placesAbove_le_mulHeight_rpow_iff`).
 Neither statement needs a Galois hypothesis.
 
-The conjugating automorphisms are chosen as a function of the absolute value of `E` alone
-(`NumberField.conjPair`), together with the place of `K` below it, which is recovered by
-restricting to `K` (`NumberField.conjPair_infinitePlace`, `NumberField.conjPair_finitePlace`).
-Their existence is the transitivity of the Galois action on the absolute values above a place.
+When `E / K` is Galois, `NumberField.conjPair` chooses the conjugating automorphisms as a
+function of the absolute value of `E` alone.
 
 The places of `E` above `Sinf` and `Sfin` are `NumberField.InfinitePlace.placesAbove E Sinf` and
 `NumberField.FinitePlace.placesAbove E Sfin`.
-
-## Main definitions
-
-* `NumberField.conjPair w' u`: a place `v` of `K` below the absolute value `u` of `E` and an
-  automorphism of `E / K` carrying `w' v` to `u`, or to the local-degree root of `u`.
 
 ## Main results
 
@@ -52,8 +44,6 @@ The places of `E` above `Sinf` and `Sfin` are `NumberField.InfinitePlace.placesA
   of the original one.
 * `NumberField.approxProd_placesAbove_le_mulHeight_rpow_iff`: the inequality of the Subspace
   Theorem holds for such a system over `E` exactly when it holds for `L` over `K`.
-* `NumberField.conjPair_infinitePlace`, `NumberField.conjPair_finitePlace`: at a place of `E`
-  above `v`, `conjPair` returns `v` and an automorphism carrying `w' v` to that place.
 
 ## References
 
@@ -146,74 +136,5 @@ example [Fintype ι] (Sinf : Finset (InfinitePlace K)) (Sfin : Finset (FinitePla
     exact AbsoluteValue.LiesOver.apply_algebraMap v.1 (x i)
   · simp only [LinearMap.proj_apply, Algebra.algebraMap_self, RingHom.id_apply, id]
     exact FinitePlace.relativeAbsValue_algebraMap W v (x i)
-
-/-! ### Conjugating automorphisms -/
-
-
-variable [IsGalois K E]
-
-open Classical in
-/-- For an absolute value `u` of `E`, a place `v` of `K` below it together with an automorphism
-`σ` of `E / K` carrying `w' v` to the absolute value that `u` induces over `v`: `u` itself when
-`u` is an infinite place of `E`, and the local-degree root of `u` when `u` is a finite place.
-When `u` is a place of `E` above a place `v` at which `w' v` lies over `v`, the pair has first
-component `v` (`NumberField.conjPair_infinitePlace`, `NumberField.conjPair_finitePlace`); when no
-such pair exists, `(u.under K, 1)` is returned. -/
-noncomputable def conjPair (w' : AbsoluteValue K ℝ → AbsoluteValue E ℝ) (u : AbsoluteValue E ℝ) :
-    AbsoluteValue K ℝ × (E ≃ₐ[K] E) :=
-  if h : ∃ p : AbsoluteValue K ℝ × (E ≃ₐ[K] E),
-      (∃ (W : InfinitePlace E) (v : InfinitePlace K), W.1 = u ∧ v.1 = p.1 ∧ W.LiesOver v ∧
-        p.2 • w' v.1 = W.1) ∨
-      (∃ (W : FinitePlace E) (v : FinitePlace K), W.1 = u ∧ v.1 = p.1 ∧ W.LiesOver v ∧
-        p.2 • w' v.1 = W.relativeAbsValue K)
-  then h.choose else (u.under K, 1)
-
-section conjPair
-
-variable {w' : AbsoluteValue K ℝ → AbsoluteValue E ℝ}
-
-/-- The defining property of `conjPair` at an absolute value for which some pair exists. -/
-private theorem conjPair_spec {u : AbsoluteValue E ℝ}
-    (h : ∃ p : AbsoluteValue K ℝ × (E ≃ₐ[K] E),
-      (∃ (W : InfinitePlace E) (v : InfinitePlace K), W.1 = u ∧ v.1 = p.1 ∧ W.LiesOver v ∧
-        p.2 • w' v.1 = W.1) ∨
-      (∃ (W : FinitePlace E) (v : FinitePlace K), W.1 = u ∧ v.1 = p.1 ∧ W.LiesOver v ∧
-        p.2 • w' v.1 = W.relativeAbsValue K)) :
-    (∃ (W : InfinitePlace E) (v : InfinitePlace K), W.1 = u ∧ v.1 = (conjPair w' u).1 ∧
-        W.LiesOver v ∧ (conjPair w' u).2 • w' v.1 = W.1) ∨
-      (∃ (W : FinitePlace E) (v : FinitePlace K), W.1 = u ∧ v.1 = (conjPair w' u).1 ∧
-        W.LiesOver v ∧ (conjPair w' u).2 • w' v.1 = W.relativeAbsValue K) := by
-  unfold conjPair
-  split_ifs
-  exact h.choose_spec
-
-/-- At an infinite place `W` of `E` above `v`, with `w' v` lying over `v`, the place of `K` chosen
-by `conjPair` is `v`, and its automorphism carries `w' v` to `W`. -/
-theorem conjPair_infinitePlace (W : InfinitePlace E) (v : InfinitePlace K) [W.LiesOver v]
-    (hw : (w' v.1).LiesOver v.1) :
-    (conjPair w' W.1).1 = v.1 ∧ (conjPair w' W.1).2 • w' v.1 = W.1 := by
-  obtain ⟨σ, hσ⟩ := exists_smul_eq_of_liesOver_infinitePlace v (w' v.1) W.1
-  rcases conjPair_spec (w' := w') ⟨(v.1, σ), .inl ⟨W, v, rfl, rfl, inferInstance, hσ⟩⟩ with
-    ⟨W₀, v₀, hW, hv, hWv, hσ₀⟩ | ⟨W₀, v₀, hW, -, -, -⟩
-  · obtain rfl : W₀ = W := Subtype.ext hW
-    obtain rfl : v₀ = v :=
-      (InfinitePlace.LiesOver.comap_eq W₀ v₀).symm.trans (InfinitePlace.LiesOver.comap_eq W₀ v)
-    exact ⟨hv.symm, hσ₀⟩
-  · exact absurd hW (FinitePlace.val_ne_infinitePlace_val W₀ W)
-
-/-- At a finite place `W` of `E` above `v`, with `w' v` lying over `v`, the place of `K` chosen by
-`conjPair` is `v`, and its automorphism carries `w' v` to the local-degree root of `W`. -/
-theorem conjPair_finitePlace (W : FinitePlace E) (v : FinitePlace K) [W.LiesOver v]
-    (hw : (w' v.1).LiesOver v.1) :
-    (conjPair w' W.1).1 = v.1 ∧ (conjPair w' W.1).2 • w' v.1 = W.relativeAbsValue K := by
-  obtain ⟨σ, hσ⟩ := exists_smul_eq_of_liesOver_finitePlace v (w' v.1) (W.relativeAbsValue K)
-  rcases conjPair_spec (w' := w') ⟨(v.1, σ), .inr ⟨W, v, rfl, rfl, inferInstance, hσ⟩⟩ with
-    ⟨W₀, v₀, hW, -, -, -⟩ | ⟨W₀, v₀, hW, hv, hWv, hσ₀⟩
-  · exact absurd hW.symm (FinitePlace.val_ne_infinitePlace_val W W₀)
-  · obtain rfl : W₀ = W := Subtype.ext hW
-    obtain rfl : v₀ = v := FinitePlace.eq_of_liesOver (w := W₀)
-    exact ⟨hv.symm, hσ₀⟩
-
-end conjPair
 
 end NumberField
