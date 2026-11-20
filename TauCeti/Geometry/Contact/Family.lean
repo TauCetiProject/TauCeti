@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Moser
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
 # Smooth families of contact forms
@@ -111,10 +112,8 @@ theorem contMDiff_apply_reebVectorField_mpullback_prodMk
   have hβ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
     (α := fun q : N × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β)).2
     (contMDiff_mpullback_prodMk β p)
-  have h := (contMDiffAt_totalSpace_iff.1
-    (ContMDiffAt.clm_bundle_apply (E₂ := Trivial M ℝ) hβ
-      (contMDiff_reebVectorField_mpullback_prodMk α hc p))).2
-  simpa [Trivial.eq_trivialization, degreeOneEquiv_apply_apply_vec] using h
+  simpa [degreeOneEquiv_apply_apply_vec] using
+    hβ.clm_bundle_apply_scalar (contMDiff_reebVectorField_mpullback_prodMk α hc p)
 
 /-- **Contact-Moser vector fields of a smooth family of contact forms.** If the slices
 `α_t = ι_t^* α` of a smooth one-form `α` on `N × M` are contact forms for all `t` in an open set

@@ -290,8 +290,7 @@ theorem NatTrans.leftDerived_zero_comp_fromLeftDerivedZero {F G : C ⥤ D} [F.Ad
   simp only [NatTrans.comp_app, P.leftDerived_app_eq, P.fromLeftDerivedZero_eq, Category.assoc,
     Iso.inv_hom_id_assoc]
   -- `erw`: the homology of `F(P)` appears both as `homologyFunctor.obj` and as `homology 0`.
-  erw [HomologicalComplex.homologyι_naturality_assoc, h,
-    Category.assoc (ChainComplex.isoHomologyι₀ _).hom]
+  erw [HomologicalComplex.homologyι_naturality_assoc, h]
   rfl
 
 /-- An exact additive functor has no positive left derived functors. -/

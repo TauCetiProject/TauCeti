@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+public import TauCeti.Analysis.Normed.Monoid.MulUnit
 
 /-!
 # Rescaling power series
@@ -20,7 +21,9 @@ coefficient `a`, is divisible by `a c`, with a quotient whose linear coefficient
 
 Over a complete local ring, `g` then has a compositional inverse, so the values of `f` on `c I`
 are exactly `a c I` for an adic ideal `I`. This is how multiplication by an integer `n` on a
-formal group is analysed deep inside the maximal ideal of a discrete valuation ring.
+formal group is analysed deep inside the maximal ideal of a discrete valuation ring. When `u` is a
+multiplicative unit (`TauCeti.IsNormMulUnit`) with `‖u‖ s = r`, rescaling by `u` transports
+weighted coefficient norms at radius `r` to weighted coefficient norms at radius `s`.
 
 ## Main results
 
@@ -29,6 +32,8 @@ formal group is analysed deep inside the maximal ideal of a discrete valuation r
   constant term and its linear coefficient `a` divides `c`.
 * `PowerSeries.coeff_multiset_prod_rescale_C_mul_rescale`: replacing `Q(t)` by `a Q(b t)`
   multiplies the coefficient of `tᵏ` in `∏_{x ∈ s} Q(x t)` by `a ^ |s| bᵏ`.
+* `PowerSeries.norm_coeff_rescale_mul_pow`: rescaling by a multiplicative unit `u` with
+  `‖u‖ s = r` identifies `‖coeff n (rescale u f)‖ sⁿ` with `‖coeff n f‖ rⁿ`.
 -/
 
 public section
@@ -71,5 +76,24 @@ theorem coeff_multiset_prod_rescale_C_mul_rescale {R : Type*} [CommSemiring R] (
       C (a ^ s.card) * rescale b (s.map fun x => rescale x Q).prod := by
     simp [Multiset.prod_map_mul, map_multiset_prod, Multiset.map_map, rescale_rescale, mul_comm]
   rw [h, coeff_C_mul, coeff_rescale, mul_assoc]
+
+/-- Rescaling by a multiplicative unit `u` preserves weighted coefficient norms when the weight is
+changed by `‖u‖`: if `‖u‖ * s = r`, then `‖coeff n (rescale u f)‖ * s ^ n = ‖coeff n f‖ * r ^ n`. -/
+theorem norm_coeff_rescale_mul_pow {R : Type*} [CommSemiring R] [Norm R] (f : R⟦X⟧) {u : R}
+    (hu : TauCeti.IsNormMulUnit u) {r s : ℝ} (hrs : ‖u‖ * s = r) (n : ℕ) :
+    ‖coeff n (rescale u f)‖ * s ^ n = ‖coeff n f‖ * r ^ n := by
+  rw [coeff_rescale]
+  have hpow (m : ℕ) : ‖u ^ m * coeff n f‖ * s ^ m = ‖coeff n f‖ * r ^ m := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      calc ‖u ^ (m + 1) * coeff n f‖ * s ^ (m + 1)
+          = (‖u ^ m * coeff n f‖ * s ^ m) * (‖u‖ * s) := by
+            rw [pow_succ', mul_assoc, hu.norm_mul, pow_succ']
+            ring
+        _ = ‖coeff n f‖ * r ^ (m + 1) := by
+            rw [ih, hrs, pow_succ]
+            ring
+  exact hpow n
 
 end PowerSeries

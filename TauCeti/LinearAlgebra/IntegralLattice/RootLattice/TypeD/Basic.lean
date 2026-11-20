@@ -213,10 +213,11 @@ private theorem checkerboardCarrier_span_eq_top :
   exact Submodule.smul_mem _ _ h2
 
 /-- The checkerboard carrier is a full lattice in `ℚⁿ`. -/
-instance instIsLatticeCheckerboardCarrier : (checkerboardCarrier n).IsLattice ℚ where
+instance instIsFullLatticeCheckerboardCarrier : (checkerboardCarrier n).IsFullLattice ℚ where
   -- a submodule of the finitely generated module `ℤⁿ` over the Noetherian ring `ℤ`
-  fg := (Submodule.fg_span (Set.finite_range _)).of_le
-    (unitLattice_carrier_eq_span_basisFun (Fin n) ▸ checkerboardCarrier_le_unitLattice_carrier n)
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := checkerboardCarrier n)
+    ((Submodule.fg_span (Set.finite_range _)).of_le
+      (unitLattice_carrier_eq_span_basisFun (Fin n) ▸ checkerboardCarrier_le_unitLattice_carrier n))
   span_eq_top := checkerboardCarrier_span_eq_top n
 
 /-! ## The lattice -/

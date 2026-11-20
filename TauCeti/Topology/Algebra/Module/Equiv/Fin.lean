@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
-import Mathlib.Logic.Equiv.Fin.Basic
+public import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Splitting and regrouping finite coordinates
