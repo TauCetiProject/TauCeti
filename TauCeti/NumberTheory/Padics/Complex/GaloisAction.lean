@@ -16,9 +16,9 @@ Let `K` be a field between `ℚ_p` and its algebraic closure `PadicAlgCl p`, for
 extension of `ℚ_p` inside `PadicAlgCl p`, and let `G_K = Gal(PadicAlgCl p / K)` carry its Krull
 topology. Every element of `G_K` fixes `ℚ_p`, so it preserves the spectral norm of
 `PadicAlgCl p` (`AlgEquiv.norm_apply`): `G_K` acts on `PadicAlgCl p` by isometries
-(`PadicAlgCl.instIsIsometricSMul`). This file records the consequences for the completion
-`ℂ_p = PadicComplex p`, on which `σ ∈ G_K` acts by the extension `UniformSpace.Completion.map σ`
-of `σ` by continuity.
+(`PadicAlgCl.instIsIsometricSMul`, in `TauCeti.NumberTheory.Padics.AlgebraicClosure`). This file
+records the consequences for the completion `ℂ_p = PadicComplex p`, on which `σ ∈ G_K` acts by
+the extension `UniformSpace.Completion.map σ` of `σ` by continuity (`PadicComplex.smul_def`).
 
 All of the following structure is then inferred from instances.
 
@@ -40,7 +40,7 @@ The theorems below characterize the action: on `PadicAlgCl p` it is `σ` itself
 
 ## Main results
 
-* `PadicAlgCl.instIsIsometricSMul`: `G_K` acts on `PadicAlgCl p` by isometries.
+* `PadicComplex.smul_def`: `σ` acts on `ℂ_p` by `UniformSpace.Completion.map σ`.
 * `PadicComplex.smul_coe`: the action on `ℂ_p` extends the action on `PadicAlgCl p`.
 * `PadicComplex.eq_smul_of_continuous`: the action of `σ` on `ℂ_p` is the unique continuous
   extension of `σ`.
@@ -55,25 +55,17 @@ public section
 
 open UniformSpace
 
-variable {p : ℕ} [Fact p.Prime] (K : Type*) [Field K] [Algebra ℚ_[p] K]
+variable {p : ℕ} [Fact p.Prime] {K : Type*} [Field K] [Algebra ℚ_[p] K]
   [Algebra K (PadicAlgCl p)] [IsScalarTower ℚ_[p] K (PadicAlgCl p)]
-
-namespace PadicAlgCl
-
-/-- `PadicAlgCl p` is algebraic over every field between `ℚ_p` and `PadicAlgCl p`. -/
-instance instIsIntegral : Algebra.IsIntegral K (PadicAlgCl p) :=
-  Algebra.IsIntegral.tower_top ℚ_[p]
-
-/-- The `K`-automorphisms of `PadicAlgCl p` are isometries for its spectral norm. -/
-instance instIsIsometricSMul : IsIsometricSMul (PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (PadicAlgCl p) :=
-  ⟨fun σ ↦ AddMonoidHomClass.isometry_of_norm (σ : PadicAlgCl p →+* PadicAlgCl p)
-    (AlgEquiv.norm_apply (σ.restrictScalars ℚ_[p]))⟩
-
-end PadicAlgCl
 
 namespace PadicComplex
 
-variable {K}
+omit [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K (PadicAlgCl p)] in
+/-- The action of `σ` on `ℂ_p` is the extension `UniformSpace.Completion.map σ` of `σ` to the
+completion. -/
+theorem smul_def (σ : PadicAlgCl p ≃ₐ[K] PadicAlgCl p) (x : ℂ_[p]) :
+    σ • x = Completion.map σ x := by
+  simp only [Completion.smul_def, AlgEquiv.smul_def]
 
 /-- On the image of `PadicAlgCl p`, the action of `σ` on `ℂ_p` is `σ`. -/
 @[simp]

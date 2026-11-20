@@ -111,7 +111,7 @@ noncomputable instance instMulSemiringAction : MulSemiringAction G (Completion �
     (isClosed_eq ((continuous_const_smul c).comp continuous_mul)
       (((continuous_const_smul c).comp continuous_fst).mul
         ((continuous_const_smul c).comp continuous_snd)))
-    fun a b ↦ by rw [← coe_mul, ← coe_smul, ← coe_smul, ← coe_smul, smul_mul', coe_mul]
+    fun a b ↦ by simp only [← coe_mul, ← coe_smul, smul_mul']
 
 end Ring
 
