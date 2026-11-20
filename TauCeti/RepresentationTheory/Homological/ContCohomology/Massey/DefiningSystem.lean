@@ -85,6 +85,8 @@ structure DefiningSystem (Γ : Type*) [Mul Γ] [TopologicalSpace Γ] (R : Type*)
 
 namespace DefiningSystem
 
+attribute [simp] entry_castSucc_succ
+
 variable {Γ : Type*} [Mul Γ] [TopologicalSpace Γ] {R : Type*} [Ring R] [TopologicalSpace R]
   {n : ℕ} {χ : Fin n → Γ → R}
 
@@ -108,13 +110,12 @@ that is, `1`-cocycles: the defining equation of an adjacent entry has no correct
 `n = 1` the only input is the corner entry, on which no equation is imposed. -/
 theorem adjacent_mul (D : DefiningSystem Γ R n χ) (hn : 2 ≤ n) (i : Fin n) (g h : Γ) :
     χ i (g * h) = χ i g + χ i h := by
-  have hc : ¬ (i.castSucc = 0 ∧ i.succ = Fin.last n) :=
-    mt (Fin.castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
   have hIoo : Finset.Ioo i.castSucc i.succ = ∅ := by
     refine Finset.eq_empty_of_forall_notMem fun m hm ↦ ?_
     rw [Finset.mem_Ioo, Fin.lt_def, Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at hm
     omega
-  have := D.entry_mul _ _ (Fin.castSucc_lt_succ (i := i)) hc g h
+  have := D.entry_mul _ _ (Fin.castSucc_lt_succ (i := i))
+    (Fin.not_castSucc_eq_zero_and_succ_eq_last hn i) g h
   rwa [hIoo, Finset.sum_empty, add_zero, D.entry_castSucc_succ] at this
 
 end DefiningSystem

@@ -142,10 +142,8 @@ private theorem liftMatrix_apply_castSucc_succ (D : DefiningSystem Γ R n χ) (h
     (c : Γ → R) (g : Γ) (i : Fin n) :
     ((liftMatrix D c g : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
       i.castSucc i.succ = χ i g := by
-  have hc : ¬ (i.castSucc = 0 ∧ i.succ = Fin.last n) :=
-    mt (Fin.castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
-  rw [coe_liftMatrix, liftEntries_apply_of_ne D c g (Fin.castSucc_lt_succ (i := i)).ne hc,
-    D.entry_castSucc_succ]
+  rw [coe_liftMatrix, liftEntries_apply_of_ne D c g (Fin.castSucc_lt_succ (i := i)).ne
+    (Fin.not_castSucc_eq_zero_and_succ_eq_last hn i), D.entry_castSucc_succ]
 
 omit [Group Γ] [Ring R] in
 /-- For a discrete `R`, the set of `g` at which prescribed entries of a continuous family of
@@ -183,10 +181,8 @@ def DefiningSystem.ofLift [Mul Γ] (hn : 2 ≤ n) (L : Γ → upperUnitriangular
     · simpa only [ite_eq_left hij] using hcont i j
     · simpa only [ite_eq_right hij] using continuous_const
   entry_castSucc_succ i := by
-    have hc : ¬ (i.castSucc = 0 ∧ i.succ = Fin.last n) :=
-      mt (Fin.castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
     funext g
-    rw [ite_eq_left ⟨Fin.castSucc_lt_succ, hc⟩, hχ]
+    rw [ite_eq_left ⟨Fin.castSucc_lt_succ, Fin.not_castSucc_eq_zero_and_succ_eq_last hn i⟩, hχ]
   entry_mul i j hij hc g h := by
     rw [ite_eq_left ⟨hij, hc⟩, ite_eq_left ⟨hij, hc⟩, ite_eq_left ⟨hij, hc⟩, hmul g h i j hij hc,
       Subgroup.coe_mul, Units.val_mul,
@@ -246,6 +242,10 @@ noncomputable def DefiningSystem.toQuotientLift (D : DefiningSystem Γ R n χ) :
     rw [Subgroup.coe_mul, Units.val_mul, coe_liftMatrix, coe_liftMatrix, coe_liftMatrix,
       liftEntries_mul_apply D 0 g h hij, ite_eq_right hc, liftEntries_apply_of_ne D 0 _ hij.ne hc]
 
+private theorem toQuotientLift_apply (D : DefiningSystem Γ R n χ) (g : Γ) :
+    D.toQuotientLift g = QuotientGroup.mk (liftMatrix D 0 g) := by
+  rw [DefiningSystem.toQuotientLift, MonoidHom.mk'_apply]
+
 /-- An element `u` of `Uₙ₊₁(R)` represents `D.toQuotientLift g` exactly when its entries
 strictly above the diagonal and away from the corner are those of `D` at `g`. -/
 theorem DefiningSystem.mk_eq_toQuotientLift_iff (D : DefiningSystem Γ R n χ) (g : Γ)
@@ -254,7 +254,7 @@ theorem DefiningSystem.mk_eq_toQuotientLift_iff (D : DefiningSystem Γ R n χ) (
         Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R)) = D.toQuotientLift g ↔
       ∀ i j : Fin (n + 1), i < j → ¬ (i = 0 ∧ j = Fin.last n) →
         ((u : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j = D.entry i j g := by
-  rw [DefiningSystem.toQuotientLift, MonoidHom.mk'_apply, mk_eq_mk_iff]
+  rw [toQuotientLift_apply, mk_eq_mk_iff]
   refine forall₄_congr fun i j hij hc ↦ ?_
   rw [coe_liftMatrix, liftEntries_apply_of_ne D 0 g hij.ne hc]
 
@@ -264,8 +264,8 @@ theorem DefiningSystem.isOpen_ker_toQuotientLift [DiscreteTopology R]
   have hker : (D.toQuotientLift.ker : Set Γ) = {g | ∀ i j, (i < j ∧ ¬ (i = 0 ∧ j = Fin.last n)) →
       liftEntries D 0 g i j = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j} := by
     ext g
-    rw [SetLike.mem_coe, MonoidHom.mem_ker, DefiningSystem.toQuotientLift, MonoidHom.mk'_apply,
-      ← QuotientGroup.mk_one, mk_eq_mk_iff, Set.mem_ofPred_eq]
+    rw [SetLike.mem_coe, MonoidHom.mem_ker, toQuotientLift_apply, ← QuotientGroup.mk_one,
+      mk_eq_mk_iff, Set.mem_ofPred_eq]
     simp only [coe_liftMatrix, OneMemClass.coe_one, Units.val_one, and_imp]
   rw [hker]
   exact isOpen_setOf_forall_apply_eq (continuous_liftEntries_apply D continuous_const) _ _
@@ -284,13 +284,18 @@ private noncomputable def lift (D : DefiningSystem Γ R n χ) (f : Γ → R)
       abel
     · rw [ite_eq_right hc, liftEntries_apply_of_ne D f _ hij.ne hc]
 
+private theorem lift_apply (D : DefiningSystem Γ R n χ) (f : Γ → R)
+    (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) (g : Γ) :
+    lift D f hval g = liftMatrix D f g := by
+  rw [lift, MonoidHom.mk'_apply]
+
 private theorem isOpen_ker_lift [DiscreteTopology R] (D : DefiningSystem Γ R n χ) {f : Γ → R}
     (hf : Continuous f) (hval : ∀ g h : Γ, D.value (g, h) = f h - f (g * h) + f g) :
     IsOpen ((lift D f hval).ker : Set Γ) := by
   have hker : ((lift D f hval).ker : Set Γ) = {g | ∀ i j, i < j →
       liftEntries D f g i j = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) i j} := by
     ext g
-    rw [SetLike.mem_coe, MonoidHom.mem_ker, lift, MonoidHom.mk'_apply, Set.mem_ofPred_eq]
+    rw [SetLike.mem_coe, MonoidHom.mem_ker, lift_apply, Set.mem_ofPred_eq]
     refine ⟨fun h i j _ ↦ ?_, fun h ↦ ext fun i j hij ↦ ?_⟩
     · rw [← coe_liftMatrix D f g, h, OneMemClass.coe_one, Units.val_one]
     · rw [coe_liftMatrix, h i j hij, OneMemClass.coe_one, Units.val_one]
@@ -356,7 +361,8 @@ theorem masseyDefined_iff_exists_lift [SeparatelyContinuousMul Γ] [DiscreteTopo
                 i.castSucc i.succ = χ i g := by
   rw [masseyDefined_iff]
   refine ⟨fun ⟨D⟩ ↦ ⟨D.toQuotientLift, D.isOpen_ker_toQuotientLift,
-    fun g ↦ ⟨liftMatrix D 0 g, rfl, liftMatrix_apply_castSucc_succ D hn 0 g⟩⟩, ?_⟩
+    fun g ↦ ⟨liftMatrix D 0 g, (toQuotientLift_apply D g).symm,
+      liftMatrix_apply_castSucc_succ D hn 0 g⟩⟩, ?_⟩
   -- Representatives of the classes `β g` have well-defined entries away from the corner.
   rintro ⟨β, hβ, hlift⟩
   refine ⟨DefiningSystem.ofLift hn (fun g ↦ (β g).out) (fun i j ↦ ?_) (fun g h i j hij hc ↦ ?_)
@@ -367,12 +373,11 @@ theorem masseyDefined_iff_exists_lift [SeparatelyContinuousMul Γ] [DiscreteTopo
     rw [QuotientGroup.mk_mul, QuotientGroup.out_eq', QuotientGroup.out_eq',
       QuotientGroup.out_eq', map_mul]
   · obtain ⟨u, hu, hχ⟩ := hlift g
-    have hc : ¬ (i.castSucc = 0 ∧ i.succ = Fin.last n) :=
-      mt (Fin.castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
     have hout : (QuotientGroup.mk (β g).out : upperUnitriangularGroup (Fin (n + 1)) R ⧸
         Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R)) = QuotientGroup.mk u := by
       rw [QuotientGroup.out_eq', hu]
-    exact (mk_eq_mk_iff.1 hout _ _ Fin.castSucc_lt_succ hc).trans (hχ i)
+    exact (mk_eq_mk_iff.1 hout _ _ Fin.castSucc_lt_succ
+      (Fin.not_castSucc_eq_zero_and_succ_eq_last hn i)).trans (hχ i)
 
 /-- **Dwyer's criterion for containing zero** (Dwyer, Theorem 2.4; Harpaz–Wittenberg,
 Proposition 2.2 and Corollary 2.3). Let `R` be a discrete ring with trivial action and `n ≥ 2`.

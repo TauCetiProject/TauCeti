@@ -221,6 +221,12 @@ theorem castSucc_eq_zero_and_succ_eq_last_iff {n : ℕ} (i : Fin n) :
   have := i.isLt
   constructor <;> intro h <;> omega
 
+/-- For `n ≥ 2`, two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are never the
+extreme pair `(0, n)`. -/
+theorem not_castSucc_eq_zero_and_succ_eq_last {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
+    ¬ (i.castSucc = 0 ∧ i.succ = last n) :=
+  mt (castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
+
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
