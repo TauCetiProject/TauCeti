@@ -106,6 +106,32 @@ theorem unitBallDiffeomorph_zero :
     unitBallDiffeomorph F ⟨0, zero_mem_unitBallOpens _⟩ = 0 := by
   rw [unitBallDiffeomorph_apply, univUnitBall_symm_apply_zero]
 
+/-- Points of norm at most `3/4` map into the closed ball of radius `2`. -/
+theorem norm_unitBallDiffeomorph_le_two (p : TauCeti.unitBallOpens F)
+    (hp : ‖(p : F)‖ ≤ 3 / 4) : ‖TauCeti.unitBallDiffeomorph F p‖ ≤ 2 := by
+  let d := Real.sqrt (1 - ‖(p : F)‖ ^ 2)
+  have hpos : 0 < 1 - ‖(p : F)‖ ^ 2 := by nlinarith [norm_nonneg (p : F)]
+  have hd : 0 < d := Real.sqrt_pos.2 hpos
+  have hd2 : d ^ 2 = 1 - ‖(p : F)‖ ^ 2 := Real.sq_sqrt hpos.le
+  have hle : ‖(p : F)‖ ≤ 2 * d := by
+    by_contra h
+    have hsq := (sq_lt_sq₀ (by positivity) (norm_nonneg (p : F))).2 (lt_of_not_ge h)
+    nlinarith [norm_nonneg (p : F)]
+  rw [TauCeti.unitBallDiffeomorph_apply, OpenPartialHomeomorph.univUnitBall_symm_apply,
+    norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hd, inv_mul_eq_div]
+  exact (div_le_iff₀ hd).2 hle
+
+/-- Conjugating an orthogonal map by the unit-ball diffeomorphism retains its Euclidean action. -/
+theorem unitBallDiffeomorph_symm_rotation (R : F ≃ₗᵢ[ℝ] F) (p : TauCeti.unitBallOpens F) :
+    ((TauCeti.unitBallDiffeomorph F).symm (R (TauCeti.unitBallDiffeomorph F p)) : F) =
+      R p := by
+  have hR (x : F) : OpenPartialHomeomorph.univUnitBall (R x) =
+      R (OpenPartialHomeomorph.univUnitBall x) := by
+    simp only [OpenPartialHomeomorph.univUnitBall_apply, R.norm_map, R.map_smul]
+  rw [TauCeti.coe_unitBallDiffeomorph_symm_apply, hR,
+    ← TauCeti.coe_unitBallDiffeomorph_symm_apply, Diffeomorph.symm_apply_apply]
+
+
 /-- **Discs instead of vector spaces.** The image of a smooth embedding `ι` of a real vector space
 `V` of dimension `k` is also the image of a smooth embedding of the open unit disc of `ℝᵏ`, which
 sends the centre to `ι 0`. -/
