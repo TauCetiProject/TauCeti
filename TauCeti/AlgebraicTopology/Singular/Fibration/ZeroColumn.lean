@@ -183,6 +183,13 @@ private def cellBoundaryFiberι (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
     by fun_prop⟩
 
 omit [T2Space B] in
+/-- The point of the ball under `cellBoundaryFiberι p j c hc` is `ballPoint c`. -/
+private lemma cellBoundaryFiberι_apply_ball (j : cell C 1) (c : ℝ) (hc : |c| = 1)
+    (e : p.fiber (map 1 j fun _ ↦ c)) :
+    (cellBoundaryFiberι p j c hc e).1.1.1 = ballPoint c hc.le :=
+  rfl
+
+omit [T2Space B] in
 private lemma cellBoundaryFiberι_comp_map (j : cell C 1) (c : ℝ) (hc : |c| = 1) :
     cellBoundaryFiberι p j c hc ≫ (cellDiskPullbackPair p C 1 j).map =
       p.pullbackFiberι (cellULiftMap C 1 j) (cellULiftMap_ballPoint j c hc.le) := by
@@ -246,12 +253,18 @@ private def cellBoundaryOpens (j : cell C 1) (c : ℝ) :
     isOpen_lt continuous_const (by fun_prop)⟩
 
 omit [T2Space B] in
+private lemma mem_cellBoundaryOpens (j : cell C 1) (c : ℝ)
+    (x : (cellDiskPullbackPair p C 1 j).snd) :
+    x ∈ cellBoundaryOpens p j c ↔ 0 < c * (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0 :=
+  Iff.rfl
+
+omit [T2Space B] in
 private lemma ballPoint_eq_of_mem_cellBoundaryOpens (j : cell C 1) {c : ℝ} (hc : |c| = 1)
     {x : (cellDiskPullbackPair p C 1 j).snd} (hx : x ∈ cellBoundaryOpens p j c) :
     x.1.1.1 = ballPoint c hc.le := by
   -- Both `c` and the coordinate of `x` are `±1`, with positive product.
   have h : (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0 = c := by
-    have hx' : 0 < c * (x.1.1.1 : ULift.{u} (Fin 1 → ℝ)).down 0 := hx
+    have hx' := (mem_cellBoundaryOpens j c x).1 hx
     rcases abs_eq zero_le_one |>.1 hc with rfl | rfl <;>
       rcases abs_eq zero_le_one |>.1 (abs_down_eq_one j x) with h | h <;> rw [h] at hx' ⊢ <;>
       linarith
@@ -265,7 +278,7 @@ private def cellBoundaryOpensHomeomorph (j : cell C 1) (c : ℝ) (hc : |c| = 1) 
     p.fiber (map 1 j fun _ ↦ c) ≃ₜ cellBoundaryOpens p j c where
   toFun e := ⟨cellBoundaryFiberι p j c hc e, by
     -- The point of the ball under `cellBoundaryFiberι` is `c`.
-    change 0 < c * c
+    rw [mem_cellBoundaryOpens, cellBoundaryFiberι_apply_ball, ballPoint_down]
     nlinarith [abs_mul_abs_self c, hc]⟩
   invFun x := ⟨x.1.1.1.2, by
     have h := x.1.1.2
@@ -303,17 +316,15 @@ private lemma cellBoundary_hom_ext (q : ℕ) (j : cell C 1) {Z : ModuleCat.{u} R
     all_goals first
       | exact absurd rfl h
       | exact TopologicalSpace.Opens.coe_disjoint.1 <| Set.disjoint_left.2 fun x hx hx' ↦ by
-          -- Unfold membership in `cellBoundaryOpens` to the sign condition.
-          change 0 < _ * _ at hx hx'
-          simp only [c, Bool.cond_true, Bool.cond_false] at hx hx'
+          simp only [s, SetLike.mem_coe, mem_cellBoundaryOpens, c, Bool.cond_true,
+            Bool.cond_false] at hx hx'
           linarith
   -- The two ends cover the boundary, so the inclusion of their union is a homeomorphism.
   have hcov (x : (cellDiskPullbackPair p C 1 j).snd) : x ∈ ⨆ i, s i := by
     rw [TopologicalSpace.Opens.mem_iSup]
-    -- Membership in `cellBoundaryOpens` unfolds to the sign condition `0 < c * x`.
     rcases abs_eq zero_le_one |>.1 (abs_down_eq_one j x) with h | h
-    · exact ⟨⟨false⟩, by change 0 < 1 * _; rw [h]; norm_num⟩
-    · exact ⟨⟨true⟩, by change 0 < -1 * _; rw [h]; norm_num⟩
+    · exact ⟨⟨false⟩, (mem_cellBoundaryOpens j _ x).2 (by simp [c, h])⟩
+    · exact ⟨⟨true⟩, (mem_cellBoundaryOpens j _ x).2 (by simp [c, h])⟩
   let val : _root_.TopCat.of ↥(⨆ i, s i) ⟶ (cellDiskPullbackPair p C 1 j).snd :=
     _root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩
   have : IsIso val := (_root_.TopCat.isIso_iff_isHomeomorph _).2
@@ -557,7 +568,11 @@ private lemma π_comp_cokernelTripleδIsoOfEq_hom {s t w : Set E} (h₁ : s ⊆ 
     (hw : w = p ⁻¹' (skeletonLT C ((1 + 1 : ℕ) : ℕ∞) : Set B)) (q : ℕ) :
     cokernel.π _ ≫ (cokernelTripleδIsoOfEq R hp h₁ h₂ hs ht hw q).hom =
       eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) q)
-          (show TopPair.ofInclusion h₁ = preimageSkeletonPair p C 0 by subst hs ht; rfl)) ≫
+          (show TopPair.ofInclusion h₁ = preimageSkeletonPair p C 0 by
+            -- After substitution both sides are `ofInclusion` of the same two sets: the
+            -- abbreviation `preimageSkeletonPair p C 0` is that pair, and the two inclusion
+            -- proofs agree by proof irrelevance.
+            subst hs ht; rfl)) ≫
         cokernel.π (oneCellTransportDifference C R hp q) := by
   subst hs ht hw
   simp only [cokernelTripleδIsoOfEq, cokernelSkeletonTripleδIso, eqToHom_refl, Category.id_comp]
@@ -589,8 +604,10 @@ private def homologyIsoCokernel (q : ℕ) (pq : ℤ × ℤ) (hb : pq.2 = -1) (ha
       (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R) (monotone_preimageSkeleton p)
         (-1 - (q : ℤ) + 2, 0 - 1) (0 - 1) 0 rfl (by lia) (-1 - q + 0 + 1) (by lia) q (by lia))
       ((Iso.eq_comp_inv _).1 (Category.assoc _ _ _).symm) ≪≫
-    cokernelTripleδIsoOfEq R hp _ _ (by rw [preimageSkeleton_def]; rfl)
-      (by rw [preimageSkeleton_def]; rfl) (by rw [preimageSkeleton_def]; rfl) q
+    cokernelTripleδIsoOfEq R hp _ _
+      (by rw [preimageSkeleton_def, show ((0 : ℤ) - 1 + 1).toNat = 0 by lia])
+      (by rw [preimageSkeleton_def, show ((0 : ℤ) + 1).toNat = 0 + 1 by lia])
+      (by rw [preimageSkeleton_def, show ((0 : ℤ) + 1 + 1).toNat = 1 + 1 by lia]) q
 
 variable (C) in
 /-- **The column `p = 0` of the second page of the Serre spectral sequence.** For a Serre
