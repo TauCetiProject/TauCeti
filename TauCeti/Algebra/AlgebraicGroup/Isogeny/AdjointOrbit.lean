@@ -111,8 +111,6 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_eq_of_charZero (hf : IsIsog
 
 section OrbitOrder
 
-variable [Algebra.FiniteType k K]
-
 /-- **Adjoint orbits under an isogeny.** In characteristic zero, the differential of an affine
 isogeny `Spec K → Spec H` identifies the rational adjoint orbits of `Spec K` with those of
 `Spec H`, as ordered sets for the closure order: the orbit of `x` corresponds to the orbit of
@@ -120,8 +118,10 @@ isogeny `Spec K → Spec H` identifies the rational adjoint orbits of `Spec K` w
 corresponding orbits. The finite type of `K` follows from that of `H`
 (`TauCeti.CommHopfAlgCat.IsIsogeny.finiteType_target`). -/
 noncomputable def adjointOrbitOrderIso (hf : IsIsogeny f) :
+    haveI := hf.finiteType_target
     Comodule.VectorOrbit k K (Module.Dual k (Bialgebra.CotangentSpace k K)) ≃o
       Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
+  let _ := hf.finiteType_target
   Comodule.VectorOrbit.orderIsoOfSurjective (mapDomain_surjective_of_injective k f hf.injective)
     hf.cotangentDualLieEquivOfCharZero.toLinearEquiv fun g x ↦ by
       simpa [cotangentDualLieEquivOfCharZero_apply] using
@@ -131,8 +131,10 @@ noncomputable def adjointOrbitOrderIso (hf : IsIsogeny f) :
 @[simp]
 theorem adjointOrbitOrderIso_mk (hf : IsIsogeny f)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    haveI := hf.finiteType_target
     hf.adjointOrbitOrderIso (Comodule.VectorOrbit.mk x) =
       Comodule.VectorOrbit.mk (dualCotangentMap f.hom x) := by
+  let _ := hf.finiteType_target
   rw [adjointOrbitOrderIso, Comodule.VectorOrbit.orderIsoOfSurjective_mk,
     LieEquiv.coe_toLinearEquiv, cotangentDualLieEquivOfCharZero_apply]
 
@@ -141,16 +143,21 @@ unique preimage of `y` under the differential. -/
 @[simp]
 theorem adjointOrbitOrderIso_symm_mk (hf : IsIsogeny f)
     (y : Module.Dual k (Bialgebra.CotangentSpace k H)) :
+    haveI := hf.finiteType_target
     hf.adjointOrbitOrderIso.symm (Comodule.VectorOrbit.mk y) =
       Comodule.VectorOrbit.mk (hf.cotangentDualLieEquivOfCharZero.symm y) := by
+  let _ := hf.finiteType_target
   rw [OrderIso.symm_apply_eq, adjointOrbitOrderIso_mk, ← hf.cotangentDualLieEquivOfCharZero_apply,
     LieEquiv.apply_symm_apply]
 
 /-- An isogeny matches nilpotent adjoint orbits with nilpotent adjoint orbits. -/
 @[simp]
 theorem isNilpotentAd_adjointOrbitOrderIso_iff (hf : IsIsogeny f)
-    (O : Comodule.VectorOrbit k K (Module.Dual k (Bialgebra.CotangentSpace k K))) :
+    (O : haveI := hf.finiteType_target
+      Comodule.VectorOrbit k K (Module.Dual k (Bialgebra.CotangentSpace k K))) :
+    haveI := hf.finiteType_target
     (hf.adjointOrbitOrderIso O).IsNilpotentAd ↔ O.IsNilpotentAd := by
+  let _ := hf.finiteType_target
   induction O using Comodule.VectorOrbit.ind with | h x
   rw [adjointOrbitOrderIso_mk, Comodule.VectorOrbit.isNilpotentAd_mk_iff,
     Comodule.VectorOrbit.isNilpotentAd_mk_iff, isNilpotent_ad_dualCotangentMap_iff_of_charZero hf]
