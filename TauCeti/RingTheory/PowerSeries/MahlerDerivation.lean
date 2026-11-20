@@ -268,12 +268,9 @@ theorem map_mahlerLogDeriv {S : Type*} [CommRing S] (φ : R →+* S) (f : R⟦X�
 theorem one_add_mul_mahlerLogDeriv_of_coe_eq_subst {g : R⟦X⟧} (hg : HasSubst g) {f u : R⟦X⟧ˣ}
     (hu : (u : R⟦X⟧) = (f : R⟦X⟧).subst g) :
     (1 + g) * mahlerLogDeriv u = mahlerDerivation R g * (mahlerLogDeriv f).subst g := by
-  have hinv : ((u⁻¹ : R⟦X⟧ˣ) : R⟦X⟧) = ((f⁻¹ : R⟦X⟧ˣ) : R⟦X⟧).subst g := by
-    refine Units.inv_eq_of_mul_eq_one_right ?_
-    rw [hu, ← coe_substAlgHom hg, ← map_mul, Units.mul_inv, map_one]
-  rw [mahlerLogDeriv_def, mahlerLogDeriv_def, hinv, hu, mahlerDerivation_apply,
-    mahlerDerivation_apply, mahlerDerivation_apply, derivative_subst hg, subst_mul hg,
-    subst_mul hg, subst_add hg, subst_X hg, ← coe_substAlgHom hg, map_one]
+  simp only [mahlerLogDeriv_def, coe_inv_eq_subst_of_coe_eq_subst hg hu, hu,
+    mahlerDerivation_apply, derivative_subst hg, subst_mul hg, subst_add hg, subst_X hg,
+    subst_one]
   ring
 
 /-- If `∂ g = a (1 + g)` and the unit `u` is the substitution `f ∘ g` of a unit `f`, then
@@ -324,9 +321,9 @@ example (f : ℤ⟦X⟧ˣ) (hf : (f : ℤ⟦X⟧) = 1 + X) : mahlerLogDeriv f⁻
 example (f : (ZMod 3)⟦X⟧ˣ) (hf : (f : (ZMod 3)⟦X⟧) = 1 + X ^ 3) :
     mahlerLogDeriv f = 0 ∧ (f : (ZMod 3)⟦X⟧) ≠ C (constantCoeff (f : (ZMod 3)⟦X⟧)) := by
   refine ⟨?_, fun h ↦ ?_⟩
-  · rw [mahlerLogDeriv_eq_iff, zero_mul, hf, mahlerDerivation_apply, map_add, derivative_one,
-      derivative_X_pow, zero_add]
-    rw [ZMod.natCast_self, map_zero, zero_mul, mul_zero]
+  · have h3 : (3 : (ZMod 3)⟦X⟧) = 0 := by
+      rw [← map_ofNat C, CharP.ofNat_eq_zero (ZMod 3) 3, map_zero]
+    simp [mahlerLogDeriv_eq_iff, hf, mahlerDerivation_apply, h3]
   · have h3 := congrArg (coeff 3) h
     rw [hf] at h3
     simp at h3
