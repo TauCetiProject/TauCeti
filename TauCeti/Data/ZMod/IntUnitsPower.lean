@@ -34,6 +34,9 @@ map into a `ZMod 2`-space of dimension `#ι`, and lets such a family be compared
 * `TauCeti.uzpow_mul_eq_of_forall_uzpow_eq`: any map between Koszul-signed degree semirings
   that preserves `u ^ ·` for a unit `u : ℤˣ` automatically preserves pairwise powers
   `u ^ (p * q)`.
+* `TauCeti.uzpow_sum`: a power `u ^ (∑ᵢ fᵢ)` is the product of the powers `u ^ fᵢ`.
+* `TauCeti.neg_one_uzpow_injective`, `TauCeti.coe_neg_one_uzpow_eq_ite`: the sign `(-1) ^ x` of
+  `x : ZMod 2` determines `x`, and as an integer it is `1` at `x = 0` and `-1` otherwise.
 -/
 
 public section
@@ -101,6 +104,23 @@ theorem uzpow_mul_eq_of_forall_uzpow_eq {ι κ : Type*} [CommSemiring ι] [Modul
     rcases Int.units_eq_one_or ((-1 : ℤˣ) ^ p) with h | h
     · rw [h, one_uzpow, one_uzpow]
     · rw [h, hf q]
+
+/-- A power of a unit of `ℤ` with a finite sum as exponent is the product of the powers. -/
+theorem uzpow_sum {R ι : Type*} [CommSemiring R] [Module R (Additive ℤˣ)] (u : ℤˣ)
+    (s : Finset ι) (f : ι → R) : u ^ (∑ i ∈ s, f i) = ∏ i ∈ s, u ^ f i := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons i s hi ih => rw [Finset.sum_cons, Finset.prod_cons, uzpow_add, ih]
+
+/-- The sign `(-1) ^ x` determines `x : ZMod 2`. -/
+theorem neg_one_uzpow_injective : Function.Injective fun x : ZMod 2 => (-1 : ℤˣ) ^ x := by
+  decide
+
+/-- As an integer, the sign `(-1) ^ x` of `x : ZMod 2` is `1` at `x = 0` and `-1` otherwise. -/
+theorem coe_neg_one_uzpow_eq_ite (x : ZMod 2) :
+    (((-1 : ℤˣ) ^ x : ℤˣ) : ℤ) = if x = 0 then 1 else -1 := by
+  revert x
+  decide
 
 /-- The sign dictionary turns addition of mod-two invariants into multiplication of signs. -/
 theorem hilbertSign_add (x y : ZMod 2) : hilbertSign (x + y) = hilbertSign x * hilbertSign y :=
