@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Saddle
+import TauCeti.AlgebraicTopology.Sphere.Puncture
+import TauCeti.Geometry.Manifold.Morse.Boundary.OneTrajectory
 import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
-import TauCeti.Geometry.Manifold.Morse.Stable.Frontier
 
 /-!
 # The Morse complex of the sphere with two maxima
@@ -16,9 +17,9 @@ import TauCeti.Geometry.Manifold.Morse.Stable.Frontier
 Let `u` and `v` be orthogonal unit vectors of a real inner product space of dimension `n + 1`,
 with `n ≥ 2`, and `0 < t < 2`. The function `f = hᵤ² + t hᵥ` on the sphere `Sⁿ`
 (`TauCeti.Geometry.Manifold.Morse.Sphere.Saddle`) is a Morse function with four critical points:
-the minimum `-v` of index `0`, the saddle `v` of index `n - 1` and two maxima of index `n`. This
-file computes its Morse complex, over `ZMod 2` and over any ring, for every pseudo-gradient `X`
-adapted to `f`.
+the minimum `-v` of index `0`, the saddle `v` of index `n - 1` and two maxima of index `n`. For
+every pseudo-gradient `X` adapted to `f`, this file computes the integral boundaries of the maxima
+and of the saddle, and the coefficient of the saddle in the mod-two boundary of each maximum.
 
 * `X` is Morse–Smale, whatever its choice: the saddle is the only critical point whose index is
   neither `0` nor `n`.
@@ -29,11 +30,12 @@ adapted to `f`.
   (`TauCeti.IsAdaptedPseudoGradient.ncard_morseTrajectorySlice_eq_one_of_isPreconnected`). On the
   torus with one maximum, both trajectories into a saddle come from that maximum, so this is a
   global fact about the sphere.
-* So the mod-two boundary of each maximum is the saddle, and its integral boundary is `±` the
-  saddle, with the sign given by the orientations of the unstable manifolds
-  (`signedMorseBoundary_single_sphereHeight_sq_add_smul_sphereHeight`).
+* So the saddle has coefficient `1` in the mod-two boundary of each maximum
+  (`IsMorseSmale.morseBoundaryCoeff_eq_one_sphereHeight_sq_add_smul_sphereHeight`), and the
+  integral boundary of each maximum is `±` the saddle, with the sign given by the orientations of
+  the unstable manifolds (`signedMorseBoundary_single_sphereHeight_sq_add_smul_sphereHeight`).
   The integral boundary of the saddle vanishes
-  (`IsMorseSmale.signedMorseBoundary_single_eq_zero_sphereHeight_sq_add_smul_sphereHeight`): for
+  (`signedMorseBoundary_single_eq_zero_sphereHeight_sq_add_smul_sphereHeight`): for
   `n = 2` its two trajectories to the minimum carry opposite signs, and for `n ≥ 3` there is no
   critical point of index `n - 2`.
 * Reversing the orientations at the maxima whose boundary is `-v`, the orientations can be chosen
@@ -83,6 +85,17 @@ private theorem mfderiv_eq_zero_of_eq_or_eq (huv : ⟪(u : E), (v : E)⟫ = 0) (
     ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀.ne').2
       (hy.imp id Or.inl))
 
+/-- The index of a point of index `n` is one more than the index of the saddle `v` of
+`hᵤ² + t hᵥ`. -/
+private theorem manifoldMorseIndex_eq_add_one_of_eq_finrank (huv : ⟪(u : E), (v : E)⟫ = 0)
+    (hn : 2 ≤ n) (ht₀ : 0 < t) (ht₂ : t < 2) {p q : sphere (0 : E) 1}
+    (hp : manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p = n)
+    (hq : q = v) :
+    manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p =
+      manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) q + 1 := by
+  rw [hq, manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀ ht₂, hp]
+  omega
+
 variable [FiniteDimensional ℝ E] {X : (x : sphere (0 : E) 1) → TangentSpace (𝓡 n) x}
 
 /-- **The function `hᵤ² + t hᵥ` is Morse–Smale for every pseudo-gradient.** For `0 < t < 2`,
@@ -127,13 +140,10 @@ theorem ncard_morseTrajectorySlice_sphereHeight_sq_add_smul_sphereHeight
       · omega
     · rw [mem_singleton_iff] at hy
       exact ⟨mfderiv_eq_zero_of_eq_or_eq huv ht₀ (Or.inr hy), hy ▸ hv0⟩
-  -- The sphere minus a point is the image of the stereographic chart from that point.
-  have hconn : IsPreconnected ({-v} : Set (sphere (0 : E) 1))ᶜ := by
-    have h := (stereographic' n (-v)).symm_image_target_eq_source
-    rw [stereographic'_target, stereographic'_source] at h
-    rw [← h]
-    exact isPreconnected_univ.image _
-      ((stereographic' n (-v)).continuousOn_symm.mono (by rw [stereographic'_target]))
+  -- The sphere minus a point is contractible.
+  have hconn : IsPreconnected ({-v} : Set (sphere (0 : E) 1))ᶜ :=
+    have := contractibleSpace_sphere_compl_singleton (-v)
+    isPreconnected_iff_preconnectedSpace.2 inferInstance
   -- A second critical point of index `n`.
   have hcount := criticalCount_sphereHeight_sq_add_smul_sphereHeight huv hn ht₀.ne'
     (by nlinarith) n
@@ -161,7 +171,7 @@ theorem ncard_morseTrajectorySlice_sphereHeight_sq_add_smul_sphereHeight
 /-- **The integral boundary of a maximum is `±` the saddle.** For `n ≥ 2` and `0 < t < 2`, the
 integral Morse boundary of `a` times a critical point `p` of index `n` of `hᵤ² + t hᵥ` is `±a`
 times the saddle `v`, the sign being `signedMorseBoundaryCoeff 𝔬 p q`, which is `1` or `-1`
-(`IsMorseSmale.signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight`). -/
+(`signedMorseBoundaryCoeff_eq_one_or_eq_neg_one_sphereHeight_sq_add_smul_sphereHeight`). -/
 theorem signedMorseBoundary_single_sphereHeight_sq_add_smul_sphereHeight
     (huv : ⟪(u : E), (v : E)⟫ = 0) (hn : 2 ≤ n) (ht₀ : 0 < t) (ht₂ : t < 2)
     (hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X)
@@ -189,49 +199,21 @@ theorem signedMorseBoundary_single_sphereHeight_sq_add_smul_sphereHeight
     omega
   · omega
 
-namespace IsMorseSmale
-
-variable {hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X}
-  (h : hX.IsMorseSmale) (hf : IsMorse (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v))
-include h hf
-
-/-- **The mod-two boundary of a maximum is the saddle.** For `n ≥ 2` and `0 < t < 2`, the
-coefficient of the saddle `v` in the mod-two Morse boundary of a critical point of index `n` of
-`hᵤ² + t hᵥ` is `1`. -/
-theorem morseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight (huv : ⟪(u : E), (v : E)⟫ = 0)
-    (hn : 2 ≤ n) (ht₀ : 0 < t) (ht₂ : t < 2)
-    {p q : criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)}
-    (hp : manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)
-        (p : sphere (0 : E) 1) = n)
-    (hq : (q : sphere (0 : E) 1) = v) : h.morseBoundaryCoeff hf p q = 1 := by
-  have hind : manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)
-      (p : sphere (0 : E) 1) =
-      manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)
-          (q : sphere (0 : E) 1) + 1 := by
-    rw [hq, manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀ ht₂, hp]
-    omega
-  rw [h.morseBoundaryCoeff_eq_ncard hf hind, hq,
-    hX.ncard_morseTrajectorySlice_sphereHeight_sq_add_smul_sphereHeight huv hn ht₀ ht₂
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp, Nat.cast_one]
-
 /-- **The integral boundary of a maximum is `±` the saddle: the coefficient.** For `n ≥ 2` and
 `0 < t < 2`, the coefficient of the saddle `v` in the integral Morse boundary of a critical point
 of index `n` of `hᵤ² + t hᵥ` is `1` or `-1`, for every choice of orientations: it is the sign of
 the only trajectory from that critical point to `v`. -/
-theorem signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight
+theorem signedMorseBoundaryCoeff_eq_one_or_eq_neg_one_sphereHeight_sq_add_smul_sphereHeight
     (huv : ⟪(u : E), (v : E)⟫ = 0) (hn : 2 ≤ n) (ht₀ : 0 < t) (ht₂ : t < 2)
+    (hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X)
     (𝔬 : MorseOrientation (sphereHeight u ^ 2 + t • sphereHeight v) X)
     {p q : criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)}
     (hp : manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)
         (p : sphere (0 : E) 1) = n)
     (hq : (q : sphere (0 : E) 1) = v) :
     hX.signedMorseBoundaryCoeff 𝔬 p q = 1 ∨ hX.signedMorseBoundaryCoeff 𝔬 p q = -1 := by
-  have hind : manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)
-      (p : sphere (0 : E) 1) =
-      manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)
-          (q : sphere (0 : E) 1) + 1 := by
-    rw [hq, manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀ ht₂, hp]
-    omega
+  have h := hX.isMorseSmale_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂
+  have hf := isMorse_sphereHeight_sq_add_smul_sphereHeight (n := n) huv ht₀.ne' (by nlinarith)
   have hone := hX.ncard_morseTrajectorySlice_sphereHeight_sq_add_smul_sphereHeight huv hn ht₀ ht₂
     (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp
   obtain ⟨y, hy⟩ := ncard_eq_one.1 hone
@@ -240,8 +222,9 @@ theorem signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight
     have hy' : y ∈ hX.morseTrajectorySlice p q := hy ▸ mem_singleton y
     rw [mem_morseTrajectorySlice] at hy'
     exact ⟨hy'.1, hy'.2.1⟩
-  rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hind, signedTrajectoryCount_def, hy,
-    finsum_mem_singleton]
+  rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one
+      (manifoldMorseIndex_eq_add_one_of_eq_finrank huv hn ht₀ ht₂ hp hq),
+    signedTrajectoryCount_def, hy, finsum_mem_singleton]
   exact trajectorySign_eq_one_or_eq_neg_one (𝔬.coord_mfderiv_chart p) (𝔬.coord_mfderiv_chart q)
     h hf hyuq
 
@@ -251,18 +234,23 @@ trajectories to the minimum carry opposite signs, and for `n ≥ 3` there is no 
 index `n - 2`. -/
 theorem signedMorseBoundary_single_eq_zero_sphereHeight_sq_add_smul_sphereHeight
     (huv : ⟪(u : E), (v : E)⟫ = 0) (hn : 2 ≤ n) (ht₀ : 0 < t) (ht₂ : t < 2)
+    (hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X)
+    (hf : IsMorse (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v))
     (𝔬 : MorseOrientation (sphereHeight u ^ 2 + t • sphereHeight v) X) {R : Type*} [Ring R]
     {q : criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)}
     (hq : (q : sphere (0 : E) 1) = v) (a : R) :
     hX.signedMorseBoundary 𝔬 hf R (Finsupp.single q a) = 0 := by
+  have h := hX.isMorseSmale_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂
   ext r
   rw [signedMorseBoundary_single_apply, Finsupp.coe_zero, Pi.zero_apply]
   suffices hqr : hX.signedMorseBoundaryCoeff 𝔬 q r = 0 by rw [hqr, Int.cast_zero, mul_zero]
   have hv0 := manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_neg_self (n := n) huv ht₀
   by_cases hr : (r : sphere (0 : E) 1) = -v
   · -- The minimum is the only critical point of index `0`.
-    refine (show r = ⟨-v, hr ▸ r.2⟩ from Subtype.ext hr) ▸
-      h.signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero hf 𝔬 (fun y hy hy0 ↦ ?_) q
+    obtain ⟨r, hr'⟩ := r
+    dsimp only at hr
+    subst hr
+    refine h.signedMorseBoundaryCoeff_eq_zero_of_unique_index_zero hf 𝔬 (fun y hy hy0 ↦ ?_) q
     rcases eq_or_eq_or_manifoldMorseIndex_eq huv ht₀ ht₂ hy with rfl | rfl | hyn
     · rw [manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self huv ht₀ ht₂] at hy0
       omega
@@ -277,6 +265,24 @@ theorem signedMorseBoundary_single_eq_zero_sphereHeight_sq_add_smul_sphereHeight
     omega
   · exact hr hrv
   · omega
+
+namespace IsMorseSmale
+
+/-- **The mod-two coefficient of the saddle in the boundary of a maximum is `1`.** For `n ≥ 2`
+and `0 < t < 2`, the coefficient of the saddle `v` in the mod-two Morse boundary of a critical
+point of index `n` of `hᵤ² + t hᵥ` is `1`. -/
+theorem morseBoundaryCoeff_eq_one_sphereHeight_sq_add_smul_sphereHeight
+    {hX : IsAdaptedPseudoGradient (sphereHeight u ^ 2 + t • sphereHeight v) X}
+    (h : hX.IsMorseSmale) (hf : IsMorse (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v))
+    (huv : ⟪(u : E), (v : E)⟫ = 0) (hn : 2 ≤ n) (ht₀ : 0 < t) (ht₂ : t < 2)
+    {p q : criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)}
+    (hp : manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v)
+        (p : sphere (0 : E) 1) = n)
+    (hq : (q : sphere (0 : E) 1) = v) : h.morseBoundaryCoeff hf p q = 1 := by
+  rw [h.morseBoundaryCoeff_eq_ncard hf
+      (manifoldMorseIndex_eq_add_one_of_eq_finrank huv hn ht₀ ht₂ hp hq), hq,
+    hX.ncard_morseTrajectorySlice_sphereHeight_sq_add_smul_sphereHeight huv hn ht₀ ht₂
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2) hp, Nat.cast_one]
 
 end IsMorseSmale
 
@@ -293,8 +299,6 @@ theorem exists_signedMorseBoundaryCoeff_eq_one_sphereHeight_sq_add_smul_sphereHe
             (p : sphere (0 : E) 1) = n →
           (q : sphere (0 : E) 1) = v → hX.signedMorseBoundaryCoeff 𝔬 p q = 1 := by
   classical
-  have h := hX.isMorseSmale_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂
-  have hf := isMorse_sphereHeight_sq_add_smul_sphereHeight (n := n) huv ht₀.ne' (by nlinarith)
   obtain ⟨𝔬⟩ := hX.nonempty_morseOrientation
   -- Reverse the orientations at the critical points whose boundary coefficient along `v` is `-1`.
   set S := {p : criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) |
@@ -306,8 +310,8 @@ theorem exists_signedMorseBoundaryCoeff_eq_one_sphereHeight_sq_add_smul_sphereHe
     rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one (by omega)] at this
     norm_num at this
   rw [signedMorseBoundaryCoeff_reverse]
-  rcases h.signedMorseBoundaryCoeff_sphereHeight_sq_add_smul_sphereHeight hf huv hn ht₀ ht₂ 𝔬 hp hq
-    with hc | hc
+  rcases hX.signedMorseBoundaryCoeff_eq_one_or_eq_neg_one_sphereHeight_sq_add_smul_sphereHeight huv
+    hn ht₀ ht₂ 𝔬 hp hq with hc | hc
   · have hpS : p ∉ S := fun hpS ↦ by
       have := hpS q hq
       rw [hc] at this

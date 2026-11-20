@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Morse.Stable.Manifold
 import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Existence
 import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
@@ -17,7 +16,8 @@ import TauCeti.Geometry.Manifold.Morse.Stable.OneDimensional
 
 Let `f` be a Morse function on a compact boundaryless manifold `M` of dimension `n`, and `X` a
 pseudo-gradient adapted to `f`. The unstable manifold `W^u(m)` of a critical point `m` of index
-`n` is an open subset of `M`, since its slice charts flatten it onto the whole model space, and
+`n` is an open subset of `M`
+(`TauCeti.IsAdaptedPseudoGradient.isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank`), and
 that of a critical point of index `0` is the point itself
 (`TauCeti.IsAdaptedPseudoGradient.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero`).
 
@@ -51,26 +51,20 @@ The answer here is global.
   least two with a unique minimum, every critical point of index `n` sends a trajectory to `q`.
 
 When there are exactly two critical points of index `n`, the two trajectories into `q` therefore
-come one from each of them, and the middle-level slice of the trajectories from either of them to
-`q` is a single point
-(`TauCeti.IsAdaptedPseudoGradient.ncard_morseTrajectorySlice_eq_one_of_isPreconnected`). This is
-the trajectory count behind the Morse complex of the sphere with two maxima, where each maximum has
+come one from each of them (`TauCeti.Geometry.Manifold.Morse.Boundary.OneTrajectory`). This is the
+trajectory count behind the Morse complex of the sphere with two maxima, where each maximum has
 boundary `±` the saddle.
 
 ## Main results
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero`: the unstable manifold of a critical
-  point of index `0` is a point.
 * `subset_unstableSet_of_isPreconnected`: a connected set covered by the unstable manifolds of
   critical points of index `n` lies in one of them.
 * `exists_mem_unstableSet_inter_stableSet_ne_of_mem_closure`: if `q` lies in the closure of
   `W^u(m)`, a trajectory runs from `m` to `q`.
 * `exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected`: every critical point of index `n`
   sends a trajectory to `q` when `M` minus its critical points of index `0` is connected.
-* `ncard_morseTrajectorySlice_eq_one_of_isPreconnected`: with two critical points of index `n`,
-  exactly one trajectory runs from each of them to `q`.
 
 ## References
 
@@ -96,43 +90,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X)
-
-/-- **The unstable manifold of a critical point of top index is open.** For a critical point `x`
-of index `n = dim M`, the unstable manifold `W^u(x)` is an open subset of `M`: its slice charts
-flatten it onto a subspace of dimension `n`, the whole model space. -/
-private theorem isOpen_unstableSet_of_manifoldMorseIndex_eq_finrank (hf : IsMorse 𝓘(ℝ, E) f)
-    {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = finrank ℝ E) :
-    IsOpen (hX.flow.unstableSet x) := by
-  refine isOpen_iff_forall_mem_open.2 fun p hp ↦ ?_
-  obtain ⟨L, φ, hL, hpφ, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hp
-  obtain rfl : L = ⊤ := Submodule.eq_top_of_finrank_eq (hL.trans hind)
-  exact ⟨φ.source, fun z hz ↦ (isSliceChart_iff.1 hs z hz).2 (by simp), φ.open_source, hpφ⟩
-
-/-- **The unstable manifold of a critical point of index zero is a point.** For a critical point
-`x` of index `0`, no other trajectory converges to `x` in backward time: near `x` the slice charts
-flatten `W^u(x)` onto the zero subspace, and every trajectory converging to `x` in backward time
-enters such a chart. -/
-theorem unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (hind : manifoldMorseIndex 𝓘(ℝ, E) f x = 0) :
-    hX.flow.unstableSet x = {x} := by
-  have hxu : x ∈ hX.flow.unstableSet x := (hX.mem_unstableSet_inter_stableSet_self hx).1
-  obtain ⟨L, φ, hL, hxφ, -, hs⟩ := hX.exists_isSliceChart_unstableSet hf hx hxu
-  obtain rfl : L = ⊥ := Submodule.finrank_eq_zero.1 (hL.trans hind)
-  -- In the slice chart at `x`, the only point of `W^u(x)` is `x` itself.
-  have hloc (z : M) (hz : z ∈ φ.source) (hzu : z ∈ hX.flow.unstableSet x) : z = x := by
-    have hz0 : φ z = 0 := by simpa using (isSliceChart_iff.1 hs z hz).1 hzu
-    have hx0 : φ x = 0 := by simpa using (isSliceChart_iff.1 hs x hxφ).1 hxu
-    exact φ.injOn hz hxφ (hz0.trans hx0.symm)
-  refine subset_antisymm (fun p hp ↦ ?_) (singleton_subset_iff.2 hxu)
-  obtain ⟨t, ht⟩ := ((Flow.mem_unstableSet.1 hp).eventually
-    (φ.open_source.mem_nhds hxφ)).exists
-  have hpt := hloc _ ht ((Flow.apply_mem_unstableSet_iff _ t).2 hp)
-  rw [mem_singleton_iff]
-  calc p = hX.flow (-t) (hX.flow t p) := by
-        rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-    _ = x := by rw [hpt, hX.flow_apply_of_mfderiv_eq_zero hx]
 
 /-- **A connected set covered by unstable manifolds of top index lies in one of them.** If every
 point of a preconnected set `S` lies on the unstable manifold of a critical point of index `n`,
@@ -170,8 +127,7 @@ private theorem exists_mem_unstableSet_of_notMem (hf : IsMorse 𝓘(ℝ, E) f) {
     (hyu : y ∉ hX.flow.unstableSet q) (hy : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = q) :
     ∃ c, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f c = 0 ∧ manifoldMorseIndex 𝓘(ℝ, E) f c = finrank ℝ E ∧
       y ∈ hX.flow.unstableSet c := by
-  obtain ⟨c, hc, hyc⟩ := mem_iUnion₂.1 ((hX.iUnion_unstableSet hf).symm ▸ mem_univ y :
-    y ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.unstableSet x)
+  obtain ⟨c, hc, hyc⟩ := hX.exists_mem_unstableSet hf y
   have hcq : c ≠ q := by
     rintro rfl
     exact hyu hyc
@@ -243,12 +199,7 @@ private theorem exists_pos_forall_norm_lt (hf : IsMorse 𝓘(ℝ, E) f) {q : M}
 /-- **A trajectory from the closure.** Let `q` be a critical point of index `n - 1` such that every
 other critical point has index `0` or `n`. If `q` lies in the closure of the unstable manifold of a
 point `m ≠ q`, then some trajectory runs from `m` to `q`: a point of `W^u(m) ∩ W^s(q)` other than
-`q`.
-
-In a Morse chart at `q` in which `X` is linear, with `x` the coordinate of positive weight, a
-small half-ball `x > 0` or `x < 0` meets `W^u(m)`. It avoids `W^u(q)` and the other critical
-points, so it is covered by the disjoint open unstable manifolds of the critical points of index
-`n`; being connected, it lies in `W^u(m)`. Its points on the axis of `x` lie in `W^s(q)`. -/
+`q`. -/
 theorem exists_mem_unstableSet_inter_stableSet_ne_of_mem_closure (hf : IsMorse 𝓘(ℝ, E) f)
     {q m : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hqind : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E)
@@ -304,11 +255,7 @@ theorem exists_mem_unstableSet_inter_stableSet_ne_of_mem_closure (hf : IsMorse �
 /-- **Every critical point of top index sends a trajectory to `q`.** Let `q` be a critical point
 of index `n - 1` such that every other critical point has index `0` or `n`, and suppose that `M`
 minus its critical points of index `0` is connected. Then for every critical point `m` of index
-`n` some trajectory runs from `m` to `q`: a point of `W^u(m) ∩ W^s(q)` other than `q`.
-
-Otherwise `q`, and with it every point of `W^u(q)`, would lie outside the closure of `W^u(m)`, and
-`M` minus its critical points of index `0` would split into the open set `W^u(m)` and the
-complement of its closure, the second containing the points of `W^s(q)` other than `q`. -/
+`n` some trajectory runs from `m` to `q`: a point of `W^u(m) ∩ W^s(q)` other than `q`. -/
 theorem exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected (hf : IsMorse 𝓘(ℝ, E) f)
     {q m : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hqind : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E)
@@ -318,6 +265,8 @@ theorem exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected (hf : IsMors
       manifoldMorseIndex 𝓘(ℝ, E) f y = 0}ᶜ)
     (hm : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f m = 0) (hmind : manifoldMorseIndex 𝓘(ℝ, E) f m = finrank ℝ E) :
     ∃ y ∈ hX.flow.unstableSet m ∩ hX.flow.stableSet q, y ≠ q := by
+  -- Otherwise `M` minus its critical points of index `0` splits into the open set `W^u(m)` and the
+  -- complement of its closure, the second containing the points of `W^s(q)` other than `q`.
   by_contra hno
   have hmq : m ≠ q := by
     rintro rfl
@@ -334,8 +283,7 @@ theorem exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected (hf : IsMors
     swap
     · exact Or.inr hyA
     left
-    obtain ⟨c, hc, hyc⟩ := mem_iUnion₂.1 ((hX.iUnion_unstableSet hf).symm ▸ mem_univ y :
-      y ∈ ⋃ x ∈ {x : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0}, hX.flow.unstableSet x)
+    obtain ⟨c, hc, hyc⟩ := hX.exists_mem_unstableSet hf y
     by_cases hcq : c = q
     · -- The closure of `A` is closed and invariant, so it contains the backward limit `q` of `y`.
       subst hcq
@@ -362,79 +310,6 @@ theorem exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected (hf : IsMors
   by_contra hyq'
   exact disjoint_left.1 (Flow.disjoint_stableSet hyq')
     (hX.mem_unstableSet_inter_stableSet_self h.1).2 hys
-
-/-- **A single trajectory.** If all the trajectories from `p` to `q ≠ p` form a single orbit of
-the flow, then the middle-level slice of the trajectories from `p` to `q` is a single point. -/
-theorem ncard_morseTrajectorySlice_eq_one_of_subset_orbit {p q a : M} (hpq : p ≠ q)
-    (ha : a ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    (hsub : hX.flow.unstableSet p ∩ hX.flow.stableSet q ⊆ hX.flow.orbit a) :
-    (hX.morseTrajectorySlice p q).ncard = 1 := by
-  have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hpq ha
-  obtain ⟨t, ht, huniq⟩ := hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hpq ha
-    (c := (f p + f q) / 2) (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
-  refine ncard_eq_one.2 ⟨hX.flow t a, Set.ext fun z ↦ ⟨fun hz ↦ ?_, ?_⟩⟩
-  · rw [mem_morseTrajectorySlice] at hz
-    obtain ⟨s, rfl⟩ := (Flow.mem_orbit_iff _).1 (hsub ⟨hz.1, hz.2.1⟩)
-    rw [huniq s hz.2.2, mem_singleton_iff]
-  · rintro rfl
-    exact (mem_morseTrajectorySlice _).2 ⟨(Flow.apply_mem_unstableSet_iff _ t).2 ha.1,
-      (Flow.apply_mem_stableSet_iff _ t).2 ha.2, ht⟩
-
-/-- **One trajectory from each of two critical points of top index.** Let `q` be a critical point
-of index `n - 1` such that every other critical point has index `0` or `n`, suppose that `M` minus
-its critical points of index `0` is connected, and let `m₁ ≠ m₂` be critical points of index `n`.
-Then exactly one trajectory runs from `m₁` to `q`: the stable manifold `W^s(q)` is `q` together with
-two trajectories, and each of `m₁` and `m₂` sends one of them to `q`. -/
-theorem ncard_morseTrajectorySlice_eq_one_of_isPreconnected (hf : IsMorse 𝓘(ℝ, E) f)
-    {q m₁ m₂ : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hqind : manifoldMorseIndex 𝓘(ℝ, E) f q + 1 = finrank ℝ E)
-    (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y ≠ q →
-      manifoldMorseIndex 𝓘(ℝ, E) f y = 0 ∨ manifoldMorseIndex 𝓘(ℝ, E) f y = finrank ℝ E)
-    (hconn : IsPreconnected {y : M | mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 ∧
-      manifoldMorseIndex 𝓘(ℝ, E) f y = 0}ᶜ)
-    (hm₁ : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f m₁ = 0)
-    (hm₁ind : manifoldMorseIndex 𝓘(ℝ, E) f m₁ = finrank ℝ E)
-    (hm₂ : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f m₂ = 0)
-    (hm₂ind : manifoldMorseIndex 𝓘(ℝ, E) f m₂ = finrank ℝ E) (hm : m₁ ≠ m₂) :
-    (hX.morseTrajectorySlice m₁ q).ncard = 1 := by
-  obtain ⟨y₁, y₂, -, -, -, heq⟩ := hX.exists_stableSet_eq_insert_union_orbit hq hqind
-  obtain ⟨a₁, ha₁, ha₁q⟩ := hX.exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected hf hq
-    hqind hcrit hconn hm₁ hm₁ind
-  obtain ⟨a₂, ha₂, ha₂q⟩ := hX.exists_mem_unstableSet_inter_stableSet_ne_of_isPreconnected hf hq
-    hqind hcrit hconn hm₂ hm₂ind
-  have hm₁q : m₁ ≠ q := by
-    rintro rfl
-    omega
-  -- The points of `W^s(q)` other than `q` lie on the orbit of `y₁` or on that of `y₂`.
-  have hon (z : M) (hz : z ∈ hX.flow.stableSet q) (hzq : z ≠ q) :
-      z ∈ hX.flow.orbit y₁ ∨ z ∈ hX.flow.orbit y₂ := by
-    rw [heq, mem_insert_iff, mem_union] at hz
-    exact hz.resolve_left hzq
-  have hunst {y z : M} (hz : z ∈ hX.flow.orbit y) :
-      z ∈ hX.flow.unstableSet m₁ ↔ y ∈ hX.flow.unstableSet m₁ := by
-    obtain ⟨s, rfl⟩ := (Flow.mem_orbit_iff _).1 hz
-    exact Flow.apply_mem_unstableSet_iff _ _
-  refine hX.ncard_morseTrajectorySlice_eq_one_of_subset_orbit hm₁q ha₁ fun z hz ↦ ?_
-  have hzq : z ≠ q := by
-    rintro rfl
-    exact disjoint_left.1 (Flow.disjoint_unstableSet hm₁q) hz.1
-      (hX.mem_unstableSet_inter_stableSet_self hq).1
-  -- If `z` and `a₁` lay on different orbits, both orbits would come from `m₁`, and so would `a₂`.
-  have hboth (h₁ : y₁ ∈ hX.flow.unstableSet m₁) (h₂ : y₂ ∈ hX.flow.unstableSet m₁) : False := by
-    refine disjoint_left.1 (Flow.disjoint_unstableSet hm) ?_ ha₂.1
-    rcases hon a₂ ha₂.2 ha₂q with h | h
-    · exact (hunst h).2 h₁
-    · exact (hunst h).2 h₂
-  have hsame {y : M} (h₁ : a₁ ∈ hX.flow.orbit y) (h₂ : z ∈ hX.flow.orbit y) :
-      z ∈ hX.flow.orbit a₁ := by
-    obtain ⟨s, rfl⟩ := (Flow.mem_orbit_iff _).1 h₁
-    obtain ⟨s', rfl⟩ := (Flow.mem_orbit_iff _).1 h₂
-    exact (Flow.mem_orbit_iff _).2 ⟨s' - s, by rw [← Flow.map_add, sub_add_cancel]⟩
-  rcases hon a₁ ha₁.2 ha₁q with h₁ | h₁ <;> rcases hon z hz.2 hzq with h₂ | h₂
-  · exact hsame h₁ h₂
-  · exact (hboth ((hunst h₁).1 ha₁.1) ((hunst h₂).1 hz.1)).elim
-  · exact (hboth ((hunst h₂).1 hz.1) ((hunst h₁).1 ha₁.1)).elim
-  · exact hsame h₁ h₂
 
 end IsAdaptedPseudoGradient
 
