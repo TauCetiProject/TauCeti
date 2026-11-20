@@ -25,6 +25,7 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.isUnit_of_isUnit_coeff_zero`: a root system is a unit if its zeroth coordinate is.
 * `Perfection.coeff_lift_apply`: the coordinates of `Perfection.lift p k R φ x` are the values of
   `φ` at the `p ^ n`-th roots of `x`.
 * `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
@@ -56,6 +57,36 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   have hf := coeffMonoidHom_pow_p_pow f 0 n
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
+
+/-- A compatible root system is a unit as soon as its zeroth coordinate is a unit. -/
+theorem isUnit_of_isUnit_coeff_zero
+    {M : Type*} [CommMonoid M] {p : ℕ}
+    (x : Perfection M p) (hx : IsUnit (Perfection.coeffMonoidHom M p 0 x)) :
+    IsUnit x := by
+  -- The later coordinates are units because their powers give the zeroth one.
+  by_cases hp : p = 0
+  · subst p
+    have hx1 : x = 1 := by
+      apply extMonoid
+      intro n
+      simpa only [pow_zero, map_one] using (coeffMonoidHom_pow_p' x n).symm
+    rw [hx1]
+    exact isUnit_one
+  have hu (n : ℕ) : IsUnit (Perfection.coeffMonoidHom M p n x) := by
+    apply (isUnit_pow_iff (pow_ne_zero n hp)).mp
+    rwa [Perfection.coeffMonoidHom_pow_p_pow_self]
+  let u (n : ℕ) : Mˣ := (hu n).unit
+  have huval (n : ℕ) : (u n : M) = Perfection.coeffMonoidHom M p n x := (hu n).unit_spec
+  have hupow (n : ℕ) : u (n + 1) ^ p = u n := by
+    apply Units.ext
+    simp only [Units.val_pow_eq_pow_val, huval, Perfection.coeffMonoidHom_pow_p']
+  let y : Perfection M p := ⟨fun n ↦ ↑(u n)⁻¹, fun n ↦ by
+    rw [← Units.val_pow_eq_pow_val, inv_pow, hupow]⟩
+  have hy (n : ℕ) : Perfection.coeffMonoidHom M p n y = ↑(u n)⁻¹ := rfl
+  apply isUnit_iff_exists_inv.mpr
+  refine ⟨y, Perfection.extMonoid fun n ↦ ?_⟩
+  rw [map_mul, map_one, ← huval, hy]
+  exact Units.mul_inv (u n)
 
 /-- The `n`-th coordinate of `Perfection.lift p k R φ x` is `φ` applied to the `p ^ n`-th root of
 `x` in the perfect ring `k`. -/
