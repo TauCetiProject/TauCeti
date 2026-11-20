@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Invertible manifold derivatives of composites
@@ -15,7 +18,9 @@ If `f` has invertible manifold derivative at `x` and `g` has invertible manifold
 `f x`, then `g ∘ f` has invertible manifold derivative at `x`. No differentiability hypothesis is
 needed, since an invertible derivative forces differentiability
 (`mdifferentiableAt_of_isInvertible_mfderiv`), and no finite-dimensionality or smoothness of the
-manifolds is assumed.
+manifolds is assumed. Precomposing with such an `f` also preserves criticality: for a map `g` into
+a normed space which is differentiable at `f x`, `d(g ∘ f)_x = 0` exactly when `dg_(f x) = 0`
+(`mvfderiv_comp_eq_zero_iff_of_isInvertible`).
 
 If the target is modelled on a finite-dimensional space over a complete field and the source model
 has the same dimension, a manifold derivative is invertible exactly when it is injective
@@ -57,6 +62,19 @@ theorem isInvertible_mfderiv_comp {f : M → M'} {g : M' → M''} {x : M}
   rw [mfderiv_comp x (mdifferentiableAt_of_isInvertible_mfderiv hdg)
     (mdifferentiableAt_of_isInvertible_mfderiv hdf)]
   exact hdg.comp hdf
+
+/-- If `f` has invertible manifold derivative at `x` and `g` is a map into a normed space which is
+differentiable at `f x`, then the derivative of `g ∘ f` vanishes at `x` exactly when the derivative
+of `g` vanishes at `f x`. This is the manifold version of
+`TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`. -/
+theorem mvfderiv_comp_eq_zero_iff_of_isInvertible {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : M → M'} {g : M' → F} {x : M}
+    (hg : MDifferentiableAt I' 𝓘(𝕜, F) g (f x)) (hf : (mfderiv I I' f x).IsInvertible) :
+    mvfderiv I (g ∘ f) x = 0 ↔ mvfderiv I' g (f x) = 0 := by
+  rw [mvfderiv_comp x hg (mdifferentiableAt_of_isInvertible_mfderiv hf)]
+  obtain ⟨e, he⟩ := hf
+  rw [← he]
+  exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ e
 
 /-- If the target is modelled on a finite-dimensional space over a complete field and the source
 model has the same dimension, a manifold derivative is invertible exactly when it is injective. The
