@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.Quotient.Prod
+import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
 
 /-!
 # The homology of a square-zero linear endomorphism
@@ -565,6 +566,114 @@ theorem homologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e 
   LinearMap.homologyMap_mk f.toLinearMap hd he hf z
 
 end LinearEquiv
+
+namespace LinearMap
+
+section RestrictScalars
+
+variable (R : Type*) {S M : Type*} [Ring R] [Ring S] [SMul R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M] (d : M →ₗ[S] M)
+
+/-- Restricting the scalars of a square-zero endomorphism from `S` to `R` does not change its
+concrete homology `ker d ⧸ im d` as an `R`-module. -/
+noncomputable def homologyRestrictScalarsEquiv (hd : d ∘ₗ d = 0) :
+    (d.restrictScalars R).homology
+        (by rw [← restrictScalars_comp, hd, restrictScalars_zero]) ≃ₗ[R]
+      d.homology hd :=
+  (Submodule.Quotient.equiv _ _ (d.kerRestrictScalarsEquiv R).symm (by
+    ext z
+    simp only [Submodule.mem_map, Submodule.restrictScalars_mem, mem_boundariesInKer,
+      LinearEquiv.coe_coe, range_restrictScalars]
+    exact ⟨fun ⟨w, hw, h⟩ => h ▸ (d.coe_kerRestrictScalarsEquiv_symm_apply R w).symm ▸ hw,
+      fun hz => ⟨d.kerRestrictScalarsEquiv R z, by rwa [d.coe_kerRestrictScalarsEquiv_apply R],
+        (d.kerRestrictScalarsEquiv R).symm_apply_apply z⟩⟩)).trans
+    (Submodule.Quotient.restrictScalarsEquiv R d.boundariesInKer)
+
+/-- `homologyRestrictScalarsEquiv` preserves the quotient class of a cycle. -/
+@[simp]
+theorem homologyRestrictScalarsEquiv_mk (hd : d ∘ₗ d = 0) (z : ker (d.restrictScalars R)) :
+    d.homologyRestrictScalarsEquiv R hd (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨z.1, z.2⟩ := by
+  rw [homologyRestrictScalarsEquiv, LinearEquiv.trans_apply, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, Submodule.Quotient.restrictScalarsEquiv_mk]
+  exact congrArg _ (Subtype.ext (d.coe_kerRestrictScalarsEquiv_symm_apply R z))
+
+/-- The inverse of `homologyRestrictScalarsEquiv` preserves the quotient class of a cycle. -/
+@[simp]
+theorem homologyRestrictScalarsEquiv_symm_mk (hd : d ∘ₗ d = 0) (z : ker d) :
+    (d.homologyRestrictScalarsEquiv R hd).symm (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨z.1, z.2⟩ := by
+  rw [LinearEquiv.symm_apply_eq, homologyRestrictScalarsEquiv_mk]
+
+end RestrictScalars
+
+section MappingConeHomotopy
+
+/-- A chain homotopy `e ∘ h + h ∘ d = f - g` makes
+`(LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h` intertwine the mapping cones of `f` and
+`g`. -/
+theorem refl_skewProd_refl_comp_mappingCone {S M N : Type*} [Semiring S]
+    [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+    {d : M →ₗ[S] M} {e : N →ₗ[S] N} {f g h : M →ₗ[S] N} (hhom : e ∘ₗ h + h ∘ₗ d = f - g) :
+    ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h).toLinearMap ∘ₗ
+        mappingCone d e f =
+      mappingCone d e g ∘ₗ
+        ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h).toLinearMap := by
+  refine LinearMap.ext fun ⟨a, b⟩ => Prod.ext ?_ ?_
+  · simp only [comp_apply, LinearEquiv.coe_coe, mappingCone_apply,
+      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply]
+  · have ha : e (h a) + h (d a) = f a - g a := congr($hhom a)
+    simp only [comp_apply, LinearEquiv.coe_coe, mappingCone_apply,
+      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, map_neg, map_add,
+      eq_sub_of_add_eq ha]
+    abel
+
+section Homology
+
+variable {S M N : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+  {d : M →ₗ[S] M} {e : N →ₗ[S] N} {f g : M →ₗ[S] N}
+  (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g)
+  {h : M →ₗ[S] N} (hhom : e ∘ₗ h + h ∘ₗ d = f - g)
+
+/-- Chain-homotopic maps induce isomorphic mapping-cone homologies. -/
+noncomputable def mappingConeHomologyEquivOfHomotopy :
+    (mappingCone d e f).homology (mappingCone_comp_self f hd he hf) ≃ₗ[S]
+      (mappingCone d e g).homology (mappingCone_comp_self g hd he hg) :=
+  ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h).homologyEquiv
+    (mappingCone_comp_self f hd he hf) (mappingCone_comp_self g hd he hg)
+    (refl_skewProd_refl_comp_mappingCone hhom)
+
+/-- `mappingConeHomologyEquivOfHomotopy` sends the class of `(a, b)` to the class of
+`(a, h a + b)`. -/
+@[simp]
+theorem mappingConeHomologyEquivOfHomotopy_mk (z : ker (mappingCone d e f)) :
+    mappingConeHomologyEquivOfHomotopy hd he hf hg hhom (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨(z.1.1, h z.1.1 + z.1.2), by
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.skewProd_apply, LinearEquiv.refl_apply,
+          add_comm z.1.2] using
+          map_mem_ker_of_comp_eq _ (refl_skewProd_refl_comp_mappingCone hhom) z.2⟩ :=
+  (LinearEquiv.homologyEquiv_mk ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h)
+    _ _ _ z).trans <| congrArg Submodule.Quotient.mk <| Subtype.ext <| by
+      simp only [LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, add_comm z.1.2]
+
+/-- The inverse of `mappingConeHomologyEquivOfHomotopy` sends the class of `(a, b)` to the class
+of `(a, -h a + b)`. -/
+@[simp]
+theorem mappingConeHomologyEquivOfHomotopy_symm_mk (z : ker (mappingCone d e g)) :
+    (mappingConeHomologyEquivOfHomotopy hd he hf hg hhom).symm (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨(z.1.1, -h z.1.1 + z.1.2), by
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.skewProd_apply, LinearEquiv.refl_apply,
+          LinearMap.neg_apply, add_comm z.1.2] using
+          map_mem_ker_of_comp_eq _ (refl_skewProd_refl_comp_mappingCone
+            (h := -h) (by rw [comp_neg, neg_comp, ← neg_add, hhom, neg_sub])) z.2⟩ := by
+  rw [LinearEquiv.symm_apply_eq, mappingConeHomologyEquivOfHomotopy_mk]
+  exact congrArg _ (Subtype.ext (Prod.ext rfl (add_neg_cancel_left (h z.1.1) z.1.2).symm))
+
+end Homology
+
+end MappingConeHomotopy
+
+end LinearMap
 
 /-! ### Quasi-isomorphisms of one-object complexes -/
 

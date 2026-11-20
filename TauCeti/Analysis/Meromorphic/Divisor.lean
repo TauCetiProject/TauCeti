@@ -27,7 +27,8 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
-* `AnalyticAt.notMem_divisor_support_of_ne_zero` — such a point is off the divisor support.
+* `AnalyticAt.notMem_divisor_support_of_ne_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` —
+  such a point is off the divisor support, so any support point where `f` is analytic is a zero.
 * `MeromorphicOn.divisor_norm_sublevel_finite` — finitely many support points occur in each
   norm sublevel over a proper normed field.
 * `AnalyticOnNhd.tsum_divisor_subtype_le_sum_closedBall` — a support-subset multiplicity sum
@@ -139,6 +140,14 @@ theorem AnalyticAt.notMem_divisor_support_of_ne_zero {𝕜 E : Type*} [Nontrivia
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
     (hf : AnalyticAt 𝕜 f z) (hfz : f z ≠ 0) : z ∉ (MeromorphicOn.divisor f U).support :=
   Function.notMem_support.mpr (hf.divisor_apply_eq_zero hfz)
+
+/-- If the divisor of `f` on `U` is nonzero at a point where `f` is analytic, then `f` vanishes
+there. No meromorphy hypothesis on `U` is needed. -/
+theorem AnalyticAt.apply_eq_zero_of_divisor_ne_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hf : AnalyticAt 𝕜 f z) (hz : MeromorphicOn.divisor f U z ≠ 0) : f z = 0 := by
+  by_contra hfz
+  exact hz (hf.divisor_apply_eq_zero hfz)
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/

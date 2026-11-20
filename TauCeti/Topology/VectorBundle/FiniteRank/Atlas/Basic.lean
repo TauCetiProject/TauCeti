@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Core.Basic
+public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -14,16 +14,18 @@ public import Mathlib.Topology.LocallyConstant.Basic
 `TauCeti.FiniteRankAtlas` assembles point-indexed Mathlib vector-bundle cores on the
 clopen strata of a locally constant natural-number rank. Its data use only the base
 universe (and the scalar universe), not the universe of any original bundle's fibres.
-There is no bounded-rank or finite-cover hypothesis.
+There is no bounded-rank or finite-cover hypothesis. `FiniteRankAtlas.stratumCore`
+packages each clopen rank stratum's coordinate core as a `TauCeti.FiniteRankBundleCore`.
 
 The reconstructed total space is a native `Bundle.TotalSpace`, with the topology of the
 disjoint union of the core total spaces. Each core total space embeds openly, with image
 exactly its rank stratum. Thus its existing Mathlib vector-bundle topology is retained,
 rather than replaced by the product topology on coordinates.
 
-`FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata, in any fibre
-universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction with
-their disjoint union, using `TauCeti.pointIndexedCoreHomeomorph` on each stratum. Its
+`FiniteRankAtlas.chartBaseSet` exposes the open domain in `X` of the preferred stratum chart
+at each base point. `FiniteRankAtlas.ofBundles` takes actual vector bundles on the rank strata,
+in any fibre universe. `FiniteRankAtlas.reconstructionHomeomorph` compares the reconstruction
+with their disjoint union, using `TauCeti.pointIndexedCoreHomeomorph` on each stratum. Its
 forward and inverse formulas retain the continuous linear fibre identifications.
 -/
 
@@ -55,6 +57,23 @@ variable {𝕜 X} (A : FiniteRankAtlas 𝕜 X)
 /-- The finite coordinate fibre of the reconstructed variable-rank bundle.
 This is an abbreviation so the standard topological-module instances are available. -/
 abbrev Fiber (x : X) := Fin (A.rank x) → 𝕜
+
+/-- Package the point-indexed coordinate core on the rank-`n` clopen stratum of `A` as a
+`FiniteRankBundleCore`. -/
+-- Expose the rank projection so the dependent coordinate model reduces to `Fin n → 𝕜`.
+@[expose]
+def stratumCore (n : ℕ) : FiniteRankBundleCore 𝕜 {x : X // A.rank x = n} where
+  rank := n
+  core := A.charts n
+  indexAt_eq := A.indexAt_eq n
+
+/-- Rank of `A.stratumCore n`. -/
+@[simp]
+theorem rank_stratumCore (n : ℕ) : (A.stratumCore n).rank = n := (rfl)
+
+/-- Underlying `VectorBundleCore` of `A.stratumCore n`. -/
+@[simp]
+theorem core_stratumCore (n : ℕ) : (A.stratumCore n).core = A.charts n := (rfl)
 
 /-- The disjoint union of the native core total spaces. -/
 abbrev GluedTotalSpace := Σ n : ℕ, (A.charts n).TotalSpace
@@ -175,6 +194,61 @@ theorem continuous_zeroSection :
 
 end Continuity
 
+section ChartBaseSet
+
+/-- The open domain in `X` of the preferred chart of `A` centred at `z`, lying inside the clopen
+stratum `{x : X | A.rank x = A.rank z}`. -/
+def chartBaseSet (z : X) : Set X :=
+  Subtype.val '' (A.charts (A.rank z)).baseSet ⟨z, rfl⟩
+
+theorem chartBaseSet_def (z : X) :
+    A.chartBaseSet z = Subtype.val '' (A.charts (A.rank z)).baseSet ⟨z, rfl⟩ := (rfl)
+
+variable {A} in
+/-- Membership in `A.chartBaseSet z` means matching rank with `z` and membership in the stratum
+chart at `z`. -/
+theorem mem_chartBaseSet_iff {z x : X} :
+    x ∈ A.chartBaseSet z ↔
+      ∃ hx : A.rank x = A.rank z, ⟨x, hx⟩ ∈ (A.charts (A.rank z)).baseSet ⟨z, rfl⟩ := by
+  constructor
+  · rintro ⟨⟨y, hy⟩, hmem, rfl⟩
+    exact ⟨hy, hmem⟩
+  · rintro ⟨hx, hmem⟩
+    exact ⟨⟨x, hx⟩, hmem, rfl⟩
+
+variable {A} in
+/-- Every point in the preferred chart centred at `z` has the same rank as `z`. -/
+theorem rank_eq_of_mem_chartBaseSet {z x : X} (hx : x ∈ A.chartBaseSet z) :
+    A.rank x = A.rank z :=
+  (mem_chartBaseSet_iff.1 hx).1
+
+/-- Each preferred chart domain `A.chartBaseSet z` is open in the base `X`. -/
+theorem isOpen_chartBaseSet (z : X) : IsOpen (A.chartBaseSet z) :=
+  (A.rank.isLocallyConstant.isOpen_fiber (A.rank z)).isOpenEmbedding_subtypeVal.isOpenMap _
+    ((A.charts (A.rank z)).isOpen_baseSet ⟨z, rfl⟩)
+
+/-- Every base point belongs to the domain of its own preferred chart. -/
+@[simp] theorem mem_chartBaseSet_self (z : X) : z ∈ A.chartBaseSet z :=
+  mem_chartBaseSet_iff.2
+    ⟨rfl, by simpa only [A.indexAt_eq] using (A.charts (A.rank z)).mem_baseSet_at ⟨z, rfl⟩⟩
+
+/-- On the rank-`m` stratum, the domain of the chart at `z` is the preimage of `A.chartBaseSet z.1`
+under `Subtype.val`. -/
+theorem baseSet_charts {m : ℕ} (z : {x : X // A.rank x = m}) :
+    (A.charts m).baseSet z = Subtype.val ⁻¹' A.chartBaseSet z.1 := by
+  rcases z with ⟨z, rfl⟩
+  ext ⟨x, hx⟩
+  simp [mem_chartBaseSet_iff, hx]
+
+variable {A} in
+/-- A point of the rank-`m` stratum belongs to the stratum chart at `z` if and only if its
+underlying point in `X` belongs to `A.chartBaseSet z.1`. -/
+theorem mem_baseSet_charts_iff {m : ℕ} {z x : {x : X // A.rank x = m}} :
+    x ∈ (A.charts m).baseSet z ↔ x.1 ∈ A.chartBaseSet z.1 := by
+  rw [A.baseSet_charts z, Set.mem_preimage]
+
+end ChartBaseSet
+
 section Reconstruction
 
 variable (𝕜) (r : LocallyConstant X ℕ)
@@ -197,6 +271,15 @@ The original fibre universe does not appear in the resulting atlas type. -/
 
 @[simp] theorem charts_ofBundles (n : ℕ) :
     (ofBundles 𝕜 r E).charts n = pointIndexedCore 𝕜 (Fin n → 𝕜) (E n) := (rfl)
+
+/-- The preferred chart domain of `ofBundles 𝕜 r E` at `z` is the image in `X` of the preferred
+stratum trivialization domain at `z`. -/
+@[simp] theorem chartBaseSet_ofBundles (z : X) :
+    (ofBundles 𝕜 r E).chartBaseSet z =
+      Subtype.val '' (trivializationAt (Fin (r z) → 𝕜) (E (r z)) ⟨z, rfl⟩).baseSet := by
+  rw [chartBaseSet_def]
+  dsimp only [ofBundles]
+  rw [VectorBundleCore.baseSet_at, pointIndexedCore_localTriv_baseSet]
 
 private noncomputable def gluedReconstructionHomeomorph :
     (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) where
