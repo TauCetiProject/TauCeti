@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Multilinear.Span
 public import TauCeti.LowDimTopology.Bordered.Grading.Basic
 public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 import Mathlib.Tactic.Group
@@ -203,19 +202,9 @@ theorem IsGraded.matrixAct_mem_boxGradedPart {l : Subgroup.center G}
   rintro ⟨s, hs⟩ m hm
   -- The entries along the path are sums of homogeneous elements; by multilinearity it suffices to
   -- treat homogeneous entries.
-  let D (i : Fin n) : Set A :=
-    ⋃ g : {g : G // g • gr (x i.succ) = (l : G) • gr (x i.castSucc)}, (Ag g : Set A)
-  have hspan (i : Fin n) : F i (x i.castSucc) (x i.succ) ∈ Submodule.span R (D i) := by
-    rw [← Submodule.iSup_eq_span]
-    exact mem_homogeneousMatrices_iff.mp (hF i) _ _
-  refine Submodule.span_le.mpr ?_
-    (((LinearMap.applyₗ m).compMultilinearMap (Mm.act n)).map_mem_span_image_pi D hspan)
-  rintro _ ⟨a, ha, rfl⟩
-  simp only [Set.mem_pi, Set.mem_univ, true_implies, D, Set.mem_iUnion, SetLike.mem_coe] at ha
-  choose g hg using ha
-  refine Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hMm.act_mem (g := fun i ↦ (g i : G)) hg hm)
-  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_zpow_smul l (fun i ↦ (g i : G)) (fun j ↦ gr (x j))
-    (fun i ↦ (g i).property), hs]
+  refine ((LinearMap.applyₗ m).compMultilinearMap (Mm.act n)).map_mem_of_mem_homogeneousMatrices hF
+    x fun g a hg ha ↦ Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hMm.act_mem ha hm)
+  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_zpow_smul l g (fun j ↦ gr (x j)) hg, hs]
 
 /-- **The twisted differential of the matrix module along a homogeneous matrix.** For a graded
 `A∞` module with differentials of central degree `l` and a matrix `C` homogeneous of degree `l`,
