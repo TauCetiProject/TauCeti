@@ -50,7 +50,8 @@ model existence.
 * `TauCeti.RelationalConfiguration.not_analyticSet_wellOrderClass`,
   `TauCeti.RelationalConfiguration.not_measurableSet_wellOrderClass` and
   `TauCeti.RelationalConfiguration.not_exists_modelsOf_eq_wellOrderClass`: the class is not
-  analytic, not Borel and not the model class of a sentence.
+  analytic, not measurable for the product σ-algebra (so not Borel when there are countably many
+  relation symbols) and not the model class of a sentence.
 
 ## References
 
@@ -232,7 +233,7 @@ theorem exists_type_lt_omega_one_of_analyticSet [Countable V] {lt : L.Relations 
   exact ⟨β, hβ, fun c hc =>
     (@type_lt_rank_descending V (codeRel lt c) (hAW hc)).trans (hb c hc)⟩
 
-/-! ### The coded well-orders are not analytic, not Borel and not definable -/
+/-! ### The coded well-orders are not analytic, not measurable and not definable -/
 
 /-- On a countably infinite carrier the coded well-orders do not form an analytic set. -/
 theorem not_analyticSet_wellOrderClass [Countable V] [Infinite V] (lt : L.Relations 2) :

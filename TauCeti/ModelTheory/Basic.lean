@@ -89,6 +89,21 @@ theorem relMap_relStructure_self (lt : L.Relations 2) {M : Type*} (r : M → M �
     (x y : M) : @Structure.RelMap L M (relStructure lt r m) 2 lt ![x, y] ↔ r x y :=
   and_iff_right rfl
 
+/-- In `relStructure lt r m`, every function symbol is interpreted as the constant `m`. -/
+@[simp]
+theorem funMap_relStructure (lt : L.Relations 2) {M : Type*} (r : M → M → Prop) (m : M) {n : ℕ}
+    (f : L.Functions n) (xs : Fin n → M) :
+    @Structure.funMap L M (relStructure lt r m) n f xs = m :=
+  (rfl)
+
+/-- In `relStructure lt r m`, every relation symbol of arity other than `2` is empty. -/
+theorem relMap_relStructure_of_ne (lt : L.Relations 2) {M : Type*} (r : M → M → Prop) (m : M)
+    {n : ℕ} (hn : n ≠ 2) (R : L.Relations n) (xs : Fin n → M) :
+    ¬ @Structure.RelMap L M (relStructure lt r m) n R xs := by
+  match n, hn with
+  | 0, _ | 1, _ | _ + 3, _ => exact id
+  | 2, hn => exact absurd rfl hn
+
 end Language
 
 end FirstOrder
