@@ -12,7 +12,7 @@ public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.Topology.Algebra.Projectivization
-import TauCeti.Algebra.Order.Ring.IntMul
+import TauCeti.Algebra.Order.Ring.Int.Mul
 import TauCeti.Analysis.Complex.Circle
 
 /-!
