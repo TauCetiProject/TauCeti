@@ -183,7 +183,7 @@ theorem finrank_quotientModelSpace_zeroLevel (z : h.levelSubMulAction 0) :
   -- Every element of `𝔤` annihilates `0 ∈ 𝔤*`, so `𝔤_0 = 𝔤`.
   have hann : finrank ℝ (lieAnnihilator ℝ (GroupLieAlgebra IG G)
       (0 : Module.Dual ℝ (GroupLieAlgebra IG G))) = finrank ℝ EG := by
-    rw [(lieAnnihilator_eq_top_iff ℝ _).2 fun ξ ↦ lie_zero ξ]
+    rw [lieAnnihilator_zero]
     exact LieSubalgebra.topEquiv.toLinearEquiv.finrank_eq
   -- The Lie algebra `GroupLieAlgebra IG G` is by definition the tangent space `EG` at `1`.
   have hG : finrank ℝ (GroupLieAlgebra IG G) = finrank ℝ EG := rfl
