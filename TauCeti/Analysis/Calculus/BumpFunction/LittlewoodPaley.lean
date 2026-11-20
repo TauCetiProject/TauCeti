@@ -42,8 +42,9 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 
 ## Main declarations
 
-* `TauCeti.exists_mul_eq_zero_of_dyadic_support`: members of two families supported in dyadic
-  annuli whose labels are far enough apart have disjoint supports.
+* `TauCeti.exists_mul_eq_zero_of_dyadic_support`: if `ψ i` vanishes where `2 ^ e i * R ≤ ρ ξ`
+  and `ψ' k` vanishes where `ρ ξ ≤ 2 ^ (e' k - 1) * r`, then `ψ i` and `ψ' k` have disjoint
+  supports once `e i + L ≤ e' k`, for some `L`.
 * `ContDiffBump.exists_rOut_lt_two_pow_mul_rIn`: `φ.rOut < 2^N φ.rIn` for some `N`.
 * `ContDiffBump.littlewoodPaley`: the dyadic cutoff `ψⱼ`.
 * `ContDiffBump.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply`: `ψⱼ` is the rescaling
