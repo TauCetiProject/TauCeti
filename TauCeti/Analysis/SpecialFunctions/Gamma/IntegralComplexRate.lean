@@ -6,9 +6,9 @@ Authors: Bastiaan J Braams
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
-public import Mathlib.Analysis.Calculus.ParametricIntegral
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+import TauCeti.Analysis.LaplaceTransform.Basic
 
 /-!
 # The Gamma integral with a complex rate
@@ -58,46 +58,12 @@ theorem integrableOn_cpow_mul_exp_neg_mul_Ioi {s w : ℂ} (hs : 0 < s.re) (hw : 
 `w` on the right half-plane. -/
 theorem differentiableOn_integral_cpow_mul_exp_neg_mul_Ioi {s : ℂ} (hs : 0 < s.re) :
     DifferentiableOn ℂ (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s - 1) * exp (-(w * t)))
-      {w | 0 < w.re} := by
-  intro w₀ hw₀
-  have hw₀' : 0 < w₀.re := hw₀
-  -- On the ball of radius `δ = Re w₀ / 2` about `w₀` we have `Re w > δ`, which gives the
-  -- integrable bound `t^{Re s} e^{-δt}` for the `w`-derivative `−t · t^{s-1} e^{-wt}`.
-  set δ := w₀.re / 2 with hδ
-  have hδ0 : 0 < δ := by positivity
-  have hball : Metric.ball w₀ δ ∈ 𝓝 w₀ := Metric.ball_mem_nhds _ hδ0
-  have hre : ∀ w ∈ Metric.ball w₀ δ, δ < w.re := by
-    intro w hw
-    rw [Metric.mem_ball, dist_eq_norm] at hw
-    have h1 := abs_re_le_norm (w - w₀)
-    rw [sub_re] at h1
-    have h2 := (abs_lt.mp (lt_of_le_of_lt h1 hw)).1
-    linarith
-  have hbint : Integrable (fun t : ℝ => t ^ s.re * Real.exp (-δ * t))
-      (volume.restrict (Ioi 0)) := by
-    have := integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := s.re) (b := δ)
-      (by linarith) one_pos hδ0
-    simp only [Real.rpow_one] at this
-    exact this
-  have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (μ := volume.restrict (Ioi 0))
-    (F := fun w (t : ℝ) => (t : ℂ) ^ (s - 1) * exp (-(w * t)))
-    (F' := fun w (t : ℝ) => (t : ℂ) ^ (s - 1) * exp (-(w * t)) * -(t : ℂ))
-    (bound := fun t : ℝ => t ^ s.re * Real.exp (-δ * t))
-    hball (Eventually.of_forall fun _ => Measurable.aestronglyMeasurable (by fun_prop))
-    (integrableOn_cpow_mul_exp_neg_mul_Ioi hs hw₀')
-    (Measurable.aestronglyMeasurable (by fun_prop)) ?_ hbint ?_
-  · exact h.2.differentiableAt.differentiableWithinAt
-  · -- The bound: `‖t^{s-1} e^{-wt} · (−t)‖ = t^{Re s} e^{-(Re w) t} ≤ t^{Re s} e^{-δt}`.
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht w hw
-    have ht' : 0 < t := ht
-    rw [norm_mul, norm_cpow_mul_exp_neg_mul s w ht', norm_neg, norm_real,
-      Real.norm_of_nonneg ht'.le, mul_right_comm, ← Real.rpow_add_one ht'.ne', sub_add_cancel]
-    gcongr
-    nlinarith [hre w hw]
-  · filter_upwards with t w _
-    have := ((hasDerivAt_id w).mul_const (t : ℂ)).neg.cexp.const_mul ((t : ℂ) ^ (s - 1))
-    simpa [mul_assoc] using this
+      {w | 0 < w.re} :=
+  TauCeti.differentiableOn_of_hasLaplace_re_gt (f := fun t : ℝ ↦ (t : ℂ) ^ (s - 1)) (a := 0)
+    fun w hw ↦ TauCeti.HasLaplace.intro
+      (by simpa only [IntegrableOn, smul_eq_mul, mul_comm (exp _), neg_mul] using
+        integrableOn_cpow_mul_exp_neg_mul_Ioi hs hw)
+      (by simp only [smul_eq_mul, mul_comm (exp _), neg_mul])
 
 /-- The Gamma integral with a complex rate: for `Re s > 0` and `Re z > 0`,
 `∫₀^∞ t^{s-1} e^{-zt} dt = Γ(s) z^{-s}`. Mathlib's `Complex.integral_cpow_mul_exp_neg_mul_Ioi`

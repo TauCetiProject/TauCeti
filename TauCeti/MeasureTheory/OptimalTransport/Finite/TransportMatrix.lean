@@ -281,24 +281,24 @@ matrices with the corresponding row and column sums. -/
 def transportMatrixEquiv (μ : PMF ι) (ν : PMF κ) :
     {π : PMF (ι × κ) // π.map Prod.fst = μ ∧ π.map Prod.snd = ν} ≃
       TransportMatrix μ ν where
-  toFun π := TransportMatrix.ofPMF π π.2.1 π.2.2
+  toFun π := TransportMatrix.ofPMF π π.property.1 π.property.2
   invFun A := ⟨A.toPMF, A.map_fst_toPMF, A.map_snd_toPMF⟩
   left_inv π := by
     apply Subtype.ext
-    exact TransportMatrix.toPMF_ofPMF (μ := μ) (ν := ν) π.1 π.2.1 π.2.2
+    exact TransportMatrix.toPMF_ofPMF (μ := μ) (ν := ν) π.val π.property.1 π.property.2
   right_inv := TransportMatrix.ofPMF_toPMF
 
 @[simp]
 theorem transportMatrixEquiv_apply (μ : PMF ι) (ν : PMF κ)
     (π : {π : PMF (ι × κ) // π.map Prod.fst = μ ∧ π.map Prod.snd = ν})
     (i : ι) (j : κ) :
-    transportMatrixEquiv μ ν π i j = π.1 (i, j) :=
+    transportMatrixEquiv μ ν π i j = π.val (i, j) :=
   by rfl
 
 @[simp]
 theorem transportMatrixEquiv_symm_apply (μ : PMF ι) (ν : PMF κ)
     (A : TransportMatrix μ ν) (p : ι × κ) :
-    ((transportMatrixEquiv μ ν).symm A).1 p = A p.1 p.2 := by
+    ((transportMatrixEquiv μ ν).symm A).val p = A p.1 p.2 := by
   rfl
 
 section Measure

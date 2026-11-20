@@ -90,18 +90,18 @@ private theorem map_substInvFun {S : Type*} [CommRing S] (f : R →+* S) (P : R�
     | 0, _ => simp [substInvFun]
     | 1, _ => simp [substInvFun, hinv]
     | m + 2, ih =>
-      have hS : HasSubst (∑ i : Fin (m + 2), C (substInvFun P i.1) * X ^ i.1) := by
+      have hS : HasSubst (∑ i : Fin (m + 2), C (substInvFun P i.val) * X ^ i.val) := by
         refine .of_constantCoeff_zero' ?_
         rw [map_sum]
         refine Finset.sum_eq_zero fun i _ ↦ ?_
         rcases i with ⟨_ | k, hk⟩
         · simp [substInvFun]
         · simp [map_pow]
-      have key : map f (P.subst (∑ i : Fin (m + 2), C (substInvFun P i.1) * X ^ i.1)) =
-          ((P.map f).subst (map f (∑ i : Fin (m + 2), C (substInvFun P i.1) * X ^ i.1))) :=
+      have key : map f (P.subst (∑ i : Fin (m + 2), C (substInvFun P i.val) * X ^ i.val)) =
+          ((P.map f).subst (map f (∑ i : Fin (m + 2), C (substInvFun P i.val) * X ^ i.val))) :=
         map_subst hS P
-      have hSm : map f (∑ i : Fin (m + 2), C (substInvFun P i.1) * X ^ i.1) =
-          ∑ i : Fin (m + 2), C (substInvFun (P.map f) i.1) * X ^ i.1 := by
+      have hSm : map f (∑ i : Fin (m + 2), C (substInvFun P i.val) * X ^ i.val) =
+          ∑ i : Fin (m + 2), C (substInvFun (P.map f) i.val) * X ^ i.val := by
         simp only [map_sum, map_mul, map_C, map_pow, map_X]
         exact Finset.sum_congr rfl fun i _ ↦ by rw [ih i (by omega)]
       rw [substInvFun, substInvFun, map_mul, map_neg, hinv, ← coeff_map, key, hSm]
