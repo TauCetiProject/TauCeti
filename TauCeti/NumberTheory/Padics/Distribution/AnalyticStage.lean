@@ -670,7 +670,8 @@ theorem transition_compLeft {F : Type*} [NormedAddCommGroup F] [Module ℤ_[p] F
       (compLeft φ hφ).comp (transition S) := by
     refine continuousLinearMap_ext fun ⟨a, k⟩ e ↦ ?_
     ext ⟨a', j⟩
-    simp only [ContinuousLinearMap.comp_apply, compLeft_single, compLeft_apply, transition_apply]
+    simp only [ContinuousLinearMap.comp_apply, compLeft_single, compLeft_apply, transition_apply,
+      reexpand_def]
     rw [tsum_eq_single k (fun m hm ↦ by simp [single_apply, hm]),
       tsum_eq_single k (fun m hm ↦ by simp [single_apply, hm])]
     by_cases ha : a'.cast = a <;> simp [single_apply, ha]
