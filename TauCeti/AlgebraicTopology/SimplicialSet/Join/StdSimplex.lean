@@ -40,6 +40,8 @@ projections are right and left fibrations.
   `j` of `Δ[n]` is the vertex `j` of `Δ[n + m + 1]` and the vertex `j` of `Δ[m]` is the vertex
   `n + 1 + j`. In particular (`SSet.join.yonedaEquiv_inl_comp_stdSimplexIso_hom_eq_edge`),
   `Δ[1]` is the edge of `Δ[1 + m + 1]` from `0` to `1`.
+* `SSet.join.map_δ_comp_stdSimplexIso_hom`: `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` is natural for the faces of
+  `Δ[n]`, which fix the cone point `n + 1`.
 * `SSet.join.inl_comp_stdSimplexIso_hom`, `SSet.join.mkOfSucc_zero_comp_stdSimplexIso_inv`,
   `SSet.join.mkOfSucc_succ_comp_stdSimplexIso_inv`: under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the cone point
   is the vertex `0`, the first edge of the spine is the cone on the vertex `0` of `Δ[n]`, and the
@@ -357,6 +359,35 @@ lemma yonedaEquiv_inr_comp_stdSimplexIso_hom (j : Fin (m + 1)) :
       (by rw [← he, obj₀Equiv_symm_mem_joinFiber_iff]; exact Fin.eq_one_of_ne_zero _ hp),
     JoinData.precomp_right_app]
   exact congrArg (fun v : Δ[m] _⦋0⦌ ↦ n + 1 + (v 0 : ℕ)) (univ_right_app_inr_app _ _)
+
+/-- The isomorphism `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]` is natural for the faces of `Δ[n]`, which act on
+`Δ[n + 1]` by fixing the cone point `n + 1`. -/
+lemma map_δ_comp_stdSimplexIso_hom (j : Fin (n + 2)) :
+    map (stdSimplex.δ j) (𝟙 Δ[0]) ≫ (stdSimplexIso.{u} (n + 1) 0).hom =
+      (stdSimplexIso n 0).hom ≫ stdSimplex.δ j.castSucc := by
+  refine hom_ext_stdSimplex ?_ ?_
+  · rw [inl_map_assoc]
+    apply yonedaEquiv.injective
+    refine stdSimplex.ext _ _ fun i ↦ ?_
+    rw [stdSimplex.yonedaEquiv_comp_apply,
+      yonedaEquiv_inl_comp_stdSimplexIso_hom (n := n + 1) (m := 0), ← Category.assoc,
+      stdSimplex.yonedaEquiv_comp_apply, yonedaEquiv_inl_comp_stdSimplexIso_hom (n := n) (m := 0),
+      CosimplicialObject.δ, CosimplicialObject.δ, stdSimplex.yonedaEquiv_map_apply,
+      stdSimplex.yonedaEquiv_map_apply, Fin.ext_iff, Fin.val_castLE]
+    simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
+      OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply, Fin.succAbove, Fin.lt_def,
+      Fin.val_castSucc, Fin.val_castLE]
+    split_ifs <;> simp
+  · rw [inr_map_assoc, Category.id_comp]
+    apply yonedaEquiv.injective
+    refine stdSimplex.ext _ _ fun i ↦ ?_
+    rw [yonedaEquiv_inr_comp_stdSimplexIso_hom (n := n + 1) (m := 0), ← Category.assoc,
+      stdSimplex.yonedaEquiv_comp_apply, yonedaEquiv_inr_comp_stdSimplexIso_hom (n := n) (m := 0),
+      CosimplicialObject.δ, stdSimplex.yonedaEquiv_map_apply]
+    simp only [SimplexCategory.δ, SimplexCategory.mkHom, SimplexCategory.Hom.toOrderHom_mk,
+      OrderEmbedding.toOrderHom_coe, Fin.succAboveOrderEmb_apply]
+    rw [Fin.succAbove_of_le_castSucc _ _ (by simp [Fin.le_def]; omega), Fin.ext_iff]
+    simp
 
 section cone
 
