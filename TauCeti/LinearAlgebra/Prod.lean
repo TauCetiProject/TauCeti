@@ -56,6 +56,9 @@ quadratic forms with the subgroup preserving both summands.
   coercion of `f.prodMap g`.
 * `LinearMap.prodMap_comp_append`: `f.prodMap g` sends an appended family of vectors of the two
   factors to the appended family of their images.
+* `LinearMap.prodMap_comp_inl`, `LinearMap.snd_comp_prodMap`: the commuting squares of the split
+  rows `0 → M₁ → M₁ × M₂ → M₂ → 0` and `0 → M₃ → M₃ × M₄ → M₄ → 0` with vertical maps `f`,
+  `f.prodMap g` and `g`.
 * `LinearMap.surjective_coprod_of_comp_left`, `LinearMap.surjective_coprod_of_comp_right`,
   `LinearMap.surjective_coprod_neg_of_comp_right`: surjectivity of `f.coprod g` survives
   removing a precomposition from either map. In particular transversality passes from `α ∘ h`
@@ -256,6 +259,18 @@ theorem prodMap_comp_append (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) 
       Fin.append (inl R M₃ M₄ ∘ f ∘ p) (inr R M₃ M₄ ∘ g ∘ q) := by
   funext i
   induction i using Fin.addCases <;> simp
+
+/-- The left square of the split rows `0 → M₁ → M₁ × M₂ → M₂ → 0` and
+`0 → M₃ → M₃ × M₄ → M₄ → 0` with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
+theorem prodMap_comp_inl (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) :
+    f.prodMap g ∘ₗ inl R M₁ M₂ = inl R M₃ M₄ ∘ₗ f := by
+  ext <;> simp
+
+/-- The right square of the split rows `0 → M₁ → M₁ × M₂ → M₂ → 0` and
+`0 → M₃ → M₃ × M₄ → M₄ → 0` with vertical maps `f`, `f.prodMap g` and `g` commutes. -/
+theorem snd_comp_prodMap (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₄) :
+    snd R M₃ M₄ ∘ₗ f.prodMap g = g ∘ₗ snd R M₁ M₂ := by
+  ext <;> simp
 
 /-- If `(x, y) ↦ f (h x) + g y` is surjective, then so is `(x, y) ↦ f x + g y`. -/
 theorem surjective_coprod_of_comp_left {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₃} {h : M₄ →ₗ[R] M₁}
