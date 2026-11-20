@@ -91,6 +91,16 @@ theorem isInvertible_prod_coprod_id_fst (A : V →L[ℝ] W) :
     exact Prod.ext h₂ h₁
   · simp
 
+/-- The kernel coordinate of the chart `(id, fst)` of `A` reads a pair `(v, w)` of the stabilized
+kernel as `v`; its kernel section sends `v` to `(v, -A v)`. -/
+@[simp]
+theorem kerSection_coprod_id_fst_apply (A : V →L[ℝ] W) (v : V) :
+    (A.coprod (ContinuousLinearMap.id ℝ W)).kerSection (fst ℝ V W) v = (v, -A v) := by
+  have h := isInvertible_prod_coprod_id_fst A
+  refine h.injective ?_
+  rw [prod_apply_kerSection h]
+  simp
+
 variable {T : E →L[ℝ] F} {A : V →L[ℝ] W} {r : E →L[ℝ] V} {σ : W →L[ℝ] F} {M : W →L[ℝ] W}
   {eK : ker (T : E →ₗ[ℝ] F) ≃ₗ[ℝ] ker (A : V →ₗ[ℝ] W)}
   {eC : (F ⧸ range (T : E →ₗ[ℝ] F)) ≃ₗ[ℝ] (W ⧸ range (A : V →ₗ[ℝ] W))}
@@ -169,16 +179,6 @@ theorem isInvertible_prod_coprod_comp_fst (hr : Function.Surjective r)
     simp only [prod_apply, coprod_apply, map_add]
     rw [he₂', add_add_add_comm, h₃, add_zero, sub_add_cancel]
   · simp [hr₃]
-
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- The kernel coordinate of the chart `(id, fst)` of `A` reads a pair `(v, w)` of the stabilized
-kernel as `v`; its kernel section sends `v` to `(v, -A v)`. -/
-private theorem kerSection_coprod_id_fst_apply (v : V) :
-    (A.coprod (ContinuousLinearMap.id ℝ W)).kerSection (fst ℝ V W) v = (v, -A v) := by
-  have h := isInvertible_prod_coprod_id_fst A
-  refine h.injective ?_
-  rw [prod_apply_kerSection h]
-  simp
 
 omit [CompleteSpace E] [CompleteSpace F] in
 /-- The stabilized kernels of `T` and `A` are identified by their coordinates in `V`; the
