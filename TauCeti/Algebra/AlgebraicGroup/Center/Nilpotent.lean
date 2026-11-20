@@ -92,10 +92,8 @@ private theorem exists_isCentral_isPrime_ne_augmentation_of_mem_upperCentralSeri
     { toFun g := ⁅g, y⁆
       map_one' := commutatorElement_one_left y
       map_mul' g g' := by
-        have hconj : ⁅g * g', y⁆ = g * ⁅g', y⁆ * g⁻¹ * ⁅g, y⁆ := by
-          simp only [commutatorElement_def]
-          group
-        rw [hconj, Subgroup.mem_center_iff.mp (hcenter g') g, mul_inv_cancel_right]
+        rw [commutatorElement_mul_left_eq_conj_mul,
+          Subgroup.mem_center_iff.mp (hcenter g') g, mul_inv_cancel_right]
         exact (Subgroup.mem_center_iff.mp (hcenter g') _).symm }
   refine exists_isCentral_isPrime_ne_augmentation_of_monoidHom ψ ?_ ?_
     ((Algebra.TensorProduct.productMap (AlgHom.id k H)
@@ -151,7 +149,7 @@ theorem exists_isCentral_isPrime_ne_augmentation_of_forall_isUnipotentPoint
     [Nontrivial (WithConv (H →ₐ[k] k))]
     (hH : ∀ g : WithConv (H →ₐ[k] k), HopfAlgebra.IsUnipotentPoint g) :
     ∃ I : HopfIdeal k H, I.IsCentral ∧ I ≠ augmentation k H ∧ I.toIdeal.IsPrime := by
-  have := HopfAlgebra.isNilpotent_points_of_forall_isUnipotentPoint hH
+  have := HopfAlgebra.isNilpotent_points_of_forall_isUnipotentPoint_of_isAlgClosed hH
   exact exists_isCentral_isPrime_ne_augmentation_of_isNilpotent
 
 end TauCeti.HopfIdeal

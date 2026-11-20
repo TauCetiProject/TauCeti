@@ -7,19 +7,26 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding
 public import TauCeti.Algebra.AlgebraicGroup.UpperUnitriangular.Nilpotent
+import TauCeti.RepresentationTheory.Unipotent.Solvable
 
 /-!
 # Nilpotence of the rational points of a unipotent group
 
-Over an algebraically closed field, a reduced finite-type affine group whose rational points are
-all unipotent is a closed subgroup of some upper-unitriangular group `U_n`. Precomposition with
-the surjective coordinate map `O(U_n) → H` injects the rational points into those of `U_n`, which
-form a nilpotent group, so the rational points of the group are nilpotent.
+A finite-type affine group over any field whose rational points are all unipotent has a
+nilpotent group of rational points. A faithful finite-dimensional representation and Kolchin's
+theorem embed the rational points into an upper-unitriangular matrix group.
+
+For a reduced group over an algebraically closed field, a separate coordinate-algebra argument
+allows the field and coordinate ring to lie in independent universes: precomposition with a
+surjective coordinate map from `O(U_n)` injects the rational points into the nilpotent group
+`U_n(k)`.
 
 ## Main declarations
 
 * `TauCeti.HopfAlgebra.isNilpotent_points_of_forall_isUnipotentPoint`: the group of rational
-  points of a reduced unipotent group over an algebraically closed field is nilpotent.
+  points of a finite-type affine group with unipotent rational points is nilpotent.
+* `TauCeti.HopfAlgebra.isNilpotent_points_of_forall_isUnipotentPoint_of_isAlgClosed`: the
+  independent-universe version for reduced groups over an algebraically closed field.
 
 ## References
 
@@ -33,12 +40,43 @@ namespace TauCeti.HopfAlgebra
 
 open WithConv
 
+universe u
+
+/-- The rational points of a finite-type affine group over any field are nilpotent if every
+rational point is unipotent. No reducedness hypothesis is required. -/
+theorem isNilpotent_points_of_forall_isUnipotentPoint
+    {k H : Type u} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
+    [Algebra.FiniteType k H]
+    (hH : ∀ g : WithConv (H →ₐ[k] k), IsUnipotentPoint g) :
+    Group.IsNilpotent (WithConv (H →ₐ[k] k)) := by
+  classical
+  obtain ⟨M, n, b, hb⟩ :=
+    Comodule.exists_isClosedImmersion_coordinateGroupSchemeHom (k := k) (H := H)
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
+  let _ : Module.Finite k M := Module.Finite.of_basis b
+  have hfaithful : Comodule.IsFaithful (k := k) (H := H) (V := M) :=
+    (Comodule.isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).mpr hb
+  let rho := Comodule.pointsRepresentation (R := k) (H := H) (A := k) M
+  apply rho.isNilpotent_of_injective_of_isUnipotent
+  · intro g h hgh
+    apply Comodule.pointsAction_injective_of_isFaithful hfaithful
+    have hrho : rho g = rho h := by
+      simpa only [Representation.asGroupHom_apply] using congrArg Units.val hgh
+    apply LinearEquiv.ext
+    intro x
+    exact LinearMap.congr_fun (by
+      simpa only [Comodule.pointsAction_toLinearMap, rho,
+        Comodule.pointsRepresentation_apply] using hrho) x
+  · intro g
+    exact (hH g).isNilpotent_pointsRepresentation_sub_one
+      (FGComoduleCat.of (R := k) (C := H) M)
+
 variable {k H : Type*} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
 
 /-- **The rational points of a unipotent group are nilpotent.** A reduced finite-type affine group
 over an algebraically closed field whose rational points are all unipotent has a nilpotent group
-of rational points. -/
-theorem isNilpotent_points_of_forall_isUnipotentPoint
+of rational points. The field and coordinate ring may lie in independent universes. -/
+theorem isNilpotent_points_of_forall_isUnipotentPoint_of_isAlgClosed
     [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
     (hH : ∀ g : WithConv (H →ₐ[k] k), IsUnipotentPoint g) :
     Group.IsNilpotent (WithConv (H →ₐ[k] k)) := by
