@@ -47,8 +47,8 @@ and `B^{α+β}_{r,q₂} ⊆ B^α_{r,q₁}` since `β > 0`.
 * `TauCeti.BesovSpace.exists_norm_timeWeighted_bilinear_smulL_apply_apply_le`: the local-in-time
   weighted form. For `u ∈ C_{η₁}((0, T]; B^α_{p₁,q₁})` and `v ∈ C_{η₂}((0, T]; B^β_{p₂,q₂})`, the
   pointwise product `t ↦ u t v t` (`TauCeti.TimeWeighted.bilinear` applied to `smulL`) lies in
-  `C_{η₁ + η₂}((0, T]; B^α_{r,q₁})`, with `sup_t t^{η₁ + η₂} ‖u t v t‖ ≤ C ‖u‖ ‖v‖` and the same
-  constant `C`, independent of `T`, `η₁` and `η₂`.
+  `C_{η₁ + η₂}((0, T]; B^α_{r,q₁})`, with `sup_t t^{η₁ + η₂} ‖u t v t‖ ≤ C ‖u‖ ‖v‖` for a constant
+  `C` depending only on `φ`, `α` and `β`, not on the exponents, `T`, `η₁` or `η₂`.
 
 ## References
 
