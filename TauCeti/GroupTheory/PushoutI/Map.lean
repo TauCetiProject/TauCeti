@@ -123,16 +123,15 @@ theorem map_injective {f : ∀ i, G i →* G' i} {k : H →* H'}
     rw [hφk i (a₁ := h) (a₂ := 1) (by simpa using hg), map_one]
   refine (injective_iff_map_eq_one _).2 fun x hx => ?_
   obtain ⟨h, w, hw, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
-  have hw' : Reduced φ' (w.map f hf1) := fun l hl => by
+  have hfw : ∀ l ∈ w.toList, f l.1 l.2 ≠ 1 := fun l hl h1 => w.ne_one l hl (hf1 _ _ h1)
+  have hw' : Reduced φ' (w.map f hfw) := fun l hl => by
     rw [Word.toList_map] at hl
     obtain ⟨l₀, hl₀, rfl⟩ := List.mem_map.1 hl
     exact fun hmem => hw l₀ hl₀ (hf _ _ hmem)
-  have hempty : w = .empty := by
-    have h' := hw'.eq_empty_of_mem_range hφ' ⟨k h⁻¹, by
+  have hempty : w = .empty := (Word.map_eq_empty_iff f hfw).1 <|
+    hw'.eq_empty_of_mem_range hφ' ⟨k h⁻¹, by
       rwa [map_inv, map_inv, eq_comm, ← mul_eq_one_iff_eq_inv', Word.prod_map,
         ← map_ofCoprodI f k hfk, ← map_base f k hfk, ← map_mul]⟩
-    ext1
-    simpa using congrArg Word.toList h'
   subst hempty
   simp only [Word.prod_empty, map_one, mul_one, map_base] at hx ⊢
   rw [(map_eq_one_iff _ hk).1 ((map_eq_one_iff _ (base_injective hφ')).1 hx), map_one]
