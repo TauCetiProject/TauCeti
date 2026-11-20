@@ -90,20 +90,13 @@ theorem exists_subset_range_ι_of_isCompact
     [∀ n, T1Space (F.obj n)] (hc : IsColimit c) {K : Set c.pt} (hK : IsCompact K) :
     ∃ n, K ⊆ range (c.ι.app n) := by
   by_contra! h
-  have hmono {m n : ℕ} (hmn : m ≤ n) : range (c.ι.app m) ⊆ range (c.ι.app n) := by
-    rw [← c.w (homOfLE hmn), TopCat.coe_comp]
-    exact range_comp_subset_range _ _
-  have hcover (p : c.pt) : ∃ n, p ∈ range (c.ι.app n) := by
-    obtain ⟨n, y, rfl⟩ :=
-      Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) p
-    exact ⟨n, y, rfl⟩
   -- For each stage `n`, a point `pt n` of `K` outside stage `n`, and a stage `next n` containing
-  -- it; necessarily `n < next n`.
+  -- it, as the stages cover the colimit; necessarily `n < next n`.
   choose pt hptK hpt using fun n ↦ not_subset.1 (h n)
-  choose next hnext using fun n ↦ hcover (pt n)
+  choose next hnext using fun n ↦ iUnion_eq_univ_iff.1 (iUnion_range_ι_of_isColimit hc) (pt n)
   have hlt (n : ℕ) : n < next n := by
     by_contra! hle
-    exact hpt n (hmono hle (hnext n))
+    exact hpt n (monotone_range_ι c hle (hnext n))
   -- Iterating `next` gives strictly increasing stages `idx k`, and points `x k` outside stage
   -- `idx k` but inside stage `idx (k + 1)`.
   let idx (k : ℕ) : ℕ := next^[k] 0
@@ -112,7 +105,7 @@ theorem exists_subset_range_ι_of_isCompact
   let x (k : ℕ) : c.pt := pt (idx k)
   have hx {k n : ℕ} (hk : x k ∈ range (c.ι.app n)) : idx k < n := by
     by_contra! hle
-    exact hpt _ (hmono hle hk)
+    exact hpt _ (monotone_range_ι c hle hk)
   have hle {j k : ℕ} (hjk : x j = x k) : k ≤ j :=
     Nat.lt_succ_iff.1 <| hidx.lt_iff_lt.1 <| hx <| hjk ▸ hidx_succ j ▸ hnext (idx j)
   have hinj : Function.Injective x := fun j k hjk ↦ le_antisymm (hle hjk.symm) (hle hjk)
