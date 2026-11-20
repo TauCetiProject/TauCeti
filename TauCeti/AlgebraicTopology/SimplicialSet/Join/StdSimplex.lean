@@ -222,11 +222,11 @@ private lemma yonedaEquiv_splitData_p (k : Fin (n + m + 2)) :
     stdSimplex.yonedaEquiv_id_apply]
 
 private lemma splitData_left_app_apply {a : ℕ} (y : (joinFiber (splitData n m).p 0).obj (op ⦋a⦌))
-    (t : Fin (a + 1)) : ((splitData n m).left.app _ y t : ℕ) = min (y.1 t : ℕ) n :=
+    (t : Fin (a + 1)) : ((splitData n m).left.app _ y t : ℕ) = min (y.val t : ℕ) n :=
   (rfl)
 
 private lemma splitData_right_app_apply {a : ℕ} (y : (joinFiber (splitData n m).p 1).obj (op ⦋a⦌))
-    (t : Fin (a + 1)) : ((splitData n m).right.app _ y t : ℕ) = y.1 t - (n + 1) :=
+    (t : Fin (a + 1)) : ((splitData n m).right.app _ y t : ℕ) = y.val t - (n + 1) :=
   (rfl)
 
 private lemma vertex_splitData (k : Fin (n + m + 2)) : vertex (splitData n m) k = k := by
@@ -468,10 +468,11 @@ lemma δ_zero_comp_stdSimplexIso_inv :
 to `x`, through `Δ[0] ⋆ Δ[0] ≅ Δ[1]`. -/
 noncomputable def coneEdgeEquiv {X : SSet.{u}} (x y : X _⦋0⦌) :
     {τ : join Δ[0] Δ[0] ⟶ X // inl _ _ ≫ τ = const y ∧ inr _ _ ≫ τ = const x} ≃ Edge y x where
-  toFun τ := Edge.mk (yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.1))
-    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_one_comp_stdSimplexIso_inv, τ.2.1,
+  toFun τ := Edge.mk (yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.val))
+    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_one_comp_stdSimplexIso_inv, τ.property.1,
       yonedaEquiv_const])
-    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_zero_comp_stdSimplexIso_inv, τ.2.2,
+    (by rw [← stdSimplex.yonedaEquiv_δ_comp, reassoc_of% δ_zero_comp_stdSimplexIso_inv,
+        τ.property.2,
       yonedaEquiv_const])
   invFun e := ⟨(stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge,
     by rw [← δ_one_comp_stdSimplexIso_inv, Category.assoc, Iso.inv_hom_id_assoc,
@@ -485,14 +486,14 @@ noncomputable def coneEdgeEquiv {X : SSet.{u}} (x y : X _⦋0⦌) :
 @[simp]
 lemma coneEdgeEquiv_apply_edge {X : SSet.{u}} (x y : X _⦋0⦌)
     (τ : {τ : join Δ[0] Δ[0] ⟶ X // inl _ _ ≫ τ = const y ∧ inr _ _ ≫ τ = const x}) :
-    (coneEdgeEquiv x y τ).edge = yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.1) :=
+    (coneEdgeEquiv x y τ).edge = yonedaEquiv ((stdSimplexIso 0 0).inv ≫ τ.val) :=
   (rfl)
 
 /-- The map `Δ[0] ⋆ Δ[0] ⟶ X` attached to an edge `e` is the composite of `Δ[0] ⋆ Δ[0] ≅ Δ[1]`
 with `e`. -/
 @[simp]
 lemma coneEdgeEquiv_symm_apply_coe {X : SSet.{u}} (x y : X _⦋0⦌) (e : Edge y x) :
-    ((coneEdgeEquiv x y).symm e).1 = (stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge :=
+    ((coneEdgeEquiv x y).symm e).val = (stdSimplexIso 0 0).hom ≫ yonedaEquiv.symm e.edge :=
   (rfl)
 
 /-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`, the first edge of the spine of `Δ[n + 1]` is the cone on the

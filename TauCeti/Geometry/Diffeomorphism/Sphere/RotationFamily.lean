@@ -106,7 +106,7 @@ def sphereRotationPlane (p : sphere (0 : E) 1) (v : sphere (0 : (ℝ ∙ (p : E)
     refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
     have hv : ‖((v : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 := norm_eq_of_mem_sphere v
     have hpv : ⟪(p : E), ((v : (ℝ ∙ (p : E))ᗮ) : E)⟫ = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).2
+      Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).property
     simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, hpv, hv,
       Complex.sq_norm, Complex.normSq_apply]
     ring
@@ -121,9 +121,9 @@ theorem continuous_sphereRotationPlane (p : sphere (0 : E) 1) :
     Continuous fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦
       (sphereRotationPlane p v).toContinuousLinearMap := by
   have hv : Continuous fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E) :=
-    continuous_subtype_val.comp continuous_subtype_val
+    continuous_subtypeVal.comp continuous_subtypeVal
   refine ((continuous_const (y := Complex.reCLM.smulRight (p : E))).add
-    ((ContinuousLinearMap.smulRightL ℝ ℂ E Complex.imCLM).continuous.comp hv)).congr fun v ↦ ?_
+    ((StrongDual.smulRightL ℝ ℂ E Complex.imCLM).continuous.comp hv)).congr fun v ↦ ?_
   ext w
   simp
 
@@ -133,11 +133,11 @@ It sends `p` to `Re z • p + Im z • v` and `v` to `-Im z • p + Re z • v`,
 orthogonal to `p` and `v`. -/
 def sphereRotationIsometry (p : sphere (0 : E) 1)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) : E ≃ₗᵢ[ℝ] E :=
-  (sphereRotationPlane p x.1).planeRotation ⟨x.2, x.2.2⟩
+  (sphereRotationPlane p x.1).planeRotation ⟨x.2, x.2.property⟩
 
 theorem sphereRotationIsometry_def (p : sphere (0 : E) 1)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
-    sphereRotationIsometry p x = (sphereRotationPlane p x.1).planeRotation ⟨x.2, x.2.2⟩ :=
+    sphereRotationIsometry p x = (sphereRotationPlane p x.1).planeRotation ⟨x.2, x.2.property⟩ :=
   (rfl)
 
 /-- **The rotation moves `p` along the great circle in the direction `v`**: it sends `p` to
@@ -147,7 +147,7 @@ theorem sphereRotationIsometry_apply_self (p : sphere (0 : E) 1)
     (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1) :
     sphereRotationIsometry p x p = sphereRotationFamily p x := by
   simpa [sphereRotationIsometry] using
-    (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.2⟩ 1
+    (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.property⟩ 1
 
 /-- The rotation sends the tangent vector `v` to `-Im z • p + Re z • v`. -/
 @[simp]
@@ -156,7 +156,7 @@ theorem sphereRotationIsometry_apply_tangent (p : sphere (0 : E) 1)
     sphereRotationIsometry p x ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) =
       -(x.2 : ℂ).im • (p : E) + (x.2 : ℂ).re • ((x.1 : (ℝ ∙ (p : E))ᗮ) : E) := by
   simpa [sphereRotationIsometry] using
-    (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.2⟩ Complex.I
+    (sphereRotationPlane p x.1).planeRotation_apply_map ⟨x.2, x.2.property⟩ Complex.I
 
 /-- The rotation fixes the vectors orthogonal to `p` and to `v`. -/
 theorem sphereRotationIsometry_apply_of_inner_eq_zero (p : sphere (0 : E) 1)
@@ -173,7 +173,7 @@ theorem continuous_sphereRotationIsometry (p : sphere (0 : E) 1) :
     Continuous fun x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦
       ((sphereRotationIsometry p x).toContinuousLinearEquiv : E →L[ℝ] E) :=
   ((continuous_sphereRotationPlane p).comp continuous_fst).planeRotation
-    ((continuous_subtype_val.comp continuous_snd).subtype_mk _)
+    ((continuous_subtypeVal.comp continuous_snd).subtype_mk _)
 
 variable [FiniteDimensional ℝ E] {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 

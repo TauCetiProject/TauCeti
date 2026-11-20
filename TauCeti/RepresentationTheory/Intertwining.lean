@@ -127,7 +127,7 @@ noncomputable def equivOfRange (f : IntertwiningMap ρ σ) (hf : Function.Inject
     ρ.Equiv P.toRepresentation :=
   (f.codRestrict P fun v => hP.le (LinearMap.mem_range_self _ v)).ofBijective
     ⟨fun _ _ h => hf (by exact congrArg Subtype.val h), fun w => by
-      obtain ⟨v, hv⟩ := hP.ge w.2
+      obtain ⟨v, hv⟩ := hP.ge w.property
       exact ⟨v, Subtype.ext (by exact hv)⟩⟩
 
 /-- **An intertwining map commutes with the action of the monoid algebra**, not only with that of

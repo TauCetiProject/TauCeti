@@ -37,13 +37,13 @@ variable {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
 
 private theorem map_erase_faceIdeal_pow_le [DecidableEq ι]
     (p : ℕ) (S : Finset ι) (a : S) (i : ℕ) :
-    letI := faceTopology f P hf p (S.erase a.1)
+    letI := faceTopology f P hf p (S.erase a.val)
     letI := faceTopology f P hf (p + 1) S
-    ((facePair f P hf p (S.erase a.1)).idealOfDefinition ^ i).map
+    ((facePair f P hf p (S.erase a.val)).idealOfDefinition ^ i).map
       ((cechLocalizationEraseRingHom f S a).restrict _ _
         fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr) ≤
       (facePair f P hf (p + 1) S).idealOfDefinition ^ i := by
-  let _ := faceTopology f P hf p (S.erase a.1)
+  let _ := faceTopology f P hf p (S.erase a.val)
   let _ := faceTopology f P hf (p + 1) S
   rw [Ideal.map_pow]
   exact pow_le_pow_left' (map_eraseRingHom_idealOfDefinition_le f P hf p S a) i
@@ -51,17 +51,17 @@ private theorem map_erase_faceIdeal_pow_le [DecidableEq ι]
 /-- Restriction from a deleted face preserves every level of the face filtration. -/
 theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
     (N : Set M) (p : ℕ) (S : Finset ι) (a : S) (i : ℕ)
-    {x : LocalizedModule (.powers (∏ j ∈ S.erase a.1, f j)) M}
-    (hx : x ∈ faceFiltration f P M hf N p (S.erase a.1) i) :
-    cechLocalizationRestriction M f (S.erase_subset a.1) x ∈
+    {x : LocalizedModule (.powers (∏ j ∈ S.erase a.val, f j)) M}
+    (hx : x ∈ faceFiltration f P M hf N p (S.erase a.val) i) :
+    cechLocalizationRestriction M f (S.erase_subset a.val) x ∈
       faceFiltration f P M hf N (p + 1) S i := by
-  let R := Localization.Away (∏ j ∈ S.erase a.1, f j)
+  let R := Localization.Away (∏ j ∈ S.erase a.val, f j)
   let T := Localization.Away (∏ j ∈ S, f j)
   let Q := LocalizedModule (.powers (∏ j ∈ S, f j)) M
   let φ : R →+* T := cechLocalizationEraseRingHom f S a
-  let _ := faceTopology f P hf p (S.erase a.1)
+  let _ := faceTopology f P hf p (S.erase a.val)
   let _ := faceTopology f P hf (p + 1) S
-  let D := (facePair f P hf p (S.erase a.1)).ringOfDefinition
+  let D := (facePair f P hf p (S.erase a.val)).ringOfDefinition
   let E := (facePair f P hf (p + 1) S).ringOfDefinition
   have hφ : ∀ r ∈ D, φ r ∈ E :=
     fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr
@@ -72,9 +72,9 @@ theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
     (Ideal.mem_map_of_mem ψ (x := r) hr)
   let _ : Module R Q := Module.compHom Q φ
   have : IsScalarTower B R Q := isScalarTower_compHom_cechLocalizationEraseRingHom M f S a
-  let u := (cechLocalizationRestriction M f (S.erase_subset a.1)).extendScalarsOfIsLocalization
-    (.powers (∏ j ∈ S.erase a.1, f j)) R
-  have hu (r : D) (y : LocalizedModule (.powers (∏ j ∈ S.erase a.1, f j)) M) :
+  let u := (cechLocalizationRestriction M f (S.erase_subset a.val)).extendScalarsOfIsLocalization
+    (.powers (∏ j ∈ S.erase a.val, f j)) R
+  have hu (r : D) (y : LocalizedModule (.powers (∏ j ∈ S.erase a.val, f j)) M) :
       u (r • y) = (ψ r : T) • u y := by
     rw [Subring.smul_def, hψ]
     exact u.map_smul (r : R) y
@@ -96,7 +96,7 @@ theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
   rw [mem_faceFiltration] at hx ⊢
   refine Submodule.smul_induction_on hx (fun r hr y hy ↦ ?_) (fun y z hy hz ↦ ?_)
   · rw [← LinearMap.extendScalarsOfIsLocalization_apply'
-      (.powers (∏ j ∈ S.erase a.1, f j)) R _ (r • y), hu]
+      (.powers (∏ j ∈ S.erase a.val, f j)) R _ (r • y), hu]
     exact Submodule.smul_mem_smul (hI r hr) (hspan y hy)
   · simpa using Submodule.add_mem _ hy hz
 
@@ -110,9 +110,9 @@ theorem cechLocalizationDifferential_mem_filtration [LinearOrder ι]
   rw [cechLocalizationDifferential_apply]
   apply AddSubgroup.sum_mem
   intro a _
-  have h := cechLocalizationRestriction_erase_mem_faceFiltration f P M hf N p S.1 a i
-    (hx ⟨S.1.erase a.1, by rw [Finset.card_erase_of_mem a.2, S.2]; rfl⟩)
-  rcases neg_one_pow_eq_or (R := B) (S.1.filter (· < a.1)).card with hs | hs <;>
+  have h := cechLocalizationRestriction_erase_mem_faceFiltration f P M hf N p S.val a i
+    (hx ⟨S.val.erase a.val, by rw [Finset.card_erase_of_mem a.property, S.property]; rfl⟩)
+  rcases neg_one_pow_eq_or (R := B) (S.val.filter (· < a.val)).card with hs | hs <;>
     simp [hs, h]
 
 section Differential

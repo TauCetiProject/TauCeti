@@ -179,13 +179,13 @@ theorem mulLeft_mul (u₁ u₂ : C^∞⟮I, M; ℝ⟯) :
 multiplication by `u⁻¹`. -/
 def mulLeftEquiv (u : C^∞⟮I, M; ℝ⟯) (hu : ∀ x, u x ≠ 0) : SobolevH1 I M ≃L[ℝ] SobolevH1 I M :=
   let uInv : C^∞⟮I, M; ℝ⟯ := ⟨fun x ↦ (u x)⁻¹, u.contMDiff.inv₀ hu⟩
-  ContinuousLinearEquiv.equivOfInverse (mulLeft u) (mulLeft uInv)
-    (fun w ↦ by
-      have hmul : uInv * u = 1 := ContMDiffMap.ext fun x ↦ inv_mul_cancel₀ (hu x)
-      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul, hmul])
-    (fun w ↦ by
+  ContinuousLinearEquiv.ofContinuousLinearMap (mulLeft u) (mulLeft uInv)
+    (ContinuousLinearMap.ext fun w ↦ by
       have hmul : u * uInv = 1 := ContMDiffMap.ext fun x ↦ mul_inv_cancel₀ (hu x)
-      simp [← ContinuousLinearMap.comp_apply, ← mulLeft_mul, hmul])
+      simp [← mulLeft_mul, hmul])
+    (ContinuousLinearMap.ext fun w ↦ by
+      have hmul : uInv * u = 1 := ContMDiffMap.ext fun x ↦ inv_mul_cancel₀ (hu x)
+      simp [← mulLeft_mul, hmul])
 
 @[simp]
 theorem mulLeftEquiv_apply (u : C^∞⟮I, M; ℝ⟯) (hu : ∀ x, u x ≠ 0) (w : SobolevH1 I M) :
@@ -372,17 +372,19 @@ def congrRescale
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x))
     {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) :
     SobolevH1 I (WithMetric (g.rescale f hf hf_pos)) ≃L[ℝ] SobolevH1 I (WithMetric g) :=
-  ContinuousLinearEquiv.equivOfInverse
+  ContinuousLinearEquiv.ofContinuousLinearMap
     (liftSmooth (ofSmooth.comp (compDiffeomorphWithMetricLinear g (g.rescale f hf hf_pos)))
       (exists_norm_ofSmooth_comp_diffeomorphWithMetric_le g hf hf_pos))
     (liftSmooth (ofSmooth.comp (compDiffeomorphWithMetricLinear (g.rescale f hf hf_pos) g))
       (exists_norm_ofSmooth_comp_diffeomorphWithMetric_symm_le g hf hf_pos))
-    (fun w ↦ by
-      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
+    (ContinuousLinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
       rw [liftSmooth_ofSmooth, LinearMap.comp_apply, liftSmooth_ofSmooth, LinearMap.comp_apply]
       exact congrArg ofSmooth (ContMDiffMap.ext fun x ↦ by simp))
-    (fun w ↦ by
-      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun v ↦ ?_
+    (ContinuousLinearMap.ext fun w ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      refine induction_on w (isClosed_eq (by fun_prop) (by fun_prop)) fun u ↦ ?_
       rw [liftSmooth_ofSmooth, LinearMap.comp_apply, liftSmooth_ofSmooth, LinearMap.comp_apply]
       exact congrArg ofSmooth (ContMDiffMap.ext fun x ↦ by simp))
 

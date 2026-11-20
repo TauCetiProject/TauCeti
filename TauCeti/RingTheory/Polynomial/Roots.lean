@@ -262,10 +262,10 @@ theorem le_card_roots_iff_exists_prod_X_sub_C_dvd {R : Type*} [CommRing R]
     intro h
     set l := p.roots.toList
     have hl : k ≤ l.length := by simpa [l] using h
-    refine ⟨fun j ↦ l[j.1], ?_⟩
+    refine ⟨fun j ↦ l[j.val], ?_⟩
     rw [key, Multiset.prod_X_sub_C_dvd_iff_le_roots hp, Fin.univ_val_map]
     conv_rhs => rw [← Multiset.coe_toList p.roots]
-    have : List.ofFn (fun j : Fin k ↦ l[j.1]) = l.take k :=
+    have : List.ofFn (fun j : Fin k ↦ l[j.val]) = l.take k :=
       List.ext_getElem (by simp; omega) fun i _ _ ↦ by simp
     rw [this]
     exact Multiset.coe_le.2 (List.take_sublist k l).subperm

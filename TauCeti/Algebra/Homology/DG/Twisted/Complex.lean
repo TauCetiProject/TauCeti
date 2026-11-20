@@ -99,7 +99,7 @@ theorem extendByZero_mem_twistedTotalGrading {ℳ : ℤ → Submodule R M} {n : 
     · rw [Function.ExtendByZero.linearMap_apply, Subtype.val_injective.extend_apply f 0 ⟨x, hx⟩]
       exact mem_twistedTotalGrading_iff.1 hf ⟨x, hx⟩
     · rw [Function.ExtendByZero.linearMap_apply,
-        Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.2)]
+        Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.property)]
       exact zero_mem _
 
 section GradedSMul

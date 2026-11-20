@@ -150,14 +150,14 @@ private theorem realPositiveIndex_ternaryPresentation (I : GlobalFormInvariants 
   have hdisc' : squareClass (unitAtRealPlace w d) =
       (3 - I.realPositiveIndex w) • squareClass (-1 : ℝˣ) := by
     rw [RingHom.squareClassMap_apply] at hdisc
-    have hm : Units.map (embedding_of_isReal w.2).toMonoidHom d = unitAtRealPlace w d :=
+    have hm : Units.map (embedding_of_isReal w.property).toMonoidHom d = unitAtRealPlace w d :=
       Units.ext (by simp)
     rwa [hm] at hdisc
-  have hda : embedding_of_isReal w.2 (d : K) ≠ 0 :=
+  have hda : embedding_of_isReal w.property (d : K) ≠ 0 :=
     (unitAtRealPlace_apply w d) ▸ (unitAtRealPlace w d).ne_zero
-  have haa : embedding_of_isReal w.2 (a : K) ≠ 0 :=
+  have haa : embedding_of_isReal w.property (a : K) ≠ 0 :=
     (unitAtRealPlace_apply w a) ▸ (unitAtRealPlace w a).ne_zero
-  have hba : embedding_of_isReal w.2 (b : K) ≠ 0 :=
+  have hba : embedding_of_isReal w.property (b : K) ≠ 0 :=
     (unitAtRealPlace_apply w b) ▸ (unitAtRealPlace w b).ne_zero
   rw [presentedForm_eq_weightedSumSquares_coe,
     _root_.QuadraticForm.realPositiveIndex_weightedSumSquares, Set.ncard_eq_toFinset_card']
