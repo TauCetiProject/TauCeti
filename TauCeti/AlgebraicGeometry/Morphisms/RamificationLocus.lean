@@ -56,6 +56,8 @@ local ring of the same dimension is étale
   finite type, in particular finite, Stacks 01WM).
 * `AlgebraicGeometry.Scheme.Hom.etale_morphismRestrict_iff`: the restriction of `f` over an open
   `U` is étale iff `f⁻¹ U` does not meet the non-étale locus.
+* `AlgebraicGeometry.Scheme.Hom.nonEtaleLocus_eq_empty_iff`: `f` is étale iff its non-étale locus
+  is empty.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_subset_nonEtaleLocus`.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_nonEtaleLocus`: for a dominant morphism of
   integral schemes, locally of finite type, onto a locally Noetherian normal (for instance,
@@ -212,6 +214,19 @@ theorem etale_morphismRestrict_iff (U : Y.Opens) :
       rw [hfac]
       infer_instance
     exact Etale.of_comp _ U.ι
+
+/-- A morphism is étale iff its non-étale locus is empty, that is, iff it is étale at every point
+in the sense of Stacks, Definition 29.37.1 (02GI). -/
+theorem nonEtaleLocus_eq_empty_iff : f.nonEtaleLocus = ∅ ↔ Etale f := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ Set.eq_empty_of_forall_notMem fun x hx ↦
+    hx ⟨⊤, trivial, inferInstance⟩⟩
+  -- Instance search does not find `IsZariskiLocalAtSource @Etale` by itself.
+  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @Etale) (Q := RingHom.Etale)
+  have hx (x : X) : ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) :=
+    not_not.mp fun hx ↦ h.subset hx
+  choose U hxU hU using hx
+  exact IsZariskiLocalAtSource.of_iSup_eq_top (P := @Etale) U
+    (top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxU x⟩) hU
 
 /-- An étale point is unramified: the ramification locus is contained in the non-étale locus. -/
 theorem ramificationLocus_subset_nonEtaleLocus : f.ramificationLocus ⊆ f.nonEtaleLocus := by
