@@ -86,18 +86,8 @@ theorem eqOn_Icc_of_hasDerivWithinAt_reactionTensor {f g : ℝ → FourTensor V}
     (hf' : ∀ t ∈ Ico a b, HasDerivWithinAt f (reactionTensor (f t)) (Ici t) t)
     (hg : ContinuousOn g (Icc a b))
     (hg' : ∀ t ∈ Ico a b, HasDerivWithinAt g (reactionTensor (g t)) (Ici t) t)
-    (ha : f a = g a) : EqOn f g (Icc a b) := by
-  -- Both trajectories lie in a ball on which `Q` is Lipschitz.
-  obtain ⟨Cf, hCf⟩ := (isCompact_Icc.image_of_continuousOn hf).isBounded.exists_norm_le
-  obtain ⟨Cg, hCg⟩ := (isCompact_Icc.image_of_continuousOn hg).isBounded.exists_norm_le
-  set ρ : ℝ≥0 := ⟨max (max Cf Cg) 0, le_max_right _ _⟩
-  have hmem {h : ℝ → FourTensor V} {C : ℝ} (hC : ∀ x ∈ h '' Icc a b, ‖x‖ ≤ C) (hCρ : C ≤ ρ)
-      (t : ℝ) (ht : t ∈ Ico a b) : h t ∈ closedBall (0 : FourTensor V) ρ :=
-    mem_closedBall_zero_iff.2 <| (hC _ ⟨t, Ico_subset_Icc_self ht, rfl⟩).trans hCρ
-  exact ODE_solution_unique_of_mem_Icc_right (v := fun _ ↦ reactionTensor)
-    (fun _ _ ↦ lipschitzOnWith_reactionTensor_closedBall ρ) hf hf'
-    (hmem hCf ((le_max_left _ _).trans (le_max_left _ _))) hg hg'
-    (hmem hCg ((le_max_right _ _).trans (le_max_left _ _))) ha
+    (ha : f a = g a) : EqOn f g (Icc a b) :=
+  locallyLipschitz_reactionTensor.eqOn_Icc_of_hasDerivWithinAt hf hf' hg hg' ha
 
 /-- **Parabolic rescaling.** If `R` solves `R' = Q(R)` at time `c t`, then `τ ↦ c • R (c τ)` solves
 it at time `t`, since `Q` is homogeneous of degree two. -/
