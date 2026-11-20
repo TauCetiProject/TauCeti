@@ -324,14 +324,6 @@ private theorem exists_isothermal_chart_of_contDiffAt_of_tames {α : ℝ≥0} (h
   obtain ⟨e, hce, -, he⟩ := exists_isothermal_chart hα0 hα1 hρ hJρ hμJ hHolder
   exact ⟨e, hce, he⟩
 
-/-- Transporting a structure along complex conjugation conjugates it: `v ↦ conj (J (conj v))`. -/
-private theorem transport_conjCLE_apply (J : AlmostComplexStructure ℂ) (v : ℂ) :
-    J.transport conjCLE.toLinearEquiv v = conj (J (conj v)) := by
-  have hs : conjCLE.symm = conjCLE := by
-    rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
-  rw [AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv, hs,
-    ContinuousLinearEquiv.coe_toLinearEquiv, conjCLE_apply, conjCLE_apply]
-
 /-- **Isothermal charts after conjugation.** If `e'` is an isothermal chart at `conj c` for the
 conjugated field `z ↦ conj ∘ J (conj z) ∘ conj`, then `e' ∘ conj` is an isothermal chart at `c`
 for `J`, with derivative `de'_(conj z) ∘ conj`, again `α`-Hölder and invertible. -/
@@ -373,7 +365,7 @@ private theorem exists_isothermal_chart_of_transport_conj {α K : ℝ≥0}
     exact (he'inv _ ((hes z).1 hz)).comp ContinuousLinearMap.isInvertible_equiv
   · -- `σ (J z v)` is the conjugated structure at `σ z` applied to `σ v`.
     have hJ'z : σ (J z v) = (J (conj (σ z))).transport σ.toLinearEquiv (σ v) := by
-      simp only [σ, transport_conjCLE_apply, conjCLE_apply, conj_conj]
+      simp only [σ, AlmostComplexStructure.transport_conjCLE_apply, conjCLE_apply, conj_conj]
     rw [hde, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearEquiv.coe_coe, hJ'z, he'J _ ((hes z).1 hz)]
 
@@ -402,8 +394,9 @@ theorem exists_isothermal_chart_of_contDiffAt {α : ℝ≥0} (hα0 : 0 < α) (h�
         (σ : ℂ →L[ℝ] ℂ) := by
     funext z
     ext1 v
-    simp only [J', σ, transport_conjCLE_apply, LinearMap.coe_toContinuousLinearMap',
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply]
+    simp only [J', σ, AlmostComplexStructure.transport_conjCLE_apply,
+      LinearMap.coe_toContinuousLinearMap', ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, conjCLE_apply]
   have hJ' : ContDiffAt ℝ 1 (fun z ↦ LinearMap.toContinuousLinearMap (J' z).toLinearMap)
       (σ c) := by
     rw [hJ'eq]
