@@ -11,6 +11,7 @@ public import Mathlib.Topology.Metrizable.Uniformity
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
 # The local Hölder spaces `C^{k,α}_loc(Ω)`
@@ -32,21 +33,26 @@ contained in `Ω`. Since the `C^{k,α}(U)` norm is the sum of the supremum norms
 derivatives through order `k` and the Hölder seminorm over `U` of the `k`-th derivative, this is
 the locally convex topology of these seminorms on the relatively compact open subsets of `Ω`. When
 `E` is finite dimensional, a countable compact exhaustion of `Ω` already generates it, so the space
-is metrizable; with a Banach codomain it is complete, hence a Fréchet space.
+is metrizable; with a Banach codomain it is complete, hence a Fréchet space. When `E` is not
+locally compact, that is infinite dimensional, the empty set is the only open set with compact
+closure, so the topology is indiscrete: the construction is meaningful only for
+finite-dimensional `E`.
 
 `C^{k,α}_loc(Ω)` is not the Banach space `C^{k,α}(Ω)` of `TauCeti.CkHolderSpaceOn`, which asks
 for bounded derivatives and a global Hölder seminorm over all of `Ω`; the latter includes
 continuously into the former (`TauCeti.CkHolderSpaceOn.toLocL`). On `Ω = (-1, 0) ∪ (0, 1)` the
 sign function lies in `C^{0,α}_loc(Ω)` but not in `C^{0,α}(Ω)`, and on `(0, 1)` the function
 `x ↦ 1 / x` lies in every `C^{k,α}_loc` but is unbounded. Nor is `C^{k,α}_loc(Ω)` a Banach space
-under some other norm: for `α ≤ 1` and nonempty `Ω` in a nontrivial finite-dimensional space, no
-neighbourhood of zero is bounded
+under some other norm: for `α ≤ 1`, nonempty `Ω` in a nontrivial finite-dimensional space and a
+nontrivial codomain `F`, no neighbourhood of zero is bounded
 (`TauCeti.CkHolderSpaceLoc.not_exists_isVonNBounded_mem_nhds_zero`), so no norm induces its
 topology.
 
 ## Main declarations
 
 * `TauCeti.CkHolderSpaceLoc k α Ω F`: the space `C^{k,α}_loc(Ω, F)` for `Ω : Opens E`.
+* `TauCeti.CkHolderSpaceLoc.mk`: the element defined by a function on `Ω` that lies in `C^{k,α}`
+  on an open neighbourhood in `Ω` of every compact subset of `Ω`.
 * `TauCeti.CkHolderSpaceLoc.exists_ckHolderSpaceOn`: every compact subset of `Ω` has an open
   neighbourhood in `Ω` on which an element lies in `C^{k,α}`.
 * `TauCeti.CkHolderSpaceLoc.restrictL`: the continuous linear restriction map to `C^{k,α}(U)` for
@@ -59,9 +65,17 @@ topology.
   `TauCeti.CkHolderSpaceLoc.instMetrizableSpace`: together with the topological vector space
   structure, these make `C^{k,α}_loc(Ω, F)` a Fréchet space when `E` is finite dimensional and `F`
   is complete.
-* `TauCeti.CkHolderSpaceLoc.not_exists_isVonNBounded_mem_nhds_zero`: `C^{k,α}_loc(Ω)` has no
-  bounded neighbourhood of zero, so it is not normable.
+* `TauCeti.CkHolderSpaceLoc.not_exists_isVonNBounded_mem_nhds_zero`: for `α ≤ 1`, nonempty `Ω`,
+  `E` nontrivial and finite dimensional, and `F` nontrivial, `C^{k,α}_loc(Ω)` has no bounded
+  neighbourhood of zero, so it is not normable.
 * `TauCeti.CkHolderSpaceOn.toLocL`: the continuous inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)`.
+
+## Implementation notes
+
+The topology, the uniform structure, the topological vector space and local convexity instances,
+`TauCeti.CkHolderSpaceLoc.continuous_iff` and the completeness argument through the uniform
+embedding into the product of the spaces `C^{k,α}(U)` follow Mathlib's `ContDiffMapSupportedIn`
+(`Mathlib/Analysis/Distribution/ContDiffMapSupportedIn.lean`).
 
 ## References
 
@@ -86,7 +100,9 @@ variable (k : ℕ) (α : ℝ≥0) {E : Type u} [NormedAddCommGroup E] [NormedSpa
 /-- The space `C^{k,α}_loc(Ω, F)` of maps `f : Ω → F` such that every compact subset of `Ω` has an
 open neighbourhood `U ⊆ Ω` on which `f` lies in `C^{k,α}(U, F)`. Its topology is the coarsest one
 making the restrictions to the open sets with compact closure in `Ω` continuous into
-`C^{k,α}(U, F)`. -/
+`C^{k,α}(U, F)`. When `E` is not locally compact, that is infinite dimensional, the only such open
+set is empty and the topology is indiscrete, so the construction is meaningful only for
+finite-dimensional `E`. -/
 -- The module system requires exposure while the declarations below construct and project through
 -- this submodule alias. The `irreducible` attribute after the basic API restores the abstraction
 -- boundary.
@@ -110,7 +126,7 @@ namespace CkHolderSpaceLoc
 variable {k α Ω F}
 
 /-- The defining property of an element of `C^{k,α}_loc(Ω)`. -/
-private def IsLoc (f : Ω → F) : Prop :=
+private abbrev IsLoc (f : Ω → F) : Prop :=
   ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
     ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩
 
@@ -178,13 +194,18 @@ theorem exists_ckHolderSpaceOn (f : CkHolderSpaceLoc k α Ω F) {K : Set E}
       ∀ x : U, g x = f ⟨x, hU x.2⟩ :=
   (equivSubtype f).2 K hKΩ hK
 
-/-- The element of `C^{k,α}_loc(Ω)` defined by a function with the defining property. -/
-private def mk (f : Ω → F) (hf : IsLoc (k := k) (α := α) f) : CkHolderSpaceLoc k α Ω F :=
+/-- The element of `C^{k,α}_loc(Ω)` defined by a function `f` on `Ω` such that every compact
+subset of `Ω` has an open neighbourhood `U ⊆ Ω` on which `f` agrees with an element of
+`C^{k,α}(U)`. -/
+def mk (f : Ω → F) (hf : ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
+    ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩) :
+    CkHolderSpaceLoc k α Ω F :=
   equivSubtype.symm ⟨f, hf⟩
 
 /-- The underlying function of `mk f hf` is `f`. -/
 @[simp]
-private theorem mk_apply (f : Ω → F) (hf : IsLoc (k := k) (α := α) f) (x : Ω) :
+theorem mk_apply (f : Ω → F) (hf : ∀ K ⊆ (Ω : Set E), IsCompact K → ∃ U : Opens E, K ⊆ U ∧
+    ∃ hU : U ≤ Ω, ∃ g : CkHolderSpaceOn k α U F, ∀ x : U, g x = f ⟨x, hU x.2⟩) (x : Ω) :
     mk f hf x = f x :=
   (rfl)
 
@@ -198,28 +219,36 @@ private theorem exists_restrict (f : CkHolderSpaceLoc k α Ω F) {U : Opens E}
   exact ⟨CkHolderSpaceOn.restrictL hUV' g, fun x ↦ by simp [hg]⟩
 
 /-- The restriction of an element of `C^{k,α}_loc(Ω)` to an open set with compact closure in `Ω`,
+as a function to `C^{k,α}(U)`. -/
+private def restrictFun (U : Opens E) (hU : IsCompact (closure (U : Set E)))
+    (hUΩ : closure (U : Set E) ⊆ Ω) (f : CkHolderSpaceLoc k α Ω F) : CkHolderSpaceOn k α U F :=
+  (f.exists_restrict hU hUΩ).choose
+
+/-- The restriction to `U` has the same values on `U`. -/
+@[simp]
+private theorem restrictFun_apply (U : Opens E) (hU : IsCompact (closure (U : Set E)))
+    (hUΩ : closure (U : Set E) ⊆ Ω) (f : CkHolderSpaceLoc k α Ω F) (x : U) :
+    restrictFun U hU hUΩ f x = f ⟨x, hUΩ (subset_closure x.2)⟩ :=
+  (f.exists_restrict hU hUΩ).choose_spec x
+
+/-- The restriction of an element of `C^{k,α}_loc(Ω)` to an open set with compact closure in `Ω`,
 as a linear map to `C^{k,α}(U)`. Use its continuous version `CkHolderSpaceLoc.restrictL` instead;
 this linear map only defines the topology. -/
 def restrictLM (U : Opens E) (hU : IsCompact (closure (U : Set E)))
     (hUΩ : closure (U : Set E) ⊆ Ω) : CkHolderSpaceLoc k α Ω F →ₗ[ℝ] CkHolderSpaceOn k α U F where
-  toFun f := (f.exists_restrict hU hUΩ).choose
+  toFun := restrictFun U hU hUΩ
   map_add' f g := by
     ext x
-    rw [CkHolderSpaceOn.coe_add, Pi.add_apply, ((f + g).exists_restrict hU hUΩ).choose_spec,
-      (f.exists_restrict hU hUΩ).choose_spec, (g.exists_restrict hU hUΩ).choose_spec, coe_add,
-      Pi.add_apply]
+    simp
   map_smul' c f := by
     ext x
-    rw [RingHom.id_apply, CkHolderSpaceOn.coe_smul, Pi.smul_apply,
-      ((c • f).exists_restrict hU hUΩ).choose_spec, (f.exists_restrict hU hUΩ).choose_spec,
-      coe_smul, Pi.smul_apply]
+    simp
 
 /-- The linear restriction to `U` has the same values on `U`. -/
-@[simp]
-theorem restrictLM_apply (U : Opens E) (hU : IsCompact (closure (U : Set E)))
+private theorem restrictLM_apply (U : Opens E) (hU : IsCompact (closure (U : Set E)))
     (hUΩ : closure (U : Set E) ⊆ Ω) (f : CkHolderSpaceLoc k α Ω F) (x : U) :
     restrictLM U hU hUΩ f x = f ⟨x, hUΩ (subset_closure x.2)⟩ :=
-  (f.exists_restrict hU hUΩ).choose_spec x
+  restrictFun_apply U hU hUΩ f x
 
 variable (Ω) in
 /-- The open sets whose closure is compact and contained in `Ω`; they index the restriction maps
@@ -337,6 +366,14 @@ private theorem exists_idx_superset [LocallyCompactSpace E] {K : Set E} (hK : Is
   obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
   exact ⟨⟨⟨V, hVo⟩, hVc, hVΩ⟩, hKV⟩
 
+omit [NormedSpace ℝ E] in
+/-- In a locally compact space, every point of `Ω` lies in an open set whose closure is compact and
+contained in `Ω`. -/
+private theorem exists_idx_mem [LocallyCompactSpace E] {x : E} (hx : x ∈ Ω) :
+    ∃ i : Idx Ω, x ∈ i.1 := by
+  obtain ⟨i, hi⟩ := exists_idx_superset Ω isCompact_singleton (singleton_subset_iff.2 hx)
+  exact ⟨i, singleton_subset_iff.1 hi⟩
+
 /-- On a locally compact, that is finite-dimensional, space, the element of `C^{k,α}_loc(Ω)`
 defined by a function on the whole space that is `C^k` on `Ω` and whose `k`-th iterated
 derivative is `α`-Hölder on every compact subset of `Ω`. Local compactness of `E` is what makes
@@ -379,8 +416,8 @@ with compact closure in `Ω` separate points. -/
 instance instT2Space [LocallyCompactSpace E] : T2Space (CkHolderSpaceLoc k α Ω F) := by
   refine T2Space.of_injective_continuous (f := fun f (i : Idx Ω) ↦ restrictL i.1 i.2.1 i.2.2 f)
     (fun f g h ↦ ext fun x ↦ ?_) (continuous_pi fun i ↦ (restrictL _ _ _).continuous)
-  obtain ⟨i, hi⟩ := exists_idx_superset Ω isCompact_singleton (singleton_subset_iff.2 x.2)
-  simpa using DFunLike.congr_fun (congr_fun h i) ⟨x, singleton_subset_iff.1 hi⟩
+  obtain ⟨i, hi⟩ := exists_idx_mem x.2
+  simpa using DFunLike.congr_fun (congr_fun h i) ⟨x, hi⟩
 
 /-- Restricting to a smaller index factors through the restriction to the larger one. -/
 private theorem res_eq_comp {i j : Idx Ω} (h : i.1 ≤ j.1) :
@@ -394,6 +431,8 @@ private theorem isUniformInducing_pi_res :
     IsUniformInducing (fun f (i : Idx Ω) ↦ res (k := k) (α := α) (F := F) i f) := by
   simp_rw [isUniformInducing_iff_uniformSpace, uniformSpace_eq_iInf, Pi.uniformSpace_eq,
     UniformSpace.comap_iInf, ← UniformSpace.comap_comap]
+  -- `Idx Ω` and `res i` are the index type and the restriction used to define `instUniformSpace`,
+  -- and evaluating the family of restrictions at `i` is `res i` by beta reduction.
   rfl
 
 omit [NormedSpace ℝ E] in
@@ -425,9 +464,8 @@ private theorem range_pi_res [LocallyCompactSpace E] :
       have h₂ := DFunLike.congr_fun (hG m j hmj) ⟨x, hxm⟩
       rw [CkHolderSpaceOn.restrictL_apply] at h₁ h₂
       exact h₁.trans h₂.symm
-    choose idx hidx using fun x : Ω ↦
-      exists_idx_superset Ω isCompact_singleton (singleton_subset_iff.2 x.2)
-    refine ⟨mk (fun x ↦ G (idx x) ⟨x, singleton_subset_iff.1 (hidx x)⟩) fun K hKΩ hK ↦ ?_, ?_⟩
+    choose idx hidx using fun x : Ω ↦ exists_idx_mem x.2
+    refine ⟨mk (fun x ↦ G (idx x) ⟨x, hidx x⟩) fun K hKΩ hK ↦ ?_, ?_⟩
     · obtain ⟨j, hKj⟩ := exists_idx_superset Ω hK hKΩ
       exact ⟨j.1, hKj, subset_closure.trans j.2.2, G j, fun y ↦ key _ _ _ _ _⟩
     · funext i
@@ -452,16 +490,12 @@ private theorem isCountablyGenerated_uniformity [LocallyCompactSpace E] :
     IsCountablyGenerated (𝓤 (CkHolderSpaceLoc k α Ω F)) := by
   have : ProperSpace E := ProperSpace.of_locallyCompactSpace ℝ
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
-  let K := CompactExhaustion.choice Ω
-  choose V hV using fun m ↦ exists_idx_superset Ω ((K.isCompact m).image continuous_subtype_val)
-    (by rintro _ ⟨x, -, rfl⟩; exact x.2)
+  obtain ⟨L, hLc, hLΩ, -, hL⟩ :=
+    Ω.isOpen.exists_monotone_isCompact_subset_forall_isCompact_subset_exists_subset
+  choose V hV using fun m ↦ exists_idx_superset Ω (hLc m) (hLΩ m)
   have hcof : ∀ i : Idx Ω, ∃ m, i.1 ≤ (V m).1 := fun i ↦ by
-    have hc : IsCompact (Subtype.val ⁻¹' closure (i.1 : Set E) : Set Ω) := by
-      rw [Subtype.isCompact_iff, image_preimage_eq_of_subset (by simpa using i.2.2)]
-      exact i.2.1
-    obtain ⟨m, hm⟩ := K.exists_superset_of_isCompact hc
-    exact ⟨m, fun x hx ↦ hV m ⟨⟨x, i.2.2 (subset_closure hx)⟩,
-      hm (mem_preimage.2 (subset_closure hx)), rfl⟩⟩
+    obtain ⟨m, hm⟩ := hL _ i.2.1 i.2.2
+    exact ⟨m, fun x hx ↦ hV m (hm (subset_closure hx))⟩
   let A : Idx Ω → Filter (CkHolderSpaceLoc k α Ω F × CkHolderSpaceLoc k α Ω F) := fun i ↦
     comap (Prod.map (res i) (res i)) (𝓤 (CkHolderSpaceOn k α i.1 F))
   have hU : 𝓤 (CkHolderSpaceLoc k α Ω F) = ⨅ i, A i := by
@@ -497,9 +531,14 @@ private theorem exists_mem_notMem_closure [Nontrivial E] (hΩ : (Ω : Set E).Non
     (i : Idx Ω) : ∃ x ∈ (Ω : Set E), x ∉ closure (i.1 : Set E) := by
   by_contra! h
   have heq : (Ω : Set E) = closure (i.1 : Set E) := subset_antisymm h i.2.2
-  have huniv : (Ω : Set E) = univ :=
-    IsClopen.eq_univ ⟨heq ▸ isClosed_closure, Ω.isOpen⟩ hΩ
-  exact noncompact_univ E (huniv ▸ heq ▸ i.2.1)
+  have hclosed : IsClosed (Ω : Set E) := by
+    rw [heq]
+    exact isClosed_closure
+  have huniv : (Ω : Set E) = univ := IsClopen.eq_univ ⟨hclosed, Ω.isOpen⟩ hΩ
+  have hcompact : IsCompact (univ : Set E) := by
+    rw [← huniv, heq]
+    exact i.2.1
+  exact noncompact_univ E hcompact
 
 /-- Every neighbourhood of zero in `C^{k,α}_loc(Ω)` contains the preimage of a neighbourhood of
 zero under a single restriction: the restrictions form a directed family. -/
@@ -544,16 +583,18 @@ private theorem exists_res_eq_zero_apply_eq [LocallyCompactSpace E] (hα : α �
       b.one_of_mem_closedBall (Metric.mem_closedBall_self (half_pos hr).le), one_smul]
 
 /-- `C^{k,α}_loc(Ω)` is not normable: no neighbourhood of zero is von Neumann bounded, which by
-Kolmogorov's criterion rules out any norm inducing its topology. Every neighbourhood of zero
-contains all functions vanishing on some open set `U` with compact closure in `Ω`, while a bump
-function supported in `Ω` away from `U` is unbounded in the seminorm of a larger open set.
+Kolmogorov's criterion rules out any norm inducing its topology.
 
 Each hypothesis is necessary: for `α > 1` and connected `Ω` the space consists of polynomials of
-degree at most `k` and is finite dimensional; for `E` trivial `Ω` is a point and the space is `F`;
-for `F` trivial or `Ω` empty the space is zero. -/
+degree at most `k` and is finite dimensional; for `E` not locally compact the topology is
+indiscrete, so every set is bounded; for `E` trivial `Ω` is a point and the space is `F`; for `F`
+trivial or `Ω` empty the space is zero. -/
 theorem not_exists_isVonNBounded_mem_nhds_zero [LocallyCompactSpace E] [Nontrivial E]
     [Nontrivial F] (hα : α ≤ 1) (hΩ : (Ω : Set E).Nonempty) :
     ¬ ∃ s ∈ 𝓝 (0 : CkHolderSpaceLoc k α Ω F), Bornology.IsVonNBounded ℝ s := by
+  -- Every neighbourhood of zero contains all functions vanishing on some open set `U` with compact
+  -- closure in `Ω`, while a bump function supported in `Ω` away from `U` is unbounded in the
+  -- seminorm of a larger open set.
   rintro ⟨s, hs0, hs⟩
   obtain ⟨i, t, ht, hts⟩ := exists_res_preimage_subset hs0
   obtain ⟨x, hxΩ, hxi⟩ := exists_mem_notMem_closure hΩ i
@@ -564,7 +605,7 @@ theorem not_exists_isVonNBounded_mem_nhds_zero [LocallyCompactSpace E] [Nontrivi
     rw [mem_preimage, map_smul, hres0, smul_zero]
     exact mem_of_mem_nhds ht
   -- But `f` has norm at least `‖v‖` on an open set containing `x`.
-  obtain ⟨j, hj⟩ := exists_idx_superset Ω isCompact_singleton (singleton_subset_iff.2 hxΩ)
+  obtain ⟨j, hj⟩ := exists_idx_mem hxΩ
   let V := restrictL (k := k) (α := α) (F := F) j.1 j.2.1 j.2.2 ⁻¹' Metric.ball 0 ‖v‖
   have hV : V ∈ 𝓝 (0 : CkHolderSpaceLoc k α Ω F) :=
     (restrictL j.1 j.2.1 j.2.2).continuous.continuousAt.preimage_mem_nhds
@@ -572,8 +613,7 @@ theorem not_exists_isVonNBounded_mem_nhds_zero [LocallyCompactSpace E] [Nontrivi
   obtain ⟨R, hR, hRs⟩ := (hs hV).exists_pos
   have hfV : f ∈ V := (smul_mem_smul_set_iff₀ hR.ne' V f).1
     (hRs R (by rw [Real.norm_eq_abs, abs_of_pos hR]) (hmem R))
-  have hle := CkHolderSpaceOn.norm_apply_le (restrictL j.1 j.2.1 j.2.2 f)
-    ⟨x, singleton_subset_iff.1 hj⟩
+  have hle := CkHolderSpaceOn.norm_apply_le (restrictL j.1 j.2.1 j.2.2 f) ⟨x, hj⟩
   rw [restrictL_apply, hfx] at hle
   have hlt := mem_ball_zero_iff.1 hfV
   linarith
@@ -590,38 +630,40 @@ private theorem isLoc (f : CkHolderSpaceOn k α Ω F) :
     CkHolderSpaceLoc.IsLoc (k := k) (α := α) (⇑f) :=
   fun _ hKΩ _ ↦ ⟨Ω, hKΩ, le_rfl, f, fun _ ↦ rfl⟩
 
+/-- Restricting the element of `C^{k,α}_loc(Ω)` defined by `f ∈ C^{k,α}(Ω)` to `U` is restricting
+`f` to `U`. -/
+private theorem restrictL_mk {U : Opens E} (hU : IsCompact (closure (U : Set E)))
+    (hUΩ : closure (U : Set E) ⊆ Ω) (f : CkHolderSpaceOn k α Ω F) :
+    CkHolderSpaceLoc.restrictL U hU hUΩ (CkHolderSpaceLoc.mk f f.isLoc) =
+      restrictL (fun _ hx ↦ hUΩ (subset_closure hx)) f := by
+  ext
+  simp
+
 /-- The inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)`, as a continuous linear map. -/
 def toLocL : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpaceLoc k α Ω F where
   toFun f := CkHolderSpaceLoc.mk f f.isLoc
   map_add' f g := by
     ext x
-    rw [CkHolderSpaceLoc.coe_add, Pi.add_apply, CkHolderSpaceLoc.mk_apply,
-      CkHolderSpaceLoc.mk_apply, CkHolderSpaceLoc.mk_apply, coe_add, Pi.add_apply]
+    simp
   map_smul' c f := by
     ext x
-    rw [RingHom.id_apply, CkHolderSpaceLoc.coe_smul, Pi.smul_apply, CkHolderSpaceLoc.mk_apply,
-      CkHolderSpaceLoc.mk_apply, coe_smul, Pi.smul_apply]
-  cont := by
-    refine (CkHolderSpaceLoc.continuous_iff _).2 fun U _ hUΩ ↦ ?_
-    refine (restrictL fun _ hx ↦ hUΩ (subset_closure hx)).continuous.congr fun f ↦ ?_
-    ext x
-    rw [Function.comp_apply, CkHolderSpaceLoc.restrictL_apply, restrictL_apply]
-    exact CkHolderSpaceLoc.mk_apply (k := k) (α := α) _ f.isLoc _
+    simp
+  cont := (CkHolderSpaceLoc.continuous_iff _).2 fun U hU hUΩ ↦
+    (restrictL fun _ hx ↦ hUΩ (subset_closure hx)).continuous.congr fun f ↦
+      (restrictL_mk hU hUΩ f).symm
 
 /-- Restricting the inclusion of `f ∈ C^{k,α}(Ω)` to `U` is restricting `f` to `U`. -/
 @[simp]
 theorem restrictL_toLocL {U : Opens E} (hU : IsCompact (closure (U : Set E)))
     (hUΩ : closure (U : Set E) ⊆ Ω) (f : CkHolderSpaceOn k α Ω F) :
     CkHolderSpaceLoc.restrictL U hU hUΩ (toLocL f) =
-      restrictL (fun _ hx ↦ hUΩ (subset_closure hx)) f := by
-  ext
-  rw [CkHolderSpaceLoc.restrictL_apply, restrictL_apply]
-  exact CkHolderSpaceLoc.mk_apply (k := k) (α := α) _ f.isLoc _
+      restrictL (fun _ hx ↦ hUΩ (subset_closure hx)) f :=
+  restrictL_mk hU hUΩ f
 
 /-- The inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)` does not change the underlying function. -/
 @[simp]
 theorem toLocL_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) : toLocL f x = f x :=
-  CkHolderSpaceLoc.mk_apply (k := k) (α := α) _ f.isLoc x
+  CkHolderSpaceLoc.mk_apply _ f.isLoc x
 
 end CkHolderSpaceOn
 
