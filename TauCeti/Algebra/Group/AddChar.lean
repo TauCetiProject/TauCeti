@@ -15,6 +15,8 @@ import Mathlib.Algebra.Group.Units.Equiv
 ## Main results
 
 * `AddChar.map_sum_eq_prod`: an additive character turns finite sums into products.
+* `AddChar.map_eq_one_of_add_eq_zero`: an additive character trivial at `x` is trivial at every
+  additive left inverse of `x`, even over a monoid.
 * `AddChar.pow_char_eq_one`: every additive character on a ring of characteristic `p`, such as
   `ZMod p`, takes values in the `p`-th roots of unity.
 * `AddChar.apply_mul_sum`: multiplying the sum of the values of a character by one value leaves
@@ -52,3 +54,12 @@ the assumption that the target ring is a domain. -/
 theorem AddChar.sum_eq_zero_of_isLeftRegular_sub_one {A R : Type*} [AddGroup A] [Fintype A]
     [CommRing R] {ψ : AddChar A R} {b : A} (hb : IsLeftRegular (ψ b - 1)) : ∑ a, ψ a = 0 :=
   hb (by simp only [sub_mul, ψ.apply_mul_sum, one_mul, sub_self, mul_zero])
+
+/-- An additive character trivial at `x` is trivial at every `y` with `y + x = 0`. Over an
+additive group this says `ψ (-x) = 1`; the statement needs neither negation in the domain nor
+inverses in the codomain, so it also applies to characters of semirings with values in a
+monoid. -/
+theorem AddChar.map_eq_one_of_add_eq_zero {A M : Type*} [AddMonoid A] [Monoid M]
+    (ψ : AddChar A M) {x y : A} (hx : ψ x = 1) (hxy : y + x = 0) : ψ y = 1 :=
+  calc ψ y = ψ y * ψ x := by rw [hx, mul_one]
+    _ = 1 := by rw [← AddChar.map_add_eq_mul, hxy, AddChar.map_zero_eq_one]
