@@ -119,7 +119,8 @@ derivatives of the coordinate maps converge locally uniformly on `Ω \ Z` as wel
 Here the image of the solutions is assumed to stay in a single chart. The mean-value inequality for
 solutions in a chart is in `TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue`. Gromov–Floer
 compactness on a closed manifold also needs the images of small discs of small energy to be
-localized into charts; that step is not treated here.
+localized into charts; that step, and the compactness theorem without the single-chart assumption,
+are in `TauCeti.Geometry.Symplectic.Floer.Compactness.Bubbling`.
 
 ## References
 
