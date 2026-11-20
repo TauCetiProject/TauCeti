@@ -239,13 +239,8 @@ theorem map_unstableFrame_eq_orientationAt_iff (hf : IsMorse 𝓘(ℝ, E) f) {p 
   let Lp : TangentSpace 𝓘(ℝ, E) p ≃ₗ[ℝ] E := eDp.toLinearEquiv
   -- Read both tangent spaces in the model space `E`, through `φ ∘ Φ_{-T}` and `φ`: there `oM`
   -- gives the same orientation at `y` and at `p`.
-  refine Orientation.eq_iff_eq_of_map_eq Ly Lp ?_ (map_orientationAt_eq_of_tendsto oM
-    (γ := fun s ↦ hX.flow (-(T + s)) y) (hX.flow.continuous (by fun_prop) continuous_const)
-    (by simp)
-    (fun s hs ↦ ((hX.mem_linearBackwardTimes φ).1 (add_mem_linearBackwardTimes hφ hT hs).1).1)
-    ((Flow.mem_unstableSet.1 hy).comp
-      (tendsto_neg_atTop_atBot.comp (tendsto_atTop_add_const_left _ T tendsto_id)))
-    eDy heDy eDp heDp)
+  refine Orientation.eq_iff_eq_of_map_eq Ly Lp ?_
+    (map_orientationAt_eq_of_mem_linearBackwardTimes hφ oM hy hT eDy heDy eDp heDp)
   -- So do the frames, since there the frame at `y` is `e^{-T}` times the frame at `p`.
   have hL : (LinearEquiv.ofBijective (hX.unstableFrame φ y).toLinearMap hby).trans Ly =
       ((LinearEquiv.smulOfNeZero ℝ _ (Real.exp (-T)) (Real.exp_pos _).ne').trans

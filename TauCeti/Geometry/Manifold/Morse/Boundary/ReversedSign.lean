@@ -182,11 +182,16 @@ theorem neg_trajectorySign_of_orientationAt_eq (hMS : hX.IsMorseSmale) (hf : IsM
     (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hp).1).2 hop)
   have hq' := ((reindex_stableNormalOrientation_eq_orientationAt_iff hφq hf hq o _ oq' oq hy.2
     (hX.mem_unstableSet_inter_stableSet_self_of_nondegenerate hq).2).2 hoq)
-  rw [neg_trajectorySign hφp hφq hMS hf hp hq hpq hy, ite_eq_left, mul_one]
-  refine (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
-    hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))).injective ?_
-  rw [Orientation.reindex_finCongr_reindex_finCongr, hp']
-  exact hq'
+  -- The two orientations of `T_y M` compared in `neg_trajectorySign` agree.
+  have hcond : Orientation.reindex ℝ (TangentSpace 𝓘(ℝ, E) y) (finCongr (by
+        rw [hp.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one hq hpq, hpq]; ring))
+      (stableNormalOrientation hφq hf hq oq' oq hy.2) =
+      unstableFrameOrientation hφp hf hp op op' hy.1 := by
+    refine (Orientation.reindex ℝ _ (finCongr ((add_comm _ _).trans
+      hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))).injective ?_
+    rw [Orientation.reindex_finCongr_reindex_finCongr, hp']
+    exact hq'
+  rw [neg_trajectorySign hφp hφq hMS hf hp hq hpq hy, ite_eq_left hcond, mul_one]
 
 /-- **Integral duality of trajectory counts on an oriented manifold.** With orientations chosen
 at `p` and `q` as in `neg_trajectorySign_of_orientationAt_eq`, the signed count of the

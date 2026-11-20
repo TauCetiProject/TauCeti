@@ -521,8 +521,7 @@ theorem mfderiv_unstableFrame_eq_exp_smul_self (hx : mfderiv 𝓘(ℝ, E) 𝓘(�
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX.flow (-T)) y (hX.unstableFrame φ y c) =
       Real.exp (-T) • mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x (hX.unstableFrame φ x c) := by
   have h0 := mfderiv_unstableFrame hφ (mem_linearBackwardTimes_self (hX := hX) hx 0) c
-  have hfl0 : (φ.toChart ∘ hX.flow (-0) : M → E) = φ.toChart := funext fun z ↦ by simp
-  rw [hfl0, neg_zero, Real.exp_zero, one_smul] at h0
+  rw [neg_zero, Flow.map_zero, Function.comp_id, Real.exp_zero, one_smul] at h0
   exact (mfderiv_unstableFrame hφ hT c).trans (congrArg (Real.exp (-T) • ·) h0).symm
 
 /-- **The unstable frame is injective.** -/
