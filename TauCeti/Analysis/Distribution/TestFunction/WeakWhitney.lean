@@ -19,15 +19,17 @@ convergence of these derivatives uniformly on compact sets, the weak Whitney top
 maps. So this inclusion is continuous (`ContDiffMapSupportedIn.continuous_toContMDiffMap`).
 Conversely, since every function in `𝓓^{n}_{K}(E, F)` vanishes with all its derivatives outside the
 compact set `K`, uniform convergence of the derivatives on `K` already is uniform convergence on
-`E`. Hence the inclusion induces the topology of `𝓓^{n}_{K}(E, F)`: a family of test functions
-supported in `K` is continuous exactly when it is continuous as a family of `C^n` maps
+`E`. Hence the inclusion induces the topology of `𝓓^{n}_{K}(E, F)`
+(`ContDiffMapSupportedIn.isInducing_toContMDiffMap`,
+`ContDiffMapSupportedIn.isEmbedding_toContMDiffMap`): a family of test functions supported in `K`
+is continuous exactly when it is continuous as a family of `C^n` maps
 (`ContDiffMapSupportedIn.continuous_iff_continuous_toContMDiffMap`).
 
 The weak Whitney topology on maps between manifolds is built from charts, and is functorial
-under composition with fixed smooth maps. Through this inclusion, test functions on a chart
-target can therefore be transported to a manifold with a continuous dependence on the test
-function, which is how chart extensions of test functions become continuous maps into bundle
-test sections.
+under composition with fixed smooth maps. Through this embedding, test functions on a chart
+target can be transported back and forth to a manifold with continuous dependence in both
+directions, which is how chart extensions of test functions identify the chart-generated and
+fixed-compact topologies on bundle test sections.
 -/
 
 public section
@@ -46,6 +48,14 @@ def toContMDiffMap (f : 𝓓^{n}_{K}(E, F)) : C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F
 @[simp]
 theorem coe_toContMDiffMap (f : 𝓓^{n}_{K}(E, F)) : ⇑(toContMDiffMap f) = f :=
   (rfl)
+
+/-- Viewing a supported test function as a `C^n` map is injective. -/
+theorem toContMDiffMap_injective :
+    Function.Injective
+      (toContMDiffMap : 𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
+  intro f g h
+  ext x
+  simpa only [coe_toContMDiffMap] using DFunLike.congr_fun h x
 
 /-- The inclusion of the test functions supported in `K` into the `C^n` maps is continuous for
 the weak Whitney topology: uniform convergence of every derivative on `E` implies its uniform
@@ -78,5 +88,22 @@ theorem continuous_iff_continuous_toContMDiffMap {X : Type*} [TopologicalSpace X
   · simp only [Function.comp_apply, structureMapCLM_apply, hi, ite_true]
     rw [(φ x₀).iteratedFDeriv_zero_on_compl hy, (φ x).iteratedFDeriv_zero_on_compl hy]
     exact refl_mem_uniformity hu
+
+/-- The topology on `𝓓^{n}_{K}(E, F)` is induced by its inclusion into `C^n` maps with the weak
+Whitney topology: because all derivatives vanish off the compact set `K`, uniform convergence on
+`K` already controls the global sup norm of every derivative through order `n`. -/
+theorem isInducing_toContMDiffMap :
+    Topology.IsInducing
+      (toContMDiffMap : 𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
+  refine ⟨le_antisymm continuous_toContMDiffMap.le_induced ?_⟩
+  let _ : TopologicalSpace 𝓓^{n}_{K}(E, F) := TopologicalSpace.induced toContMDiffMap inferInstance
+  exact continuous_id_iff_le.1 <| continuous_iff_continuous_toContMDiffMap.2 continuous_induced_dom
+
+/-- `ContDiffMapSupportedIn.toContMDiffMap` is a topological embedding of `𝓓^{n}_{K}(E, F)` into
+the weak Whitney topology on `C^n` maps. -/
+theorem isEmbedding_toContMDiffMap :
+    Topology.IsEmbedding
+      (toContMDiffMap : 𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) :=
+  ⟨isInducing_toContMDiffMap, toContMDiffMap_injective⟩
 
 end ContDiffMapSupportedIn
