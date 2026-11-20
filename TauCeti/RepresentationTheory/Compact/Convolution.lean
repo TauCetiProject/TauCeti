@@ -622,18 +622,17 @@ private theorem equicontinuous_convolutionCLM_closedBall (k : C(G, 𝕜)) :
     Equicontinuous fun f : Metric.closedBall (0 : Lp 𝕜 2 (haarProb G)) 1 =>
       (convolutionCLM k f : G → 𝕜) := by
   intro x₀
-  rw [Metric.equicontinuousAt_iff_right]
-  intro ε hε
-  filter_upwards [Metric.tendsto_nhds.1 ((convSection k).continuous.tendsto x₀) ε hε] with x hx
+  refine Metric.equicontinuousAt_of_continuity_modulus
+    (fun x => dist (convSection k x₀) (convSection k x))
+    ((continuous_const.dist (convSection k).continuous).tendsto' x₀ 0 (dist_self _)) _
+    (Filter.Eventually.of_forall fun x => ?_)
   rintro ⟨f, hf⟩
   rw [Metric.mem_closedBall, dist_zero_right] at hf
-  rw [dist_eq_norm] at hx ⊢
+  rw [dist_eq_norm, dist_eq_norm]
   calc ‖convolutionCLM k f x₀ - convolutionCLM k f x‖
       ≤ ‖convSection k x₀ - convSection k x‖ * ‖f‖ :=
         norm_convolutionCLM_apply_sub_apply_le k f x₀ x
-    _ ≤ ‖convSection k x₀ - convSection k x‖ * 1 := by gcongr
-    _ = ‖convSection k x - convSection k x₀‖ := by rw [mul_one, norm_sub_rev]
-    _ < ε := hx
+    _ ≤ ‖convSection k x₀ - convSection k x‖ := mul_le_of_le_one_right (norm_nonneg _) hf
 
 /-- **Convolution against a continuous kernel is a compact operator** from `L²(G)` to `C(G)`.
 
@@ -642,11 +641,16 @@ functions, which Arzelà-Ascoli makes relatively compact for the uniform norm. -
 theorem isCompactOperator_convolutionCLM (k : C(G, 𝕜)) :
     IsCompactOperator (convolutionCLM (G := G) k) := by
   let e := ContinuousMap.isometryEquivBoundedOfCompact G 𝕜
+  -- The isometry does not change the underlying function.
+  have he (g : C(G, 𝕜)) : ⇑(e g) = ⇑g := by
+    ext x
+    simp only [e, ContinuousMap.isometryEquivBoundedOfCompact_apply,
+      BoundedContinuousFunction.mkOfCompact_apply]
   have h : IsCompactOperator fun f => e (convolutionCLM (G := G) k f) :=
     isCompactOperator_of_equicontinuous (Metric.closedBall_mem_nhds 0 one_pos)
       (fun x => ⟨_, isCompact_closedBall (0 : 𝕜) ‖k‖,
-        fun _ hf => convolutionCLM_apply_mem_closedBall k hf x⟩)
-      (equicontinuous_convolutionCLM_closedBall k)
+        fun _ hf => by rw [he]; exact convolutionCLM_apply_mem_closedBall k hf x⟩)
+      (by simpa only [he] using equicontinuous_convolutionCLM_closedBall k)
   simpa only [Function.comp_def, e.symm_apply_apply] using h.continuous_comp e.symm.continuous
 
 /-- **The convolution operator on `L²(G)` is compact.** It factors through the uniform norm of

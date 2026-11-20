@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
@@ -87,28 +88,22 @@ private theorem W1p.isCompactOperator_valueL_restrictL_of_isBounded (hp : p ≠ 
 private theorem W1p.equicontinuousOn_preciseRepresentative_unitBall :
     EquicontinuousOn (fun u : closedBall (0 : W1p mu Omega ∞) 1 =>
       preciseRepresentative mu (W1p.value (u : W1p mu Omega ∞))) (Omega : Set E) := by
-  obtain ⟨C, hC, hdist⟩ := W1p.exists_dist_preciseRepresentative_le_top (mu := mu)
   refine (equicontinuous_restrict_iff _).1 fun x => ?_
   obtain ⟨r, hr, hrΩ⟩ := Metric.isOpen_iff.1 Omega.isOpen x x.property
-  refine equicontinuousAt_of_continuity_modulus (fun y : (Omega : Set E) => C * dist y x)
+  refine equicontinuousAt_of_continuity_modulus (fun y : (Omega : Set E) => dist y x)
     (by
-      have hc : Continuous (fun y : (Omega : Set E) => C * dist y x) := by fun_prop
+      have hc : Continuous (fun y : (Omega : Set E) => dist y x) := by fun_prop
       simpa using hc.tendsto x)
     _ ?_
-  -- For distances below `r / 3`, the local estimate stays inside a fixed ball in `Ω`.
-  filter_upwards [Metric.ball_mem_nhds x (div_pos hr three_pos)] with y hy
+  -- On a ball inside `Ω` the representatives are `‖∇u‖`-Lipschitz, and `‖∇u‖ ≤ 1`.
+  filter_upwards [Metric.ball_mem_nhds x hr] with y hy
   rintro ⟨u, hu⟩
-  have hb := mem_closedBall_zero_iff.1 hu
-  have hxy : closedBall (y : E) (2 * dist (y : E) x) ⊆ (Omega : Set E) :=
-    (closedBall_subset_ball' (by
-      have hd := mem_ball.1 hy
-      rw [Subtype.dist_eq] at hd
-      linarith)).trans hrΩ
-  rw [dist_comm]
-  refine (hdist u hxy).trans ?_
-  have hg : ‖W1p.gradient u‖ ≤ 1 := (W1p.norm_gradient_le u).trans hb
-  simpa only [Subtype.dist_eq] using mul_le_mul_of_nonneg_right
-    (mul_le_of_le_one_right hC.le hg) (dist_nonneg : 0 ≤ dist y x)
+  have hg : ‖W1p.gradient u‖₊ ≤ 1 := by
+    rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
+    exact (W1p.norm_gradient_le u).trans (mem_closedBall_zero_iff.1 hu)
+  have hL := (W1p.lipschitzOnWith_preciseRepresentative_of_convex u (convex_ball _ _) hrΩ).weaken hg
+  simpa only [Function.comp_apply, Set.domRestrict_apply, Subtype.dist_eq, NNReal.coe_one, one_mul,
+    dist_comm (y : E)] using hL.dist_le_mul x (mem_ball_self hr) y (mem_ball.1 hy)
 
 /-- The endpoint restriction is compact by Arzelà–Ascoli on the compact closure of `V`. -/
 private theorem W1p.isCompactOperator_valueL_restrictL_top
@@ -116,24 +111,22 @@ private theorem W1p.isCompactOperator_valueL_restrictL_top
     IsCompactOperator ((W1p.valueL (mu := mu) (Omega := V) (p := ∞)).comp
       (W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVO)))) := by
   have hVΩ : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
-  let K := closure (V : Set E)
-  let : CompactSpace K := isCompact_iff_compactSpace.mp hVc
   let ν : Measure ↥(V : Set E) := mu.comap (Subtype.val : ↥(V : Set E) → E)
-  let σ : C((V : Set E), K) := ⟨fun x => ⟨x, subset_closure x.property⟩,
-    continuous_subtypeVal.subtype_mk _⟩
-  -- The precise representatives, as bounded continuous functions on the compact closure of `V`.
-  let f : W1p mu Omega ∞ → K →ᵇ ℝ := fun u =>
-    BoundedContinuousFunction.mkOfCompact
-      ⟨fun x => preciseRepresentative mu (W1p.value u) x,
-        (W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u).comp_continuous
-          continuous_subtypeVal fun x => hVO x.property⟩
-  have hT : IsCompactOperator fun u => (f u).compContinuous σ :=
+  -- The precise representatives, as bounded continuous functions on `V`.
+  let f : W1p mu Omega ∞ → (V : Set E) →ᵇ ℝ := fun u =>
+    BoundedContinuousFunction.ofNormedAddCommGroup
+      (fun x => preciseRepresentative mu (W1p.value u) x)
+      ((W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u).comp_continuous
+        continuous_subtypeVal fun x => hVΩ x.property)
+      ‖W1p.value u‖ fun x => W1p.norm_preciseRepresentative_le u (hVΩ x.property)
+  have hf (u : W1p mu Omega ∞) (x : (V : Set E)) :
+      f u x = preciseRepresentative mu (W1p.value u) x := by
+    simp only [f, BoundedContinuousFunction.coe_ofNormedAddCommGroup]
+  have hT : IsCompactOperator f :=
     hVc.isCompactOperator_of_equicontinuousOn ⟨Subtype.val, continuous_subtypeVal⟩
       (fun x => subset_closure x.property)
       (Φ := fun u => preciseRepresentative mu (W1p.value u)) (closedBall_mem_nhds _ zero_lt_one)
-      (fun _ _ _ => by
-        simp only [f, σ, BoundedContinuousFunction.compContinuous_apply,
-          BoundedContinuousFunction.mkOfCompact_apply, ContinuousMap.coe_mk])
+      (fun u _ x => by rw [hf, ContinuousMap.coe_mk])
       (fun x hx => ⟨closedBall 0 1, isCompact_closedBall 0 1, fun u hu =>
         mem_closedBall_zero_iff.2 ((W1p.norm_preciseRepresentative_le u (hVO hx)).trans
           ((W1p.norm_value_le u).trans (mem_closedBall_zero_iff.1 hu)))⟩)
@@ -158,9 +151,8 @@ private theorem W1p.isCompactOperator_valueL_restrictL_top
       (W1p.value_restrictL_ae hVΩ u),
     (ae_restrict_iff_subtype V.isOpen.measurableSet).1
       (heq.filter_mono (ae_mono (Measure.restrict_mono_set mu hVΩ))),
-    BoundedContinuousFunction.coeFn_toLpTop ν (𝕜 := ℝ) ((f u).compContinuous σ)] with x hx hr hp ht
-  simp only [BoundedContinuousFunction.compContinuous_apply, σ, ContinuousMap.coe_mk, f,
-    BoundedContinuousFunction.mkOfCompact_apply] at ht
+    BoundedContinuousFunction.coeFn_toLpTop ν (𝕜 := ℝ) (f u)] with x hx hr hp ht
+  rw [hf] at ht
   exact hx.trans (hr.trans (hp.trans ht.symm))
 
 /-- **Local Rellich--Kondrachov compactness.** If `V` has compact closure contained in `Ω` and
