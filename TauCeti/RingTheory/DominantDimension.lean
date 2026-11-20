@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Biproducts
-public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import TauCeti.Algebra.Module.Injective.Envelope.ModuleCat
-public import TauCeti.Algebra.Module.Injective.Envelope.Projective
+public import TauCeti.Algebra.Category.ModuleCat.DominantDimension
 public import TauCeti.Algebra.Module.Injective.Int
-public import TauCeti.CategoryTheory.Abelian.DominantDimension
 
 /-!
 # The dominant dimension of a ring
@@ -20,13 +16,10 @@ dimension of the left regular module `Γ` in `ModuleCat Γ` (`CategoryTheory.dom
 supremum of the `n` for which there is an exact sequence `0 → Γ → I⁰ → ⋯ → Iⁿ⁻¹`, exact at `Γ` and
 at `I⁰, …, Iⁿ⁻²`, by projective and injective modules.
 
-For a finitely generated module `M` over any ring, `n ≤ dom.dim M` exactly when there is such a
-coresolution by **finitely generated** projective-injective modules
-(`ModuleCat.natCast_le_dominantDimension_iff_of_finite`). Indeed the injective envelope of `M` is a
-retract of every injective module containing `M`, so it is projective as soon as some
-projective-injective module contains `M`, and a projective injective envelope of a finitely
-generated module is finitely generated (`TauCeti.IsInjectiveEnvelope.finite_of_projective`). For an
-Artin algebra this is the dominant dimension of [ARS, §VI.5].
+For a ring, `n ≤ dom.dim Γ` exactly when there is such a coresolution by **finitely generated**
+projective-injective modules (`TauCeti.natCast_le_dominantDimension_iff`), the case of the regular
+module of `ModuleCat.natCast_le_dominantDimension_iff_of_finite`. For an Artin algebra this is the
+dominant dimension of [ARS, §VI.5].
 
 For other rings the established notion asks the terms of the minimal injective coresolution to be
 flat rather than projective (Hoshino); Xi calls it the *flat-dominant dimension*. The two differ
@@ -41,14 +34,10 @@ version is not defined here.
 
 ## Main results
 
-* `ModuleCat.natCast_le_dominantDimension_iff_of_finite` and
-  `TauCeti.natCast_le_dominantDimension_iff`: for a finitely generated module, and for the ring
-  itself, `n ≤ dom.dim` exactly when there is a coresolution with `n` terms by finitely generated
-  projective-injective modules.
+* `TauCeti.natCast_le_dominantDimension_iff`: `n ≤ dom.dim Γ` exactly when there is a
+  coresolution with `n` terms by finitely generated projective-injective modules.
 * `TauCeti.two_le_dominantDimension_iff`: `dom.dim Γ ≥ 2` exactly when `Γ` has an injective
   copresentation by finitely generated projective-injective modules.
-* `ModuleCat.dominantDimension_pi`: the dominant dimension of a finite product of modules is the
-  infimum of those of its factors.
 * `TauCeti.dominantDimension_eq_top_of_injective`: a left self-injective ring has dominant
   dimension `⊤`.
 * `TauCeti.dominantDimension_int`: `dominantDimension ℤ = 0`.
@@ -63,50 +52,9 @@ version is not defined here.
 
 public section
 
-universe u v
+universe u
 
 open CategoryTheory Limits TauCeti
-
-/-- **Finitely generated coresolutions.** For a finitely generated module `M` over any ring,
-`n ≤ dom.dim M` exactly when `M` has a coresolution with `n` terms by finitely generated
-projective-injective modules. The injective envelope of `M` is a retract of every
-projective-injective module containing `M`, hence projective, and a projective injective envelope
-of a finitely generated module is finitely generated. -/
-theorem ModuleCat.natCast_le_dominantDimension_iff_of_finite {Γ : Type u} [Ring Γ] [Small.{v} Γ]
-    (M : ModuleCat.{v} Γ) [Module.Finite Γ M] (n : ℕ) :
-    (n : ℕ∞) ≤ CategoryTheory.dominantDimension M ↔
-      ObjectProperty.IsSyzygy
-        (fun N : ModuleCat.{v} Γ ↦ Module.Finite Γ N ∧ Projective N ∧ Injective N) n M := by
-  rw [natCast_le_dominantDimension_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦
-    hasProjectiveInjectiveCoresolution_iff_isSyzygy.2 (h.mono fun _ h ↦ h.2)⟩
-  induction n generalizing M with
-  | zero => exact ObjectProperty.isSyzygy_zero _ M
-  | succ n ih =>
-    obtain ⟨J, j, hj, ⟨hJ, hJ'⟩, h'⟩ := ObjectProperty.isSyzygy_succ_iff_exists_mono.1
-      (hasProjectiveInjectiveCoresolution_iff_isSyzygy.1 h)
-    -- The injective envelope `ι : M ⟶ E` is a retract of `j`, together with its cokernel.
-    obtain ⟨E, ι, hE, hι⟩ := M.exists_injective_and_isEssentialMono
-    obtain ⟨⟨r⟩, ⟨r'⟩⟩ := hι.nonempty_retract_and_nonempty_retract_cokernel (Retract.refl M)
-      (j := j)
-    have : Projective E := r.projective
-    have := ((isInjectiveEnvelope_iff_injective_and_isEssentialMono ι).2
-      ⟨hE, hι⟩).finite_of_projective
-    have : Module.Finite Γ (cokernel ι : ModuleCat.{v} Γ) :=
-      Module.Finite.of_surjective (cokernel.π ι).hom
-        ((ModuleCat.epi_iff_surjective _).1 inferInstance)
-    exact ObjectProperty.isSyzygy_succ_iff_exists_mono.2 ⟨E, ι, hι.mono,
-      ⟨inferInstance, inferInstance, hE⟩, ih _
-      ((hasProjectiveInjectiveCoresolution_iff_isSyzygy.2 h').of_retract r')⟩
-
-/-- **Finite products.** The dominant dimension of a finite product of modules is the infimum of
-those of its factors. -/
-@[simp]
-theorem ModuleCat.dominantDimension_pi {Γ : Type u} [Ring Γ] {J : Type} [Finite J]
-    (f : J → ModuleCat.{v} Γ) :
-    CategoryTheory.dominantDimension (ModuleCat.of Γ (∀ j, f j)) =
-      ⨅ j, CategoryTheory.dominantDimension (f j) := by
-  rw [← dominantDimension_eq_of_iso (ModuleCat.biproductIsoPi f), dominantDimension_biproduct]
 
 namespace TauCeti
 

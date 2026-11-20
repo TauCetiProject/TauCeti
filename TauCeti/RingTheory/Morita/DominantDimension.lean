@@ -15,9 +15,9 @@ public import TauCeti.RingTheory.DominantDimension
 A **progenerator** `P` of a ring `Γ`, a finitely generated projective generator, has the dominant
 dimension of `Γ` (`ModuleCat.dominantDimension_eq_of_isGenerator`). Indeed each of `P` and `Γ` is a
 retract of a finite power of the other (`ModuleCat.exists_retract_pi_of_isGenerator_of_projective`),
-a finite power has the dominant dimension of its factor (`ModuleCat.dominantDimension_pi`), and a
-retract has at least the dominant dimension of the ambient object
-(`CategoryTheory.Retract.dominantDimension_le`).
+a finite power has at least the dominant dimension of its factor, with equality for a nonempty
+power (`ModuleCat.dominantDimension_pi`), and a retract has at least the dominant dimension of the
+ambient object (`CategoryTheory.Retract.dominantDimension_le`).
 
 An equivalence `e : ModuleCat A ≌ ModuleCat B` preserves the dominant dimension of objects
 (`CategoryTheory.Functor.dominantDimension_obj`) and carries the regular module `A` to a
@@ -50,7 +50,7 @@ open CategoryTheory TauCeti
 
 /-- **The dominant dimension of a progenerator.** A finitely generated projective generator `P` of
 `Γ` has the dominant dimension of `Γ`: each of `P` and `Γ` is a retract of a finite power of the
-other, and a finite power has the dominant dimension of its factor. -/
+other, and a finite power has at least the dominant dimension of its factor. -/
 theorem ModuleCat.dominantDimension_eq_of_isGenerator {Γ : Type u} [Ring Γ] (P : ModuleCat.{u} Γ)
     [Module.Finite Γ P] [Module.Projective Γ P] [Module.IsGenerator Γ P] :
     CategoryTheory.dominantDimension P = dominantDimension Γ := by
