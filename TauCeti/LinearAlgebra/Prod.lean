@@ -40,6 +40,9 @@ quadratic forms with the subgroup preserving both summands.
   automorphisms, independently of the off-diagonal block.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
+* `LinearMap.det_eq_det_mul_det_of_fst_apply_inr`: a block lower triangular endomorphism
+  `(x, y) ↦ (a x, c x + d y)` of `M₁ × M₂` has determinant `det a * det d`, and
+  `LinearMap.det_eq_det_snd_comp_comp_inr` is the case `a = id`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
@@ -78,6 +81,45 @@ quadratic forms with the subgroup preserving both summands.
 -/
 
 public section
+
+namespace LinearMap
+
+section CommRing
+
+variable {R M₁ M₂ : Type*} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+  [Module R M₂] [Module.Free R M₁] [Module.Finite R M₁] [Module.Free R M₂] [Module.Finite R M₂]
+
+/-- **The determinant of a block lower triangular map.** An endomorphism `g` of `M₁ × M₂` that
+maps `0 × M₂` into itself, `g (x, y) = (a x, c x + d y)`, has determinant `det a * det d`, where
+`a = fst ∘ g ∘ inl` and `d = snd ∘ g ∘ inr` are its diagonal blocks, independently of the
+off-diagonal block `c`. -/
+theorem det_eq_det_mul_det_of_fst_apply_inr {g : Module.End R (M₁ × M₂)}
+    (hg : ∀ y, (g (0, y)).1 = 0) :
+    LinearMap.det g = LinearMap.det (fst R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂) *
+      LinearMap.det (snd R M₁ M₂ ∘ₗ g ∘ₗ inr R M₁ M₂) := by
+  classical
+  let b₁ := Module.Free.chooseBasis R M₁
+  let b₂ := Module.Free.chooseBasis R M₂
+  have hmat : LinearMap.toMatrix (b₁.prod b₂) (b₁.prod b₂) g =
+      Matrix.fromBlocks (LinearMap.toMatrix b₁ b₁ (fst R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂)) 0
+        (LinearMap.toMatrix b₁ b₂ (snd R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂))
+        (LinearMap.toMatrix b₂ b₂ (snd R M₁ M₂ ∘ₗ g ∘ₗ inr R M₁ M₂)) := by
+    ext (i | i) (j | j) <;> simp [LinearMap.toMatrix_apply, hg]
+  rw [← LinearMap.det_toMatrix (b₁.prod b₂), hmat, Matrix.det_fromBlocks_zero₁₂,
+    LinearMap.det_toMatrix, LinearMap.det_toMatrix]
+
+/-- An endomorphism `(x, y) ↦ (x, c x + d y)` of `M₁ × M₂`, whose first component is the first
+projection, has the determinant of its lower-right block `d = snd ∘ g ∘ inr`. -/
+theorem det_eq_det_snd_comp_comp_inr {g : Module.End R (M₁ × M₂)}
+    (hg : ∀ z, (g z).1 = z.1) :
+    LinearMap.det g = LinearMap.det (snd R M₁ M₂ ∘ₗ g ∘ₗ inr R M₁ M₂) := by
+  rw [det_eq_det_mul_det_of_fst_apply_inr fun y ↦ hg (0, y)]
+  have : fst R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂ = LinearMap.id := LinearMap.ext fun x ↦ hg (x, 0)
+  rw [this, LinearMap.det_id, one_mul]
+
+end CommRing
+
+end LinearMap
 
 namespace LinearEquiv
 
@@ -142,20 +184,12 @@ determinants of its diagonal blocks. -/
 @[simp]
 theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (f : M₁ →ₗ[R] M₂) :
     (e₁.skewProd e₂ f).det = e₁.det * e₂.det := by
-  classical
-  let b₁ := Module.Free.chooseBasis R M₁
-  let b₂ := Module.Free.chooseBasis R M₂
-  have hmat : LinearMap.toMatrix (b₁.prod b₂) (b₁.prod b₂)
-      (e₁.skewProd e₂ f).toLinearMap =
-      Matrix.fromBlocks (LinearMap.toMatrix b₁ b₁ e₁.toLinearMap) 0
-        (LinearMap.toMatrix b₁ b₂ f) (LinearMap.toMatrix b₂ b₂ e₂.toLinearMap) := by
-    ext i j
-    cases i <;> cases j <;>
-      simp [LinearMap.toMatrix_apply, LinearEquiv.skewProd_apply]
   apply Units.ext
   simp only [coe_det, Units.val_mul]
-  rw [← LinearMap.det_toMatrix (b₁.prod b₂), hmat, Matrix.det_fromBlocks_zero₁₂,
-    LinearMap.det_toMatrix, LinearMap.det_toMatrix]
+  rw [LinearMap.det_eq_det_mul_det_of_fst_apply_inr fun y ↦ by simp [LinearEquiv.skewProd_apply]]
+  exact congrArg₂ (· * ·)
+    (congrArg _ (LinearMap.ext fun x ↦ by simp [LinearEquiv.skewProd_apply]))
+    (congrArg _ (LinearMap.ext fun x ↦ by simp [LinearEquiv.skewProd_apply]))
 
 end CommRing
 
