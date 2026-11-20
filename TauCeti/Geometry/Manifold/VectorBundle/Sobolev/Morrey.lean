@@ -34,7 +34,8 @@ bundle at every point of the overlap; since chart transitions preserve null sets
 representatives `gᵢ` satisfy the same relation almost everywhere, and hence everywhere, both sides
 being continuous on the open overlap and Lebesgue measure charging every nonempty open set.
 Therefore the representatives `gᵢ` glue to a continuous section with chart expression `gᵢ` on
-`A.image i` for every chart `i` (`TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn`).
+`A.image i` for every chart `i`
+(`TauCeti.FiniteBundleAtlas.exists_continuous_coord_eqOn_of_ae_eq`).
 Uniqueness holds because two continuous sections whose chart expressions agree almost everywhere
 agree everywhere (`TauCeti.FiniteBundleAtlas.eq_of_continuous_of_coord_ae_eq`).
 
@@ -79,34 +80,6 @@ namespace SobolevSection
 
 open FiniteBundleAtlas
 
-/-- The representatives constructed in the proof of
-`TauCeti.SobolevSection.existsUnique_continuous_ae_eq_coord`: given a section `s` whose chart
-expressions are in `MemWkpLoc p (A.image i) 1`, the precise representatives of its chart
-expressions are the chart expressions of a continuous section on the chart images. -/
-private theorem exists_continuous_eqOn_preciseRepresentative (hp : 2 < p) {s : ∀ x, V x}
-    (hs : ∀ i, MemWkpLoc p (A.image i) 1 (A.coord i s)) :
-    ∃ t : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (t x)) ∧
-      ∀ i, EqOn (A.coord i t) (preciseRepresentative volume (A.coord i s)) (A.image i) := by
-  set g : Fin A.n → ℂ → F := fun i ↦ preciseRepresentative volume (A.coord i s)
-  have hg_cont (i : Fin A.n) : ContinuousOn (g i) (A.image i) :=
-    (hs i).continuousOn_preciseRepresentative hp
-  have hg_ae (i : Fin A.n) : A.coord i s =ᵐ[volume.restrict (A.image i)] g i :=
-    (hs i).memLpLoc.ae_eq_preciseRepresentative Fact.out
-  -- The representatives satisfy the cocycle relation at every point of every overlap.
-  have hcompat (i i' : Fin A.n) : EqOn (g i')
-      (fun y ↦ (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm y)
-        (g i (A.transition i i' y))) (A.overlap i i') := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (A.isOpen_overlap i i')
-      ((hg_cont i').mono (A.overlap_subset_image i i'))
-      (A.continuousOn_coordChange_transition (hg_cont i))
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset (A.overlap_subset_image i i')
-        (hg_ae i'), A.sectionChartData.aeTransition_iff.1 (A.aeTransition_sectionChartData volume)
-          (i' := i') (hg_ae i),
-        ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h' h hy
-    rw [A.sectionChartData_transition_of_mem hy] at h
-    rw [← h', ← h, A.coord_eq_coordChange s hy]
-  exact A.exists_continuous_coord_eqOn hg_cont hcompat
-
 /-- **Morrey's embedding for Sobolev sections: continuous representatives.** For `2 < p ≤ ∞`,
 every element `w` of `W^{1,p}(V)` has exactly one continuous representative: there is a unique
 continuous section `s` of `V` whose chart expression `A.coord i s` agrees, for every chart `i`,
@@ -117,8 +90,10 @@ theorem existsUnique_continuous_ae_eq_coord (hp : 2 < p) (w : SobolevSection A v
         =ᵐ[volume.restrict (A.image i)] A.coord i s := by
   obtain ⟨s, hs⟩ := A.sectionChartData.exists_section volume p 1 w
   replace hs (i : Fin A.n) := (hs i).trans (A.sectionChartData_coord_ae_eq volume i s)
-  obtain ⟨t, ht, hts⟩ :=
-    exists_continuous_eqOn_preciseRepresentative hp fun i ↦ memWkpLoc_coord w hs i
+  -- The precise representatives of the chart expressions glue to a continuous section.
+  obtain ⟨t, ht, hts⟩ := exists_continuous_coord_eqOn_of_ae_eq (μ := volume)
+    (fun i ↦ (memWkpLoc_coord w hs i).continuousOn_preciseRepresentative hp)
+    fun i ↦ (memWkpLoc_coord w hs i).memLpLoc.ae_eq_preciseRepresentative Fact.out
   have hae (i : Fin A.n) :
       A.sectionChartData.chartValueL volume p 1 i w
         =ᵐ[volume.restrict (A.image i)] A.coord i t := by
