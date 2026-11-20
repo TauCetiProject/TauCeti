@@ -61,6 +61,12 @@ are:
   `-(C √r w₊ / 8 + O(1)) g`, and `F` is at distance at most
   `r |α| |β| / (2 √2) + C √r w₊ / (4 √2) + C + K / (2 √2) + |η|` from the cone of positive
   `(1,1)`-forms (`infDist_positiveCone_le_of_add_hodgeStar_eq`).
+* **The defect density.** The density `δ = (r / 4) |1 - |α|² - |β|²|` of Taubes's defect energy
+  is bounded by the `ω`-component, `δ ≤ ⟪ω, F⟫ + K / 2 + √2 |η| / 2`
+  (`div_mul_abs_one_sub_sub_le_inner_add`), and, under the lower bound `B ≥ -C g`, it bounds the
+  Hermitian part from above, `B(v, v) ≤ (δ + K + √2 |η| / 2 + C) |v|²`
+  (`hermitianForm_apply_self_le_of_add_hodgeStar_eq`). These are the two pointwise inputs of
+  Taubes's monotonicity inequality for the defect energy.
 
 The analytic inputs (the bounds on `|α|² + |β|²` and on `|β|²`, and the lower bound on the
 Hermitian part or the coarse anti-self-dual bound) are hypotheses here; they come from the maximum
@@ -96,6 +102,19 @@ private theorem nonneg_of_le_div_mul_add_div {b r K m : ℝ} (hb : 0 ≤ b) (hr 
   calc (0 : ℝ) ≤ b := hb
     _ ≤ K / r * m + K / r ^ 2 := h
     _ = K * (m / r + 1 / r ^ 2) := by ring
+
+/-- With `s = |φ|²` and `b = |β|²`, the bound `b ≤ (K / r) max (1 - s) 0 + K / r²` with `r ≥ 1`
+gives `r b ≤ 2 K`, since `max (1 - s) 0 ≤ 1` and `K / r ≤ K`. -/
+private theorem mul_le_two_mul_of_le_div_mul_add_div {s b r K : ℝ} (hs : 0 ≤ s) (hb : 0 ≤ b)
+    (hr : 1 ≤ r) (h : b ≤ K / r * max (1 - s) 0 + K / r ^ 2) : r * b ≤ 2 * K := by
+  have hr0 : 0 < r := by linarith
+  have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div hb hr0 (le_max_right _ _) h
+  have hm : max (1 - s) 0 ≤ 1 := max_le (by linarith) zero_le_one
+  have h1 : r * b ≤ r * (K / r * max (1 - s) 0 + K / r ^ 2) := by gcongr
+  have h2 : r * (K / r * max (1 - s) 0 + K / r ^ 2) = K * max (1 - s) 0 + K / r := by
+    field_simp
+  have h3 : K / r ≤ K := div_le_self hK hr
+  nlinarith
 
 /-- The real inequality behind the self-dual curvature bound. With `s = |α|²`, `b = |β|²` and
 `u = 1 / r`, the bounds `b ≤ K u max (1 - s) 0 + K u²` and `s + b ≤ 1 + K u` give
@@ -262,6 +281,33 @@ theorem abs_inner_div_two_sub_le (hr : 1 ≤ r) {K : ℝ}
         rw [abs_neg, abs_div, abs_of_pos (by norm_num : (0 : ℝ) < 4)]
     _ ≤ K / 4 + √2 * ‖η‖ / 4 := by linarith
 
+/-- **The defect density is bounded by the `ω`-component**: if
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` with `r > 0`, `K ≥ 0` and `‖φ‖² + ‖β‖² ≤ 1 + K / r`,
+then the defect density `δ = (r / 4) |1 - ‖φ‖² - ‖β‖²|` satisfies
+`δ ≤ ⟪ω, F⟫ + K / 2 + √2 ‖η‖ / 2`. Where `‖φ‖² + ‖β‖² ≤ 1` this is the formula for `⟪ω, F⟫` with
+the nonnegative term `(r / 2) ‖β‖²` dropped; elsewhere `δ ≤ K / 4` and
+`⟪ω, F⟫ ≥ -K / 4 - √2 ‖η‖ / 2`. This bounds the defect density by the Kähler component of `F`, as
+Taubes's monotonicity inequality for the defect energy requires. -/
+theorem div_mul_abs_one_sub_sub_le_inner_add (hr : 0 < r) {K : ℝ} (hK : 0 ≤ K)
+    (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + K / r)
+    (hF : F + o.hodgeStar hkl F =
+      (r / 4) • ω - (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η) :
+    r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| ≤ ⟪ω, F⟫ + K / 2 + √2 * ‖η‖ / 2 := by
+  have h := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr.le hF
+  have hωη : ⟪ω, η⟫ ≤ √2 * ‖η‖ := by
+    have hω' : ‖ω‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg ω)]
+    simpa [hω'] using real_inner_le_norm ω η
+  have hb : 0 ≤ r * ‖β‖ ^ 2 := by positivity
+  rcases le_total 0 (1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2) with h0 | h0
+  · rw [abs_of_nonneg h0]
+    linarith
+  · -- Above the vacuum, `r (‖φ‖² + ‖β‖² - 1) ≤ K`.
+    have hφβ' : r * (‖φ‖ ^ 2 + ‖β‖ ^ 2) ≤ r + K :=
+      calc r * (‖φ‖ ^ 2 + ‖β‖ ^ 2) ≤ r * (1 + K / r) := mul_le_mul_of_nonneg_left hφβ hr.le
+        _ = r + K := by rw [mul_add, mul_one, mul_div_cancel₀ K hr.ne']
+    rw [abs_of_nonpos h0]
+    linarith
+
 end SelfDual
 
 /-! ### The anti-self-dual part -/
@@ -313,18 +359,13 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
     ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
       r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + K / (2 * √2) + ‖η‖ / 2 + √2 * C := by
   have hr0 : 0 < r := by linarith
-  have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
   have h := norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm h₀ h₂₃ hQ hkl he hφ hβ hr0.le
     hF hC
   set m := max (1 - ‖φ‖ ^ 2) 0
   -- `1 - ‖φ‖² ≤ w₊` and `r ‖β‖² ≤ K w₊ + K / r ≤ 2 K`.
   have hm1 : 1 - ‖φ‖ ^ 2 ≤ m := le_max_left _ _
-  have hm2 : m ≤ 1 := max_le (by linarith [sq_nonneg ‖φ‖]) zero_le_one
-  have hrb : r * ‖β‖ ^ 2 ≤ 2 * K := by
-    have h1 : r * ‖β‖ ^ 2 ≤ r * (K / r * m + K / r ^ 2) := by gcongr
-    have h2 : r * (K / r * m + K / r ^ 2) = K * m + K / r := by field_simp
-    have h3 : K / r ≤ K := div_le_self hK hr
-    nlinarith
+  have hrb : r * ‖β‖ ^ 2 ≤ 2 * K :=
+    mul_le_two_mul_of_le_div_mul_add_div (sq_nonneg _) (sq_nonneg _) hr hβK
   -- `-⟪ω, η⟫ ≤ ‖ω‖ ‖η‖ = √2 ‖η‖`.
   have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
     have hω' : ‖J.kahlerForm‖ = √2 := by
@@ -346,6 +387,51 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
     rw [div_le_div_iff₀ (by positivity) two_pos]
     nlinarith [Real.sq_sqrt (zero_le_two : (0 : ℝ) ≤ 2)]
   linarith [neg_div (2 * √2) ⟪J.kahlerForm, η⟫]
+
+/-- **The Hermitian part is bounded above by the defect density**: if
+`F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler two-vector `ω` of `J`, with `r ≥ 1` and
+`‖β‖² ≤ (K / r) w₊ + K / r²`, where `w₊ = max (1 - ‖φ‖²) 0`, and the Hermitian part
+`B(v, v) = F(v, J v)` of `F` satisfies `B ≥ -C g`, then
+
+`B(v, v) ≤ (δ + K + √2 ‖η‖ / 2 + C) ‖v‖²`,  `δ = (r / 4) |1 - ‖φ‖² - ‖β‖²|`.
+
+The largest value of `B` on the unit sphere is `c + ‖F⁻‖ / √2` with `c = ⟪ω, F⟫ / 2`, and the
+lower bound gives `‖F⁻‖ ≤ √2 (c + C)`, so `B ≤ (2 c + C) g`; the formula for `c` bounds `2 c` by
+the defect density. This is the bound on the Hermitian part in Taubes's monotonicity inequality
+for the defect energy, in its refined form without a factor `1 + κ`. -/
+theorem hermitianForm_apply_self_le_of_add_hodgeStar_eq (hr : 1 ≤ r) {K : ℝ}
+    (hβK : ‖β‖ ^ 2 ≤ K / r * max (1 - ‖φ‖ ^ 2) 0 + K / r ^ 2)
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
+    {C : ℝ} (hC : ∀ v, -C * ‖v‖ ^ 2 ≤ J.hermitianForm F v v) (v : V) :
+    J.hermitianForm F v v ≤
+      (r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| + K + √2 * ‖η‖ / 2 + C) * ‖v‖ ^ 2 := by
+  have hr0 : 0 < r := by linarith
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
+  have hc := inner_div_two_eq_of_add_hodgeStar_eq hQ hkl
+    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hr0.le hF
+  -- The largest value of `B` on vectors of length `‖v‖` is at most `(2 c + C) ‖v‖²`.
+  have hminus : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 + C := by
+    rw [div_le_iff₀ (by positivity), mul_comm]
+    exact AlmostComplexStructure.norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self
+      h₀ h₂₃ hkl he F hC
+  have hB : J.hermitianForm F v v ≤ (⟪J.kahlerForm, F⟫ + C) * ‖v‖ ^ 2 := by
+    have h := (abs_le.1 (AlmostComplexStructure.abs_hermitianForm_apply_self_sub_le
+      h₀ h₂₃ hkl he F v)).2
+    nlinarith [sq_nonneg ‖v‖]
+  -- `2 c = (r / 4) (1 - ‖φ‖² - ‖β‖²) + (r / 2) ‖β‖² - ⟪ω, η⟫ / 2 ≤ δ + K + √2 ‖η‖ / 2`.
+  have hrb : r * ‖β‖ ^ 2 ≤ 2 * K :=
+    mul_le_two_mul_of_le_div_mul_add_div (sq_nonneg _) (sq_nonneg _) hr hβK
+  have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
+    have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
+    have := abs_real_inner_le_norm J.kahlerForm η
+    rw [hω'] at this
+    linarith [neg_le_abs ⟪J.kahlerForm, η⟫]
+  have hδ : r / 4 * (1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2) ≤ r / 4 * |1 - ‖φ‖ ^ 2 - ‖β‖ ^ 2| :=
+    mul_le_mul_of_nonneg_left (le_abs_self _) (by positivity)
+  refine hB.trans (mul_le_mul_of_nonneg_right ?_ (sq_nonneg _))
+  linarith
 
 /-- **The full curvature bound**: if `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler
 two-vector `ω` of `J`, with `r ≥ 1`, `‖φ‖² + ‖β‖² ≤ 1 + K / r` and
