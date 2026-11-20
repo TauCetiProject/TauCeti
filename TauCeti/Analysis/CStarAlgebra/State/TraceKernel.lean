@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 public import TauCeti.RingTheory.TraceFunctional.Radical
+public import TauCeti.Analysis.StarAlgebra.GNS.Basic
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 
 /-!
@@ -37,7 +38,7 @@ proper closed ideal.
 * `PositiveContinuousLinearMap.traceKernel_eq_ker_gnsNonUnitalStarAlgHom`: `N_τ = ker π_τ`.
 * `PositiveContinuousLinearMap.traceKernel_eq_top_iff`: `N_τ = A` only for `τ = 0`.
 * `PositiveContinuousLinearMap.isFaithfulTrace_iff_traceKernel_eq_bot` and
-  `PositiveContinuousLinearMap.isFaithfulTrace_iff_injective_gnsNonUnitalStarAlgHom`.
+  `PositiveContinuousLinearMap.isFaithfulTrace_iff_gnsNonUnitalStarAlgHom_injective`.
 * `PositiveContinuousLinearMap.IsTracialState.isFaithfulTrace_of_forall_isClosed`: on a
   C⋆-algebra whose only closed two-sided ideals are `⊥` and `⊤`, every tracial state is
   faithful (`PositiveContinuousLinearMap.isFaithfulTrace_of_forall_isClosed` for nonzero
@@ -62,17 +63,6 @@ namespace PositiveContinuousLinearMap
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   (τ : A →P[ℂ] ℂ)
 
-/-- An element has zero square mass for `τ` exactly when its GNS class vanishes. -/
-private theorem map_star_mul_self_eq_zero_iff_toGNS (a : A) :
-    τ (star a * a) = 0 ↔ (τ : A →ₚ[ℂ] ℂ).toGNS a = 0 :=
-  ((τ : A →ₚ[ℂ] ℂ).toGNS_eq_zero_iff a).symm
-
-/-- The elements of zero square mass form a left ideal, for every positive functional. -/
-private theorem map_star_mul_self_mul_eq_zero {b : A} (hb : τ (star b * b) = 0) (a : A) :
-    τ (star (a * b) * (a * b)) = 0 := by
-  rw [map_star_mul_self_eq_zero_iff_toGNS] at hb ⊢
-  rw [← PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_toGNS, hb, map_zero]
-
 omit [StarOrderedRing A] in
 /-- For a tracial positive functional, an element has zero square mass exactly when its
 adjoint does. -/
@@ -80,6 +70,7 @@ private theorem map_star_mul_self_eq_zero_iff_star (hτ : ∀ a b, τ (a * b) = 
     τ (star (star a) * star a) = 0 ↔ τ (star a * a) = 0 := by
   rw [star_star, hτ]
 
+open TauCeti.StarPositiveFunctional in
 /-- The **trace kernel** `N_τ = {a | τ (star a * a) = 0}` of a positive functional `τ` with
 `τ (a * b) = τ (b * a)`, as a two-sided ideal. It is closed (`isClosed_traceKernel`), stable
 under `star` (`star_mem_traceKernel_iff`), and equal to the kernel of the GNS representation
@@ -89,15 +80,23 @@ ideal: for the vector state `x ↦ x₁₁` on `2 × 2` matrices it contains `e�
 def traceKernel (hτ : ∀ a b, τ (a * b) = τ (b * a)) : TwoSidedIdeal A :=
   .mk' {a | τ (star a * a) = 0} (by simp)
     (fun {a b} ha hb => by
-      simp only [Set.mem_ofPred_eq, map_star_mul_self_eq_zero_iff_toGNS] at ha hb ⊢
-      rw [map_add, ha, hb, add_zero])
+      simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using
+        (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).nullSubmodule.add_mem
+          (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using ha)
+          (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using hb))
     (fun {a} ha => by simpa using ha)
-    (fun {a b} hb => map_star_mul_self_mul_eq_zero τ hb a)
+    (fun {a b} hb => by
+      -- the null space of a positive functional is a left ideal
+      simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using
+        (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).mul_mem_nullSubmodule a
+          (b := b) (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using hb))
     (fun {a b} ha => by
       -- `a * b = star (star b * star a)`, and `N_τ` is a left ideal stable under `star`
-      have h := map_star_mul_self_mul_eq_zero τ
-        ((map_star_mul_self_eq_zero_iff_star τ hτ a).2 ha) (star b)
-      rw [← star_mul] at h
+      have h := (ofPositiveLinearMap (τ : A →ₚ[ℂ] ℂ)).mul_mem_nullSubmodule (star b)
+        (b := star a) (by simpa [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero] using
+          (map_star_mul_self_eq_zero_iff_star τ hτ a).2 ha)
+      rw [mem_nullSubmodule_iff_apply_star_mul_self_eq_zero, ofPositiveLinearMap_apply,
+        coe_toPositiveLinearMap, ← star_mul] at h
       exact (map_star_mul_self_eq_zero_iff_star τ hτ _).1 h)
 
 section TraceKernel
@@ -127,37 +126,37 @@ instance isClosed_traceKernel : IsClosed (τ.traceKernel hτ : Set A) := by
 theorem map_eq_zero_of_mem_traceKernel {a : A} (ha : a ∈ τ.traceKernel hτ) : τ a = 0 :=
   τ.map_eq_zero_of_map_star_mul_self_eq_zero ((mem_traceKernel_iff τ hτ).1 ha)
 
-/-- An element lies in the trace kernel exactly when `τ (a * b) = 0` for every `b`: one
-direction is the Cauchy–Schwarz inequality `|τ (b * a)| ^ 2 ≤ τ (b * star b) τ (star a * a)`,
-the other takes `b = star a`. The right-hand side is the trace radical of `τ` as a linear map,
-see `asIdeal_traceKernel`. -/
+/-- An element lies in the trace kernel exactly when `τ (a * b) = 0` for every `b`. The
+right-hand side is the trace radical of `τ` as a linear map, see `asIdeal_traceKernel`. -/
 theorem mem_traceKernel_iff_forall_map_mul_eq_zero {a : A} :
     a ∈ τ.traceKernel hτ ↔ ∀ b, τ (a * b) = 0 := by
   rw [mem_traceKernel_iff]
+  -- the forward direction is the Cauchy–Schwarz inequality
+  -- `|τ (b * a)| ^ 2 ≤ τ (b * star b) τ (star a * a)`, the converse takes `b = star a`
   refine ⟨fun ha b => ?_, fun h => by rw [hτ]; exact h (star a)⟩
   have h := PositiveLinearMap.norm_map_star_mul_le τ (star b) a
   rw [star_star, ha, norm_zero, Real.sqrt_zero, mul_zero, norm_le_zero_iff] at h
   rw [hτ, h]
 
-/-- The trace kernel is the kernel of the GNS representation of `τ`. One inclusion uses that
-`N_τ` is a right ideal, the other an approximate unit of `A`. -/
+/-- The trace kernel is the kernel of the GNS representation of `τ`. -/
 theorem traceKernel_eq_ker_gnsNonUnitalStarAlgHom :
     τ.traceKernel hτ = TwoSidedIdeal.ker (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom := by
-  set f : A →ₚ[ℂ] ℂ := τ.toPositiveLinearMap
   ext a
-  rw [TwoSidedIdeal.mem_ker]
+  rw [TwoSidedIdeal.mem_ker, mem_traceKernel_iff, ← coe_toPositiveLinearMap]
+  set f : A →ₚ[ℂ] ℂ := (τ : A →ₚ[ℂ] ℂ)
   constructor
+  -- one inclusion uses that `N_τ` is a right ideal, the other an approximate unit of `A`
   · intro ha
     ext1 ξ
     -- `π(a)` vanishes on the dense set of classes `[c] = f.toGNS c`
     refine congrFun (f.denseRange_toGNS.equalizer (map_continuous (f.gnsNonUnitalStarAlgHom a))
       (map_continuous (0 : f.GNS →L[ℂ] f.GNS)) (funext fun c => ?_)) ξ
-    have hac := (τ.traceKernel hτ).mul_mem_right a c ha
-    rw [mem_traceKernel_iff, map_star_mul_self_eq_zero_iff_toGNS] at hac
+    have hac := (τ.traceKernel hτ).mul_mem_right a c ((mem_traceKernel_iff τ hτ).2 ha)
+    rw [mem_traceKernel_iff, ← coe_toPositiveLinearMap, ← f.toGNS_eq_zero_iff] at hac
     simp only [Function.comp_apply, f.gnsNonUnitalStarAlgHom_apply_toGNS, zero_apply]
     exact hac
   · intro ha
-    rw [mem_traceKernel_iff, map_star_mul_self_eq_zero_iff_toGNS]
+    rw [← f.toGNS_eq_zero_iff]
     -- `[a * e] = π(a)[e] = 0` along an approximate unit `e`, and `[a * e] → [a]`
     have hl := CStarAlgebra.increasingApproximateUnit A
     have := hl.neBot
@@ -176,35 +175,41 @@ end TraceKernel
 /-- A positive functional `τ` is **faithful** when `τ (star a * a) = 0` only for `a = 0`. For a
 tracial functional this says that its trace kernel is zero
 (`isFaithfulTrace_iff_traceKernel_eq_bot`), equivalently that its GNS representation is
-injective (`isFaithfulTrace_iff_injective_gnsNonUnitalStarAlgHom`). -/
+injective (`isFaithfulTrace_iff_gnsNonUnitalStarAlgHom_injective`). -/
 def IsFaithfulTrace : Prop :=
   ∀ a, τ (star a * a) = 0 → a = 0
 
 variable {τ}
 
+omit [StarOrderedRing A] in
+/-- A positive functional is faithful when `τ (star a * a) = 0` only for `a = 0`. -/
+theorem isFaithfulTrace_iff : τ.IsFaithfulTrace ↔ ∀ a, τ (star a * a) = 0 → a = 0 :=
+  Iff.rfl
+
+omit [StarOrderedRing A] in
+/-- A faithful positive functional vanishes on `star a * a` only for `a = 0`. -/
+theorem IsFaithfulTrace.eq_zero_of_map_star_mul_self_eq_zero (h : τ.IsFaithfulTrace) {a : A}
+    (ha : τ (star a * a) = 0) : a = 0 :=
+  isFaithfulTrace_iff.1 h a ha
+
 /-- A positive functional is faithful exactly when it is strictly positive on `star a * a` for
 every `a ≠ 0`. -/
 theorem isFaithfulTrace_iff_pos : τ.IsFaithfulTrace ↔ ∀ a ≠ 0, 0 < τ (star a * a) := by
-  refine ⟨fun h a ha => (τ.map_nonneg (star_mul_self_nonneg a)).lt_of_ne' fun h0 => ha (h a h0),
-    fun h a ha => ?_⟩
+  refine ⟨fun h a ha => (τ.map_nonneg (star_mul_self_nonneg a)).lt_of_ne' fun h0 =>
+    ha (h.eq_zero_of_map_star_mul_self_eq_zero h0), fun h => isFaithfulTrace_iff.2 fun a ha => ?_⟩
   by_contra hne
   exact (h a hne).ne' ha
-
-/-- A faithful positive functional has an injective GNS representation. -/
-theorem IsFaithfulTrace.injective_gnsNonUnitalStarAlgHom (h : τ.IsFaithfulTrace) :
-    Function.Injective (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom :=
-  PositiveLinearMap.gnsNonUnitalStarAlgHom_injective _ h
 
 /-- A tracial positive functional is faithful exactly when its trace kernel is zero. -/
 theorem isFaithfulTrace_iff_traceKernel_eq_bot (hτ : ∀ a b, τ (a * b) = τ (b * a)) :
     τ.IsFaithfulTrace ↔ τ.traceKernel hτ = ⊥ := by
   simp only [eq_bot_iff, IsConcreteLE.le_iff, mem_traceKernel_iff, TwoSidedIdeal.mem_bot,
-    IsFaithfulTrace]
+    isFaithfulTrace_iff]
 
 /-- A tracial positive functional is faithful exactly when its GNS representation is
 injective. Traciality is needed for the converse: the vector state `x ↦ x₁₁` on `2 × 2`
 matrices has an injective GNS representation but vanishes at `star e₁₂ * e₁₂ = e₂₂`. -/
-theorem isFaithfulTrace_iff_injective_gnsNonUnitalStarAlgHom
+theorem isFaithfulTrace_iff_gnsNonUnitalStarAlgHom_injective
     (hτ : ∀ a b, τ (a * b) = τ (b * a)) :
     τ.IsFaithfulTrace ↔ Function.Injective (τ : A →ₚ[ℂ] ℂ).gnsNonUnitalStarAlgHom := by
   rw [isFaithfulTrace_iff_traceKernel_eq_bot hτ, traceKernel_eq_ker_gnsNonUnitalStarAlgHom,
@@ -230,8 +235,9 @@ variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRi
 /-- **Pullback of faithfulness.** A faithful positive functional composed with an injective star
 homomorphism is faithful. -/
 theorem IsFaithfulTrace.comp (hσ : σ.IsFaithfulTrace) (f : F) (hf : Function.Injective f) :
-    (σ.comp (.ofClass f)).IsFaithfulTrace := fun a ha =>
-  hf <| by simpa using hσ (f a) (by simpa [map_star] using ha)
+    (σ.comp (.ofClass f)).IsFaithfulTrace := isFaithfulTrace_iff.2 fun a ha =>
+  hf <| by
+    simpa using hσ.eq_zero_of_map_star_mul_self_eq_zero (a := f a) (by simpa [map_star] using ha)
 
 section Unital
 
