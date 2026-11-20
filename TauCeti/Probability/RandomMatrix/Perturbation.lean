@@ -110,7 +110,7 @@ theorem measure_norm_integral_spectralMeasure_sub_ge_le {ε : ℝ} (hε : 0 < ε
           Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le
             (hA ω) (hB ω) hf)
     _ ≤ ENNReal.ofReal ((∫ ω, ‖c * ‖A ω - B ω‖‖ ^ 2 ∂P) / ε ^ 2) :=
-      meas_ge_le_integral_norm_sq_div_sq hi hε
+      meas_ge_le_integral_sq_div_sq (Y := fun ω ↦ ‖c * ‖A ω - B ω‖‖) hi hε
     _ = _ := by
       simp only [norm_mul, Real.norm_of_nonneg hc, Real.norm_of_nonneg (norm_nonneg _),
         mul_pow, integral_const_mul, c, div_pow, Real.sq_sqrt (Nat.cast_nonneg _)]
