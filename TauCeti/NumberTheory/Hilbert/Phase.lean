@@ -18,10 +18,10 @@ Let `K` be a field of characteristic zero, `A` and `B` additive subgroups of `K`
 
 `tracePhase hAB x ζ : B →+ Additive G`, `ξ ↦ ζ ^ (n · Tr_{K/ℚ}(ξ x))`.
 
-No generator of `B` is chosen. When `ζ ^ n = 1` the character depends on `x` only modulo the
-trace dual `Bᵛ` of the larger group `B`, not merely modulo `Aᵛ` (`tracePhase_eq_of_sub_mem`):
-changing `x` by an element of `Bᵛ` changes every exponent by a multiple of `n`
-(`dvd_traceExponent_sub`). The root of unity `ζ` need not be primitive, and the character is
+No generator of `B` is chosen. When `ζ ^ n = 1`, the character is unchanged when `x` changes by
+an element of the trace dual `Bᵛ` (`tracePhase_eq_of_sub_mem`), since every exponent then changes
+by a multiple of `n` (`dvd_traceExponent_sub`), but in general not when `x` changes by an element
+of `Aᵛ`. The root of unity `ζ` need not be primitive, and the character is
 natural in group homomorphisms (`tracePhase_map`), for instance in `Units.map` of a ring
 homomorphism.
 
@@ -74,11 +74,9 @@ variable (hAB : ∀ ξ ∈ B, n • ξ ∈ A)
 @[simp]
 theorem intCast_traceExponent (x : traceDual ℤ ℚ A) (ξ : B) :
     (traceExponent hAB x ξ : ℚ) = n * trace ℚ K (ξ * x) := by
-  rw [traceExponent, LinearMap.comp_apply, LinearMap.restrict_apply,
-    LinearMap.BilinForm.dualSubmoduleToDual_apply_apply, ← eq_intCast (algebraMap ℤ ℚ),
-    LinearMap.BilinForm.dualSubmodulePairing_spec]
-  simp only [traceForm_apply, LinearMap.smul_apply, LinearMap.id_apply]
-  rw [mul_smul_comm, map_nsmul, nsmul_eq_mul, mul_comm (x : K)]
+  rw [traceExponent, LinearMap.comp_apply, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply,
+    ← eq_intCast (algebraMap ℤ ℚ), LinearMap.BilinForm.dualSubmodulePairing_spec]
+  simp [traceForm_apply, mul_comm (x : K), ← nsmul_eq_mul]
 
 /-- An integer is the trace exponent exactly when it equals `n · Tr_{K/ℚ}(ξ x)`. -/
 theorem traceExponent_eq_iff (x : traceDual ℤ ℚ A) (ξ : B) (m : ℤ) :
@@ -86,16 +84,16 @@ theorem traceExponent_eq_iff (x : traceDual ℤ ℚ A) (ξ : B) (m : ℤ) :
   rw [← intCast_traceExponent hAB, eq_comm, Int.cast_inj]
 
 /-- Changing `x` by an element of the trace dual of `B` changes the trace exponent at every
-`ξ ∈ B` by a multiple of `n`. The trace dual of `B`, not that of the smaller group `A`, is the
-relevant one. -/
+`ξ ∈ B` by a multiple of `n`. The trace dual of `B`, not that of `A`, is the relevant one. -/
 theorem dvd_traceExponent_sub {x x' : traceDual ℤ ℚ A} (h : (x' : K) - x ∈ traceDual ℤ ℚ B)
     (ξ : B) : (n : ℤ) ∣ traceExponent hAB x' ξ - traceExponent hAB x ξ := by
   obtain ⟨k, hk⟩ := mem_traceDual.mp h ξ ξ.2
   rw [algebraMap_int_eq, eq_intCast, traceForm_apply] at hk
   refine ⟨k, Int.cast_injective (α := ℚ) ?_⟩
   push_cast
-  rw [intCast_traceExponent, intCast_traceExponent, hk, ← mul_sub, ← map_sub, mul_comm _ (ξ : K),
-    ← mul_sub]
+  rw [intCast_traceExponent, intCast_traceExponent, hk]
+  simp only [sub_mul, map_sub, mul_comm (ξ : K)]
+  ring
 
 variable {G : Type*} [Group G]
 
@@ -121,8 +119,7 @@ theorem tracePhase_eq_of_sub_mem {x x' : traceDual ℤ ℚ A} (h : (x' : K) - x 
     {ζ : G} (hζ : ζ ^ n = 1) : tracePhase hAB x ζ = tracePhase hAB x' ζ := by
   ext ξ
   obtain ⟨k, hk⟩ := dvd_traceExponent_sub hAB h ξ
-  rw [toMul_tracePhase, toMul_tracePhase, sub_eq_iff_eq_add'.mp hk, zpow_add, zpow_mul,
-    zpow_natCast, hζ, one_zpow, mul_one]
+  simp [sub_eq_iff_eq_add'.mp hk, zpow_add, zpow_mul, hζ]
 
 /-- The trivial root of unity gives the trivial character. -/
 @[simp]
