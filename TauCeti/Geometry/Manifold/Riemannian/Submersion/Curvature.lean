@@ -6,60 +6,86 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Riemann
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
-import TauCeti.Analysis.InnerProductSpace.Gram.Pair
-import TauCeti.Geometry.Manifold.Distribution.Kernel
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
-# O'Neill's horizontal curvature formula
+# O'Neill's horizontal curvature equations for a Riemannian submersion
 
-Let `f : M → N` be a Riemannian submersion, with O'Neill's horizontal tensor `A`
-(`TauCeti.IsRiemannianSubmersion.oneillA`). For horizontal tangent vectors `u`, `v`, `w` and `z`
-at `x`,
+For a Riemannian submersion `f : M → N` between smooth Riemannian manifolds, O'Neill's horizontal
+curvature equation expresses the horizontal part of the curvature of `M` in terms of the curvature
+of `N` and O'Neill's horizontal tensor `A` (`IsRiemannianSubmersion.oneillA`). Under the curvature
+convention `R(X, Y)Z = ∇_X ∇_Y Z - ∇_Y ∇_X Z - ∇_[X, Y] Z` and
+`Rm(u, v, w, z) = ⟪R(u, v)w, z⟫`, for base tangent vectors `u, v, w, z` at `f x` with horizontal
+lifts `u', v', w', z'` at `x`:
 
-`⟨R_M(u, v) w, z⟩ = ⟨R_N(f_* u, f_* v) f_* w, f_* z⟩ + 2 ⟨A_u v, A_w z⟩ - ⟨A_v w, A_u z⟩ +
-  ⟨A_u w, A_v z⟩`.
+* the horizontal projection of `R_M(u', v')w'` is
+  `horizontalLift x (R_N(u, v)w) + A_u'(A_v' w') - A_v'(A_u' w') - 2 A_w'(A_u' v')`;
+* the `(0, 4)` Riemann curvature tensors satisfy
+  `Rm_N(u, v, w, z) = Rm_M(u', v', w', z') + ⟪A_v' w', A_u' z'⟫ - ⟪A_u' w', A_v' z'⟫`
+  `- 2 ⟪A_u' v', A_w' z'⟫`;
+* the sectional curvatures satisfy
+  `K_N(u, v) = K_M(u', v') + 3 ‖A_u' v'‖² / det(Gram(u, v))`,
+  which reduces on orthonormal horizontal pairs to `K_N(df_x u, df_x v) = K_M(u, v) + 3 ‖A_u v‖²`
+  and on horizontal vector fields `X, Y` to
+  `K_N(df_x(X x), df_x(Y x)) = K_M(X x, Y x) + (3 / 4) ‖v [X, Y]_x‖² / det(Gram(X x, Y x))`.
 
-On a plane this reads `⟨R_M(u, w) w, u⟩ = ⟨R_N(f_* u, f_* w) f_* w, f_* u⟩ - 3 |A_u w|²`.
-Since `f_*` is isometric on horizontal vectors, the Gram determinants of `u, w` and of
-`f_* u, f_* w` agree, so the sectional curvature of a horizontal plane increases by
-`3 |A_u w|² / |u ∧ w|²` under `f`. As `v [X, Y] = 2 A_X Y` for horizontal fields, this is the
-formula `K_N = K_M + ¾ |v [X, Y]|²` for horizontal orthonormal `X, Y`. These formulas compute the
-curvature of quotient metrics, such as those of the projective spaces as quotients of round
-spheres, and of connection metrics on fibre bundles.
+In particular, a Riemannian submersion is sectional-curvature non-decreasing on horizontal planes:
+`K_M(u', v') ≤ K_N(u, v)`, with equality on any pair if and only if `A_u' v' = 0`, and equality on
+every pair at `f x` if and only if `oneillA x = 0` (as verified for Riemannian products in
+`TauCeti.Geometry.Manifold.Riemannian.Submersion.Prod`). Summing over an orthonormal basis of
+`T_(f x) N` expresses the Ricci and scalar curvatures of `N` in terms of horizontal curvature
+components of `M` and squared norms of `A`.
 
-The proof differentiates the horizontal lifts `X'`, `Y'` and `Z'` of fields `X`, `Y` and `Z` on
-the base. For such basic fields the Levi-Civita derivative is `∇_X' Y' = (∇_X Y)^~ + A_X' Y'`, the
-lift of the base derivative plus the vertical correction
-(`TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`), and the bracket is
-`[X', Y'] = [X, Y]^~ + 2 A_X' Y'` (`TauCeti.IsRiemannianSubmersion.mlieBracket_horizontalLift`).
-Expanding `R(X', Y') Z' = ∇_X' ∇_Y' Z' - ∇_Y' ∇_X' Z' - ∇_[X',Y'] Z'` and pairing with a
-horizontal vector, the vertical corrections contribute the `A`-terms. The curvature convention
-is `R(X,Y)Z = ∇_X∇_Y Z - ∇_Y∇_X Z - ∇_[X,Y] Z`.
+The operator-level formulas require no Hausdorff assumptions. Pointwise tensor, sectional, Ricci,
+and scalar identities assume `[T2Space M] [T2Space N]` so tangent vectors extend globally to smooth
+fields. Neither boundarylessness, completeness, compactness, nor global surjectivity of `f` is
+assumed, except surjectivity when transferring a global lower curvature bound to all of `N`.
 
 ## Main results
 
-* `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_of_mem_orthogonal_ker`: O'Neill's
-  horizontal curvature equation.
-* `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_self_of_mem_orthogonal_ker`: its form on
-  a horizontal plane.
-* `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv`: the sectional curvature of the
-  image of a horizontal plane.
+* `TauCeti.IsRiemannianSubmersion.starProjection_orthogonal_ker_curvatureOperator_horizontalLift`
+  and `TauCeti.IsRiemannianSubmersion.inner_curvatureOperator_horizontalLift`: O'Neill's
+  horizontal curvature equations at the operator level on smooth base vector fields.
+* `TauCeti.IsRiemannianSubmersion.starProjection_orthogonal_ker_curvatureTensor_horizontalLift` and
+  `TauCeti.IsRiemannianSubmersion.curvatureTensor_eq_mfderiv_horizontalLift_add`: the horizontal
+  part of `R_M` and the pushforward formula for `R_N`.
+* `TauCeti.IsRiemannianSubmersion.riemannCurvatureTensor_eq_horizontalLift_add`,
+  `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_of_mem_orthogonal_ker`, and
+  `TauCeti.IsRiemannianSubmersion.inner_curvatureTensor_self_of_mem_orthogonal_ker`: O'Neill's
+  `(0, 4)` horizontal curvature equations.
+* `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv`,
+  `TauCeti.IsRiemannianSubmersion.sectionalCurvature_eq_horizontalLift_add_div`,
+  `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv_eq_add_of_orthonormal`,
+  `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv_eq_add_div_norm_mlieBracket`, and
+  `TauCeti.IsRiemannianSubmersion.sectionalCurvature_mfderiv_eq_add_norm_mlieBracket_of_orthonormal`
+  (O'Neill's horizontal sectional curvature formulas in `A`-tensor and Lie-bracket forms).
+* `TauCeti.IsRiemannianSubmersion.sectionalCurvature_horizontalLift_le`,
+  `TauCeti.IsRiemannianSubmersion.sectionalCurvature_eq_horizontalLift_iff`, and
+  `TauCeti.IsRiemannianSubmersion.forall_sectionalCurvature_eq_horizontalLift_iff`: monotonicity
+  and rigidity of horizontal sectional curvature.
+* `TauCeti.IsRiemannianSubmersion.ricciTensor_eq_sum_horizontalLift` and
+  `TauCeti.IsRiemannianSubmersion.scalarCurvature_eq_sum_horizontalLift`: horizontal contractions
+  for the base Ricci and scalar curvatures.
 
 ## References
 
 * B. O'Neill, *The fundamental equations of a submersion*, Michigan Math. J. 13 (1966),
-  459–469, Theorem 2 {4} and its Corollary 1.
-* A. L. Besse, *Einstein Manifolds*, Springer, 1987, Chapter 9, 9.28f.
+  459–469, Theorem 2 {4} and Corollary 1.
+* A. L. Besse, *Einstein Manifolds*, Springer, 1987, Chapter 9, §D (Proposition 9.28(f),
+  Corollary 9.29, and Proposition 9.36).
+* J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (2018), Chapter 7
+  (Theorem 7.47).
 -/
+
 public section
 
-open Bundle CovariantDerivative Filter Manifold VectorField
-open scoped ContDiff InnerProductSpace Manifold Topology
+open Bundle CovariantDerivative FiberBundle Filter Manifold VectorField
+open scoped ContDiff InnerProductSpace Manifold Matrix Topology
 
 noncomputable section
 
@@ -78,163 +104,224 @@ variable
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
   {f : M → N} (h : IsRiemannianSubmersion I J f)
 
--- These regularity indices are propositionally, but not definitionally, equal to two.
-local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-  rw [one_add_one_eq_two]
-  infer_instance
-
-local instance : IsManifold I (minSmoothness ℝ 2) M := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  infer_instance
-
 include h
 
-/-- Pairing the Levi-Civita derivative of a basic horizontal field with a horizontal lift only sees
-the base derivative. -/
-private theorem inner_leviCivitaConnection_horizontalLift {Y : Π y : N, TangentSpace J y} {x : M}
-    (hY : CMDiffAt 1 (T% Y) (f x)) (v w : TangentSpace J (f x)) :
-    ⟪leviCivitaConnection I M (fun y ↦ h.horizontalLift y (Y (f y))) x (h.horizontalLift x v),
-        h.horizontalLift x w⟫_ℝ =
-      ⟪leviCivitaConnection J N Y (f x) v, w⟫_ℝ := by
-  rw [h.leviCivitaConnection_horizontalLift hY, inner_add_left, LinearIsometry.inner_map_map,
-    Submodule.inner_right_of_mem_orthogonal
-      (h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker x _))
-      (h.horizontalLift_mem_orthogonal_ker x w), add_zero]
+-- `∞ + 1` is propositionally, not definitionally, equal to `∞`.
+local instance : IsManifold I (∞ + 1) M := by
+  simpa using (inferInstance : IsManifold I ∞ M)
 
-/-- For a vertical field `V` and horizontal vectors `u` and `w`, `⟨∇_u V, w⟩ = ⟨V, A_w u⟩`, since
-`A_u V` is the horizontal part of `∇_u V` and `A_u` is skew-adjoint. -/
-private theorem inner_leviCivitaConnection_of_mem_ker {V : Π y : M, TangentSpace I y} {x : M}
-    (hV : MDiffAt (T% V) x) (hVv : ∀ y, V y ∈ (mfderiv I J f y).ker) {u w : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hw : w ∈ (mfderiv I J f x).kerᗮ) :
-    ⟪leviCivitaConnection I M V x u, w⟫_ℝ = ⟪V x, h.oneillA x w u⟫_ℝ := by
-  rw [h.oneillA_antisymm hw hu, inner_neg_right, ← h.inner_oneillA,
-    h.oneillA_apply_of_eventually_mem_ker hV (.of_forall hVv),
-    Submodule.inner_starProjection_left_eq_right, Submodule.starProjection_eq_self_iff.mpr hw,
-    Submodule.starProjection_eq_self_iff.mpr hu]
+/-! ### Curvature operator on basic horizontal lifts -/
 
-/-- For a vertical field `V`, a basic horizontal field `Y'` and a horizontal vector `w`,
-`⟨∇_V Y', w⟩ = ⟨V, A_w Y'⟩`. Since `[Y', V]` is vertical, this reduces to
-`inner_leviCivitaConnection_of_mem_ker`. -/
-private theorem inner_leviCivitaConnection_horizontalLift_of_mem_ker
-    {V : Π y : M, TangentSpace I y} {Y : Π y : N, TangentSpace J y} {x : M}
-    (hV : MDiffAt (T% V) x) (hVv : ∀ y, V y ∈ (mfderiv I J f y).ker)
-    (hY : CMDiffAt 1 (T% Y) (f x)) {w : TangentSpace I x} (hw : w ∈ (mfderiv I J f x).kerᗮ) :
-    ⟪leviCivitaConnection I M (fun y ↦ h.horizontalLift y (Y (f y))) x (V x), w⟫_ℝ =
-      ⟪V x, h.oneillA x w (h.horizontalLift x (Y (f x)))⟫_ℝ := by
-  have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
-  have hT := ((torsion_eq_zero_iff _).mp (torsion_leviCivitaConnection_eq_zero I)) hYd hV
-  have hbr := (h.isSubmersion.contMDiff x).mlieBracket_mem_ker_mfderiv_of_eventually_related
-    (by simp [minSmoothness_of_isRCLikeNormedField]) hYd hV (hY.mdifferentiableAt one_ne_zero)
-    (.of_forall fun y ↦ h.mfderiv_horizontalLift y _) (.of_forall hVv)
-  rw [← h.inner_leviCivitaConnection_of_mem_ker hV hVv (h.horizontalLift_mem_orthogonal_ker x _)
-      hw, ← sub_eq_zero, ← inner_sub_left, ← neg_sub, hT, inner_neg_left,
-    Submodule.inner_right_of_mem_orthogonal hbr hw, neg_zero]
+section Operator
 
-/-- For basic horizontal fields `Y'` and `Z'`, lifting smooth fields `Y` and `Z` on the base, the
-vertical field `A_Y' Z'` is differentiable, being the difference of `∇_Y' Z'` and `(∇_Y Z)^~`. -/
-private theorem mdifferentiableAt_oneillA_horizontalLift {Y Z : Π y : N, TangentSpace J y}
-    (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (x : M) :
-    MDiffAt (T% fun y ↦ h.oneillA y (h.horizontalLift y (Y (f y)))
-      (h.horizontalLift y (Z (f y)))) x := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hY' : CMDiff ∞ (T% fun y ↦ h.horizontalLift y (Y (f y))) :=
-    fun y ↦ h.contMDiffAt_horizontalLift (hY (f y)) (by simp)
-  have hZ' : CMDiff ∞ (T% fun y ↦ h.horizontalLift y (Z (f y))) :=
-    fun y ↦ h.contMDiffAt_horizontalLift (hZ (f y)) (by simp)
-  have hW : CMDiffAt 1 (T% fun z ↦ leviCivitaConnection J N Z z (Y z)) (f x) :=
-    ((leviCivitaConnection J N).contMDiff_apply hY hZ (f x)).of_le (by simp)
-  -- Pointwise, `A_Y' Z' = ∇_Y' Z' - (∇_Y Z)^~`.
-  convert mdifferentiableAt_sub_section
-    (((leviCivitaConnection I M).contMDiff_apply hY' hZ' x).mdifferentiableAt (by simp))
-    ((h.contMDiffAt_horizontalLift hW (by norm_num)).mdifferentiableAt one_ne_zero) using 3
-  exact (sub_eq_of_eq_add' (h.leviCivitaConnection_horizontalLift ((hZ _).of_le (by simp)) _)).symm
+/-- Second covariant derivative of basic horizontal lifts, projected horizontally:
+`h(∇_v' (∇_Y' Z')) = horizontalLift x (∇_v (∇_Y Z)) + A_v' (A_Y' Z')`. -/
+private theorem starProjection_orthogonal_ker_second_leviCivitaConnection_horizontalLift
+    {Y Z : Π z : N, TangentSpace J z} (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
+    (x : M) (v : TangentSpace J (f x)) :
+    (mfderiv I J f x).kerᗮ.starProjection
+        (leviCivitaConnection I M
+          (fun y ↦ leviCivitaConnection I M
+            (fun q ↦ h.horizontalLift q (Z (f q))) y (h.horizontalLift y (Y (f y))))
+          x (h.horizontalLift x v)) =
+      h.horizontalLift x
+          (leviCivitaConnection J N
+            (fun z ↦ leviCivitaConnection J N Z z (Y z)) (f x) v) +
+        h.oneillA x (h.horizontalLift x v)
+          (h.oneillA x (h.horizontalLift x (Y (f x))) (h.horizontalLift x (Z (f x)))) := by
+  set YL : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
+  set ZL : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Z (f y))
+  set YZ : Π z : N, TangentSpace J z := fun z ↦ leviCivitaConnection J N Z z (Y z)
+  set U : Π y : M, TangentSpace I y := fun y ↦ leviCivitaConnection I M ZL y (YL y)
+  set HField : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (YZ (f y))
+  set VField : Π y : M, TangentSpace I y := fun y ↦ h.oneillA y (YL y) (ZL y)
+  have hYZ : CMDiff ∞ (T% YZ) := (leviCivitaConnection J N).contMDiff_apply hY (hZ.of_le (by simp))
+  have hYL : CMDiff ∞ (T% YL) := h.contMDiff_horizontalLift hY (by simp)
+  have hZL : CMDiff ∞ (T% ZL) := h.contMDiff_horizontalLift hZ (by simp)
+  have hU : CMDiff ∞ (T% U) :=
+    (leviCivitaConnection I M).contMDiff_apply hYL (hZL.of_le (by simp))
+  have hHField : CMDiff ∞ (T% HField) := h.contMDiff_horizontalLift hYZ (by simp)
+  have hUeq : U = HField + VField := funext fun y ↦
+    h.leviCivitaConnection_horizontalLift ((hZ (f y)).of_le (by simp)) (Y (f y))
+  have hVField : CMDiff ∞ (T% VField) := by
+    refine (hU.sub_section hHField).congr fun y ↦ ?_
+    simp only [Pi.sub_apply]
+    exact congrArg (TotalSpace.mk' E y) (eq_sub_of_add_eq' (congrFun hUeq y).symm)
+  have hHd : MDiffAt (T% HField) x := (hHField x).mdifferentiableAt (by simp)
+  have hVd : MDiffAt (T% VField) x := (hVField x).mdifferentiableAt (by simp)
+  have hA := h.oneillA_apply_of_eventually_mem_ker hVd
+    (.of_forall fun y ↦ h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _))
+    (h.horizontalLift x v)
+  rw [Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x v)] at hA
+  rw [hUeq,
+    (leviCivitaConnection I M).isCovariantDerivativeOnUniv.add hHd hVd,
+    add_apply, map_add,
+    h.starProjection_covariantDerivative_horizontalLift
+      (isLeviCivitaConnection_leviCivitaConnection I)
+      (isLeviCivitaConnection_leviCivitaConnection J) ((hYZ (f x)).of_le (by simp)) v,
+    ← hA]
 
-/-- For basic horizontal fields `Y'` and `Z'`, lifting smooth fields `Y` and `Z` on the base, and
-lifts `v'` and `t'` of base vectors, `⟨∇_v' ∇_Y' Z', t'⟩ = ⟨∇_v ∇_Y Z, t⟩ + ⟨A_Y' Z', A_t' v'⟩`. -/
-private theorem inner_leviCivitaConnection_leviCivitaConnection_horizontalLift
-    {Y Z : Π y : N, TangentSpace J y} (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (x : M)
-    (v t : TangentSpace J (f x)) :
-    ⟪leviCivitaConnection I M (fun y ↦ leviCivitaConnection I M
-          (fun y ↦ h.horizontalLift y (Z (f y))) y (h.horizontalLift y (Y (f y)))) x
-        (h.horizontalLift x v), h.horizontalLift x t⟫_ℝ =
-      ⟪leviCivitaConnection J N (fun z ↦ leviCivitaConnection J N Z z (Y z)) (f x) v, t⟫_ℝ +
+/-- **O'Neill's horizontal curvature operator formula.** For smooth vector fields `X, Y, Z` on `N`
+with basic horizontal lifts `X', Y', Z'` on `M`, the horizontal part of `R_M(X', Y')Z'` at `x` is
+`horizontalLift x (R_N(X, Y)Z (f x)) + A_X'(A_Y' Z') - A_Y'(A_X' Z') - 2 A_Z'(A_X' Y')`. -/
+theorem starProjection_orthogonal_ker_curvatureOperator_horizontalLift
+    {X Y Z : Π z : N, TangentSpace J z}
+    (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (x : M) :
+    (mfderiv I J f x).kerᗮ.starProjection
+        ((leviCivitaConnection I M).curvatureOperator
+          (fun y ↦ h.horizontalLift y (X (f y)))
+          (fun y ↦ h.horizontalLift y (Y (f y)))
+          (fun y ↦ h.horizontalLift y (Z (f y))) x) =
+      h.horizontalLift x ((leviCivitaConnection J N).curvatureOperator X Y Z (f x)) +
+        h.oneillA x (h.horizontalLift x (X (f x)))
+          (h.oneillA x (h.horizontalLift x (Y (f x))) (h.horizontalLift x (Z (f x)))) -
+        h.oneillA x (h.horizontalLift x (Y (f x)))
+          (h.oneillA x (h.horizontalLift x (X (f x))) (h.horizontalLift x (Z (f x)))) -
+        (2 : ℝ) • h.oneillA x (h.horizontalLift x (Z (f x)))
+          (h.oneillA x (h.horizontalLift x (X (f x))) (h.horizontalLift x (Y (f x)))) := by
+  have hX1 : CMDiffAt 1 (T% X) (f x) := (hX (f x)).of_le (by simp)
+  have hY1 : CMDiffAt 1 (T% Y) (f x) := (hY (f x)).of_le (by simp)
+  have hZ1 : CMDiffAt 1 (T% Z) (f x) := (hZ (f x)).of_le (by simp)
+  rw [curvatureOperator_apply, map_sub, map_sub,
+    h.starProjection_orthogonal_ker_second_leviCivitaConnection_horizontalLift hY hZ x (X (f x)),
+    h.starProjection_orthogonal_ker_second_leviCivitaConnection_horizontalLift hX hZ x (Y (f x)),
+    h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift hZ1,
+    h.mfderiv_mlieBracket_horizontalLift hX1 hY1,
+    h.starProjection_ker_mlieBracket
+      (h.mdifferentiableAt_horizontalLift hX1) (h.mdifferentiableAt_horizontalLift hY1)
+      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
+      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _),
+    curvatureOperator_apply, map_sub, map_sub, map_smul]
+  abel
+
+/-- **O'Neill's horizontal curvature equation at the operator level.** Pairing `R_M(X', Y')Z'` at
+`x` with a horizontal lift `w'` relates it to `⟪R_N(X, Y)Z (f x), w⟫` and inner products of
+O'Neill's `A` tensor. -/
+theorem inner_curvatureOperator_horizontalLift
+    {X Y Z : Π z : N, TangentSpace J z}
+    (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z))
+    (x : M) (w : TangentSpace J (f x)) :
+    ⟪(leviCivitaConnection I M).curvatureOperator
+        (fun y ↦ h.horizontalLift y (X (f y)))
+        (fun y ↦ h.horizontalLift y (Y (f y)))
+        (fun y ↦ h.horizontalLift y (Z (f y))) x,
+      h.horizontalLift x w⟫_ℝ =
+      ⟪(leviCivitaConnection J N).curvatureOperator X Y Z (f x), w⟫_ℝ -
         ⟪h.oneillA x (h.horizontalLift x (Y (f x))) (h.horizontalLift x (Z (f x))),
-          h.oneillA x (h.horizontalLift x t) (h.horizontalLift x v)⟫_ℝ := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  set covM := leviCivitaConnection I M
-  set covN := leviCivitaConnection J N
-  set Y' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
-  set Z' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Z (f y))
-  -- `∇_Y' Z'` is the lift of `∇_Y Z` plus the vertical field `V = A_Y' Z'`.
-  set W : Π z : N, TangentSpace J z := fun z ↦ covN Z z (Y z)
-  set V : Π y : M, TangentSpace I y := fun y ↦ h.oneillA y (Y' y) (Z' y)
-  have hVv (y : M) : V y ∈ (mfderiv I J f y).ker :=
-    h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _)
-  have hW : CMDiffAt 1 (T% W) (f x) := (covN.contMDiff_apply hY hZ (f x)).of_le (by simp)
-  have hWd : MDiffAt (T% (fun y ↦ h.horizontalLift y (W (f y)))) x :=
-    (h.contMDiffAt_horizontalLift hW (by norm_num)).mdifferentiableAt one_ne_zero
-  have hVd : MDiffAt (T% V) x := h.mdifferentiableAt_oneillA_horizontalLift hY hZ x
-  have hYZ : (fun y ↦ covM Z' y (Y' y)) = (fun y ↦ h.horizontalLift y (W (f y))) + V :=
-    funext fun y ↦ h.leviCivitaConnection_horizontalLift ((hZ (f y)).of_le (by simp)) _
-  rw [hYZ, covM.isCovariantDerivativeOnUniv.add hWd hVd, add_apply, inner_add_left,
-    h.inner_leviCivitaConnection_horizontalLift hW,
-    h.inner_leviCivitaConnection_of_mem_ker hVd hVv (h.horizontalLift_mem_orthogonal_ker x v)
-      (h.horizontalLift_mem_orthogonal_ker x t)]
-
-/-- O'Neill's horizontal curvature equation on basic horizontal fields `X'`, `Y'` and `Z'`, lifting
-smooth fields `X`, `Y` and `Z` on the base, paired with the lift `t'` of a base vector `t`. -/
-private theorem inner_curvatureOperator_horizontalLift {X Y Z : Π y : N, TangentSpace J y}
-    (hX : CMDiff ∞ (T% X)) (hY : CMDiff ∞ (T% Y)) (hZ : CMDiff ∞ (T% Z)) (x : M)
-    (t : TangentSpace J (f x)) :
-    ⟪(leviCivitaConnection I M).curvatureOperator (fun y ↦ h.horizontalLift y (X (f y)))
-        (fun y ↦ h.horizontalLift y (Y (f y))) (fun y ↦ h.horizontalLift y (Z (f y))) x,
-        h.horizontalLift x t⟫_ℝ =
-      ⟪(leviCivitaConnection J N).curvatureOperator X Y Z (f x), t⟫_ℝ +
-        ⟪h.oneillA x (h.horizontalLift x (Y (f x))) (h.horizontalLift x (Z (f x))),
-          h.oneillA x (h.horizontalLift x t) (h.horizontalLift x (X (f x)))⟫_ℝ -
+          h.oneillA x (h.horizontalLift x (X (f x))) (h.horizontalLift x w)⟫_ℝ +
         ⟪h.oneillA x (h.horizontalLift x (X (f x))) (h.horizontalLift x (Z (f x))),
-          h.oneillA x (h.horizontalLift x t) (h.horizontalLift x (Y (f x)))⟫_ℝ -
+          h.oneillA x (h.horizontalLift x (Y (f x))) (h.horizontalLift x w)⟫_ℝ +
         2 * ⟪h.oneillA x (h.horizontalLift x (X (f x))) (h.horizontalLift x (Y (f x))),
-          h.oneillA x (h.horizontalLift x t) (h.horizontalLift x (Z (f x)))⟫_ℝ := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  set covM := leviCivitaConnection I M
-  set covN := leviCivitaConnection J N
-  set X' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (X (f y))
-  set Y' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
-  set Z' : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Z (f y))
-  set T := h.horizontalLift x t
-  have hX₁ (z : N) : CMDiffAt 1 (T% X) z := (hX z).of_le (by simp)
-  have hY₁ (z : N) : CMDiffAt 1 (T% Y) z := (hY z).of_le (by simp)
-  have hZ₁ (z : N) : CMDiffAt 1 (T% Z) z := (hZ z).of_le (by simp)
-  -- The vertical field `V = A_X' Y'`, which is half the vertical part of `[X', Y']`.
-  set V : Π y : M, TangentSpace I y := fun y ↦ h.oneillA y (X' y) (Y' y)
-  have hVv (y : M) : V y ∈ (mfderiv I J f y).ker :=
-    h.oneillA_apply_mem_ker _ (h.horizontalLift_mem_orthogonal_ker y _)
-  have hVd : MDiffAt (T% V) x := h.mdifferentiableAt_oneillA_horizontalLift hX hY x
-  -- The three terms of `R(X', Y') Z' = ∇_X' ∇_Y' Z' - ∇_Y' ∇_X' Z' - ∇_[X',Y'] Z'`.
-  have h₁ : ⟪covM (fun y ↦ covM Z' y (Y' y)) x (X' x), T⟫_ℝ =
-      ⟪covN (fun z ↦ covN Z z (Y z)) (f x) (X (f x)), t⟫_ℝ +
-        ⟪h.oneillA x (Y' x) (Z' x), h.oneillA x T (X' x)⟫_ℝ :=
-    h.inner_leviCivitaConnection_leviCivitaConnection_horizontalLift hY hZ x _ t
-  have h₂ : ⟪covM (fun y ↦ covM Z' y (X' y)) x (Y' x), T⟫_ℝ =
-      ⟪covN (fun z ↦ covN Z z (X z)) (f x) (Y (f x)), t⟫_ℝ +
-        ⟪h.oneillA x (X' x) (Z' x), h.oneillA x T (Y' x)⟫_ℝ :=
-    h.inner_leviCivitaConnection_leviCivitaConnection_horizontalLift hX hZ x _ t
-  have h₃ : ⟪covM Z' x (mlieBracket I X' Y' x), T⟫_ℝ =
-      ⟪covN Z (f x) (mlieBracket J X Y (f x)), t⟫_ℝ +
-        2 * ⟪h.oneillA x (X' x) (Y' x), h.oneillA x T (Z' x)⟫_ℝ := by
-    have hZV := h.inner_leviCivitaConnection_horizontalLift_of_mem_ker hVd hVv (hZ₁ (f x))
-      (h.horizontalLift_mem_orthogonal_ker x t)
-    rw [h.mlieBracket_horizontalLift (hX₁ (f x)) (hY₁ (f x)), map_add, map_smul, inner_add_left,
-      real_inner_smul_left, hZV, h.inner_leviCivitaConnection_horizontalLift (hZ₁ (f x))]
-  rw [curvatureOperator_apply, curvatureOperator_apply, inner_sub_left, inner_sub_left, h₁, h₂,
-    h₃, inner_sub_left, inner_sub_left]
+          h.oneillA x (h.horizontalLift x (Z (f x))) (h.horizontalLift x w)⟫_ℝ := by
+  have hw := Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x w)
+  conv_lhs =>
+    rw [← hw, ← Submodule.inner_starProjection_left_eq_right,
+      h.starProjection_orthogonal_ker_curvatureOperator_horizontalLift hX hY hZ x]
+  simp only [inner_sub_left, inner_add_left, real_inner_smul_left,
+    (h.horizontalLift x).inner_map_map, h.inner_oneillA]
   ring
+
+end Operator
+
+/-! ### Pointwise horizontal curvature equations -/
+
+section Tensor
+
+variable [T2Space M] [T2Space N] {x : M}
+
+/-- **Horizontal projection of the `(1, 3)` curvature tensor on horizontal lifts.** -/
+theorem starProjection_orthogonal_ker_curvatureTensor_horizontalLift
+    (u v w : TangentSpace J (f x)) :
+    (mfderiv I J f x).kerᗮ.starProjection
+        ((leviCivitaConnection I M).curvatureTensor x
+          (h.horizontalLift x u) (h.horizontalLift x v) (h.horizontalLift x w)) =
+      h.horizontalLift x ((leviCivitaConnection J N).curvatureTensor (f x) u v w) +
+        h.oneillA x (h.horizontalLift x u)
+          (h.oneillA x (h.horizontalLift x v) (h.horizontalLift x w)) -
+        h.oneillA x (h.horizontalLift x v)
+          (h.oneillA x (h.horizontalLift x u) (h.horizontalLift x w)) -
+        (2 : ℝ) • h.oneillA x (h.horizontalLift x w)
+          (h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)) := by
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq J F ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq J F ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq J F ∞ w
+  have hXL := h.contMDiff_horizontalLift hX (by simp)
+  have hYL := h.contMDiff_horizontalLift hY (by simp)
+  have hZL := h.contMDiff_horizontalLift hZ (by simp)
+  have hcurvM := (leviCivitaConnection I M).curvatureTensor_apply x hXL hYL hZL
+  have hcurvN := (leviCivitaConnection J N).curvatureTensor_apply (f x) hX hY hZ
+  rw [hcurvM, hcurvN]
+  exact h.starProjection_orthogonal_ker_curvatureOperator_horizontalLift hX hY hZ x
+
+/-- **Horizontal projection of the `(1, 3)` curvature tensor on horizontal vectors.** -/
+theorem starProjection_orthogonal_ker_curvatureTensor_of_mem
+    {u v w : TangentSpace I x}
+    (hu : u ∈ (mfderiv I J f x).kerᗮ)
+    (hv : v ∈ (mfderiv I J f x).kerᗮ)
+    (hw : w ∈ (mfderiv I J f x).kerᗮ) :
+    (mfderiv I J f x).kerᗮ.starProjection
+        ((leviCivitaConnection I M).curvatureTensor x u v w) =
+      h.horizontalLift x ((leviCivitaConnection J N).curvatureTensor (f x)
+          (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x w)) +
+        h.oneillA x u (h.oneillA x v w) -
+        h.oneillA x v (h.oneillA x u w) -
+        (2 : ℝ) • h.oneillA x w (h.oneillA x u v) := by
+  conv_lhs =>
+    rw [← h.horizontalLift_mfderiv_of_mem x hu, ← h.horizontalLift_mfderiv_of_mem x hv,
+      ← h.horizontalLift_mfderiv_of_mem x hw]
+  rw [h.starProjection_orthogonal_ker_curvatureTensor_horizontalLift,
+    h.horizontalLift_mfderiv_of_mem x hu, h.horizontalLift_mfderiv_of_mem x hv,
+    h.horizontalLift_mfderiv_of_mem x hw]
+
+/-- The `(1, 3)` curvature tensor of the base manifold `N` expressed as the differential of
+horizontal curvature and quadratic `A`-tensor terms on `M`. -/
+theorem curvatureTensor_eq_mfderiv_horizontalLift_add (u v w : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).curvatureTensor (f x) u v w =
+      mfderiv I J f x
+        ((leviCivitaConnection I M).curvatureTensor x
+            (h.horizontalLift x u) (h.horizontalLift x v) (h.horizontalLift x w) -
+          h.oneillA x (h.horizontalLift x u)
+            (h.oneillA x (h.horizontalLift x v) (h.horizontalLift x w)) +
+          h.oneillA x (h.horizontalLift x v)
+            (h.oneillA x (h.horizontalLift x u) (h.horizontalLift x w)) +
+          (2 : ℝ) • h.oneillA x (h.horizontalLift x w)
+            (h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v))) := by
+  have hcurv := congrArg (mfderiv I J f x)
+    (h.starProjection_orthogonal_ker_curvatureTensor_horizontalLift u v w)
+  rw [← ContinuousLinearMap.comp_apply, (mfderiv I J f x).comp_starProjection_orthogonal_ker]
+    at hcurv
+  simp only [map_add, map_sub, map_smul, h.mfderiv_horizontalLift] at hcurv ⊢
+  rw [hcurv]
+  abel
+
+/-- **O'Neill's horizontal curvature equation** expressing the `(0, 4)` Riemann curvature tensor of
+the base `N` in terms of `M` and O'Neill's `A` tensor. -/
+theorem riemannCurvatureTensor_eq_horizontalLift_add (u v w z : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).riemannCurvatureTensor (f x) u v w z =
+      (leviCivitaConnection I M).riemannCurvatureTensor x
+          (h.horizontalLift x u) (h.horizontalLift x v)
+          (h.horizontalLift x w) (h.horizontalLift x z) +
+        ⟪h.oneillA x (h.horizontalLift x v) (h.horizontalLift x w),
+          h.oneillA x (h.horizontalLift x u) (h.horizontalLift x z)⟫_ℝ -
+        ⟪h.oneillA x (h.horizontalLift x u) (h.horizontalLift x w),
+          h.oneillA x (h.horizontalLift x v) (h.horizontalLift x z)⟫_ℝ -
+        2 * ⟪h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v),
+          h.oneillA x (h.horizontalLift x w) (h.horizontalLift x z)⟫_ℝ := by
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq J F ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq J F ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq J F ∞ w
+  have hcurv := h.inner_curvatureOperator_horizontalLift hX hY hZ x z
+  rw [← (leviCivitaConnection I M).curvatureTensor_apply x
+      (h.contMDiff_horizontalLift hX (by simp)) (h.contMDiff_horizontalLift hY (by simp))
+      (h.contMDiff_horizontalLift hZ (by simp)),
+    ← (leviCivitaConnection J N).curvatureTensor_apply (f x) hX hY hZ,
+    ← riemannCurvatureTensor_apply, ← riemannCurvatureTensor_apply] at hcurv
+  linarith
 
 /-- **O'Neill's horizontal curvature equation.** For horizontal vectors `u`, `v`, `w` and `z`,
 `⟨R_M(u, v) w, z⟩ = ⟨R_N(f_* u, f_* v) f_* w, f_* z⟩ + 2 ⟨A_u v, A_w z⟩ - ⟨A_v w, A_u z⟩ +
 ⟨A_u w, A_v z⟩`. -/
-theorem inner_curvatureTensor_of_mem_orthogonal_ker [T2Space M] [T2Space N] {x : M}
+theorem inner_curvatureTensor_of_mem_orthogonal_ker
     {u v w z : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ)
     (hv : v ∈ (mfderiv I J f x).kerᗮ) (hw : w ∈ (mfderiv I J f x).kerᗮ)
     (hz : z ∈ (mfderiv I J f x).kerᗮ) :
@@ -243,34 +330,18 @@ theorem inner_curvatureTensor_of_mem_orthogonal_ker [T2Space M] [T2Space N] {x :
           (mfderiv I J f x v) (mfderiv I J f x w), mfderiv I J f x z⟫_ℝ +
         2 * ⟪h.oneillA x u v, h.oneillA x w z⟫_ℝ - ⟪h.oneillA x v w, h.oneillA x u z⟫_ℝ +
         ⟪h.oneillA x u w, h.oneillA x v z⟫_ℝ := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  -- Extend `f_* u`, `f_* v` and `f_* w` to smooth fields on the base, whose lifts take the values
-  -- `u`, `v` and `w`.
-  obtain ⟨X, hX, hXx⟩ := FiberBundle.exists_contMDiff_section_eq J F ∞ (mfderiv I J f x u)
-  obtain ⟨Y, hY, hYx⟩ := FiberBundle.exists_contMDiff_section_eq J F ∞ (mfderiv I J f x v)
-  obtain ⟨Z, hZ, hZx⟩ := FiberBundle.exists_contMDiff_section_eq J F ∞ (mfderiv I J f x w)
-  have hu' : h.horizontalLift x (X (f x)) = u := by
-    rw [hXx, h.horizontalLift_mfderiv_of_mem x hu]
-  have hv' : h.horizontalLift x (Y (f x)) = v := by
-    rw [hYx, h.horizontalLift_mfderiv_of_mem x hv]
-  have hw' : h.horizontalLift x (Z (f x)) = w := by
-    rw [hZx, h.horizontalLift_mfderiv_of_mem x hw]
-  have hX' : CMDiff ∞ (T% fun y ↦ h.horizontalLift y (X (f y))) :=
-    fun y ↦ h.contMDiffAt_horizontalLift (hX (f y)) (by simp)
-  have hY' : CMDiff ∞ (T% fun y ↦ h.horizontalLift y (Y (f y))) :=
-    fun y ↦ h.contMDiffAt_horizontalLift (hY (f y)) (by simp)
-  have hZ' : CMDiff ∞ (T% fun y ↦ h.horizontalLift y (Z (f y))) :=
-    fun y ↦ h.contMDiffAt_horizontalLift (hZ (f y)) (by simp)
-  have hcurv := h.inner_curvatureOperator_horizontalLift hX hY hZ x (mfderiv I J f x z)
-  rw [← curvatureTensor_apply _ x hX' hY' hZ', ← curvatureTensor_apply _ (f x) hX hY hZ, hu', hv',
-    hw', h.horizontalLift_mfderiv_of_mem x hz, hXx, hYx, hZx] at hcurv
-  rw [hcurv, h.oneillA_antisymm hz hu, h.oneillA_antisymm hz hv, h.oneillA_antisymm hz hw,
-    inner_neg_right, inner_neg_right, inner_neg_right]
-  ring
+  have hcurv := h.riemannCurvatureTensor_eq_horizontalLift_add
+    (mfderiv I J f x u) (mfderiv I J f x v) (mfderiv I J f x w) (mfderiv I J f x z)
+  rw [h.horizontalLift_mfderiv_of_mem x hu, h.horizontalLift_mfderiv_of_mem x hv,
+    h.horizontalLift_mfderiv_of_mem x hw, h.horizontalLift_mfderiv_of_mem x hz,
+    riemannCurvatureTensor_apply, riemannCurvatureTensor_apply] at hcurv
+  linarith
+
+/-! ### Sectional curvature of horizontal planes -/
 
 /-- **O'Neill's horizontal curvature formula.** For horizontal vectors `u` and `w`,
 `⟨R_M(u, w) w, u⟩ = ⟨R_N(f_* u, f_* w) f_* w, f_* u⟩ - 3 |A_u w|²`. -/
-theorem inner_curvatureTensor_self_of_mem_orthogonal_ker [T2Space M] [T2Space N] {x : M}
+theorem inner_curvatureTensor_self_of_mem_orthogonal_ker
     {u w : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ)
     (hw : w ∈ (mfderiv I J f x).kerᗮ) :
     ⟪(leviCivitaConnection I M).curvatureTensor x u w w, u⟫_ℝ =
@@ -281,24 +352,328 @@ theorem inner_curvatureTensor_self_of_mem_orthogonal_ker [T2Space M] [T2Space N]
     h.oneillA_antisymm hw hu, inner_zero_left, inner_neg_right, real_inner_self_eq_norm_sq]
   ring
 
+/-- Sectional-curvature numerator identity on horizontal lifts:
+`⟪R_N(u, v)v, u⟫ = ⟪R_M(u', v')v', u'⟫ + 3 ‖A_u' v'‖²` for arbitrary base vectors `u, v`. -/
+theorem inner_curvatureTensor_self_eq_horizontalLift_add (u v : TangentSpace J (f x)) :
+    ⟪(leviCivitaConnection J N).curvatureTensor (f x) u v v, u⟫_ℝ =
+      ⟪(leviCivitaConnection I M).curvatureTensor x
+          (h.horizontalLift x u) (h.horizontalLift x v)
+          (h.horizontalLift x v), h.horizontalLift x u⟫_ℝ +
+        3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 := by
+  have hcurv := h.inner_curvatureTensor_self_of_mem_orthogonal_ker
+    (h.horizontalLift_mem_orthogonal_ker x u) (h.horizontalLift_mem_orthogonal_ker x v)
+  simp only [h.mfderiv_horizontalLift] at hcurv
+  linarith
+
 /-- **O'Neill's formula for sectional curvature.** The image under `f_*` of the plane spanned by
 horizontal vectors `u` and `w` has sectional curvature larger by `3 |A_u w|² / |u ∧ w|²`. For an
 orthonormal pair this is `K_N(f_* u, f_* w) = K_M(u, w) + 3 |A_u w|²`. On a dependent pair both
 sides are zero. -/
-theorem sectionalCurvature_mfderiv [T2Space M] [T2Space N] {x : M} {u w : TangentSpace I x}
+theorem sectionalCurvature_mfderiv {u w : TangentSpace I x}
     (hu : u ∈ (mfderiv I J f x).kerᗮ) (hw : w ∈ (mfderiv I J f x).kerᗮ) :
     (leviCivitaConnection J N).sectionalCurvature (isMetricCompatible_leviCivitaConnection J)
         (f x) (mfderiv I J f x u) (mfderiv I J f x w) =
       (leviCivitaConnection I M).sectionalCurvature (isMetricCompatible_leviCivitaConnection I)
           x u w + 3 * ‖h.oneillA x u w‖ ^ 2 / (Matrix.gram ℝ ![u, w]).det := by
-  have hinner {a b : TangentSpace I x} (ha : a ∈ (mfderiv I J f x).kerᗮ)
-      (hb : b ∈ (mfderiv I J f x).kerᗮ) :
-      ⟪mfderiv I J f x a, mfderiv I J f x b⟫_ℝ = ⟪a, b⟫_ℝ := by
-    conv_rhs => rw [← h.horizontalLift_mfderiv_of_mem x ha, ← h.horizontalLift_mfderiv_of_mem x hb]
-    exact (LinearIsometry.inner_map_map _ _ _).symm
-  rw [sectionalCurvature_apply, sectionalCurvature_apply, Matrix.real_det_gram_fin_two,
-    Matrix.real_det_gram_fin_two, hinner hu hu, hinner hw hw, hinner hu hw,
+  have hgram : Matrix.gram ℝ ![mfderiv I J f x u, mfderiv I J f x w] = Matrix.gram ℝ ![u, w] := by
+    rw [← (h.horizontalLift x).gram_pair,
+      h.horizontalLift_mfderiv_of_mem x hu, h.horizontalLift_mfderiv_of_mem x hw]
+  rw [sectionalCurvature_apply, sectionalCurvature_apply, hgram,
     h.inner_curvatureTensor_self_of_mem_orthogonal_ker hu hw, ← add_div]
   ring
+
+/-- **O'Neill's horizontal sectional curvature formula** on arbitrary base tangent vectors `u, v`.
+On linearly dependent pairs both totalized Gram-determinant quotients vanish, so no linear
+independence hypothesis is required. -/
+theorem sectionalCurvature_eq_horizontalLift_add_div (u v : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x) u v =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x
+        (h.horizontalLift x u) (h.horizontalLift x v) +
+        3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 /
+          (Matrix.gram ℝ ![u, v]).det := by
+  simpa only [h.mfderiv_horizontalLift, (h.horizontalLift x).gram_pair] using
+    h.sectionalCurvature_mfderiv
+      (h.horizontalLift_mem_orthogonal_ker x u) (h.horizontalLift_mem_orthogonal_ker x v)
+
+/-- On an orthonormal pair in `T_(f x) N`, the base sectional curvature exceeds the horizontal
+sectional curvature by `3 ‖A_u' v'‖²`. -/
+theorem sectionalCurvature_eq_horizontalLift_add_of_orthonormal
+    {u v : TangentSpace J (f x)} (huv : Orthonormal ℝ ![u, v]) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x) u v =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x
+        (h.horizontalLift x u) (h.horizontalLift x v) +
+        3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 := by
+  rw [h.sectionalCurvature_eq_horizontalLift_add_div, Matrix.gram_eq_one_iff_orthonormal.mpr huv,
+    Matrix.det_one, div_one]
+
+/-- On an orthonormal horizontal pair `u, v ∈ (ker df_x)ᗮ`, the base sectional curvature is
+`K_M(u, v) + 3 ‖A_u v‖²`. -/
+theorem sectionalCurvature_mfderiv_eq_add_of_orthonormal
+    {u v : TangentSpace I x}
+    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ)
+    (huv : Orthonormal ℝ ![u, v]) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x)
+        (mfderiv I J f x u) (mfderiv I J f x v) =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x u v +
+        3 * ‖h.oneillA x u v‖ ^ 2 := by
+  rw [h.sectionalCurvature_mfderiv hu hv,
+    Matrix.gram_eq_one_iff_orthonormal.mpr huv, Matrix.det_one, div_one]
+
+/-- **O'Neill's horizontal sectional curvature formula in Lie-bracket form** for vector fields `X`
+and `Y` which are differentiable at `x` and horizontal near `x`. -/
+theorem sectionalCurvature_mfderiv_eq_add_div_norm_mlieBracket
+    {X Y : Π y : M, TangentSpace I y}
+    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
+    (hXh : ∀ᶠ y in 𝓝 x, X y ∈ (mfderiv I J f y).kerᗮ)
+    (hYh : ∀ᶠ y in 𝓝 x, Y y ∈ (mfderiv I J f y).kerᗮ) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x)
+        (mfderiv I J f x (X x)) (mfderiv I J f x (Y x)) =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x (X x) (Y x) +
+        (3 / 4 : ℝ) * ‖(mfderiv I J f x).ker.starProjection (mlieBracket I X Y x)‖ ^ 2 /
+          (Matrix.gram ℝ ![X x, Y x]).det := by
+  rw [h.sectionalCurvature_mfderiv hXh.self_of_nhds hYh.self_of_nhds,
+    h.starProjection_ker_mlieBracket hX hY hXh hYh, norm_smul, Real.norm_ofNat]
+  ring
+
+/-- **O'Neill's horizontal sectional curvature formula in Lie-bracket form** for horizontal vector
+fields `X, Y` whose values at `x` are orthonormal:
+`K_N(df_x(X x), df_x(Y x)) = K_M(X x, Y x) + (3 / 4) ‖v [X, Y]_x‖²`. -/
+theorem sectionalCurvature_mfderiv_eq_add_norm_mlieBracket_of_orthonormal
+    {X Y : Π y : M, TangentSpace I y}
+    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x)
+    (hXh : ∀ᶠ y in 𝓝 x, X y ∈ (mfderiv I J f y).kerᗮ)
+    (hYh : ∀ᶠ y in 𝓝 x, Y y ∈ (mfderiv I J f y).kerᗮ)
+    (hXY : Orthonormal ℝ ![X x, Y x]) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x)
+        (mfderiv I J f x (X x)) (mfderiv I J f x (Y x)) =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x (X x) (Y x) +
+        (3 / 4 : ℝ) * ‖(mfderiv I J f x).ker.starProjection (mlieBracket I X Y x)‖ ^ 2 := by
+  rw [h.sectionalCurvature_mfderiv_eq_add_div_norm_mlieBracket hX hY hXh hYh,
+    Matrix.gram_eq_one_iff_orthonormal.mpr hXY, Matrix.det_one, div_one]
+
+/-! ### Curvature monotonicity, rigidity, and prescribed total-space curvature -/
+
+/-- **A Riemannian submersion is sectional-curvature non-decreasing on horizontal planes.** -/
+theorem sectionalCurvature_horizontalLift_le (u v : TangentSpace J (f x)) :
+    (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x
+        (h.horizontalLift x u) (h.horizontalLift x v) ≤
+      (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x) u v := by
+  rw [h.sectionalCurvature_eq_horizontalLift_add_div]
+  exact le_add_of_nonneg_right
+    (div_nonneg (by positivity) (Matrix.posSemidef_gram ℝ ![u, v]).det_nonneg)
+
+/-- Horizontal sectional curvature at `x` is bounded above by the base sectional curvature of the
+projected plane at `f x`. -/
+theorem sectionalCurvature_le_sectionalCurvature_mfderiv
+    {u v : TangentSpace I x}
+    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
+    (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x u v ≤
+      (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x)
+        (mfderiv I J f x u) (mfderiv I J f x v) := by
+  simpa only [h.horizontalLift_mfderiv_of_mem x hu, h.horizontalLift_mfderiv_of_mem x hv] using
+    h.sectionalCurvature_horizontalLift_le (mfderiv I J f x u) (mfderiv I J f x v)
+
+/-- For any pair `u, v ∈ T_(f x) N`, the base sectional curvature equals the horizontal sectional
+curvature if and only if `A_u' v' = 0`. On linearly dependent pairs both sides hold trivially since
+the Gram-determinant quotients vanish and `A` is alternating on horizontal vectors. -/
+theorem sectionalCurvature_eq_horizontalLift_iff (u v : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x) u v =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x
+        (h.horizontalLift x u) (h.horizontalLift x v) ↔
+      h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v) = 0 := by
+  by_cases huv : LinearIndependent ℝ ![u, v]
+  · have hdet : 0 < (Matrix.gram ℝ ![u, v]).det :=
+      (Matrix.posDef_gram_of_linearIndependent huv).det_pos
+    rw [h.sectionalCurvature_eq_horizontalLift_add_div, add_eq_left, div_eq_zero_iff,
+      or_iff_left hdet.ne', mul_eq_zero, or_iff_right (by norm_num), sq_eq_zero_iff, norm_eq_zero]
+  · have hdet : (Matrix.gram ℝ ![u, v]).det = 0 :=
+      not_ne_iff.mp (Matrix.det_gram_ne_zero_iff_linearIndependent.not.mpr huv)
+    have hA : h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v) = 0 := by
+      by_cases hu : u = 0
+      · simp [hu]
+      · obtain ⟨c, hc⟩ := not_forall.mp ((LinearIndependent.pair_iff' hu).not.mp huv)
+        rw [← not_not.mp hc, map_smul, map_smul,
+          h.oneillA_self (h.horizontalLift_mem_orthogonal_ker x u), smul_zero]
+    rw [h.sectionalCurvature_eq_horizontalLift_add_div, hdet, hA, div_zero, add_zero]
+    simp
+
+/-- For any horizontal vectors `u, v ∈ (ker df_x)ᗮ`, the base sectional curvature equals the
+total-space sectional curvature if and only if `A_u v = 0`. -/
+theorem sectionalCurvature_mfderiv_eq_iff
+    {u v : TangentSpace I x}
+    (hu : u ∈ (mfderiv I J f x).kerᗮ) (hv : v ∈ (mfderiv I J f x).kerᗮ) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x)
+        (mfderiv I J f x u) (mfderiv I J f x v) =
+      (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x u v ↔
+      h.oneillA x u v = 0 := by
+  simpa only [h.horizontalLift_mfderiv_of_mem x hu, h.horizontalLift_mfderiv_of_mem x hv] using
+    h.sectionalCurvature_eq_horizontalLift_iff (mfderiv I J f x u) (mfderiv I J f x v)
+
+/-- When `oneillA x = 0`, horizontal lifts preserve the `(0, 4)` Riemann curvature tensor at `x`. -/
+theorem riemannCurvatureTensor_eq_of_oneillA_eq_zero (hA : h.oneillA x = 0)
+    (u v w z : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).riemannCurvatureTensor (f x) u v w z =
+      (leviCivitaConnection I M).riemannCurvatureTensor x
+        (h.horizontalLift x u) (h.horizontalLift x v)
+        (h.horizontalLift x w) (h.horizontalLift x z) := by
+  simp [h.riemannCurvatureTensor_eq_horizontalLift_add, hA]
+
+/-- When `oneillA x = 0`, the `(1, 3)` base curvature tensor at `f x` is the differential of the
+total-space curvature tensor on horizontal lifts at `x`. -/
+theorem curvatureTensor_eq_mfderiv_of_oneillA_eq_zero (hA : h.oneillA x = 0)
+    (u v w : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).curvatureTensor (f x) u v w =
+      mfderiv I J f x
+        ((leviCivitaConnection I M).curvatureTensor x
+          (h.horizontalLift x u) (h.horizontalLift x v) (h.horizontalLift x w)) := by
+  simp [h.curvatureTensor_eq_mfderiv_horizontalLift_add, hA]
+
+/-- **Pointwise sectional-curvature rigidity.** Every tangent pair at `f x` has the same sectional
+curvature in `N` as its horizontal lift in `M` at `x` if and only if O'Neill's horizontal tensor
+`A` vanishes at `x`. -/
+theorem forall_sectionalCurvature_eq_horizontalLift_iff :
+    (∀ u v : TangentSpace J (f x),
+      (leviCivitaConnection J N).sectionalCurvature
+          (isMetricCompatible_leviCivitaConnection J) (f x) u v =
+        (leviCivitaConnection I M).sectionalCurvature
+          (isMetricCompatible_leviCivitaConnection I) x
+          (h.horizontalLift x u) (h.horizontalLift x v)) ↔
+      h.oneillA x = 0 := by
+  rw [h.oneillA_eq_zero_iff_horizontalLift]
+  exact forall₂_congr fun u v ↦ h.sectionalCurvature_eq_horizontalLift_iff u v
+
+/-- A lower sectional-curvature bound on horizontal planes at `x` descends to `T_(f x) N`. -/
+theorem le_sectionalCurvature_of_forall_mem_orthogonal_ker {κ : ℝ}
+    (hκ : ∀ u' v' : TangentSpace I x,
+      u' ∈ (mfderiv I J f x).kerᗮ → v' ∈ (mfderiv I J f x).kerᗮ →
+      LinearIndependent ℝ ![u', v'] →
+      κ ≤ (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x u' v')
+    {u v : TangentSpace J (f x)} (huv : LinearIndependent ℝ ![u, v]) :
+    κ ≤ (leviCivitaConnection J N).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection J) (f x) u v :=
+  (hκ _ _ (h.horizontalLift_mem_orthogonal_ker x u) (h.horizontalLift_mem_orthogonal_ker x v)
+    ((h.horizontalLift x).linearIndependent_pair_iff.mpr huv)).trans
+    (h.sectionalCurvature_horizontalLift_le u v)
+
+/-- A lower sectional-curvature bound on all planes at `x` descends to `T_(f x) N`. -/
+theorem le_sectionalCurvature_of_forall {κ : ℝ}
+    (hκ : ∀ u v : TangentSpace I x, LinearIndependent ℝ ![u, v] →
+      κ ≤ (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) x u v)
+    {u v : TangentSpace J (f x)} (huv : LinearIndependent ℝ ![u, v]) :
+    κ ≤ (leviCivitaConnection J N).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection J) (f x) u v :=
+  h.le_sectionalCurvature_of_forall_mem_orthogonal_ker (fun u' v' _ _ ↦ hκ u' v') huv
+
+/-- Under a surjective Riemannian submersion, a global lower sectional-curvature bound on `M`
+descends to a global lower sectional-curvature bound on `N`. -/
+theorem le_sectionalCurvature_of_surjective (hsurj : Function.Surjective f) {κ : ℝ}
+    (hκ : ∀ (p : M) (u v : TangentSpace I p), LinearIndependent ℝ ![u, v] →
+      κ ≤ (leviCivitaConnection I M).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection I) p u v)
+    (y : N) {u v : TangentSpace J y} (huv : LinearIndependent ℝ ![u, v]) :
+    κ ≤ (leviCivitaConnection J N).sectionalCurvature
+      (isMetricCompatible_leviCivitaConnection J) y u v := by
+  obtain ⟨p, rfl⟩ := hsurj y
+  exact h.le_sectionalCurvature_of_forall (hκ p) huv
+
+/-- When `M` has prescribed sectional curvature `κ` at `x`, the base sectional curvature of any
+linearly independent pair `u, v ∈ T_(f x) N` is `κ + 3 ‖A_u' v'‖² / det(Gram(u, v))`. -/
+theorem sectionalCurvature_eq_add_div_of_hasSectionalCurvatureAt {κ : ℝ}
+    (hκ : (leviCivitaConnection I M).HasSectionalCurvatureAt
+      (isMetricCompatible_leviCivitaConnection I) x κ)
+    {u v : TangentSpace J (f x)} (huv : LinearIndependent ℝ ![u, v]) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x) u v =
+      κ + 3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 /
+        (Matrix.gram ℝ ![u, v]).det := by
+  rw [h.sectionalCurvature_eq_horizontalLift_add_div,
+    hκ.sectionalCurvature_eq _ _ ((h.horizontalLift x).linearIndependent_pair_iff.mpr huv)]
+
+/-- When `M` has prescribed sectional curvature `κ` at `x`, the base sectional curvature of any
+orthonormal pair `u, v ∈ T_(f x) N` is `κ + 3 ‖A_u' v'‖²`. -/
+theorem sectionalCurvature_eq_add_of_orthonormal_of_hasSectionalCurvatureAt {κ : ℝ}
+    (hκ : (leviCivitaConnection I M).HasSectionalCurvatureAt
+      (isMetricCompatible_leviCivitaConnection I) x κ)
+    {u v : TangentSpace J (f x)} (huv : Orthonormal ℝ ![u, v]) :
+    (leviCivitaConnection J N).sectionalCurvature
+        (isMetricCompatible_leviCivitaConnection J) (f x) u v =
+      κ + 3 * ‖h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v)‖ ^ 2 := by
+  rw [h.sectionalCurvature_eq_add_div_of_hasSectionalCurvatureAt hκ huv.linearIndependent,
+    Matrix.gram_eq_one_iff_orthonormal.mpr huv, Matrix.det_one, div_one]
+
+/-! ### Horizontal trace formulas for base Ricci and scalar curvature -/
+
+/-- In an orthonormal basis `b` of `T_(f x) N`, the base Ricci curvature is the horizontal trace of
+the Riemann curvature tensor of `M` plus `3 ∑ i, ⟪A_(b' i) u', A_(b' i) v'⟫`. -/
+theorem ricciTensor_eq_sum_horizontalLift {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x))) (u v : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).ricciTensor (f x) u v =
+      (∑ i, (leviCivitaConnection I M).riemannCurvatureTensor x
+          (h.horizontalLift x (b i)) (h.horizontalLift x u)
+          (h.horizontalLift x v) (h.horizontalLift x (b i))) +
+        3 * ∑ i, ⟪h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x u),
+          h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x v)⟫_ℝ := by
+  rw [(leviCivitaConnection J N).ricciTensor_eq_sum_riemannCurvatureTensor (f x) b u v,
+    Finset.mul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hbi := h.horizontalLift_mem_orthogonal_ker x (b i)
+  have hu := h.horizontalLift_mem_orthogonal_ker x u
+  have hv := h.horizontalLift_mem_orthogonal_ker x v
+  rw [h.riemannCurvatureTensor_eq_horizontalLift_add (b i) u v (b i),
+    h.oneillA_self hbi, inner_zero_right,
+    h.oneillA_antisymm hu hbi, h.oneillA_antisymm hv hbi,
+    inner_neg_right, inner_neg_right,
+    real_inner_comm (h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x v))]
+  ring
+
+/-- On the diagonal, the base Ricci curvature `Ric_N(u, u)` is the horizontal sectional-numerator
+sum on `M` plus `3 ∑ i, ‖A_(b' i) u'‖²`. -/
+theorem ricciTensor_self_eq_sum_horizontalLift {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x))) (u : TangentSpace J (f x)) :
+    (leviCivitaConnection J N).ricciTensor (f x) u u =
+      (∑ i, (leviCivitaConnection I M).riemannCurvatureTensor x
+          (h.horizontalLift x (b i)) (h.horizontalLift x u)
+          (h.horizontalLift x u) (h.horizontalLift x (b i))) +
+        3 * ∑ i, ‖h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x u)‖ ^ 2 := by
+  rw [h.ricciTensor_eq_sum_horizontalLift b u u]
+  simp only [real_inner_self_eq_norm_sq]
+
+/-- In an orthonormal basis `b` of `T_(f x) N`, the base scalar curvature is the double horizontal
+trace of `Rm_M` plus `3 ∑ j, ∑ i, ‖A_(b' i) (b' j)‖²`. -/
+theorem scalarCurvature_eq_sum_horizontalLift {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x))) :
+    (leviCivitaConnection J N).scalarCurvature (f x) =
+      (∑ j, ∑ i, (leviCivitaConnection I M).riemannCurvatureTensor x
+          (h.horizontalLift x (b i)) (h.horizontalLift x (b j))
+          (h.horizontalLift x (b j)) (h.horizontalLift x (b i))) +
+        3 * ∑ j, ∑ i, ‖h.oneillA x (h.horizontalLift x (b i)) (h.horizontalLift x (b j))‖ ^ 2 := by
+  rw [(leviCivitaConnection J N).scalarCurvature_eq_sum_riemannCurvatureTensor (f x) b,
+    Finset.mul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have hj := h.ricciTensor_self_eq_sum_horizontalLift b (b j)
+  rwa [(leviCivitaConnection J N).ricciTensor_eq_sum_riemannCurvatureTensor (f x) b (b j) (b j)]
+    at hj
+
+end Tensor
 
 end TauCeti.IsRiemannianSubmersion

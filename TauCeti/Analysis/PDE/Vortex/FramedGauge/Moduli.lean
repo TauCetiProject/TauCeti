@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.Coupling
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
@@ -17,7 +18,7 @@ import TauCeti.Topology.Compactness.Compact
 
 A smooth framed degree-`m` plane vortex is a smooth field `x` on `ℂ` solving the vortex
 equations whose section satisfies `α(z) (z / |z|)⁻ᵐ → 1` at infinity
-(`TauCeti.Vortex.framedVortexSubMulAction`). Its framed gauge orbits are classified by their
+(`TauCeti.Vortex.framedVortexSubMulAction 1 m`). Its framed gauge orbits are classified by their
 zero divisors (`TauCeti.Vortex.framedVortexModuliEquiv`). The Fredholm and slice theory of the
 vortex equations is set up on the affine Sobolev space `A_m^k = x_m + H^k`
 (`TauCeti.Vortex.framedFieldSpace`) with its gauge group `G_(k+1)`. This file compares the two
@@ -334,7 +335,7 @@ theorem exists_contDiff_mem_framedFieldSpace_and_existsUnique_sobolevGaugeGroup_
 theorem sobolevVortexModuliDivisor_surjective {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
     Function.Surjective (sobolevVortexModuliDivisor (f := f) (m := m) (hs := hs) hk) := fun D ↦
   (sobolevVortexDivisor_surjective D).elim fun x hx ↦
-    ⟨Quotient.mk'' ⟨x.1, mem_sobolevVortexSubMulAction.2 x.2⟩, by
+    ⟨Quotient.mk'' ⟨x.val, mem_sobolevVortexSubMulAction.2 x.property⟩, by
       rw [sobolevVortexModuliDivisor_mk]
       exact hx⟩
 
@@ -359,7 +360,7 @@ theorem sobolevVortexModuliEquiv_apply {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
 theorem sobolevVortexModuliEquiv_mk {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
     sobolevVortexModuliEquiv hk (Quotient.mk'' x) =
-      sobolevVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩ :=
+      sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ :=
   sobolevVortexModuliDivisor_mk x
 
 /-- The inverse Sobolev moduli equivalence sends the divisor of a `C²` vortex of `A_m^k` back to
@@ -368,7 +369,7 @@ its `G_(k+1)`-orbit. -/
 theorem sobolevVortexModuliEquiv_symm_sobolevVortexDivisor {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
     (x : sobolevVortices f m k) :
     (sobolevVortexModuliEquiv (f := f) (m := m) (hs := hs) hk).symm (sobolevVortexDivisor x) =
-      Quotient.mk'' ⟨x.1, mem_sobolevVortexSubMulAction.2 x.2⟩ := by
+      Quotient.mk'' ⟨x.val, mem_sobolevVortexSubMulAction.2 x.property⟩ := by
   rw [Equiv.symm_apply_eq, sobolevVortexModuliEquiv_mk]
 
 /-- **Equivalence between the Sobolev and smooth framed vortex moduli spaces.** For `k ≥ 4`, the
@@ -378,13 +379,13 @@ same zero divisor. -/
 def sobolevVortexModuliEquivFramedVortexModuli {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
     MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
       (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) ≃
-      MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m) :=
-  (sobolevVortexModuliEquiv hk).trans (framedVortexModuliEquiv m).symm
+      MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction 1 m) :=
+  (sobolevVortexModuliEquiv hk).trans (framedVortexModuliEquiv one_pos m).symm
 
 /-- `sobolevVortexModuliEquivFramedVortexModuli` factors through `Sym ℂ m`. -/
 theorem sobolevVortexModuliEquivFramedVortexModuli_eq_trans {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) :
     sobolevVortexModuliEquivFramedVortexModuli (f := f) (m := m) (hs := hs) hk =
-      (sobolevVortexModuliEquiv hk).trans (framedVortexModuliEquiv m).symm :=
+      (sobolevVortexModuliEquiv hk).trans (framedVortexModuliEquiv one_pos m).symm :=
   (rfl)
 
 /-- Evaluation of `sobolevVortexModuliEquivFramedVortexModuli` via the divisor. -/
@@ -392,15 +393,15 @@ theorem sobolevVortexModuliEquivFramedVortexModuli_apply {hs : 1 < (k : ℝ) + 1
     (q : MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
       (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)) :
     sobolevVortexModuliEquivFramedVortexModuli hk q =
-      (framedVortexModuliEquiv m).symm (sobolevVortexModuliEquiv hk q) :=
+      (framedVortexModuliEquiv one_pos m).symm (sobolevVortexModuliEquiv hk q) :=
   (rfl)
 
 /-- Evaluation of the inverse of `sobolevVortexModuliEquivFramedVortexModuli` via the divisor. -/
 theorem sobolevVortexModuliEquivFramedVortexModuli_symm_apply {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
-    (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
+    (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction 1 m)) :
     (sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm q =
       (sobolevVortexModuliEquiv (f := f) (m := m) (hs := hs) hk).symm
-        (framedVortexModuliEquiv m q) :=
+        (framedVortexModuliEquiv one_pos m q) :=
   (rfl)
 
 /-- `sobolevVortexModuliEquivFramedVortexModuli` preserves the divisor of a Sobolev vortex orbit. -/
@@ -409,7 +410,7 @@ theorem framedVortexModuliEquiv_sobolevVortexModuliEquivFramedVortexModuli {hs :
     (hk : 3 < k)
     (q : MulAction.orbitRel.Quotient (sobolevGaugeGroup hs)
       (sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)) :
-    framedVortexModuliEquiv m (sobolevVortexModuliEquivFramedVortexModuli hk q) =
+    framedVortexModuliEquiv one_pos m (sobolevVortexModuliEquivFramedVortexModuli hk q) =
       sobolevVortexModuliDivisor hk q := by
   simp [sobolevVortexModuliEquivFramedVortexModuli]
 
@@ -418,22 +419,12 @@ framed vortex orbit. -/
 @[simp]
 theorem sobolevVortexModuliDivisor_sobolevVortexModuliEquivFramedVortexModuli_symm
     {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
-    (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
+    (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction 1 m)) :
     sobolevVortexModuliDivisor hk
       ((sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm q) =
-      framedVortexModuliEquiv m q := by
+      framedVortexModuliEquiv one_pos m q := by
   rw [sobolevVortexModuliEquivFramedVortexModuli_symm_apply, ← sobolevVortexModuliEquiv_apply,
     Equiv.apply_symm_apply]
-
-/-- The inverse of `sobolevVortexModuliEquivFramedVortexModuli` preserves the divisor of a smooth
-framed vortex orbit (stated with `sobolevVortexModuliEquiv`). -/
-theorem sobolevVortexModuliEquiv_sobolevVortexModuliEquivFramedVortexModuli_symm
-    {hs : 1 < (k : ℝ) + 1} (hk : 3 < k)
-    (q : MulAction.orbitRel.Quotient framedGaugeGroup (framedVortexSubMulAction m)) :
-    sobolevVortexModuliEquiv hk
-      ((sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm q) =
-      framedVortexModuliEquiv m q :=
-  sobolevVortexModuliDivisor_sobolevVortexModuliEquivFramedVortexModuli_symm hk q
 
 /-- `sobolevVortexModuliEquivFramedVortexModuli` intertwines the inverse divisor maps. -/
 @[simp]
@@ -441,7 +432,7 @@ theorem sobolevVortexModuliEquivFramedVortexModuli_sobolevVortexModuliEquiv_symm
     {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (D : Sym ℂ m) :
     sobolevVortexModuliEquivFramedVortexModuli hk
       ((sobolevVortexModuliEquiv (f := f) (m := m) (hs := hs) hk).symm D) =
-      (framedVortexModuliEquiv m).symm D := by
+      (framedVortexModuliEquiv one_pos m).symm D := by
   simp [sobolevVortexModuliEquivFramedVortexModuli]
 
 /-- Symmetrically, the inverse equivalence intertwines the inverse divisor maps. -/
@@ -449,7 +440,7 @@ theorem sobolevVortexModuliEquivFramedVortexModuli_sobolevVortexModuliEquiv_symm
 theorem sobolevVortexModuliEquivFramedVortexModuli_symm_framedVortexModuliEquiv_symm
     {hs : 1 < (k : ℝ) + 1} (hk : 3 < k) (D : Sym ℂ m) :
     (sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm
-      ((framedVortexModuliEquiv m).symm D) =
+      ((framedVortexModuliEquiv one_pos m).symm D) =
       (sobolevVortexModuliEquiv (f := f) (m := m) (hs := hs) hk).symm D := by
   simp [sobolevVortexModuliEquivFramedVortexModuli]
 
@@ -459,21 +450,23 @@ agree. -/
 @[simp]
 theorem sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)
-    (x' : framedVortexSubMulAction m) :
+    (x' : framedVortexSubMulAction 1 m) :
     sobolevVortexModuliEquivFramedVortexModuli hk (Quotient.mk'' x) = Quotient.mk'' x' ↔
-      sobolevVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩ = framedVortexDivisor x' := by
-  rw [← (framedVortexModuliEquiv m).apply_eq_iff_eq]
+      sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ =
+        framedVortexDivisor x' := by
+  rw [← (framedVortexModuliEquiv one_pos m).apply_eq_iff_eq]
   simp
 
 /-- Symmetrically, the inverse equivalence sends the orbit of a smooth framed vortex `x'` to the
 orbit of a `C²` Sobolev vortex `x` if and only if their zero divisors agree. -/
 @[simp]
 theorem sobolevVortexModuliEquivFramedVortexModuli_symm_mk_eq_mk_iff {hs : 1 < (k : ℝ) + 1}
-    {hk : 3 < k} (x' : framedVortexSubMulAction m)
+    {hk : 3 < k} (x' : framedVortexSubMulAction 1 m)
     (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk) :
     (sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm (Quotient.mk'' x') =
         Quotient.mk'' x ↔
-      framedVortexDivisor x' = sobolevVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩ := by
+      framedVortexDivisor x' =
+        sobolevVortexDivisor ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ := by
   rw [(sobolevVortexModuliEquivFramedVortexModuli hk).symm_apply_eq, eq_comm,
     sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff, eq_comm]
 
@@ -481,20 +474,21 @@ theorem sobolevVortexModuliEquivFramedVortexModuli_symm_mk_eq_mk_iff {hs : 1 < (
 `sobolevVortexModuliEquivFramedVortexModuli` agrees with taking its `framedGaugeGroup`-orbit. -/
 theorem sobolevVortexModuliEquivFramedVortexModuli_mk_of_eq {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)
-    (x' : framedVortexSubMulAction m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
+    (x' : framedVortexSubMulAction 1 m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
     sobolevVortexModuliEquivFramedVortexModuli hk (Quotient.mk'' x) = Quotient.mk'' x' :=
   (sobolevVortexModuliEquivFramedVortexModuli_mk_eq_mk_iff x x').2
-    (sobolevVortexDivisor_eq_framedVortexDivisor ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩ x' hx)
+    (sobolevVortexDivisor_eq_framedVortexDivisor
+      ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ x' hx)
 
 /-- On the `framedGaugeGroup`-orbit of any smooth vortex lying in `A_m^k`, the inverse of
 `sobolevVortexModuliEquivFramedVortexModuli` agrees with taking its `G_(k+1)`-orbit. -/
 theorem sobolevVortexModuliEquivFramedVortexModuli_symm_mk_of_eq {hs : 1 < (k : ℝ) + 1} {hk : 3 < k}
     (x : sobolevVortexSubMulAction (f := f) (m := m) (hs := hs) hk)
-    (x' : framedVortexSubMulAction m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
+    (x' : framedVortexSubMulAction 1 m) (hx : (x : ℂ → EuclideanSpace ℝ (Fin 4)) = x') :
     (sobolevVortexModuliEquivFramedVortexModuli (f := f) (hs := hs) hk).symm (Quotient.mk'' x') =
       Quotient.mk'' x :=
   (sobolevVortexModuliEquivFramedVortexModuli_symm_mk_eq_mk_iff x' x).2
     (sobolevVortexDivisor_eq_framedVortexDivisor
-      ⟨x.1, mem_sobolevVortexSubMulAction.1 x.2⟩ x' hx).symm
+      ⟨x.val, mem_sobolevVortexSubMulAction.1 x.property⟩ x' hx).symm
 
 end TauCeti.Vortex

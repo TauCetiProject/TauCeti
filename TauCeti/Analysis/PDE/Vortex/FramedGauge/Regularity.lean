@@ -292,9 +292,9 @@ theorem coe_mem_sobolevGaugeGroup_of_smul_eq {u : framedGaugeGroup}
     (hu : u • (y : ℂ → EuclideanSpace ℝ (Fin 4)) = x) :
     (u : ℂ → Circle) ∈ sobolevGaugeGroup hs := by
   have huc : ContDiff ℝ 2 fun z ↦ ((u : ℂ → Circle) z : ℂ) :=
-    (((mem_framedGaugeGroup _).1 u.2).1).of_le (by simp)
-  exact mem_sobolevGaugeGroup_of_mem_framedFieldSpace Fact.out y.2 huc
-    (by rw [← framedGaugeGroup_smul, hu]; exact x.2)
+    (((mem_framedGaugeGroup _).1 u.property).1).of_le (by simp)
+  exact mem_sobolevGaugeGroup_of_mem_framedFieldSpace Fact.out y.property huc
+    (by rw [← framedGaugeGroup_smul, hu]; exact x.property)
 
 /-- Two fields of `A_m^k`, `k ≥ 2`, related by a smooth framed gauge lie in the same
 `G_(k+1)`-orbit, even though an arbitrary smooth framed gauge need not belong to `G_(k+1)`. -/
@@ -313,7 +313,7 @@ theorem coe_mem_framedGaugeGroup_of_smul_eq
     {u : sobolevGaugeGroup hs} (hu : u • y = x) :
     (u : ℂ → Circle) ∈ framedGaugeGroup :=
   mem_framedGaugeGroup_of_mem_sobolevGaugeGroup_of_contDiff_gaugeTransform
-    (by linarith [(by exact_mod_cast (Fact.out : 1 < k) : (1 : ℝ) < k)]) u.2 hy
+    (by linarith [(by exact_mod_cast (Fact.out : 1 < k) : (1 : ℝ) < k)]) u.property hy
     (by rwa [← coe_sobolevGaugeGroup_smul, hu])
 
 /-- **Smooth vs. Sobolev gauge equivalence on `A_m^k`.** Two smooth fields of `A_m^k`, `k ≥ 2`,

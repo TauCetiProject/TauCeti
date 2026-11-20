@@ -105,6 +105,13 @@ theorem cappedLoopAction_def (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
     cappedLoopAction ω H γ D = rectangleIntegral ω D (0, 0) (1, 1) + ∫ t in 0..1, H t (γ t) :=
   (rfl)
 
+/-- The capped action only depends on the loop through its values on the unit interval. -/
+theorem cappedLoopAction_congr_loop (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) {γ γ' : ℝ → M}
+    (h : EqOn γ γ' (Icc 0 1)) (D : ℝ × ℝ → M) :
+    cappedLoopAction ω H γ D = cappedLoopAction ω H γ' D := by
+  rw [cappedLoopAction_def, cappedLoopAction_def,
+    intervalIntegral.integral_congr fun t ht ↦ congrArg (H t) (h (by simpa using ht))]
+
 /-- The constant loop at `x`, capped by the constant disc, has action the time average
 `∫₀¹ H(t, x) dt` of the Hamiltonian at `x`. -/
 @[simp]
@@ -193,7 +200,7 @@ backwards, `u ∘ Prod.map (fun s ↦ 1 - s) id`, which is a disc of `γ` when `
 theorem cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction [IsManifold I ∞ M]
     (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
     (hu : IsSmoothCylinder I γ γ₀ u) :
-    cappedLoopAction σ.1 H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.1 H u := by
+    cappedLoopAction σ.val H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -cylinderAction σ.val H u := by
   rw [cappedLoopAction_def, SmoothTwoForm.cylinderAction_eq_of_isSmoothCylinder hu,
     rectangleIntegral_comp_prodMap_one_sub (σ.isSmoothForm.of_le (by simp))
       (hu.contMDiff.of_le (by simp))]

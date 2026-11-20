@@ -89,6 +89,18 @@ theorem HasMeromorphicContinuation.toNat_divisor_entireCompletion (s : ℂ) :
   · rw [h.divisor_completed_of_polarOrder_ne_zero (mem_univ s) hp]
     simp
 
+/-- For a meromorphically continued record, the natural zero multiplicity of the entire completion
+equals the positive part of the whole-plane divisor of the completed function, including at cleared
+poles. -/
+theorem HasMeromorphicContinuation.analyticOrderNatAt_entireCompletion_eq_toNat_divisor_completed
+    (s : ℂ) :
+    analyticOrderNatAt d.entireCompletion s =
+      (MeromorphicOn.divisor d.completed univ s).toNat := by
+  rw [← h.toNat_divisor_entireCompletion,
+    h.meromorphicOn_entireCompletion.divisor_eq_analyticOrderNatAt
+      (h.analyticAt_entireCompletion s) (mem_univ s),
+    Int.toNat_natCast]
+
 /-- The entire completion has the same zero count as the completed function on every region. -/
 @[simp]
 theorem HasMeromorphicContinuation.zeroCount_entireCompletion (R : Set ℂ) :
