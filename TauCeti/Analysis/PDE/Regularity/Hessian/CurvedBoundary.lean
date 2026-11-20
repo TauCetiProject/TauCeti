@@ -270,8 +270,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_pullback (hp : 1 < p) (hp_t
   · rintro _ ⟨y, hy, rfl⟩
     have hyx : Φ (Ψ y) = y := hΦΨ (hKU hy)
     exact PDE.continuousWithinAt_comp_comp_adjoint hΨ
-      (hΦc.continuousAt (U'.isOpen.mem_nhds (hΨ.mapsTo (hKU hy)))) (by rw [hyx]; exact hKU hy)
-      (fun x hx => (hΦmaps hx).1) (by rw [hyx]; exact hcont y hy)
+      (hΦc.continuousAt (U'.isOpen.mem_nhds (hΨ.mapsTo (hKU hy)))).continuousWithinAt
+      (by rw [hyx]; exact hKU hy) (fun x hx => (hΦmaps hx).1) (by rw [hyx]; exact hcont y hy)
   · rintro _ ⟨y, hy, rfl⟩ hcl
     have hyx : Φ (Ψ y) = y := hΦΨ (hKU hy)
     have hyΩ : y ∈ closure (Omega : Set (WithLp 2 (ℝ × E))) := by

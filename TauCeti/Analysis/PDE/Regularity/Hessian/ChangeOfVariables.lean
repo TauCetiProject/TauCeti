@@ -74,20 +74,19 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteS
   {U U' : Opens F} {Φ Ψ : F → F} {L L' c c' : ℝ}
 
 /-- Conjugating coefficients continuous within `Ω` at `Φ x` by `DΨ ∘ Φ`, for a change of
-variables `Ψ` of order at least one on `U ∋ Φ x` and `Φ` continuous at `x` mapping `Ω'` into `Ω`,
-gives coefficients continuous within `Ω'` at `x`. -/
+variables `Ψ` of order at least one on `U ∋ Φ x` and `Φ` continuous within `Ω'` at `x` mapping
+`Ω'` into `Ω`, gives coefficients continuous within `Ω'` at `x`. -/
 theorem continuousWithinAt_comp_comp_adjoint {Ω Ω' : Set F} {k : ℕ}
     (hΨ : IsChangeOfVariables (k + 1) U U' Ψ L' c') {A : F → F →L[ℝ] F} {x : F}
-    (hΦx : ContinuousAt Φ x) (hΦxU : Φ x ∈ (U : Set F)) (hmaps : MapsTo Φ Ω' Ω)
+    (hΦx : ContinuousWithinAt Φ Ω' x) (hΦxU : Φ x ∈ (U : Set F)) (hmaps : MapsTo Φ Ω' Ω)
     (hA : ContinuousWithinAt A Ω (Φ x)) :
     ContinuousWithinAt
       (fun x => fderiv ℝ Ψ (Φ x) ∘L A (Φ x) ∘L (fderiv ℝ Ψ (Φ x)).adjoint) Ω' x := by
-  have hM : ContinuousAt (fun x => fderiv ℝ Ψ (Φ x)) x :=
+  have hM : ContinuousWithinAt (fun x => fderiv ℝ Ψ (Φ x)) Ω' x :=
     ((hΨ.contDiffOn.continuousOn_fderiv_of_isOpen U.isOpen (by simp)).continuousAt
-      (U.isOpen.mem_nhds hΦxU)).comp hΦx
-  exact hM.continuousWithinAt.clm_comp ((hA.comp hΦx.continuousWithinAt hmaps).clm_comp
-    (ContinuousLinearMap.adjoint.continuous.continuousAt.comp_continuousWithinAt
-      hM.continuousWithinAt))
+      (U.isOpen.mem_nhds hΦxU)).comp_continuousWithinAt hΦx
+  exact hM.clm_comp ((hA.comp hΦx hmaps).clm_comp
+    (ContinuousLinearMap.adjoint.continuous.continuousAt.comp_continuousWithinAt hM))
 
 /-- **The transformed principal part is measurable.** For a change of variables `Ψ` of order at
 least one from `U`, a map `Φ` continuous on a measurable set `s` and mapping it into `U`, and
