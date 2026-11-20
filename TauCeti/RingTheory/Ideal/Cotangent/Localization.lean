@@ -83,7 +83,7 @@ ring localization map. -/
 theorem cotangentLocalizationEquiv_toCotangent (x : p) :
     cotangentLocalizationEquiv p Rₚ (p.toCotangent x) =
       (maximalIdeal Rₚ).toCotangent
-        ⟨algebraMap R Rₚ x, (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p x).2 x.2⟩ :=
+        ⟨algebraMap R Rₚ x, (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p x).2 x.property⟩ :=
   (rfl)
 
 /-- The cotangent localization equivalence is semilinear for the canonical equivalence between

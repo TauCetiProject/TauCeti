@@ -75,8 +75,8 @@ is a unit tangent vector of the sphere at `p`. -/
 private def stiefelTangent (p : sphere (0 : E) 1) (x : stiefel E 2)
     (hx : (x : Fin 2 → E) 0 = p) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
   ⟨⟨(x : Fin 2 → E) 1, Submodule.mem_orthogonal_singleton_iff_inner_right.2
-      (hx ▸ (mem_stiefel_two_iff.1 x.2).2.2)⟩,
-    mem_sphere_zero_iff_norm.2 (mem_stiefel_two_iff.1 x.2).2.1⟩
+      (hx ▸ (mem_stiefel_two_iff.1 x.property).2.2)⟩,
+    mem_sphere_zero_iff_norm.2 (mem_stiefel_two_iff.1 x.property).2.1⟩
 
 /-- The **Stiefel rotation family**: an orthonormal pair `(u, v)` and a point `z` of the unit
 circle of `ℂ` are sent to `u` and to `Re z • u + Im z • v`, the point reached by rotating `u`
@@ -121,9 +121,9 @@ theorem stiefelRotationFamily_of_coe_eq_one (x : stiefel E 2) {z : sphere (0 : �
 @[fun_prop]
 theorem continuous_stiefelRotationFamily : Continuous (stiefelRotationFamily (E := E)) := by
   have hv (i : Fin 2) : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (x.1 : Fin 2 → E) i :=
-    (continuous_apply i).comp (continuous_subtype_val.comp continuous_fst)
+    (continuous_apply i).comp (continuous_subtypeVal.comp continuous_fst)
   have hz : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (x.2 : ℂ) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   have h₁ : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (stiefelRotationFamily x).1 :=
     (continuous_stiefelProj 0).comp continuous_fst
   have h₂ : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (stiefelRotationFamily x).2 := by
@@ -154,7 +154,7 @@ theorem contMDiff_stiefelRotationFamily [FiniteDimensional ℝ E] {n : ℕ}
     exact ((Complex.reCLM.contDiff.contMDiff.comp hz).smul (hv 0)).add
       ((Complex.imCLM.contDiff.contMDiff.comp hz).smul (hv 1))
   exact ((contMDiff_stiefelProj E 2 0).comp contMDiff_fst).prodMk
-    (h₂.codRestrict_sphere fun x ↦ (stiefelRotationFamily x).2.2)
+    (h₂.codRestrict_sphere fun x ↦ (stiefelRotationFamily x).2.property)
 
 /-! ### Fibres -/
 
@@ -208,7 +208,7 @@ theorem exists_stiefelRotationFamily_eq {a w : sphere (0 : E) 1} (hwa : w ≠ a)
     ∃ x : stiefel E 2 × sphere (0 : ℂ) 1, 0 < (x.2 : ℂ).im ∧ stiefelRotationFamily x = (a, w) := by
   obtain ⟨⟨v, z⟩, hz, hvz⟩ := exists_sphereRotationFamily_eq a hwa hwa'
   have hv : ⟪(a : E), ((v : (ℝ ∙ (a : E))ᗮ) : E)⟫ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (a : E))ᗮ).2
+    Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (a : E))ᗮ).property
   have hframe : ![(a : E), ((v : (ℝ ∙ (a : E))ᗮ) : E)] ∈ stiefel E 2 :=
     mem_stiefel_two_iff.2 ⟨norm_eq_of_mem_sphere a, norm_eq_of_mem_sphere v, hv⟩
   -- The two vectors of the frame `![a, v]` are `a` and `v` by definition.

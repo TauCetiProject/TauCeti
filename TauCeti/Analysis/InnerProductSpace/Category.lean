@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.CategoryTheory.ConcreteCategory.Basic
-public import TauCeti.CategoryTheory.Dagger.Basic
+public import TauCeti.Analysis.CStarAlgebra.Category.Basic
 
 /-!
 # The dagger category of Hilbert spaces
@@ -18,8 +19,8 @@ structures. Composition and addition give the native linear category structure, 
 Mathlib's `ContinuousLinearMap.adjoint` supplies the conjugate-linear dagger.
 
 Unitary arrows are precisely the maps underlying linear isometric equivalences.
-The operator norm satisfies the C*-identity in categorical composition order; these
-facts provide the Hilbert-space example for analytic categories.
+The operator norm satisfies the C*-identity in categorical composition order, and complex
+Hilbert spaces form a `TauCeti.CStarCategory`.
 -/
 
 public section
@@ -288,33 +289,73 @@ theorem linearIsometryEquivOfUnitary_symm_apply (f : X ⟶ Y) (hf : IsUnitary f)
 /-- Unitary arrows between Hilbert spaces are exactly linear isometric equivalences. -/
 def unitaryEquivLinearIsometryEquiv :
     { f : X ⟶ Y // IsUnitary f } ≃ (X ≃ₗᵢ[𝕜] Y) where
-  toFun f := linearIsometryEquivOfUnitary f.1 f.2
+  toFun f := linearIsometryEquivOfUnitary f.val f.property
   invFun e := ⟨(e : X →L[𝕜] Y), isUnitary_linearIsometryEquiv e⟩
   left_inv f := by apply Subtype.ext; ext x; rfl
   right_inv e := by ext x; rfl
 
 /-- The unitary-to-isometry correspondence uses the recovered isometric equivalence. -/
 theorem unitaryEquivLinearIsometryEquiv_apply (f : { f : X ⟶ Y // IsUnitary f }) :
-    unitaryEquivLinearIsometryEquiv f = linearIsometryEquivOfUnitary f.1 f.2 := (rfl)
+    unitaryEquivLinearIsometryEquiv f = linearIsometryEquivOfUnitary f.val f.property := (rfl)
 
 /-- The unitary-to-isometry correspondence preserves the underlying continuous linear map. -/
 @[simp] theorem unitaryEquivLinearIsometryEquiv_toContinuousLinearMap
     (f : { f : X ⟶ Y // IsUnitary f }) :
-    (unitaryEquivLinearIsometryEquiv f : X →L[𝕜] Y) = f.1 := (rfl)
+    (unitaryEquivLinearIsometryEquiv f : X →L[𝕜] Y) = f.val := (rfl)
 
 /-- The inverse correspondence has the isometry's underlying continuous linear map. -/
 @[simp] theorem unitaryEquivLinearIsometryEquiv_symm_val (e : X ≃ₗᵢ[𝕜] Y) :
-    (unitaryEquivLinearIsometryEquiv.symm e).1 = ofHom (e : X →L[𝕜] Y) := (rfl)
+    (unitaryEquivLinearIsometryEquiv.symm e).val = ofHom (e : X →L[𝕜] Y) := (rfl)
 
 /-- The unitary-to-isometry correspondence preserves evaluation. -/
 theorem unitaryEquivLinearIsometryEquiv_apply_apply
     (f : { f : X ⟶ Y // IsUnitary f }) (x : X) :
-    unitaryEquivLinearIsometryEquiv f x = f.1 x := (rfl)
+    unitaryEquivLinearIsometryEquiv f x = f.val x := (rfl)
 
 /-- The inverse correspondence regards an isometry as its continuous linear map. -/
 theorem unitaryEquivLinearIsometryEquiv_symm_val_apply
     (e : X ≃ₗᵢ[𝕜] Y) (x : X) :
-    (unitaryEquivLinearIsometryEquiv.symm e).1 x = e x := (rfl)
+    (unitaryEquivLinearIsometryEquiv.symm e).val x = e x := (rfl)
+
+/-- The operator norms of a Hom space satisfy the normed space axioms. -/
+theorem normedSpaceCore (X Y : HilbertCat.{u, v} 𝕜) : NormedSpace.Core 𝕜 (X ⟶ Y) where
+  norm_nonneg := norm_nonneg
+  norm_smul := norm_smul
+  norm_triangle := norm_add_le
+  norm_eq_zero_iff _ := norm_eq_zero
+
+/-- The normed group structure induced by the operator norm is the one of continuous linear
+maps, so the completeness of the Hom space carries over. -/
+private theorem completeSpace_ofCore (X Y : HilbertCat.{u, v} 𝕜) :
+    letI := NormedAddCommGroup.ofCore (normedSpaceCore X Y)
+    CompleteSpace (X ⟶ Y) := by
+  have h : (NormedAddCommGroup.ofCore (normedSpaceCore X Y)).toPseudoMetricSpace =
+      (inferInstance : NormedAddCommGroup (X ⟶ Y)).toPseudoMetricSpace := by
+    ext f g
+    rw [@dist_eq_norm_neg_add _ (NormedAddCommGroup.ofCore
+      (normedSpaceCore X Y)).toSeminormedAddCommGroup.toSeminormedAddGroup, norm_neg_add,
+      dist_eq_norm]
+  have hc : CompleteSpace (X ⟶ Y) := inferInstance
+  -- The goal and `hc` are completeness for two metric structures, which `h` identifies.
+  convert hc using 2
+
+/-- For a morphism `f` of complex Hilbert spaces, the positive operator `f†f` is `g†g` for its
+square root `g`. -/
+theorem exists_self_comp_dagger_eq {X Y : HilbertCat.{0, v} ℂ} (f : X ⟶ Y) :
+    ∃ g : X ⟶ X, f ≫ dagger f = g ≫ dagger g := by
+  have hf : 0 ≤ (ContinuousLinearMap.adjoint f).comp f :=
+    ContinuousLinearMap.nonneg_iff_isPositive.2 (ContinuousLinearMap.isPositive_adjoint_comp_self f)
+  obtain ⟨g, hg⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.1 hf
+  exact ⟨g, by simpa [comp_eq_comp, dagger_eq_adjoint, ContinuousLinearMap.star_eq_adjoint,
+    ContinuousLinearMap.mul_def] using hg⟩
+
+/-- Complex Hilbert spaces with operator norms and adjoints form a C*-category. -/
+instance : CStarCategory (HilbertCat.{0, v} ℂ) where
+  normedSpaceCore := normedSpaceCore
+  completeSpace := completeSpace_ofCore
+  norm_comp_le f g := (norm_comp_le f g).trans_eq (mul_comm _ _)
+  norm_mul_self_le f := by rw [norm_self_comp_dagger, pow_two]
+  exists_self_comp_dagger_eq := exists_self_comp_dagger_eq
 
 end HilbertCat
 
