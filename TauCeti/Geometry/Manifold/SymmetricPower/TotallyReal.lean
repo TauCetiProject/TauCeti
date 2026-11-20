@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Chart
@@ -296,44 +295,6 @@ theorem isMaximalTotallyReal_range_fderiv_symChartAt_ofFn
 
 /-! ### Transverse products of curves -/
 
-/-- The ranges of the diagonal maps of `v` and `w` are complementary exactly when `v i` and `w i`
-are linearly independent over `ℝ` for every `i`: coordinatewise, two real lines span the complex
-line exactly when they are independent. -/
-private theorem isCompl_range_diagonalSmulRight_iff {v w : Fin n → ℂ} :
-    IsCompl (LinearMap.range (diagonalSmulRight v : (Fin n → ℝ) →ₗ[ℝ] Fin n → ℂ))
-        (LinearMap.range (diagonalSmulRight w : (Fin n → ℝ) →ₗ[ℝ] Fin n → ℂ)) ↔
-      ∀ i, LinearIndependent ℝ ![v i, w i] := by
-  refine ⟨fun h i => ?_, fun h => ⟨?_, ?_⟩⟩
-  · -- every complex number is the `i`-th coordinate of a sum of vectors of the two ranges
-    refine linearIndependent_of_top_le_span_of_card_eq_finrank (fun c _ => ?_)
-      (by simp [Complex.finrank_real_complex])
-    obtain ⟨_, ⟨a, rfl⟩, _, ⟨b, rfl⟩, hab⟩ :=
-      Submodule.mem_sup.1 ((codisjoint_iff.1 h.codisjoint).symm ▸ Submodule.mem_top :
-        Pi.single i c ∈ _ ⊔ _)
-    have hi := congrFun hab i
-    simp only [Pi.add_apply, ContinuousLinearMap.coe_coe, diagonalSmulRight_apply,
-      Pi.single_eq_same] at hi
-    rw [Matrix.range_cons_cons_empty, Submodule.mem_span_pair]
-    exact ⟨a i, b i, hi⟩
-  · -- a common vector has coordinates `a i • v i = b i • w i`, which vanish by independence
-    rw [Submodule.disjoint_def]
-    rintro _ ⟨a, rfl⟩ ⟨b, hb⟩
-    funext i
-    have hi := congrFun hb i
-    simp only [ContinuousLinearMap.coe_coe, diagonalSmulRight_apply] at hi ⊢
-    obtain ⟨ha, -⟩ := LinearIndependent.pair_iff.1 (h i) (a i) (-b i)
-      (by rw [neg_smul, hi, add_neg_cancel])
-    simp [ha]
-  · -- independence makes each pair span `ℂ`, so every vector splits coordinatewise
-    refine codisjoint_iff.2 (eq_top_iff.2 fun z _ => ?_)
-    have hspan (i : Fin n) : ∃ a b : ℝ, a • v i + b • w i = z i := by
-      have htop := (h i).span_eq_top_of_card_eq_finrank' (by simp [Complex.finrank_real_complex])
-      rw [Matrix.range_cons_cons_empty] at htop
-      exact Submodule.mem_span_pair.1 (htop ▸ Submodule.mem_top)
-    choose a b hab using hspan
-    exact Submodule.mem_sup.2 ⟨_, ⟨a, rfl⟩, _, ⟨b, rfl⟩, funext fun i => by
-      simpa only [Pi.add_apply, ContinuousLinearMap.coe_coe, diagonalSmulRight_apply] using hab i⟩
-
 /-- **Products of transverse curves are transverse in the symmetric power.** Let `γ i` and `δ j`
 be real curves in a complex curve, such that the points `γ i (t₀ i)` are pairwise distinct and are
 the points `δ j (u₀ j)` up to the permutation `σ`: `δ (σ i) (u₀ (σ i)) = γ i (t₀ i)`. In every
@@ -379,7 +340,7 @@ theorem isCompl_range_fderiv_symChartAt_ofFn_iff {γ δ : Fin n → ℝ → α} 
   rw [LinearMap.range_comp_of_range_eq_top _ hP, LinearMap.range_comp, LinearMap.range_comp,
     ← Submodule.orderIsoMapComapOfBijective_apply _ hbij,
     ← Submodule.orderIsoMapComapOfBijective_apply _ hbij, ← OrderIso.isCompl_iff,
-    isCompl_range_diagonalSmulRight_iff]
+    coe_diagonalSmulRight, coe_diagonalSmulRight, isCompl_range_pi_smulRight_iff]
   simp only [Function.comp_apply]
 
 end Curves
