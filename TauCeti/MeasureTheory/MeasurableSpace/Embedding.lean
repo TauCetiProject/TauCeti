@@ -28,7 +28,7 @@ and `MeasurableEquiv.boolArrowEquivProd` lifts `Equiv.boolArrowEquivProd` to `(B
 
 * `MeasurableEmbedding.of_injective_of_countable`
 * `MeasurableEmbedding.inl` and `MeasurableEmbedding.inr`
-* `MeasurableSpace.comap_piMap` and `MeasurableEmbedding.piMap`
+* `MeasurableSpace.comap_piMap`, `MeasurableEmbedding.piMap`, and `MeasurableEmbedding.comp_left`
 * `MeasurableEquiv.coe_refl`, `MeasurableEquiv.coe_prodCongr`, and `MeasurableEquiv.coe_prodComm`
 * `MeasurableEquiv.boolArrowEquivProd`
 -/
@@ -61,6 +61,16 @@ protected theorem MeasurableEmbedding.piMap {ι : Type*} {α β : ι → Type*} 
     exact (hf i).comap_eq
   · rw [Set.range_piMap]
     exact MeasurableSet.univ_pi fun i => (hf i).measurableSet_range
+
+/-- Postcomposition with a measurable embedding on functions out of a countable index type is a
+measurable embedding. -/
+protected theorem MeasurableEmbedding.comp_left {ι α β : Type*} [Countable ι] [MeasurableSpace α]
+    [MeasurableSpace β] {f : α → β} (hf : MeasurableEmbedding f) :
+    MeasurableEmbedding (f ∘ · : (ι → α) → ι → β) := by
+  have heq : (f ∘ · : (ι → α) → ι → β) = Pi.map fun _ : ι => f :=
+    funext fun w => funext fun i => (Pi.map_apply (fun _ : ι => f) w i).symm
+  rw [heq]
+  exact MeasurableEmbedding.piMap fun _ => hf
 
 /-- An injective measurable map out of a countable type into a type with measurable singletons
 is a measurable embedding. -/

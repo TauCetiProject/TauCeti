@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.Data.Set.Card
 
 import Mathlib.MeasureTheory.MeasurableSpace.NCard
 
@@ -22,11 +23,16 @@ by the sum of their outer measures divided by `k + 1`.
 
 ## Main statements
 
-* `MeasureTheory.lintegral_encard_setOf_eq_tsum`: `∫⁻ x, #{k | P k x} ∂μ = ∑' k, μ {x | P k x}`.
+* `MeasureTheory.lintegral_encard_setOf_eq_tsum` and
+  `MeasureTheory.lintegral_encard_setOf_le_tsum`: `∫⁻ x, #{k | P k x} ∂μ` equals
+  `∑' k, μ {x | P k x}` for measurable predicates and is bounded above by that outer-measure sum in
+  general.
 * `MeasureTheory.measure_lt_encard_setOf_le`: the outer measure of points in more than `k` sets
   of a countable family is at most the sum of their outer measures divided by `k + 1`.
 * `MeasureTheory.measure_lt_card_filter_le`: the finite-family version using `Finset.filter`.
-* `MeasureTheory.lintegral_enat_eq_tsum`: `∫⁻ x, (f x : ℝ≥0∞) ∂μ = ∑' k, μ {x | (k : ℕ∞) < f x}`.
+* `MeasureTheory.lintegral_enat_eq_tsum` and `MeasureTheory.lintegral_enat_le_tsum`:
+  `∫⁻ x, (f x : ℝ≥0∞) ∂μ` equals `∑' k, μ {x | (k : ℕ∞) < f x}` when strict superlevel sets are
+  measurable, and is bounded above by `∑' k, μ {x | (k : ℕ∞) < f x}` for arbitrary `f : β → ℕ∞`.
 -/
 
 public section
@@ -47,19 +53,35 @@ theorem lintegral_encard_setOf_eq_tsum {ι β : Type*} [Countable ι] [Measurabl
   rw [lintegral_tsum fun k => (measurable_const.indicator (hP k)).aemeasurable]
   simp_rw [lintegral_indicator_const (hP _), one_mul]
 
+/-- For an arbitrary countable family of (not necessarily measurable) predicates `P k`, the lower
+Lebesgue integral of `#{k | P k x}` is bounded above by the sum of the outer measures
+`μ {x | P k x}`. -/
+theorem lintegral_encard_setOf_le_tsum {ι β : Type*} [Countable ι] [MeasurableSpace β]
+    (μ : Measure β) (P : ι → β → Prop) :
+    ∫⁻ x, ({k | P k x}.encard : ℝ≥0∞) ∂μ ≤ ∑' k, μ {x | P k x} := by
+  let M : ι → Set β := fun k => toMeasurable μ {x | P k x}
+  have hM : ∀ k, MeasurableSet {x | x ∈ M k} := fun k => measurableSet_toMeasurable μ _
+  calc
+    ∫⁻ x, ({k | P k x}.encard : ℝ≥0∞) ∂μ ≤ ∫⁻ x, ({k | x ∈ M k}.encard : ℝ≥0∞) ∂μ :=
+      lintegral_mono fun x =>
+        ENat.toENNReal_mono (Set.encard_le_encard fun k hk => subset_toMeasurable μ _ hk)
+    _ = ∑' k, μ (M k) := lintegral_encard_setOf_eq_tsum μ hM
+    _ = ∑' k, μ {x | P k x} := tsum_congr fun k => measure_toMeasurable _
+
 /-- **Tail-sum formula for `ℕ∞`-valued functions.** The Lebesgue integral of an `ℕ∞`-valued
 function whose strict superlevel sets are measurable is `∑' k : ℕ, μ {x | (k : ℕ∞) < f x}`. -/
 theorem lintegral_enat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β)
     {f : β → ℕ∞} (hf : ∀ k : ℕ, MeasurableSet {x | (k : ℕ∞) < f x}) :
-    ∫⁻ x, (f x : ℝ≥0∞) ∂μ = ∑' k : ℕ, μ {x | (k : ℕ∞) < f x} := by
-  have hcount : ∀ x, (f x : ℝ≥0∞) = ({k : ℕ | (k : ℕ∞) < f x}.encard : ℝ≥0∞) := fun x => by
-    induction f x using ENat.recTopCoe with
-    | top => simp
-    | coe n =>
-      have hr : {k : ℕ | (k : ℕ∞) < (n : ℕ∞)} = ↑(Finset.range n) := by ext k; simp
-      rw [hr, Set.encard_coe_eq_coe_finsetCard, Finset.card_range, ENat.toENNReal_coe]
-  simp_rw [hcount]
-  exact lintegral_encard_setOf_eq_tsum μ hf
+    ∫⁻ x, (f x : ℝ≥0∞) ∂μ = ∑' k : ℕ, μ {x | (k : ℕ∞) < f x} :=
+  (lintegral_congr fun _ => by simp).trans (lintegral_encard_setOf_eq_tsum μ hf)
+
+/-- **Outer-measure tail-sum bound for `ℕ∞`-valued functions.** For any (not necessarily
+measurable) `f : β → ℕ∞`, the lower Lebesgue integral of `f` is bounded above by the sum of the
+outer measures `μ {x | (k : ℕ∞) < f x}`. -/
+theorem lintegral_enat_le_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β) (f : β → ℕ∞) :
+    ∫⁻ x, (f x : ℝ≥0∞) ∂μ ≤ ∑' k : ℕ, μ {x | (k : ℕ∞) < f x} :=
+  (lintegral_congr fun _ => by simp).trans_le
+    (lintegral_encard_setOf_le_tsum μ fun (k : ℕ) x => (k : ℕ∞) < f x)
 
 /-- The outer measure of points lying in more than `k` sets of a countable family is at most
 the sum of their outer measures divided by `k + 1`. The sets need not be measurable. -/

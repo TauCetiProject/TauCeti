@@ -33,20 +33,13 @@ parameter, at every starting state. -/
 @[simp↓]
 theorem integerWalk_isNullRecurrent_iff (p : unitInterval) (x : ℤ) :
     (integerWalk p).IsNullRecurrent x ↔ (p : ℝ) = 1 / 2 := by
-  constructor
-  · intro hx
-    exact (integerWalk_isRecurrent_iff p x).mp hx.isRecurrent
-  · intro hp
-    exact Kernel.isNullRecurrent_iff.mpr
-      ⟨(integerWalk_isRecurrent_iff p x).mpr hp, integerWalk_meanReturnTime_eq_top p hp x⟩
+  simp [Kernel.isNullRecurrent_iff, integerWalk_isRecurrent_iff, integerWalk_meanReturnTime_eq_top]
 
 /-- No nearest-neighbor integer walk has a positive recurrent state, including
 at the deterministic endpoint parameters. -/
 @[simp↓]
 theorem integerWalk_not_isPositiveRecurrent (p : unitInterval) (x : ℤ) :
     ¬ (integerWalk p).IsPositiveRecurrent x := by
-  intro hx
-  have hp := (integerWalk_isRecurrent_iff p x).mp hx.isRecurrent
-  exact ((integerWalk_isNullRecurrent_iff p x).mpr hp).not_isPositiveRecurrent hx
+  simp [Kernel.isPositiveRecurrent_iff, integerWalk_meanReturnTime_eq_top]
 
 end TauCeti.Probability

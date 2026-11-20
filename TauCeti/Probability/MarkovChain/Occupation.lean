@@ -10,6 +10,7 @@ public import TauCeti.Probability.MarkovChain.ReturnGaps
 public import TauCeti.Probability.Process.Occupation
 public import TauCeti.Probability.Process.ReturnGapRenewal
 public import TauCeti.Probability.Renewal.StrongLaw
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Occupation frequency from the counted state
@@ -34,9 +35,13 @@ with no recurrence hypothesis: started at `y`, the occupation frequency of `y` c
 surely to `r_y` (`ProbabilityTheory.Kernel.ae_tendsto_visitCount_div_markovChainLaw_dirac`), since
 at a transient state the visits are almost surely finite and `m_y = ∞`. The first-entrance
 transfer then gives the almost-sure limit from any initial law
-(`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`) and, from any finite initial
+(`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`,
+`ProbabilityTheory.HasLaw.ae_tendsto_visitCount_div_markovChainLaw`) and, from any finite initial
 law, the limit of the mean occupation frequency
-(`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`).
+(`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`,
+`ProbabilityTheory.HasLaw.tendsto_integral_visitCount_div_markovChainLaw`); started at `y`, this
+gives the Cesàro limit of the positive-time return probabilities
+(`ProbabilityTheory.Kernel.tendsto_cesaro_pow_real_singleton_self`).
 
 ## References
 
@@ -174,6 +179,30 @@ theorem tendsto_integral_visitCount_div_markovChainLaw_dirac
 
 end ProbabilityTheory.HasLaw
 
+namespace ProbabilityTheory.Kernel
+
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
+
+/-- Started at `y`, the expected positive-time visit fraction converges to the real reciprocal mean
+return time `(κ.meanReturnTime y)⁻¹.toReal`. -/
+theorem tendsto_integral_visitCount_div_markovChainLaw_dirac (κ : Kernel α α) [IsMarkovKernel κ]
+    (y : α) :
+    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
+        ∂markovChainLaw (Measure.dirac y) κ)
+      atTop (𝓝 (κ.meanReturnTime y)⁻¹.toReal) :=
+  (HasLaw.id
+    (μ := markovChainLaw (Measure.dirac y) κ)).tendsto_integral_visitCount_div_markovChainLaw_dirac
+
+/-- The Cesàro averages of the positive-time return probabilities `((κ ^ (i + 1)) y).real {y}`
+converge to `(κ.meanReturnTime y)⁻¹.toReal`. -/
+theorem tendsto_cesaro_pow_real_singleton_self (κ : Kernel α α) [IsMarkovKernel κ] (y : α) :
+    Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, ((κ ^ (i + 1)) y).real {y}) / n)
+      atTop (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
+  simpa only [integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac] using
+    κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y
+
+end ProbabilityTheory.Kernel
+
 namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
@@ -203,3 +232,61 @@ theorem tendsto_integral_visitCount_div_markovChainLaw (y : α) :
     (κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y)
 
 end MeasureTheory.Measure
+
+namespace ProbabilityTheory.HasLaw
+
+variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
+  [MeasurableSingletonClass α] [Countable α] {P : Measure Ω}
+  {X : Ω → ℕ → α} {ν : Measure α} {κ : Kernel α α} [IsMarkovKernel κ]
+
+/-- **Long-run occupation frequencies on any realization.** On any realization of a Markov chain
+from any initial law `ν`, the proportion `V_y(n) / n` of the times `1, …, n` spent at `y`
+converges almost surely to `(κ.meanReturnTime y)⁻¹.toReal` on the event that the chain enters `y`,
+and to zero off that event. -/
+theorem ae_tendsto_visitCount_div_markovChainLaw
+    (hX : HasLaw X (markovChainLaw ν κ) P) (y : α) :
+    ∀ᵐ ω ∂P,
+      Tendsto (fun n : ℕ => (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n) atTop
+        (𝓝 (if hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤ then
+          (κ.meanReturnTime y)⁻¹.toReal else 0)) := by
+  have h := ν.ae_tendsto_visitCount_div_markovChainLaw κ y
+  rw [← hX.map_eq] at h
+  filter_upwards [ae_of_ae_map hX.aemeasurable h] with ω hω
+  have hhit : hittingAfter (fun n ω => X ω n) {y} 0 ω =
+      hittingAfter (fun n (w : ℕ → α) => w n) {y} 0 (X ω) :=
+    congrFun (hittingAfter_comp_right (fun n (w : ℕ → α) => w n) X {y} 0) ω
+  rwa [hhit]
+
+/-- **Mean occupation frequencies on any realization.** On any realization of a Markov chain from a
+finite initial law `ν`, the expected proportion of the times `1, …, n` spent at `y` converges to
+`P.real {ω | H_y(ω) < ∞} * (κ.meanReturnTime y)⁻¹.toReal`. -/
+theorem tendsto_integral_visitCount_div_markovChainLaw [IsFiniteMeasure ν]
+    (hX : HasLaw X (markovChainLaw ν κ) P) (y : α) :
+    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) atTop
+      (𝓝 (P.real {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} *
+        (κ.meanReturnTime y)⁻¹.toReal)) := by
+  have hm (n : ℕ) : Measurable (fun x : ℕ → α =>
+      (visitCount (fun k => x (k + 1)) y n : ℝ) / n) :=
+    ((measurable_of_countable (fun k : ℕ => (k : ℝ))).comp
+      (measurable_visitCount_comp y n (measurableSet_singleton y)
+        (fun i _ => measurable_pi_apply (i + 1)))).div_const n
+  have heq (n : ℕ) :
+      (∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) =
+        ∫ x, (visitCount (fun k => x (k + 1)) y n : ℝ) / n ∂markovChainLaw ν κ := by
+    rw [← hX.map_eq, integral_map hX.aemeasurable (hm n).aestronglyMeasurable]
+  have hE : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
+    measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0
+  have hreal : P.real {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} =
+      (markovChainLaw ν κ).real {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} := by
+    have hset : {ω | hittingAfter (fun n ω => X ω n) {y} 0 ω ≠ ⊤} =
+        {ω | hittingAfter (fun n (w : ℕ → α) => w n) {y} 0 (X ω) ≠ ⊤} := by
+      ext ω
+      simp only [Set.mem_ofPred_eq,
+        congrFun (hittingAfter_comp_right (fun n (w : ℕ → α) => w n) X {y} 0) ω,
+        Function.comp_apply]
+    rw [hset]
+    exact hX.measureReal_eq hE
+  simp_rw [heq, hreal]
+  exact ν.tendsto_integral_visitCount_div_markovChainLaw κ y
+
+end ProbabilityTheory.HasLaw

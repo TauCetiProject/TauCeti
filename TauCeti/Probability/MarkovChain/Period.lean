@@ -42,6 +42,8 @@ is the minimal period `Function.minimalPeriod f x` of `x` under `f`.
 
 * `ProbabilityTheory.Kernel.eventually_pos_pow_period_mul_apply_singleton`: the chain returns to
   `x` with positive probability at every sufficiently large multiple of the period.
+* `ProbabilityTheory.Kernel.period_pow_period`: sampling at multiples of `κ.period x` yields period
+  one at `x`.
 * `ProbabilityTheory.Kernel.period_eq_period_of_pos`: mutually reachable states have the same
   period.
 * `ProbabilityTheory.Kernel.eventually_pos_pow_apply_singleton_of_period_eq_one`: from a state of
@@ -159,6 +161,36 @@ theorem eventually_pos_pow_period_mul_apply_singleton (κ : Kernel α α) (x : �
   obtain ⟨N, hN⟩ := hmem
   exact ⟨N, fun k hk ↦ (hN _ (hk.trans (Nat.le_mul_of_pos_left k hpos))
     (dvd_mul_right _ _)).2⟩
+
+/-- At any time not divisible by `κ.period x`, the return probability `(κ ^ n) x {x}` vanishes. -/
+theorem pow_apply_singleton_self_eq_zero_of_not_period_dvd (h : ¬ κ.period x ∣ n) :
+    (κ ^ n) x {x} = 0 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact (h (Nat.dvd_zero _)).elim
+  · exact nonpos_iff_eq_zero.mp
+      (not_lt.mp fun hpos ↦ h (period_dvd_of_mem_returnLengths ⟨hn, hpos⟩))
+
+/-- Sampling a kernel at multiples of `κ.period x` produces a kernel in which `x` has period `1`.
+When `κ.period x = 0`, `κ ^ 0 = 1` fixes `x` in one step and likewise has period `1`. -/
+@[simp]
+theorem period_pow_period (κ : Kernel α α) (x : α) :
+    (κ ^ κ.period x).period x = 1 := by
+  by_cases h0 : κ.period x = 0
+  · rw [h0, pow_zero]
+    exact period_eq_one_of_pos_apply (by simp [one_def, id_apply])
+  · obtain ⟨N, hN⟩ := eventually_atTop.mp (eventually_pos_pow_period_mul_apply_singleton κ x)
+    let k := max N 1
+    have hk : k ∈ (κ ^ κ.period x).returnLengths x := by
+      refine ⟨lt_of_lt_of_le one_pos (le_max_right N 1), ?_⟩
+      rw [← pow_mul]
+      exact hN k (le_max_left N 1)
+    have hk1 : k + 1 ∈ (κ ^ κ.period x).returnLengths x := by
+      refine ⟨Nat.succ_pos k, ?_⟩
+      rw [← pow_mul]
+      exact hN (k + 1) ((le_max_left N 1).trans (Nat.le_succ k))
+    exact Nat.dvd_one.mp
+      ((Nat.dvd_add_right (period_dvd_of_mem_returnLengths hk)).mp
+        (period_dvd_of_mem_returnLengths hk1))
 
 /-- A state of period one is revisited with positive probability at every sufficiently large
 time. -/

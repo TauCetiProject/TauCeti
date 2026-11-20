@@ -10,7 +10,8 @@ public import TauCeti.Probability.MarkovChain.Reachability
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.MarkovChain.MarkovProperty
 public import TauCeti.Probability.MarkovChain.Recurrence
-public import TauCeti.Data.ENat.ENNReal
+import TauCeti.MeasureTheory.MeasurableSpace.Embedding
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Entrance into closed communicating classes and restriction of path laws
@@ -27,13 +28,14 @@ permanence in the entered class; no stopping-time or conditional-law choice is n
 
 Restricting a Markov kernel to a measurable closed set preserves the entire trajectory law
 under the inclusion of paths, not just its finite-time transition probabilities. In particular,
-entrance and positive-return times have the same laws and the same extended nonnegative means.
-Recurrence and transience are therefore unchanged by restriction.
+entrance and positive-return times have the same laws and the same extended nonnegative means
+(`Kernel.meanReturnTime_subtype`). Recurrence and transience are therefore unchanged by
+restriction, without requiring measurable singletons.
 
 These identities allow results for chains on a finite closed communicating class to be used
-in an ambient, possibly infinite state space. The initial law may be any measure on the
-subtype. No countability or topology on the state space is needed. The Markov instance for the
-restricted kernel is equivalent to closedness by
+in an ambient, possibly infinite state space. The initial law may be any finite measure on the
+subtype. No countability, measurable singletons, or topology on the state space are needed for
+subtype restriction. The Markov instance for the restricted kernel is equivalent to closedness by
 `Kernel.isMarkovKernel_subtype_iff_isClosedSet`.
 
 ## References
@@ -189,30 +191,28 @@ theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s)
   rw [← MeasureTheory.lintegral_map hmean hhit',
     map_hittingAfter_markovChainLaw_subtype κ hs ν ht, MeasureTheory.lintegral_map hmean hhit]
 
-variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S] {s : Set S}
-  (κ : Kernel S S) [IsMarkovKernel κ] (hs : MeasurableSet s)
-  [IsMarkovKernel (κ.subtype hs)]
+private theorem measurableEmbedding_subtype_path (hs : MeasurableSet s) :
+    MeasurableEmbedding (fun (ω : ℕ → s) n => (ω n).val) :=
+  (MeasurableEmbedding.subtypeVal hs).comp_left
 
-/-- Restricting to a closed set preserves the extended mean positive return time. -/
+/-- Restricting a Markov kernel to a closed set preserves the extended mean positive return time
+of each of its states. -/
 @[simp]
 theorem meanReturnTime_subtype (x : s) :
     (κ.subtype hs).meanReturnTime x = κ.meanReturnTime x.val := by
-  have hpre : Subtype.val ⁻¹' ({x.val} : Set S) = ({x} : Set s) := by
-    ext y
-    simp [Subtype.ext_iff]
-  simpa only [meanReturnTime_def, hpre, Measure.map_dirac,
-    WithTop.recTopCoe_top_natCast_eq_toENNReal] using
-    κ.lintegral_hittingAfter_markovChainLaw_subtype hs (Measure.dirac x)
-      (measurableSet_singleton x.val) 1
+  rw [meanReturnTime_def, meanReturnTime_def, ← Measure.map_dirac' measurable_subtypeVal x,
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x),
+    (measurableEmbedding_subtype_path hs).lintegral_map]
+  simp only [hittingAfter_eval_subtype_coe_singleton]
 
 /-- Restricting to a closed set preserves and reflects recurrence of each of its states. -/
 @[simp]
 theorem isRecurrent_subtype_iff (x : s) :
     (κ.subtype hs).IsRecurrent x ↔ κ.IsRecurrent x.val := by
-  have hclosed := (isMarkovKernel_subtype_iff_isClosedSet hs).mp
-    (inferInstance : IsMarkovKernel (κ.subtype hs))
-  simp only [isRecurrent_iff_tsum_eq_top,
-    subtype_pow_apply κ hs hclosed, image_singleton]
+  rw [isRecurrent_iff, isRecurrent_iff, ← Measure.map_dirac' measurable_subtypeVal x,
+    ← markovChainLaw_map_subtype κ hs (Measure.dirac x),
+    (measurableEmbedding_subtype_path hs).map_apply]
+  simp only [preimage_ofPred_eq, hittingAfter_eval_subtype_coe_singleton]
 
 /-- Restricting to a closed set preserves and reflects transience of each of its states. -/
 @[simp]
