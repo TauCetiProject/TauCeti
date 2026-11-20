@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.FlatBaseChange
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
+import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!
 # Top homology of a closed oriented manifold with flat coefficients
@@ -57,14 +58,6 @@ theorem finrank_singularChains_homology_eq_one (k : Type) [CommRing k] [StrongRa
   rw [← (singularHomologyTensorIso ℤ k (TopCat.of M) n).toLinearEquiv.finrank_eq,
     Module.finrank_baseChange, ← e.finrank_eq, finrank_self]
 
-/-- An endomorphism that an isomorphism conjugates to multiplication by an integer `d` is itself
-multiplication by `d`. -/
-private theorem eq_zsmul_id_of_zsmul_id_comp_hom {C : Type*} [Category C] [Preadditive C]
-    {X Y : C} (e : X ≅ Y) (d : ℤ) {g : Y ⟶ Y} (h : (d • 𝟙 X) ≫ e.hom = e.hom ≫ g) :
-    g = d • 𝟙 Y := by
-  rw [← cancel_epi e.hom, ← h, Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.id_comp,
-    Category.comp_id]
-
 /-- **A self-map acts on top homology by its degree, with flat coefficients.** For a self-map `f`
 of a compact connected oriented `n`-manifold and a commutative ring `k` flat over `ℤ`, the action
 of `f` on `Hₙ(M; k)` is multiplication by the degree of `f`. -/
@@ -78,22 +71,31 @@ theorem singularHomologyMap_eq_degree_smul_id (k : Type) [CommRing k] [Module.Fl
     have hd : SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f))
         (ModuleCat.of ℤ (ULift.{0} ℤ)) n = o.degree o hE f • 𝟙 _ := by
       ext γ
-      exact o.singularHomologyMap_eq_degree_smul hE f γ
+      have hγ := o.singularHomologyMap_eq_degree_smul hE f γ
+      rw [singularHomologyFunctor_obj_map] at hγ
+      -- `hγ` types its classes by the singular homology functor, whose value on `M` is the
+      -- simplicial homology of `TopCat.toSSet.obj M` by definition
+      -- (`singularHomologyFunctor_obj_obj_eq_toSSet_homology`).
+      exact hγ
     rw [hd] at h
-    exact congrArg ModuleCat.Hom.hom (eq_zsmul_id_of_zsmul_id_comp_hom _ _ h)
+    exact congrArg ModuleCat.Hom.hom (Iso.eq_zsmul_id_of_zsmul_id_comp_hom _ _ h)
   -- Then flat base change along `ℤ → k`, which sends `d • id` to `d • id`.
   have h := singularHomologyTensorIso_hom_naturality ℤ k (TopCat.ofHom f) n
   have hb : (o.degree o hE f • LinearMap.id :
       ((singularChains ℤ).obj (TopCat.of M)).homology n →ₗ[ℤ] _).baseChange k =
       o.degree o hE f • LinearMap.id := by
     ext x
-    exact map_zsmul (TensorProduct.mk ℤ k _ (1 : k)) (o.degree o hE f) x
+    simp only [zsmul_eq_mul, TensorProduct.AlgebraTensorModule.curry_apply,
+      TensorProduct.curry_apply, LinearMap.coe_restrictScalars, LinearMap.baseChange_tmul,
+      mul_apply_eq_comp, LinearMap.id_coe, id_eq, intCast_apply_eq_smul,
+      LinearMap.restrictScalars_smul, LinearMap.smul_apply]
+    rw [← TensorProduct.mk_apply (R := ℤ) (1 : k) x, ← map_zsmul, TensorProduct.mk_apply]
   have hd : ModuleCat.ofHom (o.degree o hE f • LinearMap.id) =
       o.degree o hE f •
         𝟙 (ModuleCat.of k (k ⊗[ℤ] ((singularChains ℤ).obj (TopCat.of M)).homology n)) :=
     ModuleCat.hom_ext (by simp)
   rw [hℤ, hb, hd] at h
-  have h' := eq_zsmul_id_of_zsmul_id_comp_hom _ _ h
+  have h' := Iso.eq_zsmul_id_of_zsmul_id_comp_hom _ _ h
   rw [← Int.cast_smul_eq_zsmul k] at h'
   exact congrArg ModuleCat.Hom.hom h'
 

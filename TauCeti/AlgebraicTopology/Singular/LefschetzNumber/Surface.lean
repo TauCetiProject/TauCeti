@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LefschetzNumber.Basic
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FlatCoefficients
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+import TauCeti.RingTheory.Flat.FractionRing
 
 /-!
 # The Lefschetz zeta function of a self-map of a closed oriented surface
@@ -80,10 +81,6 @@ private theorem subsingleton_singularChains_homology_of_notMem_range_three :
   fun _ hi ↦ ModuleCat.isZero_iff_subsingleton.1 (isZero_singularHomology_of_compactSpace
     (M := M) (ModuleCat.of k k) hE (by simp at hi; omega))
 
-/-- A `ℚ`-algebra is flat over `ℤ`, because `ℚ` is a localization of `ℤ`. -/
-private theorem flat_int_of_algebra_rat [Algebra ℚ k] : Module.Flat ℤ k :=
-  (Module.flat_iff_of_isLocalization ℚ (nonZeroDivisors ℤ) k).1 inferInstance
-
 omit [T2Space M] [CompactSpace M] [FiniteDimensional ℝ E] in
 include E in
 /-- `M` is path-connected, so `H₀(M; k) = k`, on which a self-map acts by the identity. -/
@@ -101,7 +98,7 @@ compact connected homologically oriented surface and a field `k` of characterist
 theorem lefschetzNumber_eq_one_sub_trace_add_degree [Algebra ℚ k] (f : C(M, M)) :
     f.lefschetzNumber k =
       1 - LinearMap.trace k _ (ContinuousMap.singularHomologyMap k 1 f) + o.degree o hE f := by
-  have := flat_int_of_algebra_rat k
+  have := algebraRat.flat_int k
   obtain ⟨h₀, hf₀⟩ := finrank_homology_zero_and_singularHomologyMap_zero (E := E) k f
   have h₂ := o.finrank_singularChains_homology_eq_one hE k
   have := Module.finite_of_finrank_eq_succ h₀
@@ -114,6 +111,25 @@ theorem lefschetzNumber_eq_one_sub_trace_add_degree [Algebra ℚ k] (f : C(M, M)
   simp
   ring
 
+omit [T2Space M] [CompactSpace M] [FiniteDimensional ℝ E] in
+include E in
+/-- A self-map acts on `H₀(M; k) = k` by the identity, so `det (1 - t f_* | H₀(M; k)) = 1 - t`. -/
+private theorem reverse_charpoly_singularHomologyMap_zero [FiniteCWType M] (f : C(M, M)) :
+    (ContinuousMap.singularHomologyMap k 0 f).charpoly.reverse = 1 - Polynomial.X := by
+  obtain ⟨h₀, hf₀⟩ := finrank_homology_zero_and_singularHomologyMap_zero (E := E) k f
+  rw [hf₀, ← one_smul k LinearMap.id, LinearMap.reverse_charpoly_smul_id, h₀]
+  simp
+
+/-- A self-map acts on `H₂(M; k) = k` by its degree `d`, so
+`det (1 - t f_* | H₂(M; k)) = 1 - d t`. -/
+private theorem reverse_charpoly_singularHomologyMap_two [Algebra ℚ k] [FiniteCWType M]
+    (f : C(M, M)) :
+    (ContinuousMap.singularHomologyMap k 2 f).charpoly.reverse =
+      1 - Polynomial.C (o.degree o hE f : k) * Polynomial.X := by
+  have := algebraRat.flat_int k
+  rw [o.singularHomologyMap_eq_degree_smul_id hE, LinearMap.reverse_charpoly_smul_id,
+    o.finrank_singularChains_homology_eq_one hE k, pow_one]
+
 /-- **The Lefschetz zeta function of a self-map of a closed oriented surface.** For a self-map `f`
 of a compact connected homologically oriented surface of finite CW type and a field `k` of
 characteristic zero, `ζ_f · (1 - t) (1 - (deg f) t) = det (1 - t f_* | H₁(M; k))`. -/
@@ -121,17 +137,13 @@ theorem lefschetzZeta_mul_eq_reverse_charpoly [Algebra ℚ k] [FiniteCWType M] (
     f.lefschetzZeta k * ((1 - PowerSeries.X) *
       (1 - PowerSeries.C (o.degree o hE f : k) * PowerSeries.X)) =
       ((ContinuousMap.singularHomologyMap k 1 f).charpoly.reverse : k⟦X⟧) := by
-  have := flat_int_of_algebra_rat k
-  obtain ⟨h₀, hf₀⟩ := finrank_homology_zero_and_singularHomologyMap_zero (E := E) k f
   have h := ContinuousMap.lefschetzZeta_mul_prod_even_eq_prod_odd
     (subsingleton_singularChains_homology_of_notMem_range_three hE k) f
   rw [show {i ∈ Finset.range 3 | Even i} = {0, 2} by decide,
     show {i ∈ Finset.range 3 | Odd i} = {1} by decide, Finset.prod_pair (by norm_num),
-    Finset.prod_singleton, hf₀, ← one_smul k LinearMap.id, LinearMap.reverse_charpoly_smul_id,
-    o.singularHomologyMap_eq_degree_smul_id hE, LinearMap.reverse_charpoly_smul_id, h₀,
-    o.finrank_singularChains_homology_eq_one hE k] at h
-  simpa only [pow_one, Polynomial.coe_mul, Polynomial.coe_sub, Polynomial.coe_one, Polynomial.coe_C,
-    Polynomial.coe_X, map_one, one_mul, mul_assoc] using h
+    Finset.prod_singleton, reverse_charpoly_singularHomologyMap_zero (E := E) k f,
+    o.reverse_charpoly_singularHomologyMap_two hE k f] at h
+  simpa [mul_assoc, Polynomial.coe_C, -map_intCast, -eq_intCast] using h
 
 /-- **The Lefschetz zeta function of a self-map of a closed oriented surface**, solved for `ζ_f`:
 `ζ_f = det (1 - t f_* | H₁(M; k)) / ((1 - t) (1 - (deg f) t))`. -/

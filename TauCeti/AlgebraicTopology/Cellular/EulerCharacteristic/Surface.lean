@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Manifold
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.FlatCoefficients
+import TauCeti.RingTheory.Flat.FractionRing
 
 /-!
 # Euler characteristic of a closed oriented surface
@@ -56,7 +57,6 @@ theorem eulerChar_eq_two_sub_finrank_singularHomology_one :
     eulerChar M = 2 - (finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj
         (TopCat.of M)) : ℤ) := by
-  have : Module.Flat ℤ ℚ := IsLocalization.flat ℚ (nonZeroDivisors ℤ)
   have h₂ : finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 2).obj (ModuleCat.of ℚ ℚ)).obj
         (TopCat.of M)) = 1 :=
