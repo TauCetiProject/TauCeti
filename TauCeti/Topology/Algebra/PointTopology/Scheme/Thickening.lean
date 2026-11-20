@@ -9,7 +9,7 @@ public import TauCeti.Topology.Algebra.PointTopology.Scheme.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.Morphisms.Thickening
 
 /-!
-# Thickenings and reduction on scheme-valued points
+# Thickenings on scheme-valued points
 
 A thickening `i : Z ⟶ X` over `Spec k`, that is, a surjective closed immersion, is bijective
 on `R`-points when the coefficient ring `R` is reduced: a point `Spec R ⟶ X` kills the
@@ -18,9 +18,9 @@ a closed immersion induces a closed embedding on points, a thickening induces a 
 of point spaces over a reduced local T1 coefficient ring with continuous multiplication, open
 units and continuous inversion on its units, such as `ℂ`.
 
-The case of the reduction `X.nilradical.subscheme ⟶ X` shows that a scheme and its reduction
-have homeomorphic points; over `ℂ` this is the reduction homeomorphism of classical complex
-points. No finiteness or separation hypothesis on the schemes is needed. Reducedness of `R` is
+This generalises the reduction `X.nilradical.subscheme ⟶ X`, a thickening, for which
+`TauCeti.SchemePointTopology.reductionHomeomorph` gives the homeomorphism of points directly.
+No finiteness or separation hypothesis on the schemes is needed. Reducedness of `R` is
 needed: over the dual numbers `R = ℂ[ε]/(ε²)`, the identity of `Spec R` is an `R`-point of
 `Spec R` which does not factor through its reduction `Spec ℂ`.
 
@@ -30,8 +30,6 @@ needed: over the dual numbers `R = ℂ[ε]/(ε²)`, the identity of `Spec R` is 
   points with reduced coefficients.
 * `TauCeti.SchemePointTopology.isHomeomorph_map_of_isThickening` and
   `TauCeti.SchemePointTopology.homeomorphOfIsThickening`: it is a homeomorphism on points.
-* `TauCeti.SchemePointTopology.reductionHomeomorph`: the points of a scheme and of its
-  reduction are homeomorphic.
 
 ## References
 
@@ -113,13 +111,5 @@ theorem homeomorphOfIsThickening_symm_apply (i : Z ⟶ X) (hi : i ≫ fX = fZ) [
     (x : Points (R := R) fX) :
     (homeomorphOfIsThickening i hi).symm x = liftOfIsThickening i hi x :=
   (rfl)
-
-variable (fX) in
-/-- The points of a scheme and of its reduction `X.nilradical.subscheme` are homeomorphic over
-a reduced local T1 coefficient ring with continuous multiplication, open units and continuous
-inversion on its units. Over `ℂ` this is the reduction homeomorphism of complex points. -/
-noncomputable abbrev reductionHomeomorph :
-    Points (R := R) (X.nilradical.subschemeι ≫ fX) ≃ₜ Points (R := R) fX :=
-  homeomorphOfIsThickening X.nilradical.subschemeι rfl
 
 end TauCeti.SchemePointTopology

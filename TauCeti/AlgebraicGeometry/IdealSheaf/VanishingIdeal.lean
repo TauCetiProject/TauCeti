@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Subscheme
+import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 
 /-!
 # The reduced induced closed subscheme
@@ -34,9 +35,6 @@ discrete valuation ring.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
-* `Scheme.IdealSheafData.isReduced_subscheme_nilradical` and `Scheme.Hom.nilradical_le_ker`: the
-  reduction `X.nilradical.subscheme` is reduced, and every morphism from a reduced scheme to `X`
-  kills the nilradical of `X`, so it factors through the reduction.
 * `Scheme.IdealSheafData.comap_vanishingIdeal_of_isOpenImmersion`,
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_eq_top_of_notMem_range`, and
   `Scheme.IdealSheafData.comap_vanishingIdeal_closure_singleton_apply`: pullback of vanishing
@@ -50,7 +48,7 @@ discrete valuation ring.
 
 public section
 
-open TopologicalSpace
+open CategoryTheory TopologicalSpace
 
 universe u
 
@@ -115,18 +113,54 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
       exact h ⟨y, rfl⟩
   exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
 
-/-- The reduction of a scheme, the closed subscheme cut out by its nilradical, is reduced: it is
-the reduced induced closed subscheme structure on the whole space. -/
-instance isReduced_subscheme_nilradical : IsReduced X.nilradical.subscheme := by
+/-- The reduction `X.nilradical.subscheme` of a scheme is reduced. -/
+instance _root_.AlgebraicGeometry.Scheme.isReduced_subscheme_nilradical (X : Scheme.{u}) :
+    IsReduced X.nilradical.subscheme := by
   rw [← vanishingIdeal_top]
   infer_instance
 
-/-- A morphism from a reduced scheme kills the nilradical of its target, so it factors through
-the reduction of the target (`IsClosedImmersion.lift` along `subschemeι`). -/
+/-- A morphism from a reduced scheme kills the nilradical of its target, so it factors
+through the reduction `X.nilradical.subscheme` (`IsClosedImmersion.lift` along `subschemeι`). -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.nilradical_le_ker {Y : Scheme.{u}} [IsReduced Y]
     (f : Y ⟶ X) : X.nilradical ≤ f.ker := by
   rw [← vanishingIdeal_top]
-  exact vanishingIdeal_le_ker_of_range_subset f (Set.subset_univ _)
+  exact vanishingIdeal_le_ker_of_range_subset f (by simp)
+
+/-- Over an affine open `i : Spec A ⟶ X`, a lift `j` of `Spec (A ⧸ nilradical A) ⟶ Spec A ⟶ X`
+to the reduction `X.nilradical.subscheme` is an open immersion: it identifies
+`Spec (A ⧸ nilradical A)` with the pullback of `i` along `X.nilradical.subschemeι`. -/
+theorem _root_.AlgebraicGeometry.Scheme.isOpenImmersion_of_comp_nilradical_subschemeι
+    {A : CommRingCat.{u}} (i : Spec A ⟶ X) [IsOpenImmersion i]
+    (j : Spec (.of (A ⧸ _root_.nilradical A)) ⟶ X.nilradical.subscheme)
+    (hj : j ≫ X.nilradical.subschemeι =
+      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (_root_.nilradical A))) ≫ i) :
+    IsOpenImmersion j := by
+  let q := Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk (_root_.nilradical A)))
+  -- `j` is the composite of the comparison map `l` into the pullback with its second projection.
+  let l := Limits.pullback.lift q j hj.symm
+  have hl : l ≫ Limits.pullback.fst i X.nilradical.subschemeι = q :=
+    Limits.pullback.lift_fst _ _ _
+  have : IsClosedImmersion (l ≫ Limits.pullback.fst i X.nilradical.subschemeι) := by
+    rw [hl]
+    exact IsClosedImmersion.spec_of_surjective _ Ideal.Quotient.mk_surjective
+  have := IsClosedImmersion.of_comp_isClosedImmersion l
+    (Limits.pullback.fst i X.nilradical.subschemeι)
+  have : Surjective l := by
+    -- Every prime of `A` contains the nilradical, so `q` is surjective.
+    have hq : Function.Surjective q := by
+      rw [funext (Spec.map_apply _)]
+      exact (PrimeSpectrum.comap_quotientMk_bijective_of_le_nilradical le_rfl).2
+    refine ⟨fun p ↦ ?_⟩
+    obtain ⟨y, hy⟩ := hq (Limits.pullback.fst i X.nilradical.subschemeι p)
+    refine ⟨y, (Limits.pullback.fst i X.nilradical.subschemeι).isClosedEmbedding.injective ?_⟩
+    rw [← Scheme.Hom.comp_apply, hl, hy]
+  -- The pullback is reduced, being open in the reduction, so the surjective closed immersion `l`
+  -- is an isomorphism.
+  have : IsReduced (Limits.pullback i X.nilradical.subschemeι) :=
+    isReduced_of_isOpenImmersion (Limits.pullback.snd i X.nilradical.subschemeι)
+  have := isIso_of_isClosedImmersion_of_surjective l
+  rw [← Limits.pullback.lift_snd q j hj.symm]
+  infer_instance
 
 /-- Along an open immersion `j : U ⟶ X`, `(vanishingIdeal Z).comap j` is
 `vanishingIdeal (j ⁻¹' Z)`. -/
