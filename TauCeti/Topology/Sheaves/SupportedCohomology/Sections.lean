@@ -372,6 +372,18 @@ lemma coe_supportedModuleHPresheafZeroIso_hom_app_apply
         F.supportedModuleHZeroEquiv S W.unop x :=
   (rfl)
 
+/-- The inverse degree-zero comparison sends a supported section to the cohomology class that
+`CategoryTheory.Sheaf.supportedModuleHZeroEquiv` identifies with it. -/
+@[simp]
+lemma supportedModuleHZeroEquiv_supportedModuleHPresheafZeroIso_inv_app_apply
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (W : (Opens X)ᵒᵖ)
+    (s : F.supportedSubmodule S W.unop) :
+    F.supportedModuleHZeroEquiv S W.unop ((F.supportedModuleHPresheafZeroIso S).inv.app W s) =
+      s :=
+  Subtype.ext <| (coe_supportedModuleHPresheafZeroIso_hom_app_apply S F W _).symm.trans <|
+    congrArg Subtype.val
+      (ConcreteCategory.congr_hom ((F.supportedModuleHPresheafZeroIso S).inv_hom_id_app W) s)
+
 /-- The degree-zero supported cohomology presheaf of modules already satisfies the sheaf law. -/
 theorem isSheaf_supportedModuleHPresheaf_zero
     (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) :

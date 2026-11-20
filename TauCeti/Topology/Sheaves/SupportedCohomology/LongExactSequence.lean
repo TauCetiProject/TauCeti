@@ -190,10 +190,8 @@ lemma supportedModuleHPresheafδZero_app_apply (hT : T.ShortExact) (W : (Opens X
     (supportedModuleHPresheafδZero S hT).app W s =
       ((T.X₃.supportedModuleHZeroEquiv S W.unop).symm s).comp hT.extClass (zero_add 1) :=
   (supportedModuleHPresheafδ_app_apply S hT 0 W _).trans <| congrArg (Ext.comp · hT.extClass _) <|
-    (LinearEquiv.eq_symm_apply _).2 <| Subtype.ext <|
-      (coe_supportedModuleHPresheafZeroIso_hom_app_apply S T.X₃ W _).symm.trans <|
-        congrArg Subtype.val (ConcreteCategory.congr_hom
-          ((T.X₃.supportedModuleHPresheafZeroIso S).inv_hom_id_app W) s)
+    (LinearEquiv.eq_symm_apply _).2 <|
+      supportedModuleHZeroEquiv_supportedModuleHPresheafZeroIso_inv_app_apply S T.X₃ W s
 
 /-- Under `CategoryTheory.Sheaf.supportedModuleHZeroEquiv`, the image of a supported section of
 `F₂` in `F₃` corresponds to the image of its class. -/

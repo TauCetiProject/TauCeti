@@ -566,16 +566,7 @@ lemma supportedModuleHZeroEquiv_supportedModuleHPresheafEdgeIso_hom_app
       F.supportedModuleHEdgeEquiv (fun q hq ↦ h q hq.ne) hZS W x := by
   simp only [supportedModuleHPresheafEdgeIso, supportedModuleHPresheafEdgeIsoZero, eqToIso_refl,
     Iso.refl_trans, Iso.trans_hom, Iso.symm_hom, TopCat.Presheaf.comp_app]
-  -- The goal is `e (inv (d x)) = d x` for the edge equivalence `d`, the equivalence
-  -- `e = supportedModuleHZeroEquiv` and `inv` the inverse component of
-  -- `supportedModuleHPresheafZeroIso`, whose forward component is `e` on underlying sections.
-  -- The component of `d` is typed only through the unfolding of `supportedModuleHPresheaf`, so
-  -- `ConcreteCategory.comp_apply` and `NatIso.ofComponents_hom_app` do not rewrite it, and
-  -- `inv_hom_id_app` closes the goal up to that unfolding.
-  refine Subtype.ext
-    ((coe_supportedModuleHPresheafZeroIso_hom_app_apply Z _ (op W) _).symm.trans ?_)
-  exact congrArg Subtype.val (ConcreteCategory.congr_hom
-    (((F.supportedModuleHSheaf S n).supportedModuleHPresheafZeroIso Z).inv_hom_id_app (op W)) _)
+  exact supportedModuleHZeroEquiv_supportedModuleHPresheafZeroIso_inv_app_apply Z _ (op W) _
 
 end higherEdge
 
