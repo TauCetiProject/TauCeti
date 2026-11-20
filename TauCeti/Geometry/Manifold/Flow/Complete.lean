@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.CompactSupport
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
 
 /-!
@@ -19,8 +20,9 @@ pointwise maximal intervals and to the existence of global integral curves.
 Compactly supported `C¹` vector fields on boundaryless Banach manifolds are complete. In
 particular, every `C¹` vector field on a compact boundaryless Banach manifold is complete. So is
 every `C¹` vector field admitting a proper map that is constant along its integral curves, such
-as a Hamiltonian vector field with a proper family of first integrals. These criteria make
-completeness available without choosing a global flow or assuming finite dimensionality.
+as a Hamiltonian vector field with a proper family of first integrals, and more generally every
+`C¹` vector field along which a proper real function changes at a bounded rate. These criteria
+make completeness available without choosing a global flow or assuming finite dimensionality.
 
 ## Main declarations
 
@@ -43,6 +45,8 @@ completeness available without choosing a global flow or assuming finite dimensi
 * `TauCeti.isCompleteVectorField_of_isCompact_preimage_singleton`,
   `TauCeti.isCompleteVectorField_of_isProperMap`: fields whose maximal integral curves stay in
   the compact fibres of a map, for instance of a proper map, are complete.
+* `TauCeti.isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le`: a field `v` is complete when
+  some proper real function `f` has bounded derivative `|df(v)| ≤ C` along it.
 
 ## References
 
@@ -220,5 +224,56 @@ theorem isCompleteVectorField_of_isProperMap {Y : Type*} [TopologicalSpace Y]
     IsCompleteVectorField v :=
   isCompleteVectorField_of_isCompact_preimage_singleton hv
     (fun _ ↦ hG.isCompact_preimage isCompact_singleton) hGv
+
+/-- **A `C¹` vector field along which a proper function changes at a bounded rate is complete.**
+If `f : M → ℝ` is proper and differentiable and `|df(v)| ≤ C` everywhere, then along the maximal
+integral curve `γ` through `x` the mean value inequality gives `|f (γ t) - f x| ≤ C |t|`. Up to a
+finite time `T` the curve therefore stays in the compact set `f⁻¹ [f x - C T, f x + C T]`, so by
+the escape lemma neither end of its maximal interval of existence is finite. The function `f` need
+not be bounded below, and no metric is involved. -/
+theorem isCompleteVectorField_of_isProperMap_of_abs_mvfderiv_le
+    {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M)))
+    {f : M → ℝ} (hfp : IsProperMap f) (hf : MDifferentiable I 𝓘(ℝ) f) {C : ℝ}
+    (hC : ∀ x, |mvfderiv I f x (v x)| ≤ C) :
+    IsCompleteVectorField v := by
+  rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
+  intro x
+  have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
+  have hC0 : 0 ≤ C := (abs_nonneg _).trans (hC x)
+  -- The mean value inequality along the maximal integral curve.
+  have hmv (t : ℝ) (ht : t ∈ maximalIntegralCurveInterval v x) :
+      f (maximalIntegralCurve v x t) ∈ Icc (f x - C * |t|) (f x + C * |t|) := by
+    have hγ := isMIntegralCurveOn_maximalIntegralCurve (x := x) hv
+    have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := f ∘ maximalIntegralCurve v x)
+      (fun u hu ↦ TauCeti.Manifold.hasDerivWithinAt_comp_curve (hf _) (hγ u hu))
+      (fun u _ ↦ by rw [Real.norm_eq_abs]; exact hC _)
+      ordConnected_maximalIntegralCurveInterval.convex h0 ht
+    rw [Function.comp_apply, Function.comp_apply, maximalIntegralCurve_zero, Real.norm_eq_abs,
+      Real.norm_eq_abs, sub_zero] at h
+    exact ⟨by linarith [neg_abs_le (f (maximalIntegralCurve v x t) - f x)],
+      by linarith [le_abs_self (f (maximalIntegralCurve v x t) - f x)]⟩
+  -- Up to a finite time `T`, the curve stays in a compact sublevel band of `f`.
+  have hK (T : ℝ) : IsCompact (f ⁻¹' Icc (f x - C * T) (f x + C * T)) :=
+    hfp.isCompact_preimage isCompact_Icc
+  have hband {t T : ℝ} (ht : t ∈ maximalIntegralCurveInterval v x) (htT : |t| ≤ T) :
+      maximalIntegralCurve v x t ∈ f ⁻¹' Icc (f x - C * T) (f x + C * T) := by
+    have h := hmv t ht
+    have hCT := mul_le_mul_of_nonneg_left htT hC0
+    exact ⟨by linarith [h.1], by linarith [h.2]⟩
+  have hup : ¬ BddAbove (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
+    have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
+    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hlub
+    obtain ⟨t, ht, htK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsLT hb0)
+      (eventually_notMem_nhdsLT_maximalIntegralCurve hv hlub (hK _))).exists
+    exact htK (hband (hsub ⟨ha.trans ht.1, ht.2⟩) (by rw [abs_of_pos ht.1]; exact ht.2.le))
+  have hlow : ¬ BddBelow (maximalIntegralCurveInterval v x) := fun hbdd ↦ by
+    have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
+    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
+    obtain ⟨t, ht, htK⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
+      (eventually_notMem_nhdsGT_maximalIntegralCurve hv hglb (hK (-sInf _)))).exists
+    exact htK (hband (hsub ⟨ht.1, ht.2.trans hb⟩)
+      (by rw [abs_of_neg ht.2]; exact neg_le_neg ht.1.le))
+  exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow hup hlow
 
 end TauCeti
