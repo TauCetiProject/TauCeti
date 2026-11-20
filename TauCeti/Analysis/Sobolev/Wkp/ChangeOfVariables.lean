@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.Sobolev.Leibniz
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -26,15 +27,34 @@ import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.Topology.Algebra.Module.Determinant
+import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
+import TauCeti.Analysis.Sobolev.Wkp.Chain
+import TauCeti.Analysis.Sobolev.Wkp.Exponent
+import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
+import Mathlib.Analysis.Normed.Operator.Banach
 
 /-!
 # Changes of variables in `W^{k,p}`
 
-Let `Φ` be a change of variables of order `k` from an open set `U` into an open set `V`
-(`TauCeti.Wkp.IsChangeOfVariables`): a `Cᵏ` injective map with bounded derivatives of orders `1`
-through `k` and Jacobian determinant bounded away from zero. For `1 ≤ p < ∞`, this file
-constructs precomposition with `Φ` as a bounded linear operator `W^{k,p}(V) →L[ℝ] W^{k,p}(U)`
-(`TauCeti.Wkp.compL`). At order two, its weak Hessian is given by the chain rule
+Let `Φ` be a change of variables of order `k` from an open set `U` into an open set `V` of a
+finite-dimensional real inner product space (`TauCeti.Wkp.IsChangeOfVariables`): `Φ` is `Cᵏ` and
+injective on `U`, its derivatives of orders `1` through `k` are bounded and its Jacobian
+determinant is bounded away from zero. For every `1 ≤ p ≤ ∞`, precomposition with `Φ` is a bounded
+operator `TauCeti.Wkp.compL : W^{k,p}(V) →L[ℝ] W^{k,p}(U)`, characterized by its value `u ∘ Φ`.
+
+For `p < ∞` the elements with `Cᵏ` representatives are dense (Meyers–Serrin), the Faà di Bruno
+formula bounds precomposition on them by `compLBound p k L c`, and `compL` is the continuous
+extension. For `p = ∞` they are not dense, and `u ∘ Φ` is placed in `W^{k,∞}(U)` through its weak
+derivative chain. On the part `U_R` of `U` mapped into the ball of radius `R`, the restriction of
+`u` to the part `V_R` of `V` in that ball, which has finite measure, lies in `W^{k,q}(V_R)` for
+every finite `q`. The finite-exponent change of variables gives weak derivative chains of `u ∘ Φ`
+on the sets `U_R`, which glue to one on `U`, and bounds its fields in `L^q(U_R)` by
+`compLBound q k L c * μ(V_R) ^ (1/q) * ‖u‖`. Letting `q → ∞` bounds them in `L^∞(U_R)` by
+`compLBound ∞ k L c * ‖u‖`, uniformly in `R`. The operator is linear because its value determines
+it, and continuous by the closed graph theorem. Since the fields are then bounded in `L^∞(U)` by the
+same constant, its norm is at most `(k + 1) * compLBound ∞ k L c`.
+
+At order two and for `1 ≤ p < ∞`, the weak Hessian of `u ∘ Φ` is given by the chain rule
 
 `D²(u ∘ Φ)(x) = DΦ(x)† ∘ D²u(Φ x) ∘ DΦ(x) + ⟪∇u(Φ x), D²Φ(x)⟫`
 
@@ -69,9 +89,8 @@ of weak derivatives identifies the entries `⟪D²(u ∘ e) f, c⟫ = ⟪D²u(e 
 boundary values are preserved because `e` is a homeomorphism
 (`TauCeti.W1p.compL_mem_w1p0Submodule`).
 
-For a nonlinear change of variables `Φ`, precomposition is first defined on functions with `Cᵏ`
-representatives and extended by density. The weak gradient of `u ∘ Φ` is `DΦ† (∇u ∘ Φ)`, so in an
-orthonormal basis `(bᵢ)` each of its components is
+For a nonlinear change of variables `Φ` and `p < ∞`, the weak gradient of `u ∘ Φ` is
+`DΦ† (∇u ∘ Φ)`, so in an orthonormal basis `(bᵢ)` each of its components is
 `⟪∇(u ∘ Φ), c⟫ = ∑ᵢ ⟪DΦ c, bᵢ⟫ ⟪∇u(Φ ·), bᵢ⟫`, a sum of products of the `C¹` coefficients
 `⟪DΦ c, bᵢ⟫` with functions `⟪∇u(Φ ·), bᵢ⟫` in `W^{1,p}(U)`. Differentiating with the product
 rule (`TauCeti.HasWeakLineDerivOn.contDiffOn_smul_of_ne_zero`) and using uniqueness of weak
@@ -79,6 +98,12 @@ derivatives gives the chain rule for the weak Hessian.
 
 ## Main declarations
 
+* `TauCeti.Wkp.compL`: precomposition with a change of variables, a bounded operator on `W^{k,p}`
+  for every `1 ≤ p ≤ ∞`, with value `u ∘ Φ` (`TauCeti.Wkp.value_compL_ae`).
+* `TauCeti.Wkp.opNorm_compL_le`: its norm is at most `compLBound p k L c` for `p < ∞`.
+* `TauCeti.Wkp.opNorm_compL_top_le`: its norm is at most `(k + 1) * compLBound ∞ k L c` for
+  `p = ∞`.
+* `TauCeti.Wkp.compLEquiv`: precomposition with a diffeomorphism as an isomorphism of `W^{k,p}`.
 * `TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`: precomposition with a linear
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
 * `TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`: transferring a Hessian
@@ -91,7 +116,6 @@ derivatives gives the chain rule for the weak Hessian.
 * `TauCeti.Wkp.IsChangeOfVariables.exists_w1p0_value_ae_eq_mul_value_w1pCompL` and
   `TauCeti.Wkp.exists_lowerOrder_eq_restrictL_of_w1pCompL`: local zero boundary values move forward,
   and local `W^{2,p}` regularity moves back, along a change of variables.
-* `TauCeti.Wkp.compL`: precomposition with a change of variables of order `k` in `W^{k,p}`.
 * `TauCeti.Wkp.gradient_firstOrder_compL_ae`: the chain rule `∇(u ∘ Φ) = DΦ† ∇u(Φ ·)` for the
   weak gradient.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: the chain rule
@@ -594,6 +618,27 @@ theorem compLBound_nonneg (p : ℝ≥0∞) (k : ℕ) (L : ℝ) {c : ℝ} (hc : 0
   have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
   positivity
 
+/-- The constant `compLBound ∞ k L c` is at least one: the exponent of `c` vanishes, and the
+summand for `i = 0` is one. -/
+theorem one_le_compLBound_top (k : ℕ) (L c : ℝ) : 1 ≤ compLBound ⊤ k L c := by
+  rw [compLBound, ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero, one_mul]
+  have : 0 ≤ max 1 L := zero_le_one.trans (le_max_left _ _)
+  calc (1 : ℝ) = max 1 L ^ 0 * (Fintype.card (OrderedFinpartition 0) : ℝ) := by simp
+    _ ≤ _ := Finset.single_le_sum (f := fun i => max 1 L ^ i *
+        (Fintype.card (OrderedFinpartition i) : ℝ)) (fun i _ => by positivity)
+        (Finset.mem_range.2 k.succ_pos)
+
+open scoped NNReal in
+/-- As the finite exponent `q` tends to `∞`, the constant `compLBound q k L c` tends to
+`compLBound ∞ k L c`. -/
+theorem tendsto_compLBound_coe_atTop (k : ℕ) (L : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    Tendsto (fun q : ℝ≥0 => compLBound q k L c) atTop (𝓝 (compLBound ⊤ k L c)) := by
+  unfold compLBound
+  rw [ENNReal.div_top, ENNReal.toReal_zero, Real.rpow_zero]
+  refine (((Real.tendsto_const_rpow_inv_atTop (inv_ne_zero hc)).comp
+    (NNReal.tendsto_coe_atTop.2 tendsto_id)).congr fun q => ?_).mul_const _
+  rw [Function.comp_apply, id_eq, one_div, ENNReal.toReal_inv, ENNReal.coe_toReal]
+
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {U V W : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {Φ Ψ : E → E} {k : ℕ} {L L' c c' : ℝ}
@@ -810,62 +855,341 @@ private theorem compLp_ae (h : IsChangeOfVariables k U V Φ L c) (g : Lp ℝ p (
     measurableExtension_ae_eq (mu := mu) (Φ := Φ) (U := U)] with x hx hx'
   rw [compLp, hx, Function.comp_apply, hx']
 
-/-- **Change of variables in `W^{k,p}`.** If `Φ` is a change of variables of order `k` from `U`
-into `V` (`TauCeti.Wkp.IsChangeOfVariables`) and `1 ≤ p < ∞`, then precomposition with `Φ` is a
-bounded linear operator `W^{k,p}(V) →L[ℝ] W^{k,p}(U)`. Its value is `u ∘ Φ`
-(`TauCeti.Wkp.value_compL_ae`), which characterizes it (`TauCeti.Wkp.compL_eq_iff`). It is
-constructed as the continuous extension of precomposition on the subspace of elements with `Cᵏ`
-representatives, which is dense because `p < ∞`. -/
-def compL (h : IsChangeOfVariables k U V Φ L c) (_hp : p ≠ ⊤) :
+/-- Precomposition with `Φ` for `1 ≤ p < ∞`, constructed as the continuous extension of
+precomposition on the subspace of elements with `Cᵏ` representatives, which is dense because
+`p < ∞`. -/
+private def compFiniteL (h : IsChangeOfVariables k U V Φ L c) (_hp : p ≠ ⊤) :
     Wkp mu V p k →L[ℝ] Wkp mu U p k :=
   (compSmoothₗ h).extendOfNorm (smoothSubmodule mu V p k).subtype
 
-private theorem compL_apply_smooth (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤)
+private theorem compFiniteL_apply_smooth (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤)
     (u : smoothSubmodule mu V p k) :
-    compL h hp (u : Wkp mu V p k) = compSmooth h u :=
+    compFiniteL h hp (u : Wkp mu V p k) = compSmooth h u :=
   LinearMap.extendOfNorm_eq (denseRange_smoothSubmodule_subtype hp)
     ⟨compLBound p k L c, norm_compSmooth_le h⟩ u
 
-private theorem valueL_comp_compL (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
-    (valueL k).comp (compL h hp) =
+private theorem valueL_comp_compFiniteL (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
+    (valueL k).comp (compFiniteL h hp) =
       (compLp h).comp (valueL (mu := mu) (Omega := V) (p := p) k) := by
   refine DFunLike.coe_injective (Continuous.ext_on (denseRange_smoothSubmodule_subtype hp)
-    ((valueL k).comp (compL h hp)).continuous ((compLp h).comp (valueL k)).continuous ?_)
+    ((valueL k).comp (compFiniteL h hp)).continuous ((compLp h).comp (valueL k)).continuous ?_)
   rintro _ ⟨u, rfl⟩
   refine Lp.ext ?_
   simp only [Submodule.coe_subtype, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    valueL_apply, compL_apply_smooth h hp]
+    valueL_apply, compFiniteL_apply_smooth h hp]
   exact (value_compSmooth_ae h u).trans (compLp_ae h _).symm
 
-/-- The value of `compL h hp u` is `u ∘ Φ`, almost everywhere on `U`. -/
-theorem value_compL_ae (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    (value k (compL h hp u) : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
-  have he := congrArg (fun T => T u) (valueL_comp_compL h hp)
+private theorem value_compFiniteL_ae (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤)
+    (u : Wkp mu V p k) :
+    (value k (compFiniteL h hp u) : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
+  have he := congrArg (fun T => T u) (valueL_comp_compFiniteL h hp)
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, valueL_apply] at he
   rw [he]
   exact compLp_ae h _
 
-/-- An element of `W^{k,p}(U)` is `compL h hp u` exactly when its value is `u ∘ Φ` almost
-everywhere on `U`. -/
-theorem compL_eq_iff (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p k)
-    (w : Wkp mu U p k) :
-    compL h hp u = w ↔ (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) :=
-  ⟨fun hw => hw ▸ value_compL_ae h hp u,
-    fun hw => ext k (Lp.ext ((value_compL_ae h hp u).trans hw.symm))⟩
-
-/-- `compL h hp` increases norms by at most the factor `compLBound p k L c`. -/
-theorem norm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    ‖compL h hp u‖ ≤ compLBound p k L c * ‖u‖ :=
+private theorem norm_compFiniteL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤)
+    (u : Wkp mu V p k) : ‖compFiniteL h hp u‖ ≤ compLBound p k L c * ‖u‖ :=
   LinearMap.norm_extendOfNorm_apply_le (denseRange_smoothSubmodule_subtype hp) _
     (norm_compSmooth_le h) u
 
-/-- `compL h hp` has operator norm at most `compLBound p k L c`. -/
-theorem opNorm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
-    ‖(compL h hp : Wkp mu V p k →L[ℝ] Wkp mu U p k)‖ ≤ compLBound p k L c :=
-  LinearMap.opNorm_extendOfNorm_le (denseRange_smoothSubmodule_subtype hp)
-    (compLBound_nonneg p k L h.pos) (norm_compSmooth_le h)
-
 end Extension
+
+/-! ### Bounded Sobolev functions
+
+For `p = ∞` the smooth elements are not dense, and precomposition is constructed from its weak
+derivative chain instead. On the part `U_R` of `U` that `Φ` maps into the ball of radius `R`
+about the origin, `u` restricts to a Sobolev function of every finite exponent `q` on the part
+`V_R` of `V` in that ball, which has finite measure. So `u ∘ Φ` is a Sobolev function of exponent
+`q` on `U_R`, with the norm bound `compLBound q k L c * μ(V_R) ^ (1/q) * ‖u‖`. These local
+functions supply weak derivative chains of `u ∘ Φ` near every point of `U`, which glue to a chain
+on `U` (`TauCeti.exists_hasWeakFDerivOn_chain_of_locally`). On `U_R` the fields of the chain
+are bounded in `L^q` by the same constant, and as `q → ∞` it tends to `compLBound ∞ k L c * ‖u‖`
+(`TauCeti.eLpNorm_exponent_top_le_liminf`), uniformly in `R`. -/
+
+section Top
+
+open scoped NNReal
+
+/-- The open ball of radius `R` about the origin, as an open set. -/
+private def ballOpens (R : ℝ) : Opens E :=
+  ⟨Metric.ball 0 R, Metric.isOpen_ball⟩
+
+/-- The part of `U` that `Φ` maps into the ball of radius `R` about the origin. -/
+private def preimageBall (h : IsChangeOfVariables k U V Φ L c) (R : ℝ) : Opens E :=
+  ⟨U ∩ Φ ⁻¹' Metric.ball 0 R,
+    h.differentiableOn.continuousOn.isOpen_inter_preimage U.isOpen Metric.isOpen_ball⟩
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem preimageBall_le (h : IsChangeOfVariables k U V Φ L c) (R : ℝ) :
+    preimageBall h R ≤ U :=
+  fun _ hx => hx.1
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem isChangeOfVariables_preimageBall (h : IsChangeOfVariables k U V Φ L c) (R : ℝ) :
+    IsChangeOfVariables k (preimageBall h R) (V ⊓ ballOpens R) Φ L c :=
+  h.mono_set (preimageBall_le h R) fun _ hx => ⟨h.mapsTo hx.1, hx.2⟩
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem coe_eq_iUnion_preimageBall (h : IsChangeOfVariables k U V Φ L c) :
+    (U : Set E) = ⋃ R : ℕ, (preimageBall h R : Set E) := by
+  ext x
+  simp only [Set.mem_iUnion]
+  refine ⟨fun hx => ?_, fun ⟨R, hR⟩ => hR.1⟩
+  obtain ⟨R, hR⟩ := exists_nat_gt ‖Φ x‖
+  exact ⟨R, hx, by simpa only [Set.mem_preimage, Metric.mem_ball, dist_zero_right] using hR⟩
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem isFiniteMeasure_restrict_inf_ballOpens [ProperSpace E] (V : Opens E) (R : ℝ) :
+    IsFiniteMeasure (mu.restrict (V ⊓ ballOpens R : Opens E)) :=
+  isFiniteMeasure_restrict.2 ((measure_mono (fun _ hx => hx.2 : ((V ⊓ ballOpens R : Opens E) :
+    Set E) ⊆ Metric.ball 0 R)).trans_lt measure_ball_lt_top).ne
+
+/-- On the part of `U` that `Φ` maps into a ball, the precomposition of a bounded Sobolev function
+is a Sobolev function of every finite exponent `q`, with norm at most `compLBound q k L c` times
+the `q`-th root of the measure of the part of `V` in that ball, times `‖u‖`. -/
+private theorem exists_comp_preimageBall (h : IsChangeOfVariables k U V Φ L c)
+    (u : Wkp mu V ⊤ k) (R : ℝ) (q : ℝ≥0∞) [Fact (1 ≤ q)] (hq : q ≠ ⊤) :
+    ∃ y : Wkp mu (preimageBall h R) q k,
+      (value k y : E → ℝ) =ᵐ[mu.restrict (preimageBall h R)] (fun x => value k u (Φ x)) ∧
+        ‖y‖ ≤ compLBound q k L c *
+          (mu (V ⊓ ballOpens R : Opens E) ^ (1 / q.toReal)).toReal * ‖u‖ := by
+  have := isFiniteMeasure_restrict_inf_ballOpens (mu := mu) V R
+  have hle : V ⊓ ballOpens R ≤ V := inf_le_left
+  have hR := isChangeOfVariables_preimageBall h R
+  set u' := ofExponentLEL (le_top : q ≤ ⊤) k (restrictL hle k u)
+  refine ⟨compFiniteL hR hq u', ?_, ?_⟩
+  · filter_upwards [value_compFiniteL_ae hR hq u',
+      hR.ae_comp (value_ofExponentLEL_ae (le_top : q ≤ ⊤) k (restrictL hle k u)),
+      hR.ae_comp (value_restrictL_ae hle k u)] with x h1 h2 h3
+    rw [h1, h2, h3]
+  · have hu' : ‖u'‖ ≤ (mu (V ⊓ ballOpens R : Opens E) ^ (1 / q.toReal)).toReal * ‖u‖ := by
+      refine (norm_ofExponentLEL_apply_le (le_top : q ≤ ⊤) k _).trans ?_
+      rw [ENNReal.toReal_top, div_zero, sub_zero]
+      exact mul_le_mul_of_nonneg_left (norm_restrictL_le hle k u) ENNReal.toReal_nonneg
+    calc ‖compFiniteL hR hq u'‖ ≤ compLBound q k L c * ‖u'‖ := norm_compFiniteL_le hR hq u'
+      _ ≤ compLBound q k L c * ((mu (V ⊓ ballOpens R : Opens E) ^ (1 / q.toReal)).toReal *
+          ‖u‖) := mul_le_mul_of_nonneg_left hu' (compLBound_nonneg q k L h.pos)
+      _ = _ := by ring
+
+/-- The precomposition of a bounded Sobolev function of order `n + 1` has a weak derivative
+chain on `U`. -/
+private theorem exists_chain_comp {n : ℕ} (h : IsChangeOfVariables (n + 1) U V Φ L c)
+    (u : Wkp mu V ⊤ (n + 1)) :
+    ∃ G : (i : ℕ) → E → IteratedGradient E i,
+      HasWeakFDerivOn mu U (fun x => value (n + 1) u (Φ x)) (fun x => innerSL ℝ (G 0 x)) ∧
+        ∀ i < n, HasWeakFDerivOn mu U (G i) (G (i + 1)) := by
+  refine exists_hasWeakFDerivOn_chain_of_locally n fun x hx => ?_
+  obtain ⟨R, hR⟩ := Set.mem_iUnion.1 ((coe_eq_iUnion_preimageBall h).subst (motive := (x ∈ ·)) hx)
+  obtain ⟨y, hy, -⟩ := exists_comp_preimageBall h u R 1 ENNReal.one_ne_top
+  obtain ⟨H, hH0, hH, -, -⟩ := exists_iteratedGradient_chain n y
+  exact ⟨preimageBall h R, hR, H, hH0.congr_ae hy, hH⟩
+
+/-- The fields of a weak derivative chain of the precomposition of a bounded Sobolev function are
+essentially bounded on the part of `U` that `Φ` maps into a ball, by a bound independent of the
+ball. -/
+private theorem aestronglyMeasurable_and_eLpNorm_top_le_of_chain {n : ℕ}
+    (h : IsChangeOfVariables (n + 1) U V Φ L c) (u : Wkp mu V ⊤ (n + 1))
+    {G : (i : ℕ) → E → IteratedGradient E i}
+    (hG0 : HasWeakFDerivOn mu U (fun x => value (n + 1) u (Φ x)) (fun x => innerSL ℝ (G 0 x)))
+    (hG : ∀ i < n, HasWeakFDerivOn mu U (G i) (G (i + 1))) {i : ℕ} (hi : i ≤ n) (R : ℝ) :
+    AEStronglyMeasurable (G i) (mu.restrict (preimageBall h R)) ∧
+      eLpNorm (G i) ⊤ (mu.restrict (preimageBall h R)) ≤
+        ENNReal.ofReal (compLBound ⊤ (n + 1) L c * ‖u‖) := by
+  have hle := preimageBall_le h R
+  set M := (mu (V ⊓ ballOpens R : Opens E)).toReal
+  -- The bounds for every finite exponent `q ≥ 1`.
+  have hq : ∀ q : ℝ≥0, 1 ≤ q → AEStronglyMeasurable (G i) (mu.restrict (preimageBall h R)) ∧
+      eLpNorm (G i) q (mu.restrict (preimageBall h R)) ≤
+        ENNReal.ofReal (compLBound q (n + 1) L c * max 1 M ^ (q : ℝ)⁻¹ * ‖u‖) := by
+    intro q hq
+    have : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq⟩
+    obtain ⟨y, hy, hyn⟩ := exists_comp_preimageBall h u R q ENNReal.coe_ne_top
+    obtain ⟨hm, hb⟩ := (ae_eq_iteratedGradient_and_eLpNorm_le_of_chain n y hy (hG0.mono hle)
+      fun j hj => (hG j hj).mono hle).2 i hi
+    refine ⟨hm.aestronglyMeasurable, hb.trans (ENNReal.ofReal_le_ofReal (hyn.trans ?_))⟩
+    rw [← ENNReal.toReal_rpow, ENNReal.coe_toReal, one_div]
+    gcongr
+    · exact compLBound_nonneg _ _ _ h.pos
+    · exact le_max_right _ _
+  refine ⟨(hq 1 le_rfl).1, ?_⟩
+  -- As `q → ∞` the bounds tend to `compLBound ∞ (n + 1) L c * ‖u‖`.
+  have hK : Tendsto (fun q : ℝ≥0 => compLBound q (n + 1) L c * max 1 M ^ (q : ℝ)⁻¹ * ‖u‖)
+      atTop (𝓝 (compLBound ⊤ (n + 1) L c * ‖u‖)) := by
+    simpa only [Function.comp_def, id_eq, mul_one] using
+      ((tendsto_compLBound_coe_atTop (n + 1) L h.pos.ne').mul
+        ((Real.tendsto_const_rpow_inv_atTop (zero_lt_one.trans_le (le_max_left 1 M)).ne').comp
+          (NNReal.tendsto_coe_atTop.2 tendsto_id))).mul_const ‖u‖
+  refine eLpNorm_exponent_top_le_liminf.trans ?_
+  rw [← (ENNReal.tendsto_ofReal hK).liminf_eq]
+  exact liminf_le_liminf (eventually_atTop.2 ⟨1, fun q hq1 => (hq q hq1).2⟩)
+
+/-- The fields of a weak derivative chain of the precomposition of a bounded Sobolev function are
+essentially bounded on `U`, by `compLBound ∞ (n + 1) L c * ‖u‖`. -/
+private theorem memLp_top_and_eLpNorm_top_le_of_chain {n : ℕ}
+    (h : IsChangeOfVariables (n + 1) U V Φ L c) (u : Wkp mu V ⊤ (n + 1))
+    {G : (i : ℕ) → E → IteratedGradient E i}
+    (hG0 : HasWeakFDerivOn mu U (fun x => value (n + 1) u (Φ x)) (fun x => innerSL ℝ (G 0 x)))
+    (hG : ∀ i < n, HasWeakFDerivOn mu U (G i) (G (i + 1))) {i : ℕ} (hi : i ≤ n) :
+    MemLp (G i) ⊤ (mu.restrict U) ∧
+      eLpNorm (G i) ⊤ (mu.restrict U) ≤ ENNReal.ofReal (compLBound ⊤ (n + 1) L c * ‖u‖) := by
+  have hb := fun R : ℕ => aestronglyMeasurable_and_eLpNorm_top_le_of_chain h u hG0 hG hi R
+  have hm : AEStronglyMeasurable (G i) (mu.restrict U) := by
+    rw [coe_eq_iUnion_preimageBall h]
+    exact aestronglyMeasurable_iUnion_iff.2 fun R => (hb R).1
+  have hle : eLpNorm (G i) ⊤ (mu.restrict U) ≤
+      ENNReal.ofReal (compLBound ⊤ (n + 1) L c * ‖u‖) := by
+    rw [eLpNorm_exponent_top hm, coe_eq_iUnion_preimageBall h]
+    refine essSup_le_of_ae_le _ ((ae_restrict_iUnion_iff _ _).2 fun R => ?_)
+    filter_upwards [ae_le_eLpNormEssSup (f := G i) (μ := mu.restrict (preimageBall h R))]
+      with x hx
+    exact hx.trans (eLpNormEssSup_le_eLpNorm_top.trans (hb R).2)
+  exact ⟨hle.trans_lt ENNReal.ofReal_lt_top, hle⟩
+
+/-- **Change of variables in `W^{k,∞}`.** The precomposition of an element of `W^{k,∞}(V)` with a
+change of variables of order `k` is represented by an element of `W^{k,∞}(U)`. -/
+private theorem exists_comp_top (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V ⊤ k) :
+    ∃ w : Wkp mu U ⊤ k, (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
+  cases k with
+  -- At order zero `Wkp mu U ⊤ 0` is `Lp ℝ ⊤ (mu.restrict U)` by definition (`Wkp` is reducible
+  -- and `value_zero` holds by `rfl`), so `compLp` already produces the required element.
+  | zero => exact ⟨compLp h (value 0 u), by simpa only [value_zero] using compLp_ae h (value 0 u)⟩
+  | succ n =>
+    obtain ⟨G, hG0, hG⟩ := exists_chain_comp h u
+    have hGtop : ∀ i ≤ n, MemLp (G i) ⊤ (mu.restrict U) := fun i hi =>
+      (memLp_top_and_eLpNorm_top_le_of_chain h u hG0 hG hi).1
+    have hval : MemLp (fun x => value (n + 1) u (Φ x)) ⊤ (mu.restrict U) :=
+      (Lp.memLp (compLp h (value (n + 1) u))).ae_eq (compLp_ae h _)
+    obtain ⟨w, hw, -⟩ := exists_value_iteratedGradient_ae_eq_of_chain n hval hG0 hG hGtop
+    exact ⟨w, hw⟩
+
+end Top
+
+/-! ### Change of variables for every exponent -/
+
+section General
+
+/-- The precomposition of an element of `W^{k,p}(V)` with a change of variables of order `k` is
+represented by an element of `W^{k,p}(U)`, for every `1 ≤ p ≤ ∞`. -/
+private theorem exists_comp (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
+    ∃ w : Wkp mu U p k, (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
+  by_cases hp : p = ⊤
+  · subst hp
+    exact exists_comp_top h u
+  · exact ⟨compFiniteL h hp u, value_compFiniteL_ae h hp u⟩
+
+/-- The element chosen by `exists_comp` is the only one whose value is `u ∘ Φ`. -/
+private theorem choose_exists_comp_eq (h : IsChangeOfVariables k U V Φ L c) {u : Wkp mu V p k}
+    {w : Wkp mu U p k} (hw : (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x)) :
+    (exists_comp h u).choose = w :=
+  ext k (Lp.ext ((exists_comp h u).choose_spec.trans hw.symm))
+
+/-- Precomposition with `Φ` as a linear map. -/
+private def compₗ (h : IsChangeOfVariables k U V Φ L c) : Wkp mu V p k →ₗ[ℝ] Wkp mu U p k where
+  toFun u := (exists_comp h u).choose
+  map_add' u v := by
+    refine choose_exists_comp_eq h ?_
+    rw [value_add, value_add]
+    filter_upwards [(exists_comp h u).choose_spec, (exists_comp h v).choose_spec,
+      Lp.coeFn_add (value k (exists_comp h u).choose) (value k (exists_comp h v).choose),
+      h.ae_comp (Lp.coeFn_add (value k u) (value k v))] with x h2 h3 h4 h5
+    rw [h4, Pi.add_apply, h2, h3, h5, Pi.add_apply]
+  map_smul' a u := by
+    refine choose_exists_comp_eq h ?_
+    rw [RingHom.id_apply, value_smul, value_smul]
+    filter_upwards [(exists_comp h u).choose_spec,
+      Lp.coeFn_smul a (value k (exists_comp h u).choose),
+      h.ae_comp (Lp.coeFn_smul a (value k u))] with x h2 h3 h4
+    rw [h3, Pi.smul_apply, h2, h4, Pi.smul_apply]
+
+private theorem compₗ_apply (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
+    compₗ h u = (exists_comp h u).choose :=
+  rfl
+
+private theorem value_compₗ (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
+    value k (compₗ h u) = compLp h (value k u) :=
+  Lp.ext ((exists_comp h u).choose_spec.trans (compLp_ae h _).symm)
+
+/-- **Change of variables in `W^{k,p}`.** If `Φ` is a change of variables of order `k` from `U`
+into `V` (`TauCeti.Wkp.IsChangeOfVariables`) and `1 ≤ p ≤ ∞`, then precomposition with `Φ` is a
+bounded linear operator `W^{k,p}(V) →L[ℝ] W^{k,p}(U)`. Its value is `u ∘ Φ`
+(`TauCeti.Wkp.value_compL_ae`), which characterizes it (`TauCeti.Wkp.compL_eq_iff`). For `p < ∞`
+its norm is at most `compLBound p k L c` (`TauCeti.Wkp.opNorm_compL_le`), and for `p = ∞` at most
+`(k + 1) * compLBound ∞ k L c` (`TauCeti.Wkp.opNorm_compL_top_le`). -/
+def compL (h : IsChangeOfVariables k U V Φ L c) : Wkp mu V p k →L[ℝ] Wkp mu U p k :=
+  -- The value of a limit is the limit of the values, so the graph is closed.
+  ContinuousLinearMap.ofSeqClosedGraph (g := compₗ h) fun u x y hu hy => by
+    have h1 : Tendsto (fun m => value k (compₗ h (u m))) atTop (𝓝 (value k y)) := by
+      simpa only [Function.comp_def, valueL_apply] using ((valueL k).continuous.tendsto y).comp hy
+    have h2 : Tendsto (fun m => value k (compₗ h (u m))) atTop (𝓝 (compLp h (value k x))) := by
+      simpa only [Function.comp_def, valueL_apply, value_compₗ] using
+        ((compLp h).continuous.tendsto _).comp
+          (((valueL (mu := mu) (Omega := V) (p := p) k).continuous.tendsto x).comp hu)
+    exact ext k ((tendsto_nhds_unique h1 h2).trans (value_compₗ h x).symm)
+
+/-- The value of `compL h u` is `u ∘ Φ`, almost everywhere on `U`. -/
+theorem value_compL_ae (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k) :
+    (value k (compL h u) : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) := by
+  rw [compL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, compₗ_apply]
+  exact (exists_comp h u).choose_spec
+
+/-- An element of `W^{k,p}(U)` is `compL h u` exactly when its value is `u ∘ Φ` almost everywhere
+on `U`. -/
+theorem compL_eq_iff (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V p k)
+    (w : Wkp mu U p k) :
+    compL h u = w ↔ (value k w : E → ℝ) =ᵐ[mu.restrict U] fun x => value k u (Φ x) :=
+  ⟨fun hw => hw ▸ value_compL_ae h u,
+    fun hw => ext k (Lp.ext ((value_compL_ae h u).trans hw.symm))⟩
+
+/-- For `p < ∞`, `compL h` increases norms by at most the factor `compLBound p k L c`. -/
+theorem norm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p k) :
+    ‖compL h u‖ ≤ compLBound p k L c * ‖u‖ := by
+  rw [(compL_eq_iff h u (compFiniteL h hp u)).2 (value_compFiniteL_ae h hp u)]
+  exact norm_compFiniteL_le h hp u
+
+/-- For `p < ∞`, `compL h` has operator norm at most `compLBound p k L c`. -/
+theorem opNorm_compL_le (h : IsChangeOfVariables k U V Φ L c) (hp : p ≠ ⊤) :
+    ‖(compL h : Wkp mu V p k →L[ℝ] Wkp mu U p k)‖ ≤ compLBound p k L c :=
+  ContinuousLinearMap.opNorm_le_bound _ (compLBound_nonneg p k L h.pos) (norm_compL_le h hp)
+
+/-- For `p = ∞`, `compL h` increases norms by at most the factor `(k + 1) * compLBound ∞ k L c`:
+the value of `compL h u` and each of its `k` weak derivatives are bounded in `L^∞` by
+`compLBound ∞ k L c * ‖u‖`. -/
+theorem norm_compL_top_le (h : IsChangeOfVariables k U V Φ L c) (u : Wkp mu V ⊤ k) :
+    ‖compL h u‖ ≤ (k + 1) * compLBound ⊤ k L c * ‖u‖ := by
+  have hB := mul_le_mul_of_nonneg_right (one_le_compLBound_top k L c) (norm_nonneg u)
+  -- The value of `compL h u` is `u ∘ Φ`, whose `L^∞` norm is at most that of `u`.
+  have hval : ‖value k (compL h u)‖ ≤ ‖u‖ := by
+    refine le_trans ?_ (norm_value_le k u)
+    rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (value_compL_ae h u)]
+    refine ENNReal.toReal_mono (Lp.eLpNorm_ne_top _) ?_
+    simpa only [ENNReal.div_top, ENNReal.toReal_zero, ENNReal.rpow_zero, one_mul,
+      Function.comp_def] using
+      eLpNorm_comp_le_of_map_le_smul (g := (value k u : E → ℝ)) h.aemeasurable
+        (h.map_restrict_le mu) ⊤
+  cases k with
+  | zero =>
+    rw [← value_zero (compL h u), Nat.cast_zero, zero_add, one_mul]
+    linarith
+  | succ n =>
+    obtain ⟨G, hG0, hG⟩ := exists_chain_comp h u
+    refine (norm_le_norm_value_add_sum_eLpNorm_of_chain n (compL h u) (value_compL_ae h u)
+      hG0 hG).trans ?_
+    have hsum : ∑ i ∈ Finset.range (n + 1), (eLpNorm (G i) ⊤ (mu.restrict U)).toReal ≤
+        ∑ _i ∈ Finset.range (n + 1), compLBound ⊤ (n + 1) L c * ‖u‖ :=
+      Finset.sum_le_sum fun i hi => ENNReal.toReal_le_of_le_ofReal
+        (mul_nonneg (compLBound_nonneg _ _ _ h.pos) (norm_nonneg u))
+        (memLp_top_and_eLpNorm_top_le_of_chain h u hG0 hG
+          (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))).2
+    rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul] at hsum
+    linarith
+
+/-- For `p = ∞`, `compL h` has operator norm at most `(k + 1) * compLBound ∞ k L c`. -/
+theorem opNorm_compL_top_le (h : IsChangeOfVariables k U V Φ L c) :
+    ‖(compL h : Wkp mu V ⊤ k →L[ℝ] Wkp mu U ⊤ k)‖ ≤ (k + 1) * compLBound ⊤ k L c :=
+  ContinuousLinearMap.opNorm_le_bound _
+    (mul_nonneg (by positivity) (compLBound_nonneg ⊤ k L h.pos)) (norm_compL_top_le h)
+
+end General
 
 /-! ### Compatibility -/
 
@@ -873,11 +1197,10 @@ section Compatibility
 
 /-- Precomposition commutes with forgetting the highest weak derivative.
 Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
-theorem lowerOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
-    (u : Wkp mu V p (k + 1)) :
-    lowerOrder k (compL h hp u) = compL (h.mono k.le_succ) hp (lowerOrder k u) := by
-  refine ((compL_eq_iff _ hp _ _).2 ?_).symm
-  filter_upwards [value_compL_ae h hp u] with x hx
+theorem lowerOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (u : Wkp mu V p (k + 1)) :
+    lowerOrder k (compL h u) = compL (h.mono k.le_succ) (lowerOrder k u) := by
+  refine ((compL_eq_iff _ _ _).2 ?_).symm
+  filter_upwards [value_compL_ae h u] with x hx
   rw [← value_succ, hx, value_succ]
 
 /-- The first-order change of variables `TauCeti.W1p.compL` along a change of variables `Φ` of
@@ -903,22 +1226,22 @@ theorem IsChangeOfVariables.w1pCompL_mem_w1p0Submodule_of_leftInvOn
   W1p.compL_mem_w1p0Submodule_of_leftInvOn Φ hp h.differentiableOn h.injOn h.mapsTo
     h.norm_fderiv_le h.pos h.le_abs_det hΨ hΨmaps hΨΦ hu
 
-/-- **The chain rule.** The first-order part of `compL h hp u` is the first-order change of
-variables `TauCeti.W1p.compL` of the first-order part of `u`. In particular its weak gradient is
-`DΦ(x)* (∇u)(Φ x)` (`TauCeti.Wkp.gradient_firstOrder_compL_ae`).
+/-- **The chain rule.** For `p < ∞`, the first-order part of `compL h u` is the first-order
+change of variables `TauCeti.W1p.compL` of the first-order part of `u`. In particular its weak
+gradient is `DΦ(x)* (∇u)(Φ x)` (`TauCeti.Wkp.gradient_firstOrder_compL_ae`).
 Use `rw` with this lemma: `simp` does not match its dependently indexed left-hand side. -/
 theorem firstOrder_compL (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p (k + 1)) :
-    firstOrder k (compL h hp u) = h.w1pCompL hp (firstOrder k u) := by
+    firstOrder k (compL h u) = h.w1pCompL hp (firstOrder k u) := by
   refine W1p.ext_value (Lp.ext ?_)
-  filter_upwards [value_compL_ae h hp u, h.value_w1pCompL_ae hp (firstOrder k u)] with x h1 h2
+  filter_upwards [value_compL_ae h u, h.value_w1pCompL_ae hp (firstOrder k u)] with x h1 h2
   rw [h2, value_firstOrder, value_firstOrder, h1]
 
-/-- **The chain rule for the weak gradient.** The weak gradient of the first-order part of
-`compL h hp u` is `DΦ(x)† (∇u)(Φ x)` almost everywhere on `U`. -/
+/-- **The chain rule for the weak gradient.** For `p < ∞`, the weak gradient of the first-order
+part of `compL h u` is `DΦ(x)† (∇u)(Φ x)` almost everywhere on `U`. -/
 theorem gradient_firstOrder_compL_ae (h : IsChangeOfVariables (k + 1) U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p (k + 1)) :
-    ∀ᵐ x ∂mu.restrict U, W1p.gradient (firstOrder k (compL h hp u)) x =
+    ∀ᵐ x ∂mu.restrict U, W1p.gradient (firstOrder k (compL h u)) x =
       (fderiv ℝ Φ x).adjoint (W1p.gradient (firstOrder k u) (Φ x)) := by
   rw [firstOrder_compL h hp u]
   exact W1p.gradient_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos
@@ -960,7 +1283,7 @@ private theorem exists_w1p_value_eq_inner_gradient_comp (h : IsChangeOfVariables
 every direction `f`, with derivative `⟪D²u(Φ x) (DΦ(x) f), DΦ(x) c₀⟫ + ⟪∇u(Φ x), D²Φ(x) f c₀⟫`. -/
 private theorem hasWeakLineDerivOn_inner_gradient_firstOrder_compL
     (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p 2) (c₀ f : E) :
-    HasWeakLineDerivOn mu U (fun x => ⟪W1p.gradient (firstOrder 1 (compL h hp u)) x, c₀⟫_ℝ)
+    HasWeakLineDerivOn mu U (fun x => ⟪W1p.gradient (firstOrder 1 (compL h u)) x, c₀⟫_ℝ)
       (fun x => ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x c₀⟫_ℝ +
         ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f c₀⟫_ℝ) f := by
   set b := stdOrthonormalBasis ℝ E
@@ -969,7 +1292,7 @@ private theorem hasWeakLineDerivOn_inner_gradient_firstOrder_compL
     h.contDiffOn.fderiv_of_isOpen U.isOpen (by norm_num)
   -- The weak gradient of `u ∘ Φ` is `DΦ(x)† ∇u(Φ x)`.
   have hgrad : ∀ᵐ x ∂mu.restrict U,
-      W1p.gradient (firstOrder 1 (compL h hp u)) x = (fderiv ℝ Φ x).adjoint (G (Φ x)) := by
+      W1p.gradient (firstOrder 1 (compL h u)) x = (fderiv ℝ Φ x).adjoint (G (Φ x)) := by
     filter_upwards [gradient_firstOrder_compL_ae h hp u] with x hx
     rw [hx, gradient_firstOrder_one]
   -- In the basis `(bᵢ)`, `⟪∇(u ∘ Φ), c₀⟫ = ∑ᵢ ⟪bᵢ, DΦ c₀⟫ wᵢ` with `wᵢ = ⟪∇u(Φ ·), bᵢ⟫` in
@@ -1013,16 +1336,16 @@ derivatives. For a linear `Φ` the last term vanishes
 theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤)
     (u : Wkp mu V p 2) :
     ∀ᵐ x ∂mu.restrict U, ∀ f g : E,
-      ⟪iteratedGradient 1 (compL h hp u) x f, g⟫_ℝ =
+      ⟪iteratedGradient 1 (compL h u) x f, g⟫_ℝ =
         ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x g⟫_ℝ +
           ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ := by
   set b := stdOrthonormalBasis ℝ E
   set G := iteratedGradient 0 (lowerOrder 1 u)
   -- Uniqueness of weak derivatives identifies the entries `⟪D²(u ∘ Φ) f, c₀⟫`.
-  have hentry (c₀ f : E) : (fun x => ⟪iteratedGradient 1 (compL h hp u) x f, c₀⟫_ℝ)
+  have hentry (c₀ f : E) : (fun x => ⟪iteratedGradient 1 (compL h u) x f, c₀⟫_ℝ)
       =ᵐ[mu.restrict U] fun x => ⟪iteratedGradient 1 u (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x c₀⟫_ℝ +
         ⟪G (Φ x), fderiv ℝ (fderiv ℝ Φ) x f c₀⟫_ℝ := by
-    have h' := ((hasWeakFDerivOn_iteratedGradient 0 (compL h hp u)).clm_comp
+    have h' := ((hasWeakFDerivOn_iteratedGradient 0 (compL h u)).clm_comp
       (innerSL ℝ c₀)).hasWeakLineDerivOn f
     rw [← gradient_firstOrder_one] at h'
     simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm _ c₀] at h'
@@ -1038,7 +1361,7 @@ theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (
     simp [N, inner_add_left, ContinuousLinearMap.adjoint_inner_left,
       InnerProductSpace.continuousLinearMapOfBilin_apply]
   filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry (b j) (b i)] with x hx f g
-  have hxN : iteratedGradient 1 (compL h hp u) x = N x :=
+  have hxN : iteratedGradient 1 (compL h u) x = N x :=
     ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
       InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa [hN] using hx i j)
   rw [hxN, hN]
@@ -1046,10 +1369,10 @@ theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (
 /-- **Functoriality.** Precomposing with `Φ` and then with `Ψ` is precomposing with `Φ ∘ Ψ`. -/
 theorem compL_comp (hΦ : IsChangeOfVariables k V W Φ L c)
     (hΨ : IsChangeOfVariables k U V Ψ L' c') {L'' c'' : ℝ}
-    (hΦΨ : IsChangeOfVariables k U W (Φ ∘ Ψ) L'' c'') (hp : p ≠ ⊤) (u : Wkp mu W p k) :
-    compL hΨ hp (compL hΦ hp u) = compL hΦΨ hp u := by
-  refine (compL_eq_iff _ hp _ _).2 ?_
-  filter_upwards [value_compL_ae hΦΨ hp u, hΨ.ae_comp (value_compL_ae hΦ hp u)] with x h1 h2
+    (hΦΨ : IsChangeOfVariables k U W (Φ ∘ Ψ) L'' c'') (u : Wkp mu W p k) :
+    compL hΨ (compL hΦ u) = compL hΦΨ u := by
+  refine (compL_eq_iff _ _ _).2 ?_
+  filter_upwards [value_compL_ae hΦΨ u, hΨ.ae_comp (value_compL_ae hΦ u)] with x h1 h2
   rw [h1, h2, Function.comp_apply]
 
 end Compatibility
@@ -1062,35 +1385,34 @@ section Equiv
 identity of `W^{k,p}(V)`. -/
 theorem compL_compL_of_rightInvOn (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
-    (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    compL hΨ hp (compL hΦ hp u) = u := by
-  refine (compL_eq_iff _ hp _ _).2 ?_
-  filter_upwards [hΨ.ae_comp (value_compL_ae hΦ hp u), ae_restrict_mem V.isOpen.measurableSet]
+    (u : Wkp mu V p k) :
+    compL hΨ (compL hΦ u) = u := by
+  refine (compL_eq_iff _ _ _).2 ?_
+  filter_upwards [hΨ.ae_comp (value_compL_ae hΦ u), ae_restrict_mem V.isOpen.measurableSet]
     with y hy hyV
   rw [hy, hΦΨ hyV]
 
 /-- **Diffeomorphism invariance of `W^{k,p}`.** If `Φ` is a change of variables of order `k` from
 `U` into `V` and `Ψ` one from `V` into `U` with `Φ ∘ Ψ = id` on `V` and `Ψ ∘ Φ = id` on `U`, then
-for `1 ≤ p < ∞` precomposition with `Φ` is an isomorphism of Banach spaces
+for `1 ≤ p ≤ ∞` precomposition with `Φ` is an isomorphism of Banach spaces
 `W^{k,p}(V) ≃L[ℝ] W^{k,p}(U)`, with inverse precomposition with `Ψ`. -/
 def compLEquiv (hΦ : IsChangeOfVariables k U V Φ L c) (hΨ : IsChangeOfVariables k V U Ψ L' c')
-    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
-    (hp : p ≠ ⊤) : Wkp mu V p k ≃L[ℝ] Wkp mu U p k :=
-  ContinuousLinearEquiv.equivOfInverse (compL hΦ hp) (compL hΨ hp)
-    (compL_compL_of_rightInvOn hΦ hΨ hΦΨ hp) (compL_compL_of_rightInvOn hΨ hΦ hΨΦ hp)
+    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) : Wkp mu V p k ≃L[ℝ] Wkp mu U p k :=
+  ContinuousLinearEquiv.equivOfInverse (compL hΦ) (compL hΨ)
+    (compL_compL_of_rightInvOn hΦ hΨ hΦΨ) (compL_compL_of_rightInvOn hΨ hΦ hΨΦ)
 
 @[simp]
 theorem compLEquiv_apply (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) (hp : p ≠ ⊤) (u : Wkp mu V p k) :
-    compLEquiv hΦ hΨ hΦΨ hΨΦ hp u = compL hΦ hp u :=
+    (hΨΦ : LeftInvOn Ψ Φ U) (u : Wkp mu V p k) :
+    compLEquiv hΦ hΨ hΦΨ hΨΦ u = compL hΦ u :=
   (rfl)
 
 @[simp]
 theorem compLEquiv_symm_apply (hΦ : IsChangeOfVariables k U V Φ L c)
     (hΨ : IsChangeOfVariables k V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) (hp : p ≠ ⊤) (u : Wkp mu U p k) :
-    (compLEquiv hΦ hΨ hΦΨ hΨΦ hp).symm u = compL hΨ hp u :=
+    (hΨΦ : LeftInvOn Ψ Φ U) (u : Wkp mu U p k) :
+    (compLEquiv hΦ hΨ hΦΨ hΨΦ).symm u = compL hΨ u :=
   (rfl)
 
 end Equiv
@@ -1149,8 +1471,8 @@ theorem exists_lowerOrder_eq_restrictL_of_w1pCompL {Omega D V Ω' V'' : Opens E}
     {w : Wkp mu (Ω' ⊓ V'') p 2}
     (hw : lowerOrder 1 w = W1p.restrictL inf_le_left (hΦ.w1pCompL hp (W1p.restrictL hD u))) :
     ∃ w' : Wkp mu (Omega ⊓ V) p 2, lowerOrder 1 w' = W1p.restrictL inf_le_left u := by
-  refine ⟨compL hΨ hp w, ?_⟩
-  rw [← firstOrder_one, firstOrder_compL (k := 1), firstOrder_one, hw]
+  refine ⟨compL hΨ w, ?_⟩
+  rw [← firstOrder_one, firstOrder_compL (k := 1) hΨ hp, firstOrder_one, hw]
   refine W1p.ext_value (Lp.ext ?_)
   have hΩ'V : ((Ω' ⊓ V'' : Opens E) : Set E) ⊆ Ω' := fun x hx => hx.1
   filter_upwards [hΨ.value_w1pCompL_ae (mu := mu) hp _,

@@ -106,17 +106,17 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq {ι : Type*
       ⟪b y, iteratedGradient 0 (lowerOrder 1 u) y⟫_ℝ + c₀ y * value 2 u y = f y) :
     ∀ᵐ x ∂mu.restrict U,
       traceCLM ℝ E ((fderiv ℝ Ψ (Φ x) ∘L A (Φ x) ∘L (fderiv ℝ Ψ (Φ x)).adjoint) ∘L
-          iteratedGradient 1 (compL hΦ hp u) x) +
+          iteratedGradient 1 (compL hΦ u) x) +
         ⟪fderiv ℝ Ψ (Φ x) (b (Φ x)) +
             ∑ i, fderiv ℝ (fderiv ℝ Ψ) (Φ x) (e i) ((A (Φ x)).adjoint (e i)),
-          iteratedGradient 0 (lowerOrder 1 (compL hΦ hp u)) x⟫_ℝ +
-        c₀ (Φ x) * value 2 (compL hΦ hp u) x = f (Φ x) := by
-  set v := compL hΦ hp u
+          iteratedGradient 0 (lowerOrder 1 (compL hΦ u)) x⟫_ℝ +
+        c₀ (Φ x) * value 2 (compL hΦ u) x = f (Φ x) := by
+  set v := compL hΦ u
   -- `u = v ∘ Ψ`, so the chain rule along `Ψ` expresses `u` and its derivatives through `v`.
-  have hvu : compL hΨ hp v = u := compL_compL_of_rightInvOn hΦ hΨ hΦΨ hp u
+  have hvu : compL hΨ v = u := compL_compL_of_rightInvOn hΦ hΨ hΦΨ u
   have hH := inner_iteratedGradient_compL_ae hΨ hp v
-  have hval := value_compL_ae hΨ hp v
-  have hgrad : ∀ᵐ y ∂mu.restrict V, iteratedGradient 0 (lowerOrder 1 (compL hΨ hp v)) y =
+  have hval := value_compL_ae hΨ v
+  have hgrad : ∀ᵐ y ∂mu.restrict V, iteratedGradient 0 (lowerOrder 1 (compL hΨ v)) y =
       (fderiv ℝ Ψ y).adjoint (iteratedGradient 0 (lowerOrder 1 v) (Ψ y)) := by
     filter_upwards [gradient_firstOrder_compL_ae hΨ hp v] with y hy
     rw [← gradient_firstOrder_one, hy, gradient_firstOrder_one]
