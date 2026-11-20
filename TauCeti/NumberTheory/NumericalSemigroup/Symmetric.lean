@@ -14,8 +14,9 @@ import Mathlib.Tactic.IntervalCases
 
 Write `C` for the conductor of a numerical semigroup `S`, so that `F = C - 1` is its Frobenius
 number. The reflection `x ↦ C - 1 - x` of `{0, …, C - 1}` sends every element of `S` below `C`
-to a gap, since otherwise `F` would be a sum of two elements of `S`. Counting gives the
-inequality `C ≤ 2 g`, where `g` is the genus.
+to a gap, which gives the inequality `C ≤ 2 g` of
+`AddSubmonoid.IsNumericalSemigroup.numericalConductor_le_two_mul_numericalGenus`, where `g` is
+the genus.
 
 `S` is *symmetric* when the reflection also sends every gap into `S`, that is when for every
 integer `x ∉ S` (negative integers included) one has `F - x ∈ S`. Symmetric semigroups are
@@ -31,8 +32,6 @@ elements `a₀ < a₁ < ⋯ < a_{n - 1}` of `Ap(S, n)` satisfy `a_i + a_{n - 1 -
 
 ## Main results
 
-* `AddSubmonoid.IsNumericalSemigroup.numericalConductor_le_two_mul_numericalGenus`: the genus
-  is at least half the conductor, `F + 1 ≤ 2 g`.
 * `AddSubmonoid.isSymmetricNumericalSemigroup_iff_forall_int`: the symmetry condition stated
   for all integers `x ∉ S`, with the integer-valued Frobenius number.
 * `AddSubmonoid.IsNumericalSemigroup.isSymmetricNumericalSemigroup_iff_two_mul_numericalGenus_eq`:
@@ -46,57 +45,14 @@ elements `a₀ < a₁ < ⋯ < a_{n - 1}` of `Ap(S, n)` satisfy `a_i + a_{n - 1 -
 ## References
 
 * A. Assi and P. A. García-Sánchez, *Numerical semigroups and applications* (2014),
-  §1, Lemma 14; §2, Proposition 43(i), Corollary 44(i) and Proposition 47.
+  §2, Proposition 43(i), Corollary 44(i) and Proposition 47.
 -/
 
 public section
 
 namespace AddSubmonoid
 
-variable {S : AddSubmonoid ℕ} {n s : ℕ}
-
-/-! ### The genus is at least half the conductor -/
-
-/-- The reflection `s ↦ C - 1 - s` sends an element of `S` below the conductor `C` to a gap. -/
-theorem numericalConductor_sub_one_sub_notMem (hs : s ∈ S) (hlt : s < S.numericalConductor) :
-    S.numericalConductor - 1 - s ∉ S := fun h ↦
-  numericalConductor_sub_one_notMem (S := S) (by omega) <| by
-    simpa [Nat.sub_add_cancel (show s ≤ S.numericalConductor - 1 by omega)] using S.add_mem h hs
-
-/-- The reflection `s ↦ C - 1 - s` is injective below the conductor `C`. -/
-private theorem injOn_numericalConductor_sub_one_sub :
-    Set.InjOn (S.numericalConductor - 1 - ·) (Set.Iio S.numericalConductor) :=
-  fun a ha b hb hab ↦ by
-    simp only [Set.mem_Iio] at ha hb hab
-    omega
-
-/-- The natural numbers below the conductor are the elements of `S` below the conductor
-together with the gaps. -/
-theorem IsNumericalSemigroup.ncard_inter_Iio_add_numericalGenus (h : S.IsNumericalSemigroup) :
-    ((S : Set ℕ) ∩ Set.Iio S.numericalConductor).ncard + S.numericalGenus =
-      S.numericalConductor := by
-  have hgaps : Set.Iio S.numericalConductor \ S = S.numericalGaps := by
-    ext x
-    simp only [Set.mem_sdiff, Set.mem_Iio, SetLike.mem_coe, mem_numericalGaps]
-    exact ⟨And.right, fun hx ↦ ⟨h.lt_numericalConductor_of_notMem hx, hx⟩⟩
-  rw [numericalGenus_def, ← hgaps, Set.inter_comm,
-    Set.ncard_inter_add_ncard_sdiff_eq_ncard _ _ (Set.finite_Iio _), Set.ncard_Iio_nat]
-
-/-- A numerical semigroup has at most as many elements below its conductor as it has gaps. -/
-theorem IsNumericalSemigroup.ncard_inter_Iio_le_numericalGenus (h : S.IsNumericalSemigroup) :
-    ((S : Set ℕ) ∩ Set.Iio S.numericalConductor).ncard ≤ S.numericalGenus := by
-  rw [numericalGenus_def]
-  exact Set.ncard_le_ncard_of_injOn (S.numericalConductor - 1 - ·)
-    (fun _ hs ↦ (mem_numericalGaps S).mpr (numericalConductor_sub_one_sub_notMem hs.1 hs.2))
-    (injOn_numericalConductor_sub_one_sub.mono Set.inter_subset_right) h.finite_numericalGaps
-
-/-- **The genus is at least half the conductor**: `C(S) ≤ 2 g(S)` for a numerical semigroup
-`S`, that is `F(S) + 1 ≤ 2 g(S)`. -/
-theorem IsNumericalSemigroup.numericalConductor_le_two_mul_numericalGenus
-    (h : S.IsNumericalSemigroup) : S.numericalConductor ≤ 2 * S.numericalGenus := by
-  have := h.ncard_inter_Iio_add_numericalGenus
-  have := h.ncard_inter_Iio_le_numericalGenus
-  omega
+variable {S : AddSubmonoid ℕ} {n : ℕ}
 
 /-! ### Symmetric numerical semigroups -/
 
