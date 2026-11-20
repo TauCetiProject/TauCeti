@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Covering.Quotient
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Isometry
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.QuotientCovering
 
 /-!
 # Riemannian volume under finite quotient coverings
@@ -33,6 +34,13 @@ preserves volume (`TauCeti.riemannianVolume_image_of_inner_mfderiv`). Only the t
 `q` are required to preserve the inner products; no separate hypothesis that `G` acts by
 isometries, or that `q` is differentiable, is needed.
 
+The deck group `G` preserves the volume of `M`, by the same comparison on sheets. The image of the
+normalized pullback is exactly the subspace of `G`-invariant elements of `Lᵖ(M)`, so for `p = 2`
+the normalized pullback is a unitary map from `L²(N)` onto the deck-invariant subspace of `L²(M)`.
+An invariant element descends to a strongly measurable function on `N`
+(`IsQuotientCoveringMap.exists_stronglyMeasurable_ae_eq_comp`), which lies in `Lᵖ(N)` because
+pullback along `q` multiplies `Lᵖ` norms by `|G| ^ (1/p)`.
+
 ## Main results
 
 * `IsQuotientCoveringMap.map_riemannianVolume`: `q_* vol_M = |G| • vol_N`.
@@ -40,8 +48,12 @@ isometries, or that `q` is differentiable, is needed.
 * `IsQuotientCoveringMap.lintegral_comp_riemannianVolume`,
   `IsQuotientCoveringMap.integral_comp_riemannianVolume`: `∫ f ∘ q = |G| ∫ f`.
 * `IsQuotientCoveringMap.eLpNorm_comp_riemannianVolume`: `‖f ∘ q‖_p = |G| ^ (1/p) ‖f‖_p`.
+* `IsQuotientCoveringMap.measurePreserving_smul`,
+  `IsQuotientCoveringMap.smulInvariantMeasure_riemannianVolume`: `G` preserves `vol_M`.
 * `IsQuotientCoveringMap.normalizedPullbackLp`: the normalized pullback `|G| ^ (-1/p) q^*` as a
   linear isometry `Lᵖ(N) →ₗᵢ[𝕜] Lᵖ(M)`, with `IsQuotientCoveringMap.coeFn_normalizedPullbackLp`.
+* `IsQuotientCoveringMap.mem_range_normalizedPullbackLp_iff`: the image of the normalized
+  pullback consists of the `G`-invariant elements of `Lᵖ(M)`.
 
 ## References
 
@@ -155,6 +167,51 @@ theorem riemannianVolume_preimage (hq : IsQuotientCoveringMap q G)
   rw [← Measure.map_apply hq.continuous.measurable hB, hq.map_riemannianVolume hinner,
     smul_apply, smul_eq_mul]
 
+omit [Finite G] in
+/-- **The deck group preserves the volume.** If `q : M → N` is a quotient covering map for an
+action of a group `G` and a local isometry, then every `g • ·` preserves the Riemannian volume
+of `M`. No smoothness of the action is assumed: on a set where `q` is injective, a subset
+and its translate by `g` have the same image under `q`, hence the same volume. -/
+theorem measurePreserving_smul (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) (g : G) :
+    MeasurePreserving (g • · : M → M) (riemannianVolume I M) (riemannianVolume I M) := by
+  have hg : Measurable (g • · : M → M) := (hq.continuous_const_smul g).measurable
+  refine ⟨hg, ?_⟩
+  -- `q` is injective on the source of each of its local inverses; compare the two measures on
+  -- countably many of these sources covering `M`.
+  choose e he hqe using hq.isLocalHomeomorph
+  obtain ⟨T, hTc, hcover⟩ := LindelofSpace.elim_nhds_subcover (fun x ↦ (e x).source)
+    fun x ↦ (e x).open_source.mem_nhds (he x)
+  refine Measure.ext_of_biUnion_eq_univ hTc hcover fun x _ ↦ ?_
+  ext A hA
+  set B := A ∩ (e x).source
+  have hB : MeasurableSet B := hA.inter (e x).open_source.measurableSet
+  have hinj : InjOn q B := by
+    rw [hqe x]
+    exact (e x).injOn.mono inter_subset_right
+  have hinj' : InjOn q ((g • ·) ⁻¹' B) := fun a ha b hb hab ↦
+    MulAction.injective g (hinj ha hb (by rw [hq.map_smul, hq.map_smul, hab]))
+  have himage : q '' ((g • ·) ⁻¹' B) = q '' B := by
+    ext y
+    constructor
+    · rintro ⟨a, ha, rfl⟩
+      exact ⟨g • a, ha, hq.map_smul g⟩
+    · rintro ⟨b, hb, rfl⟩
+      exact ⟨g⁻¹ • b, by simpa using hb, by rw [hq.map_smul]⟩
+  rw [Measure.restrict_apply hA, Measure.restrict_apply hA, Measure.map_apply hg hB,
+    ← riemannianVolume_image_of_inner_mfderiv (hg hB) hinj' fun y _ ↦ hinner y, himage,
+    riemannianVolume_image_of_inner_mfderiv hB hinj fun y _ ↦ hinner y]
+
+omit [Finite G] in
+/-- The Riemannian volume of the total space of a quotient covering map which is a local isometry
+is invariant under the deck group. -/
+theorem smulInvariantMeasure_riemannianVolume (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ) :
+    SMulInvariantMeasure G M (riemannianVolume I M) :=
+  ⟨fun g _ hA ↦ (hq.measurePreserving_smul hinner g).measure_preimage hA.nullMeasurableSet⟩
+
 /-- Pulling a nonnegative function back along a finite quotient covering map which is a local
 isometry multiplies its integral by `|G|`. -/
 theorem lintegral_comp_riemannianVolume (hq : IsQuotientCoveringMap q G)
@@ -223,6 +280,46 @@ theorem coeFn_normalizedPullbackLp (hq : IsQuotientCoveringMap q G)
   simpa only [normalizedPullbackLp, ENNReal.toReal_natCast] using Lp.coeFn_normalizedCompOfMapEqSmul
     hq.continuous.measurable (Nat.cast_ne_zero.2 Nat.card_pos.ne') (ENNReal.natCast_ne_top _)
     (hq.map_riemannianVolume hinner) g
+
+/-- **The normalized pullback is onto the invariant functions.** An element `f ∈ Lᵖ(M)` is the
+normalized pullback of an element of `Lᵖ(N)` exactly when it is invariant under the deck group:
+for each `g ∈ G`, `f (g • x) = f x` for almost every `x`. For `p = 2` the normalized pullback is
+therefore a unitary map from `L²(N)` onto the deck-invariant subspace of `L²(M)`. -/
+theorem mem_range_normalizedPullbackLp_iff (hq : IsQuotientCoveringMap q G)
+    (hinner : ∀ x (v w : TangentSpace I x),
+      ⟪mfderiv I I' q x v, mfderiv I I' q x w⟫_ℝ = ⟪v, w⟫_ℝ)
+    {f : Lp F p (riemannianVolume I M)} :
+    f ∈ range (normalizedPullbackLp 𝕜 p hq hinner) ↔
+      ∀ g : G, (fun x ↦ f (g • x)) =ᵐ[riemannianVolume I M] f := by
+  have hcard : (0 : ℝ) < Nat.card G := Nat.cast_pos.2 Nat.card_pos
+  constructor
+  · rintro ⟨u, rfl⟩ g
+    have hu := hq.coeFn_normalizedPullbackLp (𝕜 := 𝕜) hinner u
+    filter_upwards [(hq.measurePreserving_smul hinner g).quasiMeasurePreserving.ae_eq_comp hu, hu]
+      with x hgx hx
+    simp only [comp_apply, hq.map_smul] at hgx
+    rw [hgx, hx]
+  · intro hf
+    -- `f` is almost everywhere `h ∘ q`, and `h ∈ Lᵖ(N)` since `‖h ∘ q‖_p = |G| ^ (1/p) ‖h‖_p`.
+    obtain ⟨h, hh, hfh⟩ := hq.exists_stronglyMeasurable_ae_eq_comp
+      (fun g ↦ (hq.measurePreserving_smul hinner g).quasiMeasurePreserving)
+      (Lp.aestronglyMeasurable f) hf
+    have hnorm := hq.eLpNorm_comp_riemannianVolume hinner hh.aestronglyMeasurable p
+    rw [← eLpNorm_congr_ae hfh] at hnorm
+    have hlt := (Lp.eLpNorm_lt_top f).ne
+    rw [hnorm] at hlt
+    have hmem : MemLp h p (riemannianVolume I' N) := ENNReal.lt_top_of_mul_ne_top_right hlt
+      (ENNReal.rpow_pos (by simp) (ENNReal.natCast_ne_top _)).ne'
+    have hq' : QuasiMeasurePreserving q (riemannianVolume I M) (riemannianVolume I' N) :=
+      .of_map_le_smul hq.continuous.measurable (hq.map_riemannianVolume hinner).le
+    set c : 𝕜 := algebraMap ℝ 𝕜 ((Nat.card G : ℝ) ^ (1 / p).toReal)
+    refine ⟨c • hmem.toLp h, Lp.ext ?_⟩
+    filter_upwards [hq.coeFn_normalizedPullbackLp (𝕜 := 𝕜) hinner (c • hmem.toLp h),
+      hq'.ae_eq_comp (Lp.coeFn_smul c (hmem.toLp h)), hq'.ae_eq_comp hmem.coeFn_toLp, hfh]
+      with x h₁ h₂ h₃ h₄
+    simp only [comp_apply, Pi.smul_apply] at h₂ h₃ h₄
+    rw [h₁, h₂, h₃, h₄, smul_smul, ← map_mul, ← Real.rpow_add hcard]
+    simp
 
 end Lp
 
