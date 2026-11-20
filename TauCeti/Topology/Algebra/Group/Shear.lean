@@ -24,7 +24,8 @@ map `c`.
 When `A` is a topological space with a multiplication and a one (`MulOne`), `B` a commutative
 topological group and `c = φ` a continuous homomorphism `φ : A →* B`, the shear
 `(a, b) ↦ (a, φ a * b)` of `A × B` is moreover multiplicative, hence a continuous multiplicative
-automorphism (a `ContinuousMulEquiv`), `MonoidHom.prodShear`. Shears of this form are the
+automorphism (a `ContinuousMulEquiv`), `MonoidHom.prodShear`. When the multiplication of `A` is
+unital (`MulOneClass`), shears of this form are exactly the continuous multiplicative
 automorphisms of `A × B` that fix the first coordinate and act on each fiber over `A` by a
 translation of `B`, so they describe how two splittings `G ≃ₜ* A × B` differ when their transition
 has this fiberwise-translation form; for instance, the splittings of the multiplicative group of a
