@@ -48,9 +48,10 @@ The two inclusions come from the two halves of the compactness and gluing theory
   through `y` break at `a`: the closure of `W^u(p)` also meets `W^s(a)` at a point `z ≠ a`
   (`exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet` in the namespace
   `TauCeti.IsAdaptedPseudoGradient`), which flows backwards to a critical point `b` with `b ⇝ a`
-  and `ind a < ind b`. Induction on the codimension of `W^u(a)` gives `p ⇝* b`, so `p ⇝* a`
-  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.reflTransGen_of_mem_closure_unstableSet`, in
-  `TauCeti.Geometry.Manifold.Morse.Stable.Breaking`).
+  and `f a < f b`. Induction on the number of critical points above `f a` gives `p ⇝* b`, so
+  `p ⇝* a` (`TauCeti.IsAdaptedPseudoGradient.reflTransGen_of_mem_closure_unstableSet`, in
+  `TauCeti.Geometry.Manifold.Morse.Stable.Breaking`). This inclusion needs no Morse–Smale
+  condition (`TauCeti.IsAdaptedPseudoGradient.closure_unstableSet_subset`).
 * **Gluing** gives `⊇`. If `p ⇝ q`, every point `y ≠ q` of `W^u(q)` flows forwards to a critical
   point `r ≠ q`, and the broken trajectory from `p` to `r` through `q` and `y` is a limit of
   unbroken trajectories from `p` to `r`
@@ -61,6 +62,9 @@ The two inclusions come from the two halves of the compactness and gluing theory
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
+* `closure_unstableSet_subset`, `closure_stableSet_subset`: without the Morse–Smale condition, the
+  closure of `W^u(p)` lies in the unstable manifolds below `p`, and that of `W^s(q)` in the stable
+  manifolds above `q`.
 * `IsMorseSmale.closure_unstableSet`, `IsMorseSmale.closure_stableSet`: the closures of unstable
   and stable manifolds.
 * `IsMorseSmale.mem_closure_unstableSet_iff`, `IsMorseSmale.mem_closure_stableSet_iff`: a critical
@@ -174,30 +178,46 @@ theorem IsMorseSmale.stableSet_subset_closure_stableSet (h : hX.IsMorseSmale)
 
 /-! ### The closures -/
 
+/-- **The closure of `W^u(p)` lies in the unstable manifolds below `p`.** Every point of the
+closure of `W^u(p)` lies on the unstable manifold `W^u(q)` of a point `q` reached from `p` by a
+chain of trajectories. -/
+theorem closure_unstableSet_subset (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f)
+    (p : M) :
+    closure (hX.flow.unstableSet p) ⊆ ⋃ (q) (_ : Relation.ReflTransGen hX.FlowsTo p q),
+        hX.flow.unstableSet q := fun y hy ↦ by
+  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot hf y
+  have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 ha
+  exact mem_iUnion₂.2 ⟨a, reflTransGen_of_mem_closure_unstableSet hf hy hya, hya⟩
+
+/-- **The closure of `W^s(q)` lies in the stable manifolds above `q`.** Every point of the closure
+of `W^s(q)` lies on the stable manifold `W^s(p)` of a point `p` from which a chain of trajectories
+runs to `q`. -/
+theorem closure_stableSet_subset (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f)
+    (q : M) :
+    closure (hX.flow.stableSet q) ⊆ ⋃ (p) (_ : Relation.ReflTransGen hX.FlowsTo p q),
+        hX.flow.stableSet p := fun y hy ↦ by
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf y
+  have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
+  exact mem_iUnion₂.2 ⟨b, reflTransGen_of_mem_closure_stableSet hf hy hyb, hyb⟩
+
 /-- **The closure of an unstable manifold.** Under the Morse–Smale condition, the closure of
 `W^u(p)` is the union of the unstable manifolds `W^u(q)` of the points `q` reached from `p` by
 chains of trajectories. -/
 theorem IsMorseSmale.closure_unstableSet (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     (p : M) :
     closure (hX.flow.unstableSet p) = ⋃ (q) (_ : Relation.ReflTransGen hX.FlowsTo p q),
-        hX.flow.unstableSet q := by
-  refine Subset.antisymm (fun y hy ↦ ?_)
-    (iUnion₂_subset fun q hq ↦ h.unstableSet_subset_closure_unstableSet hf hq)
-  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atBot hf y
-  have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 ha
-  exact mem_iUnion₂.2 ⟨a, h.reflTransGen_of_mem_closure_unstableSet hf hy hya, hya⟩
+        hX.flow.unstableSet q :=
+  (hX.closure_unstableSet_subset hf p).antisymm
+    (iUnion₂_subset fun _ hq ↦ h.unstableSet_subset_closure_unstableSet hf hq)
 
 /-- **The closure of a stable manifold.** Under the Morse–Smale condition, the closure of `W^s(q)`
 is the union of the stable manifolds `W^s(p)` of the points `p` from which chains of trajectories
 run to `q`. -/
 theorem IsMorseSmale.closure_stableSet (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) (q : M) :
     closure (hX.flow.stableSet q) = ⋃ (p) (_ : Relation.ReflTransGen hX.FlowsTo p q),
-        hX.flow.stableSet p := by
-  refine Subset.antisymm (fun y hy ↦ ?_)
-    (iUnion₂_subset fun p hp ↦ h.stableSet_subset_closure_stableSet hf hp)
-  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atTop hf y
-  have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
-  exact mem_iUnion₂.2 ⟨b, h.reflTransGen_of_mem_closure_stableSet hf hy hyb, hyb⟩
+        hX.flow.stableSet p :=
+  (hX.closure_stableSet_subset hf q).antisymm
+    (iUnion₂_subset fun _ hp ↦ h.stableSet_subset_closure_stableSet hf hp)
 
 /-- **The critical points in the closure of `W^u(p)`** are the critical points below `p`: under the
 Morse–Smale condition, a critical point `q` lies in the closure of `W^u(p)` exactly when a chain of
@@ -205,7 +225,7 @@ trajectories runs from `p` to `q`. -/
 theorem IsMorseSmale.mem_closure_unstableSet_iff (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) :
     q ∈ closure (hX.flow.unstableSet p) ↔ Relation.ReflTransGen hX.FlowsTo p q :=
-  ⟨fun hq' ↦ h.reflTransGen_of_mem_closure_unstableSet hf hq'
+  ⟨fun hq' ↦ reflTransGen_of_mem_closure_unstableSet hf hq'
       (hX.mem_unstableSet_inter_stableSet_self hq).1,
     fun hpq ↦ h.unstableSet_subset_closure_unstableSet hf hpq
       (hX.mem_unstableSet_inter_stableSet_self hq).1⟩
@@ -216,7 +236,7 @@ trajectories runs from `p` to `q`. -/
 theorem IsMorseSmale.mem_closure_stableSet_iff (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) :
     p ∈ closure (hX.flow.stableSet q) ↔ Relation.ReflTransGen hX.FlowsTo p q :=
-  ⟨fun hp' ↦ h.reflTransGen_of_mem_closure_stableSet hf hp'
+  ⟨fun hp' ↦ reflTransGen_of_mem_closure_stableSet hf hp'
       (hX.mem_unstableSet_inter_stableSet_self hp).2,
     fun hpq ↦ h.stableSet_subset_closure_stableSet hf hpq
       (hX.mem_unstableSet_inter_stableSet_self hp).2⟩
@@ -236,7 +256,7 @@ theorem IsMorseSmale.closure_unstableSet_diff_subset (h : hX.IsMorseSmale)
   have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 ha
   have hap : a ≠ p := fun hap ↦ hyp (hap ▸ hya)
   simp only [mem_iUnion]
-  exact ⟨a, h.reflTransGen_of_mem_closure_unstableSet hf hy hya,
+  exact ⟨a, reflTransGen_of_mem_closure_unstableSet hf hy hya,
     h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf hap ⟨y, hy, hya⟩, hya⟩
 
 /-- **The closure of `W^s(q)` adds only stable manifolds of larger index.** Under the Morse–Smale
@@ -253,7 +273,7 @@ theorem IsMorseSmale.closure_stableSet_diff_subset (h : hX.IsMorseSmale)
   have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hb
   have hbq : b ≠ q := fun hbq ↦ hyq (hbq ▸ hyb)
   simp only [mem_iUnion]
-  exact ⟨b, h.reflTransGen_of_mem_closure_stableSet hf hy hyb,
+  exact ⟨b, reflTransGen_of_mem_closure_stableSet hf hy hyb,
     h.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet hf hbq ⟨y, hy, hyb⟩, hyb⟩
 
 end IsAdaptedPseudoGradient
