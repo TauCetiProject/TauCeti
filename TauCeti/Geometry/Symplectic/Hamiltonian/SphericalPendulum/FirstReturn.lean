@@ -86,10 +86,14 @@ private theorem one_sub_sq_mul_horizontal_snd
         ((x.1 0 : ℂ) + x.1 1 * I) := by
   obtain ⟨hq, hqp⟩ := sum_sq_eq_one_and_sum_mul_eq_zero_of_mem_sphericalPendulumPhaseSpace hx
   obtain ⟨q, p⟩ := x
-  simp only [sphericalPendulumEnergyMomentum_apply] at hq hqp ⊢
-  apply Complex.ext <;> simp [sq]
-  · linear_combination (-p 0) * hq + q 0 * hqp
-  · linear_combination (-p 1) * hq + q 1 * hqp
+  have hqc : (q 0 : ℂ) ^ 2 + (q 1 : ℂ) ^ 2 + (q 2 : ℂ) ^ 2 = 1 := by exact_mod_cast hq
+  have hqpc : (q 0 : ℂ) * p 0 + (q 1 : ℂ) * p 1 + (q 2 : ℂ) * p 2 = 0 := by exact_mod_cast hqp
+  simp only [sphericalPendulumEnergyMomentum_apply, ofReal_sub, ofReal_one, ofReal_pow, ofReal_mul,
+    ofReal_neg]
+  -- With `Q = q₁ + q₂ i`, `P = p₁ + p₂ i` and `J = q₁ p₂ - q₂ p₁`, the difference of the two sides
+  -- is `-P (‖q‖² - 1) + Q ⟪q, p⟫ - J q₂ (i² + 1)`.
+  linear_combination (-((p 0 : ℂ) + p 1 * I)) * hqc + ((q 0 : ℂ) + q 1 * I) * hqpc -
+    ((q 0 : ℂ) * p 1 - q 1 * p 0) * q 1 * I_sq
 
 /-- The motions of the rotation flow of the spherical pendulum, the integral curves of the
 Hamiltonian vector field of the vertical angular momentum `J` on the phase space, solve
@@ -181,13 +185,13 @@ private theorem hasDerivWithinAt_div_sqrt_of_isMIntegralCurveOn
   generalize (γ t : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) = y at key hρ hρ0 ⊢
   generalize √(1 - y.1 2 ^ 2) = ρ at hρ hρ0 ⊢
   have hρc : (ρ : ℂ) ^ 2 = 1 - (y.1 2 : ℂ) ^ 2 := by exact_mod_cast hρ
-  have hs : (1 - (y.1 2 : ℂ) ^ 2) ≠ 0 := hρc ▸ pow_ne_zero 2 (ofReal_ne_zero.2 hρ0)
-  have hρ0c : (ρ : ℂ) ≠ 0 := ofReal_ne_zero.2 hρ0
+  have hρρ : (ρ : ℂ) * (ρ : ℂ)⁻¹ = 1 := mul_inv_cancel₀ (ofReal_ne_zero.2 hρ0)
   push_cast at key ⊢
-  field_simp
-  -- With `s = 1 - q₃²`, `Q = q₁ + q₂ i` and `P = p₁ + p₂ i`, the difference of the two sides is
-  -- `ρ² (s P - (-q₃ p₃ + J i) Q) + q₃ p₃ Q (s - ρ²)`, which vanishes by `key` and `ρ² = s`.
-  linear_combination (ρ : ℂ) ^ 2 * key - (y.1 2 * y.2 2 * (y.1 0 + y.1 1 * I) : ℂ) * hρc
+  rw [← hρc] at key ⊢
+  -- With `Q = q₁ + q₂ i` and `P = p₁ + p₂ i`, the difference of the two sides is
+  -- `ρ⁻³ (ρ² P - (-q₃ p₃ + J i) Q) - P ρ ρ⁻² (ρ ρ⁻¹ - 1)`, which vanishes by `key` and `ρ ρ⁻¹ = 1`.
+  linear_combination (ρ : ℂ)⁻¹ ^ 3 * key -
+    ((y.2 0 : ℂ) + y.2 1 * I) * ρ * (ρ : ℂ)⁻¹ ^ 2 * hρρ
 
 /-- **The azimuth of the spherical pendulum turns with angular velocity `J / (1 - q₃²)`.** Let a
 motion of the spherical pendulum on `[t₁, t₂]` have vertical angular momentum `j` and stay off the

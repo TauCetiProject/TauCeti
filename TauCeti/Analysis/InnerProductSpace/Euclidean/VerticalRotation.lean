@@ -61,7 +61,9 @@ theorem ofReal_apply_add_ofReal_apply_mul_I_eq_exp_mul_and_apply_two_eq
       (fun t _ ↦ by simpa using ((hasDerivAt_id t).ofReal_comp.mul_const I).hasDerivWithinAt)
       (fun t ht ↦ ((hv t ht).ofReal_apply_add_ofReal_apply_mul_I 0 1).congr_deriv ?_) ha hb
     · rwa [smul_eq_mul, ← sub_mul, ← ofReal_sub] at h
-    · simp [EuclideanSpace.inner_single_right]
+    · simp only [EuclideanSpace.inner_single_right, conj_trivial, PiLp.sub_apply, PiLp.smul_apply,
+        smul_eq_mul, PiLp.single_apply]
+      push_cast
       linear_combination (-(v t 1 : ℂ)) * I_sq
   · refine hs.eq_of_hasDerivWithinAt_zero (f := fun t ↦ v t 2) (fun t ht ↦ ?_) hb ha
     simpa [EuclideanSpace.inner_single_right] using (hv t ht).piLp_apply 2
