@@ -52,6 +52,8 @@ inverse of the letter `b ^ sign k`, nothing cancels in `b ^ k * g`.
   `startsWith w`.
 * `FreeGroup.isCompl_startsWith_of_smul`, `FreeGroup.isCompl_startsWith_inv_of_smul`: the
   decompositions `FreeGroup α = W(a) ⊔ a • W(a⁻¹) = W(a⁻¹) ⊔ a⁻¹ • W(a)` for a generator `a`.
+* `FreeGroup.mul_mem_startsWith_of_not_invRev_prefix`: `u * v` keeps the first letter of `u`
+  when the reduced word of `u` does not cancel completely against `v`.
 * `FreeGroup.toWord_of_zpow_mul`: if `g` does not begin with the inverse of the letter
   `b ^ sign k`, the reduced word of `b ^ k * g` is `|k|` copies of that letter followed by the
   reduced word of `g`.
@@ -171,6 +173,14 @@ theorem isCompl_startsWith_inv_of_smul (a : α) :
     IsCompl (startsWith (a, false)) ((of a)⁻¹ • startsWith (a, true)) := by
   rw [of, inv_mk_singleton]
   exact isCompl_startsWith_mk_singleton_smul (a, false)
+
+/-- If `u` starts with the letter `w` and the reduced word of `u` does not cancel completely
+against `v`, then `u * v` still starts with `w`. -/
+theorem mul_mem_startsWith_of_not_invRev_prefix {w : α × Bool} {u v : FreeGroup α}
+    (hu : u ∈ startsWith w) (h : ¬invRev u.toWord <+: v.toWord) : u * v ∈ startsWith w := by
+  have hhead := head?_toWord_mk_mul isReduced_toWord h
+  rw [mk_toWord] at hhead
+  rwa [mem_startsWith_iff_head?_eq, hhead, ← mem_startsWith_iff_head?_eq]
 
 end Cancellation
 

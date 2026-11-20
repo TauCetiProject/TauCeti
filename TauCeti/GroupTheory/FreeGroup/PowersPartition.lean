@@ -82,10 +82,9 @@ private theorem exists_zpow_mul_mul_zpow_mem_startsWith {f : FreeGroup α} (hf :
       have hmem := hp.subset (mem_invRev_iff.2 (by simp [hcl]) : (c.1, !c.2) ∈ invRev f'.toWord)
       rw [toWord_of_zpow] at hmem
       exact hc (congrArg Prod.fst (List.eq_of_mem_replicate hmem))
-    have hhead := head?_toWord_mk_mul isReduced_toWord hpre
-    rw [mk_toWord] at hhead
-    rw [mem_startsWith_iff_head?_eq, hhead, hcl, List.head?_cons, Option.some_inj]
-    exact fun h => hc (congrArg Prod.fst h)
+    exact Set.disjoint_left.1 (startsWith.disjoint_iff_ne.2 fun h => hc (congrArg Prod.fst h))
+      (mul_mem_startsWith_of_not_invRev_prefix
+        (mem_startsWith_iff_exists_toWord_eq_cons.2 ⟨l, hcl⟩) hpre)
 
 /-- If `u` and `u⁻¹` both begin with `b` or `b⁻¹`, then left multiplication by `a u a⁻¹` maps every
 element beginning with `b` or `b⁻¹` to an element beginning with `a`. -/
@@ -105,11 +104,8 @@ private theorem of_mul_mul_inv_mul_mem_startsWith (hab : a ≠ b) {u y : FreeGro
     obtain ⟨l₂, e₂⟩ := mem_startsWith_iff_exists_toWord_eq_cons.1 h₁
     rw [← toWord_inv, e₁, e₂, List.cons_prefix_cons]
     simp [hab.symm]
-  have h₃ : u * ((of a)⁻¹ * y) ∈ startsWith (b, s₁) := by
-    have hhead := head?_toWord_mk_mul (isReduced_toWord (x := u)) h₂
-    rw [mk_toWord] at hhead
-    rw [mem_startsWith_iff_head?_eq, hhead, ← mem_startsWith_iff_head?_eq]
-    exact hs₁
+  have h₃ : u * ((of a)⁻¹ * y) ∈ startsWith (b, s₁) :=
+    mul_mem_startsWith_of_not_invRev_prefix hs₁ h₂
   rw [mul_assoc, mul_assoc, of, mk_singleton_mul_mem_startsWith_iff]
   exact Set.disjoint_left.1 (startsWith.disjoint_iff_ne.2 (by simp [hab.symm])) h₃
 
