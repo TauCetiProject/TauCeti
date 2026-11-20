@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.QuasiIso
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Attach.Tower
 
 /-!
 # Semi-free models along a filtration, one stage of cells at a time
@@ -43,6 +44,12 @@ quasi-isomorphisms onto the stages therefore assemble into a quasi-isomorphism o
 The attaching cycles are not given: they are found, stage by stage, from the representatives
 `c₀ k q`, which are corrected modulo `F k` so that their differentials become images of cycles of
 the previous stage. The finite coefficients of these cycles are the rows of the model.
+
+The stages and their union form a tower of cell attachments
+(`TauCeti.RowFiniteAugmentedModule.tower`), the stage-tower construction behind the semi-free
+resolution `TauCeti.semifreeResolution` (`RowFinite/Resolution.lean`), which this file follows.
+There each stage attaches its own homogeneous relative cycles; here the cells are prescribed, and
+each stage carries the quasi-isomorphism onto `F k` that the next attachment step needs.
 
 ## Main results
 
@@ -104,122 +111,43 @@ theorem exists_rowFiniteTwistedDifferential_eq_of_forall_mem_supported (m : P �
 
 variable [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] {h : IsDGAlgebra 𝒜 d}
 
-variable (𝒜 d ℳ dM) in
-/-- A stage of the construction: a row-finite twisted module with a degree-preserving chain map to
-`M`, given on the generators and landing in `N`, whose relative cycles with target in `N` are
-relative boundaries with target in `N`, so that it is a quasi-isomorphism onto `N`. -/
-private structure FiltrationStage (N : Submodule A M) where
-  /-- The generators. -/
-  P : Type uQ
-  /-- The indices of the generators. -/
-  ind : P → ℤ
-  /-- The rows of the generators. -/
-  m : RowFiniteTwistingCocycle 𝒜 d P ind
-  /-- The images of the generators. -/
-  g : P → M
-  /-- The images of the generators lie in `N`. -/
-  g_mem : ∀ x, g x ∈ N
-  /-- The images of the generators have the degrees of the generators. -/
-  g_deg : ∀ x, g x ∈ ℳ (-ind x)
-  /-- The map given by the images of the generators is a chain map. -/
-  g_m : ∀ x, linearCombination A g (m.m x) = dM (g x)
-  /-- Relative cycles with target in `N` are relative boundaries with target in `N`. -/
-  rel : ∀ (u : P →₀ A) (w : M), rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m u = 0 →
-    linearCombination A g u = dM w → w ∈ N → ∃ (u' : P →₀ A) (w' : M), w' ∈ N ∧
-      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m u' = u ∧
-        linearCombination A g u' + dM w' = w
+/-- An augmented module is a quasi-isomorphism onto `N` when the images of its generators lie in
+`N` and its relative cycles with target in `N` are relative boundaries with target in `N`. -/
+private def IsQuasiIsoOnto (S : RowFiniteAugmentedModule.{uR, uA, uM, uQ} 𝒜 d ℳ dM)
+    (N : Submodule A M) : Prop :=
+  (∀ x, S.g x ∈ N) ∧ ∀ (u : S.P →₀ A) (w : M),
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) S.m.m u = 0 →
+    linearCombination A S.g u = dM w → w ∈ N → ∃ (u' : S.P →₀ A) (w' : M), w' ∈ N ∧
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) S.m.m u' = u ∧
+        linearCombination A S.g u' + dM w' = w
 
-namespace FiltrationStage
+omit [IsScalarTower R A M] [SetLike.GradedSMul 𝒜 ℳ] [DirectSum.Decomposition ℳ] in
+/-- The module with no generators is a quasi-isomorphism onto an acyclic submodule. -/
+private theorem isQuasiIsoOnto_empty {N : Submodule A M}
+    (hN : ∀ w ∈ N, dM w = 0 → ∃ w' ∈ N, dM w' = w) :
+    IsQuasiIsoOnto (RowFiniteAugmentedModule.empty.{uR, uA, uM, uQ} 𝒜 d ℳ dM) N := by
+  refine ⟨nofun, fun u w _ huw hw ↦ ?_⟩
+  have hu : u = 0 := ext fun x ↦ PEmpty.elim x
+  obtain ⟨w', hw', rfl⟩ := hN w hw (by rw [← huw, hu, map_zero])
+  exact ⟨0, w', hw', by rw [map_zero, hu], by simp⟩
 
-variable {N₀ : Submodule A M}
+/-- The trivial attachment of new generators, along zero cycles and with zero images. -/
+private def zeroAttachment (S : RowFiniteAugmentedModule.{uR, uA, uM, uQ} 𝒜 d ℳ dM)
+    {Q : Type uQ} (indQ : Q → ℤ) : S.Attachment indQ where
+  a := 0
+  ha _ _ := zero_mem _
+  hca _ := map_zero _
+  c := 0
+  c_mem _ := zero_mem _
+  g_a _ := by simp
 
-/-- The data of one cell attachment to a stage: the attaching cycles `a` of the new generators,
-the corrected images `c` of the new generators, and the properties produced by
-`TauCeti.RowFiniteTwistingCocycle.exists_attach_of_forall_exists`. -/
-private structure AttachStep (S : FiltrationStage.{uR, uA, uM, uQ} 𝒜 d ℳ dM N₀) (N₁ : Submodule A M)
-    {Q : Type uQ} (indQ : Q → ℤ) (c₀ : Q → M) where
-  /-- The attaching cycles. -/
-  a : Q → S.P →₀ A
-  /-- The attaching cycles have the degrees of differentials of the new generators. -/
-  ha : ∀ q y, a q y ∈ 𝒜 (S.ind y - indQ q + 1)
-  /-- The attaching vectors are cycles. -/
-  hca : ∀ q, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) S.m.m (a q) = 0
-  /-- The corrected images of the new generators. -/
-  c : Q → M
-  /-- The corrected images have the degrees of the new generators. -/
-  c_deg : ∀ q, c q ∈ ℳ (-indQ q)
-  /-- The corrected images lie in `N₁`. -/
-  c_mem : ∀ q, c q ∈ N₁
-  /-- The corrected images agree with the representatives modulo `N₀`. -/
-  c_sub : ∀ q, c q - c₀ q ∈ N₀
-  /-- The corrected image of a new generator bounds the image of its attaching cycle. -/
-  g_a : ∀ q, linearCombination A S.g (a q) = dM (c q)
-  /-- The extended map has relative cycles, with target in `N₁`, that are relative boundaries. -/
-  rel : ∀ (f : S.P ⊕ Q →₀ A) (w : M),
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (S.m.attach a ha hca).m f = 0 →
-    linearCombination A (Sum.elim S.g c) f = dM w → w ∈ N₁ → ∃ (f' : S.P ⊕ Q →₀ A) (w' : M),
-      w' ∈ N₁ ∧ rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (S.m.attach a ha hca).m f' = f ∧
-        linearCombination A (Sum.elim S.g c) f' + dM w' = w
-
-/-- The cells can be attached to a stage, by the single attachment step. -/
-private theorem nonempty_attachStep (hM : IsDGLeftModule h ℳ dM)
-    (S : FiltrationStage.{uR, uA, uM, uQ} 𝒜 d ℳ dM N₀) {N₁ : Submodule A M}
-    (hN₀ : N₀.IsHomogeneous ℳ)
-    (hN : N₀ ≤ N₁) {Q : Type uQ} {indQ : Q → ℤ} {c₀ : Q → M} (hc₀ : ∀ q, c₀ q ∈ ℳ (-indQ q))
-    (hc₀N : ∀ q, c₀ q ∈ N₁) (hdc₀ : ∀ q, dM (c₀ q) ∈ N₀)
-    (hQ : ∀ (y : Q →₀ A) (w : M), mapRange.linearMap d y = 0 → w ∈ N₁ →
-      linearCombination A c₀ y - dM w ∈ N₀ → ∃ (y' : Q →₀ A) (w' : M), w' ∈ N₁ ∧
-        mapRange.linearMap d y' = y ∧ linearCombination A c₀ y' + dM w' - w ∈ N₀) :
-    Nonempty (S.AttachStep N₁ indQ c₀) := by
-  obtain ⟨a, ha, hca, c, hcdeg, hcN, hcc₀, hca', hrel⟩ :=
-    S.m.exists_attach_of_forall_exists hM hN₀ hN S.g_mem S.g_deg S.g_m S.rel hc₀ hc₀N hdc₀ hQ
-  exact ⟨⟨a, ha, hca, c, hcdeg, hcN, hcc₀, hca', hrel⟩⟩
-
-/-- The stage obtained by attaching the cells. -/
-private noncomputable def AttachStep.toStage {S : FiltrationStage.{uR, uA, uM, uQ} 𝒜 d ℳ dM N₀}
-    {N₁ : Submodule A M} {Q : Type uQ} {indQ : Q → ℤ} {c₀ : Q → M}
-    (T : S.AttachStep N₁ indQ c₀) (hN : N₀ ≤ N₁) :
-    FiltrationStage.{uR, uA, uM, uQ} 𝒜 d ℳ dM N₁ where
-  P := S.P ⊕ Q
-  ind := Sum.elim S.ind indQ
-  m := S.m.attach T.a T.ha T.hca
-  g := Sum.elim S.g T.c
-  g_mem := by
-    rintro (x | q)
-    · exact hN (S.g_mem x)
-    · exact T.c_mem q
-  g_deg := by
-    rintro (x | q)
-    · exact S.g_deg x
-    · exact T.c_deg q
-  g_m := by
-    rintro (x | q)
-    · simpa [linearCombination_mapDomain] using S.g_m x
-    · simpa [linearCombination_mapDomain] using T.g_a q
-  rel := T.rel
-
-variable (𝒜 d ℳ dM) in
-/-- The stage with no generators, a quasi-isomorphism onto an acyclic submodule. -/
-private def zero (hN₀ : ∀ w ∈ N₀, dM w = 0 → ∃ w' ∈ N₀, dM w' = w) :
-    FiltrationStage.{uR, uA, uM, uQ} 𝒜 d ℳ dM N₀ where
-  P := PEmpty
-  ind := PEmpty.elim
-  m := 0
-  g := PEmpty.elim
-  g_mem := nofun
-  g_deg := nofun
-  g_m := nofun
-  rel u w _ huw hw := by
-    obtain ⟨w', hw', rfl⟩ := hN₀ w hw (by rw [← huw, Subsingleton.elim u 0, map_zero])
-    exact ⟨0, w', hw', Subsingleton.elim _ _, by simp⟩
-
-end FiltrationStage
-
-/-- The input of the construction: an increasing sequence of homogeneous submodules `F k`, with
-`F 0` acyclic, and for each `k` cells `Q k` with representatives `c₀ k q` of relative cycles of
-`F (k + 1)` modulo `F k`, through which the free module on `Q k` is quasi-isomorphic to
-`F (k + 1)` modulo `F k`. -/
+/-- The input of the construction: a differential graded left module with an increasing sequence
+of homogeneous submodules `F k`, with `F 0` acyclic, and for each `k` cells `Q k` with
+representatives `c₀ k q` of relative cycles of `F (k + 1)` modulo `F k`, through which the free
+module on `Q k` is quasi-isomorphic to `F (k + 1)` modulo `F k`. -/
 private structure FilteredCells (Q : ℕ → Type uQ) where
+  /-- The module is a differential graded left module. -/
+  isDGLeftModule : IsDGLeftModule h ℳ dM
   /-- The filtration. -/
   F : ℕ → Submodule A M
   /-- The filtration is increasing. -/
@@ -247,207 +175,70 @@ namespace FilteredCells
 
 variable {Q : ℕ → Type uQ}
 
-/-- The stages of the construction, each obtained from the previous one by attaching the next
-cells. -/
-private noncomputable def stage (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) :
-    (k : ℕ) → FiltrationStage.{uR, uA, uM, uQ} 𝒜 d ℳ dM (C.F k)
-  | 0 => .zero 𝒜 d ℳ dM C.acyclic
-  | k + 1 => (Classical.choice ((stage hM C k).nonempty_attachStep hM (C.isHomogeneous k)
-      (C.mono k.le_succ) (C.c₀_deg k) (C.c₀_mem k) (C.dM_c₀_mem k) (C.rel k))).toStage
-        (C.mono k.le_succ)
+/-- An attachment of the cells of stage `k` is good when the images of the cells lie in
+`F (k + 1)`, agree with their representatives modulo `F k`, and the attached module is a
+quasi-isomorphism onto `F (k + 1)`. -/
+private def IsGood (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q) (k : ℕ)
+    (S : RowFiniteAugmentedModule.{uR, uA, uM, uQ} 𝒜 d ℳ dM)
+    (T : S.Attachment (C.indQ k)) : Prop :=
+  (∀ q, T.c q ∈ C.F (k + 1)) ∧ (∀ q, T.c q - C.c₀ k q ∈ C.F k) ∧
+    IsQuasiIsoOnto (S.attach T) (C.F (k + 1))
 
-/-- The attachment of the cells of stage `k`. -/
-private noncomputable def step (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ) :
-    (C.stage hM k).AttachStep (C.F (k + 1)) (C.indQ k) (C.c₀ k) :=
-  Classical.choice ((C.stage hM k).nonempty_attachStep hM (C.isHomogeneous k) (C.mono k.le_succ)
-    (C.c₀_deg k) (C.c₀_mem k) (C.dM_c₀_mem k) (C.rel k))
+/-- The cells of stage `k` can be attached well to a quasi-isomorphism onto `F k`, by the single
+attachment step. -/
+private theorem exists_isGood (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q) (k : ℕ)
+    {S : RowFiniteAugmentedModule.{uR, uA, uM, uQ} 𝒜 d ℳ dM} (hS : IsQuasiIsoOnto S (C.F k)) :
+    ∃ T, C.IsGood k S T := by
+  obtain ⟨a, ha, hca, c, hcdeg, hcN, hcc₀, hca', hrel⟩ :=
+    S.m.exists_attach_of_forall_exists C.isDGLeftModule (C.isHomogeneous k) (C.mono k.le_succ)
+      hS.1 S.g_mem S.g_m hS.2 (C.c₀_deg k) (C.c₀_mem k) (C.dM_c₀_mem k) (C.rel k)
+  refine ⟨⟨a, ha, hca, c, hcdeg, hca'⟩, hcN, hcc₀, ?_, hrel⟩
+  rintro (x | q)
+  · exact C.mono k.le_succ (hS.1 x)
+  · exact hcN q
 
-private theorem stage_succ (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ) :
-    C.stage hM (k + 1) = (C.step hM k).toStage (C.mono k.le_succ) :=
-  (rfl)
+/-- The attachment of the cells of stage `k`: a good one whenever one exists. -/
+private noncomputable def step (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q) (k : ℕ)
+    (S : RowFiniteAugmentedModule.{uR, uA, uM, uQ} 𝒜 d ℳ dM) :
+    S.Attachment (C.indQ k) :=
+  @Classical.epsilon _ ⟨zeroAttachment S (C.indQ k)⟩ (C.IsGood k S)
 
-private theorem stage_succ_m_inl (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ)
-    (x : (C.stage hM k).P) :
-    (C.stage hM (k + 1)).m.m (.inl x) = mapDomain Sum.inl ((C.stage hM k).m.m x) :=
-  RowFiniteTwistingCocycle.attach_m_inl _ _ _ x
+/-- The stages of the construction are quasi-isomorphisms onto the stages of the filtration. -/
+private theorem isQuasiIsoOnto_tower (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q) :
+    ∀ k, IsQuasiIsoOnto (RowFiniteAugmentedModule.tower C.step k) (C.F k)
+  | 0 => isQuasiIsoOnto_empty C.acyclic
+  | k + 1 => (Classical.epsilon_spec (C.exists_isGood k (isQuasiIsoOnto_tower C k))).2.2
 
-private theorem stage_succ_m_inr (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ) (q : Q k) :
-    (C.stage hM (k + 1)).m.m (.inr q) = mapDomain Sum.inl ((C.step hM k).a q) :=
-  RowFiniteTwistingCocycle.attach_m_inr _ _ _ q
-
-/-- The generators of a stage, among all the cells. -/
-private def stageEmb (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) : (k : ℕ) → (C.stage hM k).P → Σ j, Q j
-  | 0 => PEmpty.elim
-  | k + 1 => Sum.elim (stageEmb hM C k) fun q ↦ ⟨k, q⟩
-
-/-- The generators of stage `k` are the cells of stages `< k`. -/
-private theorem fst_stageEmb_lt (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) :
-    ∀ (k : ℕ) (x : (C.stage hM k).P), (C.stageEmb hM k x).1 < k
-  | 0, x => x.elim
-  | k + 1, .inl x => (fst_stageEmb_lt hM C k x).trans (Nat.lt_succ_self k)
-  | _ + 1, .inr _ => Nat.lt_succ_self _
-
-private theorem stageEmb_injective (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) :
-    ∀ k : ℕ, Function.Injective (C.stageEmb hM k)
-  | 0 => fun x ↦ x.elim
-  | k + 1 => by
-    rintro (x | q) (y | q') hxy
-    · exact congrArg Sum.inl (stageEmb_injective hM C k hxy)
-    · exact absurd (congrArg Sigma.fst hxy) (C.fst_stageEmb_lt hM k x).ne
-    · exact absurd (congrArg Sigma.fst hxy) (C.fst_stageEmb_lt hM k y).ne'
-    · cases hxy
-      rfl
-
-private theorem range_stageEmb (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) :
-    ∀ k : ℕ, Set.range (C.stageEmb hM k) = {y | y.1 < k}
-  | 0 => by
-    refine Set.Subset.antisymm ?_ fun y hy ↦ absurd hy (Nat.not_lt_zero _)
-    rintro _ ⟨x, -⟩
-    exact PEmpty.elim x
-  | k + 1 => by
-    ext ⟨j, q⟩
-    refine ⟨fun ⟨x, hx⟩ ↦ ?_, fun hj ↦ ?_⟩
-    · have hx' := C.fst_stageEmb_lt hM (k + 1) x
-      rwa [hx] at hx'
-    · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-      · obtain ⟨x, hx⟩ : (⟨j, q⟩ : Σ j, Q j) ∈ Set.range (C.stageEmb hM k) := by
-          rw [range_stageEmb hM C k]
-          exact hj
-        exact ⟨.inl x, hx⟩
-      · exact ⟨.inr q, rfl⟩
-
-private theorem indQ_stageEmb (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) : ∀ (k : ℕ) (x : (C.stage hM k).P),
-    C.indQ (C.stageEmb hM k x).1 (C.stageEmb hM k x).2 = (C.stage hM k).ind x
-  | 0, x => x.elim
-  | k + 1, .inl x => indQ_stageEmb hM C k x
-  | _ + 1, .inr _ => rfl
-
-/-- The rows of the cells: the cell `⟨k, q⟩` has row its attaching cycle, relabelled. -/
-private noncomputable def row (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (x : Σ j, Q j) : (Σ j, Q j) →₀ A :=
-  mapDomain (C.stageEmb hM x.1) ((C.step hM x.1).a x.2)
-
-/-- The images of the cells: the cell `⟨k, q⟩` is sent to the corrected representative. -/
-private noncomputable def aug (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (x : Σ j, Q j) : M :=
-  (C.step hM x.1).c x.2
-
-private theorem row_stageEmb (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) : ∀ (k : ℕ) (x : (C.stage hM k).P),
-    C.row hM (C.stageEmb hM k x) = mapDomain (C.stageEmb hM k) ((C.stage hM k).m.m x)
-  | 0, x => x.elim
-  -- `stageEmb (k + 1) ∘ Sum.inl` is `stageEmb k` by definition, and the rows of stage `k + 1` are
-  -- those of stage `k` and the attaching cycles, both relabelled along `Sum.inl`.
-  | k + 1, .inl x => by
-    refine (row_stageEmb hM C k x).trans ?_
-    rw [stage_succ_m_inl]
-    exact mapDomain_comp (v := (C.stage hM k).m.m x) (f := Sum.inl) (g := C.stageEmb hM (k + 1))
-  | k + 1, .inr q => by
-    rw [stage_succ_m_inr]
-    exact mapDomain_comp (v := (C.step hM k).a q) (f := Sum.inl) (g := C.stageEmb hM (k + 1))
-
-private theorem aug_stageEmb (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) : ∀ (k : ℕ) (x : (C.stage hM k).P),
-    C.aug hM (C.stageEmb hM k x) = (C.stage hM k).g x
-  | 0, x => x.elim
-  | k + 1, .inl x => aug_stageEmb hM C k x
-  | _ + 1, .inr _ => rfl
-
-private theorem rowFiniteTwistedDifferential_mapDomain_stageEmb (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ)
-    (f : (C.stage hM k).P →₀ A) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (C.row hM) (mapDomain (C.stageEmb hM k) f) =
-      mapDomain (C.stageEmb hM k)
-        (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (C.stage hM k).m.m f) :=
-  rowFiniteTwistedDifferential_mapDomain _ _ (C.row_stageEmb hM k) f
-
-private theorem linearCombination_aug_mapDomain (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ)
-    (f : (C.stage hM k).P →₀ A) :
-    linearCombination A (C.aug hM) (mapDomain (C.stageEmb hM k) f) =
-      linearCombination A (C.stage hM k).g f := by
-  rw [linearCombination_mapDomain, Function.comp_def]
-  simp only [aug_stageEmb]
-
-private theorem row_mem_graded (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (x y : Σ j, Q j) :
-    C.row hM x y ∈ 𝒜 (C.indQ y.1 y.2 - C.indQ x.1 x.2 + 1) := by
-  have hrow : (C.step hM x.1).a x.2 ∈
-      rowFiniteTotalGrading 𝒜 (C.stage hM x.1).ind (1 - C.indQ x.1 x.2) :=
-    (mem_rowFiniteTotalGrading_iff 𝒜 _).2 fun y ↦ by
-      convert (C.step hM x.1).ha x.2 y using 2
-      ring
-  have h := (mem_rowFiniteTotalGrading_iff 𝒜 _).1
-    ((mapDomain_mem_rowFiniteTotalGrading_iff 𝒜 _ (ind' := fun y : Σ j, Q j ↦ C.indQ y.1 y.2)
-      (C.stageEmb_injective hM x.1) (C.indQ_stageEmb hM x.1)).2 hrow) y
-  rw [row]
-  convert h using 2
-  ring
-
-/-- The cell-filtered semi-free model: the twisting cocycle on all the cells. -/
-private noncomputable def model (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) :
-    RowFiniteTwistingCocycle 𝒜 d (Σ j, Q j) fun x ↦ C.indQ x.1 x.2 where
-  m := C.row hM
-  mem_graded := C.row_mem_graded hM
-  twisting x := by
-    refine (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero _
-      (C.row_mem_graded hM x)).2 ?_
-    rw [row, rowFiniteTwistedDifferential_mapDomain_stageEmb, (C.step hM x.1).hca x.2,
-      mapDomain_zero]
-
-private theorem model_m (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) : (C.model hM).m = C.row hM :=
-  (rfl)
-
-/-- The vectors supported on the cells of stages `< k` are those of stage `k`. -/
-private theorem exists_mapDomain_stageEmb_eq (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) {k : ℕ} {f : (Σ j, Q j) →₀ A}
-    (hf : f ∈ supported A A {y | y.1 < k}) :
-    ∃ f' : (C.stage hM k).P →₀ A, mapDomain (C.stageEmb hM k) f' = f := by
-  rw [mem_supported', ← C.range_stageEmb hM k] at hf
-  exact (mem_range_mapDomain_iff _ (C.stageEmb_injective hM k) f).2 hf
-
-private theorem mapDomain_stageEmb_mem_supported (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ)
-    (f : (C.stage hM k).P →₀ A) :
-    mapDomain (C.stageEmb hM k) f ∈ supported A A {y | y.1 < k} := by
-  classical
-  intro y hy
-  obtain ⟨x, -, rfl⟩ := Finset.mem_image.1 (mapDomain_support hy)
-  exact C.fst_stageEmb_lt hM k x
+/-- The attachment of the cells of stage `k` to the stage `k` of the construction is good. -/
+private theorem isGood_step (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q)
+    (k : ℕ) :
+    C.IsGood k _ (C.step k (RowFiniteAugmentedModule.tower C.step k)) :=
+  Classical.epsilon_spec (C.exists_isGood k (C.isQuasiIsoOnto_tower k))
 
 /-- Stage `k` of the model is a quasi-isomorphism onto `F k`. -/
-private theorem exists_model_eq (hM : IsDGLeftModule h ℳ dM)
-    (C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q) (k : ℕ)
-    (f : (Σ j, Q j) →₀ A) (w : M)
-    (hf : f ∈ supported A A {y | y.1 < k})
-    (hDf : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (C.model hM).m f = 0)
-    (hfw : linearCombination A (C.aug hM) f = dM w) (hw : w ∈ C.F k) :
+private theorem exists_towerCocycle_eq (C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q)
+    (k : ℕ) (f : (Σ j, Q j) →₀ A) (w : M) (hf : f ∈ supported A A {y | y.1 < k})
+    (hDf : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
+      (RowFiniteAugmentedModule.towerCocycle C.step).m f = 0)
+    (hfw : linearCombination A (RowFiniteAugmentedModule.towerAugmentation C.step) f = dM w)
+    (hw : w ∈ C.F k) :
     ∃ (f' : (Σ j, Q j) →₀ A) (w' : M), f' ∈ supported A A {y | y.1 < k} ∧ w' ∈ C.F k ∧
-      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (C.model hM).m f' = f ∧
-        linearCombination A (C.aug hM) f' + dM w' = w := by
-  obtain ⟨f₀, rfl⟩ := C.exists_mapDomain_stageEmb_eq hM hf
-  have hDf₀ : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (C.stage hM k).m.m f₀ = 0 := by
-    apply mapDomain_injective (C.stageEmb_injective hM k)
-    rw [← rowFiniteTwistedDifferential_mapDomain_stageEmb, mapDomain_zero]
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
+        (RowFiniteAugmentedModule.towerCocycle C.step).m f' = f ∧
+        linearCombination A (RowFiniteAugmentedModule.towerAugmentation C.step) f' + dM w' = w := by
+  obtain ⟨f₀, rfl⟩ := RowFiniteAugmentedModule.exists_mapDomain_towerOf_eq C.step hf
+  have hDf₀ : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d)
+      (RowFiniteAugmentedModule.tower C.step k).m.m f₀ = 0 := by
+    apply mapDomain_injective (RowFiniteAugmentedModule.towerOf_injective C.step k)
+    rw [← RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain,
+      mapDomain_zero]
     exact hDf
-  rw [linearCombination_aug_mapDomain] at hfw
-  obtain ⟨u', w', hw', hu', huw⟩ := (C.stage hM k).rel f₀ w hDf₀ hfw hw
-  refine ⟨mapDomain (C.stageEmb hM k) u', w', C.mapDomain_stageEmb_mem_supported hM k u', hw', ?_,
-    ?_⟩
-  · exact (C.rowFiniteTwistedDifferential_mapDomain_stageEmb hM k u').trans (by rw [hu'])
-  · rwa [linearCombination_aug_mapDomain]
+  rw [RowFiniteAugmentedModule.linearCombination_towerAugmentation_mapDomain] at hfw
+  obtain ⟨u', w', hw', hu', huw⟩ := (C.isQuasiIsoOnto_tower k).2 f₀ w hDf₀ hfw hw
+  refine ⟨mapDomain (RowFiniteAugmentedModule.towerOf C.step k) u', w',
+    RowFiniteAugmentedModule.mapDomain_towerOf_mem_supported C.step k u', hw', ?_, ?_⟩
+  · rw [RowFiniteAugmentedModule.rowFiniteTwistedDifferential_towerCocycle_mapDomain, hu']
+  · rwa [RowFiniteAugmentedModule.linearCombination_towerAugmentation_mapDomain]
 
 end FilteredCells
 
@@ -488,16 +279,15 @@ theorem exists_semifreeModel_of_filtration (hM : IsDGLeftModule h ℳ dM) {F : �
           f' ∈ supported A A {y | y.1 < k} ∧ w' ∈ F k ∧
             rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m f' = f ∧
               linearCombination A g f' + dM w' = w := by
-  let C : FilteredCells (ℳ := ℳ) (dM := dM) (d := d) Q :=
-    ⟨F, hF, hFhom, hF₀, indQ, c₀, hc₀, hc₀F, hdc₀, hQ⟩
-  have hrow (x : Σ k, Q k) : (C.model hM).m x ∈ supported A A {y | y.1 < x.1} :=
-    C.mapDomain_stageEmb_mem_supported hM x.1 _
-  refine ⟨C.model hM, C.aug hM, fun x ↦ (C.step hM x.1).c_deg x.2,
-    fun x ↦ (C.step hM x.1).c_mem x.2, fun x ↦ (C.step hM x.1).c_sub x.2, fun x ↦ ?_, hrow,
-    Subrelation.wf (r := InvImage (· < ·) Sigma.fst) (fun {y x} hy ↦ hrow x hy)
-      (InvImage.wf _ wellFounded_lt), C.exists_model_eq hM⟩
-  rw [FilteredCells.model_m, FilteredCells.row, FilteredCells.linearCombination_aug_mapDomain,
-    FilteredCells.aug]
-  exact (C.step hM x.1).g_a x.2
+  let C : FilteredCells (h := h) (ℳ := ℳ) (dM := dM) Q :=
+    ⟨hM, F, hF, hFhom, hF₀, indQ, c₀, hc₀, hc₀F, hdc₀, hQ⟩
+  exact ⟨RowFiniteAugmentedModule.towerCocycle C.step,
+    RowFiniteAugmentedModule.towerAugmentation C.step,
+    RowFiniteAugmentedModule.towerAugmentation_mem C.step,
+    fun x ↦ (C.isGood_step x.1).1 x.2, fun x ↦ (C.isGood_step x.1).2.1 x.2,
+    RowFiniteAugmentedModule.linearCombination_towerAugmentation_m C.step,
+    RowFiniteAugmentedModule.towerCocycle_m_mem_supported C.step,
+    RowFiniteAugmentedModule.wellFounded_mem_support_towerCocycle C.step,
+    C.exists_towerCocycle_eq⟩
 
 end TauCeti
