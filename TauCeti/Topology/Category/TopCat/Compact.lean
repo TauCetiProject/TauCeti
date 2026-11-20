@@ -119,7 +119,7 @@ theorem exists_subset_range_ι_of_isCompact
   -- Stage `n` meets the points `x k` only for `k < n`, so their set is closed and discrete.
   have hfin (n : ℕ) : (c.ι.app n ⁻¹' range x).Finite := by
     refine (((finite_Iio n).image x).preimage
-      (injective_ι_of_isColimit hF hc n).injOn).subset ?_
+      (injective_ι_of_isColimit (fun _ _ f ↦ hF (leOfHom f)) hc n).injOn).subset ?_
     rintro y ⟨k, hk⟩
     exact ⟨k, (hidx.id_le k).trans_lt (hx ⟨y, hk.symm⟩), hk⟩
   have hcpt : IsCompact (range x) :=
