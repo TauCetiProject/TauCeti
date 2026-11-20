@@ -72,6 +72,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   extends to a `k`-th root function complex differentiable at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
+* `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
+  the quotient lies in the slit plane.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   real `r` along the positive real axis; only the last allows `r > 0`.
@@ -94,6 +96,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
+
+The derivative `TauCeti.hasDerivAt_sub_div_sub_cpow` is adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Hypergeometric/Riemann.lean`.
 -/
 
 public section
@@ -333,6 +338,20 @@ theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^
   rcases eq_or_ne w 0 with rfl | hw
   · rw [zero_cpow hs, mul_zero]
   · rw [cpow_add _ _ hw, cpow_one]
+
+/-- The derivative of the power `w ↦ ((w - α) / (w - γ)) ^ a` at a point `z` where the quotient
+lies in the slit plane is the power times its logarithmic derivative
+`a ((z - α)⁻¹ - (z - γ)⁻¹)`. -/
+theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) ∈ slitPlane) :
+    HasDerivAt (fun w ↦ ((w - α) / (w - γ)) ^ a)
+      (((z - α) / (z - γ)) ^ a * (a * ((z - α)⁻¹ - (z - γ)⁻¹))) z := by
+  have hq : (z - α) / (z - γ) ≠ 0 := slitPlane_ne_zero h
+  obtain ⟨hzα, hzγ⟩ := ne_zero_and_ne_zero_of_div_mem_slitPlane h
+  refine ((((hasDerivAt_id z).sub_const α).div ((hasDerivAt_id z).sub_const γ) hzγ).cpow_const
+    h).congr_deriv ?_
+  simp only [id, Pi.div_apply]
+  rw [cpow_sub _ _ hq, cpow_one]
+  field_simp
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/

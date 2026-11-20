@@ -66,6 +66,8 @@ preserved under scaling by `[0, 1]`. So, for every `m`, the pullback
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
+* `TauCeti.ne_zero_and_ne_zero_of_div_mem_slitPlane` -- a quotient in the slit plane has nonzero
+  numerator and denominator
 -/
 
 public section
@@ -305,6 +307,11 @@ theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
   refine ⟨c⁻¹, inv_pos.mpr hc, fun t ht => ?_⟩
   rw [norm_inv, ← mul_inv]
   exact inv_anti₀ (by positivity) (h t ht)
+
+/-- A quotient `a / b` in the slit plane has nonzero numerator and denominator. -/
+theorem ne_zero_and_ne_zero_of_div_mem_slitPlane {a b : ℂ} (h : a / b ∈ slitPlane) :
+    a ≠ 0 ∧ b ≠ 0 :=
+  div_ne_zero_iff.mp (slitPlane_ne_zero h)
 
 end TauCeti
 
