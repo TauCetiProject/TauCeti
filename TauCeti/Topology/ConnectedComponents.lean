@@ -63,6 +63,9 @@ space by them.
   connected components meet `K`.
 * `IsOpen.joinedIn_of_mem_connectedComponentIn`: in a locally path-connected space, a point of an
   open set is joined to each point of its component by a path inside that component.
+* `IsPreconnected.connectedComponentIn_eq_of_closure_inter_subset`: a preconnected set which is
+  closed in a set `F` and is the part of `F` in an open set is the connected component in `F` of
+  each of its points.
 * `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
   a point of an open set `U` lies in the component of that point in `U`, as soon as it meets the
   closure of that component only inside `U`.
@@ -538,6 +541,26 @@ theorem _root_.IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdif
   by_contra! h
   exact huz (hU.subset_connectedComponentIn_of_inter_closure_subset hUS hz.1 hz
     (fun p hp => ⟨hp.1, fun hpS => h p ⟨hpS, hp.1⟩ hp.2⟩) hu)
+
+/-- **A relatively clopen preconnected set is a connected component.** Let `S` be a preconnected
+set which is closed in a set `F` (that is, `closure S ∩ F ⊆ S`) and is the part `U ∩ F` of `F`
+lying in an open set `U`. Then `S` is the connected component in `F` of each of its points. -/
+theorem _root_.IsPreconnected.connectedComponentIn_eq_of_closure_inter_subset
+    {F S U : Set X} {x : X} (hS : IsPreconnected S) (hx : x ∈ S) (hU : IsOpen U)
+    (hUF : U ∩ F = S) (hSc : closure S ∩ F ⊆ S) :
+    connectedComponentIn F x = S := by
+  refine subset_antisymm (fun z hz ↦ ?_)
+    (hS.subset_connectedComponentIn hx (hUF ▸ inter_subset_right))
+  have hzF : z ∈ F := connectedComponentIn_subset F x hz
+  -- the component meets the open sets `U` and `(closure S)ᶜ` disjointly, and meets `U` at `x`
+  rcases isPreconnected_iff_subset_of_disjoint.1 isPreconnected_connectedComponentIn U
+      (closure S)ᶜ hU isClosed_closure.isOpen_compl
+      (fun w hw ↦ (em (w ∈ U)).imp id fun hwU hwS ↦
+        hwU (hUF ▸ hSc ⟨hwS, connectedComponentIn_subset F x hw⟩).1)
+      (eq_empty_of_forall_notMem fun w ⟨hw, hwU, hwS⟩ ↦
+        hwS (subset_closure (hUF ▸ ⟨hwU, connectedComponentIn_subset F x hw⟩))) with hCU | hCS
+  · exact hUF ▸ ⟨hCU hz, hzF⟩
+  · exact absurd (subset_closure hx) (hCS (mem_connectedComponentIn (hUF ▸ hx).2))
 
 /-- The closure of a connected component in a set meets that set exactly in the component. -/
 @[simp]
