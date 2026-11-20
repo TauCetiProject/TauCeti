@@ -249,12 +249,12 @@ jobs:
           # A run-specific key lets a refresh save its snapshot; the prefix restores the newest
           # previous snapshot. This restore and the corresponding save do not run on pushes.
           # Snapshots saved on 2026-11-10 lost the bors receipts and scoreboards beyond GitHub's
-          # comment pagination limit, which cannot be refetched. The v3 prefix skips them; until
-          # a v3 snapshot exists, the exact key below restores the last one before that loss.
+          # comment pagination limit, which cannot be refetched. The v3 prefix skips them. Never
+          # list an exact key here as a fallback: GitHub prefers an exact match on any restore
+          # key over a prefix match, so such a key would win over every newer v3 snapshot.
           key: pr-snapshot-v3-${{ github.run_id }}
           restore-keys: |
             pr-snapshot-v3-
-            pr-snapshot-42716799007
 
       # PR history and current queue state come from GitHub rather than git. The generator
       # paginates both the PR connection and each label timeline, and bounds contributor

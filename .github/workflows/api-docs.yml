@@ -228,7 +228,8 @@ jobs:
         id: docgen
         # Below the job's limit, leaving time to save the build state after a timeout. A full
         # analysis of TauCeti takes longer than one run; each run then continues where the last
-        # one stopped.
+        # one stopped. The build stops itself at 255 minutes (see the run script); this limit is
+        # the backstop.
         timeout-minutes: 270
         env:
           # Give doc-gen4 more memory without doubling Lake's runtime worker count.
@@ -243,7 +244,12 @@ jobs:
         run: |
           rm -rf .lake/build/doc/TauCeti .lake/build/doc/SOURCE_SHA .lake/build/doc/facts.json.gz
           rm -f .lake/build/doc-data/*.docs_built
-          lake build TauCetiDocs:docs
+          # Stop the whole build, not just Lake, before the step limit. When GitHub's step limit
+          # fires it stops the shell but leaves Lake's doc-gen4 processes running, so they keep
+          # writing the database while the save below archives it, and tar refuses the archive
+          # ("file changed as we read it"): the progress is lost and the next run starts over.
+          # `timeout` signals its whole process group, which holds every process Lake started.
+          timeout --kill-after=2m 255m lake build TauCetiDocs:docs
 
       # Stamp the tree with the commit it was generated from, BEFORE it is cached, so the
       # provenance travels with the tree wherever it is later restored. This is what makes the
@@ -285,6 +291,25 @@ jobs:
       - name: Note that this tree has no facts file
         if: steps.facts.outcome == 'failure'
         run: echo "::warning title=No documentation facts::this tree is saved without facts.json.gz; the next hourly run exports again"
+
+      # Backstop for the stop inside the build step: if that step was cancelled or hit its own
+      # limit, doc-gen4 may still be running. Stop it and wait until it has exited, so that the
+      # build state saved below is not being written while it is archived.
+      - name: Stop any doc-gen4 build still running
+        if: ${{ always() && steps.docgen.outcome != 'skipped' && steps.docgen.outcome != '' }}
+        run: |
+          pattern="$PWD/.lake/packages/doc-gen4/.lake/build/bin/doc-gen4|lake build TauCetiDocs:docs"
+          pkill -TERM -f "$pattern" || true
+          for _ in $(seq 60); do
+            pgrep -f "$pattern" >/dev/null || exit 0
+            sleep 1
+          done
+          echo "::warning::doc-gen4 was still running a minute after SIGTERM; killing it"
+          pkill -KILL -f "$pattern" || true
+          sleep 5
+          if pgrep -f "$pattern" >/dev/null; then
+            echo "::warning::doc-gen4 is still running; the build state save may fail"
+          fi
 
       # pages.yml publishes the most recently SAVED tree, which is not necessarily the newest one:
       # re-running an old run of this workflow would save its older tree last, and the next Pages
