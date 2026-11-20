@@ -687,7 +687,7 @@ permutation of the items, where `Ω′` is `Ω` with a section moved. -/
 def moveSectionHom : GHom (CoordGroup.coeff (.id (FreeGroup A)) Ω.toSystem)
     (CoordGroup.coeff (.id (FreeGroup A)) (Ω.moveSection i j m hi hj hm).toSystem) :=
   CoordGroup.homOfMapsToWordMap _ _ _ (fun k => inr (FreeGroup.of (Ω.moveItem i j m k)))
-    ((CoordGroup.mapsToWordMap_iff _ _ _ _).2 fun v hv => by
+    (show Set.MapsTo _ _ _ from fun v hv => by
       rw [show wordMap _ _ v = v ∘ Ω.moveItem i j m from funext fun k => by simp]
       exact (comp_moveItem_mem_V_iff hi hj hm _).2 hv)
 
@@ -717,7 +717,7 @@ theorem moveSectionHom_bijective : Function.Bijective (moveSectionHom hi hj hm) 
       (CoordGroup.coeff (.id (FreeGroup A)) Ω.toSystem) :=
     CoordGroup.homOfMapsToWordMap _ _ _
       (fun k => inr (FreeGroup.of ((Ω.moveItem i j m).symm k)))
-      ((CoordGroup.mapsToWordMap_iff _ _ _ _).2 fun v hv => by
+      (show Set.MapsTo _ _ _ from fun v hv => by
         rw [show wordMap _ _ v = v ∘ (Ω.moveItem i j m).symm from funext fun k => by simp,
           ← comp_moveItem_mem_V_iff hi hj hm]
         simpa [Function.comp_assoc] using hv)

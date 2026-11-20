@@ -133,7 +133,7 @@ lemma degree_range_eq_top_of_degree_eq_one (P : Place k F) (hP : P.degree = 1) :
 hypothesis, since `finrank` is always a natural number even before its finiteness is known. -/
 lemma degree_nonneg {D : Divisor k F} (hD : 0 ≤ D) : 0 ≤ degree D := by
   simpa only [degree] using
-    WeilDivisor.weightedDegree_nonneg (fun P : Place k F => Int.natCast_nonneg P.degree) hD
+    WeilDivisor.weightedDegree_nonneg (fun P _ => Int.natCast_nonneg P.degree) hD
 
 /-- Residue-degree weighting is monotone for the coefficientwise order on divisors. -/
 lemma degree_le_of_le {D E : Divisor k F} (hDE : D ≤ E) : degree D ≤ degree E := by
@@ -152,7 +152,7 @@ private lemma degree_pos_of_isFunctionField (hF : IsFunctionField k F) (P : Plac
 lemma degree_pos (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) (hD0 : D ≠ 0) :
     0 < degree D := by
   simpa only [degree] using
-    WeilDivisor.weightedDegree_pos_of_pos (degree_pos_of_isFunctionField hF) hD hD0
+    WeilDivisor.weightedDegree_pos_of_pos (fun P _ => degree_pos_of_isFunctionField hF P) hD hD0
 
 /-- An effective divisor of a function field has degree zero exactly when it is zero. -/
 lemma degree_eq_zero_iff (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) :

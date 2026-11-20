@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Instances
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.RingTheory.LocalProperties.FinitePresentation
 public import Mathlib.RingTheory.Finiteness.Finsupp
@@ -53,20 +54,6 @@ namespace TauCeti.AlgebraicGeometry
 universe u
 
 noncomputable section
-
--- Scheme modules need these specializations because typeclass search does not unfold
--- `Scheme.Modules` to match the corresponding sheaf-of-modules instances.
-/-- A finitely presented scheme module is quasi-coherent. -/
-instance (priority := 100)
-    _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isFinitePresentation
-    {X : Scheme.{u}} (M : X.Modules) [M.IsFinitePresentation] : M.IsQuasicoherent :=
-  SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
-
-/-- A finitely presented scheme module is of finite type. -/
-instance (priority := 100)
-    _root_.AlgebraicGeometry.Scheme.Modules.isFiniteType_of_isFinitePresentation
-    {X : Scheme.{u}} (M : X.Modules) [M.IsFinitePresentation] : M.IsFiniteType :=
-  SheafOfModules.instIsFiniteTypeOfIsFinitePresentation M
 
 variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
 
@@ -181,22 +168,22 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_sections_of_i
     simpa only [Opens.coversTop_iff, IsOpenCover] using q.coversTop
   have hs : Ideal.span s = ⊤ := by
     apply hU.iSup_basicOpen_eq_self_iff.mp
-    refine le_antisymm (iSup_le fun f : s => X.basicOpen_le f.1) ?_
+    refine le_antisymm (iSup_le fun f : s => X.basicOpen_le f.val) ?_
     intro x hxU
     have hx : x ∈ iSup q.X := by simp [hcov]
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
     obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hi⟩ hxU
     exact Opens.mem_iSup.mpr ⟨⟨f, i, hf⟩, hxf⟩
-  have loc (f : s) : IsLocalization.Away f.1 Γ(X, X.basicOpen f.1) :=
-    hU.isLocalization_basicOpen f.1
-  have modloc (f : s) : IsLocalizedModule.Away f.1 (M.basicOpenRestrict f.1) :=
-    M.isLocalizedModule_basicOpenRestrict hU f.1
+  have loc (f : s) : IsLocalization.Away f.val Γ(X, X.basicOpen f.val) :=
+    hU.isLocalization_basicOpen f.val
+  have modloc (f : s) : IsLocalizedModule.Away f.val (M.basicOpenRestrict f.val) :=
+    M.isLocalizedModule_basicOpenRestrict hU f.val
   apply Module.FinitePresentation.of_localizationSpan' s hs
-    (Rₚ := fun f => Γ(X, X.basicOpen f.1))
-    (Mₚ := fun f => Γ(M, X.basicOpen f.1)) (fun f => M.basicOpenRestrict f.1)
+    (Rₚ := fun f => Γ(X, X.basicOpen f.val))
+    (Mₚ := fun f => Γ(M, X.basicOpen f.val)) (fun f => M.basicOpenRestrict f.val)
   intro f
-  obtain ⟨i, hi⟩ := f.2
-  let D := X.basicOpen f.1
+  obtain ⟨i, hi⟩ := f.property
+  let D := X.basicOpen f.val
   let a : D ⟶ q.X i := homOfLE hi
   let P := (q.presentation i).map (SheafOfModules.overMap X.ringCatSheaf a)
     (SheafOfModules.overMapUnitIso a).symm
@@ -207,7 +194,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finitePresentation_sections_of_i
   have : P'.IsFinite :=
     @SheafOfModules.instIsFiniteOfIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_hom e) P inferInstance
   exact Scheme.Modules.finitePresentation_sections_of_presentation M D
-    (hU.basicOpen f.1) P'
+    (hU.basicOpen f.val) P'
 
 /-- The global sections of a finitely presented sheaf on an affine scheme form a finitely
 presented module over its ring of global functions. -/
@@ -330,28 +317,28 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_sections_of_isAffineOpen
     simpa only [Opens.coversTop_iff, IsOpenCover] using q.coversTop
   have hs : Ideal.span s = ⊤ := by
     apply hU.iSup_basicOpen_eq_self_iff.mp
-    refine le_antisymm (iSup_le fun f : s => X.basicOpen_le f.1) ?_
+    refine le_antisymm (iSup_le fun f : s => X.basicOpen_le f.val) ?_
     intro x hxU
     have hx : x ∈ iSup q.X := by simp [hcov]
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
     obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hi⟩ hxU
     exact Opens.mem_iSup.mpr ⟨⟨f, i, hf⟩, hxf⟩
-  have loc (f : s) : IsLocalization.Away f.1 Γ(X, X.basicOpen f.1) :=
-    hU.isLocalization_basicOpen f.1
-  have modloc (f : s) : IsLocalizedModule.Away f.1 (M.basicOpenRestrict f.1) :=
-    M.isLocalizedModule_basicOpenRestrict hU f.1
+  have loc (f : s) : IsLocalization.Away f.val Γ(X, X.basicOpen f.val) :=
+    hU.isLocalization_basicOpen f.val
+  have modloc (f : s) : IsLocalizedModule.Away f.val (M.basicOpenRestrict f.val) :=
+    M.isLocalizedModule_basicOpenRestrict hU f.val
   apply Module.Finite.of_localizationSpan' s hs
-    (Rₚ := fun f => Γ(X, X.basicOpen f.1))
-    (Mₚ := fun f => Γ(M, X.basicOpen f.1)) (fun f => M.basicOpenRestrict f.1)
+    (Rₚ := fun f => Γ(X, X.basicOpen f.val))
+    (Mₚ := fun f => Γ(M, X.basicOpen f.val)) (fun f => M.basicOpenRestrict f.val)
   intro f
-  obtain ⟨i, hi⟩ := f.2
-  let D := X.basicOpen f.1
+  obtain ⟨i, hi⟩ := f.property
+  let D := X.basicOpen f.val
   let a : D ⟶ q.X i := homOfLE hi
   let G := (q.generators i).mapIso (SheafOfModules.overMap X.ringCatSheaf a)
     (SheafOfModules.overMapUnitIso a).symm ((SheafOfModules.overFunctorMap X.ringCatSheaf a).app M)
   have : (q.generators i).IsFiniteType := hq.isFiniteType i
   have : G.IsFiniteType := SheafOfModules.GeneratingSections.isFiniteType_mapIso _ _ _ _
-  exact Scheme.Modules.finite_sections_of_generatingSections M D (hU.basicOpen f.1) G
+  exact Scheme.Modules.finite_sections_of_generatingSections M D (hU.basicOpen f.val) G
 
 /-- A quasicoherent sheaf of finite type on `Spec R` has finite global sections as an `R`-module. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.finite_moduleSpecΓ
