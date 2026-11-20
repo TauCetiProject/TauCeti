@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
@@ -25,7 +26,8 @@ over an arbitrary site. This file only packages it over a scheme:
 * `TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X` is the `ObjectProperty` on `X.Modules`
   cut out by the predicate (closed under isomorphisms, by the site-level transport theorem, so
   `ObjectProperty.prop_of_iso` and `ObjectProperty.prop_iff_of_iso` apply to it);
-* `TauCeti.AlgebraicGeometry.InvertibleSheaf X` is the full subcategory it cuts out;
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf X` is the full subcategory it cuts out, whose
+  underlying sheaves are automatically quasi-coherent, finitely presented, and of finite type;
 * `InvertibleSheaf.free X I` is the free sheaf on an indexing type with exactly one element, and
   `InvertibleSheaf.trivial X` is the globally free rank-one sheaf;
 * `SheafOfModules.isInvertible_unit` records that the structure sheaf `𝒪_X`, as a sheaf of
@@ -121,6 +123,30 @@ does not identify it with `SheafOfModules.unit X.ringCatSheaf` of `isInvertible_
 instance isInvertible_tensorUnit : isInvertible X (𝟙_ X.Modules) :=
   isInvertible_unit X
 
+variable {X} in
+/-- An invertible `𝒪_X`-module is quasicoherent. -/
+instance (priority := 100) isQuasicoherent_of_isInvertible
+    {M : X.Modules} [hM : isInvertible X M] : M.IsQuasicoherent :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
+  let F : _root_.SheafOfModules X.ringCatSheaf := M
+  inferInstanceAs F.IsQuasicoherent
+
+variable {X} in
+/-- An invertible `𝒪_X`-module is finitely presented. -/
+instance (priority := 100) isFinitePresentation_of_isInvertible
+    {M : X.Modules} [hM : isInvertible X M] : M.IsFinitePresentation :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
+  let F : _root_.SheafOfModules X.ringCatSheaf := M
+  inferInstanceAs F.IsFinitePresentation
+
+variable {X} in
+/-- An invertible `𝒪_X`-module is of finite type. -/
+instance (priority := 100) isFiniteType_of_isInvertible
+    {M : X.Modules} [hM : isInvertible X M] : M.IsFiniteType :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
+  let F : _root_.SheafOfModules X.ringCatSheaf := M
+  inferInstanceAs F.IsFiniteType
+
 end SheafOfModules
 
 variable {X : Scheme.{u}}
@@ -137,9 +163,15 @@ instance (L : InvertibleSheaf X) : SheafOfModules.isInvertible X L.obj :=
 
 /-- The underlying sheaf of a line bundle is quasicoherent. -/
 instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
-  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
-  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
-  inferInstanceAs F.IsQuasicoherent
+  SheafOfModules.isQuasicoherent_of_isInvertible
+
+/-- The underlying sheaf of a line bundle is finitely presented. -/
+instance isFinitePresentation_obj (L : InvertibleSheaf X) : L.obj.IsFinitePresentation :=
+  SheafOfModules.isFinitePresentation_of_isInvertible
+
+/-- The underlying sheaf of a line bundle is of finite type. -/
+instance isFiniteType_obj (L : InvertibleSheaf X) : L.obj.IsFiniteType :=
+  SheafOfModules.isFiniteType_of_isInvertible
 
 /-- The invertible sheaf given by the free sheaf on an indexing type with exactly one element. -/
 def free (X : Scheme.{u}) (I : Type u) [Nonempty I] [Subsingleton I] :
