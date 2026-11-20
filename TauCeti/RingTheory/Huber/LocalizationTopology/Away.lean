@@ -45,8 +45,8 @@ own topology instance; `TauCeti.Huber.hasBasis_nhds_zero_awayTopology` supplies 
   restricts to the ideal `(πⁿ)` of `A₀`.
 * `TauCeti.Huber.isOpen_range_algebraMap_of_hasBasis`,
   `TauCeti.Huber.isBounded_range_algebraMap_of_hasBasis`: the image of `A₀` is open and bounded.
-* `TauCeti.Huber.isOpen_subring_of_hasBasis`, `TauCeti.Huber.isBounded_subring_of_hasBasis`: the
-  same for a subring `S ⊆ A` with the topology of basis `ϖⁿ S`.
+* `TauCeti.Huber.isOpen_subring_of_hasBasis`: a subring `S ⊆ A` is open for the topology with
+  basis `ϖⁿ S`.
 * `TauCeti.Huber.isPseudoUniformizer_algebraMap_of_hasBasis`: `π` is a pseudouniformiser of `A`.
 * `TauCeti.Huber.isTateRing_of_hasBasis`: `A` is a Tate ring.
 * `TauCeti.Huber.t2Space_of_hasBasis`: `A` is Hausdorff if `π` is a nonzerodivisor and `A₀` is
@@ -246,11 +246,6 @@ include h
 theorem isOpen_subring_of_hasBasis [SeparatelyContinuousAdd A] : IsOpen (S : Set A) := by
   rw [← Subring.range_subtype S]
   exact isOpen_range_algebraMap_of_hasBasis h
-
-/-- **A subring `S` is bounded** in `A` for the topology with basis `ϖⁿ S`. -/
-theorem isBounded_subring_of_hasBasis : IsBounded (S : Set A) := by
-  rw [← Subring.range_subtype S]
-  exact isBounded_range_algebraMap_of_hasBasis h
 
 end Subring
 
