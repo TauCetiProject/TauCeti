@@ -229,19 +229,10 @@ theorem forall_isLinear_iff_cartan_betti_maslovEulerPowerSeries
         Bigraded.maslovEulerPowerSeries ((r j).bettiPoincarePowerSeries bP i) ↔
       ∀ (n : ℕ) (p : ℤ), (n : ℤ) ≠ p →
         (PowerSeries.coeff n ((r j).bettiPoincarePowerSeries bP i)).coeff p = 0 := by
-    refine Bigraded.eulerPowerSeries_eq_maslovEulerPowerSeries_iff hB (fun n p ↦ ?_)
+    exact Bigraded.eulerPowerSeries_eq_maslovEulerPowerSeries_iff hB
+      ((hr j).coeff_coeff_bettiPoincarePowerSeries_nonneg S he he₀ hI hne bP hbP hconc i (hself i))
       (fun n p hpn ↦ (hr j).coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt S he he₀ hI hne bP
         hbP hconc (fun q hq ↦ hconc j q hq.ne) i (hself i) (by omega))
-    -- `dᵢ` times the coefficient is an Ext dimension, and `dᵢ > 0`.
-    let _ : Module.Finite A (S i).obj := gradedFiniteModules_iff.mp (S i).property
-    let _ : Module.Finite k (S i).obj := Module.Finite.trans A _
-    have hcoeff := (hr j).coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀
-      hI hne bP hbP hconc i n p
-    rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), coeff_C_mul]
-      at hcoeff
-    exact nonneg_of_mul_nonneg_right (hcoeff ▸ Int.natCast_nonneg _)
-      (Int.natCast_pos.mpr
-        ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated (e i) (hconc i) (hself i)))
   rw [forall_isLinear_iff_diagonal_bettiPoincarePowerSeriesMatrix S he he₀ hI hne bP hbP hconc r
     hr hneg hS hself]
   simp only [bettiPoincarePowerSeriesMatrix_apply]

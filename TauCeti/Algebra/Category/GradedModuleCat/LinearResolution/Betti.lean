@@ -59,6 +59,8 @@ In the namespace `TauCeti.GradedProjectiveResolution`:
   the bigraded Ext Poincaré series against `Sᵢ`.
 * `IsMinimal.bettiPoincarePowerSeries_eq`: the Betti series does not depend on the minimal
   resolution.
+* `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg`: at each `Pᵢ` with `dᵢ ≠ 0`, the Betti
+  series of a minimal resolution has nonnegative coefficients.
 * `IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_of_lt` and
   `IsMinimal.hasEulerPowerSeries_bettiPoincarePowerSeries`: the Betti series of a minimal resolution
   vanishes below a shifted diagonal, so it has a well-defined value at `t = -1` coefficientwise in
@@ -259,6 +261,23 @@ theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_eq_zero_iff (hr : r.IsMin
       (hr.extLinearEquiv (((S i).obj.shiftObj j).positive_smul_top_eq_bot_of_concentrated _ hN) n)
   rw [← Module.finrank_zero_iff (R := k), ← Int.natCast_eq_zero, ← hcoeff, mul_eq_zero,
     or_iff_right hc]
+
+include he he₀ hne hbP hconc in
+/-- The coefficients of the Betti Poincaré series of a minimal resolution at `Pᵢ` with
+`dᵢ = gdim(eᵢ • Sᵢ) ≠ 0` are nonnegative. -/
+theorem IsMinimal.coeff_coeff_bettiPoincarePowerSeries_nonneg (hr : r.IsMinimal) (i : I)
+    (hself : (S i).obj.smulGradedDimension (e i) ≠ 0) (n : ℕ) (j : ℤ) :
+    0 ≤ (PowerSeries.coeff n (r.bettiPoincarePowerSeries bP i)).coeff j := by
+  -- `dᵢ` times the coefficient is an Ext dimension, and `dᵢ > 0`.
+  let _ : Module.Finite A (S i).obj := gradedFiniteModules_iff.mp (S i).property
+  let _ : Module.Finite k (S i).obj := Module.Finite.trans A _
+  have hcoeff := hr.coeff_smulGradedDimension_mul_coeff_bettiPoincarePowerSeries S he he₀ hI hne
+    bP hbP hconc i n j
+  rw [GradedModuleCat.smulGradedDimension_eq_C_of_concentrated _ _ (hconc i), coeff_C_mul]
+    at hcoeff
+  exact nonneg_of_mul_nonneg_right (hcoeff ▸ Int.natCast_nonneg _)
+    (Int.natCast_pos.mpr
+      ((S i).obj.finrank_smul_piece_zero_pos_of_concentrated (e i) (hconc i) hself))
 
 include he he₀ hne hbP hconc in
 /-- **The Betti Poincaré series of a minimal resolution vanishes below a shifted diagonal.** If `M`
