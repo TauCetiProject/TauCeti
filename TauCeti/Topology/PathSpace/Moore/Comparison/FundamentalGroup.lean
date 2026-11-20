@@ -86,6 +86,15 @@ theorem zerothHomotopyEquivFundamentalGroup_mk (γ : MooreLoopSpace X x) :
   exact congrArg (Inv.inv (α := FundamentalGroup X x))
     (HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ.toPath)
 
+/-- Two Moore loops have the same multiplicative class exactly when they are joined by a path of
+Moore loops. -/
+theorem fundamentalGroupHom_eq_fundamentalGroupHom_iff {γ δ : MooreLoopSpace X x} :
+    fundamentalGroupHom x γ = fundamentalGroupHom x δ ↔ Joined γ δ := by
+  rw [← zerothHomotopyEquivFundamentalGroup_mk, ← zerothHomotopyEquivFundamentalGroup_mk,
+    (zerothHomotopyEquivFundamentalGroup x).apply_eq_iff_eq]
+  -- `ZerothHomotopy` is the quotient by the setoid whose relation is `Joined`.
+  exact Quotient.eq
+
 /-- Every element of the fundamental group is the multiplicative class of a Moore loop. -/
 theorem fundamentalGroupHom_surjective (x : X) : Function.Surjective (fundamentalGroupHom x) :=
   fun g ↦ by
