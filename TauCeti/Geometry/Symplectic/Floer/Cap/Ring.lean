@@ -34,15 +34,17 @@ required to exist as a family of counts of the right index:
   exchanged
   (`kernelProduct_sub_negOnePowCast_smul_kernelProduct_coefficientComparison_mem_coboundaries`);
 * the unit laws, from gluing a PSS plane into either input
-  (`TauCeti.Floer.kernelProduct_coordinates_symm_sub_mem_coboundaries_left` and
-  `TauCeti.Floer.kernelProduct_coordinates_symm_sub_mem_coboundaries_right`).
+  (`TauCeti.Floer.kernelProduct_coordinates_symm_sub_mem_coboundaries_right` and
+  `TauCeti.Floer.kernelProduct_coordinates_symm_sub_mem_coboundaries_left`).
 
-Together with the index conditions of rigid moduli spaces, the Leibniz identity and the closedness
-of the fundamental cycle, these make the degree-wise cohomology of `d` a graded ring with unit the
-class of `e` (`TauCeti.Floer.cohomologyGRingOfCounts`), through
-`LinearMap.cohomologyGRing`, and a graded algebra over the ground ring
-(`TauCeti.Floer.cohomologyGAlgebraOfCounts`). So `⨁ k, H^k` is an algebra in which
-`of i [a] * of j [b] = of (i + j) [a ⋆ b]`
+Together with the index conditions of rigid moduli spaces
+(`TauCeti.Floer.kernelProduct_coefficientComparison_mem_cochain_gradeBy`), the Leibniz identity
+(`TauCeti.Floer.kernelMap_kernelProduct_coefficientComparison_self_eq_add`) and the closedness
+of the fundamental cycle (`TauCeti.Floer.coordinates_symm_coefficientComparison_mem_cocycles_zero`),
+these make the degree-wise cohomology of `d` a graded ring with unit the class of `e`
+(`TauCeti.Floer.cohomologyGRingOfCounts`), through `LinearMap.cohomologyGRing`, and a graded
+algebra over the ground ring (`TauCeti.Floer.cohomologyGAlgebraOfCounts`). So `⨁ k, H^k` is an
+algebra in which `of i [a] * of j [b] = of (i + j) [a ⋆ b]`
 (`TauCeti.Floer.cohomologyGRingOfCounts_of_mk_mul_of_mk`) and `1 = of 0 [e]`
 (`TauCeti.Floer.cohomologyGRingOfCounts_one`), although the chain-level product need not be
 associative or unital. It is graded commutative when the input-exchange family exists
@@ -162,7 +164,7 @@ complex, and `e` the combination of the counts `E` of rigid PSS planes. If some 
 counts, which lowers the cochain degree by one, satisfies the unit identity
 `∑ᵢ Eᵢ Qᵢⱼₗ - [j = l] = ∑ₘ Kⱼₘ Dₘₗ + ∑ₘ Dⱼₘ Kₘₗ` of gluing a plane into the first input, then
 `e ⋆ a - a` is a coboundary of the cylinder differential for every cocycle `a`. -/
-theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_left
+theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_right
     (hunit : ∃ K : ι → ι → NovikovSeries R G ωG,
       (∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1) ∧
       ∀ j l, ∑ i, E i * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) j l =
@@ -180,9 +182,7 @@ theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_left
       r r r q hq hF hF hF Q D E (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ ha
   -- The Novikov module structure, for the identity map of the identity matrix of counts.
   let := module (R := R) hF
-  rwa [show (fun j l => coefficientComparison q hq ((1 : Matrix ι ι (NovikovSeries R G ωG)) j l)) =
-      (1 : Matrix ι ι _) from Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _),
-    novikovMapOfMatrix_one, LinearMap.id_apply,
+  rwa [novikovMapOfMatrix_coefficientComparison_one_apply,
     novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ] at h
 
 /-- **The unit of class-indexed counts on a complex is a right unit on cocycles.** Let `⋆` be the
@@ -191,7 +191,7 @@ complex, and `e` the combination of the counts `E` of rigid PSS planes. If some 
 counts, which lowers the cochain degree by one, satisfies the unit identity
 `∑ⱼ Eⱼ Qᵢⱼₗ - [i = l] = ∑ₘ Kᵢₘ Dₘₗ + ∑ₘ Dᵢₘ Kₘₗ` of gluing a plane into the second input, then
 `a ⋆ e - a` is a coboundary of the cylinder differential for every cocycle `a`. -/
-theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_right
+theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_left
     (hunit : ∃ K : ι → ι → NovikovSeries R G ωG,
       (∀ i l, ∀ A ∈ (K i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
       ∀ i l, ∑ j, E j * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) i l =
@@ -209,16 +209,14 @@ theorem kernelProduct_coordinates_symm_sub_mem_coboundaries_right
       r r r q hq hF hF hF Q D E (1 : Matrix ι ι (NovikovSeries R G ωG)) K D hunit hμ hμ hK hδ hδ ha
   -- The Novikov module structure, for the identity map of the identity matrix of counts.
   let := module (R := R) hF
-  rwa [show (fun i l => coefficientComparison q hq ((1 : Matrix ι ι (NovikovSeries R G ωG)) i l)) =
-      (1 : Matrix ι ι _) from Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _),
-    novikovMapOfMatrix_one, LinearMap.id_apply,
+  rwa [novikovMapOfMatrix_coefficientComparison_one_apply,
     novikovProductOfMatrix_eq_kernelProduct hF hF hF r r r _ hnQ] at h
 
 end Laws
 
 section CohomologyRing
 
-variable [DecidableEq ι]
+variable
   (hQ : ∀ i j k, ∀ A ∈ (Q i j k).support,
     μ ⟨k, r k⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ - n)
   (hL : ∀ i j l, ∑ k, Q i j k * D k l =
@@ -226,11 +224,53 @@ variable [DecidableEq ι]
   (E : ι → NovikovSeries R G ωG)
   (hE : ∀ i, ∀ A ∈ (E i).support, μ ⟨i, r i⟩ - degree ω c (q A) = n)
   (hED : ∀ l, ∑ i, E i * D i l = 0)
-  (hunitl : ∃ K : ι → ι → NovikovSeries R G ωG,
+
+omit [Fintype ι] in
+include hμ hQ in
+/-- **The degree of the product of class-indexed counts on a complex.** If the counts `Q` of rigid
+pairs of pants with all three ends in the same complex satisfy the index condition `hQ`, then their
+ground-ring bilinear map adds cochain degrees `n - μ`. -/
+theorem kernelProduct_coefficientComparison_mem_cochain_gradeBy [Finite ι] {i j : ℤ}
+    {a b : NovikovModule R F} (ha : a ∈ gradeBy R F (fun p => n - μ p) i)
+    (hb : b ∈ gradeBy R F (fun p => n - μ p) j) :
+    kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a b ∈
+      gradeBy R F (fun p => n - μ p) (i + j) :=
+  kernelProduct_mem_cochain_gradeBy hnQ _
+    (grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r r r q hq hμ hμ hμ hQ) ha hb
+
+include hμ hL in
+/-- **The Leibniz rule for class-indexed counts on a complex.** This is
+`TauCeti.Floer.kernelMap_kernelProduct_coefficientComparison_eq_add` when all three ends of the
+pairs of pants lie in the same complex: if the counts satisfy the Leibniz identity `hL`, then
+`d (a ⋆ b) = d a ⋆ b + (-1)^e a ⋆ d b` for `a` of cochain degree `e`. -/
+theorem kernelMap_kernelProduct_coefficientComparison_self_eq_add {e : ℤ}
+    {a : NovikovModule R F} (ha : a ∈ gradeBy R F (fun p => n - μ p) e) (b : NovikovModule R F) :
+    kernelMap hδ (mapKernelOfMatrix_mem hF r r _)
+        (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a b) =
+      kernelProduct hnQ (kernelOfMatrix_mem hF r r r _)
+          (kernelMap hδ (mapKernelOfMatrix_mem hF r r _) a) b +
+        negOnePowCast R e • kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a
+          (kernelMap hδ (mapKernelOfMatrix_mem hF r r _) b) :=
+  kernelMap_kernelProduct_coefficientComparison_eq_add r r r q hq hF hF hF hμ Q D D D n hL hδ hδ hδ
+    hnQ ha b
+
+include hμ hE hED in
+/-- **The unit cocycle of class-indexed counts.** If the counts `E` of rigid PSS planes
+constrained by the fundamental cycle satisfy the index condition `hE` and the closedness
+`∑ᵢ Eᵢ Dᵢₗ = 0`, then their combination is a cocycle of cochain degree zero. -/
+theorem coordinates_symm_coefficientComparison_mem_cocycles_zero :
+    ((coordinates hF r).symm fun i => coefficientComparison q hq (E i)) ∈
+      (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+        (gradeBy R F fun p => n - μ p) 0 :=
+  coordinates_symm_coefficientComparison_mem_cocycles r q hq hF hμ
+    (fun i A hA => (hE i A hA).trans (sub_zero n).symm) hED hδ
+
+variable [DecidableEq ι]
+  (hone_mul : ∃ K : ι → ι → NovikovSeries R G ωG,
     (∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1) ∧
     ∀ j l, ∑ i, E i * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) j l =
       ∑ m, K j m * D m l + ∑ m, D j m * K m l)
-  (hunitr : ∃ K : ι → ι → NovikovSeries R G ωG,
+  (hmul_one : ∃ K : ι → ι → NovikovSeries R G ωG,
     (∀ i l, ∀ A ∈ (K i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
     ∀ i l, ∑ j, E j * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) i l =
       ∑ m, K i m * D m l + ∑ m, D i m * K m l)
@@ -248,22 +288,19 @@ pairs of pants with all three ends in the same complex, and `e` the combination 
 of rigid PSS planes, on the completed capped module graded by the cochain degree `n - μ`. Suppose
 that the counts satisfy the index conditions of rigid moduli spaces, the Leibniz identity `hL` and
 the closedness `∑ᵢ Eᵢ Dᵢₗ = 0` of the fundamental cycle, and that families of counts lowering the
-cochain degree by one give the unit homotopies `hunitl` (a plane glued into the first input) and
-`hunitr` (into the second) and the associativity homotopy `hassoc` of the four-punctured sphere.
+cochain degree by one give the unit homotopies `hone_mul` (a plane glued into the first input) and
+`hmul_one` (into the second) and the associativity homotopy `hassoc` of the four-punctured sphere.
 Then the degree-wise cohomology of `d` is a graded ring, with product induced by `⋆` and unit the
 class of `e`. -/
 abbrev cohomologyGRingOfCounts :
     DirectSum.GRing fun k => (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
       (gradeBy R F fun p => n - μ p) k :=
   LinearMap.cohomologyGRing (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
-    (kernelProduct_mem_cochain_gradeBy hnQ _
-      (grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r r r q hq hμ hμ hμ hQ))
-    (kernelMap_kernelProduct_coefficientComparison_eq_add r r r q hq hF hF hF hμ Q D D D n hL hδ hδ
-      hδ hnQ)
-    _ (coordinates_symm_coefficientComparison_mem_cocycles r q hq hF hμ
-      (fun i A hA => (hE i A hA).trans (sub_zero n).symm) hED hδ)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hunitl)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hunitr)
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hmul_one)
     (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
       hnQ hassoc)
 
@@ -274,36 +311,36 @@ theorem cohomologyGRingOfCounts_of_mk_mul_of_mk {i j : ℤ}
       (gradeBy R F fun p => n - μ p) i)
     (b : (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
       (gradeBy R F fun p => n - μ p) j) :
-    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr hassoc
+    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
     of _ i (Submodule.Quotient.mk a) * of _ j (Submodule.Quotient.mk b) =
       of (fun k => (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
           (gradeBy R F fun p => n - μ p) k) (i + j)
         (Submodule.Quotient.mk ⟨kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a b,
-          LinearMap.apply_mem_cocycles_add _ (kernelProduct_mem_cochain_gradeBy hnQ _
-            (grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r r r q hq hμ hμ hμ hQ))
-            (kernelMap_kernelProduct_coefficientComparison_eq_add r r r q hq hF hF hF hμ Q D D D n
-              hL hδ hδ hδ hnQ) a.2 b.2⟩) := by
-  let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr hassoc
+          LinearMap.apply_mem_cocycles_add _
+            (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+            (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ
+              hL) a.2 b.2⟩) := by
+  let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc
   exact (of_mul_of _ _).trans <| congrArg _ <|
     LinearMap.cohomologyMul_mk (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
-      (kernelProduct_mem_cochain_gradeBy hnQ _
-        (grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r r r q hq hμ hμ hμ hQ))
-      (kernelMap_kernelProduct_coefficientComparison_eq_add r r r q hq hF hF hF hμ Q D D D n hL hδ
-        hδ hδ hnQ) a b
+      (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+      (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL) a b
 
 /-- The unit of the cohomology ring of class-indexed counts is the class of the combination of
 the counts of PSS planes, in degree zero. -/
 theorem cohomologyGRingOfCounts_one :
-    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr hassoc
+    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
     (1 : ⨁ k, (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
         (gradeBy R F fun p => n - μ p) k) =
       of (fun k => (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
           (gradeBy R F fun p => n - μ p) k) 0
         (Submodule.Quotient.mk
           ⟨(coordinates hF r).symm fun i => coefficientComparison q hq (E i),
-            coordinates_symm_coefficientComparison_mem_cocycles r q hq hF hμ
-              (fun i A hA => (hE i A hA).trans (sub_zero n).symm) hED hδ⟩) := by
-  let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr hassoc
+            coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE
+              hED⟩) := by
+  let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc
   exact DirectSum.one_def _
 
 /-- **The cohomology algebra of class-indexed counts.** The graded ring
@@ -312,30 +349,27 @@ map `x ↦ x • [e]` into degree zero, so that `⨁ k, H^k` is an algebra over 
 abbrev cohomologyGAlgebraOfCounts :
     @DirectSum.GAlgebra ℤ R (fun k => (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
       (gradeBy R F fun p => n - μ p) k) _ _ _ _
-      (cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr
+      (cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
         hassoc).toGSemiring :=
   LinearMap.cohomologyGAlgebra (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
-    (kernelProduct_mem_cochain_gradeBy hnQ _
-      (grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r r r q hq hμ hμ hμ hQ))
-    (kernelMap_kernelProduct_coefficientComparison_eq_add r r r q hq hF hF hF hμ Q D D D n hL hδ hδ
-      hδ hnQ)
-    _ (coordinates_symm_coefficientComparison_mem_cocycles r q hq hF hμ
-      (fun i A hA => (hE i A hA).trans (sub_zero n).symm) hED hδ)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hunitl)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hunitr)
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hmul_one)
     (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
       hnQ hassoc)
 
 /-- The structure map of the cohomology algebra of class-indexed counts sends `x` to `x • [e]`,
 for `e` the combination of the counts of PSS planes. -/
 theorem cohomologyGAlgebraOfCounts_toFun (x : R) :
-    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr hassoc
-    (cohomologyGAlgebraOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr
+    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
+    (cohomologyGAlgebraOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
         hassoc).toFun x =
       x • Submodule.Quotient.mk
         ⟨(coordinates hF r).symm fun i => coefficientComparison q hq (E i),
-          coordinates_symm_coefficientComparison_mem_cocycles r q hq hF hμ
-            (fun i A hA => (hE i A hA).trans (sub_zero n).symm) hED hδ⟩ :=
+          coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED⟩ :=
   rfl
 
 /-- **Graded commutativity of the cohomology ring of class-indexed counts.** If, in addition to
@@ -355,17 +389,15 @@ theorem cohomologyGRingOfCounts_of_mul_of_comm
       (gradeBy R F fun p => n - μ p) i)
     (y : (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
       (gradeBy R F fun p => n - μ p) j) :
-    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hunitl hunitr hassoc
+    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
     of _ i x * of _ j y = negOnePowCast R (i * j) • (of _ j y * of _ i x) :=
   LinearMap.cohomologyGRing_of_mul_of_comm (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
-    (kernelProduct_mem_cochain_gradeBy hnQ _
-      (grading_eq_of_kernelOfMatrix_coefficientComparison_ne_zero r r r q hq hμ hμ hμ hQ))
-    (kernelMap_kernelProduct_coefficientComparison_eq_add r r r q hq hF hF hF hμ Q D D D n hL hδ hδ
-      hδ hnQ)
-    _ (coordinates_symm_coefficientComparison_mem_cocycles r q hq hF hμ
-      (fun i A hA => (hE i A hA).trans (sub_zero n).symm) hED hδ)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hunitl)
-    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hunitr)
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right q hq r hF hμ n D hδ Q hnQ E hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left q hq r hF hμ n D hδ Q hnQ E hmul_one)
     (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
       hnQ hassoc)
     (kernelProduct_sub_negOnePowCast_smul_kernelProduct_coefficientComparison_mem_coboundaries q hq
