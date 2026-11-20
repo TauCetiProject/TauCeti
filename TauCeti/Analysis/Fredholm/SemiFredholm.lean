@@ -7,11 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.Topology.Connected.TotallyDisconnected
 import TauCeti.Analysis.Fredholm.ClosedRange
-import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.SmallPerturbation
 import TauCeti.Analysis.Normed.Operator.ClosedRange
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
@@ -82,21 +80,24 @@ section Banach
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
 /-- The a priori estimate of an operator with closed range and finite-dimensional kernel, with a
-projection `P` onto its kernel, persists for every operator `S` with `C ‖S - T‖ ≤ 1 / 2`, at the
-cost of a factor `2`. -/
-private theorem exists_projection_forall_norm_le_of_mul_norm_sub_le {T : E →L[𝕜] F}
+projection `P` into its kernel, persists for every operator `S` near `T`, namely with
+`2 C ‖S - T‖ < 1`, at the cost of a factor `2`. -/
+private theorem exists_projection_eventually_forall_norm_le {T : E →L[𝕜] F}
     [FiniteDimensional 𝕜 T.ker] (hrange : IsClosed (T.range : Set F)) :
-    ∃ (P : E →L[𝕜] E) (C : ℝ), 0 < C ∧ IsIdempotentElem P ∧ P.range = T.ker ∧
-      ∀ S : E →L[𝕜] F, C * ‖S - T‖ ≤ 1 / 2 → ∀ x, ‖x‖ ≤ 2 * C * ‖S x‖ + 2 * ‖P x‖ := by
+    ∃ (P : E →L[𝕜] E) (C : ℝ), IsIdempotentElem P ∧ (∀ x, P x ∈ T.ker) ∧
+      ∀ᶠ S in 𝓝 T, 2 * C * ‖S - T‖ < 1 ∧ ∀ x, ‖x‖ ≤ 2 * C * ‖S x‖ + 2 * ‖P x‖ := by
   obtain ⟨P, C, hC, hP, hPrange, hest⟩ :=
     T.exists_projection_norm_le hrange (Submodule.ClosedComplemented.of_finiteDimensional _)
-  refine ⟨P, C, hC, hP, hPrange, fun S hS x ↦ ?_⟩
+  refine ⟨P, C, hP, fun x ↦ hPrange ▸ LinearMap.mem_range_self (P : E →ₗ[𝕜] E) x, ?_⟩
+  filter_upwards [Metric.ball_mem_nhds T (by positivity : 0 < 1 / (2 * C))] with S hS
+  rw [Metric.mem_ball, dist_eq_norm, lt_div_iff₀ (by positivity)] at hS
+  refine ⟨by linarith, fun x ↦ ?_⟩
   have hTx : ‖T x‖ ≤ ‖S x‖ + ‖S - T‖ * ‖x‖ := by
     calc ‖T x‖ = ‖S x - (S - T) x‖ := by rw [sub_apply, sub_sub_cancel]
       _ ≤ ‖S x‖ + ‖(S - T) x‖ := norm_sub_le _ _
       _ ≤ ‖S x‖ + ‖S - T‖ * ‖x‖ := by gcongr; exact (S - T).le_opNorm x
   have h := hest x
-  have hx : C * ‖S - T‖ * ‖x‖ ≤ 1 / 2 * ‖x‖ := by gcongr
+  have hx : C * ‖S - T‖ * ‖x‖ ≤ 1 / 2 * ‖x‖ := by gcongr; linarith
   nlinarith
 
 /-- **Openness of the upper semi-Fredholm operators, kernel part.** Near an operator with closed
@@ -105,11 +106,8 @@ at most that of `ker T`. -/
 theorem eventually_nhds_finiteDimensional_ker_and_finrank_ker_le {T : E →L[𝕜] F}
     [FiniteDimensional 𝕜 T.ker] (hrange : IsClosed (T.range : Set F)) :
     ∀ᶠ S in 𝓝 T, FiniteDimensional 𝕜 S.ker ∧ finrank 𝕜 S.ker ≤ finrank 𝕜 T.ker := by
-  obtain ⟨P, C, hC, -, hPrange, hest⟩ := exists_projection_forall_norm_le_of_mul_norm_sub_le hrange
-  have hP (x : E) : P x ∈ T.ker := hPrange ▸ LinearMap.mem_range_self (P : E →ₗ[𝕜] E) x
-  filter_upwards [Metric.closedBall_mem_nhds T (by positivity : 0 < 1 / (2 * C))] with S hS
-  rw [Metric.mem_closedBall, dist_eq_norm, le_div_iff₀ (by positivity)] at hS
-  have hSx := hest S (by linarith)
+  obtain ⟨P, C, -, hP, hest⟩ := exists_projection_eventually_forall_norm_le hrange
+  filter_upwards [hest] with S ⟨_, hSx⟩
   -- `P` is injective on `ker S`, since `‖x‖ ≤ 2 ‖P x‖` there.
   have hinj : Function.Injective ((P.codRestrict T.ker hP : E →ₗ[𝕜] T.ker) ∘ₗ S.ker.subtype) := by
     rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
@@ -125,16 +123,14 @@ theorem eventually_nhds_finiteDimensional_ker_and_finrank_ker_le {T : E →L[�
 range and finite-dimensional kernel, every operator has closed range. -/
 theorem eventually_nhds_isClosed_range {T : E →L[𝕜] F} [FiniteDimensional 𝕜 T.ker]
     (hrange : IsClosed (T.range : Set F)) : ∀ᶠ S in 𝓝 T, IsClosed (S.range : Set F) := by
-  obtain ⟨P, C, hC, -, hPrange, hest⟩ := exists_projection_forall_norm_le_of_mul_norm_sub_le hrange
-  have hP (x : E) : P x ∈ T.ker := hPrange ▸ LinearMap.mem_range_self (P : E →ₗ[𝕜] E) x
-  filter_upwards [Metric.closedBall_mem_nhds T (by positivity : 0 < 1 / (2 * C))] with S hS
-  rw [Metric.mem_closedBall, dist_eq_norm, le_div_iff₀ (by positivity)] at hS
+  obtain ⟨P, C, -, hP, hest⟩ := exists_projection_eventually_forall_norm_le hrange
+  filter_upwards [hest] with S ⟨_, hSx⟩
   -- The finite-rank projection, viewed as an operator into `ker T`, is compact.
   refine S.isClosed_range_of_compact_estimate (C := 2 * C)
     (isCompactOperator_of_locallyCompactSpace_dom ((2 : 𝕜) • P.codRestrict T.ker hP))
     fun x ↦ ?_
   rw [smul_apply, norm_smul, RCLike.norm_ofNat, ← Submodule.norm_coe, coe_codRestrict_apply]
-  exact hest S (by linarith) x
+  exact hSx x
 
 /-- The operators with closed range and finite-dimensional kernel form an open set. -/
 theorem isOpen_setOf_finiteDimensional_ker_and_isClosed_range :
@@ -178,10 +174,8 @@ theorem eventually_nhds_isFredholm_iff {T : E →L[𝕜] F} [FiniteDimensional �
     (hrange : IsClosed (T.range : Set F)) : ∀ᶠ S in 𝓝 T, (IsFredholm S ↔ IsFredholm T) := by
   by_cases hT : IsFredholm T
   · filter_upwards [hT.eventually_isFredholm_and_index_eq] with S hS using iff_of_true hS.1 hT
-  obtain ⟨P, C, hC, hPi, hPrange, hest⟩ :=
-    exists_projection_forall_norm_le_of_mul_norm_sub_le hrange
-  filter_upwards [Metric.ball_mem_nhds T (by positivity : 0 < 1 / (2 * C))] with S hS
-  rw [Metric.mem_ball, dist_eq_norm, lt_div_iff₀ (by positivity)] at hS
+  obtain ⟨P, C, hPi, hP, hest⟩ := exists_projection_eventually_forall_norm_le hrange
+  filter_upwards [hest] with S ⟨hS, hSx⟩
   refine iff_of_false (fun hSF ↦ hT ?_) hT
   set M := (LinearMap.ker (P : E →ₗ[𝕜] E)).map (S : E →ₗ[𝕜] F)
   -- `range S = S (ker P) + S (ker T)`, and `S (ker T)` is finite-dimensional.
@@ -189,9 +183,8 @@ theorem eventually_nhds_isFredholm_iff {T : E →L[𝕜] F} [FiniteDimensional �
     rintro _ ⟨x, rfl⟩
     have hPPx : P (P x) = P x := congr($(hPi.eq) x)
     have hx : x - P x ∈ LinearMap.ker (P : E →ₗ[𝕜] E) := by simp [hPPx]
-    have hPx : P x ∈ T.ker := hPrange ▸ LinearMap.mem_range_self (P : E →ₗ[𝕜] E) x
     rw [← sub_add_cancel x (P x), map_add]
-    exact Submodule.add_mem_sup ⟨_, hx, rfl⟩ ⟨_, hPx, rfl⟩
+    exact Submodule.add_mem_sup ⟨_, hx, rfl⟩ ⟨_, hP x, rfl⟩
   have hsup : (M ⊔ T.ker.map (S : E →ₗ[𝕜] F)).CoFG := hSF.finite_coker.of_le hle
   have hMfin : FiniteDimensional 𝕜 (F ⧸ M) :=
     have : Module.Finite 𝕜 ((F ⧸ M) ⧸ (T.ker.map (S : E →ₗ[𝕜] F)).map M.mkQ) :=
@@ -202,9 +195,8 @@ theorem eventually_nhds_isFredholm_iff {T : E →L[𝕜] F} [FiniteDimensional �
     rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
     intro m hm
     have hmM : (m : F) ∈ M := (Submodule.Quotient.mk_eq_zero M).mp hm
-    refine Subtype.ext (eq_zero_of_mem_orthogonal_range_of_mem_map (C := C) (by linarith)
-      (fun x hx ↦ ?_) m.2 hmM)
-    simpa [hx] using hest S (by linarith) x
+    refine Subtype.ext (eq_zero_of_mem_orthogonal_range_of_mem_map hS (fun x hx ↦ ?_) m.2 hmM)
+    simpa [hx] using hSx x
   have : FiniteDimensional 𝕜 T.rangeᗮ := Module.Finite.of_injective _ hinj
   have : CompleteSpace T.range := hrange.completeSpace_coe
   have hcoker : FiniteDimensional 𝕜 (F ⧸ T.range) :=

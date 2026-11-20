@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.SemiFredholm
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import Mathlib.MeasureTheory.Function.L2Space
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import TauCeti.Analysis.Fredholm.ContinuousFamily
 
 /-!
