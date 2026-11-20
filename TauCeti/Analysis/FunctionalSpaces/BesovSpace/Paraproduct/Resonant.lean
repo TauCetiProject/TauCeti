@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate
-import TauCeti.Analysis.Calculus.BumpFunction.Basic
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Product
+import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Ball
 import TauCeti.Analysis.Normed.Lp.Holder
@@ -23,24 +24,25 @@ truncated resonant remainder. Each piece
 `Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` (`TauCeti.BesovSpace.resonantTerm`) is spectrally supported in the
 ball `‖ξ‖ ≤ 2 ^ j (1 + 2 ^ N) φ.rOut` (`TauCeti.BesovSpace.isVanishingOn_fourier_resonantTerm`).
 Reconstructing Besov norms from dyadic-ball series (`exists_hasSum_toDistr_and_norm_le_of_ball`)
-for `0 < α + β` yields Bahouri–Chemin–Danchin, Theorem 2.85, and two gap-independent Bony products:
+for `0 < α + β` yields Bahouri–Chemin–Danchin, Theorem 2.85, and the positive-regularity Bony
+product:
 
 * `TauCeti.BesovSpace.resonantCLM`: `B^α_{p₁,q₁} × B^β_{p₂,q₂} →L[ℂ] B^{α + β}_{r,q}` for
-  `0 < α + β`, `1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`, with uniform norm bound, the
-  `q₁`-independent existential form
-  `TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`, truncated-sum convergence
-  (`tendsto_sum_block_smul_sum_resonantCLM`), and scalar symmetry (`toDistr_resonantCLM_comm`).
-* `TauCeti.BesovSpace.bonyProductCLM`: `B^α_{p₁,q₁} × B^β_{p₂,q₂} →L[ℂ] B^α_{r,q₁}` for `α < 0`
-  and `0 < α + β` (hence `0 < β`), independent of the gap `N` (`bonyProductCLM_apply`,
-  `tendsto_lowPass_smul_lowPass_bonyProductCLM`).
+  `0 < α + β`, `1/r = 1/p₁ + 1/p₂`, `1/q = 1/q₁ + 1/q₂`, with uniform norm bound, truncated-sum
+  convergence (`tendsto_sum_block_smul_sum_resonantCLM`), and scalar symmetry
+  (`toDistr_resonantCLM_comm`).
+* `TauCeti.BesovSpace.smulL_eq_paraproductNegCLM_add`: identifies the opposite-regularity product
+  `TauCeti.BesovSpace.smulL` (`α < 0 < α + β`) from
+  `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Product` with `T_u^N v + T_v^N u + R_N(u, v)`
+  for any admissible gap `N`.
 * `TauCeti.BesovSpace.bonyProductPosCLM`: `B^s_{p₁,q} × B^s_{p₂,q} →L[ℂ] B^s_{r,q}` for `0 < s`,
   agreeing with pointwise `Lʳ` multiplication (`toDistr_bonyProductPosCLM`). At `p₁ = p₂ = r = ∞`
   this recovers the untamed algebra case `B^s_{∞,q} × B^s_{∞,q} → B^s_{∞,q}` (cf.
   Bahouri–Chemin–Danchin, Corollary 2.86, which proves the tame `L^∞ ∩ B^s_{p,q}` algebra estimate
   preserving `p`).
-* Single-block (`toDistr_resonantCLM_of_block_eq_zero`, `toDistr_bonyProductCLM_of_block_eq_zero`)
+* Single-block (`toDistr_resonantCLM_of_block_eq_zero`, `toDistr_smulL_of_block_eq_zero`)
   and constant-`1` (`toDistr_resonantCLM_one_left`, `toDistr_resonantCLM_one_right`,
-  `bonyProductCLM_one_left`, `bonyProductCLM_one_right`, `bonyProductPosCLM_one_left`,
+  `smulL_one_left`, `smulL_one_right`, `bonyProductPosCLM_one_left`,
   `bonyProductPosCLM_one_right`) identities; companion paraproduct checks live in
   `TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct.Estimate`.
 
@@ -249,29 +251,6 @@ theorem exists_norm_resonantCLM_le (N : ℕ) (α β : ℝ) (hαβ : 0 < α + β)
     fun {_ _ _ _ _ _} _ _ _ _ _ _ _ _ ↦ norm_mkContinuousOfHasSum₂_le _ _ _ _ _ _
       (exists_resonant (F := F) (φ := φ) N α β hαβ).choose_spec.1⟩
 
-variable (φ) in
-/-- **The resonant estimate** (Bahouri–Chemin–Danchin, Theorem 2.85). Let `0 < α + β` and let `N`
-be a gap. There is `C ≥ 0`, depending only on `φ`, `N`, `α` and `β`, with the following property
-for all exponents `1 ≤ p₁, p₂, r, q, q₁ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and
-`v ∈ B^β_{p₂,q}`, then the resonant part `R(u, v) = ∑ⱼ Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v` converges in
-the tempered distributions to an element of `B^{α+β}_{r,q}` of norm at most `C ‖u‖ ‖v‖`. -/
-theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 < α + β) (N : ℕ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q q₁ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
-      [Fact (1 ≤ q)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r] (u : BesovSpace ℂ φ α p₁ q₁)
-      (v : BesovSpace F φ β p₂ q), ∃ w : BesovSpace F φ (α + β) r q,
-        HasSum (fun j ↦ ((u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k :
-          Lp F r (volume : Measure E)) : 𝓢'(E, F))) w.toDistr ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
-  obtain ⟨C, hC, hle⟩ := exists_norm_resonantCLM_le (F := F) (φ := φ) N α β hαβ
-  refine ⟨C, hC, fun {p₁ p₂ r q q₁} _ _ _ _ _ _ u v ↦ ?_⟩
-  set u' : BesovSpace ℂ φ α p₁ ∞ := inclusion ℂ φ p₁ le_rfl le_top u
-  refine ⟨resonantCLM r q N hαβ u' v, ?_, ?_⟩
-  · simpa only [resonantTerm_eq_smul_sum, u', block_inclusion] using
-      hasSum_resonantCLM (r := r) (q := q) N hαβ u' v
-  · exact ((resonantCLM r q N hαβ).le_opNorm₂ u' v).trans <| by
-      gcongr
-      · exact hle
-      · exact norm_inclusion_le _ _ u
-
 omit [Fact (1 ≤ r)] [Fact (1 ≤ q)] [q₁.HolderTriple q₂ q] in
 /-- Geometric decay bound on any partial-window resonant piece when `u ∈ B^α_{p₁,q₁}` and
 `v ∈ B^β_{p₂,q₂}`. -/
@@ -394,39 +373,18 @@ variable {φ : ContDiffBump (0 : E)} {α β : ℝ} {p₁ p₂ r q₁ q₂ : ℝ�
   [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r]
   [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)]
 
-/-- Auxiliary `N`-dependent Bony product at opposite-sign regularities `α < 0`, `0 < α + β`. -/
-private def bonyProductAux (r : ℝ≥0∞) [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r] {N : ℕ}
-    (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : α < 0) (hαβ : 0 < α + β) :
-    BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ α r q₁ :=
-  ((inclusion F φ r (by linarith : α ≤ α + β) le_rfl).postcomp (BesovSpace F φ β p₂ q₂) ∘L
-      (paraproductNegCLM (F := F) r q₁ hN hα).bilinearComp
-        (.id ℂ (BesovSpace ℂ φ α p₁ q₁))
-        (inclusion F φ p₂ le_rfl (le_top : q₂ ≤ ∞))) +
-    (paraproductRightLpCLM (F := F) r hN).bilinearComp
-      (.id ℂ (BesovSpace ℂ φ α p₁ q₁)) (toLpCLM F φ p₂ q₂ (by linarith : 0 < β)) +
-    ((inclusion F φ r (by linarith : α ≤ α + β) le_rfl).postcomp (BesovSpace F φ β p₂ q₂) ∘L
-      (resonantCLM (F := F) r q₁ N hαβ).bilinearComp
-        (.id ℂ (BesovSpace ℂ φ α p₁ q₁))
-        (inclusion F φ p₂ le_rfl (le_top : q₂ ≤ ∞)))
-
-private theorem bonyProductAux_apply {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn)
+/-- **Bony decomposition of `TauCeti.BesovSpace.smulL`.** For every gap `N` satisfying
+`φ.rOut < 2 ^ N * φ.rIn`, `smulL r hα hαβ u v` equals `T_u^N v + T_v^N u + R_N(u, v)`. -/
+theorem smulL_eq_paraproductNegCLM_add {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn)
     (hα : α < 0) (hαβ : 0 < α + β)
     (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    bonyProductAux r hN hα hαβ u v =
+    smulL r hα hαβ u v =
       inclusion F φ r (by linarith) le_rfl
           (paraproductNegCLM r q₁ hN hα u (inclusion F φ p₂ le_rfl le_top v)) +
         paraproductRightLpCLM r hN u (toLpCLM F φ p₂ q₂ (by linarith) v) +
         inclusion F φ r (by linarith) le_rfl
-          (resonantCLM r q₁ N hαβ u (inclusion F φ p₂ le_rfl le_top v)) :=
-  rfl
-
-/-- For every admissible gap `N`, `S_M u · S_M v` converges in `𝓢'(E, F)` to `bonyProductAux`. -/
-private theorem tendsto_lowPass_smul_lowPass_bonyProductAux {N : ℕ}
-    (hN : φ.rOut < 2 ^ N * φ.rIn) (hα : α < 0) (hαβ : 0 < α + β)
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
-      atTop (𝓝 (bonyProductAux r hN hα hαβ u v).toDistr) := by
-  rw [bonyProductAux_apply]
+          (resonantCLM r q₁ N hαβ u (inclusion F φ p₂ le_rfl le_top v)) := by
+  refine (smulL_eq_iff hα hαβ).2 ?_
   simp only [toDistr_add, toDistr_inclusion]
   set v' : BesovSpace F φ β p₂ ∞ := inclusion F φ p₂ le_rfl le_top v
   have h₁ := (hasSum_paraproductNegCLM (r := r) (q := q₁) hN hα u v').tendsto_sum_nat
@@ -435,83 +393,6 @@ private theorem tendsto_lowPass_smul_lowPass_bonyProductAux {N : ℕ}
   have h₃ := tendsto_sum_block_smul_sum_resonantCLM (r := r) (q := q₁) N hαβ u v'
   refine ((h₁.add h₂).add h₃).congr' (Eventually.of_forall fun M ↦ ?_)
   simp [v', lowPass_smul_lowPass N M u v, block_inclusion]
-
-variable (r) in
-/-- **Bony's product at opposite-sign regularities** (`α < 0` with `0 < α + β`, hence `0 < β`). The
-sum `T_u v + T_v u + R(u, v)` defines a continuous bilinear map
-`B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^α_{r,q₁}` whenever `1/r = 1/p₁ + 1/p₂`, with operator norm bounded
-independently of `p₁, p₂, r, q₁, q₂` (`TauCeti.BesovSpace.exists_norm_bonyProductCLM_le`). At
-`p₁ = p₂ = r = ∞` and `q₁ = q₂ = ∞` this gives the Hölder–Zygmund product `𝒞^α × 𝒞^β → 𝒞^α`. It is
-independent of the admissible gap parameter `N` (`TauCeti.BesovSpace.bonyProductCLM_apply`). -/
-def bonyProductCLM (hα : α < 0) (hαβ : 0 < α + β) :
-    BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ α r q₁ :=
-  bonyProductAux r φ.exists_rOut_lt_two_pow_mul_rIn.choose_spec hα hαβ
-
-/-- **Convergence of `S_M u · S_M v` in `𝓢'(E, F)`.** When `α < 0` and `0 < α + β`, the products
-of the low-frequency cut-offs `S_M u · S_M v` converge in `𝓢'(E, F)` to
-`(bonyProductCLM r hα hαβ u v).toDistr`. -/
-theorem tendsto_lowPass_smul_lowPass_bonyProductCLM (hα : α < 0) (hαβ : 0 < α + β)
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
-      atTop (𝓝 (bonyProductCLM r hα hαβ u v).toDistr) :=
-  tendsto_lowPass_smul_lowPass_bonyProductAux _ hα hαβ u v
-
-/-- **Independence of the gap parameter `N`.** For every `N` satisfying `φ.rOut < 2 ^ N * φ.rIn`,
-`bonyProductCLM r hα hαβ u v` equals `T_u^N v + T_v^N u + R_N(u, v)`. -/
-theorem bonyProductCLM_apply {N : ℕ} (hN : φ.rOut < 2 ^ N * φ.rIn)
-    (hα : α < 0) (hαβ : 0 < α + β)
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
-    bonyProductCLM r hα hαβ u v =
-      inclusion F φ r (by linarith) le_rfl
-          (paraproductNegCLM r q₁ hN hα u (inclusion F φ p₂ le_rfl le_top v)) +
-        paraproductRightLpCLM r hN u (toLpCLM F φ p₂ q₂ (by linarith) v) +
-        inclusion F φ r (by linarith) le_rfl
-          (resonantCLM r q₁ N hαβ u (inclusion F φ p₂ le_rfl le_top v)) := by
-  rw [← bonyProductAux_apply]
-  exact ext <| tendsto_nhds_unique (tendsto_lowPass_smul_lowPass_bonyProductCLM hα hαβ u v)
-    (tendsto_lowPass_smul_lowPass_bonyProductAux hN hα hαβ u v)
-
-/-- **Uniform operator norm bound for `bonyProductCLM`.** The operator norm is bounded by a
-constant depending only on `E`, `F`, `φ`, `α` and `β`, independently of `p₁, p₂, r, q₁, q₂`. -/
-theorem exists_norm_bonyProductCLM_le (hα : α < 0) (hαβ : 0 < α + β) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q₁ q₂ : ℝ≥0∞}
-      [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] [p₁.HolderTriple p₂ r]
-      [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)],
-      ‖bonyProductCLM (F := F) (φ := φ) (p₁ := p₁) (p₂ := p₂) (q₁ := q₁) (q₂ := q₂)
-        r hα hαβ‖ ≤ C := by
-  have hβ : 0 < β := by linarith
-  set hN := φ.exists_rOut_lt_two_pow_mul_rIn.choose_spec
-  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_paraproductNegCLM_le (F := F) hN hα β
-  obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_paraproductRightLpCLM_le (F := F) hN α
-  obtain ⟨C₃, hC₃, h₃⟩ :=
-    exists_norm_resonantCLM_le (F := F) (φ := φ) φ.exists_rOut_lt_two_pow_mul_rIn.choose α β hαβ
-  have hden : 0 ≤ (1 - (2 : ℝ) ^ (-β))⁻¹ :=
-    inv_nonneg.2 (sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two
-      (neg_nonpos_of_nonneg hβ.le)))
-  refine ⟨C₁ + C₂ * (1 - 2 ^ (-β))⁻¹ + C₃, by positivity,
-    fun {_ p₂' r' q₁' q₂'} _ _ _ _ _ _ ↦ ?_⟩
-  refine ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity) fun u v ↦ ?_
-  rw [bonyProductCLM, bonyProductAux_apply]
-  set v' : BesovSpace F φ β p₂' ∞ := inclusion F φ p₂' le_rfl le_top v
-  have hv' : ‖v'‖ ≤ ‖v‖ := norm_inclusion_le _ _ v
-  have hn₁ : ‖inclusion F φ r' (by linarith : α ≤ α + β) le_rfl
-      (paraproductNegCLM r' q₁' hN hα u v')‖ ≤ C₁ * ‖u‖ * ‖v‖ :=
-    (norm_inclusion_le _ _ _).trans <|
-      ((paraproductNegCLM r' q₁' hN hα).le_opNorm₂ u v').trans (by gcongr; exact h₁)
-  have hn₂ : ‖paraproductRightLpCLM r' hN u (toLpCLM F φ p₂' q₂' hβ v)‖ ≤
-      C₂ * (1 - 2 ^ (-β))⁻¹ * ‖u‖ * ‖v‖ := by
-    refine ((paraproductRightLpCLM r' hN).le_opNorm₂ u (toLpCLM F φ p₂' q₂' hβ v)).trans ?_
-    calc _ ≤ C₂ * ‖u‖ * ((1 - 2 ^ (-β))⁻¹ * ‖v‖) := by
-          gcongr; exacts [h₂, norm_toLpCLM_apply_le hβ v]
-      _ = C₂ * (1 - 2 ^ (-β))⁻¹ * ‖u‖ * ‖v‖ := by ring
-  have hn₃ : ‖inclusion F φ r' (by linarith : α ≤ α + β) le_rfl
-      (resonantCLM r' q₁' _ hαβ u v')‖ ≤ C₃ * ‖u‖ * ‖v‖ :=
-    (norm_inclusion_le _ _ _).trans <|
-      ((resonantCLM r' q₁' _ hαβ).le_opNorm₂ u v').trans (by gcongr; exact h₃)
-  calc _ ≤ _ + _ + _ := norm_add₃_le
-    _ ≤ C₁ * ‖u‖ * ‖v‖ + C₂ * (1 - 2 ^ (-β))⁻¹ * ‖u‖ * ‖v‖ + C₃ * ‖u‖ * ‖v‖ :=
-        add_le_add_three hn₁ hn₂ hn₃
-    _ = (C₁ + C₂ * (1 - 2 ^ (-β))⁻¹ + C₃) * ‖u‖ * ‖v‖ := by ring
 
 end OppositeSign
 
@@ -675,10 +556,10 @@ theorem toDistr_resonantCLM_of_block_eq_zero [q₁.HolderTriple q₂ q] (N : ℕ
 
 /-- **Same-frequency Bony product (`α < 0`, `0 < α + β`).** Both paraproducts vanish and the
 resonant term carries `Δ_{j₀} u · Δ_{j₀} v`. -/
-theorem toDistr_bonyProductCLM_of_block_eq_zero (hα : α < 0) (hαβ : 0 < α + β)
+theorem toDistr_smulL_of_block_eq_zero (hα : α < 0) (hαβ : 0 < α + β)
     {j₀ : ℕ} {u : BesovSpace ℂ φ α p₁ q₁} {v : BesovSpace F φ β p₂ q₂}
     (hu : ∀ k ≠ j₀, u.block k = 0) (hv : ∀ k ≠ j₀, v.block k = 0) :
-    (bonyProductCLM r hα hαβ u v).toDistr =
+    (smulL r hα hαβ u v).toDistr =
       ((u.block j₀ • v.block j₀ : Lp F r (volume : Measure E)) : 𝓢'(E, F)) := by
   obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   have hv' : ∀ k ≠ j₀, (inclusion F φ p₂ le_rfl (le_top : q₂ ≤ ∞) v).block k = 0 := by
@@ -686,7 +567,7 @@ theorem toDistr_bonyProductCLM_of_block_eq_zero (hα : α < 0) (hαβ : 0 < α +
   have hg : ∀ k ≠ j₀,
       littlewoodPaleyBlock F φ k (toLpCLM F φ p₂ q₂ (by linarith) v : 𝓢'(E, F)) = 0 :=
     fun k hk ↦ by rw [coe_toLpCLM, ← coe_block, hv k hk, Lp.toTemperedDistribution_zero]
-  rw [bonyProductCLM_apply hN hα hαβ u v,
+  rw [smulL_eq_paraproductNegCLM_add hN hα hαβ u v,
     paraproductNegCLM_eq_zero_of_block_eq_zero hN hα hu hv',
     paraproductRightLpCLM_eq_zero_of_block_eq_zero hN hu hg]
   simp [toDistr_resonantCLM_of_block_eq_zero N hαβ hu hv', block_inclusion]
@@ -735,29 +616,30 @@ theorem bonyProductPosCLM_one_right (hs : 0 < s) (u : BesovSpace ℂ φ s p₁ q
     bonyProductPosCLM p₁ hs u (1 : BesovSpace ℂ φ s ∞ q) = u :=
   ext <| by simp [toDistr_bonyProductPosCLM]
 
-/-- **Unitality of `bonyProductCLM` on the left (`α < 0`, `0 < α + β`):**
+/-- **Unitality of `smulL` on the left (`α < 0`, `0 < α + β`):**
 `T_1^N v = v - S_{N + 1} v`, `T_v^N 1 = 0`, and `R_N(1, v) = S_{N + 1} v` sum to `v` in
 `B^α_{p₂,q₁}`. -/
 @[simp]
-theorem bonyProductCLM_one_left (hα : α < 0) (hαβ : 0 < α + β)
+theorem smulL_one_left (hα : α < 0) (hαβ : 0 < α + β)
     (v : BesovSpace F φ β p₂ q₂) :
-    bonyProductCLM p₂ hα hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v =
+    smulL p₂ hα hαβ (1 : BesovSpace ℂ φ α ∞ q₁) v =
       inclusionOfLT F φ p₂ q₂ q₁ (by linarith) v := by
   obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   apply ext
-  rw [bonyProductCLM_apply hN hα hαβ 1 v, paraproductRightLpCLM_one_left]
+  rw [smulL_eq_paraproductNegCLM_add hN hα hαβ 1 v, paraproductRightLpCLM_one_left]
   simp [toDistr_paraproductNegCLM_one_left hN hα]
 
-/-- **Unitality of `bonyProductCLM` on the right (`α < 0`, `0 < α + β`):** `T_u^N 1 = 0`,
+/-- **Unitality of `smulL` on the right (`α < 0`, `0 < α + β`):** `T_u^N 1 = 0`,
 `T_1^N u = u - S_{N + 1} u`, and `R_N(u, 1) = S_{N + 1} u` sum to `u`. -/
 @[simp]
-theorem bonyProductCLM_one_right (hα : α < 0) (hαβ : 0 < α + β)
+theorem smulL_one_right (hα : α < 0) (hαβ : 0 < α + β)
     (u : BesovSpace ℂ φ α p₁ q₁) :
-    bonyProductCLM p₁ hα hαβ u (1 : BesovSpace ℂ φ β ∞ q₂) = u := by
+    smulL p₁ hα hαβ u (1 : BesovSpace ℂ φ β ∞ q₂) = u := by
   obtain ⟨N, hN⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
   apply ext
-  rw [bonyProductCLM_apply hN hα hαβ u 1, inclusion_one, paraproductNegCLM_one_right hN hα u,
-    toLpCLM_one, paraproductRightLpCLM_eq_paraproductLpCLM hN u 1]
+  rw [smulL_eq_paraproductNegCLM_add hN hα hαβ u 1, inclusion_one,
+    paraproductNegCLM_one_right hN hα u, toLpCLM_one,
+    paraproductRightLpCLM_eq_paraproductLpCLM hN u 1]
   simp [toDistr_paraproductLpCLM_one_left hN u]
 
 end One

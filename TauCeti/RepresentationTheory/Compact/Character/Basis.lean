@@ -335,7 +335,7 @@ theorem orthogonal_span_characterFamily_eq_bot (h : IsIrrepSkeleton models) :
     have := (Submodule.mem_orthogonal _ _).1 hf (characterFamily models i)
       (Submodule.subset_span ⟨i, rfl⟩)
     rwa [Submodule.coe_inner, coe_characterFamily] at this
-  exact Subtype.ext (eq_zero_of_forall_inner_characterLp_eq_zero h f.2 horth)
+  exact Subtype.ext (eq_zero_of_forall_inner_characterLp_eq_zero h f.property horth)
 
 /-- **The irreducible characters are a Hilbert basis of the class functions.**  For a skeleton of
 the unitary dual of a compact Hausdorff group, the characters of the models are an orthonormal

@@ -276,7 +276,7 @@ private theorem resolutionCubeEdge_comp_resolutionCubeEdge {S T₁ T₂ U : Fins
   -- `c` and `c'`, applied to the underlying element of `x`.
   ext x
   simpa [resolutionCubeEdge, resolutionCubeEdgeMap_eq D hD R h₁' hc'T₁ hc'U,
-    resolutionCubeEdgeMap_eq D hD R h₂' hcT₂ hcU] using LinearMap.congr_fun hface x.1
+    resolutionCubeEdgeMap_eq D hD R h₂' hcT₂ hcU] using LinearMap.congr_fun hface x.val
 
 /-- **The Khovanov cube of resolutions** of a planar code `D`, in quantum degree `j`. Its vertex
 `S` is the homogeneous piece of degree `j - |S|` of the circle tensor of the resolution
@@ -381,7 +381,7 @@ theorem resolutionCube_map_homOfLE_insert_comp_resolutionCubeι {S : Finset (Fin
   -- the chosen crossing of the edge, restricted to the homogeneous pieces, and on the right the
   -- one at `a`.
   exact LinearMap.congr_fun
-    (resolutionCubeEdgeMap_eq D hD R (covBy_insert ha) ha (mem_insert_self a S)) x.1
+    (resolutionCubeEdgeMap_eq D hD R (covBy_insert ha) ha (mem_insert_self a S)) x.val
 
 /-- Along an edge `S ⋖ T` of the cube, the cube of resolutions acts by the saddle map at the
 crossing added along the edge. This restates

@@ -80,8 +80,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [Monoid
 
 namespace TopCat
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-! ### The connecting morphism and the cup product -/
 
@@ -524,7 +523,7 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
     (a : (of ↥(U ∩ V)).singularCohomology R k M p)
     (b : (TopPair.ofInclusion (Set.union_subset_union hAU hBV)).singularCohomology S k N q) :
     singularCohomologyPairMayerVietorisδ T k L hAU hBV
-        (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val) hA hB n m hm
+        (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal) hA hB n m hm
         ((TopPair.ofInclusion (Set.inter_subset_inter hAU hBV)).singularCup k u μ p q n h a
           (TopPair.singularCohomologyMap (interToUnionMap hAU hBV) q b)) =
       (TopPair.ofInclusion (Set.union_subset_union hAU hBV)).singularCup k u μ p' q m h'
@@ -551,8 +550,8 @@ theorem singularCohomologyPairMayerVietorisδ_singularCup (u : T ⟶ R ⊗ S) (�
   obtain ⟨x₂, α, hd, hg, rfl⟩ := hS.moduleCat_exists_d_eq_of_δ_eq p (p + 1) rfl a _ hδ
   -- It suffices to compare both sides after restricting to the singular simplices lying in `U` or
   -- in `V`, which is injective on cohomology.
-  have hU' : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)) := hU.preimage continuous_subtype_val
-  have hV' : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V)) := hV.preimage continuous_subtype_val
+  have hU' : IsOpen ((↑) ⁻¹' U : Set ↥(U ∪ V)) := hU.preimage continuous_subtypeVal
+  have hV' : IsOpen ((↑) ⁻¹' V : Set ↥(U ∪ V)) := hV.preimage continuous_subtypeVal
   have := isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion T k L hAU hBV hU' hV' hA hB
     (p + q + 1)
   apply (ModuleCat.mono_iff_injective (homologyMap (SSetPair.cochainComplexMap (R := T) (k := k)
