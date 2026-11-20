@@ -14,8 +14,8 @@ public import TauCeti.Probability.PopulationSampling.OnePair
 Draw a sample of size `m = |ι|` from a deterministic population `x : κ → α` of size `n = |κ|`,
 once without and once with replacement. Write `p = n.descFactorial m / n ^ m` for the probability
 that a uniform index map `ι → κ` is injective and `t = m.descFactorial 2 / n.descFactorial 2`.
-For a population of distinct values and `m ≤ n`, the largest event excess between the two laws is
-the collision probability `1 - p`
+For a population of distinct values, `m ≤ n` and a measurable all-distinct event, the largest
+event excess between the two laws is the collision probability `1 - p`
 (`iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq`).
 
 This file shows that a population with a repeated value does strictly better once `2 ≤ m`.
@@ -61,23 +61,6 @@ open scoped ENNReal
 namespace TauCeti.Probability
 
 section Arithmetic
-
-/-- The repeated-value error `1 - p - t * min p (1 - p)` is nonnegative for all sample and
-population sizes: for `m ≤ n` both `p` and `t` lie in `[0, 1]`, and for `n < m` it equals `1`. -/
-private theorem repeatedValueError_nonneg (m n : ℕ) :
-    0 ≤ 1 - (n.descFactorial m / (n : ℝ) ^ m) -
-      (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
-        min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
-  rcases le_or_gt m n with hmn | hnm
-  · have hp1 : (n.descFactorial m / (n : ℝ) ^ m) ≤ 1 :=
-      div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le_pow n m) (by positivity)
-    have ht1 : (m.descFactorial 2 / n.descFactorial 2 : ℝ) ≤ 1 :=
-      div_le_one_of_le₀ (by exact_mod_cast Nat.descFactorial_le 2 hmn) (by positivity)
-    have hmin : 0 ≤ min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) :=
-      le_min (by positivity) (sub_nonneg.2 hp1)
-    have := mul_le_of_le_one_left hmin ht1
-    linarith [min_le_right (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m)]
-  · simp [Nat.descFactorial_eq_zero_iff_lt.2 hnm]
 
 /-- For `2 ≤ m ≤ n`, the correction `t * min p (1 - p)` separating the repeated-value error from
 the collision probability `1 - p` is positive. -/
@@ -211,7 +194,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_le_of_not_in
     (etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_le_of_not_injective (ι := ι) hx)
   dsimp only at h ⊢
   rwa [← tvDist, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
-    ENNReal.toReal_ofReal (repeatedValueError_nonneg _ _)] at h
+    ENNReal.toReal_ofReal (one_sub_descFactorial_div_pow_sub_mul_min_nonneg _ _)] at h
 
 end Bound
 
@@ -220,7 +203,8 @@ section Characterization
 /-- **Strictness of the repeated-value bound.** For a sample of size `|ι| ≥ 2`, the largest event
 excess of sampling a population with a repeated value without replacement over sampling it with
 replacement is strictly below the collision probability `1 - |κ|.descFactorial |ι| / |κ| ^ |ι|`,
-which populations of distinct values attain. -/
+which, for `|ι| ≤ |κ|` and a measurable all-distinct event, populations of distinct values
+attain. -/
 theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective
     (hx : ¬ Injective x) (hm : 2 ≤ Fintype.card ι) :
     (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
@@ -236,7 +220,7 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_
   rcases le_or_gt (Fintype.card ι) (Fintype.card κ) with hmn | hnm
   · refine (iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_le_of_not_injective
       hx).trans_lt ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg ?_).2 ?_)
-    · exact repeatedValueError_nonneg _ _
+    · exact one_sub_descFactorial_div_pow_sub_mul_min_nonneg _ _
     · linarith [descFactorial_div_mul_min_pos hm hmn]
   · simp [sampleWithoutReplacement_eq_zero_of_card_lt hnm,
       Nat.descFactorial_eq_zero_iff_lt.2 hnm]

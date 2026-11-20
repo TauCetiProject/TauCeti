@@ -41,6 +41,8 @@ variation distance.
   `2 ^ r`;
 * `natCard_embedding_update_id_comp_eq_update_id_comp`: the number of embeddings with the same
   word is `1` if `r = 0` and `2` otherwise;
+* `one_sub_descFactorial_div_pow_sub_mul_min_nonneg`: the error `1 - p - t * min p (1 - p)` is
+  nonnegative for every sample and population size;
 * `sampleWithoutReplacement_dirac_update_id_apply_setOf_card_filter_eq_two`: under
   without-replacement sampling of the one-pair population, the probability of seeing `a` twice
   is `t`;
@@ -201,12 +203,19 @@ private theorem ofReal_one_sub_two_mul_mul_add_eq {p t : ℝ} (hp1 : p ≤ 1) (h
       (mul_nonneg (sub_nonneg.2 hp1) (sub_nonneg.2 ht1)),
     max_one_sub_two_mul_mul_add_eq]
 
-/-- The one-pair error expression `1 - p - t * min p (1 - p)` is nonnegative whenever `m ≤ n`. -/
-private theorem onePair_error_nonneg {m n : ℕ} (hmn : m ≤ n) :
-    0 ≤ 1 - onePairP m n - onePairT m n * min (onePairP m n) (1 - onePairP m n) := by
-  rw [← max_one_sub_two_mul_mul_add_eq]
-  exact add_nonneg (mul_nonneg (le_max_right _ _) (onePairT_nonneg m n))
-    (mul_nonneg (sub_nonneg.2 (onePairP_le_one m n)) (sub_nonneg.2 (onePairT_le_one hmn)))
+/-- The sampling-discrepancy error `1 - p - t * min p (1 - p)`, where
+`p = n.descFactorial m / n ^ m` and `t = m.descFactorial 2 / n.descFactorial 2`, is nonnegative
+for every sample size `m` and population size `n`: for `m ≤ n` both `p` and `t` lie in `[0, 1]`,
+and for `n < m` it equals `1`. -/
+theorem one_sub_descFactorial_div_pow_sub_mul_min_nonneg (m n : ℕ) :
+    0 ≤ 1 - (n.descFactorial m / (n : ℝ) ^ m) -
+      (m.descFactorial 2 / n.descFactorial 2 : ℝ) *
+        min (n.descFactorial m / (n : ℝ) ^ m) (1 - n.descFactorial m / (n : ℝ) ^ m) := by
+  rcases le_or_gt m n with hmn | hnm
+  · rw [← max_one_sub_two_mul_mul_add_eq]
+    exact add_nonneg (mul_nonneg (le_max_right _ _) (onePairT_nonneg m n))
+      (mul_nonneg (sub_nonneg.2 (onePairP_le_one m n)) (sub_nonneg.2 (onePairT_le_one hmn)))
+  · simp [Nat.descFactorial_eq_zero_iff_lt.2 hnm]
 
 variable [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] [DecidableEq κ]
 
@@ -380,7 +389,7 @@ theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_update_id_eq
   rw [tvDist, etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_update_id_eq hab hmn,
     ENNReal.toReal_mul, ENNReal.toReal_ofNat]
   dsimp only
-  rw [← onePairP, ← onePairT, ENNReal.toReal_ofReal (onePair_error_nonneg hmn)]
+  rw [ENNReal.toReal_ofReal (one_sub_descFactorial_div_pow_sub_mul_min_nonneg _ _)]
 
 end Discrepancy
 
