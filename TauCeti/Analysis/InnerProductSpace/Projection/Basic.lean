@@ -108,7 +108,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
   a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
 * `LinearMap.apply_sub_starProjection_ker`,
-  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
+  `LinearMap.map_orthogonal_ker_eq_range`,
+  `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component and
+  carry `(ker u)ᗮ` onto `range u`.
 -/
 
 public section
@@ -596,6 +598,15 @@ theorem apply_sub_starProjection_ker (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonal
   rw [mem_ker] at hx
   simpa only [map_add, hx, add_zero] using
     congrArg u (sub_add_cancel x (u.ker.starProjection x))
+
+/-- When `ker u` admits an orthogonal projection, `u` maps `(ker u)ᗮ` onto `range u`. -/
+@[simp]
+theorem map_orthogonal_ker_eq_range (u : E →ₗ[𝕜] F) [u.ker.HasOrthogonalProjection] :
+    u.kerᗮ.map u = u.range :=
+  le_antisymm map_le_range <| by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨x - u.ker.starProjection x, u.ker.sub_starProjection_mem_orthogonal x,
+      u.apply_sub_starProjection_ker x⟩
 
 end LinearMap
 
