@@ -9,15 +9,16 @@ public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 
 /-!
 # Morphism properties of relative spectra
 
 The structure morphism `Spec_X(A) ⟶ X` of a quasi-coherent algebra has finite type, finite
-presentation, finiteness, étaleness, integrality, or the closed-immersion property exactly when
-its sections algebra has the corresponding property over each affine open of `X`. These criteria
-let one check a geometric property directly on the algebra from which the relative spectrum is
-built.
+presentation, finiteness, flatness, étaleness, integrality, or the closed-immersion property
+exactly when its sections algebra has the corresponding property over each affine open of `X`.
+These criteria let one check a geometric property directly on the algebra from which the relative
+spectrum is built.
 
 The finite-type and finite-presentation criteria use Mathlib's `LocallyOfFiniteType` and
 `LocallyOfFinitePresentation`: the structure morphism is already affine, hence quasi-compact
@@ -30,6 +31,7 @@ morphisms of affine schemes.
 * The Stacks Project, [Tag 01LX](https://stacks.math.columbia.edu/tag/01LX), relative spectrum.
 * The Stacks Project, [Tag 01T2](https://stacks.math.columbia.edu/tag/01T2), finite type.
 * The Stacks Project, [Tag 01TQ](https://stacks.math.columbia.edu/tag/01TQ), finite presentation.
+* The Stacks Project, [Tag 01U2](https://stacks.math.columbia.edu/tag/01U2), flat morphisms.
 * The Stacks Project, [Tag 01WI](https://stacks.math.columbia.edu/tag/01WI), finite morphisms.
 * The Stacks Project, [Tag 02GH](https://stacks.math.columbia.edu/tag/02GH), étale morphisms.
 * The Stacks Project, [Tag 02K8](https://stacks.math.columbia.edu/tag/02K8), integral morphisms.
@@ -101,6 +103,18 @@ lemma relativeSpec_finite_iff :
   rw [A.relativeSpecToBase_iff @IsFinite]
   simp_rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom,
     RingHom.finite_algebraMap]
+  exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
+
+/-- The relative spectrum is flat over the base exactly when its sections on every affine open
+form a flat module over the structure ring. -/
+lemma relativeSpec_flat_iff :
+    Flat A.relativeSpecToBase ↔
+      ∀ (U : X.Opens), IsAffineOpen U → Module.Flat Γ(X, U) Γ(A.X, U) := by
+  have : IsZariskiLocalAtTarget @Flat.{u} :=
+    HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.Flat)
+  rw [A.relativeSpecToBase_iff @Flat]
+  simp_rw [HasRingHomProperty.Spec_iff (P := @Flat), CommRingCat.hom_ofHom,
+    RingHom.flat_algebraMap_iff]
   exact ⟨fun h U hU ↦ h ⟨U, hU⟩, fun h U ↦ h U.1 U.2⟩
 
 /-- The relative spectrum is étale over the base exactly when its sections algebra is étale

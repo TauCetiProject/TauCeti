@@ -45,6 +45,15 @@ theorem finrank_range_eq_of_comp_eq
     Module.finrank R (range g) = Module.finrank R (range f) := by
   rw [← map_range_eq_range_of_comp_eq f he₁ h, LinearEquiv.finrank_map_eq]
 
+/-- A family `v` mapped into `range f` by `f.rangeRestrict` and included back by the subtype of
+`range f` is its image `f ∘ v`. -/
+theorem subtype_comp_rangeRestrict_comp
+    {R R₂ M M₂ ι : Type*} [Semiring R] [Semiring R₂] {τ₁₂ : R →+* R₂} [RingHomSurjective τ₁₂]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂]
+    (f : M →ₛₗ[τ₁₂] M₂) (v : ι → M) :
+    (range f).subtype ∘ (f.rangeRestrict ∘ v) = f ∘ v := by
+  rw [← Function.comp_assoc, ← coe_comp, subtype_comp_rangeRestrict]
+
 /-- In a commuting square `g ∘ i = i' ∘ f` of linear maps, `g` sends the range of `i` into the
 range of `i'`. -/
 theorem range_le_comap_range_of_comp_eq
