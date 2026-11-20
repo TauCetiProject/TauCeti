@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.TestFunction.Inner
+public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
+public import TauCeti.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.SupportedIn
 import TauCeti.Analysis.Distribution.TestFunction.Postcomp
-import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Properly supported pseudodifferential operators on test functions and distributions
@@ -37,6 +39,13 @@ consequences that make properly supported operators act on all of `𝓓'(ℝⁿ)
   the distribution of its quantization (`TauCeti.Symbol.quantizeDistribution_ofFun`), and it does
   not enlarge the support of a distribution by more than `R`
   (`TauCeti.Symbol.dsupport_quantizeDistribution_subset`).
+
+* **Fixed supports.** `TauCeti.Symbol.quantizeSupportedInCLM` and
+  `TauCeti.Symbol.adjointSupportedInCLM` map stage `K` continuously to its closed `R`-thickening.
+  Their `ofSupportedInCLM_comp_*` laws identify these maps with the global test operators.
+* **Dual-valued tests.** `TauCeti.Symbol.transposeTestFunctionCLM` transports the formal adjoint
+  through the real Riesz equivalence twice, yielding a complex-linear transpose with the spatial
+  bilinear identity `TauCeti.Symbol.integral_apply_quantizeTestFunctionCLM`.
 
 On test functions supported in a compact set `K`, the operator `Op(a)` agrees with `Op(ψ a)` for a
 cutoff `ψ` equal to `1` near the `R`-neighbourhood of `K`. The symbol `ψ a` has compact spatial
@@ -200,13 +209,22 @@ private theorem HasNearDiagonalKernel.exists_norm_iteratedFDeriv_le
 
 /-- `Op(a)` on smooth functions supported in a compact set `K`, with values in the smooth functions
 supported in the closed `R`-neighbourhood of `K`. -/
-private def quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+def quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
     (K : Compacts (CoordinateSpace n)) :
     𝓓_{K}(CoordinateSpace n, V) →L[ℂ] 𝓓_{K.cthickening R}(CoordinateSpace n, W) :=
   supportedInCLM a
     (fun f _ hx ↦ ha.quantizeSchwartzValue_eq_zero_of_notMem fun h ↦
       hx (cthickening_tsupport_toSchwartzMapCLM_subset f h))
     (ha.exists_norm_iteratedFDeriv_le K)
+
+/-- Evaluation of quantization between the native fixed-support stages. -/
+@[simp]
+theorem quantizeSupportedInCLM_apply (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) (f : 𝓓_{K}(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSupportedInCLM ha K f x =
+      quantizeSchwartzValue a.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f) x := by
+  rfl
 
 /-- **A properly supported operator on test functions.** For a symbol `a` whose quantization has
 kernel supported within distance `R` of the diagonal, `u ↦ Op(a) u` as a continuous linear map on
@@ -231,6 +249,21 @@ theorem quantizeTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
     quantizeTestFunctionCLM ha u x =
       quantizeSchwartzValue a.coefficient (u.hasCompactSupport.toSchwartzMap u.contDiff) x :=
   (rfl)
+
+/-- Fixed-support quantization commutes with the native inclusions into test functions. -/
+theorem ofSupportedInCLM_comp_quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) :
+    TestFunction.ofSupportedInCLM ℂ (subset_univ (K.cthickening R : Set (CoordinateSpace n))) ∘L
+        quantizeSupportedInCLM ha K =
+      quantizeTestFunctionCLM ha ∘L TestFunction.ofSupportedInCLM ℂ
+        (subset_univ (K : Set (CoordinateSpace n))) := by
+  ext f x
+  simp only [ContinuousLinearMap.comp_apply, TestFunction.coe_ofSupportedInCLM,
+    TestFunction.coe_ofSupportedIn, quantizeSupportedInCLM_apply,
+    quantizeTestFunctionCLM_apply]
+  exact congrArg (quantizeSchwartzValue a.coefficient · x)
+    (ContDiffMapSupportedIn.toSchwartzMap_ofSupportedIn ℂ
+      (Ω := (⊤ : Opens (CoordinateSpace n))) (subset_univ _) f).symm
 
 /-- `Op(a) u` is supported in the closed `R`-neighbourhood of the support of `u`. -/
 theorem tsupport_quantizeTestFunctionCLM_subset (ha : a.HasNearDiagonalKernel R)
@@ -357,7 +390,7 @@ private theorem HasNearDiagonalKernel.tsupport_adjointValue_subset (ha : a.HasNe
 
 /-- `Op(a)*` on smooth functions supported in a compact set `K`, through the adjoint symbol of
 the cutoff `ψ a` for a `ψ` equal to `1` on `K`. -/
-private def adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+def adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
     (K : Compacts (CoordinateSpace n)) :
     𝓓_{K}(CoordinateSpace n, W) →L[ℂ] 𝓓_{K.cthickening R}(CoordinateSpace n, V) :=
   have hψ := (exists_cutoff (n := n) K K.isCompact).choose_spec
@@ -369,6 +402,20 @@ private def adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
       refine ha.adjointValue_eq_zero (K.isCompact.of_isClosed_subset (isClosed_tsupport _) hf)
         fun h ↦ hx (cthickening_tsupport_toSchwartzMapCLM_subset f h))
     ((isUniform_adjoint _ _).exists_norm_iteratedFDeriv_quantize_le K)
+
+/-- Evaluation of the formal adjoint between native fixed-support stages. -/
+@[simp]
+theorem adjointSupportedInCLM_apply (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) (f : 𝓓_{K}(CoordinateSpace n, W))
+    (x : CoordinateSpace n) :
+    adjointSupportedInCLM ha K f x = ∫ ζ, 𝐞 ⟪ζ, x⟫ •
+      𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (f y)) ζ := by
+  have hψ := (exists_cutoff (n := n) K K.isCompact).choose_spec
+  have hf := f.tsupport_toSchwartzMapCLM_subset ℂ
+  have h := quantizeSchwartzValue_adjoint_spatialCutoff (a := a) hψ.1 hψ.2.1
+    (hψ.2.2.mono hf) x
+  rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM] at h
+  exact h
 
 /-- **The formal adjoint of a properly supported operator on test functions.** For a symbol `a`
 whose quantization has kernel supported within distance `R` of the diagonal, the formal adjoint
@@ -406,6 +453,18 @@ theorem adjointTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
       𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ :=
   adjointValue_apply a φ x
 
+/-- Fixed-support adjunction commutes with the native inclusions into test functions. -/
+theorem ofSupportedInCLM_comp_adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
+    (K : Compacts (CoordinateSpace n)) :
+    TestFunction.ofSupportedInCLM ℂ (subset_univ (K.cthickening R : Set (CoordinateSpace n))) ∘L
+        adjointSupportedInCLM ha K =
+      adjointTestFunctionCLM ha ∘L TestFunction.ofSupportedInCLM ℂ
+        (subset_univ (K : Set (CoordinateSpace n))) := by
+  ext f x
+  simp only [ContinuousLinearMap.comp_apply, TestFunction.coe_ofSupportedInCLM,
+    TestFunction.coe_ofSupportedIn, adjointSupportedInCLM_apply,
+    adjointTestFunctionCLM_apply]
+
 /-- `Op(a)* φ` is supported in the closed `R`-neighbourhood of the support of `φ`. -/
 theorem tsupport_adjointTestFunctionCLM_subset (ha : a.HasNearDiagonalKernel R)
     (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), W)) :
@@ -421,6 +480,43 @@ theorem integral_inner_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
       ∫ x, inner ℂ (u x) (adjointTestFunctionCLM ha φ x) :=
   integral_inner_quantizeSchwartzValue (u.hasCompactSupport.toSchwartzMap u.contDiff)
     (φ := φ.hasCompactSupport.toSchwartzMap φ.contDiff) φ.hasCompactSupport
+
+/-- The complex-bilinear transpose on original dual-valued test functions.
+Two conjugate-linear Riesz transports give complex linearity, using the existing native
+formal adjoint and its original test-function topology. -/
+def transposeTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
+    𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W) →L[ℂ]
+      𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ V) where
+  toFun φ := TestFunction.rieszEquiv (𝕜 := ℂ) (adjointTestFunctionCLM ha
+    ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ))
+  map_add' φ ψ := by rw [map_add, map_add, map_add]
+  map_smul' c φ := by
+    rw [TestFunction.rieszEquiv_symm_smul, map_smul, TestFunction.rieszEquiv_smul]
+    simp only [starRingEnd_self_apply, RingHom.id_apply]
+  cont := (TestFunction.rieszEquiv (𝕜 := ℂ) (V := V)).continuous.comp
+    ((adjointTestFunctionCLM ha).continuous.comp
+      (TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm.continuous)
+
+/-- The native transpose is Riesz transport of the actual native formal adjoint. -/
+@[simp]
+theorem transposeTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W)) :
+    transposeTestFunctionCLM ha φ = TestFunction.rieszEquiv (𝕜 := ℂ)
+      (adjointTestFunctionCLM ha ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ)) := by
+  rfl
+
+/-- The dual-valued native transpose has the spatial complex-bilinear pairing identity. -/
+theorem integral_apply_quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R)
+    (u : 𝓓((⊤ : Opens (CoordinateSpace n)), V))
+    (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), StrongDual ℂ W)) :
+    (∫ x, φ x (quantizeTestFunctionCLM ha u x)) =
+      ∫ x, transposeTestFunctionCLM ha φ x (u x) := by
+  have h := integral_inner_quantizeTestFunctionCLM ha u
+    ((TestFunction.rieszEquiv (𝕜 := ℂ) (V := W)).symm φ)
+  have hc := congrArg (starRingEnd ℂ) h
+  rw [← integral_conj, ← integral_conj] at hc
+  simp only [inner_conj_symm, TestFunction.rieszEquiv_symm_apply (V := W)] at hc
+  simpa only [transposeTestFunctionCLM_apply, TestFunction.rieszEquiv_apply] using hc
 
 end Adjoint
 
