@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 import Mathlib.Tactic.Abel
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Basic
 
 /-!
 # Derivatives under composition and changes of coordinates
@@ -87,9 +88,7 @@ theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b 
   -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
   -- `e`, so one vanishes exactly when the other does.
   rw [fderiv_comp (x := b) hf hφ, ← he]
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
-  ext u
-  simpa using congrArg (fun L : F →L[𝕜] G ↦ L (e.symm u)) h
+  exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ e
 
 /-- Precomposing a real-valued function with scalar multiplication scales the norm of its
 Fréchet derivative by the absolute value of the scalar. -/
