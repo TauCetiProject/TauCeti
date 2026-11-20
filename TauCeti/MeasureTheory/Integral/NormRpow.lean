@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
 import Mathlib.MeasureTheory.Function.L1Space.Integrable
@@ -63,6 +64,9 @@ at most `|x - Re e| ^ s`.
   `TauCeti.setIntegral_norm_sub_rpow_le_of_mem_closure`: diameter bounds on any bounded set for
   poles in its closure and exponents `s > -d`, together with divergence `= ∞` at interior poles for
   `s ≤ -d` (`TauCeti.setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior`).
+* `TauCeti.setLAverage_ball_enorm_sub_rpow_lt_top`,
+  `TauCeti.setLAverage_ball_enorm_sub_rpow_eq_top`: the average over a ball about the pole is
+  finite for `s > -d` and infinite for `s ≤ -d`.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
 * `TauCeti.memLp_div_pow_compl_closedBall_iff` and
   `TauCeti.memLp_div_sub_pow_compl_closedBall_iff`: `a / (z - c) ^ m` is in `Lᵖ` off a disc
@@ -441,6 +445,24 @@ theorem setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior [Nontrivial E] {s : �
       (ae_of_all _ fun _ => Real.rpow_nonneg (norm_nonneg _) _)).1 hball_ne
   exact (((integrableOn_norm_sub_rpow_ball_iff_integrableOn_norm_rpow_ball x).trans
     (integrableOn_norm_rpow_ball_iff hr)).1 hint).not_ge hs
+
+/-- If `-dim E < s`, the average of `y ↦ ‖x - y‖ₑ ^ s` over a ball about `x` is finite. -/
+theorem setLAverage_ball_enorm_sub_rpow_lt_top {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ) < s)
+    (x : E) (r : ℝ) : ⨍⁻ y in ball x r, ‖x - y‖ₑ ^ s ∂mu < ⊤ := by
+  rcases le_or_gt r 0 with hr | hr
+  · simp [ball_eq_empty.2 hr]
+  refine setLAverage_lt_top (ne_top_of_le_ne_top ?_ (lintegral_mono_set ball_subset_closedBall))
+  rw [setLIntegral_closedBall_enorm_sub_rpow hs hr.le x]
+  exact ENNReal.ofReal_ne_top
+
+/-- On a nontrivial space, if `s ≤ -dim E`, the average of `y ↦ ‖x - y‖ₑ ^ s` over a ball of
+positive radius about `x` is infinite. -/
+theorem setLAverage_ball_enorm_sub_rpow_eq_top [Nontrivial E] {s : ℝ}
+    (hs : s ≤ -(Module.finrank ℝ E : ℝ)) (x : E) {r : ℝ} (hr : 0 < r) :
+    ⨍⁻ y in ball x r, ‖x - y‖ₑ ^ s ∂mu = ⊤ := by
+  rw [setLAverage_eq, setLIntegral_enorm_sub_rpow_eq_top_of_mem_interior hs
+    (by rw [isOpen_ball.interior_eq]; exact mem_ball_self hr),
+    ENNReal.top_div_of_ne_top measure_ball_lt_top.ne]
 
 /-- On a bounded set `Ω` containing `x`, the Riesz kernel `‖x - y‖ ^ (1 - n)` has integral over
 `Ω` at most `n μ(B(0, 1)) diam Ω`, since `Ω` lies in the closed ball of radius `diam Ω` about
