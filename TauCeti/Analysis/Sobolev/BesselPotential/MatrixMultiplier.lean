@@ -9,7 +9,10 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Extension
 import TauCeti.Analysis.Sobolev.BesselPotential.ComplexInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 
@@ -184,19 +187,8 @@ theorem hasSobolevExtension_bilinLeftCLM_apply (s : ℝ) {A : E → F →L[ℂ] 
   let ℓ : Fin (Module.finrank ℂ (F →L[ℂ] G)) → (F →L[ℂ] G) →L[ℂ] ℂ :=
     fun i ↦ LinearMap.toContinuousLinearMap (b.coord i)
   have hℓA (i) : (fun x ↦ ℓ i (A x)).HasTemperateGrowth :=
-    ((ℓ i).restrictScalars ℝ).hasTemperateGrowth.comp hA
-  have hsum : bilinLeftCLM (ContinuousLinearMap.apply ℂ G) hA =
-      ∑ i, (postcompCLM (b i)).comp (smulLeftCLM F fun x ↦ ℓ i (A x)) := by
-    ext u x
-    have key (i) : smulLeftCLM F (fun x ↦ ℓ i (A x)) u x = ℓ i (A x) • u x :=
-      smulLeftCLM_apply_apply (hℓA i) u x
-    simp only [bilinLeftCLM_apply, ContinuousLinearMap.apply_apply, FunLike.coe_sum,
-      Finset.sum_apply, ContinuousLinearMap.coe_comp, Function.comp_apply, postcompCLM_apply, key,
-      map_smul]
-    simp only [ℓ, LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply]
-    conv_lhs => rw [← b.sum_repr (A x)]
-    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply]
-  rw [hsum]
+    hA.continuousLinearMap_comp (ℓ i)
+  rw [bilinLeftCLM_apply_eq_sum Finset.univ (fun i _ ↦ hℓA i) b hA fun x ↦ by simp [ℓ]]
   refine Finset.sum_induction _ (fun T ↦ HasSobolevExtension T s s)
     (fun _ _ ↦ HasSobolevExtension.add) (hasSobolevExtension_zero s s) fun i _ ↦ ?_
   refine HasSobolevExtension.comp (hasSobolevExtension_iff.2
@@ -204,10 +196,9 @@ theorem hasSobolevExtension_bilinLeftCLM_apply (s : ℝ) {A : E → F →L[ℂ] 
     (hasSobolevExtension_smulLeftCLM s (hℓA i) fun n hn ↦ ?_)
   · ext1 u
     exact (toBesselPotentialSpaceCLM_postcompCLM (b i) u).symm
-  · obtain ⟨C, hC⟩ := hbd n hn
-    exact ⟨‖(ℓ i).restrictScalars ℝ‖ * C, fun x ↦
-      (((ℓ i).restrictScalars ℝ).norm_iteratedFDeriv_comp_left hA.1.contDiffAt
-        (mod_cast le_top)).trans (by gcongr; exact hC x)⟩
+  · obtain ⟨M, hM⟩ := TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists hbd
+    exact ⟨_, (ℓ i).norm_iteratedFDeriv_comp_left_le_of_forall_le (hA.1.of_le (mod_cast le_top))
+      hM n hn⟩
 
 end Matrix
 
