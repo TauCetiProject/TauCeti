@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.Places.Semilocal
-public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.Trace
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Basic
 public import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
+public import TauCeti.RingTheory.NormTrace.BaseChange
+public import TauCeti.RingTheory.NormTrace.Pi
 
 /-!
 # Norm equations in the local étale algebras
@@ -38,7 +40,7 @@ above the place, including split algebras and real and complex places.
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter II, (8.4), and Chapter VI, §2.
 
-The local decompositions are `TauCeti.semilocalEquiv` and
+The local decompositions are `IsDedekindDomain.HeightOneSpectrum.adicCompletionSemilocalEquiv` and
 `TauCeti.GlobalNumberFields.infiniteSemilocalEquiv`; unit-norm surjectivity is
 `TauCeti.map_normUnits_unitFiltration`.
 -/
@@ -63,7 +65,7 @@ theorem mem_range_normUnits_adicCompletion_iff (v : HeightOneSpectrum (𝓞 K))
       ∃ u : (w : {w : HeightOneSpectrum (𝓞 L) // w.asIdeal.LiesOver v.asIdeal}) →
           (w.1.adicCompletion L)ˣ,
         (∏ᶠ w, Algebra.normUnits (v.adicCompletion K) (u w)) = a :=
-  Algebra.mem_range_normUnits_iff_of_algEquiv (semilocalEquiv L v) a
+  Algebra.mem_range_normUnits_iff_of_algEquiv (v.adicCompletionSemilocalEquiv K (𝓞 L) L) a
 
 /-- A unit is an infinite local norm exactly when it is a product of norms from the completions
 above the place. Real and complex places are both retained. -/

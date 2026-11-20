@@ -8,8 +8,10 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Colored.Basic
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Set.Card
+import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.Positivity
+import TauCeti.Data.Fintype.EmbeddingFiber
 
 /-!
 # Edit discrepancy of colored three-uniform hypergraphs
@@ -26,7 +28,9 @@ vertex count is `Nat.card V`, so no finiteness hypothesis is needed: on an infin
 the denominator vanishes and every discrepancy is `0`.
 
 The finite set `H.editedOn H' supp` records the edited injective triples on a given support,
-counting each supported ordering separately. Its cardinality is additive over disjoint supports.
+counting each supported ordering separately. Its cardinality is additive over disjoint supports,
+and on a finite vertex set `card_editedOn_univ` recovers six times the unordered edit count,
+yielding `approximates3_of_card_editedOn_univ_le`.
 
 ## Main definitions
 
@@ -39,6 +43,10 @@ counting each supported ordering separately. Its cardinality is additive over di
 * `TauCeti.Colored3Graph.editDiscrepancy3_triangle`: the triangle inequality.
 * `TauCeti.Colored3Graph.Approximates3.trans`: approximations compose, adding their errors.
 * `TauCeti.Colored3Graph.card_editedOn_biUnion`: edit counts add over disjoint supports.
+* `TauCeti.Colored3Graph.card_editedOn_univ`: edited injective triples on `univ` equal six times
+  the unordered edit count.
+* `TauCeti.Colored3Graph.approximates3_of_card_editedOn_univ_le`: bounding `#(H.editedOn H' univ)`
+  by `ε * |V|³` gives `H.Approximates3 H' ε`.
 -/
 
 public section
@@ -217,6 +225,56 @@ theorem trans (h₁₂ : H₁.Approximates3 H₂ ε) (h₂₃ : H₂.Approximate
     _ ≤ ε + δ := add_le_add h₁₂ h₂₃
 
 end Approximates3
+
+section FiniteHost
+
+open Finset
+
+variable [Fintype V] [DecidableEq V] [DecidableEq κ]
+
+/-- Every edited unordered triple contributes its six injective orderings to `editedOn` on the
+full set of injective triples. -/
+theorem card_editedOn_univ (H H' : Colored3Graph κ V) :
+    #(H.editedOn H' univ) = 6 * {t | H.color t ≠ H'.color t}.ncard := by
+  classical
+  let edits : Finset (Set.powersetCard V 3) := univ.filter fun t ↦ H.color t ≠ H'.color t
+  have hfib : #(H.editedOn H' univ) =
+      ∑ t ∈ edits, #{x : {x : Fin 3 → V // Function.Injective x} |
+        Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ = t} := by
+    rw [editedOn_def, card_eq_sum_card_fiberwise
+      (f := fun x : {x : Fin 3 → V // Function.Injective x} ↦
+        Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) (t := edits)
+      (fun x hx ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hx).2⟩)]
+    refine sum_congr rfl fun t ht ↦ congrArg card (ext fun x ↦ ?_)
+    simp only [mem_filter, mem_univ, true_and, and_iff_right_iff_imp]
+    intro hxt
+    exact hxt ▸ (mem_filter.1 ht).2
+  have he : #edits = {t | H.color t ≠ H'.color t}.ncard := by
+    simp [edits, ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, Fintype.card_subtype]
+  rw [hfib]
+  simp [Set.powersetCard.card_filter_ofFinEmb_eq, Nat.factorial_succ, Nat.factorial_zero, he,
+    mul_comm]
+
+/-- On a finite vertex set, the edit discrepancy is the number of edited injective triples
+divided by `|V|³`. -/
+theorem editDiscrepancy3_eq_card_editedOn_univ_div (H H' : Colored3Graph κ V) :
+    H.editDiscrepancy3 H' = #(H.editedOn H' univ) / (Fintype.card V : ℚ) ^ 3 := by
+  rw [editDiscrepancy3_def, Nat.card_eq_fintype_card, H.card_editedOn_univ H', Nat.cast_mul,
+    Nat.cast_ofNat]
+
+/-- Bounding the number of edited injective triples by `ε * |V|³` yields `H.Approximates3 H' ε`
+for every `ε ≥ 0`, including on empty hosts. -/
+theorem approximates3_of_card_editedOn_univ_le {H H' : Colored3Graph κ V} {ε : ℝ} (hε : 0 ≤ ε)
+    (h : (#(H.editedOn H' univ) : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 3) :
+    H.Approximates3 H' ε := by
+  rw [approximates3_iff, H.editDiscrepancy3_eq_card_editedOn_univ_div H']
+  push_cast
+  by_cases hn : Fintype.card V = 0
+  · simpa [hn] using hε
+  · have hpos : (0 : ℝ) < (Fintype.card V : ℝ) ^ 3 := by positivity
+    rwa [div_le_iff₀ hpos]
+
+end FiniteHost
 
 end Colored3Graph
 

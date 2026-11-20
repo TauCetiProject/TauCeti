@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import Mathlib.Analysis.Complex.Order
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
+import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
 /-!
 # Totally real and totally complex fields at infinite places
@@ -32,7 +34,8 @@ a place `v` of `k` exactly when its restriction to `k` is `v`. If `w` lies over 
 `w.embedding` and its conjugate restrict to `v.embedding` and its conjugate, in one order or the
 other.
 
-An infinite place is archimedean, since it takes the value `2` at `2`.
+An infinite place is archimedean, since it takes the value `2` at `2`, and is therefore never
+equivalent to a nonarchimedean absolute value.
 
 ## Main results
 
@@ -71,6 +74,8 @@ An infinite place is archimedean, since it takes the value `2` at `2`.
   embedding of a place and its conjugate restrict to the embedding of the place below and its
   conjugate, in one order or the other.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
+* `NumberField.InfinitePlace.not_isEquiv_of_isNonarchimedean`: an infinite place is never
+  equivalent to a nonarchimedean absolute value.
 * `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
   places.
 -/
@@ -336,5 +341,14 @@ theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchim
   have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
   rw [← InfinitePlace.coe_apply, v.map_natCast] at this
   norm_num at this
+
+/-- An infinite place is never equivalent to a nonarchimedean absolute value. -/
+theorem InfinitePlace.not_isEquiv_of_isNonarchimedean (v : InfinitePlace K)
+    {w : AbsoluteValue K ℝ} (hw : IsNonarchimedean w) : ¬ v.1.IsEquiv w := by
+  intro h
+  obtain ⟨c, hc, hcw⟩ := AbsoluteValue.isEquiv_iff_exists_rpow_eq.mp h.symm
+  have hv : v.1 = w.nonarchRpow hw hc :=
+    AbsoluteValue.ext fun x ↦ by rw [w.nonarchRpow_apply, ← congrFun hcw x]
+  exact v.not_isNonarchimedean (hv ▸ w.isNonarchimedean_nonarchRpow hw hc)
 
 end NumberField

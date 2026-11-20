@@ -15,7 +15,6 @@ import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Algebra.Algebra.Operations
 import TauCeti.Algebra.DirectSum.Component
-import TauCeti.Data.ZMod.IntUnitsPower
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Submodule
@@ -148,8 +147,8 @@ noncomputable def toSymmetricEven :
     simp only [LinearMap.comp_apply, homogeneousProj_apply]
     have hx' : x ∈ parityGrading G.piece (p : ZMod 2) := mem_parityGrading_of_mem hx
     by_cases hp : (p : ZMod 2) = 0
-    · rw [← uzpow_intCast_eq_negOnePow, Int.cast_mul, hp, zero_mul, uzpow_zero, Units.val_one,
-        one_smul, mul_comm]
+    · rw [← uzpow_intCast (R := ZMod 2) (-1), Int.cast_mul, hp, zero_mul, uzpow_zero, one_smul,
+        mul_comm]
     · simp [decompose_apply_of_mem_ne (parityGrading G.piece) hx' hp]
 
 /-- On generators, `toSymmetricEven` projects onto the even parity component. -/
@@ -254,8 +253,8 @@ noncomputable def toExteriorOdd :
     have hy' : y ∈ parityGrading G.piece (q : ZMod 2) := mem_parityGrading_of_mem hy
     by_cases hp : (p : ZMod 2) = 1
     · by_cases hq : (q : ZMod 2) = 1
-      · rw [← uzpow_intCast_eq_negOnePow, Int.cast_mul, hp, hq, mul_one, uzpow_one, Units.val_neg,
-          Units.val_one, neg_smul, one_smul]
+      · rw [← uzpow_intCast (R := ZMod 2) (-1), Int.cast_mul, hp, hq, mul_one, uzpow_one,
+          Units.neg_smul, one_smul]
         exact eq_neg_of_add_eq_zero_left (ExteriorAlgebra.ι_add_mul_swap _ _)
       · simp [decompose_apply_of_mem_ne (parityGrading G.piece) hy' hq]
     · simp [decompose_apply_of_mem_ne (parityGrading G.piece) hx' hp]
@@ -449,7 +448,7 @@ noncomputable def toSymTensorExterior :
     intro p q x y hx hy
     have hx' : x ∈ parityGrading G.piece (p : ZMod 2) := mem_parityGrading_of_mem hx
     have hy' : y ∈ parityGrading G.piece (q : ZMod 2) := mem_parityGrading_of_mem hy
-    rw [← uzpow_intCast_eq_negOnePow, Int.cast_mul]
+    rw [← uzpow_intCast (R := ZMod 2) (-1), Int.cast_mul]
     rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) (p : ZMod 2) with hp | hp <;>
       rcases (by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) (q : ZMod 2) with hq | hq <;>
       (rw [hp] at hx' ⊢; rw [hq] at hy' ⊢)
