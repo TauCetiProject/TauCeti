@@ -9,9 +9,7 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.IteratedFDeriv
-import TauCeti.Algebra.MvPolynomial.Funext
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
-import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.Perm.FiberSubgroup
 
 /-!
@@ -236,34 +234,8 @@ theorem prod_factorial_smul_mvTaylorCoeff [DecidableEq ι] [CompleteSpace F]
     (∏ i, (α i).factorial) • mvTaylorCoeff f x α =
       iteratedFDeriv 𝕜 (∑ i, α i) f x (fun j ↦ Pi.single (v j) 1) := by
   obtain ⟨p, r, hp⟩ := hf
-  let S := univ.filter fun a : Fin (∑ i, α i) → ι ↦ ∀ i, Fintype.card {j // a j = i} = α i
-  rw [hp.mvTaylorCoeff_eq, p.mvCoeff_eq_sum rfl, hp.iteratedFDeriv_eq_sum_of_completeSpace]
-  -- Group permutations `σ` by the rearranged coordinate tuple `v ∘ σ ∈ S`.
-  have hmaps (σ : Equiv.Perm (Fin (∑ i, α i))) : v ∘ σ ∈ S := by
-    rw [mem_filter]
-    exact ⟨mem_univ _, fun i ↦ by
-      simp only [Fintype.card_subtype, Function.comp_apply, TauCeti.card_filter_comp_perm, hv]⟩
-  rw [← sum_fiberwise_of_maps_to (fun σ _ ↦ hmaps σ), smul_sum]
-  refine sum_congr rfl fun a ha ↦ ?_
-  have hconst : ∀ σ ∈ univ.filter (fun σ : Equiv.Perm (Fin (∑ i, α i)) ↦ v ∘ σ = a),
-      p (∑ i, α i) (fun j ↦ Pi.single (v (σ j)) 1) =
-        p (∑ i, α i) (fun j ↦ Pi.single (a j) 1) :=
-    fun σ hσ ↦ congrArg (p (∑ i, α i)) (funext fun j ↦ by simp [← congrFun (mem_filter.1 hσ).2 j])
-  rw [sum_congr rfl hconst, sum_const]
-  congr 1
-  -- Every fiber `v ∘ σ = a` is a coset of `TauCeti.fiberSubgroup v`, of size `∏ i, (α i)!`.
-  obtain ⟨σ₀, hσ₀⟩ : ∃ σ₀ : Equiv.Perm (Fin (∑ i, α i)), v ∘ σ₀ = a :=
-    Function.exists_perm_of_occCount_eq fun i ↦ by
-      rw [Function.occCount_eq_card_filter, ← Fintype.card_subtype, (mem_filter.1 ha).2 i,
-        Function.occCount_eq_card_filter, hv i]
-  have hcoset : {σ : Equiv.Perm (Fin (∑ i, α i)) // v ∘ σ = a} ≃ TauCeti.fiberSubgroup v :=
-    (Equiv.mulRight σ₀⁻¹).subtypeEquiv fun σ ↦ by
-      rw [← hσ₀, funext_iff, TauCeti.mem_fiberSubgroup]
-      exact ⟨fun h j ↦ by simpa [Equiv.Perm.mul_apply] using h (σ₀⁻¹ j),
-        fun h j ↦ by simpa [Equiv.Perm.mul_apply] using h (σ₀ j)⟩
-  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card, Nat.card_congr hcoset,
-    TauCeti.natCard_fiberSubgroup]
-  exact prod_congr rfl fun i _ ↦ by rw [hv i]
+  rw [hp.mvTaylorCoeff_eq, hp.iteratedFDeriv_eq_sum_of_completeSpace]
+  exact p.prod_factorial_smul_mvCoeff v fun i ↦ by rw [Fintype.card_subtype, hv i]
 
 /-- **Norm bound in terms of `iteratedFDeriv`**: for `f` analytic at `x`,
 `‖(∏ i, (α i)!) • mvTaylorCoeff f x α‖` is at most the operator norm of the `(∑ i, α i)`-th
@@ -547,19 +519,8 @@ theorem ContinuousLinearMap.mvTaylorCoeff_comp_eq_zero {κ : Type*} [Fintype κ]
     (A : (κ → 𝕜) →L[𝕜] (ι → 𝕜)) {x : κ → 𝕜} (hG : AnalyticAt 𝕜 G (A x)) {k : ℕ}
     (h : ∀ α : ι → ℕ, ∑ i, α i = k → TauCeti.mvTaylorCoeff G (A x) α = 0) :
     ∀ β : κ → ℕ, ∑ j, β j = k → TauCeti.mvTaylorCoeff (G ∘ A) x β = 0 := by
-  classical
   obtain ⟨p, hp⟩ := hG
-  have hpA : HasFPowerSeriesAt (G ∘ A) (p.compContinuousLinearMap A) x :=
-    hp.compContinuousLinearMap
   intro β hβ
-  rw [hpA.mvTaylorCoeff_eq]
-  refine TauCeti.eq_zero_of_forall_sum_prod_pow_smul_eq_zero (fun w : κ → 𝕜 ↦ ?_)
-    (mem_piAntidiag.2 ⟨hβ, by simp⟩)
-  rw [← (p.compContinuousLinearMap A).apply_eq_sum_mvCoeff,
-    FormalMultilinearSeries.compContinuousLinearMap_apply, Function.comp_def,
-    p.apply_eq_sum_mvCoeff]
-  refine sum_eq_zero fun α hα ↦ ?_
-  have h0 : p.mvCoeff α = 0 := by
-    rw [← hp.mvTaylorCoeff_eq]
-    exact h α (mem_piAntidiag.1 hα).1
-  simp [h0]
+  rw [hp.compContinuousLinearMap.mvTaylorCoeff_eq]
+  exact p.mvCoeff_compContinuousLinearMap_eq_zero A
+    (fun α hα ↦ by rw [← hp.mvTaylorCoeff_eq]; exact h α hα) β hβ

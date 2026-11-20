@@ -64,9 +64,9 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
 ## Main results
 
 * `TauCeti.Hive.topRow_toGTPattern`, `TauCeti.Hive.rowWeight_toGTPattern`,
-  `TauCeti.Hive.apply_eq_gtCompletion`,
-  `TauCeti.Hive.apply_eq_gtCompletion_toCyclicGTPattern_sub_sum`: top row, weight, and chart
-  inversion for `toGTPattern` and `toCyclicGTPattern`.
+  `TauCeti.Hive.apply_eq_gtCompletion`, `TauCeti.Hive.eq_of_boundary_zero_eq_of_toGTPattern_eq`,
+  `TauCeti.Hive.apply_eq_gtCompletion_toCyclicGTPattern_sub_sum`: top row, weight, chart
+  inversion, and injectivity for `toGTPattern` and `toCyclicGTPattern`.
 * `TauCeti.Hive.isGTCompletable_iff_sum_sub_le`, `TauCeti.Hive.gt_reconstruction_iff`: explicit
   difference-sum form of `IsGTCompletable` and fixed-boundary reconstruction criterion.
 * `TauCeti.Hive.hiveCount_productBoundary_shift`: shifting the inputs by `a, b` and the output by
@@ -287,6 +287,12 @@ theorem gtCompletion_self (lam : DominantWeight n) (P : GTPattern n) (j : ℕ) :
     gtCompletion lam P j j = TauCeti.prefixSum j lam.1 + P.rowSum j := by
   rw [gtCompletion_def, GTPattern.rowSum_def]
 
+/-- Past the diagonal (`j ≤ i`), the completion sums all of row `j`, giving
+`TauCeti.prefixSum j lam.1 + P.rowSum j`. -/
+theorem gtCompletion_of_le (lam : DominantWeight n) (P : GTPattern n) {i j : ℕ} (hij : j ≤ i) :
+    gtCompletion lam P i j = TauCeti.prefixSum j lam.1 + P.rowSum j := by
+  rw [gtCompletion_def, P.sum_range_entry_eq_rowSum hij]
+
 theorem gtCompletion_self_of_rowWeight {lam : DominantWeight n} {P : GTPattern n} {g : Fin n → ℤ}
     (hw : P.rowWeight = g - lam.1) {j : ℕ} (hj : j ≤ n) :
     gtCompletion lam P j j = TauCeti.prefixSum j g := by
@@ -311,6 +317,15 @@ theorem apply_eq_gtCompletion (h : IntegerHive n) (p : Vertex n) :
     h p = gtCompletion (h.boundaryWeight 0) h.toGTPattern p.z (n - p.x) := by
   simpa only [Vertex.ofChart_z_sub_x] using h.apply_ofChart_eq_gtCompletion
     (i := p.z) (j := n - p.x) (by have := p.sum_eq; omega) (Nat.sub_le n p.x)
+
+/-- An integer hive is uniquely determined by its side-`0` boundary and its Gelfand–Tsetlin
+difference pattern. -/
+theorem eq_of_boundary_zero_eq_of_toGTPattern_eq {h₁ h₂ : IntegerHive n}
+    (hb : h₁.boundary 0 = h₂.boundary 0) (hP : h₁.toGTPattern = h₂.toGTPattern) : h₁ = h₂ := by
+  have hw : h₁.boundaryWeight 0 = h₂.boundaryWeight 0 :=
+    Subtype.ext (by rw [coe_boundaryWeight, coe_boundaryWeight, hb])
+  ext p
+  rw [h₁.apply_eq_gtCompletion p, h₂.apply_eq_gtCompletion p, hw, hP]
 
 theorem apply_eq_gtCompletion_of_productBoundary {lam μ γ : DominantWeight n} {h : IntegerHive n}
     (hb : h.boundary = productBoundary lam μ γ) (p : Vertex n) :
@@ -910,6 +925,15 @@ def fixedIntegerHiveEquivGTPatternOfLeOne {n : ℕ} (hn : n ≤ 1) (lam μ γ : 
     (P : {P : GTPattern n // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1}) :
     ((fixedIntegerHiveEquivGTPatternOfLeOne hn lam μ γ).symm P).1 =
       ofGTPattern lam P.1 (isGTCompletable_of_le_one hn lam P.1) := (rfl)
+
+/-- For `n ≤ 1`, `hiveCount (productBoundary lam μ γ)` is the cardinality of the full
+weight-`(γ - λ)` Gelfand–Tsetlin fibre over `μ`. -/
+theorem hiveCount_productBoundary_eq_card_gtPattern_of_le_one {n : ℕ} (hn : n ≤ 1)
+    (lam μ γ : DominantWeight n) :
+    hiveCount (productBoundary lam μ γ) =
+      Nat.card {P : GTPattern n // P.topRow = μ.1 ∧ P.rowWeight = γ.1 - lam.1} := by
+  rw [← natCard_fixedIntegerHive]
+  exact Nat.card_congr (fixedIntegerHiveEquivGTPatternOfLeOne hn lam μ γ)
 
 /-- At `n = 1`, `hiveCount (productBoundary lam μ γ)` is `1` when `lam.1 0 + μ.1 0 = γ.1 0` and
 `0` otherwise. -/
