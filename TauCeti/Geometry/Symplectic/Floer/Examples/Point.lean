@@ -33,30 +33,34 @@ Since the pair of pants `S = ℂ ∖ {0, 1}` and the plane `ℂ` are connected, 
 
 * the pairs of pants asymptotic to `x₁`, `x₂` at the inputs and to `x₀` at the output form a single
   point when `x₁ = x₀` and `x₂ = x₀`, and are empty otherwise
-  (`TauCeti.Floer.discretePantsCount_eq`), along any nontrivial filters describing the three ends;
+  (`TauCeti.Floer.discretePantsCount_eq`), the asymptotics being taken along the ends
+  `TauCeti.ThricePuncturedSphere.Puncture.endFilter` of the pair of pants;
 * the planes asymptotic to `x` at their end form a single point
   (`TauCeti.Floer.discretePlaneCount_eq`);
-* every Floer cylinder `ℝ × S¹ → X` is invariant under translation, so there are no nonstationary
-  cylinders to count (`TauCeti.Floer.discreteCylinderCount_eq_zero`).
+* every continuous cylinder `ℝ × S¹ → X` is invariant under translation, so the set of
+  nonstationary cylinders is empty (`TauCeti.Floer.discreteCylinderCount_eq_zero`).
 
-Each such solution is rigid, being a point of a moduli space whose linearized operator acts between
-zero spaces, and its orientation line is canonically oriented, so these cardinalities are the
-counts. The Floer differential, the map of the matrix of cylinder counts, therefore vanishes
-(`TauCeti.Floer.novikovMapOfMatrix_discreteCylinderCount`), and the Floer cohomology is the whole
-capped module. In coordinates relative to reference caps, the product of the matrix of pair-of-pants
+Each pair of pants and each plane is rigid, being a point of a moduli space whose linearized
+operator acts between zero spaces, and its orientation line is canonically oriented, so these
+cardinalities are the counts. The Floer differential counts nonstationary cylinders modulo
+translation; that quotient is not formalized here, but the set it quotients is empty, so the map of
+the matrix of cardinalities `discreteCylinderCount`, the zero matrix, vanishes
+(`TauCeti.Floer.novikovMapOfMatrix_discreteCylinderCount`) and every capped combination is a
+cocycle. In coordinates relative to reference caps, the product of the matrix of pair-of-pants
 counts (`TauCeti.NovikovModule.novikovProductOfMatrix`) is then the pointwise product of
 functions `X → Λ` with values in the Floer Novikov ring
 (`TauCeti.Floer.coordinates_novikovProductOfMatrix_discretePantsCount`): the point algebra is the
 ring of `Λ`-valued functions on `X`, the product that the cup product gives on `H⁰(X; Λ)`. The
-combination of the plane counts is the unit cycle, the PSS image of the fundamental cycle `∑ₓ x`,
-whose incidence condition is automatic on a zero-dimensional target. It has the constant
-coordinates `1` and is a two-sided identity for the product
+combination of the plane counts has the constant coordinates `1`
+(`TauCeti.Floer.coordinates_symm_discretePlaneCount`) and is a two-sided identity for the product
 (`TauCeti.Floer.novikovProductOfMatrix_discretePantsCount_unit_left` and
 `TauCeti.Floer.novikovProductOfMatrix_discretePantsCount_unit_right`), and the product is
 commutative and associative at the chain level
 (`TauCeti.Floer.novikovProductOfMatrix_discretePantsCount_comm`,
 `TauCeti.Floer.novikovProductOfMatrix_discretePantsCount_assoc`), not merely up to homotopy. For a
-single point, `X = {pt}`, the product is the multiplication of `Λ` with unit `1`.
+single point, `X = {pt}`, the product is the multiplication of `Λ` with unit `1`. In the full
+theory this combination is the PSS image of the fundamental cycle `∑ₓ x`; neither the PSS map nor
+that identification is formalized here.
 
 The results hold for any period group `Γ` and actions on the capped generators; on a
 zero-dimensional target `Γ` is trivial, since every sphere is constant.
@@ -83,14 +87,14 @@ variable {X : Type*} [TopologicalSpace X] [DiscreteTopology X]
 
 section Counts
 
-/-- **The number of pairs of pants in a zero-dimensional target.** For a discrete target `X` and
-filters `l q` describing the ends of the pair of pants `S = ℂ ∖ {0, 1}` at the punctures `q`, this
-is the number of continuous maps `S → X` asymptotic to `x₁` at the input `0`, to `x₂` at the input
-`1` and to `x₀` at the output `∞`: the number of Floer pairs of pants with these asymptotic
-orbits, every map into `X` being a solution of the Floer equation. -/
-def discretePantsCount (l : Puncture → Filter ThricePuncturedSphere) (x₁ x₂ x₀ : X) : ℕ :=
-  Nat.card {u : C(ThricePuncturedSphere, X) //
-    Tendsto u (l .zero) (𝓝 x₁) ∧ Tendsto u (l .one) (𝓝 x₂) ∧ Tendsto u (l .inf) (𝓝 x₀)}
+/-- **The number of pairs of pants in a zero-dimensional target.** For a discrete target `X`, this
+is the number of continuous maps from the pair of pants `S = ℂ ∖ {0, 1}` to `X` asymptotic to `x₁`
+at the input `0`, to `x₂` at the input `1` and to `x₀` at the output `∞`, along the ends
+`Puncture.endFilter` of `S`: the number of Floer pairs of pants with these asymptotic orbits, every
+map into `X` being a solution of the Floer equation. -/
+def discretePantsCount (x₁ x₂ x₀ : X) : ℕ :=
+  Nat.card {u : C(ThricePuncturedSphere, X) // Tendsto u Puncture.zero.endFilter (𝓝 x₁) ∧
+    Tendsto u Puncture.one.endFilter (𝓝 x₂) ∧ Tendsto u Puncture.inf.endFilter (𝓝 x₀)}
 
 /-- **The number of planes in a zero-dimensional target.** For a discrete target `X`, this is the
 number of continuous maps `ℂ → X` asymptotic to `x` at the end `∞` of the plane: the number of PSS
@@ -102,21 +106,21 @@ def discretePlaneCount (x : X) : ℕ :=
 /-- **The number of nonstationary cylinders in a zero-dimensional target.** For a discrete target
 `X`, this is the number of continuous maps `ℝ × S¹ → X` asymptotic to `x` at the positive end
 `s → ∞` and to `y` at the negative end `s → -∞` that are not invariant under every translation in
-`s`: the number of nonstationary Floer cylinders between these orbits, which the differential
-counts modulo translation. -/
+`s`: the cardinality of the set of nonstationary Floer cylinders between these orbits, not of its
+quotient by translation. On a discrete target this set is empty
+(`discreteCylinderCount_eq_zero`). -/
 def discreteCylinderCount (x y : X) : ℕ :=
   Nat.card {u : C(ℝ × AddCircle (1 : ℝ), X) //
     Tendsto u (comap Prod.fst atTop) (𝓝 x) ∧ Tendsto u (comap Prod.fst atBot) (𝓝 y) ∧
       ∃ s, u ∘ (fun z => (z.1 + s, z.2)) ≠ u}
 
-/-- **Pairs of pants in a zero-dimensional target are constant.** Along any nontrivial filters
-describing the ends, there is exactly one pair of pants asymptotic to `x₁`, `x₂` and `x₀` when the
-three points agree, the constant map, and none otherwise. -/
+/-- **Pairs of pants in a zero-dimensional target are constant.** There is exactly one pair of
+pants asymptotic to `x₁`, `x₂` and `x₀` when the three points agree, the constant map, and none
+otherwise. -/
 @[simp]
-theorem discretePantsCount_eq [DecidableEq X] (l : Puncture → Filter ThricePuncturedSphere)
-    [∀ q, (l q).NeBot] (x₁ x₂ x₀ : X) :
-    discretePantsCount l x₁ x₂ x₀ = if x₁ = x₀ ∧ x₂ = x₀ then 1 else 0 := by
-  obtain ⟨w⟩ := (l .zero).nonempty_of_neBot
+theorem discretePantsCount_eq [DecidableEq X] (x₁ x₂ x₀ : X) :
+    discretePantsCount x₁ x₂ x₀ = if x₁ = x₀ ∧ x₂ = x₀ then 1 else 0 := by
+  obtain ⟨w⟩ := Puncture.zero.endFilter.nonempty_of_neBot
   rw [discretePantsCount]
   split_ifs with h
   · obtain ⟨rfl, rfl⟩ := h
@@ -155,11 +159,10 @@ variable {R S : Type*} [CommSemiring R] [AddCommGroup S] {ω : S →+ ℝ} {c : 
   [Finite X] {P : X → Type*} [∀ x, AddTorsor (PeriodGroup ω c) (P x)]
   (r : ∀ x, P x) {F : (Σ x, P x) → ℝ}
   (hF : ∀ x γ (D : P x), F ⟨x, γ +ᵥ D⟩ = F ⟨x, D⟩ - (-area ω c) γ)
-  (l : Puncture → Filter ThricePuncturedSphere) [∀ q, (l q).NeBot]
 
-/-- **The Floer differential of a zero-dimensional target vanishes.** On a finite discrete target,
-the map of the matrix of cylinder counts is zero, so every completed capped combination is a cocycle
-and the Floer cohomology is the whole capped module. -/
+/-- **The cylinder matrix of a zero-dimensional target has zero map.** On a finite discrete target
+there are no nonstationary cylinders, so the matrix `discreteCylinderCount` is zero and so is its
+map on completed capped modules. -/
 theorem novikovMapOfMatrix_discreteCylinderCount :
     novikovMapOfMatrix hF hF r r
         (fun x y => (discreteCylinderCount x y : NovikovSeries R _ (-area ω c))) = 0 := by
@@ -171,15 +174,15 @@ is the pointwise product in coordinates: relative to reference caps `r`, the coo
 `a ⋆ b` at the point `x` are the product of those of `a` and `b` at `x`. -/
 theorem coordinates_novikovProductOfMatrix_discretePantsCount (a b : NovikovModule R F) :
     coordinates hF r (novikovProductOfMatrix hF hF hF r r r
-        (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a b) =
+        (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a b) =
       coordinates hF r a * coordinates hF r b := by
   classical
   have := Fintype.ofFinite X
   funext x
   simp [coordinates_novikovProductOfMatrix, ite_and]
 
-/-- The unit cycle of a finite discrete target, the combination of the plane counts, has the
-constant coordinates `1`. -/
+/-- On a finite discrete target, the combination of the plane counts has the constant
+coordinates `1`. -/
 theorem coordinates_symm_discretePlaneCount :
     (coordinates hF r).symm (fun x => (discretePlaneCount x : NovikovSeries R _ (-area ω c))) =
       (coordinates hF r).symm 1 := by
@@ -189,7 +192,7 @@ theorem coordinates_symm_discretePlaneCount :
 of the plane counts is a left identity for the product of the pair-of-pants counts. -/
 theorem novikovProductOfMatrix_discretePantsCount_unit_left (b : NovikovModule R F) :
     novikovProductOfMatrix hF hF hF r r r
-        (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ (-area ω c)))
+        (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ (-area ω c)))
         ((coordinates hF r).symm fun x => (discretePlaneCount x : NovikovSeries R _ _)) b = b := by
   refine (coordinates hF r).injective ?_
   rw [coordinates_novikovProductOfMatrix_discretePantsCount, coordinates_symm_discretePlaneCount,
@@ -199,7 +202,7 @@ theorem novikovProductOfMatrix_discretePantsCount_unit_left (b : NovikovModule R
 of the plane counts is a right identity for the product of the pair-of-pants counts. -/
 theorem novikovProductOfMatrix_discretePantsCount_unit_right (a : NovikovModule R F) :
     novikovProductOfMatrix hF hF hF r r r
-        (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a
+        (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a
         ((coordinates hF r).symm fun x => (discretePlaneCount x : NovikovSeries R _ _)) = a := by
   refine (coordinates hF r).injective ?_
   rw [coordinates_novikovProductOfMatrix_discretePantsCount, coordinates_symm_discretePlaneCount,
@@ -209,9 +212,9 @@ theorem novikovProductOfMatrix_discretePantsCount_unit_right (a : NovikovModule 
 pair-of-pants counts is commutative at the chain level. -/
 theorem novikovProductOfMatrix_discretePantsCount_comm (a b : NovikovModule R F) :
     novikovProductOfMatrix hF hF hF r r r
-        (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a b =
+        (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a b =
       novikovProductOfMatrix hF hF hF r r r
-        (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) b a := by
+        (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) b a := by
   refine (coordinates hF r).injective ?_
   rw [coordinates_novikovProductOfMatrix_discretePantsCount,
     coordinates_novikovProductOfMatrix_discretePantsCount, mul_comm]
@@ -220,13 +223,13 @@ theorem novikovProductOfMatrix_discretePantsCount_comm (a b : NovikovModule R F)
 pair-of-pants counts is associative at the chain level. -/
 theorem novikovProductOfMatrix_discretePantsCount_assoc (a b d : NovikovModule R F) :
     novikovProductOfMatrix hF hF hF r r r
-        (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ (-area ω c)))
+        (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ (-area ω c)))
         (novikovProductOfMatrix hF hF hF r r r
-          (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ _)) a b) d =
+          (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ _)) a b) d =
       novikovProductOfMatrix hF hF hF r r r
-        (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a
+        (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ (-area ω c))) a
         (novikovProductOfMatrix hF hF hF r r r
-          (fun x₁ x₂ x₀ => (discretePantsCount l x₁ x₂ x₀ : NovikovSeries R _ _)) b d) := by
+          (fun x₁ x₂ x₀ => (discretePantsCount x₁ x₂ x₀ : NovikovSeries R _ _)) b d) := by
   refine (coordinates hF r).injective ?_
   simp only [coordinates_novikovProductOfMatrix_discretePantsCount, mul_assoc]
 
