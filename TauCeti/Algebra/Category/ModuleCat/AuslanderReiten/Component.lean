@@ -255,7 +255,8 @@ theorem forall_prop_and_isRepresentationFinite_of_isLeftAlmostSplit_of_isRightAl
       exact ⟨n, F, i, fun j ↦ (hirr _ (hirrF j) (hS X hX) (hF j)).mp hX, hi⟩)
     (2 ^ b - 1) (S.ofSequence_map_eq_zero_of_prop hS b hb) (Set.finite_range P')
     (by rintro _ ⟨j, rfl⟩; exact hPS j)
-  refine ⟨hall, isRepresentationFinite_of_forall_exists_iso (hT.image (·.obj)) fun M hM hiM ↦ ?_⟩
+  refine ⟨hall, isRepresentationFinite_iff_exists_finite_forall_exists_iso.mpr
+    ⟨_, hT.image (·.obj), fun M hM hiM ↦ ?_⟩⟩
   let Y : FGModuleCat.{w} A := ⟨M, (ModuleCat.isFG_iff _).mpr hM⟩
   obtain ⟨j, f, hf⟩ := hG.exists_hom_ne_zero_of_iso_biproduct e hiM.1
   obtain ⟨Q, hQ, ⟨e'⟩⟩ := hTmem Y (hall Y hiM) (P' j) ⟨j, rfl⟩ _ (homMk_ne_zero (Y := Y) hf)
