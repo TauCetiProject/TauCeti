@@ -214,6 +214,25 @@ instance : MonoidalCategory S.FreeMonoidal where
   pentagon _ _ _ _ := Quotient.sound pentagon
   triangle _ _ := Quotient.sound triangle
 
+/-- Interpreting a tensor word by its own generating objects recovers the word. -/
+@[simp]
+theorem projectObj_of (X : FreeMonoidalCategory S.Obj) : projectObj (of (S := S)) X = ⟨X⟩ := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y hX hY => exact congrArg₂ (· ⊗ ·) hX hY
+
+/-- Interpreting a tensor word after replacing its generating objects by tensor words `h` is
+interpreting it by the interpretations of those words. -/
+theorem projectObj_projectObj {T : TensorSignature.{u', v'}} {D : Type*} [Category D]
+    [MonoidalCategory D] (f : T.Obj → D) (h : S.Obj → T.FreeMonoidal)
+    (X : FreeMonoidalCategory S.Obj) :
+    projectObj f (projectObj h X).as = projectObj (fun a ↦ projectObj f (h a).as) X := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y hX hY => exact congrArg₂ (· ⊗ ·) hX hY
+
 /-- The morphism of the free monoidal category represented by a formal morphism. -/
 abbrev homMk {X Y : S.FreeMonoidal} (f : Hom X.as Y.as) : X ⟶ Y := ⟦f⟧
 
