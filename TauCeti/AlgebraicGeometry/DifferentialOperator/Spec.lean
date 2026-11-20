@@ -95,6 +95,14 @@ noncomputable def _root_.Derivation.specSections (V : (Spec R).Opens) :
   map_one_eq_zero' := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.val).map_one_eq_zero)
   leibniz' _ _ := Subtype.ext (funext fun x ↦ (stalkDerivation δ x.val).leibniz _ _)
 
+/-- On the germ of a section at `x`, `δ.specSections` acts by the extension of `δ` to `R_x`. -/
+@[simp]
+theorem _root_.Derivation.specSections_apply (V : (Spec R).Opens) (s : Γ(Spec R, V)) (x : V) :
+    (δ.specSections V s).val x =
+      (((Algebra.linearMap R (Localizations R x.val)).compDer δ).extendOfIsLocalization
+        (@Ideal.primeCompl R _ x.val.asIdeal x.val.isPrime)) (s.val x) :=
+  (rfl)
+
 /-- On the image of `R` in the sections over `V`, `δ.specSections V` is `δ`. -/
 theorem _root_.Derivation.specSections_algebraMap (V : (Spec R).Opens) (r : R) :
     δ.specSections V (algebraMap R Γ(Spec R, V) r) = algebraMap R Γ(Spec R, V) (δ r) :=
