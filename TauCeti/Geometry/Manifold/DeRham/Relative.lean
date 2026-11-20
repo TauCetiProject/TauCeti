@@ -351,6 +351,14 @@ variable {E' : Type u} {H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {M' : Type v} [TopologicalSpace M']
   [ChartedSpace H' M'] [IsManifold I' 2 M'] {W' : Opens M'} {f : M → M'} {g : W → W'}
 
+omit [IsManifold I 2 M] [IsManifold I' 2 M'] in
+/-- The restriction `g : W → W'` of a smooth map `f : M → M'` is smooth. -/
+private theorem contMDiff_of_val_comp (hf : ContMDiff I I' ∞ f) (hfg : ∀ x, (g x : M') = f x) :
+    ContMDiff I I' ∞ g :=
+  (ContMDiff.subtypeVal_comp_iff W' g).mp (by
+    convert hf.comp contMDiff_subtype_val using 1
+    exact funext hfg)
+
 private theorem deRhamRestriction_comm (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
     (hfg : ∀ x, (g x : M') = f x) :
     deRhamRestriction I' W' ≫ extendMap (deRhamComplex.map g hg) _ =
@@ -362,18 +370,19 @@ private theorem deRhamRestriction_comm (hf : ContMDiff I I' ∞ f) (hg : ContMDi
 /-- The cochain map of relative de Rham complexes induced by a smooth map of open pairs
 `f : (M, W) → (M', W')`, given with its restriction `g : W → W'`; it is pullback on both
 components. -/
-def map (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g) (hfg : ∀ x, (g x : M') = f x) :
+def map (hf : ContMDiff I I' ∞ f) (hfg : ∀ x, (g x : M') = f x) :
     relativeDeRhamComplex I' W' ⟶ relativeDeRhamComplex I W :=
-  (CochainComplex.mappingCone.map _ _ _ _ (deRhamRestriction_comm I W hf hg hfg))⟦(-1 : ℤ)⟧'
+  (CochainComplex.mappingCone.map _ _ _ _
+    (deRhamRestriction_comm I W hf (contMDiff_of_val_comp I W hf hfg) hfg))⟦(-1 : ℤ)⟧'
 
 /-- In relative coordinates the induced map acts by pullback on both components. -/
-private theorem relativeCoordinates_map_f (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
+private theorem relativeCoordinates_map_f (hf : ContMDiff I I' ∞ f)
     (hfg : ∀ x, (g x : M') = f x) (p q : ℤ) (hpq : p + -1 = q)
     (x : (relativeDeRhamComplex I' W').X p) :
-    relativeCoordinates (deRhamRestriction I W) p q hpq ((map I W hf hg hfg).f p x) =
+    relativeCoordinates (deRhamRestriction I W) p q hpq ((map I W hf hfg).f p x) =
       ((extendMap (deRhamComplex.map f hf) _).f p
           (relativeCoordinates (deRhamRestriction I' W') p q hpq x).1,
-        (extendMap (deRhamComplex.map g hg) _).f q
+        (extendMap (deRhamComplex.map g (contMDiff_of_val_comp I W hf hfg)) _).f q
           (relativeCoordinates (deRhamRestriction I' W') p q hpq x).2) :=
   -- `map` is typed between the mapping cocones, while `relativeCoordinates_map` is stated for the
   -- shifted cone map; the two hom types agree only after unfolding `mappingCocone`.
@@ -381,17 +390,18 @@ private theorem relativeCoordinates_map_f (hf : ContMDiff I I' ∞ f) (hg : Cont
 
 /-- The induced map sends `inl α` to `inl (f^* α)`. -/
 @[simp]
-theorem map_inl (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
-    (hfg : ∀ x, (g x : M') = f x) (k : ℕ) (α : SmoothForm I' M' ℝ k) :
-    (map I W hf hg hfg).f k (inl I' W' k α) = inl I W k (SmoothForm.mpullback f hf α) := by
+theorem map_inl (hf : ContMDiff I I' ∞ f) (hfg : ∀ x, (g x : M') = f x) (k : ℕ)
+    (α : SmoothForm I' M' ℝ k) :
+    (map I W hf hfg).f k (inl I' W' k α) = inl I W k (SmoothForm.mpullback f hf α) := by
   apply (relativeCoordinates (deRhamRestriction I W) k (k + -1) rfl).injective
   rw [relativeCoordinates_map_f, relativeCoordinates_inl, relativeCoordinates_inl]
   rw [extendMap_deRhamComplexMap_f_symm_apply, map_zero]
 
-/-- The induced map sends `inr β` to `inr (g^* β)`. -/
+/-- The induced map sends `inr β` to `inr (g^* β)`. The smoothness `hg` of `g` only serves to
+state the pullback `g^* β`. -/
 theorem map_inr (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I I' ∞ g)
     (hfg : ∀ x, (g x : M') = f x) (k : ℕ) (β : SmoothForm I' W' ℝ k) :
-    (map I W hf hg hfg).f (k + 1 : ℕ) (inr I' W' k β) =
+    (map I W hf hfg).f (k + 1 : ℕ) (inr I' W' k β) =
       inr I W k (SmoothForm.mpullback g hg β) := by
   apply (relativeCoordinates (deRhamRestriction I W) (k + 1 : ℕ) k (by push_cast; lia)).injective
   rw [relativeCoordinates_map_f, relativeCoordinates_inr, relativeCoordinates_inr]
