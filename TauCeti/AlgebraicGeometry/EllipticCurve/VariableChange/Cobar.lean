@@ -266,7 +266,7 @@ theorem map_cobarWeight_mul_cobarWeight {l m n : ℕ} (θ : Fin (m + 1) → Fin 
   have h := congrArg (fun x ↦ (vertexLabel x.2 (ψ 0)).u)
     ((simplexEquiv_eq (cobarMap θ)).symm.trans (simplexEquiv_cobarMap θ))
   simp only [vertexLabel_comp, vertexLabel_nerveMap, VariableChange.mul_inv_u] at h
-  simp only [VariableChange.mapHom, MonoidHom.coe_mk, OneHom.coe_mk, VariableChange.map_u] at h
+  simp only [VariableChange.mapHom_apply, VariableChange.map_u] at h
   rw [cobarWeight, cobarWeight, cobarWeight, RingHom.toMonoidHom_eq_coe, h, inv_mul_cancel_right,
     Function.comp_apply]
 
@@ -443,8 +443,7 @@ theorem cobarMap_succAbove_zero_eq_map_rightUnit :
     cobarMap (m := 1) (n := 2) (Fin.succAbove 0) = ChangeRing.map rightUnit := by
   refine (simplexEquiv _ 1).injective ?_
   rw [simplexEquiv_cobarMap, universalSimplex_two, simplexEquiv_one_apply, arrowEquiv_apply,
-    ChangeRing.map_comp_algebraMap, ChangeRing.universalChange_map_map, ← WeierstrassCurve.map_map,
-    map_rightUnit, ← map_variableChange, WeierstrassCurve.map_map]
+    ChangeRing.map_comp_algebraMap, ChangeRing.universalChange_map_map, map_comp_rightUnit]
   refine Prod.ext ?_ (funext fun j ↦ ?_)
   · simp
   · fin_cases j

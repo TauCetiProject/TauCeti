@@ -120,6 +120,10 @@ namespace VariableChange
 
 variable {A : Type*} [CommRing A]
 
+/-- The bundled `VariableChange.mapHom φ` applied to `C` is `C.map φ`. -/
+@[simp] lemma mapHom_apply (φ : R →+* A) (C : VariableChange R) : mapHom φ C = C.map φ :=
+  rfl
+
 /-- **A change of variables maps its inverse to the inverse of its image.** Mathlib has this as
 `map_inv` for the bundled `VariableChange.mapHom`; this is the same fact in the `.map` spelling,
 which is the one goals are phrased in — `rw` does not see through `mapHom φ C ≡ C.map φ`. -/
