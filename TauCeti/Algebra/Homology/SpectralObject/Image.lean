@@ -222,7 +222,7 @@ lemma map_fromE (β : mk₁ f₂₃ ⟶ mk₁ f₂₃') (hβ₀ : β.app 0 = α.
 `E^{n₁}(f₁, f₂, f₃) ⟶ E^{n₁}(f₁, f₂, f₃)` of a morphism of spectral objects `φ : X ⟶ Y` sends the
 element represented by `x ∈ H^{n₁}(f₁ ≫ f₂)` to the element represented by the image of `x` under
 `φ`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma toE_EMap {Y : SpectralObject C ι} (φ : X ⟶ Y) (hn₁ : n₀ + 1 = n₁ := by lia)
     (hn₂ : n₁ + 1 = n₂ := by lia) :
     X.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ ≫ EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ =
@@ -232,7 +232,7 @@ lemma toE_EMap {Y : SpectralObject C ι} (φ : X ⟶ Y) (hn₁ : n₀ + 1 = n₁
 /-- **Naturality of the embedding in the spectral object.** The map
 `E^{n₁}(f₁, f₂, f₃) ⟶ E^{n₁}(f₁, f₂, f₃)` of a morphism of spectral objects `φ : X ⟶ Y`, followed
 by `Y.fromE`, is `X.fromE` followed by the component of `φ` at `f₂ ≫ f₃`. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma EMap_fromE {Y : SpectralObject C ι} (φ : X ⟶ Y) (hn₁ : n₀ + 1 = n₁ := by lia)
     (hn₂ : n₁ + 1 = n₂ := by lia) :
     EMap φ f₁ f₂ f₃ n₀ n₁ n₂ hn₁ hn₂ ≫ Y.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂ =

@@ -331,6 +331,23 @@ theorem spectralSequenceMap_filtrationFunctorMap_hom_eq_of_homotopy (h : Homotop
     (pq.1 + pq.2) using 2 <;>
   exact coequalizer.hom_ext (by simp [cokernel.map])
 
+/-- If `f ≫ g` is homotopic to the identity through a homotopy raising the filtration by at most
+`s`, then on every page `r ≥ s + 2` the map induced by `f` followed by that induced by `g` is the
+identity. -/
+private lemma spectralSequenceMap_filtrationFunctorMap_comp_hom_eq_id {g : L ⟶ K}
+    {hg : ∀ n, (F n).Factors ((G n).arrow ≫ g)} (s : ℤ) (h : Homotopy (f ≫ g) (𝟙 K))
+    (hh : h.IsFiltered F fun n ↦ F (n + s)) (r : ℤ) (hr : 2 ≤ r) (hsr : s + 2 ≤ r) :
+    (spectralSequenceMap coreE₂Cohomological
+        (spectralObjectMap (filtrationFunctorMap hF hG f hf))).hom r hr ≫
+      (spectralSequenceMap coreE₂Cohomological
+        (spectralObjectMap (filtrationFunctorMap hG hF g hg))).hom r hr = 𝟙 _ := by
+  rw [← SpectralSequence.comp_hom _ _ r hr, ← spectralSequenceMap_comp, ← spectralObjectMap_comp,
+    ← filtrationFunctorMap_comp f g hf hg fun n ↦ Subobject.factors_comp_of_factors (hf n) (hg n),
+    spectralSequenceMap_filtrationFunctorMap_hom_eq_of_homotopy
+      (hg := fun n ↦ by simpa using (F n).factors_self) h s hh r hr hsr,
+    filtrationFunctorMap_id, spectralObjectMap_id, spectralSequenceMap_id,
+    SpectralSequence.id_hom _ r hr]
+
 /-- **A homotopy equivalence raising the filtrations by `s` induces isomorphisms from page `s + 2`
 on.** Let `f : K ⟶ L` and `g : L ⟶ K` be morphisms of filtered complexes and `h₁`, `h₂` homotopies
 from `f ≫ g` to the identity of `K` and from `g ≫ f` to the identity of `L` whose components raise
@@ -341,21 +358,10 @@ theorem isIso_spectralSequenceMap_filtrationFunctorMap_hom {g : L ⟶ K}
     (hh₁ : h₁.IsFiltered F fun n ↦ F (n + s)) (h₂ : Homotopy (g ≫ f) (𝟙 L))
     (hh₂ : h₂.IsFiltered G fun n ↦ G (n + s)) (r : ℤ) (hr : 2 ≤ r) (hsr : s + 2 ≤ r) :
     IsIso ((spectralSequenceMap coreE₂Cohomological
-      (spectralObjectMap (filtrationFunctorMap hF hG f hf))).hom r hr) := by
-  refine ⟨(spectralSequenceMap coreE₂Cohomological
-    (spectralObjectMap (filtrationFunctorMap hG hF g hg))).hom r hr, ?_, ?_⟩
-  · rw [← SpectralSequence.comp_hom _ _ r hr, ← spectralSequenceMap_comp, ← spectralObjectMap_comp,
-      ← filtrationFunctorMap_comp f g hf hg fun n ↦ Subobject.factors_comp_of_factors (hf n) (hg n),
-      spectralSequenceMap_filtrationFunctorMap_hom_eq_of_homotopy
-        (hg := fun n ↦ by simpa using (F n).factors_self) h₁ s hh₁ r hr hsr,
-      filtrationFunctorMap_id, spectralObjectMap_id, spectralSequenceMap_id,
-      SpectralSequence.id_hom _ r hr]
-  · rw [← SpectralSequence.comp_hom _ _ r hr, ← spectralSequenceMap_comp, ← spectralObjectMap_comp,
-      ← filtrationFunctorMap_comp g f hg hf fun n ↦ Subobject.factors_comp_of_factors (hg n) (hf n),
-      spectralSequenceMap_filtrationFunctorMap_hom_eq_of_homotopy
-        (hg := fun n ↦ by simpa using (G n).factors_self) h₂ s hh₂ r hr hsr,
-      filtrationFunctorMap_id, spectralObjectMap_id, spectralSequenceMap_id,
-      SpectralSequence.id_hom _ r hr]
+      (spectralObjectMap (filtrationFunctorMap hF hG f hf))).hom r hr) :=
+  ⟨_, spectralSequenceMap_filtrationFunctorMap_comp_hom_eq_id (hg := hg) s h₁ hh₁ r hr hsr,
+    spectralSequenceMap_filtrationFunctorMap_comp_hom_eq_id (hF := hG) (hG := hF) (f := g)
+      (hf := hg) (hg := hf) s h₂ hh₂ r hr hsr⟩
 
 end Shift
 
