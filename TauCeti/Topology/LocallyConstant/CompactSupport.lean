@@ -28,8 +28,8 @@ many values. Its nonzero fibres are therefore finitely many pairwise disjoint co
 `f = ∑ m • 1_{f⁻¹(m)}` (`LocallyConstant.exists_pairwiseDisjoint_sum_indicator`). In a Hausdorff
 space compact open sets are clopen, so their indicators `1_K • m` are locally constant, and they
 span `C_c^∞(X, M)` (`LocallyConstant.compactlySupported_eq_span`). Two such expansions have a common
-refinement by `Finpartition.exists_forall_le_or_disjoint`, applied in the Boolean algebra of
-compact open sets of `X`.
+refinement by `Finpartition.exists_forall_le_or_disjoint`, applied in the generalized Boolean
+algebra `CompactOpens X` of compact open sets of a Hausdorff space `X`.
 
 The test functions on a topological group, and their invariance under compact open subgroups,
 are treated in `TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport`.
