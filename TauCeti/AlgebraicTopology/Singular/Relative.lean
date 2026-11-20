@@ -394,6 +394,22 @@ lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Se
   subst hA hS
   rfl
 
+/-- A map of pairs `(t, s) ⟶ (t', s')` of subspaces induces on relative singular homology the
+same map as a map of pairs `(t₁, s₁) ⟶ (t₁', s₁')` of equal subspaces, written differently, with
+the same values, through the identifications `TopPair.ofInclusion_congr` of the pairs. -/
+lemma singularHomologyMap_comp_eqToHom_of_eq {X Y : TopCat.{w}} {s t s₁ t₁ : Set X}
+    {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'} {h₁' : s₁' ⊆ t₁'}
+    (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
+    (φ : ofInclusion h ⟶ ofInclusion h') (ψ : ofInclusion h₁ ⟶ ofInclusion h₁')
+    (hφψ : ∀ x : t, (Hom.fst φ x).1 = (Hom.fst ψ ⟨x, ht ▸ x.2⟩).1) (n : ℕ) :
+    TopPair.singularHomologyMap φ R n ≫
+        eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h' h₁' hs' ht')) =
+      eqToHom (congrArg (TopPair.singularHomology · R n) (ofInclusion_congr h h₁ hs ht)) ≫
+        TopPair.singularHomologyMap ψ R n := by
+  subst hs ht hs' ht'
+  obtain rfl : φ = ψ := hom_ext_of_fst _ (by ext x; exact Subtype.ext (hφψ x))
+  simp
+
 /-- **A pair whose subspace is everything has no relative homology.** If the embedding of the
 subspace of `P` is surjective, the relative singular homology of `P` vanishes in every degree. -/
 lemma isZero_singularHomology_of_surjective_map (hP : Function.Surjective P.map) (n : ℕ) :

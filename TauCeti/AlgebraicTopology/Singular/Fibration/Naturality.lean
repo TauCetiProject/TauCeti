@@ -23,8 +23,9 @@ sequences of filtered spaces `TauCeti.filteredSpaceSpectralSequenceMap`, so it i
 and compatible with morphisms of coefficients
 (`TauCeti.filteredSpaceSpectralSequenceMap_comp_filteredSpaceSpectralSequenceCoefficientMap`).
 
-For a map `f` over the identity of `B` between Serre fibrations, the first page is described cell by
-cell. Through the identifications `E¹_{k,q} ≅ ⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)` of
+A map `f` over the identity of `B`, that is `f ≫ p' = p`, induces the morphism
+`TauCeti.TopCat.serreSpectralSequenceMapOver`. Between Serre fibrations, its first page is described
+cell by cell. Through the identifications `E¹_{k,q} ≅ ⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)` of
 `TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma`, the morphism acts on the summand of the
 `k`-cell `j` by the map induced on `Hq` by the restriction `p⁻¹(χⱼ(0)) ⟶ p'⁻¹(χⱼ(0))` of `f` to the
 fibres over the centre of the cell
@@ -32,28 +33,28 @@ fibres over the centre of the cell
 
 * **Comparison theorem.** If `f` induces isomorphisms on the homology of the fibres over the points
   of `C`, then the morphism of Serre spectral sequences is an isomorphism on every object of every
-  page from the first on (`TauCeti.TopCat.isIso_serreSpectralSequenceMap_hom_f`). The
-  corresponding statement for the abutments, the homology of the total spaces, is
-  `TauCeti.TopCat.isIso_singularHomologyMap_of_commSq`.
+  page from the first on (`TauCeti.TopCat.isIso_serreSpectralSequenceMapOver_hom_f`).
 * **Fibre homotopy equivalences.** In particular a fibre homotopy equivalence over `B` between
   Serre fibrations induces an isomorphism of their Serre spectral sequences from the first page on
-  (`TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMap_hom_f`). This is how the fibration
+  (`TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f`). This is how the fibration
   theorem of DG Morse homology passes from a Hurewicz fibration to its Moore-path replacement.
 
 ## Main definitions
 
 * `TauCeti.TopCat.serreSpectralSequenceMap`: the morphism of Serre spectral sequences induced by a
   map of fibrations over a cellular map of the bases.
+* `TauCeti.TopCat.serreSpectralSequenceMapOver`: its special case for a map of fibrations over
+  the identity of `B`.
 
 ## Main results
 
 * `TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma_hom_naturality`: on the first page, the
   morphism induced by a map over `B` is the sum of the maps of the fibres over the centres of the
   cells.
-* `TauCeti.TopCat.isIso_serreSpectralSequenceMap_hom_f`: a map of Serre fibrations over `B` that is
-  a homology isomorphism on the fibres induces an isomorphism of Serre spectral sequences from the
-  first page on.
-* `TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMap_hom_f`: so does a fibre homotopy
+* `TauCeti.TopCat.isIso_serreSpectralSequenceMapOver_hom_f`: a map of Serre fibrations over `B`
+  that is a homology isomorphism on the fibres induces an isomorphism of Serre spectral sequences
+  from the first page on.
+* `TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f`: so does a fibre homotopy
   equivalence.
 
 ## References
@@ -110,30 +111,25 @@ abbrev serreSpectralSequenceMap (R : Type u) [Ring R] (hfg : f ≫ p' = p ≫ g)
 
 end Map
 
-section Step
-
-/-- A map of pairs `(t, s) ⟶ (t', s')` of subspaces induces on relative singular homology the
-same map as a map of pairs `(t₁, s₁) ⟶ (t₁', s₁')` of equal subspaces, written differently, with
-the same values. -/
-private lemma singularHomologyMap_comp_eqToHom_of_eq {X Y : _root_.TopCat.{u}}
-    {s t s₁ t₁ : Set X} {s' t' s₁' t₁' : Set Y} {h : s ⊆ t} {h₁ : s₁ ⊆ t₁} {h' : s' ⊆ t'}
-    {h₁' : s₁' ⊆ t₁'} (hs : s = s₁) (ht : t = t₁) (hs' : s' = s₁') (ht' : t' = t₁')
-    (hP : TopPair.ofInclusion h = TopPair.ofInclusion h₁)
-    (hP' : TopPair.ofInclusion h' = TopPair.ofInclusion h₁')
-    (φ : TopPair.ofInclusion h ⟶ TopPair.ofInclusion h')
-    (ψ : TopPair.ofInclusion h₁ ⟶ TopPair.ofInclusion h₁')
-    (hφψ : ∀ x : t, (TopPair.Hom.fst φ x).1 = (TopPair.Hom.fst ψ ⟨x, ht ▸ x.2⟩).1)
-    (R : Type u) [Ring R] (n : ℕ) :
-    TopPair.singularHomologyMap φ (ModuleCat.of R R) n ≫
-        eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) n) hP') =
-      eqToHom (congrArg (fun P : TopPair.{u} ↦ P.singularHomology (ModuleCat.of R R) n) hP) ≫
-        TopPair.singularHomologyMap ψ (ModuleCat.of R R) n := by
-  subst hs ht hs' ht'
-  obtain rfl : φ = ψ := TopPair.hom_ext_of_fst _ (by ext x; exact Subtype.ext (hφψ x))
-  simp
+section MapOver
 
 variable {E B E' : _root_.TopCat.{u}} [T2Space B] {C D : Set B} [RelCWComplex C D] {p : E ⟶ B}
   {p' : E' ⟶ B} {f : E ⟶ E'}
+
+/-- **A map over `B` preserves the skeletal filtrations.** If `f ≫ p' = p`, then `f` carries the
+preimage under `p` of the `q`-skeleton of `C` into the preimage under `p'` of the `q`-skeleton. -/
+lemma mapsTo_preimageSkeleton_of_comp_eq (hf : f ≫ p' = p) (q : ℤ) :
+    MapsTo f (preimageSkeleton C p q) (preimageSkeleton C p' q) :=
+  mapsTo_preimageSkeleton (hf.trans (Category.comp_id p).symm) (fun _ _ hx ↦ hx) q
+
+variable (C) in
+/-- **The morphism of Serre spectral sequences induced by a map over `B`.** A map `f : E ⟶ E'`
+with `f ≫ p' = p` induces a morphism from the Serre spectral sequence of `p` over `C` to that of
+`p'`: the morphism `TauCeti.TopCat.serreSpectralSequenceMap` over the identity of `B`. -/
+abbrev serreSpectralSequenceMapOver (R : Type u) [Ring R] (hf : f ≫ p' = p) :
+    serreSpectralSequence C p R ⟶ serreSpectralSequence C p' R :=
+  serreSpectralSequenceMap C C R (g := 𝟙 B) (hf.trans (Category.comp_id p).symm)
+    fun _ _ hx ↦ hx
 
 /-- On the stage `b = k - 1 ≤ b + 1` of the skeletal filtrations, the map of pairs induced by a map
 `f` over `B` is the map `(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹)) ⟶ (p'⁻¹(Xᵏ), p'⁻¹(Xᵏ⁻¹))` of preimages of
@@ -151,19 +147,17 @@ private lemma singularHomologyMap_preimagePairMap_comp_eqToHom (hf : f ≫ p' = 
           (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (p := p) k b hb)).symm ≫
         TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton (C := C) p)
           (monotone_preimageSkeleton (C := C) p') f hmaps hbb) (ModuleCat.of R R) n :=
-  singularHomologyMap_comp_eqToHom_of_eq
-    (by rw [preimageSkeleton_def, show (b + 1).toNat = k by lia])
-    (by rw [preimageSkeleton_def, show (b + 1 + 1).toNat = k + 1 by lia])
-    (by rw [preimageSkeleton_def, show (b + 1).toNat = k by lia])
-    (by rw [preimageSkeleton_def, show (b + 1 + 1).toNat = k + 1 by lia])
-    (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (p := p) k b hb).symm
-    (ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (p := p') k b hb).symm _ _
+  TopPair.singularHomologyMap_comp_eqToHom_of_eq _
+    (preimageSkeleton_eq_preimage_skeletonLT k b hb).symm
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT k b hb).symm
+    (preimageSkeleton_eq_preimage_skeletonLT k b hb).symm
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT k b hb).symm _ _
     (fun x ↦ by
       rw [TopCat.Hom.preimagePairMap_fst]
       exact (TopCat.Hom.coe_preimageMap_apply f hf _ x).trans
-        (filteredSpaceStepMap_fst_apply _ _ f hmaps hbb ⟨x.1, _⟩).symm) R n
+        (filteredSpaceStepMap_fst_apply _ _ f hmaps hbb ⟨x.1, _⟩).symm) n
 
-end Step
+end MapOver
 
 section OverBase
 
@@ -181,8 +175,7 @@ centres of the cells. -/
 @[reassoc]
 theorem serreSpectralSequenceFirstPageXIsoSigma_hom_naturality (hf : f ≫ p' = p) (k q : ℕ)
     (pq : ℤ × ℤ) (hb : pq.2 = k - 1) (ha : pq.1 + pq.2 = -(q + k : ℕ)) :
-    ((serreSpectralSequenceMap C C R (g := 𝟙 B) (hf.trans (Category.comp_id p).symm)
-        (fun _ _ hx ↦ by simpa using hx)).hom 2 le_rfl).f pq ≫
+    ((serreSpectralSequenceMapOver C R hf).hom 2 le_rfl).f pq ≫
         (serreSpectralSequenceFirstPageXIsoSigma C hp' R k q pq hb ha).hom =
       (serreSpectralSequenceFirstPageXIsoSigma C hp R k q pq hb ha).hom ≫
         Limits.Sigma.map fun j ↦ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R)
@@ -191,12 +184,10 @@ theorem serreSpectralSequenceFirstPageXIsoSigma_hom_naturality (hf : f ≫ p' = 
   have nat : (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
         (monotone_preimageSkeleton (C := C) p) pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl
         (q + k) ha).inv ≫
-        ((serreSpectralSequenceMap C C R (g := 𝟙 B) (hf.trans (Category.comp_id p).symm)
-          (fun _ _ hx ↦ by simpa using hx)).hom 2 le_rfl).f pq =
+        ((serreSpectralSequenceMapOver C R hf).hom 2 le_rfl).f pq =
       TopPair.singularHomologyMap (filteredSpaceStepMap (monotone_preimageSkeleton (C := C) p)
-          (monotone_preimageSkeleton (C := C) p') f
-          (mapsTo_preimageSkeleton (hf.trans (Category.comp_id p).symm)
-            (fun _ _ hx ↦ by simpa using hx)) (by lia : pq.2 ≤ pq.2 + 1))
+          (monotone_preimageSkeleton (C := C) p') f (mapsTo_preimageSkeleton_of_comp_eq hf)
+          (by lia : pq.2 ≤ pq.2 + 1))
           (ModuleCat.of R R) (q + k) ≫
         (filteredSpaceSpectralSequenceFirstPageXIso (ModuleCat.of R R)
           (monotone_preimageSkeleton (C := C) p') pq pq.2 (pq.2 + 1) rfl rfl (pq.1 + pq.2) rfl
@@ -229,12 +220,11 @@ Serre fibrations `p` and `p'`, and let `C ⊆ B` be a relative CW complex. If fo
 `C` the restriction `p⁻¹(b) ⟶ p'⁻¹(b)` of `f` induces isomorphisms on the singular homology
 `Hq(-; R)` of the fibres in every degree `q`, then the morphism of Serre spectral sequences induced
 by `f` is an isomorphism on every object of every page `r ≥ 2`, that is, from the first page on. -/
-theorem isIso_serreSpectralSequenceMap_hom_f (hf : f ≫ p' = p)
+theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
     (hfib : ∀ b ∈ C, ∀ q : ℕ, IsIso (((AlgebraicTopology.singularHomologyFunctor
       (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (f.preimageMap hf {b})))
     (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
-    IsIso (((serreSpectralSequenceMap C C R (g := 𝟙 B) (hf.trans (Category.comp_id p).symm)
-      (fun _ _ hx ↦ by simpa using hx)).hom r hr).f pq) := by
+    IsIso (((serreSpectralSequenceMapOver C R hf).hom r hr).f pq) := by
   refine isIso_filteredSpaceSpectralSequenceMap_hom_f _ _ _ _ _ (fun b n ↦ ?_) r hr pq
   rcases lt_or_ge b (-1) with hb | hb
   · -- Below the base both stages are the preimage of `D`, so both pairs have no homology.
@@ -269,8 +259,7 @@ theorem isIso_serreSpectralSequenceMap_hom_f (hf : f ≫ p' = p)
           (ModuleCat.of R R)).map (f.preimageMap hf {map k j 0}))).isIso_hom
     infer_instance
   have e := singularHomologyMap_preimagePairMap_comp_eqToHom hf
-    (mapsTo_preimageSkeleton (C := C) (C' := C) (hf.trans (Category.comp_id p).symm)
-      (fun _ _ hx ↦ by simpa using hx)) R k _ rfl (Int.le_add_one le_rfl) (q + k)
+    (mapsTo_preimageSkeleton_of_comp_eq (C := C) hf) R k _ rfl (Int.le_add_one le_rfl) (q + k)
   rw [(IsIso.eq_inv_comp _).2 e.symm]
   infer_instance
 
@@ -280,12 +269,11 @@ fibre homotopy equivalence `Φ` over `B` between Serre fibrations `p` and `p'`, 
 spectral sequences induced by its forward map is an isomorphism on every object of every page
 `r ≥ 2`: the restrictions of `Φ` to the fibres are homotopy equivalences, hence homology
 isomorphisms. -/
-theorem _root_.TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMap_hom_f
+theorem _root_.TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f
     (Φ : FiberHomotopyEquiv p.hom p'.hom) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
-    IsIso (((serreSpectralSequenceMap C C R (f := _root_.TopCat.ofHom Φ.toFun) (g := 𝟙 B)
-      ((_root_.TopCat.hom_ext Φ.comp_toFun).trans (Category.comp_id p).symm)
-      (fun _ _ hx ↦ by simpa using hx)).hom r hr).f pq) := by
-  refine TauCeti.TopCat.isIso_serreSpectralSequenceMap_hom_f hp hp' R
+    IsIso (((serreSpectralSequenceMapOver C R (f := _root_.TopCat.ofHom Φ.toFun)
+      (_root_.TopCat.hom_ext Φ.comp_toFun)).hom r hr).f pq) := by
+  refine TauCeti.TopCat.isIso_serreSpectralSequenceMapOver_hom_f hp hp' R
     (_root_.TopCat.hom_ext Φ.comp_toFun) (fun b _ q ↦ ?_) r hr pq
   -- The restriction of `Φ` to the fibres over `b` is the homotopy equivalence `Φ.fiber b`.
   have h : (_root_.TopCat.ofHom Φ.toFun).preimageMap (_root_.TopCat.hom_ext Φ.comp_toFun) {b} =

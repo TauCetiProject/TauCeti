@@ -96,19 +96,26 @@ preimages of the skeleta `Xⁿ = skeletonLT C (n + 1)`. -/
 abbrev preimageSkeletonPair (n : ℕ) : TopPair.{u} :=
   TopPair.ofInclusion (X := E) (preimage_mono (f := p) (skeletonLT_subset_skeletonLT_succ C n))
 
+/-- For `b = k - 1`, the stage `b` of the filtration of `E` by the preimages of the skeleta is the
+preimage `p⁻¹(Xᵏ⁻¹)` of `skeletonLT C k`. -/
+lemma preimageSkeleton_eq_preimage_skeletonLT (k : ℕ) (b : ℤ) (hb : b = k - 1) :
+    preimageSkeleton C p b = p ⁻¹' skeletonLT C (k : ℕ∞) := by
+  rw [preimageSkeleton_def, show (b + 1).toNat = k by lia]
+
+/-- For `b = k - 1`, the stage `b + 1` of the filtration of `E` by the preimages of the skeleta is
+the preimage `p⁻¹(Xᵏ)` of `skeletonLT C (k + 1)`. -/
+lemma preimageSkeleton_add_one_eq_preimage_skeletonLT (k : ℕ) (b : ℤ) (hb : b = k - 1) :
+    preimageSkeleton C p (b + 1) = p ⁻¹' skeletonLT C ((k + 1 : ℕ) : ℕ∞) :=
+  preimageSkeleton_eq_preimage_skeletonLT (k + 1) (b + 1) (by lia)
+
 /-- The pair of stages `b ≤ b + 1` of the filtration of `E` by the preimages of the skeleta is the
 pair `(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))` of consecutive preimages of skeleta, for `b = k - 1`. -/
 lemma ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (k : ℕ) (b : ℤ) (hb : b = k - 1) :
     TopPair.ofInclusion (monotone_preimageSkeleton (C := C) p (Int.le_add_one le_rfl) :
         preimageSkeleton C p b ⊆ preimageSkeleton C p (b + 1)) =
-      preimageSkeletonPair p C k := by
-  -- The pair `ofInclusion h` only depends on the two subsets.
-  suffices ∀ {s t s' t' : Set E} (h : s ⊆ t) (h' : s' ⊆ t'), s = s' → t = t' →
-      TopPair.ofInclusion h = TopPair.ofInclusion h' from
-    this _ _ (by rw [preimageSkeleton_def, show (b + 1).toNat = k by lia])
-      (by rw [preimageSkeleton_def, show (b + 1 + 1).toNat = k + 1 by lia])
-  rintro s t _ _ h h' rfl rfl
-  rfl
+      preimageSkeletonPair p C k :=
+  TopPair.ofInclusion_congr _ _ (preimageSkeleton_eq_preimage_skeletonLT k b hb)
+    (preimageSkeleton_add_one_eq_preimage_skeletonLT k b hb)
 
 /-- A point of the pullback lies over the `n`-skeleton. -/
 lemma cellPullback_mem_preimage_skeletonLT {n : ℕ} (x : cellPullback p C n) :
