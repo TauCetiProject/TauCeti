@@ -168,6 +168,21 @@ variable {ψ : ℂ → ℝ} {z : ℂ}
 private theorem fderiv_apply_eq_zero (hz : z ∉ tsupport ψ) (e : ℂ) : fderiv ℝ ψ z e = 0 := by
   simp [fderiv_of_notMem_tsupport ℝ hz]
 
+/-- The coefficient term vanishes off the support of `ψ`. -/
+private theorem coeffTerm_eq_zero_of_notMem_tsupport {v₀ : V} {J : ℂ → V →L[ℝ] V}
+    {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {S : ℂ → V →L[ℝ] V} {ξ η : ℂ → V} (B : ℂ → V →L[ℝ] V)
+    (DB : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (hz : z ∉ tsupport ψ) :
+    coeffTerm ψ v₀ J DJ S ξ η B DB z = 0 := by
+  simp [coeffTerm, fieldX, fieldY, fieldZ, fderiv_apply_eq_zero hz,
+    fderiv_of_notMem_tsupport ℝ fun h => hz (tsupport_fderiv_apply_subset ℝ _ h)]
+
+/-- The constant term vanishes off the support of `ψ`. -/
+private theorem constTerm_eq_zero_of_notMem_tsupport {v₀ : V} {J : ℂ → V →L[ℝ] V}
+    {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {S : ℂ → V →L[ℝ] V} {ξ η : ℂ → V} (hz : z ∉ tsupport ψ) :
+    constTerm ψ v₀ J DJ S ξ η z = 0 := by
+  simp [constTerm, fderiv_apply_eq_zero hz,
+    fderiv_of_notMem_tsupport ℝ fun h => hz (tsupport_fderiv_apply_subset ℝ _ h)]
+
 /-- A first derivative of a smooth function is smooth. -/
 private theorem contDiff_fderiv_apply (hψ : ContDiff ℝ ∞ ψ) (e : ℂ) :
     ContDiff ℝ ∞ (fun w => fderiv ℝ ψ w e) :=
@@ -297,15 +312,16 @@ private theorem inner_ae_eq_constTerm_add_coeffTerm
       fun z => constTerm ψ v₀ J DJ S ξ η z + coeffTerm ψ v₀ J DJ S ξ η J DJ z := by
   have hψ : ContDiff ℝ ∞ (ψ : ℂ → ℝ) := ψ.contDiff
   filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hJJ] with z hz
-  rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I
-    (((hψ.fderiv_right (m := ∞) (by simp)).differentiable (by simp)) z)]
   by_cases hzK : z ∈ tsupport (ψ : ℂ → ℝ)
-  · rw [constTerm_add_coeffTerm_self (by rw [← mul_apply_eq_comp, hz (ψ.tsupport_subset hzK)]; simp)
+  · rw [laplacian_eq_fderiv_fderiv_apply_one_add_fderiv_fderiv_apply_I
+      (((hψ.fderiv_right (m := ∞) (by simp)).differentiable (by simp)) z),
+      constTerm_add_coeffTerm_self (by rw [← mul_apply_eq_comp, hz (ψ.tsupport_subset hzK)]; simp)
       (fderiv_fderiv_apply_comm hψ.contDiffAt (by simp) 1 I)]
     simp only [inner_add_right, real_inner_smul_right]
     ring
-  · simp [constTerm, coeffTerm, fieldX, fieldY, fieldZ, fderiv_apply_eq_zero hzK,
-      fderiv_of_notMem_tsupport ℝ fun h => hzK (tsupport_fderiv_apply_subset ℝ _ h)]
+  · rw [constTerm_eq_zero_of_notMem_tsupport hzK, coeffTerm_eq_zero_of_notMem_tsupport J DJ hzK,
+      image_eq_zero_of_notMem_tsupport fun h => hzK (tsupport_laplacian_subset _ h)]
+    simp [fderiv_apply_eq_zero hzK]
 
 /-- The fields of the error term are locally integrable, and those paired with the derivative of
 the coefficient are locally `L^q`. -/
@@ -357,8 +373,7 @@ private theorem lintegral_enorm_coeffTerm_le [ENNReal.HolderTriple p q r] (hr : 
       (fun z => ‖coeffTerm ψ v₀ J DJ S ξ η (J - A) (DJ - fderiv ℝ A) z‖ₑ) ⊆ K := by
     intro z hz
     by_contra hzK
-    exact hz (by simp [coeffTerm, fieldX, fieldY, fieldZ, fderiv_apply_eq_zero hzK,
-      fderiv_of_notMem_tsupport ℝ fun h => hzK (tsupport_fderiv_apply_subset ℝ _ h)])
+    exact hz (by simp only [coeffTerm_eq_zero_of_notMem_tsupport _ _ hzK, eNorm_zero])
   -- Hölder's inequality for the term with the derivative of the coefficient.
   have hDBm : AEStronglyMeasurable (DJ - fderiv ℝ A) (volume.restrict K) :=
     (memLpLoc_iff.1 hc.memLpLoc_deriv K hKΩ hK).aestronglyMeasurable.sub
