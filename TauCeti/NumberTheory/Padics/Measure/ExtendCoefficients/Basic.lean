@@ -28,10 +28,10 @@ inequality bounds it by `B * max_i ‖c_i‖`, so it extends by density and comp
 all of `C(X, K)`. The resulting measure is characterised by its finite projections: along every map
 `q : X → A` to a finite discrete space, the coefficients of `ι_j(μ)` are the images under `j` of
 those of `μ`. In particular `ι_j(μ)(j ∘ f) = j(μ(f))` for every `f ∈ C(X, O)` when `j` is
-continuous, and this property determines `ι_j(μ)`. If `j` is moreover a topological embedding
-onto the closed unit ball of `K`, the measures `ι_j(μ)` are exactly the `K`-valued measures of
-operator norm at most `1`: such a measure sends test functions `j ∘ f` into the closed unit ball,
-hence into the image of `j`.
+continuous, and this property determines `ι_j(μ)`. If `K` is moreover a nontrivially normed field
+and `j` is a topological embedding onto its closed unit ball, the measures `ι_j(μ)` are exactly
+the `K`-valued measures of operator norm at most `1`: such a measure sends test functions
+`j ∘ f` into the closed unit ball, hence into the image of `j`.
 
 A uniform bound on `‖j a‖` is needed. Give `O = ℚ_p` the norm `max(1, |a|_p)` for `a ≠ 0`, so
 that its topology is discrete. Then Haar averaging `f ↦ p^{-n} Σ_{a mod p^n} f(a)` is an
@@ -56,12 +56,13 @@ no continuous extension exists, since `p^n 1_{p^n ℤ_p} → 0` would have integ
   extension has operator norm at most `B`.
 * `AbstractMeasure.extendCoefficients_apply_comp`: `ι_j(μ)(j ∘ f) = j(μ(f))` for continuous `j`.
 * `AbstractMeasure.eq_extendCoefficients_of_apply_comp`: this property characterises `ι_j(μ)`.
-* `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one`: for an embedding `j` onto the closed unit
-  ball of `K` and compact `X`, a `K`-valued measure of norm at most `1` restricts to an `O`-valued
-  measure.
+* `AbstractMeasure.exists_apply_comp_eq_of_norm_le_one`: over a nontrivially normed field `K`,
+  for an embedding `j` onto its closed unit ball and compact `X`, a `K`-valued measure of norm at
+  most `1` restricts to an `O`-valued measure.
 * `AbstractMeasure.mem_range_extendCoefficients_iff`,
-  `AbstractMeasure.existsUnique_apply_comp_eq_iff_norm_le_one`: for an embedding `j` onto the
-  closed unit ball, the extensions of coefficients form the closed unit ball of `D(X, K)`.
+  `AbstractMeasure.existsUnique_apply_comp_eq_iff_norm_le_one`: over a nontrivially normed field
+  `K`, for an embedding `j` onto its closed unit ball, the extensions of coefficients form the
+  closed unit ball of `D(X, K)`.
 * `AbstractMeasure.extendCoefficients_smul`, `AbstractMeasure.extendCoefficients_dirac`,
   `AbstractMeasure.extendCoefficients_map` and `AbstractMeasure.extendCoefficients_injective`.
 

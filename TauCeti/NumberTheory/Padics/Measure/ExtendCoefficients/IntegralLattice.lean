@@ -68,8 +68,7 @@ theorem isClosed_range_extendCoefficients_weak [T2Space X] [TotallyDisconnectedS
       symm
       apply eq_extendCoefficients_of_apply_comp j _ hj hje.continuous
       intro f
-      rw [coe_symm_toCLMEquiv]
-      change ν _ = j (L f)
+      rw [coe_symm_toCLMEquiv, ContinuousLinearMap.coe_mk']
       simp only [L, LinearMap.coe_mk, AddHom.coe_mk, he, hJf]
     rw [hfull]
     exact @isClosed_univ _ WeakTopology
