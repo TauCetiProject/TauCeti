@@ -67,6 +67,12 @@ ambient space.
   the Morse index strictly increases (respectively decreases) at the critical points other than `q`
   (respectively `p`) whose stable (respectively unstable) manifolds meet the closure of `W^s(q)`
   (respectively `W^u(p)`).
+* `IsMorseSmale.nonempty_unstableSet_inter_stableSet_of_mem_closure_unstableSet_inter_unstableSet`
+  and its time reversal
+  `IsMorseSmale.nonempty_unstableSet_inter_stableSet_of_mem_closure_stableSet_inter_stableSet`, in
+  the namespace `TauCeti.IsAdaptedPseudoGradient`: when the index drops by exactly one, a critical
+  point whose unstable manifold meets the closure of `W^u(p)` is joined to `p` by a trajectory,
+  and dually for the stable manifolds meeting the closure of `W^s(q)`.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level`:
   an index-one level slice is closed.
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level`:
@@ -261,6 +267,64 @@ theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unst
   let ⟨_, hy, hya⟩ := hne
   h.manifoldMorseIndex_lt_of_reflTransGen hf (reflTransGen_of_mem_closure_unstableSet hf hy hya)
     hap
+
+namespace IsMorseSmale
+
+omit hX in
+/-- **A broken backward limit at an adjacent index is a trajectory.** Under the Morse–Smale
+condition, if the closure of the unstable manifold of a point `p` meets the unstable manifold of a
+different critical point `a` with `ind a + 1 = ind p`, then some trajectory runs from `p` to `a`. -/
+theorem nonempty_unstableSet_inter_stableSet_of_mem_closure_unstableSet_inter_unstableSet
+    {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {a p : M}
+    (hap : a ≠ p)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f a + 1 = manifoldMorseIndex 𝓘(ℝ, E) f p)
+    (hne : (closure (hX.flow.unstableSet p) ∩ hX.flow.unstableSet a).Nonempty) :
+    (hX.flow.unstableSet p ∩ hX.flow.stableSet a).Nonempty := by
+  -- Break the limit at `a`: the closure of `W^u(p)` meets `W^s(a)` at a point `z ≠ a`, which lies
+  -- on a trajectory from some critical point `c` to `a`. No index fits strictly between those of
+  -- `a` and `p`, so `c = p`.
+  obtain ⟨y, hy⟩ := hne
+  obtain ⟨z, hz, hza⟩ := hX.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet hf
+    (Flow.isInvariant_unstableSet _ p) (Flow.disjoint_unstableSet hap.symm) hy
+  obtain ⟨c, -, hzc⟩ := hX.exists_tendsto_atBot hf z
+  have hzc : z ∈ hX.flow.unstableSet c := Flow.mem_unstableSet.2 hzc
+  by_cases hcp : c = p
+  · exact ⟨z, hcp ▸ hzc, hz.2⟩
+  have hca : c ≠ a := fun hca ↦
+    hza (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hca ▸ hzc, hz.2⟩)
+  have h₁ := h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf hcp
+    ⟨z, hz.1, hzc⟩
+  have h₂ := h.manifoldMorseIndex_lt hf hca ⟨z, hzc, hz.2⟩
+  omega
+
+omit hX in
+/-- **A broken forward limit at an adjacent index is a trajectory.** Under the Morse–Smale
+condition, if the closure of the stable manifold of a point `q` meets the stable manifold of a
+different critical point `b` with `ind b = ind q + 1`, then some trajectory runs from `b` to `q`. -/
+theorem nonempty_unstableSet_inter_stableSet_of_mem_closure_stableSet_inter_stableSet
+    {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {b q : M}
+    (hbq : b ≠ q)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f b = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
+    (hne : (closure (hX.flow.stableSet q) ∩ hX.flow.stableSet b).Nonempty) :
+    (hX.flow.unstableSet b ∩ hX.flow.stableSet q).Nonempty := by
+  -- Break the limit at `b`: the closure of `W^s(q)` meets `W^u(b)` at a point `z ≠ b`, which lies
+  -- on a trajectory from `b` to some critical point `c`. No index fits strictly between those of
+  -- `q` and `b`, so `c = q`.
+  obtain ⟨y, hy⟩ := hne
+  obtain ⟨z, hz, hzb⟩ := hX.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet hf
+    (Flow.isInvariant_stableSet _ q) (Flow.disjoint_stableSet hbq.symm) hy
+  obtain ⟨c, -, hzc⟩ := hX.exists_tendsto_atTop hf z
+  have hzc : z ∈ hX.flow.stableSet c := Flow.mem_stableSet.2 hzc
+  by_cases hcq : c = q
+  · exact ⟨z, hz.2, hcq ▸ hzc⟩
+  have hbc : b ≠ c := fun hbc ↦
+    hzb (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hz.2, hbc ▸ hzc⟩)
+  have h₁ := h.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet hf hcq
+    ⟨z, hz.1, hzc⟩
+  have h₂ := h.manifoldMorseIndex_lt hf hbc ⟨z, hz.2, hzc⟩
+  omega
+
+end IsMorseSmale
 
 omit hX in
 /-- **An index-one level slice is closed.** Under the Morse–Smale condition, if the critical points
