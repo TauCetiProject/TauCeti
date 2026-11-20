@@ -6,10 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.DegreeZero
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cokernel
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Injective
 import Mathlib.Algebra.Category.Grp.AB
+import Mathlib.Algebra.Category.Grp.Zero
+import Mathlib.Algebra.Category.ModuleCat.Abelian
+import Mathlib.Algebra.Category.ModuleCat.Colimits
+import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 
 /-!
 # Degree-one Leray comparison for a covering of a site
@@ -20,7 +25,10 @@ the quotient sheaf and has the same degree-zero cohomology. Both first-cohomolog
 therefore cokernels of the same map on global sections.
 
 This is the degree-one part of Leray's comparison, shared by the all-degree dimension shift
-and the open-cover API. It follows the degree-one argument in O. Forster,
+and the open-cover API. The comparison is natural in the coefficient sheaf and compatible
+with refinements between memberwise acyclic coverings. For module coefficients, it also gives
+vanishing of fixed-cover Čech first cohomology from vanishing sheaf first cohomology.
+It follows the degree-one argument in O. Forster,
 *Lectures on Riemann Surfaces*, GTM 81, applied to sites using injective Čech acyclicity.
 -/
 
@@ -245,4 +253,190 @@ lemma δ_comp_homologyCechComplexIsoHOne_hom (F : Sheaf J AddCommGrpCat.{v})
   exact (lerayOneCokerSeq_δ_comp_iso_hom U hT hU F hF).trans
     (by simp only [lerayOneZeroIso_hom, Category.assoc])
 
+section Naturality
+
+variable {κ : Type v} (V : κ → C)
+  {F G : Sheaf J AddCommGrpCat.{v}}
+
+/-- Any map of the left exact Čech sequences induces a map of their actual cokernel sequences. -/
+private def lerayOneCokerSeqHom
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G) :
+    lerayOneCokerSeq U F ⟶ lerayOneCokerSeq V G where
+  τ₁ := φ.τ₁
+  τ₂ := φ.τ₂
+  τ₃ := cokernel.map (cechInjectiveCokernelSequence U F).f (cechInjectiveCokernelSequence V G).f
+    φ.τ₁ φ.τ₂ φ.comm₁₂
+  comm₁₂ := φ.comm₁₂
+  comm₂₃ := (cokernel.π_desc _ _ _).symm
+
+omit [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] in
+/-- The cokernel-to-quotient comparisons commute with a map of Čech sequences. -/
+private lemma lerayOneCokerSeqHom_comp_toQuotient
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G) :
+    (lerayOneCokerSeqHom U V φ).τ₃ ≫ lerayOneCokerToQuotient V G =
+      lerayOneCokerToQuotient U F ≫ φ.τ₃ := by
+  rw [lerayOneCokerToQuotient_def, lerayOneCokerToQuotient_def]
+  exact cokernel.map_desc _ _ _ _ _ _ _ _ _ φ.comm₂₃ φ.comm₁₂
+
+/-- The degree-zero identification is natural whenever the global-sections comparison is. -/
+@[reassoc]
+private lemma lerayOneCokerSeqHom_comp_zeroIso (hU : J.CoversTop U) (hV : J.CoversTop V)
+    (hF : ∀ i, Subsingleton (F.H' 1 (U i))) (hG : ∀ i, Subsingleton (G.H' 1 (V i)))
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G)
+    (g : cokernel (Injective.ι F) ⟶ cokernel (Injective.ι G))
+    (hφ : HomologicalComplex.homologyMap φ.τ₃ 0 ≫
+        (homologyZeroCechIso V hT hV (cokernel (Injective.ι G))).hom =
+      (homologyZeroCechIso U hT hU (cokernel (Injective.ι F))).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map g 0)) :
+    HomologicalComplex.homologyMap (lerayOneCokerSeqHom U V φ).τ₃ 0 ≫
+        (lerayOneZeroIso V hT hV G hG).hom =
+      (lerayOneZeroIso U hT hU F hF).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map g 0) := by
+  simp only [lerayOneZeroIso_hom]
+  rw [← HomologicalComplex.homologyMap_comp_assoc,
+    lerayOneCokerSeqHom_comp_toQuotient, HomologicalComplex.homologyMap_comp, Category.assoc]
+  exact (_ ≫= hφ).trans (Category.assoc _ _ _).symm
+
+/-- Naturality of the degree-one comparison follows from the two long exact sequences. -/
+private lemma lerayOneIso_naturality
+    (hU : J.CoversTop U) (hV : J.CoversTop V)
+    (hF : ∀ i, Subsingleton (F.H' 1 (U i))) (hG : ∀ i, Subsingleton (G.H' 1 (V i)))
+    (φ : cechInjectiveCokernelSequence U F ⟶ cechInjectiveCokernelSequence V G)
+    (m : injectiveCokernelSequence F ⟶ injectiveCokernelSequence G)
+    (hφ : HomologicalComplex.homologyMap φ.τ₃ 0 ≫
+        (homologyZeroCechIso V hT hV (cokernel (Injective.ι G))).hom =
+      (homologyZeroCechIso U hT hU (cokernel (Injective.ι F))).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map m.τ₃ 0)) :
+    HomologicalComplex.homologyMap φ.τ₁ 1 ≫ (homologyCechComplexIsoHOne V hT hV G hG).hom =
+      (homologyCechComplexIsoHOne U hT hU F hF).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map m.τ₁ 1) := by
+  have h01 : (ComplexShape.up ℕ).Rel 0 1 := by simp
+  let dU : (lerayOneCokerSeq U F).X₃.homology 0 ⟶
+      ((cechComplexFunctor U).obj F.obj).homology 1 :=
+    (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f).δ 0 1 h01
+  let dV : (lerayOneCokerSeq V G).X₃.homology 0 ⟶
+      ((cechComplexFunctor V).obj G.obj).homology 1 :=
+    (cokernelSequence_shortExact (cechInjectiveCokernelSequence V G).f).δ 0 1 h01
+  have : Epi dU := epi_lerayOneCokerSeq_δ U F
+  have hd : dU ≫ HomologicalComplex.homologyMap φ.τ₁ 1 =
+      HomologicalComplex.homologyMap (lerayOneCokerSeqHom U V φ).τ₃ 0 ≫ dV :=
+    HomologicalComplex.HomologySequence.δ_naturality
+      (lerayOneCokerSeqHom U V φ)
+      (cokernelSequence_shortExact (cechInjectiveCokernelSequence U F).f)
+      (cokernelSequence_shortExact (cechInjectiveCokernelSequence V G).f) 0 1 h01
+  have hdU : dU ≫ (homologyCechComplexIsoHOne U hT hU F hF).hom =
+      (lerayOneZeroIso U hT hU F hF).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact F) 0 1 rfl) :=
+    lerayOneCokerSeq_δ_comp_iso_hom U hT hU F hF
+  have hdV : dV ≫ (homologyCechComplexIsoHOne V hT hV G hG).hom =
+      (lerayOneZeroIso V hT hV G hG).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact G) 0 1 rfl) :=
+    lerayOneCokerSeq_δ_comp_iso_hom V hT hV G hG
+  have hδ : AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map m.τ₃ 0) ≫
+      AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+        (injectiveCokernelSequence_shortExact G) 0 1 rfl) =
+      AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+        (injectiveCokernelSequence_shortExact F) 0 1 rfl) ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map m.τ₁ 1) := by
+    ext x
+    exact _root_.CategoryTheory.Sheaf.H.δ_naturality 0 1 rfl
+      (injectiveCokernelSequence_shortExact F) (injectiveCokernelSequence_shortExact G) m x
+  apply (cancel_epi dU).mp
+  rw [← Category.assoc, hd, Category.assoc, hdV, ← Category.assoc,
+    lerayOneCokerSeqHom_comp_zeroIso U hT V hU hV hF hG φ m.τ₃ hφ, Category.assoc,
+    hδ, ← Category.assoc, ← hdU, Category.assoc]
+
+/-- Degree-one Leray comparison is natural in the coefficient sheaf. -/
+@[reassoc]
+theorem homologyMap_comp_homologyCechComplexIsoHOne_hom
+    (hU : J.CoversTop U) (f : F ⟶ G)
+    (hF : ∀ i, Subsingleton (F.H' 1 (U i))) (hG : ∀ i, Subsingleton (G.H' 1 (U i))) :
+    HomologicalComplex.homologyMap ((cechComplexFunctor U).map f.hom) 1 ≫
+        (homologyCechComplexIsoHOne U hT hU G hG).hom =
+      (homologyCechComplexIsoHOne U hT hU F hF).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f 1) := by
+  simpa only [cechInjectiveCokernelSequenceMap_τ₁, injectiveCokernelSequenceMap_τ₁] using
+    lerayOneIso_naturality U hT U hU hU hF hG (cechInjectiveCokernelSequenceMap U f)
+      (injectiveCokernelSequenceMap f)
+      (by
+        rw [cechInjectiveCokernelSequenceMap_τ₃]
+        exact homologyMap_comp_homologyZeroCechIso_hom U hT hU
+          (injectiveCokernelSequenceMap f).τ₃)
+
+/-- Degree-one Leray comparison commutes with the actual map induced by a cover refinement. -/
+@[reassoc]
+theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoHOne_hom
+    (hU : J.CoversTop U) (hV : J.CoversTop V)
+    (F : Sheaf J AddCommGrpCat.{v})
+    (hFU : ∀ i, Subsingleton (F.H' 1 (U i))) (hFV : ∀ i, Subsingleton (F.H' 1 (V i)))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 1 ≫
+        (homologyCechComplexIsoHOne U hT hU F hFU).hom =
+      (homologyCechComplexIsoHOne V hT hV F hFV).hom := by
+  have h := lerayOneIso_naturality V hT U hV hU hFV hFU
+    (cechInjectiveCokernelSequenceRefinement U V F φ) (𝟙 (injectiveCokernelSequence F))
+    (by
+      simpa only [cechInjectiveCokernelSequenceRefinement_τ₁,
+        cechInjectiveCokernelSequenceRefinement_τ₃, ShortComplex.id_τ₁, ShortComplex.id_τ₃,
+        _root_.CategoryTheory.Sheaf.H.ofHom_map_id, Category.comp_id] using
+        homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom U hT hU V hV
+          (cokernel (Injective.ι F)) φ)
+  simpa only [cechInjectiveCokernelSequenceRefinement_τ₁,
+    cechInjectiveCokernelSequenceRefinement_τ₃, ShortComplex.id_τ₁, ShortComplex.id_τ₃,
+        _root_.CategoryTheory.Sheaf.H.ofHom_map_id, Category.comp_id] using h
+
+/-- A refinement between memberwise `H¹`-acyclic covers induces an isomorphism on `H¹`. -/
+theorem isIso_homologyMap_cechComplexMap_one
+    (hU : J.CoversTop U) (hV : J.CoversTop V)
+    (F : Sheaf J AddCommGrpCat.{v})
+    (hFU : ∀ i, Subsingleton (F.H' 1 (U i))) (hFV : ∀ i, Subsingleton (F.H' 1 (V i)))
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    IsIso (HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 1) := by
+  have h := homologyMap_cechComplexMap_comp_homologyCechComplexIsoHOne_hom U terminalIsTerminal V
+    hU hV F hFU hFV φ
+  rw [← Iso.eq_comp_inv] at h
+  rw [h]
+  infer_instance
+
+end Naturality
+
 end TauCeti.CategoryTheory
+
+namespace CategoryTheory.Sheaf
+
+open TauCeti.CategoryTheory
+
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{v}] [EnoughInjectives (Sheaf J AddCommGrpCat.{v})]
+  [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] {R : Type v} [Ring R]
+  [J.HasSheafCompose (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})]
+  (F : Sheaf J (ModuleCat.{v} R))
+
+/-- **Leray covers have the cohomology of the sheaf.** Let `F` be a sheaf of modules whose
+underlying sheaf of abelian groups has `H¹(F) = 0`. A covering family whose members `U i`
+have `H¹(U i, F) = 0` has vanishing first Čech cohomology, with module coefficients. -/
+theorem isZero_homology_one_cechComplex_of_subsingleton_H {ι : Type v}
+    (U : ι → C) (hU : J.CoversTop U)
+    (hF : ∀ i, Subsingleton (Sheaf.H'
+      ((sheafCompose _ (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).obj F) 1 (U i)))
+    (h : Subsingleton (Sheaf.H
+      ((sheafCompose _ (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).obj F) 1)) :
+    IsZero (((cechComplexFunctor U).obj F.obj).homology 1) := by
+  let G : ModuleCat.{v} R ⥤ AddCommGrpCat.{v} := forget₂ _ _
+  let FAb := (sheafCompose J G).obj F
+  have hFAb : FAb.obj = F.obj ⋙ G := rfl
+  have hAb : IsZero (((cechComplexFunctor U).obj FAb.obj).homology 1) :=
+    (AddCommGrpCat.isZero_of_subsingleton (AddCommGrpCat.of (Sheaf.H FAb 1))).of_iso
+      (TauCeti.CategoryTheory.homologyCechComplexIsoHOne U terminalIsTerminal hU FAb hF)
+  rw [hFAb] at hAb
+  -- forgetting the module structure commutes with forming the Čech complex and its homology
+  have hG : IsZero (G.obj (((cechComplexFunctor U).obj F.obj).homology 1)) :=
+    hAb.of_iso (((((cechComplexFunctor U).obj F.obj).sc 1).mapHomologyIso G).symm ≪≫
+      HomologicalComplex.homologyMapIso ((cechComplexFunctorMapIso U G).app F.obj) 1)
+  refine (IsZero.iff_id_eq_zero _).2 (G.map_injective ?_)
+  rw [G.map_id, G.map_zero]
+  exact hG.eq_of_src _ _
+
+end CategoryTheory.Sheaf

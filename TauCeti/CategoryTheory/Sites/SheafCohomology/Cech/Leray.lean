@@ -163,99 +163,6 @@ private def cechIsoAux :
         (injectiveCokernelSequence_shortExact F) (n + 1) (n + 1 + 1) rfl
         inferInstance inferInstance)).toAddCommGrpIso
 
-/-- In positive degrees the comparison commutes with the connecting maps of the chosen injective
-cokernel sequence `0 ⟶ F ⟶ I ⟶ Q ⟶ 0`. -/
-@[reassoc]
-private lemma δ_comp_cechIsoAux_hom (n : ℕ) (F : Sheaf J AddCommGrpCat.{v})
-    (hF : IsLerayProd U F) :
-    (cechSeq_shortExact hF).δ n (n + 1) rfl ≫ (cechIsoAux U hT hU (n + 1) F hF).hom =
-      (cechIsoAux U hT hU n _ (isLerayProd_cokernel hF)).hom ≫ AddCommGrpCat.ofHom
-        (_root_.CategoryTheory.Sheaf.H.δ (injectiveCokernelSequence_shortExact F) n (n + 1)
-          rfl) := by
-  rcases n with _ | n
-  · exact δ_comp_homologyCechComplexIsoHOne_hom U hT hU F
-      (isLerayProd_one U hF) (cechSeq_shortExact hF)
-  · have := (cechSeq_shortExact hF).isIso_δ (n + 1) (n + 1 + 1) rfl
-      (isZero_homology_cechComplex_under U F n)
-      (isZero_homology_cechComplex_under U F (n + 1))
-    simp only [cechIsoAux, Iso.trans_hom, Iso.symm_hom, ShortComplex.ShortExact.δIso, asIso_inv,
-      IsIso.hom_inv_id_assoc, AddEquiv.toAddCommGrpIso_hom]
-    -- `AddEquiv.ofBijective δ _` has underlying homomorphism `δ` by construction; Mathlib states
-    -- no lemma for its `toAddMonoidHom`
-    rfl
-
-/-- The comparison is natural in the sheaf. -/
-private lemma cechIsoAux_naturality (n : ℕ) :
-    ∀ {F G : Sheaf J AddCommGrpCat.{v}} (hF : IsLerayProd U F) (hG : IsLerayProd U G)
-      (f : F ⟶ G),
-      HomologicalComplex.homologyMap ((cechComplexFunctor U).map f.hom) n ≫
-          (cechIsoAux U hT hU n G hG).hom =
-        (cechIsoAux U hT hU n F hF).hom ≫
-          AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f n) := by
-  induction n with
-  | zero =>
-    intro F G _ _ f
-    exact homologyMap_comp_homologyZeroCechIso_hom U hT hU f
-  | succ n ih =>
-    intro F G hF hG f
-    have := epi_δ_cechSeq U hF n
-    rw [← cancel_epi ((cechSeq_shortExact hF).δ n (n + 1) rfl)]
-    -- `f` extends to a morphism of the chosen injective cokernel sequences, with last component `g`
-    let g : cokernel (Injective.ι F) ⟶ cokernel (Injective.ι G) :=
-      (injectiveCokernelSequenceMap f).τ₃
-    have hδC : (cechSeq_shortExact hF).δ n (n + 1) rfl ≫
-        HomologicalComplex.homologyMap ((cechComplexFunctor U).map f.hom) (n + 1) =
-          HomologicalComplex.homologyMap ((cechComplexFunctor U).map g.hom) n ≫
-            (cechSeq_shortExact hG).δ n (n + 1) rfl := by
-      simpa only [cechInjectiveCokernelSequenceMap_τ₁, cechInjectiveCokernelSequenceMap_τ₃] using
-        HomologicalComplex.HomologySequence.δ_naturality
-          (cechInjectiveCokernelSequenceMap U f) (cechSeq_shortExact hF) (cechSeq_shortExact hG)
-          n (n + 1) rfl
-    have hδH : AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map g n) ≫
-        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
-          (injectiveCokernelSequence_shortExact G) n (n + 1) rfl) =
-        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
-          (injectiveCokernelSequence_shortExact F) n (n + 1) rfl) ≫
-          AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f (n + 1)) := by
-      ext x
-      simp only [AddCommGrpCat.hom_comp, AddCommGrpCat.hom_ofHom, AddMonoidHom.coe_comp,
-        Function.comp_apply]
-      have h := _root_.CategoryTheory.Sheaf.H.δ_naturality n (n + 1) rfl
-        (injectiveCokernelSequence_shortExact F) (injectiveCokernelSequence_shortExact G)
-        (injectiveCokernelSequenceMap f) x
-      rwa [injectiveCokernelSequenceMap_τ₁] at h
-    rw [reassoc_of% hδC, δ_comp_cechIsoAux_hom,
-      reassoc_of% (ih (isLerayProd_cokernel hF) (isLerayProd_cokernel hG) g), hδH,
-      ← δ_comp_cechIsoAux_hom_assoc]
-
-/-- The comparison is compatible with refinement of Leray families. -/
-private lemma cechIsoAux_refinement {κ : Type v} (V : κ → C) (hV : J.CoversTop V) (n : ℕ) :
-    ∀ {F : Sheaf J AddCommGrpCat.{v}} (hFU : IsLerayProd U F) (hFV : IsLerayProd V F)
-      (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V),
-      HomologicalComplex.homologyMap (cechComplexMap F.obj φ) n ≫
-          (cechIsoAux U hT hU n F hFU).hom = (cechIsoAux V hT hV n F hFV).hom := by
-  induction n with
-  | zero =>
-    intro F _ _ φ
-    exact homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom U hT hU V hV F φ
-  | succ n ih =>
-    intro F hFU hFV φ
-    have := epi_δ_cechSeq V hFV n
-    rw [← cancel_epi ((cechSeq_shortExact hFV).δ n (n + 1) rfl)]
-    have hδ : (cechSeq_shortExact hFV).δ n (n + 1) rfl ≫
-        HomologicalComplex.homologyMap (cechComplexMap F.obj φ) (n + 1) =
-          HomologicalComplex.homologyMap (cechComplexMap (cokernel (Injective.ι F)).obj φ) n ≫
-            (cechSeq_shortExact hFU).δ n (n + 1) rfl := by
-      have h := HomologicalComplex.HomologySequence.δ_naturality
-        (cechInjectiveCokernelSequenceRefinement U V F φ)
-        (cechSeq_shortExact hFV) (cechSeq_shortExact hFU) n (n + 1) rfl
-      simp only [cechInjectiveCokernelSequenceRefinement_τ₁,
-        cechInjectiveCokernelSequenceRefinement_τ₃] at h
-      exact h
-    rw [reassoc_of% hδ, δ_comp_cechIsoAux_hom,
-      reassoc_of% (ih (isLerayProd_cokernel hFU) (isLerayProd_cokernel hFV) φ),
-      δ_comp_cechIsoAux_hom]
-
 /-! ### Leray's theorem -/
 
 /-- **Leray's acyclicity theorem.** Let `U` be a family of objects of a site with finite products
@@ -317,8 +224,19 @@ lemma δ_comp_homologyCechComplexIsoH_succ_hom (F : Sheaf J AddCommGrpCat.{v})
     hS.δ n (n + 1) rfl ≫ (homologyCechComplexIsoH U hT hU F hF (n + 1)).hom =
       (homologyCechComplexIsoH U hT hU (cokernel (Injective.ι F)) hQ n).hom ≫
         AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
-          (injectiveCokernelSequence_shortExact F) n (n + 1) rfl) :=
-  δ_comp_cechIsoAux_hom U hT hU n F hF
+          (injectiveCokernelSequence_shortExact F) n (n + 1) rfl) := by
+  rcases n with _ | n
+  · exact δ_comp_homologyCechComplexIsoHOne_hom U hT hU F
+      (isLerayProd_one U hF) (cechSeq_shortExact hF)
+  · have := (cechSeq_shortExact hF).isIso_δ (n + 1) (n + 1 + 1) rfl
+      (isZero_homology_cechComplex_under U F n)
+      (isZero_homology_cechComplex_under U F (n + 1))
+    simp only [homologyCechComplexIsoH, cechIsoAux, Iso.trans_hom, Iso.symm_hom,
+      ShortComplex.ShortExact.δIso, asIso_inv,
+      IsIso.hom_inv_id_assoc, AddEquiv.toAddCommGrpIso_hom]
+    -- `AddEquiv.ofBijective δ _` has underlying homomorphism `δ` by construction; Mathlib states
+    -- no lemma for its `toAddMonoidHom`
+    rfl
 
 /-- **Naturality of Leray's theorem.** The comparison `Hⁿ(U, F) ≅ Hⁿ(F)` commutes with the maps
 induced by a morphism `F ⟶ G` of sheaves which both satisfy the hypotheses of Leray's theorem. -/
@@ -332,8 +250,42 @@ theorem homologyMap_comp_homologyCechComplexIsoH_hom {F G : Sheaf J AddCommGrpCa
     HomologicalComplex.homologyMap ((cechComplexFunctor U).map f.hom) n ≫
         (homologyCechComplexIsoH U hT hU G hG n).hom =
       (homologyCechComplexIsoH U hT hU F hF n).hom ≫
-        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f n) :=
-  cechIsoAux_naturality U hT hU n hF hG f
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f n) := by
+  induction n generalizing F G with
+  | zero =>
+    exact homologyMap_comp_homologyZeroCechIso_hom U hT hU f
+  | succ n ih =>
+    have := epi_δ_cechSeq U hF n
+    rw [← cancel_epi ((cechSeq_shortExact hF).δ n (n + 1) rfl)]
+    -- `f` extends to a morphism of the chosen injective cokernel sequences, with last component `g`
+    let g : cokernel (Injective.ι F) ⟶ cokernel (Injective.ι G) :=
+      (injectiveCokernelSequenceMap f).τ₃
+    have hδC : (cechSeq_shortExact hF).δ n (n + 1) rfl ≫
+        HomologicalComplex.homologyMap ((cechComplexFunctor U).map f.hom) (n + 1) =
+          HomologicalComplex.homologyMap ((cechComplexFunctor U).map g.hom) n ≫
+            (cechSeq_shortExact hG).δ n (n + 1) rfl := by
+      simpa only [cechInjectiveCokernelSequenceMap_τ₁, cechInjectiveCokernelSequenceMap_τ₃] using
+        HomologicalComplex.HomologySequence.δ_naturality
+          (cechInjectiveCokernelSequenceMap U f) (cechSeq_shortExact hF) (cechSeq_shortExact hG)
+          n (n + 1) rfl
+    have hδH : AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map g n) ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact G) n (n + 1) rfl) =
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact F) n (n + 1) rfl) ≫
+          AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.map f (n + 1)) := by
+      ext x
+      simp only [AddCommGrpCat.hom_comp, AddCommGrpCat.hom_ofHom, AddMonoidHom.coe_comp,
+        Function.comp_apply]
+      have h := _root_.CategoryTheory.Sheaf.H.δ_naturality n (n + 1) rfl
+        (injectiveCokernelSequence_shortExact F) (injectiveCokernelSequence_shortExact G)
+        (injectiveCokernelSequenceMap f) x
+      rwa [injectiveCokernelSequenceMap_τ₁] at h
+    rw [reassoc_of% hδC, δ_comp_homologyCechComplexIsoH_succ_hom U hT hU G hG
+        (isLerayProd_cokernel hG) _,
+      reassoc_of% (ih (isLerayProd_cokernel hF) (isLerayProd_cokernel hG) g), hδH,
+      ← δ_comp_homologyCechComplexIsoH_succ_hom_assoc U hT hU F hF
+        (isLerayProd_cokernel hF) _]
 
 /-- **Leray's theorem and refinement.** For two families `U` and `V` covering the terminal object
 on which `F` satisfies the hypotheses of Leray's theorem, the map `Hⁿ(V, F) ⟶ Hⁿ(U, F)` induced by
@@ -348,7 +300,28 @@ theorem homologyMap_cechComplexMap_comp_homologyCechComplexIsoH_hom {κ : Type v
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ) :
     HomologicalComplex.homologyMap (cechComplexMap F.obj φ) n ≫
         (homologyCechComplexIsoH U hT hU F hFU n).hom =
-      (homologyCechComplexIsoH V hT hV F hFV n).hom :=
-  cechIsoAux_refinement U hT hU V hV n hFU hFV φ
+      (homologyCechComplexIsoH V hT hV F hFV n).hom := by
+  induction n generalizing F with
+  | zero =>
+    exact homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom U hT hU V hV F φ
+  | succ n ih =>
+    have := epi_δ_cechSeq V hFV n
+    rw [← cancel_epi ((cechSeq_shortExact hFV).δ n (n + 1) rfl)]
+    have hδ : (cechSeq_shortExact hFV).δ n (n + 1) rfl ≫
+        HomologicalComplex.homologyMap (cechComplexMap F.obj φ) (n + 1) =
+          HomologicalComplex.homologyMap (cechComplexMap (cokernel (Injective.ι F)).obj φ) n ≫
+            (cechSeq_shortExact hFU).δ n (n + 1) rfl := by
+      have h := HomologicalComplex.HomologySequence.δ_naturality
+        (cechInjectiveCokernelSequenceRefinement U V F φ)
+        (cechSeq_shortExact hFV) (cechSeq_shortExact hFU) n (n + 1) rfl
+      simp only [cechInjectiveCokernelSequenceRefinement_τ₁,
+        cechInjectiveCokernelSequenceRefinement_τ₃] at h
+      exact h
+    rw [reassoc_of% hδ, δ_comp_homologyCechComplexIsoH_succ_hom U hT hU F hFU
+        (isLerayProd_cokernel hFU) _,
+      reassoc_of% (ih (cokernel (Injective.ι F))
+        (isLerayProd_cokernel hFU) (isLerayProd_cokernel hFV)),
+      δ_comp_homologyCechComplexIsoH_succ_hom V hT hV F hFV
+        (isLerayProd_cokernel hFV) _]
 
 end TauCeti.CategoryTheory
