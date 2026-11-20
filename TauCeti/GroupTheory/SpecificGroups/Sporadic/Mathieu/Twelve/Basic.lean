@@ -65,6 +65,8 @@ that `0, 1, 2, 3, 4` is a base: only the identity of the model fixes these five 
 * `TauCeti.Sporadic.M12.presentationHom`: the homomorphism from the presented group.
 * `TauCeti.Sporadic.exists_surjective_M12`: the presented group maps onto the model.
 * `TauCeti.Sporadic.card_M12`: the model has `95040` elements.
+* `TauCeti.Sporadic.le_natCard_group_M12`: the presented group, when finite, has at least `95040`
+  elements.
 * `TauCeti.Sporadic.M12.stabilizerChain_five_eq_bot`: the points `0, 1, 2, 3, 4` form a base.
 
 ## References
@@ -462,5 +464,14 @@ theorem card_M12 : Nat.card M12 = 95040 := by
   rw [Subgroup.natCard_eq_prod_length_of_siftCheck M12.mem_transversal M12.le_closure_tables
     M12.transversalCheck_eq_true M12.sift_tables M12.siftCheck_eq_true]
   decide
+
+/-- The group presented by the presentation of `M₁₂`, when finite, has at least `95040` elements,
+since it maps onto the model `M12`. Finiteness is a hypothesis: with the junk value `Nat.card = 0`
+for infinite types, a surjection alone gives no lower bound. -/
+theorem le_natCard_group_M12 (h : 0 < Nat.card SporadicName.M12.Group) :
+    95040 ≤ Nat.card SporadicName.M12.Group := by
+  have := Nat.finite_of_card_ne_zero h.ne'
+  obtain ⟨f, hf⟩ := exists_surjective_M12
+  exact card_M12 ▸ Nat.card_le_card_of_surjective f hf
 
 end TauCeti.Sporadic
