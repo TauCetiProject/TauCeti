@@ -90,7 +90,7 @@ theorem _root_.RootPairing.Base.weylGroup_eq_top_of_matrixSymmetryGroup_eq_bot [
   have hv : (w : P.Aut)⁻¹ * u = 1 := b.eq_one_of_forall_indexEquiv_eq fun i hi ↦ by
     simpa using congrArg Subtype.val (Equiv.ext_iff.mp (Subgroup.mem_bot.mp hσ) ⟨i, hi⟩)
   rw [inv_mul_eq_one] at hv
-  exact hv ▸ w.2
+  exact hv ▸ w.property
 
 /-- **A root system with a base of a Dynkin type whose diagram has no nontrivial symmetry has
 every automorphism in its Weyl group.** -/

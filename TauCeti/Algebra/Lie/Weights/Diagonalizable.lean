@@ -204,7 +204,7 @@ theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
   induction mem_span_coroot_cartan x using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨α, rfl⟩ := hy
-    exact isSemisimple_toEnd_coroot α.1
+    exact isSemisimple_toEnd_coroot α.val
   | zero => simp
   | add y z _ _ hy hz =>
     rw [map_add]
@@ -222,7 +222,7 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
     let f : H.root → End K M := fun α ↦ toEnd K H M (IsKilling.coroot α)
     have hdiag (α : H.root) : ⨆ μ : K, (f α).eigenspace μ = ⊤ := by
       exact iSup_eigenspace_toEnd_coroot_eq_top (H.isNonZero_coe_root α)
-    have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.1).isFinitelySemisimple
+    have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.val).isFinitelySemisimple
     have hcomm : Pairwise fun α β ↦ Commute (f α) (f β) := fun α β _ ↦
       commute_toEnd_of_isLieAbelian _ _
     -- First decompose into simultaneous eigenspaces of the coroots.
@@ -331,7 +331,7 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
   rw [LinearMap.trace_eq_sum_trace_restrict (isInternal_genWeightSpace K H M) hmaps]
   refine Finset.sum_congr rfl fun chi _ ↦ ?_
   have hres : (toEnd K H M h ^ m).restrict (hmaps chi) = chi h ^ m • LinearMap.id :=
-    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.2)
+    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.property)
   rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm,
     LieSubmodule.finrank_toSubmodule]
 

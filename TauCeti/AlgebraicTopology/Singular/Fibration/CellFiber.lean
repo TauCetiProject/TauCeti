@@ -41,6 +41,16 @@ The computation has three steps.
 The disks of the single cells are lifted to the universe of `E` and `B`, so that the pullbacks
 are Serre fibrations in `TopCat.{u}`.
 
+A map `f : E ⟶ E'` over `B` between Serre fibrations induces maps between all these objects, and
+the identification is natural for them: on the first page it acts on the summand of `j` by the map
+of fibres over `χⱼ(0)`. Barraud–Damian–Humilière–Oancea identify the shriek map of the inclusion
+of a point into an oriented closed `n`-manifold, with a CW structure having a single top cell
+oriented compatibly (or with coefficients in `𝔽₂`, their Lemma 2.9), with the composite
+`Hq+n(E) ⟶ Hq+n(E, p⁻¹(Xⁿ⁻¹)) ≅ Hq(F)`. The naturality of the skeletal identification,
+`TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality`, supplies the
+cell-to-fibre square used to commute that composite with maps of fibrations (their
+Proposition 2.12); neither the shriek map nor Proposition 2.12 itself is formalized here.
+
 ## Main definitions and results
 
 * `TauCeti.TopCat.cellDiskPullbackPair`: the pair `(Pⱼ, ∂Pⱼ)` of the pullback of `p` along the
@@ -57,7 +67,8 @@ are Serre fibrations in `TopCat.{u}`.
   (`TauCeti.TopCat.cellDiskPullbackPairSingularHomologyIso_hom_naturality`).
 * `TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma`:
   `Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹)) ≅ ⨁ⱼ Hq(Fⱼ)`, characterized on the summands by
-  `TauCeti.TopCat.ι_preimageSkeletonPairSingularHomologyIsoSigma_inv`.
+  `TauCeti.TopCat.ι_preimageSkeletonPairSingularHomologyIsoSigma_inv`, and natural in maps over
+  `B` (`TauCeti.TopCat.preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality`).
 
 ## References
 
@@ -67,6 +78,8 @@ are Serre fibrations in `TopCat.{u}`.
   [*Spectral Sequences in Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/SSAT/SSch1.pdf),
   Chapter 1, Section 1.1 (the homology spectral sequence).
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Section 5.1.
+* J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
+  Applications to cotangent bundles*, arXiv:2404.07953, §2.4, Lemma 2.9 and Proposition 2.12.
 -/
 
 public section
@@ -93,8 +106,8 @@ def cellULiftMap (n : ℕ) (j : cell C n) :
     _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) ⟶ B :=
   _root_.TopCat.ofHom ⟨fun x ↦ map n j (uliftClosedBall 0 1 x : Fin n → ℝ),
     (continuousOn n j).comp_continuous
-      (continuous_subtype_val.comp (uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous)
-      fun x ↦ (uliftClosedBall 0 1 x).2⟩
+      (continuous_subtypeVal.comp (uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous)
+      fun x ↦ (uliftClosedBall 0 1 x).property⟩
 
 omit [T2Space B] in
 @[simp]
@@ -114,18 +127,18 @@ variable (p C) in
 pullback of `p` to the disks of all `n`-cells. -/
 private def cellDiskPullbackι (n : ℕ) (j : cell C n) :
     (cellDiskPullbackPair p C n j).fst ⟶ cellPullback p C n :=
-  _root_.TopCat.ofHom ⟨fun x ↦ ⟨(⟨j, uliftClosedBall 0 1 x.1.1⟩, x.1.2),
-      (sigmaCellMap_apply C n _).trans x.2⟩,
+  _root_.TopCat.ofHom ⟨fun x ↦ ⟨(⟨j, uliftClosedBall 0 1 x.val.1⟩, x.val.2),
+      (sigmaCellMap_apply C n _).trans x.property⟩,
     (((continuous_sigmaMk (σ := fun _ : cell C n ↦ closedBall (0 : Fin n → ℝ) 1)).comp
       ((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous.comp
-        (continuous_fst.comp continuous_subtype_val))).prodMk
-        (continuous_snd.comp continuous_subtype_val)).subtype_mk _⟩
+        (continuous_fst.comp continuous_subtypeVal))).prodMk
+        (continuous_snd.comp continuous_subtypeVal)).subtype_mk _⟩
 
 omit [T2Space B] in
 @[simp]
 private lemma coe_cellDiskPullbackι_apply (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
-    (cellDiskPullbackι p C n j x).1 = (⟨j, uliftClosedBall 0 1 x.1.1⟩, x.1.2) :=
+    (cellDiskPullbackι p C n j x).val = (⟨j, uliftClosedBall 0 1 x.val.1⟩, x.val.2) :=
   (rfl)
 
 variable (p C) in
@@ -148,7 +161,7 @@ omit [T2Space B] in
 @[simp]
 lemma cellDiskPullbackPairι_fst_apply_fst_fst (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
-    (TopPair.Hom.fst (cellDiskPullbackPairι p C n j) x).1.1.1 = j := by
+    (TopPair.Hom.fst (cellDiskPullbackPairι p C n j) x).val.1.1 = j := by
   rw [cellDiskPullbackPairι_fst_apply, coe_cellDiskPullbackι_apply]
 
 omit [T2Space B] in
@@ -156,8 +169,8 @@ omit [T2Space B] in
 @[simp]
 lemma coe_cellDiskPullbackPairι_fst_apply_fst_snd (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
-    ((TopPair.Hom.fst (cellDiskPullbackPairι p C n j) x).1.1.2 : Fin n → ℝ) =
-      (x.1.1 : ULift.{u} (Fin n → ℝ)).down := by
+    ((TopPair.Hom.fst (cellDiskPullbackPairι p C n j) x).val.1.2 : Fin n → ℝ) =
+      (x.val.1 : ULift.{u} (Fin n → ℝ)).down := by
   rw [cellDiskPullbackPairι_fst_apply, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply]
 
 omit [T2Space B] in
@@ -165,7 +178,7 @@ omit [T2Space B] in
 @[simp]
 lemma cellDiskPullbackPairι_fst_apply_snd (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
-    (TopPair.Hom.fst (cellDiskPullbackPairι p C n j) x).1.2 = x.1.2 := by
+    (TopPair.Hom.fst (cellDiskPullbackPairι p C n j) x).val.2 = x.val.2 := by
   rw [cellDiskPullbackPairι_fst_apply, coe_cellDiskPullbackι_apply]
 
 omit [T2Space B] in
@@ -189,7 +202,7 @@ private lemma isOpenEmbedding_cellDiskPullbackι (n : ℕ) (j : cell C n) :
   refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 (hφ.comp IsEmbedding.subtypeVal), ?_⟩
   -- The range is the part of `P` over the disk of `j`.
   have : range (cellDiskPullbackι p C n j) =
-      (fun y : cellPullback p C n ↦ y.1.1) ⁻¹' range (Sigma.mk j) := by
+      (fun y : cellPullback p C n ↦ y.val.1) ⁻¹' range (Sigma.mk j) := by
     ext ⟨⟨⟨k, b⟩, e⟩, h⟩
     constructor
     · rintro ⟨x, hx⟩
@@ -202,7 +215,7 @@ private lemma isOpenEmbedding_cellDiskPullbackι (n : ℕ) (j : cell C n) :
         cellULiftMap_uliftClosedBall_symm n j b' e h⟩, Subtype.ext <|
           (coe_cellDiskPullbackι_apply n j _).trans (by rw [Homeomorph.apply_symm_apply])⟩
   rw [this]
-  exact isOpen_range_sigmaMk.preimage (continuous_fst.comp continuous_subtype_val)
+  exact isOpen_range_sigmaMk.preimage (continuous_fst.comp continuous_subtypeVal)
 
 omit [T2Space B] in
 /-- The disjoint union of the `Pⱼ` maps homeomorphically onto `P`. -/
@@ -213,8 +226,8 @@ private lemma isHomeomorph_sigmaCellDiskPullbackι (n : ℕ) :
     isOpenMap_sigma.2 fun j ↦ (isOpenEmbedding_cellDiskPullbackι n j).isOpenMap, ?_⟩
   -- The inverse reads off the cell from the first coordinate.
   refine Function.bijective_iff_has_inverse.2
-    ⟨fun y ↦ ⟨y.1.1.1, ⟨((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm y.1.1.2, y.1.2),
-      cellULiftMap_uliftClosedBall_symm n _ _ _ y.2⟩⟩, fun x ↦ ?_, fun y ↦ ?_⟩
+    ⟨fun y ↦ ⟨y.val.1.1, ⟨((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm y.val.1.2, y.val.2),
+      cellULiftMap_uliftClosedBall_symm n _ _ _ y.property⟩⟩, fun x ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨j, ⟨⟨b, e⟩, h⟩⟩ := x
     exact Sigma.ext rfl <| heq_of_eq <| Subtype.ext <|
       Prod.ext ((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm_apply_apply b) rfl
@@ -240,11 +253,11 @@ def isColimitCofanCellDiskPullbackPairι (n : ℕ) :
     exact isHomeomorph_sigmaCellDiskPullbackι n
   have : IsIso σ := TopPair.isIso_of_isIso_fst_of_surjective_snd σ fun y ↦ by
     -- A point over a boundary sphere comes from the pullback to its cell, over the sphere.
-    obtain ⟨x, hx⟩ := (isHomeomorph_sigmaCellDiskPullbackι (p := p) n).bijective.2 y.1
-    have hy : ‖(y.1.1.1.2 : Fin n → ℝ)‖ = 1 := y.2
+    obtain ⟨x, hx⟩ := (isHomeomorph_sigmaCellDiskPullbackι (p := p) n).bijective.2 y.val
+    have hy : ‖(y.val.val.1.2 : Fin n → ℝ)‖ = 1 := y.property
     rw [← hx, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply] at hy
     -- Membership in `∂Pⱼ` is membership of the point of the disk in the sphere.
-    refine ⟨⟨x.1, x.2, (by simpa using hy : (x.2.1.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1)⟩,
+    refine ⟨⟨x.1, x.2, (by simpa using hy : (x.2.val.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1)⟩,
       Subtype.ext ?_⟩
     exact (TopPair.Hom.w_apply σ _).trans ((hσ_fst _).trans hx)
   IsColimit.ofIsoColimit hσ (Cofan.ext (asIso σ) fun j ↦ hσ.fac _ ⟨j⟩)
@@ -257,12 +270,12 @@ def cellDiskPullbackFiberHomeomorph (n : ℕ) (j : cell C n) :
     (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
         {x | (x : ULift.{u} (Fin n → ℝ)) = 0} : Set (cellDiskPullbackPair p C n j).fst) ≃ₜ
       (p ⁻¹' {map n j 0} : Set E) where
-  toFun x := ⟨x.1.1.2, by
-    have hx : (x.1.1.1 : ULift.{u} (Fin n → ℝ)) = 0 := x.2
-    rw [mem_preimage, mem_singleton_iff, ← x.1.2, cellULiftMap_apply, hx, ULift.zero_down]⟩
-  invFun e := ⟨⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.1), by
+  toFun x := ⟨x.val.val.2, by
+    have hx : (x.val.val.1 : ULift.{u} (Fin n → ℝ)) = 0 := x.property
+    rw [mem_preimage, mem_singleton_iff, ← x.val.property, cellULiftMap_apply, hx, ULift.zero_down]⟩
+  invFun e := ⟨⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.val), by
     rw [cellULiftMap_apply, ULift.zero_down]
-    exact e.2.symm⟩, rfl⟩
+    exact e.property.symm⟩, rfl⟩
   left_inv x := by
     obtain ⟨⟨⟨⟨b, hb⟩, e⟩, h⟩, hx⟩ := x
     have hb0 : b = 0 := hx
@@ -277,7 +290,7 @@ omit [T2Space B] in
 lemma coe_cellDiskPullbackFiberHomeomorph_apply (n : ℕ) (j : cell C n)
     (x : (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
         {x | (x : ULift.{u} (Fin n → ℝ)) = 0} : Set (cellDiskPullbackPair p C n j).fst)) :
-    (cellDiskPullbackFiberHomeomorph p C n j x : E) = x.1.1.2 :=
+    (cellDiskPullbackFiberHomeomorph p C n j x : E) = x.val.val.2 :=
   (rfl)
 
 omit [T2Space B] in
@@ -285,8 +298,8 @@ omit [T2Space B] in
 the disk. -/
 lemma coe_cellDiskPullbackFiberHomeomorph_symm_apply (n : ℕ) (j : cell C n)
     (e : (p ⁻¹' {map n j 0} : Set E)) :
-    ((cellDiskPullbackFiberHomeomorph p C n j).symm e).1.1 =
-      (⟨0, mem_closedBall_self zero_le_one⟩, e.1) :=
+    ((cellDiskPullbackFiberHomeomorph p C n j).symm e).val.val =
+      (⟨0, mem_closedBall_self zero_le_one⟩, e.val) :=
   (rfl)
 
 end CellDisk
@@ -314,7 +327,7 @@ lemma coe_cellDiskPullbackPairMap_fst_apply (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
     (ConcreteCategory.hom (Y := _root_.TopCat.of
       (p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B)))
-      (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j)) x).1 = x.1.2 :=
+      (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j)) x).val = x.val.2 :=
   (coe_cellPullbackPairMap_fst_apply n _).trans (cellDiskPullbackPairι_fst_apply_snd n j x)
 
 section Naturality
@@ -372,10 +385,10 @@ lemma cellDiskPullbackPairMap_comp_preimagePairMap (n : ℕ) (j : cell C n) :
       cellDiskPullbackPairHom_fst]
     -- Both sides send a point `x` of `Pⱼ` to `f x.1.2`.
     calc ((f.preimageMap hf _ (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x) : E'))
-        = f (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x).1 :=
+        = f (TopPair.Hom.fst (cellDiskPullbackPairMap p C n j) x).val :=
           f.coe_preimageMap_apply hf _ _
-      _ = f x.1.2 := congrArg f (coe_cellDiskPullbackPairMap_fst_apply n j x)
-      _ = (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf x).1.2 :=
+      _ = f x.val.2 := congrArg f (coe_cellDiskPullbackPairMap_fst_apply n j x)
+      _ = (_root_.TopCat.pullbackMapOfCompEq (cellULiftMap C n j) hf x).val.2 :=
           congrArg Prod.snd (_root_.TopCat.coe_pullbackMapOfCompEq_apply _ hf x).symm
       _ = _ := (coe_cellDiskPullbackPairMap_fst_apply (p := p') n j _).symm)
 
@@ -406,8 +419,8 @@ def cellDiskPullbackPairSingularHomologyIso (n q : ℕ) (j : cell C n) :
     (cellDiskPullbackPair p C n j).singularHomology (ModuleCat.of R R) (q + n) ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {map n j 0} : Set E)) :=
-  singularHomologyPreimageSphereIso R (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j)) q
-      (q + n) (by simp) ≪≫
+  singularHomologyPreimageSphereIso (ModuleCat.of R R)
+      (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j)) q (q + n) (by simp) ≪≫
     ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
       (ModuleCat.of R R)).mapIso
       (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p C n j))
@@ -431,7 +444,7 @@ lemma cellDiskPullbackPairSingularHomologyIso_hom_naturality (hp' : serreFibrati
   have hfP := _root_.TopCat.pullbackMapOfCompEq_comp_pullbackFst (cellULiftMap C n j) hf
   -- The map of the fibres of the pullbacks over the centre of the disk.
   let g₀ := TopCat.Hom.preimageMap _ hfP {x | (x : ULift.{u} (Fin n → ℝ)) = 0}
-  have nat := singularHomologyPreimageSphereIso_hom_naturality R
+  have nat := singularHomologyPreimageSphereIso_hom_naturality (ModuleCat.of R R)
     (mem_serreFibrations_pullbackFst hp (cellULiftMap C n j))
     (mem_serreFibrations_pullbackFst hp' (cellULiftMap C n j)) hfP g₀
     (TopCat.Hom.coe_preimageMap_apply _ hfP _) q (q + n) (by simp)
@@ -440,9 +453,9 @@ lemma cellDiskPullbackPairSingularHomologyIso_hom_naturality (hp' : serreFibrati
       (_root_.TopCat.isoOfHomeo (cellDiskPullbackFiberHomeomorph p C n j)).hom ≫ g := by
     ext x
     -- Both sides send `x` to `f x.1.1.2`.
-    calc (cellDiskPullbackFiberHomeomorph p' C n j (g₀ x) : E') = (g₀ x).1.1.2 :=
+    calc (cellDiskPullbackFiberHomeomorph p' C n j (g₀ x) : E') = (g₀ x).val.val.2 :=
           coe_cellDiskPullbackFiberHomeomorph_apply n j (g₀ x)
-      _ = f x.1.1.2 := by
+      _ = f x.val.val.2 := by
           rw [TopCat.Hom.coe_preimageMap_apply, _root_.TopCat.coe_pullbackMapOfCompEq_apply]
       _ = f (cellDiskPullbackFiberHomeomorph p C n j x) :=
           congrArg f (coe_cellDiskPullbackFiberHomeomorph_apply n j x).symm
@@ -475,6 +488,44 @@ lemma ι_preimageSkeletonPairSingularHomologyIsoSigma_inv (n q : ℕ) (j : cell 
   rw [preimageSkeletonPairSingularHomologyIsoSigma, Iso.trans_inv, Sigma.ι_mapIso_inv_assoc]
   exact congrArg _ ((isColimitCofanSingularHomologyPreimageSkeletonPair C hp R n
     (q + n)).comp_coconePointUniqueUpToIso_inv (coproductIsCoproduct _) ⟨j⟩)
+
+variable {E' : _root_.TopCat.{u}} {p' : E' ⟶ B} {f : E ⟶ E'} in
+/-- **Naturality of the first page of the skeletal filtration of a Serre fibration.** For a map
+`f` over `B` between Serre fibrations `p` and `p'`, the identifications
+`Hq+n(p⁻¹(Xⁿ), p⁻¹(Xⁿ⁻¹); R) ≅ ⨁ⱼ Hq(p⁻¹(χⱼ(0)); R)` intertwine the map induced by `f` on the
+consecutive stages of the skeletal filtrations with the sum of the maps induced on `Hq` by any maps
+`g j` of the fibres over the centres of the cells that agree with `f`. -/
+@[reassoc]
+theorem preimageSkeletonPairSingularHomologyIsoSigma_hom_naturality (hp' : serreFibrations p')
+    (hf : f ≫ p' = p) (n q : ℕ)
+    (g : ∀ j : cell C n, _root_.TopCat.of (p ⁻¹' {map n j 0} : Set E) ⟶
+      _root_.TopCat.of (p' ⁻¹' {map n j 0} : Set E'))
+    (hg : ∀ j x, (g j x : E') = f x) :
+    TopPair.singularHomologyMap
+        (TopCat.Hom.preimagePairMap f hf (skeletonLT_subset_skeletonLT_succ C n))
+        (ModuleCat.of R R) (q + n) ≫
+        (preimageSkeletonPairSingularHomologyIsoSigma C hp' R n q).hom =
+      (preimageSkeletonPairSingularHomologyIsoSigma C hp R n q).hom ≫
+        Limits.Sigma.map fun j ↦
+          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+            (ModuleCat.of R R)).map (g j) := by
+  rw [← cancel_epi (preimageSkeletonPairSingularHomologyIsoSigma C hp R n q).inv,
+    Iso.inv_hom_id_assoc]
+  refine Sigma.hom_ext _ _ fun j ↦ ?_
+  -- On the summand of `j`, this is the naturality of `Hq+n(Pⱼ, ∂Pⱼ) ≅ Hq(Fⱼ)`.
+  have hι : TopPair.singularHomologyMap (cellDiskPullbackPairMap p' C n j) (ModuleCat.of R R)
+        (q + n) ≫ (preimageSkeletonPairSingularHomologyIsoSigma C hp' R n q).hom =
+      (cellDiskPullbackPairSingularHomologyIso hp' R n q j).hom ≫
+        Sigma.ι (fun j : cell C n ↦ ((AlgebraicTopology.singularHomologyFunctor
+          (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
+            (_root_.TopCat.of (p' ⁻¹' {map n j 0} : Set E'))) j := by
+    rw [← Iso.inv_comp_eq, ← ι_preimageSkeletonPairSingularHomologyIsoSigma_inv_assoc,
+      Iso.inv_hom_id, Category.comp_id]
+  rw [ι_preimageSkeletonPairSingularHomologyIsoSigma_inv_assoc, Sigma.ι_map,
+    ← TopPair.singularHomologyMap_comp_assoc, cellDiskPullbackPairMap_comp_preimagePairMap,
+    TopPair.singularHomologyMap_comp_assoc, hι,
+    cellDiskPullbackPairSingularHomologyIso_hom_naturality_assoc hp R hp' hf n q j (g j) (hg j),
+    Iso.inv_hom_id_assoc]
 
 end Homology
 

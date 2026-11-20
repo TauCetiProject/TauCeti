@@ -1019,25 +1019,25 @@ theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
     Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
       ∫ x in Ioo (0 : ℝ) 1, x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
   have ha : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.1 : ℝ) :=
-    continuous_subtype_val.comp continuous_fst
+    continuous_subtypeVal.comp continuous_fst
   have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   refine continuous_iff_continuousAt.2 fun p ↦ ?_
   -- Halving the shapes gives a locally uniform integrable bound at both endpoints.
   let bound : ℝ → ℝ := fun x ↦
     ‖f‖ * (x ^ ((p.1 : ℝ) / 2 - 1) * (1 - x) ^ ((p.2 : ℝ) / 2 - 1))
   have hbound : Integrable bound (volume.restrict (Ioo (0 : ℝ) 1)) :=
     (TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff.2
-      ⟨half_pos p.1.2, half_pos p.2.2⟩).const_mul ‖f‖
+      ⟨half_pos p.1.property, half_pos p.2.property⟩).const_mul ‖f‖
   apply continuousAt_of_dominated (bound := bound)
   · exact .of_forall fun q ↦
       (((by fun_prop : Measurable fun x : ℝ ↦
         x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1))).mul
         f.continuous.measurable).aestronglyMeasurable
   · have hpa : ∀ᶠ q in 𝓝 p, (p.1 : ℝ) / 2 < (q.1 : ℝ) :=
-      ha.continuousAt (lt_mem_nhds (half_lt_self p.1.2))
+      ha.continuousAt (lt_mem_nhds (half_lt_self p.1.property))
     have hpb : ∀ᶠ q in 𝓝 p, (p.2 : ℝ) / 2 < (q.2 : ℝ) :=
-      hb.continuousAt (lt_mem_nhds (half_lt_self p.2.2))
+      hb.continuousAt (lt_mem_nhds (half_lt_self p.2.property))
     filter_upwards [hpa, hpb] with q hqa hqb
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
     have hxa := Real.rpow_le_rpow_of_exponent_ge hx.1 hx.2.le

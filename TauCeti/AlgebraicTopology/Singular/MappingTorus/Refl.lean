@@ -27,7 +27,9 @@ Reading it on `S¹ × F`, with the circle the unit circle `Circle` of `ℂ`, the
 (`TauCeti.isIso_singularHomologyMap_prodMk_const_one_zero`). In degree `n + 1` it is an isomorphism
 exactly when `Hₙ(F)` vanishes (`TauCeti.isIso_singularHomologyMap_prodMk_const_one_succ_iff`), and
 `Hₙ₊₁(S¹ × F)` vanishes exactly when `Hₙ₊₁(F)` and `Hₙ(F)` do
-(`TauCeti.isZero_singularHomology_circle_prod_succ_iff`). These are the forms in which the
+(`TauCeti.isZero_singularHomology_circle_prod_succ_iff`); when `Hₙ₊₁(F)` vanishes, the Wang
+connecting morphism identifies `Hₙ₊₁(S¹ × F)` with `Hₙ(F)`
+(`TauCeti.singularHomologyCircleProdSuccIso`). These are the forms in which the
 homology of a space weakly equivalent to `S¹ × F`, such as the loop space of a complex projective
 space, is computed from that of `F`.
 
@@ -39,6 +41,7 @@ space, is computed from that of `F`.
   isomorphism if and only if `Hₙ(F) = 0`.
 * `TauCeti.isZero_singularHomology_circle_prod_succ_iff`: `Hₙ₊₁(S¹ × F) = 0` if and only if
   `Hₙ₊₁(F) = 0` and `Hₙ(F) = 0`.
+* `TauCeti.singularHomologyCircleProdSuccIso`: `Hₙ₊₁(S¹ × F) ≅ Hₙ(F)` when `Hₙ₊₁(F) = 0`.
 
 ## References
 
@@ -76,7 +79,7 @@ theorem wangEndomorphism_refl : wangEndomorphism (Homeomorph.refl F) R = 0 := by
 every degree. -/
 instance mono_homologyMap_fibreInclusionChainMap_refl (n : ℕ) :
     Mono (homologyMap (fibreInclusionChainMap (Homeomorph.refl F) R) n) :=
-  (wang_exact₂ (Homeomorph.refl F) R n).mono_g (by simp)
+  mono_homologyMap_fibreInclusionChainMap _ R n (by simp)
 
 /-- For the mapping torus of the identity, the Wang connecting morphism is an epimorphism in every
 degree. -/
@@ -167,5 +170,17 @@ theorem isZero_singularHomology_circle_prod_succ_iff (n : ℕ) :
     (MappingTorus.mono_homologyMap_fibreInclusionChainMap_refl F R (n + 1)) h,
       @IsZero.of_epi _ _ _ _ _ _ (MappingTorus.epi_wangδ_refl F R n) h⟩, fun ⟨h₁, h₃⟩ ↦ ?_⟩
   exact hS.exact.isZero_X₂ (h₁.eq_of_src _ _) (h₃.eq_of_tgt _ _)
+
+/-- **`Hₙ₊₁(S¹ × F) ≅ Hₙ(F)` when `Hₙ₊₁(F)` vanishes**: the Wang connecting morphism of the
+mapping torus of the identity, read on `S¹ × F`, is then an isomorphism. -/
+def singularHomologyCircleProdSuccIso {n : ℕ}
+    (h : IsZero (((singularHomologyFunctor A (n + 1)).obj R).obj (TopCat.of F))) :
+    ((singularHomologyFunctor A (n + 1)).obj R).obj (TopCat.of (Circle × F)) ≅
+      ((singularHomologyFunctor A n).obj R).obj (TopCat.of F) :=
+  (((singularHomologyFunctor A (n + 1)).obj R).mapIso
+      (TopCat.isoOfHomeo (X := TopCat.of _) (Y := TopCat.of _)
+        (MappingTorus.reflCircleHomeomorph (F := F)))).symm ≪≫
+    @asIso _ _ _ _ (MappingTorus.wangδ (Homeomorph.refl F) R n)
+      ((MappingTorus.shortExact_wang_refl F R n).isIso_g_iff.2 h)
 
 end TauCeti

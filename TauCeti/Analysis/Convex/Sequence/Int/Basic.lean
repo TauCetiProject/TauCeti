@@ -299,7 +299,7 @@ admissible sequence it is the pointwise supremum of all convex minorants. For an
 sequence it is the all-infinite fallback, which is not an envelope of that sequence. -/
 noncomputable def intLowerConvexEnvelope (a : ℤ → WithTop ℝ) : ℤ → WithTop ℝ :=
   if IsIntAdmissible a then
-    fun n => ⨆ g : {g : ℤ → WithTop ℝ // IsIntConvexSeq g ∧ g ≤ a}, g.1 n
+    fun n => ⨆ g : {g : ℤ → WithTop ℝ // IsIntConvexSeq g ∧ g ≤ a}, g.val n
   else ⊤
 
 /-- The envelope of an inadmissible two-sided sequence is the all-infinite fallback. -/
