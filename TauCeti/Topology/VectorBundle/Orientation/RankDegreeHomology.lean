@@ -238,14 +238,13 @@ private theorem card_fin_eq_finrank : Fintype.card (Fin (n + 1)) = finrank ℝ F
 /-- An orientation of the model fibre selecting the point class
 `TauCeti.complZeroPairPointHom` of `1` (`TauCeti.localOrientation_modelOrientation`). -/
 private def modelOrientation : Orientation ℝ F (Fin (n + 1)) :=
-  (Orientation.localOrientation_surjective hF
-    ⟨_, isLocalOrientation_complZeroPairPointHom_one F (n + 1) hF⟩).choose
+  (Orientation.localOrientationEquiv hF).symm
+    ⟨_, isLocalOrientation_complZeroPairPointHom_one F (n + 1) hF⟩
 
 private theorem localOrientation_modelOrientation :
     ((modelOrientation hF).localOrientation hF).val =
       complZeroPairPointHom (ModuleCat.of ℤ (ULift.{w} ℤ)) F (n + 1) hF (ULift.up 1) :=
-  congrArg Subtype.val (Orientation.localOrientation_surjective hF
-    ⟨_, isLocalOrientation_complZeroPairPointHom_one F (n + 1) hF⟩).choose_spec
+  congrArg Subtype.val (Orientation.localOrientation_localOrientationEquiv_symm hF _)
 
 variable (E) in
 /-- A chosen orientation of the fibre over `b`: the one read as `TauCeti.modelOrientation` in the
