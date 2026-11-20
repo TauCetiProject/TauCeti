@@ -48,6 +48,9 @@ vectors indexed by `ι`.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
+* `Module.Basis.sum_repr_smul_eq_of_forall_notMem`: for a basis `b` indexed by a set `s` of indices
+  of a family `u` with `b j = u j`, and `θ` vanishing outside `s`, the `k`-th coordinate sum
+  `Σ_j b.repr (u j) k • θ j` is `θ k`.
 * `Module.Basis.apply_eq_sum_repr_zsmul`: an additive map evaluated at a vector is the sum of its
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
@@ -136,6 +139,22 @@ theorem linearIndependent_of_repr_eq_single {b : Module.Basis ι K V} {S : Finse
     · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
         Pi.single_eq_of_ne hst]
   exact LinearIndependent.of_comp π (hπ ▸ Pi.linearIndependent_single_one S K)
+
+/-- Let `b` be a basis indexed by a set `s` of indices of a family `u` with `b j = u j`. For `θ`
+vanishing outside `s`, the `k`-th coordinate `Σ_j b.repr (u j) k • θ j` of the combination of the
+`θ j` in the basis `b` is `θ k`. -/
+theorem sum_repr_smul_eq_of_forall_notMem {κ M : Type*} [Fintype κ] [AddCommMonoid M]
+    [Module K M] {s : Set κ} (b : Module.Basis s K V) {u : κ → V} (hb : ∀ j, b j = u j)
+    {θ : κ → M} (hθ : ∀ j ∉ s, θ j = 0) (k : s) : ∑ j, b.repr (u j) k • θ j = θ k := by
+  rw [Finset.sum_eq_single (k : κ)]
+  · rw [← hb k, b.repr_self, Finsupp.single_eq_same, one_smul]
+  · intro j _ hjk
+    by_cases hj : j ∈ s
+    · -- Distinct members of `s` index distinct basis vectors.
+      have hne : (⟨j, hj⟩ : s) ≠ k := fun h ↦ hjk (by rw [← h])
+      rw [← hb ⟨j, hj⟩, b.repr_self, Finsupp.single_eq_of_ne' hne, zero_smul]
+    · rw [hθ j hj, smul_zero]
+  · simp
 
 section Submodule
 
