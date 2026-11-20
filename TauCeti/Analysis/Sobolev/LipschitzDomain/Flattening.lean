@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Calculus.GraphFlattening
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # Flattening a `Cᵏ` boundary graph by a change of variables
@@ -40,6 +42,10 @@ compactness, which bounds those of the shear.
 * `TauCeti.exists_isChangeOfVariables_of_contDiff`: a `Cᵏ` boundary graph gives a flattening
   change of variables of order `k` between a convex neighbourhood on the flat side and a
   neighbourhood of the boundary point, mapping the half-space part onto the domain.
+* `TauCeti.exists_isChangeOfVariables_normalHalfSpace_of_contDiff`: for a domain in `ℝ × E` itself,
+  the flattening chart `e⁻¹ ∘ G⁻¹` maps the normal half-space `{0 < x.fst}`, in standard position,
+  onto the domain near the boundary point, which is the form the half-space estimates are stated
+  in.
 
 ## References
 
@@ -198,5 +204,99 @@ theorem exists_isChangeOfVariables_of_contDiff {Omega : Set F}
       · rw [hU'mem, e.apply_symm_apply]
         exact (hUmem y).1 hyU
       · simp
+
+omit [FiniteDimensional ℝ E] in
+/-- Near the origin, inverse graph flattening followed by `e⁻¹` maps the normal half-space into a
+graph domain and its complement out of it: for small `ρ`, a point `y` of `B(0, ρ)` is sent into `Ω`
+exactly when `0 < y.fst`. -/
+private theorem exists_pos_forall_mem_ball_symm_graphFlattening_mem_iff
+    {Omega : Set (WithLp 2 (ℝ × E))} {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ}
+    {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (hγ0 : γ 0 = 0) (hγ : Continuous γ)
+    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ ρ > 0, ∀ y ∈ ball (0 : WithLp 2 (ℝ × E)) ρ,
+      (e.symm ((graphFlattening γ hγ).symm y) ∈ Omega ↔ 0 < y.fst) := by
+  obtain ⟨δ, hδ, hγδ⟩ := Metric.continuousAt_iff.mp (hγ.continuousAt (x := 0)) (a / 2) (half_pos ha)
+  refine ⟨min (min b (a / 2)) δ, lt_min (lt_min hb (half_pos ha)) hδ, fun y hy => ?_⟩
+  rw [mem_ball_zero_iff] at hy
+  have h1 : |y.fst| < a / 2 :=
+    ((Real.norm_eq_abs _).symm.trans_le (WithLp.norm_fst_le _ y)).trans_lt
+      (hy.trans_le ((min_le_left _ _).trans (min_le_right _ _)))
+  have h2 : ‖y.snd‖ < min (min b (a / 2)) δ := (WithLp.norm_snd_le _ y).trans_lt hy
+  have h3 : |γ y.snd| < a / 2 := by
+    simpa [hγ0, Real.dist_eq] using hγδ (by simpa using h2.trans_le (min_le_right _ _))
+  have hcyl : (graphFlattening γ hγ).symm y ∈ normalCylinder a b := by
+    rw [mem_normalCylinder]
+    simp only [graphFlattening_symm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+    exact ⟨by linarith [abs_lt.1 h1, abs_lt.1 h3], by linarith [abs_lt.1 h1, abs_lt.1 h3],
+      h2.trans_le ((min_le_left _ _).trans (min_le_left _ _))⟩
+  rw [hgraph _ hcyl]
+  simp only [graphFlattening_symm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+  constructor <;> intro h <;> linarith
+
+/-- **Flattening a `Cᵏ` boundary graph onto the normal half-space.** Let `k ≥ 1`, and suppose that
+inside the normal cylinder of radius `b` and half-height `a`, in rigid coordinates `e` of `ℝ × E`
+centred at a boundary point `e.symm 0`, the set `Ω` is the region above the graph of a `Cᵏ`
+function `γ` with `γ 0 = 0`. Let `G` be graph flattening by `γ`. Then `e⁻¹ ∘ G⁻¹` is a change of
+variables of order `k` from an open neighbourhood `U'` of `0` into an open set `U`, with inverse
+`G ∘ e`, a change of variables of order `k` from `U` into `U'`, and it maps the part of `U'` in the
+normal half-space `{0 < x.fst}` onto `Ω ∩ U`. Unlike
+`TauCeti.exists_isChangeOfVariables_of_contDiff`, the flat side is the half-space in standard
+position, not its image under `e⁻¹`. -/
+theorem exists_isChangeOfVariables_normalHalfSpace_of_contDiff
+    {Omega : Set (WithLp 2 (ℝ × E))} {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ}
+    {k : ℕ} {a b : ℝ} (hk : 1 ≤ k) (ha : 0 < a) (hb : 0 < b) (hγ0 : γ 0 = 0)
+    (hγ : ContDiff ℝ k γ)
+    (hgraph : ∀ z ∈ normalCylinder a b, (e.symm z ∈ Omega ↔ γ z.snd < z.fst)) :
+    ∃ (U' U : Opens (WithLp 2 (ℝ × E))) (L₁ c₁ L₂ c₂ : ℝ), 0 ∈ U' ∧
+      Wkp.IsChangeOfVariables k U' U (e.symm ∘ (graphFlattening γ hγ.continuous).symm) L₁ c₁ ∧
+      Wkp.IsChangeOfVariables k U U' (graphFlattening γ hγ.continuous ∘ e) L₂ c₂ ∧
+      (e.symm ∘ (graphFlattening γ hγ.continuous).symm) ''
+        ({x | 0 < x.fst} ∩ U') = Omega ∩ U := by
+  -- `Φ = e⁻¹ ∘ G⁻¹` and `Ψ = G ∘ e` are mutually inverse homeomorphisms of class `Cᵏ`.
+  obtain ⟨H, hHΦ, hHΨ⟩ : ∃ H : WithLp 2 (ℝ × E) ≃ₜ WithLp 2 (ℝ × E),
+      ⇑H = e.symm ∘ (graphFlattening γ hγ.continuous).symm ∧
+        ⇑H.symm = graphFlattening γ hγ.continuous ∘ e :=
+    ⟨(graphFlattening γ hγ.continuous).symm.trans e.symm.toHomeomorph, rfl, rfl⟩
+  rw [← hHΦ, ← hHΨ]
+  have hΦd : ContDiff ℝ k H := hHΦ ▸
+    e.symm.toAffineIsometry.toContinuousAffineMap.contDiff.comp (contDiff_graphFlattening_symm hγ)
+  have hΨd : ContDiff ℝ k H.symm := hHΨ ▸
+    (contDiff_graphFlattening hγ).comp e.toAffineIsometry.toContinuousAffineMap.contDiff
+  have hk0 : (k : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (show k ≠ 0 by omega)
+  obtain ⟨ρ, hρ, hmem⟩ :=
+    exists_pos_forall_mem_ball_symm_graphFlattening_mem_iff ha hb hγ0 hγ.continuous hgraph
+  -- The charts are changes of variables between `U' = B(0, ρ)` and `U = H (U')`.
+  let U' : Opens (WithLp 2 (ℝ × E)) := ⟨ball 0 ρ, isOpen_ball⟩
+  let U : Opens (WithLp 2 (ℝ × E)) := ⟨H.symm ⁻¹' ball 0 ρ, isOpen_ball.preimage H.symm.continuous⟩
+  have hUK : (U : Set (WithLp 2 (ℝ × E))) ⊆ H '' closedBall 0 ρ := fun x hx =>
+    ⟨H.symm x, ball_subset_closedBall hx, H.apply_symm_apply x⟩
+  obtain ⟨L₁, c₁, hΦ⟩ : ∃ L₁ c₁, Wkp.IsChangeOfVariables k U' U H L₁ c₁ :=
+    Wkp.IsChangeOfVariables.exists_of_isCompact_closure isOpen_univ hΦd.contDiffOn le_rfl
+      (by exact_mod_cast hk) H.injective.injOn
+      (fun y _ => H.toOpenPartialHomeomorph.det_fderiv_ne_zero (mem_univ y)
+        (hΦd.differentiable hk0 y) (hΨd.differentiable hk0 _))
+      ((isCompact_closedBall 0 ρ).closure_of_subset ball_subset_closedBall) (subset_univ _)
+      fun y hy => by
+        simpa only [U, U', SetLike.mem_coe, Opens.mem_mk, mem_preimage, H.symm_apply_apply]
+          using hy
+  obtain ⟨L₂, c₂, hΨ⟩ : ∃ L₂ c₂, Wkp.IsChangeOfVariables k U U' H.symm L₂ c₂ :=
+    Wkp.IsChangeOfVariables.exists_of_isCompact_closure isOpen_univ hΨd.contDiffOn le_rfl
+      (by exact_mod_cast hk) H.symm.injective.injOn
+      (fun x _ => H.symm.toOpenPartialHomeomorph.det_fderiv_ne_zero (mem_univ x)
+        (hΨd.differentiable hk0 x) (hΦd.differentiable hk0 _))
+      (((isCompact_closedBall 0 ρ).image H.continuous).closure_of_subset hUK) (subset_univ _)
+      fun x hx => hx
+  refine ⟨U', U, L₁, c₁, L₂, c₂, mem_ball_self hρ, hΦ, hΨ, ?_⟩
+  -- `H` maps the part of `U'` in the half-space onto `Ω ∩ U`.
+  ext z
+  constructor
+  · rintro ⟨y, ⟨hyH, hyU'⟩, rfl⟩
+    refine ⟨by rw [hHΦ]; exact (hmem y hyU').2 hyH, ?_⟩
+    simpa only [U, U', SetLike.mem_coe, Opens.mem_mk, mem_preimage, H.symm_apply_apply]
+      using hyU'
+  · rintro ⟨hzΩ, hzU⟩
+    refine ⟨H.symm z, ⟨(hmem _ hzU).1 ?_, hzU⟩, H.apply_symm_apply z⟩
+    rw [← Function.comp_apply (f := e.symm), ← hHΦ, H.apply_symm_apply]
+    exact hzΩ
 
 end TauCeti
