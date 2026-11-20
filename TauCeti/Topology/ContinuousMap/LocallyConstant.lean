@@ -65,8 +65,7 @@ submodule. -/
 theorem denseRange_toContinuousMapLinearMap_range_subtype (R : Type*) [Semiring R]
     [AddCommMonoid V] [Module R V] [ContinuousAdd V] [ContinuousConstSMul R V] :
     DenseRange (toContinuousMapLinearMap R (X := X) (Y := V)).range.subtype := by
-  apply denseRange_subtype_val.mpr
-  rw [SetLike.setOfPred_mem_eq, LinearMap.coe_range]
+  rw [DenseRange, ← LinearMap.coe_range, Submodule.range_subtype, LinearMap.coe_range]
   exact denseRange_toContinuousMap
 
 end LocallyConstant
