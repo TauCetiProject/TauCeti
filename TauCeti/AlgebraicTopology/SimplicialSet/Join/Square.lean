@@ -354,37 +354,47 @@ private lemma squareVertex_objEquiv_hornConeIso_hom_app {d : ℕ}
     ← NatTrans.comp_app, hornConeIso_hom_comp_toStdSimplexThree]
 
 /-- Under `Δ[0] ⋆ Λ[2, 2] ≅ Δ[1] ⊗ Δ[1]`, the cone point is the vertex `(0, 0)`. -/
+@[simp]
 lemma objEquiv_coneHornIso_hom_app_inl (v : Δ[0] _⦋0⦌) :
-    prodStdSimplex.objEquiv (coneHornIso.{u}.hom.app _ ((inl _ _).app _ v)) 0 = (0, 0) := by
-  refine prodStdSimplex.squareVertex_injective ?_
-  rw [squareVertex_objEquiv_coneHornIso_hom_app, coneHornToStdSimplex_app_inl_app]
+    dsimp% prodStdSimplex.objEquiv (coneHornIso.{u}.hom.app _ ((inl _ _).app _ v)) 0 =
+      (0, 0) := by
+  refine prodStdSimplex.squareVertex_injective
+    ((squareVertex_objEquiv_coneHornIso_hom_app _ 0).trans ?_)
+  rw [coneHornToStdSimplex_app_inl_app]
   rfl
 
 /-- Under `Δ[0] ⋆ Λ[2, 2] ≅ Δ[1] ⊗ Δ[1]`, the vertices `0`, `1` and `2` of the horn are the
 vertices `(1, 0)`, `(0, 1)` and `(1, 1)`. -/
+@[simp]
 lemma objEquiv_coneHornIso_hom_app_inr (v : (Λ[2, 2] : SSet.{u}) _⦋0⦌) :
-    prodStdSimplex.objEquiv (coneHornIso.{u}.hom.app _ ((inr _ _).app _ v)) 0 =
+    dsimp% prodStdSimplex.objEquiv (coneHornIso.{u}.hom.app _ ((inr _ _).app _ v)) 0 =
       ![(1, 0), (0, 1), (1, 1)] (v.1 0) := by
-  refine prodStdSimplex.squareVertex_injective ?_
-  rw [squareVertex_objEquiv_coneHornIso_hom_app, coneHornToStdSimplex_app_inr_app]
+  refine prodStdSimplex.squareVertex_injective
+    ((squareVertex_objEquiv_coneHornIso_hom_app _ 0).trans ?_)
+  rw [coneHornToStdSimplex_app_inr_app]
   exact ((by decide : ∀ a : Fin 3, prodStdSimplex.squareVertex (![(1, 0), (0, 1), (1, 1)] a) =
     a.succ) _).symm
 
 /-- Under `Λ[2, 0] ⋆ Δ[0] ≅ Δ[1] ⊗ Δ[1]`, the vertices `0`, `1` and `2` of the horn are the
 vertices `(0, 0)`, `(1, 0)` and `(0, 1)`. -/
+@[simp]
 lemma objEquiv_hornConeIso_hom_app_inl (v : (Λ[2, 0] : SSet.{u}) _⦋0⦌) :
-    prodStdSimplex.objEquiv (hornConeIso.{u}.hom.app _ ((inl _ _).app _ v)) 0 =
+    dsimp% prodStdSimplex.objEquiv (hornConeIso.{u}.hom.app _ ((inl _ _).app _ v)) 0 =
       ![(0, 0), (1, 0), (0, 1)] (v.1 0) := by
-  refine prodStdSimplex.squareVertex_injective ?_
-  rw [squareVertex_objEquiv_hornConeIso_hom_app, hornConeToStdSimplex_app_inl_app]
+  refine prodStdSimplex.squareVertex_injective
+    ((squareVertex_objEquiv_hornConeIso_hom_app _ 0).trans ?_)
+  rw [hornConeToStdSimplex_app_inl_app]
   exact ((by decide : ∀ a : Fin 3, prodStdSimplex.squareVertex (![(0, 0), (1, 0), (0, 1)] a) =
     Fin.castLE (by omega) a) _).symm
 
 /-- Under `Λ[2, 0] ⋆ Δ[0] ≅ Δ[1] ⊗ Δ[1]`, the cone point is the vertex `(1, 1)`. -/
+@[simp]
 lemma objEquiv_hornConeIso_hom_app_inr (v : Δ[0] _⦋0⦌) :
-    prodStdSimplex.objEquiv (hornConeIso.{u}.hom.app _ ((inr _ _).app _ v)) 0 = (1, 1) := by
-  refine prodStdSimplex.squareVertex_injective ?_
-  rw [squareVertex_objEquiv_hornConeIso_hom_app, hornConeToStdSimplex_app_inr_app]
+    dsimp% prodStdSimplex.objEquiv (hornConeIso.{u}.hom.app _ ((inr _ _).app _ v)) 0 =
+      (1, 1) := by
+  refine prodStdSimplex.squareVertex_injective
+    ((squareVertex_objEquiv_hornConeIso_hom_app _ 0).trans ?_)
+  rw [hornConeToStdSimplex_app_inr_app]
   rfl
 
 end join
