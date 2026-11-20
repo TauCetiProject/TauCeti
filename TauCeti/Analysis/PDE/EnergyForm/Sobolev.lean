@@ -691,6 +691,25 @@ theorem energyFormH1_mass_sub_const
   simp only [energyIntegrand_apply, massForm_apply, jetField_apply]
   ring
 
+/-- Adding an essentially bounded function `c'` to the mass coefficient adds the weighted `L²`
+pairing `∫_Ω c' u v` to the Sobolev energy form. No boundary or coercivity assumption is
+needed. -/
+theorem energyFormH1_mass_add
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    {c' : EuclideanSpace ℝ ι → ℝ} (hc' : MemLp c' ⊤ (mu.restrict Omega)) (u v : W1p mu Omega 2) :
+    energyFormH1 a b (fun x ↦ c x + c' x) u v =
+      energyFormH1 a b c u v + ∫ x in Omega, c' x * W1p.value u x * W1p.value v x ∂mu := by
+  have hcu : MemLp (fun x ↦ c' x * W1p.value u x) 2 (mu.restrict Omega) :=
+    hc'.fun_mul (Lp.memLp _)
+  have hmass : Integrable (fun x ↦ c' x * W1p.value u x * W1p.value v x) (mu.restrict Omega) :=
+    hcu.integrable_mul (Lp.memLp (W1p.value v))
+  rw [energyFormH1_def, energyFormH1_def, ← integral_add
+    (integrable_energyIntegrand_jetField hcoeff u v) hmass]
+  apply integral_congr_ae
+  filter_upwards with x
+  simp only [energyIntegrand_apply, massForm_apply, jetField_apply]
+  ring
+
 /-- The energy form on `H¹(Ω)` as a continuous bilinear form, obtained by restricting the
 existing variable-coefficient `L²` energy form along the continuous Sobolev jet inclusion. -/
 def energyFormH1L
