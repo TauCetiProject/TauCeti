@@ -14,9 +14,11 @@ public import TauCeti.LowDimTopology.Bordered.TypeA.Homotopy
 A morphism `f` of `A∞` modules from `M` to `M'` induces the chain map
 `T_f (m ⊗ x) = ∑_k (f_{k+1} ⊗ 1) (m ⊗ δ^k (x))` of box tensor products with a type `D` structure
 `N` (`TauCeti.TypeDStructure.typeABoxMapOfHom`), and a homotopy `H` between morphisms induces a
-chain homotopy `T_H` (`TauCeti.TypeDStructure.typeABoxHomotopy`). This file shows that homotopy
-equivalent type `A` modules have homotopy equivalent box tensor products with `N`, over the ring of
-idempotents, under either boundedness hypothesis.
+chain homotopy `T_H` (`TauCeti.TypeDStructure.typeABoxHomotopy`). For a homotopy `H` between
+`g ∘ f` and the identity, this file proves the identity `T_g ∘ T_f + id = ∂ ∘ T_H + T_H ∘ ∂` on
+row vectors under either boundedness hypothesis. It also shows that, for strictly unital modules,
+morphisms and homotopies and idempotents that are cycles, `T_f` and `T_H` restrict to the box
+tensor products `M ⊗ N` over the ring of idempotents.
 
 * **Homotopy invariance.** Let `f : M → M'` and `g : M' → M` be morphisms with a homotopy `H`
   between `g ∘ f` and the identity of `M`. Then on row vectors
@@ -28,9 +30,10 @@ idempotents, under either boundedness hypothesis.
   (`TauCeti.TypeDStructure.typeABoxMapOfHom_typeABoxMapOfHom_add_of_act_eq_zero`). This combines
   the three facts `T_{g ∘ f} = T_g ∘ T_f` (`TauCeti.LowDimTopology.Bordered.TypeA.Composition`),
   `T_{id} = id`, and `T_{g ∘ f} + T_{id} = ∂ ∘ T_H + T_H ∘ ∂`
-  (`TauCeti.LowDimTopology.Bordered.TypeA.Homotopy`). With the symmetric statement for `f ∘ g`, a
-  homotopy equivalence of type `A` modules induces a homotopy equivalence of the complexes of row
-  vectors.
+  (`TauCeti.LowDimTopology.Bordered.TypeA.Homotopy`). Together with the same identity for a
+  homotopy between `f ∘ g` and the identity of `M'`, which is not stated separately here, one
+  obtains that a homotopy equivalence of type `A` modules induces a homotopy equivalence of the
+  complexes of row vectors.
 * **The box tensor product over the idempotents.** The box tensor product of a strictly unital
   module `M` is the submodule `M ⊗ N` of row vectors fixed by the idempotents
   (`TauCeti.TypeDStructure.typeABoxTensor`). When the idempotents are cycles, the maps `T_f` and
@@ -42,10 +45,11 @@ idempotents, under either boundedness hypothesis.
   (`TauCeti.UngradedAInfinityRightModuleHom.IsStrictlyUnital.cone`). A homotopy between `g ∘ f` and
   the identity qualifies when `f`, `g` and the homotopy are strictly unital, by
   `TauCeti.UngradedAInfinityRightModuleHom.IsStrictlyUnital.comp` and
-  `TauCeti.UngradedAInfinityRightModuleHom.isStrictlyUnital_id`. So the identity above holds on the
-  box tensor products over the idempotents, and together with the invariance in the type `D`
-  structure (`TauCeti.TypeDStructure.typeABoxMap_typeABoxMap_add_of_act_eq_zero`) the box tensor
-  product over the idempotents is invariant under homotopy equivalences of both factors.
+  `TauCeti.UngradedAInfinityRightModuleHom.isStrictlyUnital_id`. As an informal remark: restricting
+  the identity above to these submodules, and combining it with the invariance in the type `D`
+  structure (`TauCeti.TypeDStructure.typeABoxMap_typeABoxMap_add_of_act_eq_zero`), one obtains
+  that the box tensor product over the idempotents is invariant under homotopy equivalences of
+  both factors; this file does not state that consequence as a theorem.
 
 ## Main results
 
@@ -134,11 +138,10 @@ theorem typeABoxHomotopy_mem_typeABoxTensor [CharP R 2] (hMm : Mm.IsStrictlyUnit
 `A` module.** Over a ring of characteristic two, let the iterates `δⁿ` of `N` vanish for all
 large `n`, and let `H` be a homotopy between the composite of morphisms `f : M → M'` and
 `g : M' → M` and the identity of `M`. Then `T_g ∘ T_f + id = ∂ ∘ T_H + T_H ∘ ∂` on row vectors.
-When the modules, morphisms and homotopy are strictly unital and the idempotents are cycles,
-`T_f`, `T_g` and `T_H` restrict to the box tensor products over the idempotents
-(`TauCeti.TypeDStructure.typeABoxMapOfHom_mem_typeABoxTensor` and
-`TauCeti.TypeDStructure.typeABoxHomotopy_mem_typeABoxTensor`), so with the symmetric statement
-for `f ∘ g`, homotopy equivalent type `A` modules have homotopy equivalent box tensor products. -/
+For strictly unital modules, morphisms and homotopies and idempotents that are cycles, the maps
+involved restrict to the box tensor products over the idempotents; see
+`TauCeti.TypeDStructure.typeABoxMapOfHom_mem_typeABoxTensor` and
+`TauCeti.TypeDStructure.typeABoxHomotopy_mem_typeABoxTensor`. -/
 theorem typeABoxMapOfHom_typeABoxMapOfHom_add_of_isBounded [CharP R 2]
     (N : TypeDStructure d ι X) (hN : N.IsBounded) {f : UngradedAInfinityRightModuleHom Mm Mm'}
     {g : UngradedAInfinityRightModuleHom Mm' Mm}

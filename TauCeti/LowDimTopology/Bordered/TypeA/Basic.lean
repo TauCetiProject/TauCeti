@@ -1434,12 +1434,14 @@ theorem typeABoxMapOfHom_id_of_isBounded [CharP R 2] (N : TypeDStructure d ι X)
     (hK _)]
   simp
 
-/-- **The identity morphism of a bounded module induces the identity**, for every type `D`
-structure: if the operations of `M` vanish from arity `K` on, so do the operations of the mapping
-cone of the identity from arity `K + 1` on, and the identity has no higher components. -/
+/-- **The identity morphism of a bounded module induces the identity.** If the operations of `M`
+vanish from some arity on, the identity morphism of `M` induces the identity map of row vectors,
+for every type `D` structure. -/
 theorem typeABoxMapOfHom_id_of_act_eq_zero [CharP R 2] (N : TypeDStructure d ι X) {K : ℕ}
     (hM : ∀ n, K ≤ n → Mm.act n = 0) :
     N.typeABoxMapOfHom (UngradedAInfinityRightModuleHom.id Mm) = LinearMap.id := by
+  -- The operations of the mapping cone of the identity vanish from arity `K + 1` on, and the
+  -- identity has no higher components.
   refine LinearMap.ext fun φ => funext fun z => ?_
   rw [N.typeABoxMapOfHom_apply_eq_map_zero _ UngradedAInfinityRightModuleHom.id_map_add_one
     (N.cone_matrixAct_eq_zero_of_act_eq_zero (K := K + 1) (fun n hn => hM n (by omega))

@@ -63,8 +63,9 @@ modules (`TauCeti.AInfinityRightModuleHom`) do not apply here, since the modules
   (`TauCeti.UngradedAInfinityRightModuleHom.Homotopy.IsStrictlyUnital`). Strict morphisms, sums
   and composites of strictly unital morphisms are strictly unital, the mapping cone of a strictly
   unital morphism of strictly unital modules is a strictly unital module, and a strictly unital
-  homotopy gives a strictly unital morphism into a mapping cone. These are the morphisms of type
-  `A` modules whose induced maps preserve the box tensor products over the idempotents
+  homotopy gives a strictly unital morphism into a mapping cone. For strictly unital modules
+  whose idempotents are cycles, the maps induced by strictly unital morphisms and homotopies
+  preserve the box tensor products over the idempotents
   (`TauCeti.LowDimTopology.Bordered.TypeA.Invariance`).
 
 ## Main definitions
@@ -848,14 +849,14 @@ theorem IsStrictlyUnital.add {f g : UngradedAInfinityRightModuleHom Mm Mm'}
   fun _ _ _ _ hi => by
     rw [add_map, _root_.add_apply, hf.map_eq_zero hi, hg.map_eq_zero hi, add_zero]
 
-/-- **A composite of strictly unital morphisms is strictly unital.** In each term
-`g_{j+1}(f_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)` of a component of `g ∘ f`, a unit input lies among
-the inputs of `f_{i+1}` or among those of `g_{j+1}`. -/
+/-- **A composite of strictly unital morphisms is strictly unital.** -/
 theorem IsStrictlyUnital.comp [CharP R 2] {g : UngradedAInfinityRightModuleHom Mm' Mm''}
     {f : UngradedAInfinityRightModuleHom Mm Mm'} (hg : g.IsStrictlyUnital ι)
     (hf : f.IsStrictlyUnital ι) : (g.comp f).IsStrictlyUnital ι := by
   refine fun n a i s hi => LinearMap.ext fun m => ?_
   rw [comp_map_apply, LinearMap.zero_apply]
+  -- In each term `g_{j+1}(f_{i+1}(m, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, the unit input lies among the
+  -- inputs of `f_{i+1}` or among those of `g_{j+1}`.
   refine sum_eq_zero fun k _ => ?_
   by_cases hik : (i : ℕ) < k
   · rw [hf.map_eq_zero (i := ⟨i, hik⟩) (by simpa using hi), LinearMap.zero_apply, map_zero]
@@ -863,11 +864,12 @@ theorem IsStrictlyUnital.comp [CharP R 2] {g : UngradedAInfinityRightModuleHom M
       LinearMap.zero_apply]
 
 /-- **The mapping cone of a strictly unital morphism of strictly unital modules is strictly
-unital.** Its operations of arity at least three are built from those of the two modules and the
-components of the morphism. -/
+unital.** -/
 theorem IsStrictlyUnital.cone {f : UngradedAInfinityRightModuleHom Mm Mm'}
     (hf : f.IsStrictlyUnital ι) (hMm : Mm.IsStrictlyUnital ι) (hMm' : Mm'.IsStrictlyUnital ι) :
     f.cone.IsStrictlyUnital ι :=
+  -- The operations of arity at least three of the cone are built from those of the two modules
+  -- and the components of the morphism.
   (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun _ hn _ _ _ hi =>
     LinearMap.ext fun p => by
       simp [hMm.act_eq_zero hn hi, hMm'.act_eq_zero hn hi, hf.map_eq_zero hi]
