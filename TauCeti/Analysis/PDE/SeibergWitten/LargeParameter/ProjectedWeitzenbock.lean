@@ -114,6 +114,24 @@ private theorem inner_roughLaplacian_clm_apply_sub_le
   · exact hP₂ x
   · exact hP₁ x
 
+omit [IsContMDiffRiemannianBundle I ∞ F V] in
+/-- The bounds `|∇P| ≤ c₁` and `|∇*∇P| ≤ c₂` at a point force `0 ≤ c₁` and `0 ≤ c₂`. -/
+private theorem nonneg_of_norm_hom_le
+    (hP₁ : ∀ x, ‖cov.hom cov P x‖ ≤ c₁)
+    (hP₂ : ∀ x, ‖(cov.hom cov).roughLaplacian (leviCivitaConnection I M) P x‖ ≤ c₂) (x : M) :
+    0 ≤ c₁ ∧ 0 ≤ c₂ :=
+  ⟨(ContinuousLinearMap.opNorm_nonneg _).trans (hP₁ x), (norm_nonneg _).trans (hP₂ x)⟩
+
+omit [TopologicalSpace M] [T2Space M] in
+/-- The forcing term `ρ`, with `|ρ| ≤ K |φ + β|`, pairs with a vector `w` to at least
+`-K (|φ| + |β|) |w|`. -/
+private theorem neg_mul_le_inner_of_norm_le (hK : 0 ≤ K)
+    (hρ : ∀ x, ‖ρ x‖ ≤ K * ‖φ x + β x‖) (x : M) (w : V x) :
+    -(K * (‖φ x‖ + ‖β x‖) * ‖w‖) ≤ ⟪ρ x, w⟫ := by
+  refine le_trans ?_ (neg_le_of_abs_le (abs_real_inner_le_norm _ _))
+  gcongr
+  exact (hρ x).trans (mul_le_mul_of_nonneg_left (norm_add_le _ _) hK)
+
 variable (hcov : cov.IsMetricCompatible)
   (hP : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
     (fun y ↦ TotalSpace.mk' (F →L[ℝ] F) (E := fun z ↦ V z →L[ℝ] V z) y (P y)))
@@ -165,12 +183,8 @@ theorem neg_laplaceBeltrami_norm_sq_div_two_add_le_canonical (x : M) :
   have hcross := inner_roughLaplacian_clm_apply_sub_le hP hP₁ hP₂ hβ x (φ x)
   rw [show (fun y ↦ P y (β y)) = 0 from funext hPβ, roughLaplacian_zero, zero_sub,
     inner_neg_left, abs_neg, hPadj, hPφ] at hcross
-  have hρφ : -(K * (‖φ x‖ + ‖β x‖) * ‖φ x‖) ≤ ⟪ρ x, φ x⟫ := by
-    refine le_trans ?_ (neg_le_of_abs_le (abs_real_inner_le_norm _ _))
-    gcongr
-    exact (hρ x).trans (mul_le_mul_of_nonneg_left (norm_add_le _ _) hK)
-  have hc₁ : 0 ≤ c₁ := (ContinuousLinearMap.opNorm_nonneg _).trans (hP₁ x)
-  have hc₂ : 0 ≤ c₂ := (norm_nonneg _).trans (hP₂ x)
+  have hρφ := neg_mul_le_inner_of_norm_le hK hρ x (φ x)
+  obtain ⟨hc₁, hc₂⟩ := nonneg_of_norm_hom_le hP₁ hP₂ x
   have hcb := (abs_le.1 hcross).1
   nlinarith [norm_nonneg (φ x), norm_nonneg (β x), norm_nonneg (cov β x),
     mul_nonneg (mul_nonneg hc₁ (norm_nonneg (φ x))) (add_nonneg (norm_nonneg (φ x))
@@ -199,12 +213,8 @@ theorem neg_laplaceBeltrami_norm_sq_div_two_add_le_complement (x : M) :
   have hcross := inner_roughLaplacian_clm_apply_sub_le hP hP₁ hP₂ hφ x (β x)
   rw [show (fun y ↦ P y (φ y)) = φ from funext hPφ, inner_sub_left, hPadj, hPβ,
     inner_zero_right, sub_zero] at hcross
-  have hρβ : -(K * (‖φ x‖ + ‖β x‖) * ‖β x‖) ≤ ⟪ρ x, β x⟫ := by
-    refine le_trans ?_ (neg_le_of_abs_le (abs_real_inner_le_norm _ _))
-    gcongr
-    exact (hρ x).trans (mul_le_mul_of_nonneg_left (norm_add_le _ _) hK)
-  have hc₁ : 0 ≤ c₁ := (ContinuousLinearMap.opNorm_nonneg _).trans (hP₁ x)
-  have hc₂ : 0 ≤ c₂ := (norm_nonneg _).trans (hP₂ x)
+  have hρβ := neg_mul_le_inner_of_norm_le hK hρ x (β x)
+  obtain ⟨hc₁, hc₂⟩ := nonneg_of_norm_hom_le hP₁ hP₂ x
   have hcb := (abs_le.1 hcross).1
   nlinarith [norm_nonneg (φ x), norm_nonneg (β x), norm_nonneg (cov φ x),
     mul_nonneg (mul_nonneg hc₁ (norm_nonneg (β x))) (add_nonneg (norm_nonneg (φ x))
@@ -224,10 +234,8 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_roughLaplacian_add_eq_zero [Com
     (hr32 : 32 * c ≤ r) (hrK : c ^ 2 + 8 * c ≤ r) (x : M) :
     ‖β x‖ ^ 2 ≤ 4 * c ^ 2 / r * (1 - ‖φ x‖ ^ 2) +
       (128 * c ^ 2 + 128 * c ^ 3 + 4 * c ^ 4 + 64 * c ^ 6) / r ^ 2 := by
-  have hc0 : 0 ≤ c := le_trans (by
-    have hc₁ : 0 ≤ c₁ := (ContinuousLinearMap.opNorm_nonneg _).trans (hP₁ x)
-    have hc₂ : 0 ≤ c₂ := (norm_nonneg _).trans (hP₂ x)
-    positivity) hc
+  obtain ⟨hc₁, hc₂⟩ := nonneg_of_norm_hom_le hP₁ hP₂ x
+  have hc0 : 0 ≤ c := le_trans (by positivity) hc
   have hsq {σ : Π x : M, V x} (hσ : CMDiff ∞ (T% σ)) : ContMDiff I 𝓘(ℝ) 2 fun y ↦ ‖σ y‖ ^ 2 := by
     simp_rw [← real_inner_self_eq_norm_sq]
     exact (hσ.inner_bundle hσ).of_le (by simp)

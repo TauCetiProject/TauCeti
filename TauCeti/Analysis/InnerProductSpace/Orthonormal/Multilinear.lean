@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Topology.MetricSpace.Holder
-import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
@@ -23,11 +22,11 @@ this bounds the norm of the Hessian by the sum of the absolute values of its mat
 The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
 `ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`; for a first derivative it bounds
 the norm of the gradient by the sum of the absolute values of the partial derivatives. Its square
-form `‖L‖² ≤ (card ι) ∑ i, ‖L (b i)‖²`
-(`ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis`) bounds the norm
-of a matrix by its columns in square mean, and the sharper `‖L‖² ≤ ∑ i, ‖L (b i)‖²`
+form `‖L‖² ≤ ∑ i, ‖L (b i)‖²`
 (`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`) bounds the operator norm by
-the Hilbert–Schmidt norm.
+the Hilbert–Schmidt norm, and hence the norm of a matrix by its columns in square mean,
+`‖L‖² ≤ (card ι) ∑ i, ‖L (b i)‖²`
+(`ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis`).
 
 Conversely, the entries `H ![b i, b j]` of a bilinear map on an orthonormal basis are bounded by
 the operator norm (`ContinuousMultilinearMap.norm_apply_orthonormalBasis_le`). For a bilinear map
@@ -60,16 +59,6 @@ theorem opNorm_le_sum_norm_apply_orthonormalBasis (L : E →L[𝕜] G) (b : Orth
   exact (PiLp.norm_apply_le (b.repr x) i).trans_eq (b.repr.norm_map x)
 
 /-- The squared operator norm of a continuous linear map on an inner product space is at most the
-number of vectors of an orthonormal basis times the sum of the squared norms of its values on
-them. -/
-theorem opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
-    (b : OrthonormalBasis ι 𝕜 E) : ‖L‖ ^ 2 ≤ Fintype.card ι * ∑ i, ‖L (b i)‖ ^ 2 := by
-  refine (pow_le_pow_left₀ (norm_nonneg _) (L.opNorm_le_sum_norm_apply_orthonormalBasis b) 2).trans
-    ?_
-  simpa only [Finset.card_univ] using
-    sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i => ‖L (b i)‖)
-
-/-- The squared operator norm of a continuous linear map on an inner product space is at most the
 sum of the squared norms of its values on the vectors of an orthonormal basis: the operator norm
 is at most the Hilbert–Schmidt norm. -/
 theorem opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
@@ -86,6 +75,18 @@ theorem opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
     rw [mul_comm, ← b.repr.norm_map x, EuclideanSpace.norm_eq]
   calc ‖L‖ ^ 2 ≤ √(∑ i, ‖L (b i)‖ ^ 2) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
     _ = _ := Real.sq_sqrt hS
+
+/-- The squared operator norm of a continuous linear map on an inner product space is at most the
+number of vectors of an orthonormal basis times the sum of the squared norms of its values on
+them. It is a weakening of
+`ContinuousLinearMap.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis`. -/
+theorem opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
+    (b : OrthonormalBasis ι 𝕜 E) : ‖L‖ ^ 2 ≤ Fintype.card ι * ∑ i, ‖L (b i)‖ ^ 2 := by
+  refine (L.opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis b).trans ?_
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · simp
+  · exact le_mul_of_one_le_left (Finset.sum_nonneg fun _ _ => sq_nonneg _)
+      (by exact_mod_cast Fintype.card_pos)
 
 end ContinuousLinearMap
 

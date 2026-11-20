@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # The rough Laplacian of a homomorphism applied to a section
@@ -130,8 +131,8 @@ theorem norm_roughLaplacian_clm_apply_sub_le
   have hsum : ‖∑ i, cov'.hom cov A x (b i) (cov' s x (b i))‖ ≤
       finrank ℝ E * (‖cov'.hom cov A x‖ * ‖cov' s x‖) := by
     refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun i _ ↦ hterm i).trans ?_)
-    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-    rfl
+    rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      TauCeti.finrank_tangentSpace]
   calc _ ≤ ‖(cov'.hom cov).roughLaplacian covT A x (s x)‖ +
         ‖(2 : ℝ) • ∑ i, cov'.hom cov A x (b i) (cov' s x (b i))‖ := norm_sub_le _ _
     _ ≤ _ := by
