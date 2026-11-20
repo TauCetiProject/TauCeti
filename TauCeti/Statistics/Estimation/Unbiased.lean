@@ -5,7 +5,6 @@ Authors: Claude
 -/
 module
 
-public import Mathlib.Probability.Moments.Covariance
 public import Mathlib.Probability.Moments.Variance
 
 /-!
