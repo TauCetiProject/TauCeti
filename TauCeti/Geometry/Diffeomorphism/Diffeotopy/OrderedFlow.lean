@@ -22,7 +22,7 @@ function and composing in this order gives the diffeotopy
 `ψ_t = ψ^(v 0)_(A 0 t) ∘ ⋯ ∘ ψ^(v (k-1))_(A (k-1) t)`
 
 (`TauCeti.orderedGlobalFlowDiffeotopy`, `TauCeti.Diffeotopy.timeSlice_orderedGlobalFlowDiffeotopy`),
-the pointwise composite of the diffeotopies `TauCeti.reparamGlobalFlowDiffeotopy`. These are
+the pointwise composite of the diffeotopies `TauCeti.globalFlowDiffeotopyAlong`. These are
 the ordered flows used to correct a symplectic isotopy by finitely many symplectic flows, with
 `A i t` the integral up to time `t` of a cohomology coordinate of the isotopy.
 
@@ -71,7 +71,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- Run complete `C^n` vector fields `v 0, …, v (k - 1)` along `C^n` time functions
 `A 0, …, A (k - 1)` vanishing at `0`, and compose in order: the motion at time `t ∈ [0, 1]` is
 `ψ^(v 0)_(A 0 t) ∘ ⋯ ∘ ψ^(v (k-1))_(A (k-1) t)`. It is the pointwise composite of the diffeotopies
-`TauCeti.reparamGlobalFlowDiffeotopy`. -/
+`TauCeti.globalFlowDiffeotopyAlong`. -/
 def orderedGlobalFlowDiffeotopy (hn : 1 ≤ n) :
     {k : ℕ} → (v : Fin k → (x : M) → TangentSpace I x) →
       (∀ i, CMDiff n (fun y ↦ (⟨y, v i y⟩ : TangentBundle I M))) →
@@ -81,7 +81,7 @@ def orderedGlobalFlowDiffeotopy (hn : 1 ≤ n) :
   | _ + 1, v, hv, hc, A, hA, hA₀ =>
     (orderedGlobalFlowDiffeotopy hn (fun i ↦ v i.succ) (fun i ↦ hv i.succ) (fun i ↦ hc i.succ)
       (fun i ↦ A i.succ) (fun i ↦ hA i.succ) (fun i ↦ hA₀ i.succ)).trans
-      (reparamGlobalFlowDiffeotopy hn (hv 0) (hc 0) (A 0) (hA 0) (hA₀ 0))
+      (globalFlowDiffeotopyAlong hn (hv 0) (hc 0) (A 0) (hA 0) (hA₀ 0))
 
 section Ordered
 
@@ -107,7 +107,7 @@ theorem orderedGlobalFlowDiffeotopy_succ (v : Fin (k + 1) → (x : M) → Tangen
     orderedGlobalFlowDiffeotopy hn v hv hc A hA hA₀ =
       (orderedGlobalFlowDiffeotopy hn (fun i ↦ v i.succ) (fun i ↦ hv i.succ) (fun i ↦ hc i.succ)
         (fun i ↦ A i.succ) (fun i ↦ hA i.succ) (fun i ↦ hA₀ i.succ)).trans
-        (reparamGlobalFlowDiffeotopy hn (hv 0) (hc 0) (A 0) (hA 0) (hA₀ 0)) :=
+        (globalFlowDiffeotopyAlong hn (hv 0) (hc 0) (A 0) (hA 0) (hA₀ 0)) :=
   (rfl)
 
 /-- The ordered diffeotopy at time `t` is the ordered flow for the times `A i t`. -/
@@ -120,7 +120,7 @@ theorem orderedGlobalFlowDiffeotopy_apply (p : unitInterval × M) :
       id_eq]
   | succ k ih =>
     rw [orderedGlobalFlowDiffeotopy_succ, Diffeotopy.trans_apply, ih,
-      reparamGlobalFlowDiffeotopy_apply, orderedFlowOf_succ, Function.comp_apply, flowOf_apply]
+      globalFlowDiffeotopyAlong_apply, orderedFlowOf_succ, Function.comp_apply, flowOf_apply]
 
 namespace Diffeotopy
 

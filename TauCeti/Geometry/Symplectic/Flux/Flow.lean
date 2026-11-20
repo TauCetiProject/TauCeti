@@ -17,23 +17,23 @@ Let `σ` be a two-form on a boundaryless finite-dimensional manifold `M` and let
 smooth vector field whose contraction `ι_X σ` is closed, a symplectic vector field
 (`TauCeti.SmoothTwoForm.symplecticVectorFields`). Running the flow `ψ` of `X` along a smooth time
 function `A : ℝ → ℝ` with `A 0 = 0` gives the diffeotopy `φ_t = ψ_(A t)`, `t ∈ [0, 1]`
-(`TauCeti.reparamGlobalFlowDiffeotopy`); for `A t = a t` it runs the flow for a duration `a`
+(`TauCeti.globalFlowDiffeotopyAlong`); for `A t = a t` it runs the flow for a duration `a`
 (`TauCeti.globalFlowDiffeotopy`). This file computes its flux.
 
 The motion `(x, t) ↦ ψ_(A t) x` has velocity `A'(t) X`
-(`TauCeti.Diffeotopy.mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_time`), so the flux form
+(`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time`), so the flux form
 `∫₀¹ φ_t^* (ι_(A'(t) X) σ) dt` is the integral of the pullbacks `ψ_(A t)^* (A'(t) ι_X σ)`. The
 one-form `ι_X σ` is invariant under the flow of `X`: it is closed by assumption, and its
 contraction `σ(X, X)` with `X` vanishes, so Cartan's formula gives `L_X (ι_X σ) = 0`. Hence the
 flux form is exactly `(A 1 - A 0) ι_X σ = A 1 ι_X σ`
-(`TauCeti.Diffeotopy.fluxForm_reparamGlobalFlowDiffeotopy`), and `a ι_X σ` for the duration `a`
+(`TauCeti.Diffeotopy.fluxForm_globalFlowDiffeotopyAlong`), and `a ι_X σ` for the duration `a`
 (`TauCeti.Diffeotopy.fluxForm_globalFlowDiffeotopy`). No closedness or nondegeneracy of `σ` is
 needed for this, and `M` need not be compact.
 
 For a closed `σ` the same Cartan argument shows that the flow preserves `σ`, so every map of the
 diffeotopy preserves `σ`
-(`TauCeti.Diffeotopy.timeSlice_reparamGlobalFlowDiffeotopy_mem_diffeomorphStabilizer`), and the
-flux is the class `A 1 [ι_X σ]` (`TauCeti.Diffeotopy.flux_reparamGlobalFlowDiffeotopy`).
+(`TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer`), and the
+flux is the class `A 1 [ι_X σ]` (`TauCeti.Diffeotopy.flux_globalFlowDiffeotopyAlong`).
 
 On a compact manifold every smooth vector field is complete. If moreover `σ` is closed and
 nondegenerate, every closed one-form `α` is the contraction of the symplectic vector field
@@ -42,12 +42,12 @@ nondegenerate, every closed one-form `α` is the contraction of the symplectic v
 
 ## Main results
 
-* `TauCeti.Diffeotopy.fluxForm_reparamGlobalFlowDiffeotopy`: the flux form of the flow of a
+* `TauCeti.Diffeotopy.fluxForm_globalFlowDiffeotopyAlong`: the flux form of the flow of a
   symplectic vector field `X` along a time function `A` is `A 1 ι_X σ`;
   `TauCeti.Diffeotopy.fluxForm_globalFlowDiffeotopy`: for duration `a` it is `a ι_X σ`.
-* `TauCeti.Diffeotopy.timeSlice_reparamGlobalFlowDiffeotopy_mem_diffeomorphStabilizer`: for closed
+* `TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer`: for closed
   `σ`, every map of that diffeotopy preserves `σ`.
-* `TauCeti.Diffeotopy.flux_reparamGlobalFlowDiffeotopy`: its flux is `A 1 [ι_X σ]`;
+* `TauCeti.Diffeotopy.flux_globalFlowDiffeotopyAlong`: its flux is `A 1 [ι_X σ]`;
   `TauCeti.Diffeotopy.flux_globalFlowDiffeotopy`: for duration `a` it is `a [ι_X σ]`.
 * `TauCeti.Diffeotopy.exists_flux_eq`: on a compact manifold with a closed nondegenerate
   two-form, every class in `H¹_dR(M)` is the flux of a symplectic isotopy.
@@ -99,10 +99,10 @@ vector field whose contraction `ι_X σ` with a two-form `σ` is closed. The dif
 flow of `X` along a smooth time function `A` with `A 0 = 0` has flux form `A 1 ι_X σ`: the flux
 form only sees the total time `A 1` of the flow. Neither closedness nor nondegeneracy of `σ` is
 needed. -/
-theorem fluxForm_reparamGlobalFlowDiffeotopy {σ : SmoothTwoForm I M}
+theorem fluxForm_globalFlowDiffeotopyAlong {σ : SmoothTwoForm I M}
     (hX : X ∈ σ.symplecticVectorFields) (hc : IsCompleteVectorField X) (A : ℝ → ℝ)
     (hA : ContDiff ℝ ∞ A) (hA₀ : A 0 = 0) :
-    (reparamGlobalFlowDiffeotopy le_top X.contMDiff hc A hA hA₀).fluxForm σ =
+    (globalFlowDiffeotopyAlong le_top X.contMDiff hc A hA hA₀).fluxForm σ =
       A 1 • σ.interiorₗ X := by
   apply Subtype.ext
   funext x
@@ -115,9 +115,9 @@ theorem fluxForm_reparamGlobalFlowDiffeotopy {σ : SmoothTwoForm I M}
       rw [uIcc_of_le zero_le_one] at ht
       exact congrArg Subtype.val (projIcc_of_mem zero_le_one ht)
     refine ContinuousAlternatingMap.ext fun v ↦ ?_
-    rw [curryLeft_mfderiv_cylinderMap_apply, mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_time]
-    simp only [mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_space]
-    rw [congrFun (cylinderMap_reparamGlobalFlowDiffeotopy le_top X.contMDiff hc A hA hA₀)
+    rw [curryLeft_mfderiv_cylinderMap_apply, mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time]
+    simp only [mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space]
+    rw [congrFun (cylinderMap_globalFlowDiffeotopyAlong le_top X.contMDiff hc A hA hA₀)
       (x, projIcc 0 1 zero_le_one t), ht']
     rw [hc']
     exact apply_vecCons_smul_mfderiv_flowOf hX hc (deriv A t) _ x v
@@ -132,7 +132,7 @@ duration `a` has flux form `a ι_X σ`. Neither closedness nor nondegeneracy of 
 theorem fluxForm_globalFlowDiffeotopy {σ : SmoothTwoForm I M}
     (hX : X ∈ σ.symplecticVectorFields) (hc : IsCompleteVectorField X) (a : ℝ) :
     (globalFlowDiffeotopy le_top X.contMDiff hc a).fluxForm σ = a • σ.interiorₗ X := by
-  rw [globalFlowDiffeotopy_eq_reparamGlobalFlowDiffeotopy, fluxForm_reparamGlobalFlowDiffeotopy hX,
+  rw [globalFlowDiffeotopy_eq_globalFlowDiffeotopyAlong, fluxForm_globalFlowDiffeotopyAlong hX,
     mul_one]
 
 /-! ### The flux -/
@@ -140,12 +140,12 @@ theorem fluxForm_globalFlowDiffeotopy {σ : SmoothTwoForm I M}
 /-- **Symplectic flows are symplectic isotopies.** For a closed two-form `σ` and a complete smooth
 vector field `X` with closed contraction `ι_X σ`, every map of the diffeotopy which runs the flow
 of `X` along a smooth time function `A` with `A 0 = 0` preserves `σ`. -/
-theorem timeSlice_reparamGlobalFlowDiffeotopy_mem_diffeomorphStabilizer {σ : SmoothTwoForm I M}
+theorem timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer {σ : SmoothTwoForm I M}
     (hσ : σ.IsClosed) (hX : X ∈ σ.symplecticVectorFields) (hc : IsCompleteVectorField X)
     (A : ℝ → ℝ) (hA : ContDiff ℝ ∞ A) (hA₀ : A 0 = 0) (t : unitInterval) :
-    (reparamGlobalFlowDiffeotopy le_top X.contMDiff hc A hA hA₀).timeSlice t ∈
+    (globalFlowDiffeotopyAlong le_top X.contMDiff hc A hA hA₀).timeSlice t ∈
       SmoothForm.diffeomorphStabilizer σ := by
-  rw [SmoothForm.mem_diffeomorphStabilizer_iff_forall, timeSlice_reparamGlobalFlowDiffeotopy]
+  rw [SmoothForm.mem_diffeomorphStabilizer_iff_forall, timeSlice_globalFlowDiffeotopyAlong]
   exact fun x ↦ mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero
     (X.contMDiff.of_le (by simp)) hσ (SmoothTwoForm.mem_symplecticVectorFields_iff.1 hX)
     (hc.mem_flowDomain _ x)
@@ -158,22 +158,22 @@ theorem timeSlice_globalFlowDiffeotopy_mem_diffeomorphStabilizer {σ : SmoothTwo
     (a : ℝ) (t : unitInterval) :
     (globalFlowDiffeotopy le_top X.contMDiff hc a).timeSlice t ∈
       SmoothForm.diffeomorphStabilizer σ := by
-  rw [globalFlowDiffeotopy_eq_reparamGlobalFlowDiffeotopy]
-  exact timeSlice_reparamGlobalFlowDiffeotopy_mem_diffeomorphStabilizer hσ hX hc _ _ _ t
+  rw [globalFlowDiffeotopy_eq_globalFlowDiffeotopyAlong]
+  exact timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer hσ hX hc _ _ _ t
 
 /-- **The flux of a symplectic flow along a time function.** For a closed two-form `σ` and a
 complete symplectic vector field `X`, the diffeotopy which runs the flow of `X` along a smooth time
 function `A` with `A 0 = 0` has flux `A 1 [ι_X σ]`. -/
-theorem flux_reparamGlobalFlowDiffeotopy (σ : closedForms I M 2)
+theorem flux_globalFlowDiffeotopyAlong (σ : closedForms I M 2)
     (hX : X ∈ SmoothTwoForm.symplecticVectorFields σ.1) (hc : IsCompleteVectorField X) (A : ℝ → ℝ)
     (hA : ContDiff ℝ ∞ A) (hA₀ : A 0 = 0)
-    (hΦ : (reparamGlobalFlowDiffeotopy le_top X.contMDiff hc A hA hA₀).final ∈
+    (hΦ : (globalFlowDiffeotopyAlong le_top X.contMDiff hc A hA hA₀).final ∈
       SmoothForm.diffeomorphStabilizer σ.1) :
-    (reparamGlobalFlowDiffeotopy le_top X.contMDiff hc A hA hA₀).flux σ hΦ =
+    (globalFlowDiffeotopyAlong le_top X.contMDiff hc A hA hA₀).flux σ hΦ =
       A 1 • SmoothTwoForm.interiorClass σ.1 ⟨X, hX⟩ := by
   rw [flux_def, SmoothTwoForm.interiorClass_apply, ← map_smul]
   congr 1
-  exact Subtype.ext (fluxForm_reparamGlobalFlowDiffeotopy hX hc A hA hA₀)
+  exact Subtype.ext (fluxForm_globalFlowDiffeotopyAlong hX hc A hA hA₀)
 
 /-- **The flux of a symplectic flow.** For a closed two-form `σ` and a complete symplectic vector
 field `X`, the diffeotopy which runs the flow of `X` for duration `a` has flux `a [ι_X σ]`. -/

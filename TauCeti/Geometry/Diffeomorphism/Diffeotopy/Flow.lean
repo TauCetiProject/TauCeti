@@ -16,11 +16,11 @@ import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 A complete `C^n` vector field, `1 ≤ n`, generates a diffeotopy on a
 possibly noncompact finite-dimensional boundaryless manifold. More generally, for a `C^n` time
 function `A : ℝ → ℝ` with `A 0 = 0`, the motion at time `t ∈ [0,1]` may be taken to be the field's
-flow `ψ_(A t)` at time `A t` (`TauCeti.reparamGlobalFlowDiffeotopy`,
-`TauCeti.Diffeotopy.timeSlice_reparamGlobalFlowDiffeotopy`), with inverse `ψ_(-A t)`. Read on the
+flow `ψ_(A t)` at time `A t` (`TauCeti.globalFlowDiffeotopyAlong`,
+`TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopyAlong`), with inverse `ψ_(-A t)`. Read on the
 cylinder, the motion `(x, t) ↦ ψ_(A t) x` has time derivative `A'(t) v` and spatial derivative
-`dψ_(A t)` (`TauCeti.Diffeotopy.mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_time`,
-`TauCeti.Diffeotopy.mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_space`). The constant-speed
+`dψ_(A t)` (`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time`,
+`TauCeti.Diffeotopy.mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space`). The constant-speed
 case `A t = a t` runs the field for an arbitrary real duration `a`
 (`TauCeti.globalFlowDiffeotopy`, `TauCeti.Diffeotopy.timeSlice_globalFlowDiffeotopy`).
 Every zero of the field is fixed throughout. In particular, a field vanishing outside a
@@ -59,7 +59,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- Run a complete `C^n` vector field along a `C^n` time function `A` with `A 0 = 0`: the motion
 at time `t ∈ [0, 1]` is the flow of the field for time `A t`, and its inverse is the flow for time
 `-A t`. The ambient manifold need not be compact. -/
-def reparamGlobalFlowDiffeotopy (hn : 1 ≤ n)
+def globalFlowDiffeotopyAlong (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hcomplete : IsCompleteVectorField v) (A : ℝ → ℝ) (hA : ContDiff ℝ n A) (hA₀ : A 0 = 0) :
     Diffeotopy I n M := by
@@ -81,27 +81,27 @@ def reparamGlobalFlowDiffeotopy (hn : 1 ≤ n)
       fst_apply := fun _ => rfl
       snd_apply_zero' := fun x => by simp [hA₀, ← Diffeomorph.coe_toEquiv] }
 
-section Reparam
+section Along
 
 variable (hn : 1 ≤ n) (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
   (hcomplete : IsCompleteVectorField v) (A : ℝ → ℝ) (hA : ContDiff ℝ n A) (hA₀ : A 0 = 0)
 
 /-- The motion along a time function `A` is the maximal integral curve at time `A t`. -/
-@[simp] theorem reparamGlobalFlowDiffeotopy_apply (p : unitInterval × M) :
-    reparamGlobalFlowDiffeotopy hn hv hcomplete A hA hA₀ p =
+@[simp] theorem globalFlowDiffeotopyAlong_apply (p : unitInterval × M) :
+    globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀ p =
       maximalIntegralCurve v p.2 (A p.1) := by
-  simp [reparamGlobalFlowDiffeotopy, ← Diffeomorph.coe_toEquiv, globalFlow_apply]
+  simp [globalFlowDiffeotopyAlong, ← Diffeomorph.coe_toEquiv, globalFlow_apply]
 
 /-- The inverse motion along a time function `A` runs the field for time `-A t`. -/
-@[simp] theorem reparamGlobalFlowDiffeotopy_toDiffeomorph_symm_apply (p : unitInterval × M) :
-    (reparamGlobalFlowDiffeotopy hn hv hcomplete A hA hA₀).toDiffeomorph.symm p =
+@[simp] theorem globalFlowDiffeotopyAlong_toDiffeomorph_symm_apply (p : unitInterval × M) :
+    (globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀).toDiffeomorph.symm p =
       (p.1, maximalIntegralCurve v p.2 (-A p.1)) := by
-  simp [reparamGlobalFlowDiffeotopy, ← Diffeomorph.coe_toEquiv, globalFlow_apply]
+  simp [globalFlowDiffeotopyAlong, ← Diffeomorph.coe_toEquiv, globalFlow_apply]
 
 /-- Every zero of the generating field is fixed throughout the motion along a time function. -/
-theorem reparamGlobalFlowDiffeotopy_apply_of_eq_zero {x : M} (hx : v x = 0) (t : unitInterval) :
-    reparamGlobalFlowDiffeotopy hn hv hcomplete A hA hA₀ (t, x) = x := by
-  rw [reparamGlobalFlowDiffeotopy_apply]
+theorem globalFlowDiffeotopyAlong_apply_of_eq_zero {x : M} (hx : v x = 0) (t : unitInterval) :
+    globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀ (t, x) = x := by
+  rw [globalFlowDiffeotopyAlong_apply]
   have h := globalFlow_eq_of_isMIntegralCurve (hv.of_le (by exact_mod_cast hn))
     hcomplete (isMIntegralCurve_const hx) (A t)
   simpa only [globalFlow_apply] using h
@@ -110,24 +110,24 @@ namespace Diffeotopy
 
 /-- The time-`t` map of the motion along a time function `A` is the flow of the field for time
 `A t`. -/
-theorem timeSlice_reparamGlobalFlowDiffeotopy (t : unitInterval) :
-    ⇑((reparamGlobalFlowDiffeotopy hn hv hcomplete A hA hA₀).timeSlice t) = flowOf v (A t) := by
+theorem timeSlice_globalFlowDiffeotopyAlong (t : unitInterval) :
+    ⇑((globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀).timeSlice t) = flowOf v (A t) := by
   funext x
-  rw [timeSlice_apply, reparamGlobalFlowDiffeotopy_apply, flowOf_apply]
+  rw [timeSlice_apply, globalFlowDiffeotopyAlong_apply, flowOf_apply]
 
 /-- The motion along a time function `A`, read on the cylinder: at `(x, t)` it is the flow of
 the field for time `A t`. -/
-theorem cylinderMap_reparamGlobalFlowDiffeotopy :
-    (reparamGlobalFlowDiffeotopy hn hv hcomplete A hA hA₀).cylinderMap =
+theorem cylinderMap_globalFlowDiffeotopyAlong :
+    (globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀).cylinderMap =
       fun p : M × unitInterval ↦ flowOf v (A p.2) p.1 := by
   funext p
-  rw [cylinderMap_apply, reparamGlobalFlowDiffeotopy_apply, flowOf_apply]
+  rw [cylinderMap_apply, globalFlowDiffeotopyAlong_apply, flowOf_apply]
 
 /-- **The velocity of the motion along a time function.** The motion `(x, t) ↦ ψ_(A t) x` along a
 time function `A` of the flow `ψ` of a complete vector field `v` sends the unit time vector `∂ₜ`
 at `(x, t)` to `A'(t) v (ψ_(A t) x)`. -/
-theorem mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_time (p : M × unitInterval) :
-    mfderiv (I.prod (𝓡∂ 1)) I (reparamGlobalFlowDiffeotopy hn hv hcomplete A hA hA₀).cylinderMap p
+theorem mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time (p : M × unitInterval) :
+    mfderiv (I.prod (𝓡∂ 1)) I (globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀).cylinderMap p
       ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)) = deriv A p.2 • v (flowOf v (A p.2) p.1) := by
   have hv₁ : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) :=
     hv.of_le (by exact_mod_cast hn)
@@ -153,26 +153,26 @@ theorem mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_time (p : M × unitInter
     rw [hcomp, mfderiv_comp (f := fun z : unitInterval ↦ A z) p.2 htraj (hAd.comp p.2 hval),
       ContinuousLinearMap.comp_apply, hscale,
       mfderiv_flowOf_trajectory_apply hv₁ (hcomplete.mem_flowDomain _ _)]
-  refine (mfderiv_prod_eq_add_apply ((reparamGlobalFlowDiffeotopy hn hv hcomplete A hA
+  refine (mfderiv_prod_eq_add_apply ((globalFlowDiffeotopyAlong hn hv hcomplete A hA
     hA₀).contMDiff_cylinderMap.mdifferentiableAt
       (zero_lt_one.trans_le (by exact_mod_cast hn)).ne')).trans ?_
-  rw [cylinderMap_reparamGlobalFlowDiffeotopy]
+  rw [cylinderMap_globalFlowDiffeotopyAlong]
   exact (congrArg₂ (· + ·) (map_zero _) htime).trans (zero_add _)
 
 /-- The motion `(x, t) ↦ ψ_(A t) x` along a time function acts on spatial tangent vectors at
 `(x, t)` by the differential of the time-`A t` map `ψ_(A t)`. -/
-theorem mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_space (p : M × unitInterval) (w : E) :
-    mfderiv (I.prod (𝓡∂ 1)) I (reparamGlobalFlowDiffeotopy hn hv hcomplete A hA hA₀).cylinderMap p
+theorem mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space (p : M × unitInterval) (w : E) :
+    mfderiv (I.prod (𝓡∂ 1)) I (globalFlowDiffeotopyAlong hn hv hcomplete A hA hA₀).cylinderMap p
       (w, (0 : EuclideanSpace ℝ (Fin 1))) = mfderiv I I (flowOf v (A p.2)) p.1 w := by
-  refine (mfderiv_prod_eq_add_apply ((reparamGlobalFlowDiffeotopy hn hv hcomplete A hA
+  refine (mfderiv_prod_eq_add_apply ((globalFlowDiffeotopyAlong hn hv hcomplete A hA
     hA₀).contMDiff_cylinderMap.mdifferentiableAt
       (zero_lt_one.trans_le (by exact_mod_cast hn)).ne')).trans ?_
-  rw [cylinderMap_reparamGlobalFlowDiffeotopy]
+  rw [cylinderMap_globalFlowDiffeotopyAlong]
   exact add_eq_left.2 (map_zero _)
 
 end Diffeotopy
 
-end Reparam
+end Along
 
 /-- Run a complete `C^n` vector field for duration `a`, starting at the identity: the motion along
 the time function `t ↦ a t`. The ambient manifold need not be compact, and negative durations are
@@ -181,14 +181,14 @@ def globalFlowDiffeotopy (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hcomplete : IsCompleteVectorField v) (a : ℝ) :
     Diffeotopy I n M :=
-  reparamGlobalFlowDiffeotopy hn hv hcomplete (a * ·) (contDiff_const.mul contDiff_id) (mul_zero a)
+  globalFlowDiffeotopyAlong hn hv hcomplete (a * ·) (contDiff_const.mul contDiff_id) (mul_zero a)
 
 /-- The diffeotopy running a field for duration `a` is its motion along the time function
 `t ↦ a t`. -/
-theorem globalFlowDiffeotopy_eq_reparamGlobalFlowDiffeotopy (hn : 1 ≤ n)
+theorem globalFlowDiffeotopy_eq_globalFlowDiffeotopyAlong (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hcomplete : IsCompleteVectorField v) (a : ℝ) :
-    globalFlowDiffeotopy hn hv hcomplete a = reparamGlobalFlowDiffeotopy hn hv hcomplete (a * ·)
+    globalFlowDiffeotopy hn hv hcomplete a = globalFlowDiffeotopyAlong hn hv hcomplete (a * ·)
       (contDiff_const.mul contDiff_id) (mul_zero a) :=
   (rfl)
 
@@ -199,7 +199,7 @@ theorem globalFlowDiffeotopy_eq_reparamGlobalFlowDiffeotopy (hn : 1 ≤ n)
     (a : ℝ) (p : unitInterval × M) :
     globalFlowDiffeotopy hn hv hcomplete a p =
       maximalIntegralCurve v p.2 (a * p.1) :=
-  reparamGlobalFlowDiffeotopy_apply hn hv hcomplete _ _ _ p
+  globalFlowDiffeotopyAlong_apply hn hv hcomplete _ _ _ p
 
 /-- The inverse motion runs the same field for the opposite duration. -/
 @[simp] theorem globalFlowDiffeotopy_toDiffeomorph_symm_apply (hn : 1 ≤ n)
@@ -208,7 +208,7 @@ theorem globalFlowDiffeotopy_eq_reparamGlobalFlowDiffeotopy (hn : 1 ≤ n)
     (a : ℝ) (p : unitInterval × M) :
     (globalFlowDiffeotopy hn hv hcomplete a).toDiffeomorph.symm p =
       (p.1, maximalIntegralCurve v p.2 (-(a * p.1))) :=
-  reparamGlobalFlowDiffeotopy_toDiffeomorph_symm_apply hn hv hcomplete _ _ _ p
+  globalFlowDiffeotopyAlong_toDiffeomorph_symm_apply hn hv hcomplete _ _ _ p
 
 /-- Every zero of the generating field is fixed throughout the diffeotopy. -/
 theorem globalFlowDiffeotopy_apply_of_eq_zero (hn : 1 ≤ n)
@@ -216,7 +216,7 @@ theorem globalFlowDiffeotopy_apply_of_eq_zero (hn : 1 ≤ n)
     (hcomplete : IsCompleteVectorField v) (a : ℝ)
     {x : M} (hx : v x = 0) (t : unitInterval) :
     globalFlowDiffeotopy hn hv hcomplete a (t, x) = x :=
-  reparamGlobalFlowDiffeotopy_apply_of_eq_zero hn hv hcomplete _ _ _ hx t
+  globalFlowDiffeotopyAlong_apply_of_eq_zero hn hv hcomplete _ _ _ hx t
 
 namespace Diffeotopy
 
@@ -226,7 +226,7 @@ theorem timeSlice_globalFlowDiffeotopy (hn : 1 ≤ n)
     (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hcomplete : IsCompleteVectorField v) (a : ℝ) (t : unitInterval) :
     ⇑((globalFlowDiffeotopy hn hv hcomplete a).timeSlice t) = flowOf v (a * t) :=
-  timeSlice_reparamGlobalFlowDiffeotopy hn hv hcomplete _ _ _ t
+  timeSlice_globalFlowDiffeotopyAlong hn hv hcomplete _ _ _ t
 
 /-- The motion of the diffeotopy generated by a complete vector field, read on the cylinder: at
 `(x, t)` it is the flow of the field for time `a t`. -/
@@ -235,7 +235,7 @@ theorem cylinderMap_globalFlowDiffeotopy (hn : 1 ≤ n)
     (hcomplete : IsCompleteVectorField v) (a : ℝ) :
     (globalFlowDiffeotopy hn hv hcomplete a).cylinderMap =
       fun p : M × unitInterval ↦ flowOf v (a * p.2) p.1 :=
-  cylinderMap_reparamGlobalFlowDiffeotopy hn hv hcomplete _ _ _
+  cylinderMap_globalFlowDiffeotopyAlong hn hv hcomplete _ _ _
 
 /-- **The velocity of the flow diffeotopy.** The motion `(x, t) ↦ ψ_(a t) x` of the diffeotopy
 generated by a complete vector field `v` sends the unit time vector `∂ₜ` at `(x, t)` to
@@ -245,8 +245,8 @@ theorem mfderiv_cylinderMap_globalFlowDiffeotopy_time (hn : 1 ≤ n)
     (hcomplete : IsCompleteVectorField v) (a : ℝ) (p : M × unitInterval) :
     mfderiv (I.prod (𝓡∂ 1)) I (globalFlowDiffeotopy hn hv hcomplete a).cylinderMap p
       ((0 : E), (1 : TangentSpace (𝓡∂ 1) p.2)) = a • v (flowOf v (a * p.2) p.1) := by
-  rw [globalFlowDiffeotopy_eq_reparamGlobalFlowDiffeotopy,
-    mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_time]
+  rw [globalFlowDiffeotopy_eq_globalFlowDiffeotopyAlong,
+    mfderiv_cylinderMap_globalFlowDiffeotopyAlong_time]
   congr 1
   simp
 
@@ -257,7 +257,7 @@ theorem mfderiv_cylinderMap_globalFlowDiffeotopy_space (hn : 1 ≤ n)
     (hcomplete : IsCompleteVectorField v) (a : ℝ) (p : M × unitInterval) (w : E) :
     mfderiv (I.prod (𝓡∂ 1)) I (globalFlowDiffeotopy hn hv hcomplete a).cylinderMap p
       (w, (0 : EuclideanSpace ℝ (Fin 1))) = mfderiv I I (flowOf v (a * p.2)) p.1 w :=
-  mfderiv_cylinderMap_reparamGlobalFlowDiffeotopy_space hn hv hcomplete _ _ _ p w
+  mfderiv_cylinderMap_globalFlowDiffeotopyAlong_space hn hv hcomplete _ _ _ p w
 
 end Diffeotopy
 

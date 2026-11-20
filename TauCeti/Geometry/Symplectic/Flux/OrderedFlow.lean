@@ -27,7 +27,7 @@ is
 `Flux(ψ) = ∑ i, A i 1 [ι_(Y i) σ]`
 
 (`TauCeti.Diffeotopy.flux_orderedGlobalFlowDiffeotopy`): each factor running `Y i` along `A i` has
-flux `A i 1 [ι_(Y i) σ]` (`TauCeti.Diffeotopy.flux_reparamGlobalFlowDiffeotopy`), whatever the
+flux `A i 1 [ι_(Y i) σ]` (`TauCeti.Diffeotopy.flux_globalFlowDiffeotopyAlong`), whatever the
 time function in between, and the flux is additive on pointwise composites
 (`TauCeti.Diffeotopy.flux_trans`).
 
@@ -89,7 +89,7 @@ theorem timeSlice_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer {σ : Sm
     rw [orderedGlobalFlowDiffeotopy_succ]
     exact SmoothForm.timeSlice_trans_mem_diffeomorphStabilizer
       (ih (Y := fun i ↦ Y i.succ) (fun i ↦ hY i.succ) (fun i ↦ hc i.succ) _ _ _)
-      (timeSlice_reparamGlobalFlowDiffeotopy_mem_diffeomorphStabilizer hσ (hY 0) (hc 0) _ _ _) t
+      (timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer hσ (hY 0) (hc 0) _ _ _) t
 
 end Diffeotopy
 
@@ -141,8 +141,8 @@ theorem flux_orderedGlobalFlowDiffeotopy (σ : closedForms I M 2)
         (timeSlice_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer hσ
           (Y := fun i ↦ Y i.succ) (fun i ↦ hY i.succ) (fun i ↦ hc i.succ) _ _ _))
       (SmoothForm.final_mem_diffeomorphStabilizer
-        (timeSlice_reparamGlobalFlowDiffeotopy_mem_diffeomorphStabilizer hσ (hY 0) (hc 0) _ _ _)),
-      flux_reparamGlobalFlowDiffeotopy, ih (Y := fun i ↦ Y i.succ) (fun i ↦ hY i.succ)]
+        (timeSlice_globalFlowDiffeotopyAlong_mem_diffeomorphStabilizer hσ (hY 0) (hc 0) _ _ _)),
+      flux_globalFlowDiffeotopyAlong, ih (Y := fun i ↦ Y i.succ) (fun i ↦ hY i.succ)]
 
 /-- **Ordered symplectic flows with vanishing total times contract symplectically.** For a closed
 two-form `σ`, complete smooth symplectic vector fields `Y i` and smooth time functions `A i` with
