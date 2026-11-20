@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.Topology.Algebra.Module.Trace
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
@@ -44,6 +46,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
+* `TauCeti.trace_fderiv_eq_sum_fderiv_apply_single`: on `EuclideanSpace ℝ ι`, the divergence
+  `tr (D f)` is the sum `∑ⱼ ∂ⱼ fⱼ` of the coordinate derivatives.
 * `TauCeti.exists_testFunction_sum_smul_comp_add`: weighting translates of a test vector field
   `φ` by nonnegative smooth functions `ζ k` compactly supported in `Ω` with sum at most one gives
   a test vector field `∑ k, ζ k φ(· + τ k)` on `Ω`, of norm at most one when `‖φ‖ ≤ 1`, whose
@@ -162,6 +166,21 @@ theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : Differe
 theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
     LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
   simpa using trace_fderiv_smul hχ (differentiableAt_const v)
+
+/-- **The divergence in Euclidean coordinates**: the trace of the derivative of a map
+`f : ℝⁿ → ℝⁿ` is `∑ⱼ ∂ⱼ fⱼ`, the sum of the derivatives of its coordinates in the coordinate
+directions. -/
+theorem trace_fderiv_eq_sum_fderiv_apply_single {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {f : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {x : EuclideanSpace ℝ ι}
+    (hf : DifferentiableAt ℝ f x) :
+    LinearMap.trace ℝ _ (fderiv ℝ f x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) =
+      ∑ j, fderiv ℝ (fun y ↦ f y j) x (EuclideanSpace.single j 1) := by
+  rw [LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun ι ℝ)]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have hd : HasFDerivAt (fun y ↦ f y j) ((EuclideanSpace.proj j).comp (fderiv ℝ f x)) x :=
+    (EuclideanSpace.proj (𝕜 := ℝ) j).hasFDerivAt.comp x hf.hasFDerivAt
+  rw [hd.fderiv]
+  simp [EuclideanSpace.inner_single_left]
 
 open scoped Gradient InnerProductSpace in
 /-- On `Ω`, the divergence of `φ b` is `φ div b + ⟪∇φ, b⟫`. -/

@@ -766,6 +766,19 @@ theorem energyFormH1_sub {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
   energyFormIntegral_sub (h := integrable_energyIntegrand_jetField hcoeff u v)
     (h' := integrable_energyIntegrand_jetField hcoeff' u v)
 
+/-- **Additivity of the Sobolev energy form in its coefficients.** For two essentially bounded
+coefficient fields, the energy form of the sum of the coefficient triples is the sum of the energy
+forms; this is the `H¹` form of `energyFormIntegral_add`. -/
+theorem energyFormH1_add {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c' : EuclideanSpace ℝ ι → ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff' : MemLp (fun x => energyIntegrand (a' x) (b' x) (c' x)) ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    energyFormH1 (a + a') (b + b') (c + c') u v =
+      energyFormH1 a b c u v + energyFormH1 a' b' c' u v :=
+  energyFormIntegral_add (h := integrable_energyIntegrand_jetField hcoeff u v)
+    (h' := integrable_energyIntegrand_jetField hcoeff' u v)
+
 /-- Boundedness of the Sobolev energy form from almost-everywhere upper bounds on `Ω` alone. No
 lower ellipticity hypothesis is needed. -/
 theorem norm_energyFormH1_le_of_bounds
