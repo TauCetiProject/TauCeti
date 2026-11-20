@@ -12,10 +12,10 @@ import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
 /-!
-# Differentiating a divergence-form equation with differentiable coefficients
+# Differentiating a divergence-form equation with `C¹` coefficients
 
-Let `a` be a matrix-valued coefficient field whose entries are differentiable on an open
-`Ω ⊆ ℝⁿ`, and let `u ∈ H¹(Ω)` be a weak solution of
+Let `a` be a matrix-valued coefficient field whose entries are `C¹` on an open `Ω ⊆ ℝⁿ` (smooth
+for the second and third identities below), and let `u ∈ H¹(Ω)` be a weak solution of
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`,
 

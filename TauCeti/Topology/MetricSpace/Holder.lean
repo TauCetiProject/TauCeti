@@ -10,6 +10,7 @@ public import Mathlib.Topology.MetricSpace.HolderNorm
 public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Analysis.MeanInequalitiesPow
+import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 import TauCeti.Analysis.SpecificLimits.DyadicSum
@@ -21,7 +22,8 @@ A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathli
 `edist`. A function with bounded oscillation which satisfies a Hölder bound between nearby points
 is Hölder, which turns Hölder bounds on the pieces of a cover into one on the whole set, and is
 Hölder with every smaller exponent, with a constant depending on the scale; in particular, so is a
-function which is Lipschitz between nearby points. Local Hölder bounds around the points of a
+function which is Lipschitz between nearby points, and a locally Lipschitz function is Hölder of
+every exponent at most one on a compact set. Local Hölder bounds around the points of a
 compact set are uniform on a thickening of the set.
 
 A function which is Hölder continuous on a dense subset `s` of a pseudo-emetric space and takes
@@ -43,8 +45,9 @@ Hölder functions with a common constant is Hölder with that constant.
 For `0 < α < 1`, a series of pieces bounded by `a 2^{-jα}` and Lipschitz with constants
 `b 2^{j(1-α)}` is `α`-Hölder; this is the dyadic summation behind the Hölder regularity of
 Littlewood–Paley series.
-Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
-Hölder of exponent zero with constant `2 M`.
+Postcomposition with an isometry keeps the constant and the exponent, and postcomposition with a
+`K`-Lipschitz map keeps the exponent and multiplies the constant by `K`. A function bounded by `M`
+is Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -79,6 +82,8 @@ positive exponent, is equicontinuous on that set
 * `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
   between points at distance less than `δ`, with values within distance `D` of each other, is
   Hölder with constant `K + D δ^(-r)`.
+* `LocallyLipschitzOn.exists_holderOnWith_of_isCompact`: a function locally Lipschitz on a compact
+  set is Hölder there for every exponent at most one.
 * `HolderOnWith.comp_const_smul`: precomposing with a rescaling `z ↦ a • z` multiplies the Hölder
   constant by `‖a‖ ^ r`.
 * `HolderOnWith.dist_le_mul_rpow_of_mem_ball`: on a ball of radius `ρ`, a Hölder function with
@@ -89,6 +94,8 @@ positive exponent, is equicontinuous on that set
   preserves Hölder bounds.
 * `Isometry.holderWith_comp_iff`: postcomposition with an isometry preserves global Hölder bounds
   in both directions.
+* `LipschitzWith.comp_holderOnWith`: postcomposition with a `K`-Lipschitz map keeps the exponent
+  and multiplies the Hölder constant by `K`.
 * `HolderWith.comp_lipschitzWith_one`: precomposition with a `1`-Lipschitz map keeps the Hölder
   constant and exponent.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
@@ -225,6 +232,15 @@ theorem Isometry.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoE
     (hf : HolderWith C r f) : HolderWith C r (g ∘ f) :=
   holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
 
+/-- Postcomposition with a `K`-Lipschitz map preserves a Hölder bound on a set with the same
+exponent, multiplying the constant by `K`. -/
+theorem LipschitzWith.comp_holderOnWith {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {K : ℝ≥0} {g : Y → Z} (hg : LipschitzWith K g)
+    {C r : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith C r f s) :
+    HolderOnWith (K * C) r (g ∘ f) s := by
+  have h := hg.holderWith.comp_holderOnWith hf
+  rwa [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
+
 /-- Precomposition with a `1`-Lipschitz map preserves a global Hölder bound, with the same constant
 and exponent. -/
 theorem HolderWith.comp_lipschitzWith_one {X Y Z : Type*} [PseudoEMetricSpace X]
@@ -308,6 +324,16 @@ theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
   simpa using HolderOnWith.of_le_of_dist_le (K := L) (β := 1)
     (fun x hx y hy _ => by simpa using h.dist_le_mul x hx y hy) hdiam hα
     (by norm_num : (0 : ℝ≥0) < 1)
+
+/-- A function locally Lipschitz on a compact set `s` is Hölder on `s` for every exponent at most
+one. -/
+theorem LocallyLipschitzOn.exists_holderOnWith_of_isCompact {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {f : X → Y} {s : Set X} (hf : LocallyLipschitzOn s f)
+    (hs : IsCompact s) {α : ℝ≥0} (hα : α ≤ 1) : ∃ C : ℝ≥0, HolderOnWith C α f s := by
+  obtain ⟨L, hL⟩ := hf.exists_lipschitzOnWith_of_compact hs
+  obtain ⟨D, hD⟩ := Metric.isBounded_iff.1 hs.isBounded
+  exact ⟨_, hL.holderOnWith.of_le (D := D.toNNReal) (fun x hx y hy => by
+    rw [edist_dist]; exact ENNReal.ofReal_le_ofReal (hD hx hy)) hα⟩
 
 /-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
 `z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/

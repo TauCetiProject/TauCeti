@@ -59,6 +59,9 @@ constants are parameters, not hidden existential data.
   conormal component of a smooth gradient.
 * `TauCeti.PDE.locallyLipschitzOn_matrixBilinearForm_of_contDiffOn`: a coefficient field with
   `C¹` entries on an open set has locally Lipschitz bilinear forms there.
+* `TauCeti.PDE.holderOnWith_matrixBilinearForm_of_forall` and
+  `TauCeti.PDE.exists_holderOnWith_matrixBilinearForm_of_contDiffOn`: Hölder entries give Hölder
+  bilinear forms, and `C¹` entries give bilinear forms that are Hölder on compact sets.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
 * `TauCeti.PDE.exists_lipschitzOnWith_inv_matrixBilinearForm_self`: for a uniformly elliptic
@@ -1085,6 +1088,17 @@ theorem holderOnWith_matrixBilinearForm_of_forall {X : Type*} [PseudoMetricSpace
   refine Finset.sum_le_sum fun j _ => ?_
   rw [Matrix.sub_apply, ← Real.dist_eq]
   exact (ha i j).dist_le hx hy
+
+/-- **`C¹` coefficient fields have Hölder bilinear forms on compact sets.** If the entries of `a`
+are continuously differentiable on an open set `s`, then on every compact `S ⊆ s` the map
+`x ↦ (η, ξ ↦ ηᵀ a(x) ξ)` is `α`-Hölder in the operator norm for every `α ≤ 1`. -/
+theorem exists_holderOnWith_matrixBilinearForm_of_contDiffOn
+    {a : EuclideanSpace ℝ n → Matrix n n ℝ} {s : Set (EuclideanSpace ℝ n)} (hs : IsOpen s)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) s) {S : Set (EuclideanSpace ℝ n)}
+    (hS : IsCompact S) (hSs : S ⊆ s) {α : ℝ≥0} (hα : α ≤ 1) :
+    ∃ K : ℝ≥0, HolderOnWith K α (fun x => matrixBilinearForm (a x)) S :=
+  ((locallyLipschitzOn_matrixBilinearForm_of_contDiffOn hs ha).mono
+    hSs).exists_holderOnWith_of_isCompact hS hα
 
 /-- The coefficients `x ↦ ⟪p, a(x) q⟫` of a coefficient field that is `K`-Lipschitz on `s` as a
 bilinear form are `K ‖p‖ ‖q‖`-Lipschitz on `s`. -/
