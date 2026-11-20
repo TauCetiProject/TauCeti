@@ -53,8 +53,8 @@ variable {A : E →ₗ.[R] E} (e : E ≃L[R] F)
 /-- The graph of `e A e⁻¹` is, as a set, the preimage of the graph of `A` under `e⁻¹ × e⁻¹`. -/
 theorem coe_graph_conj (A : E →ₗ.[R] E) :
     ((A.conj (e : E ≃ₗ[R] F)).graph : Set (F × F)) = Prod.map e.symm e.symm ⁻¹' A.graph := by
-  rw [graph_conj, Submodule.comap_coe, LinearMap.coe_prodMap, LinearEquiv.coe_coe,
-    ContinuousLinearEquiv.coe_symm_toLinearEquiv]
+  ext p
+  exact mem_graph_conj_iff
 
 /-- The domain of a conjugate by a continuous linear equivalence is dense exactly when the domain
 of the original partial map is. -/
@@ -97,9 +97,7 @@ theorem IsResolventAt.conj {z : R} {T : E →L[R] E} (h : A.IsResolventAt z T) :
   · rw [mem_graph_conj_iff]
     simpa using h.1 (e.symm y)
   · have := h.2 _ (mem_graph_conj_iff.1 hp)
-    simp only [ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply,
-      ContinuousLinearEquiv.coe_symm_toLinearEquiv] at this ⊢
-    rw [_root_.map_sub, _root_.map_smul, this, ContinuousLinearEquiv.apply_symm_apply]
+    simpa using congrArg e this
 
 /-- Conjugation by a continuous linear equivalence preserves the resolvent set. -/
 @[simp]
@@ -171,6 +169,7 @@ theorem isClosable_conj_iff : (A.conj (e : E ≃ₗ[R] F)).IsClosable ↔ A.IsCl
   ⟨fun h ↦ by simpa using h.conj e.symm, (·.conj e)⟩
 
 /-- The closure of `e A e⁻¹` is the conjugate of the closure of `A`. -/
+@[simp]
 theorem closure_conj (A : E →ₗ.[R] E) :
     (A.conj (e : E ≃ₗ[R] F)).closure = A.closure.conj e := by
   by_cases hA : A.IsClosable

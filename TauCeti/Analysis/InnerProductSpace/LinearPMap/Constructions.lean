@@ -24,9 +24,9 @@ public import TauCeti.Topology.Algebra.Module.LinearPMap.Conj
   viewed as a partial map on the full domain, is self-adjoint.
 * `LinearPMap.isSelfAdjoint_perturb_bounded`: adding a bounded self-adjoint
   operator to a self-adjoint partial map preserves self-adjointness.
-* `LinearPMap.adjoint_conj`: for a densely defined partial map `A` and a linear
-  isometric equivalence `U`, the adjoint of the conjugate `U A U⁻¹` (see
-  `LinearPMap.conj`) is `U A† U⁻¹`.
+* `LinearPMap.adjoint_conj`: for any partial map `A` and a linear isometric
+  equivalence `U`, the adjoint of the conjugate `U A U⁻¹` (see `LinearPMap.conj`)
+  is `U A† U⁻¹`.
 * `LinearPMap.isSelfAdjoint_conj_iff`: `U A U⁻¹` is self-adjoint exactly when
   `A` is.
 
@@ -135,9 +135,14 @@ section Conj
 
 variable {H' : Type*} [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H']
 
+/-! The conjugate `U A U⁻¹` by a linear isometric equivalence `U` is written
+`A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')`, the form in which the conjugation lemmas for continuous
+linear equivalences (density, closedness, resolvents, spectra) apply. -/
+
 /-- Conjugation by a linear isometric equivalence preserves formal adjointness. -/
 theorem IsFormalAdjoint.conj {T S : H →ₗ.[𝕜] H} (h : T.IsFormalAdjoint S) (U : H ≃ₗᵢ[𝕜] H') :
-    (T.conj U.toLinearEquiv).IsFormalAdjoint (S.conj U.toLinearEquiv) := fun x y ↦ by
+    (T.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).IsFormalAdjoint
+      (S.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')) := fun x y ↦ by
   simpa [LinearIsometryEquiv.inner_map_eq_flip] using
     h ⟨_, mem_conj_domain_iff.1 x.2⟩ ⟨_, mem_conj_domain_iff.1 y.2⟩
 
@@ -146,12 +151,12 @@ variable [CompleteSpace H] [CompleteSpace H']
 /-- A vector lies in the domain of the adjoint of `U A U⁻¹` exactly when its preimage under `U`
 lies in the domain of `A†`. -/
 private theorem mem_adjoint_conj_domain_iff {A : H →ₗ.[𝕜] H} (U : H ≃ₗᵢ[𝕜] H') {y : H'} :
-    y ∈ (A.conj U.toLinearEquiv)†.domain ↔ U.symm y ∈ A†.domain := by
-  have hφ : Continuous fun x : (A.conj U.toLinearEquiv).domain ↦
-      (⟨U.symm x, mem_conj_domain_iff.1 x.2⟩ : A.domain) :=
+    y ∈ (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H'))†.domain ↔ U.symm y ∈ A†.domain := by
+  have hφ : Continuous fun x : (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain ↦
+      (⟨U.symm x, by simpa using mem_conj_domain_iff.1 x.2⟩ : A.domain) :=
     (U.symm.continuous.comp continuous_subtype_val).subtype_mk _
   have hψ : Continuous fun x : A.domain ↦
-      (⟨U x, map_mem_conj_domain (e := U.toLinearEquiv) x⟩ : (A.conj U.toLinearEquiv).domain) :=
+      (⟨U x, map_mem_conj_domain x⟩ : (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain) :=
     (U.continuous.comp continuous_subtype_val).subtype_mk _
   rw [mem_adjoint_domain_iff, mem_adjoint_domain_iff]
   refine ⟨fun h ↦ (h.comp hψ).congr fun x ↦ ?_, fun h ↦ (h.comp hφ).congr fun x ↦ ?_⟩
@@ -160,35 +165,36 @@ private theorem mem_adjoint_conj_domain_iff {A : H →ₗ.[𝕜] H} (U : H ≃�
 
 /-- **Adjoint of a unitary conjugate.** For a linear isometric equivalence `U`,
 `(U A U⁻¹)† = U A† U⁻¹`. -/
+@[simp]
 theorem adjoint_conj (A : H →ₗ.[𝕜] H) (U : H ≃ₗᵢ[𝕜] H') :
-    (A.conj U.toLinearEquiv)† = (A†).conj U.toLinearEquiv := by
+    (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H'))† = (A†).conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H') := by
   by_cases hA : Dense (A.domain : Set H)
-  · have hA' : Dense ((A.conj U.toLinearEquiv).domain : Set H') :=
-      (dense_conj_domain_iff U.toContinuousLinearEquiv).2 hA
+  · have hA' : Dense ((A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain : Set H') := by
+      simpa using hA
     refine le_antisymm ?_ (((adjoint_isFormalAdjoint hA).symm.conj U).le_adjoint hA')
-    rw [← conj_le_conj_iff (e := U.toLinearEquiv.symm), conj_conj_symm]
+    rw [← conj_le_conj_iff (e := ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H').symm), conj_conj_symm]
     have h := (adjoint_isFormalAdjoint hA').symm.conj U.symm
-    rw [LinearIsometryEquiv.toLinearEquiv_symm, conj_conj_symm] at h
+    rw [LinearIsometryEquiv.toContinuousLinearEquiv_symm, ContinuousLinearEquiv.toLinearEquiv_symm,
+      conj_conj_symm] at h
     exact h.le_adjoint hA
   · -- Off dense domains both adjoints take the junk value `0`, on the same domain.
-    have hA' : ¬Dense ((A.conj U.toLinearEquiv).domain : Set H') :=
-      mt (dense_conj_domain_iff U.toContinuousLinearEquiv).1 hA
+    have hA' : ¬Dense ((A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain : Set H') := by
+      simpa using hA
     refine ext (Submodule.ext fun y ↦ ?_) fun y hy hy' ↦ ?_
-    · rw [mem_adjoint_conj_domain_iff, mem_conj_domain_iff,
-        ← LinearIsometryEquiv.toLinearEquiv_symm, LinearIsometryEquiv.coe_toLinearEquiv]
+    · simp [mem_adjoint_conj_domain_iff]
     · rw [adjoint_apply_of_not_dense hA', conj_apply, adjoint_apply_of_not_dense hA,
         _root_.map_zero]
 
 /-- Conjugation by a linear isometric equivalence preserves self-adjointness. -/
 theorem _root_.IsSelfAdjoint.conj {A : H →ₗ.[𝕜] H} (hA : IsSelfAdjoint A)
-    (U : H ≃ₗᵢ[𝕜] H') : IsSelfAdjoint (A.conj U.toLinearEquiv) := by
+    (U : H ≃ₗᵢ[𝕜] H') : IsSelfAdjoint (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')) := by
   rw [isSelfAdjoint_def, adjoint_conj, isSelfAdjoint_def.1 hA]
 
 /-- A unitary conjugate `U A U⁻¹` is self-adjoint exactly when `A` is. -/
 @[simp]
 theorem isSelfAdjoint_conj_iff {A : H →ₗ.[𝕜] H} (U : H ≃ₗᵢ[𝕜] H') :
-    IsSelfAdjoint (A.conj U.toLinearEquiv) ↔ IsSelfAdjoint A :=
-  ⟨fun h ↦ by simpa [LinearIsometryEquiv.toLinearEquiv_symm] using h.conj U.symm, (·.conj U)⟩
+    IsSelfAdjoint (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')) ↔ IsSelfAdjoint A :=
+  ⟨fun h ↦ by simpa using h.conj U.symm, (·.conj U)⟩
 
 end Conj
 

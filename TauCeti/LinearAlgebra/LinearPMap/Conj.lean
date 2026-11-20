@@ -99,7 +99,7 @@ theorem mem_graph_conj_iff {p : F × F} :
 theorem graph_conj (A : E →ₗ.[R] E) (e : E ≃ₗ[R] F) :
     (A.conj e).graph = A.graph.comap ((e.symm : F →ₗ[R] E).prodMap (e.symm : F →ₗ[R] E)) := by
   ext p
-  rw [mem_graph_conj_iff, Submodule.mem_comap, LinearMap.prodMap_apply, LinearEquiv.coe_coe]
+  exact mem_graph_conj_iff
 
 /-- Conjugating by the identity does nothing. -/
 @[simp]
@@ -151,10 +151,9 @@ theorem domRestrict_conj (A : E →ₗ.[R] E) (e : E ≃ₗ[R] F) (S : Submodule
   refine ext ?_ fun x hx hx' ↦ ?_
   · rw [domRestrict_domain, conj_domain, conj_domain, domRestrict_domain,
       Submodule.map_inf _ e.injective]
-  · refine (domRestrict_apply (x := ⟨x, hx⟩) (y := ⟨x, (Submodule.mem_inf.1 hx).2⟩)
-      rfl).trans ?_
-    rw [conj_apply, conj_apply]
-    exact congrArg e (domRestrict_apply (x := ⟨e.symm x, mem_conj_domain_iff.1 hx'⟩) rfl).symm
+  · -- Both sides restrict `A.conj e`, so they agree with it at `x`.
+    let y : (A.conj e).domain := ⟨x, domRestrict_le.1 hx⟩
+    exact (domRestrict_le.2 (y := y) rfl).trans ((conj_le_conj_iff.2 domRestrict_le).2 rfl).symm
 
 /-- On an everywhere-defined map conjugation is `LinearEquiv.conjRingEquiv`, with the domain
 transported along `e`. -/
