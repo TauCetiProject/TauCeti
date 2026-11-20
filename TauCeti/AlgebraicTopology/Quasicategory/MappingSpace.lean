@@ -126,10 +126,6 @@ lemma mem_mappingSpace_obj₀_iff (σ : ((ihom Δ[1]).obj X) _⦋0⦌) :
 
 namespace mappingSpace
 
-private lemma range_ι_le : Subcomplex.range (X.mappingSpace x y).ι ≤ X.mappingSpace x y := by
-  rintro _ _ ⟨σ, rfl⟩
-  exact σ.2
-
 variable (x y)
 
 /-- The uncurried form `Δ[1] ⊗ Hom_X(x, y) ⟶ X` of the inclusion of `Hom_X(x, y)` is constant at
@@ -137,14 +133,14 @@ variable (x y)
 @[reassoc (attr := simp)]
 lemma whiskerRight_δ_one_uncurry_ι :
     stdSimplex.δ 1 ▷ _ ≫ uncurry (X.mappingSpace x y).ι = const x :=
-  ((range_le_mappingSpace_iff _).1 range_ι_le).1
+  ((range_le_mappingSpace_iff _).1 (Subfunctor.range_ι _).le).1
 
 /-- The uncurried form `Δ[1] ⊗ Hom_X(x, y) ⟶ X` of the inclusion of `Hom_X(x, y)` is constant at
 `y` on `{1} × Hom_X(x, y)`. -/
 @[reassoc (attr := simp)]
 lemma whiskerRight_δ_zero_uncurry_ι :
     stdSimplex.δ 0 ▷ _ ≫ uncurry (X.mappingSpace x y).ι = const y :=
-  ((range_le_mappingSpace_iff _).1 range_ι_le).2
+  ((range_le_mappingSpace_iff _).1 (Subfunctor.range_ι _).le).2
 
 /-- The mapping spaces of a quasicategory are quasicategories: `Hom_X(x, y)` is a fibre of the
 restriction `Fun(Δ[1], X) ⟶ Fun(∂Δ[1], X)`, which is an inner fibration. -/
