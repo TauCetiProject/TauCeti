@@ -31,8 +31,8 @@ It intertwines the gauge actions of `A` on both sides, so it descends to a bijec
 which sends the base point to the class of `c`. It is a bijection of underlying sets only: the
 target is pointed at `[c]` rather than at its own base point. Through it, the fibre of a map of
 `H¹` over the class of a cocycle becomes, after twisting, a fibre over the base point; the
-compatibility with equivariant coefficient maps needed for this is
-`TauCeti.NonabelianH1.map_twistEquiv`.
+compatibility with the maps induced by compatible pairs needed for this is
+`TauCeti.NonabelianH1.map_ofTwistEquiv`.
 
 The elements of `₍c₎A` form the one-field structure `TauCeti.NonabelianH1.Twist c`, so that the
 twisted action cannot be confused with the original one; `Twist.ofOriginal` and
@@ -44,21 +44,21 @@ an isomorphism of topological groups, which is not `G`-equivariant.
 * `TauCeti.NonabelianH1.Twist c`: the twist `₍c₎A` of `A` by the cocycle `c`, a topological group
   with the twisted action `g ⋆ x = c g * g • x * (c g)⁻¹`.
 * `TauCeti.NonabelianH1.Twist.continuousMulEquiv c`: the underlying identification `₍c₎A ≃ₜ* A`.
-* `TauCeti.NonabelianH1.Twist.map`: the map `₍c₎A →ₜ* ₍φ ∘ c₎A'` induced by an equivariant
-  continuous homomorphism `φ : A →ₜ* A'`.
-* `TauCeti.NonabelianH1.Cocycle.twistEquiv c`: the bijection `Z¹(G, ₍c₎A) ≃ Z¹(G, A)`,
+* `TauCeti.NonabelianH1.Twist.map`: the map `₍c₎A →ₜ* ₍φ ∘ c ∘ ψ₎A'` induced by a compatible
+  pair `(ψ, φ)`.
+* `TauCeti.NonabelianH1.Cocycle.ofTwistEquiv c`: the bijection `Z¹(G, ₍c₎A) ≃ Z¹(G, A)`,
   `d ↦ (g ↦ d g * c g)`.
-* `TauCeti.NonabelianH1.twistEquiv c`: the induced bijection `H¹(G, ₍c₎A) ≃ H¹(G, A)`.
+* `TauCeti.NonabelianH1.ofTwistEquiv c`: the induced bijection `H¹(G, ₍c₎A) ≃ H¹(G, A)`.
 
 ## Main results
 
 * `TauCeti.NonabelianH1.Twist.toOriginal_smul`: the twisted action is `c g * g • x * (c g)⁻¹`.
 * `TauCeti.NonabelianH1.Twist.mem_fixedPoints_iff`: the invariants of `₍c₎A` are the elements
   `x` with `c g * g • x = x * c g` for all `g`.
-* `TauCeti.NonabelianH1.Cocycle.twistEquiv_twist`: twisting intertwines the gauge actions.
-* `TauCeti.NonabelianH1.twistEquiv_one`: the base point of `H¹(G, ₍c₎A)` goes to `[c]`.
-* `TauCeti.NonabelianH1.map_twistEquiv`: twisting commutes with the maps induced by equivariant
-  continuous homomorphisms.
+* `TauCeti.NonabelianH1.Cocycle.ofTwistEquiv_twist`: twisting intertwines the gauge actions.
+* `TauCeti.NonabelianH1.ofTwistEquiv_one`: the base point of `H¹(G, ₍c₎A)` goes to `[c]`.
+* `TauCeti.NonabelianH1.map_ofTwistEquiv`: twisting commutes with the maps induced by compatible
+  pairs.
 
 ## References
 
@@ -203,32 +203,32 @@ theorem mem_fixedPoints_iff {x : Twist c} :
 
 section Map
 
-variable {A' : Type*} [Group A'] [TopologicalSpace A'] [MulDistribMulAction G A']
+variable {G' A' : Type*} [Group G'] [TopologicalSpace G'] [Group A'] [TopologicalSpace A']
+  [MulDistribMulAction G' A']
 
 variable (c) in
-/-- The map `₍c₎A →ₜ* ₍φ ∘ c₎A'` of twists induced by a `G`-equivariant continuous homomorphism
-`φ : A →ₜ* A'`. It is equivariant for the twisted actions
-(`TauCeti.NonabelianH1.Twist.map_smul`). -/
-def map (φ : A →ₜ* A') (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a) :
-    Twist c →ₜ* Twist (c.map (ContinuousMonoidHom.id G) φ h) where
+/-- The map `₍c₎A →ₜ* ₍φ ∘ c ∘ ψ₎A'` of twists induced by a compatible pair `(ψ, φ)`: continuous
+homomorphisms `ψ : G' →ₜ* G` and `φ : A →ₜ* A'` with `φ (ψ g • a) = g • φ a`. It is compatible
+with the twisted actions (`TauCeti.NonabelianH1.Twist.map_smul`). -/
+def map (ψ : G' →ₜ* G) (φ : A →ₜ* A') (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) :
+    Twist c →ₜ* Twist (c.map ψ φ h) where
   toFun x := ofOriginal (φ x.toOriginal)
   map_one' := by ext; simp
   map_mul' x y := by ext; simp
   continuous_toFun := by fun_prop
 
 @[simp]
-theorem toOriginal_map (φ : A →ₜ* A')
-    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a) (x : Twist c) :
-    (map c φ h x).toOriginal = φ x.toOriginal :=
+theorem toOriginal_map (ψ : G' →ₜ* G) (φ : A →ₜ* A')
+    (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) (x : Twist c) :
+    (map c ψ φ h x).toOriginal = φ x.toOriginal :=
   (rfl)
 
-/-- The map of twists is equivariant for the twisted actions. -/
-theorem map_smul (φ : A →ₜ* A')
-    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a) (g : G) (x : Twist c) :
-    map c φ h (ContinuousMonoidHom.id G g • x) = g • map c φ h x := by
-  have hg : ∀ a, φ (g • a) = g • φ a := h g
+/-- The map of twists is compatible with the twisted actions. -/
+theorem map_smul (ψ : G' →ₜ* G) (φ : A →ₜ* A')
+    (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) (g : G') (x : Twist c) :
+    map c ψ φ h (ψ g • x) = g • map c ψ φ h x := by
   ext
-  simp [hg]
+  simp [h]
 
 end Map
 
@@ -240,7 +240,7 @@ variable [IsTopologicalGroup A] (c : Cocycle G A)
 
 /-- **Twisting by a cocycle** on cocycles: the bijection `Z¹(G, ₍c₎A) ≃ Z¹(G, A)` sending `d` to
 `g ↦ d g * c g`, with inverse `f ↦ (g ↦ f g * (c g)⁻¹)`. -/
-def twistEquiv : Cocycle G (Twist c) ≃ Cocycle G A where
+def ofTwistEquiv : Cocycle G (Twist c) ≃ Cocycle G A where
   toFun d :=
     { toFun g := (d g).toOriginal * c g
       continuous_toFun := by fun_prop
@@ -253,29 +253,29 @@ def twistEquiv : Cocycle G (Twist c) ≃ Cocycle G A where
   right_inv f := by ext; simp
 
 @[simp]
-theorem twistEquiv_apply (d : Cocycle G (Twist c)) (g : G) :
-    c.twistEquiv d g = (d g).toOriginal * c g :=
+theorem ofTwistEquiv_apply (d : Cocycle G (Twist c)) (g : G) :
+    c.ofTwistEquiv d g = (d g).toOriginal * c g :=
   (rfl)
 
 @[simp]
-theorem toOriginal_twistEquiv_symm_apply (f : Cocycle G A) (g : G) :
-    (c.twistEquiv.symm f g).toOriginal = f g * (c g)⁻¹ :=
+theorem toOriginal_ofTwistEquiv_symm_apply (f : Cocycle G A) (g : G) :
+    (c.ofTwistEquiv.symm f g).toOriginal = f g * (c g)⁻¹ :=
   (rfl)
 
 /-- Twisting sends the trivial cocycle of `₍c₎A` to `c`. -/
 @[simp]
-theorem twistEquiv_one : c.twistEquiv 1 = c := by
+theorem ofTwistEquiv_one : c.ofTwistEquiv 1 = c := by
   ext
   simp
 
 @[simp]
-theorem twistEquiv_symm_self : c.twistEquiv.symm c = 1 :=
-  c.twistEquiv.symm_apply_eq.2 c.twistEquiv_one.symm
+theorem ofTwistEquiv_symm_self : c.ofTwistEquiv.symm c = 1 :=
+  c.ofTwistEquiv.symm_apply_eq.2 c.ofTwistEquiv_one.symm
 
 /-- Twisting by `c` preserves and reflects the cohomology relation. -/
-theorem twistEquiv_equiv_twistEquiv_iff {d d' : Cocycle G (Twist c)} :
-    c.twistEquiv d ≈ c.twistEquiv d' ↔ d ≈ d' := by
-  simp only [equiv_iff, twistEquiv_apply]
+theorem ofTwistEquiv_equiv_ofTwistEquiv_iff {d d' : Cocycle G (Twist c)} :
+    c.ofTwistEquiv d ≈ c.ofTwistEquiv d' ↔ d ≈ d' := by
+  simp only [equiv_iff, ofTwistEquiv_apply]
   constructor
   · rintro ⟨a, ha⟩
     refine ⟨Twist.ofOriginal a, fun g ↦ ?_⟩
@@ -288,23 +288,21 @@ theorem twistEquiv_equiv_twistEquiv_iff {d d' : Cocycle G (Twist c)} :
 
 /-- Twisting intertwines the gauge actions: twisting the gauge transform of `d` by `a` is the gauge
 transform by `a` of the twisted cocycle. -/
-theorem twistEquiv_twist [ContinuousSMul G A] (d : Cocycle G (Twist c)) (a : Twist c) :
-    c.twistEquiv (d.twist a) = (c.twistEquiv d).twist a.toOriginal := by
+theorem ofTwistEquiv_twist [ContinuousSMul G A] (d : Cocycle G (Twist c)) (a : Twist c) :
+    c.ofTwistEquiv (d.twist a) = (c.ofTwistEquiv d).twist a.toOriginal := by
   ext
   simp [mul_assoc]
 
 section Map
 
-variable {A' : Type*} [Group A'] [TopologicalSpace A'] [IsTopologicalGroup A']
-  [MulDistribMulAction G A']
+variable {G' A' : Type*} [Group G'] [TopologicalSpace G'] [Group A'] [TopologicalSpace A']
+  [IsTopologicalGroup A'] [MulDistribMulAction G' A']
 
-/-- Twisting commutes with mapping along a `G`-equivariant continuous homomorphism `φ`. -/
-theorem map_twistEquiv (φ : A →ₜ* A')
-    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a)
-    (d : Cocycle G (Twist c)) :
-    (c.twistEquiv d).map (ContinuousMonoidHom.id G) φ h =
-      (c.map (ContinuousMonoidHom.id G) φ h).twistEquiv
-        (d.map (ContinuousMonoidHom.id G) (Twist.map c φ h) (Twist.map_smul φ h)) := by
+/-- Twisting commutes with mapping along a compatible pair `(ψ, φ)`. -/
+theorem map_ofTwistEquiv (ψ : G' →ₜ* G) (φ : A →ₜ* A')
+    (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a) (d : Cocycle G (Twist c)) :
+    (c.ofTwistEquiv d).map ψ φ h =
+      (c.map ψ φ h).ofTwistEquiv (d.map ψ (Twist.map c ψ φ h) (Twist.map_smul ψ φ h)) := by
   ext
   simp
 
@@ -316,41 +314,40 @@ variable [IsTopologicalGroup A] (c : Cocycle G A)
 
 /-- **Twisting by a cocycle**: the bijection `H¹(G, ₍c₎A) ≃ H¹(G, A)` induced by
 `d ↦ (g ↦ d g * c g)` on cocycles. It sends the base point to the class of `c`
-(`TauCeti.NonabelianH1.twistEquiv_one`), so it preserves base points only when `c` is a
+(`TauCeti.NonabelianH1.ofTwistEquiv_one`), so it preserves base points only when `c` is a
 coboundary. -/
-def twistEquiv : NonabelianH1 G (Twist c) ≃ NonabelianH1 G A :=
-  congr c.twistEquiv fun _ _ ↦ c.twistEquiv_equiv_twistEquiv_iff.symm
+def ofTwistEquiv : NonabelianH1 G (Twist c) ≃ NonabelianH1 G A :=
+  congr c.ofTwistEquiv fun _ _ ↦ c.ofTwistEquiv_equiv_ofTwistEquiv_iff.symm
 
 @[simp]
-theorem twistEquiv_mk (d : Cocycle G (Twist c)) : twistEquiv c (mk d) = mk (c.twistEquiv d) :=
+theorem ofTwistEquiv_mk (d : Cocycle G (Twist c)) : ofTwistEquiv c (mk d) = mk (c.ofTwistEquiv d) :=
   congr_mk _ _ d
 
 @[simp]
-theorem twistEquiv_symm_mk (f : Cocycle G A) :
-    (twistEquiv c).symm (mk f) = mk (c.twistEquiv.symm f) :=
+theorem ofTwistEquiv_symm_mk (f : Cocycle G A) :
+    (ofTwistEquiv c).symm (mk f) = mk (c.ofTwistEquiv.symm f) :=
   congr_symm_mk _ _ f
 
 /-- Twisting by `c` sends the base point of `H¹(G, ₍c₎A)` to the class of `c`. -/
 @[simp]
-theorem twistEquiv_one : twistEquiv c 1 = mk c := by
-  rw [one_def, twistEquiv_mk, Cocycle.twistEquiv_one]
+theorem ofTwistEquiv_one : ofTwistEquiv c 1 = mk c := by
+  rw [one_def, ofTwistEquiv_mk, Cocycle.ofTwistEquiv_one]
 
 /-- The class of `c` corresponds to the base point of `H¹(G, ₍c₎A)`. -/
-theorem twistEquiv_symm_mk_self : (twistEquiv c).symm (mk c) = 1 := by
-  rw [twistEquiv_symm_mk, Cocycle.twistEquiv_symm_self, mk_one]
+theorem ofTwistEquiv_symm_mk_self : (ofTwistEquiv c).symm (mk c) = 1 := by
+  rw [ofTwistEquiv_symm_mk, Cocycle.ofTwistEquiv_symm_self, mk_one]
 
-/-- Twisting commutes with the maps of `H¹` induced by a `G`-equivariant continuous homomorphism
-`φ : A →ₜ* A'`: the square formed by `H¹(G, ₍c₎A) → H¹(G, ₍φ ∘ c₎A')` and `H¹(G, A) → H¹(G, A')`
-commutes. -/
-theorem map_twistEquiv {A' : Type*} [Group A'] [TopologicalSpace A'] [IsTopologicalGroup A']
-    [MulDistribMulAction G A'] (φ : A →ₜ* A')
-    (h : ∀ (g : G) (a : A), φ (ContinuousMonoidHom.id G g • a) = g • φ a)
+/-- Twisting commutes with the maps of `H¹` induced by a compatible pair `(ψ, φ)`: the square
+formed by `H¹(G, ₍c₎A) → H¹(G', ₍φ ∘ c ∘ ψ₎A')` and `H¹(G, A) → H¹(G', A')` commutes. In
+particular twisting commutes with restriction. -/
+theorem map_ofTwistEquiv {G' A' : Type*} [Group G'] [TopologicalSpace G'] [Group A']
+    [TopologicalSpace A'] [IsTopologicalGroup A'] [MulDistribMulAction G' A'] (ψ : G' →ₜ* G)
+    (φ : A →ₜ* A') (h : ∀ (g : G') (a : A), φ (ψ g • a) = g • φ a)
     (x : NonabelianH1 G (Twist c)) :
-    map (ContinuousMonoidHom.id G) φ h (twistEquiv c x) =
-      twistEquiv (c.map (ContinuousMonoidHom.id G) φ h)
-        (map (ContinuousMonoidHom.id G) (Twist.map c φ h) (Twist.map_smul φ h) x) := by
+    map ψ φ h (ofTwistEquiv c x) =
+      ofTwistEquiv (c.map ψ φ h) (map ψ (Twist.map c ψ φ h) (Twist.map_smul ψ φ h) x) := by
   induction x using induction_on with | mk d =>
-  simp only [twistEquiv_mk, map_mk, Cocycle.map_twistEquiv]
+  simp only [ofTwistEquiv_mk, map_mk, Cocycle.map_ofTwistEquiv]
 
 end NonabelianH1
 
