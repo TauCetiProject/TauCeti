@@ -1016,6 +1016,19 @@ theorem totalCriticalCount_const_eq_top [Nontrivial E] [Nonempty M] (c : ℝ) :
   rw [totalCriticalCount_def, criticalPoints_const, encard_eq_top_iff]
   exact infinite_of_mem_nhds x univ_mem
 
+/-- On a manifold modelled on a zero-dimensional space every point is critical of index `0`, so
+the number of critical points of index `0` is the number of points, possibly `⊤`. -/
+@[simp]
+theorem criticalCount_zero_of_subsingleton [Subsingleton E] :
+    criticalCount I f 0 = ENat.card M := by
+  simp [criticalCount_def, encard_univ]
+
+/-- On a manifold modelled on a zero-dimensional space every Morse index is `0`, so there are no
+critical points of positive index. -/
+theorem criticalCount_eq_zero_of_subsingleton [Subsingleton E] {j : ℕ} (hj : j ≠ 0) :
+    criticalCount I f j = 0 := by
+  simp [criticalCount_def, hj.symm]
+
 /-- A function and its negation have the same number of critical points. -/
 @[simp]
 theorem totalCriticalCount_neg : totalCriticalCount I (-f) = totalCriticalCount I f := by
