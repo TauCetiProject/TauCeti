@@ -52,6 +52,8 @@ fields on a product manifold.
 * `TauCeti.mvfderiv_curry_right`: the derivative of a slice with fixed first coordinate.
 * `TauCeti.mvfderiv_diag_eq_add`: the derivative of `x ↦ S(x, x)` is the sum of the two
   partial derivatives of `S` on the diagonal.
+* `TauCeti.mvfderiv_comp_prodMk_apply`: the chain rule for `y ↦ S(f y, g y)`, as the sum of the
+  partial derivatives of `S` applied to the derivatives of `f` and `g`.
 * `TauCeti.mfderiv_inr_eq_zero_of_forall_apply_eq`: a map constant on a slice `{p} × N` has
   differential vanishing on the vectors tangent to that slice.
 * `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
@@ -328,6 +330,22 @@ theorem mvfderiv_diag_eq_add {S : M × M → F} {q : M}
   rw [hd, mfderiv_id]
   -- `(id.prod id) v` is `(v, v)` in the product tangent space.
   exact (hS.mvfderiv_prod_eq_add_apply (v, v)).trans (add_apply _ _ v).symm
+
+/-- **The chain rule through a pair of maps.** If `S` is differentiable at `(f x, g x)` and `f`,
+`g` are differentiable at `x`, the differential of `y ↦ S(f y, g y)` at `x` sends `v` to
+`d₁S(df v) + d₂S(dg v)`, the sum of the partial differentials of `S` applied to the differentials
+of `f` and `g`. -/
+theorem mvfderiv_comp_prodMk_apply {f : M'' → M} {g : M'' → N} {S : M × N → F} {x : M''}
+    (hS : MDifferentiableAt (I.prod J) 𝓘(𝕜, F) S (f x, g x))
+    (hf : MDifferentiableAt I'' I f x) (hg : MDifferentiableAt I'' J g x)
+    (v : TangentSpace I'' x) :
+    mvfderiv I'' (fun y ↦ S (f y, g y)) x v =
+      mvfderiv I (fun y ↦ S (y, g x)) (f x) (mfderiv I'' I f x v) +
+        mvfderiv J (fun y ↦ S (f x, y)) (g x) (mfderiv I'' J g x v) := by
+  refine (mvfderiv_comp_apply (g := S) (f := fun y ↦ (f y, g y)) x hS (hf.prodMk hg) v).trans ?_
+  rw [mfderiv_prodMk hf hg]
+  -- `((df).prod (dg)) v` is the pair `(df v, dg v)` in the product tangent space.
+  exact hS.mvfderiv_prod_eq_add_apply _
 
 /-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
 `p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
