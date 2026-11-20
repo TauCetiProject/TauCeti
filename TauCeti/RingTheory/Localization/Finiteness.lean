@@ -120,7 +120,7 @@ theorem of_forall_isMaximal_exists_notMem
     Module.Finite R M := by
   -- The elements `r` with `M_r` finite generate the unit ideal: no maximal ideal contains them.
   refine of_localizationSpan
-    {r | Module.Finite (Localization.Away r) (LocalizedModule.Away r M)} ?_ fun r ↦ r.2
+    {r | Module.Finite (Localization.Away r) (LocalizedModule.Away r M)} ?_ fun r ↦ r.property
   by_contra h
   obtain ⟨q, hq, hle⟩ := Ideal.exists_le_maximal _ h
   obtain ⟨r, hrq, hr⟩ := H q hq

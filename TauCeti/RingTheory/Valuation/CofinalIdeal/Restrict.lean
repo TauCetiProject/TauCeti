@@ -312,7 +312,7 @@ private theorem characteristicSubgroup_restrictToIdeal_eq_top_of_meets (w : Valu
   have hmem : OrderMonoidIso.unitsWithZero (u : (w.ValueGroup₀)ˣ)
       ∈ characteristicSubgroup w := by
     rw [← characteristicSubgroupOfIdeal_of_meets hfg hm]
-    exact ConvexSubgroup.mem_comapUnitsWithZero.mp u.2
+    exact ConvexSubgroup.mem_comapUnitsWithZero.mp u.property
   obtain ⟨g, hg, hginv, hgle⟩ := mem_characteristicSubgroup_iff.mp hmem
   obtain ⟨hg1, a, hga⟩ := mem_characteristicGenerators.mp hg
   refine ⟨a, ?_, ?_⟩
@@ -354,7 +354,7 @@ private theorem cofinalValue_restrictToIdeal_of_not_meets (w : Valuation A Γ₀
     hγ.ne' (ValueGroup₀.embedding_injective (by simpa using h))
   obtain ⟨u, hu⟩ := WithZero.ne_zero_iff_exists.mp hγ0
   -- its image in the value group of `v` lies in `cΓ_v(I)`, so `a` is cofinal below it
-  have hmem := ConvexSubgroup.mem_comapUnitsWithZero.mp u.2
+  have hmem := ConvexSubgroup.mem_comapUnitsWithZero.mp u.property
   obtain ⟨n, hn⟩ := hcof _ hmem
   refine ⟨n, ?_⟩
   rw [← map_pow, Valuation.restrict_lt_iff_lt_embedding, ← hu,

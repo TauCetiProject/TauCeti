@@ -147,7 +147,7 @@ section Inclusions
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {R₀ : ℝ}
 
-local instance (r : Set.Ioo (0 : ℝ) 1) : Fact (0 < (r : ℝ)) := ⟨r.2.1⟩
+local instance (r : Set.Ioo (0 : ℝ) 1) : Fact (0 < (r : ℝ)) := ⟨r.property.1⟩
 
 /-- The unit Gauss norm on `washnitzerAlgebra Unit R` agrees with the univariate unit Gauss norm
 `PowerSeries.gaussNorm norm 1`. -/
@@ -274,9 +274,10 @@ theorem uniformContinuous_toOnOpenDiscOne : UniformContinuous (toOnOpenDiscOne (
   rw [one_mul, TauCeti.PowerSeries.norm_eq_gaussNorm, norm_unit_eq_gaussNorm]
   simpa only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_comp, AddMonoidHom.coe_ofClass,
     Function.comp_apply, TauCeti.PowerSeries.OnOpenDisc.coe_restrict, coe_toOnOpenDiscOne] using
-    TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) r.2.1.le r.2.2.le
+    TauCeti.PowerSeries.gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) r.property.1.le
+      r.property.2.le
       (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-        (isRestricted_of_mem_washnitzerAlgebra f.2 zero_le_one le_rfl))
+        (isRestricted_of_mem_washnitzerAlgebra f.property zero_le_one le_rfl))
 
 /-- The inclusion of `R⟨X⟩†` into series on the open unit disc is continuous. -/
 @[continuity]
@@ -346,7 +347,7 @@ theorem norm_evalAt_le_mul_norm (hb : ‖b‖ ≤ 1) (f : washnitzerAlgebra Unit
   rw [norm_unit_eq_gaussNorm]
   exact norm_evalAt_le_mul_gaussNorm_of_norm_algebraMap_le
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-      (isRestricted_of_mem_washnitzerAlgebra f.2 zero_le_one le_rfl)) halg hb
+      (isRestricted_of_mem_washnitzerAlgebra f.property zero_le_one le_rfl)) halg hb
 
 omit [IsBoundedSMul R A] [CompleteSpace A] in
 /-- In an ultrametric normed `R`-algebra with contractive `algebraMap`, `‖f(b)‖ ≤ ‖f‖` for
@@ -357,7 +358,7 @@ theorem norm_evalAt_le_of_norm_algebraMap_le (halg : ∀ r : R, ‖algebraMap R 
   rw [norm_unit_eq_gaussNorm]
   exact norm_evalAt_le_gaussNorm_of_norm_algebraMap_le
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-      (isRestricted_of_mem_washnitzerAlgebra f.2 zero_le_one le_rfl)) halg hb
+      (isRestricted_of_mem_washnitzerAlgebra f.property zero_le_one le_rfl)) halg hb
 
 /-- `evalAtHom` is continuous for the unit Gauss norm topology on `R⟨X⟩†`. -/
 @[continuity]

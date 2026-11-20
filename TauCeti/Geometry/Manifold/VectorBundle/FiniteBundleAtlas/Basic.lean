@@ -131,7 +131,7 @@ theorem exists_closure_dom_subset [LocallyCompactSpace E] [CompactSpace M] [T2Sp
     (closure_mono interior_subset).trans ((hK x).isClosed.closure_subset.trans (hKW x))
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover (fun x ↦ interior (K x))
     (fun x ↦ isOpen_interior) fun x _ ↦ mem_iUnion.2 ⟨x, hxK x⟩
-  let c : Fin t.card → M := fun i ↦ (t.equivFin.symm i).1
+  let c : Fin t.card → M := fun i ↦ (t.equivFin.symm i).val
   refine ⟨⟨t.card, c, fun i ↦ interior (K (c i)), fun i ↦ isOpen_interior,
     fun i ↦ (hK _).closure_of_subset interior_subset,
     fun i ↦ (hcl _).trans (inter_subset_right.trans inter_subset_left),

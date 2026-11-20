@@ -50,7 +50,7 @@ variable {A₀ B₀ A K L : Type*} [CommRing A₀] [CommRing B₀] [IsDomain B�
   [Algebra A₀ L] [IsScalarTower A₀ A L] [IsScalarTower A₀ B₀ L]
   (R : p.primesOver B₀ → Type*) [∀ q, CommRing (R q)] [∀ q, IsLocalRing (R q)]
   [∀ q, IsNoetherianRing (R q)] [∀ q, Ring.KrullDimLE 1 (R q)]
-  [∀ q, Algebra B₀ (R q)] [∀ q, IsLocalization.AtPrime (R q) q.1] [∀ q, Algebra (R q) L]
+  [∀ q, Algebra B₀ (R q)] [∀ q, IsLocalization.AtPrime (R q) q.val] [∀ q, Algebra (R q) L]
   [∀ q, IsScalarTower B₀ (R q) L] [∀ q, IsFractionRing (R q) L] [∀ q, Algebra A (R q)]
   [∀ q, Algebra A₀ (R q)] [∀ q, IsScalarTower A₀ A (R q)] [∀ q, IsScalarTower A₀ B₀ (R q)]
 
@@ -88,7 +88,7 @@ theorem ordFrac_norm_eq_finprod_primesOver {r : L} (hr : r ≠ 0) :
   let e := IsLocalization.AtPrime.maximalSpectrumEquivPrimesOver (S := B₀) p A B
   have (m : MaximalSpectrum B) :
       IsLocalization.AtPrime (R (e m)) (m.asIdeal.comap (algebraMap B₀ B)) := by
-    convert (inferInstance : IsLocalization.AtPrime (R (e m)) (e m).1)
+    convert (inferInstance : IsLocalization.AtPrime (R (e m)) (e m).val)
     exact (IsLocalization.AtPrime.coe_maximalSpectrumEquivPrimesOver_apply p A B m).symm
   rw [ordFrac_norm_eq_finprod_of_isLocalization (K := K) (B := B)
     (algebraMapSubmonoid B₀ p.primeCompl) (fun m ↦ R (e m)) hr, ← finprod_comp_equiv e]

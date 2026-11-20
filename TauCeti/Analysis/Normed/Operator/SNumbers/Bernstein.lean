@@ -67,12 +67,12 @@ subspaces `M` of the source of rank `n + 1`, of the gain `inf_{0 ≠ x ∈ M} �
 `M`. The indexing is zero-based, so `b₀(T) = ‖T‖` (`bernsteinNumber_zero`). -/
 noncomputable def bernsteinNumber (T : E →L[𝕜] F) (n : ℕ) : ℝ≥0 :=
   ⨆ M : {M : Submodule 𝕜 E // Module.rank 𝕜 M = n + 1},
-    ⨅ x : {x : E // x ∈ M.1 ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊
+    ⨅ x : {x : E // x ∈ M.val ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊
 
 /-- `bₙ(T)` is the supremum over the subspaces `M` of rank `n + 1` of the gain of `T` on `M`. -/
 theorem bernsteinNumber_def (T : E →L[𝕜] F) (n : ℕ) :
     T.bernsteinNumber n = ⨆ M : {M : Submodule 𝕜 E // Module.rank 𝕜 M = n + 1},
-      ⨅ x : {x : E // x ∈ M.1 ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊ := by
+      ⨅ x : {x : E // x ∈ M.val ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊ := by
   rw [bernsteinNumber]
 
 /-- The gain of `T` on `M` is a coercivity constant of `T` on `M`. -/
@@ -90,7 +90,7 @@ private theorem le_iInf_of_rank_eq (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {
     c ≤ ⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊ := by
   obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
   have : Nonempty {y : E // y ∈ M ∧ y ≠ 0} := ⟨⟨x, hx, hx0⟩⟩
-  exact le_ciInf fun y ↦ (le_div_iff₀ (nnNorm_pos.mpr y.2.2)).mpr (h y y.2.1)
+  exact le_ciInf fun y ↦ (le_div_iff₀ (nnNorm_pos.mpr y.property.2)).mpr (h y y.property.1)
 
 /-- The gain of `T` on a subspace of rank `n + 1` is at most `‖T‖`. -/
 private theorem iInf_le_nnnorm (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {n : ℕ}
@@ -108,9 +108,9 @@ theorem bernsteinNumber_le_iff {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0} :
   refine ⟨fun h M hM d hd ↦ ?_, fun h ↦ ?_⟩
   · refine ((le_iInf_of_rank_eq T hM hd).trans ?_).trans h
     exact le_ciSup (f := fun M : {M : Submodule 𝕜 E // Module.rank 𝕜 M = n + 1} ↦
-        ⨅ x : {x : E // x ∈ M.1 ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊)
-      ⟨‖T‖₊, Set.forall_mem_range.mpr fun M ↦ iInf_le_nnnorm T M.2⟩ ⟨M, hM⟩
-  · exact ciSup_le' fun M ↦ h M.1 M.2 _ fun x hx ↦ iInf_mul_nnnorm_le T M.1 hx
+        ⨅ x : {x : E // x ∈ M.val ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊)
+      ⟨‖T‖₊, Set.forall_mem_range.mpr fun M ↦ iInf_le_nnnorm T M.property⟩ ⟨M, hM⟩
+  · exact ciSup_le' fun M ↦ h M.val M.property _ fun x hx ↦ iInf_mul_nnnorm_le T M.val hx
 
 /-- **Coercive-subspace lower bound.** If `c ‖x‖ ≤ ‖T x‖` for every `x` in a subspace of rank
 `n + 1`, then `c ≤ bₙ(T)`. -/
@@ -232,7 +232,7 @@ theorem bernsteinNumber_comp_comp_le (B : F →L[𝕜] G) (T : E →L[𝕜] F) (
   have hinj : Function.Injective ((A : W →ₗ[𝕜] E) ∘ₗ M.subtype) := by
     refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
     have hAx : A x = 0 := by simpa using hx
-    simpa [hAx, hd0] using hd x x.2
+    simpa [hAx, hd0] using hd x x.property
   have hrank : Module.rank 𝕜 (LinearMap.range ((A : W →ₗ[𝕜] E) ∘ₗ M.subtype)) = n + 1 := by
     have h := lift_rank_range_of_injective _ hinj
     rw [hM, ← Nat.cast_add_one, Cardinal.lift_natCast, Cardinal.lift_eq_nat_iff] at h
@@ -243,7 +243,7 @@ theorem bernsteinNumber_comp_comp_le (B : F →L[𝕜] G) (T : E →L[𝕜] F) (
   calc d * ‖A x‖₊ ≤ d * (‖A‖₊ * ‖(x : W)‖₊) := by gcongr; exact A.le_opNNNorm x
     _ = ‖A‖₊ * (d * ‖(x : W)‖₊) := mul_left_comm _ _ _
     _ ≤ ‖A‖₊ * (‖B‖₊ * ‖T (A x)‖₊) :=
-      mul_le_mul_right ((hd x x.2).trans (B.le_opNNNorm _)) _
+      mul_le_mul_right ((hd x x.property).trans (B.le_opNNNorm _)) _
     _ = ‖B‖₊ * ‖A‖₊ * ‖T (A x)‖₊ := by ring
 
 /-- **Identity normalization.** If `n` is strictly below the rank of `E`, then `bₙ(id_E) = 1`:

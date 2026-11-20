@@ -14,7 +14,7 @@ import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Sylow
 
 /-!
-# Restricting the class of a quotient extension
+# Restricting the class of a quotient extension and the cohomological Gaschütz proof
 
 Let `N` be an abelian normal subgroup of `G` and `N ≤ H`. The quotient `H ⧸ N` is the image of
 `H` in `G ⧸ N`, and `N.subgroupOf H` is `N`. This file proves that these identifications induce an
@@ -48,8 +48,9 @@ cohomological proofs of Gaschütz's splitting theorem and of Sylow complement de
 
 ## Main definitions
 
-* `Subgroup.subgroupOfRepHom`: `N.subgroupOf H ≃ N` as a morphism of representations of the
-  image of `H` in `G ⧸ N`.
+* `Subgroup.subgroupOfRepIso` and `Subgroup.subgroupOfRepHom`: `N.subgroupOf H ≃ N` as an
+  isomorphism and a morphism of representations of the image of `H` in `G ⧸ N`, with
+  `Subgroup.subgroupOfRepInvHom` the inverse coefficient map.
 * `Subgroup.subgroupOfGroupCohomologyIso`: the resulting isomorphism between
   `Hⁿ(H ⧸ N.subgroupOf H, N.subgroupOf H)` and `Hⁿ(H.map (QuotientGroup.mk' N), N)`.
 
@@ -64,16 +65,21 @@ cohomological proofs of Gaschütz's splitting theorem and of Sylow complement de
 * `Subgroup.map_subtype_injective_of_coprime_index`,
   `Subgroup.IsLocalComplement.cohomologyClass_factorSet_quotientExtension_eq_zero`, and
   `Subgroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index`: injectivity
-  of restriction and vanishing of the extension class across an index prime to `|N|`.
+  of restriction and vanishing of the extension class across an index prime to `|N|`, with
+  `Subgroup.exists_isLocalComplement_iff_cohomologyClass_eq_zero_of_coprime_index` the resulting
+  local-complement criterion.
 * `IsPGroup.map_sylow_injective` and
   `IsPGroup.cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow`: injectivity of
-  restriction and detection of the extension class on a finite-index Sylow `p`-subgroup.
+  restriction and detection of the extension class on a finite-index Sylow `p`-subgroup, with
+  `IsPGroup.exists_isLocalComplement_sylow_iff_cohomologyClass_eq_zero` the resulting
+  local-complement criterion.
 
 ## References
 
 * W. Gaschütz, *Zur Erweiterungstheorie der endlichen Gruppen*, J. reine angew. Math. 190
   (1952), 93–107.
 * K. S. Brown, *Cohomology of Groups*, Chapter IV, §3 and Chapter III, §9.
+* J. S. Milne, *Class Field Theory*, Chapter II, Corollary 1.33.
 -/
 
 public section
@@ -98,32 +104,44 @@ theorem subgroupOfEquivOfLe_smul (hNH : N ≤ H) (y : H ⧸ N.subgroupOf H) (n :
   apply Subtype.ext
   simp [MulAut.conjNormal_apply]
 
-end
-
-variable {G : Type} [Group G] {N : Subgroup G} [N.Normal] [IsMulCommutative N] {H : Subgroup G}
-
-attribute [local instance] quotientConjugationAction
-
-/-- Identifying `N.subgroupOf H` with `N` is a morphism of representations of the image of `H`
+/-- Identifying `N.subgroupOf H` with `N` is an isomorphism of representations of the image of `H`
 in `G ⧸ N`. That image acts on `N.subgroupOf H` through
 `Subgroup.quotientSubgroupOfMulEquivMap` and the quotient conjugation action of `H`,
 and on `N` by restricting the quotient conjugation action of `G`. -/
+noncomputable def subgroupOfRepIso (hNH : N ≤ H) :
+    Rep.res (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
+        (Rep.ofMulDistribMulAction (H ⧸ N.subgroupOf H) (N.subgroupOf H)) ≅
+      Rep.res (H.map (QuotientGroup.mk' N)).subtype (Rep.ofMulDistribMulAction (G ⧸ N) N) :=
+  Rep.mkIso (Representation.Equiv.mk (N.subgroupOfEquivOfLe hNH).toAdditive.toIntLinearEquiv
+    fun q ↦ by
+      ext x
+      have h := subgroupOfEquivOfLe_smul hNH ((quotientSubgroupOfMulEquivMap N H).symm q) x.toMul
+      rw [MulEquiv.apply_symm_apply] at h
+      exact congrArg Additive.ofMul h)
+
+/-- Identifying `N.subgroupOf H` with `N` is a morphism of representations of the image of `H`
+in `G ⧸ N`. -/
 noncomputable def subgroupOfRepHom (hNH : N ≤ H) :
     Rep.res (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
         (Rep.ofMulDistribMulAction (H ⧸ N.subgroupOf H) (N.subgroupOf H)) ⟶
       Rep.res (H.map (QuotientGroup.mk' N)).subtype (Rep.ofMulDistribMulAction (G ⧸ N) N) :=
-  Rep.ofHom ⟨(N.subgroupOfEquivOfLe hNH).toMonoidHom.toAdditive.toIntLinearMap, fun q => by
-    ext x
-    have h := subgroupOfEquivOfLe_smul hNH ((quotientSubgroupOfMulEquivMap N H).symm q) x.toMul
-    rw [MulEquiv.apply_symm_apply] at h
-    -- Both representations act on `Additive.ofMul` of their arguments, so the intertwining
-    -- identity is `Additive.ofMul` of `subgroupOfEquivOfLe_smul`.
-    exact congrArg Additive.ofMul h⟩
+  (subgroupOfRepIso hNH).hom
+
+@[simp]
+theorem subgroupOfRepIso_hom (hNH : N ≤ H) :
+    (subgroupOfRepIso hNH).hom = subgroupOfRepHom hNH :=
+  (rfl)
 
 @[simp]
 theorem subgroupOfRepHom_hom_apply (hNH : N ≤ H) (x : Additive (N.subgroupOf H)) :
     (subgroupOfRepHom hNH).hom x = Additive.ofMul (N.subgroupOfEquivOfLe hNH x.toMul) :=
   (rfl)
+
+end
+
+variable {G : Type} [Group G] {N : Subgroup G} [N.Normal] [IsMulCommutative N] {H : Subgroup G}
+
+attribute [local instance] quotientConjugationAction
 
 /-- For `N ≤ H`, the group isomorphism `quotientSubgroupOfMulEquivMap N H` and the coefficient
 isomorphism `N.subgroupOfEquivOfLe hNH` identify the cohomology of `H ⧸ N.subgroupOf H` on
@@ -146,6 +164,36 @@ theorem subgroupOfGroupCohomologyIso_hom (hNH : N ≤ H) (n : ℕ) :
       groupCohomology.map (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
         (subgroupOfRepHom hNH) n :=
   groupCohomology.map_congr rfl (LinearMap.ext fun _ => rfl) n
+
+@[simp]
+theorem subgroupOfRepIso_inv_hom_apply (hNH : N ≤ H) (x : Additive N) :
+    (subgroupOfRepIso hNH).inv.hom x =
+      Additive.ofMul ((N.subgroupOfEquivOfLe hNH).symm x.toMul) :=
+  (rfl)
+
+/-- Identifying `N` with `N.subgroupOf H` is a morphism of `H ⧸ N.subgroupOf H`-representations,
+representing the coefficient map of `(Subgroup.subgroupOfGroupCohomologyIso hNH n).inv`. -/
+noncomputable def subgroupOfRepInvHom (hNH : N ≤ H) :
+    Rep.res (quotientSubgroupOfMulEquivMap N H).toMonoidHom
+        (Rep.res (H.map (QuotientGroup.mk' N)).subtype (Rep.ofMulDistribMulAction (G ⧸ N) N)) ⟶
+      Rep.ofMulDistribMulAction (H ⧸ N.subgroupOf H) (N.subgroupOf H) :=
+  Rep.ofHom (σ := (Rep.ofMulDistribMulAction (H ⧸ N.subgroupOf H) (N.subgroupOf H)).ρ)
+    ⟨(subgroupOfRepIso hNH).inv.hom.toLinearMap, fun y ↦ by
+      simpa [MulEquiv.symm_apply_apply] using
+        (subgroupOfRepIso hNH).inv.hom.isIntertwining' (quotientSubgroupOfMulEquivMap N H y)⟩
+
+@[simp]
+theorem subgroupOfRepInvHom_hom_apply (hNH : N ≤ H) (x : Additive N) :
+    (subgroupOfRepInvHom hNH).hom x =
+      Additive.ofMul ((N.subgroupOfEquivOfLe hNH).symm x.toMul) :=
+  (rfl)
+
+@[simp]
+theorem subgroupOfGroupCohomologyIso_inv (hNH : N ≤ H) (n : ℕ) :
+    (subgroupOfGroupCohomologyIso hNH n).inv =
+      groupCohomology.map (quotientSubgroupOfMulEquivMap N H).toMonoidHom
+        (subgroupOfRepInvHom hNH) n :=
+  groupCohomology.map_congr rfl (by ext; rfl) n
 
 /-- A section of the quotient extension of `G`, read on the image of `H`, is a section of the
 quotient extension of `H`. -/
@@ -305,13 +353,25 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_of_coprime_index
     (TauCeti.GroupExtension.factorSet σ hσ
         N.quotientExtension_inducesAction).cohomologyClass = 0 ↔
       (TauCeti.GroupExtension.factorSet τ hτ
-        (N.subgroupOf H).quotientExtension_inducesAction).cohomologyClass = 0 := by
-  have hNH : N ≤ H := relIndex_eq_one.1 <| Nat.eq_one_of_dvd_coprimes hcop
-    (relIndex_sup_of_le_normalizer (le_normalizer_of_normal (H := N)) ▸
-      relIndex_dvd_index_of_le le_sup_left)
-    (H.relIndex_dvd_card N)
-  exact (map_eq_zero_iff _ (map_subtype_injective_of_coprime_index hcop 2)).symm.trans
-    (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff hNH σ hσ τ hτ)
+        (N.subgroupOf H).quotientExtension_inducesAction).cohomologyClass = 0 :=
+  (map_eq_zero_iff _ (map_subtype_injective_of_coprime_index hcop 2)).symm.trans
+    (map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
+      (le_of_coprime_index (le_normalizer_of_normal (H := N)) hcop) σ hσ τ hτ)
+
+/-- **Cohomological Gaschütz criterion for local complements.** When `[G : H]` is coprime to
+`Nat.card N` (which forces `N ≤ H` since `N` is normal), `N` has a local complement in `H` if and
+only if the quotient extension class of `G` by `N` vanishes. Combined with
+`Subgroup.exists_complement_iff_cohomologyClass_eq_zero`, this recovers Gaschütz's splitting
+theorem on `G : Type` without crossed transfer. -/
+theorem exists_isLocalComplement_iff_cohomologyClass_eq_zero_of_coprime_index
+    (hcop : Nat.Coprime H.index (Nat.card N))
+    (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
+    (∃ K : Subgroup G, N.IsLocalComplement K H) ↔
+      (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
+        0 :=
+  (exists_isLocalComplement_iff_map_subtype_cohomologyClass_eq_zero
+      (le_of_coprime_index (le_normalizer_of_normal (H := N)) hcop) σ hσ).trans
+    (map_eq_zero_iff _ (map_subtype_injective_of_coprime_index hcop 2))
 
 end Subgroup
 
@@ -356,6 +416,21 @@ theorem cohomologyClass_factorSet_quotientExtension_eq_zero_iff_sylow
   (map_eq_zero_iff _ (hN.map_sylow_injective P 2)).symm.trans
     (Subgroup.map_subtype_cohomologyClass_factorSet_quotientExtension_eq_zero_iff
       (hN.le_sylow_of_normal P) σ hσ τ hτ)
+
+/-- **Cohomological Sylow detection for local complements.** For an abelian normal `p`-subgroup
+`N` of `G` (not necessarily finite) and a finite-index Sylow `p`-subgroup `P` of `G`, `N` has a
+local complement in `P` if and only if the quotient extension class of `G` by `N` vanishes.
+Combined with `Subgroup.exists_complement_iff_cohomologyClass_eq_zero`, this recovers Sylow
+detection of complements on `G : Type` without assuming `[Finite G]` or `[Finite N]`. -/
+theorem exists_isLocalComplement_sylow_iff_cohomologyClass_eq_zero
+    (hN : IsPGroup p N) (P : Sylow p G) [P.FiniteIndex]
+    (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
+    (∃ K : Subgroup G, N.IsLocalComplement K P) ↔
+      (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
+        0 :=
+  (Subgroup.exists_isLocalComplement_iff_map_subtype_cohomologyClass_eq_zero
+      (hN.le_sylow_of_normal P) σ hσ).trans
+    (map_eq_zero_iff _ (hN.map_sylow_injective P 2))
 
 end IsPGroup
 

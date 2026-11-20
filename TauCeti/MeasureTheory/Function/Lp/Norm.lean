@@ -95,6 +95,11 @@ bounds.
   `MeasureTheory.memLp_top_inv_sub_of_ae_le_norm_sub`: an almost-everywhere strongly measurable
   function into a normed division ring bounded away from zero (or from a scalar `z`) almost
   everywhere has essentially bounded reciprocal (`MemLp · ∞ μ`).
+* `LinearIsometry.norm_compLp` and `LinearIsometry.norm_compLpL_apply`: post-composing an `Lᵖ`
+  function with a semilinear isometry preserves its `Lᵖ` norm.
+* `ContinuousLinearMap.norm_apply_one_compLp` and
+  `ContinuousLinearMap.norm_apply_one_compLpL_apply`: evaluating an `Lᵖ` family of linear maps
+  `𝕜 →L[𝕜] E` at `1` preserves its `Lᵖ` norm.
 -/
 
 public section
@@ -617,7 +622,8 @@ theorem Lp.exists_measurableSet_mul_norm_lt_norm_apply_measure_lt_top [SigmaFini
   set S : Set (E →L[𝕜] F) := {B ∈ C | c + δ < ‖B‖}
   have : Countable S := (hC_count.mono (Set.sep_subset _ _)).to_subtype
   choose u hu using fun B : S ↦ show ∃ u : E, (c + δ) * ‖u‖ < ‖(B : E →L[𝕜] F) u‖ by
-    by_contra! h; exact (not_le_of_gt B.2.2) ((B : E →L[𝕜] F).opNorm_le_bound (by linarith) h)
+    by_contra! h; exact (not_le_of_gt B.property.2) ((B : E →L[𝕜] F).opNorm_le_bound
+        (by linarith) h)
   have hcover : {x | c + 2 * δ < ‖A x‖} ⊆ ⋃ B : S, {x | c * ‖u B‖ < ‖A x (u B)‖} := fun x hx ↦ by
     obtain ⟨B, hBC, hdist⟩ := Metric.mem_closure_iff.mp (hC_sub ⟨x, rfl⟩) δ hδ
     rw [dist_comm, _root_.dist_eq_norm] at hdist
@@ -666,3 +672,59 @@ theorem memLp_top_inv_sub_of_ae_le_norm_sub {f : α → 𝕜} (hf : AEStronglyMe
 end Inv
 
 end MeasureTheory
+
+section CompLpNorm
+
+open MeasureTheory
+open scoped ENNReal
+
+namespace LinearIsometry
+
+variable {α E F 𝕜₁ 𝕜₂ : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NormedAddCommGroup F]
+  [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂]
+  [NormedSpace 𝕜₁ E] [NormedSpace 𝕜₂ F] {σ : 𝕜₁ →+* 𝕜₂} [RingHomIsometric σ]
+
+/-- Post-composing an `Lᵖ` function with a semilinear isometry preserves its `Lᵖ` norm. -/
+@[simp]
+theorem norm_compLp (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLp f‖ = ‖f‖ := by
+  rw [Lp.norm_def, Lp.norm_def]
+  congr 1
+  refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_
+  filter_upwards [L.toContinuousLinearMap.coeFn_compLp f] with x hx
+  rw [hx, L.coe_toContinuousLinearMap, L.norm_map]
+
+/-- Post-composing an `Lᵖ` function with a semilinear isometry via `compLpL` preserves its `Lᵖ`
+norm. -/
+theorem norm_compLpL_apply [Fact (1 ≤ p)] (L : E →ₛₗᵢ[σ] F) (f : Lp E p μ) :
+    ‖L.toContinuousLinearMap.compLpL p μ f‖ = ‖f‖ :=
+  L.norm_compLp f
+
+end LinearIsometry
+
+namespace ContinuousLinearMap
+
+variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+
+/-- Pointwise evaluation at `1 : 𝕜` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ` norm. -/
+@[simp]
+theorem norm_apply_one_compLp (f : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLp f‖ = ‖f‖ := by
+  have h : ContinuousLinearMap.apply 𝕜 E (1 : 𝕜) =
+      (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.toContinuousLinearMap := by
+    ext φ
+    simp
+  rw [h]
+  exact (ContinuousLinearMap.toSpanSingletonLIE 𝕜 E).symm.toLinearIsometry.norm_compLp f
+
+/-- Pointwise evaluation at `1 : 𝕜` via `compLpL` on `Lp (𝕜 →L[𝕜] E) p μ` preserves the `Lᵖ`
+norm. -/
+theorem norm_apply_one_compLpL_apply [Fact (1 ≤ p)] (f : Lp (𝕜 →L[𝕜] E) p μ) :
+    ‖(ContinuousLinearMap.apply 𝕜 E (1 : 𝕜)).compLpL p μ f‖ = ‖f‖ :=
+  norm_apply_one_compLp f
+
+end ContinuousLinearMap
+
+end CompLpNorm

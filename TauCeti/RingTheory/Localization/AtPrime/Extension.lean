@@ -44,24 +44,24 @@ noncomputable def maximalSpectrumEquivPrimesOver : MaximalSpectrum Sₚ ≃ p.pr
     ⟨m.asIdeal.comap (algebraMap S Sₚ), inferInstance, inferInstance⟩
   invFun q :=
     have := IsLocalization.AtPrime.isLocalRing Rₚ p
-    have := isPrime_map_of_liesOver S p Sₚ q.1
-    have := liesOver_map_of_liesOver p Rₚ Sₚ q.1
-    ⟨q.1.map (algebraMap S Sₚ),
-      Ideal.IsMaximal.of_liesOver_isMaximal (q.1.map (algebraMap S Sₚ)) (maximalIdeal Rₚ)⟩
+    have := isPrime_map_of_liesOver S p Sₚ q.val
+    have := liesOver_map_of_liesOver p Rₚ Sₚ q.val
+    ⟨q.val.map (algebraMap S Sₚ),
+      Ideal.IsMaximal.of_liesOver_isMaximal (q.val.map (algebraMap S Sₚ)) (maximalIdeal Rₚ)⟩
   left_inv m := MaximalSpectrum.ext <|
     IsLocalization.map_under (algebraMapSubmonoid S p.primeCompl) Sₚ m.asIdeal
   right_inv q := Subtype.ext <|
     IsLocalization.under_map_of_isPrime_disjoint _ Sₚ inferInstance
-      (Ideal.disjoint_primeCompl_of_liesOver q.1 p)
+      (Ideal.disjoint_primeCompl_of_liesOver q.val p)
 
 @[simp]
 theorem coe_maximalSpectrumEquivPrimesOver_apply (m : MaximalSpectrum Sₚ) :
-    (maximalSpectrumEquivPrimesOver p Rₚ Sₚ m).1 = m.asIdeal.comap (algebraMap S Sₚ) :=
+    (maximalSpectrumEquivPrimesOver p Rₚ Sₚ m).val = m.asIdeal.comap (algebraMap S Sₚ) :=
   (rfl)
 
 @[simp]
 theorem maximalSpectrumEquivPrimesOver_symm_apply_asIdeal (q : p.primesOver S) :
-    ((maximalSpectrumEquivPrimesOver p Rₚ Sₚ).symm q).asIdeal = q.1.map (algebraMap S Sₚ) :=
+    ((maximalSpectrumEquivPrimesOver p Rₚ Sₚ).symm q).asIdeal = q.val.map (algebraMap S Sₚ) :=
   (rfl)
 
 end IsLocalization.AtPrime

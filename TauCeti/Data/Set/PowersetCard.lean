@@ -23,6 +23,8 @@ embedding to disjointness and `disjUnion`, `Set.powersetCard.le_card` and
 `Set.powersetCard.sub_add_eq_card` record the cardinality bound witnessed by an `r`-element subset
 of a finite type, and `Set.powersetCard.subsingleton_of_card_eq` together with the
 `Unique`/`Subsingleton` instances witness uniqueness at cardinalities `0` and `Fintype.card α`.
+For `p + 1 = Fintype.card α`, `Set.powersetCard.omitOne` is the equivalence sending `a : α` to the
+`p`-element subset `Finset.univ.erase a` omitting `a`.
 
 `Set.powersetCard.finChooseEquiv m j` enumerates the `j`-element subsets of `Fin m` by
 `Fin (m.choose j)`.
@@ -102,8 +104,8 @@ theorem map_disjUnion {α β : Type*} {m n : ℕ} (f : α ↪ β)
 
 /-- Every `r`-element subset of a finite type `α` satisfies `r ≤ Fintype.card α`. -/
 theorem le_card {α : Type*} [Fintype α] {r : ℕ} (T : powersetCard α r) :
-    r ≤ Fintype.card α :=
-  nonempty_iff.mp ⟨T⟩
+    r ≤ Fintype.card α := by
+  simpa [ENat.card_eq_coe_fintype_card] using nonempty_iff.mp ⟨T⟩
 
 /-- The complementary cardinality `Fintype.card α - r` and `r` sum to `Fintype.card α`. -/
 theorem sub_add_eq_card {α : Type*} [Fintype α] {r : ℕ} (T : powersetCard α r) :
@@ -141,6 +143,60 @@ instance instSubsingletonCard {α : Type*} [Fintype α] :
     Subsingleton (powersetCard α (Fintype.card α)) :=
   subsingleton_of_card_eq rfl
 
+section OmitOne
+
+variable {α : Type*} [DecidableEq α] [Fintype α] {p : ℕ}
+
+/-- The equivalence sending `a : α` to the `p`-element subset `Finset.univ.erase a` omitting `a`,
+where `p + 1 = Fintype.card α`. -/
+noncomputable def omitOne (hm : p + 1 = Fintype.card α) : α ≃ powersetCard α p :=
+  ofSingleton.trans (compl hm)
+
+/-- `omitOne hm a` is the complement of the singleton `{a}`. -/
+theorem omitOne_apply (hm : p + 1 = Fintype.card α) (a : α) :
+    omitOne hm a = compl hm (ofSingleton a) :=
+  (rfl)
+
+/-- The finite set underlying `omitOne hm a` is `Finset.univ.erase a`. -/
+@[simp]
+theorem coe_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
+    ((omitOne hm a : powersetCard α p) : Finset α) = Finset.univ.erase a := by
+  ext b
+  simp [omitOne_apply, Finset.mem_erase]
+
+/-- An element belongs to `omitOne hm a` precisely when it differs from `a`. -/
+@[simp, grind =]
+theorem mem_omitOne {hm : p + 1 = Fintype.card α} {a b : α} :
+    b ∈ omitOne hm a ↔ b ≠ a := by
+  rw [← mem_coe_iff, coe_omitOne, Finset.mem_erase]
+  simp
+
+/-- Taking the complement of `omitOne hm a` recovers the singleton `{a}`. -/
+@[simp]
+theorem compl_omitOne (hm : p + 1 = Fintype.card α) (a : α) :
+    compl ((Nat.add_comm 1 p).trans hm) (omitOne hm a) = ofSingleton a := by
+  rw [omitOne_apply, ← compl_symm (hm := hm), Equiv.symm_apply_apply]
+
+/-- `(omitOne hm).symm s` recovers the unique element outside `s` via `compl` and
+`ofSingleton.symm`. -/
+theorem omitOne_symm_apply (hm : p + 1 = Fintype.card α) (s : powersetCard α p) :
+    (omitOne hm).symm s = ofSingleton.symm (compl ((Nat.add_comm 1 p).trans hm) s) := by
+  simp [omitOne, compl_symm]
+
+/-- `(omitOne hm).symm s` equals `a` precisely when `a` does not belong to `s`. -/
+theorem omitOne_symm_apply_eq_iff {hm : p + 1 = Fintype.card α} {s : powersetCard α p} {a : α} :
+    (omitOne hm).symm s = a ↔ a ∉ s := by
+  rw [Equiv.symm_apply_eq, eq_iff_subset, coe_omitOne, Finset.subset_erase]
+  simp [mem_coe_iff]
+
+/-- The element `(omitOne hm).symm s` omitted by `s` does not belong to `s`. -/
+@[simp, grind .]
+theorem omitOne_symm_notMem (hm : p + 1 = Fintype.card α) (s : powersetCard α p) :
+    (omitOne hm).symm s ∉ s :=
+  omitOne_symm_apply_eq_iff.mp rfl
+
+end OmitOne
+
 /-- An enumeration of the `j`-element subsets of `Fin m` by `Fin (m.choose j)`. -/
 noncomputable def finChooseEquiv (m j : ℕ) : powersetCard (Fin m) j ≃ Fin (m.choose j) :=
   Fintype.equivFinOfCardEq <| by
@@ -154,17 +210,17 @@ into `t`. -/
 def ofFinEmbFiberEquiv (t : Set.powersetCard β r) :
     {f : Fin r ↪ β // ofFinEmb r β f = t} ≃ (Fin r ↪ t.val) where
   toFun f :=
-    ⟨fun i ↦ ⟨f.1 i, by
-        have h := congrArg Subtype.val f.2
+    ⟨fun i ↦ ⟨f.val i, by
+        have h := congrArg Subtype.val f.property
         rw [val_ofFinEmb] at h
-        exact h ▸ Finset.mem_map_of_mem f.1 (Finset.mem_univ i)⟩,
-      fun _ _ h ↦ f.1.injective (congrArg Subtype.val h)⟩
+        exact h ▸ Finset.mem_map_of_mem f.val (Finset.mem_univ i)⟩,
+      fun _ _ h ↦ f.val.injective (congrArg Subtype.val h)⟩
   invFun g :=
     ⟨g.trans (Function.Embedding.subtype _), Subtype.ext <| by
       rw [val_ofFinEmb]
       refine Finset.eq_of_subset_of_card_le (fun b hb ↦ ?_) (by simp [card_eq])
       obtain ⟨i, -, rfl⟩ := Finset.mem_map.1 hb
-      exact (g i).2⟩
+      exact (g i).property⟩
   left_inv _ := Subtype.ext (Function.Embedding.ext fun _ ↦ rfl)
   right_inv _ := Function.Embedding.ext fun _ ↦ Subtype.ext rfl
 
@@ -172,14 +228,14 @@ def ofFinEmbFiberEquiv (t : Set.powersetCard β r) :
 @[simp]
 theorem ofFinEmbFiberEquiv_apply_coe (t : Set.powersetCard β r)
     (f : {f : Fin r ↪ β // ofFinEmb r β f = t}) (i : Fin r) :
-    (ofFinEmbFiberEquiv t f i : β) = f.1 i :=
+    (ofFinEmbFiberEquiv t f i : β) = f.val i :=
   (rfl)
 
 /-- Applying `(ofFinEmbFiberEquiv t).symm` preserves vertex values. -/
 @[simp]
 theorem ofFinEmbFiberEquiv_symm_apply_coe (t : Set.powersetCard β r)
     (g : Fin r ↪ t.val) (i : Fin r) :
-    ((ofFinEmbFiberEquiv t).symm g).1 i = (g i : β) :=
+    ((ofFinEmbFiberEquiv t).symm g).val i = (g i : β) :=
   (rfl)
 
 /-- Exactly `r!` embeddings `Fin r ↪ β` have a prescribed `r`-element subset `t` as unordered

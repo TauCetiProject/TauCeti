@@ -66,8 +66,7 @@ lemma energyIntegrand_add :
   intro U
   apply ContinuousLinearMap.ext
   intro V
-  simp [energyIntegrand_apply, Matrix.add_mulVec, dotProduct_add, driftForm_apply,
-    massForm_apply, inner_add_left]
+  simp [energyIntegrand_apply, driftForm_apply, massForm_apply, inner_add_left]
   ring_nf
 
 /-- Pointwise evaluation form of `energyIntegrand_add`. -/
@@ -118,8 +117,7 @@ lemma energyIntegrand_smul :
   intro U
   apply ContinuousLinearMap.ext
   intro V
-  simp [energyIntegrand_apply, Matrix.smul_mulVec, dotProduct_smul, driftForm_apply,
-    massForm_apply, inner_smul_left, smul_eq_mul]
+  simp [energyIntegrand_apply, driftForm_apply, massForm_apply, inner_smul_left, smul_eq_mul]
   ring
 
 /-- Pointwise evaluation form of `energyIntegrand_smul`. -/

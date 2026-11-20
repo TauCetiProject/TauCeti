@@ -102,7 +102,7 @@ private theorem isBlock_of_notMem {x : G} (hx : x ∉ centralizer {u}) :
     IsBlock false false (of x : CentralizerExt u n) := by
   refine of_def (u := u) (n := n) ▸ isBlock_of fun ⟨c, hc⟩ => hx ?_
   rw [← hc, centralizerExtMap_false]
-  exact c.2
+  exact c.property
 
 /-- A nontrivial element `v` of `ℤⁿ`, the letter `(1, v)` of `C_G(u) × ℤⁿ`, is a one-letter
 block. -/

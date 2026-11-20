@@ -160,7 +160,7 @@ theorem integralTopForm_curl_area_eq_boundary_sum_curveIntegral {ι : Type*} [Fi
         (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
           (boundaryOrientation o).orientationAt ((q i).extend (z 0))) :
     let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-    let hg : Continuous g := hf.continuous.comp continuous_subtype_val
+    let hg : Continuous g := hf.continuous.comp continuous_subtypeVal
     IntegrableTopForm (fun x ↦ curl P Q (f x) •
       mpullback (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f manifoldAreaForm x) ∧
       (∀ i, CurveIntegrable (oneForm P Q) ((q i).map hg)) ∧
@@ -229,7 +229,7 @@ theorem integral_image_curl_eq_boundary_sum_curveIntegral {ι : Type*} [Fintype 
         (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
           (boundaryOrientation o).orientationAt ((q i).extend (z 0))) :
     let g := fun x : (𝓡∂ (1 + 1)).boundary M ↦ f x
-    let hg : Continuous g := hf.continuous.comp continuous_subtype_val
+    let hg : Continuous g := hf.continuous.comp continuous_subtypeVal
     IntegrableOn (curl P Q) (range f) ∧
       (∀ i, CurveIntegrable (oneForm P Q) ((q i).map hg)) ∧
       (∫ z in range f, curl P Q z) =
