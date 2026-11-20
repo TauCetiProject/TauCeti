@@ -116,10 +116,11 @@ theorem isCompleteFiltration_singularCochainFiltration (hX : Monotone X)
     simp only [G, Submodule.mem_comap, Submodule.mem_iInf, LinearMap.mem_ker]
     -- A simplex lies in `X (j - a)` exactly when its weight is at most `j`; the coordinates of a
     -- cochain are its restrictions to the summands of the simplices.
-    -- After unfolding the coordinates, the two conditions on the value differ only by the
-    -- definitional identification of `Iso.toLinearEquiv` with the underlying map, closed by `rfl`.
+    -- `Iso.toLinearMap_toLinearEquiv` unwraps the coordinate equivalence; the two sides then
+    -- differ only in the instances of the coercion to functions, closed by `rfl`.
     refine forall_congr' fun σ ↦ imp_congr ?_ (by
-      rw [LinearMap.proj_apply, LinearEquiv.coe_coe, cochainComponentsLinearEquiv_apply]; rfl)
+      rw [LinearMap.proj_apply, LinearEquiv.coe_coe, cochainComponentsLinearEquiv_apply,
+        Iso.toLinearMap_toLinearEquiv]; rfl)
     rw [Nat.lt_succ_iff, Nat.find_le_iff]
     exact ⟨fun h ↦ ⟨j, le_rfl, h⟩, fun ⟨i, hi, h⟩ ↦ h.trans (hX (by lia))⟩
   · push Not at hm
