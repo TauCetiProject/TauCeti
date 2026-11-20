@@ -497,7 +497,10 @@ private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens �
   set V : Opens ℝ := ⟨Ioo (a : ℝ) b, isOpen_Ioo⟩
   set ℓ : ℝ → ℝ := fun z ↦ ((a : ℝ) - f a) + (z - a) * (((b - f b) - (a - f a)) / (b - a))
   have hℓa : ℓ a = a - f a := by simp [ℓ]
-  have hℓb : ℓ b = b - f b := by simp [ℓ]; field_simp [(sub_pos.2 hab).ne']; ring
+  have hℓb : ℓ b = b - f b := by
+    simp only [ℓ]
+    field_simp [(sub_pos.2 hab).ne']
+    ring
   -- `F` extends `f` from `[a, b]` to `ℝ`, constant beyond the endpoints.
   set F : ℝ → ℝ := fun z ↦ f ⟨projIcc (a : ℝ) b hab.le z, hU (projIcc (a : ℝ) b hab.le z).2⟩
   have hF : Continuous F :=
@@ -510,6 +513,9 @@ private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens �
       continuous_toFun := by fun_prop
       map_zero_left := fun z ↦ by simp
       map_one_left := fun z ↦ by simp }
+  -- `H (t, w)` is its defining formula, and `g w` is `f w`.
+  have hHapply (t : unitInterval) (w : V) :
+      H (t, w) = (1 - t : ℝ) * f ⟨w, hU (Ioo_subset_Icc_self w.2)⟩ + t * ((w : ℝ) - ℓ w) := rfl
   refine fixedPointIndex_eq_of_homotopy H ?_
   -- The fixed points of `H` are the zeros of `Φ (t, z) = (1 - t) (z - F z) + t ℓ z` in
   -- `[0, 1] × (a, b)`, and at the endpoints `Φ` is `a - f a` and `b - f b`, which are nonzero.
@@ -518,9 +524,7 @@ private theorem fixedPointIndex_comp_inclusion_eq_sub_affineInterp {U : Opens �
     ext ⟨t, w⟩
     have hw : (w : ℝ) ∈ Icc (a : ℝ) b := Ioo_subset_Icc_self w.2
     have key : (w : ℝ) - H (t, w) = Φ (t, w) := by
-      simp only [Φ, hFeq ⟨w, hU hw⟩ hw]
-      -- `H (t, w)` is its defining formula, and `g w` is `f w`.
-      change (w : ℝ) - ((1 - t : ℝ) * f ⟨w, hU hw⟩ + t * ((w : ℝ) - ℓ w)) = _
+      simp only [Φ, hFeq ⟨w, hU hw⟩ hw, hHapply]
       ring
     rw [mem_ofPred_eq, mem_ofPred_eq, ← key, sub_eq_zero, eq_comm]
   rw [hHΦ]
@@ -578,11 +582,11 @@ theorem fixedPointIndex_add_sq_sub (ε : ℝ) :
       C((⊤ : Opens ℝ), ℝ)).fixedPointIndex = 0 := by
   -- The displacement `ε - x²` is negative at `±(|ε| + 1)`, and every fixed point satisfies
   -- `x² = ε`, so lies strictly between them.
-  set R := |ε| + 1
+  set R := |ε| + 1 with hRdef
   have hR : ε < R ^ 2 := by nlinarith [le_abs_self ε, abs_nonneg ε]
   have h := two_mul_fixedPointIndex_eq_sign_sub_sign
     (⟨fun z : (⊤ : Opens ℝ) ↦ (z : ℝ) + (z : ℝ) ^ 2 - ε, by fun_prop⟩ : C((⊤ : Opens ℝ), ℝ))
-    (a := ⟨-R, trivial⟩) (b := ⟨R, trivial⟩) (by simp [R]; linarith [abs_nonneg ε])
+    (a := ⟨-R, trivial⟩) (b := ⟨R, trivial⟩) (show -R ≤ R by linarith [abs_nonneg ε, hRdef])
     (fun _ _ ↦ trivial) fun z hz ↦ by
       have hz2 : (z : ℝ) ^ 2 = ε := by rw [coe_mk] at hz; linarith
       exact abs_lt_of_sq_lt_sq' (hz2 ▸ hR) (by positivity)
