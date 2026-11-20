@@ -581,10 +581,10 @@ theorem pointsMapOfFunctor_comp :
     pointsMapOfFunctor (U₁ ⋙ U₂)
         (Functor.associator U₁ U₂ _ ≪≫ Functor.isoWhiskerLeft U₁ e₂ ≪≫ e₁) =
       pointsMapOfFunctor U₂ e₂ ≫ pointsMapOfFunctor U₁ e₁ := by
-  ext A g
-  change _ = (pointsMapOfFunctor U₁ e₁).app A ((pointsMapOfFunctor U₂ e₂).app A g)
-  rw [pointsMapOfFunctor_app_apply (U₁ ⋙ U₂), tensorAutRestrict_comp, MonoidHom.comp_apply,
-    pointsMapOfFunctor_app_apply U₂ e₂, pointsMapOfFunctor_app_apply U₁ e₁,
+  refine NatTrans.ext (funext fun A => GrpCat.ext fun g => ?_)
+  rw [NatTrans.comp_app, GrpCat.comp_apply, pointsMapOfFunctor_app_apply (U₁ ⋙ U₂) _ A g,
+    tensorAutRestrict_comp, MonoidHom.comp_apply, pointsMapOfFunctor_app_apply U₂ e₂ A g,
+    pointsMapOfFunctor_app_apply U₁ e₁,
     ← fgPointTensorIsoEquiv_apply (H := H₂), MulEquiv.apply_symm_apply]
 
 /-- A composite of functors induces the composite of the coordinate maps, in the same order. -/
