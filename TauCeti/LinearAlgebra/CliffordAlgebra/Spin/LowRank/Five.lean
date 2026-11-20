@@ -116,7 +116,7 @@ theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_eq_five (Q : QuadraticForm
   · -- `ι Q w` is a multiple of `ω`, so `w = 0` and the conjugate `c • ω` is central: it is `ι Q m`.
     rw [hcentral t ht, map_zero, zero_add] at hy
     have hm : ι Q m = c • ω :=
-      Units.eq_of_mul_mul_inv_eq_of_commute x hy.symm ((hcenter x).smul_left c)
+      (Units.mul_mul_inv_eq_iff_eq_of_commute x ((hcenter x).smul_left c)).mp hy.symm
     rw [← hy, ← hm]
     exact LinearMap.mem_range_self _ m
 
