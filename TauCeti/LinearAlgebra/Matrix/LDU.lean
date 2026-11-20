@@ -187,7 +187,7 @@ theorem BlockUnitriangular.mul_apply_of_covBy (hA : A.BlockUnitriangular b)
     (hB : B.BlockUnitriangular b) {i j : m} (hij : b i ⋖ b j) :
     (A * B) i j = A i j + B i j := by
   rw [Matrix.mul_apply, Fintype.sum_eq_add i j fun h => hij.ne (congrArg b h)]
-  · rw [hA.2 rfl, hB.2 rfl, one_apply_eq, one_apply_eq, one_mul, mul_one, add_comm]
+  · simp [hA.apply_of_eq rfl, hB.apply_of_eq rfl, add_comm]
   · rintro k ⟨hki, hkj⟩
     rcases lt_trichotomy (b k) (b i) with hk | hk | hk
     · rw [hA.1 hk, zero_mul]

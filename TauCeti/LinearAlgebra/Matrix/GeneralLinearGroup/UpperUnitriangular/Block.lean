@@ -234,9 +234,8 @@ theorem submatrix_coe_mul_of_covBy (u v : blockUpperUnitriangularGroup n ι R) {
       ((u : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, j) +
         ((v : GL (n × ι) R) : Matrix (n × ι) (n × ι) R).submatrix (·, i) (·, j) := by
   ext a b
-  rw [submatrix_apply, Subgroup.coe_mul, Units.val_mul,
-    (blockUnitriangular u).mul_apply_of_covBy (blockUnitriangular v) hij, Matrix.add_apply,
-    submatrix_apply, submatrix_apply]
+  simp [(blockUnitriangular u).mul_apply_of_covBy (blockUnitriangular v)
+    (i := (a, i)) (j := (b, j)) hij]
 
 /-- The adjacent block trace is additive on block upper-unitriangular matrices. -/
 theorem adjacentBlockTrace_coe_mul (u v : blockUpperUnitriangularGroup n ι R) :
@@ -418,9 +417,9 @@ private theorem eq_of_covBy_of_adjacentTraceChar_comp_eq {ψ : AddChar R M} (hψ
   refine AddChar.to_mulShift_inj_of_isPrimitive hψ (DFunLike.ext _ _ fun t => ?_)
   have hchar := DFunLike.congr_fun h
     ⟨_, transvection_mem_blockUpperUnitriangularGroup (p := (b, i)) (q := (a, j)) hij.lt hpq t⟩
-  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, adjacentTraceChar_apply,
-    adjacentTraceChar_apply, adjacentBlockTrace_blockDiagonalConj, adjacentBlockTrace_def] at hchar
-  simp only [GeneralLinearGroup.val_transvection] at hchar
+  simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, adjacentTraceChar_apply,
+    adjacentBlockTrace_blockDiagonalConj] at hchar
+  simp only [adjacentBlockTrace_def, GeneralLinearGroup.val_transvection] at hchar
   rw [sum_trace_mul_submatrix_transvection hij, sum_trace_submatrix_transvection hij,
     trace_mul_single, op_smul_eq_mul] at hchar
   rw [AddChar.mulShift_apply, AddChar.mulShift_apply, hchar]
