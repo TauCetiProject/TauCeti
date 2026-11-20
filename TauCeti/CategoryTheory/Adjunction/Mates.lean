@@ -36,10 +36,16 @@ comparisons with pullback is deduced from coherence with pushforward, for exampl
 and symmetric powers of modules over schemes, where the pullback comparison is defined as the
 mate of the pushforward comparison.
 
+Both coherence statements are instances of
+`CategoryTheory.TwoSquare.whiskerLeft_eq_whiskerRight_iff_mateEquiv`: a square whiskered on its
+left side agrees with a square whiskered on its right side exactly when their mates, whiskered on
+the top and the bottom by the conjugate transformations, agree.
+
 ## Main declarations
 
 * `CategoryTheory.mateEquiv_adjunction_id`;
 * `CategoryTheory.Adjunction.homEquiv_conjugateEquiv`;
+* `CategoryTheory.TwoSquare.whiskerLeft_eq_whiskerRight_iff_mateEquiv`;
 * `CategoryTheory.Adjunction.app_comp_map_hom_app_of_mateEquiv`: compatibility with the
   identifications of the left adjoint with the identity functor;
 * `CategoryTheory.Adjunction.app_comp_map_inv_app_of_mateEquiv`: compatibility with the
@@ -52,7 +58,7 @@ namespace CategoryTheory
 
 open Category CategoryTheory.Functor
 
-universe v₁ v₂ v₃ u₁ u₂ u₃
+universe v₁ v₂ v₃ v₄ u₁ u₂ u₃ u₄
 
 variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
 
@@ -91,6 +97,20 @@ end Conjugate
 
 section MateCoherence
 
+/-- A two-square `c` whiskered on its left side by `f` agrees with a two-square `s` whiskered on its
+right side by `g` if and only if their mates agree after whiskering the mate of `c` on the top by
+the conjugate of `f` and the mate of `s` on the bottom by the conjugate of `g`. -/
+theorem TwoSquare.whiskerLeft_eq_whiskerRight_iff_mateEquiv {A : Type u₁} {B : Type u₂}
+    {E : Type u₃} {F : Type u₄} [Category.{v₁} A] [Category.{v₂} B] [Category.{v₃} E]
+    [Category.{v₄} F] {G : A ⥤ E} {H : B ⥤ F} {L₁ L₂ : A ⥤ B} {R₁ R₂ : B ⥤ A}
+    {L₃ L₄ : E ⥤ F} {R₃ R₄ : F ⥤ E}
+    (adj₁ : L₁ ⊣ R₁) (adj₂ : L₂ ⊣ R₂) (adj₃ : L₃ ⊣ R₃) (adj₄ : L₄ ⊣ R₄)
+    {f : L₂ ⟶ L₁} {g : L₃ ⟶ L₄} {c : TwoSquare G L₂ L₃ H} {s : TwoSquare G L₁ L₄ H} :
+    c.whiskerLeft f = s.whiskerRight g ↔
+      (mateEquiv adj₂ adj₃ c).whiskerTop (conjugateEquiv adj₁ adj₂ f) =
+        (mateEquiv adj₁ adj₄ s).whiskerBottom (conjugateEquiv adj₄ adj₃ g) := by
+  rw [← conjugateEquiv_mateEquiv_vcomp, ← mateEquiv_conjugateEquiv_vcomp, Equiv.apply_eq_iff_eq]
+
 namespace Adjunction
 
 /-- Let `adj : P ⊣ Q` be an adjunction of endofunctors whose left and right adjoints are
@@ -101,23 +121,24 @@ theorem app_comp_map_hom_app_of_mateEquiv {P Q : C ⥤ C} (adj : P ⊣ Q)
     {W : C ⥤ C} (c : TwoSquare W P P W) (q : TwoSquare Q W W Q) (hcq : mateEquiv adj adj c = q)
     (hq : ∀ M, q.app M ≫ b.hom.app (W.obj M) = W.map (b.hom.app M)) (M : C) :
     c.app M ≫ W.map (a.hom.app M) = a.hom.app (W.obj M) := by
-  -- Across the mate bijection, `hab` and `hcq` turn whiskering `c` by `a.hom` into whiskering `q`
-  -- by `b.inv`, and `mateEquiv_adjunction_id` fixes the identity square of `W`.
+  -- The proof follows that of `app_comp_map_inv_app_of_mateEquiv` below, with the identity
+  -- square of `W` in place of the composite square. Across the mate bijection, `hab` and `hcq`
+  -- turn whiskering `c` by `a.hom` into whiskering `q` by `b.inv`, and `mateEquiv_adjunction_id`
+  -- fixes the identity square of `W`.
   have h : c.whiskerLeft a.hom = (TwoSquare.vId W).whiskerRight a.hom := by
-    apply (mateEquiv Adjunction.id adj).injective
-    rw [conjugateEquiv_mateEquiv_vcomp, mateEquiv_conjugateEquiv_vcomp, mateEquiv_adjunction_id,
-      hcq, hab]
+    rw [TwoSquare.whiskerLeft_eq_whiskerRight_iff_mateEquiv Adjunction.id adj adj Adjunction.id,
+      mateEquiv_adjunction_id, hcq, hab]
     ext N
     simp only [Functor.comp_obj, Functor.id_obj, TwoSquare.whiskerTop_app,
-      TwoSquare.whiskerBottom_app, TwoSquare.vId, NatTrans.comp_app, Functor.rightUnitor_hom_app,
-      Functor.leftUnitor_inv_app, Category.comp_id, Category.id_comp]
-    -- What is left is `hq` with `b.hom` replaced by `b.inv`.
+      TwoSquare.whiskerBottom_app, TwoSquare.vId_app, Category.id_comp]
+    -- What is left is the inverse form of `hq`, obtained from `hq` by moving the components of
+    -- `b` across the equation.
     rw [← cancel_mono (b.hom.app _)]
-    simp only [Functor.id_obj, Category.assoc, hq, ← W.map_comp, Iso.inv_hom_id_app, W.map_id]
+    simp only [Functor.id_obj, Category.assoc, hq, Iso.inv_hom_id_app]
+    exact W.map_inv_hom' (b.app N)
   -- Components of the whiskered squares are the two sides of the asserted equation.
-  simpa only [Functor.comp_obj, Functor.id_obj, TwoSquare.whiskerLeft_app, TwoSquare.vId,
-    TwoSquare.whiskerRight_app, NatTrans.comp_app, Functor.rightUnitor_hom_app,
-    Functor.leftUnitor_inv_app, Category.comp_id] using congr_app h M
+  simpa only [Functor.comp_obj, Functor.id_obj, TwoSquare.whiskerLeft_app, TwoSquare.vId_app,
+    TwoSquare.whiskerRight_app, Category.comp_id] using congr_app h M
 
 /-- Let `A : P₁ ⊣ Q₁`, `B : P₂ ⊣ Q₂` and `C : P₃ ⊣ Q₃` be adjunctions, with `e : P₁ ⋙ P₂ ≅ P₃`
 and `d : Q₂ ⋙ Q₁ ≅ Q₃` conjugate. If the mates `qᵢ` of squares `cᵢ : Wᵢ ⋙ Pᵢ ⟶ Pᵢ ⋙ Wᵢ₊₁`
@@ -136,8 +157,7 @@ theorem app_comp_map_inv_app_of_mateEquiv {C₁ : Type u₁} {C₂ : Type u₂} 
     c₃.app M ≫ W₃.map (e.inv.app M) =
       e.inv.app (W₁.obj M) ≫ P₂.map (c₁.app M) ≫ c₂.app (P₁.obj M) := by
   have h : c₃.whiskerLeft e.inv = (TwoSquare.vComp c₁ c₂).whiskerRight e.inv := by
-    apply (mateEquiv (A.comp B) C).injective
-    rw [conjugateEquiv_mateEquiv_vcomp, mateEquiv_conjugateEquiv_vcomp,
+    rw [TwoSquare.whiskerLeft_eq_whiskerRight_iff_mateEquiv (A.comp B) C C (A.comp B),
       mateEquiv_hcomp, h₁, h₂, h₃, hed]
     apply NatTrans.ext
     funext N
