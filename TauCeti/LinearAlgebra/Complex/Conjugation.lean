@@ -80,8 +80,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
-* `LinearEquiv.conjugationOfComplexification_apply_tmul`: the transported conjugation sends
-  `e (c ⊗ₜ w)` to `e (star c ⊗ₜ w)`.
+* `LinearEquiv.conjugationOfComplexification_apply_apply` and
+  `LinearEquiv.conjugationOfComplexification_apply_tmul`: the transported conjugation sends `e u`
+  to `e (tmulConj W u)`, and in particular `e (c ⊗ₜ w)` to `e (star c ⊗ₜ w)`.
 * `LinearEquiv.conjugationOfComplexification_eq_self_iff`,
   `LinearEquiv.conjugationOfComplexification_unique` and
   `LinearEquiv.conjugationOfComplexification_natural`: the transported conjugation fixes exactly
@@ -550,14 +551,19 @@ theorem tmulConj_baseChange (f : W →ₗ[ℝ] W') (u : ℂ ⊗[ℝ] W) :
 
 end Complexification
 
-/-- Real descent intertwines tensor conjugation with the original conjugation. -/
+/-- Real descent intertwines tensor conjugation with the original conjugation.  This is
+`TauCeti.comp_eq_comp_of_mapsTo_realPoints`: the real points `1 ⊗ₜ w` of the tensor conjugation
+go to the real points `w` of `K`. -/
 @[simp]
 theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
     (x : ℂ ⊗[ℝ] realPoints K) :
     realPointsEquiv hK (tmulConj (realPoints K) x) = K (realPointsEquiv hK x) := by
-  induction x using TensorProduct.inductionOn with
-  | tmul z w => simp [mem_realPoints.mp w.property]
-  | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
+  have h := comp_eq_comp_of_mapsTo_realPoints (tmulConj_involutive (realPoints K))
+    (realPointsEquiv hK).toLinearMap fun u hu ↦ by
+      obtain ⟨w, rfl⟩ := (tmulConj_eq_self_iff (realPoints K) u).mp (mem_realPoints.mp hu)
+      simpa only [LinearEquiv.coe_coe, realPointsEquiv_tmul, one_smul, SetLike.mem_coe] using
+        w.property
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe] using (LinearMap.congr_fun h x).symm
 
 end TauCeti
 
@@ -579,11 +585,17 @@ theorem conjugationOfComplexification_apply (v : V) :
   simp only [conjugationOfComplexification, arrowCongrAddEquiv_apply, LinearMap.coe_comp,
     Function.comp_apply, LinearEquiv.coe_coe]
 
-/-- The transported conjugation conjugates the scalar of the image of a pure tensor. -/
+/-- The transport formula read through `e`: the transported conjugation of `e u` is `e` of the
+tensor conjugation of `u`.  As a simp lemma it moves the conjugation inside `e`. -/
 @[simp]
+theorem conjugationOfComplexification_apply_apply (u : ℂ ⊗[ℝ] W) :
+    conjugationOfComplexification e (e u) = e (tmulConj W u) := by
+  rw [conjugationOfComplexification_apply, e.symm_apply_apply]
+
+/-- The transported conjugation conjugates the scalar of the image of a pure tensor. -/
 theorem conjugationOfComplexification_apply_tmul (c : ℂ) (w : W) :
     conjugationOfComplexification e (e (c ⊗ₜ[ℝ] w)) = e (star c ⊗ₜ[ℝ] w) := by
-  rw [conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmul, starRingEnd_apply]
+  rw [conjugationOfComplexification_apply_apply, tmulConj_tmul, starRingEnd_apply]
 
 /-- Applying the transported tensor conjugation twice gives back the input. -/
 @[simp]
@@ -613,7 +625,7 @@ theorem conjugationOfComplexification_unique (K : V →ₛₗ[starRingEnd ℂ] V
   have h := comp_eq_comp_of_mapsTo_realPoints (conjugationOfComplexification_involutive e)
     LinearMap.id fun v hv ↦ by
       obtain ⟨w, rfl⟩ := (conjugationOfComplexification_eq_self_iff e v).mp (mem_realPoints.mp hv)
-      exact mem_realPoints.mpr (hfix w)
+      simpa only [LinearMap.id_apply, SetLike.mem_coe, mem_realPoints] using hfix w
   simpa only [LinearMap.comp_id, LinearMap.id_comp] using h
 
 /-- Transported conjugation is natural under complex-linear maps carrying the image of one real

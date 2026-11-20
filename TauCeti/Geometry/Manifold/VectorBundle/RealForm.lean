@@ -351,7 +351,8 @@ theorem maximalRealFormConjugationDiffeomorph_natural
       rw [maximalRealFormConjugationDiffeomorph_apply,
         (i p.proj).toLinearMap.conjugationOfMaximalTotallyReal_natural
           (hinj p.proj) (hmax p.proj) (j p.proj).toLinearMap (hjinj p.proj) (hjmax p.proj)
-          (A p.proj) (b p.proj) (hreal p.proj)]
+          (A p.proj) fun _ ⟨w, hw⟩ ↦ ⟨b p.proj w, by
+            simpa only [← hw, ContinuousLinearMap.coe_coe] using (hreal p.proj w).symm⟩]
     _ = _ := (congrArg
       (fun q : TotalSpace G V ↦ (⟨q.proj, A q.proj q.snd⟩ : TotalSpace G' V'))
       (maximalRealFormConjugationDiffeomorph_apply i hi hinj hmax p)).symm
