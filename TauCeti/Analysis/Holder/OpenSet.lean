@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.IsBigO
 import TauCeti.Analysis.Holder.JetBounds
 
 /-!
@@ -52,6 +53,9 @@ completeness.
   `E` agreeing with it on `Ω`; `TauCeti.CkHolderSpaceOn.toBoundedContinuousFunctionCLM`: forgetting
   the derivatives, a continuous linear map of norm at most one to `Ω →ᵇ F`.
 * `TauCeti.CkHolderSpaceOn.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.CkHolderSpaceOn.exists_apply_eq_of_contDiffOn_of_isCompact`: for `α ≤ 1`, a function
+  that is `C^{k+1}` on a neighbourhood of a compact set containing `Ω` defines an element of
+  `C^{k,α}(Ω)`.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of operator norm at
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
   whole space to an open set, also of operator norm at most one.
@@ -913,6 +917,31 @@ theorem norm_inclusionSuccL_le (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1
   LinearMap.mkContinuous_norm_le _ zero_le_three _
 
 end inclusionSucc
+
+section isCompact
+
+/-- **`C^{k+1}` functions near a compact set are `C^{k,α}`.** For `α ≤ 1`, a function that is
+`C^{k+1}` on an open set `U` containing a compact set `K` defines an element of `C^{k,α}(Ω)` for
+every open `Ω ⊆ K`: its derivatives through order `k` are bounded on `K`, and its `k`-th
+derivative is `α`-Hölder on `K`. -/
+theorem exists_apply_eq_of_contDiffOn_of_isCompact {g : E → F} {U K : Set E} (hU : IsOpen U)
+    (hg : ContDiffOn ℝ (k + 1) g U) (hK : IsCompact K) (hKU : K ⊆ U) (hΩK : (Ω : Set E) ⊆ K)
+    (hα : α ≤ 1) : ∃ f : CkHolderSpaceOn k α Ω F, ∀ x : Ω, f x = g x := by
+  have hbdd : ∀ i ≤ k, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C := fun i hi ↦ by
+    obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn
+      ((ContinuousOn.continuousOn_iteratedFDeriv hg hU (by exact_mod_cast hi.trans k.le_succ)).mono
+        hKU)
+    exact ⟨C, fun x ↦ hC x (hΩK x.2)⟩
+  -- Near each point of `K` the `k`-th derivative is `C¹`, hence `α`-Hölder on a ball.
+  obtain ⟨δ, hδ, L, -, hL, -⟩ := hK.exists_holderOnWith_thickening_and_norm_le fun x hx ↦
+    (((hg.contDiffAt (hU.mem_nhds (hKU hx))).iteratedFDeriv_right (m := 1) (i := k)
+      (by rw [add_comm])).isBigO_sub_dist_rpow one_ne_zero hα).exists_holderOnWith_ball
+  have hholder : MemHolder α fun x : Ω ↦ _root_.iteratedFDeriv ℝ k g x :=
+    ⟨L, (hL.mono (hΩK.trans (Metric.self_subset_thickening hδ K))).holderWith⟩
+  exact ⟨ofContDiffOn g ((hg.mono (hΩK.trans hKU)).of_le (by exact_mod_cast k.le_succ)) hbdd
+    hholder, ofContDiffOn_apply g _ hbdd hholder⟩
+
+end isCompact
 
 end CkHolderSpaceOn
 
