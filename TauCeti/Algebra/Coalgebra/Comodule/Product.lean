@@ -27,6 +27,8 @@ The file also records that the four standard linear maps for a product, `fst`, `
   morphisms.
 * `TauCeti.ComoduleCat.prod`: the bundled product comodule, with projections, inclusions,
   `prodLift`, and `prodDesc`.
+* `TauCeti.ComoduleCat.binaryProductLimitCone`: the bundled product is a limit cone, so it is
+  the categorical binary product.
 
 ## References
 
@@ -588,13 +590,19 @@ theorem prod_hom_ext' {M N P : ComoduleCat.{u, v, w} R C} {f g : prod R C M N �
 
 open CategoryTheory.Limits
 
+/-- The concrete product of comodules, with its two projections, is a limit cone over
+`pair M N`. -/
+@[expose] def binaryProductLimitCone (M N : ComoduleCat.{u, v, w} R C) :
+    LimitCone (pair M N) where
+  cone := BinaryFan.mk (prodFst M N) (prodSnd M N)
+  isLimit := BinaryFan.IsLimit.mk _ (fun f g ↦ prodLift f g)
+    (fun f g ↦ prodLift_fst f g) (fun f g ↦ prodLift_snd f g)
+    (fun f g _ h₁ h₂ ↦ prod_hom_ext
+      (h₁.trans (prodLift_fst f g).symm) (h₂.trans (prodLift_snd f g).symm))
+
 /-- The concrete product of comodules is their categorical binary product. -/
 instance (M N : ComoduleCat.{u, v, w} R C) : HasBinaryProduct M N :=
-  HasLimit.mk ⟨BinaryFan.mk (prodFst M N) (prodSnd M N),
-    BinaryFan.IsLimit.mk _ (fun f g ↦ prodLift f g)
-      (fun f g ↦ prodLift_fst f g) (fun f g ↦ prodLift_snd f g)
-      (fun f g _ h₁ h₂ ↦ prod_hom_ext
-        (h₁.trans (prodLift_fst f g).symm) (h₂.trans (prodLift_snd f g).symm))⟩
+  HasLimit.mk (binaryProductLimitCone M N)
 
 /-- Comodules have binary products. -/
 instance : HasBinaryProducts (ComoduleCat.{u, v, w} R C) :=
