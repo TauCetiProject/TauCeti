@@ -40,8 +40,8 @@ and in particular of continuous functions, which is `upperSemicontinuous_iInf`.
   supremum of a jointly continuous function over a compact first factor are continuous.
 * `Continuous.iInf_apply_of_compactSpace`, `Continuous.iSup_apply_of_compactSpace`: the same for a
   curried function `f : Y → X → β`, as `y ↦ ⨅ x, f y x` and `y ↦ ⨆ x, f y x`.
-* `Continuous.bddAbove_range_apply`, `Continuous.le_iSup_apply`: for a jointly continuous curried
-  `f : Y → X → β` with `X` compact, each `f y` is bounded above, so `f y x ≤ ⨆ x', f y x'`.
+* `Continuous.bddAbove_range_of_compactSpace`, `Continuous.le_ciSup_of_compactSpace`: a continuous
+  function `g` on a compact space is bounded above, so `g x ≤ ⨆ x', g x'`.
 -/
 
 public section
@@ -131,17 +131,16 @@ theorem iSup_apply_of_compactSpace (hf : Continuous (Function.uncurry f)) :
     Continuous fun y => ⨆ x, f y x :=
   Continuous.iSup_of_compactSpace (hf.comp continuous_swap)
 
-/-- For a jointly continuous `f : Y → X → β` with `X` compact, each `f y` is bounded above. -/
-theorem bddAbove_range_apply (hf : Continuous (Function.uncurry f)) (y : Y) :
-    BddAbove (range (f y)) := by
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x⟩⟩
-  · simp [range_eq_empty]
-  · have : Nonempty β := ⟨f y x⟩
-    exact (isCompact_range (hf.comp (Continuous.prodMk_right y))).bddAbove
-
-/-- For a jointly continuous `f : Y → X → β` with `X` compact, `f y x ≤ ⨆ x', f y x'`. -/
-theorem le_iSup_apply (hf : Continuous (Function.uncurry f)) (y : Y) (x : X) :
-    f y x ≤ ⨆ x', f y x' :=
-  le_ciSup (hf.bddAbove_range_apply y) x
-
 end Continuous
+
+/-- A continuous function on a compact space, with values in a nonempty linear order whose closed
+intervals `Ici a` are closed, is bounded above. -/
+theorem Continuous.bddAbove_range_of_compactSpace [CompactSpace X] {γ : Type*} [LinearOrder γ]
+    [TopologicalSpace γ] [ClosedIciTopology γ] [Nonempty γ] {g : X → γ} (hg : Continuous g) :
+    BddAbove (range g) :=
+  (isCompact_range hg).bddAbove
+
+/-- A continuous function `g` on a compact space satisfies `g x ≤ ⨆ x', g x'`. -/
+theorem Continuous.le_ciSup_of_compactSpace [CompactSpace X] [TopologicalSpace β]
+    [ClosedIciTopology β] {g : X → β} (hg : Continuous g) (x : X) : g x ≤ ⨆ x', g x' :=
+  le_ciSup hg.bddAbove_range_of_compactSpace x

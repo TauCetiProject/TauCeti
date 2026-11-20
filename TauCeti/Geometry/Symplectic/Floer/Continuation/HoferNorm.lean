@@ -116,7 +116,8 @@ theorem IsNondegenerate.cylinderAction_le_cylinderAction_add_hoferPlus (hω : ω
   have hc : Continuous (uncurry (H₀ - H₁)) := hH₀.continuous.sub hH₁.continuous
   rw [hoferPlus_def]
   exact hω.cylinderAction_le_cylinderAction_add_of_continuationHomotopy hH₀ hH₁ hu ha hb hv hv₀ J
-    hJ hfloer (fun t _ x ↦ hc.le_iSup_apply t x) hc.iSup_apply_of_compactSpace.integrableOn_Icc
+    hJ hfloer (fun t _ x ↦ (hc.uncurry_left t).le_ciSup_of_compactSpace x)
+    hc.iSup_apply_of_compactSpace.integrableOn_Icc
 
 /-- **The action shift of a continuation cylinder is at most the Hofer norm.** Under the hypotheses
 of `TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction_add_hoferPlus`, if
