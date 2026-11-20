@@ -70,37 +70,37 @@ theorem IsEvenlyCovered.pullback_fst {I : Type*} [TopologicalSpace I] {x : X} (h
   obtain ⟨hI, U, hxU, hU, _, H, hH⟩ := h
   -- The point of `g ⁻¹' U` under a point of the fibre product over `f ⁻¹' U`.
   let k (w : Pullback.fst ⁻¹' (f ⁻¹' U)) : g ⁻¹' U :=
-    ⟨w.1.snd, by
-      rw [Set.mem_preimage, ← (show f w.1.fst = g w.1.snd from w.1.2)]
-      exact w.2⟩
-  have hk : Continuous k := (Pullback.continuous_snd.comp continuous_subtype_val).subtype_mk _
+    ⟨w.val.snd, by
+      rw [Set.mem_preimage, ← (show f w.val.fst = g w.val.snd from w.val.property)]
+      exact w.property⟩
+  have hk : Continuous k := (Pullback.continuous_snd.comp continuous_subtypeVal).subtype_mk _
   -- A point of the fibre of `g` over `f x'`, for `x' ∈ f ⁻¹' U`, from its sheet index.
-  let l (v : f ⁻¹' U × I) : g ⁻¹' U := H.symm (⟨f v.1, v.1.2⟩, v.2)
+  let l (v : f ⁻¹' U × I) : g ⁻¹' U := H.symm (⟨f v.1, v.1.property⟩, v.2)
   have hl : Continuous l :=
-    H.symm.continuous.comp ((((hf.comp continuous_subtype_val).comp continuous_fst).subtype_mk
+    H.symm.continuous.comp ((((hf.comp continuous_subtypeVal).comp continuous_fst).subtype_mk
       _).prodMk continuous_snd)
   have hgl (v : f ⁻¹' U × I) : f v.1 = g (l v) := by
     rw [← hH, Homeomorph.apply_symm_apply]
   -- `l` inverts the sheet index of the point of `g ⁻¹' U` under a point of the fibre product.
-  have hlk (w : Pullback.fst ⁻¹' (f ⁻¹' U)) : l (⟨w.1.fst, w.2⟩, (H (k w)).2) = k w := by
-    have hHk : H (k w) = (⟨f w.1.fst, w.2⟩, (H (k w)).2) :=
-      Prod.ext (Subtype.ext ((hH (k w)).trans w.1.2.symm)) rfl
+  have hlk (w : Pullback.fst ⁻¹' (f ⁻¹' U)) : l (⟨w.val.fst, w.property⟩, (H (k w)).2) = k w := by
+    have hHk : H (k w) = (⟨f w.val.fst, w.property⟩, (H (k w)).2) :=
+      Prod.ext (Subtype.ext ((hH (k w)).trans w.val.property.symm)) rfl
     simp only [l, ← hHk, Homeomorph.symm_apply_apply]
   refine ⟨hI, f ⁻¹' U, hxU, hU.preimage hf, (hU.preimage hf).preimage Pullback.continuous_fst,
-    { toFun w := (⟨w.1.fst, w.2⟩, (H (k w)).2)
-      invFun v := ⟨⟨(v.1, l v), hgl v⟩, v.1.2⟩
+    { toFun w := (⟨w.val.fst, w.property⟩, (H (k w)).2)
+      invFun v := ⟨⟨(v.1, l v), hgl v⟩, v.1.property⟩
       left_inv w := Subtype.ext (Subtype.ext (Prod.ext rfl (congrArg Subtype.val (hlk w))))
       right_inv v := by
         refine Prod.ext rfl ?_
         -- `k` of the inverse image of `v` is `l v`, up to eta for subtypes.
-        exact (congrArg Prod.snd (H.apply_symm_apply (⟨f v.1, v.1.2⟩, v.2)) :)
+        exact (congrArg Prod.snd (H.apply_symm_apply (⟨f v.1, v.1.property⟩, v.2)) :)
       continuous_toFun :=
-        ((Pullback.continuous_fst.comp continuous_subtype_val).subtype_mk _).prodMk
+        ((Pullback.continuous_fst.comp continuous_subtypeVal).subtype_mk _).prodMk
           (continuous_snd.comp (H.continuous.comp hk))
       continuous_invFun := by
         refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
-        exact (continuous_subtype_val.comp continuous_fst).prodMk
-          (continuous_subtype_val.comp hl) },
+        exact (continuous_subtypeVal.comp continuous_fst).prodMk
+          (continuous_subtypeVal.comp hl) },
     fun _ ↦ rfl⟩
 
 /-- **The pullback of a covering map is a covering map**: for a covering map `g : Z → Y` and a
@@ -177,7 +177,7 @@ private noncomputable def fwdLift (H : (φ.comp ψ).Homotopy (.id B)) :
     ((pullbackSnd φ p).comp (pullbackSnd ψ _)) fun x ↦ by
     simp only [ContinuousMap.comp_apply, prodMap_apply, coe_pullbackFst, coe_pullbackSnd, Prod.map,
       ContinuousMap.id_apply, Homotopy.coe_toContinuousMap, H.apply_zero]
-    exact (congrArg φ x.2).trans x.1.2.2
+    exact (congrArg φ x.property).trans x.val.2.property
 
 private theorem fwdLift_lifts (H : (φ.comp ψ).Homotopy (.id B)) (t : I)
     (x : Pullback ψ (Pullback.fst : Pullback φ p → A)) :
@@ -224,7 +224,7 @@ private theorem pullbackInvLift_comp_fwdEnd (H : (φ.comp ψ).Homotopy (.id B)) 
     · simp only [hp.revLift_zero, symm_zero]
   have he : hp.revLift H (1, hp.fwdLift H (1, x)) = x.snd.snd := by
     rw [congr_fun hpath 1, symm_one, hp.fwdLift_zero]
-  exact Pullback.ext hb (Pullback.ext ((congrArg ψ hb).trans x.2) he)
+  exact Pullback.ext hb (Pullback.ext ((congrArg ψ hb).trans x.property) he)
 
 /-- The projection `A ×_B E → E` is a right homotopy inverse of `pullbackInv`. -/
 private theorem homotopic_pullbackInv_comp_pullbackSnd (H : (φ.comp ψ).Homotopy (.id B))

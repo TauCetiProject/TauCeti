@@ -138,7 +138,7 @@ private theorem continuous_mulOperatorEquiv_symm :
     conv_rhs => rw [← mulOperatorEquiv.apply_symm_apply S]
     rw [coe_mulOperatorEquiv, mulOperator_apply_apply, mul_one]
   exact (continuous_congr h).2 <|
-    (ContinuousLinearMap.apply ℂ (CircleSobolev s A) 1).continuous.comp continuous_subtype_val
+    (ContinuousLinearMap.apply ℂ (CircleSobolev s A) 1).continuous.comp continuous_subtypeVal
 
 /-! ### Characters of `H^s(A)` -/
 

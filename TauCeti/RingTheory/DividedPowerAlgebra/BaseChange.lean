@@ -157,7 +157,7 @@ private theorem baseChangeEquiv_baseChange_subtype_mem
   induction z using TensorProduct.inductionOn with
   | tmul s w =>
       rw [LinearMap.baseChange_tmul, baseChangeEquiv_tmul]
-      exact Submodule.smul_mem _ s (map_mem_homogeneousSubmodule _ w.2)
+      exact Submodule.smul_mem _ s (map_mem_homogeneousSubmodule _ w.property)
   | add x y hx hy => simpa only [map_add] using Submodule.add_mem _ hx hy
 
 /-- The base change isomorphism commutes with taking degree-`d` components. -/
@@ -208,7 +208,7 @@ def baseChangeHomogeneousEquiv :
         LinearMap.id_apply]
       rw [← LinearMap.comp_apply (LinearMap.baseChange S _), ← LinearMap.baseChange_comp,
         ← coe_decompose_baseChangeEquiv, AlgEquiv.apply_symm_apply,
-        DirectSum.decompose_of_mem_same _ y.2])
+        DirectSum.decompose_of_mem_same _ y.property])
     (LinearMap.ext fun z ↦ by
       simp only [baseChangeHomogeneousForward, baseChangeHomogeneousInverse, LinearMap.comp_apply,
         LinearMap.codRestrict_apply, AlgEquiv.toLinearMap_apply, Submodule.subtype_apply,

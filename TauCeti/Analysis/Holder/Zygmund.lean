@@ -431,9 +431,8 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
       (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr ∧ ContDiff ℝ k f ∧
         (∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ C * ‖u‖) ∧
           HolderWith (C * ‖u‖₊) α (iteratedFDeriv ℝ k f) := by
-  obtain ⟨n₀, hn₀⟩ : ∃ n₀ : ℕ, φ.rOut ≤ 2 ^ n₀ * φ.rIn := by
-    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-    exact ⟨n, ((div_lt_iff₀ φ.rIn_pos).1 hn).le⟩
+  obtain ⟨n₀, hn₀⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  replace hn₀ := hn₀.le
   obtain ⟨C₀, hC₀⟩ := exists_holderWith_tsum_of_rpow_mul_le (X := E) (Y := E [×k]→L[ℝ] F) hα0 hα1
   -- `B m = 2^{n₀ m} ‖D^m K₀‖₁` bounds the `m`-th derivatives of the smoothed blocks, and
   -- `q = 2^{-α}` is the ratio of the geometric series they form.
@@ -900,9 +899,10 @@ distribution of) such a map. The isomorphism is `TauCeti.BesovSpace.toCkHolderSp
 `TauCeti.BesovSpace.ofCkHolderSpace`. -/
 def ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
     BesovSpace F φ (k + α) ∞ ∞ ≃L[ℝ] CkHolderSpace k α E F :=
-  ContinuousLinearEquiv.equivOfInverse (toCkHolderSpace F φ k hα0 hα1) (ofCkHolderSpace F φ k α)
-    (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1)
-    (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1)
+  ContinuousLinearEquiv.ofContinuousLinearMap (toCkHolderSpace F φ k hα0 hα1)
+    (ofCkHolderSpace F φ k α)
+    (ContinuousLinearMap.ext (toCkHolderSpace_ofCkHolderSpace φ k hα0 hα1))
+    (ContinuousLinearMap.ext (ofCkHolderSpace_toCkHolderSpace φ k hα0 hα1))
 
 @[simp]
 theorem coe_ckHolderSpaceEquiv (k : ℕ) (hα0 : 0 < α) (hα1 : α < 1) :
@@ -985,8 +985,9 @@ variable (F) in
 `toHolderSpace` and its inverse `ofHolderSpace`. -/
 def holderSpaceEquiv {α : ℝ≥0} (hα0 : 0 < α) (hα1 : α < 1) :
     BesovSpace F φ α ∞ ∞ ≃L[ℝ] HolderSpace α E F :=
-  ContinuousLinearEquiv.equivOfInverse (toHolderSpace F φ hα0 hα1) (ofHolderSpace F φ α)
-    (ofHolderSpace_toHolderSpace φ hα0 hα1) (toHolderSpace_ofHolderSpace φ hα0 hα1)
+  ContinuousLinearEquiv.ofContinuousLinearMap (toHolderSpace F φ hα0 hα1) (ofHolderSpace F φ α)
+    (ContinuousLinearMap.ext (toHolderSpace_ofHolderSpace φ hα0 hα1))
+    (ContinuousLinearMap.ext (ofHolderSpace_toHolderSpace φ hα0 hα1))
 
 /-- `holderSpaceEquiv` acts as `toHolderSpace`. -/
 @[simp]

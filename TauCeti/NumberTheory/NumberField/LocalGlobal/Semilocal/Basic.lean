@@ -80,7 +80,7 @@ omit [NumberField K] in
 completions of `L` at the places above `v`. -/
 theorem denseRange_algebraMap_pi_liesOver :
     DenseRange fun (x : L) (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) ↦
-      algebraMap L (w.1.adicCompletion L) x := by
+      algebraMap L (w.val.adicCompletion L) x := by
   let S := ((Set.finite_coe_iff
     (s := {w : HeightOneSpectrum (𝒪 L) | w.asIdeal.LiesOver v.asIdeal})).mp
       (finite_liesOver (𝒪 L) v)).toFinset
@@ -91,14 +91,14 @@ theorem denseRange_algebraMap_pi_liesOver :
     Equiv.subtypeEquivRight fun w ↦ hS (w := w)
   -- Weak approximation is stated for the places of a `Finset`, together with a (here empty)
   -- family of infinite places; reindex its product along `S ↔ {w ∣ v}`.
-  let Φ : (((w : {w // w ∈ S}) → w.1.adicCompletion L) ×
-      ((u : {u : InfinitePlace L // u ∈ (∅ : Finset (InfinitePlace L))}) → u.1.Completion)) ≃ₜ
+  let Φ : (((w : {w // w ∈ S}) → w.val.adicCompletion L) ×
+      ((u : {u : InfinitePlace L // u ∈ (∅ : Finset (InfinitePlace L))}) → u.val.Completion)) ≃ₜ
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        w.1.adicCompletion L) :=
+        w.val.adicCompletion L) :=
     (Homeomorph.prodUnique _ _).trans
       (Homeomorph.piCongrLeft
         (Y := fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
-          w.1.adicCompletion L) e)
+          w.val.adicCompletion L) e)
   exact Φ.surjective.denseRange.comp
     (TauCeti.GlobalNumberFields.weakApproximation_denseRange S ∅) Φ.continuous
 
@@ -120,7 +120,7 @@ theorem exists_algHom_adicCompletion_eq {M : Type*} [CommRing M] [IsDomain M] [A
   -- It kills one of the idempotents `e i = 1 - [i]`, whose product vanishes.
   let e (i : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
       (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        w.1.adicCompletion L := Function.update 1 i 0
+        w.val.adicCompletion L := Function.update 1 i 0
   have he (i) : e i + Pi.single i 1 = 1 := funext fun j ↦ by
     by_cases h : j = i
     · subst h
@@ -144,13 +144,13 @@ theorem exists_algHom_adicCompletion_eq {M : Type*} [CommRing M] [IsDomain M] [A
         simp
       · simp [h]
     rw [← hx, map_mul, hi1, mul_one]
-  let φ' : i.1.adicCompletion L →ₐ[v.adicCompletion K] M :=
+  let φ' : i.val.adicCompletion L →ₐ[v.adicCompletion K] M :=
     AlgHom.ofLinearMap (f.toLinearMap.comp (LinearMap.single (v.adicCompletion K)
       (fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
-        w.1.adicCompletion L) i)) hi1
+        w.val.adicCompletion L) i)) hi1
       (fun x y ↦ by simp [Pi.single_mul])
-  refine ⟨i.1, i.2, φ', fun x ↦ ?_⟩
-  have : φ x = f (fun w ↦ algebraMap L (w.1.adicCompletion L) x) := by
+  refine ⟨i.val, i.property, φ', fun x ↦ ?_⟩
+  have : φ x = f (fun w ↦ algebraMap L (w.val.adicCompletion L) x) := by
     simp [f, v.adicCompletionSemilocalEquiv_symm_algebraMap (K := K) (B := 𝒪 L) (L := L) x]
   rw [this, hf]
   rfl
@@ -163,7 +163,7 @@ topology over `K_v`. Both the comparison and its inverse are continuous. -/
 def semilocalContinuousEquiv :
     v.adicCompletion K ⊗[K] L ≃A[v.adicCompletion K]
       ((w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        w.1.adicCompletion L) where
+        w.val.adicCompletion L) where
   toAlgEquiv := v.adicCompletionSemilocalEquiv K (𝒪 L) L
   continuous_toFun := IsModuleTopology.continuous_of_linearMap
     (v.adicCompletionSemilocalEquiv K (𝒪 L) L).toLinearMap
@@ -172,7 +172,7 @@ def semilocalContinuousEquiv :
       (v.adicCompletion K ⊗[K] L)
     let := isModuleTopologyOfFiniteDimensional (𝕜 := v.adicCompletion K)
       (E := (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) →
-        w.1.adicCompletion L)
+        w.val.adicCompletion L)
     exact IsModuleTopology.continuous_of_linearMap
       (v.adicCompletionSemilocalEquiv K (𝒪 L) L).symm.toLinearMap
 
@@ -189,8 +189,8 @@ variable {L v}
 theorem semilocalContinuousEquiv_tmul (a : v.adicCompletion K) (x : L)
     (w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal}) :
     semilocalContinuousEquiv L v (a ⊗ₜ x) w =
-      algebraMap (v.adicCompletion K) (w.1.adicCompletion L) a *
-        algebraMap L (w.1.adicCompletion L) x := by
+      algebraMap (v.adicCompletion K) (w.val.adicCompletion L) a *
+        algebraMap L (w.val.adicCompletion L) x := by
   rw [← ContinuousAlgEquiv.coe_toAlgEquiv, semilocalContinuousEquiv_toAlgEquiv]
   exact v.adicCompletionSemilocalEquiv_tmul a x w
 
@@ -199,7 +199,7 @@ theorem semilocalContinuousEquiv_tmul (a : v.adicCompletion K) (x : L)
 theorem semilocalContinuousEquiv_symm_algebraMap (x : L) :
     (semilocalContinuousEquiv L v).symm
       (fun w : {w : HeightOneSpectrum (𝒪 L) // w.asIdeal.LiesOver v.asIdeal} ↦
-        algebraMap L (w.1.adicCompletion L) x) = 1 ⊗ₜ[K] x := by
+        algebraMap L (w.val.adicCompletion L) x) = 1 ⊗ₜ[K] x := by
   rw [← ContinuousAlgEquiv.coe_toAlgEquiv, ContinuousAlgEquiv.symm_toAlgEquiv,
     semilocalContinuousEquiv_toAlgEquiv]
   exact v.adicCompletionSemilocalEquiv_symm_algebraMap x

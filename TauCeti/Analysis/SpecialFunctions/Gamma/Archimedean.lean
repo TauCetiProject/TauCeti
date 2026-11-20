@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 
 /-!
-# Zero locus, regularity, and norms of the archimedean gamma factors
+# Zero locus, regularity, norms, and relations of the archimedean gamma factors
 
 Deligne's archimedean factors are
 $$\Gamma_{\mathbb{R}}(s) = \pi^{-s/2} \Gamma(s/2), \qquad
@@ -25,7 +25,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 
 ## Main declarations
 
-* `Complex.Gammaℂ_eq_zero_iff`: total zeros of `Gammaℂ` occur at `-(n : ℂ)` (`n : ℕ`).
+* `Complex.Gammaℂ_eq_zero_iff`: total zeros of `Gammaℂ` occur at `-(n : ℂ)` (`n : ℕ`),
+  complementing `Complex.Gammaℝ_eq_zero_iff`.
 * `Complex.Gammaℂ_ne_zero_of_re_pos`, `Complex.Gammaℝ_ne_zero_of_im_ne_zero`,
   `Complex.Gammaℂ_ne_zero_of_im_ne_zero`: nonvanishing on the right half-plane and off the real
   axis.
@@ -33,6 +34,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
   `Complex.continuousAt_Gammaℝ`, `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
 * `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`, `Complex.log_norm_Gammaℝ`,
   `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
+* `Complex.two_mul_Gammaℝ_two_mul`: twice the real factor at `2 * z` is `2 ^ z` times `Gammaℂ z`,
+  everywhere on `ℂ` including at the poles where both totalized values vanish.
 
 ## References
 
@@ -125,5 +128,15 @@ theorem log_norm_Gammaℂ {z : ℂ} (hz : Gammaℂ z ≠ 0) :
   rw [norm_Gammaℂ, Real.log_mul (by positivity) hΓ, Real.log_mul two_ne_zero hpow.ne',
     Real.log_rpow h2pi]
   ring
+
+/-- Twice the real archimedean factor at `2 * z` is `2 ^ z` times the complex archimedean factor
+at `z`, including at the nonpositive integers where both sides vanish. -/
+theorem two_mul_Gammaℝ_two_mul (z : ℂ) : 2 * Gammaℝ (2 * z) = 2 ^ z * Gammaℂ z := by
+  have h2π : ((2 : ℂ) * Real.pi) ^ (-z) = (2 : ℂ) ^ (-z) * (Real.pi : ℂ) ^ (-z) := by
+    simpa using ofReal_mul_cpow zero_le_two (Real.pi : ℂ) (-z)
+  have h2 : (2 : ℂ) ^ z * (2 : ℂ) ^ (-z) = 1 := by
+    rw [← cpow_add _ _ two_ne_zero, add_neg_cancel, cpow_zero]
+  rw [Gammaℝ_def, Gammaℂ_def, neg_div, mul_div_cancel_left₀ _ two_ne_zero, h2π]
+  linear_combination 2 * (Real.pi : ℂ) ^ (-z) * Gamma z * h2.symm
 
 end Complex

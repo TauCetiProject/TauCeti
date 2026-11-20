@@ -56,7 +56,9 @@ These representations are the input of the limit theorem for the excess.
 
 * `TauCeti.Probability.lt_renewalExcess_iff`: on a nonexplosive path, `x < E t` exactly when some
   arrival `arrival T n` is at most `t` while the next one is after `t + x`.
-* `TauCeti.Probability.measurable_renewalExcess`: measurability of the excess.
+* `TauCeti.Probability.measurable_renewalExcess`, `TauCeti.Probability.aemeasurable_renewalExcess`,
+  `TauCeti.Probability.renewalExcess_congr_ae`: measurability, almost-everywhere measurability,
+  and almost-everywhere congruence of the excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
   `P(x < E t) = (F> (· + x) ∗ U) t`.
@@ -167,6 +169,18 @@ theorem aemeasurable_renewalExcess (hT : ∀ n, AEMeasurable (T n) P) (t : ℝ�
     AEMeasurable (renewalExcess T t) P :=
   (measurable_renewalExcess (fun n ↦ (hT n).measurable_mk) t).aemeasurable.congr <|
     all_ae_of (renewalExcess_congr_ae fun n ↦ (hT n).ae_eq_mk.symm) t
+
+/-- For almost-everywhere measurable increments on a probability space, the excess sublevel
+probability at time `t` is one minus the strict-superlevel probability. -/
+theorem measureReal_renewalExcess_le_eq_one_sub [IsProbabilityMeasure P]
+    (hT : ∀ n, AEMeasurable (T n) P) (t x : ℝ≥0) :
+    P.real {ω | renewalExcess T t ω ≤ x} = 1 - P.real {ω | x < renewalExcess T t ω} := by
+  have hnull : NullMeasurableSet {ω | x < renewalExcess T t ω} P :=
+    (aemeasurable_renewalExcess hT t).nullMeasurableSet_preimage measurableSet_Ioi
+  rw [← probReal_compl_eq_one_sub₀ hnull]
+  congr 1
+  ext ω
+  simp
 
 /-- For i.i.d. increments with law `F`, the `n`-th arrival is at most `t` and the next one is
 after `t + x` with probability `∫_{[0, t]} F((t - s + x, ∞)) F^{∗n}(ds)`, because `arrival T n`

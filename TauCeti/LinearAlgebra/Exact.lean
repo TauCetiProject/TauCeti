@@ -255,7 +255,7 @@ theorem bijective_restrict_ker_of_prod_coprod
       rw [mem_ker, ← LinearMap.comp_apply, h.comp_eq_comp_of_prod_coprod, LinearMap.comp_apply,
         mem_ker.1 hx, map_zero]) := by
   refine ⟨fun x y hxy ↦ Subtype.ext (hinj (Prod.ext (congrArg Subtype.val hxy) ?_)), ?_⟩
-  · simp [mem_ker.1 x.2, mem_ker.1 y.2]
+  · simp [mem_ker.1 x.property, mem_ker.1 y.property]
   · rintro ⟨c, hc⟩
     obtain ⟨x, hx⟩ := (h (c, 0)).1 (by simpa using hc)
     exact ⟨⟨x, mem_ker.2 (congrArg Prod.snd hx)⟩, Subtype.ext (congrArg Prod.fst hx)⟩
@@ -305,7 +305,7 @@ theorem exists_exact_codRestrict_mkQ {R : Type*} [Ring R] {M : Type*} [AddCommGr
     (hf : ∀ g : G, g ∈ range f ↔ (g : M) ∈ P) :
     ∃ q : G →ₗ[R] G.map P.mkQ, Function.Surjective q ∧ Function.Exact f q ∧
       (G.map P.mkQ).subtype ∘ₗ q = P.mkQ ∘ₗ G.subtype := by
-  refine ⟨(P.mkQ ∘ₗ G.subtype).codRestrict _ fun g ↦ mem_map_of_mem g.2, ?_,
+  refine ⟨(P.mkQ ∘ₗ G.subtype).codRestrict _ fun g ↦ mem_map_of_mem g.property, ?_,
     exact_iff.mpr <| ext fun g ↦ ?_, subtype_comp_codRestrict _ _ _⟩
   · rintro ⟨_, g, hg, rfl⟩
     exact ⟨⟨g, hg⟩, by ext; simp⟩

@@ -50,7 +50,7 @@ def basedMapCircleHomeomorph (Y : BasedTopologicalSpace.{u}) :
 the value of the loop at `t` is the value of `φ` at the point `(cos 2πt, sin 2πt)`. -/
 theorem iteratedLoopSpaceHomeomorph_basedMapCircleHomeomorph (Y : BasedTopologicalSpace.{u})
     (φ : BasedMap Sphere1 Y.carrier Sphere1.east Y.basepoint) (t : Fin 1 → unitInterval) :
-    iteratedLoopSpaceHomeomorph 1 Y (basedMapCircleHomeomorph Y φ) t = φ.1 (circleLoop t) := by
+    iteratedLoopSpaceHomeomorph 1 Y (basedMapCircleHomeomorph Y φ) t = φ.val (circleLoop t) := by
   rw [basedMapCircleHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
   exact BasedMap.homeomorphGenLoop_apply _ _ _ _ _ _ _
 

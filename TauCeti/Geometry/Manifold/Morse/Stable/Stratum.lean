@@ -200,7 +200,7 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum {k : ℕ} {x : Fin (k + 1
     ∃ Φ : hX.morseBrokenTrajectoryStratum x c ≃ₜ
         ((j : Fin k) → hX.morseTrajectoryRecords (x j.castSucc) (x j.succ)
           fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i),
-      ∀ w j i, (Φ w j).1 i = w.1 i := by
+      ∀ w j i, (Φ w j).val i = w.val i := by
   -- Each level lies strictly between the values at the ends of some step `J i`.
   have hJ (i : ι) : ∃ j : Fin k, c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc)) :=
     (Fin.exists_succ_lt_lt_castSucc (g := fun j ↦ f (x j)) (fun j ↦ (hcx i j).symm) (hc i).2
@@ -213,30 +213,30 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum {k : ℕ} {x : Fin (k + 1
           fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i := by
     obtain ⟨z, hz, hw⟩ := hw
     exact hX.mem_morseTrajectoryRecords.2
-      ⟨z j, hz j, fun i ↦ ⟨(hw i).1, hX.exists_flow_eq_of_mem_Ioo hz hw i.2⟩⟩
+      ⟨z j, hz j, fun i ↦ ⟨(hw i).1, hX.exists_flow_eq_of_mem_Ioo hz hw i.property⟩⟩
   -- Conversely, records of the steps assemble into a record of the stratum.
   have hbwd (v : (j : Fin k) → hX.morseTrajectoryRecords (x j.castSucc) (x j.succ)
       fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i) :
-      (fun i ↦ (v (J i)).1 ⟨i, hJ i⟩) ∈ hX.morseBrokenTrajectoryStratum x c := by
-    choose y hy hv using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).2
+      (fun i ↦ (v (J i)).val ⟨i, hJ i⟩) ∈ hX.morseBrokenTrajectoryStratum x c := by
+    choose y hy hv using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).property
     exact ⟨y, hy, fun i ↦ ⟨(hv (J i) ⟨i, hJ i⟩).1, J i, (hv (J i) ⟨i, hJ i⟩).2⟩⟩
   have hcont : Continuous fun (v : (j : Fin k) → hX.morseTrajectoryRecords (x j.castSucc)
       (x j.succ) fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i) i ↦
-      (v (J i)).1 ⟨i, hJ i⟩ :=
-    continuous_pi fun i ↦ ((continuous_apply _).comp continuous_subtype_val).comp
+      (v (J i)).val ⟨i, hJ i⟩ :=
+    continuous_pi fun i ↦ ((continuous_apply _).comp continuous_subtypeVal).comp
       (continuous_apply (J i))
   refine ⟨
-    { toFun w j := ⟨fun i ↦ (w : ι → M) i, hfwd w.1 w.2 j⟩
-      invFun v := ⟨fun i ↦ (v (J i)).1 ⟨i, hJ i⟩, hbwd v⟩
+    { toFun w j := ⟨fun i ↦ (w : ι → M) i, hfwd w.val w.property j⟩
+      invFun v := ⟨fun i ↦ (v (J i)).val ⟨i, hJ i⟩, hbwd v⟩
       left_inv w := rfl
       right_inv v := funext fun j ↦ Subtype.ext (funext fun i ↦ ?_)
       continuous_toFun := continuous_pi fun j ↦
-        (continuous_pi fun i ↦ (continuous_apply i.1).comp continuous_subtype_val).subtype_mk _
+        (continuous_pi fun i ↦ (continuous_apply i.val).comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := hcont.subtype_mk _ },
     fun w j i ↦ rfl⟩
   -- A level of step `j` is a level of no other step, since `f` decreases along the chain.
   obtain ⟨i, hi⟩ := i
-  choose y hy _ using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).2
+  choose y hy _ using fun j ↦ hX.mem_morseTrajectoryRecords.1 (v j).property
   obtain rfl : J i = j :=
     (hX.antitone_apply_of_chain hy).eq_of_mem_Ioo_of_mem_Icc_fin (hJ i) (Ioo_subset_Icc_self hi)
   rfl
@@ -260,7 +260,7 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum_orbitQuotient {k : ℕ}
   have hne : x j.castSucc ≠ x j.succ := fun h ↦ by
     obtain ⟨i, hi⟩ := hlev j
     exact (hi.1.trans hi.2).ne (by rw [h])
-  exact (hX.exists_homeomorph_morseTrajectoryRecords_orbitQuotient hne fun i ↦ i.2).some
+  exact (hX.exists_homeomorph_morseTrajectoryRecords_orbitQuotient hne fun i ↦ i.property).some
 
 /-- **A record determines its chain.** Let `x 0, …, x k` be a chain with a level strictly between
 `f (x (j + 1))` and `f (x j)` for every step `j`, and `x' 0, …, x' k'` a chain with the same ends

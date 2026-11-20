@@ -41,6 +41,8 @@ for sets `s ∈ Filter.codiscreteWithin U` and their complement specializations
   `Eᶜ ∈ Filter.codiscreteWithin U` holds exactly when `U` avoids the derived set `derivedSet E`. In
   a `T₁` space this thickens any such `U` to the open superset `(derivedSet E)ᶜ`, within which `Eᶜ`
   remains codiscrete.
+* `Homeomorph.preimage_mem_codiscreteWithin`: a homeomorphism `e` carries codiscreteness within
+  `t` to codiscreteness of preimages within `e ⁻¹' t`, and back.
 -/
 
 public section
@@ -180,5 +182,12 @@ theorem TauCeti.compl_mem_codiscreteWithin_iff_subset_compl_derivedSet {E : Set 
     (hEU : E ⊆ U) : Eᶜ ∈ codiscreteWithin U ↔ U ⊆ (derivedSet E)ᶜ :=
   ⟨TauCeti.subset_compl_derivedSet_of_compl_mem_codiscreteWithin hEU,
     TauCeti.compl_mem_codiscreteWithin_of_subset_compl_derivedSet⟩
+
+/-- Under a homeomorphism `e`, the preimage `e ⁻¹' s` is codiscrete within `e ⁻¹' t` exactly when
+`s` is codiscrete within `t`. -/
+theorem Homeomorph.preimage_mem_codiscreteWithin {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y)
+    {s t : Set Y} : e ⁻¹' s ∈ codiscreteWithin (e ⁻¹' t) ↔ s ∈ codiscreteWithin t := by
+  rw [← e.image_symm]
+  exact e.symm.isEmbedding.image_mem_codiscreteWithin
 
 end TopologicalSpace

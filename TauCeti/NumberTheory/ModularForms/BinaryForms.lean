@@ -115,7 +115,7 @@ theorem binaryFormRep_op_neg (M : Matrix (Fin 2) (Fin 2) ℤ) :
     binaryFormRep R w (op (-M)) = (-1 : R) ^ w • binaryFormRep R w (op M) := by
   refine LinearMap.ext fun P ↦ Subtype.ext ?_
   simp only [coe_binaryFormRep_apply, LinearMap.smul_apply, Submodule.coe_smul]
-  rw [Matrix.map_neg _ Int.cast_neg, P.2.linearSubst_neg]
+  rw [Matrix.map_neg _ Int.cast_neg, P.property.linearSubst_neg]
 
 /-- For even `w`, a matrix and its negative act in the same way. -/
 theorem binaryFormRep_op_neg_of_even (hw : Even w) (M : Matrix (Fin 2) (Fin 2) ℤ) :
@@ -166,7 +166,7 @@ theorem binaryFormRep_op_scalar (a : ℤ) :
   apply LinearMap.ext
   intro P
   apply Subtype.ext
-  simp [hmat, P.2.linearSubst_smul]
+  simp [hmat, P.property.linearSubst_smul]
 
 /-- An upper-triangular `2 × 2` integer matrix `(a b; 0 d)` scales the monomial `Y^w` by `d^w`. -/
 theorem binaryFormRep_upperTriangular_X_one_pow {M : Matrix (Fin 2) (Fin 2) ℤ}
@@ -191,6 +191,13 @@ theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : 
   rw [binaryFormMonomialBasis, Module.Basis.reindex_apply, coe_homogeneousMonomialBasis]
   simp only [coe_finsuppDegreeFinTwoEquiv_symm, X_pow_eq_monomial, monomial_mul_monomial,
     one_mul]
+
+/-- The coordinate of a binary form on `Xʲ Yʷ⁻ʲ` in the monomial basis is its coefficient. -/
+theorem binaryFormMonomialBasis_repr_apply {R : Type*} [CommSemiring R] {w : ℕ}
+    (P : homogeneousSubmodule (Fin 2) R w) (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w).repr P j =
+      (P : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 (j : ℕ) + Finsupp.single 1 (w - j)) := by
+  simp [binaryFormMonomialBasis]
 
 /-- Changing coefficients sends the monomial basis to the monomial basis. -/
 @[simp]
@@ -294,7 +301,7 @@ theorem eval_binaryFormDual (φ : homogeneousSubmodule (Fin 2) R w →ₗ[R] R) 
   rw [binaryFormDual_apply, linearFormPow_eq_sum, map_sum, Submodule.coe_sum, map_sum]
   rw [← Equiv.sum_comp Fin.revPerm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have hj : (j : ℕ) ≤ w := Nat.lt_succ_iff.mp j.2
+  have hj : (j : ℕ) ≤ w := Nat.lt_succ_iff.mp j.isLt
   simp only [Fin.revPerm_apply, Fin.rev_rev, Submodule.coe_smul, coe_binaryFormMonomialBasis,
     smul_eq_mul, smul_eval, map_smul, Fin.val_rev, eval_mul, eval_pow, eval_X]
   have h₁ : w + 1 - (j + 1) = w - j := by omega
@@ -333,8 +340,7 @@ theorem binaryFormRep_binaryFormDual (M : Matrix (Fin 2) (Fin 2) ℤ)
       ext j
       have hrepr : (binaryFormMonomialBasis R w).repr (mapHomogeneousSubmodule f w P) j =
           f ((binaryFormMonomialBasis A w).repr P j) := by
-        simp [binaryFormMonomialBasis, homogeneousMonomialBasis_repr_apply,
-          MvPolynomial.coeff_map]
+        simp [binaryFormMonomialBasis_repr_apply, MvPolynomial.coeff_map]
       rw [hrepr]
       simp [Finsupp.single_apply]
     rw [hmap, map_sum]
@@ -372,6 +378,6 @@ theorem binaryFormDual_injective (h : ∀ j ≤ w, IsRegular (w.choose j : R)) :
   refine (binaryFormMonomialBasis R w).ext fun j ↦ ?_
   have hj := hc (Fin.rev j)
   rw [Fin.rev_rev, mul_assoc, ((isUnit_neg_one (α := R)).pow _).mul_right_eq_zero] at hj
-  exact ((h _ (Nat.lt_succ_iff.mp j.rev.2)).left.mul_left_eq_zero_iff).1 hj
+  exact ((h _ (Nat.lt_succ_iff.mp j.rev.isLt)).left.mul_left_eq_zero_iff).1 hj
 
 end TauCeti

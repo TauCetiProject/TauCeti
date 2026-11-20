@@ -116,9 +116,9 @@ def specialFiberNumericalType : NumericalType.{u} where
     exact ⟨⟨η, (Set.Finite.mem_toFinset _).mpr hc⟩⟩
   multiplicity j := ⟨toBase.specialFiberMultiplicity π j,
     toBase.specialFiberMultiplicity_pos hη (hπ ▸ Ideal.mem_span_singleton_self π)
-      (toBase.ne_zero_of_base_ne_closedPoint hη hπ) j ((Set.Finite.mem_toFinset _).mp j.2)⟩
-  weight i := ⟨toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.2),
-    toBase.specialFiberWeight_pos _ (h₀ i ((Set.Finite.mem_toFinset _).mp i.2))⟩
+      (toBase.ne_zero_of_base_ne_closedPoint hη hπ) j ((Set.Finite.mem_toFinset _).mp j.property)⟩
+  weight i := ⟨toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property),
+    toBase.specialFiberWeight_pos _ (h₀ i ((Set.Finite.mem_toFinset _).mp i.property))⟩
   intersection := toBase.specialFiberIntersectionMatrix hX hη
   intersection_isSymm := toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁
   offDiagonal_nonneg _ _ := toBase.specialFiberIntersectionMatrix_nonneg_of_ne hX hη h₀ h₁
@@ -150,7 +150,7 @@ theorem specialFiberNumericalType_weight
     (i : (toBase.finite_setOf_base_eq_closedPoint
       (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset) :
     ((toBase.specialFiberNumericalType hX hη h₀ h₁ hπ hreg hconn).weight i : ℕ) =
-      toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.2) :=
+      toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property) :=
   rfl
 
 /-- The intersection matrix of the numerical type of a regular model is the intersection matrix
