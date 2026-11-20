@@ -86,10 +86,12 @@ theorem quadraticEnd_apply (ψ v : E) :
 theorem quadraticEnd_zero : quadraticEnd (0 : E) = 0 := by
   ext; simp
 
-/-- `ψ` is an eigenvector of `Q₀(ψ)` with eigenvalue `‖ψ‖² / 2`. -/
+/-- `ψ` is an eigenvector of `Q₀(ψ)` with eigenvalue `‖ψ‖² / 2`. As a simp lemma it takes
+priority over `quadraticEnd_apply`, which would leave `Q₀(ψ) ψ` as an unreduced difference. -/
+@[simp high]
 theorem quadraticEnd_apply_self (ψ : E) :
     quadraticEnd ψ ψ = ((‖ψ‖ : ℂ) ^ 2 / 2) • ψ := by
-  simp [inner_self_eq_norm_sq_to_K]
+  simp
   module
 
 /-- `Q₀` is homogeneous of degree two for the real structure: `Q₀(c ψ) = |c|² Q₀(ψ)`. -/
@@ -192,12 +194,26 @@ theorem quadraticEndPolar_comm (ψ φ : E) : quadraticEndPolar ψ φ = quadratic
   simp only [quadraticEndPolar_apply, add_comm (rankOne ℂ φ ψ), ← RCLike.re_to_complex,
     inner_re_symm ψ]
 
+/-- `B(ψ, c ψ) = 2 Re(c) Q₀(ψ)`. In particular `B(ψ, ξ ψ) = 0` for imaginary `ξ`: the derivative
+of `Q₀` vanishes along the infinitesimal phase directions. -/
+theorem quadraticEndPolar_smul_self (c : ℂ) (ψ : E) :
+    quadraticEndPolar ψ (c • ψ) = (2 * c.re) • quadraticEnd ψ := by
+  ext v
+  -- The coefficient of `⟪ψ, v⟫ ψ` is `c + conj c = 2 Re(c)`.
+  simp [inner_smul_left, inner_smul_right, ← Complex.ofReal_pow,
+    eq_sub_of_add_eq' (Complex.add_conj c)]
+  module
+
 /-- The polarization of `Q₀` restricts on the diagonal to `2 Q₀`. -/
 @[simp]
 theorem quadraticEndPolar_self (ψ : E) : quadraticEndPolar ψ ψ = 2 • quadraticEnd ψ := by
-  ext v
-  simp [inner_self_eq_norm_sq_to_K, ← Complex.ofReal_pow]
-  module
+  simpa [two_smul] using quadraticEndPolar_smul_self 1 ψ
+
+/-- `B(ψ, i ψ) = 0`: the derivative of `Q₀` vanishes along the infinitesimal phase direction
+`i ψ`. -/
+@[simp]
+theorem quadraticEndPolar_I_smul_self (ψ : E) : quadraticEndPolar ψ (Complex.I • ψ) = 0 := by
+  simp [quadraticEndPolar_smul_self]
 
 /-- Real polarization of `Q₀`: `Q₀(ψ + φ) = Q₀(ψ) + Q₀(φ) + B(ψ, φ)`. -/
 theorem quadraticEnd_add (ψ φ : E) :
@@ -217,22 +233,6 @@ theorem isSelfAdjoint_quadraticEndPolar [CompleteSpace E] (ψ φ : E) :
   rw [eq_sub_of_add_eq' (quadraticEnd_add ψ φ).symm]
   exact (isSelfAdjoint_quadraticEnd _).sub
     ((isSelfAdjoint_quadraticEnd _).add (isSelfAdjoint_quadraticEnd _))
-
-/-- `B(ψ, c ψ) = 2 Re(c) Q₀(ψ)`. In particular `B(ψ, ξ ψ) = 0` for imaginary `ξ`: the derivative
-of `Q₀` vanishes along the infinitesimal phase directions. -/
-theorem quadraticEndPolar_smul_self (c : ℂ) (ψ : E) :
-    quadraticEndPolar ψ (c • ψ) = (2 * c.re) • quadraticEnd ψ := by
-  -- The coefficient of `⟪ψ, v⟫ ψ` is `c + conj c = 2 Re(c)`.
-  have hc : conj c = 2 * c.re - c := by rw [Complex.re_eq_add_conj]; ring
-  ext v
-  simp [inner_smul_left, inner_smul_right, inner_self_eq_norm_sq_to_K, ← Complex.ofReal_pow, hc]
-  module
-
-/-- `B(ψ, i ψ) = 0`: the derivative of `Q₀` vanishes along the infinitesimal phase direction
-`i ψ`. -/
-@[simp]
-theorem quadraticEndPolar_I_smul_self (ψ : E) : quadraticEndPolar ψ (Complex.I • ψ) = 0 := by
-  simp [quadraticEndPolar_smul_self]
 
 /-- `B(ψ - φ, ψ + φ) = 2 (Q₀(ψ) - Q₀(φ))`. -/
 theorem quadraticEndPolar_sub_add (ψ φ : E) :
