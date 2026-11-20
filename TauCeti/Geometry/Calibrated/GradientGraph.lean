@@ -46,8 +46,8 @@ data of these graphs.
   `det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^(i ∑ⱼ arctan λⱼ)`
   (`Matrix.IsHermitian.det_one_add_I_smul_map_ofReal_eq_mul_exp`), so `e^(-iθ) det (1 + i A)` is
   real and positive exactly when `∑ⱼ arctan λⱼ = θ + 2πk` for some integer `k`
-  (`Matrix.IsHermitian.im_exp_mul_det_eq_zero_and_re_pos_iff`). The integer `k` records the
-  branch; nothing here selects one.
+  (`Matrix.IsHermitian.im_exp_mul_det_one_add_I_smul_map_ofReal_eq_zero_and_re_pos_iff`). The
+  integer `k` records the branch; nothing here selects one.
 * **The linearized equation.** At a symmetric solution `A` of `Im (e^(-iθ) det (1 + i A)) = 0`,
   the derivative of the residual in a real direction `B` is
   `Re (e^(-iθ) det (1 + i A)) tr ((1 + A²)⁻¹ B)`
@@ -161,8 +161,8 @@ theorem linearIndependent_realGraphMap_single (A : Matrix ι ι ℝ) :
 
 /-- **The phase-lift equation.** For a real symmetric matrix `A` with eigenvalues `λⱼ`,
 `e^(-iθ) det (1 + i A)` is real and positive exactly when `∑ⱼ arctan λⱼ = θ` modulo `2π`. -/
-theorem IsHermitian.im_exp_mul_det_eq_zero_and_re_pos_iff {A : Matrix ι ι ℝ}
-    (hA : A.IsHermitian) (θ : ℝ) :
+theorem IsHermitian.im_exp_mul_det_one_add_I_smul_map_ofReal_eq_zero_and_re_pos_iff
+    {A : Matrix ι ι ℝ} (hA : A.IsHermitian) (θ : ℝ) :
     ((Complex.exp (-(θ : ℂ) * I) * (1 + I • A.map ((↑) : ℝ → ℂ)).det).im = 0 ∧
         0 < (Complex.exp (-(θ : ℂ) * I) * (1 + I • A.map ((↑) : ℝ → ℂ)).det).re) ↔
       ∃ k : ℤ, ∑ j, Real.arctan (hA.eigenvalues j) = θ + 2 * Real.pi * k := by
@@ -185,11 +185,7 @@ theorem IsHermitian.im_exp_mul_det_eq_zero_and_re_pos_iff {A : Matrix ι ι ℝ}
     · rw [h1] at h
       nlinarith
   rw [hcos, Real.cos_eq_one_iff]
-  constructor
-  · rintro ⟨k, hk⟩
-    exact ⟨k, by linarith⟩
-  · rintro ⟨k, hk⟩
-    exact ⟨k, by linarith⟩
+  exact exists_congr fun k ↦ ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩
 
 /-! ### The linearized equation -/
 
@@ -224,17 +220,14 @@ theorem IsSymm.hasDerivAt_im_exp_mul_det_one_add_I_smul {A : Matrix ι ι ℝ} (
   · funext t
     simp [hline, det_mul]
   · -- On a solution `e^(-iθ) det M` is real, and `M⁻¹ N = i (1 - i A) (1 + A²)⁻¹ B`.
-    have htr (X : Matrix ι ι ℝ) : trace (X.map ((↑) : ℝ → ℂ)) = ((trace X : ℝ) : ℂ) :=
-      (AddMonoidHom.map_trace Complex.ofRealHom X).symm
-    have hmap (X Y : Matrix ι ι ℝ) :
-        (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
-      Matrix.map_mul (f := Complex.ofRealHom)
     have hMN : M⁻¹ * N = I • (((1 + A * A)⁻¹ * B).map ((↑) : ℝ → ℂ) -
         I • (A * (1 + A * A)⁻¹ * B).map ((↑) : ℝ → ℂ)) := by
-      rw [hM_def, hA.inv_one_add_I_smul_map_ofReal, hN_def, hmap, hmap, hmap]
+      rw [hM_def, hA.inv_one_add_I_smul_map_ofReal, hN_def, map_ofReal_mul, map_ofReal_mul,
+        map_ofReal_mul]
       simp [sub_mul, Matrix.mul_assoc]
     have hz : c * M.det = ((c * M.det).re : ℂ) := Complex.ext (by simp) (by simp [hθ])
-    rw [Complex.imCLM_apply, ← mul_assoc, hz, hMN, trace_smul, trace_sub, trace_smul, htr, htr]
+    rw [Complex.imCLM_apply, ← mul_assoc, hz, hMN, trace_smul, trace_sub, trace_smul,
+      trace_map_ofReal, trace_map_ofReal]
     simp
 
 end Matrix
@@ -357,7 +350,8 @@ theorem standardSpecialLagrangianForm_realGraphMap_single_eq_norm_ιMulti_iff_ex
         ‖exteriorPower.ιMulti ℝ n (fun j ↦ realGraphMap A (EuclideanSpace.single j 1))‖ ↔
       ∃ k : ℤ, ∑ j, Real.arctan (hA.eigenvalues j) = θ + 2 * Real.pi * k := by
   rw [standardSpecialLagrangianForm_realGraphMap_single_eq_norm_ιMulti_iff,
-    and_iff_right (isHermitian_iff_isSymm.1 hA), hA.im_exp_mul_det_eq_zero_and_re_pos_iff]
+    and_iff_right (isHermitian_iff_isSymm.1 hA),
+    hA.im_exp_mul_det_one_add_I_smul_map_ofReal_eq_zero_and_re_pos_iff]
 
 /-- **The holomorphic volume form on a gradient graph**: if `u` is `C²` at `x`, the pullback of
 `Ω = dz₁ ∧ ⋯ ∧ dzₙ` along the gradient graph is `det (1 + i D²u(x)) dx₁ ∧ ⋯ ∧ dxₙ` at `x`. -/

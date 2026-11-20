@@ -16,6 +16,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Matrix.Hermitian
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
@@ -149,15 +150,6 @@ theorem _root_.OrthonormalBasis.det_hessianOperator {ι : Type*} [Fintype ι] [D
   ext i j
   exact b.toMatrix_hessianOperator_apply f x i j
 
-/-- In an orthonormal basis, the matrix of the Hessian operator of a function `C²` at `x` is
-symmetric, by the symmetry of second derivatives. -/
-theorem _root_.OrthonormalBasis.isSymm_toMatrix_hessianOperator {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (b : OrthonormalBasis ι ℝ E) (hf : ContDiffAt ℝ 2 f x) :
-    (LinearMap.toMatrix b.toBasis b.toBasis (hessianOperator f x).toLinearMap).IsSymm :=
-  Matrix.IsSymm.ext fun i j ↦ by
-    rw [b.toMatrix_hessianOperator_apply, b.toMatrix_hessianOperator_apply]
-    exact hf.isSymmSndFDerivAt (by simp) _ _
-
 /-- In the standard basis of `ℝⁿ`, the entries `(D²u(y) eⱼ)ᵢ` of the Hessian operator of a function
 `C²` at `y` are the second partial derivatives `∂ᵢ∂ⱼu(y)`. -/
 theorem hessianOperator_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -238,6 +230,14 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
     _ = ⟪(hessianOperator f x : E → E) w, v⟫_ℝ :=
       (inner_hessianOperator_left f x w v).symm
     _ = ⟪v, (hessianOperator f x : E → E) w⟫_ℝ := real_inner_comm _ _
+
+/-- In an orthonormal basis, the matrix of the Hessian operator of a function `C²` at `x` is
+symmetric, since the Hessian operator is self-adjoint. -/
+theorem _root_.OrthonormalBasis.isSymm_toMatrix_hessianOperator {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (b : OrthonormalBasis ι ℝ E) (hf : ContDiffAt ℝ 2 f x) :
+    (LinearMap.toMatrix b.toBasis b.toBasis (hessianOperator f x).toLinearMap).IsSymm :=
+  Matrix.isHermitian_iff_isSymm.1
+    ((LinearMap.isHermitian_toMatrix_iff b).2 hf.isSelfAdjoint_hessianOperator.isSymmetric)
 
 /-- The gradient is differentiable at a twice continuously differentiable point, with derivative
 the Hessian operator. -/

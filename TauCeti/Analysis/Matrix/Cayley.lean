@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
 import Mathlib.Algebra.Order.Star.Real
+import TauCeti.LinearAlgebra.Matrix.OfReal
 
 /-!
 # The Cayley transform of a Hermitian matrix
@@ -218,9 +219,7 @@ theorem IsHermitian.det_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.I
   rw [hmat, det_smul, ← heval, ← Finset.card_univ, ← Finset.prod_const,
     ← Finset.prod_mul_distrib]
   refine Finset.prod_congr rfl fun j _ ↦ ?_
-  ring_nf
-  rw [I_sq]
-  ring
+  linear_combination (-1 : ℂ) * I_sq
 
 /-- **Polar form of `det (1 + i A)`.** For a real symmetric matrix `A` with eigenvalues `λⱼ`,
 `det (1 + i A) = (∏ⱼ √(1 + λⱼ²)) e^(i ∑ⱼ arctan λⱼ)`, so the phase of `det (1 + i A)` is
@@ -238,19 +237,15 @@ theorem IsHermitian.det_one_add_I_smul_map_ofReal_eq_mul_exp {A : Matrix n n ℝ
 theorem IsSymm.inv_one_add_I_smul_map_ofReal {A : Matrix n n ℝ} (hA : A.IsSymm) :
     (1 + I • A.map ((↑) : ℝ → ℂ))⁻¹ =
       (1 - I • A.map ((↑) : ℝ → ℂ)) * ((1 + A * A)⁻¹).map ((↑) : ℝ → ℂ) := by
-  have hmap (X Y : Matrix n n ℝ) :
-      (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  have hone : (1 : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = 1 :=
-    Matrix.map_one _ (by simp) (by simp)
   have h1 : (1 + I • A.map ((↑) : ℝ → ℂ)) * (1 - I • A.map ((↑) : ℝ → ℂ)) =
       (1 + A * A).map ((↑) : ℝ → ℂ) := by
-    rw [Matrix.map_add _ Complex.ofReal_add, hmap, hone]
+    rw [Matrix.map_add _ Complex.ofReal_add, map_ofReal_mul, map_ofReal_one]
     simp [add_mul, mul_sub, smul_smul]
     abel
   refine inv_eq_right_inv ?_
-  rw [← Matrix.mul_assoc, h1, ← hmap,
-    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hA.posDef_one_add_mul_self.isUnit), hone]
+  rw [← Matrix.mul_assoc, h1, ← map_ofReal_mul,
+    mul_nonsing_inv _ ((isUnit_iff_isUnit_det _).1 hA.posDef_one_add_mul_self.isUnit),
+    map_ofReal_one]
 
 /-- For a real symmetric matrix `A`, the linear functional `B ↦ tr ((1 + A²)⁻¹ B)` is positive on
 the rank-one matrices `ξ ξᵀ`: `tr ((1 + A²)⁻¹ ξ ξᵀ) > 0` for every nonzero `ξ`. -/
