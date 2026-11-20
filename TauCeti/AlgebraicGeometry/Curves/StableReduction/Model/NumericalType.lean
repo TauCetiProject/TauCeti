@@ -72,15 +72,15 @@ theorem numericalType_Component :
 
 /-- Every component of `M.numericalType` lies over `closedPoint R`. -/
 theorem base_eq_closedPoint_of_numericalType (i : (M.numericalType hX).Component) :
-    M.toBase (i.1 : M.total) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.2
+    M.toBase (i.val : M.total) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.property
 
 /-- For any generator `π` of `maximalIdeal R`, `((M.numericalType hX).multiplicity i : ℕ)` is
 `M.toBase.specialFiberMultiplicity π i`. -/
 theorem numericalType_multiplicity {π : R} (hπ : maximalIdeal R = Ideal.span {π})
     (i : (M.numericalType hX).Component) :
-    ((M.numericalType hX).multiplicity i : ℕ) = M.toBase.specialFiberMultiplicity π i.1 :=
+    ((M.numericalType hX).multiplicity i : ℕ) = M.toBase.specialFiberMultiplicity π i.val :=
   M.toBase.specialFiberMultiplicity_congr (((IsDiscreteValuationRing.irreducible_iff_uniformizer
-    _).mp (IsDiscreteValuationRing.exists_irreducible R).choose_spec).symm.trans hπ) i.1
+    _).mp (IsDiscreteValuationRing.exists_irreducible R).choose_spec).symm.trans hπ) i.val
 
 /-- The weight of the `i`-th component in `M.numericalType`, in `ℕ`. -/
 @[simp]
@@ -101,19 +101,20 @@ theorem numericalType_intersection_apply (i j : (M.numericalType hX).Component) 
         (M.toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
           (M.base_eq_closedPoint_of_numericalType hX i))
       LineBundleClass.intersectionNumber (ResidueField R)
-        (vanishingIdeal ⟨closure {(i.1 : M.total)}, isClosed_closure⟩).subschemeι
+        (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subschemeι
         (LineBundleClass.mk
           (Scheme.IdealSheafData.isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-            hX j.1.2).toInvertibleSheaf)⁻¹ :=
+            hX j.val.property).toInvertibleSheaf)⁻¹ :=
   M.toBase.specialFiberIntersectionMatrix_apply hX _ i j
 
 /-- The genus of the `i`-th component in `M.numericalType` is `dim_{κᵢ} H¹(Cᵢ, 𝒪_{Cᵢ})`. -/
 @[simp]
 theorem numericalType_genus (i : (M.numericalType hX).Component) :
-    (M.numericalType hX).genus i =
-      Module.finrank Γ((vanishingIdeal ⟨closure {(i.1 : M.total)}, isClosed_closure⟩).subscheme, ⊤)
-        (Cohomology (InvertibleSheaf.trivial
-          (vanishingIdeal ⟨closure {(i.1 : M.total)}, isClosed_closure⟩).subscheme).obj 1) := (rfl)
+    (M.numericalType hX).genus i = Module.finrank
+      Γ((vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subscheme, ⊤)
+      (Cohomology (InvertibleSheaf.trivial
+        (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subscheme).obj 1) :=
+  (rfl)
 
 /-- On every component `Cᵢ` of `M`, `wᵢ * gᵢ = dim_k H¹(Cᵢ, 𝒪_{Cᵢ})`. -/
 theorem weight_mul_genus_numericalType (i : (M.numericalType hX).Component) :
@@ -122,7 +123,7 @@ theorem weight_mul_genus_numericalType (i : (M.numericalType hX).Component) :
         (M.base_eq_closedPoint_of_numericalType hX i))
     ((M.numericalType hX).weight i : ℕ) * (M.numericalType hX).genus i =
       Module.finrank (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-        (vanishingIdeal ⟨closure {(i.1 : M.total)}, isClosed_closure⟩).subscheme).obj 1) :=
+        (vanishingIdeal ⟨closure {(i.val : M.total)}, isClosed_closure⟩).subscheme).obj 1) :=
   M.toBase.specialFiberWeight_mul_finrank_cohomology_one
     (M.base_eq_closedPoint_of_numericalType hX i)
 

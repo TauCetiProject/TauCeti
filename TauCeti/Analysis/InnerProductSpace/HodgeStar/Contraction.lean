@@ -94,11 +94,11 @@ theorem koszulDifferential_hodgeStar (u : V) {k l : ℕ} (hkl : k + (l + 1) = fi
   -- `(u ∧ x) ∧ y` on the right, and moving `u` past `x` costs `(-1) ^ k`.
   refine ext_inner_right ℝ fun y ↦ ?_
   set z : ⋀[ℝ]^(finrank ℝ V) V := ⟨_, by
-    rw [← hkl']; exact (wedge ℝ V (k + 1) l (ExteriorAlgebra.wedgeLeft u k x) y).2⟩
+    rw [← hkl']; exact (wedge ℝ V (k + 1) l (ExteriorAlgebra.wedgeLeft u k x) y).property⟩
   have hx : (x : _root_.ExteriorAlgebra ℝ V) * (_root_.ExteriorAlgebra.ι ℝ u * y) =
       (-1 : ℝ) ^ k • (_root_.ExteriorAlgebra.ι ℝ u * x * y) := by
     rw [_root_.ExteriorAlgebra.ι_mul_eq_involute_mul u (x : _root_.ExteriorAlgebra ℝ V),
-      ExteriorAlgebra.involute_of_mem_exteriorPower x.2]
+      ExteriorAlgebra.involute_of_mem_exteriorPower x.property]
     simp [smul_smul, ← mul_pow, mul_assoc]
   -- Both inner products are now volumes of the same top form `z`, up to the sign.
   rw [real_inner_comm, ← inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_comm,

@@ -114,11 +114,11 @@ def specialFiberNumericalType (hX : ∀ x : X, coheight x ≤ 2)
     exact ⟨⟨η, (Set.Finite.mem_toFinset _).mpr hc⟩⟩
   { Component := (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset
     multiplicity j := ⟨toBase.specialFiberMultiplicity π j,
-      toBase.specialFiberMultiplicity_pos hη hπm hπ0 j ((Set.Finite.mem_toFinset _).mp j.2)⟩
-    weight i := ⟨toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.2),
+      toBase.specialFiberMultiplicity_pos hη hπm hπ0 j ((Set.Finite.mem_toFinset _).mp j.property)⟩
+    weight i := ⟨toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property),
       toBase.specialFiberWeight_pos _
         (toBase.finiteDimensional_cohomology_trivial_subscheme_closure_singleton hX
-          ((Set.Finite.mem_toFinset _).mp i.2) 0)⟩
+          ((Set.Finite.mem_toFinset _).mp i.property) 0)⟩
     intersection := toBase.specialFiberIntersectionMatrix hX hη
     intersection_isSymm := toBase.specialFiberIntersectionMatrix_isSymm hX hη
     offDiagonal_nonneg _ _ hij := toBase.specialFiberIntersectionMatrix_nonneg_of_ne hX hη hij
@@ -129,10 +129,10 @@ def specialFiberNumericalType (hX : ∀ x : X, coheight x ≤ 2)
         (toBase.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity hX hη hπ hreg) i
       simpa [Matrix.mulVec, dotProduct, mul_comm] using h
     weight_dvd := toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix hX hη
-    genus i := Module.finrank Γ((vanishingIdeal ⟨closure {(i.1 : X)}, isClosed_closure⟩).subscheme,
-        ⊤)
+    genus i := Module.finrank
+      Γ((vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme, ⊤)
       (Cohomology (InvertibleSheaf.trivial (vanishingIdeal
-        ⟨closure {(i.1 : X)}, isClosed_closure⟩).subscheme).obj 1) }
+        ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 1) }
 
 section Projections
 
@@ -149,7 +149,7 @@ theorem specialFiberNumericalType_Component (hη : toBase (genericPoint X) ≠ c
 /-- Every component of `specialFiberNumericalType` lies over the closed point of `Spec R`. -/
 theorem base_eq_closedPoint_of_specialFiberNumericalType
     (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
-    toBase (i.1 : X) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.2
+    toBase (i.val : X) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.property
 
 /-- The multiplicity of a component of the numerical type of a regular model is its multiplicity
 in the divisor of `π`. -/
@@ -157,7 +157,7 @@ in the divisor of `π`. -/
 theorem specialFiberNumericalType_multiplicity
     (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
     ((toBase.specialFiberNumericalType hX hπ hreg).multiplicity i : ℕ) =
-      toBase.specialFiberMultiplicity π i.1 :=
+      toBase.specialFiberMultiplicity π i.val :=
   rfl
 
 /-- The weight of a component of the numerical type of a regular model is the degree
@@ -188,10 +188,10 @@ theorem specialFiberNumericalType_intersection_apply
         (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton
           (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i))
       LineBundleClass.intersectionNumber (ResidueField R)
-        (vanishingIdeal ⟨closure {(i.1 : X)}, isClosed_closure⟩).subschemeι
+        (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subschemeι
         (LineBundleClass.mk
           (Scheme.IdealSheafData.isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
-            hX j.1.2).toInvertibleSheaf)⁻¹ :=
+            hX j.val.property).toInvertibleSheaf)⁻¹ :=
   toBase.specialFiberIntersectionMatrix_apply hX _ i j
 
 /-- The genus of a component `C` of the numerical type of a regular model is
@@ -201,9 +201,9 @@ constant field. -/
 theorem specialFiberNumericalType_genus
     (i : (toBase.specialFiberNumericalType hX hπ hreg).Component) :
     (toBase.specialFiberNumericalType hX hπ hreg).genus i = Module.finrank
-      Γ((vanishingIdeal ⟨closure {(i.1 : X)}, isClosed_closure⟩).subscheme, ⊤)
+      Γ((vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme, ⊤)
       (Cohomology (InvertibleSheaf.trivial
-        (vanishingIdeal ⟨closure {(i.1 : X)}, isClosed_closure⟩).subscheme).obj 1) :=
+        (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 1) :=
   rfl
 
 /-- On every component `Cᵢ`, `wᵢ * gᵢ = dim_k H¹(Cᵢ, 𝒪_{Cᵢ})`. -/
@@ -214,7 +214,7 @@ theorem weight_mul_genus_specialFiberNumericalType
     ((toBase.specialFiberNumericalType hX hπ hreg).weight i : ℕ) *
         (toBase.specialFiberNumericalType hX hπ hreg).genus i =
       Module.finrank (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-        (vanishingIdeal ⟨closure {(i.1 : X)}, isClosed_closure⟩).subscheme).obj 1) :=
+        (vanishingIdeal ⟨closure {(i.val : X)}, isClosed_closure⟩).subscheme).obj 1) :=
   toBase.specialFiberWeight_mul_finrank_cohomology_one
     (toBase.base_eq_closedPoint_of_specialFiberNumericalType hX hπ hreg i)
 
@@ -226,7 +226,7 @@ theorem specialFiberNumericalType_congr {π' : R}
   let T := toBase.specialFiberNumericalType hX hπ hreg
   (T.reindex_refl).symm.trans (T.reindex_eq (T' := toBase.specialFiberNumericalType hX hπ' hreg')
     (Equiv.refl T.Component)
-    (fun i ↦ PNat.eq (toBase.specialFiberMultiplicity_congr (hπ.symm.trans hπ') i.1).symm)
+    (fun i ↦ PNat.eq (toBase.specialFiberMultiplicity_congr (hπ.symm.trans hπ') i.val).symm)
     (fun _ ↦ rfl) (fun _ _ ↦ rfl) fun _ ↦ rfl)
 
 /-- The special fibre is reduced iff every component has multiplicity `1` in
@@ -237,7 +237,7 @@ theorem isReduced_specialFiber_iff_multiplicity_eq_one :
   have hη := toBase.base_genericPoint_ne_closedPoint_of_isSMulRegular
     (hπ ▸ Ideal.mem_span_singleton_self π) hreg
   rw [toBase.isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one_of_isRegular hX hη hπ]
-  exact ⟨fun h i ↦ PNat.eq (h i.1 ((Set.Finite.mem_toFinset _).mp i.2)),
+  exact ⟨fun h i ↦ PNat.eq (h i.val ((Set.Finite.mem_toFinset _).mp i.property)),
     fun h x hx ↦ congrArg PNat.val (h ⟨x, (Set.Finite.mem_toFinset _).mpr hx⟩)⟩
 
 end Projections

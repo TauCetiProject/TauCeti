@@ -26,8 +26,8 @@ import TauCeti.Topology.Sheaves.Functors
 For an affine morphism `f : X ⟶ Y` and a quasi-coherent sheaf `M` on `X`, all positive higher
 direct images `R^{q+1} f_* M` vanish (`Scheme.Hom.isZero_higherDirectImage_succ_of_isAffineHom`),
 so Leray acyclicity identifies `Hⁿ(Y, f_* M)` with `Hⁿ(X, M)` in every degree `n`, naturally in
-`M` (`Scheme.Hom.cohomologyPushforwardIsoOfIsAffineHom`) and `R`-linearly over a base ring `R`
-(`Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom`), preserving `R`-finiteness
+`M` (`Scheme.Hom.cohomologyPushforwardLerayIsoOfIsAffineHom`) and `R`-linearly over a base ring `R`
+(`Scheme.Hom.cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom`), preserving `R`-finiteness
 (`Scheme.Hom.moduleFinite_cohomology_pushforward_iff_of_isAffineHom`) and `finrank`. Degree zero
 holds unconditionally (`Scheme.Hom.cohomologyZeroPushforwardBaseLinearEquiv`), and degree one on a
 two-affine-open cover matches Mayer–Vietoris boundaries
@@ -275,26 +275,26 @@ variable [IsAffineHom f]
 
 /-- Direct image of a quasi-coherent sheaf along an affine morphism preserves cohomology in every
 degree, via the Leray edge isomorphism. -/
-def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
+def cohomologyPushforwardLerayIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅ AddCommGrpCat.of (Cohomology M n) :=
   (AddEquiv.ofBijective (f.cohomologyLerayEdge M n)
     (f.cohomologyLerayEdge_bijective_of_isAffineHom M n)).toAddCommGrpIso
 
 /-- The affine-morphism cohomology comparison commutes with morphisms of quasi-coherent sheaves. -/
 @[reassoc]
-lemma cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules}
+lemma cohomologyPushforwardLerayIsoOfIsAffineHom_naturality {M N : X.Modules}
     [M.IsQuasicoherent] [N.IsQuasicoherent] (α : M ⟶ N) (n : ℕ) :
     (pushforward f ⋙ cohomologyFunctor Y n).map α ≫
-        (f.cohomologyPushforwardIsoOfIsAffineHom N n).hom =
-      (f.cohomologyPushforwardIsoOfIsAffineHom M n).hom ≫ (cohomologyFunctor X n).map α := by
+        (f.cohomologyPushforwardLerayIsoOfIsAffineHom N n).hom =
+      (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).hom ≫ (cohomologyFunctor X n).map α := by
   ext x; exact f.cohomologyLerayEdge_naturality α n x
 
 /-- The affine-morphism cohomology comparison carries the action of a global function on `Y` to
 the action of its pullback on `X`. -/
-lemma cohomologyPushforwardIsoOfIsAffineHom_hom_smul (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
-    (r : Γ(Y, ⊤)) (x : Cohomology ((pushforward f).obj M) n) :
-    (f.cohomologyPushforwardIsoOfIsAffineHom M n).hom (r • x) =
-      f.appTop r • (f.cohomologyPushforwardIsoOfIsAffineHom M n).hom x := by
+lemma cohomologyPushforwardLerayIsoOfIsAffineHom_hom_smul (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) (r : Γ(Y, ⊤)) (x : Cohomology ((pushforward f).obj M) n) :
+    (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).hom (r • x) =
+      f.appTop r • (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).hom x := by
   rw [cohomology_smul, cohomology_smul, ← pushforward_map_globalSectionsSmul]
   exact f.cohomologyLerayEdge_naturality (M.globalSectionsSmul (f.appTop r)) n x
 
@@ -305,40 +305,41 @@ variable (R : Type u) [CommRing R] [X.Over (Spec (.of R))] [Y.Over (Spec (.of R)
 
 /-- Direct image of a quasi-coherent sheaf along an affine morphism over `R` preserves cohomology
 as an `R`-module in every degree. -/
-def cohomologyPushforwardBaseLinearEquivOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
-    Cohomology ((pushforward f).obj M) n ≃ₗ[R] Cohomology M n where
-  __ := (f.cohomologyPushforwardIsoOfIsAffineHom M n).addCommGroupIsoToAddEquiv
+def cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) : Cohomology ((pushforward f).obj M) n ≃ₗ[R] Cohomology M n where
+  __ := (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).addCommGroupIsoToAddEquiv
   map_smul' r x := by
     have hr : f.appTop (baseRingToGlobalSections R Y r) = baseRingToGlobalSections R X r := by
       rw [baseRingToGlobalSections_apply, baseRingToGlobalSections_apply,
         ← CommRingCat.comp_apply, ← comp_appTop, HomIsOver.comp_over]
-    change (f.cohomologyPushforwardIsoOfIsAffineHom M n).hom (r • x) =
-      r • (f.cohomologyPushforwardIsoOfIsAffineHom M n).hom x
-    simp only [base_smul_cohomology, f.cohomologyPushforwardIsoOfIsAffineHom_hom_smul, hr]
+    change (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).hom (r • x) =
+      r • (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).hom x
+    simp only [base_smul_cohomology, f.cohomologyPushforwardLerayIsoOfIsAffineHom_hom_smul, hr]
 
 /-- The `R`-linear affine-pushforward comparison agrees with the additive forward map. -/
 @[simp]
-lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_apply (M : X.Modules) [M.IsQuasicoherent]
-    (n : ℕ) (x : Cohomology ((pushforward f).obj M) n) :
-    f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom R M n x =
-      (f.cohomologyPushforwardIsoOfIsAffineHom M n).hom x := (rfl)
+lemma cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom_apply (M : X.Modules)
+    [M.IsQuasicoherent] (n : ℕ) (x : Cohomology ((pushforward f).obj M) n) :
+    f.cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom R M n x =
+      (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).hom x := (rfl)
 
 /-- The inverse `R`-linear affine-pushforward comparison agrees with the additive inverse map. -/
 @[simp]
-lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_symm_apply (M : X.Modules)
+lemma cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom_symm_apply (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) (x : Cohomology M n) :
-    (f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom R M n).symm x =
-      (f.cohomologyPushforwardIsoOfIsAffineHom M n).inv x := (rfl)
+    (f.cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom R M n).symm x =
+      (f.cohomologyPushforwardLerayIsoOfIsAffineHom M n).inv x := (rfl)
 
 /-- The `R`-linear affine-pushforward cohomology comparison is natural in the sheaf. -/
-lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_naturality {M N : X.Modules}
+lemma cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom_naturality {M N : X.Modules}
     [M.IsQuasicoherent] [N.IsQuasicoherent] (α : M ⟶ N) (n : ℕ)
     (x : Cohomology ((pushforward f).obj M) n) :
-    f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom R N n
+    f.cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom R N n
         (cohomologyMapBaseLinear R Y ((pushforward f).map α) n x) =
       cohomologyMapBaseLinear R X α n
-        (f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom R M n x) := by
-  simp only [cohomologyPushforwardBaseLinearEquivOfIsAffineHom_apply, cohomologyMapBaseLinear_apply]
+        (f.cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom R M n x) := by
+  simp only [cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom_apply,
+    cohomologyMapBaseLinear_apply]
   exact f.cohomologyLerayEdge_naturality α n x
 
 /-- Cohomology of an affine pushforward over `R` is `R`-finite iff the source cohomology is. -/
@@ -346,13 +347,13 @@ lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_naturality {M N : X.Modu
 theorem moduleFinite_cohomology_pushforward_iff_of_isAffineHom (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) :
     Module.Finite R (Cohomology ((pushforward f).obj M) n) ↔ Module.Finite R (Cohomology M n) :=
-  Module.Finite.equiv_iff (f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom R M n)
+  Module.Finite.equiv_iff (f.cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom R M n)
 
 /-- Direct image of a quasi-coherent sheaf along an affine morphism over `R` preserves `finrank`. -/
 @[simp]
 theorem finrank_cohomology_pushforward_of_isAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     Module.finrank R (Cohomology ((pushforward f).obj M) n) = Module.finrank R (Cohomology M n) :=
-  (f.cohomologyPushforwardBaseLinearEquivOfIsAffineHom R M n).finrank_eq
+  (f.cohomologyPushforwardLerayBaseLinearEquivOfIsAffineHom R M n).finrank_eq
 
 end BaseRing
 

@@ -161,8 +161,8 @@ private theorem isFinite_of_topologicalKrullDim_le_zero [IsProper (X ↘ Spec (.
     (hX : topologicalKrullDim X ≤ 0) : IsFinite (X ↘ Spec (.of k)) := by
   have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
   have hsub (Z : irreducibleComponents X) : (Z : Set X).Subsingleton := by
-    let Zs : Set X := Z.1
-    have : IrreducibleSpace Zs := Subtype.irreducibleSpace Z.2.1
+    let Zs : Set X := Z.val
+    have : IrreducibleSpace Zs := Subtype.irreducibleSpace Z.property.left
     have : Nonempty (TopologicalSpace.IrreducibleCloseds Zs) :=
       ⟨⟨Set.univ, IrreducibleSpace.isIrreducible_univ Zs, isClosed_univ⟩⟩
     have hZ0 : topologicalKrullDim Zs = 0 := le_antisymm
@@ -190,7 +190,7 @@ private theorem finiteDimensional_cohomology_of_not_nontrivial_stalk_genericPoin
     (hQη : ¬ Nontrivial (Q.presheaf.stalk (genericPoint X))) (n : ℕ) :
     FiniteDimensional k (Cohomology Q n) := by
   let hQ (U : X.affineOpens) : Module.Finite Γ(X, U) Γ(Q, U) :=
-    Q.finite_sections_of_isAffineOpen U.1 U.2
+    Q.finite_sections_of_isAffineOpen U.val U.property
   let I := Q.annihilator hQ
   let i : I.subscheme ⟶ X := I.subschemeι
   let _ : I.subscheme.Over (Spec (.of k)) := ⟨i ≫ (X ↘ Spec (.of k))⟩
@@ -283,9 +283,10 @@ theorem finiteDimensional_cohomology_of_isCurveOver [X.IsCurveOver k] (M : X.Mod
     let _ := (ν.app U₀).hom.toAlgebra
     have hker : RingHom.ker (algebraMap Γ(X, U₀) Γ(f.normalization, ν ⁻¹ᵁ U₀)) ≤
         Module.annihilator Γ(X, U₀) Γ(M, U₀) := fun r hr ↦ by
-      rw [hbij_ν.1 ((RingHom.mem_ker.mp hr).trans (map_zero _).symm)]; exact Submodule.zero_mem _
+      rw [hbij_ν.injective ((RingHom.mem_ker.mp hr).trans (map_zero _).symm)]
+      exact Submodule.zero_mem _
     have hb := TensorProduct.mk_one_bijective_of_ker_le_annihilator (R := Γ(X, U₀))
-      (S := Γ(f.normalization, ν ⁻¹ᵁ U₀)) (M := Γ(M, U₀)) hbij_ν.2 hker
+      (S := Γ(f.normalization, ν ⁻¹ᵁ U₀)) (M := Γ(M, U₀)) hbij_ν.surjective hker
     let e := ν.pullbackSectionsEquiv M hU₀ (hU₀.preimage ν)
     have key : e.symm ∘ ν.pullbackSections M U₀ =
         TensorProduct.mk Γ(X, U₀) Γ(f.normalization, ν ⁻¹ᵁ U₀) Γ(M, U₀) 1 :=
@@ -297,13 +298,13 @@ theorem finiteDimensional_cohomology_of_isCurveOver [X.IsCurveOver k] (M : X.Mod
     have hmono : Mono ((kernel.ι η).app U₀) := by
       simpa using (inferInstance : Mono (((toPresheaf X).map (kernel.ι η)).app (Opposite.op U₀)))
     refine subsingleton_of_forall_eq 0 fun a ↦
-      (AddCommGrpCat.mono_iff_injective _).mp hmono (hbij_η.1 ?_)
+      (AddCommGrpCat.mono_iff_injective _).mp hmono (hbij_η.injective ?_)
     rw [map_zero, ← ConcreteCategory.comp_apply, ← Hom.comp_app, kernel.condition, Hom.zero_app]
     simp
   have hsub_coker : Subsingleton Γ(cokernel η, U₀) := by
     refine subsingleton_of_forall_eq 0 fun a ↦ ?_
     obtain ⟨a', rfl⟩ := (cokernel.π η).app_surjective_of_epi_of_isAffineOpen U₀ hU₀ a
-    obtain ⟨a₀, rfl⟩ := hbij_η.2 a'
+    obtain ⟨a₀, rfl⟩ := hbij_η.surjective a'
     rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, cokernel.condition, Hom.zero_app]; simp
   have : (kernel η).IsFinitePresentation := isFinitePresentation_kernel η
   have : (kernel η).IsFiniteType := inferInstance

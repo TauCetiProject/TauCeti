@@ -124,12 +124,12 @@ noncomputable def rangeQuotientHomeomorph
     (hq : IsQuotientMap (rangeQuotientMap (G := G) A))
     (hc : Continuous (fun p : X × F => (A p.1).quotientRangeCoordinate B p.2)) :
     TotalSpace G (fun x => F ⧸ (A x).range) ≃ₜ X × G where
-  toFun p := (p.1, (A p.1).quotientRangeEquiv B (h p.1) p.2)
+  toFun p := (p.proj, (A p.proj).quotientRangeEquiv B (h p.proj) p.snd)
   invFun p := ⟨p.1, Submodule.Quotient.mk (B p.2)⟩
   left_inv p := by
-    have hi := ((A p.1).quotientRangeEquiv B (h p.1)).symm_apply_apply p.2
+    have hi := ((A p.proj).quotientRangeEquiv B (h p.proj)).symm_apply_apply p.snd
     rw [ContinuousLinearMap.quotientRangeEquiv_symm_apply] at hi
-    exact congrArg (TotalSpace.mk p.1) hi
+    exact congrArg (TotalSpace.mk p.proj) hi
   right_inv p := by simp [ContinuousLinearMap.quotientRangeCoordinate_apply_right (h p.1)]
   continuous_toFun := hq.continuous_iff.mpr (by
     dsimp only [Function.comp_def, rangeQuotientMap]
@@ -147,7 +147,7 @@ theorem rangeQuotientHomeomorph_apply
     (hc : Continuous (fun p : X × F => (A p.1).quotientRangeCoordinate B p.2))
     (p : TotalSpace G (fun x => F ⧸ (A x).range)) :
     rangeQuotientHomeomorph A B h hq hc p =
-      (p.1, (A p.1).quotientRangeEquiv B (h p.1) p.2) := (rfl)
+      (p.proj, (A p.proj).quotientRangeEquiv B (h p.proj) p.snd) := (rfl)
 
 /-- Inverse total-space coordinates take the class of the complementary representative. -/
 @[simp]

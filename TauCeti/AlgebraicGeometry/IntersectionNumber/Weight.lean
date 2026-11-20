@@ -77,10 +77,11 @@ codimension at most two and generic point away from the closed point, the weight
 of the intersection matrix. -/
 theorem specialFiberWeight_dvd_specialFiberIntersectionMatrix (hX : ∀ x : X, coheight x ≤ 2)
     (hη : toBase (genericPoint X) ≠ closedPoint R) (i j) :
-    (toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.2) : ℤ) ∣
+    (toBase.specialFiberWeight ((Set.Finite.mem_toFinset _).mp i.property) : ℤ) ∣
       toBase.specialFiberIntersectionMatrix hX hη i j := by
   rw [specialFiberIntersectionMatrix_apply]
-  exact toBase.specialFiberWeight_dvd_intersectionNumber ((Set.Finite.mem_toFinset _).mp i.2) _ _
+  exact toBase.specialFiberWeight_dvd_intersectionNumber
+    ((Set.Finite.mem_toFinset _).mp i.property) _ _
 
 end AlgebraicGeometry.Scheme.Hom
 

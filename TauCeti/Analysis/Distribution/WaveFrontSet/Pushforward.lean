@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.CutoffPushforward
+public import TauCeti.Analysis.Distribution.Pushforward
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
@@ -22,6 +23,10 @@ then compact, it is the pushforward `A_* T`, and for a projection it is integrat
 fibres. This file proves Hörmander's bound for its wave front set:
 
 `WF(A_* (χ T)) ⊆ {(A x, η) | x ∈ supp χ ∩ supp T, Aᵀ η = 0 or (x, Aᵀ η) ∈ WF(T)}`.
+
+The same bound holds for the pushforward `A_* T` along a linear map proper on the support of `T`
+(`Distribution.pushforward`), with `x` ranging over the support of `T` in `Ω`
+(`Distribution.waveFrontSet_pushforward_subset`).
 
 Its proof rests on the identity `(A_* T)^(η) = T (χ (f ∘ A) e_(Aᵀ η))` for localized Fourier
 transforms (`Distribution.localFourier_cutoffPushforwardCLM`): the characters of `E'` pull back
@@ -47,6 +52,7 @@ map `0`, to which the bound above applies through its term `Aᵀ η = 0`. When `
   microlocally smooth at `(x, Aᵀ η)` for every `x ∈ supp χ ∩ supp T` with `A x = y`, then
   `A_* (χ T)` is microlocally smooth at `(y, η)`.
 * `Distribution.waveFrontSet_cutoffPushforwardCLM_subset`: the wave front bound above.
+* `Distribution.waveFrontSet_pushforward_subset`: the same bound for maps proper on the support.
 * `Distribution.waveFrontSet_cutoffPushforwardCLM_subset_of_surjective`: for surjective `A`,
   `WF(A_* (χ T)) ⊆ {(A x, η) | x ∈ supp χ, (x, Aᵀ η) ∈ WF(T)}`.
 * `Distribution.waveFrontSet_cutoffPushforwardCLM_const`: the pushforward along a constant map
@@ -185,6 +191,34 @@ theorem waveFrontSet_cutoffPushforwardCLM_subset_of_surjective {A : E →L[ℝ] 
   have h := ContinuousLinearMap.adjoint_inner_left A z η
   rw [h0, inner_zero_left, hz] at h
   exact inner_self_eq_zero.1 h.symm
+
+/-- **Hörmander's wave front bound for a pushforward along a linear map proper on the support.**
+If the linear map `A` is proper on the support of `T`, the pushforward `A_* T` satisfies
+`WF(A_* T) ⊆ {(A x, η) | x ∈ Ω ∩ supp T, Aᵀ η = 0 or (x, Aᵀ η) ∈ WF(T)}`. -/
+theorem waveFrontSet_pushforward_subset (A : E →L[ℝ] E') (T : 𝓓'(Ω, ℂ))
+    (hT : IsProperOnSupport T A Ω') :
+    (pushforward T A A.contDiff.contDiffOn hT : 𝓓'(Ω', ℂ)).waveFrontSet ⊆
+      {p | ∃ x ∈ (Ω : Set E) ∩ dsupport T, A x = p.1 ∧
+        ((A†) p.2 = 0 ∨ (x, (A†) p.2) ∈ T.waveFrontSet)} := by
+  -- Over a neighbourhood of each point of `Ω'`, `A_* T` is the pushforward of `T` with a cutoff
+  -- (`Distribution.restrictCLM_pushforward`), to which
+  -- `Distribution.waveFrontSet_cutoffPushforwardCLM_subset` applies.
+  rintro ⟨y, η⟩ hp
+  obtain ⟨K, hK, hyK, hKΩ'⟩ := exists_compact_subset Ω'.isOpen (mem_waveFrontSet_iff.1 hp).1
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) (hT.isCompact hK hKΩ')
+    (inter_subset_left.trans inter_subset_left)
+  -- Over the interior `U` of `K`, `A_* T` is the pushforward of `T` with the cutoff `χ`.
+  let U : Opens E' := ⟨interior K, isOpen_interior⟩
+  have h := waveFrontSet_inter_eq_of_restrictCLM_eq
+    (SetLike.coe_subset_coe.1 (interior_subset.trans hKΩ'))
+    (restrictCLM_pushforward (hΦ := A.contDiff.contDiffOn) (hT := hT) (U := U)
+      interior_subset hχ)
+  have hp' : (y, η) ∈ (cutoffPushforwardCLM χ A A.contDiff.contDiffOn T : 𝓓'(Ω', ℂ)).waveFrontSet ∩
+      (U : Set E') ×ˢ univ := by
+    rw [← h]
+    exact ⟨hp, hyK, mem_univ η⟩
+  obtain ⟨x, hx, hxy, hη⟩ := waveFrontSet_cutoffPushforwardCLM_subset A T hp'.1
+  exact ⟨x, ⟨χ.tsupport_subset hx.1, hx.2⟩, hxy, hη⟩
 
 end Linear
 

@@ -298,7 +298,7 @@ private theorem iSup_O (hj : ∀ x : X.obj, ∃ (i : ι) (y : (U i).obj), (j i).
 private theorem range_O {W : PreAdicSpace.{u}} (a : W ⟶ X.obj) (i : ι) :
     Set.range (W.ofRestrict (O j a i).isOpenEmbedding ≫ a).base ⊆ Set.range (j i).hom.base := by
   rintro _ ⟨y, rfl⟩
-  exact y.2
+  exact y.property
 
 variable {f g j}
 

@@ -120,12 +120,12 @@ end FinitePlace
 /-- The discriminant of a system at a real place `w`: the image of the global discriminant in
 `ℝˣ/(ℝˣ)²` under the real embedding of `w`. -/
 def discrAtRealPlace (w : {w : InfinitePlace K // w.IsReal}) : SquareClassGroup ℝ :=
-  (embedding_of_isReal w.2).squareClassMap I.discr
+  (embedding_of_isReal w.property).squareClassMap I.discr
 
 /-- Unfolds `discrAtRealPlace`. -/
 @[simp]
 theorem discrAtRealPlace_def (w : {w : InfinitePlace K // w.IsReal}) :
-    I.discrAtRealPlace w = (embedding_of_isReal w.2).squareClassMap I.discr :=
+    I.discrAtRealPlace w = (embedding_of_isReal w.property).squareClassMap I.discr :=
   (rfl)
 
 /-- The negative index `n - p_w` of a system at a real place `w`. -/
@@ -231,9 +231,9 @@ theorem prod_finiteHasse_mul_prod_realHasse_eq_one (hI : I.IsAdmissible)
 negative exactly when the negative index is odd. -/
 theorem embedding_of_isReal_neg_iff_odd (hI : I.IsAdmissible) {d : Kˣ}
     (hd : squareClass d = I.discr) (w : {w : InfinitePlace K // w.IsReal}) :
-    embedding_of_isReal w.2 (d : K) < 0 ↔ Odd (I.realNegativeIndex w) := by
-  set u : ℝˣ := Units.map (embedding_of_isReal w.2).toMonoidHom d
-  have hu : (u : ℝ) = embedding_of_isReal w.2 (d : K) := by simp [u]
+    embedding_of_isReal w.property (d : K) < 0 ↔ Odd (I.realNegativeIndex w) := by
+  set u : ℝˣ := Units.map (embedding_of_isReal w.property).toMonoidHom d
+  have hu : (u : ℝ) = embedding_of_isReal w.property (d : K) := by simp [u]
   have h : squareClass u = I.realNegativeIndex w • squareClass (-1 : ℝˣ) := by
     rw [← RingHom.squareClassMap_apply, hd, ← discrAtRealPlace_def, hI.discrAtRealPlace_eq]
   have hpos : 0 < (u : ℝ) ↔ Even (I.realNegativeIndex w) := by

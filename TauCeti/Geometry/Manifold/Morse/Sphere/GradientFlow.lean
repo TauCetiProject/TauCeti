@@ -197,7 +197,7 @@ private theorem one_add_sphereHeight_maximalIntegralCurve_neg_mgradient_eq (hx :
     1 + sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) =
       (1 + sphereHeight v x) / (1 - sphereHeight v x) * Real.exp (-t) ^ 2 *
         (1 - sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t)) := by
-  rw [← Real.exp_nat_mul, show ((2 : ℕ) : ℝ) * -t = -(2 * t) by push_cast; ring,
+  rw [← Real.exp_natCast_mul, show ((2 : ℕ) : ℝ) * -t = -(2 * t) by push_cast; ring,
     ← one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (n := n) hx ht,
     div_mul_cancel₀ _
       (sub_pos.2 (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one hx ht)).ne']
@@ -214,7 +214,6 @@ theorem exists_riemannianEDist_le_mul_exp_neg_maximalIntegralCurve_neg_mgradient
   set R := (1 + sphereHeight v x) / (1 - sphereHeight v x)
   obtain ⟨K, hK0, hK⟩ := exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     (isManifoldNondegenerateCriticalPoint_sphereHeight_neg v)
-    Ici_subset_maximalIntegralCurveInterval_neg_mgradient_sphereHeight
     (tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight hx)
     (contMDiff_sphereHeight (n := n) v)
   refine ⟨K * √(2 * R), ?_⟩

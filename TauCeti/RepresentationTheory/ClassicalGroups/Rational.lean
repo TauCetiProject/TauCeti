@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunction
 public import TauCeti.RepresentationTheory.MatrixCoefficients
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
-public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 
 /-!

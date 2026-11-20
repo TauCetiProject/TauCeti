@@ -274,12 +274,8 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     refine (norm_toEuclideanCLM_apply_le _ _).trans_eq ?_
     rw [matrixBilinearForm_sub, norm_sub_rev (matrixBilinearForm A)]
   have hθm : AEStronglyMeasurable
-      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) (mu.restrict B) := by
-    have h : Continuous fun M : Matrix ι ι ℝ => matrixBilinearForm (M - A) :=
-      continuous_matrixBilinearForm.comp (continuous_sub_right A)
-    simpa only [matrixBilinearForm_sub] using
-      (Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
-        h).comp_aestronglyMeasurable ha
+      (fun x => ‖matrixBilinearForm (a x) - matrixBilinearForm A‖) (mu.restrict B) :=
+    aestronglyMeasurable_norm_matrixBilinearForm_sub ha A
   have hθb : ∀ᵐ x ∂mu.restrict B, ‖θ x ^ 2‖ ≤ ε ^ 2 := by
     filter_upwards [ae_restrict_mem hBm] with x hxB
     rw [Real.norm_of_nonneg (sq_nonneg _)]
@@ -375,7 +371,7 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
   -- `2 r ‖f‖ ‖∇v‖`.
   have hℓ : ∀ v : W1p0 volume B 2, |⟪hf.toLp, W1p.value (v : W1p volume B 2)⟫_ℝ| ≤
       2 * r * ‖hf.toLp‖ * ‖W1p.gradient (v : W1p volume B 2)‖ := fun v => by
-    have hv := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.2
+    have hv := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hBr v.property
     have hfv := abs_real_inner_le_norm hf.toLp (W1p.value (v : W1p volume B 2))
     have := mul_le_mul_of_nonneg_left hv (norm_nonneg hf.toLp)
     linarith
