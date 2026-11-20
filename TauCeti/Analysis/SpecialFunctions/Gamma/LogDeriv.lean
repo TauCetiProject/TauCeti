@@ -5,9 +5,8 @@ Authors: OpenAI Codex
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
-import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 
 /-!
 # Logarithmic derivatives of the archimedean gamma factors
@@ -96,19 +95,13 @@ example : logDeriv Gammaℂ 1 =
 /-- The logarithmic derivative is analytic off the poles of the real-place gamma factor. -/
 theorem analyticAt_logDeriv_Gammaℝ {s : ℂ} (hs : Gammaℝ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℝ) s := by
-  have ha : AnalyticAt ℂ Gammaℝ s := by
-    have h := (differentiable_Gammaℝ_inv.analyticAt s).inv (inv_ne_zero hs)
-    rw [show (fun z ↦ (Gammaℝ z)⁻¹)⁻¹ = Gammaℝ from funext (fun z ↦ inv_inv _)] at h
-    exact h
+  have ha := analyticAt_Gammaℝ_of_ne_zero hs
   exact ha.deriv.div ha hs
 
 /-- The logarithmic derivative is analytic off the poles of the complex-place gamma factor. -/
 theorem analyticAt_logDeriv_Gammaℂ {s : ℂ} (hs : Gammaℂ s ≠ 0) :
     AnalyticAt ℂ (logDeriv Gammaℂ) s := by
-  have ha : AnalyticAt ℂ Gammaℂ s := by
-    have h := (differentiable_Gammaℂ_inv.analyticAt s).inv (inv_ne_zero hs)
-    rw [show (fun z ↦ (Gammaℂ z)⁻¹)⁻¹ = Gammaℂ from funext (fun z ↦ inv_inv _)] at h
-    exact h
+  have ha := analyticAt_Gammaℂ_of_ne_zero hs
   exact ha.deriv.div ha hs
 
 /-- The real-place logarithmic derivative is continuous on the positive half-plane. -/
