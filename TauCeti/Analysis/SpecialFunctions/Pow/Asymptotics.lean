@@ -29,6 +29,8 @@ On a seminormed group, as `‖s‖ → ∞`:
   in particular `√‖s‖ = o(s)`.
 
 These are the comparisons behind the order of growth of an entire function.
+On the real line, for `r > 0`, a polynomial-type weight `t ^ c (1 + t) ^ p` times `exp (-r t)` is
+`O(exp (-(r / 2) t))` as `t → ∞`, which makes such Laplace integrands integrable on `(0, ∞)`.
 
 ## Positive powers near zero
 
@@ -140,6 +142,34 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
     filter_upwards [eventually_ge_atTop 0] with x hx
     rw [Function.comp_apply, ← Real.rpow_mul hx, mul_div_cancel₀ _ hb.ne', Real.rpow_natCast]
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- For `r > 0`, a polynomial-type weight `t ^ c (1 + t) ^ p` times `exp (-r t)` is
+`O(exp (-(r / 2) t))` as `t → ∞`, for every natural `c` and real `p`. -/
+theorem isBigO_pow_mul_one_add_rpow_mul_exp (c : ℕ) (p : ℝ) {r : ℝ} (hr : 0 < r) :
+    (fun t : ℝ ↦ t ^ c * (1 + t) ^ p * Real.exp (-(r * t))) =O[atTop]
+      fun t ↦ Real.exp (-(r / 2) * t) := by
+  set q : ℝ := c + |p|
+  have hlo : (fun t : ℝ ↦ (1 + t) ^ q) =o[atTop] fun t ↦ Real.exp (r / 2 * (1 + t)) :=
+    (isLittleO_rpow_exp_pos_mul_atTop q (half_pos hr)).comp_tendsto
+      (tendsto_atTop_add_const_left _ 1 tendsto_id)
+  have hmul := hlo.isBigO.mul (isBigO_refl (fun t : ℝ ↦ Real.exp (-(r * t))) atTop)
+  refine IsBigO.trans ?_ (hmul.trans (IsBigO.of_bound (Real.exp (r / 2)) ?_))
+  · refine IsBigO.of_bound 1 ?_
+    filter_upwards [eventually_ge_atTop 0] with t ht
+    have h1t : 1 ≤ 1 + t := by linarith
+    have hpow : t ^ c * (1 + t) ^ p ≤ (1 + t) ^ q := by
+      calc t ^ c * (1 + t) ^ p ≤ (1 + t) ^ (c : ℝ) * (1 + t) ^ |p| := by
+            gcongr
+            · rw [Real.rpow_natCast]
+              exact pow_le_pow_left₀ ht (by linarith) c
+            · exact le_abs_self p
+        _ = (1 + t) ^ q := by rw [← Real.rpow_add (by linarith)]
+    rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity), one_mul]
+    exact mul_le_mul_of_nonneg_right hpow (Real.exp_pos _).le
+  · filter_upwards with t
+    rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
+      ← Real.exp_add, ← Real.exp_add]
+    exact le_of_eq (congr_arg Real.exp (by ring))
 
 /-- For `a < b`, the real power `x ^ a` is `o(x ^ b)` as `x → ∞`. -/
 theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
