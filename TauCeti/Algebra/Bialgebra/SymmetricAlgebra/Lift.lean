@@ -195,7 +195,7 @@ private theorem reducedComul_eq_zero_of_injOn {φ : S →ₐc[k] A} {d : ℕ}
   -- Over a field every module is flat, so tensoring the two injective restrictions of `φ`
   -- gives an injective map.
   have hinj : Function.Injective ((φ : S →ₗ[k] A) ∘ₗ (F d).subtype) := fun p q hpq ↦
-    Subtype.ext (hd p.2 q.2 hpq)
+    Subtype.ext (hd p.property q.property hpq)
   have hu0 : u = 0 := by
     apply TensorProduct.map_injective_of_flat_flat _ _ hinj hinj
     rw [map_zero, TensorProduct.map_comp, LinearMap.comp_apply, hu, φ.map_reducedComul, hφx,

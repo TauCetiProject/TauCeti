@@ -121,7 +121,7 @@ private theorem adjoin_primitive_eq_top_of_isUpperUnitriangular {M : Type v} [Ad
   have hy := congrArg (fun φ : _ →ₐ[k] H ↦ φ y) hfac
   simp only [BialgHom.coe_toAlgHom, AlgHom.comp_apply] at hy
   rw [hy]
-  exact (g y).2
+  exact (g y).property
 
 /-- **A commutative unipotent group over a field of characteristic zero is a vector group.** If
 `H` is commutative, cocommutative and of finite type over a field of characteristic zero, and every
@@ -131,7 +131,7 @@ theorem liftBialgHom_primitive_bijective [Algebra.FiniteType k H]
     (hfixed : ∀ (V : Type v) [AddCommGroup V] [Module k V] [Comodule k H V]
       [FiniteDimensional k V] [Nontrivial V], Comodule.HasNonzeroFixedVector k H V) :
     Function.Bijective (SymmetricAlgebra.liftBialgHom (Coalgebra.skewPrimitive k (1 : H) 1).subtype
-      fun p ↦ p.2) := by
+      fun p ↦ p.property) := by
   refine ⟨SymmetricAlgebra.liftBialgHom_injective _ Subtype.val_injective, ?_⟩
   -- A faithful representation has an upper-unitriangular coefficient matrix.
   obtain ⟨M, m, c, hc⟩ := Comodule.exists_coordinateBialgHom_surjective (k := k) (H := H)
@@ -142,7 +142,7 @@ theorem liftBialgHom_primitive_bijective [Algebra.FiniteType k H]
   have hsurj := (Comodule.coordinateBialgHom_surjective_iff_of_bases c b).mp hc
   -- Its primitive logarithm generates `H`, and the range of the lift contains the primitives.
   suffices h : (SymmetricAlgebra.liftBialgHom (Coalgebra.skewPrimitive k (1 : H) 1).subtype
-      fun p ↦ p.2).toAlgHom.range = ⊤ from
+      fun p ↦ p.property).toAlgHom.range = ⊤ from
     (AlgHom.range_eq_top _).mp h
   rw [eq_top_iff, ← adjoin_primitive_eq_top_of_isUpperUnitriangular b hb hsurj,
     Algebra.adjoin_le_iff]
@@ -185,7 +185,7 @@ primitive elements of its coordinate Hopf algebra maps bijectively onto it. -/
 theorem liftBialgHom_primitive_bijective_of_forall_isUnipotentPoint [IsAlgClosed k]
     [Algebra.FiniteType k H] (hH : ∀ g : WithConv (H →ₐ[k] k), IsUnipotentPoint g) :
     Function.Bijective (SymmetricAlgebra.liftBialgHom (Coalgebra.skewPrimitive k (1 : H) 1).subtype
-      fun p ↦ p.2) :=
+      fun p ↦ p.property) :=
   have := isReduced_of_charZero k H
   liftBialgHom_primitive_bijective fun _ _ _ _ _ _ ↦
     Comodule.hasNonzeroFixedVector_of_forall_isUnipotentPoint hH
