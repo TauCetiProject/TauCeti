@@ -81,7 +81,7 @@ private def singleParityCheckCoordEquiv (n : ℕ) :
     · rw [eq_univ_of_forall fun j ↦ mem_Iic.mpr (Fin.le_last j)]
       exact (mem_singleParityCheckCode R (Fin (n + 1))).mp
         ((∑ i : Fin n, (∑ j ∈ Iic i.castSucc, (x : Fin (n + 1) → R) j) •
-          singleParityCheckAdjacentDiff R n i) - x).2
+          singleParityCheckAdjacentDiff R n i) - x).property
     · intro k
       simp only [AddSubgroupClass.coe_sub, Pi.sub_apply, sum_sub_distrib, sub_eq_zero]
       exact sum_Iic_sum_smul_adjacentDiff R _ k

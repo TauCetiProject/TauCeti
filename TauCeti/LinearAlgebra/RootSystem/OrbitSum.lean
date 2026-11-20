@@ -394,7 +394,7 @@ theorem weightMap_orbitSum_of_autCongr {σ : P.Aut} {σ₂ : P₂.Aut}
 theorem mem_foldedIndices_weightMap {σ : P.Aut} {σ₂ : P₂.Aut}
     (φ : P.Equiv P₂) (hφ : φ.autCongr σ = σ₂) (v : P.foldedIndices σ) :
     φ.weightMap (v : M) ∈ P₂.foldedIndices σ₂ := by
-  obtain ⟨i, hi⟩ := mem_foldedIndices.mp v.2
+  obtain ⟨i, hi⟩ := mem_foldedIndices.mp v.property
   exact mem_foldedIndices.mpr ⟨φ.indexEquiv i, hi ▸ (weightMap_orbitSum_of_autCongr φ hφ i).symm⟩
 
 /-- An intertwining equivalence `φ : P.Equiv P₂` carries `P.foldedIndices σ` onto
@@ -416,7 +416,7 @@ noncomputable def foldedIndicesCongr {σ : P.Aut} {σ₂ : P₂.Aut}
 theorem mem_foldedIndices_weightMap_iff {σ : P.Aut} {σ₂ : P₂.Aut}
     (φ : P.Equiv P₂) (hφ : φ.autCongr σ = σ₂) (v : M) :
     φ.weightMap v ∈ P₂.foldedIndices σ₂ ↔ v ∈ P.foldedIndices σ :=
-  ⟨fun h ↦ by simpa [foldedIndicesCongr] using ((foldedIndicesCongr φ hφ).symm ⟨_, h⟩).2,
+  ⟨fun h ↦ by simpa [foldedIndicesCongr] using ((foldedIndicesCongr φ hφ).symm ⟨_, h⟩).property,
     fun h ↦ mem_foldedIndices_weightMap φ hφ ⟨v, h⟩⟩
 
 end FoldedIndicesCongr

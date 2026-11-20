@@ -93,7 +93,7 @@ def typeAZeroSumRevEquiv (m : ℕ) :
     { toFun x := ⟨fun a ↦ -(x : Fin (m + 1) → R) a.rev, by
         rw [mem_singleParityCheckCode, sum_neg_distrib, neg_eq_zero]
         exact (Equiv.sum_comp (Fin.revPerm : Equiv.Perm (Fin (m + 1))) _).trans
-          ((mem_singleParityCheckCode R (Fin (m + 1))).mp x.2)⟩
+          ((mem_singleParityCheckCode R (Fin (m + 1))).mp x.property)⟩
       map_add' _ _ := Subtype.ext (funext fun _ ↦ by simp; ring)
       map_smul' _ _ := Subtype.ext (funext fun _ ↦ by simp) }
     fun _ ↦ Subtype.ext (funext fun _ ↦ by simp)
@@ -139,7 +139,7 @@ private lemma zeroSumDiffMap_injective (m : ℕ) : Injective (zeroSumDiffMap K m
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]; intro u hu
   have hc (a : Fin (m + 1)) : (u : Fin (m + 1) → K) a = (u : Fin (m + 1) → K) 0 :=
     Fin.induction rfl (fun k ih ↦ (sub_eq_zero.mp (congrFun hu k)).symm.trans ih) a
-  have hsum := (mem_singleParityCheckCode K (Fin (m + 1))).mp u.2
+  have hsum := (mem_singleParityCheckCode K (Fin (m + 1))).mp u.property
   simp_rw [hc, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul] at hsum
   have hu0 := (mul_eq_zero.mp hsum).resolve_left (Nat.cast_ne_zero.mpr (Nat.succ_ne_zero m))
   exact Subtype.ext (funext fun a ↦ (hc a).trans hu0)
@@ -265,7 +265,7 @@ theorem reflectionPerm_typeAZeroSumRootPairing_val (m : ℕ) (p q : TypeAIndex m
 
 /-- Self-reflection in `p = (a, b)` reverses the pair to `(b, a)`. -/
 @[simp] theorem reflectionPerm_self_typeAZeroSumRootPairing (m : ℕ) (p : TypeAIndex m) :
-    (typeAZeroSumRootPairing K m).reflectionPerm p p = ⟨(p.val.2, p.val.1), p.2.symm⟩ :=
+    (typeAZeroSumRootPairing K m).reflectionPerm p p = ⟨(p.val.2, p.val.1), p.property.symm⟩ :=
   Subtype.ext (by simp [reflectionPerm_typeAZeroSumRootPairing_val])
 
 -- `typeABaseChangeEquivZeroSum` has dependent target type `typeAZeroSumRootPairing K m`, so
@@ -384,8 +384,9 @@ theorem isPos_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :
       Fin.val_castSucc]
     have : (q.val.1 : ℕ) < (q.val.2 : ℕ) := hlt
     split_ifs <;> first | (norm_num; done) | (exfalso; omega)
-  refine ⟨fun hpos ↦ (lt_or_gt_of_ne p.2).resolve_right fun hgt ↦ ?_, hfwd p⟩
-  have hq : _ ∈ posRoots _ _ := (mem_posRoots _ _ _).mpr (hfwd ⟨(p.val.2, p.val.1), p.2.symm⟩ hgt)
+  refine ⟨fun hpos ↦ (lt_or_gt_of_ne p.property).resolve_right fun hgt ↦ ?_, hfwd p⟩
+  have hq : _ ∈ posRoots _ _ :=
+    (mem_posRoots _ _ _).mpr (hfwd ⟨(p.val.2, p.val.1), p.property.symm⟩ hgt)
   rw [← reflectionPerm_self_typeAZeroSumRootPairing K m p] at hq
   exact reflectionPerm_self_notMem_posRoots _ _ ((mem_posRoots _ _ _).mpr hpos) hq
 

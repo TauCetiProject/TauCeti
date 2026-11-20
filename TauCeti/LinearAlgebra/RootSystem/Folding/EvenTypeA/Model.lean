@@ -134,7 +134,7 @@ private lemma fixedSubmodule_revAut_apply_rev {n : ℕ}
     ((x : singleParityCheckCode K (Fin (2 * n + 1))) : Fin (2 * n + 1) → K) a.rev =
       -((x : singleParityCheckCode K (Fin (2 * n + 1))) : Fin (2 * n + 1) → K) a := by
   have hx := congrArg (fun w : singleParityCheckCode K (Fin (2 * n + 1)) ↦
-    (w : Fin (2 * n + 1) → K) a) (LinearMap.mem_fixedSubmodule_iff.mp x.2)
+    (w : Fin (2 * n + 1) → K) a) (LinearMap.mem_fixedSubmodule_iff.mp x.property)
   simp only [weightMap_typeAZeroSumRevAut, LinearEquiv.coe_coe, coe_typeAZeroSumRevEquiv_apply,
     neg_eq_iff_eq_neg] at hx
   exact hx
@@ -498,11 +498,11 @@ theorem mem_range_root_typeBBaseChangeRootSystem_iff_mem_foldedIndices (n : ℕ)
       Subtype.ext (by rw [← hp, orbitSum_typeAZeroSumRevAut_eq, ite_eq_left hfix,
         coe_evenTypeAFoldAtomFixed])
     exact hx' ▸ evenTypeAFoldAtom_mem_range_typeB K n
-      (fun hc ↦ p.2 (by rw [hfix, hc, rev_evenTypeAMidIdx]))
+      (fun hc ↦ p.property (by rw [hfix, hc, rev_evenTypeAMidIdx]))
   · have hx' : x = evenTypeAFoldAtomFixed K n p.val.1 - evenTypeAFoldAtomFixed K n p.val.2 :=
       Subtype.ext (by rw [← hp, orbitSum_typeAZeroSumRevAut_eq, ite_eq_right hfix,
         Submodule.coe_sub, coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed])
-    exact hx' ▸ evenTypeAFoldAtom_sub_mem_range_typeB K n p.2 hfix
+    exact hx' ▸ evenTypeAFoldAtom_sub_mem_range_typeB K n p.property hfix
 
 /-- `evenTypeAFixedCoordEquiv K n` sends the `k`-th simple orbit sum of `A₂ₙ` to the `k`-th
 Bourbaki simple root of `typeBBaseChangeRootSystem K n`. -/
