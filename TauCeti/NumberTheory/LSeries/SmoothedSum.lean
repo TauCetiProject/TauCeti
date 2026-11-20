@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Analysis.MellinInversion
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 
 /-!
 # Exponentially smoothed coefficient sums as Mellin inverses

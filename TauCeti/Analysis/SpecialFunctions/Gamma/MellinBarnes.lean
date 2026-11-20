@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Calculus.RealCharts
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 
 /-!
 # The Mellin–Barnes integral of `(1 + u)^{-a}`
