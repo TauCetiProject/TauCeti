@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.LinearAlgebra.LinearMap.Ker
 public import TauCeti.LinearAlgebra.Quotient.Prod
 import TauCeti.LinearAlgebra.LinearMap.RestrictScalars
@@ -41,6 +42,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   `f` across coefficient rings with `f ∘ d = e ∘ f`.
 * `LinearEquiv.homologyEquiv`: the equivalence of homologies induced by a semilinear equivalence `f`
   with `f ∘ d = e ∘ f`.
+* `LinearEquiv.conjHomologyEquiv`: the equivalence from the homology of `d` to that of its
+  conjugate `f ∘ d ∘ f⁻¹` by a semilinear equivalence `f`.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of a linear chain map
   over a single coefficient ring.
 * `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
@@ -518,10 +521,9 @@ theorem sumMappingCone_single_inr_apply_inr (d : (ι →₀ S) →ₗ[S] (ι →
 to zero. -/
 theorem sumMappingCone_comp_self {d : (ι →₀ S) →ₗ[S] (ι →₀ S)} {e : (κ →₀ S) →ₗ[S] (κ →₀ S)}
     {f : (ι →₀ S) →ₗ[S] (κ →₀ S)} (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) :
-    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 := by
-  unfold sumMappingCone
-  rw [← Module.End.mul_eq_comp, ← map_mul, Module.End.mul_eq_comp,
-    mappingCone_comp_self f hd he hf, map_zero]
+    sumMappingCone d e f ∘ₗ sumMappingCone d e f = 0 :=
+  (sumFinsuppLEquivProdFinsupp S).symm.conjRingEquiv_apply_comp_self
+    (mappingCone_comp_self f hd he hf)
 
 /-- The kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies in its range exactly when the kernel of
 the mapping cone on `(ι →₀ S) × (κ →₀ S)` lies in its range. -/
@@ -568,6 +570,21 @@ theorem homologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e 
       Submodule.Quotient.mk
         ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.2⟩ :=
   LinearMap.homologyMap_mk f.toLinearMap hd he hf z
+
+/-- A semilinear equivalence `f` induces an equivalence from the homology of a square-zero
+endomorphism `d` to that of its conjugate `f ∘ d ∘ f⁻¹`. -/
+noncomputable def conjHomologyEquiv (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) :
+    d.homology hd ≃ₛₗ[σ] (f.conjRingEquiv d).homology (f.conjRingEquiv_apply_comp_self hd) :=
+  f.homologyEquiv hd _ (f.conjRingEquiv_apply_comp d).symm
+
+/-- The equivalence of homologies induced by conjugation sends the class of a cycle `z` to the
+class of `f z`. -/
+@[simp]
+theorem conjHomologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (z : LinearMap.ker d) :
+    f.conjHomologyEquiv hd (Submodule.Quotient.mk z) =
+      Submodule.Quotient.mk ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d)
+        (e := f.conjRingEquiv d) f.toLinearMap (f.conjRingEquiv_apply_comp d).symm z.2⟩ :=
+  f.homologyEquiv_mk hd _ _ z
 
 end LinearEquiv
 
