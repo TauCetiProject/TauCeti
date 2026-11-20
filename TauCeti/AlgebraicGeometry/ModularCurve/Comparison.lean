@@ -115,7 +115,7 @@ noncomputable def gammaOneToGammaOneNaive (hN : ∀ b : B, (N : B.residueField b
       EllipticCurveGeom.IsOfExactOrder.isFiberwiseInjective
         (by rw [zmodMonoidHomEquiv_symm_apply_ofAdd_one]
             exact (gammaOneEquiv X.unop α).property)
-        fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+        fun s ↦ X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
   naturality X Y φ := by
     ext α
     apply (naiveLevelEquiv _).injective
@@ -165,7 +165,7 @@ instance isIso_gammaOneToGammaOneNaive : IsIso (gammaOneToGammaOneNaive B N hN) 
     have hP := EllipticCurveGeom.isFiberwiseInjective_iff_isOfNaiveExactOrder.mp hφ
     let β := (gammaOneEquiv X.unop).symm
       ⟨φ (.ofAdd 1), hP.isOfExactOrder fun s ↦
-        X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+        X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
     refine ⟨β, ?_⟩
     apply (naiveLevelEquiv X.unop).injective
     apply Subtype.ext
@@ -275,7 +275,7 @@ noncomputable def gammaToGammaNaive (hN : ∀ b : B, (N : B.residueField b) ≠ 
     gamma B N ⟶ gammaNaive B N where
   app X := TypeCat.ofHom fun α ↦ (naiveLevelEquiv X.unop).symm
     ⟨(gammaEquiv X.unop α).val, (gammaEquiv X.unop α).property.isFiberwiseInjective fun _ ↦
-      X.unop.structureMap.natCast_residueField_ne_zero (hN _)⟩
+      X.unop.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)⟩
   naturality X Y φ := by
     ext α
     apply (naiveLevelEquiv _).injective
@@ -417,7 +417,7 @@ theorem hasProperty_etale_gammaOneRelRepData (N : ℕ) (hN : ∀ b : B, (N : B.r
   (RelRepData.hasProperty_iff _).mpr fun X ↦ by
     rw [gammaOneRelRepData_rep]
     exact X.curve.etale_exactOrderScheme_hom N fun _ ↦
-      X.structureMap.natCast_residueField_ne_zero (hN _)
+      X.structureMap.natCast_residueField_ne_zero_iff.mpr (hN _)
 
 end ModuliProblem
 
