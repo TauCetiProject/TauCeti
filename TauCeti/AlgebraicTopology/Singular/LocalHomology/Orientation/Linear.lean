@@ -43,6 +43,8 @@ on the identification used.
 * `Orientation.localOrientation`: the local orientation at the origin selected by an orientation.
 * `Orientation.localOrientationEquiv`: orientations correspond bijectively to local orientations
   at the origin.
+* `TauCeti.singularHomologyComplZeroIso`: the integral local homology of `F` at the origin in
+  the top degree is one copy of `ℤ`.
 
 ## Main results
 
@@ -75,6 +77,20 @@ noncomputable section
 open CategoryTheory Module TauCeti
 
 universe w
+
+namespace TauCeti
+
+variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+
+/-- The integral local homology of a real normed space `F` of dimension `n + 1` at the origin in
+degree `n + 1` is one copy of `ℤ`, computed in the identity chart. -/
+def singularHomologyComplZeroIso (hF : finrank ℝ F = n + 1) :
+    localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({0} : Set F) (n + 1) ≅
+      ModuleCat.of ℤ (ULift.{w} ℤ) :=
+  singularHomologyComplSingletonIsoOfFinrankEq _ (OpenPartialHomeomorph.refl F)
+    (Set.mem_univ (0 : F)) hF
+
+end TauCeti
 
 namespace Orientation
 
@@ -205,13 +221,6 @@ theorem localOrientation_neg (ω : Orientation ℝ F (Fin (n + 1))) (hF : finran
   simp only [localOrientation, localOrientationVia, Orientation.map_neg, modelLocalOrientation_neg,
     LocalOrientation.map_neg]
 
-/-- The integral local homology of `F` at the origin in the top degree is one copy of `ℤ`. -/
-private def complZeroIso (hF : finrank ℝ F = n + 1) :
-    localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({0} : Set F) (n + 1) ≅
-      ModuleCat.of ℤ (ULift.{w} ℤ) :=
-  singularHomologyComplSingletonIsoOfFinrankEq _ (OpenPartialHomeomorph.refl F)
-    (Set.mem_univ (0 : F)) hF
-
 /-- Distinct orientations select distinct local orientations. -/
 theorem localOrientation_injective (hF : finrank ℝ F = n + 1) :
     Function.Injective fun ω : Orientation ℝ F (Fin (n + 1)) ↦ ω.localOrientation hF := by
@@ -222,7 +231,7 @@ theorem localOrientation_injective (hF : finrank ℝ F = n + 1) :
   · exact h'
   · rw [h', localOrientation_neg] at h
     exact absurd (congrArg Subtype.val h)
-      ((ω'.localOrientation hF).property.neg_ne (complZeroIso hF))
+      ((ω'.localOrientation hF).property.neg_ne (singularHomologyComplZeroIso hF))
 
 /-- Two orientations select the same local orientation exactly when they are equal. -/
 @[simp]
@@ -236,9 +245,10 @@ theorem localOrientation_surjective (hF : finrank ℝ F = n + 1) :
   have := FiniteDimensional.of_finrank_eq_succ hF
   intro z
   let ω : Orientation ℝ F (Fin (n + 1)) := (Module.finBasisOfFinrankEq ℝ F hF).orientation
-  rcases (ω.localOrientation hF).property.eq_or_eq_neg (complZeroIso hF) z.property with h | h
-  · exact ⟨ω, Subtype.ext h.symm⟩
-  · exact ⟨-ω, Subtype.ext (by simp [h])⟩
+  rcases LocalOrientation.eq_or_eq_neg (singularHomologyComplZeroIso hF) z (ω.localOrientation hF)
+    with h | h
+  · exact ⟨ω, h.symm⟩
+  · exact ⟨-ω, by simp [h]⟩
 
 /-- **Orientations and local orientations of a vector space.** For a real normed space `F` of
 dimension `n + 1`, `Orientation.localOrientation` is a bijection between the orientations of `F`
