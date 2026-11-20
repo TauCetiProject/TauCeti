@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Jet.Symmetric
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 
 /-!
@@ -63,7 +62,8 @@ open scoped Manifold Topology ContDiff
 namespace TauCeti
 
 open SymmetricJet
-open FirstJetBundle (mem_baseSet_iff contDiffAt_fiberCoordChange contDiffAt_localRep)
+open FirstJetBundle (mem_baseSet_iff contDiffAt_fiberCoordChange contDiffAt_localRep
+  contDiffAt_ext_coord_change_of_mem_baseSet)
 
 variable {𝕜 : Type*} [RCLike 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
@@ -124,8 +124,7 @@ theorem toJets_coordChange {i j y : M} (hi : y ∈ FirstJetBundle.baseSet (H := 
       linearJetCoordChange r (extChartAt I i ∘ (extChartAt I j).symm)
         (FirstJetBundle.fiberCoordChange I F V i j) (extChartAt I j y) (toJets 𝕜 E F r A) :=
   toJets_symmetricJetCoordChange (n := r)
-    (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hi).2
-      ((mem_baseSet_iff F V).1 hj).2)
+    (contDiffAt_ext_coord_change_of_mem_baseSet I hi hj)
     (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hi).1 hj) (by simp) A
 
 /-- **Cocycle law for `r`-jet coordinate changes**. -/
@@ -140,8 +139,7 @@ theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ FirstJetBundle.baseSet 
   have hhij : ContDiffAt 𝕜 r (extChartAt I i ∘ (extChartAt I j).symm)
       ((extChartAt I j ∘ (extChartAt I k).symm) (extChartAt I k y)) := by
     rw [← hjk]
-    exact contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hi).2
-      ((mem_baseSet_iff F V).1 hj).2
+    exact contDiffAt_ext_coord_change_of_mem_baseSet I hi hj
   have hgij : ContDiffAt 𝕜 r (FirstJetBundle.fiberCoordChange I F V i j)
       ((extChartAt I j ∘ (extChartAt I k).symm) (extChartAt I k y)) := by
     rw [← hjk]
@@ -170,7 +168,7 @@ theorem coordChange_comp_apply {i j k y : M} (hi : y ∈ FirstJetBundle.baseSet 
       ((mem_baseSet_iff F V).1 hzk).1 w
   rw [coordChange_def, coordChange_def, hjk,
     symmetricJetCoordChange_comp hhij hgij
-      (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hj).2 hk₂)
+      (contDiffAt_ext_coord_change_of_mem_baseSet I hj hk)
       (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hj).1 hk) (by simp),
     symmetricJetCoordChange_congr hh hg, ← coordChange_def]
 
@@ -194,8 +192,7 @@ theorem contMDiffOn_coordChange {n : ℕ∞ω} [IsManifold I (n + r) M]
     (extChartAt I j).right_inv hz.1
   have hh : ContDiffOn 𝕜 (n + r) (extChartAt I i ∘ (extChartAt I j).symm) T := fun z hz ↦ by
     rw [← hTpt z hz]
-    exact (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hz.2.1).2
-      ((mem_baseSet_iff F V).1 hz.2.2).2).contDiffWithinAt
+    exact (contDiffAt_ext_coord_change_of_mem_baseSet I hz.2.1 hz.2.2).contDiffWithinAt
   have hg : ContDiffOn 𝕜 (n + r) (FirstJetBundle.fiberCoordChange I F V i j) T := fun z hz ↦ by
     rw [← hTpt z hz]
     exact (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hz.2.1).1
@@ -345,8 +342,7 @@ theorem toJets_trivializationAt_jet {s : ∀ x, V x} {y : M}
     rw [toJets_jet hs, toJets_mk, hx]
   rw [trivializationAt_apply_snd, coordChange_def, hjet,
     toJets_symmetricJetCoordChange_iteratedFDeriv hrep (by simp)
-      (contDiffAt_ext_coord_change_extChartAt ((mem_baseSet_iff F V).1 hy).2
-        ((mem_baseSet_iff F V).1 hi).2)
+      (contDiffAt_ext_coord_change_of_mem_baseSet I hy hi)
       (contDiffAt_fiberCoordChange ((mem_baseSet_iff F V).1 hy).1 hi)]
   -- Near the image of `y`, the local representative at `i` is the transformed local
   -- representative at `y`.

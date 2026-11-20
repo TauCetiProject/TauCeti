@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -139,6 +140,14 @@ theorem eventually_extChartAt_symm_mem_baseSet {i j y : M}
     (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ (chartAt H j).source) :
     ∀ᶠ z in 𝓝[range I] extChartAt I j y, (extChartAt I j).symm z ∈ baseSet (H := H) F V i :=
   mem_nhdsWithin_of_mem_nhds (eventually_extChartAt_symm_mem_baseSet_nhds I hi hj)
+
+/-- On a boundaryless manifold, the change of extended charts from `j` to `i` is `C^n` at the
+image of a point of the first-jet chart domains at `i` and `j` when `M` is. -/
+theorem contDiffAt_ext_coord_change_of_mem_baseSet [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M]
+    {i j y : M} (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    ContDiffAt 𝕜 n (extChartAt I i ∘ (extChartAt I j).symm) (extChartAt I j y) :=
+  contDiffAt_ext_coord_change i j (PartialEquiv.mem_symm_trans_source _
+    (mem_extChartAt_source_of_mem_baseSet I hj) (mem_extChartAt_source_of_mem_baseSet I hi))
 
 end FirstJetBundle
 
