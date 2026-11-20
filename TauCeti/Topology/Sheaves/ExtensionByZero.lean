@@ -19,16 +19,20 @@ at points of `U` and zero elsewhere. It is the left adjoint of restriction to `U
 
 Mathlib's `TopologicalSpace.Opens.sheafEquivOver` identifies sheaves on `U` with sheaves on the
 slice `Over U` of the site of open subsets of `X`, and `TopologicalSpace.Opens.extendByZero`
-is this identification followed by the canonical sheaf pullback along `Over.forget U`. Its
-presheaf model, extension by zero outside the lower interval of `U` followed by sheafification,
-is `TauCeti.CategoryTheory.PresheafExtensionByZero.functor`; by uniqueness of left adjoints it
-makes extension by zero exact.
+is this identification followed by the canonical sheaf pullback along `Over.forget U`. It is
+also the sheafification of the presheaf extension by zero
+`TauCeti.CategoryTheory.PresheafExtensionByZero.functor`
+(`TopologicalSpace.Opens.extendByZeroIsoSheafify`), so
+`TauCeti.CategoryTheory.SheafExtensionByZero.preservesFiniteLimits_sheafPullback` shows that
+extension by zero preserves finite limits.
 
 ## Main declarations
 
 * `TopologicalSpace.Opens.extendByZero`: extension by zero of sheaves from `U` to `X`.
 * `TopologicalSpace.Opens.extendByZeroAdjunction`: extension by zero is left adjoint to
   `TopologicalSpace.Opens.sheafRestrict`. In particular it preserves all colimits.
+* `TopologicalSpace.Opens.extendByZeroIsoSheafify`: extension by zero is the sheafification of the
+  presheaf extension by zero.
 * `TopologicalSpace.Opens.preservesFiniteLimits_extendByZero`: extension by zero preserves finite
   limits.
 * `TopologicalSpace.Opens.extendByZeroCompStalkFunctorIso`: at a point of `U`, the stalk of the
@@ -70,6 +74,14 @@ noncomputable def extendByZeroAdjunction : U.extendByZero A ⊣ U.sheafRestrict 
   (U.sheafEquivOver.symm.toAdjunction.comp
     ((Over.forget U).sheafAdjunctionContinuous A _ _)).ofNatIsoRight
     U.overPullbackSheafEquivOver
+
+/-- Extension by zero is the sheafification of the presheaf extension by zero outside the lower
+interval of `U`. -/
+noncomputable def extendByZeroIsoSheafify :
+    U.extendByZero A ≅ U.sheafEquivOver.inverse ⋙ sheafToPresheaf _ A ⋙
+      TauCeti.CategoryTheory.PresheafExtensionByZero.functor U ⋙ presheafToSheaf _ A :=
+  U.sheafEquivOver.inverse.isoWhiskerLeft
+    (TauCeti.CategoryTheory.SheafExtensionByZero.sheafPullbackIsoSheafify U _)
 
 /-- Extension by zero is a left adjoint, so it preserves all colimits. -/
 instance isLeftAdjoint_extendByZero : (U.extendByZero A).IsLeftAdjoint :=
