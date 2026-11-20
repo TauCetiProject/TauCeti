@@ -316,9 +316,8 @@ private lemma leftHomologyDataSucc_π_comp_homologyIso_inv (n : ℕ) :
       (leftHomologyDataSucc ι hK n).cyclesIso.inv ≫ ShortComplex.homologyπ _ := by
   -- the projection of `leftHomologyDataSucc ι hK n` is `sectionsIsoCechZero` followed by the
   -- iterated connecting map
-  exact (sectionsIsoCechZero_hom_assoc (K.cycles (n + 1)) _).symm.trans
-    ((Category.assoc _ _ _).symm.trans
-      (leftHomologyDataSucc ι hK n).π_comp_homologyIso_inv)
+  simpa only [sectionsIsoCechZero_hom, Category.assoc] using
+    (leftHomologyDataSucc ι hK n).π_comp_homologyIso_inv
 
 private lemma leftHomologyDataSucc_cyclesIso_inv (n : ℕ) :
     (leftHomologyDataSucc ι hK n).cyclesIso.inv ≫

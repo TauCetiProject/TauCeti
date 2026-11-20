@@ -127,26 +127,14 @@ def cechComplexCompIso :
     obtain rfl : n + 1 = _ := h
     exact compXIso_hom_comp_d G U Q hG n
 
-/-- In native product coordinates the comparison uses the images of the product projections. -/
-@[reassoc]
-theorem cechComplexCompIso_hom_f_comp_cechXIso_hom_π (n : ℕ)
-    (a : Fin (n + 1) → ι) :
-    (cechComplexCompIso G U Q hG).hom.f n ≫
-        (cechXIso U (G.op ⋙ Q) n).hom ≫ Pi.π _ a =
-      (cechXIso (fun i ↦ G.obj (U i)) Q n).hom ≫ Pi.π _ a ≫
-        Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op := by
-  simpa only [cechComplexCompIso, HomologicalComplex.Hom.isoOfComponents_hom_f,
-    prodIso, asIso_hom, piComparison] using compXIso_hom_π G U Q hG n a
-
 /-- The factor of `(cechComplexCompIso G U Q hG).hom.f n` indexed by `a` is `Q` applied to the
 canonical map `G(U (a 0) × ⋯ × U (a n)) ⟶ G (U (a 0)) × ⋯ × G (U (a n))`. -/
 @[reassoc]
 theorem cechComplexCompIso_hom_f_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechComplexCompIso G U Q hG).hom.f n ≫ Pi.π _ a =
-      Pi.π _ a ≫ Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op := by
-  have hr := cechComplexCompIso_hom_f_comp_cechXIso_hom_π G U Q hG n a
-  rw [cechXIso_hom_π_assoc] at hr
-  exact (cechXIso_comp_π_eq_iff U (G.op ⋙ Q) n a _ _).mp hr
+      Pi.π _ a ≫ Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op :=
+  (_ ≫= (cechXIso_hom_π U (G.op ⋙ Q) n a).symm).trans <|
+    (compXIso_hom_π G U Q hG n a).trans (cechXIso_hom_π_assoc _ Q n a _)
 
 /-- The isomorphism of Čech complexes `cechComplexCompIso` is natural in the presheaf `Q`. -/
 @[reassoc]

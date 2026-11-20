@@ -127,10 +127,10 @@ image under `F` of the projection onto the factor indexed by `a`. -/
 @[reassoc]
 theorem cechComplexFunctorMapIso_hom_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a : Fin (n + 1) → ι) :
     ((cechComplexFunctorMapIso U F).hom.app P).f n ≫ Pi.π _ a =
-      F.map (Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a) := by
-  have hr := cechComplexFunctorMapXIso_hom_π U F P n a
-  conv_rhs at hr => rw [cechXIso_hom_π]
-  exact (cechXIso_comp_π_eq_iff U (P ⋙ F) n a _ _).mp hr
+      F.map (Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) a) :=
+  (_ ≫= (cechXIso_hom_π U (P ⋙ F) n a).symm).trans <|
+    (cechComplexFunctorMapXIso_hom_π U F P n a).trans
+      (congrArg F.map (cechXIso_hom_π U P n a))
 
 /-- **`cechComplexFunctorMapIso` commutes with refinement maps.** For a morphism `φ` from the
 family `U` to a family `V`, applying `F` to the map `Č(V, P) ⟶ Č(U, P)` induced by `φ` and then

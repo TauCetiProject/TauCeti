@@ -138,16 +138,6 @@ lemma cechXIso_hom_π (n : ℕ) (a : Fin (n + 1) → ι) :
     (cechXIso U P n).hom ≫ Pi.π _ a = (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) :=
   Category.id_comp _
 
-/-- A coordinate equation gives the native tuple reading, with its dependent target. -/
-lemma cechXIso_comp_π_eq_iff (n : ℕ) (a : Fin (n + 1) → ι) {Z : A}
-    (f : Z ⟶ ((cechComplexFunctor U).obj P).X n)
-    (g : Z ⟶ P.obj (op ((unop
-      ((FormalCoproduct.mk _ U).cech.rightOp.obj ⦋n⦌)).obj a))) :
-    (f ≫ (cechXIso U P n).hom ≫ Pi.π _ a = g) ↔
-      f ≫ (Pi.π _ a : ((cechComplexFunctor U).obj P).X n ⟶ _) = g := by
-  simp only [cechXIso_hom_π]
-  rfl
-
 /-! ### The Čech complex in degrees `0` and `1`
 
 A `0`-cochain is determined by its restrictions `restrict` to the members `U i`. It is killed by
@@ -343,17 +333,6 @@ theorem cechComplexMap_f_π (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk 
     (cechComplexMap P φ).f n ≫ Pi.π _ a =
       Pi.π _ (φ.f ∘ a) ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a j)).op :=
   Pi.lift_comp_π _ _
-
-/-- In product coordinates an actual refinement restricts along its product of inclusions. -/
-@[reassoc]
-theorem cechComplexMap_f_comp_cechXIso_hom_π {κ : Type w} (V : κ → C)
-    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
-    (n : ℕ) (a : Fin (n + 1) → ι) :
-    (cechComplexMap P φ).f n ≫ (cechXIso U P n).hom ≫ Pi.π _ a =
-      (cechXIso V P n).hom ≫ Pi.π _ (φ.f ∘ a) ≫
-        P.map (Limits.Pi.map fun j ↦ φ.φ (a j)).op :=
-  (_ ≫= Category.id_comp _).trans <| (cechComplexMap_f_π P φ n a).trans
-    (Category.id_comp _).symm
 
 /-- The component `(cechComplexMap P φ).f n` is `P` applied to the map of `(n + 1)`-fold powers of
 formal coproducts induced by `φ`. -/
@@ -786,13 +765,6 @@ theorem cechAugmentation_f_zero_comp_π (a : Fin 1 → ι) : (cechAugmentation U
     (Category.assoc _ _ _).trans <| (_ ≫= Pi.lift_comp_π _ _).trans <|
       (Pi.lift_comp_π_assoc _ _ _).trans <| (Category.id_comp _).trans <|
         P.congr_map (congrArg Quiver.Hom.op (hT.hom_ext _ _))
-
-/-- In product coordinates the augmentation reads restriction from the terminal object. -/
-@[reassoc]
-theorem cechAugmentation_f_zero_comp_cechXIso_hom_π (a : Fin 1 → ι) :
-    (cechAugmentation U hT P).f 0 ≫ (cechXIso U P 0).hom ≫ Pi.π _ a =
-      P.map (hT.from (∏ᶜ fun j ↦ U (a j))).op :=
-  (_ ≫= Category.id_comp _).trans (cechAugmentation_f_zero_comp_π U hT P a)
 
 section Map
 
