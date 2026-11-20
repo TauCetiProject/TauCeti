@@ -116,10 +116,7 @@ theorem approxProd_placesAbove_le_mulHeight_rpow_iff [Fintype ι] [Algebra K F]
         (algebraMap K E ∘ x) ≤ Height.mulHeight (algebraMap K E ∘ x) ^ r ↔
       approxProd Sinf Sfin w L x ≤ Height.mulHeight x ^ r := by
   have h₀ := (Height.mulHeight_pos x).le
-  have hpow : (Height.mulHeight x ^ finrank K E) ^ r = (Height.mulHeight x ^ r) ^ finrank K E := by
-    rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul h₀, ← Real.rpow_mul h₀,
-      mul_comm]
-  rw [approxProd_placesAbove hInf hFin, mulHeight_algebraMap, hpow]
+  rw [approxProd_placesAbove hInf hFin, mulHeight_algebraMap, ← Real.rpow_pow_comm h₀]
   exact pow_le_pow_iff_left₀ (approxProd_nonneg x) (Real.rpow_nonneg h₀ r) finrank_pos.ne'
 
 /-- The hypotheses of `NumberField.approxProd_placesAbove` hold for the coordinate forms at every
