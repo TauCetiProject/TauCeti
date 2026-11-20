@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
+public import TauCeti.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Algebra.Star.Opposite
 
 /-!
 # Topological closure and dense inclusions of nonunital `⋆`-subalgebras
 
 This file provides `@[simp]` and density lemmas for nonunital `⋆`-subalgebras and opposite
-`⋆`-algebra homomorphisms:
+`⋆`-algebra homomorphisms, and a closedness lemma for `L ∩ star L`:
 
 * `NonUnitalStarSubalgebra.topologicalClosure_coe`: the underlying set of `s.topologicalClosure`
   is `closure (s : Set A)`, matching `StarSubalgebra.topologicalClosure_coe`.
@@ -21,6 +22,8 @@ This file provides `@[simp]` and density lemmas for nonunital `⋆`-subalgebras 
   `⋆`-algebra homomorphisms.
 * `NonUnitalStarSubalgebraClass.denseRange_subtype` and `denseRange_subtype_op`: the subtype
   inclusion of `s` (and its multiplicative opposite) has dense range iff `(s : Set A)` is dense.
+* `Submodule.isClosed_interStar`: the star subalgebra `L ∩ star L` of a closed left ideal `L` is
+  closed.
 -/
 
 public section
@@ -93,3 +96,15 @@ theorem denseRange_subtype_op (s : S) :
   (NonUnitalStarAlgHom.denseRange_op _).trans (denseRange_subtype s)
 
 end NonUnitalStarSubalgebraClass
+
+namespace Submodule
+
+variable {R A : Type*} [CommSemiring R] [Star R] [NonUnitalNonAssocSemiring A] [StarRing A]
+  [Module R A] [StarModule R A] [TopologicalSpace A] [ContinuousStar A]
+  {L : Submodule R A} {hL : ∀ (a : A) {x : A}, x ∈ L → a * x ∈ L}
+
+/-- For a closed left ideal `L`, the star subalgebra `L ∩ star L` is closed. -/
+theorem isClosed_interStar (hLc : IsClosed (L : Set A)) : IsClosed (L.interStar hL : Set A) :=
+  coe_interStar (hL := hL) ▸ hLc.inter (hLc.preimage continuous_star)
+
+end Submodule
