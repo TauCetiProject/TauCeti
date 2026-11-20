@@ -110,6 +110,12 @@ private theorem coeff_zeroPeriodPart (a : NovikovSeries R H N) (k : mker N) :
     (zeroPeriodPart a).coeff k = a.coeff k := by
   simp [zeroPeriodPart, Finsupp.ofSupportFinite_coe]
 
+/-- Pushing coefficients on the period kernel forward to `H` gives zero at every exponent of
+nonzero period. -/
+private theorem mapDomain_subtype_mker_of_ne_zero (v : mker N →₀ R) {h : H} (hh : N h ≠ 0) :
+    Finsupp.mapDomain (mker N).subtype v h = 0 :=
+  Finsupp.mapDomain_of_notMem_range _ _ fun ⟨k, hk⟩ => hh (hk ▸ mem_mker.1 k.2)
+
 end Semiring
 
 section Ring
@@ -125,9 +131,7 @@ def ofMker : AddMonoidAlgebra R (mker N) →+* nonnegSubring R N :=
     fun x => mem_nonnegSubring.2 fun h hh => by
       rw [RingHom.comp_apply, coeff_ofAddMonoidAlgebra, AddMonoidAlgebra.mapDomainRingHom_apply,
         AddMonoidAlgebra.coeff_mapDomain]
-      exact Finsupp.mapDomain_of_notMem_range _ _ fun ⟨k, hk⟩ => by
-        rw [← hk, AddSubmonoid.coe_subtype, mem_mker.1 k.2] at hh
-        exact lt_irrefl 0 hh
+      exact mapDomain_subtype_mker_of_ne_zero _ hh.ne
 
 /-- The coefficient of `ofMker R N x` at an exponent of period zero is the coefficient of `x`. -/
 @[simp]
@@ -140,7 +144,7 @@ theorem coeff_ofMker_of_ne_zero (x : AddMonoidAlgebra R (mker N)) {h : H} (hh : 
     (ofMker R N x : NovikovSeries R H N).coeff h = 0 := by
   simp only [ofMker, RingHom.codRestrict_apply, RingHom.comp_apply, coeff_ofAddMonoidAlgebra,
     AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.coeff_mapDomain]
-  exact Finsupp.mapDomain_of_notMem_range _ _ fun ⟨k, hk⟩ => hh (hk ▸ mem_mker.1 k.2)
+  exact mapDomain_subtype_mker_of_ne_zero _ hh
 
 /-- `ofMker R N` sends a monomial of the period kernel to the same monomial. -/
 @[simp]
@@ -263,19 +267,19 @@ def residueEquiv : nonnegSubring R N ⧸ posIdeal R N ≃+* AddMonoidAlgebra R (
 /-- The residue ring isomorphism sends the class of a series to its residue. -/
 @[simp]
 theorem residueEquiv_mk (a : nonnegSubring R N) :
-    residueEquiv R N (Ideal.Quotient.mk _ a) = residue R N a :=
-  (rfl)
+    residueEquiv R N (Ideal.Quotient.mk _ a) = residue R N a := by
+  simp [residueEquiv]
 
 /-- The inverse of the residue ring isomorphism sends an element of the group ring of the period
 kernel to the class of its image in the nonnegative subring. -/
 @[simp]
 theorem residueEquiv_symm_apply (x : AddMonoidAlgebra R (mker N)) :
-    (residueEquiv R N).symm x = Ideal.Quotient.mk _ (ofMker R N x) :=
-  (rfl)
+    (residueEquiv R N).symm x = Ideal.Quotient.mk _ (ofMker R N x) := by
+  simp [residueEquiv]
 
 section ActionWeight
 
-variable {G : Type*} [AddCommMonoid G] (E : G →+ ℝ)
+variable {G : Type*} [AddMonoid G] (E : G →+ ℝ)
 
 variable (R) in
 /-- After the action-weighted extension `G × ℝ` of the period data `E`, with period
@@ -296,6 +300,14 @@ theorem coeff_residueEquivCoprodId_mk (a : nonnegSubring R (E.coprod (AddMonoidH
     (g : G) :
     (residueEquivCoprodId R E (Ideal.Quotient.mk _ a)).coeff g =
       (a : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))).coeff (g, -E g) := by
+  simp [residueEquivCoprodId]
+
+/-- The inverse of the residue ring isomorphism after the action-weighted extension sends the
+monomial at `g` to the class of the monomial at the exponent `(g, -E g)` of period zero. -/
+@[simp]
+theorem residueEquivCoprodId_symm_single (g : G) (r : R) :
+    (residueEquivCoprodId R E).symm (AddMonoidAlgebra.single g r) =
+      Ideal.Quotient.mk _ (ofMker R _ (AddMonoidAlgebra.single (E.mkerCoprodIdEquiv g) r)) := by
   simp [residueEquivCoprodId]
 
 /-- The inclusion `g ↦ (g, 0)` of exponents into the action-weighted extension preserves
@@ -323,7 +335,7 @@ theorem residueEquivCoprodId_mk_mapNonnegSubring_inl (a : nonnegSubring R E) :
       coeff_map_of_injective _ _ _ (fun _ _ h => congrArg Prod.fst h), hk, coeff_residue]
     simp
   · -- Otherwise `(g, -E g)` is not of the form `(g', 0)`, and `g` is not in `ker E`.
-    rw [Finsupp.mapDomain_of_notMem_range _ _ fun ⟨k, hk⟩ => hg (hk ▸ mem_mker.1 k.2)]
+    rw [mapDomain_subtype_mker_of_ne_zero _ hg]
     by_contra hne
     obtain ⟨g', -, hg'⟩ := support_map_subset _ _ _ _ (mem_support.2 hne)
     exact hg (neg_eq_zero.1 (congrArg Prod.snd hg').symm)
@@ -363,7 +375,7 @@ theorem ofMker_mem_gradeBy {x : AddMonoidAlgebra R (mker N)}
 
 /-- After the action-weighted extension, the residue of a homogeneous series of degree `i`, for
 a degree `μ` of the first component, is homogeneous of degree `i` in `R[G]`. -/
-theorem residueEquivCoprodId_mk_mem_gradeBy {G : Type*} [AddCommMonoid G] {E : G →+ ℝ}
+theorem residueEquivCoprodId_mk_mem_gradeBy {G : Type*} [AddMonoid G] {E : G →+ ℝ}
     {μ : G → ι} {a : nonnegSubring R (E.coprod (AddMonoidHom.id ℝ))}
     (ha : (a : NovikovSeries R (G × ℝ) (E.coprod (AddMonoidHom.id ℝ))) ∈
       gradeBy R (E.coprod (AddMonoidHom.id ℝ)) (fun p => μ p.1) i) :
