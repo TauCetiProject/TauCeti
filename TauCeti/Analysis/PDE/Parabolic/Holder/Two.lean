@@ -119,12 +119,6 @@ theorem continuous_timeExtension (hab : a ≤ b) {f : slab (E := E) a b → F}
     (continuous_snd.prodMk ((continuous_projIcc (h := hab)).comp continuous_fst)))
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- The time slices of the clamped time extension of a continuous slab map are continuous. -/
-theorem continuous_timeExtension_slice (hab : a ≤ b) {f : slab (E := E) a b → F}
-    (hf : Continuous f) (x : E) : Continuous (timeExtension hab f x) :=
-  (continuous_timeExtension hab hf).comp (continuous_id.prodMk continuous_const)
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
 /-- Clamping time preserves the supremum bound of a bounded continuous slab map. -/
 theorem norm_timeExtension_le (hab : a ≤ b) (f : slab (E := E) a b →ᵇ F)
     (s : ℝ) (x : E) : ‖timeExtension hab f x s‖ ≤ ‖f‖ := by

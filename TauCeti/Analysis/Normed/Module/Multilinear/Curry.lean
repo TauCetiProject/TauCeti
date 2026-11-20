@@ -13,8 +13,7 @@ public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
 Mathlib's `ContinuousMultilinearMap.domDomCongrₗᵢ` packages the reindexing of the arguments of a
 continuous multilinear map along an equivalence of index types as a linear isometric equivalence.
 This file records its evaluation lemma, and how joining the last variable with Mathlib's
-`continuousMultilinearCurryRightEquiv'` interacts with separating the first one and with the
-currying isomorphisms in zero and one variables.
+`continuousMultilinearCurryRightEquiv'` interacts with separating the first one.
 
 ## Main declarations
 
@@ -22,8 +21,6 @@ currying isomorphisms in zero and one variables.
   `ContinuousMultilinearMap.domDomCongr`.
 * `ContinuousMultilinearMap.curryLeft_continuousMultilinearCurryRightEquiv'_symm`: separating the
   first variable commutes with joining the last one.
-* `continuousMultilinearCurryRightEquiv'_zero_symm_apply`: joining the last variable of a
-  map in zero variables is `continuousMultilinearCurryFin1`.
 -/
 
 public section
@@ -60,15 +57,5 @@ theorem ContinuousMultilinearMap.curryLeft_continuousMultilinearCurryRightEquiv'
       · rfl
       · simp only [Fin.init, Fin.cons_succ, ← Fin.succ_castSucc]
     simp [hw]
-
-/-- Joining the last variable of a map in zero variables with values in `E →L[𝕜] F` gives the
-map in one variable that `continuousMultilinearCurryFin1` identifies with its value. -/
-theorem continuousMultilinearCurryRightEquiv'_zero_symm_apply (N : E [×0]→L[𝕜] (E →L[𝕜] F)) :
-    (continuousMultilinearCurryRightEquiv' 𝕜 0 E F).symm N =
-      (continuousMultilinearCurryFin1 𝕜 E F).symm (continuousMultilinearCurryFin0 𝕜 E _ N) :=
-  ContinuousMultilinearMap.ext fun w ↦ by
-    rw [continuousMultilinearCurryRightEquiv_symm_apply', continuousMultilinearCurryFin0_apply,
-      Subsingleton.elim (Fin.init w : Fin 0 → E) 0]
-    simp
 
 end CurryRight

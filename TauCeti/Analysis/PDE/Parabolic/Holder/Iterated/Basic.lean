@@ -902,6 +902,33 @@ theorem norm_timeSliceL_le_of_holderWith (f : ParabolicCkHolderSpace k α E F ha
           funext (timeSliceL_apply f h x)]
         exact hC x)
 
+/-- The contribution `‖D_t^r D_x^m u‖ + ‖time slices‖ + ‖Hölder field‖` of the pair `(r, m)` to the
+norm is at most `2 B + C`, where `B` bounds the field and `C` is a Hölder constant of its time
+slices (when `2 r + m + 1 = k`) or of the field itself (when `2 r + m = k`). -/
+theorem norm_add_norm_timeSliceL_add_norm_mixedDerivHolderL_le
+    (f : ParabolicCkHolderSpace k α E F hab) {r m : ℕ} {B : ℝ} {C : ℝ≥0}
+    (hB : ‖mixedDerivL r m f‖ ≤ B)
+    (hs : 2 * r + m + 1 = k → ∀ x : E,
+      HolderWith C ((1 + α) / 2) fun t : Icc a b ↦ mixedDerivL r m f (slabMk x t))
+    (hh : 2 * r + m = k → HolderWith C α (mixedDerivL r m f : slab (E := E) a b → _)) :
+    ‖mixedDerivL r m f‖ + (‖timeSliceL r m f‖ + ‖mixedDerivHolderL r m f‖) ≤ 2 * B + C := by
+  have hB0 : 0 ≤ B := le_trans (by positivity) hB
+  by_cases h₁ : 2 * r + m + 1 = k
+  · rw [mixedDerivHolderL_of_ne (by omega), _root_.zero_apply, norm_zero]
+    have := norm_timeSliceL_le_of_holderWith f h₁ (hs h₁)
+    linarith
+  · rw [timeSliceL_of_ne h₁, _root_.zero_apply, norm_zero]
+    by_cases h₂ : 2 * r + m = k
+    · have hc : ⇑(mixedDerivHolderL r m f) = ⇑(mixedDerivL r m f) :=
+        funext (mixedDerivHolderL_apply f h₂)
+      have := HolderSpace.norm_le_of_norm_le_of_holderWith (norm_nonneg (mixedDerivL r m f))
+        (f := mixedDerivHolderL r m f)
+        (fun p ↦ by rw [mixedDerivHolderL_apply f h₂]; exact (mixedDerivL r m f).norm_coe_le_norm p)
+        (by rw [hc]; exact hh h₂)
+      linarith
+    · rw [mixedDerivHolderL_of_ne h₂, _root_.zero_apply, norm_zero]
+      linarith [C.coe_nonneg]
+
 /-! ### Completeness -/
 
 private theorem continuous_fieldL (r m : ℕ) : Continuous fun J : Jet k α E F a b ↦ fieldL r m J :=
