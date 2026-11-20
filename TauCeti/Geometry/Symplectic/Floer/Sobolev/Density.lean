@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -18,11 +19,14 @@ import TauCeti.MeasureTheory.Integral.Rectangle
 For a map `ξ : ℝ × ℝ → E` into a normed space, the `W^{1,2}` energy density
 `‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²` is the integrand of the Sobolev norm on which the linear estimates for
 the linearized Floer operator are stated. This file records the elementary facts about it shared by
-those estimates.
+those estimates, together with the derivatives of a section cut off by a function of `s`.
 
 ## Main results
 
 * `Floer.continuous_sobolev`: the density of a `C¹` map is continuous.
+* `Floer.fderiv_smul_fst_apply_stdComplexLineReal`,
+  `Floer.fderiv_smul_fst_apply_stdComplexLineImag`: the derivatives of a section cut off by a
+  function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
 * `Floer.sobolev_add_le`: the density of `ξ₁ + ξ₂` is at most twice the sum of the densities of
   `ξ₁` and `ξ₂`.
 * `Floer.setIntegral_norm_sq_le_sobolev`: the density bounds `‖ξ‖²`, so its integral over a
@@ -45,6 +49,26 @@ theorem continuous_sobolev {ξ : ℝ × ℝ → E} (hξ : ContDiff ℝ 1 ξ) :
   have := hξ.continuous_fderiv one_ne_zero
   have := hξ.continuous
   fun_prop
+
+/-- The `s`-derivative of a section cut off by a function `β(s)`: `∂s (β ξ) = β ∂s ξ + β' ξ`. -/
+theorem fderiv_smul_fst_apply_stdComplexLineReal {ξ : ℝ × ℝ → E} {β : ℝ → ℝ} {β' : ℝ}
+    {z : ℝ × ℝ} (hβ : HasDerivAt β β' z.1) (hξ : DifferentiableAt ℝ ξ z) :
+    fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineReal =
+      β z.1 • fderiv ℝ ξ z stdComplexLineReal + β' • ξ z := by
+  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
+    (hβ.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
+  rw [hd.fderiv]
+  simp [stdComplexLineReal_eq, add_comm]
+
+/-- The `t`-derivative of a section cut off by a function `β(s)`: `∂t (β ξ) = β ∂t ξ`. -/
+theorem fderiv_smul_fst_apply_stdComplexLineImag {ξ : ℝ × ℝ → E} {β : ℝ → ℝ} {z : ℝ × ℝ}
+    (hβ : DifferentiableAt ℝ β z.1) (hξ : DifferentiableAt ℝ ξ z) :
+    fderiv ℝ (fun w ↦ β w.1 • ξ w) z stdComplexLineImag =
+      β z.1 • fderiv ℝ ξ z stdComplexLineImag := by
+  have hd : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 • ξ w) _ z :=
+    (hβ.hasDerivAt.hasFDerivAt.comp z hasFDerivAt_fst).smul hξ.hasFDerivAt
+  rw [hd.fderiv]
+  simp [stdComplexLineImag_eq]
 
 /-- The `W^{1,2}` energy density of a section splits over a sum: the density of `ξ₁ + ξ₂` is at
 most twice the sum of the densities of `ξ₁` and `ξ₂`. -/
@@ -74,4 +98,5 @@ theorem setIntegral_norm_sq_le_sobolev {ξ : ℝ × ℝ → E} (hξ : ContDiff �
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
       have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
       linarith
+
 end TauCeti.Floer
