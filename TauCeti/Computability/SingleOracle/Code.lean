@@ -61,6 +61,7 @@ program uniformly in the oracle.
 * M. Carneiro, *Formalizing computability theory via partial recursive functions*, ITP 2019. The
   numbering, the evaluation and the adequacy proof follow Mathlib's `Nat.Partrec.Code`,
   `Nat.Partrec.Code.eval` and `Nat.Partrec.Code.exists_code`, extended by the oracle instruction.
+  Parameter specialization follows Mathlib's `Nat.Partrec.Code.curry`.
 * The namespace and constructors follow the shape of the single-oracle code proposed by Edwin Park
   in Mathlib pull request 38973.
 -/
@@ -525,6 +526,31 @@ theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
     rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
   | rfind' cf ihf => rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf]
 
+/-- Specialize a program's first input to `a`, leaving the second input free. -/
+def curry (c : Code) (a : ℕ) : Code :=
+  comp c (pair (Nat.Partrec.Code.const a).toSingleOracleCode (pair left right))
+
+/-- Parameter specialization preserves evaluation, uniformly for every partial oracle. -/
+@[simp]
+theorem eval_curry (O : ℕ →. ℕ) (c : Code) (a x : ℕ) :
+    eval O (curry c a) x = eval O c (Nat.pair a x) := by
+  have hbind (n : ℕ) : Part.some n >>= eval O c = eval O c n := Part.bind_some n (eval O c)
+  simp [curry, Nat.Partrec.Code.eval_const, Seq.seq, hbind]
+
+/-- The parameter compiler is primitive recursive on programs and parameters. -/
+theorem primrec₂_curry : Primrec₂ curry :=
+  primrec₂_comp.comp Primrec.fst <| primrec₂_pair.comp
+    (Nat.Partrec.Code.primrec_toSingleOracleCode.comp
+      (Nat.Partrec.Code.primrec_const.comp Primrec.snd))
+    (Primrec.const (pair left right))
+
+/-- Specialization retains both the source program and the parameter in its syntax. -/
+theorem curry_inj {c d : Code} {a b : ℕ} (h : curry c a = curry d b) :
+    c = d ∧ a = b := by
+  simp only [curry, Code.comp.injEq, Code.pair.injEq] at h
+  exact ⟨h.1, Nat.Partrec.Code.const_inj
+    (Nat.Partrec.Code.toSingleOracleCode_injective h.2.1)⟩
+
 /-- Run `c` on the fixed input `x`, ignoring the input of the compiled program. -/
 def fixInput (c : Code) (x : ℕ) : Code :=
   comp c (Nat.Partrec.Code.const x).toSingleOracleCode
@@ -579,5 +605,11 @@ theorem exists_forall_eval_eq_of_partrec {f : ℕ →. ℕ} (hf : Nat.Partrec f)
     ∃ c : Code, ∀ O, eval O c = f := by
   obtain ⟨c, rfl⟩ := Nat.Partrec.Code.exists_code.1 hf
   exact ⟨c.toSingleOracleCode, fun O => eval_toSingleOracleCode O c⟩
+
+/-- A primitive recursive function is computed by one program relative to every oracle. -/
+theorem exists_code_of_primrec {g : ℕ → ℕ} (hg : Primrec g) :
+    ∃ c : Code, ∀ O n, eval O c n = Part.some (g n) :=
+  (exists_forall_eval_eq_of_partrec (Nat.Partrec.of_primrec (Primrec.nat_iff.1 hg))).imp
+    fun _ h O n => by simp [h O]
 
 end TauCeti.Oracle.Single.Code

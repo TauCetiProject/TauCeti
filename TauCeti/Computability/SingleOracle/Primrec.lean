@@ -357,10 +357,17 @@ theorem primrec_boundedAnswers
     {answers : α → ℕ → Option ℕ} (hσ : Primrec₂ answers) :
     Primrec fun p : (α × ℕ × Code × ℕ) × ℕ =>
       p.1.2.2.1.boundedAnswers (answers p.1.1) p.1.2.1 p.2 p.1.2.2.2 := by
-  exact option_bind ((primrec_evaln hσ).comp fst) <| .mk <| option_guard
-    ((Primrec.nat_le.comp (Halt.primrec_use.comp (snd.comp fst))
-      (snd.comp (fst.comp fst))).primrecRel)
-    (Halt.primrec_output.comp snd)
+  have hguard : Primrec₂ fun (p : (α × ℕ × Code × ℕ) × ℕ) (h : Halt) =>
+      Option.guard (fun _ => h.use ≤ p.2) h.output :=
+    .mk <| option_guard
+      ((Primrec.nat_le.comp (Halt.primrec_use.comp (snd.comp fst))
+        (snd.comp (fst.comp fst))).primrecRel)
+      (Halt.primrec_output.comp snd)
+  refine (option_bind ((primrec_evaln hσ).comp fst) hguard).of_eq fun p => ?_
+  apply Option.ext
+  intro y
+  simp only [Option.bind_eq_some_iff, Option.guard_eq_some_iff, boundedAnswers_eq_some_iff,
+    decide_eq_true_eq, and_comm]
 
 /-- The stage use is primitive recursive, uniformly in a parameter `a` on which the answers `σ a`
 depend primitive recursively, and in the fuel, the program and the argument. -/

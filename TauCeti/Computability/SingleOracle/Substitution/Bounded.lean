@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Substitution.Basic
-public import TauCeti.Computability.SingleOracle.Stage
+public import TauCeti.Computability.SingleOracle.Evaln
 -- The concrete search certificates compute using the evaluator's defining equations.
 import all TauCeti.Computability.SingleOracle.Evaln
-import Mathlib.Order.Filter.AtTopBot.Basic
-import Mathlib.Order.Filter.Finite
 
 /-!
 # Bounded oracle substitution and use
@@ -24,19 +22,13 @@ syntax. Inlining a successful outer run adds at most the inner fuel to its own f
 a successful inlined run can be reproduced by giving the query program the inlined fuel at every
 address. For a fixed successful inlined run, its recorded base-oracle use is the least bound
 that permits a successful replay of that run using bounded query answers.
-
-These are raw fuel comparisons. The normalized-stage results additionally bound the program
-index and output, as in R. I. Soare, *Recursively Enumerable Sets and Degrees*, Springer, 1987,
-III.1.7–9.
 -/
 
 public section
 
-open Encodable Filter
-
 namespace TauCeti.Oracle.Single.Code
 
-variable {σ : ℕ → Option ℕ} {c d : Code} {j k u x y : ℕ} {r : Halt}
+variable {σ : ℕ → Option ℕ} {c d : Code} {j k u x : ℕ} {r : Halt}
 
 private theorem evaln_succ_use_eq_zero_of_basic
     (hc : c = zero ∨ c = succ ∨ c = left ∨ c = right)
@@ -202,57 +194,5 @@ example : ¬ ∃ j k t, evaln (shiftQuery.boundedAnswers searchAnswers j 2) k (r
 example : ∃ t, evaln searchAnswers 6 ((rfind' oracle).subst shiftQuery) (Nat.pair 0 0) =
     some t ∧ t.output = 1 ∧ t.use ≤ 3 :=
   exists_evaln_subst_of_evaln_boundedAnswers evaln_search_boundedAnswers
-
-/-- Inlining a successful outer stage run gives a successful compiled stage run with the same
-output at any stage large enough for the combined fuel, program index and output. -/
-theorem exists_evalStage_subst_of_evalStage_boundedAnswers {s : ℕ}
-    (h : evalStage (d.boundedAnswers σ j u) k c x = some r)
-    (hks : j + k ≤ s) (hcs : encode (c.subst d) < s) :
-    ∃ t, evalStage σ s (c.subst d) x = some t ∧ t.output = r.output ∧ t.use ≤ u := by
-  obtain ⟨-, hr, hy⟩ := evalStage_eq_some_iff.1 h
-  obtain ⟨t, ht, he, hu⟩ := exists_evaln_subst_of_evaln_boundedAnswers hr
-  exact ⟨t, evalStage_eq_some_of_evaln ht hks hcs (he ▸ hy.trans_le (by omega)), he, hu⟩
-
-/-- A successful compiled stage run can be replayed as an outer stage run. The stage must allow
-the original program's index, and the query bounds must cover the compiled stage and use. -/
-theorem exists_evalStage_boundedAnswers_of_evalStage_subst {s : ℕ}
-    (h : evalStage σ k (c.subst d) x = some r) (hj : k ≤ j) (hu : r.use ≤ u)
-    (hks : k ≤ s) (hcs : encode c < s) :
-    ∃ t, evalStage (d.boundedAnswers σ j u) s c x = some t ∧ t.output = r.output := by
-  obtain ⟨-, hr, hy⟩ := evalStage_eq_some_iff.1 h
-  obtain ⟨t, ht, he⟩ := exists_evaln_boundedAnswers_of_evaln_subst hr hj hu
-  exact ⟨t, evalStage_eq_some_of_evaln ht hks hcs (he ▸ hy.trans_le hks), he⟩
-
-/-- For finitely many successful inlined runs, possibly witnessed at different stages, the same
-query fuel and outer stage can replay them all exactly when the permitted base-oracle use covers
-their largest use. Each entry records an outer program, its input and the inlined run's outcome. -/
-theorem exists_evalStage_boundedAnswers_forall_mem_iff {runs : List (Code × ℕ × Halt)}
-    (h : ∀ p ∈ runs, ∃ k, evalStage σ k (p.1.subst d) p.2.1 = some p.2.2) :
-    (∃ j s, ∀ p ∈ runs, ∃ t,
-      evalStage (d.boundedAnswers σ j u) s p.1 p.2.1 = some t ∧
-        t.output = p.2.2.output) ↔ runs.toFinset.sup (fun p => p.2.2.use) ≤ u := by
-  classical
-  rw [Finset.sup_le_iff]
-  simp only [List.mem_toFinset]
-  constructor
-  · rintro ⟨j, s, hs⟩ p hp
-    obtain ⟨k, hk⟩ := h p hp
-    obtain ⟨t, ht, -⟩ := hs p hp
-    exact (exists_evaln_boundedAnswers_iff_use_le (evalStage_eq_some_iff.1 hk).2.1).1
-      ⟨j, s, t, (evalStage_eq_some_iff.1 ht).2.1⟩
-  · intro hu
-    have hcompiled (p) (hp : p ∈ runs.toFinset) :
-        ∀ᶠ k in atTop, evalStage σ k (p.1.subst d) p.2.1 = some p.2.2 := by
-      obtain ⟨k, hk⟩ := h p (List.mem_toFinset.1 hp)
-      exact eventually_atTop.2 ⟨k, fun _ hkk => evalStage_mono hkk hk⟩
-    obtain ⟨j, hj⟩ := ((eventually_all_finset runs.toFinset).2 hcompiled).exists
-    have houter (p) (hp : p ∈ runs.toFinset) :
-        ∀ᶠ s in atTop, ∃ t, evalStage (d.boundedAnswers σ j u) s p.1 p.2.1 = some t ∧
-          t.output = p.2.2.output := by
-      obtain ⟨t, ht, he⟩ := exists_evaln_boundedAnswers_of_evaln_subst
-        (evalStage_eq_some_iff.1 (hj p hp)).2.1 le_rfl (hu p (List.mem_toFinset.1 hp))
-      exact (eventually_atTop.2 (exists_forall_evalStage_eq_some ht)).mono fun _ hs => ⟨t, hs, he⟩
-    obtain ⟨s, hs⟩ := ((eventually_all_finset runs.toFinset).2 houter).exists
-    exact ⟨j, s, fun p hp => hs p (List.mem_toFinset.2 hp)⟩
 
 end TauCeti.Oracle.Single.Code

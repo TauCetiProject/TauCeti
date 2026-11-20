@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Computability.SingleOracle.Substitution.Basic
 public import TauCeti.Computability.SingleOracle.Evaln
-import TauCeti.Computability.SingleOracle.Recursion
 import TauCeti.Data.PFun.Basic
 
 /-!
@@ -26,12 +25,11 @@ open Encodable Denumerable
 
 namespace TauCeti.Oracle.Single.Code
 
-private theorem exists_jumpIndexCode : ∃ c : Code, ∀ O,
-    eval O c = fun n => Part.some ((ofNat Code n.unpair.1).jumpIndex n.unpair.2) := by
-  have h : Primrec fun n : ℕ => (ofNat Code n.unpair.1).jumpIndex n.unpair.2 :=
+private theorem exists_jumpIndexCode : ∃ c : Code, ∀ O n,
+    eval O c n = Part.some ((ofNat Code n.unpair.1).jumpIndex n.unpair.2) :=
+  exists_code_of_primrec <|
     primrec₂_jumpIndex.comp ((Primrec.ofNat Code).comp (Primrec.fst.comp Primrec.unpair))
       (Primrec.snd.comp Primrec.unpair)
-  exact exists_forall_eval_eq_of_partrec (Nat.Partrec.of_primrec (Primrec.nat_iff.1 h))
 
 /-- Compile a program that translates a halting index using `d` and queries its oracle at the
 translated index. The translator code is chosen noncomputably and fixed for all `d`.
