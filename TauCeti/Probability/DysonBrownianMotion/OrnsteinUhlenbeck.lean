@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.HalfLinePrimitive
+import TauCeti.Analysis.SpecialFunctions.Exp.Half
 
 /-!
 # The Ornstein–Uhlenbeck Dyson system and its exponential time change
@@ -87,6 +88,19 @@ private theorem continuous_apply_toNNReal {n : ℕ} {Z : ℝ≥0 → Fin n → �
     (i : Fin n) : Continuous fun s : ℝ ↦ Z s.toNNReal i :=
   ((continuous_apply i).comp hZ).comp continuous_real_toNNReal
 
+/-- A coordinate of a continuous path, read at time `e^u - 1` and weighted by `e^{-u/2}`, is
+continuous in `u`. -/
+private theorem continuous_exp_neg_half_mul_comp {n : ℕ} {Z : ℝ≥0 → Fin n → ℝ}
+    (hZ : Continuous Z) (i : Fin n) :
+    Continuous fun u : ℝ ↦ Real.exp (-(u / 2)) * Z (Real.exp u - 1).toNNReal i :=
+  (Real.continuous_exp.comp (continuous_id.div_const 2).neg).mul
+    ((continuous_apply_toNNReal hZ i).comp (Real.continuous_exp.sub continuous_const))
+
+/-- For `0 ≤ s`, the interval `[0, s]` lies in `[0, ∞)`. -/
+private theorem uIcc_zero_subset_Ici {s : ℝ} (hs : 0 ≤ s) : uIcc 0 s ⊆ Ici (0 : ℝ) := by
+  rw [uIcc_of_le hs]
+  exact Icc_subset_Ici_self
+
 /-- `u ↦ log (1 + u)` is continuous on `[0, ∞)`. -/
 private theorem continuousOn_log_one_add : ContinuousOn (fun u : ℝ ↦ Real.log (1 + u)) (Ici 0) :=
   (continuousOn_const.add continuousOn_id).log fun u hu ↦
@@ -104,10 +118,6 @@ private theorem continuousOn_comp_log_one_add_div {g : ℝ → ℝ} (hg : Contin
     (continuousOn_const.mul
       (Real.continuous_sqrt.comp (continuous_const.add continuous_id)).continuousOn)
     fun r hr ↦ (mul_pos two_pos (Real.sqrt_pos.2 (by linarith [mem_Ici.1 hr]))).ne'
-
-private theorem exp_neg_half_mul_exp_half (u : ℝ) :
-    Real.exp (-(u / 2)) * Real.exp (u / 2) = 1 := by
-  rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
 
 private theorem exp_neg_half_mul_exp (u : ℝ) :
     Real.exp (-(u / 2)) * Real.exp u = (Real.exp (-(u / 2)))⁻¹ := by
@@ -140,13 +150,12 @@ private theorem mul_comp_eq_integral {c c' τ τ' D E ξ ω : ℝ → ℝ} {a b 
   -- `φ u = c u (x + P (τ u)) + ∫₀ᵘ c' ω(τ ·) - ∫₀ᵘ (E + a c ξ(τ ·))` is continuous on `[0, t]`,
   -- has derivative `0` on `(0, t)` by `hrel` and `hξ`, hence `φ t = φ 0 = c 0 x` by the mean
   -- value theorem. Integrability and continuity facts used in both steps come first.
-  have hIci (s : ℝ) (hs : 0 ≤ s) : uIcc 0 s ⊆ Ici (0 : ℝ) := by
-    rw [uIcc_of_le hs]; exact Icc_subset_Ici_self
   have hτmaps : MapsTo τ (Ici 0) (Ici 0) := fun u hu ↦ by
     have := hτmono (le_refl (0 : ℝ)) hu hu
     rwa [hτ0] at this
   have hGint (r : ℝ) (hr : 0 ≤ r) : IntervalIntegrable (fun u ↦ D u + b * ξ u) volume 0 r :=
-    (hDint r hr).add (((hξc.mono (hIci r hr)).intervalIntegrable (μ := volume)).const_mul b)
+    (hDint r hr).add
+      (((hξc.mono (uIcc_zero_subset_Ici hr)).intervalIntegrable (μ := volume)).const_mul b)
   have hGat (r : ℝ) (hr : 0 < r) : ContinuousAt (fun u ↦ D u + b * ξ u) r :=
     (hD r hr).add (continuousAt_const.mul (hξc.continuousAt (Ici_mem_nhds hr)))
   have hPderiv (r : ℝ) (hr : 0 < r) :
@@ -162,7 +171,7 @@ private theorem mul_comp_eq_integral {c c' τ τ' D E ξ ω : ℝ → ℝ} {a b 
   have hKint (s : ℝ) (hs : 0 ≤ s) (hst : s ≤ t) :
       IntervalIntegrable (fun v ↦ E v + a * (c v * ξ (τ v))) volume 0 s :=
     (hEint.mono_set (by rw [uIcc_of_le hs, uIcc_of_le ht]; exact Icc_subset_Icc le_rfl hst)).add
-      (hLc.mono (hIci s hs)).intervalIntegrable
+      (hLc.mono (uIcc_zero_subset_Ici hs)).intervalIntegrable
   have hξτ (u : ℝ) (hu : 0 ≤ u) :
       ξ (τ u) = x + ω (τ u) + ∫ v in (0 : ℝ)..τ u, (D v + b * ξ v) :=
     hξ (τ u) (hτmaps hu)
@@ -182,7 +191,7 @@ private theorem mul_comp_eq_integral {c c' τ τ' D E ξ ω : ℝ → ℝ} {a b 
         rw [uIcc_of_le hτt]
         exact ⟨hτmaps hu.1, hτmono hu.1 ht hu.2⟩
     have hH := intervalIntegral.continuousOn_primitive_interval'
-      ((hHc.mono (hIci t ht)).intervalIntegrable (μ := volume)) left_mem_uIcc
+      ((hHc.mono (uIcc_zero_subset_Ici ht)).intervalIntegrable (μ := volume)) left_mem_uIcc
     have hK := intervalIntegral.continuousOn_primitive_interval' (hKint t ht le_rfl) left_mem_uIcc
     rw [uIcc_of_le ht] at hH hK
     exact (((hcc.mono Icc_subset_Ici_self).mul (continuousOn_const.add hPτ)).add hH).sub hK
@@ -196,7 +205,8 @@ private theorem mul_comp_eq_integral {c c' τ τ' D E ξ ω : ℝ → ℝ} {a b 
           c u * ((D (τ u) + b * ξ (τ u)) * τ' u)) u :=
       (hc u hu0).mul (((hPderiv (τ u) (hτpos u hu0)).comp u (hτ u hu0)).const_add x)
     have h2 : HasDerivAt (fun v ↦ ∫ w in (0 : ℝ)..v, c' w * ω (τ w)) (c' u * ω (τ u)) u :=
-      intervalIntegral.integral_hasDerivAt_right (hHc.mono (hIci u hu0.le)).intervalIntegrable
+      intervalIntegral.integral_hasDerivAt_right
+        (hHc.mono (uIcc_zero_subset_Ici hu0.le)).intervalIntegrable
         ((hHc.mono Ioi_subset_Ici_self).stronglyMeasurableAtFilter isOpen_Ioi u hu0)
         (hHc.continuousAt (Ici_mem_nhds hu0))
     have h3 : HasDerivAt (fun v ↦ ∫ w in (0 : ℝ)..v, (E w + a * (c w * ξ (τ w))))
@@ -418,8 +428,8 @@ theorem ouTimeChangeInv_exp_sub_one (Y : ℝ≥0 → Fin n → ℝ) (t : ℝ≥0
 theorem ouTimeChange_ouTimeChangeInv (Y : ℝ≥0 → Fin n → ℝ) :
     ouTimeChange (ouTimeChangeInv Y) = Y := by
   ext t i
-  rw [ouTimeChange_apply, ouTimeChangeInv_exp_sub_one, Pi.smul_apply, smul_eq_mul, ← mul_assoc,
-    exp_neg_half_mul_exp_half, one_mul]
+  rw [ouTimeChange_apply, ouTimeChangeInv_exp_sub_one, Pi.smul_apply, smul_eq_mul]
+  linear_combination Y t i * Real.exp_half_mul_exp_neg_half t
 
 /-- `ouTimeChangeInv` is a left inverse of `ouTimeChange`. -/
 @[simp]
@@ -447,9 +457,7 @@ theorem continuous_ouTimeChangeInv {Y : ℝ≥0 → Fin n → ℝ} (hY : Continu
 theorem continuous_ouTimeChangeForcing {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) :
     Continuous (ouTimeChangeForcing w) := by
   refine continuous_pi fun i ↦ ?_
-  have hg : Continuous fun u : ℝ ↦ Real.exp (-(u / 2)) * w (Real.exp u - 1).toNNReal i :=
-    (Real.continuous_exp.comp (continuous_id.div_const 2).neg).mul
-      ((continuous_apply_toNNReal hw i).comp (Real.continuous_exp.sub continuous_const))
+  have hg := continuous_exp_neg_half_mul_comp hw i
   exact (hg.comp NNReal.continuous_coe).add ((intervalIntegral.continuous_primitive
     (fun a b ↦ (hg.div_const 2).intervalIntegrable a b) 0).comp NNReal.continuous_coe)
 
@@ -466,7 +474,7 @@ theorem continuous_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → ℝ} (hw : 
   exact ((Real.continuous_sqrt.comp (continuous_const.add NNReal.continuous_coe)).mul
     ((continuous_apply_toNNReal hw i).comp continuous_log_one_add_coe)).sub hint
 
-/-- The forcing transform is linear: scaling `w` scales `ouTimeChangeForcing w`. -/
+/-- The forcing transform commutes with scalar multiplication of `w`. -/
 theorem ouTimeChangeForcing_const_mul (a : ℝ) (w : ℝ≥0 → Fin n → ℝ) :
     ouTimeChangeForcing (fun t i ↦ a * w t i) = fun t i ↦ a * ouTimeChangeForcing w t i := by
   ext t i
@@ -475,7 +483,7 @@ theorem ouTimeChangeForcing_const_mul (a : ℝ) (w : ℝ≥0 → Fin n → ℝ) 
   · ring
   · congr 1; ext u; ring
 
-/-- The inverse forcing transform is linear: scaling `w` scales `ouTimeChangeInvForcing w`. -/
+/-- The inverse forcing transform commutes with scalar multiplication of `w`. -/
 theorem ouTimeChangeInvForcing_const_mul (a : ℝ) (w : ℝ≥0 → Fin n → ℝ) :
     ouTimeChangeInvForcing (fun t i ↦ a * w t i) = fun t i ↦ a * ouTimeChangeInvForcing w t i := by
   ext t i
@@ -502,8 +510,7 @@ theorem ouTimeChangeForcing_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → �
     ((by fun_prop : Continuous fun r : ℝ ↦ √(1 + r)).continuousOn.mul
       (hwi.comp_continuousOn continuousOn_log_one_add))
     (fun r hr ↦ (hg.continuousAt (Ici_mem_nhds hr)).neg)
-    (fun r hr ↦ ((hg.mono (by rw [uIcc_of_le hr]; exact Icc_subset_Ici_self)).intervalIntegrable
-      (μ := volume)).neg)
+    (fun r hr ↦ ((hg.mono (uIcc_zero_subset_Ici hr)).intervalIntegrable (μ := volume)).neg)
     (fun r hr ↦ by
       simp only [ouTimeChangeInvForcing, Real.coe_toNNReal r hr, zero_add,
         intervalIntegral.integral_neg, sub_eq_add_neg])
@@ -513,8 +520,8 @@ theorem ouTimeChangeForcing_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → �
     simp only [add_sub_cancel, Real.log_exp, ← Real.exp_half, Real.toNNReal_coe, zero_add] at key
     have hA : Continuous fun u : ℝ ↦ -(w u.toNNReal i / 2) - Real.exp (-(u / 2)) *
         ouTimeChangeInvForcing w (Real.exp u - 1).toNNReal i / 2 :=
-      (hwi.div_const 2).neg.sub (((Real.continuous_exp.comp (continuous_id.div_const 2).neg).mul
-        (hf.comp (Real.continuous_exp.sub continuous_const))).div_const 2)
+      (hwi.div_const 2).neg.sub
+        ((continuous_exp_neg_half_mul_comp (continuous_ouTimeChangeInvForcing hw) i).div_const 2)
     have hB : Continuous fun u : ℝ ↦
         Real.exp (-(u / 2)) * (Real.exp (u / 2) * w u.toNNReal i) / 2 := by fun_prop
     have hsum : (∫ u in (0 : ℝ)..t,
@@ -526,9 +533,9 @@ theorem ouTimeChangeForcing_ouTimeChangeInvForcing {w : ℝ≥0 → Fin n → �
       rw [← intervalIntegral.integral_add (hB.intervalIntegrable 0 t)
         (hA.intervalIntegrable 0 t), ← intervalIntegral.integral_neg]
       exact intervalIntegral.integral_congr fun u _ ↦ by
-        linear_combination w u.toNNReal i / 2 * exp_neg_half_mul_exp_half u
+        linear_combination w u.toNNReal i / 2 * Real.exp_half_mul_exp_neg_half u
     rw [ouTimeChangeForcing]
-    linear_combination key + hsum + w t i * exp_neg_half_mul_exp_half t
+    linear_combination key + hsum + w t i * Real.exp_half_mul_exp_neg_half t
   · simp only [add_sub_cancel, Real.log_exp, ← Real.exp_half]
     have h1 : Real.exp (-(u / 2)) * Real.exp u = Real.exp (u / 2) := by
       rw [exp_neg_half_mul_exp, Real.exp_neg, inv_inv]
@@ -542,12 +549,10 @@ theorem ouTimeChangeInvForcing_ouTimeChangeForcing {w : ℝ≥0 → Fin n → �
     ouTimeChangeInvForcing (ouTimeChangeForcing w) = w := by
   ext t i
   have hf := continuous_apply_toNNReal (continuous_ouTimeChangeForcing hw) i
-  have hω : Continuous fun r : ℝ ↦ Real.exp (-(r / 2)) * w (Real.exp r - 1).toNNReal i :=
-    (Real.continuous_exp.comp (continuous_id.div_const 2).neg).mul
-      ((continuous_apply_toNNReal hw i).comp (Real.continuous_exp.sub continuous_const))
+  have hω := continuous_exp_neg_half_mul_comp hw i
   have hωL := continuousOn_comp_log_one_add_div hω
   have hfL := continuousOn_comp_log_one_add_div hf
-  have hIcc : uIcc 0 (t : ℝ) ⊆ Ici 0 := by rw [uIcc_of_le t.coe_nonneg]; exact Icc_subset_Ici_self
+  have hIcc := uIcc_zero_subset_Ici t.coe_nonneg
   -- `ouTimeChangeForcing w` solves the equation with forcing `e^{-r/2} w (e^r - 1)`, linear drift
   -- `-ξ / 2` and drift `D r = e^{-r/2} w (e^r - 1) / 2 + ξ r / 2`.
   have key := log_comp_eq_integral (x := 0) (ξ := fun r ↦ ouTimeChangeForcing w r.toNNReal i)
@@ -573,10 +578,11 @@ theorem ouTimeChangeInvForcing_ouTimeChangeForcing {w : ℝ≥0 → Fin n → �
   have hsplit := intervalIntegral.integral_add ((hωL.mono hIcc).intervalIntegrable (μ := volume))
     ((hfL.mono hIcc).intervalIntegrable (μ := volume))
   simp only [← add_div] at hsplit
-  rw [hsplit, ← mul_assoc, sqrt_one_add_mul_exp_neg_half_log t.coe_nonneg,
-    Real.exp_log (by positivity), add_sub_cancel_left, Real.toNNReal_coe] at key
+  have hwt : (Real.exp (Real.log (1 + t)) - 1).toNNReal = t := by
+    simp [Real.exp_log (by positivity : (0 : ℝ) < 1 + t)]
+  rw [hwt] at key
   rw [ouTimeChangeInvForcing]
-  linear_combination key
+  linear_combination key + hsplit + w t i * sqrt_one_add_mul_exp_neg_half_log t.coe_nonneg
 
 end TimeChange
 
@@ -738,7 +744,11 @@ theorem sum_sub_sq_le_of_le (hX : IsDysonOUPath n x w X) (hY : IsDysonOUPath n y
   have he (u : ℝ) : Real.exp (u / 2) ^ 2 = Real.exp u := by rw [sq, ← Real.exp_add, add_halves]
   simp only [ouTimeChangeInv_exp_sub_one, Pi.smul_apply, smul_eq_mul, ← mul_sub, mul_pow,
     ← Finset.mul_sum, he] at h
-  rw [Real.exp_neg, Real.exp_sub, inv_div, div_mul_eq_mul_div, le_div_iff₀ (Real.exp_pos _)]
+  have hts : Real.exp t * Real.exp (-((t : ℝ) - s)) = Real.exp s := by
+    rw [← Real.exp_add]
+    ring_nf
+  refine le_of_mul_le_mul_left ?_ (Real.exp_pos t)
+  rw [← mul_assoc, hts]
   linarith
 
 /-- **Exponential pathwise `ℓ²` contraction from the start.** Two Ornstein–Uhlenbeck Dyson
