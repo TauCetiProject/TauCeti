@@ -250,11 +250,6 @@ private theorem le_matrixBilinearForm_add_sub {M N : Matrix ι ι ℝ}
     (hMN : |g ⬝ᵥ ((M - N) *ᵥ h)| ≤ L * |d| * ‖g‖ * ‖h‖) (hd : |d| ≤ ε) :
     lam / 2 * ‖g‖ ^ 2 - (L * ε) ^ 2 / (2 * lam) * ‖h‖ ^ 2 ≤
       matrixBilinearForm M g (g + h) - matrixBilinearForm N g h := by
-  have hsplit : matrixBilinearForm M g (g + h) - matrixBilinearForm N g h =
-      M.toQuadraticForm' g + g ⬝ᵥ ((M - N) *ᵥ h) := by
-    rw [map_add, ← matrixBilinearForm_self]
-    simp only [matrixBilinearForm_apply, Matrix.sub_mulVec, dotProduct_sub]
-    ring
   -- `L |d| ‖g‖ ‖h‖ ≤ (λ / 2) ‖g‖² + (L |d| ‖h‖)² / (2 λ) ≤ (λ / 2) ‖g‖² + (L ε)² ‖h‖² / (2 λ)`.
   have hsq : (L * |d|) ^ 2 ≤ (L * ε) ^ 2 := by
     rw [mul_pow, mul_pow]
@@ -271,7 +266,7 @@ private theorem le_matrixBilinearForm_add_sub {M N : Matrix ι ι ℝ}
       ring
     rw [this]
     exact div_nonneg key (by positivity)
-  rw [hsplit]
+  rw [matrixBilinearForm_add_sub_matrixBilinearForm]
   linarith [neg_abs_le (g ⬝ᵥ ((M - N) *ᵥ h))]
 
 variable {A : EuclideanSpace ℝ ι → ℝ → Matrix ι ι ℝ} {lam Lam L : ℝ}
