@@ -212,13 +212,13 @@ namespace IsNondegenerate
 
 variable {hσ : σ.IsNondegenerate}
 
-/-- If the differential of `f` at `x` vanishes on a coisotropic fibre `P x`, then the Hamiltonian
-vector field of `f` at `x` lies in `P x`: `σ(X_f, v) = df(v)` vanishes for `v ∈ P x`, so
-`X_f ∈ (P x)^σ ⊆ P x`. -/
+/-- If the differential of `f` at `x` vanishes on a coisotropic subspace `W` of `T_x M`, then the
+Hamiltonian vector field of `f` at `x` lies in `W`: `σ(X_f, v) = df(v)` vanishes for `v ∈ W`, so
+`X_f ∈ W^σ ⊆ W`. -/
 theorem hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero {x : M}
-    (hPx : (hσ.symplecticFormAt x).IsCoisotropic (P x))
-    (hf : ∀ v ∈ P x, mvfderiv I f x v = 0) : σ.hamiltonianVectorField f x ∈ P x :=
-  hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic hPx fun w hw ↦ by
+    {W : Submodule ℝ (TangentSpace I x)} (hW : (hσ.symplecticFormAt x).IsCoisotropic W)
+    (hf : ∀ v ∈ W, mvfderiv I f x v = 0) : σ.hamiltonianVectorField f x ∈ W :=
+  hσ.mem_of_forall_eval₂_eq_zero_of_isCoisotropic hW fun w hw ↦ by
     rw [hσ.eval₂_hamiltonianVectorField]
     exact hf w hw
 

@@ -33,7 +33,7 @@ The distribution is recorded, as in `TauCeti.IsContMDiffDistribution`, as a fami
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mem_of_forall_eval₂_eq_zero_of_isCoisotropic`: a vector
-  `σ`-orthogonal to a coisotropic fibre `P_x` lies in `P_x`.
+  `σ`-orthogonal to a coisotropic subspace `W ⊆ T_x M` lies in `W`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.two_mul_finrank`: a real polarization
   has half the rank of the tangent bundle.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsRealPolarization.eval₂_eq_zero`: `σ` vanishes on pairs of
@@ -78,11 +78,11 @@ structure IsRealPolarization (P : Π x : M, Submodule ℝ (TangentSpace I x)) : 
   /-- A real polarization is involutive. -/
   isInvolutive : IsInvolutiveDistribution I P
 
-/-- A tangent vector `σ`-orthogonal to a coisotropic subspace `P x` lies in `P x`. -/
-theorem mem_of_forall_eval₂_eq_zero_of_isCoisotropic {P : Π x : M, Submodule ℝ (TangentSpace I x)}
-    {x : M} (hPx : (hσ.symplecticFormAt x).IsCoisotropic (P x)) {v : TangentSpace I x}
-    (hv : ∀ w ∈ P x, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ P x := by
-  refine SymplecticForm.isCoisotropic_iff_le.1 hPx ?_
+/-- A tangent vector `σ`-orthogonal to a coisotropic subspace `W` of `T_x M` lies in `W`. -/
+theorem mem_of_forall_eval₂_eq_zero_of_isCoisotropic {x : M}
+    {W : Submodule ℝ (TangentSpace I x)} (hW : (hσ.symplecticFormAt x).IsCoisotropic W)
+    {v : TangentSpace I x} (hv : ∀ w ∈ W, SmoothBundleForm.eval₂ σ x v w = 0) : v ∈ W := by
+  refine SymplecticForm.isCoisotropic_iff_le.1 hW ?_
   rw [SymplecticForm.mem_orthogonal_iff']
   intro w hw
   rw [symplecticFormAt_apply]
