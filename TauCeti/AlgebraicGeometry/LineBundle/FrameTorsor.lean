@@ -7,10 +7,12 @@ module
 
 public import Mathlib.CategoryTheory.Sites.Subsheaf
 public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Prestack
+public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.PullHom
 public import TauCeti.AlgebraicGeometry.Descent.QuasicoherentSheaf.Separated
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
 public import TauCeti.AlgebraicGeometry.LineBundle.Endomorphisms
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
+public import TauCeti.AlgebraicGeometry.Sites.Big.GmGrp
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian
 
 /-!
@@ -48,8 +50,6 @@ here.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.GmGrp S J hJ`: the multiplicative group `T ↦ Γ(T, 𝒪_T)ˣ` as a sheaf of
-  groups on the big site of `S` for a topology `J` coarser than the fpqc topology.
 * `AlgebraicGeometry.Scheme.Modules.frameSheaf M hJ`: the sheaf of frames of a quasi-coherent
   module.
 * `AlgebraicGeometry.Scheme.Modules.frameTorsor M hJ hZ`: the frame torsor of an invertible sheaf,
@@ -86,83 +86,9 @@ namespace AlgebraicGeometry.Scheme
 open Pseudofunctor.LocallyDiscreteOpToCat TauCeti.AlgebraicGeometry.Descent
   TauCeti.AlgebraicGeometry.SheafOfModules
 
-section Gm
-
-variable (S : Scheme.{u}) {J : GrothendieckTopology Scheme.{u}}
-
-/-- The abelian sheaf `𝔾_m : T ↦ Γ(T, 𝒪_T)ˣ` on the big fpqc site of `S` is a sheaf for every
-topology coarser than the fpqc topology. -/
-lemma isSheaf_Gm_of_le (hJ : J ≤ fpqcTopology) : Presheaf.IsSheaf (J.over S) (Gm S).obj :=
-  fun E ↦ Presieve.isSheaf_of_le _ (fun _ _ hR ↦ hJ _ hR) ((Gm S).property E)
-
-variable (J) in
-/-- The multiplicative group `𝔾_m : T ↦ Γ(T, 𝒪_T)ˣ` as a sheaf of groups on the big site of `S`
-for a topology `J` coarser than the fpqc topology. -/
--- An abbreviation, so that statements about its sections see the sheaf of groups underlying the
--- abelian sheaf `Gm S` (`GmGrpObjEquiv`).
-noncomputable abbrev GmGrp (hJ : J ≤ fpqcTopology) : Sheaf (J.over S) GrpCat.{u} :=
-  (abelianSheafToGrpSheaf (J.over S)).obj ⟨(Gm S).obj, isSheaf_Gm_of_le S hJ⟩
-
-variable {S} {hJ : J ≤ fpqcTopology}
-
-/-- The sections of `𝔾_m` over an `S`-scheme `T` are the units of `Γ(T, 𝒪_T)`. -/
-noncomputable def GmGrpObjEquiv (T : Over S) : Γ(T.left, ⊤)ˣ ≃* (GmGrp S J hJ).obj.obj (op T) :=
-  (MulEquiv.multiplicativeAdditive _).symm.trans
-    (abelianSheafToGrpSheafObjEquiv ⟨(Gm S).obj, isSheaf_Gm_of_le S hJ⟩ (op T))
-
-/-- The restriction maps of `𝔾_m` are the maps of units induced by pullback of functions. -/
-@[simp]
-lemma GmGrp_map_GmGrpObjEquiv {T T' : Over S} (f : T ⟶ T') (a : Γ(T'.left, ⊤)ˣ) :
-    (GmGrp S J hJ).obj.map f.op (GmGrpObjEquiv T' a) =
-      GmGrpObjEquiv T (Units.map f.left.appTop.hom a) :=
-  abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv _ _ _
-
-end Gm
-
 namespace Modules
 
 variable {S : Scheme.{u}} {J : GrothendieckTopology Scheme.{u}}
-
-/-- Multiplication by a global function commutes with the restriction maps `pullHom` of the
-presheaves of morphisms of the pullback pseudofunctor of modules: restricting multiplication by
-`r` on `f^* M` along `g` gives multiplication by `g^♯ r` on `(g ≫ f)^* M`. -/
-lemma pullHom_globalSectionsSmul {X Y Y' : Scheme.{u}} {M : X.Modules} (f : Y ⟶ X)
-    (r : Γ(Y, ⊤)) (g : Y' ⟶ Y) (gf : Y' ⟶ X) (hgf : g ≫ f = gf) :
-    pullHom (F := modulesPseudofunctor) (M₁ := M) (M₂ := M) (f₁ := f) (f₂ := f)
-        (globalSectionsSmul ((pullback f).obj M) r) g gf gf hgf hgf =
-      globalSectionsSmul ((pullback gf).obj M) (g.appTop r) := by
-  rw [modulesPseudofunctor_pullHom, pullback_map_globalSectionsSmul]
-  have key {A B C : Y'.Modules} (e₁ : A ≅ B) (e₂ : B ≅ C) (r' : Γ(Y', ⊤)) :
-      e₂.inv ≫ e₁.inv ≫ globalSectionsSmul A r' ≫ e₁.hom ≫ e₂.hom = globalSectionsSmul C r' := by
-    rw [globalSectionsSmul_naturality_assoc, globalSectionsSmul_naturality, Iso.inv_hom_id_assoc,
-      Iso.inv_hom_id_assoc]
-  exact key ((pullbackComp g f).app M) ((pullbackCongr hgf).app M) _
-
-/-- Restricting a morphism `φ` composed with multiplication by a global function `r` gives the
-restriction of `φ` composed with multiplication by the pullback of `r`. -/
-lemma pullHom_globalSectionsSmul_comp {X X' Y Y' : Scheme.{u}} {M : X.Modules} {N : X'.Modules}
-    {f : Y ⟶ X} {f' : Y ⟶ X'} (r : Γ(Y, ⊤)) (φ : (pullback f).obj M ⟶ (pullback f').obj N)
-    (g : Y' ⟶ Y) (gf : Y' ⟶ X) (gf' : Y' ⟶ X') (hgf : g ≫ f = gf) (hgf' : g ≫ f' = gf') :
-    pullHom (F := modulesPseudofunctor) (M₁ := M) (M₂ := N) (f₁ := f) (f₂ := f')
-        (globalSectionsSmul ((pullback f).obj M) r ≫ φ) g gf gf' hgf hgf' =
-      globalSectionsSmul ((pullback gf).obj M) (g.appTop r) ≫
-        pullHom (F := modulesPseudofunctor) (M₁ := M) (M₂ := N) (f₁ := f) (f₂ := f') φ g gf gf'
-          hgf hgf' :=
-  (pullHom_comp _ _ g gf gf gf' hgf hgf hgf').trans
-    (congrArg (· ≫ _) (pullHom_globalSectionsSmul f r g gf hgf))
-
-/-- Restricting a morphism `φ` followed by the pullback of a morphism `ψ` gives the restriction of
-`φ` followed by the pullback of `ψ`. -/
-lemma pullHom_comp_pullback_map {X X' Y Y' : Scheme.{u}} {M : X.Modules} {N N' : X'.Modules}
-    {f : Y ⟶ X} {f' : Y ⟶ X'} (φ : (pullback f).obj M ⟶ (pullback f').obj N) (ψ : N ⟶ N')
-    (g : Y' ⟶ Y) (gf : Y' ⟶ X) (gf' : Y' ⟶ X') (hgf : g ≫ f = gf) (hgf' : g ≫ f' = gf') :
-    pullHom (F := modulesPseudofunctor) (M₁ := M) (M₂ := N') (f₁ := f) (f₂ := f')
-        (φ ≫ (pullback f').map ψ) g gf gf' hgf hgf' =
-      pullHom (F := modulesPseudofunctor) (M₁ := M) (M₂ := N) (f₁ := f) (f₂ := f') φ g gf gf'
-          hgf hgf' ≫ (pullback gf').map ψ :=
-  (pullHom_comp (F := modulesPseudofunctor) (M₁ := M) (M₂ := N) (M₃ := N') (f₁ := f) (f₂ := f')
-    (f₃ := f') φ ((pullback f').map ψ) g gf gf' gf' hgf hgf' hgf').trans
-      (congrArg (_ ≫ ·) (pullHom_map (F := modulesPseudofunctor) ψ f' g gf' hgf'))
 
 variable (M : S.Modules)
 
@@ -210,9 +136,6 @@ theorem isSheaf_frameSubfunctor [M.IsQuasicoherent] (hJ : J ≤ fpqcTopology) :
 /-- The sheaf of frames of a quasi-coherent `𝒪_S`-module `M` on the big site of `S`, for a topology
 `J` coarser than the fpqc topology: its sections over `h : T ⟶ S` are the isomorphisms
 `h^* 𝒪_S ⟶ h^* M` (`frameSheafObjEquiv`). -/
--- Exposed so that the sections of the sheaf of frames are, by definition, morphisms of modules
--- (`frameSheaf_map_val`, `GmGrpObjEquiv_smul_val`).
-@[expose]
 noncomputable def frameSheaf [M.IsQuasicoherent] (hJ : J ≤ fpqcTopology) :
     Sheaf (J.over S) (Type u) :=
   ⟨(frameSubfunctor M).toFunctor,
@@ -221,12 +144,6 @@ noncomputable def frameSheaf [M.IsQuasicoherent] (hJ : J ≤ fpqcTopology) :
 section Quasicoherent
 
 variable [M.IsQuasicoherent] {hJ : J ≤ fpqcTopology}
-
-/-- The restriction maps of the sheaf of frames are those of the presheaf of morphisms. -/
-@[simp]
-lemma frameSheaf_map_val {T T' : Over S} (f : T ⟶ T') (e : (frameSheaf M hJ).obj.obj (op T')) :
-    ((frameSheaf M hJ).obj.map f.op e).1 = pullHom e.1 f.left T.hom T.hom (Over.w f) (Over.w f) :=
-  rfl
 
 /-- The frames of `M` over an `S`-scheme `h : T ⟶ S` are the isomorphisms `h^* 𝒪_S ≅ h^* M`. -/
 noncomputable def frameSheafObjEquiv (T : Over S) :
@@ -237,17 +154,6 @@ noncomputable def frameSheafObjEquiv (T : Over S) :
   invFun i := ⟨i.hom, i.isIso_hom⟩
   left_inv _ := rfl
   right_inv _ := by ext1; rfl
-
-@[simp]
-lemma frameSheafObjEquiv_apply_hom (T : Over S) (e : (frameSheaf M hJ).obj.obj (op T)) :
-    (frameSheafObjEquiv M T e).hom = e.1 :=
-  (rfl)
-
-@[simp]
-lemma frameSheafObjEquiv_symm_apply_val (T : Over S)
-    (i : (pullback T.hom).obj (𝟙_ S.Modules) ≅ (pullback T.hom).obj M) :
-    ((frameSheafObjEquiv (hJ := hJ) M T).symm i).1 = i.hom :=
-  (rfl)
 
 /-- An `S`-scheme `h : T ⟶ S` carries a frame of `M` exactly when `h^* M` is isomorphic to `𝒪_T`. -/
 lemma nonempty_frameSheaf_obj_iff (T : Over S) :
@@ -294,6 +200,7 @@ lemma frameSheafObjEquiv_GmGrpObjEquiv_smul (T : Over S) (u : Γ(T.left, ⊤)ˣ)
   simp only [frameSheafObjEquiv_smul M (op T), unop_op, MulEquiv.symm_apply_apply]
 
 /-- The restriction maps of the sheaf of frames, read on isomorphisms. -/
+@[simp]
 lemma frameSheafObjEquiv_map_hom {T T' : Over S} (f : T ⟶ T')
     (e : (frameSheaf M hJ).obj.obj (op T')) :
     (frameSheafObjEquiv M T ((frameSheaf M hJ).obj.map f.op e)).hom =
@@ -336,21 +243,17 @@ lemma existsUnique_smul_eq (T : Over S) (e e' : (frameSheaf M hJ).obj.obj (op T)
     rw [globalSectionsAction_apply, globalSectionsAction_apply, hw, hv]
 
 /-- The inverse of a restricted frame is the restriction of the inverse. -/
+@[simp]
 lemma frameSheafObjEquiv_map_inv {T T' : Over S} (f : T ⟶ T')
     (e : (frameSheaf M hJ).obj.obj (op T')) :
     (frameSheafObjEquiv M T ((frameSheaf M hJ).obj.map f.op e)).inv =
       pullHom (F := modulesPseudofunctor) (M₁ := M) (M₂ := 𝟙_ S.Modules) (f₁ := T'.hom)
         (f₂ := T'.hom) (frameSheafObjEquiv M T' e).inv f.left T.hom T.hom (Over.w f)
         (Over.w f) := by
-  refine Iso.inv_ext ?_
-  rw [frameSheafObjEquiv_map_hom]
-  refine (pullHom_comp (F := modulesPseudofunctor) (M₁ := 𝟙_ S.Modules) (M₂ := M)
-    (M₃ := 𝟙_ S.Modules) (f₁ := T'.hom) (f₂ := T'.hom) (f₃ := T'.hom)
-    (frameSheafObjEquiv M T' e).hom (frameSheafObjEquiv M T' e).inv f.left T.hom T.hom T.hom
-    (Over.w f) (Over.w f) (Over.w f)).symm.trans ?_
-  exact (congrArg (fun k ↦ pullHom (F := modulesPseudofunctor) (M₁ := 𝟙_ S.Modules)
-    (M₂ := 𝟙_ S.Modules) (f₁ := T'.hom) (f₂ := T'.hom) k f.left T.hom T.hom (Over.w f) (Over.w f))
-    (Iso.hom_inv_id (frameSheafObjEquiv M T' e))).trans (pullHom_id_eq_id _ _ _)
+  simp only [← IsIso.Iso.inv_hom, frameSheafObjEquiv_map_hom]
+  -- The instance is passed explicitly: the frame lives in `T'.left.Modules`, while `pullHom` is
+  -- stated in the categories of `modulesPseudofunctor`, where instance search does not find it.
+  exact @inv_pullHom _ _ _ _ _ _ _ _ _ _ _ (frameSheafObjEquiv M T' e).isIso_hom _ _ _ _ _ _
 
 variable {M} {N : S.Modules} [N.IsQuasicoherent]
 
@@ -535,9 +438,7 @@ lemma mk_frameTorsor_tensorUnit :
   refine (Sheaf.NonabelianH1.mk_eq_one_iff _).2
     ⟨fun T ↦ (frameSheafObjEquiv (hJ := hJ) _ T.unop).symm (Iso.refl _), fun {T T'} f ↦ ?_⟩
   refine (frameSheafObjEquiv (hJ := hJ) _ T'.unop).injective (Iso.ext ?_)
-  change (frameSheafObjEquiv _ T'.unop ((frameSheaf _ hJ).obj.map f.unop.op _)).hom = _
-  rw [frameSheafObjEquiv_map_hom]
-  exact pullHom_id_eq_id _ _ _
+  exact (frameSheafObjEquiv_map_hom _ f.unop _).trans (pullHom_id_eq_id _ _ _)
 
 variable {M} [isInvertible S M]
 
