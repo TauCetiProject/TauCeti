@@ -36,6 +36,8 @@ components.
   pullback;
 * `FiniteLocallyFreeSheaf.rank_biprod_apply` and `FiniteLocallyFreeSheaf.rank_tensor_apply`: rank
   is additive under direct sums and multiplicative under tensor products;
+* `FiniteLocallyFreeSheaf.isZero_obj_iff_forall_rank_eq_zero`: a finite locally free sheaf is zero
+  exactly when its rank vanishes everywhere;
 * `FiniteLocallyFreeSheaf.isInvertible_iff_forall_rank_eq_one`: the invertible sheaves are exactly
   the finite locally free sheaves of rank one at every point, so that the fully faithful inclusion
   `InvertibleSheaf.toFiniteLocallyFree` identifies `InvertibleSheaf X` with the rank-one objects
@@ -254,6 +256,36 @@ def rankLocus (E : FiniteLocallyFreeSheaf X) (n : ℕ) : TopologicalSpace.Clopen
 theorem mem_rankLocus {E : FiniteLocallyFreeSheaf X} {n : ℕ} {x : X} :
     x ∈ E.rankLocus n ↔ E.rank x = n :=
   LocallyConstant.mem_fiberClopens
+
+/-- A finite locally free sheaf is zero exactly when it has rank zero at every point. A sheaf of
+rank zero is free on the empty basis around every point, so all its sections vanish locally. -/
+theorem isZero_obj_iff_forall_rank_eq_zero (E : FiniteLocallyFreeSheaf X) :
+    IsZero E.obj ↔ ∀ x, E.rank x = 0 := by
+  refine ⟨fun h x ↦ ?_, fun h ↦ ?_⟩
+  · rw [E.rank_eq_of_iso (F := free X PEmpty) (h.iso (by
+      rw [free_obj]; exact SheafOfModules.isZero_free PEmpty))]
+    simp
+  choose U hU σ hσ hfin using E.exists_generatingSections
+  have hz (x : X) : IsZero (E.obj.over (U x)) := by
+    have := hσ x
+    have := hfin x
+    have : IsEmpty (σ x).I := by
+      rw [← Finite.card_eq_zero_iff]
+      exact (E.rank_apply_eq_natCard (hU x) (σ x)).symm.trans (h x)
+    exact (SheafOfModules.isZero_free _).of_iso (asIso (σ x).π).symm
+  rw [IsZero.iff_id_eq_zero]
+  refine Scheme.Modules.hom_ext _ _ fun V ↦ ?_
+  ext s
+  refine TopCat.Sheaf.eq_of_locally_eq'
+    (⟨E.obj.presheaf, E.obj.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    (fun x : V ↦ V ⊓ U x) V (fun x ↦ homOfLE inf_le_left)
+    (fun x hx ↦ Opens.mem_iSup.2 ⟨⟨x, hx⟩, hx, hU x⟩) _ _ fun x ↦ ?_
+  -- The sections of `E` over `V ⊓ U x` are those of the zero sheaf `E|_{U x}` at `V ⊓ U x`.
+  have key (t : Γ(E.obj, V ⊓ U x)) : t = 0 :=
+    congrArg (fun φ : E.obj.over (U x) ⟶ E.obj.over (U x) ↦
+      φ.val.app (Opposite.op (Over.mk (homOfLE inf_le_right : V ⊓ U x ⟶ U x))) t)
+      ((hz x).eq_of_src (𝟙 _) 0)
+  exact (key _).trans (key _).symm
 
 end FiniteLocallyFreeSheaf
 
