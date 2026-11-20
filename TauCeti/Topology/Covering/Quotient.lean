@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Covering.Quotient
+import TauCeti.Topology.Covering.Proper
 
 /-!
 # Intermediate quotients of a quotient covering map
@@ -30,9 +31,10 @@ application is `TauCeti.UniversalCover.isCoveringMap_subgroupQuotientProj`.
 The file also records that a surjective covering map is an open quotient map: the companion,
 for a covering map with no group acting, of Mathlib's `IsQuotientCoveringMap.isOpenQuotientMap`
 that the rest of the file consumes. Finally, the quotient covering map of a finite group has
-finite fibres, which is what makes it a finite covering with a transfer on singular chains. The
-acting group may be replaced by any isomorphic group acting compatibly, which is how an abstract
-group identified with a fundamental group is made to act on a universal cover.
+finite fibres (and hence a compact covering space whenever the base is compact), which is what
+makes it a finite covering with a transfer on singular chains. The acting group may be replaced by
+any isomorphic group acting compatibly, which is how an abstract group identified with a
+fundamental group is made to act on a universal cover.
 
 For a discrete additive subgroup `L` of a topological additive group `E`, the orbit projection
 `E → AddAction.orbitRel.Quotient L E` for translation by `L` is a quotient covering map. Unlike
@@ -53,8 +55,10 @@ Neither normality nor a separation axiom is needed.
 * `IsCoveringMap.isOpenQuotientMap`: a surjective covering map is an open quotient map.
 * `IsQuotientCoveringMap.isCoveringMap_of_comp`: the map from the quotient by a subgroup down to
   the quotient by the whole group is a covering map.
-* `IsQuotientCoveringMap.finite_fiber`: the quotient covering map of a finite group has finite
-  fibres.
+* `IsQuotientCoveringMap.finite_fiber`, `IsAddQuotientCoveringMap.finite_fiber`: the quotient
+  covering map of a finite group has finite fibres.
+* `IsQuotientCoveringMap.compactSpace`, `IsAddQuotientCoveringMap.compactSpace`: the covering
+  space of a finite-group quotient covering over a compact base is compact.
 * `IsQuotientCoveringMap.image_smul_set`: the quotient covering map has the same image on a set
   and on its translates.
 * `IsQuotientCoveringMap.of_smul_eq`: a quotient covering map for `G` is one for any group
@@ -254,10 +258,21 @@ end IsQuotientCoveringMap
 
 /-- The fibres of the quotient covering map of a finite group are finite, each being an orbit of
 the free action. -/
+@[to_additive
+/-- The fibres of the additive quotient covering map of a finite additive group are finite, each
+being an orbit of the free action. -/]
 theorem _root_.IsQuotientCoveringMap.finite_fiber [Finite G] (hq : IsQuotientCoveringMap q G)
     (x : X) : Finite ↥(q ⁻¹' {x}) := by
   obtain ⟨e, rfl⟩ := hq.surjective x
   exact Finite.of_equiv G (hq.fiberEquivGroup ⟨e, rfl⟩).symm
+
+/-- The covering space of a finite-group quotient covering over a compact base is compact. -/
+@[to_additive
+/-- The covering space of a finite additive group quotient covering over a compact base is
+compact. -/]
+theorem _root_.IsQuotientCoveringMap.compactSpace [CompactSpace X] [Finite G]
+    (hq : IsQuotientCoveringMap q G) : CompactSpace E :=
+  hq.isCoveringMap.compactSpace hq.finite_fiber
 
 /-- **A quotient covering map stays one when the acting group is replaced by an isomorphic one
 acting compatibly.** If `e : G ≃* G'` and each `e g` acts on `E` as `g` does, then the orbits and
