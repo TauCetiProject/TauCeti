@@ -152,7 +152,7 @@ theorem norm_riemannZeta_le_of_re_pos {s : ℂ} (hs : 0 < s.re) :
       have h16 : (16 : ℝ) < Real.exp 4 := by
         calc (16 : ℝ) = 2 ^ 4 := by norm_num
           _ < Real.exp 1 ^ 4 := pow_lt_pow_left₀ h2e (by norm_num) (by norm_num)
-          _ = Real.exp 4 := by rw [← Real.exp_nat_mul]; norm_num
+          _ = Real.exp 4 := by rw [← Real.exp_natCast_mul]; norm_num
       linarith [Real.pi_lt_four]
     rw [hval, norm_real, Real.norm_eq_abs]
     simp only [sub_self, norm_zero, inv_zero, zero_add, norm_one, one_re, div_one]

@@ -202,7 +202,7 @@ private theorem toReal_edist_sq_le (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolv
   have key := sq_le_mul_one_add_div_pow_of_sq_le_mul_sub
     (D := fun n ↦ (edist (u 0) (u n)).toReal) (d := fun n ↦ (edist (u n) (u (n + 1))).toReal)
     (e := e) (τ := τ) (τ' := τ') (A := A)
-    τ.2 (by exact_mod_cast hττ') (by simp) (fun _ ↦ ENNReal.toReal_nonneg)
+    τ.property (by exact_mod_cast hττ') (by simp) (fun _ ↦ ENNReal.toReal_nonneg)
     (fun n ↦ ENNReal.toReal_le_add (edist_triangle _ _ _) (hfin n)
       (edist_ne_top_of_mem_moreauYosidaResolvent (hu n)))
     (fun n ↦ ?_) hcoer n
@@ -458,7 +458,7 @@ private theorem apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent
     refine (edist_sq_le_of_forall_mem_moreauYosidaResolvent hu hτ hττ' hA hE _).trans
       (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left ?_
         (mul_nonneg (by positivity) hEA)))
-    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity) (add_nonneg ht τ.2)
+    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity) (add_nonneg ht τ.property)
     rw [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
     exact this.trans hB
 
@@ -592,7 +592,7 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
     fun t ↦ {y | φ y ≤ E ∧ edist x₀ y ≤ ENNReal.ofReal (2 * τ' * (E - A) * B t) ^ (2⁻¹ : ℝ)}
   have hvK k t : v k t ∈ K t := by
     have := apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) (hττ' k)
-      (hAk k) (hEk k) hEA t.2 (hexpk k t)
+      (hAk k) (hEk k) hEA t.property (hexpk k t)
     rwa [hU0] at this
   have hK t ⦃w : ℕ → X⦄ (hw : ∀ n, w n ∈ K t) :
       ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) :=
@@ -604,7 +604,7 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
   have hvω_le s t (hst : s ≤ t) : limsup (fun k ↦ edist (v k s) (v k t)) atTop ≤ ω s t := by
     have hst' : (s : ℝ) ≤ t := hst
     refine (limsup_edist_ceil_le_rpow_of_forall_mem_moreauYosidaResolvent hτ hττ' hτ0 hU
-      hAk hEk hEA s.2 hst' (hexpk · t)).trans_eq ?_
+      hAk hEk hEA s.property hst' (hexpk · t)).trans_eq ?_
     simp [hω_def, abs_of_nonneg (sub_nonneg.2 hst'), max_eq_right hst']
   have hvω s t : limsup (fun k ↦ edist (v k s) (v k t)) atTop ≤ ω s t := by
     rcases le_total s t with h | h

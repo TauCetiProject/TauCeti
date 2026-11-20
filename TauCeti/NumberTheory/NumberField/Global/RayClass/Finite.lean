@@ -69,7 +69,7 @@ instance congruenceSubgroup_finiteIndex (𝔪 : Modulus K) :
     rintro ⟨x, hx⟩ ⟨h1, h2⟩
     refine Subgroup.mem_subgroupOf.mpr (mem_congruenceSubgroup.mpr ?_)
     refine isCongrOne_of_residue_eq_one hx ?_
-      fun w _ ↦ isTotallyPositive_iff.mp (mem_totallyPositiveUnits.mp h2) w.1 w.2
+      fun w _ ↦ isTotallyPositive_iff.mp (mem_totallyPositiveUnits.mp h2) w.val w.property
     rw [← coe_residueHom 𝔪 ⟨x, hx⟩, MonoidHom.mem_ker.mp h1, Units.val_one]
   exact Subgroup.finiteIndex_of_le hle
 
@@ -111,7 +111,7 @@ private theorem principalIdealHom_surjective (𝔪 : Modulus K) :
       (NumberFieldArithmetic.principalIdealAway K 𝔪.support).range := by
     rw [NumberFieldArithmetic.range_principalIdealAway, MonoidHom.mem_ker,
       MonoidHom.comp_apply, Subgroup.subtype_apply, ← idealsPrimeToClassGroup_apply]
-    exact MonoidHom.mem_ker.mp I.2
+    exact MonoidHom.mem_ker.mp I.property
   obtain ⟨x, hx⟩ := hI
   exact ⟨x, Subtype.ext hx⟩
 

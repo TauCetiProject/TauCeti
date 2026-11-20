@@ -281,7 +281,7 @@ theorem eq_zero_of_locally_vanishing (T : 𝓓^{n}(Ω, F) →+ G)
     (h : ∀ x ∈ Ω, ∃ U : Set E, IsOpen U ∧ x ∈ U ∧
       ∀ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ U → T φ = 0) : T = 0 := by
   classical
-  choose U hU hxU hT using fun x : Ω ↦ h x x.2
+  choose U hU hxU hT using fun x : Ω ↦ h x x.property
   ext φ
   obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate U hU fun x hx ↦
     mem_iUnion.mpr ⟨⟨x, φ.tsupport_subset hx⟩, hxU _⟩

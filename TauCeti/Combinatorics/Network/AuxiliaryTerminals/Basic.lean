@@ -164,11 +164,11 @@ theorem originalArrow_inj {e e' : Σ x y, Q x y} :
 
 /-- The fresh source has an arrow to `Sum.inl a` only when `a ∈ A`. -/
 theorem mem_of_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) : a ∈ A :=
-  e.2
+  e.property
 
 /-- The fresh sink has an arrow from `Sum.inl b` only when `b ∈ B`. -/
 theorem mem_of_sink {b : V} (e : AuxTerminalHom Q A B (inl b) (inr true)) : b ∈ B :=
-  e.2
+  e.property
 
 /-- Every arrow from the fresh source to `Sum.inl a` is `source`. -/
 theorem eq_source {a : V} (e : AuxTerminalHom Q A B (inr false) (inl a)) :
@@ -188,7 +188,7 @@ theorem forall_iff {P : ∀ ⦃x y⦄, AuxTerminalHom Q A B x y → Prop} :
         ∀ ⦃b⦄ (hb : b ∈ B), P (sink hb) := by
   refine ⟨fun h ↦ ⟨fun _ _ _ ↦ h _, fun _ _ ↦ h _, fun _ _ ↦ h _⟩, ?_⟩
   rintro ⟨horig, hsrc, hsink⟩ (v | (_ | _)) (w | (_ | _)) e
-  all_goals first | exact e.elim | exact horig e | exact hsrc e.2 | exact hsink e.2
+  all_goals first | exact e.elim | exact horig e | exact hsrc e.property | exact hsink e.property
 
 instance instSubsingletonSource (a : V) :
     Subsingleton (AuxTerminalHom Q A B (inr false) (inl a)) :=

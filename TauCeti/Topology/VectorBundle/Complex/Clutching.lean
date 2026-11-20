@@ -313,16 +313,16 @@ theorem clutchingNumber_transAt (p q : Ω^ (Fin 2) X x) :
     · exact mem_preimage.2 (mem_of_eq_of_mem (GenLoop.boundary f y hy) hx₀)
     · exact mem_preimage.2 (mem_of_eq_of_mem (GenLoop.transAt_apply_of_coe_eq_half 0 q p hy) hx₀)
   -- The two halves of the concatenation are `q` and `p`, with the halves of the frame `Ψ`.
-  let qL : Ω^ (Fin 2) X x := ⟨f.1.comp (cubeLeftHalf 0), fun y hy ↦
+  let qL : Ω^ (Fin 2) X x := ⟨f.val.comp (cubeLeftHalf 0), fun y hy ↦
     (GenLoop.transAt_apply_cubeLeftHalf 0 q p y).trans (GenLoop.boundary q y hy)⟩
-  let pR : Ω^ (Fin 2) X x := ⟨f.1.comp (cubeRightHalf 0), fun y hy ↦
+  let pR : Ω^ (Fin 2) X x := ⟨f.val.comp (cubeRightHalf 0), fun y hy ↦
     (GenLoop.transAt_apply_cubeRightHalf 0 q p y).trans (GenLoop.boundary p y hy)⟩
   have hqL : qL = q := GenLoop.ext _ _ (GenLoop.transAt_apply_cubeLeftHalf 0 q p)
   have hpR : pR = p := GenLoop.ext _ _ (GenLoop.transAt_apply_cubeRightHalf 0 q p)
   rw [clutchingNumber_eq_squareBoundaryDegree f e₀ hx₀ hΨ, squareBoundaryDegree_eq_add hcont,
     ← hqL, ← hpR,
-    clutchingNumber_eq_squareBoundaryDegree_comp (f := f.1) hΨ (cubeLeftHalf 0) _ e₀ hx₀,
-    clutchingNumber_eq_squareBoundaryDegree_comp (f := f.1) hΨ (cubeRightHalf 0) _ e₀ hx₀]
+    clutchingNumber_eq_squareBoundaryDegree_comp (f := f.val) hΨ (cubeLeftHalf 0) _ e₀ hx₀,
+    clutchingNumber_eq_squareBoundaryDegree_comp (f := f.val) hΨ (cubeRightHalf 0) _ e₀ hx₀]
   -- The coercions `⇑f` and `⇑f.1` agree by definition (`GenLoop.coe_coe`).
   rfl
 

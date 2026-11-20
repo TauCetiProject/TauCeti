@@ -91,7 +91,7 @@ theorem IsNullSet.biUnion {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE
     (hs : ∀ i ∈ t, IsNullSet I (s i)) : IsNullSet I (⋃ i ∈ t, s i) := by
   have := ht.to_subtype
   rw [biUnion_eq_iUnion]
-  exact IsNullSet.iUnion fun i ↦ hs i i.2
+  exact IsNullSet.iUnion fun i ↦ hs i i.property
 
 /-- A countable subset of a manifold with a nontrivial finite-dimensional model is null. -/
 theorem _root_.Set.Countable.isNullSet {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]

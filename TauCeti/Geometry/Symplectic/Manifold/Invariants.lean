@@ -90,8 +90,8 @@ theorem IsNondegenerate.symplecticFormAt_tangentRepresentation (hσ : σ.IsNonde
       hσ.symplecticFormAt x u v := by
   have h := SmoothForm.eval₂_mpullback (fun y : M ↦ (g : G) • y)
     (contMDiff_const_smul (g : G)) σ x u v
-  rw [hσG g g.2] at h
-  have hgx : (g : G) • x = x := g.2
+  rw [hσG g g.property] at h
+  have hgx : (g : G) • x = x := g.property
   rw [IsNondegenerate.symplecticFormAt_apply, IsNondegenerate.symplecticFormAt_apply, h,
     tangentRepresentation_apply, hgx]
 
@@ -124,7 +124,7 @@ theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner
     (hσ.symplecticFormAt x).IsSymplectic
       (tangentRepresentation hd).toRepresentation.invariants :=
   SymplecticForm.isSymplectic_invariants_of_inner
-    (fun g u w ↦ (inner_tangentRepresentation_apply hd g u w).trans (hK g g.2 u w))
+    (fun g u w ↦ (inner_tangentRepresentation_apply hd g u w).trans (hK g g.property u w))
     (hσ.symplecticFormAt_tangentRepresentation hσG hd)
 
 end ConstSMul

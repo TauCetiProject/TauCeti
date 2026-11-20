@@ -254,15 +254,16 @@ theorem hasProjectiveDimensionLE {n : ℕ} (hn : ringKrullDim R ≤ n) (M : Modu
     Module.Finite.equiv (Shrink.linearEquiv R (R ⧸ I)).symm
   -- Test on the localizations at maximal ideals, which are regular local of dimension `≤ n`.
   refine (ModuleCat.hasProjectiveDimensionLE_iff_forall_maximalSpectrum n _).mpr fun m ↦ ?_
-  have : Small.{v} (Localization.AtPrime m.1) := small_of_surjective Localization.mkHom_surjective
-  have : Small.{v} (LocalizedModule m.1.primeCompl (Shrink.{v} (R ⧸ I))) :=
-    small_of_surjective (IsLocalizedModule.mk'_surjective m.1.primeCompl
-      (LocalizedModule.mkLinearMap m.1.primeCompl (Shrink.{v} (R ⧸ I))))
-  have : Module.Finite (Localization.AtPrime m.1)
-      ((ModuleCat.of R (Shrink.{v} (R ⧸ I))).localizedModule m.1.primeCompl) :=
-    Module.Finite.equiv (Shrink.linearEquiv (Localization.AtPrime m.1) _).symm
+  have : Small.{v} (Localization.AtPrime m.asIdeal)
+      := small_of_surjective Localization.mkHom_surjective
+  have : Small.{v} (LocalizedModule m.asIdeal.primeCompl (Shrink.{v} (R ⧸ I))) :=
+    small_of_surjective (IsLocalizedModule.mk'_surjective m.asIdeal.primeCompl
+      (LocalizedModule.mkLinearMap m.asIdeal.primeCompl (Shrink.{v} (R ⧸ I))))
+  have : Module.Finite (Localization.AtPrime m.asIdeal)
+      ((ModuleCat.of R (Shrink.{v} (R ⧸ I))).localizedModule m.asIdeal.primeCompl) :=
+    Module.Finite.equiv (Shrink.linearEquiv (Localization.AtPrime m.asIdeal) _).symm
   refine IsRegularLocalRing.hasProjectiveDimensionLE_of_finite ?_ _
-  rw [IsLocalization.AtPrime.ringKrullDim_eq_height m.1]
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height m.asIdeal]
   exact Ideal.height_le_ringKrullDim_of_isPrime.trans hn
 
 /-- Over a regular ring, the projective dimension of every module is at most the Krull dimension

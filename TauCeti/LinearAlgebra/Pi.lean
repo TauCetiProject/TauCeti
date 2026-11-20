@@ -401,7 +401,7 @@ public theorem finrank_pi_eq_finsum {R ι : Type*} [Semiring R] [StrongRankCondi
     Module.finrank R ((i : ι) → M i) = ∑ᶠ i, Module.finrank R (M i) := by
   classical
   have (i : {x // x ∉ h.toFinset}) : Subsingleton (M i) :=
-    not_nontrivial_iff_subsingleton.mp (by simpa using i.2)
+    not_nontrivial_iff_subsingleton.mp (by simpa using i.property)
   rw [(LinearEquiv.piEquivPiSubtypeProd R (· ∈ h.toFinset) M).finrank_eq, Module.finrank_prod,
     Module.finrank_zero_of_subsingleton (M := (i : {x // x ∉ h.toFinset}) → M i), add_zero,
     Module.finrank_pi_fintype,

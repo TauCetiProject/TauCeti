@@ -296,7 +296,7 @@ theorem ι_eq_algebraMap_iff (hz : z ∈ center K L) (hz₀ : z ≠ 0) {x : L} {
     let χ : LieCharacter K B :=
       { toLinearMap := c • f ∘ₗ (B : Submodule K L).subtype
         map_lie' := fun {y y'} ↦ by
-          have hyy : ⁅y, y'⁆ = 0 := Subtype.ext (hlie y.2 y'.2)
+          have hyy : ⁅y, y'⁆ = 0 := Subtype.ext (hlie y.property y'.property)
           simp only [hyy, AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, map_zero]
           rw [LieRing.of_associative_ring_bracket, mul_comm, sub_self] }
     have hχ (r : K) (hr : r • z ∈ B) : χ ⟨r • z, hr⟩ = r * c := by

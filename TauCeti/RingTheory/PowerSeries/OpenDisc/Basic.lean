@@ -448,7 +448,7 @@ under coefficientwise scalar multiplication. -/
 noncomputable instance instModuleSubring :
     Module R (OnOpenDisc.subring R R₀) where
   smul r f := ⟨r • (f : R⟦X⟧),
-    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.2).smul r)⟩
+    OnOpenDisc.mem_subring.mpr ((OnOpenDisc.mem_subring.mp f.property).smul r)⟩
   one_smul f := Subtype.ext (one_smul R (f : R⟦X⟧))
   mul_smul r s f := Subtype.ext (mul_smul r s (f : R⟦X⟧))
   smul_zero r := Subtype.ext (smul_zero r)
@@ -468,7 +468,7 @@ noncomputable instance instAlgebraSubring {S : Type*} [CommSemiring S] [Algebra 
     Algebra S (OnOpenDisc.subring R R₀) where
   smul s f := ⟨s • (f : R⟦X⟧), OnOpenDisc.mem_subring.mpr <| by
     rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
-    exact (onOpenDisc_C (algebraMap S R s)).mul (OnOpenDisc.mem_subring.mp f.2)⟩
+    exact (onOpenDisc_C (algebraMap S R s)).mul (OnOpenDisc.mem_subring.mp f.property)⟩
   algebraMap := (algebraMap S R⟦X⟧).codRestrict _ fun s ↦ OnOpenDisc.mem_subring.mpr <| by
     rw [PowerSeries.algebraMap_apply]
     exact onOpenDisc_C _

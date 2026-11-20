@@ -86,7 +86,7 @@ theorem MeasureTheory.UniformIntegrable.ae_mono {α β γ ι : Type*}
     (hle : ∀ i, ∀ᵐ x ∂μ, ‖V i x‖ₑ ≤ ‖D i x‖ₑ) : UniformIntegrable V p μ := by
   constructor
   · refine unifIntegrable_iff.2 fun ε hε ↦ ?_
-    obtain ⟨δ, hδ, hbound⟩ := unifIntegrable_iff.1 hUI.1 ε hε
+    obtain ⟨δ, hδ, hbound⟩ := unifIntegrable_iff.1 hUI.unifIntegrable ε hε
     refine ⟨δ, hδ, fun i s hs ↦ ?_⟩
     exact (eLpNorm_mono_eNorm_ae (hV i).restrict
       ((hle i).filter_mono ae_restrict_le)).trans (hbound i s hs)

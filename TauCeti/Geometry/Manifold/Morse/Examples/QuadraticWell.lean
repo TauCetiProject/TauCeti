@@ -148,7 +148,7 @@ through `x₀`, the energy `f(γ t) - f(0) = γ(t)²` is `x₀² exp (-4 t)`. -/
 theorem sq_maximalIntegralCurve_neg_mgradient_sq (x₀ t : ℝ) :
     maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 2)) x₀ t ^ 2 =
       x₀ ^ 2 * Real.exp (-(4 * t)) := by
-  rw [maximalIntegralCurve_neg_mgradient_sq, mul_pow, ← Real.exp_nat_mul]
+  rw [maximalIntegralCurve_neg_mgradient_sq, mul_pow, ← Real.exp_natCast_mul]
   ring_nf
 
 /-- The length of the trajectory of `-grad x²` through `x₀` between the times `t ≤ s` is

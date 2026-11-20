@@ -84,7 +84,7 @@ theorem one_add_mul_pow_ceil_div_le_exp {a τ t : ℝ} (ha : 0 ≤ a) (htτ : 0 
   calc (1 + a * τ) ^ ⌈t / τ⌉₊ ≤ Real.exp (a * τ) ^ ⌈t / τ⌉₊ := by
         gcongr
         linarith [Real.add_one_le_exp (a * τ)]
-    _ = Real.exp (a * (⌈t / τ⌉₊ * τ)) := by rw [← Real.exp_nat_mul]; ring_nf
+    _ = Real.exp (a * (⌈t / τ⌉₊ * τ)) := by rw [← Real.exp_natCast_mul]; ring_nf
     _ ≤ Real.exp (a * (t + τ)) := by gcongr
 
 /-- **Convergence of the discrete growth factors.** If `L i` time steps of length `τ i → 0` take
@@ -113,7 +113,7 @@ theorem tendsto_one_add_mul_pow {ι : Type*} {l : Filter ι} {τ : ι → ℝ} {
         _ = a * (L i * τ i) := by ring
   refine ((Real.continuous_exp.tendsto _).comp hlog).congr' ?_
   filter_upwards [hpos] with i hi
-  rw [Function.comp_apply, Real.exp_nat_mul, Real.exp_log hi]
+  rw [Function.comp_apply, Real.exp_natCast_mul, Real.exp_log hi]
 
 /-- **Convergence of the discrete exponential integrals.** If `L i` time steps of length `τ i → 0`
 take the total time `L i τ i → T`, then `τ i ∑_{n < L i} (1 + a τ i) ^ n`, the discrete

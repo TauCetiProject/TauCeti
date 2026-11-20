@@ -281,9 +281,9 @@ theorem exists_pow_tameRamificationIndex_eq_mul {π : Kˣ} (hπ : IsUniformizer 
   have hunit : IsUnit ((e / p ^ k : ℕ) : 𝒪[L]) := by
     rw [IsLocalRing.isUnit_natCast_iff_not_dvd, ← Algebra.ringChar_eq 𝓀[K] 𝓀[L]]
     exact Nat.not_dvd_ordCompl (CharP.prime_ringChar 𝓀[K]) ramificationIndex_pos.ne'
-  obtain ⟨γ, hγ⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hunit y.2.2
+  obtain ⟨γ, hγ⟩ := unitFiltration_one_le_range_powMonoidHom_of_isUnit hunit y.2.property
   rw [powMonoidHom_apply] at hγ
-  refine ⟨β * γ⁻¹, y.1, y.1.2, ?_⟩
+  refine ⟨β * γ⁻¹, y.1, y.1.property, ?_⟩
   have hβ : β ^ (e / p ^ k) = x * Units.map (algebraMap K L : K →* L) π := by simp [x]
   rw [mul_pow, inv_pow, hγ, hβ, hy, mul_right_comm, mul_inv_cancel_right]
 
