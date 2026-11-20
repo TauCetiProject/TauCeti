@@ -42,6 +42,8 @@ bounds.
   power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
+  `L²` functions.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
 * `MeasureTheory.integral_norm_sq_eq_toReal_eLpNorm_sq`: the integral of the squared pointwise
   norm of any a.e. strongly measurable function is its squared `L²` seminorm, as a real number.
@@ -376,6 +378,20 @@ theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
   simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
     Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
+
+/-- **Cauchy–Schwarz for `L²` functions.** For `f, g ∈ L²`, possibly with different codomains,
+`∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂`. -/
+theorem Lp.integral_norm_mul_norm_le {alpha E F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup E] [NormedAddCommGroup F] (f : Lp E 2 m)
+    (g : Lp F 2 m) :
+    ∫ x, ‖f x‖ * ‖g x‖ ∂m ≤ ‖f‖ * ‖g‖ := by
+  have hf : MemLp (fun x => ‖f x‖) (ENNReal.ofReal (2 : ℝ)) m := by
+    simpa using (Lp.memLp f).norm
+  have hg : MemLp (fun x => ‖g x‖) (ENNReal.ofReal (2 : ℝ)) m := by
+    simpa using (Lp.memLp g).norm
+  simpa only [norm_norm, Real.rpow_two, ← Real.sqrt_eq_rpow, Lp.integral_norm_sq_eq_norm_sq,
+    Real.sqrt_sq_eq_abs, abs_norm] using
+    integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
 
 /-- The `L²` seminorm of a square-integrable function is the square root of the integral of its
 squared pointwise norm. -/
