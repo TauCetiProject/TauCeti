@@ -92,7 +92,7 @@ theorem le_hausdorffMeasure_image_of_domRestrict
     (hi : AntilipschitzWith L (s.domRestrict f)) {d : ℝ} (hd : 0 ≤ d) :
     μH[d] s ≤ (L : ℝ≥0∞) ^ d * μH[d] (f '' s) := by
   have hle := hi.le_hausdorffMeasure_image hd Set.univ
-  rw [← isometry_subtype_coe.hausdorffMeasure_image (Or.inl hd) (Set.univ : Set s),
+  rw [← isometry_subtypeVal.hausdorffMeasure_image (Or.inl hd) (Set.univ : Set s),
     Set.image_univ, Subtype.range_coe, Set.image_univ, Set.range_domRestrict] at hle
   exact hle
 

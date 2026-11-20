@@ -9,9 +9,11 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Group.Integral
@@ -108,8 +110,16 @@ gives a set of measure one.
   empty).
 * `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le`: the same in scale-invariant form,
   `R^(-n/p₀) ‖f‖_{L^{p₀}(B(x₀, R))} ≤ |B(0, 1)|^(1/p₀ - 1/p) R^(-n/p) ‖f‖_{L^p(B(x₀, R))}`.
+* `MeasureTheory.Measure.rpow_neg_mul_toReal_eLpNorm_ball_le_of_ae_norm_le`: a function bounded by
+  `B` almost everywhere on `B(x₀, R)` has `R^(-n/p) ‖f‖_{L^p(B(x₀, R))} ≤ |B(0, 1)|^(1/p) B`.
+* `MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow`: Hölder's inequality
+  bounding the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` by
+  `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
+  isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
+  measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -216,6 +226,61 @@ theorem rpow_neg_mul_toReal_eLpNorm_ball_le
             (R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
         gcongr
     _ = _ := by rw [mul_left_comm, hRpow]; ring
+
+/-- A function bounded by `B` almost everywhere on the ball `B(x₀, R)` of radius `R > 0`, in
+dimension `n`, has scale-invariant `L^p` norm there at most a constant times `B`:
+`R^(-n/p) ‖f‖_{L^p(B(x₀, R))} ≤ |B(0, 1)|^(1/p) B`. For `p ≤ 0` the `L^p` norm vanishes. -/
+theorem rpow_neg_mul_toReal_eLpNorm_ball_le_of_ae_norm_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p R B : ℝ} {x₀ : E} (hR : 0 < R)
+    (hf : AEStronglyMeasurable f (mu.restrict (ball x₀ R)))
+    (hfB : ∀ᵐ x ∂mu.restrict (ball x₀ R), ‖f x‖ ≤ B) :
+    R ^ (-((finrank ℝ E : ℝ) / p)) *
+        (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal ≤
+      mu.real (ball (0 : E) 1) ^ (1 / p) * B := by
+  have hne : mu.restrict (ball x₀ R) ≠ 0 := by
+    rw [Ne, Measure.restrict_eq_zero]
+    exact (measure_ball_pos mu x₀ hR).ne'
+  have hB : 0 ≤ B := by
+    have := ae_neBot.2 hne
+    obtain ⟨x, hx⟩ := hfB.exists
+    exact (norm_nonneg _).trans hx
+  have hω : 0 ≤ mu.real (ball (0 : E) 1) := measureReal_nonneg
+  rcases le_or_gt p 0 with hp | hp
+  · rw [ENNReal.ofReal_of_nonpos hp, eLpNorm_exponent_zero hf]
+    simpa using mul_nonneg (Real.rpow_nonneg hω _) hB
+  have hle := eLpNorm_le_of_ae_bound (p := ENNReal.ofReal p) hf hfB
+  rw [Measure.restrict_apply_univ, ENNReal.toReal_ofReal hp.le] at hle
+  have hnorm : (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal ≤
+      mu.real (ball x₀ R) ^ p⁻¹ * B := by
+    refine (ENNReal.toReal_mono (by finiteness) hle).trans_eq ?_
+    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal hB, measureReal_def]
+  calc R ^ (-((finrank ℝ E : ℝ) / p)) *
+        (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R))).toReal
+      ≤ R ^ (-((finrank ℝ E : ℝ) / p)) * (mu.real (ball x₀ R) ^ p⁻¹ * B) := by gcongr
+    _ = _ := by
+        rw [addHaar_real_ball_rpow _ _ hR, ← mul_assoc, ← mul_assoc, ← Real.rpow_add hR,
+          one_div]
+        congr 1
+        rw [← div_eq_mul_inv, neg_add_cancel, Real.rpow_zero, one_mul]
+
+/-- Hölder's inequality for the `L²` mass on a ball: for `2 ≤ q` and a function `g` in `L^q(t)`,
+the integral of `‖g‖²` over a ball `B(x, r) ⊆ t` of radius `r > 0` is at most
+`‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}`, where `n` is the dimension. -/
+theorem _root_.MeasureTheory.MemLp.setIntegral_ball_norm_sq_le_eLpNorm_sq_mul_rpow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+    {F : Type*} [NormedAddCommGroup F] {g : E → F} {t : Set E} {q : ENNReal}
+    (hg : MemLp g q (mu.restrict t)) (hq : 2 ≤ q) {x : E} {r : ℝ} (hr : 0 < r)
+    (hsub : ball x r ⊆ t) :
+    ∫ y in ball x r, ‖g y‖ ^ 2 ∂mu ≤ (eLpNorm g q (mu.restrict t)).toReal ^ 2 *
+      (mu.real (ball (0 : E) 1) ^ (1 - 2 / q.toReal) *
+        r ^ ((finrank ℝ E : ℝ) * (1 - 2 / q.toReal))) := by
+  have h := hg.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow hq hsub
+    measure_ball_lt_top.ne
+  rwa [addHaar_real_ball_of_pos mu x hr, Real.mul_rpow (by positivity) measureReal_nonneg,
+    ← Real.rpow_natCast r, ← Real.rpow_mul hr.le, mul_comm (r ^ _)] at h
 
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/
@@ -621,6 +686,40 @@ theorem measurePreserving_of_abs_det_eq_one
     map_add_right_eq_self]
 
 end ContinuousAffineMap
+
+namespace LinearIsometryEquiv
+
+/-- Every linear isometry self-equivalence of a finite-dimensional real normed space preserves
+every additive Haar measure on that space. -/
+theorem measurePreserving_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  have hle : ∀ g : E ≃ₗᵢ[ℝ] E, |g.toContinuousLinearMap.det| ≤ 1 := fun g ↦ by
+    have hnorm : ‖g.toContinuousLinearMap‖ ≤ 1 :=
+      g.toContinuousLinearMap.opNorm_le_bound zero_le_one fun x ↦ by simp
+    exact g.toContinuousLinearMap.abs_det_le_opNorm_pow.trans
+      (by simpa using pow_le_pow_left₀ (norm_nonneg _) hnorm _)
+  have hmul : |f.toContinuousLinearMap.det| * |f.symm.toContinuousLinearMap.det| = 1 := by
+    rw [← abs_mul, ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp,
+      show (f.toContinuousLinearMap : E →ₗ[ℝ] E) ∘ₗ (f.symm.toContinuousLinearMap : E →ₗ[ℝ] E) =
+        LinearMap.id from LinearMap.ext fun x ↦ f.apply_symm_apply x,
+      LinearMap.det_id, abs_one]
+  have habs : |f.toContinuousLinearMap.det| = 1 := le_antisymm (hle f) (by
+    nlinarith [abs_nonneg f.toContinuousLinearMap.det,
+      abs_nonneg f.symm.toContinuousLinearMap.det, hle f.symm])
+  simpa using ContinuousAffineMap.measurePreserving_of_abs_det_eq_one μ
+    f.toContinuousLinearMap.toContinuousAffineMap (by simpa using habs)
+
+/-- Every linear isometry self-equivalence of a finite-dimensional real normed space pushes every
+additive Haar measure forward to itself. -/
+theorem map_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    μ.map f = μ :=
+  (f.measurePreserving_addHaar μ).map_eq
+
+end LinearIsometryEquiv
 
 namespace MeasureTheory.Measure
 

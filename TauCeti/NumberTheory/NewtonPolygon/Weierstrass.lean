@@ -301,7 +301,7 @@ theorem supportingValue_newtonPolygon_eq_of_isUnit_mul {f : K⟦X⟧} {σ τ : �
   have hcτ : 0 < b ^ τ := Real.rpow_pos_of_pos hb0 τ
   have huσ := TauCeti.PowerSeries.isDistinguished_zero_of_isUnit hcσ hu
   have hurτ : (u : K⟦X⟧).IsRestricted (b ^ τ) :=
-    TauCeti.PowerSeries.isRestricted_of_abs_le u.2 <| by
+    TauCeti.PowerSeries.isRestricted_of_abs_le u.property <| by
       rw [abs_of_pos hcτ, abs_of_pos hcσ]
       exact Real.rpow_le_rpow_of_exponent_le hb.le hτσ
   obtain ⟨cu, iu, hcu, hiu⟩ :=

@@ -92,7 +92,7 @@ theorem commutationHomotopy_unblockedDifferential_single_apply (x z : GridState 
       ∑ y : GridState n,
         G.unblockedCoefficient R x y * G.commutationHexagonCoefficient R C y z := by
   rw [commutationHomotopy_apply_apply, Finsupp.sum_fintype _ _ fun _ => zero_mul _]
-  simp [commutationHexagonCoefficient_def]
+  simp
 
 /-- On a grid-state generator, the coefficient of the round trip through the commuted diagram,
 first the commutation map of a turn `T` and then that of the commuted diagram at the same columns

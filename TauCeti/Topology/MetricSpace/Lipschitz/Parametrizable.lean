@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
+import TauCeti.Topology.UnitInterval
 
 /-!
 # Lipschitz-parametrizable sets
@@ -280,7 +281,7 @@ theorem of_isBounded_of_subset_ker {E : Type*} [NormedAddCommGroup E] [NormedSpa
     (hSf : S ⊆ LinearMap.ker f) : IsLipschitzParametrizable (Module.finrank ℝ E - 1) S := by
   -- Pull `S` back to the kernel, parametrize it there, and push it forward again: `S` is the
   -- image of its own preimage exactly because it lies in the kernel.
-  have hiso : Isometry (Subtype.val : LinearMap.ker f → E) := isometry_subtype_coe
+  have hiso : Isometry (Subtype.val : LinearMap.ker f → E) := isometry_subtypeVal
   have h := (of_isBounded (hiso.antilipschitzWith.isBounded_preimage hS)).image hiso.lipschitzWith
   rwa [Set.image_preimage_eq_of_subset (by rwa [Subtype.range_coe]),
     Nat.eq_sub_of_add_eq (Module.Dual.finrank_ker_add_one_of_ne_zero hf)] at h
@@ -360,23 +361,15 @@ theorem exists_cover_image_unitCube {d : ℕ} {C : NNReal} {f : (Fin d → ℝ) 
   have hQcov : Icc (0 : Fin d → ℝ) 1 ⊆ ⋃ k, Q k := by
     intro x hx
     simp only [Set.mem_Icc, Pi.le_def, Pi.zero_apply, Pi.one_apply] at hx
-    -- The subcube containing `x` is indexed by the integer parts of the scaled coordinates,
-    -- capped at `m - 1` so that the coordinate `1` lands in the last subcube.
-    refine mem_iUnion.2 ⟨fun i ↦ ⟨min ⌊x i * m⌋₊ (m - 1),
-      lt_of_le_of_lt (min_le_right _ _) (Nat.sub_lt hm Nat.one_pos)⟩, fun i ↦ ?_⟩
-    -- Evaluate the index family just chosen at `i`.
-    dsimp only
-    have hx0 : 0 ≤ x i := hx.1 i
-    have hx1 : x i ≤ 1 := hx.2 i
-    have hfloor : ((min ⌊x i * m⌋₊ (m - 1) : ℕ) : ℝ) ≤ x i * m :=
-      le_trans (by exact_mod_cast min_le_left ⌊x i * m⌋₊ (m - 1))
-        (Nat.floor_le (by positivity))
-    refine ⟨(div_le_iff₀ hmR).2 hfloor, (le_div_iff₀ hmR).2 ?_⟩
-    rcases le_total ⌊x i * m⌋₊ (m - 1) with h | h
-    · rw [min_eq_left h]
-      exact (Nat.lt_floor_add_one _).le
-    · rw [min_eq_right h, Nat.cast_sub hm, Nat.cast_one, sub_add_cancel]
-      nlinarith
+    -- The subcube containing `x` is indexed by the arcs of the subdivision of the unit interval
+    -- into `m` arcs containing the coordinates of `x`, the coordinate `1` being in the last arc.
+    let s : Fin d → unitInterval := fun i ↦ ⟨x i, hx.1 i, hx.2 i⟩
+    refine mem_iUnion.2 ⟨fun i ↦ ⟨unitInterval.arcIndex m (s i), unitInterval.arcIndex_lt hm _⟩,
+      fun i ↦ ⟨(div_le_iff₀ hmR).2 ?_, (le_div_iff₀ hmR).2 ?_⟩⟩
+    · rw [mul_comm]
+      exact unitInterval.arcIndex_le_mul m (s i)
+    · rw [mul_comm]
+      exact unitInterval.mul_le_arcIndex_add_one hm (s i)
   have hQdist : ∀ k, ∀ x ∈ Q k, ∀ y ∈ Q k, dist x y ≤ 1 / m := by
     intro k x hx y hy
     refine (dist_pi_le_iff (by positivity)).2 fun i ↦ ?_

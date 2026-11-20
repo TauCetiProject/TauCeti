@@ -165,7 +165,7 @@ private theorem adjoin_plus_le_comap_map_rationalEvalPairHom
         restrictedMvPowerSeriesCompletion k A), ?_, ?_⟩
     · rw [Pair.completion_plus]
       exact map_mem_completionPlus
-        (U.weightedC_mem_weighted_plus isWeightFamily_one_weight b.2)
+        (U.weightedC_mem_weighted_plus isWeightFamily_one_weight b.property)
     · simp [toCompletionLoc_apply, Completion.coeRingHom]
   · obtain ⟨i, hi⟩ := hTt ⟨y, rfl⟩
     simp only at hi
@@ -221,7 +221,7 @@ theorem isQuotientMapping_of_adjoin_le_integralClosure {B : Type*} [CommRing B] 
       hadj
     have hIC : (integralClosure
         ↥(Algebra.adjoin U.plus (Set.range fun y : ↥T ↦ (divBy (y : A) s : S))) S).toSubring ≤
-        R.comap Completion.coeRingHom := Subring.integralClosure_le_iff.mpr fun a ↦ hbase a.2
+        R.comap Completion.coeRingHom := Subring.integralClosure_le_iff.mpr fun a ↦ hbase a.property
     exact fun x hx ↦ hIC hx
   exact hle ((rationalLocalizationPair_plus P U hP T s S hden) ▸ hx)
 
@@ -366,7 +366,7 @@ private theorem adjoin_plus_le_comap_map_weightedRationalEvalPairHom :
     refine Subring.mem_map.mpr ⟨((weightedC (rationalWeight T s) hW b :
       weightedRestrictedSubring _ _) : Completion (weightedRestrictedSubring _ hW)), ?_, ?_⟩
     · rw [Pair.completion_plus]
-      exact map_mem_completionPlus (U.weightedC_mem_weighted_plus hW b.2)
+      exact map_mem_completionPlus (U.weightedC_mem_weighted_plus hW b.property)
     · simp [toCompletionLoc_apply, Completion.coeRingHom]
   · rw [SetLike.mem_coe, Subring.mem_comap, toRingHom_weightedRationalEvalPairHom]
     refine Subring.mem_map.mpr ⟨((weightedC (rationalWeight T s) hW y * weightedX _ hW 0 :
@@ -374,7 +374,7 @@ private theorem adjoin_plus_le_comap_map_weightedRationalEvalPairHom :
     · rw [Pair.completion_plus]
       exact map_mem_completionPlus
         (U.weightedC_mul_weightedX_mem_weighted_plus hW
-          (rationalWeight_apply T s 0 ▸ Set.mem_insert_of_mem s y.2))
+          (rationalWeight_apply T s 0 ▸ Set.mem_insert_of_mem s y.property))
     · rw [Completion.coe_mul, map_mul, weightedRationalEvalHom_coe_weightedC,
         weightedRationalEvalHom_coe_weightedX, toCompletionLoc_apply, ← Completion.coe_mul,
         mul_comm, invSelf_mul_algebraMap]
@@ -470,7 +470,7 @@ private theorem isQuotientMapping_of_presentation {C : Type*} [CommRing C] [Topo
     rw [SetLike.mem_coe, Subring.mem_comap, Subalgebra.mem_toSubring, mem_integralClosure_iff,
       IsScalarTower.algebraMap_apply V.plus B S, Algebra.algebraMap_ofSubsemiring_apply]
     simpa only [toCompletionLoc_apply, Completion.coe_coeRingHom] using
-      (hπ.mem_plus_iff.mp a.2).map_of_comp_eq κ
+      (hπ.mem_plus_iff.mp a.property).map_of_comp_eq κ
         (toCompletionLoc P T s S hden) (by ext; rfl)
   · exact isIntegral_algebraMap (R := Z.plus.map σ.toRingHom) (x := ⟨_, hfrac a⟩)
 
@@ -523,7 +523,7 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
     -- Every rational fraction is the image of an extra unweighted variable.
     obtain ⟨j, _, htj⟩ := hcover 0 a (by
       rw [rationalWeight_apply]
-      exact Set.mem_insert_of_mem s a.2)
+      exact Set.mem_insert_of_mem s a.property)
     have hmem := U.weightedC_mul_weightedX_mem_weighted_completion_plus hZ (hZ1 j)
     simp only [map_one, one_mul] at hmem
     have hval : σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd 1 j)) :
