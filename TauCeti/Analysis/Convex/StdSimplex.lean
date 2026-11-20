@@ -50,6 +50,8 @@ likewise separated by at least `(card ι)⁻¹`.
   simplex are the vectors with nonnegative coordinates summing to one.
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
   simplex form a convex set.
+* `LinearMap.sum_apply_eq_of_mapsTo_range_weights`: a linear map carrying the standard simplex
+  into a standard simplex preserves coordinate sums.
 * `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
   the standard simplex, the points with some vanishing coordinate, and its compactness.
 * `TauCeti.mem_convexHull_pi_single_iff`: membership in the face of the standard simplex spanned
@@ -113,6 +115,24 @@ theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [LinearOrder 
   exact (lt_add_of_pos_right (x i) hxj).trans_le this
 
 end Convexity.StdSimplex
+
+/-- A linear map carrying the weight vectors of the standard simplex on `α` into those of the
+standard simplex on `β` preserves coordinate sums: it sends every vertex to a vector of coordinate
+sum one. -/
+theorem LinearMap.sum_apply_eq_of_mapsTo_range_weights {R α β : Type*} [Semiring R]
+    [PartialOrder R] [ZeroLEOneClass R] [Fintype α] [Fintype β] (L : (α → R) →ₗ[R] (β → R))
+    (hL : MapsTo L (Set.range fun t : StdSimplex R α => ⇑t.weights)
+      (Set.range fun t : StdSimplex R β => ⇑t.weights)) (v : α → R) :
+    ∑ b, L v b = ∑ a, v a := by
+  classical
+  have hvert (a : α) : ∑ b, L (Pi.single a 1) b = 1 := by
+    have ha : Pi.single a 1 ∈ Set.range fun t : StdSimplex R α => ⇑t.weights :=
+      StdSimplex.mem_range_toFun_comp_weights_iff.2 ⟨Pi.single_nonneg.2 zero_le_one, by simp⟩
+    exact (StdSimplex.mem_range_toFun_comp_weights_iff.1 (hL ha)).2
+  conv_lhs => rw [pi_eq_sum_univ' v]
+  simp_rw [map_sum, map_smul, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+  rw [Finset.sum_comm]
+  simp_rw [← Finset.mul_sum, hvert, mul_one]
 
 namespace TauCeti
 

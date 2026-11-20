@@ -24,8 +24,11 @@ linear equivalence `e.continuousLinearEquivAt 𝕜 b`, with inverse its symmetri
 `Bundle.Trivialization.homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt`).
 
 More generally, any linear trivialization sends a vector over its base set to a nonzero vector
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). Over the base
-set, its fibrewise linear inverse `e.symmₗ R b` is the inverse of the fibrewise linear equivalence
+exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`), and likewise
+for its inverse over the base set (`Bundle.Trivialization.symm_apply_ne_zero_iff`); both commute
+with scalar multiplication over the base set (`Bundle.Trivialization.snd_apply_mk_smul`,
+`Bundle.Trivialization.symm_apply_smul`). Over the base set, its fibrewise linear inverse
+`e.symmₗ R b` is the inverse of the fibrewise linear equivalence
 (`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
 (`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
@@ -33,11 +36,14 @@ of the first followed by the coordinate change from the first to the second
 (`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Linear coordinate changes
 satisfy the identity and cocycle laws over the relevant base sets
 (`Bundle.Trivialization.coordChangeL_same_apply`,
-`Bundle.Trivialization.coordChangeL_coordChangeL_apply`), and send the coordinate of a point in
+`Bundle.Trivialization.coordChangeL_coordChangeL_apply`), equal the identity outside the overlap
+(`Bundle.Trivialization.coordChangeL_of_notMem`), and send the coordinate of a point in
 the first trivialization to its coordinate in the second
 (`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
-point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`).
+point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
+linear maps on the model fibre back to a fibre through a linear trivialization is injective
+(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`).
 
 We also record the product trivialization's fibrewise inverse
 (`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
@@ -76,7 +82,7 @@ theorem homeomorphTrivial_apply (he : e.baseSet = Set.univ) (v : TotalSpace F E)
 @[simp]
 theorem homeomorphTrivial_symm_apply (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
-    (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.2) := by
+    (e.homeomorphTrivial he).symm w = e.toPartialHomeomorph.symm (w.proj, w.snd) := by
   rfl
 
 section Linear
@@ -89,8 +95,28 @@ include R in
 /-- A linear trivialization sends a vector over its base set to a nonzero vector exactly when the
 vector is nonzero. -/
 theorem snd_apply_ne_zero_iff {v : TotalSpace F E} (hv : v.proj ∈ e.baseSet) :
-    (e v).2 ≠ 0 ↔ v.2 ≠ 0 := by
+    (e v).2 ≠ 0 ↔ v.snd ≠ 0 := by
   simpa only [linearEquivAt_apply] using (e.linearEquivAt R v.proj hv).map_ne_zero_iff
+
+include R in
+/-- Over its base set, the inverse of a linear trivialization sends a vector of the model fibre to
+a nonzero vector exactly when the vector is nonzero. -/
+theorem symm_apply_ne_zero_iff {b : B} (hb : b ∈ e.baseSet) {w : F} :
+    e.symm b w ≠ 0 ↔ w ≠ 0 := by
+  simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_ne_zero_iff
+
+variable {R} in
+/-- Over its base set, a linear trivialization commutes with scalar multiplication in the fibre. -/
+theorem snd_apply_mk_smul {b : B} (hb : b ∈ e.baseSet) (c : R) (v : E b) :
+    (e ⟨b, c • v⟩).2 = c • (e ⟨b, v⟩).2 := by
+  simpa only [linearEquivAt_apply] using (e.linearEquivAt R b hb).map_smul c v
+
+variable {R} in
+/-- Over its base set, the inverse of a linear trivialization commutes with scalar
+multiplication. -/
+theorem symm_apply_smul {b : B} (hb : b ∈ e.baseSet) (c : R) (w : F) :
+    e.symm b (c • w) = c • e.symm b w := by
+  simpa only [linearEquivAt_symm_apply] using (e.linearEquivAt R b hb).symm.map_smul c w
 
 /-- Over the base set, the fibrewise linear inverse of a linear trivialization is the inverse of
 its fibrewise linear equivalence. -/
@@ -103,24 +129,40 @@ theorem symmₗ_injective {b : B} (hb : b ∈ e.baseSet) : Function.Injective (e
   rw [← e.coe_linearEquivAt_symm R hb, LinearEquiv.coe_coe]
   exact (e.linearEquivAt R b hb).symm.injective
 
+/-- Outside the overlap of two linear trivializations, their linear coordinate change is the
+identity equivalence. -/
+@[simp]
+theorem coordChangeL_of_notMem (e' : Trivialization F (π F E)) [e'.IsLinear R] {b : B}
+    (hb : b ∉ e.baseSet ∩ e'.baseSet) :
+    e.coordChangeL R e' b = ContinuousLinearEquiv.refl R F := by
+  apply ContinuousLinearEquiv.toLinearEquiv_injective
+  -- Mathlib defines `Bundle.Trivialization.coordChangeL` via a `dite` on
+  -- `b ∈ e.baseSet ∩ e'.baseSet` whose off-overlap branch is `LinearEquiv.refl R F`.
+  dsimp only [coordChangeL]
+  exact dite_eq_right hb
+
 end Linear
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
-  [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
+
+section FiberBundle
+
+variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E))
+  [e.IsLinear 𝕜]
 
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
     e.homeomorphTrivial he v = TotalSpace.mk' F v.proj (e.continuousLinearEquivAt 𝕜 v.proj
-      (he ▸ Set.mem_univ _) v.2) :=
+      (he ▸ Set.mem_univ _) v.snd) :=
   congrArg (Bundle.Trivial.homeomorphProd B F).symm
-    (e.apply_eq_prod_continuousLinearEquivAt 𝕜 v.proj (he ▸ Set.mem_univ _) v.2)
+    (e.apply_eq_prod_continuousLinearEquivAt 𝕜 v.proj (he ▸ Set.mem_univ _) v.snd)
 
 theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (w : TotalSpace F (Bundle.Trivial B F)) :
     (e.homeomorphTrivial he).symm w = TotalSpace.mk' F w.proj
-      ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.2) := by
+      ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.snd) := by
   rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
 
@@ -140,6 +182,15 @@ theorem tendsto_mk_nhds_mk_iff {ι : Type*} {l : Filter ι} {x : ι → B} {x₀
   exact Filter.tendsto_congr' (hb.mono fun i hi ↦
     (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hi _).symm)
 
+/-- Over the base set of a linear trivialization `e`, pulling continuous linear maps on the model
+fibre back to the fibre over `b` through `e` is injective. -/
+theorem injective_comp_continuousLinearMapAt {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {b : B} (hb : b ∈ e.baseSet) :
+    Function.Injective fun c : F →L[𝕜] G ↦ c ∘L e.continuousLinearMapAt 𝕜 b := by
+  intro c c' h
+  ext v
+  simpa [e.continuousLinearMapAt_symmL hb] using DFunLike.congr_fun h (e.symmL 𝕜 b v)
+
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 
 /-- **The fibre equivalences of two trivializations differ by the coordinate change**: for linear
@@ -152,15 +203,22 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
 
-omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+end FiberBundle
+
+section CoordChangeL
+
+variable (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
+
 /-- The coordinate change from a linear trivialization to itself is the identity over its base
 set. -/
 @[simp]
-theorem coordChangeL_same_apply (hb : b ∈ e.baseSet) (v : F) : e.coordChangeL 𝕜 e b v = v := by
+theorem coordChangeL_same_apply {b : B} (hb : b ∈ e.baseSet) (v : F) :
+    e.coordChangeL 𝕜 e b v = v := by
   rw [e.coordChangeL_apply' e ⟨hb, hb⟩]
   exact e.coordChange_same_apply hb v
 
-omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
+
 /-- **Cocycle law for linear coordinate changes**: over the intersection of three base sets, the
 coordinate change from `e` to `e'` followed by the one from `e'` to `e''` is the coordinate change
 from `e` to `e''`. -/
@@ -172,13 +230,14 @@ theorem coordChangeL_coordChangeL_apply (e'' : Trivialization F (π F E)) [e''.I
     e.coordChangeL_apply' e'' ⟨hb, hb''⟩]
   exact e.coordChange_coordChange e' e'' hb hb' v
 
-omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- The linear coordinate change from `e` to `e'` sends the coordinate of a point in `e` to its
 coordinate in `e'`. -/
 theorem coordChangeL_apply_snd {p : TotalSpace F E} (hb : p.proj ∈ e.baseSet)
     (hb' : p.proj ∈ e'.baseSet) : e.coordChangeL 𝕜 e' p.proj (e p).2 = (e' p).2 := by
   rw [e.coordChangeL_apply' e' ⟨hb, hb'⟩]
   exact e.coordChange_apply_snd e' hb
+
+end CoordChangeL
 
 end Bundle.Trivialization
 
@@ -247,3 +306,27 @@ theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Typ
   simp only [continuousLinearMapAt_apply, coe_linearMapAt]
 
 end Bundle.Trivialization
+
+namespace VectorBundle
+
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalSpace B]
+  (F : Type*) [NormedAddCommGroup F] [NormedSpace 𝕜 F] (E : B → Type*)
+  [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
+
+/-- The fibres of a topological vector bundle are topological additive groups: the preferred
+trivialization at `b` restricts to a linear homeomorphism of the fibre onto the model fibre. -/
+protected theorem isTopologicalAddGroup [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
+    [VectorBundle 𝕜 F E] (b : B) : IsTopologicalAddGroup (E b) :=
+  let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
+    (FiberBundle.mem_baseSet_trivializationAt' b)
+  e.toHomeomorph.isInducing.isTopologicalAddGroup e
+
+/-- The fibres of a topological vector bundle have continuous scalar multiplication: the preferred
+trivialization at `b` restricts to a linear homeomorphism of the fibre onto the model fibre. -/
+protected theorem continuousSMul [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+    [VectorBundle 𝕜 F E] (b : B) : ContinuousSMul 𝕜 (E b) :=
+  let e := (trivializationAt F E b).continuousLinearEquivAt 𝕜 b
+    (FiberBundle.mem_baseSet_trivializationAt' b)
+  e.toHomeomorph.isInducing.continuousSMul continuous_id fun {c x} ↦ e.map_smul c x
+
+end VectorBundle

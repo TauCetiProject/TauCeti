@@ -75,8 +75,8 @@ def ofCube : (n : ℕ) → (I^(Fin n)) → StdSimplex ℝ (Fin (n + 1))
         (Fin.cons (1 - t 0 : ℝ) fun k => (t 0 : ℝ) * (ofCube n (Fin.tail t)).weights k)
       nonneg := fun k => by
         refine Fin.cases ?_ (fun k => ?_) k
-        · simpa using (t 0).2.2
-        · simpa using mul_nonneg (t 0).2.1 (weights_nonneg (w := ofCube n (Fin.tail t)) k)
+        · simpa using (t 0).property.2
+        · simpa using mul_nonneg (t 0).property.1 (weights_nonneg (w := ofCube n (Fin.tail t)) k)
       total := by
         rw [Finsupp.sum_fintype _ _ (by simp)]
         simp [Fin.sum_univ_succ, ← Finset.mul_sum] }
@@ -107,7 +107,7 @@ lemma continuous_ofCube (n : ℕ) : Continuous (ofCube n) := by
     · simp only [Function.comp_apply, ofCube_weights_succ]
       have := (continuous_weights_apply ℝ k).comp
         (ih.comp (continuous_pi fun j => continuous_apply (A := fun _ => I) j.succ))
-      exact (continuous_subtype_val.comp (continuous_apply 0)).mul this
+      exact (continuous_subtypeVal.comp (continuous_apply 0)).mul this
 
 /-- A point of the cube whose image in the simplex has a vanishing barycentric coordinate lies
 on the boundary of the cube. -/
@@ -220,8 +220,8 @@ def prism {n : ℕ} (s : I) (w : StdSimplex ℝ (Fin (n + 1))) : StdSimplex ℝ 
     (Fin.cons (s * w.weights 0) (Fin.cons ((1 - s) * w.weights 0) fun k => w.weights k.succ))
   nonneg k := by
     refine Fin.cases ?_ (fun k => Fin.cases ?_ (fun k => ?_) k) k
-    · simpa using mul_nonneg s.2.1 (weights_nonneg (w := w) 0)
-    · simpa using mul_nonneg (sub_nonneg.2 s.2.2) (weights_nonneg (w := w) 0)
+    · simpa using mul_nonneg s.property.1 (weights_nonneg (w := w) 0)
+    · simpa using mul_nonneg (sub_nonneg.2 s.property.2) (weights_nonneg (w := w) 0)
     · simp
   total := by
     rw [Finsupp.sum_fintype _ _ (by simp)]

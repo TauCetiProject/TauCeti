@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Semigroups.Basic
 public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.Analysis.Semigroups.GrowthBound
 import Mathlib.Topology.Algebra.Group.Order
 
 /-!
@@ -16,7 +17,10 @@ import Mathlib.Topology.Algebra.Group.Order
 
 This file defines the infinitesimal generator as a `LinearPMap`, exposes domain
 membership through the explicit right-difference-quotient limit, and proves the local
-orbit-integral lemmas giving density of the generator domain.
+orbit-integral lemmas giving density of the generator domain. These include the shift identity
+`S(h) ∫_0^t S(σ) y dσ - ∫_0^t S(σ) y dσ = ∫_t^{t+h} S(σ) y dσ - ∫_0^h S(σ) y dσ` for `t, h ≥ 0`
+(`StronglyContinuousSemigroup.realOperator_intervalIntegral_orbit_sub`), together with
+continuity and norm bounds for the orbit integral `∫_0^τ S(σ) y dσ`.
 
 ## References
 Ported and adapted (Apache 2.0) from `mrdouglasny/hille-yosida`; references include
@@ -239,37 +243,68 @@ theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
     ((S.realOperator_continuousWithinAt x 0).mono Set.Ioi_subset_Ici_self)
   simpa using h
 
-private theorem StronglyContinuousSemigroup.local_integral_shift_identity
-    (S : StronglyContinuousSemigroup X) (x : X) {t h : ℝ} (ht : 0 < t) (hh : 0 < h) :
-    S.realOperator h (∫ u in (0 : ℝ)..t, S.realOperator u x) -
-        ∫ u in (0 : ℝ)..t, S.realOperator u x =
-      (∫ u in t..t + h, S.realOperator u x) - ∫ u in (0 : ℝ)..h, S.realOperator u x := by
-  set f := fun u => S.realOperator u x
-  have hf_zero_t : IntervalIntegrable f volume (0 : ℝ) t :=
-    (S.continuous_realOperator_apply x).intervalIntegrable _ _
-  have hf_h_th : IntervalIntegrable f volume h (t + h) :=
-    (S.continuous_realOperator_apply x).intervalIntegrable _ _
-  have hf_zero_h : IntervalIntegrable f volume (0 : ℝ) h :=
-    (S.continuous_realOperator_apply x).intervalIntegrable _ _
-  have hf_h_zero : IntervalIntegrable f volume h (0 : ℝ) := hf_zero_h.symm
-  have h_push : S.realOperator h (∫ u in (0 : ℝ)..t, f u) = ∫ u in h..t + h, f u := by
-    rw [← (S.realOperator h).intervalIntegral_comp_comm hf_zero_t]
-    rw [intervalIntegral.integral_congr (g := fun u => f (u + h))]
-    · simp [zero_add]
-    · intro u hu
-      have hu_nonneg : 0 ≤ u := by
-        rw [Set.uIcc_of_le ht.le] at hu
-        exact hu.1
-      have h_semigroup_apply :
-          S.realOperator h (S.realOperator u x) = S.realOperator (u + h) x := by
-        rw [← S.realOperator_add_apply h u hh.le hu_nonneg, add_comm]
-      simpa [f] using h_semigroup_apply
-  have h_sub :
-      (∫ u in h..t + h, f u) - ∫ u in (0 : ℝ)..t, f u =
-        (∫ u in t..t + h, f u) - ∫ u in (0 : ℝ)..h, f u := by
-    exact intervalIntegral.integral_interval_sub_interval_comm'
-      hf_h_th hf_zero_t hf_h_zero
-  rw [h_push, h_sub]
+/-- Joint continuity of the orbit integral `(τ, y) ↦ ∫_0^τ S(σ) y dσ`. -/
+theorem StronglyContinuousSemigroup.continuous_intervalIntegral_orbit
+    (S : StronglyContinuousSemigroup X) :
+    Continuous fun p : ℝ × X => ∫ σ in (0 : ℝ)..p.1, S.realOperator σ p.2 :=
+  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous
+    (f := fun (p : ℝ × X) σ => S.realOperator σ p.2)
+    (S.continuous_realOperator_uncurry.comp
+      (continuous_snd.prodMk (continuous_snd.comp continuous_fst))) continuous_fst
+
+omit [CompleteSpace X] in
+/-- `‖∫_0^τ S(σ) y dσ‖ ≤ C ‖y‖ τ` when `S` is bounded by `C` on `(0, τ]`. -/
+theorem StronglyContinuousSemigroup.norm_intervalIntegral_orbit_le
+    (S : StronglyContinuousSemigroup X) {C τ : ℝ} (hτ : 0 ≤ τ)
+    (hC : ∀ σ ∈ Set.Ioc 0 τ, ‖S.realOperator σ‖ ≤ C) (y : X) :
+    ‖∫ σ in (0 : ℝ)..τ, S.realOperator σ y‖ ≤ C * ‖y‖ * τ := by
+  have h := intervalIntegral.norm_integral_le_of_norm_le_const
+    (a := 0) (b := τ) (f := fun σ => S.realOperator σ y) (C := C * ‖y‖) fun σ hσ => by
+      rw [Set.uIoc_of_le hτ] at hσ
+      exact (S.realOperator σ).le_of_opNorm_le (hC _ hσ) _
+  rwa [sub_zero, abs_of_nonneg hτ] at h
+
+/-- `S(a) ∫_0^b S(σ) y dσ = ∫_a^{a+b} S(σ) y dσ` for `a, b ≥ 0`. -/
+theorem StronglyContinuousSemigroup.realOperator_intervalIntegral_orbit
+    (S : StronglyContinuousSemigroup X) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (y : X) :
+    S.realOperator a (∫ σ in (0 : ℝ)..b, S.realOperator σ y) =
+      ∫ σ in a..a + b, S.realOperator σ y := by
+  rw [← (S.realOperator a).intervalIntegral_comp_comm
+      ((S.continuous_realOperator_apply y).intervalIntegrable _ _),
+    intervalIntegral.integral_congr (g := fun σ => S.realOperator (σ + a) y)]
+  · rw [intervalIntegral.integral_comp_add_right (fun σ => S.realOperator σ y), zero_add,
+      add_comm b a]
+  · intro σ hσ
+    rw [Set.uIcc_of_le hb] at hσ
+    simp only
+    rw [← S.realOperator_add_apply a σ ha hσ.1, add_comm]
+
+/-- The shift identity for orbit integrals:
+`S(h) ∫_0^t S(σ) y dσ - ∫_0^t S(σ) y dσ = ∫_t^{t+h} S(σ) y dσ - ∫_0^h S(σ) y dσ`
+for `t, h ≥ 0`. -/
+theorem StronglyContinuousSemigroup.realOperator_intervalIntegral_orbit_sub
+    (S : StronglyContinuousSemigroup X) {t h : ℝ} (ht : 0 ≤ t) (hh : 0 ≤ h) (y : X) :
+    S.realOperator h (∫ σ in (0 : ℝ)..t, S.realOperator σ y) -
+        ∫ σ in (0 : ℝ)..t, S.realOperator σ y =
+      (∫ σ in t..t + h, S.realOperator σ y) - ∫ σ in (0 : ℝ)..h, S.realOperator σ y := by
+  have hi (a b : ℝ) : IntervalIntegrable (fun σ => S.realOperator σ y) volume a b :=
+    (S.continuous_realOperator_apply y).intervalIntegrable a b
+  rw [S.realOperator_intervalIntegral_orbit hh ht, add_comm t h]
+  exact intervalIntegral.integral_interval_sub_interval_comm' (hi _ _) (hi _ _) (hi _ _)
+
+/-- `(S(h) - 1) ∫_0^τ S = (S(τ) - 1) ∫_0^h S` for `τ, h ≥ 0`: both sides are
+`∫_τ^{τ+h} S - ∫_0^h S`. -/
+theorem StronglyContinuousSemigroup.realOperator_intervalIntegral_orbit_sub_comm
+    (S : StronglyContinuousSemigroup X) {τ h : ℝ} (hτ : 0 ≤ τ) (hh : 0 ≤ h) (y : X) :
+    S.realOperator h (∫ σ in (0 : ℝ)..τ, S.realOperator σ y) -
+        ∫ σ in (0 : ℝ)..τ, S.realOperator σ y =
+      S.realOperator τ (∫ σ in (0 : ℝ)..h, S.realOperator σ y) -
+        ∫ σ in (0 : ℝ)..h, S.realOperator σ y := by
+  have hi (a b : ℝ) : IntervalIntegrable (fun σ => S.realOperator σ y) volume a b :=
+    (S.continuous_realOperator_apply y).intervalIntegrable a b
+  rw [S.realOperator_intervalIntegral_orbit_sub hτ hh,
+    S.realOperator_intervalIntegral_orbit_sub hh hτ, add_comm h τ]
+  exact intervalIntegral.integral_interval_sub_interval_comm' (hi _ _) (hi _ _) (hi _ _)
 
 private theorem StronglyContinuousSemigroup.tendsto_average_orbit_at
     (S : StronglyContinuousSemigroup X) (x : X) (t : ℝ) :
@@ -309,7 +344,7 @@ private theorem StronglyContinuousSemigroup.tendsto_quot_integral_orbit
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.realOperator t x - x)) := by
     refine h_lim.congr' ?_
     filter_upwards [self_mem_nhdsWithin] with h hh
-    rw [StronglyContinuousSemigroup.local_integral_shift_identity S x ht hh]
+    rw [S.realOperator_intervalIntegral_orbit_sub ht.le hh.le x]
     rw [smul_sub]
   simpa [y, intervalIntegral.integral_of_le ht.le] using h_interval
 

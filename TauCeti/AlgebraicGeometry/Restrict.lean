@@ -69,8 +69,8 @@ range. -/
 theorem Scheme.Hom.isIso_morphismRestrict_of_le_opensRange [IsOpenImmersion f] {V : Y.Opens}
     (hV : V ≤ f.opensRange) : IsIso (f ∣_ V) := by
   refine (isIso_iff_isOpenImmersion_and_surjective _).mpr ⟨inferInstance, ⟨fun y ↦ ?_⟩⟩
-  obtain ⟨z, hz⟩ := hV y.2
-  exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.2)⟩,
+  obtain ⟨z, hz⟩ := hV y.property
+  exact ⟨⟨z, (Scheme.Hom.mem_preimage _).mpr (hz ▸ y.property)⟩,
     Subtype.ext ((morphismRestrict_base_coe _ _ _).trans hz)⟩
 
 /-- Restricting `f` over an open `U` of the target, with source the open `V = f ⁻¹ᵁ U` (up to a

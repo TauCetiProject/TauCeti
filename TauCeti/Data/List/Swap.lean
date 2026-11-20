@@ -55,7 +55,7 @@ theorem val_swapIndexEquiv (u v : List α) (a b : α) (j : Fin (u ++ b :: a :: v
 /-- Looking up an entry of `u ++ b :: a :: v` and translating its index gives the same entry of
 `u ++ a :: b :: v`. -/
 theorem getElem_swapIndexEquiv (u v : List α) (a b : α) (j : Fin (u ++ b :: a :: v).length) :
-    (u ++ b :: a :: v)[j.1] = (u ++ a :: b :: v)[(swapIndexEquiv u v a b j).1] := by
+    (u ++ b :: a :: v)[j.val] = (u ++ a :: b :: v)[(swapIndexEquiv u v a b j).val] := by
   grind [val_swapIndexEquiv]
 
 /-- The swap of indices of `u ++ b :: a :: v` is inverse to the swap of indices of

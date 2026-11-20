@@ -108,9 +108,7 @@ multiplication by `a` for even `j` and by `b` for odd `j`. -/
 theorem cyclicModuleResolutionComplex_d (j : ℕ) :
     (cyclicModuleResolutionComplex a b hab hba).d (j + 1) j =
       ModuleCat.ofHom (LinearMap.toSpanSingleton Aᵐᵒᵖ Aᵐᵒᵖ (op (if Even j then a else b))) := by
-  -- the two sides differ only in the reducible spelling of the terms `A` of the complex
-  by_cases hj : Even j <;> simp [HomologicalComplex.alternatingConst_d, Nat.even_add_one, hj] <;>
-    rfl
+  by_cases hj : Even j <;> simp [HomologicalComplex.alternatingConst_d, Nat.even_add_one, hj]
 
 /-- The differential of `TauCeti.cyclicModuleResolutionComplex` into degree `j` sends `c` to
 `c * op a` for even `j` and to `c * op b` for odd `j`. -/
@@ -248,7 +246,7 @@ def cyclicModuleRootPowProjectiveResolution :
     ProjectiveResolution (ModuleCat.of (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ
       ((AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ ⧸ Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]) ^ i)})) :=
   cyclicModuleProjectiveResolution AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff
-    AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff
+    AdjoinRoot.root_X_pow_pow_sub_mul_eq_zero_iff
 
 /-- The complex of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the general cyclic-module
 resolution complex specialized to `x ^ i` and `x ^ (n - i)`. -/
@@ -257,7 +255,7 @@ theorem cyclicModuleRootPowProjectiveResolution_complex :
     (cyclicModuleRootPowProjectiveResolution R n i).complex =
       (cyclicModuleProjectiveResolution
         (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff (n := n) (i := i))
-        (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff (n := n) (i := i))).complex :=
+        (AdjoinRoot.root_X_pow_pow_sub_mul_eq_zero_iff (n := n) (i := i))).complex :=
   (rfl)
 
 /-- Every term of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the free module

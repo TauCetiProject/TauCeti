@@ -54,7 +54,7 @@ def replaceMarginal (π : ProbabilityMeasure (∀ j, X j)) (i : ι)
   let _ : Nonempty (X i) := σ.nonempty.map Prod.fst
   let ρ : Measure ((∀ j, X j) × X i) :=
     π.toMeasure.map fun x ↦ (x, x i)
-  let γ : Measure ((∀ j, X j) × X i × X i) := glue ρ σ.toMeasure.condKernel
+  let γ : Measure ((∀ j, X j) × X i × X i) := ρ.glue σ.toMeasure.condKernel
   letI : IsProbabilityMeasure ρ := by
     dsimp only [ρ]
     infer_instance
@@ -69,7 +69,7 @@ private theorem toMeasure_replaceMarginal (π : ProbabilityMeasure (∀ j, X j))
     [StandardBorelSpace (X i)] [Nonempty (X i)]
     (σ : ProbabilityMeasure (X i × X i)) :
     (replaceMarginal π i σ).toMeasure =
-      (glue (π.toMeasure.map fun x ↦ (x, x i)) σ.toMeasure.condKernel).map
+      ((π.toMeasure.map fun x ↦ (x, x i)).glue σ.toMeasure.condKernel).map
         (fun q ↦ @Function.update ι X (Classical.decEq ι) q.1 i q.2.2) := by
   unfold replaceMarginal
   dsimp only
@@ -95,7 +95,7 @@ theorem map_eval_replaceMarginal_same (π : ProbabilityMeasure (∀ j, X j)) (i 
     simp
   rw [Measure.map_map (measurable_pi_apply i) (by fun_prop), hcomp,
     ← Measure.map_map measurable_snd measurable_snd, ← Measure.snd, ← Measure.snd,
-    snd_glue_condKernel ρ σ.toMeasure hρσ]
+    Measure.snd_glue_condKernel ρ σ.toMeasure hρσ]
 
 /-- Replacing coordinate `i` leaves the law of every measurable statistic that does not depend on
 that coordinate unchanged. -/
@@ -115,7 +115,7 @@ theorem map_replaceMarginal_eq_of_update_eq {Y : Type w} [MeasurableSpace Y]
     (Measure.fst_map_prodMk measurable_id (measurable_pi_apply i)).trans Measure.map_id
   rw [Measure.map_map hf (by fun_prop), hcomp,
     ← Measure.map_map hf measurable_fst, ← Measure.fst,
-    fst_glue, hfst]
+    Measure.fst_glue, hfst]
 
 /-- Replacing coordinate `i` leaves the marginal at every different coordinate `j` unchanged. -/
 @[simp]
@@ -159,7 +159,7 @@ def replaceMarginal (π : MultiCoupling μ) (i : ι) [StandardBorelSpace (X i)]
     (hσ : σ.toMeasure.fst = (μ i).toMeasure) :
     MultiCoupling (@Function.update ι (fun j ↦ ProbabilityMeasure (X j))
       (Classical.decEq ι) μ i (σ.map Prod.snd)) := by
-  refine ⟨Measure.replaceMarginal π.1 i σ, ?_⟩
+  refine ⟨Measure.replaceMarginal π.val i σ, ?_⟩
   constructor
   intro j
   by_cases hji : j = i
@@ -168,8 +168,8 @@ def replaceMarginal (π : MultiCoupling μ) (i : ι) [StandardBorelSpace (X i)]
     · simp only [Function.update_self, ProbabilityMeasure.toMeasure_map]
       rw [← Measure.snd]
     · rw [hσ]
-      exact (π.2.marginal_eq i).symm
-  · rw [Measure.map_eval_replaceMarginal_of_ne π.1 i σ hji, π.2.marginal_eq,
+      exact (π.property.marginal_eq i).symm
+  · rw [Measure.map_eval_replaceMarginal_of_ne π.val i σ hji, π.property.marginal_eq,
       @Function.update_of_ne ι (fun j ↦ ProbabilityMeasure (X j)) (Classical.decEq ι)
         j i hji (σ.map Prod.snd) μ]
 
@@ -180,7 +180,7 @@ theorem coe_replaceMarginal (π : MultiCoupling μ) (i : ι) [StandardBorelSpace
     (σ : ProbabilityMeasure (X i × X i))
     (hσ : σ.toMeasure.fst = (μ i).toMeasure) :
     (π.replaceMarginal i σ hσ : ProbabilityMeasure (∀ j, X j)) =
-      Measure.replaceMarginal π.1 i σ :=
+      Measure.replaceMarginal π.val i σ :=
   by
     apply ProbabilityMeasure.toMeasure_injective
     rfl

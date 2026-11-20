@@ -281,7 +281,7 @@ theorem cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom :
     Iso.trans_hom] at h ⊢
   refine Eq.trans ?_ h.symm
   exact congrArg (fun w ↦ (invariantsRestrictScalarsIntIso (resolutionX Y (i + 1))).hom w)
-    (Subtype.ext ((resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply f (i + 1) x.1).trans
+    (Subtype.ext ((resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply f (i + 1) x.val).trans
       (restrictScalarsInt_map_hom_apply _ _).symm))
 
 end Naturality
@@ -533,11 +533,11 @@ private theorem cochainsMap_comp_homogeneousCochainsRestrictScalarsIntIso_hom_of
   -- A homogeneous cochain is a subtype of `resolutionX _ (i + 1)`, and `cochainsMap` acts on its
   -- underlying element as `resolutionMap`; this unfolds the complex-map wrappers to that action.
   change (resolutionXRestrictScalarsIntIso Y (i + 1)).hom.hom
-      ((resolutionMap phi (resRestrictScalarsIntMap (phi : H →* G) f) (i + 1)).hom x.1) =
+      ((resolutionMap phi (resRestrictScalarsIntMap (phi : H →* G) f) (i + 1)).hom x.val) =
     (resolutionMap phi f (i + 1)).hom
-      ((homogeneousCochainsRestrictScalarsIntIso X).hom.f i x).1
+      ((homogeneousCochainsRestrictScalarsIntIso X).hom.f i x).val
   exact (resolutionXRestrictScalarsIntIso_hom_resolutionMap_apply_of_hom
-    phi f (i + 1) x.1).trans (congrArg
+    phi f (i + 1) x.val).trans (congrArg
       (fun z : (resolutionX X (i + 1)).V ↦ (resolutionMap phi f (i + 1)).hom z)
       (coe_homogeneousCochainsRestrictScalarsIntIso_hom_f X i x).symm)
 
@@ -731,6 +731,27 @@ theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply
     simp only [eqToHom_refl, CategoryTheory.id_apply]
     rfl
   exact key X.ρ.restrictScalarsInt (ofDiscreteModule_ρ_eq_restrictScalarsInt_obj_ρ X)
+
+/-- In degree two, `ofDiscreteModuleCocyclesRestrictScalarsIntIso` does not change the values of
+a homogeneous cocycle. -/
+-- Not a `simp` lemma, for the same reason as `iCycles_cocyclesRestrictScalarsIntEquiv_one_apply`.
+theorem iCycles_ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_two_apply
+    (w : cocycles (ofDiscreteModule ℤ G X.V) 2) (g₀ g₁ g₂ : G) :
+    ((homogeneousCochains X).iCycles 2
+        ((ofDiscreteModuleCocyclesRestrictScalarsIntIso X 2).hom w)).val g₀ g₁ g₂ =
+      ((homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂ := by
+  rw [ofDiscreteModuleCocyclesRestrictScalarsIntIso_hom_apply]
+  refine (iCycles_cocyclesRestrictScalarsIntEquiv_two_apply X _ g₀ g₁ g₂).trans ?_
+  -- The transport along the equality of objects is a `cast` of values once that equality has a
+  -- variable side; here both carriers are `X.V`, so the `cast` is the identity.
+  have hev : ∀ (B : TopRep ℤ G) (h : ofDiscreteModule ℤ G X.V = B),
+      ((homogeneousCochains B).iCycles 2
+          (eqToHom (congrArg (cocycles · 2) h) w)).val g₀ g₁ g₂ =
+        cast (congrArg TopRep.V h)
+          (((homogeneousCochains (ofDiscreteModule ℤ G X.V)).iCycles 2 w).val g₀ g₁ g₂) := by
+    rintro B rfl
+    simp only [eqToHom_refl, CategoryTheory.id_apply, cast_eq]
+  exact (hev _ (ofDiscreteModule_eq_restrictScalarsInt_obj X)).trans (cast_eq _ _)
 
 /-- `Hⁿ(G, X)` vanishes exactly when the `ℤ`-cohomology of the carrier of the discrete `X`
 vanishes. -/

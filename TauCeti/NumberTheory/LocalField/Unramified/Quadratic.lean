@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.LocalField.Norm.Quadratic
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 import TauCeti.NumberTheory.LocalField.Henselian
-import TauCeti.RingTheory.LocalRing.QuadraticDoubleRoot
 
 /-!
 # Integral bases of unramified quadratic extensions
@@ -91,23 +90,15 @@ private theorem residue_notMem_range_of_isUnit_discrim
     apply (algebraMap 𝓀[K] 𝓀[L]).injective
     rw [ResidueField.algebraMap_residue, map_zero, ← map_zero (residue 𝒪[L]), ← hroot]
     simp only [map_add, map_sub, map_mul, map_pow, ← ResidueField.algebraMap_residue, hr₀]
-  -- Hensel's lemma lifts `r` to a root `s ∈ 𝒪[K]`: the root is simple, as `T² - 4N` is a unit.
-  obtain ⟨s, hs, -, -⟩ := HenselianLocalRing.exists_quadratic_root_of_isUnit_discriminant
-    (a := -T) (b := -N) (t := r) (by rwa [neg_sq, mul_neg, ← sub_eq_add_neg])
+  -- Hensel's lemma lifts `r` to a root `s ∈ 𝒪[K]` (the root is simple, as `T² - 4N` is a unit), so
+  -- `ω = s` or `ω = T - s` lies in `𝒪[K]`.
+  obtain ⟨s, hs⟩ := TauCeti.HenselianRing.mem_range_algebraMap_of_isUnit_discrim
+    (I := 𝓂[K]) (b := -T) (c := N) (t := r)
+    (by simpa [neg_sq] using hω)
     ((residue_eq_zero_iff _).mp (by simpa [sub_eq_add_neg] using hres))
-  have hs' : s ^ 2 - T * s + N = 0 := by linear_combination hs
-  -- Then `(ω - s)(ω + s - T) = 0`, so `ω ∈ 𝒪[K]`.
-  have hfac : (ω - algebraMap 𝒪[K] 𝒪[L] s) * (ω + algebraMap 𝒪[K] 𝒪[L] (s - T)) = 0 := by
-    have := congrArg (algebraMap 𝒪[K] 𝒪[L]) hs'
-    simp only [map_add, map_sub, map_mul, map_pow, map_zero] at this ⊢
-    linear_combination hroot - this
-  refine coe_notMem_range_of_isUnit_discrim hω ?_
-  rcases mul_eq_zero.mp hfac with h | h
-  · exact ⟨s, by
-      rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), ← sub_eq_zero.mp h]⟩
-  · refine ⟨((-(s - T) : 𝒪[K]) : K), ?_⟩
-    rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), map_neg,
-      ← eq_neg_of_add_eq_zero_left h]
+    (x := ω) (by simpa [sub_eq_add_neg] using hroot)
+  refine coe_notMem_range_of_isUnit_discrim hω ⟨s, ?_⟩
+  rw [← Valuation.HasExtension.val_algebraMap (vA := valuation L), hs]
 
 /-- **An element of unit discriminant forces an unramified extension.** If `ω ∈ 𝒪[L]` has
 discriminant `Tr(ω)² - 4 N(ω)` a unit of `𝒪[K]`, then the quadratic extension `L/K` is

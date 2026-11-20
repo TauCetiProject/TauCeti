@@ -38,6 +38,8 @@ counting the countable models of an infinitary sentence.
   `bfEquivSetoid` unchanged;
 * `TauCeti.RelationalConfiguration.isoSetoid_le_bfEquivSetoid` — isomorphic configurations are
   equivalent at every level;
+* `Equiv.bfEquivSetoid_encodeVia_iff` — encodings of two structures on a common carrier are
+  `α`-equivalent exactly when the structures are;
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_bfEquivSetoid_of_isEmpty` — on an empty carrier,
   every back-and-forth level coincides with isomorphism;
 * `TauCeti.RelationalConfiguration.isoSetoid_iff_forall_bfEquivSetoid` — on a countable carrier,
@@ -60,7 +62,7 @@ counting the countable models of an infinitary sentence.
 
 public section
 
-universe u v w o o'
+universe u v w w' w'' o o'
 
 open FirstOrder FirstOrder.Language
 
@@ -99,7 +101,8 @@ theorem measurableSet_setOf_bfEquiv [Countable V] [∀ n, Countable (L.Relations
     -- Limit below `ω₁`: a conjunction over the countably many smaller levels.
     have : Countable (Set.Iio α) := (Cardinal.countable_Iio_of_lt_omega_one hα).to_subtype
     simp only [BFEquiv.limit hlim]
-    have h := Measurable.forall (ι := Set.Iio α) fun β => ih β.1 β.2 (β.2.trans hα) a b
+    have h := Measurable.forall (ι := Set.Iio α) fun β => ih β.val β.property
+        (β.property.trans hα) a b
     simpa only [Subtype.forall, Set.mem_Iio] using h
 
 variable (L V) in
@@ -140,6 +143,31 @@ theorem isoSetoid_le_bfEquivSetoid (α : Ordinal.{o}) : isoSetoid L V ≤ bfEqui
     obtain ⟨e⟩ := isoSetoid_apply.mp hcd
     have h := @Language.Equiv.bfEquiv L _ V V c.toStructure d.toStructure e α 0 Fin.elim0
     rwa [Subsingleton.elim (e ∘ Fin.elim0) Fin.elim0] at h
+
+/-- Structures transported to a common carrier have `α`-equivalent encodings exactly when their
+empty tuples are back-and-forth equivalent at depth `α`, whatever their universes. -/
+theorem _root_.Equiv.bfEquivSetoid_encodeVia_iff {M : Type w'} {N : Type w''} [L.Structure M]
+    [L.Structure N] (e : M ≃ V) (f : N ≃ V) {α : Ordinal.{o}} :
+    bfEquivSetoid L V α (e.encodeVia (L := L)) (f.encodeVia (L := L)) ↔
+      BFEquiv (L := L) α 0 (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N) := by
+  set S := (e.encodeVia (L := L)).toStructure
+  set T := (f.encodeVia (L := L)).toStructure
+  obtain ⟨E⟩ := e.nonempty_equiv_encodeVia (L := L)
+  obtain ⟨F⟩ := f.nonempty_equiv_encodeVia (L := L)
+  have hE : @BFEquiv L _ M V _ S α 0 Fin.elim0 Fin.elim0 := by
+    have h := @Language.Equiv.bfEquiv L _ M V _ S E α 0 Fin.elim0
+    rwa [Subsingleton.elim (E ∘ Fin.elim0) Fin.elim0] at h
+  have hF : @BFEquiv L _ N V _ T α 0 Fin.elim0 Fin.elim0 := by
+    have h := @Language.Equiv.bfEquiv L _ N V _ T F α 0 Fin.elim0
+    rwa [Subsingleton.elim (F ∘ Fin.elim0) Fin.elim0] at h
+  rw [bfEquivSetoid_apply]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · exact @BFEquiv.trans L _ M V N _ S _ 0 Fin.elim0 Fin.elim0 Fin.elim0 α hE
+      (@BFEquiv.trans L _ V V N S T _ 0 Fin.elim0 Fin.elim0 Fin.elim0 α h
+        (@BFEquiv.symm L _ N V _ T 0 Fin.elim0 Fin.elim0 α hF))
+  · exact @BFEquiv.trans L _ V M V S _ T 0 Fin.elim0 Fin.elim0 Fin.elim0 α
+      (@BFEquiv.symm L _ M V _ S 0 Fin.elim0 Fin.elim0 α hE)
+      (@BFEquiv.trans L _ M N V _ _ T 0 Fin.elim0 Fin.elim0 Fin.elim0 α h hF)
 
 /-- On an empty carrier, configurations that agree at back-and-forth level zero are equal. -/
 theorem eq_of_bfEquivSetoid_zero [IsEmpty V] {c d : RelationalConfiguration L V}

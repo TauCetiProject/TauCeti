@@ -108,7 +108,7 @@ theorem schroedingerValue_le_liminf_schroedingerValue_of_isTightMeasureSet [T2Sp
     by_cases hn : schroedingerValue (Rs n).toMeasure (μs n).toMeasure (νs n).toMeasure < a
     · obtain ⟨σ, hσ, hσa⟩ := schroedingerValue_lt_iff.mp hn
       exact ⟨⟨σ, hσ.isProbabilityMeasure⟩, hσ, fun _ ↦ hσa⟩
-    · exact ⟨(Coupling.prod (μs n) (νs n)).1, (Coupling.prod (μs n) (νs n)).2,
+    · exact ⟨(Coupling.prod (μs n) (νs n)).val, (Coupling.prod (μs n) (νs n)).property,
         fun h ↦ absurd h hn⟩
   choose πs hπs hπsa using hchoice
   let lb := l ⊓ 𝓟 {n | schroedingerValue (Rs n).toMeasure (μs n).toMeasure (νs n).toMeasure < a}

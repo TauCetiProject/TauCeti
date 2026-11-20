@@ -138,7 +138,7 @@ private theorem agree (c d : PointedWeierstrassChart E.structureMap E.zero) :
   have hU : Set.range ((r ⁻¹ᵁ V).ι ≫ r) ⊆ Set.range (c.restrictι V') := by
     rintro _ ⟨y, rfl⟩
     rw [range_restrictι, Scheme.Hom.comp_apply]
-    exact y.2
+    exact y.property
   have hℓ : ((r ⁻¹ᵁ V).ι ≫ pullback.fst _ _ ≫ pullback.fst _ _) ≫ q =
       IsOpenImmersion.lift (c.restrictι V') _ hU ≫ (c.restrict V').baseMap := by
     rw [← restrictι_baseMap, IsOpenImmersion.lift_fac_assoc]
