@@ -230,8 +230,8 @@ theorem lintegral_mul_setLIntegral_rpow_le [SFinite ν] [SFinite μ] {R : β →
           mul_inv_cancel₀ hr0.ne', ENNReal.rpow_one]
 
 /-- **Minkowski's integral inequality for power-weighted truncations.** If the truncation of the
-weight `t ^ s` at each point `x` is at most `K f(x) ^ (qᵢ (p - pᵢ) / pᵢ)`, then the weighted
-`L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
+weight `t ^ s` at each point `x` is at most `K f(x) ^ (qᵢ (p - pᵢ) / pᵢ)`, then the `t ^ s`-weighted
+integral in `t` of the `(qᵢ / pᵢ)`-th powers of the truncated integrals of `f ^ pᵢ` is at most
 `K (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. This is the estimate for one endpoint in Marcinkiewicz interpolation
 and in the real interpolation of `Lᵖ` spaces, where the truncations cut `f` at a power `c t ^ γ` of
 the parameter. -/
@@ -293,7 +293,7 @@ theorem measurable_ofReal_rpow_mul_setLIntegral_rpow [SFinite μ] {f : α → �
 
 /-- **The endpoint estimate above a height.** Truncate `f` above the height `c * t ^ γ`, where the
 exponents are tied by `(s + 1) / γ = qᵢ (p - pᵢ) / pᵢ` with `pᵢ < p`. Then the `t ^ s`-weighted
-`L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
+integral in `t` of the `(qᵢ / pᵢ)`-th powers of the truncated integrals of `f ^ pᵢ` is at most
 `c ^ (qᵢ (pᵢ - p) / pᵢ) / |s + 1| (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
 theorem lintegral_mul_setLIntegral_ofReal_mul_rpow_lt_le [SFinite μ] {f : α → ℝ≥0∞}
     (hf : Measurable f) {p pᵢ qᵢ s γ c : ℝ} (hc : 0 < c) (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)
@@ -309,7 +309,7 @@ theorem lintegral_mul_setLIntegral_ofReal_mul_rpow_lt_le [SFinite μ] {f : α �
 
 /-- **The endpoint estimate up to a height.** Truncate `f` up to the height `c * t ^ γ`, where the
 exponents are tied by `(s + 1) / γ = qᵢ (p - pᵢ) / pᵢ` with `p < pᵢ`. Then the `t ^ s`-weighted
-`L^{qᵢ / pᵢ}` norm in `t` of the truncated integrals of `f ^ pᵢ` is at most
+integral in `t` of the `(qᵢ / pᵢ)`-th powers of the truncated integrals of `f ^ pᵢ` is at most
 `c ^ (qᵢ (pᵢ - p) / pᵢ) / |s + 1| (∫⁻ f ^ p) ^ (qᵢ / pᵢ)`. -/
 theorem lintegral_mul_setLIntegral_le_ofReal_mul_rpow_le [SFinite μ] {f : α → ℝ≥0∞}
     (hf : Measurable f) {p pᵢ qᵢ s γ c : ℝ} (hc : 0 < c) (hpᵢ : 0 < pᵢ) (hpq : pᵢ ≤ qᵢ)

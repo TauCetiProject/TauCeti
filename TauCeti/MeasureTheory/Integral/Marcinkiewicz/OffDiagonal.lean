@@ -233,15 +233,11 @@ private theorem lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable
   have hσ : SigmaFinite (μ.restrict {x | 0 < f x}) :=
     sigmaFinite_restrict_pos_of_lintegral_rpow_ne_top hf.aemeasurable hp htop
   -- A positive power of `f` vanishes off `{f > 0}`, so no truncated integral sees the complement.
-  have key : ∀ r : ℝ, 0 < r → ∀ S : Set α,
-      ∫⁻ x in S, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x in S, f x ^ r ∂μ :=
-    fun _ hr S => setLIntegral_rpow_restrict_pos hf hr S
-  have ep : ∫⁻ x, f x ^ p ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x, f x ^ p ∂μ := by
-    simpa using key p hp Set.univ
   have hmain := lintegral_rpow_le_of_meas_ofReal_lt_le_rpow_of_measurable_of_sFinite
     (μ := μ.restrict {x | 0 < f x}) hf hu hp₀ hlt₀ hlt₁ hpq₀ hpq₁ hγ₀ hγ₁ hc fun t ht => by
-      rw [key p₀ hp₀, key p₁ hp₁]; exact h t ht
-  rwa [ep] at hmain
+      rw [setLIntegral_rpow_restrict_pos hf hp₀, setLIntegral_rpow_restrict_pos hf hp₁]
+      exact h t ht
+  rwa [lintegral_rpow_restrict_pos hf hp] at hmain
 
 /-- **Off-diagonal Marcinkiewicz interpolation**, in distributional form.
 

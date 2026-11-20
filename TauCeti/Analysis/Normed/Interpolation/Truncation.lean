@@ -364,7 +364,7 @@ private theorem lintegral_multHaar_enorm_rpow_le [Fact (1 ≤ p)] (hθ : θ ∈ 
   rw [hNc, lintegral_multHaar_eq_setLIntegral]
   refine (setLIntegral_mono' measurableSet_Ioi fun t ht => ?_).trans
     (setLIntegral_Ioi_two_mul_add_le (ν := μ.restrict {x | 0 < g x}) hg ha har hrb hbQ hθ hγa hγb
-      hc (by rw [← hI]; simpa using setLIntegral_rpow_restrict_pos (μ := μ) hg hr univ))
+      hc (by rw [← hI]; exact lintegral_rpow_restrict_pos hg hr))
   simpa only [setLIntegral_rpow_restrict_pos hg ha,
     setLIntegral_rpow_restrict_pos hg (ha.trans (har.trans hrb))] using
     ofReal_inv_mul_enorm_rpow_le f h₀ h₁ hp₁ hQ1 ht

@@ -574,6 +574,12 @@ theorem setLIntegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r
   rw [Measure.restrict_restrict' hpos, Set.inter_comm, ← Measure.restrict_restrict hpos]
   exact setLIntegral_eq_of_support_subset hsupp
 
+/-- The whole-space case of `TauCeti.setLIntegral_rpow_restrict_pos`: restricting `μ` to
+`{f > 0}` does not change the integral of a positive power of `f`. -/
+theorem lintegral_rpow_restrict_pos (hf : Measurable f) {r : ℝ} (hr : 0 < r) :
+    ∫⁻ x, f x ^ r ∂(μ.restrict {x | 0 < f x}) = ∫⁻ x, f x ^ r ∂μ := by
+  simpa using setLIntegral_rpow_restrict_pos hf hr univ
+
 variable {β : Type*} [MeasurableSpace β]
 
 /-- **The layer cake formula** for an `ℝ≥0∞`-valued function: for `0 < p`,
