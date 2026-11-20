@@ -103,10 +103,12 @@ theorem analyticOnNhd_bernoulliKernel : AnalyticOnNhd ℝ bernoulliKernel Set.un
   ((analyticOnNhd_rexp (u := Set.univ)).dslope 0 t trivial).inv (Real.dslope_exp_pos 0 t).ne'
 
 /-- The Bernoulli kernel is smooth, indeed real analytic (`n = ω`). -/
+@[fun_prop]
 theorem contDiff_bernoulliKernel {n : WithTop ℕ∞} : ContDiff ℝ n bernoulliKernel :=
   analyticOnNhd_bernoulliKernel.contDiff
 
 /-- The Bernoulli kernel is continuous. -/
+@[fun_prop]
 theorem continuous_bernoulliKernel : Continuous bernoulliKernel :=
   (contDiff_bernoulliKernel (n := 0)).continuous
 
