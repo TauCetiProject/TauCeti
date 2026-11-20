@@ -268,7 +268,7 @@ private theorem continuous_spinTwoToCircle : Continuous spinTwoToCircle := by
   let _ : ContinuousAdd (CliffordAlgebra (realCliffordForm 2 0)) :=
     IsModuleTopology.toContinuousAdd ℝ _
   exact ((IsModuleTopology.continuous_of_linearMap planeValue).comp
-    continuous_subtype_val).subtype_mk _
+    continuous_subtypeVal).subtype_mk _
 
 private theorem continuous_circleToSpecialOrthogonal : Continuous circleToSpecialOrthogonal := by
   apply (QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear _).isInducing.continuous_iff.2
@@ -280,7 +280,7 @@ private theorem continuous_circleToSpecialOrthogonal : Continuous circleToSpecia
     have hc : Continuous fun z : Circle ↦
         planeCoord.symm ((z : ℂ) * planeCoord (Pi.single j 1)) :=
       (LinearMap.continuous_of_finiteDimensional planeCoord.symm.toLinearMap).comp
-        (continuous_subtype_val.mul continuous_const)
+        (continuous_subtypeVal.mul continuous_const)
     convert (continuous_apply i).comp hc using 2 with z
     simp only [MonoidHom.comp_apply, Units.coeHom_apply,
       QuadraticMap.specialOrthogonalToGeneralLinear_apply, Function.comp_apply]

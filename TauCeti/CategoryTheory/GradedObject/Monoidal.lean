@@ -154,7 +154,6 @@ lemma id_tensorHom_eq_mapMap [AddMonoid I] [MonoidalCategory C] (X : GradedObjec
       mapMap (((mapBifunctor (curriedTensor C) I I).obj X).map g) (fun x ↦ x.1 + x.2) n := by
   dsimp [tensorHom, mapBifunctorMapMap]
   simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
-  rfl
 
 /-- The inclusion of the summand `X₁ i₁ ⊗ X₂ i₂` into the tensor product of graded objects in
 degree `i₁ + i₂` is a split monomorphism in a category with zero morphisms, being a coprojection

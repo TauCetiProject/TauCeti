@@ -107,7 +107,7 @@ theorem hasSum_log_of_mem_unitFiltration_one (p : ℕ) [Fact p.Prime]
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   have hγ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hγ0 : 0 < valuation K (π : K) := by
-    simpa [zero_lt_iff] using hπ.ne_zero
+    simpa [pos_iff_ne_zero] using hπ.ne_zero
   have hxγ : valuation K ((u : K) - 1) ≤ valuation K (π : K) := by
     simpa using ((mem_unitFiltration_iff_valuation_le hπ).mp hu).2
   have hsum : Summable (fun n : ℕ => (-1) ^ (n + 1) / n * ((u : K) - 1) ^ n) := by
@@ -144,7 +144,7 @@ private theorem valuation_logSeries_coeff_mul_pow_sub_pow_mul_le (p : ℕ) [Fact
       valuation K (a - b) := by
   have hγ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hγ0 : 0 < valuation K (π : K) := by
-    simpa [zero_lt_iff] using hπ.ne_zero
+    simpa [pos_iff_ne_zero] using hπ.ne_zero
   have hexp : absoluteRamificationIndex K p * padicValNat p n ≤ n - 1 + (C + 1) := by
     have := hC n
     omega
@@ -172,7 +172,7 @@ theorem continuous_log_unitFiltration (p : ℕ) [Fact p.Prime] [FinitePadicExten
   have hπ0 : valuation K (π : K) ≠ 0 := by
     simpa using hπ.ne_zero
   have hc : Continuous fun u : unitFiltration K i => ((u : Kˣ) : K) :=
-    Units.continuous_val.comp continuous_subtype_val
+    Units.continuous_val.comp continuous_subtypeVal
   have hdisc : ∀ u : unitFiltration K i, valuation K (((u : Kˣ) : K) - 1) ≤ valuation K (π : K) :=
     fun u => by simpa using ((mem_unitFiltration_iff_valuation_le hπ).mp
       (unitFiltration_antitone hi u.property)).2
@@ -185,7 +185,7 @@ theorem continuous_log_unitFiltration (p : ℕ) [Fact p.Prime] [FinitePadicExten
     (unitFiltration_antitone hi u.property)) γ fun n => ?_
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  rw [← mul_lt_mul_iff_left₀ (pow_pos (zero_lt_iff.mpr hπ0) (C + 1))]
+  rw [← mul_lt_mul_iff_left₀ (pow_pos (pos_iff_ne_zero.mpr hπ0) (C + 1))]
   refine (valuation_logSeries_coeff_mul_pow_sub_pow_mul_le p hπ hC (hdisc w) (hdisc u)
     hn).trans_lt ?_
   simpa only [sub_sub_sub_cancel_right, Units.val_mul, Units.val_pow_eq_pow_val,
@@ -203,7 +203,7 @@ private theorem valuation_logSeries_coeff_mul_pow_sub_pow_le {π : 𝒪[K]} (hπ
       valuation K (a - b) * valuation K (π : K) := by
   have hγ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hγ0 : 0 < valuation K (π : K) := by
-    simpa [zero_lt_iff] using hπ.ne_zero
+    simpa [pos_iff_ne_zero] using hπ.ne_zero
   rw [← mul_le_mul_iff_left₀ (pow_pos hγ0 (absoluteRamificationIndex K p * padicValNat p n)),
     valuation_logSeries_coeff_mul p hπ (by omega)]
   calc valuation K (a ^ n - b ^ n)
@@ -244,11 +244,11 @@ theorem valuation_log_sub_log_sub_sub_lt {i : ℕ}
   have hlt : ∀ n, valuation K (Function.update f 1 0 n) < valuation K ((u : K) - w) := by
     intro n
     rcases eq_or_ne n 1 with rfl | hn1
-    · simpa [zero_lt_iff] using huw0
+    · simpa [pos_iff_ne_zero] using huw0
     rw [Function.update_of_ne hn1]
     rcases eq_or_ne n 0 with rfl | hn0
-    · simpa [hf_def, zero_lt_iff] using huw0
-    refine lt_of_le_of_lt ?_ (mul_lt_of_lt_one_right (zero_lt_iff.mpr huw0) hγ1)
+    · simpa [hf_def, pos_iff_ne_zero] using huw0
+    refine lt_of_le_of_lt ?_ (mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr huw0) hγ1)
     simpa only [sub_sub_sub_cancel_right] using
       valuation_logSeries_coeff_mul_pow_sub_pow_le hπ hi hu1 hw1 (by omega : 2 ≤ n)
   -- The modified series sums to `log u - log w - (u - w)`.

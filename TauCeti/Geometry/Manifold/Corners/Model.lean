@@ -109,7 +109,7 @@ theorem coe_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadr
 @[fun_prop]
 theorem continuous_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceInclusion (m := m) i) :=
-  ((euclideanQuadrantFaceParam i).continuous.comp continuous_subtype_val).subtype_mk _
+  ((euclideanQuadrantFaceParam i).continuous.comp continuous_subtypeVal).subtype_mk _
 
 /-- The retraction of the quadrant of dimension `m + 1` onto its face `z i = 0`, read in the
 quadrant of dimension `m`: delete the coordinate `i`. On the face it inverts
@@ -126,7 +126,7 @@ theorem coe_euclideanQuadrantFaceRetract (i : Fin (m + 1)) (z : EuclideanQuadran
 @[fun_prop]
 theorem continuous_euclideanQuadrantFaceRetract (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceRetract (m := m) i) :=
-  ((euclideanQuadrantFaceProj i).continuous.comp continuous_subtype_val).subtype_mk _
+  ((euclideanQuadrantFaceProj i).continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem euclideanQuadrantFaceRetract_faceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :

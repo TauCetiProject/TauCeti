@@ -158,13 +158,13 @@ private theorem valuation_mul_prod_map_max_lt (x : closedPolydisc 1 K) {S : Mult
       x.val.valuation (C u) *
         (S.map fun α ↦ max (x.val.valuation g) (x.val.valuation (C (b - α)))).prod := by
   refine mul_lt_mul_of_pos_left ?_
-    (zero_lt_iff.mpr fun h0 ↦ hu ((closedPolydisc_valuation_weightedC_eq_zero_iff x u).mp h0))
+    (pos_iff_ne_zero.mpr fun h0 ↦ hu ((closedPolydisc_valuation_weightedC_eq_zero_iff x u).mp h0))
   obtain ⟨S, rfl⟩ := Multiset.exists_cons_of_mem hb
   simp only [Multiset.map_cons, Multiset.prod_cons, sub_self, map_zero, max_eq_left zero_le]
   have hpos : 0 < (S.map fun α ↦ max (x.val.valuation g) (x.val.valuation (C (b - α)))).prod := by
-    refine zero_lt_iff.mpr (Multiset.prod_ne_zero fun h0 ↦ ?_)
+    refine pos_iff_ne_zero.mpr (Multiset.prod_ne_zero fun h0 ↦ ?_)
     obtain ⟨α, -, hα⟩ := Multiset.mem_map.mp h0
-    exact (zero_le.trans_lt h).ne' (le_zero_iff.mp (hα ▸ le_max_left _ _))
+    exact (zero_le.trans_lt h).ne' (nonpos_iff_eq_zero.mp (hα ▸ le_max_left _ _))
   calc x.val.valuation f * (S.map fun α ↦ max (x.val.valuation f) (x.val.valuation (C
       (b - α)))).prod
       ≤ x.val.valuation f * (S.map fun α ↦ max (x.val.valuation g) (x.val.valuation (C
@@ -222,7 +222,7 @@ theorem setOf_eval₂RingHom_vle_weightedC_eq_iUnion_closedSubdisc
       have key := valuation_mul_prod_map_max_lt x hu hb hlt
       rw [valuation_mul_prod_map_max_eq x (hd b hb), ← hval] at key
       exact key.not_ge ((valuation_le_iff _ _ _).mpr h)
-    · rw [← map_zero C, ← valuation_le_iff, map_zero C, map_zero, le_zero_iff,
+    · rw [← map_zero C, ← valuation_le_iff, map_zero C, map_zero, nonpos_iff_eq_zero,
         closedPolydisc_valuation_weightedC_eq_zero_iff] at h0
       exact ne_zero_of_norm_mul_prod_map_max_eq hb (hd b hb) hc h0
   · rintro ⟨b, hb, h, -⟩

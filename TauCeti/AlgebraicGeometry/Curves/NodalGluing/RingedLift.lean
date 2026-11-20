@@ -111,7 +111,7 @@ private theorem exists_chartAt_section {y : Σ i, X i} (hy : y ∉ flagPointSet 
     ofMDifferentiable (fun p ↦ chartAt ℂ y p.val) fun p ↦
       ((mdifferentiableAt_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas y)
         ((hmemU p.val).mp p.property).1).comp p
-        (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero p))
+        (contMDiff_subtypeVal (n := 1).mdifferentiable one_ne_zero p))
   have hχ : χ ∈ quotientSectionSubring 𝓘(ℂ) (gluedRelSetoid d) U := by
     rw [quotientSectionSubring_eq_top_of_injOn]
     · trivial

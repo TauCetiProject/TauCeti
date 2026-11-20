@@ -91,7 +91,7 @@ private theorem coe_levelHomeomorph (hf : ContMDiff I J m f)
 private theorem contMDiff_coordinate (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) :
     ContMDiff I 𝓘(ℝ, F) m (fun x : domain hf φ ↦ φ (f x)) :=
-  φ.contMDiffOn.comp_contMDiff (hf.comp contMDiff_subtype_val) fun x ↦ x.2
+  φ.contMDiffOn.comp_contMDiff (hf.comp contMDiff_subtypeVal) fun x ↦ x.property
 
 /-- Target coordinates and the open inclusion both have invertible differential, so regularity
 is unchanged by passing to the coordinate level. -/

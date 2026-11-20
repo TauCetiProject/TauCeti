@@ -572,8 +572,8 @@ private theorem continuous_shapiroPrimitive2 (hw : Continuous w) (f : G × G →
     (hf : Continuous f) : Continuous (shapiroPrimitive2 w f) := by
   have hwa : Continuous fun p : G × G => w p.1 := hw.comp continuous_fst
   have hwb : Continuous fun p : G × G => w p.2 := hw.comp continuous_snd
-  have hva : Continuous fun p : G × G => ((w p.1 : U) : G) := continuous_subtype_val.comp hwa
-  have hvb : Continuous fun p : G × G => ((w p.2 : U) : G) := continuous_subtype_val.comp hwb
+  have hva : Continuous fun p : G × G => ((w p.1 : U) : G) := continuous_subtypeVal.comp hwa
+  have hvb : Continuous fun p : G × G => ((w p.2 : U) : G) := continuous_subtypeVal.comp hwb
   have hkey : shapiroPrimitive2 w f = fun p : G × G =>
       w p.1 • f (((w p.1 : U) : G)⁻¹ * p.1, p.1⁻¹ * p.2) 1 -
         w p.1 • f (((w p.1 : U) : G)⁻¹ * ((w p.2 : U) : G), ((w p.2 : U) : G)⁻¹ * p.2) 1 := by

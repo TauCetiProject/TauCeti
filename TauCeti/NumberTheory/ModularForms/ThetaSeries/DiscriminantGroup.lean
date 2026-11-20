@@ -267,7 +267,7 @@ theorem thetaCosetClass_intCast_vadd (hL : IsEven L) (γ : DiscriminantGroup L) 
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
     rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.property, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 
@@ -286,7 +286,7 @@ theorem thetaCosetClass_slash_T_zpow (hL : IsEven L) (γ : DiscriminantGroup L) 
   induction γ using Submodule.Quotient.induction_on with
   | H x =>
     rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.property, hL.discriminantQuadraticChar_mk,
-      ← Complex.exp_int_mul]
+      ← Complex.exp_intCast_mul]
     congr 2
     ring
 

@@ -252,7 +252,7 @@ theorem exists_openNormalSubgroup_memFinite_le {M : Subgroup G} (hM : IsOpen (M 
     exact ⟨U.val, U.property, fun _ hx ↦ Set.sdiff_eq_empty.mp hU hx⟩
   by_contra hcon
   have hnonempty : ∀ U : S, (t U).Nonempty := fun U ↦ by
-    rw [Set.nonempty_iff_ne_empty]
+    rw [← Set.ne_empty_iff_nonempty]
     exact fun h ↦ hcon ⟨U, h⟩
   have hclosed : ∀ U : S, IsClosed (t U) := fun U ↦ (U.val.toOpenSubgroup.isClosed).sdiff hM
   -- The family is closed under intersection, so the sets `t U` are downward directed.

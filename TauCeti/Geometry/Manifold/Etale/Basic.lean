@@ -250,7 +250,7 @@ theorem isLocalDiffeomorph_composablePairs_fst
       (fun p : {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left} ↦ p.val.1) := by
   let := composablePairsChartedSpace (H' := H') hs.isLocalHomeomorph
   refine fun p ↦ IsLocalDiffeomorphAt.of_comp_left ?_ (ht p.val.1)
-    (continuous_fst.comp continuous_subtype_val).continuousAt
+    (continuous_fst.comp continuous_subtypeVal).continuousAt
   simpa only [Function.comp_def, funext fun q : {q : Quiver.Total D × Quiver.Total D //
     q.1.right = q.2.left} ↦ q.property] using
     (isLocalDiffeomorph_composablePairs_snd (J := J) (n := n) hs.isLocalHomeomorph p).comp

@@ -125,11 +125,7 @@ theorem peterssonInnerCosets_zero_left (g : CuspForm (Γ.map (mapGL ℝ)) k) :
 
 omit [Γ.FiniteIndex] in
 private theorem out_one_mem_WithCenter :
-    ((QuotientGroup.mk 1 : SL(2, ℤ) ⧸ Γ.withCenter)).out ∈ Γ.withCenter := by
-  have h : (QuotientGroup.mk
-      ((QuotientGroup.mk 1 : SL(2, ℤ) ⧸ Γ.withCenter)).out : SL(2, ℤ) ⧸ Γ.withCenter) =
-      QuotientGroup.mk 1 := Quotient.out_eq _
-  simpa using (Γ.withCenter).inv_mem (QuotientGroup.eq.mp h)
+    ((QuotientGroup.mk 1 : SL(2, ℤ) ⧸ Γ.withCenter)).out ∈ Γ.withCenter := by simp
 
 omit [Γ.FiniteIndex] in
 /-- **Slashing by `Γ·{±I}` scales every form by one and the same unimodular constant**: by `1`

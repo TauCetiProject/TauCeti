@@ -105,7 +105,7 @@ theorem exists_isOpenEmbedding_prod_ball (hS : S.Finite) {r : ℝ} (hr : 0 < r) 
   let g (s : S) (z : E) : X := (chartAt E (s : X)).symm (chartAt E (s : X) s + (ε s / r) • z)
   refine ⟨fun p ↦ g p.1 p.2, .of_continuous_injective_isOpenMap
     (continuous_prod_of_discrete_left.2 fun s ↦ ((chartAt E (s : X)).continuousOn_symm.comp
-      (by fun_prop) fun z hz ↦ (hεW s (hball s hz)).1).comp_continuous continuous_subtype_val
+      (by fun_prop) fun z hz ↦ (hεW s (hball s hz)).1).comp_continuous continuous_subtypeVal
         fun z ↦ z.property) (fun p q h ↦ ?_) (isOpenMap_prod_of_discrete_left.2 fun s U hU ↦ ?_),
     fun s ↦ by simp [g, (chartAt E (s : X)).left_inv (mem_chart_source E _)]⟩
   · -- The common value lies in `W p.1 ∩ W q.1`, so `p.1 = q.1`; charts are injective.
@@ -122,7 +122,7 @@ theorem exists_isOpenEmbedding_prod_ball (hS : S.Finite) {r : ℝ} (hr : 0 < r) 
     rw [← image_image (g s), ← image_image (chartAt E (s : X)).symm]
     exact (chartAt E (s : X)).isOpen_image_symm_of_subset_target
       (((isOpenMap_add_left _).comp (isOpenMap_smul₀ (hc s))) _
-        (isOpen_ball.isOpenMap_subtype_val U hU))
+        (isOpen_ball.isOpenMap_subtypeVal U hU))
       (by rintro _ ⟨_, ⟨z, -, rfl⟩, rfl⟩; exact (hεW s (hball s z.property)).1)
 
 end Set.Finite

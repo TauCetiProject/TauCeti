@@ -116,7 +116,9 @@ theorem kostantRootSubgroup_def :
         eqToHom (GeneralLinear.groupScheme_def ℤ n).symm := by
   let : Comodule ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ) M :=
     kostantRootSubgroupComodule e h ρ M hM i hnil
-  rw [kostantRootSubgroup, Comodule.coordinateGroupSchemeHom_def]
+  rw [kostantRootSubgroup]
+  dsimp only
+  rw [Comodule.coordinateGroupSchemeHom_def]
   rfl
 
 /-- Replacing a generator family by one with the same selected root vector leaves the

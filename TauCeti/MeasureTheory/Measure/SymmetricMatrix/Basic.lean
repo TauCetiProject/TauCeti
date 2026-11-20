@@ -323,7 +323,7 @@ theorem continuous_trace_mul_coe {p : ℕ}
 theorem continuous_coe_apply {p : ℕ} (i j : Fin p) :
     Continuous fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ) i j :=
-  continuous_subtype_val.matrix_elem i j
+  continuous_subtypeVal.matrix_elem i j
 
 /-- Reading off an entry of a symmetric matrix is measurable. -/
 @[fun_prop]

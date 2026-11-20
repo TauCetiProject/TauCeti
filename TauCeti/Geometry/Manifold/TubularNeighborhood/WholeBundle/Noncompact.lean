@@ -57,8 +57,8 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
       ⟨(r q.val.1)⁻¹ • (⟨q.val.2, (mem_normalTubeOfRadius.mp q.property).1⟩ :
           normalSubspace I f q.val.1), by
         rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
-        exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr (by simpa using
-            (mem_normalTubeOfRadius.mp q.property).2)⟩⟩
+        exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+            (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩⟩
   left_inv p := by
     rcases p with ⟨x, v⟩
     dsimp only
@@ -90,19 +90,19 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
   continuous_invFun := by
     have hι := isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f
     have hrq : Continuous fun q : normalTubeOfRadius I f r => (r q.val.1)⁻¹ :=
-      (r.continuous.comp (continuous_fst.comp continuous_subtype_val)).inv₀
+      (r.continuous.comp (continuous_fst.comp continuous_subtypeVal)).inv₀
         (fun q => (hr q.val.1).ne')
     have hv : Continuous fun q : normalTubeOfRadius I f r =>
         (r q.val.1)⁻¹ • q.val.2 :=
-      hrq.smul (continuous_snd.comp continuous_subtype_val)
+      hrq.smul (continuous_snd.comp continuous_subtypeVal)
     let k : normalTubeOfRadius I f r → ball (0 : V) 1 := fun q =>
       ⟨(r q.val.1)⁻¹ • q.val.2, by
         rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
-        exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr (by simpa using
-            (mem_normalTubeOfRadius.mp q.property).2)⟩
+        exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+            (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩
     have hk : Continuous k := hv.subtype_mk _
     apply hι.isInducing.continuous_iff.mpr
-    convert (continuous_fst.comp continuous_subtype_val).prodMk
+    convert (continuous_fst.comp continuous_subtypeVal).prodMk
       (Homeomorph.unitBall.symm.continuous.comp hk) using 1
     funext q
     apply Prod.ext
@@ -110,8 +110,8 @@ def normalBundleHomeomorphTubeOfRadius (f : M → V) (r : C(M, ℝ))
     · let y : ball (0 : normalSubspace I f q.val.1) 1 :=
         ⟨(r q.val.1)⁻¹ • ⟨q.val.2, (mem_normalTubeOfRadius.mp q.property).1⟩, by
           rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
-          exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr (by simpa using
-              (mem_normalTubeOfRadius.mp q.property).2)⟩
+          exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+              (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩
       have hS : Homeomorph.unitBall.symm y =
           (Real.sqrt (1 - ‖y.val‖ ^ 2))⁻¹ • y.val := Homeomorph.unitBall_symm_apply_coe y
       have hV : Homeomorph.unitBall.symm (k q) =
@@ -149,8 +149,8 @@ theorem normalBundleHomeomorphTubeOfRadius_symm_apply_snd (f : M → V) (r : C(M
   let y : ball (0 : normalSubspace I f q.val.1) 1 :=
     ⟨(r q.val.1)⁻¹ • ⟨q.val.2, (mem_normalTubeOfRadius.mp q.property).1⟩, by
       rw [mem_ball_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (hr q.val.1).le]
-      exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr (by simpa using
-          (mem_normalTubeOfRadius.mp q.property).2)⟩
+      exact (inv_mul_lt_iff₀ (hr q.val.1)).mpr
+          (by simpa using (mem_normalTubeOfRadius.mp q.property).2)⟩
   have hy : Homeomorph.unitBall.symm y =
       (Real.sqrt (1 - ‖y.val‖ ^ 2))⁻¹ • y.val := Homeomorph.unitBall_symm_apply_coe y
   have hinv :
@@ -212,8 +212,8 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle [FiniteDimensional ℝ V]
     have hp : Continuous fun p : Icc (0 : ℝ) 1 ×
         (Set.univ : Set (TotalSpace V (fun x : M => normalSubspace I f x))) =>
           (p.2.val.proj, (p.2.val.snd : V)) :=
-      hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
-    exact hp.fst.prodMk ((continuous_subtype_val.comp continuous_fst).smul hp.snd)
+      hι.continuous.comp (continuous_subtypeVal.comp continuous_snd)
+    exact hp.fst.prodMk ((continuous_subtypeVal.comp continuous_fst).smul hp.snd)
 
 /-- A noncompact Euclidean immersion inducing the source topology has an open embedding of its
 whole normal bundle. -/

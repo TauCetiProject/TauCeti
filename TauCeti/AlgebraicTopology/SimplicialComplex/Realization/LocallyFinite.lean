@@ -61,7 +61,7 @@ theorem isEmbedding_realization_coe_of_finite_vertex_stars
   let c : Realization K → (ι → ℝ) := fun x => x.val
   let U : ι → TopologicalSpace.Opens (range c) := fun v =>
     ⟨{y | 0 < y.val v}, isOpen_lt continuous_const
-      ((continuous_apply v).comp continuous_subtype_val)⟩
+      ((continuous_apply v).comp continuous_subtypeVal)⟩
   have hpreimage (v : ι) : (rangeFactorization c) ⁻¹' (U v) = K.openStarRealization v := by
     ext x
     simp only [U, TopologicalSpace.Opens.coe_mk, mem_preimage, mem_ofPred_eq,

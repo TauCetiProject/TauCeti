@@ -152,7 +152,7 @@ theorem minCriticalCount_eq_sum {ι : Type*} [Fintype ι] (U : ι → Opens M)
         rw [totalCriticalCount_eq_sum U hd hU]
         exact Finset.sum_congr rfl fun i _ ↦ hF i ▸ hgc i
   · rw [totalCriticalCount_eq_sum U hd hU]
-    exact Finset.sum_le_sum fun i _ ↦ minCriticalCount_le (hf.comp contMDiff_subtype_val)
+    exact Finset.sum_le_sum fun i _ ↦ minCriticalCount_le (hf.comp contMDiff_subtypeVal)
 
 /-- **The component sum formula for `c(M)`.** If `M` is locally connected with finitely many
 connected components, for instance compact and boundaryless, then `c(M)` is the sum of the minimal

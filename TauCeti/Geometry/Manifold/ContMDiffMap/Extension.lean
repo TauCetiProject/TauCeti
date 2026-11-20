@@ -113,7 +113,7 @@ theorem ContMDiff.exists_contMDiffMap_eventuallyEq_comp_subtype_val
     ∃ G : C^n⟮I, M; 𝓘(ℝ, F), F⟯, ((G : M → F) ∘ Subtype.val) =ᶠ[𝓝 x] φ := by
   obtain ⟨G, hG_eq⟩ := (ContMDiffMap.contMDiffOn_extend U ⟨φ, hφ⟩
     0).exists_contMDiffMap_eventuallyEq (U.isOpen.mem_nhds x.property)
-  refine ⟨G, ((continuous_subtype_val.tendsto x).eventually hG_eq).mono fun y hy ↦ ?_⟩
+  refine ⟨G, ((continuous_subtypeVal.tendsto x).eventually hG_eq).mono fun y hy ↦ ?_⟩
   simpa [Subtype.val_injective.extend_apply] using hy
 
 /-- **Positive smooth germ extension from an open submanifold.** A positive `C^n` function on an

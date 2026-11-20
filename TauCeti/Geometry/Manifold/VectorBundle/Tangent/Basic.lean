@@ -803,7 +803,7 @@ private theorem eventually_tangentBundleCore_coordChange_open_eq
         (tangentBundleCore I M).coordChange
           (achart H (x : M)) (achart H (y : M)) (y : M) := by
   rcases mem_nhds_iff.mp
-      (Opens.chartAt_subtype_val_symm_eventuallyEq (H := H) U (x := x)) with
+      (Opens.chartAt_subtypeVal_symm_eventuallyEq (H := H) U (x := x)) with
     ⟨V, hV, hVopen, hxV⟩
   have hxV' : chartAt H x x ∈ V := by
     simpa [Opens.chartAt_eq] using hxV
@@ -842,7 +842,7 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
       (tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
   ext v
   rw [ContinuousLinearEquiv.coe_coe, tangentSpaceOpenEquiv_apply, mfderiv]
-  simp only [contMDiff_subtype_val.mdifferentiableAt one_ne_zero, ↓reduceIte]
+  simp only [contMDiff_subtypeVal.mdifferentiableAt one_ne_zero, ↓reduceIte]
   have h : writtenInExtChartAt I I x (Subtype.val : U → M) =ᶠ[
       nhdsWithin (extChartAt I x x) (Set.range I)] id := by
     have hmem : I.symm ⁻¹' (chartAt H x).target ∩ Set.range I ∈
@@ -896,7 +896,7 @@ subset is. -/
 @[simp]
 theorem mdifferentiableAt_comp_subtype_val_iff {U : Opens N} {f : N → M} {x : U} :
     MDifferentiableAt J I (f ∘ (Subtype.val : U → N)) x ↔ MDifferentiableAt J I f (x : N) :=
-  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtype_val f x).symm
+  (differentiableWithinAt_localInvariantProp.liftPropAt_iff_comp_subtypeVal f x).symm
 
 /-- A map into an open subset is differentiable at a point exactly when its composition with the
 inclusion is. -/
@@ -910,7 +910,7 @@ theorem mfderiv_comp_subtype_val_apply {U : Opens N} {f : N → M} {x : U}
     (v : TangentSpace J x) :
     mfderiv J I (f ∘ (Subtype.val : U → N)) x v = mfderiv J I f (x : N) v := by
   by_cases hf : MDifferentiableAt J I f (x : N)
-  · rw [mfderiv_comp x hf (contMDiff_subtype_val.mdifferentiableAt one_ne_zero),
+  · rw [mfderiv_comp x hf (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero),
       ContinuousLinearMap.comp_apply, mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
       tangentSpaceOpenEquiv_apply]
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
@@ -922,7 +922,7 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
     (v : TangentSpace J x) :
     mfderiv J I ((Subtype.val : U → M) ∘ f) x v = mfderiv J I f x v := by
   by_cases hf : MDifferentiableAt J I f x
-  · rw [mfderiv_comp x (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) hf,
+  · rw [mfderiv_comp x (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) hf,
       ContinuousLinearMap.comp_apply, mfderiv_subtype_val]
     exact tangentSpaceOpenEquiv_apply _ _
   · rw [mfderiv_zero_of_not_mdifferentiableAt hf,
@@ -990,7 +990,7 @@ theorem eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
       (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
-    continuousAt_subtype_val.eventually
+    continuousAt_subtypeVal.eventually
       ((trivializationAt E (TangentSpace I : M → Type _) (x : M)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (x : M))),
     eventually_tangentBundleCore_coordChange_open_eq (I := I) x] with y hyU hyM hcoord
@@ -1043,13 +1043,13 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
   -- Pull ambient `C^n` regularity back along the inclusion and compare the inherited and ambient
   -- tangent-bundle coordinates on a common neighbourhood of `x`.
   rw [contMDiffAt_section_iff]
-  have h := hb.comp x (contMDiff_subtype_val (I := I) (U := U)).contMDiffAt
+  have h := hb.comp x (contMDiff_subtypeVal (I := I) (U := U)).contMDiffAt
   rw [contMDiffAt_totalSpace_iff] at h
   apply h.2.congr_of_eventuallyEq
   filter_upwards [
     (trivializationAt E (TangentSpace I : U → Type _) x).open_baseSet.mem_nhds
       (mem_baseSet_trivializationAt E (TangentSpace I : U → Type _) x),
-    continuousAt_subtype_val.eventually
+    continuousAt_subtypeVal.eventually
       ((trivializationAt E (TangentSpace I : M → Type _) x.val).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x.val)),
     eventually_tangentSpaceOpenEquiv_symmL_trivializationAt_eq (I := I) x] with y hyU hyM hsymm

@@ -300,7 +300,7 @@ def morseCharacteristicMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fi
     { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_le hball hf hk
         (mem_closedBall_zero_iff.1 w.down.property)).trans (le_add_of_nonneg_right hε)⟩
       continuous_toFun := ((continuousOn_morseCellMap hball hk).comp_continuous
-        (continuous_subtype_val.comp continuous_uliftDown) fun w ↦ w.down.2).subtype_mk _ }
+        (continuous_subtypeVal.comp continuous_uliftDown) fun w ↦ w.down.property).subtype_mk _ }
 
 /-- The attaching map `∂D^k → M_{c-ε}` of the cell of a chart `ψ` in which
 `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` and whose target contains the closed ball of radius `√ε`:
@@ -314,7 +314,7 @@ def morseAttachingMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))
     { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_of_norm_eq_one hball hf hk hε
         (mem_sphere_zero_iff_norm.1 w.down.property)).le⟩
       continuous_toFun := ((continuousOn_morseCellMap hball hk).comp_continuous
-        (continuous_subtype_val.comp continuous_uliftDown)
+        (continuous_subtypeVal.comp continuous_uliftDown)
         fun w ↦ sphere_subset_closedBall w.down.property).subtype_mk _ }
 
 @[simp]
@@ -498,7 +498,7 @@ def morseFamilyCharacteristicMap (i : ι) : C(P × TopCat.disk.{u} (k i), {x | f
   toFun q := (ψ q.1 i).morseCharacteristicMap (hk i) hε (hball q.1 i) (hf q.1 i) q.2
   continuous_toFun := Topology.IsInducing.subtypeVal.continuous_iff.2 <|
     ((continuousOn_morseCellMap_family (ψ := fun p ↦ ψ p i) (hk i) (hs i)).comp_continuous
-      (continuous_fst.prodMk (continuous_subtype_val.comp (continuous_uliftDown.comp
+      (continuous_fst.prodMk (continuous_subtypeVal.comp (continuous_uliftDown.comp
         continuous_snd))) fun q ↦ ⟨mem_univ _, q.2.down.property⟩).congr fun q ↦
       (OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball q.1 i) (hf q.1 i) (hk i) hε
         q.2).symm
@@ -629,7 +629,7 @@ theorem homotopic_morseAttachingMap_diskBoundaryMap_comp
     (ψ₁.morseAttachingMap hk hε hball₁ hf₁).hom.Homotopic
       (g.diskBoundaryMap ≫ ψ₀.morseAttachingMap hk hε hball₀ hf₀).hom :=
   ⟨{ toFun p := ⟨K (p.1, TopCat.diskBoundaryInclusion k p.2), hK p.1 p.2⟩
-     continuous_toFun := (continuous_subtype_val.comp (K.continuous.comp
+     continuous_toFun := (continuous_subtypeVal.comp (K.continuous.comp
        (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion k).hom.continuous.comp
          continuous_snd)))).subtype_mk _
      map_zero_left s := Subtype.ext ((congrArg Subtype.val (K.apply_zero _)).trans

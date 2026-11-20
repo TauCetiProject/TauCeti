@@ -84,7 +84,7 @@ theorem linearIndependent_logEmbedding_pi {κ : Type*} [Finite κ]
   let f : Submodule.span ℤ (Set.range v) → κ → unitLattice S :=
     fun x k ↦ ⟨x.val k, hle x.property k (Set.mem_univ k)⟩
   have hf : Continuous f := continuous_pi fun k ↦
-    ((continuous_apply k).comp continuous_subtype_val).subtype_mk _
+    ((continuous_apply k).comp continuous_subtypeVal).subtype_mk _
   have hinj : Function.Injective f := by
     intro x y h
     apply Subtype.ext

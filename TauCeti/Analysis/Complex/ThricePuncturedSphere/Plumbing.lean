@@ -177,7 +177,7 @@ theorem norm_plumbingFactor_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) 
 is the radius of the circle `Re z = L/2` in the end. -/
 theorem norm_plumbingFactor_eq_sq_div_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
     ‖q.plumbingFactor L‖ = Real.exp (-(2 * π * (L / 2))) ^ 2 / 4 := by
-  rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
+  rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_natCast_mul]
   ring_nf
 
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/

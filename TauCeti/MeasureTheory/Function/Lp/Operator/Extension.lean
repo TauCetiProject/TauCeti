@@ -252,7 +252,7 @@ theorem strongTypeExtension_apply (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ�
     (f : lpTwoSubmodule (E := E) (p := p) (μ := μ)) :
     strongTypeExtension T C hT hp f.val = strongTypeOnIntersection T C hT f := by
   apply LinearMap.extendOfNorm_eq
-  · exact (denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
+  · exact (denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
   · exact ⟨C, norm_strongTypeOnIntersection_le T C hT⟩
 
 /-- The operator norm of the extended map is bounded by the strong-type constant. -/
@@ -261,7 +261,7 @@ theorem norm_strongTypeExtension_le (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ
       eLpNorm (T f) p μ ≤ C * eLpNorm f p μ) (hp : p ≠ ∞) :
     ‖strongTypeExtension T C hT hp‖ ≤ C := by
   apply LinearMap.opNorm_extendOfNorm_le
-  · exact (denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
+  · exact (denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp)
   · exact C.property
   · exact norm_strongTypeOnIntersection_le T C hT
 
@@ -291,7 +291,7 @@ theorem strongTypeExtension_unique (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C : ℝ�
     S = strongTypeExtension T C hT hp := by
   symm
   apply LinearMap.extendOfNorm_unique
-    ((denseRange_subtype_val).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp))
+    ((denseRange_subtypeVal).2 (dense_lpTwoSubmodule (E := E) (p := p) (μ := μ) hp))
     C (norm_strongTypeOnIntersection_le T C hT)
   apply LinearMap.ext
   intro f

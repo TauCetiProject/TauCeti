@@ -411,7 +411,7 @@ private theorem nonempty_fundamentalGroup_compl_range_mulEquiv_freeGroup (hδ : 
   have hx : (⟨-I, neg_I_mem_compl_range⟩ : ↥(range fun i ↦ (c i : ℂ))ᶜ) ∈ C := neg_I_mem_comb
   let vK := vanKampenWideEquiv (U := cover c δ) (C := C)
     (fun y ↦ (exists_piece_mem_nhds hδ y.property).imp fun _ h ↦
-      continuous_subtype_val.continuousAt.preimage_mem_nhds h)
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds h)
     (isPathConnected_cover hδ hc) hC (fun k ↦ preimage_mono (comb_subset_piece k))
     (fun _ _ hij _ hz ↦ piece_inter_piece_subset hc hij hz)
     hx

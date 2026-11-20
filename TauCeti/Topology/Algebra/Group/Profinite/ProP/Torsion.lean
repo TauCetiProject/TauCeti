@@ -233,7 +233,7 @@ theorem exists_continuousLinearEquiv_pi_padicInt_prod_torsion (hA : IsProP p A)
     simp only [e, Function.Exact.splitSurjectiveEquiv, Equiv.coe_fn_mk, LinearEquiv.trans_apply,
       LinearEquiv.symm_symm, LinearEquiv.prodComm_apply]
     exact (LinearEquiv.ofBijective_apply _ _).trans (by simp)
-  have hcont : Continuous e := he ▸ (continuous_subtype_val.comp continuous_snd).add
+  have hcont : Continuous e := he ▸ (continuous_subtypeVal.comp continuous_snd).add
     ((LinearMap.continuous_on_pi s).comp continuous_fst)
   have : Finite T := hA.finite_torsion_module hfg
   exact ⟨r, ⟨({ e with

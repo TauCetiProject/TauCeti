@@ -52,7 +52,7 @@ private noncomputable def point (j : ℕ) : U₀ :=
 private theorem locallyFinite_singleton_point : LocallyFinite fun j ↦ ({point j} : Set U₀) := by
   intro p
   have hp : (0 : ℝ) < p.val := p.property.1
-  refine ⟨{q | p.1 / 2 < q.1}, (isOpen_lt continuous_const continuous_subtype_val).mem_nhds
+  refine ⟨{q | p.val / 2 < q.val}, (isOpen_lt continuous_const continuous_subtypeVal).mem_nhds
     (half_lt_self hp), (finite_lt_nat ⌈2 / p.val⌉₊).subset ?_⟩
   rintro j ⟨_, rfl, hj⟩
   -- `p / 2 < 1 / (j + 2)` forces `j + 2 < 2 / p`.

@@ -83,7 +83,7 @@ theorem exists_homotopicRel_cellFrontier {K : Set E} (hK : IsCompact K) (hk : fi
     ∃ g : C(K, C), f.HomotopicRel g {x | (f x : X) ∈ openCell k j}ᶜ ∧
       ∀ x, (f x : X) ∈ openCell k j → (g x : X) ∈ cellFrontier k j := by
   let f' : C(K, (skeletonLT C ((k + 1 : ℕ) : ℕ∞) : Set X)) :=
-    ⟨fun x ↦ ⟨f x, hf x⟩, (continuous_subtype_val.comp f.continuous).subtype_mk hf⟩
+    ⟨fun x ↦ ⟨f x, hf x⟩, (continuous_subtypeVal.comp f.continuous).subtype_mk hf⟩
   let φ := openCellChart k j
   have hφs : φ.source = Subtype.val ⁻¹' openCell k j := openCellChart_source k j
   have hφt : φ.target = ball 0 1 := openCellChart_target k j
@@ -136,7 +136,7 @@ theorem exists_homotopicRel_skeletonLT {K : Set E} (hK : IsCompact K) (hk : finr
   -- The compact image of `f` meets only finitely many open `k`-cells.
   have hA : {j : cell C k | (range (fun x ↦ (f x : X)) ∩ openCell k j).Nonempty}.Finite :=
     (finite_setOf_nonempty_inter_openCell_of_isCompact (C := C)
-      (isCompact_range (continuous_subtype_val.comp f.continuous))).preimage (f := Sigma.mk k)
+      (isCompact_range (continuous_subtypeVal.comp f.continuous))).preimage (f := Sigma.mk k)
       sigma_mk_injective.injOn
   -- Push `f` off these cells one at a time, never entering an open `k`-cell that `f` misses.
   have key (T : Finset (cell C k)) : ∃ g : C(K, C),
@@ -190,7 +190,7 @@ theorem exists_homotopicRel_skeletonLT_finrank {K : Set E} (hK : IsCompact K) {n
   have : CompactSpace K := isCompact_iff_compactSpace.1 hK
   -- The compact image of `f` lies in a finite skeleton; compress it one dimension at a time.
   obtain ⟨m, hm⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
-    (isCompact_range (continuous_subtype_val.comp f.continuous))
+    (isCompact_range (continuous_subtypeVal.comp f.continuous))
     (range_subset_iff.2 fun x ↦ (f x).property)
   induction m generalizing f with
   | zero =>

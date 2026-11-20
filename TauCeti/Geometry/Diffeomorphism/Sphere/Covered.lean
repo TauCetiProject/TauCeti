@@ -140,7 +140,7 @@ private theorem continuous_firstToLastIsometry_conj :
   let g := ((firstToLastIsometry n).symm.toContinuousLinearEquiv :
     EuclideanSpace ℝ (Fin (n + 2)) →L[ℝ] EuclideanSpace ℝ (Fin (1 + (n + 1))))
   have h := UnitaryGroup.continuous_toLinearIsometryEquiv.comp
-    (continuous_subtype_val.subtype_mk
+    (continuous_subtypeVal.subtype_mk
       fun A : specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ ↦ A.property.1)
   refine ((continuous_const (y := f)).clm_comp (h.clm_comp (continuous_const (y := g)))).congr
     fun A ↦ ?_

@@ -177,7 +177,7 @@ def restrictOpen (U : Opens M) :
       exact congrArg z.val.snd
         ((Manifold.tangentSpaceOpenEquiv (I := I)
           (⟨z.val.proj, z.property⟩ : U)).apply_symm_apply v)
-    exact contMDiff_subtype_val.contMDiffAt.congr_of_eventuallyEq
+    exact contMDiff_subtypeVal.contMDiffAt.congr_of_eventuallyEq
       (Filter.Eventually.of_forall (congrFun heq))
 
 /-- The restriction identification, viewed in the ambient cotangent bundle, is the canonical
@@ -235,7 +235,7 @@ theorem openInclusion_vectorBundleScalarDiffeomorph (U : Opens M) {a : M → �
     (ha : ContMDiff I 𝓘(𝕜) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : CotangentBundle I U) :
     openInclusion U (vectorBundleScalarDiffeomorph (F := E →L[𝕜] 𝕜)
         (V := fun x : U ↦ TangentSpace I x →L[𝕜] 𝕜) (a ∘ Subtype.val)
-        (ha.comp contMDiff_subtype_val) (fun x ↦ ha0 x) z) =
+        (ha.comp contMDiff_subtypeVal) (fun x ↦ ha0 x) z) =
       vectorBundleScalarDiffeomorph a ha ha0 (openInclusion U z) := by
   rw [vectorBundleScalarDiffeomorph_apply, vectorBundleScalarDiffeomorph_apply,
     openInclusion_def, openInclusion_def]
@@ -317,7 +317,7 @@ theorem overOpenScalarDiffeomorph_symm (U : Opens M) (a : U → 𝕜) (ha : Cont
 `π⁻¹(U)` is the restriction of the fibre dilation of `T*M` by `a`. -/
 theorem coe_overOpenScalarDiffeomorph_comp_subtype_val (U : Opens M) {a : M → 𝕜}
     (ha : ContMDiff I 𝓘(𝕜) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
-    (overOpenScalarDiffeomorph U (a ∘ Subtype.val) (ha.comp contMDiff_subtype_val)
+    (overOpenScalarDiffeomorph U (a ∘ Subtype.val) (ha.comp contMDiff_subtypeVal)
         (fun x ↦ ha0 x) z : CotangentBundle I M) =
       vectorBundleScalarDiffeomorph a ha ha0 z := by
   rw [overOpenScalarDiffeomorph, Diffeomorph.diffCongr_apply_apply, coe_restrictOpen,

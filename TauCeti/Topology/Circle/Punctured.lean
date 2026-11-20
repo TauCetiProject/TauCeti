@@ -86,7 +86,7 @@ def circleChordHomotopy :
         ((1 - p.1 : ℝ) : ℂ) * p.2.val + (p.1 : ℝ) := by fun_prop
     have h0 (p : I × {z : Circle | z ≠ -1}) : ((1 - p.1 : ℝ) : ℂ) * p.2.val + (p.1 : ℝ) ≠ 0 :=
       Complex.slitPlane_ne_zero (chord_mem_slitPlane p.2.property p.1)
-    exact (continuous_subtype_val.comp (normalizeToSphere _ hc h0).continuous).congr fun p =>
+    exact (continuous_subtypeVal.comp (normalizeToSphere _ hc h0).continuous).congr fun p =>
       coe_normalizeToSphere_apply _ hc h0 p
   map_zero_left z := by
     refine Subtype.ext (Circle.ext ?_)

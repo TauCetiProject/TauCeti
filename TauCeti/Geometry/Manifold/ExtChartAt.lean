@@ -763,7 +763,7 @@ theorem measurableSet_image_extChartAt_iff [MeasurableSpace E] [BorelSpace E] {s
       (extChartAt I x).source.domRestrict (extChartAt I x) '' (Subtype.val ⁻¹' s) := by
     rw [Set.image_domRestrict, Set.inter_eq_left.mpr hsource]
   rw [himage, (measurableEmbedding_extChartAt_restrict (I := I) x).measurableSet_image,
-    ← (MeasurableEmbedding.subtype_coe (isOpen_extChartAt_source (I := I) x).measurableSet)
+    ← (MeasurableEmbedding.subtypeVal (isOpen_extChartAt_source (I := I) x).measurableSet)
       |>.measurableSet_image, Subtype.image_preimage_coe, Set.inter_eq_right.mpr hsource]
 
 /-- For the Borel measurable space on the manifold, the image of a measurable subset of an

@@ -96,7 +96,7 @@ variable (E) in
 /-- The punctured closed unit ball, as an open subset of the closed unit ball. It is the range of
 the radial collar (`TauCeti.range_ballCollar`). -/
 def puncturedClosedBall : Opens (closedBall (0 : E) 1) :=
-  ⟨{y | (y : E) ≠ 0}, isOpen_ne_fun continuous_subtype_val continuous_const⟩
+  ⟨{y | (y : E) ≠ 0}, isOpen_ne_fun continuous_subtypeVal continuous_const⟩
 
 omit [InnerProductSpace ℝ E] in
 /-- A point of the closed unit ball lies in the punctured closed ball exactly when it is nonzero. -/
@@ -113,7 +113,7 @@ theorem contMDiff_ballCollarInv {k : ℕ∞ω} :
         ballCollarInv (y : closedBall (0 : E) 1) (mem_puncturedClosedBall.1 y.property)) := by
   have hy : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, E) k
       (fun y : puncturedClosedBall E ↦ ((y : closedBall (0 : E) 1) : E)) :=
-    contMDiff_subtypeVal_closedBall.comp contMDiff_subtype_val
+    contMDiff_subtypeVal_closedBall.comp contMDiff_subtypeVal
   have hnorm (y : puncturedClosedBall E) : ContMDiffAt (𝓡∂ (n + 1)) 𝓘(ℝ) k
       (fun y : puncturedClosedBall E ↦ ‖((y : closedBall (0 : E) 1) : E)‖) y :=
     (contDiffAt_norm ℝ (mem_puncturedClosedBall.1 y.property)).comp_contMDiffAt

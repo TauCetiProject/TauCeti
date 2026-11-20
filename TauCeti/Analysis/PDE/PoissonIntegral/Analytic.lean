@@ -134,7 +134,7 @@ theorem analyticOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (F
       (g y : ℂ) • complexPoissonKernel n (z, complexify n y) ∂volume.toSphere
   have hF : AnalyticAt ℂ F (complexify n x) := by
     refine analyticAt_integral_smul ((isCompact_sphere 0 1).image (complexify n).continuous)
-      ((complexify n).continuous.comp continuous_subtype_val)
+      ((complexify n).continuous.comp continuous_subtypeVal)
       (fun y ↦ mem_image_of_mem _ y.property) ?_ hg.ofReal
     rintro _ ⟨y, hy, rfl⟩
     exact analyticAt_complexPoissonKernel hn (hxS ⟨y, hy⟩)

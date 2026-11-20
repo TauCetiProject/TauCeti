@@ -365,7 +365,7 @@ theorem topologicalClosure_zpowers_eq_top {R : Type*} [CommRing R] [IsDomain R]
   have : CompactSpace C :=
     isCompact_iff_compactSpace.1 (Subgroup.zpowers ζ).isClosed_topologicalClosure.isCompact
   have hsurj : Function.Surjective ((↑) : C → PrimeToPTateModule p R) := by
-    refine surjective_of_forall_surjective_proj continuous_subtype_val fun m y ↦ ?_
+    refine surjective_of_forall_surjective_proj continuous_subtypeVal fun m y ↦ ?_
     have : NeZero (m : ℕ) := ⟨m.property.1⟩
     obtain ⟨k, hk⟩ : ∃ k : ℤ, (proj m ζ : Rˣ) ^ k = y := by
       rw [← Subgroup.mem_zpowers_iff, (hζ m).zpowers_eq]

@@ -170,7 +170,7 @@ theorem degree_comap_eq_ncard_sub_ncard {U V : TopologicalSpace.Opens E} [Precon
   have hmem : ∀ w (hw : w ∈ (U : Set E) ∩ φ ⁻¹' {(y : E)}), (⟨w, hw.1⟩ : U) ∈ f ⁻¹' {y} :=
     fun w hw ↦ Subtype.ext ((hφ ⟨w, hw.1⟩).symm.trans hw.2)
   have hK : IsCompact ((U : Set E) ∩ φ ⁻¹' {(y : E)}) :=
-    himage ▸ (hf.isCompact_preimage isCompact_singleton).image continuous_subtype_val
+    himage ▸ (hf.isCompact_preimage isCompact_singleton).image continuous_subtypeVal
   have hKfin : ((U : Set E) ∩ φ ⁻¹' {(y : E)}).Finite :=
     hK.finite_inter_preimage_of_hasFDerivAt (fun w hw ↦ hderiv _ (hmem w hw)) fun w hw ↦
       ⟨_, ((f' w).toContinuousLinearEquivOfDetNeZero (hdet _ (hmem w hw))).antilipschitzWith⟩

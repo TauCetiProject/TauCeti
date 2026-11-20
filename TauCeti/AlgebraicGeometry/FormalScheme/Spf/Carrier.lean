@@ -130,7 +130,7 @@ theorem carrier_eq_empty_iff_subsingleton [T1Space A] (hI : IsAdic I) :
 /-- If `I` defines the topology of `A` and `A` is separated and nonzero, the formal spectrum is
 nonempty. -/
 theorem carrier_nonempty [T1Space A] [Nontrivial A] (hI : IsAdic I) : (carrier A).Nonempty :=
-  Set.nonempty_iff_ne_empty.mpr fun h ↦
+  Set.ne_empty_iff_nonempty.mp fun h ↦
     not_subsingleton A ((carrier_eq_empty_iff_subsingleton hI).mp h)
 
 section Quotient
@@ -177,7 +177,7 @@ section BasicOpen
 /-- The basic open set `D(f)` of the underlying space of `Spf A`: the open primes of `A` not
 containing `f`. -/
 def basicOpen (f : A) : Opens (carrier A) :=
-  (PrimeSpectrum.basicOpen f).comap ⟨Subtype.val, continuous_subtype_val⟩
+  (PrimeSpectrum.basicOpen f).comap ⟨Subtype.val, continuous_subtypeVal⟩
 
 @[simp]
 theorem mem_basicOpen {f : A} {p : carrier A} :
@@ -262,7 +262,7 @@ variable {B : Type*} [CommRing B] [TopologicalSpace B] {C : Type*} [CommRing C]
 (EGA I, Ch. I, 10.2.1). -/
 def comap (φ : B →+* A) (hφ : Continuous φ) : C(carrier A, carrier B) where
   toFun p := ⟨PrimeSpectrum.comap φ p, p.property.preimage hφ⟩
-  continuous_toFun := ((continuous_comap φ).comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := ((continuous_comap φ).comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_comap_apply (φ : B →+* A) (hφ : Continuous φ) (p : carrier A) :

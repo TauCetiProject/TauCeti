@@ -71,8 +71,8 @@ variable {s : Set E} {t : Set E'} {f : s → M}
 theorem continuous (hf : ContMDiffOnSubset I n f) : Continuous f := by
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   obtain ⟨U, hU, g, hg, hgf⟩ := hf x
-  refine ((hg.continuousOn.continuousAt hU).comp continuous_subtype_val.continuousAt).congr ?_
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds hU] with y hy
+  refine ((hg.continuousOn.continuousAt hU).comp continuous_subtypeVal.continuousAt).congr ?_
+  filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds hU] with y hy
     using hgf y hy
 
 /-- A map that is `C^n` on an arbitrary subset is `C^m` there for every `m ≤ n`. -/
@@ -135,7 +135,7 @@ theorem subtypeVal_comp_iff {V : TopologicalSpace.Opens M} {f : s → V} :
     · have hyV : g y ∈ V := hy.2
       simpa [hyV] using hgf y hy.1
   · obtain ⟨U, hU, g, hg, hgf⟩ := hf x
-    exact ⟨U, hU, Subtype.val ∘ g, contMDiff_subtype_val.comp_contMDiffOn hg,
+    exact ⟨U, hU, Subtype.val ∘ g, contMDiff_subtypeVal.comp_contMDiffOn hg,
       fun y hy ↦ congrArg Subtype.val (hgf y hy)⟩
 
 end ContMDiffOnSubset

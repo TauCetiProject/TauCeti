@@ -178,13 +178,13 @@ def iwasawaSLHomeomorph :
       (iwasawaHomeomorph ℝ n).symm.continuous.comp continuous_toGL
     have hK : Continuous (slOrthogonal (n := n)) := isEmbedding_toGL.continuous_iff.2 <| by
       simpa only [Function.comp_def, toGL_slOrthogonal] using
-        continuous_subtype_val.comp (continuous_fst.comp hF)
+        continuous_subtypeVal.comp (continuous_fst.comp hF)
     have hA : Continuous (slDiagonal (n := n)) := isEmbedding_toGL.continuous_iff.2 <| by
       simpa only [Function.comp_def, toGL_slDiagonal] using
-        continuous_subtype_val.comp (continuous_fst.comp (continuous_snd.comp hF))
+        continuous_subtypeVal.comp (continuous_fst.comp (continuous_snd.comp hF))
     have hU : Continuous (slUnitriangular (n := n)) := isEmbedding_toGL.continuous_iff.2 <| by
       simpa only [Function.comp_def, toGL_slUnitriangular] using
-        continuous_subtype_val.comp (continuous_snd.comp (continuous_snd.comp hF))
+        continuous_subtypeVal.comp (continuous_snd.comp (continuous_snd.comp hF))
     exact (hK.subtype_mk _).prodMk ((hA.subtype_mk _).prodMk (hU.subtype_mk _))
 
 /-- The Iwasawa decomposition of `SL n ℝ` multiplies its three factors. -/

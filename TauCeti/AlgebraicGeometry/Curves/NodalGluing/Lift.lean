@@ -117,8 +117,8 @@ private theorem continuousOn_liftAux (h : GluedCurve d ≃ₜ GluedCurve d')
         fun x : ((flagPointSet d)ᶜ : Set (Σ i, X i)) ↦ h (Quotient.mk (gluedRelSetoid d) x) :=
       funext fun x ↦ mk_liftAux h x
     rw [this]
-    exact h.continuous.comp (continuous_quotient_mk'.comp continuous_subtype_val)
-  exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtype_val.comp hk)
+    exact h.continuous.comp (continuous_quotient_mk'.comp continuous_subtypeVal)
+  exact continuousOn_iff_continuous_domRestrict.mpr (continuous_subtypeVal.comp hk)
 
 /-- The lift of `h`: the continuous extension of the lift away from the flag points. -/
 private def liftMap (h : GluedCurve d ≃ₜ GluedCurve d') : (Σ i, X i) → Σ i, X' i :=

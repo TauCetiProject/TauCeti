@@ -88,7 +88,7 @@ theorem isOpen_integratedCharacterSet :
   rw [isOpen_iff_mem_nhds]
   intro ω hω
   obtain ⟨f, hf⟩ := (π.mem_integratedCharacterSet_iff hcont hbdd A hA ω).mp hω
-  apply mem_of_superset ((isOpen_ne_fun ((eval_continuous _).comp continuous_subtype_val)
+  apply mem_of_superset ((isOpen_ne_fun ((eval_continuous _).comp continuous_subtypeVal)
     continuous_const).mem_nhds hf)
   intro ψ hψ
   exact (π.mem_integratedCharacterSet_iff hcont hbdd A hA ψ).mpr ⟨f, hψ⟩
@@ -152,15 +152,15 @@ theorem continuous_integratedCharacterToPontryaginDual :
       continuous_toAdd).congr fun g => ?_
     exact π.comp_integratedOperatorL1 (hcont := hcont) (hbdd := hbdd) g.toAdd f
   have heval (b : A) : Continuous fun p : D × Multiplicative G => (p.1.val b : ℂ) :=
-    (eval_continuous b).comp (continuous_subtype_val.comp (continuous_subtype_val.comp
+    (eval_continuous b).comp (continuous_subtypeVal.comp (continuous_subtypeVal.comp
       continuous_fst))
   -- Characters are uniformly bounded, so `ω(v g') - ω(v g)` is small uniformly in `ω`.
   have hnum : ContinuousAt (fun p : D × Multiplicative G => (p.1.val (v p.2) : ℂ)) (ω, g) := by
     have hsmall : Tendsto (fun p : D × Multiplicative G => p.1.val (v p.2 - v g)) (𝓝 (ω, g))
         (𝓝 0) := by
-      refine squeeze_zero_norm (fun p => AlgHom.norm_apply_le_self_mul_norm_one p.1.1 _) ?_
-      simpa using ((hv.comp continuous_snd).sub (continuous_const (y := v g))).norm.mul_const
-        ‖(1 : A)‖ |>.tendsto (ω, g)
+      refine squeeze_zero_norm (fun p => NonUnitalAlgHom.norm_apply_le_self p.1.val _) ?_
+      simpa using ((hv.comp continuous_snd).sub (continuous_const (y := v g))).norm
+        |>.tendsto (ω, g)
     have h : Tendsto (fun p : D × Multiplicative G => (p.1.val (v p.2) : ℂ)) (𝓝 (ω, g))
         (𝓝 (ω.val (v g) + 0)) :=
       ((heval (v g)).continuousAt.tendsto.add hsmall).congr fun p => by simp

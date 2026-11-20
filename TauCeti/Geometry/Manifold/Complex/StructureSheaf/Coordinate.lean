@@ -44,7 +44,7 @@ def holomorphicCoordinateSection (z : ℂ) :
     (holomorphicStructureSheaf 𝓘(ℂ) X).obj.obj (op ⟨e.source, e.open_source⟩) :=
   ofMDifferentiable (fun y => e y - z) fun y =>
     ((mdifferentiableAt_of_mem_maximalAtlas he y.property).comp y
-      (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)).sub mdifferentiableAt_const
+      (contMDiff_subtypeVal (n := 1).mdifferentiable one_ne_zero y)).sub mdifferentiableAt_const
 
 /-- The translated coordinate section evaluates at `y` to `e y - z`. -/
 -- Index on evaluation rather than the unexposed section carrier and its dependent open set.
@@ -142,7 +142,7 @@ private theorem holomorphicCoordinateGerm_dvd_germ_of_dslope (hx : x ∈ e.sourc
     intro y
     exact ((hV y y.property).2.2.differentiableAt.mdifferentiableAt).comp y
       ((mdifferentiableAt_of_mem_maximalAtlas he (hWe y.property)).comp y
-        (contMDiff_subtype_val (n := 1).mdifferentiable one_ne_zero y)))
+        (contMDiff_subtypeVal (n := 1).mdifferentiable one_ne_zero y)))
   -- The division identity on this neighborhood passes through the ring germ map.
   have hmul : S.map (homOfLE hWe).op (holomorphicCoordinateSection e he (e x)) * q =
       S.map (homOfLE hWU).op s := by

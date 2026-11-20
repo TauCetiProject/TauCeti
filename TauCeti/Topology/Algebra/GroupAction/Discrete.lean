@@ -98,7 +98,7 @@ theorem isLocallyConstant_of_apply_mul (hU : IsOpen (U : Set G)) {k : G → M}
     (hk : ∀ (u : U) (g : G), k (u * g) = u • k g) : IsLocallyConstant k := by
   refine (IsLocallyConstant.iff_eventually_eq k).2 fun g ↦ ?_
   have hopen : IsOpen ((fun u : U ↦ (u : G) * g) '' MulAction.stabilizer U (k g)) :=
-    (isOpenMap_mul_right g).comp hU.isOpenMap_subtype_val _ (stabilizer_isOpen U (k g))
+    (isOpenMap_mul_right g).comp hU.isOpenMap_subtypeVal _ (stabilizer_isOpen U (k g))
   filter_upwards [hopen.mem_nhds ⟨1, one_mem _, one_mul g⟩]
   rintro _ ⟨u, hu, rfl⟩
   exact (hk u g).trans (MulAction.mem_stabilizer_iff.1 hu)

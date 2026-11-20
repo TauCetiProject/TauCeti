@@ -123,7 +123,7 @@ theorem integral_cutoffCurrent_comp_closedBall_eq_two_pi_mul_degree_of_dist_lt {
   let F : C(unitInterval × Circle, ℂ) :=
     ⟨fun p ↦ α (σ (z₀ + r * p.2) + (p.1 : ℝ) • (σ' (z₀ + r * p.2) - σ (z₀ + r * p.2))),
       hα.continuous.comp <| (hσc.comp continuous_snd).add <|
-        (continuous_subtype_val.comp continuous_fst).smul <|
+        (continuous_subtypeVal.comp continuous_fst).smul <|
           (hσ'.continuous.comp (by fun_prop)).sub (hσc.comp continuous_snd)⟩
   let f' : C(Circle, ℂ) := ⟨fun ζ ↦ α (σ' (z₀ + r * ζ)), by fun_prop⟩
   let u' := f'.normalizeToCircle fun ζ ↦ by simpa [f'] using hne 1 (hsph ζ)

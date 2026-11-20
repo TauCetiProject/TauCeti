@@ -134,7 +134,7 @@ theorem toFilterGerm_germ {x : X} {l : Filter X} (hl : l ≤ 𝓝 x) {U : Opens 
 def germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     (holomorphicStructureSheaf I X).presheaf.stalk x :=
   ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ ⊤ x trivial)
-    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtype_val))
+    (ofContMDiff (fun y : (⊤ : Opens X) ↦ f y) (hf.comp contMDiff_subtypeVal))
 
 /-- The holomorphic germ of a globally analytic function `f` is the germ of `f`. -/
 @[simp]

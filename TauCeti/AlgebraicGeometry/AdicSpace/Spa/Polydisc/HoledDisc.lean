@@ -222,8 +222,8 @@ private theorem setOf_vle_eq_basicOpen (b : K) {d : K} (hd : IsUnit d) :
   ext v
   have hd₀ : v.val.valuation (C d) ≠ 0 := ((hd.map C).map v.val.valuation).ne_zero
   rw [Set.mem_ofPred_eq, Set.mem_preimage, mem_basicOpen_iff, iff_self_and,
-    ← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
-  exact fun h h₀ ↦ hd₀ (le_zero_iff.mp (h₀ ▸ h))
+    ← valuation_le_iff, ← valuation_le_iff, map_zero, nonpos_iff_eq_zero]
+  exact fun h h₀ ↦ hd₀ (nonpos_iff_eq_zero.mp (h₀ ▸ h))
 
 /-- A hole whose radius parameter is a unit `d` is the rational subset `R({d} / (T - b))`: the
 inequality `v(d) ≤ v(T - b)` already forces `v(T - b) ≠ 0`. -/
@@ -235,8 +235,8 @@ private theorem setOf_vle_eq_rationalSubset (b : K) {d : K} (hd : IsUnit d) :
   have hd₀ : v.val.valuation (C d) ≠ 0 := ((hd.map C).map v.val.valuation).ne_zero
   simp only [Set.mem_ofPred_eq, Set.mem_preimage, mem_rationalSubset_iff, hv, Finset.mem_singleton,
     forall_eq, true_and, iff_self_and]
-  rw [← valuation_le_iff, ← valuation_le_iff, map_zero, le_zero_iff]
-  exact fun h h₀ ↦ hd₀ (le_zero_iff.mp (h₀ ▸ h))
+  rw [← valuation_le_iff, ← valuation_le_iff, map_zero, nonpos_iff_eq_zero]
+  exact fun h h₀ ↦ hd₀ (nonpos_iff_eq_zero.mp (h₀ ▸ h))
 
 /-- **A holed disc whose holes have unit radius parameters is open** in the closed unit disc: it
 is the intersection of the open subset `closedSubdisc a c` with the finitely many basic opens
@@ -244,7 +244,7 @@ is the intersection of the open subset `closedSubdisc a c` with the finitely man
 theorem isOpen_holedDisc [Finite ι] (a c : K) (b : ι → K) {d : ι → K} (hd : ∀ i, IsUnit (d i)) :
     IsOpen (holedDisc a c b d) :=
   (isOpen_closedSubdisc a c).inter <| isOpen_iInter_of_finite fun i ↦
-    setOf_vle_eq_basicOpen (b i) (hd i) ▸ (isOpen_basicOpen _ _).preimage continuous_subtype_val
+    setOf_vle_eq_basicOpen (b i) (hd i) ▸ (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 /-- **A holed disc is a rational subset** of the closed unit disc over a Huber ring when `T - a`
 and `c` generate an open ideal and the holes have unit radius parameters: it is the intersection
@@ -596,7 +596,7 @@ private theorem vle_prod_iff (x : closedPolydisc 1 K) {F : Finset (K × K)} (hF 
       (valuation_weightedX_sub_weightedC_lt_of_lt (h q₀ hq₀) hlt)
       (Finset.prod_le_pow_card _ _ _ fun q hq ↦
         (valuation_weightedX_sub_weightedC_lt_of_lt (h q (Finset.mem_of_mem_erase hq)) hlt).le)
-      zero_le (zero_lt_iff.mpr (pow_ne_zero _ hs))
+      zero_le (pos_iff_ne_zero.mpr (pow_ne_zero _ hs))
   · -- if `v(s) ≤ v(T - b)`, every factor is `v(T - b)`
     intro hle
     exact Finset.pow_card_le_prod _ _ _ fun q hq ↦
@@ -639,7 +639,7 @@ private theorem exists_valuation_weightedX_sub_weightedC_lt (x : closedPolydisc 
   rw [map_mul, map_mul, map_pow, map_pow, hτpow]
   exact mul_lt_mul_of_pos_right
     ((closedPolydisc_valuation_weightedC_lt_iff x _ _).mpr hρτ)
-    (zero_lt_iff.mpr (pow_ne_zero _ hτ₀))
+    (pos_iff_ne_zero.mpr (pow_ne_zero _ hτ₀))
 
 /-- **Separating the discs of a finite family by a product of linear factors.** Let the discs
 `D(a, |c|)` of a nonempty finite family have radii at most `|ρ|` and centres pairwise within `|τ|`

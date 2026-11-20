@@ -289,7 +289,7 @@ noncomputable def equivariantLocalSectionTrivialization (p : E → X) (hpc : Con
       fun e he ↦ coe_equivariantSectionFiber he
   continuousOn_invFun :=
     (hs.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hq ↦ hq.1).smul
-      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+      (continuous_subtypeVal.comp_continuousOn continuousOn_snd)
   baseSet := U
   open_baseSet := hU
   source_eq := rfl

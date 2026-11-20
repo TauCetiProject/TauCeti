@@ -318,7 +318,7 @@ theorem topologicalKrullDim_closure_of_isLocallyClosed {K : Type u} [Field K]
   rw [topologicalKrullDim_eq_iSup_irreducibleComponents]
   refine iSup_le fun C ↦ ?_
   let Z : Set X := Subtype.val '' C.val
-  have hZ : IsIrreducible Z := C.2.1.image _ continuous_subtype_val.continuousOn
+  have hZ : IsIrreducible Z := C.property.1.image _ continuous_subtypeVal.continuousOn
   have hZc : IsClosed Z := isClosed_closure.isClosedEmbedding_subtypeVal.isClosedMap _
     (isClosed_of_mem_irreducibleComponents _ C.property)
   have hd : Dense ((Subtype.val : closure s → X) ⁻¹' s) := by

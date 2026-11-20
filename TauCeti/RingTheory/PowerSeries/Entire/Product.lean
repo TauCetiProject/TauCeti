@@ -429,7 +429,7 @@ theorem evalAt_tprod_polynomialHom_one_sub_C_inv_mul_X_eq_zero_iff [CompleteSpac
     ← _root_.PowerSeries.constantCoeff_taylor,
     ← _root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero,
     order_taylor_tprod_polynomialHom_one_sub_C_inv_mul_X hα hα0 x, ne_eq, Set.encard_eq_zero]
-  exact Set.nonempty_iff_ne_empty.symm.trans Set.nonempty_def
+  exact Set.ne_empty_iff_nonempty.trans Set.nonempty_def
 
 /-- **Enumeration-independent unconditional Weierstrass product.** Let `f` be an entire power series
 with constant coefficient `1` over an algebraically closed complete ultrametric normed field `K`.

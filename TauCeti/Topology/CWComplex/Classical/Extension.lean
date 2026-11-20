@@ -79,7 +79,7 @@ private lemma exists_extension_skeletonLT_succ {n : ℕ}
     let g : C(sphere (0 : Fin n → ℝ) 1, Y) :=
       ⟨fun y ↦ f ((), ⟨map n j y, cellFrontier_subset_skeletonLT n j ⟨y, y.property, rfl⟩⟩),
         f.continuous.comp (continuous_const.prodMk
-          (((continuousOn n j).comp_continuous continuous_subtype_val
+          (((continuousOn n j).comp_continuous continuous_subtypeVal
             fun y ↦ sphere_subset_closedBall y.property).subtype_mk _))⟩
     obtain ⟨G, hG⟩ := (g.nullhomotopic_iff_exists_extension_closedBall).1 (h ⟨j⟩ g)
     exact ⟨G.comp ⟨Prod.snd, continuous_snd⟩, fun () y hy ↦ hG ⟨y, hy⟩⟩

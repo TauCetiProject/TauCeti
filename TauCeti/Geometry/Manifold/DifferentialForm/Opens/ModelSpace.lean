@@ -41,7 +41,7 @@ representative. -/
 theorem RoughForm.inChartAt_opens_eventuallyEq (ω : RoughForm 𝓘(ℝ, E) U F k)
     (ω₀ : E → E [⋀^Fin k]→L[ℝ] F) (hω : ∀ x : U, ω x = ω₀ x) (x : U) :
     ω.inChartAt x =ᶠ[𝓝 (x : E)] ω₀ := by
-  have he := U.chartAt_subtype_val_symm_eventuallyEq (H := E) (x := x)
+  have he := U.chartAt_subtypeVal_symm_eventuallyEq (H := E) (x := x)
   simp only [chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
     OpenPartialHomeomorph.refl_apply] at he
   filter_upwards [he.eventually_nhds] with z hz
@@ -95,7 +95,7 @@ theorem mextDerivWithin_opens_eq_extDerivWithin
     {ω : RoughForm 𝓘(ℝ, E) U F k} {ω₀ : E → E [⋀^Fin k]→L[ℝ] F}
     (hω : ∀ x : U, ω x = ω₀ x) (s : Set U) (x : U) :
     mextDerivWithin ω s x = extDerivWithin ω₀ (Subtype.val '' s) (x : E) := by
-  have he := U.chartAt_subtype_val_symm_eventuallyEq (H := E) (x := x)
+  have he := U.chartAt_subtypeVal_symm_eventuallyEq (H := E) (x := x)
   simp only [chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
     OpenPartialHomeomorph.refl_apply] at he
   have hs : (extChartAt 𝓘(ℝ, E) x).symm ⁻¹' s =ᶠ[𝓝 (x : E)] Subtype.val '' s := by
@@ -194,7 +194,7 @@ theorem IsSmoothForm.continuous_flatOneFormEquiv {n : WithTop ℕ∞}
   let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
     (ι := Fin 1) 0).symm
   have hc : Continuous (fun x : U ↦ ω₀ x) :=
-    hω₀.continuousOn.comp_continuous continuous_subtype_val fun x ↦ x.2
+    hω₀.continuousOn.comp_continuous continuous_subtypeVal fun x ↦ x.property
   exact (L.continuous.comp hc).congr fun x ↦ congrArg L (heq x).symm
 
 /-- The flat one-form adapter of the differential of a restricted function is its ambient

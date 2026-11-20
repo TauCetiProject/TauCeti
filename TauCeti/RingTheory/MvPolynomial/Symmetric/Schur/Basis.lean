@@ -188,9 +188,11 @@ theorem partWeightCoeff_surjective : Function.Surjective (partWeightCoeff σ R n
         Finsupp.ext fun ξ => ?_⟩
   rw [partWeightCoeff_apply, coeff_sum]
   refine (Finset.sum_eq_single ξ (fun ν _ hne => ?_) fun hξ => absurd (mem_univ ξ) hξ).trans ?_
-  · rw [coeff_smul, coeff_msymm_partWeight R ν.1 ξ.1 ξ.2,
+  · rw [AddMonoidAlgebra.coeff_smul_apply, coeff_msymm_partWeight R ν.val ξ.val ξ.property,
       ite_eq_right fun h => hne (Subtype.ext h.symm), smul_zero]
-  · rw [coeff_smul, coeff_msymm_partWeight R ξ.1 ξ.1 ξ.2, ite_eq_left rfl, smul_eq_mul, mul_one]
+  · rw [AddMonoidAlgebra.coeff_smul_apply, coeff_msymm_partWeight R ξ.val ξ.val ξ.property,
+      ite_eq_left rfl,
+      smul_eq_mul, mul_one]
 
 /-- **A symmetric homogeneous polynomial is exactly a prescription of coefficients at the sorted
 monomials.** -/

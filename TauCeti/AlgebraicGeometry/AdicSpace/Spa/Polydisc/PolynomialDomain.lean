@@ -195,7 +195,8 @@ private theorem card_filter_eq_zero_or_of_mem_cell {Z : Finset K} {γ δ : K}
       Multiset.card (g.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) = 0 := by
   have hδ : ‖γ - δ‖ = 0 := by
     have hlow := (mem_cell.mp hx).2.1
-    rwa [h0, le_zero_iff, closedPolydisc_valuation_weightedC_eq_zero_iff, ← norm_eq_zero] at hlow
+    rwa [h0, nonpos_iff_eq_zero, closedPolydisc_valuation_weightedC_eq_zero_iff,
+      ← norm_eq_zero] at hlow
   have hroot {p : Polynomial K}
       (hp : Multiset.card (p.roots.filter fun α ↦ ‖γ - α‖ ≤ ‖γ - δ‖) ≠ 0) :
       Polynomial.X - Polynomial.C γ ∣ p := by
@@ -245,10 +246,10 @@ private theorem valuation_pow_mul_le_iff {x : closedPolydisc 1 K} {γ ρ a b : K
   have ha : x.val.valuation (C a) = x.val.valuation (C ρ) ^ l * x.val.valuation (C b) := by
     rw [← map_pow, ← map_pow, ← map_mul, ← map_mul, hρ, div_mul_cancel₀ _ hb]
   have hb' : 0 < x.val.valuation (C b) :=
-    zero_lt_iff.mpr ((closedPolydisc_valuation_weightedC_eq_zero_iff x b).not.mpr hb)
+    pos_iff_ne_zero.mpr ((closedPolydisc_valuation_weightedC_eq_zero_iff x b).not.mpr hb)
   rw [ha, pow_add, mul_assoc]
   constructor <;>
-  rw [mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _), mul_le_mul_iff_left₀ hb',
+  rw [mul_le_mul_iff_right₀ (pow_pos (pos_iff_ne_zero.mpr h0) _), mul_le_mul_iff_left₀ hb',
     pow_le_pow_iff_left₀ zero_le zero_le (by omega)]
 
 /-- **The case `m < n` of `isHoledDiscUnion_cell_inter`.** If `m < n`, `e ≠ 0`, and `m = 0` at
@@ -287,7 +288,7 @@ private theorem exists_isHoledDiscUnion_cell_inter_of_eq (Z : Finset K) (γ δ :
     rw [← hmn, ← closedPolydisc_valuation_weightedC_le_iff x]
     by_cases h0 : x.val.valuation (T - C γ) = 0
     · rw [hm x hx h0, pow_zero, one_mul, one_mul]
-    · exact mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _)
+    · exact mul_le_mul_iff_right₀ (pow_pos (pos_iff_ne_zero.mpr h0) _)
   by_cases hce : ‖c‖ ≤ ‖e‖
   · exact ⟨Set.univ, by rw [Set.inter_univ]; exact isHoledDiscUnion_cell Z γ δ,
       fun x hx ↦ by simpa [hce] using hiff x hx⟩
@@ -410,7 +411,7 @@ private theorem vle_iff_vle_div_gcd [DecidableEq K] {x : closedPolydisc 1 K} {g 
       x.val.valuation (Polynomial.eval₂RingHom C T (g / gcd g p)) ≤
         x.val.valuation (Polynomial.eval₂RingHom C T (p / gcd g p)) := by
     simp only [map_mul]
-    exact mul_le_mul_iff_right₀ (zero_lt_iff.mpr hx)
+    exact mul_le_mul_iff_right₀ (pos_iff_ne_zero.mpr hx)
   rwa [EuclideanDomain.mul_div_cancel' hh (gcd_dvd_left g p),
     EuclideanDomain.mul_div_cancel' hh (gcd_dvd_right g p), valuation_le_iff,
     valuation_le_iff] at key
@@ -431,7 +432,7 @@ private theorem setOf_forall_vle_eq_iInter_div_gcd [DecidableEq K] {G : Finset (
   ext x
   have hp0 : ¬ x.val.toValuativeRel.vle (Polynomial.eval₂RingHom C T p) 0 ↔
       x.val.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 := by
-    rw [Ne, ← le_zero_iff, ← map_zero x.1.valuation, valuation_le_iff]
+    rw [Ne, ← nonpos_iff_eq_zero, ← map_zero x.val.valuation, valuation_le_iff]
   -- a divisor of a polynomial with nonzero value has nonzero value
   have hdvd {f h : Polynomial K} (hhf : h ∣ f)
       (hf : x.val.valuation (Polynomial.eval₂RingHom C T f) ≠ 0) :
@@ -446,7 +447,7 @@ private theorem setOf_forall_vle_eq_iInter_div_gcd [DecidableEq K] {G : Finset (
       closedPolydisc_valuation_weightedC_eq_zero_iff]
   have hcp := (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_left _ p) hcx)).mpr (hG _ hcG)
   have hx : x.val.valuation (Polynomial.eval₂RingHom C T p) ≠ 0 :=
-    fun h0 ↦ hcx (le_zero_iff.mp (h0 ▸ (valuation_le_iff _ _ _).mpr hcp))
+    fun h0 ↦ hcx (nonpos_iff_eq_zero.mp (h0 ▸ (valuation_le_iff _ _ _).mpr hcp))
   exact ⟨fun g hg ↦ (vle_iff_vle_div_gcd hp (hdvd (gcd_dvd_right g p) hx)).mpr (hG g hg), hx⟩
 
 /-- **Every rational subset of the closed unit disc is a finite union of holed discs.** Let `K`

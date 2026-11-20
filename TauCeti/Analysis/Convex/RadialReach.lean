@@ -129,7 +129,7 @@ theorem continuous_compactConvexRadialReach :
     funext (compactConvexRadialReach_eq_inv_gauge hconv hcl hb hc)
   rw [heq]
   exact ((continuous_gauge (convex_setOf_add_mem hconv)
-    (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)).comp continuous_subtype_val).inv₀
+    (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)).comp continuous_subtypeVal).inv₀
       (fun u ↦ (gauge_pos_of_mem_sphere hb hc u).ne')
 
 /-- The convex-ball homeomorphism has the positive radial-reach formula on every segment

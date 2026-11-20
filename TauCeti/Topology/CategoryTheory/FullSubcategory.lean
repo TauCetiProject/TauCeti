@@ -194,8 +194,8 @@ theorem continuous_comp_fullSubcategory
     (⟨(ι p.val.1, ι p.val.2), congrArg ObjectProperty.FullSubcategory.obj p.property⟩ :
       {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})
   have hι : Continuous ι := isEmbedding_total_fullSubcategory.continuous
-  have hg : Continuous g := ((hι.comp (continuous_fst.comp continuous_subtype_val)).prodMk
-    (hι.comp (continuous_snd.comp continuous_subtype_val))).subtype_mk _
+  have hg : Continuous g := ((hι.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
+    (hι.comp (continuous_snd.comp continuous_subtypeVal))).subtype_mk _
   refine isEmbedding_total_fullSubcategory.continuous_iff.mpr ?_
   convert hc.comp hg using 1
   funext ⟨⟨⟨x, y, f⟩, ⟨y', z, f'⟩⟩, h⟩

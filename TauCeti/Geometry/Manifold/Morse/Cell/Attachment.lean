@@ -552,7 +552,7 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
       -- `x.2 : (x : M) ∈ {x | f x ≤ c + ε}` is the inequality `f x ≤ c + ε` by the definition of
       -- membership in a set-builder set.
       fun x ↦ Or.inl (le_trans (b := c + ε) x.property (by linarith))
-    exact ⟨⟨fun x ↦ ⟨x.1, x.2, hsub x⟩, continuous_subtype_val.subtype_mk _⟩, fun x ↦ rfl,
+    exact ⟨⟨fun x ↦ ⟨x.val, x.property, hsub x⟩, continuous_subtypeVal.subtype_mk _⟩, fun x ↦ rfl,
       ⟨ContinuousMap.HomotopyRel.refl _ _⟩⟩
   have := Fintype.ofFinite ι
   -- Milnor's cutoff, equal to `2ε` on `(-∞, ε]` and to `0` on `[2ε, ∞)`.

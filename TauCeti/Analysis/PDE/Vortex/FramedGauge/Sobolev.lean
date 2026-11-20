@@ -168,9 +168,9 @@ theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : �
   obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
   have hs' := finrank_real_complex_lt_two_mul hs
   have hre := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₁
-    ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const)
+    ((continuous_re.comp (continuous_subtypeVal.comp hu)).sub continuous_const)
   have him := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₂
-    (continuous_im.comp (continuous_subtype_val.comp hu))
+    (continuous_im.comp (continuous_subtypeVal.comp hu))
   have h := (((continuous_ofReal.tendsto 0).comp hre).add
     (((continuous_ofReal.tendsto 0).comp him).mul_const I)).const_add (1 : ℂ)
   have hfun : (fun z ↦ (u z : ℂ)) =
@@ -225,9 +225,9 @@ theorem contDiff_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {k : ℕ} (hk :
     push_cast
     linarith
   have hre := contDiff_of_mem_realSobolevFunctions hk' hu₁
-    ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const)
+    ((continuous_re.comp (continuous_subtypeVal.comp hu)).sub continuous_const)
   have him := contDiff_of_mem_realSobolevFunctions hk' hu₂
-    (continuous_im.comp (continuous_subtype_val.comp hu))
+    (continuous_im.comp (continuous_subtypeVal.comp hu))
   have hfun : (fun z ↦ (u z : ℂ)) =
       fun z ↦ ofRealCLM ((u z : ℂ).re - 1) + 1 + ofRealCLM (u z : ℂ).im * I := by
     ext1 z

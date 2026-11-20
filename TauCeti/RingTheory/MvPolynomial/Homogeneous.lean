@@ -297,8 +297,8 @@ theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
     homogeneousComponent 1 φ = ∑ i, φ.coeff (Finsupp.single i 1) • X i := by
   classical
   ext d
-  simp only [coeff_homogeneousComponent, coeff_sum, coeff_smul, coeff_X, smul_eq_mul, mul_ite,
-    mul_one, mul_zero]
+  simp only [coeff_homogeneousComponent, coeff_sum, AddMonoidAlgebra.coeff_smul_apply, coeff_X,
+    smul_eq_mul, mul_ite, mul_one, mul_zero]
   split_ifs with hd
   · obtain ⟨i, rfl⟩ := (Finsupp.sum_eq_one_iff d).1 <| by
       rw [Finsupp.sum, ← Finsupp.degree_apply]

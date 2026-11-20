@@ -101,7 +101,7 @@ theorem one_sub_pow_mem_slitPlane_iff_forall_exp {m : ℕ} (hm : 0 < m) {z : ℂ
   rw [(isPrimitiveRoot_exp m hm.ne').one_sub_pow_mem_slitPlane_iff hm]
   refine forall₂_congr fun j _ => ?_
   have hexp : exp (2 * Real.pi * I / m) ^ j = exp (2 * Real.pi * I * j / m) := by
-    rw [← exp_nat_mul]
+    rw [← exp_natCast_mul]
     congr 1
     ring
   rw [hexp]

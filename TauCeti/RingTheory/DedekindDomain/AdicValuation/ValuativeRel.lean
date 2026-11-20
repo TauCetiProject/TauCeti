@@ -290,10 +290,10 @@ instance compactSpace_adicCompletionIntegers
   let f : 𝒪[v.adicCompletion K] ≃ₜ v.adicCompletionIntegers K := {
     toEquiv := (v.integerEquivAdicCompletionIntegers (K := K)).toEquiv
     continuous_toFun := continuous_induced_rng.mpr <|
-      continuous_subtype_val.congr fun x ↦
+      continuous_subtypeVal.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers (K := K) x).symm
     continuous_invFun := continuous_induced_rng.mpr <|
-      continuous_subtype_val.congr fun x ↦
+      continuous_subtypeVal.congr fun x ↦
         (v.coe_integerEquivAdicCompletionIntegers_symm (K := K) x).symm }
   exact f.compactSpace
 

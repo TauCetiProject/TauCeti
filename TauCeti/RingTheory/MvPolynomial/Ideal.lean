@@ -175,7 +175,7 @@ theorem linearIndependent_of_sub_monomial_mem_pow_idealOfVars {R : Type*} [CommR
   have hcoeff (i j : ι) (hij : degree (s i) ≤ degree (s j)) :
       (v j).coeff (s i) = if i = j then c j else 0 := by
     have h := (mem_pow_idealOfVars_iff' _ _).mp (hv j) (s i) (Nat.lt_succ_of_le hij)
-    rw [coeff_sub, coeff_monomial, sub_eq_zero] at h
+    rw [AddMonoidAlgebra.coeff_sub, Finsupp.sub_apply, coeff_monomial, sub_eq_zero] at h
     simp only [h, hs.eq_iff, eq_comm]
   rw [linearIndependent_iff']
   intro t g hg i hi
@@ -183,7 +183,7 @@ theorem linearIndependent_of_sub_monomial_mem_pow_idealOfVars {R : Type*} [CommR
   induction hd : degree (s i) using Nat.strong_induction_on generalizing i with
   | _ d ih =>
     have h := congrArg (fun p : MvPolynomial σ R ↦ p.coeff (s i)) hg
-    simp only [coeff_sum, coeff_smul] at h
+    simp only [coeff_sum, AddMonoidAlgebra.coeff_smul_apply] at h
     rw [Finset.sum_eq_single_of_mem i hi, hcoeff i i le_rfl] at h
     · simp only [↓reduceIte, smul_eq_mul] at h
       exact (mul_eq_zero.mp h).resolve_right (hc i)

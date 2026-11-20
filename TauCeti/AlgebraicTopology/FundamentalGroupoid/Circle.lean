@@ -98,10 +98,10 @@ theorem mem_lower {z : sphere (0 : ℂ) 1} : z ∈ lower ↔ (z : ℂ) ≠ I := 
 theorem mem_basepoints {z : sphere (0 : ℂ) 1} : z ∈ basepoints ↔ z = 1 ∨ z = -1 := Iff.rfl
 
 theorem isOpen_upper : IsOpen upper :=
-  isOpen_ne_fun continuous_subtype_val continuous_const
+  isOpen_ne_fun continuous_subtypeVal continuous_const
 
 theorem isOpen_lower : IsOpen lower :=
-  isOpen_ne_fun continuous_subtype_val continuous_const
+  isOpen_ne_fun continuous_subtypeVal continuous_const
 
 /-- The two arcs cover the circle. -/
 theorem upper_union_lower : upper ∪ lower = univ := by
@@ -155,7 +155,7 @@ private theorem isPathConnected_re_pos :
   have hne : ∀ w : H, (w : ℂ) ≠ 0 := fun w h ↦ by
     have hw : 0 < (w : ℂ).re := w.property
     simp [h] at hw
-  let f := normalizeToSphere (fun w : H ↦ (w : ℂ)) continuous_subtype_val hne
+  let f := normalizeToSphere (fun w : H ↦ (w : ℂ)) continuous_subtypeVal hne
   convert isPathConnected_range f.continuous using 1
   ext z
   constructor
@@ -188,7 +188,7 @@ private theorem re_pos_iff_of_joinedIn {x y : sphere (0 : ℂ) 1} (h : JoinedIn 
     0 < (x : ℂ).re ↔ 0 < (y : ℂ).re := by
   obtain ⟨γ, hγ⟩ := h
   let f : unitInterval → ℝ := fun t ↦ ((γ t : sphere (0 : ℂ) 1) : ℂ).re
-  have hf : Continuous f := continuous_re.comp (continuous_subtype_val.comp γ.continuous)
+  have hf : Continuous f := continuous_re.comp (continuous_subtypeVal.comp γ.continuous)
   have hne : ∀ t, f t ≠ 0 := fun t ↦ re_ne_zero_of_mem_inter (hγ t)
   have h0 : f 0 = (x : ℂ).re := by simp [f]
   have h1 : f 1 = (y : ℂ).re := by simp [f]
@@ -313,7 +313,7 @@ private theorem arcFunctor_comp_eq {K : Type*} [Group K] (kA kB : K) :
   refine CategoryTheory.Functor.ext (fun _ ↦ rfl) fun a b f ↦ ?_
   obtain ⟨γ, -⟩ := Quotient.exists_rep f.hom
   have hab : (a.val : sphere (0 : ℂ) 1) = b.val := eq_of_joinedIn_inter a.property b.property
-    ⟨γ.map continuous_subtype_val, fun t ↦ (γ t).2⟩
+    ⟨γ.map continuous_subtypeVal, fun t ↦ (γ t).property⟩
   rw [Functor.comp_map, Functor.comp_map, arcFunctor, arcFunctor,
     SingleObj.differenceFunctor_map, SingleObj.differenceFunctor_map]
   simp [FundamentalGroupoidOn.map, hab]

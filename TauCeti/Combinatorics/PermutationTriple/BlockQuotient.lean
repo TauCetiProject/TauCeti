@@ -295,7 +295,7 @@ and the quotient by them is the double cover `(0 1)`, `(0 1)`, `1`. -/
 theorem exists_blockQuotient_eq_ofTwo_swap (hcard : B.ncard * 2 = n) (h0 : t.σ0 '' B ≠ B)
     (h1 : t.σ1 '' B ≠ B) :
     ∃ e : orbit t.monodromyGroup B ≃ Fin 2, t.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
-  have hBne : B.Nonempty := Set.nonempty_iff_ne_empty.2 fun h ↦ h0 (by simp [h])
+  have hBne : B.Nonempty := Set.ne_empty_iff_nonempty.1 fun h ↦ h0 (by simp [h])
   have h := ncard_mul_eq_of_isBlock ht hB hBne (Finite.equivFin (orbit t.monodromyGroup B))
   exact ⟨Finite.equivFinOfCardEq (Nat.eq_of_mul_eq_mul_left
     ((Set.ncard_pos B.toFinite).mpr hBne) (h.trans hcard.symm)),

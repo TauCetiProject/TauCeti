@@ -75,7 +75,7 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
     let _ := frameTopology (I := I) (n := n) e U hU
     Continuous (e'.frameCoordinates (I := I) (n := n) hU') := by
   let _ := frameTopology (I := I) (n := n) e U hU
-  let W (i : ι) : Opens U' := Opens.comap ⟨Subtype.val, continuous_subtype_val⟩ (U i)
+  let W (i : ι) : Opens U' := Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ (U i)
   have hW : ∀ x : U', ∃ i, x ∈ W i := fun x ↦ hcover x
   apply ContMDiffMap.continuous_of_forall_continuous_restrict W hW
   intro i
@@ -85,13 +85,13 @@ theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U
         -- The target-subtype criterion leaves composition through two inclusions. Normalize
         -- their nested subtype coercions, which are bundled by different open carriers.
         change ContMDiff I I n (fun x : W i ↦ ((x : U') : M))
-        exact (contMDiff_subtype_val (U := U')).comp
-          (contMDiff_subtype_val (U := W i)))⟩
+        exact (contMDiff_subtypeVal (U := U')).comp
+          (contMDiff_subtypeVal (U := W i)))⟩
   let A : C^n⟮I, W i; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
     ⟨fun x ↦ ((e i).coordChangeL 𝕜 e' ((x : U') : M) : F →L[𝕜] F), fun x ↦
       (contMDiffAt_coordChangeL (e := e i) (e' := e')
         (hU i x.property) (hU' (x : U').property)).comp x
-          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+          (contMDiff_subtypeVal.comp contMDiff_subtypeVal).contMDiffAt⟩
   have hc : Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦
       ((e i).frameCoordinates (hU i) s).comp j) :=
     ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
@@ -157,20 +157,20 @@ theorem frameTopology_le_of_refinement {κ : Type*}
 /-- Restriction of native sections is continuous into the topology induced by the pulled-back
 frames and the restricted frame domains. No global covering hypothesis is needed. -/
 theorem continuous_restrict_frameTopology (W : Opens M) :
-    let c : C(W, M) := ⟨Subtype.val, continuous_subtype_val⟩
+    let c : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
     let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
       ContMDiffVectorBundle.pullback F V I
-        (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, W; I, M⟯)
+        (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, W; I, M⟯)
     let eW := fun i ↦ (e i).pullback c
     let UW := fun i ↦ Opens.comap c (U i)
     let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
     let _ := frameTopology (I := I) (n := n) e U hU
     let _ := frameTopology (I := I) (n := n) eW UW hUW
     Continuous (fun s : Cₛ^n⟮I; F, V⟯ ↦ s.restrict W) := by
-  let c : C(W, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  let c : C(W, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   let _ : ContMDiffVectorBundle n F (c *ᵖ V) I :=
     ContMDiffVectorBundle.pullback F V I
-      (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, W; I, M⟯)
+      (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, W; I, M⟯)
   let eW := fun i ↦ (e i).pullback c
   let UW := fun i ↦ Opens.comap c (U i)
   let hUW : ∀ i, (UW i : Set W) ⊆ (eW i).baseSet := fun i _ hx ↦ hU i hx
@@ -184,8 +184,8 @@ theorem continuous_restrict_frameTopology (W : Opens M) :
         -- Normalize the composite of the two open inclusions after the target-subtype
         -- criterion; rewriting cannot identify their distinct bundled membership proofs.
         change ContMDiff I I n (fun x : UW i ↦ ((x : W) : M))
-        exact (contMDiff_subtype_val (U := W)).comp
-          (contMDiff_subtype_val (U := UW i)))⟩
+        exact (contMDiff_subtypeVal (U := W)).comp
+          (contMDiff_subtypeVal (U := UW i)))⟩
   have h := ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp
     ((continuous_frameCoordinates e U hU i).prodMk (continuous_const (y := j)))
   apply h.congr

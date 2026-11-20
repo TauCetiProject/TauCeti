@@ -126,8 +126,8 @@ private def chartTargetHomeomorph (x₀ : M) :
   invFun z := ⟨z, mem_extChartTargetOpens.mp z.property⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val.subtype_mk _
-  continuous_invFun := continuous_subtype_val.subtype_mk _
+  continuous_toFun := continuous_subtypeVal.subtype_mk _
+  continuous_invFun := continuous_subtypeVal.subtype_mk _
 
 omit [IsManifold I ∞ M] in
 private theorem coe_chartTargetHomeomorph_apply (x₀ : M) (z : (extChartAt I x₀).target) :
@@ -179,7 +179,7 @@ private def symInclusion (m : ℕ) :
     C(E [×m]→L[ℝ] symmetricBilinearMaps ℝ E ℝ, E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) :=
   ⟨(symmetricBilinearMaps ℝ E ℝ).subtypeL.compContinuousMultilinearMap,
     (ContinuousMultilinearMap.isUniformInducing_postcomp _
-      isUniformEmbedding_subtype_val.isUniformInducing).isInducing.continuous⟩
+      isUniformEmbedding_subtypeVal.isUniformInducing).isInducing.continuous⟩
 
 @[simp]
 private theorem symInclusion_apply (m : ℕ) (q : E [×m]→L[ℝ] symmetricBilinearMaps ℝ E ℝ) :
@@ -188,7 +188,7 @@ private theorem symInclusion_apply (m : ℕ) (q : E [×m]→L[ℝ] symmetricBili
 
 private theorem isInducing_symInclusion (m : ℕ) : IsInducing (symInclusion (E := E) m) :=
   (ContinuousMultilinearMap.isUniformInducing_postcomp _
-    isUniformEmbedding_subtype_val.isUniformInducing).isInducing
+    isUniformEmbedding_subtypeVal.isUniformInducing).isInducing
 
 /-- The coordinate derivatives of the chart metric are those of its symmetric-valued form. -/
 private theorem chartMetricDerivative_eq (k : ℕ∞)

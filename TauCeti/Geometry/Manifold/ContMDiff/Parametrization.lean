@@ -208,7 +208,7 @@ theorem exists_opens_diffeomorph_euclideanSpace {x : N} (hx : I.IsInteriorPoint 
             rw [← extChartAt_source I]
             exact hy.1))
         fun y hy ↦ hy.2
-    exact hf.comp_contMDiff contMDiff_subtype_val fun u ↦ u.2
+    exact hf.comp_contMDiff contMDiff_subtypeVal fun u ↦ u.property
   · rw [← ContMDiff.subtypeVal_comp_iff]
     exact (contMDiffOn_extChartAt_symm x).comp_contMDiff
       (L.symm.contDiff.comp OpenPartialHomeomorph.contDiff_univBall).contMDiff hbT

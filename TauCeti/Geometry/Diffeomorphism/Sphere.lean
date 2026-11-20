@@ -237,7 +237,7 @@ private theorem contMDiff_normalizedApply :
   have hpair : ContMDiff (𝓘(ℝ, E →L[ℝ] F).prod (𝓡 n)) 𝓘(ℝ, (E →L[ℝ] F) × E) m
       fun z : invertibleOpens n (E := E) (F := F) × sphere (0 : E) 1 ↦
         ((z.1 : E →L[ℝ] F), (z.2 : E)) :=
-    (contMDiff_subtype_val.comp contMDiff_fst).prodMk_space
+    (contMDiff_subtypeVal.comp contMDiff_fst).prodMk_space
       (contMDiff_coe_sphere.comp contMDiff_snd)
   have happ : ContDiff ℝ m fun p : (E →L[ℝ] F) × E ↦ p.1 p.2 :=
     isBoundedBilinearMap_apply.contDiff

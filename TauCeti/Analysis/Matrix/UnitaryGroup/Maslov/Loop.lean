@@ -161,7 +161,7 @@ noncomputable def realImagePath {U V : unitaryGroup n ℂ} (γ : Path U V) :
   exists_frame := ⟨TauCeti.realSubspace n, TauCeti.isMaximalTotallyReal_realSubspace,
     fun t ↦ (γ t : Matrix n n ℂ).toEuclideanCLE (det_isUnit (γ t)).ne_zero,
     by simpa only [coe_toEuclideanCLE, Function.comp_def] using
-      continuous_toEuclideanCLM.comp (continuous_subtype_val.comp γ.continuous),
+      continuous_toEuclideanCLM.comp (continuous_subtypeVal.comp γ.continuous),
     fun t ↦ realImage_eq_map_toEuclideanCLE _⟩
 
 @[simp]

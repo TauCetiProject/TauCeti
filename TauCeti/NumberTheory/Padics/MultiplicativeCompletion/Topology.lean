@@ -47,7 +47,7 @@ instance padicCompletionUnitsContinuousSMul :
   have hc : Continuous fun y : ℤ_[p] × Additive ↑(padicCompletionUnits p L) ↦
       (PadicInt.toZModPow m y.1, y.2.toMul.val m) :=
     ((PadicInt.continuous_toZModPow m).comp continuous_fst).prodMk
-      ((continuous_apply m).comp (continuous_subtype_val.comp
+      ((continuous_apply m).comp (continuous_subtypeVal.comp
         (continuous_toMul.comp continuous_snd)))
   exact (hpow.comp hc).congr fun y ↦ by
     simp only [Function.comp_apply, PadicInt.val_toZModPow_eq_appr]
@@ -62,7 +62,7 @@ theorem continuous_padicCompletionUnitsAut (K : Type*) [Field K] [Algebra K L]
   have hσ : Continuous (padicCompletionPowerClassMap p L K σ m) :=
     continuous_of_discreteTopology
   have hm : Continuous (fun x : ↑(padicCompletionUnits p L) ↦ x.val m) :=
-    (continuous_apply m).comp continuous_subtype_val
+    (continuous_apply m).comp continuous_subtypeVal
   exact (hσ.comp hm).congr fun x ↦ (padicCompletionUnitsAut_apply p L K σ x m).symm
 
 private theorem isClosed_padicCompletionUnits :

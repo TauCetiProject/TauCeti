@@ -132,18 +132,18 @@ lemma continuous_cellDeformation (A : Set (cell C n)) {Ψ : C(I × (Fin n → �
       obtain ⟨rfl, hij⟩ := Sigma.mk.inj_iff.1 hij
       obtain rfl := eq_of_heq hij
       refine ((continuousOn m i).comp_continuous (Ψ.continuous.comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))
+        (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))
         fun q ↦ mem_closedBall_zero_iff.2 (hΨb _ _ (mem_closedBall_zero_iff.1 q.2.property))).congr
         fun q ↦ ?_
       exact (cellDeformation_map hΨ hj q.1 (mem_closedBall_zero_iff.1 q.2.property)).symm
     · -- Every other cell of the skeleton misses the open cells of `A`, and is fixed.
       push Not at hiA
-      refine ((continuousOn m i).comp_continuous (continuous_subtype_val.comp continuous_snd)
+      refine ((continuousOn m i).comp_continuous (continuous_subtypeVal.comp continuous_snd)
         fun q ↦ q.2.property).congr fun q ↦ (cellDeformation_of_notMem fun j hj ↦ ?_).symm
       exact (disjoint_closedCell_openCell_of_ne n hm (hiA j hj)).notMem_of_mem_left
         ⟨q.2, q.2.property, rfl⟩
   · -- The base lies in the `(n-1)`-skeleton, which is fixed.
-    exact (continuous_subtype_val.comp continuous_snd).congr fun q ↦
+    exact (continuous_subtypeVal.comp continuous_snd).congr fun q ↦
       (cellDeformation_of_mem_skeletonLT ((skeletonLT C n).base_subset q.2.property)).symm
 
 /-- **A deformation of the closed unit ball fixing the unit sphere, read through the

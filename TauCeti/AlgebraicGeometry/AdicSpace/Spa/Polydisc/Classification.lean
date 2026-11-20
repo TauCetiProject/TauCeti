@@ -236,7 +236,7 @@ private theorem valuation_mul_pow_le_iff_of_le [IsAlgClosed K] {x y : closedPoly
         z.val.valuation (C c) * z.val.valuation (T - C a) ^ n * z.val.valuation (T - C a) ^ k ∧
       z.val.valuation (C (e * c)) * z.val.valuation (T - C a) ^ n =
         z.val.valuation (C c) * z.val.valuation (T - C a) ^ n * z.val.valuation (C e) := by
-    refine ⟨zero_lt_iff.mpr (mul_ne_zero (fun h0 ↦ hc ?_) (pow_ne_zero n hz₀)),
+    refine ⟨pos_iff_ne_zero.mpr (mul_ne_zero (fun h0 ↦ hc ?_) (pow_ne_zero n hz₀)),
       by rw [pow_add, mul_assoc], by rw [map_mul, map_mul]; ac_rfl⟩
     simpa [h0] using closedPolydisc_valuation_weightedC_le_iff z c 0
   obtain ⟨hx, hx₁, hx₂⟩ := key x hx₀
@@ -366,7 +366,7 @@ private theorem cutRadius_pos {x : closedPolydisc 1 K} {b : K} (hb : ‖b‖ ≤
   have hopen := (Valuation.isContinuous_def.mp hcont (T - C b)).preimage
     (continuous_weightedC isWeightFamily_one_weight)
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp hopen 0
-    (by simpa only [Set.mem_preimage, map_zero, Set.mem_ofPred_eq] using zero_lt_iff.mpr h)
+    (by simpa only [Set.mem_preimage, map_zero, Set.mem_ofPred_eq] using pos_iff_ne_zero.mpr h)
   obtain ⟨c, hc₀, hcε⟩ := NormedField.exists_norm_lt K hε
   exact hc₀.trans_le (norm_le_cutRadius hb (hball (mem_ball_zero_iff.mpr hcε)).le)
 

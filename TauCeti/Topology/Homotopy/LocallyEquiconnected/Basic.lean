@@ -222,6 +222,6 @@ theorem _root_.IsOpen.locallyEquiconnectedSpace [LocallyEquiconnectedSpace X] {s
   have hr : ContinuousOn r s := by
     refine continuousOn_iff_continuous_domRestrict.mpr (continuous_id.congr fun x => ?_)
     simp [r, x.property]
-  exact .of_retract continuous_subtype_val hs (by simp) hr fun y => by simp [r, y.2]
+  exact .of_retract continuous_subtypeVal hs (by simp) hr fun y => by simp [r, y.property]
 
 end TauCeti

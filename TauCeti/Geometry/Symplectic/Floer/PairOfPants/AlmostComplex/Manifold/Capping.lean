@@ -456,8 +456,8 @@ theorem contMDiff_cappingAlmostComplex
     (tames_update_inf h₀.tames (hJb q)) hJb
     (SmoothAlmostComplexStructure.periodic_update_inf (hJbp q))
     (SmoothAlmostComplexStructure.contMDiff_update_inf (hJbs q)) hJbp hJbs hq
-    (update_self inf (Jb q) fun _ _ => J₀).symm (hℓ.comp contMDiff_subtype_val)
-    (hf.comp contMDiff_subtype_val) (hb.comp contMDiff_subtype_val) (fun y : U => hL y)
+    (update_self inf (Jb q) fun _ _ => J₀).symm (hℓ.comp contMDiff_subtypeVal)
+    (hf.comp contMDiff_subtypeVal) (hb.comp contMDiff_subtypeVal) (fun y : U => hL y)
     (fun y : U => y.property)
   refine contMDiffAt_subtype_iff (U := U)
     (x := ⟨p, mem_plumbedSphere_of_le_norm_sub_endCenter (hS p) hge⟩).mp ?_

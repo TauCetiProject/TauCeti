@@ -58,7 +58,7 @@ theorem ContMDiffAt.innerSL_smulRight_bundle {σ τ : Π x, V x} {x : M}
   let _ : NormedSpace ℝ (F →L[ℝ] ℝ) := inferInstance
   let _ : NormedAddCommGroup (F →L[ℝ] F →L[ℝ] ℝ) := inferInstance
   let _ : NormedSpace ℝ (F →L[ℝ] F →L[ℝ] ℝ) := inferInstance
-  have hp := ((ContinuousLinearMap.smulRightL ℝ F (F →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
+  have hp := ((ContinuousLinearMap.smulRightL ℝ ℝ ℝ F (F →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
     hσ').clm_apply hτ'
   refine hp.congr_of_eventuallyEq ?_
   filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds

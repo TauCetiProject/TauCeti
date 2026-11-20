@@ -234,7 +234,7 @@ theorem gaussianEnsembleLaw_one_eq_map_goeMeasure (n : ℕ) :
 theorem gaussianEnsembleLaw_eq_map_gueMeasure {β : ℕ} (hβ : β ≠ 1) (n : ℕ) :
     gaussianEnsembleLaw β n = (gueMeasure n).map Subtype.val := by
   rw [gaussianEnsembleLaw_def, gueMeasure_def,
-    Measure.map_map measurable_subtype_coe (measurable_gueMatrix n)]
+    Measure.map_map measurable_subtypeVal (measurable_gueMatrix n)]
   exact congrArg (Measure.map · _) (funext (gaussianEnsemble_eq_gaussianEnsemble_two_of_ne_one hβ))
 
 /-- The ambient `β = 2` law is the subtype-coercion pushforward of `gueMeasure`. -/
@@ -489,10 +489,10 @@ theorem map_mul_mul_conjTranspose_gaussianEnsembleLaw_two {n : ℕ}
   have hconj : Measurable fun H : Matrix (Fin n) (Fin n) ℂ ↦
       (U : Matrix (Fin n) (Fin n) ℂ) * H * (U : Matrix (Fin n) (Fin n) ℂ)ᴴ :=
     ((continuous_const.mul continuous_id).mul continuous_const).measurable
-  rw [gaussianEnsembleLaw_two_eq_map_gueMeasure, Measure.map_map hconj measurable_subtype_coe]
+  rw [gaussianEnsembleLaw_two_eq_map_gueMeasure, Measure.map_map hconj measurable_subtypeVal]
   simp_rw [Function.comp_def, ← Matrix.UnitaryGroup.coe_hermitianConj_apply]
   rw [← Function.comp_def Subtype.val (Matrix.UnitaryGroup.hermitianConj U),
-    ← Measure.map_map measurable_subtype_coe
+    ← Measure.map_map measurable_subtypeVal
       (Matrix.UnitaryGroup.hermitianConj U).continuous.measurable, map_hermitianConj_gueMeasure]
 
 /-- Under `goeMeasure n`, the upper-triangular coordinates are independent Gaussians:

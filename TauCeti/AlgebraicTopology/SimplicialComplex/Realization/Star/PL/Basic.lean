@@ -105,7 +105,7 @@ theorem exists_isPLOn_closedStarMap
       ∀ x : closedStarRealization K {v}, G (x.val.val : ι → ℝ) = (closedStarMap f x).val.val := by
   have : CompactSpace (geometricLink K v) := isCompact_iff_compactSpace.mp hc
   have hcoord : IsCompact (range (fun y : geometricLink K v => (y.val.val : ι → ℝ))) :=
-    isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
+    isCompact_range ((continuous_realization_coe K).comp continuous_subtypeVal)
   obtain ⟨G, hG, heq⟩ := exists_isPiecewiseAffineOn_closedStarMap f F hF
     (hf.isPiecewiseAffineOn_of_isCompact hcoord)
   exact ⟨G, hG.isPLOn, heq⟩

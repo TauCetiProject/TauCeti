@@ -240,7 +240,7 @@ def specialOrthogonalQuotientHomeomorph (h : r < N) :
       (finiteOrthonormalFrame ℝ r N) :=
     .of_orbit (specialOrthogonal_unitaryMap_standard_surjective h)
   quotientStabilizerHomeomorph _ (standard ℝ h.le)
-    (continuous_unitaryMap.comp ((continuous_subtype_val.subtype_mk _).prodMk continuous_const))
+    (continuous_unitaryMap.comp ((continuous_subtypeVal.subtype_mk _).prodMk continuous_const))
 
 @[simp]
 theorem specialOrthogonalQuotientHomeomorph_mk (h : r < N)
@@ -292,7 +292,7 @@ theorem continuous_fromBlocksOne (m : ℕ) :
   refine continuous_induced_rng.2 ?_
   simp only [Function.comp_def, SpecialOrthogonalGroup.coe_fromBlocksOne]
   exact (continuous_const.matrix_fromBlocks continuous_const continuous_const
-    continuous_subtype_val).matrix_reindex _ _
+    continuous_subtypeVal).matrix_reindex _ _
 
 variable (r) in
 /-- The block embedding `B ↦ diag(1_r, B)` is a homeomorphism of `SO(m)` onto the stabilizer of

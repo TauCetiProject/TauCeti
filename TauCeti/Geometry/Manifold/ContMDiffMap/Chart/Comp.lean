@@ -157,6 +157,6 @@ theorem continuous_comp_manifoldWeakWhitney :
   have h := eventually_comp_mem_source_and_iteratedFDerivWithin_mem w.property
     ((mem_chartJetSet.mp h₀) w hw).1 hm (hV.mem_nhds ((mem_chartJetSet.mp h₀) w hw).2)
   rw [nhds_prod_eq]
-  exact (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually h
+  exact (tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually h
 
 end ContMDiffMap

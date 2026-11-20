@@ -225,7 +225,7 @@ theorem isCompact_closure_range_of_forall_eq_add_integral [ProperSpace E] {d : X
       (Eventually.of_forall fun z v ↦ hTinc v y z)
     have hBc : Continuous fun z : Icc a b ↦ ∫ s in y..z, B s ∂μ :=
       (continuousOn_primitive_interval_of_integrableOn_Ioo hBi y.property).comp_continuous
-        continuous_subtype_val Subtype.prop
+        continuous_subtypeVal Subtype.prop
     simpa using hBc.abs.tendsto y
   · exact mem_closedBall_zero_iff.2 (((T v).norm_coe_le_norm _).trans
       (norm_le_of_forall_eq_add_integral ht₀ (hdi v) hBi (hdB v) (hT v)))

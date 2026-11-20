@@ -175,8 +175,8 @@ theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
   -- and `toLin'` is `mulVecLin`
   have h : toEuclideanLin A = (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap ∘ₗ
       A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
-  rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq]
-  rfl
+  rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq,
+    Matrix.finrank_range_mulVecLin]
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
@@ -322,7 +322,7 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv :
     Continuous fun A : unitaryGroup ι 𝕜 ↦
       ((UnitaryGroup.toLinearIsometryEquiv A).toContinuousLinearEquiv :
         EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) := by
-  refine (continuous_toEuclideanCLM.comp continuous_subtype_val).congr fun A ↦ ?_
+  refine (continuous_toEuclideanCLM.comp continuous_subtypeVal).congr fun A ↦ ?_
   ext x
   simp
 
@@ -332,8 +332,8 @@ theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
     Continuous fun p : unitaryGroup ι 𝕜 × Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1 ↦
       UnitaryGroup.toLinearIsometryEquiv p.1 • p.2 := by
   refine continuous_induced_rng.2 <| (continuous_uncurry_toEuclideanCLM.comp
-    ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ ?_
+    ((continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd))).congr fun p ↦ ?_
   simp [toLpLin_apply]
 
 /-- The determinant of the continuous linear map of a square matrix is the determinant of the

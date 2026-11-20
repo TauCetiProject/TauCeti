@@ -160,7 +160,7 @@ private theorem continuous_intervalCellMap : Continuous intervalCellMap :=
   (continuous_projIcc (h := zero_le_one)).comp (by fun_prop : Continuous fun t : ℝ ↦ (t + 1) / 2)
 
 private theorem continuous_intervalCellMap_symm : Continuous intervalCellMap.symm :=
-  (continuous_const.mul continuous_subtype_val).sub continuous_const
+  (continuous_const.mul continuous_subtypeVal).sub continuous_const
 
 private theorem image_ball_intervalCellMap : intervalCellMap '' ball 0 1 = Ioo 0 1 :=
   intervalCellMap_source ▸ intervalCellMap.image_source_eq_target

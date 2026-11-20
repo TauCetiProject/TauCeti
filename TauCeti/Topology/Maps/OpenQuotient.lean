@@ -128,7 +128,7 @@ theorem isOpenMap_quotientMk (r : Setoid X)
     IsOpenMap (Quotient.mk r) := fun U hU ↦
   isQuotientMap_quot_mk.isOpen_preimage.mp <|
     (r.preimage_image_quotientMk U).symm ▸ (r.isOpenMap_snd_iff_fst.mpr hs) _
-      (hU.preimage (continuous_fst.comp continuous_subtype_val))
+      (hU.preimage (continuous_fst.comp continuous_subtypeVal))
 
 /-- If the first projection from `{q : X × X // r q.1 q.2}` is open, then `Quotient.mk r` is an
 open quotient map. -/
@@ -145,7 +145,7 @@ theorem IsOpen.stableUnderGeneralization_preimage_image_quotientMk {r : Setoid X
     (hWo : IsOpen W) (hs_gen : GeneralizingMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) :
     StableUnderGeneralization (Quotient.mk r ⁻¹' (Quotient.mk r '' W)) := by
   rw [r.preimage_image_quotientMk]
-  exact ((hWo.preimage (continuous_fst.comp continuous_subtype_val)).stableUnderGeneralization
+  exact ((hWo.preimage (continuous_fst.comp continuous_subtypeVal)).stableUnderGeneralization
     ).image (r.generalizingMap_snd_iff_fst.mpr hs_gen)
 
 /-- Restricting an equivalence relation with open first projection to an open subset `W ⊆ X`
@@ -158,9 +158,9 @@ theorem IsOpen.isOpenMap_fst_comap {r : Setoid X} {W : Set X} (hWo : IsOpen W)
   obtain ⟨O₁, hO₁o, rfl⟩ := hO
   let O₂ : Set (X × X) := (Prod.map (Subtype.val : W → X) (Subtype.val : W → X)) '' O₁
   have hO₂o : IsOpen O₂ :=
-    (hWo.isOpenMap_subtype_val.prodMap hWo.isOpenMap_subtype_val) O₁ hO₁o
+    (hWo.isOpenMap_subtypeVal.prodMap hWo.isOpenMap_subtypeVal) O₁ hO₁o
   let O₃ : Set {q : X × X // r q.1 q.2} := Subtype.val ⁻¹' O₂
-  have hO₃o : IsOpen O₃ := hO₂o.preimage continuous_subtype_val
+  have hO₃o : IsOpen O₃ := hO₂o.preimage continuous_subtypeVal
   have heq : (fun q : {q : W × W // (r.comap (Subtype.val : W → X)) q.1 q.2} ↦ q.val.1) ''
       (Subtype.val ⁻¹' O₁) =
       (Subtype.val : W → X) ⁻¹' ((fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) '' O₃) := by
@@ -178,7 +178,7 @@ theorem IsOpen.isOpenMap_fst_comap {r : Setoid X} {W : Set X} (hWo : IsOpen W)
         exact hr
       exact ⟨⟨(w₁, w₂), hrW⟩, hwO₁, rfl⟩
   rw [heq]
-  exact (hs_open O₃ hO₃o).preimage continuous_subtype_val
+  exact (hs_open O₃ hO₃o).preimage continuous_subtypeVal
 
 /-- When `Quotient.mk r` is an open map and `W ⊆ X` is open, the quotient of `W` by the induced
 equivalence relation `r.comap Subtype.val` is homeomorphic to its image `Quotient.mk r '' W`,
@@ -188,10 +188,10 @@ noncomputable def IsOpen.quotientComapHomeomorphImage {r : Setoid X} {W : Set X}
     Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W := by
   let g : C(W, Quotient.mk r '' W) :=
     ⟨fun w ↦ ⟨Quotient.mk r w.val, w.val, w.property, rfl⟩,
-      (continuous_quot_mk.comp continuous_subtype_val).subtype_mk _⟩
+      (continuous_quot_mk.comp continuous_subtypeVal).subtype_mk _⟩
   have hg : IsOpenQuotientMap g :=
     ⟨fun ⟨_, x, hxW, hx⟩ ↦ ⟨⟨x, hxW⟩, Subtype.ext hx⟩,
-      g.continuous, (hq.comp hW.isOpenMap_subtype_val).subtype_mk _⟩
+      g.continuous, (hq.comp hW.isOpenMap_subtypeVal).subtype_mk _⟩
   exact (Homeomorph.Quotient.congrRight fun w₁ w₂ ↦ by
     rw [Setoid.comap_rel, Setoid.ker_def, Subtype.ext_iff]
     exact (@Quotient.eq _ r w₁.val w₂.val).symm).trans hg.isQuotientMap.homeomorph

@@ -189,7 +189,7 @@ theorem integrable_seminorm_uniformSphereMeasure (p : Seminorm ℝ E) :
     Integrable (fun u : sphere (0 : E) 1 ↦ p u) (uniformSphereMeasure E) := by
   obtain ⟨C, _, hC⟩ := p.bound_of_continuous_normedSpace p.continuous_of_finiteDimensional
   refine Integrable.of_bound
-    (p.continuous_of_finiteDimensional.comp continuous_subtype_val).aestronglyMeasurable C
+    (p.continuous_of_finiteDimensional.comp continuous_subtypeVal).aestronglyMeasurable C
     (Filter.Eventually.of_forall fun u ↦ ?_)
   rw [Real.norm_eq_abs, abs_of_nonneg (apply_nonneg p (u : E))]
   simpa [norm_eq_of_mem_sphere u] using hC u
@@ -201,7 +201,7 @@ theorem integral_seminorm_stdGaussian (p : Seminorm ℝ E) :
       (∫ r, r ∂chiMeasure (Module.finrank ℝ E) 1) *
         ∫ u : sphere (0 : E) 1, p u ∂uniformSphereMeasure E :=
   integral_stdGaussian_of_posHomog
-    (p.continuous_of_finiteDimensional.comp continuous_subtype_val).aestronglyMeasurable
+    (p.continuous_of_finiteDimensional.comp continuous_subtypeVal).aestronglyMeasurable
     fun hr x ↦ by rw [map_smul_eq_mul, Real.norm_of_nonneg hr.le, smul_eq_mul]
 
 /-- In positive dimension, the uniform spherical expectation of a real seminorm equals its standard
@@ -210,7 +210,7 @@ theorem integral_seminorm_uniformSphereMeasure [Nontrivial E] (p : Seminorm ℝ 
     ∫ u : sphere (0 : E) 1, p u ∂uniformSphereMeasure E =
       (∫ r, r ∂chiMeasure (Module.finrank ℝ E) 1)⁻¹ * ∫ x, p x ∂stdGaussian E :=
   integral_uniformSphereMeasure_of_posHomog
-    (p.continuous_of_finiteDimensional.comp continuous_subtype_val).aestronglyMeasurable
+    (p.continuous_of_finiteDimensional.comp continuous_subtypeVal).aestronglyMeasurable
     fun hr x ↦ by rw [map_smul_eq_mul, Real.norm_of_nonneg hr.le, smul_eq_mul]
 
 /-- Dividing the standard Gaussian expectation of a seminorm by `√(finrank ℝ E)` bounds its uniform
@@ -220,7 +220,7 @@ theorem div_sqrt_finrank_le_integral_seminorm_uniformSphereMeasure [Nontrivial E
     (∫ x, p x ∂stdGaussian E) / √(Module.finrank ℝ E) ≤
       ∫ u : sphere (0 : E) 1, p u ∂uniformSphereMeasure E :=
   div_sqrt_finrank_le_integral_uniformSphereMeasure_of_posHomog
-    (p.continuous_of_finiteDimensional.comp continuous_subtype_val).aestronglyMeasurable
+    (p.continuous_of_finiteDimensional.comp continuous_subtypeVal).aestronglyMeasurable
     (fun hr x ↦ by rw [map_smul_eq_mul, Real.norm_of_nonneg hr.le])
     fun u ↦ apply_nonneg p (u : E)
 
@@ -231,7 +231,7 @@ theorem integral_seminorm_uniformSphereMeasure_le_mul_sqrt_two_div_finrank [Nont
     ∫ u : sphere (0 : E) 1, p u ∂uniformSphereMeasure E ≤
       √(2 / (Module.finrank ℝ E : ℝ)) * ∫ x, p x ∂stdGaussian E :=
   integral_uniformSphereMeasure_le_mul_sqrt_two_div_finrank_of_posHomog
-    (p.continuous_of_finiteDimensional.comp continuous_subtype_val).aestronglyMeasurable
+    (p.continuous_of_finiteDimensional.comp continuous_subtypeVal).aestronglyMeasurable
     (fun hr x ↦ by rw [map_smul_eq_mul, Real.norm_of_nonneg hr.le])
     fun u ↦ apply_nonneg p (u : E)
 

@@ -253,8 +253,9 @@ noncomputable def zeroAtInftyEquiv
     (hE : ∃ C : ℝ≥0, ∀ (r : R) (m : E), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖) :
     CompletedTensor R C₀(I, R) E ≃L[R] C₀(I, E) :=
   letI := Classical.decEq I
-  .equivOfInverse (toZeroAtInfty I hE) (ofZeroAtInfty I) (ofZeroAtInfty_toZeroAtInfty I hE)
-    (toZeroAtInfty_ofZeroAtInfty I hE)
+  .ofContinuousLinearMap (toZeroAtInfty I hE) (ofZeroAtInfty I)
+    (ContinuousLinearMap.ext (toZeroAtInfty_ofZeroAtInfty I hE))
+    (ContinuousLinearMap.ext (ofZeroAtInfty_toZeroAtInfty I hE))
 
 variable (hE : ∃ C : ℝ≥0, ∀ (r : R) (m : E), ‖r • m‖ ≤ C * ‖r‖ * ‖m‖)
 

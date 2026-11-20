@@ -176,7 +176,7 @@ namespace IteratedFiberProduct
 /-- Every factor projection `eval i : Y^[k] → Y` is continuous. -/
 theorem continuous_eval {k : ℕ} (i : Fin k) :
     Continuous (eval i : IteratedFiberProduct π k → Y) :=
-  (continuous_apply i).comp continuous_subtype_val
+  (continuous_apply i).comp continuous_subtypeVal
 
 /-- The diagonal map `const k : Y → Y^[k]` is continuous. -/
 theorem continuous_const (k : ℕ) :
@@ -239,7 +239,7 @@ private def iteratedOneHomeomorph {π : Y → M} (hπ : Continuous π) :
     ((hπ.comp (IteratedFiberProduct.continuous_eval 0)).prodMk
       (IteratedFiberProduct.continuous_eval 0)).subtype_mk _
   continuous_invFun :=
-    (continuous_pi fun _ ↦ continuous_subtype_val.snd).subtype_mk _
+    (continuous_pi fun _ ↦ continuous_subtypeVal.snd).subtype_mk _
 
 private def iteratedStepHomeomorph {π : Y → M} (m : ℕ) :
     IteratedFiberProduct π (m + 2) ≃ₜ
@@ -266,10 +266,10 @@ private def iteratedStepHomeomorph {π : Y → M} (m : ℕ) :
     induction i using Fin.lastCases with
     | last =>
       simp only [Fin.snoc_last]
-      exact continuous_subtype_val.snd
+      exact continuous_subtypeVal.snd
     | cast k =>
       simp only [Fin.snoc_castSucc]
-      exact (IteratedFiberProduct.continuous_eval k).comp continuous_subtype_val.fst
+      exact (IteratedFiberProduct.continuous_eval k).comp continuous_subtypeVal.fst
 
 variable [IsManifold IY n Y] [IsManifold IM n M]
   [IY.Boundaryless]

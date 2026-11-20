@@ -59,14 +59,14 @@ namespace unitInterval
 /-- A point of the unit square outside the open square lies on one of its four edges. -/
 theorem notMem_Ioo_prod_Ioo_iff {q : I × I} :
     q ∉ Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1 ↔ q.1 = 0 ∨ q.1 = 1 ∨ q.2 = 0 ∨ q.2 = 1 := by
-  simp only [mem_prod, mem_Ioo, not_and_or, not_lt, le_zero_iff, ← or_assoc]
+  simp only [mem_prod, mem_Ioo, not_and_or, not_lt, nonpos_iff_eq_zero, ← or_assoc]
   simp only [le_one'.ge_iff_eq', or_assoc, eq_comm (a := (1 : I))]
 
 /-- The inclusion `I × I → ℝ × ℝ` carries the open unit square onto the open unit square. -/
 theorem image_prodMap_val_Ioo_prod_Ioo :
     Prod.map Subtype.val Subtype.val '' (Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1) =
       Ioo (0 : ℝ) 1 ×ˢ Ioo (0 : ℝ) 1 := by
-  rw [prodMap_image_prod, image_subtype_val_Ioo, Icc.coe_zero, Icc.coe_one]
+  rw [prodMap_image_prod, image_subtypeVal_Ioo, Icc.coe_zero, Icc.coe_one]
 
 /-- **The open unit square is simply connected.** -/
 theorem isSimplyConnected_Ioo_prod_Ioo : IsSimplyConnected (Ioo (0 : I) 1 ×ˢ Ioo (0 : I) 1) := by
@@ -268,9 +268,9 @@ theorem continuousAt_radialPush {t : I} {q : I × I} (hq : q ≠ squareCentre) :
       have hp : (p : I × (I × I)).2 ≠ squareCentre := p.property
       simp only [domRestrict_apply, radialPush, hp, ↓reduceDIte]
   rw [h]
-  refine continuous_clamp.comp (continuous_subtype_val.comp (realRadialHomotopy.continuous.comp
-    ((continuous_symm.comp (continuous_fst.comp continuous_subtype_val)).prodMk ?_)))
-  exact ((continuous_subtype_val.prodMap continuous_subtype_val).comp
-    (continuous_snd.comp continuous_subtype_val)).subtype_mk _
+  refine continuous_clamp.comp (continuous_subtypeVal.comp (realRadialHomotopy.continuous.comp
+    ((continuous_symm.comp (continuous_fst.comp continuous_subtypeVal)).prodMk ?_)))
+  exact ((continuous_subtypeVal.prodMap continuous_subtypeVal).comp
+    (continuous_snd.comp continuous_subtypeVal)).subtype_mk _
 
 end unitInterval

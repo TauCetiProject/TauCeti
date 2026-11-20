@@ -63,8 +63,6 @@ infrastructure independent of the diamond operators.
   `Γ(N) ≤ Γ(M)` whenever `M ∣ N`.
 * `CongruenceSubgroup.index_Gamma`: `[SL₂(ℤ) : Γ(N)] = |SL₂(ℤ/Nℤ)|`; in particular
   `CongruenceSubgroup.index_Gamma_three`: `[SL₂(ℤ) : Γ(3)] = 24`.
-* `CongruenceSubgroup.Gamma_le_Gamma1`, `CongruenceSubgroup.Gamma_le_Gamma0`: at a fixed level
-  the three families are nested, `Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`.
 * `CongruenceSubgroup.map_eq_one_of_mem_Gamma`: a matrix of `Γ(N)` is the identity matrix modulo
   `N`, as an integral matrix.
 * `CongruenceSubgroup.mem_Gamma0_iff_dvd`: `Γ₀(N)` membership read as the integer divisibility
@@ -207,17 +205,6 @@ theorem index_Gamma_three : (Gamma 3).index = 24 := by
   rw [index_Gamma, Matrix.card_SL_field]
   simp [Fin.prod_univ_two, ZMod.card]
 
-/-- `Γ(N) ≤ Γ₁(N)`: the principal congruence subgroup sits inside `Γ₁(N)`, since the three
-congruences `a ≡ 1`, `d ≡ 1`, `c ≡ 0` that `Γ₁(N)` imposes are three of the four that `Γ(N)`
-does. -/
-theorem Gamma_le_Gamma1 (N : ℕ) : Gamma N ≤ Gamma1 N := fun _ hA ↦
-  (Gamma1_mem _ _).mpr ⟨(Gamma_mem.mp hA).1, (Gamma_mem.mp hA).2.2.2, (Gamma_mem.mp hA).2.2.1⟩
-
-/-- `Γ(N) ≤ Γ₀(N)`: the principal congruence subgroup sits inside `Γ₀(N)`, along the chain
-`Γ(N) ≤ Γ₁(N) ≤ Γ₀(N)`. -/
-theorem Gamma_le_Gamma0 (N : ℕ) : Gamma N ≤ Gamma0 N :=
-  (Gamma_le_Gamma1 N).trans (Gamma1_in_Gamma0 N)
-
 /-- **`Γ₀(N)` membership as an integer divisibility.** `CongruenceSubgroup.Gamma0_mem` states it
 as a congruence in `ZMod N`; this is the same fact with the congruence already discharged into
 `(N : ℤ) ∣ A 1 0`, which is the form a proof needs whenever it wants to name the quotient.
@@ -258,7 +245,7 @@ form in which membership is checked whenever a construction produces a `Γ₀(N)
 controls only its lower-right entry. -/
 theorem mem_Gamma1_iff {γ : SL(2, ℤ)} :
     γ ∈ Gamma1 N ↔ γ ∈ Gamma0 N ∧ ((γ 1 1 : ℤ) : ZMod N) = 1 :=
-  ⟨fun h ↦ ⟨Gamma1_in_Gamma0 N h, (Gamma1_mem N γ).mp h |>.2.1⟩,
+  ⟨fun h ↦ ⟨Gamma1_le_Gamma0 N h, (Gamma1_mem N γ).mp h |>.2.1⟩,
     fun ⟨h₀, h₁⟩ ↦ (Gamma1_mem N γ).mpr ((Gamma1_to_Gamma0_mem ⟨γ, h₀⟩).mp h₁)⟩
 
 /-- **`Γ₁(N)` membership is exactly two divisibilities on the lower row**, `(N : ℤ) ∣ c` and
@@ -371,7 +358,7 @@ This is the foundation for the diamond operator `⟨d⟩` on modular forms. -/
 theorem Gamma0_normalizes_Gamma1 (g : ↥(Gamma0 N)) (h : SL(2, ℤ)) (hh : h ∈ Gamma1 N) :
     (g : SL(2, ℤ)) * h * (g : SL(2, ℤ))⁻¹ ∈ Gamma1 N :=
   (Gamma1_mem _ _).mpr <| (Gamma1_to_Gamma0_mem _).mp <|
-    (Gamma0Map N).normal_ker.conj_mem ⟨h, Gamma1_in_Gamma0 N hh⟩
+    (Gamma0Map N).normal_ker.conj_mem ⟨h, Gamma1_le_Gamma0 N hh⟩
       ((Gamma1_to_Gamma0_mem _).mpr ((Gamma1_mem _ _).mp hh)) g
 
 /-- `Γ₀(N)` lies in the normaliser of `Γ₁(N)`: the statement of `Gamma0_normalizes_Gamma1` in
@@ -386,7 +373,7 @@ theorem Gamma0_le_normalizer_Gamma1 (N : ℕ) :
 /-- The inclusion `Γ₁(N) ≤ Γ₀(N)`, transported to `GL₂(ℝ)`. -/
 theorem Gamma1_map_le_Gamma0_map (N : ℕ) :
     (Gamma1 N).map (mapGL ℝ) ≤ (Gamma0 N).map (mapGL ℝ) :=
-  Subgroup.map_mono (Gamma1_in_Gamma0 N)
+  Subgroup.map_mono (Gamma1_le_Gamma0 N)
 
 /-- The antitonicity `Γ₁(N) ≤ Γ₁(M)` for `M ∣ N`, transported to `GL₂(ℝ)`. This is the
 inclusion along which a form of level `M` is read as a form of level `N`. -/
@@ -518,7 +505,7 @@ theorem Gamma1_index (N : ℕ) :
   have hker : (Gamma1 N).subgroupOf (Gamma0 N) = (Gamma0Map N).toHomUnits.ker := by
     ext g
     exact mem_Gamma1_iff_toHomUnits_eq_one g
-  rw [← Subgroup.relIndex_mul_index (Gamma1_in_Gamma0 N), Subgroup.relIndex, hker,
+  rw [← Subgroup.relIndex_mul_index (Gamma1_le_Gamma0 N), Subgroup.relIndex, hker,
     Subgroup.index_ker, MonoidHom.range_eq_top_of_surjective _
       Gamma0Map_toHomUnits_surjective, Nat.card_congr Subgroup.topEquiv.toEquiv]
 
@@ -677,7 +664,6 @@ private lemma TjS_inv_10 (j : ℤ) : ((T ^ j * S)⁻¹).val 1 0 = -1 := by
 
 private lemma TjS_inv_11 (j : ℤ) : ((T ^ j * S)⁻¹).val 1 1 = j := by
   rw [inv_apply_one_one, TjS_00]
-
 
 private lemma TjS_inv_mul_10 (j : ℤ) (σ : SL(2, ℤ)) :
     ((T ^ j * S)⁻¹ * σ).val 1 0 = j * σ.val 1 0 - σ.val 0 0 := by
@@ -1146,7 +1132,7 @@ theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} :
   conv_rhs => arg 1; rw [← Nat.prod_factorization_pow_eq_self hN]
   simp only [Nat.prod_primeFactors_prod_factorization, ← Finsupp.prod_mul]
   refine Finsupp.prod_congr (M := ℕ) (N := ℕ) fun p hp ↦ ?_
-  rw [Finsupp.mem_support_iff, ← zero_lt_iff] at hp
+  rw [Finsupp.mem_support_iff, ← pos_iff_ne_zero] at hp
   rw [mul_right_comm, ← pow_succ, Nat.sub_add_cancel hp]
 
 end CongruenceSubgroup

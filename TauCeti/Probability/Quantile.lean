@@ -844,7 +844,7 @@ theorem measurable_quantile_probabilityMeasure :
   have hcdf : Measurable fun P : ProbabilityMeasure ℝ ↦ cdf (P : Measure ℝ) x := by
     simp only [cdf_eq_real, Measure.real]
     exact ((Measure.measurable_coe measurableSet_Iic).comp
-      measurable_subtype_coe).ennreal_toReal
+      measurable_subtypeVal).ennreal_toReal
   have hset :
       (fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
         (q.1 : Measure ℝ).quantile q.2) ⁻¹' Iic x =
@@ -852,7 +852,7 @@ theorem measurable_quantile_probabilityMeasure :
     ext q
     exact quantile_le_iff (q.1 : Measure ℝ) q.2.property.1 q.2.property.2
   rw [hset]
-  exact measurableSet_le (measurable_subtype_coe.comp measurable_snd)
+  exact measurableSet_le (measurable_subtypeVal.comp measurable_snd)
     (hcdf.comp measurable_fst)
 
 /-- The upper quantile is jointly measurable in a probability measure and a level in `(0, 1)`. -/
@@ -868,7 +868,7 @@ theorem measurable_upperQuantile_probabilityMeasure :
       (P : Measure ℝ).real (Iio x) := by
     simp only [Measure.real]
     exact ((Measure.measurable_coe measurableSet_Iio).comp
-      measurable_subtype_coe).ennreal_toReal
+      measurable_subtypeVal).ennreal_toReal
   have hset :
       (fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
         (q.1 : Measure ℝ).upperQuantile q.2) ⁻¹' Iio x =
@@ -876,7 +876,7 @@ theorem measurable_upperQuantile_probabilityMeasure :
     ext q
     exact upperQuantile_lt_iff (q.1 : Measure ℝ) q.2.property.1 q.2.property.2
   rw [hset]
-  exact measurableSet_lt (measurable_subtype_coe.comp measurable_snd)
+  exact measurableSet_lt (measurable_subtypeVal.comp measurable_snd)
     (hleft.comp measurable_fst)
 
 /-- Quantiles of a measurable family of probability measures are jointly measurable in the

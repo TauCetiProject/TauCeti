@@ -56,7 +56,7 @@ theorem continuous_metricChangeBetween :
   have hσ (w : E p₀.proj) :
       Continuous fun y : e.baseSet ↦ TotalSpace.mk' F (y : B) (σ y w) := by
     refine (e.continuousOn_symm.comp_continuous
-      (continuous_subtype_val.prodMk (continuous_const (y := e₀ w)))
+      (continuous_subtypeVal.prodMk (continuous_const (y := e₀ w)))
       fun y ↦ ⟨y.property, Set.mem_univ _⟩).congr fun y ↦ ?_
     simp [σ]
   let h' (y : e.baseSet) := (h.inner y).bilinearComp
@@ -80,13 +80,13 @@ theorem continuous_metricChangeBetween :
   rw [continuousOn_iff_continuous_domRestrict]
   let y : U → e.baseSet := fun x ↦ ⟨x.val.proj, x.property⟩
   have hy : Continuous y :=
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _
   have hz : Continuous fun x : U ↦ (e x.val).2 :=
-    continuous_snd.comp (e.continuousOn.comp_continuous continuous_subtype_val
+    continuous_snd.comp (e.continuousOn.comp_continuous continuous_subtypeVal
       fun x ↦ e.mem_source.2 x.property)
   -- Express the output in the ordinary chart, then identify it by coordinate naturality.
   have hout := (e.continuousOn_symm.comp_continuous
-    ((continuous_subtype_val.comp hy).prodMk
+    ((continuous_subtypeVal.comp hy).prodMk
       (e₀.continuous.comp ((hT.comp hy).clm_apply (e₀.symm.continuous.comp hz))))
     fun x ↦ ⟨x.property, Set.mem_univ _⟩)
   refine hout.congr fun x ↦ ?_

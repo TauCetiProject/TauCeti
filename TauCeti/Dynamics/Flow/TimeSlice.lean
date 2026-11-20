@@ -42,7 +42,7 @@ def timeSliceHomeomorph (hc : Continuous c) (hshift : ∀ t x, c (φ t x) = t + 
       right_inv := ?_
       continuous_toFun := hc.prodMk ((φ.continuous hc.neg continuous_id).subtype_mk _)
       continuous_invFun := φ.continuous continuous_fst
-        (continuous_subtype_val.comp continuous_snd) }
+        (continuous_subtypeVal.comp continuous_snd) }
   · intro x
     simp [forward, backward, ← φ.map_add]
   · rintro ⟨t, x, hx⟩

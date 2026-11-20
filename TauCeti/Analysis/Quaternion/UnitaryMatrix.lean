@@ -203,7 +203,7 @@ theorem continuous_quaternionUnitaryIsometry_apply :
       quaternionUnitaryIsometry ι p.1 p.2 := by
   simp only [quaternionUnitaryIsometry_apply]
   exact (PiLp.continuous_toLp 2 _).comp
-    ((continuous_subtype_val.comp continuous_fst).matrix_mulVec
+    ((continuous_subtypeVal.comp continuous_fst).matrix_mulVec
       ((PiLp.continuous_ofLp 2 _).comp continuous_snd))
 
 end Isometry
@@ -417,7 +417,7 @@ instance instContinuousSMulUnitaryMatrixQuaternionSphere :
     ContinuousSMul (unitary (Matrix ι ι ℍ)) (sphere (0 : PiLp 2 fun _ : ι ↦ ℍ) 1) where
   continuous_smul := continuous_induced_rng.2 <|
     (continuous_quaternionUnitaryIsometry_apply.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).congr fun p ↦
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).congr fun p ↦
         (coe_quaternionUnitary_smul_sphere p.1 p.2).symm
 
 /-- The compact symplectic group `Sp(ι)` acts transitively on the unit sphere of `ℍⁿ` (vacuously

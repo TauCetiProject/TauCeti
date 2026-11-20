@@ -70,7 +70,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingWeight_eventuallyEq_of_notM
     hγ hclosed
   have hopen : IsOpen ((Subtype.val : ↥((γ '' uIcc a b)ᶜ) → ℂ) ''
       {w | Contour.windingNumber γ a b w.val = Contour.windingNumber γ a b z}) :=
-    hK.isClosed.isOpen_compl.isOpenMap_subtype_val _ (hc.isOpen_fiber _)
+    hK.isClosed.isOpen_compl.isOpenMap_subtypeVal _ (hc.isOpen_fiber _)
   have hmem : z ∈ (Subtype.val : ↥((γ '' uIcc a b)ᶜ) → ℂ) ''
       {w | Contour.windingNumber γ a b w.val = Contour.windingNumber γ a b z} :=
     ⟨⟨z, hz⟩, rfl, rfl⟩

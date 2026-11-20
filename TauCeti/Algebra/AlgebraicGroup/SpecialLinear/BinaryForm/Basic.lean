@@ -524,7 +524,7 @@ theorem X_one_pow_mem_of_ne_bot {W : Subcomodule k (coordinateHopfAlgebra k 2)
   have hf := mem_binaryForms.mp (hW hfW)
   -- The largest power of `x` occurring in `f`, and a monomial `m₀` of `f` realizing it.
   have hne : (f.support.image (· 0)).Nonempty :=
-    (Finset.nonempty_iff_ne_empty.mpr (by simpa using hf₀)).image _
+    (Finset.ne_empty_iff_nonempty.mp (by simpa using hf₀)).image _
   obtain ⟨m₀, hm₀, hm₀i⟩ := Finset.mem_image.mp ((f.support.image (· 0)).max'_mem hne)
   set i₀ := (f.support.image (· 0)).max' hne
   -- The coefficient of `t ^ i₀` in `f(x - t y, y)` only sees the monomial `m₀`.

@@ -242,7 +242,7 @@ theorem Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype [DiscreteTopolog
       (V.subtype.restrictScalars ℤ) le_rfl) := by
   have : FiniteDimensional ℝ V := .of_injective (V.subtype.restrictScalars ℝ) V.injective_subtype
   refine Continuous.isClosedEmbedding ?_ ?_
-  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtype_val
+  · exact Submodule.continuous_orbitRelQuotientMap _ _ _ continuous_subtypeVal
   · exact (Submodule.orbitRelQuotientMap_injective_iff _ _ _ _).2 le_rfl
 
 end Subtorus

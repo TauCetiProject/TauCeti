@@ -93,13 +93,13 @@ theorem continuous_polarUnitary :
   have h := (polarHomotopy (n ⊕ n) ℝ).continuous.comp
     (continuous_const.prodMk continuous_id : Continuous fun A : GL (n ⊕ n) ℝ ↦ ((1 : I), A))
   simp only [Function.comp_def, polarHomotopy_apply, Set.Icc.coe_one, polarDeformation_one] at h
-  exact (h.comp continuous_subtype_val).subtype_mk _
+  exact (h.comp continuous_subtypeVal).subtype_mk _
 
 /-- The orthogonal polar factor of a symplectic matrix depends continuously on it, as a
 symplectic matrix. -/
 theorem continuous_inclusion_polarUnitary :
     Continuous fun A : GLSymplectic n ℝ ↦ Subgroup.inclusion inf_le_left (polarUnitary A) :=
-  continuous_induced_rng.2 ((continuous_subtype_val.comp continuous_polarUnitary).congr fun _ ↦
+  continuous_induced_rng.2 ((continuous_subtypeVal.comp continuous_polarUnitary).congr fun _ ↦
     (Subgroup.coe_inclusion _ _).symm)
 
 /-- The **symplectic polar homotopy** `(t, A) ↦ P ^ (1 - t) U` of a symplectic matrix `A = P U`:
@@ -113,7 +113,7 @@ noncomputable def polarHomotopy :
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
     have h := (Matrix.GeneralLinearGroup.polarHomotopy (n ⊕ n) ℝ).continuous.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd) :
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd) :
         Continuous fun p : I × GLSymplectic n ℝ ↦ (p.1, (p.2 : GL (n ⊕ n) ℝ)))
     simpa only [Function.comp_def, polarHomotopy_apply] using h
   map_zero_left A := Subtype.ext (by simp)

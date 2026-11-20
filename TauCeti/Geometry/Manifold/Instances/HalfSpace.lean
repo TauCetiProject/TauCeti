@@ -46,7 +46,7 @@ noncomputable def modelWithCornersHalfSpace :
     left_inv' := fun q _ => Subtype.ext (Prod.ext rfl (max_eq_left q.property))
     right_inv' := fun q hq => Prod.ext rfl (max_eq_left hq) }
   apply ModelWithCorners.ofConvexRange φ rfl
-    (convex_halfSpace_ge (LinearMap.snd ℝ E ℝ).isLinear 0) continuous_subtype_val
+    (convex_halfSpace_ge (LinearMap.snd ℝ E ℝ).isLinear 0) continuous_subtypeVal
     ((continuous_fst.prodMk (continuous_snd.max continuous_const)).subtype_mk _)
   refine ⟨(0, 1), mem_interior_iff_mem_nhds.mpr ?_⟩
   exact Filter.mem_of_superset
@@ -96,7 +96,7 @@ noncomputable def halfSpaceInteriorChart :
     rwa [coe_modelWithCornersHalfSpace_symm_apply E hq.le]
   left_inv' q _ := (modelWithCornersHalfSpace E).left_inv q
   right_inv' q hq := coe_modelWithCornersHalfSpace_symm_apply E (le_of_lt hq)
-  open_source := isOpen_lt continuous_const (continuous_snd.comp continuous_subtype_val)
+  open_source := isOpen_lt continuous_const (continuous_snd.comp continuous_subtypeVal)
   open_target := isOpen_lt continuous_const continuous_snd
   continuousOn_toFun := (modelWithCornersHalfSpace E).continuous.continuousOn
   continuousOn_invFun := (modelWithCornersHalfSpace E).continuous_symm.continuousOn

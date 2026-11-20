@@ -156,7 +156,7 @@ theorem isOpen_singleton_augmentation_of_forall_mul_eq {e : A} (he : ∀ a : A, 
     simp [← not_iff_not, ne_augmentation_iff_apply_inr_eq_one he]
   rw [heq]
   exact isClosed_singleton.isOpen_compl.preimage
-    ((WeakDual.eval_continuous (e : Unitization 𝕜 A)).comp continuous_subtype_val)
+    ((WeakDual.eval_continuous (e : Unitization 𝕜 A)).comp continuous_subtypeVal)
 
 /-- When `A` is a subsingleton, the augmentation character is the unique character of
 `Unitization 𝕜 A`. -/
@@ -290,12 +290,12 @@ noncomputable def unitizationComplAugmentationHomeomorph :
         (g := fun χ : characterSpace 𝕜 A ↦
           ((unitizationExtend χ).val : WeakDual 𝕜 (Unitization 𝕜 A)))
         fun u ↦ continuous_const.add
-          ((WeakDual.eval_continuous u.snd).comp continuous_subtype_val)) _) _
+          ((WeakDual.eval_continuous u.snd).comp continuous_subtypeVal)) _) _
   continuous_invFun := by
     rw [continuous_induced_rng]
     refine WeakDual.continuous_of_continuous_eval fun a ↦ ?_
     exact (WeakDual.eval_continuous (a : Unitization 𝕜 A)).comp
-      (continuous_subtype_val.comp continuous_subtype_val)
+      (continuous_subtypeVal.comp continuous_subtypeVal)
 
 /-- `unitizationComplAugmentationHomeomorph 𝕜 A` applies `unitizationExtend`. -/
 @[simp]

@@ -75,7 +75,7 @@ private theorem discreteTopology_cuspPeriods [DiscreteTopology Γ] (σ : PSL(2, 
     (f := fun x : cuspPeriods Γ σ ↦ (⟨σ⁻¹ * upperRightHom (x : ℝ) * σ,
         mem_cuspPeriods.mp x.property⟩ : Γ))
     (continuous_induced_rng.mpr ?_) fun x y h ↦ ?_
-  · exact (continuous_const.mul (continuous_upperRightHom.comp continuous_subtype_val)).mul
+  · exact (continuous_const.mul (continuous_upperRightHom.comp continuous_subtypeVal)).mul
       continuous_const
   · exact Subtype.ext (upperRightHom_injective (by simpa using congrArg Subtype.val h))
 

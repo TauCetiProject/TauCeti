@@ -180,7 +180,7 @@ def isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion
         congrFun (hfst s) _⟩⟩)
     (fun K hcomp ↦ by
       obtain ⟨s, hs⟩ := IsCompact.exists_finset_subset_preimage_biUnion_baseSet
-        (F := F) (E := E) (hcomp.image continuous_subtype_val)
+        (F := F) (E := E) (hcomp.image continuous_subtypeVal)
       exact ⟨s, fun p hp ↦ ⟨⟨p.val, hs (mem_image_of_mem _ hp), p.property⟩, by
         apply Subtype.ext
         have h := TopPair.Hom.w_apply
@@ -252,7 +252,7 @@ private theorem existsUnique_thomCover
       ∃ s, K ⊆ range (TopPair.Hom.fst (c.ι.app s)) := by
     -- Compact subsets of the total space project into finitely many members of the cover.
     intro K hK
-    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
+    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
     obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property)
     refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩⟩, ?_⟩⟩
     exact thomPairOverMap_fst_apply F E _ _
@@ -260,7 +260,7 @@ private theorem existsUnique_thomCover
       ∃ s, K ⊆ range (TopPair.Hom.snd (c.ι.app s)) := by
     -- The same argument applies to the complement of the zero section.
     intro K hK
-    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
+    have hproj := hK.image ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
     obtain ⟨s, hs⟩ := hproj.elim_finite_subcover W hWo (by rintro _ ⟨v, _, rfl⟩; exact v.property.1)
     refine ⟨s, fun v hv ↦ ⟨⟨v.val, hs ⟨v, hv, rfl⟩, v.property.2⟩, ?_⟩⟩
     exact thomPairOverMap_snd_apply F E _ _

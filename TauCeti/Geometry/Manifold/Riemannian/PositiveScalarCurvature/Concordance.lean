@@ -699,7 +699,7 @@ theorem IsCollaredConcordance.hasPositiveScalarCurvature_left
   (hasPositiveScalarCurvature_iff _).2 fun x ↦ by
   obtain ⟨ε, hε, h₀, -⟩ := h.exists_collar
   rw [← scalarCurvature_eq_of_inner_eq_restrictIcc_cylinder (U := {p | (p.2 : ℝ) < ε})
-    (isOpen_lt (continuous_subtype_val.comp continuous_snd) continuous_const) h₀
+    (isOpen_lt (continuous_subtypeVal.comp continuous_snd) continuous_const) h₀
     (p := (x, 0)) (by simpa using hε)]
   exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature _
 
@@ -709,7 +709,7 @@ theorem IsCollaredConcordance.hasPositiveScalarCurvature_right
   (hasPositiveScalarCurvature_iff _).2 fun x ↦ by
   obtain ⟨ε, hε, -, h₁⟩ := h.exists_collar
   rw [← scalarCurvature_eq_of_inner_eq_restrictIcc_cylinder (U := {p | 1 - ε < (p.2 : ℝ)})
-    (isOpen_lt continuous_const (continuous_subtype_val.comp continuous_snd)) h₁
+    (isOpen_lt continuous_const (continuous_subtypeVal.comp continuous_snd)) h₁
     (p := (x, 1)) (by simpa using hε)]
   exact (hasPositiveScalarCurvature_iff _).1 h.hasPositiveScalarCurvature _
 

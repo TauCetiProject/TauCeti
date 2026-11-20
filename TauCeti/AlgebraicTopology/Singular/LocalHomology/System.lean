@@ -490,7 +490,7 @@ private lemma Patch.map_inclusion_comp_functor (P Q : Patch M E) (k : ℕ) :
   refine FundamentalGroupoid.functor_ext (U := W) (fun z ↦ ?_) fun S ↦ ?_
   · obtain ⟨S, hzS, hS⟩ := P.exists_closedImage_subset z.property.1
       (P.isOpen_domain.inter Q.isOpen_domain) z.property
-    exact ⟨⟨S, hS⟩, continuous_subtype_val.continuousAt.preimage_mem_nhds
+    exact ⟨⟨S, hS⟩, continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (S.isOpen_domain.mem_nhds hzS)⟩
   refine CategoryTheory.Functor.hext (fun _ ↦ rfl) fun a b _ ↦ heq_of_eq ?_
   exact (P.iso_inv_comp_iso_hom R S.val _ _ a.as.property b.as.property
@@ -648,8 +648,8 @@ theorem eq_localHomologyTransport (k : ℕ)
       fun P ↦ CategoryTheory.Functor.hext (fun _ ↦ rfl) fun a b g ↦ heq_of_eq ?_
     induction g using Path.Homotopic.Quotient.ind with | mk γ =>
     -- The image of `γ` in `M` is `γ.map continuous_subtype_val`, a path in the domain of `P`.
-    exact (hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2).trans
-      (P.localHomologyTransport_mk R (γ.map continuous_subtype_val) (fun s ↦ (γ s).2) k).symm
+    exact (hpatch P (γ.map continuous_subtypeVal) fun s ↦ (γ s).property).trans
+      (P.localHomologyTransport_mk R (γ.map continuous_subtypeVal) (fun s ↦ (γ s).property) k).symm
   exact eq_of_heq (Functor.hcongr_hom hG f)
 
 /-- **Restrictions of a global class are parallel.** The restrictions
@@ -688,7 +688,7 @@ theorem localHomologyRestriction_univ_comp_localHomologyTransport (k : ℕ)
     rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
     rintro ⟨⟨a⟩, ⟨b⟩, g⟩ -
     induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpatch P (γ.map continuous_subtype_val) fun s ↦ (γ s).2
+    exact hpatch P (γ.map continuous_subtypeVal) fun s ↦ (γ s).property
   have hf : f ∈ S.arrows x y := hS ▸ trivial
   exact hf
 

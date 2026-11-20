@@ -102,9 +102,9 @@ private def outer (e₁ : E → M) (e₂ : E → N) (a b : ℝ) : Set (puncture 
 private theorem isOpen_outer (h₁ : Continuous e₁) (h₂ : Continuous e₂) :
     IsOpen (outer e₁ e₂ a b) :=
   isOpen_sum_iff.2
-    ⟨((isCompact_closedBall 0 a).image h₁).isClosed.isOpen_compl.preimage continuous_subtype_val,
+    ⟨((isCompact_closedBall 0 a).image h₁).isClosed.isOpen_compl.preimage continuous_subtypeVal,
       ((isCompact_closedBall 0 b⁻¹).image h₂).isClosed.isOpen_compl.preimage
-        continuous_subtype_val⟩
+        continuous_subtypeVal⟩
 
 /-- The two regions, as an open subset of the disjoint union of the punctured summands. -/
 private def outerOpens (h₁ : Continuous e₁) (h₂ : Continuous e₂) :
@@ -236,7 +236,7 @@ include d₁ in
 private theorem contMDiff_neckPunctureInl (ha : 0 ≤ a) :
     ContMDiff 𝓘(ℝ, E) I ∞ (neckPunctureInl (b := b) h₁ ha) := fun w ↦
   (ContMDiffAt.subtypeVal_comp_iff (puncture e₁) _ w).mp
-    ((d₁.contMDiff.comp contMDiff_subtype_val) w)
+    ((d₁.contMDiff.comp contMDiff_subtypeVal) w)
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ N] in
 include d₂ in
@@ -245,7 +245,7 @@ private theorem contMDiff_neckPunctureInr (ha : 0 ≤ a) :
   (ContMDiffAt.subtypeVal_comp_iff (puncture e₂) _ w).mp
     (d₂.contMDiff.contMDiffAt.comp w
       ((contDiffAt_inversion (ne_zero_of_mem_neck ha w)).contMDiffAt.comp w
-        contMDiff_subtype_val.contMDiffAt))
+        contMDiff_subtypeVal.contMDiffAt))
 
 omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
 include d₁ in

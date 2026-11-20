@@ -207,7 +207,7 @@ theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :
   ext v
   have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
   simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
-    inv_mul_le_iff₀ (zero_lt_iff.mpr hu)]
+    inv_mul_le_iff₀ (pos_iff_ne_zero.mpr hu)]
 
 omit [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] in
 variable (Aplus) in
@@ -218,7 +218,7 @@ theorem laurentCoverOpen_inv_mul_false (u : Aˣ) (g : A) :
   ext v
   have hu : (v : Spv A).valuation u ≠ 0 := (u.isUnit.map (v : Spv A).valuation).ne_zero
   simp [laurentCoverOpen, ← valuation_le_iff, map_units_inv, hu, v.property,
-    le_inv_mul_iff₀ (zero_lt_iff.mpr hu)]
+    le_inv_mul_iff₀ (pos_iff_ne_zero.mpr hu)]
 
 /-! ### Transport from the completed rational localisations -/
 

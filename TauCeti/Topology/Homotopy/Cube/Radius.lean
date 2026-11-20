@@ -120,7 +120,7 @@ theorem continuous_openBoxContraction :
     Continuous fun q : I × (I × I^N) ↦ openBoxContraction q.1 q.2 :=
   (continuous_projIcc.comp' (by fun_prop)).prodMk (continuous_cubeScale.comp
     ((continuous_const.min (continuous_const.sub (continuous_const.mul
-      (continuous_subtype_val.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
+      (continuous_subtypeVal.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
 
 /-- At time `0` the contraction of the open box is the identity. -/
 @[simp]

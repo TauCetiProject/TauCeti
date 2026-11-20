@@ -89,13 +89,13 @@ def normalBundleHomeomorphTube (f : M → V) {ε : ℝ} (hε : 0 < ε) :
     simp [Homeomorph.unitBall_apply_coe, OpenPartialHomeomorph.univUnitBall_apply]
   continuous_invFun := by
     have hv : Continuous fun q : normalTube I f ε => ε⁻¹ • q.val.2 :=
-      continuous_const.smul (continuous_snd.comp continuous_subtype_val)
+      continuous_const.smul (continuous_snd.comp continuous_subtypeVal)
     let k : normalTube I f ε → ball (0 : V) 1 := fun q => ⟨ε⁻¹ • q.val.2, by
       rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
       exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.property).2)⟩
     have hk : Continuous k := hv.subtype_mk _
     apply (isEmbedding_totalSpace_normalSubspace (I := I) (F := V) f).isInducing.continuous_iff.mpr
-    convert (continuous_fst.comp continuous_subtype_val).prodMk
+    convert (continuous_fst.comp continuous_subtypeVal).prodMk
       (Homeomorph.unitBall.symm.continuous.comp hk) using 1
     funext q
     apply Prod.ext
@@ -180,7 +180,7 @@ theorem exists_isOpenEmbedding_normalBundle_subset [FiniteDimensional ℝ V]
       simp only [mem_preimage, mem_normalTube, mem_ofPred_eq,
         (mem_normalTube.mp p.property).1, true_and]
     rw [heq]
-    exact isOpen_lt ((continuous_snd.comp continuous_subtype_val).norm) continuous_const
+    exact isOpen_lt ((continuous_snd.comp continuous_subtypeVal).norm) continuous_const
   have hrEmb := hemb.comp (IsOpenEmbedding.inclusion hsub hrel)
   let e := normalBundleHomeomorphTube (I := I) f hr
   let Φ : TotalSpace V (fun x : M => normalSubspace I f x) → V :=
@@ -214,7 +214,7 @@ theorem exists_isTubularNeighborhood_wholeNormalBundle_subset [FiniteDimensional
     have hp : Continuous fun p : Icc (0 : ℝ) 1 ×
         (univ : Set (TotalSpace V (fun x : M => normalSubspace I f x))) =>
           (p.2.val.proj, (p.2.val.snd : V)) :=
-      hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
-    exact hp.fst.prodMk ((continuous_subtype_val.comp continuous_fst).smul hp.snd)
+      hι.continuous.comp (continuous_subtypeVal.comp continuous_snd)
+    exact hp.fst.prodMk ((continuous_subtypeVal.comp continuous_fst).smul hp.snd)
 
 end TauCeti

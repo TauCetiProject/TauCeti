@@ -524,7 +524,7 @@ theorem proPKernel_proPKernel_eq_top : proPKernel p (proPKernel p G) = ⊤ := by
   have : K'.Normal := (isTopCharacteristic_proPKernel p).map_subtype_normal
   have : IsClosed (K' : Set G) := by
     rw [Subgroup.coe_map]
-    exact (isClosed_proPKernel (G := G)).isClosedMap_subtype_val _ (isClosed_proPKernel (G := N))
+    exact (isClosed_proPKernel (G := G)).isClosedMap_subtypeVal _ (isClosed_proPKernel (G := N))
   -- `G ⧸ K'` maps onto the pro-`p` group `G ⧸ N`.
   let f : G ⧸ K' →* G ⧸ N := QuotientGroup.map K' N (MonoidHom.id G) hK'N
   have hf : Continuous f :=
@@ -542,7 +542,7 @@ theorem proPKernel_proPKernel_eq_top : proPKernel p (proPKernel p G) = ⊤ := by
   have hφ : Continuous φ :=
     -- `φ ∘ QuotientGroup.mk` is `ψ` by `QuotientGroup.lift_mk`, definitionally.
     (QuotientGroup.isQuotientMap_mk K).continuous_iff.mpr
-      ((QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _)
+      ((QuotientGroup.continuous_mk.comp continuous_subtypeVal).subtype_mk _)
   have hφs : Function.Surjective φ := by
     rintro ⟨x, hx⟩
     obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x

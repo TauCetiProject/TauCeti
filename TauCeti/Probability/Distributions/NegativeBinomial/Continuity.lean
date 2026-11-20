@@ -63,7 +63,7 @@ theorem continuous_negativeBinomialMeasure :
   have hr : Continuous fun q : ℝ≥0 × Ioc (0 : ℝ) 1 ↦ (q.1 : ℝ) :=
     NNReal.continuous_coe.comp continuous_fst
   have hp : Continuous fun q : ℝ≥0 × Ioc (0 : ℝ) 1 ↦ (q.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   exact ((((Polynomial.continuous _).comp hr).div_const _).mul
     (hp.rpow hr fun q ↦ Or.inl q.2.property.1.ne')).mul
       ((continuous_const.sub hp).pow k)

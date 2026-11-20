@@ -292,7 +292,7 @@ def complexSmoothCotangentRestrictEquiv (U : TopologicalSpace.Opens M) {x : U}
     (complexSmoothVanishingIdeal I (x : M)).Cotangent ≃ₗ[ℂ]
       (complexSmoothVanishingIdeal I x).Cotangent :=
   LinearEquiv.ofBijective
-    (complexSmoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯)
+    (complexSmoothCotangentMap (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯)
       (y := x) (by simp))
     (complexSmoothCotangentMap_bijective _ _ hx (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
       ⟨Manifold.tangentSpaceOpenEquiv x, by
@@ -303,7 +303,7 @@ def complexSmoothCotangentRestrictEquiv (U : TopologicalSpace.Opens M) {x : U}
 theorem coe_complexSmoothCotangentRestrictEquiv (U : TopologicalSpace.Opens M) {x : U}
     (hx : I.IsInteriorPoint (x : M)) :
     ⇑(complexSmoothCotangentRestrictEquiv U hx) =
-      complexSmoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯)
+      complexSmoothCotangentMap (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯)
         (y := x) (by simp) :=
   funext (LinearEquiv.ofBijective_apply _)
 
@@ -315,7 +315,7 @@ theorem complexSmoothCotangentRestrictEquiv_toCotangent (U : TopologicalSpace.Op
         ((complexSmoothVanishingIdeal I (x : M)).toCotangent f) =
       (complexSmoothVanishingIdeal I x).toCotangent
         ⟨(f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯).comp
-          (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯),
+          (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯),
           comp_mem_complexSmoothVanishingIdeal _ (by simp) f.property⟩ := by
   rw [coe_complexSmoothCotangentRestrictEquiv]
   exact complexSmoothCotangentMap_toCotangent _ (by simp) f
@@ -332,7 +332,7 @@ theorem complexSmoothCotangentEquiv_complexSmoothCotangentRestrictEquiv
   simpa only [coe_complexSmoothCotangentRestrictEquiv, ContMDiffMap.coeFn_mk,
     Manifold.mfderiv_subtype_val] using
     complexSmoothCotangentEquiv_complexSmoothCotangentMap
-      (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x) (by simp) hx
+      (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯) (y := x) (by simp) hx
       (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx) u
 
 end TauCeti

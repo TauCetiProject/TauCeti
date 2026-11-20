@@ -164,10 +164,10 @@ theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (hDm : Me
     exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
       (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
         (continuous_surfaceScale.comp
-          (continuous_subtype_val.prodMk continuous_const)).continuousAt
+          (continuous_subtypeVal.prodMk continuous_const)).continuousAt
   have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
   refine (integrable_const B).mono' hmeas ?_
-  filter_upwards [ae_restrict_mem (measurable_subtype_coe hDm)] with x hx
+  filter_upwards [ae_restrict_mem (measurable_subtypeVal hDm)] with x hx
   exact hB t le_rfl x hx
 
 open scoped Classical in
@@ -212,7 +212,7 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D
   have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ x ∂(surfaceHaar K).restrict (Subtype.val ⁻¹' D),
       ‖F u x‖ ≤ B := by
     filter_upwards [Ioi_mem_nhds (half_lt_self hu₀)] with u (hu : u₀ / 2 < u)
-    filter_upwards [ae_restrict_mem (measurable_subtype_coe hDm)] with x hx
+    filter_upwards [ae_restrict_mem (measurable_subtypeVal hDm)] with x hx
     exact hB (u / V ^ 2) (div_le_div_of_nonneg_right hu.le (sq_nonneg V)) x hx
   have hint : Integrable (fun _ ↦ B)
       ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
@@ -240,7 +240,7 @@ theorem continuous_latticeTheta_surfaceScale (L : Submodule ℤ (mixedSpace K))
     Continuous fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t) :=
   continuous_iff_continuousAt.mpr fun x ↦ ContinuousAt.comp (g := latticeTheta L)
     (continuousAt_latticeTheta L (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
-    (continuous_surfaceScale.comp (continuous_subtype_val.prodMk continuous_const)).continuousAt
+    (continuous_surfaceScale.comp (continuous_subtypeVal.prodMk continuous_const)).continuousAt
 
 open scoped Classical in
 /-- **The Mellin kernel at `∞`**: over a bounded measurable set `D` of parameters the kernel of a
@@ -258,7 +258,7 @@ theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)} (hDm : Measurabl
   set n : ℝ := (Module.finrank ℚ K : ℝ)⁻¹
   set A : ℂ := (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ)
   set S : Set (normOneSurface K) := Subtype.val ⁻¹' D
-  have hS : MeasurableSet S := measurable_subtype_coe hDm
+  have hS : MeasurableSet S := measurable_subtypeVal hDm
   have hfin : surfaceHaar K S < ⊤ := surfaceHaar_preimage_lt_top hD
   have : IsFiniteMeasure ((surfaceHaar K).restrict S) := isFiniteMeasure_restrict.mpr hfin.ne
   -- the decay of the theta series on the bounded subset `D ∩ S` of the norm-one surface

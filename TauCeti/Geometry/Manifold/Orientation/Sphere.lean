@@ -174,7 +174,8 @@ theorem _root_.Orientation.orientation_eq_neg_orientationAt_sphereOrientation_if
     v.orientation = -o.sphereOrientation.orientationAt u ↔
       o.volumeForm
         (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) < 0 := by
-  rw [← Orientation.ne_iff_eq_neg _ _ (o.sphereOrientation.finrank_tangentSpace_eq u).symm, Ne,
+  rw [← Orientation.ne_iff_eq_neg _ _
+      (Nat.card_eq_fintype_card.trans (o.sphereOrientation.finrank_tangentSpace_eq u).symm), Ne,
     o.orientation_eq_orientationAt_sphereOrientation_iff, not_lt]
   exact (Orientation.volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_mvfderiv_coe_sphere u v.linearIndependent)).le_iff_lt
@@ -185,7 +186,8 @@ sphere. -/
 theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n + 1))) :
     (-o).sphereOrientation = -o.sphereOrientation := by
   ext u
-  have hcard := ((-o).sphereOrientation.finrank_tangentSpace_eq u).symm
+  have hcard :=
+    Nat.card_eq_fintype_card.trans ((-o).sphereOrientation.finrank_tangentSpace_eq u).symm
   let v := finBasisOfFinrankEq ℝ (TangentSpace (𝓡 n) u) (finrank_euclideanSpace_fin (𝕜 := ℝ))
   -- A tangent basis is positive for `-o` exactly when it is negative for `o`.
   have h : v.orientation = (-o).sphereOrientation.orientationAt u ↔
@@ -380,8 +382,8 @@ theorem isOrientationReversingAt_conjSphere (z : sphere (0 : ℂ) 1) :
     fin_cases i
     simp [b']
   rw [Manifold.Orientation.isOrientationReversingAt_iff_of_basis c b' hb', iff_true_left hc,
-    ← Orientation.ne_iff_eq_neg _ _
-      (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (κ z)).symm,
+    ← Orientation.ne_iff_eq_neg _ _ (Nat.card_eq_fintype_card.trans
+      (Complex.orientation.sphereOrientation.finrank_tangentSpace_eq (κ z)).symm),
     Ne, Complex.orientation_eq_orientationAt_sphereOrientation_iff, ← hb', hd, not_lt]
   simp only [κ, coe_conjSphere, Complex.conj_re, Complex.conj_im]
   linarith

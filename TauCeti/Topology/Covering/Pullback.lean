@@ -73,11 +73,11 @@ theorem IsEvenlyCovered.pullback_fst {I : Type*} [TopologicalSpace I] {x : X} (h
     ⟨w.val.snd, by
       rw [Set.mem_preimage, ← (show f w.val.fst = g w.val.snd from w.val.property)]
       exact w.property⟩
-  have hk : Continuous k := (Pullback.continuous_snd.comp continuous_subtype_val).subtype_mk _
+  have hk : Continuous k := (Pullback.continuous_snd.comp continuous_subtypeVal).subtype_mk _
   -- A point of the fibre of `g` over `f x'`, for `x' ∈ f ⁻¹' U`, from its sheet index.
   let l (v : f ⁻¹' U × I) : g ⁻¹' U := H.symm (⟨f v.1, v.1.property⟩, v.2)
   have hl : Continuous l :=
-    H.symm.continuous.comp ((((hf.comp continuous_subtype_val).comp continuous_fst).subtype_mk
+    H.symm.continuous.comp ((((hf.comp continuous_subtypeVal).comp continuous_fst).subtype_mk
       _).prodMk continuous_snd)
   have hgl (v : f ⁻¹' U × I) : f v.1 = g (l v) := by
     rw [← hH, Homeomorph.apply_symm_apply]
@@ -95,12 +95,12 @@ theorem IsEvenlyCovered.pullback_fst {I : Type*} [TopologicalSpace I] {x : X} (h
         -- `k` of the inverse image of `v` is `l v`, up to eta for subtypes.
         exact (congrArg Prod.snd (H.apply_symm_apply (⟨f v.1, v.1.property⟩, v.2)) :)
       continuous_toFun :=
-        ((Pullback.continuous_fst.comp continuous_subtype_val).subtype_mk _).prodMk
+        ((Pullback.continuous_fst.comp continuous_subtypeVal).subtype_mk _).prodMk
           (continuous_snd.comp (H.continuous.comp hk))
       continuous_invFun := by
         refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
-        exact (continuous_subtype_val.comp continuous_fst).prodMk
-          (continuous_subtype_val.comp hl) },
+        exact (continuous_subtypeVal.comp continuous_fst).prodMk
+          (continuous_subtypeVal.comp hl) },
     fun _ ↦ rfl⟩
 
 /-- **The pullback of a covering map is a covering map**: for a covering map `g : Z → Y` and a

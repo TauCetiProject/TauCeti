@@ -122,7 +122,7 @@ theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ
 /-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
 theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
     (Circle.exp (Real.pi / d) : ℂ) ^ d = -1 := by
-  rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+  rw [Circle.coe_exp, ← Complex.exp_natCast_mul]
   have hmul : (d : ℂ) * (↑(Real.pi / d) * Complex.I) = Real.pi * Complex.I := by
     push_cast
     field_simp

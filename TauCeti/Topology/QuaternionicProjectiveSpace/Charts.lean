@@ -86,7 +86,7 @@ theorem ratio_self_eq_one (k : Fin (n + 1)) {p : QuaternionicProjectiveSpace n}
 theorem isOpen_affineOpen (k : Fin (n + 1)) : IsOpen (affineOpen k) := by
   apply (isOpenQuotientMap_mk n).isQuotientMap.isOpen_preimage.mp
   convert (isOpen_ne_fun
-    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp continuous_subtype_val)
+    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp continuous_subtypeVal)
     (continuous_const (y := (0 : ℍ)))) using 1
   ext v
   simp
@@ -108,9 +108,9 @@ theorem continuousOn_ratio (k j : Fin (n + 1)) : ContinuousOn (ratio k j) (affin
   apply ContinuousAt.continuousWithinAt
   apply continuousAt_lift
   exact ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) j).comp
-    continuous_subtype_val).continuousAt.mul
+    continuous_subtypeVal).continuousAt.mul
     ((((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp
-      continuous_subtype_val).continuousAt).inv₀ hk)
+      continuous_subtypeVal).continuousAt).inv₀ hk)
 
 private def affineVector (k : Fin (n + 1)) (z : Fin n → ℍ) : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ :=
   WithLp.toLp 2 (Fin.insertNth (α := fun _ ↦ ℍ) k 1 z)

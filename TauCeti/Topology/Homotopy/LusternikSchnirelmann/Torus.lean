@@ -102,7 +102,7 @@ private theorem nullhomotopic_subtypeVal_torusCellNhd [∀ i, Fact (0 < p i)] (S
   ContinuousMap.Nullhomotopic.pi fun i ↦
     (AddCircle.nullhomotopic_subtypeVal_compl_singleton (torusCellAvoided p S i)).comp_left
       ⟨fun x : torusCellNhd p S ↦ ⟨x.val i, x.property.1 i⟩,
-        ((continuous_apply i).comp continuous_subtype_val).subtype_mk _⟩
+        ((continuous_apply i).comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- Every point lies in the neighbourhood `V_S` of the cell of its set `S` of nonzero
 coordinates. -/

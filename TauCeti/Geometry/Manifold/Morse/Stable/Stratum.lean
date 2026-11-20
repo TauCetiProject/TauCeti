@@ -223,7 +223,7 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum {k : ℕ} {x : Fin (k + 1
   have hcont : Continuous fun (v : (j : Fin k) → hX.morseTrajectoryRecords (x j.castSucc)
       (x j.succ) fun i : {i // c i ∈ Ioo (f (x j.succ)) (f (x j.castSucc))} ↦ c i) i ↦
       (v (J i)).val ⟨i, hJ i⟩ :=
-    continuous_pi fun i ↦ ((continuous_apply _).comp continuous_subtype_val).comp
+    continuous_pi fun i ↦ ((continuous_apply _).comp continuous_subtypeVal).comp
       (continuous_apply (J i))
   refine ⟨
     { toFun w j := ⟨fun i ↦ (w : ι → M) i, hfwd w.val w.property j⟩
@@ -231,7 +231,7 @@ theorem exists_homeomorph_morseBrokenTrajectoryStratum {k : ℕ} {x : Fin (k + 1
       left_inv w := rfl
       right_inv v := funext fun j ↦ Subtype.ext (funext fun i ↦ ?_)
       continuous_toFun := continuous_pi fun j ↦
-        (continuous_pi fun i ↦ (continuous_apply i.1).comp continuous_subtype_val).subtype_mk _
+        (continuous_pi fun i ↦ (continuous_apply i.val).comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := hcont.subtype_mk _ },
     fun w j i ↦ rfl⟩
   -- A level of step `j` is a level of no other step, since `f` decreases along the chain.

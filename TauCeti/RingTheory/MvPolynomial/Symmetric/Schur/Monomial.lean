@@ -356,7 +356,7 @@ theorem schurPoly_eq_sum_kostkaNumber_smul_msymm :
     schurPoly σ R μ = ∑ ν : n.Partition, (kostkaNumber μ ν : R) • msymm σ R ν := by
   ext d
   rw [coeff_sum]
-  simp only [coeff_smul, smul_eq_mul]
+  simp only [AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul]
   by_cases hd : d.degree = n
   · rw [coeff_schurPoly_eq_kostkaNumber R μ hd, Finset.sum_eq_single (weightPartition d hd)]
     · rw [coeff_msymm R _ hd, ite_eq_left rfl, mul_one]

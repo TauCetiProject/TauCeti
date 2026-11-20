@@ -109,7 +109,7 @@ theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [Norme
   · convert summable_zero with k
     rw [Subsingleton.elim (p.coeff k • (a - algebraMap ℂ A z₀) ^ k) 0, norm_zero]
   set b := a - algebraMap ℂ A z₀
-  obtain ⟨w, hw, hsr⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
+  obtain ⟨w, hw, hsr⟩ := spectrum.exists_eNorm_eq_spectralRadius b
   have hw_mem : w + z₀ ∈ spectrum ℂ a := by
     rwa [spectrum.add_mem_iff, neg_add_eq_sub]
   have hlt : ENNReal.ofReal (gelfandRadius b) < p.radius := by

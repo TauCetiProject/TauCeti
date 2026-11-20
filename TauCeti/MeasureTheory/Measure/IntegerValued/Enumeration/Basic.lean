@@ -95,7 +95,7 @@ theorem _root_.Measurable.exists_finite_occurrence_enumeration
   -- Choose on the space of all finite integer-valued measures, so the same measurable
   -- removal operation can be iterated for every member of the family.
   let M := FiniteIntegerMeasure X
-  have hcoe : Measurable (fun ν : M => (ν : Measure X)) := measurable_subtype_coe
+  have hcoe : Measurable (fun ν : M => (ν : Measure X)) := measurable_subtypeVal
   obtain ⟨pick, hpick, hnone, hmass⟩ := hcoe.exists_option_one_le_singleton
     (fun ν => ν.property.1) (fun ν => ν.property.2)
   let atom : M → Measure X := fun ν => (pick ν).elim 0 Measure.dirac

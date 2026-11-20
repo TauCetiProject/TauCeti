@@ -84,7 +84,7 @@ theorem exists_mul_toPrincipalIdeal_mem_idealsAway {S : Finset (HeightOneSpectru
       simp [hvS, Valuation.map_eq_of_sub_lt (v.valuation K) hlt, hp]
   -- A nonzero prescribed valuation at any prime in the union rules out a zero multiplier.
   have hx0 : x ≠ 0 := by
-    obtain ⟨v, hv⟩ := Finset.nonempty_iff_ne_empty.mpr hST
+    obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.1 hST
     have hne : v.valuation K x ≠ 0 := by
       rw [hval v hv]
       split

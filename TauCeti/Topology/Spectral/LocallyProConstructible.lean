@@ -181,9 +181,9 @@ theorem IsLocallyProConstructible.of_isOpenCover {ι : Type*} {U : ι → Opens 
   have himage (x : V) : IsProConstructible (e x '' (Subtype.val ⁻¹' s)) := by
     have := hWs x
     have hg : IsOpenEmbedding (g x) :=
-      .inclusion _ ((hWo x).preimage continuous_subtype_val)
+      .inclusion _ ((hWo x).preimage continuous_subtypeVal)
     have he : IsOpenEmbedding (e x) :=
-      .inclusion _ ((hWo x).preimage continuous_subtype_val)
+      .inclusion _ ((hWo x).preimage continuous_subtypeVal)
     have hW : IsProConstructible ((Subtype.val : W x → X) ⁻¹' s) := by
       convert isLocallyProConstructible_iff_isProConstructible.mp
         ((hs (i x)).preimage_of_isOpenEmbedding hg) using 1
@@ -225,7 +225,7 @@ theorem _root_.IsClosed.isLocallyProConstructible (hs : IsClosed s) :
     IsLocallyProConstructible s := by
   intro U _ hUs
   have := hUs
-  exact (hs.preimage continuous_subtype_val).isProConstructible
+  exact (hs.preimage continuous_subtypeVal).isProConstructible
 
 /-- A locally pro-constructible subspace of a locally spectral space is locally spectral. -/
 theorem IsLocallyProConstructible.isLocallySpectralSpace (hs : IsLocallyProConstructible s)
@@ -233,7 +233,7 @@ theorem IsLocallyProConstructible.isLocallySpectralSpace (hs : IsLocallyProConst
   refine isLocallySpectralSpace_iff.mpr fun x ↦ ?_
   obtain ⟨U, hUo, hxU, hUs⟩ := isLocallySpectralSpace_iff.mp hX x.val
   have := hUs
-  refine ⟨Subtype.val ⁻¹' U, hUo.preimage continuous_subtype_val, hxU, ?_⟩
+  refine ⟨Subtype.val ⁻¹' U, hUo.preimage continuous_subtypeVal, hxU, ?_⟩
   have hspec : SpectralSpace ((Subtype.val : U → X) ⁻¹' s) :=
     (hs.isProConstructible_preimage hUo).spectralSpace
   have hSU : SpectralSpace (s ∩ U : Set X) := by
@@ -273,7 +273,7 @@ theorem IsLocallyProConstructible.preimage {u : Set Y} (hu : IsLocallyProConstru
       convert (hu.isProConstructible_preimage (hVo x)).preimage hg using 1
       ext y
       simp
-    have he : IsOpenEmbedding (e x) := .inclusion _ ((hWo x).preimage continuous_subtype_val)
+    have he : IsOpenEmbedding (e x) := .inclusion _ ((hWo x).preimage continuous_subtypeVal)
     exact hW.image he.isSpectralMap
   obtain ⟨T, hT⟩ := (isCompact_iff_compactSpace.mpr hUs.toCompactSpace).elim_finite_subcover
     W hWo (fun x hx ↦ mem_iUnion.mpr ⟨⟨x, hx⟩, hxW ⟨x, hx⟩⟩)
@@ -295,7 +295,7 @@ projection is locally spectral. -/
 theorem IsLocallyProConstructible.isLocallySpectralMap_fst {R : Set (X × Y)}
     (hR : IsLocallyProConstructible R) (hY : IsLocallySpectralSpace Y) :
     IsLocallySpectralMap (fun q : R ↦ q.val.1) := by
-  have hcont : Continuous (fun q : R ↦ q.1.1) := continuous_fst.comp continuous_subtype_val
+  have hcont : Continuous (fun q : R ↦ q.val.1) := continuous_fst.comp continuous_subtypeVal
   refine .of_isSpectralMap_restrict hcont fun U V hUV hUo hVo hUs hVs ↦ ?_
   rw [hUV.isSpectralMap_restrict_iff hcont.continuousOn hVo]
   intro K hKV hKo hKc
@@ -309,7 +309,7 @@ theorem IsLocallyProConstructible.isLocallySpectralMap_fst {R : Set (X × Y)}
   have hP : IsProConstructible P := hR.isProConstructible_preimage (hVo.prod hWo)
   have : SpectralSpace P := hP.spectralSpace
   let O : Set R := Subtype.val ⁻¹' (V ×ˢ W)
-  have hOo : IsOpen O := (hVo.prod hWo).preimage continuous_subtype_val
+  have hOo : IsOpen O := (hVo.prod hWo).preimage continuous_subtypeVal
   have hqO : q ∈ O := ⟨hUV hqU, hqW⟩
   let eOP : O ≃ₜ P :=
     { toFun := fun p ↦ ⟨⟨p.val.val, p.property⟩, p.val.property⟩
@@ -317,9 +317,9 @@ theorem IsLocallyProConstructible.isLocallySpectralMap_fst {R : Set (X × Y)}
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl
       continuous_toFun :=
-        ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+        ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).subtype_mk _
       continuous_invFun :=
-        ((continuous_subtype_val.comp continuous_subtype_val).subtype_mk _).subtype_mk _ }
+        ((continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _).subtype_mk _ }
   have : SpectralSpace O := by
     have : CompactSpace O := eOP.symm.compactSpace
     exact eOP.isOpenEmbedding.spectralSpace
@@ -402,11 +402,11 @@ theorem IsLocallyProConstructible.closure_eq_setOfPred_specializes
     have := hUs
     have hy' : (⟨y, hyU⟩ : U) ∈ closure ((Subtype.val : U → X) ⁻¹' s) := by
       rw [← hUo.isOpenEmbedding_subtypeVal.isOpenMap.preimage_closure_eq_closure_preimage
-        continuous_subtype_val]
+        continuous_subtypeVal]
       exact hy
     rw [(hs.isProConstructible_preimage hUo).closure_eq_setOfPred_specializes] at hy'
     obtain ⟨x, hx, hxy⟩ := hy'
-    exact ⟨x.1, hx, hxy.map continuous_subtype_val⟩
+    exact ⟨x.val, hx, hxy.map continuous_subtypeVal⟩
   · rintro y ⟨x, hx, hxy⟩
     exact closure_mono (singleton_subset_iff.mpr hx) hxy.mem_closure
 

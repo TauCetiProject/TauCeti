@@ -79,7 +79,7 @@ theorem exists_isOpenEmbedding_normalTubeOfRadius {f : M → V}
     isOpen_lt (continuous_norm.comp continuous_snd) (r.continuous.comp continuous_fst)
   refine ⟨r, hr, .of_continuous_injective_isOpenMap ?_
     (fun p q h => Subtype.ext (hinjT p.property q.property h)) ?_⟩
-  · exact ((hf.continuous.comp continuous_fst).add continuous_snd).comp continuous_subtype_val
+  · exact ((hf.continuous.comp continuous_fst).add continuous_snd).comp continuous_subtypeVal
   -- Openness follows by covering the variable tube by the local normal tubes.
   · intro U hU
     obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hU

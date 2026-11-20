@@ -159,7 +159,7 @@ private theorem exists_continuous_chartCoord_symm_eq_smul {X : Type*} [Topologic
       chartCoord D₃ q₃ (h₃ x) ((chartCoord D₂ q (h x)).symm v) =
         c x • chartCoord D₃ q₃ (h₃ x₀) ((chartCoord D₂ q (h x₀)).symm v) := by
   obtain ⟨c, hc, hc0, hcv⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul
-    (continuous_subtype_val.comp hS) h₃ h x₀
+    (continuous_subtypeVal.comp hS) h₃ h x₀
   refine ⟨c, hc, hc0, fun x v ↦ ?_⟩
   simp only [chartCoord, linearEquiv, LinearEquiv.trans_apply, LinearEquiv.symm_trans_apply]
   rw [← map_smul]
@@ -175,7 +175,7 @@ theorem isOpen_setOf_isInvertible_prod_coprod :
   have : CompleteSpace Λ := FiniteDimensional.completeSpace 𝕜 Λ
   have hc : Continuous fun T : {T : E →L[𝕜] F // T.IsFredholm} ↦ (T.val.coprod D₂).prod q :=
     (prodL (E := E × Λ) (F := F) (G := G) 𝕜).continuous.comp
-      ((continuous_subtype_val.continuousLinearMapCoprod continuous_const).prodMk
+      ((continuous_subtypeVal.continuousLinearMapCoprod continuous_const).prodMk
         continuous_const)
   exact isOpen_setOfPred_isInvertible.preimage hc
 
@@ -252,7 +252,7 @@ theorem continuousOn_pretrivialization_coordChange :
   · rw [hU]
     exact continuousOn_empty _
   rw [continuousOn_iff_continuous_domRestrict]
-  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul continuous_subtype_val
+  obtain ⟨c, hc, -, hcv⟩ := exists_continuous_chartCoord_symm_eq_smul continuous_subtypeVal
     (fun T : U ↦ T.property.1) (fun T : U ↦ T.property.2) ⟨T₀, hT₀⟩
   refine (hc.smul (continuous_const (y := chartCoord D₃ q₃ hT₀.2
     ((chartCoord D₂ q hT₀.1).symm 1)))).congr fun T ↦ ?_

@@ -131,8 +131,8 @@ theorem exists_isTubularNeighborhood_subset
   · simpa using starConvex_univ (𝕜 := ℝ) (0 : f.NormalSpace x hn)
   · exact W.isOpen.isOpenEmbedding_subtypeVal.comp
       (Φ.toHomeomorph.isOpenEmbedding.comp isOpen_univ.isOpenEmbedding_subtypeVal)
-  · exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
-      (continuous_subtype_val.comp continuous_snd)
+  · exact (continuous_subtypeVal.comp continuous_fst).smul_totalSpace
+      (continuous_subtypeVal.comp continuous_snd)
   · rintro _ ⟨v, rfl⟩
     exact hWO (Φ v).property
 

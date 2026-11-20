@@ -117,7 +117,7 @@ theorem exists_ball_preimage_schwarzChristoffelPrimitive_subset_of_unique_bounda
       rw [hfiber v hv]
       exact ⟨x, hxU, rfl⟩
     exact ((OnePoint.isOpenEmbedding_coe.isOpenMap U hU).preimage
-      continuous_subtype_val).mem_nhds hvU
+      continuous_subtypeVal).mem_nhds hvU
   have hnearC := OnePoint.continuous_coe.continuousAt.tendsto.eventually hnear
   obtain ⟨ε, hε, hεnear⟩ := Metric.eventually_nhds_iff.mp hnearC
   refine ⟨ε, hε, fun z hz hzball => ?_⟩

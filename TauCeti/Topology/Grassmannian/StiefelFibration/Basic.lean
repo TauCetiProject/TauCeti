@@ -97,7 +97,7 @@ theorem coe_specialOrthogonalFrameMap (A : specialOrthogonalGroup (Fin (r + m)) 
 variable (r m) in
 /-- The frame map `SO(r + m) → V_r(ℝ^(r + m))` is continuous. -/
 theorem continuous_specialOrthogonalFrameMap : Continuous (specialOrthogonalFrameMap r m) :=
-  continuous_unitaryMap.comp ((continuous_subtype_val.subtype_mk _).prodMk continuous_const)
+  continuous_unitaryMap.comp ((continuous_subtypeVal.subtype_mk _).prodMk continuous_const)
 
 /-- The frame map is equivariant: `(A B) • e = A • (B • e)`. -/
 theorem specialOrthogonalFrameMap_mul (A B : specialOrthogonalGroup (Fin (r + m)) ℝ) :
@@ -199,7 +199,7 @@ private theorem exists_specialOrthogonalFrameMap_localSection :
   obtain ⟨U, hU, hstd, s, hs, hs1, hsec⟩ := exists_unitaryFrameMap_localSection (𝕜 := ℝ) (r := r)
     (m := m)
   have hdet : ContinuousOn (fun f ↦ (s f : Matrix (Fin (r + m)) (Fin (r + m)) ℝ).det) U :=
-    continuous_id.matrix_det.comp_continuousOn (continuous_subtype_val.comp_continuousOn hs)
+    continuous_id.matrix_det.comp_continuousOn (continuous_subtypeVal.comp_continuousOn hs)
   let V := U ∩ (fun f ↦ (s f : Matrix (Fin (r + m)) (Fin (r + m)) ℝ).det) ⁻¹' Ioi 0
   -- A real unitary matrix has determinant `±1`, so positive determinant means determinant `1`.
   have hmem {f} (hf : f ∈ V) :
@@ -214,7 +214,7 @@ private theorem exists_specialOrthogonalFrameMap_localSection :
   refine ⟨V, hdet.isOpen_inter_preimage hU isOpen_Ioi, ⟨hstd, by simp [hs1]⟩,
     fun f ↦ if hf : f ∈ V then ⟨s f, hmem hf⟩ else 1, ?_, fun f hf ↦ ?_⟩
   · rw [IsInducing.subtypeVal.continuousOn_iff]
-    exact (continuous_subtype_val.comp_continuousOn (hs.mono inter_subset_left)).congr
+    exact (continuous_subtypeVal.comp_continuousOn (hs.mono inter_subset_left)).congr
       fun f (hf : f ∈ V) ↦ by simp [hf]
   · refine Subtype.ext (funext fun i ↦ ?_)
     have h := congrArg (fun g : finiteOrthonormalFrame ℝ r (r + m) ↦ g.val i) (hsec f hf.1)

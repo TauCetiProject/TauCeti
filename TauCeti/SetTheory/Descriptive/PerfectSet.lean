@@ -86,7 +86,7 @@ theorem Setoid.hasCantorAntichainOn_ker_univ_of_not_countable_range [Topological
     rw [PiNat.res_succ, hA, PiNat.res_length]
     exact (hW (D (PiNat.res x n)) n (x n)).2.2.2
   have hne (l : List Bool) : (A l).Nonempty :=
-    nonempty_iff_ne_empty.2 fun h => (D l).2.2 (by simp [A, h])
+    ne_empty_iff_nonempty.1 fun h => (D l).property.2 (by simp [A, h])
   have hdom := hanti.map_of_vanishingDiam hdiam hne
   have hlim (x : ℕ → Bool) : (⋂ n, A (PiNat.res x n)).Nonempty :=
     ⟨_, mem_iInter.2 (map_mem ⟨x, hdom ▸ mem_univ x⟩)⟩

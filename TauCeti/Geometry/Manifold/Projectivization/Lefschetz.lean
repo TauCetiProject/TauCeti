@@ -174,7 +174,7 @@ private theorem exists_openEmbedding_isMorse_affineChartInvOneAddDistSq
   let ρ : (Projectivization.affineChart i).symm ⁻¹' X → ℝ := fun z ↦ ‖ι z - c‖ ^ 2
   let F : X → ℝ := fun x ↦ Projectivization.affineChartInvOneAddDistSq i c x.val
   have hF_cont : Continuous F :=
-    (Projectivization.continuous_affineChartInvOneAddDistSq i c).comp continuous_subtype_val
+    (Projectivization.continuous_affineChartInvOneAddDistSq i c).comp continuous_subtypeVal
   have hFj : F ∘ j = fun z ↦ (1 + ρ z)⁻¹ := by
     ext z
     simp [F, j, ι, ρ, eL]

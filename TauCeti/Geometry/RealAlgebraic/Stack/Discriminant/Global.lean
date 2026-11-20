@@ -95,7 +95,7 @@ private lemma exists_delineation_ball_prod (he : IsAnalyticChart d S e) (hxe : x
   let r := min ε (min ρ δ)
   have hr : 0 < r := lt_min hε (lt_min hρ hδ)
   let ι : ball a r → ball a ε := fun u ↦ ⟨u, ball_subset_ball (min_le_left _ _) u.property⟩
-  have hι : Continuous ι := continuous_subtype_val.subtype_mk _
+  have hι : Continuous ι := continuous_subtypeVal.subtype_mk _
   refine ⟨r, hr,
     hφρ.mono (ball_subset_ball (min_le_right _ _ |>.trans (min_le_left _ _))),
     fun u ↦ (hδmem (ball_subset_ball (min_le_right _ _ |>.trans (min_le_right _ _)) u.property)).2,

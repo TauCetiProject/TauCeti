@@ -71,7 +71,7 @@ variable {n : ℕ}
 private def normalizeSphere :
     C({v : Fin (n + 1) → ℍ // v ≠ 0}, sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1) :=
   normalizeToSphere (fun v : {v : Fin (n + 1) → ℍ // v ≠ 0} ↦ WithLp.toLp 2 v.val)
-    ((PiLp.continuous_toLp 2 _).comp continuous_subtype_val)
+    ((PiLp.continuous_toLp 2 _).comp continuous_subtypeVal)
     fun v ↦ (WithLp.toLp_eq_zero 2).not.2 v.property
 
 private theorem coe_normalizeSphere (v : {v : Fin (n + 1) → ℍ // v ≠ 0}) :
@@ -136,7 +136,7 @@ def projectivizationHomeomorph : QuaternionicProjectiveSpace n ≃ₜ ℙ ℍᵐ
     refine (isOpenQuotientMap_mk n).isQuotientMap.continuous_iff.2 ?_
     simp only [Function.comp_def, QuaternionicProjectiveSpace.lift_mk]
     exact Projectivization.continuous_mk
-      ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val) _
+      ((PiLp.continuous_ofLp 2 _).comp continuous_subtypeVal) _
   continuous_invFun :=
     Projectivization.continuous_iff.2 ((continuous_mk n).comp normalizeSphere.continuous)
 

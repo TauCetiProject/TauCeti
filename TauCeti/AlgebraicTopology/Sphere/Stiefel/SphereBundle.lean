@@ -91,7 +91,7 @@ def stiefelBundleSphereFamily : C(StiefelBundle F E 3, C(Sphere2, sphereBundle F
         -- are the coordinates of the standard two-sphere.
         have hc (i : Fin 3) : Continuous fun q : StiefelBundle F E 3 × Sphere2 ↦
             (standardStiefelSphereMap q.2 : EuclideanSpace ℝ (Fin 3)) i :=
-          (PiLp.continuous_apply 2 _ i).comp (continuous_subtype_val.comp
+          (PiLp.continuous_apply 2 _ i).comp (continuous_subtypeVal.comp
             (standardStiefelSphereMap.continuous.comp continuous_snd))
         have hv (i : Fin 3) : Continuous fun q : StiefelBundle F E 3 × Sphere2 ↦
             TotalSpace.mk' F q.1.proj

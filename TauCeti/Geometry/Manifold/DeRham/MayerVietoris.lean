@@ -309,9 +309,9 @@ theorem SmoothForm.surjective_mayerVietoris [FiniteDimensional ℝ E] [IsManifol
   -- A cut-off function vanishing near the points outside `V` and equal to one near the points
   -- outside `U`.
   have hA : IsClosed {x : (U ⊔ V : Opens M) | (x : M) ∉ V} :=
-    (V.isOpen.preimage continuous_subtype_val).isClosed_compl
+    (V.isOpen.preimage continuous_subtypeVal).isClosed_compl
   have hB : IsClosed {x : (U ⊔ V : Opens M) | (x : M) ∉ U} :=
-    (U.isOpen.preimage continuous_subtype_val).isClosed_compl
+    (U.isOpen.preimage continuous_subtypeVal).isClosed_compl
   have hAB : Disjoint {x : (U ⊔ V : Opens M) | (x : M) ∉ V} {x | (x : M) ∉ U} :=
     disjoint_left.mpr fun x hxV hxU ↦ (Opens.mem_sup.mp x.property).elim hxU hxV
   obtain ⟨ρ, hρ0, hρ1, -⟩ := exists_contMDiffMap_zero_one_nhds_of_isClosed I (n := ⊤) hA hB hAB
@@ -559,10 +559,10 @@ theorem mayerVietorisδ_naturality {U V : Opens M} {U' V' : Opens M'}
   let fV : V → V' := fun x ↦ ⟨f (Opens.inclusion le_sup_right x), hfV _ x.property⟩
   -- Read in `M'`, they are the composites of `f` with the inclusions of `U` and `V` in `U ⊔ V`.
   have hfU' : ContMDiff I I' ∞ fU := (ContMDiff.subtypeVal_comp_iff U' fU).mp
-    (contMDiff_subtype_val.comp (hf.comp (contMDiff_inclusion le_sup_left)) :
+    (contMDiff_subtypeVal.comp (hf.comp (contMDiff_inclusion le_sup_left)) :
       ContMDiff I I' ∞ (Subtype.val ∘ f ∘ Opens.inclusion le_sup_left))
   have hfV' : ContMDiff I I' ∞ fV := (ContMDiff.subtypeVal_comp_iff V' fV).mp
-    (contMDiff_subtype_val.comp (hf.comp (contMDiff_inclusion le_sup_right)) :
+    (contMDiff_subtypeVal.comp (hf.comp (contMDiff_inclusion le_sup_right)) :
       ContMDiff I I' ∞ (Subtype.val ∘ f ∘ Opens.inclusion le_sup_right))
   have hgU : Opens.inclusion inf_le_left ∘ g = fU ∘ Opens.inclusion inf_le_left :=
     funext fun x ↦ Subtype.ext (hfg x)

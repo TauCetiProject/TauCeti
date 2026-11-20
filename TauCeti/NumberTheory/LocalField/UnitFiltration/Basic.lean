@@ -327,7 +327,7 @@ theorem unitFiltration_succ_lt {i : ℕ} (hi : i ≠ 0) :
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
   have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
   have hπ0 : 0 < valuation K (π : K) := by
-    rw [zero_lt_iff, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
+    rw [pos_iff_ne_zero, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
     exact hπ.ne_zero
   have hv : valuation K (1 + (π : K) ^ i) = 1 := (valuation K).map_one_add_of_lt <| by
     rw [map_pow]

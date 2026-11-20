@@ -995,7 +995,7 @@ private lemma mk₂Coh_zero_two_empty {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X
 private lemma mk₂Coh_zero_two_singleton {X₀ X₁ X₂ : C} (f : DGHom R 0 X₀ X₁) (g : DGHom R 0 X₁ X₂)
     (h : DGHom R 0 X₀ X₂) (η : DGHom R (-1) X₀ X₂) {hij hS hd} :
     mk₂Coh f g h η 0 2 {1} (-1) hij hS hd = η := by
-  simp only [mk₂Coh, singleton_ne_empty, dite_false]
+  simp only [mk₂Coh, (singleton_nonempty _).ne_empty, dite_false]
   exact castDeg_self R _ η
 
 /-- The `2`-simplex of the differential graded nerve with edges `f : X₀ ⟶ X₁`, `g : X₁ ⟶ X₂` and

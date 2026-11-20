@@ -235,7 +235,7 @@ theorem supSeminorm_map_sub_algebraMap_constantCoeff_le {B : Type*} [CommRing B]
   · refine hB.supSeminorm_aeval_le hε0.le hε1 hX (by simp [c₀]) fun t ↦ ?_
     rcases eq_or_ne t 0 with rfl | ht
     · simp [c₀]
-    · rw [MvPolynomial.coeff_sub, MvPolynomial.coeff_C_of_ne_zero ht, sub_zero]
+    · rw [AddMonoidAlgebra.coeff_sub_apply, MvPolynomial.coeff_C_of_ne_zero ht, sub_zero]
       have h := norm_coeff_le_norm P t
       rw [hP, coe_polynomialToRestricted, MvPolynomial.coeff_coe] at h
       exact h.trans hPg

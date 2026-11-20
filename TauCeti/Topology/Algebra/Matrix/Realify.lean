@@ -178,7 +178,7 @@ noncomputable def realifyUnitaryHomeomorph
   -- `U(n)` is compact, so a continuous bijection onto a Hausdorff space is a homeomorphism.
   Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf)
     (((Matrix.isClosedEmbedding_realify (m := n) (n := n) (𝕜 := ℂ)).continuous.comp
-      continuous_subtype_val).subtype_mk _ |>.subtype_mk _)
+      continuous_subtypeVal).subtype_mk _ |>.subtype_mk _)
 
 /-- Realification identifies `U(n)` with the orthogonal matrices of `G`, as matrices. -/
 @[simp]
@@ -228,7 +228,7 @@ theorem coe_ofUnitary (U : unitaryGroup n ℂ) :
 
 /-- Realification of unitary matrices is continuous. -/
 theorem continuous_ofUnitary : Continuous (ofUnitary : unitaryGroup n ℂ → GLSymplectic n ℝ) := by
-  refine continuous_induced_rng.2 ((continuous_subtype_val.comp
+  refine continuous_induced_rng.2 ((continuous_subtypeVal.comp
     (map_continuous (unitaryGroupEquivSymplecticInfOrthogonal (n := n)))).congr fun U ↦ ?_)
   rw [Function.comp_apply, Function.comp_apply, ofUnitary_apply, Subgroup.coe_inclusion]
 

@@ -63,7 +63,7 @@ def path (x : MoorePathPullback f b) : MoorePath X := x.val.2.toMoorePath
 
 /-- Projection to the based path space underlying the pullback. -/
 def toMoorePathFrom : C(MoorePathPullback f b, MoorePathFrom X b) :=
-  ⟨fun x ↦ x.1.2, continuous_snd.comp continuous_subtype_val⟩
+  ⟨fun x ↦ x.val.2, continuous_snd.comp continuous_subtypeVal⟩
 
 @[simp]
 theorem point_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
@@ -89,7 +89,7 @@ theorem ext {x y : MoorePathPullback f b} (h : x.point = y.point) (h' : x.path =
 
 @[fun_prop]
 theorem continuous_point : Continuous (point : MoorePathPullback f b → D) :=
-  continuous_fst.comp continuous_subtype_val
+  continuous_fst.comp continuous_subtypeVal
 
 @[fun_prop]
 theorem continuous_path : Continuous (path : MoorePathPullback f b → MoorePath X) :=

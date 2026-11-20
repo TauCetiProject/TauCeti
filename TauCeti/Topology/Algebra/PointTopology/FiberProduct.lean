@@ -57,8 +57,8 @@ noncomputable def relativeTensorProductHomeomorph :
     refine continuous_of_continuous_tmul _ fun a b ↦ ?_
     simpa only [Equiv.invFun_as_coe, relativeTensorProductEquiv_symm_apply,
       AlgHom.tensorProductLift_tmul, Function.comp_apply] using
-      ((continuous_eval a).comp (continuous_fst.comp continuous_subtype_val)).fun_mul
-        ((continuous_eval b).comp (continuous_snd.comp continuous_subtype_val))
+      ((continuous_eval a).comp (continuous_fst.comp continuous_subtypeVal)).fun_mul
+        ((continuous_eval b).comp (continuous_snd.comp continuous_subtypeVal))
 
 /-- The fibre-product comparison restricts a point to the left tensor factor. -/
 @[simp]

@@ -386,10 +386,10 @@ open square. -/
 theorem isOpenEmbedding_restrict_cell :
     IsOpenEmbedding ((Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)).domRestrict (cell γ i)) := by
   have hT : IsOpen (Ioo 0 1 ×ˢ Ioo 0 1 : Set (I × I)) := isOpen_Ioo.prod isOpen_Ioo
-  refine .of_continuous_injective_isOpenMap ((cell γ i).continuous.comp continuous_subtype_val)
+  refine .of_continuous_injective_isOpenMap ((cell γ i).continuous.comp continuous_subtypeVal)
     (fun q q' h => Subtype.ext ((cell_eq_cell_iff q'.property).1 h).2) fun V hV => ?_
   rw [domRestrict_eq, image_comp]
-  exact isOpen_image_cell (hT.isOpenMap_subtype_val V hV) (Subtype.coe_image_subset _ _)
+  exact isOpen_image_cell (hT.isOpenMap_subtypeVal V hV) (Subtype.coe_image_subset _ _)
 
 /-- The open cells are simply connected. -/
 theorem isSimplyConnected_image_cell :
@@ -585,7 +585,7 @@ private lemma continuous_deform :
       have hq : q ≠ squareCentre := fun h => ha ⟨i, h ▸ rfl⟩
       exact (continuous_inr.comp continuous_sigmaMk).continuousAt.comp
         (continuousAt_radialPush hq)
-  exact hcont.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+  exact hcont.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
     fun p => ⟨trivial, p.2.property⟩
 
 /-- At time `1` the radial deformation retracts the complement of the centres onto `X`. -/

@@ -108,7 +108,7 @@ def positiveDefiniteSymmetricSectionHomeomorph :
       e U hU).continuous.subtype_mk fun g ↦ g.toSymmetricSection_mem).congr
         fun g ↦ Subtype.ext (positiveDefiniteSymmetricSectionEquiv_apply g).symm
   · apply (continuous_frameTopology_iff (IB := IB) (n := n) e U hU).mpr
-    simpa using (continuous_subtype_val : Continuous
+    simpa using (continuous_subtypeVal : Continuous
       (fun σ : TauCeti.Manifold.positiveDefiniteSymmetricSections IB n F V ↦ σ.val))
 
 @[simp]
@@ -167,9 +167,9 @@ theorem continuous_convexCombination_frameTopology :
   have hs := (isEmbedding_toSymmetricSection_frameTopology (IB := IB) (n := n) e U hU).continuous
   apply (continuous_frameTopology_iff (IB := IB) (n := n) e U hU).mpr
   simp only [toSymmetricSection_convexCombination]
-  exact ((continuous_const.sub (continuous_subtype_val.comp continuous_snd)).smul
+  exact ((continuous_const.sub (continuous_subtypeVal.comp continuous_snd)).smul
     (hs.comp (continuous_fst.comp continuous_fst))).add
-      ((continuous_subtype_val.comp continuous_snd).smul
+      ((continuous_subtypeVal.comp continuous_snd).smul
         (hs.comp (continuous_snd.comp continuous_fst)))
 
 end Bundle.ContMDiffRiemannianMetric

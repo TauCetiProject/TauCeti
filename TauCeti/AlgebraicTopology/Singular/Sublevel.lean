@@ -97,7 +97,7 @@ theorem singularHomologyπ_comp_singularHomologyIsoSublevelPair_inv (hab : a ≤
     (sublevelPair f hab).singularHomologyπ R n ≫
         (singularHomologyIsoSublevelPair hab ha hb R n).inv =
       ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) := by
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩) := by
   rw [singularHomologyIsoSublevelPair, Iso.trans_inv]
   exact (@asIso _ _ _ _ _ (isIso_singularHomologyπ_sublevelPair hab ha R n)).hom_inv_id_assoc _
 

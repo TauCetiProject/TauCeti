@@ -200,7 +200,7 @@ private def sphereWedgePairToSkeletonPair :
     (TopCat.ofHom ⟨fun y ↦ ⟨y, (skeletonLT_sphereWedge_eq_univ ι n).symm ▸ mem_univ y⟩,
       continuous_id.subtype_mk _⟩)
     (TopCat.ofHom ⟨fun y ↦ ⟨y.val, (skeletonLT_sphereWedge_eq_singleton ι n).symm ▸ y.property⟩,
-      continuous_subtype_val.subtype_mk _⟩)
+      continuous_subtypeVal.subtype_mk _⟩)
     (by ext; rfl)
 
 private lemma sphereWedgePairToSkeletonPair_fst_apply (y : sphereWedge ι (n + 2)) :
@@ -210,7 +210,7 @@ private lemma sphereWedgePairToSkeletonPair_fst_apply (y : sphereWedge ι (n + 2
 private lemma isIso_sphereWedgePairToSkeletonPair :
     IsIso (sphereWedgePairToSkeletonPair ι n) := by
   have : IsIso (TopPair.Hom.fst (sphereWedgePairToSkeletonPair ι n)) :=
-    ⟨TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩, by ext; rfl, by ext; rfl⟩
+    ⟨TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩, by ext; rfl, by ext; rfl⟩
   refine TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun y ↦ ?_
   have hy : y.val ∈ ({sphereWedgeBase ι (n + 2)} : Set _) :=
     skeletonLT_sphereWedge_eq_singleton ι n ▸ y.property

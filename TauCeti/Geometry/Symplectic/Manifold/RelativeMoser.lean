@@ -506,7 +506,7 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
       simp only [mpullback_apply, hη q, ContinuousAlternatingMap.coe_zero, Pi.zero_apply])
   -- Moser's argument runs on the open submanifold `W`, with the restricted forms.
   let res := SmoothForm.mpullback (I := I) (I' := I) (F := ℝ) (k := 2) (Subtype.val : W → M)
-    contMDiff_subtype_val
+    contMDiff_subtypeVal
   let g : Q → W := fun q ↦ ⟨f q, hfW (mem_range_self q)⟩
   have hgK : IsCompact (range g) :=
     isCompact_range (f.contMDiff.continuous.subtype_mk fun q ↦ hfW (mem_range_self q))
@@ -533,7 +533,7 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
     exact (congrArg (mfderiv I I Φ (f q))
       (Manifold.tangentSpaceOpenEquiv_apply (I := I) (g q) v)).symm.trans h.symm
   refine ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
-    ⟨Subtype.val '' C, hC.image continuous_subtype_val, hΦC⟩, ?_, hΦ1⟩
+    ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩, ?_, hΦ1⟩
   -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
   obtain ⟨U, ⟨hU, hKU⟩, hUΨ⟩ := (hasBasis_nhdsSet (range g)).mem_iff.1 hΨ
   refine mem_of_superset ((W.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hU).mem_nhdsSet.2 ?_)
@@ -542,7 +542,7 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
     exact ⟨g q, hKU (mem_range_self q), rfl⟩
   · rintro _ ⟨z, hz, rfl⟩
     rw [mem_ofPred_eq, ← SmoothForm.coe_mpullback_subtype_val_apply,
-      SmoothForm.mpullback_mpullback_of_comp_eq _ _ Ψ.contMDiff contMDiff_subtype_val hcomp]
+      SmoothForm.mpullback_mpullback_of_comp_eq _ _ Ψ.contMDiff contMDiff_subtypeVal hcomp]
     exact (hUΨ hz).trans (SmoothForm.coe_mpullback_subtype_val_apply σ₀ z)
 
 open TopologicalSpace in
@@ -564,8 +564,8 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
       (∀ q, ∃ h : f q ∈ U₀, (φ ⟨f q, h⟩ : M) = f q ∧
         mfderiv I I φ ⟨f q, h⟩ = ContinuousLinearMap.id ℝ (TangentSpace I (⟨f q, h⟩ : U₀))) ∧
       SmoothForm.mpullback φ φ.contMDiff
-          (SmoothForm.mpullback (Subtype.val : U₁ → M) contMDiff_subtype_val σ₁) =
-        SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtype_val σ₀ := by
+          (SmoothForm.mpullback (Subtype.val : U₁ → M) contMDiff_subtypeVal σ₁) =
+        SmoothForm.mpullback (Subtype.val : U₀ → M) contMDiff_subtypeVal σ₀ := by
   obtain ⟨Φ, hΦf, -, hΦ, hΦ1⟩ :=
     exists_diffeomorph_fix_embedding_eventually_mpullback_eq f h₀ h₁ hnd heq
   -- Restrict `Φ` to an open neighbourhood `U` of `f(Q)` on which it pulls `σ₁` back to `σ₀`, and
@@ -585,7 +585,7 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
     exact h
   apply Subtype.ext
   funext z
-  rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_subtype_val Φ.contMDiff
+  rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_subtypeVal Φ.contMDiff
     (funext (Φ.subtype_apply_coe hU₀₁)), SmoothForm.coe_mpullback_subtype_val_apply,
     SmoothForm.coe_mpullback_subtype_val_apply]
   exact hUΦ z.property

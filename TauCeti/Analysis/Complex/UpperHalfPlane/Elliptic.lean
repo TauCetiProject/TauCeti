@@ -128,11 +128,11 @@ def stabilizerBallHomeomorph [Finite (stabilizer Γ z)] :
     Subtype.ext <| by
       simp only [discCoordinate_discCoordinateHomeomorph_symm, Complex.UnitDisc.coe_mk]
   continuous_toFun :=
-    Continuous.subtype_mk ((continuous_discCoordinate z).comp continuous_subtype_val) _
+    Continuous.subtype_mk ((continuous_discCoordinate z).comp continuous_subtypeVal) _
   continuous_invFun := by
     refine Continuous.subtype_mk
       ((discCoordinateHomeomorph z).symm.continuous.comp ?_) _
-    exact Complex.UnitDisc.isEmbedding_coe.continuous_iff.mpr continuous_subtype_val
+    exact Complex.UnitDisc.isEmbedding_coe.continuous_iff.mpr continuous_subtypeVal
 
 @[simp]
 theorem coe_stabilizerBallHomeomorph [Finite (stabilizer Γ z)] (τ : stabilizerBall Γ z ε) :

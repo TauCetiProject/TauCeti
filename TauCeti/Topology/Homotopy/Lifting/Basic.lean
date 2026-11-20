@@ -135,8 +135,8 @@ theorem HasHomotopyLiftingProperty.pullback {B' : Type*} [TopologicalSpace B']
 theorem HasHomotopyLiftingProperty.restrictPreimage (hp : HasHomotopyLiftingProperty p A)
     (t : Set B) : HasHomotopyLiftingProperty (t.restrictPreimage p) A := by
   intro f H hH
-  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(p ⁻¹' t, E)).comp f)
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
+  obtain ⟨G, hG, hG₀⟩ := hp ((⟨Subtype.val, continuous_subtypeVal⟩ : C(p ⁻¹' t, E)).comp f)
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(t, B)).comp H) fun a ↦ congrArg Subtype.val (hH a)
   have hGt (x : I × A) : p (G x) ∈ t := by
     have hx := congrFun hG x
     simp only [Function.comp_apply, ContinuousMap.comp_apply, ContinuousMap.coe_mk] at hx
@@ -153,7 +153,7 @@ theorem HasHomotopyLiftingProperty.comp_subtypeVal (hp : HasHomotopyLiftingPrope
     HasHomotopyLiftingProperty (p ∘ Subtype.val : S → B) A := by
   intro f H hH
   obtain ⟨G, hG, hG₀⟩ :=
-    hp ((⟨Subtype.val, continuous_subtype_val⟩ : C(S, E)).comp f) H hH
+    hp ((⟨Subtype.val, continuous_subtypeVal⟩ : C(S, E)).comp f) H hH
   have hGS (x : I × A) : G x ∈ S := by
     have : PathConnectedSpace I :=
       (Set.projIcc_surjective (zero_le_one : (0 : ℝ) ≤ 1)).pathConnectedSpace continuous_projIcc

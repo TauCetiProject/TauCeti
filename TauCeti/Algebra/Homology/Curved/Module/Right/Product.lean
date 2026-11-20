@@ -258,7 +258,7 @@ noncomputable instance
 
 instance : HasProducts.{u}
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
+  .mk fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 /-- Componentwise homotopies glue to a homotopy into the product. Their common degree of minus
 one gives a uniform finite degree support on each source element. -/
@@ -350,6 +350,6 @@ noncomputable instance (X : J → DGHomotopyCategory R (CurvedDGRightModuleCat.{
       isLimit := homotopyProductFanIsLimit _ }
 
 instance : HasProducts.{u} (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
+  .mk fun _ ↦ ⟨fun _ ↦ hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 end TauCeti.CurvedDGRightModuleCat

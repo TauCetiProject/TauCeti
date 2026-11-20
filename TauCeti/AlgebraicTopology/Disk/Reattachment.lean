@@ -128,8 +128,8 @@ theorem snd_reattachmentPath (p : TopCat.disk.{u} k × I) :
 
 theorem continuous_reattachmentPath : Continuous (reattachmentPath.{u} (k := k)) := by
   have hs : Continuous fun p : TopCat.disk.{u} k × I ↦ (p.2 : ℝ) :=
-    continuous_subtype_val.comp continuous_snd
-  exact .prodMk ((((continuous_const.sub hs).mul (continuous_subtype_val.comp
+    continuous_subtypeVal.comp continuous_snd
+  exact .prodMk ((((continuous_const.sub hs).mul (continuous_subtypeVal.comp
     (continuous_reattachmentTime.comp continuous_fst))).subtype_mk _))
     ((diskRadialPush k _).continuous.comp
       ((continuous_symm.comp continuous_snd).prodMk continuous_fst))

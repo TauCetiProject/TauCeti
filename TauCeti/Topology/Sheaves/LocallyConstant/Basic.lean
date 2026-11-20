@@ -101,7 +101,7 @@ theorem isSheaf_locallyConstantRingCatPresheaf : (locallyConstantRingCatPresheaf
       ⟨x, (hmem x).choose_spec, hx⟩
   have hj (i : ι) : Topology.IsOpenEmbedding
       (Set.inclusion (Opens.leSupr U i).le : U i → ↥(iSup U)) :=
-    .inclusion _ ((U i).isOpen.preimage continuous_subtype_val)
+    .inclusion _ ((U i).isOpen.preimage continuous_subtypeVal)
   have hgc : IsLocallyConstant g := by
     refine (IsLocallyConstant.iff_eventually_eq g).mpr fun x ↦ ?_
     obtain ⟨i, hx⟩ := hmem x
@@ -226,7 +226,7 @@ variable {X R} [Ring R]
 /-- The fiber of a locally constant function on an open `U` over `r`, as an open subset of `X`. -/
 private def fiberOpen {U : Opens X} (f : LocallyConstant U R) (r : R) : Opens X :=
   ⟨Subtype.val '' {x | f x = r},
-    U.isOpen.isOpenMap_subtype_val _ (f.isLocallyConstant.isOpen_fiber r)⟩
+    U.isOpen.isOpenMap_subtypeVal _ (f.isLocallyConstant.isOpen_fiber r)⟩
 
 omit [Ring R] in
 private lemma fiberOpen_le {U : Opens X} (f : LocallyConstant U R) (r : R) :

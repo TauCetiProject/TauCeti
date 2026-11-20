@@ -87,7 +87,7 @@ with the map between the actual chart intersections. -/
 def pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y)) :
     A.pullback f ⟶ D.pullback f where
   operator i j := (a.operator (f i) (f j)).comp
-    ⟨fun x => ⟨f x, x.2⟩, (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ⟨fun x => ⟨f x, x.property⟩, (f.continuous.comp continuous_subtypeVal).subtype_mk _⟩
   compatible i i' j j' x hi hi' hj hj' v :=
     a.compatible (f i) (f i') (f j) (f j') (f x) hi hi' hj hj' v
 
@@ -96,7 +96,7 @@ def pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D) (f : C(X, Y)) 
     (pullbackMap a f).operator i j = (a.operator (f i) (f j)).comp
       ⟨fun x : ↥((A.pullback f).core.baseSet i ∩ (D.pullback f).core.baseSet j) => ⟨f x,
           x.property⟩,
-        (f.continuous.comp continuous_subtype_val).subtype_mk _⟩ := (rfl)
+        (f.continuous.comp continuous_subtypeVal).subtype_mk _⟩ := (rfl)
 
 /-- In preferred coordinates pullback simply evaluates the original map at `f x`. -/
 @[simp] theorem fiberMap_pullbackMap {A D : FiniteRankBundleCore 𝕜 Y} (a : A ⟶ D)

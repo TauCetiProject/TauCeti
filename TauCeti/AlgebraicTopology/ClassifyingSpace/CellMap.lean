@@ -214,7 +214,7 @@ def universalGSpaceCellularMap (φ : G →* H) :
     TopCat.of (univ : Set (universalGSpace G)) ⟶
       TopCat.of (univ : Set (universalGSpace H)) :=
   TopCat.ofHom ⟨fun x ↦ ⟨φ.universalGSpaceMap x.val, mem_univ _⟩,
-    (φ.universalGSpaceMap.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    (φ.universalGSpaceMap.continuous.comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- The universal-subset map agrees with the continuous map on underlying points. -/
 @[simp]

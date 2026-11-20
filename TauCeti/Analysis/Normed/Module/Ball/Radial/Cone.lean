@@ -145,7 +145,7 @@ theorem continuous_sphereCone (hf : Continuous f) {c : ℝ} (hc : ∀ u, ‖f u�
         rw [domRestrict_apply, sphereCone_of_ne_zero y.property, Function.comp_apply,
           homeomorphUnitSphereProd_apply_snd_coe]
       rw [heq]
-      exact ((continuous_subtype_val.comp continuous_snd).smul (hf.comp continuous_fst)).comp
+      exact ((continuous_subtypeVal.comp continuous_snd).smul (hf.comp continuous_fst)).comp
         (homeomorphUnitSphereProd E).continuous
     exact hcont.continuousAt (isOpen_compl_singleton.mem_nhds hx)
 

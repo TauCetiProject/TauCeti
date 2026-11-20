@@ -71,7 +71,7 @@ theorem mem_upperHalfPlane {z : ThricePuncturedSphere} :
 
 /-- The upper half-plane is open. -/
 theorem isOpen_upperHalfPlane : IsOpen upperHalfPlane :=
-  isOpen_lt continuous_const (Complex.continuous_im.comp continuous_subtype_val)
+  isOpen_lt continuous_const (Complex.continuous_im.comp continuous_subtypeVal)
 
 /-- The point `p₊ = 1/2 + (√35/2)·i` lies in the upper half-plane. -/
 theorem pPlus_mem_upperHalfPlane : pPlus ∈ upperHalfPlane := by

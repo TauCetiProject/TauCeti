@@ -60,7 +60,7 @@ variable [HasZeroMorphisms C] [HasCokernels C] {G : C ⥤ C} (ι : 𝟭 C ⟶ G)
 @[expose, simps, implicit_reducible]
 noncomputable def cokernelFunctor : C ⥤ C where
   obj X := cokernel (ι.app X)
-  map f := cokernel.map (ι.app _) (ι.app _) f (G.map f) (ι.naturality f).symm
+  map f := cokernel.map (ι.app _) (ι.app _) f (G.map f) (ι.naturality f)
 
 /-- The cokernel projections `G X ⟶ coker (ι_X)`, as a natural transformation. -/
 noncomputable def toCokernelFunctor : G ⟶ ι.cokernelFunctor where

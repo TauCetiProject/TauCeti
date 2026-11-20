@@ -105,7 +105,7 @@ theorem isCompact_univ [CompactSpace B] (hc : Continuous c) :
 /-- A continuous change of parameter induces a continuous map of total spaces; continuity of
 the coefficient map itself is unnecessary here. -/
 theorem continuous_baseChange {f : A → B} (hf : Continuous f) : Continuous (baseChange c f) :=
-  ((hf.comp continuous_subtype_val.fst).prodMk continuous_subtype_val.snd).subtype_mk _
+  ((hf.comp continuous_subtypeVal.fst).prodMk continuous_subtypeVal.snd).subtype_mk _
 
 /-- Reparametrization is the topological fiber product of the original family projection and
 the parameter map. The comparison retains the parameter and the projective point. -/
@@ -127,9 +127,9 @@ def pullbackHomeomorph (f : A → B) (hf : Continuous f) :
     dsimp only at h
     cases h
     rfl
-  · exact (continuous_subtype_val.fst.prodMk (continuous_baseChange c hf)).subtype_mk _
-  · exact (continuous_subtype_val.fst.prodMk
-      (continuous_subtype_val.comp continuous_subtype_val.snd).snd).subtype_mk _
+  · exact (continuous_subtypeVal.fst.prodMk (continuous_baseChange c hf)).subtype_mk _
+  · exact (continuous_subtypeVal.fst.prodMk
+      (continuous_subtypeVal.comp continuous_subtypeVal.snd).snd).subtype_mk _
 
 /-- The first projection of the pullback comparison is the unchanged parameter. -/
 @[simp]
@@ -169,8 +169,8 @@ def fiberHomeomorph (b : B) :
     dsimp only at h
     cases h
     rfl
-  · exact ((continuous_const.prodMk continuous_subtype_val).subtype_mk _).subtype_mk _
-  · exact ((continuous_subtype_val.comp continuous_subtype_val).snd).subtype_mk _
+  · exact ((continuous_const.prodMk continuous_subtypeVal).subtype_mk _).subtype_mk _
+  · exact ((continuous_subtypeVal.comp continuous_subtypeVal).snd).subtype_mk _
 
 /-- The fiber comparison inserts the specified parameter and the original projective point. -/
 @[simp]

@@ -81,7 +81,7 @@ def unitBallDiffeomorph : unitBallOpens F ≃ₘ^∞⟮𝓘(ℝ, F), 𝓘(ℝ, F
     rw [univUnitBall_target, ← coe_unitBallOpens]; exact v.property))
   right_inv v := univUnitBall.left_inv (mem_univ v)
   contMDiff_toFun :=
-    contDiffOn_univUnitBall_symm.contMDiffOn.comp_contMDiff contMDiff_subtype_val fun v ↦ by
+    contDiffOn_univUnitBall_symm.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun v ↦ by
       rw [← coe_unitBallOpens]; exact v.property
   contMDiff_invFun :=
     (ContMDiff.subtypeVal_comp_iff (unitBallOpens F) _).1 contDiff_univUnitBall.contMDiff

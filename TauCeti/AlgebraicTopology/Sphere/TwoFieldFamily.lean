@@ -267,8 +267,8 @@ def twoFieldInnerLoop :
     -- The witness is stated through `simpa`: the bare index term `hx.inner_eq_zero _` has type
     -- `⟪![x, u x, v x] 0, ![x, u x, v x] 1⟫ = 0`, which `simp` rejects as ill-typed here.
     Ω^ (Fin 1) (sphereEquator (u xq.val.1))
-      ⟨xq.val.1, mem_sphereEquator.2 (by simpa using hx.inner_eq_zero (by decide :
-          (0 : Fin 3) ≠ 1))⟩
+      ⟨xq.val.1, mem_sphereEquator.2
+          (by simpa using hx.inner_eq_zero (by decide : (0 : Fin 3) ≠ 1))⟩
     where
   val :=
     { toFun z := ⟨⟨tangentCircle (xq.val.1 : E) (v xq.val.1) (xq.val.2 : E) (2 * π * z 0),
@@ -384,7 +384,7 @@ Definition 6.14 of Barraud–Damian–Humilière–Oancea reads in the double lo
 def twoFieldSphereFamilyFiber (x : sphere (0 : E) 1) :
     C({xq : twoFieldEquators u v // xq.val.1 = x},
       BasedMap Sphere2 (sphere (0 : E) 1) Sphere2.north x) :=
-  BasedMap.lift ((twoFieldSphereFamily h hu hv).comp ⟨Subtype.val, continuous_subtype_val⟩)
+  BasedMap.lift ((twoFieldSphereFamily h hu hv).comp ⟨Subtype.val, continuous_subtypeVal⟩)
     fun xq ↦ by simpa using xq.property
 
 /-- The based two-sphere of a point `(x, q)` of the fibre over `x` is the two-sphere of `(x, q)`. -/

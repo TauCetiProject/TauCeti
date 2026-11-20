@@ -238,7 +238,7 @@ private theorem exists_cauchyTransform_eq [FiniteDimensional ℂ E] {D : ℂ →
       (support_cauchySource_subset D Ψ)
   let op (Ψ : C(closedBall c r, E →L[ℂ] E)) : C(closedBall c r, E →L[ℂ] E) :=
     ⟨fun w ↦ 1 + cauchyTransform (cauchySource D Ψ) w,
-      (continuous_const.add (hcont Ψ)).comp continuous_subtype_val⟩
+      (continuous_const.add (hcont Ψ)).comp continuous_subtypeVal⟩
   have hop : ContractingWith (4⁻¹ : ℝ).toNNReal op := by
     refine ⟨by rw [Real.toNNReal_lt_one]; norm_num, LipschitzWith.of_dist_le_mul fun Ψ Ψ' ↦ ?_⟩
     rw [Real.coe_toNNReal _ (by norm_num)]

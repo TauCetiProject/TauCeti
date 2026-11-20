@@ -47,7 +47,7 @@ theorem isEmbedding_graph (P : M →L[R] M) (hP : IsIdempotentElem P) (g : M →
     exact (LinearMap.IsIdempotentElem.mem_range_iff
       (ContinuousLinearMap.IsIdempotentElem.toLinearMap hP)).mp (LinearMap.mem_range.mpr v.property)
   exact hleft.isEmbedding P.continuous.rangeFactorization
-    (continuous_subtype_val.add (hg.comp_continuous continuous_subtype_val Subtype.prop))
+    (continuous_subtypeVal.add (hg.comp_continuous continuous_subtypeVal Subtype.prop))
 
 /-- The graph over the part of the range of a continuous projection lying in `s` is homeomorphic
 to that part, when the vertical component of the graph lies in the kernel of the projection. -/

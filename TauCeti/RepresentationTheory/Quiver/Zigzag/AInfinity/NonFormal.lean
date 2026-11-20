@@ -263,8 +263,8 @@ theorem exists_not_isFormal_zigzagLoopAInfinityAlgebra_of_three_le_degree [Nontr
   obtain ⟨n, hn⟩ : ∃ n, p.length = n + 1 :=
     Nat.exists_eq_add_one.mpr (Nat.pos_of_ne_zero fun h ↦ hvw (p.eq_of_length_eq_zero h))
   have hinj {i j : ℕ} (hi : i ≤ n + 1) (hj : j ≤ n + 1) (h : p.getVert i = p.getVert j) : i = j :=
-    hp.getVert_injOn (by simp only [Set.mem_ofPred_eq]; omega)
-      (by simp only [Set.mem_ofPred_eq]; omega) h
+    hp.getVert_injOn (by simp only [Set.mem_Iic]; omega)
+      (by simp only [Set.mem_Iic]; omega) h
   let f : Fin (n + 1) → G.Dart := fun t ↦
     ⟨(p.getVert t, p.getVert (t + 1)), p.adj_getVert_succ (by omega)⟩
   obtain ⟨a, b, ha, hb, hab, hau, hbu⟩ := G.exists_adj_adj_ne_of_three_le_degree hv (p.getVert 1)

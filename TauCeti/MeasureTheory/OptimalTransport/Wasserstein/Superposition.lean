@@ -177,7 +177,7 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
       (ae_of_all _ fun γ ↦ γ.continuous)
   have hcont_μ : Continuous fun t : Icc a b ↦ (μ t : ProbabilityMeasure E) :=
     WassersteinSpace.continuous_toProbabilityMeasure.comp
-      (hμ.continuousOn'.comp_continuous continuous_subtype_val fun t ↦ by
+      (hμ.continuousOn'.comp_continuous continuous_subtypeVal fun t ↦ by
         rw [uIcc_of_le hab.le]
         exact t.property)
   have hmarg (t : ℝ) (ht : t ∈ Icc a b) :

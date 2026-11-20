@@ -181,7 +181,7 @@ theorem exists_isCompact_le_normal_of_mem_nhds_one [IsTopologicalGroup G]
   have hU₀'_open : IsOpen (U₀' : Set G) := by simpa [U₀'] using U₀.isOpen
   have : CompactSpace U₀' := isCompact_iff_compactSpace.mp hU₀'_compact
   have hs_sub : (((↑) : U₀' → G) ⁻¹' s) ∈ 𝓝 (1 : U₀') :=
-    continuous_subtype_val.continuousAt hs
+    continuous_subtypeVal.continuousAt hs
   obtain ⟨W, hWs, hW_open, h1W⟩ := mem_nhds_iff.mp hs_sub
   obtain ⟨N, hNW⟩ := ProfiniteGrp.exist_openNormalSubgroup_sub_open_nhds_of_one
     (G := U₀') hW_open h1W
@@ -189,7 +189,7 @@ theorem exists_isCompact_le_normal_of_mem_nhds_one [IsTopologicalGroup G]
   let H_sub : Subgroup G := N.toSubgroup.map U₀'.subtype
   have hH_open : IsOpen (H_sub : Set G) := by
     rw [Subgroup.coe_map, Subgroup.coe_subtype]
-    exact hU₀'_open.isOpenMap_subtype_val _ N.toOpenSubgroup.isOpen
+    exact hU₀'_open.isOpenMap_subtypeVal _ N.toOpenSubgroup.isOpen
   let V : OpenSubgroup G := ⟨H_sub, hH_open⟩
   have hVU₀ : V ≤ U₀ := by
     rintro _ ⟨x, -, rfl⟩

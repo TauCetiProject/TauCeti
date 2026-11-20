@@ -358,7 +358,7 @@ theorem order_toOneForm_ne_top [IsManifold 𝓘(ℂ) 1 X] [PreconnectedSpace X]
     (isDifferentialSectionAt_toOneForm s y).meromorphicAt).eq_univ ⟨x, hx⟩
   refine hs (Subtype.ext (eq_of_eventually_codiscrete s.property (zero_mem _)
     (eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun y ↦ ?_)))
-  have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
+  have ht := continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := y) Subtype.val_injective
   exact ht.eventually
     (OneForm.eventually_apply_eq_zero_of_order_eq_top (eq_univ_iff_forall.1 hu y))
 
@@ -463,7 +463,7 @@ theorem differentialSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E)
   -- Near `x`, every point other than `x` lies off the poles allowed by `E`.
   have hval : Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_subtype_val.continuousAt.mono_left nhdsWithin_le_nhds)
+      (continuous_subtypeVal.continuousAt.mono_left nhdsWithin_le_nhds)
       (eventually_nhdsWithin_of_forall fun _ hy ↦ Subtype.coe_injective.ne hy)
   have := ChartedSpace.t1Space ℂ X
   have hev : ∀ᶠ y : U in 𝓝[≠] x, E y ≤ 0 :=

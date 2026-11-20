@@ -156,7 +156,7 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul (hU_open : IsOpe
     IsOpenEmbedding
       (U.domRestrict (Quotient.mk'' : X → MulAction.orbitRel.Quotient G X)) := by
   refine .of_continuous_injective_isOpenMap
-    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (continuous_quot_mk.comp continuous_subtypeVal) ?_
     (MulAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
   exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.property y.property hxy)
@@ -191,7 +191,7 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_vadd (hU_open : IsOpe
     IsOpenEmbedding
       (U.domRestrict (Quotient.mk'' : X → AddAction.orbitRel.Quotient A X)) := by
   refine .of_continuous_injective_isOpenMap
-    (continuous_quot_mk.comp continuous_subtype_val) ?_
+    (continuous_quot_mk.comp continuous_subtypeVal) ?_
     (AddAction.isOpenQuotientMap_quotientMk.isOpenMap.domRestrict hU_open)
   intro x y hxy
   exact Subtype.ext (injOn_quotientMk_of_disjoint_vadd hU x.property y.property hxy)
@@ -348,7 +348,7 @@ namespace SubMulAction
 /-- A properly discontinuous action remains properly discontinuous on every invariant subspace. -/
 theorem properlyDiscontinuousSMul {G X : Type*} [TopologicalSpace X] [SMul G X]
     [ProperlyDiscontinuousSMul G X] (S : SubMulAction G X) : ProperlyDiscontinuousSMul G S :=
-  continuous_subtype_val.properlyDiscontinuousSMul fun _ _ ↦ rfl
+  continuous_subtypeVal.properlyDiscontinuousSMul fun _ _ ↦ rfl
 
 end SubMulAction
 

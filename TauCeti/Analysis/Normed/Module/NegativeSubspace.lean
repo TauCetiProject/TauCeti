@@ -189,7 +189,7 @@ theorem sign_det_fst_comp_comp_of_norm_snd_lt [FiniteDimensional ℝ E] (A : E �
   have hpos := det_fst_comp_pos_iff_of_norm_snd_lt
     (L := fun t : unitInterval ↦ A.comp (L.negativeContraction t))
     ((compL ℝ E (E × F) (E × F) A).continuous.comp
-      (L.continuous_negativeContraction.comp continuous_subtype_val)) hfam 1 0
+      (L.continuous_negativeContraction.comp continuous_subtypeVal)) hfam 1 0
   have hcomp : (fst ℝ E F).comp (A.comp (L.negativeContraction 0)) =
       ((fst ℝ E F).comp (A.comp (inl ℝ E F))).comp ((fst ℝ E F).comp L) := by
     ext u

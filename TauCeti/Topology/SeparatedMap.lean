@@ -59,7 +59,7 @@ theorem IsLocallyInjective.isDiscrete_preimage_singleton (hp : IsLocallyInjectiv
   -- `p` is constant on the fiber and locally injective.
   have hb : p ∘ ((↑) : ↥(p ⁻¹' {b}) → E) = fun _ ↦ b := funext fun e ↦ e.property
   exact ⟨(discreteTopology_iff_locallyInjective b).2 <|
-    hb ▸ hp.comp_right continuous_subtype_val Subtype.val_injective⟩
+    hb ▸ hp.comp_right continuous_subtypeVal Subtype.val_injective⟩
 
 /-- A compact set of points in one fiber of a locally injective map, such as a local
 homeomorphism, is finite. -/

@@ -72,7 +72,7 @@ theorem tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow
     intro n
     have heq (x : ℝ) : (g x : ℝ≥0∞) ^ 2 = ENNReal.ofReal (exp ((2 * t) * x)) := by
       rw [← ENNReal.coe_pow, ENNReal.coe_nnreal_eq, NNReal.coe_pow]
-      simp only [g, Real.coe_toNNReal _ (exp_pos _).le, ← exp_nat_mul]
+      simp only [g, Real.coe_toNNReal _ (exp_pos _).le, ← exp_natCast_mul]
       congr 2
       ring
     simp_rw [heq]

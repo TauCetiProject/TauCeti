@@ -218,7 +218,7 @@ theorem contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart
   -- Near `x`, the inclusion is the inverse of `e` after the extended chart.
   have hval : (Subtype.val : s → M) =ᶠ[nhds x]
       (c.extendTrans I Ψ).symm ∘ extChartAt (𝓡∂ (n + 1)) x := by
-    filter_upwards [heq, (continuous_subtype_val.continuousAt (x := x)).preimage_mem_nhds
+    filter_upwards [heq, (continuous_subtypeVal.continuousAt (x := x)).preimage_mem_nhds
       ((c.extendTrans I Ψ).open_source.mem_nhds hx)] with w hw hws
     rw [Function.comp_apply, ← hw, Function.comp_apply, (c.extendTrans I Ψ).left_inv hws]
   exact ((((contMDiffOn_extendTrans_symm c hc hΨ).contMDiffAt

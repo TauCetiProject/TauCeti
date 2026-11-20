@@ -118,6 +118,6 @@ theorem continuous_weylDensity (K : Subgroup G) : Continuous (weylDensity (I := 
   have hAd : Continuous fun p : G × LeftInvariantDerivation I G => Ad (I := I) p.1 p.2 :=
     (contMDiff_Ad_apply (I := I) (G := G)).continuous
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  exact hAd.comp (continuous_subtype_val.inv.prodMk continuous_const)
+  exact hAd.comp (continuous_subtypeVal.inv.prodMk continuous_const)
 
 end TauCeti.Lie

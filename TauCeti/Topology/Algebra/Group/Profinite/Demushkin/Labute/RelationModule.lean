@@ -240,7 +240,9 @@ theorem labuteSMul_of (hF : IsProP p F) (χ : F →ₜ* ℤ_[p]ˣ)
     χ.coe_ker ▸ isClosed_singleton.preimage χ.continuous
   let _ := (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule
     (orientationQuotient χ)
-  rw [labuteSMul, completedGroupAlgebra.map_of]
+  rw [labuteSMul]
+  dsimp only
+  rw [completedGroupAlgebra.map_of]
   exact (hF.topologicalAbelianization (χ : F →* ℤ_[p]ˣ).ker).completedGroupAlgebraModule_of_smul
     (invMonoidHom γ) ξ
 

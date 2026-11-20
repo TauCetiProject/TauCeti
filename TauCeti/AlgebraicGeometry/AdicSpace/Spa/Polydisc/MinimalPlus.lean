@@ -135,7 +135,7 @@ private theorem exists_polynomial_approx {v : Spv 𝒯} (hv : v.IsContinuous) (f
         p.coeff n‖ < ε := by
   have hnhds : {h : 𝒯 | v.valuation h < v.valuation b} ∈ nhds (0 : 𝒯) :=
     (Valuation.isContinuous_def.mp ((isContinuous_def v).mp hv) b).mem_nhds
-      (by rw [Set.mem_ofPred_eq, map_zero]; exact zero_lt_iff.mpr hb)
+      (by rw [Set.mem_ofPred_eq, map_zero]; exact pos_iff_ne_zero.mpr hb)
   obtain ⟨U, -, hU⟩ :=
     (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_iff.mp hnhds
   obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.is_nonarchimedean _ (Metric.ball_mem_nhds (0 : K) hε)
@@ -214,7 +214,7 @@ private theorem valuation_weightedC_mul_pow_lt {v : Spv 𝒯}
   have hlt := Valuation.IsContinuous.lt_one_of_isTopologicallyNilpotent
     ((isContinuous_def v).mp ((mem_spa_iff _ v).mp hv).1) hnil
   rw [← mul_inv_cancel_left₀ hb a, map_mul, map_mul, mul_assoc, ← map_pow, ← map_mul]
-  exact mul_lt_of_lt_one_right (zero_lt_iff.mpr (valuation_weightedC_ne_zero hv hb)) hlt
+  exact mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr (valuation_weightedC_ne_zero hv hb)) hlt
 
 /-- At a point of `Spa(K⟨T⟩, K⟨T⟩⁺)` with `v(T) > 1`, the dominant monomial of a polynomial
 determines its value: if `aₛ` is the last coefficient of `p` of maximal norm, then
@@ -223,7 +223,8 @@ private theorem valuation_eval₂_eq {v : Spv 𝒯} (hv : v ∈ spa (closedDiscM
     (hT : 1 < v.valuation T) {p : Polynomial K} {s : ℕ} (hs : p.coeff s ≠ 0)
     (hle : ∀ n, ‖p.coeff n‖ ≤ ‖p.coeff s‖) (hlt : ∀ n, s < n → ‖p.coeff n‖ < ‖p.coeff s‖) :
     v.valuation (Polynomial.eval₂ C T p) = v.valuation (C (p.coeff s)) * v.valuation T ^ s := by
-  have hpos : 0 < v.valuation (C (p.coeff s)) := zero_lt_iff.mpr (valuation_weightedC_ne_zero hv hs)
+  have hpos : 0 < v.valuation (C (p.coeff s)) :=
+    pos_iff_ne_zero.mpr (valuation_weightedC_ne_zero hv hs)
   have hTpos : 0 < v.valuation T := zero_lt_one.trans hT
   have hmem : s ∈ Finset.range (p.natDegree + 1) :=
     Finset.mem_range.mpr (Nat.lt_succ_of_le (Polynomial.le_natDegree_of_ne_zero hs))
@@ -311,7 +312,7 @@ private theorem valuation_mul_pow_le_iff {v : Spv 𝒯} (hv : v ∈ spa (closedD
     refine ⟨fun h ↦ not_le.mp fun hba ↦ h.not_gt ?_,
       fun h ↦ (valuation_weightedC_mul_pow_lt hv hb h _).le⟩
     exact ((valuation_weightedC_le_iff hv b a).mpr hba).trans_lt
-      (lt_mul_of_one_lt_right (zero_lt_iff.mpr (valuation_weightedC_ne_zero hv ha))
+      (lt_mul_of_one_lt_right (pos_iff_ne_zero.mpr (valuation_weightedC_ne_zero hv ha))
         (one_lt_pow₀ hT (by omega)))
 
 /-- **Two points of `Spa(K⟨T⟩, K⟨T⟩⁺)` at which `T` has value larger than `1` are equal.** -/
@@ -467,7 +468,7 @@ theorem isOpen_closedPolydisc_spa_closedDiscMinimalPlus :
     ext v
     simp [basicOpen_one_right, mem_closedPolydisc_iff_weightedX_vle_one v.property]
   rw [h]
-  exact (isOpen_basicOpen T 1).preimage continuous_subtype_val
+  exact (isOpen_basicOpen T 1).preimage continuous_subtypeVal
 
 /-- **Wedhorn's Example 7.58 for the closed unit disc**: `Spa(K⟨T⟩, K⟨T⟩°)` is an open subspace of
 `Spa(K⟨T⟩, K⟨T⟩⁺)`. -/

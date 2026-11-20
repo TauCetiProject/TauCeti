@@ -338,14 +338,14 @@ def polarHomeomorph : SpecialLinearGroup n 𝕜 ≃ₜ
   continuous_toFun := by
     have h := (polarDiffeomorph n 𝕜).continuous.comp continuous_toGL
     exact ((continuous_fst.comp h).subtype_mk _).prodMk
-      (((continuous_subtype_val.comp (continuous_snd.comp h))).subtype_mk _)
+      (((continuous_subtypeVal.comp (continuous_snd.comp h))).subtype_mk _)
   continuous_invFun := by
     have hP : Continuous fun p : {P : posDefOpens n 𝕜 //
         ((P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜).det = 1} × specialUnitaryGroup n 𝕜 ↦
         ((p.1 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)) :=
-      continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)
-    exact ((continuous_subtype_val.comp hP).mul
-      (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+      continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_fst)
+    exact ((continuous_subtypeVal.comp hP).mul
+      (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
 
 /-- The positive-definite coordinate of the polar coordinates on `SL(n, 𝕜)` is `√(A Aᴴ)`. -/
 @[simp]

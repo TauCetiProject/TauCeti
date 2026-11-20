@@ -44,10 +44,10 @@ theorem continuous_gammaMeasure :
     charFun_gammaMeasure a.1.property a.2.property]
   have hr : Tendsto (fun n ↦ ((p n).2 : ℂ)) atTop (𝓝 (a.2 : ℂ)) :=
     Complex.continuous_ofReal.continuousAt.tendsto.comp
-      ((continuous_subtype_val.comp continuous_snd).tendsto a |>.comp hp)
+      ((continuous_subtypeVal.comp continuous_snd).tendsto a |>.comp hp)
   have ha : Tendsto (fun n ↦ ((p n).1 : ℂ)) atTop (𝓝 (a.1 : ℂ)) :=
     Complex.continuous_ofReal.continuousAt.tendsto.comp
-      ((continuous_subtype_val.comp continuous_fst).tendsto a |>.comp hp)
+      ((continuous_subtypeVal.comp continuous_fst).tendsto a |>.comp hp)
   refine (tendsto_const_nhds.sub (tendsto_const_nhds.div hr ?_)).cpow ha.neg ?_
   · exact_mod_cast a.2.property.ne'
   · apply Complex.mem_slitPlane_iff.2

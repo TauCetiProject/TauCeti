@@ -272,7 +272,7 @@ theorem hyperplane_subset_closure_sdiff_of_finrank {ι : Sort*} [Countable ι]
   intro ε hε
   obtain ⟨z, hz, hzE⟩ := A.exists_mem_open_avoid_of_finrank_lt E
     (fun i => by have := hE i; omega) (U := Subtype.val ⁻¹' Metric.ball x ε)
-    (Metric.isOpen_ball.preimage continuous_subtype_val)
+    (Metric.isOpen_ball.preimage continuous_subtypeVal)
     ⟨⟨x, AffineSubspace.self_mem_mk' x _⟩, Metric.mem_ball_self hε⟩
   exact ⟨z, ⟨hA z z.property, fun hzZ => by
     obtain ⟨i, hi⟩ := Set.mem_iUnion.mp (hZE hzZ)

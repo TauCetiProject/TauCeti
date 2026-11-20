@@ -95,13 +95,13 @@ private def ofImage {U : Opens (TopCat.of M)} {V : Opens U}
 private theorem contMDiff_toImage {U : Opens (TopCat.of M)} (V : Opens U) :
     ContMDiff IM IM ∞ (toImage : V → U.isOpenEmbedding.isOpenMap.functor.obj V) := by
   rw [← ContMDiff.subtypeVal_comp_iff]
-  exact (contMDiff_subtype_val.comp contMDiff_subtype_val :
+  exact (contMDiff_subtypeVal.comp contMDiff_subtypeVal :
     ContMDiff IM IM ∞ fun x : V ↦ (x : U).val)
 
 private theorem contMDiff_ofImage {U : Opens (TopCat.of M)} (V : Opens U) :
     ContMDiff IM IM ∞ (ofImage : U.isOpenEmbedding.isOpenMap.functor.obj V → V) := by
   rw [← ContMDiff.subtypeVal_comp_iff, ← ContMDiff.subtypeVal_comp_iff]
-  exact contMDiff_subtype_val
+  exact contMDiff_subtypeVal
 
 end Image
 

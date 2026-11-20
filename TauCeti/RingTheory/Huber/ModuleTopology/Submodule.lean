@@ -93,7 +93,7 @@ private noncomputable def continuousLinearEquivRangeDomRestrict [TopologicalSpac
   let e : P ≃ₗ[A] LinearMap.range g := LinearEquiv.ofInjective g hg
   exact
     { e with
-      continuous_toFun := (f.continuous.comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := (f.continuous.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }
 
 @[simp]
@@ -129,10 +129,10 @@ theorem isClosed_of_apply_eq_zero [TopologicalSpace V] [ContinuousAdd V] [T2Spac
   have hW : IsClosed (f ⁻¹' (Q : Set M)) := hQ.preimage f.continuous
   let r : f ⁻¹' (Q : Set M) → V := fun w ↦ (e.symm ⟨f w.val, w.property⟩ : V)
   have hr : Continuous r :=
-    continuous_subtype_val.comp <|
-      e.symm.continuous.comp ((f.continuous.comp continuous_subtype_val).subtype_mk _)
+    continuous_subtypeVal.comp <|
+      e.symm.continuous.comp ((f.continuous.comp continuous_subtypeVal).subtype_mk _)
   have hZ : IsClosed {w : f ⁻¹' (Q : Set M) | r w = w.val} :=
-    isClosed_eq hr continuous_subtype_val
+    isClosed_eq hr continuous_subtypeVal
   convert hW.isClosedEmbedding_subtypeVal.isClosedMap _ hZ using 1
   ext v
   simp only [Set.mem_image, Set.mem_ofPred_eq, Subtype.exists, Set.mem_preimage, SetLike.mem_coe]

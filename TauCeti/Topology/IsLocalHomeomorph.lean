@@ -207,9 +207,9 @@ theorem pullback_snd {f : X → Y} {g : Z → Y} (hf : IsLocalHomeomorph f)
   refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.mpr fun q ↦ ?_
   obtain ⟨e, he, rfl⟩ := hf q.fst
   have hfst : Continuous (Function.Pullback.fst : (⇑e).Pullback g → X) :=
-    continuous_fst.comp continuous_subtype_val
+    continuous_fst.comp continuous_subtypeVal
   have hsnd : Continuous (Function.Pullback.snd : (⇑e).Pullback g → Z) :=
-    continuous_snd.comp continuous_subtype_val
+    continuous_snd.comp continuous_subtypeVal
   have hpb (p : (⇑e).Pullback g) : e p.fst = g p.snd := p.property
   let U : Set ((⇑e).Pullback g) := Function.Pullback.fst ⁻¹' e.source
   let W : Set Z := g ⁻¹' e.target
@@ -224,10 +224,11 @@ theorem pullback_snd {f : X → Y} {g : Z → Y} (hf : IsLocalHomeomorph f)
         -- The first component of the round trip is `e.symm (g p.1.snd)` by definition of `φ`.
         exact (congrArg e.symm (hpb p.val)).symm.trans (e.left_inv p.property)
       right_inv _ := rfl
-      continuous_toFun := (hsnd.comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := (hsnd.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun :=
-        (((e.continuousOn_symm.comp_continuous (hg.comp continuous_subtype_val) fun w ↦ w.2).prodMk
-          continuous_subtype_val).subtype_mk _).subtype_mk _ }
+        (((e.continuousOn_symm.comp_continuous (hg.comp continuous_subtypeVal) fun w ↦
+            w.property).prodMk
+          continuous_subtypeVal).subtype_mk _).subtype_mk _ }
   refine ⟨U, (e.open_source.preimage hfst).mem_nhds he, ?_⟩
   exact ((e.open_target.preimage hg).isOpenEmbedding_subtypeVal.comp φ.isOpenEmbedding :)
 

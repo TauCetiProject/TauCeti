@@ -717,7 +717,7 @@ face at `b p.1`, `false` for the back face at `a p.1`). -/
 private noncomputable def boxFaceChart (a b : Fin 4 → ℝ) (p : Fin 4 × Bool) :
     C(BoxFaceDomain a b p, ℍ) :=
   ⟨fun z ↦ dq (p.1.insertNth (cond p.2 (b p.1) (a p.1)) z.val),
-    dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_subtype_val)⟩
+    dq.continuous.comp (continuous_const.finInsertNth p.1 continuous_subtypeVal)⟩
 
 private theorem integrable_comp_boxFaceChart {a b : Fin 4 → ℝ} {f : ℍ → ℍ}
     (hf : ∀ i : Fin 4,

@@ -98,7 +98,7 @@ theorem contMDiffOn_coe_sectionZeroChartAt_symm (z : ↥{y | s y = 0}) :
       (sectionZeroChartAt hf hsurj hker K z).target := by
   by_cases hm : m = 0
   · subst m
-    exact contMDiffOn_zero_iff.2 (continuous_subtype_val.comp_continuousOn
+    exact contMDiffOn_zero_iff.2 (continuous_subtypeVal.comp_continuousOn
       (sectionZeroChartAt hf hsurj hker K z).continuousOn_symm)
   let Φ := (hf z).implicitToOpenPartialHomeomorphOfComplemented _ _
     (LinearMap.range_eq_top.2 (hsurj z)) (hker z)
@@ -201,7 +201,7 @@ theorem hasMFDerivAt_coe_sectionZero (z : ↥{y | s y = 0}) :
     apply levelSetChart_symm_apply (hf z) _ _ hzero
     rw [levelSetChart_target]
     exact ht.1
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   -- The preferred source and target charts are exactly the coordinate map in `hcoord`;
   -- the tangent-space casts for these boundaryless models are identity maps.
   simp only [writtenInExtChartAt, extChartAt, OpenPartialHomeomorph.extend_coe,
@@ -248,7 +248,7 @@ theorem isImmersionOfComplement_coe_sectionZero :
     (fun _ hz ↦ hΨ.contDiffAt (Ψ.open_source.mem_nhds hz))
     (fun _ hz ↦ hΨ'.contDiffAt (Ψ.open_target.mem_nhds hz))
   apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
-    continuous_subtype_val.continuousAt A χ ((chartAt X z.1).trans Ψ)
+    continuous_subtypeVal.continuousAt A χ ((chartAt X z.val).trans Ψ)
     (mem_sectionZeroChartAt_source hf hsurj hker K hb he z)
   · have h₀ : (A.symm (chartAt X z.val z.val - chartAt X z.val z.val)).1 ∈ χ.target := by
       rw [sub_self, map_zero]

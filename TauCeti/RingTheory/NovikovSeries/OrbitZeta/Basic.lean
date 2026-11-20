@@ -247,7 +247,7 @@ private theorem hasSum_single_iterate {g : H} (hg : 0 < N g) (ε : ℕ → ℤ) 
         ((NormedSpace.log ((unitsOneSubSingle hg ((σ : ℤ) : K) : nonnegSubring K N)) :
           nonnegSubring K N) : NovikovSeries K H N)) := by
   have h := ((isTopologicallyNilpotent_of_mem_posIdeal' (single_mem_posIdeal hg ((σ : ℤ) : K))
-    ).hasSum_log_one_sub.map (nonnegSubring K N).subtype continuous_subtype_val).const_smul
+    ).hasSum_log_one_sub.map (nonnegSubring K N).subtype continuous_subtypeVal).const_smul
       (-(ε 1 * σ) : ℤ)
   rw [Subring.coe_subtype] at h
   rw [val_unitsOneSubSingle]
@@ -301,7 +301,7 @@ theorem orbitZeta_eq_eulerProduct (hpos : ∀ i, 0 < N (γ i))
     have h1 : expMulEquiv K N (.ofAdd (ℓ i)) = ⟨u i, hu i⟩ ^ (-(ε i 1 * σ i)) := by
       rw [ofAdd_zsmul, map_zpow, ofAdd_toAdd, MulEquiv.apply_symm_apply]
     rw [← coe_expMulEquiv_apply (K := K) (N := N) (ℓ i), h1, SubgroupClass.coe_zpow]
-  have h := hprod.map (nonnegSubring K N).subtype continuous_subtype_val
+  have h := hprod.map (nonnegSubring K N).subtype continuous_subtypeVal
   rw [Subring.coe_subtype] at h
   rw [orbitZeta_def, ← coe_exp_nonnegSubring ⟨orbitLog K N γ ε, _⟩]
   exact h.unique ((hasProd_eulerProduct hfin _ _).congr_fun fun i => by simp [hexp, u])

@@ -64,7 +64,7 @@ theorem continuous_multivariateGaussian {ι : Type*} [Fintype ι] [DecidableEq �
       EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦
         (t ⬝ᵥ p.2.val *ᵥ t : ℝ)) :=
     continuous_const.dotProduct
-      ((continuous_subtype_val.comp continuous_snd).matrix_mulVec continuous_const)
+      ((continuous_subtypeVal.comp continuous_snd).matrix_mulVec continuous_const)
   have hmean : Continuous (fun p :
       EuclideanSpace ℝ ι × {S : Matrix ι ι ℝ // S.PosSemidef} ↦ (⟪t, p.1⟫ : ℝ)) :=
     continuous_const.inner continuous_fst

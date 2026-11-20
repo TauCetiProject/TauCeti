@@ -132,7 +132,7 @@ theorem continuous_prepend {y : X} (γ : Path x₀ y) :
   refine (continuous_ofBasedPath x₀).comp (Continuous.subtype_mk ?_ _)
   refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
   have h_eval : Continuous fun p : BasedPath y × I => p.1.val p.2 :=
-    continuous_eval.comp (continuous_subtype_val.prodMap continuous_id)
+    continuous_eval.comp (continuous_subtypeVal.prodMap continuous_id)
   -- Unfolding `BasedPath.ofPath` and its continuous-map evaluation exposes concatenation.
   change Continuous fun p : BasedPath y × I => γ.trans p.1.toPath p.2
   exact Path.trans_continuous_family (a := fun _ : BasedPath y => x₀)

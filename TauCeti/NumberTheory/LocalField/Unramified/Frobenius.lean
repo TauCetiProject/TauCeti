@@ -178,8 +178,8 @@ theorem unramifiedFrobenius_congr {x : Unramified E} (hx : x ∈ 𝒪[Unramified
 theorem frobenius_congr {x : Breve E} (hx : x ∈ 𝒪[Breve E]) :
     valuation (Breve E) (frobenius E x - x ^ Nat.card 𝓀[E]) < 1 := by
   have hcont : Continuous fun z : 𝒪[Breve E] ↦ frobenius E z.val - z.val ^ Nat.card 𝓀[E] :=
-    (continuous_frobenius.comp continuous_subtype_val).sub
-      (continuous_subtype_val.pow (Nat.card 𝓀[E]))
+    (continuous_frobenius.comp continuous_subtypeVal).sub
+      (continuous_subtypeVal.pow (Nat.card 𝓀[E]))
   refine Completion.valuation_lt_one_of_continuous_integer (K := Unramified E) hcont
     (fun y ↦ ?_) ⟨x, hx⟩
   have hcoe : ((algebraMap 𝒪[Unramified E] 𝒪[Breve E] y : 𝒪[Breve E]) : Breve E) =

@@ -143,7 +143,7 @@ private theorem continuous_frame :
       (contMDiff_coe_sphere.continuous_tangentMap le_rfl))
   refine continuous_pi fun i ↦ ?_
   fin_cases i
-  · exact continuous_subtype_val.comp (FiberBundle.continuous_proj _ _)
+  · exact continuous_subtypeVal.comp (FiberBundle.continuous_proj _ _)
   · -- `NormedSpace.fromTangentSpace` is definitionally the identity on `E`, identifying
     -- `TangentSpace 𝓘(ℝ, E) p.proj` with `E` in the equality below.
     exact hT.congr fun p ↦
@@ -159,7 +159,7 @@ def sphereUnitTangentHomeomorphStiefel :
     isCompact_iff_compactSpace.1 (isCompact_setOf_norm_eq_bundle (r := fun _ ↦ 1)
       (V := fun x : sphere (0 : E) 1 ↦ TangentSpace (𝓡 n) x) continuous_const)
   Continuous.homeoOfEquivCompactToT2 (f := sphereUnitTangentEquivStiefel E n)
-    ((continuous_frame.comp continuous_subtype_val).subtype_mk _)
+    ((continuous_frame.comp continuous_subtypeVal).subtype_mk _)
 
 /-- The unit tangent vector `w` at `x` goes to the pair `(x, dι w)`. -/
 @[simp]

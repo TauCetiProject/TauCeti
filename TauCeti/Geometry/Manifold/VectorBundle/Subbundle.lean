@@ -128,7 +128,7 @@ theorem contMDiffAt_trivOperator {X : ι → Π x, E x} {y₀ y : B}
     ContMDiffAt IB 𝓘(𝕜, (ι → 𝕜') →L[𝕜'] F) n (trivOperator 𝕜' F X y₀) y := by
   have h (i : ι) := ((trivializationAt F E y₀).contMDiffAt_section_iff hy).mp (hX i)
   rw [funext (trivOperator_eq_sum (𝕜 := 𝕜') (F := F) (X := X) y₀)]
-  exact contMDiffAt_finsetSum fun i _ ↦ ((ContinuousLinearMap.smulRightL 𝕜' (ι → 𝕜') F
+  exact contMDiffAt_finsetSum fun i _ ↦ ((ContinuousLinearMap.smulRightL 𝕜' 𝕜' 𝕜' (ι → 𝕜') F
     (ContinuousLinearMap.proj i)).restrictScalars 𝕜 |>.contDiff.contDiffAt).comp_contMDiffAt (h i)
 
 variable [∀ x, Module 𝕜' (E x)] [VectorBundle 𝕜' F E]
@@ -538,7 +538,7 @@ theorem exists_isSubbundleFrameOn_map_synthesisMap {d r : ℕ} {ε : Fin d → �
   -- The rank of a continuous family of projections is locally constant.
   set S := Subtype.val '' {y : U₀ | finrank ℝ (W y).starProjection.range = r}
   have hS : IsOpen S :=
-    hU₀.isOpenMap_subtype_val _ ((isLocallyConstant_finrank_range
+    hU₀.isOpenMap_subtypeVal _ ((isLocallyConstant_finrank_range
       (p := fun y : U₀ ↦ (W y).starProjection) hP.continuousOn.domRestrict
       fun y ↦ (W y).isIdempotentElem_starProjection).isOpen_fiber _)
   -- Synthesizing `C^n` coordinates against the `C^n` sections `ε i` gives `C^n` sections.
@@ -763,7 +763,7 @@ private theorem exists_contMDiffOn_subbundleCoord [FiniteDimensional 𝕜 F']
   intro eV eE
   let U : Set B' := eV.baseSet ∩ f ⁻¹' eE.baseSet
   let subL (x : B') : V x →L[𝕜] E (f x) :=
-    { toLinearMap := (V x).subtype, cont := continuous_subtype_val }
+    { toLinearMap := (V x).subtype, cont := continuous_subtypeVal }
   let A : B' → F' →L[𝕜] F := fun x ↦
     ContinuousLinearMap.inCoordinates F' (fun x ↦ V x) F E x₀ x (f x₀) (f x) (subL x)
   have hAeq : ∀ x ∈ U, ∀ w : F', (eE ⟨f x, ((eV.symm x w : V x) : E (f x))⟩).2 = A x w := by

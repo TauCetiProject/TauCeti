@@ -218,7 +218,7 @@ theorem IsFiberGauge.gaugeSphereBundle_subset_zeroSectionCompl {ρ : TotalSpace 
 Thom pair. -/
 def gaugeDiscSpherePairMap {ρ : TotalSpace F E → ℝ} (hρ : IsFiberGauge ρ) :
     gaugeDiscSpherePair ρ ⟶ thomPair F E :=
-  TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+  TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (TopCat.ofHom (ContinuousMap.inclusion hρ.gaugeSphereBundle_subset_zeroSectionCompl))
     (by ext; rfl)
 
@@ -268,7 +268,7 @@ variable {B : Type w} [TopologicalSpace B] (F : Type*) [NormedAddCommGroup F]
 
 /-- The projection `S(E) → B` of the unit sphere bundle of a bundle with normed fibres. -/
 def sphereBundleProj : C(sphereBundle F E, B) :=
-  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
+  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtypeVal⟩
 
 @[simp]
 theorem sphereBundleProj_apply (v : sphereBundle F E) :
@@ -280,7 +280,7 @@ bundle. -/
 def sphereBundleFiberIncl (b : B) : C(Metric.sphere (0 : E b) 1, sphereBundle F E) where
   toFun x := ⟨⟨b, x⟩, mem_sphereBundle.2 (mem_sphere_zero_iff_norm.1 x.property)⟩
   continuous_toFun :=
-    ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _
+    ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_sphereBundleFiberIncl_apply (b : B) (x : Metric.sphere (0 : E b) 1) :
@@ -303,7 +303,7 @@ theorem range_sphereBundleFiberIncl (b : B) :
 /-- The inclusion of the sphere of the fibre over `b` into the sphere bundle is an embedding. -/
 theorem isEmbedding_sphereBundleFiberIncl (b : B) :
     Topology.IsEmbedding (sphereBundleFiberIncl F E b) :=
-  ⟨.of_comp (sphereBundleFiberIncl F E b).continuous continuous_subtype_val
+  ⟨.of_comp (sphereBundleFiberIncl F E b).continuous continuous_subtypeVal
       ((FiberBundle.totalSpaceMk_isInducing F E b).comp .subtypeVal),
     fun _ _ h ↦ Subtype.ext (TotalSpace.mk_inj.1 (congrArg Subtype.val h))⟩
 
@@ -351,8 +351,8 @@ theorem isProperMap_discBundle_proj :
       mem_discBundle.2 ((q.1.frame.norm_map _).trans_le (mem_closedBall_zero_iff.1 q.2.property))⟩
   refine isProperMap_of_comp_of_surj (f := ev)
     ((OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _)
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val)
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _)
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal)
     (OrthonormalFrameBundle.isProperMap_proj.comp isProperMap_fst_of_compactSpace) ?_
   -- Every vector of norm at most one is an orthonormal frame applied to a vector of norm at most
   -- one.
@@ -365,7 +365,7 @@ variable {F E} in
 /-- The projection to the base of a closed subset of the disc bundle is closed. -/
 theorem isClosed_image_proj_of_subset_discBundle {S : Set (TotalSpace F E)}
     (hS : IsClosed S) (hSD : S ⊆ discBundle F E) : IsClosed (TotalSpace.proj '' S) := by
-  have h := (isProperMap_discBundle_proj 𝕜 F E).isClosedMap _ (hS.preimage continuous_subtype_val)
+  have h := (isProperMap_discBundle_proj 𝕜 F E).isClosedMap _ (hS.preimage continuous_subtypeVal)
   convert h using 1
   ext b
   simp only [mem_image, mem_preimage, Subtype.exists, exists_and_left, exists_prop]
@@ -375,7 +375,7 @@ theorem isClosed_image_proj_of_subset_discBundle {S : Set (TotalSpace F E)}
 theorem isCompact_discBundle_inter_proj_preimage_singleton (b : B) :
     IsCompact (discBundle F E ∩ TotalSpace.proj ⁻¹' {b}) := by
   have h := ((isProperMap_discBundle_proj 𝕜 F E).isCompact_preimage
-    (isCompact_singleton (x := b))).image continuous_subtype_val
+    (isCompact_singleton (x := b))).image continuous_subtypeVal
   convert h using 1
   ext v
   simp only [mem_inter_iff, mem_preimage, mem_image, Subtype.exists, exists_and_right,
@@ -406,7 +406,7 @@ private def gaugeDiscRetraction : C(TotalSpace F E, gaugeDiscBundle ρ) where
 `D_ρ(E) → E` is a homotopy equivalence, with homotopy inverse the radial retraction
 `v ↦ v / max 1 (ρ v)`. -/
 def gaugeDiscBundleHomotopyEquiv : gaugeDiscBundle ρ ≃ₕ TotalSpace F E where
-  toFun := ⟨Subtype.val, continuous_subtype_val⟩
+  toFun := ⟨Subtype.val, continuous_subtypeVal⟩
   invFun := gaugeDiscRetraction hρ
   left_inv := by
     convert ContinuousMap.Homotopic.refl (ContinuousMap.id (gaugeDiscBundle ρ))
@@ -417,7 +417,7 @@ def gaugeDiscBundleHomotopyEquiv : gaugeDiscBundle ρ ≃ₕ TotalSpace F E wher
     { toFun := fun p ↦ TotalSpace.mk' F p.2.proj ((1 - p.1 + p.1 * (max 1 (ρ p.2))⁻¹) • p.2.snd)
       continuous_toFun := by
         have ht : Continuous fun p : I × TotalSpace F E ↦ (p.1 : ℝ) :=
-          continuous_subtype_val.comp continuous_fst
+          continuous_subtypeVal.comp continuous_fst
         exact Continuous.smul_totalSpace ((continuous_const.sub ht).add (ht.mul
           ((continuous_const.max (hρ.continuous.comp continuous_snd)).inv₀
             fun _ ↦ (lt_max_of_lt_left one_pos).ne'))) continuous_snd
@@ -444,11 +444,11 @@ def gaugeSphereBundleHomotopyEquiv : gaugeSphereBundle ρ ≃ₕ zeroSectionComp
     hρ.gaugeSphereBundle_subset_zeroSectionCompl
     (fun p ↦ TotalSpace.mk' F p.2.val.proj ((1 - p.1 + p.1 * (ρ p.2.val)⁻¹) • p.2.val.snd))
     (have ht : Continuous fun p : I × zeroSectionCompl F E ↦ (p.1 : ℝ) :=
-      continuous_subtype_val.comp continuous_fst
+      continuous_subtypeVal.comp continuous_fst
     Continuous.smul_totalSpace ((continuous_const.sub ht).add (ht.mul
-      ((hρ.continuous.comp (continuous_subtype_val.comp continuous_snd)).inv₀
+      ((hρ.continuous.comp (continuous_subtypeVal.comp continuous_snd)).inv₀
         fun p ↦ (hρ.pos (mem_zeroSectionCompl.1 p.2.property)).ne')))
-      (continuous_subtype_val.comp continuous_snd))
+      (continuous_subtypeVal.comp continuous_snd))
     (fun p ↦ have hp := mem_zeroSectionCompl.1 p.2.property
       mem_zeroSectionCompl.2 <|
         smul_ne_zero (by
@@ -526,7 +526,7 @@ private def zeroSectionGaugeDisc : C(B, gaugeDiscBundle ρ) :=
 
 /-- The projection of the disc bundle of a fibre gauge. -/
 private def gaugeDiscProjMap : C(gaugeDiscBundle ρ, B) :=
-  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
+  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtypeVal⟩
 
 /-- The radial contraction `(t, v) ↦ t • v` of the disc bundle of a fibre gauge onto the zero
 section. -/
@@ -540,8 +540,8 @@ private def gaugeDiscBundleContraction :
           (mem_gaugeDiscBundle.1 p.2.property)⟩
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
-    exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
-      (continuous_subtype_val.comp continuous_snd)
+    exact (continuous_subtypeVal.comp continuous_fst).smul_totalSpace
+      (continuous_subtypeVal.comp continuous_snd)
   map_zero_left v := by
     ext : 1
     simp [zeroSectionGaugeDisc, gaugeDiscProjMap, zeroSection]

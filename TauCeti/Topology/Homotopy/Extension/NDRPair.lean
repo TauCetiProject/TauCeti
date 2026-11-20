@@ -421,8 +421,8 @@ private theorem continuousOn_cutoff (hfU : ∀ x, f x < 1 → x ∈ U) :
     ContinuousOn (cutoff D f) (univ ×ˢ {x | f x < 1}) := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hU (p : (univ ×ˢ {x | f x < 1} : Set (I × X))) : p.val.2 ∈ U := hfU _ p.property.2
-  refine (continuous_subtype_val.comp (D.continuous.comp (Continuous.prodMk
-    ((continuous_cutoffTime f).comp continuous_subtype_val)
+  refine (continuous_subtypeVal.comp (D.continuous.comp (Continuous.prodMk
+    ((continuous_cutoffTime f).comp continuous_subtypeVal)
     (Continuous.subtype_mk (by fun_prop) hU)))).congr fun p ↦ ?_
   simp only [Function.comp_apply, domRestrict_apply, cutoff_of_mem D f (hU p)]
 
@@ -434,7 +434,7 @@ private theorem continuous_cutoff (hfU : ∀ x, f x < 1 → x ∈ U) : Continuou
       ((isOpen_lt f.continuous continuous_const).mem_nhds (Subtype.coe_lt_coe.1 hp)))
   · have hlt : (3 / 4 : ℝ) < f p.2 := by linarith
     refine continuousAt_snd.congr (Filter.eventuallyEq_of_mem (prod_mem_nhds Filter.univ_mem
-      ((isOpen_lt continuous_const (continuous_subtype_val.comp f.continuous)).mem_nhds hlt))
+      ((isOpen_lt continuous_const (continuous_subtypeVal.comp f.continuous)).mem_nhds hlt))
         fun q hq ↦ ?_)
     exact (cutoff_of_le D f (le_of_lt hq.2) q.1).symm
 

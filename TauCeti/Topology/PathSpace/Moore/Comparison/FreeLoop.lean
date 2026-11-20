@@ -92,7 +92,7 @@ def ofClosedUnitPath : C(ClosedUnitPath X, MooreFreeLoopSpace X) where
     (MoorePath.target_ofUnitPath p.val).trans
       (p.property.symm.trans (MoorePath.source_ofUnitPath p.val).symm)⟩
   continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2
-    (MoorePath.continuous_ofUnitPath.comp continuous_subtype_val)
+    (MoorePath.continuous_ofUnitPath.comp continuous_subtypeVal)
 
 @[simp]
 theorem toMoorePath_ofClosedUnitPath (p : ClosedUnitPath X) :
@@ -330,7 +330,7 @@ theorem unitHomotopy_mem_contractibleLoops (s : I) {γ : MooreFreeLoopSpace X}
 /-- Forward comparison restricted to contractible free loops. -/
 def toCircleMapContractible : C(contractibleLoops X, TauCeti.contractibleLoops X) where
   toFun γ := ⟨toCircleMap γ.val, toCircleMap_mem_contractibleLoops γ.property⟩
-  continuous_toFun := (toCircleMap.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (toCircleMap.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_toCircleMapContractible (γ : contractibleLoops X) :
@@ -340,7 +340,7 @@ theorem coe_toCircleMapContractible (γ : contractibleLoops X) :
 /-- Reverse comparison restricted to contractible free loops. -/
 def ofCircleMapContractible : C(TauCeti.contractibleLoops X, contractibleLoops X) where
   toFun f := ⟨ofCircleMap f.val, ofCircleMap_mem_contractibleLoops f.property⟩
-  continuous_toFun := (ofCircleMap.continuous.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (ofCircleMap.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_ofCircleMapContractible (f : TauCeti.contractibleLoops X) :
@@ -370,7 +370,7 @@ def unitHomotopyContractible :
       (fun h ↦ ∀ γ, basepointContractible X (h γ) = basepointContractible X γ) where
   toFun p := ⟨unitHomotopy (p.1, p.2.val), unitHomotopy_mem_contractibleLoops p.1 p.2.property⟩
   continuous_toFun := ((unitHomotopy (X := X)).continuous.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
   map_zero_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_zero γ.val)
   map_one_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_one γ.val)
   prop' s γ := by simp

@@ -167,7 +167,7 @@ theorem _root_.Measurable.exists_option_one_le_singleton {α X : Type*} [Measura
     have hs' : MeasurableSet {a | μ a univ = 0} :=
       measurableSet_eq_fun ((Measure.measurable_coe MeasurableSet.univ).comp hm) measurable_const
     exact hs'.compl.congr (Set.ext fun _ => measure_univ_ne_zero)
-  obtain ⟨g, hg, hmass⟩ := (hm.comp measurable_subtype_coe).exists_one_le_singleton
+  obtain ⟨g, hg, hmass⟩ := (hm.comp measurable_subtypeVal).exists_one_le_singleton
     (fun a : s => hfinite a) (fun a : s => hint a) (fun a : s => a.property)
   refine ⟨fun a => if h : a ∈ s then some (g ⟨a, h⟩) else none,
     (Option.measurable_some.comp hg).dite measurable_const hs, ?_, ?_⟩

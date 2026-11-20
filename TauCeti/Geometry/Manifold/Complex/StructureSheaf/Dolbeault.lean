@@ -80,7 +80,7 @@ private def planeSet (V : Opens (TopCat.of U)) : Set ℂ :=
   Subtype.val '' (V : Set U)
 
 private lemma isOpen_planeSet (V : Opens (TopCat.of U)) : IsOpen (planeSet V) :=
-  U.isOpen.isOpenMap_subtype_val _ V.isOpen
+  U.isOpen.isOpenMap_subtypeVal _ V.isOpen
 
 private lemma mem_planeSet (y : V) : ((y : U) : ℂ) ∈ planeSet V := ⟨y, y.property, rfl⟩
 

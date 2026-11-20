@@ -245,7 +245,7 @@ theorem coe_vadd_delzantLevel (θ : ι → AddCircle (2 * π)) (x : delzantLevel
 
 instance : ContinuousVAdd (ι → AddCircle (2 * π)) (delzantLevel i u c) :=
   ⟨continuous_induced_rng.2 (continuous_torusRotation.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))⟩
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))⟩
 
 /-- A point at which `μ = β_ℝ^* y` for some `y ∈ V*` lies on the level. -/
 theorem mem_delzantLevel_of_forall_eq {x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι}

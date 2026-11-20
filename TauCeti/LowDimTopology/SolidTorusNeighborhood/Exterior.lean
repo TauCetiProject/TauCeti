@@ -200,7 +200,7 @@ theorem halve_snd (p : SolidTorus) : (halve p).2 = p.2 :=
 /-- Halving the radius is an embedding of the solid torus into itself. -/
 theorem isEmbedding_halve : IsEmbedding halve := by
   have h : IsEmbedding fun w : closedBall (0 : ℂ) 1 => (halve (w, 1)).1 := by
-    refine IsEmbedding.of_comp (by unfold halve; fun_prop) continuous_subtype_val ?_
+    refine IsEmbedding.of_comp (by unfold halve; fun_prop) continuous_subtypeVal ?_
     exact (Homeomorph.smulOfNeZero (2⁻¹ : ℝ) (by norm_num)).isEmbedding.comp
       IsEmbedding.subtypeVal
   exact h.prodMap IsEmbedding.id
@@ -312,7 +312,7 @@ theorem isBicollar_halveBicollar (h : IsSolidTorusNeighborhood f Φ) :
       mem_closedBall_zero_iff.mpr ((norm_sigmoidPolar q).trans_le (Real.sigmoid_le_one _))) := by
     refine ⟨isOpenEmbedding_sigmoidPolar.isEmbedding.codRestrict _ _, ?_⟩
     rw [range_codRestrict]
-    exact isOpenEmbedding_sigmoidPolar.isOpen_range.preimage continuous_subtype_val
+    exact isOpenEmbedding_sigmoidPolar.isOpen_range.preimage continuous_subtypeVal
   have hb := h.isOpenEmbedding_comp ((hι.prodMap IsOpenEmbedding.id).comp e.isOpenEmbedding) (by
     rintro _ ⟨q, rfl⟩
     exact (norm_sigmoidPolar _).trans_lt (Real.sigmoid_lt_one _))

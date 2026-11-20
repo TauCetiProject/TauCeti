@@ -183,7 +183,7 @@ include hω ho
 omit ho in
 private theorem eventually_apply_ne_zero (ho : ∀ x, ω.order x ≠ ⊤) (x : U) :
     ∀ᶠ y : U in 𝓝[≠] x, ω y ≠ 0 :=
-  (continuous_subtype_val.continuousAt.tendsto_nhdsNE Subtype.val_injective).eventually
+  (continuous_subtypeVal.continuousAt.tendsto_nhdsNE Subtype.val_injective).eventually
     ((hω x).eventually_apply_ne_zero (ho x))
 
 /-- Division of a section of `Ω_D` by `ω`, as a function. -/
@@ -198,7 +198,7 @@ private theorem divideSection_apply (s : differentialSections D U) (y : U) :
 
 private theorem divideSection_smul_eventuallyEq (s : differentialSections D U) (x : U) :
     ∀ᶠ y in 𝓝[≠] x, (divideSection hω ho s).val y • ω y = s.val y := by
-  have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
+  have ht := continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
   filter_upwards [ht.eventually
       (toDivisorSection_eventuallyEq E (OneForm.meromorphicAt_ratio
         (isDifferentialSectionAt_extendSection s.property x).meromorphicAt (hω x))),
@@ -224,7 +224,7 @@ private theorem multiplySection_apply (f : divisorSections E U) (y : U) :
 
 private theorem multiplySection_eventuallyEq (f : divisorSections E U) (x : U) :
     ∀ᶠ y in 𝓝[≠] x, (multiplySection hω ho f).val y = f.val y • ω y := by
-  have ht := continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
+  have ht := continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
   filter_upwards [ht.eventually
       (normalizeForm_eventuallyEq (D := D)
         ((hω x).smul (isDivisorSectionAt_extend f.property x).meromorphicAt))] with y hy
@@ -441,7 +441,7 @@ private theorem differentialSheafMapOfLE_comp_eq_of_smul (hω : ∀ x, ω.Meromo
   refine eq_of_eventuallyEq_codiscrete (Subtype.prop _) (Subtype.prop _) ?_
   refine eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun x ↦ ?_
   have ht : Tendsto (Subtype.val : U.unop → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
-    continuous_subtype_val.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
+    continuous_subtypeVal.continuousAt.tendsto_nhdsNE (x := x) Subtype.val_injective
   have hlhs := he' U.unop ((differentialSheafMapOfLE h).hom.app U s)
   have hrhs := he U.unop s
   rw [eventually_codiscrete_iff_forall_eventually_nhdsNE] at hlhs hrhs

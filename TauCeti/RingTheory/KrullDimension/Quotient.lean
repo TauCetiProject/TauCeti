@@ -386,7 +386,7 @@ theorem topologicalKrullDimAt_le_iSup_ringKrullDim_quotient [IsNoetherianRing R]
   refine (topologicalKrullDimAt_le_of_isOpen hU hpU).trans ?_
   rw [topologicalKrullDim_eq_iSup_of_isClosed
     (fun q : T ↦ (Subtype.val ⁻¹' zeroLocus (q.val : Set R) : Set U))
-    (fun q ↦ (isClosed_zeroLocus _).preimage continuous_subtype_val) ?_]
+    (fun q ↦ (isClosed_zeroLocus _).preimage continuous_subtypeVal) ?_]
   · refine iSup_le fun q ↦ ?_
     rw [IsEmbedding.subtypeVal.topologicalKrullDim_preimage, Subtype.range_coe]
     refine (IsEmbedding.inclusion Set.inter_subset_left).isInducing.topologicalKrullDim_le.trans

@@ -192,7 +192,7 @@ theorem Convex.exists_isMaxOn_re_of_bddAbove (hconv : Convex ℝ C) (hC : IsComp
   have : CompleteSpace C := hC.completeSpace_coe
   obtain ⟨M, hM⟩ := hbdd
   have hcont : Continuous fun y : C ↦ -re (f y) :=
-    (continuous_re.comp (f.continuous.comp continuous_subtype_val)).neg
+    (continuous_re.comp (f.continuous.comp continuous_subtypeVal)).neg
   obtain ⟨⟨x, hx⟩, hxz, hmin⟩ :=
     hcont.lowerSemicontinuous.exists_add_mul_dist_le_and_lt_add_mul_dist
       ⟨-M, by rintro _ ⟨y, rfl⟩; exact neg_le_neg (hM (mem_image_of_mem _ y.property))⟩ hkf ⟨z, hz⟩

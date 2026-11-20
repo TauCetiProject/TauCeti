@@ -73,7 +73,7 @@ noncomputable def sigmaVectorBundleCore (hc : IsLocallyConstant c)
       let f : ↥({x | ∃ h : c x = a, ⟨x, h⟩ ∈ (Z a).baseSet i} ∩
           {x | ∃ h : c x = a, ⟨x, h⟩ ∈ (Z a).baseSet j}) → {y : B // c y = a} :=
         fun x => ⟨x.val, x.property.1.choose⟩
-      have hf : Continuous f := continuous_subtype_val.subtype_mk _
+      have hf : Continuous f := continuous_subtypeVal.subtype_mk _
       refine (((Z a).continuousOn_coordChange i j).comp_continuous hf
         fun x => ⟨x.property.1.choose_spec, x.property.2.choose_spec⟩).congr fun x => ?_
       dsimp only [Function.comp_apply, Set.domRestrict]
@@ -152,7 +152,7 @@ noncomputable def sigmaVectorBundleCoreHomeomorph (hc : IsLocallyConstant c)
     rw [FiberBundle.continuousAt_totalSpace]
     have hp₀ := (FiberBundle.continuousAt_totalSpace _ _).1
       ((continuous_id (X := (Z a).TotalSpace)).continuousAt (x := p₀))
-    refine ⟨(continuous_subtype_val.comp (Z a).continuous_proj).continuousAt, ?_⟩
+    refine ⟨(continuous_subtypeVal.comp (Z a).continuous_proj).continuousAt, ?_⟩
     convert hp₀.2 using 1
     funext p
     simp only [id_eq, VectorBundleCore.trivializationAt]
@@ -169,9 +169,9 @@ noncomputable def sigmaVectorBundleCoreHomeomorph (hc : IsLocallyConstant c)
       refine continuous_iff_continuousAt.2 fun q₀ => ?_
       rw [FiberBundle.continuousAt_totalSpace]
       have hq₀ := (FiberBundle.continuousAt_totalSpace _ _).1
-        (continuous_subtype_val.continuousAt (x := q₀))
+        (continuous_subtypeVal.continuousAt (x := q₀))
       refine ⟨(((hc.sigmaVectorBundleCore Z).continuous_proj.comp
-        continuous_subtype_val).subtype_mk _).continuousAt, ?_⟩
+        continuous_subtypeVal).subtype_mk _).continuousAt, ?_⟩
       convert hq₀.2 using 1
       funext q
       simp only [VectorBundleCore.trivializationAt]
@@ -209,7 +209,7 @@ theorem continuous_mk_sigmaVectorBundleCore_iff {Y : Type*} [TopologicalSpace Y]
   · intro hs a
     apply (IsEmbedding.sigmaMk (σ := fun a => (Z a).TotalSpace)).continuous_iff.2
     convert (hc.sigmaVectorBundleCoreHomeomorph Z).symm.continuous.comp
-      (hs.comp continuous_subtype_val) using 1
+      (hs.comp continuous_subtypeVal) using 1
     funext ⟨y, hy⟩
     cases hy
     rfl

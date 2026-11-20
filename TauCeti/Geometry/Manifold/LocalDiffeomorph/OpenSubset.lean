@@ -152,10 +152,10 @@ def toDiffeomorphSourceTarget :
   toEquiv := Φ.toOpenPartialHomeomorph.toHomeomorphSourceTarget.toEquiv
   contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
     ((Φ.contMDiffOn x x.property).contMDiffAt (Φ.open_source.mem_nhds x.property)).comp x
-      contMDiff_subtype_val.contMDiffAt
+      contMDiff_subtypeVal.contMDiffAt
   contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1 fun x ↦
     ((Φ.symm.contMDiffOn x x.property).contMDiffAt (Φ.open_target.mem_nhds x.property)).comp x
-      contMDiff_subtype_val.contMDiffAt
+      contMDiff_subtypeVal.contMDiffAt
 
 /-- The diffeomorphism `PartialDiffeomorph.toDiffeomorphSourceTarget` evaluates as the partial
 diffeomorphism. -/
@@ -188,7 +188,7 @@ def ofTop (U : TopologicalSpace.Opens M) (hU : U = ⊤) : U ≃ₘ^n⟮I, I⟯ M
   invFun x := ⟨x, hU.symm ▸ trivial⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  contMDiff_toFun := contMDiff_subtype_val
+  contMDiff_toFun := contMDiff_subtypeVal
   contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp contMDiff_id
 
 /-- The diffeomorphism `Diffeomorph.ofTop` is the inclusion. -/
@@ -220,9 +220,9 @@ form of Mathlib's `Homeomorph.subtype`. -/
 def subtype (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x ∈ U ↔ g x ∈ V) : U ≃ₘ^n⟮I, J⟯ V where
   toEquiv := g.toEquiv.subtypeEquiv h_iff
   contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
-    (g.contMDiff.comp contMDiff_subtype_val)
+    (g.contMDiff.comp contMDiff_subtypeVal)
   contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
-    (g.symm.contMDiff.comp contMDiff_subtype_val)
+    (g.symm.contMDiff.comp contMDiff_subtypeVal)
 
 /-- The restriction `Diffeomorph.subtype` evaluates as the diffeomorphism. -/
 @[simp]
@@ -256,7 +256,7 @@ noncomputable def subtypeVal (U : TopologicalSpace.Opens M) (hU : Nonempty U) :
   toPartialEquiv := (U.openPartialHomeomorphSubtypeCoe hU).toPartialEquiv
   open_source := (U.openPartialHomeomorphSubtypeCoe hU).open_source
   open_target := (U.openPartialHomeomorphSubtypeCoe hU).open_target
-  contMDiffOn_toFun := contMDiff_subtype_val.contMDiffOn
+  contMDiffOn_toFun := contMDiff_subtypeVal.contMDiffOn
   contMDiffOn_invFun := fun y hy ↦ by
     refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 ?_
     exact contMDiffWithinAt_id.congr

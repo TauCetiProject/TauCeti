@@ -57,7 +57,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- The inclusion of an open subset `W` of `M`, as a smooth map `C^∞⟮IM, W; IM, M⟯`. -/
 private def subtypeValMap (W : Opens M) : C^∞⟮IM, W; IM, M⟯ :=
-  ⟨Subtype.val, contMDiff_subtype_val⟩
+  ⟨Subtype.val, contMDiff_subtypeVal⟩
 
 private theorem subtypeValMap_apply (W : Opens M) (x : W) :
     subtypeValMap IM W x = x.val :=

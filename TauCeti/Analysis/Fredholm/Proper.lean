@@ -129,13 +129,13 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     refine (AntilipschitzWith.prodMk_of_dist_le (f := N.domRestrict f) (g := N.domRestrict Pker)
       (A := (2 * C).toNNReal) (B := 2) fun x y ↦ ?_).isUniformInducing
       (happN.lipschitzWith.uniformContinuous.prodMk
-        (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val))
+        (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtypeVal))
     simpa only [Subtype.dist_eq, Set.domRestrict_apply, dist_eq_norm, hC2, NNReal.coe_ofNat,
       mul_assoc] using key x x.property y y.property
   -- total boundedness, then compactness
   have htb : TotallyBounded
       ((Subtype.val : N → E) '' (Subtype.val : N → E) ⁻¹' (f ⁻¹' L)) := by
-    refine TotallyBounded.image ?_ uniformContinuous_subtype_val
+    refine TotallyBounded.image ?_ uniformContinuous_subtypeVal
     refine (totallyBounded_preimage hind (hL.prod hKpc).totallyBounded).subset ?_
     exact fun x hx => ⟨hx, hPN (x : E) x.property⟩
   rw [Subtype.image_preimage_coe] at htb
@@ -177,7 +177,7 @@ theorem locallyCompactSpace_preimage {D : E → E →L[𝕜] F} {L : Set F} (hL 
     · rw [Topology.IsEmbedding.subtypeVal.isCompact_iff, Subtype.image_preimage_coe,
         Set.inter_comm]
       exact hprop L hL
-    · exact continuous_subtype_val.continuousAt.preimage_mem_nhds hN
+    · exact continuous_subtypeVal.continuousAt.preimage_mem_nhds hN
   infer_instance
 
 /-- **A level set of a map with upper semi-Fredholm derivative is locally compact**: the case

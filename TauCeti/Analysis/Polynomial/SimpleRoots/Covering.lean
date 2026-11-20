@@ -239,9 +239,9 @@ theorem isEvenlyCovered_fst_isRoot (hF : ∀ i ≤ d, Continuous fun b => (F b).
       continuous_toFun := by fun_prop
       continuous_invFun := by
         refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
-        refine (continuous_subtype_val.comp continuous_fst).prodMk ?_
+        refine (continuous_subtypeVal.comp continuous_fst).prodMk ?_
         exact continuous_prod_of_discrete_right.2 fun i =>
-          (hσc i).comp_continuous continuous_subtype_val fun x => x.2 }, fun _ => rfl⟩
+          (hσc i).comp_continuous continuous_subtypeVal fun x => x.property }, fun _ => rfl⟩
 
 /-- **The root space is a covering space over the separable members.** For a family of polynomials
 of constant degree with continuous coefficients, the projection `(b, z) ↦ b` from the space of

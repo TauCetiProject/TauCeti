@@ -66,9 +66,9 @@ private theorem norm_le_one (z : closedBall (0 : ℂ) 1) : ‖(z : ℂ)‖ ≤ 1
 inversion in the unit circle on the second. -/
 private noncomputable def discDoubleMap : C(DoubleAlong discBoundary, OnePoint ℂ) :=
   desc discBoundary
-    ⟨fun z ↦ ((z : ℂ) : OnePoint ℂ), continuous_coe.comp continuous_subtype_val⟩
+    ⟨fun z ↦ ((z : ℂ) : OnePoint ℂ), continuous_coe.comp continuous_subtypeVal⟩
     ⟨fun z ↦ unitCircleInversion ((z : ℂ) : OnePoint ℂ),
-      unitCircleInversion.continuous.comp (continuous_coe.comp continuous_subtype_val)⟩
+      unitCircleInversion.continuous.comp (continuous_coe.comp continuous_subtypeVal)⟩
     fun z ↦ (unitCircleInversion_coe_of_norm_eq_one z.property).symm
 
 private theorem discDoubleMap_inl (z : closedBall (0 : ℂ) 1) :
@@ -186,7 +186,7 @@ theorem discNegConj_discNegConj (z : closedBall (0 : ℂ) 1) : discNegConj (disc
   Subtype.ext (by simp)
 
 theorem continuous_discNegConj : Continuous discNegConj :=
-  (continuous_conj.comp continuous_subtype_val).neg.subtype_mk _
+  (continuous_conj.comp continuous_subtypeVal).neg.subtype_mk _
 
 theorem discNegConj_mem_discBoundary {z : closedBall (0 : ℂ) 1} (hz : z ∈ discBoundary) :
     discNegConj z ∈ discBoundary := by

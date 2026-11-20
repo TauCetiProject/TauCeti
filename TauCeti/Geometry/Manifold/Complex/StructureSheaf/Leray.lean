@@ -106,7 +106,7 @@ private lemma contMDiff_toOpens (hφ : ContMDiff I J ω φ) (V : Opens Y) :
 private lemma contMDiff_ofOpens (hφ' : ContMDiff J I ω φ.symm) (V : Opens Y) :
     ContMDiff J I ω (ofOpens φ (V := V)) := by
   rw [← ContMDiff.subtypeVal_comp_iff]
-  exact (contMDiff_subtype_val.comp (hφ'.comp contMDiff_subtype_val) :
+  exact (contMDiff_subtypeVal.comp (hφ'.comp contMDiff_subtypeVal) :
     ContMDiff J I ω fun y : V ↦ (φ.symm y : X))
 
 variable (hφ : ContMDiff I J ω φ) (hφ' : ContMDiff J I ω φ.symm)
@@ -192,9 +192,9 @@ theorem subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
   refine φ.subsingleton_H'_one_holomorphicStructureSheafModules_of_homeomorph (Y := D) ?_ ?_
     (isZero_cechCohomology_one_holomorphicStructureSheafModules_eball c R)
   · rw [← ContMDiff.subtypeVal_comp_iff]
-    exact he₁.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2.1
+    exact he₁.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property.1
   · rw [← ContMDiff.subtypeVal_comp_iff]
-    exact he₂.comp_contMDiff contMDiff_subtype_val fun y ↦ hR y.2
+    exact he₂.comp_contMDiff contMDiff_subtypeVal fun y ↦ hR y.property
 
 /-- **Acyclic neighbourhoods.** Every neighbourhood of a point `x` of a Riemann surface contains an
 open neighbourhood `W` of `x` with `H¹(W, 𝒪) = 0`, namely a coordinate disc centred at `x`. -/

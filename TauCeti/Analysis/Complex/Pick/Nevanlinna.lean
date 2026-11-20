@@ -415,8 +415,8 @@ theorem I_mul_herglotzTransform_cayley_eq (mu : Measure Circle) [IsFiniteMeasure
     simpa only [tau, i, UpperHalfPlane.coe_mk, map_neg, conj_I, sub_neg_eq_add,
       mem_ball_zero_iff, w] using h
   have hcont : Continuous fun u : Circle ↦ I * (((u : ℂ) + w) / ((u : ℂ) - w)) :=
-    continuous_const.mul <| (continuous_subtype_val.add continuous_const).div
-      (continuous_subtype_val.sub continuous_const) fun u hu ↦ by
+    continuous_const.mul <| (continuous_subtypeVal.add continuous_const).div
+      (continuous_subtypeVal.sub continuous_const) fun u hu ↦ by
         have hnorm := Circle.norm_coe u
         rw [sub_eq_zero] at hu
         rw [hu] at hnorm

@@ -261,7 +261,7 @@ theorem toAdd_galoisKummerCharacter (σ : L →ₐ[K] SeparableClosure K) (a : L
 theorem continuous_galoisKummerCharacter (σ : L →ₐ[K] SeparableClosure K) (a : Lˣ)
     (r : SeparableClosure K) (hr : r ^ 2 = σ (a : L)) :
     Continuous (galoisKummerCharacter σ a r hr) :=
-  continuous_ofAdd.comp ((continuous_rootSign r).comp continuous_subtype_val)
+  continuous_ofAdd.comp ((continuous_rootSign r).comp continuous_subtypeVal)
 
 /-- **The Kummer class of `a ∈ Lˣ`, carried to `galoisSubgroup K L σ`, is the class of its Kummer
 character**: for a square root `r` of `σ a`, the transported class is represented by the character

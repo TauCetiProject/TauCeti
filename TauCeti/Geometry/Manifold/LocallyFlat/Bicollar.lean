@@ -342,8 +342,8 @@ theorem restrict (h : IsLocallyBicollared f) {U : Set N} (hU : IsOpen U) :
   obtain ⟨V, hV, hxV, hb⟩ := h x
   let W : Set U := ((↑) : U → N) ⁻¹' V
   let R : Set V := ((↑) : V → N) ⁻¹' U
-  have hW : IsOpen W := hV.preimage continuous_subtype_val
-  have hR : IsOpen R := hU.preimage continuous_subtype_val
+  have hW : IsOpen W := hV.preimage continuous_subtypeVal
+  have hR : IsOpen R := hU.preimage continuous_subtypeVal
   -- `W` and `R` are the two readings of `U ∩ V`, one as a subset of `U` and one as a subset of
   -- `V`; the homeomorphism between them only re-brackets the pair of membership proofs.
   let e : W ≃ₜ R := {

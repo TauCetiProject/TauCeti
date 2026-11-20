@@ -55,7 +55,7 @@ variable {p : ℕ}
 theorem continuous_choleskyReconstruction :
     Continuous (@choleskyReconstruction p) := by
   refine continuous_induced_rng.2 (continuous_induced_rng.2 ?_)
-  exact (continuous_subtype_val.matrix_mul continuous_subtype_val.matrix_transpose).congr
+  exact (continuous_subtypeVal.matrix_mul continuous_subtypeVal.matrix_transpose).congr
     fun L ↦ (choleskyReconstruction_coe L).symm
 
 /-- The factors of the matrices in a set `K` of positive-definite matrices are the lower-triangular
@@ -91,7 +91,7 @@ theorem isProperMap_choleskyReconstruction :
     IsProperMap (@choleskyReconstruction p) := by
   refine isProperMap_iff_isCompact_preimage.2 ⟨continuous_choleskyReconstruction, fun K hK ↦ ?_⟩
   have hK'c : IsCompact ((fun A : PosDefMatrix p ↦ (A.val : Matrix (Fin p) (Fin p) ℝ)) '' K) :=
-    hK.image (continuous_subtype_val.comp continuous_subtype_val)
+    hK.image (continuous_subtypeVal.comp continuous_subtypeVal)
   obtain ⟨c, hc⟩ := hK'c.bddAbove_image (continuous_id.matrix_trace).continuousOn
   have hTclosed : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧
       L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.val : Matrix (Fin p) (Fin p) ℝ)) '' K} :=

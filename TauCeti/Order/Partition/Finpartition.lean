@@ -246,7 +246,7 @@ noncomputable def ofFibers (g : Ω → κ) : Finpartition (Set.univ : Set Ω) :=
 theorem mem_ofFibers_parts : s ∈ (ofFibers g).parts ↔ ∃ x, g ⁻¹' {g x} = s := by
   classical
   rw [ofFibers, ofErase_parts, Finset.mem_erase, Set.Finite.mem_toFinset, Set.bot_eq_empty,
-    ← Set.nonempty_iff_ne_empty]
+    Set.ne_empty_iff_nonempty]
   constructor
   · rintro ⟨⟨x, hx⟩, i, rfl⟩
     exact ⟨x, by rw [Set.mem_preimage, Set.mem_singleton_iff] at hx; rw [hx]⟩
@@ -268,7 +268,7 @@ noncomputable def indexedPartition (P : Finpartition (Set.univ : Set Ω)) :
     IndexedPartition (fun p : P.parts => (p : Set Ω)) :=
   IndexedPartition.mk' _
     (fun p q hne => P.disjoint p.property q.property fun h => hne (Subtype.ext h))
-    (fun p => Set.nonempty_iff_ne_empty.mpr (P.ne_bot p.property))
+    (fun p => Set.ne_empty_iff_nonempty.mp (P.ne_bot p.property))
     (fun x => by
       obtain ⟨p, ⟨hp, hxp⟩, _⟩ := P.isPartition_parts.2 x
       exact ⟨⟨p, hp⟩, hxp⟩)
@@ -295,7 +295,7 @@ theorem sUnion_parts : ⋃₀ (P.parts : Set (Set Ω)) = u := by
 
 /-- A part of a finite partition of a set is nonempty. -/
 theorem nonempty_of_mem_parts_set {s : Set Ω} (hs : s ∈ P.parts) : s.Nonempty :=
-  Set.nonempty_iff_ne_empty.2 (P.ne_bot hs)
+  Set.ne_empty_iff_nonempty.1 (P.ne_bot hs)
 
 /-- Every point of a set lies in some part of a finite partition of it. -/
 theorem exists_mem_set {x : Ω} (hx : x ∈ u) : ∃ s ∈ P.parts, x ∈ s := by
@@ -772,7 +772,7 @@ variable {α : Type*} [DecidableEq α] {s C : Finset α} {i j : α}
 
 /-- The partition of `s` with the part `{i, j}`, all other points forming singletons. -/
 noncomputable def pairPartition (s : Finset α) (i j : α) (hij : {i, j} ⊆ s) : Finpartition s :=
-  (⊥ : Finpartition (s \ {i, j})).extend (insert_ne_empty i {j}) sdiff_disjoint
+  (⊥ : Finpartition (s \ {i, j})).extend (insert_nonempty i {j}).ne_empty sdiff_disjoint
     (sdiff_union_of_subset hij)
 
 /-- The parts of `pairPartition s i j` are `{i, j}` and the singletons of the other points. -/

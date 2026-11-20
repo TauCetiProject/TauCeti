@@ -508,7 +508,7 @@ theorem specialFiberPicardSpecialization_pullback (a : LineBundleClass X) :
   let p := MonoidHom.toAdditive (pullbackHom (genericFiberι R K toBase))
   have hpa : Additive.ofMul (pullback (genericFiberι R K toBase) a) = p (Additive.ofMul a) :=
     Additive.toMul.injective (by simp [p])
-  rw [specialFiberPicardSpecialization, hpa, AddMonoidHom.liftOfSurjective,
+  rw [specialFiberPicardSpecialization, hpa,
     AddMonoidHom.liftOfRightInverse_comp_apply]
   rfl
 

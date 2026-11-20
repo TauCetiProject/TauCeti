@@ -119,7 +119,7 @@ theorem codRestrict_coe {s : Set X} {x y : s} (γ : Path x.val y.val) (hmem : �
 /-- Mapping `γ.codRestrict hmem` back along the subtype inclusion recovers `γ`. -/
 @[simp]
 theorem map_codRestrict {s : Set X} {x y : s} (γ : Path x.val y.val) (hmem : ∀ t, γ t ∈ s) :
-    (γ.codRestrict hmem).map continuous_subtype_val = γ := by
+    (γ.codRestrict hmem).map continuous_subtypeVal = γ := by
   ext t
   simp
 
@@ -227,15 +227,15 @@ to the paths in the ambient space from `a` to `b`: every such path stays in the 
 `a`, hence in `S`. -/
 def subtypeValHomeomorph {S : Set X} {a b : S} (hS : pathComponent (a : X) ⊆ S) :
     Path a b ≃ₜ Path (a : X) b where
-  toFun γ := γ.map continuous_subtype_val
+  toFun γ := γ.map continuous_subtypeVal
   invFun γ := γ.codRestrict fun t ↦ hS (γ.mem_pathComponent t)
   left_inv _ := rfl
   right_inv _ := rfl
   continuous_toFun := continuous_induced_rng.2 <|
-    (ContinuousMap.continuous_postcomp ⟨Subtype.val, continuous_subtype_val⟩).comp
+    (ContinuousMap.continuous_postcomp ⟨Subtype.val, continuous_subtypeVal⟩).comp
       continuous_induced_dom
   continuous_invFun := continuous_induced_rng.2 <|
-    (ContinuousMap.isEmbedding_postcomp ⟨Subtype.val, continuous_subtype_val⟩
+    (ContinuousMap.isEmbedding_postcomp ⟨Subtype.val, continuous_subtypeVal⟩
       IsEmbedding.subtypeVal).isInducing.continuous_iff.2 continuous_induced_dom
 
 @[simp]
@@ -290,7 +290,7 @@ theorem exists_homotopy_forall_mem_of_isSimplyConnected {V : Set X} (hV : IsSimp
     (codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
     (codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq)
   -- map the subspace homotopy back down, and read its endpoints through `map_codRestrict`
-  refine ⟨(h.map (⟨Subtype.val, continuous_subtype_val⟩ : C(V, X))).cast
+  refine ⟨(h.map (⟨Subtype.val, continuous_subtypeVal⟩ : C(V, X))).cast
     (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) p hp)
     (map_codRestrict (x := ⟨a, haV⟩) (y := ⟨b, hbV⟩) q hq), fun t x => ?_⟩
   simp
@@ -807,7 +807,7 @@ theorem map_nullhomotopic_of_nullhomotopic {Y : Type*} [TopologicalSpace Y] {f :
 /-- A loop that stays in a set whose inclusion is null-homotopic is itself null-homotopic in the
 ambient space. -/
 theorem refl_of_forall_mem_of_nullhomotopic {s : Set X}
-    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtype_val).Nullhomotopic)
+    (hs : (ContinuousMap.mk (Subtype.val : s → X) continuous_subtypeVal).Nullhomotopic)
     {x : X} (γ : Path x x) (hγ : ∀ t, γ t ∈ s) : γ.Homotopic (Path.refl x) := by
   have hx : x ∈ s := γ.source ▸ hγ 0
   have hmap := map_nullhomotopic_of_nullhomotopic hs

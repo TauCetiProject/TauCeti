@@ -159,7 +159,7 @@ private lemma coe_sub_ne_zero (hw : w ∈ ball (0 : ℂ) 1) (z : Circle) : (z : 
 
 private lemma continuous_add_div_sub (hw : w ∈ ball (0 : ℂ) 1) :
     Continuous fun z : Circle ↦ ((z : ℂ) + w) / ((z : ℂ) - w) :=
-  (continuous_subtype_val.add continuous_const).div (continuous_subtype_val.sub continuous_const)
+  (continuous_subtypeVal.add continuous_const).div (continuous_subtypeVal.sub continuous_const)
     (coe_sub_ne_zero hw)
 
 /-- The Herglotz transform `w ↦ ∫ (z + w) / (z - w) dμ(z)` of a finite measure on the unit
@@ -191,8 +191,8 @@ theorem _root_.MeasureTheory.Measure.differentiableOn_herglotzTransform
     exact (((hasDerivAt_id' w).const_add (z : ℂ)).div
       ((hasDerivAt_id' w).const_sub (z : ℂ)) hne).congr_deriv (by ring)
   have hF' : Continuous fun z : Circle ↦ 2 * (z : ℂ) / ((z : ℂ) - w₀) ^ 2 :=
-    (continuous_const.mul continuous_subtype_val).div
-      ((continuous_subtype_val.sub continuous_const).pow 2)
+    (continuous_const.mul continuous_subtypeVal).div
+      ((continuous_subtypeVal.sub continuous_const).pow 2)
       fun z ↦ pow_ne_zero 2 (coe_sub_ne_zero hw₀ z)
   refine (hasDerivAt_integral_of_dominated_loc_of_deriv_le (bound := fun _ ↦ 2 / ε ^ 2)
     (ball_mem_nhds w₀ hε) ?_ ((continuous_add_div_sub hw₀).integrable_of_hasCompactSupport

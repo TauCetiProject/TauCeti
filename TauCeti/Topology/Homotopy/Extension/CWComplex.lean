@@ -76,7 +76,7 @@ theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
     intro j
     obtain ⟨K, hK0, hKs⟩ :=
       (hasHomotopyExtensionProperty_sphere_closedBall (E := Fin n → ℝ)).exists_extension_of_isClosed
-        (isClosed_sphere.preimage continuous_subtype_val)
+        (isClosed_sphere.preimage continuous_subtypeVal)
         (f.comp ⟨fun y ↦ ⟨map n j y, map_mem_skeletonLT_succ j
             (mem_closedBall_zero_iff.1 y.property)⟩,
           (continuous_map_closedBall j).subtype_mk _⟩)
@@ -84,15 +84,15 @@ theorem hasHomotopyExtensionProperty_skeletonLT_succ (n : ℕ) :
           map_mem_skeletonLT_succ j (mem_closedBall_zero_iff.1 p.2.val.property)⟩,
           cellFrontier_subset_skeletonLT n j ⟨p.2, p.2.property, rfl⟩⟩),
           continuous_fst.prodMk ((((continuous_map_closedBall j).comp
-            (continuous_subtype_val.comp continuous_snd)).subtype_mk _).subtype_mk _)⟩)
+            (continuous_subtypeVal.comp continuous_snd)).subtype_mk _).subtype_mk _)⟩)
         fun a ↦ hG _
     exact ⟨K, hK0, fun t y hy ↦ hKs t ⟨y, hy⟩⟩
   choose K hK0 hKs using hext
   -- Glue `G` and the extensions `K j` over the closed `n`-cells.
   obtain ⟨F, hFG, hFK⟩ := exists_continuousMap_prod_skeletonLT_succ
     (G.comp ⟨fun p : I × (skeletonLT C n : Set X) ↦
-      (p.1, ⟨⟨(p.2 : X), skeletonLT_mono (by exact_mod_cast n.le_succ) p.2.property⟩,
-          p.2.property⟩),
+      (p.1, ⟨⟨(p.2 : X), skeletonLT_mono
+          (by exact_mod_cast n.le_succ) p.2.property⟩, p.2.property⟩),
       by fun_prop⟩) K hKs
   refine ⟨F, fun x ↦ ?_, fun t a ↦ hFG t a.val a.property⟩
   obtain hx | ⟨j, y, hy, hxy⟩ := mem_skeletonLT_or_exists_map x.property

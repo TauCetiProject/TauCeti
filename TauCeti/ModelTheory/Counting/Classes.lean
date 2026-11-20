@@ -136,14 +136,14 @@ theorem mk_quotient_isoSetoidOn_le_continuum [∀ n, Countable (L.Relations n)] 
 square of the model class. -/
 theorem isClosed_setOf_isoSetoidOn {V : Type w} [Finite V] (φ : L.SentenceInf ι) :
     IsClosed {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
-  isClosed_setOf_isoSetoid.preimage (continuous_subtype_val.prodMap continuous_subtype_val)
+  isClosed_setOf_isoSetoid.preimage (continuous_subtypeVal.prodMap continuous_subtypeVal)
 
 /-- On a finite carrier, in a language with countably many relation symbols of each arity,
 restricted isomorphism on the model class of `φ` has Borel graph. -/
 theorem measurableSet_setOf_isoSetoidOn [∀ n, Countable (L.Relations n)] {V : Type w} [Finite V]
     (φ : L.SentenceInf ι) :
     MeasurableSet {p : modelsOf (V := V) φ × modelsOf (V := V) φ | isoSetoidOn V φ p.1 p.2} :=
-  measurableSet_setOf_isoSetoid.preimage (measurable_subtype_coe.prodMap measurable_subtype_coe)
+  measurableSet_setOf_isoSetoid.preimage (measurable_subtypeVal.prodMap measurable_subtypeVal)
 
 /-- **Finite-carrier dichotomy (Cantor form).** On a finite carrier, in a language with countably
 many relation symbols of each arity, the models of an infinitary sentence with countable branching

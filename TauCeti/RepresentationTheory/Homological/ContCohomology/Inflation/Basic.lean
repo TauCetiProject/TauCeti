@@ -554,7 +554,7 @@ private theorem exists_sub_mem_B2_vanishing_snd (hN : IsOpen (N : Set G)) (f : Z
     Subgroup.coe_inv])
   let b : G → M := fun g => r g • c (m g) - (f : G × G → M) (r g, m g) + c σ
   have hb : Continuous b :=
-    ((hr.smul (hc.comp hm)).sub (hf.1.comp (hr.prodMk (continuous_subtype_val.comp hm)))).add
+    ((hr.smul (hc.comp hm)).sub (hf.1.comp (hr.prodMk (continuous_subtypeVal.comp hm)))).add
       continuous_const
   -- On `N` the correction `b` is `c`.
   have hbN (n : N) : b n = c n := by
@@ -588,7 +588,7 @@ private theorem exists_sub_mem_B2_vanishing (hN : IsOpen (N : Set G)) [Subsingle
   -- coboundary `n ↦ n • x h - x h`.
   have hx (h : G) : ∃ x : M, ∀ n : N, n • x - x = (f : G × G → M) (n, h) := by
     let φ : Z1 N M := ⟨fun n => (f : G × G → M) (n, h), mem_Z1_iff.2
-      ⟨hf.1.comp (continuous_subtype_val.prodMk continuous_const), fun n n' => by
+      ⟨hf.1.comp (continuous_subtypeVal.prodMk continuous_const), fun n n' => by
         have h₁ := hf.2 n n' h
         -- `n' * h = h * (h⁻¹ * n' * h)`, with `h⁻¹ * n' * h ∈ N` by normality.
         have h₂ := groupCohomology.apply_mul_snd_of_isCocycle₂_of_vanishing hf.2 hR n h
@@ -664,7 +664,7 @@ private theorem exists_continuous_cochain_const_on_normal [Subsingleton (H1 N M)
       ∀ n : N, k n = F (1, 1) := by
   -- On `N`, `c - F (1, 1)` is a continuous `1`-cocycle, hence a coboundary.
   have hz : (fun n : N ↦ c n - F (1, 1)) ∈ Z1 N M := by
-    refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtype_val).sub continuous_const, fun n n' ↦ ?_⟩
+    refine mem_Z1_iff.2 ⟨(hc.comp continuous_subtypeVal).sub continuous_const, fun n n' ↦ ?_⟩
     have h := hcF n n'
     rw [quotientMk_coe_eq_one, quotientMk_coe_eq_one] at h
     simp only [Subgroup.coe_mul, Subgroup.smul_def, smul_sub]

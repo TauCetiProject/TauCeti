@@ -66,7 +66,7 @@ private noncomputable def lineMapPath (hγ : AbsolutelyContinuousOnInterval γ a
   toFun t := γ (AffineMap.lineMap a b (t : ℝ))
   continuous_toFun :=
     (absolutelyContinuousOnInterval_comp_lineMap_iff.2 hγ).continuousOn.comp_continuous
-      continuous_subtype_val fun t ↦ (uIcc_of_le (zero_le_one' ℝ)).symm ▸ t.2
+      continuous_subtypeVal fun t ↦ (uIcc_of_le (zero_le_one' ℝ)).symm ▸ t.property
   source' := by simp
   target' := by simp
 

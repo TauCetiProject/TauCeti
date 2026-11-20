@@ -76,7 +76,7 @@ theorem ratio_self_eq_one (k : Fin (n + 1)) {p : ComplexProjectiveSpace n}
 theorem isOpen_affineOpen (k : Fin (n + 1)) : IsOpen (affineOpen k) := by
   apply (isOpenQuotientMap_mk n).isQuotientMap.isOpen_preimage.mp
   convert (isOpen_ne_fun
-    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp continuous_subtype_val)
+    ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp continuous_subtypeVal)
     (continuous_const (y := (0 : ℂ)))) using 1
   ext v
   simp
@@ -100,9 +100,9 @@ theorem continuousOn_ratio (k j : Fin (n + 1)) : ContinuousOn (ratio k j) (affin
   apply ContinuousAt.continuousWithinAt
   apply continuousAt_lift
   exact ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) j).comp
-    continuous_subtype_val).continuousAt.div
+    continuous_subtypeVal).continuousAt.div
     (((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp
-      continuous_subtype_val).continuousAt) hk
+      continuous_subtypeVal).continuousAt) hk
 
 /-- The homogeneous coordinate vector `(z₀, …, 1, …, z_{n-1})` of the point with affine
 coordinates `z` in the chart `X_k ≠ 0`, with the entry `1` in position `k`. -/

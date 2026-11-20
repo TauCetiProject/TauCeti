@@ -291,7 +291,7 @@ def fiberHomeomorph (b : B) :
   left_inv := retraction_mk p b
   right_inv z := Subtype.ext (mk_retraction p z.property)
   continuous_toFun := (continuous_mk p b).subtype_mk _
-  continuous_invFun := (continuous_retraction p b).comp continuous_subtype_val
+  continuous_invFun := (continuous_retraction p b).comp continuous_subtypeVal
 
 /-- The fiber homeomorphism is the inclusion of the torus. -/
 @[simp]

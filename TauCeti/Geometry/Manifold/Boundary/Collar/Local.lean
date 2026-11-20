@@ -214,7 +214,7 @@ def homeomorphNormalIio (ε : ℝ) : ↥(normalIio ε) ≃ₜ ↥(Set.Ico (0 : �
           rw [normalRay_coe_apply, max_eq_left r.property.1]
         exact hr) }
   continuous_toFun := by fun_prop
-  continuous_invFun := (continuous_normalRay.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun := (continuous_normalRay.comp continuous_subtypeVal).subtype_mk _
 
 /-- The interval identification is the normal coordinate. -/
 @[simp]
@@ -384,7 +384,7 @@ theorem mem_sourceOpens (h : IsProductCollarChart k φ V ε) {x : M} :
 submanifold of the canonical boundary manifold. -/
 def sourceBoundaryOpens (h : IsProductCollarChart k φ V ε) :
     TopologicalSpace.Opens ↥((𝓡∂ (n + 1)).boundary M) :=
-  TopologicalSpace.Opens.comap ⟨Subtype.val, continuous_subtype_val⟩ h.sourceOpens
+  TopologicalSpace.Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ h.sourceOpens
 
 /-- A boundary point belongs to the boundary part of the chart source exactly when its ambient
 point belongs to the chart source. -/

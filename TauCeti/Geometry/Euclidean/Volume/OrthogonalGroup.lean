@@ -111,7 +111,7 @@ theorem continuous_orthogonalGroupLastColumn (n : ℕ) :
     Continuous (orthogonalGroupLastColumn n) := by
   refine Continuous.subtype_mk ?_ _
   simp only [Matrix.UnitaryGroup.toLinearIsometryEquiv_apply]
-  exact (PiLp.continuous_toLp 2 _).comp (continuous_subtype_val.matrix_mulVec continuous_const)
+  exact (PiLp.continuous_toLp 2 _).comp (continuous_subtypeVal.matrix_mulVec continuous_const)
 
 variable {n : ℕ}
 
@@ -177,7 +177,7 @@ private theorem measurable_sphereSection :
   refine Measurable.of_eval_matrix _ fun i j ↦ ?_
   have hw : Continuous fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
       EuclideanSpace.single (Fin.last n) (1 : ℝ) - u :=
-    continuous_const.sub continuous_subtype_val
+    continuous_const.sub continuous_subtypeVal
   have hc : Measurable fun u : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 ↦
       inner ℝ (EuclideanSpace.single (Fin.last n) (1 : ℝ) - u)
         (EuclideanSpace.single j (1 : ℝ)) /
@@ -212,7 +212,7 @@ private theorem measurable_decompose : Measurable (decompose (n := n)) := by
   refine measurable_of_measurable_coe ?_
   simp only [coe_decompose]
   exact (measurable_sphereSection.comp measurable_fst).mul
-    (measurable_matrix_blockSucc.comp (measurable_subtype_coe.comp measurable_snd))
+    (measurable_matrix_blockSucc.comp (measurable_subtypeVal.comp measurable_snd))
 
 /-- An orthogonal matrix fixes the last basis vector of Euclidean space exactly when it fixes the
 last coordinate vector. -/
@@ -317,7 +317,7 @@ private theorem measurable_fibreCorner_mul (g : Matrix.orthogonalGroup (Fin (n +
     exact Measurable.of_eval_matrix _ fun i j ↦ hshift.eval_matrix
   refine measurable_of_measurable_coe ?_
   simp only [Submonoid.coe_mul]
-  exact (hcorner.comp measurable_fst).mul (measurable_subtype_coe.comp measurable_snd)
+  exact (hcorner.comp measurable_fst).mul (measurable_subtypeVal.comp measurable_snd)
 
 /-- Left translation by `g` acts on the trivialization as the skew product
 `(u, h) ↦ (g u, fibreCorner g u * h)`. -/
@@ -475,7 +475,7 @@ theorem orthogonalGroupVolume_eq_two_mul_specialOrthogonalGroupVolume {n : ℕ} 
   set S : Set (Matrix.orthogonalGroup (Fin (m + 1)) ℝ) :=
     {g | (g : Matrix (Fin (m + 1)) (Fin (m + 1)) ℝ).det = 1}
   have hS : MeasurableSet S := measurableSet_eq_fun
-    ((Continuous.matrix_det continuous_subtype_val).measurable) measurable_const
+    ((Continuous.matrix_det continuous_subtypeVal).measurable) measurable_const
   -- Left translation by the reflection carries `SO(m + 1)` onto its complement.
   have hpre : (fun g ↦ orthogonalDiagonalReflection ℝ 0 * g) ⁻¹' S = Sᶜ := by
     ext g

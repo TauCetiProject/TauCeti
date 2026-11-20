@@ -74,11 +74,11 @@ def extendClosedBall (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1)
   right_inv := ballExtension_inverse f.symm (fun x hx => by rw [f.symm_apply_eq, hf x hx])
   continuous_toFun := by
     have hr := (lipschitzWith_radialRetraction (E := E) zero_le_one).continuous
-    exact (continuous_subtype_val.comp (f.continuous.comp (hr.subtype_mk _))).add
+    exact (continuous_subtypeVal.comp (f.continuous.comp (hr.subtype_mk _))).add
       (continuous_id.sub hr)
   continuous_invFun := by
     have hr := (lipschitzWith_radialRetraction (E := E) zero_le_one).continuous
-    exact (continuous_subtype_val.comp (f.symm.continuous.comp (hr.subtype_mk _))).add
+    exact (continuous_subtypeVal.comp (f.symm.continuous.comp (hr.subtype_mk _))).add
       (continuous_id.sub hr)
 
 variable (f : closedBall (0 : E) 1 ≃ₜ closedBall (0 : E) 1)

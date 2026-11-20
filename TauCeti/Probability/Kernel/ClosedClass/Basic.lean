@@ -64,8 +64,8 @@ theorem isClosedSet_iff_forall_apply_eq_one [IsMarkovKernel κ] (hs : Measurable
 /-- Restrict both arguments of a transition kernel to a measurable set of states.
 The resulting kernel may lose mass unless the set is closed under transitions. -/
 noncomputable def subtype (κ : Kernel S S) (hs : MeasurableSet s) : Kernel s s :=
-  (κ.comap Subtype.val measurable_subtype_coe).comapRight
-    (MeasurableEmbedding.subtype_coe hs)
+  (κ.comap Subtype.val measurable_subtypeVal).comapRight
+    (MeasurableEmbedding.subtypeVal hs)
 
 /-- The transition measure of the subtype kernel is the pullback along subtype inclusion. -/
 theorem subtype_apply (κ : Kernel S S) (hs : MeasurableSet s) (x : s) :
@@ -74,7 +74,7 @@ theorem subtype_apply (κ : Kernel S S) (hs : MeasurableSet s) (x : s) :
 /-- Evaluation of the subtype kernel on a set of subtype states. -/
 theorem subtype_apply' (κ : Kernel S S) (hs : MeasurableSet s) (x : s) (t : Set s) :
     κ.subtype hs x t = κ x (Subtype.val '' t) := by
-  rw [subtype_apply, (MeasurableEmbedding.subtype_coe hs).comap_apply]
+  rw [subtype_apply, (MeasurableEmbedding.subtypeVal hs).comap_apply]
 
 /-- Singleton transition probabilities are unchanged by restriction. -/
 @[simp]
@@ -107,10 +107,10 @@ theorem isMarkovKernel_subtype_iff_isClosedSet [IsMarkovKernel κ] (hs : Measura
 /-- If no mass leaves the set, inclusion recovers the original transition measure. -/
 theorem map_subtype (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) :
-    (κ.subtype hs).map Subtype.val = κ.comap Subtype.val measurable_subtype_coe := by
+    (κ.subtype hs).map Subtype.val = κ.comap Subtype.val measurable_subtypeVal := by
   ext1 x
-  rw [map_apply _ measurable_subtype_coe, subtype_apply,
-    map_comap_subtype_coe hs, comap_apply]
+  rw [map_apply _ measurable_subtypeVal, subtype_apply,
+    map_comap_subtypeVal hs, comap_apply]
   exact Measure.restrict_eq_self_of_ae_mem
     (ae_iff.mpr ((isClosedSet_def κ s).mp hclosed x x.property))
 
@@ -119,8 +119,8 @@ corresponding ambient power. -/
 theorem map_subtype_pow (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) (n : ℕ) :
     ((κ.subtype hs) ^ n).map Subtype.val =
-      (κ ^ n).comap Subtype.val measurable_subtype_coe := by
-  let e : Kernel s S := deterministic Subtype.val measurable_subtype_coe
+      (κ ^ n).comap Subtype.val measurable_subtypeVal := by
+  let e : Kernel s S := deterministic Subtype.val measurable_subtypeVal
   have hstep : e ∘ₖ κ.subtype hs = κ ∘ₖ e := by
     simpa [e, deterministic_comp_eq_map, comp_deterministic_eq_comap] using
       map_subtype κ hs hclosed
@@ -134,8 +134,8 @@ theorem subtype_pow_apply (κ : Kernel S S) (hs : MeasurableSet s)
     ((κ.subtype hs) ^ n) x t = (κ ^ n) x (Subtype.val '' t) := by
   have h := congrArg (fun η : Kernel s S => η x (Subtype.val '' t))
     (map_subtype_pow κ hs hclosed n)
-  rw [map_apply _ measurable_subtype_coe,
-    (MeasurableEmbedding.subtype_coe hs).map_apply, comap_apply'] at h
+  rw [map_apply _ measurable_subtypeVal,
+    (MeasurableEmbedding.subtypeVal hs).map_apply, comap_apply'] at h
   simpa only [Subtype.coe_injective.preimage_image] using h
 
 /-- The probability of leaving a closed set is zero at every finite time. -/
@@ -144,7 +144,7 @@ theorem pow_apply_compl_eq_zero (κ : Kernel S S) (hs : MeasurableSet s)
     (κ ^ n) x sᶜ = 0 := by
   have h := congrArg (fun η : Kernel s S => η ⟨x, hx⟩ sᶜ)
     (map_subtype_pow κ hs hclosed n)
-  simpa [map_apply' _ measurable_subtype_coe _ hs.compl, comap_apply'] using h.symm
+  simpa [map_apply' _ measurable_subtypeVal _ hs.compl, comap_apply'] using h.symm
 
 /-- A measurable closed set contains every state reachable from one of its members. -/
 theorem IsClosedSet.mem_of_reaches (hs : MeasurableSet s) (hclosed : κ.IsClosedSet s) {x y : S}

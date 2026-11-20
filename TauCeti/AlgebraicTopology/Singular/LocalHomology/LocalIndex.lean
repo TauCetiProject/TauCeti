@@ -279,7 +279,7 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
     -- `j` identifies `U` with `j '' U`, compatibly with the local orientations at `x` and `j x`.
     let ψ : C(↥(W ∩ W₁), ↥(j '' (W ∩ W₁))) :=
       ⟨fun z ↦ ⟨j z, mem_image_of_mem j z.property⟩,
-        (hj.continuous.comp continuous_subtype_val).subtype_mk _⟩
+        (hj.continuous.comp continuous_subtypeVal).subtype_mk _⟩
     have hψ : IsOpenEmbedding ψ :=
       (IsOpenEmbedding.of_comp_iff ψ hU'o.isOpenEmbedding_subtypeVal).1
         (hj.comp hUo.isOpenEmbedding_subtypeVal)
@@ -337,7 +337,7 @@ theorem localIndex_comap {M' N' : Type} [TopologicalSpace M'] [T2Space M'] [Char
 omit [T2Space M] in
 /-- The complement of `S ∖ {x}` meets `S` only in `x`. -/
 private theorem compl_diff_preimage_subset (S : Set M) (x : M) :
-    (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' S ⊆
+    (⟨Subtype.val, continuous_subtypeVal⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' S ⊆
       {⟨x, fun h ↦ h.2 rfl⟩} :=
   fun z hz ↦ Subtype.ext (by_contra fun h ↦ z.property ⟨hz, h⟩)
 
@@ -345,7 +345,7 @@ private theorem compl_diff_preimage_subset (S : Set M) (x : M) :
 `S ∖ {x}` to a class of `Hₙ(M, M ∖ S)`. -/
 private def compClass {S : Set M} (hS : S.Finite) (x : M) :
     localHomology (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) S n :=
-  localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtype_val⟩
+  localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ⟨Subtype.val, continuous_subtypeVal⟩
     (compl_diff_preimage_subset S x) n
     (((hS.sdiff.isClosed.isOpen_compl).isOpenEmbedding_subtypeVal.localOrientationEquiv
       ⟨x, fun h ↦ h.2 rfl⟩ n).symm (o x)).val
@@ -365,7 +365,7 @@ private theorem localHomologyRestriction_compClass_of_ne {S : Set M} (hS : S.Fin
     (hx' : x' ∈ S) (hxx' : x ≠ x') :
     localHomologyRestriction (ModuleCat.of ℤ (ULift.{0} ℤ)) (singleton_subset_iff.2 hx') n
       (o.compClass hS x) = 0 := by
-  have hempty : (⟨Subtype.val, continuous_subtype_val⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' {x'} ⊆ ∅ :=
+  have hempty : (⟨Subtype.val, continuous_subtypeVal⟩ : C(↥(S \ {x})ᶜ, M)) ⁻¹' {x'} ⊆ ∅ :=
     fun z (hz : (z : M) = x') ↦ z.property ⟨hz ▸ hx', fun h ↦ hxx' (hz ▸ h).symm⟩
   rw [compClass, ← ConcreteCategory.comp_apply, localHomologyMap_comp_localHomologyRestriction,
     ← localHomologyRestriction_comp_localHomologyMap _ _ (empty_subset _) hempty,

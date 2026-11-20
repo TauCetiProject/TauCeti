@@ -107,7 +107,9 @@ private theorem coalgHom_of_tprod (f : ReducedTensorWords R M →ₗ[R] N) {n : 
       ofLetter R N (f (subword R x 0 n)) +
         ∑ d ∈ Finset.range n,
           prepend R N (f (subword R x 0 d)) (coalgHom R f (subword R x d (n - d))) := by
-  rw [coalgHom, toModule_of, coalgHomComponent, dite_eq_left hn, ← of_tprod_eq_subword R hn x]
+  rw [coalgHom, toModule_of, coalgHomComponent]
+  dsimp only
+  rw [dite_eq_left hn, ← of_tprod_eq_subword R hn x]
   simp only [LinearMap.add_apply, LinearMap.coe_comp, Function.comp_apply, LinearMap.sum_apply]
   congr 1
   rw [Finset.sum_range]

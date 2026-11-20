@@ -121,16 +121,16 @@ private theorem isPushout_of_handles [Finite ι] [T2Space M] (hfc : Continuous f
   let α (i : ι) : TopCat.of (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (n - k i)) ⟶
       TopCat.of {x | f x ≤ c - ε} :=
     TopCat.ofHom ⟨fun s ↦ ⟨(e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2), hbd i s⟩,
-      (continuous_subtype_val.comp ((e i).symm.continuous.comp
+      (continuous_subtypeVal.comp ((e i).symm.continuous.comp
         ((TopCat.diskBoundaryInclusion (k i)).hom.continuous.prodMap continuous_id))).subtype_mk _⟩
   let χ (i : ι) : TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (n - k i)) ⟶
       TopCat.of {x | f x ≤ c + ε} :=
     TopCat.ofHom ⟨fun w ↦ ⟨Φ.symm ((e i).symm w),
         hup _ (Or.inr (mem_iUnion.2 ⟨i, ((e i).symm w).property⟩))⟩,
-      (Φ.symm.continuous.comp (continuous_subtype_val.comp (e i).symm.continuous)).subtype_mk _⟩
+      (Φ.symm.continuous.comp (continuous_subtypeVal.comp (e i).symm.continuous)).subtype_mk _⟩
   let j : TopCat.of {x | f x ≤ c - ε} ⟶ TopCat.of {x | f x ≤ c + ε} :=
     TopCat.ofHom ⟨fun x ↦ ⟨Φ.symm x, hup _ (Or.inl x.property)⟩,
-      (Φ.symm.continuous.comp continuous_subtype_val).subtype_mk _⟩
+      (Φ.symm.continuous.comp continuous_subtypeVal).subtype_mk _⟩
   have hα (i : ι) (s) : (α i s : M) = (e i).symm (TopCat.diskBoundaryInclusion (k i) s.1, s.2) :=
     rfl
   have hχ (i : ι) (w) : (χ i w : M) = Φ.symm ((e i).symm w) := rfl

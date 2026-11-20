@@ -176,7 +176,7 @@ private lemma lintegral_closedBall_eq_lintegral_lintegral_indicator (V : Submodu
   by_cases hw : w ∈ closedBall (0 : Vᗮ) ε
   · rw [indicator_of_mem hw]
     simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte, hsplit]
-    rw [lintegral_const_mul _ (f := fun v : V ↦ g v) (hg.comp measurable_subtype_coe)]
+    rw [lintegral_const_mul _ (f := fun v : V ↦ g v) (hg.comp measurable_subtypeVal)]
     simp only [g, Submodule.norm_coe, lintegral_ofReal_exp_neg_pi_mul_sq_norm, mul_one]
   · rw [indicator_of_notMem hw]
     simp only [indicator_apply, add_mem_preimage_starProjection_iff, hw, ↓reduceIte,

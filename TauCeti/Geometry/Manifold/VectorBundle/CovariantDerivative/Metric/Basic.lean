@@ -148,7 +148,7 @@ theorem IsMetricCompatible.inner_eq_of_isPreconnected_of_cov_eq_zero
   have hloc : IsLocallyConstant φ :=
     (IsLocallyConstant.iff_eventually_eq φ).mpr fun z ↦ by
       have hev := hcov.eventuallyEq_inner_const_of_cov_eq_zero hU hσ hτ hσ0 hτ0 z.property
-      exact continuous_subtype_val.continuousAt.eventually hev
+      exact continuous_subtypeVal.continuousAt.eventually hev
   exact hloc.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
 variable {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]

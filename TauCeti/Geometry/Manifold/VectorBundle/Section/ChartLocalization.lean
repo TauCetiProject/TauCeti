@@ -208,7 +208,7 @@ theorem continuous_chartLocalization (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     -- On the chart target, compose the frame coefficients with the inverse chart and multiply by
     -- `ψ ∘ c⁻¹`.
     have hsymm : ContMDiff 𝓘(ℝ, E) I n (fun y : W true ↦ c.symm y) :=
-      hc.comp_contMDiff (contMDiff_subtype_val (U := W true)) fun y ↦ y.2
+      hc.comp_contMDiff (contMDiff_subtypeVal (U := W true)) fun y ↦ y.property
     let j : C^n⟮𝓘(ℝ, E), W true; I, chartSource c⟯ :=
       ⟨fun y ↦ ⟨c.symm y, c.map_target y.property⟩,
         (TauCeti.ContMDiff.subtypeVal_comp_iff (chartSource c) _).mp hsymm⟩
@@ -444,7 +444,7 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
     (supportedIn I F n V K).subtype, fun x _ ↦ ?_, LinearMap.ext fun σ ↦ ?_⟩
   · exact (TestFunction.ofSupportedInCLM ℝ (hL x)).continuous.comp
       ((continuous_chartLocalization _ _ (contMDiffOn_testChart_symm V x) _ _ _ (hL x) (hψ x) e U hU
-        hcover).comp continuous_subtype_val)
+        hcover).comp continuous_subtypeVal)
   · simp [p, hdecomp σ]
 
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]

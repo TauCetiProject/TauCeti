@@ -420,7 +420,7 @@ def latitudeHomeomorphComplPair :
     rw [coe_latitude_of_mem p _ (Ioo_subset_Icc_self hs), Submodule.coe_smul]
     simp only [smul_inv_smul₀ hpos.ne', sub_add_cancel]
   continuous_toFun :=
-    (continuous_latitude p continuous_fst (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+    (continuous_latitude p continuous_fst (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
   continuous_invFun := continuous_latitudeComplPairInv p
 
 /-- `TauCeti.latitudeHomeomorphComplPair p` evaluates `TauCeti.latitude p`. -/
@@ -570,13 +570,13 @@ theorem exists_homeomorph_sphere_of_union_closedBall_orthogonal
   have hclosedHem : IsClosed {y : sphere (0 : E) 1 | 0 ≤ ⟪(y : E), (p : E)⟫} :=
     isClosed_le continuous_const (by fun_prop)
   have hclosedA : IsClosedMap gA :=
-    (hclosedHem.isClosedMap_subtype_val.comp e.symm.isClosedMap).comp eA.isClosedMap
+    (hclosedHem.isClosedMap_subtypeVal.comp e.symm.isClosedMap).comp eA.isClosedMap
   let T : closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 ≃ₜ
       closedBall (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
     (H.trans (Homeomorph.neg _)).subtype fun v ↦ by simp [hHn]
   have hclosedB : IsClosedMap gB := by
     convert (Homeomorph.neg (sphere (0 : E) 1)).isClosedMap.comp
-      (hclosedHem.isClosedMap_subtype_val.comp
+      (hclosedHem.isClosedMap_subtypeVal.comp
         (eB.trans T |>.trans e.symm).isClosedMap) using 1
     have hT (x : B) : T (eB x) = ⟨-H (eB x), hmemB x⟩ :=
       Subtype.ext (by simp [T])
@@ -589,8 +589,8 @@ theorem exists_homeomorph_sphere_of_union_closedBall_orthogonal
         (f₁ := gA) (f₂ := id) (g₁ := gB) (g₂ := id) (funext hg_A) (funext hg_B)
         (by simpa only [Subtype.range_coe] using hAB) s
     rw [himage]
-    exact (hclosedA _ (hs.preimage continuous_subtype_val)).union
-      (hclosedB _ (hs.preimage continuous_subtype_val))
+    exact (hclosedA _ (hs.preimage continuous_subtypeVal)).union
+      (hclosedB _ (hs.preimage continuous_subtypeVal))
   obtain ⟨h, hh⟩ := isHomeomorph_iff_exists_homeomorph.1
     (isHomeomorph_iff_continuous_isClosedMap_bijective.2 ⟨g.continuous, hclosed, hinj, hsurj⟩)
   refine ⟨h, ?_⟩

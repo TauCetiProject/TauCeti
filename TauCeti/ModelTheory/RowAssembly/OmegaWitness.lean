@@ -462,18 +462,18 @@ private noncomputable def hilbertRow (z : ℕ → Bool) (m : ℕ) : Option Row �
   (Equiv.optionEquivSumPUnit.{0} Row).trans
     (((hilbertSplit z m).sumCongr (.refl _)).trans
       ((Equiv.sumAssoc _ _ _).trans
-        ((Equiv.sumCongr (.refl _) Equiv.natSumPUnitEquivNat).trans
+        ((Equiv.sumCongr (.refl _) Equiv.natEquivNatSumPUnit.symm).trans
           (hilbertSplit z m).symm)))
 
 private theorem hilbertRow_none (z : ℕ → Bool) (m : ℕ) :
     hilbertRow z m none = pathPrefix z (2 * m) := by
   simp [hilbertRow, hilbertSplit_symm_inr, hilbertSeq,
-    Equiv.natSumPUnitEquivNat, Equiv.natEquivNatSumPUnit]
+    Equiv.natEquivNatSumPUnit]
 
 private theorem hilbertRow_some_hilbertSeq (z : ℕ → Bool) (m k : ℕ) :
     hilbertRow z m (some (hilbertSeq z m k)) = hilbertSeq z m (k + 1) := by
   simp [hilbertRow, hilbertSplit_apply_hilbertSeq, hilbertSplit_symm_inr,
-    Equiv.natSumPUnitEquivNat, Equiv.natEquivNatSumPUnit]
+    Equiv.natEquivNatSumPUnit]
 
 private theorem hilbertRow_some_of_notMem (z : ℕ → Bool) (m : ℕ) {p : Row}
     (hp : p ∉ Set.range (hilbertSeq z m)) :

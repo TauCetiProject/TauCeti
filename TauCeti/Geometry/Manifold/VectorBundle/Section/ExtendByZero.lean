@@ -42,13 +42,13 @@ variable [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V] [T2Space M]
 /-- The image of a compactly supported section's closed support under an open inclusion is
 closed in the ambient Hausdorff manifold. -/
 theorem isClosed_image_tsupport (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     IsClosed (Subtype.val '' s.val.tsupport : Set M) :=
-  ((mem_compactlySupported.mp s.2).image continuous_subtype_val).isClosed
+  ((mem_compactlySupported.mp s.property).image continuous_subtypeVal).isClosed
 
 /-- Extend a compactly supported section over an open subset by zero. -/
 def extendByZero (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) : Cₛ^n⟮I; F, V⟯ where
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) : Cₛ^n⟮I; F, V⟯ where
   toFun x := by
     classical
     exact if hx : x ∈ U then s.val ⟨x, hx⟩ else 0
@@ -57,8 +57,8 @@ def extendByZero (s : compactlySupported I F n
     intro x
     by_cases hx : x ∈ U
     · have hs := (Pullback.contMDiff_iff
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))
-        (contMDiff_subtype_val (U := U))).mp s.1.contMDiff |>.2
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))
+        (contMDiff_subtypeVal (U := U))).mp s.val.contMDiff |>.2
       apply (contMDiffAt_subtype_iff (x := (⟨x, hx⟩ : U))).mp
       exact (hs ⟨x, hx⟩).congr_of_eventuallyEq (Filter.Eventually.of_forall fun y => by
         simp [Pullback.lift])
@@ -76,7 +76,7 @@ def extendByZero (s : compactlySupported I F n
 
 /-- The pointwise formula for extension by zero. -/
 theorem extendByZero_apply (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) (x : M) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) (x : M) :
     dsimp% only [ContinuousMap.coe_mk]
       (extendByZero s x =
         open Classical in if hx : x ∈ U then s.val ⟨x, hx⟩ else 0) := (rfl)
@@ -84,7 +84,7 @@ theorem extendByZero_apply (s : compactlySupported I F n
 /-- Inside the open subset, extension keeps the original fibre value. -/
 @[simp]
 theorem extendByZero_apply_of_mem (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) (x : U) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) (x : U) :
     dsimp% only [ContinuousMap.coe_mk] (extendByZero s x = s.val x) := by
   -- The dependent conditional has pullback fibres, definitionally equal to `V x`.
   erw [extendByZero_apply, dite_eq_left x.property]
@@ -92,7 +92,7 @@ theorem extendByZero_apply_of_mem (s : compactlySupported I F n
 /-- Outside the open subset, extension is zero. -/
 @[simp]
 theorem extendByZero_apply_of_notMem (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) {x : M}
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) {x : M}
     (hx : x ∉ U) : extendByZero s x = 0 := by
   rw [extendByZero_apply]
   simp [hx]
@@ -101,7 +101,7 @@ theorem extendByZero_apply_of_notMem (s : compactlySupported I F n
 Compactness in the open subset ensures that this image is already closed in the ambient base. -/
 @[simp]
 theorem tsupport_extendByZero (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     (extendByZero s).tsupport = Subtype.val '' s.val.tsupport := by
   have hnonzero : {x : M | extendByZero s x ≠ 0} =
       Subtype.val '' {x : U | s.val x ≠ 0} := by
@@ -120,20 +120,20 @@ theorem tsupport_extendByZero (s : compactlySupported I F n
   rw [tsupport_def, hnonzero, tsupport_def]
   apply le_antisymm
   · exact closure_minimal (image_mono subset_closure) hK
-  · exact image_closure_subset_closure_image continuous_subtype_val
+  · exact image_closure_subset_closure_image continuous_subtypeVal
 
 /-- Extension by zero preserves compact support. -/
 theorem extendByZero_mem_compactlySupported (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     extendByZero s ∈ compactlySupported I F n V := by
   rw [mem_compactlySupported, tsupport_extendByZero]
-  exact (mem_compactlySupported.mp s.2).image continuous_subtype_val
+  exact (mem_compactlySupported.mp s.property).image continuous_subtypeVal
 
 /-- Extension by zero preserves the zero section. -/
 @[simp]
 theorem extendByZero_zero :
     extendByZero (0 : compactlySupported I F n
-      ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) = 0 := by
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) = 0 := by
   ext x
   by_cases hx : x ∈ U
   · rw [extendByZero_apply_of_mem _ ⟨x, hx⟩]
@@ -143,7 +143,7 @@ theorem extendByZero_zero :
 /-- Extension by zero preserves addition. -/
 @[simp]
 theorem extendByZero_add (s t : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     extendByZero (s + t) = extendByZero s + extendByZero t := by
   ext x
   by_cases hx : x ∈ U
@@ -156,7 +156,7 @@ theorem extendByZero_add (s t : compactlySupported I F n
 /-- Extension by zero commutes with ground-field scalar multiplication. -/
 @[simp]
 theorem extendByZero_smul (c : 𝕜) (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     extendByZero (c • s) = c • extendByZero s := by
   ext x
   by_cases hx : x ∈ U
@@ -167,7 +167,7 @@ theorem extendByZero_smul (c : 𝕜) (s : compactlySupported I F n
 
 /-- Extension by zero as a linear map on compactly supported native section spaces. -/
 def extendByZeroLinearMap : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V) →ₗ[𝕜]
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) →ₗ[𝕜]
     compactlySupported I F n V where
   toFun s := ⟨extendByZero s, extendByZero_mem_compactlySupported s⟩
   map_add' s t := Subtype.ext (extendByZero_add s t)
@@ -176,14 +176,14 @@ def extendByZeroLinearMap : compactlySupported I F n
 /-- The section underlying the linear extension map is extension by zero. -/
 @[simp]
 theorem extendByZeroLinearMap_apply (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     dsimp% only [ContinuousMap.coe_mk]
       ((extendByZeroLinearMap s).val = extendByZero s) := (rfl)
 
 /-- Restriction of extension by zero is the original section. -/
 @[simp]
 theorem restrict_extendByZero (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     (extendByZero s).restrict U = s.val := by
   ext x
   simp
@@ -198,7 +198,7 @@ theorem extendByZero_injective : Function.Injective
 /-- Equality of extensions by zero is equivalent to equality of the original sections. -/
 @[simp]
 theorem extendByZero_inj (s t : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     extendByZero s = extendByZero t ↔ s = t :=
   extendByZero_injective.eq_iff
 
@@ -213,7 +213,7 @@ omit [T2Space M] in
 when restricted to `U`. Compact support alone would not suffice at the frontier of `U`. -/
 theorem restrict_mem_compactlySupported (s : compactlySupported I F n V)
     (hs : s.val.tsupport ⊆ U) : s.val.restrict U ∈ compactlySupported I F n
-      ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V) := by
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) := by
   rw [mem_compactlySupported, tsupport_restrict]
   exact Topology.IsInducing.subtypeVal.isCompact_preimage'
     (mem_compactlySupported.mp s.property) (fun x hx => ⟨⟨x, hs hx⟩, rfl⟩)
@@ -247,9 +247,9 @@ on the source. This is the module compatibility used to localize test sections. 
 @[simp]
 theorem extendByZero_smul_function (f : C^n⟮I, M; 𝕜⟯)
     (s : compactlySupported I F n
-      ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+      ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)) :
     extendByZero
-      ⟨f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.1,
+      ⟨f.comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯) • s.val,
         smul_function_mem_compactlySupported _ s.property⟩ = f • extendByZero s := by
   ext x
   by_cases hx : x ∈ U

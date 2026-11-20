@@ -122,8 +122,8 @@ theorem exists_inter_deformation_trans (hBA : B ⊆ A) (hSB : A ∩ S ⊆ B)
   obtain ⟨H⟩ := comp_retractions (e₁ ▸ ⟨H₁.symm⟩) (by rw [e₂]; exact ⟨H₂.symm⟩) hr₁
   have e : range ((ContinuousMap.inclusion hBA).comp
       (ContinuousMap.inclusion (inter_subset_left : B ∩ S ⊆ B))) = {x : A | (x : X) ∈ S} :=
-    Set.ext fun x ↦ ⟨by rintro ⟨y, rfl⟩; exact y.property.2, fun hx ↦ ⟨⟨x, hSB ⟨x.property, hx⟩,
-        hx⟩, rfl⟩⟩
+    Set.ext fun x ↦
+        ⟨by rintro ⟨y, rfl⟩; exact y.property.2, fun hx ↦ ⟨⟨x, hSB ⟨x.property, hx⟩, hx⟩, rfl⟩⟩
   rw [e] at H
   -- The retraction fixes `A ∩ S`, since the homotopy does.
   exact ⟨(ContinuousMap.inclusion (inter_subset_inter_left S hBA)).comp (r₂.comp r₁),
@@ -312,7 +312,7 @@ theorem exists_deformation_of_preimage (hj : IsOpenEmbedding j) {S T V : Set X} 
   have hkS {x : S} (hx : x ∉ range k) : (x : X) ∈ V :=
     hSV ⟨x.property, fun ⟨y, hy⟩ ↦ hx ⟨⟨y, by simp [hy, x.property]⟩, Subtype.ext hy⟩⟩
   obtain ⟨G, hGk, hG⟩ := (S.restrictPreimage_isOpenEmbedding hj).exists_continuousMap_extend_id
-    (hV.preimage continuous_subtype_val) (fun _ ↦ hkS) H.toContinuousMap
+    (hV.preimage continuous_subtypeVal) (fun _ ↦ hkS) H.toContinuousMap
     fun t y hy ↦ H.eq_snd t (hVT ⟨y.property, hy⟩)
   -- The extended deformation fixes every point of `T` and starts inside `T`.
   have hGT (t : I) (x : S) (hx : (x : X) ∈ T) : G (t, x) = x := by

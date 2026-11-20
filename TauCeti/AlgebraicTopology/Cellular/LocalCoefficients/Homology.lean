@@ -555,7 +555,7 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
   obtain ⟨K, hK, hc⟩ :=
     LocalCoefficientSystem.exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
   obtain ⟨d, hd⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
-    (hK.image continuous_subtype_val) (by rintro _ ⟨x, -, rfl⟩; exact x.2)
+    (hK.image continuous_subtypeVal) (by rintro _ ⟨x, -, rfl⟩; exact x.property)
   set m := n + d
   let ι : skeletonObj C (m + 1) ⟶ TopCat.of C :=
     TopCat.ofHom (ContinuousMap.inclusion (skeletonLT C ((m + 1 : ℕ) : ℕ∞)).subset_complex)

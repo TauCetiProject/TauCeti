@@ -457,11 +457,11 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
     letI := periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
     letI := torusFamilyChartedSpace (H := HY) (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
+      (fun l ↦ (hP l).continuous.comp continuous_subtypeVal) (fun z ↦ hinj z.val)
     letI := continuousConstVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val)
+      (fun l ↦ (hP l).continuous.comp continuous_subtypeVal)
     haveI := properlyDiscontinuousVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
+      (fun l ↦ (hP l).continuous.comp continuous_subtypeVal) (fun z ↦ hinj z.val)
     haveI : T2Space (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
       t2Space_of_properlyDiscontinuousVAdd_of_t2Space
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
@@ -482,7 +482,7 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
       properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
     letI := continuousConstSMul_torusFamilyBaseChangeAffineMulAction
       R hone hmul P (fun l ↦ (hP l).continuous) ρ hequiv b hb hbmul
-      (MonoidHom.id Γ) (f := (Subtype.val : freeLocus Γ Y → Y)) continuous_subtype_val
+      (MonoidHom.id Γ) (f := (Subtype.val : freeLocus Γ Y → Y)) continuous_subtypeVal
       (fun _ _ ↦ rfl) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI : IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
       isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
@@ -491,7 +491,7 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
         (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E))) := by
   let f : freeLocus Γ Y → Y := Subtype.val
   -- `freeLocus.instChartedSpace` is the open-subset charted space on `(freeLocus Γ Y : Set Y)`.
-  have hf_diff : ContMDiff I I n f := contMDiff_subtype_val (U := ⟨_, isOpen_freeLocus Γ Y⟩)
+  have hf_diff : ContMDiff I I n f := contMDiff_subtypeVal (U := ⟨_, isOpen_freeLocus Γ Y⟩)
   let : ∀ z : freeLocus Γ Y, DiscreteTopology (LinearMap.range ((P ∘ f) z)) :=
     fun z ↦ inferInstanceAs (DiscreteTopology (LinearMap.range (P z.val)))
   let : ∀ z : freeLocus Γ Y, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) :=
@@ -553,13 +553,13 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
     letI := periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
     letI := torusFamilyChartedSpace (H := HY) (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
+      (fun l ↦ (hP l).continuous.comp continuous_subtypeVal) (fun z ↦ hinj z.val)
     letI := continuousConstVAdd_periodAddAction P (fun l ↦ (hP l).continuous)
     letI := continuousConstVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val)
+      (fun l ↦ (hP l).continuous.comp continuous_subtypeVal)
     haveI := properlyDiscontinuousVAdd_periodAddAction P (fun l ↦ (hP l).continuous) hinj
     haveI := properlyDiscontinuousVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
+      (fun l ↦ (hP l).continuous.comp continuous_subtypeVal) (fun z ↦ hinj z.val)
     haveI : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
       t2Space_of_properlyDiscontinuousVAdd_of_t2Space
     haveI : T2Space (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
@@ -589,7 +589,7 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI := continuousConstSMul_torusFamilyBaseChangeAffineMulAction
       R hone hmul P (fun l ↦ (hP l).continuous) ρ hequiv b hb hbmul
-      (MonoidHom.id Γ) (f := (Subtype.val : freeLocus Γ Y → Y)) continuous_subtype_val
+      (MonoidHom.id Γ) (f := (Subtype.val : freeLocus Γ Y → Y)) continuous_subtypeVal
       (fun _ _ ↦ rfl) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI := hfreeY
     letI : IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
@@ -600,7 +600,7 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
           (MonoidHom.id Γ) (Subtype.val : freeLocus Γ Y → Y) fun _ _ ↦ rfl)) :=
   contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom P hinj hP R hone hmul ρ hequiv
     b hb hbmul hR hbc (MonoidHom.id Γ) (Subtype.val : freeLocus Γ Y → Y)
-    (contMDiff_subtype_val (U := ⟨_, isOpen_freeLocus Γ Y⟩) :
+    (contMDiff_subtypeVal (U := ⟨_, isOpen_freeLocus Γ Y⟩) :
       ContMDiff I I n (Subtype.val : freeLocus Γ Y → Y))
     (fun _ _ ↦ rfl) hfreeY
     (isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _) hm

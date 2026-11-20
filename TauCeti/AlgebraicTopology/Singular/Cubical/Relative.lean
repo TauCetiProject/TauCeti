@@ -99,7 +99,7 @@ theorem map_mem_supportedIn {Y : Type*} [TopologicalSpace Y] {A : Set X} {B : Se
   obtain ⟨h, rfl⟩ := hg
   -- `f` restricted to `A`, with values in `B`.
   let f' : C(A, B) :=
-    ⟨fun a ↦ ⟨f a, hf a.2⟩, (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ⟨fun a ↦ ⟨f a, hf a.property⟩, (f.continuous.comp continuous_subtypeVal).subtype_mk _⟩
   have hres : (ContinuousMap.subtypeVal B).comp f' = f.comp (ContinuousMap.subtypeVal A) :=
     ContinuousMap.ext fun _ ↦ rfl
   refine ⟨map R f' n h, ?_⟩

@@ -210,7 +210,7 @@ private theorem isOpen_idealOfDefinition_map_pow (P : PairOfDefinition A) (B : S
     ((P.idealOfDefinition.map (Subring.inclusion hle) ^ n).toAddSubgroup) <| by
     rw [Submodule.coe_toAddSubgroup]
     have hnhd : Subtype.val ⁻¹' (P.idealImage n : Set A) ∈ 𝓝 (0 : B) :=
-      continuous_subtype_val.continuousAt.preimage_mem_nhds <|
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds <|
         (P.isOpen_idealImage n).mem_nhds (P.idealImage n).zero_mem
     refine mem_of_superset hnhd ?_
     rintro ⟨x, hxB⟩ hx
@@ -582,7 +582,7 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq (B : Subring A)
   · -- `Jⁿ` contains the trace of the open set `I ^ ((k₀ + 1) * (n + 1))`, hence is open.
     refine AddSubgroup.isOpen_of_mem_nhds (g := 0) (Ideal.span S ^ n).toAddSubgroup ?_
     rw [Submodule.coe_toAddSubgroup]
-    refine mem_of_superset (continuous_subtype_val.continuousAt.preimage_mem_nhds
+    refine mem_of_superset (continuous_subtypeVal.continuousAt.preimage_mem_nhds
       ((P.isOpen_idealImage ((k₀ + 1) * (n + 1))).mem_nhds (P.idealImage _).zero_mem)) ?_
     intro y hy
     obtain ⟨v, hv, hveq⟩ := P.idealImage_subset_image_span_pow hk hspan hSmem n hy
@@ -604,7 +604,7 @@ theorem isBounded_of_isAdic {B : Subring A} (hopen : IsOpen (B : Set A)) {J : Id
   rw [isBounded_iff]
   intro U hU
   obtain ⟨n, hn⟩ := (isAdic_iff.mp hJ).2 _
-    (continuous_subtype_val.continuousAt.preimage_mem_nhds hU)
+    (continuous_subtypeVal.continuousAt.preimage_mem_nhds hU)
   refine ⟨Subtype.val '' ((J ^ n : Ideal B) : Set B),
     (hopen.isOpenEmbedding_subtypeVal.isOpenMap _ ((isAdic_iff.mp hJ).1 n)).mem_nhds
       ⟨0, (J ^ n).zero_mem, rfl⟩, ?_⟩

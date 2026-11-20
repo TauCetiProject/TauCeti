@@ -82,7 +82,7 @@ theorem map_comp {Z : Type*} [TopologicalSpace Z] {z : Z} (g : C(Y, Z)) (hg : g 
 /-- The map induced on based mapping spaces by a based map is continuous. -/
 theorem continuous_map (g : C(X, Y)) (hg : g x = y) :
     Continuous (map (B := B) (b₀ := b₀) g hg) :=
-  continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtype_val)
+  continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp g).comp continuous_subtypeVal)
 
 end Map
 
@@ -146,10 +146,10 @@ a topological embedding of the based mapping space in the generalized loops. -/
 theorem isEmbedding_precompGenLoop : IsEmbedding (precompGenLoop (X := X) (x := x) q b₀ hb) := by
   have hcont : Continuous (precompGenLoop (X := X) (x := x) q b₀ hb) :=
     continuous_induced_rng.2
-      ((ContinuousMap.continuous_precomp q).comp continuous_subtype_val)
+      ((ContinuousMap.continuous_precomp q).comp continuous_subtypeVal)
   refine ⟨?_, fun f g h => Subtype.ext ((ContinuousMap.cancel_right hq).1
     (congrArg Subtype.val h))⟩
-  exact IsInducing.of_comp hcont continuous_subtype_val
+  exact IsInducing.of_comp hcont continuous_subtypeVal
     ((ContinuousMap.isInducing_precomp_of_surjective q q.continuous.isProperMap hq).comp ⟨rfl⟩)
 
 variable (hb' : ∀ z, q z = b₀ → z ∈ Cube.boundary N)

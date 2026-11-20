@@ -56,7 +56,7 @@ instance zeroSkeletonDiscreteTopology :
         simpa [E, skeletonLT_I] using j.property
       rw [closedCell_zero_eq_singleton]
       exact ((Set.finite_singleton _).subset Set.inter_subset_right).isClosed
-  exact Subtype.val_injective.preimage_image A ▸ hc.preimage continuous_subtype_val
+  exact Subtype.val_injective.preimage_image A ▸ hc.preimage continuous_subtypeVal
 
 /-- The stage before the zero-skeleton is empty for an absolute CW complex. -/
 instance zeroSkeletonPreviousIsEmpty : IsEmpty (↑(skeletonLT C ((0 : ℕ) : ℕ∞))) :=

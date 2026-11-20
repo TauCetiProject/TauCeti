@@ -105,9 +105,9 @@ noncomputable def spaTrivialHomeomorph (Aplus : Subring A) :
     obtain ⟨p, hp⟩ := x.property
     exact Subtype.ext (Subtype.ext (by simp only [← hp, suppFun_trivialSection]))
   continuous_toFun :=
-    ((continuous_trivialSection.comp continuous_subtype_val).subtype_mk _).subtype_mk _
+    ((continuous_trivialSection.comp continuous_subtypeVal).subtype_mk _).subtype_mk _
   continuous_invFun :=
-    (continuous_suppFun.comp (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _
+    (continuous_suppFun.comp (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _
 
 /-- `spaTrivialHomeomorph` sends an open prime to its trivial valuation. -/
 @[simp]
@@ -141,7 +141,7 @@ theorem isProConstructible_spaTrivial (Aplus : Subring A) :
     exact forall_congr' fun a ↦ or_congr_right and_comm
   rw [heq]
   refine IsProConstructible.iInter fun a ↦ IsProConstructible.union ?_ ?_
-  · exact ((isOpen_basicOpen a a).preimage continuous_subtype_val).isClosed_compl.isProConstructible
+  · exact ((isOpen_basicOpen a a).preimage continuous_subtypeVal).isClosed_compl.isProConstructible
   · have hmem := val_preimage_laurentPiece_mem_spaRationalFamily Aplus (fun _ : Bool ↦ a) {true}
     exact (isCompact_of_mem_spaRationalFamily hmem).isProConstructible
       ((isTopologicalBasis_spaRationalFamily Aplus).isOpen hmem)

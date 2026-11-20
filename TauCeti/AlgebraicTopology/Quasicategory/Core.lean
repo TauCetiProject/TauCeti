@@ -267,7 +267,7 @@ lemma mem_core_obj_zero (x : X _⦋0⦌) : x ∈ X.core.obj (op ⦋0⦌) :=
 /-- An edge lies in the core exactly when it is an equivalence. -/
 @[simp]
 lemma Edge.edge_mem_core_iff {x₀ x₁ : X _⦋0⦌} (e : Edge x₀ x₁) :
-    e.edge ∈ X.core.obj (op ⦋1⦌) ↔ e.IsEquivalence := by
+    e.edge ∈ X.core.obj (Opposite.op ⦋1⦌) ↔ e.IsEquivalence := by
   refine ⟨fun h ↦ (isEquivalence_iff_of_edge_eq (by simp)).1 (h (𝟙 _)), fun h f ↦ ?_⟩
   obtain ⟨a, rfl⟩ | rfl := SimplexCategory.eq_of_one_to_one f
   · exact isEquivalence_mk'_map_of_eq _ _ rfl

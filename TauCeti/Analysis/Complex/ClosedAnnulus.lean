@@ -81,8 +81,8 @@ noncomputable def closedAnnulusHomeomorph (h₀ : 0 < r₁) :
     · simp [abs_of_pos ht]
   continuous_toFun := by
     refine .prodMk (Circle.homeomorphSphere.symm.continuous.comp (continuous_fst.comp
-      ((homeomorphUnitSphereProd ℂ).continuous.comp (continuous_subtype_val.subtype_mk _))))
-      (continuous_subtype_val.norm.subtype_mk _)
+      ((homeomorphUnitSphereProd ℂ).continuous.comp (continuous_subtypeVal.subtype_mk _))))
+      (continuous_subtypeVal.norm.subtype_mk _)
   continuous_invFun := by
     refine Continuous.subtype_mk ?_ _
     fun_prop

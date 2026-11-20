@@ -129,7 +129,7 @@ private theorem two_mul_two_pow_mul_two_pow_mul_exp_lt [Fintype κ] [Nonempty κ
   have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
   have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
     calc (2 : ℝ) ^ k ≤ exp 1 ^ k := pow_le_pow_left₀ (by norm_num) h2 k
-      _ = exp k := by rw [← exp_nat_mul, mul_one]
+      _ = exp k := by rw [← exp_natCast_mul, mul_one]
   have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ - 1) := by
     linarith [add_one_le_exp ((Fintype.card κ : ℝ) - 1)]
   have hexp : -2 * (ε ^ 3 * #s * #t) ^ 2 / ((#s * #t : ℕ) : ℝ) = -2 * (ε ^ 6 * #s) * #t := by
@@ -261,7 +261,7 @@ private theorem two_mul_rect_add_one_mul_exp_lt [Fintype κ] [Nonempty κ] {η :
   have h2 : (2 : ℝ) ≤ exp 1 := by linarith [add_one_le_exp (1 : ℝ)]
   have hpow (k : ℕ) : (2 : ℝ) ^ k ≤ exp k :=
     calc (2 : ℝ) ^ k ≤ exp 1 ^ k := pow_le_pow_left₀ (by norm_num) h2 k
-      _ = exp k := by rw [← exp_nat_mul, mul_one]
+      _ = exp k := by rw [← exp_natCast_mul, mul_one]
   have hrect : (2 * (2 ^ #s * 2 ^ #t + 1 : ℕ) : ℝ) ≤ exp 2 * exp #s * exp #t := by
     have h1 : (1 : ℝ) ≤ (2 : ℝ) ^ #s * (2 : ℝ) ^ #t :=
       one_le_mul_of_one_le_of_one_le (one_le_pow₀ (by norm_num)) (one_le_pow₀ (by norm_num))

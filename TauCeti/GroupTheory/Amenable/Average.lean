@@ -200,7 +200,7 @@ theorem Amenable.of_isFoelner [MeasurableSpace G] {ι : Type*}
     ((MeasureTheory.Measure.count_apply_lt_top' i.property.1).1
       (lt_top_iff_ne_top.2 i.property.2.2)).toFinset, by simp⟩
   have hne (i : s) : (F' i).Nonempty := by
-    simpa [← coe_nonempty, hF', Set.nonempty_iff_ne_empty] using i.2.2.1
+    simpa [← coe_nonempty, hF', ← Set.ne_empty_iff_nonempty] using i.property.2.1
   refine .of_tendsto_card_smul_symmDiff_div_card (l := comap (↑) l) (Eventually.of_forall hne)
     fun g => ?_
   have hF's : IsFoelner G MeasureTheory.Measure.count (comap ((↑) : s → ι) l)

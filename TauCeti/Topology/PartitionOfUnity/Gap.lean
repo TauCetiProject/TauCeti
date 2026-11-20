@@ -168,7 +168,7 @@ positive, and they strictly exceed every weight outside it. -/
 theorem gap_pos_iff {E : Finset ι} {x : X} :
     0 < ρ.gap E x ↔ E.Nonempty ∧ (∀ i ∈ E, 0 < ρ i x) ∧ ∀ i ∈ E, ∀ j ∉ E, ρ j x < ρ i x := by
   classical
-  refine ⟨fun h ↦ ⟨Finset.nonempty_iff_ne_empty.2 ?_, fun i hi ↦ pos_of_gap_pos h hi,
+  refine ⟨fun h ↦ ⟨Finset.ne_empty_iff_nonempty.1 ?_, fun i hi ↦ pos_of_gap_pos h hi,
     fun i hi j hj ↦ lt_of_gap_pos h hi hj⟩, fun ⟨hne, hpos, hlt⟩ ↦ ?_⟩
   · rintro rfl
     exact h.ne' (gap_empty x)

@@ -47,7 +47,7 @@ def diskRadialPush (n : ℕ) (hr : 0 ≤ r) : C(I × TopCat.disk.{u} n, TopCat.d
   toFun p := ULift.up ⟨radialPush r p.1 p.2.down.val, mem_closedBall_zero_iff.2 <|
     norm_radialPush_le_one p.1 (mem_closedBall_zero_iff.1 p.2.down.property)⟩
   continuous_toFun := continuous_uliftUp.comp <| ((continuous_radialPush hr).comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp
+    (continuous_fst.prodMk (continuous_subtypeVal.comp
       (continuous_uliftDown.comp continuous_snd)))).subtype_mk _
 
 @[simp]

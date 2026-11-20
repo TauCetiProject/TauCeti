@@ -208,7 +208,7 @@ theorem continuous_tangentRepresentation (IG : ModelWithCorners 𝕜 F HG) [IsMa
     funext fun g ↦ (Manifold.inTangentCoordinates_eq_self_of_eq (x₀ := (g₀ : G)) (x := g) _ _ _
       rfl (g.property.trans g₀.property.symm)).trans (tangentRepresentation_apply hd g).symm
   rw [← hcomp]
-  exact h.comp continuous_subtype_val.continuousAt
+  exact h.comp continuous_subtypeVal.continuousAt
 
 end Continuity
 

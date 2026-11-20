@@ -325,7 +325,7 @@ private theorem dgCast_boundary_term (f : Coherences R obj) (hf : IsConstInit f 
   · rw [ite_eq_right hmin]
     have hne : {s ∈ S.map Fin.castSuccEmb | s < t.castSucc}.Nonempty := by
       rw [hlt]
-      exact (nonempty_iff_ne_empty.2 hmin).map
+      exact (ne_empty_iff_nonempty.1 hmin).map
     rw [hf.1 _ _ _ _ _ _ _ (Fin.castSucc_ne_last t) hne, zero_dgComp, smul_zero, map_zero]
 
 /-- For coherences whose restriction to the first `n + 1` vertices is that of a constant simplex,
@@ -423,9 +423,9 @@ private theorem boundary_eq_zero_of_ne_last {f : Coherences R obj} (hf : IsConst
       ((heq_of_eq (Coherences.congr f hgt)).trans
         (hf.2 _ _ _ _ (empty_subset _) (by simp [hgt]) hj))
     rw [hcard, one_smul, eq_of_heq (ha.trans hb.symm), sub_self, smul_zero]
-  · rw [hf.1 _ _ _ _ _ _ _ hj (nonempty_iff_ne_empty.2 hS₁)]
+  · rw [hf.1 _ _ _ _ _ _ _ hj (ne_empty_iff_nonempty.1 hS₁)]
     rw [hunion] at hS₁
-    obtain ⟨s, hs⟩ := nonempty_iff_ne_empty.2 hS₁
+    obtain ⟨s, hs⟩ := ne_empty_iff_nonempty.1 hS₁
     rcases mem_union.1 hs with hs | hs
     · rw [hf.1 _ _ _ _ _ _ _ htj ⟨s, hs⟩, zero_dgComp, smul_zero, sub_zero, smul_zero]
     · rw [hf.1 _ _ _ _ _ _ _ hj ⟨s, hs⟩, dgComp_zero, smul_zero, sub_zero, smul_zero]
@@ -651,7 +651,7 @@ private noncomputable def ofChainMap (g : (dgHomComplex R X Y).SimplexChainMap n
         exact dgDifferential_eq_zero_of_heq_dgId
           (psiObj_of_ne ((hij.trans_lt (lt_of_le_of_ne (Fin.le_last j) hj)).ne))
           (psiObj_of_ne hj) (by simpa using hd) (psiCoh_of_ne_last_empty_heq g _ _ _ hj)
-      · rw [psiCoh_of_ne_last_of_nonempty g hij hS hd hj (nonempty_iff_ne_empty.2 hS₀), map_zero,
+      · rw [psiCoh_of_ne_last_of_nonempty g hij hS hd hj (ne_empty_iff_nonempty.1 hS₀), map_zero,
           boundary_eq_zero_of_ne_last psiObj_castSucc (isConstInit_psiCoh g) hij hS hd hj]
 
 private theorem ofChainMap_coh (g : (dgHomComplex R X Y).SimplexChainMap n) :
@@ -688,8 +688,8 @@ private theorem ofChainMap_toChainMap (σ : Simplex R C (n + 1))
     · subst hS₀
       exact (psiCoh_of_ne_last_empty_heq _ hij hS hd hj).trans (hσ.2 _ _ _ _ _ _ hj).symm
     · rw [ofChainMap_coh,
-        psiCoh_of_ne_last_of_nonempty _ hij hS hd hj (nonempty_iff_ne_empty.2 hS₀),
-        hσ.1 _ _ _ _ _ _ _ hj (nonempty_iff_ne_empty.2 hS₀)]
+        psiCoh_of_ne_last_of_nonempty _ hij hS hd hj (ne_empty_iff_nonempty.1 hS₀),
+        hσ.1 _ _ _ _ _ _ _ hj (ne_empty_iff_nonempty.1 hS₀)]
       exact zero_heq_zero (hobj i) (hobj j)
 
 /-- Pulling back along a simplicial operator of the right mapping space, which acts on the first

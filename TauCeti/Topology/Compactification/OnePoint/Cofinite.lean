@@ -46,7 +46,7 @@ theorem discreteTopology_diff_singleton
   refine discreteTopology_iff_isOpen_singleton.mpr fun x ↦ ?_
   obtain ⟨U, V, hU, hV, haU, hxV, hUV⟩ := t2_separation (Ne.symm x.property.2)
   -- Only finitely many points of `s` lie outside `U`, and `V` is disjoint from `U`.
-  exact isOpen_singleton_of_finite_mem_nhds x ((hV.preimage continuous_subtype_val).mem_nhds hxV)
+  exact isOpen_singleton_of_finite_mem_nhds x ((hV.preimage continuous_subtypeVal).mem_nhds hxV)
     (((eventually_cofinite.mp (h (hU.mem_nhds haU))).preimage
       (inclusion_injective sdiff_subset).injOn).subset fun _ hy hyU ↦ disjoint_left.mp hUV hyU hy)
 

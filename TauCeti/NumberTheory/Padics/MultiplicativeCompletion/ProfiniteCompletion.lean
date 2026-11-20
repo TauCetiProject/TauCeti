@@ -76,7 +76,7 @@ private theorem mem_proPKernel_of_profiniteCompletionToPadicCompletionUnits_eq_o
       e ((profiniteCompletionToPadicCompletionUnits p L d).val m) := by
     refine congrFun <| (ProfiniteGrp.ProfiniteCompletion.denseRange (G := GrpCat.of Lˣ)).equalizer
       QuotientGroup.continuous_mk (continuous_of_discreteTopology.comp <|
-        (continuous_apply m).comp <| continuous_subtype_val.comp
+        (continuous_apply m).comp <| continuous_subtypeVal.comp
           (profiniteCompletionToPadicCompletionUnits p L).continuous) (funext fun a ↦ ?_)
     simp only [Function.comp_apply, profiniteCompletionToPadicCompletionUnits_etaFn,
       padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply, e, QuotientGroup.map_mk]

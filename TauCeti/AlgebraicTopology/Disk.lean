@@ -285,8 +285,8 @@ def diskContraction (n : ℕ) :
         (unitInterval.symm p.1).property⟩ :
       ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
   continuous_toFun := continuous_uliftUp.comp <| Continuous.subtype_mk
-    ((continuous_subtype_val.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
-      (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))) _
+    ((continuous_subtypeVal.comp (unitInterval.continuous_symm.comp continuous_fst)).smul
+      (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd))) _
   map_zero_left _ := ULift.ext (Subtype.ext (by simp))
   map_one_left _ := ULift.ext (Subtype.ext (by simp))
 
@@ -395,7 +395,7 @@ def cubeBoundaryPairHom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
     cubeBoundaryPair.{u} m ⟶ P :=
   TopPair.ofHom (TopCat.ofHom (c.comp ⟨ULift.down, continuous_uliftDown⟩))
     (TopCat.ofHom (P.liftSnd ((c.comp ⟨ULift.down, continuous_uliftDown⟩).comp
-      ⟨Subtype.val, continuous_subtype_val⟩) fun z ↦ hc z.2))
+      ⟨Subtype.val, continuous_subtypeVal⟩) fun z ↦ hc z.property))
     (by ext z; exact TopPair.map_liftSnd _ _ z)
 
 @[simp]

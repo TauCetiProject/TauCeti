@@ -204,7 +204,7 @@ theorem not_isClosed_timeForm : ¬ timeForm.IsClosed := by
 
 private theorem contMDiff_normalizedTime {n : ℕ∞ω} :
     ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) n fun z : PositivePeriod × ℝ ↦ z.2 / (z.1 : ℝ) :=
-  contMDiff_snd.div₀ (contMDiff_subtype_val.comp contMDiff_fst) fun z ↦ z.1.property.ne'
+  contMDiff_snd.div₀ (contMDiff_subtypeVal.comp contMDiff_fst) fun z ↦ z.1.property.ne'
 
 /-- On the real cover `Q(p, t) = (p, [t]_p)`, the angle form is the differential of the
 normalized time `t / p`. -/
@@ -239,7 +239,7 @@ private theorem mextDeriv_ofFunction_snd_eq_mul (z : PositivePeriod × ℝ) :
     simp [mul_div_cancel₀ _ z.1.property.ne']
   rw [← ht]
   exact mextDeriv_ofFunction_mul
-    ((contMDiff_subtype_val.comp contMDiff_fst (n := ∞)).mdifferentiable (by simp) z)
+    ((contMDiff_subtypeVal.comp contMDiff_fst (n := ∞)).mdifferentiable (by simp) z)
     (contMDiff_normalizedTime (n := ∞).mdifferentiable (by simp) z)
 
 /-- On the real cover `Q(p, t) = (p, [t]_p)`, the time form is `dt - (t / p) • dp`. -/
@@ -274,7 +274,7 @@ theorem mpullback_deck_mpullback_representative {F : Type*} [NormedAddCommGroup 
   have hdeck : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) ∞
       fun z : PositivePeriod × ℝ ↦ (z.1, z.2 + k * (z.1 : ℝ)) :=
     contMDiff_fst.prodMk
-      (contMDiff_snd.add (contMDiff_const.mul (contMDiff_subtype_val.comp contMDiff_fst)))
+      (contMDiff_snd.add (contMDiff_const.mul (contMDiff_subtypeVal.comp contMDiff_fst)))
   have hcomp : representative ∘ (fun z : PositivePeriod × ℝ ↦ (z.1, z.2 + k * (z.1 : ℝ))) =
       representative :=
     funext fun z ↦ representative_add_intCast_mul z.1 z.2 k

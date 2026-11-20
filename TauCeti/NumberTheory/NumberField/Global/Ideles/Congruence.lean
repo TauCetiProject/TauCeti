@@ -434,7 +434,7 @@ theorem isOpen_ideleCongruenceSubgroup (𝔪 : Modulus K) :
       have hinv := FiniteAdeleRing.mem_integralAdeles.mp hy1 v
       rw [mem_adicCompletionIntegers, ← HeightOneSpectrum.coe_ideleFiniteCoord, map_inv,
         Units.val_inv_eq_inv_val, map_inv₀] at hinv
-      exact (inv_le_one₀ (zero_lt_iff.mpr hne)).mp hinv
+      exact (inv_le_one₀ (pos_iff_ne_zero.mpr hne)).mp hinv
     · rw [HeightOneSpectrum.coe_ideleFiniteCoord]
       exact hx2 v ((Modulus.mem_support_iff 𝔪 v).mpr hv)
     · rw [InfinitePlace.coe_ideleInfiniteCoord]

@@ -87,16 +87,16 @@ private theorem isEvenlyCovered_of_trivialization (hq : Continuous q) (hg : Cont
         dsimp only
         rw [tp.apply_symm_apply' (hVsub hw.1).1]
       continuous_toFun := by
-        refine Continuous.prodMk (Continuous.subtype_mk (hg.comp continuous_subtype_val) _)
+        refine Continuous.prodMk (Continuous.subtype_mk (hg.comp continuous_subtypeVal) _)
           (Continuous.subtype_mk ?_ _)
         refine continuous_snd.comp_continuousOn tp.continuousOn_toFun
-          |>.comp_continuous continuous_subtype_val fun e => ?_
+          |>.comp_continuous continuous_subtypeVal fun e => ?_
         exact tp.mem_source.mpr (hVsub ((hgW e.val).mp e.property).1).1
       continuous_invFun := by
         refine Continuous.subtype_mk ?_ _
         refine tp.toOpenPartialHomeomorph.continuousOn_symm.comp_continuous ?_ fun wi => ?_
-        · exact ((hq.comp continuous_subtype_val).comp continuous_fst).prodMk
-            (continuous_subtype_val.comp continuous_snd)
+        · exact ((hq.comp continuous_subtypeVal).comp continuous_fst).prodMk
+            (continuous_subtypeVal.comp continuous_snd)
         · exact tp.mem_target.mpr (hVsub wi.1.property.1).1 },
     fun _ => rfl⟩
 

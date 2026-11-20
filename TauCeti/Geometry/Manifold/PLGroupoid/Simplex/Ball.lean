@@ -193,17 +193,17 @@ def coordinateSimplexHalfSpaceChart (v : Option (Option ι)) :
     exact Subtype.ext ((coordinateSimplexHalfSpaceMap v).apply_symm_apply q.val)
   open_source := isOpen_lt
     (continuous_finsetSum _ fun i _ => (continuous_apply i).comp
-      ((coordinateSimplexChartSwap v).continuous.comp continuous_subtype_val)) continuous_const
+      ((coordinateSimplexChartSwap v).continuous.comp continuous_subtypeVal)) continuous_const
   open_target := isOpen_lt
     (continuous_finsetSum _ fun i _ => (continuous_apply i).comp
-      ((coordinateSimplexHalfSpaceMap none).symm.continuous.comp continuous_subtype_val))
+      ((coordinateSimplexHalfSpaceMap none).symm.continuous.comp continuous_subtypeVal))
     continuous_const
   continuousOn_toFun :=
-    ((coordinateSimplexHalfSpaceMap v).continuous.comp continuous_subtype_val).subtype_mk _
+    ((coordinateSimplexHalfSpaceMap v).continuous.comp continuous_subtypeVal).subtype_mk _
       |>.continuousOn
   continuousOn_invFun := by
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
-    refine ((coordinateSimplexHalfSpaceMap v).symm.continuous.comp continuous_subtype_val)
+    refine ((coordinateSimplexHalfSpaceMap v).symm.continuous.comp continuous_subtypeVal)
       |>.continuousOn.congr ?_
     intro q hq
     simp only [Function.comp_apply]

@@ -103,7 +103,7 @@ private theorem borelSpace_of_edist_eq {Y : Type*} [PseudoMetricSpace Y] [Separa
       have hlsc : LowerSemicontinuous fun s : S ↦
           wassersteinEDist p ((s : ProbabilityMeasure X) : Measure X) (toPM ν : Measure X) :=
         (lowerSemicontinuous_wassersteinEDist p).comp
-          (continuous_subtype_val.prodMk continuous_const)
+          (continuous_subtypeVal.prodMk continuous_const)
       have : Metric.eball ν r = e ⁻¹' {s | wassersteinEDist p
           ((s : ProbabilityMeasure X) : Measure X) (toPM ν : Measure X) < r} := by
         ext μ

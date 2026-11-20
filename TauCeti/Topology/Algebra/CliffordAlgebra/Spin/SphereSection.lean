@@ -83,7 +83,7 @@ theorem mem_realCliffordSpinLastUnitNeighborhood {n : ℕ}
 theorem isOpen_realCliffordSpinLastUnitNeighborhood (n : ℕ) :
     IsOpen (realCliffordSpinLastUnitNeighborhood n) := by
   rw [realCliffordSpinLastUnitNeighborhood]
-  exact isOpen_compl_singleton.preimage continuous_subtype_val
+  exact isOpen_compl_singleton.preimage continuous_subtypeVal
 
 private theorem last_sub_neg_ne_zero {n : ℕ} {x : Fin (n + 1) → ℝ}
     (hx : x ≠ -(lastUnitVector n)) :

@@ -325,7 +325,7 @@ private theorem toSSetObjEquiv_simplex₁_fullSimplexEquivStdSimplex_apply {γ :
 `TauCeti.TopCat.simplex₁`. -/
 def ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) : SmoothSimplex I M 1 :=
   ⟨TauCeti.TopCat.simplex₁ (X := TopCat.of M)
-      ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtype_val⟩,
+      ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtypeVal⟩,
     mem_smoothSingularSubcomplex_of_contMDiffOn _ (g := fun y ↦ γ (y 0))
       (hγ.comp (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff).contMDiffOn
       Filter.univ_mem
@@ -335,7 +335,7 @@ def ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) : SmoothS
 @[simp]
 theorem coe_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) :
     (ofCurve hγ).val = TauCeti.TopCat.simplex₁ (X := TopCat.of M)
-      ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtype_val⟩ :=
+      ⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtypeVal⟩ :=
   (rfl)
 
 /-- Read on `Δ¹`, the smooth `1`-simplex of `γ` evaluates `γ` at the unique coordinate. -/
@@ -450,7 +450,7 @@ theorem smoothSingularSubcomplex_preimage_inclusion {U V : TopologicalSpace.Open
     TopCat.toSSetObjEquiv_toSSet_map_app, ConcreteCategory.hom_ofHom, ContinuousMap.coe_comp,
     ContinuousMap.coe_mk] at hσ
   rw [mem_smoothSingularSubcomplex_iff, ← ContMDiffOnSubset.subtypeVal_comp_iff]
-  convert contMDiff_subtype_val.comp_contMDiffOnSubset hσ using 1
+  convert contMDiff_subtypeVal.comp_contMDiffOnSubset hσ using 1
   ext x
   simp
 

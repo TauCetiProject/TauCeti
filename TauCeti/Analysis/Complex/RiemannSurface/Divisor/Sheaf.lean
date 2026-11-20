@@ -329,7 +329,7 @@ theorem eq_of_eventuallyEq_codiscrete {U : Opens X} {f g : U → ℂ}
       hf₁.apply_eq_zero hD, hg₁.apply_eq_zero hD]
   · have hcont {k : U → ℂ} {k₁ : X → ℂ} (hk₁ : IsDivisorSectionAt D k₁ x)
         (ek : k =ᶠ[𝓝 x] k₁ ∘ Subtype.val) : ContinuousAt k x :=
-      ((hk₁.contMDiffAt hD).continuousAt.comp continuous_subtype_val.continuousAt).congr ek.symm
+      ((hk₁.contMDiffAt hD).continuousAt.comp continuous_subtypeVal.continuousAt).congr ek.symm
     have := (tendsto_chartAt_symm_nhdsNE (H := ℂ) x).neBot
     exact tendsto_nhds_unique_of_eventuallyEq
       ((hcont hf₁ ef).tendsto.mono_left nhdsWithin_le_nhds)
@@ -412,7 +412,7 @@ theorem divisorSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E) (U :
   -- Near `x`, every point other than `x` lies off the poles allowed by `E`.
   have hval : Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_subtype_val.continuousAt.mono_left nhdsWithin_le_nhds)
+      (continuous_subtypeVal.continuousAt.mono_left nhdsWithin_le_nhds)
       (eventually_nhdsWithin_of_forall fun _ hy ↦ Subtype.coe_injective.ne hy)
   have := ChartedSpace.t1Space ℂ X
   have hev : ∀ᶠ y : U in 𝓝[≠] x, E y ≤ 0 :=

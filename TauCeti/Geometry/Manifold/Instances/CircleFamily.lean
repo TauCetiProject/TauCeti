@@ -127,7 +127,7 @@ theorem contMDiff_period (n : ℕ∞ω) :
 /-- The real-valued period projection is smooth. -/
 theorem contMDiff_periodReal {n : ℕ∞ω} :
     ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, ℝ) n fun z : CircleFamily ↦ (z.period : ℝ) :=
-  contMDiff_subtype_val.comp (contMDiff_period n)
+  contMDiff_subtypeVal.comp (contMDiff_period n)
 
 /-- In normalized coordinates, a fixed-period inclusion rescales only the circle. -/
 @[simp]
@@ -179,7 +179,7 @@ def fiberHomeomorph (p : PositivePeriod) :
   left_inv := retraction_mk p
   right_inv z := Subtype.ext (mk_retraction z.property)
   continuous_toFun := ((contMDiff_mk p 0).continuous).subtype_mk _
-  continuous_invFun := (contMDiff_retraction p 0).continuous.comp continuous_subtype_val
+  continuous_invFun := (contMDiff_retraction p 0).continuous.comp continuous_subtypeVal
 
 /-- The fiber homeomorphism is the original fixed-period inclusion. -/
 @[simp]
@@ -226,9 +226,9 @@ def realNormalization (n : ℕ∞ω) :
   left_inv z := by simp [z.1.property.ne']
   right_inv z := by simp [z.1.property.ne']
   contMDiff_toFun := contMDiff_fst.prodMk (contMDiff_snd.div₀
-    (contMDiff_subtype_val.comp contMDiff_fst) fun z ↦ z.1.property.ne')
+    (contMDiff_subtypeVal.comp contMDiff_fst) fun z ↦ z.1.property.ne')
   contMDiff_invFun := contMDiff_fst.prodMk
-    (contMDiff_snd.mul (contMDiff_subtype_val.comp contMDiff_fst))
+    (contMDiff_snd.mul (contMDiff_subtypeVal.comp contMDiff_fst))
 
 /-- Real normalization divides the time coordinate by the period. -/
 @[simp]

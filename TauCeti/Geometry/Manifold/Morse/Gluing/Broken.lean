@@ -450,7 +450,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
   · refine continuous_iff_continuousAt.2 fun s ↦ ?_
     have hc : Continuous fun s : Icc (0 : ℝ) r₁ ↦
         (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).val :=
-      continuous_subtype_val.comp (e.continuous.comp (continuous_inclusion _))
+      continuous_subtypeVal.comp (e.continuous.comp (continuous_inclusion _))
     exact (continuousAt_toChart_symm_of_mem_insert_splitGluingPairs φ hε₁ hy₁φ hy₂φ
       (by rw [← hcl]; exact (e (inclusion (Icc_subset_Icc_right hr₁r₀) s)).property)).comp
       hc.continuousAt
@@ -790,7 +790,7 @@ private theorem IsMorseSmale.exists_gluingArc_of_ne {hX : IsAdaptedPseudoGradien
   -- The arc: the points with the coordinates of the gluing pairs.
   refine ⟨T₁, T₂, r₀, hr₀, fun s ↦ (Ψ (e s).val.1, Ψ (e s).val.2), ?_, ?_, fun s hs ↦ ?_⟩
   · refine continuous_iff_continuousAt.2 fun s ↦ ?_
-    have hc : Continuous fun s ↦ (e s).val := continuous_subtype_val.comp e.continuous
+    have hc : Continuous fun s ↦ (e s).val := continuous_subtypeVal.comp e.continuous
     exact (continuousAt_toChart_symm_of_mem_insert_splitGluingPairs φ
       (fun z hz ↦ hε₂ z (by linarith)) hy₁φ hy₂φ (hmem s)).comp (f := fun s ↦ (e s).val)
       hc.continuousAt

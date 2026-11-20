@@ -111,7 +111,7 @@ theorem continuous_germSection (U : Opens X) (s : ToType (F.obj (Opposite.op U))
     -- As above, the target topology presents this equality with an implicit dependent index.
     change F.germ U (y : X) y.property s = F.germ V (y : X) _ t
     exact F.germ_ext W hyW iWU iWV heq
-  · exact W.isOpen.preimage continuous_subtype_val
+  · exact W.isOpen.preimage continuous_subtypeVal
   · exact hxW
 
 /-- A germ section is an open embedding of its domain into the étalé space. -/

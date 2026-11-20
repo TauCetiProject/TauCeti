@@ -210,9 +210,9 @@ def lowerTriangleCoordinatesHomeomorph :
   right_inv x := Subtype.ext (funext fun ij ↦ lowerTriangleMatrix_apply_of_le x.val ij.property)
   continuous_toFun := by
     refine Continuous.subtype_mk (continuous_pi fun ij ↦ ?_) _
-    exact continuous_subtype_val.matrix_elem ij.1.1 ij.1.2
+    exact continuous_subtypeVal.matrix_elem ij.val.1 ij.val.2
   continuous_invFun :=
-    Continuous.subtype_mk (continuous_lowerTriangleMatrix.comp continuous_subtype_val) _
+    Continuous.subtype_mk (continuous_lowerTriangleMatrix.comp continuous_subtypeVal) _
 
 @[simp]
 theorem lowerTriangleCoordinatesHomeomorph_apply_coe (L : PosDiagLowerTriangular p)

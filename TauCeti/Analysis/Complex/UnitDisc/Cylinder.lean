@@ -43,7 +43,7 @@ def cylinderRadius : Ioi (0 : ℝ) ≃ₜ Ioo (0 : ℝ) 1 where
   continuous_toFun := by fun_prop
   continuous_invFun := by
     apply Continuous.subtype_mk
-    exact ((Real.continuousOn_log.comp_continuous continuous_subtype_val
+    exact ((Real.continuousOn_log.comp_continuous continuous_subtypeVal
       (fun r ↦ r.property.1.ne')).neg).div_const _
 
 /-- The radial coordinate is the normalized decreasing exponential. -/
@@ -61,12 +61,12 @@ def puncturedPolar : ↥(Metric.ball (0 : ℂ) 1 \ {0}) ≃ₜ Circle × Ioo (0 
       ↥(Metric.ball (0 : ℂ) 1 \ {0}) :=
     { toEquiv := (Equiv.subtypeSubtypeEquivSubtypeInter _ _).trans
         (Equiv.subtypeEquivRight fun _ ↦ and_comm)
-      continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   let radius : {r : Ioi (0 : ℝ) // (r : ℝ) < 1} ≃ₜ Ioo (0 : ℝ) 1 :=
     { toEquiv := Equiv.subtypeSubtypeEquivSubtypeInter (fun r : ℝ ↦ 0 < r) (· < 1)
-      continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+      continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   source.symm.trans <|
     ((homeomorphUnitSphereProd ℂ).subtype
       (p := fun z : ({0}ᶜ : Set ℂ) ↦ (z : ℂ) ∈ Metric.ball 0 1)

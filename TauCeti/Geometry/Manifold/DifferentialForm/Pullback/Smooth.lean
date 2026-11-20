@@ -479,7 +479,7 @@ theorem mpullback_prodMap_mpullback_snd {f : M → M''} {g : M' → M'''}
 
 /-- Restricting a smooth form on `M` to an open subset does not change its value at any point. -/
 theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : SmoothForm I M F k)
-    (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtype_val σ).1 x = σ.1 x :=
+    (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/

@@ -121,7 +121,7 @@ private theorem continuous_starBallMap
     (hK : IsCompact (closedStarRealization K {v}))
     (e : geometricLink K v ≃ₜ Metric.sphere (0 : E) 1) : Continuous (starBallMap e) := by
   have hc : Continuous (fun x : closedStarRealization K {v} => x.val.val v) :=
-    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtype_val)
+    (continuous_apply v).comp ((continuous_realization_coe K).comp continuous_subtypeVal)
   have hC := (K.isClosedEmbedding_realization_coe_restrict hK).isEmbedding
   let S : Set (closedStarRealization K {v}) := {x | x.val.val v < 1}
   have hS : IsOpen S := isOpen_lt hc continuous_const
@@ -141,7 +141,7 @@ private theorem continuous_starBallMap
     · simp only [hj, ↓reduceIte]
       have hcoord (j : ι) : Continuous (fun x : S => x.val.val.val j) :=
         (continuous_apply j).comp ((continuous_realization_coe K).comp
-          (continuous_subtype_val.comp continuous_subtype_val))
+          (continuous_subtypeVal.comp continuous_subtypeVal))
       exact ((continuous_const.sub (hcoord v)).inv₀
         (fun x => (sub_pos.mpr x.property).ne')).mul (hcoord j)
   have haway : ContinuousOn (starBallMap e) S := by
@@ -150,8 +150,8 @@ private theorem continuous_starBallMap
         (e (starLinkProjection K v
           ⟨x.val.val, (mem_puncturedClosedStar K v _).mpr ⟨x.val.property, x.property⟩⟩) : E)) :=
       ((continuous_const : Continuous (fun _ : S => (1 : ℝ))).sub
-      (hc.comp continuous_subtype_val)).smul
-      (continuous_subtype_val.comp (e.continuous.comp hp))
+      (hc.comp continuous_subtypeVal)).smul
+      (continuous_subtypeVal.comp (e.continuous.comp hp))
     exact h.congr fun x => (dite_eq_left x.property : starBallMap e x.val = _).symm
   rw [continuous_iff_continuousAt]
   intro x
@@ -265,10 +265,10 @@ def openStarHomeomorphBall
     right_inv y := Subtype.ext (congrArg (fun z : Metric.closedBall (0 : E) 1 => z.val)
       (H.apply_symm_apply ⟨y.val, mem_closedBall_zero_iff.mpr
         (mem_ball_zero_iff.mp y.property).le⟩))
-    continuous_toFun := (continuous_subtype_val.comp
-      (H.continuous.comp (continuous_subtype_val.subtype_mk _))).subtype_mk _
-    continuous_invFun := (continuous_subtype_val.comp
-      (H.symm.continuous.comp (continuous_subtype_val.subtype_mk _))).subtype_mk _ }
+    continuous_toFun := (continuous_subtypeVal.comp
+      (H.continuous.comp (continuous_subtypeVal.subtype_mk _))).subtype_mk _
+    continuous_invFun := (continuous_subtypeVal.comp
+      (H.symm.continuous.comp (continuous_subtypeVal.subtype_mk _))).subtype_mk _ }
 
 /-- The open-star model is the restriction of the closed-star model. -/
 @[simp]

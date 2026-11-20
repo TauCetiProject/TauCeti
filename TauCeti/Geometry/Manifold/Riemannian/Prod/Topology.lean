@@ -222,11 +222,11 @@ theorem continuous_prodTangentSpace {P : Type*} [TopologicalSpace P]
   have h₁ : Continuous fun q : P × (extChartAt (I.prod J) (x, y)).target ↦
       iteratedFDeriv ℝ m ((g q.1).toNondegenerateMetric.chartMetric x) (q.2 : E × F).1 :=
     (hg x m hm).comp (continuous_fst.prodMk
-      ((continuous_fst.comp continuous_subtype_val.snd').subtype_mk fun q ↦ (hmem q).1))
+      ((continuous_fst.comp continuous_subtypeVal.snd').subtype_mk fun q ↦ (hmem q).1))
   have h₂ : Continuous fun q : P × (extChartAt (I.prod J) (x, y)).target ↦
       iteratedFDeriv ℝ m ((h q.1).toNondegenerateMetric.chartMetric y) (q.2 : E × F).2 :=
     (hh y m hm).comp (continuous_fst.prodMk
-      ((continuous_snd.comp continuous_subtype_val.snd').subtype_mk fun q ↦ (hmem q).2))
+      ((continuous_snd.comp continuous_subtypeVal.snd').subtype_mk fun q ↦ (hmem q).2))
   refine Continuous.congr ?_ fun q ↦
     (iteratedFDeriv_chartMetric_prodTangentSpace (g q.1) (h q.1) x y m q.2.property).symm
   exact (h₁.pullbackBilinL_compContinuousMultilinearMap (.fst ℝ E F)).add
@@ -253,7 +253,7 @@ theorem continuous_prodTangentSpace_iff [Nonempty M] [Nonempty N] {P : Type*}
       rw [TauCeti.extChartAt_prod_target]
       exact ⟨q.2.property, mem_extChartAt_target y₀⟩
     have hc := (hgh (x, y₀) m hm).comp (continuous_fst.prodMk
-      ((continuous_subtype_val.snd'.prodMk continuous_const).subtype_mk hmem))
+      ((continuous_subtypeVal.snd'.prodMk continuous_const).subtype_mk hmem))
     refine Continuous.congr ?_ fun q ↦
       (iteratedFDeriv_chartMetric_eq_of_prodTangentSpace (g q.1) (h q.1) x y₀ m (hmem q)).symm
     exact hc.pullbackBilinL_compContinuousMultilinearMap (.inl ℝ E F)
@@ -264,7 +264,7 @@ theorem continuous_prodTangentSpace_iff [Nonempty M] [Nonempty N] {P : Type*}
       rw [TauCeti.extChartAt_prod_target]
       exact ⟨mem_extChartAt_target x₀, q.2.property⟩
     have hc := (hgh (x₀, y) m hm).comp (continuous_fst.prodMk
-      ((continuous_const.prodMk continuous_subtype_val.snd').subtype_mk hmem))
+      ((continuous_const.prodMk continuous_subtypeVal.snd').subtype_mk hmem))
     refine Continuous.congr ?_ fun q ↦
       (iteratedFDeriv_chartMetric_eq_of_prodTangentSpace' (g q.1) (h q.1) x₀ y m (hmem q)).symm
     exact hc.pullbackBilinL_compContinuousMultilinearMap (.inr ℝ E F)

@@ -172,20 +172,20 @@ As an instance, it lets instance search find the separation and compactness prop
 quotients `K ⧸ H.subgroupOf K` such as the graded pieces of a closed central series. -/
 instance isClosed_subgroupOf (H K : Subgroup G) [IsClosed (H : Set G)] :
     IsClosed (H.subgroupOf K : Set K) :=
-  IsClosed.preimage continuous_subtype_val ‹_›
+  IsClosed.preimage continuous_subtypeVal ‹_›
 
 /-- The inclusion of `U ⊓ D` into `U`, where `U ⊓ D` is presented as the subgroup `U.subgroupOf D`
 of `D`, is continuous. -/
 theorem continuous_subgroupOf_codRestrict (D U : Subgroup G) :
     Continuous ((D.subtype.comp (U.subgroupOf D).subtype).codRestrict U fun x ↦ x.property) :=
-  (continuous_subtype_val.comp continuous_subtype_val).codRestrict _
+  (continuous_subtypeVal.comp continuous_subtypeVal).codRestrict _
 
 /-- A homomorphism of subgroups is continuous if its values are those of a continuous
 homomorphism of the ambient groups. -/
 theorem _root_.Continuous.subgroupHom {G' : Type*} [Group G'] [TopologicalSpace G']
     {U : Subgroup G} {U' : Subgroup G'} {φ : G →* G'} (hφ : Continuous φ) {ψ : U →* U'}
     (hψ : ∀ u, (ψ u : G') = φ u) : Continuous ψ :=
-  continuous_induced_rng.2 ((hφ.comp continuous_subtype_val).congr fun u ↦ (hψ u).symm)
+  continuous_induced_rng.2 ((hφ.comp continuous_subtypeVal).congr fun u ↦ (hψ u).symm)
 
 /-- **A dense subgroup meets an open subgroup densely.** If `D` is dense and `U` is open, the
 inclusion of `U ⊓ D`, presented as the subgroup `U.subgroupOf D` of `D`, into `U` has dense
@@ -204,7 +204,7 @@ theorem _root_.Dense.denseRange_subgroupOf_codRestrict {D U : Subgroup G}
     · intro hxD
       exact ⟨⟨⟨x, hxD⟩, x.property⟩, rfl⟩
   rw [DenseRange, hrange]
-  exact hD.preimage hU.isOpenMap_subtype_val
+  exact hD.preimage hU.isOpenMap_subtypeVal
 
 /-- **An open subgroup has the same index in a dense subgroup.** If `f : G' →* G` has dense range
 and `U` is an open subgroup of a group `G` with continuous left translations, then the preimage of
@@ -251,7 +251,7 @@ omit [IsTopologicalGroup G] in
 /-- The inclusion of a subgroup into a larger subgroup is continuous. -/
 @[fun_prop]
 theorem continuous_inclusion {H K : Subgroup G} (h : H ≤ K) : Continuous (inclusion h) :=
-  continuous_induced_rng.2 continuous_subtype_val
+  continuous_induced_rng.2 continuous_subtypeVal
 
 /-- The topological closure of a subgroup is closed. -/
 instance instIsClosedTopologicalClosure (s : Subgroup G) :
@@ -687,7 +687,7 @@ theorem _root_.MonoidHom.discreteTopology_range_of_finite_preimage {G H : Type*}
     Topology.IsInducing.subtypeVal.separatelyContinuousMul f.range.subtype
   refine discreteTopology_of_isOpen_singleton_one
     (isOpen_singleton_of_finite_mem_nhds _ (s := Subtype.val ⁻¹' W)
-      (continuous_subtype_val.continuousAt.preimage_mem_nhds hW) ?_)
+      (continuous_subtypeVal.continuousAt.preimage_mem_nhds hW) ?_)
   refine (hfin.image f.rangeRestrict).subset ?_
   rintro ⟨_, g, rfl⟩ hg
   exact ⟨g, hg, Subtype.ext rfl⟩
@@ -710,12 +710,12 @@ theorem _root_.MonoidHom.isEmbedding_of_isCompact_preimage {G H : Type*} [Group 
     -- inducing; and a neighbourhood of `1` in `H` can be shrunk into `W`.
     have : CompactSpace (f ⁻¹' W) := isCompact_iff_compactSpace.1 hc
     have hind : Topology.IsInducing (f ∘ Subtype.val : f ⁻¹' W → H) :=
-      ((hf.comp continuous_subtype_val).isClosedEmbedding
+      ((hf.comp continuous_subtypeVal).isClosedEmbedding
         (hinj.comp Subtype.val_injective)).isInducing
     intro s hs
     have h1 : (1 : G) ∈ f ⁻¹' W := by simpa using mem_of_mem_nhds hW
     have hs' : (Subtype.val : f ⁻¹' W → G) ⁻¹' s ∈ 𝓝 ⟨1, h1⟩ :=
-      continuous_subtype_val.continuousAt.preimage_mem_nhds hs
+      continuous_subtypeVal.continuousAt.preimage_mem_nhds hs
     rw [hind.nhds_eq_comap, Filter.mem_comap] at hs'
     obtain ⟨t, ht, hts⟩ := hs'
     refine Filter.mem_comap.2 ⟨t ∩ W, Filter.inter_mem (by simpa using ht) hW, ?_⟩

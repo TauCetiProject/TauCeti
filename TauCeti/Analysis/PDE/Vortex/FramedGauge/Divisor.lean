@@ -104,7 +104,7 @@ theorem exists_mem_sobolevGaugeGroup_gaugeTransform_eq_iff {k : ℕ} (hk : 1 < k
   refine ⟨fun ⟨u, hu, hux⟩ ↦ Multiset.ext.2 fun z ↦ ?_, fun hDD' ↦ ?_⟩
   · -- Continuous gauges do not change the zero multiplicities.
     have h := isZeroMultiplicity_sectionValue_gaugeTransform
-      (continuous_subtype_val.comp ((mem_sobolevGaugeGroup _ u).1 hu).1) hD'
+      (continuous_subtypeVal.comp ((mem_sobolevGaugeGroup _ u).1 hu).1) hD'
     rw [hux] at h
     exact congrFun (hD.unique h) z
   · subst hDD'

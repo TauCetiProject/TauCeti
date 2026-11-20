@@ -77,7 +77,7 @@ private theorem continuousOn_sphereDirection_apply :
   ((continuousAt_sphereDirection _ ((mk_mem_affineOpen_iff k v).1 hv)).comp
     (f := fun v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦ v.val k)
     ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ) k).comp
-      continuous_subtype_val).continuousAt).continuousWithinAt
+      continuous_subtypeVal).continuousAt).continuousWithinAt
 
 /-- The **chart of the Hopf fibration** over the affine open `{X_k ≠ 0}` of `CPⁿ`, with fibre the
 unit circle. It is the orbit trivialization (`TauCeti.orbitTrivialization`) determined by the

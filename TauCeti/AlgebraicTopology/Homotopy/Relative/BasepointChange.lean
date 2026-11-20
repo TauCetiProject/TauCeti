@@ -437,9 +437,9 @@ private def concatTail (γ : Path X.basepoint b) :
         ((γ.map X.pair.map.hom.continuous).subpath x.val.1 1),
     Path.trans_continuous_family _
       (continuous_eval.comp
-        ((continuous_snd.comp (continuous_subtype_val.comp continuous_fst)).prodMk continuous_snd))
+        ((continuous_snd.comp (continuous_subtypeVal.comp continuous_fst)).prodMk continuous_snd))
       _ ((γ.map X.pair.map.hom.continuous).subpath_continuous_family.comp
-        ((continuous_fst.comp (continuous_subtype_val.comp continuous_fst)).prodMk
+        ((continuous_fst.comp (continuous_subtypeVal.comp continuous_fst)).prodMk
           (continuous_const.prodMk continuous_snd)))⟩
 
 private theorem concatTail_apply (γ : Path X.basepoint b)
@@ -468,7 +468,7 @@ private def pathSpaceConcat (γ : Path X.basepoint b) :
   toFun q := ⟨concatTail γ ⟨(0, q.val), pathSpace_apply_one_eq γ q⟩,
     concatTail_mem γ _ ((BasedTopPair.mem_pathSpace_iff _).1 q.property).1⟩
   continuous_toFun := Continuous.subtype_mk ((concatTail γ).continuous.comp
-    (Continuous.subtype_mk (continuous_const.prodMk continuous_subtype_val) _)) _
+    (Continuous.subtype_mk (continuous_const.prodMk continuous_subtypeVal) _)) _
 
 /-- The path `t ↦ c_{γ t} ⋆ γ.subpath t 1` in the space of paths from `A` to `b`, from the image of
 the constant path at `a` under `pathSpaceConcat γ` to the constant path at `b`. -/
@@ -502,7 +502,7 @@ private def squash (q : RelGenLoop N ⟨X.pair, b⟩) : RelGenLoop N ⟨X.pair, 
   mk ((q : C(I × (I^N), X.pair.fst)).comp
       ⟨fun y => (projIcc 0 1 zero_le_one (2 * y.1), y.2),
         (continuous_projIcc.comp (continuous_const.mul
-          (continuous_subtype_val.comp continuous_fst))).prodMk continuous_snd⟩)
+          (continuous_subtypeVal.comp continuous_fst))).prodMk continuous_snd⟩)
     (fun z => by simpa using apply_zero_mem_range q z)
     fun s z h => by
       simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, coe_coe]

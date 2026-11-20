@@ -311,7 +311,7 @@ theorem isOpen_val_preimage_spaAnalytic (P : PairOfDefinition A) (Aplus : Subrin
     rw [isAnalyticPoint_iff_exists_mem_extendedIdealOfDefinition_notMem_supp P]
     simp only [mem_supp_iff]
   rw [hset]
-  exact isOpen_biUnion fun a _ ↦ (isOpen_basicOpen a a).preimage continuous_subtype_val
+  exact isOpen_biUnion fun a _ ↦ (isOpen_basicOpen a a).preimage continuous_subtypeVal
 
 omit [IsTopologicalRing A] in
 /-- A rational subset whose denominator belongs to the extended ideal of definition consists of

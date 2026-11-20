@@ -380,7 +380,7 @@ theorem isOpen_maximalIdeal_pow_adicCompletionIntegers (n : ℕ) :
         {y : v.adicCompletion K | Valued.v y ≤ exp (-(n : ℤ))} :=
     Set.ext fun x ↦ v.mem_maximalIdeal_pow_iff (K := K)
   rw [h]
-  exact (v.isOpen_setOf_valued_le (K := K) exp_ne_zero).preimage continuous_subtype_val
+  exact (v.isOpen_setOf_valued_le (K := K) exp_ne_zero).preimage continuous_subtypeVal
 
 /-- **Every neighbourhood of `0` in `𝒪_v` contains a power of the maximal ideal.** A neighbourhood
 is cut out by a valuation bound, and `exp` takes some integer below that bound; the corresponding
@@ -449,7 +449,7 @@ theorem exists_valued_sub_le (x : v.adicCompletionIntegers K) (n : ℕ) :
     ((IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n :
       Ideal (v.adicCompletionIntegers K)) : Set (v.adicCompletionIntegers K))
   have hU : IsOpen (((↑) : v.adicCompletionIntegers K → v.adicCompletion K) '' U) :=
-    (Valued.isOpen_valuationSubring _).isOpenMap_subtype_val _
+    (Valued.isOpen_valuationSubring _).isOpenMap_subtypeVal _
       ((v.isOpen_maximalIdeal_pow_adicCompletionIntegers n).preimage (continuous_sub_right x))
   -- so it contains an element `z` of `K`, which is then integral at `v`
   obtain ⟨z, y, hy, hyz⟩ := (denseRange_algebraMap (K := K) v).exists_mem_open hU

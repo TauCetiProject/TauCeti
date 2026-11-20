@@ -66,7 +66,7 @@ theorem exists_continuousMap_isRoot_powerSubstitution
   let r : Fin d → C(U × ↥(ball (0 : ℂ) R' \ {0}), ℂ) := fun i =>
     ⟨fun b => (L (e i) b).val.2,
       ((continuous_snd : Continuous (Prod.snd : B × ℂ → ℂ)).comp
-        (continuous_subtype_val : Continuous (Subtype.val : Z → B × ℂ))).comp (L (e i)).continuous⟩
+        (continuous_subtypeVal : Continuous (Subtype.val : Z → B × ℂ))).comp (L (e i)).continuous⟩
   have hbase : ∀ i b, p (L (e i) b) = q b := fun i b => congrFun (hL (e i)).2 b
   refine ⟨r, fun b => ⟨?_, fun i => (hbase i b) ▸ (L (e i) b).property⟩⟩
   intro i j hij

@@ -80,14 +80,14 @@ def tangentCircleLoop (hu : ‖u‖ = 1) (p₀ : sphereEquator u) :
               (mem_sphereEquator.1 q.property)
           _)⟩
       continuous_toFun := ((continuous_tangentCircle _ u).comp
-        (continuous_const.prodMk (continuous_const.mul continuous_subtype_val))).subtype_mk _
+        (continuous_const.prodMk (continuous_const.mul continuous_subtypeVal))).subtype_mk _
       source' := Subtype.ext (by simp)
       target' := Subtype.ext (by simp) }
   continuous_toFun := by
     refine Path.continuous_uncurry_iff.1 (Continuous.subtype_mk ?_ _)
     exact (continuous_tangentCircle _ u).comp
-      ((continuous_subtype_val.comp (continuous_subtype_val.comp continuous_fst)).prodMk
-        (continuous_const.mul (continuous_subtype_val.comp continuous_snd)))
+      ((continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_fst)).prodMk
+        (continuous_const.mul (continuous_subtypeVal.comp continuous_snd)))
 
 @[simp]
 theorem coe_tangentCircleLoop_apply (hu : ‖u‖ = 1) (p₀ q : sphereEquator u) (t : I) :

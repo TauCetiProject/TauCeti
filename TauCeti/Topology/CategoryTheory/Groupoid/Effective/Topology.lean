@@ -139,8 +139,8 @@ theorem isLocalHomeomorph_mapTotal :
   intro a
   obtain ⟨U, hU, haU, hinj⟩ := hs.isLocallyInjective a
   refine ⟨U, hU.mem_nhds haU, .of_continuous_injective_isOpenMap
-    (isQuotientMap_mapTotal.continuous.comp continuous_subtype_val) ?_
-    ((isOpenMap_mapTotal hs).comp hU.isOpenMap_subtype_val)⟩
+    (isQuotientMap_mapTotal.continuous.comp continuous_subtypeVal) ?_
+    ((isOpenMap_mapTotal hs).comp hU.isOpenMap_subtypeVal)⟩
   intro b c hbc
   apply Subtype.ext
   exact hinj b.property c.property
@@ -212,7 +212,7 @@ theorem isTopologicalGroupoid : IsTopologicalGroupoid (EffectiveQuotient C) wher
     let lift : (Prod.map q q) ⁻¹' S →
         {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} := fun p ↦
       ⟨p.val, (isHomeomorph_toEffectiveQuotient_obj (C := C)).injective p.property⟩
-    have hlift : Continuous lift := continuous_subtype_val.subtype_mk _
+    have hlift : Continuous lift := continuous_subtypeVal.subtype_mk _
     convert hq.continuous.comp (IsTopologicalGroupoid.continuous_comp.comp hlift) using 1
     funext p
     obtain ⟨⟨⟨x, y, a⟩, ⟨z, w, b⟩⟩, h⟩ := p
@@ -290,9 +290,9 @@ theorem t2Space_arrows_iff :
     let φ : S → Quiver.Total C := fun p ↦
       p.val.1.comp ⟨p.val.2.right, p.val.2.left, inv p.val.2.hom⟩ p.property
     have hφ : Continuous φ := IsTopologicalGroupoid.continuous_comp.comp
-      (((continuous_fst.comp continuous_subtype_val).prodMk
+      (((continuous_fst.comp continuous_subtypeVal).prodMk
         (IsTopologicalGroupoid.continuous_inverse.comp
-          (continuous_snd.comp continuous_subtype_val))).subtype_mk fun p ↦ p.2)
+          (continuous_snd.comp continuous_subtypeVal))).subtype_mk fun p ↦ p.property)
     convert hS.isClosedEmbedding_subtypeVal.isClosedMap _ (hclosed.preimage hφ) using 1
     ext ⟨⟨x₁, y₁, f₁⟩, ⟨x₂, y₂, f₂⟩⟩
     constructor

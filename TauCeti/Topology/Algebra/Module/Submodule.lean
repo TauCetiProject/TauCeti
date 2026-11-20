@@ -74,5 +74,5 @@ instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [Add
     (p : Submodule R M) (q : Submodule R M₂) [DiscreteTopology p] [DiscreteTopology q] :
     DiscreteTopology (p.prod q) :=
   DiscreteTopology.of_continuous_injective (f := p.prodEquiv q)
-    ((continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _))
+    ((continuous_subtypeVal.fst.subtype_mk _).prodMk (continuous_subtypeVal.snd.subtype_mk _))
     (p.prodEquiv q).injective

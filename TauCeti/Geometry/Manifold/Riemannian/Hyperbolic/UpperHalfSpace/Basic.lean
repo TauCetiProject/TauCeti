@@ -189,7 +189,7 @@ variable {E}
 theorem contMDiff_coe :
     ContMDiff 𝓘(ℝ, WithLp 2 (E × ℝ)) 𝓘(ℝ, WithLp 2 (E × ℝ)) ω
       (coe : UpperHalfSpace E → WithLp 2 (E × ℝ)) :=
-  contMDiff_subtype_val (U := upperHalfSpaceOpens E)
+  contMDiff_subtypeVal (U := upperHalfSpaceOpens E)
 
 /-- The conformal factor `t⁻²` of the hyperbolic metric is analytic on the upper half-space. -/
 theorem contMDiff_inv_height_sq :

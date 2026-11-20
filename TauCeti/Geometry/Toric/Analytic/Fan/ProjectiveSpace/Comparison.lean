@@ -141,7 +141,7 @@ private theorem continuous_spherePoint : Continuous (spherePoint b hi) := by
       Continuous (fun w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦
         w.val ((finSuccEquiv n).symm j)) :=
     (PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℂ)
-      ((finSuccEquiv n).symm j)).comp continuous_subtype_val
+      ((finSuccEquiv n).symm j)).comp continuous_subtypeVal
   have hcoord : ContinuousAt (fun w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 ↦
       fun j : {j : Option (Fin n) // j ≠ k} ↦
         w.val ((finSuccEquiv n).symm j) / w.val ((finSuccEquiv n).symm k)) v :=

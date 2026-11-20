@@ -354,7 +354,7 @@ theorem exists_sphere_tangentBundle_trivialization_mem_maximalAtlas
       (A i).contMDiff_sphereSkewField (m := m) (hskew i)
   have hcont : ∀ i : Fin n, Continuous fun b : (univ : Set (sphere (0 : E) 1)) ↦
       TotalSpace.mk' (EuclideanSpace ℝ (Fin n)) (b : sphere (0 : E) 1) (d b.val i) :=
-    fun i ↦ (hd i).continuous.comp continuous_subtype_val
+    fun i ↦ (hd i).continuous.comp continuous_subtypeVal
   refine ⟨c.bundleTrivialization (E := TangentSpace (𝓡 n)) isOpen_univ (fun b ↦ d b.val) hcont,
     inferInstance, c.bundleTrivialization_baseSet (E := TangentSpace (𝓡 n)) isOpen_univ _ hcont,
     fun x v ↦ ?_,

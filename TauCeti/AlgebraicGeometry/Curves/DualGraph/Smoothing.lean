@@ -435,7 +435,7 @@ end Singleton
 /-- Smoothing every node leaves a single component, since the graph is connected. -/
 theorem smoothingVertex_univ_eq (v w : G.Vertex) :
     G.smoothingVertex univ v = G.smoothingVertex univ w := by
-  rw [smoothingVertex_eq_smoothingVertex_iff, ← Relation.EqvGen.reflTransGen_symmGen]
+  rw [smoothingVertex_eq_smoothingVertex_iff, ← Relation.reflTransGen_symmGen]
   refine .mono (fun _ _ ⟨e, h⟩ ↦ ?_) _ _ (G.connected v w)
   obtain ⟨h₀, h₁⟩ | ⟨h₀, h₁⟩ := h
   exacts [.inl ⟨e, mem_univ e, h₀, h₁⟩, .inr ⟨e, mem_univ e, h₀, h₁⟩]

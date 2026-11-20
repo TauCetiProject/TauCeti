@@ -312,7 +312,7 @@ private theorem volume_lt_norm_sub_setAverage_le [CompleteSpace E]
     ← ENNReal.ofReal_pow (by norm_num)]
   refine ENNReal.ofReal_le_ofReal ?_
   calc (2 : ℝ)⁻¹ ^ N = Real.exp (-(N * Real.log 2)) := by
-        rw [Real.exp_neg, Real.exp_nat_mul, Real.exp_log two_pos, inv_pow]
+        rw [Real.exp_neg, Real.exp_natCast_mul, Real.exp_log two_pos, inv_pow]
     _ ≤ Real.exp (Real.log 2 + -(Real.log 2 * s / a)) := by
         refine Real.exp_le_exp.2 ?_
         have := mul_lt_mul_of_pos_left hlt hlog
@@ -352,7 +352,7 @@ private theorem ofReal_exp_mul_norm_le_one_add_tsum (σ : ℝ) (n : ℕ) (M : �
     exact (lt_div_iff₀ ha).1 h'
   refine le_add_left (le_trans ?_ (_root_.le_tsum _ N))
   simp only [hN, ↓reduceIte]
-  rw [← ENNReal.ofReal_pow (Real.exp_pos _).le, ← Real.exp_nat_mul]
+  rw [← ENNReal.ofReal_pow (Real.exp_pos _).le, ← Real.exp_natCast_mul]
   refine ENNReal.ofReal_le_ofReal (Real.exp_le_exp.2 ?_)
   rw [← mul_assoc, mul_comm _ σ, mul_assoc, hN1]
   exact mul_le_mul_of_nonneg_left ((div_le_iff₀ ha).1 (Nat.le_ceil _)) hσ.le |>.trans_eq

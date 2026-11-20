@@ -117,9 +117,9 @@ theorem exists_disjoint_bisections_of_proper_source_target [T2Space (Quiver.Tota
       (Filter.inter_mem (Filter.inter_mem hS hT) ((hO a).2.mem_nhds (hO a).1))
     refine ⟨W, hW, haW, fun b hb ↦ (hWsub hb).2, ?_, ?_⟩
     · exact hsS.comp (.inclusion (fun b hb ↦ (hWsub hb).1.1)
-        (hW.preimage continuous_subtype_val))
+        (hW.preimage continuous_subtypeVal))
     · exact htT.comp (.inclusion (fun b hb ↦ (hWsub hb).1.2)
-        (hW.preimage continuous_subtype_val))
+        (hW.preimage continuous_subtypeVal))
   choose B hBopen hBmem hBsub hBs hBt using hb
   let W (f : x ⟶ x) := B ⟨x, x, f⟩
   have hcover : ∀ a : Quiver.Total C, a.left = x → a.right = x → a ∈ ⋃ f, W f := by
@@ -381,11 +381,11 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
   -- The arrows of each label are parametrized by their sources, through the chart `e g`.
   have hopen (g : Aut x) : IsOpenEmbedding fun y : U ↦ σ g y :=
     (e g).symm.isOpenEmbedding_restrict.comp
-      (.inclusion (fun y hy ↦ hUT y hy g) (hUo.preimage continuous_subtype_val))
+      (.inclusion (fun y hy ↦ hUT y hy g) (hUo.preimage continuous_subtypeVal))
   obtain ⟨hfull, hfaith, hFopen, hFx⟩ := isotropy_functor_properties hinj hdisj hcover
     (fun y hy ↦ hVU₀ y (hUV hy)) hsmul (fun g y hy ↦ hσW g y (hUT y hy g)) hUl hσx hopen hxU
     F hFo hF
-  exact ⟨U, hxU, inst, F, hUo, fun g ↦ ((hact g).comp_continuous continuous_subtype_val
+  exact ⟨U, hxU, inst, F, hUo, fun g ↦ ((hact g).comp_continuous continuous_subtypeVal
     fun y ↦ hUT _ y.property g).subtype_mk _, hFo, hfull, hfaith, hFopen, hFx⟩
 
 end Groupoid

@@ -184,8 +184,8 @@ abbrev interPair : TopPair.{w} := ofSubset (X := TopCat.of A) (Subtype.val ⁻¹
 
 /-- The inclusion of pairs `(A, A ∩ B) ⟶ (X, B)`. -/
 def excisionMap : interPair A B ⟶ ofSubset B :=
-  ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-    (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtype_val.restrictPreimage⟩)
+  ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
+    (TopCat.ofHom ⟨B.restrictPreimage Subtype.val, continuous_subtypeVal.restrictPreimage⟩)
 
 @[simp]
 lemma excisionMap_fst_apply (x : (interPair A B).fst) : Hom.fst (excisionMap A B) x = x.val := (rfl)
@@ -342,8 +342,8 @@ variable {X : TopCat.{w}} (U V : Set X)
 so that its inner pair is `TopPair.interPair U V`. -/
 private abbrev interTriple : TopTriple.{w} :=
   TopTriple.of (B := TopCat.of (Subtype.val ⁻¹' V : Set U)) (A := TopCat.of U) (X := X)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) IsEmbedding.subtypeVal
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩) IsEmbedding.subtypeVal
     IsEmbedding.subtypeVal
 
 /-- The inner pair of `TopPair.interTriple U V` is `TopPair.interPair U V`. -/

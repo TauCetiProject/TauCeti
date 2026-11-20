@@ -325,7 +325,7 @@ variable (hst) in
 the same points as `s`. -/
 def ofInclusionIsoOfSubset (ht : ∀ x, x ∈ t) {s₀ : Set X} (hs : ∀ x, x ∈ s ↔ x ∈ s₀) :
     ofInclusion hst ≅ ofSubset s₀ where
-  hom := TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+  hom := TopPair.ofHom (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (TopCat.ofHom ⟨fun x ↦ ⟨x.val, (hs _).1 x.property⟩, by fun_prop⟩)
   inv := TopPair.ofHom (TopCat.ofHom ⟨fun x ↦ ⟨x, ht x⟩, by fun_prop⟩)
     (TopCat.ofHom ⟨fun x ↦ ⟨x.val, (hs _).2 x.property⟩, by fun_prop⟩)
@@ -756,13 +756,13 @@ variable {X Y X' Y' : TopCat.{u}} {A : Set X} {B : Set Y}
 union with the preimage of any subset `B` of `Y` under the second projection. -/
 lemma isOpen_subtypeVal_preimage_preimage_fst_union (hA : IsOpen A) :
     IsOpen ((↑) ⁻¹' (fst X Y ⁻¹' A) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) :=
-  (hA.preimage (fst X Y).hom.continuous).preimage continuous_subtype_val
+  (hA.preimage (fst X Y).hom.continuous).preimage continuous_subtypeVal
 
 /-- The preimage of an open subset `B` of `Y` under the second projection of `X × Y` is open in its
 union with the preimage of any subset `A` of `X` under the first projection. -/
 lemma isOpen_subtypeVal_preimage_preimage_snd_union (hB : IsOpen B) :
     IsOpen ((↑) ⁻¹' (snd X Y ⁻¹' B) : Set ↥(fst X Y ⁻¹' A ∪ snd X Y ⁻¹' B)) :=
-  (hB.preimage (snd X Y).hom.continuous).preimage continuous_subtype_val
+  (hB.preimage (snd X Y).hom.continuous).preimage continuous_subtypeVal
 
 /-- The product of two maps carries the preimage of `A` under the first projection into the
 preimage of `A'` when the first map carries `A` into `A'`. -/

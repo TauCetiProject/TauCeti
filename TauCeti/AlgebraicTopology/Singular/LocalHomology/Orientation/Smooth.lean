@@ -499,15 +499,15 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
   let iU : C(W, U) := ContinuousMap.inclusion fun _ hx ↦ hx.1.1
   let iφ : C(W, φ.source) := ContinuousMap.inclusion fun _ hx ↦ hx.1.2
   let fχ : C(W, χ.source) :=
-    ⟨fun x ↦ ⟨f x, x.2.2⟩, (f.continuous.comp continuous_subtype_val).subtype_mk _⟩
+    ⟨fun x ↦ ⟨f x, x.property.2⟩, (f.continuous.comp continuous_subtypeVal).subtype_mk _⟩
   let m : C(W, V) := ⟨fun x ↦ ⟨φ x, hmemV x.property.1.2 x.property.1.1 x.property.2⟩,
-    (φ.continuousOn.comp_continuous continuous_subtype_val fun x ↦ x.2.1.2).subtype_mk _⟩
+    (φ.continuousOn.comp_continuous continuous_subtypeVal fun x ↦ x.property.1.2).subtype_mk _⟩
   set SW : Set W := ContinuousMap.subtypeVal W ⁻¹' {a}
   -- A class `w` on `W` which `φ` carries to the local orientation of the model at `φ a`.
   have hgφ : IsOpenEmbedding ((sourceRestrict φ).comp iφ) :=
     φ.isOpenEmbedding_restrict.comp
       (IsOpenEmbedding.inclusion (inter_subset_left.trans inter_subset_right)
-        (hWo.preimage continuous_subtype_val))
+        (hWo.preimage continuous_subtypeVal))
   have hgφS : (sourceRestrict φ).comp iφ ⁻¹' {φ a} = SW := by
     ext x
     simp only [mem_preimage, mem_singleton_iff, ContinuousMap.comp_apply, SW]
@@ -581,8 +581,8 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationO
   -- Both sides come from the class `w` on `W`, on which `f` factors through the source of `χ`.
   have hfW : (f.restrict U).comp iU = (ContinuousMap.subtypeVal χ.source).comp fχ := rfl
   have e₂ := ConcreteCategory.congr_hom ((localHomologyMap_comp Z iU (f.restrict U) hiU
-      (fun z hz ↦ mem_singleton_iff.2 (Subtype.ext (hU z z.property (by simpa using hz))))
-          (n + 1)).trans
+      (fun z hz ↦ mem_singleton_iff.2 (Subtype.ext (hU z z.property
+          (by simpa using hz)))) (n + 1)).trans
     ((localHomologyMap_congr Z hfW _ (n + 1)).trans (localHomologyMap_comp Z fχ
       (ContinuousMap.subtypeVal χ.source) hfχ subset_rfl (n + 1)).symm)) w
   simp only [ConcreteCategory.comp_apply] at e₂
@@ -981,7 +981,7 @@ private theorem exists_closedBall_sign_eq [I.Boundaryless]
   have hxφ : x ∈ φ.source := by simp [φ]
   set O : Set M :=
     Subtype.val '' {a : (chartAt H x).source | l.sign x a = l.sign x ⟨x, mem_chart_source H x⟩}
-  have hO : IsOpen O := (chartAt H x).open_source.isOpenMap_subtype_val _
+  have hO : IsOpen O := (chartAt H x).open_source.isOpenMap_subtypeVal _
     ((l.locallyConstant_sign x).isOpen_fiber _)
   have hxV : φ x ∈ φ.target ∩ φ.symm ⁻¹' O :=
     ⟨φ.map_source hxφ, by
@@ -1113,7 +1113,7 @@ private theorem localOrientationTransport_chartAt {H : Type v} [TopologicalSpace
     rw [Subgroupoid.im, Subgroupoid.map_le_iff_le_comap]
     rintro ⟨⟨c⟩, ⟨d⟩, g⟩ -
     induction g using Path.Homotopic.Quotient.ind with | mk γ =>
-    exact hpath b (γ.map continuous_subtype_val) fun t ↦ (γ t).2
+    exact hpath b (γ.map continuous_subtypeVal) fun t ↦ (γ t).property
   have hf : f ∈ S.arrows x y := hS ▸ trivial
   exact hf
 

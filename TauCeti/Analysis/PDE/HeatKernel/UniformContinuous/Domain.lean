@@ -94,8 +94,8 @@ theorem integral_laplacian_smul_eq_integral_smul_generator_heatSemigroupBUC
       ∀ φ : 𝓓(⊤, ℝ), ∫ x, Δ (φ : E → ℝ) x • p.1 x = ∫ x, (φ : E → ℝ) x • p.2 x}
   -- Against a fixed test function, both sides are continuous in the supremum norm.
   have hs : IsClosed s := by
-    refine IsClosed.preimage ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd)) ?_
+    refine IsClosed.preimage ((continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd)) ?_
     simp only [ofPred_forall]
     refine isClosed_iInter fun φ ↦ isClosed_eq ?_ ?_
     · exact (((φ.contDiff.of_le (by simp)).continuous_laplacian).integrable_of_hasCompactSupport

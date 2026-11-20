@@ -97,7 +97,7 @@ theorem isClosed_complexProjectiveZeroLocus (p : ι → MvPolynomial (Fin N) ℂ
       complexProjectiveZeroLocus_mk_iff_forall_smul, Set.mem_iInter, Set.mem_ofPred_eq]
   rw [h]
   exact isClosed_iInter fun i ↦ isClosed_iInter fun c ↦ isClosed_eq
-    ((continuous_eval (p i)).comp ((continuous_const_smul c).comp continuous_subtype_val))
+    ((continuous_eval (p i)).comp ((continuous_const_smul c).comp continuous_subtypeVal))
     continuous_const
 
 /-- The common zero locus of any family of polynomials is compact. -/
@@ -153,7 +153,7 @@ theorem isClosed_complexProjectiveIncidence (d : ι → ℕ) :
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
   convert (isClosed_setOfPred_forall_eval_eq_zero_homogeneousSubmodule
     (σ := Fin N) (R := ℂ) d).preimage
-      (continuous_fst.prodMk (continuous_subtype_val.comp' continuous_snd)) using 1
+      (continuous_fst.prodMk (continuous_subtypeVal.comp' continuous_snd)) using 1
   ext ⟨c, v⟩
   simp only [Set.mem_preimage, Prod.map_apply, id_eq, Projectivization.mk'_eq_mk,
     mk_mem_complexProjectiveIncidence_iff, Set.mem_ofPred_eq]
@@ -178,7 +178,7 @@ theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep
   have hJ : Continuous fun v : {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt p v.val :=
     continuous_matrix fun i j ↦ by
       simpa only [jacobiMatrixAt_apply, Function.comp_def] using
-        (continuous_eval _).comp continuous_subtype_val
+        (continuous_eval _).comp continuous_subtypeVal
   convert Matrix.isOpen_setOfPred_mulVec_surjective.preimage hJ using 1
   ext v
   simp only [Set.mem_preimage, Projectivization.mk'_eq_mk, Set.mem_ofPred_eq]
@@ -234,7 +234,7 @@ theorem isClosed_complexProjectiveBadRankLocus (d : ι → ℕ) :
       {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt (fun i ↦ (x.1 i : MvPolynomial (Fin N) ℂ)) x.2.val
           :=
     (continuous_jacobiMatrixAt_homogeneousSubmodule d).comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
   convert ((isClosed_complexProjectiveIncidence d).preimage
       (continuous_id.prodMap Projectivization.isOpenQuotientMap_mk'.continuous)).inter
     (Matrix.isOpen_setOfPred_mulVec_surjective.preimage hJ).isClosed_compl using 1

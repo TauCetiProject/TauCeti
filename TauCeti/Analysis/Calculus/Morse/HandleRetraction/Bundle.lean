@@ -142,10 +142,10 @@ private theorem continuous_quadraticHandleDeformation_totalSpace (ε : ℝ) :
   · obtain ⟨h₀, h₁⟩ := mem_Icc_quadraticHandleDeformation_scalar ε p.1 p.2.snd
     rwa [Real.norm_of_nonneg h₀]
   · have hp' : ‖p.2.snd.2‖ ≠ 0 := norm_ne_zero_iff.2 hp
-    exact (((continuous_const.sub continuous_subtype_val.fst').continuousAt.mul
+    exact (((continuous_const.sub continuous_subtypeVal.fst').continuousAt.mul
       (continuousAt_const.min
         (((hu.pow 2).sub continuous_const).sqrt.continuousAt.div hv.continuousAt hp'))).add
-      continuous_subtype_val.fst'.continuousAt)
+      continuous_subtypeVal.fst'.continuousAt)
 
 include hᵤ hₛ in
 /-- **Milnor's retraction in a sum of vector bundles**: in each fibre of `Eᵤ ×ᵇ Eₛ` it keeps `u`

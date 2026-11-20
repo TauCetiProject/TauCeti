@@ -218,7 +218,7 @@ private theorem mfderiv_restrict_of_mem_atlas {e : OpenPartialHomeomorph M X}
   mfderiv_comp (f := Subtype.val) y
     (((contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid (I := I) (n := 1) (Isom I X)
       he).contMDiffAt (e.open_source.mem_nhds y.property)).mdifferentiableAt one_ne_zero)
-    (contMDiff_subtype_val.mdifferentiableAt one_ne_zero)
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
 
 variable [IsManifold I ∞ X] [IsContMDiffRiemannianBundle I ∞ E (fun x : X ↦ TangentSpace I x)]
 
@@ -242,7 +242,7 @@ theorem isLocalRiemannianIsometry_restrict_of_mem_atlas {e : OpenPartialHomeomor
     (Isom I X) he
   have hderiv := mfderiv_restrict_of_mem_atlas (I := I) he
   refine ⟨fun y ↦ (hsmooth.contMDiffAt (e.open_source.mem_nhds y.property)).comp y
-    contMDiff_subtype_val.contMDiffAt, fun y ↦ ?_, fun y v w ↦ ?_⟩
+    contMDiff_subtypeVal.contMDiffAt, fun y ↦ ?_, fun y v w ↦ ?_⟩
   · -- Near `y`, the chart `e` is the preferred chart at `y`, whose derivative at `y` is the
     -- identity, followed by an isometry `γ` of `X`, whose derivative is invertible.
     obtain ⟨γ, hγ⟩ := exists_smul_eventuallyEq_chartAt (G := Isom I X) he y.property

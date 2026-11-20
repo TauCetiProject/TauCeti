@@ -68,7 +68,7 @@ private theorem false_of_forall_not_le (hJ : J.IsSeparatingIdeal) (P : ℕ → I
     let F : ℕ → Submodule ℂ K := fun k ↦
       ((P (n + k + 1)).restrictScalars ℂ).comap (LinearMap.mulLeft ℂ c ∘ₗ K.subtype)
     have hFc (k : ℕ) : IsClosed (F k : Set K) :=
-      (hP _).isClosed.preimage (continuous_const.mul continuous_subtype_val)
+      (hP _).isClosed.preimage (continuous_const.mul continuous_subtypeVal)
     -- `F k = ⊤` would force `P n ≤ P (n + k + 1)`, as `P (n + k + 1)` is prime.
     have hFt (k : ℕ) : F k ≠ ⊤ := by
       intro htop

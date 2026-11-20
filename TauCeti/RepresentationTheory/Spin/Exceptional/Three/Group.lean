@@ -178,8 +178,7 @@ private theorem spinThreeExteriorBasis_occupied
 
 private theorem vacuumIndex_ne_occupiedIndex : vacuumIndex ≠ occupiedIndex := by
   intro h
-  have := spinThreeIndexEquiv.injective h
-  simp at this
+  exact (Finset.singleton_nonempty 0).ne_empty (spinThreeIndexEquiv.injective h).symm
 
 private theorem finTwo_eq_vacuum_or_occupied (i : Fin 2) :
     i = vacuumIndex ∨ i = occupiedIndex := by

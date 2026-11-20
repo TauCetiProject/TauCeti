@@ -345,11 +345,11 @@ theorem continuous_ofCoords : Continuous fun z : E × ℝ => ofCoords z.1 z.2 :=
 theorem continuous_slabMk {a b : ℝ} :
     Continuous fun z : E × Icc a b => slabMk (a := a) (b := b) z.1 z.2 :=
   (continuous_ofCoords.comp (continuous_fst.prodMk
-    (continuous_subtype_val.comp continuous_snd))).subtype_mk _
+    (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
 
 @[fun_prop]
 theorem continuous_slabTime {a b : ℝ} : Continuous (slabTime : slab (E := E) a b → Icc a b) :=
-  (continuous_time.comp continuous_subtype_val).subtype_mk _
+  (continuous_time.comp continuous_subtypeVal).subtype_mk _
 
 /-- The spatial slice `x ↦ (x, t)` of a slab at the time `t`, as a continuous map. -/
 def spatialSlice {a b : ℝ} (t : Icc a b) : C(E, slab (E := E) a b) :=

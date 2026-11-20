@@ -127,15 +127,15 @@ theorem dgDifferential_cohOfComposableArrows
       castDeg_dgComp R _ hd₁, dgComp_castDeg R _ rfl, castDeg_castDeg, ← dgCompZero_def,
       ← dgClosedHom_comp, ← F.map_comp, homOfLE_comp, sub_self, smul_zero]
   · -- Otherwise the face term and one factor of the composite term have interior vertices.
-    obtain ⟨s, hs⟩ := nonempty_iff_ne_empty.2 ht
+    obtain ⟨s, hs⟩ := ne_empty_iff_nonempty.1 ht
     obtain ⟨hst, hsS⟩ := mem_erase.1 hs
     rw [cohOfComposableArrows_of_ne_empty F ht, zero_sub]
     rcases lt_or_gt_of_ne hst with h | h
     · rw [cohOfComposableArrows_of_ne_empty F
-        (nonempty_iff_ne_empty.1 ⟨s, mem_filter.2 ⟨hsS, h⟩⟩), zero_dgComp, smul_zero, neg_zero,
+        (ne_empty_iff_nonempty.2 ⟨s, mem_filter.2 ⟨hsS, h⟩⟩), zero_dgComp, smul_zero, neg_zero,
         smul_zero]
     · rw [cohOfComposableArrows_of_ne_empty (S := {s ∈ S | t.val < s}) F
-        (nonempty_iff_ne_empty.1 ⟨s, mem_filter.2 ⟨hsS, h⟩⟩), dgComp_zero, smul_zero, neg_zero,
+        (ne_empty_iff_nonempty.2 ⟨s, mem_filter.2 ⟨hsS, h⟩⟩), dgComp_zero, smul_zero, neg_zero,
         smul_zero]
 
 /-- The `n`-simplex of the differential graded nerve given by a string of `n` composable closed
@@ -275,7 +275,7 @@ theorem ofComposableArrows_toComposableArrows (h₁ : ∀ X Y : C, Subsingleton 
     rw [ofComposableArrows_coh_empty, dgClosedHom_toComposableArrows_map]
   · -- A coherence with interior vertices has negative degree.
     have hd₀ : d < 0 := by
-      have := card_pos.2 (nonempty_iff_ne_empty.2 hS₀)
+      have := card_pos.2 (ne_empty_iff_nonempty.1 hS₀)
       omega
     rw [ofComposableArrows_coh_of_ne_empty _ hS₀]
     exact @Subsingleton.elim _ (h _ _ d hd₀) _ _

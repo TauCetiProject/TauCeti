@@ -108,7 +108,7 @@ continuous function vanishing at infinity. -/
 def restrictComplSingleton [TopologicalSpace β] [Zero β] (F : C(K, β)) {x₀ : K} (hF : F x₀ = 0) :
     C₀({x : K // x ≠ x₀}, β) where
   toFun x := F x.val
-  continuous_toFun := F.continuous.comp continuous_subtype_val
+  continuous_toFun := F.continuous.comp continuous_subtypeVal
   zero_at_infty' := hF ▸ F.tendsto_restrict_complSingleton_cocompact x₀
 
 /-- `F.restrictComplSingleton hF` evaluates as `F` on `{x : K // x ≠ x₀}`. -/
@@ -123,7 +123,7 @@ theorem restrictComplSingleton_eq_liftZeroAtInfty [TopologicalSpace β] [Zero β
     {x₀ : K} [CompactSpace {x : K // x ≠ x₀}] (F : C(K, β)) (hF : F x₀ = 0) :
     F.restrictComplSingleton hF =
       ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty
-        (F.comp ⟨Subtype.val, continuous_subtype_val⟩) := by
+        (F.comp ⟨Subtype.val, continuous_subtypeVal⟩) := by
   ext x
   simp
 

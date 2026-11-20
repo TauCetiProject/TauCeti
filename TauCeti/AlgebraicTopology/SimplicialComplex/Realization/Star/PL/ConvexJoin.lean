@@ -251,7 +251,7 @@ theorem exists_homeomorph_closedStarRealization_convexJoin
   have hFPL := isPLOn_joinFormula (b := b) hK hF
   have hcont : Continuous f :=
     (hFPL.continuousOn.comp_continuous ((continuous_realization_coe K).comp
-      continuous_subtype_val) fun x => mem_range_self x).subtype_mk _
+      continuous_subtypeVal) fun x => mem_range_self x).subtype_mk _
   have hinj : Function.Injective f := by
     intro x y hxy
     have hcoe := congrArg (fun z : S => joinInverseFormula G h b v z.val) hxy

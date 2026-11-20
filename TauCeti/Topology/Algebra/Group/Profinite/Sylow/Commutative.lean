@@ -105,7 +105,7 @@ noncomputable def continuousMulEquivMaximalProPQuotient (hP : IsProPSylow p P) :
     P ≃ₜ* maximalProPQuotient p G :=
   have : CompactSpace P := isCompact_iff_compactSpace.mp hP.isClosed.isCompact
   have hcont : Continuous ((maximalProPQuotient.mk p G).domRestrict P) :=
-    (maximalProPQuotient.continuous_mk p G).comp continuous_subtype_val
+    (maximalProPQuotient.continuous_mk p G).comp continuous_subtypeVal
   ContinuousMulEquiv.mk (MulEquiv.ofBijective _ hP.bijective_domRestrict_maximalProPQuotient_mk)
     hcont (hcont.continuous_symm_of_equiv_compact_to_t2
       (f := (MulEquiv.ofBijective _ hP.bijective_domRestrict_maximalProPQuotient_mk).toEquiv))
@@ -130,7 +130,7 @@ theorem isProPSylow_iff_isClosed_and_bijective_domRestrict_maximalProPQuotient_m
   -- quotient map is injective on `Q` and already surjective on `P`, so `P = Q`.
   have : CompactSpace P := isCompact_iff_compactSpace.mp hclosed.isCompact
   have hcont : Continuous ((maximalProPQuotient.mk p G).domRestrict P) :=
-    (maximalProPQuotient.continuous_mk p G).comp continuous_subtype_val
+    (maximalProPQuotient.continuous_mk p G).comp continuous_subtypeVal
   have hP : IsProP p P :=
     (isProP_maximalProPQuotient (p := p) (G := G)).of_equiv
       (ContinuousMulEquiv.mk (MulEquiv.ofBijective _ hbij) hcont

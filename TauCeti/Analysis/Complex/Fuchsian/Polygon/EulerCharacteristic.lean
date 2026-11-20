@@ -496,7 +496,7 @@ private theorem faceMap_of_mem (x : closedBall (0 : Fin 2 → ℝ) 1) :
 
 private theorem continuousOn_faceMap : ContinuousOn (faceMap (P := P) Γ) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
-  exact (continuous_quotient_mk'.comp (continuous_subtype_val.comp
+  exact (continuous_quotient_mk'.comp (continuous_subtypeVal.comp
     (faceHomeomorph P).continuous)).congr fun x ↦ (faceMap_of_mem x).symm
 
 private theorem image_faceMap_ball :

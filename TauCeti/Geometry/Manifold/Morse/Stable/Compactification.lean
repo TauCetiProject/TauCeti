@@ -219,7 +219,7 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
   have hg : Continuous fun (y : S) i ↦ hX.flow (τ i y) (y : M) :=
     continuous_pi fun i ↦ hX.flow.continuous ((Flow.continuousOn_levelCrossingTime
       hX.mdifferentiable.continuous.continuousOn hanti (hex i)).comp_continuous
-      continuous_subtype_val fun y ↦ y.2.1) continuous_subtype_val
+      continuous_subtypeVal fun y ↦ y.property.1) continuous_subtypeVal
   -- The point on the level `c i₀` is the point itself.
   have hτ₀ (y : S) : τ i₀ y = 0 :=
     (Flow.levelCrossingTime_eq_zero_iff (hanti y y.property.1)
@@ -245,7 +245,7 @@ theorem exists_homeomorph_morseTrajectoryRecords {p r : M} (hpr : p ≠ r) {c : 
           rfl⟩⟩
       left_inv w := Subtype.ext (funext (hrec w.val w.property))
       right_inv y := Subtype.ext (by simp only [hτ₀, Flow.map_zero_apply])
-      continuous_toFun := ((continuous_apply i₀).comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := ((continuous_apply i₀).comp continuous_subtypeVal).subtype_mk _
       continuous_invFun := hg.subtype_mk _ }, fun w ↦ rfl⟩
 
 /-- **The records of unbroken trajectories form the space of unparametrized trajectories.** For a

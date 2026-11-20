@@ -82,7 +82,7 @@ theorem continuous_algebraMap_residueFieldValuation [TopologicalSpace A]
       (MonoidWithZeroHom.ValueGroup₀.embedding γ.val), ← hab, map_div₀,
       Valuation.embedding_restrict, Valuation.embedding_restrict]
   filter_upwards [(((isContinuous_def v).mp hv).isOpen_lt_div a hb').mem_nhds
-    (by simp [← hemb, zero_lt_iff])] with z hz
+    (by simp [← hemb, pos_iff_ne_zero])] with z hz
   rwa [Valuation.restrict_lt_iff_lt_embedding, valued_algebraMap_residueFieldValuation, hemb]
 
 end ValuationSpectrum

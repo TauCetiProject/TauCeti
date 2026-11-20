@@ -82,7 +82,7 @@ variable {M E' : Type} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E']
 set `U` inside the base set of `e`. -/
 private def fiberCoord {U : Set M} (hUe : U ⊆ e.baseSet) : C(U, F) :=
   ⟨fun x ↦ (e (TotalSpace.mk' F x.val (s x.val))).2,
-    continuous_snd.comp ((e.continuousOn.comp_continuous (hs.comp continuous_subtype_val)
+    continuous_snd.comp ((e.continuousOn.comp_continuous (hs.comp continuous_subtypeVal)
       fun x ↦ e.mem_source.2 (hUe x.property)))⟩
 
 omit [T2Space M] [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle ℝ F E] in
@@ -106,10 +106,10 @@ private def sectionThomPairOverMap {z : M} {U : Set M} (hz : z ∈ U)
     TopPair.ofSubset ({⟨z, hz⟩}ᶜ : Set (TopCat.of U)) ⟶ thomPairOver F E U :=
   TopPair.ofHom
     (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.val (s x.val), x.property⟩,
-      (hs.comp continuous_subtype_val).subtype_mk _⟩)
+      (hs.comp continuous_subtypeVal).subtype_mk _⟩)
     (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk' F x.val.val (s x.val.val), x.val.property,
       mem_zeroSectionCompl.2 fun h0 ↦ x.property (Subtype.ext (hUz x.val.val x.val.property h0))⟩,
-      ((hs.comp (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _)⟩)
+      ((hs.comp (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _)⟩)
     (by ext; rfl)
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ x, Module ℝ (E x)] [∀ x, TopologicalSpace (E x)]
@@ -119,7 +119,7 @@ private theorem sectionThomPairOverMap_comp {z : M} {U : Set M} (hz : z ∈ U)
     sectionThomPairOverMap hs hz hUz ≫ thomPairOverMap F E (subset_univ U) ≫
         (thomPairOverUnivIso F E).hom =
       thomPairMapOfNeZero ⟨fun x : U ↦ TotalSpace.mk' F x.val (s x.val),
-        hs.comp continuous_subtype_val⟩ (S := {⟨z, hz⟩})
+        hs.comp continuous_subtypeVal⟩ (S := {⟨z, hz⟩})
         fun x hx h0 ↦ hx (mem_singleton_iff.2 (Subtype.ext (hUz x.val x.property h0))) :=
   TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ by
     -- The carriers of the pairs agree with `U` and the subspaces of the total space only up to

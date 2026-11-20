@@ -69,13 +69,13 @@ def stiefelTwoHomeomorphSpecialOrthogonalGroup :
   continuous_toFun := by
     have hv (i : Fin 2) : Continuous fun v : stiefel (EuclideanSpace ℝ (Fin 3)) 2 ↦ ofLp (v.val i)
         :=
-      (PiLp.continuous_ofLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
+      (PiLp.continuous_ofLp 2 _).comp ((continuous_apply i).comp continuous_subtypeVal)
     exact (continuous_ofFrame.comp ((hv 0).prodMk (hv 1))).subtype_mk _
   continuous_invFun := by
     have hA (j : Fin 3) : Continuous fun A : specialOrthogonalGroup (Fin 3) ℝ ↦
         toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col j) :=
       (PiLp.continuous_toLp 2 _).comp ((continuous_apply j).comp
-        (continuous_id.matrix_transpose.comp continuous_subtype_val))
+        (continuous_id.matrix_transpose.comp continuous_subtypeVal))
     refine Continuous.subtype_mk (continuous_pi fun i ↦ ?_) _
     fin_cases i
     · exact hA 0

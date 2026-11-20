@@ -76,7 +76,7 @@ theorem _root_.PartialDiffeomorph.exists_isIntegralManifold
   let u : U := ⟨0, h0⟩
   let f : U → M := fun w ↦ Φ.symm (p w)
   have hf : ContMDiff 𝓘(ℝ, W) I n f :=
-    Φ.symm.contMDiffOn.comp_contMDiff (hp.comp contMDiff_subtype_val) fun w ↦ w.2
+    Φ.symm.contMDiffOn.comp_contMDiff (hp.comp contMDiff_subtypeVal) fun w ↦ w.property
   have hfx (w : U) : f w ∈ Φ.source := Φ.map_target w.property
   -- Differentiate the coordinate expression to identify the tangent image.
   have hcomp : (Φ ∘ f : U → E) = p ∘ (Subtype.val : U → W) := by

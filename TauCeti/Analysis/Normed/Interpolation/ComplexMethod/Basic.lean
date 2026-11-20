@@ -1298,9 +1298,16 @@ variable (θ) in
 (`toSum_mapEquiv`). The norms of `e₀`, `e₁` and of their inverses bound its norm and the norm of
 its inverse by `norm_map_le`; if `e₀` and `e₁` preserve norms, so does it (`norm_mapEquiv`). -/
 def mapEquiv : C.ComplexMethodSpace θ ≃L[ℂ] D.ComplexMethodSpace θ :=
-  ContinuousLinearEquiv.equivOfInverse (map θ e₀ e₁ h) (map θ e₀.symm e₁.symm hsymm)
-    (leftInverse_map _ _ h _ _ hsymm e₀.symm_apply_apply e₁.symm_apply_apply)
-    (leftInverse_map _ _ hsymm _ _ h e₀.apply_symm_apply e₁.apply_symm_apply)
+  ContinuousLinearEquiv.ofContinuousLinearMap (map θ e₀ e₁ h) (map θ e₀.symm e₁.symm hsymm)
+    (ContinuousLinearMap.ext fun x ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      exact leftInverse_map (e₀.symm : Y₀ →L[ℂ] X₀) (e₁.symm : Y₁ →L[ℂ] X₁) hsymm
+        (e₀ : X₀ →L[ℂ] Y₀) (e₁ : X₁ →L[ℂ] Y₁) h e₀.apply_symm_apply e₁.apply_symm_apply x)
+    (ContinuousLinearMap.ext fun x ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      exact leftInverse_map (e₀ : X₀ →L[ℂ] Y₀) (e₁ : X₁ →L[ℂ] Y₁) h
+        (e₀.symm : Y₀ →L[ℂ] X₀) (e₁.symm : Y₁ →L[ℂ] X₁) hsymm e₀.symm_apply_apply
+        e₁.symm_apply_apply x)
 
 theorem mapEquiv_apply (u : C.ComplexMethodSpace θ) :
     mapEquiv θ e₀ e₁ h hsymm u = map θ e₀ e₁ h u :=

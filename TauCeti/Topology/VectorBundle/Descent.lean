@@ -157,9 +157,9 @@ theorem continuous_totalSpaceMap (a : CoordinateHom Z W) : Continuous a.totalSpa
   have hs : IsOpen s :=
     ((Z.isOpen_baseSet i).inter (W.isOpen_baseSet j)).preimage Z.continuous_proj
   have hbase : Continuous (fun q : s ↦ (⟨q.val.proj, q.property⟩ : ↥(Z.baseSet i ∩ W.baseSet j))) :=
-    (Z.continuous_proj.comp continuous_subtype_val).subtype_mk _
+    (Z.continuous_proj.comp continuous_subtypeVal).subtype_mk _
   have hcoord : Continuous (fun q : s ↦ ((Z.localTriv i) q.val).2) :=
-    ((Z.localTriv i).continuousOn.comp_continuous continuous_subtype_val
+    ((Z.localTriv i).continuousOn.comp_continuous continuous_subtypeVal
       (fun q ↦ q.property.1)).snd
   have hlocal := ((a.operator i j).continuous.comp hbase).clm_apply hcoord
   rw [FiberBundle.continuousAt_totalSpace]

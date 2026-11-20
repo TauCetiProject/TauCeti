@@ -159,14 +159,14 @@ private theorem fiberLocalization_orbitMap_eq {U : Set M} (hU : IsOpen U) (x₀ 
     rw [ModuleCat.comp_apply, ModuleCat.comp_apply, hA, map_zsmul,
       o.fiberLocalization_id_fundamentalClass hd] at h
     exact h.symm
-  have hπs : π.comp s = ⟨Subtype.val, continuous_subtype_val⟩ :=
+  have hπs : π.comp s = ⟨Subtype.val, continuous_subtypeVal⟩ :=
     ContinuousMap.ext fun z ↦ by simp [hπ, hs]
   -- `s_* o_U`, the image of the local orientation at `x₀` under the section.
   let z₀ := (localHomologyMap R s hsU d).hom
     ((localHomologyIsoOfIsOpenEmbedding R hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom (o x₀).val)
   have h₂ : πD.hom z₀ = (o x₀).val := by
     have hc : localHomologyMap R s hsU d ≫ πD =
-        localHomologyMap R ⟨Subtype.val, continuous_subtype_val⟩
+        localHomologyMap R ⟨Subtype.val, continuous_subtypeVal⟩
           (by rw [← hπs, ContinuousMap.coe_comp, preimage_comp]; exact hsU) d := by
       simp only [πD, localHomologyMap_comp]
       exact localHomologyMap_congr R hπs _ d
@@ -238,7 +238,7 @@ private theorem singularHomologyCrossRel_localOrientation_ne_zero {U : Set M} (h
         ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))
           hU.isOpenEmbedding_subtypeVal x₀ d).inv.hom (o x₀).val ⊗ₜ β) ≠ 0 := by
   intro hX0
-  let incl : C(U, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  let incl : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   have h₁ : incl ⁻¹' {(x₀ : M)} ⊆ {x₀} := fun _ hz ↦ Subtype.ext hz
   have hincl := singularHomologyCrossRel_localHomologyMap_tmul _ _ incl h₁ rfl
     ((localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ))

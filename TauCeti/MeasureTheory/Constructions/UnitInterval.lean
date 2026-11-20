@@ -131,7 +131,7 @@ theorem cellIdx_eq_sub_one_iff (hm : 0 < m) (x : I) :
 @[fun_prop]
 theorem measurable_cellIdx : Measurable (cellIdx m) :=
   (measurable_of_countable fun k => min k (m - 1)).comp
-    (Nat.measurable_floor.comp (measurable_const.mul measurable_subtype_coe))
+    (Nat.measurable_floor.comp (measurable_const.mul measurable_subtypeVal))
 
 /-- Each cell is measurable. -/
 @[measurability]

@@ -111,7 +111,7 @@ towards `c`, by the affine homotopy from the inclusion of `K` to the constant ma
 private lemma isZero_of_starConvex (hp : serreFibrations p) (hK : Convex ℝ K) {c : V}
     (hc : c ∈ K) {S : Set V} (hS : StarConvex ℝ c S) (hcS : c ∈ S) (m : ℕ) :
     IsZero ((TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ S})).singularHomology M m) :=
-  let G := ContinuousMap.Homotopy.affine ⟨((↑) : K → V), continuous_subtype_val⟩ (.const K c)
+  let G := ContinuousMap.Homotopy.affine ⟨((↑) : K → V), continuous_subtypeVal⟩ (.const K c)
   isZero_singularHomology_preimage_of_deformation hp
     ⟨fun q ↦ ⟨G q, hK.lineMap_mem q.2.property hc q.1.property⟩, by fun_prop⟩
     (fun x ↦ Subtype.ext (by simp [G]))
@@ -124,7 +124,7 @@ private lemma isZero_of_starConvex (hp : serreFibrations p) (hK : Convex ℝ K) 
 
 /-- The composite `E → K → V` of the fibration with the inclusion of the base. -/
 private abbrev proj (p : E ⟶ _root_.TopCat.of K) : C(E, V) :=
-  ⟨fun e ↦ (p e : V), continuous_subtype_val.comp p.hom.continuous⟩
+  ⟨fun e ↦ (p e : V), continuous_subtypeVal.comp p.hom.continuous⟩
 
 /-- The part of `E` over the complement of a closed half-subspace is acyclic. -/
 private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))

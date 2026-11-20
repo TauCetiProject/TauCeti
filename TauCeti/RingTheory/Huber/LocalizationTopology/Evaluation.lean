@@ -382,7 +382,7 @@ theorem rationalEvalHom_comp_completionMap {k : ℕ} (t : Fin k → A) (ht : ∀
   obtain ⟨p, rfl⟩ : ∃ p, weightedPolynomialsEquiv isWeightFamily_one_weight p = a :=
     ⟨(weightedPolynomialsEquiv isWeightFamily_one_weight).symm a,
       (weightedPolynomialsEquiv isWeightFamily_one_weight).apply_symm_apply a⟩
-  rw [UniformSpace.Completion.map_coe uniformContinuous_subtype_val,
+  rw [UniformSpace.Completion.map_coe uniformContinuous_subtypeVal,
     AddMonoidHom.completion_coe, coe_weightedPolynomialsEquiv]
   have hpe : (polyEvalHom s (S := S) t).toAddMonoidHom
       (weightedPolynomialsEquiv isWeightFamily_one_weight p)

@@ -152,7 +152,7 @@ theorem exists_eqOn_comp_of_ker_mfderiv_le {U : Set M} (hU : IsOpen U)
     have hlc : IsLocallyConstant (S.domRestrict g) := by
       refine (IsLocallyConstant.iff_eventually_eq _).2 fun z ↦ ?_
       obtain ⟨h, -, hgh⟩ := hloc z z.property.1
-      filter_upwards [(continuous_subtype_val.tendsto z).eventually hgh] with z' hz'
+      filter_upwards [(continuous_subtypeVal.tendsto z).eventually hgh] with z' hz'
       have hz : F z = F y := z.property.2
       have hz'' : F z' = F y := z'.property.2
       rw [domRestrict_apply, domRestrict_apply, hz', hgh.self_of_nhds, comp_apply, comp_apply, hz,

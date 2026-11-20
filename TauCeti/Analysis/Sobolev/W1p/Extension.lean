@@ -193,7 +193,7 @@ private theorem extendByZero_mem_image (hsub : Omega ≤ Omega') {u : W1p mu Ome
       (w1p0Submodule mu Omega' p).isClosed
   have hcont : Continuous fun v : W1p mu Omega p =>
       Sobolev1JetLp.extendByZeroₗᵢ (mu := mu) (p := p) hsub (v : Sobolev1JetLp mu Omega p) :=
-    (Sobolev1JetLp.extendByZeroₗᵢ hsub).continuous.comp continuous_subtype_val
+    (Sobolev1JetLp.extendByZeroₗᵢ hsub).continuous.comp continuous_subtypeVal
   refine w1p0Submodule_subset_of_isClosed (hclosed.preimage hcont) (fun phi => ?_) hu
   exact ⟨W1p.ofTestFunctionₗ mu Omega' p (TestFunction.monoCLM ℝ phi),
     W1p.ofTestFunctionₗ_mem_w1p0Submodule _,

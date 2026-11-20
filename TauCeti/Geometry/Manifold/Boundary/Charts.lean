@@ -359,7 +359,7 @@ theorem isImmersion_subtypeVal_boundary :
   apply Manifold.IsImmersionOfComplement.isImmersion (F := ℝ)
   intro p
   apply Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
-    continuous_subtype_val.continuousAt (euclideanHalfSpaceBoundaryNormalEquiv n)
+    continuous_subtypeVal.continuousAt (euclideanHalfSpaceBoundaryNormalEquiv n)
     (chartAt (EuclideanSpace ℝ (Fin n)) p)
     (chartAt (EuclideanHalfSpace (n + 1)) (p : M))
     (mem_chart_source _ p) (mem_chart_source _ (p : M))

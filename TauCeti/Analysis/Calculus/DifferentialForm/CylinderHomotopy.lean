@@ -361,7 +361,7 @@ theorem contDiffOn_cylinderHomotopy (hs : Convex ℝ s) (hsu : UniqueDiffOn ℝ 
     (hω : ContDiffOn ℝ r ω (s ×ˢ Icc 0 1)) : ContDiffOn ℝ r (cylinderHomotopy ω) s := by
   rw [cylinderHomotopy_eq_integral_unitInterval]
   exact hs.contDiffOn_integral_smul_of_contDiffOn (μ := (volume : Measure I))
-    (integrable_const (1 : ℝ)) continuous_subtype_val hsu (hsu.prod uniqueDiffOn_Icc_zero_one)
+    (integrable_const (1 : ℝ)) continuous_subtypeVal hsu (hsu.prod uniqueDiffOn_Icc_zero_one)
     (contractInl.contDiff.comp_contDiffOn hω) fun x hx t ↦ ⟨hx, t.property⟩
 
 variable [CompleteSpace F]
@@ -382,7 +382,7 @@ private theorem extDerivWithin_cylinderHomotopy_eq (hs : Convex ℝ s) (hsu : Un
       ((hω.differentiableOn one_ne_zero _ ⟨hx, t.property⟩).hasFDerivWithinAt.comp x
         (hasFDerivAt_prodMk_left x (t : ℝ)).hasFDerivWithinAt fun x' hx' ↦ ⟨hx', t.property⟩)
   have h := hs.hasFDerivWithinAt_integral_smul_of_contDiffOn (μ := (volume : Measure I))
-    (integrable_const (1 : ℝ)) continuous_subtype_val hW
+    (integrable_const (1 : ℝ)) continuous_subtypeVal hW
     (contractInl.contDiff.comp_contDiffOn hω) (fun x hx t ↦ ⟨hx, t.property⟩) hx (hsu x hx)
   simp only [Function.comp_apply] at h
   have hDc : ContinuousOn D (Icc 0 1) :=
@@ -390,7 +390,7 @@ private theorem extDerivWithin_cylinderHomotopy_eq (hs : Convex ℝ s) (hsu : Un
       (continuous_const.prodMk continuous_id).continuousOn fun _ ht ↦ ⟨hx, ht⟩).clm_comp
         continuousOn_const)
   have hint := integrable_smul_of_continuousOn (μ := (volume : Measure I)) (x := x)
-    (integrable_const (1 : ℝ)) continuous_subtype_val (F := fun p : E × ℝ ↦ D p.2)
+    (integrable_const (1 : ℝ)) continuous_subtypeVal (F := fun p : E × ℝ ↦ D p.2)
     (W := {p | p.2 ∈ Icc 0 1}) (hDc.comp continuous_snd.continuousOn fun _ hp ↦ hp) fun t ↦
         t.property
   simp only [one_smul] at hint

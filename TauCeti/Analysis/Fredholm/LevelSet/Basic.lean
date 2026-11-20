@@ -335,7 +335,7 @@ theorem isOpen_levelSetImplicitCoordSource
     (hsurj : ∀ x ∈ {x | f x = c}, Function.Surjective (D x))
     (hker : ∀ x ∈ {x | f x = c}, (D x).ker.ClosedComplemented)
     (z : ↥{x | f x = c}) : IsOpen (levelSetImplicitCoordSource hf hsurj hker z) :=
-  ((hf z.1 z.2).isOpen_implicitCoordSource _ _).preimage continuous_subtype_val
+  ((hf z.val z.property).isOpen_implicitCoordSource _ _).preimage continuous_subtypeVal
 
 omit [CompleteSpace 𝕜] in
 /-- Membership in `TauCeti.levelSetImplicitCoordSource` is membership of the ambient point in
@@ -641,7 +641,7 @@ theorem accPt_levelSet_of_nontrivial_ker (hf : HasStrictFDerivAt f f' a) (hf' : 
   intro U hU
   have hUz : Ψ.symm ⁻¹' (Subtype.val ⁻¹' U) ∈ 𝓝 (0 : ↥f'.ker) := by
     rw [← Filter.mem_map, hmap]
-    exact continuous_subtype_val.continuousAt.preimage_mem_nhds hU
+    exact continuous_subtypeVal.continuousAt.preimage_mem_nhds hU
   obtain ⟨k, ⟨hkU, hkT⟩, hk0⟩ := Filter.nonempty_of_mem (Filter.inter_mem
     (nhdsWithin_le_nhds (Filter.inter_mem hUz
       (Ψ.open_target.mem_nhds (mem_levelSetChart_target hf hf' hker ha))))

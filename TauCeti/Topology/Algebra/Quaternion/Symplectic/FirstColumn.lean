@@ -274,7 +274,7 @@ private def firstColumnSectionDomain (n : ℕ) :
 private theorem isOpen_firstColumnSectionDomain (n : ℕ) :
     IsOpen (firstColumnSectionDomain n) :=
   isOpen_compl_singleton.preimage
-    ((continuous_apply 0).comp ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val))
+    ((continuous_apply 0).comp ((PiLp.continuous_ofLp 2 _).comp continuous_subtypeVal))
 
 private theorem one_mem_firstColumnSectionDomain (n : ℕ) :
     quaternionUnitaryFirstColumn n 1 ∈ firstColumnSectionDomain n := by
@@ -284,7 +284,7 @@ private def firstColumnCoord0 (x : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ �
   WithLp.ofLp (x : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 0
 
 private theorem continuous_firstColumnCoord0 : Continuous (firstColumnCoord0 (n := n)) :=
-  (continuous_apply 0).comp ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val)
+  (continuous_apply 0).comp ((PiLp.continuous_ofLp 2 _).comp continuous_subtypeVal)
 
 private theorem firstColumnCoord0_one :
     firstColumnCoord0 (quaternionUnitaryFirstColumn n 1) = 1 := by
@@ -371,7 +371,7 @@ private theorem continuousOn_firstColumnHouseholder :
   have haligned : ContinuousOn (firstColumnAligned (n := n)) (firstColumnSectionDomain n) :=
     continuousOn_pi.2 fun i ↦
       ((((continuous_apply i).comp
-        ((PiLp.continuous_ofLp 2 _).comp continuous_subtype_val)).continuousOn).mul
+        ((PiLp.continuous_ofLp 2 _).comp continuous_subtypeVal)).continuousOn).mul
           continuousOn_firstColumnPhase).congr fun x _ ↦ by
         simp [firstColumnAligned]
   refine continuousOn_quaternionHouseholder haligned.neg fun x _ ↦ ?_

@@ -288,7 +288,7 @@ private theorem fiberClassOver_eq_of_path (hg : IsLocalFiberGenerator K F E g ε
   have : LocallyPathConnectedSpace unitInterval :=
     Convex.locallyPathConnectedSpace ℝ (convex_Icc (0 : ℝ) 1)
   refine γ.eq_of_eventually_eq fun t ↦ ?_
-  have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtype_val.comp γ.continuous
+  have hγ : Continuous fun s ↦ ((γ s : W) : B) := continuous_subtypeVal.comp γ.continuous
   have hc : ((γ t : W) : B) ∈ (trivializationAt F E (γ t : B)).baseSet :=
     mem_baseSet_trivializationAt F E _
   have hO : {s : unitInterval | ((γ s : W) : B) ∈ (trivializationAt F E (γ t : B)).baseSet ∧
@@ -344,7 +344,7 @@ private theorem isIso_thomPairOverSingularHomologyFinrankInv_of_subset
     (hW : W ⊆ (trivializationAt F E c).baseSet) :
     IsIso (thomPairOverSingularHomologyFinrankInv hg W) := by
   have hu : ∀ ⦃x y : TopCat.of W⦄, Path x y → ε c x = ε c y := fun _ _ γ ↦
-    hg.eq_of_path c continuous_subtype_val (fun x ↦ hW x.2) γ
+    hg.eq_of_path c continuous_subtypeVal (fun x ↦ hW x.property) γ
   have h : thomPairOverSingularHomologyFinrankInv hg W ≫
       TopPair.singularHomologyMap ((trivializationAt F E c).thomPairOverIso ℝ hW).hom
         (ModuleCat.of K K) (finrank ℝ F) =
@@ -537,7 +537,7 @@ map over the union. -/
 private theorem thomPairSingularHomologyFinrankInv_restrict (hg : IsLocalFiberGenerator K F E g ε)
     (s : Finset B) :
     ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :
           TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet) ⟶ TopCat.of B) ≫
         thomPairSingularHomologyFinrankInv hg =
       thomPairOverSingularHomologyFinrankInv hg (⋃ b ∈ s, (trivializationAt F E b).baseSet) ≫
@@ -563,7 +563,7 @@ variable (F E) in
 private def baseFiniteTrivializingUnionCocone :
     Cocone (baseFiniteTrivializingUnionDiagram (B := B) F E) where
   pt := TopCat.of B
-  ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
+  ι := { app _ := TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ }
 
 variable (K F E) in
 /-- The homology of the base is the filtered colimit of the homologies of the finite unions of the
@@ -639,7 +639,7 @@ cocones. -/
 private theorem singularHomologyMap_ι_thomPairSingularHomologyFinrankInv
     (hg : IsLocalFiberGenerator K F E g ε) (s : Finset B) :
     ((singularHomologyFunctor (ModuleCat.{w} K) 0).obj (ModuleCat.of K K)).map
-        (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
+        (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :
           TopCat.of ↥(⋃ b ∈ s, (trivializationAt F E b).baseSet) ⟶ TopCat.of B) ≫
         thomPairSingularHomologyFinrankInv hg ≫ eqToHom (singularHomology_thomPair_eq K) =
       thomPairOverSingularHomologyFinrankInv hg (⋃ b ∈ s, (trivializationAt F E b).baseSet) ≫
@@ -806,8 +806,9 @@ private theorem singularHomologyMap_complZeroPairIso_hom_orientedFiberGenerator
   have hne : -ω ≠ ω := (Module.Ray.ne_neg_self ω).symm
   -- Compare `e` with the trivialization at `b`: they induce equal maps if they read `o b` alike,
   -- and opposite ones otherwise.
-  rcases Orientation.eq_or_eq_neg ((trivializationAt F E b).mapOrientation ι hb₀ (o b)) ω hι
-    with h | h <;> rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι with h' | h'
+  have hι' : Nat.card ι = finrank ℝ F := Nat.card_eq_fintype_card.trans hι
+  rcases Orientation.eq_or_eq_neg ((trivializationAt F E b).mapOrientation ι hb₀ (o b)) ω hι'
+    with h | h <;> rcases Orientation.eq_or_eq_neg (e.mapOrientation ι hb (o b)) ω hι' with h' | h'
   · rw [Trivialization.singularHomologyMap_complZeroPairIso_hom_eq_of_mapOrientation_eq
       _ e hb₀ hb hι _ (h'.trans h.symm)]
     simp [h, h', h₀]

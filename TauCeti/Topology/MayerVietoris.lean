@@ -60,8 +60,8 @@ theorem exists_nat_cover_finite_sup (hB : Opens.IsBasis B) (U : Opens X) :
   let K := K₀.shiftr
   let C (n : ℕ) : Set X := Subtype.val '' K n
   let V (n : ℕ) : Opens X :=
-    ⟨Subtype.val '' interior (K n), U.isOpen.isOpenMap_subtype_val _ isOpen_interior⟩
-  have hC (n : ℕ) : IsCompact (C n) := (K.isCompact n).image continuous_subtype_val
+    ⟨Subtype.val '' interior (K n), U.isOpen.isOpenMap_subtypeVal _ isOpen_interior⟩
+  have hC (n : ℕ) : IsCompact (C n) := (K.isCompact n).image continuous_subtypeVal
   have hCV (n : ℕ) : C n ⊆ V (n + 1) := image_mono (K.subset_interior_succ n)
   have hVC (n : ℕ) : (V n : Set X) ⊆ C n := image_mono interior_subset
   have hmono {i j : ℕ} (hij : i ≤ j) : C i ⊆ C j := image_mono (K.subset hij)
@@ -210,8 +210,8 @@ theorem mayerVietoris_induction_le {X : Type*} [TopologicalSpace X] (W : Opens X
   -- Transport the induction to the opens of the subspace `W`, through the image of the
   -- inclusion, which identifies them with the opens of `X` contained in `W`.
   let ι : Opens W → Opens X := fun V ↦
-    ⟨Subtype.val '' (V : Set W), W.isOpen.isOpenMap_subtype_val _ V.isOpen⟩
-  let κ : Opens X → Opens W := Opens.comap ⟨Subtype.val, continuous_subtype_val⟩
+    ⟨Subtype.val '' (V : Set W), W.isOpen.isOpenMap_subtypeVal _ V.isOpen⟩
+  let κ : Opens X → Opens W := Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩
   have hι_coe (V : Opens W) : (ι V : Set X) = Subtype.val '' (V : Set W) := Opens.coe_mk
   have hικ (U : Opens X) (hU : U ≤ W) : ι (κ U) = U := by
     refine Opens.ext ?_

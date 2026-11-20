@@ -71,6 +71,10 @@ variable (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 abbrev khovanovTotalComplex : CochainComplex (ModuleCat.{u} R) ℤ :=
   ∐ D.khovanovComplex hD R
 
+/-- Cochain complexes of `R`-modules have coproducts indexed by `Type`, as required by
+`GradedObject.total`. -/
+instance : HasCoproducts.{0} (CochainComplex (ModuleCat.{u} R) ℤ) := .mk fun _ ↦ inferInstance
+
 /-- The ordinary complex is the native quantum total, not a product completion. -/
 theorem khovanovTotalComplex_def :
     D.khovanovTotalComplex hD R =
@@ -101,7 +105,7 @@ theorem quantumComplexDirectSumXIso_hom_ι_basis (i j : ℤ) (e : D.EnhancedStat
       (PreservesCoproduct.iso (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i)
         (D.khovanovComplex hD R)).hom =
       Sigma.ι (fun j ↦ (D.khovanovComplex hD R j).X i) j := by
-    simpa only [← PreservesCoproduct.inv_hom, IsIso.Iso.inv_inv, eval_obj, eval_map] using
+    simpa only [← PreservesCoproduct.iso_inv, IsIso.Iso.inv_inv, eval_obj, eval_map] using
       map_ι_comp_inv_sigmaComparison
         (eval (ModuleCat.{u} R) (ComplexShape.up ℤ) i) (D.khovanovComplex hD R) j
   simp only [quantumComplexDirectSumXIso, Iso.trans_hom, ModuleCat.hom_comp,

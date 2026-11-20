@@ -228,7 +228,7 @@ theorem contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace :
       (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘
         (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)) :=
   fun x ↦ (contDiffAt_centralForceEnergyMomentum_kepler b x.property.1).contMDiffAt.comp x
-    (contMDiff_subtype_val x)
+    (contMDiff_subtypeVal x)
 
 /-- **The levels of the Kepler problem in its bound phase space are compact.** For `m, κ > 0`,
 the states of the bound phase space sharing the energy and the angular momentum of a given one
@@ -254,7 +254,7 @@ private theorem poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace
     [FiniteDimensional ℝ V] (i j : Fin 2) (x : keplerBoundPhaseSpace b m κ) :
     SmoothTwoForm.poissonBracket
       (SmoothForm.mpullback (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)
-        contMDiff_subtype_val (stdSymplecticForm (V := V)).constSmooth)
+        contMDiff_subtypeVal (stdSymplecticForm (V := V)).constSmooth)
       (fun y ↦ (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘ Subtype.val) y i)
       (fun y ↦ (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘ Subtype.val) y j) x = 0 :=
   poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b i j x
@@ -266,7 +266,7 @@ theorem isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace
     [FiniteDimensional ℝ V] (hm : 0 < m) (hκ : 0 < κ) (i : Fin 2) :
     IsCompleteVectorField (SmoothTwoForm.hamiltonianVectorField
       (SmoothForm.mpullback (Subtype.val : keplerBoundPhaseSpace b m κ → V × V)
-        contMDiff_subtype_val (stdSymplecticForm (V := V)).constSmooth)
+        contMDiff_subtypeVal (stdSymplecticForm (V := V)).constSmooth)
       fun y ↦ (centralForceEnergyMomentum b m (fun r ↦ -κ / r) ∘ Subtype.val) y i) := by
   have hσ := (SymplecticForm.isNondegenerate_constSmooth
     (stdSymplecticForm (V := V))).mpullback_subtype_val (keplerBoundPhaseSpace b m κ)

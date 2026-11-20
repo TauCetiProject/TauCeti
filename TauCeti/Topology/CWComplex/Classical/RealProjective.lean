@@ -361,7 +361,7 @@ theorem image_cellMap_ball (i : Fin (n + 1)) : cellMap i '' ball 0 1 = openCell 
 theorem continuousOn_cellMap (i : Fin (n + 1)) : ContinuousOn (cellMap i) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hc : Continuous (cellSpherePoint i) := (continuous_hemispherePoint.comp
-    ((Homeomorph.continuous _).comp continuous_subtype_val)).subtype_mk _
+    ((Homeomorph.continuous _).comp continuous_subtypeVal)).subtype_mk _
   exact ((continuous_mk n).comp hc).congr fun x => (cellMap_apply i x.property).symm
 
 /-- The inverse of the characteristic map of the `i`-cell is continuous on the open `i`-cell. -/
@@ -371,10 +371,10 @@ theorem continuousOn_cellMap_symm (i : Fin (n + 1)) :
   obtain ⟨y, rfl⟩ := mk_surjective n p
   have hyi := (mk_mem_openCell_iff.1 hp).1
   have hc : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 => y.val i :=
-    (PiLp.continuous_apply _ _ _).comp continuous_subtype_val
+    (PiLp.continuous_apply _ _ _).comp continuous_subtypeVal
   refine (continuousAt_lift n (cellChart_neg i) ?_).continuousWithinAt
   exact (Homeomorph.continuous _).continuousAt.comp ((hc.continuousAt.div hc.continuousAt.abs
-    (abs_ne_zero.2 hyi)).smul ((continuous_truncate i).comp continuous_subtype_val).continuousAt)
+    (abs_ne_zero.2 hyi)).smul ((continuous_truncate i).comp continuous_subtypeVal).continuousAt)
 
 /-- The characteristic map of the `i`-cell sends the boundary sphere of the sup-norm ball into the
 open cells of dimension less than `i`. -/

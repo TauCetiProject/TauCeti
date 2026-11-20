@@ -154,7 +154,7 @@ compact. -/
 theorem isCompact_range_geometricLink (hc : IsCompact (closedStarRealization K {v})) :
     IsCompact (range fun y : geometricLink K v => (y.val.val : ι → ℝ)) := by
   have := isCompact_iff_compactSpace.mp (K.isCompact_geometricLink v hc)
-  exact isCompact_range ((continuous_realization_coe K).comp continuous_subtype_val)
+  exact isCompact_range ((continuous_realization_coe K).comp continuous_subtypeVal)
 
 /-- The apex coordinate of a geometric link point is zero. -/
 @[simp]
@@ -396,7 +396,7 @@ theorem closedStarRealization_singleton_eq_insert_range_starRay :
 /-- The coordinate at a vertex is continuous on the punctured star. -/
 private theorem continuous_puncturedStar_coordinate (w : ι) :
     Continuous (fun x : puncturedClosedStar K v => x.val.val w) :=
-  (continuous_apply w).comp ((continuous_realization_coe K).comp continuous_subtype_val)
+  (continuous_apply w).comp ((continuous_realization_coe K).comp continuous_subtypeVal)
 
 /-- Radial projection is continuous when the realization has its coordinate topology. -/
 theorem continuous_starLinkProjection
@@ -447,9 +447,9 @@ theorem continuous_starRay
   intro w
   have hc : Continuous (fun p : geometricLink K v × Ico (0 : ℝ) 1 => p.1.val.val w) :=
     (continuous_apply w).comp ((continuous_realization_coe K).comp
-      (continuous_subtype_val.comp continuous_fst))
+      (continuous_subtypeVal.comp continuous_fst))
   have ht : Continuous (fun p : geometricLink K v × Ico (0 : ℝ) 1 => (p.2 : ℝ)) :=
-    continuous_subtype_val.comp continuous_snd
+    continuous_subtypeVal.comp continuous_snd
   simp only [Function.comp_apply, Finsupp.add_apply, Finsupp.smul_apply,
     Finsupp.single_apply, smul_eq_mul]
   by_cases h : v = w
@@ -502,13 +502,13 @@ theorem setOf_support_mem_closedStar_mem_nhds (K : PreAbstractSimplicialComplex 
       y.val.val.support ∈ closedStar K σ} ∈ 𝓝 x := by
   have hopen := (isOpen_biInter_finset fun i (_ : i ∈ σ) =>
     A.isOpen_openStarRealization i).preimage
-      (continuous_subtype_val (p := fun x : Realization A => x.1.support ∈ K))
+      (continuous_subtypeVal (p := fun x : Realization A => x.val.support ∈ K))
   have hmem : x.val ∈ ⋂ i ∈ σ, A.openStarRealization i :=
     mem_iInter₂.mpr fun i hi => A.mem_openStarRealization_iff_mem_support.mpr (hx hi)
   refine Filter.mem_of_superset (hopen.mem_nhds hmem) fun y hy => ?_
   have hsub : σ ⊆ y.val.val.support := fun i hi =>
     A.mem_openStarRealization_iff_mem_support.mp (mem_iInter₂.mp hy i hi)
-  exact mem_closedStar.mpr ⟨y.property, by simpa only [Finset.union_eq_left.mpr hsub] using
-      y.property⟩
+  exact mem_closedStar.mpr ⟨y.property,
+      by simpa only [Finset.union_eq_left.mpr hsub] using y.property⟩
 
 end PreAbstractSimplicialComplex

@@ -766,7 +766,7 @@ theorem gaussPointBelow_vle_iff (hr₀ : 0 < r) (hr₁ : r ≤ 1)
 theorem supp_gaussPointAbove (hr₀ : 0 < r) (hr₁ : r < 1) :
     (gaussPointAbove (K := K) hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, gaussPointAbove_vle_iff, map_zero, le_zero_iff,
+    rw [mem_supp_iff, gaussPointAbove_vle_iff, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationAbove_eq_zero_iff, Ideal.mem_bot]
 
 /-- **The support of `η_{r⁻}` is trivial.** -/
@@ -774,7 +774,7 @@ theorem supp_gaussPointAbove (hr₀ : 0 < r) (hr₁ : r < 1) :
 theorem supp_gaussPointBelow (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     (gaussPointBelow (K := K) hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, gaussPointBelow_vle_iff, map_zero, le_zero_iff,
+    rw [mem_supp_iff, gaussPointBelow_vle_iff, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationBelow_eq_zero_iff, Ideal.mem_bot]
 
 /-- Just above `r`, the variable `T` is strictly larger than a constant `c` of norm `r`: the

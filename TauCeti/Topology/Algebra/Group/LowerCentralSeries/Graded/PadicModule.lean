@@ -109,7 +109,7 @@ theorem IsProP.gradedMk_padicPow (hG : IsProP p G) {q n : ℕ}
       u⟩
   have hpow : hR.padicPow x u = xuR := by
     apply Subtype.ext
-    exact hR.map_padicPow hG R.subtype continuous_subtype_val x u
+    exact hR.map_padicPow hG R.subtype continuous_subtypeVal x u
   let _ : Module ℤ_[p] (gradedPiece q G n) := hG.gradedPieceModule q n
   rw [gradedMk_def, gradedMk_def]
   -- Expose the subgroup quotient underlying the sealed graded class map.

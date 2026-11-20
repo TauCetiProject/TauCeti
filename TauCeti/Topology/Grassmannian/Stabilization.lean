@@ -74,7 +74,7 @@ theorem continuous_rankStabilization [TopologicalSpace 𝕜] :
   refine Continuous.subtype_mk (continuous_pi fun i ↦ ?_) _
   refine Fin.cases continuous_const (fun i ↦ continuous_pi fun j ↦ ?_) i
   exact Fin.cases continuous_const (fun j ↦
-    (continuous_apply j).comp ((continuous_apply i).comp continuous_subtype_val)) j
+    (continuous_apply j).comp ((continuous_apply i).comp continuous_subtypeVal)) j
 
 end finiteFullRankFrame
 

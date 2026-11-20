@@ -229,7 +229,8 @@ theorem coeff_hsymmPart {σ : Type*} [Fintype σ] [DecidableEq σ] {n : ℕ} (ν
       ∑ μ : n.Partition, (kostkaNumber μ ν * diagramKostkaNumber (ofPartition μ)
         (Finsupp.mapDomain (fun x => (Fintype.equivFin σ x : ℕ)) d) : R) := by
   rw [hsymmPart_eq_sum_kostkaNumber_smul_schurPoly, coeff_sum]
-  exact sum_congr rfl fun μ _ => by rw [coeff_smul, coeff_schurPoly, smul_eq_mul]
+  exact sum_congr rfl fun μ _ => by
+    rw [AddMonoidAlgebra.coeff_smul_apply, coeff_schurPoly, smul_eq_mul]
 
 /-- **The coefficients of `h_ν` at partitions**: the coefficient of the monomial recording the parts
 of `ξ` in `h_ν` is `∑_μ K_{μν} K_{μξ}`.  The row bound is what makes the monomial record all of

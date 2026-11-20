@@ -91,7 +91,7 @@ private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
   let T : Set (Fin n → ℝ) := S ∩ U
   let ψ : T → V := fun y ↦ ⟨c (e y), y.property.2.2⟩
   have hψ : Continuous ψ := Continuous.subtype_mk (c.continuous.comp
-    (e.continuousOn.comp_continuous continuous_subtype_val fun y ↦ y.2.2.1)) _
+    (e.continuousOn.comp_continuous continuous_subtypeVal fun y ↦ y.property.2.1)) _
   have hφψ (y : T) : φ (ψ y) = y := he.symm_firstCoords_firstCoords_apply y.property.2.1
       y.property.1
   -- The ordered chart roots and their common exponent and multiplicity data are exactly the
@@ -101,7 +101,7 @@ private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
       count := k
       root := fun i y ↦ t i (ψ y)
       continuous_root := fun i ↦
-        (ht i).continuousOn.comp_continuous (continuous_subtype_val.comp hψ)
+        (ht i).continuousOn.comp_continuous (continuous_subtypeVal.comp hψ)
           fun y ↦ (ψ y).property
       strictMono_root := fun y ↦ hmono (ψ y) (ψ y).property
       exponent := fun _ ↦ q.lazardExponent (Polynomial.C ∘ φ a)

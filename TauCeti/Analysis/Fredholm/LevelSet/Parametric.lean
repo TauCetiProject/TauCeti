@@ -520,7 +520,7 @@ theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
   let B : Set Λ := g ''
     (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : {z : E × Λ | f z = c}) : E × Λ)).comp
       (ContinuousLinearMap.inl ℝ E Λ))})
-  have hQnhds : Q ∈ 𝓝 z := continuous_subtype_val.continuousAt.preimage_mem_nhds hQ₀nhds
+  have hQnhds : Q ∈ 𝓝 z := continuous_subtypeVal.continuousAt.preimage_mem_nhds hQ₀nhds
   refine ⟨Q, hQnhds, B, hNnowhere, ?_⟩
   intro w hwQ hwbad
   obtain ⟨hwsource, hwN⟩ := hQ₀ w hwQ

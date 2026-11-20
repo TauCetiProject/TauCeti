@@ -122,6 +122,7 @@ theorem weightTorusCoordinateBialgHom_def [Fintype sigma] (wt : Fin N → sigma 
       DiagonalizableGroup.diagonalCoordinateMap (Pi.basisFun S (Fin N))
         (fun i ↦ SplitTorus.weightCharacter (wt i)) := by
   rw [weightTorusCoordinateBialgHom]
+  dsimp only
   congr 1
   funext i
   apply Multiplicative.toAdd.injective

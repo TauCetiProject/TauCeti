@@ -214,9 +214,9 @@ private theorem continuous_deformation : Continuous (deformation K s) := by
   let Y := faceInclusion K σ ⁻¹' K.openStarRealizationSet s
   have hcoord (v : ι) : Continuous fun p : unitInterval × Y => p.2.val.val v := by
     have h : Continuous fun x : StandardSimplex σ.val => (x.val : ι → ℝ) := continuous_induced_dom
-    exact (continuous_apply v).comp (h.comp (continuous_subtype_val.comp continuous_snd))
+    exact (continuous_apply v).comp (h.comp (continuous_subtypeVal.comp continuous_snd))
   have ht : Continuous fun p : unitInterval × Y => (p.1 : ℝ) :=
-    continuous_subtype_val.comp continuous_fst
+    continuous_subtypeVal.comp continuous_fst
   have hmass (p : unitInterval × Y) : ∑ v ∈ σ.val with v ∈ s, p.2.val.val v ≠ 0 := by
     obtain ⟨v, hv, hpos⟩ := p.2.property
     rw [faceInclusion_val] at hpos
@@ -277,7 +277,7 @@ def openStarRetraction :
     exact (Finset.mem_filter.mp hv).2⟩
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
-    exact (continuous_subtype_val.comp ((continuous_deformation K s).comp
+    exact (continuous_subtypeVal.comp ((continuous_deformation K s).comp
       (continuous_const.prodMk continuous_id))).congr (deformation_one K s)
 
 private theorem openStarRetraction_val (x : K.openStarRealizationSet s) :

@@ -291,7 +291,7 @@ theorem gradedCohomologyClass_pairing [LocallyCompactSpace G]
       rw [hμ'v, gradedCochainComplex_ρ_apply, gradedCochainComplex_ρ_apply,
         gradedCochainComplex_ρ_apply, hρ, hμ'v]))
     (fun p q b ↦ (continuous_gradedCochainComplex_X_iff _ _ _ _ _ _ _ _).2
-      ((hcont b.1).comp continuous_subtype_val))
+      ((hcont b.val).comp continuous_subtypeVal))
     (fun p q a b hb ↦ Subtype.ext (by
       rw [hdv _ _ (by omega), hμ'v, hd a.val b.val ((hdv q (q + 1) rfl b).symm.trans
         (congrArg Subtype.val hb)), hμ'v, hdv p (p + 1) rfl a]))

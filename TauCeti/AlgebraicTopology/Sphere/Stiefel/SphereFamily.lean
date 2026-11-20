@@ -188,9 +188,9 @@ def stiefelSphereFamily : C(stiefel E 3, C(Sphere2, sphere (0 : E) 1)) :=
         simp only [Function.comp_def, LinearIsometry.coe_unitSphereMap_apply,
           Orthonormal.synthesisMapIsometry_apply]
         refine continuous_finsetSum _ fun i _ => Continuous.smul ?_ ?_
-        · exact (PiLp.continuous_apply 2 _ i).comp (continuous_subtype_val.comp
+        · exact (PiLp.continuous_apply 2 _ i).comp (continuous_subtypeVal.comp
             (standardStiefelSphereMap.continuous.comp continuous_snd))
-        · exact (continuous_apply i).comp (continuous_subtype_val.comp continuous_fst) }
+        · exact (continuous_apply i).comp (continuous_subtypeVal.comp continuous_fst) }
 
 /-- The two-sphere `σ_{p,u,v}` is the image of the standard double loop under the linear map
 `ℝ³ → E` sending the standard basis to `(p, u, v)`: the linear combination of `p`, `u` and `v`

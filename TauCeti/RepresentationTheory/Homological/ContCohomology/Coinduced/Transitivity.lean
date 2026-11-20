@@ -85,7 +85,7 @@ def transEquiv : DiscreteCoind G U (DiscreteCoind U V A) ≃+ DiscreteCoind G W 
         hsmul ⟨x, hx⟩ w _ hv])
   invFun φ := mk G U (DiscreteCoind U V A)
     (fun g => mk U V A (fun u => φ ((u : G) * g))
-      ((isLocallyConstant φ).comp_continuous (continuous_subtype_val.mul continuous_const))
+      ((isLocallyConstant φ).comp_continuous (continuous_subtypeVal.mul continuous_const))
       (fun v u => by
         have hvW : ((v : U) : G) ∈ W :=
           hW ▸ Subgroup.mem_map.2 ⟨v, v.property, Subgroup.subtype_apply (v : U)⟩

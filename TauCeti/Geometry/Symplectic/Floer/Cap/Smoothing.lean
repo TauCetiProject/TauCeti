@@ -242,7 +242,7 @@ private theorem contMDiffOn_capModel {E H : Type*} [NormedAddCommGroup E] [Norme
 /-- The path in the loop space traced by the model on the unit square. -/
 private def capModelPath (hg : Continuous g) : Path γ (Path.refl x) :=
   Path.ofContinuousFamily (fun s t : unitInterval ↦ capModel g P (s, t))
-    ((continuous_capModel hgγ hg).comp (continuous_subtype_val.prodMap continuous_subtype_val))
+    ((continuous_capModel hgγ hg).comp (continuous_subtypeVal.prodMap continuous_subtypeVal))
     (fun s ↦ by rw [Icc.coe_zero, capModel_seam_zero hgγ])
     (fun s ↦ by rw [Icc.coe_one, capModel_seam_one hgγ])
     (fun t ↦ by rw [Icc.coe_zero, capModel_zero, hgγ])
@@ -264,8 +264,8 @@ private theorem homotopic_capModelPath (hg : Continuous g) :
     projIcc 0 1 zero_le_one (q.1 * capRamp q.2)
   have hσ : Continuous σ := continuous_projIcc.comp (by fun_prop)
   have hρ : Continuous ρ := continuous_projIcc.comp
-    ((continuous_subtype_val.comp continuous_fst).mul
-      (contDiff_capRamp.continuous.comp (continuous_subtype_val.comp continuous_snd)))
+    ((continuous_subtypeVal.comp continuous_fst).mul
+      (contDiff_capRamp.continuous.comp (continuous_subtypeVal.comp continuous_snd)))
   let K := Path.continuousFamily (x₀ := x) (x₁ := x)
     (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦
       P (σ q) (collaredSmoothTransitionLineMapUnit (ρ q) t))
@@ -369,8 +369,8 @@ private theorem homotopic_capModelPath_toPath (hgp : Periodic g 1)
   have hR : Continuous fun q : (unitInterval × unitInterval) × unitInterval ↦
       R (q.1.1, ((q.1.2 : ℝ), (q.2 : ℝ))) :=
     R.continuous.comp ((continuous_fst.comp continuous_fst).prodMk
-      ((continuous_subtype_val.comp (continuous_snd.comp continuous_fst)).prodMk
-        (continuous_subtype_val.comp continuous_snd)))
+      ((continuous_subtypeVal.comp (continuous_snd.comp continuous_fst)).prodMk
+        (continuous_subtypeVal.comp continuous_snd)))
   let K := Path.continuousFamily (x₀ := x) (x₁ := x)
     (fun (q : unitInterval × unitInterval) (t : unitInterval) ↦ R (q.1, ((q.2 : ℝ), (t : ℝ)))) hR
     (fun q ↦ by

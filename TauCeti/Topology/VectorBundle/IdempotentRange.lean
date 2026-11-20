@@ -146,7 +146,7 @@ noncomputable def rangeTrivialization :
     refine Continuous.continuousOn ((isEmbedding_totalSpace_range F' p).continuous_iff.mpr ?_)
     exact continuous_fst.prodMk ((hp.comp continuous_fst).clm_apply
       ((continuous_intertwiner hp x₀ |>.comp continuous_fst).clm_apply
-        (continuous_subtype_val.comp (φ.continuous.comp continuous_snd))))
+        (continuous_subtypeVal.comp (φ.continuous.comp continuous_snd))))
   baseSet := {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))}
   open_baseSet := isOpen_setOf_isUnit_intertwiner hp x₀
   source_eq := rfl

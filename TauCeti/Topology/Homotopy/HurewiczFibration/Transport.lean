@@ -72,7 +72,7 @@ def transport (γ : Path b₀ b₁) : C(p ⁻¹' {b₀}, p ⁻¹' {b₁}) :=
       (Λ.apply_lift _ _ _ 1).trans γ.target⟩,
     Continuous.subtype_mk
       ((continuous_eval_const (1 : I)).comp
-        (Λ.continuous_lift continuous_subtype_val continuous_const _)) _⟩
+        (Λ.continuous_lift continuous_subtypeVal continuous_const _)) _⟩
 
 /-- The end point of the lift of `γ` from `x` is the image of `x` under the transport. -/
 theorem transport_apply_coe (γ : Path b₀ b₁) (x : p ⁻¹' {b₀}) :
@@ -92,7 +92,7 @@ private theorem liftFamily_comp_snd_one {Y : Type*} [TopologicalSpace Y] (f : C(
 /-- Transport along a constant path is homotopic to the identity of the fiber. -/
 theorem transport_refl_homotopic (b : B) :
     (Λ.transport (Path.refl b)).Homotopic (ContinuousMap.id _) := by
-  let f : C(p ⁻¹' {b}, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let f : C(p ⁻¹' {b}, E) := ⟨Subtype.val, continuous_subtypeVal⟩
   let Γ : C(p ⁻¹' {b} × I, B) := (Path.refl b).toContinuousMap.comp ContinuousMap.snd
   have h : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (y.property : p y.val = b).symm
   obtain ⟨K, hK₀, hK₁, hK⟩ := Λ.isHurewiczFibration.{u}.exists_homotopy_endpoints
@@ -136,7 +136,7 @@ theorem exists_lift_trans (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
     ∃ C : C(p ⁻¹' {b₀} × I, E), (∀ y, C (y, 0) = y.val) ∧
       (∀ y, C (y, 1) = (Λ.transport δ (Λ.transport γ y)).val) ∧
       ∀ y t, p (C (y, t)) = (γ.trans δ) t := by
-  let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtypeVal⟩
   -- The constant-in-`y` families of paths `γ`, `δ` and `γ.trans δ` over the fiber.
   let Γγ : C(p ⁻¹' {b₀} × I, B) := γ.toContinuousMap.comp ContinuousMap.snd
   let Γδ : C(p ⁻¹' {b₀} × I, B) := δ.toContinuousMap.comp ContinuousMap.snd
@@ -191,7 +191,7 @@ theorem exists_lift_trans (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
 theorem transport_trans_homotopic (γ : Path b₀ b₁) (δ : Path b₁ b₂) :
     (Λ.transport (γ.trans δ)).Homotopic ((Λ.transport δ).comp (Λ.transport γ)) := by
   obtain ⟨C, hC₀, hC₁, hC⟩ := Λ.exists_lift_trans γ δ
-  let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let f : C(p ⁻¹' {b₀}, E) := ⟨Subtype.val, continuous_subtypeVal⟩
   let Γ : C(p ⁻¹' {b₀} × I, B) := (γ.trans δ).toContinuousMap.comp ContinuousMap.snd
   have Γ_apply : ∀ z, Γ z = (γ.trans δ) z.2 := fun _ ↦ (rfl) -- the definition of `Γ`
   have hz : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (γ.trans δ).source.trans
@@ -217,7 +217,7 @@ theorem transport_homotopic_fiberHomotopyEquiv (α : C(I, B)) :
   -- Both maps are end points of lifts of `α` from each point of the fibre over `α 0`: the lifts
   -- given by `Λ`, and the lifts traced in the pullback by the contraction to `1`.
   let γ : Path (α 0) (α 1) := { toContinuousMap := α, source' := rfl, target' := rfl }
-  let f : C(p ⁻¹' {α 0}, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let f : C(p ⁻¹' {α 0}, E) := ⟨Subtype.val, continuous_subtypeVal⟩
   let Γ : C(p ⁻¹' {α 0} × I, B) := γ.toContinuousMap.comp ContinuousMap.snd
   have hΓ : ∀ y, Γ (y, 0) = p (f y) := fun y ↦ (y.property : p y.val = α 0).symm
   let α' : C(p ⁻¹' {α 0} × I, E) :=
@@ -268,7 +268,7 @@ theorem transport_comp_homotopic {E' : Type u'} {B' : Type v'} [TopologicalSpace
     (hg₀ : ∀ x, (g₀ x).val = g x.val) (hg₁ : ∀ x, (g₁ x).val = g x.val) :
     ((Λ.transport (γ.map f.continuous)).comp g₀).Homotopic (g₁.comp (Λ'.transport γ)) := by
   let s₀ : C(p' ⁻¹' {a₀}, E) := ⟨fun x ↦ g x.val, by fun_prop⟩
-  let s₀' : C(p' ⁻¹' {a₀}, E') := ⟨Subtype.val, continuous_subtype_val⟩
+  let s₀' : C(p' ⁻¹' {a₀}, E') := ⟨Subtype.val, continuous_subtypeVal⟩
   let Γ' : C(p' ⁻¹' {a₀} × I, B') := γ.toContinuousMap.comp ContinuousMap.snd
   let Γ : C(p' ⁻¹' {a₀} × I, B) := (γ.map f.continuous).toContinuousMap.comp ContinuousMap.snd
   have hΓ' : ∀ x, Γ' (x, 0) = p' (s₀' x) := fun x ↦ γ.source.trans (x.property : p' x.val = a₀).symm

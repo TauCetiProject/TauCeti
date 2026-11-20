@@ -652,7 +652,7 @@ theorem eventually_detLineChartEquiv_symm_eq_smul {A₀ : E →L[ℝ] F}
   have hxV : A₀ ∈ V := ⟨hxU, hxU'⟩
   -- The transition on the open set `V` where both charts are valid, relative to its value at `A₀`.
   obtain ⟨c, hc, -, hcu⟩ := exists_continuous_detLineChartEquiv_symm_eq_smul
-    (T := fun A : V ↦ (A : E →L[ℝ] F)) continuous_subtype_val (fun A ↦ hUinv A A.2.1)
+    (T := fun A : V ↦ (A : E →L[ℝ] F)) continuous_subtypeVal (fun A ↦ hUinv A A.property.1)
     (fun A ↦ hUinv' A A.property.2) ⟨A₀, hxV⟩
   -- At `A₀` the transition agrees with itself, so its relative coefficient `c` is `1` there.
   have hc1 : c ⟨A₀, hxV⟩ = 1 := by

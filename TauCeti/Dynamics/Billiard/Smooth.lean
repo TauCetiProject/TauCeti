@@ -147,19 +147,20 @@ private theorem exists_hasFDerivAt_inner_deriv_chordDir (hn : n ≠ 0) (hχ : Co
     simp only [map_add, map_smul, smul_eq_mul]
     ring
   -- The derivative is the map `(a, b) ↦ (a, α a + c b)`, inverted by `(a, z) ↦ (a, (z - α a) / c)`.
-  refine ⟨ContinuousLinearEquiv.equivOfInverse ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod G')
+  refine ⟨ContinuousLinearEquiv.ofContinuousLinearMap ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod G')
     ((ContinuousLinearMap.fst ℝ ℝ ℝ).prod
       (c⁻¹ • (ContinuousLinearMap.snd ℝ ℝ ℝ - α • ContinuousLinearMap.fst ℝ ℝ ℝ)))
-    (fun p ↦ ?_) (fun p ↦ ?_), hasFDerivAt_fst.prodMk hG1⟩
-  · ext
-    · simp
-    · simp [hG']
-      field_simp
+    (ContinuousLinearMap.ext fun p ↦ ?_) (ContinuousLinearMap.ext fun p ↦ ?_),
+    hasFDerivAt_fst.prodMk hG1⟩
   · ext
     · simp
     · simp [hG']
       field_simp
       ring
+  · ext
+    · simp
+    · simp [hG']
+      field_simp
 
 /-- **Smoothness of the next collision parameter.** If `χ` is `C^(n+1)` with `n ≠ 0`, the next
 collision parameter `t(s, v)` is `C^n`, jointly in `s` and `v`, on the strip `ℝ × (-1, 1)`. It is
@@ -300,7 +301,7 @@ private theorem continuous_restrict_strip {f : ℝ × ℝ → ℝ × ℝ}
     (hmaps : ∀ x : ℝ × Ioo (-1 : ℝ) 1, (f (x.1, x.2)).2 ∈ Ioo (-1 : ℝ) 1) :
     Continuous fun x : ℝ × Ioo (-1 : ℝ) 1 ↦
       ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : Ioo (-1 : ℝ) 1)) := by
-  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
     fun x ↦ ⟨mem_univ _, x.2.property⟩
   exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
 

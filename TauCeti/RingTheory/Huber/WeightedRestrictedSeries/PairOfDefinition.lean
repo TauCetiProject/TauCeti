@@ -436,7 +436,7 @@ theorem isOpen_weightedRingOfDefinition (P : PairOfDefinition A) (hT : IsWeightF
 theorem isOpen_weightedIdeal (P : PairOfDefinition A) (hT : IsWeightFamily T) (n : ℕ) :
     IsOpen ((P.weightedIdeal hT n : Ideal (P.weightedRingOfDefinition hT)) :
       Set (P.weightedRingOfDefinition hT)) :=
-  (isOpen_weightedNhd hT (P.isOpen_idealImage n)).preimage continuous_subtype_val
+  (isOpen_weightedNhd hT (P.isOpen_idealImage n)).preimage continuous_subtypeVal
 
 /-- **The subspace topology on `A₀⟨X⟩_T` is the `I⟨X⟩_T`-adic topology.**
 

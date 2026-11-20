@@ -57,7 +57,7 @@ theorem continuous_stableMeasure :
     intro t
     have hc := (Complex.continuous_exp.comp
       ((continuous_stableCharacteristicExponent_params t).comp
-        (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)))).tendsto a
+        (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd)))).tendsto a
     simpa only [hμ, charFun_stableMeasure (p _).1.property (abs_le.mpr (p _).2.property),
       charFun_stableMeasure a.1.property (abs_le.mpr a.2.property), NNReal.coe_one, one_mul,
           zero_mul,

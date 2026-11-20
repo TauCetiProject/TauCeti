@@ -175,7 +175,7 @@ theorem contMDiff_coe_levelSet
     letI := levelSetChartedSpace hf hFred hsurj hindex
     ContMDiff 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, E) m (Subtype.val : ↥{x | f x = c} → E) := by
   let _i := levelSetChartedSpace hf hFred hsurj hindex
-  refine fun z ↦ contMDiffAt_iff.2 ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine fun z ↦ contMDiffAt_iff.2 ⟨continuous_subtypeVal.continuousAt, ?_⟩
   have hz := (levelSetChartAt hf hFred hsurj hindex z).map_source
     (mem_levelSetChartAt_source hf hFred hsurj hindex z)
   have h := (contDiffOn_coe_levelSetChartAt_symm hf hFred hsurj hindex hsmooth z).contDiffAt
@@ -222,7 +222,7 @@ theorem hasMFDerivAt_coe_levelSet
   -- In the model space the extended charts are the preferred chart at `z` and the identity.
   have e : chartAt (Fin n → 𝕜) z = levelSetChartAt hf hFred hsurj hindex z :=
     levelSetChartedSpace_chartAt hf hFred hsurj hindex z
-  refine ⟨continuous_subtype_val.continuousAt, ?_⟩
+  refine ⟨continuous_subtypeVal.continuousAt, ?_⟩
   simp only [mfld_simps, e, Function.comp_def, levelSetChartAt_apply_self hf hFred hsurj hindex z,
     hasFDerivWithinAt_univ]
   -- The tangent-space casts for these boundaryless models are identity maps.

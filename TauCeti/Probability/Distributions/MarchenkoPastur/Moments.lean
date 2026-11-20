@@ -344,7 +344,7 @@ theorem integral_pow_succ_marchenkoPastur_eq_sum_range (y : ℝ≥0) (k : ℕ) :
   have hs : #s = k + 1 := by simp [s]
   rw [integral_pow_marchenkoPastur]
   have hpos (π : NoncrossingPartition s) : 1 ≤ #π.val.parts := by
-    refine Finset.card_pos.2 (nonempty_iff_ne_empty.2 fun h ↦ ?_)
+    refine Finset.card_pos.2 (ne_empty_iff_nonempty.1 fun h ↦ ?_)
     have := Finpartition.parts_eq_empty_iff.1 h
     exact (univ_nonempty (α := Fin (k + 1))).ne_empty this
   have hle (π : NoncrossingPartition s) : #π.val.parts ≤ k + 1 :=

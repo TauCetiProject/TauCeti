@@ -488,8 +488,8 @@ def sphereMappingConeSkeletonHomeomorph :
   left_inv _ := rfl
   right_inv p :=
     Subtype.ext (Prod.ext rfl ((mem_skeletonLT_sphereMappingCone_iff h f).1 p.property).2.symm)
-  continuous_toFun := (continuous_subtype_val.prodMk continuous_const).subtype_mk _
-  continuous_invFun := (continuous_fst.comp continuous_subtype_val).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.prodMk continuous_const).subtype_mk _
+  continuous_invFun := (continuous_fst.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_sphereMappingConeSkeletonHomeomorph_apply (a : sphere (0 : EuclideanSpace ℝ ι) 1) :

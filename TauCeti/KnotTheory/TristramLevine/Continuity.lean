@@ -85,7 +85,7 @@ theorem eventually_tristramLevineSignature_eq_of_alexander_ne_zero
     (hΔ : eval₂ Complex.ofRealHom (Circle.toUnits ω) (alexander V) ≠ 0) :
     ∀ᶠ (z : Circle) in 𝓝 ω,
       tristramLevineSignature V z = tristramLevineSignature V ω := by
-  exact (continuous_subtype_val : Continuous ((↑) : Circle → ℂ)).continuousAt.eventually
+  exact (continuous_subtypeVal : Continuous ((↑) : Circle → ℂ)).continuousAt.eventually
     (eventually_tristramLevineSignature_eq V
       ((det_tristramLevineForm_ne_zero_iff V ω hω).mpr hΔ))
 
@@ -98,7 +98,7 @@ theorem isLocallyConstant_tristramLevineSignature_of_alexander_ne_zero
     IsLocallyConstant (fun ω : s => tristramLevineSignature V (ω : Circle)) := by
   rw [IsLocallyConstant.iff_eventually_eq]
   intro ω
-  exact (continuous_subtype_val : Continuous ((↑) : s → Circle)).continuousAt.eventually
+  exact (continuous_subtypeVal : Continuous ((↑) : s → Circle)).continuousAt.eventually
     (eventually_tristramLevineSignature_eq_of_alexander_ne_zero V
       (h₁ ω ω.property) (hΔ ω ω.property))
 

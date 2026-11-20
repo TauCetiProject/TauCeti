@@ -89,7 +89,7 @@ theorem exists_contMDiffMap_isClosedEmbedding_norm_le
       simpa only [range_domRestrict] using hclosed⟩
   exact ⟨r, hr, hrε, hDsource,
     e.isOpenEmbedding_restrict.comp (IsOpenEmbedding.inclusion (hTD.trans hDsource)
-      (hT.preimage continuous_subtype_val)), hd,
-    hd.comp (IsClosedEmbedding.inclusion hSD (hS.preimage continuous_subtype_val))⟩
+      (hT.preimage continuous_subtypeVal)), hd,
+    hd.comp (IsClosedEmbedding.inclusion hSD (hS.preimage continuous_subtypeVal))⟩
 
 end OpenPartialHomeomorph

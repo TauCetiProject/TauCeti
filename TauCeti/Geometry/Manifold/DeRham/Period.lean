@@ -228,7 +228,7 @@ theorem pathClassIntegral_mk_eq_pathIntegral (hφ : IsSmoothForm I 1 φ)
       (by simp only [Γ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
       (hgU.add_const (pathIntegral φ c 0 t₀ - g (c t₀)))
       (by simp only [Γ, PrimitiveSpace.proj_graph, hγ]; exact hxU) ?_
-    filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+    filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
       (Metric.ball_mem_nhds (t₀ : ℝ) hδ)] with s hs
     have hsub : uIcc (t₀ : ℝ) s ⊆ c ⁻¹' U := by
       refine (Set.OrdConnected.uIcc_subset ?_ (Metric.mem_ball_self (x := (t₀ : ℝ)) hδ) hs).trans
@@ -432,7 +432,7 @@ theorem mem_exactForms_one_iff_periodHom_eq_zero [PreconnectedSpace M]
   rw [mem_exactForms_one_iff_forall_pathIntegral_eq_zero hφ x₀]
   intro c hc hc₀ hc₁
   -- a smooth loop at `x₀` defines an element of the fundamental group
-  let γ : Path x₀ x₀ := ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtype_val⟩, hc₀, hc₁⟩
+  let γ : Path x₀ x₀ := ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtypeVal⟩, hc₀, hc₁⟩
   rw [← periodHom_ofMul_eq_pathIntegral (φ.isSmoothForm.of_le (by simp))
     ((mem_closedForms I φ).mp hφ) (hc.of_le (by simp)) (γ := γ) fun _ ↦ rfl, h,
     AddMonoidHom.zero_apply]

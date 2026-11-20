@@ -477,7 +477,7 @@ theorem _root_.Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates
       (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure = ⊤ := by
   obtain ⟨t, ht, ht_image, htN⟩ :=
     N.exists_convergesToOne_lift_quotient_topologicallyGenerates hN hs hsg
-  refine ⟨t, ht_image, ht.union (hu.image N.subtype continuous_subtype_val), ?_⟩
+  refine ⟨t, ht_image, ht.union (hu.image N.subtype continuous_subtypeVal), ?_⟩
   let K : Subgroup G := (Subgroup.closure (t ∪ N.subtype '' u)).topologicalClosure
   have hK_closed : IsClosed (K : Set G) := by
     dsimp only [K]
@@ -489,7 +489,7 @@ theorem _root_.Subgroup.exists_convergesToOne_lift_union_topologicallyGenerates
     exact Subgroup.le_topologicalClosure _
       (Subgroup.subset_closure (Or.inr ⟨x, hx, rfl⟩))
   have hcomap_closed : IsClosed (K.comap N.subtype : Set N) :=
-    hK_closed.preimage continuous_subtype_val
+    hK_closed.preimage continuous_subtypeVal
   have hcomap_top : K.comap N.subtype = ⊤ := by
     apply eq_top_iff.mpr
     rw [← hug]

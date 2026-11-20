@@ -190,7 +190,7 @@ theorem continuous_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = 
     Continuous (prodMap (F₁ := F₁) (E₁ := E₁) (F₂ := F₂) (E₂ := E₂) hm hn) := by
   refine continuous_of_isOpen_preimage_sheet (by
     simpa only [Function.comp_def, proj_prodMap] using
-      (continuous_proj.comp (continuous_fst.comp continuous_subtype_val) :
+      (continuous_proj.comp (continuous_fst.comp continuous_subtypeVal) :
         Continuous fun p : FiberProd F₁ E₁ F₂ E₂ m n ↦ p.val.1.proj)) fun b o ↦ ?_
   refine isOpen_iff_forall_mem_open.2 fun p hp ↦ ?_
   obtain ⟨hb, ho⟩ := mem_sheet_iff.1 hp
@@ -203,9 +203,9 @@ theorem continuous_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = 
   have hopen : IsOpen {q : FiberProd F₁ E₁ F₂ E₂ m n |
       q.val.1 ∈ sheet e₁ o₁ ∧ q.val.2 ∈ sheet e₂ o₂} :=
     ((isOpen_sheet (by simpa only [Fintype.card_fin] using hm.symm) e₁ o₁).preimage
-      (continuous_fst.comp continuous_subtype_val)).inter
+      (continuous_fst.comp continuous_subtypeVal)).inter
       ((isOpen_sheet (by simpa only [Fintype.card_fin] using hn.symm) e₂ o₂).preimage
-        (continuous_snd.comp continuous_subtype_val))
+        (continuous_snd.comp continuous_subtypeVal))
   refine ⟨_, ?_, hopen, mem_sheet_iff.2 ⟨hb₁, rfl⟩, mem_sheet_iff.2 ⟨hb₂, rfl⟩⟩
   have hmodel : Orientation.prod o₁ o₂ hm hn = o := by
     rcases p with ⟨⟨⟨x, a⟩, ⟨y, c⟩⟩, hxy⟩
@@ -330,10 +330,10 @@ theorem isOpenMap_prodMap (hm : finrank ℝ F₁ = m) (hn : finrank ℝ F₂ = n
     refine Continuous.subtype_mk (Continuous.prodMk ?_ ?_) _
     · exact (continuous_mk_mapOrientation_symm
         (by simpa only [Fintype.card_fin] using hm.symm) e₁ o₁).comp
-        (continuous_subtype_val.subtype_mk fun x ↦ x.2.1)
+        (continuous_subtypeVal.subtype_mk fun x ↦ x.property.1)
     · exact (continuous_mk_mapOrientation_symm
         (by simpa only [Fintype.card_fin] using hn.symm) e₂ o₂).comp
-        (continuous_subtype_val.subtype_mk fun x ↦ x.2.2)
+        (continuous_subtypeVal.subtype_mk fun x ↦ x.property.2)
   let t := prodMap hm hn ∘ s
   have ht : Continuous t := (continuous_prodMap hm hn).comp hs
   have hpt : proj ∘ t = (Subtype.val : V → B) := by

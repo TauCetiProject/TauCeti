@@ -269,7 +269,7 @@ private theorem valuation_lt_of_ord_lt {a b : F'} (hb : b ≠ 0)
     (h : a ≠ 0 → P'.ord b < P'.ord a) : P'.valuation a < P'.valuation b := by
   rcases eq_or_ne a 0 with rfl | ha
   · rw [map_zero]
-    exact zero_lt_iff.mpr (P'.valuation.ne_zero_iff.mpr hb)
+    exact pos_iff_ne_zero.mpr (P'.valuation.ne_zero_iff.mpr hb)
   · rw [P'.valuation_eq_exp_neg_ord ha, P'.valuation_eq_exp_neg_ord hb, WithZero.exp_lt_exp]
     have := h ha
     omega

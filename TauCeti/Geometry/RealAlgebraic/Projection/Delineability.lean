@@ -114,7 +114,7 @@ theorem nonempty_delineation_of_signInvariant_collinsProjection (hS : IsPreconne
   refine nonempty_delineation_of_collinsProjection (fun x : S ↦ MvPolynomial.eval₂Hom φ x.val)
     (fun q _ ↦ ?_) fun q hq x y ↦ ?_
   · simp only [MvPolynomial.coe_eval₂Hom, ← MvPolynomial.eval_map]
-    exact (MvPolynomial.continuous_eval _).comp continuous_subtype_val
+    exact (MvPolynomial.continuous_eval _).comp continuous_subtypeVal
   · simpa only [MvPolynomial.coe_eval₂Hom, sign_eq_zero_iff] using
       (congrArg (· = 0) (signInvariant_def.1 (h q hq) x x.property y y.property)).to_iff
 

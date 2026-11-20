@@ -418,7 +418,7 @@ lemma chainComplexHomEquiv_map (g : K.SimplexChainMap n) {m : ℕ} (θ : ⦋m⦌
     (chainComplexHomEquiv (g.map θ.toOrderHom)).val =
       SSet.chainComplexMap (SSet.stdSimplex.map θ) _ ≫ (chainComplexHomEquiv g).val :=
   coeff_injective fun j α ↦ by
-    have h : coeff (SSet.chainComplexMap (SSet.stdSimplex.map θ) _ ≫ g.toChainComplexHom) j α =
+    have h : coeff (SSet.chainComplexMap (SSet.stdSimplex.{u}.map θ) _ ≫ g.toChainComplexHom) j α =
         coeff g.toChainComplexHom j ((SSet.stdSimplex.map θ).app _ α) := by
       simp [coeff]
     refine (coeff_toChainComplexHom _ α).trans (Eq.trans ?_ h.symm)

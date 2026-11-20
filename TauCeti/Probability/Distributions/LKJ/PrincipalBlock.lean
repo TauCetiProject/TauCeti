@@ -105,9 +105,9 @@ private theorem map_leadingBlock_lkjMeasure (h : q ≤ p) {η : ℝ} (hη : 0 < 
     linarith
   have he : MeasurableEmbedding (Subtype.val :
       selfAdjoint.submodule ℝ (Matrix (Fin q) (Fin q) ℝ) → Matrix (Fin q) (Fin q) ℝ) :=
-    MeasurableEmbedding.subtype_coe isClosed_setOfPred_isSelfAdjoint.measurableSet
+    MeasurableEmbedding.subtypeVal isClosed_setOfPred_isSelfAdjoint.measurableSet
   apply he.map_injective
-  rw [Measure.map_map measurable_subtype_coe (by fun_prop), map_coe_lkjMeasure hη']
+  rw [Measure.map_map measurable_subtypeVal (by fun_prop), map_coe_lkjMeasure hη']
   have hshape {n : ℕ} (a : ℝ) (ij : strictLowerTriangle n) :
       lkjPartialCorrelationShape n a ij = a + ((n : ℝ) - ij.val.2.val - 2) / 2 := by
     have hj : ij.val.2.val + 2 ≤ n := by
@@ -122,7 +122,7 @@ private theorem map_leadingBlock_lkjMeasure (h : q ≤ p) {η : ℝ} (hη : 0 < 
   have hcoe := map_coe_lkjMeasure (p := p) hη
   simp_rw [hshape] at hcoe
   rw [← map_submatrix_partialCorrelationGram_pi_betaMeasure h hη, ← hcoe]
-  rw [Measure.map_map (by fun_prop) measurable_subtype_coe]
+  rw [Measure.map_map (by fun_prop) measurable_subtypeVal]
   congr 1
   funext R
   simp [Matrix.transpose_submatrix,

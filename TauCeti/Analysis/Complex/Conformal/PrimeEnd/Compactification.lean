@@ -148,7 +148,7 @@ theorem continuous_point : Continuous (point : U → PrimeEndCompactification U)
       Subtype.val ⁻¹' V := by
     ext
     simp
-  exact h ▸ hV.preimage continuous_subtype_val
+  exact h ▸ hV.preimage continuous_subtypeVal
 
 /-- The inclusion of an open set into its prime-end compactification is an open map: near a point
 of `U`, the compactification consists of points of `U`. -/
@@ -226,7 +226,7 @@ private theorem continuous_ofClosedBall : Continuous ofClosedBall := by
     simp only [mem_preimage, mem_ofPred_eq, mem_toFilter_ofClosedBall_iff hV,
       ← eventually_nhdsWithin_iff, eventually_mem_set]
   rw [h]
-  exact isOpen_setOfPred_eventually_nhds.preimage continuous_subtype_val
+  exact isOpen_setOfPred_eventually_nhds.preimage continuous_subtypeVal
 
 private theorem ofClosedBall_injective : Function.Injective ofClosedBall := by
   intro a b h

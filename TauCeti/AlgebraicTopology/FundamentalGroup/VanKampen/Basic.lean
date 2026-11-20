@@ -413,8 +413,8 @@ theorem isPushout_fundamentalGroup_union {A B C : Set X} (hC : C = A ∪ B)
   have hAB' : IsPathConnected (A' ∩ B') :=
     hAB.preimage_coe (inter_subset_left.trans subset_union_left)
   have hCover : interior A' ∪ interior B' = univ := by
-    rw [(hAo.preimage continuous_subtype_val).interior_eq,
-      (hBo.preimage continuous_subtype_val).interior_eq]
+    rw [(hAo.preimage continuous_subtypeVal).interior_eq,
+      (hBo.preimage continuous_subtypeVal).interior_eq]
     ext z
     exact iff_of_true z.property (mem_univ z)
   let iA : GrpCat.of (_root_.FundamentalGroup A' ⟨x', hxA⟩) ≅

@@ -201,7 +201,7 @@ private theorem IsLocallyBicollaredWithSides.isLocallyCollared_sideRestrict
       (IsEmbedding.id.prodMap IsEmbedding.subtypeVal)).codRestrict _ hmem
   · rw [hrange]
     exact (hb.isOpenEmbedding.isOpenMap _ (isOpen_univ.prod isOpen_Ioo)).preimage
-      continuous_subtype_val
+      continuous_subtypeVal
   · by_contra ht
     exact disjoint_left.1 (h.disjoint_range_left hA hAB) ⟨y, congrArg Subtype.val hy⟩
       (hbA ⟨mem_univ _, lt_of_le_of_ne t.property.1 (Ne.symm ht)⟩)
@@ -229,13 +229,13 @@ private theorem depth_of_coe_eq_zero {s : ball (0 : ℝ) 1} (hs : (s : ℝ) = 0)
   Subtype.ext (by simp [depth, hs])
 
 private theorem continuous_depth : Continuous depth :=
-  (continuous_abs.comp continuous_subtype_val).subtype_mk _
+  (continuous_abs.comp continuous_subtypeVal).subtype_mk _
 
 private theorem continuous_posBall : Continuous posBall :=
-  continuous_subtype_val.subtype_mk _
+  continuous_subtypeVal.subtype_mk _
 
 private theorem continuous_negBall : Continuous negBall :=
-  continuous_subtype_val.neg.subtype_mk _
+  continuous_subtypeVal.neg.subtype_mk _
 
 private theorem depth_posBall (t : Ico (0 : ℝ) 1) : depth (posBall t) = t :=
   Subtype.ext (abs_of_nonneg t.property.1)
@@ -295,10 +295,10 @@ private theorem glue_negBall (hcA : IsCollar (sideRestrict f A) cA)
 
 private theorem continuous_glue (hcA : IsCollar (sideRestrict f A) cA)
     (hcB : IsCollar (sideRestrict f B) cB) : Continuous (glue cA cB) := by
-  refine Continuous.if_le ?_ ?_ continuous_const (continuous_subtype_val.comp continuous_snd) ?_
-  · exact continuous_subtype_val.comp (hcA.isOpenEmbedding.continuous.comp
+  refine Continuous.if_le ?_ ?_ continuous_const (continuous_subtypeVal.comp continuous_snd) ?_
+  · exact continuous_subtypeVal.comp (hcA.isOpenEmbedding.continuous.comp
       (continuous_fst.prodMk (continuous_depth.comp continuous_snd)))
-  · exact continuous_subtype_val.comp (hcB.isOpenEmbedding.continuous.comp
+  · exact continuous_subtypeVal.comp (hcB.isOpenEmbedding.continuous.comp
       (continuous_fst.prodMk (continuous_depth.comp continuous_snd)))
   · rintro ⟨x, s⟩ hs
     simp only [depth_of_coe_eq_zero hs.symm, coe_apply_zero_of_isCollar hcA,

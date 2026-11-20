@@ -150,7 +150,7 @@ def diskRelCWComplex :
       rintro m ⟨⟨hm⟩⟩
       subst m
       rw [diskCellMapOfCell_self]
-      exact (continuous_subtype_val.comp (diskHomeomorphClosedBall n).continuous).continuousOn)
+      exact (continuous_subtypeVal.comp (diskHomeomorphClosedBall n).continuous).continuousOn)
     (by
       rintro ⟨m, ⟨⟨hm⟩⟩⟩ - ⟨m', ⟨⟨hm'⟩⟩⟩ - hne
       subst m m'

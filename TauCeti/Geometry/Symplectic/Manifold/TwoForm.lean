@@ -541,18 +541,18 @@ theorem mpullback_constSmooth_eq_mpullback_subtype_val_iff (form : SmoothTwoForm
     (form₀ : SymplecticForm F) (chart : PartialDiffeomorph I 𝓘(ℝ, F) M F ∞) :
     SmoothForm.mpullback
         (fun x : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) ↦ chart x.val)
-        (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun x ↦ x.2)
+        (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtypeVal fun x ↦ x.property)
         form₀.constSmooth =
       SmoothForm.mpullback
         (Subtype.val : (⟨chart.source, chart.open_source⟩ : TopologicalSpace.Opens M) → M)
-        contMDiff_subtype_val form ↔
+        contMDiff_subtypeVal form ↔
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w = form₀ (mvfderiv I chart x v) (mvfderiv I chart x w) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   let U : TopologicalSpace.Opens M := ⟨chart.source, chart.open_source⟩
   have hpoint (x : U) (v w : TangentSpace I x) :
       (SmoothForm.mpullback (fun y : U ↦ chart y.val)
-          (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtype_val fun y ↦ y.2)
+          (chart.contMDiffOn_toFun.comp_contMDiff contMDiff_subtypeVal fun y ↦ y.property)
           form₀.constSmooth).eval₂ x v w =
         form₀ (mvfderiv I chart x.val (Manifold.tangentSpaceOpenEquiv (I := I) x v))
           (mvfderiv I chart x.val (Manifold.tangentSpaceOpenEquiv (I := I) x w)) := by
@@ -561,7 +561,7 @@ theorem mpullback_constSmooth_eq_mpullback_subtype_val_iff (form : SmoothTwoForm
           (chart.open_source.mem_nhds x.property)).mdifferentiableAt
         (by simp)
     have hsub : MDifferentiableAt I I (Subtype.val : U → M) x :=
-      (contMDiff_subtype_val (n := ∞)).mdifferentiableAt (by simp)
+      (contMDiff_subtypeVal (n := ∞)).mdifferentiableAt (by simp)
     rw [SmoothForm.eval₂_mpullback]
     refine (form₀.eval₂_constSmooth_mfderiv_eq (chart ∘ Subtype.val) x v w).trans ?_
     rw [mvfderiv_comp_apply x hmd hsub, mvfderiv_comp_apply x hmd hsub,

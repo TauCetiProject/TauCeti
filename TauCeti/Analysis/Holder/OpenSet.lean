@@ -806,13 +806,13 @@ def restrictL (h : Ω' ≤ Ω) : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderSpa
             funext fun x ↦ iteratedFDeriv_extendZero_of_le h f (Fin.last k) x
           rw [he]
           exact (f.memHolder_iteratedFDeriv.holderWith.comp_lipschitzWith_one
-            ((LipschitzWith.subtype_val (Ω' : Set E)).subtype_mk fun x ↦ h x.2)).memHolder)
+            ((LipschitzWith.subtypeVal (Ω' : Set E)).subtype_mk fun x ↦ h x.property)).memHolder)
       map_add' f g := by ext x; simp [extendZero_of_le h]
       map_smul' c f := by ext x; simp [extendZero_of_le h] }
     1 fun f ↦ by
       rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk]
       exact (norm_le_of_iteratedFDeriv_eq (ι := fun x : Ω' ↦ (⟨x, h x.property⟩ : Ω))
-        ((LipschitzWith.subtype_val (Ω' : Set E)).subtype_mk fun x ↦ h x.2) _ f.iteratedFDeriv
+        ((LipschitzWith.subtypeVal (Ω' : Set E)).subtype_mk fun x ↦ h x.property) _ f.iteratedFDeriv
         (fun i x ↦ by rw [iteratedFDeriv_ofContDiffOn, iteratedFDeriv_extendZero_of_le h])
         f.memHolder_iteratedFDeriv).trans (norm_eq f).ge
 
@@ -929,12 +929,12 @@ def restrictOnL : CkHolderSpace k α E F →L[ℝ] CkHolderSpaceOn k α Ω F :=
     { toFun f := ofContDiffOn f f.contDiff.contDiffOn
         (fun i hi ↦ ⟨‖f‖, fun x ↦ f.norm_iteratedFDeriv_apply_le hi x⟩)
         (f.memHolder_iteratedFDeriv.holderWith.comp_lipschitzWith_one
-          (LipschitzWith.subtype_val (Ω : Set E))).memHolder
+          (LipschitzWith.subtypeVal (Ω : Set E))).memHolder
       map_add' f g := by ext x; simp
       map_smul' c f := by ext x; simp }
     1 fun f ↦ by
       rw [one_mul, LinearMap.coe_mk, AddHom.coe_mk]
-      refine (norm_le_of_iteratedFDeriv_eq (LipschitzWith.subtype_val (Ω : Set E)) _
+      refine (norm_le_of_iteratedFDeriv_eq (LipschitzWith.subtypeVal (Ω : Set E)) _
         f.iteratedFDeriv
         (fun i x ↦ by rw [iteratedFDeriv_ofContDiffOn, CkHolderSpace.iteratedFDeriv_eq])
         (by rw [CkHolderSpace.coe_iteratedFDeriv]; exact f.memHolder_iteratedFDeriv)).trans_eq ?_

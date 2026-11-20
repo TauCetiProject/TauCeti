@@ -270,7 +270,7 @@ theorem coe_smul_weightedEllipsoid (u : Circle) (z : weightedEllipsoid a b ε) :
 /-- The weighted circle action on the ellipsoid is continuous. -/
 instance : ContinuousSMul Circle (weightedEllipsoid a b ε) :=
   ⟨continuous_induced_rng.2 <| continuous_weightedRotation.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))⟩
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))⟩
 
 /-! ### Exchanging the coordinates -/
 
@@ -547,7 +547,7 @@ theorem weightedHopf_def (hε : 0 < ε) (z : weightedEllipsoid a b ε) :
   (rfl)
 
 theorem continuous_weightedHopf (hε : 0 < ε) : Continuous (weightedHopf (a := a) (b := b) hε) :=
-  continuous_mk (continuous_weightedHopfVector.comp continuous_subtype_val) _
+  continuous_mk (continuous_weightedHopfVector.comp continuous_subtypeVal) _
 
 /-- The weighted Hopf map is invariant under the weighted circle action. -/
 @[simp]

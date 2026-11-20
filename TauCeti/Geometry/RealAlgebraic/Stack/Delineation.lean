@@ -480,7 +480,7 @@ theorem exists_delineation_ball_of_isRoot_iff {B : Type*} [NormedAddCommGroup B]
     isPreconnected_iff_preconnectedSpace.1 (convex_ball b₀ ε).isPreconnected
   obtain ⟨D, hD⟩ := exists_delineation_of_isRoot_iff (θ := fun i (b : ball b₀ ε) ↦ s i b)
     (fun j ↦ continuous_iff_continuousAt.2 fun b ↦
-      ((hball b.2).2.1 j).comp continuous_subtype_val.continuousAt)
+      ((hball b.property).2.1 j).comp continuous_subtypeVal.continuousAt)
     (fun b c ↦ (hball b.property).2.2.2.trans (hball c.property).2.2.2.symm)
     (fun i ↦ ((hs i).mono hVU).domRestrict) (fun b ↦ hmono b (hVU b.property))
     (fun b ↦ hroots b (hVU b.property))

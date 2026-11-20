@@ -172,14 +172,15 @@ def closedBallChart (φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)) :
   right_inv' y _ := by
     simp [inversion_inversion _ (by positivity : (√2 : ℝ) ≠ 0),
       modelWithCornersEuclideanHalfSpace_symm_apply_of_le y.property]
-  open_source := isOpen_ne_fun (φ.continuous.comp continuous_subtype_val) continuous_const
+  open_source := isOpen_ne_fun (φ.continuous.comp continuous_subtypeVal) continuous_const
   open_target := isOpen_univ
   continuousOn_toFun := (𝓡∂ n).continuous_symm.comp_continuousOn <|
     ContinuousOn.inversion continuousOn_const continuousOn_const
-      (φ.continuous.comp continuous_subtype_val).continuousOn fun _ hx ↦ hx
+      (φ.continuous.comp continuous_subtypeVal).continuousOn fun _ hx ↦ hx
   continuousOn_invFun := Continuous.continuousOn <| Continuous.subtype_mk
     (φ.symm.continuous.comp <| Continuous.inversion continuous_const continuous_const
-      continuous_subtype_val fun y ↦ ne_neg_single_of_nonneg y.2) (symm_inversion_mem_closedBall φ)
+      continuous_subtypeVal fun y ↦ ne_neg_single_of_nonneg y.property)
+          (symm_inversion_mem_closedBall φ)
 
 variable (φ : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
 

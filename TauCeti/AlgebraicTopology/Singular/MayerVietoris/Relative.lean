@@ -372,7 +372,7 @@ private lemma isIso_homologyMap_smallPairToUnion (hU : IsOpen U) (hV : IsOpen V)
     IsIso (SSetPair.homologyMap (smallSingularSubcomplexPairToUnion U V) R n) := by
   have : QuasiIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).left R) :=
     quasiIso_chainComplexMap_smallSingularSubcomplexToUnion R U V
-      (hU.preimage continuous_subtype_val) (hV.preimage continuous_subtype_val)
+      (hU.preimage continuous_subtypeVal) (hV.preimage continuous_subtypeVal)
   have : IsIso (SSet.chainComplexMap (smallSingularSubcomplexPairToUnion U V).right R) := by
     rw [chainComplexMap_smallSingularSubcomplexPairToUnion_right]
     exact IsIso.id _

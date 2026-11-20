@@ -114,5 +114,5 @@ theorem IsCoveringMapOn.of_isLocalHomeomorph_of_isCompact_preimage [T2Space E] [
   have hproper : IsProperMap (s.restrictPreimage f) := by
     refine isProperMap_iff_isCompact_preimage.mpr ⟨hcont, fun K hK' ↦ ?_⟩
     rw [IsEmbedding.subtypeVal.isCompact_iff, image_val_preimage_restrictPreimage]
-    exact hK _ (Subtype.coe_image_subset _ _) (hK'.image continuous_subtype_val)
+    exact hK _ (Subtype.coe_image_subset _ _) (hK'.image continuous_subtypeVal)
   exact hloc.isCoveringMap_of_isProperMap hproper

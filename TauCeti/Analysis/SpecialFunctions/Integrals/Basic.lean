@@ -317,7 +317,7 @@ theorem cos_pow_mul_cexp (k : ℕ) (n : ℤ) (θ : ℝ) :
   rw [hcos, mul_pow, add_pow, Finset.mul_sum, Finset.sum_mul]
   refine Finset.sum_congr rfl fun m hm => ?_
   have hmk : m ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
-  rw [← Complex.exp_nat_mul, ← Complex.exp_nat_mul]
+  rw [← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul]
   calc (1 / 2 : ℂ) ^ k * (Complex.exp (m * (θ * Complex.I)) *
         Complex.exp ((k - m : ℕ) * (-θ * Complex.I)) * k.choose m) *
         Complex.exp (n * θ * Complex.I)

@@ -262,7 +262,7 @@ theorem W1p0.valueL_posPart (hp : p ≠ ∞) (u : W1p0 mu Omega p) :
 /-- Taking the positive part is continuous on `W^{1,p}_0(Ω)` for finite exponents. -/
 theorem W1p0.continuous_posPart (hp : p ≠ ∞) :
     Continuous (W1p0.posPart (mu := mu) (Omega := Omega) hp) :=
-  ((W1p.continuous_posPart hp).comp continuous_subtype_val).subtype_mk _
+  ((W1p.continuous_posPart hp).comp continuous_subtypeVal).subtype_mk _
 
 /-- Taking the positive part does not increase the norm of `W^{1,p}_0(Ω)`. -/
 theorem W1p0.norm_posPart_le (hp : p ≠ ∞) (u : W1p0 mu Omega p) :

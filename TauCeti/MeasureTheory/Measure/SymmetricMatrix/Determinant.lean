@@ -79,7 +79,7 @@ continuous. -/
 theorem measurableSet_setOfPred_det_eq_zero (p : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).det = 0} :=
-  (isClosed_eq (Continuous.matrix_det continuous_subtype_val) continuous_const).measurableSet
+  (isClosed_eq (Continuous.matrix_det continuous_subtypeVal) continuous_const).measurableSet
 
 /-- The singular symmetric matrices form a `symmetricLebesgue`-null set. -/
 theorem symmetricLebesgue_setOf_det_eq_zero (p : ℕ) :

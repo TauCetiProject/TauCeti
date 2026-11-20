@@ -377,7 +377,7 @@ instance discreteTopology_periodLattice : DiscreteTopology (h.periodLattice hσc
     (f := fun α : h.periodLattice hσc b ↦ (⟨h.dualCoord b α,
       (h.mem_periodLattice_iff_mem_coordStabilizer hσc b x).1 α.property⟩ : h.coordStabilizer hσc b
           x))
-    (((h.dualCoord b).continuous.comp continuous_subtype_val).subtype_mk _)
+    (((h.dualCoord b).continuous.comp continuous_subtypeVal).subtype_mk _)
     fun _ _ hαβ ↦ Subtype.ext ((h.dualCoord b).injective (congrArg Subtype.val hαβ))
 
 /-- **The period lattice is a full lattice.** The period lattice spans `T*_b B`, so with its

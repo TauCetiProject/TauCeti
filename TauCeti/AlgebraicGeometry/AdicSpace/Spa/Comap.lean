@@ -107,7 +107,7 @@ theorem continuous_spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subr
     (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
     Continuous (spaComap φ hφ Aplus Bplus hplus) := by
   rw [continuous_induced_rng]
-  exact (continuous_comap φ).comp continuous_subtype_val
+  exact (continuous_comap φ).comp continuous_subtypeVal
 
 /-- `spaComap` of the identity homomorphism is the identity map on `spa Aplus`. -/
 @[simp]
@@ -359,7 +359,7 @@ theorem isClosed_support_locus (Aplus : Subring A) (J : Ideal A) :
     simp [PrimeSpectrum.mem_zeroLocus, suppFun_asIdeal]
   rw [hlocus, ← Set.preimage_comp]
   exact (PrimeSpectrum.isClosed_zeroLocus (J : Set A)).preimage
-    (continuous_suppFun.comp continuous_subtype_val)
+    (continuous_suppFun.comp continuous_subtypeVal)
 
 /-- The quotient homomorphism with the image plus ring induces a closed embedding of sub-unit
 valuation loci. -/

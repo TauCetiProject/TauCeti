@@ -228,8 +228,8 @@ variable [FiniteDimensional ℝ V] [Fact (Fintype.card ι = finrank ℝ V)]
 /-- The right action of the special orthogonal group on positively oriented frames is
 continuous. -/
 instance : ContinuousSMul (specialOrthogonalGroup V)ᵐᵒᵖ (orientedFrames s o) where
-  continuous_smul := ((continuous_op.comp ((continuous_subtype_val.comp continuous_unop).comp
-    continuous_fst)).smul (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+  continuous_smul := ((continuous_op.comp ((continuous_subtypeVal.comp continuous_unop).comp
+    continuous_fst)).smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
 
 end ContinuousSMul
 
@@ -432,17 +432,17 @@ private def orientedTrivialization
     rw [Prod.mk.injEq, coe_orientedTrivializationInv hT hr p₀ hq.1,
       T.proj_symm_apply' hq.1, T.apply_symm_apply' hq.1, mul_inv_cancel_left]
     exact ⟨rfl, Subtype.ext (coe_toSpecialOrthogonal g.property)⟩
-  open_source := T.open_baseSet.preimage (continuous_proj.comp continuous_subtype_val)
+  open_source := T.open_baseSet.preimage (continuous_proj.comp continuous_subtypeVal)
   open_target := T.open_baseSet.prod isOpen_univ
   continuousOn_toFun :=
-    (continuous_proj.comp continuous_subtype_val).continuousOn.prodMk <|
+    (continuous_proj.comp continuous_subtypeVal).continuousOn.prodMk <|
       continuous_toSpecialOrthogonal.comp_continuousOn <|
         ContinuousOn.mul
           (fun _ hp ↦ ((continuousAt_correction id hp).comp
             (f := fun p : orientedFrames s o ↦ p.val.proj)
-            (continuous_proj.comp continuous_subtype_val).continuousAt).continuousWithinAt)
+            (continuous_proj.comp continuous_subtypeVal).continuousAt).continuousWithinAt)
           (continuous_snd.comp_continuousOn (T.continuousOn_toFun.comp
-            continuous_subtype_val.continuousOn fun _ hp ↦ T.mem_source.2 hp))
+            continuous_subtypeVal.continuousOn fun _ hp ↦ T.mem_source.2 hp))
   continuousOn_invFun := by
     refine Topology.IsInducing.subtypeVal.continuousOn_iff.2 (ContinuousOn.congr
       (f := fun q : B × specialOrthogonalGroup V ↦
@@ -453,7 +453,7 @@ private def orientedTrivialization
     exact ContinuousOn.mul
       (fun _ hq ↦ ((continuousAt_correction (·⁻¹) hq.1).comp
         continuous_fst.continuousAt).continuousWithinAt)
-      (continuous_subtype_val.comp continuous_snd).continuousOn
+      (continuous_subtypeVal.comp continuous_snd).continuousOn
   baseSet := T.baseSet
   open_baseSet := T.open_baseSet
   source_eq := rfl

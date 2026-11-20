@@ -141,8 +141,8 @@ theorem eventually_exists_comp_eq
     (⟨p.val.1.right, p.val.1.left, inv p.val.1.hom⟩ : Quiver.Total C).comp p.val.2 p.property
   have hΨ : Continuous Ψ := IsTopologicalGroupoid.continuous_comp.comp
     (((IsTopologicalGroupoid.continuous_inverse.comp
-      (continuous_fst.comp continuous_subtype_val)).prodMk
-        (continuous_snd.comp continuous_subtype_val)).subtype_mk fun p ↦ p.2)
+      (continuous_fst.comp continuous_subtypeVal)).prodMk
+        (continuous_snd.comp continuous_subtypeVal)).subtype_mk fun p ↦ p.property)
   let p₀ : {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left} :=
     ⟨(a, a.comp b h), (Quiver.Total.comp_left a b h).symm⟩
   have hΨp₀ : Ψ p₀ = b := Quiver.Total.inv_comp_comp a b h _

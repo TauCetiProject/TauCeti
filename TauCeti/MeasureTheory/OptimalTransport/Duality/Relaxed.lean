@@ -357,7 +357,7 @@ theorem transportCost_borelGapCost_self (μ : Measure I) [IsProbabilityMeasure �
         convert hA0 using 2
         ext z; simp [A]
       let u : I → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (x : ℝ)
-      have hu_meas : Measurable u := continuous_subtype_val.measurable.ennreal_ofReal
+      have hu_meas : Measurable u := continuous_subtypeVal.measurable.ennreal_ofReal
       have hu_fin : ∫⁻ z, u z.1 ∂π ≠ ∞ := by
         rw [hπ.lintegral_comp_fst hu_meas.aemeasurable]
         exact ne_top_of_le_ne_top ENNReal.one_ne_top <|
@@ -404,7 +404,7 @@ theorem relaxedTransportCost_borelGapCost :
       zero_le_one,
     min_le_right _ _⟩⟩
   have hg_meas : Measurable g :=
-    (((continuous_subtype_val.add continuous_const).min continuous_const).subtype_mk _).measurable
+    (((continuous_subtypeVal.add continuous_const).min continuous_const).subtype_mk _).measurable
   let π : Measure (I × I) := μ₀.map (fun x ↦ (x, g x))
   have hfst : π.fst ≤ volume := by
     rw [Measure.fst_map_prodMk measurable_id' hg_meas, Measure.map_id']

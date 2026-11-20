@@ -284,8 +284,9 @@ private theorem layerCharacterCupTate_eq (ι : L →ₐ[K] SeparableClosure K) (
     ⟨x, by
       rw [LinearMap.mem_ker]
       simpa [Rep.sub_hom, sub_eq_zero] using x.property (layerFrobenius K L ι)⟩
-  rw [layerCharacterCupTate, layerPeriodicClass, NormalLayer.characterConnectingClass_def,
-    NormalLayer.tateHIsoH_def]
+  rw [layerCharacterCupTate, layerPeriodicClass]
+  dsimp only
+  rw [NormalLayer.characterConnectingClass_def, NormalLayer.tateHIsoH_def]
   exact TauCeti.TateCohomology.cup_characterConnectingClass_eq_groupCohomologyπEven
     (mem_zpowers_layerFrobenius K L ι) (layerFrobeniusCharacter K L ι)
       (layerFrobeniusCharacter_frobenius K L ι) A x z rfl

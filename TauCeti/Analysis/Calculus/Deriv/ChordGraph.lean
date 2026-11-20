@@ -142,7 +142,7 @@ theorem exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv {x x' : ℝ → 
     rw [OrderIso.coe_toHomeomorph, StrictMono.coe_orderIsoOfSurjective]
   let g : C(ℝ, W) :=
     ⟨fun ξ ↦ w (e.symm (projIcc (x a) (x b) hxab ξ)),
-      hwc.comp_continuous (continuous_subtype_val.comp (e.symm.continuous.comp continuous_projIcc))
+      hwc.comp_continuous (continuous_subtypeVal.comp (e.symm.continuous.comp continuous_projIcc))
         fun ξ ↦ (e.symm _).property⟩
   have hg : ∀ t ∈ Icc a b, g (x t) = w t := fun t ht ↦ by
     simp only [g, ContinuousMap.coe_mk, projIcc_of_mem hxab (hmaps ht), ← he t ht,

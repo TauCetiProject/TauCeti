@@ -41,7 +41,7 @@ noncomputable def evalRpow (r : ℝ) (p : ℝ≥0∞) (x : E) :
     C(toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r, ℝ) where
   toFun φ := ‖(φ : WeakDual 𝕜 E) x‖ ^ p.toReal
   continuous_toFun :=
-    ((eval_continuous x).comp continuous_subtype_val).norm.rpow_const
+    ((eval_continuous x).comp continuous_subtypeVal).norm.rpow_const
       fun _ ↦ Or.inr ENNReal.toReal_nonneg
 
 @[simp]
@@ -57,7 +57,7 @@ the weak-star closed dual ball of radius `r`. -/
 noncomputable def evalClosedBall (r : ℝ) :
     E →L[𝕜] C(toStrongDual ⁻¹' Metric.closedBall (0 : StrongDual 𝕜 E) r, 𝕜) :=
   LinearMap.mkContinuous
-    { toFun x := ⟨fun φ ↦ (φ : WeakDual 𝕜 E) x, (eval_continuous x).comp continuous_subtype_val⟩
+    { toFun x := ⟨fun φ ↦ (φ : WeakDual 𝕜 E) x, (eval_continuous x).comp continuous_subtypeVal⟩
       map_add' x y := by ext; simp
       map_smul' c x := by ext; simp }
     (max r 0) fun x ↦ (ContinuousMap.norm_le _ (by positivity)).2 fun φ ↦

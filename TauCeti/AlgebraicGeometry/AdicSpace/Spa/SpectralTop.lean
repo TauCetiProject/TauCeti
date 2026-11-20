@@ -120,7 +120,7 @@ theorem isHomeomorph_spaComap_toSpectralTop (Aplus : Subring A) :
       right_inv v := Subtype.ext ?_
       continuous_toFun := continuous_spaComap ..
       continuous_invFun := continuous_induced_rng.mpr
-        ((continuous_comap e).comp continuous_subtype_val) }
+        ((continuous_comap e).comp continuous_subtypeVal) }
   · simp only [spaComap_val]
     exact comap_symm_comap v.val
   · rw [spaComap_val]

@@ -210,7 +210,7 @@ theorem powMap_smul (ζ : rootsOfUnity m ℂ) (u : rootsOfUnityBall m r) :
 
 /-- The power map is continuous. -/
 theorem continuous_powMap : Continuous (powMap m r) :=
-  ((continuous_subtype_val.pow m)).subtype_mk _
+  ((continuous_subtypeVal.pow m)).subtype_mk _
 
 /-- For `0 ≤ r`, the principal `m`-th root `t ↦ t ^ (1 / m)` from the disc of radius `r ^ m`
 to the disc of radius `r`. It is a section of `TauCeti.rootsOfUnityBall.powMap`

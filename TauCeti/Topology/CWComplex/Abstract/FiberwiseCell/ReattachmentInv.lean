@@ -62,10 +62,10 @@ private def reattachmentLoopTime (u s : I) : I :=
 
 private theorem continuous_reattachmentLoopTime :
     Continuous fun q : I × I ↦ reattachmentLoopTime q.1 q.2 :=
-  continuous_projIcc.comp ((continuous_const.sub (continuous_subtype_val.comp continuous_fst)).mul
-    ((continuous_const.mul (continuous_subtype_val.comp continuous_snd)).min
+  continuous_projIcc.comp ((continuous_const.sub (continuous_subtypeVal.comp continuous_fst)).mul
+    ((continuous_const.mul (continuous_subtypeVal.comp continuous_snd)).min
       ((continuous_const.sub (continuous_const.mul
-        (continuous_subtype_val.comp continuous_snd))).div_const _)))
+        (continuous_subtypeVal.comp continuous_snd))).div_const _)))
 
 private theorem coe_reattachmentLoopTime (u s : I) :
     (reattachmentLoopTime u s : ℝ) = (1 - (u : ℝ)) * min (3 * (s : ℝ)) ((3 - 3 * (s : ℝ)) / 2) := by
@@ -110,7 +110,7 @@ private def quarterBallInclusion (n : ℕ) :
     C(closedBall (0 : EuclideanSpace ℝ (Fin n)) (1 / 4), TopCat.disk.{u} n) :=
   ⟨fun v ↦ (ULift.up ⟨v.val, closedBall_subset_closedBall
       (by norm_num) v.property⟩ : TopCat.disk.{u} n),
-    continuous_uliftUp.comp (continuous_subtype_val.subtype_mk _)⟩
+    continuous_uliftUp.comp (continuous_subtypeVal.subtype_mk _)⟩
 
 @[simp]
 private theorem coe_quarterBallInclusion_apply_down {n : ℕ}
@@ -460,14 +460,14 @@ private def fiberwiseDiskInv (i : ι) : C(P × TopCat.disk.{u} (k i), TopCat.dis
           inv_mul_le_iff₀ hc]
         linarith
       have hcu : Continuous fun p ↦ e i p ((‖v‖ + 1)⁻¹ • v) :=
-        (continuous_subtype_val.comp (continuous_uliftDown.comp ((h i).continuous.comp
+        (continuous_subtypeVal.comp (continuous_uliftDown.comp ((h i).continuous.comp
           (continuous_id.prodMk continuous_const)))).congr fun p ↦ he i p (ULift.up ⟨_, hu⟩)
       exact (hcu.const_smul (‖v‖ + 1)).congr fun p ↦ by
         rw [Pi.smul_apply, ← map_smul, smul_inv_smul₀ hc.ne']
     have he' : Continuous fun p ↦ (e i p).toIsometryEquiv := IsometryEquiv.continuous_iff.2 hcont
     have hsymm : Continuous fun x : P × EuclideanSpace ℝ (Fin (k i)) ↦ (e i x.1).symm x.2 :=
       ((IsometryEquiv.continuous_symm.comp he').comp continuous_fst).eval continuous_snd
-    exact continuous_uliftUp.comp ((hsymm.comp (continuous_fst.prodMk (continuous_subtype_val.comp
+    exact continuous_uliftUp.comp ((hsymm.comp (continuous_fst.prodMk (continuous_subtypeVal.comp
       (continuous_uliftDown.comp continuous_snd)))).subtype_mk _)
 
 private theorem coe_fiberwiseDiskInv_apply_down (i : ι) (x : P × TopCat.disk.{u} (k i)) :

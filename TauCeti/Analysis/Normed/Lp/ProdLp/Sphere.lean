@@ -180,8 +180,8 @@ def sphereProdFstLeHomeomorph :
       continuous_normalizer.comp (by fun_prop)
     refine .subtype_mk (.subtype_mk ?_ _) _
     exact (WithLp.prod_continuous_toLp 2 F G).comp
-      (.prodMk (hc.smul (continuous_subtype_val.comp continuous_fst))
-        (hc.smul (continuous_subtype_val.comp continuous_snd)))
+      (.prodMk (hc.smul (continuous_subtypeVal.comp continuous_fst))
+        (hc.smul (continuous_subtypeVal.comp continuous_snd)))
 
 @[simp]
 theorem coe_sphereProdFstLeHomeomorph_apply_fst

@@ -111,11 +111,11 @@ noncomputable def subtypeCoord (e : OpenPartialHomeomorph X Y) (s : Set X) (hs :
     simp only [mem_preimage] at hz
     rw [dite_eq_left hz, e.right_inv hz]
     exact hπι hz
-  open_source := e.open_source.preimage continuous_subtype_val
+  open_source := e.open_source.preimage continuous_subtypeVal
   open_target := e.open_target.preimage hιc
   continuousOn_toFun :=
     hπc.comp
-      (e.continuousOn.comp continuous_subtype_val.continuousOn (mapsTo_preimage _ _))
+      (e.continuousOn.comp continuous_subtypeVal.continuousOn (mapsTo_preimage _ _))
       (fun x hx => ⟨e.map_source hx, ⟨π (e x.val), hslice hx x.property⟩⟩)
   continuousOn_invFun := by
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]

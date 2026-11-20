@@ -207,7 +207,7 @@ noncomputable def eviSemiflow (lam : ℝ) (hφ : LowerSemicontinuous φ) :
     Flow ℝ≥0 (eviDomain lam φ) where
   toFun t x := ⟨eviFlow lam φ t x, mapsTo_eviFlow t x.property⟩
   cont' := ((continuousOn_uncurry_eviFlow hφ).comp_continuous
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
     fun p ↦ ⟨mem_univ _, p.2.property⟩).subtype_mk _
   map_add' s t x := Subtype.ext (eviFlow_add hφ s t x)
   map_zero' x := Subtype.ext (eviFlow_zero (x : X))

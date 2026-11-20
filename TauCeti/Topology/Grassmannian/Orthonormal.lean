@@ -84,12 +84,12 @@ def toFullRankFrame (f : finiteOrthonormalFrame 𝕜 r N) : finiteFullRankFrame 
 @[fun_prop]
 theorem continuous_toFullRankFrame :
     Continuous (toFullRankFrame : finiteOrthonormalFrame 𝕜 r N → _) :=
-  continuous_subtype_val.subtype_mk _
+  continuous_subtypeVal.subtype_mk _
 
 /-- The orthonormal frames carry the subspace topology of the frames. -/
 theorem isEmbedding_toFullRankFrame :
     IsEmbedding (toFullRankFrame : finiteOrthonormalFrame 𝕜 r N → _) :=
-  .of_comp continuous_toFullRankFrame continuous_subtype_val IsEmbedding.subtypeVal
+  .of_comp continuous_toFullRankFrame continuous_subtypeVal IsEmbedding.subtypeVal
 
 /-- The orthonormal frames form a compact subset of `Fin r → Fin N → 𝕜`: they are cut out by the
 continuous equations `⟪f i, f j⟫ = if i = j then 1 else 0`, and every coordinate of a unit vector
@@ -201,8 +201,8 @@ theorem continuous_unitaryMap :
       unitaryMap p.1 p.2 :=
   continuous_induced_rng.2 <| continuous_pi fun i ↦ by
     simp only [Function.comp_def, coe_unitaryMap]
-    exact Continuous.matrix_mulVec (continuous_subtype_val.comp continuous_fst)
-      ((continuous_apply i).comp (continuous_subtype_val.comp continuous_snd))
+    exact Continuous.matrix_mulVec (continuous_subtypeVal.comp continuous_fst)
+      ((continuous_apply i).comp (continuous_subtypeVal.comp continuous_snd))
 
 variable (𝕜) in
 /-- The **standard orthonormal frame** `(e₀, …, e_{r-1})` of `𝕜^N`, for `r ≤ N`. -/
@@ -251,7 +251,7 @@ theorem continuousSMul_specialOrthogonalMulAction :
     ContinuousSMul (specialOrthogonalGroup (Fin N) ℝ) (finiteOrthonormalFrame ℝ r N) :=
   letI := specialOrthogonalMulAction r N
   ⟨continuous_unitaryMap.comp
-    (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
+    (((continuous_subtypeVal.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
 
 end UnitaryMap
 
@@ -288,7 +288,7 @@ theorem continuous_orthonormalize :
       (v := fun j (f : finiteFullRankFrame 𝕜 r N) ↦
         (WithLp.toLp 2 (f.val j) : EuclideanSpace 𝕜 (Fin N))) i
       (fun j _ ↦ (PiLp.continuous_toLp 2 _).comp <|
-        (continuous_apply j).comp continuous_subtype_val)
+        (continuous_apply j).comp continuous_subtypeVal)
       fun f ↦ f.linearIndependent_toLp.linearIndepOn _) _
 
 /-- Gram-Schmidt orthonormalization does not change the span of a frame. -/
@@ -329,9 +329,9 @@ def sphereHomeomorph (N : ℕ) :
   left_inv f := Subtype.ext <| funext fun i ↦ by rw [Subsingleton.elim i 0]
   right_inv y := rfl
   continuous_toFun := Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp
-    ((continuous_apply 0).comp continuous_subtype_val)) _
+    ((continuous_apply 0).comp continuous_subtypeVal)) _
   continuous_invFun := Continuous.subtype_mk (continuous_pi fun _ ↦
-    (PiLp.continuous_ofLp 2 _).comp continuous_subtype_val) _
+    (PiLp.continuous_ofLp 2 _).comp continuous_subtypeVal) _
 
 @[simp]
 theorem coe_sphereHomeomorph_apply {N : ℕ} (f : finiteOrthonormalFrame ℝ 1 N) :

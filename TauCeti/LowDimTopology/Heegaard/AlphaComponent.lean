@@ -126,7 +126,7 @@ containing exactly one of them contains both sides of every `β`-arc or neither.
 theorem SameAlphaComponent.apply_eq {α : Sort*} {f : Region → α}
     (hf : ∀ p, f (H.betaLeft p) = f (H.betaRight p)) {r r' : Region}
     (h : H.SameAlphaComponent r r') : f r = f r' :=
-  Relation.EqvGen.eqvGen_le (r' := InvImage Eq f) (fun _ _ ⟨p, ha, hb⟩ => ha ▸ hb ▸ hf p) r r' h
+  Relation.eqvGen_le (r' := InvImage Eq f) (fun _ _ ⟨p, ha, hb⟩ => ha ▸ hb ▸ hf p) r r' h
 
 @[refl]
 theorem SameAlphaComponent.refl (r : Region) : H.SameAlphaComponent r r :=

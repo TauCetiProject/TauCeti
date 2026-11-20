@@ -45,6 +45,9 @@ variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
   [HasProducts.{w} A] [HasCoproducts.{0} A]
   {ι κ : Type w} (U : ι → C) {V : κ → C}
 
+/-- Cochain complexes in a category with products have products, computed degreewise. -/
+instance hasProducts_cochainComplex : HasProducts.{w} (CochainComplex A ℤ) where
+
 /-- The direct-sum total Čech complex of a presheaf of cochain complexes, functorial in its
 coefficients. The Čech grading is extended by zero from `ℕ` to `ℤ` before totalization.
 The composite functor is exposed so native total inclusions and maps can elaborate with its

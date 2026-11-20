@@ -137,7 +137,7 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
     ring
   calc c * exp (((π - arg c) / 2 : ℝ) * I) ^ 2
       = ‖c‖ * exp ((arg c : ℂ) * I + 2 * (((π - arg c) / 2 : ℝ) * I)) := by
-        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_nat_mul]
+        rw [exp_add, ← mul_assoc, norm_mul_exp_arg_mul_I, ← exp_natCast_mul]
         norm_num
     _ = -‖c‖ := by
         rw [h, exp_pi_mul_I]
@@ -217,7 +217,7 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     {Q : ℂ} (hQ : Q ∈ slitPlane) (hc : ∀ᶠ x in l, 0 < c x)
     (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
-  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
+  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_ofReal_mul hx _)
 
 end Complex
 

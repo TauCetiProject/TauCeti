@@ -129,12 +129,12 @@ theorem isEmbedding_bendingHypersurface
   have hf : Continuous f := by
     apply Continuous.subtype_mk
     exact ((hγ.contDiff_radius.continuous.comp continuous_snd).smul
-      (continuous_subtype_val.comp continuous_fst)).prodMk
+      (continuous_subtypeVal.comp continuous_fst)).prodMk
         (hγ.contDiff_height.continuous.comp continuous_snd)
   have hk : Continuous k := by
-    have hx : Continuous (fun z : S ↦ z.1.1) := continuous_fst.comp continuous_subtype_val
+    have hx : Continuous (fun z : S ↦ z.val.1) := continuous_fst.comp continuous_subtypeVal
     exact ((hx.norm.inv₀ fun z ↦ norm_ne_zero_iff.2 z.property).smul hx).prodMk
-      ((continuous_snd.comp continuous_subtype_val).sub hx.norm)
+      ((continuous_snd.comp continuous_subtypeVal).sub hx.norm)
   have heq : k ∘ f = Prod.map (Subtype.val : sphere (0 : V) 1 → V)
       (fun t ↦ h t - r t) := by
     funext p

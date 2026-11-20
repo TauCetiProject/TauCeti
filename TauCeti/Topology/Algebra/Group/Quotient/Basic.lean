@@ -287,7 +287,7 @@ theorem coe_quotientOpenSubgroupMap (U : OpenSubgroup G) (u : U.toSubgroup) :
 /-- The restricted quotient homomorphism is continuous. -/
 theorem continuous_quotientOpenSubgroupMap (U : OpenSubgroup G) :
     Continuous (quotientOpenSubgroupMap N U) :=
-  continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtype_val)
+  continuous_induced_rng.2 (QuotientGroup.continuous_mk.comp continuous_subtypeVal)
 
 /-- The image in `G / N` of an open subgroup of finite index has finite index. -/
 instance instFiniteIndexQuotientOpenSubgroup (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex] :

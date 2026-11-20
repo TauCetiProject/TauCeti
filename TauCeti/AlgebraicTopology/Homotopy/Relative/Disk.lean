@@ -97,7 +97,7 @@ private theorem exists_boundaryHomotopy (R : I → I × (I^N) → I × (I^N))
     (⟨fun y ↦ ⟨g (0, y), hg (Cube.mk_zero_mem_prodBoundary y)⟩, by fun_prop⟩ : C(I^N, B))
     ⟨fun q ↦ ⟨g (R q.1 (0, q.2)), hg (hRJ (.inr q.2.property) _)⟩,
       (g.continuous.comp (hR.comp (continuous_fst.prodMk (continuous_const.prodMk
-        (continuous_subtype_val.comp continuous_snd))))).subtype_mk _⟩
+        (continuous_subtypeVal.comp continuous_snd))))).subtype_mk _⟩
     fun a ↦ by simp [hR₀]
   let h : I × (I × I^N) → Y := fun q ↦
     if q.2.1 = 0 then (K (q.1, q.2.2) : Y) else g (R q.1 q.2)
@@ -114,7 +114,7 @@ private theorem exists_boundaryHomotopy (R : I → I × (I^N) → I × (I^N))
     refine ContinuousOn.union_of_isClosed ?_ ?_ (isClosed_eq (by fun_prop) continuous_const)
       ((isClosed_eq (by fun_prop) continuous_const).union
         (hbd.isClosed.preimage (by fun_prop)))
-    · refine (continuous_subtype_val.comp (K.continuous.comp
+    · refine (continuous_subtypeVal.comp (K.continuous.comp
         (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))).continuousOn.congr ?_
       intro q hq
       simp [h, show q.2.1 = 0 from hq]

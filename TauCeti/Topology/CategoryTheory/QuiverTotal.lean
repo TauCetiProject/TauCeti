@@ -45,10 +45,10 @@ theorem eventually_comp_mem
   -- On `D` both sections are defined, and their composite is continuous.
   let Φ : D → Quiver.Total C := fun y ↦ (σ y).comp (τ (σ y).right) (hτl _ y.property.2).symm
   have hΦ : Continuous Φ := hc.comp <| Continuous.subtype_mk
-    ((hσ.comp_continuous continuous_subtype_val fun y ↦ y.2.1).prodMk
-      (hτ.comp_continuous (hσr.comp_continuous continuous_subtype_val fun y ↦ y.2.1)
+    ((hσ.comp_continuous continuous_subtypeVal fun y ↦ y.property.1).prodMk
+      (hτ.comp_continuous (hσr.comp_continuous continuous_subtypeVal fun y ↦ y.property.1)
         fun y ↦ y.property.2)) fun y ↦ (hτl _ y.property.2).symm
-  rw [← hD.isOpenMap_subtype_val.map_nhds_eq continuous_subtype_val.continuousAt
+  rw [← hD.isOpenMap_subtypeVal.map_nhds_eq continuous_subtypeVal.continuousAt
     (x := ⟨x, hxS, hxT⟩)]
   exact Filter.eventually_map.2
     ((hΦ.continuousAt.eventually_mem (hO.mem_nhds (hOx _))).mono fun y hy _ ↦ hy)

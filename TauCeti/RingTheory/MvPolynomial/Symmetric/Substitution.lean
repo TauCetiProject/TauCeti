@@ -46,14 +46,14 @@ under permutations of the variables, `rename e (f i) = f (e i)`, yields a symmet
 polynomial. -/
 protected theorem IsSymmetric.bind₁ (hp : p.IsSymmetric) {f : σ → MvPolynomial σ R}
     (hf : ∀ (e : Equiv.Perm σ) (i : σ), rename e (f i) = f (e i)) :
-    (bind₁ f p).IsSymmetric := fun e => by
-  conv_rhs => rw [← hp e, bind₁_rename, Function.comp_def]
-  simp_rw [rename_bind₁, hf]
+    (aeval f p).IsSymmetric := fun e => by
+  conv_rhs => rw [← hp e, aeval_rename, Function.comp_def]
+  simp_rw [rename_aeval, hf]
 
 /-- Substituting the same univariate polynomial into every variable of a symmetric multivariate
 polynomial preserves symmetry. -/
 theorem IsSymmetric.bind₁_aeval_X (hp : p.IsSymmetric) (q : Polynomial R) :
-    (bind₁ (fun i => Polynomial.aeval (X i) q) p).IsSymmetric :=
+    (aeval (fun i => Polynomial.aeval (X i : MvPolynomial σ R) q) p).IsSymmetric :=
   hp.bind₁ fun e i => by rw [← Polynomial.aeval_algHom_apply, rename_X]
 
 end MvPolynomial

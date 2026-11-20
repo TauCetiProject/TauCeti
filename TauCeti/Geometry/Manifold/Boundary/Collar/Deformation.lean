@@ -103,7 +103,7 @@ def collarCoord (t : ℝ) : C(collarPart c t, N × Ico (0 : ℝ) 1) :=
   ⟨fun x ↦ hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm
       ⟨x, image_subset_range _ _ x.property⟩,
     hc.isOpenEmbedding.isEmbedding.toHomeomorph.symm.continuous.comp
-      (continuous_subtype_val.subtype_mk _)⟩
+      (continuous_subtypeVal.subtype_mk _)⟩
 
 /-- The collar sends the collar coordinates of a point back to the point. -/
 lemma apply_collarCoord {t : ℝ} (x : collarPart c t) : c (hc.collarCoord t x) = x :=
@@ -149,8 +149,8 @@ private lemma continuous_collarScale {t : ℝ} :
     Continuous fun q : I × collarPart c t ↦ hc.collarScale q.1 q.2 := by
   have h : Continuous fun q : I × collarPart c t ↦ hc.collarCoord t q.2 :=
     (map_continuous _).comp continuous_snd
-  exact hc.isOpenEmbedding.continuous.comp (h.fst.prodMk (((continuous_subtype_val.comp
-    continuous_fst).mul (continuous_subtype_val.comp h.snd)).subtype_mk _))
+  exact hc.isOpenEmbedding.continuous.comp (h.fst.prodMk (((continuous_subtypeVal.comp
+    continuous_fst).mul (continuous_subtypeVal.comp h.snd)).subtype_mk _))
 
 /-- **The collar deforms onto the boundary.** For `0 < t`, scaling the depth coordinate deforms
 the collar `c(N × [0, t))` of depth less than `t` onto the boundary `f(N)`, relative to `f(N)`. -/

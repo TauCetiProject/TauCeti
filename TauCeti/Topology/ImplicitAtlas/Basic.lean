@@ -270,7 +270,7 @@ of fibres of `ψ_∅I`, so its image is open in `U_∅I` by the quotient axiom, 
 theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
   set ψ := 𝒜.footprintMap (Finset.empty_subset I)
   set W : Set (kuranishiZeroSet 𝒜.kuranishi ∅ I) := {x | x.val ∈ 𝒜.regLocus I}
-  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtype_val
+  have hW : IsOpen W := (𝒜.isOpen_regLocus I).preimage continuous_subtypeVal
   -- `W` is saturated for `ψ`, so its image in `range ψ` is open.
   have hsat : rangeFactorization ψ ⁻¹' (rangeFactorization ψ '' W) = W := by
     refine Subset.antisymm (fun x ⟨y, hy, hyx⟩ ↦ ?_) (subset_preimage_image _ _)
@@ -280,7 +280,7 @@ theorem isOpen_footprint (I : Finset A) : IsOpen (𝒜.footprint I) := by
   have himage : ψ '' W = Subtype.val '' (rangeFactorization ψ '' W) := by
     simp only [image_image, rangeFactorization_coe]
   exact 𝒜.baseHomeomorph.isOpenMap _ (himage ▸
-    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtype_val _ hopen)
+    (𝒜.isOpen_range_footprintMap _).isOpenMap_subtypeVal _ hopen)
 
 /-- The regular footprints cover `X`. -/
 theorem iUnion_footprint : ⋃ I, 𝒜.footprint I = univ :=

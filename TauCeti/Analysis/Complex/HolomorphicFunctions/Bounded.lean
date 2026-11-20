@@ -200,7 +200,7 @@ theorem dist_apply_le_of_ball_subset (f : boundedHolomorphicFunctions E U) {x z 
 /-- Restriction of bounded holomorphic maps to a smaller open set. -/
 noncomputable def restrict (h : U' ≤ U) :
     boundedHolomorphicFunctions E U →L[ℂ] boundedHolomorphicFunctions E U' :=
-  ((compContinuousCLM E ℂ ⟨fun z => ⟨z, h z.2⟩, continuous_subtype_val.subtype_mk _⟩).comp
+  ((compContinuousCLM E ℂ ⟨fun z => ⟨z, h z.property⟩, continuous_subtypeVal.subtype_mk _⟩).comp
     (boundedHolomorphicFunctions E U).subtypeL).codRestrict _ fun f => by
     exact ⟨extend f, (differentiableOn_extend f).mono h, fun z => extend_apply f ⟨z, h z.property⟩⟩
 
@@ -244,8 +244,8 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
   -- The unit ball of `H^∞(U, E)` is equicontinuous by the Cauchy estimate
   -- `dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem applies on the compact set `K`.
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let ρ : C(K, U) := ⟨fun z => ⟨z, hKU z.2⟩, continuous_subtype_val.subtype_mk _⟩
-  let σ : C(U', K) := ⟨fun z => ⟨z, hU'K z.2⟩, continuous_subtype_val.subtype_mk _⟩
+  let ρ : C(K, U) := ⟨fun z => ⟨z, hKU z.property⟩, continuous_subtypeVal.subtype_mk _⟩
+  let σ : C(U', K) := ⟨fun z => ⟨z, hU'K z.property⟩, continuous_subtypeVal.subtype_mk _⟩
   -- The unit ball of `H^∞(U, E)`, restricted to `K`.
   let A : Set (K →ᵇ E) :=
     (fun f : boundedHolomorphicFunctions E U => (f : U →ᵇ E).compContinuous ρ) '' closedBall 0 1

@@ -46,7 +46,7 @@ generalized loops. -/
 theorem continuous_map (f : C(X, Y)) (hf : f x = y) :
     Continuous (map (N := N) f hf) := by
   refine Continuous.subtype_mk ?_ _
-  exact (ContinuousMap.continuous_postcomp f).comp continuous_subtype_val
+  exact (ContinuousMap.continuous_postcomp f).comp continuous_subtypeVal
 
 @[simp]
 theorem map_const (f : C(X, Y)) (hf : f x = y) :

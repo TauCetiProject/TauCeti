@@ -145,7 +145,7 @@ theorem skeletonLT_subset_interior_skeletonNeighborhood (n : ℕ) :
   have hK := isClosed_iUnion_map_closedBall (C := C) n (r := 2⁻¹) (by norm_num)
   refine fun x hx ↦ interior_maximal (t := (Subtype.val ⁻¹'
     (⋃ j : cell C n, map n j '' closedBall 0 2⁻¹))ᶜ) (fun y hy ↦ ?_)
-    (hK.preimage continuous_subtype_val).isOpen_compl ?_
+    (hK.preimage continuous_subtypeVal).isOpen_compl ?_
   · refine mem_skeletonNeighborhood.2 ⟨y.property, fun j z hz h ↦ hy (mem_iUnion.2 ⟨j, z, ?_, h⟩)⟩
     exact mem_closedBall_zero_iff.2 hz.le
   · rintro hx'

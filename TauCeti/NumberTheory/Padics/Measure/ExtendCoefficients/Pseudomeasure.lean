@@ -150,7 +150,7 @@ theorem continuous_extendedPseudoCharacterEval {S : Type*} [TopologicalSpace S]
   obtain ⟨g, hg⟩ : ∃ g, κ s₀ g ≠ 1 := by simpa using DFunLike.ne_iff.mp hs₀
   have hval : Continuous fun s ↦ κ s g := (continuous_eval_const g).comp hκ
   have hV : IsOpen {s : {s // κ s ≠ 1} | κ s g ≠ 1} :=
-    isOpen_ne_fun (hval.comp continuous_subtype_val) continuous_const
+    isOpen_ne_fun (hval.comp continuous_subtypeVal) continuous_const
   refine ContinuousAt.congr (f := fun s : {s // κ s ≠ 1} ↦
     (κ s).extendedCharacterRingHom j hj (numerator (diracHom (G := G) (R := O)) Q g z) /
       (κ s g - 1)) ?_ ?_
@@ -158,8 +158,8 @@ theorem continuous_extendedPseudoCharacterEval {S : Type*} [TopologicalSpace S]
     · simpa only [extendedCharacterRingHom_apply, Function.comp_def] using
         ((map_continuous
           (extendCoefficients j hj (numerator (diracHom (G := G) (R := O)) Q g z))).comp
-          (hκ'.comp continuous_subtype_val)).continuousAt
-    · exact ((hval.comp continuous_subtype_val).sub continuous_const).continuousAt
+          (hκ'.comp continuous_subtypeVal)).continuousAt
+    · exact ((hval.comp continuous_subtypeVal).sub continuous_const).continuousAt
   · filter_upwards [hV.mem_nhds hg] with s hs
     exact ((κ s).extendedPseudoCharacterEval_eq_div j hj Q s.property hs z).symm
 

@@ -77,7 +77,7 @@ theorem mem_puncturedDiscAnnulus (c : A) (n : ℕ) (v : closedPolydisc 1 A) :
 
 /-- Every exhaustion annulus is open in the closed unit disc. -/
 theorem isOpen_puncturedDiscAnnulus (c : A) (n : ℕ) : IsOpen (puncturedDiscAnnulus c n) :=
-  (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 /-- An exhaustion annulus lies in the punctured disc. -/
 theorem puncturedDiscAnnulus_subset (c : A) (n : ℕ) :
@@ -156,7 +156,7 @@ theorem isOpen_puncturedDisc : IsOpen (puncturedDisc A) := by
     ext v
     simp [mem_puncturedDisc, mem_basicOpen_iff, ← valuation_le_iff]
   rw [h]
-  exact (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  exact (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 end TopologicalRing
 
@@ -184,7 +184,7 @@ theorem classicalPoint_pow_mem_puncturedDisc_notMem_annulus
   have hlt : x.val.valuation (c ^ (n + 2)) < x.val.valuation (c ^ (n + 1)) := by
     have hexp : n + 2 = (n + 1) + 1 := by omega
     rw [hexp, pow_succ, map_mul]
-    simpa using mul_lt_mul_of_pos_left hcval (zero_lt_iff.mpr (hne (n + 1)))
+    simpa using mul_lt_mul_of_pos_left hcval (pos_iff_ne_zero.mpr (hne (n + 1)))
   simp only [mem_puncturedDisc, mem_puncturedDiscAnnulus]
   simp only [classicalPoint_vle, evalAtHom_weightedX, evalAtHom_weightedC, map_zero]
   simp only [← valuation_le_iff, map_zero]
@@ -200,7 +200,7 @@ theorem exists_mem_puncturedDisc_notMem_annulus {c : A} (hc : IsPseudoUniformize
   have hplus : IsRingOfIntegralElements (powerBoundedSubring A) := by
     simpa only [Pair.powerBounded_plus] using (Pair.powerBounded A).isRingOfIntegralElements
   have hne : (spa (powerBoundedSubring A)).Nonempty := by
-    rw [Set.nonempty_iff_ne_empty, ne_eq,
+    rw [← Set.ne_empty_iff_nonempty, ne_eq,
       spa_eq_empty_iff_subsingleton _ hplus]
     exact not_subsingleton A
   obtain ⟨x, hx⟩ := hne

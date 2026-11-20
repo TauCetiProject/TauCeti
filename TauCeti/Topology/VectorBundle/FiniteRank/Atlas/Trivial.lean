@@ -77,7 +77,7 @@ theorem continuous_mk_trivial_iff {Y : Type*} [TopologicalSpace Y]
   refine forall_congr' fun n => ?_
   exact (FiniteRankBundleCore.continuous_trivial_iff
     (𝕜 := 𝕜) (B := {x : X // r x = n}) (n := n)).trans
-    (and_iff_right ((hb.comp continuous_subtype_val).subtype_mk _))
+    (and_iff_right ((hb.comp continuous_subtypeVal).subtype_mk _))
 
 /-- A map into the reconstructed total space of a constant-rank trivial atlas is continuous if and
 only if its base map and coordinate vector are continuous. -/
@@ -96,7 +96,7 @@ theorem continuous_mk_trivial_const_iff {Y : Type*} [TopologicalSpace Y]
     refine (continuous_mk_trivial_iff (r := LocallyConstant.const X n) hb s).2 fun m => ?_
     by_cases hnm : n = m
     · subst hnm
-      exact hs.comp continuous_subtype_val
+      exact hs.comp continuous_subtypeVal
     · have : IsEmpty {y : Y // (LocallyConstant.const X n) (b y) = m} := ⟨fun y => hnm y.property⟩
       exact continuous_of_discreteTopology
 

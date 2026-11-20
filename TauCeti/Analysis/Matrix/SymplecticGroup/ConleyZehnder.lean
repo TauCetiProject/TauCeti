@@ -249,7 +249,7 @@ open scoped Matrix.Norms.L2Operator in
 private theorem continuous_graphFrameUnit : Continuous (graphFrameUnit (n := n)) := by
   have hF : Continuous fun A : GLSymplectic n ℝ ↦
       graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
-    continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtype_val)
+    continuous_graphFrame.comp (Units.continuous_val.comp continuous_subtypeVal)
   exact Units.isOpenEmbedding_val.continuous_iff.2 (hF.congr fun A ↦ (coe_graphFrameUnit A).symm)
 
 /-- The **unitary graph frame** of a symplectic matrix `A`: the diagonal straightening `T` times
@@ -469,7 +469,7 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal {U V : unitaryGr
     congr 1
     funext k
     rcases k with j | j <;>
-    · simp only [Sum.elim_inl, Sum.elim_inr, hφdef, Circle.coe_exp, ← Complex.exp_nat_mul]
+    · simp only [Sum.elim_inl, Sum.elim_inr, hφdef, Circle.coe_exp, ← Complex.exp_natCast_mul]
       congr 1
       push_cast
       ring
@@ -490,7 +490,7 @@ theorem conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation {U V : unit
     (hγ : ∀ t : I, (γ t : Matrix n n ℂ) = diagonal fun j ↦ Complex.exp (α j * t * Complex.I)) :
     conleyZehnderIndex (γ.map continuous_ofUnitary) = -∑ j, Real.sign (α j) := by
   rw [conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal γ (θ := fun j t ↦ α j * t)
-    (fun j ↦ continuous_const.mul continuous_subtype_val) fun t ↦ by rw [hγ t]; push_cast; simp]
+    (fun j ↦ continuous_const.mul continuous_subtypeVal) fun t ↦ by rw [hγ t]; push_cast; simp]
   congr 1
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   -- Since `|α_j / 2π| < 1`, the count `⌊α_j / 2π⌋ + ⌈α_j / 2π⌉` is `sign α_j`.
@@ -539,8 +539,8 @@ theorem conleyZehnderIndex_sum {A B : GLSymplectic n ℝ} {C D : GLSymplectic m 
       symplecticSum_mem_unitaryGroup (graphUnitaryFrame _).property (graphUnitaryFrame _).property⟩
   have hf : Continuous f := Continuous.subtype_mk
     (Continuous.matrix_symplecticSum
-      (continuous_subtype_val.comp (continuous_graphUnitaryFrame.comp γ₁.continuous))
-      (continuous_subtype_val.comp (continuous_graphUnitaryFrame.comp γ₂.continuous))) _
+      (continuous_subtypeVal.comp (continuous_graphUnitaryFrame.comp γ₁.continuous))
+      (continuous_subtypeVal.comp (continuous_graphUnitaryFrame.comp γ₂.continuous))) _
   let δ : Path (f 0) (f 1) := ⟨⟨f, hf⟩, rfl, rfl⟩
   rw [conleyZehnderIndex_eq_neg_maslovIndex _ δ fun t ↦
       realImage_symplecticSum_graphUnitaryFrame (γ₁ t) (γ₂ t),

@@ -116,7 +116,7 @@ private theorem continuous_chamberOrderedCoord {K : AbstractSimplicialComplex ι
   split
   · have hcoe : Continuous (fun y : StandardSimplex σ.val => (y.val : ι → ℝ)) :=
       continuous_induced_dom
-    exact ((continuous_apply _).comp hcoe).comp continuous_subtype_val
+    exact ((continuous_apply _).comp hcoe).comp continuous_subtypeVal
   · exact continuous_const
 
 private theorem chamberOrderedCoord_succ_le {K : AbstractSimplicialComplex ι} (σ : Face K)

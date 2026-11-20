@@ -229,7 +229,7 @@ theorem continuous_pointsEquivOfIsPullback_symm :
   let τ : c ⁻¹' S → {q : (A →ₐ[k] R) × (B →ₐ[k] R) //
       q.1.comp (IsScalarTower.toAlgHom k C A) = q.2.comp (IsScalarTower.toAlgHom k C B)} :=
     fun q ↦ ⟨q.val, (hcompat q.val.1 q.val.2).1 q.property⟩
-  have hτ : Continuous τ := continuous_subtype_val.subtype_mk _
+  have hτ : Continuous τ := continuous_subtypeVal.subtype_mk _
   -- On compatible pairs of chart points, the inverse comparison is read in the chart.
   have key : (pointsEquivOfIsPullback (R := R) hP hp₁ hg₁ hg₂).symm ∘ S.restrictPreimage c =
       chartPoint fP (CommAlgCat.of k (A ⊗[C] B)) (tensorProductChart hP hA hB)
@@ -375,7 +375,7 @@ inversion on the units, the product comparison of points is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_pointsProdEquivOfIsPullback [ContinuousMul R] :
     Continuous (pointsProdEquivOfIsPullback (R := R) hXY hp₁) :=
-  continuous_subtype_val.comp (continuous_pointsEquivOfIsPullback hXY hp₁ _ _)
+  continuous_subtypeVal.comp (continuous_pointsEquivOfIsPullback hXY hp₁ _ _)
 
 variable [IsTopologicalRing R]
 

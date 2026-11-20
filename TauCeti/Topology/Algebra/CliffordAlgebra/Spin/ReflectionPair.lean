@@ -72,7 +72,7 @@ theorem joined_one_spinReflectionPair_of_joined (v w : M) (hv : Q v = 1) (hw : Q
     let _ : ContinuousAdd (CliffordAlgebra Q) := IsModuleTopology.toContinuousAdd R _
     have hmul : Continuous (fun x : M ↦ ι Q v * ι Q x) :=
       IsModuleTopology.continuous_of_linearMap ((LinearMap.mulLeft R (ι Q v)).comp (ι Q))
-    convert hmul.comp continuous_subtype_val using 1
+    convert hmul.comp continuous_subtypeVal using 1
     funext u
     exact coe_spinReflectionPair Q v u hv u.property
   simpa only [f, spinReflectionPair_self] using h.map hf
@@ -97,7 +97,7 @@ theorem joined_one_spinReflectionPair_realCliffordForm_zero {n : ℕ} (hn : 2 �
     fun u => ⟨u.val, (mem_realCliffordUnitLevel (k + 2) _).mp u.property⟩
   have hf : Continuous f := by
     apply continuous_induced_rng.mpr
-    exact continuous_subtype_val
+    exact continuous_subtypeVal
   exact joined_one_spinReflectionPair_of_joined v w hv hw
     (by simpa only [f] using this.map hf)
 

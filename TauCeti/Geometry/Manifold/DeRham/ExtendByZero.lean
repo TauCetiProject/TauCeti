@@ -181,7 +181,7 @@ theorem exists_sum_extendByZero [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   have : LocallyCompactSpace W := ChartedSpace.locallyCompactSpace H W
   obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
     (fun i ↦ {x : W | (x : M) ∈ U i})
-    (fun i ↦ (U i).isOpen.preimage continuous_subtype_val) (fun x _ ↦ by
+    (fun i ↦ (U i).isOpen.preimage continuous_subtypeVal) (fun x _ ↦ by
       obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover x.property)
       exact Set.mem_iUnion.mpr ⟨i, hi⟩)
   -- Use the model-fibre view for function-support lemmas, whose codomain is nondependent.
@@ -466,7 +466,7 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedFor
   rw [exactCompactlySupportedForms_succ]
   refine ⟨η - γ.val, (mem_compactlySupportedForms I).mpr ?_, ?_⟩
   · refine hU.of_isClosed_subset (isClosed_tsupport _) <| closure_minimal (fun x hx ↦ ?_)
-      (U.isOpen.preimage continuous_subtype_val).isClosed_compl
+      (U.isOpen.preimage continuous_subtypeVal).isClosed_compl
     intro hxU
     obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
     -- At points of `U`, both `η` and the constant form `γ` take the value `c`.

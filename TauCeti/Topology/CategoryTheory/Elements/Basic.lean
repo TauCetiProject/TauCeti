@@ -158,10 +158,10 @@ theorem continuous_comp
     (⟨(π p.val.1, π p.val.2), congrArg Functor.Elements.obj p.property⟩ :
       {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left})
   have hg : Continuous g :=
-    ((continuous_total_π.comp (continuous_fst.comp continuous_subtype_val)).prodMk
-      (continuous_total_π.comp (continuous_snd.comp continuous_subtype_val))).subtype_mk _
+    ((continuous_total_π.comp (continuous_fst.comp continuous_subtypeVal)).prodMk
+      (continuous_total_π.comp (continuous_snd.comp continuous_subtypeVal))).subtype_mk _
   refine isEmbedding_total.continuous_iff.mpr (((hc.comp hg).prodMk
-    (continuous_source.comp (continuous_fst.comp continuous_subtype_val))).congr fun p ↦ ?_)
+    (continuous_source.comp (continuous_fst.comp continuous_subtypeVal))).congr fun p ↦ ?_)
   obtain ⟨⟨⟨x, y, f⟩, ⟨y', z, f'⟩⟩, h⟩ := p
   dsimp only at h
   subst h

@@ -325,8 +325,8 @@ noncomputable def torusFamilyBaseChangeHomeomorph
       continuous_toFun :=
         (continuous_fst.prodMk ((hf.comp continuous_fst).prodMk continuous_snd)).subtype_mk _
       continuous_invFun :=
-        (continuous_fst.comp continuous_subtype_val).prodMk
-          (continuous_snd.comp (continuous_snd.comp continuous_subtype_val)) }
+        (continuous_fst.comp continuous_subtypeVal).prodMk
+          (continuous_snd.comp (continuous_snd.comp continuous_subtypeVal)) }
   letI := continuousConstVAdd_periodAddAction P hcont
   have hopen : IsOpenMap (torusFamilyBaseChangeEquiv P f ∘ (Quotient.mk _ : Z × E → _)) := by
     have heq : torusFamilyBaseChangeEquiv P f ∘ Quotient.mk _ =

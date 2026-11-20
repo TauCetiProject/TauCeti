@@ -208,22 +208,22 @@ variable {σ : SmoothTwoForm I M} (U : Opens M) [LindelofSpace U]
 /-- **The Liouville measure of an open subset.** The Liouville measure of the restriction of `σ` to
 an open subset `U` gives a subset of `U` its Liouville measure in `M`. -/
 theorem liouvilleMeasure_mpullback_subtypeVal :
-    liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ) =
+    liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ) =
       (σ.liouvilleMeasure n).comap Subtype.val := by
   have hU : MeasurableEmbedding (Subtype.val : U → M) :=
-    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
-  exact hU.liouvilleMeasure_eq_comap (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
+  exact hU.liouvilleMeasure_eq_comap (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
     (SmoothForm.coe_mpullback _ _ _).symm
 
 /-- **Restriction of the Liouville measure to an open subset.** Pushed forward to `M`, the Liouville
 measure of the restriction of `σ` to an open subset `U` is the restriction to `U` of the Liouville
 measure of `σ`. -/
 theorem map_liouvilleMeasure_mpullback_subtypeVal :
-    (liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtype_val σ)).map
+    (liouvilleMeasure n (SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ)).map
       Subtype.val = (σ.liouvilleMeasure n).restrict U := by
   have hU : MeasurableEmbedding (Subtype.val : U → M) :=
-    MeasurableEmbedding.subtype_coe U.isOpen.measurableSet
-  rw [hU.map_liouvilleMeasure (contMDiff_subtype_val.mdifferentiable one_ne_zero)
+    MeasurableEmbedding.subtypeVal U.isOpen.measurableSet
+  rw [hU.map_liouvilleMeasure (contMDiff_subtypeVal.mdifferentiable one_ne_zero)
     (SmoothForm.coe_mpullback _ _ _).symm, Subtype.range_coe]
 
 end TauCeti.SmoothTwoForm

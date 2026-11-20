@@ -63,17 +63,17 @@ variable {𝕜 k} {n : ℕ}
 
 /-- A `k`-dimensional subspace of `𝕜^n`, viewed in `ℕ →₀ 𝕜` through the coordinate inclusion. -/
 noncomputable def toInfinite (V : finiteGrassmannian 𝕜 k n) : infiniteGrassmannian 𝕜 k :=
-  ⟨V.1.map (coordinateInclusion n), by
-    rw [rank_map_eq (coordinateInclusion_injective n), ← Module.finrank_eq_rank, V.2]⟩
+  ⟨V.val.map (coordinateInclusion n), by
+    rw [rank_map_eq (coordinateInclusion_injective n), ← Module.finrank_eq_rank, V.property]⟩
 
 theorem coe_toInfinite (V : finiteGrassmannian 𝕜 k n) :
-    (toInfinite V).1 = V.1.map (coordinateInclusion n) := (rfl)
+    (toInfinite V).val = V.val.map (coordinateInclusion n) := (rfl)
 
 /-- Membership in a finite stage is detected by restricting to its coordinates and checking
 that all later coordinates vanish. -/
 @[simp]
 theorem mem_toInfinite (V : finiteGrassmannian 𝕜 k n) (v : ℕ →₀ 𝕜) :
-    v ∈ (toInfinite V).1 ↔ (fun i : Fin n ↦ v i) ∈ V.1 ∧ ∀ i, n ≤ i → v i = 0 := by
+    v ∈ (toInfinite V).val ↔ (fun i : Fin n ↦ v i) ∈ V.val ∧ ∀ i, n ≤ i → v i = 0 := by
   rw [coe_toInfinite, Submodule.mem_map]
   constructor
   · rintro ⟨w, hw, rfl⟩
@@ -89,7 +89,7 @@ theorem mem_toInfinite (V : finiteGrassmannian 𝕜 k n) (v : ℕ →₀ 𝕜) :
 
 theorem toInfinite_injective : Function.Injective (toInfinite : finiteGrassmannian 𝕜 k n → _) :=
   fun _ _ h ↦ Subtype.ext
-    (Submodule.map_injective_of_injective (coordinateInclusion_injective n) congr($h.1))
+    (Submodule.map_injective_of_injective (coordinateInclusion_injective n) congr(($h).val))
 
 @[simp]
 theorem toInfinite_inj {V W : finiteGrassmannian 𝕜 k n} : toInfinite V = toInfinite W ↔ V = W :=
@@ -119,17 +119,17 @@ theorem toInfinite_eq_toInfinite_iff {m : ℕ} (h : n ≤ m) {V : finiteGrassman
 consists of functions vanishing from coordinate `n` on. -/
 theorem mem_range_toInfinite_iff (W : infiniteGrassmannian 𝕜 k) :
     W ∈ range (toInfinite : finiteGrassmannian 𝕜 k n → _) ↔
-      W.1 ≤ Finsupp.supported 𝕜 𝕜 (Iio n) := by
+      W.val ≤ Finsupp.supported 𝕜 𝕜 (Iio n) := by
   constructor
   · rintro ⟨V, rfl⟩
     rw [coe_toInfinite, ← range_coordinateInclusion]
     exact LinearMap.map_le_range
   · intro hW
     rw [← range_coordinateInclusion] at hW
-    have hmap : (W.1.comap (coordinateInclusion n)).map (coordinateInclusion n) = W.1 :=
+    have hmap : (W.val.comap (coordinateInclusion n)).map (coordinateInclusion n) = W.val :=
       Submodule.map_comap_eq_of_le hW
-    have hrank : Module.rank 𝕜 (W.1.comap (coordinateInclusion n)) = k := by
-      rw [← rank_map_eq (coordinateInclusion_injective n), hmap, W.2]
+    have hrank : Module.rank 𝕜 (W.val.comap (coordinateInclusion n)) = k := by
+      rw [← rank_map_eq (coordinateInclusion_injective n), hmap, W.property]
     exact ⟨⟨_, Module.finrank_eq_of_rank_eq hrank⟩, Subtype.ext hmap⟩
 
 end finiteGrassmannian
@@ -147,7 +147,7 @@ variable {𝕜 : Type*} [Field 𝕜] {k : ℕ}
 /-- Every point of the infinite Grassmannian comes from some finite stage. -/
 theorem exists_toInfinite_eq (W : infiniteGrassmannian 𝕜 k) :
     ∃ (n : ℕ) (V : finiteGrassmannian 𝕜 k n), toInfinite V = W := by
-  have : FiniteDimensional 𝕜 W.1 := .of_rank_eq_nat W.2
+  have : FiniteDimensional 𝕜 W.val := .of_rank_eq_nat W.property
   obtain ⟨n, hn⟩ := (Module.Finite.iff_fg.1 this).exists_le_supported_Iio
   exact ⟨n, (mem_range_toInfinite_iff W).2 hn⟩
 
@@ -163,7 +163,7 @@ noncomputable def basepoint : infiniteGrassmannian 𝕜 k :=
   toInfinite (⟨⊤, finrank_top 𝕜 _ |>.trans (Module.finrank_fin_fun 𝕜)⟩ : finiteGrassmannian 𝕜 k k)
 
 @[simp]
-theorem coe_basepoint : (basepoint 𝕜 k).1 = Finsupp.supported 𝕜 𝕜 (Iio k) := by
+theorem coe_basepoint : (basepoint 𝕜 k).val = Finsupp.supported 𝕜 𝕜 (Iio k) := by
   rw [basepoint, coe_toInfinite, Submodule.map_top, range_coordinateInclusion]
 
 noncomputable instance : Inhabited (infiniteGrassmannian 𝕜 k) :=
@@ -173,7 +173,7 @@ noncomputable instance : Inhabited (infiniteGrassmannian 𝕜 k) :=
 noncomputable instance : Unique (infiniteGrassmannian 𝕜 0) where
   default := basepoint 𝕜 0
   uniq W := Subtype.ext <| by
-    have hW : W.1 = ⊥ := Submodule.rank_eq_zero.1 (by simpa using W.2)
+    have hW : W.val = ⊥ := Submodule.rank_eq_zero.1 (by simpa using W.property)
     simp [hW]
 
 section Topology

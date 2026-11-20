@@ -250,7 +250,7 @@ def toX : L s₀ a Φ ⟶ TopCat.of X :=
     { pt := TopCat.of X
       ι := NatTrans.ofSequence
         (fun k ↦ TopCat.ofHom ⟨fun w ↦ ((stage s₀ a Φ k).h w : X),
-          continuous_subtype_val.comp (stage s₀ a Φ k).h.toFun.continuous⟩)
+          continuous_subtypeVal.comp (stage s₀ a Φ k).h.toFun.continuous⟩)
         fun k ↦ by
           rw [tower_map_succ]
           ext w

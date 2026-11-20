@@ -66,8 +66,8 @@ private theorem exists_continuousOn_isRoot_powerSubstitution
   let incl : U × ↥(ball (0 : ℂ) R \ {0}) → E × ℂ := fun b => (b.1.val, b.2.val)
   have hincl : ∀ b, incl b ∈ U ×ˢ (ball 0 R \ {0}) := fun b => ⟨b.1.property, b.2.property⟩
   have hic : Continuous incl :=
-    (continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd)
+    (continuous_subtypeVal.comp continuous_fst).prodMk
+      (continuous_subtypeVal.comp continuous_snd)
   have : Nonempty (U × ↥(ball (0 : ℂ) R' \ {0})) := by
     obtain ⟨x, hx, hxR⟩ := NormedField.exists_norm_lt ℂ hR'
     exact ⟨(Classical.ofNonempty, ⟨x, mem_ball_zero_iff.2 hxR, norm_pos_iff.1 hx⟩)⟩

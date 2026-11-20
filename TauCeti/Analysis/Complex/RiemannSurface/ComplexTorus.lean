@@ -194,7 +194,7 @@ give infinitely many. -/
 theorem finite_fixingSubgroup_iff_nonempty [IsZLattice ℝ L]
     (e : M ≃ₘ^n⟮I, 𝓘(ℂ)⟯ AddAction.orbitRel.Quotient L ℂ) (hn : n ≠ 0) {s : Set M} :
     Finite (fixingSubgroup (I := I) (n := n) s) ↔ s.Nonempty := by
-  refine ⟨fun h ↦ nonempty_iff_ne_empty.mpr fun hs ↦ ?_, fun hs ↦ ?_⟩
+  refine ⟨fun h ↦ Set.ne_empty_iff_nonempty.mp fun hs ↦ ?_, fun hs ↦ ?_⟩
   · rw [hs] at h
     exact not_finite_iff_infinite.mpr e.infinite_fixingSubgroup_empty h
   · have := finite_fixingSubgroup_of_nonempty (n := n) hn (hs.image e)

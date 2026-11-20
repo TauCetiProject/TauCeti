@@ -119,12 +119,12 @@ private lemma preimage_setOf_snd {Y : TopCat.{u}} (f : X ⟶ Y)
 
 private lemma isOpen_setOf_fst (σ : X ⟶ disjointOpensClassifier.{u}) :
     IsOpen {x | (σ x).down.val.1} :=
-  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtype_val.comp <|
+  continuous_Prop.1 <| continuous_fst.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma isOpen_setOf_snd (σ : X ⟶ disjointOpensClassifier.{u}) :
     IsOpen {x | (σ x).down.val.2} :=
-  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtype_val.comp <|
+  continuous_Prop.1 <| continuous_snd.comp <| continuous_subtypeVal.comp <|
     continuous_uliftDown.comp σ.hom.continuous
 
 private lemma disjoint_setOf (σ : X ⟶ disjointOpensClassifier.{u}) :

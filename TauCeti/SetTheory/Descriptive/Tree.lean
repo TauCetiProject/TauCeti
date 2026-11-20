@@ -534,6 +534,6 @@ theorem AnalyticSet.exists_treeRank_lt_omega_one_of_isClosed {X : Type*} [Topolo
     (hwf : ∀ x ∈ s, IsWellFounded (F x))
     (hcl : ∀ u : List A, IsClosed {x : X | u ∈ F x}) :
     ∃ β : Ordinal.{u}, β < ω₁ ∧ ∀ x ∈ s, rank (F x) < β :=
-  hs.exists_treeRank_lt_omega_one F hwf fun u => (hcl u).preimage continuous_subtype_val
+  hs.exists_treeRank_lt_omega_one F hwf fun u => (hcl u).preimage continuous_subtypeVal
 
 end MeasureTheory

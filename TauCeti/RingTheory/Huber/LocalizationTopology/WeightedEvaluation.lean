@@ -401,7 +401,7 @@ theorem continuous_weightedPolyEvalHom :
     simp
   rw [h]
   exact (continuous_weightedRationalEvalHom P T s S hden hW).comp
-    ((Completion.continuous_coe _).comp continuous_subtype_val)
+    ((Completion.continuous_coe _).comp continuous_subtypeVal)
 
 /-- **The polynomial evaluation is an open quotient map onto `A[1/s]`**, with its localisation
 topology. -/
@@ -440,7 +440,7 @@ private theorem weightedRationalEvalHom_comp_completionMap :
     ((continuous_weightedRationalEvalHom P T s S hden hW).comp Completion.continuous_map)
     (AddMonoidHom.continuous_completion _ _) fun f ↦ ?_
   obtain ⟨p, rfl⟩ := (weightedPolynomialsEquiv hW).surjective f
-  rw [Completion.map_coe uniformContinuous_subtype_val, AddMonoidHom.completion_coe]
+  rw [Completion.map_coe uniformContinuous_subtypeVal, AddMonoidHom.completion_coe]
   simp
 
 /-- **The evaluation map `A⟨X⟩_{T ∪ {s}} → A⟨T/s⟩` is surjective.** -/
@@ -486,7 +486,7 @@ theorem isOpenMap_weightedRationalEvalHom :
   have hpre : Completion.map (Subtype.val : weightedPolynomials (rationalWeight T s) hW → _) ⁻¹' V
       ∈ nhds 0 := by
     refine Completion.continuous_map.continuousAt.preimage_mem_nhds ?_
-    rwa [← Completion.coe_zero, Completion.map_coe uniformContinuous_subtype_val,
+    rwa [← Completion.coe_zero, Completion.map_coe uniformContinuous_subtypeVal,
       ZeroMemClass.coe_zero, Completion.coe_zero]
   refine Filter.mem_of_superset
     (Filter.le_map_iff.mp (IsTopologicalAddGroup.isOpenMap_iff_nhds_zero.mp hcompl) _ hpre) ?_

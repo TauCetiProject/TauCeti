@@ -503,7 +503,7 @@ def posLengthHomeomorph :
   continuous_invFun := by
     refine Continuous.subtype_mk (isEmbedding_toMoorePath.continuous_iff.2 ?_) _
     exact (Path.continuous_toMoorePath.comp continuous_snd).moorePath_rescale
-      (continuous_subtype_val.comp continuous_fst) fun q ↦ ne_of_gt q.1.2
+      (continuous_subtypeVal.comp continuous_fst) fun q ↦ ne_of_gt q.1.property
 
 @[simp]
 theorem posLengthHomeomorph_apply_fst (γ : (length ⁻¹' Set.Ioi 0 : Set (MooreLoopSpace X x))) :

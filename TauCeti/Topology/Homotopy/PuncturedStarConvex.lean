@@ -129,7 +129,7 @@ def radialProjectionToSphere (hr : 0 < r) : C(↥(V \ {p}), sphere p r) where
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
     have hsub : Continuous fun z : ↥(V \ {p}) => (z : E) - p :=
-      continuous_subtype_val.sub continuous_const
+      continuous_subtypeVal.sub continuous_const
     exact continuous_const.add
       ((continuous_const.div hsub.norm fun z => norm_ne_zero_iff.mpr
           (sub_ne_zero.mpr z.property.2)).smul
@@ -172,9 +172,9 @@ def _root_.StarConvex.radialHomotopy (hV : StarConvex ℝ p V) (hr : 0 < r)
   continuous_toFun := by
     refine Continuous.subtype_mk ?_ _
     have hsub : Continuous fun x : I × ↥(V \ {p}) => (x.2 : E) - p :=
-      (continuous_subtype_val.comp continuous_snd).sub continuous_const
+      (continuous_subtypeVal.comp continuous_snd).sub continuous_const
     have ht : Continuous fun x : I × ↥(V \ {p}) => (x.1 : ℝ) :=
-      continuous_subtype_val.comp continuous_fst
+      continuous_subtypeVal.comp continuous_fst
     have hdiv : Continuous fun x : I × ↥(V \ {p}) => r / ‖(x.2 : E) - p‖ :=
       continuous_const.div hsub.norm fun x => norm_ne_zero_iff.mpr (sub_ne_zero.mpr x.2.property.2)
     exact continuous_const.add ((((continuous_const.sub ht).mul hdiv).add ht).smul hsub)

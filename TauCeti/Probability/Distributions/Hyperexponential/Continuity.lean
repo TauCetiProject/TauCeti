@@ -42,7 +42,7 @@ theorem continuous_hyperexponentialMeasure :
     (Convexity.StdSimplex.isEmbedding_toFun_comp_weights_nnreal (ι := ι)).firstCountableTopology
   apply continuous_iff_seqContinuous.2
   intro q a hq
-  have hparam := (continuous_subtype_val.tendsto a).comp hq
+  have hparam := (continuous_subtypeVal.tendsto a).comp hq
   let _ (n : ℕ) := isProbabilityMeasure_hyperexponentialMeasure (q n).property
   let _ := isProbabilityMeasure_hyperexponentialMeasure a.property
   -- Mathlib's Lévy convergence theorem.

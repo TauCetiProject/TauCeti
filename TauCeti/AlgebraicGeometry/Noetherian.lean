@@ -54,9 +54,9 @@ instance locallyConnectedSpace_of_isLocallyNoetherian (X : Scheme.{u}) [IsLocall
   refine ⟨(↑) '' connectedComponent (⟨x, hxW⟩ : W), ?_, ?_, ?_, ?_⟩
   · rintro _ ⟨y, -, rfl⟩
     exact interior_subset (hWU y.property)
-  · exact W.isOpen.isOpenMap_subtype_val _ isOpen_connectedComponent
+  · exact W.isOpen.isOpenMap_subtypeVal _ isOpen_connectedComponent
   · exact ⟨_, mem_connectedComponent, rfl⟩
-  · exact isConnected_connectedComponent.image _ continuous_subtype_val.continuousOn
+  · exact isConnected_connectedComponent.image _ continuous_subtypeVal.continuousOn
 
 end TauCeti.AlgebraicGeometry
 

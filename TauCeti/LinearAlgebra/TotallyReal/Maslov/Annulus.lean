@@ -170,7 +170,7 @@ private theorem maslovIndex_map_zpowEquiv (Λ : TotallyRealLoop ℂ) (m : ℤ) {
     simp [zpowEquiv, hρ.ne']
   have hexp :
       Complex.exp (2 * π * t * Complex.I) ^ m = Complex.exp (2 * π * m * t * Complex.I) := by
-    rw [← Complex.exp_int_mul]
+    rw [← Complex.exp_intCast_mul]
     congr 1
     ring
   rw [hlin]

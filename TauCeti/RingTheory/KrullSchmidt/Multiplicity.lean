@@ -270,7 +270,7 @@ private theorem indecomposableDecomposition_eq_singleton_top :
     · exact eq_top_of_isCompl_bot (hrest ▸ hcompl)
   have htop : ⊤ ∈ s := by
     obtain ⟨P, hP⟩ : s.Nonempty := by
-      rw [Finset.nonempty_iff_ne_empty]
+      rw [← Finset.ne_empty_iff_nonempty]
       intro hs0
       let _ := hM.nontrivial
       apply top_ne_bot (α := Submodule A M)

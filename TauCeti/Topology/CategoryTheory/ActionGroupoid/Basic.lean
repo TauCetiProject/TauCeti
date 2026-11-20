@@ -166,10 +166,10 @@ theorem continuous_comp [ContinuousMul G] :
   simpa only [Function.comp_def, Quiver.Total.comp_def, arrowHomeomorph_apply,
     ActionCategory.comp_hom, eqToHom_hom, one_mul, mul_one, Pi.mul_apply,
     objectHomeomorph_apply] using
-    (((continuous_label G X).comp (continuous_snd.comp continuous_subtype_val)).mul
-      ((continuous_label G X).comp (continuous_fst.comp continuous_subtype_val))).prodMk
+    (((continuous_label G X).comp (continuous_snd.comp continuous_subtypeVal)).mul
+      ((continuous_label G X).comp (continuous_fst.comp continuous_subtypeVal))).prodMk
         ((objectHomeomorph G X).continuous.comp
-          ((continuous_source G X).comp (continuous_fst.comp continuous_subtype_val)))
+          ((continuous_source G X).comp (continuous_fst.comp continuous_subtypeVal)))
 
 section Discrete
 

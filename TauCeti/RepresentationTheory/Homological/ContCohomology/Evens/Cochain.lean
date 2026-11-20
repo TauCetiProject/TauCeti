@@ -202,7 +202,7 @@ theorem continuous_evensExtend [TopologicalSpace G] [SeparatelyContinuousMul G]
     funext fun v => dite_eq_right v.property
   have hon : ContinuousOn (evensExtend U α) (U : Set G) := by
     rw [continuousOn_iff_continuous_domRestrict, hres]
-    exact continuous_toAdd.comp (hα.comp (continuous_subtype_val.subtype_mk _))
+    exact continuous_toAdd.comp (hα.comp (continuous_subtypeVal.subtype_mk _))
   have hoff : ContinuousOn (evensExtend U α) ((U : Set G)ᶜ) := by
     rw [continuousOn_iff_continuous_domRestrict, hresc]
     exact continuous_const

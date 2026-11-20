@@ -71,7 +71,7 @@ public instance : FunLike (BasedPath x₀) I X where
 
 /-- Evaluation `BasedPath x₀ × I → X` is jointly continuous. -/
 public instance : ContinuousEval (BasedPath x₀) I X :=
-  .of_continuous_forget continuous_subtype_val
+  .of_continuous_forget continuous_subtypeVal
 
 @[simp] public theorem mk_apply (γ : C(I, X)) (h : γ 0 = x₀) (t : I) :
     (show BasedPath x₀ from ⟨γ, h⟩) t = γ t := rfl
@@ -197,7 +197,7 @@ public noncomputable def deformTerminal (ha : 0 ≤ a) (hab : a < b) (hb : b < 1
       simp [div_self (sub_ne_zero.2 hab.ne')]
     · rintro t rfl
       simp [hab.le]
-  ⟨⟨fun t ↦ f t, hf.comp continuous_subtype_val⟩, by simp [f, ha]⟩
+  ⟨⟨fun t ↦ f t, hf.comp continuous_subtypeVal⟩, by simp [f, ha]⟩
 
 variable (ha : 0 ≤ a) (hab : a < b) (hb : b < 1) {t : I}
 
@@ -420,7 +420,7 @@ public theorem exists_open_nhds_pathComponent_preimage
     rw [Function.update_self]
     exact pathComponentIn_subset.trans inter_subset_right
   refine ⟨{β | Path.IsInTube β.toPath part T'},
-    (T'.isOpen_setOf_isInTube part).preimage continuous_subtype_val, hα_tube', fun β hβ ↦ ?_⟩
+    (T'.isOpen_setOf_isInTube part).preimage continuous_subtypeVal, hα_tube', fun β hβ ↦ ?_⟩
   obtain ⟨ρ, hρ, h⟩ := hα_tube'.exists_trans_homotopic hβ
   exact (joinedIn_preimage_of_append α ρ (hρ.trans hW_U)).trans
     (joinedIn_endpoint_preimage_of_homotopic (hρ.trans hW_U ρ.target_mem_range) h)

@@ -327,7 +327,7 @@ theorem continuous_totalSpaceMk_frame_apply [FiniteDimensional 𝕜 V] :
 instance [CompleteSpace V] [FiniteDimensional 𝕜 V] :
     ContinuousSMul (unitary (V →L[𝕜] V))ᵐᵒᵖ (OrthonormalFrameBundle 𝕜 F E V) where
   continuous_smul := continuous_iff.2 fun _ ↦ continuous_totalSpaceMk_frame_apply.comp
-    (continuous_snd.prodMk (((continuous_subtype_val.comp continuous_unop).comp
+    (continuous_snd.prodMk (((continuous_subtypeVal.comp continuous_unop).comp
       continuous_fst).clm_apply continuous_const))
 
 end OrthonormalFrameBundle
@@ -382,7 +382,7 @@ theorem continuous_orthonormalFrame :
   have hc : Continuous fun y : e.baseSet ↦
       ∑ i, ⟪b i, v⟫_𝕜 • (e ⟨y, e.orthonormalBasis c y i⟩).2 :=
     continuous_finsetSum Finset.univ fun i _ ↦ (hT i).const_smul _
-  refine (e.continuousOn_symm.comp_continuous (continuous_subtype_val.prodMk hc)
+  refine (e.continuousOn_symm.comp_continuous (continuous_subtypeVal.prodMk hc)
     fun y ↦ ⟨y.property, mem_univ _⟩).congr fun y ↦ ?_
   -- In the coordinates of `e`, the frame applied to `v` is the matching combination of the
   -- coordinates of the Gram–Schmidt basis vectors.
@@ -400,11 +400,11 @@ theorem continuous_orthonormalFrame_symm_apply :
   have hσ (i : ι) : Continuous fun x : (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
       (⟨x.val.proj, e.orthonormalBasis c ⟨x.val.proj, x.property⟩ i⟩ : TotalSpace F E) :=
     (e.continuous_orthonormalBasis c i).comp
-      (((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _)
+      (((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _)
   -- The coordinates of `x` in the orthonormal basis `b` are its inner products with the
   -- Gram–Schmidt basis vectors.
   refine (continuous_finsetSum Finset.univ fun i _ ↦
-    ((hσ i).inner_bundle_of_continuousFiberNorm (𝕜 := 𝕜) continuous_subtype_val).smul
+    ((hσ i).inner_bundle_of_continuousFiberNorm (𝕜 := 𝕜) continuous_subtypeVal).smul
       (continuous_const (y := b i))).congr fun x ↦ ?_
   simp [orthonormalFrame_symm_apply]
 
@@ -484,9 +484,9 @@ def orthonormalFrameBundle :
     have hσ : Continuous fun q : (e.baseSet ×ˢ univ : Set (B × unitary (V →L[𝕜] V))) ↦
         (⟨q.val.1, orthonormalFrameAt e c b q.val.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
       ((e.continuous_orthonormalFrame c b).comp
-        ((continuous_fst.comp continuous_subtype_val).subtype_mk fun q ↦ q.2.1)).congr fun q ↦
+        ((continuous_fst.comp continuous_subtypeVal).subtype_mk fun q ↦ q.property.1)).congr fun q ↦
           mk_eq_mk_iff.2 (orthonormalFrameAt_of_mem e c b q.property.1).symm
-    exact (continuous_op.comp (continuous_snd.comp continuous_subtype_val)).smul hσ
+    exact (continuous_op.comp (continuous_snd.comp continuous_subtypeVal)).smul hσ
   baseSet := e.baseSet
   open_baseSet := e.open_baseSet
   source_eq := rfl
@@ -575,7 +575,7 @@ theorem continuous_totalSpaceMk_apply_of_orthonormalFrame {A : ∀ b, E b →L[�
   rw [continuousOn_iff_continuous_domRestrict]
   let y : U → e.baseSet := fun x ↦ ⟨x.val.proj, x.property⟩
   have hy : Continuous y :=
-    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
+    ((FiberBundle.continuous_proj F E).comp continuous_subtypeVal).subtype_mk _
   -- Over `e.baseSet`, `A` applied to `v` is the frame `σ` applied to the operator read in `σ`,
   -- applied to the coordinates of `v` in `σ`; all three pieces are continuous.
   have hframe : Continuous fun x : U ↦

@@ -521,7 +521,7 @@ spaces `I_x(M) / I_x(M)² ≃ I_x(U) / I_x(U)²`. -/
 def smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (x : M)) :
     (smoothVanishingIdeal I (x : M)).Cotangent ≃ₗ[ℝ] (smoothVanishingIdeal I x).Cotangent :=
   LinearEquiv.ofBijective
-    (smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
+    (smoothCotangentMap (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯) (y := x)
       (by simp))
     (smoothCotangentMap_bijective _ _ (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
       ⟨Manifold.tangentSpaceOpenEquiv x, (Manifold.mfderiv_subtype_val x).symm⟩)
@@ -529,7 +529,7 @@ def smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (
 /-- Restriction to an open set is the pullback of cotangent classes along the inclusion of `U`. -/
 theorem coe_smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (x : M)) :
     ⇑(smoothCotangentRestrictEquiv U hx) =
-      smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
+      smoothCotangentMap (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯) (y := x)
         (by simp) :=
   funext (LinearEquiv.ofBijective_apply _)
 
@@ -539,7 +539,7 @@ theorem smoothCotangentRestrictEquiv_toCotangent (U : Opens M) {x : U}
     (hx : I.IsInteriorPoint (x : M)) (f : smoothVanishingIdeal I (x : M)) :
     smoothCotangentRestrictEquiv U hx ((smoothVanishingIdeal I (x : M)).toCotangent f) =
       (smoothVanishingIdeal I x).toCotangent
-        ⟨(f : C^∞⟮I, M; ℝ⟯).comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯),
+        ⟨(f : C^∞⟮I, M; ℝ⟯).comp (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^∞⟮I, U; I, M⟯),
           comp_mem_smoothVanishingIdeal _ (by simp) f.property⟩ := by
   rw [coe_smoothCotangentRestrictEquiv]
   exact smoothCotangentMap_toCotangent _ (by simp) f

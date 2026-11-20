@@ -91,7 +91,7 @@ def logisticNormalChartHomeomorph (r : ι) :
   continuous_toFun := (continuous_logisticNormalChart r).subtype_mk _
   continuous_invFun := by
     refine (contDiffOn_logisticNormalLogRatio r (n := 0)).continuousOn.comp_continuous
-      continuous_subtype_val fun x ↦ ?_
+      continuous_subtypeVal fun x ↦ ?_
     exact fun i ↦ (x.property.1 i).ne'
 
 /-- The logistic-chart homeomorphism is the logistic chart. -/

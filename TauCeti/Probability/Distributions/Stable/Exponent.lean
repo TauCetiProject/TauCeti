@@ -313,7 +313,7 @@ private theorem continuousAt_stableCharacteristicExponent_im_params_one {u : ℝ
     ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
       (stableCharacteristicExponent p.1.val p.2 u).im) (⟨1, by norm_num⟩, β) := by
   have ha : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ))
-      (⟨1, by norm_num⟩, β) := (continuous_subtype_val.comp continuous_fst).continuousAt
+      (⟨1, by norm_num⟩, β) := (continuous_subtypeVal.comp continuous_fst).continuousAt
   -- Both divided differences extend continuously, with a nonzero cosine derivative.
   have hd := (Real.hasStrictDerivAt_const_rpow (abs_pos.mpr hu) 1).hasDerivAt
   have hc := hasDerivAt_cos_pi_mul_div_two_one
@@ -338,12 +338,12 @@ theorem continuous_stableCharacteristicExponent_params (u : ℝ) :
     simpa only [stableCharacteristicExponent_zero] using
       (continuous_const : Continuous fun _ : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (0 : ℂ))
   have hp : Continuous (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ |u| ^ p.1.val) :=
-    continuous_const.rpow (continuous_subtype_val.comp continuous_fst)
+    continuous_const.rpow (continuous_subtypeVal.comp continuous_fst)
       (fun _ ↦ Or.inl (abs_ne_zero.mpr hu))
   apply continuous_iff_continuousAt.mpr
   rintro ⟨⟨α, hα⟩, β⟩
   have ha : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦ (p.1 : ℝ)) (⟨α, hα⟩, β) :=
-    (continuous_subtype_val.comp continuous_fst).continuousAt
+    (continuous_subtypeVal.comp continuous_fst).continuousAt
   have him : ContinuousAt (fun p : Set.Ioc (0 : ℝ) 2 × ℝ ↦
       (stableCharacteristicExponent p.1.val p.2 u).im) (⟨α, hα⟩, β) := by
     by_cases hα1 : α = 1

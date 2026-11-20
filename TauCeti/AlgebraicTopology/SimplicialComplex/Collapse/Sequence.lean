@@ -61,8 +61,8 @@ private theorem ElementaryCollapsesTo.exists_strong_deformation_retraction_flat
   -- the ambient point and L-membership; continuity follows from the two projections.
   let r' : C(X, Y) :=
     ⟨fun x => ⟨(r x).val.val, (r x).property⟩,
-      (continuous_subtype_val.comp
-        (continuous_subtype_val.comp r.continuous)).subtype_mk _⟩
+      (continuous_subtypeVal.comp
+        (continuous_subtypeVal.comp r.continuous)).subtype_mk _⟩
   refine ⟨r', ?_, ⟨?_⟩⟩
   · intro x
     exact congrArg (fun y => (⟨y.val.val, y.property⟩ : Y))

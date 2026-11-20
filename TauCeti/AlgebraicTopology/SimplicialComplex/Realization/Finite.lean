@@ -81,7 +81,7 @@ the weak realization. This applies in particular to compact local chart domains.
 theorem isClosedEmbedding_realization_coe_restrict {s : Set (Realization K)} (hs : IsCompact s) :
     Topology.IsClosedEmbedding (fun x : s => (x.val.val : ι → ℝ)) := by
   let : CompactSpace s := isCompact_iff_compactSpace.mp hs
-  exact ((continuous_realization_coe K).comp continuous_subtype_val).isClosedEmbedding
+  exact ((continuous_realization_coe K).comp continuous_subtypeVal).isClosedEmbedding
     ((injective_realization_coe K).comp Subtype.val_injective)
 
 /-- For a complex with finitely many faces the barycentric-coordinate map is a closed

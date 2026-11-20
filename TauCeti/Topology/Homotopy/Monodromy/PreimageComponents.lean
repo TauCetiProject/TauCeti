@@ -86,7 +86,7 @@ theorem joinedIn_preimage_iff (hp : IsCoveringMap p) {V : Set X} {v : X}
     (hv : v ∈ V) (e e' : p ⁻¹' {v}) :
     JoinedIn (p ⁻¹' V) (e : E) (e' : E) ↔
       ∃ g : FundamentalGroup V ⟨v, hv⟩,
-        hp.monodromy (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩ g).toPath
+        hp.monodromy (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨v, hv⟩ g).toPath
           e = e' := by
   have he : p (e : E) = v := e.property
   have he' : p (e' : E) = v := e'.property
@@ -95,7 +95,7 @@ theorem joinedIn_preimage_iff (hp : IsCoveringMap p) {V : Set X} {v : X}
     -- The projection of a joining path is a loop at `v` lying in `V`.
     let γ : Path v v := (h.somePath.map hp.continuous).cast he.symm he'.symm
     have hγ : ∀ t, γ t ∈ V := fun t => h.somePath_mem t
-    have hδ : FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩
+    have hδ : FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨v, hv⟩
         (FundamentalGroup.fromPath (.mk (γ.codRestrict (x := ⟨v, hv⟩) (y := ⟨v, hv⟩) hγ))) =
           FundamentalGroup.fromPath (.mk γ) := by
       refine CategoryTheory.End.ext ?_
@@ -179,7 +179,7 @@ theorem sameCycle_monodromyPerm_iff_joinedIn_preimage (hp : IsCoveringMap p)
     {V : Set X} {v : X} (hv : v ∈ V) {c : FundamentalGroup V ⟨v, hv⟩}
     (hc : Subgroup.zpowers c = ⊤) (e e' : p ⁻¹' {v}) :
     (hp.monodromyPerm v
-        (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩ c)).SameCycle e e' ↔
+        (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨v, hv⟩ c)).SameCycle e e' ↔
       JoinedIn (p ⁻¹' V) (e : E) (e' : E) := by
   rw [hp.joinedIn_preimage_iff hv]
   constructor
@@ -199,14 +199,14 @@ noncomputable def sameCycleQuotientEquivZerothHomotopy (hp : IsCoveringMap p)
     {V : Set X} (hV : IsPathConnected V) {v : X} (hv : v ∈ V) {c : FundamentalGroup V ⟨v, hv⟩}
     (hc : Subgroup.zpowers c = ⊤) :
     Quotient (SameCycle.setoid (hp.monodromyPerm v
-        (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩ c))) ≃
+        (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨v, hv⟩ c))) ≃
       ZerothHomotopy (p ⁻¹' V) :=
   have hmem (e : p ⁻¹' {v}) : (e : E) ∈ p ⁻¹' V := by
     rw [Set.mem_preimage, e.property]
     exact hv
   have hrel (e e' : p ⁻¹' {v}) :
       (hp.monodromyPerm v
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨v, hv⟩ c)).SameCycle e e' ↔
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨v, hv⟩ c)).SameCycle e e' ↔
         Joined (⟨e, hmem e⟩ : p ⁻¹' V) ⟨e', hmem e'⟩ := by
     rw [hp.sameCycle_monodromyPerm_iff_joinedIn_preimage hv hc, joinedIn_iff_joined]
   Equiv.ofBijective

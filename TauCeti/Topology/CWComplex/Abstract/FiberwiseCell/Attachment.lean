@@ -307,7 +307,7 @@ characteristic maps `χ i : P × D^{k i} → Y` restricting to the attaching map
 spheres: it is the inclusion on `P × A` and `(p, x) ↦ (p, χ i (p, x))` on the `i`-th cell. -/
 def fiberwiseCellComparison : fiberwiseCellAttachment α ⟶ TopCat.of (P × Y) :=
   fiberwiseCellAttachmentDesc α
-    (TopCat.ofHom ((ContinuousMap.id P).prodMap ⟨Subtype.val, continuous_subtype_val⟩))
+    (TopCat.ofHom ((ContinuousMap.id P).prodMap ⟨Subtype.val, continuous_subtypeVal⟩))
     (fun i ↦ TopCat.ofHom (ContinuousMap.fst.prodMk (χ i))) fun i p s ↦ Prod.ext rfl (hχ i p s)
 
 @[simp]
@@ -358,7 +358,7 @@ private def fiberwiseCellReattachmentFun (i : ι) :
         (ULift.up ⟨q.2.val, closedBall_subset_closedBall (by norm_num) q.2.property⟩))),
       (fiberwiseCellAttachmentCell α₀ i).hom.continuous.comp (continuous_fst.prodMk
         ((h i).continuous.comp (continuous_fst.prodMk (TopCat.continuous_reattachmentRadial.comp
-          (continuous_uliftUp.comp ((continuous_subtype_val.comp continuous_snd).subtype_mk _))))))⟩
+          (continuous_uliftUp.comp ((continuous_subtypeVal.comp continuous_snd).subtype_mk _))))))⟩
     ⟨fun q ↦ fiberwiseCellAttachmentIncl α₀
         (q.1, ⟨K i (σ q.2.1, (q.1, TopCat.diskBoundaryInclusion (k i) q.2.2)), hK i _ _ _⟩),
       (fiberwiseCellAttachmentIncl α₀).hom.continuous.comp (continuous_fst.prodMk
@@ -531,7 +531,7 @@ include hχ₁ in
 `TauCeti.fiberwiseCellReattachmentCylinder` on the cylinders over the cells. -/
 private def fiberwiseCellReattachmentCylinderMap : C(I × fiberwiseCellAttachment α₁, P × Y) :=
   fiberwiseCellAttachmentCylinderDesc α₁
-    (((ContinuousMap.id P).prodMap ⟨Subtype.val, continuous_subtype_val⟩).comp ContinuousMap.snd)
+    (((ContinuousMap.id P).prodMap ⟨Subtype.val, continuous_subtypeVal⟩).comp ContinuousMap.snd)
     (fiberwiseCellReattachmentCylinder χ₀ χ₁ h K) fun i t p s ↦ by
       rw [fiberwiseCellReattachmentCylinder_apply, TopCat.reattachmentPath_diskBoundaryInclusion,
         ContinuousMap.Homotopy.apply_zero]

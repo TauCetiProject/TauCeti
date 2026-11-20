@@ -168,7 +168,7 @@ private theorem continuous_radialMap (Ψ : AmbientIsotopy (sphere (0 : E) 1 × Z
         Ψ.toContinuousMap.continuous.comp (ht.prodMk ((hdir.comp continuous_fst).prodMk
           continuous_snd))
       exact ((by fun_prop : Continuous fun q : {x : E // x ≠ 0} × Z => ‖(q.1 : E)‖).smul
-        (continuous_subtype_val.comp (continuous_fst.comp hΨ))).prodMk (continuous_snd.comp hΨ)
+        (continuous_subtypeVal.comp (continuous_fst.comp hΨ))).prodMk (continuous_snd.comp hΨ)
     have := he.continuousAt_iff (g := radialMap Ψ) (x := (⟨p.1, hp⟩, p.2))
     exact this.mp hcont.continuousAt
 

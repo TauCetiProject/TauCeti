@@ -133,7 +133,7 @@ def closedBallRayRetraction : C(closedBall (0 : E) 1, sphere (0 : E) 1) where
     mem_sphere_zero_iff_norm.2 <| TauCeti.norm_add_unitSphereRayTime_smul_sub
       (fun h ↦ hf x (Subtype.ext h.symm)) (mem_closedBall_zero_iff.1 x.property)⟩
   continuous_toFun := by
-    have := (continuous_subtype_val.comp f.continuous).unitSphereRayTime continuous_subtype_val
+    have := (continuous_subtypeVal.comp f.continuous).unitSphereRayTime continuous_subtypeVal
       fun x h ↦ hf x (Subtype.ext h.symm)
     fun_prop
 

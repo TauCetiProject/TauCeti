@@ -65,8 +65,8 @@ noncomputable def homeomorphSphereProdOfNormPos (r : ℝ) (hr : 0 < r) :
     simp [norm_smul, smul_smul, abs_of_pos hd, hu, hr.ne', hd.ne']
   continuous_toFun := by
     have hnorm : Continuous (fun x : {x : E | 0 < ‖x‖} => ‖x.val‖) :=
-      continuous_subtype_val.norm
-    have hdir := ((hnorm.inv₀ fun x => ne_of_gt x.2).smul continuous_subtype_val).const_smul r
+      continuous_subtypeVal.norm
+    have hdir := ((hnorm.inv₀ fun x => ne_of_gt x.property).smul continuous_subtypeVal).const_smul r
     exact (hdir.subtype_mk _).prodMk ((hnorm.div_const r).subtype_mk _)
   continuous_invFun := by fun_prop
 
@@ -121,7 +121,7 @@ theorem _root_.Topology.IsOpenEmbedding.smul_coe_sphere {Y : Type*} [Topological
   have hρ' : Topology.IsOpenEmbedding (codRestrict ρ (Ioi 0) fun y ↦ mem_Ioi.2 (hpos y)) := by
     refine ⟨hρ.isEmbedding.codRestrict _ _, ?_⟩
     rw [range_codRestrict]
-    exact hρ.isOpen_range.preimage continuous_subtype_val
+    exact hρ.isOpen_range.preimage continuous_subtypeVal
   exact (isOpen_lt continuous_const continuous_norm).isOpenEmbedding_subtypeVal.comp
     ((homeomorphUnitSphereProdOfNormPos E).symm.isOpenEmbedding.comp
       (Topology.IsOpenEmbedding.id.prodMap hρ'))

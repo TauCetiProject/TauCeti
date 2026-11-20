@@ -1239,7 +1239,7 @@ private noncomputable def lexValuation (hc : 0 < c)
     · rw [add_zero]
     rcases eq_or_ne f 0 with rfl | hf
     · rw [lexValue_zero] at hgf
-      refine absurd (le_zero_iff.mp hgf) ?_
+      refine absurd (nonpos_iff_eq_zero.mp hgf) ?_
       rw [lexValue_of_ne_zero hc d hg]
       exact WithZero.coe_ne_zero
     have hgf' := (lexValue_le_lexValue_iff hc d hg hf).mp hgf

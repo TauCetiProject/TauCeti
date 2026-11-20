@@ -113,7 +113,7 @@ theorem isOpenEmbedding_domRestrict_norm_lt_bundle
   e.isOpenEmbedding_restrict.comp
     (IsOpenEmbedding.inclusion hsource
       ((isOpen_lt (TauCeti.continuous_norm_bundle F V)
-        (hr.comp (FiberBundle.continuous_proj F V))).preimage continuous_subtype_val))
+        (hr.comp (FiberBundle.continuous_proj F V))).preimage continuous_subtypeVal))
 
 /-- A partial homeomorphism defined on compact closed fibre discs takes them onto the
 closure of the open disc image. -/

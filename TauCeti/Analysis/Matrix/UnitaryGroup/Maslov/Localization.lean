@@ -174,7 +174,7 @@ private theorem continuous_cayleyDet : Continuous (cayleyDet (n := n)) := by
   have hz : Continuous fun B : SymmMatrix n => det (1 + Complex.I • B.val.map ((↑) : ℝ → ℂ)) :=
     Continuous.matrix_det (A := fun B : SymmMatrix n => 1 + Complex.I • B.val.map ((↑) : ℝ → ℂ))
       (continuous_const.add
-        ((continuous_subtype_val.matrix_map continuous_ofReal).const_smul Complex.I))
+        ((continuous_subtypeVal.matrix_map continuous_ofReal).const_smul Complex.I))
   have hc : Continuous fun B : SymmMatrix n => (cayleyDet B : ℂ) :=
     (hz.div (continuous_conj.comp hz) fun B => (map_ne_zero _).2
       B.property.map_ofReal.isUnit_det_one_add_I_smul.ne_zero).congr fun B => by
@@ -209,7 +209,7 @@ private theorem maslovIndex_eq_angleChange_cayleyDet {U V : unitaryGroup n ℂ} 
 /-- The segment `t ↦ t B` from `0` to a symmetric matrix `B`. -/
 private def segment (B : SymmMatrix n) : Path (⟨0, isHermitian_zero⟩ : SymmMatrix n) B where
   toFun t := ⟨(t : ℝ) • B.val, B.property.smul (IsSelfAdjoint.all _)⟩
-  continuous_toFun := (continuous_subtype_val.smul continuous_const).subtype_mk _
+  continuous_toFun := (continuous_subtypeVal.smul continuous_const).subtype_mk _
   source' := Subtype.ext (by simp)
   target' := Subtype.ext (by simp)
 
@@ -235,7 +235,7 @@ private noncomputable def diagonalFrame (B : SymmMatrix n) :
       (t * B.property.eigenvalues j))
   continuous_toFun := TauCeti.continuous_unitaryTorusHom.comp <| continuous_pi fun _ =>
     Circle.exp.continuous.comp (Real.continuous_arctan.comp
-      (continuous_subtype_val.mul continuous_const))
+      (continuous_subtypeVal.mul continuous_const))
   source' := rfl
   target' := rfl
 
@@ -298,7 +298,7 @@ private theorem maslovIndex_segmentFrame (B : SymmMatrix n) :
     (map_ofReal_mul_transpose_map_ofReal_eq_one B.property.eigenvectorUnitary.property),
     maslovIndex_eq_sum_sign_of_diagonal_arctan (diagonalFrame B)
       (a := fun j t => t * B.property.eigenvalues j)
-      (fun j => continuous_subtype_val.mul continuous_const)
+      (fun j => continuous_subtypeVal.mul continuous_const)
       (fun t => by simp [diagonalFrame, Circle.coe_exp]),
     IsHermitian.signature_def, Int.cast_sum, Finset.sum_div]
   refine Finset.sum_congr rfl fun j _ => ?_

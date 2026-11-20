@@ -281,7 +281,7 @@ noncomputable instance
 
 instance : HasCoproducts.{u}
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasColimit_of_iso Discrete.natIsoFunctor⟩
+  ⟨fun _ ↦ ⟨fun _ ↦ hasColimit_of_iso Discrete.natIsoFunctor⟩⟩
 
 variable {M} in
 /-- The closed morphism between direct sums applying a family of closed morphisms summand by
@@ -481,7 +481,7 @@ noncomputable instance (X : J → DGHomotopyCategory R (CurvedDGRightModuleCat.{
       isColimit := homotopyDirectSumCofanIsColimit _ }
 
 instance : HasCoproducts.{u} (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
-  fun _ ↦ ⟨fun _ ↦ hasColimit_of_iso Discrete.natIsoFunctor⟩
+  ⟨fun _ ↦ ⟨fun _ ↦ hasColimit_of_iso Discrete.natIsoFunctor⟩⟩
 
 end Homotopy
 

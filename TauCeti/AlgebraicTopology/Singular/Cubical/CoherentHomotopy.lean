@@ -116,7 +116,7 @@ def boundaryHomotopy (c : SingularCube X (m + 1)) : C(I × Cube.boundary (Fin (m
     let F : Fin (m + 1) × Bool → Set (I × Cube.boundary (Fin (m + 1))) :=
       fun jb ↦ {q | (q.2 : Fin (m + 1) → I) jb.1 = e jb.2}
     refine (locallyFinite_of_finite F).continuous ?_ (fun jb ↦ isClosed_eq
-      ((continuous_apply jb.1).comp (continuous_subtype_val.comp continuous_snd))
+      ((continuous_apply jb.1).comp (continuous_subtypeVal.comp continuous_snd))
       continuous_const) fun jb ↦ ?_
     · refine Set.eq_univ_of_forall fun q ↦ Set.mem_iUnion.2 ?_
       obtain ⟨j, hj⟩ := q.2.property
@@ -126,7 +126,7 @@ def boundaryHomotopy (c : SingularCube X (m + 1)) : C(I × Cube.boundary (Fin (m
           L.homotopy (SingularCube.face jb.1 (e jb.2) c)
             (q.1, jb.1.removeNth (q.2 : Fin (m + 1) → I)) :=
         (L.homotopy _).continuous.comp (continuous_fst.prodMk
-          ((removeNthCM jb.1).continuous.comp (continuous_subtype_val.comp continuous_snd)))
+          ((removeNthCM jb.1).continuous.comp (continuous_subtypeVal.comp continuous_snd)))
       refine hcont.continuousOn.congr ?_
       intro q hq
       have hq : (q.2 : Fin (m + 1) → I) jb.1 = e jb.2 := hq

@@ -102,7 +102,7 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (Discrete X) where
   continuous_comp := by
     apply (arrowHomeomorph X).isInducing.continuous_iff.mpr
     simpa only [Function.comp_def, arrowHomeomorph_apply, Quiver.Total.comp_left] using
-      (arrowHomeomorph X).continuous.comp (continuous_fst.comp continuous_subtype_val)
+      (arrowHomeomorph X).continuous.comp (continuous_fst.comp continuous_subtypeVal)
 
 /-- Composable pairs in the unit groupoid are pairs of the same unit, with the topology
 of the object space, not a discrete topology. -/
@@ -119,7 +119,7 @@ def composablePairsHomeomorph :
     rfl
   right_inv _ := rfl
   continuous_toFun := (arrowHomeomorph X).continuous.comp
-    (continuous_fst.comp continuous_subtype_val)
+    (continuous_fst.comp continuous_subtypeVal)
   continuous_invFun := ((arrowHomeomorph X).symm.continuous.prodMk
     (arrowHomeomorph X).symm.continuous).subtype_mk _
 
@@ -321,8 +321,8 @@ def composablePairsHomeomorph :
     rfl
   right_inv _ := rfl
   continuous_toFun := ((arrowHomeomorph G).continuous.comp
-    (continuous_fst.comp continuous_subtype_val)).prodMk
-    ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtype_val))
+    (continuous_fst.comp continuous_subtypeVal)).prodMk
+    ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtypeVal))
   continuous_invFun := (((arrowHomeomorph G).symm.continuous.comp continuous_fst).prodMk
     ((arrowHomeomorph G).symm.continuous.comp continuous_snd)).subtype_mk _
 
@@ -403,8 +403,8 @@ instance isTopologicalGroupoid : IsTopologicalGroupoid (SingleObj G) where
   continuous_comp := by
     apply (arrowHomeomorph G).isInducing.continuous_iff.mpr
     convert
-      ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtype_val)).mul
-        ((arrowHomeomorph G).continuous.comp (continuous_fst.comp continuous_subtype_val)) using 1
+      ((arrowHomeomorph G).continuous.comp (continuous_snd.comp continuous_subtypeVal)).mul
+        ((arrowHomeomorph G).continuous.comp (continuous_fst.comp continuous_subtypeVal)) using 1
     funext p
     exact arrowHomeomorph_comp G p.val.1 p.val.2 p.property
 

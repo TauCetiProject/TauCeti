@@ -146,8 +146,8 @@ variable {b₀ : B} {x : X}
 instance instContinuousSMulStabilizer :
     ContinuousSMul (stabilizer G x) (BasedMap B X b₀ x) where
   continuous_smul :=
-    ((continuous_subtype_val.comp continuous_fst).smul
-      (continuous_subtype_val.comp continuous_snd)).subtype_mk _
+    ((continuous_subtypeVal.comp continuous_fst).smul
+      (continuous_subtypeVal.comp continuous_snd)).subtype_mk _
 
 /-! ### The action map over the orbit map -/
 
@@ -156,7 +156,7 @@ variable (b₀ x) in
 `g ↦ g • x` (`TauCeti.mappingSpaceEval_actionMap`). For `g` in the stabilizer of `x`, `g • γ` is
 the stabilizer action on based maps (`TauCeti.BasedMap.coe_stabilizer_smul`). -/
 def actionMap : C(G × BasedMap B X b₀ x, C(B, X)) :=
-  ⟨fun p ↦ p.1 • p.2.1, continuous_fst.smul (continuous_subtype_val.comp continuous_snd)⟩
+  ⟨fun p ↦ p.1 • p.2.val, continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)⟩
 
 /-- The action map translates a based map by the group element. -/
 @[simp]

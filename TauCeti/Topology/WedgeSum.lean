@@ -325,7 +325,7 @@ theorem isOpenEmbedding_subtypeVal (hSo : ∀ i, IsOpen (S i)) :
     · rintro ⟨a, ha, rfl⟩
       exact ⟨_, ha, rfl⟩
   rw [hpre]
-  exact (hSo i).isOpenMap_subtype_val _ ((isOpen_iff.1 hO) i)
+  exact (hSo i).isOpenMap_subtypeVal _ ((isOpen_iff.1 hO) i)
 
 end Subspace
 

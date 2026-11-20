@@ -155,7 +155,7 @@ theorem sphereTopCellMap_apply_of_norm_eq_one {x : Fin n → ℝ} (hx : ‖x‖ 
 /-- The characteristic map of the top cell of `Sⁿ` is continuous on the closed unit ball, as a
 CW characteristic map must be. -/
 theorem continuousOn_sphereTopCellMap : ContinuousOn (sphereTopCellMap h) (closedBall 0 1) :=
-  (continuous_subtype_val.comp ((sphereOnePointEquiv h).continuous.comp
+  (continuous_subtypeVal.comp ((sphereOnePointEquiv h).continuous.comp
     continuous_unitBallToOnePoint)).continuousOn
 
 /-- The inverse of the characteristic map of the top cell of `Sⁿ` is continuous on the open
@@ -166,7 +166,7 @@ theorem continuousOn_sphereTopCellMap_symm :
   -- On the target, the inverse is `unitBallToOnePoint.symm` after the inverse homeomorphism.
   refine (continuousOn_unitBallToOnePoint_symm.comp_continuous
     ((sphereOnePointEquiv h).symm.continuous.comp
-      (continuous_subtype_val.subtype_mk fun y ↦ y.2.1))
+      (continuous_subtypeVal.subtype_mk fun y ↦ y.property.1))
     fun y ↦ sphereOnePointEquiv_symm_mem_target h y.property).congr fun y ↦ ?_
   exact (sphereTopCellMap_symm_apply h y.property.1).symm
 

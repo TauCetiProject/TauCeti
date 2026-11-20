@@ -257,7 +257,7 @@ theorem tendstoUniformlyOn_riemannSum {α E : Type*} [TopologicalSpace α] [Norm
   have hEq : Equicontinuous fun (x : K) (t : uIcc a b) ↦ f t x := fun t ↦
     Metric.equicontinuousAt_iff_right.mpr fun η hη ↦ by
       obtain ⟨v, hv, hvf⟩ := hK.mem_uniformity_of_prod hf t.property (Metric.dist_mem_uniformity hη)
-      filter_upwards [nhdsWithin_eq_map_subtype_coe t.2 ▸ hv] with s hs x
+      filter_upwards [nhdsWithin_eq_map_subtypeVal t.property ▸ hv] with s hs x
       exact dist_comm (f s x) (f t x) ▸ hvf s hs x x.property
   obtain ⟨δ, hδ, hδF⟩ := Metric.uniformEquicontinuous_iff.mp
     (CompactSpace.uniformEquicontinuous_of_equicontinuous hEq) (ε / (2 * |b - a|)) (by positivity)

@@ -82,7 +82,7 @@ theorem stiefel.coe_smul (e : E ≃ₗᵢ[ℝ] E) (v : stiefel E k) :
 /-- Each linear isometry acts continuously on orthonormal frames. -/
 instance stiefel.instContinuousConstSMul : ContinuousConstSMul (E ≃ₗᵢ[ℝ] E) (stiefel E k) where
   continuous_const_smul e := continuous_induced_rng.2 <| continuous_pi fun i ↦
-    e.continuous.comp ((continuous_apply i).comp continuous_subtype_val)
+    e.continuous.comp ((continuous_apply i).comp continuous_subtypeVal)
 
 /-- Projecting a frame to one of its vectors, a point of the unit sphere, is equivariant for the
 actions of linear isometries on frames and on the sphere. -/

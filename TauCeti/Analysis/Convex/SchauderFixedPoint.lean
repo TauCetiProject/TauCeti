@@ -83,7 +83,7 @@ theorem exists_dist_le_of_isCompact_closure_image (hC : IsClosed C) (hconv : Con
   -- A partition of unity on `K` moves each point of `K` by at most `ε` into the convex hull `D`
   -- of the finitely many points `T` of `K` it is indexed by.
   obtain ⟨s, ρ, hρ⟩ := ContinuousMap.exists_partitionOfUnity_dist_finsum_smul_le
-    ⟨((↑) : K → E), continuous_subtype_val⟩ hε
+    ⟨((↑) : K → E), continuous_subtypeVal⟩ hε
   let T : Set E := (↑) '' (s : Set K)
   let D := convexHull ℝ T
   let P : K → E := fun y ↦ ∑ᶠ k : s, ρ k y • ((k : K) : E)
@@ -140,7 +140,7 @@ theorem schauderFixedPoint_closedConvex (hC : IsClosed C) (hconv : Convex ℝ C)
   have hgC : MapsTo g C C := fun x hx ↦ (hg ⟨x, hx⟩).symm ▸ (f ⟨x, hx⟩).property
   have hgc : ContinuousOn g C := by
     rw [continuousOn_iff_continuous_domRestrict]
-    exact (continuous_subtype_val.comp f.continuous).congr fun x ↦ (hg x).symm
+    exact (continuous_subtypeVal.comp f.continuous).congr fun x ↦ (hg x).symm
   have himage : g '' C = range fun x ↦ (f x : E) := by
     rw [image_eq_range]
     exact congrArg range (funext hg)

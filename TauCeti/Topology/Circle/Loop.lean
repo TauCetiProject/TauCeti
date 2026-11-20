@@ -55,7 +55,7 @@ namespace TauCeti
 `1 ∈ Circle` and mapping `(0, 1)` bijectively onto `Circle \ {1}`. -/
 def unitToCircle : C(I, Circle) where
   toFun t := Circle.exp (2 * Real.pi * t)
-  continuous_toFun := Circle.exp.continuous.comp (continuous_const.mul continuous_subtype_val)
+  continuous_toFun := Circle.exp.continuous.comp (continuous_const.mul continuous_subtypeVal)
 
 theorem unitToCircle_apply (t : I) : unitToCircle t = Circle.exp (2 * Real.pi * t) :=
   (rfl)

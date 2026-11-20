@@ -93,7 +93,7 @@ theorem discCoordinate_ellipticMeridianLift_pow (n : ℤ) (τ : ℍ) (t : unitIn
       ((2 * Real.pi * n * (t : ℝ) : ℝ) : ℂ) * Complex.I := by
     push_cast
     field_simp [hm]
-  rw [discCoordinate_ellipticMeridianLift, mul_pow, ← Complex.exp_nat_mul, hangle]
+  rw [discCoordinate_ellipticMeridianLift, mul_pow, ← Complex.exp_natCast_mul, hangle]
 
 /-- The meridian in the local quotient coordinate, defined as the power-map projection of its
 explicit lift. At the fixed point itself this degenerates to the constant zero path. -/

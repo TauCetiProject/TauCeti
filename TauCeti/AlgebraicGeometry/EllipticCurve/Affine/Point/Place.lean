@@ -209,7 +209,7 @@ theorem one_lt_valuation_pointPlace_div {y : F}
       CoordinateRing.mk_mem_XYIdeal_iff h])
   rw [map_div₀, HeightOneSpectrum.valuation_of_algebraMap,
     HeightOneSpectrum.valuation_of_algebraMap, hp1, one_div,
-    one_lt_inv₀ (zero_lt_iff.mpr (HeightOneSpectrum.intValuation_ne_zero _ _ hq0))]
+    one_lt_inv₀ (pos_iff_ne_zero.mpr (HeightOneSpectrum.intValuation_ne_zero _ _ hq0))]
   refine (HeightOneSpectrum.intValuation_lt_one_iff_mem _ _).mpr ?_
   rwa [WeierstrassCurve.Affine.CoordinateRing.pointPlace_asIdeal,
     CoordinateRing.mk_mem_XYIdeal_iff h]

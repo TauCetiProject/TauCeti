@@ -189,7 +189,7 @@ theorem hasHomotopyExtensionProperty_sphere_closedBall :
     HasHomotopyExtensionProperty
       (Subtype.val ⁻¹' sphere (0 : E) 1 : Set (closedBall (0 : E) 1)) := by
   refine hasHomotopyExtensionProperty_of_retraction
-    (isClosed_sphere.preimage continuous_subtype_val) (r := ballCylinderRetraction)
+    (isClosed_sphere.preimage continuous_subtypeVal) (r := ballCylinderRetraction)
     (fun p => ?_) (fun p hp => ?_)
   · rw [mem_cylinderExtensionDomain_iff, ballCylinderRetraction_apply]
     obtain h0 | hs := (ballRadialProjection_spec p).2.2
@@ -219,7 +219,7 @@ theorem nullhomotopic_iff_exists_extension_closedBall (g : C(sphere (0 : E) 1, Y
     let H := hc.some.symm
     obtain ⟨K, -, hK⟩ :=
       TauCeti.hasHomotopyExtensionProperty_sphere_closedBall.exists_extension_of_isClosed
-        (isClosed_sphere.preimage continuous_subtype_val) (ContinuousMap.const _ c)
+        (isClosed_sphere.preimage continuous_subtypeVal) (ContinuousMap.const _ c)
         (H.toContinuousMap.comp ⟨fun p : I × (Subtype.val ⁻¹' sphere (0 : E) 1 :
           Set (closedBall (0 : E) 1)) ↦ (p.1, (⟨p.2.val.val, p.2.property⟩ : sphere (0 : E) 1)),
               by fun_prop⟩)

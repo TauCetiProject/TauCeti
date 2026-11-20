@@ -125,7 +125,7 @@ theorem scale (r : ℝ) (hr : r ∈ Ioc (0 : ℝ) 1) :
       IsOpenEmbedding (inclusion (Ico_subset_Ico_right hr.2 : Ico (0 : ℝ) r ⊆ Ico 0 1)) := by
     refine ⟨.inclusion _, ?_⟩
     rw [range_inclusion]
-    convert (isOpen_Iio (a := r)).preimage continuous_subtype_val using 1
+    convert (isOpen_Iio (a := r)).preimage continuous_subtypeVal using 1
     ext y
     exact and_iff_right y.property.1
   refine h.reparam_isOpenEmbedding ?_ (Subtype.ext (mul_zero r))

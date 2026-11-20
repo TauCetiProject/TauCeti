@@ -276,7 +276,7 @@ private abbrev lowerSet : Set (cubeSpace.{w} m) :=
 private lemma interior_upperSet_union_interior_lowerSet :
     interior (upperSet.{w} i) ∪ interior (lowerSet.{w} i) = Set.univ := by
   have hc : Continuous fun z : cubeSpace.{w} m ↦ (z.down i : ℝ) :=
-    continuous_subtype_val.comp ((continuous_apply i).comp continuous_uliftDown)
+    continuous_subtypeVal.comp ((continuous_apply i).comp continuous_uliftDown)
   refine Set.eq_univ_of_forall fun z ↦ ?_
   rcases lt_or_ge (1 / 4 : ℝ) (z.down i) with h | h
   · exact Or.inl (interior_maximal (fun _ h' ↦ Or.inr (le_of_lt h'))
@@ -589,7 +589,7 @@ theorem singularHomologyMap_cubeBoundaryPair_eq_add (R : C) {m : ℕ} (i : Fin m
     · exact ⟨Hom.snd f ⟨z.val, hV⟩, Hom.w_apply f _⟩
     · exact hf _ hU hV
   let F : slabPair.{w} i ⟶ Y := TopPair.ofHom φ
-    (TopCat.ofHom (Y.liftSnd (φ.hom.comp ⟨Subtype.val, continuous_subtype_val⟩) hφ))
+    (TopCat.ofHom (Y.liftSnd (φ.hom.comp ⟨Subtype.val, continuous_subtypeVal⟩) hφ))
     (by ext z; exact map_liftSnd _ hφ z)
   have h₁ : f = ofSubsetMap (𝟙 _) (boundary_subset_inter i) ≫ F :=
     hom_ext_of_fst _ (by rw [Hom.fst_comp, ofSubsetMap_fst]; exact (Category.id_comp φ).symm)

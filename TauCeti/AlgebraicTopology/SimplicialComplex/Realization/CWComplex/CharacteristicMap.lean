@@ -135,7 +135,7 @@ theorem simplexCharacteristicMap_symm_apply {y : Realization K}
 theorem continuousOn_simplexCharacteristicMap :
     ContinuousOn (simplexCharacteristicMap K f hf) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
-  exact (continuous_subtype_val.comp (simplexClosedBallHomeomorph K f hf).continuous).congr
+  exact (continuous_subtypeVal.comp (simplexClosedBallHomeomorph K f hf).continuous).congr
     (fun x => (simplexCharacteristicMap_apply K f hf x.property).symm)
 
 /-- The inverse of a simplicial characteristic map is continuous on the open cell. -/
@@ -146,8 +146,8 @@ theorem continuousOn_simplexCharacteristicMap_symm :
   have hc : Continuous (fun y : {y : Realization K |
       y.val.support = Finset.univ.image f} =>
       ((simplexClosedBallHomeomorph K f hf).symm ⟨y.val, y.property.le⟩).val) :=
-    continuous_subtype_val.comp ((simplexClosedBallHomeomorph K f hf).symm.continuous.comp
-      (continuous_subtype_val.subtype_mk (fun y => y.2.le)))
+    continuous_subtypeVal.comp ((simplexClosedBallHomeomorph K f hf).symm.continuous.comp
+      (continuous_subtypeVal.subtype_mk (fun y => y.property.le)))
   exact hc.congr (fun y => (simplexCharacteristicMap_symm_apply K f hf y.property).symm)
 
 /-- The closed ball maps onto the whole closed simplex. -/

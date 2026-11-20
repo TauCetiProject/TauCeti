@@ -147,7 +147,7 @@ theorem exists_chartCkSeminorm_le_coordChange
     exact ⟨z.property, hoverlap z hz⟩
   obtain ⟨C, hCpos, hC⟩ := exists_norm_iteratedFDerivWithin_comp_extend_symm_le (F := F)
     (chart_mem_maximalAtlas x) (chart_mem_maximalAtlas y)
-    (K.isCompact.image continuous_subtype_val) hKs k hk
+    (K.isCompact.image continuous_subtypeVal) hKs k hk
   refine ⟨C, hCpos, fun f ↦ ?_⟩
   have hδ := apply_nonneg (chartCkSeminorm (F := F) y L k hk) f
   refine (chartCkSeminorm_le_iff x K k hk f (mul_nonneg hCpos.le hδ)).mpr fun m hm z hz ↦ ?_
@@ -183,7 +183,7 @@ theorem exists_chartCkSeminorm_coordChange
     apply Continuous.subtype_mk
     exact (continuousOn_extChartAt y).comp_continuous
       ((continuousOn_extChartAt_symm x).comp_continuous
-        (continuous_subtype_val.comp continuous_subtype_val) (fun z ↦ z.val.property))
+        (continuous_subtypeVal.comp continuous_subtypeVal) (fun z ↦ z.val.property))
       (fun z ↦ hoverlap z.val z.property)
   let L : TopologicalSpace.Compacts (extChartAt I y).target :=
     ⟨range θ, isCompact_range hθ⟩

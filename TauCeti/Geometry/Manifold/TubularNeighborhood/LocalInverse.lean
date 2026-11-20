@@ -118,12 +118,12 @@ theorem exists_contMDiff_normalBundle_add_rightInverse
   let R : t → TotalSpace F (fun x => normalSubspace I f x) :=
     fun y => ⟨r y, ⟨y - f (r y), (hnormal y y.property).2⟩⟩
   have hr' : ContMDiff 𝓘(ℝ, V) I n (fun y : t => r y) :=
-    hr.comp_contMDiff contMDiff_subtype_val (fun y => y.property)
+    hr.comp_contMDiff contMDiff_subtypeVal (fun y => y.property)
   have hR : ContMDiff 𝓘(ℝ, V) (I.prod 𝓘(ℝ, F)) n R := by
     apply (contMDiff_normalBundle_iff hf himm hdim).mpr
     refine ⟨hr', ?_⟩
     simpa only [R, sub_eq_add_neg, Function.comp_def, Pi.add_def] using
-      (contMDiff_subtype_val (U := t)).add
+      (contMDiff_subtypeVal (U := t)).add
       (contDiff_neg.contMDiff.comp ((hf.of_le (by simp : n ≤ n + 1)).comp hr'))
   refine ⟨U, hU, hx₀, t, hUs, R, hR, (fun y => (hnormal y y.property).1), ?_, ?_⟩
   · intro y

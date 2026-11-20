@@ -137,7 +137,7 @@ private lemma range_gaugeDiscSpherePair_map_subset_outerCollar :
   norm_num)
 
 private lemma isOpen_outerCollar (hρ : Continuous ρ) : IsOpen (outerCollar ρ) :=
-  isOpen_lt continuous_const (hρ.comp continuous_subtype_val)
+  isOpen_lt continuous_const (hρ.comp continuous_subtypeVal)
 
 variable [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
@@ -153,7 +153,7 @@ private def discCollar : C(I × gaugeDiscBundle ρ, gaugeDiscBundle ρ) where
     exact radialPush_le_one _ (mem_gaugeDiscBundle.1 p.2.property)⟩
   continuous_toFun := by
     have hv : Continuous fun p : I × gaugeDiscBundle ρ ↦ (p.2 : TotalSpace F E) :=
-      continuous_subtype_val.comp continuous_snd
+      continuous_subtypeVal.comp continuous_snd
     -- The collar rescales each vector by a factor in `[0, 3]`, continuous off the zero section.
     refine Continuous.subtype_mk
       (hv.smul_totalSpace_of_norm_le (C := 3) (fun p ↦ ?_) fun p hp ↦ ?_) _
@@ -294,7 +294,7 @@ private lemma exists_isIso_attach_discBundle_subset
           hmem hx
     rw [hrange]
     have hD : IsClosed D := hgD ▸ range_domRestrict g _ ▸ hg.isClosed_range
-    exact hD.preimage continuous_subtype_val
+    exact hD.preimage continuous_subtypeVal
   have hφA (v : gaugeDiscBundle ρ) (hv : (v : TotalSpace F E) ∈ gaugeSphereBundle ρ) :
       (φ v : Y) ∈ A :=
     (hgA v v.property).2 hv
@@ -322,12 +322,12 @@ private lemma exists_isIso_attach_discBundle_subset
   have he₂ : TopPair.Homotopy (e.inv ≫ e.hom) (𝟙 _) := by rw [Iso.inv_hom_id]; exact .refl _
   refine ⟨ψ, fun v ↦ congrArg Subtype.val (hψ v), fun R n ↦ ?_, fun R k _ _ M n ↦ ?_⟩
   · have := isIso_singularHomologyMap_of_attach_gaugeDiscBundle (f := ψ ≫ e.inv) hρ
-      (hA.preimage continuous_subtype_val) R n hf hfX hfcover
+      (hA.preimage continuous_subtypeVal) R n hf hfX hfcover
     have := TopPair.isIso_singularHomologyMap e.hom e.inv he₁ he₂ R n
     rw [hψe, TopPair.singularHomologyMap_comp]
     infer_instance
   · have := isIso_singularCohomologyMap_of_attach_gaugeDiscBundle (f := ψ ≫ e.inv) hρ
-      (hA.preimage continuous_subtype_val) R n k M hf hfX hfcover
+      (hA.preimage continuous_subtypeVal) R n k M hf hfX hfcover
     have := TopPair.isIso_singularCohomologyMap e.hom e.inv he₁ he₂ R k M n
     rw [hψe, TopPair.singularCohomologyMap_comp]
     infer_instance

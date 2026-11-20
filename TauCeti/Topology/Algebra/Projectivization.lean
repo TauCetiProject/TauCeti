@@ -91,7 +91,7 @@ theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
     [TopologicalSpace W] [T1Space W] {G : V →ₗ[K] W} (hG : Continuous G) :
     IsOpen (linearProjectionDomain G) := by
   rw [← isQuotientMap_mk'.isOpen_preimage]
-  convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtype_val) using 1
+  convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtypeVal) using 1
   ext v
   simp [mk'_eq_mk]
 
@@ -174,13 +174,13 @@ theorem continuousAt_linearProjection {T W : Type*} [TopologicalSpace T] [AddCom
   rw [show (t₀, mk' K v) = Prod.map id (mk' K) (t₀, v) from rfl, ← hq.continuousAt_comp_iff]
   -- On the open set of pairs `(t, v)` with `G t v ≠ 0`, the composite is `(t, v) ↦ [G t v]`.
   have hGv : Continuous fun x : T × {v : V // v ≠ 0} ↦ G x.1 x.2 :=
-    hG.comp (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+    hG.comp (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
   let U := (fun x : T × {v : V // v ≠ 0} ↦ G x.1 x.2) ⁻¹' {0}ᶜ
   have hx : (t₀, v) ∈ U := by
     simpa [U, mk'_eq_mk, mk_mem_linearProjectionDomain_iff] using hy₀
   refine ContinuousOn.continuousAt ?_ ((isOpen_compl_singleton.preimage hGv).mem_nhds hx)
   rw [continuousOn_iff_continuous_domRestrict]
-  refine (continuous_mk (K := K) (hGv.comp continuous_subtype_val) fun x : U ↦ x.2).congr
+  refine (continuous_mk (K := K) (hGv.comp continuous_subtypeVal) fun x : U ↦ x.property).congr
     fun x ↦ ?_
   simp [mk'_eq_mk, linearProjection_mk _ _ x.property]
 
@@ -257,7 +257,7 @@ instance instCompactSpace [FiniteDimensional 𝕜 V] : CompactSpace (ℙ 𝕜 V)
     isCompact_iff_compactSpace.1 (isCompact_sphere 0 1)
   refine Function.Surjective.compactSpace (f := fun v : Metric.sphere (0 : V) 1 ↦
     mk 𝕜 (v : V) (ne_zero_of_mem_sphere one_ne_zero v))
-    (continuous_mk continuous_subtype_val _) fun x ↦ ?_
+    (continuous_mk continuous_subtypeVal _) fun x ↦ ?_
   obtain ⟨v, -, hv, rfl⟩ := exists_norm_eq_one_mk_eq x
   exact ⟨⟨v, mem_sphere_zero_iff_norm.2 hv⟩, rfl⟩
 
@@ -286,7 +286,7 @@ theorem pathConnectedSpace_of_one_lt_rank {K V : Type*} [DivisionRing K] [AddCom
   exact Function.Surjective.pathConnectedSpace
     (f := fun v : ({0}ᶜ : Set V) ↦ mk K (v : V) (mem_compl_singleton_iff.1 v.property))
     (fun x ↦ ⟨⟨x.rep, mem_compl_singleton_iff.2 x.rep_ne_zero⟩, x.mk_rep⟩)
-    (continuous_mk continuous_subtype_val _)
+    (continuous_mk continuous_subtypeVal _)
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
@@ -320,7 +320,7 @@ theorem isOpen_affineOpen (i : ι) : IsOpen (affineOpen (K := K) i) := by
     ext v
     simp [mk'_eq_mk]
   rw [this]
-  exact isOpen_compl_singleton.preimage ((continuous_apply i).comp continuous_subtype_val)
+  exact isOpen_compl_singleton.preimage ((continuous_apply i).comp continuous_subtypeVal)
 
 end AffineOpen
 
@@ -357,7 +357,7 @@ theorem continuousOn_affineChart (i : Fin (n + 1)) :
       fun j ↦ v.val (i.succAbove j) / v.val i :=
     funext fun v ↦ affineChart_mk i v.val v.property
   have hcoord (j : Fin (n + 1)) : Continuous fun v : {v : Fin (n + 1) → K // v ≠ 0} ↦ v.val j :=
-    (continuous_apply j).comp continuous_subtype_val
+    (continuous_apply j).comp continuous_subtypeVal
   rw [← isOpenQuotientMap_mk'.continuousAt_comp_iff, hchart]
   exact continuousAt_pi.2 fun j ↦ (hcoord _).continuousAt.div₀ (hcoord i).continuousAt hx
 

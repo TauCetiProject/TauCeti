@@ -259,8 +259,8 @@ def invariantsRestrictScalarsIntEquiv (X : TopRep k G) :
   map_smul' _ _ := rfl
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_induced_rng.2 continuous_subtype_val
-  continuous_invFun := continuous_induced_rng.2 continuous_subtype_val
+  continuous_toFun := continuous_induced_rng.2 continuous_subtypeVal
+  continuous_invFun := continuous_induced_rng.2 continuous_subtypeVal
 
 /-- `invariantsRestrictScalarsIntEquiv` is the identity on the underlying elements. -/
 @[simp]

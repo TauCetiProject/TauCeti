@@ -158,7 +158,7 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
       norm_map' := N.norm_polarFactor_apply_of_injective
         (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x) }
   refine ⟨h₀, rfl, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
-  let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtype_val⟩
+  let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtypeVal⟩
   have hw (w : closedBall (0 : E) δ) : ((w : E), (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by
     have := mem_closedBall_zero_iff.mp w.property
     simpa [Prod.norm_def] using this.trans hδ.2

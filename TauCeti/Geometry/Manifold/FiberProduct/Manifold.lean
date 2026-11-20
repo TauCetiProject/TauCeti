@@ -71,13 +71,13 @@ private theorem isOpenEmbedding_fiberProductPatchInclusion (hf : Continuous f) (
   let U : Set {p : X × Y // f p.1 = g p.2} :=
     {p | f p.val.1 ∈ (extChartPartialDiffeomorph IN n a).source}
   have hU : IsOpen U := (extChartPartialDiffeomorph IN n a).open_source.preimage
-    (hf.comp (continuous_fst.comp continuous_subtype_val))
+    (hf.comp (continuous_fst.comp continuous_subtypeVal))
   let e : fiberProductPatch (IN := IN) (n := n) (f := f) (g := g) a ≃ₜ U :=
     { toEquiv := (Equiv.subtypeSubtypeEquivSubtypeInter
         (fun p : X × Y ↦ f p.1 = g p.2)
         (fun p ↦ f p.1 ∈ (extChartPartialDiffeomorph IN n a).source)).symm
-      continuous_toFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _ }
+      continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
   exact hU.isOpenEmbedding_subtypeVal.comp e.isOpenEmbedding
 
 variable [IsManifold IX n X] [IsManifold IY n Y]

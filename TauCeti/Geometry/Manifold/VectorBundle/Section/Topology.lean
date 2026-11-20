@@ -277,7 +277,7 @@ theorem continuous_totalSpace_eval (hcover : ∀ x, ∃ i, x ∈ U i) :
       ContMDiffMap.continuous_eval_manifoldWeakWhitney.comp
         (((continuous_frameCoordinates e U hU i).comp continuous_fst).prodMk continuous_snd)
     have ht := (e i).continuousOn_symm.comp_continuous
-      ((continuous_subtype_val.comp continuous_snd).prodMk hc)
+      ((continuous_subtypeVal.comp continuous_snd).prodMk hc)
       (fun p ↦ ⟨hU i p.2.property, Set.mem_univ _⟩)
     exact ht.congr fun p ↦ by
       simp only [Function.comp_apply, Trivialization.frameCoordinates_apply,

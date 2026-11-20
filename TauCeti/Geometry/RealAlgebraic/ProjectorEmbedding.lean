@@ -83,9 +83,9 @@ theorem continuous_projector : Continuous (projector : ℙ K (ι → K) → Matr
   have hcomp : projector ∘ mk' K = fun x : {x : ι → K // x ≠ 0} ↦ rankOneProjector x.val :=
     funext fun x ↦ by simp
   simp only [hcomp, rankOneProjector_def]
-  exact ((continuous_subtype_val.dotProduct continuous_subtype_val).inv₀ fun x ↦
+  exact ((continuous_subtypeVal.dotProduct continuous_subtypeVal).inv₀ fun x ↦
     dotProduct_self_eq_zero.not.mpr x.property).smul
-    (continuous_subtype_val.matrix_vecMulVec continuous_subtype_val)
+    (continuous_subtypeVal.matrix_vecMulVec continuous_subtypeVal)
 
 /-- Over `ℝ` the projector map is a closed embedding, hence a homeomorphism from real projective
 space onto the projector locus `TauCeti.projectorLocus ι ℝ`. -/

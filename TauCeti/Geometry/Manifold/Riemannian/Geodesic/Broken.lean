@@ -320,7 +320,7 @@ theorem continuous_brokenGeodesic (n : ℕ) :
   induction n with
   | zero =>
     simp only [brokenGeodesic_zero]
-    exact MoorePath.continuous_refl.comp ((continuous_apply 0).comp continuous_subtype_val)
+    exact MoorePath.continuous_refl.comp ((continuous_apply 0).comp continuous_subtypeVal)
   | succ n ih =>
     simp only [fun q : {q : Fin (n + 2) → M //
         ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r} ↦
@@ -329,13 +329,13 @@ theorem continuous_brokenGeodesic (n : ℕ) :
         ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r} ↦
         (⟨(q.val (Fin.castSucc 0), q.val (Fin.succ 0)), q.property 0⟩ :
             {p : M × M // dist p.1 p.2 < r}) :=
-      (((continuous_apply _).comp continuous_subtype_val).prodMk
-        ((continuous_apply _).comp continuous_subtype_val)).subtype_mk _
+      (((continuous_apply _).comp continuous_subtypeVal).prodMk
+        ((continuous_apply _).comp continuous_subtypeVal)).subtype_mk _
     have htail : Continuous fun q : {q : Fin (n + 2) → M //
         ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r} ↦
         (⟨Fin.tail q.val, forall_dist_tail_lt q.property⟩ :
           {q : Fin (n + 1) → M // ∀ i : Fin n, dist (q i.castSucc) (q i.succ) < r}) :=
-      continuous_subtype_val.finTail.subtype_mk _
+      continuous_subtypeVal.finTail.subtype_mk _
     exact ((geodesicSegment hr).continuous.comp hseg).moorePath_trans (ih.comp htail) _
 
 /-- Repeating the first vertex does not change the broken geodesic: the geodesic segment from
@@ -460,8 +460,8 @@ def cyclicDistanceCutBrokenGeodesic {n : ℕ} {δ : Fin (n + 1) → ℝ} (hδ : 
         (⟨Fin.snoc q.val (q.val 0),
           forall_dist_snoc_lt fun i ↦ (mem_cyclicDistanceCut.1 q.property i).trans_lt (hδ i)⟩ :
           {q : Fin (n + 2) → M // ∀ i : Fin (n + 1), dist (q i.castSucc) (q i.succ) < r}) :=
-      (Continuous.finSnoc (A := fun _ ↦ M) continuous_subtype_val
-        ((continuous_apply 0).comp continuous_subtype_val)).subtype_mk _
+      (Continuous.finSnoc (A := fun _ ↦ M) continuous_subtypeVal
+        ((continuous_apply 0).comp continuous_subtypeVal)).subtype_mk _
     exact (continuous_brokenGeodesic hr (n + 1)).comp hsnoc
 
 @[simp]

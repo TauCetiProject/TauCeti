@@ -528,7 +528,7 @@ private theorem eventually_eval_dehomogenize_affineChart_eq_zero
     (hp : ∀ k, (p k).IsHomogeneous (d k)) (hs : s = complexProjectiveZeroLocus p ∩ V) (z : s)
     (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
     ∀ᶠ w : s in nhds z, (fun k ↦ eval (affineChart i w.val) (dehomogenize i (p k))) = 0 := by
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+  filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
     ((isOpen_affineOpen i).mem_nhds hi)] with w hw
   exact funext ((mem_complexProjectiveZeroLocus_iff_eval_affineChart hp hw).1
     (hs.subset w.property).1)

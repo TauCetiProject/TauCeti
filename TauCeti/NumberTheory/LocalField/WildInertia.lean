@@ -595,7 +595,7 @@ theorem isProPSylow_wildInertiaSubgroup :
     fun R hR _ σ hσ ↦ Subgroup.mem_subgroupOf.2
       (mem_wildInertiaSubgroup_of_forall_exists_pow_mem p σ.property fun U ↦ ?_)
   -- A `p`-power of `σ` lies in the trace of `U` on `I_K`, since `R` is pro-`p`.
-  set V := U.comap (inertiaSubgroup K).subtype continuous_subtype_val
+  set V := U.comap (inertiaSubgroup K).subtype continuous_subtypeVal
   obtain ⟨n, hn⟩ := hR.isPGroup_map_mk' V ⟨_, σ, hσ, rfl⟩
   have hmem : σ ^ p ^ n ∈ V.toSubgroup := by
     rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
@@ -694,7 +694,7 @@ theorem map_wildInertiaSubgroup_restrictNormalHom :
       (map_inertiaSubgroup_restrictNormalHom L).ge
   have hf : Continuous (f.subgroupMap I) :=
     continuous_induced_rng.2 ((InfiniteGalois.restrictNormalHom_continuous L).comp
-      continuous_subtype_val)
+      continuous_subtypeVal)
   -- The image of the Sylow pro-`p` subgroup `P_K` of `I_K` is Sylow in `A`, and it lies in the
   -- `p`-group `G_1(L/K)`, so the two agree.
   have hS := (isProPSylow_wildInertiaSubgroup K p).map_of_surjective _ hf

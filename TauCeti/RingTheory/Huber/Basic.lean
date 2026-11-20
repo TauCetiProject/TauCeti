@@ -507,7 +507,7 @@ def map {B : Type*} [CommRing B] [TopologicalSpace B]
   let f₀ : P.ringOfDefinition →+* A₀ :=
     (f.comp P.ringOfDefinition.subtype).codRestrict A₀ fun a ↦
       Subring.mem_map.mpr ⟨a, a.property, rfl⟩
-  have hf₀_cont : Continuous f₀ := (hf.continuous.comp continuous_subtype_val).subtype_mk _
+  have hf₀_cont : Continuous f₀ := (hf.continuous.comp continuous_subtypeVal).subtype_mk _
   have hf₀_open : IsOpenMap f₀ :=
     hf.isOpenMap.subtype_map P.isOpen_ringOfDefinition
       (fun a ha ↦ Subring.mem_map.mpr ⟨a, ha, rfl⟩)
@@ -925,7 +925,7 @@ theorem _root_.Subring.isAdic_span_singleton_of_isOpen_of_isBounded :
   rw [isAdic_iff]
   refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
   · rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
-    exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtype_val
+    exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtypeVal
   · rw [IsInducing.subtypeVal.nhds_eq_comap, ZeroMemClass.coe_zero, Filter.mem_comap] at hs
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨n, hn⟩ := hb.exists_pow_mul_subset hϖ.isTopologicallyNilpotent ht

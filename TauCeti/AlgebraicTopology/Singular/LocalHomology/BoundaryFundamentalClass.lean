@@ -93,7 +93,7 @@ private def segment : Set (B × Ico (0 : ℝ) 1) := {q | q.1 = b ∧ (q.2 : ℝ)
 
 private lemma isClosed_segment [T1Space B] : IsClosed (segment b) :=
   (isClosed_singleton.preimage continuous_fst).inter
-    (isClosed_le (continuous_subtype_val.comp continuous_snd) continuous_const)
+    (isClosed_le (continuous_subtypeVal.comp continuous_snd) continuous_const)
 
 private lemma isCompact_segment : IsCompact (segment b) := by
   have hI : IsCompact {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
@@ -203,9 +203,9 @@ private lemma isIso_singularHomologyMap_lowerPairMap [T1Space B] (k : ℕ) :
     have hyx : (y : B × Ico (0 : ℝ) 1) = x := congrArg Subtype.val hy
     exact ⟨⟨x, x.property, hyx ▸ y.property⟩, rfl⟩
   · rintro (_ | _)
-    · exact (isClosed_segment b).isOpen_compl.preimage continuous_subtype_val
-    · exact (isOpen_lt (continuous_subtype_val.comp continuous_snd) continuous_const).preimage
-        continuous_subtype_val
+    · exact (isClosed_segment b).isOpen_compl.preimage continuous_subtypeVal
+    · exact (isOpen_lt (continuous_subtypeVal.comp continuous_snd) continuous_const).preimage
+        continuous_subtypeVal
   · refine eq_univ_of_forall fun (w : ({(b, half)}ᶜ : Set (B × Ico (0 : ℝ) 1))) ↦
       mem_iUnion.2 ?_
     by_cases hw : ((w : B × Ico (0 : ℝ) 1).2 : ℝ) < 1 / 2
@@ -230,7 +230,7 @@ private def toLower : TopPair.ofSubset ({b}ᶜ : Set (TopCat.of B)) ⟶ lowerPai
     (TopCat.ofHom ⟨fun m ↦ ⟨(m, bottom), bottom_lt_half⟩,
       (continuous_id.prodMk continuous_const).subtype_mk _⟩)
     (TopCat.ofHom ⟨fun m ↦ ⟨(m.val, bottom), bottom_lt_half, fun h ↦ m.property h.1⟩,
-      (continuous_subtype_val.prodMk continuous_const).subtype_mk _⟩) rfl
+      (continuous_subtypeVal.prodMk continuous_const).subtype_mk _⟩) rfl
 
 /-- The projection `(m, t) ↦ m` of `lowerPair b` onto `(B, B ∖ {b})`. -/
 private def fromLower : lowerPair b ⟶ TopPair.ofSubset ({b}ᶜ : Set (TopCat.of B)) :=
@@ -238,7 +238,7 @@ private def fromLower : lowerPair b ⟶ TopPair.ofSubset ({b}ᶜ : Set (TopCat.o
     (TopCat.ofHom ⟨fun q : lower B ↦ (q : B × Ico (0 : ℝ) 1).1, by fun_prop⟩)
     (TopCat.ofHom ⟨fun q : ↥(lower B ∩ (segment b)ᶜ) ↦
       ⟨(q : B × Ico (0 : ℝ) 1).1, fun h ↦ q.property.2 ⟨h, q.property.1.le⟩⟩,
-      (continuous_fst.comp continuous_subtype_val).subtype_mk _⟩) rfl
+      (continuous_fst.comp continuous_subtypeVal).subtype_mk _⟩) rfl
 
 private lemma toLower_comp_fromLower : toLower b ≫ fromLower b = 𝟙 _ :=
   TopPair.hom_ext_of_fst _ rfl
@@ -247,7 +247,7 @@ variable (B) in
 /-- Contracting the depth coordinate of `B × [0, 1 / 2)` to `0`. -/
 private def lowerContraction : C(lower B, lower B) :=
   ⟨fun q ↦ ⟨((q : B × Ico (0 : ℝ) 1).1, bottom), bottom_lt_half⟩,
-    ((continuous_fst.comp continuous_subtype_val).prodMk continuous_const).subtype_mk _⟩
+    ((continuous_fst.comp continuous_subtypeVal).prodMk continuous_const).subtype_mk _⟩
 
 variable (B) in
 /-- Scaling the depth coordinate deforms `lowerContraction B` into the identity of `lower B`. -/
@@ -378,9 +378,9 @@ private def collarTripleMap : triple z ⟶ spaceTriple (c := c) z :=
 
 /-- The triple `(X, D, D ∖ {z})`. -/
 private abbrev boundaryTriple : TopTriple.{w} :=
-  TopTriple.of (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ :
+  TopTriple.of (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ :
       TopCat.of ↥({z}ᶜ : Set D) ⟶ TopCat.of D)
-    (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ : TopCat.of D ⟶ TopCat.of X)
+    (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩ : TopCat.of D ⟶ TopCat.of X)
     IsEmbedding.subtypeVal IsEmbedding.subtypeVal
 
 /-- The identity of `X` as a map of triples `(X, D, D ∖ {z}) ⟶ (X, X ∖ {p}, X ∖ σ)`. -/

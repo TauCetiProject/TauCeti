@@ -55,7 +55,7 @@ theorem isUnit_stalk_iff {x : X} (f : (holomorphicStructureSheaf I X).presheaf.s
       simpa only [S, eval_germ] using hf
     let V : Opens X :=
       ⟨Subtype.val '' {y : U | s y ≠ 0},
-        U.2.isOpenMap_subtype_val _ ((contMDiff s).continuous.isOpen_preimage _ isOpen_ne)⟩
+        U.is_open'.isOpenMap_subtypeVal _ ((contMDiff s).continuous.isOpen_preimage _ isOpen_ne)⟩
     have hVU : V ≤ U := Subtype.coe_image_subset _ _
     have hxV : x ∈ V := ⟨⟨x, hxU⟩, hs, rfl⟩
     let t : (holomorphicStructureSheaf I X).obj.obj (op V) := S.map hVU.hom.op s

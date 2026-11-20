@@ -75,12 +75,12 @@ theorem integral_map_circleExp_of_restrict_Ioc {E : Type*} [NormedAddCommGroup E
     AddCircle.homeomorphCircle'.toMeasurableEquiv.measurableEmbedding.comp
       (AddCircle.measurableEquivIoc (2 * π) a).symm.measurableEmbedding
   have hμ' : (μ.comap Subtype.val).map ((↑) : Ioc a (a + 2 * π) → ℝ) = μ := by
-    rw [map_comap_subtype_coe measurableSet_Ioc, hμ]
+    rw [map_comap_subtypeVal measurableSet_Ioc, hμ]
   calc ∫ z, g z ∂μ.map Circle.exp
       = ∫ z, g z ∂(μ.comap Subtype.val).map (Circle.exp ∘ ((↑) : Ioc a (a + 2 * π) → ℝ)) := by
-        rw [← Measure.map_map Circle.exp.continuous.measurable measurable_subtype_coe, hμ']
+        rw [← Measure.map_map Circle.exp.continuous.measurable measurable_subtypeVal, hμ']
     _ = ∫ θ, g (Circle.exp θ) ∂(μ.comap Subtype.val).map ((↑) : Ioc a (a + 2 * π) → ℝ) := by
-        rw [he.integral_map, (MeasurableEmbedding.subtype_coe measurableSet_Ioc).integral_map]
+        rw [he.integral_map, (MeasurableEmbedding.subtypeVal measurableSet_Ioc).integral_map]
         simp only [Function.comp_apply]
     _ = ∫ θ, g (Circle.exp θ) ∂μ := by rw [hμ']
 

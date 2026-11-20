@@ -166,7 +166,7 @@ theorem map_coe_lkjMeasure (hη : 0 < η) :
           (lkjPartialCorrelationShape p η ij)).map (fun x ↦ -1 + 2 * x)).map
         partialCorrelationGram := by
   rw [← map_correlationMatrix_map_correlationCoordinatesOfPartialCorrelation_pi_betaMeasure hη,
-    Measure.map_map measurable_subtype_coe (by fun_prop),
+    Measure.map_map measurable_subtypeVal (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)]
   apply Measure.map_congr
   filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure

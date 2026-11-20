@@ -121,7 +121,7 @@ def pathSpaceHomeo : RelGenLoop N X ≃ₜ Ω^ N X.pathSpace X.pathSpaceBase whe
   toFun p := ⟨⟨toPathSpace p, continuous_toPathSpace p⟩, fun t ht => Subtype.ext <|
     ContinuousMap.ext fun s => apply_of_mem_boundary p s ht⟩
   invFun γ := mk ⟨fun y => (γ y.2).val y.1, by
-      have := (continuous_subtype_val.comp (map_continuous (γ : C(I^N, X.pathSpace))))
+      have := (continuous_subtypeVal.comp (map_continuous (γ : C(I^N, X.pathSpace))))
       exact continuous_eval.comp ((this.comp continuous_snd).prodMk continuous_fst)⟩
     (fun t => (γ t).property.1) fun s t h => by
       rcases h with rfl | ht
@@ -133,14 +133,14 @@ def pathSpaceHomeo : RelGenLoop N X ≃ₜ Ω^ N X.pathSpace X.pathSpaceBase whe
     refine Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ ?_) _
     refine Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ ?_) _
     exact continuous_eval.comp
-      ((continuous_subtype_val.comp (continuous_fst.comp continuous_fst)).prodMk
+      ((continuous_subtypeVal.comp (continuous_fst.comp continuous_fst)).prodMk
         (continuous_snd.prodMk (continuous_snd.comp continuous_fst)))
   continuous_invFun := by
     refine Continuous.subtype_mk (ContinuousMap.continuous_of_continuous_uncurry _ ?_) _
     simp only [coe_mk]
     have hγ :
         Continuous fun z : Ω^ N X.pathSpace X.pathSpaceBase × (I × (I^N)) => (z.1 z.2.2).val :=
-      continuous_subtype_val.comp
+      continuous_subtypeVal.comp
         (continuous_eval.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))
     exact continuous_eval.comp (hγ.prodMk (continuous_fst.comp continuous_snd))
 

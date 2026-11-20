@@ -325,7 +325,7 @@ theorem continuous_reducedMomentMap :
   -- On `v = β_ℝ t`, the reduced moment map evaluates to the component `⟨μ, t⟩`.
   obtain ⟨t, rfl⟩ := hβ v
   refine ((ContinuousLinearMap.apply ℝ ℝ t).continuous.comp
-    ((continuous_delzantMomentMap c).comp continuous_subtype_val)).congr fun x ↦ by
+    ((continuous_delzantMomentMap c).comp continuous_subtypeVal)).congr fun x ↦ by
       simp [delzantMomentMap_eq_comp_reducedMomentMap hβ x]
 
 /-- **The fibres of the reduced moment map are the orbits of the residual torus.** -/

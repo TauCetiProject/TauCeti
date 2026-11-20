@@ -354,10 +354,10 @@ theorem mk0_mem_of_inv_le_of_le (v : Valuation R Γ₀) {H : ConvexSubgroup Γ�
     (hH : ∀ a : R, ∀ ha : v a ≠ 0, 1 ≤ v a → Units.mk0 (v a) ha ∈ H)
     {b c : R} (hb : v b ≠ 0) (hlo : (v c)⁻¹ ≤ v b) (hhi : v b ≤ v c) :
     Units.mk0 (v b) hb ∈ H := by
-  have hc : v c ≠ 0 := fun h ↦ hb (le_zero_iff.mp (h ▸ hhi))
+  have hc : v c ≠ 0 := fun h ↦ hb (nonpos_iff_eq_zero.mp (h ▸ hhi))
   have h1 : 1 ≤ v c := by
     by_contra hlt
-    have hinv := (one_lt_inv₀ (zero_lt_iff.mpr hc)).2 (not_le.1 hlt)
+    have hinv := (one_lt_inv₀ (pos_iff_ne_zero.mpr hc)).2 (not_le.1 hlt)
     exact lt_asymm (hinv.trans_le (hlo.trans hhi)) (not_le.1 hlt)
   have hmc : Units.mk0 (v c) hc ∈ H := hH c hc h1
   refine H.convex (inv_mem hmc) hmc ?_ ?_
@@ -455,7 +455,7 @@ theorem one_lt_restrictToConvex_mul_inv (v : Valuation R Γ₀) (H : ConvexSubgr
   have hlt' : v.restrictToConvex H hH b < v.restrictToConvex H hH a := by
     rw [restrictToConvex_apply_of_mem v H hH hb hmem, restrictToConvex_apply_of_mem v H hH ha hmema]
     simpa [← Units.val_lt_val] using hlt
-  rwa [← div_eq_mul_inv, one_lt_div₀ (zero_lt_iff.mpr hbr)]
+  rwa [← div_eq_mul_inv, one_lt_div₀ (pos_iff_ne_zero.mpr hbr)]
 
 /-- **Dividing a restricted value by a kept value is at most `1` exactly when the quotient is.**
 If `v a = v b * g` with `v b` a kept nonzero value, then `v.restrictToConvex a` divided by
@@ -469,7 +469,7 @@ theorem restrictToConvex_mul_inv_le_one_iff (v : Valuation R Γ₀) (H : ConvexS
     by_contra hgt
     refine (not_lt_of_ge hle) (one_lt_restrictToConvex_mul_inv v H hH hb hmem ?_)
     rw [hg]
-    exact lt_mul_of_one_lt_right (zero_lt_iff.mpr hb) (lt_of_not_ge hgt)
+    exact lt_mul_of_one_lt_right (pos_iff_ne_zero.mpr hb) (lt_of_not_ge hgt)
   · intro hg1
     exact restrictToConvex_mul_inv_le_one v H hH (hg ▸ mul_le_of_le_one_right' hg1)
 

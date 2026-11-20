@@ -95,7 +95,7 @@ theorem tsum_absNorm_cpow_dvd_isPrincipal (J : (Ideal (𝓞 K))⁰) (s : ℂ) :
         Equiv.subtypeEquivRight fun _ ↦ by rw [nonZeroDivisors_dvd_iff_dvd_coe]
   rw [← e.tsum_eq, ← tsum_mul_left]
   refine tsum_congr fun 𝔟 ↦ ?_
-  simp [e, map_mul, Complex.natCast_mul_natCast_cpow]
+  simp [e, map_mul, Complex.natCast_mul_cpow]
 
 /-- **The sum over the points of `J` in the fundamental cone.** For `Re s > 1`, the sum of
 `|N(x)|^(-s)` over the points `x` of the fundamental cone that are images of elements of `J`
@@ -245,12 +245,12 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
     rw [abs_of_nonneg (by positivity)] at h
     exact_mod_cast h
   -- `(n^d)^s N(n^d x)^(-s) = N(x)^(-s)`, where `d = [K : ℚ]`
-  have hscale (x : ℝ) (hx : 0 ≤ x) :
+  have hscale (x : ℝ) :
       ((n : ℂ) ^ Module.finrank ℚ K) ^ s * ((n : ℂ) ^ Module.finrank ℚ K * x) ^ (-s) =
         (x : ℂ) ^ (-s) := by
     have hc : (n : ℂ) ^ Module.finrank ℚ K = (((n : ℝ) ^ Module.finrank ℚ K : ℝ) : ℂ) := by
       rw [Complex.ofReal_pow, Complex.ofReal_natCast]
-    rw [hc, Complex.mul_cpow_ofReal_nonneg (by positivity) hx, ← mul_assoc, Complex.cpow_neg,
+    rw [hc, Complex.ofReal_mul_cpow (by positivity), ← mul_assoc, Complex.cpow_neg,
       mul_inv_cancel₀ (by simp [Complex.cpow_eq_zero_iff, hn']), one_mul]
   have h := (e.hasSum_iff.mpr (hasSum_norm_cpow_idealSet J hs)).mul_left
     (((n : ℂ) ^ Module.finrank ℚ K) ^ s)
@@ -259,8 +259,8 @@ theorem hasSum_norm_cpow_fundamentalCone_inter_idealLattice {c : RayClassGroup (
   · ext a
     simp only [Function.comp_apply, e, Equiv.coe_fn_mk, mixedEmbedding.norm_smul, Nat.abs_cast]
     push_cast
-    rw [hscale _ (mixedEmbedding.norm_nonneg _)]
+    rw [hscale]
   · rw [hN, ← Complex.ofReal_ratCast, ← mul_assoc, mul_left_comm _ (torsionOrder K : ℂ),
-      hscale _ (by exact_mod_cast FractionalIdeal.absNorm_nonneg _)]
+      hscale]
 
 end TauCeti.LFunctions

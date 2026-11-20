@@ -161,8 +161,8 @@ def precompHomeomorph (n : ℕ) :
     simp_rw [totalArrow_def] at ht
     exact (ht.prodMk (continuous_whiskerLeft (Fin.succFunctor (n + 1)))).subtype_mk _
   continuous_invFun := continuous_precomp hs hu hc
-    (continuous_fst.comp continuous_subtype_val)
-    (continuous_snd.comp continuous_subtype_val) (fun p ↦ p.2)
+    (continuous_fst.comp continuous_subtypeVal)
+    (continuous_snd.comp continuous_subtypeVal) (fun p ↦ p.property)
 
 @[simp]
 theorem precompHomeomorph_apply (n : ℕ) (F : ComposableArrows C (n + 1)) :

@@ -45,7 +45,7 @@ theorem continuous_properComplexGaussianMeasure :
     (complexToRealEuclidean ι).continuous.comp continuous_fst
   have hcov : Continuous (fun p : (ι → ℂ) × {C : Matrix ι ι ℂ // C.PosSemidef} ↦
       complexGaussianRealCovariance p.2.val) :=
-    continuous_complexGaussianRealCovariance.comp (continuous_subtype_val.comp continuous_snd)
+    continuous_complexGaussianRealCovariance.comp (continuous_subtypeVal.comp continuous_snd)
   have h := (ProbabilityMeasure.continuous_map (complexToRealEuclidean ι).symm.continuous).comp
     (hmean.multivariateGaussian hcov fun p ↦
       (posSemidef_complexGaussianRealCovariance_iff p.2.val).2 p.2.property)

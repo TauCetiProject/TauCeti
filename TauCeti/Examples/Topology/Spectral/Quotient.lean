@@ -48,7 +48,7 @@ example {X : Type*} [TopologicalSpace X] [SpectralSpace X] :
       invFun := fun x ↦ ⟨(x, x), rfl⟩
       left_inv := fun q ↦ Subtype.ext (Prod.ext rfl q.property)
       right_inv := fun _ ↦ rfl
-      continuous_toFun := continuous_fst.comp continuous_subtype_val
+      continuous_toFun := continuous_fst.comp continuous_subtypeVal
       continuous_invFun := (continuous_id.prodMk continuous_id).subtype_mk fun _ ↦ rfl }
   have hs_open : IsOpenMap (fun q : {q : X × X // (⊥ : Setoid X) q.1 q.2} ↦ q.val.1) := e.isOpenMap
   exact ⟨spectralSpace_quotient_of_isOpenMap hR hs_open,
@@ -169,7 +169,7 @@ example :
         q.val.2 = (true, True)} := by
       have hp : IsOpen ({true} ×ˢ ({True} : Set Prop)) :=
         (isOpen_discrete {true}).prod isOpen_singleton_true
-      convert hp.preimage (continuous_snd.comp continuous_subtype_val) using 1
+      convert hp.preimage (continuous_snd.comp continuous_subtypeVal) using 1
       ext q
       simp [Prod.ext_iff]
     have hq₁O : q₁.val.2 = (true, True) :=

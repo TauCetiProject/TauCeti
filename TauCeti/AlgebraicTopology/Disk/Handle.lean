@@ -78,7 +78,7 @@ private def handleCylinderPoint (p : TopCat.disk.{u} k × TopCat.disk.{u} l) :
 
 private lemma continuous_handleCylinderPoint :
     Continuous (handleCylinderPoint : TopCat.disk.{u} k × TopCat.disk.{u} l → _) :=
-  ((continuous_norm.comp (continuous_subtype_val.comp
+  ((continuous_norm.comp (continuous_subtypeVal.comp
     (continuous_uliftDown.comp continuous_snd))).subtype_mk _).prodMk
       (continuous_uliftDown.comp continuous_fst)
 
@@ -108,7 +108,7 @@ def handleCoreRetraction (k l : ℕ) :
     have hp := continuous_ballRadialProjection.comp
       (continuous_handleCylinderPoint (k := k) (l := l))
     have hy : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ p.2.down.val :=
-      continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd)
+      continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd)
     exact (continuous_uliftUp.comp (hp.snd.subtype_mk _)).prodMk
       (continuous_uliftUp.comp ((hp.fst.div_norm_smul hy
         (fun p ↦ (ballRadialProjection_spec _).1.1)
@@ -265,7 +265,7 @@ private lemma continuousOn_coreAttachmentValue {Q : Type*} [TopologicalSpace Q]
     (hac : ∀ s, a (s, diskCenter l) = c (TopCat.diskBoundaryInclusion k s)) :
     ContinuousOn (coreAttachmentValue a c) {p | ‖p.1.down.val‖ = 1 ∨ p.2 = diskCenter l} := by
   have hx : Continuous fun p : TopCat.disk.{u} k × TopCat.disk.{u} l ↦ ‖p.1.down.val‖ :=
-    continuous_norm.comp (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_fst))
+    continuous_norm.comp (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_fst))
   have hS : IsClosed {p : TopCat.disk.{u} k × TopCat.disk.{u} l | ‖p.1.down.val‖ = 1} :=
     isClosed_eq hx continuous_const
   have hC : IsClosed {p : TopCat.disk.{u} k × TopCat.disk.{u} l | p.2 = diskCenter l} :=

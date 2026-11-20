@@ -327,7 +327,7 @@ private lemma continuous_pieceWeights (k : Fin (p + 1)) :
   rw [(StdSimplex.isEmbedding_toFun_comp_weights ℝ (Fin (p + 2))).continuous_iff]
   refine continuous_pi fun j ↦ ?_
   simp only [Function.comp_apply, pieceWeights, StdSimplex.weights_comap_apply]
-  exact (continuous_prismWeights _).comp continuous_subtype_val
+  exact (continuous_prismWeights _).comp continuous_subtypeVal
 
 /-- The underlying function of `SSet.prodStdSimplex₁.prism`. -/
 private noncomputable def prismFun (p : ℕ) (z : StdSimplex ℝ (Fin (p + 1)) × I) :

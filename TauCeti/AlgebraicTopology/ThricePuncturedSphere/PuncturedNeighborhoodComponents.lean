@@ -98,11 +98,11 @@ sheets lie in the same cycle of the monodromy of `g` exactly when the endpoints 
 private theorem sameCycle_iff_of_transport
     (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
     (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c) = g)
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c) = g)
     (i j : Fin n) :
     σ.SameCycle i j ↔
       (hp.monodromyPerm y
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c)).SameCycle
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c)).SameCycle
         (hp.monodromy (.mk α) (ν.symm i)) (hp.monodromy (.mk α) (ν.symm j)) := by
   subst hσ hg
   rw [hp.monodromyPerm_fundamentalGroupMulEquivOfPath_symm, sameCycle_permCongr_iff,
@@ -128,7 +128,7 @@ transport of a generator of `π₁(S, y)`. -/
 private def sameCycleQuotientEquivConnectedComponents (hS : IsOpen S) (hS' : IsPathConnected S)
     (hc : Subgroup.zpowers c = ⊤) (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
     (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c) = g) :
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c) = g) :
     Quotient (SameCycle.setoid σ) ≃ ConnectedComponents (p ⁻¹' S) :=
   haveI := locallyPathConnectedSpace_preimage hp hS
   ((Quotient.congr (ν.symm.trans (coveringFiberEquiv hp (.mk α))) fun i j => by
@@ -142,7 +142,7 @@ private theorem sameCycleQuotientEquivConnectedComponents_mk (hS : IsOpen S)
     (hS' : IsPathConnected S) (hc : Subgroup.zpowers c = ⊤)
     (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
     (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-      (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ ⟨y, hy⟩ c) = g) (i : Fin n) :
+      (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ ⟨y, hy⟩ c) = g) (i : Fin n) :
     sameCycleQuotientEquivConnectedComponents hp ν hy hS hS' hc hσ hg (Quotient.mk _ i) =
       ConnectedComponents.mk
         ⟨hp.monodromy (.mk α) (ν.symm i), monodromy_mem_preimage hp hy (ν.symm i)⟩ := by
@@ -165,7 +165,7 @@ punctured neighborhood of `0`. -/
 theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ0_iff (i j : Fin n) :
     (hp.monodromyTriple ν).σ0.SameCycle i j ↔
       (hp.monodromyPerm (zeroBasePt : ThricePuncturedSphere)
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ zeroBasePt
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ zeroBasePt
             (FundamentalGroup.fromPath (.mk δZero)))).SameCycle
         (hp.monodromy (.mk αZero) (ν.symm i)) (hp.monodromy (.mk αZero) (ν.symm j)) :=
   sameCycle_iff_of_transport hp ν zeroBasePt.property (hp.monodromyTriple_σ0 ν)
@@ -228,7 +228,7 @@ punctured neighborhood of `1`. -/
 theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σ1_iff (i j : Fin n) :
     (hp.monodromyTriple ν).σ1.SameCycle i j ↔
       (hp.monodromyPerm (oneBasePt : ThricePuncturedSphere)
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ oneBasePt
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ oneBasePt
             (FundamentalGroup.fromPath (.mk δOne)))).SameCycle
         (hp.monodromy (.mk αOne) (ν.symm i)) (hp.monodromy (.mk αOne) (ν.symm j)) :=
   sameCycle_iff_of_transport hp ν oneBasePt.property (hp.monodromyTriple_σ1 ν)
@@ -290,7 +290,7 @@ punctured neighborhood of `∞`. -/
 theorem _root_.IsCoveringMap.sameCycle_monodromyTriple_σinf_iff (i j : Fin n) :
     (hp.monodromyTriple ν).σinf.SameCycle i j ↔
       (hp.monodromyPerm pPlus
-          (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ infBasePt
+          (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ infBasePt
             (FundamentalGroup.fromPath (.mk δInf)))).SameCycle
         (hp.monodromy (.mk αPlus) (ν.symm i)) (hp.monodromy (.mk αPlus) (ν.symm j)) :=
   sameCycle_iff_of_transport hp ν infBasePt.property (hp.monodromyTriple_σinf ν)

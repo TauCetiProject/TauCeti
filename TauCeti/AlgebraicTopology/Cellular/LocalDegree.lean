@@ -222,7 +222,7 @@ private def diskInterior (n : ℕ) : Set (TopCat.disk.{w} n) :=
   {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1}
 
 private lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
-  isOpen_lt (continuous_norm.comp (continuous_subtype_val.comp
+  isOpen_lt (continuous_norm.comp (continuous_subtypeVal.comp
     (diskHomeomorphClosedBall n).continuous)) continuous_const
 
 /-- The radial deformation `TauCeti.radialPush r` of the disk, in sup-norm coordinates. -/
@@ -234,7 +234,7 @@ private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
         (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).property))⟩
   continuous_toFun := (diskHomeomorphClosedBall n).symm.continuous.comp
     (Continuous.subtype_mk ((continuous_radialPush hr).comp (continuous_fst.prodMk
-      (continuous_subtype_val.comp ((diskHomeomorphClosedBall n).continuous.comp
+      (continuous_subtypeVal.comp ((diskHomeomorphClosedBall n).continuous.comp
         continuous_snd)))) _)
 
 private lemma coe_diskHomeomorphClosedBall_diskRadialPush {r : ℝ} (hr : 0 ≤ r)
@@ -305,7 +305,7 @@ private def diskCore (i : cell C n) : Set (TopCat.disk.{w} n) :=
   {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ ≤ cellRadius C x i}
 
 private lemma isClosed_diskCore (i : cell C n) : IsClosed (diskCore C x i) :=
-  isClosed_le (continuous_norm.comp (continuous_subtype_val.comp
+  isClosed_le (continuous_norm.comp (continuous_subtypeVal.comp
     (diskHomeomorphClosedBall n).continuous)) continuous_const
 
 variable {i : cell C n} (hx : (x : X) ∈ openCell n i)

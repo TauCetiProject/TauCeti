@@ -461,7 +461,7 @@ theorem IsCellularSet.nonempty_homeomorph_of_isOpenEmbedding {X Y : Type*} [Topo
       exact ⟨.inl, fun h ↦ h.resolve_right fun h ↦ hx (image_subset_range _ _ h.1)⟩
   -- So `f` identifies the image of `G`, which is `X`, with `Y`.
   obtain ⟨h, -⟩ := exists_homeomorph_image_of_forall_eq_iff hG.continuousOn isCompact_univ
-    (fun x : (univ : Set X) ↦ f x) (hf.comp continuous_subtype_val)
+    (fun x : (univ : Set X) ↦ f x) (hf.comp continuous_subtypeVal)
     (fun y ↦ let ⟨x, hx⟩ := hfs y; ⟨⟨x, mem_univ x⟩, hx⟩) fun x y ↦ (hGf x y).symm
   exact ⟨((Homeomorph.setCongr (image_univ_of_surjective hGs)).trans
     (Homeomorph.Set.univ X)).symm.trans h⟩

@@ -105,7 +105,7 @@ theorem isCompact_preimage_image_quotientMk {r : Setoid X}
     (hs : IsSpectralMap fun q : {q : X × X // r q.1 q.2} ↦ q.val.1) {W : Set X} (hWo : IsOpen W)
     (hWc : IsCompact W) : IsCompact (Quotient.mk r ⁻¹' (Quotient.mk r '' W)) := by
   rw [r.preimage_image_quotientMk]
-  exact (hs.isCompact_preimage_of_isOpen hWo hWc).image (continuous_snd.comp continuous_subtype_val)
+  exact (hs.isCompact_preimage_of_isOpen hWo hWc).image (continuous_snd.comp continuous_subtypeVal)
 
 /-- On a prespectral space, if the first projection from `{q : X × X // r q.1 q.2}` is both a
 spectral map and an open map, then `Quotient.mk r : X → Quotient r` is a spectral map. -/
@@ -144,7 +144,7 @@ theorem IsLocallyProConstructible.preimage_image_quotientMk_closure {F : Set X}
   obtain ⟨x', hx'F, hx'y'⟩ := hy'
   let q₀ : {q : X × X // r q.1 q.2} := ⟨(y', y), Quotient.exact hy'y⟩
   obtain ⟨q₁, hq₁q₀, hq₁fst⟩ := hs (a := q₀) hx'y'
-  refine ⟨q₁.1.2, ?_, hq₁q₀.map (continuous_snd.comp continuous_subtype_val)⟩
+  refine ⟨q₁.val.2, ?_, hq₁q₀.map (continuous_snd.comp continuous_subtypeVal)⟩
   rw [← hFinv]
   exact ⟨x', hx'F, Quotient.sound (hq₁fst ▸ q₁.property)⟩
 
@@ -480,6 +480,6 @@ theorem quasiSeparatedSpace_quotient_of_isOpenMap (hX : IsLocallySpectralSpace X
     · rintro ⟨⟨⟨x₁, x₂⟩, hx₁W, hx₂W⟩, hr, rfl⟩
       exact ⟨⟨x₁, hx₁W, rfl⟩, ⟨x₂, hx₂W, (Quotient.sound hr).symm⟩⟩
   rw [heq]
-  exact hPc.image (continuous_quot_mk.comp (continuous_fst.comp continuous_subtype_val))
+  exact hPc.image (continuous_quot_mk.comp (continuous_fst.comp continuous_subtypeVal))
 
 end TauCeti

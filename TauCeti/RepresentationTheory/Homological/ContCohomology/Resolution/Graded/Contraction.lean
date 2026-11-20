@@ -98,7 +98,7 @@ private theorem continuous_conj_restrict {Y : TopRep.{max v w} k G} {φ : M.V �
     (hφ : Continuous fun p : M.V × G ↦ Y.ρ p.2 (φ (M.ρ p.2⁻¹ p.1))) (n : ℕ) :
     Continuous fun p : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V × G ↦
       Y.ρ p.2 (φ (M.ρ p.2⁻¹ p.1.val)) :=
-  hφ.comp (continuous_subtype_val.prodMap continuous_id)
+  hφ.comp (continuous_subtypeVal.prodMap continuous_id)
 
 /-- **The contraction of a graded representation**: a contraction of the total module `M` onto
 `X` restricts to a contraction of the complex `TopRep.gradedCochainComplex` onto `X`. The data

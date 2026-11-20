@@ -71,7 +71,7 @@ theorem continuous_veronese {K : Type*} [Field K] [TopologicalSpace K] [Continuo
     (d : ℕ) : Continuous (veronese (N := N) K d) :=
   continuous_iff.2 <| (continuous_mk (K := K)
     (f := fun v : {v : Fin N → K // v ≠ 0} ↦ veroneseMonomials d v.val)
-    ((continuous_veroneseMonomials d).comp continuous_subtype_val)
+    ((continuous_veroneseMonomials d).comp continuous_subtypeVal)
     fun v ↦ veroneseMonomials_ne_zero d v.property).congr fun v ↦ by simp [mk'_eq_mk]
 
 /-- **The Veronese map is a closed embedding.** Over `ℝ` or `ℂ`, the Veronese map of positive

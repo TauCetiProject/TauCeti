@@ -363,7 +363,7 @@ theorem continuousOn_cellMap (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ) = m
     ContinuousOn (cellMap i hm) (closedBall 0 1) := by
   rw [continuousOn_iff_continuous_domRestrict]
   have hc : Continuous (cellSpherePoint i hm) := (continuous_hemispherePoint.comp
-    ((Homeomorph.continuous _).comp continuous_subtype_val)).subtype_mk _
+    ((Homeomorph.continuous _).comp continuous_subtypeVal)).subtype_mk _
   exact ((continuous_mk n).comp hc).congr fun x => (cellMap_apply i hm x.property).symm
 
 /-- The inverse of the characteristic map of the `2i`-cell is continuous on the open cell. -/
@@ -373,11 +373,11 @@ theorem continuousOn_cellMap_symm (i : Fin (n + 1)) {m : ℕ} (hm : 2 * (i : ℕ
   obtain ⟨y, rfl⟩ := mk_surjective n p
   have hyi := (mk_mem_openCell_iff.1 hp).1
   have hc : Continuous fun y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 => y.val i :=
-    (PiLp.continuous_apply _ _ _).comp continuous_subtype_val
+    (PiLp.continuous_apply _ _ _).comp continuous_subtypeVal
   refine (continuousAt_lift n (cellChart_smul i hm) ?_).continuousWithinAt
   exact (Homeomorph.continuous _).continuousAt.comp (((continuousAt_phase hyi).comp
     (f := fun y : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 => y.val i) hc.continuousAt).smul
-    ((continuous_truncate i).comp continuous_subtype_val).continuousAt)
+    ((continuous_truncate i).comp continuous_subtypeVal).continuousAt)
 
 /-- The characteristic map of the `2i`-cell sends the boundary sphere of the sup-norm ball into
 the open cells `2i'` with `i' < i`. -/

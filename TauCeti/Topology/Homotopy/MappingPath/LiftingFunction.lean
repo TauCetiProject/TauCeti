@@ -181,8 +181,8 @@ def ofHomeomorphOver {E' : Type u'} [TopologicalSpace E'] {p' : C(E', B)}
     ⟨fun z ↦ (e.symm : C(E, E')).comp
         (Λ.lift (e z.val.1) z.val.2 (z.property.trans (h z.val.1).symm)),
       (ContinuousMap.continuous_postcomp (e.symm : C(E, E'))).comp
-        (Λ.continuous_lift (e.continuous.comp continuous_subtype_val.fst)
-          continuous_subtype_val.snd fun z ↦ z.property.trans (h z.val.1).symm)⟩
+        (Λ.continuous_lift (e.continuous.comp continuous_subtypeVal.fst)
+          continuous_subtypeVal.snd fun z ↦ z.property.trans (h z.val.1).symm)⟩
   apply_zero' z := by simp
   comp_apply' z := by
     ext t

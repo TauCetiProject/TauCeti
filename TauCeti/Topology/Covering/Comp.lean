@@ -57,7 +57,7 @@ theorem exists_sheets {f : E → X} {x : X} {I : Type*}
   -- The sheet indexed by `i` is the part of `f ⁻¹' U` that `H` sends to `U × {i}`.
   refine ⟨U, hxU, hU, fun i ↦ Subtype.val '' (H ⁻¹' (Prod.snd ⁻¹' {i})), fun i ↦ ?_, fun i ↦ ?_,
     fun i ↦ ?_, fun i W hW ↦ ?_, fun i j hij ↦ ?_, ?_⟩
-  · exact hfU.isOpenMap_subtype_val _
+  · exact hfU.isOpenMap_subtypeVal _
       (((isOpen_discrete {i}).preimage continuous_snd).preimage H.continuous)
   · rintro _ ⟨a, ha, rfl⟩ _ ⟨b, hb, rfl⟩ hab
     refine congrArg Subtype.val (H.injective (Prod.ext (Subtype.ext ?_) ?_))

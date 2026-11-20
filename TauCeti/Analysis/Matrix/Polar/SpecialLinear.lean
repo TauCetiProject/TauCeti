@@ -246,7 +246,7 @@ induced by the polar homotopy of `SL(n, 𝕜)` runs from the identity to the pol
 followed by the inclusion `PSU(n) → PSL(n, 𝕜)`, and fixes `PSU(n)` throughout. -/
 def polarHomotopy :
     (ContinuousMap.id (ProjectiveSpecialLinearGroup n 𝕜)).HomotopyRel
-      ((⟨Subtype.val, continuous_subtype_val⟩ :
+      ((⟨Subtype.val, continuous_subtypeVal⟩ :
         C((toPSL : specialUnitaryGroup n 𝕜 →* _).range, ProjectiveSpecialLinearGroup n 𝕜)).comp
           (polarRetraction n 𝕜))
       ((toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range) where
@@ -280,10 +280,10 @@ inclusion, with homotopy inverse the polar retraction. -/
 def polarHomotopyEquiv :
     (toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range ≃ₕ
       ProjectiveSpecialLinearGroup n 𝕜 where
-  toFun := ⟨Subtype.val, continuous_subtype_val⟩
+  toFun := ⟨Subtype.val, continuous_subtypeVal⟩
   invFun := polarRetraction n 𝕜
   left_inv := by
-    rw [show (polarRetraction n 𝕜).comp ⟨Subtype.val, continuous_subtype_val⟩ =
+    rw [show (polarRetraction n 𝕜).comp ⟨Subtype.val, continuous_subtypeVal⟩ =
         ContinuousMap.id _ from ContinuousMap.ext ?_]
     rintro ⟨_, k, rfl⟩
     exact polarRetraction_toPSL k

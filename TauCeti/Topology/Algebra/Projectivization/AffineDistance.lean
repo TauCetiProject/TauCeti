@@ -136,11 +136,11 @@ theorem continuous_affineChartInvOneAddDistSq :
     funext fun v ↦ by simp only [Function.comp_apply, mk'_eq_mk, affineChartInvOneAddDistSq_mk]
   rw [hF]
   have hi : Continuous fun v : {v : Fin (n + 1) → 𝕜 // v ≠ 0} ↦ v.val i :=
-    (continuous_apply i).comp continuous_subtype_val
+    (continuous_apply i).comp continuous_subtypeVal
   have hrest : Continuous fun v : {v : Fin (n + 1) → 𝕜 // v ≠ 0} ↦
       WithLp.toLp 2 (fun j ↦ v.val (i.succAbove j)) - v.val i • a :=
     ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦
-      (continuous_apply _).comp continuous_subtype_val)).sub (hi.smul continuous_const)
+      (continuous_apply _).comp continuous_subtypeVal)).sub (hi.smul continuous_const)
   exact (hi.norm.pow 2).div ((hi.norm.pow 2).add (hrest.norm.pow 2)) fun v ↦
     norm_sq_add_norm_sq_sub_smul_ne_zero i a v.val v.property
 

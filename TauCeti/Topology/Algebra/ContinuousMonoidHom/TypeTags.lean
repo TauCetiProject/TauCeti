@@ -118,9 +118,9 @@ def toSubgroupContinuousMulEquiv {A : Type*} [AddGroup A] [TopologicalSpace A]
   right_inv _ := rfl
   map_mul' _ _ := rfl
   continuous_toFun :=
-    (continuous_ofAdd.comp (continuous_subtype_val.comp continuous_toAdd)).subtype_mk _
+    (continuous_ofAdd.comp (continuous_subtypeVal.comp continuous_toAdd)).subtype_mk _
   continuous_invFun :=
-    continuous_ofAdd.comp ((continuous_toAdd.comp continuous_subtype_val).subtype_mk _)
+    continuous_ofAdd.comp ((continuous_toAdd.comp continuous_subtypeVal).subtype_mk _)
 
 /-- Forward evaluation of `AddSubgroup.toSubgroupContinuousMulEquiv` in the ambient group. -/
 @[simp]

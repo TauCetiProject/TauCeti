@@ -206,7 +206,7 @@ theorem zpowers_δZero : Subgroup.zpowers (FundamentalGroup.fromPath (.mk δZero
 theorem transport_δZero_eq_periph0 :
     (FundamentalGroup.fundamentalGroupMulEquivOfPath αZero).symm
       (FundamentalGroup.map
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodZero, _)) zeroBasePt
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(puncturedNeighborhoodZero, _)) zeroBasePt
         (FundamentalGroup.fromPath (.mk δZero))) = periph0 := by
   -- Compare `γ0` with the conjugated local loop inside the punctured unit disc about `0`.
   let S : Set ThricePuncturedSphere := {z | (z : ℂ) ∈ ball (0 : ℂ) 1 \ {0}}
@@ -215,7 +215,7 @@ theorem transport_δZero_eq_periph0 :
   have hb : basePt ∈ S := hmem (by norm_num [coe_basePt])
   have hy : (zeroBasePt : ThricePuncturedSphere) ∈ S := hmem (by norm_num)
   have hγ (t : unitInterval) : γ0 t ∈ S := hmem (by rw [norm_coe_γ0]; norm_num)
-  have hδ (t : unitInterval) : δZero.map continuous_subtype_val t ∈ S :=
+  have hδ (t : unitInterval) : δZero.map continuous_subtypeVal t ∈ S :=
     hmem (by simp [norm_circleMap_zero]; norm_num)
   have hα (t : unitInterval) : αZero t ∈ S := hmem (by
     rw [coe_αZero, norm_real, Real.norm_of_nonneg (by linarith [t.property.2])]
@@ -224,14 +224,14 @@ theorem transport_δZero_eq_periph0 :
   have h := (Circle.homotopic_trans_of_degree_map_eq
     (map_direction_bijective (S := S) one_pos (fun _ => Iff.rfl) hsub ⟨basePt, hb⟩).injective
     (γ := γ0.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨basePt, hb⟩) hγ)
-    (δ := (δZero.map continuous_subtype_val).codRestrict (x := ⟨_, hy⟩) (y := ⟨_, hy⟩) hδ)
+    (δ := (δZero.map continuous_subtypeVal).codRestrict (x := ⟨_, hy⟩) (y := ⟨_, hy⟩) hδ)
     (by
       rw [degree_map_direction _ _ _ (r := 1 / 2) (φ := 0) (by norm_num) fun t => by
           simp [coe_γ0, circleMap],
         degree_map_direction _ _ _ (r := 1 / 4) (φ := 0) (by norm_num) fun t => by
           simp [circleMap]])
     (αZero.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
-    ⟨Subtype.val, continuous_subtype_val⟩
+    ⟨Subtype.val, continuous_subtypeVal⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
   rw [FundamentalGroup.map_fromPath _ _ δZero,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph0_def,
@@ -310,7 +310,7 @@ theorem zpowers_δOne : Subgroup.zpowers (FundamentalGroup.fromPath (.mk δOne))
 theorem transport_δOne_eq_periph1 :
     (FundamentalGroup.fundamentalGroupMulEquivOfPath αOne).symm
       (FundamentalGroup.map
-        (⟨Subtype.val, continuous_subtype_val⟩ : C(puncturedNeighborhoodOne, _)) oneBasePt
+        (⟨Subtype.val, continuous_subtypeVal⟩ : C(puncturedNeighborhoodOne, _)) oneBasePt
         (FundamentalGroup.fromPath (.mk δOne))) = periph1 := by
   -- Compare `γ1` with the conjugated local loop inside the punctured unit disc about `1`.
   let S : Set ThricePuncturedSphere := {z | (z : ℂ) ∈ ball (1 : ℂ) 1 \ {1}}
@@ -319,7 +319,7 @@ theorem transport_δOne_eq_periph1 :
   have hb : basePt ∈ S := hmem (by norm_num [coe_basePt])
   have hy : (oneBasePt : ThricePuncturedSphere) ∈ S := hmem (by norm_num)
   have hγ (t : unitInterval) : γ1 t ∈ S := hmem (by rw [norm_coe_γ1_sub_one]; norm_num)
-  have hδ (t : unitInterval) : δOne.map continuous_subtype_val t ∈ S :=
+  have hδ (t : unitInterval) : δOne.map continuous_subtypeVal t ∈ S :=
     hmem (by simp [circleMap_sub_center, norm_circleMap_zero]; norm_num)
   have hα (t : unitInterval) : αOne t ∈ S := hmem (by
     rw [coe_αOne, ← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonpos (by linarith
@@ -329,7 +329,7 @@ theorem transport_δOne_eq_periph1 :
   have h := (Circle.homotopic_trans_of_degree_map_eq
     (map_direction_bijective (S := S) one_pos (fun _ => Iff.rfl) hsub ⟨basePt, hb⟩).injective
     (γ := γ1.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨basePt, hb⟩) hγ)
-    (δ := (δOne.map continuous_subtype_val).codRestrict (x := ⟨_, hy⟩) (y := ⟨_, hy⟩) hδ)
+    (δ := (δOne.map continuous_subtypeVal).codRestrict (x := ⟨_, hy⟩) (y := ⟨_, hy⟩) hδ)
     (by
       rw [degree_map_direction _ _ _ (r := 1 / 2) (φ := π) (by norm_num) fun t => by
           rw [Path.codRestrict_coe, coe_γ1, circleMap_neg_radius, circleMap,
@@ -338,7 +338,7 @@ theorem transport_δOne_eq_periph1 :
           rw [Path.codRestrict_coe, Path.map_coe, Function.comp_apply, coe_δOne,
             circleMap_neg_radius, circleMap, add_comm (2 * π * (t : ℝ)) π]])
     (αOne.codRestrict (x := ⟨basePt, hb⟩) (y := ⟨_, hy⟩) hα)).map
-    ⟨Subtype.val, continuous_subtype_val⟩
+    ⟨Subtype.val, continuous_subtypeVal⟩
   simp only [Path.map_trans, ← Path.map_symm, Path.map_codRestrict] at h
   rw [FundamentalGroup.map_fromPath _ _ δOne,
     FundamentalGroup.fundamentalGroupMulEquivOfPath_symm_apply, periph1_def,

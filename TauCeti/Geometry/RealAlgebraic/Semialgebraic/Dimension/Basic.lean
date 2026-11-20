@@ -145,7 +145,7 @@ theorem semialgebraicDim_eq_bot_iff : semialgebraicDim s = ⊥ ↔ s = ∅ := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- A point of `s` is homeomorphic to `ℝ ^ 0`.
     by_contra hs
-    obtain ⟨x, hx⟩ := nonempty_iff_ne_empty.2 hs
+    obtain ⟨x, hx⟩ := ne_empty_iff_nonempty.1 hs
     have h0 := le_semialgebraicDim (X := ({x} : Set (Fin n → ℝ))) .subtypeVal
       (by simpa using hx) (Homeomorph.homeomorphOfUnique _ (Fin 0 → ℝ)).isOpenEmbedding
     simp [h] at h0
@@ -203,7 +203,7 @@ theorem semialgebraicDim_iUnion_of_isLocallyClosed {ι : Type*} [Finite ι]
   -- interior point `x` in `t`. Near `x`, the set `t` lies in that `u i`.
   have := hne.to_subtype
   obtain ⟨i, x, hx⟩ := nonempty_interior_of_iUnion_of_isLocallyClosed
-    (fun i ↦ (hu i).preimage continuous_subtype_val)
+    (fun i ↦ (hu i).preimage continuous_subtypeVal)
     (eq_univ_of_forall fun x ↦ by simpa using ht x.property)
   exact le_iSup_of_le i <| le_semialgebraicDim_of_isOpen hf isOpen_interior ⟨x, hx⟩
     (image_subset_iff.2 interior_subset)
@@ -268,7 +268,7 @@ theorem _root_.IsLocallyClosed.semialgebraicDim_union (hs : IsLocallyClosed s)
       (image_subset_iff.2 interior_subset)
   · -- Otherwise `s` is nowhere dense in `m`, so an open part of `m` lies in `t`.
     have hK : IsNowhereDense ((Subtype.val : m → Fin n → ℝ) ⁻¹' s) :=
-      (hs.preimage continuous_subtype_val).isNowhereDense_iff.2 (not_nonempty_iff_eq_empty.1 hint)
+      (hs.preimage continuous_subtypeVal).isNowhereDense_iff.2 (not_nonempty_iff_eq_empty.1 hint)
     let Y : Set m := (closure ((Subtype.val : m → Fin n → ℝ) ⁻¹' s))ᶜ
     have hY : Y.Nonempty := by
       by_contra h

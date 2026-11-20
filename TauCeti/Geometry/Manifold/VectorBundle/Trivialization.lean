@@ -301,7 +301,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 def frameTransitionMap : C^n⟮I, U; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
   ⟨fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F), fun x ↦
     (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.property) (hU' x.property)).comp x
-      contMDiff_subtype_val.contMDiffAt⟩
+      contMDiff_subtypeVal.contMDiffAt⟩
 
 /-- Evaluation of the smooth frame-change operator is the native bundle coordinate change. -/
 @[simp]

@@ -362,9 +362,9 @@ theorem isOpenEmbedding_normalTubeOfRadius_of_le {f : M → V} {r R : M → ℝ}
       (mem_normalTubeOfRadius.mp hp).2.trans_le (hrR p.1)⟩
   apply h.comp (IsOpenEmbedding.inclusion hsub ?_)
   convert isOpen_lt ((continuous_norm.comp continuous_snd).comp
-    (continuous_subtype_val : Continuous
+    (continuous_subtypeVal : Continuous
       (Subtype.val : normalTubeOfRadius I f R → M × V)))
-    ((hr.comp continuous_fst).comp continuous_subtype_val) using 1
+    ((hr.comp continuous_fst).comp continuous_subtypeVal) using 1
   ext p
   simp only [mem_preimage, mem_normalTubeOfRadius, mem_ofPred_eq, Function.comp_apply]
   exact and_iff_right (mem_normalTubeOfRadius.mp p.property).1
@@ -531,7 +531,7 @@ theorem exists_isOpenEmbedding_normalTube {f : M → V} (hf : ContMDiff I 𝓘(�
       (hinjT p.property p'.property h)) ?_
   · have hfc := hf.continuous
     have hΦ : Continuous fun p : M × V => f p.1 + p.2 := by fun_prop
-    exact hΦ.comp continuous_subtype_val
+    exact hΦ.comp continuous_subtypeVal
   · intro U hU
     obtain ⟨O₁, hO₁, rfl⟩ := isOpen_induced_iff.mp hU
     have himage : (normalTube I f ε).domRestrict (fun p : M × V => f p.1 + p.2) ''
@@ -569,9 +569,9 @@ theorem exists_isTubularNeighborhood_normalBundle {f : M → V} (hf : ContMDiff 
       invFun := fun q => ⟨⟨q.val.1, ⟨q.val.2, q.property.1⟩⟩, q.property.2⟩
       left_inv := fun _ => rfl
       right_inv := fun _ => rfl
-      continuous_toFun := (hι.continuous.comp continuous_subtype_val).subtype_mk _
+      continuous_toFun := (hι.continuous.comp continuous_subtypeVal).subtype_mk _
       continuous_invFun :=
-        (hι.isInducing.continuous_iff.mpr continuous_subtype_val).subtype_mk _ }
+        (hι.isInducing.continuous_iff.mpr continuous_subtypeVal).subtype_mk _ }
   refine ⟨ε, hε, ?_⟩
   exact
     { isOpen := (isOpen_lt (continuous_norm.comp continuous_snd) continuous_const).preimage
@@ -586,9 +586,9 @@ theorem exists_isTubularNeighborhood_normalBundle {f : M → V} (hf : ContMDiff 
       continuous_radial := by
         refine hι.isInducing.continuous_iff.mpr ?_
         have h1 : Continuous fun p : Icc (0 : ℝ) 1 × U => ι p.2.val :=
-          hι.continuous.comp (continuous_subtype_val.comp continuous_snd)
+          hι.continuous.comp (continuous_subtypeVal.comp continuous_snd)
         have h2 : Continuous fun p : Icc (0 : ℝ) 1 × U => (p.1 : ℝ) :=
-          continuous_subtype_val.comp continuous_fst
+          continuous_subtypeVal.comp continuous_fst
         exact h1.fst.prodMk (h2.smul h1.snd) }
 
 end FiniteDimensionalAmbient

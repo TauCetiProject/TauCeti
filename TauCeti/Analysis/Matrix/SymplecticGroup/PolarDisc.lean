@@ -158,7 +158,7 @@ def spSymmHomeomorph : {X : selfAdjoint (Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ) //
     ext i
     fin_cases i <;> simp
   continuous_toFun := (PiLp.continuous_toLp 2 _).comp <| continuous_pi fun i ↦ by
-    fin_cases i <;> exact (continuous_subtype_val.comp continuous_subtype_val).matrix_elem _ _
+    fin_cases i <;> exact (continuous_subtypeVal.comp continuous_subtypeVal).matrix_elem _ _
   continuous_invFun := (((continuous_spSymmMatrix (ι := ι)).comp
     (f := fun v : EuclideanSpace ℝ (Fin 2) ↦ (v 0, v 1)) (((continuous_apply 0).comp
     (PiLp.continuous_ofLp 2 _)).prodMk ((continuous_apply 1).comp

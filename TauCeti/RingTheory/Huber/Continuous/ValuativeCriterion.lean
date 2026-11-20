@@ -392,7 +392,7 @@ private theorem exists_continuous_valuation_of_not_isIntegral_of_isDomain [IsDom
     obtain ⟨t₀, ht₀S, ht₀max⟩ :=
       S.exists_max_image (fun t ↦ w₀ ((t : P.ringOfDefinition) : R)) ⟨t₁, ht₁S⟩
     have ht₀ne : w₀ ((t₀ : P.ringOfDefinition) : R) ≠ 0 :=
-      ne_of_gt (lt_of_lt_of_le (zero_lt_iff.mpr ((hw₀app t₁).symm ▸ ht₁ne)) (ht₀max t₁ ht₁S))
+      ne_of_gt (lt_of_lt_of_le (pos_iff_ne_zero.mpr ((hw₀app t₁).symm ▸ ht₁ne)) (ht₀max t₁ ht₁S))
     exact exists_continuous_valuation_of_forall_le P hA₀B w₀ hBle hxgt hS (hgenmem t₀ ht₀S)
       (fun t ht ↦ ht₀max t (Finset.mem_coe.mp ht))
       ((hw₀app t₀).symm ▸ hgenlt t₀ ht₀S) ht₀ne

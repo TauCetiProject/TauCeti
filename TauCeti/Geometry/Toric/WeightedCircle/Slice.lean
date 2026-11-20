@@ -443,11 +443,11 @@ theorem weightedSliceChartSnd_apply [NeZero b] (u : {u : ℂ // a * ‖u‖ ^ 2 
 
 theorem continuous_weightedSliceChartFst [NeZero a] : Continuous (weightedSliceChartFst a b ε) :=
   continuous_quotient_mk'.comp
-    ((continuous_weightedSliceFst.comp continuous_subtype_val).subtype_mk _)
+    ((continuous_weightedSliceFst.comp continuous_subtypeVal).subtype_mk _)
 
 theorem continuous_weightedSliceChartSnd [NeZero b] : Continuous (weightedSliceChartSnd a b ε) :=
   continuous_quotient_mk'.comp
-    ((continuous_weightedSliceSnd.comp continuous_subtype_val).subtype_mk _)
+    ((continuous_weightedSliceSnd.comp continuous_subtypeVal).subtype_mk _)
 
 /-- Two points of the disc have the same image under the slice chart over `z₁ ≠ 0` exactly when the
 circle maps the slice point over the first to the slice point over the second. -/
@@ -526,8 +526,8 @@ theorem isOpen_preimage_image_weightedSliceChartFst [NeZero a]
     IsOpen (weightedSliceChartFst a b ε ⁻¹' (weightedSliceChartFst a b ε '' U)) := by
   have hT : weightedSliceChartFst a b ε ⁻¹' (weightedSliceChartFst a b ε '' U) =
       ⋃ (ζ : Circle) (_ : ζ ^ a = 1), (fun w : {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε} ↦
-        (⟨(ζ : ℂ) ^ b * w, by simpa [norm_pow] using w.property⟩ : {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε}))
-            ⁻¹'
+        (⟨(ζ : ℂ) ^ b * w,
+            by simpa [norm_pow] using w.property⟩ : {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε})) ⁻¹'
           U := by
     ext w
     simp only [mem_preimage, mem_image, mem_iUnion]
@@ -544,7 +544,7 @@ theorem isOpen_preimage_image_weightedSliceChartFst [NeZero a]
         ← Circle.coe_mul, inv_mul_cancel, Circle.coe_one, one_pow, one_mul]
   rw [hT]
   exact isOpen_iUnion fun ζ ↦ isOpen_iUnion fun _ ↦ hU.preimage <|
-    (continuous_const.mul continuous_subtype_val).subtype_mk _
+    (continuous_const.mul continuous_subtypeVal).subtype_mk _
 
 /-- **The slice chart over `z₁ ≠ 0` is an open map**, for any positive weights (coprimality is not
 needed). -/
@@ -559,7 +559,7 @@ theorem isOpenMap_weightedSliceChartFst [NeZero a] : IsOpenMap (weightedSliceCha
   set D := {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε}
   set s : D → weightedEllipsoid a b ε := fun w ↦
     ⟨weightedSliceFst a b ε w, weightedSliceFst_mem_weightedEllipsoid ha w.property.le⟩ with hs_def
-  have hs : Continuous s := (continuous_weightedSliceFst.comp continuous_subtype_val).subtype_mk _
+  have hs : Continuous s := (continuous_weightedSliceFst.comp continuous_subtypeVal).subtype_mk _
   intro U hU
   set T := weightedSliceChartFst a b ε ⁻¹' (weightedSliceChartFst a b ε '' U)
   have hT : IsOpen T := isOpen_preimage_image_weightedSliceChartFst hU
@@ -606,7 +606,7 @@ theorem isOpenMap_weightedSliceChartFst [NeZero a] : IsOpenMap (weightedSliceCha
     obtain ⟨w, hwU, hw⟩ := hcT
     exact ⟨w, hwU, hw.trans (Quotient.sound ⟨u, hc⟩)⟩
   -- The neighbourhood is open.
-  · exact (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
+  · exact (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtypeVal))
       continuous_const).inter hF.isOpen_compl
   -- The neighbourhood contains `z₀`.
   · obtain ⟨u, hu⟩ : ∃ u : Circle, u • s w₀ = z₀ := Quotient.exact hz₀.symm

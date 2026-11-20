@@ -78,7 +78,7 @@ theorem measurableSet_probabilityMeasureCodeIndex (s : ProbabilityMeasureCodeInd
 theorem measurable_probabilityMeasureCode : Measurable (probabilityMeasureCode (α := α)) :=
   Measurable.of_eval fun s =>
     (Measure.measurable_coe (measurableSet_probabilityMeasureCodeIndex s)).comp
-      measurable_subtype_coe
+      measurable_subtypeVal
 
 /-- The Giry measurable space on probability measures over a countably generated space is the
 pullback of the product measurable space along the canonical evaluation code. -/

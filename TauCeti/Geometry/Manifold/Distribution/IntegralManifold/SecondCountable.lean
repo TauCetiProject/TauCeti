@@ -110,7 +110,7 @@ private theorem secondCountableTopology_plaqueSet [IsManifold I (m : ℕ∞ω) M
       (Submodule.Quotient.eq W).mp (y.property.2.trans hy₀.2.symm)
     exact congrArg Subtype.val (hp ⟨Φ (f y.val) - Φ (f y₀), hmem⟩)
   have hgcont : Continuous g := p.continuous.comp <|
-    (hΦsmooth.continuousOn.comp_continuous (hf.contMDiff.continuous.comp continuous_subtype_val)
+    (hΦsmooth.continuousOn.comp_continuous (hf.contMDiff.continuous.comp continuous_subtypeVal)
       fun y ↦ y.property.1).sub continuous_const
   have hginj : Injective g := fun y₁ y₂ h ↦ Subtype.ext <| hinj <| Φ.injOn y₁.property.1
       y₂.property.1 <|

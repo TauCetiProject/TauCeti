@@ -48,7 +48,7 @@ theorem continuous_hypoexponentialMeasure :
   intro i _
   have hi : Tendsto (fun n ↦ ((r n).val i : ℂ)) atTop (𝓝 (a.val i : ℂ)) := by
     have hc : Continuous (fun r : {r : ι → ℝ // ∀ i, 0 < r i} ↦ (r.val i : ℂ)) :=
-      Complex.continuous_ofReal.comp ((continuous_apply i).comp continuous_subtype_val)
+      Complex.continuous_ofReal.comp ((continuous_apply i).comp continuous_subtypeVal)
     exact (hc.tendsto a).comp hr
   refine hi.div (hi.sub tendsto_const_nhds) ?_
   intro h

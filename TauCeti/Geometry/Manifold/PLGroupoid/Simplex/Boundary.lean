@@ -135,9 +135,9 @@ theorem isOpen_coordinateSimplexBoundaryChartSource (v : Option (Option ι)) :
   cases v with
   | none =>
     exact isOpen_lt (continuous_finsetSum _ fun i _ =>
-      (continuous_apply i).comp continuous_subtype_val) continuous_const
+      (continuous_apply i).comp continuous_subtypeVal) continuous_const
   | some j =>
-    exact isOpen_lt continuous_const ((continuous_apply j).comp continuous_subtype_val)
+    exact isOpen_lt continuous_const ((continuous_apply j).comp continuous_subtypeVal)
 
 /-- The complements of the opposite facets cover the simplex boundary. -/
 theorem exists_mem_coordinateSimplexBoundaryChartSource
@@ -189,7 +189,7 @@ def coordinateSimplexBoundaryChart (v : Option (Option ι)) :
   open_source := isOpen_coordinateSimplexBoundaryChartSource v
   open_target := isOpen_coordinateSimplexBoundaryChartTarget
   continuousOn_toFun := ((coordinateSimplexBoundaryChartProjection v).continuous.comp
-    continuous_subtype_val).continuousOn
+    continuous_subtypeVal).continuousOn
   continuousOn_invFun := by
     rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
     refine (isPiecewiseAffineOn_coordinateSimplexBoundaryChartLift v).continuousOn.mono

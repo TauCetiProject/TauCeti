@@ -445,7 +445,7 @@ private theorem measurable_restrict_riemannianJacobian_of_subset_chart [OpensMea
     simp only [T, LinearMap.toMatrix_apply, ContinuousLinearMap.coe_coe]
     exact ((Module.finBasis ℝ E).coord k).continuous_of_finiteDimensional.measurable.comp
       ((measurable_fderiv_apply_const ℝ (extChartAt I α ∘ f) (b i)).comp
-        measurable_subtype_coe)
+        measurable_subtypeVal)
   have hG (k l) : Measurable (fun x : s ↦ chartGramMatrix (I := I) α (f x) k l) := by
     apply Continuous.measurable
     apply ((contMDiffOn_chartGramMatrix_entry (I := I) (n := 0) α k l).continuousOn.comp
@@ -498,12 +498,12 @@ theorem _root_.Module.Basis.measurable_restrict_riemannianJacobian [OpensMeasura
   let j : a α → ↥(f ⁻¹' (chartAt H α.val).source ∩ s) :=
     fun x ↦ ⟨x.val.val, x.property, x.val.property⟩
   have hj : Measurable j :=
-    (measurable_subtype_coe.comp measurable_subtype_coe).subtype_mk
+    (measurable_subtypeVal.comp measurable_subtypeVal).subtype_mk
   -- Specify the subtype map so elaboration does not unfold the Jacobian to infer it.
   have hm' : Measurable (fun x : a α ↦ riemannianJacobian (I := I) b f x.val.val) :=
     hm.comp (f := j) hj
   rw [← Subtype.image_preimage_coe]
-  exact (MeasurableEmbedding.subtype_coe (ha α)).measurableSet_image.mpr (hm' hA)
+  exact (MeasurableEmbedding.subtypeVal (ha α)).measurableSet_image.mpr (hm' hA)
 
 omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [BorelSpace F] in
 /-- The Jacobian is almost everywhere measurable on a measurable carrier of pointwise
@@ -598,12 +598,12 @@ theorem _root_.Module.Basis.restrict_map_withDensity_riemannianJacobian_of_injOn
       (riemannianVolume I M).restrict (f '' s) := by
   have hc : ContinuousOn f s := fun x hx ↦ (hf x hx).continuousAt.continuousWithinAt
   rw [← b.map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hf,
-    ← restrict_withDensity hs, ← map_comap_subtype_coe hs,
+    ← restrict_withDensity hs, ← map_comap_subtypeVal hs,
     AEMeasurable.map_map_of_aemeasurable]
   · rw [Set.domRestrict_eq]
-  · rw [map_comap_subtype_coe hs, restrict_withDensity hs]
+  · rw [map_comap_subtypeVal hs, restrict_withDensity hs]
     exact (hc.aemeasurable hs).mono_ac (withDensity_absolutelyContinuous _ _)
-  · exact measurable_subtype_coe.aemeasurable
+  · exact measurable_subtypeVal.aemeasurable
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 

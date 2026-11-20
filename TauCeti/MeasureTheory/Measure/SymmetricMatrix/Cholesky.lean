@@ -313,7 +313,7 @@ theorem choleskyLowerCoordinates_apply (A : PosDefMatrix p) (ij : lowerTriangle 
   lowerTriangleCoordinatesHomeomorph_apply_coe p (cholesky A) ij
 
 theorem continuous_choleskyLowerCoordinates : Continuous (choleskyLowerCoordinates p) :=
-  continuous_subtype_val.comp
+  continuous_subtypeVal.comp
     ((lowerTriangleCoordinatesHomeomorph p).continuous.comp continuous_cholesky)
 
 @[fun_prop]

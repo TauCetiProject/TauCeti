@@ -251,7 +251,7 @@ variable {G : Type*} [Group G] [TopologicalSpace G]
 instance [SeparatelyContinuousMul G] (N : Subgroup G) [N.Normal] :
     ContinuousConstSMul (ConjAct G) N where
   continuous_const_smul g :=
-    continuous_induced_rng.2 ((continuous_const_smul g).comp continuous_subtype_val)
+    continuous_induced_rng.2 ((continuous_const_smul g).comp continuous_subtypeVal)
 
 variable [IsTopologicalGroup G] (N : Subgroup G) [N.Normal]
 
@@ -389,7 +389,7 @@ instance : ContinuousSMul (G ⧸ N) (TopologicalAbelianization N) where
     refine QuotientGroup.continuous_mk.comp (continuous_induced_rng.2 ?_)
     simp only [Function.comp_def, MulAut.conjNormal_apply]
     exact IsTopologicalGroup.continuous_conj_prod.comp
-      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+      (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
 
 variable {R : Subgroup G} [R.Normal] {N}
 

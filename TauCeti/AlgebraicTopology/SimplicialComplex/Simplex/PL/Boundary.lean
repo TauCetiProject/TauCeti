@@ -63,8 +63,8 @@ def realizationStandardSuccSimplexBoundaryHomeomorphCoordinateSimplex (n : ℕ) 
         ((mem_frontier_coordinateSimplex _ _).mp y.property).1⟩, y.property⟩
     left_inv := fun _ => rfl
     right_inv := fun _ => rfl
-    continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-    continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
+    continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
+    continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
   let a := simplexCoordinateReindex n
   have hpre : a ⁻¹' coordinateSimplex (Option (Fin n)) = coordinateSimplex (Fin (n + 1)) :=
     Set.ext (simplexCoordinateReindex_mem_iff n)

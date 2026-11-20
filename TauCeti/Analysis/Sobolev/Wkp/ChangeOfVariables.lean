@@ -922,8 +922,9 @@ for `1 ≤ p < ∞` precomposition with `Φ` is an isomorphism of Banach spaces
 def compLEquiv (hΦ : IsChangeOfVariables k U V Φ L c) (hΨ : IsChangeOfVariables k V U Ψ L' c')
     (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
     (hp : p ≠ ⊤) : Wkp mu V p k ≃L[ℝ] Wkp mu U p k :=
-  ContinuousLinearEquiv.equivOfInverse (compL hΦ hp) (compL hΨ hp)
-    (compL_compL_of_rightInvOn hΦ hΨ hΦΨ hp) (compL_compL_of_rightInvOn hΨ hΦ hΨΦ hp)
+  ContinuousLinearEquiv.ofContinuousLinearMap (compL hΦ hp) (compL hΨ hp)
+    (ContinuousLinearMap.ext (compL_compL_of_rightInvOn hΨ hΦ hΨΦ hp))
+    (ContinuousLinearMap.ext (compL_compL_of_rightInvOn hΦ hΨ hΦΨ hp))
 
 @[simp]
 theorem compLEquiv_apply (hΦ : IsChangeOfVariables k U V Φ L c)

@@ -265,7 +265,7 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
     ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ ∑ j, ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ := by
   set b := EuclideanSpace.basisFun (Fin n) ℝ
   set T : Fin n → A →L[ℝ] CoordinateSpace n →L[ℝ] A := fun j ↦
-    ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n) A (innerSL ℝ (b j))
+    ContinuousLinearMap.smulRightL ℝ ℝ ℝ (CoordinateSpace n) A (innerSL ℝ (b j))
   have hfd : fderiv ℝ f = ∑ j, T j ∘ coordinateDeriv [j] f := by
     funext y
     ext h

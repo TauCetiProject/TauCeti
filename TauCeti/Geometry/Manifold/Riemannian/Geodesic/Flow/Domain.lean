@@ -81,7 +81,7 @@ theorem measurableSet_setOfPred_Icc_subset_geodesicInterval_and_mapsTo
   have hflow (s : Icc (0 : ℝ) u) :
       Continuous fun p : A ↦ maximalGeodesic I M (Z p.val).proj (Z p.val).snd s.val :=
     contMDiffOn_maximalGeodesic.continuousOn.comp_continuous
-      ((hZ.comp continuous_subtype_val).prodMk continuous_const) fun p ↦ htime p s.property
+      ((hZ.comp continuous_subtypeVal).prodMk continuous_const) fun p ↦ htime p s.property
   let B : Set A := {p | MapsTo (maximalGeodesic I M (Z p.val).proj (Z p.val).snd) (Icc 0 u) D}
   have hB : IsClosed B := hD.setOfPred_mapsTo fun t ht ↦ hflow ⟨t, ht⟩
   obtain ⟨C, hC, hBC⟩ :=

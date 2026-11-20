@@ -252,7 +252,7 @@ theorem mem_Z1 [IsTopologicalAddGroup M] (hf : IsTransgressionLift c f) : c ∈ 
       rw [hf.apply_coe]
       abel
     rw [hc]
-    exact (hf.continuous.comp continuous_subtype_val).sub continuous_const
+    exact (hf.continuous.comp continuous_subtypeVal).sub continuous_const
   · calc
       c (n * n') = f (n * n') - f 1 := by
         have h := hf.apply_coe (n * n')
@@ -806,7 +806,7 @@ theorem fiveTerm_exact_H1N (hN : IsClosed (N : Set G)) :
   let z : G → M := fun g => f g - e g
   have hz : z ∈ Z1 G M := by
     refine mem_Z1_iff.2 ⟨hf.continuous.sub
-      (continuous_subtype_val.comp (he_cont.comp QuotientGroup.continuous_mk)), fun g h => ?_⟩
+      (continuous_subtypeVal.comp (he_cont.comp QuotientGroup.continuous_mk)), fun g h => ?_⟩
     have := hde g h
     rw [d1_apply, QuotientGroup.mk_mul] at this
     simp only [z, QuotientGroup.mk_mul, smul_sub]

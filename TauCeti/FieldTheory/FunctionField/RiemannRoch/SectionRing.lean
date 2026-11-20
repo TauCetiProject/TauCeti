@@ -508,7 +508,7 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
     refine mem_holomorphyRing_iff.mpr fun P hP ↦ ?_
     rw [Set.mem_ofPred_eq] at hP
     have hsi := mem_riemannRochSpace_iff.mp (hs i) P
-    rw [Place.mem_integers_iff, map_div₀, map_pow, hP, div_le_one₀ (zero_lt_iff.mpr
+    rw [Place.mem_integers_iff, map_div₀, map_pow, hP, div_le_one₀ (pos_iff_ne_zero.mpr
       WithZero.exp_ne_zero), ← nsmul_eq_mul, WithZero.exp_nsmul]
     exact pow_le_pow_left₀ zero_le hsi m
   set I : Ideal O.toSubring := Ideal.span (Set.range fun i ↦ (⟨_, hgen i⟩ : O.toSubring))

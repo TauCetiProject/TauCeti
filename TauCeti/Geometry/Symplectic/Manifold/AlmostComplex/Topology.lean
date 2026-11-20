@@ -214,7 +214,7 @@ theorem isClosed_setOf_invariant_tames_frameTopology (hcover : ∀ x, ∃ i, x �
     let _ := SmoothAlmostComplexStructure.frameTopology e U hU
     IsClosed {J : {J : SmoothAlmostComplexStructure I M // form.Tames J} | form.Invariant J} := by
   let _ := SmoothAlmostComplexStructure.frameTopology e U hU
-  exact (isClosed_setOf_invariant_frameTopology e U hU hcover form).preimage continuous_subtype_val
+  exact (isClosed_setOf_invariant_frameTopology e U hU hcover form).preimage continuous_subtypeVal
 
 end SmoothTwoForm
 

@@ -263,7 +263,7 @@ theorem eq_empty_or_eq_primeFactors_of_prod_classGroupMk0_eq_one
       (fun p => (Q p : Ideal (𝓞 K))) hram hprime hover hprin with h1 | h1
   · left
     by_contra hne
-    obtain ⟨p, hp⟩ := Finset.nonempty_iff_ne_empty.mpr hne
+    obtain ⟨p, hp⟩ := Finset.ne_empty_iff_nonempty.mp hne
     have hple : p ≤ 1 := Nat.le_of_dvd one_pos (h1 ▸ Finset.dvd_prod_of_mem (fun p => p) hp)
     exact (NumberField.prime_of_mem_ramifiedPrimes (hram p hp)).one_lt.not_ge hple
   · right

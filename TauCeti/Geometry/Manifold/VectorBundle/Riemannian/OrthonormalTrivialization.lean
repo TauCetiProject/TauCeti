@@ -115,7 +115,7 @@ theorem continuous_of_contMDiffOn_orthonormalBasis {U : Set B}
     (hd : ∀ i, ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n
       (fun b ↦ TotalSpace.mk' F b (if hb : b ∈ U then d ⟨b, hb⟩ i else 0)) U) (i : ι) :
     Continuous fun b : U ↦ TotalSpace.mk' F (b : B) (d b i) :=
-  ((hd i).continuousOn.comp_continuous continuous_subtype_val fun b ↦ b.2).congr fun b ↦
+  ((hd i).continuousOn.comp_continuous continuous_subtypeVal fun b ↦ b.property).congr fun b ↦
     congrArg (TotalSpace.mk' F (b : B)) (by simp [b.property])
 
 end RCLikeLocal
@@ -456,7 +456,7 @@ theorem bundleTrivialization_univ_apply [IsContinuousRiemannianBundle F E]
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i)))
     (p : TotalSpace F E) :
     c.bundleTrivialization isOpen_univ (fun b ↦ d b.val)
-        (fun i ↦ (hd i).continuous.comp continuous_subtype_val) p =
+        (fun i ↦ (hd i).continuous.comp continuous_subtypeVal) p =
       c.totalSpaceDiffeomorph d hd p := by
   cases p
   simp
@@ -499,7 +499,7 @@ theorem bundleTrivialization_univ_mem_maximalAtlas
     (d : ∀ b : B, OrthonormalBasis ι ℝ (E b))
     (hd : ∀ i, ContMDiff IB (IB.prod 𝓘(ℝ, F)) n (fun b ↦ TotalSpace.mk' F b (d b i))) :
     (c.bundleTrivialization isOpen_univ (fun b ↦ d b.val)
-        (fun i ↦ (hd i).continuous.comp continuous_subtype_val)).toOpenPartialHomeomorph ∈
+        (fun i ↦ (hd i).continuous.comp continuous_subtypeVal)).toOpenPartialHomeomorph ∈
       (contMDiffFiberwiseLinear B F IB n).maximalAtlas (TotalSpace F E) := by
   classical
   exact c.bundleTrivialization_mem_maximalAtlas isOpen_univ (fun b ↦ d b.val) fun i ↦

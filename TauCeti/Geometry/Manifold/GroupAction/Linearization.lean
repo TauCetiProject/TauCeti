@@ -75,7 +75,7 @@ theorem contMDiffConstSMul_mulActionOpens (σ : ContRepresentation 𝕜 G E)
   intro g
   apply (TauCeti.ContMDiff.subtypeVal_comp_iff B _).mp
   simpa only [Function.comp_def, val_mulActionOpens_smul] using
-    (σ g).contDiff.contMDiff.comp (contMDiff_subtype_val (I := 𝓘(𝕜, E)) (n := n))
+    (σ g).contDiff.contMDiff.comp (contMDiff_subtypeVal (I := 𝓘(𝕜, E)) (n := n))
 
 end ContRepresentation
 

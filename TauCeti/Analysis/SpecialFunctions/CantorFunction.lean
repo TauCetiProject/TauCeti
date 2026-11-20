@@ -202,7 +202,7 @@ theorem continuous_cantorFunction : Continuous cantorFunction := by
       rw [range_cantorFunction]
       exact y.property
     exact ⟨x, Subtype.ext hx⟩
-  exact continuous_subtype_val.comp (hg.continuous_of_surjective hsurj)
+  exact continuous_subtypeVal.comp (hg.continuous_of_surjective hsurj)
 
 /-- The Cantor function is measurable. -/
 @[fun_prop]

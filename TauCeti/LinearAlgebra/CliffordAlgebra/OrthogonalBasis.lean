@@ -435,7 +435,7 @@ theorem basis_comm_ι_iff [Fintype I] [Nontrivial R]
     · exact Or.inl hempty
     · right
       have hsodd : Odd s.card := by
-        obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hempty
+        obtain ⟨i, hi⟩ := Finset.ne_empty_iff_nonempty.mp hempty
         have h := hs i
         rw [basis_mul_ι_of_mem hb hi] at h
         have heven : Even (s.card - 1) :=

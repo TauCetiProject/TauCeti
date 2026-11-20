@@ -311,7 +311,7 @@ private theorem continuous_congrLeftMap [ProperSpace E] [T2Space N] (h₁ : IsOp
       (continuous_punctureMap _ _ φ.continuous)).continuousAt
   · refine (isOpenEmbedding_inr h₁ h₂).continuousAt_iff.1 ?_
     refine (continuous_inr e₁' e₂).continuousAt.congr ?_
-    filter_upwards [(hK.isOpen_compl.preimage continuous_subtype_val).mem_nhds hy] with y' hy'
+    filter_upwards [(hK.isOpen_compl.preimage continuous_subtypeVal).mem_nhds hy] with y' hy'
     rw [comp_apply, congrLeftMap_inr, hr y' hy']
 
 /-- **Moving the first ball of a connected sum.** Let `φ : M ≃ₜ M'` carry the ball `e₁` to the
@@ -398,13 +398,13 @@ private theorem contMDiff_congrLeftMap (hφs : ContMDiff I I n φ) :
     have hinl : inl e₁' e₂ = mk e₁' e₂ ∘ Sum.inl := funext fun x ↦ (mk_inl e₁' e₂ x).symm
     have hφ' : ContMDiff I I n (punctureMap φ φ.injective hφ.eq_of_nhds) :=
       (ContMDiff.subtypeVal_comp_iff _ _).1
-        (by rw [subtypeVal_comp_punctureMap]; exact hφs.comp contMDiff_subtype_val)
+        (by rw [subtypeVal_comp_punctureMap]; exact hφs.comp contMDiff_subtypeVal)
     rw [hinl]
     exact (hmk'.contMDiff.comp (ContMDiff.inl.comp hφ')).contMDiffAt
   · rw [← mk_inr, ← ((hmk (.inr y)).contMDiffAt_comp_iff le_rfl), congrLeftMap, lift_comp_mk,
       contMDiffAt_sumElim_inr]
     refine (hmk'.contMDiff.comp ContMDiff.inr).contMDiffAt.congr_of_eventuallyEq ?_
-    filter_upwards [(hK.isOpen_compl.preimage continuous_subtype_val).mem_nhds hy] with y' hy'
+    filter_upwards [(hK.isOpen_compl.preimage continuous_subtypeVal).mem_nhds hy] with y' hy'
     rw [hr y' hy', comp_apply, mk_inr]
 
 /-- **Moving the first ball of a connected sum of manifolds.** If `φ : M ≃ₘ M'` is a `C^n`

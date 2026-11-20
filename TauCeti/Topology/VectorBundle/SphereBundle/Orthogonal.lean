@@ -136,13 +136,13 @@ private def sphereBundleHomeomorph [TopologicalSpace X] (F : Type*) :
   right_inv _ := rfl
   continuous_toFun := by
     have h := (isEmbedding_totalSpace_range F (complementProjection f)).continuous.comp
-      (continuous_subtype_val (p := (· ∈ sphereBundle F _)))
+      (continuous_subtypeVal (p := (· ∈ sphereBundle F _)))
     exact (h.fst.prodMk (h.snd.subtype_mk _)).subtype_mk _
   continuous_invFun := by
     refine (IsInducing.subtypeVal.continuous_iff).2 <|
       (isEmbedding_totalSpace_range F (complementProjection f)).continuous_iff.2 ?_
-    exact (continuous_fst.comp continuous_subtype_val).prodMk
-      (continuous_subtype_val.comp (continuous_snd.comp continuous_subtype_val))
+    exact (continuous_fst.comp continuous_subtypeVal).prodMk
+      (continuous_subtypeVal.comp (continuous_snd.comp continuous_subtypeVal))
 
 variable [Fintype ι]
 

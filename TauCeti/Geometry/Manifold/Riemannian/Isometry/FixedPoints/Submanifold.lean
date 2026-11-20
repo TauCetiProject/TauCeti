@@ -135,7 +135,7 @@ theorem isLocallyConstant_finrank_fixedTangentSubspace :
       Module.finrank ℝ (fixedTangentSubspace 𝓘(ℝ, E) K (z : M)) := by
   refine (IsLocallyConstant.iff_eventually_eq _).2 fun p ↦ ?_
   obtain ⟨q, hq, hpq, hs⟩ := exists_mem_maximalAtlas_isSliceChart hK p.property
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+  filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
     (q.open_source.mem_nhds hpq)] with z hz
   exact finrank_fixedTangentSubspace_eq_of_mem_source hK hq hs hz z.property
 

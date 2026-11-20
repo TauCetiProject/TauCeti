@@ -151,7 +151,7 @@ theorem restrictOpenTangentSpace_inner
 /-- Restriction to an open submanifold is pullback along its inclusion. -/
 theorem restrictOpenTangentSpace_eq_pullback [FiniteDimensional ℝ E]
     (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
-    g.restrictOpenTangentSpace U = g.pullback (Subtype.val : U → M) contMDiff_subtype_val
+    g.restrictOpenTangentSpace U = g.pullback (Subtype.val : U → M) contMDiff_subtypeVal
       (TauCeti.Manifold.mfderiv_subtype_val_injective (I := I)) := by
   ext x v w
   simp only [restrictOpenTangentSpace_inner, pullback_inner,
@@ -181,7 +181,7 @@ theorem restrictOpenTangentSpace_rescale
     (f : M → ℝ) (hf : ContMDiff I 𝓘(ℝ) n f) (hf_pos : ∀ x, 0 < f x) :
     (g.rescale f hf hf_pos).restrictOpenTangentSpace U =
       (g.restrictOpenTangentSpace U).rescale (f ∘ Subtype.val)
-        (hf.comp contMDiff_subtype_val) (fun y ↦ hf_pos y.1) := by
+        (hf.comp contMDiff_subtypeVal) (fun y ↦ hf_pos y.val) := by
   ext y v w
   simp only [restrictOpenTangentSpace_inner, rescale_inner, Function.comp_apply]
 
@@ -360,7 +360,7 @@ theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ} :
       (fun h ↦ hd ((ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff γ Set.univ t).1 h))]
     simp
   have hv : MDiffAt (Subtype.val : U → M) (γ t) :=
-    (contMDiff_subtype_val (γ t)).mdifferentiableAt one_ne_zero
+    (contMDiff_subtypeVal (γ t)).mdifferentiableAt one_ne_zero
   rw [(HasMFDerivAt.comp t hv.hasMFDerivAt hd.hasMFDerivAt).mfderiv, mfderiv_subtype_val]
   simp
 
@@ -384,7 +384,7 @@ theorem riemannianEDist_le_riemannianEDist_subtype (U : Opens M) (x y : U) :
     (I := I) fun γ h0 h1 hγ ↦ ?_
   rw [TauCeti.Manifold.pathELength_subtypeVal_comp]
   exact Manifold.riemannianEDist_le_pathELength
-    (contMDiff_subtype_val.comp_contMDiffOn hγ)
+    (contMDiff_subtypeVal.comp_contMDiffOn hγ)
     (congrArg Subtype.val h0) (congrArg Subtype.val h1) zero_le_one
 
 end TopologicalSpace.Opens

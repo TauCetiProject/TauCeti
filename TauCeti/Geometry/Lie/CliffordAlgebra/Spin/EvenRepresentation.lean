@@ -105,7 +105,7 @@ private theorem spinToEvenHom_continuous (n : ℕ) : Continuous (spinToEvenHom n
         spinGroup (realCliffordForm n 0)) : CliffordAlgebra (realCliffordForm n 0)),
         spinGroup.mem_even ((realCliffordSpinContinuousMulEquivUnitsRange n).symm g).property⟩ :
           CliffordAlgebra.even (realCliffordForm n 0))) :=
-    (continuous_subtype_val.comp
+    (continuous_subtypeVal.comp
       (realCliffordSpinContinuousMulEquivUnitsRange n).symm.continuous).subtype_mk _
   apply h.congr
   intro g

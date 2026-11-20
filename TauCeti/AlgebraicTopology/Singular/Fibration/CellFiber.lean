@@ -106,7 +106,7 @@ def cellULiftMap (n : ℕ) (j : cell C n) :
     _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) ⟶ B :=
   _root_.TopCat.ofHom ⟨fun x ↦ map n j (uliftClosedBall 0 1 x : Fin n → ℝ),
     (continuousOn n j).comp_continuous
-      (continuous_subtype_val.comp (uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous)
+      (continuous_subtypeVal.comp (uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous)
       fun x ↦ (uliftClosedBall 0 1 x).property⟩
 
 omit [T2Space B] in
@@ -131,8 +131,8 @@ private def cellDiskPullbackι (n : ℕ) (j : cell C n) :
       (sigmaCellMap_apply C n _).trans x.property⟩,
     (((continuous_sigmaMk (σ := fun _ : cell C n ↦ closedBall (0 : Fin n → ℝ) 1)).comp
       ((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous.comp
-        (continuous_fst.comp continuous_subtype_val))).prodMk
-        (continuous_snd.comp continuous_subtype_val)).subtype_mk _⟩
+        (continuous_fst.comp continuous_subtypeVal))).prodMk
+        (continuous_snd.comp continuous_subtypeVal)).subtype_mk _⟩
 
 omit [T2Space B] in
 @[simp]
@@ -215,7 +215,7 @@ private lemma isOpenEmbedding_cellDiskPullbackι (n : ℕ) (j : cell C n) :
         cellULiftMap_uliftClosedBall_symm n j b' e h⟩, Subtype.ext <|
           (coe_cellDiskPullbackι_apply n j _).trans (by rw [Homeomorph.apply_symm_apply])⟩
   rw [this]
-  exact isOpen_range_sigmaMk.preimage (continuous_fst.comp continuous_subtype_val)
+  exact isOpen_range_sigmaMk.preimage (continuous_fst.comp continuous_subtypeVal)
 
 omit [T2Space B] in
 /-- The disjoint union of the `Pⱼ` maps homeomorphically onto `P`. -/

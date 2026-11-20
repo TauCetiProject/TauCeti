@@ -314,7 +314,7 @@ theorem quadraticDefect_eq_zero_iff {a : Kˣ} : quadraticDefect a = 0 ↔ IsSqua
     sub_eq_zero, ← Units.isSquare_coe_iff]
   refine ⟨fun h => ⟨ξ₀, by rw [h, sq]⟩, fun ⟨r, hr⟩ => ?_⟩
   have h := h₀ r
-  rwa [sq r, ← hr, sub_self, map_zero, le_zero_iff, map_eq_zero, sub_eq_zero] at h
+  rwa [sq r, ← hr, sub_self, map_zero, nonpos_iff_eq_zero, map_eq_zero, sub_eq_zero] at h
 
 /-- The quadratic defect of an integral element is an integral ideal. -/
 theorem quadraticDefect_le_one {a : Kˣ} (ha : (a : K) ∈ 𝒪[K]) : quadraticDefect a ≤ 1 := by

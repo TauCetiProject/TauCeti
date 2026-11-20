@@ -81,7 +81,7 @@ variable [TopologicalSpace F] [IsTopologicalRing F]
 /-- Negation of points is continuous: on homogeneous coordinates it is a linear map. -/
 instance : ContinuousNeg W.Point := by
   refine ⟨isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr ?_⟩
-  have h := continuous_mk (W := W) (Projective.continuous_neg.comp continuous_subtype_val)
+  have h := continuous_mk (W := W) (Projective.continuous_neg.comp continuous_subtypeVal)
     fun P : {P : Fin 3 → F // W.Nonsingular P} ↦ nonsingular_neg P.property
   convert h using 2 with P
   rw [Point.ext_iff]
@@ -127,14 +127,14 @@ noncomputable def continuousAddEquivVariableChange :
     refine isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr ?_
     simpa only [Function.comp_def, AddEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe,
       AddEquiv.coe_toEquiv, addEquivVariableChange_mk] using
-      continuous_mk ((continuous_const.matrix_mulVec continuous_subtype_val))
+      continuous_mk ((continuous_const.matrix_mulVec continuous_subtypeVal))
         fun P : {P : Fin 3 → F // (C • W).toProjective.Nonsingular P} ↦
           (nonsingular_variableChange W C P.val).mp P.property
   continuous_invFun := by
     refine isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr ?_
     simpa only [Function.comp_def, AddEquiv.toEquiv_eq_coe, Equiv.invFun_as_coe,
       AddEquiv.coe_toEquiv_symm, addEquivVariableChange_symm_mk] using
-      continuous_mk ((continuous_const.matrix_mulVec continuous_subtype_val))
+      continuous_mk ((continuous_const.matrix_mulVec continuous_subtypeVal))
         fun P : {P : Fin 3 → F // W.toProjective.Nonsingular P} ↦
           (nonsingular_variableChange W C _).mpr (by
             rw [mulVec_mulVec, VariableChange.toMatrix_mul_toMatrix_inv, one_mulVec]

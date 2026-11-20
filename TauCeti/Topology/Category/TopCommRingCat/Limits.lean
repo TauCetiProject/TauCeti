@@ -78,7 +78,7 @@ def piFanIsLimit {β : Type v} (f : β → TopCommRingCat.{max u v}) : IsLimit (
 instance {β : Type v} (f : β → TopCommRingCat.{max u v}) : HasProduct f :=
   HasLimit.mk ⟨piFan f, piFanIsLimit f⟩
 
-instance : HasProducts.{v} TopCommRingCat.{max u v} := fun _ =>
+instance : HasProducts.{v} TopCommRingCat.{max u v} := .mk fun _ =>
   ⟨fun _ => hasLimit_of_iso Discrete.natIsoFunctor.symm⟩
 
 variable {R S : TopCommRingCat.{u}} (f g : R ⟶ S)
@@ -88,7 +88,7 @@ variable {R S : TopCommRingCat.{u}} (f g : R ⟶ S)
 @[expose, simps! pt]
 def equalizerFork : Fork f g :=
   Fork.ofι (P := TopCommRingCat.of (RingHom.eqLocus f.val g.val))
-    ⟨(RingHom.eqLocus f.val g.val).subtype, continuous_subtype_val⟩
+    ⟨(RingHom.eqLocus f.val g.val).subtype, continuous_subtypeVal⟩
     (Subtype.ext (RingHom.ext fun x => x.property))
 
 /-- The inclusion of the equalizer fork is, as a function, the subtype coercion of the

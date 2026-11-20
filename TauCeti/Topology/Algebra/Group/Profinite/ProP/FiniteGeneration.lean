@@ -76,7 +76,7 @@ theorem IsTopologicallyFinitelyGenerated.isOpen_map_subtype_proPFrattini
     IsOpen ((proPFrattini p U.toSubgroup).map U.toSubgroup.subtype : Set G) := by
   have : CompactSpace U.toSubgroup := isCompact_iff_compactSpace.mp U.isClosed.isCompact
   rw [Subgroup.coe_map, Subgroup.coe_subtype]
-  exact U.isOpen.isOpenMap_subtype_val _ ((hG.of_openSubgroup U).isOpen_proPFrattini p)
+  exact U.isOpen.isOpenMap_subtypeVal _ ((hG.of_openSubgroup U).isOpen_proPFrattini p)
 
 /-- The pro-`p` Frattini quotient of a compact topologically finitely generated group is finite.
 Neither primality of `p` nor the pro-`p` condition on the group is needed in this direction. -/

@@ -227,7 +227,7 @@ private def zeroCoordSet (n : ℕ) (i : Fin (n + 2)) :
 private theorem isClosed_zeroCoordSet (n : ℕ) (i : Fin (n + 2)) :
     IsClosed (zeroCoordSet n i) := by
   apply isClosed_eq
-  · exact (continuous_barycentric_coord (sphereAffineBasis n) i).comp continuous_subtype_val
+  · exact (continuous_barycentric_coord (sphereAffineBasis n) i).comp continuous_subtypeVal
   · exact continuous_const
 
 private theorem iUnion_zeroCoordSet (n : ℕ) :
@@ -275,7 +275,7 @@ private theorem continuous_fixedPolytopeToBoundary (n : ℕ) (i : Fin (n + 2)) :
   apply continuous_pi
   intro j
   exact (continuous_barycentric_coord (sphereAffineBasis n) j).comp
-    (continuous_subtype_val.comp continuous_subtype_val)
+    (continuous_subtypeVal.comp continuous_subtypeVal)
 
 private theorem polytopeToBoundary_eq_fixed (n : ℕ) (i : Fin (n + 2))
     (y : zeroCoordSet n i) :

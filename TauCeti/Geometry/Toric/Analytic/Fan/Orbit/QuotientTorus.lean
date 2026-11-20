@@ -170,7 +170,7 @@ noncomputable def analyticConeOrbitTorusHomeomorph (σ : Φ.cones) :
       rwa [← Φ.analyticAffineChart_str_eq σ] at h
     have hval (m : N ⧸ coneSublattice i σ.val →+ ℤ) :
         Continuous fun y ↦ ((Φ.analyticConeOrbitTorusEquiv hΦ σ (k y) m : ℂˣ) : ℂ) :=
-      ((hmono _).comp continuous_subtype_val).congr fun y ↦
+      ((hmono _).comp continuous_subtypeVal).congr fun y ↦
         (Φ.val_analyticConeOrbitTorusEquiv_apply hΦ σ y.property m).symm
     rw [Equiv.toFun_as_coe, ← k.comp_continuous_iff']
     refine continuous_complexTorus_iff.2 fun m ↦ Units.continuous_iff.2 ⟨hval m, ?_⟩

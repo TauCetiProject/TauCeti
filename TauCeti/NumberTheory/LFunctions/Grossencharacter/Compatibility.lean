@@ -79,7 +79,7 @@ theorem coe_idealCharacter_integralIdealsAwayHom (χ : Grossencharacter K 𝔪)
     { toFun J := χ.unitaryWeight.val J * (Ideal.absNorm (J : Ideal (𝓞 K)) : ℂ) ^ (χ.idealShift : ℂ)
       map_one' := by simp
       map_mul' I J := by
-        rw [Submonoid.coe_mul, map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_natCast_cpow]
+        rw [Submonoid.coe_mul, map_mul, map_mul, Nat.cast_mul, Complex.natCast_mul_cpow]
         ring }
   refine DFunLike.congr_fun (NumberFieldArithmetic.integralIdealsAway_hom_ext
     (f := (Units.coeHom ℂ).comp (χ.toHeckeCharacter.idealCharacter.comp

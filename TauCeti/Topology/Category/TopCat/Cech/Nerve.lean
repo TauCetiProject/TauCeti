@@ -34,7 +34,7 @@ variable {X : TopCat.{u}} {ι : Type u} (U : ι → Opens X)
 
 /-- The map from the disjoint union of a family of open subsets to the ambient space. -/
 def openCoverMap : TopCat.of (Σ i, U i) ⟶ X :=
-  TopCat.ofHom ⟨fun p => p.2.1, continuous_sigma fun _ => continuous_subtype_val⟩
+  TopCat.ofHom ⟨fun p => p.2.val, continuous_sigma fun _ => continuous_subtypeVal⟩
 
 /-- The cover map sends a point of a member of the family to the same point of the ambient
 space. -/
@@ -62,7 +62,7 @@ abbrev openCoverArrow : Arrow TopCat.{u} :=
 
 /-- The map from the disjoint union of open subspaces is open. -/
 theorem isOpenMap_openCoverMap : IsOpenMap (openCoverMap U) :=
-  isOpenMap_sigma.mpr fun i => (U i).isOpen.isOpenMap_subtype_val
+  isOpenMap_sigma.mpr fun i => (U i).isOpen.isOpenMap_subtypeVal
 
 /-- The cover map is surjective exactly when the family is an open cover. -/
 @[simp]

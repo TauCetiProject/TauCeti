@@ -420,7 +420,7 @@ theorem map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure (hn : (p : 
         (choleskyLowerCoordinates p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) := by
   have hemb : MeasurableEmbedding
       (Subtype.val : PosDefMatrix p → selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
-    MeasurableEmbedding.subtype_coe (measurableSet_posDefMatrix p)
+    MeasurableEmbedding.subtypeVal (measurableSet_posDefMatrix p)
   have hres : (Measure.pi (bartlettCoordinateMeasure (p := p) n)).restrict
       (posDiagLowerRegion p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) :=
     Measure.restrict_eq_self_of_ae_mem <| by

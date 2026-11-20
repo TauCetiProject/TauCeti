@@ -103,7 +103,7 @@ theorem measurable_tsum_fiber_of_injective_fderiv
       exact (hpd hij).mono inter_subset_left inter_subset_left
   simp_rw [hfiber]
   exact Measurable.tsum fun n ↦
-    (he n).measurable_extend (hg.comp measurable_subtype_coe) measurable_const
+    (he n).measurable_extend (hg.comp measurable_subtypeVal) measurable_const
 
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

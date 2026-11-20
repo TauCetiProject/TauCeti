@@ -92,7 +92,7 @@ private lemma twistedHeckeSlashSum_slash_eq_of_mem_Gamma1 {f : ℍ → ℂ}
     (hγ : γ ∈ (Gamma1 N).map (mapGL ℝ)) :
     twistedHeckeSlashSum k χ D f ∣[k] γ = twistedHeckeSlashSum k χ D f := by
   obtain ⟨σ, hσ, rfl⟩ := Subgroup.mem_map.mp hγ
-  have hσ₀ : σ ∈ Gamma0 N := Gamma1_in_Gamma0 N hσ
+  have hσ₀ : σ ∈ Gamma0 N := Gamma1_le_Gamma0 N hσ
   have hone : (Gamma0Map N).toHomUnits ⟨σ, hσ₀⟩ = 1 :=
     Units.ext ((Gamma1_mem N σ).mp hσ).2.1
   have hrel := (mem_functionCharSpace_iff k χ _).mp

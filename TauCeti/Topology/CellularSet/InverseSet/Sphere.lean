@@ -94,7 +94,7 @@ private theorem exists_notMem_image_closedBall (hEF : finrank ℝ F = finrank �
   by_contra! h
   have hne {x : E} (hx : x ∈ sphere (0 : E) 1) : f x ≠ y := fun h ↦ hy ⟨x, hx, h⟩
   have hc : Continuous fun x : sphere (0 : E) 1 ↦ f x :=
-    hf.comp_continuous continuous_subtype_val fun x ↦ sphere_subset_closedBall x.2
+    hf.comp_continuous continuous_subtypeVal fun x ↦ sphere_subset_closedBall x.property
   have hi : Injective fun x : sphere (0 : E) 1 ↦ f x := fun x x' h ↦ Subtype.ext <|
     eq_of_apply_eq hinj (sphere_subset_closedBall x.property) (sphere_subset_closedBall x'.property)
         h (hne x.property)

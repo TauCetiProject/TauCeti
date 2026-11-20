@@ -66,9 +66,9 @@ private theorem exists_chart_of_closedStar
     left_inv x := by simp
     right_inv y := by simp
     continuous_toFun := (φ.continuous.comp
-      (continuous_subtype_val.subtype_mk _)).subtype_mk _
-    continuous_invFun := (continuous_subtype_val.comp
-      (φ.symm.continuous.comp continuous_subtype_val)).subtype_mk _ }
+      (continuous_subtypeVal.subtype_mk _)).subtype_mk _
+    continuous_invFun := (continuous_subtypeVal.comp
+      (φ.symm.continuous.comp continuous_subtypeVal)).subtype_mk _ }
   let b := e.trans a.toHomeomorphSourceTarget
   let : Nonempty a.target := ⟨b ⟨vertex K v, by simp [vertex_val]⟩⟩
   let t := a.open_target.isOpenEmbedding_subtypeVal.toOpenPartialHomeomorph
@@ -181,7 +181,8 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_halfSpace_is
     refine Fin.lastCases ?_ (fun j => ?_) i <;> simp [M, N]
   have hNM (q : (Fin n → ℝ) × ℝ) : N (M q) = q := by
     ext <;> simp [M, N]
-  let L := ContinuousLinearEquiv.equivOfInverse N M hMN hNM
+  let L := ContinuousLinearEquiv.ofContinuousLinearMap N M (ContinuousLinearMap.ext hNM)
+    (ContinuousLinearMap.ext hMN)
   -- The simplex interior has positive height, so it lies in the source of the interior chart.
   have hpos (y : Fin (n + 1) → ℝ) (hy : y ∈ c.target) : 0 < (N y).2 := by
     rw [hct, interior_coordinateSimplex] at hy

@@ -225,7 +225,7 @@ theorem setOf_vle_or_vle_mem_spaRationalFamily (Aplus : Subring A) (f : A) {r σ
       (hr.map v.val.valuation).ne_zero ((valuation_lt_iff _ _ _).mpr (hrσ v.val v.property))
     simp only [mem_ofPred_eq, mem_preimage, mem_rationalSubset_iff, v.property, true_and,
       Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq, ← valuation_le_iff,
-      le_refl, and_true, map_zero, le_zero_iff]
+      le_refl, and_true, map_zero, nonpos_iff_eq_zero]
     exact h
 
 section TopologicalRing
@@ -315,7 +315,7 @@ theorem isTopologicalBasis_spaRationalFamily_of_pairOfDefinition
       ⟨x, spa_subset_spvOfIdeal P Aplus x.property⟩
     have hxO : xI ∈ Subtype.val ⁻¹' O := hx
     have hOI : IsOpen (Subtype.val ⁻¹' O : Set (spvOfIdeal P.extendedIdealOfDefinition hfg)) :=
-      hO.preimage continuous_subtype_val
+      hO.preimage continuous_subtypeVal
     obtain ⟨V, hVr, hxV, hVO⟩ :=
       (isTopologicalBasis_rationalFamily P.extendedIdealOfDefinition hfg).isOpen_iff.mp hOI xI hxO
     obtain ⟨T, s, hadm, rfl⟩ := mem_rationalFamily_iff.mp hVr
@@ -384,7 +384,7 @@ theorem isCompact_of_mem_spaRationalFamily_of_pairOfDefinition
     Subtype.val ⁻¹' basicOpenFinset T s
   have := spectralSpace_spvOfIdeal P.extendedIdealOfDefinition hfg
   have hS : IsProConstructible S := isProConstructible_val_preimage_spa P Aplus
-  have hVopen : IsOpen V := (isOpen_basicOpenFinset T s).preimage continuous_subtype_val
+  have hVopen : IsOpen V := (isOpen_basicOpenFinset T s).preimage continuous_subtypeVal
   have hVmem : V ∈ rationalFamily P.extendedIdealOfDefinition hfg :=
     mem_rationalFamily_iff.mpr
       ⟨T, s, isAdmissible_extendedIdealOfDefinition_of_isOpen_span P hT, rfl⟩
@@ -539,7 +539,7 @@ theorem exists_unit_forall_mem_spa_exists_vlt (Aplus : Subring A) {T : Finset A}
       have h := (isCompact_of_mem_spaRationalFamily
         (mem_spaRationalFamily_iff.mpr ⟨T, t, hTopen, rfl⟩ :
           (Subtype.val ⁻¹' rationalSubset Aplus T t : Set (spa Aplus)) ∈
-            spaRationalFamily Aplus)).image continuous_subtype_val
+            spaRationalFamily Aplus)).image continuous_subtypeVal
       rwa [Subtype.image_preimage_coe,
         Set.inter_eq_right.mpr (rationalSubset_subset_spa Aplus T t)] at h
     exact exists_mem_nhds_zero_forall_vlt

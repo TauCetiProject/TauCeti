@@ -109,15 +109,15 @@ section Topology
 variable [TopologicalSpace P.E]
 
 theorem continuous_pullbackFst : Continuous P.pullbackFst :=
-  continuous_fst.comp continuous_subtype_val
+  continuous_fst.comp continuous_subtypeVal
 
 theorem continuous_pullbackSnd : Continuous P.pullbackSnd :=
-  continuous_snd.comp continuous_subtype_val
+  continuous_snd.comp continuous_subtypeVal
 
 theorem continuous_pullbackGroupExtension_inl : Continuous P.pullbackGroupExtension.inl := by
   apply continuous_induced_rng.mpr
   simpa only [Function.comp_def, pullbackGroupExtension_inl] using
-    (continuous_const.prodMk continuous_subtype_val :
+    (continuous_const.prodMk continuous_subtypeVal :
       Continuous fun n : P.α.ker ↦ ((1 : G), (n : P.E)))
 
 variable [DiscreteTopology P.E]

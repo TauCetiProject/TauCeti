@@ -215,7 +215,7 @@ theorem exists_homeomorph_comp_eq_of_continuous_injective
   let τ₁ : sphere (0 : ℂ) 1 → sphere (0 : ℂ) 1 := fun u => ⟨τ₀ u, hτ₀n u⟩
   have hτc : Continuous τ₁ := by
     refine Continuous.subtype_mk ?_ _
-    exact L₀.symm.continuous.comp ((H.symm.continuous.comp hγ).subtype_val.subtype_mk _)
+    exact L₀.symm.continuous.comp ((H.symm.continuous.comp hγ).subtypeVal.subtype_mk _)
   have hτb : Bijective τ₁ := by
     refine ⟨fun u u' huu' => hγi (H.symm.injective (Subtype.ext ?_)), fun w => ?_⟩
     · have := congrArg (fun z : sphere (0 : ℂ) 1 => L z) huu'

@@ -305,7 +305,7 @@ def fiberHomeomorph (b : B) : AddCircle (p b : ℝ) ≃ₜ {z : Pullback p // z.
   left_inv := retraction_mk p b
   right_inv z := Subtype.ext (mk_retraction p z.property)
   continuous_toFun := (continuous_mk p b).subtype_mk _
-  continuous_invFun := (continuous_retraction p b).comp continuous_subtype_val
+  continuous_invFun := (continuous_retraction p b).comp continuous_subtypeVal
 
 /-- The fiber homeomorphism is the inclusion of the circle. -/
 @[simp]
@@ -348,9 +348,9 @@ def fiberProductHomeomorph (hp : Continuous p) :
       conv_rhs => rw [← CircleFamily.mk_retraction w.property.symm, CircleFamily.normalization_mk]
       rfl
     rw [h]
-    exact (continuous_fst.comp continuous_subtype_val).prodMk
+    exact (continuous_fst.comp continuous_subtypeVal).prodMk
       (continuous_snd.comp ((CircleFamily.normalization ⊤).continuous.comp
-        (continuous_snd.comp continuous_subtype_val)))
+        (continuous_snd.comp continuous_subtypeVal)))
 
 /-- The fiber-product homeomorphism records the base point and the image in the total family. -/
 @[simp]
@@ -365,10 +365,10 @@ def realNormalizationHomeomorph (hp : Continuous p) : B × ℝ ≃ₜ B × ℝ w
   left_inv z := by simp [(p z.1).property.ne']
   right_inv z := by simp [(p z.1).property.ne']
   continuous_toFun := continuous_fst.prodMk
-    (continuous_snd.div ((continuous_subtype_val.comp hp).comp continuous_fst)
+    (continuous_snd.div ((continuous_subtypeVal.comp hp).comp continuous_fst)
       fun z ↦ (p z.1).property.ne')
   continuous_invFun := continuous_fst.prodMk
-    (continuous_snd.mul ((continuous_subtype_val.comp hp).comp continuous_fst))
+    (continuous_snd.mul ((continuous_subtypeVal.comp hp).comp continuous_fst))
 
 /-- Real normalization divides the time coordinate by the period. -/
 @[simp]
@@ -629,9 +629,9 @@ def realNormalization (hp : ContMDiff IB 𝓘(ℝ) n p) :
     (B × ℝ) ≃ₘ^n⟮IB.prod 𝓘(ℝ), IB.prod 𝓘(ℝ)⟯ B × ℝ where
   __ := (realNormalizationHomeomorph p hp.continuous).toEquiv
   contMDiff_toFun := contMDiff_fst.prodMk (contMDiff_snd.div₀
-    ((contMDiff_subtype_val.comp hp).comp contMDiff_fst) fun z ↦ (p z.1).property.ne')
+    ((contMDiff_subtypeVal.comp hp).comp contMDiff_fst) fun z ↦ (p z.1).property.ne')
   contMDiff_invFun := contMDiff_fst.prodMk
-    (contMDiff_snd.mul ((contMDiff_subtype_val.comp hp).comp contMDiff_fst))
+    (contMDiff_snd.mul ((contMDiff_subtypeVal.comp hp).comp contMDiff_fst))
 
 /-- Real normalization divides the time coordinate by the period. -/
 @[simp]

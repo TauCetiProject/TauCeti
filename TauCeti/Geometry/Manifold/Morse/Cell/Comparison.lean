@@ -563,7 +563,7 @@ theorem exists_morseCellAttachment_deformation [Finite ι] (hfs : ContMDiff I �
       ⋃ i, (φ i).source ∩ φ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0})),
       range Φ) :=
     ⟨fun x ↦ ⟨⟨x, x.property.1⟩, hrange ▸ x.property.2⟩,
-      ((continuous_subtype_val.subtype_mk _).subtype_mk _)⟩
+      ((continuous_subtypeVal.subtype_mk _).subtype_mk _)⟩
   refine ⟨(hΦ.isEmbedding.toHomeomorph.symm : C(range Φ, _)).comp (j.comp r), fun y ↦ ?_, ?_⟩
   · have hy : (Φ y : M) ∈ {x | f x ≤ c - ε} ∪
         ⋃ i, (φ i).source ∩ φ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} := by

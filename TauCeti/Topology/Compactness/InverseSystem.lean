@@ -180,7 +180,7 @@ theorem exists_forall_map_succ_eq_and_forall_eq_of_forall_mem_range (α : ∀ k,
   let γ : ∀ k, X (k + 1) → X k := fun k a ↦
     ⟨α k a.val, by simp [hsq, Set.mem_singleton_iff.mp a.property, hb]⟩
   obtain ⟨s, hs⟩ := exists_forall_map_succ_eq_of_compact_t2 γ fun k ↦
-    ((hα k).comp continuous_subtype_val).subtype_mk _
+    ((hα k).comp continuous_subtypeVal).subtype_mk _
   exact ⟨fun k ↦ (s k).val, fun k ↦ congrArg Subtype.val (hs k), fun k ↦ (s k).property⟩
 
 end Sequence

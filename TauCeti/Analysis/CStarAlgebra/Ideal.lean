@@ -245,7 +245,7 @@ theorem starAlgHom_injective : Function.Injective I.starAlgHom :=
   Subtype.coe_injective
 
 theorem isometry_starAlgHom : Isometry I.starAlgHom :=
-  isometry_subtype_coe
+  isometry_subtypeVal
 
 @[simp]
 theorem range_starAlgHom :

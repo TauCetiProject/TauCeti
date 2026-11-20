@@ -84,7 +84,7 @@ noncomputable def ofProd (hS : IsPreconnected S) (hprod : ∏ k, F k ≠ 0) :
         (F k).lazardValuation (Fin.snoc y.val (r y)) :=
     (F k).lazardValuation_eq_of_dvd hprod
       (Finset.dvd_prod_of_mem F (Finset.mem_univ k)) isPreconnected_univ
-      (continuous_subtype_val.finSnoc (A := fun _ ↦ ℝ) hr).continuousOn
+      (continuous_subtypeVal.finSnoc (A := fun _ ↦ ℝ) hr).continuousOn
       (fun x _ y _ ↦ hv x y) (mem_univ x) (mem_univ y)
   -- The existing stack API supplies a continuous graph in a sector, also for an empty root list.
   let hgraph := exists_continuous_forall_mem_sectorSet

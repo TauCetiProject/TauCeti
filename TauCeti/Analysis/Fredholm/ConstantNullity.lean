@@ -342,9 +342,9 @@ theorem hasLocalSubbundleFrames_ker_of_isFredholm {W s : Set X} (hT : Continuous
   obtain ⟨U, -, hU, hx₀U, κ, hκ, hκU⟩ :=
     (hfred x₀ x₀.property).exists_continuousOn_ker_parametrization hT hW (hsW x₀.property)
   have hκU' (x : s) (hx : (x : X) ∈ U) := hκU x hx (by rw [hr x x.property, hr x₀ x₀.property])
-  refine ⟨Subtype.val ⁻¹' U, hU.preimage continuous_subtype_val, hx₀U, _,
+  refine ⟨Subtype.val ⁻¹' U, hU.preimage continuous_subtypeVal, hx₀U, _,
     Trivialization.isSubbundleFrameOn_symm_comp (Trivial.trivialization s E) (subset_univ _)
-      (hκ.comp continuous_subtype_val.continuousOn (mapsTo_preimage _ _))
+      (hκ.comp continuous_subtypeVal.continuousOn (mapsTo_preimage _ _))
       (finBasisOfFinrankEq 𝕜 _ (hr x₀ x₀.property)) (fun x hx ↦ (hκU' x hx).1) fun x hx v ↦ ?_⟩
   rw [Function.comp_apply, (hκU' x hx).2, Trivial.trivialization_symm_apply]
 

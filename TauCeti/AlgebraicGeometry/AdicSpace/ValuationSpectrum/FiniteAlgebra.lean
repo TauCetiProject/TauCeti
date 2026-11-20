@@ -80,7 +80,7 @@ theorem linearIndependent_of_valuation (v : Spv K) {ι : Type*} (w : ι → Spv 
   obtain ⟨i₀, hi₀t, hmax⟩ := Finset.exists_max_image t (fun j ↦ v.valuation (g j)) ⟨i, hit⟩
   have hg₀ : g i₀ ≠ 0 := fun h ↦ hgi <| by
     have := hmax i hit
-    rwa [h, map_zero, le_zero_iff, map_eq_zero] at this
+    rwa [h, map_zero, nonpos_iff_eq_zero, map_eq_zero] at this
   have hc : (w i₀).valuation (algebraMap K L (g i₀)) ≠ 0 := ((isUnit_iff_ne_zero.mpr hg₀).map
     (algebraMap K L) |>.map (w i₀).valuation).ne_zero
   have hrest : (w i₀).valuation (∑ j ∈ t.erase i₀, g j • e j) <
@@ -178,8 +178,8 @@ private theorem exists_valuation_le_one_lt (v : Spv K) {w₁ w₂ : Spv L}
   by_cases hb : b ∈ w₁.supp
   · have hb₂ : b ∈ w₂.supp := hsupp ▸ hb
     rw [supp_eq_valuation_supp, Valuation.mem_supp_iff] at hb hb₂
-    rw [hb, hb₂, le_zero_iff, le_zero_iff, ← Valuation.mem_supp_iff, ← Valuation.mem_supp_iff,
-      ← supp_eq_valuation_supp, ← supp_eq_valuation_supp, hsupp]
+    rw [hb, hb₂, nonpos_iff_eq_zero, nonpos_iff_eq_zero, ← Valuation.mem_supp_iff,
+      ← Valuation.mem_supp_iff, ← supp_eq_valuation_supp, ← supp_eq_valuation_supp, hsupp]
   · obtain ⟨y, hy⟩ := exists_valuation_mul_eq_one hq hb
     have key : ∀ w : Spv L, w.supp = w₁.supp →
         (w.valuation a ≤ w.valuation b ↔ w.valuation (a * y) ≤ 1) := fun w hw ↦ by

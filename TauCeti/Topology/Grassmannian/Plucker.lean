@@ -68,8 +68,8 @@ theorem pluckerMap_injective :
   obtain ⟨g, rfl⟩ := frameSpan_surjective W
   apply Subtype.ext
   simp only [coe_frameSpan]
-  exact (mk_plucker_eq_mk_plucker_iff f.property g.property).1 (by simpa only
-      [pluckerMap_frameSpan] using h)
+  exact (mk_plucker_eq_mk_plucker_iff f.property g.property).1
+      (by simpa only [pluckerMap_frameSpan] using h)
 
 variable [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜]
 
@@ -81,7 +81,7 @@ theorem continuous_pluckerMap :
   apply isQuotientMap_frameSpan.continuous_iff.2
   simpa only [Function.comp_def, pluckerMap_frameSpan] using
     Projectivization.continuous_mk
-      (continuous_plucker.comp (continuous_subtype_val :
+      (continuous_plucker.comp (continuous_subtypeVal :
         Continuous fun f : finiteFullRankFrame 𝕜 r N ↦ f.val))
       (fun f ↦ (plucker_ne_zero_iff _).2 f.property)
 

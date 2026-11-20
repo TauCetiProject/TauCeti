@@ -83,9 +83,9 @@ theorem _root_.Continuous.metricChangeCompositionCorrectionPath
     Continuous fun p : unitInterval × X ↦
       metricChangeCompositionCorrectionPath (h p.2) (k p.2) (hpos p.2) (kpos p.2) p.1 := by
   have hline : Continuous fun p : unitInterval × X ↦
-      AffineMap.lineMap (k p.2) (h p.2) (p.1 : ℝ) := by
-    simp only [AffineMap.lineMap_apply_module]
-    fun_prop
+      AffineMap.lineMap (k p.2) (h p.2) (p.1 : ℝ) :=
+    (hk.comp continuous_snd).lineMap (hh.comp continuous_snd)
+      (continuous_subtypeVal.comp continuous_fst)
   exact (hline.metricChangeCompositionCorrection (hk.comp continuous_snd)
     (fun p ↦ isStrictlyPositive_continuousLinearMapOfBilin_lineMap
       (k p.2) (h p.2) (kpos p.2) (hpos p.2) p.1 p.1.property)
@@ -110,7 +110,7 @@ noncomputable def metricChangeCompositionHomotopy (h k : E →L[ℝ] E →L[ℝ]
   toFun p := k.metricChangeTransport
     ((metricChangeCompositionCorrectionPath h k hH hK p.1).val p.2)
   continuous_toFun := k.metricChangeTransport.continuous.comp
-    ((continuous_subtype_val.comp
+    ((continuous_subtypeVal.comp
       ((metricChangeCompositionCorrectionPath h k hH hK).continuous.comp continuous_fst)).clm_apply
         continuous_snd)
   map_zero_left v := by simp

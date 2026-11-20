@@ -758,7 +758,7 @@ theorem discPointBelow_ne_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0
 theorem supp_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r < 1) :
     (discPointAbove a ha hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, discPointAbove_vle_iff, map_zero, map_zero, le_zero_iff,
+    rw [mem_supp_iff, discPointAbove_vle_iff, map_zero, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationAbove_eq_zero_iff, map_eq_zero_iff _ (taylorHom_injective _ _),
       Ideal.mem_bot]
 
@@ -767,7 +767,7 @@ theorem supp_discPointAbove (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ 
 theorem supp_discPointBelow (a : K) (ha : ‖a‖ ≤ 1) (hr₀ : 0 < r) (hr₁ : r ≤ 1) :
     (discPointBelow a ha hr₀ hr₁).val.supp = ⊥ :=
   Ideal.ext fun _ ↦ by
-    rw [mem_supp_iff, discPointBelow_vle_iff, map_zero, map_zero, le_zero_iff,
+    rw [mem_supp_iff, discPointBelow_vle_iff, map_zero, map_zero, nonpos_iff_eq_zero,
       closedDiscGaussValuationBelow_eq_zero_iff, map_eq_zero_iff _ (taylorHom_injective _ _),
       Ideal.mem_bot]
 

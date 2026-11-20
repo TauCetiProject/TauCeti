@@ -185,11 +185,11 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq {K : Set M}
   set W : TopologicalSpace.Opens M := ⟨N, hN⟩
   have hW : Nonempty W := ⟨⟨x₀, hKN hx₀⟩⟩
   set res : SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I W ℝ 1 :=
-    mpullback (Subtype.val : W → M) contMDiff_subtype_val
+    mpullback (Subtype.val : W → M) contMDiff_subtypeVal
   have hcW (y : W) (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) :
       IsContactFormAt (res α₀ + s • (res α₁ - res α₀)).val y := by
     rw [← map_sub, ← map_smul, ← map_add, coe_mpullback,
-      isContactFormAt_mpullback_iff contMDiff_subtype_val.contMDiffAt
+      isContactFormAt_mpullback_iff contMDiff_subtypeVal.contMDiffAt
         ((α₀ + s • (α₁ - α₀)).contMDiff.of_le (by simp) y)
         (by rw [Manifold.mfderiv_subtype_val]; exact ContinuousLinearEquiv.bijective _)]
     exact hcN y y.property s hs

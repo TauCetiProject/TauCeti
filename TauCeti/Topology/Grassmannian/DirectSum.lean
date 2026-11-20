@@ -67,11 +67,11 @@ theorem continuous_directSum [TopologicalSpace 𝕜]
   refine Continuous.subtype_mk (continuous_pi fun k ↦ ?_) _
   refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
   · simp only [Fin.append_left]
-    exact hfc.comp (((continuous_apply i).comp (continuous_subtype_val.comp continuous_fst)).prodMk
+    exact hfc.comp (((continuous_apply i).comp (continuous_subtypeVal.comp continuous_fst)).prodMk
       continuous_const)
   · simp only [Fin.append_right]
     exact hfc.comp (continuous_const.prodMk
-      ((continuous_apply j).comp (continuous_subtype_val.comp continuous_snd)))
+      ((continuous_apply j).comp (continuous_subtypeVal.comp continuous_snd)))
 
 end finiteFullRankFrame
 

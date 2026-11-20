@@ -146,7 +146,7 @@ theorem exists_continuousMap_prod_skeletonLT_succ
   · have hmem (d : D) : (d : X) ∈ (skeletonLT C n : Set X) :=
       (skeletonLT C n).base_subset d.property
     exact Continuous.congr (G.continuous.comp (continuous_fst.prodMk
-      ((continuous_subtype_val.comp continuous_snd).subtype_mk fun p ↦ hmem p.2)))
+      ((continuous_subtypeVal.comp continuous_snd).subtype_mk fun p ↦ hmem p.2)))
       fun p ↦ (extendOverCells_of_mem p.1 ⟨_, _⟩ (hmem p.2)).symm
 
 end Step
@@ -245,7 +245,7 @@ theorem exists_continuousMap_prod_complex_of_skeletonLT [LocallyCompactSpace Z]
   · have hmem (d : D) : (d : X) ∈ (skeletonLT C ((k + 0 : ℕ) : ℕ∞) : Set X) :=
       (skeletonLT C _).base_subset d.property
     exact ((F 0).continuous.comp (continuous_fst.prodMk
-      ((continuous_subtype_val.comp continuous_snd).subtype_mk fun p ↦ hmem p.2))).congr
+      ((continuous_subtypeVal.comp continuous_snd).subtype_mk fun p ↦ hmem p.2))).congr
       fun p ↦ (glued_apply hF 0 p.1 ⟨_, _⟩ (hmem p.2)).symm
 
 end Glue

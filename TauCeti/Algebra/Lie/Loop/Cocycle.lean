@@ -397,7 +397,7 @@ theorem exists_apply_one_tmul_eq_d₁₂_apply
       ext x y z
       have h := cocycle_single_tmul c 0 0 n x y z
       rw [zero_add, add_zero] at h
-      simp only [d₁₂_apply_coe_apply_apply, Submodule.coe_zero, LinearMap.zero_apply,
+      simp only [twoCochain_val_apply, d₁₂_apply_apply, Submodule.coe_zero, LinearMap.zero_apply,
         LinearMap.sub_apply, Module.Dual.lie_apply]
       linear_combination h
     obtain ⟨φ, hφ⟩ := exists_eq_lie_of_d₁₂_eq_zero hD

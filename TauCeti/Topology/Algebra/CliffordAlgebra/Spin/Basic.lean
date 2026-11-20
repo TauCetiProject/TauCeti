@@ -126,7 +126,7 @@ canonical subtype topologies. -/
 theorem continuous_spinGroupMap (f : Q →qᵢ P) : Continuous f.spinGroupMap := by
   apply continuous_induced_rng.mpr
   refine (f.continuous_cliffordAlgebraMap.comp
-    continuous_subtype_val).congr ?_
+    continuous_subtypeVal).congr ?_
   exact fun x ↦ (coe_spinGroupMap_apply f x).symm
 
 end QuadraticMap.Isometry
@@ -187,7 +187,7 @@ instance instIsTopologicalGroupSpinGroup (Q : QuadraticForm R V)
     [ContinuousMul (CliffordAlgebra Q)] :
     IsTopologicalGroup (spinGroup Q) where
   continuous_mul := continuous_mul
-  continuous_inv := continuous_induced_rng.mpr continuous_subtype_val.star
+  continuous_inv := continuous_induced_rng.mpr continuous_subtypeVal.star
 
 /-- The Spin action is jointly continuous in the Spin element and the vector. -/
 @[fun_prop]
@@ -197,11 +197,11 @@ theorem continuous_spinVectorAction [Invertible (2 : R)]
     Continuous (fun p : spinGroup Q × V => spinVectorAction Q p.1 p.2) := by
   let _ : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup R V
   have hval : Continuous (fun p : spinGroup Q × V => (p.1 : CliffordAlgebra Q)) :=
-    continuous_subtype_val.comp continuous_fst
+    continuous_subtypeVal.comp continuous_fst
   have hι : Continuous (fun p : spinGroup Q × V => ι Q p.2) :=
     (continuous_ι Q).comp continuous_snd
   have hstar : Continuous (fun p : spinGroup Q × V => star (p.1 : CliffordAlgebra Q)) :=
-    (continuous_subtype_val.comp continuous_fst).star
+    (continuous_subtypeVal.comp continuous_fst).star
   have hprod : Continuous (fun p : spinGroup Q × V =>
       (p.1 : CliffordAlgebra Q) * ι Q p.2 * star (p.1 : CliffordAlgebra Q)) :=
     (hval.mul hι).mul hstar
@@ -273,7 +273,7 @@ theorem joined_of_coe_eq_prod_mul_ι_mul_prod [TopologicalSpace V] [IsModuleTopo
     rwa [List.map_append, List.prod_append, List.map_cons, List.prod_cons, ← mul_assoc] at h
   let f : {v : V // Q v = Q b} → spinGroup Q := fun v ↦ ⟨_, hmem v⟩
   have hf : Continuous f := continuous_induced_rng.mpr <|
-    (continuous_const.mul ((continuous_ι Q).comp continuous_subtype_val)).mul continuous_const
+    (continuous_const.mul ((continuous_ι Q).comp continuous_subtypeVal)).mul continuous_const
   convert h.joined_subtype.map hf using 1
   exacts [Subtype.ext hx, Subtype.ext hy]
 

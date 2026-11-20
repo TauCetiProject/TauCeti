@@ -67,8 +67,8 @@ private def collarSphere (hd : 0 < d) (w : {w : _root_.TopCat.disk.{u} k // d �
 
 private theorem continuous_collarSphere (hd : 0 < d) :
     Continuous (collarSphere.{u} (k := k) hd) :=
-  continuous_uliftUp.comp ((continuous_subtype_val.comp (continuous_uliftDown.comp
-    ((continuous_collarRadial hd).comp continuous_subtype_val))).subtype_mk _)
+  continuous_uliftUp.comp ((continuous_subtypeVal.comp (continuous_uliftDown.comp
+    ((continuous_collarRadial hd).comp continuous_subtypeVal))).subtype_mk _)
 
 private theorem diskBoundaryInclusion_collarSphere (hd : 0 < d)
     (w : {w : _root_.TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
@@ -80,7 +80,7 @@ private def collarTime (d : ℝ) (w : _root_.TopCat.disk.{u} k) : I :=
   projIcc 0 1 zero_le_one ((‖w.down.val‖ - d) / (1 - d))
 
 private theorem continuous_collarTime : Continuous (collarTime.{u} (k := k) d) :=
-  continuous_projIcc.comp (((continuous_norm.comp (continuous_subtype_val.comp
+  continuous_projIcc.comp (((continuous_norm.comp (continuous_subtypeVal.comp
     continuous_uliftDown)).sub continuous_const).div_const _)
 
 private theorem collarTime_of_norm_eq {w : _root_.TopCat.disk.{u} k} (hw : ‖w.down.val‖ = d) :
@@ -135,17 +135,17 @@ private theorem continuous_diskCollarFun (hd : 0 < d)
         outer (p.val.1, collarTime d p.val.2, collarSphere hd ⟨p.val.2, p.property⟩) :=
       funext fun p ↦ dite_eq_left p.property
     rw [hF]
-    exact outer.continuous.comp ((continuous_fst.comp continuous_subtype_val).prodMk
-      ((continuous_collarTime.comp (continuous_snd.comp continuous_subtype_val)).prodMk
+    exact outer.continuous.comp ((continuous_fst.comp continuous_subtypeVal).prodMk
+      ((continuous_collarTime.comp (continuous_snd.comp continuous_subtypeVal)).prodMk
         ((continuous_collarSphere hd).comp
-          ((continuous_snd.comp continuous_subtype_val).subtype_mk _))))
+          ((continuous_snd.comp continuous_subtypeVal).subtype_mk _))))
   have hF : F = fun p ↦ if d ≤ ‖p.2.down.val‖ then F p else inner (p.1, collarRadial hd p.2) := by
     funext p
     split_ifs with hw
     · rfl
     · exact dite_eq_right hw
   rw [hF]
-  exact continuous_if_le continuous_const (continuous_norm.comp (continuous_subtype_val.comp
+  exact continuous_if_le continuous_const (continuous_norm.comp (continuous_subtypeVal.comp
     (continuous_uliftDown.comp continuous_snd))) houter hinner.continuousOn
     fun p hp ↦ diskCollarFun_of_norm_le hd hseam hp.symm.le
 

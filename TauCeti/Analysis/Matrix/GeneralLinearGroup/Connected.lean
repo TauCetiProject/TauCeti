@@ -63,7 +63,7 @@ instance instPathConnectedSpaceMatrixGeneralLinearGroup : PathConnectedSpace (GL
   apply Units.isOpenEmbedding_val.isEmbedding.isInducing.continuous_iff.mpr
   simpa only [f, Function.comp_def, Units.val_mul, IsUnit.unit_spec,
     Unitary.val_toUnits_apply] using
-    continuous_subtype_val.fst'.matrix_mul continuous_subtype_val.snd'
+    continuous_subtypeVal.fst'.matrix_mul continuous_subtypeVal.snd'
 
 /-- The realified complex general linear group, the subgroup of `GL (n ⊕ n) ℝ` of invertible real
 matrices commuting with `J`, is path connected. -/

@@ -861,8 +861,8 @@ theorem measurable_partialCorrelationOfCorrelationCoordinates :
   classical
   have hL : Continuous fun x : posDefCorrelationRegion p ↦
       (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 x.property⟩).val :=
-    continuous_subtype_val.comp <| continuous_cholesky.comp <|
-      ((correlationMatrix p).continuous.comp continuous_subtype_val).subtype_mk _
+    continuous_subtypeVal.comp <| continuous_cholesky.comp <|
+      ((correlationMatrix p).continuous.comp continuous_subtypeVal).subtype_mk _
   have hP : Measurable (Matrix.partialCorrelationOfCholesky (p := p)) := by
     refine Measurable.of_eval fun ij ↦ ?_
     simp only [Matrix.partialCorrelationOfCholesky_apply]
@@ -987,7 +987,7 @@ theorem closure_posDefCorrelationRegion :
   refine Subset.antisymm ?_ fun x hx => ?_
   · refine closure_minimal (fun x hx => hx.posSemidef) ?_
     exact isClosed_setOfPred_posSemidef.preimage
-      (continuous_subtype_val.comp (correlationMatrix p).continuous)
+      (continuous_subtypeVal.comp (correlationMatrix p).continuous)
   · have hmem : ∀ᶠ t in 𝓝[<] (1 : ℝ), t • x ∈ posDefCorrelationRegion p := by
       filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with t ht
       rw [mem_posDefCorrelationRegion, coe_correlationMatrix_smul, add_comm]

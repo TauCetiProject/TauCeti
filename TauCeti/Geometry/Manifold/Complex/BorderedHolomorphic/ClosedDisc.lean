@@ -104,7 +104,7 @@ def cayleyChart (ζ : ℂ) (hζ : ‖ζ‖ = 1) : OpenPartialHomeomorph 𝕔𝔻
     refine Continuous.continuousOn (continuous_iff_continuousAt.2 fun w ↦ ?_)
     simp only [Function.comp_def, coe_mk]
     exact (contDiffAt_mul_I_sub_div_add_I (n := 0) ζ
-      (add_I_ne_zero_of_im_nonneg w.2)).continuousAt.comp continuous_subtype_val.continuousAt
+      (add_I_ne_zero_of_im_nonneg w.property)).continuousAt.comp continuous_subtypeVal.continuousAt
 
 variable {ζ : ℂ} {hζ : ‖ζ‖ = 1}
 
@@ -291,7 +291,7 @@ structure induced on the interior by the Cayley charts. -/
 theorem contMDiff_coe_borderedInterior {n : ℕ∞ω} :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ) n (fun z : borderedInterior 𝕔𝔻 ↦ ((z : 𝕔𝔻) : ℂ)) := by
   refine ContMDiff.of_le (fun x ↦ ?_) le_top
-  refine contMDiffAt_iff.2 ⟨(continuous_coe.comp continuous_subtype_val).continuousAt, ?_⟩
+  refine contMDiffAt_iff.2 ⟨(continuous_coe.comp continuous_subtypeVal).continuousAt, ?_⟩
   simp only [mfld_simps]
   refine ContDiffAt.contDiffWithinAt ?_
   set w := chartAt ℂ x x

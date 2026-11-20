@@ -64,7 +64,7 @@ theorem germ_locallyConstant_eq_const (x : X) (U : Opens X) (hx : x ∈ U)
       (locallyConstantRingCatPresheaf X R).germ ⊤ x (by trivial)
         (LocallyConstant.const _ (f ⟨x, hx⟩)) := by
   obtain ⟨V, hV, hxV, hf⟩ := f.isLocallyConstant.exists_open ⟨x, hx⟩
-  let W : Opens X := ⟨Subtype.val '' V, U.isOpen.isOpenMap_subtype_val _ hV⟩
+  let W : Opens X := ⟨Subtype.val '' V, U.isOpen.isOpenMap_subtypeVal _ hV⟩
   have hWU : W ≤ U := by rintro _ ⟨y, _, rfl⟩; exact y.property
   have hxW : x ∈ W := ⟨⟨x, hx⟩, hxV, rfl⟩
   have he : (locallyConstantRingCatPresheaf X R).map (homOfLE hWU).op f =

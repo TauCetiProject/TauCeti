@@ -79,7 +79,7 @@ private theorem map_coe_apply_one_zero_lkjMeasure_two (hη : 0 < η) :
         (fun R : Matrix (Fin 2) (Fin 2) ℝ ↦ R 1 0) ∘
           (fun R : selfAdjoint.submodule ℝ (Matrix (Fin 2) (Fin 2) ℝ) ↦
             (R : Matrix (Fin 2) (Fin 2) ℝ)) := rfl
-  rw [hentry, ← Measure.map_map (by fun_prop) measurable_subtype_coe, map_coe_lkjMeasure hη,
+  rw [hentry, ← Measure.map_map (by fun_prop) measurable_subtypeVal, map_coe_lkjMeasure hη,
     Measure.map_map (by fun_prop) continuous_partialCorrelationGram.measurable]
   have hgram : (fun R : Matrix (Fin 2) (Fin 2) ℝ ↦ R 1 0) ∘ partialCorrelationGram =
       Function.eval ij₀ := by
@@ -185,7 +185,7 @@ theorem variance_coe_apply_lkjMeasure_of_ne (hη : 0 < η) {i j : Fin p} (hij : 
           (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
             (R : Matrix (Fin p) (Fin p) ℝ)) := rfl
   rw [hcomp, ← variance_map Matrix.measurable_apply.aemeasurable
-      measurable_subtype_coe.aemeasurable,
+      measurable_subtypeVal.aemeasurable,
     map_coe_lkjMeasure hη, variance_map Matrix.measurable_apply.aemeasurable
       continuous_partialCorrelationGram.measurable.aemeasurable]
   exact variance_partialCorrelationGram hη hij
@@ -211,7 +211,7 @@ theorem covariance_coe_apply_lkjMeasure {ij kl : strictLowerTriangle p} (hne : i
             (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
               (R : Matrix (Fin p) (Fin p) ℝ)) := rfl
   rw [hcomp ij, hcomp kl, ← covariance_map Matrix.measurable_apply.aestronglyMeasurable
-      Matrix.measurable_apply.aestronglyMeasurable measurable_subtype_coe.aemeasurable,
+      Matrix.measurable_apply.aestronglyMeasurable measurable_subtypeVal.aemeasurable,
     map_coe_lkjMeasure hη]
   exact covariance_apply_map_partialCorrelationGram_pi _ hne
 

@@ -132,7 +132,7 @@ private theorem exists_homotopyRel_segment (hℓ : y - x ≠ 0 → ℓ (y - x) =
     ((convex_segment x y).thickening δ).add_smul_sub_mem hz
       (self_subset_thickening hδ _ (segmentProj_mem ℓ x y z)) ⟨t.property.1, t.property.2⟩
   have hcontU : Continuous fun z : U => e z :=
-    e.continuousOn.comp_continuous continuous_subtype_val fun z => z.2.1
+    e.continuousOn.comp_continuous continuous_subtypeVal fun z => z.property.1
   have hlineU (q : I × U) : e.symm (e q.2 + (q.1 : ℝ) • (p (e q.2) - e q.2)) ∈ U := by
     have hT := hline q.2.property.2 q.1
     exact ⟨e.map_target (hδt hT), by rw [mem_preimage, e.right_inv (hδt hT)]; exact hT⟩
@@ -146,7 +146,7 @@ private theorem exists_homotopyRel_segment (hℓ : y - x ≠ 0 → ℓ (y - x) =
                 map_one_left := fun z => Subtype.ext <| by simp [r]
                 prop' := fun t z hz => Subtype.ext <| ?_ }⟩⟩
   · exact (e.continuousOn_symm.comp_continuous ((hcontU.comp continuous_snd).add
-      ((continuous_subtype_val.comp continuous_fst).smul
+      ((continuous_subtypeVal.comp continuous_fst).smul
         ((hp.comp (hcontU.comp continuous_snd)).sub (hcontU.comp continuous_snd))))
       fun q => hδt (hline q.2.property.2 q.1)).subtype_mk _
   · obtain ⟨w, hw, hwz⟩ := hz

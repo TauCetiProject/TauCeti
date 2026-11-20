@@ -121,10 +121,10 @@ private theorem map_orientationAt_inl_eq_inr
   -- `ρ₁` and `ρ₂` are differentiable at `w₀` and preserve orientation from `oP`.
   have hinv : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) 1 (inversion (0 : E) 1 ∘ Subtype.val) w₀ :=
     (contDiffAt_const.inversion contDiffAt_const contDiffAt_id hv).contMDiffAt.comp w₀
-      contMDiff_subtype_val.contMDiffAt
+      contMDiff_subtypeVal.contMDiffAt
   have hρ₁d : MDifferentiableAt 𝓘(ℝ, E) I ρ₁ w₀ :=
     ((ContMDiffAt.subtypeVal_comp_iff (puncture e₁) ρ₁ w₀).mp
-      (d₁.contMDiff.comp contMDiff_subtype_val).contMDiffAt).mdifferentiableAt one_ne_zero
+      (d₁.contMDiff.comp contMDiff_subtypeVal).contMDiffAt).mdifferentiableAt one_ne_zero
   have hρ₂d : MDifferentiableAt 𝓘(ℝ, E) I ρ₂ w₀ :=
     ((ContMDiffAt.subtypeVal_comp_iff (puncture e₂) ρ₂ w₀).mp
       (d₂.contMDiff.contMDiffAt.comp w₀ hinv)).mdifferentiableAt one_ne_zero

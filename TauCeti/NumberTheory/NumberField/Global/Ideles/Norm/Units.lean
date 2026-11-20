@@ -91,7 +91,7 @@ private abbrev integralClasses := raySubgroup (Modulus.one K)
 
 private def integralClassMap : C(integralIdeles (K := K), integralClasses (K := K)) :=
   ⟨fun x ↦ ⟨(x.val : IdeleClassGroup (𝓞 K) K), mem_raySubgroup_iff.mpr ⟨x.val, x.property, rfl⟩⟩,
-    (QuotientGroup.continuous_mk.comp continuous_subtype_val).subtype_mk _⟩
+    (QuotientGroup.continuous_mk.comp continuous_subtypeVal).subtype_mk _⟩
 
 private theorem integralClassMap_isQuotientMap :
     IsQuotientMap (integralClassMap (K := K)) := by
@@ -106,7 +106,7 @@ private theorem integralClassMap_isQuotientMap :
 private def integralIdeleLog :
     C(integralIdeles (K := K), logSpace K ⧸ (unitLattice K).toAddSubgroup) :=
   ⟨fun x ↦ QuotientAddGroup.mk (ideleLog (Additive.ofMul x.val)),
-    QuotientAddGroup.continuous_mk.comp (continuous_ideleLog.comp continuous_subtype_val)⟩
+    QuotientAddGroup.continuous_mk.comp (continuous_ideleLog.comp continuous_subtypeVal)⟩
 
 private theorem integralIdeleLog_factorsThrough :
     Function.FactorsThrough (integralIdeleLog (K := K)) integralClassMap := by
@@ -240,6 +240,6 @@ instance compactSpace_logSpace_quotient_unitLattice :
     obtain ⟨c, hc, hlog⟩ := unitLogQuotient_normOne_surjective z
     exact ⟨⟨c, hc⟩, hlog⟩
   exact hs.compactSpace
-    (continuous_unitLogQuotient.comp (continuous_ofMul.comp continuous_subtype_val))
+    (continuous_unitLogQuotient.comp (continuous_ofMul.comp continuous_subtypeVal))
 
 end TauCeti.GlobalNumberFields

@@ -138,7 +138,7 @@ private theorem testIdx_union_bound {κ κ₂ V : Type*} [Fintype κ] [Fintype V
     calc (2 : ℝ) * Fintype.card (TestIdx Q₀)
         ≤ (2 : ℝ) ^ (3 * n ^ 2 + 7) := by exact_mod_cast hcard2
       _ ≤ exp 1 ^ (3 * n ^ 2 + 7) := pow_le_pow_left₀ (by norm_num) h2e _
-      _ = exp (3 * (n : ℝ) ^ 2 + 7) := by rw [← exp_nat_mul, mul_one]; push_cast; rfl
+      _ = exp (3 * (n : ℝ) ^ 2 + 7) := by rw [← exp_natCast_mul, mul_one]; push_cast; rfl
   have hKexp : (Fintype.card κ : ℝ) ≤ exp (Fintype.card κ) := by
     linarith [add_one_le_exp (Fintype.card κ : ℝ)]
   have hexp_eq : -2 * ((β / 21) * (#Q₀.support : ℝ)) ^ 2 / (#Q₀.support : ℝ) =

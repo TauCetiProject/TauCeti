@@ -476,7 +476,7 @@ private def ellipseAngle (a θ : ℝ) : ℂ :=
 
 private theorem ellipseAngle_one (θ : ℝ) : ellipseAngle 1 θ = Circle.exp (2 * θ) := by
   rw [ellipseAngle, sqDir, Circle.coe_exp, one_mul, Real.cos_sq_add_sin_sq, ofReal_one, div_one,
-    ofReal_cos, ofReal_sin, ← exp_mul_I, ← exp_nat_mul]
+    ofReal_cos, ofReal_sin, ← exp_mul_I, ← exp_natCast_mul]
   push_cast
   ring_nf
 
@@ -576,8 +576,8 @@ private theorem continuousAt_coreAngleFun {x : ℙ ℝ (Fin 3 → ℝ)}
   rw [← isOpenQuotientMap_mk'.continuousAt_comp_iff]
   exact continuousAt_sqDir (x := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.val 0)
     (y := fun v : {v : Fin 3 → ℝ // v ≠ 0} ↦ v.val 1)
-    ((continuous_apply 0).comp continuous_subtype_val)
-    ((continuous_apply 1).comp continuous_subtype_val) hx
+    ((continuous_apply 0).comp continuous_subtypeVal)
+    ((continuous_apply 1).comp continuous_subtypeVal) hx
 
 /-- The **core angle** `ρ[x : y : z] = (x + i y)² / (x² + y²)` of `ℝℙ²` minus the maximum
 `[0 : 0 : 1]` of `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)`, that is of the open set
@@ -589,7 +589,7 @@ def realProjPlaneCoreAngle :
     C({x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}, Circle) where
   toFun x := ⟨coreAngleFun x, mem_sphere_zero_iff_norm.2 (norm_coreAngleFun x.property)⟩
   continuous_toFun := (continuousOn_of_forall_continuousAt (fun _ hx ↦ continuousAt_coreAngleFun hx)
-    |>.comp_continuous continuous_subtype_val fun x ↦ x.2).subtype_mk _
+    |>.comp_continuous continuous_subtypeVal fun x ↦ x.property).subtype_mk _
 
 @[simp]
 theorem coe_realProjPlaneCoreAngle_mk (v : Fin 3 → ℝ) (hv : v ≠ 0)

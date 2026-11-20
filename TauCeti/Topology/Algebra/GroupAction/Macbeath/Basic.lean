@@ -303,7 +303,7 @@ private theorem continuous_macbeathProj : Continuous (macbeathProj G U) :=
   Continuous.quotient_lift
     (f := fun y : Σ _ : PresentedGroup (macbeathRels G U), U ↦ macbeathHom G U y.1 • (y.2 : X))
     (continuous_sigma fun a ↦
-      (continuous_const_smul (macbeathHom G U a)).comp continuous_subtype_val) _
+      (continuous_const_smul (macbeathHom G U a)).comp continuous_subtypeVal) _
 
 private theorem isOpen_range_macbeathSheet (hUo : IsOpen U)
     (c : PresentedGroup (macbeathRels G U)) : IsOpen (range (macbeathSheet c)) := by
@@ -322,7 +322,7 @@ private theorem isOpen_range_macbeathSheet (hUo : IsOpen U)
     · rintro ⟨⟨s, h₁⟩, hw⟩
       exact ⟨⟨_, hw⟩, (macbeathSheet_eq_iff (b := b) (w := w)).2 ⟨s, h₁, rfl⟩⟩
   rw [this]
-  exact isOpen_iUnion fun _ ↦ hUo.preimage ((continuous_const_smul _).comp continuous_subtype_val)
+  exact isOpen_iUnion fun _ ↦ hUo.preimage ((continuous_const_smul _).comp continuous_subtypeVal)
 
 /-- A subset of `g • U` is open as soon as its preimage under the sheet indexed by `c`, where `c`
 maps to `g`, is open in `U`. -/
@@ -343,7 +343,7 @@ private theorem isOpen_of_preimage_macbeathSheet (hUo : IsOpen U)
       obtain ⟨_, ⟨v, ⟨hv, -⟩, rfl⟩, rfl⟩ := mem_smul_set.1 hy
       rwa [mem_preimage, macbeathProj_sheet, hc] at hv
   rw [hW']
-  exact (hUo.isOpenMap_subtype_val _ hO).smul g
+  exact (hUo.isOpenMap_subtypeVal _ hO).smul g
 
 omit [TopologicalSpace X] [ContinuousConstSMul G X] in
 /-- Every point over `g • U` of the glued space lies in one of the sheets indexed by the preimages

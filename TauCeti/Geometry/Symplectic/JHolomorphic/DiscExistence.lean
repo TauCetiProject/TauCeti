@@ -120,7 +120,7 @@ private theorem lipschitzWith_discCutoff : LipschitzWith 2 discCutoff := by
         abs_two]
       push_cast
       linarith
-  have h := (LipschitzWith.subtype_val _).comp ((LipschitzWith.projIcc (zero_le_one' ℝ)).comp hg)
+  have h := (LipschitzWith.subtypeVal _).comp ((LipschitzWith.projIcc (zero_le_one' ℝ)).comp hg)
   rw [one_mul, one_mul] at h
   exact h
 

@@ -245,7 +245,7 @@ theorem _root_.IsPreconnected.reflTransGen_of_subset_biUnion {C : Set α} {T : S
     let ⟨c, hcU, hcC⟩ := hkC
     ⟨⟨c, hcC⟩, hcU⟩
   refine Relation.ReflTransGen.mono ?_ _ _ (reflTransGen_inter_nonempty_of_isOpen_cover
-    (hunion ▸ isPreconnected_univ) (fun k hk ↦ continuous_subtype_val.isOpen_preimage _ (hU k hk))
+    (hunion ▸ isPreconnected_univ) (fun k hk ↦ continuous_subtypeVal.isOpen_preimage _ (hU k hk))
     hi (hne hiC) hj (hne hjC))
   rintro k l ⟨hk, hl, c, hck, hcl⟩
   exact ⟨hk, hl, c, ⟨hck, hcl⟩, c.property⟩

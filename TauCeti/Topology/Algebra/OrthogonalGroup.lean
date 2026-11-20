@@ -210,7 +210,7 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
   · -- The determinant along a path takes only the values `±1`, so it cannot change sign.
     rintro ⟨γ⟩
     have hc : Continuous fun t ↦ ((γ t : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det :=
-      (continuous_subtype_val.comp γ.continuous).matrix_det
+      (continuous_subtypeVal.comp γ.continuous).matrix_det
     have h0 : ∀ t, ((γ t : orthogonalGroup ι ℝ) : _root_.Matrix ι ι ℝ).det ≠ 0 := fun t ↦ by
       rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup (γ t).property with h | h <;> simp [h]
     rcases det_eq_one_or_neg_one_of_mem_orthogonalGroup A.property with hA | hA <;>
@@ -229,7 +229,7 @@ theorem joined_orthogonalGroup_iff_det_eq {A B : orthogonalGroup ι ℝ} :
     let C : specialOrthogonalGroup ι ℝ := ⟨A⁻¹ * B, (A⁻¹ * B).property, hdet⟩
     have hC : Joined (1 : orthogonalGroup ι ℝ) (A⁻¹ * B) :=
       (PathConnectedSpace.joined 1 C).map (f := fun D : specialOrthogonalGroup ι ℝ ↦
-        (⟨D, D.2.1⟩ : orthogonalGroup ι ℝ)) (continuous_subtype_val.subtype_mk _)
+        (⟨D, D.property.1⟩ : orthogonalGroup ι ℝ)) (continuous_subtypeVal.subtype_mk _)
     simpa using (Joined.refl A).mul hC
 
 end TauCeti.Matrix

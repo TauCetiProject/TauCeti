@@ -140,8 +140,8 @@ def cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) �
     C(cyclicDistanceCut (X := X) δ, cyclicDistanceCut (X := X) δ') where
   toFun q := ⟨Fin.cons (q.val 0) q.val, cons_mem_cyclicDistanceCut h₀ h₁ h q.property⟩
   continuous_toFun :=
-    (((continuous_apply 0).comp continuous_subtype_val).finCons (A := fun _ ↦ X)
-      continuous_subtype_val).subtype_mk _
+    (((continuous_apply 0).comp continuous_subtypeVal).finCons (A := fun _ ↦ X)
+      continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_cyclicDistanceCutRepeatFirst_apply {δ : Fin (n + 1) → ℝ} {δ' : Fin (n + 2) → ℝ}
@@ -157,7 +157,7 @@ theorem isEmbedding_cyclicDistanceCutRepeatFirst {δ : Fin (n + 1) → ℝ} {δ'
     (h : ∀ i : Fin n, δ i.succ ≤ δ' i.succ.succ) :
     IsEmbedding (cyclicDistanceCutRepeatFirst (X := X) h₀ h₁ h) := by
   refine IsEmbedding.of_comp (map_continuous _)
-    continuous_subtype_val.finTail ?_
+    continuous_subtypeVal.finTail ?_
   have hcomp : (fun p : cyclicDistanceCut (X := X) δ' ↦ Fin.tail p.val) ∘
       cyclicDistanceCutRepeatFirst h₀ h₁ h = Subtype.val := by
     funext q
@@ -195,6 +195,6 @@ theorem isClosedEmbedding_cyclicDistanceCutRepeatFirst [T2Space X] {δ : Fin (n 
   refine ⟨isEmbedding_cyclicDistanceCutRepeatFirst h₀ h₁ h, ?_⟩
   rw [range_cyclicDistanceCutRepeatFirst]
   exact ((isClosed_eq (continuous_apply 1) (continuous_apply 0)).inter
-    ((isClosed_cyclicDistanceCut δ).preimage continuous_id.finTail)).preimage continuous_subtype_val
+    ((isClosed_cyclicDistanceCut δ).preimage continuous_id.finTail)).preimage continuous_subtypeVal
 
 end TauCeti

@@ -149,7 +149,7 @@ theorem frobeniusCharacteristic_indClassFunction {n : ℕ} (h : n ≤ Fintype.ca
   -- Frobenius reciprocity against the class function `π ↦ [x^d] p_(ρ(π))`
   have hd := frobenius_reciprocity_classFunction hG F (coeffPsumPartClassFunction n d)
   simp only [coeffPsumPartClassFunction, psumPart, Perm.parts_partition_inv, hcard] at hd
-  simpa only [psumPart, coeff_smul, coeff_sum, smul_eq_mul, Finset.mul_sum,
+  simpa only [psumPart, AddMonoidAlgebra.coeff_smul_apply, coeff_sum, smul_eq_mul, Finset.mul_sum,
     Subgroup.indClassFunction_apply] using hd
 
 /-! ### Multiplicativity of the Frobenius characteristic -/

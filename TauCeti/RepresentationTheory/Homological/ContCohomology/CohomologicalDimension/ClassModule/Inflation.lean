@@ -382,7 +382,7 @@ private theorem continuousSMul_quotient_fixedPoints :
   | H γ =>
     refine Topology.IsInducing.subtypeVal.continuous_iff.2 ?_
     simp_rw [Function.comp_def, coe_quotient_smul_fixedPoints_addSubgroup]
-    exact (continuous_const_smul γ).comp continuous_subtype_val
+    exact (continuous_const_smul γ).comp continuous_subtypeVal
 
 /-- Under `scd_p G ≤ 2`, `abelianizationProPInfl1` is inflation from
 `(G ⧸ V) ⧸ W.map (mk' V) ≅ G ⧸ W` with the invariants as coefficients, after the isomorphism

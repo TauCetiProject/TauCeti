@@ -131,7 +131,7 @@ theorem card_nonempty_finset {ι : Type*} :
     let := Fintype.ofFinite ι
     have h : Fintype.card {S : Finset ι // S.Nonempty} = 2 ^ Fintype.card ι - 1 := by
       rw [Fintype.card_subtype]
-      simp_rw [Finset.nonempty_iff_ne_empty]
+      simp_rw [← Finset.ne_empty_iff_nonempty]
       rw [Finset.filter_ne', Finset.card_erase_of_mem (Finset.mem_univ _), Finset.card_univ,
         Fintype.card_finset]
     rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, h]

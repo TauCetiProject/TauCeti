@@ -298,7 +298,7 @@ theorem continuous_smul_const (f : DiscreteCoind G U A) : Continuous fun r : R =
   by_cases h : (fun r : R => r • f) ⁻¹' {y} = ∅
   · rw [h]
     exact isOpen_empty
-  · obtain ⟨r₀, hr₀⟩ := Set.nonempty_iff_ne_empty.mpr h
+  · obtain ⟨r₀, hr₀⟩ := Set.ne_empty_iff_nonempty.mp h
     have hy : r₀ • f = y := hr₀
     rw [← hy]
     have hrange : (Set.range f).Finite := f.isLocallyConstant.range_finite
@@ -616,7 +616,7 @@ theorem trace_map_single (f : A →ₗ[R] M) (hf : ∀ (u : U) (a : A), f (u •
   rw [hg, map_smul, _root_.map_smul, trace_apply,
     Finset.sum_eq_single_of_mem ((1 : G) : G ⧸ U) (Finset.mem_univ _)]
   · have h1 : ((1 : G) : G ⧸ U).out⁻¹ ∈ U := by
-      simpa using QuotientGroup.eq.1 (QuotientGroup.out_eq' ((1 : G) : G ⧸ U))
+      simp
     have := single_apply_mul hU 1 a ⟨_, h1⟩
     rw [mul_one] at this
     rw [map_apply, this, hf, Subgroup.smul_def, smul_smul]

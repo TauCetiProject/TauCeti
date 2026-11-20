@@ -121,7 +121,7 @@ theorem continuous_starProjection_toEuclidean :
       (f := fun f : finiteOrthonormalFrame 𝕜 r N ↦ fun i ↦
         (WithLp.toLp 2 (f.val i) : EuclideanSpace 𝕜 (Fin N)))
       (continuous_pi fun i ↦
-        (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val))
+        (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtypeVal))
       (fun f ↦ f.property) fun f ↦ ?_
   rw [toEuclidean_frameSpan, finiteOrthonormalFrame.coe_toFullRankFrame]
 
@@ -289,7 +289,7 @@ theorem continuous_mk_frameBasis (i : Fin r) :
   (isEmbedding_totalSpace_range _ _).continuous_iff.2 <| by
     simp only [Function.comp_def, coe_frameBasis_apply]
     exact continuous_frameSpan.prodMk <| (PiLp.continuous_toLp 2 _).comp <|
-      (continuous_apply i).comp continuous_subtype_val
+      (continuous_apply i).comp continuous_subtypeVal
 
 end finiteGrassmannian
 

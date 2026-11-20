@@ -165,7 +165,7 @@ theorem le_iff_dvd (v : R →*₀ Γ₀) (hle : ∀ x, v x ≤ 1) (hlt : ∀ x, 
     rcases eq_or_ne (v x) 0 with hx | hx
     · simp [hsupp x hx]
     rw [map_mul] at h
-    exact absurd h (mul_lt_of_lt_one_right (zero_lt_iff.mpr hx) (hlt z hz)).not_ge
+    exact absurd h (mul_lt_of_lt_one_right (pos_iff_ne_zero.mpr hx) (hlt z hz)).not_ge
   · rw [hz, map_mul]
     exact mul_le_of_le_one_right' (hle z)
 

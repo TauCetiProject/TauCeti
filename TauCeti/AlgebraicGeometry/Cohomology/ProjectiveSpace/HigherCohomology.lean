@@ -365,7 +365,7 @@ private lemma chartSectionsHom_injective {S : Finset κ} (hS : S.Nonempty) :
   · have hc := congrArg (fun q : MvPolynomial κ R ↦
       q.coeff (N • indicatorExponent S + numeratorExponent e₀ S j)) hP
     rw [MvPolynomial.coeff_sum, AddMonoidAlgebra.coeff_zero, Finset.sum_eq_single e₀] at hc
-    · simpa [MvPolynomial.coeff_smul, MvPolynomial.coeff_monomial] using hc
+    · simpa [AddMonoidAlgebra.coeff_smul_apply, MvPolynomial.coeff_monomial] using hc
     · intro e he hne
       have hD : N • indicatorExponent S + numeratorExponent e S j ≠
           N • indicatorExponent S + numeratorExponent e₀ S j := fun h ↦ hne <| funext fun i ↦ by

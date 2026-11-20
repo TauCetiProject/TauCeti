@@ -39,7 +39,7 @@ namespace MvPolynomial
 variable {σ : Type*} [Fintype σ]
 
 private def sphereCoord (i : σ) : C(Metric.sphere (0 : EuclideanSpace ℝ σ) 1, ℝ) :=
-  ⟨fun x ↦ x.val i, (EuclideanSpace.proj i).continuous.comp continuous_subtype_val⟩
+  ⟨fun x ↦ x.val i, (EuclideanSpace.proj i).continuous.comp continuous_subtypeVal⟩
 
 @[simp]
 private theorem sphereCoord_apply (i : σ)

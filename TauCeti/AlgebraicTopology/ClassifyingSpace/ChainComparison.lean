@@ -189,7 +189,7 @@ variable {G}
 def universalGSpaceCellularTranslation (g : G) :
     TopCat.of (univ : Set (universalGSpace G)) ⟶ TopCat.of (univ : Set (universalGSpace G)) :=
   TopCat.ofHom ⟨fun x ↦ ⟨g • x.val, mem_univ _⟩,
-    ((continuous_const_smul g).comp continuous_subtype_val).subtype_mk _⟩
+    ((continuous_const_smul g).comp continuous_subtypeVal).subtype_mk _⟩
 
 /-- Translation on the universal subset is ordinary translation on the underlying point. -/
 @[simp]

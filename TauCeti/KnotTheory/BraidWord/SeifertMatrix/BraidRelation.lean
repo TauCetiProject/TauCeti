@@ -298,7 +298,7 @@ private theorem seifertMatrix_braid_entry (hij : (j : ℕ) = i + 1)
   generalize (u ++ (i, ε) :: (j, ε) :: (i, ε) :: v).signAt c₂ = s₂ at *
   clear hsign hlc hld hlc₂ hld₂
   -- what is left is linear arithmetic on the positions, levels and signs
-  grind (splits := 40)
+  grind (branches := 4096)
 
 variable {ε} in
 /-- **The braid relation is a unimodular change of basis of the Seifert matrix.** Replacing the

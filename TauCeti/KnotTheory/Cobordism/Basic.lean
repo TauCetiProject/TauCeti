@@ -633,7 +633,7 @@ private theorem isEmbedding_glueFun_comp_subtypeVal_upper (hc : 0 < c)
   have hP : Continuous (collarParam S ∘
       (Subtype.val : {y | 1 - 2 * c < (S.toFun y).2} → S.carrier)) :=
     continuous_iff_continuousAt.2 fun y ↦
-      (contMDiffAt_collarParam hS y.2).continuousAt.comp continuous_subtype_val.continuousAt
+      (contMDiffAt_collarParam hS y.property).continuousAt.comp continuous_subtypeVal.continuousAt
   have hK : Continuous (Prod.map K₁ (id : ℝ → ℝ)) :=
     K₁.isEmbedding.continuous.prodMap continuous_id
   have hPK : Prod.map K₁ id ∘ (collarParam S ∘
@@ -667,7 +667,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
   let W : Bool → Set S.carrier := fun b ↦ bif b
     then {y | 1 - 2 * c < (S.toFun y).2} else {y | (S.toFun y).2 < 1 - c}
   refine isEmbedding_of_iSup_eq_top_of_preimage_subset_range (glueFun C S hc) hglue U ?_
-    (fun b ↦ W b) (fun b ↦ Subtype.val) (fun b ↦ continuous_subtype_val) ?_ ?_
+    (fun b ↦ W b) (fun b ↦ Subtype.val) (fun b ↦ continuous_subtypeVal) ?_ ?_
   -- The two slabs cover the image.
   · rintro _ ⟨y, rfl⟩
     rw [SetLike.mem_coe, TopologicalSpace.Opens.mem_iSup]

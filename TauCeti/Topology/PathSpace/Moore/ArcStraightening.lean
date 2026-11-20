@@ -91,7 +91,7 @@ private def straightenArcsUnit (hρ : IsPathInterpolation ρ U) (hr : 0 < r) :
     C((I × arcsWithin U r) × I, X) where
   toFun q := straightenArcs ρ r (q.1.2 : MoorePath X).toUnitPath q.1.1 q.2
   continuous_toFun := (continuous_straightenArcs hρ hr
-    (continuous_toUnitPath.comp continuous_subtype_val) fun γ ↦ γ.2).comp
+    (continuous_toUnitPath.comp continuous_subtypeVal) fun γ ↦ γ.property).comp
       (by fun_prop : Continuous fun q : (I × arcsWithin U r) × I ↦ (q.1.2, q.1.1, q.2))
 
 private theorem straightenArcsUnit_apply (hρ : IsPathInterpolation ρ U) (hr : 0 < r) (t s : I)
@@ -228,7 +228,7 @@ theorem coe_toArcsWithin (γ : arcsWithin U r) :
 
 @[fun_prop]
 theorem continuous_toArcsWithin : Continuous (toArcsWithin : arcsWithin U r → _) :=
-  (continuous_toMoorePath.comp continuous_subtype_val).subtype_mk _
+  (continuous_toMoorePath.comp continuous_subtypeVal).subtype_mk _
 
 variable (hρ : IsPathInterpolation ρ U) (hr : 0 < r)
 

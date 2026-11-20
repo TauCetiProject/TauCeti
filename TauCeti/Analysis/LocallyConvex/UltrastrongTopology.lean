@@ -337,7 +337,7 @@ theorem isInducing_restrict_toPointwiseConvergenceCLM
     IsInducing (s.domRestrict fun A : ContinuousLinearMapUltrastrong 𝕜 E F ↦
       ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) E F A.toCLM) := by
   refine isInducing_iff_nhds.2 fun A ↦ le_antisymm
-    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtype_val).tendsto A).le_comap ?_
+    ((continuous_toPointwiseConvergenceCLM.comp continuous_subtypeVal).tendsto A).le_comap ?_
   rw [nhds_subtype, ← tendsto_iff_comap]
   exact (tendsto_iff_tendsto_toPointwiseConvergenceCLM_of_eventually_norm_le
     (Eventually.of_forall fun B : s ↦ hs B B.property)).2 tendsto_comap

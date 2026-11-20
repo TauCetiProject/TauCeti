@@ -141,7 +141,7 @@ theorem prod_powerset_eq_mul_prod_singleton_mul_prod_filter_mul {α M : Type*} [
   have hbig : ((s.powerset.erase ∅).erase s).filter (fun S : Finset α ↦ ¬ S.card = 1) =
       s.powerset.filter fun S : Finset α ↦ 1 < S.card ∧ S ≠ s := by
     ext S
-    simp only [mem_filter, mem_erase, mem_powerset, ← nonempty_iff_ne_empty, ← card_pos]
+    simp only [mem_filter, mem_erase, mem_powerset, ne_empty_iff_nonempty, ← card_pos]
     grind
   rw [hsing, hbig, prod_image fun _ _ _ _ h ↦ singleton_inj.1 h]
   ac_rfl

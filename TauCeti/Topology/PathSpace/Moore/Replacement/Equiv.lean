@@ -206,7 +206,7 @@ def homeomorphPathsFrom (A : Set X) :
   right_inv γ := Subtype.ext (path_mk _ _ _)
   continuous_toFun := continuous_path.subtype_mk _
   continuous_invFun := continuous_mk ((MoorePath.continuous_source.comp
-    continuous_subtype_val).subtype_mk _) continuous_subtype_val _
+    continuous_subtypeVal).subtype_mk _) continuous_subtypeVal _
 
 @[simp]
 theorem path_homeomorphPathsFrom_symm (A : Set X) (γ : {γ : MoorePath X // γ.source ∈ A}) :

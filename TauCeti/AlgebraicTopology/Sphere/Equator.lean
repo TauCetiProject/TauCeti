@@ -88,7 +88,7 @@ variable (K : Submodule ℝ E) [K.HasOrthogonalProjection]
 private def toSphereOrthogonal :
     C({x : sphere (0 : E) 1 | (x : E) ∉ K}, sphere (0 : Kᗮ) 1) :=
   normalizeToSphere (fun x => Kᗮ.orthogonalProjectionOnto ((x : sphere (0 : E) 1) : E))
-    ((ContinuousLinearMap.continuous _).comp (continuous_subtype_val.comp continuous_subtype_val))
+    ((ContinuousLinearMap.continuous _).comp (continuous_subtypeVal.comp continuous_subtypeVal))
     (fun x => by simpa only [ne_eq, Submodule.orthogonalProjectionOnto_eq_zero_iff,
       Submodule.orthogonal_orthogonal, Set.mem_ofPred_eq] using x.property)
 

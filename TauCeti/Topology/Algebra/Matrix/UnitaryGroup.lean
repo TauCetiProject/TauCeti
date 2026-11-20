@@ -45,10 +45,10 @@ def unitaryReindexContinuousMulEquiv (e : m ≃ n) :
     unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α) where
   __ := (Unitary.mapEquiv (.ofClass (reindexStarAlgEquiv ℕ α e))).toMulEquiv
   continuous_toFun := continuous_induced_rng.2 <|
-    (continuous_subtype_val.matrix_reindex e e).congr fun _ ↦ by
+    (continuous_subtypeVal.matrix_reindex e e).congr fun _ ↦ by
       simp
   continuous_invFun := continuous_induced_rng.2 <|
-    (continuous_subtype_val.matrix_reindex e.symm e.symm).congr fun _ ↦ by
+    (continuous_subtypeVal.matrix_reindex e.symm e.symm).congr fun _ ↦ by
       simp [← StarMulEquiv.toMulEquiv_symm]
 
 variable {α} in
@@ -90,11 +90,11 @@ def unitaryUniqueContinuousMulEquiv : unitary (Matrix m m α) ≃ₜ* unitary α
   __ := (Unitary.mapEquiv (.ofClass (uniqueStarRingEquiv (m := m) (A := α)))).toMulEquiv
   continuous_toFun := continuous_induced_rng.2 <| by
     have h : Continuous fun A : unitary (Matrix m m α) ↦ A.val default default :=
-      (continuous_apply default).comp ((continuous_apply default).comp continuous_subtype_val)
+      (continuous_apply default).comp ((continuous_apply default).comp continuous_subtypeVal)
     exact h.congr fun _ ↦ by simp
   continuous_invFun := continuous_induced_rng.2 <| by
     have h : Continuous fun u : unitary α ↦ Matrix.of fun _ _ : m ↦ (u : α) :=
-      continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtype_val
+      continuous_pi fun _ ↦ continuous_pi fun _ ↦ continuous_subtypeVal
     exact h.congr fun _ ↦ by simp [← StarMulEquiv.toMulEquiv_symm]
 
 variable {m α} in

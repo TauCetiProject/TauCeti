@@ -109,14 +109,14 @@ private def morseFiberwiseBase :
     C({x | f x ≤ c - ε}, PUnit.{u + 1} × {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
   ⟨fun x ↦ (PUnit.unit, ⟨⟨x, (mem_ofPred.1 x.property).trans
       ((sub_le_self c hε).trans (le_add_of_nonneg_right hε))⟩, x.property⟩),
-    continuous_const.prodMk ((continuous_subtype_val.subtype_mk _).subtype_mk _)⟩
+    continuous_const.prodMk ((continuous_subtypeVal.subtype_mk _).subtype_mk _)⟩
 
 /-- The projection of `PUnit × M_{c-ε}`, with `M_{c-ε}` viewed inside `M_{c+ε}`, to the lower
 sublevel `M_{c-ε}`: the inverse of `TauCeti.morseFiberwiseBase`. -/
 private def morseFiberwiseBaseInv :
     C(PUnit.{u + 1} × {y : {x | f x ≤ c + ε} | f y ≤ c - ε}, {x | f x ≤ c - ε}) :=
   ⟨fun x ↦ ⟨x.2.val.val, x.2.property⟩,
-    (continuous_subtype_val.comp (continuous_subtype_val.comp continuous_snd)).subtype_mk _⟩
+    (continuous_subtypeVal.comp (continuous_subtypeVal.comp continuous_snd)).subtype_mk _⟩
 
 private theorem morseFiberwiseBaseInv_morseFiberwiseBase (p : PUnit.{u + 1})
     (x : {x | f x ≤ c - ε}) : morseFiberwiseBaseInv (p, (morseFiberwiseBase hε x).2) = x :=

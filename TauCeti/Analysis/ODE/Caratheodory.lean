@@ -93,7 +93,7 @@ private noncomputable def next (hab : a ≤ b)
       exact integrableOn_Icc hab hM hK hF y
     have h := continuousOn_primitive_interval hI
     rw [uIcc_of_le hab] at h
-    exact (continuousOn_const.add h).comp_continuous continuous_subtype_val Subtype.prop
+    exact (continuousOn_const.add h).comp_continuous continuous_subtypeVal Subtype.prop
 
 private theorem next_apply (hab : a ≤ b)
     (hM : AEStronglyMeasurable M (volume.restrict (Ioo a b)))

@@ -249,15 +249,15 @@ variable (p C) in
 /-- The inclusion of the part over the open balls into the pullback, as a map of pairs. -/
 private def cellPullbackOpenShellPairToShellPair (n : ℕ) :
     cellPullbackOpenShellPair p C n ⟶ cellPullbackShellPair p C n :=
-  TopPair.ofHom (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩)
+  TopPair.ofHom (_root_.TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩)
     (_root_.TopCat.ofHom ⟨fun x ↦ ⟨x.val.val, x.property⟩, by fun_prop⟩) rfl
 
 omit [T2Space B] in
 private lemma continuous_norm_cellPullback (n : ℕ) :
     Continuous fun x : cellPullback p C n ↦ ‖(x.val.1.2 : Fin n → ℝ)‖ := by
   have h : Continuous fun q : Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1 ↦ ‖(q.2 : Fin n → ℝ)‖ :=
-    continuous_sigma fun _ ↦ continuous_norm.comp continuous_subtype_val
-  exact h.comp (continuous_fst.comp continuous_subtype_val)
+    continuous_sigma fun _ ↦ continuous_norm.comp continuous_subtypeVal
+  exact h.comp (continuous_fst.comp continuous_subtypeVal)
 
 variable (p C) in
 omit [T2Space B] in
@@ -330,15 +330,15 @@ private def cellPullbackOpenHomeomorph (n : ℕ) :
     rw [hs]
     rfl
   right_inv _ := rfl
-  continuous_toFun := (continuous_snd.comp (continuous_subtype_val.comp
-    continuous_subtype_val)).subtype_mk _
+  continuous_toFun := (continuous_snd.comp (continuous_subtypeVal.comp
+    continuous_subtypeVal)).subtype_mk _
   continuous_invFun := by
     have hs : Continuous fun e : (p ⁻¹' ⋃ j : cell C n, openCell (C := C) n j : Set E) ↦
         (iUnionOpenCellHomeomorph (C := C) n).symm ⟨p e.val, e.property⟩ :=
       (iUnionOpenCellHomeomorph (C := C) n).symm.continuous.comp
-        ((p.hom.continuous.comp continuous_subtype_val).subtype_mk _)
+        ((p.hom.continuous.comp continuous_subtypeVal).subtype_mk _)
     refine Continuous.subtype_mk (Continuous.subtype_mk (Continuous.prodMk ?_
-      continuous_subtype_val) _) _
+      continuous_subtypeVal) _) _
     exact (continuous_sigma_map.2 fun _ ↦ continuous_inclusion ball_subset_closedBall).comp hs
 
 private lemma coe_cellPullbackOpenHomeomorph_apply (n : ℕ)
@@ -378,7 +378,7 @@ private lemma isIso_singularHomologyMap_cellPullbackOpenShellPairMap (n k : ℕ)
       (cellPullbackOpenShellPairToShellPair p C n ≫ cellPullbackShellPairMap p C n)
       (ModuleCat.of R R) k) := by
   have hpc : Continuous fun x : p ⁻¹' (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set B) ↦ p x.val :=
-    p.hom.continuous.comp continuous_subtype_val
+    p.hom.continuous.comp continuous_subtypeVal
   refine TopPair.isIso_singularHomologyMap_of_open_cover _ _
     (isEmbedding_cellPullbackOpenShellPairMap p C n) ?_
     (fun b : Bool ↦ bif b

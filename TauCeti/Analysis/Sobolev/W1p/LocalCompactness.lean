@@ -96,7 +96,7 @@ private theorem W1p.isCompact_closure_preciseRepresentative_unitBall
     BoundedContinuousFunction.mkOfCompact
       ⟨fun x => preciseRepresentative mu (W1p.value u) x, by
         have hc := W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u
-        exact hc.comp_continuous continuous_subtype_val (fun x => hKΩ x.2)⟩
+        exact hc.comp_continuous continuous_subtypeVal (fun x => hKΩ x.property)⟩
   refine ⟨f, fun _ _ => rfl, ?_⟩
   obtain ⟨C, hC, hdist⟩ := W1p.exists_dist_preciseRepresentative_le_top (mu := mu)
   obtain ⟨R, hR, hRK⟩ := hK.exists_cthickening_subset_open Omega.isOpen hKΩ
@@ -138,7 +138,7 @@ private theorem W1p.isCompactOperator_valueL_restrictL_top
   let : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let ν : Measure ↥(V : Set E) := mu.comap (Subtype.val : ↥(V : Set E) → E)
   let σ : C((V : Set E), K) := ⟨fun x => ⟨x, subset_closure x.property⟩,
-    continuous_subtype_val.subtype_mk _⟩
+    continuous_subtypeVal.subtype_mk _⟩
   let e := Lp.comapSubtypeEquivₗᵢ (E := ℝ) (p := ∞) ℝ mu V.isOpen.measurableSet
   let S : (K →ᵇ ℝ) → Lp ℝ ∞ (mu.restrict (V : Set E)) := fun g =>
     e.symm (BoundedContinuousFunction.toLpTop ν ℝ (g.compContinuous σ))

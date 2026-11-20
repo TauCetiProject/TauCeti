@@ -78,7 +78,7 @@ theorem isClosed_setOf_not_exists (P : Opens X → Prop) :
 its image in `X`. -/
 theorem exists_le_preimage_coe_eq (Ω : Opens X) {W : Set Ω} (hW : IsOpen W) :
     ∃ U : Opens X, U ≤ Ω ∧ ((↑) : Ω → X) ⁻¹' (U : Set X) = W :=
-  ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩, Subtype.coe_image_subset _ _,
+  ⟨⟨(↑) '' W, Ω.isOpen.isOpenMap_subtypeVal W hW⟩, Subtype.coe_image_subset _ _,
     Set.preimage_image_eq W Subtype.val_injective⟩
 
 /-- In a locally compact regular space, every compact subset `K` of an open set `U` lies in an

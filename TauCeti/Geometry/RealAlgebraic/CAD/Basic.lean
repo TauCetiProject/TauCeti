@@ -120,7 +120,7 @@ theorem isSemialgebraicStack_eval (hC : IsSemialgebraic C) (p : Fin k → MvPoly
   have hq (i : Fin k) (y : Fin (n + 1) → ℝ) :
       eval y (rename Fin.succ (p i)) = eval (Fin.tail y) (p i) := by
     simp only [eval_rename, Fin.tail_def, comp_def]
-  refine ⟨fun i ↦ (continuous_eval (p i)).comp continuous_subtype_val,
+  refine ⟨fun i ↦ (continuous_eval (p i)).comp continuous_subtypeVal,
     fun x ↦ hp x.val x.property, fun i ↦ ?_, fun j ↦ ?_⟩
   · convert hC.preimage_tail.inter (isSemialgebraic_eval_eq (rename Fin.succ (p i)) (X 0))
       using 1

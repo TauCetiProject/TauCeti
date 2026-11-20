@@ -340,7 +340,7 @@ def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
     (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
       (FiberBundle.continuous_totalSpaceMk F E b).subtype_mk _⟩)
     (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x.val, hb, mem_zeroSectionCompl.2 x.property⟩,
-      ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _⟩)
+      ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtypeVal).subtype_mk _⟩)
     (by ext; rfl)
 
 @[simp]
@@ -547,7 +547,7 @@ def zeroSectionHomotopy {s : ∀ b, E b} (hs : Continuous fun b ↦ TotalSpace.m
     TopCat.Homotopy (zeroSectionHom F E) (TopCat.ofHom ⟨_, hs⟩) where
   toFun p := TotalSpace.mk' F p.2 ((p.1 : ℝ) • s p.2)
   continuous_toFun :=
-    (continuous_subtype_val.comp continuous_fst).smul_totalSpace (hs.comp continuous_snd)
+    (continuous_subtypeVal.comp continuous_fst).smul_totalSpace (hs.comp continuous_snd)
   map_zero_left b := (congrArg (TotalSpace.mk' F b) (zero_smul ℝ (s b))).trans
     (zeroSectionHom_apply F E b).symm
   map_one_left b := congrArg (TotalSpace.mk' F b) (one_smul ℝ (s b))

@@ -379,11 +379,11 @@ form `dr ∧ dp_r + dθ ∧ dL` on the cylinder `r > 0`, where `dθ` is the time
 `AddCircle (2 * π)` and `dL` the coordinate form of the real line. -/
 theorem mpullback_polarCanonicalDiffeomorph :
     SmoothForm.mpullback (polarCanonicalDiffeomorph b) (polarCanonicalDiffeomorph b).contMDiff
-        (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtype_val
+        (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
           (stdSymplecticForm (V := V)).constSmooth) =
       SmoothForm.mpullback
         (Subtype.val : polarCanonicalCylinder → (ℝ × ℝ) × (AddCircle (2 * π) × ℝ))
-        contMDiff_subtype_val
+        contMDiff_subtypeVal
         (SmoothTwoForm.prod (stdSymplecticForm (V := ℝ)).constSmooth
           (SmoothForm.wedge
             (SmoothForm.mpullback Prod.fst contMDiff_fst (AddCircle.timeForm (2 * π)))
@@ -504,7 +504,7 @@ def polarPlaneDiffeomorph :
     refine Subtype.ext ?_
     simpa only [polarCanonical_apply, polarPlaneMap_coe] using congrArg Prod.fst hq
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1
-    ((contMDiff_polarPlaneMap (b 0) (b 1)).comp contMDiff_subtype_val)
+    ((contMDiff_polarPlaneMap (b 0) (b 1)).comp contMDiff_subtypeVal)
   contMDiff_invFun := by
     -- The inverse is read off from the inverse polar canonical coordinates of `(q, 0)`.
     let incl : puncturedSpace V → puncturedPhaseSpace V := fun q ↦
@@ -515,11 +515,11 @@ def polarPlaneDiffeomorph :
         mem_polarHalfCylinder.2 (mem_polarCanonicalCylinder.1 z.property)⟩
     have hincl : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, V × V) ∞ incl :=
       (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1
-        (contMDiff_subtype_val.prodMk_space contMDiff_const)
+        (contMDiff_subtypeVal.prodMk_space contMDiff_const)
     have hproj : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) (𝓘(ℝ).prod 𝓘(ℝ)) ∞ proj :=
       (ContMDiff.subtypeVal_comp_iff polarHalfCylinder _).1
         ((((contDiff_fst (𝕜 := ℝ) (E := ℝ) (F := ℝ)).contMDiff (n := ∞)).comp
-          contMDiff_fst).prodMk (contMDiff_fst.comp contMDiff_snd) |>.comp contMDiff_subtype_val)
+          contMDiff_fst).prodMk (contMDiff_fst.comp contMDiff_snd) |>.comp contMDiff_subtypeVal)
     refine (hproj.comp ((polarCanonicalDiffeomorph b).symm.contMDiff.comp hincl)).congr
       fun q ↦ ?_
     exact Subtype.ext (radius_angle_polarCanonicalDiffeomorph_symm b (incl q)).symm

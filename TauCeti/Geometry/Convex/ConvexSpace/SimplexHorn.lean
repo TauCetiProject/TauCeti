@@ -193,10 +193,10 @@ theorem continuous_hornDeformation (a : ι) :
   simp only [Function.comp_apply, hornDeformation_weights]
   split_ifs
   · exact ((continuous_weights_apply ℝ i).comp continuous_snd).add
-      (continuous_const.mul (continuous_subtype_val.comp continuous_fst |>.mul
+      (continuous_const.mul (continuous_subtypeVal.comp continuous_fst |>.mul
         ((continuous_hornDepth a).comp continuous_snd)))
   · exact ((continuous_weights_apply ℝ i).comp continuous_snd).sub
-      (continuous_subtype_val.comp continuous_fst |>.mul
+      (continuous_subtypeVal.comp continuous_fst |>.mul
         ((continuous_hornDepth a).comp continuous_snd))
 
 /-- The continuous retraction of a simplex onto its horn. -/

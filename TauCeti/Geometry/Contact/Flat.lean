@@ -154,7 +154,7 @@ theorem contMDiffAt_sectionAlong_contactFlat {EN HN N : Type*} [NormedAddCommGro
   have hα₂ := (contMDiffAt_hom_bundle _).1 hα₁
   refine ⟨hα₂.1, ?_⟩
   -- In coordinates, `α ⊗ α` is `smulRight` applied twice to the coordinate expression of `α`.
-  refine (((ContinuousLinearMap.smulRightL ℝ E (E →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
+  refine (((StrongDual.smulRightL ℝ E (E →L[ℝ] ℝ)).contDiff.comp_contMDiffAt
     hα₂.2).clm_apply hα₂.2).congr_of_eventuallyEq ?_
   filter_upwards [hα₂.1.continuousAt.preimage_mem_nhds
     ((trivializationAt E (TangentSpace I) (b m₀)).open_baseSet.mem_nhds

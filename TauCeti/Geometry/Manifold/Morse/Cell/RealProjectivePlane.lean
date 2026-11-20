@@ -558,7 +558,7 @@ private theorem continuousOn_linearProjection_flatten :
       (univ ×ˢ linearProjectionDomain dropLast) := by
   rintro ⟨t, y⟩ ⟨-, hy⟩
   refine (continuousAt_linearProjection (G := fun t : I ↦ flatten t)
-    (continuous_flatten.comp (continuous_subtype_val.prodMap continuous_id)) ?_).continuousWithinAt
+    (continuous_flatten.comp (continuous_subtypeVal.prodMap continuous_id)) ?_).continuousWithinAt
   induction y using ind with | h v hv =>
   rw [mk_mem_linearProjectionDomain_iff] at hy ⊢
   exact flatten_ne_zero hy t
@@ -598,7 +598,7 @@ private def sublevelToLine (hc : c < 2) :
     C({y | projectiveMomentFunction ℝ ![0, 1, 2] y ≤ c}, ℙ ℝ (Fin 2 → ℝ)) where
   toFun y := linearProjection dropLast y.val
   continuous_toFun := (contMDiffOn_linearProjection dropLast 0).continuousOn.comp_continuous
-    continuous_subtype_val fun y ↦ mem_linearProjectionDomain_of_le hc y.2
+    continuous_subtypeVal fun y ↦ mem_linearProjectionDomain_of_le hc y.property
 
 /-- The inclusion `[x : y] ↦ [x : y : 0]` of the projective line into a sublevel above `1`. -/
 private def lineToSublevel (hc : 1 ≤ c) :
@@ -616,7 +616,7 @@ private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     projectiveMomentFunction_linearProjection_flatten_le hc₂ p.2.property p.1.property.1
         p.1.property.2⟩
   continuous_toFun := (continuousOn_linearProjection_flatten.comp_continuous
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
     fun p ↦ ⟨mem_univ _, mem_linearProjectionDomain_of_le hc₂ p.2.property⟩).subtype_mk _
   map_zero_left y := by
     obtain ⟨y, hy⟩ := y
@@ -795,7 +795,7 @@ theorem degree_projectivePlaneCoreLoop_map (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     coe_projectivePlaneSublevelCircleEquiv_apply_of_eq hc₁ hc₂ rfl, Circle.coe_exp]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Real.cos_sq_add_sin_sq,
     Complex.ofReal_one, div_one]
-  rw [Complex.ofReal_cos, Complex.ofReal_sin, ← Complex.exp_mul_I, ← Complex.exp_nat_mul]
+  rw [Complex.ofReal_cos, Complex.ofReal_sin, ← Complex.exp_mul_I, ← Complex.exp_natCast_mul]
   congr 1
   push_cast
   ring

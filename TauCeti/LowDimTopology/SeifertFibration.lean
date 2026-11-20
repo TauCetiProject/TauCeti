@@ -187,7 +187,7 @@ private theorem nonempty_homeomorph_circle_of_isCoprime {p q : ℤ} (hq : q ≠ 
       rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, one_mul]
       exact mem_closedBall_zero_iff.1 a.1.property
     refine ⟨fun t ↦ (⟨_, hmem t⟩, t ^ q * a.2), ?_, fun t s h ↦ ?_, ?_⟩
-    · have hcoe : Continuous fun t : Circle ↦ (t : ℂ) := continuous_subtype_val
+    · have hcoe : Continuous fun t : Circle ↦ (t : ℂ) := continuous_subtypeVal
       exact (((hcoe.comp (continuous_zpow p)).mul continuous_const).subtype_mk hmem).prodMk
         ((continuous_zpow q).mul continuous_const)
     · obtain ⟨h₁, h₂⟩ := Prod.ext_iff.1 h

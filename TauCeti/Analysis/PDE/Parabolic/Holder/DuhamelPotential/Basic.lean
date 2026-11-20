@@ -279,8 +279,8 @@ private def gradient (f : slab (E := E) 0 T →ᵇ F) : slab (E := E) 0 T →ᵇ
       (p : ParabolicSpaceTime E).time) (p : ParabolicSpaceTime E).space)
     ((continuousOn_fderiv_heatDuhamelPotential (continuous_timeExtension T.coe_nonneg f.continuous)
       (norm_timeExtension_le T.coe_nonneg f)).comp_continuous
-        ((continuous_time.comp continuous_subtype_val).prodMk
-          (continuous_space.comp continuous_subtype_val))
+        ((continuous_time.comp continuous_subtypeVal).prodMk
+          (continuous_space.comp continuous_subtypeVal))
         fun p => ⟨(mem_slab.1 p.property).1, mem_univ _⟩)
     _ (norm_fderiv_le f)
 

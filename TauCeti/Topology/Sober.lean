@@ -72,7 +72,7 @@ theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X
     ⟨irreducibleComponent (⟨x, hx⟩ : s), irreducibleComponent_mem_irreducibleComponents _⟩
   refine ⟨(genericPoints.ofComponent C).val, (genericPoints.ofComponent C).property, ?_⟩
   exact ((genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent).map
-    continuous_subtype_val
+    continuous_subtypeVal
 
 section Maps
 

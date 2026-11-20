@@ -503,8 +503,10 @@ def bundleDualTensorHomEquiv (x : B) : (StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ 
     rw [bundleDualTensorHom_inCoordinates x x hx₁ hx₂,
       ← ProjectiveTensor.toOperatorEquiv_toContinuousLinearMap]
     exact ContinuousLinearMap.isInvertible_equiv
-  ContinuousLinearEquiv.equivOfInverse (bundleDualTensorHom x) (bundleDualTensorHom x).inverse
-    (fun _ ↦ hinv.inverse_apply_eq.2 rfl) (fun _ ↦ (hinv.inverse_apply_eq.1 rfl).symm)
+  ContinuousLinearEquiv.ofContinuousLinearMap (bundleDualTensorHom x)
+    (bundleDualTensorHom x).inverse
+    (ContinuousLinearMap.ext fun _ ↦ (hinv.inverse_apply_eq.1 rfl).symm)
+    (ContinuousLinearMap.ext fun _ ↦ hinv.inverse_apply_eq.2 rfl)
 
 @[simp] theorem bundleDualTensorHomEquiv_toContinuousLinearMap (x : B) :
     (bundleDualTensorHomEquiv 𝕜 F₁ F₂ (E₁ := E₁) (E₂ := E₂) x).toContinuousLinearMap =

@@ -66,7 +66,7 @@ to `y`". A zigzag is thus a proof-relevant witness of `Relation.EqvGen`. -/
 theorem nonempty_path_symmetrify_iff_eqvGen :
     Nonempty (@Path (Symmetrify V) _ a b) ↔
       Relation.EqvGen (fun x y : V ↦ Nonempty (x ⟶ y)) a b := by
-  rw [← Relation.EqvGen.reflTransGen_symmGen]
+  rw [← Relation.reflTransGen_symmGen]
   refine (reachable_iff_reflTransGen (V := Symmetrify V)).trans (Iff.of_eq ?_)
   -- An arrow of the symmetrized quiver from `x` to `y` is an arrow from `x` to `y` or back.
   exact congrArg (Relation.ReflTransGen · a b) (funext₂ fun x y ↦ propext nonempty_sum)

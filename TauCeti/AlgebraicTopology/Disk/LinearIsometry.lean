@@ -75,7 +75,7 @@ def diskMap : TopCat.disk.{u} n ⟶ TopCat.disk.{u} n :=
     { toFun w := ULift.up ⟨g w.down, mem_closedBall_zero_iff.2 <| (g.norm_map _).trans_le <|
         mem_closedBall_zero_iff.1 w.down.property⟩
       continuous_toFun := continuous_uliftUp.comp ((g.continuous.comp
-        (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _) }
+        (continuous_subtypeVal.comp continuous_uliftDown)).subtype_mk _) }
 
 /-- The self-map `s ↦ g s` of the boundary sphere `TopCat.diskBoundary n` induced by a linear
 isometry `g` of `ℝⁿ`. -/
@@ -84,7 +84,7 @@ def diskBoundaryMap : TopCat.diskBoundary.{u} n ⟶ TopCat.diskBoundary.{u} n :=
     { toFun s := ULift.up ⟨g s.down, mem_sphere_zero_iff_norm.2 <| (g.norm_map _).trans <|
         mem_sphere_zero_iff_norm.1 s.down.property⟩
       continuous_toFun := continuous_uliftUp.comp ((g.continuous.comp
-        (continuous_subtype_val.comp continuous_uliftDown)).subtype_mk _) }
+        (continuous_subtypeVal.comp continuous_uliftDown)).subtype_mk _) }
 
 @[simp]
 theorem coe_diskMap_apply_down (w : TopCat.disk.{u} n) :
@@ -158,7 +158,7 @@ is `LinearIsometryEquiv.diskMap (g p)`. -/
 def diskMapFamily : C(P × TopCat.disk.{u} n, TopCat.disk.{u} n) where
   toFun q := (g q.1).diskMap q.2
   continuous_toFun := continuous_uliftUp.comp (((hg.comp continuous_fst).clm_apply
-    (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
+    (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd))).subtype_mk _)
 
 @[simp]
 theorem diskMapFamily_apply (q : P × TopCat.disk.{u} n) :

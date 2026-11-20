@@ -89,7 +89,7 @@ private def isColimitComplPairCocone :
   · refine ⟨Classical.arbitrary ι, fun x _ ↦ ⟨x, ?_⟩⟩
     rw [hfst]
     rfl
-  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtype_val)
+  · obtain ⟨i, hi⟩ := hcpt _ (hT.image continuous_subtypeVal)
       (disjoint_left.2 fun _ ⟨x, _, hx⟩ ↦ hx ▸ x.property)
     exact ⟨i, fun x hx ↦ ⟨⟨x.val, disjoint_left.1 hi ⟨x, hx, rfl⟩⟩,
       Subtype.ext (TopPair.ofSubsetMap_snd_apply _ _ _)⟩⟩

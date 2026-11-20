@@ -129,7 +129,7 @@ theorem secondCountableTopology_of_preimage_isOpen_cover [PreconnectedSpace E]
       (s := fun j ↦ ((↑) : V a → E) ⁻¹' S i.val j)
       (a := {j | (V a ∩ S i.val j).Nonempty})
       (fun j₁ _ j₂ _ hne ↦ (hSd i.val hne).preimage _)
-      (fun j _ ↦ (hSo i.1 j).preimage continuous_subtype_val)
+      (fun j _ ↦ (hSo i.val j).preimage continuous_subtypeVal)
       (fun j ⟨e, he, he'⟩ ↦ ⟨⟨e, he⟩, he'⟩)
 
 end TauCeti

@@ -108,7 +108,7 @@ theorem integralTopForm_eq_setIntegral_mpullback (o : Manifold.Orientation I N (
       ((↑) : U → EuclideanSpace ℝ (Fin p)) ψ =
       mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I (g ∘ ((↑) : U → EuclideanSpace ℝ (Fin p))) φ := by
     funext x
-    rw [mpullback_comp_at (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) (hgd x)]
+    rw [mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) (hgd x)]
     ext v
     simp [ψ, x.property]
   have hrange : _root_.tsupport (α := E [⋀^Fin p]→L[ℝ] ℝ) φ ⊆

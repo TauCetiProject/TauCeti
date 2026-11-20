@@ -217,12 +217,12 @@ def toDiffeomorphSourceTarget (c : OpenPartialHomeomorph M H)
     apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
     intro x
     exact ((contMDiffOn_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
-      (c.open_source.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+      (c.open_source.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
   contMDiff_invFun := by
     apply (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).1
     intro x
     exact ((contMDiffOn_symm_of_mem_maximalAtlas hc x.val x.property).contMDiffAt
-      (c.open_target.mem_nhds x.property)).comp x contMDiff_subtype_val.contMDiffAt
+      (c.open_target.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
 
 @[simp]
 theorem toDiffeomorphSourceTarget_apply_coe (c : OpenPartialHomeomorph M H)
@@ -296,9 +296,9 @@ def extChartAtDiffeomorph [I.Boundaryless] [IsManifold I n M] (x : M) :
     exact p.property)
   right_inv z := Subtype.ext <| (extChartAt I x).right_inv z.property
   contMDiff_toFun := (ContMDiff.subtypeVal_comp_iff (extChartTargetOpens I x) _).mp
-    ((contMDiffOn_extChartAt (x := x)).comp_contMDiff contMDiff_subtype_val fun p ↦ p.2)
+    ((contMDiffOn_extChartAt (x := x)).comp_contMDiff contMDiff_subtypeVal fun p ↦ p.property)
   contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff (chartSourceOpens H x) _).mp
-    ((contMDiffOn_extChartAt_symm x).comp_contMDiff contMDiff_subtype_val fun z ↦ z.2)
+    ((contMDiffOn_extChartAt_symm x).comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property)
 
 @[simp]
 theorem coe_extChartAtDiffeomorph_apply [I.Boundaryless] [IsManifold I n M] (x : M)

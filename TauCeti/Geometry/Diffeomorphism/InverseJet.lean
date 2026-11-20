@@ -252,7 +252,7 @@ theorem isOpen_diffeomorph_symm_fderivWithin_test (hn : 1 ≤ n) (x : M) (y : N)
       (hf₀ w hw).1).eventually
     (hV.mem_nhds (hf₀ w hw).2)
   rw [nhds_prod_eq] at hsrc ⊢
-  exact hsrc.and ((tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually hD)
+  exact hsrc.and ((tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually hD)
 
 end Continuity
 

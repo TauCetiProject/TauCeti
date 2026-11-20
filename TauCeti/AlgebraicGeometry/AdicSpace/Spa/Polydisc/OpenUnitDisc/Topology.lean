@@ -69,7 +69,7 @@ theorem mem_discExhaustion (c : K) (n : ℕ) (v : closedPolydisc 1 K) :
 
 /-- Each exhaustion disc is open in the closed unit disc. -/
 theorem isOpen_discExhaustion (c : K) (n : ℕ) : IsOpen (discExhaustion c n) :=
-  (isOpen_basicOpen _ _).preimage continuous_subtype_val
+  (isOpen_basicOpen _ _).preimage continuous_subtypeVal
 
 open scoped Classical in
 /-- The exhaustion disc is the rational subset with numerators `T^(n+1), c` and denominator

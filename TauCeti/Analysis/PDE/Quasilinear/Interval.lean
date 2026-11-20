@@ -547,7 +547,7 @@ theorem exists_contDiff_eq_intervalRepresentativeL_and_holderWith_deriv_deriv (h
   · -- `w''` is Hölder on `ℝ`, since `projIcc` is `1`-Lipschitz.
     have hπ : LipschitzWith 1 fun t => (projIcc x₀ x₁ hx.le t : ℝ) := by
       simpa [Function.comp_def] using
-        (LipschitzWith.subtype_val _).comp (LipschitzWith.projIcc hx.le)
+        (LipschitzWith.subtypeVal _).comp (LipschitzWith.projIcc hx.le)
     have hHₑ := hH.comp_holderWith hπ.holderWith fun t => (projIcc x₀ x₁ hx.le t).property
     rw [mul_one] at hHₑ
     rw [hddw]

@@ -658,7 +658,7 @@ theorem _root_.ContinuousMonoidHom.explicitRes1_explicitMap1_eq_zero_of_map_le
   -- The restriction `φ|_T : T → S`, completing the commuting square with the inclusions.
   let φT : T →ₜ* S :=
     { toMonoidHom := ((φ : H →* G).comp T.subtype).codRestrict S fun t ↦ hTS ⟨t, t.property, rfl⟩
-      continuous_toFun := (φ.continuous.comp continuous_subtype_val).subtype_mk _ }
+      continuous_toFun := (φ.continuous.comp continuous_subtypeVal).subtype_mk _ }
   rw [explicitRes1_eq_explicitMap1, explicitMap1_explicitMap1_of_comp_eq G M H N φ f hf hequiv
     T N (ContinuousMonoidHom.subgroupSubtype T) (AddMonoidHom.id N) continuous_id
     (ContinuousMonoidHom.id_subgroupSubtype_smul N T) (ContinuousMonoidHom.subgroupSubtype S)

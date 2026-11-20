@@ -262,12 +262,12 @@ theorem continuous_mk_mapOrientation_symm (hι : Fintype.card ι = finrank ℝ F
     (e : Trivialization F (π F E)) [MemTrivializationAtlas e] (o : Orientation ℝ F ι) :
     Continuous fun x : e.baseSet ↦
       (⟨x, (e.mapOrientation ι x.property).symm o⟩ : VectorBundleOrientationCover F E ι) := by
-  refine continuous_of_isOpen_preimage_sheet continuous_subtype_val fun b o' ↦ ?_
+  refine continuous_of_isOpen_preimage_sheet continuous_subtypeVal fun b o' ↦ ?_
   set e' := trivializationAt F E b
   refine isOpen_iff_mem_nhds.2 fun x ⟨hx', hx⟩ ↦ ?_
   have h := (e.eventually_mapOrientation_symm_eq hι e' x.property hx' o).and
     (e'.open_baseSet.mem_nhds hx')
-  filter_upwards [continuous_subtype_val.continuousAt.eventually h] with y ⟨hy, hy'⟩
+  filter_upwards [continuous_subtypeVal.continuousAt.eventually h] with y ⟨hy, hy'⟩
   exact ⟨hy', (hy y.property hy').trans hx⟩
 
 /-- Over the base set of a trivialization `e` of the atlas, the orientation double cover is the
@@ -282,9 +282,9 @@ def trivializationHomeomorph (hι : Fintype.card ι = finrank ℝ F)
   left_inv p := by ext <;> simp
   right_inv x := by simp
   continuous_toFun := by
-    refine (continuous_proj.comp continuous_subtype_val).subtype_mk _ |>.prodMk ?_
+    refine (continuous_proj.comp continuous_subtypeVal).subtype_mk _ |>.prodMk ?_
     refine continuous_discrete_rng.2 fun o ↦ ?_
-    convert (isOpen_sheet hι e o).preimage continuous_subtype_val using 1
+    convert (isOpen_sheet hι e o).preimage continuous_subtypeVal using 1
     ext p
     exact ⟨fun hp ↦ ⟨p.property, hp⟩, fun ⟨_, hp⟩ ↦ hp⟩
   continuous_invFun := by

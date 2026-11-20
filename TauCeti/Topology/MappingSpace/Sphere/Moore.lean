@@ -273,8 +273,8 @@ def contractibleConstLoopPathHomeomorphUnitPathsBetween :
     ⟨r.val, ⟨let ⟨q, hq⟩ := hr.1; ⟨q, hq.symm⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val.subtype_mk _
-  continuous_invFun := continuous_subtype_val.subtype_mk _
+  continuous_toFun := continuous_subtypeVal.subtype_mk _
+  continuous_invFun := continuous_subtypeVal.subtype_mk _
 
 @[simp]
 theorem coe_contractibleConstLoopPathHomeomorphUnitPathsBetween (p : ContractibleConstLoopPath Q) :
@@ -500,7 +500,7 @@ theorem basedConstContractibleMooreTarget_apply (γ : BasedConstContractibleMoor
 /-- South-pole evaluation `Map_*(S², Q) → Q`. -/
 def basedMapSphere2South : C(BasedMap Sphere2 Q Sphere2.north x, Q) :=
   ⟨fun f ↦ f.val Sphere2.south,
-    (continuous_eval_const Sphere2.south).comp continuous_subtype_val⟩
+    (continuous_eval_const Sphere2.south).comp continuous_subtypeVal⟩
 
 @[simp]
 theorem basedMapSphere2South_apply (f : BasedMap Sphere2 Q Sphere2.north x) :
@@ -522,8 +522,8 @@ def basedContractibleConstLoopPathHomeomorphUnitPathsBetween (x : Q) :
     ⟨⟨r.val, ⟨⟨x, hr.1⟩, let ⟨q, hq⟩ := hr.2; ⟨q, hq.symm⟩⟩⟩, hr.1⟩
   left_inv _ := rfl
   right_inv _ := rfl
-  continuous_toFun := continuous_subtype_val.subtype_val.subtype_mk _
-  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
+  continuous_toFun := continuous_subtypeVal.subtypeVal.subtype_mk _
+  continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
 
 @[simp]
 theorem coe_basedContractibleConstLoopPathHomeomorphUnitPathsBetween (x : Q)

@@ -112,7 +112,7 @@ instance [ContMDiffSMul I 𝓘(ℝ, V) n G V] :
   contMDiff_smul := by
     have hx : ContMDiff (I.prod 𝓘(ℝ, V × V)) 𝓘(ℝ, V × V) n
         fun p : G × puncturedPhaseSpace V ↦ (p.2 : V × V) :=
-      contMDiff_subtype_val.comp contMDiff_snd
+      contMDiff_subtypeVal.comp contMDiff_snd
     have hsmul := contMDiff_smul (I := I) (I' := 𝓘(ℝ, V)) (n := n) (G := G) (M := V)
     have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
     have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
@@ -128,8 +128,8 @@ instance [ContMDiffConstSMul 𝓘(ℝ, V) n G V] :
   have hsmul := ContMDiffConstSMul.contMDiff_const_smul (I := 𝓘(ℝ, V)) (n := n) (M := V) g
   have hfst : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.fst := contDiff_fst.contMDiff
   have hsnd : ContMDiff 𝓘(ℝ, V × V) 𝓘(ℝ, V) n Prod.snd := contDiff_snd.contMDiff
-  exact (hsmul.comp (hfst.comp contMDiff_subtype_val)).prodMk_space
-    (hsmul.comp (hsnd.comp contMDiff_subtype_val))
+  exact (hsmul.comp (hfst.comp contMDiff_subtypeVal)).prodMk_space
+    (hsmul.comp (hsnd.comp contMDiff_subtypeVal))
 
 end PuncturedPhaseSpace
 
@@ -411,7 +411,7 @@ energy–momentum map Poisson-commute. -/
 theorem poissonBracket_centralForceEnergyMomentum_comp_subtypeVal [FiniteDimensional ℝ V]
     {m : ℝ} {U : ℝ → ℝ} {W : TopologicalSpace.Opens (V × V)} (i j : Fin 2) (x : W) :
     SmoothTwoForm.poissonBracket
-      (SmoothForm.mpullback (Subtype.val : W → V × V) contMDiff_subtype_val
+      (SmoothForm.mpullback (Subtype.val : W → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
       (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y i)
       (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y j) x = 0 := by
@@ -438,12 +438,12 @@ independent away from the circular orbits, a nowhere dense set. -/
 theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] {m : ℝ}
     (hm : m ≠ 0) {U : ℝ → ℝ} (hU : ContDiffOn ℝ ∞ U (Ioi 0)) :
     SmoothTwoForm.IsIntegrableSystem
-      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtype_val
+      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
         (stdSymplecticForm (V := V)).constSmooth)
       (centralForceEnergyMomentum b m U ∘ Subtype.val) := by
   have hF (x : puncturedPhaseSpace V) := contDiffAt_centralForceEnergyMomentum b (m := m)
     (hU.contDiffAt (Ioi_mem_nhds (norm_pos_iff.2 x.property))) x.property
-  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtype_val x),
+  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtypeVal x),
     poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b, ?_, ?_⟩
   · -- Points with nonzero radial momentum are regular, and they are dense.
     refine Dense.mono (s₁ := {x : puncturedPhaseSpace V | ⟪(x : V × V).1, (x : V × V).2⟫_ℝ ≠ 0})

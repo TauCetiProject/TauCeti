@@ -44,7 +44,7 @@ variable {X : Type w} [TopologicalSpace X]
 the subtype. -/
 lemma continuous_map_closedBall {n : ℕ} (j : cell C n) :
     Continuous fun y : closedBall (0 : Fin n → ℝ) 1 ↦ map n j y :=
-  (continuousOn n j).comp_continuous continuous_subtype_val fun y ↦ y.2
+  (continuousOn n j).comp_continuous continuous_subtypeVal fun y ↦ y.property
 
 /-- The characteristic map of an `n`-cell, as a continuous map from the closed unit ball of
 `Fin n → ℝ` into the complex. -/

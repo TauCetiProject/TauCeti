@@ -164,7 +164,7 @@ theorem _root_.Path.homotopic_of_segment_ne_zero {a b : sphere (0 : E) 1} (γ γ
   refine Path.homotopic_of_continuous_square
     (normalizeSegmentToSphere (fun t => ((γ t : sphere (0 : E) 1) : E))
       (fun t => ((γ' t : sphere (0 : E) 1) : E))
-      (continuous_subtype_val.comp γ.continuous) (continuous_subtype_val.comp γ'.continuous) h0)
+      (continuous_subtypeVal.comp γ.continuous) (continuous_subtypeVal.comp γ'.continuous) h0)
     (ContinuousMap.continuous _) ?_ ?_ ?_ ?_
   · intro s
     refine Subtype.ext ?_
@@ -217,7 +217,7 @@ theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
   have hp : ‖(p : E)‖ = 1 := mem_sphere_zero_iff_norm.mp p.property
   let inclusion : ({p}ᶜ : Set (sphere (0 : E) 1)) → E := fun q =>
     ((q : sphere (0 : E) 1) : E)
-  have hinclusion : Continuous inclusion := continuous_subtype_val.comp continuous_subtype_val
+  have hinclusion : Continuous inclusion := continuous_subtypeVal.comp continuous_subtypeVal
   have hsegment : ∀ z : I × ({p}ᶜ : Set (sphere (0 : E) 1)),
       (1 - (z.1 : ℝ)) • inclusion z.2 + (z.1 : ℝ) • (-(p : E)) ≠ 0 := by
     rintro ⟨u, q⟩
@@ -255,12 +255,12 @@ theorem contractibleSpace_sphere_compl_singleton (p : sphere (0 : E) 1) :
 /-- **The inclusion of the unit sphere minus one point into the sphere is null-homotopic.** -/
 theorem nullhomotopic_inclusion_sphere_compl_singleton (p : sphere (0 : E) 1) :
     (ContinuousMap.mk (Subtype.val : ({p}ᶜ : Set (sphere (0 : E) 1)) → sphere (0 : E) 1)
-      continuous_subtype_val).Nullhomotopic := by
+      continuous_subtypeVal).Nullhomotopic := by
   let _ : ContractibleSpace ({p}ᶜ : Set (sphere (0 : E) 1)) :=
     contractibleSpace_sphere_compl_singleton p
   simpa using (id_nullhomotopic ({p}ᶜ : Set (sphere (0 : E) 1))).comp_right
     (ContinuousMap.mk (Subtype.val : ({p}ᶜ : Set (sphere (0 : E) 1)) → sphere (0 : E) 1)
-      continuous_subtype_val)
+      continuous_subtypeVal)
 
 /-- **A loop on the unit sphere that omits a point of the sphere is null-homotopic.** The loop
 runs in the punctured sphere, whose inclusion into the sphere is null-homotopic. -/

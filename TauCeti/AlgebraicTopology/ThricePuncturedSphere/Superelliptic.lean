@@ -163,8 +163,8 @@ instance superellipticCurve.instContinuousConstSMul :
     ContinuousConstSMul (rootsOfUnity 4 ℂ) superellipticCurve where
   continuous_const_smul ζ := by
     refine Continuous.subtype_mk ?_ _
-    exact continuous_subtype_val.fst.prodMk ((continuous_const_smul ζ).comp
-      continuous_subtype_val.snd)
+    exact continuous_subtypeVal.fst.prodMk ((continuous_const_smul ζ).comp
+      continuous_subtypeVal.snd)
 
 /-- The fourth roots of unity act freely on the superelliptic curve, whose `y`-coordinates are
 nonzero over the thrice-punctured sphere. -/
@@ -307,7 +307,7 @@ private def chartOne (w : ↥(ball (0 : ℂ) 1 \ {0})) : superellipticCurve :=
 
 private theorem continuous_localRoot_comp :
     Continuous fun w : ↥(ball (0 : ℂ) 1 \ {0}) ↦ localRoot w :=
-  continuousOn_localRoot.comp_continuous continuous_subtype_val fun w ↦ w.2.1
+  continuousOn_localRoot.comp_continuous continuous_subtypeVal fun w ↦ w.property.1
 
 private theorem continuous_chartZero : Continuous chartZero :=
   ((Continuous.subtype_mk (by fun_prop) _).prodMk continuous_localRoot_comp).subtype_mk _
@@ -448,7 +448,8 @@ private def chartInf (b : Bool) (v : ↥(ball (0 : ℂ) 1 \ {0})) :
 private theorem continuous_chartInf (b : Bool) : Continuous (chartInf b) :=
   (((Continuous.subtype_mk (continuous_const.div (by fun_prop) fun v ↦ pow_ne_zero 2 v.property.2)
     _).prodMk (continuous_const.mul
-    (continuousOn_localRootInf.comp_continuous continuous_subtype_val fun v ↦ v.2))).subtype_mk
+    (continuousOn_localRootInf.comp_continuous continuous_subtypeVal fun v ↦
+        v.property))).subtype_mk
       _).subtype_mk _
 
 /-- Every point `(s, y)` of the curve with `2 < |s|` is `(2 / v ^ 2, ζ localRootInf v)` for some

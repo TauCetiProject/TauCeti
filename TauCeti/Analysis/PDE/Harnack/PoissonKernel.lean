@@ -77,7 +77,7 @@ private theorem le_mul_and_mul_le_of_harmonicOnNhd_ball_one {n : ℕ} (hn : n �
   have hP := eqOn_ballPoissonIntegral_of_harmonicOnNhd hn hc hu
   let g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ := fun y ↦ u y
   have hgi : Integrable g volume.toSphere :=
-    (hc.comp_continuous continuous_subtype_val fun y ↦
+    (hc.comp_continuous continuous_subtypeVal fun y ↦
       sphere_subset_closedBall y.property).integrable_of_hasCompactSupport (.of_compactSpace _)
   have hKi := integrable_ballPoissonKernel_mul hgi (x := x)
   have hK0i := integrable_ballPoissonKernel_mul hgi (x := 0)

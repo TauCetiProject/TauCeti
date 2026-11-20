@@ -197,7 +197,7 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
     rw [(IsInducing.id.prodMap IsInducing.subtypeVal).continuousOn_iff]
     have he : ContinuousOn (fun v : TauCeti.sphereBundle F E ↦ e v)
         (sphereBundleProj F E ⁻¹' e.baseSet) :=
-      e.continuousOn.comp continuous_subtype_val.continuousOn fun v hv ↦
+      e.continuousOn.comp continuous_subtypeVal.continuousOn fun v hv ↦
         e.mem_source.2 (by simpa using hv)
     refine (he.fst.prodMk (((continuous_norm.comp_continuousOn he.snd).inv₀ fun v hv ↦
       norm_ne_zero_iff.2 (e.apply_snd_ne_zero_of_mem_sphereBundle (by simpa using hv))).smul
@@ -213,7 +213,7 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
     have hs : ContinuousOn (fun p : B × sphere (0 : F) 1 ↦
         e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))) (e.baseSet ×ˢ univ) :=
       e.toOpenPartialHomeomorph.continuousOn_symm.comp
-        (continuous_id.prodMap continuous_subtype_val).continuousOn
+        (continuous_id.prodMap continuous_subtypeVal).continuousOn
         fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1
     have hn : ContinuousOn (fun p : B × sphere (0 : F) 1 ↦
         ‖(e.toOpenPartialHomeomorph.symm (p.1, (p.2 : F))).snd‖⁻¹) (e.baseSet ×ˢ univ) :=
@@ -223,7 +223,7 @@ def sphereBundle (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.snd‖) :
           ((e.symm_apply_ne_zero_iff ℝ hp.1).2 (ne_zero_of_mem_unit_sphere p.2))
     refine (e.toOpenPartialHomeomorph.continuousOn_symm.comp
       (continuous_fst.continuousOn.prodMk
-        (hn.smul (continuous_subtype_val.comp continuous_snd).continuousOn))
+        (hn.smul (continuous_subtypeVal.comp continuous_snd).continuousOn))
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ e.mk_mem_target.2 hp.1).congr
       fun p (hp : p ∈ e.baseSet ×ˢ univ) ↦ ?_
     simp only [Function.comp_apply, Pi.smul_apply']

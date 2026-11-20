@@ -103,10 +103,10 @@ private theorem Compatible.continuous_cayleyContractionFun (h₀ : ω.Compatible
     (h₀.isUnit_one_sub_smul_cayleyFormula J.property (abs_coe_le_one (σ t)) hA hB)).continuousAt
   have hin : Continuous fun p : I × {J : AlmostComplexStructure V // ω.Tames J} ↦
       ((σ p.1 : ℝ), A, LinearMap.toContinuousLinearMap p.2.val.toLinearMap) :=
-    (continuous_subtype_val.comp (continuous_symm.comp continuous_fst)).prodMk
+    (continuous_subtypeVal.comp (continuous_symm.comp continuous_fst)).prodMk
       (continuous_const.prodMk
         (AlmostComplexStructure.isEmbedding_toContinuousLinearMap.continuous.comp
-          (continuous_subtype_val.comp continuous_snd)))
+          (continuous_subtypeVal.comp continuous_snd)))
   refine (hcont.comp (f := fun p : I × {J : AlmostComplexStructure V // ω.Tames J} ↦
       ((σ p.1 : ℝ), A, LinearMap.toContinuousLinearMap p.2.val.toLinearMap))
     hin.continuousAt).congr (Filter.Eventually.of_forall fun p ↦ ?_)
@@ -169,9 +169,9 @@ def Compatible.compatibleCayleyContraction (h₀ : ω.Compatible J₀) :
   toFun p := ⟨h₀.cayleyContraction (p.1, ⟨p.2, p.2.property.tames⟩),
     h₀.compatible_cayleyContraction p.1 p.2.property⟩
   continuous_toFun := by
-    refine Continuous.subtype_mk (continuous_subtype_val.comp
+    refine Continuous.subtype_mk (continuous_subtypeVal.comp
       (h₀.cayleyContraction.continuous.comp (continuous_fst.prodMk ?_))) _
-    exact (continuous_subtype_val.comp continuous_snd).subtype_mk _
+    exact (continuous_subtypeVal.comp continuous_snd).subtype_mk _
   map_zero_left J := Subtype.ext (by simp)
   map_one_left J := Subtype.ext (by simp)
   prop' t J hJ := by

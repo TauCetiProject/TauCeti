@@ -179,7 +179,7 @@ private theorem depth_eq_zero {s : Iio (1 : ℝ)} (hs : (s : ℝ) ≤ 0) :
   Subtype.ext (max_eq_right hs)
 
 private theorem continuous_depth : Continuous depth :=
-  (continuous_subtype_val.max continuous_const).subtype_mk _
+  (continuous_subtypeVal.max continuous_const).subtype_mk _
 
 /-- The chart of `extended f` built from the local collar `c`. -/
 private def chart (hc : IsCollar (f ∘ ((↑) : U → N)) c) (z : U × Iio (1 : ℝ)) : extended f :=
@@ -203,7 +203,7 @@ private theorem continuous_chart (hc : IsCollar (f ∘ ((↑) : U → N)) c) :
     Continuous (chart hc) :=
   ((hc.isOpenEmbedding.continuous.comp (continuous_fst.prodMk
     (continuous_depth.comp continuous_snd))).prodMk
-    ((continuous_subtype_val.comp continuous_snd).min continuous_const)).subtype_mk _
+    ((continuous_subtypeVal.comp continuous_snd).min continuous_const)).subtype_mk _
 
 /-- Read in the chart, a point of the local collar `c` at height `t ≤ 0` is the point `(c q, t)`,
 provided it lies in the external collar (`q` at depth zero) or in `M` (`t = 0`). -/
@@ -240,7 +240,7 @@ private theorem isOpenEmbedding_chart (hc : IsCollar (f ∘ ((↑) : U → N)) c
     (hcf : ∀ p, c p ∈ range f → (p.2 : ℝ) = 0) : IsOpenEmbedding (chart hc) := by
   set e := hc.isOpenEmbedding.isEmbedding.toHomeomorph
   have hopen : IsOpen (chartRange (f := f) c) :=
-    hc.isOpenEmbedding.isOpen_range.preimage (continuous_fst.comp continuous_subtype_val)
+    hc.isOpenEmbedding.isOpen_range.preimage (continuous_fst.comp continuous_subtypeVal)
   have he : ∀ y : chartRange (f := f) c, c (e.symm ⟨(y : M × ℝ).1, y.property⟩) = (y : M × ℝ).1 :=
     fun y => congrArg Subtype.val (e.apply_symm_apply ⟨(y : M × ℝ).1, y.property⟩)
   let E : U × Iio (1 : ℝ) ≃ₜ chartRange (f := f) c :=
@@ -264,10 +264,10 @@ private theorem isOpenEmbedding_chart (hc : IsCollar (f ∘ ((↑) : U → N)) c
       continuous_invFun := by
         have hq : Continuous fun y : chartRange (f := f) c => e.symm ⟨(y : M × ℝ).1, y.property⟩ :=
           e.symm.continuous.comp ((continuous_fst.comp
-            (continuous_subtype_val.comp continuous_subtype_val)).subtype_mk _)
+            (continuous_subtypeVal.comp continuous_subtypeVal)).subtype_mk _)
         exact (continuous_fst.comp hq).prodMk
-          (((continuous_subtype_val.comp (continuous_snd.comp hq)).add
-            (continuous_snd.comp (continuous_subtype_val.comp continuous_subtype_val))).subtype_mk
+          (((continuous_subtypeVal.comp (continuous_snd.comp hq)).add
+            (continuous_snd.comp (continuous_subtypeVal.comp continuous_subtypeVal))).subtype_mk
             _) }
   exact hopen.isOpenEmbedding_subtypeVal.comp E.isOpenEmbedding
 
@@ -281,13 +281,13 @@ private noncomputable def pushHomeomorph (a : N → ℝ) (ha : Continuous a) (ha
   left_inv z := Prod.ext rfl (Subtype.ext (unpush_push (ha0 _) (ha1 _) _))
   right_inv z := Prod.ext rfl (Subtype.ext (push_unpush (ha0 _) (ha1 _) _))
   continuous_toFun := continuous_fst.prodMk ((continuous_push.comp
-    ((ha.comp (continuous_subtype_val.comp continuous_fst)).prodMk
-      (continuous_subtype_val.comp continuous_snd))).subtype_mk _)
+    ((ha.comp (continuous_subtypeVal.comp continuous_fst)).prodMk
+      (continuous_subtypeVal.comp continuous_snd))).subtype_mk _)
   continuous_invFun := by
     have ha' : Continuous fun z : U × Iio (1 : ℝ) => a z.1 :=
-      ha.comp (continuous_subtype_val.comp continuous_fst)
+      ha.comp (continuous_subtypeVal.comp continuous_fst)
     have hs : Continuous fun z : U × Iio (1 : ℝ) => (z.2 : ℝ) :=
-      continuous_subtype_val.comp continuous_snd
+      continuous_subtypeVal.comp continuous_snd
     refine continuous_fst.prodMk (Continuous.subtype_mk ?_ _)
     exact ((hs.sub ha').max ((hs.sub ha').div (continuous_const.sub (continuous_const.mul ha'))
       fun z => by dsimp only [Pi.sub_apply, Pi.mul_apply]; linarith [ha1 z.1])).min hs
@@ -327,7 +327,7 @@ private theorem exists_pushesBy [T2Space M] [CompactSpace N] (hf : Injective f)
   set C : Set (extended f) := {y | (y : M × ℝ) ∈ (f '' T) ×ˢ Iic 0} ∪
     chart hc '' {z | (z.1 : N) ∈ T ∧ (z.2 : ℝ) ∈ Icc 0 (1 / 2)}
   have hC : IsClosed C :=
-    (((hT.image hfc).isClosed.prod isClosed_Iic).preimage continuous_subtype_val).union
+    (((hT.image hfc).isClosed.prod isClosed_Iic).preimage continuous_subtypeVal).union
       ((isCompact_slab hT hsupp).image (continuous_chart hc)).isClosed
   have hCχ : C ⊆ range (chart hc) := by
     rintro y (⟨⟨x, hxT, hx⟩, ht⟩ | ⟨z, -, rfl⟩)
@@ -426,7 +426,7 @@ private theorem isCollared_of_pushesBy (hfe : IsEmbedding f) {G : extended f ≃
   have hcomp : ι ∘ col = G ∘ e := funext fun p =>
     Subtype.ext (Prod.ext rfl (hG.coe_snd_eq_zero _ (by linarith [p.2.property.1])).symm)
   have hcol : Continuous col :=
-    continuous_fst.comp (continuous_subtype_val.comp (G.continuous.comp he.continuous))
+    continuous_fst.comp (continuous_subtypeVal.comp (G.continuous.comp he.continuous))
   -- Its image is the part of `M` covered by the push of the open lower half of `extended f`.
   have hrange : range col = ι ⁻¹' (G '' {y | (y : M × ℝ).2 < 0}) := by
     ext m
@@ -445,7 +445,7 @@ private theorem isCollared_of_pushesBy (hfe : IsEmbedding f) {G : extended f ≃
   refine isCollared_iff.2 ⟨col, ⟨.of_comp hcol hι (hcomp ▸ G.isEmbedding.comp he), hrange ▸ ?_⟩,
     fun x => ?_⟩
   · exact (G.isOpenMap _ (isOpen_Iio.preimage
-      (continuous_snd.comp continuous_subtype_val))).preimage hι
+      (continuous_snd.comp continuous_subtypeVal))).preimage hι
   · -- At depth zero the collar is `f`.
     have he0 : e (x, ⟨0, by norm_num⟩) = ⟨(f x, -(1 / 4)), mk_mem_extended (by norm_num)⟩ :=
       Subtype.ext (Prod.ext rfl (by norm_num))

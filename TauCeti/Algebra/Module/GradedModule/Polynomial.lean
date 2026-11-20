@@ -357,7 +357,7 @@ theorem isSMulRegular_of_coeff_zero (hd : d ≠ 0)
   refine IsSMulRegular.of_right_eq_zero_of_smul fun x hax ↦ ?_
   by_contra hx
   have hs : (DirectSum.decompose G.piece x).support.Nonempty := by
-    rw [Finset.nonempty_iff_ne_empty]
+    rw [← Finset.ne_empty_iff_nonempty]
     intro hs
     have hz := DFinsupp.support_eq_empty.mp hs
     exact hx ((DirectSum.decompose G.piece).injective

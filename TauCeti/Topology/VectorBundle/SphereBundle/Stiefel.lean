@@ -148,7 +148,7 @@ def fiberIncl (b : B) : C(stiefel (E b) k, StiefelBundle F E k) where
   toFun x := ⟨b, x⟩
   continuous_toFun := continuous_iff.2 ⟨continuous_const, fun i ↦
     (FiberBundle.continuous_totalSpaceMk F E b).comp
-      ((continuous_apply i).comp continuous_subtype_val)⟩
+      ((continuous_apply i).comp continuous_subtypeVal)⟩
 
 variable {F E k}
 

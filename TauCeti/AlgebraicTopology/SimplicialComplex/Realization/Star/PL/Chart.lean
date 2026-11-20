@@ -61,9 +61,9 @@ private theorem exists_openStar_chart_of_simplexModel
     left_inv x := by simp [toStar, ofInterior]
     right_inv y := by simp [toStar, ofInterior]
     continuous_toFun := ((e₀.continuous.comp
-      (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _
+      (continuous_subtypeVal.subtype_mk _)).subtypeVal).subtype_mk _
     continuous_invFun := ((e₀.symm.continuous.comp
-      (continuous_subtype_val.subtype_mk _)).subtype_val).subtype_mk _ }
+      (continuous_subtypeVal.subtype_mk _)).subtypeVal).subtype_mk _ }
   obtain ⟨c, hcs, hct, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
     (K.isOpen_openStarRealization v) isOpen_interior e
     (e.symm ⟨_, (nonempty_interior_coordinateSimplex (Fin m)).some_mem⟩)

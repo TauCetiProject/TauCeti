@@ -102,7 +102,7 @@ private theorem stage_injective (hF : (frobenius K p).Flat) (n : ℕ) :
 private noncomputable def stageEquiv (hF : (frobenius K p).Flat) (n : ℕ) :
     K ≃+* (stage i p n).range :=
   RingEquiv.ofBijective (stage i p n).rangeRestrict
-    ⟨fun _ _ h ↦ stage_injective i p hF n congr($h.1), (stage i p n).rangeRestrict_surjective⟩
+    ⟨fun _ _ h ↦ stage_injective i p hF n congr(($h).val), (stage i p n).rangeRestrict_surjective⟩
 
 /-- A perfect closure is flat over the image of each stage. -/
 private theorem flat_range_stage (hF : (frobenius K p).Flat) (n : ℕ) :

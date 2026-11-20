@@ -63,7 +63,7 @@ theorem univ_prod [LocallyCompactSpace Z] (hS : IsCoherentWith (range S)) (hSX :
     refine hS.continuous_iff.2 <| forall_mem_range.2 fun i ↦ ?_
     rw [continuousOn_iff_continuous_domRestrict]
     have hc : Continuous fun p : S i × Z ↦ g (p.2, p.1) :=
-      (hg' i).comp_continuous (continuous_snd.prodMk (continuous_subtype_val.comp continuous_fst))
+      (hg' i).comp_continuous (continuous_snd.prodMk (continuous_subtypeVal.comp continuous_fst))
         fun p ↦ ⟨mem_univ _, p.1.property⟩
     exact (ContinuousMap.curry ⟨_, hc⟩).continuous
   exact continuous_eval.comp ((hG.comp continuous_snd).prodMk continuous_fst)
@@ -125,5 +125,5 @@ theorem Topology.IsCoherentWith.isClosed_of_forall_isClosed_inter {X : Type*} [T
     {S : Set (Set X)} (hS : IsCoherentWith S) {t : Set X} (ht : ∀ s ∈ S, IsClosed (t ∩ s)) :
     IsClosed t := by
   refine hS.isClosed_iff.2 fun s hs ↦ ?_
-  have := (ht s hs).preimage (continuous_subtype_val (p := (· ∈ s)))
+  have := (ht s hs).preimage (continuous_subtypeVal (p := (· ∈ s)))
   rwa [preimage_inter, Subtype.coe_preimage_self, inter_univ] at this

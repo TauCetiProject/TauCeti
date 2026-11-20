@@ -86,11 +86,11 @@ private theorem coeffVol_realCliffordSpinOneOneEquiv (p : rootsOfUnity 2 ℝ × 
 
 private theorem continuous_coeffOne : Continuous coeffOne :=
   ((IsModuleTopology.continuous_of_linearMap realCliffordOneOneEquivMatrix.toLinearMap).comp
-    continuous_subtype_val).matrix_elem 0 0
+    continuous_subtypeVal).matrix_elem 0 0
 
 private theorem continuous_coeffVol : Continuous coeffVol :=
   ((IsModuleTopology.continuous_of_linearMap realCliffordOneOneEquivMatrix.toLinearMap).comp
-    continuous_subtype_val).matrix_elem 0 1
+    continuous_subtypeVal).matrix_elem 0 1
 
 /-- The sign `ζ`, read off from the sign of `ζ cosh t`. -/
 private noncomputable def spinSign (x : realCliffordSpinGroup 1 1) : rootsOfUnity 2 ℝ :=
@@ -151,7 +151,7 @@ noncomputable def realCliffordSpinOneOneContinuousMulEquiv :
     change Continuous realCliffordSpinOneOneEquiv.symm
     rw [h]
     have hσ : Continuous fun x ↦ ((spinSign x : ℝˣ) : ℝ) :=
-      Units.continuous_val.comp (continuous_subtype_val.comp continuous_spinSign)
+      Units.continuous_val.comp (continuous_subtypeVal.comp continuous_spinSign)
     exact continuous_spinSign.prodMk
       (continuous_ofAdd.comp (continuous_arsinh.comp (hσ.mul continuous_coeffVol)))
 

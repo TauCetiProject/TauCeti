@@ -96,7 +96,7 @@ private theorem isOpen_image_ball_zero_one (hEF : finrank ℝ E = finrank ℝ F)
   let j : F → sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 := Φ ∘ (↑)
   have hj : IsOpenEmbedding j := Φ.isOpenEmbedding.comp OnePoint.isOpenEmbedding_coe
   have hcont {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Continuous fun y : s ↦ j (f y) :=
-    hj.continuous.comp (hf.comp_continuous continuous_subtype_val fun y ↦ hs y.2)
+    hj.continuous.comp (hf.comp_continuous continuous_subtypeVal fun y ↦ hs y.property)
   have hinj' {s : Set E} (hs : s ⊆ closedBall (0 : E) 1) : Injective fun y : s ↦ j (f y) :=
     fun y z h ↦ Subtype.ext <| hinj (hs y.property) (hs z.property) (hj.injective h)
   have hjf : InjOn (j ∘ f) (closedBall 0 1) := hj.injective.injOn.comp hinj (mapsTo_univ _ _)
@@ -259,7 +259,7 @@ theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N
     rintro _ ⟨y, -, rfl⟩
     exact y.property
   rw [domRestrict_eq, image_comp]
-  exact (hU.isOpenMap_subtype_val s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
+  exact (hU.isOpenMap_subtypeVal s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
     (hinj.mono hsU) hEF
 
 omit [FiniteDimensional ℝ E] in
@@ -288,7 +288,7 @@ private theorem coe_apply_mem_interior (e : A ≃ₜ B) (hEF : finrank ℝ E = f
   let U : TopologicalSpace.Opens M := ⟨interior A, isOpen_interior⟩
   let g : U → N := fun y ↦ e ⟨y, interior_subset y.property⟩
   have hg : Continuous g :=
-    continuous_subtype_val.comp (e.continuous.comp (continuous_inclusion interior_subset))
+    continuous_subtypeVal.comp (e.continuous.comp (continuous_inclusion interior_subset))
   have hginj : Injective g := fun y z hyz ↦
     Subtype.ext (Subtype.mk.inj (e.injective (Subtype.ext hyz)))
   exact interior_maximal (by rintro _ ⟨y, rfl⟩; exact (e _).property)

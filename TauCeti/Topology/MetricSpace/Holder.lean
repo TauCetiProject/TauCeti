@@ -155,7 +155,7 @@ theorem HolderOnWith.extend_of_dense (hf : HolderOnWith C r f s)
   replace hr : 0 < r := pos_iff_ne_zero.2 hr
   have hu : UniformContinuous (s.domRestrict f) := hf.holderWith.uniformContinuous hr
   have hi := isUniformInducing_val s
-  have hd : DenseRange ((↑) : s → X) := hs.denseRange_val
+  have hd : DenseRange ((↑) : s → X) := hs.denseRange_subtypeVal
   set g := (hi.isDenseInducing hd).extend (s.domRestrict f)
   have hg : Continuous g := (uniformContinuous_uniformly_extend hi hd hu).continuous
   have heq : EqOn f g s := fun x hx => (uniformly_extend_of_ind hi hd hu ⟨x, hx⟩).symm

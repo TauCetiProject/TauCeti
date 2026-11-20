@@ -100,7 +100,7 @@ theorem isOpen_radialCore {U : Set (TotalSpace F E)} (hU : IsOpen U) :
   let R : Icc (0 : ℝ) 1 × TotalSpace F E → TotalSpace F E :=
     fun p => ⟨p.2.proj, (p.1 : ℝ) • p.2.snd⟩
   have hR : Continuous R :=
-    (continuous_subtype_val.comp continuous_fst).smul_totalSpace continuous_snd
+    (continuous_subtypeVal.comp continuous_fst).smul_totalSpace continuous_snd
   have hclosed : IsClosed (Prod.snd '' (R ⁻¹' Uᶜ)) :=
     isClosedMap_snd_of_compactSpace _ (hU.isClosed_compl.preimage hR)
   convert hclosed.isOpen_compl using 1

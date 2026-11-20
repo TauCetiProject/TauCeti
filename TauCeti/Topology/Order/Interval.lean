@@ -256,7 +256,8 @@ theorem exists_continuous_projIcc_inverse {α β : Type*} [ConditionallyComplete
     hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
   have hF (s : Icc a b) : (F s : β) = f s := rfl
   refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
-    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
+    continuous_subtypeVal.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦
+        (F.symm _).property,
     fun r ↦ ?_, fun s hs ↦ ?_⟩
   · rw [← hF, Homeomorph.apply_symm_apply, coe_projIcc, min_comm]
   · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=

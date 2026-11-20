@@ -195,11 +195,11 @@ private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
         simp only [Φ₀.apply_symm_apply]
         exact Ψ.right_inv (hWt _ ⟨w, hw, rfl⟩)
       contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff W _).mp
-        (Ψ.contMDiffOn.comp_contMDiff (contMDiff_subtype_val.comp Φ₀.contMDiff)
+        (Ψ.contMDiffOn.comp_contMDiff (contMDiff_subtypeVal.comp Φ₀.contMDiff)
           fun p => hW₀src _ (Φ₀ p).property)
       contMDiff_invFun := Φ₀.contMDiff_invFun.comp
         ((TauCeti.ContMDiff.subtypeVal_comp_iff W₀ _).mp
-          (Ψ.symm.contMDiffOn.comp_contMDiff contMDiff_subtype_val
+          (Ψ.symm.contMDiffOn.comp_contMDiff contMDiff_subtypeVal
             fun y => hWt y y.property)) }
   refine ⟨W, fun y hy => htarget (hWt y hy), Φ, fun x => ?_⟩
   -- the value of `Φ` is the `toFun` field above, so this holds by `rfl`

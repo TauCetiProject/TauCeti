@@ -70,7 +70,7 @@ theorem exists_analyticOnNhd_root_sub_eq_pow_mul_unit
     intro x
     obtain ⟨b, hb⟩ := hlocal x x.property
     have hx : order x = b := hb.self_of_nhds
-    filter_upwards [(continuous_subtype_val.tendsto x).eventually hb] with w hw
+    filter_upwards [(continuous_subtypeVal.tendsto x).eventually hb] with w hw
     exact hw.trans hx.symm
   let : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.1 hUc.isPreconnected
   obtain ⟨x₀, hx₀⟩ := hUc.nonempty

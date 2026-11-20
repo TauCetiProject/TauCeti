@@ -133,7 +133,7 @@ theorem norm_LSeries_threeFourOne_ge_one (χ : UnitaryIdealWeight K)
   have hE₁ := χ.val.exp_tsum_neg_log_one_sub_eq_LSeries hS₁
   have hE₂ := (χ ^ 2).val.exp_tsum_neg_log_one_sub_eq_LSeries hS₂
   simp only [toIdealArithmeticFunction_eq_val]
-  rw [← hE₀, ← hE₁, ← hE₂, ← exp_nat_mul, ← exp_nat_mul, ← exp_add, ← exp_add, norm_exp,
+  rw [← hE₀, ← hE₁, ← hE₂, ← exp_natCast_mul, ← exp_natCast_mul, ← exp_add, ← exp_add, norm_exp,
     Real.one_le_exp_iff]
   have hsum := Complex.hasSum_re
     (((hs₀.hasSum.mul_left 3).add (hs₁.hasSum.mul_left 4)).add hs₂.hasSum)

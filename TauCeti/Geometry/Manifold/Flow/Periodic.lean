@@ -493,7 +493,7 @@ theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
   -- The initial points of the contractible solutions form a closed set of nondegenerate fixed
   -- points, hence a finite set.
   have hK : IsClosed (Subtype.val '' {y | P (e.symm y)}) :=
-    hY.isClosedMap_subtype_val _ (isClopen_setOf_homotopic_refl _ hfam).isClosed
+    hY.isClosedMap_subtypeVal _ (isClopen_setOf_homotopic_refl _ hfam).isClosed
   have hKfin := hK.isCompact.finite_of_isNondegenerateFixedPt (I := I) <| by
     rintro _ ⟨y, hy, rfl⟩
     have hnd := h _ ((hP _).1 hy)

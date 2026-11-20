@@ -121,7 +121,7 @@ private theorem contMDiff_mk_iff {U : Opens X} (s : (x : U) → V x) :
 those whose bundled map into the total space is complex analytic. -/
 def holomorphicBundleSections (U : Opens X) : Submodule ℂ ((x : U) → V x) where
   carrier := {s | ContMDiff I (I.prod 𝓘(ℂ, F)) ω (fun x : U ↦ TotalSpace.mk' F (x : X) (s x))}
-  zero_mem' := (contMDiff_zeroSection ℂ V).comp contMDiff_subtype_val
+  zero_mem' := (contMDiff_zeroSection ℂ V).comp contMDiff_subtypeVal
   add_mem' {s t} hs ht := by
     refine (contMDiff_mk_iff I F V _).2 fun x ↦ ?_
     refine (((contMDiff_mk_iff I F V s).1 hs x).add_section
@@ -346,7 +346,7 @@ private def trivialSectionsEquiv (U : Opens X) :
     (Trivial.contMDiff_mk_iff.1 (contMDiff s)).2
   invFun f := ofContMDiff (fun x ↦ f x)
     (Trivial.contMDiff_mk_iff.2
-      ⟨contMDiff_subtype_val, holomorphicStructureSheafModules.contMDiff f⟩)
+      ⟨contMDiff_subtypeVal, holomorphicStructureSheafModules.contMDiff f⟩)
   map_add' _ _ := holomorphicStructureSheafModules.ext fun _ ↦ by simp
   map_smul' _ _ := holomorphicStructureSheafModules.ext fun _ ↦ by simp
   left_inv _ := ext fun _ ↦ by simp

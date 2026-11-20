@@ -322,7 +322,7 @@ theorem signInvariant_sectionSet (hS : IsPreconnected S) (k : ι) (i : Fin D.cou
     SignInvariant (fun z : S × ℝ ↦ eval (Fin.snoc z.1.val z.2) (F k)) (sectionSet D.root i) := by
   have := isPreconnected_iff_preconnectedSpace.1 hS
   refine (isPreconnected_sectionSet (D.continuous_root i)).signInvariant_of_eq_zero_iff
-    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+    ((continuous_eval (F k)).comp ((continuous_subtypeVal.comp continuous_fst).finSnoc
       (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
   rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
     D.lazardValuation_snoc_eq_of_mem_sectionSet k hz hz']
@@ -334,7 +334,7 @@ theorem signInvariant_sectorSet (hS : IsPreconnected S) (k : ι) (j : Fin (D.cou
   have := isPreconnected_iff_preconnectedSpace.1 hS
   refine (isPreconnected_sectorSet D.continuous_root D.strictMono_root j
     ).signInvariant_of_eq_zero_iff
-    ((continuous_eval (F k)).comp ((continuous_subtype_val.comp continuous_fst).finSnoc
+    ((continuous_eval (F k)).comp ((continuous_subtypeVal.comp continuous_fst).finSnoc
       (A := fun _ ↦ ℝ) continuous_snd)).continuousOn fun z hz z' hz' ↦ ?_
   rw [← lazardValuation_pos_iff, ← lazardValuation_pos_iff,
     D.lazardValuation_snoc_eq_of_mem_sectorSet k hz hz']

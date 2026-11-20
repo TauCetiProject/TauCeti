@@ -85,7 +85,7 @@ theorem finite_setOf_sum_intCast_smul_mem {v : ι → E} (hv : LinearIndependent
     intro a
     simp [φ, b, Basis.equivFun_symm_apply, Basis.span_apply]
   have hs' : Bornology.IsBounded (((↑) : span ℝ (Set.range v) → E) ⁻¹' s) :=
-    isometry_subtype_coe.antilipschitzWith.isBounded_preimage hs
+    isometry_subtypeVal.antilipschitzWith.isBounded_preimage hs
   refine ((ZSpan.setFinite_inter b hs').preimage hφ.injOn).subset fun a ha =>
     Set.mem_preimage.2 ⟨?_, ?_⟩
   · simpa [hφv] using ha

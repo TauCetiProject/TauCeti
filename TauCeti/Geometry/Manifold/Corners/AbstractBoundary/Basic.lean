@@ -371,7 +371,7 @@ theorem continuous_faceSection : Continuous (faceSection he hi) :=
 @[fun_prop]
 theorem continuous_point : Continuous (point : J.AbstractBoundary M → M) := by
   refine continuous_def.2 fun U hU ↦ isOpen_iff.2 fun e _ i _ ↦ ?_
-  exact hU.preimage continuous_subtype_val
+  exact hU.preimage continuous_subtypeVal
 
 /-- The face sections are injective: a face section remembers its point of `M`. -/
 theorem faceSection_injective : Injective (faceSection he hi) := fun _ _ h ↦
@@ -399,7 +399,7 @@ theorem isOpenMap_faceSection : IsOpenMap (faceSection he hi) := by
         faceSection_eq_faceSection_iff.2 ⟨rfl, h⟩⟩
   rw [hset]
   exact ((hO.inter e.open_source).inter (isOpen_setOf_faceGerm_eq e e' i j)).preimage
-    continuous_subtype_val
+    continuous_subtypeVal
 
 /-- **The faces of a chart are open pieces of the abstract boundary**: every face section is an
 open embedding. -/
@@ -510,7 +510,7 @@ theorem isOpenMap_codRestrict_point_modelWithCornersEuclideanHalfSpace (hn : n �
   obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hU.preimage (continuous_faceSection (he := he)
     (hi := hi)))
   -- Near `p`, every boundary point in the chart and in `O` is the image of a point of `U`.
-  refine mem_of_superset ((hO.inter e.open_source).preimage continuous_subtype_val
+  refine mem_of_superset ((hO.inter e.open_source).preimage continuous_subtypeVal
     |>.mem_nhds ⟨(hOU ▸ hbU : p ∈ Subtype.val ⁻¹' O), p.property.1⟩) ?_
   rintro ⟨y, hy⟩ ⟨hyO, hye⟩
   have hy0 : e.extend (𝓡∂ (m + 1)) y 0 = 0 := by

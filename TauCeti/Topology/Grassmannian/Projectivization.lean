@@ -56,7 +56,7 @@ noncomputable def projectivizationHomeomorph (𝕜 : Type*) [Field 𝕜] [Topolo
   continuous_invFun := by
     apply isQuotientMap_frameSpan.continuous_iff.2
     have hc := Projectivization.continuous_mk (K := 𝕜)
-      ((continuous_apply 0).comp (continuous_subtype_val (p :=
+      ((continuous_apply 0).comp (continuous_subtypeVal (p :=
         fun v : Fin 1 → Fin N → 𝕜 ↦ LinearIndependent 𝕜 v)))
       (fun v ↦ v.property.ne_zero 0)
     exact hc.congr fun v ↦

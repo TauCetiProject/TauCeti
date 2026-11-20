@@ -376,7 +376,7 @@ theorem lsCategoryCount_eq_zero : lsCategoryCount X A = 0 ↔ A = ∅ := by
 
 /-- A nonempty set has positive Lusternik–Schnirelmann count. -/
 theorem lsCategoryCount_pos : 0 < lsCategoryCount X A ↔ A.Nonempty := by
-  rw [pos_iff_ne_zero, Ne, lsCategoryCount_eq_zero, nonempty_iff_ne_empty]
+  rw [pos_iff_ne_zero, Ne, lsCategoryCount_eq_zero, ← ne_empty_iff_nonempty]
 
 /-- Subadditivity of the Lusternik–Schnirelmann count on unions. -/
 theorem lsCategoryCount_union_le :
@@ -643,7 +643,7 @@ theorem lsCategoryCount_preimage_subtypeVal {C : Set X} (hC : IsClopen C) (hA : 
     have hmem (x : X) : (if x ∈ C then x else y) ∈ C := by split_ifs with h; exacts [h, hA hy]
     let r : C(X, C) := ⟨fun x ↦ ⟨_, hmem x⟩,
       (continuous_id'.if (by simp [hC.frontier_eq]) continuous_const).subtype_mk hmem⟩
-    have hr : r.comp ⟨Subtype.val, continuous_subtype_val⟩ = ContinuousMap.id C :=
+    have hr : r.comp ⟨Subtype.val, continuous_subtypeVal⟩ = ContinuousMap.id C :=
       ContinuousMap.ext fun x ↦ Subtype.ext (by simp [r, x.property])
     exact lsCategoryCount_le_of_mapsTo _ r (by rw [hr]) (mapsTo_preimage _ _)
   · simpa [image_preimage_eq_of_subset (hA.trans Subtype.range_coe.superset)] using

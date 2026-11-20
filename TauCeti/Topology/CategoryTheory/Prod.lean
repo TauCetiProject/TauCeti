@@ -106,10 +106,10 @@ theorem continuous_comp_prod
       {p : Quiver.Total D × Quiver.Total D // p.1.right = p.2.left})
   have h₁ : Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
       p.1.right = p.2.left} ↦ e p.val.1 := e.continuous.comp (continuous_fst.comp
-    continuous_subtype_val)
+    continuous_subtypeVal)
   have h₂ : Continuous fun p : {p : Quiver.Total (C × D) × Quiver.Total (C × D) //
       p.1.right = p.2.left} ↦ e p.val.2 := e.continuous.comp (continuous_snd.comp
-    continuous_subtype_val)
+    continuous_subtypeVal)
   have hgC : Continuous gC :=
     ((continuous_fst.comp h₁).prodMk (continuous_fst.comp h₂)).subtype_mk _
   have hgD : Continuous gD :=

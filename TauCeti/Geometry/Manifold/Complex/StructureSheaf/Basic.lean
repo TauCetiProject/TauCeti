@@ -333,7 +333,7 @@ def precomp (f : X → Y) (hf : ContMDiff I J ω f) (U : (Opens Y)ᵒᵖ) :
     { toFun := fun g ↦ ofContMDiff (fun x ↦ g ⟨f x.val, x.property⟩) (by
         apply (contMDiff g).comp (I' := J)
         exact (TauCeti.ContMDiff.subtypeVal_comp_iff (unop U) _).mp
-          (hf.comp contMDiff_subtype_val))
+          (hf.comp contMDiff_subtypeVal))
       map_one' := rfl
       map_mul' := fun _ _ ↦ rfl
       map_zero' := rfl
@@ -607,7 +607,7 @@ theorem precompLinearMap_bijective (f : X → Y) (hf : ContMDiff I J ω f) (g : 
     fun y ↦ ⟨g y.val, ((hfg y.val).symm ▸ y.property : f (g y.val) ∈ unop U)⟩
   have hk : ContMDiff J I ω k := by
     rw [← ContMDiff.subtypeVal_comp_iff]
-    exact hg.comp contMDiff_subtype_val
+    exact hg.comp contMDiff_subtypeVal
   have hfk (y : ↥(unop U)) : (⟨f (k y).val, (k y).property⟩ : ↥(unop U)) = y := Subtype.ext
       (hfg y.val)
   refine ⟨fun h₁ h₂ h ↦ ext fun y ↦ ?_, fun h ↦ ⟨ofContMDiff (fun y ↦ h (k y))

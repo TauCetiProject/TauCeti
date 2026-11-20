@@ -151,7 +151,7 @@ theorem coeFn_toLp_inclusion_subOne_inv (h : 0 ≤ s) (u : SobolevTopologicalGau
 /-- A Sobolev gauge is continuous as a map into `ℂ`. -/
 theorem continuous_coe_toSubgroup (u : SobolevTopologicalGaugeGroup hs) :
     Continuous fun z ↦ ((toSubgroup hs u : ℂ → Circle) z : ℂ) :=
-  continuous_subtype_val.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).2).1
+  continuous_subtypeVal.comp ((mem_sobolevGaugeGroup hs _).1 (toSubgroup hs u).property).1
 
 /-- A Sobolev gauge is determined by its element `u - 1` of `H^s(ℂ)`. -/
 theorem subOne_injective :

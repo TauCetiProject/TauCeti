@@ -119,7 +119,7 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
     exact (MulSemiringAction.toAlgHom A B g).comap_mem_spa_integralClosure hy
   let σ (g : G) : spa T.plus → spa T.plus := fun y ↦ ⟨_, hmem g y.property⟩
   have hσ (g : G) : Continuous (σ g) :=
-    ((continuous_comap _).comp continuous_subtype_val).subtype_mk _
+    ((continuous_comap _).comp continuous_subtypeVal).subtype_mk _
   have hinv (g : G) (y : Spv B) :
       comap (MulSemiringAction.toRingHom G B g⁻¹) (comap (MulSemiringAction.toRingHom G B g) y) =
         y := by

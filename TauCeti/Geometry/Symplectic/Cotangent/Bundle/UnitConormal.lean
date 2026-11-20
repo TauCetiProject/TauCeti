@@ -282,7 +282,7 @@ theorem isSmoothEmbedding_unitConormalInclusion (hi : IsSmoothEmbedding J I ∞ 
       unitConormalInclusion J I k i = conormalInclusion (Fin k → ℝ) J I i ∘ Subtype.val :=
     (rfl)
   refine ⟨hf.isImmersion_of_injective_mfderiv (by simp) fun z ↦ ?_,
-    Topology.IsEmbedding.of_comp hf.continuous continuous_subtype_val
+    Topology.IsEmbedding.of_comp hf.continuous continuous_subtypeVal
       (hcomp ▸ hι.isEmbedding.comp hv.isEmbedding)⟩
   have h : Injective (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
       (conormalInclusion (Fin k → ℝ) J I i ∘ Subtype.val) z) := by

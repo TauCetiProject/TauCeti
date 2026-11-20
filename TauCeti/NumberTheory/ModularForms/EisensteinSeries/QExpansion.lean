@@ -172,8 +172,8 @@ theorem qExpansion_identity_zmod (f : ZMod v → ℂ) {k : ℕ} (hk : 2 ≤ k) (
     have hrm : -(((r : ℕ) : ZMod v) * -(m : ZMod v)) = (((r : ℕ) * m : ℕ) : ℤ) := by
       push_cast
       ring
-    rw [hrm, stdAddChar_coe, coe_residuePoint, ← Complex.exp_nat_mul,
-      ← Complex.exp_nat_mul, ← Complex.exp_add]
+    rw [hrm, stdAddChar_coe, coe_residuePoint, ← Complex.exp_natCast_mul,
+      ← Complex.exp_natCast_mul, ← Complex.exp_add]
     congr 1
     push_cast
     ring
@@ -281,7 +281,7 @@ private lemma tsum_row_pnat (hk : 2 ≤ k) (z : ℍ) (c : ℕ+) :
   congr 1
   refine tsum_congr fun m ↦ ?_
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  rw [pow_mul, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul]
+  rw [pow_mul, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul]
   congr 2
   simp only [w]
   push_cast
@@ -596,7 +596,7 @@ private lemma tsum_row_add_tsum_row_neg (hk : 2 ≤ k) (z : ℍ) (c : ℕ+)
   rw [H]
   congr 1
   refine tsum_congr fun m ↦ ?_
-  rw [← Complex.exp_nat_mul, ← Complex.exp_nat_mul, hw]
+  rw [← Complex.exp_natCast_mul, ← Complex.exp_natCast_mul, hw]
   congr 2
   push_cast
   ring

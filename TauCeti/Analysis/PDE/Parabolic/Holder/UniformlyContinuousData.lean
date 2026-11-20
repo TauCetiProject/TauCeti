@@ -334,7 +334,7 @@ theorem euclideanCauchySolutionBUC_apply_slabMk_zero
     fun d ↦ ?_
   · exact isClosed_eq ((continuous_eval_const _).comp
       (euclideanCauchySolutionBUC hα₀ hα₁ hT a b c ha).continuous)
-      ((continuous_eval_const x).comp (continuous_subtype_val.comp continuous_snd))
+      ((continuous_eval_const x).comp (continuous_subtypeVal.comp continuous_snd))
   · simp
 
 /-- **Uniform attainment of the initial datum.** As `t → 0⁺`, the extended solution converges to
@@ -360,7 +360,7 @@ theorem tendstoUniformly_euclideanCauchySolutionBUC
       rw [mul_div_assoc', div_le_div_iff₀ (by positivity) two_pos]
       nlinarith [norm_nonneg (timeDerivL u)]⟩
   have hev : ∀ᶠ t : Icc (0 : ℝ) T in 𝓝 ⟨0, left_mem_Icc.2 hT.le⟩, (t : ℝ) < τ :=
-    (continuous_subtype_val.tendsto _).eventually (gt_mem_nhds hτ)
+    (continuous_subtypeVal.tendsto _).eventually (gt_mem_nhds hτ)
   filter_upwards [hev] with t ht x
   have h1 := abs_le.1 (hu (slabMk x t))
   have h2 := abs_lt.1 (hg x)

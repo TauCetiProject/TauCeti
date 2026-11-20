@@ -102,7 +102,7 @@ Its chart operators are the transposes of the chart operators of `f`. -/
 noncomputable def dualMap (f : A ⟶ D) : D.dual ⟶ A.dual where
   operator i j :=
     ⟨fun x => (f.operator j i ⟨x.val, x.property.2, x.property.1⟩).piTranspose,
-      ((f.operator j i).continuous.comp (continuous_subtype_val.subtype_mk _)).piTranspose⟩
+      ((f.operator j i).continuous.comp (continuous_subtypeVal.subtype_mk _)).piTranspose⟩
   compatible i i' j j' x hi hi' hj hj' v := by
     have h : (f.operator j i ⟨x, hj, hi⟩).comp (A.core.coordChange j' j x) =
         (D.core.coordChange i' i x).comp (f.operator j' i' ⟨x, hj', hi'⟩) :=

@@ -274,7 +274,7 @@ noncomputable def dilationSimilarityHom {S T : Set (PLPath 𝕜 V)} (hf : Functi
   wt_toFun _ := normalCrystalOn_wt_of_val_eq_map_natCast_smul hf hF hS hT rfl
   ε_toFun i _ := normalCrystalOn_ε_of_val_eq_map_natCast_smul hf hF hS hT i rfl
   eIter_toFun i _ := Option.unattach_inj.mp <| by
-    simpa only [Option.unattach_map, Option.map_unattach] using
+    simpa only [Option.unattach_map, Option.map_unattach_eq_map_val] using
       unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF hS hT i hn rfl
 
 @[simp]
@@ -339,7 +339,7 @@ noncomputable def componentDilationSimilarityHom (hf : Function.Injective f)
       unattach_normalCrystalOn_eIter_of_val_eq_map_natCast_smul hf hF
         isCrystalSet_setOf_isIntegralPath _ i hn (π := y.val) rfl,
       ← NormalCrystal.unattach_component_e]
-    simp only [Option.unattach_map, Option.map_unattach]
+    simp only [Option.unattach_map, Option.map_unattach_eq_map_val]
 
 @[simp]
 theorem componentDilationSimilarityHom_apply (hf : Function.Injective f)

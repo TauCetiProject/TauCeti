@@ -306,7 +306,7 @@ private def coneExt (Ψ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1) (z : 
 
 private theorem continuous_coneExt (hΨ : Continuous Ψ) : Continuous (coneExt Ψ) :=
   (continuous_norm.max continuous_const).smul
-    (continuous_subtype_val.comp (hΨ.comp (continuous_radialRetractionToClosedBall zero_le_one)))
+    (continuous_subtypeVal.comp (hΨ.comp (continuous_radialRetractionToClosedBall zero_le_one)))
 
 /-- For a slice disc, the cone extension has `max ‖·‖ 1` equal to that of its argument. -/
 private theorem max_norm_coneExt (hΨ : IsTopologicalSliceDisc K₀ Ψ) (z : ℂ) :
@@ -513,7 +513,7 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
     have hlog : Continuous fun y : E => Real.log (max ‖y‖ 1) :=
       (continuous_norm.max continuous_const).log fun y =>
         (lt_max_of_lt_right one_pos).ne'
-    exact (((continuous_subtype_val.comp_continuousOn (continuous_fst.comp_continuousOn hφr)).sub
+    exact (((continuous_subtypeVal.comp_continuousOn (continuous_fst.comp_continuousOn hφr)).sub
       ((hlog.smul continuous_const).continuousOn))).prodMk (continuous_snd.comp_continuousOn hφr)
   have hΘinj := injOn_extendedSliceChart hdim (φ := φ) (Θ := Θ) fun _ => rfl
   -- By invariance of domain, `Θ` is an open embedding on `W`.

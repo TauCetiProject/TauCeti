@@ -51,7 +51,8 @@ theorem IsSemialgebraicStack.comp {C : Set (Fin n → ℝ)} {θ : Fin k → C �
       (fun i ↦ eval y (q i)) = Fin.cons (y 0) (f (Fin.tail y)) := by
     ext i
     refine Fin.cases ?_ (fun j ↦ ?_) i <;> simp [q, f, eval_rename, Fin.tail_def, Function.comp_def]
-  refine ⟨fun i ↦ (hθ.continuous i).comp ((hf.comp continuous_subtype_val).subtype_mk fun x ↦ x.2),
+  refine ⟨fun i ↦ (hθ.continuous i).comp ((hf.comp continuous_subtypeVal).subtype_mk fun x ↦
+      x.property),
     fun x ↦ hθ.strictMono ⟨f x.val, x.property⟩, fun i ↦ ?_, fun j ↦ ?_⟩
   · rw [image_cylinder_sectionSet_comp]
     convert (hθ.isSemialgebraic_sectionSet i).preimage_eval q using 1

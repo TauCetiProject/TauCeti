@@ -128,7 +128,7 @@ theorem exists_contMDiff_contraction_of_starConvex {U : TopologicalSpace.Opens H
     have hψ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
       Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
     have hx : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ fun p : ℝ × U ↦ I p.2 :=
-      (I.contMDiff.comp contMDiff_subtype_val).comp contMDiff_snd
+      (I.contMDiff.comp contMDiff_subtypeVal).comp contMDiff_snd
     have hh : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ, E) ∞ h :=
       contMDiff_const.add ((contMDiff_const.sub hψ).smul (hx.sub contMDiff_const))
     exact I.contMDiffOn_symm.comp_contMDiff hh fun p ↦ image_subset_range I _ (hmem p)

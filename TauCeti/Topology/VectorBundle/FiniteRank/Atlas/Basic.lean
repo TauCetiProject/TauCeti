@@ -85,7 +85,7 @@ def gluedProj (p : A.GluedTotalSpace) : X := p.2.proj.val
 
 /-- The glued projection is continuous, since each stratum projection is continuous. -/
 @[continuity, fun_prop] theorem continuous_gluedProj : Continuous A.gluedProj :=
-  continuous_sigma fun n => continuous_subtype_val.comp (A.charts n).continuous_proj
+  continuous_sigma fun n => continuous_subtypeVal.comp (A.charts n).continuous_proj
 
 /-- The glued projection is open: the rank strata are open in the base. -/
 theorem isOpenMap_gluedProj : IsOpenMap A.gluedProj := by
@@ -167,7 +167,7 @@ theorem continuous_mk_iff_rankStrata (hb : Continuous b) (s : ∀ y, A.Fiber (b 
   constructor
   · intro hs n
     apply (IsEmbedding.sigmaMk (σ := fun n => (A.charts n).TotalSpace)).continuous_iff.2
-    convert A.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtype_val) using 1
+    convert A.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtypeVal) using 1
     funext ⟨y, hy⟩
     cases hy
     simp only [Function.comp_apply, totalSpaceHomeomorph_symm_apply, Fin.cast_refl, id_eq]

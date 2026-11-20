@@ -244,7 +244,7 @@ lemma toSSet_map_inclusion_app_bijective (hs : Pairwise (Disjoint on s)) : Funct
   · let f := toSSetObjEquiv (of ↥(⨆ i, s i)) n τ
     obtain ⟨i, hi⟩ := Opens.mem_iSup.1 (f x₀).property
     have hrange : range (fun x ↦ (f x : M)) ⊆ s i :=
-      (isPreconnected_range (continuous_subtype_val.comp f.continuous)).subset_of_subset_iUnion
+      (isPreconnected_range (continuous_subtypeVal.comp f.continuous)).subset_of_subset_iUnion
         (fun j ↦ (s j).isOpen) hs'
         (by rintro _ ⟨x, rfl⟩; exact mem_iUnion.2 (Opens.mem_iSup.1 (f x).property))
         ⟨_, ⟨x₀, rfl⟩, hi⟩

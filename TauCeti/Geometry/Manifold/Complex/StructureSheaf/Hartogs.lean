@@ -104,7 +104,7 @@ theorem restrictAlgHom_bijective_of_isDiscrete (hE : 2 ≤ Module.finrank ℂ E)
     have hgfV : EqOn g f (V : Set X) := hsdiff ▸ hgf
     have hg_omega : ContMDiffOn I 𝓘(ℂ) ω g U := hg.contMDiffOn U.isOpen
     have hg_sub : ContMDiff I 𝓘(ℂ) ω (fun x : U ↦ g x) := fun x ↦
-      (hg_omega.contMDiffAt (U.isOpen.mem_nhds x.2)).comp x contMDiff_subtype_val.contMDiffAt
+      (hg_omega.contMDiffAt (U.isOpen.mem_nhds x.property)).comp x contMDiff_subtypeVal.contMDiffAt
     refine ⟨ofContMDiff (fun x : U ↦ g x) hg_sub, ext fun y ↦ ?_⟩
     rw [restrictAlgHom_apply, ofContMDiff_apply]
     dsimp only [Opens.inclusion]

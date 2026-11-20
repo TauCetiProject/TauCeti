@@ -139,8 +139,8 @@ theorem isCompact_orthogonalGroup (hQ : Q.Anisotropic) :
   let Φ : T → V ≃ₗ[K] V := fun p => LinearEquiv.ofLinearMap p.val.1 p.val.2 p.property.2.1
       p.property.2.2
   have hΦ : Continuous Φ := continuous_linearEquiv_iff.mpr
-    ⟨(continuous_fst.comp continuous_subtype_val).congr fun p => by simp [Φ],
-      (continuous_snd.comp continuous_subtype_val).congr fun p =>
+    ⟨(continuous_fst.comp continuous_subtypeVal).congr fun p => by simp [Φ],
+      (continuous_snd.comp continuous_subtypeVal).congr fun p =>
         LinearMap.ext fun x => by simp [Φ]⟩
   refine (isCompact_range hΦ).of_isClosed_subset (isClosed_orthogonalGroup Q) fun g hg => ?_
   have hinv : (g : Module.End K V) * ((g⁻¹ : V ≃ₗ[K] V) : Module.End K V) = 1 :=

@@ -418,7 +418,7 @@ theorem continuous_boundaryLinear (n : ℕ) : Continuous (boundaryLinear ℝ n �
 theorem isProperMap_boundary_properCone (n : ℕ) :
     IsProperMap (fun f : properCone n => boundaryLinear ℝ n ℝ f.val) := by
   rw [isProperMap_iff_isCompact_preimage]
-  refine ⟨(continuous_boundaryLinear n).comp continuous_subtype_val, fun K hK => ?_⟩
+  refine ⟨(continuous_boundaryLinear n).comp continuous_subtypeVal, fun K hK => ?_⟩
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hK.isBounded
   let S : Set (Vertex n → ℝ) := (properCone n : Set (Vertex n → ℝ)) ∩ boundaryLinear ℝ n ℝ ⁻¹' K
   have hS_compact : IsCompact S := Metric.isCompact_iff_isClosed_bounded.mpr

@@ -130,7 +130,7 @@ theorem continuous_val_compactlySupportedTopology :
   exact (continuous_compactlySupportedTopology_iff e U hU
     (compactlySupported I F n V).subtype).2 fun K => by
       simpa only [Submodule.coe_subtype, val_comp_ofSupportedIn]
-        using (continuous_subtype_val :
+        using (continuous_subtypeVal :
           Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯))
 
 /-- Each fixed-compact stage retains exactly its compact derivative topology inside the
@@ -163,12 +163,12 @@ theorem compactlySupportedTopology_eq_induced [CompactSpace M] :
     (compactlySupported I F n V).subtype.codRestrict _
       (fun s => mem_supportedIn.2 (subset_univ s.val.tsupport))
   let R : compactlySupported I F n V →L[ℝ] supportedIn I F n V K :=
-    ⟨r, continuous_subtype_val.subtype_mk _⟩
+    ⟨r, continuous_subtypeVal.subtype_mk _⟩
   exact TauCeti.FinalLocallyConvexTopology.eq_of_rightInverse
     (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
     (fun K => continuous_induced_rng.2 (by
       simpa only [val_comp_ofSupportedIn]
-        using (continuous_subtype_val :
+        using (continuous_subtypeVal :
           Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯)))) K R
     (fun s => Subtype.ext (ofSupportedIn_apply K (R s)))
 
@@ -233,7 +233,7 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
       (t.chartTestSection c hc hct (TestFunction.ofSupportedIn hK φ)).val) := by
   have hL : IsClosed (c.symm '' K) :=
     (K.isCompact.image_of_continuousOn (c.continuousOn_symm.mono hK)).isClosed
-  let val : C(U, M) := ⟨Subtype.val, continuous_subtype_val⟩
+  let val : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
   -- Cover `U` by the chart source, where the coefficients are computed in the chart, and by the
   -- complement of the image of `K`, where they vanish.
   let W : Bool → Opens U := fun b ↦
@@ -263,11 +263,11 @@ theorem continuous_frameCoordinates_chartTestSection_ofSupportedIn {K : Compacts
     let j : C^n⟮I, W true; 𝓘(ℝ, E), E⟯ :=
       ⟨fun x ↦ c ((x : U) : M), fun x ↦
         (hc.contMDiffAt (c.open_source.mem_nhds x.property)).comp x
-          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+          (contMDiff_subtypeVal.comp contMDiff_subtypeVal).contMDiffAt⟩
     let A : C^n⟮I, W true; 𝓘(ℝ, F →L[ℝ] F), F →L[ℝ] F⟯ :=
       ⟨fun x ↦ (t.coordChangeL ℝ t' ((x : U) : M) : F →L[ℝ] F), fun x ↦
         (contMDiffAt_coordChangeL (e := t) (e' := t') (hct x.property) (hU (x : U).property)).comp x
-          (contMDiff_subtype_val.comp contMDiff_subtype_val).contMDiffAt⟩
+          (contMDiff_subtypeVal.comp contMDiff_subtypeVal).contMDiffAt⟩
     have hincl : Continuous (ContDiffMapSupportedIn.toContMDiffMap :
         𝓓^{n}_{K}(E, F) → C^n⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) := by
       rw [ContMDiffMap.manifoldWeakWhitneyTopology_self]

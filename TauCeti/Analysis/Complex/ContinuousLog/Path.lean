@@ -84,7 +84,7 @@ theorem hasContinuousLogOn_range_of_isEmbedding_path (γ : Path x y)
   let h : X → ℂ := fun z => if hz : z ∈ range γ then H (e.symm ⟨z, hz⟩ : ℝ) else 0
   refine hasContinuousLogOn_iff.mpr ⟨h, ?_, ?_⟩
   · rw [continuousOn_iff_continuous_domRestrict]
-    convert (continuousOn_univ.mp hHc).comp (continuous_subtype_val.comp e.symm.continuous) using 1
+    convert (continuousOn_univ.mp hHc).comp (continuous_subtypeVal.comp e.symm.continuous) using 1
     ext z
     simp only [domRestrict_apply, h, z.property, ↓reduceDIte, Function.comp_apply]
   · intro z hz

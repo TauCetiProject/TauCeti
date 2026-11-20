@@ -46,7 +46,7 @@ def stiefelFrameIncl : C(stiefel (ℝ ∙ (p : E))ᗮ k, stiefel E (k + 1)) wher
         fun i => Submodule.mem_orthogonal_singleton_iff_inner_right.1 (x.val i).property,
         (mem_stiefel_iff.1 x.property).comp_linearIsometry (ℝ ∙ (p : E))ᗮ.subtypeₗᵢ⟩⟩
   continuous_toFun := Continuous.subtype_mk (continuous_const.matrixVecCons (continuous_pi fun i =>
-    continuous_subtype_val.comp ((continuous_apply i).comp continuous_subtype_val))) _
+    continuous_subtypeVal.comp ((continuous_apply i).comp continuous_subtypeVal))) _
 
 variable {p k}
 

@@ -170,7 +170,7 @@ theorem coe_rootsOfUnity_smul_puncturedDisc [NeZero e] (ζ : rootsOfUnity e ℂ)
 noncomputable instance puncturedDiscContinuousConstSMul [NeZero e] :
     ContinuousConstSMul (rootsOfUnity e ℂ) ↥(ball (0 : ℂ) 1 \ {0}) where
   continuous_const_smul ζ :=
-    Continuous.subtype_mk ((continuous_const_smul ζ).comp continuous_subtype_val) _
+    Continuous.subtype_mk ((continuous_const_smul ζ).comp continuous_subtypeVal) _
 
 /-- Rotation by a root of unity acts cancellatively on the punctured disc. -/
 noncomputable instance puncturedDiscIsCancelSMul [NeZero e] :

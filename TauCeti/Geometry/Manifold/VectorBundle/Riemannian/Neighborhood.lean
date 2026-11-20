@@ -106,7 +106,7 @@ theorem exists_diffeomorph_subset_zeroSection [IsContMDiffRiemannianBundle I n F
       left_inv := fun p => Ψ.toPartialEquiv.left_inv (hsource ▸ mem_univ p)
       right_inv := fun q => Subtype.ext (Ψ.toPartialEquiv.right_inv q.property)
       contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff W _).mp hforward
-      contMDiff_invFun := Ψ.contMDiffOn_invFun.comp_contMDiff contMDiff_subtype_val
+      contMDiff_invFun := Ψ.contMDiffOn_invFun.comp_contMDiff contMDiff_subtypeVal
         (fun q => q.property) }
   have hΦ (p : TotalSpace F V) : (Φ p).val = Ψ p := rfl
   refine ⟨W, ?_, Φ, ?_, ?_⟩

@@ -245,7 +245,7 @@ theorem smulDeriv_dilation (s : ℝ) (z : ℍ) : smulDeriv (↑(dilation s)) z =
     Algebra.algebraMap_self_apply, coe_dilation, Matrix.of_apply, Matrix.cons_val',
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Complex.ofReal_zero,
     zero_mul, zero_add]
-  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_nat_mul,
+  rw [← Complex.ofReal_pow, ← Complex.ofReal_inv, Complex.ofReal_inj, ← Real.exp_natCast_mul,
     ← Real.exp_neg]
   congr 1
   push_cast

@@ -67,7 +67,7 @@ theorem _root_.ContinuousOn.isLocallyConstant_windingNumber_of_integer {γ : ℝ
       simpa only [mem_image, not_exists, not_and] using z.property
     exact (continuousAt_windingNumber_of_avoidance hγ_cont havoid
       (intervalIntegrable_inv_sub_mul_deriv hγ_cont havoid hderiv_int)).comp
-        continuous_subtype_val.continuousAt
+        continuous_subtypeVal.continuousAt
   have hncont : Continuous n := Complex.isClosedEmbedding_intCast.isEmbedding.continuous_iff.mpr
     (by simpa only [Function.comp_def, ← hn] using hc)
   simpa only [Function.comp_def, ← hn] using
@@ -88,7 +88,7 @@ theorem isLocallyConstant_windingNumber_of_closed {γ : ℝ → ℂ} {a b : ℝ}
   have h := hγ_cont.isLocallyConstant_windingNumber_of_integer hderiv_int
     (fun _ hz ↦ hac.exists_int_windingNumber hclosed hz)
   -- Reindex by the same point with its equivalent trace-avoidance predicate.
-  exact h.comp_continuous (continuous_subtype_val.subtype_mk
+  exact h.comp_continuous (continuous_subtypeVal.subtype_mk
     (fun z ↦ by simpa only [mem_image, not_exists, not_and] using z.property))
 
 /-- A continuous curve with integrable derivative and integer indices has constant winding
@@ -173,7 +173,7 @@ theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} 
   -- around `w`; push that set forward along the open inclusion to a `ℂ`-ball.
   have hlc := isLocallyConstant_windingNumber_of_closed hclosed hP hγ_cont hγ_diff hderiv_int
   obtain ⟨V, hV_open, hwV, hV_const⟩ := hlc.exists_open ⟨w, hoff⟩
-  have hVℂ : IsOpen (Subtype.val '' V) := hSopen.isOpenMap_subtype_val V hV_open
+  have hVℂ : IsOpen (Subtype.val '' V) := hSopen.isOpenMap_subtypeVal V hV_open
   obtain ⟨ε₂, hε₂, hball₂⟩ := Metric.isOpen_iff.mp hVℂ w ⟨⟨w, hoff⟩, hwV, rfl⟩
   refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, fun w' hw' ↦ ⟨fun t ht ↦ ?_, ?_⟩⟩
   · exact sub_ne_zero.mp (norm_pos_iff.mp (lt_of_lt_of_le hε₁

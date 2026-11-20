@@ -56,7 +56,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Restriction of a native smooth map to an open source. -/
 def restrict (f : C^n⟮I, M; J, N⟯) (U : Opens M) : C^n⟮I, U; J, N⟯ :=
-  f.comp ⟨Subtype.val, contMDiff_subtype_val⟩
+  f.comp ⟨Subtype.val, contMDiff_subtypeVal⟩
 
 /-- Restricting a map does not change its value. -/
 @[simp]
@@ -252,7 +252,7 @@ theorem continuous_of_forall_continuous_restrict [IsManifold I n M] [LocallyComp
     apply hV.mem_nhds
     simpa only [chartIteratedFDeriv_self_target_apply] using h₀ hw
   rw [nhds_prod_eq]
-  have h := (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually
+  have h := (tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually
     (hlim.eventually_mem hv)
   simpa only [chartIteratedFDeriv_self_target_apply, Prod.map_fst, Prod.map_snd, id_eq] using h
 
@@ -313,7 +313,7 @@ def ofOpens {U : Opens M} (c : StrongCkControl I U n)
       simp only [Compacts.coe_map, image_image]
       exact image_congr fun z _ ↦ (U.coe_extChartAt_symm_apply _ z.property).symm
     simp only [h]
-    exact LocallyFinite.image_of_isClosedMap c.locallyFinite hU.isClosedMap_subtype_val fun _ ↦
+    exact LocallyFinite.image_of_isClosedMap c.locallyFinite hU.isClosedMap_subtypeVal fun _ ↦
       (subsingleton_singleton.preimage Subtype.val_injective).isCompact
 
 /-- The ambient neighbourhood of `f` of a strong control on a closed open subset is the preimage,

@@ -106,10 +106,10 @@ inverse is `(det A)⁻¹ • adjugate A` everywhere. -/
 theorem measurable_symmetricInv : Measurable (symmetricInv (p := p)) := by
   have hdet : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ).det :=
-    continuous_subtype_val.matrix_det.measurable
+    continuous_subtypeVal.matrix_det.measurable
   have hadj : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (A : Matrix (Fin p) (Fin p) ℝ).adjugate :=
-    continuous_subtype_val.matrix_adjugate.measurable
+    continuous_subtypeVal.matrix_adjugate.measurable
   have hcoe : Measurable fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
       (symmetricInv A : Matrix (Fin p) (Fin p) ℝ) := by
     simp only [coe_symmetricInv, Matrix.inv_def, Ring.inverse_eq_inv']

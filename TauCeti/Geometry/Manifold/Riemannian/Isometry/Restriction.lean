@@ -82,7 +82,7 @@ Riemannian bundle `TauCeti.Manifold.instRiemannianBundleOpen U`, is a local Riem
 theorem IsLocalRiemannianIsometry.subtype_val
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)] (U : Opens M) :
     IsLocalRiemannianIsometry I I (Subtype.val : U → M) where
-  contMDiff := contMDiff_subtype_val
+  contMDiff := contMDiff_subtypeVal
   isInvertible_mfderiv x :=
     ⟨Manifold.tangentSpaceOpenEquiv (I := I) x, (Manifold.mfderiv_subtype_val x).symm⟩
   inner_mfderiv x v w := by
@@ -147,10 +147,10 @@ theorem exists_riemannianIsometry_ball_of_inner_mfderiv_eq
       left_inv := fun y ↦ Subtype.ext (hloc.localInverse_left_inv y.property.1.1)
       right_inv := fun z ↦ Subtype.ext (hloc.localInverse_right_inv (hr_sub z.property).1)
       contMDiff_toFun :=
-        (ContMDiff.subtypeVal_comp_iff B _).mp (hΦ_smooth.comp contMDiff_subtype_val)
+        (ContMDiff.subtypeVal_comp_iff B _).mp (hΦ_smooth.comp contMDiff_subtypeVal)
       contMDiff_invFun := (ContMDiff.subtypeVal_comp_iff W _).mp <|
         contMDiffOn_univ.1 <|
-          hloc.contMDiffOn_localInverse.comp contMDiff_subtype_val.contMDiffOn
+          hloc.contMDiffOn_localInverse.comp contMDiff_subtypeVal.contMDiffOn
             fun z _ ↦ (hr_sub z.property).1 }
   have hcomp_coe : ((Subtype.val : B → F) ∘ d) = (Φ ∘ (Subtype.val : W → M)) := rfl
   let Ψ : RiemannianIsometry I 𝓘(ℝ, F) W B :=

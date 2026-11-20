@@ -153,7 +153,7 @@ private theorem subgroupOf_le_ker_restrictAux :
       rw [SetLike.mem_coe, MonoidHom.mem_ker, restrictAux_apply, ofAdd_eq_one, Set.mem_preimage,
         Set.mem_singleton_iff]
     rw [this]
-    exact isClosed_singleton.preimage (hh.continuous.comp continuous_subtype_val)
+    exact isClosed_singleton.preimage (hh.continuous.comp continuous_subtypeVal)
   rw [pLowerCentralSeries_succ p G 1]
   refine (pLowerCentralStep_subgroupOf_le_ker_iff _ hker).mpr ⟨fun n ↦ ?_, fun g n ↦ ?_⟩
   · rw [restrictAux_apply, ← ofAdd_nsmul, hP, ofAdd_zero]

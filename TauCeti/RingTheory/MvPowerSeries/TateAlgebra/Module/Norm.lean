@@ -526,9 +526,10 @@ Gauss families over the scalar restricted series. -/
 def mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖)
     (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
     Gauss c E ≃L[IsRestricted.subring (R := R) c] Gauss c F :=
-  .equivOfInverse (mapContinuousLinearMap e.toLinearMap he)
+  .ofContinuousLinearMap (mapContinuousLinearMap e.toLinearMap he)
     (mapContinuousLinearMap e.symm.toLinearMap he')
-    (fun a ↦ ext fun t ↦ by simp) (fun b ↦ ext fun t ↦ by simp)
+    (ContinuousLinearMap.ext fun b ↦ ext fun t ↦ by simp)
+    (ContinuousLinearMap.ext fun a ↦ ext fun t ↦ by simp)
 
 /-- The induced isomorphism applies the coefficient equivalence coefficientwise. -/
 @[simp]

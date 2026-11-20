@@ -431,7 +431,7 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
   classical
   have hftsf : ∀ k : ℕ, ∃ W : MvPolynomial (Fin n) K,
       MvPolynomial.aeval (fun j : Fin n => esymm (Fin n) K ((j : ℕ) + 1)) W =
-        MvPolynomial.bind₁ (fun i : Fin n => Polynomial.aeval (MvPolynomial.X i) q)
+        MvPolynomial.aeval (fun i : Fin n => Polynomial.aeval (MvPolynomial.X i) q)
           (esymm (Fin n) K k) := fun k => by
     obtain ⟨W, hW⟩ := (esymmAlgHom_fin_bijective K n).surjective
       ⟨_, (esymm_isSymmetric (Fin n) K k).bind₁_aeval_X q⟩
@@ -455,9 +455,9 @@ theorem exists_map_eval_esymm_eq_eval (q : K[X]) :
       refine congrArg (fun g => MvPolynomial.aeval g (esymm (Fin n) K k))
         (_root_.funext fun j => (congrFun (Polynomial.coe_aeval_eq_eval (v j)) q).symm)
     _ = MvPolynomial.aeval v
-          (MvPolynomial.bind₁ (fun j : Fin n => Polynomial.aeval (MvPolynomial.X j) q)
+          (MvPolynomial.aeval (fun j : Fin n => Polynomial.aeval (MvPolynomial.X j) q)
             (esymm (Fin n) K k)) := by
-      rw [MvPolynomial.aeval_bind₁]
+      rw [MvPolynomial.comp_aeval_apply]
       refine congrArg (fun g => MvPolynomial.aeval g (esymm (Fin n) K k))
         (_root_.funext fun j => ?_)
       calc

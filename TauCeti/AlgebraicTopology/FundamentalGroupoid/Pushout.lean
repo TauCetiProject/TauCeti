@@ -84,7 +84,7 @@ private theorem exists_twoCover_mem_nhds (hCover : interior A ∪ interior B = u
 
 private def swapInter : C(↥(B ∩ A), ↥(A ∩ B)) where
   toFun z := ⟨z.val, z.property.2, z.property.1⟩
-  continuous_toFun := continuous_subtype_val.subtype_mk fun z ↦ ⟨z.2.2, z.2.1⟩
+  continuous_toFun := continuous_subtypeVal.subtype_mk fun z ↦ ⟨z.property.2, z.property.1⟩
 
 variable {D : Type*} [Category D]
 

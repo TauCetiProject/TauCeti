@@ -186,7 +186,7 @@ private theorem exists_homotopyEquiv_left_union (hE : finrank ℝ E = 3)
     rw [← continuousOn_univ, hcov]
     refine ContinuousOn.union_of_isClosed ?_ ?_ (s.isClosed_left.preimage (by fun_prop))
       (s.isClosed_right.preimage (by fun_prop))
-    · exact (continuous_subtype_val.comp continuous_snd).continuousOn.congr fun q hq ↦ hHL q hq
+    · exact (continuous_subtypeVal.comp continuous_snd).continuousOn.congr fun q hq ↦ hHL q hq
     · rw [continuousOn_iff_continuous_domRestrict]
       have hres : domRestrict {q | (q.2 : M) ∈ s.right} H = fun q ↦
           ((e.symm (F (q.val.1, ⟨e ⟨q.val.2, q.property⟩, hV q.val.2 q.property⟩)) : s.right) : M)
@@ -226,7 +226,7 @@ private theorem exists_fundamentalGroup_map_left_surjective (hE : finrank ℝ E 
   obtain ⟨eN, heN⟩ := s.exists_homotopyEquiv_left_union hE e hSV F hF₀ hF₁ hFfix
   have hWc : IsPathConnected ((↑) '' (e ⁻¹' V) : Set M) := by
     rw [← e.image_symm]
-    exact (hVc.image e.symm.continuous).image continuous_subtype_val
+    exact (hVc.image e.symm.continuous).image continuous_subtypeVal
   let W : Set M := (↑) '' (e ⁻¹' V)
   have hmemW (p : s.right) : (p : M) ∈ W ↔ e p ∈ V := Subtype.val_injective.mem_set_image
   have hLRW {p : M} (hpL : p ∈ s.left) (hpR : p ∈ s.right) : p ∈ W :=

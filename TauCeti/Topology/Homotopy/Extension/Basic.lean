@@ -197,7 +197,7 @@ theorem HasHomotopyExtensionProperty.exists_retraction (h : HasHomotopyExtension
       ⟨fun x => ⟨((0 : I), x), zero_mem_cylinderExtensionDomain x⟩, by fun_prop⟩
       ⟨fun q => ⟨(q.1, (q.2 : X)), mem_cylinderExtensionDomain_of_mem q.2.property⟩, by fun_prop⟩
       (fun _ => rfl)
-  refine ⟨⟨fun p => (G p : I × X), continuous_subtype_val.comp G.continuous⟩,
+  refine ⟨⟨fun p => (G p : I × X), continuous_subtypeVal.comp G.continuous⟩,
     fun p => (G p).property, ?_⟩
   rintro ⟨t, x⟩ (h0 | hx)
   · obtain rfl : t = 0 := h0

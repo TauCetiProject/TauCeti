@@ -161,7 +161,7 @@ theorem coe_normNonnegSubring (a : nonnegSubring R N) :
 @[fun_prop]
 theorem continuous_normNonnegSubring : Continuous (normNonnegSubring (R := R) (N := N) K) := by
   apply Continuous.subtype_mk
-  exact (continuous_algebraNorm K).comp continuous_subtype_val
+  exact (continuous_algebraNorm K).comp continuous_subtypeVal
 
 /-- A perturbation of `1` supported in periods at least a nonnegative cutoff has norm
 agreeing with `1` below that same cutoff, without a loss depending on coset representatives. -/

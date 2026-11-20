@@ -258,10 +258,11 @@ def normalSpaceEquiv (hn : n ≠ 0) (hm : m ≠ 0) (hv : (mfderiv J J' v (f x)).
     f.NormalSpace x hn ≃L[𝕜] g.NormalSpace (u x) hm :=
   -- The range hypothesis `map_tangentRange_mfderiv` is stated for the linear map underlying
   -- `tangentSpaceCast ∘L mfderiv`. It is the one underlying the equivalence below by definition,
-  -- since `ContinuousLinearEquiv.equivOfInverse'` applies `mfderiv` (see
-  -- `ContinuousLinearEquiv.equivOfInverse'_apply`) and the cast then follows it.
+  -- since `ContinuousLinearEquiv.ofContinuousLinearMap` applies `mfderiv` (see
+  -- `ContinuousLinearEquiv.coe_ofContinuousLinearMap`) and the cast then follows it.
   f.normalSpaceEquivOfMapTangentRange g x (u x) hn hm
-    ((ContinuousLinearEquiv.equivOfInverse' _ _ hv.self_comp_inverse hv.inverse_comp_self).trans
+    ((ContinuousLinearEquiv.ofContinuousLinearMap _ _ hv.self_comp_inverse
+      hv.inverse_comp_self).trans
       (tangentSpaceCast J' (v (f x)) (g (u x))))
     (f.map_tangentRange_mfderiv g hn hm (mdifferentiableAt_of_isInvertible_mfderiv hv) h hsurj)
 
@@ -275,7 +276,7 @@ theorem normalSpaceEquiv_toContinuousLinearMap (hn : n ≠ 0) (hm : m ≠ 0)
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
   rw [ContinuousLinearEquiv.coe_apply, normalMap_normalClass]
   refine (f.normalSpaceEquivOfMapTangentRange_normalClass g x (u x) hn hm _ _ w).trans ?_
-  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.equivOfInverse'_apply]
+  rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.coe_ofContinuousLinearMap]
 
 /-- On representatives, the normal-fibre equivalence applies the ambient differential. -/
 @[simp]

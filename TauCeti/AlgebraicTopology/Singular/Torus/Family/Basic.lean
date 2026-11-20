@@ -476,7 +476,7 @@ def torusFamilyPeriodLoop (y : Y) (l : Λ) :
   letI := periodAddAction P
   { toFun t := ⟨Quotient.mk _ (y, (t : ℝ) • P y l), torusFamilyProjection_mk P _⟩
     continuous_toFun := (continuous_quotient_mk'.comp (continuous_const.prodMk
-      (continuous_subtype_val.smul continuous_const))).subtype_mk _
+      (continuous_subtypeVal.smul continuous_const))).subtype_mk _
     source' := by simp
     target' := by
       ext
@@ -504,7 +504,7 @@ theorem torusFamilyMarking_periodLoop (y : Y) (l : Λ) :
     (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l))) = l
   refine hinj y ?_
   rw [torusFamilyMarking_loopClass P hcont hinj y _
-    ⟨fun t ↦ (t : ℝ) • P y l, continuous_subtype_val.smul continuous_const⟩
+    ⟨fun t ↦ (t : ℝ) • P y l, continuous_subtypeVal.smul continuous_const⟩
     (coe_torusFamilyPeriodLoop_apply P y l)]
   simp
 
@@ -577,7 +577,7 @@ theorem IsFlatTorusFamilyMarking.torusFamilyMarking_symm_trans_eq
   let H : C(I × I, AddAction.orbitRel.Quotient Λ (Y × E)) :=
     ⟨fun x ↦ Quotient.mk _ (p x.2, (x.1 : ℝ) • P (p x.2) l),
       continuous_quotient_mk'.comp ((p.continuous.comp continuous_snd).prodMk
-        ((continuous_subtype_val.comp continuous_fst).smul
+        ((continuous_subtypeVal.comp continuous_fst).smul
           ((hcont l).comp (p.continuous.comp continuous_snd))))⟩
   have hH : ∀ s, H (0, s) = H (1, s) := fun s ↦ by
     simp only [H, ContinuousMap.coe_mk, Set.Icc.coe_zero, Set.Icc.coe_one, zero_smul, one_smul]

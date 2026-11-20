@@ -140,13 +140,13 @@ private noncomputable def normalSourceHomeomorphOfComplement
               simpa only [source, mem_preimage, normalQuotientMap_apply] using p.property⟩ : U))
                   := by
         exact ((Pullback.continuous_proj F (TangentSpace J) (f : M → N)).comp
-          continuous_subtype_val).subtype_mk _
+          continuous_subtypeVal).subtype_mk _
       have hvec : Continuous
           (fun p : (f.normalQuotientMap (K := P) hn ⁻¹' source) =>
             (e (Pullback.lift (f : M → N) p.val)).2) := by
         refine continuous_snd.comp (e.continuousOn.comp_continuous ?_ ?_)
         · exact (Pullback.continuous_lift F (TangentSpace J) (f : M → N)).comp
-            continuous_subtype_val
+            continuous_subtypeVal
         · intro p
           rw [e.mem_source]
           apply (hU ?_).2
@@ -174,9 +174,9 @@ private noncomputable def normalSourceHomeomorphOfComplement
     have hq' : Continuous q := by
       rw [(inducing_pullbackTotalSpaceEmbedding F (TangentSpace J)
         (f : M → N)).continuous_iff]
-      have h := (continuous_subtype_val.comp continuous_fst).prodMk
+      have h := (continuous_subtypeVal.comp continuous_fst).prodMk
         (e.continuousOn_symm.comp_continuous
-          (((f.contMDiff.continuous.comp continuous_subtype_val).comp continuous_fst).prodMk
+          (((f.contMDiff.continuous.comp continuous_subtypeVal).comp continuous_fst).prodMk
             continuous_snd) (fun p => by
               rw [TangentBundle.trivializationAt_baseSet]
               exact ⟨(hU p.1.property).2, mem_univ _⟩))
@@ -343,7 +343,7 @@ def normalSpaceTrivializationOfComplement (f : SmoothEmbedding I J n M N) (hn : 
     rw [continuousOn_iff_continuous_domRestrict]
     let e := normalSourceHomeomorphOfComplement f hn x₀ U hUopen hU B hB hcoord
     have he : Continuous (fun p => ((e p).1.val, (e p).2)) :=
-      (continuous_subtype_val.comp (continuous_fst.comp e.continuous)).prodMk
+      (continuous_subtypeVal.comp (continuous_fst.comp e.continuous)).prodMk
         (continuous_snd.comp e.continuous)
     refine he.congr ?_
     rintro ⟨p, hp⟩
@@ -359,10 +359,10 @@ def normalSpaceTrivializationOfComplement (f : SmoothEmbedding I J n M N) (hn : 
     let c : (U ×ˢ univ : Set (M × P)) → U × P := fun p =>
       (⟨p.val.1, p.property.1⟩, p.val.2)
     have hc : Continuous c := by
-      exact ((continuous_fst.comp continuous_subtype_val).subtype_mk _).prodMk
-        (continuous_snd.comp continuous_subtype_val)
+      exact ((continuous_fst.comp continuous_subtypeVal).subtype_mk _).prodMk
+        (continuous_snd.comp continuous_subtypeVal)
     have he : Continuous (fun p => (e.symm (c p)).val) :=
-      continuous_subtype_val.comp (e.symm.continuous.comp hc)
+      continuous_subtypeVal.comp (e.symm.continuous.comp hc)
     refine he.congr ?_
     rintro ⟨p, hp⟩
     -- The restricted homeomorphism has the same inverse formula as the partial map.

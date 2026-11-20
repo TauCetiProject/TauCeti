@@ -134,7 +134,7 @@ variable (hp : IsCoveringMap p) (ν : p ⁻¹' {basePt} ≃ Fin n) {q : Puncture
   (hδ : ∀ t : unitInterval, (q.coord (δ t) : ℂ) = q.coord y * exp (2 * π * I * t))
   (hσ : σ = ν.permCongr (hp.monodromyPerm basePt g))
   (hg : (FundamentalGroup.fundamentalGroupMulEquivOfPath α).symm
-    (FundamentalGroup.map ⟨Subtype.val, continuous_subtype_val⟩ y
+    (FundamentalGroup.map ⟨Subtype.val, continuous_subtypeVal⟩ y
       (FundamentalGroup.fromPath (.mk δ))) = g)
 
 include hσ hg in
@@ -142,12 +142,12 @@ include hσ hg in
 from the endpoint of the lift of `α` from the sheet `m` ends at the endpoint of the lift of `α` from
 the sheet `σ m`. -/
 private theorem monodromy_δ_monodromy_α (m : Fin n) :
-    hp.monodromy (.mk (δ.map continuous_subtype_val)) (hp.monodromy (.mk α) (ν.symm m)) =
+    hp.monodromy (.mk (δ.map continuous_subtypeVal)) (hp.monodromy (.mk α) (ν.symm m)) =
       hp.monodromy (.mk α) (ν.symm (σ m)) := by
   subst hσ hg
   -- Lifting the transport of `δ` and then `α` is lifting `α` and then `δ`.
   have h := hp.monodromy_fundamentalGroupMulEquivOfPath_symm_apply α
-    (FundamentalGroup.fromPath (.mk (δ.map continuous_subtype_val))) (ν.symm m)
+    (FundamentalGroup.fromPath (.mk (δ.map continuous_subtypeVal))) (ν.symm m)
   rw [eq_symm_apply, coveringFiberEquiv_apply] at h
   rw [FundamentalGroup.map_fromPath]
   simpa only [permCongr_apply, symm_apply_apply, IsCoveringMap.coe_monodromyPerm] using h.symm
@@ -171,7 +171,7 @@ coordinate `c` of `y`, the lift of `δ` from a point `v` with `v ^ e = c` ends a
 private theorem monodromy_δ_eq {v v' : 𝔻*}
     (hv : (v : ℂ) ^ e = q.coord y) (hv' : (v' : ℂ) = exp (2 * π * I / e) * v)
     {x : p ⁻¹' {(y : ThricePuncturedSphere)}} (hx : φ v = x) :
-    (hp.monodromy (.mk (δ.map continuous_subtype_val)) x : E) = φ v' := by
+    (hp.monodromy (.mk (δ.map continuous_subtypeVal)) x : E) = φ v' := by
   have hmem (t : unitInterval) : exp (2 * π * I * t / e) * v ∈ ball (0 : ℂ) 1 \ {0} := by
     refine mul_mem_puncturedDisc_of_norm_eq_one ?_ v
     rw [show 2 * π * I * t / e = ((2 * π * t / e : ℝ) : ℂ) * I by push_cast; ring]
@@ -179,12 +179,12 @@ private theorem monodromy_δ_eq {v v' : 𝔻*}
   -- The arc `t ↦ exp (2πit/e) * v` lifts `δ`.
   let Γ : C(unitInterval, E) := ⟨fun t ↦ φ ⟨_, hmem t⟩,
     hφ.comp (Continuous.subtype_mk (by fun_prop) _)⟩
-  have hΓ : p ∘ Γ = δ.map continuous_subtype_val := by
+  have hΓ : p ∘ Γ = δ.map continuous_subtypeVal := by
     funext t
     obtain ⟨ht, h⟩ := hφq ⟨_, hmem t⟩
     refine congrArg Subtype.val (q.coord.injective (Subtype.ext (h.trans ?_)))
     have he' : (e : ℂ) ≠ 0 := Nat.cast_ne_zero.2 he
-    rw [hδ t, mul_pow, ← exp_nat_mul, hv, mul_comm, mul_div_cancel₀ _ he']
+    rw [hδ t, mul_pow, ← exp_natCast_mul, hv, mul_comm, mul_div_cancel₀ _ he']
   rw [hp.monodromy_eq_apply_one hΓ (by simp [Γ, hx])]
   exact congrArg φ (Subtype.ext (by simp [hv']))
 

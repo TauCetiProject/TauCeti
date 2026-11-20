@@ -203,7 +203,7 @@ theorem continuous_eval_and_not_continuous_rationalDiagonal_range_coeMonoidHom
       (fun i ↦ (Pi.evalMonoidHom G i).comp (Subgroup.subtype (RestrictedProduct.coeMonoidHom :
         Πʳ i, [G i, ((⊥ : Subgroup (G i)) : Set (G i))] →* ∀ i, G i).range))
       (fun _ ↦ ⊥) fun γ ↦ by obtain ⟨_, x, rfl⟩ := γ; exact x.property) := by
-  refine ⟨fun i ↦ (continuous_apply i).comp continuous_subtype_val, fun hd ↦ ?_⟩
+  refine ⟨fun i ↦ (continuous_apply i).comp continuous_subtypeVal, fun hd ↦ ?_⟩
   refine not_isInducing_coe_bot hG ?_
   -- The coercion is the range restriction of `coeMonoidHom` followed by the inclusion of the
   -- range into the full product.

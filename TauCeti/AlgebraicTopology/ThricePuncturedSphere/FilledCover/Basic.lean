@@ -387,7 +387,7 @@ theorem compactSpace : CompactSpace (FilledCover p) := by
     (hp.isCompact_preimage_compactCore hfin _).union
       (isCompact_iUnion fun _ ↦ hp.isCompact_preimage_compactCore hfin _)
   refine hK.of_isClosed_subset (isOpen_iUnion fun i ↦ (isOpenEmbedding_chart hp hfin i).isOpenMap _
-    (isOpen_lt continuous_subtype_val.norm continuous_const)).isClosed_compl fun y hy ↦ ?_
+    (isOpen_lt continuous_subtypeVal.norm continuous_const)).isClosed_compl fun y hy ↦ ?_
   by_cases hD : ∃ q : Puncture, p y ∈ q.neighborhood
   · -- A point over the punctured neighbourhood of `q` is in the range of the chart of its
     -- component, at a point of norm at least `1 / 2`.

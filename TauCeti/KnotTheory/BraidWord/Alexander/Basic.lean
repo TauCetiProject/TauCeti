@@ -194,7 +194,7 @@ private theorem firstAbove_zero_eq_none_iff {p : Fin n} :
 
 private theorem firstAbove_succ_of_not_mem {p : Fin n} {j : Fin w.length}
     (hj : j ∉ w.crossingsAt p) : w.firstAbove p (j + 1) = w.firstAbove p j := by
-  refine List.find?_congr fun k hk ↦ ?_
+  refine List.find?_congr rfl fun k hk ↦ ?_
   have : k ≠ j := fun h ↦ hj (h ▸ hk)
   have : (k : ℕ) ≠ j := fun h ↦ this (Fin.ext h)
   simp only [decide_eq_decide]

@@ -121,7 +121,7 @@ theorem isContinuous_of_forall_isContinuous_comap [∀ i, ContinuousConstSMul (A
       simpa only [comap_apply, hφt] using hu.ne'
     obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent
       (((hw m).isOpen_lt_div (t j m hjm r') hu').mem_nhds
-        (by simpa using zero_lt_iff.mpr (div_ne_zero
+        (by simpa using pos_iff_ne_zero.mpr (div_ne_zero
           (by simpa only [comap_apply, hφt] using hr.ne') hu')))
       (hy.map (ht i m him))
     refine ⟨n, ?_⟩

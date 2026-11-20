@@ -88,7 +88,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
   have : F₀.Full := hfull
   have : F₀.Faithful := hfaithful
   have hneigh : (Subtype.val : U → C) ⁻¹' s ∈ 𝓝 (⟨x, hxU⟩ : U) :=
-    continuous_subtype_val.continuousAt.preimage_mem_nhds hsx
+    continuous_subtypeVal.continuousAt.preimage_mem_nhds hsx
   obtain ⟨σ, e, c, hcpos, hxe, hezero, hes, het, -, he, hei, hequiv, -⟩ :=
     exists_equivariant_contMDiff_chart_target_eq_sumOfConjugatesInnerSublevel
       (fun g ↦ hsmul.contMDiff_const_smul g) hn hfix hneigh

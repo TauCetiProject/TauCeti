@@ -246,7 +246,7 @@ theorem abs_padicValRat_le_of_add_eq_one (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (
     exact le_max_of_le_left zero_le_one
   -- `N` is attained at some prime `q ∈ S`, by `x` or by `y`
   obtain ⟨q, hqS, hq⟩ := Finset.exists_mem_eq_sup S
-    (Finset.nonempty_iff_ne_empty.2 fun h ↦ by simp [N, h] at hNpos)
+    (Finset.ne_empty_iff_nonempty.1 fun h ↦ by simp [N, h] at hNpos)
     fun q ↦ max (padicValRat q (x : ℚ)).natAbs (padicValRat q (y : ℚ)).natAbs
   have hq2 : (2 : ℝ) ≤ q := by exact_mod_cast (hS q hqS).two_le
   have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast hNpos

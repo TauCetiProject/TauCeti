@@ -148,7 +148,7 @@ theorem eventually_exists_homotopicRel_id_eventually_eq {y : M} {U : Set M} (hU 
     contMDiff_zero_iff.1 <| contMDiff_chartExtend (I' := 𝓡∂ 1)
       (Φ := fun t : unitInterval ↦ radialSquash c' (r / 2) t)
       (contMDiff_zero_iff.2 ((continuous_radialSquash c' (r / 2)).comp
-        (continuous_subtype_val.prodMap continuous_id)))
+        (continuous_subtypeVal.prodMap continuous_id)))
       (isCompact_closedBall c' (r / 2 / 2)) (fun p hp ↦ (hrt (hKr hp)).1)
       (fun t v hv ↦ by
         rw [mem_closedBall, dist_eq_norm] at hv ⊢

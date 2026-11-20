@@ -151,7 +151,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     rw [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦ ⟨⟨y, hgV hy⟩, rfl⟩]
     exact hgc
   have hC : IsCompact (Subtype.val '' (f ⁻¹' (Subtype.val ⁻¹' tsupport g))) :=
-    (hp.isCompact_preimage hK).image continuous_subtype_val
+    (hp.isCompact_preimage hK).image continuous_subtypeVal
   have hCs : Subtype.val '' (f ⁻¹' (Subtype.val ⁻¹' tsupport g)) ⊆ U := by
     rintro _ ⟨z, -, rfl⟩
     exact z.property
@@ -218,7 +218,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     rw [hfib, preimage_comp]
     exact (hp.isCompact_preimage (Subtype.isCompact_iff.2
       ((finite_singleton y).subset (image_preimage_subset _ _)).isCompact)).image
-        continuous_subtype_val
+        continuous_subtypeVal
   -- The area formula with multiplicity on an open subset of `U` where the Jacobian does not
   -- vanish, applied to the measurable map `ψ`.
   have harea : ∀ S : Set E, IsOpen S → S ⊆ U → (∀ x ∈ S, (fderiv ℝ φ x).det ≠ 0) →

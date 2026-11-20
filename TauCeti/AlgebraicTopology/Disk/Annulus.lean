@@ -48,7 +48,7 @@ def annulusParam (d : ℝ) (w : TopCat.disk.{u} k) : I :=
 @[continuity, fun_prop]
 theorem continuous_annulusParam : Continuous (annulusParam.{u} (k := k) d) :=
   continuous_projIcc.comp (((continuous_norm.comp
-    (continuous_subtype_val.comp continuous_uliftDown)).sub continuous_const).div_const _)
+    (continuous_subtypeVal.comp continuous_uliftDown)).sub continuous_const).div_const _)
 
 /-- The direction `w / ‖w‖` of a point `w` of the annulus `d ≤ ‖w‖` of the disk, for `0 < d`: the
 end of the radial push `TauCeti.TopCat.diskRadialPush` with radius `d`. -/
@@ -59,9 +59,9 @@ def annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.val�
 
 @[continuity, fun_prop]
 theorem continuous_annulusDir (hd : 0 < d) : Continuous (annulusDir.{u} (k := k) hd) :=
-  continuous_uliftUp.comp ((continuous_subtype_val.comp (continuous_uliftDown.comp
+  continuous_uliftUp.comp ((continuous_subtypeVal.comp (continuous_uliftDown.comp
     ((diskRadialPush k hd.le).continuous.comp
-      (continuous_const.prodMk continuous_subtype_val)))).subtype_mk _)
+      (continuous_const.prodMk continuous_subtypeVal)))).subtype_mk _)
 
 /-- The direction of `w` is `w / ‖w‖`. -/
 theorem coe_annulusDir (hd : 0 < d) (w : {w : TopCat.disk.{u} k // d ≤ ‖w.down.val‖}) :
@@ -217,7 +217,7 @@ def discGlue (hd : 0 < d) (A : C(P × closedBall (0 : EuclideanSpace ℝ (Fin k)
   toFun := discGlueFun hd A B
   continuous_toFun := by
     have hn : Continuous fun q : P × TopCat.disk.{u} k ↦ ‖q.2.down.val‖ :=
-      continuous_norm.comp (continuous_subtype_val.comp (continuous_uliftDown.comp continuous_snd))
+      continuous_norm.comp (continuous_subtypeVal.comp (continuous_uliftDown.comp continuous_snd))
     have hs : ContinuousOn (discGlueFun hd A B) {q | ‖q.2.down.val‖ ≤ d} := by
       rw [continuousOn_iff_continuous_domRestrict]
       have he : domRestrict {q | ‖q.2.down.val‖ ≤ d} (discGlueFun hd A B) =

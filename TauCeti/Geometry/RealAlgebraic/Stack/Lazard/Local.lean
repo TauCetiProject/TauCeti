@@ -63,7 +63,7 @@ private theorem lazardExponent_eq_of_locally (hS : IsPreconnected S) {U : S → 
       (optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardExponent
         (Polynomial.C ∘ y.val) := by
     refine (IsLocallyConstant.iff_eventually_eq _).2 fun a ↦ ?_
-    filter_upwards [((hU a).preimage continuous_subtype_val).mem_nhds (hxU a)] with y hy
+    filter_upwards [((hU a).preimage continuous_subtypeVal).mem_nhds (hxU a)] with y hy
     exact ((D a).lazardExponent_eq k ⟨y.val, y.property, hy⟩).trans
       ((D a).lazardExponent_eq k ⟨a.val, a.property, hxU a⟩).symm
   exact (hloc.apply_eq_of_preconnectedSpace x x₀).trans rfl
@@ -96,9 +96,9 @@ theorem nonempty_lazardDelineation_of_locally (hS : IsPreconnected S) (hSne : S.
     (D a).root i ⟨y.val.val, y.val.property, y.property⟩
   have hθc (a : S) (i : Fin (D a).count) : Continuous (θ a i) :=
     (D a).continuous_root i |>.comp <| Continuous.subtype_mk
-      (continuous_subtype_val.comp continuous_subtype_val) _
+      (continuous_subtypeVal.comp continuous_subtypeVal) _
   obtain ⟨q, -, r, m, hrc, hrmono, hrrange, hm, -⟩ :=
-    exists_roots_of_locally (P := P) (Z := Z) (fun a ↦ (hU a).preimage continuous_subtype_val)
+    exists_roots_of_locally (P := P) (Z := Z) (fun a ↦ (hU a).preimage continuous_subtypeVal)
       hxU hθc
       (fun a y ↦ (D a).strictMono_root _) (fun a y ↦ hlocalRange a ⟨y.val.val, y.val.property,
           y.property⟩)

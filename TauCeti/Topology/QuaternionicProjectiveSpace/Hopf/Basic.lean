@@ -82,7 +82,7 @@ private theorem continuousOn_sphereDirection_apply :
   rw [continuousOn_iff_continuous_domRestrict]
   refine (normalizeToSphere (fun v : mk n ⁻¹' affineOpen k ↦ v.val.val k)
     ((PiLp.continuous_apply 2 (fun _ : Fin (n + 1) ↦ ℍ) k).comp
-      (continuous_subtype_val.comp continuous_subtype_val))
+      (continuous_subtypeVal.comp continuous_subtypeVal))
     fun v ↦ (mk_mem_affineOpen_iff k v.val).1 v.property).continuous.congr fun v ↦ Subtype.ext ?_
   rw [coe_normalizeToSphere_apply]
   exact (coe_sphereDirection_of_ne_zero _ ((mk_mem_affineOpen_iff k v.val).1 v.property)).symm

@@ -50,8 +50,8 @@ theorem continuous_matrixNormalMeasure {ι κ : Type*} [Fintype ι] [Fintype κ]
   have hcov : Continuous (fun p : Matrix ι κ ℝ ×
       {U : Matrix ι ι ℝ // U.PosSemidef} × {V : Matrix κ κ ℝ // V.PosSemidef} ↦
         p.2.2.val ⊗ₖ p.2.1.val) := by
-    exact (continuous_subtype_val.comp (continuous_snd.comp continuous_snd)).matrix_kronecker
-      (continuous_subtype_val.comp (continuous_fst.comp continuous_snd))
+    exact (continuous_subtypeVal.comp (continuous_snd.comp continuous_snd)).matrix_kronecker
+      (continuous_subtypeVal.comp (continuous_fst.comp continuous_snd))
   have hread : Continuous ((TauCeti.matrixVecMeasurableEquiv 2).symm :
       EuclideanSpace ℝ (κ × ι) → Matrix ι κ ℝ) := by
     have h : Continuous (fun x : EuclideanSpace ℝ (κ × ι) ↦

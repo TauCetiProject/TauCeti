@@ -201,7 +201,7 @@ private theorem isOpen_thomPairOver_mayerVietoris (hU : IsOpen U) (hV : IsOpen V
       TotalSpace F E) ⁻¹' (π F E ⁻¹' V ∩ zeroSectionCompl F E)) := by
   have hopen {W : Set B} (hW : IsOpen W) (T : Set (TotalSpace F E)) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W)) :=
-    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtype_val
+    (hW.preimage (FiberBundle.continuous_proj F E)).preimage continuous_subtypeVal
   have hopen₀ {W : Set B} (hW : IsOpen W) {T : Set (TotalSpace F E)}
       (hT : T ⊆ zeroSectionCompl F E) :
       IsOpen (((↑) : T → TotalSpace F E) ⁻¹' (π F E ⁻¹' W ∩ zeroSectionCompl F E)) := by

@@ -106,7 +106,7 @@ theorem pairwiseDisjoint_irreducibleComponents_of_closedPoints_transitive
   intro C hC D hD hne
   rw [Function.onFun, disjoint_iff_inter_eq_empty]
   by_contra hbad
-  obtain ⟨y, hyCD, hyc⟩ := nonempty_inter_closedPoints (nonempty_iff_ne_empty.mpr hbad)
+  obtain ⟨y, hyCD, hyc⟩ := nonempty_inter_closedPoints (ne_empty_iff_nonempty.mp hbad)
     ((isClosed_of_mem_irreducibleComponents C hC).inter
       (isClosed_of_mem_irreducibleComponents D hD)).isLocallyClosed
   exact hne (heq hC hD hyc hyCD.1 hyCD.2)

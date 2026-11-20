@@ -78,8 +78,8 @@ private def slabPotential (h : E → G) (hc : Continuous h) (hM : ∀ y, ‖h y�
     (fun p ↦ heatCauchyPotential h (p : ParabolicSpaceTime E).time
       (p : ParabolicSpaceTime E).space)
     ((continuous_heatCauchyPotential hc hM).comp
-      ((continuous_time.comp continuous_subtype_val).prodMk
-        (continuous_space.comp continuous_subtype_val)))
+      ((continuous_time.comp continuous_subtypeVal).prodMk
+        (continuous_space.comp continuous_subtypeVal)))
     M fun _ ↦ norm_heatCauchyPotential_le hM _ _
 
 private theorem slabPotential_apply (hc : Continuous h) (hM : ∀ y, ‖h y‖ ≤ M)

@@ -191,7 +191,7 @@ theorem eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto {ι : Type*} {A : ι → 
   -- The negative index is locally constant on the space of symmetric operators at `L`.
   let S := {B : E →L[ℝ] E // (B : E →ₗ[ℝ] E).IsSymmetric}
   have hV : Continuous fun B : S ↦ (innerSL ℝ).comp (B : E →L[ℝ] E) :=
-    continuous_const.clm_comp continuous_subtype_val
+    continuous_const.clm_comp continuous_subtypeVal
   have hconst := eventually_sigNeg_toBilinForm_eq_of_continuousAt (x := (⟨L, hLsym⟩ : S))
     (.of_forall fun B ↦ B.property.isSymm_toBilinForm_innerSL_comp) hV.continuousAt hLnd
   have hlimS : Tendsto (fun s ↦ (⟨A s, hsym s⟩ : S)) l (𝓝 ⟨L, hLsym⟩) :=

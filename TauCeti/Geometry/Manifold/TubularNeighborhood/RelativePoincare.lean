@@ -90,7 +90,7 @@ theorem exists_isSmoothForm_relative_primitive (f : SmoothEmbedding I J ∞ M N)
     rw [← hΦ x]
     exact (Φ _).property
   refine ⟨W, hWO, hfW, fun {k r} hr {η} hη hclosed hi ↦ ?_⟩
-  have hval : ContMDiff J J ∞ (Subtype.val : W → N) := contMDiff_subtype_val
+  have hval : ContMDiff J J ∞ (Subtype.val : W → N) := contMDiff_subtypeVal
   have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
   have hηW : IsSmoothForm J r (mpullback J J (Subtype.val : W → N) η) :=
     hη.mpullback (hval.of_le (by exact_mod_cast (le_top : r + 1 ≤ ⊤)))
