@@ -139,7 +139,7 @@ theorem char_rationalWeylRep_weightOfShape_diagonal {ν : YoungDiagram} (hν : �
   have hrow : ∀ j < n, ν.rowLen j = l.detShiftShape.rowLen j + c := by
     intro j hj
     have hshape := DominantWeight.rowLen_detShiftShape l ⟨j, hj⟩
-    have hval : l.1 ⟨j, hj⟩ = (ν.rowLen j : ℤ) := weightOfShape_apply n ν ⟨j, hj⟩
+    have hval : l.val ⟨j, hj⟩ = (ν.rowLen j : ℤ) := weightOfShape_apply n ν ⟨j, hj⟩
     have hle := DominantWeight.detShift_le l ⟨j, hj⟩
     simp only [hval] at hshape hle
     omega

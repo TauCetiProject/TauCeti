@@ -177,6 +177,11 @@ theorem isLocalDiffeomorph (hf : IsLocalRiemannianIsometry I J f) {n : ℕ∞ω}
     IsLocalDiffeomorph I J n f :=
   isLocalDiffeomorph_of_mfderiv_eq (hf.contMDiff.of_le hn') hn hf.isInvertible_mfderiv
 
+/-- A local Riemannian isometry out of a boundaryless manifold is a local homeomorphism. -/
+theorem isLocalHomeomorph [IsManifold I 1 M] [IsManifold J 1 N]
+    (hf : IsLocalRiemannianIsometry I J f) : IsLocalHomeomorph f :=
+  (hf.isLocalDiffeomorph (n := 1) le_rfl (by simp)).isLocalHomeomorph
+
 end LocalDiffeomorph
 
 variable (I M) in

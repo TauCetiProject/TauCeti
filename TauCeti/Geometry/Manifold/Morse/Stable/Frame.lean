@@ -69,8 +69,16 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   the tangent space of the stable manifold, and are onto.
 * `range_unstableFrame`, `injective_unstableFrame`: the frame is an isomorphism onto the tangent
   space of the unstable manifold.
+* `bijective_unstableFrame`: at a critical point of top index, the frame is an isomorphism onto the
+  whole tangent space.
 * `stableNormal_mfderiv_flow`, `unstableFrame_flow`: along the flow, the derivative of the time-`t`
   map carries the normal coordinates and the frame to positive multiples of themselves.
+* `injective_unstableFrame_of_mem`, `surjective_stableNormal_of_mem`: the frame is injective and
+  the normal coordinates are onto at every point of the unstable, respectively stable, manifold.
+* `exact_unstableFrame_neg_stableNormal`, `exact_neg_unstableFrame_stableNormal`: the unstable
+  frame of `X` and the normal coordinates of the stable manifold of `-X`, read in the negated Morse
+  chart, form a short exact sequence `0 → V⁻ → T_y M → V⁺ → 0` at the points of the unstable
+  manifold, and symmetrically at the points of the stable manifold.
 * `coord_toChart_flow_neg_eq_zero_of_not_weight_neg`: once the backward orbit of a point of the
   unstable manifold is linear in the chart, its coordinates of positive weight vanish.
 * `unstableFrame_exp_smul_negativeCoord`: the frame sends the direction in which a trajectory leaves
@@ -180,6 +188,16 @@ theorem mem_linearForwardTimes_flow {y : M} {t T : ℝ} :
 theorem mem_linearBackwardTimes_flow {y : M} {t T : ℝ} :
     T ∈ hX.linearBackwardTimes φ (hX.flow t y) ↔ T - t ∈ hX.linearBackwardTimes φ y := by
   simp only [mem_linearBackwardTimes, ← Flow.map_add, show -(T - t) = -T + t by ring]
+
+/-- At its critical point, the centre of the Morse chart has linear backward flow at every
+time. -/
+theorem mem_linearBackwardTimes_self (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (T : ℝ) :
+    T ∈ hX.linearBackwardTimes φ x := by
+  refine (mem_linearBackwardTimes hX φ).2
+    ⟨by rw [hX.flow_apply_of_mfderiv_eq_zero hx]; exact φ.mem_source, fun t _ ↦ ?_⟩
+  rw [hX.flow_apply_of_mfderiv_eq_zero hx, φ.apply_self, map_zero, φ.linearFlow_zero_right,
+    map_zero, ← φ.apply_self]
+  exact φ.toChart.map_source φ.mem_source
 
 /-- The chain rule for the chart `φ` composed with the time-`s` map of the flow, after the
 time-`t` map. -/
@@ -312,6 +330,13 @@ theorem stableNormal_apply {y : M} {T : ℝ} (hT : T ∈ hX.linearForwardTimes �
   have h₁ := exp_smul_negativeCoord_mfderiv_add hφ hT (sub_nonneg.2 (le_max_right T₀ T)) w
   rw [sub_add_cancel] at h₀ h₁
   exact h₀.symm.trans h₁
+
+/-- At a time `0` of linear forward flow, the normal coordinates of the stable manifold are the
+coordinates of negative weight of the derivative of the chart. -/
+theorem stableNormal_apply_of_zero_mem {y : M} (hy : 0 ∈ hX.linearForwardTimes φ y)
+    (w : TangentSpace 𝓘(ℝ, E) y) :
+    hX.stableNormal φ y w = φ.negativeCoord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y w) := by
+  rw [stableNormal_apply hφ hy, neg_zero, Real.exp_zero, one_smul, Flow.map_zero, comp_id]
 
 /-- **The tangent space of the stable manifold, read along the flow.** At a point `y` of `W^s(x)`,
 for all large times `T`, the span of the tangent cone of `W^s(x)` at `y` is the preimage of the
@@ -457,6 +482,20 @@ theorem injective_unstableFrame {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardT
   rw [mfderiv_unstableFrame hφ hT, mfderiv_unstableFrame hφ hT] at h
   exact φ.injective_negativeExtend (smul_right_injective E (Real.exp_ne_zero _) h)
 
+/-- **At a critical point of top index the unstable frame is an isomorphism.** If `x` has Morse
+index `n = dim M`, the unstable frame at every point `y` with a time of linear backward flow is a
+bijection from the coordinates of negative weight onto the tangent space at `y`. -/
+theorem bijective_unstableFrame (hx : manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E)
+    {y : M} {T : ℝ} (hT : T ∈ hX.linearBackwardTimes φ y) : Bijective (hX.unstableFrame φ y) := by
+  have hinj := injective_unstableFrame hφ hT
+  have hdim : Module.finrank ℝ ({i // φ.weight i < 0} → ℝ) =
+      Module.finrank ℝ (TangentSpace 𝓘(ℝ, E) y) := by
+    rw [φ.finrank_negativeWeight_fun, hx]
+    -- `TangentSpace 𝓘(ℝ, E) y` is definitionally `E`.
+    rfl
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (f := (hX.unstableFrame φ y).toLinearMap) hdim).1 hinj⟩
+
 /-- **The unstable frame along the flow.** Moving a point of `W^u(x)` by the time-`t` map of the
 flow carries the unstable frame to `e^{t}` times the unstable frame: the unstable frame at `Φ_t y`
 is `e^{-t}` times the derivative of `Φ_t` applied to the unstable frame at `y`. -/
@@ -512,6 +551,44 @@ theorem range_unstableFrame (hf : IsMorse 𝓘(ℝ, E) f) {y : M} (hy : y ∈ hX
     rw [mfderiv_unstableFrame hφ hT, map_smul, smul_smul, ← Real.exp_add, neg_add_cancel,
       Real.exp_zero, one_smul]
     exact φ.negativeExtend_negativeCoord hv
+
+/-! ### Exactness for the reversed pseudo-gradient -/
+
+/-- **The unstable frame is injective** at every point of the unstable manifold. -/
+theorem injective_unstableFrame_of_mem (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) : Injective (hX.unstableFrame φ y) := by
+  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes hφ hf hy).exists
+  exact hX.injective_unstableFrame hφ hT
+
+/-- **The normal coordinates are onto** at every point of the stable manifold. -/
+theorem surjective_stableNormal_of_mem {y : M} (hy : y ∈ hX.flow.stableSet x) :
+    Surjective (hX.stableNormal φ y) := by
+  obtain ⟨T, hT⟩ := (hX.eventually_mem_linearForwardTimes hφ hy).exists
+  exact hX.surjective_stableNormal hφ hT
+
+/-- At a point of the unstable manifold of `x`, the unstable frame of `X` and the normal
+coordinates of the stable manifold of `x` for `-X`, read in the negated Morse chart, form an exact
+sequence: both see the tangent space of `W^u(x)`, which is the stable manifold of `-X`. -/
+theorem exact_unstableFrame_neg_stableNormal (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) :
+    Exact (hX.unstableFrame φ y) ((hX.neg hf).stableNormal (φ.neg hx) y) := by
+  intro v
+  rw [(hX.neg hf).stableNormal_eq_zero_iff (φ.coord_mfderiv_neg hφ hx)
+      (by rwa [← hX.unstableSet_eq_stableSet_neg hf]), ← hX.unstableSet_eq_stableSet_neg hf]
+  exact (Set.ext_iff.1 (hX.range_unstableFrame hφ hf hy) v).symm
+
+/-- At a point of the stable manifold of `x`, the unstable frame of `-X`, read in the negated Morse
+chart, and the normal coordinates of the stable manifold of `x` for `X` form an exact sequence:
+both see the tangent space of `W^s(x)`, which is the unstable manifold of `-X`. -/
+theorem exact_neg_unstableFrame_stableNormal (hf : IsMorse 𝓘(ℝ, E) f)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) {y : M}
+    (hy : y ∈ hX.flow.stableSet x) :
+    Exact ((hX.neg hf).unstableFrame (φ.neg hx) y) (hX.stableNormal φ y) := by
+  intro v
+  rw [hX.stableNormal_eq_zero_iff hφ hy, hX.stableSet_eq_unstableSet_neg hf]
+  exact (Set.ext_iff.1 ((hX.neg hf).range_unstableFrame (φ.coord_mfderiv_neg hφ hx) hf.neg
+    ((hX.stableSet_eq_unstableSet_neg hf x).subset hy)) v).symm
 
 /-! ### The direction of a trajectory leaving the critical point -/
 
@@ -570,7 +647,7 @@ theorem unstableFrame_exp_smul_negativeCoord (hf : IsMorse 𝓘(ℝ, E) f) {y : 
   have he : φ.negativeCoord (φ.toChart (hX.flow (-T) y)) = Real.exp (-T) • a := by
     funext i
     have hw : φ.weight i = -1 :=
-      (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.2)
+      (φ.weight_eq_neg_one_or_eq_one i).resolve_right ((φ.weight_ne_one_iff i).2 i.property)
     have h := hcoord i
     rw [φ.coord_negativeExtend_of_weight_neg a i, hw] at h
     rw [φ.negativeCoord_apply, Pi.smul_apply, smul_eq_mul]

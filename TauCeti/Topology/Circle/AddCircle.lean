@@ -157,7 +157,7 @@ theorem exists_forall_eq_add_pos (ψ : ℝ × AddCircle T → AddCircle T)
     exact ⟨hdw ▸ hw, by rw [hdw, hwψ, add_sub_cancel]⟩
   have hdc : Continuous d := continuous_iff_continuousAt.2 fun τ ↦ by
     obtain ⟨w, hw, hwψ⟩ := hθnear τ (mem_univ τ)
-    refine continuous_subtype_val.continuousAt.comp <|
+    refine continuous_subtypeVal.continuousAt.comp <|
       (AddCircle.continuousAt_equivIco T _ fun h ↦ ?_).comp (by fun_prop)
     rw [← hwψ, AddCircle.coe_eq_coe_iff_of_mem_Ico (hIco hw)
       ⟨le_rfl, by linarith [hT.out]⟩] at h

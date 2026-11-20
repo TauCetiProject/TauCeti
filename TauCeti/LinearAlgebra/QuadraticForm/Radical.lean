@@ -380,7 +380,7 @@ noncomputable def IsometryEquiv.restrictProdRadicalOfIsCompl (Q : QuadraticMap R
     change Q (W.prodEquivOfIsCompl Q.radical hW.symm x) = _
     rw [Submodule.coe_prodEquivOfIsCompl', QuadraticMap.prod_apply,
       QuadraticMap.restrict_apply, add_comm,
-      (QuadraticMap.mem_radical_iff'.mp x.2.2).2]
+      (QuadraticMap.mem_radical_iff'.mp x.2.property).2]
     simp
 
 /-- The direct-sum isometry adds the complement and radical components. -/
@@ -616,7 +616,7 @@ theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
   refine ⟨z, ?_, ?_⟩
   · apply QuadraticMap.isOrtho_polarBilin.mp
     simpa only [B, W, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] using
-      z.2 y (Submodule.mem_span_singleton_self y)
+      z.property y (Submodule.mem_span_singleton_self y)
   · have hz' : B (z : V) (z : V) ≠ 0 := by
       simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using hz
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,

@@ -5,12 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Integrability
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.FDeriv.QuadraticMap
 import TauCeti.Analysis.ODE.Frobenius
+import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
+import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.ConformalCurvature
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -18,40 +25,48 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 /-!
 # Local solutions of the conformal flattening equation
 
-Let `g` be a smooth Riemannian metric on a finite-dimensional real normed space `E`. In dimension
-at least `3`, the metric `e^(2φ) g` has vanishing Schouten tensor exactly when `φ` solves the
-*conformal flattening equation*
+Let `g` be a smooth Riemannian metric on a manifold `M`. In dimension at least `3`, the metric
+`e^(2φ) g` has vanishing Schouten tensor exactly when `φ` solves the *conformal flattening equation*
 
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g`,
 
 with `P` the Schouten tensor of `g`
 (`Bundle.ContMDiffRiemannianMetric.schoutenTensor_leviCivitaConnection_rescale_eq_zero_iff`).
 This file proves that the equation is locally solvable with arbitrary initial data wherever the
-Weyl and Cotton tensors of `g` vanish: if `W = 0` and `C = 0` near `x₀`, then for every number `c`
-and tangent vector `ξ` at `x₀` there is a smooth `φ` solving the equation near `x₀` with
-`φ x₀ = c` and `grad φ x₀ = ξ`. This is a converse of
-`TauCeti.Manifold.weylTensor_eq_zero_of_forall_exists_eventually_hessian_eq` and
+Weyl and Cotton tensors of `g` vanish: near any interior point `x₀` at which `W = 0` and `C = 0`
+in a neighbourhood, for every number `c` and tangent vector `ξ` at `x₀` there is a globally smooth
+`φ : M → ℝ` solving the equation near `x₀` with `φ x₀ = c` and `grad φ x₀ = ξ`. This is a converse
+of `TauCeti.Manifold.weylTensor_eq_zero_of_forall_exists_eventually_hessian_eq` and
 `TauCeti.Manifold.cottonTensor_eq_zero_of_eventually_hessian_eq`, and the analytic step in the
 proof that a metric with vanishing Weyl tensor (dimension at least `4`) or vanishing Cotton tensor
 (dimension `3`) is locally conformally flat.
 
-In linear coordinates, writing `α = dφ`, the equation is the first-order total differential
-equation `D(φ, α)(u) = (α u, v ↦ α(Γ(u, v)) + Φ_α(u, v))` on `E × (ℝ × E*)`, where `Γ` are the
-Christoffel symbols of `g` (`TauCeti.Manifold.christoffelSecondKind`) and `Φ_α` is the right side
-of the equation. Its Frobenius integrability condition is checked without computing curvature in
-coordinates: at a point `(y, c, α)`, a quadratic function with this value, differential and
-prescribed second derivative solves the equation at `y`, and along such a function the
-antisymmetrized derivative of the defect of the equation is
+On a finite-dimensional real normed space `E`, writing `α = dφ`, the equation is the first-order
+total differential equation `D(φ, α)(u) = (α u, v ↦ α(Γ(u, v)) + Φ_α(u, v))` on `E × (ℝ × E*)`,
+where `Γ` are the Christoffel symbols of `g` (`TauCeti.Manifold.christoffelSecondKind`) and `Φ_α`
+is the right side of the equation. Its Frobenius integrability condition is checked without
+computing curvature in coordinates: at a point `(y, c, α)`, a quadratic function with this value,
+differential and prescribed second derivative solves the equation at `y`, and along such a function
+the antisymmetrized derivative of the defect of the equation is
 `-(C(X, Y, Z) + W(Z, Y, X, grad φ))`
 (`TauCeti.Manifold.mvfderiv_hessian_sub_conformalFlatteningForm_sub_swap`), which vanishes. The
 local Frobenius theorem `TauCeti.exists_contDiffOn_solution_family_of_isFrobeniusIntegrableAt`
 then produces the solution, and a cutoff makes it globally smooth.
 
+On a general smooth manifold `M`, an interior point `x₀` has an open neighbourhood diffeomorphic
+to `E` (`TauCeti.exists_opens_diffeomorph_euclideanSpace`). Pulling the metric back to `E` makes
+the parametrization a local Riemannian isometry, which preserves vanishing of the Weyl and Cotton
+tensors and naturality of the conformal flattening equation
+(`TauCeti.IsLocalRiemannianIsometry.hessian_comp_eq_conformalFlatteningForm_iff`). Solving on `E`
+and extending from the coordinate domain by a smooth bump function gives the global solution on `M`.
+
 ## Main results
 
-* `TauCeti.Manifold.exists_eventually_hessian_eq_model_space`: on a normed space with a smooth
-  Riemannian metric whose Weyl and Cotton tensors vanish near `x₀`, the conformal flattening
-  equation has a smooth solution near `x₀` with any prescribed value and gradient at `x₀`.
+* `TauCeti.Manifold.exists_eventually_hessian_eq_of_isInteriorPoint`: near an interior point `x₀`
+  of a smooth Riemannian manifold whose Weyl and Cotton tensors vanish near `x₀`, the conformal
+  flattening equation has a smooth solution near `x₀` with any prescribed value and gradient at
+  `x₀`.
+* `TauCeti.Manifold.exists_eventually_hessian_eq`: specialization to boundaryless manifolds.
 
 ## References
 
@@ -304,7 +319,7 @@ with `φ x₀ = c` and `grad φ x₀ = ξ` solving the conformal flattening equa
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x₀`, where `P` is the Schouten tensor. When `E` has
 dimension at least `3`, this says equivalently that `e^(2φ) g` has vanishing Schouten tensor near
 `x₀`. -/
-theorem exists_eventually_hessian_eq_model_space {x₀ : E}
+private theorem exists_eventually_hessian_eq_model_space {x₀ : E}
     (hW : ∀ᶠ y in 𝓝 x₀, (lc).weylTensor y = 0) (hC : ∀ᶠ y in 𝓝 x₀, (lc).cottonTensor y = 0)
     (c : ℝ) (ξ : TangentSpace 𝓘(ℝ, E) x₀) :
     ∃ φ : E → ℝ, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient 𝓘(ℝ, E) φ x₀ = ξ ∧
@@ -358,5 +373,136 @@ theorem exists_eventually_hessian_eq_model_space {x₀ : E}
     simpa only [ContinuousLinearEquiv.symm_apply_apply, sub_eq_zero] using h
 
 end ModelSpace
+
+/-! ### Coordinate transport to smooth manifolds -/
+
+section Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+
+/-- Near any interior point `x₀` of a smooth Riemannian manifold `M`, there is an open embedding
+`f : E → M` with `f z₀ = x₀` which is a local Riemannian isometry from a pulled-back smooth metric
+on `E` to `M`, and every smooth function on `E` agrees near `z₀` with `φ ∘ f` for a globally smooth
+`φ : M → ℝ`. -/
+private theorem exists_pullback_parametrization_of_isInteriorPoint {x₀ : M}
+    (hx₀ : I.IsInteriorPoint x₀) :
+    ∃ (f : E → M) (z₀ : E)
+      (gE : ContMDiffRiemannianMetric 𝓘(ℝ, E) ∞ E (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z)),
+      f z₀ = x₀ ∧ Topology.IsOpenEmbedding f ∧
+      (∀ {ψ : E → ℝ}, ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ψ →
+        ∃ φ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ φ ∧ (φ ∘ f) =ᶠ[𝓝 z₀] ψ) ∧
+      letI : RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) := ⟨gE.toRiemannianMetric⟩
+      TauCeti.IsLocalRiemannianIsometry 𝓘(ℝ, E) I f := by
+  obtain ⟨U, hx₀U, ⟨Φ₀⟩⟩ := TauCeti.exists_opens_diffeomorph_euclideanSpace (n := (⊤ : ℕ∞)) hx₀
+  let Φ : U ≃ₘ^∞⟮I, 𝓘(ℝ, E)⟯ E := Φ₀.trans (toEuclidean (E := E)).symm.toDiffeomorph
+  let f : E → M := (Subtype.val : U → M) ∘ Φ.symm
+  have hf_smooth : ContMDiff 𝓘(ℝ, E) I (∞ + 1) f :=
+    (contMDiff_subtypeVal.comp Φ.symm.contMDiff).of_le (by simp)
+  have hinv (z : E) : (mfderiv 𝓘(ℝ, E) I f z).IsInvertible := by
+    rw [mfderiv_comp z ((contMDiff_subtypeVal (n := ∞)).mdifferentiableAt (by simp))
+      (Φ.symm.contMDiff.mdifferentiableAt (by simp))]
+    exact ((TauCeti.IsLocalRiemannianIsometry.subtype_val U).isInvertible_mfderiv
+      (Φ.symm z)).comp (Φ.symm.isInvertible_mfderiv (by simp))
+  let gM := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
+    (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)
+  let gE := gM.pullback f hf_smooth (fun z ↦ (hinv z).injective)
+  have hemb : Topology.IsOpenEmbedding f :=
+    U.isOpen.isOpenEmbedding_subtypeVal.comp Φ.symm.toHomeomorph.isOpenEmbedding
+  refine ⟨f, Φ ⟨x₀, hx₀U⟩, gE, by simp [f], hemb, fun {ψ} hψ ↦ ?_, ?_⟩
+  · have hψΦ : ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) (ψ ∘ Φ) := (hψ.comp Φ.contMDiff).of_le (by simp)
+    obtain ⟨G, hG_eq⟩ := hψΦ.exists_contMDiffMap_eventuallyEq_comp_subtype_val (x := ⟨x₀, hx₀U⟩)
+    refine ⟨G, G.contMDiff, ?_⟩
+    have hΦ_tendsto : Tendsto Φ.symm (𝓝 (Φ ⟨x₀, hx₀U⟩)) (𝓝 ⟨x₀, hx₀U⟩) := by
+      simpa using Φ.symm.continuous.tendsto (Φ ⟨x₀, hx₀U⟩)
+    exact (hΦ_tendsto.eventually hG_eq).mono fun z hz ↦ by
+      simpa [f] using hz
+  · have hgM : (⟨gM.toRiemannianMetric⟩ : RiemannianBundle (fun x : M ↦ TangentSpace I x)) =
+        ‹RiemannianBundle (fun x : M ↦ TangentSpace I x)› := by
+      have hinner : gM.toRiemannianMetric.inner = RiemannianBundle.g.inner := by
+        ext x v w
+        exact ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner
+          (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x) x v w
+      refine congrArg RiemannianBundle.mk ?_
+      cases h₁ : gM.toRiemannianMetric
+      cases h₂ : RiemannianBundle.g (E := fun x : M ↦ TangentSpace I x)
+      rw [h₁, h₂] at hinner
+      cases hinner
+      rfl
+    exact hgM ▸ gM.isLocalRiemannianIsometry_pullback_of_isInvertible hf_smooth hinv
+
+/-- **Local solutions of the conformal flattening equation on a manifold.** Near an interior point
+`x₀` of a smooth Riemannian manifold `M` where the Weyl and Cotton tensors vanish in a
+neighbourhood, for every `c : ℝ` and every tangent vector `ξ` at `x₀` there is a smooth function
+`φ : M → ℝ` with `φ x₀ = c` and `grad φ x₀ = ξ` solving the conformal flattening equation
+`Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x₀`. -/
+theorem exists_eventually_hessian_eq_of_isInteriorPoint {x₀ : M} (hx₀ : I.IsInteriorPoint x₀)
+    (hW : ∀ᶠ y in 𝓝 x₀, (CovariantDerivative.leviCivitaConnection I M).weylTensor y = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (CovariantDerivative.leviCivitaConnection I M).cottonTensor y = 0)
+    (c : ℝ) (ξ : TangentSpace I x₀) :
+    ∃ φ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient I φ x₀ = ξ ∧
+      ∀ᶠ y in 𝓝 x₀, ∀ u v : TangentSpace I y, hessian I φ y u v =
+        (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm y
+          (mgradient I φ y) u v := by
+  obtain ⟨f, z₀, gE, rfl, hemb, hext, hf_iso⟩ :=
+    exists_pullback_parametrization_of_isInteriorPoint hx₀
+  let _ : RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) := ⟨gE.toRiemannianMetric⟩
+  have hWE : ∀ᶠ z in 𝓝 z₀, (CovariantDerivative.leviCivitaConnection 𝓘(ℝ, E) E).weylTensor z = 0 :=
+    ((hf_iso.contMDiff.continuous.tendsto z₀).eventually hW).mono fun z hz ↦
+      (hf_iso.weylTensor_eq_zero_iff z).1 hz
+  have hCE : ∀ᶠ z in 𝓝 z₀,
+      (CovariantDerivative.leviCivitaConnection 𝓘(ℝ, E) E).cottonTensor z = 0 :=
+    ((hf_iso.contMDiff.continuous.tendsto z₀).eventually hC).mono fun z hz ↦
+      (hf_iso.cottonTensor_eq_zero_iff z).1 hz
+  obtain ⟨e₀, he₀⟩ := hf_iso.exists_linearIsometryEquiv_eq_mfderiv z₀
+  obtain ⟨ψ, hψ, hψ_val, hψ_grad, hψ_sol⟩ :=
+    exists_eventually_hessian_eq_model_space hWE hCE c (e₀.symm ξ)
+  obtain ⟨φ, hφ, hφf_eq⟩ := hext hψ
+  refine ⟨φ, hφ, hφf_eq.eq_of_nhds.trans hψ_val, ?_, ?_⟩
+  · have hgrad₀ : mgradient 𝓘(ℝ, E) (φ ∘ f) z₀ = mgradient 𝓘(ℝ, E) ψ z₀ := by
+      simp [mgradient_def, mvfderiv_eq_fderiv, hφf_eq.fderiv_eq]
+    apply (hf_iso.mfderiv_injective z₀)
+    rw [← hf_iso.mfderiv_mgradient_comp (hφ.mdifferentiableAt (by simp)),
+      hgrad₀, hψ_grad, ← he₀, e₀.apply_symm_apply]
+  · have hφf_diff : ContDiff ℝ ∞ (φ ∘ f) := contMDiff_iff_contDiff.1 (hφ.comp hf_iso.contMDiff)
+    have hψ_diff : ContDiff ℝ ∞ ψ := contMDiff_iff_contDiff.1 hψ
+    have hsol_z₀ : ∀ᶠ z in 𝓝 z₀, ∀ u v : TangentSpace I (f z), hessian I φ (f z) u v =
+        (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm (f z)
+          (mgradient I φ (f z)) u v := by
+      filter_upwards [hφf_eq.eventually_nhds, hψ_sol] with z hz hsolz
+      have hzEq : (φ ∘ f) =ᶠ[𝓝 z] ψ := hz
+      refine (hf_iso.hessian_comp_eq_conformalFlatteningForm_iff
+        (hφ.contMDiffAt.of_le (by simp))).1 fun u v ↦ ?_
+      have h₁ := hessian_sub_conformalFlatteningForm_model_space
+        (hφf_diff.contDiffAt.of_le (by simp) : ContDiffAt ℝ 2 (φ ∘ f) z)
+        (tangentSpaceCastModel 𝓘(ℝ, E) z u) (tangentSpaceCastModel 𝓘(ℝ, E) z v)
+      have h₂ := hessian_sub_conformalFlatteningForm_model_space
+        (hψ_diff.contDiffAt.of_le (by simp) : ContDiffAt ℝ 2 ψ z)
+        (tangentSpaceCastModel 𝓘(ℝ, E) z u) (tangentSpaceCastModel 𝓘(ℝ, E) z v)
+      simp only [ContinuousLinearEquiv.symm_apply_apply] at h₁ h₂
+      rw [hzEq.eq_of_nhds, hzEq.fderiv_eq, hzEq.fderiv.fderiv_eq, ← h₂, hsolz u v, sub_self] at h₁
+      exact sub_eq_zero.1 h₁
+    refine Filter.eventually_of_mem (hemb.image_mem_nhds.2 hsol_z₀) ?_
+    rintro _ ⟨z, hz, rfl⟩
+    exact hz
+
+/-- **Local solutions of the conformal flattening equation on a boundaryless manifold.** If the Weyl
+and Cotton tensors vanish near `x₀`, then for every `c : ℝ` and every tangent vector `ξ` at `x₀`
+there is a smooth function `φ : M → ℝ` with `φ x₀ = c` and `grad φ x₀ = ξ` solving the conformal
+flattening equation `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g` near `x₀`. -/
+theorem exists_eventually_hessian_eq [BoundarylessManifold I M] {x₀ : M}
+    (hW : ∀ᶠ y in 𝓝 x₀, (CovariantDerivative.leviCivitaConnection I M).weylTensor y = 0)
+    (hC : ∀ᶠ y in 𝓝 x₀, (CovariantDerivative.leviCivitaConnection I M).cottonTensor y = 0)
+    (c : ℝ) (ξ : TangentSpace I x₀) :
+    ∃ φ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ φ ∧ φ x₀ = c ∧ mgradient I φ x₀ = ξ ∧
+      ∀ᶠ y in 𝓝 x₀, ∀ u v : TangentSpace I y, hessian I φ y u v =
+        (CovariantDerivative.leviCivitaConnection I M).conformalFlatteningForm y
+          (mgradient I φ y) u v :=
+  exists_eventually_hessian_eq_of_isInteriorPoint BoundarylessManifold.isInteriorPoint hW hC c ξ
+
+end Manifold
 
 end TauCeti.Manifold

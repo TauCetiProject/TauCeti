@@ -38,7 +38,7 @@ finitely supported permutation of the time coordinate. -/
 @[implicit_reducible]
 def exchangeableSigma (α : Type*) [MeasurableSpace α] : MeasurableSpace (ℕ → α) :=
   ⨅ π : {π : Equiv.Perm ℕ // (MulAction.fixedBy ℕ π)ᶜ.Finite},
-    MeasurableSpace.invariants (permReindex (α := α) π.1)
+    MeasurableSpace.invariants (permReindex (α := α) π.val)
 
 /-- A set is measurable for `exchangeableSigma` iff it is ambient-measurable and fixed by every
 finitely supported time permutation. -/
@@ -57,7 +57,7 @@ theorem mem_exchangeableSigma_iff {s : Set (ℕ → α)} :
     · intro π hπ
       exact (MeasurableSpace.measurableSet_invariants.mp (hs ⟨π, hπ⟩)).2
   · rintro ⟨hs_meas, hs_inv⟩ π
-    exact MeasurableSpace.measurableSet_invariants.mpr ⟨hs_meas, hs_inv π.1 π.2⟩
+    exact MeasurableSpace.measurableSet_invariants.mpr ⟨hs_meas, hs_inv π.val π.property⟩
 
 /-- The exchangeable σ-algebra is a sub-σ-algebra of the ambient path-space σ-algebra. -/
 theorem exchangeableSigma_le :
@@ -127,7 +127,7 @@ theorem comp_permReindex_eq_of_measurable_exchangeableSigma [MeasurableSpace β]
   exact MeasurableSpace.comp_eq_of_measurable_invariants
     (hg.mono (iInf_le (fun π : {π : Equiv.Perm ℕ //
       (MulAction.fixedBy ℕ π)ᶜ.Finite} =>
-      MeasurableSpace.invariants (permReindex (α := α) π.1)) ⟨π, hπ⟩) le_rfl)
+      MeasurableSpace.invariants (permReindex (α := α) π.val)) ⟨π, hπ⟩) le_rfl)
 
 /-- If a set belongs to the future path σ-algebra from time `N` onward and `π` fixes every index
 `k ≥ N`, then reindexing paths by `π` leaves the set fixed. -/
@@ -143,7 +143,7 @@ private theorem preimage_permReindex_eq_of_measurable_tailFamily
       rcases hu with ⟨k, t, _, rfl⟩
       ext x
       simp only [Set.mem_preimage]
-      rw [permReindex_apply, hπ k.1 k.2]
+      rw [permReindex_apply, hπ k.val k.property]
   | empty =>
       simp
   | compl t ht hpre =>

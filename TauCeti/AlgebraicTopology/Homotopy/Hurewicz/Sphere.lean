@@ -128,7 +128,8 @@ private lemma isOpenEmbedding_diskToSphere_domRestrict :
         ((diskToSphere n).hom.continuous.restrictPreimage) ?_
         (IsClosedMap.restrictPreimage (diskToSphere n).hom.continuous.isClosedMap _)).isEmbedding,
     ?_⟩
-  · exact fun z w h ↦ Subtype.ext ((bijOn_diskToSphere n).injOn z.2 w.2 (congrArg Subtype.val h))
+  · exact fun z w h ↦ Subtype.ext ((bijOn_diskToSphere n).injOn z.property w.property
+      (congrArg Subtype.val h))
   · rw [range_domRestrict, (bijOn_diskToSphere n).image_eq]
     exact isOpen_compl_singleton
 
@@ -201,7 +202,7 @@ private lemma isIso_singularHomologyMap_diskToSpherePairMap (k : ℕ) :
         (Y := TopCat.of (diskToSphereChart n).target) (diskToSphereChart n).toHomeomorphSourceTarget
         (B := Subtype.val ⁻¹' {diskCenter (n + 1)}ᶜ)
         (B' := Subtype.val ⁻¹' {diskToSphereChart n (diskCenter (n + 1))}ᶜ)
-        fun z ↦ ((diskToSphereChart n).injOn.eq_iff z.2 hx).not.symm).hom ≫
+        fun z ↦ ((diskToSphereChart n).injOn.eq_iff z.property hx).not.symm).hom ≫
       TopPair.excisionMap (X := TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (n + 2))) 1))
         (diskToSphereChart n).target {diskToSphereChart n (diskCenter (n + 1))}ᶜ := by
     apply TopPair.hom_ext_of_fst

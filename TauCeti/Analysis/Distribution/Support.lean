@@ -40,7 +40,9 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
 * `Distribution.isVanishingOn_compl_dsupport`: an additive map on test functions vanishes on the
   complement of its support; `Distribution.isVanishingOn_iff_disjoint_dsupport` is the resulting
   characterization of the open sets on which it vanishes.
-* `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values.
+* `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values;
+  by `Distribution.map_eq_map_of_forall_eventuallyEq` it suffices that they agree near each point
+  of the support in `Ω`.
 * `Distribution.dsupport_eq_empty_iff`, `Distribution.eq_zero_of_dsupport_subset_empty`: an
   additive map on test functions vanishes when and only when its support is empty.
 * `Distribution.dsupport_comp_smulLeftCLM_subset`, `Distribution.dsupport_comp_cutoffCLM_subset`,
@@ -164,7 +166,7 @@ on their union. -/
 theorem isVanishingOn_sUnion {S : Set (Set E)} (hS : ∀ s ∈ S, IsOpen s ∧ IsVanishingOn T s) :
     IsVanishingOn T (⋃₀ S) := by
   rw [sUnion_eq_iUnion]
-  exact isVanishingOn_iUnion T (fun s ↦ (hS s s.2).1) fun s ↦ (hS s s.2).2
+  exact isVanishingOn_iUnion T (fun s ↦ (hS s s.property).1) fun s ↦ (hS s s.property).2
 
 /-- An additive map on test functions vanishes on the complement of its support. -/
 theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
@@ -229,6 +231,18 @@ theorem map_eq_map_of_eventuallyEq {φ ψ : 𝓓^{n}(Ω, F)}
   refine closure_minimal (fun x hx hxU ↦ hx ?_) hU.isClosed_compl
   have hx' : φ x = ψ x := hφψ hxU
   simp [hx']
+
+/-- The value of an additive map on test functions on `Ω` depends only on the germs of the test
+at the points of its support that lie in `Ω`: near the other points of the support every test
+function on `Ω` vanishes. -/
+theorem map_eq_map_of_forall_eventuallyEq {φ ψ : 𝓓^{n}(Ω, F)}
+    (h : ∀ x ∈ (Ω : Set E) ∩ dsupport T, (φ : E → F) =ᶠ[𝓝 x] ψ) : T φ = T ψ := by
+  refine map_eq_map_of_eventuallyEq T (eventually_nhdsSet_iff_forall.2 fun x hx ↦ ?_)
+  by_cases hxΩ : x ∈ Ω
+  · exact h x ⟨hxΩ, hx⟩
+  · have hφ := notMem_tsupport_iff_eventuallyEq.1 fun h' ↦ hxΩ (φ.tsupport_subset h')
+    have hψ := notMem_tsupport_iff_eventuallyEq.1 fun h' ↦ hxΩ (ψ.tsupport_subset h')
+    exact hφ.trans hψ.symm
 
 end Group
 
