@@ -85,7 +85,7 @@ def cellPath (j : cell C 1) : Path (map 1 j (fun _ ↦ -1)) (map 1 j (fun _ ↦ 
   continuous_toFun := by
     refine (continuousOn 1 j).comp_continuous (by fun_prop) fun t ↦ ?_
     rw [mem_closedBall_zero_iff, pi_norm_const, Real.norm_eq_abs]
-    exact unitInterval.abs_two_mul_sub_one_le t
+    exact unitInterval.abs_two_mul_sub_one_le_one t
   source' := by simp
   target' := by norm_num
 

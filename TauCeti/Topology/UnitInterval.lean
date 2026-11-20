@@ -24,7 +24,7 @@ neighbourhood, which permits locally finite compositions without a global positi
 Finally, `unitInterval.abs_coe_le_one` and `Set.abs_projIcc_le` bound the absolute value of a
 point of the unit interval by `1`, and that of the projection onto a symmetric interval
 `[-a, a]` by `a`. These are the side conditions for scaling by a factor `b` with `|b| ≤ 1`.
-Similarly `unitInterval.abs_two_mul_sub_one_le` bounds `|2t - 1|` by `1`, for the
+Similarly `unitInterval.abs_two_mul_sub_one_le_one` bounds `|2t - 1|` by `1`, for the
 reparametrisation `t ↦ 2t - 1` of the unit interval onto `[-1, 1]`.
 
 The subdivision of the unit interval into `r` equal arcs `[i/r, (i+1)/r]` is described by
@@ -70,7 +70,7 @@ theorem abs_coe_le_one (t : I) : |(t : ℝ)| ≤ 1 :=
   (abs_of_nonneg t.2.1).trans_le t.2.2
 
 /-- For a point `t` of the unit interval, `2t - 1` lies in `[-1, 1]`. -/
-theorem abs_two_mul_sub_one_le (t : I) : |2 * (t : ℝ) - 1| ≤ 1 :=
+theorem abs_two_mul_sub_one_le_one (t : I) : |2 * (t : ℝ) - 1| ≤ 1 :=
   abs_le.2 ⟨by linarith [t.2.1], by linarith [t.2.2]⟩
 
 end unitInterval
