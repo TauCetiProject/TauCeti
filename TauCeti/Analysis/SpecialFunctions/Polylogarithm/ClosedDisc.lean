@@ -9,9 +9,10 @@ public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Basic
 import Mathlib.Analysis.Normed.Group.FunctionSeries
-import Mathlib.Analysis.PSeries
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
+import TauCeti.Analysis.Normed.Field.Basic
+import TauCeti.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.DiscSeries
 import TauCeti.Analysis.SpecialFunctions.Polylogarithm.RadialIntegrand
@@ -115,38 +116,22 @@ theorem continuousOn_polylog_closedBall {n : ℤ} (hn : 2 ≤ n) :
   obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = (k + 2 : ℕ) := ⟨(n - 2).toNat, by omega⟩
   exact continuousOn_polylog_nat_add_two_closedBall k
 
-private lemma summable_norm_inv_zpow {n : ℤ} (hn : 2 ≤ n) :
-    Summable (fun k : ℕ ↦ ‖((k + 1 : ℂ) ^ n)⁻¹‖) := by
-  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m := ⟨n.toNat, by omega⟩
-  refine ((summable_nat_add_iff 1).mpr (Real.summable_nat_pow_inv.mpr (by omega : 1 < m))).congr
-    fun k ↦ ?_
-  have hcast : ‖(k + 1 : ℂ)‖ = (k + 1 : ℝ) := by exact_mod_cast Complex.norm_natCast (k + 1)
-  rw [zpow_natCast, norm_inv, norm_pow, hcast]
-  push_cast
-  ring
-
-private lemma norm_pow_div_zpow_le (n : ℤ) (k : ℕ) {z : ℂ} (hz : z ∈ closedBall (0 : ℂ) 1) :
-    ‖z ^ (k + 1) / (k + 1 : ℂ) ^ n‖ ≤ ‖((k + 1 : ℂ) ^ n)⁻¹‖ := by
-  rw [div_eq_mul_inv, norm_mul, norm_pow]
-  exact mul_le_of_le_one_left (norm_nonneg _)
-    (pow_le_one₀ (norm_nonneg _) (mem_closedBall_zero_iff.mp hz))
-
 /-- **Closed-disc series of the polylogarithm.** For every integer weight `n ≥ 2` and every `z`
 in the closed unit disc `‖z‖ ≤ 1`, the series `∑_{k ≥ 0} z ^ (k + 1) / (k + 1) ^ n` converges to
 `polylog n z`. -/
 theorem hasSum_polylog_of_norm_le_one {n : ℤ} (hn : 2 ≤ n) {z : ℂ} (hz : ‖z‖ ≤ 1) :
     HasSum (fun k : ℕ ↦ z ^ (k + 1) / (k + 1 : ℂ) ^ n) (polylog n z) := by
-  have hsum := summable_norm_inv_zpow hn
+  have hsum := summable_norm_inv_natCast_add_one_zpow ℂ hn
   have heq : EqOn (polylog n) (fun w ↦ ∑' k : ℕ, w ^ (k + 1) / (k + 1 : ℂ) ^ n)
       (closedBall 0 1) :=
     EqOn.of_subset_closure (fun w hw ↦ polylog_eq_tsum n (mem_ball_zero_iff.mp hw))
       (continuousOn_polylog_closedBall hn)
       (continuousOn_tsum (fun k ↦ (continuous_pow (k + 1)).continuousOn.div_const _) hsum
-        fun k _ hw ↦ norm_pow_div_zpow_le n k hw)
+        fun k _ hw ↦ norm_pow_div_le_norm_inv (mem_closedBall_zero_iff.mp hw) _ _)
       ball_subset_closedBall (closure_ball (0 : ℂ) one_ne_zero).ge
   have hz' : z ∈ closedBall (0 : ℂ) 1 := mem_closedBall_zero_iff.mpr hz
   rw [heq hz']
-  exact (Summable.of_norm_bounded hsum fun k ↦ norm_pow_div_zpow_le n k hz').hasSum
+  exact (Summable.of_norm_bounded hsum fun k ↦ norm_pow_div_le_norm_inv hz _ _).hasSum
 
 /-- For every integer weight `n ≥ 2`, the polylogarithm disc series converges absolutely on the
 closed unit disc `‖z‖ ≤ 1`, and the sum of the norms of its terms equals `(polylog n ‖z‖).re`. -/
@@ -167,9 +152,9 @@ theorem tendstoUniformlyOn_polylog_closedBall_one {n : ℤ} (hn : 2 ≤ n) :
     TendstoUniformlyOn
       (fun N (z : ℂ) ↦ ∑ k ∈ Finset.range N, z ^ (k + 1) / (k + 1 : ℂ) ^ n)
       (polylog n) atTop (closedBall 0 1) :=
-  (tendstoUniformlyOn_tsum_nat (summable_norm_inv_zpow hn)
-    fun k _ hz ↦ norm_pow_div_zpow_le n k hz).congr_right fun _ hz ↦
-      (hasSum_polylog_of_norm_le_one hn (mem_closedBall_zero_iff.mp hz)).tsum_eq
+  (tendstoUniformlyOn_tsum_nat (summable_norm_inv_natCast_add_one_zpow ℂ hn)
+    fun _ _ hz ↦ norm_pow_div_le_norm_inv (mem_closedBall_zero_iff.mp hz) _ _).congr_right
+      fun _ hz ↦ (hasSum_polylog_of_norm_le_one hn (mem_closedBall_zero_iff.mp hz)).tsum_eq
 
 /-- **Zeta values of polylogarithms.** For every integer weight `n ≥ 2`, `Liₙ(1) = ζ(n)`. -/
 theorem polylog_one_eq_riemannZeta {n : ℤ} (hn : 2 ≤ n) : polylog n 1 = riemannZeta n := by

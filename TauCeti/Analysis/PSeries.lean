@@ -43,6 +43,8 @@ dyadic annuli and compares their contributions with a geometric series.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 * `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
   when sublevel counts grow at a smaller exponent.
+* `TauCeti.summable_norm_inv_natCast_add_one_zpow` — `∑ k : ℕ, ‖((k + 1) ^ n)⁻¹‖` converges in
+  an `RCLike` field for an integer exponent `n > 1`.
 * `TauCeti.not_summable_norm_zpow_neg_add_mul` — along a nonvanishing arithmetic progression
   `w + v n` in `ℂ`, the norms of the inverse `k`-th powers are not summable for `k < 2`.
 -/
@@ -159,6 +161,18 @@ theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
     _ ≤ (C * ((2 : ℝ) ^ (n + 1)) ^ B) * ((2 : ℝ) ^ n) ^ (-p) :=
       mul_le_mul_of_nonneg_right (hweight.trans hn) (by positivity)
     _ = (C * 2 ^ B) * q ^ n := by rw [mul_assoc, hscale]; ring
+
+/-- **The shifted `p`-series in `𝕜`.** For an integer exponent `n > 1`, the norms of the
+reciprocals `((k + 1) ^ n)⁻¹` in an `RCLike` field `𝕜` are summable over `k : ℕ`. -/
+theorem summable_norm_inv_natCast_add_one_zpow (𝕜 : Type*) [RCLike 𝕜] {n : ℤ} (hn : 1 < n) :
+    Summable fun k : ℕ ↦ ‖((k + 1 : 𝕜) ^ n)⁻¹‖ := by
+  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = m := ⟨n.toNat, by omega⟩
+  refine ((summable_nat_add_iff 1).mpr (Real.summable_nat_pow_inv.mpr (by omega : 1 < m))).congr
+    fun k ↦ ?_
+  have hcast : ‖(k + 1 : 𝕜)‖ = (k + 1 : ℝ) := by exact_mod_cast RCLike.norm_natCast (K := 𝕜) (k + 1)
+  rw [zpow_natCast, norm_inv, norm_pow, hcast]
+  push_cast
+  ring
 
 /-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
 are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
