@@ -24,8 +24,4 @@ theorem Function.Exact.piMap {ι : Type*} {X Y Z : ι → Type*} [∀ i, Zero (Z
     {f : ∀ i, X i → Y i} {g : ∀ i, Y i → Z i} (h : ∀ i, Function.Exact (f i) (g i)) :
     Function.Exact (Pi.map f) (Pi.map g) := by
   intro y
-  refine ⟨fun hy ↦ ?_, ?_⟩
-  · choose x hx using fun i ↦ (h i (y i)).1 (congrFun hy i)
-    exact ⟨x, funext hx⟩
-  · rintro ⟨x, rfl⟩
-    exact funext fun i ↦ (h i).apply_apply_eq_zero (x i)
+  simp only [funext_iff, Pi.map_apply, Pi.zero_apply, h _ _, Set.range_piMap, Set.mem_univ_pi]
