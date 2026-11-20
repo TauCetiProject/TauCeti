@@ -131,6 +131,7 @@ variable [Abelian C] [ω.Faithful] [PreservesFiniteLimits ω] [FiniteDimensional
   {t : ω.obj T}
 
 /-- A morphism out of `fiberSpan t` vanishes as soon as its value at `fiberSpanPoint t` does. -/
+@[simp]
 theorem map_fiberSpanPoint_eq_zero_iff {Y : C} (f : (ω.fiberSpan t : C) ⟶ Y) :
     (ω.map f).hom (ω.fiberSpanPoint t) = 0 ↔ f = 0 := by
   refine ⟨fun hf ↦ ?_, fun hf ↦ by simp [hf]⟩
@@ -295,6 +296,8 @@ theorem fiberSpanEval_apply (t : ω.obj T) {Y : C} (f : (ω.fiberSpan t : C) ⟶
     ω.fiberSpanEval t Y f = (ω.map f).hom (ω.fiberSpanPoint t) :=
   (rfl)
 
+/-- Evaluation at `fiberSpanPoint t` is natural in the target: applying `ω.map g` to the value
+of `f` gives the value of `f ≫ g`. -/
 theorem map_fiberSpanEval (t : ω.obj T) {Y Y' : C} (f : (ω.fiberSpan t : C) ⟶ Y)
     (g : Y ⟶ Y') : (ω.map g).hom (ω.fiberSpanEval t Y f) = ω.fiberSpanEval t Y' (f ≫ g) := by
   simp
