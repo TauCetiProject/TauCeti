@@ -25,10 +25,11 @@ of the banded Cauchy–Schwarz inequality `ENNReal.tsum_sum_mul_le_of_card_le`.
 
 If the members of a family whose labels are at least `L` apart have zero product, then at most
 `L` members are nonzero, so that the sum of squares of a real family is at most `L` when its values
-lie in `[-1, 1]`; and if the family moreover sums to `1`, then the members whose labels lie within
-`L` of that of a nonzero member `f i` sum to `1` after multiplication by `f i`. Applied pointwise
-to a family of functions, these give the finite overlap, the bounded sum of squares and the window
-identity of partitions of unity such as the Littlewood–Paley cutoffs.
+lie in `[-1, 1]`; and if the family moreover sums to `1`, then `(∑_{k ∈ W} f k) f i = f i` for
+every finite `W` containing the members whose labels lie within `L` of that of `i`, that is, the
+neighbouring members sum to `1` wherever `f i ≠ 0`. Applied pointwise to a family of functions,
+these give the finite overlap, the bounded sum of squares and the window identity of partitions of
+unity such as the Littlewood–Paley cutoffs.
 
 ## Main results
 
@@ -40,8 +41,9 @@ identity of partitions of unity such as the Littlewood–Paley cutoffs.
   `L`-separated members have zero product are nonzero.
 * `TauCeti.sum_sq_le_of_mul_eq_zero`: the sum of squares of such a real family with values in
   `[-1, 1]` is at most `L`.
-* `TauCeti.sum_mul_eq_right_of_mul_eq_zero`: for such a real family summing to `1`, the members
-  with labels within `L` of that of `i` sum to `1` after multiplication by `f i`.
+* `TauCeti.sum_mul_eq_right_of_mul_eq_zero`: for such a real family summing to `1`,
+  `(∑_{k ∈ W} f k) f i = f i` whenever `W` contains the indices with labels within `L` of that
+  of `i`.
 -/
 
 public section
