@@ -140,7 +140,7 @@ theorem map {k : Y → ℝ} {φ : X → Y} (h : HasDensity P μ (k ∘ φ)) (hφ
   ae_nonneg := (ae_map_iff hφ.aemeasurable (measurableSet_le measurable_const hk)).mpr h.ae_nonneg
   eq_withDensity := by
     rw [h.eq_withDensity]
-    exact Measure.map_withDensity_comp hφ hk.ennreal_ofReal
+    exact Measure.map_withDensity_comp hφ.aemeasurable hk.ennreal_ofReal.aemeasurable
 
 end HasDensity
 
