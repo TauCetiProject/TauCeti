@@ -197,8 +197,9 @@ finite rank and `det (𝟙 - φ_*) ≠ 0` on it, then for a torsion-free module 
 with `δ` the Wang connecting morphism and `ε` the augmentation of `H₀(F)`
 (`TauCeti.MappingTorus.singularKronecker_cohomologyOneEquiv_symm_apply`). With `k = M = ℤ` and a
 closed orientable surface `F`, this is `H¹(Y_φ; ℤ) ≅ ℤ` when the integral determinant
-`det (1 - φ_*)` is nonzero; that this matches `b₁(Y_φ) = 1`, through base change to `ℚ` and
-`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff`, is not made here. -/
+`det (1 - φ_*)` is nonzero. That determinant is nonzero exactly when `b₁(Y_φ) = 1` over a field
+of characteristic zero such as `ℚ` or `ℝ`
+(`TauCeti.MappingTorus.finrank_homology_one_eq_one_iff_det_int_ne_zero`). -/
 def cohomologyOneEquiv
     (hdet : (LinearMap.id -
       (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) 1).hom).det ≠ 0) :

@@ -155,7 +155,7 @@ variable {F : Type w} [TopologicalSpace F] (φ : F ≃ₜ F)
 /-- **The Wang determinant under flat base change.** If `S` is a flat `R`-algebra and `Hₙ(F; R)` is
 free, the determinant of `𝟙 - φ_*` on `Hₙ(F; S)` is the image in `S` of its determinant on
 `Hₙ(F; R)`. (When `Hₙ(F; R)` has infinite rank, both determinants are `1` by convention.) This is
-`TauCeti.det_id_sub_singularChains_homologyMap_baseChange` for the monodromy. -/
+`TauCeti.det_id_sub_singularChains_homologyMap_eq_algebraMap` for the monodromy. -/
 theorem det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap (R S : Type w) [CommRing R]
     [CommRing S] [Algebra R S] [Module.Flat R S] (n : ℕ)
     [Module.Free R ((((singularChainComplexFunctor (ModuleCat.{w} R)).obj
@@ -164,7 +164,7 @@ theorem det_id_sub_homologyMap_monodromyChainMap_eq_algebraMap (R S : Type w) [C
       algebraMap R S
         (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of R R)) n).hom).det := by
   rw [monodromyChainMap_def, monodromyChainMap_def]
-  exact det_id_sub_singularChains_homologyMap_baseChange _ n
+  exact det_id_sub_singularChains_homologyMap_eq_algebraMap _ n
 
 end BaseChange
 

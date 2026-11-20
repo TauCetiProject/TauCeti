@@ -30,7 +30,7 @@ coefficients, where the `Tor` term vanishes. It is the simplicial comparison
 Under this identification a continuous map acts on `S ⊗[R] Hₙ(X; R)` by the base change of its
 action on `Hₙ(X; R)`. So for a continuous self-map `g`, the determinant of `𝟙 - g_*` over `S` is
 the image of its determinant over `R` when `Hₙ(X; R)` is free
-(`TauCeti.det_id_sub_singularChains_homologyMap_baseChange`). For `R = ℤ` and `S` a field of
+(`TauCeti.det_id_sub_singularChains_homologyMap_eq_algebraMap`). For `R = ℤ` and `S` a field of
 characteristic zero, such as `ℚ` or `ℝ`, which is flat over `ℤ` because it is torsion-free,
 determinants of the action of a map on rational or real homology are computed from its action on
 integral homology.
@@ -48,7 +48,7 @@ of a space vanishes in a degree exactly when its integral homology is a torsion 
 * `TauCeti.singularHomologyTensorIso`: `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)` for a flat `R`-algebra `S`,
   natural in `X` (`TauCeti.singularHomologyTensorIso_hom_naturality`), with components given by
   `TauCeti.singularHomologyTensorIso_hom`.
-* `TauCeti.det_id_sub_singularChains_homologyMap_baseChange`: for a continuous self-map `g` and
+* `TauCeti.det_id_sub_singularChains_homologyMap_eq_algebraMap`: for a continuous self-map `g` and
   free `Hₙ(X; R)`, the determinant of `𝟙 - g_*` on `Hₙ(X; S)` is the image of its determinant on
   `Hₙ(X; R)`.
 * `TauCeti.isTorsion'_singularChains_homology_iff`: `Hₙ(X; R)` is `M`-torsion exactly when
@@ -126,7 +126,7 @@ variable {R S} in
 `Hₙ(X; R)` is free, then for a continuous self-map `g : X ⟶ X` the determinant of `𝟙 - g_*` on
 `Hₙ(X; S)` is the image in `S` of its determinant on `Hₙ(X; R)`. (When `Hₙ(X; R)` has infinite
 rank, both determinants are `1` by convention.) -/
-theorem det_id_sub_singularChains_homologyMap_baseChange [Module.Flat R S] {X : TopCat.{u}}
+theorem det_id_sub_singularChains_homologyMap_eq_algebraMap [Module.Flat R S] {X : TopCat.{u}}
     (g : X ⟶ X) (n : ℕ) [Module.Free R (((singularChains R).obj X).homology n)] :
     (LinearMap.id - (HomologicalComplex.homologyMap ((singularChains S).map g) n).hom).det =
       algebraMap R S
