@@ -243,7 +243,7 @@ private theorem exists_chart_comp_affine {α K : ℝ≥0} {φ : ℂ → ℂ} {e 
     rw [mul_one, one_mul] at h
     exact ⟨_, fun z hz z' hz' ↦ by rw [hdE z hz, hdE z' hz']; exact h z hz z' hz'⟩
   · rw [hdE z hz]
-    refine ContinuousLinearMap.isInvertible_of_injective_of_finrank_eq _ rfl ?_
+    refine (ContinuousLinearMap.isInvertible_iff_injective_of_finrank_eq rfl).2 ?_
     exact (hinj _ ((hEs z).mp hz).2).comp
       ((smul_right_injective ℂ (inv_ne_zero hε)).comp L.injective)
 
