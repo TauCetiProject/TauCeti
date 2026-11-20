@@ -52,6 +52,9 @@ reduced core `v` is nonempty so `|w| < |w| + |v| = |w ∗ w|`. Consequently, on 
 
 ## Main results
 
+* `TauCeti.InfWord.IsCyclicallyReduced.npow`, `TauCeti.InfWord.IsCyclicallyReduced.isMul_npow`:
+  the powers `uⁿ` (`TauCeti.InfWord.npow`) of a cyclically reduced word `u` are cyclically
+  reduced, and `uᵐ ∗ uⁿ = uᵐ⁺ⁿ`.
 * `TauCeti.InfWord.IsCyclicDecomposition.unique`: uniqueness of the cyclic decomposition `(c, v)`.
 * `TauCeti.InfWord.IsCyclicDecomposition.mul_self`: for `w = c⁻¹ ++ v ++ c` in `CDR(Λ, X)`,
   `w ∗ w = c⁻¹ ++ (v ++ v) ++ c`.
@@ -74,7 +77,7 @@ reduced core `v` is nonempty so `|w| < |w| + |v| = |w ∗ w|`. Consequently, on 
 
 * A. Myasnikov, V. Remeslennikov, D. Serbin, *Regular free length functions on Lyndon's free
   `ℤ[t]`-group `F^{ℤ[t]}`*, Contemp. Math. 378 (2005), 37–77, §3.2 (Example 3.5), §3.3
-  (Lemma 3.8 (1)) and §4 (Theorem 4.1 and Corollary 4.2).
+  (standard exponentiation and Lemma 3.8 (1)) and §4 (Theorem 4.1 and Corollary 4.2).
 * O. Kharlampovich, A. Myasnikov, V. Remeslennikov, D. Serbin, *Groups with free regular length
   functions in `ℤⁿ`*, Trans. Amer. Math. Soc. 364 (2012), 2847–2882, §2.3, Theorem 2.
 -/
@@ -186,6 +189,30 @@ theorem IsCyclicallyReduced.isReduced_append_or_isReduced_inv_append (hu : u.IsC
       c.letter (Order.succ 0) = (u.letter u.length).map (Prod.map id not)
   · exact .inr ⟨hc, hu.isReduced, fun _ _ h' => hu.letter_succ_zero_ne h.1 (h'.trans h.2.2)⟩
   · exact .inl ⟨hu.isReduced, hc, fun h₁ h₂ h₃ => h ⟨h₁, h₂, h₃⟩⟩
+
+private theorem IsCyclicallyReduced.isReduced_npow (hu : u.IsCyclicallyReduced) (n : ℕ) :
+    (u.npow n).IsReduced := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [npow_succ]
+    refine isReduced_append_iff.2 ⟨ih, hu.isReduced, fun hn hu0 => ?_⟩
+    obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 :=
+      Nat.exists_eq_succ_of_ne_zero (by rintro rfl; simp at hn)
+    rw [npow_succ, length_append, letter_append_length_add _ _ hu0]
+    exact hu.letter_succ_zero_ne hu0
+
+/-- The powers of a cyclically reduced word are cyclically reduced. -/
+theorem IsCyclicallyReduced.npow (hu : u.IsCyclicallyReduced) (n : ℕ) :
+    (u.npow n).IsCyclicallyReduced := by
+  rw [isCyclicallyReduced_iff_isReduced_append_self, ← npow_add]
+  exact hu.isReduced_npow _
+
+/-- For a cyclically reduced word `u`, `uᵐ ∗ uⁿ = uᵐ⁺ⁿ`. -/
+theorem IsCyclicallyReduced.isMul_npow (hu : u.IsCyclicallyReduced) (m n : ℕ) :
+    IsMul (u.npow m) (u.npow n) (u.npow (m + n)) := by
+  rw [npow_add]
+  exact isMul_append (npow_add u m n ▸ hu.isReduced_npow (m + n))
 
 /-! ### Cyclic decompositions and `CDR(Λ, X)` -/
 
