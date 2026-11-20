@@ -391,6 +391,32 @@ theorem volume_preimage_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s)
 
 end AffineSubspace
 
+namespace Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The Euclidean Hausdorff measure of the dimension of a subspace `T`, restricted to `T`, is the
+image of the Lebesgue measure of `T` under the inclusion. -/
+theorem euclideanHausdorffMeasure_restrict_eq_map (T : Submodule ℝ E) :
+    μHE[finrank ℝ T].restrict (T : Set E) = (volume : Measure T).map Subtype.val := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    isometry_subtype_coe.map_euclideanHausdorffMeasure, Subtype.range_coe]
+
+/-- The Euclidean Hausdorff measure of the dimension of a subspace, restricted to the subspace, is
+locally finite. -/
+instance isLocallyFiniteMeasure_euclideanHausdorffMeasure_restrict (T : Submodule ℝ E) :
+    IsLocallyFiniteMeasure (μHE[finrank ℝ T].restrict (T : Set E)) := by
+  have he := T.isClosed_of_finiteDimensional.isClosedEmbedding_subtypeVal
+  have : IsFiniteMeasureOnCompacts ((volume : Measure T).map Subtype.val) :=
+    ⟨fun K hK ↦ by
+      rw [Measure.map_apply measurable_subtype_coe hK.isClosed.measurableSet]
+      exact (he.isCompact_preimage hK).measure_lt_top⟩
+  rw [T.euclideanHausdorffMeasure_restrict_eq_map]
+  infer_instance
+
+end Submodule
+
 namespace TauCeti
 
 open scoped RealInnerProductSpace
