@@ -504,6 +504,13 @@ noncomputable def intervalBaseTimeCoordinate (t : ℝ) : ℝ :=
 theorem intervalBaseTimeCoordinate_apply (t : ℝ) :
     intervalBaseTimeCoordinate t = Real.log t - Real.log (1 - t ^ 2) / 2 := (rfl)
 
+/-- On `(0, 1)` the exponential of the time coordinate is `t / √(1 - t²)`. -/
+theorem exp_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    Real.exp (intervalBaseTimeCoordinate t) = t / √(1 - t ^ 2) := by
+  have h1 : 0 < 1 - t ^ 2 := by nlinarith [ht.1, ht.2]
+  rw [intervalBaseTimeCoordinate, Real.exp_sub, Real.exp_log ht.1, Real.sqrt_eq_rpow,
+    Real.rpow_def_of_pos h1, div_eq_mul_one_div (Real.log _)]
+
 /-- On `(0, 1)` the derivative of the time coordinate is `1 / (t (1 - t²))`. -/
 theorem hasDerivAt_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
     HasDerivAt intervalBaseTimeCoordinate (t * (1 - t ^ 2))⁻¹ t := by
