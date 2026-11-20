@@ -37,6 +37,7 @@ once.
   appending.
 * `Fin.tail_snoc`: dropping the first entry commutes with appending a last one.
 * `Fin.snoc_tail_comp_rev`: appending the first entry to the reversed tail reverses the tuple.
+* `Fin.init_comp_rev`: dropping the last entry of the reversed tuple is reversing the tail.
 * `Fin.snoc_self_zero_succ`: in `q 0, …, q n, q 0`, the entry after the `i`-th is `q (i + 1)`.
 * `Fin.forall_snoc_eq_iff_snoc_eq`: appending one entry to each of two tuples gives the same
   equality pattern exactly when the old patterns agree and the new entries repeat the same
@@ -144,6 +145,12 @@ theorem tail_snoc {n : ℕ} (a : Fin (n + 1) → α) (x : α) :
 theorem snoc_tail_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
     snoc (tail a ∘ rev) (a 0) = a ∘ rev := by
   rw [← cons_comp_rev, cons_self_tail]
+
+/-- Reversing `a` and dropping the last entry is reversing the tail of `a`. -/
+theorem init_comp_rev {α : Type*} {n : ℕ} (a : Fin (n + 1) → α) :
+    init (a ∘ rev) = tail a ∘ rev := by
+  funext i
+  simp [init, tail, rev_castSucc]
 
 /-- Closing a tuple up with its first entry: the entry of `q 0, …, q n, q 0` after the `i`-th is
 `q (i + 1)`, with `q n` followed by `q 0`. -/
