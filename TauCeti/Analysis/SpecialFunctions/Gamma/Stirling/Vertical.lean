@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
@@ -181,18 +182,6 @@ theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
     exact pow_le_pow_left₀ (abs_nonneg _) hσM 2
   linarith
 
-/-- Two positive reals within a factor `2` of each other have logarithms within `log 2 < 1`. -/
-private lemma abs_log_sub_log_le_one {x y : ℝ} (hx : 0 < x) (hy : 0 < y) (hxy : x ≤ 2 * y)
-    (hyx : y ≤ 2 * x) : |Real.log x - Real.log y| ≤ 1 := by
-  have h2 := Real.log_two_lt_d9
-  have hup : Real.log x ≤ Real.log 2 + Real.log y := by
-    rw [← Real.log_mul two_ne_zero hy.ne']
-    exact Real.log_le_log hx hxy
-  have hlo : Real.log y ≤ Real.log 2 + Real.log x := by
-    rw [← Real.log_mul two_ne_zero hx.ne']
-    exact Real.log_le_log hy hyx
-  exact abs_le.2 ⟨by norm_num at h2; linarith, by norm_num at h2; linarith⟩
-
 /-- Stirling's formula on vertical strips for a shifted argument, measured against `log |t|`:
 for every compact interval `[a, b]` and every shift `μ`, there are `C` and `X` such that
 `|log ‖Γ(s + μ)‖ - ((σ + Re μ - 1/2) log |t| - π |t| / 2)| ≤ C` for `s = σ + i t` with
@@ -225,8 +214,8 @@ theorem exists_abs_log_norm_Gamma_add_vertical_sub_le (a b : ℝ) (μ : ℂ) :
       (div_le_self (abs_nonneg C) (hT1.trans hv))
   -- The comparison `|log |v| - log |τ|| ≤ 1`, since `|τ| / 2 ≤ |v| ≤ 2 |τ|`.
   have hlog : |Real.log (|v|) - Real.log (|τ|)| ≤ 1 :=
-    abs_log_sub_log_le_one hv0 hτ0 (by linarith [abs_le.1 hvabs])
-      (by linarith [abs_le.1 hvabs])
+    (Real.abs_log_sub_log_le_log hv0 hτ0 (c := 2) (by linarith [abs_le.1 hvabs])
+      (by linarith [abs_le.1 hvabs])).trans (Real.log_two_lt_d9.le.trans (by norm_num))
   have hcoef : |s.re + μ.re - 1 / 2| ≤ M + |μ.re| + 1 / 2 := by
     have hσμ : |s.re + μ.re| ≤ M + |μ.re| :=
       (abs_add_le _ _).trans (by gcongr; exact abs_le_max_abs_abs hs.1 hs.2)
