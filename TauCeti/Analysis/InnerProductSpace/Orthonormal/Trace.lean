@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
-public import Mathlib.Tactic.Linarith
+public import TauCeti.LinearAlgebra.Matrix.Trace.Hermitian
 
 /-!
 # Contraction of skew and symmetric operators
@@ -24,7 +24,7 @@ namespace OrthonormalBasis
 
 variable {ι V W : Type*} [Fintype ι]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+  [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
 
 /-- The contraction of a skew-adjoint operator with a symmetric operator is zero, including
 after pulling the skew-adjoint operator back by an arbitrary linear map. -/
@@ -42,21 +42,18 @@ theorem sum_inner_map_map_symmetric_eq_zero (b : OrthonormalBasis ι ℝ V)
   have hskew (i j : ι) : inner ℝ (K (d (b i))) (d (b j)) =
       -inner ℝ (K (d (b j))) (d (b i)) := by
     rw [hK, real_inner_comm]
-  have hneg : (∑ i, inner ℝ (K (d (b i))) (d (A (b i)))) =
-      -(∑ i, inner ℝ (K (d (b i))) (d (A (b i)))) := by
-    calc
-      _ = ∑ i, ∑ j, inner ℝ (b j) (A (b i)) *
-          inner ℝ (K (d (b i))) (d (b j)) := Finset.sum_congr rfl fun i _ ↦ hexpand i
-      _ = ∑ j, ∑ i, inner ℝ (b j) (A (b i)) *
-          inner ℝ (K (d (b i))) (d (b j)) := Finset.sum_comm
-      _ = ∑ j, ∑ i, -(inner ℝ (b i) (A (b j)) *
-          inner ℝ (K (d (b j))) (d (b i))) := by
-        refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-        calc
-          _ = inner ℝ (b i) (A (b j)) *
-              (-inner ℝ (K (d (b j))) (d (b i))) := by rw [hcoeff i j, hskew i j]
-          _ = _ := mul_neg _ _
-      _ = _ := by simp only [Finset.sum_neg_distrib, ← hexpand]
-  linarith
+  let H : Matrix ι ι ℝ := Matrix.of fun i j ↦ inner ℝ (b i) (A (b j))
+  let X : Matrix ι ι ℝ := Matrix.of fun i j ↦ inner ℝ (K (d (b i))) (d (b j))
+  have hH : H.IsHermitian := Matrix.IsHermitian.ext fun i j ↦ by
+    simpa only [H, Matrix.of_apply, star_trivial] using hcoeff i j
+  have hX : X.conjTranspose = -X := by
+    ext i j
+    simpa only [Matrix.conjTranspose_apply, Matrix.neg_apply, X, Matrix.of_apply, star_trivial]
+      using hskew j i
+  have htrace := hH.re_trace_mul_eq_zero_of_conjTranspose_eq_neg hX
+  simp only [RCLike.re_to_real, Matrix.trace, Matrix.diag_apply, Matrix.mul_apply, H, X,
+    Matrix.of_apply] at htrace
+  rw [Finset.sum_comm] at htrace
+  simpa only [← hexpand] using htrace
 
 end OrthonormalBasis
